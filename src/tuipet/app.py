@@ -35,6 +35,8 @@ class Screen(Static):
     """The animated LCD screen."""
     def on_mount(self):
         self.frame_i = 0
+        self.walk_x = 0
+        self.walk_dir = 1
 
     def paint(self, pet: Pet):
         if pet.num == -1:                      # egg
@@ -45,10 +47,20 @@ class Screen(Static):
             rec = by_num[pet.num]
             roles = data.ROLES
         frames = roles.get(pet.anim, [0])
-        idx = frames[self.frame_i % len(frames)]
-        rows = rec["frames"][idx] or rec["frames"][0]
-        mirror = pet.anim in data.MIRROR_ROLES and self.frame_i % 2 == 1
-        self.update(render_screen(rows, SCREEN_COLS, SCREEN_ROWS, LCD_ON, LCD_BG, mirror=mirror))
+        first = next((f for f in rec["frames"] if f), rec["frames"][0])
+        if pet.anim in ("idle", "walk") and pet.num != -1:
+            # idle: the WHOLE creature, centred, with a gentle 1px breathing bob —
+            # never flickers to a cropped walk frame and never clips the edge
+            rows = first
+            yshift = self.frame_i % 2
+            mirror = False
+        else:
+            idx = frames[self.frame_i % len(frames)]
+            rows = rec["frames"][idx] or first
+            yshift = 0
+            mirror = pet.anim in data.MIRROR_ROLES and self.frame_i % 2 == 1
+        self.update(render_screen(rows, SCREEN_COLS, SCREEN_ROWS, LCD_ON, LCD_BG,
+                                  mirror=mirror, yshift=yshift))
 
     def advance(self):
         self.frame_i += 1
