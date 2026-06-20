@@ -8,6 +8,7 @@ We threshold dark pixels -> 1-bit bitmaps, crop to the union bbox of a Digimon's
 non-empty frames (stable alignment), and emit a compact JSON dataset.
 """
 import csv, json, os, sys, gzip
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import numpy as np
 from PIL import Image
 
@@ -23,18 +24,31 @@ def get_sheet(stage, s):
     key = f"sprites{stage}{s}"
     if key not in _cache:
         p = os.path.join(RES, key + ".png")
-        _cache[key] = np.array(Image.open(p).convert("RGB")) if os.path.exists(p) else None
+        if os.path.exists(p):
+            img = Image.open(p)
+            if img.mode != "RGBA":
+                img = img.convert("RGBA")
+            _cache[key] = np.array(img)
+        else:
+            _cache[key] = None
     return _cache[key]
 
 F = 3        # creatures are authored at 3x; native cell is ~20px
 NATIVE = 20  # native cell size after downsample (60 = 20*3)
 
+_CYAN = (153, 217, 234)
+
 def dark_mask_native(cell60):
-    # cell60: HxWx3 RGB slice (60x60). Box-downsample the dark mask by 3 and
-    # threshold at 0.5 -> recovers native sprite and drops 1px column labels.
-    r = cell60[:, :, 0].astype(int); g = cell60[:, :, 1].astype(int); b = cell60[:, :, 2].astype(int)
-    mask = ((r < 110) & (g < 110) & (b < 110)).astype(float)
-    m = mask[:NATIVE*F, :NATIVE*F].reshape(NATIVE, F, NATIVE, F).mean(axis=(1, 3))
+    # cell60: HxWx4 RGBA slice (60x60). A pixel belongs to the sprite if it is
+    # OPAQUE and NOT the cyan LCD background (works for both opaque-cyan-bg sheets
+    # and transparent-bg sheets). Box-downsample by 3 and threshold -> native
+    # sprite, dropping 1px column labels.
+    rgb = cell60[:, :, :3].astype(int)
+    a = cell60[:, :, 3]
+    notcyan = (np.abs(rgb[:, :, 0] - _CYAN[0]) + np.abs(rgb[:, :, 1] - _CYAN[1])
+               + np.abs(rgb[:, :, 2] - _CYAN[2])) > 60
+    on = ((a > 128) & notcyan).astype(float)
+    m = on[:NATIVE*F, :NATIVE*F].reshape(NATIVE, F, NATIVE, F).mean(axis=(1, 3))
     return m > 0.5
 
 
@@ -61,12 +75,6 @@ def extract_digimon(stage, S, N):
         return None
     masks = []
     x0 = round(col * cw)
-    # placeholder sheets render cells as solid black (no cyan LCD background);
-    # detect by measuring cyan background fraction in the idle (row 0) cell.
-    c0 = sheet[0:NATIVE*F, x0:x0 + NATIVE*F]
-    cb = (c0[:, :, 2].astype(int) > 150) & (c0[:, :, 1].astype(int) > 150)
-    if cb.mean() < 0.12:
-        return None  # placeholder / unused slot
     for f in range(GRID):
         y0 = round(f * ch)
         masks.append(dark_mask_native(sheet[y0:y0 + NATIVE*F, x0:x0 + NATIVE*F]))
@@ -150,6 +158,8 @@ def main():
     print(f"extracted {len(out)} digimon, {nonemptyframes} non-empty frames, skipped {skipped}")
     print(f"wrote {path} ({sz/1024:.0f} KB)")
     extract_eggs()
+    import extract_icons as _ic
+    _ic.run()
     # sample frame-occupancy: how many digimon have each frame index non-empty
     occ = [0]*GRID
     for d in out:

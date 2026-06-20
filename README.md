@@ -111,13 +111,9 @@ mood; **battles/wins are tracked and feed evolution**: most Champion+ forms
 (Greymon, etc.) require battle experience plus multi-attribute training, so battling
 unlocks the rest of the evolution tree that care alone cannot reach.
 
-## Unfinished sprites
+## Sprite extraction
 
-The DVPetTest build ships finished art for ~960 of the ~1500 Digimon; the rest
-have a solid-square placeholder in the sheet. tuipet detects these (a content bbox that is ~100% filled) and substitutes a
-generic "mystery monster" blob so nothing ever renders as a black box. (Eggs
-themselves use the real sprites from armorEggs.png; spritesEgg0 is placeholder.) The evolution graph keeps all entries, and
-battles prefer enemies with real art (389 of 462), so fights always look right.
+All DVPet sprite sheets are RGBA with transparent backgrounds. The extractor masks on "opaque AND not the cyan LCD colour", recovering every creature (~1525), the eggs, and the food/item icons (from the food/item sheets' alpha channel). A few genuinely-unfinished cells are detected and shown as a generic blob.
 
 ## Adventure
 

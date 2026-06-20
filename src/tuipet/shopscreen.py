@@ -87,33 +87,67 @@ class ShopScreen(ModalScreen):
     def action_leave(self):
         self.dismiss(self.msg)
 
+    def _icon_lines(self, e):
+        from .render import downsample
+        fr = data.load_icons().get(e["key"]) if e else None
+        if not fr:
+            return []
+        bm = downsample(fr[0], 3 if e["key"].startswith("f:") else 2)
+        w = max((len(r) for r in bm), default=0)
+        if not w:
+            return []
+        bm = [r.ljust(w, "0") for r in bm]
+        if len(bm) % 2:
+            bm.append("0" * w)
+        lines = []
+        for cy in range(0, len(bm), 2):
+            top, bot = bm[cy], bm[cy + 1]
+            seg = ""
+            for x in range(w):
+                t, b = top[x] == "1", bot[x] == "1"
+                seg += "█" if (t and b) else ("▀" if t else ("▄" if b else " "))
+            lines.append(seg)
+        return lines
+
     def render_view(self):
         rows = self._rows()
+        vis = 5
         out = Text()
         head = "SHOP" if self.mode == "shop" else "BAG"
-        out.append(f"{head}", style=INK_B)
-        out.append(f"          Bits: {self.pet.bits}\n", style=INK)
+        out.append(f"{head}    Bits: {self.pet.bits}\n", style=INK_B)
+        sel_e = rows[min(self.cursor, len(rows) - 1)] if rows else None
+        # selected item: icon (left) beside its name/price/effect (right)
+        icon = self._icon_lines(sel_e)
+        info = []
+        if sel_e:
+            info = [sel_e["name"][:22],
+                    (f"{sel_e['price']} bits" if self.mode == "shop"
+                     else f"x{self.pet.inventory.get(sel_e['key'], 0)} owned"),
+                    effect_summary(sel_e)[:22]]
+        for r in range(4):
+            ic = icon[r] if r < len(icon) else ""
+            tx = info[r - 0] if 0 <= r < len(info) else ""
+            out.append(f" {ic:<10} ", style=INK)
+            out.append(f"{tx}\n", style=INK_B if r == 0 else INK)
+        out.append("─" * 46 + "\n", style=DIM)
         if not rows:
-            out.append("\n  (empty)\n\n", style=DIM)
+            out.append("  (empty)\n", style=DIM)
         else:
             self.cursor = min(self.cursor, len(rows) - 1)
-            lo = max(0, min(self.cursor - VISIBLE // 2, len(rows) - VISIBLE))
-            for i in range(lo, min(lo + VISIBLE, len(rows))):
+            lo = max(0, min(self.cursor - vis // 2, len(rows) - vis))
+            for i in range(lo, min(lo + vis, len(rows))):
                 e = rows[i]
                 sel = i == self.cursor
                 mark = ">" if sel else " "
                 if self.mode == "shop":
-                    line = f"{mark}{e['price']:>5}b {e['name'][:15]:15} {effect_summary(e)[:16]}"
+                    line = f"{mark}{e['price']:>5}b {e['name'][:16]:16}"
                 else:
-                    cnt = self.pet.inventory.get(e["key"], 0)
-                    line = f"{mark} x{cnt} {e['name'][:16]:16} {effect_summary(e)[:16]}"
+                    line = f"{mark} x{self.pet.inventory.get(e['key'],0)} {e['name'][:18]:18}"
                 out.append(line[:46] + "\n", style=SEL if sel else INK)
-        # pad
-        shown = min(len(rows), VISIBLE) if rows else 3
-        for _ in range(VISIBLE - shown):
+        for _ in range(vis - (min(len(rows), vis) if rows else 1)):
             out.append("\n", style=INK)
         out.append(f"{self.msg}\n", style=INK_B)
         verb = "buy" if self.mode == "shop" else "use"
         other = "bag" if self.mode == "shop" else "shop"
-        out.append(f"↑↓ move  ENTER {verb}  TAB {other}  ESC leave", style=DIM)
+        out.append(f"↑↓ ENTER {verb}  TAB {other}  ESC leave", style=DIM)
         self.view.update(out)

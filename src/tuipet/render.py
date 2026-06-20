@@ -149,3 +149,20 @@ def render_scene(placements, cols, rows, on="#0b3d0b", bg="#9bbc0f"):
         if cy != rows - 1:
             t.append("\n")
     return t
+
+
+def downsample(rows, f):
+    """Box-downsample a 1-bit bitmap by integer factor f (for shrinking 3x icons)."""
+    if not rows or f <= 1:
+        return rows
+    w = max(len(r) for r in rows)
+    rows = [r.ljust(w, "0") for r in rows]
+    h = len(rows)
+    out = []
+    for y in range(h // f):
+        line = []
+        for x in range(w // f):
+            c = sum(rows[y*f+dy][x*f+dx] == "1" for dy in range(f) for dx in range(f))
+            line.append("1" if c * 2 >= f * f else "0")
+        out.append("".join(line))
+    return out

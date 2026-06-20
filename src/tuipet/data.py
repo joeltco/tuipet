@@ -59,7 +59,8 @@ def load_sprites():
         data = json.load(fh)
     for rec in data:
         # unfinished art shows as a solid square; swap in the generic blob sprite
-        if _content_fill(rec["frames"][0]) > 0.97:
+        first = next((f for f in rec["frames"] if f), None)
+        if first is not None and _content_fill(first) > 0.97:
             PLACEHOLDER_NUMS.add(rec["num"])
             rec["frames"] = placeholder.FRAMES
             rec["w"], rec["h"] = placeholder.W, placeholder.H
@@ -344,3 +345,16 @@ def consumable_by_key(key):
         if e["key"] == key:
             return e
     return None
+
+
+@lru_cache(maxsize=1)
+def load_icons():
+    """Food/item icons (frame 0) keyed f:<id> / i:<id>, or empty if not extracted."""
+    path = os.path.join(_DATA, "icons.json.gz")
+    if not os.path.exists(path):
+        return {}
+    try:
+        with gzip.open(path, "rt") as fh:
+            return json.load(fh)
+    except (OSError, ValueError):
+        return {}
