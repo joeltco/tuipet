@@ -69,9 +69,10 @@ def extract_digimon(stage, S, N):
     if sheet is None:
         return None
     H, W, _ = sheet.shape
-    ch, cw = H / GRID, W / GRID
+    cw = ch = H / GRID  # square cells (~61px); height is always 672 so this is the
+                        # canonical pitch. Wider sheets just have MORE columns.
     col = N // GRID  # creatures are laid out per COLUMN; 11 frames run down the rows
-    if col >= GRID:
+    if col >= round(W / cw):
         return None
     masks = []
     x0 = round(col * cw)
