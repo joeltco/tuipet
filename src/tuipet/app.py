@@ -48,19 +48,10 @@ class Screen(Static):
             roles = data.ROLES
         frames = roles.get(pet.anim, [0])
         first = next((f for f in rec["frames"] if f), rec["frames"][0])
-        if pet.anim in ("idle", "walk") and pet.num != -1:
-            # idle: the WHOLE creature, centred, with a gentle 1px breathing bob —
-            # never flickers to a cropped walk frame and never clips the edge
-            rows = first
-            yshift = self.frame_i % 2
-            mirror = False
-        else:
-            idx = frames[self.frame_i % len(frames)]
-            rows = rec["frames"][idx] or first
-            yshift = 0
-            mirror = pet.anim in data.MIRROR_ROLES and self.frame_i % 2 == 1
-        self.update(render_screen(rows, SCREEN_COLS, SCREEN_ROWS, LCD_ON, LCD_BG,
-                                  mirror=mirror, yshift=yshift))
+        idx = frames[self.frame_i % len(frames)]
+        rows = rec["frames"][idx] or first
+        mirror = pet.anim in data.MIRROR_ROLES and self.frame_i % 2 == 1
+        self.update(render_screen(rows, SCREEN_COLS, SCREEN_ROWS, LCD_ON, LCD_BG, mirror=mirror))
 
     def advance(self):
         self.frame_i += 1

@@ -33,28 +33,34 @@ def get_sheet(stage, s):
             _cache[key] = None
     return _cache[key]
 
-F = 3        # creatures are authored at 3x; native cell is ~20px
-NATIVE = 20  # native cell size after downsample (60 = 20*3)
-
+# DVPet's divideIntoColumn geometry: a 48px sprite with a 12px gutter (pitch 60),
+# authored at 3x so native is 16px. The creature's POSITION within its 48px cell
+# is the animation (bob/walk/crouch), so we keep the full native cell and never
+# crop -- that is exactly what the game draws.
+F = 3
+SIZE = 48
+GUTTER = 12
+PITCH = SIZE + GUTTER   # 60
+NATIVE = SIZE // F       # 16
 _CYAN = (153, 217, 234)
 
-def dark_mask_native(cell60):
-    # cell60: HxWx4 RGBA slice (60x60). A pixel belongs to the sprite if it is
-    # OPAQUE and NOT the cyan LCD background (works for both opaque-cyan-bg sheets
-    # and transparent-bg sheets). Box-downsample by 3 and threshold -> native
-    # sprite, dropping 1px column labels.
-    rgb = cell60[:, :, :3].astype(int)
-    a = cell60[:, :, 3]
+
+def cell_mask(sheet, col, fr):
+    """16x16 native mask for one frame: OPAQUE and not the cyan LCD background."""
+    y0 = GUTTER + PITCH * fr
+    x0 = GUTTER + PITCH * col
+    cell = sheet[y0:y0 + SIZE, x0:x0 + SIZE]
+    if cell.shape[0] < SIZE or cell.shape[1] < SIZE:
+        return None
+    rgb = cell[:, :, :3].astype(int)
+    a = cell[:, :, 3]
     notcyan = (np.abs(rgb[:, :, 0] - _CYAN[0]) + np.abs(rgb[:, :, 1] - _CYAN[1])
                + np.abs(rgb[:, :, 2] - _CYAN[2])) > 60
     on = ((a > 128) & notcyan).astype(float)
-    m = on[:NATIVE*F, :NATIVE*F].reshape(NATIVE, F, NATIVE, F).mean(axis=(1, 3))
-    return m > 0.5
+    return on.reshape(NATIVE, F, NATIVE, F).mean(axis=(1, 3)) > 0.5
 
 
 def content_fill(frame):
-    """Fill ratio within a frame's tight content bbox. Solid placeholder squares
-    (no finished art in this test build) come out ~1.0; real silhouettes ~0.3-0.6."""
     rows = [r for r in frame if "1" in r]
     if not rows:
         return 0.0
@@ -64,38 +70,22 @@ def content_fill(frame):
     ones = sum(r[left:right + 1].count("1") for r in rows)
     return ones / (w * len(rows))
 
+
 def extract_digimon(stage, S, N):
     sheet = get_sheet(stage, S)
     if sheet is None:
         return None
     H, W, _ = sheet.shape
-    cw = ch = H / GRID  # square cells (~61px); height is always 672 so this is the
-                        # canonical pitch. Wider sheets just have MORE columns.
-    col = N // GRID  # creatures are laid out per COLUMN; 11 frames run down the rows
-    if col >= round(W / cw):
+    col = N // GRID
+    if GUTTER + PITCH * col + SIZE > W:
         return None
-    masks = []
-    x0 = round(col * cw)
-    for f in range(GRID):
-        y0 = round(f * ch)
-        masks.append(dark_mask_native(sheet[y0:y0 + NATIVE*F, x0:x0 + NATIVE*F]))
-    # union bbox over non-empty frames
-    nonempty = [m for m in masks if m.any()]
-    if not nonempty:
+    masks = [cell_mask(sheet, col, f) for f in range(GRID)]
+    if not any(m is not None and m.any() for m in masks):
         return None
-    union = np.zeros_like(masks[0])
-    for m in nonempty:
-        union |= m
-    ys, xs = np.where(union)
-    y0, y1, x0, x1 = ys.min(), ys.max() + 1, xs.min(), xs.max() + 1
-    frames = []
-    for m in masks:
-        crop = m[y0:y1, x0:x1]
-        if not crop.any():
-            frames.append(None)
-        else:
-            frames.append(["".join("1" if v else "0" for v in r) for r in crop])
-    return {"w": int(x1 - x0), "h": int(y1 - y0), "frames": frames}
+    frames = [None if (m is None or not m.any())
+              else ["".join("1" if v else "0" for v in r) for r in m]
+              for m in masks]
+    return {"w": NATIVE, "h": NATIVE, "frames": frames}
 
 
 
