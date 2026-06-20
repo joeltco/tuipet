@@ -1,0 +1,19 @@
+# Python
+.venv/
+__pycache__/
+*.pyc
+*.egg-info/
+build/
+dist/
+
+# Raw DVPet game files (never distribute)
+_extract/
+raw_resources
+raw_model
+
+# Game data — derived from DVPet, regenerate with tools/setup_assets.sh
+src/tuipet/data/*.csv
+src/tuipet/data/*.gz
+
+# Save data
+*.save

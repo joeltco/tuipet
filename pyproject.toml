@@ -1,0 +1,22 @@
+[project]
+name = "tuipet"
+version = "0.1.0"
+description = "A terminal virtual pet (Digimon V-Pet style) rendered with halfblock sprites, built on data extracted from DVPet."
+requires-python = ">=3.10"
+dependencies = ["textual>=0.50", "rich>=13"]
+
+[project.scripts]
+tuipet = "tuipet.app:main"
+
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+tuipet = ["data/*.gz", "data/*.csv"]
