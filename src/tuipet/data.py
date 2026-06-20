@@ -58,13 +58,19 @@ def load_sprites():
     with gzip.open(os.path.join(_DATA, "sprites.json.gz"), "rt") as fh:
         data = json.load(fh)
     for rec in data:
-        # unfinished art shows as a solid square; swap in the generic blob sprite
-        first = next((f for f in rec["frames"] if f), None)
-        if first is not None and _content_fill(first) > 0.97:
+        frames = rec["frames"]
+        first = next((f for f in frames if f), None)
+        best = max((sum(r.count("1") for r in f) for f in frames if f), default=0)
+        # unfinished cells (solid square, near-blank, or fully empty) -> blob
+        if first is None or best < 10 or _content_fill(first) > 0.97:
             PLACEHOLDER_NUMS.add(rec["num"])
             rec["frames"] = placeholder.FRAMES
             rec["w"], rec["h"] = placeholder.W, placeholder.H
             rec["_placeholder"] = True
+        else:
+            # fill empty animation frames with the first real frame so no role
+            # (idle/eat/sleep/...) ever renders blank
+            rec["frames"] = [f if f else first for f in frames]
     by_num = {d["num"]: d for d in data}
     return data, by_num
 
