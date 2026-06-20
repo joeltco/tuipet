@@ -44,6 +44,7 @@ class Pet:
     trophies: int = 0
     adv_map: int = 0
     adv_zone: int = 0
+    egg_type: int = 0
     inventory: dict = field(default_factory=dict)
     # transient animation request, consumed by the UI
     anim: str = "idle"
@@ -67,7 +68,7 @@ class Pet:
 
     @classmethod
     def new_egg(cls):
-        return cls(num=-1, name="Digitama", stage="Egg")
+        return cls(num=-1, name="Digitama", stage="Egg", egg_type=random.randint(0, 10))
 
     def _hatch_into_fresh(self):
         _, by_num = data.load_sprites()

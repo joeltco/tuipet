@@ -20,7 +20,7 @@ pip install -e .
 tuipet           # or: PYTHONPATH=src python -m tuipet.app
 ```
 
-Start from an **egg** — it wobbles, cracks, and hatches into a random Fresh baby.
+Start from an **egg** — one of 11 real DVPet egg designs (from armorEggs.png) — it wobbles, cracks, and hatches into a random Fresh baby.
 
 Keys: **f** feed · **t** train (minigame) · **p** play · **c** clean · **h** heal ·
 **s** sleep · **n** new egg · **q** quit.
@@ -114,9 +114,9 @@ unlocks the rest of the evolution tree that care alone cannot reach.
 ## Unfinished sprites
 
 The DVPetTest build ships finished art for ~960 of the ~1500 Digimon; the rest
-have a solid-square placeholder in the sheet. tuipet detects these (a content
-bbox that is ~100% filled) and substitutes a generic "mystery monster" blob so
-nothing ever renders as a black box. The evolution graph keeps all entries, and
+have a solid-square placeholder in the sheet. tuipet detects these (a content bbox that is ~100% filled) and substitutes a
+generic "mystery monster" blob so nothing ever renders as a black box. (Eggs
+themselves use the real sprites from armorEggs.png; spritesEgg0 is placeholder.) The evolution graph keeps all entries, and
 battles prefer enemies with real art (389 of 462), so fights always look right.
 
 ## Adventure

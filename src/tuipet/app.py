@@ -38,7 +38,7 @@ class Screen(Static):
 
     def paint(self, pet: Pet):
         if pet.num == -1:                      # egg
-            rec = egg_mod.record()
+            rec = egg_mod.record(pet.egg_type)
             roles = egg_mod.ROLES
         else:
             _, by_num = data.load_sprites()

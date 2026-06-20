@@ -88,6 +88,35 @@ def extract_digimon(stage, S, N):
             frames.append(["".join("1" if v else "0" for v in r) for r in crop])
     return {"w": int(x1 - x0), "h": int(y1 - y0), "frames": frames}
 
+
+
+def extract_eggs():
+    """Extract the 11 egg sprites from armorEggs.png (1-bit black-on-cyan)."""
+    import numpy as np
+    from PIL import Image
+    im = np.array(Image.open(os.path.join(RES, "armorEggs.png")).convert("RGB"))
+    H, W, _ = im.shape
+    dark = im.sum(axis=2) < 200
+    colhas = dark.any(axis=0)
+    eggs, x = [], 0
+    while x < W:
+        if colhas[x]:
+            j = x
+            while j < W and colhas[j]:
+                j += 1
+            band = dark[:, x:j]
+            ys = np.where(band.any(axis=1))[0]
+            if len(ys):
+                crop = band[ys.min():ys.max() + 1]
+                eggs.append(["".join("1" if v else "0" for v in r) for r in crop])
+            x = j
+        else:
+            x += 1
+    path = os.path.join(OUT, "eggs.json.gz")
+    with gzip.open(path, "wt") as fh:
+        json.dump(eggs, fh)
+    print(f"extracted {len(eggs)} egg sprites -> {path}")
+
 def main():
     os.makedirs(OUT, exist_ok=True)
     rows = list(csv.DictReader(open(os.path.join(MODEL, "digimon.csv"))))
@@ -120,6 +149,7 @@ def main():
     nonemptyframes = sum(1 for d in out for f in d["frames"] if f)
     print(f"extracted {len(out)} digimon, {nonemptyframes} non-empty frames, skipped {skipped}")
     print(f"wrote {path} ({sz/1024:.0f} KB)")
+    extract_eggs()
     # sample frame-occupancy: how many digimon have each frame index non-empty
     occ = [0]*GRID
     for d in out:
