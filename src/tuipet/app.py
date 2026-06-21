@@ -18,6 +18,7 @@ from . import jogressscreen
 from . import jogress
 from . import tournamentscreen
 from . import titlescreen
+from . import themescreen
 from .pet import Pet
 from .render import render_screen
 
@@ -463,10 +464,11 @@ class TuiPetApp(App):
             pass
 
     def action_theme(self):
-        name = theme.cycle()
-        theme.save_choice(name)
+        self._open_mode(themescreen.ThemePanel(on_change=self._restyle), self._after_theme)
+
+    def _after_theme(self, _=None):
         self._restyle()
-        self.flash(f"Theme: {name}")
+        self.flash(f"Theme: {theme.current()}")
         self.repaint()
 
     def _center(self, text):
