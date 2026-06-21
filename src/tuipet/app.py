@@ -339,13 +339,17 @@ class TuiPetApp(App):
     CSS = """
     Screen { align: center middle; }
     #wrap { width: auto; height: auto; }
-    #lcd {
-        border: heavy #7a7e78; padding: 0 1; background: #c6c9cc;
-        width: 44; height: 14;
+    #top { width: auto; height: auto; }
+    #left { width: 44; height: auto; }
+    #lcd { border: round #7a7e78; padding: 0 1; background: #c6c9cc; width: 44; height: 14; }
+    #msg {
+        border: round #7a7e78; padding: 0 1; width: 44; height: 3; margin-top: 1;
+        color: #7d8186; content-align: left middle;
     }
-    #stats { border: round #444; padding: 0 1; width: 30; height: 22; margin-left: 1; }
-    #msg { height: 1; color: $text-muted; margin-top: 1; }
-    #keys { height: 3; color: $text-muted; margin-top: 1; }
+    #stats { border: round #7a7e78; padding: 0 1; width: 30; height: 18; margin-left: 1; }
+    #keys {
+        border: round #7a7e78; padding: 0 1; width: 75; height: 5; margin-top: 1; color: #7d8186;
+    }
     """
     BINDINGS = [
         ("f", "feed", "Feed"), ("t", "train", "Train"), ("b", "battle", "Battle"),
@@ -372,16 +376,21 @@ class TuiPetApp(App):
 
     def compose(self) -> ComposeResult:
         with Vertical(id="wrap"):
-            with Horizontal():
-                yield Screen(id="lcd")
+            with Horizontal(id="top"):
+                with Vertical(id="left"):
+                    yield Screen(id="lcd")
+                    yield Static("Welcome! Raise your pet.", id="msg")
                 yield Stats(id="stats")
-            yield Static("Welcome! Raise your pet.", id="msg")
             yield Static(KEYS, id="keys")
 
     def on_mount(self):
         self.screen_w = self.query_one("#lcd", Screen)
         self.stats_w = self.query_one("#stats", Stats)
         self.msg_w = self.query_one("#msg", Static)
+        self.keys_w = self.query_one("#keys", Static)
+        self.screen_w.border_title = "TUIPET"
+        self.stats_w.border_title = "STATUS"
+        self.keys_w.border_title = "ACTIONS"
         self.msg_w.update(self._welcome)
         theme.apply(theme.load_choice())
         self._restyle()
@@ -434,8 +443,12 @@ class TuiPetApp(App):
 
     def _restyle(self):
         try:
+            for w in (self.screen_w, self.stats_w, self.msg_w, self.keys_w):
+                w.styles.border = ("round", theme.BORDER)
+                w.styles.border_title_color = theme.MID
             self.screen_w.styles.background = theme.LCD_BG
-            self.screen_w.styles.border = ("heavy", theme.BORDER)
+            self.msg_w.styles.color = theme.MID
+            self.keys_w.styles.color = theme.MID
         except Exception:
             pass
 
