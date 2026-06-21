@@ -68,16 +68,9 @@ for name, files in {"happy": ("happy.png", "happy2.png"),
     if fr:
         effects[name] = fr
 
-# Zzz: a sleep-Z that rises and fades -- FIXED-height frames (6 native rows).
-# Do NOT split on blank rows or the vertical motion is destroyed.
-_zm = native_mask("sleep.png")
-_ZF = 6
-zframes = []
-for _y in range(0, (len(_zm) // _ZF) * _ZF, _ZF):
-    _ch = _zm[_y:_y + _ZF]
-    _cols = [x for x in range(_ch.shape[1]) if _ch[:, x].any()]
-    _sub = _ch[:, min(_cols):max(_cols) + 1] if _cols else _ch
-    zframes.append(to_rows(_sub))
+# Zzz: DVPet sleepLights ("Zz") + sleepLights2 ("Z") -- two clean blinking glyphs
+zframes = [to_rows(crop(native_mask(f))) for f in ("sleepLights.png", "sleepLights2.png")
+           if crop(native_mask(f)) is not None]
 if zframes:
     effects["zzz"] = zframes
 

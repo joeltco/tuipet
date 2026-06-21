@@ -112,12 +112,12 @@ def _effect_overlay(pet, frame_i, cols, px_h):
     if pet.poop and pm:                                   # a row of piles, bottom-left (DVPet filth)
         pw = len(pm[0])
         for i in range(min(pet.poop, 3)):
-            pts += _blit(pm, i * (pw + 1), px_h - len(pm) - 2)
+            pts += _blit(pm, 2 + i * (pw + 1), px_h - len(pm) - 2)
     if pet.num == -1:
         return pts
     if pet.asleep and E.get("zzz"):                       # Zzz above a sleeper
         z = E["zzz"][frame_i % len(E["zzz"])]
-        pts += _blit(z, cols - len(z[0]) - 2, 1)
+        pts += _blit(z, cols // 2 + 5, 0)   # float above the sleeper's head
     emo = ("happy" if pet.anim in ("happy", "play") else
            "unhappy" if pet.anim in ("sad", "refuse") else
            "depressed" if pet.anim == "angry" else None)
