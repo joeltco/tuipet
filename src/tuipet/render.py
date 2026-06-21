@@ -71,7 +71,7 @@ if __name__ == "__main__":
         c.print(frame_text(d["frames"][i], on, off))
 
 
-def render_screen(frame_rows, cols, rows, on="#0f380f", bg="#9bbc0f", baseline=True, mirror=False, xshift=0, corner=None, overlay=None, bgimg=None):
+def render_screen(frame_rows, cols, rows, on="#0f380f", bg="#9bbc0f", baseline=True, mirror=False, xshift=0, corner=None, overlay=None, bgimg=None, frame=None):
     """Compose a sprite centred on a fixed cols x rows (character) LCD screen.
 
     Returns a rich Text. The screen is rows*2 pixels tall; the sprite is blitted
@@ -111,8 +111,8 @@ def render_screen(frame_rows, cols, rows, on="#0f380f", bg="#9bbc0f", baseline=T
     for cy in range(rows):
         ty, byy = cy * 2, cy * 2 + 1
         for cx in range(cols):
-            tc = on if buf[ty][cx] else ("#" + bgimg[ty][cx * 6:cx * 6 + 6] if bgimg else bg)
-            bc = on if buf[byy][cx] else ("#" + bgimg[byy][cx * 6:cx * 6 + 6] if bgimg else bg)
+            tc = (frame.get((cx, ty)) if frame else None) or (on if buf[ty][cx] else ("#" + bgimg[ty][cx * 6:cx * 6 + 6] if bgimg else bg))
+            bc = (frame.get((cx, byy)) if frame else None) or (on if buf[byy][cx] else ("#" + bgimg[byy][cx * 6:cx * 6 + 6] if bgimg else bg))
             t.append("▀", style=f"{tc} on {bc}")
         if cy != rows - 1:
             t.append("\n")

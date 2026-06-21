@@ -60,6 +60,50 @@ _PRECIP_N = {"Drizzling": 5, "LightSnow": 6, "Raining": 11, "Snowing": 10,
              "HeavyRain": 18, "HeavySnow": 16}
 CLOUD = ["0011100", "0111111", "1111111"]
 
+
+def _build_cell_frame(cols, pxh):
+    """A broken jail cell drawn over the screen: beveled stone border, broken bar
+    stubs (pet stands behind them), and an obvious padlock that sticks out right."""
+    LITE, MID, DARK = "#d6d6d6", "#9a9a9a", "#565656"
+    LOCK, RING, KEY = "#eaeaea", "#bcbcbc", "#1c1c1c"
+    f = {}
+    def put(x, y, c):
+        if 0 <= x < cols and 0 <= y < pxh:
+            f[(x, y)] = c
+    for x in range(cols):                              # 3px beveled stone border
+        put(x, 0, LITE); put(x, 1, MID); put(x, 2, DARK)
+        put(x, pxh - 1, DARK); put(x, pxh - 2, MID); put(x, pxh - 3, MID)
+    for y in range(pxh):
+        put(0, y, LITE); put(1, y, MID); put(2, y, DARK)
+        put(cols - 1, y, DARK); put(cols - 2, y, MID); put(cols - 3, y, MID)
+    for bx in (cols // 3, 2 * cols // 3):              # broken vertical bars
+        for dx, c in ((-1, LITE), (0, MID), (1, DARK)):
+            for y in range(0, 9):
+                put(bx + dx, y, c)
+            for y in range(pxh - 9, pxh):
+                put(bx + dx, y, c)
+        for dx in (-1, 0, 1):                          # busted-off ends
+            put(bx + dx, 9, DARK); put(bx + dx, pxh - 10, DARK)
+    PAD = ["..RRR..",                                  # padlock, right edge, centred
+           ".R...R.",
+           ".R...R.",
+           "LLLLLLL",
+           "LLLKLLL",
+           "LLKKKLL",
+           "LLLKLLL",
+           "LLLLLLL",
+           "LLLLLLL"]
+    px0, py0 = cols - 7, pxh // 2 - len(PAD) // 2
+    for j, row in enumerate(PAD):
+        for i, ch in enumerate(row):
+            if ch == "R": put(px0 + i, py0 + j, RING)
+            elif ch == "L": put(px0 + i, py0 + j, LOCK)
+            elif ch == "K": put(px0 + i, py0 + j, KEY)
+    return f
+
+
+CELL_FRAME = _build_cell_frame(SCREEN_COLS, SCREEN_ROWS * 2)
+
 _K = "b cyan"
 KEYS = (
     f"[{_K}]f[/] feed   [{_K}]p[/] play   [{_K}]c[/] clean   [{_K}]h[/] heal   [{_K}]s[/] sleep\n"
@@ -162,7 +206,7 @@ class Screen(Static):
                    + _effect_overlay(pet, self.frame_i, SCREEN_COLS, SCREEN_ROWS * 2))
         if pet.dead:                           # a grave marker
             self.update(render_screen(GRAVESTONE, SCREEN_COLS, SCREEN_ROWS, on, bg,
-                                      corner=corner, overlay=overlay, bgimg=bgimg))
+                                      corner=corner, overlay=overlay, bgimg=bgimg, frame=CELL_FRAME))
             return
         if pet.num == -1:                      # egg
             rec = egg_mod.record(pet.egg_type)
@@ -186,7 +230,7 @@ class Screen(Static):
         else:
             mirror = pet.anim in data.MIRROR_ROLES and self.frame_i % 2 == 1
         self.update(render_screen(rows, SCREEN_COLS, SCREEN_ROWS, on, bg,
-                                  mirror=mirror, xshift=xshift, corner=corner, overlay=overlay, bgimg=bgimg))
+                                  mirror=mirror, xshift=xshift, corner=corner, overlay=overlay, bgimg=bgimg, frame=CELL_FRAME))
 
     def _background(self, pet):
         frames = data.load_backgrounds().get(pet.habitat_obj().get("bg", ""))
