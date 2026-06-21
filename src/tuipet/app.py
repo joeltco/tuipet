@@ -256,13 +256,14 @@ class Screen(Static):
         overlay = _weather_overlay(pet.weather, self.frame_i, SCREEN_COLS, px_h)
         xshift = 0
         if fx["kind"] == "eat":
+            xshift = 9                                         # pet sits right, faces its food
             food = self._food_frames(fx.get("icon") or "f:0")
             if food:
                 if step < 5:
-                    fi, fy = 0, 2 + step                       # food drops in front
+                    fi, fy = 0, 4 + step                       # food drops in on the left
                 else:
-                    fi, fy = min(3, 1 + (step - 5) // 3), 7     # ...bitten away to nothing
-                overlay += _blit(food[min(fi, len(food) - 1)], 5, fy)
+                    fi, fy = min(3, 1 + (step - 5) // 3), 9     # ...monster chomps it away
+                overlay += _blit(food[min(fi, len(food) - 1)], 12, fy)
         elif fx["kind"] == "clean":
             wash = data.load_effects().get("wash", [None])[0]
             if wash:
