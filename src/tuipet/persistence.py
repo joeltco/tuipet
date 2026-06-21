@@ -15,7 +15,7 @@ from .pet import Pet, _clamp
 
 SAVE_DIR = os.path.expanduser("~/.local/share/tuipet")
 SAVE_PATH = os.path.join(SAVE_DIR, "save.json")
-MAX_OFFLINE = 12 * 3600  # cap catch-up at 12h of real time
+MAX_OFFLINE = 36 * 3600  # cap catch-up at 36h of real time
 
 
 def save(pet, path=SAVE_PATH):
@@ -30,6 +30,7 @@ def save(pet, path=SAVE_PATH):
 
 def _offline(pet, elapsed):
     pet.world_seconds += elapsed       # keep the day/night clock turning while away
+    pet.age_seconds += elapsed         # the pet ages while you're away
     if elapsed < 30 or pet.stage == "Egg":
         return ""
     mins = elapsed / 60.0

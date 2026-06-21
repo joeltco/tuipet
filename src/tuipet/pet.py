@@ -20,15 +20,15 @@ def _dvpet_time(phase):
 # Lifespan (seconds), scaled from DVPet's real-time model. A pet lives this long
 # in total; reaching higher stages extends it; neglect (sickness/starvation/
 # fatigue) burns it down faster. The final stretch is the geriatric "old age".
-LIFE_START = 360.0
-STAGE_LIFE = {"Rookie": 420.0, "Champion": 600.0, "Ultimate": 840.0, "Mega": 1080.0}
-GERIATRIC_REMAIN = 75.0   # last N seconds of life = elderly
+LIFE_START = 259200.0          # 3 days (egg/baby base lifespan)
+STAGE_LIFE = {"Rookie": 345600.0, "Champion": 388800.0, "Ultimate": 432000.0, "Mega": 432000.0}  # 4-5 days
+GERIATRIC_REMAIN = 21600.0   # last N seconds of life = elderly
 
 # X-Antibody: a special state that unlocks evolution into the "X" Digimon forms.
 # None -> Temporary (decays) -> Permanent -> XProgram.  Acquired by a rare natural
 # birth roll or the X-Antibody / X-Program items.  (DVPet birth is 1/1000; bumped
 # for tuipet so it is an occasional surprise rather than never seen.)
-X_COUNT_MAX = 150.0
+X_COUNT_MAX = 3600.0
 X_BIRTH_TARGET, X_BIRTH_BOUND = 1, 50
 _XA_ORDER = {"None": 0, "Temporary": 1, "Permanent": 2, "XProgram": 3}
 
@@ -49,7 +49,7 @@ _PERSONALITY = {
 # Day/night: the world runs on an accelerated clock. One full DAY_LENGTH-second
 # cycle runs dawn -> day -> dusk -> night. Night makes the pet sleepy: kept awake
 # it tires and sulks faster, while rest is deepest then.
-DAY_LENGTH = 240.0
+DAY_LENGTH = 1440.0           # 24 min per day/night cycle
 
 
 def _phase_of(p):
@@ -125,11 +125,11 @@ class Pet:
                 self.element = rec.get("element", "")
 
     # seconds in each stage before it is eligible to evolve (accelerated time)
-    EGG_DURATION = 18      # seconds an egg incubates before hatching
+    EGG_DURATION = 180     # seconds an egg incubates before hatching (~3 min)
 
-    STAGE_DURATION = {
-        "Fresh": 20, "InTraining": 40, "Rookie": 90,
-        "Champion": 150, "Ultimate": 240, "Mega": 9e9,
+    STAGE_DURATION = {                       # seconds in a stage before it may evolve
+        "Fresh": 1800, "InTraining": 2400, "Rookie": 3000,
+        "Champion": 3600, "Ultimate": 3600, "Mega": 9e9,
     }
 
     @classmethod
@@ -195,7 +195,7 @@ class Pet:
             self._temperature_effects(dt)
             self._track_time_pref(dt)
         if self.asleep:
-            rate = 10 if self.day_phase == "night" else 5   # rest is deepest at night
+            rate = 0.02 if self.day_phase == "night" else 0.01   # rest is deepest at night
             self.energy = _clamp(self.energy + rate * dt, 0, 100)
             if self.energy >= 100:
                 self.asleep = False
@@ -204,16 +204,16 @@ class Pet:
 
         night = self.day_phase == "night"
         # at night an awake pet tires and grows cranky about twice as fast
-        drain = 2.4 if night else 1.2
+        drain = 0.016 if night else 0.008
         lo, hi = self.ideal_temp
         if self.weather in ("Clear", "Cloudy") and lo <= self.temp <= hi:
             drain *= 0.6                  # fair weather + ideal temp eases fatigue
         drain *= max(0.5, min(1.6, 1 - 0.12 * self._affinity()))
         self.energy = _clamp(self.energy - drain * dt, 0, 100)
-        self.mood = _clamp(self.mood - (1.4 if night else 0.8) * dt, 0, 100)
+        self.mood = _clamp(self.mood - (0.009 if night else 0.005) * dt, 0, 100)
         # hunger ticks down on a slow clock
         self._hunger_t = getattr(self, "_hunger_t", 0) + dt
-        if self._hunger_t >= 12:
+        if self._hunger_t >= 1800:
             self._hunger_t = 0
             if self.hunger > 0:
                 self.hunger -= 1
@@ -221,7 +221,7 @@ class Pet:
                 self.care_mistakes += 1
         # pooping
         self._poop_t = getattr(self, "_poop_t", 0) + dt
-        if self._poop_t >= 18:
+        if self._poop_t >= 2700:
             self._poop_t = 0
             self.poop += 1
         # sickness from filth / starvation
@@ -236,13 +236,13 @@ class Pet:
         # lifespan: neglect burns life down faster than the natural clock
         extra = 0.0
         if self.sick:
-            extra += 1.5
+            extra += 0.8
         if self.hunger == 0:
-            extra += 1.0
+            extra += 0.4
         if self.energy <= 0:
-            extra += 0.5
+            extra += 0.2
         if self.is_geriatric:
-            extra += 0.5
+            extra += 0.2
         self.lifespan -= extra * dt
         if self.age_seconds >= self.lifespan:
             self._die()

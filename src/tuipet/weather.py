@@ -38,10 +38,10 @@ SNOW = {"Snowing", "LightSnow", "HeavySnow"}
 PRECIP = RAIN | SNOW
 
 # --- tuipet clock cadences (seconds) ---
-WEATHER_CHECK_SEC = 18.0
-TEMP_RATE = 4.0            # temperature lapses this fast toward its target
-IDEAL_TEMP_MOOD_SEC = 12.0
-BAD_TEMP_SICK_SEC = 8.0
+WEATHER_CHECK_SEC = 600.0
+TEMP_RATE = 0.05            # temperature lapses this fast toward its target
+IDEAL_TEMP_MOOD_SEC = 1800.0
+BAD_TEMP_SICK_SEC = 1200.0
 BAD_TEMP_SICK_CHANCE = 0.015
 
 
