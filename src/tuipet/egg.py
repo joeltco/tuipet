@@ -37,13 +37,15 @@ def _shift(rows, dx):
 
 
 def frames(egg_type=0):
-    """Real egg sprite (armorEggs.png) animated by a horizontal shake -- no drawn
-    art. armorEggs has one frame per egg, so hatching is a shake, not a crack."""
+    """Real Digitama egg (spritesEgg0.png, the Egg-stage creature sheet). Each egg
+    has its own animation frames; the hatch role adds a shake. No drawn art."""
     eggs = _real_eggs()
     if not eggs:
         return [["0"]]                               # only before setup_assets.sh
-    base = eggs[egg_type % len(eggs)]
-    return [base, _shift(base, 1), _shift(base, -1), base, _shift(base, 1)]
+    egg = eggs[egg_type % len(eggs)]                 # a list of real frames
+    f0 = egg[0]
+    f1 = egg[1] if len(egg) > 1 else f0
+    return [f0, f1, _shift(f0, -1), f0, _shift(f0, 1)]
 
 ROLES = {"idle": [0, 1], "egg_idle": [0, 1], "hatch": [2, 3, 4]}
 

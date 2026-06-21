@@ -90,31 +90,29 @@ def extract_digimon(stage, S, N):
 
 
 def extract_eggs():
-    """Extract the 11 egg sprites from armorEggs.png (1-bit black-on-cyan)."""
-    import numpy as np
-    from PIL import Image
-    im = np.array(Image.open(os.path.join(RES, "armorEggs.png")).convert("RGB"))
-    H, W, _ = im.shape
-    dark = im.sum(axis=2) < 200
-    colhas = dark.any(axis=0)
-    eggs, x = [], 0
-    while x < W:
-        if colhas[x]:
-            j = x
-            while j < W and colhas[j]:
-                j += 1
-            band = dark[:, x:j]
-            ys = np.where(band.any(axis=1))[0]
-            if len(ys):
-                crop = band[ys.min():ys.max() + 1]
-                eggs.append(["".join("1" if v else "0" for v in r) for r in crop])
-            x = j
-        else:
-            x += 1
+    """Real Digitama egg sprites from spritesEgg0.png (the Egg-stage creature
+    sheet). Each column is one egg; the rows down the column are its frames.
+    armorEggs.png (used before) is just tiny armor-icon trinkets, not eggs."""
+    sheet = get_sheet("Egg", 0)
+    if sheet is None:
+        return
+    H, W, _ = sheet.shape
+    ncols = (W - GUTTER) // PITCH
+    eggs = []
+    for col in range(ncols):
+        frames = []
+        for fr in range(GRID):
+            m = cell_mask(sheet, col, fr)
+            if m is not None and m.any():
+                frames.append(["".join("1" if v else "0" for v in r) for r in m])
+        # a real egg = a column whose first cell has a solid silhouette
+        if frames and sum(r.count("1") for r in frames[0]) >= 14:
+            eggs.append(frames)
     path = os.path.join(OUT, "eggs.json.gz")
     with gzip.open(path, "wt") as fh:
         json.dump(eggs, fh)
-    print(f"extracted {len(eggs)} egg sprites -> {path}")
+    print(f"extracted {len(eggs)} real egg sprites -> {path}")
+
 
 def main():
     os.makedirs(OUT, exist_ok=True)
