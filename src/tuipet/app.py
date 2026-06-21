@@ -50,11 +50,23 @@ class Screen(Static):
         first = next((f for f in rec["frames"] if f), rec["frames"][0])
         idx = frames[self.frame_i % len(frames)]
         rows = rec["frames"][idx] or first
-        mirror = pet.anim in data.MIRROR_ROLES and self.frame_i % 2 == 1
-        self.update(render_screen(rows, SCREEN_COLS, SCREEN_ROWS, LCD_ON, LCD_BG, mirror=mirror))
+        if pet.anim in ("idle", "walk") and pet.num != -1:
+            sw = max(len(r) for r in rows)
+            bound = max(0, (SCREEN_COLS - sw) // 2)
+            xshift = max(-bound, min(bound, self.walk_x))
+            mirror = self.walk_dir < 0     # sprites face right by default
+        else:
+            xshift = 0
+            mirror = pet.anim in data.MIRROR_ROLES and self.frame_i % 2 == 1
+        self.update(render_screen(rows, SCREEN_COLS, SCREEN_ROWS, LCD_ON, LCD_BG,
+                                  mirror=mirror, xshift=xshift))
 
     def advance(self):
         self.frame_i += 1
+        self.walk_x += self.walk_dir
+        if abs(self.walk_x) >= 5:
+            self.walk_dir = -self.walk_dir
+            self.walk_x = max(-5, min(5, self.walk_x))
 
 
 class Stats(Static):
