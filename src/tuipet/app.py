@@ -20,6 +20,7 @@ from . import tournamentscreen
 from .pet import Pet
 from .render import render_screen
 
+from . import theme
 from .theme import LCD_ON, LCD_BG, PHASE_PALETTE, SIL_DAY, SIL_NIGHT
 SCREEN_COLS, SCREEN_ROWS = 40, 12
 SPRITE_W = 16                                   # native creature sprite width
@@ -60,7 +61,7 @@ _K = "b cyan"
 KEYS = (
     f"[{_K}]f[/] feed   [{_K}]p[/] play   [{_K}]c[/] clean   [{_K}]h[/] heal   [{_K}]s[/] sleep\n"
     f"[{_K}]t[/] train  [{_K}]b[/] battle  [{_K}]a[/] adventure  [{_K}]u[/] cup  [{_K}]j[/] jogress\n"
-    f"[{_K}]o[/] shop   [{_K}]e[/] habitat  [{_K}]d[/] data   [{_K}]n[/] new   [{_K}]q[/] quit"
+    f"[{_K}]o[/] shop   [{_K}]e[/] habitat  [{_K}]d[/] data   [{_K}]g[/] theme  [{_K}]n[/] new  [{_K}]q[/] quit"
 )
 
 
@@ -343,7 +344,7 @@ class TuiPetApp(App):
         ("a", "adventure", "Adventure"), ("o", "shop", "Shop"), ("e", "habitat", "Habitat"),
         ("d", "digicore", "DigiCore"),
         ("j", "jogress", "Jogress"), ("u", "tournament", "Cup"),
-        ("s", "sleep", "Sleep"), ("n", "new", "New pet"), ("q", "quit", "Quit"),
+        ("s", "sleep", "Sleep"), ("g", "theme", "Theme"), ("n", "new", "New pet"), ("q", "quit", "Quit"),
     ]
 
     def __init__(self, pet: Pet | None = None):
@@ -373,6 +374,8 @@ class TuiPetApp(App):
         self.stats_w = self.query_one("#stats", Stats)
         self.msg_w = self.query_one("#msg", Static)
         self.msg_w.update(self._welcome)
+        theme.apply(theme.load_choice())
+        self._restyle()
         self.repaint()
         if self._new_game:
             self._open_mode(eggselectscreen.EggSelectPanel(), self._after_egg_pick)
@@ -419,6 +422,20 @@ class TuiPetApp(App):
     def action_quit(self):
         persistence.save(self.pet)
         self.exit()
+
+    def _restyle(self):
+        try:
+            self.screen_w.styles.background = theme.LCD_BG
+            self.screen_w.styles.border = ("heavy", theme.BORDER)
+        except Exception:
+            pass
+
+    def action_theme(self):
+        name = theme.cycle()
+        theme.save_choice(name)
+        self._restyle()
+        self.flash(f"Theme: {name}")
+        self.repaint()
 
     def _center(self, text):
         from rich.text import Text
