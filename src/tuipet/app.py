@@ -20,7 +20,7 @@ from . import tournamentscreen
 from .pet import Pet
 from .render import render_screen
 
-LCD_ON, LCD_BG = "#0b3d0b", "#9bbc0f"
+from .theme import LCD_ON, LCD_BG, PHASE_PALETTE, SIL_DAY, SIL_NIGHT
 SCREEN_COLS, SCREEN_ROWS = 40, 12
 SPRITE_W = 16                                   # native creature sprite width
 WALK_RANGE = (SCREEN_COLS - SPRITE_W) // 5      # how far the pet paces from centre (stays central)
@@ -43,14 +43,6 @@ MOON = _FX.get("moon", [None])[0]             # real DVPet night.png
 _POOP_FR = (_FX.get("poop") or [None])[0]
 POOP_W = len(_POOP_FR[0]) if _POOP_FR else 5
 _FROZEN_FR = (_FX.get("frozen") or [None])[0]
-
-# LCD palette per time of day (creature ink, screen background)
-PHASE_PALETTE = {
-    "dawn":  ("#3a5a2a", "#c0d89b"),   # pale morning green
-    "day":   ("#0f380f", "#9bbc0f"),   # classic bright Game Boy green
-    "dusk":  ("#5a2d00", "#e0913a"),   # warm amber sunset
-    "night": ("#6f8f4f", "#0d1f1a"),   # dim glow on near-black
-}
 
 WEATHER_GLYPH = {
     "Clear": "", "Cloudy": chr(0x2601), "Drizzling": chr(0x2602),
@@ -152,7 +144,7 @@ class Screen(Static):
         bgimg = self._background(pet)
         corner = None                      # DVPet shows time via bg frame + palette, no corner icon
         if bgimg:
-            on = "#eef6cc" if pet.day_phase == "night" else "#0a280a"   # silhouette ink
+            on = SIL_NIGHT if pet.day_phase == "night" else SIL_DAY   # silhouette ink
         else:
             w = pet.weather
             if w in _RAIN:
@@ -246,7 +238,7 @@ class Screen(Static):
         on, bg = PHASE_PALETTE.get(pet.day_phase, (LCD_ON, LCD_BG))
         bgimg = self._background(pet)
         if bgimg:
-            on = "#eef6cc" if pet.day_phase == "night" else "#0a280a"
+            on = SIL_NIGHT if pet.day_phase == "night" else SIL_DAY
         px_h = SCREEN_ROWS * 2
         step = fx["step"]
         pose = {"eat": "eat", "clean": "idle", "cheer": "happy", "spit": "refuse"}.get(fx["kind"], "idle")
@@ -338,7 +330,7 @@ class TuiPetApp(App):
     Screen { align: center middle; }
     #wrap { width: auto; height: auto; }
     #lcd {
-        border: heavy #5a7a1a; padding: 0 1; background: #9bbc0f;
+        border: heavy #7a7e78; padding: 0 1; background: #c6c9cc;
         width: 44; height: 14;
     }
     #stats { border: round #444; padding: 0 1; width: 30; height: 22; margin-left: 1; }

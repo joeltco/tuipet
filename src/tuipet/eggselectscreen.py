@@ -4,9 +4,7 @@ from rich.text import Text
 from . import egg as egg_mod
 from .render import render_screen
 
-LCD_ON, LCD_BG = "#0b3d0b", "#9bbc0f"
-INK_B = f"bold {LCD_ON} on {LCD_BG}"
-DIM = f"#5a7a1a on {LCD_BG}"
+from .theme import LCD_ON, LCD_BG, INK_B, DIM
 COLS, ROWS = 38, 10
 
 

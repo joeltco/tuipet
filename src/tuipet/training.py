@@ -9,10 +9,7 @@ from .render import render_screen
 METER_W = 30
 ZONE_W = 5
 REPS = 3
-LCD_ON, LCD_BG = "#0b3d0b", "#9bbc0f"
-INK = f"{LCD_ON} on {LCD_BG}"
-INK_B = f"bold {LCD_ON} on {LCD_BG}"
-DIM = f"#5a7a1a on {LCD_BG}"
+from .theme import LCD_ON, LCD_BG, INK, INK_B, DIM, MID, ACCENT, SIL_DAY, SIL_NIGHT
 
 
 class TrainingPanel:
@@ -78,18 +75,18 @@ class TrainingPanel:
         idx = frames[self.frame_i % len(frames)]
         rows = rec["frames"][idx] or rec["frames"][0]
         bgimg = self.pet.background()
-        on = "#eef6cc" if self.pet.day_phase == "night" else ("#0a280a" if bgimg else LCD_ON)
+        on = SIL_NIGHT if self.pet.day_phase == "night" else (SIL_DAY if bgimg else LCD_ON)
         sprite = render_screen(rows, 40, 7, on, LCD_BG, bgimg=bgimg)
         meter = Text()
         meter.append("[", style=INK)
         for i in range(METER_W):
             in_zone = self.zone <= i < self.zone + ZONE_W
             if i == self.pos:
-                meter.append("█", style=f"#cc0000 on {LCD_BG}")
+                meter.append("█", style=f"{ACCENT} on {LCD_BG}")
             elif in_zone:
-                meter.append("▓", style=f"#0b3d0b on {LCD_BG}")
+                meter.append("▓", style=f"{LCD_ON} on {LCD_BG}")
             else:
-                meter.append("─", style=f"#5a7a1a on {LCD_BG}")
+                meter.append("─", style=f"{MID} on {LCD_BG}")
         meter.append("]", style=INK)
         dots = "●" * self.hits + "○" * (REPS - self.rep) + "·" * (self.rep - self.hits)
         out = Text()

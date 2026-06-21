@@ -3,11 +3,7 @@ from __future__ import annotations
 from rich.text import Text
 from . import data
 
-LCD_ON, LCD_BG = "#0b3d0b", "#9bbc0f"
-INK = f"{LCD_ON} on {LCD_BG}"
-INK_B = f"bold {LCD_ON} on {LCD_BG}"
-SEL = f"bold #9bbc0f on {LCD_ON}"
-DIM = f"#5a7a1a on {LCD_BG}"
+from .theme import LCD_ON, LCD_BG, INK, INK_B, DIM, SEL, POS, NEG
 W = 38
 
 
@@ -44,9 +40,9 @@ class HabitatPanel:
     def _aff_parts(self, h):
         a = self._aff(h)
         if a > 0:
-            return (chr(0x2665) * a + " thrives", f"bold #0b5a0b on {LCD_BG}")
+            return (chr(0x2665) * a + " thrives", f"bold {POS} on {LCD_BG}")
         if a < 0:
-            return (chr(0x2716) * -a + " suffers", f"bold #7a1010 on {LCD_BG}")
+            return (chr(0x2716) * -a + " suffers", f"bold {NEG} on {LCD_BG}")
         return ("neutral", DIM)
 
     def text(self):

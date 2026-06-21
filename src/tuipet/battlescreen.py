@@ -5,10 +5,7 @@ from . import data
 from .battle import Battle
 from .render import render_scene
 
-LCD_ON, LCD_BG = "#0b3d0b", "#9bbc0f"
-INK = f"{LCD_ON} on {LCD_BG}"
-INK_B = f"bold {LCD_ON} on {LCD_BG}"
-DIM = f"#5a7a1a on {LCD_BG}"
+from .theme import LCD_ON, LCD_BG, INK, INK_B, DIM, SIL_DAY, SIL_NIGHT
 COLS, ROWS = 40, 9
 _E = data.load_effects()
 ATTACK = (_E.get("attack") or [None])[0]
@@ -85,7 +82,7 @@ class BattlePanel:
         pet_x, enemy_x = 1, COLS - ew - 1
         overlay = self._attack_overlay(pet_x, pw, enemy_x, ew)
         bgimg = self.pet.background()
-        on = "#eef6cc" if self.pet.day_phase == "night" else ("#0a280a" if bgimg else LCD_ON)
+        on = SIL_NIGHT if self.pet.day_phase == "night" else (SIL_DAY if bgimg else LCD_ON)
         scene = render_scene([(pet_rows, pet_x, True), (enemy_rows, enemy_x, False)],
                              COLS, ROWS, on, LCD_BG, overlay=overlay, bgimg=bgimg)
         title = f"BATTLE vs {b.enemy['name']}" + (" (BOSS)" if b.enemy["boss"] else "")

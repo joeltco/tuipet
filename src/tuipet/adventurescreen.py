@@ -6,10 +6,7 @@ from .adventure import Adventure
 from .battlescreen import BattlePanel
 from .render import render_scene
 
-LCD_ON, LCD_BG = "#0b3d0b", "#9bbc0f"
-INK = f"{LCD_ON} on {LCD_BG}"
-INK_B = f"bold {LCD_ON} on {LCD_BG}"
-DIM = f"#5a7a1a on {LCD_BG}"
+from .theme import LCD_ON, LCD_BG, INK, INK_B, DIM
 COLS, ROWS = 40, 8
 BAR_W = 28
 

@@ -3,9 +3,7 @@ from __future__ import annotations
 from rich.text import Text
 from . import data  # noqa: F401  (pet methods drive the data)
 
-LCD_ON, LCD_BG = "#0b3d0b", "#9bbc0f"
-INK_B = f"bold {LCD_ON} on {LCD_BG}"
-DIM = f"#5a7a1a on {LCD_BG}"
+from .theme import LCD_ON, LCD_BG, INK_B, DIM
 
 
 def _mins(s):

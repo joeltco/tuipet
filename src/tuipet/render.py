@@ -12,7 +12,7 @@ from rich.text import Text
 
 # A few palettes. "on" = creature ink, "off" = LCD background (None = transparent).
 PALETTES = {
-    "lcd":   ("#0f380f", "#9bbc0f"),   # classic Game Boy green
+    "lcd":   ("#2b2e31", "#c6c9cc"),   # grey pocket-LCD
     "vpet":  ("#1a1a1a", "#8cb89a"),   # grey-green pocket LCD
     "amber": ("#3a1f00", "#ffb000"),
     "mono":  ("#e6e6e6", None),        # white ink, transparent bg
@@ -71,7 +71,7 @@ if __name__ == "__main__":
         c.print(frame_text(d["frames"][i], on, off))
 
 
-def render_screen(frame_rows, cols, rows, on="#0f380f", bg="#9bbc0f", baseline=True, mirror=False, xshift=0, corner=None, overlay=None, bgimg=None):
+def render_screen(frame_rows, cols, rows, on="#2b2e31", bg="#c6c9cc", baseline=True, mirror=False, xshift=0, corner=None, overlay=None, bgimg=None):
     """Compose a sprite centred on a fixed cols x rows (character) LCD screen.
 
     Returns a rich Text. The screen is rows*2 pixels tall; the sprite is blitted
@@ -119,7 +119,7 @@ def render_screen(frame_rows, cols, rows, on="#0f380f", bg="#9bbc0f", baseline=T
     return t
 
 
-def render_scene(placements, cols, rows, on="#0b3d0b", bg="#9bbc0f", overlay=None, bgimg=None):
+def render_scene(placements, cols, rows, on="#2b2e31", bg="#c6c9cc", overlay=None, bgimg=None):
     """Compose several sprites onto one LCD screen.
 
     placements: list of (frame_rows, x_left, mirror). Each sprite sits on the
