@@ -14,7 +14,7 @@ RES = os.path.join(ROOT, "raw_resources")
 OUT = os.path.join(ROOT, "src/tuipet/data")
 MODEL = os.path.join(ROOT, "raw_model")
 FW, FH, GAP = 104, 101, 2
-COLS, PXH = 40, 28
+COLS, PXH = 40, 40
 
 
 def frames_for(fn):

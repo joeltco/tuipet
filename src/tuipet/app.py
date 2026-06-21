@@ -21,7 +21,7 @@ from .pet import Pet
 from .render import render_screen
 
 LCD_ON, LCD_BG = "#0b3d0b", "#9bbc0f"
-SCREEN_COLS, SCREEN_ROWS = 40, 14
+SCREEN_COLS, SCREEN_ROWS = 40, 20
 SPRITE_W = 16                                   # native creature sprite width
 WALK_RANGE = (SCREEN_COLS - SPRITE_W) // 2      # how far the pet paces from centre
 
@@ -251,9 +251,9 @@ class TuiPetApp(App):
     #wrap { width: auto; height: auto; }
     #lcd {
         border: heavy #5a7a1a; padding: 0 1; background: #9bbc0f;
-        width: 44; height: 16;
+        width: 44; height: 22;
     }
-    #stats { border: round #444; padding: 0 1; width: 30; height: 21; margin-left: 1; }
+    #stats { border: round #444; padding: 0 1; width: 30; height: 22; margin-left: 1; }
     #msg { height: 1; color: $text-muted; margin-top: 1; }
     #keys { height: 3; color: $text-muted; margin-top: 1; }
     """
@@ -340,9 +340,19 @@ class TuiPetApp(App):
         persistence.save(self.pet)
         self.exit()
 
+    def _center(self, text):
+        from rich.text import Text
+        n = text.plain.count("\n") + 1
+        pad = max(0, (SCREEN_ROWS - n) // 2)
+        if not pad:
+            return text
+        out = Text("\n" * pad)
+        out.append_text(text)
+        return out
+
     def repaint(self):
         if self.mode is not None:
-            self.screen_w.update(self.mode.text())
+            self.screen_w.update(self._center(self.mode.text()))
         else:
             self.screen_w.paint(self.pet)
         self.stats_w.paint(self.pet)
@@ -355,7 +365,7 @@ class TuiPetApp(App):
     def on_fast(self):                         # fast tick: active panel animation
         if self.mode is not None and hasattr(self.mode, "anim"):
             self.mode.anim()
-            self.screen_w.update(self.mode.text())
+            self.screen_w.update(self._center(self.mode.text()))
 
     def on_tick(self):
         prev = (self.pet.num, self.pet.stage)
