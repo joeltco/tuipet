@@ -19,6 +19,7 @@ from . import jogress
 from . import tournamentscreen
 from . import titlescreen
 from . import themescreen
+from . import deathscreen
 from .pet import Pet
 from .render import render_screen
 
@@ -413,6 +414,12 @@ class TuiPetApp(App):
             self.msg_w.update(self._welcome)
             self.repaint()
 
+    def _after_death(self, result):
+        if result == "new":
+            self.action_new()
+        else:
+            self.repaint()
+
     def _after_egg_pick(self, egg_type):
         if egg_type is not None:
             self.pet = Pet.new_egg(egg_type=egg_type)
@@ -507,12 +514,14 @@ class TuiPetApp(App):
         was_dead = self.pet.dead
         self.pet.tick(1.0)
         if self.pet.dead and not was_dead:
-            mins = int(self.pet.age_seconds) // 60
-            self.flash(f"[b red]{self.pet.name} passed away[/] (gen {self.pet.generation}, lived {mins}m). Press N for a new egg.")
+            self.flash("")
+            self._open_mode(deathscreen.DeathPanel(self.pet), self._after_death)
         elif (self.pet.num, self.pet.stage) != prev:
-            self.flash(f"[b green]{self.pet.name}![/] evolved to {self.pet.stage}!")
-            if prev[1] != "Egg":
-                self.screen_w.start_fx("evolve")
+            if prev[1] == "Egg":
+                self.flash(f"[b]{self.pet.name}[/] hatched!")
+            else:
+                self.flash(f"[b]{self.pet.name}![/] evolved to {self.pet.stage}!")
+            self.screen_w.start_fx("evolve")
         self.repaint()
 
     def flash(self, text):
