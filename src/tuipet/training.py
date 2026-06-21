@@ -77,7 +77,9 @@ class TrainingPanel:
         frames = data.ROLES.get("attack", [4])
         idx = frames[self.frame_i % len(frames)]
         rows = rec["frames"][idx] or rec["frames"][0]
-        sprite = render_screen(rows, 34, 7, LCD_ON, LCD_BG)
+        bgimg = self.pet.background()
+        on = "#eef6cc" if self.pet.day_phase == "night" else ("#0a280a" if bgimg else LCD_ON)
+        sprite = render_screen(rows, 40, 7, on, LCD_BG, bgimg=bgimg)
         meter = Text()
         meter.append("[", style=INK)
         for i in range(METER_W):

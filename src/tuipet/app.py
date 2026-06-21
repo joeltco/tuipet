@@ -197,14 +197,7 @@ class Screen(Static):
                                   mirror=mirror, xshift=xshift, corner=corner, overlay=overlay, bgimg=bgimg))
 
     def _background(self, pet):
-        frames = data.load_backgrounds().get(pet.habitat_obj().get("bg", ""))
-        if not frames:
-            return None
-        if pet.weather in _PRECIP and len(frames) > 4:
-            idx = 4
-        else:
-            idx = {"dawn": 0, "day": 1, "dusk": 2, "night": 3}.get(pet.day_phase, 1)
-        return frames[min(idx, len(frames) - 1)]
+        return pet.background()
 
     def advance(self):
         self.frame_i += 1

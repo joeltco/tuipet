@@ -23,6 +23,7 @@ def _enemy_level(enemy):
 
 _RAIN = {"Drizzling", "Raining", "HeavyRain"}
 _SNOW = {"LightSnow", "Snowing", "HeavySnow"}
+_PRECIP = _RAIN | _SNOW
 
 
 def _dvpet_time(phase):
@@ -303,6 +304,17 @@ class Pet:
     def habitat_obj(self):
         habs = data.load_habitats()
         return habs.get(self.habitat) or habs.get(0) or next(iter(habs.values()))
+
+    def background(self):
+        """The habitat background frame for the current weather/time (or None)."""
+        frames = data.load_backgrounds().get(self.habitat_obj().get("bg", ""))
+        if not frames:
+            return None
+        if self.weather in _PRECIP and len(frames) > 4:
+            idx = 4
+        else:
+            idx = {"dawn": 0, "day": 1, "dusk": 2, "night": 3}.get(self.day_phase, 1)
+        return frames[min(idx, len(frames) - 1)]
 
     def _affinity(self):
         """Net Field/Element fit with the current home: +compatible, -incompatible."""

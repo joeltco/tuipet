@@ -56,7 +56,7 @@ class BattlePanel:
 
     def _hp(self, hp, mx):
         hp = max(0, hp)
-        return "●" * hp + "○" * (mx - hp) if mx <= 12 else f"{hp}/{mx}"
+        return "█" * hp + "░" * (mx - hp) if mx <= 12 else f"{hp}/{mx}"
 
     def _attack_overlay(self, pet_x, pw, enemy_x, ew):
         if not (self.atk and ATTACK):
@@ -84,8 +84,10 @@ class BattlePanel:
         ew = max(len(r) for r in enemy_rows)
         pet_x, enemy_x = 1, COLS - ew - 1
         overlay = self._attack_overlay(pet_x, pw, enemy_x, ew)
+        bgimg = self.pet.background()
+        on = "#eef6cc" if self.pet.day_phase == "night" else ("#0a280a" if bgimg else LCD_ON)
         scene = render_scene([(pet_rows, pet_x, True), (enemy_rows, enemy_x, False)],
-                             COLS, ROWS, LCD_ON, LCD_BG, overlay=overlay)
+                             COLS, ROWS, on, LCD_BG, overlay=overlay, bgimg=bgimg)
         title = f"BATTLE vs {b.enemy['name']}" + (" (BOSS)" if b.enemy["boss"] else "")
         out = Text()
         out.append(title + "\n", style=INK_B)
