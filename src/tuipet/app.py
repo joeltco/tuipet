@@ -2,8 +2,7 @@
 from __future__ import annotations
 from textual.app import App, ComposeResult
 from textual.containers import Horizontal, Vertical
-from textual.widgets import Static, Footer
-from textual.reactive import reactive
+from textual.widgets import Static
 
 from . import data
 from . import egg as egg_mod
@@ -65,6 +64,13 @@ _SNOW = {"LightSnow", "Snowing", "HeavySnow"}
 _PRECIP_N = {"Drizzling": 5, "LightSnow": 6, "Raining": 11, "Snowing": 10,
              "HeavyRain": 18, "HeavySnow": 16}
 CLOUD = ["0011100", "0111111", "1111111"]
+
+_K = "b cyan"
+KEYS = (
+    f"[{_K}]f[/] feed   [{_K}]p[/] play   [{_K}]c[/] clean   [{_K}]h[/] heal   [{_K}]s[/] sleep\n"
+    f"[{_K}]t[/] train  [{_K}]b[/] battle  [{_K}]a[/] adventure  [{_K}]u[/] cup  [{_K}]j[/] jogress\n"
+    f"[{_K}]o[/] shop   [{_K}]e[/] habitat  [{_K}]d[/] data   [{_K}]n[/] new   [{_K}]q[/] quit"
+)
 
 
 def _scale_hex(hexcol, f):
@@ -201,6 +207,7 @@ class TuiPetApp(App):
     }
     #stats { border: round #444; padding: 0 1; width: 30; height: 21; margin-left: 1; }
     #msg { height: 1; color: $text-muted; margin-top: 1; }
+    #keys { height: 3; color: $text-muted; margin-top: 1; }
     """
     BINDINGS = [
         ("f", "feed", "Feed"), ("t", "train", "Train"), ("b", "battle", "Battle"),
@@ -226,7 +233,7 @@ class TuiPetApp(App):
                 yield Screen(id="lcd")
                 yield Stats(id="stats")
             yield Static("Welcome! Raise your pet.", id="msg")
-        yield Footer()
+            yield Static(KEYS, id="keys")
 
     def on_mount(self):
         self.screen_w = self.query_one("#lcd", Screen)

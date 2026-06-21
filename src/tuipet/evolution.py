@@ -89,7 +89,7 @@ def check(pet, num):
         _attr(req["data"][0], dat, total), _attr(req["data"][1], dat, total),
         _attr(req["vaccine"][0], vac, total), _attr(req["vaccine"][1], vac, total),
         _attr(req["virus"][0], vir, total), _attr(req["virus"][1], vir, total),
-        req["time"] == "None",                          # no day-cycle yet
+        req["time"] == "None" or req["time"] == getattr(pet, "train_time", ""),
         req["weight"] == "None" or req["weight"] == weight_category(pet.weight, pet._base_weight()),
         _cmp(*req["disturb"], pet.disturb),
         _cmp(*req["overeat"], pet.overeat),
@@ -173,6 +173,15 @@ def deviation(pet, num):
     return dev
 
 
+def _failed_form(pet, by_num):
+    """DVPet's safety net: a pet that meets no requirement still evolves -- into
+    its species' 'Failed' form (e.g. Numemon) rather than getting stuck."""
+    failed = [t for t in data.load_evolutions().get(pet.num, [])
+              if t in by_num and by_num[t]["stage"] != pet.stage
+              and data.load_requirements().get(t, {}).get("special") == "Failed"]
+    return random.choice(failed) if failed else None
+
+
 def _is_xform(num):
     return data.load_requirements().get(num, {}).get("xantibody", "None") in ("Induced", "Natural")
 
@@ -192,7 +201,7 @@ def select(pet):
             targets.append(t)
     valid = [t for t in targets if check(pet, t)]
     if not valid:
-        return None
+        return _failed_form(pet, by_num)
     if has_xa:
         xvalid = [t for t in valid if _is_xform(t)]
         if xvalid:

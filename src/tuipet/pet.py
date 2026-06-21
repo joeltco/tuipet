@@ -12,6 +12,11 @@ def _clamp(v, lo, hi):
     return max(lo, min(hi, v))
 
 
+def _dvpet_time(phase):
+    """Map tuipet's day phase to DVPet's training Time (Morning/Noon/Night)."""
+    return {"dawn": "Morning", "day": "Noon", "dusk": "Noon", "night": "Night"}.get(phase, "Noon")
+
+
 # Lifespan (seconds), scaled from DVPet's real-time model. A pet lives this long
 # in total; reaching higher stages extends it; neglect (sickness/starvation/
 # fatigue) burns it down faster. The final stretch is the geriatric "old age".
@@ -105,6 +110,7 @@ class Pet:
     time_pref: dict = _dcf(default_factory=lambda: {"dawn": 0, "day": 0, "dusk": 0, "night": 0})
     x_antibody: str = "None"
     x_count: float = 0.0
+    train_time: str = ""            # time of day of the last training (gates some evolutions)
     inventory: dict = _dcf(default_factory=dict)
     # transient animation request, consumed by the UI
     anim: str = "idle"
@@ -461,6 +467,7 @@ class Pet:
         The player picks which attribute to build (attribute arg); it accumulates
         across the whole life (it is NOT reset on evolution), exactly like DVPet.
         """
+        self.train_time = _dvpet_time(self.day_phase)
         attr = attribute or (self.attribute if self.attribute in ("Vaccine", "Data", "Virus") else "Vaccine")
         if hits >= 2:
             self.strength = _clamp(self.strength + 1, 0, 4)
