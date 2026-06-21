@@ -212,7 +212,7 @@ class Screen(Static):
             return True
         kind = self.fx["kind"]
         self.fx = None
-        if kind == "eat":          # a good meal is chased by the happy 'sunshine'
+        if kind in ("eat", "clean"):   # eating and a good wash end in the happy 'sunshine'
             self.start_fx("cheer")
         return self.fx is not None
 
@@ -567,7 +567,11 @@ class TuiPetApp(App):
             self._do("zzz... asleep"); return
         self._open_mode(adventurescreen.AdventurePanel(self.pet), lambda _=None: self.repaint())
 
-    def action_play(self): self._do(self.pet.play())
+    def action_play(self):
+        msg = self.pet.play()
+        if self.pet.anim == "play":
+            self.screen_w.start_fx("cheer")
+        self._do(msg)
     def action_clean(self):
         poop = self.pet.poop
         msg = self.pet.clean()
