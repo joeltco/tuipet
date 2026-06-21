@@ -42,6 +42,7 @@ MOON = _FX.get("moon", [None])[0]             # real DVPet night.png
 
 _POOP_FR = (_FX.get("poop") or [None])[0]
 POOP_W = len(_POOP_FR[0]) if _POOP_FR else 5
+_FROZEN_FR = (_FX.get("frozen") or [None])[0]
 
 # LCD palette per time of day (creature ink, screen background)
 PHASE_PALETTE = {
@@ -124,12 +125,6 @@ def _effect_overlay(pet, frame_i, cols, px_h):
     if pet.asleep and E.get("zzz"):                       # Zzz above a sleeper
         z = E["zzz"][frame_i % len(E["zzz"])]
         pts += _blit(z, cols - len(z[0]) - 2, 1)
-    elif pet.status_word() == "freezing" and E.get("frozen"):   # frost overlay
-        fr = E["frozen"][0]
-        pts += _blit(fr, (cols - len(fr[0])) // 2, px_h - len(fr) - 2)
-    elif pet.anim == "wash" and E.get("wash"):            # soapy splash while washing
-        w = E["wash"]
-        pts += _blit([r[:9] for r in w[0][:10]], 1, px_h - 13)
     emo = ("happy" if pet.anim in ("happy", "play") else
            "unhappy" if pet.anim in ("sad", "refuse") else
            "depressed" if pet.anim == "angry" else None)
@@ -196,6 +191,8 @@ class Screen(Static):
             xshift = max(0, min(12, row_right - (SCREEN_COLS - SPRITE_W) // 2 + 2))
         else:
             mirror = pet.anim in data.MIRROR_ROLES and self.frame_i % 2 == 1
+        if pet.num != -1 and pet.status_word() == "freezing" and _FROZEN_FR:
+            rows, xshift, mirror = _FROZEN_FR, 0, False    # encased in ice
         self.update(render_screen(rows, SCREEN_COLS, SCREEN_ROWS, on, bg,
                                   mirror=mirror, xshift=xshift, corner=corner, overlay=overlay, bgimg=bgimg))
 
@@ -217,9 +214,9 @@ class Screen(Static):
             self.walk_x = max(-WALK_RANGE, min(WALK_RANGE, self.walk_x))
 
     # ---- care-action animations (DVPet SpriteAnim eat/clean/cheer) -----------
-    def start_fx(self, kind, icon=None):
+    def start_fx(self, kind, icon=None, poop=0):
         steps = {"eat": 16, "cheer": 14, "clean": 16, "spit": 11, "evolve": 12}.get(kind, 12)
-        self.fx = {"kind": kind, "step": 0, "steps": steps, "icon": icon}
+        self.fx = {"kind": kind, "step": 0, "steps": steps, "icon": icon, "poop": poop}
 
     def advance_fx(self):
         if not self.fx:
@@ -273,11 +270,21 @@ class Screen(Static):
                     fi, fy = min(3, 1 + (step - 5) // 3), 9     # ...monster chomps it away
                 overlay += _blit(food[min(fi, len(food) - 1)], 12, fy)
         elif fx["kind"] == "clean":
-            wash = data.load_effects().get("wash", [None])[0]
+            E = data.load_effects()
+            wash = E.get("wash", [None])[0]
+            wx = SCREEN_COLS - 3 - step * 3                    # wash sweeps the screen R -> L
+            pm = E.get("poop", [None])[0]
+            if pm and fx.get("poop"):                          # filth squeegeed left, off-screen
+                pw = len(pm[0])
+                for i in range(min(fx["poop"], 3)):
+                    px = i * (pw + 1)
+                    if wx <= px + pw:                          # wash front reached this pile
+                        px = wx - pw                           # ...so it rides off to the left
+                    if px + pw > 0:
+                        overlay += _blit(pm, px, px_h - len(pm) - 2)
             if wash:
-                wx = SCREEN_COLS - 3 - step * 3                # sweep the screen R -> L
                 overlay += _blit(wash, wx, max(0, (px_h - len(wash)) // 2))
-            xshift = -max(0, min(8, step - 5))                 # pet swept leftward
+            xshift = -max(0, min(8, step - 5))                 # pet swept leftward too
         elif fx["kind"] == "cheer":
             hap = data.load_effects().get("happy")
             if hap and (step // 2) % 2 == 0:                   # pulsing happy sparkle
@@ -559,9 +566,10 @@ class TuiPetApp(App):
 
     def action_play(self): self._do(self.pet.play())
     def action_clean(self):
+        poop = self.pet.poop
         msg = self.pet.clean()
         if self.pet.anim == "wash":
-            self.screen_w.start_fx("clean")
+            self.screen_w.start_fx("clean", poop=poop)
         self._do(msg)
     def action_heal(self):
         msg = self.pet.heal()
