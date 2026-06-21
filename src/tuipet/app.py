@@ -210,7 +210,7 @@ class Screen(Static):
 
     # ---- care-action animations (DVPet SpriteAnim eat/clean/cheer) -----------
     def start_fx(self, kind, icon=None):
-        steps = {"eat": 16, "cheer": 14, "clean": 16}.get(kind, 12)
+        steps = {"eat": 16, "cheer": 14, "clean": 16, "spit": 11, "evolve": 12}.get(kind, 12)
         self.fx = {"kind": kind, "step": 0, "steps": steps, "icon": icon}
 
     def advance_fx(self):
@@ -251,7 +251,7 @@ class Screen(Static):
             on = "#eef6cc" if pet.day_phase == "night" else "#0a280a"
         px_h = SCREEN_ROWS * 2
         step = fx["step"]
-        pose = {"eat": "eat", "clean": "idle", "cheer": "happy"}.get(fx["kind"], "idle")
+        pose = {"eat": "eat", "clean": "idle", "cheer": "happy", "spit": "refuse"}.get(fx["kind"], "idle")
         rows = self._pose_rows(pet, pose, step // 2)
         overlay = _weather_overlay(pet.weather, self.frame_i, SCREEN_COLS, px_h)
         xshift = 0
@@ -275,6 +275,13 @@ class Screen(Static):
             if hap and (step // 2) % 2 == 0:                   # pulsing happy sparkle
                 hf = hap[(step // 2) % len(hap)]
                 overlay += _blit(hf, SCREEN_COLS - len(hf[0]) - 2, 1)
+        elif fx["kind"] == "spit":
+            xshift = 9                                         # too full: rejected food
+            food = self._food_frames(fx.get("icon") or "f:0")
+            if food:
+                overlay += _blit(food[0], 12, 5 + step * 2)    # ...drops away off-screen
+        elif fx["kind"] == "evolve" and step % 2 == 1:
+            rows = ["1" * len(r) for r in rows]                # digivolution flash silhouette
         self.update(render_screen(rows, SCREEN_COLS, SCREEN_ROWS, on, bg,
                                   xshift=xshift, overlay=overlay, bgimg=bgimg))
 
@@ -453,6 +460,8 @@ class TuiPetApp(App):
             self.flash(f"[b red]{self.pet.name} passed away[/] (gen {self.pet.generation}, lived {mins}m). Press N for a new egg.")
         elif (self.pet.num, self.pet.stage) != prev:
             self.flash(f"[b green]{self.pet.name}![/] evolved to {self.pet.stage}!")
+            if prev[1] != "Egg":
+                self.screen_w.start_fx("evolve")
         self.repaint()
 
     def flash(self, text):
@@ -466,6 +475,8 @@ class TuiPetApp(App):
         msg = self.pet.feed()
         if self.pet.anim == "eat":
             self.screen_w.start_fx("eat", "f:0")
+        elif "too full" in msg:
+            self.screen_w.start_fx("spit", "f:0")
         self._do(msg)
     def action_train(self):
         reason = self.pet.can_train()
