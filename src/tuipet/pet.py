@@ -12,6 +12,15 @@ def _clamp(v, lo, hi):
     return max(lo, min(hi, v))
 
 
+def _enemy_level(enemy):
+    """DVPet getLevel: (vaccine+data+virus + (health-5)*10) / 100, min 1."""
+    v = enemy.get("vaccine", 0)
+    d = enemy.get("data_power", 0)
+    vir = enemy.get("virus", 0)
+    h = enemy.get("hp", 5)
+    return max(1, int((v + d + vir + (h - 5) * 10) / 100))
+
+
 def _dvpet_time(phase):
     """Map tuipet's day phase to DVPet's training Time (Morning/Noon/Night)."""
     return {"dawn": "Morning", "day": "Noon", "dusk": "Noon", "night": "Night"}.get(phase, "Noon")
@@ -91,6 +100,7 @@ class Pet:
     disturb: int = 0
     obedience: int = 0
     battles: int = 0
+    levels_fought: list = _dcf(default_factory=list)  # opponent levels beaten this stage (DVPet _levelsFought)
     bits: int = 0
     trophies: int = 0
     adv_map: int = 0
@@ -449,6 +459,7 @@ class Pet:
         # per-stage care record resets; the next stage's care decides the next form
         self.care_mistakes = self.overeat = self.disturb = 0
         self.injuries = self.sick_count = 0
+        self.levels_fought = []
         self.weight = self._base_weight()
         # reaching a higher stage extends the total lifespan toward that stage's floor
         self.lifespan = max(self.lifespan, STAGE_LIFE.get(self.stage, self.lifespan))
@@ -540,6 +551,8 @@ class Pet:
         self.energy = _clamp(self.energy - 10, 0, 100)
         if won:
             self.wins += 1
+            if enemy:
+                self.levels_fought.append(_enemy_level(enemy))
             self.mood = _clamp(self.mood + 8, 0, 100)
             lo, hi = (enemy or {}).get("bits", (1, 5))
             gained = random.randint(lo, hi)

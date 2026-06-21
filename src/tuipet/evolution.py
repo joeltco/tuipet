@@ -102,6 +102,12 @@ def check(pet, num):
     ]
     if not all(gates):
         return False
+    # LevelFought: enough opponents of at least MinLevelFought power beaten this stage
+    lf_min = req.get("level_fought_min", 0)
+    if lf_min:
+        cnt = sum(1 for lv in getattr(pet, "levels_fought", ()) if lv >= lf_min)
+        if not _cmp(*req["level_fought"], cnt):
+            return False
     # temperature + habitat conditions (DVPet gates evolution on these; we have
     # both systems, so honour them)
     tr = req.get("temp_req")
@@ -153,6 +159,11 @@ def fulfilled(pet, num):
     if cond != "None" and _cmp(cond, val, pet.care_mistakes):
         score += {"LessThan": R["mistakeLess"], "GreaterThan": R["mistakeGreater"],
                   "EqualTo": R["mistakeEqual"]}.get(cond, R["mistakeNone"])
+    lf_min = req.get("level_fought_min", 0)
+    if lf_min and req["level_fought"][0] != "None":
+        cnt = sum(1 for lv in getattr(pet, "levels_fought", ()) if lv >= lf_min)
+        if _cmp(*req["level_fought"], cnt):
+            score += 1  # Config._levelFoughtRate
     if req.get("xantibody", "None") in ("Induced", "Natural") and getattr(pet, "x_antibody", "None") != "None":
         score += X_ANTIBODY_RATE
     tr = req.get("temp_req")

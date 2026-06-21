@@ -219,6 +219,8 @@ def load_requirements():
             "mood": (r.get("Mood") or "None").strip(),
             "time": (r.get("Time") or "None").strip(),
             "special": (r.get("SpecialEvolution") or "None").strip() or "None",
+            "level_fought_min": _int_or(r.get("MinLevelFought (vaccine+data+virus+[health*100])/100"), 0),
+            "level_fought": _gate(r, "LevelFoughtKey", "LevelFoughtValue"),
         }
     return reqs
 
