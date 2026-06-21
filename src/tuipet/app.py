@@ -270,7 +270,8 @@ class Screen(Static):
                         overlay += _blit(pm, px, px_h - len(pm) - 2)
             if wash:
                 overlay += _blit(wash, wx, max(0, (px_h - len(wash)) // 2))
-            xshift = -max(0, min(8, step - 5))                 # pet swept leftward too
+            sw = max(len(r) for r in rows)
+            xshift = min(0, wx - sw - (SCREEN_COLS - sw) // 2)  # pet swept left in lockstep with the wash
         elif fx["kind"] == "cheer":
             hap = data.load_effects().get("happy")
             if hap and (step // 2) % 2 == 0:                   # pulsing happy sparkle
