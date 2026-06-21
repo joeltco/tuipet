@@ -30,14 +30,8 @@ _WEATHER_TEMP_FACTOR = {   # Config *TempFactor: weather lowers temperature
 NIGHT_TEMP_FACTOR = 10
 MORNING_TEMP_FACTOR = 3
 
-# --- DVPet default Habitat constants (Habitat.class field defaults) ---
-SEASON_TEMP = {"Spring": (20, 60), "Summer": (60, 100),
-               "Fall": (20, 60), "Winter": (0, 40)}
-SEASON_PRECIP_MOD = {"Spring": 10, "Summer": 0, "Fall": 10, "Winter": 20}
-CLOUD_MOD = 10
-WEATHER_CHANCE = 60        # scaled from DVPet's 250 for the compressed clock
-WEATHER_CHANGE = 100
-
+# Habitat climate now comes from each habitat record (data.load_habitats); these
+# functions take a `hab` dict so weather varies by where the pet lives.
 SEASONS = ["Spring", "Summer", "Fall", "Winter"]
 RAIN = {"Raining", "Drizzling", "HeavyRain"}
 SNOW = {"Snowing", "LightSnow", "HeavySnow"}
@@ -60,23 +54,27 @@ def _calc_weather(weather, warm):
     return "Drizzling" if warm else "LightSnow"
 
 
-def next_weather(weather, season, day_temp):
-    """checkWeather: DVPet's weather transition state machine (default habitat)."""
-    season_mod = SEASON_PRECIP_MOD[season]
-    cloud_mod = CLOUD_MOD if weather == "Cloudy" else 0
+def next_weather(weather, season, day_temp, hab):
+    """checkWeather: DVPet's weather transition state machine, per habitat."""
+    chance = hab["weather_chance"]
+    change = hab["weather_change"] or 100
+    if chance <= 0:
+        return "Clear"
+    season_mod = hab["precip_mod"][season]
+    cloud_mod = hab["cloud_mod"] if weather == "Cloudy" else 0
     warm = day_temp > FREEZING_TEMP
     if weather in ("Clear", "Cloudy"):
-        prob = random.randint(0, WEATHER_CHANCE - 1) + season_mod + cloud_mod
-        if prob > WEATHER_CHANCE - 1:
+        prob = random.randint(0, chance - 1) + season_mod + cloud_mod
+        if prob > chance - 1:
             if weather == "Clear":
                 return "Cloudy" if random.randint(0, 1) == 1 else _calc_weather(weather, warm)
             return _calc_weather(weather, warm)
-        p2 = random.randint(0, WEATHER_CHANGE - 1) + season_mod
-        return "Cloudy" if p2 >= WEATHER_CHANGE * CLOUDY_COEFFICIENT else "Clear"
+        p2 = random.randint(0, change - 1) + season_mod
+        return "Cloudy" if p2 >= change * CLOUDY_COEFFICIENT else "Clear"
     # already precipitating: escalate, ease, or clear
-    prob = random.randint(0, WEATHER_CHANGE - 1) - season_mod
+    prob = random.randint(0, change - 1) - season_mod
     weather = _calc_weather(weather, warm)
-    if prob > WEATHER_CHANGE * 0.5:
+    if prob > change * 0.5:
         p = random.randint(0, WEATHER_CHANGE_CHANCE - 1)
         if weather in ("Drizzling", "LightSnow"):
             if p <= 2:
@@ -97,15 +95,15 @@ def next_weather(weather, season, day_temp):
     return weather
 
 
-def adjusted_day_temp(day_temp, weather, phase):
-    """getAdjustedDayTemp: day temp minus weather and time-of-day factors.
+def adjusted_day_temp(day_temp, weather, phase, hab):
+    """getAdjustedDayTemp: day temp minus weather and habitat time-of-day factors.
 
     tuipet's dawn maps to DVPet's Morning; day/dusk have no time factor."""
     t = day_temp - _WEATHER_TEMP_FACTOR.get(weather, 0)
     if phase == "night":
-        t -= NIGHT_TEMP_FACTOR
+        t -= hab["night_tf"]
     elif phase == "dawn":
-        t -= MORNING_TEMP_FACTOR
+        t -= hab["morning_tf"]
     return max(0, t)
 
 

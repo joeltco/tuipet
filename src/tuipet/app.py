@@ -11,6 +11,7 @@ from . import training
 from . import battlescreen
 from . import adventurescreen
 from . import shopscreen
+from . import habitatscreen
 from . import persistence
 from . import jogressscreen
 from . import jogress
@@ -161,9 +162,13 @@ class Stats(Static):
         wglyph = WEATHER_GLYPH.get(pet.weather, "")
         env = (f"[yellow]{picon}[/] [dim]{pet.day_phase}[/dim]   "
                f"{wglyph} [dim]{pet.weather} {int(pet.temp)}\u00b0[/dim]")
+        aff = pet._affinity()
+        amark = ("[green]" + chr(0x2665) + "[/]" if aff > 0
+                 else ("[red]" + chr(0x2716) + "[/]" if aff < 0 else "[dim]·[/dim]"))
         lines = [
             f"[b]{pet.name}[/b]  [dim]gen {pet.generation}[/dim]",
-            f"[dim]{pet.stage} · {pet.attribute}[/dim]  [dim]{pet.season}[/dim]",
+            f"[dim]{pet.stage} · {pet.attribute}[/dim]",
+            f"[dim]@{pet.habitat_obj()['name']}[/dim] {amark} [dim]{pet.season}[/dim]",
             env,
             f"Hunger  {hearts(pet.hunger)}",
             f"Effort  {hearts(pet.strength)}",
@@ -192,13 +197,13 @@ class TuiPetApp(App):
         border: heavy #5a7a1a; padding: 0 1; background: #9bbc0f;
         width: 30; height: 14;
     }
-    #stats { border: round #444; padding: 0 1; width: 30; height: 19; margin-left: 1; }
+    #stats { border: round #444; padding: 0 1; width: 30; height: 21; margin-left: 1; }
     #msg { height: 1; color: $text-muted; margin-top: 1; }
     """
     BINDINGS = [
         ("f", "feed", "Feed"), ("t", "train", "Train"), ("b", "battle", "Battle"),
         ("p", "play", "Play"), ("c", "clean", "Clean"), ("h", "heal", "Heal"),
-        ("a", "adventure", "Adventure"), ("o", "shop", "Shop"),
+        ("a", "adventure", "Adventure"), ("o", "shop", "Shop"), ("e", "habitat", "Habitat"),
         ("j", "jogress", "Jogress"), ("u", "tournament", "Cup"),
         ("s", "sleep", "Sleep"), ("n", "new", "New pet"), ("q", "quit", "Quit"),
     ]
@@ -314,6 +319,14 @@ class TuiPetApp(App):
 
     def action_shop(self):
         self.push_screen(shopscreen.ShopScreen(self.pet), self._after_shop)
+
+    def action_habitat(self):
+        self.push_screen(habitatscreen.HabitatScreen(self.pet), self._after_habitat)
+
+    def _after_habitat(self, msg):
+        if msg:
+            self.flash(msg)
+        self.repaint()
 
     def _after_shop(self, msg):
         if msg:

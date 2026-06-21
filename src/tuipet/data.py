@@ -373,3 +373,63 @@ def load_icons():
             return json.load(fh)
     except (OSError, ValueError):
         return {}
+
+
+# ---------------------------------------------------------------------------
+# Habitats (habitats.csv).  Each habitat is a home with a seasonal climate that
+# drives the weather/temperature system, plus Field/Element affinities that help
+# or hurt a pet living there.  Faithful to DVPet's Habitat model; the one tuning
+# is WEATHER_CHANCE_SCALE, dividing DVPet's 1/# precip chance for the compressed
+# clock so weather is actually visible.
+# ---------------------------------------------------------------------------
+WEATHER_CHANCE_SCALE = 4
+
+
+@lru_cache(maxsize=1)
+def load_habitats():
+    path = os.path.join(_DATA, "habitats.csv")
+    out = {}
+    for r in csv.DictReader(open(path)):
+        try:
+            hid = int(r["ID"])
+        except (KeyError, ValueError):
+            continue
+
+        def rng(k):
+            try:
+                a, b = (r.get(k) or "0t0").split("t")
+                return (int(a), int(b))
+            except (ValueError, AttributeError):
+                return (0, 0)
+
+        def num(k, default=0):
+            try:
+                return int(r.get(k) or default)
+            except ValueError:
+                return default
+
+        def lst(k):
+            return [x for x in (r.get(k) or "").split(";") if x and x != "Empty"]
+
+        chance = num("Weather Chance (1/#)")
+        out[hid] = {
+            "id": hid,
+            "name": r.get("Name") or f"Habitat {hid}",
+            "desc": r.get("Description") or "",
+            "price": num("Price"),
+            "unlocked": (r.get("Unlocked") or "FALSE").strip().upper() == "TRUE",
+            "temps": {"Spring": rng("Spring Temp (#t#)"), "Summer": rng("Summer Temp (#t#)"),
+                      "Fall": rng("Fall Temp (#t#)"), "Winter": rng("Winter Temp (#t#)")},
+            "precip_mod": {"Spring": num("Spring Mod (inc precipitation during season)"),
+                           "Summer": num("Summer Mod (inc precipitation during season)"),
+                           "Fall": num("Fall Mod (inc precipitation during season)"),
+                           "Winter": num("Winter Mod (inc precipitation during season)")},
+            "cloud_mod": num("Cloud Mod (inc precipitation when cloudy)"),
+            "weather_chance": 0 if chance <= 0 else max(1, chance // WEATHER_CHANCE_SCALE),
+            "weather_change": num("Weather Change (make worse or clear up)", 100),
+            "night_tf": num("NightTempFactor", 10),
+            "morning_tf": num("MorningTempFactor", 3),
+            "compat_fields": lst("CompatibleField"), "compat_elements": lst("CompatibleElement"),
+            "incompat_fields": lst("IncompatibleField"), "incompat_elements": lst("IncompatibleElement"),
+        }
+    return out

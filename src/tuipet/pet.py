@@ -1,7 +1,7 @@
 """DVPet game model: a single virtual pet, its stats, and care logic."""
 from __future__ import annotations
 import random
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field as _dcf
 from . import data
 from . import egg as egg_mod
 from . import evolution
@@ -76,10 +76,22 @@ class Pet:
     temp: float = 50.0
     day_temp: float = 50.0
     weather: str = "Clear"
-    inventory: dict = field(default_factory=dict)
+    field: str = ""
+    element: str = ""
+    habitat: int = 2                # current home (2 = Plains, a temperate default)
+    habitats: list = _dcf(default_factory=lambda: [0, 2])
+    inventory: dict = _dcf(default_factory=dict)
     # transient animation request, consumed by the UI
     anim: str = "idle"
     anim_ttl: float = 0.0
+
+    def __post_init__(self):
+        if self.num is not None and self.num >= 0 and not self.field:
+            _, by_num = data.load_sprites()
+            rec = by_num.get(self.num)
+            if rec:
+                self.field = rec.get("field", "")
+                self.element = rec.get("element", "")
 
     # seconds in each stage before it is eligible to evolve (accelerated time)
     EGG_DURATION = 18      # seconds an egg incubates before hatching
@@ -113,7 +125,8 @@ class Pet:
     def from_num(cls, num):
         _, by_num = data.load_sprites()
         r = by_num[num]
-        return cls(num=num, name=r["name"], stage=r["stage"], attribute=r["attribute"])
+        return cls(num=num, name=r["name"], stage=r["stage"], attribute=r["attribute"],
+                   field=r.get("field", ""), element=r.get("element", ""))
 
     # ---- per-tick simulation -------------------------------------------------
     def tick(self, dt):
@@ -155,6 +168,7 @@ class Pet:
         lo, hi = self.ideal_temp
         if self.weather in ("Clear", "Cloudy") and lo <= self.temp <= hi:
             drain *= 0.6                  # fair weather + ideal temp eases fatigue
+        drain *= max(0.5, min(1.6, 1 - 0.12 * self._affinity()))
         self.energy = _clamp(self.energy - drain * dt, 0, 100)
         self.mood = _clamp(self.mood - (1.4 if night else 0.8) * dt, 0, 100)
         # hunger ticks down on a slow clock
@@ -218,42 +232,86 @@ class Pet:
     def ideal_temp(self):
         return data.load_requirements().get(self.num, {}).get("ideal_temp", (40, 60))
 
+    def habitat_obj(self):
+        habs = data.load_habitats()
+        return habs.get(self.habitat) or habs.get(0) or next(iter(habs.values()))
+
+    def _affinity(self):
+        """Net Field/Element fit with the current home: +compatible, -incompatible."""
+        h = self.habitat_obj()
+        f, e = self.field, self.element
+        compat = (f in h["compat_fields"]) + (e in h["compat_elements"])
+        incompat = (f in h["incompat_fields"]) + (e in h["incompat_elements"])
+        return compat - incompat
+
     def _update_weather(self, dt):
-        # a fresh day-temperature target is rolled at each day rollover
-        day = int(self.world_seconds // DAY_LENGTH)
-        if getattr(self, "_weather_day", -1) != day:
-            self._weather_day = day
-            lo, hi = wx.SEASON_TEMP[self.season]
-            self.day_temp = random.randint(lo, hi)
-        # weather transitions on its own slow cadence
-        self._weather_t = getattr(self, "_weather_t", 0.0) + dt
-        if self._weather_t >= wx.WEATHER_CHECK_SEC:
-            self._weather_t = 0.0
-            self.weather = wx.next_weather(self.weather, self.season, self.day_temp)
-        # the actual temperature lapses toward the weather/time-adjusted target
-        target = wx.adjusted_day_temp(self.day_temp, self.weather, self.day_phase)
+        hab = self.habitat_obj()
+        lo_i, hi_i = self.ideal_temp
+        if hab["weather_chance"] <= 0:        # climate-controlled home (Hard Disk)
+            self.weather = "Clear"
+            target = self.day_temp = (lo_i + hi_i) / 2
+        else:
+            day = int(self.world_seconds // DAY_LENGTH)
+            if getattr(self, "_weather_day", -1) != day:
+                self._weather_day = day
+                lo, hi = hab["temps"][self.season]
+                self.day_temp = random.randint(min(lo, hi), max(lo, hi))
+            self._weather_t = getattr(self, "_weather_t", 0.0) + dt
+            if self._weather_t >= wx.WEATHER_CHECK_SEC:
+                self._weather_t = 0.0
+                self.weather = wx.next_weather(self.weather, self.season, self.day_temp, hab)
+            target = wx.adjusted_day_temp(self.day_temp, self.weather, self.day_phase, hab)
         if self.temp < target:
             self.temp = min(target, self.temp + wx.TEMP_RATE * dt)
         elif self.temp > target:
             self.temp = max(target, self.temp - wx.TEMP_RATE * dt)
 
+    def buy_habitat(self, hid):
+        habs = data.load_habitats()
+        h = habs.get(hid)
+        if not h:
+            return "?"
+        if hid in self.habitats:
+            return f"You already own {h['name']}."
+        if self.bits < h["price"]:
+            return "Not enough bits."
+        self.bits -= h["price"]
+        self.habitats = sorted(set(self.habitats) | {hid})
+        return f"Bought {h['name']}!"
+
+    def move_to(self, hid):
+        habs = data.load_habitats()
+        h = habs.get(hid)
+        if not h:
+            return "?"
+        if hid not in self.habitats:
+            return "You don't own that habitat."
+        self.habitat = hid
+        self._weather_day = -1            # force a fresh climate roll on arrival
+        return f"Moved to {h['name']}."
+
     def _temperature_effects(self, dt):
         lo, hi = self.ideal_temp
+        aff = self._affinity()                # compatible home helps, incompatible hurts
         too_hot = self.temp >= hi + wx.UPPER_IDEAL
         too_cold = self.temp <= lo - wx.LOWER_IDEAL
         self._comfort_t = getattr(self, "_comfort_t", 0.0) + dt
         if self._comfort_t >= wx.IDEAL_TEMP_MOOD_SEC:
             self._comfort_t = 0.0
             if lo <= self.temp <= hi:
-                self.mood = _clamp(self.mood + wx.IDEAL_TEMP_INC, 0, 100)
+                self.mood = _clamp(self.mood + wx.IDEAL_TEMP_INC + aff, 0, 100)
             elif too_hot or too_cold:
-                self.mood = _clamp(self.mood - wx.IDEAL_TEMP_DEC, 0, 100)
+                self.mood = _clamp(self.mood - wx.IDEAL_TEMP_DEC + aff, 0, 100)
         self._btemp_t = getattr(self, "_btemp_t", 0.0) + dt
         if self._btemp_t >= wx.BAD_TEMP_SICK_SEC:
             self._btemp_t = 0.0
-            if (too_hot or too_cold) and not self.sick and random.random() < wx.BAD_TEMP_SICK_CHANCE:
-                self.sick = True
-                self.sick_count += 1
+            if not self.sick:
+                chance = wx.BAD_TEMP_SICK_CHANCE * (1 - 0.25 * aff) if (too_hot or too_cold) else 0.0
+                if aff < 0:                   # an incompatible home is just unhealthy
+                    chance += 0.004 * (-aff)
+                if chance > 0 and random.random() < chance:
+                    self.sick = True
+                    self.sick_count += 1
 
     def _die(self):
         self.dead = True
@@ -278,6 +336,8 @@ class Pet:
         r = by_num[num]
         self.num, self.name = num, r["name"]
         self.stage, self.attribute = r["stage"], r["attribute"]
+        self.field = r.get("field", self.field)
+        self.element = r.get("element", self.element)
         self.stage_seconds = 0.0
         # per-stage care record resets; the next stage's care decides the next form
         self.care_mistakes = self.overeat = self.disturb = 0

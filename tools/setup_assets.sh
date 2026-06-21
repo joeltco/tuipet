@@ -18,7 +18,7 @@ rm -rf _extract && mkdir -p _extract/jar
 ln -sfn _extract/jar/resources raw_resources
 ln -sfn _extract/jar/Model raw_model
 mkdir -p src/tuipet/data
-for f in digimon evolutions foods items enemies maps zones towns shopConsumable; do
+for f in digimon evolutions foods items enemies maps zones towns shopConsumable habitats; do
   cp "raw_model/$f.csv" "src/tuipet/data/$f.csv"
 done
 python tools/extract_sprites.py
