@@ -42,6 +42,17 @@ GRAVESTONE = [
     "1111111111111111",
 ]
 
+SUN = ["01110", "11111", "11111", "11111", "01110"]
+MOON = ["01110", "11100", "11000", "11100", "01110"]
+
+# LCD palette per time of day (creature ink, screen background)
+PHASE_PALETTE = {
+    "dawn":  ("#3a5a2a", "#c0d89b"),   # pale morning green
+    "day":   ("#0f380f", "#9bbc0f"),   # classic bright Game Boy green
+    "dusk":  ("#5a2d00", "#e0913a"),   # warm amber sunset
+    "night": ("#6f8f4f", "#0d1f1a"),   # dim glow on near-black
+}
+
 
 class Screen(Static):
     """The animated LCD screen."""
@@ -51,8 +62,10 @@ class Screen(Static):
         self.walk_dir = 1
 
     def paint(self, pet: Pet):
+        on, bg = PHASE_PALETTE.get(pet.day_phase, (LCD_ON, LCD_BG))
+        corner = SUN if pet.is_daytime else MOON
         if pet.dead:                           # a grave marker
-            self.update(render_screen(GRAVESTONE, SCREEN_COLS, SCREEN_ROWS, LCD_ON, LCD_BG))
+            self.update(render_screen(GRAVESTONE, SCREEN_COLS, SCREEN_ROWS, on, bg, corner=corner))
             return
         if pet.num == -1:                      # egg
             rec = egg_mod.record(pet.egg_type)
@@ -74,8 +87,8 @@ class Screen(Static):
             mirror = self.walk_dir > 0         # mirror=True faces right (sprites face left by default)
         else:
             mirror = pet.anim in data.MIRROR_ROLES and self.frame_i % 2 == 1
-        self.update(render_screen(rows, SCREEN_COLS, SCREEN_ROWS, LCD_ON, LCD_BG,
-                                  mirror=mirror, xshift=xshift))
+        self.update(render_screen(rows, SCREEN_COLS, SCREEN_ROWS, on, bg,
+                                  mirror=mirror, xshift=xshift, corner=corner))
 
     def advance(self):
         self.frame_i += 1
@@ -94,7 +107,7 @@ class Stats(Static):
         mins, secs = divmod(int(pet.age_seconds), 60)
         lines = [
             f"[b]{pet.name}[/b]  [dim]gen {pet.generation}[/dim]",
-            f"[dim]{pet.stage} · {pet.attribute}[/dim]",
+            f"[dim]{pet.stage} · {pet.attribute}[/dim]  [yellow]{(chr(0x2600) if pet.is_daytime else chr(0x263E))}[/] [dim]{pet.day_phase}[/dim]",
             "",
             f"Hunger  {hearts(pet.hunger)}",
             f"Effort  {hearts(pet.strength)}",

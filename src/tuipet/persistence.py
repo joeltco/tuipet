@@ -29,6 +29,7 @@ def save(pet, path=SAVE_PATH):
 
 
 def _offline(pet, elapsed):
+    pet.world_seconds += elapsed       # keep the day/night clock turning while away
     if elapsed < 30 or pet.stage == "Egg":
         return ""
     mins = elapsed / 60.0

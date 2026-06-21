@@ -18,6 +18,21 @@ LIFE_START = 360.0
 STAGE_LIFE = {"Rookie": 420.0, "Champion": 600.0, "Ultimate": 840.0, "Mega": 1080.0}
 GERIATRIC_REMAIN = 75.0   # last N seconds of life = elderly
 
+# Day/night: the world runs on an accelerated clock. One full DAY_LENGTH-second
+# cycle runs dawn -> day -> dusk -> night. Night makes the pet sleepy: kept awake
+# it tires and sulks faster, while rest is deepest then.
+DAY_LENGTH = 240.0
+
+
+def _phase_of(p):
+    if p < 0.10:
+        return "dawn"
+    if p < 0.50:
+        return "day"
+    if p < 0.58:
+        return "dusk"
+    return "night"
+
 
 @dataclass
 class Pet:
@@ -56,6 +71,7 @@ class Pet:
     lifespan: float = LIFE_START
     generation: int = 1
     dead: bool = False
+    world_seconds: float = 0.0
     inventory: dict = field(default_factory=dict)
     # transient animation request, consumed by the UI
     anim: str = "idle"
@@ -97,6 +113,7 @@ class Pet:
 
     # ---- per-tick simulation -------------------------------------------------
     def tick(self, dt):
+        self.world_seconds += dt          # the day/night clock runs even past death
         if self.dead:
             return
         self.age_seconds += dt
@@ -118,14 +135,17 @@ class Pet:
             return
 
         if self.asleep:
-            self.energy = _clamp(self.energy + 8 * dt, 0, 100)
+            rate = 10 if self.day_phase == "night" else 5   # rest is deepest at night
+            self.energy = _clamp(self.energy + rate * dt, 0, 100)
             if self.energy >= 100:
                 self.asleep = False
                 self._set_anim("idle", 0)
             return
 
-        self.energy = _clamp(self.energy - 1.2 * dt, 0, 100)
-        self.mood = _clamp(self.mood - 0.8 * dt, 0, 100)
+        night = self.day_phase == "night"
+        # at night an awake pet tires and grows cranky about twice as fast
+        self.energy = _clamp(self.energy - (2.4 if night else 1.2) * dt, 0, 100)
+        self.mood = _clamp(self.mood - (1.4 if night else 0.8) * dt, 0, 100)
         # hunger ticks down on a slow clock
         self._hunger_t = getattr(self, "_hunger_t", 0) + dt
         if self._hunger_t >= 12:
@@ -143,7 +163,8 @@ class Pet:
         if (self.poop >= 3 or self.hunger == 0) and not self.sick and random.random() < 0.02 * dt:
             self.sick = True
             self.sick_count += 1
-        if self.energy <= 0 and not self.asleep:
+        # the pet nods off on its own when exhausted, and dozes earlier at night
+        if not self.asleep and self.energy <= (35 if night else 0):
             self.asleep = True
             self._set_anim("sleep", 0)
 
@@ -169,6 +190,14 @@ class Pet:
         return (not self.dead
                 and self.stage in ("Rookie", "Champion", "Ultimate", "Mega")
                 and (self.lifespan - self.age_seconds) < GERIATRIC_REMAIN)
+
+    @property
+    def day_phase(self):
+        return _phase_of((self.world_seconds % DAY_LENGTH) / DAY_LENGTH)
+
+    @property
+    def is_daytime(self):
+        return self.day_phase in ("dawn", "day")
 
     def _die(self):
         self.dead = True
@@ -399,6 +428,8 @@ class Pet:
             return "starving"
         if self.poop >= 3:
             return "needs cleaning"
+        if self.day_phase == "night" and not self.asleep and self.energy < 45:
+            return "sleepy"
         if self.mood < 25:
             return "unhappy"
         if self.mood > 75:
