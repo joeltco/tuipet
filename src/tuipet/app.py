@@ -28,13 +28,15 @@ SPRITE_W = 16                                   # native creature sprite width
 WALK_RANGE = (SCREEN_COLS - SPRITE_W) // 5      # how far the pet paces from centre (stays central)
 
 
-def hearts(n, total=4):
-    return "[red]" + "●" * n + "[/red]" + "[dim]" + "○" * (total - n) + "[/dim]"
+def hearts(n, total=4, color=None):
+    color = color or theme.HEART
+    return f"[{color}]" + "●" * n + "[/][dim]" + "○" * (total - n) + "[/dim]"
 
 
-def bar(v, width=12, color="green"):
+def bar(v, width=12, color=None):
+    color = color or theme.LIFE
     fill = round(v / 100 * width)
-    return f"[{color}]" + "█" * fill + "[/]" + "[dim]" + "─" * (width - fill) + "[/dim]"
+    return f"[{color}]" + "█" * fill + "[/][dim]" + "─" * (width - fill) + "[/dim]"
 
 
 _FX = data.load_effects()
@@ -299,39 +301,39 @@ class Screen(Static):
 
 class Stats(Static):
     def paint(self, pet: Pet):
+        T = theme
+        div = f"[dim]{'─' * 26}[/]"
         deco = []
         if pet.asleep: deco.append("[blue]Zzz[/]")
-        if pet.sick: deco.append("[red]+ sick[/]")
-        if pet.poop: deco.append(f"[yellow]~poop x{pet.poop}[/]")
+        if pet.sick: deco.append(f"[{T.NEG}]+sick[/]")
+        if pet.poop: deco.append(f"[{T.COIN}]~poop x{pet.poop}[/]")
         mins, secs = divmod(int(pet.age_seconds), 60)
         picon = chr(0x2600) if pet.is_daytime else chr(0x263E)
         wglyph = WEATHER_GLYPH.get(pet.weather, "")
-        env = (f"[yellow]{picon}[/] [dim]{pet.day_phase}[/dim]   "
-               f"{wglyph} [dim]{pet.weather} {int(pet.temp)}\u00b0[/dim]")
         aff = pet._affinity()
-        amark = ("[green]" + chr(0x2665) + "[/]" if aff > 0
-                 else ("[red]" + chr(0x2716) + "[/]" if aff < 0 else "[dim]·[/dim]"))
-        xm = " [b magenta]X[/]" if pet.x_antibody != "None" else ""
+        amark = (f"[{T.POS}]" + chr(0x2665) + "[/]" if aff > 0
+                 else (f"[{T.NEG}]" + chr(0x2716) + "[/]" if aff < 0 else "[dim]·[/dim]"))
+        xm = f" [b {T.ACCENT}]X[/]" if pet.x_antibody != "None" else ""
+        lifepct = max(0, int((pet.lifespan - pet.age_seconds) / max(1, pet.lifespan) * 100))
+        lifecol = T.NEG if pet.is_geriatric else T.LIFE
+        self.border_subtitle = f"gen {pet.generation}"
         lines = [
-            f"[b]{pet.name}[/b]{xm}  [dim]gen {pet.generation}[/dim]",
-            f"[dim]{pet.stage} · {pet.attribute}[/dim]",
-            f"[dim]@{pet.habitat_obj()['name']}[/dim] {amark} [dim]{pet.season}[/dim]",
-            env,
+            f"[b]{pet.name[:14]}[/]{xm} [dim]{pet.stage}·{pet.attribute}[/]",
+            div,
             f"Hunger  {hearts(pet.hunger)}",
             f"Effort  {hearts(pet.strength)}",
-            f"Energy  {bar(pet.energy, color='cyan')}",
-            f"Mood    {bar(pet.mood, color='magenta')}",
-            "",
-            f"Weight  {pet.weight}g",
-            f"Power   [green]V{pet.vaccine}[/] [cyan]D{pet.data_power}[/] [magenta]Vi{pet.virus}[/]",
-            f"Battle  {pet.wins}W/{pet.battles}   [yellow]{pet.bits}b[/]",
-            f"Trophy  [yellow]{chr(0x25CF) * min(pet.trophies, 8)}[/] {pet.trophies}" if pet.trophies else "",
-            f"Age     {mins}m{secs:02d}s",
-            f"Life    {bar(max(0, int((pet.lifespan - pet.age_seconds) / max(1, pet.lifespan) * 100)), color=('red' if pet.is_geriatric else 'green'))}",
-            f"Care x  {pet.care_mistakes}",
-            "",
-            f"State: [b]{pet.status_word()}[/b]",
-            "  ".join(deco),
+            f"Energy  {bar(pet.energy, 12, T.ENERGY)}",
+            f"Mood    {bar(pet.mood, 12, T.MOOD)}",
+            div,
+            f"Power   [{T.POS}]V{pet.vaccine}[/] [{T.ENERGY}]D{pet.data_power}[/] [{T.MOOD}]Vi{pet.virus}[/]",
+            f"Weight {pet.weight}g   [{T.COIN}]{pet.bits}b[/]",
+            f"Battle {pet.wins}W/{pet.battles}   [{T.COIN}]\u2605{pet.trophies}[/]",
+            div,
+            f"@{pet.habitat_obj()['name'][:14]} {amark} [dim]{pet.season}[/]",
+            f"[{T.COIN}]{picon}[/][dim]{pet.day_phase} {wglyph}{pet.weather} {int(pet.temp)}\u00b0[/] [dim]{mins}m{secs:02d}s[/]",
+            f"Life    {bar(lifepct, 12, lifecol)}",
+            div,
+            f"[b]{pet.status_word()}[/]   " + "  ".join(deco),
         ]
         self.update("\n".join(lines))
 
