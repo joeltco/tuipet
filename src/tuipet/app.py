@@ -40,6 +40,9 @@ GRAVESTONE = _FX.get("grave", [None])[0]      # real DVPet death.png
 SUN = _FX.get("sun", [None])[0]               # real DVPet noon.png
 MOON = _FX.get("moon", [None])[0]             # real DVPet night.png
 
+_POOP_FR = (_FX.get("poop") or [None])[0]
+POOP_W = len(_POOP_FR[0]) if _POOP_FR else 5
+
 # LCD palette per time of day (creature ink, screen background)
 PHASE_PALETTE = {
     "dawn":  ("#3a5a2a", "#c0d89b"),   # pale morning green
@@ -112,8 +115,10 @@ def _effect_overlay(pet, frame_i, cols, px_h):
     if pet.dead:
         return pts
     pm = E.get("poop", [None])[0]
-    if pet.poop and pm:                                   # a pile in the corner, clear of the pet
-        pts += _blit(pm, 0, px_h - len(pm))
+    if pet.poop and pm:                                   # a row of piles, bottom-left (DVPet filth)
+        pw = len(pm[0])
+        for i in range(min(pet.poop, 3)):
+            pts += _blit(pm, i * (pw + 1), px_h - len(pm) - 2)
     if pet.num == -1:
         return pts
     if pet.asleep and E.get("zzz"):                       # Zzz above a sleeper
@@ -186,6 +191,9 @@ class Screen(Static):
             # there's poop on the floor, so the pet never walks through it)
             xshift = max(-WALK_RANGE, min(WALK_RANGE, self.walk_x))
             mirror = self.walk_dir > 0         # mirror=True faces right (sprites face left by default)
+        elif pet.anim in ("idle", "walk") and pet.poop:
+            row_right = min(pet.poop, 3) * (POOP_W + 1)        # stand clear, right of the poop row
+            xshift = max(0, min(12, row_right - (SCREEN_COLS - SPRITE_W) // 2 + 2))
         else:
             mirror = pet.anim in data.MIRROR_ROLES and self.frame_i % 2 == 1
         self.update(render_screen(rows, SCREEN_COLS, SCREEN_ROWS, on, bg,
