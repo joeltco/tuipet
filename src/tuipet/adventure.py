@@ -4,6 +4,7 @@ restores adventure life, and a zone boss gating progress to the next zone)."""
 from __future__ import annotations
 import random
 from . import data
+from . import loot
 
 LIVES = 3
 ENCOUNTER_CHANCE = 0.22
@@ -28,6 +29,7 @@ class Adventure:
         self.boss_pending = False
         self.done = False
         self.last = "Adventure begins!"
+        self.loot = None
 
     @property
     def zone(self):
@@ -65,11 +67,20 @@ class Adventure:
         return None
 
     def resolve(self, won, was_boss, enemy):
-        """Apply a battle result to the run."""
+        """Apply a battle result to the run, rolling loot on a win."""
+        self.loot = None
+        if won:
+            drop = loot.roll(was_boss)
+            if drop:
+                self.pet.add_item(drop["key"])
+                self.loot = drop
         if was_boss:
             self.boss_pending = False
             if won:
-                return self._complete_zone()
+                res = self._complete_zone()
+                if self.loot:
+                    self.last += f"  Loot: {self.loot['name']}!"
+                return res
             self.lives -= 1
             self.progress = LEGS * 0.6
             self.last = f"Lost to {enemy['name']}... regrouping."
@@ -78,6 +89,10 @@ class Adventure:
                 self.lives -= 1
                 self.progress = max(0, self.progress - 4)  # penalty steps
                 self.last = "Knocked back!"
+            else:
+                self.last = f"Beat {enemy['name']}!"
+                if self.loot:
+                    self.last += f"  Loot: {self.loot['name']}!"
         if self.lives <= 0:
             self._retreat()
         return None

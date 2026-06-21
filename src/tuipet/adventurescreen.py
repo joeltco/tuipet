@@ -100,7 +100,8 @@ class AdventureScreen(ModalScreen):
         out.append(f"ADVENTURE  Map {a.mi + 1}-{a.zi + 1}\n", style=INK_B)
         out.append_text(scene)
         out.append(f"\n{bar} {a.pct}%\n", style=INK)
-        out.append(f"Life {lives}   Bits {self.pet.bits}\n", style=INK)
+        bag = sum(self.pet.inventory.values())
+        out.append(f"Life {lives}   Bits {self.pet.bits}   Bag {bag}\n", style=INK)
         out.append((a.last or "") + "\n", style=INK_B)
         if a.done:
             out.append("Journey complete!   ESC", style=INK_B)

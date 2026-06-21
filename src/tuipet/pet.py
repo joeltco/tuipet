@@ -381,6 +381,10 @@ class Pet:
         self.inventory[entry["key"]] = self.inventory.get(entry["key"], 0) + 1
         return f"Bought {entry['name']}."
 
+    def add_item(self, key, n=1):
+        """Drop loot / grants straight into the bag."""
+        self.inventory[key] = self.inventory.get(key, 0) + n
+
     def use_item(self, key):
         if self.inventory.get(key, 0) <= 0:
             return "None left."
