@@ -60,6 +60,12 @@ def hatch_target(egg_type=0):
     return random.choice(eggs[egg_type % len(eggs)]["hatch"])
 
 
+def hatch_targets(egg_type=0):
+    """All DigimonNums this egg can hatch into (to preview its habitat)."""
+    eggs = _real_eggs()
+    return list(eggs[egg_type % len(eggs)]["hatch"]) if eggs else []
+
+
 def hatch_name(egg_type=0):
     eggs = _real_eggs()
     return eggs[egg_type % len(eggs)]["hatch_name"] if eggs else "?"

@@ -144,8 +144,10 @@ class Pet:
     def new_egg(cls, generation=1, egg_type=None):
         if egg_type is None:
             egg_type = random.randrange(egg_mod.count())
-        return cls(num=-1, name="Digitama", stage="Egg",
-                   egg_type=egg_type, generation=generation)
+        pet = cls(num=-1, name="Digitama", stage="Egg",
+                  egg_type=egg_type, generation=generation)
+        pet._apply_egg_habitat()
+        return pet
 
     def _hatch_into_fresh(self):
         _, by_num = data.load_sprites()
@@ -163,8 +165,10 @@ class Pet:
     def from_num(cls, num):
         _, by_num = data.load_sprites()
         r = by_num[num]
-        return cls(num=num, name=r["name"], stage=r["stage"], attribute=r["attribute"],
-                   field=r.get("field", ""), element=r.get("element", ""))
+        pet = cls(num=num, name=r["name"], stage=r["stage"], attribute=r["attribute"],
+                  field=r.get("field", ""), element=r.get("element", ""))
+        pet._apply_natural_habitat()
+        return pet
 
     # ---- per-tick simulation -------------------------------------------------
     def tick(self, dt):
@@ -413,6 +417,25 @@ class Pet:
         if target is not None:
             self.evolve_to(target)
 
+    def _apply_egg_habitat(self):
+        """Show the destined habitat as soon as the egg is chosen (DVPet)."""
+        for t in egg_mod.hatch_targets(self.egg_type):
+            h = data.natural_habitat(t)
+            if h >= 0:
+                self.habitat = h
+                if h not in self.habitats:
+                    self.habitats = sorted(set(self.habitats) | {h})
+                return
+
+    def _apply_natural_habitat(self):
+        """Move to this species' natural habitat (digimon.csv Habitat) so each
+        Digimon shows its own background. -1 = no preference -> keep current."""
+        hr = data.natural_habitat(self.num)
+        if hr is not None and hr >= 0:
+            self.habitat = hr
+            if hr not in self.habitats:
+                self.habitats = sorted(set(self.habitats) | {hr})
+
     def evolve_to(self, num):
         _, by_num = data.load_sprites()
         r = by_num[num]
@@ -420,6 +443,7 @@ class Pet:
         self.stage, self.attribute = r["stage"], r["attribute"]
         self.field = r.get("field", self.field)
         self.element = r.get("element", self.element)
+        self._apply_natural_habitat()
         if data.load_requirements().get(num, {}).get("xantibody", "None") in ("Induced", "Natural"):
             self._set_xantibody("Permanent")          # the X-Antibody locks in
         self.stage_seconds = 0.0

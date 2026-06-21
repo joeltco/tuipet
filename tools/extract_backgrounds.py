@@ -14,7 +14,7 @@ RES = os.path.join(ROOT, "raw_resources")
 OUT = os.path.join(ROOT, "src/tuipet/data")
 MODEL = os.path.join(ROOT, "raw_model")
 FW, FH, GAP = 104, 101, 2
-COLS, PXH = 40, 40
+COLS, PXH = 40, 24
 
 
 def frames_for(fn):
@@ -27,7 +27,10 @@ def frames_for(fn):
     out = []
     for i in range(n):
         y = i * (FH + GAP)
-        fr = im.crop((0, y, FW, min(y + FH, H))).resize((COLS, PXH), Image.BILINEAR)
+        TOP_BAR, BOT_BAR = 20, 21   # exact DVPet _mainDisplay window (104x60); strips the icon-overlay sky/ground bands
+        y0 = y + TOP_BAR
+        y1 = min(y + FH - BOT_BAR, H)
+        fr = im.crop((0, y0, FW, y1)).resize((COLS, PXH), Image.LANCZOS)
         px = fr.load()
         out.append(["".join("%02x%02x%02x" % px[x, yy] for x in range(COLS)) for yy in range(PXH)])
     return out

@@ -222,6 +222,30 @@ def load_requirements():
         }
     return reqs
 
+
+@lru_cache(maxsize=1)
+def _canonical_habitat_by_name():
+    """DVPet stores duplicate species rows: the egg-hatch duplicates carry
+    Habitat -1 while the base row carries the real habitat. Map name -> habitat."""
+    path = os.path.join(_RAW, "digimon.csv")
+    out = {}
+    for r in csv.DictReader(open(path)):
+        h = _int_or(r.get("Habitat"), -1)
+        if h >= 0:
+            out.setdefault((r.get("Name") or "").strip(), h)
+    return out
+
+
+def natural_habitat(num):
+    """The habitat a Digimon calls home (-1 = none). Resolves DVPet's duplicate
+    rows so egg-hatched forms still find their species' habitat."""
+    h = load_requirements().get(num, {}).get("habitat_req", -1)
+    if h is not None and h >= 0:
+        return h
+    _, by_num = load_sprites()
+    name = (by_num.get(num, {}).get("name") or "").strip()
+    return _canonical_habitat_by_name().get(name, -1)
+
 # ---------------------------------------------------------------------------
 # Battle enemies (parsed from enemies.csv).  Each enemy references a Digimon by
 # number (its sprite + attribute) and carries battle Health and attribute power.
