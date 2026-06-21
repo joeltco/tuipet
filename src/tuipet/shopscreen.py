@@ -5,6 +5,7 @@ from rich.text import Text
 from . import data
 
 from .theme import LCD_ON, LCD_BG, INK, INK_B, DIM, SEL
+from . import menu
 W = 38
 
 
@@ -83,9 +84,8 @@ class ShopPanel:
 
     def text(self):
         rows = self._rows()
-        out = Text()
         head = "SHOP" if self.mode == "shop" else "BAG"
-        out.append(f"{head}   Bits: {self.pet.bits}\n", style=INK_B)
+        out = menu.header(head, f"{self.pet.bits}b")
         sel = rows[min(self.cursor, len(rows) - 1)] if rows else None
         icon = self._icon_lines(sel)
         info = []
@@ -99,30 +99,25 @@ class ShopPanel:
             tx = info[r] if r < len(info) else ""
             out.append(f" {ic:<9} ", style=INK)
             out.append(f"{tx}\n", style=INK_B if r == 0 else INK)
-        out.append("-" * W + "\n", style=DIM)
+        vis = 4
         if not rows:
-            out.append("  (empty)\n", style=DIM)
-            empties = 5
+            out.append_text(menu.row("(empty)"))
+            shown = 1
         else:
             self.cursor = min(self.cursor, len(rows) - 1)
-            vis = 5
             lo = max(0, min(self.cursor - vis // 2, len(rows) - vis))
             shown = 0
             for i in range(lo, min(lo + vis, len(rows))):
                 e = rows[i]
-                sel_row = i == self.cursor
-                mark = ">" if sel_row else " "
                 if self.mode == "shop":
-                    line = f"{mark}{e['price']:>5}b {e['name'][:20]}"
+                    label = f"{e['price']:>4}b {e['name'][:24]}"
                 else:
-                    line = f"{mark} x{self.pet.inventory.get(e['key'],0)} {e['name'][:22]}"
-                out.append(line[:W] + "\n", style=SEL if sel_row else INK)
+                    label = f"x{self.pet.inventory.get(e['key'],0)}  {e['name'][:26]}"
+                out.append_text(menu.row(label, i == self.cursor))
                 shown += 1
-            empties = vis - shown
-        for _ in range(empties):
-            out.append("\n", style=INK)
-        out.append(f"{self.msg[:W]}\n", style=INK_B)
+        out.append_text(menu.blanks(vis - shown))
+        out.append_text(menu.note(self.msg))
         verb = "buy" if self.mode == "shop" else "use"
         other = "bag" if self.mode == "shop" else "shop"
-        out.append(f"ENTER {verb}  TAB {other}  ESC out", style=DIM)
+        out.append_text(menu.footer(f"ENTER {verb}   TAB {other}   ESC out"))
         return out

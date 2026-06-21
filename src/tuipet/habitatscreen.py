@@ -4,6 +4,7 @@ from rich.text import Text
 from . import data
 
 from .theme import LCD_ON, LCD_BG, INK, INK_B, DIM, SEL, POS, NEG
+from . import menu
 W = 38
 
 
@@ -46,34 +47,32 @@ class HabitatPanel:
         return ("neutral", DIM)
 
     def text(self):
-        out = Text()
-        out.append(f"HABITATS    Bits: {self.pet.bits}\n", style=INK_B)
+        out = menu.header("HABITAT", f"{self.pet.bits}b")
         sel = self.rows[self.cursor]
         su, wi = sel["temps"]["Summer"], sel["temps"]["Winter"]
         climate = ("climate-controlled" if sel["weather_chance"] <= 0
-                   else f"Su {su[0]}-{su[1]}° Wi {wi[0]}-{wi[1]}°")
-        out.append(f"{sel['name']}  ", style=INK_B)
+                   else f"Su {su[0]}-{su[1]}°  Wi {wi[0]}-{wi[1]}°")
+        out.append(f"{sel['name'][:20]}  ", style=INK_B)
         atxt, astyle = self._aff_parts(sel)
         out.append(atxt + "\n", style=astyle)
         out.append(f"  {climate}\n", style=INK)
-        out.append("-" * W + "\n", style=DIM)
-        vis = 6
+        vis = 5
         lo = max(0, min(self.cursor - vis // 2, len(self.rows) - vis))
+        shown = 0
         for i in range(lo, min(lo + vis, len(self.rows))):
             h = self.rows[i]
-            cur = i == self.cursor
             if h["id"] == self.pet.habitat:
-                tag = chr(0x25CF) + " here "
+                tag = chr(0x25CF) + " here"
             elif h["id"] in self.pet.habitats:
-                tag = chr(0x25CB) + " owned"
+                tag = chr(0x25CB) + " own"
             else:
-                tag = f"{h['price']:>5}b"
+                tag = f"{h['price']}b"
             a = self._aff(h)
-            amark = (chr(0x2665) if a > 0 else (chr(0x2716) if a < 0 else " "))
-            line = f"{'>' if cur else ' '} {h['name']:<13} {tag:>7} {amark}"
-            out.append(line[:W] + "\n", style=SEL if cur else INK)
-        for _ in range(vis - (min(lo + vis, len(self.rows)) - lo)):
-            out.append("\n", style=INK)
-        out.append(f"{self.msg[:W]}\n", style=INK_B)
-        out.append("up/dn ENTER buy/move ESC out", style=DIM)
+            amark = (chr(0x2665) if a > 0 else (chr(0x2716) if a < 0 else "·"))
+            label = f"{h['name']:<14}{tag:>7} {amark}"
+            out.append_text(menu.row(label, i == self.cursor))
+            shown += 1
+        out.append_text(menu.blanks(vis - shown))
+        out.append_text(menu.note(self.msg))
+        out.append_text(menu.footer("up/dn  ENTER buy/move  ESC out"))
         return out

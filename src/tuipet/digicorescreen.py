@@ -3,7 +3,8 @@ from __future__ import annotations
 from rich.text import Text
 from . import data  # noqa: F401  (pet methods drive the data)
 
-from .theme import LCD_ON, LCD_BG, INK_B, DIM
+from .theme import LCD_ON, LCD_BG, INK, INK_B, DIM
+from . import menu
 
 
 def _mins(s):
@@ -73,15 +74,11 @@ class DigiCorePanel:
 
     def text(self):
         title, rows = self.pages[self.i]
-        out = Text()
-        out.append(f"DIGICORE  {title}\n", style=INK_B)
-        out.append("-" * 30 + "\n", style=DIM)
-        for label, val in rows:
-            out.append(f" {label:<8}", style=DIM)
-            out.append(f"{val}\n", style=INK_B)
-        for _ in range(max(0, 9 - len(rows))):
-            out.append("\n")
         dots = " ".join((chr(0x25CF) if j == self.i else chr(0x25CB)) for j in range(len(self.pages)))
-        out.append(f"{dots}\n", style=DIM)
-        out.append("<-/-> page   ESC close", style=DIM)
+        out = menu.header(f"DIGICORE  {title}", dots)
+        for label, val in rows:
+            out.append(f" {label:<9}", style=DIM)
+            out.append(f"{val}\n", style=INK_B)
+        out.append_text(menu.blanks(9 - len(rows)))
+        out.append_text(menu.footer("←/→ page    ESC close"))
         return out
