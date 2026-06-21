@@ -21,7 +21,7 @@ from .pet import Pet
 from .render import render_screen
 
 LCD_ON, LCD_BG = "#0b3d0b", "#9bbc0f"
-SCREEN_COLS, SCREEN_ROWS = 26, 12
+SCREEN_COLS, SCREEN_ROWS = 40, 14
 SPRITE_W = 16                                   # native creature sprite width
 WALK_RANGE = (SCREEN_COLS - SPRITE_W) // 2      # how far the pet paces from centre
 
@@ -236,7 +236,7 @@ class TuiPetApp(App):
     #wrap { width: auto; height: auto; }
     #lcd {
         border: heavy #5a7a1a; padding: 0 1; background: #9bbc0f;
-        width: 30; height: 14;
+        width: 44; height: 16;
     }
     #stats { border: round #444; padding: 0 1; width: 30; height: 21; margin-left: 1; }
     #msg { height: 1; color: $text-muted; margin-top: 1; }
@@ -262,6 +262,8 @@ class TuiPetApp(App):
             else:
                 self._new_game = True
         self.pet = pet or Pet.new_egg()
+        self.mode = None            # active in-display panel (no pop-up screens)
+        self._mode_close = None
 
     def compose(self) -> ComposeResult:
         with Vertical(id="wrap"):
@@ -278,8 +280,9 @@ class TuiPetApp(App):
         self.msg_w.update(self._welcome)
         self.repaint()
         if self._new_game:
-            self.push_screen(eggselectscreen.EggSelectScreen(), self._after_egg_pick)
+            self._open_mode(eggselectscreen.EggSelectPanel(), self._after_egg_pick)
         self.set_interval(0.45, self.on_anim)
+        self.set_interval(0.12, self.on_fast)
         self.set_interval(1.0, self.on_tick)
         self.set_interval(10.0, self.autosave)
 
@@ -295,17 +298,49 @@ class TuiPetApp(App):
     def on_unmount(self):
         persistence.save(self.pet)
 
+    def on_key(self, event):
+        if self.mode is not None:
+            event.stop()
+            result = self.mode.key(event.key)
+            if result is not None and result[0] == "done":
+                self._close_mode(result[1])
+            else:
+                self.repaint()
+
+    def _open_mode(self, panel, on_close=None):
+        self.mode = panel
+        self._mode_close = on_close
+        self.repaint()
+
+    def _close_mode(self, result):
+        cb = self._mode_close
+        self.mode = None
+        self._mode_close = None
+        if cb:
+            cb(result)
+        else:
+            self.repaint()
+
     def action_quit(self):
         persistence.save(self.pet)
         self.exit()
 
     def repaint(self):
-        self.screen_w.paint(self.pet)
+        if self.mode is not None:
+            self.screen_w.update(self.mode.text())
+        else:
+            self.screen_w.paint(self.pet)
         self.stats_w.paint(self.pet)
 
-    def on_anim(self):
-        self.screen_w.advance()
-        self.screen_w.paint(self.pet)
+    def on_anim(self):                         # slow tick: idle pet bob
+        if self.mode is None:
+            self.screen_w.advance()
+            self.screen_w.paint(self.pet)
+
+    def on_fast(self):                         # fast tick: active panel animation
+        if self.mode is not None and hasattr(self.mode, "anim"):
+            self.mode.anim()
+            self.screen_w.update(self.mode.text())
 
     def on_tick(self):
         prev = (self.pet.num, self.pet.stage)
@@ -330,7 +365,7 @@ class TuiPetApp(App):
         reason = self.pet.can_train()
         if reason:
             self._do(reason); return
-        self.push_screen(training.TrainingScreen(self.pet), self._after_train)
+        self._open_mode(training.TrainingPanel(self.pet), self._after_train)
 
     def _after_train(self, msg):
         if msg:
@@ -341,7 +376,7 @@ class TuiPetApp(App):
         reason = self.pet.can_battle()
         if reason:
             self._do(reason); return
-        self.push_screen(battlescreen.BattleScreen(self.pet), self._after_battle)
+        self._open_mode(battlescreen.BattlePanel(self.pet), self._after_battle)
 
     def _after_battle(self, battle):
         if battle is not None:
@@ -353,7 +388,7 @@ class TuiPetApp(App):
             self._do("Too young for the cup."); return
         if self.pet.asleep:
             self._do("zzz... asleep"); return
-        self.push_screen(tournamentscreen.TournamentScreen(self.pet), self._after_cup)
+        self._open_mode(tournamentscreen.TournamentPanel(self.pet), self._after_cup)
 
     def _after_cup(self, msg):
         if msg:
@@ -364,7 +399,7 @@ class TuiPetApp(App):
         reason = jogress.can_jogress(self.pet)
         if reason:
             self._do(reason); return
-        self.push_screen(jogressscreen.JogressScreen(self.pet), self._after_jogress)
+        self._open_mode(jogressscreen.JogressPanel(self.pet), self._after_jogress)
 
     def _after_jogress(self, msg):
         if msg:
@@ -372,13 +407,13 @@ class TuiPetApp(App):
         self.repaint()
 
     def action_shop(self):
-        self.push_screen(shopscreen.ShopScreen(self.pet), self._after_shop)
+        self._open_mode(shopscreen.ShopPanel(self.pet), self._after_shop)
 
     def action_habitat(self):
-        self.push_screen(habitatscreen.HabitatScreen(self.pet), self._after_habitat)
+        self._open_mode(habitatscreen.HabitatPanel(self.pet), self._after_habitat)
 
     def action_digicore(self):
-        self.push_screen(digicorescreen.DigiCoreScreen(self.pet), lambda _=None: self.repaint())
+        self._open_mode(digicorescreen.DigiCorePanel(self.pet), lambda _=None: self.repaint())
 
     def _after_habitat(self, msg):
         if msg:
@@ -395,7 +430,7 @@ class TuiPetApp(App):
             self._do("Too young to adventure."); return
         if self.pet.asleep:
             self._do("zzz... asleep"); return
-        self.push_screen(adventurescreen.AdventureScreen(self.pet), lambda _=None: self.repaint())
+        self._open_mode(adventurescreen.AdventurePanel(self.pet), lambda _=None: self.repaint())
 
     def action_play(self): self._do(self.pet.play())
     def action_clean(self): self._do(self.pet.clean())
@@ -403,8 +438,8 @@ class TuiPetApp(App):
     def action_sleep(self): self._do(self.pet.toggle_sleep())
     def action_new(self):
         gen = self.pet.generation + 1
-        self.push_screen(eggselectscreen.EggSelectScreen(),
-                         lambda et: self._hatch_new(et, gen))
+        self._open_mode(eggselectscreen.EggSelectPanel(),
+                        lambda et: self._hatch_new(et, gen))
 
     def _hatch_new(self, egg_type, gen):
         self.pet = Pet.new_egg(generation=gen, egg_type=egg_type)
