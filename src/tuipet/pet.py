@@ -6,6 +6,7 @@ from . import data
 from . import egg as egg_mod
 from . import evolution
 from . import weather as wx
+from . import theme
 
 
 def _clamp(v, lo, hi):
@@ -314,7 +315,7 @@ class Pet:
             idx = 4
         else:
             idx = {"dawn": 0, "day": 1, "dusk": 2, "night": 3}.get(self.day_phase, 1)
-        return frames[min(idx, len(frames) - 1)]
+        return theme.weather_tint(frames[min(idx, len(frames) - 1)], self.weather)
 
     def _affinity(self):
         """Net Field/Element fit with the current home: +compatible, -incompatible."""
