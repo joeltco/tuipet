@@ -143,8 +143,11 @@ class Screen(Static):
         self.frame_i = 0
         self.walk_x = 0
         self.walk_dir = 1
+        self.fx = None        # active care-action animation
 
     def paint(self, pet: Pet):
+        if self.fx:
+            return self._paint_fx(pet)
         on, bg = PHASE_PALETTE.get(pet.day_phase, (LCD_ON, LCD_BG))
         bgimg = self._background(pet)
         corner = None                      # DVPet shows time via bg frame + palette, no corner icon
@@ -204,6 +207,75 @@ class Screen(Static):
         if abs(self.walk_x) >= WALK_RANGE:     # reached an edge: turn around
             self.walk_dir = -self.walk_dir
             self.walk_x = max(-WALK_RANGE, min(WALK_RANGE, self.walk_x))
+
+    # ---- care-action animations (DVPet SpriteAnim eat/clean/cheer) -----------
+    def start_fx(self, kind, icon=None):
+        steps = {"eat": 16, "cheer": 14, "clean": 16}.get(kind, 12)
+        self.fx = {"kind": kind, "step": 0, "steps": steps, "icon": icon}
+
+    def advance_fx(self):
+        if not self.fx:
+            return False
+        self.fx["step"] += 1
+        if self.fx["step"] < self.fx["steps"]:
+            return True
+        kind = self.fx["kind"]
+        self.fx = None
+        if kind == "eat":          # a good meal is chased by the happy 'sunshine'
+            self.start_fx("cheer")
+        return self.fx is not None
+
+    def _pose_rows(self, pet, role, phase):
+        if pet.num == -1:
+            rec = egg_mod.record(pet.egg_type)
+            roles = egg_mod.ROLES
+        else:
+            _, by_num = data.load_sprites()
+            rec = by_num[pet.num]
+            roles = data.ROLES
+        frames = roles.get(role, [0])
+        first = next((f for f in rec["frames"] if f), rec["frames"][0])
+        return rec["frames"][frames[phase % len(frames)]] or first
+
+    def _food_frames(self, key):
+        raw = data.load_icons().get(key)
+        if not raw:
+            return None
+        return [[r[::3] for r in fr[::3]] for fr in raw]   # 24px (3x) -> native 8px
+
+    def _paint_fx(self, pet):
+        fx = self.fx
+        on, bg = PHASE_PALETTE.get(pet.day_phase, (LCD_ON, LCD_BG))
+        bgimg = self._background(pet)
+        if bgimg:
+            on = "#eef6cc" if pet.day_phase == "night" else "#0a280a"
+        px_h = SCREEN_ROWS * 2
+        step = fx["step"]
+        pose = {"eat": "eat", "clean": "idle", "cheer": "happy"}.get(fx["kind"], "idle")
+        rows = self._pose_rows(pet, pose, step // 2)
+        overlay = _weather_overlay(pet.weather, self.frame_i, SCREEN_COLS, px_h)
+        xshift = 0
+        if fx["kind"] == "eat":
+            food = self._food_frames(fx.get("icon") or "f:0")
+            if food:
+                if step < 5:
+                    fi, fy = 0, 2 + step                       # food drops in front
+                else:
+                    fi, fy = min(3, 1 + (step - 5) // 3), 7     # ...bitten away to nothing
+                overlay += _blit(food[min(fi, len(food) - 1)], 5, fy)
+        elif fx["kind"] == "clean":
+            wash = data.load_effects().get("wash", [None])[0]
+            if wash:
+                wx = SCREEN_COLS - 3 - step * 3                # sweep the screen R -> L
+                overlay += _blit(wash, wx, max(0, (px_h - len(wash)) // 2))
+            xshift = -max(0, min(8, step - 5))                 # pet swept leftward
+        elif fx["kind"] == "cheer":
+            hap = data.load_effects().get("happy")
+            if hap and (step // 2) % 2 == 0:                   # pulsing happy sparkle
+                hf = hap[(step // 2) % len(hap)]
+                overlay += _blit(hf, SCREEN_COLS // 2 - len(hf[0]) // 2, 1)
+        self.update(render_screen(rows, SCREEN_COLS, SCREEN_ROWS, on, bg,
+                                  xshift=xshift, overlay=overlay, bgimg=bgimg))
 
 
 class Stats(Static):
@@ -358,14 +430,18 @@ class TuiPetApp(App):
         self.stats_w.paint(self.pet)
 
     def on_anim(self):                         # slow tick: idle pet bob
-        if self.mode is None:
+        if self.mode is None and not self.screen_w.fx:
             self.screen_w.advance()
             self.screen_w.paint(self.pet)
 
-    def on_fast(self):                         # fast tick: active panel animation
-        if self.mode is not None and hasattr(self.mode, "anim"):
-            self.mode.anim()
-            self.screen_w.update(self._center(self.mode.text()))
+    def on_fast(self):                         # fast tick: panel + care-action animation
+        if self.mode is not None:
+            if hasattr(self.mode, "anim"):
+                self.mode.anim()
+                self.screen_w.update(self._center(self.mode.text()))
+        elif self.screen_w.fx:
+            self.screen_w.advance_fx()
+            self.screen_w.paint(self.pet)
 
     def on_tick(self):
         prev = (self.pet.num, self.pet.stage)
@@ -385,7 +461,11 @@ class TuiPetApp(App):
         self.flash(result)
         self.repaint()
 
-    def action_feed(self): self._do(self.pet.feed())
+    def action_feed(self):
+        msg = self.pet.feed()
+        if self.pet.anim == "eat":
+            self.screen_w.start_fx("eat", "f:0")
+        self._do(msg)
     def action_train(self):
         reason = self.pet.can_train()
         if reason:
@@ -458,7 +538,11 @@ class TuiPetApp(App):
         self._open_mode(adventurescreen.AdventurePanel(self.pet), lambda _=None: self.repaint())
 
     def action_play(self): self._do(self.pet.play())
-    def action_clean(self): self._do(self.pet.clean())
+    def action_clean(self):
+        msg = self.pet.clean()
+        if self.pet.anim == "wash":
+            self.screen_w.start_fx("clean")
+        self._do(msg)
     def action_heal(self): self._do(self.pet.heal())
     def action_sleep(self): self._do(self.pet.toggle_sleep())
     def action_new(self):
