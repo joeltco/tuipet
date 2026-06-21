@@ -10,6 +10,7 @@ METER_W = 30
 ZONE_W = 5
 REPS = 3
 from .theme import LCD_ON, LCD_BG, INK, INK_B, DIM, MID, ACCENT, SIL_DAY, SIL_NIGHT
+from . import menu
 
 
 class TrainingPanel:
@@ -89,12 +90,11 @@ class TrainingPanel:
                 meter.append("─", style=f"{MID} on {LCD_BG}")
         meter.append("]", style=INK)
         dots = "●" * self.hits + "○" * (REPS - self.rep) + "·" * (self.rep - self.hits)
-        out = Text()
-        out.append("TRAINING\n", style=INK_B)
+        out = menu.bar("TRAINING", self.train_attr)
         out.append(sprite)
         out.append("\n")
         out.append(meter)
-        out.append(f"\nrep {min(self.rep + 1, REPS)}/{REPS}  hits {dots}  {self.train_attr}\n", style=INK)
-        out.append(f"{self.flash}\n", style=INK_B)
-        out.append("SPACE strike  1/2/3 type  ESC stop", style=DIM)
+        out.append(f"\nrep {min(self.rep + 1, REPS)}/{REPS}   hits {dots}\n", style=INK)
+        out.append_text(menu.note(self.flash))
+        out.append_text(menu.footer("SPACE strike   1/2/3 type   ESC stop"))
         return out

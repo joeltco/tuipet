@@ -24,6 +24,21 @@ def header(title, right=""):
     return t
 
 
+def bar(title, right=""):
+    """Compact 1-line title (bold) + optional right-aligned info, no divider -
+    for the scene-heavy activity screens that can't spare a line."""
+    t = Text()
+    title = title[:W]
+    if right:
+        gap = max(1, W - len(title) - len(right))
+        t.append(title + " " * gap, style=INK_B)
+        t.append(right, style=DIM)
+    else:
+        t.append(title, style=INK_B)
+    t.append("\n")
+    return t
+
+
 def row(label, selected=False):
     """A selectable list row with a ▸ cursor; selected rows render inverted."""
     line = (("▸ " if selected else "  ") + label)[:W].ljust(W)

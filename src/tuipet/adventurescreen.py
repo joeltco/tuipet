@@ -7,7 +7,8 @@ from .battlescreen import BattlePanel
 from .render import render_scene
 
 from .theme import LCD_ON, LCD_BG, INK, INK_B, DIM
-COLS, ROWS = 40, 8
+from . import menu
+COLS, ROWS = 40, 7
 BAR_W = 28
 
 
@@ -71,16 +72,15 @@ class AdventurePanel:
         fill = round(a.pct / 100 * BAR_W)
         bar = "[" + "█" * fill + "·" * (BAR_W - fill) + "]"
         lives = "♥" * a.lives + "·" * (3 - a.lives)
-        out = Text()
-        out.append(f"ADVENTURE  Map {a.mi + 1}-{a.zi + 1}\n", style=INK_B)
+        out = menu.bar("ADVENTURE", f"Map {a.mi + 1}-{a.zi + 1}")
         out.append_text(scene)
         out.append(f"\n{bar} {a.pct}%\n", style=INK)
-        out.append(f"Life {lives}  Bits {self.pet.bits}  Bag {sum(self.pet.inventory.values())}\n", style=INK)
-        out.append((a.last or "") + "\n", style=INK_B)
+        out.append(f"Life {lives}   Bits {self.pet.bits}   Bag {sum(self.pet.inventory.values())}\n", style=INK)
+        out.append_text(menu.note(a.last or ""))
         if a.done:
-            out.append("Journey complete!   ESC", style=INK_B)
+            out.append_text(menu.footer("Journey complete!   ESC"))
         elif self.travelling:
-            out.append("travelling...  SPACE stop  ESC out", style=DIM)
+            out.append_text(menu.footer("travelling...   SPACE stop   ESC out"))
         else:
-            out.append("stopped.  SPACE go  ESC out", style=DIM)
+            out.append_text(menu.footer("stopped.   SPACE go   ESC out"))
         return out

@@ -5,8 +5,9 @@ from . import data, jogress
 from .render import render_scene
 
 from .theme import LCD_ON, LCD_BG, INK, INK_B, DIM, SEL
-COLS, ROWS = 40, 9
-VISIBLE = 4
+from . import menu
+COLS, ROWS = 40, 7
+VISIBLE = 3
 
 
 class JogressPanel:
@@ -44,12 +45,13 @@ class JogressPanel:
         return rec["frames"][idx] or rec["frames"][0]
 
     def text(self):
-        out = Text()
-        out.append("JOGRESS - DNA Fusion\n", style=INK_B)
+        out = menu.bar("JOGRESS", "DNA Fusion")
         if not self.options:
-            out.append("\n  No partner resonates right now.\n", style=DIM)
-            out.append("  (Champion+ with a matching partner.)\n\n\n\n", style=DIM)
-            out.append("ESC back", style=DIM)
+            out.append_text(menu.blanks(2))
+            out.append_text(menu.note("No partner resonates now."))
+            out.append("  Champion+ with a matching partner.\n", style=DIM)
+            out.append_text(menu.blanks(1))
+            out.append_text(menu.footer("ESC back"))
             return out
         opt = self.fused or self.options[self.cursor]
         if self.fused:
@@ -64,18 +66,15 @@ class JogressPanel:
         out.append_text(scene)
         out.append("\n")
         if self.fused:
-            out.append(f"{self.result_msg}\n", style=INK_B)
-            out.append("\n", style=INK)
-            out.append("the fusion stabilises...  (SPACE)", style=DIM)
+            out.append_text(menu.note(self.result_msg))
+            out.append_text(menu.footer("the fusion stabilises...   SPACE"))
             return out
         lo = max(0, min(self.cursor - VISIBLE // 2, len(self.options) - VISIBLE))
+        shown = 0
         for i in range(lo, min(lo + VISIBLE, len(self.options))):
             o = self.options[i]
-            sel = i == self.cursor
-            mark = ">" if sel else " "
-            line = f"{mark}+{o['partner_name'][:11]:11}={o['name'][:13]}({o['attribute'][:2]})"
-            out.append(line[:38] + "\n", style=SEL if sel else INK)
-        for _ in range(VISIBLE - min(VISIBLE, len(self.options))):
-            out.append("\n", style=INK)
-        out.append("up/dn pick  ENTER fuse  ESC out", style=DIM)
+            out.append_text(menu.row(f"+{o['partner_name'][:10]} = {o['name'][:12]}({o['attribute'][:2]})", i == self.cursor))
+            shown += 1
+        out.append_text(menu.blanks(VISIBLE - shown))
+        out.append_text(menu.footer("up/dn pick   ENTER fuse   ESC out"))
         return out

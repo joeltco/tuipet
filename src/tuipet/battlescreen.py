@@ -6,7 +6,8 @@ from .battle import Battle
 from .render import render_scene
 
 from .theme import LCD_ON, LCD_BG, INK, INK_B, DIM, SIL_DAY, SIL_NIGHT
-COLS, ROWS = 40, 9
+from . import menu
+COLS, ROWS = 40, 8
 _E = data.load_effects()
 ATTACK = (_E.get("attack") or [None])[0]
 HIT = (_E.get("hit") or [None])[0]
@@ -85,16 +86,15 @@ class BattlePanel:
         on = SIL_NIGHT if self.pet.day_phase == "night" else (SIL_DAY if bgimg else LCD_ON)
         scene = render_scene([(pet_rows, pet_x, True), (enemy_rows, enemy_x, False)],
                              COLS, ROWS, on, LCD_BG, overlay=overlay, bgimg=bgimg)
-        title = f"BATTLE vs {b.enemy['name']}" + (" (BOSS)" if b.enemy["boss"] else "")
-        out = Text()
-        out.append(title + "\n", style=INK_B)
+        boss = "BOSS" if b.enemy["boss"] else ""
+        out = menu.bar(f"BATTLE  vs {b.enemy['name']}"[:32], boss)
         out.append_text(scene)
         out.append(f"\nYou {self._hp(b.pet_hp, b.pet_max)}", style=INK)
-        out.append(f"    Foe[{b.enemy['attribute'][:2]}] {self._hp(b.enemy_hp, b.enemy_max)}\n", style=INK)
-        out.append((b.last or "Choose your attack!") + "\n", style=INK_B)
+        out.append(f"   Foe[{b.enemy['attribute'][:2]}] {self._hp(b.enemy_hp, b.enemy_max)}\n", style=INK)
+        out.append_text(menu.note(b.last or "Choose your attack!"))
         if b.over:
             res = "VICTORY!" if b.won else "DEFEAT"
-            out.append(f"{res}  {b.reward}   SPACE", style=INK_B)
+            out.append_text(menu.footer(f"{res}  {b.reward}   SPACE"))
         else:
-            out.append("1 Vac  2 Data  3 Vir   ESC flee", style=DIM)
+            out.append_text(menu.footer("1 Vac   2 Data   3 Vir   ESC flee"))
         return out
