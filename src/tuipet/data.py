@@ -32,6 +32,11 @@ ROLES = {
     "sad":    [6],
     "tired":  [9],
     "exhausted": [10],
+    "yawn":   [8, 1],      # yawning(): mouth-open 8 -> settle 1
+    "wake":   [3, 1],      # wakeUp(): groggy 3 -> up
+    "surprise": [4, 6],    # surprising(): startle poses
+    "shield": [4],         # weathering() rain: shielding pose
+    "huddle": [9],         # weathering() snow/cold: huddle pose
 }
 # Roles drawn as a left/right mirror flip on alternating frames (head-shake etc.)
 MIRROR_ROLES = {"refuse"}

@@ -179,8 +179,8 @@ class Screen(Static):
         idx = frames[self.frame_i % len(frames)]
         rows = rec["frames"][idx] or first
         xshift, mirror = 0, False
-        if pet.is_geriatric and pet.anim in ("idle", "walk"):
-            rows = rec["frames"][9] or first   # elderly: stand still in the tired pose
+        if pet.anim in ("idle", "walk") and (pet.is_geriatric or pet.sick):
+            rows = rec["frames"][9] or first   # elderly/sick: stand still in the weary pose
         elif pet.anim in ("idle", "walk") and pet.num != -1 and not pet.poop:
             # pace back and forth, facing the way it moves (but stand still while
             # there's poop on the floor, so the pet never walks through it)

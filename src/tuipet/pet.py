@@ -216,7 +216,7 @@ class Pet:
             # sleep through the night; wake in the morning once decently rested
             if self.day_phase != "night" and self.energy >= 60:
                 self.asleep = False
-                self._set_anim("idle", 0)
+                self._set_anim("wake", 1.6)  # morning stretch (DVPet wakeUp())
             return
 
         night = self.day_phase == "night"
@@ -241,6 +241,7 @@ class Pet:
         if self._poop_t >= 2700:
             self._poop_t = 0
             self.poop += 1
+            self._set_anim("poop", 2.2)          # squat-and-go (DVPet poop())
         # sickness from filth / starvation
         if (self.poop >= 3 or self.hunger == 0) and not self.sick and random.random() < 0.02 * dt:
             self.sick = True
@@ -250,7 +251,7 @@ class Pet:
         self._wake_grace = max(0.0, getattr(self, "_wake_grace", 0.0) - dt)
         if not self.asleep and self._wake_grace <= 0 and ((night and self.energy < 85) or self.energy <= 0):
             self.asleep = True
-            self._set_anim("sleep", 0)
+            self._set_anim("yawn", 1.8)   # yawn, then settle into sleep
 
         # lifespan: neglect burns life down faster than the natural clock
         extra = 0.0
