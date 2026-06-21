@@ -19,6 +19,14 @@ LIFE_START = 360.0
 STAGE_LIFE = {"Rookie": 420.0, "Champion": 600.0, "Ultimate": 840.0, "Mega": 1080.0}
 GERIATRIC_REMAIN = 75.0   # last N seconds of life = elderly
 
+# X-Antibody: a special state that unlocks evolution into the "X" Digimon forms.
+# None -> Temporary (decays) -> Permanent -> XProgram.  Acquired by a rare natural
+# birth roll or the X-Antibody / X-Program items.  (DVPet birth is 1/1000; bumped
+# for tuipet so it is an occasional surprise rather than never seen.)
+X_COUNT_MAX = 150.0
+X_BIRTH_TARGET, X_BIRTH_BOUND = 1, 50
+_XA_ORDER = {"None": 0, "Temporary": 1, "Permanent": 2, "XProgram": 3}
+
 # Personality: DVPet's 3x3x3 table over (disposition, glutton, restless), each in
 # {-1 low, 0 neutral, +1 high}.  Ported verbatim from PhysicalState.checkPersonality.
 _PERSONALITY = {
@@ -95,6 +103,8 @@ class Pet:
     habitat: int = 2                # current home (2 = Plains, a temperate default)
     habitats: list = _dcf(default_factory=lambda: [0, 2])
     time_pref: dict = _dcf(default_factory=lambda: {"dawn": 0, "day": 0, "dusk": 0, "night": 0})
+    x_antibody: str = "None"
+    x_count: float = 0.0
     inventory: dict = _dcf(default_factory=dict)
     # transient animation request, consumed by the UI
     anim: str = "idle"
@@ -135,6 +145,8 @@ class Pet:
         import random as _r
         self.evolve_to(_r.choice(fresh))
         self.hatching = False
+        if self.x_antibody == "None" and _r.randint(0, X_BIRTH_BOUND - 1) < X_BIRTH_TARGET:
+            self._set_xantibody("Permanent")          # born a natural X-Antibody carrier
 
     @classmethod
     def from_num(cls, num):
@@ -149,6 +161,10 @@ class Pet:
         self._update_weather(dt)          # ...and so does the weather, over the grave
         if self.dead:
             return
+        if self.x_antibody == "Temporary":          # a protoform fades if unused
+            self.x_count -= dt
+            if self.x_count <= 0:
+                self.x_antibody, self.x_count = "None", 0.0
         self.age_seconds += dt
         self.stage_seconds += dt
         if self.anim_ttl > 0:
@@ -312,6 +328,12 @@ class Pet:
         elif self.temp > target:
             self.temp = max(target, self.temp - wx.TEMP_RATE * dt)
 
+    def _set_xantibody(self, state):
+        """Raise the X-Antibody state (never downgrades except by expiry)."""
+        if _XA_ORDER[state] > _XA_ORDER.get(self.x_antibody, 0):
+            self.x_antibody = state
+        self.x_count = X_COUNT_MAX if self.x_antibody == "Temporary" else 0.0
+
     def buy_habitat(self, hid):
         habs = data.load_habitats()
         h = habs.get(hid)
@@ -384,6 +406,8 @@ class Pet:
         self.stage, self.attribute = r["stage"], r["attribute"]
         self.field = r.get("field", self.field)
         self.element = r.get("element", self.element)
+        if data.load_requirements().get(num, {}).get("xantibody", "None") in ("Induced", "Natural"):
+            self._set_xantibody("Permanent")          # the X-Antibody locks in
         self.stage_seconds = 0.0
         # per-stage care record resets; the next stage's care decides the next form
         self.care_mistakes = self.overeat = self.disturb = 0
@@ -560,6 +584,13 @@ class Pet:
         self.inventory[key] -= 1
         if self.inventory[key] <= 0:
             del self.inventory[key]
+        if e.get("special") == "xantibody":
+            self._set_anim("happy", 1.5)
+            if key == "i:14":
+                self._set_xantibody("Permanent")
+                return "X-Program complete! The X-Antibody is permanent."
+            self._set_xantibody("Temporary")
+            return "X-Antibody induced! Evolve soon to make it stick."
         is_food = key.startswith("f:")
         if e["hunger"]:
             self.hunger = _clamp(self.hunger + e["hunger"], 0, 4)

@@ -11,6 +11,7 @@ import random
 from . import data
 
 WEIGHT_THRESH = 0.5  # Config.OverUnderWeightThreshold
+X_ANTIBODY_RATE = 3  # Config.XAntibodyRate — bonus when an X-form's req is met
 
 # Config *Rate constants used to weight how well each met gate counts.
 R = {
@@ -77,6 +78,8 @@ def check(pet, num):
         return False
     if req.get("special", "None") != "None":
         return False  # jogress/fusion/mode need a special trigger, not normal evolution
+    if req.get("xantibody", "None") in ("Induced", "Natural") and getattr(pet, "x_antibody", "None") == "None":
+        return False  # X-Antibody forms are unreachable without the antibody
     vac, dat, vir = _stats(pet)
     total = vac + dat + vir
     if not _stat_total_ok(req, total):
@@ -99,6 +102,9 @@ def check(pet, num):
     ]
     if not all(gates):
         return False
+    # the antibody commits the pet to its X-form: skip the random prob gate
+    if req.get("xantibody", "None") in ("Induced", "Natural") and getattr(pet, "x_antibody", "None") != "None":
+        return True
     # probability: prob >= probBound -> always; else prob must beat a roll
     prob, bound = req["prob"], req["probBound"]
     if prob < bound:
@@ -139,6 +145,8 @@ def fulfilled(pet, num):
     if cond != "None" and _cmp(cond, val, pet.care_mistakes):
         score += {"LessThan": R["mistakeLess"], "GreaterThan": R["mistakeGreater"],
                   "EqualTo": R["mistakeEqual"]}.get(cond, R["mistakeNone"])
+    if req.get("xantibody", "None") in ("Induced", "Natural") and getattr(pet, "x_antibody", "None") != "None":
+        score += X_ANTIBODY_RATE
     return score
 
 
@@ -165,14 +173,30 @@ def deviation(pet, num):
     return dev
 
 
+def _is_xform(num):
+    return data.load_requirements().get(num, {}).get("xantibody", "None") in ("Induced", "Natural")
+
+
 def select(pet):
-    """Return the chosen evolution target num, or None."""
+    """Return the chosen evolution target num, or None.
+
+    Normal evolution climbs a stage; with the X-Antibody, an X-form is also
+    reachable -- including a same-stage reformat (e.g. Agumon -> Agumon X)."""
     _, by_num = data.load_sprites()
-    targets = [t for t in data.load_evolutions().get(pet.num, [])
-               if t in by_num and by_num[t]["stage"] != pet.stage]
+    has_xa = getattr(pet, "x_antibody", "None") != "None"
+    targets = []
+    for t in data.load_evolutions().get(pet.num, []):
+        if t not in by_num or t == pet.num:
+            continue
+        if by_num[t]["stage"] != pet.stage or (has_xa and _is_xform(t)):
+            targets.append(t)
     valid = [t for t in targets if check(pet, t)]
     if not valid:
         return None
+    if has_xa:
+        xvalid = [t for t in valid if _is_xform(t)]
+        if xvalid:
+            valid = xvalid          # the X-Antibody steers evolution to an X-form
     best = max(fulfilled(pet, t) for t in valid)
     top = [t for t in valid if abs(fulfilled(pet, t) - best) < 1e-9]
     if len(top) > 1:

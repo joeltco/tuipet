@@ -194,6 +194,7 @@ def load_requirements():
             "weight": (r.get("Weight") or "None").strip(),
             "base_weight": int(float(r.get("NewWeight") or 20)),
             "ideal_temp": _temp_range(r.get("IdealTemp")),
+            "xantibody": (r.get("Xantibody") or "None").strip() or "None",
             "mood": (r.get("Mood") or "None").strip(),
             "time": (r.get("Time") or "None").strip(),
             "special": (r.get("SpecialEvolution") or "None").strip() or "None",
@@ -351,6 +352,15 @@ def load_shop():
         except ValueError:
             pass
         out.append(entry)
+    # special X-Antibody gear — not in shopConsumable.csv, but buyable here (and so
+    # droppable as rare loot); using one induces the X-Antibody state, not care stats
+    for sid, price in ((79, 2000), (14, 4000)):
+        base = items.get(sid)
+        key = f"i:{sid}"
+        if base and key not in seen:
+            entry = dict(base)
+            entry["key"], entry["price"], entry["special"] = key, price, "xantibody"
+            out.append(entry); seen.add(key)
     out.sort(key=lambda e: e["price"])
     return out
 

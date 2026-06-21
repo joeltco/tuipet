@@ -27,13 +27,16 @@ def build_pages(pet):
     temperament = ["mellow", "steady", "restless"][pet._restless() + 1]
     disp = ["sour", "even", "sunny"][pet._disposition() + 1]
     fav, dis = pet.favorite_time(), pet.disliked_time()
+    status = [
+        ("Name", pet.name), ("No.", f"#{pet.num}"), ("Stage", pet.stage),
+        ("Attrib", pet.attribute), ("Field", pet.field or "-"),
+        ("Element", pet.element or "-"), ("Gen", str(pet.generation)),
+        ("Age", _mins(pet.age_seconds)), ("Life", f"{_mins(rem)} left"),
+    ]
+    if pet.x_antibody != "None":
+        status.append(("X-Anti", pet.x_antibody))
     return [
-        ("STATUS", [
-            ("Name", pet.name), ("No.", f"#{pet.num}"), ("Stage", pet.stage),
-            ("Attrib", pet.attribute), ("Field", pet.field or "-"),
-            ("Element", pet.element or "-"), ("Gen", str(pet.generation)),
-            ("Age", _mins(pet.age_seconds)), ("Life", f"{_mins(rem)} left"),
-        ]),
+        ("STATUS", status),
         ("POWER", [
             ("Vaccine", str(pet.vaccine)), ("Data", str(pet.data_power)),
             ("Virus", str(pet.virus)), ("Effort", f"{pet.strength}/4"),
@@ -99,7 +102,7 @@ class DigiCoreScreen(ModalScreen):
         for label, val in rows:
             out.append(f" {label:<8}", style=DIM)
             out.append(f"{val}\n", style=INK_B)
-        for _ in range(9 - len(rows)):
+        for _ in range(max(0, 9 - len(rows))):
             out.append("\n")
         dots = " ".join((chr(0x25CF) if j == self.i else chr(0x25CB)) for j in range(len(self.pages)))
         out.append(f"{dots}\n", style=INK)

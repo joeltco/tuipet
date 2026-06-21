@@ -166,8 +166,9 @@ class Stats(Static):
         aff = pet._affinity()
         amark = ("[green]" + chr(0x2665) + "[/]" if aff > 0
                  else ("[red]" + chr(0x2716) + "[/]" if aff < 0 else "[dim]·[/dim]"))
+        xm = " [b magenta]X[/]" if pet.x_antibody != "None" else ""
         lines = [
-            f"[b]{pet.name}[/b]  [dim]gen {pet.generation}[/dim]",
+            f"[b]{pet.name}[/b]{xm}  [dim]gen {pet.generation}[/dim]",
             f"[dim]{pet.stage} · {pet.attribute}[/dim]",
             f"[dim]@{pet.habitat_obj()['name']}[/dim] {amark} [dim]{pet.season}[/dim]",
             env,
