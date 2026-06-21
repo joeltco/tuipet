@@ -543,7 +543,11 @@ class TuiPetApp(App):
         if self.pet.anim == "wash":
             self.screen_w.start_fx("clean")
         self._do(msg)
-    def action_heal(self): self._do(self.pet.heal())
+    def action_heal(self):
+        msg = self.pet.heal()
+        if self.pet.anim == "heal":
+            self.screen_w.start_fx("cheer")
+        self._do(msg)
     def action_sleep(self): self._do(self.pet.toggle_sleep())
     def action_new(self):
         gen = self.pet.generation + 1
