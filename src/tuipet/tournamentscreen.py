@@ -6,7 +6,7 @@ from .tournament import Tournament
 from .battlescreen import BattlePanel
 from .render import render_scene
 
-from .theme import LCD_ON, LCD_BG, INK, INK_B, DIM
+from .theme import LCD_ON, LCD_BG, INK, INK_B, DIM, SIL_DAY, SIL_NIGHT
 from . import menu
 COLS, ROWS = 40, 7
 
@@ -48,10 +48,12 @@ class TournamentPanel:
         if self.sub is not None:
             return self.sub.text()
         t = self.tourney
+        bgimg = self.pet.background()
+        on = SIL_NIGHT if self.pet.day_phase == "night" else (SIL_DAY if bgimg else LCD_ON)
         if t.over:
             out = menu.bar(t.name, "RESULT")
             scene = render_scene([(self._frames(self.pet.num), (COLS - 16) // 2, False)],
-                                 COLS, ROWS, LCD_ON, LCD_BG)
+                                 COLS, ROWS, on, LCD_BG, bgimg=bgimg)
             out.append_text(scene)
             out.append(f"\n{'●' * min(self.pet.trophies, 14)}\n", style=INK_B)
             out.append_text(menu.note(t.last))
@@ -62,7 +64,7 @@ class TournamentPanel:
         opp_rows = self._frames(opp["num"])
         ow = max(len(r) for r in opp_rows)
         scene = render_scene([(pet_rows, 2, True), (opp_rows, COLS - ow - 2, False)],
-                             COLS, ROWS, LCD_ON, LCD_BG)
+                             COLS, ROWS, on, LCD_BG, bgimg=bgimg)
         out = menu.bar(t.name, f"{t.round_name} {t.round + 1}/3")
         out.append_text(scene)
         out.append(f"\nvs {opp['name']}[{opp['attribute'][:2]}]   Trophy {self.pet.trophies}\n", style=INK)
