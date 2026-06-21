@@ -19,6 +19,20 @@ LIFE_START = 360.0
 STAGE_LIFE = {"Rookie": 420.0, "Champion": 600.0, "Ultimate": 840.0, "Mega": 1080.0}
 GERIATRIC_REMAIN = 75.0   # last N seconds of life = elderly
 
+# Personality: DVPet's 3x3x3 table over (disposition, glutton, restless), each in
+# {-1 low, 0 neutral, +1 high}.  Ported verbatim from PhysicalState.checkPersonality.
+_PERSONALITY = {
+    (0, 0): ("Docile", "Restless", "Calm"),
+    (0, 1): ("Gluttonous", "Hasty", "Lazy"),
+    (0, -1): ("Content", "Fidgety", "Stoic"),
+    (1, 0): ("Cheerful", "Hyper", "Carefree"),
+    (1, 1): ("Eager", "Playful", "Loafing"),
+    (1, -1): ("Generous", "Antsy", "Mellow"),
+    (-1, 0): ("Serious", "Anxious", "Apathetic"),
+    (-1, 1): ("Selfish", "Impish", "Lethargic"),
+    (-1, -1): ("Tolerant", "Unruly", "Callous"),
+}
+
 # Day/night: the world runs on an accelerated clock. One full DAY_LENGTH-second
 # cycle runs dawn -> day -> dusk -> night. Night makes the pet sleepy: kept awake
 # it tires and sulks faster, while rest is deepest then.
@@ -80,6 +94,7 @@ class Pet:
     element: str = ""
     habitat: int = 2                # current home (2 = Plains, a temperate default)
     habitats: list = _dcf(default_factory=lambda: [0, 2])
+    time_pref: dict = _dcf(default_factory=lambda: {"dawn": 0, "day": 0, "dusk": 0, "night": 0})
     inventory: dict = _dcf(default_factory=dict)
     # transient animation request, consumed by the UI
     anim: str = "idle"
@@ -154,6 +169,7 @@ class Pet:
 
         if self.stage != "Egg":
             self._temperature_effects(dt)
+            self._track_time_pref(dt)
         if self.asleep:
             rate = 10 if self.day_phase == "night" else 5   # rest is deepest at night
             self.energy = _clamp(self.energy + rate * dt, 0, 100)
@@ -243,6 +259,36 @@ class Pet:
         compat = (f in h["compat_fields"]) + (e in h["compat_elements"])
         incompat = (f in h["incompat_fields"]) + (e in h["incompat_elements"])
         return compat - incompat
+
+    def _track_time_pref(self, dt):
+        # the pet warms to the times of day it spends happy in, and sours on the
+        # rest -- DVPet's timeRanks favorite/disliked, kept lightweight
+        d = 1 if self.mood >= 60 else (-1 if self.mood <= 25 else 0)
+        if d:
+            ph = self.day_phase
+            self.time_pref[ph] = _clamp(self.time_pref.get(ph, 0) + d, -90, 90)
+
+    def _disposition(self):
+        return 1 if self.mood >= 70 else (-1 if self.mood <= 30 else 0)
+
+    def _glutton(self):
+        return 1 if self.overeat >= 4 else (-1 if self.overeat == 0 else 0)
+
+    def _restless(self):
+        return 1 if self.disturb >= 3 else (-1 if self.disturb == 0 else 0)
+
+    def personality(self):
+        if self.num == -1 or self.stage == "Egg":
+            return "Unhatched"
+        trio = _PERSONALITY[(self._disposition(), self._glutton())]
+        rst = self._restless()
+        return trio[0 if rst == 0 else (1 if rst == 1 else 2)]
+
+    def favorite_time(self):
+        return max(self.time_pref, key=self.time_pref.get) if any(self.time_pref.values()) else None
+
+    def disliked_time(self):
+        return min(self.time_pref, key=self.time_pref.get) if any(v < 0 for v in self.time_pref.values()) else None
 
     def _update_weather(self, dt):
         hab = self.habitat_obj()

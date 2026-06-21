@@ -12,6 +12,7 @@ from . import battlescreen
 from . import adventurescreen
 from . import shopscreen
 from . import habitatscreen
+from . import digicorescreen
 from . import persistence
 from . import jogressscreen
 from . import jogress
@@ -204,6 +205,7 @@ class TuiPetApp(App):
         ("f", "feed", "Feed"), ("t", "train", "Train"), ("b", "battle", "Battle"),
         ("p", "play", "Play"), ("c", "clean", "Clean"), ("h", "heal", "Heal"),
         ("a", "adventure", "Adventure"), ("o", "shop", "Shop"), ("e", "habitat", "Habitat"),
+        ("d", "digicore", "DigiCore"),
         ("j", "jogress", "Jogress"), ("u", "tournament", "Cup"),
         ("s", "sleep", "Sleep"), ("n", "new", "New pet"), ("q", "quit", "Quit"),
     ]
@@ -322,6 +324,9 @@ class TuiPetApp(App):
 
     def action_habitat(self):
         self.push_screen(habitatscreen.HabitatScreen(self.pet), self._after_habitat)
+
+    def action_digicore(self):
+        self.push_screen(digicorescreen.DigiCoreScreen(self.pet), lambda _=None: self.repaint())
 
     def _after_habitat(self, msg):
         if msg:
