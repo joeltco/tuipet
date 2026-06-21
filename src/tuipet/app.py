@@ -53,6 +53,49 @@ PHASE_PALETTE = {
     "night": ("#6f8f4f", "#0d1f1a"),   # dim glow on near-black
 }
 
+WEATHER_GLYPH = {
+    "Clear": "", "Cloudy": chr(0x2601), "Drizzling": chr(0x2602),
+    "Raining": chr(0x2602), "HeavyRain": chr(0x2614),
+    "LightSnow": chr(0x2744), "Snowing": chr(0x2744), "HeavySnow": chr(0x2744),
+}
+_RAIN = {"Drizzling", "Raining", "HeavyRain"}
+_SNOW = {"LightSnow", "Snowing", "HeavySnow"}
+_PRECIP_N = {"Drizzling": 5, "LightSnow": 6, "Raining": 11, "Snowing": 10,
+             "HeavyRain": 18, "HeavySnow": 16}
+CLOUD = ["0011100", "0111111", "1111111"]
+
+
+def _scale_hex(hexcol, f):
+    h = hexcol.lstrip("#")
+    r, g, b = (int(h[i:i + 2], 16) for i in (0, 2, 4))
+    cl = lambda v: max(0, min(255, int(v * f)))
+    return "#%02x%02x%02x" % (cl(r), cl(g), cl(b))
+
+
+def _weather_overlay(weather, frame_i, cols, px_h):
+    pts = []
+    if weather == "Cloudy" or weather in _RAIN or weather in _SNOW:
+        for y, line in enumerate(CLOUD):          # a cloud bank, top-left
+            for x, ch in enumerate(line):
+                if ch == "1":
+                    pts.append((1 + x, 1 + y))
+    n = _PRECIP_N.get(weather, 0)
+    if n:
+        snow = weather in _SNOW
+        for i in range(n):
+            x0 = (i * 7 + 3) % cols
+            base = (i * 5) % px_h
+            if snow:
+                y = (base + frame_i) % px_h                  # slow, drifting
+                x = (x0 + ((frame_i // 2 + i) % 3 - 1)) % cols
+                pts.append((x, y))
+            else:
+                y = (base + frame_i * 2) % px_h              # fast, slanted streaks
+                x = (x0 + y // 2) % cols
+                pts.append((x, y))
+                pts.append((x, (y - 1) % px_h))
+    return pts
+
 
 class Screen(Static):
     """The animated LCD screen."""
@@ -64,8 +107,17 @@ class Screen(Static):
     def paint(self, pet: Pet):
         on, bg = PHASE_PALETTE.get(pet.day_phase, (LCD_ON, LCD_BG))
         corner = SUN if pet.is_daytime else MOON
+        w = pet.weather
+        if w in _RAIN:
+            bg = _scale_hex(bg, 0.78)          # overcast dims the screen
+        elif w in _SNOW:
+            bg = _scale_hex(bg, 0.85)
+        elif w == "Cloudy":
+            bg = _scale_hex(bg, 0.9)
+        overlay = _weather_overlay(w, self.frame_i, SCREEN_COLS, SCREEN_ROWS * 2)
         if pet.dead:                           # a grave marker
-            self.update(render_screen(GRAVESTONE, SCREEN_COLS, SCREEN_ROWS, on, bg, corner=corner))
+            self.update(render_screen(GRAVESTONE, SCREEN_COLS, SCREEN_ROWS, on, bg,
+                                      corner=corner, overlay=overlay))
             return
         if pet.num == -1:                      # egg
             rec = egg_mod.record(pet.egg_type)
@@ -88,7 +140,7 @@ class Screen(Static):
         else:
             mirror = pet.anim in data.MIRROR_ROLES and self.frame_i % 2 == 1
         self.update(render_screen(rows, SCREEN_COLS, SCREEN_ROWS, on, bg,
-                                  mirror=mirror, xshift=xshift, corner=corner))
+                                  mirror=mirror, xshift=xshift, corner=corner, overlay=overlay))
 
     def advance(self):
         self.frame_i += 1
@@ -105,10 +157,14 @@ class Stats(Static):
         if pet.sick: deco.append("[red]+ sick[/]")
         if pet.poop: deco.append(f"[yellow]~poop x{pet.poop}[/]")
         mins, secs = divmod(int(pet.age_seconds), 60)
+        picon = chr(0x2600) if pet.is_daytime else chr(0x263E)
+        wglyph = WEATHER_GLYPH.get(pet.weather, "")
+        env = (f"[yellow]{picon}[/] [dim]{pet.day_phase}[/dim]   "
+               f"{wglyph} [dim]{pet.weather} {int(pet.temp)}\u00b0[/dim]")
         lines = [
             f"[b]{pet.name}[/b]  [dim]gen {pet.generation}[/dim]",
-            f"[dim]{pet.stage} · {pet.attribute}[/dim]  [yellow]{(chr(0x2600) if pet.is_daytime else chr(0x263E))}[/] [dim]{pet.day_phase}[/dim]",
-            "",
+            f"[dim]{pet.stage} · {pet.attribute}[/dim]  [dim]{pet.season}[/dim]",
+            env,
             f"Hunger  {hearts(pet.hunger)}",
             f"Effort  {hearts(pet.strength)}",
             f"Energy  {bar(pet.energy, color='cyan')}",

@@ -5,6 +5,7 @@ from dataclasses import dataclass, field
 from . import data
 from . import egg as egg_mod
 from . import evolution
+from . import weather as wx
 
 
 def _clamp(v, lo, hi):
@@ -72,6 +73,9 @@ class Pet:
     generation: int = 1
     dead: bool = False
     world_seconds: float = 0.0
+    temp: float = 50.0
+    day_temp: float = 50.0
+    weather: str = "Clear"
     inventory: dict = field(default_factory=dict)
     # transient animation request, consumed by the UI
     anim: str = "idle"
@@ -114,6 +118,7 @@ class Pet:
     # ---- per-tick simulation -------------------------------------------------
     def tick(self, dt):
         self.world_seconds += dt          # the day/night clock runs even past death
+        self._update_weather(dt)          # ...and so does the weather, over the grave
         if self.dead:
             return
         self.age_seconds += dt
@@ -134,6 +139,8 @@ class Pet:
                     self._hatch_into_fresh()
             return
 
+        if self.stage != "Egg":
+            self._temperature_effects(dt)
         if self.asleep:
             rate = 10 if self.day_phase == "night" else 5   # rest is deepest at night
             self.energy = _clamp(self.energy + rate * dt, 0, 100)
@@ -144,7 +151,11 @@ class Pet:
 
         night = self.day_phase == "night"
         # at night an awake pet tires and grows cranky about twice as fast
-        self.energy = _clamp(self.energy - (2.4 if night else 1.2) * dt, 0, 100)
+        drain = 2.4 if night else 1.2
+        lo, hi = self.ideal_temp
+        if self.weather in ("Clear", "Cloudy") and lo <= self.temp <= hi:
+            drain *= 0.6                  # fair weather + ideal temp eases fatigue
+        self.energy = _clamp(self.energy - drain * dt, 0, 100)
         self.mood = _clamp(self.mood - (1.4 if night else 0.8) * dt, 0, 100)
         # hunger ticks down on a slow clock
         self._hunger_t = getattr(self, "_hunger_t", 0) + dt
@@ -198,6 +209,51 @@ class Pet:
     @property
     def is_daytime(self):
         return self.day_phase in ("dawn", "day")
+
+    @property
+    def season(self):
+        return wx.season_for_day(int(self.world_seconds // DAY_LENGTH))
+
+    @property
+    def ideal_temp(self):
+        return data.load_requirements().get(self.num, {}).get("ideal_temp", (40, 60))
+
+    def _update_weather(self, dt):
+        # a fresh day-temperature target is rolled at each day rollover
+        day = int(self.world_seconds // DAY_LENGTH)
+        if getattr(self, "_weather_day", -1) != day:
+            self._weather_day = day
+            lo, hi = wx.SEASON_TEMP[self.season]
+            self.day_temp = random.randint(lo, hi)
+        # weather transitions on its own slow cadence
+        self._weather_t = getattr(self, "_weather_t", 0.0) + dt
+        if self._weather_t >= wx.WEATHER_CHECK_SEC:
+            self._weather_t = 0.0
+            self.weather = wx.next_weather(self.weather, self.season, self.day_temp)
+        # the actual temperature lapses toward the weather/time-adjusted target
+        target = wx.adjusted_day_temp(self.day_temp, self.weather, self.day_phase)
+        if self.temp < target:
+            self.temp = min(target, self.temp + wx.TEMP_RATE * dt)
+        elif self.temp > target:
+            self.temp = max(target, self.temp - wx.TEMP_RATE * dt)
+
+    def _temperature_effects(self, dt):
+        lo, hi = self.ideal_temp
+        too_hot = self.temp >= hi + wx.UPPER_IDEAL
+        too_cold = self.temp <= lo - wx.LOWER_IDEAL
+        self._comfort_t = getattr(self, "_comfort_t", 0.0) + dt
+        if self._comfort_t >= wx.IDEAL_TEMP_MOOD_SEC:
+            self._comfort_t = 0.0
+            if lo <= self.temp <= hi:
+                self.mood = _clamp(self.mood + wx.IDEAL_TEMP_INC, 0, 100)
+            elif too_hot or too_cold:
+                self.mood = _clamp(self.mood - wx.IDEAL_TEMP_DEC, 0, 100)
+        self._btemp_t = getattr(self, "_btemp_t", 0.0) + dt
+        if self._btemp_t >= wx.BAD_TEMP_SICK_SEC:
+            self._btemp_t = 0.0
+            if (too_hot or too_cold) and not self.sick and random.random() < wx.BAD_TEMP_SICK_CHANCE:
+                self.sick = True
+                self.sick_count += 1
 
     def _die(self):
         self.dead = True
@@ -428,6 +484,11 @@ class Pet:
             return "asleep"
         if self.sick:
             return "sick"
+        if self.temp <= wx.FREEZING_TEMP:
+            return "freezing"
+        lo, hi = self.ideal_temp
+        if self.temp >= hi + wx.UPPER_IDEAL:
+            return "overheating"
         if self.hunger == 0:
             return "starving"
         if self.poop >= 3:

@@ -143,6 +143,14 @@ def evolution_targets(num, stage):
 # where Key is a comparison operator and Value the threshold.  Mirrors the
 # game's Model/EvolutionInfo + Model/Evolution.checkEvolReq exactly.
 # ---------------------------------------------------------------------------
+def _temp_range(s):
+    try:
+        a, b = (s or "40t60").split("t")
+        return (int(a), int(b))
+    except (ValueError, AttributeError):
+        return (40, 60)
+
+
 def _gate(row, key, val):
     cond = (row.get(key) or "None").strip() or "None"
     try:
@@ -185,6 +193,7 @@ def load_requirements():
                       _gate(r, "VirusPowerSecondKey", "VirusPowerSecondValue")],
             "weight": (r.get("Weight") or "None").strip(),
             "base_weight": int(float(r.get("NewWeight") or 20)),
+            "ideal_temp": _temp_range(r.get("IdealTemp")),
             "mood": (r.get("Mood") or "None").strip(),
             "time": (r.get("Time") or "None").strip(),
             "special": (r.get("SpecialEvolution") or "None").strip() or "None",

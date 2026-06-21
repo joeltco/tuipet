@@ -71,7 +71,7 @@ if __name__ == "__main__":
         c.print(frame_text(d["frames"][i], on, off))
 
 
-def render_screen(frame_rows, cols, rows, on="#0f380f", bg="#9bbc0f", baseline=True, mirror=False, xshift=0, corner=None):
+def render_screen(frame_rows, cols, rows, on="#0f380f", bg="#9bbc0f", baseline=True, mirror=False, xshift=0, corner=None, overlay=None):
     """Compose a sprite centred on a fixed cols x rows (character) LCD screen.
 
     Returns a rich Text. The screen is rows*2 pixels tall; the sprite is blitted
@@ -103,6 +103,10 @@ def render_screen(frame_rows, cols, rows, on="#0f380f", bg="#9bbc0f", baseline=T
                     py, pxx = 1 + y, cx0 + x
                     if 0 <= py < px_h and 0 <= pxx < cols:
                         buf[py][pxx] = 1
+    if overlay:                              # weather: rain/snow/cloud pixels
+        for ox_, oy_ in overlay:
+            if 0 <= oy_ < px_h and 0 <= ox_ < cols:
+                buf[oy_][ox_] = 1
     t = Text()
     for cy in range(rows):
         top, bot = buf[cy * 2], buf[cy * 2 + 1]
