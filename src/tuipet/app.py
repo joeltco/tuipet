@@ -51,10 +51,11 @@ class Screen(Static):
         idx = frames[self.frame_i % len(frames)]
         rows = rec["frames"][idx] or first
         if pet.anim in ("idle", "walk") and pet.num != -1:
+            rows = first                       # whole frame-0 sprite, no bob flicker
             sw = max(len(r) for r in rows)
             bound = max(0, (SCREEN_COLS - sw) // 2)
             xshift = max(-bound, min(bound, self.walk_x))
-            mirror = self.walk_dir < 0     # sprites face right by default
+            mirror = self.walk_dir > 0         # mirror=True faces right (battle-consistent)
         else:
             xshift = 0
             mirror = pet.anim in data.MIRROR_ROLES and self.frame_i % 2 == 1
