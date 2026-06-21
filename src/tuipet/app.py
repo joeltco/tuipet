@@ -20,6 +20,8 @@ from .render import render_screen
 
 LCD_ON, LCD_BG = "#0b3d0b", "#9bbc0f"
 SCREEN_COLS, SCREEN_ROWS = 26, 12
+SPRITE_W = 16                                   # native creature sprite width
+WALK_RANGE = (SCREEN_COLS - SPRITE_W) // 2      # how far the pet paces from centre
 
 
 def hearts(n, total=4):
@@ -50,12 +52,11 @@ class Screen(Static):
         first = next((f for f in rec["frames"] if f), rec["frames"][0])
         idx = frames[self.frame_i % len(frames)]
         rows = rec["frames"][idx] or first
+        # While idle the pet paces back and forth, alternating frames 0/1 (the
+        # walk step) and facing the way it moves. Other animations stay centred.
         if pet.anim in ("idle", "walk") and pet.num != -1:
-            # rows already alternates frames 0/1 (the walk bob); just pace + face
-            sw = max(len(r) for r in rows)
-            bound = max(0, (SCREEN_COLS - sw) // 2)
-            xshift = max(-bound, min(bound, self.walk_x))
-            mirror = self.walk_dir > 0         # mirror=True faces right (battle-consistent)
+            xshift = max(-WALK_RANGE, min(WALK_RANGE, self.walk_x))
+            mirror = self.walk_dir > 0         # mirror=True faces right (sprites face left by default)
         else:
             xshift = 0
             mirror = pet.anim in data.MIRROR_ROLES and self.frame_i % 2 == 1
@@ -65,9 +66,9 @@ class Screen(Static):
     def advance(self):
         self.frame_i += 1
         self.walk_x += self.walk_dir
-        if abs(self.walk_x) >= 5:
+        if abs(self.walk_x) >= WALK_RANGE:     # reached an edge: turn around
             self.walk_dir = -self.walk_dir
-            self.walk_x = max(-5, min(5, self.walk_x))
+            self.walk_x = max(-WALK_RANGE, min(WALK_RANGE, self.walk_x))
 
 
 class Stats(Static):

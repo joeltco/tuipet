@@ -71,7 +71,7 @@ if __name__ == "__main__":
         c.print(frame_text(d["frames"][i], on, off))
 
 
-def render_screen(frame_rows, cols, rows, on="#0f380f", bg="#9bbc0f", baseline=True, mirror=False, xshift=0, yshift=0):
+def render_screen(frame_rows, cols, rows, on="#0f380f", bg="#9bbc0f", baseline=True, mirror=False, xshift=0):
     """Compose a sprite centred on a fixed cols x rows (character) LCD screen.
 
     Returns a rich Text. The screen is rows*2 pixels tall; the sprite is blitted
@@ -87,7 +87,7 @@ def render_screen(frame_rows, cols, rows, on="#0f380f", bg="#9bbc0f", baseline=T
         sw = max(len(r) for r in frame_rows)
         sh = len(frame_rows)
         ox = (cols - sw) // 2 + xshift
-        oy = ((px_h - sh - 2) if baseline else (px_h - sh) // 2) - yshift
+        oy = (px_h - sh - 2) if baseline else (px_h - sh) // 2
         for y, line in enumerate(frame_rows):
             for x, ch in enumerate(line):
                 if ch == "1":
