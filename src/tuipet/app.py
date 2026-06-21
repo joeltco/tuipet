@@ -34,17 +34,10 @@ def bar(v, width=12, color="green"):
     return f"[{color}]" + "█" * fill + "[/]" + "[dim]" + "─" * (width - fill) + "[/dim]"
 
 
-GRAVESTONE = [
-    "......1111......", "....11111111....", "...1111111111...",
-    "..111111111111..", ".11111111111111.", ".111111111111111",
-    ".111111..1111111", ".11111....111111", ".111111..1111111",
-    ".111111..1111111", ".111111111111111", ".11111111111111.",
-    ".11111111111111.", ".11111111111111.", "1111111111111111",
-    "1111111111111111",
-]
-
-SUN = ["01110", "11111", "11111", "11111", "01110"]
-MOON = ["01110", "11100", "11000", "11100", "01110"]
+_FX = data.load_effects()
+GRAVESTONE = _FX.get("grave", [None])[0]      # real DVPet death.png
+SUN = _FX.get("sun", [None])[0]               # real DVPet noon.png
+MOON = _FX.get("moon", [None])[0]             # real DVPet night.png
 
 # LCD palette per time of day (creature ink, screen background)
 PHASE_PALETTE = {

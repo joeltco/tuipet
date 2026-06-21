@@ -73,9 +73,25 @@ zframes = [to_rows(crop(f)) for f in split_vertical(native_mask("sleep.png")) if
 if zframes:
     effects["zzz"] = zframes
 
-# poop: filth.png is a packed multi-mound field at a non-creature scale, so a
-# single clean poop doesn't crop out of it -- hand-author a small mound instead
-effects["poop"] = [["00100", "01010", "01110", "11111"]]
+# poop: crop a single mound out of filth.png (a real DVPet sprite -- the sheet
+# is a packed field, so we take one clean mound from it)
+_fil = native_mask("filth.png")
+_p = crop(_fil[6:10, 2:8])
+if _p is not None:
+    effects["poop"] = [to_rows(_p)]
+
+# copymon: DVPet's real stand-in creature, used as the placeholder sprite
+_cm = split_vertical(native_mask("copymon.png"))
+if _cm:
+    _big = crop(max(_cm, key=lambda f: int(f.sum())))
+    if _big is not None:
+        effects["copymon"] = [to_rows(_big)]
+
+# real overlays that were previously hand-drawn in app.py
+for name, fn in {"grave": "death.png", "sun": "noon.png", "moon": "night.png"}.items():
+    c = crop(native_mask(fn))
+    if c is not None:
+        effects[name] = [to_rows(c)]
 
 # attack projectile (first orb of attackSprites) + impact burst (core of attackHit)
 ap = split_vertical(native_mask("attackSprites.png"))
