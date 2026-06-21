@@ -117,12 +117,8 @@ def _effect_overlay(pet, frame_i, cols, px_h):
     if pet.dead:
         return pts
     pm = E.get("poop", [None])[0]
-    if pet.poop and pm:                                   # poop piles on the floor
-        pw, ph = len(pm[0]), len(pm)
-        for i in range(min(pet.poop, 3)):
-            ox = cols - pw - 1 - i * (pw + 1)
-            if ox > cols // 2:
-                pts += _blit(pm, ox, px_h - ph)
+    if pet.poop and pm:                                   # a pile in the corner, clear of the pet
+        pts += _blit(pm, 0, px_h - len(pm))
     if pet.num == -1:
         return pts
     if pet.asleep and E.get("zzz"):                       # Zzz above a sleeper
@@ -131,13 +127,6 @@ def _effect_overlay(pet, frame_i, cols, px_h):
     elif pet.status_word() == "freezing" and E.get("frozen"):   # frost overlay
         fr = E["frozen"][0]
         pts += _blit(fr, (cols - len(fr[0])) // 2, px_h - len(fr) - 2)
-    elif pet.anim == "eat":                               # food shrinks as it eats
-        from .render import downsample
-        food = data.load_icons().get("f:40")
-        if food:
-            fb = downsample(food[min(frame_i % 4, len(food) - 1)], 3)
-            if fb:
-                pts += _blit(fb, cols // 2 - len(fb[0]) - 2, px_h - len(fb) - 5)
     elif pet.anim == "wash" and E.get("wash"):            # soapy splash while washing
         w = E["wash"]
         pts += _blit([r[:9] for r in w[0][:10]], 1, px_h - 13)
@@ -190,8 +179,9 @@ class Screen(Static):
         xshift, mirror = 0, False
         if pet.is_geriatric and pet.anim in ("idle", "walk"):
             rows = rec["frames"][9] or first   # elderly: stand still in the tired pose
-        elif pet.anim in ("idle", "walk") and pet.num != -1:
-            # pace back and forth, facing the way it moves
+        elif pet.anim in ("idle", "walk") and pet.num != -1 and not pet.poop:
+            # pace back and forth, facing the way it moves (but stand still while
+            # there's poop on the floor, so the pet never walks through it)
             xshift = max(-WALK_RANGE, min(WALK_RANGE, self.walk_x))
             mirror = self.walk_dir > 0         # mirror=True faces right (sprites face left by default)
         else:
