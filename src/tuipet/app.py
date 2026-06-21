@@ -55,6 +55,7 @@ WEATHER_GLYPH = {
 }
 _RAIN = {"Drizzling", "Raining", "HeavyRain"}
 _SNOW = {"LightSnow", "Snowing", "HeavySnow"}
+_PRECIP = _RAIN | _SNOW
 _PRECIP_N = {"Drizzling": 5, "LightSnow": 6, "Raining": 11, "Snowing": 10,
              "HeavyRain": 18, "HeavySnow": 16}
 CLOUD = ["0011100", "0111111", "1111111"]
@@ -145,19 +146,23 @@ class Screen(Static):
 
     def paint(self, pet: Pet):
         on, bg = PHASE_PALETTE.get(pet.day_phase, (LCD_ON, LCD_BG))
-        corner = SUN if pet.is_daytime else MOON
-        w = pet.weather
-        if w in _RAIN:
-            bg = _scale_hex(bg, 0.78)          # overcast dims the screen
-        elif w in _SNOW:
-            bg = _scale_hex(bg, 0.85)
-        elif w == "Cloudy":
-            bg = _scale_hex(bg, 0.9)
-        overlay = (_weather_overlay(w, self.frame_i, SCREEN_COLS, SCREEN_ROWS * 2)
+        bgimg = self._background(pet)
+        corner = None if bgimg else (SUN if pet.is_daytime else MOON)
+        if bgimg:
+            on = "#eef6cc" if pet.day_phase == "night" else "#0a280a"   # silhouette ink
+        else:
+            w = pet.weather
+            if w in _RAIN:
+                bg = _scale_hex(bg, 0.78)
+            elif w in _SNOW:
+                bg = _scale_hex(bg, 0.85)
+            elif w == "Cloudy":
+                bg = _scale_hex(bg, 0.9)
+        overlay = (_weather_overlay(pet.weather, self.frame_i, SCREEN_COLS, SCREEN_ROWS * 2)
                    + _effect_overlay(pet, self.frame_i, SCREEN_COLS, SCREEN_ROWS * 2))
         if pet.dead:                           # a grave marker
             self.update(render_screen(GRAVESTONE, SCREEN_COLS, SCREEN_ROWS, on, bg,
-                                      corner=corner, overlay=overlay))
+                                      corner=corner, overlay=overlay, bgimg=bgimg))
             return
         if pet.num == -1:                      # egg
             rec = egg_mod.record(pet.egg_type)
@@ -181,7 +186,17 @@ class Screen(Static):
         else:
             mirror = pet.anim in data.MIRROR_ROLES and self.frame_i % 2 == 1
         self.update(render_screen(rows, SCREEN_COLS, SCREEN_ROWS, on, bg,
-                                  mirror=mirror, xshift=xshift, corner=corner, overlay=overlay))
+                                  mirror=mirror, xshift=xshift, corner=corner, overlay=overlay, bgimg=bgimg))
+
+    def _background(self, pet):
+        frames = data.load_backgrounds().get(pet.habitat_obj().get("bg", ""))
+        if not frames:
+            return None
+        if pet.weather in _PRECIP and len(frames) > 4:
+            idx = 4
+        else:
+            idx = {"dawn": 0, "day": 1, "dusk": 2, "night": 3}.get(pet.day_phase, 1)
+        return frames[min(idx, len(frames) - 1)]
 
     def advance(self):
         self.frame_i += 1

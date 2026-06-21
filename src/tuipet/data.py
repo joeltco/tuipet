@@ -394,6 +394,19 @@ def consumable_by_key(key):
 
 
 @lru_cache(maxsize=1)
+def load_backgrounds():
+    """Habitat background scenes (per time-of-day/weather frame) keyed by file name."""
+    path = os.path.join(_DATA, "backgrounds.json.gz")
+    if not os.path.exists(path):
+        return {}
+    try:
+        with gzip.open(path, "rt") as fh:
+            return json.load(fh)
+    except (OSError, ValueError):
+        return {}
+
+
+@lru_cache(maxsize=1)
 def load_effects():
     """Auxiliary effect overlays (poop/zzz/frozen/wash/emotes) keyed by name."""
     path = os.path.join(_DATA, "effects.json.gz")
@@ -459,6 +472,7 @@ def load_habitats():
         out[hid] = {
             "id": hid,
             "name": r.get("Name") or f"Habitat {hid}",
+            "bg": (r.get("File Name (png)") or "").strip(),
             "desc": r.get("Description") or "",
             "price": num("Price"),
             "unlocked": (r.get("Unlocked") or "FALSE").strip().upper() == "TRUE",

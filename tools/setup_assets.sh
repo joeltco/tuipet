@@ -23,4 +23,5 @@ for f in digimon evolutions foods items enemies maps zones towns shopConsumable 
 done
 python tools/extract_sprites.py
 python tools/extract_effects.py
+python tools/extract_backgrounds.py
 echo "Done. Game data written to src/tuipet/data/ — you can now run: tuipet"
