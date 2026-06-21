@@ -102,6 +102,14 @@ def check(pet, num):
     ]
     if not all(gates):
         return False
+    # temperature + habitat conditions (DVPet gates evolution on these; we have
+    # both systems, so honour them)
+    tr = req.get("temp_req")
+    if tr is not None and not (tr[0] <= getattr(pet, "temp", 50) <= tr[1]):
+        return False
+    hr = req.get("habitat_req", -1)
+    if hr != -1 and getattr(pet, "habitat", -1) != hr:
+        return False
     # the antibody commits the pet to its X-form: skip the random prob gate
     if req.get("xantibody", "None") in ("Induced", "Natural") and getattr(pet, "x_antibody", "None") != "None":
         return True
@@ -147,6 +155,11 @@ def fulfilled(pet, num):
                   "EqualTo": R["mistakeEqual"]}.get(cond, R["mistakeNone"])
     if req.get("xantibody", "None") in ("Induced", "Natural") and getattr(pet, "x_antibody", "None") != "None":
         score += X_ANTIBODY_RATE
+    tr = req.get("temp_req")
+    if tr is not None and tr[0] <= getattr(pet, "temp", 50) <= tr[1]:
+        score += 1
+    if req.get("habitat_req", -1) != -1 and getattr(pet, "habitat", -1) == req["habitat_req"]:
+        score += 1
     return score
 
 
@@ -204,7 +217,16 @@ def select(pet):
             targets.append(t)
     valid = [t for t in targets if check(pet, t)]
     if not valid:
-        return _failed_form(pet, by_num)
+        # nothing fully qualifies -> Failed form if the species has one, else the
+        # best-matched stage-up target, so a pet NEVER gets stuck below Mega
+        ff = _failed_form(pet, by_num)
+        if ff is not None:
+            return ff
+        stage_up = [t for t in targets if by_num[t]["stage"] != pet.stage
+                    and data.load_requirements().get(t, {}).get("special", "None") == "None"]
+        if stage_up:
+            return max(stage_up, key=lambda t: fulfilled(pet, t))
+        return None
     if has_xa:
         xvalid = [t for t in valid if _is_xform(t)]
         if xvalid:

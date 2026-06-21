@@ -152,6 +152,24 @@ def _temp_range(s):
         return (40, 60)
 
 
+def _temp_req(s):
+    """Evolution temperature requirement (TempReq "lo t hi"), or None if unset
+    ("0t-1" means no requirement)."""
+    try:
+        lo, hi = (s or "0t-1").split("t")
+        lo, hi = int(lo), int(hi)
+        return (lo, hi) if (hi >= lo and hi >= 0) else None
+    except (ValueError, AttributeError):
+        return None
+
+
+def _int_or(s, default):
+    try:
+        return int(float(s))
+    except (ValueError, TypeError):
+        return default
+
+
 def _gate(row, key, val):
     cond = (row.get(key) or "None").strip() or "None"
     try:
@@ -196,6 +214,8 @@ def load_requirements():
             "base_weight": int(float(r.get("NewWeight") or 20)),
             "ideal_temp": _temp_range(r.get("IdealTemp")),
             "xantibody": (r.get("Xantibody") or "None").strip() or "None",
+            "temp_req": _temp_req(r.get("TempReq")),
+            "habitat_req": _int_or(r.get("Habitat"), -1),
             "mood": (r.get("Mood") or "None").strip(),
             "time": (r.get("Time") or "None").strip(),
             "special": (r.get("SpecialEvolution") or "None").strip() or "None",
