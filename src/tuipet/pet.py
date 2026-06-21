@@ -21,6 +21,10 @@ def _enemy_level(enemy):
     return max(1, int((v + d + vir + (h - 5) * 10) / 100))
 
 
+_RAIN = {"Drizzling", "Raining", "HeavyRain"}
+_SNOW = {"LightSnow", "Snowing", "HeavySnow"}
+
+
 def _dvpet_time(phase):
     """Map tuipet's day phase to DVPet's training Time (Morning/Noon/Night)."""
     return {"dawn": "Morning", "day": "Noon", "dusk": "Noon", "night": "Night"}.get(phase, "Noon")
@@ -268,6 +272,10 @@ class Pet:
             self._die()
             return
 
+        if (self.anim in ("idle", "walk") and self.anim_ttl <= 0 and not self.poop
+                and not self.sick and random.random() < 0.03 * dt):
+            self._special_idle()
+
         self._maybe_evolve()
 
     @property
@@ -469,6 +477,21 @@ class Pet:
     # ---- care actions --------------------------------------------------------
     def _set_anim(self, name, ttl):
         self.anim, self.anim_ttl = name, ttl
+
+    def _special_idle(self):
+        """An occasional idle quirk reflecting weather + mood (DVPet
+        weathering()/personalityMood*): huddle in bad weather, a happy hop
+        when content, a grumpy tantrum when unhappy."""
+        if self.weather in _RAIN:
+            self._set_anim("shield", 2.0)
+        elif self.weather in _SNOW:
+            self._set_anim("huddle", 2.0)
+        elif self.mood >= 70:
+            self._set_anim(random.choice(("play", "surprise", "happy")), 2.0)
+        elif self.mood <= 30:
+            self._set_anim(random.choice(("angry", "tantrum")), 2.0)
+        elif random.random() < 0.5:
+            self._set_anim("surprise", 1.6)
 
     def feed(self, food=None):
         if self.dead:
