@@ -11,6 +11,14 @@ def _clamp(v, lo, hi):
     return max(lo, min(hi, v))
 
 
+# Lifespan (seconds), scaled from DVPet's real-time model. A pet lives this long
+# in total; reaching higher stages extends it; neglect (sickness/starvation/
+# fatigue) burns it down faster. The final stretch is the geriatric "old age".
+LIFE_START = 360.0
+STAGE_LIFE = {"Rookie": 420.0, "Champion": 600.0, "Ultimate": 840.0, "Mega": 1080.0}
+GERIATRIC_REMAIN = 75.0   # last N seconds of life = elderly
+
+
 @dataclass
 class Pet:
     num: int
@@ -45,6 +53,9 @@ class Pet:
     adv_map: int = 0
     adv_zone: int = 0
     egg_type: int = 0
+    lifespan: float = LIFE_START
+    generation: int = 1
+    dead: bool = False
     inventory: dict = field(default_factory=dict)
     # transient animation request, consumed by the UI
     anim: str = "idle"
@@ -67,8 +78,9 @@ class Pet:
         return cls.from_num(num)
 
     @classmethod
-    def new_egg(cls):
-        return cls(num=-1, name="Digitama", stage="Egg", egg_type=random.randint(0, 10))
+    def new_egg(cls, generation=1):
+        return cls(num=-1, name="Digitama", stage="Egg",
+                   egg_type=random.randint(0, 10), generation=generation)
 
     def _hatch_into_fresh(self):
         _, by_num = data.load_sprites()
@@ -85,6 +97,8 @@ class Pet:
 
     # ---- per-tick simulation -------------------------------------------------
     def tick(self, dt):
+        if self.dead:
+            return
         self.age_seconds += dt
         self.stage_seconds += dt
         if self.anim_ttl > 0:
@@ -133,13 +147,40 @@ class Pet:
             self.asleep = True
             self._set_anim("sleep", 0)
 
+        # lifespan: neglect burns life down faster than the natural clock
+        extra = 0.0
+        if self.sick:
+            extra += 1.5
+        if self.hunger == 0:
+            extra += 1.0
+        if self.energy <= 0:
+            extra += 0.5
+        if self.is_geriatric:
+            extra += 0.5
+        self.lifespan -= extra * dt
+        if self.age_seconds >= self.lifespan:
+            self._die()
+            return
+
         self._maybe_evolve()
+
+    @property
+    def is_geriatric(self):
+        return (not self.dead
+                and self.stage in ("Rookie", "Champion", "Ultimate", "Mega")
+                and (self.lifespan - self.age_seconds) < GERIATRIC_REMAIN)
+
+    def _die(self):
+        self.dead = True
+        self.asleep = False
+        self.hatching = False
+        self._set_anim("idle", 0)
 
     def _base_weight(self):
         return data.load_requirements().get(self.num, {}).get("base_weight", 20)
 
     def _maybe_evolve(self):
-        if self.sick or self.asleep:
+        if self.sick or self.asleep or self.is_geriatric:
             return
         if self.stage_seconds < self.STAGE_DURATION.get(self.stage, 9e9):
             return
@@ -157,6 +198,8 @@ class Pet:
         self.care_mistakes = self.overeat = self.disturb = 0
         self.injuries = self.sick_count = 0
         self.weight = self._base_weight()
+        # reaching a higher stage extends the total lifespan toward that stage's floor
+        self.lifespan = max(self.lifespan, STAGE_LIFE.get(self.stage, self.lifespan))
         self._set_anim("happy", 2.5)
 
     # ---- care actions --------------------------------------------------------
@@ -164,6 +207,8 @@ class Pet:
         self.anim, self.anim_ttl = name, ttl
 
     def feed(self, food=None):
+        if self.dead:
+            return "It rests now — press N for a new egg."
         if self.stage == "Egg":
             return "It is still an egg."
         if self.asleep:
@@ -183,6 +228,8 @@ class Pet:
         return f"Fed {food['name']}."
 
     def can_train(self):
+        if self.dead:
+            return "It rests now — press N for a new egg."
         if self.stage == "Egg":
             return "It is still an egg."
         if self.asleep:
@@ -222,6 +269,8 @@ class Pet:
         return f"{rank} +{gain} {attr}"
 
     def can_battle(self):
+        if self.dead:
+            return "It rests now — press N for a new egg."
         if self.stage in ("Egg", "Fresh"):
             return "Too young to battle."
         if self.asleep:
@@ -251,6 +300,8 @@ class Pet:
         return "Defeat..."
 
     def clean(self):
+        if self.dead:
+            return "It rests now — press N for a new egg."
         if self.stage == "Egg":
             return "It is still an egg."
         if not self.poop:
@@ -260,6 +311,8 @@ class Pet:
         return f"Cleaned {n} poop."
 
     def heal(self):
+        if self.dead:
+            return "It rests now — press N for a new egg."
         if self.stage == "Egg":
             return "It is still an egg."
         if not self.sick:
@@ -270,6 +323,8 @@ class Pet:
         return f"{self.name} feels better!"
 
     def toggle_sleep(self):
+        if self.dead:
+            return "It rests now — press N for a new egg."
         if self.stage == "Egg":
             return "It is still an egg."
         self.asleep = not self.asleep
@@ -277,6 +332,8 @@ class Pet:
         return "Lights off. Zzz." if self.asleep else "Lights on."
 
     def play(self):
+        if self.dead:
+            return "It rests now — press N for a new egg."
         if self.stage == "Egg":
             return "It is still an egg."
         if self.asleep:
@@ -301,6 +358,8 @@ class Pet:
         e = data.consumable_by_key(key)
         if not e:
             return "?"
+        if self.dead:
+            return "It rests now — press N for a new egg."
         if self.stage == "Egg":
             return "It is still an egg."
         self.inventory[key] -= 1
@@ -328,6 +387,10 @@ class Pet:
 
     # ---- presentation helpers -----------------------------------------------
     def status_word(self):
+        if self.dead:
+            return "passed away"
+        if self.is_geriatric:
+            return "elderly"
         if self.asleep:
             return "asleep"
         if self.sick:

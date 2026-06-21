@@ -33,6 +33,16 @@ def bar(v, width=12, color="green"):
     return f"[{color}]" + "█" * fill + "[/]" + "[dim]" + "─" * (width - fill) + "[/dim]"
 
 
+GRAVESTONE = [
+    "......1111......", "....11111111....", "...1111111111...",
+    "..111111111111..", ".11111111111111.", ".111111111111111",
+    ".111111..1111111", ".11111....111111", ".111111..1111111",
+    ".111111..1111111", ".111111111111111", ".11111111111111.",
+    ".11111111111111.", ".11111111111111.", "1111111111111111",
+    "1111111111111111",
+]
+
+
 class Screen(Static):
     """The animated LCD screen."""
     def on_mount(self):
@@ -41,6 +51,9 @@ class Screen(Static):
         self.walk_dir = 1
 
     def paint(self, pet: Pet):
+        if pet.dead:                           # a grave marker
+            self.update(render_screen(GRAVESTONE, SCREEN_COLS, SCREEN_ROWS, LCD_ON, LCD_BG))
+            return
         if pet.num == -1:                      # egg
             rec = egg_mod.record(pet.egg_type)
             roles = egg_mod.ROLES
@@ -52,13 +65,14 @@ class Screen(Static):
         first = next((f for f in rec["frames"] if f), rec["frames"][0])
         idx = frames[self.frame_i % len(frames)]
         rows = rec["frames"][idx] or first
-        # While idle the pet paces back and forth, alternating frames 0/1 (the
-        # walk step) and facing the way it moves. Other animations stay centred.
-        if pet.anim in ("idle", "walk") and pet.num != -1:
+        xshift, mirror = 0, False
+        if pet.is_geriatric and pet.anim in ("idle", "walk"):
+            rows = rec["frames"][9] or first   # elderly: stand still in the tired pose
+        elif pet.anim in ("idle", "walk") and pet.num != -1:
+            # pace back and forth, facing the way it moves
             xshift = max(-WALK_RANGE, min(WALK_RANGE, self.walk_x))
             mirror = self.walk_dir > 0         # mirror=True faces right (sprites face left by default)
         else:
-            xshift = 0
             mirror = pet.anim in data.MIRROR_ROLES and self.frame_i % 2 == 1
         self.update(render_screen(rows, SCREEN_COLS, SCREEN_ROWS, LCD_ON, LCD_BG,
                                   mirror=mirror, xshift=xshift))
@@ -79,7 +93,7 @@ class Stats(Static):
         if pet.poop: deco.append(f"[yellow]~poop x{pet.poop}[/]")
         mins, secs = divmod(int(pet.age_seconds), 60)
         lines = [
-            f"[b]{pet.name}[/b]",
+            f"[b]{pet.name}[/b]  [dim]gen {pet.generation}[/dim]",
             f"[dim]{pet.stage} · {pet.attribute}[/dim]",
             "",
             f"Hunger  {hearts(pet.hunger)}",
@@ -92,6 +106,7 @@ class Stats(Static):
             f"Battle  {pet.wins}W/{pet.battles}   [yellow]{pet.bits}b[/]",
             f"Trophy  [yellow]{chr(0x25CF) * min(pet.trophies, 8)}[/] {pet.trophies}" if pet.trophies else "",
             f"Age     {mins}m{secs:02d}s",
+            f"Life    {bar(max(0, int((pet.lifespan - pet.age_seconds) / max(1, pet.lifespan) * 100)), color=('red' if pet.is_geriatric else 'green'))}",
             f"Care x  {pet.care_mistakes}",
             "",
             f"State: [b]{pet.status_word()}[/b]",
@@ -108,7 +123,7 @@ class TuiPetApp(App):
         border: heavy #5a7a1a; padding: 0 1; background: #9bbc0f;
         width: 30; height: 14;
     }
-    #stats { border: round #444; padding: 0 1; width: 30; height: 14; margin-left: 1; }
+    #stats { border: round #444; padding: 0 1; width: 30; height: 19; margin-left: 1; }
     #msg { height: 1; color: $text-muted; margin-top: 1; }
     """
     BINDINGS = [
@@ -166,8 +181,12 @@ class TuiPetApp(App):
 
     def on_tick(self):
         prev = (self.pet.num, self.pet.stage)
+        was_dead = self.pet.dead
         self.pet.tick(1.0)
-        if (self.pet.num, self.pet.stage) != prev:
+        if self.pet.dead and not was_dead:
+            mins = int(self.pet.age_seconds) // 60
+            self.flash(f"[b red]{self.pet.name} passed away[/] (gen {self.pet.generation}, lived {mins}m). Press N for a new egg.")
+        elif (self.pet.num, self.pet.stage) != prev:
             self.flash(f"[b green]{self.pet.name}![/] evolved to {self.pet.stage}!")
         self.repaint()
 
@@ -244,9 +263,10 @@ class TuiPetApp(App):
     def action_heal(self): self._do(self.pet.heal())
     def action_sleep(self): self._do(self.pet.toggle_sleep())
     def action_new(self):
-        self.pet = Pet.new_egg()
+        gen = self.pet.generation + 1
+        self.pet = Pet.new_egg(generation=gen)
         persistence.save(self.pet)
-        self._do("A new egg appeared!")
+        self._do(f"A new egg appeared! (generation {gen})")
 
 
 def main():
