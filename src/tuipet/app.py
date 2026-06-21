@@ -403,7 +403,11 @@ class TuiPetApp(App):
     def action_sleep(self): self._do(self.pet.toggle_sleep())
     def action_new(self):
         gen = self.pet.generation + 1
-        self.pet = Pet.new_egg(generation=gen)
+        self.push_screen(eggselectscreen.EggSelectScreen(),
+                         lambda et: self._hatch_new(et, gen))
+
+    def _hatch_new(self, egg_type, gen):
+        self.pet = Pet.new_egg(generation=gen, egg_type=egg_type)
         persistence.save(self.pet)
         self._do(f"A new egg appeared! (generation {gen})")
 
