@@ -143,15 +143,18 @@ class Pet:
     @classmethod
     def new_egg(cls, generation=1, egg_type=None):
         if egg_type is None:
-            egg_type = random.randint(0, 10)
+            egg_type = random.randrange(egg_mod.count())
         return cls(num=-1, name="Digitama", stage="Egg",
                    egg_type=egg_type, generation=generation)
 
     def _hatch_into_fresh(self):
         _, by_num = data.load_sprites()
-        fresh = [n for n, r in by_num.items() if r["stage"] == "Fresh" and not data.is_placeholder(n)]
         import random as _r
-        self.evolve_to(_r.choice(fresh))
+        target = egg_mod.hatch_target(self.egg_type)
+        if target is None or target not in by_num or data.is_placeholder(target):
+            fresh = [n for n, r in by_num.items() if r["stage"] == "Fresh" and not data.is_placeholder(n)]
+            target = _r.choice(fresh)
+        self.evolve_to(target)
         self.hatching = False
         if self.x_antibody == "None" and _r.randint(0, X_BIRTH_BOUND - 1) < X_BIRTH_TARGET:
             self._set_xantibody("Permanent")          # born a natural X-Antibody carrier

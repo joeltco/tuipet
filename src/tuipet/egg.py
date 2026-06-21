@@ -42,12 +42,28 @@ def frames(egg_type=0):
     eggs = _real_eggs()
     if not eggs:
         return [["0"]]                               # only before setup_assets.sh
-    egg = eggs[egg_type % len(eggs)]                 # a list of real frames
-    f0 = egg[0]
-    f1 = egg[1] if len(egg) > 1 else f0
+    fr = eggs[egg_type % len(eggs)]["frames"]        # the egg's real animation frames
+    f0 = fr[0]
+    f1 = fr[1] if len(fr) > 1 else f0
     return [f0, f1, _shift(f0, -1), f0, _shift(f0, 1)]
 
 ROLES = {"idle": [0, 1], "egg_idle": [0, 1], "hatch": [2, 3, 4]}
+
+
+def hatch_target(egg_type=0):
+    """The Fresh creature (DigimonNum) this egg hatches into, or None."""
+    eggs = _real_eggs()
+    return eggs[egg_type % len(eggs)]["hatch"] if eggs else None
+
+
+def hatch_name(egg_type=0):
+    eggs = _real_eggs()
+    return eggs[egg_type % len(eggs)]["hatch_name"] if eggs else "?"
+
+
+def count():
+    eggs = _real_eggs()
+    return len(eggs) if eggs else 1
 
 
 def record(egg_type=0):

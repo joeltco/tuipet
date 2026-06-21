@@ -27,7 +27,7 @@ class EggSelectScreen(ModalScreen):
 
     def __init__(self):
         super().__init__()
-        self.n = max(1, len(egg_mod._real_eggs() or [1]))
+        self.n = egg_mod.count()
         self.i = 0
 
     def compose(self):
@@ -50,5 +50,6 @@ class EggSelectScreen(ModalScreen):
         out = Text()
         out.append(f"CHOOSE YOUR EGG   {self.i + 1}/{self.n}\n", style=INK_B)
         out.append_text(render_screen(rows, COLS, ROWS, LCD_ON, LCD_BG))
-        out.append("\n  ◄  pick  ►    ENTER start", style=DIM)
+        out.append(f"\n  hatches: {egg_mod.hatch_name(self.i)}\n", style=INK_B)
+        out.append("  ◄  pick  ►    ENTER", style=DIM)
         self.view.update(out)
