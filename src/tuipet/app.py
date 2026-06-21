@@ -17,6 +17,7 @@ from . import persistence
 from . import jogressscreen
 from . import jogress
 from . import tournamentscreen
+from . import titlescreen
 from .pet import Pet
 from .render import render_screen
 
@@ -395,12 +396,19 @@ class TuiPetApp(App):
         theme.apply(theme.load_choice())
         self._restyle()
         self.repaint()
-        if self._new_game:
-            self._open_mode(eggselectscreen.EggSelectPanel(), self._after_egg_pick)
+        self._open_mode(titlescreen.TitlePanel(), self._after_title)
+        self.msg_w.update("[b]▸ PRESS ENTER ◂[/b]")
         self.set_interval(0.45, self.on_anim)
         self.set_interval(0.12, self.on_fast)
         self.set_interval(1.0, self.on_tick)
         self.set_interval(10.0, self.autosave)
+
+    def _after_title(self, _=None):
+        if self._new_game:
+            self._open_mode(eggselectscreen.EggSelectPanel(), self._after_egg_pick)
+        else:
+            self.msg_w.update(self._welcome)
+            self.repaint()
 
     def _after_egg_pick(self, egg_type):
         if egg_type is not None:
