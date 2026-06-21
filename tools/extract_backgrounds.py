@@ -7,7 +7,7 @@ each 104x101 with a 2px gap. We crop each and downsample to the LCD pixel grid
 (40x28) as RGB, so the pet view can show a colour scene that follows the
 day/night clock."""
 import json, gzip, os, csv
-from PIL import Image
+from PIL import Image, ImageEnhance, ImageOps
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 RES = os.path.join(ROOT, "raw_resources")
@@ -30,7 +30,10 @@ def frames_for(fn):
         TOP_BAR, BOT_BAR = 20, 21   # exact DVPet _mainDisplay window (104x60); strips the icon-overlay sky/ground bands
         y0 = y + TOP_BAR
         y1 = min(y + FH - BOT_BAR, H)
-        fr = im.crop((0, y0, FW, y1)).resize((COLS, PXH), Image.LANCZOS)
+        fr = im.crop((0, y0, FW, y1)).resize((COLS, PXH), Image.BOX)
+        fr = ImageEnhance.Color(fr).enhance(1.85)    # punch up colour (terminal/JPEG mute it)
+        fr = ImageEnhance.Contrast(fr).enhance(1.3)
+        fr = ImageOps.posterize(fr, 4)               # flat colour bands -> clean pixel-art
         px = fr.load()
         out.append(["".join("%02x%02x%02x" % px[x, yy] for x in range(COLS)) for yy in range(PXH)])
     return out
