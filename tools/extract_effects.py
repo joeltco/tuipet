@@ -77,6 +77,17 @@ if zframes:
 # single clean poop doesn't crop out of it -- hand-author a small mound instead
 effects["poop"] = [["00100", "01010", "01110", "11111"]]
 
+# attack projectile (first orb of attackSprites) + impact burst (core of attackHit)
+ap = split_vertical(native_mask("attackSprites.png"))
+if ap:
+    orb = crop(ap[0][:, :9])
+    if orb is not None:
+        effects["attack"] = [to_rows(orb)]
+hb = native_mask("attackHit.png")
+burst = crop(hb[5:15, 12:22])
+if burst is not None:
+    effects["hit"] = [to_rows(burst)]
+
 # ---- preview ----
 for name, frames in effects.items():
     print(f"\n===== {name}  ({len(frames)} frame(s)) =====")

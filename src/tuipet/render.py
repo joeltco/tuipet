@@ -125,7 +125,7 @@ def render_screen(frame_rows, cols, rows, on="#0f380f", bg="#9bbc0f", baseline=T
     return t
 
 
-def render_scene(placements, cols, rows, on="#0b3d0b", bg="#9bbc0f"):
+def render_scene(placements, cols, rows, on="#0b3d0b", bg="#9bbc0f", overlay=None):
     """Compose several sprites onto one LCD screen.
 
     placements: list of (frame_rows, x_left, mirror). Each sprite sits on the
@@ -146,6 +146,10 @@ def render_scene(placements, cols, rows, on="#0b3d0b", bg="#9bbc0f"):
                     py, px = oy + y, x_left + x
                     if 0 <= py < px_h and 0 <= px < cols:
                         buf[py][px] = 1
+    if overlay:                              # projectiles / impact bursts
+        for ox_, oy_ in overlay:
+            if 0 <= oy_ < px_h and 0 <= ox_ < cols:
+                buf[oy_][ox_] = 1
     t = Text()
     for cy in range(rows):
         top, bot = buf[cy * 2], buf[cy * 2 + 1]

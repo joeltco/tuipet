@@ -1,4 +1,4 @@
-"""Battle screen — pet vs enemy, attribute-triangle combat with animation."""
+"""Battle screen — pet vs enemy, attribute-triangle combat with attack effects."""
 from __future__ import annotations
 from rich.text import Text
 from textual.screen import ModalScreen
@@ -13,6 +13,16 @@ INK = f"{LCD_ON} on {LCD_BG}"
 INK_B = f"bold {LCD_ON} on {LCD_BG}"
 DIM = f"#5a7a1a on {LCD_BG}"
 COLS, ROWS = 40, 9
+
+_E = data.load_effects()
+ATTACK = (_E.get("attack") or [None])[0]   # flying projectile orb
+HIT = (_E.get("hit") or [None])[0]         # impact burst
+FLY = 5                                     # frames the projectile travels
+
+
+def _blit(bm, ox, oy):
+    return [(ox + x, oy + y) for y, row in enumerate(bm)
+            for x, c in enumerate(row) if c == "1"]
 
 
 class BattleScreen(ModalScreen):
@@ -29,32 +39,31 @@ class BattleScreen(ModalScreen):
         self.pet = pet
         self.battle = Battle(pet, enemy)
         self.frame_i = 0
-        self.flash_atk = None
-        self.flash_ttl = 0
+        self.atk = None          # active attack animation, or None
 
     def compose(self):
         yield Static(id="bt")
 
     def on_mount(self):
         self.view = self.query_one("#bt", Static)
-        self.set_interval(0.4, self._anim)
+        self.set_interval(0.22, self._anim)
         self.render_view()
 
     def _anim(self):
         self.frame_i += 1
-        if self.flash_ttl > 0:
-            self.flash_ttl -= 1
-            if self.flash_ttl == 0:
-                self.flash_atk = None
+        if self.atk:
+            self.atk["step"] += 1
+            if self.atk["step"] > FLY + 2:      # fly, then 2 frames of impact
+                self.atk = None
         self.render_view()
 
     def action_atk(self, which):
-        if self.battle.over:
+        if self.battle.over or self.atk:
             return
         before = self.battle.enemy_hp
         self.battle.play_round(which)
-        self.flash_atk = "pet" if self.battle.enemy_hp < before else "enemy"
-        self.flash_ttl = 1
+        attacker = "pet" if self.battle.enemy_hp < before else "enemy"
+        self.atk = {"attacker": attacker, "step": 0}
         self.render_view()
 
     def action_leave(self):
@@ -68,18 +77,37 @@ class BattleScreen(ModalScreen):
 
     def _hp(self, hp, mx):
         hp = max(0, hp)
-        if mx <= 12:
-            return "●" * hp + "○" * (mx - hp)
-        return f"{hp}/{mx}"
+        return "●" * hp + "○" * (mx - hp) if mx <= 12 else f"{hp}/{mx}"
+
+    def _attack_overlay(self, pet_x, pw, enemy_x, ew):
+        if not (self.atk and ATTACK):
+            return []
+        a = self.atk
+        py = ROWS * 2 - 13                       # mid-height of the scene
+        ow, hw = len(ATTACK[0]), (len(HIT[0]) if HIT else 0)
+        if a["attacker"] == "pet":               # left -> right, bursts on the foe
+            x0, x1, tx = pet_x + pw - 1, enemy_x - ow, enemy_x + ew // 2 - hw // 2
+        else:                                    # right -> left, bursts on the pet
+            x0, x1, tx = enemy_x - ow, pet_x + pw - 1, pet_x + pw // 2 - hw // 2
+        if a["step"] <= FLY:
+            x = int(x0 + (x1 - x0) * (a["step"] / FLY))
+            return _blit(ATTACK, x, py)
+        return _blit(HIT, tx, py - 1) if HIT else []
 
     def render_view(self):
         b = self.battle
-        pet_rows = self._frames(self.pet.num, self.flash_atk == "pet")
-        enemy_rows = self._frames(b.enemy["num"], self.flash_atk == "enemy")
+        a = self.atk
+        pet_atk = bool(a and a["attacker"] == "pet" and a["step"] <= FLY)
+        enemy_atk = bool(a and a["attacker"] == "enemy" and a["step"] <= FLY)
+        pet_rows = self._frames(self.pet.num, pet_atk)
+        enemy_rows = self._frames(b.enemy["num"], enemy_atk)
+        pw = max(len(r) for r in pet_rows)
         ew = max(len(r) for r in enemy_rows)
+        pet_x, enemy_x = 1, COLS - ew - 1
+        overlay = self._attack_overlay(pet_x, pw, enemy_x, ew)
         scene = render_scene(
-            [(pet_rows, 1, True), (enemy_rows, COLS - ew - 1, False)],
-            COLS, ROWS, LCD_ON, LCD_BG)
+            [(pet_rows, pet_x, True), (enemy_rows, enemy_x, False)],
+            COLS, ROWS, LCD_ON, LCD_BG, overlay=overlay)
 
         title = f"BATTLE vs {b.enemy['name']}" + (" (BOSS)" if b.enemy["boss"] else "")
         out = Text()
