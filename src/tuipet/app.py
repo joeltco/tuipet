@@ -51,7 +51,7 @@ class Screen(Static):
         idx = frames[self.frame_i % len(frames)]
         rows = rec["frames"][idx] or first
         if pet.anim in ("idle", "walk") and pet.num != -1:
-            rows = first                       # whole frame-0 sprite, no bob flicker
+            # rows already alternates frames 0/1 (the walk bob); just pace + face
             sw = max(len(r) for r in rows)
             bound = max(0, (SCREEN_COLS - sw) // 2)
             xshift = max(-bound, min(bound, self.walk_x))
@@ -105,7 +105,7 @@ class TuiPetApp(App):
     #wrap { width: auto; height: auto; }
     #lcd {
         border: heavy #5a7a1a; padding: 0 1; background: #9bbc0f;
-        width: 28; height: 14;
+        width: 30; height: 14;
     }
     #stats { border: round #444; padding: 0 1; width: 30; height: 14; margin-left: 1; }
     #msg { height: 1; color: $text-muted; margin-top: 1; }
