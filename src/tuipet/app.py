@@ -174,14 +174,19 @@ class Screen(Static):
         xshift, mirror = 0, False
         if pet.anim in ("idle", "walk") and (pet.is_geriatric or pet.sick):
             rows = rec["frames"][9] or first   # elderly/sick: stand still in the weary pose
-        elif pet.anim in ("idle", "walk") and pet.num != -1 and not pet.poop:
-            # pace back and forth, facing the way it moves (but stand still while
-            # there's poop on the floor, so the pet never walks through it)
-            xshift = max(-WALK_RANGE, min(WALK_RANGE, self.walk_x))
+        elif pet.anim in ("idle", "walk") and pet.num != -1:
+            # pace back and forth; poop on the floor shrinks the free space -- the
+            # pet still walks, just in the room to the right of the pile (DVPet
+            # stepFrame uses filthLabel width as the left walk bound)
+            sw = max(len(r) for r in rows)
+            base = (SCREEN_COLS - sw) // 2
+            poop_right = (2 + min(pet.poop, 3) * (POOP_W + 1)) if pet.poop else 0
+            lo = max(base - WALK_RANGE, poop_right)
+            hi = min(SCREEN_COLS - sw - 1, max(base + WALK_RANGE, lo + 6))
+            lo = min(lo, hi)
+            self.walk_lo, self.walk_hi = lo - base, hi - base
+            xshift = max(self.walk_lo, min(self.walk_hi, self.walk_x))
             mirror = self.walk_dir > 0         # mirror=True faces right (sprites face left by default)
-        elif pet.anim in ("idle", "walk") and pet.poop:
-            row_right = min(pet.poop, 3) * (POOP_W + 1)        # stand clear, right of the poop row
-            xshift = max(0, min(12, row_right - (SCREEN_COLS - SPRITE_W) // 2 + 2))
         else:
             mirror = pet.anim in data.MIRROR_ROLES and self.frame_i % 2 == 1
         if pet.num != -1 and pet.status_word() == "freezing" and _FROZEN_FR:
@@ -194,10 +199,13 @@ class Screen(Static):
 
     def advance(self):
         self.frame_i += 1
+        lo = getattr(self, "walk_lo", -WALK_RANGE)
+        hi = getattr(self, "walk_hi", WALK_RANGE)
         self.walk_x += self.walk_dir
-        if abs(self.walk_x) >= WALK_RANGE:     # reached an edge: turn around
-            self.walk_dir = -self.walk_dir
-            self.walk_x = max(-WALK_RANGE, min(WALK_RANGE, self.walk_x))
+        if self.walk_x >= hi:                   # hit a wall (screen edge or poop): turn around
+            self.walk_x, self.walk_dir = hi, -1
+        elif self.walk_x <= lo:
+            self.walk_x, self.walk_dir = lo, 1
 
     # ---- care-action animations (DVPet SpriteAnim eat/clean/cheer) -----------
     def start_fx(self, kind, icon=None, poop=0):
