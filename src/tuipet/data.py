@@ -373,6 +373,19 @@ def consumable_by_key(key):
 
 
 @lru_cache(maxsize=1)
+def load_effects():
+    """Auxiliary effect overlays (poop/zzz/frozen/wash/emotes) keyed by name."""
+    path = os.path.join(_DATA, "effects.json.gz")
+    if not os.path.exists(path):
+        return {}
+    try:
+        with gzip.open(path, "rt") as fh:
+            return json.load(fh)
+    except (OSError, ValueError):
+        return {}
+
+
+@lru_cache(maxsize=1)
 def load_icons():
     """Food/item icons (frame 0) keyed f:<id> / i:<id>, or empty if not extracted."""
     path = os.path.join(_DATA, "icons.json.gz")

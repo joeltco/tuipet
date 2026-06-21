@@ -105,6 +105,54 @@ def _weather_overlay(weather, frame_i, cols, px_h):
     return pts
 
 
+def _blit(bm, ox, oy):
+    return [(ox + x, oy + y) for y, row in enumerate(bm)
+            for x, c in enumerate(row) if c == "1"]
+
+
+def _effect_overlay(pet, frame_i, cols, px_h):
+    """Auxiliary status sprites overlaid on the LCD (poop/Zzz/frost/food/emotes)."""
+    E = data.load_effects()
+    pts = []
+    if pet.dead:
+        return pts
+    pm = E.get("poop", [None])[0]
+    if pet.poop and pm:                                   # poop piles on the floor
+        pw, ph = len(pm[0]), len(pm)
+        for i in range(min(pet.poop, 3)):
+            ox = cols - pw - 1 - i * (pw + 1)
+            if ox > cols // 2:
+                pts += _blit(pm, ox, px_h - ph)
+    if pet.num == -1:
+        return pts
+    if pet.asleep and E.get("zzz"):                       # Zzz above a sleeper
+        z = E["zzz"][frame_i % len(E["zzz"])]
+        pts += _blit(z, cols // 2 + 5, 1)
+    elif pet.status_word() == "freezing" and E.get("frozen"):   # frost overlay
+        fr = E["frozen"][0]
+        pts += _blit(fr, (cols - len(fr[0])) // 2, px_h - len(fr) - 2)
+    elif pet.anim == "eat":                               # food shrinks as it eats
+        from .render import downsample
+        food = data.load_icons().get("f:40")
+        if food:
+            fb = downsample(food[min(frame_i % 4, len(food) - 1)], 3)
+            if fb:
+                pts += _blit(fb, cols // 2 - len(fb[0]) - 2, px_h - len(fb) - 5)
+    elif pet.anim == "wash" and E.get("wash"):            # soapy splash while washing
+        w = E["wash"]
+        pts += _blit([r[:9] for r in w[0][:10]], 1, px_h - 13)
+    emo = ("happy" if pet.anim in ("happy", "play") else
+           "unhappy" if pet.anim in ("sad", "refuse") else
+           "depressed" if pet.anim == "angry" else None)
+    if emo and E.get(emo):                                # emote bubble on reactions
+        ef = E[emo][frame_i % len(E[emo])]
+        pts += _blit(ef, cols // 2 - len(ef[0]) // 2, 1)
+    elif (pet.anim in ("idle", "walk") and frame_i % 2 == 0 and E.get("attention")
+          and (pet.hunger == 0 or pet.sick or pet.poop >= 3 or pet.energy <= 0)):
+        pts += _blit(E["attention"][0], cols // 2 + 7, 1)  # '!' call for care
+    return pts
+
+
 class Screen(Static):
     """The animated LCD screen."""
     def on_mount(self):
@@ -122,7 +170,8 @@ class Screen(Static):
             bg = _scale_hex(bg, 0.85)
         elif w == "Cloudy":
             bg = _scale_hex(bg, 0.9)
-        overlay = _weather_overlay(w, self.frame_i, SCREEN_COLS, SCREEN_ROWS * 2)
+        overlay = (_weather_overlay(w, self.frame_i, SCREEN_COLS, SCREEN_ROWS * 2)
+                   + _effect_overlay(pet, self.frame_i, SCREEN_COLS, SCREEN_ROWS * 2))
         if pet.dead:                           # a grave marker
             self.update(render_screen(GRAVESTONE, SCREEN_COLS, SCREEN_ROWS, on, bg,
                                       corner=corner, overlay=overlay))

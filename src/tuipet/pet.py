@@ -530,6 +530,7 @@ class Pet:
             return "Nothing to clean."
         n, self.poop = self.poop, 0
         self.mood = _clamp(self.mood + 3, 0, 100)
+        self._set_anim("wash", 1.2)
         return f"Cleaned {n} poop."
 
     def heal(self):
