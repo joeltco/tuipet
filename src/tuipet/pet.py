@@ -53,11 +53,11 @@ DAY_LENGTH = 1440.0           # 24 min per day/night cycle
 
 
 def _phase_of(p):
-    if p < 0.10:
+    if p < 0.08:
         return "dawn"
-    if p < 0.50:
+    if p < 0.55:
         return "day"
-    if p < 0.58:
+    if p < 0.70:
         return "dusk"
     return "night"
 
@@ -198,16 +198,17 @@ class Pet:
             self._temperature_effects(dt)
             self._track_time_pref(dt)
         if self.asleep:
-            rate = 0.02 if self.day_phase == "night" else 0.01   # rest is deepest at night
+            rate = 0.35 if self.day_phase == "night" else 0.28   # rest is deepest at night
             self.energy = _clamp(self.energy + rate * dt, 0, 100)
-            if self.energy >= 100:
+            # sleep through the night; wake in the morning once decently rested
+            if self.day_phase != "night" and self.energy >= 60:
                 self.asleep = False
                 self._set_anim("idle", 0)
             return
 
         night = self.day_phase == "night"
         # at night an awake pet tires and grows cranky about twice as fast
-        drain = 0.016 if night else 0.008
+        drain = 0.05 if night else 0.03
         lo, hi = self.ideal_temp
         if self.weather in ("Clear", "Cloudy") and lo <= self.temp <= hi:
             drain *= 0.6                  # fair weather + ideal temp eases fatigue
@@ -231,8 +232,10 @@ class Pet:
         if (self.poop >= 3 or self.hunger == 0) and not self.sick and random.random() < 0.02 * dt:
             self.sick = True
             self.sick_count += 1
-        # the pet nods off on its own when exhausted, and dozes earlier at night
-        if not self.asleep and self.energy <= (35 if night else 0):
+        # bedtime: sleep through the night, or pass out if run to exhaustion by
+        # day; a grace window after a manual wake lets you interact at night
+        self._wake_grace = max(0.0, getattr(self, "_wake_grace", 0.0) - dt)
+        if not self.asleep and self._wake_grace <= 0 and ((night and self.energy < 85) or self.energy <= 0):
             self.asleep = True
             self._set_anim("sleep", 0)
 
@@ -556,6 +559,8 @@ class Pet:
         if self.stage == "Egg":
             return "It is still an egg."
         self.asleep = not self.asleep
+        if not self.asleep:
+            self._wake_grace = 180.0          # stay up after a manual wake
         self._set_anim("sleep" if self.asleep else "idle", 0)
         return "Lights off. Zzz." if self.asleep else "Lights on."
 
