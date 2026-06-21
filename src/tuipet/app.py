@@ -346,7 +346,7 @@ class TuiPetApp(App):
     #wrap { width: auto; height: auto; }
     #top { width: auto; height: auto; }
     #left { width: 44; height: auto; }
-    #lcd { border: round #7a7e78; padding: 0 1; background: #c6c9cc; width: 44; height: 14; }
+    #lcd { border: double #7a7e78; padding: 0 1; background: #c6c9cc; width: 44; height: 14; }
     #msg {
         border: round #7a7e78; padding: 0 1; width: 44; height: 3; margin-top: 1;
         color: #7d8186; content-align: left middle;
@@ -396,6 +396,7 @@ class TuiPetApp(App):
         self.screen_w.border_title = "TUIPET"
         self.stats_w.border_title = "STATUS"
         self.keys_w.border_title = "ACTIONS"
+        self.screen_w.border_subtitle = "● on"
         self.msg_w.update(self._welcome)
         theme.apply(theme.load_choice())
         self._restyle()
@@ -464,6 +465,8 @@ class TuiPetApp(App):
             for w in (self.screen_w, self.stats_w, self.msg_w, self.keys_w):
                 w.styles.border = ("round", theme.BORDER)
                 w.styles.border_title_color = theme.MID
+            self.screen_w.styles.border = ("double", theme.BORDER)
+            self.screen_w.styles.border_subtitle_color = theme.ACCENT
             self.screen_w.styles.background = theme.LCD_BG
             self.msg_w.styles.color = theme.MID
             self.keys_w.styles.color = theme.MID
