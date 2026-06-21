@@ -62,7 +62,8 @@ def load_sprites():
         first = next((f for f in frames if f), None)
         best = max((sum(r.count("1") for r in f) for f in frames if f), default=0)
         # unfinished cells (solid square, near-blank, or fully empty) -> blob
-        if first is None or best < 10 or _content_fill(first) > 0.97:
+        if (first is None or best < 10 or _content_fill(first) > 0.97
+                or rec["name"].strip().upper() in ("EMPTY", "", "NA", "NULL", "NONE")):
             PLACEHOLDER_NUMS.add(rec["num"])
             rec["frames"] = placeholder.FRAMES
             rec["w"], rec["h"] = placeholder.W, placeholder.H

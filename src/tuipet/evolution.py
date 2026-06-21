@@ -178,6 +178,7 @@ def _failed_form(pet, by_num):
     its species' 'Failed' form (e.g. Numemon) rather than getting stuck."""
     failed = [t for t in data.load_evolutions().get(pet.num, [])
               if t in by_num and by_num[t]["stage"] != pet.stage
+              and not data.is_placeholder(t)
               and data.load_requirements().get(t, {}).get("special") == "Failed"]
     return random.choice(failed) if failed else None
 
@@ -196,6 +197,8 @@ def select(pet):
     targets = []
     for t in data.load_evolutions().get(pet.num, []):
         if t not in by_num or t == pet.num:
+            continue
+        if data.is_placeholder(t):
             continue
         if by_num[t]["stage"] != pet.stage or (has_xa and _is_xform(t)):
             targets.append(t)

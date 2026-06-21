@@ -136,18 +136,20 @@ class Pet:
     def hatch(cls, num=None):
         _, by_num = data.load_sprites()
         if num is None:
-            fresh = [n for n, r in by_num.items() if r["stage"] == "Fresh"]
+            fresh = [n for n, r in by_num.items() if r["stage"] == "Fresh" and not data.is_placeholder(n)]
             num = random.choice(fresh)
         return cls.from_num(num)
 
     @classmethod
-    def new_egg(cls, generation=1):
+    def new_egg(cls, generation=1, egg_type=None):
+        if egg_type is None:
+            egg_type = random.randint(0, 10)
         return cls(num=-1, name="Digitama", stage="Egg",
-                   egg_type=random.randint(0, 10), generation=generation)
+                   egg_type=egg_type, generation=generation)
 
     def _hatch_into_fresh(self):
         _, by_num = data.load_sprites()
-        fresh = [n for n, r in by_num.items() if r["stage"] == "Fresh"]
+        fresh = [n for n, r in by_num.items() if r["stage"] == "Fresh" and not data.is_placeholder(n)]
         import random as _r
         self.evolve_to(_r.choice(fresh))
         self.hatching = False

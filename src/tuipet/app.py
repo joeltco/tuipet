@@ -12,6 +12,7 @@ from . import adventurescreen
 from . import shopscreen
 from . import habitatscreen
 from . import digicorescreen
+from . import eggselectscreen
 from . import persistence
 from . import jogressscreen
 from . import jogress
@@ -253,10 +254,13 @@ class TuiPetApp(App):
     def __init__(self, pet: Pet | None = None):
         super().__init__()
         self._welcome = "Welcome! Raise your pet."
+        self._new_game = False
         if pet is None:
             loaded, msg = persistence.load()
             if loaded is not None:
                 pet, self._welcome = loaded, (msg or "Welcome back!")
+            else:
+                self._new_game = True
         self.pet = pet or Pet.new_egg()
 
     def compose(self) -> ComposeResult:
@@ -273,9 +277,17 @@ class TuiPetApp(App):
         self.msg_w = self.query_one("#msg", Static)
         self.msg_w.update(self._welcome)
         self.repaint()
+        if self._new_game:
+            self.push_screen(eggselectscreen.EggSelectScreen(), self._after_egg_pick)
         self.set_interval(0.45, self.on_anim)
         self.set_interval(1.0, self.on_tick)
         self.set_interval(10.0, self.autosave)
+
+    def _after_egg_pick(self, egg_type):
+        if egg_type is not None:
+            self.pet = Pet.new_egg(egg_type=egg_type)
+        self.flash("Take good care of your egg!")
+        self.repaint()
 
     def autosave(self):
         persistence.save(self.pet)
