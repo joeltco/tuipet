@@ -118,7 +118,7 @@ def _effect_overlay(pet, frame_i, cols, px_h):
         return pts
     if pet.asleep and E.get("zzz"):                       # Zzz above a sleeper
         z = E["zzz"][frame_i % len(E["zzz"])]
-        pts += _blit(z, cols // 2 + 5, 1)
+        pts += _blit(z, cols - len(z[0]) - 2, 1)
     elif pet.status_word() == "freezing" and E.get("frozen"):   # frost overlay
         fr = E["frozen"][0]
         pts += _blit(fr, (cols - len(fr[0])) // 2, px_h - len(fr) - 2)
@@ -130,10 +130,10 @@ def _effect_overlay(pet, frame_i, cols, px_h):
            "depressed" if pet.anim == "angry" else None)
     if emo and E.get(emo):                                # emote bubble on reactions
         ef = E[emo][frame_i % len(E[emo])]
-        pts += _blit(ef, cols // 2 - len(ef[0]) // 2, 1)
+        pts += _blit(ef, cols - len(ef[0]) - 2, 1)
     elif (pet.anim in ("idle", "walk") and frame_i % 2 == 0 and E.get("attention")
           and (pet.hunger == 0 or pet.sick or pet.poop >= 3 or pet.energy <= 0)):
-        pts += _blit(E["attention"][0], cols // 2 + 7, 1)  # '!' call for care
+        pts += _blit(E["attention"][0], cols - len(E["attention"][0][0]) - 2, 1)  # '!' call for care
     return pts
 
 
@@ -273,7 +273,7 @@ class Screen(Static):
             hap = data.load_effects().get("happy")
             if hap and (step // 2) % 2 == 0:                   # pulsing happy sparkle
                 hf = hap[(step // 2) % len(hap)]
-                overlay += _blit(hf, SCREEN_COLS // 2 - len(hf[0]) // 2, 1)
+                overlay += _blit(hf, SCREEN_COLS - len(hf[0]) - 2, 1)
         self.update(render_screen(rows, SCREEN_COLS, SCREEN_ROWS, on, bg,
                                   xshift=xshift, overlay=overlay, bgimg=bgimg))
 
