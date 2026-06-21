@@ -151,14 +151,13 @@ class Pet:
 
     def _hatch_into_fresh(self):
         _, by_num = data.load_sprites()
-        import random as _r
         target = egg_mod.hatch_target(self.egg_type)
         if target is None or target not in by_num or data.is_placeholder(target):
             fresh = [n for n, r in by_num.items() if r["stage"] == "Fresh" and not data.is_placeholder(n)]
-            target = _r.choice(fresh)
+            target = random.choice(fresh)
         self.evolve_to(target)
         self.hatching = False
-        if self.x_antibody == "None" and _r.randint(0, X_BIRTH_BOUND - 1) < X_BIRTH_TARGET:
+        if self.x_antibody == "None" and random.randint(0, X_BIRTH_BOUND - 1) < X_BIRTH_TARGET:
             self._set_xantibody("Permanent")          # born a natural X-Antibody carrier
 
     @classmethod
@@ -646,6 +645,10 @@ class Pet:
         self.vaccine = max(0, self.vaccine + e["vaccine"])
         self.data_power = max(0, self.data_power + e["data"])
         self.virus = max(0, self.virus + e["virus"])
+        if e["unfatigue"]:
+            self.energy = 100
+        if e["undepressed"]:
+            self.mood = _clamp(self.mood + 50, 0, 100)
         if e["cured"]:
             self.sick = False
         if e["healed"]:

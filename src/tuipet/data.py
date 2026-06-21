@@ -284,6 +284,7 @@ def load_enemies():
             "location": int(r.get("Location") or 0),
             "penalty": int(r.get("Penalty") or 0),
             "chance": int(r.get("AppearanceChance/100") or 100),
+            "loot_table": int(r.get("LootTableID") or -1),
         })
     return enemies
 
@@ -415,6 +416,47 @@ def consumable_by_key(key):
         if e["key"] == key:
             return e
     return None
+
+
+@lru_cache(maxsize=1)
+def load_loot_tables():
+    """DVPet loot tables: table_id -> ordered list of {key, name, rate}.
+
+    Built from lootTable.csv (table -> drop-rate IDs) and dropRate.csv
+    (drop-rate ID -> consumable + percentage). A single 0..100 draw walks the
+    list; the slack below 100 is the chance nothing drops (see loot.roll)."""
+    foods, items = _load_consumables()
+    rates = {}
+    with open(os.path.join(_DATA, "dropRate.csv")) as fh:
+        rd = csv.reader(fh)
+        next(rd, None)
+        for row in rd:
+            if len(row) < 4 or not row[0].strip():
+                continue
+            try:
+                did, cid, rate = int(row[0]), int(row[1]), int(row[3])
+            except ValueError:
+                continue
+            is_food = row[2].strip().upper() == "TRUE"
+            base = (foods if is_food else items).get(cid)
+            if not base:
+                continue
+            rates[did] = {"key": ("f:%d" if is_food else "i:%d") % cid,
+                          "name": base["name"], "rate": rate}
+    tables = {}
+    with open(os.path.join(_DATA, "lootTable.csv")) as fh:
+        rd = csv.reader(fh)
+        next(rd, None)
+        for row in rd:
+            if not row or not row[0].strip():
+                continue
+            try:
+                tid = int(row[0])
+            except ValueError:
+                continue
+            tables[tid] = [rates[int(c)] for c in row[1:]
+                           if c.strip().isdigit() and int(c) in rates]
+    return tables
 
 
 @lru_cache(maxsize=1)

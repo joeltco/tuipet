@@ -70,7 +70,7 @@ class Adventure:
         """Apply a battle result to the run, rolling loot on a win."""
         self.loot = None
         if won:
-            drop = loot.roll(was_boss)
+            drop = loot.roll(enemy)
             if drop:
                 self.pet.add_item(drop["key"])
                 self.loot = drop
