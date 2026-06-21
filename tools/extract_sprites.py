@@ -142,7 +142,8 @@ def extract_eggs():
             m = egg_cell(col, fr)
             if m is not None and m.any():
                 frames.append(["".join("1" if v else "0" for v in rr) for rr in m])
-        eggs.append({"frames": frames, "hatch": fresh[0], "hatch_name": digi[fresh[0]]["Name"]})
+        eggs.append({"frames": frames, "hatch": fresh,
+                     "hatch_name": digi[fresh[0]]["Name"] if len(fresh) == 1 else "???"})
     path = os.path.join(OUT, "eggs.json.gz")
     with gzip.open(path, "wt") as fh:
         json.dump(eggs, fh)

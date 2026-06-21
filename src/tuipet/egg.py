@@ -6,6 +6,7 @@ has a single frame in armorEggs, so hatching is a shake, not a carved crack.
 """
 from __future__ import annotations
 import gzip
+import random
 import json
 import os
 from functools import lru_cache
@@ -51,9 +52,12 @@ ROLES = {"idle": [0, 1], "egg_idle": [0, 1], "hatch": [2, 3, 4]}
 
 
 def hatch_target(egg_type=0):
-    """The Fresh creature (DigimonNum) this egg hatches into, or None."""
+    """A Fresh creature (DigimonNum) this egg hatches into -- chosen at random among
+    the egg's targets, so generic "mystery" eggs surprise you (DVPet behaviour)."""
     eggs = _real_eggs()
-    return eggs[egg_type % len(eggs)]["hatch"] if eggs else None
+    if not eggs:
+        return None
+    return random.choice(eggs[egg_type % len(eggs)]["hatch"])
 
 
 def hatch_name(egg_type=0):
