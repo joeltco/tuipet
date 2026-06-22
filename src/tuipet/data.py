@@ -7,38 +7,38 @@ _HERE = os.path.dirname(__file__)
 _DATA = os.path.join(_HERE, "data")
 _RAW = _DATA  # bundled CSVs (digimon/evolutions/foods) live alongside sprites
 
-# Authoritative frame roles, reverse-engineered from DVPet's View/SpriteAnim.class.
-# Each creature strip has 11 frames (index 0-10):
-#   0 idle/walk A      5 happy / cheer-up
-#   1 idle/walk B      6 sad / unhappy
-#   2 sleep/rest A     7 eat-closed (chew) / cheer-down
-#   3 sleep/rest B     8 eat-open (mouth) / neutral
-#   4 angry/refuse/attack   9 tired / sick / disliked / geriatric
-#                          10 exhausted (very tired)
-# Loops below mirror the game's own animations (cheer/jeer/eat/refuse/idleSleep).
+# Frame roles VERIFIED against DVPet View/SpriteAnim drawNum() args (each per-Digimon
+# strip is 11 frames, index 0-10; sheet order preserved by extract_sprites col 0..10):
+#   0 idle/neutral base      6 attack / cheer-up (HP_Training_AttackSuccess, attackDefault)
+#   1 idle-B / walk-B / toy   7 eat-chew / cheer-down(big) / wake-end
+#   2 sleep                   8 eat-swallow
+#   3 stretch / yawn          9 dejected / fail / disliked (HP_Training_AttackFail, jeer-up)
+#   4 cheer-down / clean-done 10 collapse / dying (Dying, jeer-down, exhausted)
+#   5 excited / cheer-up(big)
+# State->frames taken from the real animations: Cheering=6,4  Jeering=9,10  Eating=0,7,8,7
+# attackDefault=6,0  Cleaning=0,4  Bounce/Jump(play)=1,5  Dying=10.
 ROLES = {
-    "idle":   [0, 1],      # walk bob
+    "idle":   [0, 1],      # Idling / Discovering walk
     "walk":   [0, 1],
-    "sleep":  [2, 3],      # idleSleep cycles 2,3
-    "happy":  [5, 7],      # cheer(): good praise up=5 down=7
-    "angry":  [6, 4],      # jeer(): bad praise up=6 down=4
-    "eat":    [8, 7],      # eat(): mouth-open 8 / chew 7
-    "refuse": [4],         # head-shake (mirrored); depressed -> 9
-    "attack": [4, 6],      # battle/training charge poses
-    "tantrum": [4, 6, 1],
-    "poop":   [4, 5],
-    "play":   [1, 5],
-    "heal":   [8, 7],      # recover(): eats medicine
-    "sad":    [6],
-    "tired":  [9],
-    "exhausted": [10],
-    "yawn":   [8, 1],      # yawning(): mouth-open 8 -> settle 1
-    "wake":   [3, 1],      # wakeUp(): groggy 3 -> up
-    "surprise": [4, 6],    # surprising(): startle poses
-    "shield": [4],         # weathering() rain: shielding pose
-    "huddle": [9],         # weathering() snow/cold: huddle pose
+    "sleep":  [2, 3],      # idleSleep
+    "happy":  [6, 4],      # Cheering: cheer(false) poseA=6 poseB=4
+    "angry":  [9, 10],     # Jeering: jeer(false) poseA=9 poseB=10
+    "eat":    [7, 8],      # eat(): chew 7 / swallow 8
+    "refuse": [4],         # head-shake (mirrored); no distinct DVPet state -> tuipet pose
+    "attack": [6, 0],      # attackDefault: strike 6 -> reset 0
+    "tantrum": [9, 10],    # tuipet unhappy-idle -> jeer poses
+    "poop":   [4, 5],      # tuipet poop squat (DVPet poop frames not isolated)
+    "play":   [1, 5],      # Bounce/Jump toy interact: 1 -> 5
+    "heal":   [7, 8],      # recover(): eat-medicine, same as eat
+    "sad":    [9],         # dejected/fail pose (HP_Training_AttackFail)
+    "tired":  [9],         # disliked/weary pose
+    "exhausted": [10],     # collapse pose (Dying)
+    "yawn":   [8, 1],      # to-sleep (tuipet pose; DVPet yawn not isolated)
+    "wake":   [3, 1],      # wakeUp groggy -> settle
+    "surprise": [1, 5],    # AngrySurprise startle beats 1,5
+    "shield": [4],         # weathering() rain (tuipet adaptation)
+    "huddle": [9],         # weathering() snow/cold (tuipet adaptation)
 }
-# Roles drawn as a left/right mirror flip on alternating frames (head-shake etc.)
 MIRROR_ROLES = {"refuse"}
 
 STAGE_ORDER = ["Fresh", "InTraining", "Rookie", "Champion", "Ultimate", "Mega"]

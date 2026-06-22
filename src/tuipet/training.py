@@ -206,7 +206,7 @@ class TrainingPanel:
     def _sprite_idx(self):
         gk = self.gkey
         if self.phase == "done":
-            return 5 if self.success else 9
+            return 6 if self.success else 9   # AttackSuccess=6 / AttackFail=9
         if gk == "data":
             return DATA_SHOOT_FRAME if self.slot == self.target else 4
         return [4, 6][self.frame_i % 2]

@@ -927,7 +927,10 @@ class Pet:
         if evolution.weight_category(self.weight, self._base_weight()) == "Over" and random.random() < 0.5:
             self._injure()
         self._check_worse_injury(in_battle=False)        # drilling an injured pet can worsen it
-        self._set_anim("happy" if hits >= 2 else "attack", 1.8)
+        # DVPet HP_Training_AttackSuccess = hit pose (frame 6); AttackFail = dejected pose
+        # (frame 9). A failed drill shows the dejected reaction (which surfaces the "unhappy"
+        # discourage emote), not an attack pose.
+        self._set_anim("happy" if hits >= 2 else "sad", 1.8)
         rank = "Perfect!" if hits == 3 else ("Good!" if hits == 2 else ("Meh." if hits == 1 else "Whiff."))
         if game == "hp":
             return f"{rank} {'Effort up!' if hits >= 2 else 'no gain'}"
