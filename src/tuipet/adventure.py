@@ -8,6 +8,7 @@ from . import loot
 
 LIVES = 3
 ENCOUNTER_CHANCE = 0.22
+NIGHT_MULT = 1.6   # DVPet RandomEncounterNightCoefficient: more wild encounters after dark
 LEGS = 24  # travel ticks to cross a zone
 
 
@@ -59,7 +60,8 @@ class Adventure:
             self.lives = LIVES
             self.last = "Reached a town — rested!"
             return ("town", None)
-        if self.zone["randoms"] and random.random() < ENCOUNTER_CHANCE:
+        chance = ENCOUNTER_CHANCE * (NIGHT_MULT if self.pet.day_phase == "night" else 1.0)
+        if self.zone["randoms"] and random.random() < chance:
             e = random.choice(_real(self.zone["randoms"]))
             self.last = f"Wild {e['name']} appeared!"
             return ("encounter", e)
