@@ -346,7 +346,8 @@ class Stats(Static):
         lifecol = T.NEG if pet.is_geriatric else T.LIFE
         self.border_subtitle = f"gen {pet.generation}"
         lines = [
-            f"[b]{pet.name[:14]}[/]{xm} [dim]{pet.stage}·{pet.attribute}[/]",
+            f"[b]{pet.name[:22]}[/]{xm}",
+            f"[dim]{pet.stage} · {pet.attribute}[/]",
             div,
             f"Hunger  {hearts(pet.hunger)}",
             f"Effort  {hearts(pet.strength)}",
@@ -360,7 +361,6 @@ class Stats(Static):
             f"@{pet.habitat_obj()['name'][:14]} {amark} [dim]{pet.season}[/]",
             f"[{T.COIN}]{picon}[/][dim]{pet.day_phase} {wglyph}{pet.weather} {int(pet.temp)}\u00b0[/] [dim]{mins}m{secs:02d}s[/]",
             f"Life    {bar(lifepct, 12, lifecol)}",
-            div,
             f"[b]{pet.status_word()}[/]   " + "  ".join(deco),
         ]
         self.update("\n".join(lines))
