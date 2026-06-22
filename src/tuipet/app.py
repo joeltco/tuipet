@@ -235,9 +235,9 @@ class Screen(Static):
             self.walk_x, self.walk_dir = lo, 1
 
     # ---- care-action animations (DVPet SpriteAnim eat/clean/cheer) -----------
-    def start_fx(self, kind, icon=None, poop=0):
-        steps = {"eat": 16, "cheer": 14, "clean": 16, "spit": 11, "evolve": 12, "dying": 18}.get(kind, 12)
-        self.fx = {"kind": kind, "step": 0, "steps": steps, "icon": icon, "poop": poop}
+    def start_fx(self, kind, icon=None, poop=0, old_num=None):
+        steps = {"eat": 16, "cheer": 14, "clean": 16, "spit": 11, "evolve": 18, "dying": 18}.get(kind, 12)
+        self.fx = {"kind": kind, "step": 0, "steps": steps, "icon": icon, "poop": poop, "old_num": old_num}
 
     def advance_fx(self):
         if not self.fx:
@@ -317,8 +317,19 @@ class Screen(Static):
             food = self._food_frames(fx.get("icon") or "f:0")
             if food:
                 overlay += _blit(food[0], 12, 5 + step * 2)    # ...drops away off-screen
-        elif fx["kind"] == "evolve" and step % 2 == 1:
-            rows = ["0" * len(r) for r in rows]                # digivolution flash: blink the creature, not a solid box
+        elif fx["kind"] == "evolve":
+            n = fx["steps"]
+            if step < n // 3:                                  # 1) the old form shakes
+                old = fx.get("old_num")
+                if old not in (None, -1):
+                    rec = data.load_sprites()[1].get(old)
+                    if rec and rec["frames"][0]:
+                        rows = rec["frames"][0]
+                xshift = -2 if step % 2 else 2
+            elif step < 2 * n // 3:                            # 2) dither / static transition
+                overlay = overlay + [(x, y) for y in range(px_h) for x in range(SCREEN_COLS)
+                                     if (x + y + step) % 2 == 0]
+            # 3) reveal: rows is already the evolved form
         self.update(render_screen(rows, SCREEN_COLS, SCREEN_ROWS, on, bg,
                                   xshift=xshift, overlay=overlay, bgimg=bgimg,
                                   mirror=(fx["kind"] == "dying")))
@@ -770,7 +781,7 @@ class TuiPetApp(App):
             else:
                 self.beep("evolve")
                 self.flash(f"[b]{p.name}![/] evolved to {p.stage}!")
-            self.screen_w.start_fx("evolve")
+            self.screen_w.start_fx("evolve", old_num=prev[0])
         elif p.poop > poop0:
             self.beep("poop", bell=False)
         # care-need call (classic V-pet nag): alert on onset, then every ~90s
