@@ -590,6 +590,15 @@ class TuiPetApp(App):
                                           "[dim]←→ ↑↓ browse[/]", "[dim]ENTER to choose[/]"])
         elif isinstance(self.mode, adventurescreen.AdventurePanel):
             self._status_adventure()
+        elif isinstance(self.mode, digicorescreen.DigiCorePanel):
+            dp = self.mode
+            toc = [(f"[b]▸ {t}[/]" if j == dp.i else f"[dim]  {t}[/]")
+                   for j, (t, _) in enumerate(dp.pages)]
+            self._status_card("Data Book", [
+                f"[b]{self.pet.name[:14]}[/]",
+                f"[dim]{self.pet.stage} · {self.pet.attribute}[/]",
+                "",
+            ] + toc + ["", "[dim]←/→ flip   ESC close[/]"])
         else:
             self.stats_w.paint(self.pet)
 
