@@ -590,6 +590,8 @@ class TuiPetApp(App):
                                           "[dim]←→ ↑↓ browse[/]", "[dim]ENTER to choose[/]"])
         elif isinstance(self.mode, adventurescreen.AdventurePanel):
             self._status_adventure()
+        elif isinstance(self.mode, tournamentscreen.TournamentPanel):
+            self._status_tournament()
         elif isinstance(self.mode, digicorescreen.DigiCorePanel):
             dp = self.mode
             toc = [(f"[b]▸ {t}[/]" if j == dp.i else f"[dim]  {t}[/]")
@@ -606,6 +608,30 @@ class TuiPetApp(App):
         self.stats_w.border_subtitle = ""
         body = [f"[b]{title}[/]", f"[dim]{'─' * 26}[/]"] + lines
         self.stats_w.update("\n".join(body))
+
+    def _status_tournament(self):
+        p, t, T = self.pet, self.mode.tourney, theme
+        self.stats_w.border_subtitle = f"gen {p.generation}"
+        div = f"[dim]{'─' * 26}[/]"
+        if t.over:
+            lines = [f"[b]{p.name[:14]}[/] [dim]· cup[/]", div,
+                     f"[b]{t.name[:24]}[/]", "",
+                     f"Trophies  [{T.COIN}]\u2605{p.trophies}[/]", "", div,
+                     "[dim]the cup is decided[/]"]
+        else:
+            lines = [
+                f"[b]{p.name[:14]}[/] [dim]· cup[/]", div,
+                f"[b]{t.name[:24]}[/]",
+                f"Match    {t.round + 1} / 3",
+                f"Trophy   [{T.COIN}]\u2605{p.trophies}[/]",
+                div,
+                f"Effort   {hearts(p.strength)}",
+                f"Energy   {bar(p.energy, 11, T.ENERGY)}",
+                f"Power    [{T.POS}]V{p.vaccine}[/] [{T.ENERGY}]D{p.data_power}[/] [{T.MOOD}]Vi{p.virus}[/]",
+                div,
+                "[dim]fight for the cup[/]",
+            ]
+        self.stats_w.update("\n".join(lines))
 
     def _status_adventure(self):
         p, a, T = self.pet, self.mode.adv, theme
