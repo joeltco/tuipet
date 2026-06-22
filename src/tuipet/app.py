@@ -611,6 +611,11 @@ class TuiPetApp(App):
             self.screen_w.paint(self.pet)
 
     def on_tick(self):
+        if isinstance(self.mode, (battlescreen.BattlePanel, training.TrainingPanel,
+                                  adventurescreen.AdventurePanel,
+                                  tournamentscreen.TournamentPanel,
+                                  jogressscreen.JogressPanel)):
+            return  # pet is busy in an activity -> pause its idle life-sim
         prev = (self.pet.num, self.pet.stage)
         was_dead = self.pet.dead
         poop0 = self.pet.poop
