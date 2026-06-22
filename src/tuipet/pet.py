@@ -251,6 +251,7 @@ class Pet:
     poop_sizes: list = _dcf(default_factory=list)   # per-pile size 1..4 (DVPet _filth bytes)
     sick: bool = False
     asleep: bool = False
+    lights: bool = True             # DVPet _lights: room-light toggle, SEPARATE from sleep
     care_mistakes: int = 0
     wins: int = 0
     hatching: bool = False
@@ -576,9 +577,7 @@ class Pet:
         frames = data.load_backgrounds().get(self.habitat_obj().get("bg", ""))
         if not frames:
             return None
-        if self.asleep and len(frames) > 3:
-            idx = 3                                          # lights off: the dark habitat
-        elif self.weather in _PRECIP and len(frames) > 4:
+        if self.weather in _PRECIP and len(frames) > 4:
             idx = 4
         else:
             idx = {"dawn": 0, "day": 1, "dusk": 2, "night": 3}.get(self.day_phase, 1)
@@ -1272,16 +1271,15 @@ class Pet:
         self._set_anim("heal", 1.5)
         return f"{self.name} feels better!"
 
-    def toggle_sleep(self):
+    def toggle_lights(self):
+        """The lights button (DVPet setLights): toggles the room light ONLY. The pet
+        sleeps and wakes on its own schedule -- this does not force sleep or wake."""
         if self.dead:
             return "It rests now — press N for a new egg."
         if self.stage == "Egg":
             return "It is still an egg."
-        self.asleep = not self.asleep
-        if not self.asleep:
-            self._wake_grace = 180.0          # stay up after a manual wake
-        self._set_anim("sleep" if self.asleep else "idle", 0)
-        return "Lights off. Zzz." if self.asleep else "Lights on."
+        self.lights = not self.lights
+        return "Lights off." if not self.lights else "Lights on."
 
     def play(self):
         if self.dead:

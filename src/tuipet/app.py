@@ -74,7 +74,7 @@ CLOUD = ["0011100", "0111111", "1111111"]
 
 _K = "b cyan"
 KEYS = (
-    f"[{_K}]f[/] feed   [{_K}]p[/] play   [{_K}]c[/] clean   [{_K}]h[/] heal   [{_K}]s[/] sleep\n"
+    f"[{_K}]f[/] feed   [{_K}]p[/] play   [{_K}]c[/] clean   [{_K}]h[/] heal   [{_K}]s[/] lights\n"
     f"[{_K}]t[/] train  [{_K}]b[/] battle  [{_K}]a[/] adventure  [{_K}]u[/] cup  [{_K}]j[/] jogress\n"
     f"[{_K}]o[/] shop  [{_K}]e[/] habitat  [{_K}]d[/] data  [{_K}]g[/] theme  [{_K}]m[/] sound  [{_K}]n[/] new  [{_K}]q[/] quit"
 )
@@ -179,11 +179,11 @@ class Screen(Static):
     def paint(self, pet: Pet):
         if self.fx:
             return self._paint_fx(pet)
-        phase = "night" if pet.asleep else pet.day_phase   # asleep -> lights off (render dark)
+        phase = pet.day_phase
         on, bg = PHASE_PALETTE.get(phase, (LCD_ON, LCD_BG))
         bgimg = self._background(pet)
         corner = None                      # DVPet shows time via bg frame + palette, no corner icon
-        if pet.asleep:                     # lights off: black screen, just the sleeping pet + Zzz
+        if not pet.lights:                 # lights off (the 's' lights button): dark room (+ Zzz if asleep)
             bgimg, bg, on = None, "#050505", SIL_NIGHT
         elif bgimg:
             on = SIL_NIGHT if phase == "night" else SIL_DAY   # silhouette ink
@@ -457,7 +457,7 @@ class TuiPetApp(App):
         ("a", "adventure", "Adventure"), ("o", "shop", "Shop"), ("e", "habitat", "Habitat"),
         ("d", "digicore", "DigiCore"),
         ("j", "jogress", "Jogress"), ("u", "tournament", "Cup"),
-        ("s", "sleep", "Sleep"), ("g", "theme", "Theme"), ("m", "sound", "Sound"), ("n", "new", "New pet"), ("q", "quit", "Quit"),
+        ("s", "sleep", "Lights"), ("g", "theme", "Theme"), ("m", "sound", "Sound"), ("n", "new", "New pet"), ("q", "quit", "Quit"),
     ]
 
     def __init__(self, pet: Pet | None = None):
@@ -931,7 +931,7 @@ class TuiPetApp(App):
             self.screen_w.start_fx("cheer")
             self.beep("happy", bell=False)
         self._do(msg)
-    def action_sleep(self): self._do(self.pet.toggle_sleep())
+    def action_sleep(self): self._do(self.pet.toggle_lights())   # the "s" key is the LIGHTS toggle
     def action_new(self):
         gen = self.pet.generation + 1
         self._open_mode(eggselectscreen.EggSelectPanel(),
