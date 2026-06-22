@@ -399,6 +399,7 @@ def _consumable(row, id_field):
         "cured": flag("Cured"),
         "healed": flag("Healed") or flag("Recovered"),
         "unfatigue": flag("Removes Fatigue"),
+        "vitamin": flag("Vitamin"),   # injury-worsening guard (no shipped item flags it yet)
         "undepressed": flag("Removes Depressed"),
     }
 

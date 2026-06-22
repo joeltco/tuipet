@@ -167,6 +167,22 @@ MIN_INJ_LENGTH, MAX_INJ_LENGTH = 1, 12       # Min/MaxInjLength
 SICK_LAPSE_MIN = 29                      # SickLapseMin (game-min per recovery lapse)
 INJ_LAPSE_MIN = 29                       # InjLapseMin
 
+# DVPet injury worsening + vitamins (config.csv, calcWorse{Exercise,Battle}Inj /
+# worsenedInjury / feedVitamin): pushing an injured pet (training/battling) can worsen the
+# injury -- extending it and costing mood/obedience/energy/spirit -- at a chance set by
+# weight and whether a vitamin is active.  Chances are factor/WorseInjuryChance.  No shipped
+# item is flagged Vitamin in items.csv, so has_vitamin() defaults false (the no-vitamin
+# rates apply); the grant path (feed_vitamin / a "vitamin" consumable flag) is wired and
+# ready.  Values verbatim from config.csv column 1; WorseInjuryLifeDec lifespan hit omitted.
+WORSE_INJ_CHANCE = 100                   # WorseInjuryChance / WorseBattleInjuryChance (bound)
+WORSE_INJ_EXERCISE = {"bad_nv": 10, "good_nv": 1, "good_v": 0, "bad_v": 5}   # WorseInjury*
+WORSE_INJ_BATTLE = {"bad_nv": 15, "good_nv": 5, "good_v": 0, "bad_v": 5}     # WorseBattleInjury*
+WORSE_MALADY_MOOD_DEC = -35              # worseMaladyMoodDec
+WORSE_MALADY_OBED_DEC = -10              # worseMaladyObedienceDec
+WORSE_INJ_ENERGY_DEC = 1                 # WorseInjuryEnergyDec
+WORSE_INJ_ENTH_CHANGE = -1               # WorseInjuryEnthusiasmChange
+VITAMIN_HOURS = 60                       # VitaminHours (game-min of injury-worsening protection)
+
 # X-Antibody: a special state that unlocks evolution into the "X" Digimon forms.
 # None -> Temporary (decays) -> Permanent -> XProgram.  Acquired by a rare natural
 # birth roll or the X-Antibody / X-Program items.  (DVPet birth is 1/1000; bumped
@@ -252,6 +268,7 @@ class Pet:
     fatigue_length: float = 0.0     # DVPet _fatigueLength (game-min remaining; >0 == fatigued)
     sick_length: float = 0.0        # DVPet _sickLength (game-min until natural recovery)
     inj_length: float = 0.0         # DVPet _injLength (game-min until the injury heals)
+    vitamin_lapse: float = 0.0      # DVPet _vitaminLapse (game-min of injury-worsening protection)
     battles: int = 0
     levels_fought: list = _dcf(default_factory=list)  # opponent levels beaten this stage (DVPet _levelsFought)
     bits: int = 0
@@ -393,6 +410,8 @@ class Pet:
                     self.sick = False
             if self.inj_length > 0:                           # injLapse: the injury heals over time
                 self.inj_length = max(0.0, self.inj_length - dt)
+            if self.vitamin_lapse > 0:                        # vitaminLapse: protection wears off
+                self.vitamin_lapse = max(0.0, self.vitamin_lapse - dt)
         if self.asleep:
             # DVPet sleep recovery: +SleepEnergyGain every SleepMinutesToEnergyGain.
             self._sleep_e_t = getattr(self, "_sleep_e_t", 0.0) + dt
@@ -898,6 +917,7 @@ class Pet:
         # training while overweight risks an injury
         if evolution.weight_category(self.weight, self._base_weight()) == "Over" and random.random() < 0.5:
             self._injure()
+        self._check_worse_injury(in_battle=False)        # drilling an injured pet can worsen it
         self._set_anim("happy" if hits >= 2 else "attack", 1.8)
         rank = "Perfect!" if hits == 3 else ("Good!" if hits == 2 else ("Meh." if hits == 1 else "Whiff."))
         if game == "hp":
@@ -923,6 +943,7 @@ class Pet:
         """Resolve a finished battle: update battles/wins and rewards."""
         self.battles += 1
         self._set_energy(self.energy - 1)               # battle energy (BattleWon/LostEnergyDec)
+        self._check_worse_injury(in_battle=True)         # battling injured can worsen it
         if won:
             self.wins += 1
             if enemy:
@@ -1110,6 +1131,37 @@ class Pet:
         self._set_mood(self.mood - INJ_MOOD_DEC)
         self._set_enthusiasm(self.enthusiasm + INJ_ENTH_CHANGE)
 
+    def has_vitamin(self):
+        """PhysicalState.hasVitamin: a vitamin is active, guarding against worse injuries."""
+        return self.vitamin_lapse > 0
+
+    def feed_vitamin(self):
+        """PhysicalState.feedVitamin: top up injury-worsening protection."""
+        self.vitamin_lapse = VITAMIN_HOURS
+
+    def _worsen_injury(self):
+        """PhysicalState.worsenedInjury: the injury gets worse -- extended, with mood/
+        obedience/energy/spirit costs (the WorseInjuryLifeDec lifespan hit is omitted)."""
+        self.obedience += WORSE_MALADY_OBED_DEC
+        self._set_mood(self.mood + WORSE_MALADY_MOOD_DEC)
+        self._set_enthusiasm(self.enthusiasm + WORSE_INJ_ENTH_CHANGE)
+        self.inj_length += random.randint(MIN_INJ_LENGTH, MAX_INJ_LENGTH) * INJ_LAPSE_MIN
+        self._set_energy(self.energy - WORSE_INJ_ENERGY_DEC)
+
+    def _check_worse_injury(self, in_battle):
+        """calcWorse{Exercise,Battle}Inj: pushing an already-injured pet can worsen the
+        injury, at a chance set by weight and whether a vitamin is active."""
+        if not self.is_injured():
+            return
+        table = WORSE_INJ_BATTLE if in_battle else WORSE_INJ_EXERCISE
+        good_weight = evolution.weight_category(self.weight, self._base_weight()) == "Healthy"
+        if good_weight:
+            factor = table["good_v"] if self.has_vitamin() else table["good_nv"]
+        else:
+            factor = table["bad_v"] if self.has_vitamin() else table["bad_nv"]
+        if random.randint(0, WORSE_INJ_CHANCE - 1) < factor:
+            self._worsen_injury()
+
     def _fatigue(self):
         """PhysicalState.fatigue: the pet collapses from over-exertion — a heavy one-time
         mood/energy/spirit hit (worse if it was already fatigued), then it must rest the
@@ -1278,6 +1330,8 @@ class Pet:
         self.vaccine = max(0, self.vaccine + e["vaccine"])
         self.data_power = max(0, self.data_power + e["data"])
         self.virus = max(0, self.virus + e["virus"])
+        if e.get("vitamin"):
+            self.feed_vitamin()                          # guards against injury worsening
         if e["unfatigue"]:
             self.energy = self.max_energy
             self.fatigue_length = 0.0                    # a restorative shakes off fatigue
