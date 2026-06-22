@@ -104,6 +104,31 @@ CALORIE_LAPSE_CHANGE = -1               # CalorieLapseChange (drain per lapse)
 CALORIE_LAPSE_GERIATRIC_EXTRA = -3      # CalorieLapseChangeGeriatric (added when elderly)
 CALORIE_DECAY_SEC = 1800 / (2 * CALORIE_LIMIT)   # keep ~1800s per hunger heart
 
+# DVPet discipline (config.csv, PhysicalState.praise / scold / checkPraiseScoldWindow).
+# The pet flags a praise window after a good deed and a scold window after a bad one;
+# praising/scolding while the matching window is open trains obedience, the mistimed
+# response penalizes it.  Deltas verbatim; windows age on the mood-lapse cadence.
+PRAISE_HIGH_DISP_MOOD_INC = 10          # PraiseHighDispositionMoodInc
+PRAISE_LOW_DISP_MOOD_INC = 6            # PraiseLowDispositionMoodInc
+PRAISE_NONCOMPLIANT_OBED_DEC = 2        # PraiseNoncompliantObedienceDec
+CORRECT_PRAISE_OBED = {0: 3, 1: 5, -1: 1}   # CorrectPraiseObedienceInc[/High/Low]
+PRAISE_SCOLD_MOOD_INC = 10              # PraiseScoldMoodInc (mis-praise during scold window)
+PRAISE_SCOLD_ENTH = 5                   # PraiseScoldEnthusiasmChange (setEnthusiasm)
+PRAISE_SCOLD_OBED_DEC = 8               # PraiseScoldObedienceDec
+SCOLD_OBED_INC = 1                      # ScoldObedienceInc
+SCOLD_HIGH_OBED_MOOD = 75               # ScoldHighObedienceMood threshold
+SCOLD_HIGH_OBED_MOOD_DEC = 5            # ScoldHighObedienceMoodDec
+SCOLD_LOW_OBED_MOOD_DEC = 15            # ScoldLowObedienceMoodDec
+CORRECT_SCOLD_OBED = {0: 0, 1: 2, -1: 0}    # CorrectScoldObedienceInc[/High/Low]
+CORRECT_SCOLD_ENTH = -1                 # CorrectScoldEnthusiasmChange
+SCOLD_ENTH = -3                         # ScoldEnthusiasmChange (scold outside any window)
+SCOLD_PRAISE_MOOD_DEC = 10              # ScoldPraiseMoodDec (mis-scold during praise window)
+SCOLD_PRAISE_ENTH_DEC = 6              # ScoldPraiseEnthusiasmDec
+SCOLD_PRAISE_OBED = {0: 1, 1: 3, -1: 0}     # ScoldPraiseObedienceInc[/High/Low]
+DISCIPLINE_SCOLD_OBED_INC = 2           # DisciplineCallScoldObedienceInc (a fair scold)
+PRAISE_WINDOW_MAX = 2                    # PraiseWindowMax (lapses the window stays open)
+SCOLD_WINDOW_MAX = 2                     # ScoldWindowMax
+
 # X-Antibody: a special state that unlocks evolution into the "X" Digimon forms.
 # None -> Temporary (decays) -> Permanent -> XProgram.  Acquired by a rare natural
 # birth roll or the X-Antibody / X-Program items.  (DVPet birth is 1/1000; bumped
@@ -180,6 +205,12 @@ class Pet:
     glutton: int = 0
     restless: int = 0
     exercise_today: int = 0         # DVPet _exercise: drills done today (resets daily)
+    # discipline windows (DVPet _praise/_scold + their aging windows)
+    praise_flag: bool = False       # a good deed is awaiting praise
+    scold_flag: bool = False        # a bad deed is awaiting a scolding
+    praise_window: int = 0          # lapses since the praise flag opened
+    scold_window: int = 0
+    compliance: bool = True         # DVPet _compliance (a fair scold restores it)
     battles: int = 0
     levels_fought: list = _dcf(default_factory=list)  # opponent levels beaten this stage (DVPet _levelsFought)
     bits: int = 0
@@ -346,6 +377,15 @@ class Pet:
                 self._set_mood(self.mood + 1)
             if self.poop > 0:                            # poopWaitMoodCheck: an uncleaned mess nags
                 self._set_mood(self.mood + (LARGE_POOP_WAIT_MOOD if self.poop >= 3 else POOP_WAIT_MOOD))
+            # discipline windows age (checkPraiseScoldWindow); a missed window closes
+            if self.praise_flag:
+                self.praise_window += 1
+                if self.praise_window > PRAISE_WINDOW_MAX:
+                    self.praise_flag, self.praise_window = False, 0
+            if self.scold_flag:
+                self.scold_window += 1
+                if self.scold_window > SCOLD_WINDOW_MAX:
+                    self.scold_flag, self.scold_window = False, 0
             # enthusiasm lapse: while ASLEEP spirit decays toward 0 (EnthusiasmLapse Dec/Inc).
             # DVPet's AWAKE enthusiasmLapse (mood -= |enth|*EnthusiasmMoodDecCoefficient, plus an
             # energy-gated climb) is gated on maxEnergy/EnthusiasmChangeEnergyCoefficient. DVPet's
@@ -373,6 +413,7 @@ class Pet:
                     self.hunger -= 1
                 else:
                     self.care_mistakes += 1
+                    self._open_scold()           # neglect: the pet acts up
                 self.calories = CALORIE_LIMIT
         # pooping (DVPet poop(): relief mood bump, sheds weight, drops a sized pile)
         self._poop_t = getattr(self, "_poop_t", 0) + dt
@@ -392,6 +433,7 @@ class Pet:
                 if self._filth_t >= 1800:    # uncleaned grace before it counts
                     self._filth_t = -3600    # AfterMistakeMinutesPostponed grace after one
                     self.care_mistakes += 1
+                    self._open_scold()       # left in filth: the pet acts up
         else:
             self._filth_t = 0                # cleaned / under the limit resets the call timer
         # sickness from filth / starvation
@@ -827,6 +869,7 @@ class Pet:
             self.wins += 1
             if enemy:
                 self.levels_fought.append(_enemy_level(enemy))
+            self._open_praise()                          # a win is praiseworthy
             self._set_mood(self.mood + 10)               # BattleWonMoodInc
             self._set_enthusiasm(self.enthusiasm - 3)    # BattleWonEnthusiasmDec
             lo, hi = (enemy or {}).get("bits", (1, 5))
@@ -945,6 +988,79 @@ class Pet:
         sends it back in — it sulks but obeys a touch more."""
         self._set_mood(self.mood - SURR_REJECT_MOOD_DEC)
         self.obedience += SURR_REJECT_OBED_INC
+
+    # ---- discipline: praise / scold (PhysicalState) --------------------------
+    def _open_praise(self):
+        """A good deed opens a praise window (DVPet setPraise)."""
+        if self.num != -1 and self.stage != "Egg":
+            self.praise_flag, self.praise_window = True, 0
+
+    def _open_scold(self):
+        """A bad deed makes the pet act up: opens a scold window and marks it
+        noncompliant.  DVPet raises this on its periodic disciplineCall timer (deferred
+        here — at tuipet's ~60x clock it would fire far too often) and on battle misdeeds;
+        tuipet opens it on the care-mistake event instead, keeping the deltas faithful."""
+        if self.num != -1 and self.stage != "Egg":
+            self.scold_flag, self.scold_window, self.compliance = True, 0, False
+
+    def praise(self):
+        """PhysicalState.praise: cheering the pet always lifts its mood; doing so inside
+        an open praise window trains obedience, but praising while it is misbehaving (a
+        scold window is open) spoils it instead."""
+        if self.dead:
+            return "It rests now — press N for a new egg."
+        if self.stage == "Egg":
+            return "It is still an egg."
+        if self.asleep:
+            self._disturbed()
+        self._set_mood(self.mood + (PRAISE_LOW_DISP_MOOD_INC if self._disposition() < 0
+                                    else PRAISE_HIGH_DISP_MOOD_INC))
+        if not self.compliance:
+            self.obedience -= PRAISE_NONCOMPLIANT_OBED_DEC
+        if self.scold_flag and not self.praise_flag:          # mis-praised a misbehaving pet
+            self._set_mood(self.mood + PRAISE_SCOLD_MOOD_INC)
+            self._set_enthusiasm(PRAISE_SCOLD_ENTH)
+            self.obedience -= PRAISE_SCOLD_OBED_DEC
+            self.scold_flag, self.scold_window = False, 0
+            self._set_anim("surprise", 1.6)
+            return "It was misbehaving — the praise only spoiled it."
+        if self.praise_flag:                                  # well-timed praise
+            self.obedience += CORRECT_PRAISE_OBED[self._disposition()]
+            self.praise_flag, self.praise_window = False, 0
+            self._set_anim("happy", 2.0)
+            return f"{self.name} beams with pride!"
+        self._set_anim("happy", 1.6)
+        return f"You praise {self.name}."
+
+    def scold(self):
+        """PhysicalState.scold: a scolding nudges obedience up and mood down (more so for
+        a low-obedience pet); a well-timed scold (an open scold window) corrects it, while
+        scolding a pet that did nothing wrong (an open praise window) is unfair."""
+        if self.dead:
+            return "It rests now — press N for a new egg."
+        if self.stage == "Egg":
+            return "It is still an egg."
+        if self.asleep:
+            self._disturbed()
+        self.obedience += SCOLD_OBED_INC
+        self._set_mood(self.mood - (SCOLD_LOW_OBED_MOOD_DEC if self.obedience < SCOLD_HIGH_OBED_MOOD
+                                    else SCOLD_HIGH_OBED_MOOD_DEC))
+        if self.praise_flag and not self.scold_flag:          # mis-scolded a good pet
+            self._set_mood(self.mood - SCOLD_PRAISE_MOOD_DEC)
+            self._set_enthusiasm(self.enthusiasm - SCOLD_PRAISE_ENTH_DEC)
+            self.obedience += SCOLD_PRAISE_OBED[self._disposition()]
+            self.praise_flag, self.praise_window = False, 0
+            self._set_anim("sad", 1.8)
+            return "It did nothing wrong — that scolding was unfair."
+        if self.scold_flag:                                   # well-timed scold
+            self._set_enthusiasm(self.enthusiasm + CORRECT_SCOLD_ENTH)
+            self.obedience += CORRECT_SCOLD_OBED[self._disposition()]
+            self.scold_flag, self.scold_window, self.compliance = False, 0, True
+            self._set_anim("angry", 1.8)
+            return f"{self.name} takes the lesson to heart."
+        self._set_enthusiasm(self.enthusiasm + SCOLD_ENTH)
+        self._set_anim("angry", 1.6)
+        return f"You scold {self.name}."
 
     def clean(self):
         if self.dead:
@@ -1073,6 +1189,10 @@ class Pet:
             return "needs cleaning"
         if self.day_phase == "night" and not self.asleep and self.energy < self.max_energy // 2:
             return "sleepy"
+        if self.scold_flag:
+            return "misbehaving"
+        if self.praise_flag:
+            return "did great!"
         if self.mood <= MIN_UNHAPPY_MOOD:
             return "unhappy"
         if self.mood >= MIN_HAPPY_MOOD:

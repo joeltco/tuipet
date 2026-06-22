@@ -438,6 +438,7 @@ class TuiPetApp(App):
     BINDINGS = [
         ("f", "feed", "Feed"), ("t", "train", "Train"), ("b", "battle", "Battle"),
         ("p", "play", "Play"), ("c", "clean", "Clean"), ("h", "heal", "Heal"),
+        ("r", "praise", "Praise"), ("k", "scold", "Scold"),
         ("a", "adventure", "Adventure"), ("o", "shop", "Shop"), ("e", "habitat", "Habitat"),
         ("d", "digicore", "DigiCore"),
         ("j", "jogress", "Jogress"), ("u", "tournament", "Cup"),
@@ -837,6 +838,12 @@ class TuiPetApp(App):
             self.flash(battle.reward)
             self.beep("win") if battle.won else self.beep("lose", bell=False)
         self.repaint()
+
+    def action_praise(self):
+        self._do(self.pet.praise())
+
+    def action_scold(self):
+        self._do(self.pet.scold())
 
     def action_tournament(self):
         if self.pet.stage in ("Egg", "Fresh", "InTraining"):
