@@ -588,6 +588,8 @@ class TuiPetApp(App):
             self._status_card("New Egg", [f"[dim]{i + 1} of {egg_mod.count()} eggs[/]", "",
                                           "Destined to hatch", f"  [b]{egg_mod.hatch_name(i)}[/]", "",
                                           "[dim]←→ ↑↓ browse[/]", "[dim]ENTER to choose[/]"])
+        elif isinstance(self.mode, adventurescreen.AdventurePanel):
+            self._status_adventure()
         else:
             self.stats_w.paint(self.pet)
 
@@ -595,6 +597,28 @@ class TuiPetApp(App):
         self.stats_w.border_subtitle = ""
         body = [f"[b]{title}[/]", f"[dim]{'─' * 26}[/]"] + lines
         self.stats_w.update("\n".join(body))
+
+    def _status_adventure(self):
+        p, a, T = self.pet, self.mode.adv, theme
+        self.stats_w.border_subtitle = f"gen {p.generation}"
+        div = f"[dim]{'─' * 26}[/]"
+        lives = "♥" * a.lives + "[dim]·[/]" * (3 - a.lives)
+        lines = [
+            f"[b]{p.name[:14]}[/] [dim]· away[/]",
+            div,
+            f"Map      {a.mi + 1}-{a.zi + 1}",
+            f"Lives    {lives}",
+            f"Progress {a.pct}%",
+            f"Bag      {sum(p.inventory.values())}   [{T.COIN}]{p.bits}b[/]",
+            div,
+            f"Hunger   {hearts(p.hunger)}",
+            f"Energy   {bar(p.energy, 11, T.ENERGY)}",
+            f"Power    [{T.POS}]V{p.vaccine}[/] [{T.ENERGY}]D{p.data_power}[/] [{T.MOOD}]Vi{p.virus}[/]",
+            div,
+            "[dim]out exploring —[/]",
+            "[dim]survive the zone[/]",
+        ]
+        self.stats_w.update("\n".join(lines))
 
     def on_anim(self):                         # slow tick: idle pet bob
         if self.mode is None and not self.screen_w.fx:
@@ -606,6 +630,8 @@ class TuiPetApp(App):
             if hasattr(self.mode, "anim"):
                 self.mode.anim()
                 self.screen_w.update(self._center(self.mode.text()))
+                if isinstance(self.mode, adventurescreen.AdventurePanel):
+                    self._status_adventure()
         elif self.screen_w.fx:
             self.screen_w.advance_fx()
             self.screen_w.paint(self.pet)
