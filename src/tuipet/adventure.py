@@ -7,8 +7,17 @@ from . import data
 from . import loot
 
 LIVES = 3
+# Wild-encounter rate. DVPet (Model.Zone.checkBattle) rolls every game-tick:
+#   chance = C - (night ? C/NightCoeff : 0) + C/WalkCoeff ; encounter iff
+#   Random.nextInt(ceil(chance)) == 0. Adventure travel is "walking" (travelSpeed 1).
+# config RandomEncounter*Coefficient: Night 2, Walk 2 (C = RandomEncounterChance 7000).
+_C, _NIGHT_COEFF, _WALK_COEFF = 7000.0, 2.0, 2.0
+_CHANCE_DAY = _C + _C / _WALK_COEFF                        # 10500
+_CHANCE_NIGHT = _C - _C / _NIGHT_COEFF + _C / _WALK_COEFF   # 7000
+NIGHT_MULT = _CHANCE_DAY / _CHANCE_NIGHT                    # 1.5x as likely at night
+# Per-leg base: a TUI pacing abstraction (DVPet rolls 1/chance per tick; we split a
+# zone into LEGS discrete legs). Not a DVPet constant.
 ENCOUNTER_CHANCE = 0.22
-NIGHT_MULT = 1.6   # DVPet RandomEncounterNightCoefficient: more wild encounters after dark
 LEGS = 24  # travel ticks to cross a zone
 
 

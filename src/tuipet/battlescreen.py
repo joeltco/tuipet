@@ -1,4 +1,5 @@
-"""Battle — pet vs enemy with attack effects, rendered in the display box."""
+"""Battle — pet vs enemy, rendered in the display box. Combat logic lives in
+battle.Battle (a faithful DVPet port); this is presentation only."""
 from __future__ import annotations
 from rich.text import Text
 from . import data
@@ -43,15 +44,10 @@ class BattlePanel:
                 enemy_hurt = self.battle.enemy_hp < be
                 pet_hurt = self.battle.pet_hp < bp
                 attacker = "pet" if enemy_hurt else "enemy"
-                attr = which if attacker == "pet" else self.battle.last_enemy_attr
-                if attacker == "pet":
-                    pw_val = {"Vaccine": self.pet.vaccine, "Data": self.pet.data_power,
-                              "Virus": self.pet.virus}.get(attr, 0)
-                else:
-                    e = self.battle.enemy
-                    pw_val = {"Vaccine": e["vaccine"], "Data": e["data_power"],
-                              "Virus": e["virus"]}.get(attr, 0)
-                count = max(1, min(4, 1 + pw_val // 50))
+                # orbs thrown = the round's real damage (Battle.finishAttack amount)
+                dmg = (self.battle.last_player_damage if attacker == "pet"
+                       else self.battle.last_enemy_damage)
+                count = max(1, min(6, dmg))
                 self.atk = {"attacker": attacker, "step": 0, "count": count,
                             "pet_hurt": pet_hurt, "enemy_hurt": enemy_hurt}
             return None
@@ -135,7 +131,7 @@ class BattlePanel:
         out.append(f"   Foe[{b.enemy['attribute'][:2]}] {self._hp(b.enemy_hp, b.enemy_max)}\n", style=INK)
         out.append_text(menu.note(b.last or "Choose your attack!"))
         if b.over:
-            res = ("SURRENDER!" if b.surrendered else "VICTORY!") if b.won else "DEFEAT"
+            res = "VICTORY!" if b.won else "DEFEAT"
             out.append_text(menu.footer(f"{res}  {b.reward}   SPACE"))
         else:
             out.append_text(menu.footer("1 Vac   2 Data   3 Vir   ESC flee"))

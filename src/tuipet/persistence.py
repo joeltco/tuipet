@@ -35,7 +35,7 @@ def _offline(pet, elapsed):
         return ""
     mins = elapsed / 60.0
     pet.energy = _clamp(pet.energy - min(60, mins * 3), 0, 100)
-    pet.mood = _clamp(pet.mood - min(50, mins * 2), 0, 100)
+    pet.mood = _clamp(pet.mood - min(50, mins * 2), -300, 300)
     drop = min(pet.hunger, int(mins // 5))
     pet.hunger -= drop
     if mins > 10 and pet.hunger == 0:

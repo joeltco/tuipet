@@ -366,7 +366,8 @@ def _consumable(row, id_field):
         "desc": (row.get("Description") or "").replace("<br>", " "),
         "price": int(num("DefaultPrice")),
         "hunger": int(num("Hunger")),
-        "mood": int(num("Mood") + num("Enthusiasm")),   # we fold DVPet enthusiasm/spirit into mood
+        "mood": int(num("Mood")),
+        "enthusiasm": int(num("Enthusiasm")),   # DVPet keeps spirit separate from mood
         "weight": int(num("Weight")),
         "energy": int(num("Energy (<1 * maxEnergy)") or num("Energy")),
         "strength": int(num("Strength")),

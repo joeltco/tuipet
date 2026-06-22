@@ -60,7 +60,7 @@ def build_pages(pet):
         ]),
         ("CONDITION", [
             ("Hunger", f"{pet.hunger}/4"), ("Energy", f"{int(pet.energy)}/100"),
-            ("Mood", f"{int(pet.mood)}/100"), ("Sick", "yes" if pet.sick else "no"),
+            ("Mood", pet.current_mood()), ("Spirit", f"{pet.enthusiasm:+d}"), ("Sick", "yes" if pet.sick else "no"),
             ("Injury", str(pet.injuries)), ("Poop", str(pet.poop)),
             ("Care x", str(pet.care_mistakes)), ("Disturb", str(pet.disturb)),
         ]),

@@ -50,8 +50,13 @@ def weight_category(weight, base):
 
 
 def mood_category(mood):
-    return "Happy" if mood >= 75 else ("Neutral" if mood >= 40 else
-                                       ("Unhappy" if mood >= 15 else "Depressed"))
+    if mood <= -250:            # ToDepressedMoodMin
+        return "Depressed"
+    if mood >= 150:             # MinHappyMood
+        return "Happy"
+    if mood <= -1:              # MinUnhappyMood
+        return "Unhappy"
+    return "Neutral"
 
 
 def _stats(pet):

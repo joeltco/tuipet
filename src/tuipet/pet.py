@@ -39,6 +39,15 @@ LIFE_START = 259200.0          # 3 days (egg/baby base lifespan)
 STAGE_LIFE = {"Rookie": 345600.0, "Champion": 388800.0, "Ultimate": 432000.0, "Mega": 432000.0}  # 4-5 days
 GERIATRIC_REMAIN = 21600.0   # last N seconds of life = elderly
 
+# DVPet mood model (config.csv): a signed score mapped to a Mood enum.
+MOOD_MIN, MOOD_MAX = -300, 300        # MinMood / MaxMood
+MIN_HAPPY_MOOD = 150                  # MinHappyMood
+MIN_UNHAPPY_MOOD = -1                 # MinUnhappyMood
+TO_DEPRESSED_MOOD = -250              # ToDepressedMoodMin
+NEW_UNDEPRESSED_MOOD = -50            # NewUndepressedMood
+MIN_ENTHUSIASM, MAX_ENTHUSIASM = -10, 10   # MinEnthusiasm / MaxEnthusiasm
+MAX_ENTHUSIASM_MOOD_PENALTY = 10           # MaxEnthusiasmMoodPenalty
+
 # X-Antibody: a special state that unlocks evolution into the "X" Digimon forms.
 # None -> Temporary (decays) -> Permanent -> XProgram.  Acquired by a rare natural
 # birth roll or the X-Antibody / X-Program items.  (DVPet birth is 1/1000; bumped
@@ -88,7 +97,8 @@ class Pet:
     hunger: int = 4                 # hearts 0..4 (4 = full)
     strength: int = 2               # effort hearts 0..4
     energy: int = 100               # 0..100
-    mood: int = 80                  # 0..100
+    mood: int = 0                   # DVPet signed mood (MinMood..MaxMood); Neutral at 0
+    enthusiasm: int = 0             # DVPet spirit, MinEnthusiasm..MaxEnthusiasm (separate from mood)
     weight: int = 20
     poop: int = 0
     sick: bool = False
@@ -233,7 +243,32 @@ class Pet:
             drain *= 0.6                  # fair weather + ideal temp eases fatigue
         drain *= max(0.5, min(1.6, 1 - 0.12 * self._affinity()))
         self.energy = _clamp(self.energy - drain * dt, 0, 100)
-        self.mood = _clamp(self.mood - (0.009 if night else 0.005) * dt, 0, 100)
+        # DVPet mood lapse (~MoodLapseMin game-min): Happy drains, Unhappy recovers,
+        # Neutral settles toward 0 (config *MoodLapse* values).
+        self._mood_lapse_t = getattr(self, "_mood_lapse_t", 0.0) + dt
+        if self._mood_lapse_t >= 59:
+            self._mood_lapse_t = 0.0
+            m = self.current_mood()
+            if m == "Happy":
+                self._set_mood(self.mood - 10)           # HappyMoodLapseDec
+            elif m == "Depressed":
+                self._set_mood(self.mood + 10)           # VeryUnhappyMoodLapseInc (climb out)
+            elif m == "Unhappy":
+                self._set_mood(self.mood + 5)            # UnhappyMoodLapseInc
+            elif self.mood > 0:
+                self._set_mood(self.mood - 1)            # NeutralMoodLapseDec toward 0
+            elif self.mood < 0:
+                self._set_mood(self.mood + 1)
+            # enthusiasm lapse: while ASLEEP spirit decays toward 0 (EnthusiasmLapse Dec/Inc).
+            # DVPet's AWAKE enthusiasmLapse (mood -= |enth|*EnthusiasmMoodDecCoefficient, plus an
+            # energy-gated climb) is gated on maxEnergy/EnthusiasmChangeEnergyCoefficient. DVPet's
+            # maxEnergy is a different scale from tuipet's 0..100 energy and isn't ported yet, so
+            # that branch is deferred rather than approximated with a mismatched threshold.
+            if self.asleep:
+                if self.enthusiasm > 0:
+                    self._set_enthusiasm(self.enthusiasm - 1)    # EnthusiasmLapseDec
+                elif self.enthusiasm < 0:
+                    self._set_enthusiasm(self.enthusiasm + 2)    # EnthusiasmLapseInc
         # hunger ticks down on a slow clock
         self._hunger_t = getattr(self, "_hunger_t", 0) + dt
         if self._hunger_t >= 1800:
@@ -248,15 +283,20 @@ class Pet:
             self._poop_t = 0
             self.poop += 1
             self._set_anim("poop", 2.2)          # squat-and-go (DVPet poop())
-        # filth care-mistake: filth left uncleaned too long (DVPet MinutesToMistakePoop).
-        # Cleaning resets the timer; otherwise neglect counts toward the evolution gate.
-        if self.poop > 0:
-            self._filth_t = getattr(self, "_filth_t", 0) + dt
-            if self._filth_t >= 1800:
-                self._filth_t = 0
-                self.care_mistakes += 1
+        # Filth care-mistake (DVPet poopCall/incCallMinutes): a mistake is only logged
+        # once the mess reaches the filth limit AND the awake pet leaves it uncleaned for
+        # a grace period; after one, the timer is postponed (AfterMistakeMinutesPostponed)
+        # so they do not stack instantly. DVPet MistakeFilthLimit=7 filth items; tuipet's
+        # coarse `poop` count maps the visible "needs cleaning" level (>=3) to that gate.
+        FILTH_LIMIT = 3                      # MistakeFilthLimit (mapped to tuipet poop scale)
+        if self.poop >= FILTH_LIMIT:
+            if not self.asleep:              # DVPet poopCall() only ticks while awake;
+                self._filth_t = getattr(self, "_filth_t", 0) + dt   # sleep pauses, not resets
+                if self._filth_t >= 1800:    # uncleaned grace before it counts
+                    self._filth_t = -3600    # AfterMistakeMinutesPostponed grace after one
+                    self.care_mistakes += 1
         else:
-            self._filth_t = 0
+            self._filth_t = 0                # cleaned / under the limit resets the call timer
         # sickness from filth / starvation
         if (self.poop >= 3 or self.hunger == 0) and not self.sick and random.random() < 0.02 * dt:
             self.sick = True
@@ -339,13 +379,13 @@ class Pet:
     def _track_time_pref(self, dt):
         # the pet warms to the times of day it spends happy in, and sours on the
         # rest -- DVPet's timeRanks favorite/disliked, kept lightweight
-        d = 1 if self.mood >= 60 else (-1 if self.mood <= 25 else 0)
+        d = 1 if self.mood >= MIN_HAPPY_MOOD else (-1 if self.mood <= MIN_UNHAPPY_MOOD else 0)
         if d:
             ph = self.day_phase
             self.time_pref[ph] = _clamp(self.time_pref.get(ph, 0) + d, -90, 90)
 
     def _disposition(self):
-        return 1 if self.mood >= 70 else (-1 if self.mood <= 30 else 0)
+        return 1 if self.mood >= MIN_HAPPY_MOOD else (-1 if self.mood <= MIN_UNHAPPY_MOOD else 0)
 
     def _glutton(self):
         return 1 if self.overeat >= 4 else (-1 if self.overeat == 0 else 0)
@@ -427,9 +467,9 @@ class Pet:
         if self._comfort_t >= wx.IDEAL_TEMP_MOOD_SEC:
             self._comfort_t = 0.0
             if lo <= self.temp <= hi:
-                self.mood = _clamp(self.mood + wx.IDEAL_TEMP_INC + aff, 0, 100)
+                self._set_mood(self.mood + wx.IDEAL_TEMP_INC + aff)
             elif too_hot or too_cold:
-                self.mood = _clamp(self.mood - wx.IDEAL_TEMP_DEC + aff, 0, 100)
+                self._set_mood(self.mood - wx.IDEAL_TEMP_DEC + aff)
         self._btemp_t = getattr(self, "_btemp_t", 0.0) + dt
         if self._btemp_t >= wx.BAD_TEMP_SICK_SEC:
             self._btemp_t = 0.0
@@ -502,11 +542,42 @@ class Pet:
     def _set_anim(self, name, ttl):
         self.anim, self.anim_ttl = name, ttl
 
+    def _set_mood(self, value):
+        """PhysicalState.setMood: nudge once by disposition (MoodChangeDispositionCoefficient=1),
+        then clamp to [MinMood, MaxMood]."""
+        value = int(round(value))
+        if value != self.mood:
+            value += self._disposition()      # MoodChangeDispositionCoefficient = 1
+        self.mood = _clamp(value, MOOD_MIN, MOOD_MAX)
+
+    def mood_pct(self):
+        """Mood as 0..100 for the status bar."""
+        return (self.mood - MOOD_MIN) * 100 // (MOOD_MAX - MOOD_MIN)
+
+    def current_mood(self):
+        """PhysicalState.setCurrentMood -> Mood enum word."""
+        if self.mood <= TO_DEPRESSED_MOOD:
+            return "Depressed"
+        if self.mood >= MIN_HAPPY_MOOD:
+            return "Happy"
+        if self.mood <= MIN_UNHAPPY_MOOD:
+            return "Unhappy"
+        return "Neutral"
+
+    def _set_enthusiasm(self, value):
+        """PhysicalState.setEnthusiasm: clamp to [MinEnthusiasm, MaxEnthusiasm];
+        hitting a boundary costs mood (MaxEnthusiasmMoodPenalty)."""
+        value = _clamp(int(round(value)), MIN_ENTHUSIASM, MAX_ENTHUSIASM)
+        if value != self.enthusiasm and value in (MIN_ENTHUSIASM, MAX_ENTHUSIASM):
+            self._set_mood(self.mood - MAX_ENTHUSIASM_MOOD_PENALTY)
+        self.enthusiasm = value
+
     def _disturbed(self):
         """Bothering the pet mid-sleep: counts toward restlessness AND costs mood
         now (DVPet DisturbMoodDec)."""
         self.disturb += 1
-        self.mood = _clamp(self.mood - 10, 0, 100)
+        self._set_mood(self.mood - 10)              # DisturbMoodDec
+        self._set_enthusiasm(self.enthusiasm - 2)   # DisturbEnthusiasmDec
         return "zzz... mind its sleep!"
 
     def _special_idle(self):
@@ -517,9 +588,9 @@ class Pet:
             self._set_anim("shield", 2.0)
         elif self.weather in _SNOW:
             self._set_anim("huddle", 2.0)
-        elif self.mood >= 70:
+        elif self.mood >= MIN_HAPPY_MOOD:
             self._set_anim(random.choice(("play", "surprise")), 2.0)
-        elif self.mood <= 30:
+        elif self.mood <= MIN_UNHAPPY_MOOD:
             self._set_anim(random.choice(("angry", "tantrum")), 2.0)
         elif random.random() < 0.5:
             self._set_anim("surprise", 1.6)
@@ -540,7 +611,7 @@ class Pet:
             return f"{self.name} is too full!"
         self.hunger = _clamp(self.hunger + max(1, food["hunger"]), 0, 4)
         self.weight += food.get("weight", 1)
-        self.mood = _clamp(self.mood + food.get("mood", 0), 0, 100)
+        self._set_mood(self.mood + food.get("mood", 0))     # foods.csv Mood (DVPet-scale)
         self._set_anim("eat", 1.4)
         return f"Fed {food['name']}."
 
@@ -569,7 +640,8 @@ class Pet:
         if hits >= 2:
             self.strength = _clamp(self.strength + 1, 0, 4)
             self.obedience += 1
-        gain = max(0, power)
+        success = hits >= 2
+        gain = 1 if success else 0     # DVPet onExerciseFinish: a successful drill adds exactly +1
         if game == "hp":
             attr = "Effort"
         else:
@@ -581,10 +653,15 @@ class Pet:
             elif attr == "Virus":
                 self.virus += gain
             if attr != self.attribute:                       # disliked-attribute cost
-                self.mood = _clamp(self.mood - 1, 0, 100)
+                self._set_mood(self.mood - 1)            # NoneTrainingAttributeMoodRankChange
+                self._set_enthusiasm(self.enthusiasm - 3)  # ExerciseDislikedAttributeEnthusiasmChange
+            else:
+                self._set_enthusiasm(self.enthusiasm - 1)  # ExerciseFavAttributeEnthusiasmDec
         self.weight = max(1, self.weight - 2)
         self.energy = _clamp(self.energy - 15, 0, 100)
-        self.mood = _clamp(self.mood + hits * 3, 0, 100)
+        if not success:                                  # DVPet exercise-fail penalties
+            self._set_mood(self.mood - 10)               # ExerciseFailMoodDec
+            self.obedience -= 1                          # ExerciseFailObedienceDec
         # training while overweight risks an injury
         if evolution.weight_category(self.weight, self._base_weight()) == "Over" and random.random() < 0.5:
             self.injuries += 1
@@ -614,13 +691,15 @@ class Pet:
             self.wins += 1
             if enemy:
                 self.levels_fought.append(_enemy_level(enemy))
-            self.mood = _clamp(self.mood + 8, 0, 100)
+            self._set_mood(self.mood + 10)               # BattleWonMoodInc
+            self._set_enthusiasm(self.enthusiasm - 3)    # BattleWonEnthusiasmDec
             lo, hi = (enemy or {}).get("bits", (1, 5))
             gained = random.randint(lo, hi)
             self.bits += gained
             self._set_anim("happy", 2.0)
             return f"Victory! +{gained} bits"
-        self.mood = _clamp(self.mood - 10, 0, 100)
+        self._set_mood(self.mood - 20)               # BattleLostMoodDec
+        self._set_enthusiasm(self.enthusiasm - 6)    # BattleLostEnthusiasmDec
         if random.random() < 0.3:
             self.injuries += 1
         self._set_anim("sad", 2.0)
@@ -634,7 +713,7 @@ class Pet:
         if not self.poop:
             return "Nothing to clean."
         n, self.poop = self.poop, 0
-        self.mood = _clamp(self.mood + 3, 0, 100)
+        self._set_mood(self.mood + 6)               # CleanMoodInc
         self._set_anim("wash", 1.2)
         return f"Cleaned {n} poop."
 
@@ -646,7 +725,7 @@ class Pet:
         if not self.sick:
             return "Not sick."
         self.sick = False
-        self.mood = _clamp(self.mood + 5, 0, 100)
+        self._set_mood(self.mood + 75)              # curedMoodBonus
         self._set_anim("heal", 1.5)
         return f"{self.name} feels better!"
 
@@ -668,7 +747,7 @@ class Pet:
             return "It is still an egg."
         if self.asleep:
             return self._disturbed()
-        self.mood = _clamp(self.mood + 8, 0, 100)
+        self._set_mood(self.mood + 10)              # play ~= SpoilMoodInc (no DVPet 'play'; adapted)
         self.energy = _clamp(self.energy - 4, 0, 100)
         self._set_anim("play", 1.5)
         return "Played together!"
@@ -708,7 +787,8 @@ class Pet:
         is_food = key.startswith("f:")
         if e["hunger"]:
             self.hunger = _clamp(self.hunger + e["hunger"], 0, 4)
-        self.mood = _clamp(self.mood + e["mood"], 0, 100)
+        self._set_mood(self.mood + e["mood"])
+        self._set_enthusiasm(self.enthusiasm + e.get("enthusiasm", 0))
         self.weight = max(1, self.weight + e["weight"])
         if e["energy"]:
             self.energy = _clamp(self.energy + e["energy"], 0, 100)
@@ -721,7 +801,7 @@ class Pet:
         if e["unfatigue"]:
             self.energy = 100
         if e["undepressed"]:
-            self.mood = _clamp(self.mood + 50, 0, 100)
+            self._set_mood(max(self.mood, NEW_UNDEPRESSED_MOOD))  # leave depression
         if e["cured"]:
             self.sick = False
         if e["healed"]:
@@ -750,8 +830,8 @@ class Pet:
             return "needs cleaning"
         if self.day_phase == "night" and not self.asleep and self.energy < 45:
             return "sleepy"
-        if self.mood < 25:
+        if self.mood <= MIN_UNHAPPY_MOOD:
             return "unhappy"
-        if self.mood > 75:
+        if self.mood >= MIN_HAPPY_MOOD:
             return "happy"
         return "ok"
