@@ -110,6 +110,7 @@ class Battle:
         self.last_enemy_attr = None
         self.last_player_damage = 0
         self.last_enemy_damage = 0
+        self.last_player_first = True
         self._pet_zero_attack = None       # checkRememberZeroAttack
         self._enemy_zero_attack = None
         self.surrendered = False           # set True by surrender() (PhysicalState.checkSurrender)
@@ -147,6 +148,7 @@ class Battle:
         pdmg, edmg, enemy_attr = fx["pdmg"], fx["edmg"], fx["enemy_attr"]
         self.last_enemy_attr = enemy_attr
         self.last_player_damage, self.last_enemy_damage = pdmg, edmg
+        self.last_player_first = fx["player_first"]    # initiative order (checkFirst) for the View
         move = data.move_name(self.pet.num, player_attr) or player_attr
         emove = data.move_name(self.enemy["num"], enemy_attr) or enemy_attr
         # resolve in initiative order (checkFirst / First / Counter / ForcePlayerSecond);
