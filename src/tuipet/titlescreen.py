@@ -6,6 +6,8 @@ from . import data
 from .theme import LCD_ON, LCD_BG
 
 COLS, PXH = 40, 24
+BOOT_BLIP = 4      # frames of all-segments-on (power-on flash)
+BOOT_FADE = 5      # frames of dither dissolve into the title
 # tiny 3x5 pixel font for the wordmark
 _FONT = {
     "T": ["111", "010", "010", "010", "010"],
@@ -54,19 +56,31 @@ class TitlePanel:
         buf = [[0] * COLS for _ in range(PXH)]
         sw = max(len(r) for r in mascot)
         sh = len(mascot)
+        ww = max(len(r) for r in WORD)
+        group_h = sh + 1 + len(WORD)                 # mascot + gap + wordmark, centred as a unit
+        top = max(0, (PXH - group_h) // 2)
         ox = (COLS - sw) // 2
-        oy = max(0, 14 - sh)
+        oy = top
         for y, line in enumerate(mascot):
             for x, ch in enumerate(line):
                 if ch == "1" and 0 <= oy + y < PXH and 0 <= ox + x < COLS:
                     buf[oy + y][ox + x] = 1
-        ww = max(len(r) for r in WORD)
         wx = (COLS - ww) // 2
-        wy = 17
+        wy = top + sh + 1
         for y, line in enumerate(WORD):
             for x, ch in enumerate(line):
                 if ch == "1" and 0 <= wy + y < PXH and 0 <= wx + x < COLS:
                     buf[wy + y][wx + x] = 1
+        # power-on: all segments flash black, then the title dissolves in from static
+        boot = self.frame_i
+        if boot < BOOT_BLIP:
+            buf = [[1] * COLS for _ in range(PXH)]
+        elif boot < BOOT_BLIP + BOOT_FADE:
+            keep = BOOT_BLIP + BOOT_FADE - boot      # thinning noise as the title emerges
+            for y in range(PXH):
+                for x in range(COLS):
+                    if (x * 7 + y * 13 + boot * 5) % (BOOT_FADE + 1) < keep:
+                        buf[y][x] = 1
         t = Text()
         for cy in range(PXH // 2):
             ty, byy = cy * 2, cy * 2 + 1
