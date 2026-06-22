@@ -17,3 +17,4 @@ src/tuipet/data/*.gz
 
 # Save data
 *.save
+src/tuipet/data/sounds/

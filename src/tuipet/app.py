@@ -20,6 +20,7 @@ from . import tournamentscreen
 from . import titlescreen
 from . import themescreen
 from . import deathscreen
+from . import sound
 from .pet import Pet
 from .render import render_screen
 import os
@@ -483,8 +484,12 @@ class TuiPetApp(App):
         persistence.save(self.pet)
         self.exit()
 
-    def beep(self):
-        if self.sound:
+    def beep(self, name=None, bell=True):
+        if not self.sound:
+            return
+        if name and sound.play(name):
+            return
+        if bell:
             self.bell()
 
     def action_sound(self):
@@ -549,30 +554,34 @@ class TuiPetApp(App):
     def on_tick(self):
         prev = (self.pet.num, self.pet.stage)
         was_dead = self.pet.dead
+        poop0 = self.pet.poop
         self.pet.tick(1.0)
         p = self.pet
         if p.dead and not was_dead:
-            self.beep()
+            self.beep("death")
             self.flash("")
             self._open_mode(deathscreen.DeathPanel(p), self._after_death)
         elif (p.num, p.stage) != prev:
-            self.beep()
             if prev[1] == "Egg":
+                self.beep("hatch")
                 self.flash(f"[b]{p.name}[/] hatched!")
             else:
+                self.beep("evolve")
                 self.flash(f"[b]{p.name}![/] evolved to {p.stage}!")
             self.screen_w.start_fx("evolve")
-        # care-need call (classic V-pet nag): beep on onset, then every ~90s
+        elif p.poop > poop0:
+            self.beep("poop", bell=False)
+        # care-need call (classic V-pet nag): alert on onset, then every ~90s
         needs = (not p.dead and p.stage != "Egg" and not p.asleep
                  and (p.hunger == 0 or p.sick or p.poop >= 3 or p.energy <= 0))
         if needs and not self._needs:
-            self.beep()
+            self.beep("alarm")
             self._nag_t = 0.0
         elif needs:
             self._nag_t = getattr(self, "_nag_t", 0.0) + 1.0
             if self._nag_t >= 90:
                 self._nag_t = 0.0
-                self.beep()
+                self.beep("alarm")
         self._needs = needs
         self.repaint()
 
@@ -587,8 +596,10 @@ class TuiPetApp(App):
         msg = self.pet.feed()
         if self.pet.anim == "eat":
             self.screen_w.start_fx("eat", "f:0")
+            self.beep("eat", bell=False)
         elif "too full" in msg:
             self.screen_w.start_fx("spit", "f:0")
+            self.beep("refuse", bell=False)
         self._do(msg)
     def action_train(self):
         reason = self.pet.can_train()
@@ -610,8 +621,7 @@ class TuiPetApp(App):
     def _after_battle(self, battle):
         if battle is not None:
             self.flash(battle.reward)
-            if battle.won:
-                self.beep()
+            self.beep("win") if battle.won else self.beep("lose", bell=False)
         self.repaint()
 
     def action_tournament(self):
@@ -635,6 +645,7 @@ class TuiPetApp(App):
     def _after_jogress(self, msg):
         if msg:
             self.flash(msg)
+            self.beep("jogress")
         self.repaint()
 
     def action_shop(self):
@@ -667,17 +678,20 @@ class TuiPetApp(App):
         msg = self.pet.play()
         if self.pet.anim == "play":
             self.screen_w.start_fx("cheer")
+            self.beep("happy", bell=False)
         self._do(msg)
     def action_clean(self):
         poop = self.pet.poop
         msg = self.pet.clean()
         if self.pet.anim == "wash":
             self.screen_w.start_fx("clean", poop=poop)
+            self.beep("wash", bell=False)
         self._do(msg)
     def action_heal(self):
         msg = self.pet.heal()
         if self.pet.anim == "heal":
             self.screen_w.start_fx("cheer")
+            self.beep("happy", bell=False)
         self._do(msg)
     def action_sleep(self): self._do(self.pet.toggle_sleep())
     def action_new(self):
