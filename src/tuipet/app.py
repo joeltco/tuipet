@@ -325,6 +325,8 @@ class Screen(Static):
 
 class Stats(Static):
     def paint(self, pet: Pet):
+        if pet.num == -1 or pet.stage == "Egg":
+            return self._paint_egg(pet)
         T = theme
         div = f"[dim]{'─' * 26}[/]"
         deco = []
@@ -358,6 +360,25 @@ class Stats(Static):
             f"Life    {bar(lifepct, 12, lifecol)}",
             div,
             f"[b]{pet.status_word()}[/]   " + "  ".join(deco),
+        ]
+        self.update("\n".join(lines))
+
+    def _paint_egg(self, pet):
+        mins, secs = divmod(int(pet.age_seconds), 60)
+        self.border_subtitle = f"gen {pet.generation}"
+        div = f"[dim]{'─' * 26}[/]"
+        lines = [
+            "[b]Digitama[/] [dim]· egg[/]",
+            div,
+            "[dim]a new life is warming[/]",
+            "",
+            "Destined to hatch",
+            f"  [b]{egg_mod.hatch_name(pet.egg_type)}[/]",
+            div,
+            f"Age     {mins}m{secs:02d}s",
+            "",
+            "[dim]keep it cosy — it[/]",
+            "[dim]hatches on its own[/]",
         ]
         self.update("\n".join(lines))
 
@@ -535,7 +556,22 @@ class TuiPetApp(App):
             self.screen_w.update(self._center(self.mode.text()))
         else:
             self.screen_w.paint(self.pet)
-        self.stats_w.paint(self.pet)
+        if isinstance(self.mode, titlescreen.TitlePanel):
+            self._status_card("TUIPET", ["[dim]a terminal v-pet[/]", "", "",
+                                         "[dim]a creature awaits[/]", "",
+                                         "[dim]press ENTER[/]", "[dim]to begin[/]"])
+        elif isinstance(self.mode, eggselectscreen.EggSelectPanel):
+            i = self.mode.i
+            self._status_card("New Egg", [f"[dim]{i + 1} of {egg_mod.count()} eggs[/]", "",
+                                          "Destined to hatch", f"  [b]{egg_mod.hatch_name(i)}[/]", "",
+                                          "[dim]←→ ↑↓ browse[/]", "[dim]ENTER to choose[/]"])
+        else:
+            self.stats_w.paint(self.pet)
+
+    def _status_card(self, title, lines):
+        self.stats_w.border_subtitle = ""
+        body = [f"[b]{title}[/]", f"[dim]{'─' * 26}[/]"] + lines
+        self.stats_w.update("\n".join(body))
 
     def on_anim(self):                         # slow tick: idle pet bob
         if self.mode is None and not self.screen_w.fx:
