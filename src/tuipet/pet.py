@@ -493,6 +493,13 @@ class Pet:
     def _set_anim(self, name, ttl):
         self.anim, self.anim_ttl = name, ttl
 
+    def _disturbed(self):
+        """Bothering the pet mid-sleep: counts toward restlessness AND costs mood
+        now (DVPet DisturbMoodDec)."""
+        self.disturb += 1
+        self.mood = _clamp(self.mood - 10, 0, 100)
+        return "zzz... mind its sleep!"
+
     def _special_idle(self):
         """An occasional idle quirk reflecting weather + mood (DVPet
         weathering()/personalityMood*): huddle in bad weather, a happy hop
@@ -514,8 +521,7 @@ class Pet:
         if self.stage == "Egg":
             return "It is still an egg."
         if self.asleep:
-            self.disturb += 1
-            return "zzz... asleep"
+            return self._disturbed()
         foods = data.load_foods()
         food = food or (foods[0] if foods else {"name": "Meat", "hunger": 1, "weight": 4, "mood": 5})
         if self.hunger >= 4:
@@ -535,8 +541,7 @@ class Pet:
         if self.stage == "Egg":
             return "It is still an egg."
         if self.asleep:
-            self.disturb += 1
-            return "zzz... asleep"
+            return self._disturbed()
         if self.energy < 12:
             self._set_anim("refuse", 1.0)
             return "Too tired to train."
@@ -586,8 +591,7 @@ class Pet:
         if self.stage in ("Egg", "Fresh"):
             return "Too young to battle."
         if self.asleep:
-            self.disturb += 1
-            return "zzz... asleep"
+            return self._disturbed()
         if self.energy < 10:
             self._set_anim("refuse", 1.0)
             return "Too tired to battle."
@@ -654,8 +658,7 @@ class Pet:
         if self.stage == "Egg":
             return "It is still an egg."
         if self.asleep:
-            self.disturb += 1
-            return "zzz... asleep"
+            return self._disturbed()
         self.mood = _clamp(self.mood + 8, 0, 100)
         self.energy = _clamp(self.energy - 4, 0, 100)
         self._set_anim("play", 1.5)
