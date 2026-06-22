@@ -103,22 +103,27 @@ class BattlePanel:
         if not a:
             return []
         py = ROWS * 2 - 13
-        if a["step"] <= FLY and ORB:                      # a stream of orbs flies
+        # the attack sprite flies from the shooter's near edge to the target (the foe is left)
+        if a["attacker"] == "pet":
+            sx, sw, tx, tw = pet_x, pw, enemy_x, ew
+        else:
+            sx, sw, tx, tw = enemy_x, ew, pet_x, pw
+        if a["step"] <= FLY and ORB:
             ow = len(ORB[0])
-            if a["attacker"] == "pet":
-                x0, x1 = pet_x + pw - 1, enemy_x - ow
-            else:
-                x0, x1 = enemy_x - ow, pet_x + pw - 1
+            if sx > tx:                                   # shooter on the right -> fly left
+                x0, x1, dirn = sx - ow, tx + tw, -1
+            else:                                         # shooter on the left -> fly right
+                x0, x1, dirn = sx + sw, tx - ow, 1
             lead = int(x0 + (x1 - x0) * (a["step"] / FLY))
             gap = ow + 1
             cells = []
             for i in range(a.get("count", 1)):
-                ox = lead - i * gap if a["attacker"] == "pet" else lead + i * gap
+                ox = lead - dirn * i * gap                # the trail follows the lead orb
                 if 0 <= ox <= COLS - ow:
                     cells += _blit(ORB, ox, py)
             return cells
-        # contact: a bright flash, then the burst, centred on the struck side
-        cx = (enemy_x + ew // 2) if a["attacker"] == "pet" else (pet_x + pw // 2)
+        # contact: a bright flash, then the burst, on the struck (target) side
+        cx = tx + tw // 2
         fx = FLASH if a["step"] == FLY + 1 else HIT
         if not fx:
             return []
@@ -146,11 +151,18 @@ class BattlePanel:
         enemy_rows = self._frames(b.enemy["num"], enemy_mode)
         pw = max(len(r) for r in pet_rows)
         ew = max(len(r) for r in enemy_rows)
-        pet_x, enemy_x = 1, COLS - ew - 1
+        # DVPet battle layout: player on the RIGHT (faces left), opponent on the LEFT (faces right)
+        pet_x, enemy_x = COLS - pw - 1, 1
+        if a and a["step"] <= FLY:                         # battlePlayerShootAnim: lunge at the foe, then recoil
+            lunge = (a["step"] if a["step"] <= 2 else max(0, FLY - a["step"])) * 2
+            if a["attacker"] == "pet":
+                pet_x -= lunge
+            else:
+                enemy_x += lunge
         overlay = self._attack_overlay(pet_x, pw, enemy_x, ew)
         bgimg = self.pet.background()
         on = SIL_NIGHT if self.pet.day_phase == "night" else (SIL_DAY if bgimg else LCD_ON)
-        scene = render_scene([(pet_rows, pet_x, True), (enemy_rows, enemy_x, False)],
+        scene = render_scene([(pet_rows, pet_x, False), (enemy_rows, enemy_x, True)],
                              COLS, ROWS, on, LCD_BG, overlay=overlay, bgimg=bgimg)
         boss = "BOSS" if b.enemy["boss"] else ""
         out = menu.bar(f"BATTLE  vs {b.enemy['name']}"[:32], boss)
