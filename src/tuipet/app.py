@@ -183,7 +183,9 @@ class Screen(Static):
         on, bg = PHASE_PALETTE.get(phase, (LCD_ON, LCD_BG))
         bgimg = self._background(pet)
         corner = None                      # DVPet shows time via bg frame + palette, no corner icon
-        if bgimg:
+        if pet.asleep:                     # lights off: black screen, just the sleeping pet + Zzz
+            bgimg, bg, on = None, "#050505", SIL_NIGHT
+        elif bgimg:
             on = SIL_NIGHT if phase == "night" else SIL_DAY   # silhouette ink
         else:
             w = pet.weather
