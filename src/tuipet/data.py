@@ -29,6 +29,7 @@ ROLES = {
     "tantrum": [9, 10],    # tuipet unhappy-idle -> jeer poses
     "poop":   [4, 5],      # tuipet poop squat (DVPet poop frames not isolated)
     "play":   [1, 5],      # Bounce/Jump toy interact: 1 -> 5
+    "wash":   [0, 4],      # Cleaning/Bathe: scrub 0 -> refreshed 4
     "heal":   [7, 8],      # recover(): eat-medicine, same as eat
     "sad":    [9],         # dejected/fail pose (HP_Training_AttackFail)
     "tired":  [9],         # disliked/weary pose

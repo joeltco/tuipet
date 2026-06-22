@@ -83,7 +83,7 @@ class BattlePanel:
         if mode == "attack":
             roles = data.ROLES["attack"]
         elif mode == "recoil":
-            roles = (9,)                                  # weary/hurt recoil pose
+            roles = (10,)                                 # Battling_Hit_Aftermath damaged pose
         else:
             roles = data.ROLES["idle"]
         idx = roles[self.frame_i % len(roles)]
