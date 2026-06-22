@@ -1324,6 +1324,16 @@ class Pet:
                 return "X-Program complete! The X-Antibody is permanent."
             self._set_xantibody("Temporary")
             return "X-Antibody induced! Evolve soon to make it stick."
+        # crafter (DVPet FoodID/ItemID unlock list): yields a random treat from its list --
+        # the Toy Oven bakes a random food, the Chocolate Egg pops a random capsule.
+        targets = [f"f:{n}" for n in e.get("unlocks_food", [])] + \
+                  [f"i:{n}" for n in e.get("unlocks_item", [])]
+        if targets:
+            got = random.choice(targets)
+            self.add_item(got)
+            self._set_anim("happy", 1.4)
+            made = (data.consumable_by_key(got) or {}).get("name", got)
+            return f"{self.name} got a {made}!"
         is_food = key.startswith("f:")
         if e["hunger"]:
             self.hunger = _clamp(self.hunger + e["hunger"], 0, 4)

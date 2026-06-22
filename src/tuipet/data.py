@@ -401,7 +401,20 @@ def _consumable(row, id_field):
         "unfatigue": flag("Removes Fatigue"),
         "vitamin": int(num("Vitamins")) > 0,   # foods.csv Vitamins>0 (e.g. "Vitamin") guards vs injury worsening
         "undepressed": flag("Removes Depressed"),
+        # DVPet FoodID/ItemID cols: ";"-list of consumables this one yields when used
+        # (a "crafter" -- Toy Oven bakes random foods, Chocolate Egg pops random capsules)
+        "unlocks_food": _idlist(row.get("FoodID")),
+        "unlocks_item": _idlist(row.get("ItemID")),
     }
+
+
+def _idlist(s):
+    out = []
+    for x in (s or "").split(";"):
+        x = x.strip()
+        if x and x.lstrip("-").isdigit() and int(x) >= 0:
+            out.append(int(x))
+    return out
 
 
 @lru_cache(maxsize=1)
@@ -456,6 +469,13 @@ def load_shop():
             entry = dict(base)
             entry["key"], entry["price"], entry["special"] = key, price, "xantibody"
             out.append(entry); seen.add(key)
+    # specialty stock not listed in shopConsumable.csv: the Vitamin (injury guard) and the
+    # two "crafter" consumables, so their mechanics are actually reachable.
+    for src_map, prefix, cid, price in ((foods, "f", 5, 300), (foods, "f", 58, 800), (items, "i", 66, 1200)):
+        base = src_map.get(cid); key = f"{prefix}:{cid}"
+        if base and key not in seen:
+            entry = dict(base); entry["key"], entry["price"] = key, price
+            out.append(entry); seen.add(key)
     out.sort(key=lambda e: e["price"])
     return out
 
@@ -464,6 +484,16 @@ def consumable_by_key(key):
     for e in load_shop():
         if e["key"] == key:
             return e
+    # fall back to the full tables -- crafted/loot consumables need not have a shop slot
+    try:
+        kind, cid = key.split(":"); cid = int(cid)
+    except (ValueError, AttributeError):
+        return None
+    foods, items = _load_consumables()
+    base = (foods if kind == "f" else items).get(cid)
+    if base:
+        e = dict(base); e["key"] = key
+        return e
     return None
 
 
