@@ -9,9 +9,12 @@ from .theme import LCD_ON, LCD_BG, INK, INK_B, DIM, SIL_DAY, SIL_NIGHT
 from . import menu
 COLS, ROWS = 40, 8
 _E = data.load_effects()
-ATTACK_FR = _E.get("attack") or []
 HIT = (_E.get("hit") or [None])[0]
 FLASH = (_E.get("flash") or [None])[0]
+_FALLBACK = (_E.get("attack") or [None])[0]
+PROJECTILES = {"Vaccine": (_E.get("atk_vaccine") or [_FALLBACK])[0],   # orb (red.png)
+               "Data": (_E.get("atk_data") or [_FALLBACK])[0],        # block (green.png)
+               "Virus": (_E.get("atk_virus") or [_FALLBACK])[0]}      # dart (yellow.png)
 FLY = 5
 
 
@@ -43,7 +46,8 @@ class BattlePanel:
                 enemy_hurt = self.battle.enemy_hp < be
                 pet_hurt = self.battle.pet_hp < bp
                 attacker = "pet" if enemy_hurt else "enemy"
-                self.atk = {"attacker": attacker, "step": 0,
+                attr = which if attacker == "pet" else self.battle.last_enemy_attr
+                self.atk = {"attacker": attacker, "step": 0, "attr": attr,
                             "pet_hurt": pet_hurt, "enemy_hurt": enemy_hurt}
             return None
         if k in ("escape", "space"):
@@ -70,8 +74,8 @@ class BattlePanel:
         if not a:
             return []
         py = ROWS * 2 - 13
-        if a["step"] <= FLY and ATTACK_FR:                # orb pulses as it flies
-            orb = ATTACK_FR[a["step"] % len(ATTACK_FR)]
+        orb = PROJECTILES.get(a.get("attr")) or _FALLBACK
+        if a["step"] <= FLY and orb:                      # the attribute's projectile flies
             ow = len(orb[0])
             if a["attacker"] == "pet":
                 x0, x1 = pet_x + pw - 1, enemy_x - ow

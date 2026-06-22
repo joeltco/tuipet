@@ -63,6 +63,7 @@ class Battle:
         self.last = ""
         self.ai = ai_for_wins(pet.wins, self.enemy["boss"])
         self.prev_player_attr = None
+        self.last_enemy_attr = None
         self.surrendered = False
 
     def _powers(self, side):
@@ -93,6 +94,7 @@ class Battle:
             return self.last
         self.round += 1
         enemy_attr = self._enemy_choice()
+        self.last_enemy_attr = enemy_attr
         pe = effective(player_attr, self._powers("pet"), enemy_attr)
         ee = effective(enemy_attr, self._powers("enemy"), player_attr)
         move = data.move_name(self.pet.num, player_attr) or player_attr

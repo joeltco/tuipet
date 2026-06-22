@@ -94,6 +94,18 @@ for name, fn in {"grave": "death.png", "sun": "noon.png", "moon": "night.png"}.i
     if c is not None:
         effects[name] = [to_rows(c)]
 
+# per-attribute projectiles: DVPet's real attack sprites (proven via SpriteAnim
+# initAttackButtons: Vaccine=red.png, Data=green.png, Virus=yellow.png -- distinct
+# black silhouettes: an orb, a block, and a dart. Downsampled /2 to ~7px.
+for _fn, _key in (("red.png", "atk_vaccine"), ("green.png", "atk_data"), ("yellow.png", "atk_virus")):
+    _a = np.array(Image.open(os.path.join(RES, _fn)).convert("RGBA"))
+    _m = _a[:, :, 3] > 120
+    _h, _w = _m.shape
+    _m2 = _m[:_h // 2 * 2, :_w // 2 * 2].reshape(_h // 2, 2, _w // 2, 2).mean(axis=(1, 3)) > 0.4
+    _c = crop(_m2)
+    if _c is not None:
+        effects[_key] = [to_rows(_c)]
+
 # attack projectile: the leading orb, animated across several attackSprites frames
 ap = split_vertical(native_mask("attackSprites.png"))
 if ap:
