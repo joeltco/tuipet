@@ -9,8 +9,9 @@ from .theme import LCD_ON, LCD_BG, INK, INK_B, DIM, SIL_DAY, SIL_NIGHT
 from . import menu
 COLS, ROWS = 40, 8
 _E = data.load_effects()
-ATTACK = (_E.get("attack") or [None])[0]
+ATTACK_FR = _E.get("attack") or []
 HIT = (_E.get("hit") or [None])[0]
+FLASH = (_E.get("flash") or [None])[0]
 FLY = 5
 
 
@@ -65,19 +66,28 @@ class BattlePanel:
         return "█" * hp + "░" * (mx - hp) if mx <= 12 else f"{hp}/{mx}"
 
     def _attack_overlay(self, pet_x, pw, enemy_x, ew):
-        if not (self.atk and ATTACK):
-            return []
         a = self.atk
+        if not a:
+            return []
         py = ROWS * 2 - 13
-        ow, hw = len(ATTACK[0]), (len(HIT[0]) if HIT else 0)
-        if a["attacker"] == "pet":
-            x0, x1, tx = pet_x + pw - 1, enemy_x - ow, enemy_x + ew // 2 - hw // 2
-        else:
-            x0, x1, tx = enemy_x - ow, pet_x + pw - 1, pet_x + pw // 2 - hw // 2
-        if a["step"] <= FLY:
+        if a["step"] <= FLY and ATTACK_FR:                # orb pulses as it flies
+            orb = ATTACK_FR[a["step"] % len(ATTACK_FR)]
+            ow = len(orb[0])
+            if a["attacker"] == "pet":
+                x0, x1 = pet_x + pw - 1, enemy_x - ow
+            else:
+                x0, x1 = enemy_x - ow, pet_x + pw - 1
             x = int(x0 + (x1 - x0) * (a["step"] / FLY))
-            return _blit(ATTACK, x, py)
-        return _blit(HIT, tx, py - 1) if HIT else []
+            return _blit(orb, x, py)
+        # contact: a bright flash, then the burst, centred on the struck side
+        cx = (enemy_x + ew // 2) if a["attacker"] == "pet" else (pet_x + pw // 2)
+        fx = FLASH if a["step"] == FLY + 1 else HIT
+        if not fx:
+            return []
+        w = len(fx[0])
+        x = min(max(0, cx - w // 2), COLS - w)
+        fy = max(0, (ROWS * 2 - len(fx)) // 2)
+        return _blit(fx, x, fy)
 
     def text(self):
         b = self.battle

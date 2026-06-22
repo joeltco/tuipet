@@ -94,16 +94,26 @@ for name, fn in {"grave": "death.png", "sun": "noon.png", "moon": "night.png"}.i
     if c is not None:
         effects[name] = [to_rows(c)]
 
-# attack projectile (first orb of attackSprites) + impact burst (core of attackHit)
+# attack projectile: the leading orb, animated across several attackSprites frames
 ap = split_vertical(native_mask("attackSprites.png"))
 if ap:
-    orb = crop(ap[0][:, :9])
-    if orb is not None:
-        effects["attack"] = [to_rows(orb)]
+    fr = []
+    for i in (0, 6, 12, 18):
+        if i < len(ap):
+            orb = crop(ap[i][:, :9])
+            if orb is not None:
+                fr.append(to_rows(orb))
+    if fr:
+        effects["attack"] = fr
+# impact: small burst core of attackHit, plus the bright attackHitFlash burst
 hb = native_mask("attackHit.png")
 burst = crop(hb[5:15, 12:22])
 if burst is not None:
     effects["hit"] = [to_rows(burst)]
+hf = native_mask("attackHitFlash.png")
+flash = crop(hf[3:17, 9:25])
+if flash is not None:
+    effects["flash"] = [to_rows(flash)]
 
 # ---- preview ----
 for name, frames in effects.items():

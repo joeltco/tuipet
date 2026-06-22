@@ -257,6 +257,25 @@ def natural_habitat(num):
 # Battle enemies (parsed from enemies.csv).  Each enemy references a Digimon by
 # number (its sprite + attribute) and carries battle Health and attribute power.
 # ---------------------------------------------------------------------------
+_MOVES = None
+
+
+def move_name(num, attribute):
+    """The flavour name of a Digimon's attack for an attribute (DVPet
+    VaccineName/DataName/VirusName columns), e.g. 'Exhaust Flame'."""
+    global _MOVES
+    if _MOVES is None:
+        _MOVES = {}
+        cols = {"Vaccine": "VaccineName:Effect", "Data": "DataName:Effect", "Virus": "VirusName:Effect"}
+        for r in csv.DictReader(open(os.path.join(_DATA, "digimon.csv"))):
+            try:
+                n = int(r["DigimonNum"])
+            except (KeyError, ValueError):
+                continue
+            _MOVES[n] = {a: (r.get(c, "") or "").split(":")[0].strip() for a, c in cols.items()}
+    return (_MOVES.get(num) or {}).get(attribute, "")
+
+
 @lru_cache(maxsize=1)
 def load_enemies():
     _, by_num = load_sprites()

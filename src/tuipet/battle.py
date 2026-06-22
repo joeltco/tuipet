@@ -95,17 +95,19 @@ class Battle:
         enemy_attr = self._enemy_choice()
         pe = effective(player_attr, self._powers("pet"), enemy_attr)
         ee = effective(enemy_attr, self._powers("enemy"), player_attr)
+        move = data.move_name(self.pet.num, player_attr) or player_attr
+        emove = data.move_name(self.enemy["num"], enemy_attr) or enemy_attr
         if pe > ee:
             self.enemy_hp -= 1
-            verb = "hits!" + (" (advantage)" if beats(player_attr, enemy_attr) else "")
-            self.last = f"R{self.round}: your {player_attr} {verb}"
+            adv = " (advantage)" if beats(player_attr, enemy_attr) else ""
+            self.last = f"R{self.round}: {move} hits!{adv}"
         elif ee > pe:
             self.pet_hp -= 1
-            self.last = f"R{self.round}: enemy {enemy_attr} hits you!"
+            self.last = f"R{self.round}: foe's {emove} hits you!"
         else:
             self.enemy_hp -= 1
             self.pet_hp -= 1
-            self.last = f"R{self.round}: clash! both take a hit"
+            self.last = f"R{self.round}: clash! {move} vs {emove}"
         self.prev_player_attr = player_attr
         if self.enemy_hp <= 0 or self.pet_hp <= 0:
             self._finish()
