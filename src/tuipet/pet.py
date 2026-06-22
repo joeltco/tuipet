@@ -93,6 +93,17 @@ POOP_WAIT_MOOD = -1                     # PoopWaitMoodChange (mess nags)
 LARGE_POOP_WAIT_MOOD = -2              # LargePoopWaitMoodChange (a big mess nags more)
 POOP_MAX_PILES = 6                      # _filth byte[] length (max simultaneous piles)
 
+# DVPet calorie buffer (config.csv, PhysicalState.calorieChange / setCalories): a
+# -CalorieLimit..+CalorieLimit "fullness within the current hunger heart".  Each lapse
+# the buffer drains (faster when geriatric); when it empties the hunger heart drops a
+# level (or, at zero, logs a care mistake).  Eating refills it; overfilling speeds the
+# next poop.  DVPet's two coupled timers collapse here to one buffer whose drain rate is
+# tuned to preserve tuipet's ~1800s-per-heart hunger pace (col-1 calorie mods are 0).
+CALORIE_LIMIT = 4                       # CalorieLimit (buffer half-range)
+CALORIE_LAPSE_CHANGE = -1               # CalorieLapseChange (drain per lapse)
+CALORIE_LAPSE_GERIATRIC_EXTRA = -3      # CalorieLapseChangeGeriatric (added when elderly)
+CALORIE_DECAY_SEC = 1800 / (2 * CALORIE_LIMIT)   # keep ~1800s per hunger heart
+
 # X-Antibody: a special state that unlocks evolution into the "X" Digimon forms.
 # None -> Temporary (decays) -> Permanent -> XProgram.  Acquired by a rare natural
 # birth roll or the X-Antibody / X-Program items.  (DVPet birth is 1/1000; bumped
@@ -139,8 +150,9 @@ class Pet:
     attribute: str = ""
     age_seconds: float = 0.0
     stage_seconds: float = 0.0      # time spent in the current stage
-    hunger: int = 4                 # hearts 0..4 (4 = full)
-    strength: int = 2               # effort hearts 0..4
+    hunger: int = 4                 # hearts 0..4 (4 = full); FullHunger=4
+    calories: int = 4               # DVPet calorie buffer, -CALORIE_LIMIT..+CALORIE_LIMIT
+    strength: int = 2               # effort hearts 0..4; FullStrength=4
     energy: int = 24                # DVPet energy, -max_energy..+max_energy (full at max_energy)
     max_energy: int = 24            # per-Digimon (digimon.csv MaxEnergy)
     mood: int = 0                   # DVPet signed mood (MinMood..MaxMood); Neutral at 0
@@ -350,14 +362,18 @@ class Pet:
             # so ~24 mood-lapses land per 24-REAL-minute day and the drain outpaces any feasible
             # interaction rate, pinning mood at Depressed. Re-enabling it faithfully needs a real-time
             # (or much slower) clock; the DVPet numbers are intentionally NOT softened to compensate.
-        # hunger ticks down on a slow clock
-        self._hunger_t = getattr(self, "_hunger_t", 0) + dt
-        if self._hunger_t >= 1800:
-            self._hunger_t = 0
-            if self.hunger > 0:
-                self.hunger -= 1
-            else:
-                self.care_mistakes += 1
+        # hunger: the DVPet calorie buffer drains each lapse; emptying it drops a hunger
+        # heart (or logs a care mistake at zero), then refills for the next heart.
+        self._cal_t = getattr(self, "_cal_t", 0.0) + dt
+        if self._cal_t >= CALORIE_DECAY_SEC:
+            self._cal_t = 0.0
+            self.calories += CALORIE_LAPSE_CHANGE + (CALORIE_LAPSE_GERIATRIC_EXTRA if self.is_geriatric else 0)
+            if self.calories <= -CALORIE_LIMIT:
+                if self.hunger > 0:
+                    self.hunger -= 1
+                else:
+                    self.care_mistakes += 1
+                self.calories = CALORIE_LIMIT
         # pooping (DVPet poop(): relief mood bump, sheds weight, drops a sized pile)
         self._poop_t = getattr(self, "_poop_t", 0) + dt
         if self._poop_t >= 2700:
@@ -723,9 +739,12 @@ class Pet:
         if self.hunger >= 4:
             self.weight += 1
             self.overeat += 1
+            self.calories = CALORIE_LIMIT
+            self._poop_t = min(2700, getattr(self, "_poop_t", 0) + 900)   # overeat -> sooner poop (AboveMaxCalories->bmGauge)
             self._set_anim("refuse", 1.0)
             return f"{self.name} is too full!"
         self.hunger = _clamp(self.hunger + max(1, food["hunger"]), 0, 4)
+        self.calories = CALORIE_LIMIT                       # a meal refills the calorie buffer
         self.weight += food.get("weight", 1)
         self._set_mood(self.mood + food.get("mood", 0))     # foods.csv Mood (DVPet-scale)
         self._set_anim("eat", 1.4)
@@ -1010,6 +1029,7 @@ class Pet:
         is_food = key.startswith("f:")
         if e["hunger"]:
             self.hunger = _clamp(self.hunger + e["hunger"], 0, 4)
+            self.calories = CALORIE_LIMIT               # food refills the calorie buffer
         self._set_mood(self.mood + e["mood"])
         self._set_enthusiasm(self.enthusiasm + e.get("enthusiasm", 0))
         self.weight = max(1, self.weight + e["weight"])
