@@ -204,7 +204,7 @@ class BattlePanel:
                 pl, fl = fr["pl"], fr["fl"]
             else:  # result
                 win = self.result_winner
-                cheer = (CHEER_A, CHEER_B)[self.frame_i % 2]
+                cheer = (5, 7)[self.frame_i % 2]        # winning(): cheer(true) poses 5,7
                 pr = cheer if win == "pet" else COLLAPSE
                 fpose = cheer if win == "foe" else COLLAPSE
                 pl, fl = (3, 0) if self.won else (0, 3)

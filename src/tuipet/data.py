@@ -23,22 +23,22 @@ ROLES = {
     "sleep":  [2, 3],      # idleSleep
     "happy":  [6, 4],      # Cheering: cheer(false) poseA=6 poseB=4
     "angry":  [9, 10],     # Jeering: jeer(false) poseA=9 poseB=10
-    "eat":    [7, 8],      # eat(): chew 7 / swallow 8
-    "refuse": [4],         # head-shake (mirrored); no distinct DVPet state -> tuipet pose
+    "eat":    [8, 7],      # eat(): open-mouth 8 -> chew 7 (verified DVPet order)
+    "refuse": [4],         # refuse(): frame 4 (9 if Depressed) shaken by mirror toggle
     "attack": [6, 0],      # attackDefault: strike 6 -> reset 0
     "tantrum": [9, 10],    # tuipet unhappy-idle -> jeer poses
-    "poop":   [4, 5],      # tuipet poop squat (DVPet poop frames not isolated)
+    "poop":   [4, 5],      # poop(): squat 4 -> sit 5 (verified)
     "play":   [1, 5],      # Bounce/Jump toy interact: 1 -> 5
     "wash":   [0, 4],      # Cleaning/Bathe: scrub 0 -> refreshed 4
     "heal":   [7, 8],      # recover(): eat-medicine, same as eat
     "sad":    [9],         # dejected/fail pose (HP_Training_AttackFail)
     "tired":  [9],         # disliked/weary pose
     "exhausted": [10],     # collapse pose (Dying)
-    "yawn":   [8, 1],      # to-sleep (tuipet pose; DVPet yawn not isolated)
-    "wake":   [3, 1],      # wakeUp groggy -> settle
+    "yawn":   [0, 8],      # yawning(): idle 0 -> open-mouth 8 (verified)
+    "wake":   [2, 3, 1],   # wakeUp(): groggy 2/3 -> settle 1 (verified)
     "surprise": [1, 5],    # AngrySurprise startle beats 1,5
-    "shield": [4],         # weathering() rain (tuipet adaptation)
-    "huddle": [9],         # weathering() snow/cold (tuipet adaptation)
+    "shield": [4],         # weathering(): rain -> frame 4 (verified)
+    "huddle": [9],         # weathering(): cold/snow -> frame 9 (verified)
 }
 MIRROR_ROLES = {"refuse"}
 
