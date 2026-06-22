@@ -63,6 +63,8 @@ class TrainingPanel:
         self.rounds_won = 0
         self.slot = 0
         self.target = 0
+        self._strike_pose = None   # transient hit(6)/miss(9) pose during a drill
+        self._strike_t = 0
 
     @property
     def gkey(self):
@@ -98,6 +100,8 @@ class TrainingPanel:
     # ---- anim (called each fast tick) ----
     def anim(self):
         self.frame_i += 1
+        if self._strike_t > 0:
+            self._strike_t -= 1
         if self.phase != "play":
             return
         gk = self.gkey
@@ -153,6 +157,10 @@ class TrainingPanel:
             self._strike()
         return None
 
+    def _flash(self, pose):
+        """Briefly show a strike (6) or recoil (9) pose, like DVPet AttackSuccess/Fail."""
+        self._strike_pose, self._strike_t = pose, 4
+
     def _strike(self):
         gk = self.gkey
         if gk == "hp":
@@ -160,8 +168,10 @@ class TrainingPanel:
             if abs(self.pos - center) <= HP_ZONE_W // 2:
                 self.rounds_won += 1
                 self.flash = "HIT!"
+                self._flash(6)
             else:
                 self.flash = "missed."
+                self._flash(9)
             self.rep += 1
             if self.rep >= HP_ROUNDS:
                 won = self.rounds_won
@@ -173,6 +183,7 @@ class TrainingPanel:
         elif gk == "vaccine":
             self.taps += 1
             self.flash = f"{self.taps} hits!"
+            self._flash(6)
         elif gk == "data":
             dist = min((self.slot - self.target) % DATA_SLOTS,
                        (self.target - self.slot) % DATA_SLOTS)
@@ -180,12 +191,15 @@ class TrainingPanel:
                 self.hits += 1
                 self.power += 18
                 self.flash = "BULLSEYE!"
+                self._flash(6)
             elif dist == 1:
                 self.hits += 1
                 self.power += 10
                 self.flash = "clipped it"
+                self._flash(6)
             else:
                 self.flash = "missed"
+                self._flash(9)
             self.rep += 1
             if self.rep >= DATA_REPS:
                 self._finish(self.hits, self.power, "Data", "data")
@@ -207,9 +221,11 @@ class TrainingPanel:
         gk = self.gkey
         if self.phase == "done":
             return 6 if self.success else 9   # AttackSuccess=6 / AttackFail=9
+        if self._strike_t > 0:                # just struck: hit(6) / miss(9), like DVPet
+            return self._strike_pose
         if gk == "data":
-            return DATA_SHOOT_FRAME if self.slot == self.target else 4
-        return [4, 6][self.frame_i % 2]
+            return [1, 4][self.frame_i % 2]   # DVPet Data_Training aim bob 1<->4
+        return [0, 1][self.frame_i % 2]       # HP/vaccine/virus: stand ready (idle bob)
 
     # ---- render ----
     def text(self):
