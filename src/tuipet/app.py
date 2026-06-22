@@ -211,11 +211,12 @@ class Screen(Static):
         frames = roles.get(pet.anim, [0])
         first = next((f for f in rec["frames"] if f), rec["frames"][0])
         idx = frames[self.frame_i % len(frames)]
-        rows = rec["frames"][idx] or first
+        _fr = rec["frames"]
+        rows = (_fr[idx] if idx < len(_fr) else None) or first
         xshift, mirror = 0, False
         cold = pet.num != -1 and pet.status_word() == "freezing"
         if pet.anim in ("idle", "walk") and (pet.is_geriatric or pet.sick or cold):
-            rows = rec["frames"][9] or first   # elderly/sick/cold: stand still, huddled/weary
+            rows = (_fr[9] if 9 < len(_fr) else None) or first   # elderly/sick/cold: stand still, huddled/weary
         elif pet.anim in ("idle", "walk") and pet.num != -1:
             # pace back and forth; poop on the floor shrinks the free space -- the
             # pet still walks, just in the room to the right of the pile (DVPet

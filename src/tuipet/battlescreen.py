@@ -134,8 +134,8 @@ class BattlePanel:
 
     # ---- rendering ------------------------------------------------------
     def _rows(self, num, pose):
-        rec = data.load_sprites()[1][num]
-        return rec["frames"][pose] or rec["frames"][0]
+        fr = data.load_sprites()[1][num]["frames"]
+        return (fr[pose] if pose < len(fr) else None) or fr[0]
 
     def _place(self, pet_rows, foe_rows):
         """player LEFT (faces right, mirror=True), foe RIGHT (faces left, mirror=False),
