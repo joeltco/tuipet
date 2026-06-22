@@ -22,6 +22,7 @@ from . import themescreen
 from . import deathscreen
 from .pet import Pet
 from .render import render_screen
+import os
 
 from . import theme
 from .theme import LCD_ON, LCD_BG, PHASE_PALETTE, SIL_DAY, SIL_NIGHT
@@ -66,8 +67,28 @@ _K = "b cyan"
 KEYS = (
     f"[{_K}]f[/] feed   [{_K}]p[/] play   [{_K}]c[/] clean   [{_K}]h[/] heal   [{_K}]s[/] sleep\n"
     f"[{_K}]t[/] train  [{_K}]b[/] battle  [{_K}]a[/] adventure  [{_K}]u[/] cup  [{_K}]j[/] jogress\n"
-    f"[{_K}]o[/] shop   [{_K}]e[/] habitat  [{_K}]d[/] data   [{_K}]g[/] theme  [{_K}]n[/] new  [{_K}]q[/] quit"
+    f"[{_K}]o[/] shop  [{_K}]e[/] habitat  [{_K}]d[/] data  [{_K}]g[/] theme  [{_K}]m[/] sound  [{_K}]n[/] new  [{_K}]q[/] quit"
 )
+
+
+def _sound_path():
+    return os.path.join(persistence.SAVE_DIR, "sound.txt")
+
+
+def _load_sound():
+    try:
+        return open(_sound_path()).read().strip() != "off"
+    except OSError:
+        return True
+
+
+def _save_sound(on):
+    try:
+        os.makedirs(persistence.SAVE_DIR, exist_ok=True)
+        with open(_sound_path(), "w") as fh:
+            fh.write("on" if on else "off")
+    except OSError:
+        pass
 
 
 def _scale_hex(hexcol, f):
@@ -362,7 +383,7 @@ class TuiPetApp(App):
         ("a", "adventure", "Adventure"), ("o", "shop", "Shop"), ("e", "habitat", "Habitat"),
         ("d", "digicore", "DigiCore"),
         ("j", "jogress", "Jogress"), ("u", "tournament", "Cup"),
-        ("s", "sleep", "Sleep"), ("g", "theme", "Theme"), ("n", "new", "New pet"), ("q", "quit", "Quit"),
+        ("s", "sleep", "Sleep"), ("g", "theme", "Theme"), ("m", "sound", "Sound"), ("n", "new", "New pet"), ("q", "quit", "Quit"),
     ]
 
     def __init__(self, pet: Pet | None = None):
@@ -378,6 +399,8 @@ class TuiPetApp(App):
         self.pet = pet or Pet.new_egg()
         self.mode = None            # active in-display panel (no pop-up screens)
         self._mode_close = None
+        self.sound = _load_sound()
+        self._needs = False
 
     def compose(self) -> ComposeResult:
         with Vertical(id="wrap"):
@@ -460,6 +483,17 @@ class TuiPetApp(App):
         persistence.save(self.pet)
         self.exit()
 
+    def beep(self):
+        if self.sound:
+            self.bell()
+
+    def action_sound(self):
+        self.sound = not self.sound
+        _save_sound(self.sound)
+        self.flash(f"Sound: {'on' if self.sound else 'off'}")
+        if self.sound:
+            self.bell()
+
     def _restyle(self):
         try:
             for w in (self.screen_w, self.stats_w, self.msg_w, self.keys_w):
@@ -516,15 +550,30 @@ class TuiPetApp(App):
         prev = (self.pet.num, self.pet.stage)
         was_dead = self.pet.dead
         self.pet.tick(1.0)
-        if self.pet.dead and not was_dead:
+        p = self.pet
+        if p.dead and not was_dead:
+            self.beep()
             self.flash("")
-            self._open_mode(deathscreen.DeathPanel(self.pet), self._after_death)
-        elif (self.pet.num, self.pet.stage) != prev:
+            self._open_mode(deathscreen.DeathPanel(p), self._after_death)
+        elif (p.num, p.stage) != prev:
+            self.beep()
             if prev[1] == "Egg":
-                self.flash(f"[b]{self.pet.name}[/] hatched!")
+                self.flash(f"[b]{p.name}[/] hatched!")
             else:
-                self.flash(f"[b]{self.pet.name}![/] evolved to {self.pet.stage}!")
+                self.flash(f"[b]{p.name}![/] evolved to {p.stage}!")
             self.screen_w.start_fx("evolve")
+        # care-need call (classic V-pet nag): beep on onset, then every ~90s
+        needs = (not p.dead and p.stage != "Egg" and not p.asleep
+                 and (p.hunger == 0 or p.sick or p.poop >= 3 or p.energy <= 0))
+        if needs and not self._needs:
+            self.beep()
+            self._nag_t = 0.0
+        elif needs:
+            self._nag_t = getattr(self, "_nag_t", 0.0) + 1.0
+            if self._nag_t >= 90:
+                self._nag_t = 0.0
+                self.beep()
+        self._needs = needs
         self.repaint()
 
     def flash(self, text):
@@ -561,6 +610,8 @@ class TuiPetApp(App):
     def _after_battle(self, battle):
         if battle is not None:
             self.flash(battle.reward)
+            if battle.won:
+                self.beep()
         self.repaint()
 
     def action_tournament(self):
