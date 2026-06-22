@@ -140,6 +140,20 @@ DISCIPLINE_TARGET_RESTLESS_HI = 3        # restless & under-exercised acts up mo
 DISCIPLINE_TARGET_RESTLESS_LO = -1
 DISCIPLINE_OBEDIENCE_MAX = 50            # DisciplineCallObedienceMax (grown + obedient => exempt)
 
+# DVPet fatigue (config.csv, PhysicalState.fatigue / checkFatigueLapse): training to
+# exhaustion can leave the pet fatigued for FatigueMin..FatigueMax game-minutes -- a big
+# one-time mood/energy/spirit hit, and it cannot act until it has rested off the clock.
+# isFatigued() == fatigue_length > 0; the length counts down in game-minutes (1 game-min
+# ~= 1s under tuipet's clock).  Habitat-compatibility length mods and the lifespan hit
+# are omitted (documented); deltas verbatim.
+FATIGUE_MIN = 5                          # FatigueMin
+FATIGUE_MAX = 60                         # FatigueMax
+FATIGUE_MOOD_DEC = 50                    # FatigueMoodDec (the exhaustion hit)
+FATIGUE_ENERGY_DEC = 1                   # FatigueEnergyDec
+FATIGUE_ENTH_CHANGE = -1                 # FatigueEnthusiasmChange
+ALREADY_FATIGUED_MOOD_DEC = 35           # alreadyFatiguedMoodDec (re-fatigued while down)
+FATIGUE_CHANCE = 60                      # FatigueChance (% on an exhausting drill)
+
 # X-Antibody: a special state that unlocks evolution into the "X" Digimon forms.
 # None -> Temporary (decays) -> Permanent -> XProgram.  Acquired by a rare natural
 # birth roll or the X-Antibody / X-Program items.  (DVPet birth is 1/1000; bumped
@@ -222,6 +236,7 @@ class Pet:
     praise_window: int = 0          # lapses since the praise flag opened
     scold_window: int = 0
     compliance: bool = True         # DVPet _compliance (a fair scold restores it)
+    fatigue_length: float = 0.0     # DVPet _fatigueLength (game-min remaining; >0 == fatigued)
     battles: int = 0
     levels_fought: list = _dcf(default_factory=list)  # opponent levels beaten this stage (DVPet _levelsFought)
     bits: int = 0
@@ -355,6 +370,8 @@ class Pet:
             if getattr(self, "_exercise_day", -1) != day:    # DVPet checkExerciseTime: daily reset
                 self._exercise_day = day
                 self.exercise_today = 0
+            if self.fatigue_length > 0:                       # checkFatigueLapse: rest it off (even asleep)
+                self.fatigue_length = max(0.0, self.fatigue_length - dt)
         if self.asleep:
             # DVPet sleep recovery: +SleepEnergyGain every SleepMinutesToEnergyGain.
             self._sleep_e_t = getattr(self, "_sleep_e_t", 0.0) + dt
@@ -811,6 +828,9 @@ class Pet:
             return "It is still an egg."
         if self.asleep:
             return self._disturbed()
+        if self.is_fatigued():
+            self._set_anim("exhausted", 1.2)
+            return "Too fatigued — let it rest."
         if self.energy <= 0:                            # MinEnergyForActivity
             self._set_anim("refuse", 1.0)
             return "Too tired to train."
@@ -849,6 +869,8 @@ class Pet:
                 self._set_enthusiasm(self.enthusiasm - 1)  # ExerciseFavAttributeEnthusiasmDec
         self.weight = max(1, self.weight - 2)
         self._set_energy(self.energy - 1)               # ExerciseEnergyDec
+        if self.energy <= 0 and random.randint(0, 99) < FATIGUE_CHANCE:   # trained to exhaustion
+            self._fatigue()
         if not success:                                  # DVPet exercise-fail penalties
             self._set_mood(self.mood - 10)               # ExerciseFailMoodDec
             self.obedience -= 1                          # ExerciseFailObedienceDec
@@ -868,6 +890,9 @@ class Pet:
             return "Too young to battle."
         if self.asleep:
             return self._disturbed()
+        if self.is_fatigued():
+            self._set_anim("exhausted", 1.2)
+            return "Too fatigued — let it rest."
         if self.energy <= 0:                            # MinEnergyForActivity
             self._set_anim("refuse", 1.0)
             return "Too tired to battle."
@@ -926,7 +951,7 @@ class Pet:
         else:
             time_factor = 0.0
         time_factor *= base
-        unwell = self.sick or self.injuries > 0 or self.energy <= 0   # isSick||isInj||isFatigued
+        unwell = self.sick or self.injuries > 0 or self.is_fatigued()   # isSick||isInj||isFatigued
         unwell_factor = (REFUSE_UNWELL_SICK if unwell else 0.0) * (1 - base)
         ex = self.exercise_today or 1                                  # _exercise!=0 ? _exercise : 1
         if self.energy >= 0:
@@ -1035,6 +1060,23 @@ class Pet:
         bound = max(1, DISCIPLINE_CALL_CHANCE - (OBEDIENCE_REFUSAL_CAP - self.obedience))
         if random.randint(0, bound - 1) < target:
             self._open_scold()
+
+    def is_fatigued(self):
+        """PhysicalState.isFatigued: worn out until the fatigue length counts down."""
+        return self.fatigue_length > 0
+
+    def _fatigue(self):
+        """PhysicalState.fatigue: the pet collapses from over-exertion — a heavy one-time
+        mood/energy/spirit hit (worse if it was already fatigued), then it must rest the
+        fatigue length off (FatigueMin..FatigueMax game-min)."""
+        already = self.is_fatigued()
+        self.fatigue_length = random.randint(FATIGUE_MIN, FATIGUE_MAX)   # +habitat compat (omitted)
+        self._set_energy(self.energy - FATIGUE_ENERGY_DEC)
+        self._set_enthusiasm(self.enthusiasm + FATIGUE_ENTH_CHANGE)
+        self._set_mood(self.mood - FATIGUE_MOOD_DEC)
+        if already:
+            self._set_mood(self.mood - ALREADY_FATIGUED_MOOD_DEC)
+        self._set_anim("exhausted", 2.0)
 
     def praise(self):
         """PhysicalState.praise: cheering the pet always lifts its mood; doing so inside
@@ -1192,6 +1234,7 @@ class Pet:
         self.virus = max(0, self.virus + e["virus"])
         if e["unfatigue"]:
             self.energy = self.max_energy
+            self.fatigue_length = 0.0                    # a restorative shakes off fatigue
         if e["undepressed"]:
             self._set_mood(max(self.mood, NEW_UNDEPRESSED_MOOD))  # leave depression
         if e["cured"]:
@@ -1211,6 +1254,8 @@ class Pet:
             return "asleep"
         if self.sick:
             return "sick"
+        if self.is_fatigued():
+            return "fatigued"
         if self.temp <= wx.FREEZING_TEMP:
             return "freezing"
         lo, hi = self.ideal_temp
