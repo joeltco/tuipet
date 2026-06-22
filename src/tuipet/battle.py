@@ -45,6 +45,7 @@ NOT ported (documented, not faked):
 from __future__ import annotations
 import random
 from . import data
+from . import battlefx
 
 ATTRS = ("Vaccine", "Data", "Virus")
 
@@ -138,22 +139,35 @@ class Battle:
         self.round += 1
         enemy_attr = self._enemy_choice()
         self.last_player_attr = player_attr
-        self.last_enemy_attr = enemy_attr
         pdmg = self._damage(self.pet.stage, player_attr, self._pet_counts, self._enemy_counts)
         edmg = self._damage(self.enemy["stage"], enemy_attr, self._enemy_counts, self._pet_counts)
+        # attack-effect "chip" layer (AttackEffectProcess): the player's attack effect
+        # fires if its conditions pass, adjusting damage / initiative / health changes.
+        fx = battlefx.resolve(self, player_attr, enemy_attr, pdmg, edmg)
+        pdmg, edmg, enemy_attr = fx["pdmg"], fx["edmg"], fx["enemy_attr"]
+        self.last_enemy_attr = enemy_attr
         self.last_player_damage, self.last_enemy_damage = pdmg, edmg
         move = data.move_name(self.pet.num, player_attr) or player_attr
         emove = data.move_name(self.enemy["num"], enemy_attr) or enemy_attr
-        # sequential resolution; checkFinish ends the moment a side hits 0, so a
-        # KO'd enemy never retaliates. _playerFirst defaults true (effect 5, which
-        # can flip it, is part of the unported chip layer).
-        self.enemy_hp -= pdmg
+        # resolve in initiative order (checkFirst / First / Counter / ForcePlayerSecond);
+        # a KO'd side does not retaliate (checkFinish ends the moment HP hits 0).
+        if fx["player_first"]:
+            self.enemy_hp -= pdmg
+            if self.enemy_hp > 0:
+                self.pet_hp -= edmg
+        else:
+            self.pet_hp -= edmg
+            if self.pet_hp > 0:
+                self.enemy_hp -= pdmg
         if pdmg <= 0:
             self._pet_zero_attack = player_attr
-        if self.enemy_hp > 0:
-            self.pet_hp -= edmg
-            if edmg <= 0:
-                self._enemy_zero_attack = enemy_attr
+        if edmg <= 0:
+            self._enemy_zero_attack = enemy_attr
+        # processHealthChange: Leech/Absorb/Heal heal; Sacrifice* costs (clamped to max)
+        if fx["phc"]:
+            self.pet_hp = min(self.pet_max, self.pet_hp + fx["phc"])
+        if fx["ehc"]:
+            self.enemy_hp = min(self.enemy_max, self.enemy_hp + fx["ehc"])
         self.last = f"R{self.round}: {move} →{pdmg}   foe {emove} →{edmg}"
         if self.pet_hp <= 0 or self.enemy_hp <= 0:
             self._finish()

@@ -262,20 +262,39 @@ def natural_habitat(num):
 _MOVES = None
 
 
-def move_name(num, attribute):
-    """The flavour name of a Digimon's attack for an attribute (DVPet
-    VaccineName/DataName/VirusName columns), e.g. 'Exhaust Flame'."""
-    global _MOVES
-    if _MOVES is None:
-        _MOVES = {}
+_ATTACKS = None
+
+
+def _load_attacks():
+    global _ATTACKS
+    if _ATTACKS is None:
+        _ATTACKS = {}
         cols = {"Vaccine": "VaccineName:Effect", "Data": "DataName:Effect", "Virus": "VirusName:Effect"}
         for r in csv.DictReader(open(os.path.join(_DATA, "digimon.csv"))):
             try:
                 n = int(r["DigimonNum"])
             except (KeyError, ValueError):
                 continue
-            _MOVES[n] = {a: (r.get(c, "") or "").split(":")[0].strip() for a, c in cols.items()}
-    return (_MOVES.get(num) or {}).get(attribute, "")
+            info = {}
+            for a, c in cols.items():
+                parts = [p.strip() for p in (r.get(c, "") or "").split(":")]
+                effect = parts[1] if len(parts) > 1 and parts[1] else "None"
+                info[a] = {"name": parts[0] if parts else "", "effect": effect,
+                           "conditions": [p for p in parts[2:] if p]}
+            _ATTACKS[n] = info
+    return _ATTACKS
+
+
+def move_name(num, attribute):
+    """The flavour name of a Digimon's attack for an attribute (DVPet
+    VaccineName/DataName/VirusName columns), e.g. 'Exhaust Flame'."""
+    return (_load_attacks().get(num) or {}).get(attribute, {}).get("name", "")
+
+
+def attack_info(num, attribute):
+    """Full DVPet attack for an attribute: {name, effect, conditions[]} parsed from
+    the digimon.csv Name:Effect:Condition(s) cell (AttackEffectProcess input)."""
+    return (_load_attacks().get(num) or {}).get(attribute) or {"name": "", "effect": "None", "conditions": []}
 
 
 @lru_cache(maxsize=1)
