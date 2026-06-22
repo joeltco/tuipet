@@ -145,9 +145,9 @@ def _effect_overlay(pet, frame_i, cols, px_h):
     if pet.asleep and E.get("zzz"):                       # Zzz above a sleeper
         z = E["zzz"][frame_i % len(E["zzz"])]
         pts += _blit(z, cols // 2 + 5, 0)   # float above the sleeper's head
-    emo = ("happy" if pet.anim in ("happy", "play") else
+    emo = ("happy" if pet.anim == "happy" else
            "unhappy" if pet.anim in ("sad", "refuse") else
-           "depressed" if pet.anim == "angry" else None)
+           "depressed" if pet.anim in ("angry", "tantrum") else None)
     if emo and E.get(emo):                                # emote bubble on reactions
         ef = E[emo][frame_i % len(E[emo])]
         pts += _blit(ef, cols - len(ef[0]) - 2, 1)

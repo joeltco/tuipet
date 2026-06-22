@@ -500,7 +500,7 @@ class Pet:
         elif self.weather in _SNOW:
             self._set_anim("huddle", 2.0)
         elif self.mood >= 70:
-            self._set_anim(random.choice(("play", "surprise", "happy")), 2.0)
+            self._set_anim(random.choice(("play", "surprise")), 2.0)
         elif self.mood <= 30:
             self._set_anim(random.choice(("angry", "tantrum")), 2.0)
         elif random.random() < 0.5:

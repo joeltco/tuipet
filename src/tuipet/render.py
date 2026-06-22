@@ -87,7 +87,7 @@ def render_screen(frame_rows, cols, rows, on="#2b2e31", bg="#c6c9cc", baseline=T
         sw = max(len(r) for r in frame_rows)
         sh = len(frame_rows)
         ox = (cols - sw) // 2 + xshift
-        oy = (px_h - sh - 2) if baseline else (px_h - sh) // 2
+        oy = max(0, (px_h - sh - 2) if baseline else (px_h - sh) // 2)
         for y, line in enumerate(frame_rows):
             for x, ch in enumerate(line):
                 if ch == "1":
@@ -133,7 +133,7 @@ def render_scene(placements, cols, rows, on="#2b2e31", bg="#c6c9cc", overlay=Non
             continue
         src = [r[::-1] for r in frame_rows] if mirror else frame_rows
         sh = len(src)
-        oy = px_h - sh - 2
+        oy = max(0, px_h - sh - 2)
         for y, line in enumerate(src):
             for x, ch in enumerate(line):
                 if ch == "1":
