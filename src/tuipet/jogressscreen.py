@@ -1,4 +1,6 @@
-"""Jogress DNA fusion, rendered in the display box."""
+"""Jogress DNA fusion, rendered in the display box: pick a partner, watch the
+two parents converge and flash, then the fused form is revealed -- DVPet's
+startJogressAnim -> jogressFlash -> fused."""
 from __future__ import annotations
 from rich.text import Text
 from . import data, jogress
@@ -8,6 +10,7 @@ from .theme import LCD_ON, LCD_BG, INK, INK_B, DIM, SEL
 from . import menu
 COLS, ROWS = 40, 7
 VISIBLE = 3
+FUSE_STEPS = 16
 
 
 class JogressPanel:
@@ -18,29 +21,41 @@ class JogressPanel:
         self.frame_i = 0
         self.fused = None
         self.result_msg = ""
+        self.phase = "pick"            # pick | fusing | fused
+        self.fuse_step = 0
+        self.old_num = None
+        self.partner_num = None
 
     def anim(self):
         self.frame_i += 1
+        if self.phase == "fusing":
+            self.fuse_step += 1
+            if self.fuse_step >= FUSE_STEPS:
+                self.phase = "fused"
 
     def key(self, k):
-        if k in ("up", "k") and self.options and not self.fused:
+        if self.phase == "pick" and self.options and k in ("up", "k"):
             self.cursor = (self.cursor - 1) % len(self.options)
-        elif k in ("down", "j") and self.options and not self.fused:
+        elif self.phase == "pick" and self.options and k in ("down", "j"):
             self.cursor = (self.cursor + 1) % len(self.options)
         elif k in ("enter", "space"):
-            if self.fused:
+            if self.phase == "fused":
                 return ("done", self.result_msg)
-            if self.options:
+            if self.phase == "pick" and self.options:
                 opt = self.options[self.cursor]
+                self.old_num = self.pet.num            # remember the parents before fusing
+                self.partner_num = opt["partner_num"]
                 self.result_msg = jogress.fuse(self.pet, opt["num"])
                 self.fused = opt
-        elif k in ("escape", "j"):
+                self.phase = "fusing"
+                self.fuse_step = 0
+        elif k == "escape":
             return ("done", self.result_msg or None)
         return None
 
-    def _idle(self, num):
+    def _sprite(self, num, role="idle"):
         rec = data.load_sprites()[1][num]
-        roles = data.ROLES["happy"] if self.fused else data.ROLES["idle"]
+        roles = data.ROLES[role]
         idx = roles[self.frame_i % len(roles)]
         return rec["frames"][idx] or rec["frames"][0]
 
@@ -53,22 +68,28 @@ class JogressPanel:
             out.append_text(menu.blanks(1))
             out.append_text(menu.footer("ESC back"))
             return out
-        opt = self.fused or self.options[self.cursor]
-        if self.fused:
-            scene = render_scene([(self._idle(opt["num"]), (COLS - 16) // 2, False)],
+
+        if self.phase == "fusing":
+            return self._render_fusing(out)
+
+        if self.phase == "fused":
+            scene = render_scene([(self._sprite(self.fused["num"], "happy"), (COLS - 16) // 2, False)],
                                  COLS, ROWS, LCD_ON, LCD_BG)
-        else:
-            pet_rows = self._idle(self.pet.num)
-            par_rows = self._idle(opt["partner_num"]) if opt["partner_num"] else []
-            pw = max((len(r) for r in par_rows), default=0)
-            scene = render_scene([(pet_rows, 2, False), (par_rows, COLS - pw - 2, True)],
-                                 COLS, ROWS, LCD_ON, LCD_BG)
-        out.append_text(scene)
-        out.append("\n")
-        if self.fused:
+            out.append_text(scene)
+            out.append("\n")
             out.append_text(menu.note(self.result_msg))
             out.append_text(menu.footer("the fusion stabilises...   SPACE"))
             return out
+
+        # pick
+        opt = self.options[self.cursor]
+        pet_rows = self._sprite(self.pet.num)
+        par_rows = self._sprite(opt["partner_num"]) if opt["partner_num"] else []
+        pw = max((len(r) for r in par_rows), default=0)
+        scene = render_scene([(pet_rows, 2, False), (par_rows, COLS - pw - 2, True)],
+                             COLS, ROWS, LCD_ON, LCD_BG)
+        out.append_text(scene)
+        out.append("\n")
         lo = max(0, min(self.cursor - VISIBLE // 2, len(self.options) - VISIBLE))
         shown = 0
         for i in range(lo, min(lo + VISIBLE, len(self.options))):
@@ -77,4 +98,26 @@ class JogressPanel:
             shown += 1
         out.append_text(menu.blanks(VISIBLE - shown))
         out.append_text(menu.footer("up/dn pick   ENTER fuse   ESC out"))
+        return out
+
+    def _render_fusing(self, out):
+        pet_rows = self._sprite(self.old_num)
+        par_rows = self._sprite(self.partner_num) if self.partner_num else []
+        pw = max((len(r) for r in pet_rows), default=0)
+        rw = max((len(r) for r in par_rows), default=0)
+        t = self.fuse_step / FUSE_STEPS
+        pet_target = (COLS - pw) // 2
+        par_target = (COLS - rw) // 2
+        pet_x = int(2 + (pet_target - 2) * t)                 # parents slide to centre and merge
+        par_x = int((COLS - rw - 2) - ((COLS - rw - 2) - par_target) * t)
+        overlay = []
+        if self.fuse_step >= FUSE_STEPS - 5:                  # a flash as the DNA merges
+            px_h = ROWS * 2
+            overlay = [(x, y) for y in range(px_h) for x in range(COLS) if (x + y + self.fuse_step) % 2 == 0]
+        scene = render_scene([(pet_rows, pet_x, False), (par_rows, par_x, True)],
+                             COLS, ROWS, LCD_ON, LCD_BG, overlay=overlay)
+        out.append_text(scene)
+        out.append("\n")
+        out.append_text(menu.note("DNA... connect!"))
+        out.append_text(menu.footer(""))
         return out
