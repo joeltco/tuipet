@@ -81,6 +81,18 @@ SURR_REJECT_MOOD_DEC = 10               # SurrenderRejectMoodDec
 SURR_REJECT_OBED_INC = 1                # SurrenderRejectObedienceInc
 SURR_ENTH_DEC = 3                       # SurrenderEnthusiasmDec
 
+# DVPet poop / filth (config.csv, PhysicalState.poop / poopWaitMoodCheck).  A bowel
+# movement bumps mood, sheds a little weight and drops a pile of a size set by the
+# Digimon's base weight; an uncleaned mess then nags the mood until it is cleaned.
+POOP_MOOD_INC = 10                      # PoopMoodInc (relief)
+POOP_WEIGHT_DEC_COEF = 0.1             # PoopWeightDecCoefficient
+POOP_WEIGHT_LIMIT = 4                   # PoopWeightLimit (max weight lost per poop)
+POOP_INC_WEIGHT_FACTOR = 40            # PoopIncWeightFactor -> size 3 at/above
+POOP_INC_WEIGHT_FACTOR_SMALL = 15      # PoopIncWeightFactorSmall -> size 1 at/below
+POOP_WAIT_MOOD = -1                     # PoopWaitMoodChange (mess nags)
+LARGE_POOP_WAIT_MOOD = -2              # LargePoopWaitMoodChange (a big mess nags more)
+POOP_MAX_PILES = 6                      # _filth byte[] length (max simultaneous piles)
+
 # X-Antibody: a special state that unlocks evolution into the "X" Digimon forms.
 # None -> Temporary (decays) -> Permanent -> XProgram.  Acquired by a rare natural
 # birth roll or the X-Antibody / X-Program items.  (DVPet birth is 1/1000; bumped
@@ -134,7 +146,8 @@ class Pet:
     mood: int = 0                   # DVPet signed mood (MinMood..MaxMood); Neutral at 0
     enthusiasm: int = 0             # DVPet spirit, MinEnthusiasm..MaxEnthusiasm (separate from mood)
     weight: int = 20
-    poop: int = 0
+    poop: int = 0                   # pile count == DVPet countFilth()
+    poop_sizes: list = _dcf(default_factory=list)   # per-pile size 1..4 (DVPet _filth bytes)
     sick: bool = False
     asleep: bool = False
     care_mistakes: int = 0
@@ -319,6 +332,8 @@ class Pet:
                 self._set_mood(self.mood - 1)            # NeutralMoodLapseDec toward 0
             elif self.mood < 0:
                 self._set_mood(self.mood + 1)
+            if self.poop > 0:                            # poopWaitMoodCheck: an uncleaned mess nags
+                self._set_mood(self.mood + (LARGE_POOP_WAIT_MOOD if self.poop >= 3 else POOP_WAIT_MOOD))
             # enthusiasm lapse: while ASLEEP spirit decays toward 0 (EnthusiasmLapse Dec/Inc).
             # DVPet's AWAKE enthusiasmLapse (mood -= |enth|*EnthusiasmMoodDecCoefficient, plus an
             # energy-gated climb) is gated on maxEnergy/EnthusiasmChangeEnergyCoefficient. DVPet's
@@ -343,11 +358,11 @@ class Pet:
                 self.hunger -= 1
             else:
                 self.care_mistakes += 1
-        # pooping
+        # pooping (DVPet poop(): relief mood bump, sheds weight, drops a sized pile)
         self._poop_t = getattr(self, "_poop_t", 0) + dt
         if self._poop_t >= 2700:
             self._poop_t = 0
-            self.poop += 1
+            self._do_poop()
             self._set_anim("poop", 2.2)          # squat-and-go (DVPet poop())
         # Filth care-mistake (DVPet poopCall/incCallMinutes): a mistake is only logged
         # once the mess reaches the filth limit AND the awake pet leaves it uncleaned for
@@ -653,6 +668,26 @@ class Pet:
     def energy_pct(self):
         return max(0, self.energy) * 100 // self.max_energy if self.max_energy else 0
 
+    def _poop_size(self):
+        """DVPet poop(): pile size from base weight (heavier mons drop bigger)."""
+        bw = self._base_weight()
+        if bw >= POOP_INC_WEIGHT_FACTOR:
+            return 3
+        if bw <= POOP_INC_WEIGHT_FACTOR_SMALL:
+            return 1
+        return 2
+
+    def _do_poop(self):
+        """PhysicalState.poop: relief mood bump, weight shed, and a new sized pile
+        added to the filth (capped at the _filth array length).  The bmGauge timer
+        that schedules this is replaced by tuipet's poop interval."""
+        self._set_mood(self.mood + POOP_MOOD_INC)                 # PoopMoodInc
+        wdec = min(int(self._base_weight() * POOP_WEIGHT_DEC_COEF), POOP_WEIGHT_LIMIT)
+        self.weight = max(1, self.weight - wdec)
+        if self.poop < POOP_MAX_PILES:                            # addFilth: first free slot (capped)
+            self.poop += 1                                        # poop == countFilth()
+            self.poop_sizes.append(self._poop_size())
+
     def _disturbed(self):
         """Bothering the pet mid-sleep: counts toward restlessness AND costs mood
         now (DVPet DisturbMoodDec)."""
@@ -900,6 +935,7 @@ class Pet:
         if not self.poop:
             return "Nothing to clean."
         n, self.poop = self.poop, 0
+        self.poop_sizes = []                        # clearFilth()
         self._set_mood(self.mood + 6)               # CleanMoodInc
         self._set_anim("wash", 1.2)
         return f"Cleaned {n} poop."
