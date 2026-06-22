@@ -638,21 +638,39 @@ class TuiPetApp(App):
         self.stats_w.border_subtitle = f"gen {p.generation}"
         div = f"[dim]{'─' * 26}[/]"
         lives = "♥" * a.lives + "[dim]·[/]" * (3 - a.lives)
-        lines = [
-            f"[b]{p.name[:14]}[/] [dim]· away[/]",
-            div,
-            f"Map      {a.mi + 1}-{a.zi + 1}",
-            f"Lives    {lives}",
-            f"Progress {a.pct}%",
-            f"Bag      {sum(p.inventory.values())}   [{T.COIN}]{p.bits}b[/]",
-            div,
-            f"Hunger   {hearts(p.hunger)}",
-            f"Energy   {bar(p.energy, 11, T.ENERGY)}",
-            f"Power    [{T.POS}]V{p.vaccine}[/] [{T.ENERGY}]D{p.data_power}[/] [{T.MOOD}]Vi{p.virus}[/]",
-            div,
-            "[dim]out exploring —[/]",
-            "[dim]survive the zone[/]",
-        ]
+        power = f"[{T.POS}]V{p.vaccine}[/] [{T.ENERGY}]D{p.data_power}[/] [{T.MOOD}]Vi{p.virus}[/]"
+        if self.mode.sub is not None:                       # mid-encounter battle
+            e = self.mode.sub.battle.enemy
+            tag = f" [{T.NEG}]BOSS[/]" if e.get("boss") else ""
+            lines = [
+                f"[b]{p.name[:14]}[/] [dim]· battle[/]",
+                div,
+                f"vs [b]{e['name'][:14]}[/]{tag}",
+                f"Lives    {lives}",
+                div,
+                f"Effort   {hearts(p.strength)}",
+                f"Energy   {bar(p.energy, 11, T.ENERGY)}",
+                f"Power    {power}",
+                div,
+                "[dim]a wild foe blocks[/]",
+                "[dim]the path — fight![/]",
+            ]
+        else:                                               # travelling
+            lines = [
+                f"[b]{p.name[:14]}[/] [dim]· away[/]",
+                div,
+                f"Map      {a.mi + 1}-{a.zi + 1}",
+                f"Lives    {lives}",
+                f"Progress {a.pct}%",
+                f"Bag      {sum(p.inventory.values())}   [{T.COIN}]{p.bits}b[/]",
+                div,
+                f"Hunger   {hearts(p.hunger)}",
+                f"Energy   {bar(p.energy, 11, T.ENERGY)}",
+                f"Power    {power}",
+                div,
+                "[dim]out exploring —[/]",
+                "[dim]survive the zone[/]",
+            ]
         self.stats_w.update("\n".join(lines))
 
     def on_anim(self):                         # slow tick: idle pet bob
