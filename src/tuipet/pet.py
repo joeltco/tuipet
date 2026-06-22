@@ -540,33 +540,42 @@ class Pet:
             return "Too tired to train."
         return None
 
-    def apply_training(self, hits, power, attribute=None):
-        """Apply the training minigame result (hits 0..3, power 0..100).
+    def apply_training(self, hits, power, attribute=None, game="hp"):
+        """Apply a training-minigame result (hits 0..3, power 0..100).
 
-        The player picks which attribute to build (attribute arg); it accumulates
-        across the whole life (it is NOT reset on evolution), exactly like DVPet.
+        game in {hp, vaccine, data, virus}: the HP drill builds Effort
+        (strength); the attribute drills build that attribute's power, which
+        accumulates for the whole life (NOT reset on evolution), exactly like
+        DVPet. Training a non-favored attribute costs a little mood
+        (DVPet NoneTrainingAttributeMoodRankChange).
         """
         self.train_time = _dvpet_time(self.day_phase)
-        attr = attribute or (self.attribute if self.attribute in ("Vaccine", "Data", "Virus") else "Vaccine")
         if hits >= 2:
             self.strength = _clamp(self.strength + 1, 0, 4)
+            self.obedience += 1
         gain = max(0, power)
-        if attr == "Vaccine":
-            self.vaccine += gain
-        elif attr == "Data":
-            self.data_power += gain
-        elif attr == "Virus":
-            self.virus += gain
+        if game == "hp":
+            attr = "Effort"
+        else:
+            attr = attribute or (self.attribute if self.attribute in ("Vaccine", "Data", "Virus") else "Vaccine")
+            if attr == "Vaccine":
+                self.vaccine += gain
+            elif attr == "Data":
+                self.data_power += gain
+            elif attr == "Virus":
+                self.virus += gain
+            if attr != self.attribute:                       # disliked-attribute cost
+                self.mood = _clamp(self.mood - 1, 0, 100)
         self.weight = max(1, self.weight - 2)
         self.energy = _clamp(self.energy - 15, 0, 100)
         self.mood = _clamp(self.mood + hits * 3, 0, 100)
-        if hits >= 2:
-            self.obedience += 1
         # training while overweight risks an injury
         if evolution.weight_category(self.weight, self._base_weight()) == "Over" and random.random() < 0.5:
             self.injuries += 1
         self._set_anim("happy" if hits >= 2 else "attack", 1.8)
         rank = "Perfect!" if hits == 3 else ("Good!" if hits == 2 else ("Meh." if hits == 1 else "Whiff."))
+        if game == "hp":
+            return f"{rank} {'Effort up!' if hits >= 2 else 'no gain'}"
         return f"{rank} +{gain} {attr}"
 
     def can_battle(self):
