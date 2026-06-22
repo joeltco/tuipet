@@ -211,8 +211,9 @@ class Screen(Static):
         idx = frames[self.frame_i % len(frames)]
         rows = rec["frames"][idx] or first
         xshift, mirror = 0, False
-        if pet.anim in ("idle", "walk") and (pet.is_geriatric or pet.sick):
-            rows = rec["frames"][9] or first   # elderly/sick: stand still in the weary pose
+        cold = pet.num != -1 and pet.status_word() == "freezing"
+        if pet.anim in ("idle", "walk") and (pet.is_geriatric or pet.sick or cold):
+            rows = rec["frames"][9] or first   # elderly/sick/cold: stand still, huddled/weary
         elif pet.anim in ("idle", "walk") and pet.num != -1:
             # pace back and forth; poop on the floor shrinks the free space -- the
             # pet still walks, just in the room to the right of the pile (DVPet
@@ -228,8 +229,9 @@ class Screen(Static):
             mirror = self.walk_dir > 0         # mirror=True faces right (sprites face left by default)
         else:
             mirror = pet.anim in data.MIRROR_ROLES and self.frame_i % 2 == 1
-        if pet.num != -1 and pet.status_word() == "freezing" and _FROZEN_FR:
-            rows, xshift, mirror = _FROZEN_FR, 0, False    # encased in ice
+        # NOTE: DVPet's frozen.png (the ice encasement) is its GAME-PAUSED indicator
+        # (setFrozenIcon only fires when !isPlaying), not a cold-weather state -- so cold
+        # shows the huddle pose above, not a full ice block over the pet.
         self.update(render_screen(rows, SCREEN_COLS, SCREEN_ROWS, on, bg,
                                   mirror=mirror, xshift=xshift, corner=corner, overlay=overlay, bgimg=bgimg))
 
