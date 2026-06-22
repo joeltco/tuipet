@@ -42,7 +42,7 @@ def options(pet):
         if t not in by or t in seen:
             continue
         r = reqs.get(t)
-        if not r or r.get("special") not in ("Jogress", "Fusion"):   # Fusion uses the same DNA partner matrix
+        if not r or r.get("special") not in ("Jogress", "Fusion", "Mode"):   # Fusion+Mode share the Jogress DNA matrix
             continue
         partners = required_partners(pet.attribute, by[t]["attribute"])
         if not partners:
