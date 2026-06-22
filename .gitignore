@@ -6,15 +6,14 @@ __pycache__/
 build/
 dist/
 
-# Raw DVPet game files (never distribute)
+# Raw DVPet jar dump — NOT needed once data/assets are vendored (below). Kept out of the repo.
 _extract/
 raw_resources
 raw_model
 
-# Game data — derived from DVPet, regenerate with tools/setup_assets.sh
-src/tuipet/data/*.csv
-src/tuipet/data/*.gz
+# Game data + assets are now VENDORED in src/tuipet/data/ (CSVs, sprite/effect/icon/
+# background/egg atlases, sounds) so the DVPet jar is no longer needed to build or run
+# tuipet. Regeneration via tools/setup_assets.sh is still possible if the jar is present.
 
 # Save data
 *.save
-src/tuipet/data/sounds/

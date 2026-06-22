@@ -1,0 +1,12 @@
+Y_PlayerField X_OppField,Fire,Light,Ice,Water,Metal,Wood,Dark,Thunder,Earth,Wind,None
+Fire,0,0,0,0,0,0,0,0,0,0,0
+Light,0,0,0,0,0,0,0,0,0,0,0
+Ice,0,0,0,0,0,0,0,0,0,0,0
+Water,0,0,0,0,0,0,0,0,0,0,0
+Metal,0,0,0,0,0,0,0,0,0,0,0
+Wood,0,0,0,0,0,0,0,0,0,0,0
+Dark,0,0,0,0,0,0,0,0,0,0,0
+Thunder,0,0,0,0,0,0,0,0,0,0,0
+Earth,0,0,0,0,0,0,0,0,0,0,0
+Wind,0,0,0,0,0,0,0,0,0,0,0
+None,0,0,0,0,0,0,0,0,0,0,0
