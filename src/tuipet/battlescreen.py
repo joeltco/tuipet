@@ -11,10 +11,7 @@ COLS, ROWS = 40, 8
 _E = data.load_effects()
 HIT = (_E.get("hit") or [None])[0]
 FLASH = (_E.get("flash") or [None])[0]
-_FALLBACK = (_E.get("attack") or [None])[0]
-PROJECTILES = {"Vaccine": (_E.get("atk_vaccine") or [_FALLBACK])[0],   # orb (red.png)
-               "Data": (_E.get("atk_data") or [_FALLBACK])[0],        # block (green.png)
-               "Virus": (_E.get("atk_virus") or [_FALLBACK])[0]}      # dart (yellow.png)
+ORB = (_E.get("attack") or [None])[0]            # the attackSprites projectile (checkAttackSprite)
 FLY = 5
 
 
@@ -47,7 +44,15 @@ class BattlePanel:
                 pet_hurt = self.battle.pet_hp < bp
                 attacker = "pet" if enemy_hurt else "enemy"
                 attr = which if attacker == "pet" else self.battle.last_enemy_attr
-                self.atk = {"attacker": attacker, "step": 0, "attr": attr,
+                if attacker == "pet":
+                    pw_val = {"Vaccine": self.pet.vaccine, "Data": self.pet.data_power,
+                              "Virus": self.pet.virus}.get(attr, 0)
+                else:
+                    e = self.battle.enemy
+                    pw_val = {"Vaccine": e["vaccine"], "Data": e["data_power"],
+                              "Virus": e["virus"]}.get(attr, 0)
+                count = max(1, min(4, 1 + pw_val // 50))
+                self.atk = {"attacker": attacker, "step": 0, "count": count,
                             "pet_hurt": pet_hurt, "enemy_hurt": enemy_hurt}
             return None
         if k in ("escape", "space"):
@@ -74,15 +79,20 @@ class BattlePanel:
         if not a:
             return []
         py = ROWS * 2 - 13
-        orb = PROJECTILES.get(a.get("attr")) or _FALLBACK
-        if a["step"] <= FLY and orb:                      # the attribute's projectile flies
-            ow = len(orb[0])
+        if a["step"] <= FLY and ORB:                      # a stream of orbs flies
+            ow = len(ORB[0])
             if a["attacker"] == "pet":
                 x0, x1 = pet_x + pw - 1, enemy_x - ow
             else:
                 x0, x1 = enemy_x - ow, pet_x + pw - 1
-            x = int(x0 + (x1 - x0) * (a["step"] / FLY))
-            return _blit(orb, x, py)
+            lead = int(x0 + (x1 - x0) * (a["step"] / FLY))
+            gap = ow + 1
+            cells = []
+            for i in range(a.get("count", 1)):
+                ox = lead - i * gap if a["attacker"] == "pet" else lead + i * gap
+                if 0 <= ox <= COLS - ow:
+                    cells += _blit(ORB, ox, py)
+            return cells
         # contact: a bright flash, then the burst, centred on the struck side
         cx = (enemy_x + ew // 2) if a["attacker"] == "pet" else (pet_x + pw // 2)
         fx = FLASH if a["step"] == FLY + 1 else HIT
