@@ -50,7 +50,7 @@ class TitlePanel:
     def text(self):
         _, by = data.load_sprites()
         rec = by[self.num]
-        idx = data.ROLES["idle"][self.frame_i % 2]
+        idx = data.ROLES["idle"][(self.frame_i // 4) % 2]  # gentle bob (~0.5s), not every fast-tick
         first = next((f for f in rec["frames"] if f), rec["frames"][0])
         mascot = rec["frames"][idx] or first
         buf = [[0] * COLS for _ in range(PXH)]

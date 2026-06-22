@@ -1,7 +1,7 @@
 """DigiCore — paged data book, rendered in the display box."""
 from __future__ import annotations
 from rich.text import Text
-from . import data  # noqa: F401  (pet methods drive the data)
+from . import data, evolution  # noqa: F401  (pet methods drive the data)
 
 from .theme import LCD_ON, LCD_BG, INK, INK_B, DIM
 from . import menu
@@ -9,7 +9,28 @@ from . import menu
 
 def _mins(s):
     s = int(max(0, s))
-    return f"{s // 60}m{s % 60:02d}s"
+    if s < 3600:
+        return f"{s // 60}m{s % 60:02d}s"
+    if s < 86400:
+        return f"{s // 3600}h{(s % 3600) // 60:02d}m"
+    return f"{s // 86400}d{(s % 86400) // 3600:02d}h"
+
+
+def _evo_rows(pet):
+    """The evolution line for the data book: what this Digimon can become,
+    closest-first, with the ones whose requirements are already met flagged."""
+    if pet.num == -1 or pet.stage in ("Egg", "Fresh"):
+        return [("(too young)", "")]
+    try:
+        cands = sorted(evolution.candidates(pet), key=lambda c: (not c[2], c[3]))
+    except Exception:
+        cands = []
+    if not cands:
+        return [("(final form)", "")]
+    rows = []
+    for num, name, ready, dev in cands[:9]:
+        rows.append((name[:14], chr(0x2713) + " ready" if ready else ""))
+    return rows
 
 
 def build_pages(pet):
@@ -54,6 +75,7 @@ def build_pages(pet):
             ("Appetite", appetite), ("Pace", temperament),
             ("Likes", fav or "-"), ("Dislikes", dis or "-"),
         ]),
+        ("EVOLVES", _evo_rows(pet)),
     ]
 
 
