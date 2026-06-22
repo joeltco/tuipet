@@ -184,7 +184,7 @@ class Screen(Static):
         bgimg = self._background(pet)
         corner = None                      # DVPet shows time via bg frame + palette, no corner icon
         if not pet.lights:                 # lights off (the 's' lights button): dark room (+ Zzz if asleep)
-            bgimg, bg, on = None, "#050505", SIL_NIGHT
+            bgimg, bg, on = None, "#000000", SIL_NIGHT   # DVPet lightsOff.png is pure (0,0,0)
         elif bgimg:
             on = SIL_NIGHT if phase == "night" else SIL_DAY   # silhouette ink
         else:
@@ -234,6 +234,8 @@ class Screen(Static):
         # NOTE: DVPet's frozen.png (the ice encasement) is its GAME-PAUSED indicator
         # (setFrozenIcon only fires when !isPlaying), not a cold-weather state -- so cold
         # shows the huddle pose above, not a full ice block over the pet.
+        if not pet.lights:                 # lights off: DVPet's lightsOff is a fully-opaque black
+            rows, xshift, mirror = [], 0, False   # cover -> the pet is hidden; only black (+ Zzz) shows
         self.update(render_screen(rows, SCREEN_COLS, SCREEN_ROWS, on, bg,
                                   mirror=mirror, xshift=xshift, corner=corner, overlay=overlay, bgimg=bgimg))
 
