@@ -154,6 +154,19 @@ FATIGUE_ENTH_CHANGE = -1                 # FatigueEnthusiasmChange
 ALREADY_FATIGUED_MOOD_DEC = 35           # alreadyFatiguedMoodDec (re-fatigued while down)
 FATIGUE_CHANCE = 60                      # FatigueChance (% on an exhausting drill)
 
+# DVPet sickness & injury durations (config.csv, PhysicalState.sicken / injure): an
+# illness or injury lasts Min..MaxLength recovery lapses (SickLapseMin/InjLapseMin game-min
+# each) and then clears on its own; onset costs mood/spirit.  Habitat-compat length mods
+# omitted (documented); deltas verbatim.  Cured early by medicine as before.
+SICK_MOOD_DEC = 50                       # SickMoodDec
+INJ_MOOD_DEC = 50                        # InjuryMoodDec
+SICK_ENTH_CHANGE = -1                    # SickEnthusiasmChange
+INJ_ENTH_CHANGE = -1                     # InjuryEnthusiasmChange
+MIN_SICK_LENGTH, MAX_SICK_LENGTH = 1, 10     # Min/MaxSickLength (recovery lapses)
+MIN_INJ_LENGTH, MAX_INJ_LENGTH = 1, 12       # Min/MaxInjLength
+SICK_LAPSE_MIN = 29                      # SickLapseMin (game-min per recovery lapse)
+INJ_LAPSE_MIN = 29                       # InjLapseMin
+
 # X-Antibody: a special state that unlocks evolution into the "X" Digimon forms.
 # None -> Temporary (decays) -> Permanent -> XProgram.  Acquired by a rare natural
 # birth roll or the X-Antibody / X-Program items.  (DVPet birth is 1/1000; bumped
@@ -237,6 +250,8 @@ class Pet:
     scold_window: int = 0
     compliance: bool = True         # DVPet _compliance (a fair scold restores it)
     fatigue_length: float = 0.0     # DVPet _fatigueLength (game-min remaining; >0 == fatigued)
+    sick_length: float = 0.0        # DVPet _sickLength (game-min until natural recovery)
+    inj_length: float = 0.0         # DVPet _injLength (game-min until the injury heals)
     battles: int = 0
     levels_fought: list = _dcf(default_factory=list)  # opponent levels beaten this stage (DVPet _levelsFought)
     bits: int = 0
@@ -372,6 +387,12 @@ class Pet:
                 self.exercise_today = 0
             if self.fatigue_length > 0:                       # checkFatigueLapse: rest it off (even asleep)
                 self.fatigue_length = max(0.0, self.fatigue_length - dt)
+            if self.sick_length > 0:                          # sickLapse: illness recovers in time
+                self.sick_length = max(0.0, self.sick_length - dt)
+                if self.sick_length == 0:
+                    self.sick = False
+            if self.inj_length > 0:                           # injLapse: the injury heals over time
+                self.inj_length = max(0.0, self.inj_length - dt)
         if self.asleep:
             # DVPet sleep recovery: +SleepEnergyGain every SleepMinutesToEnergyGain.
             self._sleep_e_t = getattr(self, "_sleep_e_t", 0.0) + dt
@@ -467,8 +488,7 @@ class Pet:
             self._filth_t = 0                # cleaned / under the limit resets the call timer
         # sickness from filth / starvation
         if (self.poop >= 3 or self.hunger == 0) and not self.sick and random.random() < 0.02 * dt:
-            self.sick = True
-            self.sick_count += 1
+            self._sicken()
         # bedtime: sleep through the night, or pass out if run to exhaustion by
         # day; a grace window after a manual wake lets you interact at night
         self._wake_grace = max(0.0, getattr(self, "_wake_grace", 0.0) - dt)
@@ -646,8 +666,7 @@ class Pet:
                 if aff < 0:                   # an incompatible home is just unhealthy
                     chance += 0.004 * (-aff)
                 if chance > 0 and random.random() < chance:
-                    self.sick = True
-                    self.sick_count += 1
+                    self._sicken()
 
     def _die(self):
         self.dead = True
@@ -704,6 +723,8 @@ class Pet:
         # per-stage care record resets; the next stage's care decides the next form
         self.care_mistakes = self.overeat = self.disturb = 0
         self.injuries = self.sick_count = 0
+        self.sick = False
+        self.sick_length = self.inj_length = self.fatigue_length = 0.0
         self.levels_fought = []
         self.weight = self._base_weight()
         # reaching a higher stage extends the total lifespan toward that stage's floor
@@ -876,7 +897,7 @@ class Pet:
             self.obedience -= 1                          # ExerciseFailObedienceDec
         # training while overweight risks an injury
         if evolution.weight_category(self.weight, self._base_weight()) == "Over" and random.random() < 0.5:
-            self.injuries += 1
+            self._injure()
         self._set_anim("happy" if hits >= 2 else "attack", 1.8)
         rank = "Perfect!" if hits == 3 else ("Good!" if hits == 2 else ("Meh." if hits == 1 else "Whiff."))
         if game == "hp":
@@ -917,7 +938,7 @@ class Pet:
         self._set_mood(self.mood - 20)               # BattleLostMoodDec
         self._set_enthusiasm(self.enthusiasm - 6)    # BattleLostEnthusiasmDec
         if random.random() < 0.3:
-            self.injuries += 1
+            self._injure()
         self._set_anim("sad", 2.0)
         return "Defeat..."
 
@@ -951,7 +972,7 @@ class Pet:
         else:
             time_factor = 0.0
         time_factor *= base
-        unwell = self.sick or self.injuries > 0 or self.is_fatigued()   # isSick||isInj||isFatigued
+        unwell = self.sick or self.is_injured() or self.is_fatigued()   # isSick||isInj||isFatigued
         unwell_factor = (REFUSE_UNWELL_SICK if unwell else 0.0) * (1 - base)
         ex = self.exercise_today or 1                                  # _exercise!=0 ? _exercise : 1
         if self.energy >= 0:
@@ -1065,6 +1086,30 @@ class Pet:
         """PhysicalState.isFatigued: worn out until the fatigue length counts down."""
         return self.fatigue_length > 0
 
+    def is_injured(self):
+        """PhysicalState.isInj: currently nursing an injury (the count persists for evolution)."""
+        return self.inj_length > 0
+
+    def _sicken(self):
+        """PhysicalState.sicken: fall ill for MinSickLength..MaxSickLength recovery lapses;
+        it clears on its own once that runs out (or earlier with medicine)."""
+        if self.sick:
+            return
+        self.sick = True
+        self.sick_count += 1
+        self.sick_length = random.randint(MIN_SICK_LENGTH, MAX_SICK_LENGTH) * SICK_LAPSE_MIN
+        self._set_mood(self.mood - SICK_MOOD_DEC)
+        self._set_enthusiasm(self.enthusiasm + SICK_ENTH_CHANGE)
+
+    def _injure(self):
+        """PhysicalState.injure: take an injury for MinInjLength..MaxInjLength recovery
+        lapses; the cumulative injury count (used by evolution) also ticks up."""
+        self.injuries += 1
+        self.inj_length = max(self.inj_length,
+                              random.randint(MIN_INJ_LENGTH, MAX_INJ_LENGTH) * INJ_LAPSE_MIN)
+        self._set_mood(self.mood - INJ_MOOD_DEC)
+        self._set_enthusiasm(self.enthusiasm + INJ_ENTH_CHANGE)
+
     def _fatigue(self):
         """PhysicalState.fatigue: the pet collapses from over-exertion — a heavy one-time
         mood/energy/spirit hit (worse if it was already fatigued), then it must rest the
@@ -1158,6 +1203,7 @@ class Pet:
         if not self.sick:
             return "Not sick."
         self.sick = False
+        self.sick_length = 0.0                      # medicine cures the illness outright
         self._set_mood(self.mood + 75)              # curedMoodBonus
         self._set_anim("heal", 1.5)
         return f"{self.name} feels better!"
@@ -1239,8 +1285,10 @@ class Pet:
             self._set_mood(max(self.mood, NEW_UNDEPRESSED_MOOD))  # leave depression
         if e["cured"]:
             self.sick = False
+            self.sick_length = 0.0
         if e["healed"]:
             self.injuries = max(0, self.injuries - 1)
+            self.inj_length = 0.0
         self._set_anim("eat" if is_food else "happy", 1.4)
         return f"Used {e['name']}."
 
@@ -1256,6 +1304,8 @@ class Pet:
             return "sick"
         if self.is_fatigued():
             return "fatigued"
+        if self.is_injured():
+            return "injured"
         if self.temp <= wx.FREEZING_TEMP:
             return "freezing"
         lo, hi = self.ideal_temp
