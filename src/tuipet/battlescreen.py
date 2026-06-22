@@ -14,6 +14,9 @@ HIT = (_E.get("hit") or [None])[0]
 FLASH = (_E.get("flash") or [None])[0]
 ORB = (_E.get("attack") or [None])[0]            # the attackSprites projectile (checkAttackSprite)
 FLY = 5
+# Verified from View/SpriteAnim battle methods (drawNumMirror frame args):
+BATTLE_ATTACK = [1, 0, 4]   # battlePlayerShootAnim: windup 1 -> 0 -> 4
+BATTLE_BRACE  = [0, 4]      # battlePlayerReceiveAttackAnim: target braces 0 <-> 4
 
 
 def _blit(bm, ox, oy):
@@ -81,9 +84,11 @@ class BattlePanel:
     def _frames(self, num, mode):
         rec = data.load_sprites()[1][num]
         if mode == "attack":
-            roles = data.ROLES["attack"]
+            roles = BATTLE_ATTACK                          # battlePlayerShootAnim 1->0->4
+        elif mode == "brace":
+            roles = BATTLE_BRACE                           # battlePlayerReceiveAttackAnim 0<->4
         elif mode == "recoil":
-            roles = (10,)                                 # Battling_Hit_Aftermath damaged pose
+            roles = (10,)                                  # battlePlayerHitAftermath damaged pose
         else:
             roles = data.ROLES["idle"]
         idx = roles[self.frame_i % len(roles)]
@@ -127,11 +132,11 @@ class BattlePanel:
         a = self.atk
         flying = bool(a and a["step"] <= FLY)
         pet_mode = enemy_mode = "idle"
-        if a and flying:
+        if a and flying:                                  # shooter shoots; the target braces
             if a["attacker"] == "pet":
-                pet_mode = "attack"
+                pet_mode, enemy_mode = "attack", "brace"
             else:
-                enemy_mode = "attack"
+                enemy_mode, pet_mode = "attack", "brace"
         elif a:                                           # contact: the struck side flinches
             if a.get("pet_hurt"):
                 pet_mode = "recoil"
