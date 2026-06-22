@@ -1,5 +1,13 @@
 """DVPet TUI — a terminal virtual pet rendered with halfblock sprites."""
 from __future__ import annotations
+# Force 24-bit color BEFORE importing Textual: SSH sessions usually do not carry
+# COLORTERM, so Textual would auto-downgrade to xterm-256 and the muted background
+# palette (e.g. the teal night hills #507070/#406060) all round to the same gray
+# cube-color #5f5f5f -- flattening the ground into a featureless gray block. Modern
+# terminals (Termux, etc.) support truecolor; advertise it unless the user set otherwise.
+import os as _os
+if not _os.environ.get("COLORTERM"):
+    _os.environ["COLORTERM"] = "truecolor"
 from textual.app import App, ComposeResult
 from textual.containers import Horizontal, Vertical
 from textual.widgets import Static
