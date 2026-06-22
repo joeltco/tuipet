@@ -128,6 +128,17 @@ SCOLD_PRAISE_OBED = {0: 1, 1: 3, -1: 0}     # ScoldPraiseObedienceInc[/High/Low]
 DISCIPLINE_SCOLD_OBED_INC = 2           # DisciplineCallScoldObedienceInc (a fair scold)
 PRAISE_WINDOW_MAX = 2                    # PraiseWindowMax (lapses the window stays open)
 SCOLD_WINDOW_MAX = 2                     # ScoldWindowMax
+# auto disciplineCall (checkDisciplineCall): the pet spontaneously acts up on the
+# DisciplineCallMin cadence -- chance = randomChance(TargetChance+careAdjust,
+# DisciplineCallChance-(ObedienceRefusalCap-obedience)); well-behaved grown pets are
+# exempt.  DisciplineCallMin=59 game-min maps onto tuipet's ~59s mood-lapse (Joel's
+# cadence-scaling choice), numbers verbatim.
+DISCIPLINE_TARGET_CHANCE = 16            # DisciplineCallTargetChance
+DISCIPLINE_CALL_CHANCE = 150             # DisciplineCallChance (randomChance bound base)
+DISCIPLINE_TARGET_GLUTTON = 3            # DisciplineCallTargetGluttonChange
+DISCIPLINE_TARGET_RESTLESS_HI = 3        # restless & under-exercised acts up more
+DISCIPLINE_TARGET_RESTLESS_LO = -1
+DISCIPLINE_OBEDIENCE_MAX = 50            # DisciplineCallObedienceMax (grown + obedient => exempt)
 
 # X-Antibody: a special state that unlocks evolution into the "X" Digimon forms.
 # None -> Temporary (decays) -> Permanent -> XProgram.  Acquired by a rare natural
@@ -386,6 +397,7 @@ class Pet:
                 self.scold_window += 1
                 if self.scold_window > SCOLD_WINDOW_MAX:
                     self.scold_flag, self.scold_window = False, 0
+            self._check_discipline_call()                # the pet may spontaneously act up
             # enthusiasm lapse: while ASLEEP spirit decays toward 0 (EnthusiasmLapse Dec/Inc).
             # DVPet's AWAKE enthusiasmLapse (mood -= |enth|*EnthusiasmMoodDecCoefficient, plus an
             # energy-gated climb) is gated on maxEnergy/EnthusiasmChangeEnergyCoefficient. DVPet's
@@ -1002,6 +1014,27 @@ class Pet:
         tuipet opens it on the care-mistake event instead, keeping the deltas faithful."""
         if self.num != -1 and self.stage != "Egg":
             self.scold_flag, self.scold_window, self.compliance = True, 0, False
+
+    def _check_discipline_call(self):
+        """checkDisciplineCall: on the DisciplineCallMin cadence, a chance for the pet to
+        act up on its own (opening a scold window) — likelier when its needs go unmet,
+        rarer the more obedient it is.  Obedient grown pets are exempt.  (Sleep-approach
+        gating from DVPet is approximated by running this only while awake.)"""
+        if self.scold_flag or self.praise_flag:          # checkCall(): already mid-discipline
+            return
+        if self.obedience >= DISCIPLINE_OBEDIENCE_MAX and self.stage not in ("Fresh", "InTraining"):
+            return
+        adjust = 0
+        if self.hunger < 4 and self.glutton > 0:          # hungry glutton frets
+            adjust = DISCIPLINE_TARGET_GLUTTON
+        if self.exercise_today < 4 and self.restless > 0:  # under-exercised & restless (overrides)
+            adjust = DISCIPLINE_TARGET_RESTLESS_HI
+        elif self.exercise_today < 4 and self.restless < 0:
+            adjust = DISCIPLINE_TARGET_RESTLESS_LO
+        target = DISCIPLINE_TARGET_CHANCE + adjust
+        bound = max(1, DISCIPLINE_CALL_CHANCE - (OBEDIENCE_REFUSAL_CAP - self.obedience))
+        if random.randint(0, bound - 1) < target:
+            self._open_scold()
 
     def praise(self):
         """PhysicalState.praise: cheering the pet always lifts its mood; doing so inside
