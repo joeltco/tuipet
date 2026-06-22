@@ -27,6 +27,7 @@ class BattlePanel:
         self.battle = Battle(pet, enemy)
         self.frame_i = 0
         self.atk = None
+        self.surrender_req = False        # the pet has asked to give up; awaiting Y/N
 
     def anim(self):
         self.frame_i += 1
@@ -35,7 +36,27 @@ class BattlePanel:
             if self.atk["step"] > FLY + 2:
                 self.atk = None
 
+    def _check_surrender(self):
+        """DVPet onRoundEnd: after a round the pet may give up (1) or beg to flee (2)."""
+        b = self.battle
+        s = b.pet.check_surrender(b.pet_hp, b.enemy_hp, b.enemy_max, b.pet_max)
+        if s == 1:
+            b.pet.surrender_effect(1, b.pet_hp, b.enemy_hp)
+            b.surrender()
+        elif s == 2:
+            self.surrender_req = True
+
     def key(self, k):
+        if self.surrender_req:                       # the pet is asking to quit -- Y accept / N refuse
+            b = self.battle
+            if k in ("y", "Y"):
+                b.pet.surrender_effect(2, b.pet_hp, b.enemy_hp)
+                b.surrender()
+                self.surrender_req = False
+            elif k in ("n", "N"):
+                b.pet.surrender_reject()             # sulks, fights on
+                self.surrender_req = False
+            return None
         which = {"1": "Vaccine", "2": "Data", "3": "Virus"}.get(k)
         if which:
             if not (self.battle.over or self.atk):
@@ -50,6 +71,8 @@ class BattlePanel:
                 count = max(1, min(6, dmg))
                 self.atk = {"attacker": attacker, "step": 0, "count": count,
                             "pet_hurt": pet_hurt, "enemy_hurt": enemy_hurt}
+                if not self.battle.over:
+                    self._check_surrender()
             return None
         if k in ("escape", "space"):
             return ("done", self.battle if self.battle.over else None)
@@ -129,10 +152,15 @@ class BattlePanel:
         out.append_text(scene)
         out.append(f"\nYou {self._hp(b.pet_hp, b.pet_max)}", style=INK)
         out.append(f"   Foe[{b.enemy['attribute'][:2]}] {self._hp(b.enemy_hp, b.enemy_max)}\n", style=INK)
-        out.append_text(menu.note(b.last or "Choose your attack!"))
+        note = b.last or "Choose your attack!"
+        if self.surrender_req and not b.over:
+            note = f"{self.pet.name} wants to give up!"
+        out.append_text(menu.note(note))
         if b.over:
-            res = "VICTORY!" if b.won else "DEFEAT"
+            res = "SURRENDER" if getattr(b, "surrendered", False) else ("VICTORY!" if b.won else "DEFEAT")
             out.append_text(menu.footer(f"{res}  {b.reward}   SPACE"))
+        elif self.surrender_req:
+            out.append_text(menu.footer("Let it quit?   Y yes   N fight on"))
         else:
             out.append_text(menu.footer("1 Vac   2 Data   3 Vir   ESC flee"))
         return out

@@ -35,12 +35,12 @@ Enemy AI (Battle: AIType selected from the PLAYER's win count):
 Win/lose (Battle.checkFinish / battleEnd): the battle ends the instant either
 HP <= 0; the player loses iff its OWN HP <= 0 (a double-KO is therefore a loss).
 
-NOT ported (documented, not faked):
-  - AttackEffect/AttackCondition chip layer (AttackEffectProcess): the per-
-    attribute effect+condition data lives in digimon.csv (Name:Effect:Condition)
-    but is not yet wired; with it unset the engine matches shipped behaviour.
-  - Player-side surrender/escape (PhysicalState.checkSurrender): an obedience/
-    disposition morale mechanic that needs the obedience-factor model first.
+Companion systems (ported elsewhere, faithful):
+  - AttackEffect/AttackCondition chip layer -> battlefx.py (the per-attribute
+    effect+condition data is pre-baked into digimon.csv and resolved per round).
+  - Player-side surrender/escape (PhysicalState.checkSurrender) -> pet.py
+    (check_surrender / surrender_effect); battlescreen drives the Y/N request and
+    Battle.surrender() ends the bout as neither win nor loss.
 """
 from __future__ import annotations
 import random
@@ -112,7 +112,7 @@ class Battle:
         self.last_enemy_damage = 0
         self._pet_zero_attack = None       # checkRememberZeroAttack
         self._enemy_zero_attack = None
-        self.surrendered = False           # player-surrender not yet ported; never set
+        self.surrendered = False           # set True by surrender() (PhysicalState.checkSurrender)
 
     def _damage(self, stage, attr, my, opp):
         atk = BASE_ATTACK.get(stage, 5) + calc_attack_power(attr, my, opp)  # + affinity (0)
@@ -177,3 +177,16 @@ class Battle:
         self.over = True
         self.won = self.pet_hp > 0          # battleEnd: player loses iff _health <= 0
         self.reward = self.pet.record_battle(self.won, self.enemy)
+
+    def surrender(self):
+        """Battle.surrender: the pet bows out -- the bout ends as neither win nor loss.
+        Costs SurrenderEnthusiasmDec spirit; a fixed (non-random) foe still counts as a
+        battle fought.  SurrenderEnergyDec/SurrenderWeightDec are 0 in the shipped config."""
+        from .pet import SURR_ENTH_DEC
+        self.over = True
+        self.won = False
+        self.surrendered = True
+        self.reward = "Surrendered."
+        self.pet._set_enthusiasm(self.pet.enthusiasm - SURR_ENTH_DEC)
+        if self.enemy.get("boss"):          # getIsRandom() == false -> battles += 1
+            self.pet.battles += 1

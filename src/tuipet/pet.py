@@ -48,6 +48,39 @@ NEW_UNDEPRESSED_MOOD = -50            # NewUndepressedMood
 MIN_ENTHUSIASM, MAX_ENTHUSIASM = -10, 10   # MinEnthusiasm / MaxEnthusiasm
 MAX_ENTHUSIASM_MOOD_PENALTY = 10           # MaxEnthusiasmMoodPenalty
 
+# DVPet obedience + battle-surrender morale (config.csv column 1, where CanRefuse=TRUE;
+# Config.loadConfig strips the name column and PhysicalState loads column 0 => the first
+# value column).  Drives PhysicalState.getObedienceFactors / getAdjustedObedience /
+# checkSurrender — the pet may give up or beg to flee a battle based on disposition,
+# obedience, health and win-rate.  Every number is verbatim from the binary.
+CAN_REFUSE = True
+REFUSE_CHANCE = 100                 # RefuseRate -> Random.nextInt(REFUSE_CHANCE)
+OBEDIENCE_REFUSAL_CAP = 100         # ObedienceRefusalCap
+OBEDIENCE_MOOD_MOD = 15.0           # ObedienceMoodModCoefficient
+OBEDIENCE_TIME_MOD = 10.0           # ObedienceTimeModCoefficient
+OBEDIENCE_ENTH_MOD = 6.0            # ObedienceEnthusiasmModCoefficient
+REFUSE_UNWELL_SICK = -10.0          # RefuseUnwellModSickFactor
+DEPRESSED_OBEDIENCE = 50.0          # DepressedObedience
+SURR_HEALTH_COEF = 5.0              # SurrenderChanceHealthCoefficient
+SURR_DISP_COEF = 5.0                # HighDispositionSurrenderChanceDispositionCoefficient
+HD_CONT_HI_HP, HD_CONT_LO_HP = 30.0, -10.0    # HighDispositionContinueChance*HealthFactor
+HD_CONT_HI_EHP, HD_CONT_LO_EHP = -10.0, 25.0  # HighDispositionContinueChance*EnemyHealthFactor
+HD_SURR_HI_HP, HD_SURR_LO_HP = -10.0, 10.0     # HighDispositionSurrenderChance*HealthFactor
+LD_CONT_HI_HP, LD_CONT_LO_HP = 60.0, 0.0       # LowDispositionContinueChance*HealthFactor
+LD_SURR_HI_EHP, LD_SURR_LO_EHP = 5.0, -60.0    # LowDispositionSurrenderChance*EnemyHealthFactor
+SURR_HI_EHP, SURR_LO_EHP = 10.0, 30.0          # SurrenderChance*EnemyHealthFactor
+SURR_HI_FACTOR, SURR_LO_FACTOR = 3.0, 0.75     # SurrenderChanceHigh/LowFactor
+SURR_HI_WINRATE_MIN = 0.4                       # SurrenderChanceHighFactorWinRateMin
+# aftermath (ClockTic.surrenderEffect / surrender-reject / Battle.surrender)
+SURR_EFFECT_MOOD_INC = 10               # SurrenderEffectMoodInc
+SURR_EFFECT_LOWDISP_MOOD_DEC = 20       # SurrenderEffectLowDispositionMoodDec
+SURR_EFFECT_REQ_OBED_DEC = 10           # SurrenderEffectRequestObedienceDec
+SURR_EFFECT_OBED_DEC = 1                # SurrenderEffectObedienceDec
+SURR_EFFECT_REQ_LOWHP_OBED = 15         # SurrenderEffectRequestLowHealthObedienceInc (setObedience)
+SURR_REJECT_MOOD_DEC = 10               # SurrenderRejectMoodDec
+SURR_REJECT_OBED_INC = 1                # SurrenderRejectObedienceInc
+SURR_ENTH_DEC = 3                       # SurrenderEnthusiasmDec
+
 # X-Antibody: a special state that unlocks evolution into the "X" Digimon forms.
 # None -> Temporary (decays) -> Permanent -> XProgram.  Acquired by a rare natural
 # birth roll or the X-Antibody / X-Program items.  (DVPet birth is 1/1000; bumped
@@ -116,6 +149,12 @@ class Pet:
     injuries: int = 0
     disturb: int = 0
     obedience: int = 0
+    # personality traits: fixed at hatch (DVPet randPersonalityTraits), each in {-1,0,+1}.
+    # Distinct from the overeat/disturb care counters, which drive evolution.
+    disposition: int = 0
+    glutton: int = 0
+    restless: int = 0
+    exercise_today: int = 0         # DVPet _exercise: drills done today (resets daily)
     battles: int = 0
     levels_fought: list = _dcf(default_factory=list)  # opponent levels beaten this stage (DVPet _levelsFought)
     bits: int = 0
@@ -189,8 +228,21 @@ class Pet:
             target = random.choice(fresh)
         self.evolve_to(target)
         self.hatching = False
+        self._rand_personality_traits()               # fix disposition/glutton/restless for life
         if self.x_antibody == "None" and random.randint(0, X_BIRTH_BOUND - 1) < X_BIRTH_TARGET:
             self._set_xantibody("Permanent")          # born a natural X-Antibody carrier
+
+    def _rand_personality_traits(self):
+        """PhysicalState.randPersonalityTraits: each trait rolls Random.nextInt(3) ->
+        {0:-1, 1:0, 2:+1} and is fixed for life (only assigned while still neutral)."""
+        def roll(cur):
+            if cur != 0:
+                return cur
+            r = random.randint(0, 2)
+            return -1 if r < 1 else (1 if r > 1 else 0)
+        self.restless = roll(self.restless)
+        self.glutton = roll(self.glutton)
+        self.disposition = roll(self.disposition)
 
     @classmethod
     def from_num(cls, num):
@@ -232,6 +284,10 @@ class Pet:
         if self.stage != "Egg":
             self._temperature_effects(dt)
             self._track_time_pref(dt)
+            day = int(self.world_seconds // DAY_LENGTH)
+            if getattr(self, "_exercise_day", -1) != day:    # DVPet checkExerciseTime: daily reset
+                self._exercise_day = day
+                self.exercise_today = 0
         if self.asleep:
             # DVPet sleep recovery: +SleepEnergyGain every SleepMinutesToEnergyGain.
             self._sleep_e_t = getattr(self, "_sleep_e_t", 0.0) + dt
@@ -395,13 +451,13 @@ class Pet:
             self.time_pref[ph] = _clamp(self.time_pref.get(ph, 0) + d, -90, 90)
 
     def _disposition(self):
-        return 1 if self.mood >= MIN_HAPPY_MOOD else (-1 if self.mood <= MIN_UNHAPPY_MOOD else 0)
+        return self.disposition          # DVPet _disposition: fixed personality trait
 
     def _glutton(self):
-        return 1 if self.overeat >= 4 else (-1 if self.overeat == 0 else 0)
+        return self.glutton
 
     def _restless(self):
-        return 1 if self.disturb >= 3 else (-1 if self.disturb == 0 else 0)
+        return self.restless
 
     def personality(self):
         if self.num == -1 or self.stage == "Egg":
@@ -662,6 +718,7 @@ class Pet:
         (DVPet NoneTrainingAttributeMoodRankChange).
         """
         self.train_time = _dvpet_time(self.day_phase)
+        self.exercise_today += 1                          # DVPet _exercise (incExerciseTime)
         if hits >= 2:
             self.strength = _clamp(self.strength + 1, 0, 4)
             self.obedience += 1
@@ -729,6 +786,111 @@ class Pet:
             self.injuries += 1
         self._set_anim("sad", 2.0)
         return "Defeat..."
+
+    # ---- battle morale: obedience & surrender (PhysicalState) ----------------
+    def _adjusted_obedience(self):
+        """PhysicalState.getAdjustedObedience: the obedience score, capped down to
+        DepressedObedience while the mood is Depressed."""
+        ao = float(self.obedience)
+        if self.current_mood() == "Depressed" and DEPRESSED_OBEDIENCE < ao:
+            ao = DEPRESSED_OBEDIENCE
+        return ao
+
+    def _obedience_factors(self):
+        """PhysicalState.getObedienceFactors -> (base, moodFactor, total).  Verbatim
+        port; the time term uses tuipet's day-phase time ranks for the clock-hour
+        favorite/disliked check, and 'fatigued' maps to spent energy (tuipet has no
+        separate fatigue flag)."""
+        depressed = self.current_mood() == "Depressed"
+        obed = DEPRESSED_OBEDIENCE if depressed else float(self.obedience)
+        base = obed / OBEDIENCE_REFUSAL_CAP
+        if OBEDIENCE_MOOD_MOD == 0:
+            mood_factor = 0.0
+        else:
+            mood_factor = (self.mood / OBEDIENCE_MOOD_MOD) * ((1 - base) if self.mood < 0 else base)
+        energy_ratio = (self.energy / self.max_energy if self.max_energy else 0.0) * 24.0
+        now = self.day_phase
+        if self.favorite_time() == now:
+            time_factor = OBEDIENCE_TIME_MOD
+        elif self.disliked_time() == now:
+            time_factor = -OBEDIENCE_TIME_MOD
+        else:
+            time_factor = 0.0
+        time_factor *= base
+        unwell = self.sick or self.injuries > 0 or self.energy <= 0   # isSick||isInj||isFatigued
+        unwell_factor = (REFUSE_UNWELL_SICK if unwell else 0.0) * (1 - base)
+        ex = self.exercise_today or 1                                  # _exercise!=0 ? _exercise : 1
+        if self.energy >= 0:
+            exercise_factor = base * (energy_ratio / ex)
+        else:
+            exercise_factor = base * (energy_ratio * ex)
+        enth_factor = (self.enthusiasm * OBEDIENCE_ENTH_MOD) * (1 - base)
+        total = exercise_factor + time_factor + mood_factor + unwell_factor + enth_factor
+        return (base, mood_factor, total)
+
+    def check_surrender(self, health, enemy_health, enemy_max_health, full_hp):
+        """PhysicalState.checkSurrender (verbatim two-pass formula).  Returns
+        0 = fight on, 2 = the pet REQUESTS to give up (the trainer decides), or
+        1 = it surrenders/flees outright.  Disposition 0/+1 = the steady 'high'
+        branch; -1 = the grumpy 'low' branch that quits more readily."""
+        if not CAN_REFUSE:
+            return 0
+        adj_factor = self._obedience_factors()[2]
+        adj_obed = self._adjusted_obedience()
+        disp = self._disposition()
+        health_thresh = full_hp / SURR_HEALTH_COEF
+        r1 = random.randint(0, REFUSE_CHANCE - 1)
+        if disp == 0 or disp == 1:                                    # HIGH disposition
+            cont = adj_obed + adj_factor
+            cont += HD_CONT_HI_HP if health >= health_thresh else HD_CONT_LO_HP
+            if health < enemy_health and enemy_health >= enemy_max_health / SURR_HEALTH_COEF:
+                cont += HD_CONT_HI_EHP
+            else:
+                cont += HD_CONT_LO_EHP
+            surr = r1 + disp * SURR_DISP_COEF
+            surr += HD_SURR_HI_HP if (health >= health_thresh and health >= enemy_health) else HD_SURR_LO_HP
+        else:                                                         # LOW disposition (-1)
+            cont = adj_obed + adj_factor
+            cont += LD_CONT_HI_HP if health >= health_thresh else LD_CONT_LO_HP
+            surr = float(r1)
+            surr += LD_SURR_LO_EHP if (health >= health_thresh and health >= enemy_health) else LD_SURR_HI_EHP
+        if surr < cont:
+            return 0
+        # provisional surrender request; the second pass decides whether it escalates to a flat refusal
+        high_hp = health >= health_thresh
+        ratio_ok = bool(full_hp and enemy_max_health and
+                        health / full_hp >= enemy_health / enemy_max_health)
+        if high_hp and (health >= enemy_health or ratio_ok):
+            factor = SURR_HI_FACTOR
+        elif self.battles > 0 and self.wins / self.battles >= SURR_HI_WINRATE_MIN:
+            factor = SURR_HI_FACTOR
+        else:
+            factor = SURR_LO_FACTOR
+        r2 = random.randint(0, REFUSE_CHANCE - 1)
+        surr2 = r2 + disp * SURR_DISP_COEF
+        if health < enemy_health and enemy_health >= enemy_max_health / SURR_HEALTH_COEF:
+            surr2 -= SURR_HI_EHP
+        else:
+            surr2 -= SURR_LO_EHP
+        surr2 = surr2 / factor
+        return 1 if surr2 >= cont else 2
+
+    def surrender_effect(self, surrender_val, health, enemy_health):
+        """ClockTic.surrenderEffect: the morale aftermath when the pet gives up (1) or
+        its surrender request is accepted (2)."""
+        self._set_mood(self.mood + SURR_EFFECT_MOOD_INC)
+        if surrender_val == 1 and self._disposition() < 0 and health >= enemy_health:
+            self._set_mood(self.mood - SURR_EFFECT_LOWDISP_MOOD_DEC)
+        if health >= enemy_health:
+            self.obedience -= SURR_EFFECT_REQ_OBED_DEC if surrender_val == 2 else SURR_EFFECT_OBED_DEC
+        if surrender_val == 2 and health < enemy_health:
+            self.obedience = SURR_EFFECT_REQ_LOWHP_OBED          # setObedience(15), verbatim (a SET, not +=)
+
+    def surrender_reject(self):
+        """ClockTic: the trainer refuses the pet's surrender request (surrender==2) and
+        sends it back in — it sulks but obeys a touch more."""
+        self._set_mood(self.mood - SURR_REJECT_MOOD_DEC)
+        self.obedience += SURR_REJECT_OBED_INC
 
     def clean(self):
         if self.dead:
