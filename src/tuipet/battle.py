@@ -12,6 +12,21 @@ from . import data
 
 TRIANGLE = {"Vaccine": "Virus", "Virus": "Data", "Data": "Vaccine"}  # key beats value
 ATTRS = ("Vaccine", "Data", "Virus")
+COUNTER = {"Virus": "Vaccine", "Data": "Virus", "Vaccine": "Data"}   # value that beats the key
+
+# DVPet enemy AI escalates with the player's win count (config *AIWins thresholds).
+AI_TIERS = ["Random", "Brute", "StrategicBrute", "StrategicDefense", "StrategicBalanced"]
+AI_WINS = {"Random": 0, "Brute": 15, "StrategicBrute": 30, "StrategicDefense": 45, "StrategicBalanced": 60}
+
+
+def ai_for_wins(wins, boss=False):
+    tier = "Random"
+    for name in AI_TIERS:
+        if wins >= AI_WINS[name]:
+            tier = name
+    if boss:                                          # bosses fight one tier smarter
+        tier = AI_TIERS[min(AI_TIERS.index(tier) + 1, len(AI_TIERS) - 1)]
+    return tier
 
 
 def beats(a, b):
@@ -46,6 +61,9 @@ class Battle:
         self.over = False
         self.won = None
         self.last = ""
+        self.ai = ai_for_wins(pet.wins, self.enemy["boss"])
+        self.prev_player_attr = None
+        self.surrendered = False
 
     def _powers(self, side):
         if side == "pet":
@@ -53,10 +71,22 @@ class Battle:
         return {"Vaccine": self.enemy["vaccine"], "Data": self.enemy["data_power"], "Virus": self.enemy["virus"]}
 
     def _enemy_choice(self):
-        # mostly attacks with its battle attribute (shown to the player), some bluff
-        if random.random() < 0.2:
+        """Pick the enemy's attack per its AI type, reading the player's previous
+        attack (DVPet _previousAttackType). First round has no read."""
+        ai, strong, last = self.ai, self.enemy["attribute"], self.prev_player_attr
+        if ai == "Random":
             return random.choice(ATTRS)
-        return self.enemy["attribute"]
+        if ai == "Brute" or last is None:
+            return strong
+        if ai == "StrategicDefense":
+            return COUNTER[last]                          # counter your last move
+        if ai == "StrategicBrute":
+            return strong if random.random() < 0.6 else COUNTER[last]
+        # StrategicBalanced: maximise effective power assuming you repeat
+        if random.random() < 0.75:
+            powers = self._powers("enemy")
+            return max(ATTRS, key=lambda a: effective(a, powers, last))
+        return random.choice(ATTRS)
 
     def play_round(self, player_attr):
         if self.over:
@@ -76,13 +106,24 @@ class Battle:
             self.enemy_hp -= 1
             self.pet_hp -= 1
             self.last = f"R{self.round}: clash! both take a hit"
+        self.prev_player_attr = player_attr
         if self.enemy_hp <= 0 or self.pet_hp <= 0:
+            self._finish()
+            return self.last
+        # a cornered, non-boss enemy may throw in the towel (DVPet enemySurrender)
+        if not self.enemy["boss"] and 0 < self.enemy_hp <= max(1, self.enemy_max // 4) \
+                and random.random() < 0.4:
+            self.surrendered = True
             self._finish()
         return self.last
 
     def _finish(self):
         self.over = True
-        self.won = self.enemy_hp <= 0 and self.pet_hp > 0
-        if self.pet_hp <= 0 and self.enemy_hp <= 0:
-            self.won = False  # double-KO counts as a loss
+        if self.surrendered:
+            self.won = True
+            self.last = f"{self.enemy['name']} surrenders!"
+        else:
+            self.won = self.enemy_hp <= 0 and self.pet_hp > 0
+            if self.pet_hp <= 0 and self.enemy_hp <= 0:
+                self.won = False  # double-KO counts as a loss
         self.reward = self.pet.record_battle(self.won, self.enemy)

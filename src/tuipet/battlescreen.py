@@ -37,18 +37,26 @@ class BattlePanel:
         which = {"1": "Vaccine", "2": "Data", "3": "Virus"}.get(k)
         if which:
             if not (self.battle.over or self.atk):
-                before = self.battle.enemy_hp
+                be, bp = self.battle.enemy_hp, self.battle.pet_hp
                 self.battle.play_round(which)
-                attacker = "pet" if self.battle.enemy_hp < before else "enemy"
-                self.atk = {"attacker": attacker, "step": 0}
+                enemy_hurt = self.battle.enemy_hp < be
+                pet_hurt = self.battle.pet_hp < bp
+                attacker = "pet" if enemy_hurt else "enemy"
+                self.atk = {"attacker": attacker, "step": 0,
+                            "pet_hurt": pet_hurt, "enemy_hurt": enemy_hurt}
             return None
         if k in ("escape", "space"):
             return ("done", self.battle if self.battle.over else None)
         return None
 
-    def _frames(self, num, attacking):
+    def _frames(self, num, mode):
         rec = data.load_sprites()[1][num]
-        roles = data.ROLES["attack"] if attacking else data.ROLES["idle"]
+        if mode == "attack":
+            roles = data.ROLES["attack"]
+        elif mode == "recoil":
+            roles = (9,)                                  # weary/hurt recoil pose
+        else:
+            roles = data.ROLES["idle"]
         idx = roles[self.frame_i % len(roles)]
         return rec["frames"][idx] or rec["frames"][0]
 
@@ -74,10 +82,20 @@ class BattlePanel:
     def text(self):
         b = self.battle
         a = self.atk
-        pet_atk = bool(a and a["attacker"] == "pet" and a["step"] <= FLY)
-        enemy_atk = bool(a and a["attacker"] == "enemy" and a["step"] <= FLY)
-        pet_rows = self._frames(self.pet.num, pet_atk)
-        enemy_rows = self._frames(b.enemy["num"], enemy_atk)
+        flying = bool(a and a["step"] <= FLY)
+        pet_mode = enemy_mode = "idle"
+        if a and flying:
+            if a["attacker"] == "pet":
+                pet_mode = "attack"
+            else:
+                enemy_mode = "attack"
+        elif a:                                           # contact: the struck side flinches
+            if a.get("pet_hurt"):
+                pet_mode = "recoil"
+            if a.get("enemy_hurt"):
+                enemy_mode = "recoil"
+        pet_rows = self._frames(self.pet.num, pet_mode)
+        enemy_rows = self._frames(b.enemy["num"], enemy_mode)
         pw = max(len(r) for r in pet_rows)
         ew = max(len(r) for r in enemy_rows)
         pet_x, enemy_x = 1, COLS - ew - 1
@@ -93,7 +111,7 @@ class BattlePanel:
         out.append(f"   Foe[{b.enemy['attribute'][:2]}] {self._hp(b.enemy_hp, b.enemy_max)}\n", style=INK)
         out.append_text(menu.note(b.last or "Choose your attack!"))
         if b.over:
-            res = "VICTORY!" if b.won else "DEFEAT"
+            res = ("SURRENDER!" if b.surrendered else "VICTORY!") if b.won else "DEFEAT"
             out.append_text(menu.footer(f"{res}  {b.reward}   SPACE"))
         else:
             out.append_text(menu.footer("1 Vac   2 Data   3 Vir   ESC flee"))
