@@ -318,7 +318,7 @@ class Screen(Static):
             if food:
                 overlay += _blit(food[0], 12, 5 + step * 2)    # ...drops away off-screen
         elif fx["kind"] == "evolve" and step % 2 == 1:
-            rows = ["1" * len(r) for r in rows]                # digivolution flash silhouette
+            rows = ["0" * len(r) for r in rows]                # digivolution flash: blink the creature, not a solid box
         self.update(render_screen(rows, SCREEN_COLS, SCREEN_ROWS, on, bg,
                                   xshift=xshift, overlay=overlay, bgimg=bgimg))
 
