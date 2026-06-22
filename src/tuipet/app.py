@@ -613,11 +613,20 @@ class TuiPetApp(App):
         p, t, T = self.pet, self.mode.tourney, theme
         self.stats_w.border_subtitle = f"gen {p.generation}"
         div = f"[dim]{'─' * 26}[/]"
-        if t.over:
+        if t.over and t.champion:
             lines = [f"[b]{p.name[:14]}[/] [dim]· cup[/]", div,
                      f"[b]{t.name[:24]}[/]", "",
-                     f"Trophies  [{T.COIN}]\u2605{p.trophies}[/]", "", div,
-                     "[dim]the cup is decided[/]"]
+                     f"[{T.POS}]\u2605 CHAMPION \u2605[/]", "",
+                     f"Trophy   [{T.COIN}]\u2605{p.trophies}[/]",
+                     f"Reward   [{T.COIN}]+{t.reward_bits}b[/]", div,
+                     "[dim]you took the cup![/]"]
+        elif t.over:
+            lines = [f"[b]{p.name[:14]}[/] [dim]· cup[/]", div,
+                     f"[b]{t.name[:24]}[/]", "",
+                     f"[{T.NEG}]eliminated[/]",
+                     f"[dim]in the {t.round_name}[/]", "",
+                     f"Trophy   [{T.COIN}]\u2605{p.trophies}[/]", div,
+                     "[dim]train up, try again[/]"]
         else:
             lines = [
                 f"[b]{p.name[:14]}[/] [dim]· cup[/]", div,
