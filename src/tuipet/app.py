@@ -325,6 +325,8 @@ class Screen(Static):
 
 class Stats(Static):
     def paint(self, pet: Pet):
+        if pet.dead:
+            return self._paint_grave(pet)
         if pet.num == -1 or pet.stage == "Egg":
             return self._paint_egg(pet)
         T = theme
@@ -379,6 +381,27 @@ class Stats(Static):
             "",
             "[dim]keep it cosy — it[/]",
             "[dim]hatches on its own[/]",
+        ]
+        self.update("\n".join(lines))
+
+    def _paint_grave(self, pet):
+        mins = int(pet.age_seconds) // 60
+        self.border_subtitle = f"gen {pet.generation}"
+        div = f"[dim]{'─' * 26}[/]"
+        lines = [
+            f"[b]{pet.name[:16]}[/] [dim]· rest[/]",
+            div,
+            "[dim]a life remembered[/]",
+            "",
+            f"Lived    {mins}m",
+            f"Reached  {pet.stage}",
+            f"Attrib   {pet.attribute}",
+            f"Record   {pet.wins}W / {pet.battles}",
+            div,
+            "[dim]gone, but not[/]",
+            "[dim]forgotten.[/]",
+            "",
+            "[dim]press N for a new egg[/]",
         ]
         self.update("\n".join(lines))
 
