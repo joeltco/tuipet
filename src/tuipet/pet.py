@@ -248,6 +248,15 @@ class Pet:
             self._poop_t = 0
             self.poop += 1
             self._set_anim("poop", 2.2)          # squat-and-go (DVPet poop())
+        # filth care-mistake: filth left uncleaned too long (DVPet MinutesToMistakePoop).
+        # Cleaning resets the timer; otherwise neglect counts toward the evolution gate.
+        if self.poop > 0:
+            self._filth_t = getattr(self, "_filth_t", 0) + dt
+            if self._filth_t >= 1800:
+                self._filth_t = 0
+                self.care_mistakes += 1
+        else:
+            self._filth_t = 0
         # sickness from filth / starvation
         if (self.poop >= 3 or self.hunger == 0) and not self.sick and random.random() < 0.02 * dt:
             self.sick = True
