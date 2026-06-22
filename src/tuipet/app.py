@@ -876,7 +876,9 @@ class TuiPetApp(App):
         self.repaint()
 
     def _after_shop(self, msg):
-        if msg:
+        if isinstance(msg, tuple) and msg and msg[0] == "eat":
+            self.screen_w.start_fx("eat", msg[1])        # the pet eats what you fed from the bag
+        elif msg:
             self.flash(msg)
         self.repaint()
 

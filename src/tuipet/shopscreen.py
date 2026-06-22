@@ -54,6 +54,8 @@ class ShopPanel:
                     self.msg = self.pet.buy(e)
                 else:
                     self.msg = self.pet.use_item(e["key"])
+                    if e["key"].startswith("f:") and self.pet.anim == "eat":
+                        return ("done", ("eat", e["key"]))   # fed a food -> watch the pet eat it
                     if self.cursor >= len(self.pet.inventory):
                         self.cursor = max(0, len(self.pet.inventory) - 1)
         elif k in ("escape", "o"):
