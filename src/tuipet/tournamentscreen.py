@@ -38,9 +38,9 @@ class TournamentPanel:
             return ("done", t.last if t.over else None)
         return None
 
-    def _frames(self, num):
+    def _frames(self, num, role="idle"):
         rec = data.load_sprites()[1][num]
-        roles = data.ROLES["idle"]
+        roles = data.ROLES.get(role, data.ROLES["idle"])
         idx = roles[self.frame_i % len(roles)]
         return rec["frames"][idx] or rec["frames"][0]
 
@@ -52,10 +52,14 @@ class TournamentPanel:
         on = SIL_NIGHT if self.pet.day_phase == "night" else (SIL_DAY if bgimg else LCD_ON)
         if t.over:
             out = menu.bar(t.name, "RESULT")
-            scene = render_scene([(self._frames(self.pet.num), (COLS - 16) // 2, False)],
+            pose = "happy" if t.champion else "tired"          # Tourney_Trophy: champion celebrates, loser slumps
+            scene = render_scene([(self._frames(self.pet.num, pose), (COLS - 16) // 2, False)],
                                  COLS, ROWS, on, LCD_BG, bgimg=bgimg)
             out.append_text(scene)
-            out.append(f"\n{'●' * min(self.pet.trophies, 14)}\n", style=INK_B)
+            if t.champion:
+                out.append(f"\n{'\u2605' * min(self.pet.trophies, 14)}\n", style=INK_B)
+            else:
+                out.append("\n\n")
             out.append_text(menu.note(t.last))
             out.append_text(menu.footer("ESC leave"))
             return out
