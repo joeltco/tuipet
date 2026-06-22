@@ -47,16 +47,25 @@ IDLE = 0
 WIND_T = len(SHOOT_WINDUP)   # ticks 0..WIND_T-1 : windup poses, lunging at the foe
 STRIKE_T = WIND_T            # tick WIND_T        : strike (frame 6) + launch
 FLY = 5                      # flight length
-FLY_T0 = STRIKE_T            # the sprite is airborne from the strike tick onward
-IMPACT_T = STRIKE_T + 1 + FLY
-IMPACT_LEN = 3
-END_T = IMPACT_T + IMPACT_LEN
+HIT_T0 = STRIKE_T + 1 + FLY  # battleHit: hide both fighters, flicker the blast
+HIT_LEN = 5
+AFT_T0 = HIT_T0 + HIT_LEN    # battlePlayerHitAftermath: fighters back, victim hurt, HP drains
+AFT_LEN = 3
+END_T = AFT_T0 + AFT_LEN
 LUNGE_MAX = 3                # cols the attacker dashes toward the foe (TUI scale of the pixel lunge)
 
 
 def _blit(bm, ox, oy):
     return [(ox + x, oy + y) for y, row in enumerate(bm)
             for x, c in enumerate(row) if c == "1"]
+
+
+def _cbounds(rows):
+    """(min_col, max_col) of the lit pixels -- the sprite's real content width,
+    ignoring the transparent padding baked into the fixed-size sprite cell."""
+    w = max(len(r) for r in rows)
+    cols = [x for x in range(w) if any(x < len(r) and r[x] == "1" for r in rows)]
+    return (min(cols), max(cols)) if cols else (0, w - 1)
 
 
 class BattlePanel:
@@ -105,7 +114,7 @@ class BattlePanel:
             return
         self.t += 1
         atk = self.seq[self.ai]
-        if self.t == IMPACT_T:                           # battlePlayerHitAftermath: drain HP at impact
+        if self.t == AFT_T0:                             # battlePlayerHitAftermath: drain HP here
             if atk["victim"] == "enemy":
                 self.de = atk["after"]
             else:
@@ -161,37 +170,41 @@ class BattlePanel:
         hp = max(0, hp)
         return "█" * hp + "░" * (mx - hp) if mx <= 12 else f"{hp}/{mx}"
 
-    def _attack_overlay(self, atk, pet_x, pw, enemy_x, ew):
-        """The flying attack sprite (checkAttackSprite) + the contact flash/burst."""
+    def _attack_overlay(self, atk, pet_edge, enemy_edge, victim_cx):
+        """The flying attack sprite (checkAttackSprite) + the hit blast (battleHit).
+
+        pet_edge / enemy_edge are the fighters' inner (facing) content edges, so the
+        projectile crosses the real gap between them; victim_cx is the struck side's
+        content centre for the blast."""
         orb = ATK_SPRITE.get(atk["attr"])
         py = ROWS * 2 - 13
-        if STRIKE_T <= self.t < IMPACT_T and orb:        # in flight
+        if STRIKE_T <= self.t < HIT_T0 and orb:          # in flight
             ow = len(orb[0])
             if atk["attacker"] == "pet":                 # player (right) fires left
-                x0, x1 = pet_x - ow, enemy_x + ew
+                x0, x1 = pet_edge - ow, enemy_edge
                 src = [r[::-1] for r in orb]             # face the travel direction
             else:                                        # foe (left) fires right
-                x0, x1 = enemy_x + ew, pet_x - ow
+                x0, x1 = enemy_edge, pet_edge - ow
                 src = orb
             prog = (self.t - STRIKE_T) / float(FLY)
             ox = int(x0 + (x1 - x0) * min(1.0, prog))
             if 0 <= ox <= COLS - ow:
                 return _blit(src, ox, py)
             return []
-        if self.t >= IMPACT_T and atk["dmg"] > 0:        # contact burst on the struck side
-            vx, vw = (enemy_x, ew) if atk["victim"] == "enemy" else (pet_x, pw)
-            cx = vx + vw // 2
-            fx = FLASH if self.t == IMPACT_T else HIT
+        if HIT_T0 <= self.t < AFT_T0 and atk["dmg"] > 0:  # battleHit: blast flicker, star <-> flash
+            fx = HIT if (self.t - HIT_T0) % 2 == 0 else FLASH
             if not fx:
                 return []
             w = len(fx[0])
-            x = min(max(0, cx - w // 2), COLS - w)
+            x = min(max(0, victim_cx - w // 2), COLS - w)
             fy = max(0, (ROWS * 2 - len(fx)) // 2)
             return _blit(fx, x, fy)
         return []
 
     def _poses_and_lunge(self, atk):
-        """Return (pet_pose, enemy_pose, pet_lunge, enemy_lunge) for the current tick."""
+        """Return (pet_pose, enemy_pose, pet_lunge, enemy_lunge) for the current tick.
+        A pose of None means that fighter is hidden (battleHit blanks both before the
+        blast)."""
         att, vic = atk["attacker"], atk["victim"]
         t = self.t
         if t < WIND_T:                                   # windup: attacker poses, lunging in
@@ -199,11 +212,17 @@ class BattlePanel:
             lunge = LUNGE_MAX * (t + 1) // WIND_T
         elif t == STRIKE_T:                              # strike + launch
             apose, vpose, lunge = SHOOT_STRIKE, BRACE[0], LUNGE_MAX
-        elif t < IMPACT_T:                               # flight: follow-through + target braces
+        elif t < HIT_T0:                                 # flight: follow-through + target braces
             apose = SHOOT_STRIKE
             vpose = BRACE[(t - STRIKE_T) % len(BRACE)]
             lunge = max(0, LUNGE_MAX - (t - STRIKE_T))   # ease back out
-        else:                                            # impact: hurt pose (10) on damage, else dodge
+        elif t < AFT_T0:                                 # battleHit blast: both fighters hidden...
+            if atk["dmg"] > 0:
+                apose = vpose = None                     # ...behind the explosion flicker
+            else:
+                apose, vpose = IDLE, IDLE                # a dodge: no blast, both just stand
+            lunge = 0
+        else:                                            # aftermath: victim hurt (frame 10) or dodged
             apose = IDLE
             vpose = HURT if atk["dmg"] > 0 else IDLE
             lunge = 0
@@ -216,18 +235,26 @@ class BattlePanel:
         atk = self.seq[self.ai] if self.seq else None
         if atk:
             pet_pose, enemy_pose, pet_lunge, enemy_lunge = self._poses_and_lunge(atk)
-            pet_rows = self._rows(self.pet.num, pet_pose)
-            enemy_rows = self._rows(b.enemy["num"], enemy_pose)
+            pet_rows = self._rows(self.pet.num, pet_pose) if pet_pose is not None else []
+            enemy_rows = self._rows(b.enemy["num"], enemy_pose) if enemy_pose is not None else []
         else:
             pet_rows = self._idle_rows(self.pet.num)
             enemy_rows = self._idle_rows(b.enemy["num"])
             pet_lunge = enemy_lunge = 0
-        pw = max(len(r) for r in pet_rows)
-        ew = max(len(r) for r in enemy_rows)
-        # player RIGHT (faces left), opponent LEFT (faces right) -- lunge toward the centre
-        pet_x = COLS - pw - 1 - pet_lunge
-        enemy_x = 1 + enemy_lunge
-        overlay = self._attack_overlay(atk, pet_x, pw, enemy_x, ew) if atk else []
+        # Anchor by real content edges (sprites carry transparent padding): the pet
+        # plants its RIGHT edge on the right wall, the foe its LEFT edge on the left
+        # wall, so they stand apart with a true gap the projectile can cross.
+        p_lo, p_hi = _cbounds(pet_rows) if pet_rows else (0, 0)
+        e_src = [r[::-1] for r in enemy_rows]            # foe is rendered mirrored
+        e_lo, e_hi = _cbounds(e_src) if enemy_rows else (0, 0)
+        RWALL, LWALL = COLS - 2, 1
+        pet_x = RWALL - p_hi - pet_lunge
+        enemy_x = LWALL - e_lo + enemy_lunge
+        pet_edge = pet_x + p_lo                          # pet's inner (left-facing) edge
+        enemy_edge = enemy_x + e_hi + 1                  # foe's inner (right-facing) edge
+        victim_cx = ((enemy_x + e_lo + enemy_x + e_hi) // 2 if atk and atk["victim"] == "enemy"
+                     else (pet_x + p_lo + pet_x + p_hi) // 2) if atk else 0
+        overlay = self._attack_overlay(atk, pet_edge, enemy_edge, victim_cx) if atk else []
         bgimg = self.pet.background()
         on = SIL_NIGHT if self.pet.day_phase == "night" else (SIL_DAY if bgimg else LCD_ON)
         scene = render_scene([(pet_rows, pet_x, False), (enemy_rows, enemy_x, True)],
