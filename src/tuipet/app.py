@@ -592,6 +592,8 @@ class TuiPetApp(App):
             self._status_adventure()
         elif isinstance(self.mode, tournamentscreen.TournamentPanel):
             self._status_tournament()
+        elif isinstance(self.mode, training.TrainingPanel):
+            self._status_training()
         elif isinstance(self.mode, digicorescreen.DigiCorePanel):
             dp = self.mode
             toc = [(f"[b]▸ {t}[/]" if j == dp.i else f"[dim]  {t}[/]")
@@ -640,6 +642,49 @@ class TuiPetApp(App):
                 div,
                 "[dim]fight for the cup[/]",
             ]
+        self.stats_w.update("\n".join(lines))
+
+    def _status_training(self):
+        from .training import (GAMES, VACCINE_HITS_MIN, VACCINE_WINDOW,
+                               HP_ROUNDS, DATA_REPS, VIRUS_BAR_MIN)
+        p, tp, T = self.pet, self.mode, theme
+        self.stats_w.border_subtitle = f"gen {p.generation}"
+        div = f"[dim]{'-' * 26}[/]".replace("-", "\u2500")
+        eff = hearts(p.strength)
+        energy = bar(p.energy, 11, T.ENERGY)
+        power = f"[{T.POS}]V{p.vaccine}[/] [{T.ENERGY}]D{p.data_power}[/] [{T.MOOD}]Vi{p.virus}[/]"
+        label = GAMES[tp.gi][1]
+        gk = tp.gkey
+        if tp.phase == "menu":
+            lines = [f"[b]{p.name[:14]}[/] [dim]\u00b7 train[/]", div,
+                     "[b]choose a drill[/]", "",
+                     f"Effort   {eff}", f"Power    {power}", f"Energy   {energy}",
+                     div, "[dim]pick what to build[/]"]
+        elif tp.phase == "done":
+            verdict = f"[{T.POS}]drill complete[/]" if tp.success else f"[{T.NEG}]needs work[/]"
+            lines = [f"[b]{p.name[:14]}[/] [dim]\u00b7 train[/]", div,
+                     f"[b]{label}[/]", "", verdict, "",
+                     f"Effort   {eff}", f"Energy   {energy}", div,
+                     f"[dim]{(tp.result or '')[:24]}[/]"]
+        else:
+            if gk == "hp":
+                dots = "\u25cf" * tp.rounds_won + "\u25cb" * (HP_ROUNDS - tp.rep) + "\u00b7" * (tp.rep - tp.rounds_won)
+                prog, prog2 = f"Round    {min(tp.rep + 1, HP_ROUNDS)} / {HP_ROUNDS}", f"Won      {dots}"
+                target, flav = f"Effort   {eff}", "build your effort"
+            elif gk == "vaccine":
+                tpct = max(0, tp.timer) / VACCINE_WINDOW * 100
+                prog, prog2 = f"Hits     {tp.taps} / {VACCINE_HITS_MIN}", f"Time     {bar(tpct, 11, T.MOOD)}"
+                target, flav = f"Vaccine  [{T.POS}]{p.vaccine}[/]", "mash it up!"
+            elif gk == "data":
+                dots = "\u25cf" * tp.hits + "\u25cb" * (DATA_REPS - tp.rep) + "\u00b7" * (tp.rep - tp.hits)
+                prog, prog2 = f"Shot     {min(tp.rep + 1, DATA_REPS)} / {DATA_REPS}", f"Hits     {dots}"
+                target, flav = f"Data     [{T.ENERGY}]{p.data_power}[/]", "shoot the frame"
+            else:
+                prog, prog2 = f"Power    {int(tp.pos)}", f"Need     {VIRUS_BAR_MIN}"
+                target, flav = f"Virus    [{T.MOOD}]{p.virus}[/]", "stop it high"
+            lines = [f"[b]{p.name[:14]}[/] [dim]\u00b7 train[/]", div,
+                     f"[b]{label}[/]", prog, prog2, div,
+                     target, f"Energy   {energy}", div, f"[dim]{flav}[/]"]
         self.stats_w.update("\n".join(lines))
 
     def _status_adventure(self):
@@ -694,6 +739,8 @@ class TuiPetApp(App):
                 self.screen_w.update(self._center(self.mode.text()))
                 if isinstance(self.mode, adventurescreen.AdventurePanel):
                     self._status_adventure()
+                elif isinstance(self.mode, training.TrainingPanel):
+                    self._status_training()
         elif self.screen_w.fx:
             self.screen_w.advance_fx()
             self.screen_w.paint(self.pet)
