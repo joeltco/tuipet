@@ -168,11 +168,12 @@ class Screen(Static):
     def paint(self, pet: Pet):
         if self.fx:
             return self._paint_fx(pet)
-        on, bg = PHASE_PALETTE.get(pet.day_phase, (LCD_ON, LCD_BG))
+        phase = "night" if pet.asleep else pet.day_phase   # asleep -> lights off (render dark)
+        on, bg = PHASE_PALETTE.get(phase, (LCD_ON, LCD_BG))
         bgimg = self._background(pet)
         corner = None                      # DVPet shows time via bg frame + palette, no corner icon
         if bgimg:
-            on = SIL_NIGHT if pet.day_phase == "night" else SIL_DAY   # silhouette ink
+            on = SIL_NIGHT if phase == "night" else SIL_DAY   # silhouette ink
         else:
             w = pet.weather
             if w in _RAIN:

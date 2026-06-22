@@ -311,7 +311,9 @@ class Pet:
         frames = data.load_backgrounds().get(self.habitat_obj().get("bg", ""))
         if not frames:
             return None
-        if self.weather in _PRECIP and len(frames) > 4:
+        if self.asleep and len(frames) > 3:
+            idx = 3                                          # lights off: the dark habitat
+        elif self.weather in _PRECIP and len(frames) > 4:
             idx = 4
         else:
             idx = {"dawn": 0, "day": 1, "dusk": 2, "night": 3}.get(self.day_phase, 1)
