@@ -47,6 +47,16 @@ TO_DEPRESSED_MOOD = -250              # ToDepressedMoodMin
 NEW_UNDEPRESSED_MOOD = -50            # NewUndepressedMood
 MIN_ENTHUSIASM, MAX_ENTHUSIASM = -10, 10   # MinEnthusiasm / MaxEnthusiasm
 MAX_ENTHUSIASM_MOOD_PENALTY = 10           # MaxEnthusiasmMoodPenalty
+# enthusiasmLapse (every EnthusiasmLapseMin=59 game-min == tuipet's mood lapse): awake, an
+# unspent spirit sours the mood (mood -= |enth*EnthusiasmMoodDecCoefficient|) and an energetic
+# pet's spirit climbs; asleep it decays toward 0.  Spending spirit on activities keeps the
+# drain small -- a "stay engaged" mechanic.
+ENTHUSIASM_MOOD_DEC_COEF = 2               # EnthusiasmMoodDecCoefficient
+ENTHUSIASM_CHANGE_ENERGY_COEF = 24         # EnthusiasmChangeEnergyCoefficient
+HIGH_ENERGY_ENTH_CHANGE = 1                # HighEnergyEnthusiasmChange (energetic -> spirit up)
+LOW_ENERGY_ENTH_CHANGE = 0                 # LowEnergyEnthusiasmChange
+ENTHUSIASM_LAPSE_DEC = 1                   # EnthusiasmLapseDec (asleep, +enth -> 0)
+ENTHUSIASM_LAPSE_INC = 2                   # EnthusiasmLapseInc (asleep, -enth -> 0)
 
 # DVPet obedience + battle-surrender morale (config.csv column 1, where CanRefuse=TRUE;
 # Config.loadConfig strips the name column and PhysicalState loads column 0 => the first
@@ -418,6 +428,14 @@ class Pet:
             if self._sleep_e_t >= 60:                # SleepMinutesToEnergyGain (game-min)
                 self._sleep_e_t = 0.0
                 self._set_energy(self.energy + getattr(self, "_sleep_energy_gain", 3))
+            # asleep enthusiasmLapse: spirit settles toward 0 while resting
+            self._enth_lapse_t = getattr(self, "_enth_lapse_t", 0.0) + dt
+            if self._enth_lapse_t >= 59:
+                self._enth_lapse_t = 0.0
+                if self.enthusiasm > 0:
+                    self._set_enthusiasm(self.enthusiasm - ENTHUSIASM_LAPSE_DEC)
+                elif self.enthusiasm < 0:
+                    self._set_enthusiasm(self.enthusiasm + ENTHUSIASM_LAPSE_INC)
             # sleep through the night; wake in the morning once fully rested
             if self.day_phase != "night" and self.energy >= self.max_energy:
                 self.asleep = False
@@ -455,22 +473,13 @@ class Pet:
                 if self.scold_window > SCOLD_WINDOW_MAX:
                     self.scold_flag, self.scold_window = False, 0
             self._check_discipline_call()                # the pet may spontaneously act up
-            # enthusiasm lapse: while ASLEEP spirit decays toward 0 (EnthusiasmLapse Dec/Inc).
-            # DVPet's AWAKE enthusiasmLapse (mood -= |enth|*EnthusiasmMoodDecCoefficient, plus an
-            # energy-gated climb) is gated on maxEnergy/EnthusiasmChangeEnergyCoefficient. DVPet's
-            # maxEnergy is a different scale from tuipet's 0..100 energy and isn't ported yet, so
-            # that branch is deferred rather than approximated with a mismatched threshold.
-            if self.asleep:
-                if self.enthusiasm > 0:
-                    self._set_enthusiasm(self.enthusiasm - 1)    # EnthusiasmLapseDec
-                elif self.enthusiasm < 0:
-                    self._set_enthusiasm(self.enthusiasm + 2)    # EnthusiasmLapseInc
-            # DVPet's AWAKE enthusiasmLapse -- mood -= |enth|*EnthusiasmMoodDecCoefficient plus the
-            # energy>maxEnergy/24 spirit climb -- is faithful PER LAPSE but assumes DVPet's real-time
-            # clock (1 game-min = 1 real-min). tuipet compresses time ~60x (1 game-min = 1 real-sec),
-            # so ~24 mood-lapses land per 24-REAL-minute day and the drain outpaces any feasible
-            # interaction rate, pinning mood at Depressed. Re-enabling it faithfully needs a real-time
-            # (or much slower) clock; the DVPet numbers are intentionally NOT softened to compensate.
+            # awake enthusiasmLapse (mood -= |enth*EnthusiasmMoodDecCoefficient|, then an energetic
+            # pet's spirit climbs HighEnergyEnthusiasmChange) stays DEFERRED -- and this was measured,
+            # not assumed: ported faithfully it collapses mood to Unhappy/Depressed within ~15 real-min
+            # whatever the play style, because the only awake spirit-restoring force is +1/lapse while
+            # activities cost -3..-6, so under tuipet's ~60x clock |enthusiasm| pins at 10 and the drain
+            # sticks at -20/lapse (active play is WORSE, driving enth to -10). It needs the real-time
+            # clock to balance; DVPet numbers are NOT softened. Asleep decay (below) IS ported.
         # hunger: the DVPet calorie buffer drains each lapse; emptying it drops a hunger
         # heart (or logs a care mistake at zero), then refills for the next heart.
         self._cal_t = getattr(self, "_cal_t", 0.0) + dt
