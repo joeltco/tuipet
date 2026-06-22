@@ -34,7 +34,8 @@ def _offline(pet, elapsed):
     if elapsed < 30 or pet.stage == "Egg":
         return ""
     mins = elapsed / 60.0
-    pet.energy = _clamp(pet.energy - min(60, mins * 3), 0, 100)
+    # DVPet has no passive energy decay; just re-clamp to the (per-pet) range.
+    pet.energy = _clamp(pet.energy, -pet.max_energy, pet.max_energy)
     pet.mood = _clamp(pet.mood - min(50, mins * 2), -300, 300)
     drop = min(pet.hunger, int(mins // 5))
     pet.hunger -= drop

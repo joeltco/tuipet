@@ -96,7 +96,8 @@ class Pet:
     stage_seconds: float = 0.0      # time spent in the current stage
     hunger: int = 4                 # hearts 0..4 (4 = full)
     strength: int = 2               # effort hearts 0..4
-    energy: int = 100               # 0..100
+    energy: int = 24                # DVPet energy, -max_energy..+max_energy (full at max_energy)
+    max_energy: int = 24            # per-Digimon (digimon.csv MaxEnergy)
     mood: int = 0                   # DVPet signed mood (MinMood..MaxMood); Neutral at 0
     enthusiasm: int = 0             # DVPet spirit, MinEnthusiasm..MaxEnthusiasm (separate from mood)
     weight: int = 20
@@ -143,12 +144,17 @@ class Pet:
     anim_ttl: float = 0.0
 
     def __post_init__(self):
-        if self.num is not None and self.num >= 0 and not self.field:
+        if self.num is not None and self.num >= 0:
             _, by_num = data.load_sprites()
             rec = by_num.get(self.num)
-            if rec:
+            if rec and not self.field:
                 self.field = rec.get("field", "")
                 self.element = rec.get("element", "")
+            req = data.load_requirements().get(self.num, {})
+            self.max_energy = req.get("max_energy", 24)        # per-Digimon maxEnergy
+            self._sleep_energy_gain = req.get("sleep_energy_gain", 3)
+            if self.energy > self.max_energy:
+                self.energy = self.max_energy
 
     # seconds in each stage before it is eligible to evolve (accelerated time)
     EGG_DURATION = 180     # seconds an egg incubates before hatching (~3 min)
@@ -227,22 +233,20 @@ class Pet:
             self._temperature_effects(dt)
             self._track_time_pref(dt)
         if self.asleep:
-            rate = 0.35 if self.day_phase == "night" else 0.28   # rest is deepest at night
-            self.energy = _clamp(self.energy + rate * dt, 0, 100)
-            # sleep through the night; wake in the morning once decently rested
-            if self.day_phase != "night" and self.energy >= 60:
+            # DVPet sleep recovery: +SleepEnergyGain every SleepMinutesToEnergyGain.
+            self._sleep_e_t = getattr(self, "_sleep_e_t", 0.0) + dt
+            if self._sleep_e_t >= 60:                # SleepMinutesToEnergyGain (game-min)
+                self._sleep_e_t = 0.0
+                self._set_energy(self.energy + getattr(self, "_sleep_energy_gain", 3))
+            # sleep through the night; wake in the morning once fully rested
+            if self.day_phase != "night" and self.energy >= self.max_energy:
                 self.asleep = False
                 self._set_anim("wake", 1.6)  # morning stretch (DVPet wakeUp())
             return
 
         night = self.day_phase == "night"
-        # at night an awake pet tires and grows cranky about twice as fast
-        drain = 0.05 if night else 0.03
-        lo, hi = self.ideal_temp
-        if self.weather in ("Clear", "Cloudy") and lo <= self.temp <= hi:
-            drain *= 0.6                  # fair weather + ideal temp eases fatigue
-        drain *= max(0.5, min(1.6, 1 - 0.12 * self._affinity()))
-        self.energy = _clamp(self.energy - drain * dt, 0, 100)
+        # DVPet has NO passive energy decay -- energy only drops from activity
+        # (exercise/battle/travel) and refills during sleep.
         # DVPet mood lapse (~MoodLapseMin game-min): Happy drains, Unhappy recovers,
         # Neutral settles toward 0 (config *MoodLapse* values).
         self._mood_lapse_t = getattr(self, "_mood_lapse_t", 0.0) + dt
@@ -269,6 +273,12 @@ class Pet:
                     self._set_enthusiasm(self.enthusiasm - 1)    # EnthusiasmLapseDec
                 elif self.enthusiasm < 0:
                     self._set_enthusiasm(self.enthusiasm + 2)    # EnthusiasmLapseInc
+            # DVPet's AWAKE enthusiasmLapse -- mood -= |enth|*EnthusiasmMoodDecCoefficient plus the
+            # energy>maxEnergy/24 spirit climb -- is faithful PER LAPSE but assumes DVPet's real-time
+            # clock (1 game-min = 1 real-min). tuipet compresses time ~60x (1 game-min = 1 real-sec),
+            # so ~24 mood-lapses land per 24-REAL-minute day and the drain outpaces any feasible
+            # interaction rate, pinning mood at Depressed. Re-enabling it faithfully needs a real-time
+            # (or much slower) clock; the DVPet numbers are intentionally NOT softened to compensate.
         # hunger ticks down on a slow clock
         self._hunger_t = getattr(self, "_hunger_t", 0) + dt
         if self._hunger_t >= 1800:
@@ -304,7 +314,7 @@ class Pet:
         # bedtime: sleep through the night, or pass out if run to exhaustion by
         # day; a grace window after a manual wake lets you interact at night
         self._wake_grace = max(0.0, getattr(self, "_wake_grace", 0.0) - dt)
-        if not self.asleep and self._wake_grace <= 0 and ((night and self.energy < 85) or self.energy <= 0):
+        if not self.asleep and self._wake_grace <= 0 and (night or self.energy <= 0):
             self.asleep = True
             self._set_anim("yawn", 1.8)   # yawn, then settle into sleep
 
@@ -526,6 +536,10 @@ class Pet:
         self.field = r.get("field", self.field)
         self.element = r.get("element", self.element)
         self._apply_natural_habitat()
+        _req = data.load_requirements().get(num, {})
+        self.max_energy = _req.get("max_energy", self.max_energy)
+        self._sleep_energy_gain = _req.get("sleep_energy_gain", 3)
+        self.energy = min(self.energy, self.max_energy)   # DVPet clamps to new max (no auto-refill)
         if data.load_requirements().get(num, {}).get("xantibody", "None") in ("Induced", "Natural"):
             self._set_xantibody("Permanent")          # the X-Antibody locks in
         self.stage_seconds = 0.0
@@ -571,6 +585,17 @@ class Pet:
         if value != self.enthusiasm and value in (MIN_ENTHUSIASM, MAX_ENTHUSIASM):
             self._set_mood(self.mood - MAX_ENTHUSIASM_MOOD_PENALTY)
         self.enthusiasm = value
+
+    def _set_energy(self, value):
+        """DVPet setEnergy: clamp to [-max_energy, +max_energy]; dropping into the
+        red saps mood (NegativeEnergyMoodDec)."""
+        value = _clamp(int(round(value)), -self.max_energy, self.max_energy)
+        if value < 0 and value < self.energy:
+            self._set_mood(self.mood - 10)       # NegativeEnergyMoodDec (per step into the red)
+        self.energy = value
+
+    def energy_pct(self):
+        return max(0, self.energy) * 100 // self.max_energy if self.max_energy else 0
 
     def _disturbed(self):
         """Bothering the pet mid-sleep: counts toward restlessness AND costs mood
@@ -622,7 +647,7 @@ class Pet:
             return "It is still an egg."
         if self.asleep:
             return self._disturbed()
-        if self.energy < 12:
+        if self.energy <= 0:                            # MinEnergyForActivity
             self._set_anim("refuse", 1.0)
             return "Too tired to train."
         return None
@@ -658,7 +683,7 @@ class Pet:
             else:
                 self._set_enthusiasm(self.enthusiasm - 1)  # ExerciseFavAttributeEnthusiasmDec
         self.weight = max(1, self.weight - 2)
-        self.energy = _clamp(self.energy - 15, 0, 100)
+        self._set_energy(self.energy - 1)               # ExerciseEnergyDec
         if not success:                                  # DVPet exercise-fail penalties
             self._set_mood(self.mood - 10)               # ExerciseFailMoodDec
             self.obedience -= 1                          # ExerciseFailObedienceDec
@@ -678,7 +703,7 @@ class Pet:
             return "Too young to battle."
         if self.asleep:
             return self._disturbed()
-        if self.energy < 10:
+        if self.energy <= 0:                            # MinEnergyForActivity
             self._set_anim("refuse", 1.0)
             return "Too tired to battle."
         return None
@@ -686,7 +711,7 @@ class Pet:
     def record_battle(self, won, enemy=None):
         """Resolve a finished battle: update battles/wins and rewards."""
         self.battles += 1
-        self.energy = _clamp(self.energy - 10, 0, 100)
+        self._set_energy(self.energy - 1)               # battle energy (BattleWon/LostEnergyDec)
         if won:
             self.wins += 1
             if enemy:
@@ -748,7 +773,7 @@ class Pet:
         if self.asleep:
             return self._disturbed()
         self._set_mood(self.mood + 10)              # play ~= SpoilMoodInc (no DVPet 'play'; adapted)
-        self.energy = _clamp(self.energy - 4, 0, 100)
+        self._set_energy(self.energy - 1)
         self._set_anim("play", 1.5)
         return "Played together!"
 
@@ -791,7 +816,7 @@ class Pet:
         self._set_enthusiasm(self.enthusiasm + e.get("enthusiasm", 0))
         self.weight = max(1, self.weight + e["weight"])
         if e["energy"]:
-            self.energy = _clamp(self.energy + e["energy"], 0, 100)
+            self._set_energy(self.energy + e["energy"])
         if e["strength"]:
             self.strength = _clamp(self.strength + e["strength"], 0, 4)
         self.obedience += e["obedience"]
@@ -799,7 +824,7 @@ class Pet:
         self.data_power = max(0, self.data_power + e["data"])
         self.virus = max(0, self.virus + e["virus"])
         if e["unfatigue"]:
-            self.energy = 100
+            self.energy = self.max_energy
         if e["undepressed"]:
             self._set_mood(max(self.mood, NEW_UNDEPRESSED_MOOD))  # leave depression
         if e["cured"]:
@@ -828,7 +853,7 @@ class Pet:
             return "starving"
         if self.poop >= 3:
             return "needs cleaning"
-        if self.day_phase == "night" and not self.asleep and self.energy < 45:
+        if self.day_phase == "night" and not self.asleep and self.energy < self.max_energy // 2:
             return "sleepy"
         if self.mood <= MIN_UNHAPPY_MOOD:
             return "unhappy"

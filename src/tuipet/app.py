@@ -364,7 +364,7 @@ class Stats(Static):
             div,
             f"Hunger  {hearts(pet.hunger)}",
             f"Effort  {hearts(pet.strength)}",
-            f"Energy  {bar(pet.energy, 12, T.ENERGY)}",
+            f"Energy  {bar(pet.energy_pct(), 12, T.ENERGY)}",
             f"Mood    {bar(pet.mood_pct(), 12, T.MOOD)}",
             div,
             f"Power   [{T.POS}]V{pet.vaccine}[/] [{T.ENERGY}]D{pet.data_power}[/] [{T.MOOD}]Vi{pet.virus}[/]",
@@ -651,7 +651,7 @@ class TuiPetApp(App):
                 f"Trophy   [{T.COIN}]\u2605{p.trophies}[/]",
                 div,
                 f"Effort   {hearts(p.strength)}",
-                f"Energy   {bar(p.energy, 11, T.ENERGY)}",
+                f"Energy   {bar(p.energy_pct(), 11, T.ENERGY)}",
                 f"Power    [{T.POS}]V{p.vaccine}[/] [{T.ENERGY}]D{p.data_power}[/] [{T.MOOD}]Vi{p.virus}[/]",
                 div,
                 "[dim]fight for the cup[/]",
@@ -665,7 +665,7 @@ class TuiPetApp(App):
         self.stats_w.border_subtitle = f"gen {p.generation}"
         div = f"[dim]{'-' * 26}[/]".replace("-", "\u2500")
         eff = hearts(p.strength)
-        energy = bar(p.energy, 11, T.ENERGY)
+        energy = bar(p.energy_pct(), 11, T.ENERGY)
         power = f"[{T.POS}]V{p.vaccine}[/] [{T.ENERGY}]D{p.data_power}[/] [{T.MOOD}]Vi{p.virus}[/]"
         label = GAMES[tp.gi][1]
         gk = tp.gkey
@@ -717,7 +717,7 @@ class TuiPetApp(App):
                 f"Lives    {lives}",
                 div,
                 f"Effort   {hearts(p.strength)}",
-                f"Energy   {bar(p.energy, 11, T.ENERGY)}",
+                f"Energy   {bar(p.energy_pct(), 11, T.ENERGY)}",
                 f"Power    {power}",
                 div,
                 "[dim]a wild foe blocks[/]",
@@ -733,7 +733,7 @@ class TuiPetApp(App):
                 f"Bag      {sum(p.inventory.values())}   [{T.COIN}]{p.bits}b[/]",
                 div,
                 f"Hunger   {hearts(p.hunger)}",
-                f"Energy   {bar(p.energy, 11, T.ENERGY)}",
+                f"Energy   {bar(p.energy_pct(), 11, T.ENERGY)}",
                 f"Power    {power}",
                 div,
                 "[dim]out exploring —[/]",

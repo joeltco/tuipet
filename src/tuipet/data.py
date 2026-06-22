@@ -226,6 +226,8 @@ def load_requirements():
             "special": (r.get("SpecialEvolution") or "None").strip() or "None",
             "level_fought_min": _int_or(r.get("MinLevelFought (vaccine+data+virus+[health*100])/100"), 0),
             "level_fought": _gate(r, "LevelFoughtKey", "LevelFoughtValue"),
+            "max_energy": _int_or(r.get("MaxEnergy"), 24),          # DVPet per-Digimon maxEnergy
+            "sleep_energy_gain": _int_or(r.get("SleepEnergyGain"), 3),
         }
     return reqs
 
