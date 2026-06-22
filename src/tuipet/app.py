@@ -766,6 +766,7 @@ class TuiPetApp(App):
         if self.mode is not None:
             return  # a sub-screen is open -> pause the life-sim (resumes in the main view)
         prev = (self.pet.num, self.pet.stage)
+        prev_season = self.pet.season
         was_dead = self.pet.dead
         poop0 = self.pet.poop
         self.pet.tick(1.0)
@@ -797,6 +798,8 @@ class TuiPetApp(App):
                 self._nag_t = 0.0
                 self.beep("alarm")
         self._needs = needs
+        if not p.dead and p.stage != "Egg" and p.season != prev_season:
+            self.flash(f"{p.season} has arrived!")   # seasons used to turn silently
         self.repaint()
 
     def flash(self, text):
