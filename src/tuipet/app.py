@@ -236,7 +236,7 @@ class Screen(Static):
 
     # ---- care-action animations (DVPet SpriteAnim eat/clean/cheer) -----------
     def start_fx(self, kind, icon=None, poop=0):
-        steps = {"eat": 16, "cheer": 14, "clean": 16, "spit": 11, "evolve": 12}.get(kind, 12)
+        steps = {"eat": 16, "cheer": 14, "clean": 16, "spit": 11, "evolve": 12, "dying": 18}.get(kind, 12)
         self.fx = {"kind": kind, "step": 0, "steps": steps, "icon": icon, "poop": poop}
 
     def advance_fx(self):
@@ -277,7 +277,7 @@ class Screen(Static):
             on = SIL_NIGHT if pet.day_phase == "night" else SIL_DAY
         px_h = SCREEN_ROWS * 2
         step = fx["step"]
-        pose = {"eat": "eat", "clean": "idle", "cheer": "happy", "spit": "refuse"}.get(fx["kind"], "idle")
+        pose = {"eat": "eat", "clean": "idle", "cheer": "happy", "spit": "refuse", "dying": "exhausted"}.get(fx["kind"], "idle")
         rows = self._pose_rows(pet, pose, step // 2)
         overlay = _weather_overlay(pet.weather, self.frame_i, SCREEN_COLS, px_h)
         xshift = 0
@@ -320,7 +320,8 @@ class Screen(Static):
         elif fx["kind"] == "evolve" and step % 2 == 1:
             rows = ["0" * len(r) for r in rows]                # digivolution flash: blink the creature, not a solid box
         self.update(render_screen(rows, SCREEN_COLS, SCREEN_ROWS, on, bg,
-                                  xshift=xshift, overlay=overlay, bgimg=bgimg))
+                                  xshift=xshift, overlay=overlay, bgimg=bgimg,
+                                  mirror=(fx["kind"] == "dying")))
 
 
 class Stats(Static):
@@ -443,6 +444,7 @@ class TuiPetApp(App):
                 self._new_game = True
         self.pet = pet or Pet.new_egg()
         self.mode = None            # active in-display panel (no pop-up screens)
+        self._dying_fx = False      # playing the death animation before the memorial
         self._mode_close = None
         self.sound = _load_sound()
         self._needs = False
@@ -744,6 +746,9 @@ class TuiPetApp(App):
         elif self.screen_w.fx:
             self.screen_w.advance_fx()
             self.screen_w.paint(self.pet)
+        if self._dying_fx and not self.screen_w.fx:        # dying beat finished -> memorial
+            self._dying_fx = False
+            self._open_mode(deathscreen.DeathPanel(self.pet), self._after_death)
 
     def on_tick(self):
         if self.mode is not None:
@@ -754,9 +759,10 @@ class TuiPetApp(App):
         self.pet.tick(1.0)
         p = self.pet
         if p.dead and not was_dead:
-            self.beep("death")
+            self.beep("death")            # death.wav, like DVPet's dying() sound
             self.flash("")
-            self._open_mode(deathscreen.DeathPanel(p), self._after_death)
+            self.screen_w.start_fx("dying")   # exhausted pose beat, then the memorial
+            self._dying_fx = True
         elif (p.num, p.stage) != prev:
             if prev[1] == "Egg":
                 self.beep("hatch")
