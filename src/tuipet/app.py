@@ -345,18 +345,20 @@ class Screen(Static):
             if food:
                 overlay += _blit(food[0], 12, 5 + step * 2)    # ...drops away off-screen
         elif fx["kind"] == "evolve":
+            # DVPet evolveAnim(): the screen strobes dark (lightsOff) <-> bright burst
+            # (evol) while changeSprite() swaps the old form for the new one mid-flash --
+            # the digimon flashes as a silhouette and emerges as its evolved form.
             n = fx["steps"]
-            if step < n // 3:                                  # 1) the old form shakes
-                old = fx.get("old_num")
-                if old not in (None, -1):
-                    rec = data.load_sprites()[1].get(old)
-                    if rec and rec["frames"][0]:
-                        rows = rec["frames"][0]
-                xshift = -2 if step % 2 else 2
-            elif step < 2 * n // 3:                            # 2) dither / static transition
-                overlay = overlay + [(x, y) for y in range(px_h) for x in range(SCREEN_COLS)
-                                     if (x + y + step) % 2 == 0]
-            # 3) reveal: rows is already the evolved form
+            swap = n // 2                                      # changeSprite() midway
+            old = fx.get("old_num")
+            if step < swap and old not in (None, -1):          # old form until the swap...
+                rec = data.load_sprites()[1].get(old)
+                if rec and rec["frames"][0]:
+                    rows = rec["frames"][0]
+            # ...with bright full-screen "evol" flashes punctuating the transition
+            if step < n - 3 and step % 3 == 1:
+                overlay = overlay + [(x, y) for y in range(px_h) for x in range(SCREEN_COLS)]
+            # the final steps drop the flash -> the evolved form is revealed
         self.update(render_screen(rows, SCREEN_COLS, SCREEN_ROWS, on, bg,
                                   xshift=xshift, overlay=overlay, bgimg=bgimg,
                                   mirror=(fx["kind"] == "dying")))
