@@ -36,6 +36,25 @@ def _fit(s, w):
     return s[:w].ljust(w)
 
 
+def _wrap(s, w):
+    """Word-wrap `s` into lines of width <= w, hard-splitting any over-long word."""
+    out, line = [], ""
+    for word in str(s).split(" "):
+        while len(word) > w:
+            if line:
+                out.append(line); line = ""
+            out.append(word[:w]); word = word[w:]
+        if not line:
+            line = word
+        elif len(line) + 1 + len(word) <= w:
+            line += " " + word
+        else:
+            out.append(line); line = word
+    if line:
+        out.append(line)
+    return out or [""]
+
+
 def _hpbar(hp, mx, w=10):
     fill = max(0, min(w, round(hp / mx * w))) if mx else 0
     return "█" * fill + "─" * (w - fill)
@@ -445,10 +464,13 @@ class LobbyPanel:
         t.append(_fit(f"you: {me}", CHATW), style=INK_B)     # confirm your identity
         t.append("│", style=DIM)
         t.append(f"{online} on".rjust(ROSTW)[:ROSTW] + "\n", style=INK_B)
-        chat = [f"{nm}: {tx}" for nm, tx in (s.chat[-BODY:] if s else [])]
-        chat = [""] * (BODY - len(chat)) + chat
+        lines = []
+        for nm, tx in (s.chat if s else []):
+            lines.extend(_wrap(f"{nm}: {tx}", CHATW))
+        lines = lines[-BODY:]
+        lines = [""] * (BODY - len(lines)) + lines
         for i in range(BODY):
-            t.append(_fit(chat[i], CHATW), style=INK)
+            t.append(_fit(lines[i], CHATW), style=INK)
             t.append("│", style=DIM)
             if i < len(others):
                 pl = others[i]
@@ -461,7 +483,9 @@ class LobbyPanel:
                 t.append(_fit("", ROSTW), style=INK)
             t.append("\n")
         t.append("say: ", style=INK_B)                       # this is chat, not a login box
-        t.append(_fit(self.buf + "_", CHATW + ROSTW - 5) + "\n", style=INK)
+        fw = CHATW + ROSTW - 5
+        shown = self.buf if len(self.buf) < fw else self.buf[-(fw - 1):]
+        t.append(_fit(shown + "_", fw) + "\n", style=INK)
         if self.invite_prompt is not None:
             inv = self.invite_prompt
             t.append(f"{inv['from_name']} invites {inv['kind']}  [Y]/[N]", style=INK_B)
