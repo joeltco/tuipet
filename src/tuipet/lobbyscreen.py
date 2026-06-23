@@ -415,8 +415,9 @@ class LobbyPanel:
         s = self.state
         others = self._others()
         online = len(s.roster) if s else 0
+        me = (s.me_name if s and s.me_name else None) or "connecting…"
         t = Text()
-        t.append(_fit("LOBBY", CHATW), style=INK_B)
+        t.append(_fit(f"you: {me}", CHATW), style=INK_B)     # confirm your identity
         t.append("│", style=DIM)
         t.append(f"{online} on".rjust(ROSTW)[:ROSTW] + "\n", style=INK_B)
         chat = [f"{nm}: {tx}" for nm, tx in (s.chat[-BODY:] if s else [])]
@@ -425,15 +426,17 @@ class LobbyPanel:
             t.append(_fit(chat[i], CHATW), style=INK)
             t.append("│", style=DIM)
             if i < len(others):
-                p = others[i]
+                pl = others[i]
                 marker = ">" if i == min(self.sel, len(others) - 1) else " "
-                t.append(_fit(f"{marker}{p['name']}", ROSTW),
+                t.append(_fit(f"{marker}{pl['name']}", ROSTW),
                          style=SEL if marker == ">" else INK)
+            elif i == 0 and not others:
+                t.append(_fit(" nobody yet", ROSTW), style=DIM)
             else:
                 t.append(_fit("", ROSTW), style=INK)
             t.append("\n")
-        t.append("> ", style=INK_B)
-        t.append(_fit(self.buf + "_", CHATW + ROSTW) + "\n", style=INK)
+        t.append("say: ", style=INK_B)                       # this is chat, not a login box
+        t.append(_fit(self.buf + "_", CHATW + ROSTW - 5) + "\n", style=INK)
         if self.invite_prompt is not None:
             inv = self.invite_prompt
             t.append(f"{inv['from_name']} invites {inv['kind']}  [Y]/[N]", style=INK_B)
