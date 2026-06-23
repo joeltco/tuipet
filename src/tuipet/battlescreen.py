@@ -1,41 +1,51 @@
-"""Battle — rebuilt to the official Digivice / Digital Monster battle sequence.
+"""Battle — the authentic Digimon V-pet sequence (one monster on screen at a time).
 
-Researched from the Wikimon/Fandom wikis + the official manuals, and cross-checked
-against Digimon Unlimited's own battle code (DigimonService.j()). The real vpet
-battle is NOT the DVPet lunge-and-strike; it is:
+Per DVPet's battle View (SpriteAnim.battlePlayerShootAnim / battlePlayerReceiveAttackAnim /
+dodge / battleHit): the monsters are NEVER shown together during a volley. Whoever has
+initiative is shown alone, rears back and FIRES its attack orb; the orb flies OFF the near
+screen edge; the screen then switches to the DEFENDER alone, and the orb arrives from the
+OPPOSITE off-screen edge -- the defender either DODGES (weaves aside, a 0-damage miss) or is
+HIT (a fullscreen explosion flash). Then the roles reverse. Orbs are the real per-attribute /
+per-Digimon projectiles (attackSprites.png + attackSpritesSpecial.png), not the menu icons.
 
-  1. a fullscreen "BATTLE" banner flashes (DMU cl.az <-> cl.aA)
-  2. the two Digimon face off (player left / foe right) and fire their attacks,
-     which fly across and CLASH in the centre; the stronger pushes through
-  3. on a hit, a fullscreen explosion covers the whole screen (DMU cm.f251a <-> cm.b)
-  4. blows are exchanged a few times; the winner cheers, the loser collapses
-
-Fullscreen overlay frames (16x32) live in data/battle_overlays.json. The Battle
-engine still resolves the actual win/loss + rewards; this drives the animation.
+Turn-interactive: each round you pick an attack type; Model.Battle resolves it; this drives
+the presentation. Player stands on the RIGHT (faces left), enemy on the LEFT (faces right).
 """
 from __future__ import annotations
 import json, os
 from . import data
 from .battle import Battle
 from .render import render_scene
-from .theme import LCD_ON, LCD_BG, INK, SIL_DAY, SIL_NIGHT
+from .theme import LCD_ON, LCD_BG, SIL_DAY, SIL_NIGHT
 from . import menu
 
-COLS, ROWS = 40, 12                              # fill the whole LCD (the HUD lives in the side panel)
+COLS, ROWS = 40, 12
 PXH = ROWS * 2                                   # 24 px tall
-_E = data.load_effects()
-ATK = {"Vaccine": (_E.get("atk_vaccine") or _E.get("attack") or [None])[0],
-       "Data":    (_E.get("atk_data") or _E.get("attack") or [None])[0],
-       "Virus":   (_E.get("atk_virus") or _E.get("attack") or [None])[0]}
 with open(os.path.join(os.path.dirname(__file__), "data", "battle_overlays.json")) as _f:
     _OV = json.load(_f)
-BANNER = _OV["battle_banner"]                    # [az, aA]  fullscreen "BATTLE"
-EXPLODE = _OV["hit_explosion"]                   # [f251a, b] fullscreen hit blast
-OVW = len(BANNER[0][0])                          # 32
-OVX = (COLS - OVW) // 2                           # centre the 32-wide overlay in 40
+BANNER = _OV["battle_banner"]
+EXPLODE = _OV["hit_explosion"]
+OVW = len(BANNER[0][0])
+OVX = (COLS - OVW) // 2
 
 # poses (tuipet DVPet 11-frame layout)
-IDLE, ATTACK, CHEER_A, CHEER_B, FLINCH, COLLAPSE = 0, 6, 6, 4, 9, 10
+IDLE, TURN, ATTACK, CHEER_A, CHEER_B, COLLAPSE = 0, 1, 6, 5, 7, 10
+FIRE_Y = PXH - 14                                # orb travels across the monster's mid-body
+
+# timeline tuning (ticks per beat)
+BANNER_FLASHES, BANNER_HOLD = 3, 3
+FACEOFF_T = 5                                    # 0.6s stare-down
+WINDUP_T = 6                                     # 0.7s charge / rear-back before firing
+FIRE_T = 7                                       # 0.84s per orb leg (~6px/beat, DVPet pace)
+EXPLODE_HOLD, EXPLODE_FRAMES = 2, 6              # 0.72s strobing hit flash
+FLINCH_T = 8                                     # ~1.0s held hurt pose (DVPet aftermath)
+DODGE_T = 9                                      # ~1.1s weave
+
+OPTS = [("Vaccine", "Vaccine"), ("Data", "Data"), ("Virus", "Virus"), ("Surrender", None)]
+# attack/defence chip effects -> a short on-screen label (DVPet AttackEffectProcess)
+EFFECT_LABEL = {"DefenseUp": "Blocked!", "AttackUp": "Power up!", "Counter": "Counter!",
+                "Weaken": "Weakened!", "DisableAttack": "Disabled!", "Leech": "Leech!",
+                "Absorb": "Absorb!", "Heal": "Heal!", "First": "First strike!", "Second": "Second!"}
 
 
 def _blit(bm, ox, oy):
@@ -44,8 +54,7 @@ def _blit(bm, ox, oy):
 
 
 def _full(frame):
-    """A fullscreen 16x32 overlay frame -> pixel coords, centred in the field."""
-    oy = max(0, (PXH - len(frame)) // 2)         # centre the 16px overlay in the 24px field
+    oy = max(0, (PXH - len(frame)) // 2)
     return [(OVX + x, oy + y) for y, row in enumerate(frame)
             for x, c in enumerate(row) if c == "1"]
 
@@ -56,226 +65,251 @@ def _cbounds(rows):
     return (min(cols), max(cols)) if cols else (0, w - 1)
 
 
-# per-tick timeline kinds are built once at battle start
-BANNER_FLASHES = 3        # how many times "BATTLE" blinks
-BANNER_HOLD = 3           # ticks per banner frame
-FACEOFF_T = 5
-WINDUP_T = 3              # attacker rears back before firing
-FIRE_T = 6                # the weapon flies one-way to the defender
-EXPLODE_HOLD = 2          # ticks per explosion frame
-EXPLODE_FRAMES = 6        # fullscreen hit-explosion flicker
-FLINCH_T = 3              # defender reels after a hit
-DODGE_T = 5               # defender leaps clear; the shot whiffs past
-
-
 class BattlePanel:
     def __init__(self, pet, enemy=None):
         self.pet = pet
         self.battle = Battle(pet, enemy)
         self.frame_i = 0
-        self.i = 0                                # index into the timeline
+        self.sel = 0
+        self.pet_attr = None
+        self.foe_attr = None
         self.done_anim = False
-        self.hud_pl, self.hud_fl, self.hud_note = 3, 3, ""   # HUD state for the side panel
-        self._build()
-
-    # ---- resolve outcome + build the animation timeline -----------------
-    def _build(self):
-        b = self.battle
-        best = max(("Vaccine", "Data", "Virus"),
-                   key=lambda a: {"Vaccine": self.pet.vaccine, "Data": self.pet.data_power,
-                                  "Virus": self.pet.virus}[a])
-        guard = 0
-        while not b.over and guard < 200:
-            b.play_round(best); guard += 1
-        self.won = bool(b.won)
-        self.pet_attr = best
-        self.foe_attr = b.enemy.get("attribute", "Virus")
-        winner = "pet" if self.won else "foe"
-        loser = "foe" if self.won else "pet"
-        self.result_winner = winner
-
-        # --- build the turn-based exchange (DMU j(): one fires, the other dodges
-        # or is hit; never simultaneous). The winner lands its shots; the loser's
-        # shots mostly whiff, landing once for tension. First side to 0 lives loses.
-        # orb count per side: out-powering the foe fires the stronger DOUBLE shot
-        # (2 orbs, DMU Attack1), otherwise a single orb (Attack0) -- the manual:
-        # "power higher than the enemy -> stronger attack."
-        e = self.battle.enemy
-        pet_pow = self.pet.vaccine + self.pet.data_power + self.pet.virus
-        foe_pow = e.get("vaccine", 0) + e.get("data_power", 0) + e.get("virus", 0)
-        orbs_of = {"pet": 2 if pet_pow > foe_pow else 1,
-                   "foe": 2 if foe_pow > pet_pow else 1}
-
-        pl = fl = 3
-        loser_may_hit = 1                      # the loser lands this many before falling
-        turn = winner                          # winner opens
-        attacks = []
-        while pl > 0 and fl > 0:
-            atk = turn
-            dfn = "foe" if atk == "pet" else "pet"
-            if atk == winner:
-                hit = True                     # the winner's shots connect
-            else:
-                # the loser only lands while it still has a budgeted hit AND it
-                # won't KO the winner (so the winner survives to win)
-                wlives = pl if winner == "pet" else fl
-                hit = loser_may_hit > 0 and wlives > 1
-                if hit:
-                    loser_may_hit -= 1
-            if hit:
-                if dfn == "foe":
-                    fl = max(0, fl - 1)
-                else:
-                    pl = max(0, pl - 1)
-            attacks.append({"atk": atk, "def": dfn, "hit": hit,
-                            "orbs": orbs_of[atk], "pl": pl, "fl": fl})
-            turn = dfn                          # the defender shoots back next
-
+        self.won = None
+        self.hud_php = self.battle.pet_hp
+        self.hud_fhp = self.battle.enemy_hp
+        self.hud_note = "Battle start!"
+        self.phase = "intro"
         tl = []
-        for _ in range(BANNER_FLASHES):         # 1) "BATTLE" banner flashes fullscreen
+        for _ in range(BANNER_FLASHES):
             tl += [{"m": "banner", "f": 0}] * BANNER_HOLD
             tl += [{"m": "banner", "f": 1}] * BANNER_HOLD
-        tl += [{"m": "faceoff"}] * FACEOFF_T    # 2) the two face off
-        cpl = cfl = 3                           # hearts shown DURING each beat
-        for a in attacks:                       # 3) trade blows, one at a time
-            for _ in range(WINDUP_T):
-                tl.append({"m": "windup", "atk": a["atk"], "pl": cpl, "fl": cfl})
-            for s in range(FIRE_T):
-                tl.append({"m": "fire", "atk": a["atk"], "prog": (s + 1) / FIRE_T,
-                           "orbs": a["orbs"], "pl": cpl, "fl": cfl})
-            if a["hit"]:
-                cpl, cfl = a["pl"], a["fl"]     # the shot lands -> life drops now
-                for s in range(EXPLODE_FRAMES):
-                    tl.append({"m": "hit", "f": (s // EXPLODE_HOLD) % 2, "def": a["def"],
-                               "pl": cpl, "fl": cfl})
-                tl += [{"m": "flinch", "def": a["def"], "pl": cpl, "fl": cfl}] * FLINCH_T
-            else:
-                for s in range(DODGE_T):        # the defender leaps clear -- a miss
-                    tl.append({"m": "dodge", "def": a["def"], "prog": (s + 1) / DODGE_T,
-                               "orbs": a["orbs"], "pl": cpl, "fl": cfl})
         self.timeline = tl
+        self.i = 0
 
-    # ---- driving --------------------------------------------------------
+    # ---- one round: pick attack, resolve, build the alternating-view timeline ----
+    def _resolve_and_build(self, attr):
+        b = self.battle
+        ph0, fh0 = b.pet_hp, b.enemy_hp
+        b.play_round(attr)
+        self.pet_attr = b.last_player_attr
+        self.foe_attr = b.last_enemy_attr
+        pdmg, edmg = b.last_player_damage, b.last_enemy_damage
+        # strike order: initiative first; a KO'd side does not retaliate
+        if b.last_player_first:
+            seq = [("pet", "foe", pdmg)]
+            if fh0 - max(0, pdmg) > 0:
+                seq.append(("foe", "pet", edmg))
+        else:
+            seq = [("foe", "pet", edmg)]
+            if ph0 - max(0, edmg) > 0:
+                seq.append(("pet", "foe", pdmg))
+
+        tl = []
+        ph, fh = ph0, fh0
+        tl += [{"m": "faceoff", "view": seq[0][0], "ph": ph, "fh": fh}] * FACEOFF_T
+        for atk, dfn, dmg in seq:
+            other = edmg if atk == "pet" else pdmg
+            dbl = dmg >= 2 and dmg >= other                  # DVPet doubleAttack: strong & out/matching power
+            fxn = b.last_effect if atk == "pet" else None    # only the player carries chip effects (PvE)
+            for s in range(WINDUP_T):
+                tl.append({"m": "windup", "view": atk, "atk": atk, "wu": s, "ph": ph, "fh": fh})
+            for s in range(FIRE_T):                          # attacker shown: orb leaves off-screen
+                tl.append({"m": "fire_out", "view": atk, "atk": atk, "double": dbl, "fx": fxn,
+                           "prog": (s + 1) / FIRE_T, "ph": ph, "fh": fh})
+            for s in range(FIRE_T):                          # defender shown: orb arrives off-screen
+                tl.append({"m": "fire_in", "view": dfn, "atk": atk, "def": dfn, "double": dbl,
+                           "prog": (s + 1) / FIRE_T, "ph": ph, "fh": fh})
+            if dmg > 0:                                      # HIT: fullscreen flash, then flinch
+                if dfn == "foe":
+                    fh = max(0, fh - dmg)
+                else:
+                    ph = max(0, ph - dmg)
+                for s in range(EXPLODE_FRAMES):
+                    tl.append({"m": "hit", "f": (s // EXPLODE_HOLD) % 2, "def": dfn, "ph": ph, "fh": fh})
+                tl += [{"m": "flinch", "view": dfn, "def": dfn, "ph": ph, "fh": fh}] * FLINCH_T
+            else:                                            # DODGE: defender weaves, orb whiffs past
+                for s in range(DODGE_T):
+                    tl.append({"m": "dodge", "view": dfn, "atk": atk, "def": dfn,
+                               "prog": (s + 1) / DODGE_T, "ph": ph, "fh": fh})
+        self.timeline = tl
+        self.i = 0
+        self.phase = "anim"
+
+    def _enter_result(self):
+        self.done_anim = True
+        self.won = bool(self.battle.won)
+        self.phase = "result"
+
+    # ---- driving ----
     def anim(self):
         self.frame_i += 1
+        if self.phase in ("menu", "result"):
+            return
         if self.i < len(self.timeline) - 1:
             self.i += 1
+        elif self.phase == "intro":
+            self.phase = "menu"
         else:
-            self.done_anim = True
+            if self.battle.over:
+                self._enter_result()
+            else:
+                self.phase = "menu"
 
     def key(self, k):
-        if k in ("escape", "space", "enter"):
-            if self.done_anim:
-                return ("done", self.battle)
-            self.i = len(self.timeline) - 1       # skip to the end
-            self.done_anim = True
+        if self.phase == "intro":
+            if k in ("space", "enter", "escape"):
+                self.i = len(self.timeline) - 1
+                self.phase = "menu"
+            return None
+        if self.phase == "menu":
+            if k in ("up", "k"):
+                self.sel = (self.sel - 1) % len(OPTS)
+            elif k in ("down", "j"):
+                self.sel = (self.sel + 1) % len(OPTS)
+            elif k in ("1", "2", "3"):
+                self.sel = int(k) - 1
+                self._resolve_and_build(OPTS[self.sel][1])
+            elif k in ("enter", "space"):
+                if OPTS[self.sel][1] is None:
+                    self.battle.surrender()
+                    return ("done", None)
+                self._resolve_and_build(OPTS[self.sel][1])
+            elif k == "s":
+                self.battle.surrender()
+                return ("done", None)
+            elif k == "escape":
+                return ("done", None)
+            return None
+        if self.phase == "anim":
+            if k in ("space", "enter", "escape"):
+                self.i = len(self.timeline) - 1
+            return None
+        if k in ("space", "enter", "escape"):
+            return ("done", self.battle)
         return None
 
-    # ---- rendering ------------------------------------------------------
+    # ---- rendering ----
     def _rows(self, num, pose):
         fr = data.load_sprites()[1][num]["frames"]
         return (fr[pose] if pose < len(fr) else None) or fr[0]
-
-    def _place(self, pet_rows, foe_rows):
-        """player LEFT (faces right, mirror=True), foe RIGHT (faces left, mirror=False),
-        anchored by real content edges so they hug the walls with a centre gap."""
-        out = []
-        edges = {}
-        if pet_rows:
-            src = [r[::-1] for r in pet_rows]            # mirror=True
-            lo, hi = _cbounds(src)
-            x = 1 - lo
-            out.append((pet_rows, x, True))
-            edges["pet"] = x + hi + 1                    # inner (right-facing) edge
-        if foe_rows:
-            lo, hi = _cbounds(foe_rows)                  # mirror=False
-            x = (COLS - 2) - hi
-            out.append((foe_rows, x, False))
-            edges["foe"] = x + lo                        # inner (left-facing) edge
-        return out, edges
 
     def _scene(self, placements, overlay):
         bgimg = self.pet.background()
         on = SIL_NIGHT if self.pet.day_phase == "night" else (SIL_DAY if bgimg else LCD_ON)
         return render_scene(placements, COLS, ROWS, on, LCD_BG, overlay=overlay, bgimg=bgimg)
 
-    def _orb_ys(self, orbs):
-        """1 orb on the firing line; 2 orbs straddle it 8px apart (DMU draws ap at
-        y and y+8 for the double shot)."""
-        return [PXH - 12] if orbs <= 1 else [PXH - 15, PXH - 7]
+    def _place_one(self, view, rows, xshift=0):
+        """Place the ONE monster currently on screen. Player stands RIGHT (faces left), enemy
+        LEFT (faces right). Returns (placements, mouth_edge) -- the inner edge the orb leaves
+        from / arrives at."""
+        if view == "foe":
+            src = [r[::-1] for r in rows]                    # mirror=True -> faces right
+            lo, hi = _cbounds(src)
+            x = (1 - lo) + xshift
+            return [(rows, x, True)], x + hi + 1             # mouth = right edge (toward pet)
+        lo, hi = _cbounds(rows)                              # mirror=False -> faces left
+        x = ((COLS - 2) - hi) + xshift
+        return [(rows, x, False)], x + lo                    # mouth = left edge (toward foe)
 
-    def _shot_overlay(self, attacker, prog, orbs, p_edge, f_edge):
-        """1 or 2 orbs fly from the attacker toward the defender (never both sides)."""
-        if attacker == "pet":                            # player (left) fires right at the foe
-            beam = ATK.get(self.pet_attr); src = beam
-            x0, x1 = p_edge, f_edge - (len(beam[0]) if beam else 0)
-        else:                                            # foe (right) fires left at the player
-            beam = ATK.get(self.foe_attr); src = [r[::-1] for r in beam] if beam else beam
-            x0, x1 = f_edge - (len(beam[0]) if beam else 0), p_edge
-        if not beam:
+    def _pow(self, side, attr):
+        if side == "pet":
+            return {"Vaccine": self.pet.vaccine, "Data": self.pet.data_power,
+                    "Virus": self.pet.virus}.get(attr, 0)
+        e = self.battle.enemy
+        return {"Vaccine": e.get("vaccine", 0), "Data": e.get("data_power", 0),
+                "Virus": e.get("virus", 0)}.get(attr, 0)
+
+    def _orb_overlay(self, fr, mouth):
+        """The attacker's real orb, flying OFF the near edge (fire_out) or IN from the far edge
+        (fire_in/dodge). No clamp -- render_scene clips anything off-screen. Player fires left,
+        enemy fires right; the orb keeps a constant world direction across the screen switch."""
+        atk, m, prog = fr["atk"], fr["m"], fr["prog"]
+        if atk == "pet":
+            orb = data.attack_orb(self.pet.num, self.pet_attr, self._pow("pet", self.pet_attr))
+        else:
+            orb = data.attack_orb(self.battle.enemy["num"], self.foe_attr, self._pow("foe", self.foe_attr))
+        if not orb:
             return []
-        x = max(0, min(int(x0 + (x1 - x0) * prog), COLS - len(beam[0])))
-        cells = []
-        for y in self._orb_ys(orbs):
-            cells += _blit(src, x, y)
-        return cells
+        w = len(orb[0])
+        left = (atk == "pet")                                # player fires left; enemy fires right
+        if m == "fire_out":                                  # orb leaves the mouth, off the near edge
+            x0, x1 = (mouth - w, -w) if left else (mouth, COLS)
+        else:                                                # fire_in / dodge: arrives, STOPS at the defender's edge
+            x0, x1 = (COLS, mouth) if left else (-w, mouth - w)
+            if m == "dodge":                                 # whiffs past to the far edge
+                x1 = -w if left else COLS
+        # the orb art faces LEFT natively; flip it to point in its travel direction
+        # (player/foe orbs are directional, so a rightward orb must be mirrored)
+        src = orb if left else [r[::-1] for r in orb]
+        x = int(x0 + (x1 - x0) * prog)
+        pts = _blit(src, x, FIRE_Y)
+        if fr.get("double"):                                 # doubleAttack: a second orb stacked above
+            pts += _blit(src, x, FIRE_Y - len(src) - 1)
+        return pts
 
-    def text(self):
+    def _render_scene_frame(self, fr):
         b = self.battle
-        fr = self.timeline[min(self.i, len(self.timeline) - 1)] if not self.done_anim \
-            else {"m": "result"}
         m = fr["m"]
-        pl = fr.get("pl", 3)            # full hearts until an exchange decrements them
-        fl = fr.get("fl", 3)
-
+        ph = fr.get("ph", b.pet_hp)
+        fh = fr.get("fh", b.enemy_hp)
         if m == "banner":
             scene = self._scene([], _full(BANNER[fr["f"]]))
             note = "BATTLE!"
         elif m == "hit":
-            scene = self._scene([], _full(EXPLODE[fr["f"]]))   # fullscreen hit explosion
+            scene = self._scene([], _full(EXPLODE[fr["f"]]))
             note = "HIT!"
         else:
-            dfn = fr.get("def")
-            atk = fr.get("atk") or ("foe" if dfn == "pet" else "pet")
-            if m == "faceoff":
-                pr = fpose = IDLE
-            elif m in ("windup", "fire"):                      # only the attacker rears/fires
-                pr = ATTACK if atk == "pet" else IDLE
-                fpose = ATTACK if atk == "foe" else IDLE
-            elif m == "dodge":                                 # the defender jukes (pose 1)
-                pr = 1 if dfn == "pet" else IDLE
-                fpose = 1 if dfn == "foe" else IDLE
-            elif m == "flinch":                                # the struck side reels
-                pr = COLLAPSE if dfn == "pet" else IDLE
-                fpose = COLLAPSE if dfn == "foe" else IDLE
-            else:                                              # result
-                win = self.result_winner
-                cheer = (5, 7)[self.frame_i % 2]               # winning(): cheer(true) 5,7
-                pr = cheer if win == "pet" else COLLAPSE
-                fpose = cheer if win == "foe" else COLLAPSE
-            pet_rows = self._rows(self.pet.num, pr)
-            foe_rows = self._rows(b.enemy["num"], fpose)
-            placements, edges = self._place(pet_rows, foe_rows)
-            pe, fe = edges.get("pet", 8), edges.get("foe", COLS - 8)
-            overlay = []
-            orbs = fr.get("orbs", 1)
-            if m == "fire":                                    # the orb(s) fly AT the defender
-                overlay = self._shot_overlay(atk, fr["prog"], orbs, pe, fe)
-            elif m == "dodge":                                 # ...and sail on past the juke
-                beam = ATK.get(self.pet_attr if atk == "pet" else self.foe_attr)
-                if beam:
-                    w = len(beam[0])
-                    src = beam if atk == "pet" else [r[::-1] for r in beam]
-                    x0, x1 = (fe, COLS - w) if atk == "pet" else (pe - w, 0)
-                    x = max(0, min(int(x0 + (x1 - x0) * fr["prog"]), COLS - w))
-                    for y in self._orb_ys(orbs):
-                        overlay += _blit(src, x, y)
-            scene = self._scene(placements, overlay)
-            note = {"faceoff": f"{self.pet.name} vs {b.enemy['name']}",
-                    "windup": "...", "fire": "Fire!", "dodge": "Dodge!",
-                    "flinch": "Hit!", "result": ""}.get(m, "")
-
-        # the LCD shows ONLY the battle scene (full height); the HUD (hearts, status,
-        # controls) is published for the side stats panel via app._status_battle().
-        self.hud_pl, self.hud_fl, self.hud_note = pl, fl, note
+            view = fr.get("view", "pet")
+            if m == "result":
+                pose = (CHEER_A, CHEER_B)[self.frame_i % 2] if self.won else COLLAPSE
+            elif m in ("windup", "fire_out"):
+                pose = ATTACK
+            elif m == "dodge":
+                pose = TURN if self.frame_i % 2 else IDLE
+            elif m == "flinch":
+                pose = COLLAPSE
+            else:                                            # fire_in, faceoff
+                pose = IDLE
+            num = self.pet.num if view == "pet" else b.enemy["num"]
+            rows = self._rows(num, pose)
+            xshift = 0
+            back = 1 if view == "pet" else -1                # +x = pet's wall (right), foe's (left)
+            if m == "windup":
+                xshift = back * min(3, fr.get("wu", 0) + 1)  # rear back, charging up
+            elif m == "fire_out" and fr.get("prog", 1) < 0.35:
+                xshift = -back * 2                           # lunge toward the foe on release
+            elif m == "dodge":
+                xshift = back * (3 if self.frame_i % 2 else 2)   # weave back toward its wall
+            place, mouth = self._place_one(view, rows, xshift)
+            overlay = self._orb_overlay(fr, mouth) if m in ("fire_out", "fire_in", "dodge") else []
+            scene = self._scene(place, overlay)
+            note = {"faceoff": f"{self.pet.name[:8]} vs {b.enemy['name'][:8]}",
+                    "windup": "...", "fire_out": "Fire!", "fire_in": "Incoming!",
+                    "dodge": "Dodge!", "flinch": "Hit!", "result": ""}.get(m, "")
+            if fr.get("fx") and m == "fire_out":             # surface the player's chip effect
+                note = EFFECT_LABEL.get(fr["fx"], fr["fx"])
+        self.hud_php, self.hud_fhp, self.hud_note = ph, fh, note
         return scene
+
+    def _render_menu(self):
+        b = self.battle
+        out = menu.header("BATTLE", f"vs {b.enemy['name'][:16]}")
+        tag = " BOSS" if b.enemy.get("boss") else ""
+        out.append_text(menu.note(
+            f"You HP {b.pet_hp}/{b.pet_max}   Foe HP {b.enemy_hp}/{b.enemy_max}{tag}"))
+        out.append_text(menu.blanks(1))
+        powr = {"Vaccine": self.pet.vaccine, "Data": self.pet.data_power, "Virus": self.pet.virus}
+        for i, (label, attr) in enumerate(OPTS):
+            tagr = f"pow {powr[attr]}" if attr else "bow out"
+            out.append_text(menu.row(f"{label:<10} {tagr}", i == self.sel))
+        out.append_text(menu.footer("↑↓ pick   ENTER attack   ESC flee"))
+        self.hud_php, self.hud_fhp, self.hud_note = b.pet_hp, b.enemy_hp, "Choose your attack"
+        return out
+
+    def text(self):
+        if self.phase == "menu":
+            return self._render_menu()
+        if self.phase == "result":
+            return self._render_scene_frame({"m": "result", "view": "pet"})
+        fr = self.timeline[min(self.i, len(self.timeline) - 1)]
+        return self._render_scene_frame(fr)

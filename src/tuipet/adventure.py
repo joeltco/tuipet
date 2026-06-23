@@ -56,6 +56,13 @@ class Adventure:
         """Advance one leg. Returns ('encounter'|'boss', enemy) or ('town'|None)."""
         if self.boss_pending or self.done:
             return None
+        if getattr(self.pet, "adv_seek", False):           # Disaster Transport: forced encounter
+            self.pet.adv_seek = False
+            pool = _real(self.zone["randoms"]) or _real(self.zone["bosses"])
+            if pool:
+                e = random.choice(pool)
+                self.last = f"Ambush! {e['name']}!"
+                return ("encounter", e)
         # travelling tires the pet (like exercise)
         self.pet.energy = max(0, self.pet.energy - 2)
         self.pet.weight = max(1, self.pet.weight - 1) if random.random() < 0.3 else self.pet.weight

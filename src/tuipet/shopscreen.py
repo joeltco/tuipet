@@ -53,7 +53,12 @@ class ShopPanel:
                 if self.mode == "shop":
                     self.msg = self.pet.buy(e)
                 else:
+                    if (e.get("action") or "") in data.TRANSPORT_ACTIONS:
+                        return ("done", ("transport", e["key"]))   # open the warp picker
+                    num0 = self.pet.num
                     self.msg = self.pet.use_item(e["key"])
+                    if self.pet.num != num0:
+                        return ("done", ("evolve", num0))    # item-triggered evolution
                     if e["key"].startswith("f:") and self.pet.anim == "eat":
                         return ("done", ("eat", e["key"]))   # fed a food -> watch the pet eat it
                     if self.cursor >= len(self.pet.inventory):

@@ -59,7 +59,8 @@ _NAMES = ("LCD_ON", "LCD_BG", "MID", "INK", "INK_B", "DIM", "SEL", "ACCENT",
           "HEART", "ENERGY", "MOOD", "LIFE", "COIN")
 _SCREEN_MODULES = ("app", "battlescreen", "training", "adventurescreen",
                    "tournamentscreen", "shopscreen", "habitatscreen",
-                   "jogressscreen", "digicorescreen", "eggselectscreen")
+                   "jogressscreen", "digicorescreen", "eggselectscreen",
+                   "lobbyscreen")
 
 _RAIN = {"Drizzling", "Raining", "HeavyRain"}
 _SNOW = {"LightSnow", "Snowing", "HeavySnow"}

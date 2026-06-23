@@ -7,7 +7,7 @@ data it is documented as such rather than approximated.
 HP (Battle.setupOpponents / getOppMaxHealth):
   player starts full at the per-stage MaxHealth; enemy at its enemies.csv Health
   (Enemy.getEnemyHealth). config MaxHealth*: Rookie 10, Champion 15, Ultimate 20,
-  Mega 30, default 10.
+  Mega 25, default 10.
 
 Per-round damage (Battle.attack -> finishAttack):
       dmg = getBaseAttack(stage) + calcAttackPower(attr) + affinityBonus
@@ -53,7 +53,7 @@ ATTRS = ("Vaccine", "Data", "Virus")
 BASE_ATTACK = {"Fresh": 1, "InTraining": 2, "Rookie": 5,
                "Champion": 5, "Ultimate": 5, "Mega": 5}
 # config.csv MaxHealth* — getOppMaxHealth(stage)
-MAX_HEALTH = {"Rookie": 10, "Champion": 15, "Ultimate": 20, "Mega": 30}
+MAX_HEALTH = {"Rookie": 10, "Champion": 15, "Ultimate": 20, "Mega": 25}  # config MaxHealth* (classic)
 MAX_HEALTH_DEFAULT = 10
 # config.csv *AIWins thresholds (player win count -> enemy AI tier)
 AI_RANDOM, AI_BRUTE, AI_STRAT_BRUTE, AI_STRAT_DEFENSE, AI_STRAT_BALANCED = 0, 15, 30, 45, 60
@@ -88,6 +88,15 @@ def pick_enemy(pet, boss=False):
     return random.choice(real or pool)
 
 
+def battle_card(pet):
+    """A pet's battle-relevant snapshot, used as the opponent's Enemy dict in PvP."""
+    _, by = data.load_sprites()
+    return {"num": pet.num,
+            "name": getattr(pet, "name", None) or by.get(pet.num, {}).get("name") or "?",
+            "stage": pet.stage, "vaccine": pet.vaccine, "data_power": pet.data_power,
+            "virus": pet.virus, "hp": MAX_HEALTH.get(pet.stage, MAX_HEALTH_DEFAULT), "bits": (1, 5)}
+
+
 class Battle:
     def __init__(self, pet, enemy=None):
         self.pet = pet
@@ -113,7 +122,9 @@ class Battle:
         self.last_player_first = True
         self._pet_zero_attack = None       # checkRememberZeroAttack
         self._enemy_zero_attack = None
+        self.last_effect = None            # the player chip that fired this round (DefenseUp etc.)
         self.surrendered = False           # set True by surrender() (PhysicalState.checkSurrender)
+        self._forced_enemy_attr = None     # PvP: the partner's real choice overrides the AI
 
     def _damage(self, stage, attr, my, opp):
         atk = BASE_ATTACK.get(stage, 5) + calc_attack_power(attr, my, opp)  # + affinity (0)
@@ -121,6 +132,8 @@ class Battle:
 
     def _enemy_choice(self):
         """enemyAttackChoose, dispatched on the AI type."""
+        if self._forced_enemy_attr is not None:        # PvP: use the partner's move
+            return self._forced_enemy_attr
         ec, pc = self._enemy_counts, self._pet_counts
         nonzero = [a for a in ATTRS if ec[a] > 0]
         if not nonzero:                                  # no usable attribute -> own type
@@ -145,6 +158,7 @@ class Battle:
         # attack-effect "chip" layer (AttackEffectProcess): the player's attack effect
         # fires if its conditions pass, adjusting damage / initiative / health changes.
         fx = battlefx.resolve(self, player_attr, enemy_attr, pdmg, edmg)
+        self.last_effect = fx.get("effect_fired")
         pdmg, edmg, enemy_attr = fx["pdmg"], fx["edmg"], fx["enemy_attr"]
         self.last_enemy_attr = enemy_attr
         self.last_player_damage, self.last_enemy_damage = pdmg, edmg

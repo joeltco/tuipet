@@ -7,19 +7,29 @@ from __future__ import annotations
 import random
 from . import data
 
-# result = JOGRESS[player_attribute][partner_attribute]  (from attributeJogress.csv)
-JOGRESS = {
-    "Vaccine": {"Vaccine": "Vaccine", "Data": "Data", "Virus": "Vaccine"},
-    "Data":    {"Vaccine": "Data",    "Data": "Data", "Virus": "Virus"},
-    "Virus":   {"Vaccine": "Vaccine", "Data": "Virus", "Virus": "Virus"},
-}
+# attributeJogress.csv as (result, digimon, partner) attribute triples. BOTH matrix blocks
+# are included (DVPet Affinity.readAttributeInfo reads all rows), so None/Free-attribute
+# fusions are covered -- not just the Vaccine/Data/Virus 3x3. 308 mons are Free-attribute and
+# 23 jogress targets (Apocalymon, Mastemon, ...) are Free, all unreachable without block 2.
+JOGRESS_PAIRS = [
+    # block 1 -- partner None yields None
+    ("None", "None", "None"), ("None", "Vaccine", "None"), ("None", "Data", "None"), ("None", "Virus", "None"),
+    # block 1 -- partner Vaccine / Data / Virus (the classic 3x3, plus the None-digimon column)
+    ("None", "None", "Vaccine"), ("Vaccine", "Vaccine", "Vaccine"), ("Data", "Data", "Vaccine"), ("Vaccine", "Virus", "Vaccine"),
+    ("None", "None", "Data"), ("Data", "Vaccine", "Data"), ("Data", "Data", "Data"), ("Virus", "Virus", "Data"),
+    ("None", "None", "Virus"), ("Vaccine", "Vaccine", "Virus"), ("Virus", "Data", "Virus"), ("Virus", "Virus", "Virus"),
+    # block 2 -- Free-attribute combinations (a None partner or None digimon yields a real result)
+    ("Virus", "Vaccine", "None"), ("Vaccine", "Data", "None"), ("Data", "Virus", "None"),
+    ("Virus", "None", "Vaccine"), ("Vaccine", "None", "Data"), ("Data", "None", "Virus"),
+]
 ATTRS = ("Vaccine", "Data", "Virus")
 
 
 def required_partners(player_attr, target_attr):
-    if player_attr not in JOGRESS:
-        return []
-    return [p for p in ATTRS if JOGRESS[player_attr].get(p) == target_attr]
+    """Partner attributes that fuse a `player_attr` digimon into a `target_attr` form
+    (attributeJogress.csv, both blocks -- handles None/Free combinations natively)."""
+    return [par for (evol, dig, par) in JOGRESS_PAIRS
+            if dig == player_attr and evol == target_attr]
 
 
 def _partner_for(pet, attrs):
@@ -65,6 +75,25 @@ def can_jogress(pet):
     if not options(pet):
         return "No fusion partner resonates now."
     return None
+
+
+def fuse_targets(pet, partner_attr):
+    """Multiplayer jogress: the forms `pet` can fuse into when the partner has
+    attribute `partner_attr` (the real partner replaces offline `_partner_for`)."""
+    pa = partner_attr or "None"
+    return [o for o in options(pet) if pa in o["partners"]]
+
+
+def resolve(pet, partner_attr):
+    """Choose the fusion form for a partner of `partner_attr` the way DVPet's
+    pairJogressMatch does: the highest-priority valid target, ties broken at random."""
+    targets = fuse_targets(pet, partner_attr)
+    if not targets:
+        return None
+    reqs = data.load_requirements()
+    best = max(reqs.get(o["num"], {}).get("priority", 0.0) for o in targets)
+    top = [o for o in targets if reqs.get(o["num"], {}).get("priority", 0.0) == best]
+    return random.choice(top)
 
 
 def fuse(pet, target_num):

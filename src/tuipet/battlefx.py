@@ -183,9 +183,11 @@ def resolve(b, player_attr, enemy_attr, pdmg, edmg):
         "pdmg": pdmg, "edmg": edmg, "phc": 0, "ehc": 0,
         "player_first": _check_first(b),
     }
+    st["effect_fired"] = None
     if effect != "None" and _valid_conditions(conds, st):
         _special_conditions(conds, st)
         _check_effect(effect, conds, st, b)
+        st["effect_fired"] = effect          # the chip that activated this round (View feedback)
     st["pdmg"] = max(0, st["pdmg"])
     st["edmg"] = max(0, st["edmg"])
     return st

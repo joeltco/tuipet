@@ -16,6 +16,33 @@ from .pet import Pet, _clamp
 SAVE_DIR = os.path.expanduser("~/.local/share/tuipet")
 SAVE_PATH = os.path.join(SAVE_DIR, "save.json")
 MAX_OFFLINE = 36 * 3600  # cap catch-up at 36h of real time
+SETTINGS_PATH = os.path.join(SAVE_DIR, "settings.json")
+
+
+def load_settings(path=SETTINGS_PATH):
+    """App-level prefs that outlive any single pet (e.g. the tamer name)."""
+    try:
+        return json.load(open(path))
+    except (OSError, ValueError):
+        return {}
+
+
+def save_settings(d, path=SETTINGS_PATH):
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    tmp = path + ".tmp"
+    with open(tmp, "w") as fh:
+        json.dump(d, fh)
+    os.replace(tmp, path)
+
+
+def get_tamer():
+    return (load_settings().get("tamer") or "").strip()
+
+
+def set_tamer(name):
+    d = load_settings()
+    d["tamer"] = (name or "").strip()[:24]
+    save_settings(d)
 
 
 def save(pet, path=SAVE_PATH):

@@ -90,6 +90,25 @@ SURR_EFFECT_REQ_LOWHP_OBED = 15         # SurrenderEffectRequestLowHealthObedien
 SURR_REJECT_MOOD_DEC = 10               # SurrenderRejectMoodDec
 SURR_REJECT_OBED_INC = 1                # SurrenderRejectObedienceInc
 SURR_ENTH_DEC = 3                       # SurrenderEnthusiasmDec
+# --- DNA system (DVPet DNA.class + PhysicalState.applyDNA + config.csv) ---
+MAX_DNA_INVENTORY = 99                  # config MaxDNAInventory
+DNA_STRENGTH_CHANGE = 1                 # config DNAStrengthChange
+DNA_SAME_FIELD_MOOD, DNA_DIFF_FIELD_MOOD = 1, -1
+DNA_SAME_FIELD_ENTH_DEC, DNA_DIFF_FIELD_ENTH_DEC = 3, 6
+DNA_SAME_FIELD_SICK, DNA_DIFF_FIELD_SICK = 1, 2     # checkSick target out of SICK_BOUND
+DNA_SICK_BOUND = 100                    # config SickChance / WorseSickChance bound
+DNA_FULFILLED_RATE = 2                  # config DNAFulfilledRate (priority weight per met field)
+# --- food taste (DVPet Taste<Food> + Rank + config.csv) ---
+RANK_LIMIT, RANK_MIN = 200, -200       # config RankLimit / RankMinimum
+RANK_CHANGE_FOOD = 1                    # config RankChangeFood (per meal)
+RANK_PREF_INC = 2                       # config RankChangeSpeciesPreferenceInc (species like/dislike bias)
+RANK_DISLIKED = -2                      # config RankChangeDisliked
+RANK_AFTER_FAV = 20                     # config RankChangeAfterFav (decay other ranks toward 0)
+FAV_FOOD_MOOD = 10                      # config FavFoodMoodInc
+FOOD_MOOD = 2                           # config FoodMoodInc (neutral food)
+FAV_FOOD_ENTH = 1                       # config FavFoodEnthusiasmInc
+DISLIKED_FOOD_OBEDIENCE = -1            # config DislikedFoodObedienceChange
+INTOL_FOOD_SICK_CHANCE = 50            # config IntolerantFoodSickChance (per roll, x2 rolls)
 
 # DVPet poop / filth (config.csv, PhysicalState.poop / poopWaitMoodCheck).  A bowel
 # movement bumps mood, sheds a little weight and drops a pile of a size set by the
@@ -113,6 +132,13 @@ CALORIE_LIMIT = 4                       # CalorieLimit (buffer half-range)
 CALORIE_LAPSE_CHANGE = -1               # CalorieLapseChange (drain per lapse)
 CALORIE_LAPSE_GERIATRIC_EXTRA = -3      # CalorieLapseChangeGeriatric (added when elderly)
 CALORIE_DECAY_SEC = 1800 / (2 * CALORIE_LIMIT)   # keep ~1800s per hunger heart
+# DVPet per-species physiology (calcNeedDecay: higher coefficient = SLOWER decay). ~85% of
+# species share the modal values below, so only outliers diverge from tuipet's tuned pace.
+REF_HUNGER_COEF = 60          # modal HungerDecayCoefficient
+REF_STRENGTH_COEF = 50        # modal StrengthDecayCoefficient
+REF_POOP_RATIO = 64           # modal PoopLimit / PoopLapseInc
+POOP_INTERVAL_BASE = 2700     # tuipet's tuned poop interval at the modal ratio
+STRENGTH_DECAY_BASE = 3000    # gentle effort decay at the modal coefficient (~50 min/heart)
 
 # DVPet discipline (config.csv, PhysicalState.praise / scold / checkPraiseScoldWindow).
 # The pet flags a praise window after a good deed and a scold window after a bad one;
@@ -175,6 +201,16 @@ INJ_ENTH_CHANGE = -1                     # InjuryEnthusiasmChange
 MIN_SICK_LENGTH, MAX_SICK_LENGTH = 1, 10     # Min/MaxSickLength (recovery lapses)
 MIN_INJ_LENGTH, MAX_INJ_LENGTH = 1, 12       # Min/MaxInjLength
 SICK_LAPSE_MIN = 29                      # SickLapseMin (game-min per recovery lapse)
+# DVPet GoodNutrition (config.csv): 3 macros accumulate from food and decay each lapse; all
+# >= GoodNutritionMinimum gives a "well-fed" buff. Foods are specialised (Meat=protein,
+# Fruit=vitamin, Veg=mineral), so good nutrition rewards a VARIED diet.
+GOOD_NUTRITION_MIN = 16        # GoodNutritionMinimum
+MAX_MACRO = 24                 # MaxProtein / MaxVitamin / MaxMineral
+NUTRITION_LAPSE_CHANGE = -3    # NutritionLapseChange (decay per lapse)
+NUTRITION_LAPSE_SEC = 600.0    # tuipet cadence for macro decay (real-time adaptation)
+GOOD_NUTR_RECOVERY_MULT = 2.0  # GoodNutrition{Sick,Inj,Fatigue}LapseChange=-1 -> ~2x recovery
+GOOD_NUTR_LIFESPAN_COEF = 0.5  # GoodNutritionLifespanDecCoefficient (slower lifespan loss)
+GOOD_NUTR_SICK_MULT = 40 / 60  # GoodNutritionFatigueChance(40) / FatigueChance(60)
 INJ_LAPSE_MIN = 29                       # InjLapseMin
 
 # DVPet injury worsening + vitamins (config.csv, calcWorse{Exercise,Battle}Inj /
@@ -253,6 +289,12 @@ class Pet:
     asleep: bool = False
     lights: bool = True             # DVPet _lights: room-light toggle, SEPARATE from sleep
     care_mistakes: int = 0
+    dna_owned: dict = _dcf(default_factory=lambda: {f: 0 for f in data.DNA_FIELDS})    # banked
+    dna_applied: dict = _dcf(default_factory=lambda: {f: 0 for f in data.DNA_FIELDS})  # charged
+    food_ranks: dict = _dcf(default_factory=lambda: {c: 0 for c in data.FOOD_CATEGORIES})
+    food_eaten: dict = _dcf(default_factory=lambda: {c: 0 for c in data.FOOD_CATEGORIES})
+    favorite_food: str = ""             # emerges at rank +RankLimit
+    disliked_food: str = ""             # emerges at rank -RankLimit
     wins: int = 0
     hatching: bool = False
     vaccine: int = 0
@@ -280,12 +322,16 @@ class Pet:
     sick_length: float = 0.0        # DVPet _sickLength (game-min until natural recovery)
     inj_length: float = 0.0         # DVPet _injLength (game-min until the injury heals)
     vitamin_lapse: float = 0.0      # DVPet _vitaminLapse (game-min of injury-worsening protection)
+    nutr_protein: int = 0           # DVPet _protein (0..MaxProtein), from a meaty diet
+    nutr_mineral: int = 0           # DVPet _mineral, from vegetables
+    nutr_vitamin: int = 0           # DVPet _vitamin, from fruit
     battles: int = 0
     levels_fought: list = _dcf(default_factory=list)  # opponent levels beaten this stage (DVPet _levelsFought)
     bits: int = 0
     trophies: int = 0
     adv_map: int = 0
     adv_zone: int = 0
+    adv_seek: bool = False    # Disaster Transport: next adventure leg forces an encounter
     egg_type: int = 0
     lifespan: float = LIFE_START
     generation: int = 1
@@ -413,14 +459,15 @@ class Pet:
             if getattr(self, "_exercise_day", -1) != day:    # DVPet checkExerciseTime: daily reset
                 self._exercise_day = day
                 self.exercise_today = 0
+            _rec = dt * (GOOD_NUTR_RECOVERY_MULT if self.good_nutrition() else 1.0)  # well-fed heals faster
             if self.fatigue_length > 0:                       # checkFatigueLapse: rest it off (even asleep)
-                self.fatigue_length = max(0.0, self.fatigue_length - dt)
+                self.fatigue_length = max(0.0, self.fatigue_length - _rec)
             if self.sick_length > 0:                          # sickLapse: illness recovers in time
-                self.sick_length = max(0.0, self.sick_length - dt)
+                self.sick_length = max(0.0, self.sick_length - _rec)
                 if self.sick_length == 0:
                     self.sick = False
             if self.inj_length > 0:                           # injLapse: the injury heals over time
-                self.inj_length = max(0.0, self.inj_length - dt)
+                self.inj_length = max(0.0, self.inj_length - _rec)
             if self.vitamin_lapse > 0:                        # vitaminLapse: protection wears off
                 self.vitamin_lapse = max(0.0, self.vitamin_lapse - dt)
         if self.asleep:
@@ -462,7 +509,7 @@ class Pet:
                 self._set_mood(self.mood - 1)            # NeutralMoodLapseDec toward 0
             elif self.mood < 0:
                 self._set_mood(self.mood + 1)
-            if self.poop > 0:                            # poopWaitMoodCheck: an uncleaned mess nags
+            if self.poop > 0 and self._phys().get("filth_mood", -1):   # some species are unbothered by filth
                 self._set_mood(self.mood + (LARGE_POOP_WAIT_MOOD if self.poop >= 3 else POOP_WAIT_MOOD))
             # discipline windows age (checkPraiseScoldWindow); a missed window closes
             if self.praise_flag:
@@ -484,7 +531,7 @@ class Pet:
         # hunger: the DVPet calorie buffer drains each lapse; emptying it drops a hunger
         # heart (or logs a care mistake at zero), then refills for the next heart.
         self._cal_t = getattr(self, "_cal_t", 0.0) + dt
-        if self._cal_t >= CALORIE_DECAY_SEC:
+        if self._cal_t >= self._hunger_interval:
             self._cal_t = 0.0
             self.calories += CALORIE_LAPSE_CHANGE + (CALORIE_LAPSE_GERIATRIC_EXTRA if self.is_geriatric else 0)
             if self.calories <= -CALORIE_LIMIT:
@@ -496,10 +543,22 @@ class Pet:
                 self.calories = CALORIE_LIMIT
         # pooping (DVPet poop(): relief mood bump, sheds weight, drops a sized pile)
         self._poop_t = getattr(self, "_poop_t", 0) + dt
-        if self._poop_t >= 2700:
+        if self._poop_t >= self._poop_interval:
             self._poop_t = 0
             self._do_poop()
             self._set_anim("poop", 2.2)          # squat-and-go (DVPet poop())
+        # effort decays per species (DVPet calcStrengthDecayLapse): keep training or it slips
+        self._str_t = getattr(self, "_str_t", 0.0) + dt
+        if not self.asleep and self.strength > 0 and self._str_t >= self._strength_interval:
+            self._str_t = 0.0
+            self.strength -= 1
+        # nutrition macros decay each lapse (NutritionLapseChange) -- keep a varied diet up
+        self._nutr_t = getattr(self, "_nutr_t", 0.0) + dt
+        if self._nutr_t >= NUTRITION_LAPSE_SEC:
+            self._nutr_t = 0.0
+            self.nutr_protein = max(0, self.nutr_protein + NUTRITION_LAPSE_CHANGE)
+            self.nutr_mineral = max(0, self.nutr_mineral + NUTRITION_LAPSE_CHANGE)
+            self.nutr_vitamin = max(0, self.nutr_vitamin + NUTRITION_LAPSE_CHANGE)
         # Filth care-mistake (DVPet poopCall/incCallMinutes): a mistake is only logged
         # once the mess reaches the filth limit AND the awake pet leaves it uncleaned for
         # a grace period; after one, the timer is postponed (AfterMistakeMinutesPostponed)
@@ -516,7 +575,9 @@ class Pet:
         else:
             self._filth_t = 0                # cleaned / under the limit resets the call timer
         # sickness from filth / starvation
-        if (self.poop >= 3 or self.hunger == 0) and not self.sick and random.random() < 0.02 * dt:
+        if (self.poop >= 3 or self.hunger == 0) and not self.sick \
+                and random.random() < 0.02 / self._phys().get("poop_sick_mult", 1.0) * dt \
+                        * (GOOD_NUTR_SICK_MULT if self.good_nutrition() else 1.0):
             self._sicken()
         # bedtime: sleep through the night, or pass out if run to exhaustion by
         # day; a grace window after a manual wake lets you interact at night
@@ -535,7 +596,7 @@ class Pet:
             extra += 0.2
         if self.is_geriatric:
             extra += 0.2
-        self.lifespan -= extra * dt
+        self.lifespan -= extra * dt * (GOOD_NUTR_LIFESPAN_COEF if self.good_nutrition() else 1.0)
         if self.age_seconds >= self.lifespan:
             self._die()
             return
@@ -685,15 +746,14 @@ class Pet:
                 self._set_mood(self.mood + wx.IDEAL_TEMP_INC + aff)
             elif too_hot or too_cold:
                 self._set_mood(self.mood - wx.IDEAL_TEMP_DEC + aff)
+        # bad-temperature sickness is DISABLED in classic mode (config SickChanceBadTemp=0;
+        # only hardcore enables it) -- temperature drives mood, not illness. An incompatible
+        # habitat is still unhealthy (DVPet incompatibleField/ElementSickChanceChange).
         self._btemp_t = getattr(self, "_btemp_t", 0.0) + dt
         if self._btemp_t >= wx.BAD_TEMP_SICK_SEC:
             self._btemp_t = 0.0
-            if not self.sick:
-                chance = wx.BAD_TEMP_SICK_CHANCE * (1 - 0.25 * aff) if (too_hot or too_cold) else 0.0
-                if aff < 0:                   # an incompatible home is just unhealthy
-                    chance += 0.004 * (-aff)
-                if chance > 0 and random.random() < chance:
-                    self._sicken()
+            if not self.sick and aff < 0 and random.random() < 0.004 * (-aff):
+                self._sicken()
 
     def _die(self):
         self.dead = True
@@ -732,6 +792,158 @@ class Pet:
             if hr not in self.habitats:
                 self.habitats = sorted(set(self.habitats) | {hr})
 
+    # ---- DNA (DVPet DNA.class) -------------------------------------------
+    def dna_total(self):
+        return sum(self.dna_applied.get(f, 0) for f in data.DNA_FIELDS)
+
+    def dna_percent(self, field):
+        """DNA.getPercent: this field's share of all charged DNA (the evolution gate)."""
+        t = self.dna_total()
+        return int(100 * self.dna_applied.get(field, 0) / t) if t else 0
+
+    def can_charge_dna(self):
+        if self.dead:
+            return "It rests now — press N for a new egg."
+        if self.stage == "Egg":
+            return "An egg has no DNA yet."
+        if self.asleep:
+            return self._disturbed()
+        return None
+
+    def generate_dna(self, field, amount):
+        """DNA_GenerateValidate: spend `amount` bits 1:1 -> owned[field]; cap 99 (overflow refunds)."""
+        if field not in self.dna_owned or amount <= 0 or self.bits < amount:
+            return False
+        self.bits -= amount
+        total = self.dna_owned.get(field, 0) + amount
+        if total > MAX_DNA_INVENTORY:
+            self.bits += total - MAX_DNA_INVENTORY          # refund the overflow as bits
+            total = MAX_DNA_INVENTORY
+        self.dna_owned[field] = total
+        return True
+
+    def apply_dna(self, field, amount):
+        """PhysicalState.applyDNA: owned -> charged, at a cost (disturb/strength/mood/spirit/sick)."""
+        owned = self.dna_owned.get(field, 0)
+        if amount <= 0 or owned < amount:
+            self._set_anim("refuse", 1.0)                   # Jeering: not enough DNA
+            return False
+        self.dna_owned[field] = owned - amount
+        self.dna_applied[field] = self.dna_applied.get(field, 0) + amount
+        self.disturb += 1                                   # DVPet disturb()
+        self.strength = _clamp(self.strength + DNA_STRENGTH_CHANGE * amount, 0, 4)
+        same = field == self.field
+        self._set_mood(self.mood + (DNA_SAME_FIELD_MOOD if same else DNA_DIFF_FIELD_MOOD) * amount)
+        self._set_enthusiasm(self.enthusiasm
+                             - (DNA_SAME_FIELD_ENTH_DEC if same else DNA_DIFF_FIELD_ENTH_DEC) * amount)
+        chance = (DNA_SAME_FIELD_SICK if same else DNA_DIFF_FIELD_SICK) * amount
+        for _ in range(2):                                  # checkWorseSick + checkSick (2 rolls)
+            if random.random() < chance / DNA_SICK_BOUND:
+                self._sicken()
+                break
+        return True
+
+    def reset_dna(self):
+        """DNA.resetDNA (via resetEvolVar): charged DNA clears on evolution; owned inventory persists."""
+        self.dna_applied = {f: 0 for f in data.DNA_FIELDS}
+
+    # ---- per-species physiology (DVPet calcNeedDecay coefficients) -------
+    def _phys(self):
+        return data.load_requirements().get(self.num, {})
+
+    @property
+    def _hunger_interval(self):
+        return CALORIE_DECAY_SEC * (self._phys().get("hunger_decay", 60) / REF_HUNGER_COEF)
+
+    @property
+    def _poop_interval(self):
+        r = self._phys()
+        return POOP_INTERVAL_BASE * (r.get("poop_limit", 64) / max(1, r.get("poop_lapse", 1))) / REF_POOP_RATIO
+
+    @property
+    def _strength_interval(self):
+        return STRENGTH_DECAY_BASE * (self._phys().get("strength_decay", 50) / REF_STRENGTH_COEF)
+
+    # ---- nutrition (DVPet GoodNutrition: protein/mineral/vitamin macros) --
+    def good_nutrition(self):
+        return (self.nutr_protein >= GOOD_NUTRITION_MIN and self.nutr_mineral >= GOOD_NUTRITION_MIN
+                and self.nutr_vitamin >= GOOD_NUTRITION_MIN)
+
+    def _apply_nutrition(self, food):
+        """PhysicalState.applyNutrition: a meal adds its macros (clamped 0..MaxMacro)."""
+        self.nutr_protein = _clamp(self.nutr_protein + int(food.get("protein", 0)), 0, MAX_MACRO)
+        self.nutr_mineral = _clamp(self.nutr_mineral + int(food.get("mineral", 0)), 0, MAX_MACRO)
+        self.nutr_vitamin = _clamp(self.nutr_vitamin + int(food.get("vitamin_n", 0)), 0, MAX_MACRO)
+
+    # ---- food taste (DVPet Taste<Food>) ----------------------------------
+    def _species_food(self):
+        r = data.load_requirements().get(self.num, {})
+        return (r.get("food_pref", "None"), r.get("food_aversion", "None"),
+                r.get("food_intol", []))
+
+    def major_food(self):
+        """PhysicalState.getMajorFood: the strictly most-eaten category, else None."""
+        best = max(self.food_eaten.values(), default=0)
+        if best <= 0:
+            return None
+        top = [c for c in data.FOOD_CATEGORIES if self.food_eaten.get(c, 0) == best]
+        return top[0] if len(top) == 1 else None
+
+    def _change_rank(self, cat):
+        """Taste.changeRank: bump the eaten category's rank (+/- species pref bias); eating
+        your current favourite/disliked pulls the OTHER ranks back toward 0; clamp to
+        +/-RankLimit; a rank that reaches the cap becomes the new favourite/disliked."""
+        pref, aver, _ = self._species_food()
+        delta = RANK_CHANGE_FOOD
+        if cat == pref:
+            delta += RANK_PREF_INC
+        elif cat == aver:
+            delta -= RANK_PREF_INC
+        if cat == self.disliked_food:
+            delta += RANK_DISLIKED
+            for c in data.FOOD_CATEGORIES:                 # incRankExcept toward 0
+                if c != cat and self.food_ranks[c] < 0:
+                    self.food_ranks[c] = min(0, self.food_ranks[c] + RANK_AFTER_FAV)
+        if cat == self.favorite_food:
+            for c in data.FOOD_CATEGORIES:                 # decRankExcept toward 0
+                if c != cat and self.food_ranks[c] > 0:
+                    self.food_ranks[c] = max(0, self.food_ranks[c] - RANK_AFTER_FAV)
+        self.food_ranks[cat] = _clamp(self.food_ranks[cat] + delta, RANK_MIN, RANK_LIMIT)
+        for c in data.FOOD_CATEGORIES:
+            if self.food_ranks[c] >= RANK_LIMIT:
+                self.favorite_food = c
+            elif self.food_ranks[c] <= RANK_MIN:
+                self.disliked_food = c
+
+    def _eat_food(self, category):
+        """DVPet feed taste. A food's Type is a ";"-list of categories (foodType.getType()):
+        the tier comes from whether any category is the CURRENT disliked (first) or favourite,
+        then each category's rank/eaten is bumped (incFoodRankAndEaten) and intolerance rolled."""
+        cats = [c for c in (category or "").split(";") if c in data.FOOD_CATEGORIES]
+        if not cats:
+            return "neutral"
+        if self.disliked_food and self.disliked_food in cats:
+            tier = "disliked"
+            self._set_mood(self.mood - FAV_FOOD_MOOD)
+            self.obedience += DISLIKED_FOOD_OBEDIENCE
+        elif self.favorite_food and self.favorite_food in cats:
+            tier = "favorite"
+            self._set_mood(self.mood + FAV_FOOD_MOOD)
+            self._set_enthusiasm(self.enthusiasm + FAV_FOOD_ENTH)
+        else:
+            tier = "neutral"
+            self._set_mood(self.mood + FOOD_MOOD)
+        for c in cats:                                     # incFoodRankAndEaten: per category
+            self.food_eaten[c] = self.food_eaten.get(c, 0) + 1
+            self._change_rank(c)
+        _, _, intol = self._species_food()
+        if any(c in intol for c in cats):                  # checkIntolerantFoodSick (x2 rolls)
+            for _ in range(2):
+                if random.random() < INTOL_FOOD_SICK_CHANCE / 100:
+                    self._sicken()
+                    break
+        return tier
+
     def evolve_to(self, num):
         _, by_num = data.load_sprites()
         r = by_num[num]
@@ -753,9 +965,20 @@ class Pet:
         self.sick = False
         self.sick_length = self.inj_length = self.fatigue_length = 0.0
         self.levels_fought = []
+        self.reset_dna()                # DNA.resetDNA: charged DNA clears each evolution
+        self.food_eaten = {c: 0 for c in data.FOOD_CATEGORIES}   # MajorFood resets per stage
         self.weight = self._base_weight()
-        # reaching a higher stage extends the total lifespan toward that stage's floor
-        self.lifespan = max(self.lifespan, STAGE_LIFE.get(self.stage, self.lifespan))
+        # DVPet attributeEvolChange: a form raises/lowers the carried attribute powers
+        self.vaccine = max(0, self.vaccine + _req.get("vaccine_change", 0))
+        self.data_power = max(0, self.data_power + _req.get("data_change", 0))
+        self.virus = max(0, self.virus + _req.get("virus_change", 0))
+        # reaching a higher stage extends lifespan toward the stage floor; LifespanMod adjusts
+        # it per form (real-time scale). GrowthPeriodMod is omitted -- DVPet's growth period is
+        # in real days while tuipet's evolve timer is compressed, so the scales don't align.
+        self.lifespan = max(self.lifespan,
+                            STAGE_LIFE.get(self.stage, self.lifespan) + _req.get("lifespan_mod", 0))
+        if _req.get("give_item", -1) >= 0:        # GiveItem: grant a consumable (dormant in data)
+            self.add_item(f"i:{_req['give_item']}")
         self._set_anim("happy", 2.5)
 
     # ---- care actions --------------------------------------------------------
@@ -859,15 +1082,18 @@ class Pet:
             self.weight += 1
             self.overeat += 1
             self.calories = CALORIE_LIMIT
-            self._poop_t = min(2700, getattr(self, "_poop_t", 0) + 900)   # overeat -> sooner poop (AboveMaxCalories->bmGauge)
+            self._poop_t = min(self._poop_interval, getattr(self, "_poop_t", 0) + 900)   # overeat -> sooner poop
             self._set_anim("refuse", 1.0)
             return f"{self.name} is too full!"
         self.hunger = _clamp(self.hunger + max(1, food["hunger"]), 0, 4)
         self.calories = CALORIE_LIMIT                       # a meal refills the calorie buffer
         self.weight += food.get("weight", 1)
-        self._set_mood(self.mood + food.get("mood", 0))     # foods.csv Mood (DVPet-scale)
+        self._set_mood(self.mood + food.get("mood", 0))     # foods.csv intrinsic mood
+        tier = self._eat_food(food.get("category", ""))     # DVPet taste: fav/disliked/neutral
+        self._apply_nutrition(food)                          # GoodNutrition macros
         self._set_anim("eat", 1.4)
-        return f"Fed {food['name']}."
+        tag = {"favorite": "  It loves it!", "disliked": "  It dislikes that."}.get(tier, "")
+        return f"Fed {food['name']}.{tag}"
 
     def can_train(self):
         if self.dead:
@@ -1263,13 +1489,18 @@ class Pet:
             return "It rests now — press N for a new egg."
         if self.stage == "Egg":
             return "It is still an egg."
-        if not self.sick:
-            return "Not sick."
-        self.sick = False
-        self.sick_length = 0.0                      # medicine cures the illness outright
+        if not self.sick and not self.is_injured():
+            return "It's not sick or injured."
+        sick0, inj0 = self.sick, self.is_injured()
+        if self.sick:
+            self.sick = False
+            self.sick_length = 0.0                  # medicine cures the illness outright
+        if self.is_injured():
+            self.inj_length = 0.0                   # first aid mends the active injury (DVPet bath/recovery)
         self._set_mood(self.mood + 75)              # curedMoodBonus
         self._set_anim("heal", 1.5)
-        return f"{self.name} feels better!"
+        what = "illness and injury" if (sick0 and inj0) else ("injury" if inj0 else "illness")
+        return f"Treated {self.name}'s {what}."
 
     def toggle_lights(self):
         """The lights button (DVPet setLights): toggles the room light ONLY. The pet
@@ -1311,6 +1542,8 @@ class Pet:
         e = data.consumable_by_key(key)
         if not e:
             return "?"
+        if not data.item_is_functional(e):
+            return f"{e['name']} has no use yet."   # action-item whose system is unbuilt
         if self.dead:
             return "It rests now — press N for a new egg."
         if self.stage == "Egg":
@@ -1335,6 +1568,17 @@ class Pet:
             self._set_anim("happy", 1.4)
             made = (data.consumable_by_key(got) or {}).get("name", got)
             return f"{self.name} got a {made}!"
+        if e.get("action") == "ItemEvol":           # item-triggered evolution (Digimental/etc.)
+            target = evolution.item_select(self, e["id"])
+            if target is None and e.get("dexnum", -1) >= 0:
+                target = evolution.item_direct(self, e["dexnum"])
+            if target is None:
+                self.inventory[key] = self.inventory.get(key, 0) + 1   # refund: not usable now
+                self._set_anim("refuse", 1.0)
+                return f"{self.name} can't use that yet."
+            self.evolve_to(target)
+            self._set_anim("happy", 1.4)
+            return f"{self.name} evolved!"
         is_food = key.startswith("f:")
         if e["hunger"]:
             self.hunger = _clamp(self.hunger + e["hunger"], 0, 4)
@@ -1363,6 +1607,9 @@ class Pet:
         if e["healed"]:
             self.injuries = max(0, self.injuries - 1)
             self.inj_length = 0.0
+        if is_food:
+            self._eat_food(e.get("category", ""))           # bag food -> same taste system
+            self._apply_nutrition(e)
         self._set_anim("eat" if is_food else "happy", 1.4)
         return f"Used {e['name']}."
 

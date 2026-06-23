@@ -3,7 +3,7 @@ name = "tuipet"
 version = "0.1.0"
 description = "A terminal virtual pet (Digimon V-Pet style) rendered with halfblock sprites, built on data extracted from DVPet."
 requires-python = ">=3.10"
-dependencies = ["textual>=0.50", "rich>=13"]
+dependencies = ["textual>=0.50", "rich>=13", "websockets>=12"]
 
 [project.scripts]
 tuipet = "tuipet.app:main"

@@ -118,6 +118,12 @@ def load_foods():
                     "mood": int(row["Mood"] or 0),
                     "energy": int(row["Energy"] or 0),
                     "strength": int(row["Strength"] or 0),
+                    "obedience": int(row["Obedience"] or 0),
+                    "enthusiasm": int(row["Enthusiasm"] or 0),
+                    "category": (row.get("Type") or "").strip(),
+                    "protein": int(row.get("Proteins") or 0),
+                    "vitamin_n": int(row.get("Vitamins") or 0),
+                    "mineral": int(row.get("Minerals") or 0),
                 })
             except (KeyError, ValueError):
                 continue
@@ -176,6 +182,13 @@ def _int_or(s, default):
         return default
 
 
+# DVPet DNA fields (Enum.Field order, matching digimon.csv {Field}Key/{Field}Value cols)
+FOOD_CATEGORIES = ("Meat", "Fish", "Veg", "Fruit", "Med", "Junk", "Grain", "Dairy")
+DNA_FIELDS = ("VirusBuster", "MetalEmpire", "DragonsRoar", "JungleTrooper",
+              "DeepSaver", "NightmareSoldier", "WindGuardian", "NatureSpirit",
+              "DarkArea", "None")
+
+
 def _gate(row, key, val):
     cond = (row.get(key) or "None").strip() or "None"
     try:
@@ -183,6 +196,39 @@ def _gate(row, key, val):
     except ValueError:
         v = 0.0
     return (cond, v)
+
+
+def _attack_index(s):
+    """digimon.csv col 55 'vaccineNum:dataNum:virusNum' -> per-attribute special-orb index (-1 = none)."""
+    parts = (s or "").split(":")
+    out = {}
+    for attr, i in (("Vaccine", 0), ("Data", 1), ("Virus", 2)):
+        try:
+            out[attr] = int(parts[i])
+        except (ValueError, IndexError):
+            out[attr] = -1
+    return out
+
+
+@lru_cache(maxsize=1)
+def load_orbs():
+    with gzip.open(os.path.join(_DATA, "orbs.json.gz")) as fh:
+        return json.load(fh)
+
+
+def attack_orb(num, attribute, power):
+    """DVPet checkAttackSprite: the Digimon's per-species special orb (attackSpritesSpecial.png,
+    digimon.csv col 55) if set for this attribute, else the generic per-attribute orb at the
+    power tier floor(power/25) from attackSprites.png."""
+    orbs = load_orbs()
+    idx = (load_requirements().get(num, {}).get("attack_index") or {}).get(attribute, -1)
+    if idx is not None and idx >= 0:
+        sp = orbs["special"].get(str(idx))
+        if sp:
+            return sp
+    tiers = orbs["generic"].get(attribute) or orbs["generic"]["Vaccine"]
+    t = max(0, min(int(power) // 25, len(tiers) - 1))
+    return tiers[t] or next((x for x in tiers if x), None)
 
 
 @lru_cache(maxsize=1)
@@ -222,11 +268,34 @@ def load_requirements():
             "xantibody": (r.get("Xantibody") or "None").strip() or "None",
             "temp_req": _temp_req(r.get("TempReq")),
             "habitat_req": _int_or(r.get("Habitat"), -1),
+            "field": (r.get("NewField") or "None").strip() or "None",
+            "element": (r.get("Element") or "None").strip() or "None",
             "mood": (r.get("Mood") or "None").strip(),
             "time": (r.get("Time") or "None").strip(),
             "special": (r.get("SpecialEvolution") or "None").strip() or "None",
             "level_fought_min": _int_or(r.get("MinLevelFought (vaccine+data+virus+[health*100])/100"), 0),
             "level_fought": _gate(r, "LevelFoughtKey", "LevelFoughtValue"),
+            "dna": {f: _gate(r, f + "Key", f + "Value") for f in DNA_FIELDS},
+            "evol_item": _int_or(r.get("EvolItemID"), -1),   # item that triggers this form
+            "attack_index": _attack_index(r.get("SpecialAttacksVaccineDataVirus")),
+            "food_pref": (r.get("FoodPreference") or "None").strip() or "None",
+            "food_aversion": (r.get("FoodAversion") or "None").strip() or "None",
+            "food_intol": [x.strip() for x in (r.get("FoodIntolerance(; separator)") or "").split(";")
+                           if x.strip() and x.strip() != "None"],
+            "major_food": (r.get("MajorFood") or "None").strip() or "None",
+            "hunger_decay": _int_or(r.get("HungerDecayCoefficient"), 60),
+            "strength_decay": _int_or(r.get("StrengthDecayCoefficient"), 50),
+            "poop_lapse": _int_or(r.get("PoopLapseInc"), 1),
+            "poop_limit": _int_or(r.get("PoopLimit"), 64),
+            "poop_sick_mult": float(r.get("PoopSickChanceBoundMultiplier") or 1.0),
+            "filth_mood": _int_or(r.get("FilthLapseMoodChange"), -1),
+            "max_strength": _int_or(r.get("MaxStrength"), 4),
+            "vaccine_change": _int_or(r.get("VaccineChange"), 0),    # attributeEvolChange
+            "data_change": _int_or(r.get("DataChange"), 0),
+            "virus_change": _int_or(r.get("VirusChange"), 0),
+            "lifespan_mod": _int_or(r.get("LifespanMod"), 0),        # per-form lifespan delta
+            "give_item": _int_or(r.get("GiveItem"), -1),             # consumable granted on evolve
+            "incarnations": _gate(r, "IncarnationsKey", "IncarnationsValue"),  # generation-count gate
             "max_energy": _int_or(r.get("MaxEnergy"), 24),          # DVPet per-Digimon maxEnergy
             "sleep_energy_gain": _int_or(r.get("SleepEnergyGain"), 3),
         }
@@ -406,6 +475,9 @@ def _consumable(row, id_field):
         # (a "crafter" -- Toy Oven bakes random foods, Chocolate Egg pops random capsules)
         "unlocks_food": _idlist(row.get("FoodID")),
         "unlocks_item": _idlist(row.get("ItemID")),
+        "action": (row.get("AnimationType") or "").strip(),  # DVPet item behaviour driver
+        "dexnum": int(num("DigimonID")),  # direct ItemEvol target form (-1 if none)
+        "category": (row.get("Type") or "").strip(),  # foods.csv food category for taste
     }
 
 
@@ -432,6 +504,32 @@ def _load_consumables():
         except (KeyError, ValueError):
             continue
     return foods, items
+
+
+# An item is "functional" in tuipet only if use_item actually applies an effect.
+# Pure action-items whose AnimationType drives an UNIMPLEMENTED system (the
+# *Transport warps, ItemEvol evolution items, Recover lives, Inherit digimemory)
+# carry zero stats and currently do nothing -- they are filtered out of the shop
+# and loot until their system is built. Extend this as each system is implemented.
+_FUNC_STATS = ("hunger", "mood", "enthusiasm", "weight", "energy",
+               "strength", "obedience", "vaccine", "data", "virus")
+_FUNC_FLAGS = ("cured", "healed", "unfatigue", "undepressed", "vitamin")
+
+
+# DVPet world-warp items (items.csv AnimationType); handled by transportscreen.
+TRANSPORT_ACTIONS = {"PhoenixTransport", "BirdraTransport", "GarudaTransport", "WhaTransport"}
+
+
+def item_is_functional(e):
+    if not e:
+        return False
+    if any(e.get(k) for k in _FUNC_STATS) or any(e.get(k) for k in _FUNC_FLAGS):
+        return True
+    if e.get("action") == "ItemEvol":   # item-triggered evolution (now implemented)
+        return True
+    if e.get("action") in TRANSPORT_ACTIONS:   # world-warp items (now implemented)
+        return True
+    return bool(e.get("special") or e.get("unlocks_food") or e.get("unlocks_item"))
 
 
 @lru_cache(maxsize=1)
@@ -477,6 +575,7 @@ def load_shop():
         if base and key not in seen:
             entry = dict(base); entry["key"], entry["price"] = key, price
             out.append(entry); seen.add(key)
+    out = [e for e in out if item_is_functional(e)]   # hide inert action-items
     out.sort(key=lambda e: e["price"])
     return out
 
@@ -519,7 +618,7 @@ def load_loot_tables():
                 continue
             is_food = row[2].strip().upper() == "TRUE"
             base = (foods if is_food else items).get(cid)
-            if not base:
+            if not base or not item_is_functional(base):   # no inert loot drops
                 continue
             rates[did] = {"key": ("f:%d" if is_food else "i:%d") % cid,
                           "name": base["name"], "rate": rate}

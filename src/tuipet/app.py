@@ -16,6 +16,8 @@ from . import data
 from . import egg as egg_mod
 from . import training
 from . import battlescreen
+from . import dnascreen
+from . import transportscreen
 from . import adventurescreen
 from . import shopscreen
 from . import habitatscreen
@@ -24,6 +26,8 @@ from . import eggselectscreen
 from . import persistence
 from . import jogressscreen
 from . import jogress
+from . import net
+from . import lobbyscreen
 from . import tournamentscreen
 from . import titlescreen
 from . import themescreen
@@ -75,7 +79,7 @@ CLOUD = ["0011100", "0111111", "1111111"]
 _K = "b cyan"
 KEYS = (
     f"[{_K}]f[/] feed  [{_K}]p[/] play  [{_K}]c[/] clean  [{_K}]h[/] heal  [{_K}]r[/] praise  [{_K}]k[/] scold  [{_K}]s[/] lights\n"
-    f"[{_K}]t[/] train  [{_K}]b[/] battle  [{_K}]a[/] adventure  [{_K}]u[/] cup  [{_K}]j[/] jogress\n"
+    f"[{_K}]t[/] train  [{_K}]b[/] battle  [{_K}]a[/] adventure  [{_K}]u[/] cup  [{_K}]j[/] jogress  [{_K}]x[/] DNA\n"
     f"[{_K}]o[/] shop  [{_K}]e[/] habitat  [{_K}]d[/] data  [{_K}]g[/] theme  [{_K}]m[/] sound  [{_K}]n[/] new  [{_K}]q[/] quit"
 )
 
@@ -144,10 +148,11 @@ def _effect_overlay(pet, frame_i, cols, px_h):
     if pet.dead:
         return pts
     pm = E.get("poop", [None])[0]
-    if pet.poop and pm:                                   # a row of piles, bottom-left (DVPet filth)
-        pw = len(pm[0])
-        for i in range(min(pet.poop, 3)):
-            pts += _blit(pm, 2 + i * (pw + 1), px_h - len(pm) - 2)
+    if pet.poop and pm:                                   # piles stack in a 2-wide grid (DVPet filth)
+        pw, ph_ = len(pm[0]), len(pm)
+        for i in range(min(pet.poop, 6)):
+            col, row = i % 2, i // 2
+            pts += _blit(pm, 2 + col * (pw + 1), (px_h - 2 - ph_) - row * (ph_ + 1))
     if pet.num == -1:
         return pts
     if pet.asleep and E.get("zzz"):                       # Zzz above a sleeper
@@ -223,18 +228,16 @@ class Screen(Static):
             # cold weather is NOT a freeze: DVPet's weathering() plays a brief huddle
             # reaction periodically (handled by the "huddle" quirk in pet.py); the pet
             # otherwise walks/bobs normally, so cold does not pin it in place here.
-        elif pet.anim in ("idle", "walk") and pet.num != -1 and pet.scold_flag:
-            # misbehaving (an open scold window): the pet jeers/acts up -- DVPet's
-            # disciplineCall cue; jeer poses 9<->10 so it reads as "scold me"
-            j = (10 if self.frame_i % 2 and 10 < len(_fr) else 9)
-            rows = (_fr[j] if j < len(_fr) else None) or first
         elif pet.anim in ("idle", "walk") and pet.num != -1:
+            # NOTE: a misbehaving pet (scold_flag) keeps walking/idling normally -- DVPet's
+            # disciplineCall shows ONLY a status icon (the '!', via _teachState) beside the
+            # pet; it does not freeze the sprite or pin a jeer pose.
             # pace back and forth; poop on the floor shrinks the free space -- the
             # pet still walks, just in the room to the right of the pile (DVPet
             # stepFrame uses filthLabel width as the left walk bound)
             sw = max(len(r) for r in rows)
             base = (SCREEN_COLS - sw) // 2
-            poop_right = (2 + min(pet.poop, 3) * (POOP_W + 1)) if pet.poop else 0
+            poop_right = (2 + min(pet.poop, 2) * (POOP_W + 1)) if pet.poop else 0
             lo = max(base - WALK_RANGE, poop_right)
             hi = min(SCREEN_COLS - sw - 1, max(base + WALK_RANGE, lo + 6))
             lo = min(lo, hi)
@@ -339,8 +342,9 @@ class Screen(Static):
                         overlay += _blit(pm, px, px_h - len(pm) - 2)
             if wash:
                 overlay += _blit(wash, wx, max(0, (px_h - len(wash)) // 2))
-            sw = max(len(r) for r in rows)
-            xshift = min(0, wx - sw - (SCREEN_COLS - sw) // 2)  # pet swept left in lockstep with the wash
+            # the pet stays put while the wash sweeps OVER it (a brief scrub); pushing it left
+            # in lockstep on this tiny LCD just smashed pet + wash + filth into one blob
+            xshift = 0
         elif fx["kind"] == "cheer":
             hap = data.load_effects().get("happy")
             if hap and (step // 2) % 2 == 0:                   # pulsing happy sparkle
@@ -476,7 +480,8 @@ class TuiPetApp(App):
         ("r", "praise", "Praise"), ("k", "scold", "Scold"),
         ("a", "adventure", "Adventure"), ("o", "shop", "Shop"), ("e", "habitat", "Habitat"),
         ("d", "digicore", "DigiCore"),
-        ("j", "jogress", "Jogress"), ("u", "tournament", "Cup"),
+        ("j", "jogress", "Jogress"), ("u", "tournament", "Cup"), ("x", "dna", "DNA"),
+        ("l", "lobby", "Lobby"),
         ("s", "sleep", "Lights"), ("g", "theme", "Theme"), ("m", "sound", "Sound"), ("n", "new", "New pet"), ("q", "quit", "Quit"),
     ]
 
@@ -527,6 +532,16 @@ class TuiPetApp(App):
         self.set_interval(10.0, self.autosave)
 
     def _after_title(self, _=None):
+        if not persistence.get_tamer():          # first launch: set your tamer name once
+            self._open_mode(lobbyscreen.NamePanel(), self._after_name)
+            return
+        self._post_title()
+
+    def _after_name(self, name):
+        persistence.set_tamer(name or "Tamer")
+        self._post_title()
+
+    def _post_title(self):
         if self._new_game:
             self._open_mode(eggselectscreen.EggSelectPanel(), self._after_egg_pick)
         else:
@@ -555,6 +570,10 @@ class TuiPetApp(App):
         if self.mode is not None:
             event.stop()
             result = self.mode.key(event.key)
+            snd = getattr(self.mode, "sfx", None)
+            if snd:
+                self.beep(snd, bell=False)
+                self.mode.sfx = None
             if result is not None and result[0] == "done":
                 self._close_mode(result[1])
             else:
@@ -573,6 +592,40 @@ class TuiPetApp(App):
             cb(result)
         else:
             self.repaint()
+
+    # ---- multiplayer lobby ----------------------------------------------
+    def action_lobby(self):
+        if self.mode is not None:
+            return
+        self._open_mode(lobbyscreen.LobbyPanel(self.pet, self._lobby_connect,
+                        name=persistence.get_tamer() or None),
+                        self._after_lobby)
+
+    def _lobby_connect(self, name, card):
+        """Create + start the WebSocket client; the app owns its worker lifecycle."""
+        persistence.set_tamer(name)
+        uri = os.environ.get("TUIPET_LOBBY_URL", "ws://127.0.0.1:8765")
+        client = net.LobbyClient(uri, name, card)
+        self._lobby_worker = self.run_worker(client.run(), name="lobby", exclusive=False)
+        return client
+
+    def _after_lobby(self, result=None):
+        w = getattr(self, "_lobby_worker", None)
+        if w is not None:
+            w.cancel()
+            self._lobby_worker = None
+        if isinstance(result, tuple) and result:
+            tag = result[0]
+            if tag == "jogress":
+                self.flash(jogress.fuse(self.pet, result[1]))   # same path as offline jogress
+                self.beep("jogress")
+            elif tag == "battle_record":          # guest records its own win/loss
+                self.flash(self.pet.record_battle(result[1], result[2]))
+                self.beep("attack")
+            elif tag == "battle_msg":             # host already recorded by the engine
+                self.flash(result[1])
+                self.beep("attack")
+        self.repaint()
 
     def action_quit(self):
         persistence.save(self.pet)
@@ -646,6 +699,8 @@ class TuiPetApp(App):
             self._status_training()
         elif isinstance(self.mode, battlescreen.BattlePanel):
             self._status_battle()
+        elif isinstance(self.mode, dnascreen.DNAPanel):
+            self._status_dna()
         elif isinstance(self.mode, digicorescreen.DigiCorePanel):
             dp = self.mode
             toc = [(f"[b]▸ {t}[/]" if j == dp.i else f"[dim]  {t}[/]")
@@ -743,21 +798,54 @@ class TuiPetApp(App):
         p, m, T = self.pet, self.mode, theme
         b = m.battle
         self.stats_w.border_subtitle = f"gen {p.generation}"
-        div = f"[dim]{'\u2500' * 26}[/]"
-        h3 = lambda n: "\u2665" * max(0, n) + "[dim]\u00b7[/]" * (3 - max(0, n))
+        div = f"[dim]{'─' * 26}[/]"
+        php = getattr(m, "hud_php", b.pet_hp)
+        fhp = getattr(m, "hud_fhp", b.enemy_hp)
+        pp = int(100 * php / b.pet_max) if b.pet_max else 0
+        fp = int(100 * fhp / b.enemy_max) if b.enemy_max else 0
         tag = f" [{T.NEG}]BOSS[/]" if b.enemy.get("boss") else ""
         lines = [
-            f"[b]{p.name[:14]}[/] [dim]\u00b7 battle[/]", div,
+            f"[b]{p.name[:14]}[/] [dim]· battle[/]", div,
             f"vs [b]{b.enemy['name'][:14]}[/]{tag}", "",
-            f"You      {h3(m.hud_pl)}",
-            f"Foe      {h3(m.hud_fl)}",
+            f"You  {bar(pp, 11, T.POS)} {php}/{b.pet_max}",
+            f"Foe  {bar(fp, 11, T.NEG)} {fhp}/{b.enemy_max}",
             div,
         ]
         if m.done_anim:
             res = f"[{T.POS}]VICTORY![/]" if m.won else f"[{T.NEG}]DEFEAT[/]"
             lines += [res, f"[dim]{(b.reward or '')[:24]}[/]", "", "[dim]SPACE  continue[/]"]
         else:
-            lines += [f"[dim]{(m.hud_note or '')[:24]}[/]", "", "[dim]SPACE  skip[/]"]
+            hint = "↑↓ ENTER pick" if getattr(m, "phase", "") == "menu" else "SPACE  skip"
+            lines += [f"[dim]{(m.hud_note or '')[:24]}[/]", "", f"[dim]{hint}[/]"]
+        self.stats_w.update("\n".join(lines))
+
+    def _status_dna(self):
+        p, m, T = self.pet, self.mode, theme
+        self.stats_w.border_subtitle = f"gen {p.generation}"
+        div = f"[dim]{'─' * 26}[/]"
+        f = m.field
+        same = f == p.field
+        own, chg = p.dna_owned.get(f, 0), p.dna_applied.get(f, 0)
+        cost = "spirit -3/ea  mood+" if same else "spirit -6/ea  mood-  ill?"
+        from . import data, evolution
+        reqs = data.load_requirements()
+        dna_t = [t for t in data.load_evolutions().get(p.num, [])
+                 if reqs.get(t) and any(g[0] != "None" for g in reqs[t]["dna"].values())]
+        unlocked = sum(1 for t in dna_t if evolution._dna_ok(p, reqs[t]))
+        lines = [
+            f"[b]{p.name[:14]}[/] [dim]· DNA[/]", div,
+            f"Bits     [{T.COIN}]{p.bits}[/]",
+            f"Field    {f}" + ("  [dim](own)[/]" if same else ""),
+            f"Banked   {own}     Charged {chg}",
+            f"Share    {p.dna_percent(f)}%    [dim]x{m.amount}[/]",
+            f"Unlocks  [b]{unlocked}[/]/{len(dna_t)} form(s)",
+            div,
+            f"[dim]{cost}[/]",
+            f"[dim]{(m.last or '')[:24]}[/]",
+            "",
+            "[dim]G gen  ENTER charge[/]",
+            "[dim]←→ amount  ESC out[/]",
+        ]
         self.stats_w.update("\n".join(lines))
 
     def _status_adventure(self):
@@ -816,6 +904,8 @@ class TuiPetApp(App):
                     self._status_training()
                 elif isinstance(self.mode, battlescreen.BattlePanel):
                     self._status_battle()
+                elif isinstance(self.mode, dnascreen.DNAPanel):
+                    self._status_dna()
         elif self.screen_w.fx:
             self.screen_w.advance_fx()
             self.screen_w.paint(self.pet)
@@ -931,6 +1021,16 @@ class TuiPetApp(App):
             self.beep("jogress")
         self.repaint()
 
+    def action_dna(self):
+        reason = self.pet.can_charge_dna()
+        if reason:
+            self._do(reason); return
+        self._open_mode(dnascreen.DNAPanel(self.pet), self._after_dna)
+
+    def _after_dna(self, _=None):
+        self.autosave()
+        self.repaint()
+
     def action_shop(self):
         self._open_mode(shopscreen.ShopPanel(self.pet), self._after_shop)
 
@@ -948,8 +1048,21 @@ class TuiPetApp(App):
     def _after_shop(self, msg):
         if isinstance(msg, tuple) and msg and msg[0] == "eat":
             self.screen_w.start_fx("eat", msg[1])        # the pet eats what you fed from the bag
+        elif isinstance(msg, tuple) and msg and msg[0] == "evolve":
+            self.beep("evolve")
+            self.flash(f"[b]{self.pet.name}![/] evolved to {self.pet.stage}!")
+            self.screen_w.start_fx("evolve", old_num=msg[1])
+        elif isinstance(msg, tuple) and msg and msg[0] == "transport":
+            self._open_mode(transportscreen.TransportPanel(self.pet, msg[1]), self._after_transport)
+            return
         elif msg:
             self.flash(msg)
+        self.repaint()
+
+    def _after_transport(self, msg):
+        if msg:
+            self.flash(msg)
+        self.autosave()
         self.repaint()
 
     def action_adventure(self):

@@ -17,3 +17,6 @@ raw_model
 
 # Save data
 *.save
+
+# Decompiled DVPet Java used only for the porting audit — never commit (copyrighted)
+_audit_src/

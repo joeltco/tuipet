@@ -41,8 +41,7 @@ PRECIP = RAIN | SNOW
 WEATHER_CHECK_SEC = 600.0
 TEMP_RATE = 0.05            # temperature lapses this fast toward its target
 IDEAL_TEMP_MOOD_SEC = 1800.0
-BAD_TEMP_SICK_SEC = 1200.0
-BAD_TEMP_SICK_CHANCE = 0.015
+BAD_TEMP_SICK_SEC = 1200.0   # cadence of the environmental (incompatible-habitat) sick check
 
 
 def _calc_weather(weather, warm):
