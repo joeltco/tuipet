@@ -163,7 +163,8 @@ def _effect_overlay(pet, frame_i, cols, px_h):
         ef = E[emo][frame_i % len(E[emo])]
         pts += _blit(ef, cols - len(ef[0]) - 2, 1)
     elif (pet.anim in ("idle", "walk") and frame_i % 2 == 0 and E.get("attention")
-          and (pet.hunger == 0 or pet.sick or pet.poop >= 3 or pet.energy <= 0)):
+          and (pet.hunger == 0 or pet.sick or pet.poop >= 3 or pet.energy <= 0
+               or getattr(pet, "scold_flag", False))):
         pts += _blit(E["attention"][0], cols - len(E["attention"][0][0]) - 2, 1)  # '!' call for care
     return pts
 
@@ -221,6 +222,11 @@ class Screen(Static):
             # cold weather is NOT a freeze: DVPet's weathering() plays a brief huddle
             # reaction periodically (handled by the "huddle" quirk in pet.py); the pet
             # otherwise walks/bobs normally, so cold does not pin it in place here.
+        elif pet.anim in ("idle", "walk") and pet.num != -1 and pet.scold_flag:
+            # misbehaving (an open scold window): the pet jeers/acts up -- DVPet's
+            # disciplineCall cue; jeer poses 9<->10 so it reads as "scold me"
+            j = (10 if self.frame_i % 2 and 10 < len(_fr) else 9)
+            rows = (_fr[j] if j < len(_fr) else None) or first
         elif pet.anim in ("idle", "walk") and pet.num != -1:
             # pace back and forth; poop on the floor shrinks the free space -- the
             # pet still walks, just in the room to the right of the pile (DVPet
@@ -842,7 +848,8 @@ class TuiPetApp(App):
             self.beep("poop", bell=False)
         # care-need call (classic V-pet nag): alert on onset, then every ~90s
         needs = (not p.dead and p.stage != "Egg" and not p.asleep
-                 and (p.hunger == 0 or p.sick or p.poop >= 3 or p.energy <= 0))
+                 and (p.hunger == 0 or p.sick or p.poop >= 3 or p.energy <= 0
+                      or p.scold_flag))
         if needs and not self._needs:
             self.beep("alarm")
             self._nag_t = 0.0
