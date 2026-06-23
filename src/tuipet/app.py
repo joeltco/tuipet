@@ -604,7 +604,7 @@ class TuiPetApp(App):
     def _lobby_connect(self, name, card):
         """Create + start the WebSocket client; the app owns its worker lifecycle."""
         persistence.set_tamer(name)
-        uri = os.environ.get("TUIPET_LOBBY_URL", "ws://127.0.0.1:8765")
+        uri = os.environ.get("TUIPET_LOBBY_URL", "ws://68.183.59.19:8765")  # live lobby; override for local dev
         client = net.LobbyClient(uri, name, card)
         self._lobby_worker = self.run_worker(client.run(), name="lobby", exclusive=False)
         return client
