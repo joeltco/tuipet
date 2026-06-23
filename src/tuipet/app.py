@@ -831,10 +831,11 @@ class TuiPetApp(App):
             if prev[1] == "Egg":
                 self.beep("hatch")
                 self.flash(f"[b]{p.name}[/] hatched!")
+                # hatch has NO evolve dither -- the egg already shook; the Fresh just appears
             else:
                 self.beep("evolve")
                 self.flash(f"[b]{p.name}![/] evolved to {p.stage}!")
-            self.screen_w.start_fx("evolve", old_num=prev[0])
+                self.screen_w.start_fx("evolve", old_num=prev[0])
         elif p.poop > poop0:
             self.beep("poop", bell=False)
         # care-need call (classic V-pet nag): alert on onset, then every ~90s
