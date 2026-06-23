@@ -60,11 +60,12 @@ def _cbounds(rows):
 BANNER_FLASHES = 3        # how many times "BATTLE" blinks
 BANNER_HOLD = 3           # ticks per banner frame
 FACEOFF_T = 5
-BEAM_T = 6                # beams fly to centre
-CLASH_T = 2               # beams meet
+WINDUP_T = 3              # attacker rears back before firing
+FIRE_T = 6                # the weapon flies one-way to the defender
 EXPLODE_HOLD = 2          # ticks per explosion frame
-EXPLODE_FRAMES = 4        # total explosion ticks per hit
-FLINCH_T = 3
+EXPLODE_FRAMES = 6        # fullscreen hit-explosion flicker
+FLINCH_T = 3              # defender reels after a hit
+DODGE_T = 5               # defender leaps clear; the shot whiffs past
 
 
 class BattlePanel:
@@ -91,32 +92,68 @@ class BattlePanel:
         self.foe_attr = b.enemy.get("attribute", "Virus")
         winner = "pet" if self.won else "foe"
         loser = "foe" if self.won else "pet"
-        self.pet_lives = 3
-        self.foe_lives = 3
+        self.result_winner = winner
+
+        # --- build the turn-based exchange (DMU j(): one fires, the other dodges
+        # or is hit; never simultaneous). The winner lands its shots; the loser's
+        # shots mostly whiff, landing once for tension. First side to 0 lives loses.
+        # orb count per side: out-powering the foe fires the stronger DOUBLE shot
+        # (2 orbs, DMU Attack1), otherwise a single orb (Attack0) -- the manual:
+        # "power higher than the enemy -> stronger attack."
+        e = self.battle.enemy
+        pet_pow = self.pet.vaccine + self.pet.data_power + self.pet.virus
+        foe_pow = e.get("vaccine", 0) + e.get("data_power", 0) + e.get("virus", 0)
+        orbs_of = {"pet": 2 if pet_pow > foe_pow else 1,
+                   "foe": 2 if foe_pow > pet_pow else 1}
+
+        pl = fl = 3
+        loser_may_hit = 1                      # the loser lands this many before falling
+        turn = winner                          # winner opens
+        attacks = []
+        while pl > 0 and fl > 0:
+            atk = turn
+            dfn = "foe" if atk == "pet" else "pet"
+            if atk == winner:
+                hit = True                     # the winner's shots connect
+            else:
+                # the loser only lands while it still has a budgeted hit AND it
+                # won't KO the winner (so the winner survives to win)
+                wlives = pl if winner == "pet" else fl
+                hit = loser_may_hit > 0 and wlives > 1
+                if hit:
+                    loser_may_hit -= 1
+            if hit:
+                if dfn == "foe":
+                    fl = max(0, fl - 1)
+                else:
+                    pl = max(0, pl - 1)
+            attacks.append({"atk": atk, "def": dfn, "hit": hit,
+                            "orbs": orbs_of[atk], "pl": pl, "fl": fl})
+            turn = dfn                          # the defender shoots back next
 
         tl = []
-        # 1) BATTLE banner flash (fullscreen)
-        for _ in range(BANNER_FLASHES):
+        for _ in range(BANNER_FLASHES):         # 1) "BATTLE" banner flashes fullscreen
             tl += [{"m": "banner", "f": 0}] * BANNER_HOLD
             tl += [{"m": "banner", "f": 1}] * BANNER_HOLD
-        # 2) face-off
-        tl += [{"m": "faceoff"}] * FACEOFF_T
-        # 3) three exchanges, the loser hit each time (stronger pushes through)
-        pl, fl = 3, 3
-        for ex in range(3):
-            for s in range(BEAM_T):
-                tl.append({"m": "beams", "prog": (s + 1) / BEAM_T})
-            tl += [{"m": "clash"}] * CLASH_T
-            if loser == "pet":
-                pl -= 1
+        tl += [{"m": "faceoff"}] * FACEOFF_T    # 2) the two face off
+        cpl = cfl = 3                           # hearts shown DURING each beat
+        for a in attacks:                       # 3) trade blows, one at a time
+            for _ in range(WINDUP_T):
+                tl.append({"m": "windup", "atk": a["atk"], "pl": cpl, "fl": cfl})
+            for s in range(FIRE_T):
+                tl.append({"m": "fire", "atk": a["atk"], "prog": (s + 1) / FIRE_T,
+                           "orbs": a["orbs"], "pl": cpl, "fl": cfl})
+            if a["hit"]:
+                cpl, cfl = a["pl"], a["fl"]     # the shot lands -> life drops now
+                for s in range(EXPLODE_FRAMES):
+                    tl.append({"m": "hit", "f": (s // EXPLODE_HOLD) % 2, "def": a["def"],
+                               "pl": cpl, "fl": cfl})
+                tl += [{"m": "flinch", "def": a["def"], "pl": cpl, "fl": cfl}] * FLINCH_T
             else:
-                fl -= 1
-            for s in range(EXPLODE_FRAMES):
-                tl.append({"m": "explode", "f": (s // EXPLODE_HOLD) % 2,
-                           "loser": loser, "pl": pl, "fl": fl})
-            tl += [{"m": "flinch", "loser": loser, "pl": pl, "fl": fl}] * FLINCH_T
+                for s in range(DODGE_T):        # the defender leaps clear -- a miss
+                    tl.append({"m": "dodge", "def": a["def"], "prog": (s + 1) / DODGE_T,
+                               "orbs": a["orbs"], "pl": cpl, "fl": cfl})
         self.timeline = tl
-        self.result_winner = winner
 
     # ---- driving --------------------------------------------------------
     def anim(self):
@@ -162,20 +199,25 @@ class BattlePanel:
         on = SIL_NIGHT if self.pet.day_phase == "night" else (SIL_DAY if bgimg else LCD_ON)
         return render_scene(placements, COLS, ROWS, on, LCD_BG, overlay=overlay, bgimg=bgimg)
 
-    def _beam_overlay(self, prog, p_edge, f_edge):
-        """Both fighters' beams fly inward and clash at the centre."""
+    def _orb_ys(self, orbs):
+        """1 orb on the firing line; 2 orbs straddle it 8px apart (DMU draws ap at
+        y and y+8 for the double shot)."""
+        return [PXH - 12] if orbs <= 1 else [PXH - 15, PXH - 7]
+
+    def _shot_overlay(self, attacker, prog, orbs, p_edge, f_edge):
+        """1 or 2 orbs fly from the attacker toward the defender (never both sides)."""
+        if attacker == "pet":                            # player (left) fires right at the foe
+            beam = ATK.get(self.pet_attr); src = beam
+            x0, x1 = p_edge, f_edge - (len(beam[0]) if beam else 0)
+        else:                                            # foe (right) fires left at the player
+            beam = ATK.get(self.foe_attr); src = [r[::-1] for r in beam] if beam else beam
+            x0, x1 = f_edge - (len(beam[0]) if beam else 0), p_edge
+        if not beam:
+            return []
+        x = max(0, min(int(x0 + (x1 - x0) * prog), COLS - len(beam[0])))
         cells = []
-        mid = (p_edge + f_edge) // 2
-        pbeam, fbeam = ATK.get(self.pet_attr), ATK.get(self.foe_attr)
-        py = PXH - 12
-        if pbeam:
-            w = len(pbeam[0])
-            x = int(p_edge + (mid - p_edge) * prog)
-            cells += _blit(pbeam, min(x, mid - w), py)
-        if fbeam:
-            w = len(fbeam[0])
-            x = int(f_edge - (f_edge - mid) * prog)
-            cells += _blit([r[::-1] for r in fbeam], max(x - w, mid), py)
+        for y in self._orb_ys(orbs):
+            cells += _blit(src, x, y)
         return cells
 
     def text(self):
@@ -189,40 +231,48 @@ class BattlePanel:
         if m == "banner":
             scene = self._scene([], _full(BANNER[fr["f"]]))
             note = "BATTLE!"
-        elif m == "explode":
-            scene = self._scene([], _full(EXPLODE[fr["f"]]))
-            pl, fl = fr["pl"], fr["fl"]
+        elif m == "hit":
+            scene = self._scene([], _full(EXPLODE[fr["f"]]))   # fullscreen hit explosion
             note = "HIT!"
         else:
+            dfn = fr.get("def")
+            atk = fr.get("atk") or ("foe" if dfn == "pet" else "pet")
             if m == "faceoff":
-                pr, fpose = IDLE, IDLE
-            elif m == "beams":
-                pr, fpose = ATTACK, ATTACK
-            elif m == "clash":
-                pr, fpose = ATTACK, ATTACK
-            elif m == "flinch":
-                pr = COLLAPSE if fr["loser"] == "pet" else IDLE
-                fpose = COLLAPSE if fr["loser"] == "foe" else IDLE
-                pl, fl = fr["pl"], fr["fl"]
-            else:  # result
+                pr = fpose = IDLE
+            elif m in ("windup", "fire"):                      # only the attacker rears/fires
+                pr = ATTACK if atk == "pet" else IDLE
+                fpose = ATTACK if atk == "foe" else IDLE
+            elif m == "dodge":                                 # the defender jukes (pose 1)
+                pr = 1 if dfn == "pet" else IDLE
+                fpose = 1 if dfn == "foe" else IDLE
+            elif m == "flinch":                                # the struck side reels
+                pr = COLLAPSE if dfn == "pet" else IDLE
+                fpose = COLLAPSE if dfn == "foe" else IDLE
+            else:                                              # result
                 win = self.result_winner
-                cheer = (5, 7)[self.frame_i % 2]        # winning(): cheer(true) poses 5,7
+                cheer = (5, 7)[self.frame_i % 2]               # winning(): cheer(true) 5,7
                 pr = cheer if win == "pet" else COLLAPSE
                 fpose = cheer if win == "foe" else COLLAPSE
-                pl, fl = (3, 0) if self.won else (0, 3)
             pet_rows = self._rows(self.pet.num, pr)
             foe_rows = self._rows(b.enemy["num"], fpose)
             placements, edges = self._place(pet_rows, foe_rows)
+            pe, fe = edges.get("pet", 8), edges.get("foe", COLS - 8)
             overlay = []
-            if m == "beams":
-                overlay = self._beam_overlay(fr["prog"], edges.get("pet", 8),
-                                             edges.get("foe", COLS - 8))
-            elif m == "clash":
-                mid = (edges.get("pet", 8) + edges.get("foe", COLS - 8)) // 2
-                overlay = [(mid + dx, PXH - 11 + dy) for dx in (-1, 0, 1) for dy in (-1, 0, 1)]
+            orbs = fr.get("orbs", 1)
+            if m == "fire":                                    # the orb(s) fly AT the defender
+                overlay = self._shot_overlay(atk, fr["prog"], orbs, pe, fe)
+            elif m == "dodge":                                 # ...and sail on past the juke
+                beam = ATK.get(self.pet_attr if atk == "pet" else self.foe_attr)
+                if beam:
+                    w = len(beam[0])
+                    src = beam if atk == "pet" else [r[::-1] for r in beam]
+                    x0, x1 = (fe, COLS - w) if atk == "pet" else (pe - w, 0)
+                    x = max(0, min(int(x0 + (x1 - x0) * fr["prog"]), COLS - w))
+                    for y in self._orb_ys(orbs):
+                        overlay += _blit(src, x, y)
             scene = self._scene(placements, overlay)
             note = {"faceoff": f"{self.pet.name} vs {b.enemy['name']}",
-                    "beams": "Clash!", "clash": "Clash!",
+                    "windup": "...", "fire": "Fire!", "dodge": "Dodge!",
                     "flinch": "Hit!", "result": ""}.get(m, "")
 
         # the LCD shows ONLY the battle scene (full height); the HUD (hearts, status,
