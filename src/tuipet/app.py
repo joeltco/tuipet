@@ -236,6 +236,10 @@ class Screen(Static):
             mirror = self.walk_dir > 0         # mirror=True faces right (sprites face left by default)
         else:
             mirror = pet.anim in data.MIRROR_ROLES and self.frame_i % 2 == 1
+        if pet.num == -1 and pet.anim == "hatch":   # DVPet hatch(): the egg ROCKS side to side
+            rows = (_fr[0] if _fr and _fr[0] else first)   # the whole egg, shaking in place
+            xshift = 3 if self.frame_i % 2 == 0 else -3    # moveRight/moveLeft 3, alternating
+            mirror = False
         # NOTE: DVPet's frozen.png (the ice encasement) is its GAME-PAUSED indicator
         # (setFrozenIcon only fires when !isPlaying), not a cold-weather state -- so cold
         # shows the huddle pose above, not a full ice block over the pet.
