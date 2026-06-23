@@ -215,9 +215,11 @@ class Screen(Static):
         _fr = rec["frames"]
         rows = (_fr[idx] if idx < len(_fr) else None) or first
         xshift, mirror = 0, False
-        cold = pet.num != -1 and pet.status_word() == "freezing"
-        if pet.anim in ("idle", "walk") and (pet.is_geriatric or pet.sick or cold):
-            rows = (_fr[9] if 9 < len(_fr) else None) or first   # elderly/sick/cold: stand still, huddled/weary
+        if pet.anim in ("idle", "walk") and (pet.is_geriatric or pet.sick):
+            rows = (_fr[9] if 9 < len(_fr) else None) or first   # elderly/sick: weary idle (idleUnwell pose 9)
+            # cold weather is NOT a freeze: DVPet's weathering() plays a brief huddle
+            # reaction periodically (handled by the "huddle" quirk in pet.py); the pet
+            # otherwise walks/bobs normally, so cold does not pin it in place here.
         elif pet.anim in ("idle", "walk") and pet.num != -1:
             # pace back and forth; poop on the floor shrinks the free space -- the
             # pet still walks, just in the room to the right of the pile (DVPet
