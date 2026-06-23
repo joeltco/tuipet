@@ -159,13 +159,14 @@ def _effect_overlay(pet, frame_i, cols, px_h):
            "unhappy" if pet.anim in ("sad", "refuse", "angry", "tantrum") else None)
     if emo is None and pet.anim in ("idle", "walk") and pet.current_mood() == "Depressed":
         emo = "depressed"
-    if emo and E.get(emo):                                # emote bubble on reactions
+    sy = px_h // 3                                        # status icons sit beside the pet
+    if emo and E.get(emo):                                # emote bubble on reactions, ...
         ef = E[emo][frame_i % len(E[emo])]
-        pts += _blit(ef, cols - len(ef[0]) - 2, 1)
+        pts += _blit(ef, cols - len(ef[0]) - 2, sy)       # ...lowered (DVPet ~55% down, not the top)
     elif (pet.anim in ("idle", "walk") and frame_i % 2 == 0 and E.get("attention")
           and (pet.hunger == 0 or pet.sick or pet.poop >= 3 or pet.energy <= 0
                or getattr(pet, "scold_flag", False))):
-        pts += _blit(E["attention"][0], cols - len(E["attention"][0][0]) - 2, 1)  # '!' call for care
+        pts += _blit(E["attention"][0], cols - len(E["attention"][0][0]) - 2, sy)  # '!' call
     return pts
 
 
