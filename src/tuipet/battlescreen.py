@@ -21,8 +21,8 @@ from .render import render_scene
 from .theme import LCD_ON, LCD_BG, INK, SIL_DAY, SIL_NIGHT
 from . import menu
 
-COLS, ROWS = 40, 8
-PXH = ROWS * 2                                   # 16 px tall
+COLS, ROWS = 40, 12                              # fill the whole LCD (the HUD lives in the side panel)
+PXH = ROWS * 2                                   # 24 px tall
 _E = data.load_effects()
 ATK = {"Vaccine": (_E.get("atk_vaccine") or _E.get("attack") or [None])[0],
        "Data":    (_E.get("atk_data") or _E.get("attack") or [None])[0],
@@ -45,7 +45,8 @@ def _blit(bm, ox, oy):
 
 def _full(frame):
     """A fullscreen 16x32 overlay frame -> pixel coords, centred in the field."""
-    return [(OVX + x, y) for y, row in enumerate(frame)
+    oy = max(0, (PXH - len(frame)) // 2)         # centre the 16px overlay in the 24px field
+    return [(OVX + x, oy + y) for y, row in enumerate(frame)
             for x, c in enumerate(row) if c == "1"]
 
 
@@ -73,6 +74,7 @@ class BattlePanel:
         self.frame_i = 0
         self.i = 0                                # index into the timeline
         self.done_anim = False
+        self.hud_pl, self.hud_fl, self.hud_note = 3, 3, ""   # HUD state for the side panel
         self._build()
 
     # ---- resolve outcome + build the animation timeline -----------------
@@ -181,8 +183,8 @@ class BattlePanel:
         fr = self.timeline[min(self.i, len(self.timeline) - 1)] if not self.done_anim \
             else {"m": "result"}
         m = fr["m"]
-        pl = fr.get("pl", 0 if not self.won else 3)
-        fl = fr.get("fl", 3 if not self.won else 0)
+        pl = fr.get("pl", 3)            # full hearts until an exchange decrements them
+        fl = fr.get("fl", 3)
 
         if m == "banner":
             scene = self._scene([], _full(BANNER[fr["f"]]))
@@ -223,17 +225,7 @@ class BattlePanel:
                     "beams": "Clash!", "clash": "Clash!",
                     "flinch": "Hit!", "result": ""}.get(m, "")
 
-        boss = "BOSS" if b.enemy["boss"] else ""
-        out = menu.bar(f"BATTLE  vs {b.enemy['name']}"[:32], boss)
-        out.append_text(scene)
-        hearts = lambda n: "♥" * max(0, n) + "♡" * (3 - max(0, n))
-        out.append(f"\nYou {hearts(pl)}", style=INK)
-        out.append(f"      Foe {hearts(fl)}\n", style=INK)
-        if self.done_anim:
-            res = "VICTORY!" if self.won else "DEFEAT"
-            out.append_text(menu.note(f"{res}  {b.reward}"))
-            out.append_text(menu.footer("SPACE  continue"))
-        else:
-            out.append_text(menu.note(note))
-            out.append_text(menu.footer("SPACE  skip"))
-        return out
+        # the LCD shows ONLY the battle scene (full height); the HUD (hearts, status,
+        # controls) is published for the side stats panel via app._status_battle().
+        self.hud_pl, self.hud_fl, self.hud_note = pl, fl, note
+        return scene

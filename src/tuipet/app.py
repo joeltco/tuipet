@@ -631,6 +631,8 @@ class TuiPetApp(App):
             self._status_tournament()
         elif isinstance(self.mode, training.TrainingPanel):
             self._status_training()
+        elif isinstance(self.mode, battlescreen.BattlePanel):
+            self._status_battle()
         elif isinstance(self.mode, digicorescreen.DigiCorePanel):
             dp = self.mode
             toc = [(f"[b]▸ {t}[/]" if j == dp.i else f"[dim]  {t}[/]")
@@ -724,6 +726,27 @@ class TuiPetApp(App):
                      target, f"Energy   {energy}", div, f"[dim]{flav}[/]"]
         self.stats_w.update("\n".join(lines))
 
+    def _status_battle(self):
+        p, m, T = self.pet, self.mode, theme
+        b = m.battle
+        self.stats_w.border_subtitle = f"gen {p.generation}"
+        div = f"[dim]{'\u2500' * 26}[/]"
+        h3 = lambda n: "\u2665" * max(0, n) + "[dim]\u00b7[/]" * (3 - max(0, n))
+        tag = f" [{T.NEG}]BOSS[/]" if b.enemy.get("boss") else ""
+        lines = [
+            f"[b]{p.name[:14]}[/] [dim]\u00b7 battle[/]", div,
+            f"vs [b]{b.enemy['name'][:14]}[/]{tag}", "",
+            f"You      {h3(m.hud_pl)}",
+            f"Foe      {h3(m.hud_fl)}",
+            div,
+        ]
+        if m.done_anim:
+            res = f"[{T.POS}]VICTORY![/]" if m.won else f"[{T.NEG}]DEFEAT[/]"
+            lines += [res, f"[dim]{(b.reward or '')[:24]}[/]", "", "[dim]SPACE  continue[/]"]
+        else:
+            lines += [f"[dim]{(m.hud_note or '')[:24]}[/]", "", "[dim]SPACE  skip[/]"]
+        self.stats_w.update("\n".join(lines))
+
     def _status_adventure(self):
         p, a, T = self.pet, self.mode.adv, theme
         self.stats_w.border_subtitle = f"gen {p.generation}"
@@ -778,6 +801,8 @@ class TuiPetApp(App):
                     self._status_adventure()
                 elif isinstance(self.mode, training.TrainingPanel):
                     self._status_training()
+                elif isinstance(self.mode, battlescreen.BattlePanel):
+                    self._status_battle()
         elif self.screen_w.fx:
             self.screen_w.advance_fx()
             self.screen_w.paint(self.pet)
