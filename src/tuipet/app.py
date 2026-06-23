@@ -215,8 +215,9 @@ class Screen(Static):
         _fr = rec["frames"]
         rows = (_fr[idx] if idx < len(_fr) else None) or first
         xshift, mirror = 0, False
-        if pet.anim in ("idle", "walk") and (pet.is_geriatric or pet.sick):
-            rows = (_fr[9] if 9 < len(_fr) else None) or first   # elderly/sick: weary idle (idleUnwell pose 9)
+        if pet.anim in ("idle", "walk") and pet.sick:
+            rows = (_fr[9] if 9 < len(_fr) else None) or first   # sick: weary idle (DVPet idleUnwell pose 9)
+            # NOTE: no geriatric freeze -- DVPet has no elderly idle; old pets walk normally
             # cold weather is NOT a freeze: DVPet's weathering() plays a brief huddle
             # reaction periodically (handled by the "huddle" quirk in pet.py); the pet
             # otherwise walks/bobs normally, so cold does not pin it in place here.
