@@ -74,7 +74,7 @@ CLOUD = ["0011100", "0111111", "1111111"]
 
 _K = "b cyan"
 KEYS = (
-    f"[{_K}]f[/] feed   [{_K}]p[/] play   [{_K}]c[/] clean   [{_K}]h[/] heal   [{_K}]s[/] lights\n"
+    f"[{_K}]f[/] feed  [{_K}]p[/] play  [{_K}]c[/] clean  [{_K}]h[/] heal  [{_K}]r[/] praise  [{_K}]k[/] scold  [{_K}]s[/] lights\n"
     f"[{_K}]t[/] train  [{_K}]b[/] battle  [{_K}]a[/] adventure  [{_K}]u[/] cup  [{_K}]j[/] jogress\n"
     f"[{_K}]o[/] shop  [{_K}]e[/] habitat  [{_K}]d[/] data  [{_K}]g[/] theme  [{_K}]m[/] sound  [{_K}]n[/] new  [{_K}]q[/] quit"
 )
