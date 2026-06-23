@@ -132,28 +132,30 @@ async def handler(ws):
                 continue
 
             if t == "login":
+                # A login_failed closes the socket (return): this client always
+                # retries on a fresh connection, so keeping the old one open leaks it.
                 name = _clean(m.get("name"), MAX_NAME)
                 pw = str(m.get("pw") or "")[:MAX_PW]
                 if not name:
                     await _send(client, {"t": "login_failed", "msg": "Name required."})
-                    continue
+                    return
                 key = name.lower()
                 acc = ACCOUNTS.get(key)
                 if acc:                                   # existing name -> must match
                     if not _verify(pw, acc):
                         await _send(client, {"t": "login_failed", "msg": "Wrong password for that name."})
-                        continue
+                        return
                     name = acc["name"]                    # canonical capitalisation
                 else:                                     # new name -> claim it
                     if not pw:
                         await _send(client, {"t": "login_failed", "msg": "Pick a password to claim this name."})
-                        continue
+                        return
                     ACCOUNTS[key] = _make_account(name, pw)
                     _save_accounts()
                     LOG.info("registered account %s", name)
                 if any(c.live and c.name.lower() == key for c in CLIENTS.values() if c is not client):
                     await _send(client, {"t": "login_failed", "msg": "That name is already online."})
-                    continue
+                    return
                 client.name = name
                 client.pet = m.get("pet") or {}
                 client.live = logged_in = True
@@ -186,6 +188,8 @@ async def handler(ws):
                     out["kind"] = m.get("kind")
                     if t == "invite_resp":
                         out["accept"] = bool(m.get("accept"))
+                        if m.get("busy"):           # auto-decline while in a session
+                            out["busy"] = True
                 await _send(target, out)
     except websockets.ConnectionClosed:
         pass

@@ -613,21 +613,12 @@ class TuiPetApp(App):
         return client
 
     def _after_lobby(self, result=None):
+        # The lobby panel applies its own jogress/battle results in-place (you stay
+        # in the lobby between sessions), so here we just tear down the connection.
         w = getattr(self, "_lobby_worker", None)
         if w is not None:
             w.cancel()
             self._lobby_worker = None
-        if isinstance(result, tuple) and result:
-            tag = result[0]
-            if tag == "jogress":
-                self.flash(jogress.fuse(self.pet, result[1]))   # same path as offline jogress
-                self.beep("jogress")
-            elif tag == "battle_record":          # guest records its own win/loss
-                self.flash(self.pet.record_battle(result[1], result[2]))
-                self.beep("attack")
-            elif tag == "battle_msg":             # host already recorded by the engine
-                self.flash(result[1])
-                self.beep("attack")
         self.repaint()
 
     def action_quit(self):

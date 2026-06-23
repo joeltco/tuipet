@@ -58,8 +58,11 @@ class LobbyClient:
     def invite(self, to, kind):
         self._send({"t": "invite", "to": to, "kind": kind})
 
-    def respond(self, to, kind, accept):
-        self._send({"t": "invite_resp", "to": to, "kind": kind, "accept": bool(accept)})
+    def respond(self, to, kind, accept, busy=False):
+        msg = {"t": "invite_resp", "to": to, "kind": kind, "accept": bool(accept)}
+        if busy:
+            msg["busy"] = True
+        self._send(msg)
 
     def relay(self, to, payload):
         self._send({"t": "relay", "to": to, "payload": payload})

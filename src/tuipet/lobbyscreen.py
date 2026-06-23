@@ -180,12 +180,17 @@ class LobbyPanel:
                     self.invite_prompt = m
                     self.sfx = "menu"
                 else:
-                    self.client.respond(m["from_id"], m.get("kind"), False)   # busy -> auto-decline
+                    self.client.respond(m["from_id"], m.get("kind"), False, busy=True)  # in a session
                 s.inbox.remove(m)
             elif t == "invite_resp":
                 s.inbox.remove(m)
                 if m.get("accept"):
-                    self._enter_session(m["from_id"], m["from_name"], m.get("kind"), host=True)
+                    if self.phase == "lobby":
+                        self._enter_session(m["from_id"], m["from_name"], m.get("kind"), host=True)
+                    else:                                  # already busy -> free the accepter
+                        self.client.relay(m["from_id"], {"kind": m.get("kind"), "abort": True})
+                elif m.get("busy"):
+                    self.status = f"{m['from_name']} is busy."
                 else:
                     self.status = f"{m['from_name']} declined."
             elif t == "relay":
@@ -225,18 +230,43 @@ class LobbyPanel:
                                     "card": battle.battle_card(self.pet)})
             self.status = f"Battle vs {pname}…"
 
+    def _return_to_lobby(self, status=""):
+        """End the current session and drop back into the chat lobby (not out of it).
+        Any pet change (a fusion) is pushed so the roster shows your new form."""
+        had_partner = self.partner is not None
+        self.partner = self.partner_species = self.jresult = None
+        self.jphase = self.fail_reason = None
+        self.battle = self.opp_card = self.bphase = None
+        self.bt_my_choice = self.bt_opp_choice = None
+        self.bt_log = self.bt_outcome = ""
+        self.bt_reward = self.bt_payload = None
+        self.is_host = False
+        self.phase = "lobby"
+        self.status = status or "Back in the lobby."
+        if had_partner and self.client:
+            self.client.update_pet(self._card())
+
     def _on_relay(self, m):
         if not self.partner or m.get("from_id") != self.partner[0]:
             return
         payload = m.get("payload") or {}
         kind = payload.get("kind")
+        if payload.get("abort"):                       # partner cancelled / got busy
+            if self.phase == "jogress" and self.jphase == "waiting":
+                self.fail_reason, self.jphase = "Partner left the fusion.", "failed"
+            elif self.phase == "battle" and self.bphase not in (None, "over"):
+                self.bt_outcome = "Opponent left."
+                self.bt_payload = ("battle_msg", "Opponent left — battle void.")
+                self.bphase = "over"
+            return
         if kind == "jogress" and self.phase == "jogress" and self.jphase == "waiting":
             self.partner_species = payload.get("name")
-            self.jresult = jogress.resolve(self.pet, payload.get("attr"))
+            reason = jogress.can_jogress(self.pet)      # honour asleep / too-young, like offline
+            self.jresult = None if reason else jogress.resolve(self.pet, payload.get("attr"))
             if self.jresult:
                 self.jphase, self.sfx = "result", "jogress"
             else:
-                self.fail_reason = jogress.can_jogress(self.pet) or "No resonance with that partner."
+                self.fail_reason = reason or "No resonance with that partner."
                 self.jphase = "failed"
         elif kind == "battle" and self.phase == "battle":
             bt = payload.get("t")
@@ -287,10 +317,10 @@ class LobbyPanel:
         if res.get("over"):
             self.bphase, self.sfx = "over", "attack"
             won = my_alive and not opp_alive
-            if won:
-                self.bt_outcome = "★ YOU WIN! ★"
-            elif opp_alive and not my_alive:
+            if not my_alive:                       # own HP gone (incl. double-KO) = loss (battleEnd)
                 self.bt_outcome = "YOU LOSE…"
+            elif not opp_alive:
+                self.bt_outcome = "★ YOU WIN! ★"
             else:
                 self.bt_outcome = "DRAW"
             if as_host:
@@ -305,7 +335,9 @@ class LobbyPanel:
     def _key_battle(self, k):
         if self.bphase == "over":
             if k in ("enter", "space", "escape"):
-                return ("done", self.bt_payload)
+                if self.bt_payload and self.bt_payload[0] == "battle_record":
+                    self.pet.record_battle(self.bt_payload[1], self.bt_payload[2])  # guest records its own result
+                self._return_to_lobby(self.bt_outcome)   # host already recorded via the engine
             return None
         if self.bphase == "choose":
             if k in ATTACK_KEYS:
@@ -315,11 +347,17 @@ class LobbyPanel:
                 if self.is_host:
                     self._host_resolve()
             elif k == "escape":
-                return ("done", None)              # forfeit -> just leave; opponent sees you gone
+                self._forfeit()
             return None
         if self.bphase in ("card", "wait") and k == "escape":
-            return ("done", None)
+            self._forfeit()
         return None
+
+    def _forfeit(self):
+        """Leave a battle in progress -> tell the opponent, then back to the lobby."""
+        if self.partner:
+            self.client.relay(self.partner[0], {"kind": "battle", "abort": True})
+        self._return_to_lobby("You forfeited.")
 
     # ---- input -----------------------------------------------------------
     def key(self, k):
@@ -342,14 +380,18 @@ class LobbyPanel:
     def _key_jogress(self, k):
         if self.jphase == "result":
             if k in ("enter", "space", "escape"):
-                return ("done", ("jogress", self.jresult["num"]))
+                msg = jogress.fuse(self.pet, self.jresult["num"])   # same path as offline jogress
+                self.sfx = "jogress"
+                self._return_to_lobby(msg)
             return None
         if self.jphase == "failed":
             if k in ("enter", "space", "escape"):
-                return ("done", None)
+                self._return_to_lobby(self.fail_reason or "No resonance.")
             return None
-        if k == "escape":
-            return ("done", None)
+        if k == "escape":                                  # cancel mid-fusion -> free the partner
+            if self.partner:
+                self.client.relay(self.partner[0], {"kind": "jogress", "abort": True})
+            self._return_to_lobby("Fusion cancelled.")
         return None
 
     def _key_lobby(self, k):
