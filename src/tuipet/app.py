@@ -569,6 +569,7 @@ class TuiPetApp(App):
     def on_key(self, event):
         if self.mode is not None:
             event.stop()
+            event.prevent_default()      # a panel owns the keyboard: don't fire global BINDINGS
             result = self.mode.key(event.key)
             snd = getattr(self.mode, "sfx", None)
             if snd:
