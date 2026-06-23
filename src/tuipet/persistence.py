@@ -45,6 +45,21 @@ def set_tamer(name):
     save_settings(d)
 
 
+def get_account():
+    """The cached lobby account: (name, password). (None, "") if unset."""
+    a = load_settings().get("account") or {}
+    name = (a.get("name") or "").strip()
+    return (name or None, a.get("pw") or "")
+
+
+def set_account(name, pw):
+    d = load_settings()
+    name = (name or "").strip()[:24]
+    d["account"] = {"name": name, "pw": pw or ""}
+    d["tamer"] = name
+    save_settings(d)
+
+
 def save(pet, path=SAVE_PATH):
     os.makedirs(os.path.dirname(path), exist_ok=True)
     data = asdict(pet)

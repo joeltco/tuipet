@@ -41,40 +41,65 @@ def _hpbar(hp, mx, w=10):
     return "█" * fill + "─" * (w - fill)
 
 
-class NamePanel:
-    """One-time tamer-name prompt shown at first launch; the app caches the result."""
+class AccountPanel:
+    """Name + password entry. Tab/Up/Down switch fields; Enter on the password
+    confirms when both are filled. Returns ("done", (name, password)), or
+    ("done", None) on Esc. Used at first launch and to recover a failed login."""
 
-    def __init__(self, default=""):
-        self.buf = default
+    def __init__(self, name="", note="Set your name + password — your name is yours."):
+        self.name_buf = name
+        self.pw_buf = ""
+        self.field = "pw" if name else "name"
+        self.note = note
         self.sfx = None
 
     def key(self, k):
-        if k in ("enter", "escape"):
-            return ("done", self.buf.strip()[:24] or "Tamer")
+        if k == "escape":
+            return ("done", None)
+        if k in ("tab", "up", "down"):
+            self.field = "pw" if self.field == "name" else "name"
+            return None
+        if k == "enter":
+            if self.field == "name":
+                self.field = "pw"
+                return None
+            name = self.name_buf.strip()[:24]
+            if name and self.pw_buf:
+                return ("done", (name, self.pw_buf))
+            return None
+        attr = "name_buf" if self.field == "name" else "pw_buf"
+        cur = getattr(self, attr)
         if k == "backspace":
-            self.buf = self.buf[:-1]
+            cur = cur[:-1]
         elif k == "space":
-            self.buf += " "
+            cur = cur + " "
         elif len(k) == 1 and k.isprintable():
-            self.buf += k
+            cur = cur + k
+        setattr(self, attr, cur[:64])
         return None
 
     def text(self):
         t = Text()
-        t.append("  WELCOME, TAMER\n", style=INK_B)
-        t.append("\n  What should we call you?\n\n", style=DIM)
-        t.append("  > ", style=INK_B)
-        t.append(self.buf + "_", style=INK_B)
-        t.append("\n\n  [Enter] confirm", style=DIM)
+        t.append("  TUIPET ACCOUNT\n\n", style=INK_B)
+        nm = self.name_buf + ("_" if self.field == "name" else "")
+        pw = "*" * len(self.pw_buf) + ("_" if self.field == "pw" else "")
+        t.append("  name:     ", style=DIM)
+        t.append(nm + "\n", style=INK_B if self.field == "name" else INK)
+        t.append("  password: ", style=DIM)
+        t.append(pw + "\n\n", style=INK_B if self.field == "pw" else INK)
+        t.append(f"  {self.note}\n", style=DIM)
+        t.append("  [Tab] switch  [Enter] go  [Esc] back", style=DIM)
         return t
 
 
 class LobbyPanel:
-    def __init__(self, pet, on_connect, name=None):
+    def __init__(self, pet, on_connect, name=None, pw=""):
         self.pet = pet
         self.on_connect = on_connect
         self.client = None
         self.state = None
+        self.entry = None              # AccountPanel while logging in
+        self._last_name = name or ""
         self.buf = ""
         self.sel = 0
         self.action_for = None
@@ -99,14 +124,19 @@ class LobbyPanel:
         self.bt_outcome = ""
         self.bt_reward = None
         self.bt_payload = None        # ("done", X) payload when the bout ends
-        if name:
-            self.client = self.on_connect(name, self._card())
-            self.state = self.client.state
-            self.phase = "lobby"
-            self.status = "Connecting…"
+        if name and pw:
+            self._connect(name, pw)
         else:
-            self.phase = "name"
-            self.status = "Type a name, then Enter to join."
+            self.phase = "login"
+            self.entry = AccountPanel(name=name or "")
+            self.status = "Log in to the lobby."
+
+    def _connect(self, name, pw):
+        self._last_name = name
+        self.client = self.on_connect(name, pw, self._card())
+        self.state = self.client.state
+        self.phase = "lobby"
+        self.status = "Connecting…"
 
     # ---- presence card ---------------------------------------------------
     def _card(self):
@@ -142,7 +172,11 @@ class LobbyPanel:
             elif t == "relay":
                 s.inbox.remove(m)
                 self._on_relay(m)
-        if s.error:
+        if s.login_failed:
+            self.entry = AccountPanel(name=self._last_name, note=s.login_failed)
+            self.phase = "login"
+            s.login_failed = None
+        elif s.error:
             self.status = f"! {s.error}"
             s.error = None
         elif s.connected and self.status == "Connecting…":
@@ -270,24 +304,21 @@ class LobbyPanel:
 
     # ---- input -----------------------------------------------------------
     def key(self, k):
-        if self.phase == "name":
-            return self._key_name(k)
+        if self.phase == "login":
+            return self._key_login(k)
         if self.phase == "jogress":
             return self._key_jogress(k)
         if self.phase == "battle":
             return self._key_battle(k)
         return self._key_lobby(k)
 
-    def _key_name(self, k):
-        if k == "escape":
-            return ("done", None)
-        if k == "enter":
-            name = self.buf.strip() or "Tamer"
-            self.client = self.on_connect(name, self._card())
-            self.state = self.client.state
-            self.phase, self.buf, self.status = "lobby", "", "Connecting…"
-            return None
-        return self._edit(k)
+    def _key_login(self, k):
+        r = self.entry.key(k)
+        if r is not None and r[0] == "done":
+            if r[1] is None:
+                return ("done", None)            # Esc -> leave the lobby
+            self._connect(*r[1])
+        return None
 
     def _key_jogress(self, k):
         if self.jphase == "result":
@@ -350,22 +381,16 @@ class LobbyPanel:
 
     # ---- render ----------------------------------------------------------
     def text(self):
-        if self.phase == "name":
-            return self._text_name()
+        if self.phase == "login":
+            return self._text_login()
         if self.phase == "jogress":
             return self._text_jogress()
         if self.phase == "battle":
             return self._text_battle()
         return self._text_lobby()
 
-    def _text_name(self):
-        t = Text()
-        t.append("  TUIPET LOBBY\n", style=INK_B)
-        t.append("\n  Enter your tamer name:\n\n", style=DIM)
-        t.append("  > ", style=INK_B)
-        t.append(self.buf + "_", style=INK_B)
-        t.append("\n\n  [Enter] join   [Esc] back", style=DIM)
-        return t
+    def _text_login(self):
+        return self.entry.text()
 
     def _text_jogress(self):
         t = Text()

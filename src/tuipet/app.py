@@ -532,13 +532,14 @@ class TuiPetApp(App):
         self.set_interval(10.0, self.autosave)
 
     def _after_title(self, _=None):
-        if not persistence.get_tamer():          # first launch: set your tamer name once
-            self._open_mode(lobbyscreen.NamePanel(), self._after_name)
+        if not persistence.get_account()[0]:     # first launch: create your lobby account
+            self._open_mode(lobbyscreen.AccountPanel(), self._after_account)
             return
         self._post_title()
 
-    def _after_name(self, name):
-        persistence.set_tamer(name or "Tamer")
+    def _after_account(self, result):
+        if result:
+            persistence.set_account(*result)
         self._post_title()
 
     def _post_title(self):
@@ -598,15 +599,16 @@ class TuiPetApp(App):
     def action_lobby(self):
         if self.mode is not None:
             return
+        name, pw = persistence.get_account()
         self._open_mode(lobbyscreen.LobbyPanel(self.pet, self._lobby_connect,
-                        name=persistence.get_tamer() or None),
+                        name=name, pw=pw),
                         self._after_lobby)
 
-    def _lobby_connect(self, name, card):
+    def _lobby_connect(self, name, pw, card):
         """Create + start the WebSocket client; the app owns its worker lifecycle."""
-        persistence.set_tamer(name)
+        persistence.set_account(name, pw)
         uri = os.environ.get("TUIPET_LOBBY_URL", "wss://ff3mmo.com/tuipet/")  # live lobby (TLS); override for local dev
-        client = net.LobbyClient(uri, name, card)
+        client = net.LobbyClient(uri, name, pw, card)
         self._lobby_worker = self.run_worker(client.run(), name="lobby", exclusive=False)
         return client
 

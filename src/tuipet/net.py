@@ -27,6 +27,7 @@ class LobbyState:
         self.roster: list[dict] = []          # [{id,name,pet}] — replaced wholesale
         self.chat: list[tuple[str, str]] = []  # [(from_name, text)] — capped
         self.inbox: list[dict] = []            # invite / invite_resp / relay — drained by caller
+        self.login_failed: str | None = None   # server rejected the login (bad password / name taken)
 
     def others(self):
         """Roster minus me — the people you can battle/jogress."""
@@ -34,9 +35,10 @@ class LobbyState:
 
 
 class LobbyClient:
-    def __init__(self, uri, name, pet=None, state=None):
+    def __init__(self, uri, name, pw="", pet=None, state=None):
         self.uri = uri
         self.name = name
+        self.pw = pw
         self.pet = pet or {}
         self.state = state or LobbyState()
         self._ws = None
@@ -68,7 +70,8 @@ class LobbyClient:
         try:
             async with websockets.connect(self.uri, max_size=64 * 1024) as ws:
                 self._ws = ws
-                await ws.send(json.dumps({"t": "login", "name": self.name, "pet": self.pet}))
+                await ws.send(json.dumps({"t": "login", "name": self.name,
+                                          "pw": self.pw, "pet": self.pet}))
                 self.state.connected = True
                 sender = asyncio.create_task(self._send_loop())
                 try:
@@ -107,5 +110,7 @@ class LobbyClient:
             del s.chat[:-CHAT_CAP]
         elif t in ("invite", "invite_resp", "relay"):
             s.inbox.append(m)
+        elif t == "login_failed":
+            s.login_failed = m.get("msg")
         elif t == "error":
             s.error = m.get("msg")

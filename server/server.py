@@ -1,38 +1,75 @@
-"""tuipet lobby server — a standalone WebSocket relay.
+"""tuipet lobby server — a standalone WebSocket relay with named accounts.
 
-Zero tuipet dependency: it knows nothing about pets, jogress, or battle rules.
-It only does four things, so it can be dropped on any host and run as one file:
-
-  * name login          a client joins with a handle + an opaque pet "card"
-  * presence            everyone sees a live roster of who's online
-  * chat                broadcast text to the room
-  * point-to-point      invite / invite-response / session relay between two
-                        clients (jogress and battle plug in here, client-side)
+Zero tuipet dependency. It does:
+  * account login    name + password; first login to a name claims it (password
+                     hashed with pbkdf2, stored in accounts.json), later logins to
+                     that name must match. So your name is yours.
+  * presence         a live roster of who's online
+  * chat             broadcast text to the room
+  * point-to-point   invite / invite-response / session relay between two clients
+                     (jogress and battle plug in here, client-side)
 
 Wire format: one JSON object per message, discriminated by the field `t`.
-Run:  python3 server.py            (PORT / HOST via env, defaults 0.0.0.0:8765)
+Run:  python3 server.py     (HOST/PORT/TUIPET_ACCOUNTS via env; defaults 0.0.0.0:8765)
 """
 from __future__ import annotations
 
 import asyncio
-import json
-import os
+import hashlib
+import hmac
 import itertools
+import json
 import logging
+import os
 
 import websockets
 
 LOG = logging.getLogger("tuipet.lobby")
 HOST = os.environ.get("TUIPET_HOST", "0.0.0.0")
 PORT = int(os.environ.get("TUIPET_PORT", "8765"))
+ACCOUNTS_PATH = os.environ.get(
+    "TUIPET_ACCOUNTS",
+    os.path.join(os.path.dirname(os.path.abspath(__file__)), "accounts.json"))
 
-# defensive limits — a lobby relay, not a chat firehose
 MAX_CLIENTS = 200
 MAX_NAME = 24
+MAX_PW = 128
 MAX_CHAT = 400
-MAX_MSG_BYTES = 64 * 1024          # a pet/battle card stays well under this
+MAX_MSG_BYTES = 64 * 1024
+PBKDF2_ITERS = 100_000
 
 _ids = itertools.count(1)
+
+
+# ---- accounts (name -> {name, salt, hash}, keyed by lowercased name) --------
+def _load_accounts():
+    try:
+        return json.load(open(ACCOUNTS_PATH))
+    except (OSError, ValueError):
+        return {}
+
+
+ACCOUNTS = _load_accounts()
+
+
+def _save_accounts():
+    tmp = ACCOUNTS_PATH + ".tmp"
+    with open(tmp, "w") as f:
+        json.dump(ACCOUNTS, f)
+    os.replace(tmp, ACCOUNTS_PATH)
+
+
+def _hash(pw, salt):
+    return hashlib.pbkdf2_hmac("sha256", pw.encode("utf-8"), salt, PBKDF2_ITERS).hex()
+
+
+def _make_account(name, pw):
+    salt = os.urandom(16)
+    return {"name": name, "salt": salt.hex(), "hash": _hash(pw, salt)}
+
+
+def _verify(pw, acc):
+    return hmac.compare_digest(_hash(pw, bytes.fromhex(acc["salt"])), acc["hash"])
 
 
 class Client:
@@ -42,11 +79,8 @@ class Client:
         self.id = next(_ids)
         self.ws = ws
         self.name = f"guest{self.id}"
-        self.pet = {}              # opaque card the lobby never interprets
-        self.live = False          # only logged-in clients appear in the roster
-
-    def public(self):
-        return {"id": self.id, "name": self.name, "pet": self.pet}
+        self.pet = {}
+        self.live = False
 
 
 CLIENTS: dict[int, Client] = {}
@@ -56,22 +90,11 @@ def _clean(s, limit):
     return str(s).replace("\n", " ").replace("\r", " ").strip()[:limit]
 
 
-def _unique_name(name):
-    name = _clean(name, MAX_NAME) or "guest"
-    taken = {c.name for c in CLIENTS.values()}
-    if name not in taken:
-        return name
-    for n in itertools.count(2):           # "Joel" -> "Joel#2" -> "Joel#3"
-        cand = f"{name}#{n}"
-        if cand not in taken:
-            return cand
-
-
 async def _send(client, obj):
     try:
         await client.ws.send(json.dumps(obj))
     except Exception:
-        pass                                # a dead socket gets reaped on its own task
+        pass
 
 
 async def _broadcast(obj, exclude=None):
@@ -83,7 +106,8 @@ async def _broadcast(obj, exclude=None):
 
 
 def _roster():
-    return {"t": "roster", "players": [c.public() for c in CLIENTS.values() if c.live]}
+    return {"t": "roster", "players": [
+        {"id": c.id, "name": c.name, "pet": c.pet} for c in CLIENTS.values() if c.live]}
 
 
 async def _push_roster():
@@ -108,7 +132,29 @@ async def handler(ws):
                 continue
 
             if t == "login":
-                client.name = _unique_name(m.get("name"))
+                name = _clean(m.get("name"), MAX_NAME)
+                pw = str(m.get("pw") or "")[:MAX_PW]
+                if not name:
+                    await _send(client, {"t": "login_failed", "msg": "Name required."})
+                    continue
+                key = name.lower()
+                acc = ACCOUNTS.get(key)
+                if acc:                                   # existing name -> must match
+                    if not _verify(pw, acc):
+                        await _send(client, {"t": "login_failed", "msg": "Wrong password for that name."})
+                        continue
+                    name = acc["name"]                    # canonical capitalisation
+                else:                                     # new name -> claim it
+                    if not pw:
+                        await _send(client, {"t": "login_failed", "msg": "Pick a password to claim this name."})
+                        continue
+                    ACCOUNTS[key] = _make_account(name, pw)
+                    _save_accounts()
+                    LOG.info("registered account %s", name)
+                if any(c.live and c.name.lower() == key for c in CLIENTS.values() if c is not client):
+                    await _send(client, {"t": "login_failed", "msg": "That name is already online."})
+                    continue
+                client.name = name
                 client.pet = m.get("pet") or {}
                 client.live = logged_in = True
                 await _send(client, {"t": "welcome", "id": client.id, "name": client.name})
@@ -118,7 +164,7 @@ async def handler(ws):
             elif not logged_in:
                 await _send(client, {"t": "error", "msg": "Log in first."})
 
-            elif t == "pet":                # update my pet card -> refresh roster
+            elif t == "pet":
                 client.pet = m.get("pet") or {}
                 await _push_roster()
 
@@ -137,12 +183,10 @@ async def handler(ws):
                 if t == "relay":
                     out["payload"] = m.get("payload")
                 else:
-                    out["kind"] = m.get("kind")        # "jogress" | "battle"
+                    out["kind"] = m.get("kind")
                     if t == "invite_resp":
                         out["accept"] = bool(m.get("accept"))
                 await _send(target, out)
-
-            # unknown `t` is ignored — forward-compatible with newer clients
     except websockets.ConnectionClosed:
         pass
     finally:
@@ -154,9 +198,9 @@ async def handler(ws):
 
 async def main():
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(message)s")
-    LOG.info("tuipet lobby on ws://%s:%d", HOST, PORT)
+    LOG.info("tuipet lobby on ws://%s:%d (%d accounts)", HOST, PORT, len(ACCOUNTS))
     async with websockets.serve(handler, HOST, PORT, max_size=MAX_MSG_BYTES):
-        await asyncio.Future()             # run forever
+        await asyncio.Future()
 
 
 if __name__ == "__main__":
