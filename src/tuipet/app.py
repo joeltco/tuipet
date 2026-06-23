@@ -186,7 +186,8 @@ class Screen(Static):
         if not pet.lights:                 # lights off (the 's' lights button): dark room (+ Zzz if asleep)
             bgimg, bg, on = None, "#000000", SIL_NIGHT   # DVPet lightsOff.png is pure (0,0,0)
         elif bgimg:
-            on = SIL_NIGHT if phase == "night" else SIL_DAY   # silhouette ink
+            on = SIL_DAY   # dark silhouette day OR night -- the pet is never white;
+            #                white (SIL_NIGHT) is reserved for the lights-out Zzz below
         else:
             w = pet.weather
             if w in _RAIN:
