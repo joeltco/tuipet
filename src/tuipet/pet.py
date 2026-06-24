@@ -192,6 +192,7 @@ FATIGUE_MOOD_DEC = 50                    # FatigueMoodDec (the exhaustion hit)
 FATIGUE_ENERGY_DEC = 1                   # FatigueEnergyDec
 FATIGUE_ENTH_CHANGE = -1                 # FatigueEnthusiasmChange
 ALREADY_FATIGUED_MOOD_DEC = 35           # alreadyFatiguedMoodDec (re-fatigued while down)
+TRAIN_POWER_PER_HIT = 2     # attribute power per drill-hit (compression-scaled from DVPet's flat +1)
 FATIGUE_CHANCE = 60                      # FatigueChance (% on an exhausting drill)
 
 # DVPet sickness & injury durations (config.csv, PhysicalState.sicken / injure): an
@@ -1154,7 +1155,13 @@ class Pet:
             self.strength = _clamp(self.strength + 1, 0, 4)
             self.obedience += 1
         success = hits >= 2
-        gain = 1 if success else 0     # DVPet onExerciseFinish: a successful drill adds exactly +1
+        # DVPet onExerciseFinish adds +1 per drill, but the real device's stages last
+        # real-DAYS (hundreds of trainings) while tuipet compresses them to ~2h. A flat
+        # +1 can't reach the real-data attribute-power thresholds (digimon.csv median 50)
+        # in a compressed stage, so good forms become unreachable. Scale the gain by drill
+        # QUALITY to compensate for the clock -- same approach as the deferred enthusiasm
+        # lapse. A perfect drill (3 hits) = +6, a solid one (2) = +4.
+        gain = hits * TRAIN_POWER_PER_HIT if success else 0
         if game == "hp":
             attr = "Effort"
         else:
