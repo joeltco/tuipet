@@ -1069,6 +1069,8 @@ class TuiPetApp(App):
         self.repaint()
 
     def action_feed(self):
+        if self.screen_w.fx is not None:        # let the current care animation finish before acting again
+            return
         msg = self.pet.feed()
         if self.pet.anim == "eat":
             self.screen_w.start_fx("eat", "f:0", pet=self.pet)
@@ -1103,6 +1105,8 @@ class TuiPetApp(App):
         self.repaint()
 
     def action_praise(self):
+        if self.screen_w.fx is not None:        # let the current care animation finish before acting again
+            return
         msg = self.pet.praise()
         if self.pet.anim == "happy":                # the praise lands -> DVPet cheer()
             self.screen_w.start_fx("cheer")
@@ -1110,6 +1114,8 @@ class TuiPetApp(App):
         self._do(msg)
 
     def action_scold(self):
+        if self.screen_w.fx is not None:        # let the current care animation finish before acting again
+            return
         msg = self.pet.scold()
         if self.pet.anim == "angry":                # the scold lands -> DVPet jeer()
             self.screen_w.start_fx("jeer")
@@ -1194,12 +1200,16 @@ class TuiPetApp(App):
         self._open_mode(adventurescreen.AdventurePanel(self.pet), lambda _=None: self.repaint())
 
     def action_play(self):
+        if self.screen_w.fx is not None:        # let the current care animation finish before acting again
+            return
         msg = self.pet.play()
         if self.pet.anim == "play":
             self.screen_w.start_fx("cheer")
             self.beep("happy", bell=False)
         self._do(msg)
     def action_clean(self):
+        if self.screen_w.fx is not None:        # let the current care animation finish before acting again
+            return
         poop = self.pet.poop
         msg = self.pet.clean()
         if self.pet.anim == "wash":
@@ -1207,6 +1217,8 @@ class TuiPetApp(App):
             self.beep("wash", bell=False)
         self._do(msg)
     def action_heal(self):
+        if self.screen_w.fx is not None:        # let the current care animation finish before acting again
+            return
         msg = self.pet.heal()
         if self.pet.anim == "heal":
             self.screen_w.start_fx("cheer")
