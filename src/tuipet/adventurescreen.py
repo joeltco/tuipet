@@ -45,6 +45,10 @@ class AdventurePanel:
                 self.sub = None
                 if r[1] is None:
                     self.adv.last = "Fled the battle."
+                    if was_boss:
+                        self.adv.boss_pending = False   # re-arm: the zone boss can be retried
+                        self.travelling = False         # stopped at the gate -- SPACE to face it again
+                        return None
                 else:
                     self.adv.resolve(r[1].won, was_boss, enemy)
                 self.travelling = not self.adv.done
