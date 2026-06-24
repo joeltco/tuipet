@@ -41,8 +41,12 @@ regression safety — not new features.
   lines. `menu.footer` caps ~38 cols.
 - `pet.tick(1.0)` == one real second. `DAY_LENGTH` is a cosmetic 24-min
   day/night cycle, NOT tied to aging (`lifespan` ~3-5 days).
-- Combat: the **attribute triangle (+32) is the only real modifier** —
-  element/field affinity CSVs are all zeros in DVPet; do not re-pitch them.
+- Combat (verified Workstream A): per-round damage is
+  `base_attack(stage) + calc_attack_power(attr)`, floored at 0, where
+  calc_attack_power is **-1/0/+1** from comparing this side's attribute COUNT
+  vs the opponent's (battle.py). Field/element affinity adds 0 (CSVs all zero) —
+  do not re-pitch. NB: the "+32 attribute triangle" is a real-*hardware* concept,
+  NOT tuipet's modifier; tuipet uses the count comparison above.
 - ZERO hand-drawn sprites (Joel's hard rule). Only weather FX may be
   procedural. Everything else is extracted from real DVPet sheets.
 
@@ -58,7 +62,7 @@ regression safety — not new features.
       no magic allowlist). No code change needed.
 - [ ] Egg unlock: all 49 eggs reach a non-locked state through real play;
       buyable/temp/owned transitions; the Carimon password path.
-- [ ] Battle resolution: power math, damage tiers, DP gating.
+- [x] Battle resolution: **VERIFIED.** Per-round damage = base(stage) + (-1/0/+1 count delta), floored at 0; per-stage HP (R10/C15/U20/M25, enemy min 2); win iff own HP>0 (double-KO = loss); first-strike KO blocks retaliation; AI win-ramp thresholds. Pinned by tests/test_battle.py (11 tests). Found+fixed a doc error: combat is the count comparison, not a '+32 triangle' (that's real hardware).
 - [ ] Care effects (Futon), care-mistake / death triggers, training gain.
 - [ ] Tournament eligibility, season reset, trophy persistence.
 
