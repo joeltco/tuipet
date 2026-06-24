@@ -491,9 +491,8 @@ class Stats(Static):
             f"Power   [{T.POS}]V{pet.vaccine}[/] [{T.ENERGY}]D{pet.data_power}[/] [{T.MOOD}]Vi{pet.virus}[/]",
             f"Weight {pet.weight}g   [{T.COIN}]{pet.bits}b[/]",
             f"Battle {pet.wins}W/{pet.battles}   [{T.COIN}]\u2605{pet.trophies}[/]",
-            div,
             f"@{pet.habitat_obj()['name'][:14]} {amark} [dim]{pet.season}[/]",
-            f"[{T.COIN}]{picon}[/][dim]{pet.day_phase} {wglyph}{pet.weather} {int(pet.temp)}\u00b0[/] [dim]{mins}m{secs:02d}s[/]",
+            f"[{T.COIN}]{picon}[/] [dim]{wglyph}{pet.weather} {int(pet.temp)}\u00b0[/] [dim]{mins}m{secs:02d}s[/]",
             f"Life    {bar(lifepct, 12, lifecol)}",
             f"[b]{pet.status_word()}[/]   " + "  ".join(deco),
         ]
