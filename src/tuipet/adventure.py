@@ -147,7 +147,8 @@ class Adventure:
         if not self._town_done and prev < mid <= self.location:
             self._town_done = True
             self.life = MAX_LIFE
-            self.last = "Reached a town -- adventure life restored."
+            self.pet._set_energy(self.pet.max_energy)   # a town is a rest stop: refill energy too
+            self.last = "Reached a town -- rested (life + energy)."
             return ("town", None)
         # Zone boss gates the end of the zone.
         if self.location >= self.total_steps:
@@ -201,6 +202,7 @@ class Adventure:
         self._town_done = False
         self.life = MAX_LIFE
         self.boss_pending = False
+        self.pet._set_energy(self.pet.max_energy)       # regrouped at a town -> rested
         self.last = "Out of life -- retreated to town to regroup."
 
     def _complete_zone(self):
