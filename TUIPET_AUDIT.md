@@ -49,8 +49,13 @@ regression safety — not new features.
 ## Workstreams
 
 ### A. Correctness vs DVPet data
-- [ ] Evolution gates: every form reachable; no soft-locks below Mega
-      (re-verify after the levels_fought / stat-gate changes).
+- [x] Evolution gates: **VERIFIED no soft-lock.** All 93 Fresh starters have a
+      pure-timed-care path to a Mega; no climbable below-Mega form can be *forced*
+      toward a dead-end. The 8 below-Mega care-terminals (Liamon, Darcmon,
+      Targetmon, BaoHackmon, RaptorSparrowmon, Baboongamon, Petaldramon, Sagomon)
+      are jogress/spirit/X-only by design and always opt-in (a Mega-bound sibling
+      exists at every parent). Pinned by tests/test_evolution.py (graph invariant,
+      no magic allowlist). No code change needed.
 - [ ] Egg unlock: all 49 eggs reach a non-locked state through real play;
       buyable/temp/owned transitions; the Carimon password path.
 - [ ] Battle resolution: power math, damage tiers, DP gating.
