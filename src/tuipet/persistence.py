@@ -35,6 +35,36 @@ def save_settings(d, path=SETTINGS_PATH):
     os.replace(tmp, path)
 
 
+def get_album():
+    """Set of distinct Digimon species nums ever raised (the DM20-style zukan)."""
+    return set(load_settings().get("progress", {}).get("album", []))
+
+
+def get_wins():
+    """Lifetime battle wins across all pets/generations."""
+    return int(load_settings().get("progress", {}).get("wins", 0))
+
+
+def album_add(num):
+    if num is None or num < 0:
+        return
+    d = load_settings()
+    prog = d.setdefault("progress", {})
+    album = set(prog.get("album", []))
+    if num in album:
+        return                       # already registered -> no write
+    album.add(num)
+    prog["album"] = sorted(album)
+    save_settings(d)
+
+
+def wins_add(n=1):
+    d = load_settings()
+    prog = d.setdefault("progress", {})
+    prog["wins"] = int(prog.get("wins", 0)) + int(n)
+    save_settings(d)
+
+
 def get_tamer():
     return (load_settings().get("tamer") or "").strip()
 
@@ -68,6 +98,8 @@ def save(pet, path=SAVE_PATH):
     with open(tmp, "w") as fh:
         json.dump(data, fh)
     os.replace(tmp, path)  # atomic
+    if getattr(pet, "num", -1) >= 0 and pet.stage != "Egg":
+        album_add(pet.num)            # grow the cross-pet album (gates egg unlocks)
 
 
 def _offline(pet, elapsed):

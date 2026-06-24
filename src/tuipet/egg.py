@@ -85,6 +85,45 @@ def record(egg_type=0):
             "frames": fr}
 
 
+# --- DM20-style egg unlock (tuipet adaptation; see memory digimon-vpet-dm20) ---
+BASE_EGGS = (1, 2, 3, 4, 5)        # always unlocked: Botamon/Punimon/Poyomon/Yuramon/Zurumon (DM20 Ver.1-5)
+WIN_EGGS = ((50, 46), (100, 47))   # mystery "???" eggs unlocked by lifetime battle wins
+ALBUM_PER_EGG = 1                  # each new distinct Digimon registered opens the next egg
+
+
+def _album_pool():
+    """Egg indices that unlock progressively via the album, in order."""
+    n = count()
+    base = {i for i in BASE_EGGS if i < n}
+    win_idx = {idx for _, idx in WIN_EGGS}
+    return [i for i in range(n) if i not in base and i not in win_idx]
+
+
+def unlocked_eggs(album_count, wins):
+    """Egg indices available given album size (distinct Digimon raised) + lifetime wins."""
+    n = count()
+    unlocked = {i for i in BASE_EGGS if i < n}
+    for need, idx in WIN_EGGS:
+        if wins >= need and idx < n:
+            unlocked.add(idx)
+    pool = _album_pool()
+    unlocked.update(pool[:max(0, album_count // ALBUM_PER_EGG)])
+    return unlocked
+
+
+def next_unlock_hint(album_count, wins):
+    """Short hint for opening the next locked egg ('' if all unlocked)."""
+    pool = _album_pool()
+    got = max(0, album_count // ALBUM_PER_EGG)
+    if got < len(pool):
+        need = (got + 1) * ALBUM_PER_EGG - album_count
+        return "%d more Digimon → egg" % need
+    for win_need, idx in WIN_EGGS:
+        if idx < count() and wins < win_need:
+            return "%d more wins → egg" % (win_need - wins)
+    return ""
+
+
 # back-compat: some callers referenced egg.FRAMES / egg.W / egg.H
 FRAMES = frames(0)
 W = max(len(r) for r in FRAMES[0])

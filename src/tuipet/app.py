@@ -1097,6 +1097,8 @@ class TuiPetApp(App):
 
     def _after_battle(self, battle):
         if battle is not None:
+            if battle.won:
+                persistence.wins_add(1)        # lifetime wins gate the mystery eggs
             self.flash(battle.reward)
             self.beep("win") if battle.won else self.beep("lose", bell=False)
         self.repaint()
