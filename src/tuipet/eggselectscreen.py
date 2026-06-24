@@ -41,6 +41,19 @@ class EggSelectPanel:
         self.msg = ""            # transient footer note (e.g. "Licensed!")
         self.msg_t = 0
         self.sfx = None
+        self.entering = False    # secret-code (DVPet password) entry mode
+        self.buf = ""
+
+    def _refresh(self):
+        """Recompute unlock state after a permanent change (purchase / password)."""
+        prog = persistence.get_progress()
+        owned = persistence.get_eggs_owned()
+        self.states = egg_mod.egg_states(prog, owned)
+        self.unlocked = egg_mod.selectable_eggs(prog, owned)
+        self.hint = egg_mod.locked_hint(prog, owned)
+        self.locked = sum(1 for st, _ in self.states.values() if st == "locked")
+        self.n = len(self.unlocked)
+        self.i = min(self.i, self.n - 1)
 
     def _bits(self):
         return int(getattr(self.pet, "bits", 0) or 0)
@@ -61,6 +74,11 @@ class EggSelectPanel:
         self.msg, self.msg_t = text, 22
 
     def key(self, k):
+        if self.entering:
+            return self._key_code(k)
+        if k in ("c", "C"):                            # enter a secret code
+            self.entering, self.buf = True, ""
+            return None
         if k in ("right", "l", "down", "j"):
             self.pos += 1
             self.i = int(self.pos) % self.n
@@ -84,6 +102,32 @@ class EggSelectPanel:
             return ("done", idx)                       # owned/temp -> hatch
         elif k == "escape":
             return ("done", None)                      # back out without choosing
+        return None
+
+    def _key_code(self, k):
+        if k == "escape":
+            self.entering, self.buf = False, ""
+            return None
+        if k == "enter":
+            idx = egg_mod.password_egg(self.buf)
+            self.entering = False
+            if idx is not None:
+                persistence.egg_own(idx)
+                self._refresh()
+                if idx in self.unlocked:
+                    self.i = self.unlocked.index(idx)
+                    self.pos = self.scroll = float(self.i)
+                self.sfx = "select"
+                self._flash("Unlocked %s!" % egg_mod.hatch_name(idx))
+            else:
+                self.sfx = "error"
+                self._flash("No such code.")
+            self.buf = ""
+            return None
+        if k == "backspace":
+            self.buf = self.buf[:-1]
+        elif len(k) == 1 and k.isprintable():
+            self.buf = (self.buf + k)[:24]
         return None
 
     def _egg(self, pos):
@@ -116,10 +160,14 @@ class EggSelectPanel:
         out.append_text(scene)
         out.append("\n")                              # scene has no trailing newline
         out.append_text(menu.note(self._note(self._egg(self.i))))
-        if self.msg:
+        if self.entering:
+            out.append_text(menu.footer(f"code: {self.buf}_   ENTER ok  ESC cancel"))
+        elif self.msg:
             out.append_text(menu.footer(self.msg))
-        elif self.locked > 0 and self.hint and (self.frame_i // 30) % 2 == 1:
+        elif self.locked > 0 and self.hint and (self.frame_i // 30) % 3 == 1:
             out.append_text(menu.footer(f"{self.locked} locked · {self.hint}"))
+        elif self.locked > 0 and (self.frame_i // 30) % 3 == 2:
+            out.append_text(menu.footer("C: enter a secret code"))
         else:
             out.append_text(menu.footer("←→ browse   ENTER pick   ESC back"))
         return out

@@ -179,6 +179,19 @@ def auto_owned(prog, owned):
     return out
 
 
+def password_egg(code):
+    """Egg index unlocked by a secret password (DVPet Copymon codes), or None.
+    Case-insensitive; e.g. 'Accentier' -> Carimon."""
+    from . import data
+    code = (code or "").strip().lower()
+    if not code:
+        return None
+    for idx, rule in data.load_egg_unlock().items():
+        if rule.get("password") and rule["password"].lower() == code:
+            return idx
+    return None
+
+
 def selectable_eggs(prog, owned):
     """Egg indices the player may pick or license now (owned + temp + buyable)."""
     st = egg_states(prog, owned)
