@@ -91,15 +91,15 @@ def record(egg_type=0):
 # attribute/element/field). Conditions met + price>0 -> licensable in the egg shop;
 # price 0 + permanent -> auto-unlocked; price 0 + temporary -> available that
 # generation only. persistence.get_progress() supplies the live state.
-_STAGE_ORDER = ["Fresh", "InTraining", "Rookie", "Champion", "Ultimate", "Mega"]
 _WIN_EGGS = {46: 50, 47: 100}      # tuipet-only "???" eggs (not in eggUnlock.csv) -> lifetime wins
 
 
 def _conditions_met(rule, prog):
+    from . import data
     if rule["gen"] is not None and prog["max_gen"] < rule["gen"]:
         return False
     if rule["stage"] is not None:
-        want = _STAGE_ORDER.index(rule["stage"]) if rule["stage"] in _STAGE_ORDER else 99
+        want = data.STAGE_ORDER.index(rule["stage"]) if rule["stage"] in data.STAGE_ORDER else 99
         if prog["max_stage"] < want:
             return False
     if rule["xanti"] and not (prog["last_xanti"] or prog["xanti_ever"]):

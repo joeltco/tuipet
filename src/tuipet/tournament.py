@@ -14,14 +14,6 @@ from . import battle, data
 TOURNEY_BITS = {"Rookie": 125, "Champion": 150, "Ultimate": 175, "Mega": 200}
 TOURNEY_MAX_BITS = 225
 ROUNDS = ["Quarterfinal", "Semifinal", "Final"]
-STAGE_ORDER = ["Egg", "Fresh", "InTraining", "Rookie", "Champion", "Ultimate", "Mega"]
-
-
-def _stage_rank(stage):
-    try:
-        return STAGE_ORDER.index(stage)
-    except ValueError:
-        return len(STAGE_ORDER)
 
 
 def trophy_label(t):
@@ -47,7 +39,7 @@ def available(pet):
             continue
         if t["attr_req"] and t["attr_req"] != getattr(pet, "attribute", ""):
             continue
-        if t["age_limit"] and _stage_rank(pet.stage) < _stage_rank(t["age_limit"]):
+        if t["age_limit"] and data.stage_rank(pet.stage) < data.stage_rank(t["age_limit"]):
             continue
         ws = won.get(t["id"])
         if ws is not None and not t["same_day_retry"]:
