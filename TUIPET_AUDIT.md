@@ -93,7 +93,7 @@ regression safety — not new features.
 
 ### E. Code health
 - [ ] Dead code / unused params / stale comments.
-- [ ] Duplication (STAGE_ORDER defined in 4 files — consolidate?).
+- [x] Duplication: **DONE.** STAGE_ORDER had two divergent variants copied across 5 files (6-stage evolution order vs 7-stage rank incl. Egg). Consolidated to one source each: data.STAGE_ORDER (egg.py now imports it) and data.STAGE_RANK + data.stage_rank() (shop.py + tournament.py now call it). 84 tests confirm behavior preserved; data.stage_rank pinned in test_data.py. ATTRS=(Vaccine,Data,Virus) is also locally repeated (battle, jogress) but left as-is: it never diverges, and a fixed 3-tuple as a local idiom is cleaner than a cross-module dependency.
 - [ ] Consistent naming/idiom with surrounding code.
 
 ### F. Regression safety (deliverable)

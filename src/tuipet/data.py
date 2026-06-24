@@ -43,6 +43,17 @@ ROLES = {
 MIRROR_ROLES = {"refuse"}
 
 STAGE_ORDER = ["Fresh", "InTraining", "Rookie", "Champion", "Ultimate", "Mega"]
+# full growth order including the Egg stage, for age/stage-rank gating (shop, tournament)
+STAGE_RANK = ["Egg"] + STAGE_ORDER
+
+
+def stage_rank(stage):
+    """Index of `stage` in the full growth order (Egg..Mega); an unknown stage
+    counts as fully grown (gates shop unlocks and tournament age limits)."""
+    try:
+        return STAGE_RANK.index(stage)
+    except ValueError:
+        return len(STAGE_RANK)      # unknown stage -> treat as fully grown
 
 
 PLACEHOLDER_NUMS = set()
