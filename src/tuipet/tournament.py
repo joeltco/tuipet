@@ -18,7 +18,7 @@ ROUNDS = ["Quarterfinal", "Semifinal", "Final"]
 
 def trophy_label(t):
     if t["field_req"]:
-        return "%s Cup" % t["field_req"]
+        return "%s Cup" % data.pretty_field(t["field_req"])
     if t["attr_req"]:
         return "%s Cup" % t["attr_req"]
     return "%s Open #%d" % (t["season"], t["id"])

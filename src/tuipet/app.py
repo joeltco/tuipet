@@ -975,7 +975,7 @@ class TuiPetApp(App):
         lines = [
             f"[b]{p.name[:14]}[/] [dim]· DNA[/]", div,
             f"Bits     [{T.COIN}]{p.bits}[/]",
-            f"Field    {f}" + ("  [dim](own)[/]" if same else ""),
+            f"Field    {data.pretty_field(f)}" + ("  [dim](own)[/]" if same else ""),
             f"Banked   {own}     Charged {chg}",
             f"Share    {p.dna_percent(f)}%    [dim]x{m.amount}[/]",
             f"Unlocks  [b]{unlocked}[/]/{len(dna_t)} form(s)",
