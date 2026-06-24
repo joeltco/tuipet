@@ -592,6 +592,17 @@ class Pet:
             self.asleep = True
             self._set_anim("yawn", 1.8)   # yawn, then settle into sleep
 
+        # DVPet discrete neglect-death triggers (config.csv): real abandonment is fatal,
+        # not merely a faster lifespan burn. Care mistakes + injuries are per-form (they
+        # reset on evolution); the starvation timer persists across evolutions.
+        if self.care_mistakes >= 20 or self.injuries >= 20:   # MaxCareMistakes / MaxInjuries
+            self._die(); return
+        if self.hunger == 0:
+            self._starve_t = getattr(self, "_starve_t", 0.0) + dt
+            if self._starve_t >= 12 * 3600:                   # empty hunger 12h -> death
+                self._die(); return
+        else:
+            self._starve_t = 0.0
         self.habitat_record[self.habitat] = self.habitat_record.get(self.habitat, 0) + dt
         # lifespan: neglect burns life down faster than the natural clock
         extra = 0.0
