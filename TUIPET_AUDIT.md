@@ -98,7 +98,7 @@ regression safety — not new features.
       hot path = cached dict lookups + the sprite/bg frame already cached).
 
 ### E. Code health
-- [ ] Dead code / unused params / stale comments.
+- [x] Dead code: **AUDITED** (AST scan for module-level defs/consts referenced only at their definition). 21 candidates, almost all intentional and left in place: real DVPet-derived helpers staged for future wiring (anim.sleep_pose/sleep_zzz_level, app.SUN/MOON sprites), reasonable public API (persistence.get_album/get_wins/get_tamer/set_tamer, data.evolution_targets), and documented DVPet config constants (ENTHUSIASM_*, weather temp factors). Gratuitously deleting deliberate, data-grounded code is not warranted. ONE actionable finding fixed: action_tournament duplicated can_enter's young/asleep gating inline (leaving can_enter dead) -> now delegates to can_enter (single source of entry gating; also rejects before opening an empty cup screen).
 - [x] Duplication: **DONE.** STAGE_ORDER had two divergent variants copied across 5 files (6-stage evolution order vs 7-stage rank incl. Egg). Consolidated to one source each: data.STAGE_ORDER (egg.py now imports it) and data.STAGE_RANK + data.stage_rank() (shop.py + tournament.py now call it). 84 tests confirm behavior preserved; data.stage_rank pinned in test_data.py. ATTRS=(Vaccine,Data,Virus) is also locally repeated (battle, jogress) but left as-is: it never diverges, and a fixed 3-tuple as a local idiom is cleaner than a cross-module dependency.
 - [ ] Consistent naming/idiom with surrounding code.
 
