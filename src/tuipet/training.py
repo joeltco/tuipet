@@ -20,7 +20,7 @@ from . import menu
 
 # DVPet config (normal difficulty)
 VACCINE_HITS_MIN = 20
-VACCINE_WINDOW = 40            # fast-ticks (~5s at 0.12s/tick) to mash
+VACCINE_WINDOW = 48            # ticks on the unified 0.1s clock = ~4.8s to mash (restored from 40 @ old 0.12s tick)
 VIRUS_BAR_MIN = 86
 VIRUS_SPEED = 4
 DATA_SHOOT_FRAME = 7
