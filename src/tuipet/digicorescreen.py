@@ -48,16 +48,17 @@ def build_pages(pet):
         ("Element", pet.element or "-"), ("Gen", str(pet.generation)),
         ("Age", _mins(pet.age_seconds)), ("Life", f"{_mins(rem)} left"),
     ]
+    power = [
+        ("Vaccine", str(pet.vaccine)), ("Data", str(pet.data_power)),
+        ("Virus", str(pet.virus)), ("Effort", f"{pet.strength}/4"),
+        ("Weight", f"{pet.weight}g"), ("Battles", f"{pet.wins}W / {pet.battles}"),
+        ("Trophy", str(pet.trophies)), ("Bits", str(pet.bits)),
+    ]
     if pet.x_antibody != "None":
-        status.append(("X-Anti", pet.x_antibody))
+        power.append(("X-Anti", pet.x_antibody))   # keep STATUS at its 9-row max (no overflow)
     return [
         ("STATUS", status),
-        ("POWER", [
-            ("Vaccine", str(pet.vaccine)), ("Data", str(pet.data_power)),
-            ("Virus", str(pet.virus)), ("Effort", f"{pet.strength}/4"),
-            ("Weight", f"{pet.weight}g"), ("Battles", f"{pet.wins}W / {pet.battles}"),
-            ("Trophy", str(pet.trophies)), ("Bits", str(pet.bits)),
-        ]),
+        ("POWER", power),
         ("CONDITION", [
             ("Hunger", f"{pet.hunger}/4"), ("Energy", f"{int(pet.energy)}/{pet.max_energy}"),
             ("Mood", pet.current_mood()), ("Spirit", f"{pet.enthusiasm:+d}"), ("Sick", "yes" if pet.sick else "no"),
