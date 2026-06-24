@@ -696,6 +696,10 @@ class TuiPetApp(App):
     def _open_mode(self, panel, on_close=None):
         self.mode = panel
         self._mode_close = on_close
+        # clear the message strip so a screen never shows the PREVIOUS screen's
+        # farewell flash; each sub-screen carries its own note inside the LCD
+        if getattr(self, "msg_w", None) is not None:
+            self.msg_w.update("")
         self.repaint()
 
     def _close_mode(self, result):
