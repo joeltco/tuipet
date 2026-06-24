@@ -1,7 +1,9 @@
 """Choose-your-egg: a smooth horizontal carousel of full-size egg sprites. Only
-UNLOCKED eggs appear (DM20-style — a small base set, the rest opened by raising a
-variety of Digimon plus battle wins; see persistence album/wins). ←→ glide between
-eggs, ENTER hatches the centred one, ESC backs out."""
+eggs you can pick or license appear — the base set plus everything unlocked through
+play (generation, album/history, X-Antibody, reached stage, maps cleared, tournament
+trophies, previous-generation traits; see data.load_egg_unlock / egg.evaluate). Eggs
+met-but-priced show a LICENSE cost paid from the pet's bits. ←→ glide, ENTER
+hatches (or licenses) the centred egg, ESC backs out."""
 from __future__ import annotations
 from . import egg as egg_mod
 from . import menu
@@ -19,25 +21,44 @@ SNAP = 0.03                   # below this, settle exactly
 
 
 class EggSelectPanel:
-    def __init__(self):
-        album = len(persistence.get_album())
-        wins = persistence.get_wins()
-        self.unlocked = sorted(egg_mod.unlocked_eggs(album, wins))  # real egg indices
+    def __init__(self, pet=None):
+        self.pet = pet
+        prog = persistence.get_progress()
+        owned = persistence.get_eggs_owned()
+        for i in egg_mod.auto_owned(prog, owned):     # newly-permanent eggs stick
+            persistence.egg_own(i)
+            owned.add(i)
+        self.states = egg_mod.egg_states(prog, owned)
+        self.unlocked = egg_mod.selectable_eggs(prog, owned)   # owned + temp + buyable
         self.total = egg_mod.count()
-        self.hint = egg_mod.next_unlock_hint(album, wins)
+        self.hint = egg_mod.locked_hint(prog, owned)
+        self.locked = sum(1 for s, _ in self.states.values() if s == "locked")
         self.n = len(self.unlocked)
         self.i = 0               # cursor = position within self.unlocked
         self.pos = 0.0           # continuous carousel target
         self.scroll = 0.0        # eased current position, chases self.pos
         self.frame_i = 0
+        self.msg = ""            # transient footer note (e.g. "Licensed!")
+        self.msg_t = 0
+        self.sfx = None
+
+    def _bits(self):
+        return int(getattr(self.pet, "bits", 0) or 0)
 
     def anim(self):
         self.frame_i += 1
+        if self.msg_t > 0:
+            self.msg_t -= 1
+            if self.msg_t == 0:
+                self.msg = ""
         diff = self.pos - self.scroll
         if abs(diff) < SNAP:
             self.scroll = self.pos
         else:
             self.scroll += diff * EASE
+
+    def _flash(self, text):
+        self.msg, self.msg_t = text, 22
 
     def key(self, k):
         if k in ("right", "l", "down", "j"):
@@ -47,7 +68,20 @@ class EggSelectPanel:
             self.pos -= 1
             self.i = int(self.pos) % self.n
         elif k in ("enter", "space"):
-            return ("done", self.unlocked[self.i])     # the real egg index
+            idx = self.unlocked[self.i]
+            state, price = self.states.get(idx, ("owned", 0))
+            if state == "buyable":
+                if self._bits() >= price:
+                    self.pet.bits -= price
+                    persistence.egg_own(idx)
+                    self.states[idx] = ("owned", 0)
+                    self.sfx = "select"
+                    self._flash("Licensed %s!  ENTER to hatch" % egg_mod.hatch_name(idx))
+                    return None
+                self.sfx = "error"
+                self._flash("Need %d bits (you have %d)" % (price, self._bits()))
+                return None
+            return ("done", idx)                       # owned/temp -> hatch
         elif k == "escape":
             return ("done", None)                      # back out without choosing
         return None
@@ -61,6 +95,15 @@ class EggSelectPanel:
             return fr[(self.frame_i // 5) % 2] or fr[0]
         return fr[0]
 
+    def _note(self, idx):
+        state, price = self.states.get(idx, ("owned", 0))
+        name = egg_mod.hatch_name(idx)
+        if state == "buyable":
+            return "%s — LICENSE %db (you %d)" % (name, price, self._bits())
+        if state == "temp":
+            return "hatches: %s  (this gen only)" % name
+        return "hatches: %s" % name
+
     def text(self):
         placements = []
         base = round(self.scroll)
@@ -72,10 +115,11 @@ class EggSelectPanel:
         out = menu.header("CHOOSE YOUR EGG", f"{self.i + 1}/{self.n}")
         out.append_text(scene)
         out.append("\n")                              # scene has no trailing newline
-        out.append_text(menu.note(f"hatches: {egg_mod.hatch_name(self._egg(self.i))}"))
-        locked = self.total - self.n
-        if locked > 0 and self.hint and (self.frame_i // 30) % 2 == 1:
-            out.append_text(menu.footer(f"{locked} locked · {self.hint}"))
+        out.append_text(menu.note(self._note(self._egg(self.i))))
+        if self.msg:
+            out.append_text(menu.footer(self.msg))
+        elif self.locked > 0 and self.hint and (self.frame_i // 30) % 2 == 1:
+            out.append_text(menu.footer(f"{self.locked} locked · {self.hint}"))
         else:
-            out.append_text(menu.footer("←→ browse   ENTER hatch   ESC back"))
+            out.append_text(menu.footer("←→ browse   ENTER pick   ESC back"))
         return out

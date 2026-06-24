@@ -624,7 +624,7 @@ class TuiPetApp(App):
 
     def _post_title(self):
         if self._new_game:
-            self._open_mode(eggselectscreen.EggSelectPanel(), self._after_egg_pick)
+            self._open_mode(eggselectscreen.EggSelectPanel(self.pet), self._after_egg_pick)
         else:
             self.msg_w.update(self._welcome)
             self.repaint()
@@ -645,6 +645,18 @@ class TuiPetApp(App):
 
     def autosave(self):
         persistence.save(self.pet)
+        self._note_progress()
+
+    def _note_progress(self):
+        """Record cross-generation egg-unlock milestones from the live pet."""
+        p = self.pet
+        if p is None or p.stage in ("", "Egg"):
+            return
+        persistence.note_generation(p.generation)
+        if p.stage in data.STAGE_ORDER:
+            persistence.note_stage_index(data.STAGE_ORDER.index(p.stage))
+        if getattr(p, "x_antibody", "None") != "None":
+            persistence.note_xanti()
 
     def on_unmount(self):
         persistence.save(self.pet)
@@ -763,10 +775,16 @@ class TuiPetApp(App):
                                          "[dim]a creature awaits[/]", "",
                                          "[dim]press ENTER[/]", "[dim]to begin[/]"])
         elif isinstance(self.mode, eggselectscreen.EggSelectPanel):
-            i = self.mode.i
-            self._status_card("New Egg", [f"[dim]{i + 1} of {egg_mod.count()} eggs[/]", "",
-                                          "Destined to hatch", f"  [b]{egg_mod.hatch_name(i)}[/]", "",
-                                          "[dim]←→ ↑↓ browse[/]", "[dim]ENTER to choose[/]"])
+            m = self.mode
+            idx = m.unlocked[m.i] if m.unlocked else 0
+            state, price = m.states.get(idx, ("owned", 0))
+            badge = {"owned": "[dim]licensed[/]", "temp": "[dim]this gen only[/]",
+                     "buyable": f"[b]license {price}b[/]"}.get(state, "")
+            self._status_card("New Egg", [f"[dim]{m.i + 1} of {m.n} available[/]",
+                                          f"[dim]{m.locked} still locked[/]", "",
+                                          "Destined to hatch", f"  [b]{egg_mod.hatch_name(idx)}[/]",
+                                          f"  {badge}", "",
+                                          "[dim]←→ browse  ENTER pick[/]"])
         elif isinstance(self.mode, adventurescreen.AdventurePanel):
             self._status_adventure()
         elif isinstance(self.mode, tournamentscreen.TournamentPanel):
@@ -1227,8 +1245,9 @@ class TuiPetApp(App):
         self._do(msg)
     def action_sleep(self): self._do(self.pet.toggle_lights())   # the "s" key is the LIGHTS toggle
     def action_new(self):
+        persistence.snapshot_prev_gen(self.pet)   # previous-generation egg gates
         gen = self.pet.generation + 1
-        self._open_mode(eggselectscreen.EggSelectPanel(),
+        self._open_mode(eggselectscreen.EggSelectPanel(self.pet),
                         lambda et: self._hatch_new(et, gen))
 
     def _hatch_new(self, egg_type, gen):

@@ -19,15 +19,17 @@ MAX_OFFLINE = 36 * 3600  # cap catch-up at 36h of real time
 SETTINGS_PATH = os.path.join(SAVE_DIR, "settings.json")
 
 
-def load_settings(path=SETTINGS_PATH):
+def load_settings(path=None):
     """App-level prefs that outlive any single pet (e.g. the tamer name)."""
+    path = path or SETTINGS_PATH
     try:
         return json.load(open(path))
     except (OSError, ValueError):
         return {}
 
 
-def save_settings(d, path=SETTINGS_PATH):
+def save_settings(d, path=None):
+    path = path or SETTINGS_PATH
     os.makedirs(os.path.dirname(path), exist_ok=True)
     tmp = path + ".tmp"
     with open(tmp, "w") as fh:
@@ -65,6 +67,114 @@ def wins_add(n=1):
     save_settings(d)
 
 
+# --- cross-generation egg-unlock progress (DVPet eggUnlock.csv signals) -----------
+# These outlive any single pet and feed egg.evaluate(): permanent milestones (album,
+# wins, max generation/stage, maps cleared, tournament trophies, X-Antibody ever) plus
+# a snapshot of the pet that just freed the slot, for the "previous generation" gates.
+
+def _prog():
+    return load_settings().get("progress", {})
+
+
+def get_eggs_owned():
+    """Egg indices permanently licensed (bought, or a met price-0 permanent unlock)."""
+    return set(_prog().get("eggs_owned", []))
+
+
+def egg_own(idx):
+    if idx is None:
+        return
+    d = load_settings()
+    prog = d.setdefault("progress", {})
+    owned = set(prog.get("eggs_owned", []))
+    if idx in owned:
+        return
+    owned.add(idx)
+    prog["eggs_owned"] = sorted(owned)
+    save_settings(d)
+
+
+def _note_max(key, value):
+    d = load_settings()
+    prog = d.setdefault("progress", {})
+    if int(value) > int(prog.get(key, 0)):
+        prog[key] = int(value)
+        save_settings(d)
+
+
+def note_generation(g):
+    _note_max("max_gen", g)
+
+
+def note_stage_index(i):
+    _note_max("max_stage", i)
+
+
+def note_xanti():
+    d = load_settings()
+    prog = d.setdefault("progress", {})
+    if not prog.get("xanti_ever"):
+        prog["xanti_ever"] = True
+        save_settings(d)
+
+
+def _note_set(key, value):
+    d = load_settings()
+    prog = d.setdefault("progress", {})
+    cur = set(prog.get(key, []))
+    if value in cur:
+        return
+    cur.add(value)
+    prog[key] = sorted(cur)
+    save_settings(d)
+
+
+def map_complete_add(map_index):
+    _note_set("maps", int(map_index))
+
+
+def tourney_add(trophy_id):
+    _note_set("tourneys", int(trophy_id))
+
+
+def snapshot_prev_gen(pet):
+    """Record the just-ended pet's traits for the 'previous generation' egg gates."""
+    if pet is None or getattr(pet, "stage", "Egg") == "Egg":
+        return
+    d = load_settings()
+    prog = d.setdefault("progress", {})
+    prog["last_gen"] = {
+        "field": getattr(pet, "field", "") or "None",
+        "attribute": getattr(pet, "attribute", "") or "None",
+        "element": getattr(pet, "element", "") or "None",
+        "mood": int(getattr(pet, "mood", 0)),
+        "obedience": int(getattr(pet, "obedience", 0)),
+        "xanti": getattr(pet, "x_antibody", "None") != "None",
+    }
+    save_settings(d)
+
+
+def get_progress():
+    """Assemble the full progress view egg.evaluate() consumes."""
+    prog = _prog()
+    last = prog.get("last_gen", {}) or {}
+    return {
+        "album": set(prog.get("album", [])),
+        "wins": int(prog.get("wins", 0)),
+        "max_gen": int(prog.get("max_gen", 1)),
+        "max_stage": int(prog.get("max_stage", 0)),
+        "xanti_ever": bool(prog.get("xanti_ever", False)),
+        "maps": set(prog.get("maps", [])),
+        "tourneys": set(prog.get("tourneys", [])),
+        "last_field": last.get("field", "None"),
+        "last_attr": last.get("attribute", "None"),
+        "last_elem": last.get("element", "None"),
+        "last_mood": int(last.get("mood", 0)),
+        "last_obed": int(last.get("obedience", 0)),
+        "last_xanti": bool(last.get("xanti", False)),
+    }
+
+
 def get_tamer():
     return (load_settings().get("tamer") or "").strip()
 
@@ -90,7 +200,8 @@ def set_account(name, pw):
     save_settings(d)
 
 
-def save(pet, path=SAVE_PATH):
+def save(pet, path=None):
+    path = path or SAVE_PATH
     os.makedirs(os.path.dirname(path), exist_ok=True)
     data = asdict(pet)
     data["_saved_at"] = time.time()
@@ -123,7 +234,8 @@ def _offline(pet, elapsed):
     return f"Welcome back! ({int(mins / 60)}h away) Your pet needs care!"
 
 
-def load(path=SAVE_PATH, catch_up=True):
+def load(path=None, catch_up=True):
+    path = path or SAVE_PATH
     """Return (pet, message) or (None, '') if no valid save exists."""
     if not os.path.exists(path):
         return None, ""
@@ -145,12 +257,13 @@ def load(path=SAVE_PATH, catch_up=True):
     return pet, msg
 
 
-def delete(path=SAVE_PATH):
+def delete(path=None):
+    path = path or SAVE_PATH
     try:
         os.remove(path)
     except OSError:
         pass
 
 
-def exists(path=SAVE_PATH):
-    return os.path.exists(path)
+def exists(path=None):
+    return os.path.exists(path or SAVE_PATH)

@@ -119,6 +119,8 @@ class Tournament:
                 self.pet.trophies_won = {}
                 won = self.pet.trophies_won
             won[self.trophy["id"]] = self.pet.season
+            from . import persistence
+            persistence.tourney_add(self.trophy["id"])   # gates the tournament egg unlocks
             extras = []
             if self.trophy["item"] >= 0:
                 self.pet.add_item("i:%d" % self.trophy["item"]); extras.append("item")

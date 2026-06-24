@@ -214,12 +214,17 @@ class Adventure:
             self.last = "Zone cleared! Onward."
             self._save()
             return "zone"
+        from . import persistence
         if self.mi + 1 < len(self.maps):
+            persistence.map_complete_add(self.mi)        # this map is cleared
             self.mi += 1
             self.zi = 0
             self.last = "MAP COMPLETE! New region unlocked!"
             self._save()
             return "map"
+        persistence.map_complete_add(self.mi)
+        for _m in range(len(self.maps)):
+            persistence.map_complete_add(_m)             # conquered everything
         self.done = True
         self.last = "You conquered the Digital World!"
         return "all"

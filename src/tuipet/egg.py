@@ -85,42 +85,114 @@ def record(egg_type=0):
             "frames": fr}
 
 
-# --- DM20-style egg unlock (tuipet adaptation; see memory digimon-vpet-dm20) ---
-BASE_EGGS = (1, 2, 3, 4, 5)        # always unlocked: Botamon/Punimon/Poyomon/Yuramon/Zurumon (DM20 Ver.1-5)
-WIN_EGGS = ((50, 46), (100, 47))   # mystery "???" eggs unlocked by lifetime battle wins
-ALBUM_PER_EGG = 1                  # each new distinct Digimon registered opens the next egg
+# --- DVPet eggUnlock.csv-driven egg unlock (real data; see data.load_egg_unlock) ---
+# Each egg gates on the same signals the device tracks (generation, album/history,
+# X-Antibody, reached stage, maps cleared, tournament trophies, previous-generation
+# attribute/element/field). Conditions met + price>0 -> licensable in the egg shop;
+# price 0 + permanent -> auto-unlocked; price 0 + temporary -> available that
+# generation only. persistence.get_progress() supplies the live state.
+_STAGE_ORDER = ["Fresh", "InTraining", "Rookie", "Champion", "Ultimate", "Mega"]
+_WIN_EGGS = {46: 50, 47: 100}      # tuipet-only "???" eggs (not in eggUnlock.csv) -> lifetime wins
 
 
-def _album_pool():
-    """Egg indices that unlock progressively via the album, in order."""
-    n = count()
-    base = {i for i in BASE_EGGS if i < n}
-    win_idx = {idx for _, idx in WIN_EGGS}
-    return [i for i in range(n) if i not in base and i not in win_idx]
+def _conditions_met(rule, prog):
+    if rule["gen"] is not None and prog["max_gen"] < rule["gen"]:
+        return False
+    if rule["stage"] is not None:
+        want = _STAGE_ORDER.index(rule["stage"]) if rule["stage"] in _STAGE_ORDER else 99
+        if prog["max_stage"] < want:
+            return False
+    if rule["xanti"] and not (prog["last_xanti"] or prog["xanti_ever"]):
+        return False
+    if rule["tourney"] is not None and rule["tourney"] not in prog["tourneys"]:
+        return False
+    if rule["map"] is not None and rule["map"] not in prog["maps"]:
+        return False
+    if rule["history"] and not all(n in prog["album"] for n in rule["history"]):
+        return False
+    if rule["prev_field"] is not None and prog["last_field"] != rule["prev_field"]:
+        return False
+    if rule["prev_attr"] is not None and prog["last_attr"] != rule["prev_attr"]:
+        return False
+    if rule["prev_elem"] is not None and prog["last_elem"] != rule["prev_elem"]:
+        return False
+    if rule["obedience"] is not None and prog["last_obed"] < rule["obedience"]:
+        return False
+    if rule["mood"] is not None and prog["last_mood"] < rule["mood"]:
+        return False
+    # gates tuipet does not model -> egg stays locked (e.g. password, food/item used)
+    if rule["password"] is not None:
+        return False
+    if rule["food"] is not None or rule["item"] is not None or rule["habitat"] is not None:
+        return False
+    if rule["zone"] is not None:
+        return False
+    return True
 
 
-def unlocked_eggs(album_count, wins):
-    """Egg indices available given album size (distinct Digimon raised) + lifetime wins."""
-    n = count()
-    unlocked = {i for i in BASE_EGGS if i < n}
-    for need, idx in WIN_EGGS:
-        if wins >= need and idx < n:
-            unlocked.add(idx)
-    pool = _album_pool()
-    unlocked.update(pool[:max(0, album_count // ALBUM_PER_EGG)])
-    return unlocked
+def _fallback_pool():
+    """Tuipet-only eggs absent from eggUnlock.csv (excluding the win-eggs), in order."""
+    from . import data
+    rules = data.load_egg_unlock()
+    return [i for i in range(count())
+            if i not in rules and i not in _WIN_EGGS]
 
 
-def next_unlock_hint(album_count, wins):
-    """Short hint for opening the next locked egg ('' if all unlocked)."""
-    pool = _album_pool()
-    got = max(0, album_count // ALBUM_PER_EGG)
-    if got < len(pool):
-        need = (got + 1) * ALBUM_PER_EGG - album_count
-        return "%d more Digimon → egg" % need
-    for win_need, idx in WIN_EGGS:
-        if idx < count() and wins < win_need:
-            return "%d more wins → egg" % (win_need - wins)
+def egg_state(idx, prog, owned):
+    """('owned'|'buyable'|'temp'|'locked', price) for one egg index."""
+    from . import data
+    rule = data.load_egg_unlock().get(idx)
+    if rule is None:                                   # tuipet-only egg: simple fallback
+        if idx in owned:
+            return ("owned", 0)
+        need = _WIN_EGGS.get(idx)
+        if need is not None:
+            return ("owned", 0) if prog["wins"] >= need else ("locked", 0)
+        pool = _fallback_pool()
+        rank = pool.index(idx) if idx in pool else 99
+        return ("owned", 0) if len(prog["album"]) > rank else ("locked", 0)
+    if rule["start"] or idx in owned:
+        return ("owned", 0)
+    if not _conditions_met(rule, prog):
+        return ("locked", rule["price"])
+    if rule["price"] > 0:
+        return ("buyable", rule["price"])
+    return ("owned", 0) if rule["can_perm"] else ("temp", 0)
+
+
+def egg_states(prog, owned):
+    return {i: egg_state(i, prog, owned) for i in range(count())}
+
+
+def auto_owned(prog, owned):
+    """Eggs that just became permanent (price-0 met, can_perm) -> caller persists them."""
+    from . import data
+    rules = data.load_egg_unlock()
+    out = []
+    for i in range(count()):
+        if i in owned:
+            continue
+        rule = rules.get(i)
+        if rule and not rule["start"] and rule["price"] == 0 and rule["can_perm"] \
+                and _conditions_met(rule, prog):
+            out.append(i)
+    return out
+
+
+def selectable_eggs(prog, owned):
+    """Egg indices the player may pick or license now (owned + temp + buyable)."""
+    st = egg_states(prog, owned)
+    return sorted(i for i, (s, _) in st.items() if s != "locked")
+
+
+def locked_hint(prog, owned):
+    """Shortest 'what unlocks next' hint among locked eggs ('' if none)."""
+    from . import data
+    rules = data.load_egg_unlock()
+    for i in range(count()):
+        s, _ = egg_state(i, prog, owned)
+        if s == "locked" and rules.get(i) and rules[i]["desc"]:
+            return rules[i]["desc"]
     return ""
 
 
