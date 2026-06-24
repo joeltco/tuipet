@@ -69,12 +69,17 @@ regression safety — not new features.
   - LATENT (dormant, not a live bug): the `reset_season and ws != season` re-entry branch is dead given shipped data -- all 325 cups set same_day_retry=True (so the won-exclusion never fires) and reset_season=FALSE. `ws` stores the season NAME at win time, which always equals the current season for a season-locked cup, so the branch could never re-open it. If a future CSV sets same_day_retry=FALSE on a reset_season cup, it would stay locked forever. Left as-is (no data exercises it); revisit if the data changes.
 
 ### B. Edge cases & robustness
-- [ ] Save/load migration: old saves missing new fields (effect_id,
-      progress keys) load with defaults — add a guard test.
-- [ ] Bounds: empty album/roster, gen 1 with no prev-gen snapshot, 0 bits,
-      dead pet interactions, None returns from panels (cancel paths).
-- [ ] Offline catch-up math at extremes (36h cap, mid-evolution, mid-effect).
+- [x] Save/load migration + bounds + offline extremes: **VERIFIED.** A ~30-case
+      edge fuzz found graceful degradation everywhere user-reachable; pinned in
+      tests/test_robustness.py (14) + tests/test_persistence.py: empty gen-1
+      account (no prev-gen snapshot), 0-bit buys, empty-bag sell, missing/garbage
+      item keys, bad habitat ids, dead-pet inertness, corrupt/partial/unknown-num
+      saves, future-timestamp clamp (no time travel), offline 0s/huge bounds,
+      out-of-range egg indices. Lone crash Pet.from_num(bad num) is an internal
+      fail-loud on a data-integrity error (only ever called with validated nums) —
+      left as-is on purpose.
 - [ ] Multiplayer/lobby: disconnect, name-taken, partner leaves mid-jogress.
+      (networked; deferred — needs a ws harness, lower ROI than the above.)
 
 ### C. UI / UX consistency
 - [ ] Theme propagation across ALL screens (the `_SCREEN_MODULES` set).
