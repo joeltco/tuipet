@@ -63,7 +63,8 @@ regression safety — not new features.
 - [ ] Egg unlock: all 49 eggs reach a non-locked state through real play;
       buyable/temp/owned transitions; the Carimon password path.
 - [x] Battle resolution: **VERIFIED.** Per-round damage = base(stage) + (-1/0/+1 count delta), floored at 0; per-stage HP (R10/C15/U20/M25, enemy min 2); win iff own HP>0 (double-KO = loss); first-strike KO blocks retaliation; AI win-ramp thresholds. Pinned by tests/test_battle.py (11 tests). Found+fixed a doc error: combat is the count comparison, not a '+32 triangle' (that's real hardware).
-- [ ] Care effects (Futon), care-mistake / death triggers, training gain.
+- [x] Care effects (Futon) + care-mistake / death triggers: **VERIFIED.** Four neglect-death paths (20 care-mistakes, 20 injuries, 12h continuous starvation, lifespan expiry); per-form counters reset on evolve; eggs immune; dead pet frozen; feeding resets the starve clock. Pinned by tests/test_death.py (9) + the Futon lifecycle in tests/test_pet_effect.py.
+- [ ] Training gain (apply_training attribute-power scaling) -- still to verify.
 - [ ] Tournament eligibility, season reset, trophy persistence.
 
 ### B. Edge cases & robustness
