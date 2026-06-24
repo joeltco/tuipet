@@ -37,7 +37,7 @@ def _partner_for(pet, attrs):
     same = [n for n, r in by.items() if r["stage"] == pet.stage and r["attribute"] in attrs
             and not data.is_placeholder(n) and n != pet.num]
     pool = same or [n for n, r in by.items() if r["attribute"] in attrs and not data.is_placeholder(n)]
-    n = random.choice(pool) if pool else None
+    n = min(pool) if pool else None        # stable example partner (was random -> re-rolled each visit)
     return n, (by[n]["name"] if n else "?")
 
 
