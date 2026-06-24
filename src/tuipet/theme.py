@@ -57,10 +57,10 @@ _current = _DEFAULT
 _NAMES = ("LCD_ON", "LCD_BG", "MID", "INK", "INK_B", "DIM", "SEL", "ACCENT",
           "POS", "NEG", "BORDER", "SIL_DAY", "SIL_NIGHT", "PHASE_PALETTE",
           "HEART", "ENERGY", "MOOD", "LIFE", "COIN")
-_SCREEN_MODULES = ("app", "battlescreen", "training", "adventurescreen",
+_SCREEN_MODULES = ("app", "menu", "battlescreen", "training", "adventurescreen",
                    "tournamentscreen", "shopscreen", "habitatscreen",
                    "jogressscreen", "digicorescreen", "eggselectscreen",
-                   "lobbyscreen")
+                   "lobbyscreen", "titlescreen", "deathscreen", "themescreen")
 
 _RAIN = {"Drizzling", "Raining", "HeavyRain"}
 _SNOW = {"LightSnow", "Snowing", "HeavySnow"}
