@@ -469,6 +469,7 @@ class Stats(Static):
         if pet.asleep: deco.append("[blue]Zzz[/]")
         if pet.sick: deco.append(f"[{T.NEG}]+sick[/]")
         if pet.poop: deco.append(f"[{T.COIN}]~poop x{pet.poop}[/]")
+        if getattr(pet, "effect_id", -1) >= 0: deco.append(f"[{T.POS}]\u2726{pet.effect_name()}[/]")
         mins, secs = divmod(int(pet.age_seconds), 60)
         picon = chr(0x2600) if pet.is_daytime else chr(0x263E)
         wglyph = WEATHER_GLYPH.get(pet.weather, "")
@@ -1065,7 +1066,7 @@ class TuiPetApp(App):
         elif p.poop > poop0:
             self.beep("poop", bell=False)
         # care-need call (classic V-pet nag): alert on onset, then every ~90s
-        needs = (not p.dead and p.stage != "Egg" and not p.asleep
+        needs = (not p.dead and p.stage != "Egg" and not p.asleep and not p.call_paused()
                  and (p.hunger == 0 or p.sick or p.poop >= 3 or p.energy <= 0
                       or p.scold_flag))
         if needs and not self._needs:

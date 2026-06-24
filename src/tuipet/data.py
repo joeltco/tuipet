@@ -533,6 +533,7 @@ def _consumable(row, id_field):
         "action": (row.get("AnimationType") or "").strip(),  # DVPet item behaviour driver
         "dexnum": int(num("DigimonID")),  # direct ItemEvol target form (-1 if none)
         "category": (row.get("Type") or "").strip(),  # foods.csv food category for taste
+        "effect_id": int(num("EffectID")) if (row.get("EffectID") or "").strip() not in ("", "-1") else -1,
         # DVPet Consumable uses-model: a held consumable carries uses up to MaxUses;
         # using spends UsesPer*; can_inc/can_dec gate buying/using (foods/items.csv).
         "max_uses": int(num("MaxUses") or 1),
@@ -588,6 +589,8 @@ def item_is_functional(e):
     if not e:
         return False
     if any(e.get(k) for k in _FUNC_STATS) or any(e.get(k) for k in _FUNC_FLAGS):
+        return True
+    if e.get("effect_id", -1) >= 0:     # grants a temporary care effect (Futon)
         return True
     if e.get("action") == "ItemEvol":   # item-triggered evolution (now implemented)
         return True
@@ -874,6 +877,44 @@ WEATHER_CHANCE_SCALE = 4
 
 
 @lru_cache(maxsize=1)
+@lru_cache(maxsize=1)
+def load_care_effects():
+    """DVPet careEffect.csv -> {id: effect}. Temporary care buffs (the Futon's sleep
+    boost): a duration plus per-tick rate changes ("amount;every_n_ticks") and pause
+    flags. Applied by pet.use_item / pet.tick."""
+    def pair(v):
+        parts = (v or "0;0").split(";")
+        try:
+            return (int(parts[0]), int(parts[1]) if len(parts) > 1 else 0)
+        except ValueError:
+            return (0, 0)
+    def flag(v):
+        return (v or "FALSE").strip().upper() == "TRUE"
+    out = {}
+    path = os.path.join(_DATA, "careEffect.csv")
+    if not os.path.exists(path):
+        return out
+    for r in csv.DictReader(open(path)):
+        try:
+            eid = int(r["EffectID"])
+        except (ValueError, KeyError, TypeError):
+            continue
+        out[eid] = {
+            "name": (r.get("Name") or "").strip(),
+            "desc": (r.get("Description") or "").strip(),
+            "duration": int(r.get("MaxDuration") or 0),
+            "end_on_sleep": flag(r.get("EndOnSleepChange")),
+            "pause_temp": flag(r.get("PauseTemp")),
+            "pause_call": flag(r.get("PauseCall")),
+            "mood": pair(r.get("MoodChange")),
+            "energy": pair(r.get("EnergyChange")),
+            "hunger": pair(r.get("HungerChange")),
+            "strength": pair(r.get("StrengthChange")),
+            "can_reapply": flag(r.get("CanReapply")),
+        }
+    return out
+
+
 @lru_cache(maxsize=1)
 def load_digicore_icons():
     """DVPet digicoreMenuConfig.csv -> {digimon_num: core_label}. The Data Book core
