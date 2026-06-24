@@ -56,6 +56,14 @@ def build_pages(pet):
     ]
     if pet.x_antibody != "None":
         power.append(("X-Anti", pet.x_antibody))   # keep STATUS at its 9-row max (no overflow)
+    person = [
+        ("Type", pet.personality()), ("Spirit", disp),
+        ("Appetite", appetite), ("Pace", temperament),
+        ("Likes", fav or "-"), ("Dislikes", dis or "-"),
+    ]
+    core = data.load_digicore_icons().get(pet.num)
+    if core:
+        person.append(("Core", f"{chr(0x25C6)} {core}"))   # DVPet digicore badge
     return [
         ("STATUS", status),
         ("POWER", power),
@@ -71,11 +79,7 @@ def build_pages(pet):
             ("Temp", f"{int(pet.temp)}°"),
             ("Ideal", f"{pet.ideal_temp[0]}-{pet.ideal_temp[1]}°"),
         ]),
-        ("PERSON", [
-            ("Type", pet.personality()), ("Spirit", disp),
-            ("Appetite", appetite), ("Pace", temperament),
-            ("Likes", fav or "-"), ("Dislikes", dis or "-"),
-        ]),
+        ("PERSON", person),
         ("EVOLVES", _evo_rows(pet)),
     ]
 

@@ -875,6 +875,25 @@ WEATHER_CHANCE_SCALE = 4
 
 @lru_cache(maxsize=1)
 @lru_cache(maxsize=1)
+def load_digicore_icons():
+    """DVPet digicoreMenuConfig.csv -> {digimon_num: core_label}. The Data Book core
+    badge (Burst / Twelve / Two / Dark) the device shows for certain Digimon."""
+    label = {"burstCore.png": "Burst", "twelveCore.png": "Twelve",
+             "twoCore.png": "Two", "darkcore.png": "Dark"}
+    out = {}
+    path = os.path.join(_DATA, "digicoreMenuConfig.csv")
+    if not os.path.exists(path):
+        return out
+    for r in csv.reader(open(path)):
+        if len(r) < 2 or not r[0].strip().isdigit():
+            continue
+        lbl = label.get((r[1] or "").strip())
+        if lbl:
+            out[int(r[0])] = lbl
+    return out
+
+
+@lru_cache(maxsize=1)
 def load_egg_unlock():
     """DVPet eggUnlock.csv -> {egg_index: rule}. Joined to tuipet egg indices by the
     egg's hatch name. Each rule is the parsed set of conditions that gate the egg;
