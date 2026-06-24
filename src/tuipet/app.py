@@ -1059,7 +1059,8 @@ class TuiPetApp(App):
                 self._nag_t = 0.0
                 self.beep("alarm")
         self._needs = needs
-        self.repaint()
+        if self.screen_w.fx is None:   # during a care fx on_frame owns the paint; repainting here flashes the status box
+            self.repaint()
 
     def flash(self, text):
         self.msg_w.update(text)
