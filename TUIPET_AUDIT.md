@@ -81,10 +81,14 @@ regression safety — not new features.
 - [ ] Consistent naming/idiom with surrounding code.
 
 ### F. Regression safety (deliverable)
-- [ ] Stand up a `tests/` dir + minimal runner (pytest) covering the core:
-      evolution no-soft-lock, egg-unlock reachability, save/load round-trip,
-      Futon lifecycle, battle math, offline catch-up. Convert the best of the
-      throwaway `/tmp` tests into permanent ones.
+- [x] Stand up a `tests/` dir + pytest runner. **DONE** (26 tests): an autouse
+      `isolate_save` fixture sandboxes all persistence I/O into tmp (so a test can
+      never touch the real save). Covers: CSV loaders (care/digicore/eggUnlock),
+      egg-unlock reachability + password path, save/load round-trip + old-save
+      migration, bounded offline catch-up (36h cap), and the Futon care-effect
+      lifecycle. Run with `python3 -m pytest -q`.
+- [ ] Still to add: evolution no-soft-lock, battle/DP math, jogress outcome,
+      tournament eligibility. (Wire these in as those systems are audited.)
 
 ## Method
 
