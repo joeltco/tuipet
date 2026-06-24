@@ -24,7 +24,6 @@ class TransportPanel:
         self.kind = KIND.get(e.get("action"), "zone")
         self.maps = data.load_maps()
         self.cursor = 0
-        self.frame_i = 0
         self.options = self._options()
 
     def _options(self):
@@ -39,9 +38,6 @@ class TransportPanel:
             return [("Warp to the nearest town  (rest)", mi, 0)]
         zi = max(0, min(self.pet.adv_zone, len(self.maps[mi]["zones"]) - 1))
         return [("Warp toward the nearest enemy", mi, zi)]
-
-    def anim(self):
-        self.frame_i += 1
 
     def key(self, k):
         if k in ("up", "k"):
