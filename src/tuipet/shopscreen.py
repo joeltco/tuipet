@@ -169,7 +169,7 @@ class ShopPanel:
         out.append_text(menu.blanks(vis - shown))
         out.append_text(menu.note(self.msg))
         if self.mode == "shop":
-            out.append_text(menu.footer("←→ category  ↑↓ pick  ENTER buy  TAB bag"))
+            out.append_text(menu.footer("←→ category ↑↓ pick ENTER buy TAB bag"))
         else:
-            out.append_text(menu.footer("←→ category  ENTER use  R sell  TAB shop"))
+            out.append_text(menu.footer("←→ category ENTER use R sell TAB shop"))
         return out

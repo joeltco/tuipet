@@ -457,6 +457,22 @@ class Screen(Static):
                                   mirror=(fx["kind"] == "dying")))
 
 
+def _status_line(status, deco, width=26):
+    """Assemble the status word + deco glyphs, bounded to `width` visible cols
+    so the Stats box never wraps past its 16-row height. Drops the lowest-priority
+    deco that would overflow (rare: only when asleep+sick+poop+effect pile up)."""
+    from rich.text import Text
+    used = len(status) + 3                      # the status word + 3 spaces
+    shown = []
+    for d in deco:
+        vis = len(Text.from_markup(d).plain)
+        add = vis + (2 if shown else 0)         # 2-space separator between glyphs
+        if used + add <= width:
+            shown.append(d)
+            used += add
+    return f"[b]{status}[/]   " + "  ".join(shown)
+
+
 class Stats(Static):
     def paint(self, pet: Pet):
         if pet.dead:
@@ -495,7 +511,7 @@ class Stats(Static):
             f"@{pet.habitat_obj()['name'][:14]} {amark} [dim]{pet.season}[/]",
             f"[{T.COIN}]{picon}[/] [dim]{wglyph}{pet.weather} {int(pet.temp)}\u00b0[/] [dim]{mins}m{secs:02d}s[/]",
             f"Life    {bar(lifepct, 12, lifecol)}",
-            f"[b]{pet.status_word()}[/]   " + "  ".join(deco),
+            _status_line(pet.status_word(), deco),
         ]
         self.update("\n".join(lines))
 
