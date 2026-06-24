@@ -736,7 +736,9 @@ class Pet:
             return "Not enough bits."
         self.bits -= h["price"]
         self.habitats = sorted(set(self.habitats) | {hid})
-        return f"Bought {h['name']}!"
+        self.habitat = hid                 # buying a new home moves you in (moving is free anyway)
+        self._weather_day = -1             # fresh climate roll on arrival, like move_to
+        return f"Bought {h['name']} — moved in!"
 
     def move_to(self, hid):
         habs = data.load_habitats()
