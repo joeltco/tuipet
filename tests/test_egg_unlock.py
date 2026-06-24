@@ -106,3 +106,15 @@ def test_signal_gated_eggs_are_reachable():
         if state == "locked":
             stranded.append(i)
     assert not stranded, f"signal-gated eggs unreachable: {stranded}"
+
+
+def test_egg_select_cursor_starts_on_a_free_egg():
+    """On a fresh account the egg picker must land on an owned (free) starter, not an
+    unaffordable license egg (a new player has 0 bits)."""
+    from tuipet.eggselectscreen import EggSelectPanel
+    panel = EggSelectPanel()
+    assert panel.unlocked, "a fresh account must have selectable eggs"
+    idx = panel.unlocked[panel.i]
+    state, price = panel.states[idx]
+    assert state == "owned" and price == 0, \
+        f"new-game cursor landed on {state} (price {price}); expected a free owned egg"
