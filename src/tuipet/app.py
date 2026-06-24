@@ -29,6 +29,7 @@ from . import jogressscreen
 from . import jogress
 from . import net
 from . import lobbyscreen
+from . import tournament
 from . import tournamentscreen
 from . import titlescreen
 from . import themescreen
@@ -1159,10 +1160,9 @@ class TuiPetApp(App):
         self._do(msg)
 
     def action_tournament(self):
-        if self.pet.stage in ("Egg", "Fresh", "InTraining"):
-            self._do("Too young for the cup."); return
-        if self.pet.asleep:
-            self._do("zzz... asleep"); return
+        err = tournament.can_enter(self.pet)   # single source of entry gating (young/asleep/no-cup)
+        if err:
+            self._do(err); return
         self._open_mode(tournamentscreen.TournamentPanel(self.pet), self._after_cup)
 
     def _after_cup(self, msg):
