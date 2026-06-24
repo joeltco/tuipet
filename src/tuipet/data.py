@@ -1,6 +1,6 @@
 """Load extracted sprites + game data from the DVPet CSVs."""
 from __future__ import annotations
-import csv, gzip, json, os
+import csv, gzip, json, os, re
 from functools import lru_cache
 
 _HERE = os.path.dirname(__file__)
@@ -54,6 +54,13 @@ def stage_rank(stage):
         return STAGE_RANK.index(stage)
     except ValueError:
         return len(STAGE_RANK)      # unknown stage -> treat as fully grown
+
+
+def pretty_field(name):
+    """Display form of a CamelCase Field value (the data keeps it joined for
+    matching): 'NightmareSoldier' -> 'Nightmare Soldier'. 'None'/single words
+    are unchanged."""
+    return re.sub(r"(?<=[a-z])(?=[A-Z])", " ", name or "")
 
 
 PLACEHOLDER_NUMS = set()

@@ -46,6 +46,22 @@ def test_egg_count_sane():
     assert egg.count() >= 5, "expected the base egg roster to load"
 
 
+def test_pretty_field():
+    """CamelCase Field values get spaced for display; data keys stay joined."""
+    assert data.pretty_field("NightmareSoldier") == "Nightmare Soldier"
+    assert data.pretty_field("DeepSaver") == "Deep Saver"
+    assert data.pretty_field("MetalEmpire") == "Metal Empire"
+    assert data.pretty_field("None") == "None"
+    assert data.pretty_field("") == ""
+    assert data.pretty_field(None) == ""
+    # every real field value spaces cleanly and stays within the 17-col DNA column
+    _, by = data.load_sprites()
+    for f in {r.get("field", "") for r in by.values() if r.get("field")}:
+        pretty = data.pretty_field(f)
+        assert pretty.replace(" ", "") == f          # only spaces inserted
+        assert len(pretty) <= 17
+
+
 def test_stage_rank_helper():
     """The consolidated 7-stage rank (Egg..Mega); unknown stage = fully grown."""
     assert data.STAGE_RANK == ["Egg"] + data.STAGE_ORDER

@@ -44,7 +44,7 @@ def build_pages(pet):
     fav, dis = pet.favorite_time(), pet.disliked_time()
     status = [
         ("Name", pet.name), ("No.", f"#{pet.num}"), ("Stage", pet.stage),
-        ("Attrib", pet.attribute), ("Field", pet.field or "-"),
+        ("Attrib", pet.attribute), ("Field", data.pretty_field(pet.field) or "-"),
         ("Element", pet.element or "-"), ("Gen", str(pet.generation)),
         ("Age", _mins(pet.age_seconds)), ("Life", f"{_mins(rem)} left"),
     ]
