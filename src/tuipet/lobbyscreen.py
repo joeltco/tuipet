@@ -511,14 +511,17 @@ class LobbyPanel:
             lines.extend(_wrap(f"{nm}: {tx}", CHATW))
         lines = lines[-BODY:]
         lines = [""] * (BODY - len(lines)) + lines
+        sel = min(self.sel, len(others) - 1) if others else 0
+        rlo = max(0, min(sel - BODY // 2, len(others) - BODY)) if len(others) > BODY else 0
         for i in range(BODY):
             t.append(_fit(lines[i], CHATW), style=INK)
             t.append("│", style=DIM)
-            if i < len(others):
-                pl = others[i]
-                marker = ">" if i == min(self.sel, len(others) - 1) else " "
-                t.append(_fit(f"{marker}{pl['name']}", ROSTW),
-                         style=SEL if marker == ">" else INK)
+            ridx = rlo + i
+            if ridx < len(others):
+                pl = others[ridx]
+                cur = ridx == sel
+                t.append(_fit((">" if cur else " ") + pl["name"], ROSTW),
+                         style=SEL if cur else INK)
             elif i == 0 and not others:
                 t.append(_fit(" nobody yet", ROSTW), style=DIM)
             else:
