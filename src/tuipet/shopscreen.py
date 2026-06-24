@@ -144,12 +144,13 @@ class ShopPanel:
             else:
                 info = [sel["name"][:tw], "x%d" % owned, "sell %db" % shop.resell_price(sel)]
             info.append(_effect(sel)[:tw])
+            for r in range(IC_ROWS):
+                tx = info[r] if r < len(info) else ""
+                out.append(icon[r] + "  ", style=INK)
+                out.append(tx[:tw] + "\n", style=INK_B if r == 0 else INK)
         else:
-            info = ["(nothing here)", "", "", ""]
-        for r in range(IC_ROWS):
-            tx = info[r] if r < len(info) else ""
-            out.append(icon[r] + "  ", style=INK)
-            out.append(tx[:tw] + "\n", style=INK_B if r == 0 else INK)
+            out.append("(nothing here)\n", style=DIM)   # left-aligned; no phantom icon offset
+            out.append_text(menu.blanks(IC_ROWS - 1))
 
         # item list for this tab
         vis = 3
