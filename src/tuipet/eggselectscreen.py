@@ -41,6 +41,8 @@ class EggSelectPanel:
             self.i = int(self.pos) % self.n
         elif k in ("enter", "space"):
             return ("done", self.i)
+        elif k == "escape":
+            return ("done", None)          # back out without choosing
         return None
 
     def _frame(self, idx, center):
@@ -61,5 +63,5 @@ class EggSelectPanel:
         out.append_text(scene)
         out.append("\n")                              # scene has no trailing newline
         out.append_text(menu.note(f"hatches: {egg_mod.hatch_name(self.i)}"))
-        out.append_text(menu.footer("←→ browse      ENTER hatch"))
+        out.append_text(menu.footer("←→ browse   ENTER hatch   ESC back"))
         return out

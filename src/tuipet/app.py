@@ -637,8 +637,10 @@ class TuiPetApp(App):
             self.repaint()
 
     def _after_egg_pick(self, egg_type):
-        if egg_type is not None:
-            self.pet = Pet.new_egg(egg_type=egg_type)
+        if egg_type is None:                       # backed out -> return to the title
+            self._open_mode(titlescreen.TitlePanel(), self._after_title)
+            return
+        self.pet = Pet.new_egg(egg_type=egg_type)
         self.flash("Take good care of your egg!")
         self.repaint()
 
@@ -1216,6 +1218,9 @@ class TuiPetApp(App):
                         lambda et: self._hatch_new(et, gen))
 
     def _hatch_new(self, egg_type, gen):
+        if egg_type is None:                        # cancelled -> keep the current pet
+            self._do("Kept your current partner.")
+            return
         self.pet = Pet.new_egg(generation=gen, egg_type=egg_type)
         persistence.save(self.pet)
         self._do(f"A new egg appeared! (generation {gen})")
