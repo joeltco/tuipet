@@ -85,7 +85,7 @@ regression safety — not new features.
 - [x] Theme propagation: **VERIFIED clean.** Every module that copies a theme colour name (`from .theme import INK,...`) is in _SCREEN_MODULES, and every listed module actually binds names -- the set is complete AND minimal, so no screen keeps a stale palette after a switch. Pinned by tests/test_theme.py (4): a static completeness invariant (new screen can not silently leak) + a functional switch/propagate/revert check + unknown-theme fallback.
 - [x] No status-box clipping / footer width: **FOUND + FIXED 2 real overflows.** (1) The Stats status+deco line could hit 38 cols (asleep+sick+poop+effect on an elderly pet) in the 26-wide box -> wrapped past the 16-row height; new _status_line() bounds it (drops lowest-priority deco, never wraps). (2) Two shop footers were 40 cols and silently truncated to TAB b/TAB sh; shortened to 37. Pinned by tests/test_ui_stats.py (render-bounds harness + a footer-literal width guard over all source).
 - [ ] Status box content correct next to every action (the per-action HUD).
-- [ ] Animation gating: every fx completes before re-trigger (feed/clean/etc).
+- [x] Animation gating: **VERIFIED.** All 6 care actions (feed/clean/praise/scold/play/heal) early-return on `screen_w.fx is not None`, so no fx is interrupted mid-run; the menu-fed eat path overwrites benignly (LCD hidden behind the bag). fx state machine (run-to-completion + the clean->cheer chain + glutton step-scaling) and the presence of every guard pinned by tests/test_fx.py (5). This is the same re-trigger class as the earlier feed flicker fix.
 
 ### D. Performance
 - [x] lru_cache coverage: **FOUND + FIXED a real bug.** load_habitats() was the
