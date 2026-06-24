@@ -1,21 +1,26 @@
-"""Shop — spend bits on foods/items and use them from the bag. Renders inside the
-main display box (no pop-up screen)."""
+"""Shop — category tabs (Food / Medicine / Toys / Chips), each showing only the
+items unlocked at the pet's current evolution stage. Bag mirrors the tabs (plus a
+Special tab for evolution/transport items found as drops). Renders in the LCD box."""
 from __future__ import annotations
-from rich.text import Text
 from . import data
+from . import shop
+from .render import downsample
 
 from .theme import LCD_ON, LCD_BG, INK, INK_B, DIM, SEL
 from . import menu
 W = 38
+IC_W, IC_ROWS = 10, 4                      # selected-item icon: auto-sized to fit, never clipped
+SHOP_TABS = shop.CATEGORIES                # food, medicine, toy, chip
+BAG_TABS = shop.CATEGORIES + ["special"]
+TAB_LABEL = dict(shop.CAT_LABEL, special="Special")
 
 
-def effect_summary(e):
+def _effect(e):
     parts = []
-    for k, lbl in (("hunger", "food"), ("mood", "mood"), ("weight", "wt"),
-                   ("energy", "en"), ("strength", "eff"), ("vaccine", "Va"),
-                   ("data", "Da"), ("virus", "Vi")):
+    for k, lbl in (("hunger", "food"), ("mood", "mood"), ("weight", "wt"), ("energy", "en"),
+                   ("strength", "eff"), ("vaccine", "Va"), ("data", "Da"), ("virus", "Vi")):
         if e.get(k):
-            parts.append(f"{lbl}{e[k]:+d}")
+            parts.append("%s%+d" % (lbl, e[k]))
     if e.get("cured"):
         parts.append("cure")
     if e.get("healed"):
@@ -24,107 +29,147 @@ def effect_summary(e):
 
 
 class ShopPanel:
-    def __init__(self, pet):
+    def __init__(self, pet, start_mode="shop"):
         self.pet = pet
-        self.mode = "shop"
+        self.mode = start_mode
+        self.tab = 0
         self.cursor = 0
-        self.msg = "Welcome! Spend your bits."
+        self.msg = "Your bag." if start_mode == "bag" else "Welcome! Spend your bits."
+
+    # ---- data ----
+    def _tabs(self):
+        return SHOP_TABS if self.mode == "shop" else BAG_TABS
+
+    def _owned_by_cat(self, cat):
+        out = []
+        for k in self.pet.inventory:
+            e = data.consumable_by_key(k)
+            if e and data.shop_category(dict(e, key=k)) == cat:
+                out.append(dict(e, key=k))
+        out.sort(key=lambda e: e.get("price", 0))
+        return out
 
     def _rows(self):
+        cat = self._tabs()[self.tab]
         if self.mode == "shop":
-            return data.load_shop()
-        return [data.consumable_by_key(k) for k in self.pet.inventory]
+            return shop.unlocked(self.pet, cat)
+        return self._owned_by_cat(cat)
 
+    # ---- input ----
     def key(self, k):
+        tabs = self._tabs()
         rows = self._rows()
-        if k in ("up", "k"):
-            if rows:
-                self.cursor = (self.cursor - 1) % len(rows)
+        n = len(rows)
+        if k in ("left", "h"):
+            self.tab = (self.tab - 1) % len(tabs); self.cursor = 0
+        elif k in ("right", "l"):
+            self.tab = (self.tab + 1) % len(tabs); self.cursor = 0
+        elif k in ("up", "k"):
+            if n: self.cursor = (self.cursor - 1) % n
         elif k in ("down", "j"):
-            if rows:
-                self.cursor = (self.cursor + 1) % len(rows)
+            if n: self.cursor = (self.cursor + 1) % n
         elif k == "tab":
             self.mode = "bag" if self.mode == "shop" else "shop"
-            self.cursor = 0
+            self.tab = 0; self.cursor = 0
             self.msg = "Your bag." if self.mode == "bag" else "Spend your bits."
-        elif k in ("enter", "space"):
-            if rows:
-                e = rows[self.cursor]
-                if self.mode == "shop":
-                    self.msg = self.pet.buy(e)
-                else:
-                    if (e.get("action") or "") in data.TRANSPORT_ACTIONS:
-                        return ("done", ("transport", e["key"]))   # open the warp picker
-                    num0 = self.pet.num
-                    self.msg = self.pet.use_item(e["key"])
-                    if self.pet.num != num0:
-                        return ("done", ("evolve", num0))    # item-triggered evolution
-                    if e["key"].startswith("f:") and self.pet.anim == "eat":
-                        return ("done", ("eat", e["key"]))   # fed a food -> watch the pet eat it
-                    if self.cursor >= len(self.pet.inventory):
-                        self.cursor = max(0, len(self.pet.inventory) - 1)
+        elif k in ("enter", "space") and rows:
+            e = rows[min(self.cursor, n - 1)]
+            if self.mode == "shop":
+                self.msg = self.pet.buy(e)
+            else:
+                if (e.get("action") or "") in data.TRANSPORT_ACTIONS:
+                    return ("done", ("transport", e["key"]))
+                num0 = self.pet.num
+                self.msg = self.pet.use_item(e["key"])
+                if self.pet.num != num0:
+                    return ("done", ("evolve", num0))
+                if e["key"].startswith("f:") and self.pet.anim == "eat":
+                    return ("done", ("eat", e["key"]))
+        elif k == "r" and self.mode == "bag" and rows:
+            self.msg = self.pet.sell(rows[min(self.cursor, n - 1)])
         elif k in ("escape", "o"):
             return ("done", self.msg)
         return None
 
-    def _icon_lines(self, e):
-        from .render import downsample
+    # ---- selected-item icon, auto-sized so it never clips ----
+    def _icon(self, e):
+        blank = [" " * IC_W] * IC_ROWS
         fr = data.load_icons().get(e["key"]) if e else None
         if not fr:
-            return []
-        bm = downsample(fr[0], 3 if e["key"].startswith("f:") else 2)
+            return blank
+        src = fr[0]
+        sh = len(src)
+        sw = max((len(r) for r in src), default=0)
+        if not sw:
+            return blank
+        # downsample factor that fits BOTH the cell width (IC_W px) and height (IC_ROWS*2 px)
+        factor = max(1, -(-sw // IC_W), -(-sh // (2 * IC_ROWS)))
+        bm = downsample(src, factor)
         w = max((len(r) for r in bm), default=0)
         if not w:
-            return []
-        bm = [r.ljust(w, "0") for r in bm]
+            return blank
         if len(bm) % 2:
             bm.append("0" * w)
         lines = []
         for cy in range(0, len(bm), 2):
-            top, bot = bm[cy], bm[cy + 1]
-            seg = ""
-            for x in range(w):
-                t, b = top[x] == "1", bot[x] == "1"
-                seg += "█" if (t and b) else ("▀" if t else ("▄" if b else " "))
-            lines.append(seg)
-        return lines
+            t, b = bm[cy].ljust(w, "0"), bm[cy + 1].ljust(w, "0")
+            seg = "".join("█" if (t[x] == "1" and b[x] == "1") else
+                          ("▀" if t[x] == "1" else ("▄" if b[x] == "1" else " "))
+                          for x in range(w))
+            lines.append(seg.ljust(IC_W))      # w <= IC_W (factor guarantees it) -> pad, never cut
+        return (lines + blank)[:IC_ROWS]
 
+    # ---- render ----
     def text(self):
+        tabs = self._tabs()
         rows = self._rows()
-        head = "SHOP" if self.mode == "shop" else "BAG"
-        out = menu.header(head, f"{self.pet.bits}b")
-        sel = rows[min(self.cursor, len(rows) - 1)] if rows else None
-        icon = self._icon_lines(sel)
-        info = []
+        n = len(rows)
+        self.cursor = min(self.cursor, max(0, n - 1))
+
+        out = menu.header("SHOP" if self.mode == "shop" else "BAG", "%db" % self.pet.bits)
+        # tab bar
+        bar = ""
+        for i, t in enumerate(tabs):
+            lbl = TAB_LABEL[t]
+            bar += ("[%s]" % lbl) if i == self.tab else (" %s " % lbl)
+        out.append(bar[:W].ljust(W) + "\n", style=INK_B)
+
+        sel = rows[self.cursor] if rows else None
+        icon = self._icon(sel) if sel else [" " * IC_W] * IC_ROWS
+        tw = W - IC_W - 2
         if sel:
-            info = [sel["name"][:24],
-                    (f"{sel['price']} bits" if self.mode == "shop"
-                     else f"x{self.pet.inventory.get(sel['key'], 0)} owned"),
-                    effect_summary(sel)[:24]]
-        for r in range(3):
-            ic = icon[r] if r < len(icon) else ""
-            tx = info[r] if r < len(info) else ""
-            out.append(f" {ic:<9} ", style=INK)
-            out.append(f"{tx}\n", style=INK_B if r == 0 else INK)
-        vis = 4
-        if not rows:
-            out.append_text(menu.row("(empty)"))
-            shown = 1
+            owned = self.pet.inventory.get(sel["key"], 0)
+            if self.mode == "shop":
+                info = [sel["name"][:tw], "%db" % shop.purchase_price(sel), "own %d" % owned]
+            else:
+                info = [sel["name"][:tw], "x%d" % owned, "sell %db" % shop.resell_price(sel)]
+            info.append(_effect(sel)[:tw])
         else:
-            self.cursor = min(self.cursor, len(rows) - 1)
-            lo = max(0, min(self.cursor - vis // 2, len(rows) - vis))
+            info = ["(nothing here)", "", "", ""]
+        for r in range(IC_ROWS):
+            tx = info[r] if r < len(info) else ""
+            out.append(icon[r] + "  ", style=INK)
+            out.append(tx[:tw] + "\n", style=INK_B if r == 0 else INK)
+
+        # item list for this tab
+        vis = 3
+        if not rows:
+            empty = "(locked — grows as you evolve)" if self.mode == "shop" else "(none owned)"
+            out.append_text(menu.row(empty)); shown = 1
+        else:
+            lo = max(0, min(self.cursor - vis // 2, n - vis))
             shown = 0
-            for i in range(lo, min(lo + vis, len(rows))):
+            for i in range(lo, min(lo + vis, n)):
                 e = rows[i]
                 if self.mode == "shop":
-                    label = f"{e['price']:>4}b {e['name'][:24]}"
+                    label = "%-22s %db" % (e["name"][:22], shop.purchase_price(e))
                 else:
-                    label = f"x{self.pet.inventory.get(e['key'],0)}  {e['name'][:26]}"
-                out.append_text(menu.row(label, i == self.cursor))
-                shown += 1
+                    label = "x%-2d %-26s" % (self.pet.inventory.get(e["key"], 0), e["name"][:26])
+                out.append_text(menu.row(label, i == self.cursor)); shown += 1
         out.append_text(menu.blanks(vis - shown))
         out.append_text(menu.note(self.msg))
-        verb = "buy" if self.mode == "shop" else "use"
-        other = "bag" if self.mode == "shop" else "shop"
-        out.append_text(menu.footer(f"ENTER {verb}   TAB {other}   ESC out"))
+        if self.mode == "shop":
+            out.append_text(menu.footer("←→ category  ↑↓ pick  ENTER buy  TAB bag"))
+        else:
+            out.append_text(menu.footer("←→ category  ENTER use  R sell  TAB shop"))
         return out

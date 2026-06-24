@@ -14,7 +14,7 @@ from __future__ import annotations
 import random
 from rich.text import Text
 from . import data
-from .render import render_screen
+from .render import render_screen, render_scene
 from .theme import LCD_ON, LCD_BG, INK, INK_B, DIM, MID, ACCENT, SIL_DAY, SIL_NIGHT
 from . import menu
 
@@ -30,7 +30,9 @@ HP_ROUNDS = 3
 HP_ROUNDS_WON = 2
 HP_METER_W = 28
 HP_ZONE_W = 6
+HP_ROUND_LEN = 20             # cfg _hpTrainingRoundLength: ~2s/round before it times out
 VBAR_W = 28
+SCENE_ROWS = 9                # grounded play-arena height (full-bleed, like battle/adventure)
 
 GAMES = [
     ("hp",      "HP Drill", "Effort", "best of 3 — build Effort"),
@@ -60,6 +62,7 @@ class TrainingPanel:
         self.zone = 0
         self.taps = 0
         self.timer = VACCINE_WINDOW
+        self.round_t = HP_ROUND_LEN
         self.rounds_won = 0
         self.slot = 0
         self.target = 0
@@ -90,6 +93,18 @@ class TrainingPanel:
         self.zone = random.randint(0, HP_METER_W - HP_ZONE_W)
         self.pos = 0.0
         self.dir = 1
+        self.round_t = HP_ROUND_LEN
+
+    def _hp_next(self):
+        """Resolve one HP round (after a strike OR a timeout) and advance."""
+        self.rep += 1
+        if self.rep >= HP_ROUNDS:
+            won = self.rounds_won
+            hits = 3 if won >= 3 else (2 if won >= HP_ROUNDS_WON else won)
+            self._finish(hits, 0, None, "hp")
+        else:
+            self.flash = f"Round {self.rep + 1}/{HP_ROUNDS} — {self.flash}"
+            self._new_hp_zone()
 
     def _finish(self, hits, power, attribute, game):
         self.success = hits >= 2
@@ -106,6 +121,12 @@ class TrainingPanel:
             return
         gk = self.gkey
         if gk == "hp":
+            self.round_t -= 1                     # cfg _hpTrainingRoundLength: time runs out -> miss
+            if self.round_t <= 0:
+                self.flash = "too slow!"
+                self._flash(9)
+                self._hp_next()
+                return
             self.pos += self.dir * 2
             if self.pos >= HP_METER_W - 1:
                 self.pos = HP_METER_W - 1
@@ -172,14 +193,7 @@ class TrainingPanel:
             else:
                 self.flash = "missed."
                 self._flash(9)
-            self.rep += 1
-            if self.rep >= HP_ROUNDS:
-                won = self.rounds_won
-                hits = 3 if won >= 3 else (2 if won >= HP_ROUNDS_WON else won)
-                self._finish(hits, 0, None, "hp")
-            else:
-                self.flash = f"Round {self.rep + 1}/{HP_ROUNDS} — {self.flash}"
-                self._new_hp_zone()
+            self._hp_next()
         elif gk == "vaccine":
             self.taps += 1
             self.flash = f"{self.taps} hits!"
@@ -224,8 +238,8 @@ class TrainingPanel:
         if self._strike_t > 0:                # just struck: hit(6) / miss(9), like DVPet
             return self._strike_pose
         if gk == "data":
-            return [1, 4][self.frame_i % 2]   # DVPet Data_Training aim bob 1<->4
-        return [0, 1][self.frame_i % 2]       # HP/vaccine/virus: stand ready (idle bob)
+            return [1, 4][(self.frame_i // 4) % 2]   # Data aim bob, ~0.5s/pose (was 0.24s jitter)
+        return [0, 1][(self.frame_i // 4) % 2]       # HP/vaccine/virus ready bob, ~0.5s/pose
 
     # ---- render ----
     def text(self):
@@ -238,11 +252,11 @@ class TrainingPanel:
         rows = rec["frames"][idx] or rec["frames"][0]
         bgimg = self.pet.background()
         on = SIL_NIGHT if self.pet.day_phase == "night" else (SIL_DAY if bgimg else LCD_ON)
-        sprite = render_screen(rows, 40, 7, on, LCD_BG, bgimg=bgimg)
-        out = menu.bar("TRAINING", GAMES[self.gi][1])
-        out.append(sprite)
+        ew = max(len(r) for r in rows)
+        x = (40 - ew) // 2                                   # pet stands centred in the arena
+        out = render_scene([(rows, x, False)], 40, SCENE_ROWS, on, LCD_BG, bgimg=bgimg)
         out.append("\n")
-        out.append_text(self._render_hud())
+        out.append_text(self._render_hud())                  # one compact gauge line
         out.append_text(menu.note(self.flash))
         if self.phase == "done":
             hint = "SPACE done"
@@ -256,28 +270,34 @@ class TrainingPanel:
         return out
 
     def _render_menu(self):
-        out = menu.bar("TRAINING", "pick a drill")
+        # House list-menu chrome (matches battle/shop/habitat): titled header w/
+        # divider, a status note that tracks the cursor, then the selectable rows.
+        out = menu.header("TRAINING", "pick a drill")
+        out.append_text(menu.note(GAMES[self.gi][3]))
+        out.append_text(menu.blanks(1))
         for i, (gk, label, attr, blurb) in enumerate(GAMES):
             tag = "effort" if gk == "hp" else f"{attr[:4]} pow"
             out.append_text(menu.row(f"{label:<9} {tag}", i == self.gi))
-        out.append_text(menu.blanks(5))
-        out.append_text(menu.note(GAMES[self.gi][3]))
         out.append_text(menu.footer("↑↓ pick   ENTER start   ESC out"))
         return out
 
     def _render_hud(self):
+        # One compact gauge line; round/score/power live in the side panel
+        # (_status_training), so the LCD stays a full-bleed arena.
         gk = self.gkey
         t = Text()
         if gk == "hp":
             t.append_text(self._meter(self.pos, self.zone, HP_METER_W, HP_ZONE_W))
-            dots = "●" * self.rounds_won + "○" * (HP_ROUNDS - self.rep) + "·" * (self.rep - self.rounds_won)
-            t.append(f"\nround {min(self.rep + 1, HP_ROUNDS)}/{HP_ROUNDS}   won {dots}\n", style=INK)
+            tb = int((max(self.round_t, 0) / HP_ROUND_LEN) * 6)   # round countdown
+            t.append(" ", style=INK)
+            t.append("█" * tb + "░" * (6 - tb), style=f"{ACCENT} on {LCD_BG}")
+            t.append("\n", style=INK)
         elif gk == "vaccine":
-            filled = int((self.timer / VACCINE_WINDOW) * 24)
+            filled = int((max(self.timer, 0) / VACCINE_WINDOW) * 14)
             t.append("time ", style=INK)
-            t.append("█" * filled + "░" * (24 - filled), style=f"{ACCENT} on {LCD_BG}")
+            t.append("█" * filled + "░" * (14 - filled), style=f"{ACCENT} on {LCD_BG}")
             done = self.taps >= VACCINE_HITS_MIN
-            t.append(f"\nhits {self.taps}/{VACCINE_HITS_MIN} {'●' if done else '○'}\n",
+            t.append(f"  {self.taps}/{VACCINE_HITS_MIN} {'●' if done else '○'}\n",
                      style=INK_B if done else INK)
         elif gk == "data":
             ring = Text()
@@ -292,10 +312,10 @@ class TrainingPanel:
                     ring.append("· ", style=f"{MID} on {LCD_BG}")
             t.append_text(ring)
             dots = "●" * self.hits + "○" * (DATA_REPS - self.rep) + "·" * (self.rep - self.hits)
-            t.append(f"\nshot {min(self.rep + 1, DATA_REPS)}/{DATA_REPS}   hits {dots}\n", style=INK)
+            t.append(f"  {dots}\n", style=INK)
         else:  # virus
             t.append_text(self._powerbar(self.pos))
-            t.append(f"\npower {int(self.pos)}   need {VIRUS_BAR_MIN}\n", style=INK)
+            t.append(f"  {int(self.pos)}/{VIRUS_BAR_MIN}\n", style=INK)
         return t
 
     def _meter(self, pos, zone, w, zw):

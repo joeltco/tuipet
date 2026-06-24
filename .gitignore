@@ -20,3 +20,9 @@ raw_model
 
 # Decompiled DVPet Java used only for the porting audit — never commit (copyrighted)
 _audit_src/
+
+# decompilation-derived analysis notes -- keep local, not in the public repo
+ANIMATION_AUDIT.md
+DNA_SCOPE.md
+SHOP_ITEMS.md
+POOP_POSTMORTEM.md

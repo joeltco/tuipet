@@ -68,6 +68,10 @@ REFUSE_CHANCE = 100                 # RefuseRate -> Random.nextInt(REFUSE_CHANCE
 OBEDIENCE_REFUSAL_CAP = 100         # ObedienceRefusalCap
 OBEDIENCE_MOOD_MOD = 15.0           # ObedienceMoodModCoefficient
 OBEDIENCE_TIME_MOD = 10.0           # ObedienceTimeModCoefficient
+# PhysicalState.spoil (config SpoilMoodInc / SpoilObedienceDec): a mood lift paired
+# with an obedience cost. tuipet's Play button maps onto this DVPet mechanic.
+SPOIL_MOOD_INC = 10                 # SpoilMoodInc
+SPOIL_OBEDIENCE_DEC = 10            # SpoilObedienceDec
 OBEDIENCE_ENTH_MOD = 6.0            # ObedienceEnthusiasmModCoefficient
 REFUSE_UNWELL_SICK = -10.0          # RefuseUnwellModSickFactor
 DEPRESSED_OBEDIENCE = 50.0          # DepressedObedience
@@ -120,7 +124,7 @@ POOP_INC_WEIGHT_FACTOR = 40            # PoopIncWeightFactor -> size 3 at/above
 POOP_INC_WEIGHT_FACTOR_SMALL = 15      # PoopIncWeightFactorSmall -> size 1 at/below
 POOP_WAIT_MOOD = -1                     # PoopWaitMoodChange (mess nags)
 LARGE_POOP_WAIT_MOOD = -2              # LargePoopWaitMoodChange (a big mess nags more)
-POOP_MAX_PILES = 6                      # _filth byte[] length (max simultaneous piles)
+POOP_MAX_PILES = 4                      # classic Digimon V-Pet max poops (DVPet's _filth[] is 6; Joel set 4 to match the real toy)
 
 # DVPet calorie buffer (config.csv, PhysicalState.calorieChange / setCalories): a
 # -CalorieLimit..+CalorieLimit "fullness within the current hunger heart".  Each lapse
@@ -329,6 +333,7 @@ class Pet:
     levels_fought: list = _dcf(default_factory=list)  # opponent levels beaten this stage (DVPet _levelsFought)
     bits: int = 0
     trophies: int = 0
+    trophies_won: dict = _dcf(default_factory=dict)   # trophy id -> season won (per-season earned)
     adv_map: int = 0
     adv_zone: int = 0
     adv_seek: bool = False    # Disaster Transport: next adventure leg forces an encounter
@@ -344,6 +349,7 @@ class Pet:
     element: str = ""
     habitat: int = 2                # current home (2 = Plains, a temperate default)
     habitats: list = _dcf(default_factory=lambda: [0, 2])
+    habitat_record: dict = _dcf(default_factory=dict)   # time-in-each-habitat -> getMajorHabitat
     time_pref: dict = _dcf(default_factory=lambda: {"dawn": 0, "day": 0, "dusk": 0, "night": 0})
     x_antibody: str = "None"
     x_count: float = 0.0
@@ -586,6 +592,7 @@ class Pet:
             self.asleep = True
             self._set_anim("yawn", 1.8)   # yawn, then settle into sleep
 
+        self.habitat_record[self.habitat] = self.habitat_record.get(self.habitat, 0) + dt
         # lifespan: neglect burns life down faster than the natural clock
         extra = 0.0
         if self.sick:
@@ -651,6 +658,14 @@ class Pet:
         compat = (f in h["compat_fields"]) + (e in h["compat_elements"])
         incompat = (f in h["incompat_fields"]) + (e in h["incompat_elements"])
         return compat - incompat
+
+    def major_habitat(self):
+        """DVPet getMajorHabitat: the habitat lived in the MOST (evolution gates on this,
+        not the current home). Falls back to the current habitat early on / on ties."""
+        rec = self.habitat_record
+        if not rec:
+            return self.habitat
+        return max(rec, key=lambda hid: (rec[hid], hid == self.habitat))
 
     def _track_time_pref(self, dt):
         # the pet warms to the times of day it spends happy in, and sours on the
@@ -1090,6 +1105,7 @@ class Pet:
         self.weight += food.get("weight", 1)
         self._set_mood(self.mood + food.get("mood", 0))     # foods.csv intrinsic mood
         tier = self._eat_food(food.get("category", ""))     # DVPet taste: fav/disliked/neutral
+        self._last_meal_disliked = (tier == "disliked")      # eat(): disliked -> +9 grimace bite
         self._apply_nutrition(food)                          # GoodNutrition macros
         self._set_anim("eat", 1.4)
         tag = {"favorite": "  It loves it!", "disliked": "  It dislikes that."}.get(tier, "")
@@ -1356,6 +1372,7 @@ class Pet:
         self.sick = True
         self.sick_count += 1
         self.sick_length = random.randint(MIN_SICK_LENGTH, MAX_SICK_LENGTH) * SICK_LAPSE_MIN
+        self.sick_length = max(SICK_LAPSE_MIN, self.sick_length - self._affinity() * SICK_LAPSE_MIN)
         self._set_mood(self.mood - SICK_MOOD_DEC)
         self._set_enthusiasm(self.enthusiasm + SICK_ENTH_CHANGE)
 
@@ -1363,8 +1380,9 @@ class Pet:
         """PhysicalState.injure: take an injury for MinInjLength..MaxInjLength recovery
         lapses; the cumulative injury count (used by evolution) also ticks up."""
         self.injuries += 1
-        self.inj_length = max(self.inj_length,
-                              random.randint(MIN_INJ_LENGTH, MAX_INJ_LENGTH) * INJ_LAPSE_MIN)
+        rolled = random.randint(MIN_INJ_LENGTH, MAX_INJ_LENGTH) * INJ_LAPSE_MIN
+        rolled = max(INJ_LAPSE_MIN, rolled - self._affinity() * INJ_LAPSE_MIN)   # habitat-compat length mod
+        self.inj_length = max(self.inj_length, rolled)
         self._set_mood(self.mood - INJ_MOOD_DEC)
         self._set_enthusiasm(self.enthusiasm + INJ_ENTH_CHANGE)
 
@@ -1404,7 +1422,7 @@ class Pet:
         mood/energy/spirit hit (worse if it was already fatigued), then it must rest the
         fatigue length off (FatigueMin..FatigueMax game-min)."""
         already = self.is_fatigued()
-        self.fatigue_length = random.randint(FATIGUE_MIN, FATIGUE_MAX)   # +habitat compat (omitted)
+        self.fatigue_length = max(FATIGUE_MIN, random.randint(FATIGUE_MIN, FATIGUE_MAX) - self._affinity())   # habitat-compat length mod
         self._set_energy(self.energy - FATIGUE_ENERGY_DEC)
         self._set_enthusiasm(self.enthusiasm + FATIGUE_ENTH_CHANGE)
         self._set_mood(self.mood - FATIGUE_MOOD_DEC)
@@ -1519,18 +1537,43 @@ class Pet:
             return "It is still an egg."
         if self.asleep:
             return self._disturbed()
-        self._set_mood(self.mood + 10)              # play ~= SpoilMoodInc (no DVPet 'play'; adapted)
-        self._set_energy(self.energy - 1)
+        # DVPet has no dedicated 'play' care action; tuipet's Play button maps onto
+        # PhysicalState.spoil(): setMood(+SpoilMoodInc) AND setObedience(-SpoilObedienceDec).
+        # A real tradeoff -- happier now, but the pet gets cheekier (more disobedient).
+        self._set_mood(self.mood + SPOIL_MOOD_INC)
+        self.obedience = max(0, self.obedience - SPOIL_OBEDIENCE_DEC)   # DVPet setObedience floors at 0
         self._set_anim("play", 1.5)
-        return "Played together!"
+        return "Played together -- happy, but a bit spoiled."
 
     # ---- shop / items --------------------------------------------------------
     def buy(self, entry):
-        if self.bits < entry["price"]:
+        """Purchase one consumable at its list price, capped at the item's bag stack."""
+        from . import shop
+        price = shop.purchase_price(entry)
+        if self.bits < price:
             return "Not enough bits."
-        self.bits -= entry["price"]
-        self.inventory[entry["key"]] = self.inventory.get(entry["key"], 0) + 1
+        key = entry["key"]
+        cap = entry.get("max_uses") or 99
+        if self.inventory.get(key, 0) >= cap:
+            return f"Can't carry more {entry['name']} (max {cap})."
+        self.bits -= price
+        self.inventory[key] = self.inventory.get(key, 0) + 1
         return f"Bought {entry['name']}."
+
+    def sell(self, entry):
+        """Resell one from the bag for a fraction of its price (shop.resell_price)."""
+        from . import shop
+        key = entry["key"]
+        if self.inventory.get(key, 0) <= 0:
+            return "None to sell."
+        val = shop.resell_price(entry)
+        if val <= 0:
+            return f"{entry['name']} can't be resold."
+        self.inventory[key] -= 1
+        if self.inventory[key] <= 0:
+            self.inventory.pop(key, None)
+        self.bits += val
+        return f"Sold {entry['name']} for {val}b."
 
     def add_item(self, key, n=1):
         """Drop loot / grants straight into the bag."""

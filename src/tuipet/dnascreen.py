@@ -69,7 +69,7 @@ class DNAPanel:
             chg = p.dna_applied.get(f, 0)
             pct = p.dna_percent(f)
             tag = "*" if f == p.field else " "           # * = your own Field (cheaper)
-            label = f"{tag}{f:<15}{own:>3}b {chg:>3}c {pct:>3}%"
+            label = f"{tag}{f[:17]:<17}{own:>3}b {chg:>3}c {pct:>3}%"
             out.append_text(menu.row(label, i == self.cursor))
         out.append_text(menu.footer("↑↓fld ←→amt  G gen  ENTER chg  ESC"))
         return out

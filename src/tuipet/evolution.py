@@ -12,7 +12,13 @@ from . import data
 
 WEIGHT_THRESH = 0.5  # Config.OverUnderWeightThreshold
 X_ANTIBODY_RATE = 3  # Config.XAntibodyRate — bonus when an X-form's req is met
-DNA_FULFILLED_RATE = 2  # Config.DNAFulfilledRate — priority weight per met DNA field gate
+DNA_FULFILLED_RATE = 2
+
+
+def _major_hab(pet):
+    """DVPet getMajorHabitat: evolution gates on the habitat lived in MOST, not the current one."""
+    mh = getattr(pet, "major_habitat", None)
+    return mh() if callable(mh) else getattr(pet, "habitat", -1)  # Config.DNAFulfilledRate — priority weight per met DNA field gate
 WIN_RATE_PROB_COEF = 0.4  # Config._winRateEvolProbabilityIncCoefficient
 
 # Config *Rate constants used to weight how well each met gate counts.
@@ -152,7 +158,7 @@ def check(pet, num, item=-1):
     if tr is not None and not (tr[0] <= getattr(pet, "temp", 50) <= tr[1]) and not dna_ok:
         return False
     hr = req.get("habitat_req", -1)
-    if hr != -1 and getattr(pet, "habitat", -1) != hr and not dna_ok:
+    if hr != -1 and _major_hab(pet) != hr and not dna_ok:
         return False
     # the antibody commits the pet to its X-form: skip the random prob gate
     if req.get("xantibody", "None") in ("Induced", "Natural") and getattr(pet, "x_antibody", "None") != "None":
@@ -215,7 +221,7 @@ def fulfilled(pet, num):
     tr = req.get("temp_req")
     if tr is not None and tr[0] <= getattr(pet, "temp", 50) <= tr[1]:
         score += 1
-    if req.get("habitat_req", -1) != -1 and getattr(pet, "habitat", -1) == req["habitat_req"]:
+    if req.get("habitat_req", -1) != -1 and _major_hab(pet) == req["habitat_req"]:
         score += 1
     for f, g in (req.get("dna") or {}).items():     # getDNAReq: priority per met Field gate
         if g[0] != "None" and _cmp(g[0], g[1], pet.dna_percent(f)):

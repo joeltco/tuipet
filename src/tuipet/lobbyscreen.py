@@ -168,7 +168,7 @@ class LobbyPanel:
     def _others(self):
         return self.state.others() if self.state else []
 
-    # ---- per-tick refresh (on_fast calls this) ---------------------------
+    # ---- per-tick refresh (the 0.1s interval clock calls this) -----------
     def anim(self):
         s = self.state
         if not s:

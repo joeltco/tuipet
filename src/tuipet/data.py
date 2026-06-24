@@ -417,6 +417,61 @@ def enemies_for_stage(stage):
 # enemies and zone boss(es), parsed from zones.csv + enemies.csv.
 # ---------------------------------------------------------------------------
 @lru_cache(maxsize=1)
+def load_tournies():
+    """Tournament trophies (tournies.csv): per-season cups with field/attribute/age
+    restrictions, a BitModifier prize, ItemWon/FoodWon prizes, and enemy overrides."""
+    path = os.path.join(_DATA, "tournies.csv")
+    rows = list(csv.DictReader(open(path)))
+    if not rows:
+        return []
+    hdr = list(rows[0].keys())
+    age_col = next((k for k in hdr if k.startswith("AgeLimit")), "AgeLimit")
+    food_col = next((k for k in hdr if k.startswith("FoodWon")), "FoodWonqAmount")
+
+    def na(v):
+        v = (v or "NA").strip()
+        return "" if v in ("NA", "None", "") else v
+
+    out = []
+    for r in rows:
+        try:
+            tid = int(r["Trophy"])
+        except (KeyError, ValueError):
+            continue
+        fid, famt = -1, 0
+        fw = r.get(food_col) or "-1q-1"
+        if "q" in fw:
+            a, b = fw.split("q", 1)
+            try:
+                fid, famt = int(a), int(b)
+            except ValueError:
+                pass
+        try:
+            item = int(r.get("ItemWon") or -1)
+        except ValueError:
+            item = -1
+        try:
+            bm = float(r.get("BitModifier") or 1)
+        except ValueError:
+            bm = 1.0
+        out.append({
+            "id": tid, "sprite": int(r.get("SpriteNum") or 0),
+            "season": na(r.get("Season")) or "Spring",
+            "field_req": na(r.get("FieldRestriction")),
+            "attr_req": na(r.get("AttributeRestriction")),
+            "age_limit": na(r.get(age_col)),
+            "bit_mod": bm, "item": item, "food_id": fid, "food_amt": famt,
+            "reset_season": (r.get("ResetWonOnSeasonChange") or "FALSE").strip().upper() == "TRUE",
+            "same_day_retry": (r.get("SameDayRetry") or "FALSE").strip().upper() == "TRUE",
+            "enemy_stage": na(r.get("OverrideEnemyStage")),
+            "enemy_attr": na(r.get("OverrideEnemyAttribute")),
+            "enemy_elem": na(r.get("OverrideEnemyElement")),
+            "enemy_field": na(r.get("OverrideEnemyField")),
+        })
+    return out
+
+
+@lru_cache(maxsize=1)
 def load_maps():
     from collections import defaultdict
     enemies = load_enemies()
@@ -478,6 +533,15 @@ def _consumable(row, id_field):
         "action": (row.get("AnimationType") or "").strip(),  # DVPet item behaviour driver
         "dexnum": int(num("DigimonID")),  # direct ItemEvol target form (-1 if none)
         "category": (row.get("Type") or "").strip(),  # foods.csv food category for taste
+        # DVPet Consumable uses-model: a held consumable carries uses up to MaxUses;
+        # using spends UsesPer*; can_inc/can_dec gate buying/using (foods/items.csv).
+        "max_uses": int(num("MaxUses") or 1),
+        "uses_per": int(num("UsesPerFood") or num("UsesPerItem") or 1),
+        "can_inc": (row.get("CanIncUses") or "TRUE").strip().upper() != "FALSE",
+        "can_dec": (row.get("CanDecUses") or "TRUE").strip().upper() != "FALSE",
+        # DVPet getNormalItems: only items flagged ShowInInventory appear in the bag
+        # (transports / key / evolution items are hidden). Foods have no column -> shown.
+        "show_in_inventory": (row.get("ShowInInventory") or "TRUE").strip().upper() != "FALSE",
     }
 
 
@@ -532,6 +596,124 @@ def item_is_functional(e):
     return bool(e.get("special") or e.get("unlocks_food") or e.get("unlocks_item"))
 
 
+# ---------------------------------------------------------------------------
+# Shop taxonomy: every consumable gets a shop category + a price-tier unlock stage.
+# Categories: food / medicine / toy / chip / special. Special (evolution items,
+# transports, X-gear) are NOT sold in the everyday shop -- they come from drops/DNA.
+# ---------------------------------------------------------------------------
+_SPECIAL_ANIMS = {"ItemEvol", "X_Program", "Inherit", "PhoenixTransport",
+                  "BirdraTransport", "GarudaTransport", "WhaTransport", "PortToilet"}
+_UNLOCK_STAGES = ["Fresh", "Rookie", "Champion", "Ultimate", "Mega"]
+
+
+def shop_category(e):
+    """Bucket a consumable into food / medicine / toy / chip / special."""
+    act = (e.get("action") or "").strip()
+    if act in _SPECIAL_ANIMS or e.get("special") == "xantibody":
+        return "special"
+    if "Chip" in (e.get("name") or ""):          # the named battle chips only
+        return "chip"
+    if ("Med" in (e.get("category") or "") or e.get("cured")
+            or act in ("Recover", "Bandaging")):  # cures / first-aid (not every healing food)
+        return "medicine"
+    return "food" if str(e.get("key", "")).startswith("f:") else "toy"
+
+
+def _assign_unlock_stages(catalog):
+    """Price-tier unlock: within each category, the cheapest items unlock first
+    (Fresh) and pricier ones reveal as the pet grows (...Mega), 5 even bands."""
+    from collections import defaultdict
+    by = defaultdict(list)
+    for e in catalog:
+        by[e["shop_cat"]].append(e)
+    for items in by.values():
+        items.sort(key=lambda e: e["price"])
+        n = max(1, len(items))
+        for idx, e in enumerate(items):
+            e["unlock_stage"] = _UNLOCK_STAGES[min(4, idx * 5 // n)]
+
+
+@lru_cache(maxsize=1)
+def shop_catalog():
+    """The full buyable catalog: every functional, NON-special consumable (all
+    foods + items), classified and price-tiered. Special items (evolution /
+    transport / X-gear) are excluded -- those come from drops / DNA, not the shop."""
+    foods, items = _load_consumables()
+    out = []
+    for cid, base in foods.items():
+        e = dict(base); e["key"] = "f:%d" % cid; out.append(e)
+    for cid, base in items.items():
+        e = dict(base); e["key"] = "i:%d" % cid; out.append(e)
+    for e in out:
+        e["shop_cat"] = shop_category(e)
+    shop = [e for e in out if e["shop_cat"] != "special" and e.get("price", 0) > 0
+            and item_is_functional(e)]
+    # collapse identical-named entries (e.g. the 11 gacha "Capsule" items) to one, cheapest
+    seen = {}
+    for e in sorted(shop, key=lambda x: x["price"]):
+        seen.setdefault((e["shop_cat"], e["name"]), e)
+    shop = list(seen.values())
+    _assign_unlock_stages(shop)
+    shop.sort(key=lambda e: (e["shop_cat"], e["price"]))
+    return shop
+
+
+def _shop_season4(val, default=0):
+    """Parse a ';'-separated per-season list (Spring;Summer;Fall;Winter) of ints."""
+    parts = [x.strip() for x in (val or "").split(";")]
+    out = []
+    for i in range(4):
+        try:
+            out.append(int(parts[i]))
+        except (IndexError, ValueError):
+            out.append(default)
+    return out
+
+
+def _shop_time4(val):
+    """Parse DefaultTimeAvailable 'AtB;AtB;AtB;AtB' -> 4 per-season [start,end] hour windows."""
+    out = []
+    for seg in (val or "").split(";"):
+        seg = seg.strip()
+        if "t" in seg:
+            a, b = seg.split("t", 1)
+            try:
+                out.append([int(a), int(b)]); continue
+            except ValueError:
+                pass
+        out.append([0, 23])
+    while len(out) < 4:
+        out.append(out[-1] if out else [0, 23])
+    return out[:4]
+
+
+def _shop_econ(r):
+    """DVPet ShopConsumable economy fields for one shopConsumable.csv row."""
+    def i(k, d):
+        try:
+            return int(r.get(k) or d)
+        except ValueError:
+            return d
+    return {
+        "min_stock": i("minStock", 1), "max_stock": i("maxStock", 1),
+        "stock_chance": _shop_season4(r.get("stockChance(SpringSummerFallWinter)"), 100),
+        "time_avail": _shop_time4(r.get("DefaultTimeAvailable(HtH;SpringSummerFallWinter)")),
+        "must_stock": (r.get("MustStock") or "false").strip().lower() == "true",
+        "sale_chance": _shop_season4(r.get("SaleChance(SpringSummerFallWinter)"), 0),
+        "sale_factor": i("SaleFactor", 1), "resell_factor": i("ResellFactor", 0),
+    }
+
+
+def _shop_econ_default():
+    """Always-stocked, no-sale defaults for specialty items not in shopConsumable.csv."""
+    # NOT must_stock: these specialty extras (X-Antibody etc.) are not in DVPet's
+    # shopConsumable.csv -- keep them buyable but as an occasional rare find, not a
+    # permanent shelf fixture, so they do not clutter the faithful storefront.
+    return {"min_stock": 1, "max_stock": 1, "stock_chance": [20] * 4,
+            "time_avail": [[6, 23]] * 4, "must_stock": False,
+            "sale_chance": [0] * 4, "sale_factor": 1, "resell_factor": 10}
+
+
 @lru_cache(maxsize=1)
 def load_shop():
     """Shop inventory: resolved consumables with a stable key and shop price."""
@@ -558,6 +740,7 @@ def load_shop():
             entry["price"] = int(r.get("Price") or entry["price"])
         except ValueError:
             pass
+        entry.update(_shop_econ(r))
         out.append(entry)
     # special X-Antibody gear — not in shopConsumable.csv, but buyable here (and so
     # droppable as rare loot); using one induces the X-Antibody state, not care stats
@@ -567,15 +750,18 @@ def load_shop():
         if base and key not in seen:
             entry = dict(base)
             entry["key"], entry["price"], entry["special"] = key, price, "xantibody"
-            out.append(entry); seen.add(key)
+            entry.update(_shop_econ_default()); out.append(entry); seen.add(key)
     # specialty stock not listed in shopConsumable.csv: the Vitamin (injury guard) and the
     # two "crafter" consumables, so their mechanics are actually reachable.
     for src_map, prefix, cid, price in ((foods, "f", 5, 300), (foods, "f", 58, 800), (items, "i", 66, 1200)):
         base = src_map.get(cid); key = f"{prefix}:{cid}"
         if base and key not in seen:
             entry = dict(base); entry["key"], entry["price"] = key, price
-            out.append(entry); seen.add(key)
+            entry.update(_shop_econ_default()); out.append(entry); seen.add(key)
     out = [e for e in out if item_is_functional(e)]   # hide inert action-items
+    for e in out:
+        e["shop_cat"] = shop_category(e)
+    _assign_unlock_stages(out)
     out.sort(key=lambda e: e["price"])
     return out
 

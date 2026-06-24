@@ -30,6 +30,7 @@ OVX = (COLS - OVW) // 2
 
 # poses (tuipet DVPet 11-frame layout)
 IDLE, TURN, ATTACK, CHEER_A, CHEER_B, COLLAPSE = 0, 1, 6, 5, 7, 10
+CHARGE = 4                                      # DVPet shoot frame 4: pre-attack/charge pose
 FIRE_Y = PXH - 14                                # orb travels across the monster's mid-body
 
 # timeline tuning (ticks per beat)
@@ -262,13 +263,19 @@ class BattlePanel:
             view = fr.get("view", "pet")
             if m == "result":
                 pose = (CHEER_A, CHEER_B)[self.frame_i % 2] if self.won else COLLAPSE
-            elif m in ("windup", "fire_out"):
+            elif m == "windup":
+                # DVPet battlePlayerShootAnim sequences poses 1->0->4 (ready->idle->charge)
+                # through the wind-up, then snaps to 6 (attack) only at the moment of firing.
+                pose = (TURN, TURN, IDLE, IDLE, CHARGE, CHARGE)[min(fr.get("wu", 0), 5)]
+            elif m == "fire_out":
                 pose = ATTACK
             elif m == "dodge":
                 pose = TURN if self.frame_i % 2 else IDLE
             elif m == "flinch":
                 pose = COLLAPSE
-            else:                                            # fire_in, faceoff
+            elif m == "fire_in":
+                pose = CHARGE if self.frame_i % 2 else IDLE  # DVPet defender bobs 0<->4 awaiting the orb
+            else:                                            # faceoff
                 pose = IDLE
             num = self.pet.num if view == "pet" else b.enemy["num"]
             rows = self._rows(num, pose)

@@ -18,19 +18,29 @@ Per-round damage (Battle.attack -> finishAttack):
   field-vs-field + element-vs-element affinity) is 0: the shipped fieldAffinity
   and elementAffinity matrices are entirely zero.  _attack is floored at 0.
 
-Enemy AI (Battle: AIType selected from the PLAYER's win count):
-  wins <15 Random, <30 Brute, <45 StrategicBrute, <60 StrategicDefense,
-  >=60 StrategicDefense if (enemy power-sum+HP) > (player power-sum+HP) else
-  StrategicBalanced.  config *AIWins: 0/15/30/45/60.
-  randomAI: random among the attributes whose count > 0.
-  bruteAI / strategic line: pick the attribute with the best calcAttackPower
-  delta, breaking ties by greatest raw count (checkAttackTotalAndZero), and
-  avoiding the attribute last remembered as dealing 0 (checkRememberZeroAttack).
+Enemy AI (tuipet ADAPTATION -- deliberately NOT faithful; kept as a difficulty ramp):
+  tuipet sets the ENEMY's AI tier from the PLAYER's win count:
+    wins <15 Random, <30 Brute, <45 StrategicBrute, <60 StrategicDefense,
+    >=60 StrategicDefense if (enemy power-sum+HP) > (player power-sum+HP) else
+    StrategicBalanced.  (config *AIWins: 0/15/30/45/60.)
+  In DVPet this win-count ladder actually sets the *player's* auto-AI (_playerAI,
+  Battle.java 261-270). The real ENEMY AI is randomizeAI(isBoss) -- a RANDOM tier
+  each battle (non-boss ~1/3 Random / 1/3 Brute / 1/3 Strategic; boss always
+  Strategic). tuipet makes attack-picking interactive (the human chooses), so
+  _playerAI has no role here and the win-count formula is repurposed onto the enemy
+  ON PURPOSE, so foes get tougher as you win. Intentional difficulty ramp, NOT fidelity.
 
-  NOTE: the strategic AIs additionally weight per-attribute AttackEffect "chips"
-  (calcBruteStrategyValues / checkAttackWeight / checkDefendWeight). Those effect
-  weights are 0 for the shipped data (no chip effects populated), so all
-  non-random AIs collapse to the brute delta-pick — matching the shipped game.
+  Attack choice is also SIMPLIFIED (another deliberate adaptation):
+    randomAI -> random among attributes with count>0 (this part is faithful).
+    every non-random tier -> ONE brute-style pick: best calcAttackPower delta,
+      tie-break greatest raw count, avoiding the remembered zero-attack.
+  DVPet's real Brute vs evenStrategy/bruteStrategy/defenseStrategy differ (health-
+  based defending at <=half HP, checkAttackTotalAndZero specific tie-breaks,
+  checkZeroAttackSubstitute, and per-effect weights via checkAttackWeight/
+  checkDefendWeight). tuipet does not replicate those.
+  (AttackEffects ARE populated in the shipped data -- ~62% of attacks -- but wild
+  enemies from enemies.csv carry none, so those weights would not change a wild
+  enemy's pick regardless.)
 
 Win/lose (Battle.checkFinish / battleEnd): the battle ends the instant either
 HP <= 0; the player loses iff its OWN HP <= 0 (a double-KO is therefore a loss).
@@ -60,7 +70,9 @@ AI_RANDOM, AI_BRUTE, AI_STRAT_BRUTE, AI_STRAT_DEFENSE, AI_STRAT_BALANCED = 0, 15
 
 
 def ai_for_wins(wins, enemy_outmatches_player):
-    """Battle ctor: enemy AIType from the player's win count."""
+    """tuipet enemy-difficulty ramp (ADAPTED): enemy AI tier from the player's win
+    count. In DVPet this formula sets the *player's* auto-AI; the real enemy AI is
+    randomizeAI(isBoss). Repurposed here on purpose -- see module docstring."""
     if wins < AI_BRUTE:
         return "Random"
     if wins < AI_STRAT_BRUTE:
