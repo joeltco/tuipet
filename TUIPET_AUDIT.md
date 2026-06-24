@@ -88,8 +88,14 @@ regression safety — not new features.
 - [ ] Animation gating: every fx completes before re-trigger (feed/clean/etc).
 
 ### D. Performance
-- [ ] 10 Hz loop does no avoidable work (caches hot, no per-frame CSV reads).
-- [ ] `lru_cache` coverage on all data loaders; no repeated parses.
+- [x] lru_cache coverage: **FOUND + FIXED a real bug.** load_habitats() was the
+      ONLY uncached loader, yet hit every frame via background()/habitat_obj() and
+      every tick via _update_weather()/_affinity() -- a fresh habitats.csv parse +
+      open() syscall ~10-30x/sec. Added @lru_cache: 0.256 ms/call -> 0.0003 ms
+      (~850x). Also removed a duplicate @lru_cache on load_care_effects. Guarded by
+      tests/test_performance.py (asserts ALL data loaders are memoized).
+- [x] 10 Hz loop: no other per-frame CSV reads remain (every load_* is now cached;
+      hot path = cached dict lookups + the sprite/bg frame already cached).
 
 ### E. Code health
 - [ ] Dead code / unused params / stale comments.

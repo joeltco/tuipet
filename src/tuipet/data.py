@@ -888,7 +888,6 @@ WEATHER_CHANCE_SCALE = 4
 
 
 @lru_cache(maxsize=1)
-@lru_cache(maxsize=1)
 def load_care_effects():
     """DVPet careEffect.csv -> {id: effect}. Temporary care buffs (the Futon's sleep
     boost): a duration plus per-tick rate changes ("amount;every_n_ticks") and pause
@@ -1003,6 +1002,7 @@ def load_egg_unlock():
     return rules
 
 
+@lru_cache(maxsize=1)
 def load_habitats():
     path = os.path.join(_DATA, "habitats.csv")
     out = {}
