@@ -600,6 +600,8 @@ class TuiPetApp(App):
         self._mode_close = None
         self.sound = _load_sound()
         self._needs = False
+        self._flash_t = 0           # ticks an action flash holds before a care-need re-asserts
+        self._showing_need = False
 
     def compose(self) -> ComposeResult:
         with Vertical(id="wrap"):
@@ -1099,11 +1101,35 @@ class TuiPetApp(App):
                 self._nag_t = 0.0
                 self.beep("alarm")
         self._needs = needs
+        # the alarm's on-screen half: announce the active care need in the HUD box,
+        # yielding to a fresh action flash and clearing once the need is met
+        if self._flash_t > 0:
+            self._flash_t -= 1
+        elif needs:
+            self.msg_w.update(self._need_message(p))
+            self._showing_need = True
+        elif self._showing_need:
+            self.msg_w.update("")
+            self._showing_need = False
         if self.screen_w.fx is None:   # during a care fx on_frame owns the paint; repainting here flashes the status box
             self.repaint()
 
+    FLASH_HOLD = 4                  # seconds an action result holds before the care-need shows
+
     def flash(self, text):
         self.msg_w.update(text)
+        self._flash_t = self.FLASH_HOLD
+
+    def _need_message(self, p):
+        """HUD announcement for the pet's most urgent unmet care need (or '')."""
+        name = p.name or "Your pet"
+        if p.sick:          msg = f"{name} is sick!"
+        elif p.hunger == 0: msg = f"{name} is hungry!"
+        elif p.poop >= 3:   msg = f"{name} needs cleaning!"
+        elif p.energy <= 0: msg = f"{name} is exhausted!"
+        elif p.scold_flag:  msg = f"{name} is misbehaving!"
+        else:               return ""
+        return f"[{theme.NEG}]\u26a0 {msg}[/]"
 
     def _do(self, result):
         self.flash(result)
