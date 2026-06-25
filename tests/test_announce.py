@@ -55,6 +55,8 @@ def test_hud_announces_yields_and_clears():
         import pytest
         pytest.skip("sprite assets not installed")
     persistence.set_account("Tester", "x")
+    pet._sicken = lambda *a, **k: None   # deterministic: sick is the only need that
+    # outranks hunger, so block random illness and the announced need stays "hungry"
 
     async def go():
         app = TuiPetApp(pet=pet)
