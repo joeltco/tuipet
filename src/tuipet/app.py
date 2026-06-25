@@ -169,10 +169,17 @@ def _effect_overlay(pet, frame_i, cols, px_h, tick=0, pet_right=None):
            "unhappy" if pet.anim in ("sad", "refuse", "angry", "tantrum") else None)
     if emo is None and pet.anim in ("idle", "walk") and pet.current_mood() == "Depressed":
         emo = "depressed"
-    sy = 1                                                # single status slot pinned to the upper-right
-    def _icon_x(w):                                       # top-right, 1px gap from the border
-        return cols - w - 1
+    sy = 1                                                # status slot at the creature's UPPER-RIGHT
     asleep = bool(getattr(pet, "asleep", False))
+    pr = pet_right if pet_right is not None else cols - 1
+    def _icon_x(w):
+        # DVPet adjustEmotionLabel: the emote/status rides just past the creature's
+        # right edge and tracks it as it roams, clamped on-screen. While asleep the
+        # creature is centred and the Zzz owns the above-head zone, so park at the
+        # right border to stay clear of it (logical LCD placement, never overlapping).
+        if asleep:
+            return cols - w - 1
+        return max(0, min(pr + 1, cols - w - 1))
 
     # All status icons share ONE upper-right slot. When several conditions are active
     # they take turns -- flashing in order, one per rotation window -- never stacked.
