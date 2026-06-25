@@ -416,6 +416,18 @@ class Pet:
         if self.x_antibody == "None" and random.randint(0, X_BIRTH_BOUND - 1) < X_BIRTH_TARGET:
             self._set_xantibody("Permanent")          # born a natural X-Antibody carrier
 
+    def advance_hatch(self, dt):
+        """Advance the 3s hatch animation at frame cadence (10 Hz) so every DVPet
+        crack interval renders (rock 4-15, drawNum(1)@16, drawNum(2)@19, hatch@29).
+        Returns True on the frame the egg actually hatches into a Fresh."""
+        if not self.hatching:
+            return False
+        self._hatch_t = getattr(self, "_hatch_t", 3.0) - dt
+        if self._hatch_t <= 0:
+            self._hatch_into_fresh()
+            return True
+        return False
+
     def _rand_personality_traits(self):
         """PhysicalState.randPersonalityTraits: each trait rolls Random.nextInt(3) ->
         {0:-1, 1:0, 2:+1} and is fixed for life (only assigned while still neutral)."""
@@ -459,10 +471,8 @@ class Pet:
                 self.hatching = True
                 self._hatch_t = 3.0
                 self._set_anim("hatch", 3.0)
-            if self.hatching:
-                self._hatch_t = getattr(self, "_hatch_t", 3.0) - dt
-                if self._hatch_t <= 0:
-                    self._hatch_into_fresh()
+            # the 3s hatch is advanced at frame cadence (10 Hz) via advance_hatch();
+            # a 1 Hz countdown here would skip the crack frames (only 3 coarse steps).
             return
 
         if self.stage != "Egg":

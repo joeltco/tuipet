@@ -304,7 +304,7 @@ class Screen(Static):
             xshift, mirror = self.roamer.xshift, self.roamer.mirror
         else:
             mirror = pet.anim in data.MIRROR_ROLES and (self.frame_i // 6) % 2 == 1
-        if pet.num == -1 and pet.anim == "hatch":
+        if pet.num == -1 and pet.hatching:
             # DVPet hatch() (SpriteAnim 11556), driven by elapsed hatch time (1 interval==0.1s):
             # the egg rocks (moveRight/Left 3) over intervals 4..15, then CRACKS -- drawNum(1)
             # at interval 16, drawNum(2) at interval 19 -- revealing the baby before the Fresh.
@@ -1124,6 +1124,10 @@ class TuiPetApp(App):
             else:                              # any other fx just finished -> restore the HUD
                 self.repaint()
         else:
+            if self.pet.hatching and self.pet.advance_hatch(0.1):
+                p = self.pet
+                self.beep("hatch")
+                self.flash(f"[b]{p.name}[/] hatched!")
             sc.advance(self.pet)
             sc.paint(self.pet)
 
