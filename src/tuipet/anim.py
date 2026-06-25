@@ -77,7 +77,7 @@ class Roamer:
             self.face = face
         self._t = 0
 
-    def step(self, left_bound=0):
+    def step(self, left_bound=0, right_bound=None):
         """Advance one interval.  Movement happens on the WALK_BEAT cadence: the pet
         paces STEP_PX at a time, turning around at the screen edges (and at a filth
         pile on the left) and occasionally reversing mid-room -- the way DVPet's
@@ -90,6 +90,8 @@ class Roamer:
         self.pose ^= 1
         self.x += self.face * STEP_PX
         right_edge = self.cols - self.sw
+        if right_bound is not None:                  # a right-edge status column is a wall too
+            right_edge = min(right_edge, right_bound)
         if self.x >= right_edge:                     # hit the right wall -> turn back
             self.x = float(right_edge)
             self.face = -1
