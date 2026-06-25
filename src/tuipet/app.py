@@ -143,8 +143,20 @@ def _blit(bm, ox, oy):
             for x, c in enumerate(row) if c == "1"]
 
 
+COND_W = COND_H = 7                                # state.png cell size (DVPet 7x7 cells)
+COND_PITCH = COND_H + 1
+# DVPet draws the condition icons as a fixed VERTICAL COLUMN down the right edge of
+# the LCD (setLocX ~120), one fixed row each, every active one shown AT ONCE -- not a
+# single cycling slot.  Vertical order is DVPet's setLocY (top->bottom): sick(55),
+# medicine(64), injury(73), bandage(83), vitamin(93), fatigue(103).  teach is NOT in
+# the column -- DVPet gives it setDynamicComponentLocation, so it tracks the creature.
+
+
 def _effect_overlay(pet, frame_i, cols, px_h, tick=0, pet_right=None):
-    """Auxiliary status sprites overlaid on the LCD (poop/Zzz/frost/food/emotes)."""
+    """Status sprites overlaid on the LCD, laid out like the DM20 hardware: poop
+    bottom-left, the sleep Zzz top-right, a fixed condition column down the right
+    edge (all active conditions at once), and a creature-tracking emote/'!'/teach
+    bubble -- each in its own zone so nothing overlaps."""
     E = data.load_effects()
     pts = []
     if pet.dead:
@@ -160,51 +172,57 @@ def _effect_overlay(pet, frame_i, cols, px_h, tick=0, pet_right=None):
             pts += _blit(pm, x, y)
     if pet.num == -1:
         return pts
-    if pet.asleep and E.get("zzz"):                       # Zzz above a sleeper, breathing on the sleep beat
-        z = E["zzz"][(frame_i // 2) % len(E["zzz"])]
-        pts += _blit(z, cols // 2 + 5, 0)   # float above the sleeper's head
-    # DVPet: Cheering->happy emote, Jeering->unhappy emote; the depressed face is the
-    # Mood indicator (shown when the mood is actually Depressed), not a reaction.
-    emo = ("happy" if pet.anim == "happy" else
-           "unhappy" if pet.anim in ("sad", "refuse", "angry", "tantrum") else None)
-    if emo is None and pet.anim in ("idle", "walk") and pet.current_mood() == "Depressed":
-        emo = "depressed"
-    sy = 1                                                # status slot at the creature's UPPER-RIGHT
     asleep = bool(getattr(pet, "asleep", False))
-    pr = pet_right if pet_right is not None else cols - 1
-    def _icon_x(w):
-        # DVPet adjustEmotionLabel: the emote/status rides just past the creature's
-        # right edge and tracks it as it roams, clamped on-screen. While asleep the
-        # creature is centred and the Zzz owns the above-head zone, so park at the
-        # right border to stay clear of it (logical LCD placement, never overlapping).
-        if asleep:
-            return cols - w - 1
-        return max(0, min(pr + 1, cols - w - 1))
-
-    # All status icons share ONE upper-right slot. When several conditions are active
-    # they take turns -- flashing in order, one per rotation window -- never stacked.
-    icons = []
-    # transient mood/reaction emote, or the care-call '!' (hunger/poop/sleep -- no state icon)
-    if emo and E.get(emo):
-        icons.append(E[emo][frame_i % len(E[emo])])
-    elif (pet.anim in ("idle", "walk") and E.get("attention")
-          and (pet.hunger == 0 or pet.poop >= 3 or pet.energy <= 0)):
-        icons.append(E["attention"][0])
-    # persistent condition indicators -- DVPet stateNum blink (frame0/frame1).
-    # Cadence: 7 ticks when unwell (override), else 10 asleep / 7 awake (stateNumTic).
+    # --- sleep Zzz: fixed TOP-RIGHT corner (DVPet sleepLabel: width - w - 8, y1) ---
+    zz_h = 0
+    if asleep and E.get("zzz"):
+        z = E["zzz"][(frame_i // 2) % len(E["zzz"])]
+        zw, zz_h = len(z[0]), len(z)
+        pts += _blit(z, cols - zw - 1, 0)
+    # --- condition column: fixed right edge, every active condition stacked + blinking ---
+    # DVPet stateNumTic blink: 7 ticks awake / 10 asleep, faster (7) when unwell.
     unwell = pet.sick or pet.is_injured() or pet.is_fatigued()
     sf = (tick // (7 if unwell else (10 if asleep else 7))) % 2
-    teach = ((getattr(pet, "praise_flag", False) or getattr(pet, "scold_flag", False))
-             and pet.lights and not asleep)
-    for key, active in (("st_sick", pet.sick), ("st_injury", pet.is_injured()),
-                        ("st_fatigue", pet.is_fatigued()), ("st_vitamin", pet.has_vitamin()),
-                        ("st_teach", teach)):
-        if active and E.get(key):
-            icons.append(E[key][sf])
-    # show ONE at a time in the corner, cycling through them in order (~0.5s each)
-    if icons:
-        bm = icons[(tick // 5) % len(icons)]
-        pts += _blit(bm, _icon_x(len(bm[0])), sy)
+    col_x = cols - COND_W
+    col_y0 = (zz_h + 1) if (asleep and zz_h) else 1        # start below the Zzz when asleep
+    column = (("st_sick", pet.sick), ("st_medicine", getattr(pet, "med", False)),
+              ("st_injury", pet.is_injured()), ("st_bandage", getattr(pet, "bandage", False)),
+              ("st_vitamin", pet.has_vitamin()), ("st_fatigue", pet.is_fatigued()))
+    k = 0
+    col_active = False
+    for key, active in column:
+        if not active or not E.get(key):
+            continue
+        col_active = True
+        y = col_y0 + k * COND_PITCH
+        if y + COND_H > px_h:                             # out of vertical room (rare: 3+ at once)
+            break
+        pts += _blit(E[key][sf], col_x, y)
+        k += 1
+    # --- creature-tracking bubble: emote / care-call '!' / teach (awake only) ---
+    # DVPet's emotionLabel + teachState both ride the creature (adjustEmotionLabel /
+    # setDynamicComponentLocation); reactions don't fire while it sleeps, so this slot
+    # is awake-only and is clamped to stay left of the condition column.
+    if not asleep:
+        emo = ("happy" if pet.anim == "happy" else
+               "unhappy" if pet.anim in ("sad", "refuse", "angry", "tantrum") else None)
+        bubble = []
+        if emo and E.get(emo):                            # cheer -> happy, jeer -> unhappy (DVPet)
+            bubble.append(E[emo][frame_i % len(E[emo])])
+        elif (pet.anim in ("idle", "walk") and E.get("attention")
+              and (pet.hunger == 0 or pet.poop >= 3 or pet.energy <= 0)):
+            bubble.append(E["attention"][0])             # care-call '!'
+        teach = ((getattr(pet, "praise_flag", False) or getattr(pet, "scold_flag", False))
+                 and pet.lights)
+        if teach and E.get("st_teach"):
+            bubble.append(E["st_teach"][sf])
+        if bubble:
+            bm = bubble[(tick // 5) % len(bubble)]        # if both present, take turns (rare)
+            w = len(bm[0])
+            pr = pet_right if pet_right is not None else cols - 1
+            right_limit = (col_x - 1 - w) if col_active else (cols - w - 1)
+            x = max(0, min(pr + 1, right_limit))
+            pts += _blit(bm, x, 1)
     return pts
 
 
@@ -307,7 +325,10 @@ class Screen(Static):
         if pet is not None and pet.anim in ("idle", "walk") and pet.num != -1 and not pet.sick:
             poop_cols = (min(pet.poop, POOP_MAX_PILES) + 1) // 2          # 3x2 grid -> ceil(piles/2) columns wide
             poop_right = (2 + poop_cols * (POOP_W + POOP_PAD) + 1) if pet.poop else 0
-            self.roamer.step(left_bound=poop_right)
+            cond = (pet.is_injured() or pet.is_fatigued() or pet.has_vitamin()
+                    or getattr(pet, "med", False) or getattr(pet, "bandage", False))
+            right_bound = (SCREEN_COLS - COND_W - 1 - SPRITE_W) if cond else None   # clear the right-edge column
+            self.roamer.step(left_bound=poop_right, right_bound=right_bound)
 
     # ---- care-action animations (DVPet SpriteAnim eat/clean/cheer) -----------
     def start_fx(self, kind, icon=None, poop=0, old_num=None, pet=None):
