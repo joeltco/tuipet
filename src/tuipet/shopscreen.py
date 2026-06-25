@@ -4,15 +4,17 @@ Special tab for evolution/transport items found as drops). Renders in the LCD bo
 from __future__ import annotations
 from . import data
 from . import shop
+from . import egg as egg_mod
+from . import persistence
 from .render import downsample
 
 from .theme import LCD_ON, LCD_BG, INK, INK_B, DIM, SEL
 from . import menu
 W = 38
 IC_W, IC_ROWS = 10, 4                      # selected-item icon: auto-sized to fit, never clipped
-SHOP_TABS = shop.CATEGORIES                # food, medicine, toy, chip
+SHOP_TABS = shop.CATEGORIES + ["egg"]      # food, medicine, toy, chip, egg
 BAG_TABS = shop.CATEGORIES + ["special"]
-TAB_LABEL = dict(shop.CAT_LABEL, special="Special")
+TAB_LABEL = dict(shop.CAT_LABEL, special="Special", egg="Eggs")
 
 
 def _effect(e):
@@ -52,6 +54,9 @@ class ShopPanel:
     def _rows(self):
         cat = self._tabs()[self.tab]
         if self.mode == "shop":
+            if cat == "egg":
+                prog, owned = persistence.get_progress(), persistence.get_eggs_owned()
+                return [egg_mod.shop_egg_entry(i, pr) for i, pr in egg_mod.buyable_eggs(prog, owned)]
             return shop.unlocked(self.pet, cat)
         return self._owned_by_cat(cat)
 
@@ -75,7 +80,10 @@ class ShopPanel:
         elif k in ("enter", "space") and rows:
             e = rows[min(self.cursor, n - 1)]
             if self.mode == "shop":
-                self.msg = self.pet.buy(e)
+                if e.get("egg_idx") is not None:
+                    self.msg = self._buy_egg(e)
+                else:
+                    self.msg = self.pet.buy(e)
             else:
                 if (e.get("action") or "") in data.TRANSPORT_ACTIONS:
                     return ("done", ("transport", e["key"]))
@@ -91,10 +99,25 @@ class ShopPanel:
             return ("done", self.msg)
         return None
 
+    def _buy_egg(self, e):
+        """Buy a buyable egg: spend bits, unlock it permanently (it then appears in
+        the egg select). Eggs are not inventory items."""
+        idx, price = e["egg_idx"], e["price"]
+        if idx in persistence.get_eggs_owned():
+            return "Already unlocked."
+        if self.pet.bits < price:
+            return "Not enough bits."
+        self.pet.bits -= price
+        persistence.egg_own(idx)
+        return "Unlocked %s! Hatch it next egg." % e["name"]
+
     # ---- selected-item icon, auto-sized so it never clips ----
     def _icon(self, e):
         blank = [" " * IC_W] * IC_ROWS
-        fr = data.load_icons().get(e["key"]) if e else None
+        if e and e.get("egg_idx") is not None:
+            fr = egg_mod.frames(e["egg_idx"])
+        else:
+            fr = data.load_icons().get(e["key"]) if e else None
         if not fr:
             return blank
         src = fr[0]
@@ -138,12 +161,16 @@ class ShopPanel:
         icon = self._icon(sel) if sel else [" " * IC_W] * IC_ROWS
         tw = W - IC_W - 2
         if sel:
-            owned = self.pet.inventory.get(sel["key"], 0)
-            if self.mode == "shop":
-                info = [sel["name"][:tw], "%db" % shop.purchase_price(sel), "own %d" % owned]
+            if sel.get("egg_idx") is not None:
+                info = [sel["name"][:tw], "%db" % sel["price"], "permanent egg",
+                        "hatch it next egg"]
             else:
-                info = [sel["name"][:tw], "x%d" % owned, "sell %db" % shop.resell_price(sel)]
-            info.append(_effect(sel)[:tw])
+                owned = self.pet.inventory.get(sel["key"], 0)
+                if self.mode == "shop":
+                    info = [sel["name"][:tw], "%db" % shop.purchase_price(sel), "own %d" % owned]
+                else:
+                    info = [sel["name"][:tw], "x%d" % owned, "sell %db" % shop.resell_price(sel)]
+                info.append(_effect(sel)[:tw])
             for r in range(IC_ROWS):
                 tx = info[r] if r < len(info) else ""
                 out.append(icon[r] + "  ", style=INK)
@@ -155,7 +182,10 @@ class ShopPanel:
         # item list for this tab
         vis = 3
         if not rows:
-            empty = "(locked — grows as you evolve)" if self.mode == "shop" else "(none owned)"
+            if self._tabs()[self.tab] == "egg":
+                empty = "(no eggs to buy yet)"
+            else:
+                empty = "(locked — grows as you evolve)" if self.mode == "shop" else "(none owned)"
             out.append_text(menu.row(empty)); shown = 1
         else:
             lo = max(0, min(self.cursor - vis // 2, n - vis))
