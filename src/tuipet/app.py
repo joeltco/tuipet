@@ -196,8 +196,8 @@ def _effect_overlay(pet, frame_i, cols, px_h, tick=0, pet_right=None):
     # DVPet stateNumTic blink: 7 ticks awake / 10 asleep, faster (7) when unwell.
     unwell = pet.sick or pet.is_injured() or pet.is_fatigued()
     sf = (tick // (7 if unwell else (10 if asleep else 7))) % 2
-    col_x = cols - COND_W
-    col_y0 = (zz_h + 1) if (asleep and zz_h) else 1        # start below the Zzz when asleep
+    col_x = cols - COND_W - 1                              # 1px off the right bezel (DVPet leaves ~2px)
+    col_y0 = (zz_h + 1) if (asleep and zz_h) else 0        # even y -> crisp half-block alignment; below Zzz when asleep
     column = (("st_sick", pet.sick), ("st_medicine", pet.has_medicine()),
               ("st_injury", pet.is_injured()), ("st_bandage", pet.has_bandage()),
               ("st_vitamin", pet.has_vitamin()), ("st_fatigue", pet.is_fatigued()))
