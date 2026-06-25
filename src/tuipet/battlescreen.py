@@ -31,16 +31,19 @@ OVX = (COLS - OVW) // 2
 # poses (tuipet DVPet 11-frame layout)
 IDLE, TURN, ATTACK, CHEER_A, CHEER_B, COLLAPSE = 0, 1, 6, 5, 7, 10
 CHARGE = 4                                      # DVPet shoot frame 4: pre-attack/charge pose
-FIRE_Y = PXH - 14                                # orb travels across the monster's mid-body
+# the 16px creature band on the 24px LCD (y6..y22); orbs must stay INSIDE it
+BAND_TOP = PXH - 18                              # 6: creature/orb top limit
+BAND_BOT = PXH - 2                               # 22: floor
+FIRE_Y = PXH - 14                                # orb mid-body height (centred in the band)
 
-# timeline tuning (ticks per beat)
-BANNER_FLASHES, BANNER_HOLD = 3, 3
-FACEOFF_T = 5                                    # 0.6s stare-down
-WINDUP_T = 6                                     # 0.7s charge / rear-back before firing
-FIRE_T = 7                                       # 0.84s per orb leg (~6px/beat, DVPet pace)
-EXPLODE_HOLD, EXPLODE_FRAMES = 2, 6              # 0.72s strobing hit flash
-FLINCH_T = 8                                     # ~1.0s held hurt pose (DVPet aftermath)
-DODGE_T = 9                                      # ~1.1s weave
+# timeline tuning (ticks per beat, 1 tick == 0.1s); slowed for a readable vpet pace
+BANNER_FLASHES, BANNER_HOLD = 3, 4
+FACEOFF_T = 9                                    # 0.9s stare-down
+WINDUP_T = 9                                     # 0.9s charge / rear-back before firing
+FIRE_T = 12                                      # 1.2s per orb leg (~1.7px/tick, smooth glide)
+EXPLODE_HOLD, EXPLODE_FRAMES = 3, 9              # 0.9s strobing hit flash
+FLINCH_T = 12                                    # 1.2s held hurt pose
+DODGE_T = 14                                     # 1.4s weave
 
 OPTS = [("Vaccine", "Vaccine"), ("Data", "Data"), ("Virus", "Virus"), ("Surrender", None)]
 # attack/defence chip effects -> a short on-screen label (DVPet AttackEffectProcess)
@@ -243,9 +246,12 @@ class BattlePanel:
         # (player/foe orbs are directional, so a rightward orb must be mirrored)
         src = orb if left else [r[::-1] for r in orb]
         x = int(x0 + (x1 - x0) * prog)
-        pts = _blit(src, x, FIRE_Y)
-        if fr.get("double"):                                 # doubleAttack: a second orb stacked above
-            pts += _blit(src, x, FIRE_Y - len(src) - 1)
+        h = len(src)
+        mid = BAND_TOP + (16 - h) // 2                        # centre the orb in the 16px creature band
+        if fr.get("double"):                                 # doubleAttack: BOTH orbs kept inside the band
+            pts = _blit(src, x, BAND_TOP) + _blit(src, x, BAND_BOT - h)
+        else:
+            pts = _blit(src, x, mid)
         return pts
 
     def _render_scene_frame(self, fr):
