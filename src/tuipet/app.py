@@ -455,7 +455,9 @@ class Screen(Static):
                 hap = data.load_effects().get("happy")
                 if hap:
                     hf = hap[(step // 6) % len(hap)]
-                    overlay += _blit(hf, SCREEN_COLS - len(hf[0]) - 1, 1)
+                    # DVPet cheer(): the pet stays CENTRED and the emote rides its right
+                    # edge (adjustEmotionLabel) -- not pinned to the far corner.
+                    overlay += _blit(hf, (SCREEN_COLS - SPRITE_W) // 2 + SPRITE_W, 1)
         elif fx["kind"] == "jeer":
             # DVPet jeer(): pose alternates down(+10)/up(+9) every 6 intervals with an
             # "unhappy" emote bubble; ends ~beat 30 (the scold reaction).
@@ -464,12 +466,15 @@ class Screen(Static):
             un = data.load_effects().get("unhappy")
             if un:
                 uf = un[(step // 6) % len(un)]
-                overlay += _blit(uf, SCREEN_COLS - len(uf[0]) - 1, 1)
+                # DVPet jeer(): centred pet, emote at its right edge (not the corner).
+                overlay += _blit(uf, (SCREEN_COLS - SPRITE_W) // 2 + SPRITE_W, 1)
         elif fx["kind"] == "spit":
-            xshift = 9                                         # too full: rejected food
+            # DVPet refuse(): the pet stays CENTRED and shakes its head; the rejected
+            # food drops away from its mouth (on its left) rather than off to one side.
+            xshift = 0
             food = self._food_frames(fx.get("icon") or "f:0")
             if food:
-                overlay += _blit(food[0], 12, 5 + step * 2)    # ...drops away off-screen
+                overlay += _blit(food[0], (SCREEN_COLS - SPRITE_W) // 2, 5 + step * 2)
         elif fx["kind"] == "evolve":
             # DVPet evolveAnim(): the screen strobes dark (lightsOff) <-> bright burst
             # (evol) while changeSprite() swaps the old form for the new one mid-flash --
