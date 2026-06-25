@@ -30,7 +30,7 @@ HP_ROUNDS = 3
 HP_ROUNDS_WON = 2
 HP_METER_W = 28
 HP_ZONE_W = 6
-HP_ROUND_LEN = 20             # cfg _hpTrainingRoundLength: ~2s/round before it times out
+HP_ROUND_LEN = 26             # ~2.6s/round before it times out (Joel tuned: was 20/2.0s, too fast)
 VBAR_W = 28
 SCENE_ROWS = 9                # grounded play-arena height (full-bleed, like battle/adventure)
 
@@ -127,7 +127,7 @@ class TrainingPanel:
                 self._flash(9)
                 self._hp_next()
                 return
-            self.pos += self.dir * 2
+            self.pos += self.dir * 1.5   # Joel tuned: was *2 (~25% slower marker)
             if self.pos >= HP_METER_W - 1:
                 self.pos = HP_METER_W - 1
                 self.dir = -1
