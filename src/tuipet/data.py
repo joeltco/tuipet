@@ -544,9 +544,13 @@ def _consumable(row, id_field):
         # analog -- HP is recomputed per battle), so do NOT fold Recovered into healed,
         # else Steak/Tuna/Honey/Bath/etc. would falsely cure injuries (DVPet applyConsumable).
         "healed": flag("Healed"),
-        "unfatigue": flag("Removes Fatigue"),
+        # foods.csv uses FatiguedRelieved/DepressedRelieved; items.csv uses Removes *
+        "unfatigue": flag("Removes Fatigue") or flag("FatiguedRelieved"),
         "vitamin": int(num("Vitamins")) > 0,   # foods.csv Vitamins>0 (e.g. "Vitamin") guards vs injury worsening
-        "undepressed": flag("Removes Depressed"),
+        "undepressed": flag("Removes Depressed") or flag("DepressedRelieved"),
+        "seconds": int(num("Seconds")),     # DVPet setTotalLifespan: lifespan delta (sec)
+        "temp": int(num("Temp")),           # DVPet temp change (clamped 0..MaxTemp=100)
+        "sleep": flag("Sleep"),             # DVPet item Sleep flag: induce sleep
         # DVPet FoodID/ItemID cols: ";"-list of consumables this one yields when used
         # (a "crafter" -- Toy Oven bakes random foods, Chocolate Egg pops random capsules)
         "unlocks_food": _idlist(row.get("FoodID")),
@@ -610,6 +614,8 @@ def item_is_functional(e):
     if not e:
         return False
     if any(e.get(k) for k in _FUNC_STATS) or any(e.get(k) for k in _FUNC_FLAGS):
+        return True
+    if e.get("seconds") or e.get("temp") or e.get("sleep"):   # lifespan / temp / sleep items
         return True
     if e.get("effect_id", -1) >= 0:     # grants a temporary care effect (Futon)
         return True
