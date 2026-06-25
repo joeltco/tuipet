@@ -88,9 +88,9 @@ def record(egg_type=0):
 # --- DVPet eggUnlock.csv-driven egg unlock (real data; see data.load_egg_unlock) ---
 # Each egg gates on the same signals the device tracks (generation, album/history,
 # X-Antibody, reached stage, maps cleared, tournament trophies, previous-generation
-# attribute/element/field). Conditions met + price>0 -> licensable in the egg shop;
-# price 0 + permanent -> auto-unlocked; price 0 + temporary -> available that
-# generation only. persistence.get_progress() supplies the live state.
+# attribute/element/field). Once an egg's conditions are met it is UNLOCKED and free
+# to hatch: can_perm eggs stay unlocked for good, others only while the condition
+# holds (this generation). persistence.get_progress() supplies the live state.
 _WIN_EGGS = {46: 50, 47: 100}      # tuipet-only "???" eggs (not in eggUnlock.csv) -> lifetime wins
 
 
@@ -154,9 +154,9 @@ def egg_state(idx, prog, owned):
     if rule["start"] or idx in owned:
         return ("owned", 0)
     if not _conditions_met(rule, prog):
-        return ("locked", rule["price"])
-    if rule["price"] > 0:
-        return ("buyable", rule["price"])
+        return ("locked", 0)
+    # condition met: the egg is unlocked. can_perm sticks (persisted by auto_owned);
+    # otherwise it is available only while the condition holds (this generation).
     return ("owned", 0) if rule["can_perm"] else ("temp", 0)
 
 
@@ -173,7 +173,7 @@ def auto_owned(prog, owned):
         if i in owned:
             continue
         rule = rules.get(i)
-        if rule and not rule["start"] and rule["price"] == 0 and rule["can_perm"] \
+        if rule and not rule["start"] and rule["can_perm"] \
                 and _conditions_met(rule, prog):
             out.append(i)
     return out

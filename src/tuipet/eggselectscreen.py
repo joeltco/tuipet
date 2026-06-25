@@ -1,9 +1,8 @@
 """Choose-your-egg: a smooth horizontal carousel of full-size egg sprites. Only
-eggs you can pick or license appear — the base set plus everything unlocked through
-play (generation, album/history, X-Antibody, reached stage, maps cleared, tournament
-trophies, previous-generation traits; see data.load_egg_unlock / egg.evaluate). Eggs
-met-but-priced show a LICENSE cost paid from the pet's bits. ←→ glide, ENTER
-hatches (or licenses) the centred egg, ESC backs out."""
+eggs you can HATCH appear — the base starters plus everything unlocked through play
+(generation, album/history, X-Antibody, reached stage, maps cleared, tournament
+trophies, previous-generation traits; see data.load_egg_unlock). ←→ glide, ENTER
+hatches the centred egg, ESC backs out."""
 from __future__ import annotations
 from . import egg as egg_mod
 from . import menu
@@ -29,7 +28,7 @@ class EggSelectPanel:
             persistence.egg_own(i)
             owned.add(i)
         self.states = egg_mod.egg_states(prog, owned)
-        self.unlocked = egg_mod.selectable_eggs(prog, owned)   # owned + temp + buyable
+        self.unlocked = egg_mod.selectable_eggs(prog, owned)   # owned + temp (everything hatchable)
         self.total = egg_mod.count()
         self.hint = egg_mod.locked_hint(prog, owned)
         self.locked = sum(1 for s, _ in self.states.values() if s == "locked")
@@ -54,9 +53,6 @@ class EggSelectPanel:
         self.locked = sum(1 for st, _ in self.states.values() if st == "locked")
         self.n = len(self.unlocked)
         self.i = min(self.i, self.n - 1)
-
-    def _bits(self):
-        return int(getattr(self.pet, "bits", 0) or 0)
 
     def anim(self):
         self.frame_i += 1
@@ -86,20 +82,7 @@ class EggSelectPanel:
             self.pos -= 1
             self.i = int(self.pos) % self.n
         elif k in ("enter", "space"):
-            idx = self.unlocked[self.i]
-            state, price = self.states.get(idx, ("owned", 0))
-            if state == "buyable":
-                if self._bits() >= price:
-                    self.pet.bits -= price
-                    persistence.egg_own(idx)
-                    self.states[idx] = ("owned", 0)
-                    self.sfx = "select"
-                    self._flash("Licensed %s!  ENTER to hatch" % egg_mod.hatch_name(idx))
-                    return None
-                self.sfx = "error"
-                self._flash("Need %d bits (you have %d)" % (price, self._bits()))
-                return None
-            return ("done", idx)                       # owned/temp -> hatch
+            return ("done", self.unlocked[self.i])     # hatch the centred egg
         elif k == "escape":
             return ("done", None)                      # back out without choosing
         return None
@@ -140,10 +123,8 @@ class EggSelectPanel:
         return fr[0]
 
     def _note(self, idx):
-        state, price = self.states.get(idx, ("owned", 0))
+        state = self.states.get(idx, ("owned", 0))[0]
         name = egg_mod.hatch_name(idx)
-        if state == "buyable":
-            return "%s — LICENSE %db (you %d)" % (name, price, self._bits())
         if state == "temp":
             return "hatches: %s  (this gen only)" % name
         return "hatches: %s" % name

@@ -69,28 +69,6 @@ def test_password_egg_resolves():
     state, _ = egg.egg_state(idx, _prog_for(data.load_egg_unlock().get(idx)), owned=set())
     assert state == "locked"
 
-
-def test_buying_a_license_makes_it_owned():
-    """A condition-met, priced egg is 'buyable'; once in `owned` it reads 'owned'."""
-    rules = data.load_egg_unlock()
-    buyable = None
-    for i, r in rules.items():
-        if r["start"] or r["price"] <= 0:
-            continue
-        if r["password"] or r["food"] or r["item"] or r["habitat"] or r["zone"]:
-            continue
-        st, price = egg.egg_state(i, _prog_for(r), owned=set())
-        if st == "buyable":
-            buyable = i
-            assert price == r["price"] > 0
-            break
-    if buyable is None:
-        import pytest
-        pytest.skip("no purely signal-gated priced egg in this build")
-    st, _ = egg.egg_state(buyable, _prog_for(rules[buyable]), owned={buyable})
-    assert st == "owned"
-
-
 def test_signal_gated_eggs_are_reachable():
     """Every egg gated only on signals tuipet tracks must reach a non-locked state
     given some progress. Eggs gated on unmodelled systems (food/item/habitat/zone/

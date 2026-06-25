@@ -801,9 +801,8 @@ class TuiPetApp(App):
         elif isinstance(self.mode, eggselectscreen.EggSelectPanel):
             m = self.mode
             idx = m.unlocked[m.i] if m.unlocked else 0
-            state, price = m.states.get(idx, ("owned", 0))
-            badge = {"owned": "[dim]licensed[/]", "temp": "[dim]this gen only[/]",
-                     "buyable": f"[b]license {price}b[/]"}.get(state, "")
+            state = m.states.get(idx, ("owned", 0))[0]
+            badge = {"temp": "[dim]this gen only[/]"}.get(state, "[dim]ready[/]")
             self._status_card("New Egg", [f"[dim]{m.i + 1} of {m.n} available[/]",
                                           f"[dim]{m.locked} still locked[/]", "",
                                           "Destined to hatch", f"  [b]{egg_mod.hatch_name(idx)}[/]",
