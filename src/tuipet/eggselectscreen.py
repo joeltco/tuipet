@@ -28,7 +28,7 @@ class EggSelectPanel:
             persistence.egg_own(i)
             owned.add(i)
         self.states = egg_mod.egg_states(prog, owned)
-        self.unlocked = egg_mod.selectable_eggs(prog, owned)   # owned + temp (everything hatchable)
+        self.unlocked = egg_mod.hatchable_eggs(prog, owned)    # owned + temp -- only eggs you can hatch
         self.total = egg_mod.count()
         self.hint = egg_mod.locked_hint(prog, owned)
         self.locked = sum(1 for s, _ in self.states.values() if s == "locked")
@@ -48,7 +48,7 @@ class EggSelectPanel:
         prog = persistence.get_progress()
         owned = persistence.get_eggs_owned()
         self.states = egg_mod.egg_states(prog, owned)
-        self.unlocked = egg_mod.selectable_eggs(prog, owned)
+        self.unlocked = egg_mod.hatchable_eggs(prog, owned)
         self.hint = egg_mod.locked_hint(prog, owned)
         self.locked = sum(1 for st, _ in self.states.values() if st == "locked")
         self.n = len(self.unlocked)
