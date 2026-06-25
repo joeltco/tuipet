@@ -44,6 +44,19 @@ from .theme import LCD_ON, LCD_BG, PHASE_PALETTE, SIL_DAY, SIL_NIGHT
 SCREEN_COLS, SCREEN_ROWS = 40, 12
 SPRITE_W = 16                                   # native creature sprite width
 
+import re as _re
+HUD_W = 40              # message-box content width (CSS #msg: 44 - 2 border - 2 padding)
+HUD_GAP = "      "      # blank run between marquee wraps so the looped text reads cleanly
+HUD_STEP = 2            # advance the marquee every N frames (10 Hz clock -> ~0.2 s/char)
+HUD_HOLD = 8            # marquee steps to hold on the message head before scrolling (~1.6 s)
+_HUD_MARKUP = _re.compile(r"\[/?[^\]]*\]")
+def _hud_plain(t):
+    """Visible text of a Rich-markup string (tags stripped) for width measurement."""
+    return _HUD_MARKUP.sub("", t)
+def _hud_esc(t):
+    """Escape '[' so a plain marquee window is never parsed as Rich markup."""
+    return t.replace("[", "\\[")
+
 
 def hearts(n, total=4, color=None):
     color = color or theme.HEART
@@ -648,6 +661,10 @@ class TuiPetApp(App):
         self._needs = False
         self._flash_t = 0           # ticks an action flash holds before a care-need re-asserts
         self._showing_need = False
+        self._hud_scroll = None     # plain text being marquee-scrolled, or None when it fits
+        self._hud_off = 0           # marquee window offset
+        self._hud_hold = 0          # steps left to hold on the head before scrolling
+        self._hud_tick = 0          # frame counter for the marquee throttle
 
     def compose(self) -> ComposeResult:
         with Vertical(id="wrap"):
@@ -667,12 +684,12 @@ class TuiPetApp(App):
         self.stats_w.border_title = "STATUS"
         self.keys_w.border_title = "ACTIONS"
         self.screen_w.border_subtitle = "● on"
-        self.msg_w.update(self._welcome)
+        self._hud(self._welcome)
         theme.apply(theme.load_choice())
         self._restyle()
         self.repaint()
         self._open_mode(titlescreen.TitlePanel(), self._after_title)
-        self.msg_w.update("[b]▸ PRESS ENTER ◂[/b]")
+        self._hud("[b]▸ PRESS ENTER ◂[/b]")
         self.set_interval(0.1, self.on_frame)    # single DVPet interval clock: 1 tick == 0.1s (main view AND sub-screens)
         self.set_interval(1.0, self.on_tick)
         self.set_interval(10.0, self.autosave)
@@ -692,7 +709,7 @@ class TuiPetApp(App):
         if self._new_game:
             self._open_mode(eggselectscreen.EggSelectPanel(self.pet), self._after_egg_pick)
         else:
-            self.msg_w.update(self._welcome)
+            self._hud(self._welcome)
             self.repaint()
 
     def _after_death(self, result):
@@ -747,7 +764,7 @@ class TuiPetApp(App):
         # clear the message strip so a screen never shows the PREVIOUS screen's
         # farewell flash; each sub-screen carries its own note inside the LCD
         if getattr(self, "msg_w", None) is not None:
-            self.msg_w.update("")
+            self._hud("")
         self.repaint()
 
     def _close_mode(self, result):
@@ -1072,6 +1089,7 @@ class TuiPetApp(App):
         self.stats_w.update("\n".join(lines))
 
     def on_frame(self):                        # single DVPet interval clock (10 Hz, 0.1s): main view AND sub-screens
+        self._hud_marquee()                    # scroll any over-long HUD message (independent of the LCD)
         if self.mode is not None:
             if hasattr(self.mode, "anim"):
                 self.mode.anim()
@@ -1143,18 +1161,50 @@ class TuiPetApp(App):
         if self._flash_t > 0:
             self._flash_t -= 1
         elif needs:
-            self.msg_w.update(self._need_message(p))
+            self._hud(self._need_message(p))
             self._showing_need = True
         elif self._showing_need:
-            self.msg_w.update("")
+            self._hud("")
             self._showing_need = False
         if self.screen_w.fx is None:   # during a care fx on_frame owns the paint; repainting here flashes the status box
             self.repaint()
 
     FLASH_HOLD = 4                  # seconds an action result holds before the care-need shows
 
+    def _hud(self, markup):
+        """Single entry point for the message box.  Any message wider than the box
+        is marquee-scrolled (see _hud_marquee) so it is never clipped; messages that
+        fit render as-is with their Rich markup."""
+        if len(_hud_plain(markup)) <= HUD_W:
+            self._hud_scroll = None
+            self.msg_w.update(markup)
+        else:
+            self._hud_scroll = _hud_plain(markup)   # scroll plain text (overflow msgs carry no markup)
+            self._hud_off = 0
+            self._hud_hold = HUD_HOLD
+            self._hud_tick = 0
+            self.msg_w.update(_hud_esc(self._hud_scroll[:HUD_W]))
+
+    def _hud_marquee(self):
+        """Advance the message marquee one step.  Called from the 10 Hz frame clock;
+        a no-op unless the current message overflows the box."""
+        if self._hud_scroll is None:
+            return
+        self._hud_tick = (self._hud_tick + 1) % HUD_STEP
+        if self._hud_tick:
+            return                                  # throttle: scroll once per HUD_STEP frames
+        if self._hud_hold > 0:
+            self._hud_hold -= 1
+            return                                  # pause on the head (and at each wrap)
+        loop = self._hud_scroll + HUD_GAP
+        self.msg_w.update(_hud_esc((loop + loop)[self._hud_off:self._hud_off + HUD_W]))
+        self._hud_off += 1
+        if self._hud_off >= len(loop):
+            self._hud_off = 0
+            self._hud_hold = HUD_HOLD               # hold again when it loops back to the head
+
     def flash(self, text):
-        self.msg_w.update(text)
+        self._hud(text)
         self._flash_t = self.FLASH_HOLD
 
     def _need_message(self, p):
