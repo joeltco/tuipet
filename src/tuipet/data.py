@@ -540,7 +540,10 @@ def _consumable(row, id_field):
         "data": int(num("Data")),
         "virus": int(num("Virus")),
         "cured": flag("Cured"),
-        "healed": flag("Healed") or flag("Recovered"),
+        # DVPet Healed clears an injury; Recovered only restores battle HP (no tuipet
+        # analog -- HP is recomputed per battle), so do NOT fold Recovered into healed,
+        # else Steak/Tuna/Honey/Bath/etc. would falsely cure injuries (DVPet applyConsumable).
+        "healed": flag("Healed"),
         "unfatigue": flag("Removes Fatigue"),
         "vitamin": int(num("Vitamins")) > 0,   # foods.csv Vitamins>0 (e.g. "Vitamin") guards vs injury worsening
         "undepressed": flag("Removes Depressed"),
