@@ -1733,8 +1733,8 @@ class Pet:
         if e.get("vitamin"):
             self.feed_vitamin()                          # guards against injury worsening
         if e["unfatigue"]:
-            self.energy = self.max_energy
-            self.fatigue_length = 0.0                    # a restorative shakes off fatigue
+            self.fatigue_length = 0.0                    # DVPet Fatigued flag only clears
+            # fatigue-length; energy stays driven by the item's Energy column, not a full refill
         if e["undepressed"]:
             self._set_mood(max(self.mood, NEW_UNDEPRESSED_MOOD))  # leave depression
         if e["cured"]:
@@ -1745,10 +1745,19 @@ class Pet:
             self.injuries = max(0, self.injuries - 1)
             self.inj_length = 0.0
             self.bandage_lapse = BANDAGE_HOURS           # recovery item -> getBandage indicator
+        if e.get("seconds"):
+            self.lifespan += e["seconds"]                # DVPet setTotalLifespan: +/- lifespan
+        if e.get("temp"):
+            new_temp = self.temp + e["temp"]             # DVPet applies only if it stays in range
+            if 0 <= new_temp <= wx.MAX_TEMP:             # config MaxTemp=100, floor 0
+                self.temp = new_temp
+        if e.get("sleep") and not self.asleep:
+            self.asleep = True                           # DVPet item Sleep flag forces sleep
         if is_food:
             self._eat_food(e.get("category", ""))           # bag food -> same taste system
             self._apply_nutrition(e)
-        self._set_anim("eat" if is_food else "happy", 1.4)
+        if not e.get("sleep"):                           # a sleep item leaves the pet dozing,
+            self._set_anim("eat" if is_food else "happy", 1.4)   # not in the happy/eat pose
         return f"Used {e['name']}."
 
     # ---- presentation helpers -----------------------------------------------
