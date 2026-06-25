@@ -38,6 +38,7 @@ BANNER_FLASHES, BANNER_HOLD = 3, 3
 FACEOFF_T = 5                                    # 0.6s stare-down
 WINDUP_T = 6                                     # 0.7s charge / rear-back before firing
 FIRE_T = 7                                       # 0.84s per orb leg (~6px/beat, DVPet pace)
+FIRE_CROSS = 12                                  # 1.4s: orb crosses from attacker to defender
 EXPLODE_HOLD, EXPLODE_FRAMES = 2, 6              # 0.72s strobing hit flash
 FLINCH_T = 8                                     # ~1.0s held hurt pose (DVPet aftermath)
 DODGE_T = 9                                      # ~1.1s weave
@@ -114,12 +115,9 @@ class BattlePanel:
             fxn = b.last_effect if atk == "pet" else None    # only the player carries chip effects (PvE)
             for s in range(WINDUP_T):
                 tl.append({"m": "windup", "view": atk, "atk": atk, "wu": s, "ph": ph, "fh": fh})
-            for s in range(FIRE_T):                          # attacker shown: orb leaves off-screen
-                tl.append({"m": "fire_out", "view": atk, "atk": atk, "double": dbl, "fx": fxn,
-                           "prog": (s + 1) / FIRE_T, "ph": ph, "fh": fh})
-            for s in range(FIRE_T):                          # defender shown: orb arrives off-screen
-                tl.append({"m": "fire_in", "view": dfn, "atk": atk, "def": dfn, "double": dbl,
-                           "prog": (s + 1) / FIRE_T, "ph": ph, "fh": fh})
+            for s in range(FIRE_CROSS):                      # both shown: orb crosses to the defender
+                tl.append({"m": "fire", "atk": atk, "def": dfn, "double": dbl, "fx": fxn,
+                           "prog": (s + 1) / FIRE_CROSS, "ph": ph, "fh": fh})
             if dmg > 0:                                      # HIT: fullscreen flash, then flinch
                 if dfn == "foe":
                     fh = max(0, fh - dmg)
@@ -199,18 +197,54 @@ class BattlePanel:
         on = SIL_NIGHT if self.pet.day_phase == "night" else (SIL_DAY if bgimg else LCD_ON)
         return render_scene(placements, COLS, ROWS, on, LCD_BG, overlay=overlay, bgimg=bgimg)
 
-    def _place_one(self, view, rows, xshift=0):
-        """Place the ONE monster currently on screen. Player stands RIGHT (faces left), enemy
-        LEFT (faces right). Returns (placements, mouth_edge) -- the inner edge the orb leaves
-        from / arrives at."""
-        if view == "foe":
-            src = [r[::-1] for r in rows]                    # mirror=True -> faces right
-            lo, hi = _cbounds(src)
-            x = (1 - lo) + xshift
-            return [(rows, x, True)], x + hi + 1             # mouth = right edge (toward pet)
-        lo, hi = _cbounds(rows)                              # mirror=False -> faces left
-        x = ((COLS - 2) - hi) + xshift
-        return [(rows, x, False)], x + lo                    # mouth = left edge (toward foe)
+    def _place_both(self, ppose, fpose, hide=None, pshift=0, fshift=0):
+        """BOTH monsters facing off (real-vpet layout): player on the LEFT facing RIGHT,
+        foe on the RIGHT facing LEFT. Returns (placements, pmouth, fmouth, body_y) -- the
+        two inner firing edges and the shared mid-body height the orb travels at."""
+        b = self.battle
+        prows = [] if hide == "pet" else self._rows(self.pet.num, ppose)
+        frows = [] if hide == "foe" else self._rows(b.enemy["num"], fpose)
+        pf = [r[::-1] for r in prows] if prows else []      # player faces RIGHT (native faces left)
+        placements = []
+        pmouth, fmouth, body_y = 2, COLS - 3, PXH - 12
+        if pf:
+            plo, phi = _cbounds(pf)
+            px = (1 - plo) + pshift
+            placements.append((pf, px, False))
+            pmouth = px + phi + 1                           # right edge -> toward the foe
+            body_y = (PXH - len(pf) - 2) + len(pf) // 2      # mid-body height
+        if frows:
+            flo, fhi = _cbounds(frows)                       # foe faces LEFT (native)
+            fx = ((COLS - 2) - fhi) + fshift
+            placements.append((frows, fx, False))
+            fmouth = fx + flo - 1                            # left edge -> toward the player
+        return placements, pmouth, fmouth, body_y
+
+    def _orb_cross(self, fr, pmouth, fmouth, body_y, whiff=False):
+        """The attacker's orb flying ACROSS the gap to the defender (player L->R, foe R->L).
+        Reaches the defender's near edge at prog 1 (then the defender flashes); on a dodge
+        it whiffs off the far edge. Same DVPet orb sprite, just routed between the two mons."""
+        b = self.battle
+        atk, prog = fr["atk"], fr["prog"]
+        if atk == "pet":
+            orb = data.attack_orb(self.pet.num, self.pet_attr, self._pow("pet", self.pet_attr))
+        else:
+            orb = data.attack_orb(b.enemy["num"], self.foe_attr, self._pow("foe", self.foe_attr))
+        if not orb:
+            return []
+        w, h = len(orb[0]), len(orb)
+        oy = body_y - h // 2
+        if atk == "pet":                                    # left -> right
+            x0, x1 = pmouth, (COLS if whiff else fmouth - w)
+            src = [r[::-1] for r in orb]                     # orb art faces left -> flip to point right
+        else:                                               # right -> left
+            x0, x1 = fmouth - w, (-w if whiff else pmouth)
+            src = orb
+        x = int(x0 + (x1 - x0) * prog)
+        pts = _blit(src, x, oy)
+        if fr.get("double"):                                # doubleAttack: a second orb stacked above
+            pts += _blit(src, x, oy - h - 1)
+        return pts
 
     def _pow(self, side, attr):
         if side == "pet":
@@ -220,83 +254,69 @@ class BattlePanel:
         return {"Vaccine": e.get("vaccine", 0), "Data": e.get("data_power", 0),
                 "Virus": e.get("virus", 0)}.get(attr, 0)
 
-    def _orb_overlay(self, fr, mouth):
-        """The attacker's real orb, flying OFF the near edge (fire_out) or IN from the far edge
-        (fire_in/dodge). No clamp -- render_scene clips anything off-screen. Player fires left,
-        enemy fires right; the orb keeps a constant world direction across the screen switch."""
-        atk, m, prog = fr["atk"], fr["m"], fr["prog"]
-        if atk == "pet":
-            orb = data.attack_orb(self.pet.num, self.pet_attr, self._pow("pet", self.pet_attr))
-        else:
-            orb = data.attack_orb(self.battle.enemy["num"], self.foe_attr, self._pow("foe", self.foe_attr))
-        if not orb:
-            return []
-        w = len(orb[0])
-        left = (atk == "pet")                                # player fires left; enemy fires right
-        if m == "fire_out":                                  # orb leaves the mouth, off the near edge
-            x0, x1 = (mouth - w, -w) if left else (mouth, COLS)
-        else:                                                # fire_in / dodge: arrives, STOPS at the defender's edge
-            x0, x1 = (COLS, mouth) if left else (-w, mouth - w)
-            if m == "dodge":                                 # whiffs past to the far edge
-                x1 = -w if left else COLS
-        # the orb art faces LEFT natively; flip it to point in its travel direction
-        # (player/foe orbs are directional, so a rightward orb must be mirrored)
-        src = orb if left else [r[::-1] for r in orb]
-        x = int(x0 + (x1 - x0) * prog)
-        pts = _blit(src, x, FIRE_Y)
-        if fr.get("double"):                                 # doubleAttack: a second orb stacked above
-            pts += _blit(src, x, FIRE_Y - len(src) - 1)
-        return pts
-
     def _render_scene_frame(self, fr):
         b = self.battle
         m = fr["m"]
         ph = fr.get("ph", b.pet_hp)
         fh = fr.get("fh", b.enemy_hp)
-        if m == "banner":
-            scene = self._scene([], _full(BANNER[fr["f"]]))
-            note = "BATTLE!"
-        elif m == "hit":
-            scene = self._scene([], _full(EXPLODE[fr["f"]]))
-            note = "HIT!"
-        else:
-            view = fr.get("view", "pet")
-            if m == "result":
-                pose = (CHEER_A, CHEER_B)[self.frame_i % 2] if self.won else COLLAPSE
-            elif m == "windup":
-                # DVPet battlePlayerShootAnim sequences poses 1->0->4 (ready->idle->charge)
-                # through the wind-up, then snaps to 6 (attack) only at the moment of firing.
-                pose = (TURN, TURN, IDLE, IDLE, CHARGE, CHARGE)[min(fr.get("wu", 0), 5)]
-            elif m == "fire_out":
-                pose = ATTACK
-            elif m == "dodge":
-                pose = TURN if self.frame_i % 2 else IDLE
-            elif m == "flinch":
-                pose = COLLAPSE
-            elif m == "fire_in":
-                pose = CHARGE if self.frame_i % 2 else IDLE  # DVPet defender bobs 0<->4 awaiting the orb
-            else:                                            # faceoff
-                pose = IDLE
-            num = self.pet.num if view == "pet" else b.enemy["num"]
-            rows = self._rows(num, pose)
-            xshift = 0
-            back = 1 if view == "pet" else -1                # +x = pet's wall (right), foe's (left)
-            if m == "windup":
-                xshift = back * min(3, fr.get("wu", 0) + 1)  # rear back, charging up
-            elif m == "fire_out" and fr.get("prog", 1) < 0.35:
-                xshift = -back * 2                           # lunge toward the foe on release
-            elif m == "dodge":
-                xshift = back * (3 if self.frame_i % 2 else 2)   # weave back toward its wall
-            place, mouth = self._place_one(view, rows, xshift)
-            overlay = self._orb_overlay(fr, mouth) if m in ("fire_out", "fire_in", "dodge") else []
-            scene = self._scene(place, overlay)
-            note = {"faceoff": f"{self.pet.name[:8]} vs {b.enemy['name'][:8]}",
-                    "windup": "...", "fire_out": "Fire!", "fire_in": "Incoming!",
-                    "dodge": "Dodge!", "flinch": "Hit!", "result": ""}.get(m, "")
-            if fr.get("fx") and m == "fire_out":             # surface the player's chip effect
-                note = EFFECT_LABEL.get(fr["fx"], fr["fx"])
+        if m == "banner":                                    # full-screen BATTLE flash, no mons yet
+            self.hud_php, self.hud_fhp, self.hud_note = ph, fh, "BATTLE!"
+            return self._scene([], _full(BANNER[fr["f"]]))
+
+        atk, dfn = fr.get("atk"), fr.get("def")
+        ppose = fpose = IDLE                                  # both mons always on screen, facing off
+        pshift = fshift = 0
+        hide = None
+        overlay = []
+        note = ""
+        if m == "faceoff":
+            note = f"{self.pet.name[:8]} vs {b.enemy['name'][:8]}"
+        elif m == "result":                                  # winner cheers, loser stays collapsed
+            cheer = (CHEER_A, CHEER_B)[self.frame_i % 2]
+            ppose, fpose = (cheer, COLLAPSE) if self.won else (COLLAPSE, cheer)
+        elif m == "windup":
+            wu = fr.get("wu", 0)
+            charge = (TURN, TURN, IDLE, IDLE, CHARGE, CHARGE)[min(wu, 5)]
+            back = -min(3, wu + 1)                            # rear back AWAY from the foe (player<-, foe->)
+            if atk == "pet":
+                ppose, pshift = charge, back
+            else:
+                fpose, fshift = charge, -back
+            note = "..."
+        elif m == "fire":
+            lunge = -2 if fr.get("prog", 1) < 0.3 else 0      # snap forward on release
+            if atk == "pet":
+                ppose, pshift = ATTACK, -lunge
+            else:
+                fpose, fshift = ATTACK, lunge
+            note = EFFECT_LABEL.get(fr.get("fx"), "Fire!")
+        elif m == "hit":                                     # the LOSER (defender) flashes on/off
+            if fr.get("f"):
+                hide = dfn
+            else:
+                if dfn == "pet": ppose = COLLAPSE
+                else: fpose = COLLAPSE
+            note = "Hit!"
+        elif m == "flinch":
+            if dfn == "pet": ppose = COLLAPSE
+            else: fpose = COLLAPSE
+            note = "Hit!"
+        elif m == "dodge":
+            weave = TURN if self.frame_i % 2 else IDLE
+            if atk == "pet":
+                ppose, fpose = ATTACK, weave
+            else:
+                fpose, ppose = ATTACK, weave
+            note = "Dodge!"
+
+        place, pmouth, fmouth, body_y = self._place_both(ppose, fpose, hide=hide,
+                                                         pshift=pshift, fshift=fshift)
+        if m == "fire":
+            overlay = self._orb_cross(fr, pmouth, fmouth, body_y)
+        elif m == "dodge":
+            overlay = self._orb_cross(fr, pmouth, fmouth, body_y, whiff=True)
         self.hud_php, self.hud_fhp, self.hud_note = ph, fh, note
-        return scene
+        return self._scene(place, overlay)
 
     def _render_menu(self):
         b = self.battle
