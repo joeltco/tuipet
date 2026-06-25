@@ -118,3 +118,47 @@ def test_egg_select_cursor_starts_on_a_free_egg():
     state, price = panel.states[idx]
     assert state == "owned" and price == 0, \
         f"new-game cursor landed on {state} (price {price}); expected a free owned egg"
+
+
+def test_egg_gate_cross_references_exist():
+    """Every egg gate must point at a real, reachable game object; otherwise the egg
+    is silently stranded. Guards against a data refresh adding an egg gated on a
+    trophy/map/Digimon/field that does not exist."""
+    rules = data.load_egg_unlock()
+    tourneys = {t["id"] for t in data.load_tournies()}
+    nmaps = len(data.load_maps())
+    _, by = data.load_sprites()
+    fields = {r.get("field") for r in by.values()}
+    attrs = {r.get("attribute") for r in by.values()}
+    elems = {r.get("element") for r in by.values()}
+    bad = []
+    for idx, rule in rules.items():
+        if rule["tourney"] is not None and rule["tourney"] not in tourneys:
+            bad.append((idx, "tourney", rule["tourney"]))
+        if rule["map"] is not None and not (0 <= rule["map"] < nmaps):
+            bad.append((idx, "map", rule["map"]))
+        for n in (rule["history"] or []):
+            if n not in by:
+                bad.append((idx, "history", n))
+        if rule["prev_field"] is not None and rule["prev_field"] not in fields:
+            bad.append((idx, "prev_field", rule["prev_field"]))
+        if rule["prev_attr"] is not None and rule["prev_attr"] not in attrs:
+            bad.append((idx, "prev_attr", rule["prev_attr"]))
+        if rule["prev_elem"] is not None and rule["prev_elem"] not in elems:
+            bad.append((idx, "prev_elem", rule["prev_elem"]))
+    assert not bad, f"egg gates referencing nonexistent objects (egg stranded): {bad}"
+
+
+def test_no_egg_gated_on_an_unmodeled_system():
+    """_conditions_met hard-fails food/item/habitat/zone gates (tuipet does not model
+    them), so any egg using ONLY those is permanently locked. Shipped data uses none;
+    this guards a refresh from silently stranding an egg on an unmodeled gate."""
+    rules = data.load_egg_unlock()
+    stranded = []
+    for idx, rule in rules.items():
+        if rule["start"]:
+            continue
+        if any(rule[k] is not None for k in ("food", "item", "habitat", "zone")):
+            stranded.append((idx, [k for k in ("food", "item", "habitat", "zone")
+                                   if rule[k] is not None]))
+    assert not stranded, f"eggs gated on unmodeled systems (permanently locked): {stranded}"
