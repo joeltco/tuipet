@@ -74,11 +74,13 @@ class AdventurePanel:
         x = 1 + int((COLS - ew - 2) * (a.pct / 100))
         scene = render_scene([(pet_rows, x, True)], COLS, ROWS, LCD_ON, LCD_BG)
         fill = round(a.pct / 100 * BAR_W)
-        bar = "[" + "█" * fill + "·" * (BAR_W - fill) + "]"
-        lives = "♥" * a.lives + "·" * (3 - a.lives)
+        lives = "♥" * a.lives + "·" * (3 - a.lives)   # dot = lost life (heart glyph reads hollow)
         out = menu.bar("ADVENTURE", f"Map {a.mi + 1}-{a.zi + 1}")
         out.append_text(scene)
-        out.append(f"\n{bar} {a.pct}%\n", style=INK)
+        out.append("\n", style=INK)
+        out.append("█" * fill, style=INK_B)               # bright fill, matches STATUS bars
+        out.append("─" * (BAR_W - fill), style=DIM)       # dim empty track
+        out.append(f" {a.pct}%\n", style=INK)
         out.append(f"Life {lives}   Bits {self.pet.bits}   Bag {sum(self.pet.inventory.values())}\n", style=INK)
         out.append_text(menu.note(a.last or ""))
         if a.done:

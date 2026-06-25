@@ -52,7 +52,7 @@ def hearts(n, total=4, color=None):
 
 def bar(v, width=12, color=None):
     color = color or theme.LIFE
-    fill = round(v / 100 * width)
+    fill = max(0, min(width, round(v / 100 * width)))   # clamp: never overrun the track
     return f"[{color}]" + "█" * fill + "[/][dim]" + "─" * (width - fill) + "[/dim]"
 
 
@@ -818,16 +818,8 @@ class TuiPetApp(App):
             self._status_battle()
         elif isinstance(self.mode, dnascreen.DNAPanel):
             self._status_dna()
-        elif isinstance(self.mode, digicorescreen.DigiCorePanel):
-            dp = self.mode
-            toc = [(f"[b]▸ {t}[/]" if j == dp.i else f"[dim]  {t}[/]")
-                   for j, (t, _) in enumerate(dp.pages)]
-            self._status_card("Data Book", [
-                f"[b]{self.pet.name[:14]}[/]",
-                f"[dim]{self.pet.stage} · {self.pet.attribute}[/]",
-                "",
-            ] + toc + ["", "[dim]←/→ flip   ESC close[/]"])
         else:
+            # data/digicore browses in the LCD; keep live vitals on the right
             self.stats_w.paint(self.pet)
 
     def _status_card(self, title, lines):
