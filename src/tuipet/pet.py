@@ -233,6 +233,8 @@ WORSE_MALADY_OBED_DEC = -10              # worseMaladyObedienceDec
 WORSE_INJ_ENERGY_DEC = 1                 # WorseInjuryEnergyDec
 WORSE_INJ_ENTH_CHANGE = -1               # WorseInjuryEnthusiasmChange
 VITAMIN_HOURS = 60                       # VitaminHours (game-min of injury-worsening protection)
+MEDICINE_HOURS = 60                      # MedicineHours (game-min the medicine indicator lingers, config.csv)
+BANDAGE_HOURS = 60                       # BandageHours (game-min the bandage indicator lingers, config.csv)
 
 # X-Antibody: a special state that unlocks evolution into the "X" Digimon forms.
 # None -> Temporary (decays) -> Permanent -> XProgram.  Acquired by a rare natural
@@ -327,6 +329,8 @@ class Pet:
     sick_length: float = 0.0        # DVPet _sickLength (game-min until natural recovery)
     inj_length: float = 0.0         # DVPet _injLength (game-min until the injury heals)
     vitamin_lapse: float = 0.0      # DVPet _vitaminLapse (game-min of injury-worsening protection)
+    med_lapse: float = 0.0          # DVPet _medLapse: medicine indicator after curing sickness (getMed)
+    bandage_lapse: float = 0.0      # DVPet _bandageLapse: bandage indicator after mending an injury (getBandage)
     nutr_protein: int = 0           # DVPet _protein (0..MaxProtein), from a meaty diet
     nutr_mineral: int = 0           # DVPet _mineral, from vegetables
     nutr_vitamin: int = 0           # DVPet _vitamin, from fruit
@@ -479,6 +483,10 @@ class Pet:
                 self.inj_length = max(0.0, self.inj_length - _rec)
             if self.vitamin_lapse > 0:                        # vitaminLapse: protection wears off
                 self.vitamin_lapse = max(0.0, self.vitamin_lapse - dt)
+            if self.med_lapse > 0:                            # medLapse: medicine wears off (getMed icon)
+                self.med_lapse = max(0.0, self.med_lapse - dt)
+            if self.bandage_lapse > 0:                        # bandageLapse: bandage wears off (getBandage icon)
+                self.bandage_lapse = max(0.0, self.bandage_lapse - dt)
         self._tick_effect(dt)
         if self.asleep:
             # DVPet sleep recovery: +SleepEnergyGain every SleepMinutesToEnergyGain.
@@ -1456,6 +1464,14 @@ class Pet:
         """PhysicalState.hasVitamin: a vitamin is active, guarding against worse injuries."""
         return self.vitamin_lapse > 0
 
+    def has_medicine(self):
+        """PhysicalState.getMed: medicine is still active (the medicine state icon shows)."""
+        return self.med_lapse > 0
+
+    def has_bandage(self):
+        """PhysicalState.getBandage: a bandage is still on (the bandage state icon shows)."""
+        return self.bandage_lapse > 0
+
     def feed_vitamin(self):
         """PhysicalState.feedVitamin: top up injury-worsening protection."""
         self.vitamin_lapse = VITAMIN_HOURS
@@ -1579,8 +1595,10 @@ class Pet:
         if self.sick:
             self.sick = False
             self.sick_length = 0.0                  # medicine cures the illness outright
+            self.med_lapse = MEDICINE_HOURS         # DVPet feedMed: medicine indicator runs as it wears off
         if self.is_injured():
             self.inj_length = 0.0                   # first aid mends the active injury (DVPet bath/recovery)
+            self.bandage_lapse = BANDAGE_HOURS      # DVPet applyBandage: the bandage shows during recovery
         self._set_mood(self.mood + 75)              # curedMoodBonus
         self._set_anim("heal", 1.5)
         what = "illness and injury" if (sick0 and inj0) else ("injury" if inj0 else "illness")
@@ -1722,9 +1740,11 @@ class Pet:
         if e["cured"]:
             self.sick = False
             self.sick_length = 0.0
+            self.med_lapse = MEDICINE_HOURS              # medicine item -> getMed indicator
         if e["healed"]:
             self.injuries = max(0, self.injuries - 1)
             self.inj_length = 0.0
+            self.bandage_lapse = BANDAGE_HOURS           # recovery item -> getBandage indicator
         if is_food:
             self._eat_food(e.get("category", ""))           # bag food -> same taste system
             self._apply_nutrition(e)

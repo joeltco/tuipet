@@ -185,8 +185,8 @@ def _effect_overlay(pet, frame_i, cols, px_h, tick=0, pet_right=None):
     sf = (tick // (7 if unwell else (10 if asleep else 7))) % 2
     col_x = cols - COND_W
     col_y0 = (zz_h + 1) if (asleep and zz_h) else 1        # start below the Zzz when asleep
-    column = (("st_sick", pet.sick), ("st_medicine", getattr(pet, "med", False)),
-              ("st_injury", pet.is_injured()), ("st_bandage", getattr(pet, "bandage", False)),
+    column = (("st_sick", pet.sick), ("st_medicine", pet.has_medicine()),
+              ("st_injury", pet.is_injured()), ("st_bandage", pet.has_bandage()),
               ("st_vitamin", pet.has_vitamin()), ("st_fatigue", pet.is_fatigued()))
     k = 0
     col_active = False
@@ -326,7 +326,7 @@ class Screen(Static):
             poop_cols = (min(pet.poop, POOP_MAX_PILES) + 1) // 2          # 3x2 grid -> ceil(piles/2) columns wide
             poop_right = (2 + poop_cols * (POOP_W + POOP_PAD) + 1) if pet.poop else 0
             cond = (pet.is_injured() or pet.is_fatigued() or pet.has_vitamin()
-                    or getattr(pet, "med", False) or getattr(pet, "bandage", False))
+                    or pet.has_medicine() or pet.has_bandage())
             right_bound = (SCREEN_COLS - COND_W - 1 - SPRITE_W) if cond else None   # clear the right-edge column
             self.roamer.step(left_bound=poop_right, right_bound=right_bound)
 
