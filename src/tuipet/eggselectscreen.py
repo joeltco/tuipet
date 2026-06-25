@@ -34,12 +34,9 @@ class EggSelectPanel:
         self.hint = egg_mod.locked_hint(prog, owned)
         self.locked = sum(1 for s, _ in self.states.values() if s == "locked")
         self.n = len(self.unlocked)
-        # start on the first FREE (owned) egg, not an unaffordable license, so a new
-        # player with 0 bits lands on a starter they can actually hatch
-        self.i = next((k for k, idx in enumerate(self.unlocked)
-                       if self.states.get(idx, ("owned", 0))[0] == "owned"), 0)
-        self.pos = float(self.i)    # continuous carousel target
-        self.scroll = float(self.i)  # eased current position, chases self.pos
+        self.i = 0               # cursor opens on the first egg (position 1/N)
+        self.pos = 0.0           # continuous carousel target
+        self.scroll = 0.0        # eased current position, chases self.pos
         self.frame_i = 0
         self.msg = ""            # transient footer note (e.g. "Licensed!")
         self.msg_t = 0
