@@ -304,9 +304,17 @@ class Screen(Static):
             xshift, mirror = self.roamer.xshift, self.roamer.mirror
         else:
             mirror = pet.anim in data.MIRROR_ROLES and (self.frame_i // 6) % 2 == 1
-        if pet.num == -1 and pet.anim == "hatch":   # DVPet hatch(): the egg ROCKS side to side
-            rows = (_fr[0] if _fr and _fr[0] else first)   # the whole egg, shaking in place
-            xshift = 3 if self.frame_i % 2 == 0 else -3    # moveRight/moveLeft 3, alternating
+        if pet.num == -1 and pet.anim == "hatch":
+            # DVPet hatch() (SpriteAnim 11556), driven by elapsed hatch time (1 interval==0.1s):
+            # the egg rocks (moveRight/Left 3) over intervals 4..15, then CRACKS -- drawNum(1)
+            # at interval 16, drawNum(2) at interval 19 -- revealing the baby before the Fresh.
+            n = int((3.0 - getattr(pet, "_hatch_t", 3.0)) / 0.1)
+            pos = 0
+            for k in range(4, min(n, 15) + 1):             # +3,+3 then -3,-3, repeating
+                pos += 3 if ((k - 4) // 2) % 2 == 0 else -3
+            xshift = pos
+            fi = 0 if n < 16 else (1 if n < 19 else 2)      # egg -> crack -> baby emerging
+            rows = (_fr[fi] if fi < len(_fr) and _fr[fi] else first)
             mirror = False
         # NOTE: DVPet's frozen.png (the ice encasement) is its GAME-PAUSED indicator
         # (setFrozenIcon only fires when !isPlaying), not a cold-weather state -- so cold

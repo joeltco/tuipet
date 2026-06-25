@@ -48,7 +48,7 @@ def frames(egg_type=0):
     f1 = fr[1] if len(fr) > 1 else f0
     return [f0, f1, _shift(f0, -1), f0, _shift(f0, 1)]
 
-ROLES = {"idle": [0, 1], "egg_idle": [0, 1], "hatch": [2, 3, 4]}
+ROLES = {"idle": [0, 1], "egg_idle": [0, 1], "hatch": [0, 1, 2]}  # frames: egg -> crack -> baby
 
 
 def hatch_target(egg_type=0):
