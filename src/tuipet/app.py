@@ -490,6 +490,15 @@ class Screen(Static):
             if step < n - 3 and step % 3 == 1:
                 overlay = overlay + [(x, y) for y in range(px_h) for x in range(SCREEN_COLS)]
             # the final steps drop the flash -> the evolved form is revealed
+        elif fx["kind"] == "dying":
+            # DVPet dying() (SpriteAnim 13179): the collapsed pet sways gently (+/-1)
+            # while the 'dying' emote (dying/dying2) pulses at its right edge, tracking
+            # it -- frame swap and sway in lockstep, just before the memorial.
+            xshift = 1 if (step // 5) % 2 == 0 else -1
+            dye = data.load_effects().get("dying")
+            if dye:
+                df = dye[(step // 5) % len(dye)]
+                overlay += _blit(df, (SCREEN_COLS - SPRITE_W) // 2 + SPRITE_W + xshift, 1)
         self.update(render_screen(rows, SCREEN_COLS, SCREEN_ROWS, on, bg,
                                   xshift=xshift, overlay=overlay, bgimg=bgimg,
                                   mirror=(fx["kind"] == "dying")))
