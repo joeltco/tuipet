@@ -1,8 +1,9 @@
 """Egg sprites for the hatch sequence.
 
 Uses the real DVPet egg sprites (extracted from armorEggs.png into
-data/eggs.json.gz), animated only by a horizontal shake — no drawn art. Each egg
-has a single frame in armorEggs, so hatching is a shake, not a carved crack.
+data/eggs.json.gz). Each egg has 3 real DVPet frames (idle, settle, cracked-open),
+so hatching plays a real carved crack before the baby. The side-to-side shake is an
+xshift at render time, not baked into extra frames. No drawn art.
 """
 from __future__ import annotations
 import gzip
@@ -38,15 +39,19 @@ def _shift(rows, dx):
 
 
 def frames(egg_type=0):
-    """Real Digitama egg (spritesEgg0.png, the Egg-stage creature sheet). Each egg
-    has its own animation frames; the hatch role adds a shake. No drawn art."""
+    """Real Digitama egg (spritesEgg0.png, the Egg-stage creature sheet): the 3 real
+    DVPet frames -- [0] idle egg, [1] settle/bulge, [2] cracked-open (shell breaks,
+    baby emerges). The hatch role (ROLES["hatch"]=[0,1,2]) plays all three; the
+    side-to-side shake is applied as an xshift at render time, not baked into extra
+    frames. No drawn art -- the crack frame comes straight from DVPet's sheet."""
     eggs = _real_eggs()
     if not eggs:
         return [["0"]]                               # only before setup_assets.sh
-    fr = eggs[egg_type % len(eggs)]["frames"]        # the egg's real animation frames
+    fr = eggs[egg_type % len(eggs)]["frames"]        # real frames: idle / settle / crack
     f0 = fr[0]
     f1 = fr[1] if len(fr) > 1 else f0
-    return [f0, f1, _shift(f0, -1), f0, _shift(f0, 1)]
+    f2 = fr[2] if len(fr) > 2 else f1                 # the REAL crack frame (was discarded)
+    return [f0, f1, f2]
 
 ROLES = {"idle": [0, 1], "egg_idle": [0, 1], "hatch": [0, 1, 2]}  # frames: egg -> crack -> baby
 
