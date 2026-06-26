@@ -200,17 +200,63 @@ def set_account(name, pw):
     save_settings(d)
 
 
+def to_save_dict(pet):
+    """The on-disk/cloud save payload: the flat pet plus a wall-clock stamp used
+    for offline catch-up AND last-write-wins cloud merge."""
+    data = asdict(pet)
+    data["_saved_at"] = time.time()
+    return data
+
+
 def save(pet, path=None):
     path = path or SAVE_PATH
     os.makedirs(os.path.dirname(path), exist_ok=True)
-    data = asdict(pet)
-    data["_saved_at"] = time.time()
+    data = to_save_dict(pet)
     tmp = path + ".tmp"
     with open(tmp, "w") as fh:
         json.dump(data, fh)
     os.replace(tmp, path)  # atomic
     if getattr(pet, "num", -1) >= 0 and pet.stage != "Egg":
         album_add(pet.num)            # grow the cross-pet album (gates egg unlocks)
+
+
+def write_save_dict(data, path=None):
+    """Atomically write a raw save dict (e.g. one pulled from the cloud) to disk."""
+    path = path or SAVE_PATH
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    tmp = path + ".tmp"
+    with open(tmp, "w") as fh:
+        json.dump(data, fh)
+    os.replace(tmp, path)
+
+
+def local_saved_at(path=None):
+    """The _saved_at of the on-disk save, or 0.0 if there's no readable save."""
+    path = path or SAVE_PATH
+    try:
+        return float(json.load(open(path)).get("_saved_at") or 0.0)
+    except (ValueError, OSError, TypeError):
+        return 0.0
+
+
+def pet_from_save(data, catch_up=True):
+    """Build (pet, message) from a save dict (disk or cloud). Returns (None, '')
+    on malformed data. Applies the bounded offline decay when catch_up is set."""
+    if not isinstance(data, dict):
+        return None, ""
+    data = dict(data)                            # don't mutate the caller's dict
+    saved_at = data.pop("_saved_at", None)
+    valid = {f.name for f in fields(Pet)}
+    kwargs = {k: v for k, v in data.items() if k in valid}
+    try:
+        pet = Pet(**kwargs)
+    except TypeError:
+        return None, ""
+    msg = ""
+    if catch_up and saved_at:
+        elapsed = min(max(0.0, time.time() - saved_at), MAX_OFFLINE)
+        msg = _offline(pet, elapsed)
+    return pet, msg
 
 
 def _offline(pet, elapsed):
@@ -243,18 +289,7 @@ def load(path=None, catch_up=True):
         data = json.load(open(path))
     except (ValueError, OSError):
         return None, ""
-    saved_at = data.pop("_saved_at", None)
-    valid = {f.name for f in fields(Pet)}
-    kwargs = {k: v for k, v in data.items() if k in valid}
-    try:
-        pet = Pet(**kwargs)
-    except TypeError:
-        return None, ""
-    msg = ""
-    if catch_up and saved_at:
-        elapsed = min(max(0.0, time.time() - saved_at), MAX_OFFLINE)
-        msg = _offline(pet, elapsed)
-    return pet, msg
+    return pet_from_save(data, catch_up=catch_up)
 
 
 def delete(path=None):

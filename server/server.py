@@ -30,6 +30,9 @@ PORT = int(os.environ.get("TUIPET_PORT", "8765"))
 ACCOUNTS_PATH = os.environ.get(
     "TUIPET_ACCOUNTS",
     os.path.join(os.path.dirname(os.path.abspath(__file__)), "accounts.json"))
+SAVES_PATH = os.environ.get(
+    "TUIPET_SAVES",
+    os.path.join(os.path.dirname(os.path.abspath(__file__)), "saves.json"))
 
 MAX_CLIENTS = 200
 MAX_NAME = 24
@@ -70,6 +73,34 @@ def _make_account(name, pw):
 
 def _verify(pw, acc):
     return hmac.compare_digest(_hash(pw, bytes.fromhex(acc["salt"])), acc["hash"])
+
+
+# ---- cloud saves (name.lower() -> full pet save dict incl. _saved_at) --------
+def _load_saves():
+    try:
+        return json.load(open(SAVES_PATH))
+    except (OSError, ValueError):
+        return {}
+
+
+SAVES = _load_saves()
+_saves_lock = asyncio.Lock()
+
+
+async def _store_save(key, save):
+    """Last-write-wins by the client-stamped _saved_at: only newer saves land."""
+    if not isinstance(save, dict):
+        return
+    incoming = save.get("_saved_at") or 0
+    have = (SAVES.get(key) or {}).get("_saved_at") or 0
+    if incoming < have:
+        return                                    # stale push -> ignore (a newer device won)
+    SAVES[key] = save
+    async with _saves_lock:
+        tmp = SAVES_PATH + ".tmp"
+        with open(tmp, "w") as f:
+            json.dump(SAVES, f)
+        os.replace(tmp, SAVES_PATH)               # atomic
 
 
 class Client:
@@ -153,22 +184,35 @@ async def handler(ws):
                     ACCOUNTS[key] = _make_account(name, pw)
                     _save_accounts()
                     LOG.info("registered account %s", name)
-                if any(c.live and c.name.lower() == key for c in CLIENTS.values() if c is not client):
+                # A sync_only connection just pulls/pushes the cloud save; it never
+                # joins the live roster, so it can coexist with a lobby login on the
+                # same account (and won't trip the "already online" guard below).
+                sync_only = bool(m.get("sync_only"))
+                if not sync_only and any(
+                        c.live and c.name.lower() == key for c in CLIENTS.values() if c is not client):
                     await _send(client, {"t": "login_failed", "msg": "That name is already online."})
                     return
                 client.name = name
                 client.pet = m.get("pet") or {}
-                client.live = logged_in = True
-                await _send(client, {"t": "welcome", "id": client.id, "name": client.name})
-                await _push_roster()
-                LOG.info("login id=%s name=%s (%d online)", client.id, client.name, len(CLIENTS))
+                client.live = not sync_only
+                logged_in = True
+                await _send(client, {"t": "welcome", "id": client.id, "name": client.name,
+                                     "save": SAVES.get(key)})       # cloud save (or null) for cross-device load
+                if not sync_only:
+                    await _push_roster()
+                LOG.info("login id=%s name=%s sync_only=%s (%d online)",
+                         client.id, client.name, sync_only, len(CLIENTS))
 
             elif not logged_in:
                 await _send(client, {"t": "error", "msg": "Log in first."})
 
             elif t == "pet":
                 client.pet = m.get("pet") or {}
-                await _push_roster()
+                if client.live:
+                    await _push_roster()
+
+            elif t == "save":
+                await _store_save(client.name.lower(), m.get("save"))
 
             elif t == "chat":
                 text = _clean(m.get("text"), MAX_CHAT)

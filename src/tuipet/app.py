@@ -36,6 +36,7 @@ from . import themescreen
 from . import deathscreen
 from . import sound
 from . import update as update_check
+from . import cloudsync
 from .pet import Pet, POOP_MAX_PILES
 from .render import render_screen
 import os
@@ -711,6 +712,7 @@ class TuiPetApp(App):
         self._showing_need = False
         self._update_msg = None     # set by the background PyPI check when a newer release exists
         self._showing_update = False
+        self._sync = None           # background cloud-save push client (net.SyncClient), or None
         self._hud_scroll = None     # plain text being marquee-scrolled, or None when it fits
         self._hud_off = 0           # marquee window offset
         self._hud_hold = 0          # steps left to hold on the head before scrolling
@@ -744,6 +746,23 @@ class TuiPetApp(App):
         self.set_interval(1.0, self.on_tick)
         self.set_interval(10.0, self.autosave)
         self.run_worker(self._check_update(), name="update", exclusive=False)
+        self._start_sync()
+
+    def _start_sync(self):
+        """Spin up the background cloud-save push client once an account exists
+        (idempotent). The startup pull already ran in main(); this handles pushes."""
+        if self._sync is not None:
+            return
+        name, pw = persistence.get_account()
+        if not name:
+            return                       # no account yet (first launch) — started after account setup
+        self._sync = net.SyncClient(_lobby_uri(), name, pw)
+        self.run_worker(self._sync.run(), name="sync", exclusive=False)
+
+    def _push_cloud(self):
+        """Queue the current pet's save for upload (no-op until the account/sync exists)."""
+        if self._sync is not None and self.pet is not None:
+            self._sync.push_save(persistence.to_save_dict(self.pet))
 
     async def _check_update(self):
         """Background: ask PyPI once per launch if a newer tuipet exists, then let
@@ -762,6 +781,7 @@ class TuiPetApp(App):
     def _after_account(self, result):
         if result:
             persistence.set_account(*result)
+        self._start_sync()              # account now exists -> begin cloud-save sync
         self._post_title()
 
     def _post_title(self):
@@ -788,6 +808,7 @@ class TuiPetApp(App):
     def autosave(self):
         persistence.save(self.pet)
         self._note_progress()
+        self._push_cloud()              # mirror the autosave up to the cloud
 
     def _note_progress(self):
         """Record cross-generation egg-unlock milestones from the live pet."""
@@ -802,6 +823,18 @@ class TuiPetApp(App):
 
     def on_unmount(self):
         persistence.save(self.pet)
+        self._flush_cloud_on_quit()     # capture the final state cloud-side on any exit
+
+    def _flush_cloud_on_quit(self):
+        """Best-effort blocking push so the final state is captured cloud-side."""
+        if self._sync is None:
+            return
+        try:
+            name, pw = persistence.get_account()
+            cloudsync.push_save(_lobby_uri(), name, pw,
+                                persistence.to_save_dict(self.pet), timeout=2.0)
+        except Exception:
+            pass
 
     def on_key(self, event):
         if self.mode is not None:
@@ -847,7 +880,7 @@ class TuiPetApp(App):
     def _lobby_connect(self, name, pw, card):
         """Create + start the WebSocket client; the app owns its worker lifecycle."""
         persistence.set_account(name, pw)
-        uri = os.environ.get("TUIPET_LOBBY_URL", "wss://ff3mmo.com/tuipet/")  # live lobby (TLS); override for local dev
+        uri = _lobby_uri()
         client = net.LobbyClient(uri, name, pw, card)
         self._lobby_worker = self.run_worker(client.run(), name="lobby", exclusive=False)
         return client
@@ -1473,7 +1506,19 @@ class TuiPetApp(App):
         self._do(f"A new egg appeared! (generation {gen})")
 
 
+def _lobby_uri():
+    return os.environ.get("TUIPET_LOBBY_URL", "wss://ff3mmo.com/tuipet/")  # live lobby (TLS); override for local dev
+
+
 def main():
+    # Cross-device: pull a newer cloud save down BEFORE the app loads the pet, so
+    # the normal load path picks it up (no mid-session swapping). Fail-soft.
+    if not _os.environ.get("TUIPET_NO_SYNC"):
+        try:
+            name, pw = persistence.get_account()
+            cloudsync.sync_down_at_startup(_lobby_uri(), name, pw)
+        except Exception:
+            pass
     TuiPetApp().run()
 
 
