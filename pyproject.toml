@@ -2,8 +2,27 @@
 name = "tuipet"
 version = "0.1.0"
 description = "A terminal virtual pet (Digimon V-Pet style) rendered with halfblock sprites, built on data extracted from DVPet."
+readme = "README.md"
 requires-python = ">=3.10"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{ name = "Joel Taylor", email = "joeltaylor734@gmail.com" }]
+keywords = ["terminal", "tui", "virtual-pet", "digimon", "vpet", "textual", "game"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Console",
+    "Intended Audience :: End Users/Desktop",
+    "Programming Language :: Python :: 3",
+    "Topic :: Games/Entertainment",
+    "Operating System :: POSIX :: Linux",
+    "Operating System :: Android",
+]
 dependencies = ["textual>=0.50", "rich>=13", "websockets>=12"]
+
+[project.urls]
+Homepage = "https://github.com/joeltco/tuipet"
+Repository = "https://github.com/joeltco/tuipet"
+Issues = "https://github.com/joeltco/tuipet/issues"
 
 [project.scripts]
 tuipet = "tuipet.app:main"

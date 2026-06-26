@@ -14,23 +14,27 @@ sprites and animated in the terminal. Built on data mined from the free
 
 ## Install
 
-**One command** (Termux on Android, or any Linux):
+**One command:**
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/joeltco/tuipet/main/install.sh | bash
-tuipet
+pip install tuipet && tuipet
 ```
 
-That installs Python + tuipet with every sprite, sound, and CSV bundled — nothing
-else to download. On **Termux** it also pulls `termux-api`; to actually hear the
-LCD beeps you additionally need the **Termux:API** app from F-Droid/Play (the
-package alone isn't enough). Over SSH, sound stays silent on purpose.
-
-Prefer pip directly:
+Or with pipx / uv (isolated):
 
 ```sh
-pip install git+https://github.com/joeltco/tuipet
+pipx install tuipet      # then: tuipet
+uvx tuipet               # run without installing
 ```
+
+Every sprite, sound, and CSV is bundled in the package — nothing else to download.
+
+**On Termux (Android):** first `pkg install python`, then `pip install tuipet`. To
+actually hear the LCD beeps you also need the **termux-api** package
+(`pkg install termux-api`) *and* the **Termux:API** app from F-Droid/Play — the
+package alone isn't enough. Over SSH, sound stays silent on purpose. The
+`curl -fsSL https://raw.githubusercontent.com/joeltco/tuipet/main/install.sh | bash`
+script does all of that in one shot.
 
 ## Run from source
 
