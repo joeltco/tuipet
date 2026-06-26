@@ -19,7 +19,7 @@ package-dir = {"" = "src"}
 where = ["src"]
 
 [tool.setuptools.package-data]
-tuipet = ["data/*.gz", "data/*.csv"]
+tuipet = ["data/*.gz", "data/*.csv", "data/*.json", "data/sounds/*.wav"]
 
 [tool.pytest.ini_options]
 pythonpath = ["src"]
