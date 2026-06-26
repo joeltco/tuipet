@@ -566,8 +566,12 @@ class Stats(Static):
         div = f"[dim]{'─' * 26}[/]"
         word = pet.status_word()
         deco = []
-        if pet.asleep: deco.append("[blue]Zzz[/]")
+        if pet.asleep and word != "asleep": deco.append("[blue]Zzz[/]")
         if pet.sick and word != "sick": deco.append(f"[{T.NEG}]+sick[/]")
+        if pet.is_fatigued() and word != "fatigued": deco.append(f"[{T.NEG}]+tired[/]")
+        if pet.is_injured() and word != "injured": deco.append(f"[{T.NEG}]+hurt[/]")
+        if pet.is_freezing() and word != "freezing": deco.append("[blue]+cold[/]")
+        if pet.is_overheating() and word != "overheating": deco.append(f"[{T.NEG}]+hot[/]")
         if pet.poop: deco.append(f"[{T.COIN}]~poop x{pet.poop}[/]")
         if getattr(pet, "effect_id", -1) >= 0: deco.append(f"[{T.POS}]\u2726{pet.effect_name()}[/]")
         mins, secs = divmod(int(pet.age_seconds), 60)
