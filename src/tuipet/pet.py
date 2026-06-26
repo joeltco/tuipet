@@ -102,6 +102,24 @@ DNA_SAME_FIELD_ENTH_DEC, DNA_DIFF_FIELD_ENTH_DEC = 3, 6
 DNA_SAME_FIELD_SICK, DNA_DIFF_FIELD_SICK = 1, 2     # checkSick target out of SICK_BOUND
 DNA_SICK_BOUND = 100                    # config SickChance / WorseSickChance bound
 DNA_FULFILLED_RATE = 2                  # config DNAFulfilledRate (priority weight per met field)
+
+# DVPet ClockTic.getDNARate: the DNA-generate mini-game maps your mash-rate (which,
+# at the 10s mark, equals your total presses) onto one of these 8-wide Field bands
+# (config _<field>RateMaxMiniGame). Too slow (<=8) or over-mashed (>80) -> None = a
+# wasted wager. Faster mashing reaches the rarer late fields (DarkArea needs 73-80).
+DNA_RATE_BANDS = (
+    (8, "None"), (16, "DeepSaver"), (24, "JungleTrooper"), (32, "NatureSpirit"),
+    (40, "WindGuardian"), (48, "DragonsRoar"), (56, "MetalEmpire"),
+    (64, "NightmareSoldier"), (72, "VirusBuster"), (80, "DarkArea"),
+)
+
+
+def dna_field_for_rate(rate):
+    """DVPet getDNARate: the Field a mini-game rate yields (None if over/under-mashed)."""
+    for hi, field in DNA_RATE_BANDS:
+        if rate <= hi:
+            return field
+    return "None"
 # --- food taste (DVPet Taste<Food> + Rank + config.csv) ---
 RANK_LIMIT, RANK_MIN = 200, -200       # config RankLimit / RankMinimum
 RANK_CHANGE_FOOD = 1                    # config RankChangeFood (per meal)
@@ -914,6 +932,27 @@ class Pet:
             total = MAX_DNA_INVENTORY
         self.dna_owned[field] = total
         return True
+
+    def dna_bet(self, amount):
+        """DVPet DNA_GenerateValidate (onEnter): pay the wager up front, before the mash
+        mini-game runs. Returns False (and jeers) if the pet can't afford it."""
+        if amount <= 0 or self.bits < amount:
+            self._set_anim("refuse", 1.0)                   # Jeering: can't afford the wager
+            return False
+        self.bits -= amount
+        return True
+
+    def dna_minigame_award(self, amount, rate):
+        """DVPet onDNAGenerate: the mash `rate` picks the Field; bank `amount` DNA of it
+        (the wager was already spent in dna_bet). Overflow past the 99 cap refunds as
+        bits, exactly like the device. Returns the Field won ("None" = wasted)."""
+        field = dna_field_for_rate(rate)
+        total = self.dna_owned.get(field, 0) + amount
+        if total > MAX_DNA_INVENTORY:
+            self.bits += total - MAX_DNA_INVENTORY          # refund the overflow as bits
+            total = MAX_DNA_INVENTORY
+        self.dna_owned[field] = total
+        return field
 
     def apply_dna(self, field, amount):
         """PhysicalState.applyDNA: owned -> charged, at a cost (disturb/strength/mood/spirit/sick)."""
