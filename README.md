@@ -12,7 +12,27 @@ sprites and animated in the terminal. Built on data mined from the free
 - A `rich`/`textual` UI: an LCD screen with an animated pet, stat bars, and care
   actions (feed, train, play, clean, heal, sleep), plus time-based evolution.
 
-## Run
+## Install
+
+**One command** (Termux on Android, or any Linux):
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/joeltco/tuipet/main/install.sh | bash
+tuipet
+```
+
+That installs Python + tuipet with every sprite, sound, and CSV bundled — nothing
+else to download. On **Termux** it also pulls `termux-api`; to actually hear the
+LCD beeps you additionally need the **Termux:API** app from F-Droid/Play (the
+package alone isn't enough). Over SSH, sound stays silent on purpose.
+
+Prefer pip directly:
+
+```sh
+pip install git+https://github.com/joeltco/tuipet
+```
+
+## Run from source
 
 ```sh
 python -m venv .venv && . .venv/bin/activate
