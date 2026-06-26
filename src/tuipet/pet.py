@@ -968,11 +968,18 @@ class Pet:
         self._set_mood(self.mood + (DNA_SAME_FIELD_MOOD if same else DNA_DIFF_FIELD_MOOD) * amount)
         self._set_enthusiasm(self.enthusiasm
                              - (DNA_SAME_FIELD_ENTH_DEC if same else DNA_DIFF_FIELD_ENTH_DEC) * amount)
+        # DVPet applyDNA calls checkWorseSick(...) THEN checkSick(...): these are
+        # mutually exclusive on sick-state (worsen an existing illness vs. roll a brand
+        # new one), so EXACTLY ONE roll ever takes effect -- not two independent
+        # new-sickness chances (the old range(2) ~doubled the real sicken rate). The
+        # Same/DiffField Sick and WorseSick chances are equal in config (1 / 2), so one
+        # `chance` value covers both branches; both bounds are 100 (= DNA_SICK_BOUND).
         chance = (DNA_SAME_FIELD_SICK if same else DNA_DIFF_FIELD_SICK) * amount
-        for _ in range(2):                                  # checkWorseSick + checkSick (2 rolls)
-            if random.random() < chance / DNA_SICK_BOUND:
-                self._sicken()
-                break
+        if random.random() < chance / DNA_SICK_BOUND:
+            if self.sick:
+                self._worsen_sick()                         # checkWorseSick: aggravate it
+            else:
+                self._sicken()                              # checkSick: a brand-new illness
         return True
 
     def reset_dna(self):
@@ -1498,6 +1505,18 @@ class Pet:
         self.sick_length = max(SICK_LAPSE_MIN, self.sick_length - self._affinity() * SICK_LAPSE_MIN)
         self._set_mood(self.mood - SICK_MOOD_DEC)
         self._set_enthusiasm(self.enthusiasm + SICK_ENTH_CHANGE)
+
+    def _worsen_sick(self):
+        """PhysicalState.checkWorseSick (effect body): an already-sick pet gets worse --
+        the illness drags on one lapse longer, with mood/obedience/spirit costs and a
+        fresh mess. (The WorseSickLifeDec lifespan hit is omitted, as in _worsen_injury.)"""
+        self.obedience += WORSE_MALADY_OBED_DEC
+        self._set_mood(self.mood + WORSE_MALADY_MOOD_DEC)
+        self._set_enthusiasm(self.enthusiasm + SICK_ENTH_CHANGE)  # WorseSickEnthusiasmChange == -1
+        self.sick_length += SICK_LAPSE_MIN                        # setSickLength(_sickLength + 1) = +1 lapse
+        if self.poop < POOP_MAX_PILES:                           # checkWorseSick -> startPoop()
+            self.poop += 1
+            self.poop_sizes.append(self._poop_size())
 
     def _injure(self):
         """PhysicalState.injure: take an injury for MinInjLength..MaxInjLength recovery
