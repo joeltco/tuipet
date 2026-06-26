@@ -1,9 +1,8 @@
 """DigiCore — paged data book, rendered in the display box."""
 from __future__ import annotations
-from rich.text import Text
 from . import data, evolution  # noqa: F401  (pet methods drive the data)
 
-from .theme import LCD_ON, LCD_BG, INK, INK_B, DIM
+from .theme import LCD_ON, LCD_BG, INK, INK_B, DIM  # noqa: F401  (palette names bound for theme.apply propagation)
 from . import menu
 
 

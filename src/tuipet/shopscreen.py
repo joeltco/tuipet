@@ -8,7 +8,7 @@ from . import egg as egg_mod
 from . import persistence
 from .render import downsample
 
-from .theme import LCD_ON, LCD_BG, INK, INK_B, DIM, SEL
+from .theme import LCD_ON, LCD_BG, INK, INK_B, DIM, SEL  # noqa: F401  (palette names bound for theme.apply propagation)
 from . import menu
 W = 38
 IC_W, IC_ROWS = 10, 4                      # selected-item icon: auto-sized to fit, never clipped

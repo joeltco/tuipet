@@ -65,6 +65,14 @@ _SCREEN_MODULES = ("app", "menu", "battlescreen", "training", "adventurescreen",
 _RAIN = {"Drizzling", "Raining", "HeavyRain"}
 _SNOW = {"LightSnow", "Snowing", "HeavySnow"}
 
+# Static declarations of the palette names so linters/type-checkers can see them.
+# apply(_DEFAULT) runs at import (bottom of file) and overwrites these with the live
+# theme via globals().update(_derive(...)); they are never actually the empties below.
+LCD_ON = LCD_BG = MID = INK = INK_B = DIM = SEL = ACCENT = POS = NEG = BORDER = ""
+SIL_DAY = SIL_NIGHT = HEART = ENERGY = MOOD = LIFE = COIN = ""
+PHASE_PALETTE: dict = {}
+WEATHER: dict = {}
+
 
 def _derive(t):
     on, bg, mid = t["on"], t["bg"], t["mid"]

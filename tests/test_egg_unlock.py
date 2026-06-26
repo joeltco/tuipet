@@ -1,6 +1,8 @@
 """The eggUnlock.csv condition engine: start eggs, locking, the password path, and
 the reachability invariant (no signal-gated egg is permanently stranded as locked).
 """
+import pytest
+
 from tuipet import data, egg
 
 

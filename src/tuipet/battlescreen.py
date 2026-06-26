@@ -12,7 +12,8 @@ Turn-interactive: each round you pick an attack type; Model.Battle resolves it; 
 the presentation. Player stands on the RIGHT (faces left), enemy on the LEFT (faces right).
 """
 from __future__ import annotations
-import json, os
+import json
+import os
 from . import data
 from .battle import Battle
 from .render import render_scene

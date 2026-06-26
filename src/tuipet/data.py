@@ -1,6 +1,10 @@
 """Load extracted sprites + game data from the DVPet CSVs."""
 from __future__ import annotations
-import csv, gzip, json, os, re
+import csv
+import gzip
+import json
+import os
+import re
 from functools import lru_cache
 
 _HERE = os.path.dirname(__file__)
@@ -63,7 +67,7 @@ def pretty_field(name):
     return re.sub(r"(?<=[a-z])(?=[A-Z])", " ", name or "")
 
 
-PLACEHOLDER_NUMS = set()
+PLACEHOLDER_NUMS: set[int] = set()
 
 
 def _content_fill(frame):

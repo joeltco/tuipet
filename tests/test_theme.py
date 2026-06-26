@@ -12,7 +12,6 @@ import importlib
 import os
 import re
 
-import pytest
 
 from tuipet import theme
 

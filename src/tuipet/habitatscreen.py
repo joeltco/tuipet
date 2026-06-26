@@ -1,9 +1,8 @@
 """Habitat — buy/move homes, rendered in the display box."""
 from __future__ import annotations
-from rich.text import Text
 from . import data
 
-from .theme import LCD_ON, LCD_BG, INK, INK_B, DIM, SEL, POS, NEG
+from .theme import LCD_ON, LCD_BG, INK, INK_B, DIM, SEL, POS, NEG  # noqa: F401  (palette names bound for theme.apply propagation)
 from . import menu
 W = 38
 

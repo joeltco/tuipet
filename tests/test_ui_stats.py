@@ -114,7 +114,8 @@ def test_status_line_no_deco():
 # ---- footer hints must fit the panel width (menu clips silently) -----------
 
 def test_footer_literals_fit_width():
-    import pathlib, re
+    import pathlib
+    import re
     from tuipet import menu
     srcdir = pathlib.Path(__file__).resolve().parents[1] / "src" / "tuipet"
     over = []

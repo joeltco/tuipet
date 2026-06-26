@@ -42,7 +42,7 @@ def latest_if_newer(timeout=4.0):
         return None                      # dev/source run: nothing to compare against
     try:
         req = urllib.request.Request(PYPI_JSON, headers={"User-Agent": "tuipet-update-check"})
-        with urllib.request.urlopen(req, timeout=timeout) as r:
+        with urllib.request.urlopen(req, timeout=timeout) as r:  # nosec B310 - constant https PyPI URL, not user input
             latest = json.load(r)["info"]["version"]
     except Exception:
         return None                      # offline / PyPI hiccup / parse error -> stay quiet

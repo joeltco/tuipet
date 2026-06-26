@@ -2,11 +2,10 @@
 two parents converge and flash, then the fused form is revealed -- DVPet's
 startJogressAnim -> jogressFlash -> fused."""
 from __future__ import annotations
-from rich.text import Text
 from . import data, jogress
 from .render import render_scene
 
-from .theme import LCD_ON, LCD_BG, INK, INK_B, DIM, SEL
+from .theme import LCD_ON, LCD_BG, INK, INK_B, DIM, SEL  # noqa: F401  (palette names bound for theme.apply propagation)
 from . import menu
 COLS, ROWS = 40, 7
 VISIBLE = 3

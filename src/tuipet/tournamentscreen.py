@@ -1,13 +1,12 @@
 """Tournament — pick a seasonal cup, then fight its bracket, in the display box."""
 from __future__ import annotations
-from rich.text import Text
 from . import data
 from . import tournament
 from .tournament import Tournament
 from .battlescreen import BattlePanel
 from .render import render_scene
 
-from .theme import LCD_ON, LCD_BG, INK, INK_B, DIM, SIL_DAY, SIL_NIGHT
+from .theme import LCD_ON, LCD_BG, INK, INK_B, DIM, SIL_DAY, SIL_NIGHT  # noqa: F401  (palette names bound for theme.apply propagation)
 from . import menu
 COLS, ROWS = 40, 7
 

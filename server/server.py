@@ -25,7 +25,7 @@ import os
 import websockets
 
 LOG = logging.getLogger("tuipet.lobby")
-HOST = os.environ.get("TUIPET_HOST", "0.0.0.0")
+HOST = os.environ.get("TUIPET_HOST", "0.0.0.0")  # nosec B104 - lobby server is meant to listen on all interfaces (behind nginx)
 PORT = int(os.environ.get("TUIPET_PORT", "8765"))
 ACCOUNTS_PATH = os.environ.get(
     "TUIPET_ACCOUNTS",

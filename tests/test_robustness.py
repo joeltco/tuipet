@@ -9,7 +9,6 @@ paths so a refactor can't turn them back into crashes.
 """
 import json
 
-import pytest
 
 from tuipet import data, egg, persistence
 from tuipet.pet import Pet
