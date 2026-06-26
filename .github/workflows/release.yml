@@ -49,3 +49,5 @@ jobs:
           name: dist
           path: dist/
       - uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          skip-existing: true      # deploy.sh may have already published this version locally

@@ -1,5 +1,6 @@
 # Python
 .venv/
+.release-venv/      # deploy.sh's on-demand twine venv
 __pycache__/
 *.pyc
 *.egg-info/
