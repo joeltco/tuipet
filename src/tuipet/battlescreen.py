@@ -83,6 +83,8 @@ class BattlePanel:
         self.hud_fhp = self.battle.enemy_hp
         self.hud_note = "Battle start!"
         self.phase = "intro"
+        self.sfx = "battle"          # play the battle-start beep on the first frame
+        self._last_m = None          # tracks timeline marker edges for per-event sfx
         tl = []
         for _ in range(BANNER_FLASHES):
             tl += [{"m": "banner", "f": 0}] * BANNER_HOLD
@@ -145,12 +147,23 @@ class BattlePanel:
         self.phase = "result"
 
     # ---- driving ----
+    def _emit_sfx(self):
+        """Fire a one-shot beep at timeline marker edges: orb launch -> attack, impact -> hit."""
+        m = self.timeline[self.i].get("m")
+        if m != self._last_m:
+            if m == "fire_out":
+                self.sfx = "attack"
+            elif m == "hit":
+                self.sfx = "attackHit"
+        self._last_m = m
+
     def anim(self):
         self.frame_i += 1
         if self.phase in ("menu", "result"):
             return
         if self.i < len(self.timeline) - 1:
             self.i += 1
+            self._emit_sfx()
         elif self.phase == "intro":
             self.phase = "menu"
         else:

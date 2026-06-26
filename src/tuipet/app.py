@@ -1143,6 +1143,10 @@ class TuiPetApp(App):
         if self.mode is not None:
             if hasattr(self.mode, "anim"):
                 self.mode.anim()
+                snd = getattr(self.mode, "sfx", None)   # drain anim-driven sfx (battle hits, lobby) — on_key only covers keypress
+                if snd:
+                    self.beep(snd, bell=False)
+                    self.mode.sfx = None
                 self.screen_w.update(self._center(self.mode.text()))
                 if isinstance(self.mode, adventurescreen.AdventurePanel):
                     self._status_adventure()
