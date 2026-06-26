@@ -200,7 +200,10 @@ def _int_or(s, default):
         return default
 
 
-# DVPet DNA fields (Enum.Field order, matching digimon.csv {Field}Key/{Field}Value cols)
+# DVPet DNA fields by name ("None" is Enum.Field ordinal 0 = a REAL bankable/chargeable
+# slot; only NA is excluded). Order here is tuipet's menu display order -- inventory and
+# evolution gates are keyed by NAME (digimon.csv {Field}Key/{Field}Value matched by name),
+# so this tuple's order is independent of Enum.Field ordinals.
 FOOD_CATEGORIES = ("Meat", "Fish", "Veg", "Fruit", "Med", "Junk", "Grain", "Dairy")
 DNA_FIELDS = ("VirusBuster", "MetalEmpire", "DragonsRoar", "JungleTrooper",
               "DeepSaver", "NightmareSoldier", "WindGuardian", "NatureSpirit",

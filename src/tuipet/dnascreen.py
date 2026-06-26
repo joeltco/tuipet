@@ -52,7 +52,7 @@ class DNAPanel:
                 field = self.pet.dna_minigame_award(self.bet, rate)
                 self.won = (field, self.bet, rate)
                 self.phase = "result"
-                self.sfx = "select" if field != "None" else "error"
+                self.sfx = "select"      # DVPet banks even None (UnlockDNA) -- never a jeer
 
     # ---- input -----------------------------------------------------------
     def key(self, k):
@@ -158,14 +158,14 @@ class DNAPanel:
         field, wager, rate = self.won
         out = menu.bar("DNA · GENERATE", f"rate {rate}")
         out.append_text(menu.blanks(1))
+        # DVPet banks the rolled Field even when it is None (the dud field): over/under
+        # mashing still yields real -- if near-useless -- None-field DNA, not a whiff.
+        out.append_text(menu.note(f"✓ Got {wager} {data.pretty_field(field)} DNA"))
+        out.append_text(menu.blanks(1))
+        out.append_text(menu.row(f"rate {rate} → {field}", False))
         if field == "None":
-            out.append_text(menu.note("✗ Whiffed — no usable DNA."))
-            out.append_text(menu.blanks(1))
-            out.append_text(menu.row(f"rate {rate} → None  ({wager}b spent)", False))
+            out.append_text(menu.row("None = the dud field (banked)", False))
         else:
-            out.append_text(menu.note(f"✓ Won {wager} {data.pretty_field(field)}!"))
-            out.append_text(menu.blanks(1))
-            out.append_text(menu.row(f"rate {rate} → {field}", False))
             out.append_text(menu.row(f"banked into {field} DNA", False))
         out.append_text(menu.footer("any key to continue"))
         return out
