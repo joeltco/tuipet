@@ -353,7 +353,7 @@ class Screen(Static):
 
     # ---- care-action animations (DVPet SpriteAnim eat/clean/cheer) -----------
     def start_fx(self, kind, icon=None, poop=0, old_num=None, pet=None):
-        steps = {"eat": 35, "cheer": 31, "jeer": 31, "clean": 22, "spit": 11, "evolve": 18, "dying": 18}.get(kind, 12)
+        steps = {"eat": 35, "cheer": 31, "jeer": 31, "clean": 22, "spit": 11, "evolve": 18, "dying": 18, "dna_charge": 16}.get(kind, 12)
         self.fx = {"kind": kind, "step": 0, "steps": steps, "icon": icon, "poop": poop, "old_num": old_num}
         if kind == "eat":
             # DVPet eat(): each chew beat is scaled by pow(N, mod) -- a glutton wolfs
@@ -511,6 +511,21 @@ class Screen(Static):
             if step < n - 3 and step % 3 == 1:
                 overlay = overlay + [(x, y) for y in range(px_h) for x in range(SCREEN_COLS)]
             # the final steps drop the flash -> the evolved form is revealed
+        elif fx["kind"] == "dna_charge":
+            # DVPet dnaCharge(): the field drops into the pet and a "dnaWash" sweep
+            # passes DOWN over it (moveDown) while the pet feeds on the DNA; bright
+            # "flash" pulses mark the absorb.  Pet stays centred.  ~16 beats.
+            rows = self._pose_rows_idx(pet, 0 if (step // 2) % 2 == 0 else 7)
+            E = data.load_effects()
+            wash = E.get("wash", [None])[0]
+            if wash:
+                wy = -len(wash) + step * 3                 # wash front: enters top, exits bottom
+                overlay += _blit(wash, (SCREEN_COLS - SPRITE_W) // 2, wy)
+            if step % 3 == 1 and step < fx["steps"] - 2:
+                fl = E.get("flash")
+                if fl:
+                    overlay += _blit(fl[(step // 3) % len(fl)],
+                                     (SCREEN_COLS - SPRITE_W) // 2 + SPRITE_W, 1)
         elif fx["kind"] == "dying":
             # DVPet dying() (SpriteAnim 13179): the collapsed pet sways gently (+/-1)
             # while the 'dying' emote (dying/dying2) pulses at its right edge, tracking
@@ -1040,8 +1055,11 @@ class TuiPetApp(App):
         dna_t = [t for t in data.load_evolutions().get(p.num, [])
                  if reqs.get(t) and any(g[0] != "None" for g in reqs[t]["dna"].values())]
         unlocked = sum(1 for t in dna_t if evolution._dna_ok(p, reqs[t]))
+        screen = {"home": "menu", "charge": "charge", "stats": "stats",
+                  "reqs": "requirements", "bet": "generate", "mash": "generate",
+                  "result": "generate"}.get(m.phase, "menu")
         lines = [
-            f"[b]{p.name[:14]}[/] [dim]· DNA[/]", div,
+            f"[b]{p.name[:14]}[/] [dim]· DNA · {screen}[/]", div,
             f"Bits     [{T.COIN}]{p.bits}[/]",
             f"Field    {data.pretty_field(f)}" + ("  [dim](own)[/]" if same else ""),
             f"Banked   {own}     Charged {chg}",
@@ -1051,8 +1069,8 @@ class TuiPetApp(App):
             f"[dim]{cost}[/]",
             f"[dim]{(m.last or '')[:24]}[/]",
             "",
-            "[dim]G gen  ENTER charge[/]",
-            "[dim]←→ amount  ESC out[/]",
+            "[dim]own Field * = cheaper charge[/]",
+            "[dim]ESC steps back out[/]",
         ]
         self.stats_w.update("\n".join(lines))
 
@@ -1317,9 +1335,14 @@ class TuiPetApp(App):
             self._do(reason); return
         self._open_mode(dnascreen.DNAPanel(self.pet), self._after_dna)
 
-    def _after_dna(self, _=None):
+    def _after_dna(self, result=None):
         self.autosave()
-        self.repaint()
+        if isinstance(result, tuple) and result and result[0] == "charged":
+            _, field, amount = result          # DVPet applyDNA -> DNA_Feeding -> main view
+            self.screen_w.start_fx("dna_charge", icon=field, pet=self.pet)
+            self.flash("%s absorbed %d %s DNA" % (self.pet.name, amount, data.pretty_field(field)))
+        else:
+            self.repaint()
 
     def action_shop(self):
         self._open_mode(shopscreen.ShopPanel(self.pet), self._after_shop)
