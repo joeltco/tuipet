@@ -34,6 +34,83 @@ class LobbyState:
         return [p for p in self.roster if p["id"] != self.me_id]
 
 
+class SyncClient:
+    """Background cloud-save sync over the same lobby server.
+
+    Logs in with `sync_only` so it never joins the live roster (it can coexist with
+    a lobby login on the same account). On connect it receives the account's stored
+    save and hands it to `on_pull` once; thereafter `push_save` ships the latest
+    local save up (only the newest pending push is kept). Reconnects with backoff;
+    a bad password stops the loop. Fully fail-soft — offline just means no sync.
+    """
+
+    def __init__(self, uri, name, pw="", on_pull=None):
+        self.uri = uri
+        self.name = name
+        self.pw = pw
+        self.on_pull = on_pull
+        self.connected = False
+        self._pending = None                  # latest save dict awaiting upload
+        self._ws = None
+        self._wake: asyncio.Event = asyncio.Event()
+        self._stop = False                    # set on auth failure -> don't retry
+
+    def push_save(self, save):
+        self._pending = save                  # keep only the newest; server is last-write-wins
+        self._wake.set()
+
+    async def run(self):
+        backoff = 2
+        while not self._stop:
+            try:
+                async with websockets.connect(self.uri, max_size=64 * 1024) as ws:
+                    self._ws = ws
+                    await ws.send(json.dumps({"t": "login", "name": self.name,
+                                              "pw": self.pw, "sync_only": True}))
+                    self.connected = True
+                    backoff = 2
+                    if self._pending is not None:
+                        self._wake.set()       # flush anything queued while we were down
+                    sender = asyncio.create_task(self._send_loop())
+                    try:
+                        async for raw in ws:
+                            self._handle(raw)
+                    finally:
+                        sender.cancel()
+            except Exception:
+                pass                           # offline / dropped -> retry after backoff
+            finally:
+                self.connected = False
+                self._ws = None
+            if self._stop:
+                break
+            await asyncio.sleep(backoff)
+            backoff = min(backoff * 2, 60)
+
+    async def _send_loop(self):
+        while True:
+            await self._wake.wait()
+            self._wake.clear()
+            save = self._pending
+            if save is not None and self._ws is not None:
+                try:
+                    await self._ws.send(json.dumps({"t": "save", "save": save}))
+                except Exception:
+                    return
+
+    def _handle(self, raw):
+        try:
+            m = json.loads(raw)
+        except (ValueError, AttributeError):
+            return
+        t = m.get("t")
+        if t == "welcome":
+            if self.on_pull is not None:
+                self.on_pull(m.get("save"))    # server's stored save (or None)
+        elif t == "login_failed":
+            self._stop = True                  # wrong password -> stop retrying
+
+
 class LobbyClient:
     def __init__(self, uri, name, pw="", pet=None, state=None):
         self.uri = uri
