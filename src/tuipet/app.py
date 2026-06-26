@@ -35,6 +35,7 @@ from . import titlescreen
 from . import themescreen
 from . import deathscreen
 from . import sound
+from . import update as update_check
 from .pet import Pet, POOP_MAX_PILES
 from .render import render_screen
 import os
@@ -708,6 +709,8 @@ class TuiPetApp(App):
         self._needs = False
         self._flash_t = 0           # ticks an action flash holds before a care-need re-asserts
         self._showing_need = False
+        self._update_msg = None     # set by the background PyPI check when a newer release exists
+        self._showing_update = False
         self._hud_scroll = None     # plain text being marquee-scrolled, or None when it fits
         self._hud_off = 0           # marquee window offset
         self._hud_hold = 0          # steps left to hold on the head before scrolling
@@ -740,6 +743,15 @@ class TuiPetApp(App):
         self.set_interval(0.1, self.on_frame)    # single DVPet interval clock: 1 tick == 0.1s (main view AND sub-screens)
         self.set_interval(1.0, self.on_tick)
         self.set_interval(10.0, self.autosave)
+        self.run_worker(self._check_update(), name="update", exclusive=False)
+
+    async def _check_update(self):
+        """Background: ask PyPI once per launch if a newer tuipet exists, then let
+        the idle HUD nudge the player (see on_tick).  Fail-soft, never blocks."""
+        import asyncio
+        latest = await asyncio.to_thread(update_check.latest_if_newer)
+        if latest:
+            self._update_msg = f"⬆ tuipet {latest} out — pip install -U tuipet"
 
     def _after_title(self, _=None):
         if not persistence.get_account()[0]:     # first launch: create your lobby account
@@ -1218,12 +1230,17 @@ class TuiPetApp(App):
         # yielding to a fresh action flash and clearing once the need is met
         if self._flash_t > 0:
             self._flash_t -= 1
+            self._showing_update = False
         elif needs:
             self._hud(self._need_message(p))
             self._showing_need = True
+            self._showing_update = False
         elif self._showing_need:
             self._hud("")
             self._showing_need = False
+        elif self._update_msg and not self._showing_update:
+            self._hud(self._update_msg)     # gentle update nudge when idle (set once so the marquee can scroll)
+            self._showing_update = True
         if self.screen_w.fx is None:   # during a care fx on_frame owns the paint; repainting here flashes the status box
             self.repaint()
 
