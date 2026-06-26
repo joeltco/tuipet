@@ -176,16 +176,15 @@ def _weather_overlay(weather, frame_i, cols, px_h):
                 x = (x0 + (-1, 0, 1, 0)[(frame_i // 2 + i) % 4]) % cols
                 pts.append((x, y))
             else:
-                # a real slanted streak: the drop leans down-right as it falls and
-                # the streak tiles its own length each frame (smooth descent, no
-                # sky wrap); heavier rain draws a longer streak
+                # a straight vertical streak falling straight down; it tiles its
+                # own length each frame for a smooth descent (no sky wrap), and
+                # heavier rain draws a longer streak
                 length = 3 if heavy else 2
                 y = (base + frame_i * length) % px_h
-                x = (x0 + y // 2) % cols
                 for d in range(length):
                     yy = y - d
                     if yy >= 0:                              # don't wrap a streak across the sky
-                        pts.append(((x - d) % cols, yy))
+                        pts.append((x0, yy))
     return pts
 
 
