@@ -84,12 +84,38 @@ WEATHER_GLYPH = {
     "Raining": chr(0x2602), "HeavyRain": chr(0x2614),
     "LightSnow": chr(0x2744), "Snowing": chr(0x2744), "HeavySnow": chr(0x2744),
 }
+def _sky_icon(pet):
+    """One time+weather glyph for the status line: a sun only in clear daytime, a
+    moon in clear night, otherwise the cloud/rain/snow symbol -- never a sun behind
+    rain.  Returns (glyph, colour)."""
+    if pet.weather == "Clear":
+        return (chr(0x2600), theme.COIN) if pet.is_daytime else (chr(0x263E), "blue")
+    g = WEATHER_GLYPH.get(pet.weather) or chr(0x2601)
+    col = "cyan" if pet.weather in _SNOW else ("blue" if pet.weather in _RAIN else "white")
+    return g, col
+
+
 _RAIN = {"Drizzling", "Raining", "HeavyRain"}
 _SNOW = {"LightSnow", "Snowing", "HeavySnow"}
 _PRECIP = _RAIN | _SNOW
 _PRECIP_N = {"Drizzling": 5, "LightSnow": 6, "Raining": 11, "Snowing": 10,
              "HeavyRain": 18, "HeavySnow": 16}
 CLOUD = ["0011100", "0111111", "1111111"]
+CLOUD_BASES = (1, 21)            # two puffs spread along the top of the sky
+
+
+def _cloud_pts(frame_i, cols):
+    """A drifting overcast: two cloud puffs slide slowly across the top (~1 col
+    every 1.2s) so the sky reads as moving weather, not a frozen corner blob."""
+    drift = frame_i // 3
+    pts = []
+    for bi, bx in enumerate(CLOUD_BASES):
+        ox = bx + drift + bi * 4
+        for y, line in enumerate(CLOUD):
+            for x, ch in enumerate(line):
+                if ch == "1":
+                    pts.append(((ox + x) % cols, 1 + y))
+    return pts
 
 _K = "b cyan"
 KEYS = (
@@ -129,10 +155,7 @@ def _scale_hex(hexcol, f):
 def _weather_overlay(weather, frame_i, cols, px_h):
     pts = []
     if weather == "Cloudy" or weather in _RAIN or weather in _SNOW:
-        for y, line in enumerate(CLOUD):          # a cloud bank, top-left
-            for x, ch in enumerate(line):
-                if ch == "1":
-                    pts.append((1 + x, 1 + y))
+        pts += _cloud_pts(frame_i, cols)          # drifting overcast
     n = _PRECIP_N.get(weather, 0)
     if n:
         snow = weather in _SNOW
@@ -575,8 +598,7 @@ class Stats(Static):
         if pet.poop: deco.append(f"[{T.COIN}]~poop x{pet.poop}[/]")
         if getattr(pet, "effect_id", -1) >= 0: deco.append(f"[{T.POS}]\u2726{pet.effect_name()}[/]")
         mins, secs = divmod(int(pet.age_seconds), 60)
-        picon = chr(0x2600) if pet.is_daytime else chr(0x263E)
-        wglyph = WEATHER_GLYPH.get(pet.weather, "")
+        sky, skycol = _sky_icon(pet)
         aff = pet._affinity()
         amark = (f"[{T.POS}]" + chr(0x2665) + "[/]" if aff > 0
                  else (f"[{T.NEG}]" + chr(0x2716) + "[/]" if aff < 0 else "[dim]·[/dim]"))
@@ -597,7 +619,7 @@ class Stats(Static):
             f"Weight  {pet.weight}g   [{T.COIN}]{pet.bits}b[/]",
             f"Battle  {pet.wins}W/{pet.battles}   [{T.COIN}]\u2605{pet.trophies}[/]",
             f"@{pet.habitat_obj()['name'][:14]} {amark} [dim]{pet.season}[/]",
-            f"[{T.COIN}]{picon}[/] [dim]{wglyph}{pet.weather} {int(pet.temp)}\u00b0[/] [dim]{mins}m{secs:02d}s[/]",
+            f"[{skycol}]{sky}[/] [dim]{pet.weather} {int(pet.temp)}\u00b0[/] [dim]{mins}m{secs:02d}s[/]",
             f"Life    {bar(lifepct, 12, lifecol)}",
             _status_line(word, deco),
         ]
