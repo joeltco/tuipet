@@ -84,17 +84,18 @@ echo "==> pushed main + $TAG"
 
 # --- publish ----------------------------------------------------------------
 if [ "$PUBLISH" = 1 ]; then
-  if ! python3 -c "import twine" 2>/dev/null; then
-    [ -x .release-venv/bin/twine ] || { echo "==> setting up .release-venv (twine)"; python3 -m venv .release-venv && .release-venv/bin/pip install -q --upgrade pip twine; }
-    TWINE=".release-venv/bin/twine"
-  else
-    TWINE="python3 -m twine"
+  # build + twine from a self-contained venv (system python lacks the pypa build
+  # CLI and twine); created once, reused after.
+  if [ ! -x .release-venv/bin/twine ] || [ ! -x .release-venv/bin/python ]; then
+    echo "==> setting up .release-venv (build + twine)"
+    python3 -m venv .release-venv
+    .release-venv/bin/pip install -q --upgrade pip build twine
   fi
   echo "==> build"
   rm -rf dist
-  python3 -m build
+  .release-venv/bin/python -m build
   echo "==> upload to PyPI"
-  $TWINE upload dist/*
+  .release-venv/bin/twine upload dist/*
   echo "==> published tuipet $NEXT — https://pypi.org/project/tuipet/$NEXT/"
 else
   echo "==> done; watch the release workflow at https://github.com/joeltco/tuipet/actions"
