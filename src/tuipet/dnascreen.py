@@ -1,35 +1,63 @@
-"""DNA screen (DVPet DNA_Inventory / DNA_Generate mini-game / DNA_Detail).
+"""DNA screen -- the device's three DNA sub-screens plus a requirements viewer.
 
-Generate Field-DNA with the real DVPet mash mini-game (G): wager bits, then mash
-SPACE for ~10s -- your hit-rate lands on a Field by DVPet's getDNARate bands (faster
-mash -> rarer field; too slow/fast -> None, a wasted wager). Then CHARGE banked DNA
-into the pet (ENTER) to bend evolution toward forms whose Field-DNA gates you meet.
-Charging off your own Field costs more spirit, sours mood, and risks illness.
+Home menu (DVPet DNA_Validation): Charge / Generate / Stats / Requirements.
+  * Charge   (DNA_Inventory + DNA_Detail): spend banked DNA into the pet, bending
+             evolution toward forms whose Field-DNA gates you meet. Charging off
+             your own Field costs more spirit, sours mood, risks illness. On commit
+             the pet absorbs it (the DNA_Feeding "dnaWash" fx plays on the display).
+  * Generate (DNA_GenerateValidate + DNA_Generate): wager bits, mash SPACE ~10s; a
+             faster mash earns a rarer Field (getDNARate bands), too slow/fast -> the
+             dud None field. The won Field blinks in (the UnlockDNA reveal).
+  * Stats    (DNA_Stats): each Field's charged share -- the evolution gate %.
+  * Requirements: per evolution target, the Field-DNA % each form needs and whether
+             your charged distribution satisfies it (DVPet's evolution-tree DNA page).
 """
 from __future__ import annotations
 import math
-from . import data, menu
+from . import data, menu, evolution
 from .pet import MAX_DNA_INVENTORY, dna_field_for_rate
 
 MASH_TICKS = 100            # DVPet: 100 intervals x 0.1s = the 10s mini-game window
 MASH_KEYS = ("space",)      # the single "button" you mash
 _METER_W = 22
 
+_HOME = (("charge", "Charge"), ("generate", "Generate"),
+         ("stats", "Stats"), ("reqs", "Requirements"))
+
 
 class DNAPanel:
     def __init__(self, pet):
         self.pet = pet
         self.fields = list(data.DNA_FIELDS)
-        self.cursor = 0
-        self.amount = 1
+        self.cursor = 0              # field cursor (charge / stats)
+        self.amount = 1             # charge amount
+        self.home_i = 0             # home-menu cursor
+        self.req_i = 0              # requirements-viewer cursor
         self.frame_i = 0
-        self.phase = "menu"          # menu | bet | mash | result
+        self.phase = "home"         # home | charge | stats | reqs | bet | mash | result
         self.bet = 1
         self.hits = 0
         self.mash_f = 0
-        self.won = None              # (field, wager, rate) after a mini-game
-        self.last = "Charge, or G to generate."
+        self.won = None             # (field, wager, rate) after a mini-game
+        self.blink = 0              # UnlockDNA reveal blink counter
+        self.last = "Generate DNA, then charge it."
         self.sfx = None
+        self._targets = self._dna_targets()
+
+    # ---- data ------------------------------------------------------------
+    def _dna_targets(self):
+        """The pet's evolution targets that declare a Field-DNA gate (getDNAReq)."""
+        reqs = data.load_requirements()
+        _, by = data.load_sprites()
+        out = []
+        for t in data.load_evolutions().get(self.pet.num, []):
+            r = reqs.get(t)
+            if not r:
+                continue
+            gates = {f: g for f, g in r["dna"].items() if g[0] != "None"}
+            if gates:
+                out.append((t, by.get(t, {}).get("name", "#%d" % t), gates, r))
+        return out
 
     @property
     def field(self):
@@ -52,37 +80,33 @@ class DNAPanel:
                 field = self.pet.dna_minigame_award(self.bet, rate)
                 self.won = (field, self.bet, rate)
                 self.phase = "result"
+                self.blink = 0
                 self.sfx = "select"      # DVPet banks even None (UnlockDNA) -- never a jeer
+        elif self.phase == "result":
+            self.blink += 1              # drive the won-Field blink reveal
 
     # ---- input -----------------------------------------------------------
     def key(self, k):
-        p = self.pet
         self.sfx = None
-        if self.phase == "mash":
-            if k in MASH_KEYS:
-                self.hits += 1
-            return None                                  # locked in until the timer ends
-        if self.phase == "result":
-            self.phase = "menu"                          # any key dismisses the result
-            return None
-        if self.phase == "bet":
-            if k in ("left", "h"):
-                self.bet = max(1, self.bet - 1)
-            elif k in ("right", "l"):
-                self.bet = min(MAX_DNA_INVENTORY, self.bet + 1)
-            elif k in ("enter", "space"):
-                if p.dna_bet(self.bet):
-                    self.phase, self.hits, self.mash_f = "mash", 0, 0
-                    self.sfx = "select"
-                else:
-                    self.last = "Not enough bits to wager."
-                    self.sfx = "error"
-                    self.phase = "menu"
-            elif k in ("escape", "x", "q", "g"):
-                self.phase = "menu"
-            return None
-        # ---- menu phase ----
-        f = self.field
+        return getattr(self, "_key_" + self.phase)(k)
+
+    def _key_home(self, k):
+        if k in ("up", "k"):
+            self.home_i = (self.home_i - 1) % len(_HOME)
+        elif k in ("down", "j"):
+            self.home_i = (self.home_i + 1) % len(_HOME)
+        elif k in ("enter", "space", "right", "l"):
+            self.phase = _HOME[self.home_i][0]
+            if self.phase == "generate":
+                self.phase = "bet"
+                self.bet = max(1, min(MAX_DNA_INVENTORY, self.amount))
+            self.sfx = "select"
+        elif k in ("escape", "x", "q"):
+            return ("done", None)
+        return None
+
+    def _key_charge(self, k):
+        p, f = self.pet, self.field
         if k in ("up", "k"):
             self.cursor = (self.cursor - 1) % len(self.fields)
         elif k in ("down", "j"):
@@ -91,50 +115,148 @@ class DNAPanel:
             self.amount = max(1, self.amount - 1)
         elif k in ("right", "l"):
             self.amount = min(MAX_DNA_INVENTORY, self.amount + 1)
-        elif k == "g":                                   # open the generate mini-game
-            self.bet = min(MAX_DNA_INVENTORY, max(1, self.amount))
-            self.phase = "bet"
-        elif k in ("enter", "space"):                    # charge: banked -> applied
+        elif k in ("enter", "space"):
             amt = min(self.amount, p.dna_owned.get(f, 0))
             if amt <= 0:
-                self.last = "No banked DNA -- generate it with G first."
+                self.last = "No banked %s yet." % data.pretty_field(f)
                 self.sfx = "error"
             elif p.apply_dna(f, amt):
-                same = f == p.field
-                self.last = f"Charged {amt} {f}! ({'own' if same else 'off'}-field)"
                 self.sfx = "compatible"
-        elif k in ("escape", "x", "q"):
-            return ("done", None)
+                return ("done", ("charged", f, amt))   # close -> DNA_Feeding absorb fx
+        elif k in ("escape", "q"):
+            self.phase = "home"
+        return None
+
+    def _key_stats(self, k):
+        if k in ("up", "k"):
+            self.cursor = (self.cursor - 1) % len(self.fields)
+        elif k in ("down", "j"):
+            self.cursor = (self.cursor + 1) % len(self.fields)
+        elif k in ("escape", "q", "enter"):
+            self.phase = "home"
+        return None
+
+    def _key_reqs(self, k):
+        n = max(1, len(self._targets))
+        if k in ("up", "k"):
+            self.req_i = (self.req_i - 1) % n
+        elif k in ("down", "j"):
+            self.req_i = (self.req_i + 1) % n
+        elif k in ("escape", "q", "enter"):
+            self.phase = "home"
+        return None
+
+    def _key_bet(self, k):
+        p = self.pet
+        if k in ("left", "h"):
+            self.bet = max(1, self.bet - 1)
+        elif k in ("right", "l"):
+            self.bet = min(MAX_DNA_INVENTORY, self.bet + 1)
+        elif k in ("enter", "space"):
+            if p.dna_bet(self.bet):
+                self.phase, self.hits, self.mash_f = "mash", 0, 0
+                self.sfx = "select"
+            else:
+                self.last = "Not enough bits to wager."
+                self.sfx = "error"
+                self.phase = "home"
+        elif k in ("escape", "q"):
+            self.phase = "home"
+        return None
+
+    def _key_mash(self, k):
+        if k in MASH_KEYS:
+            self.hits += 1                # locked in until the 10s timer ends
+        return None
+
+    def _key_result(self, k):
+        self.phase = "home"              # the won DNA is banked -- back to the menu to charge it
         return None
 
     # ---- views -----------------------------------------------------------
+    def text(self):
+        return getattr(self, "_text_" + self.phase)()
+
     def _meter(self, rate):
         filled = max(0, min(_METER_W, int(round(rate / 80.0 * _METER_W))))
         return "█" * filled + "░" * (_METER_W - filled)
 
-    def text(self):
-        return {"bet": self._text_bet, "mash": self._text_mash,
-                "result": self._text_result}.get(self.phase, self._text_menu)()
-
-    def _text_menu(self):
+    def _home_tag(self, key):
         p = self.pet
-        out = menu.bar("DNA", f"{p.bits}b   x{self.amount}")
+        if key == "charge":
+            return "%d banked" % sum(p.dna_owned.values())
+        if key == "generate":
+            return "mash for DNA"
+        if key == "stats":
+            return "%d charged" % p.dna_total()
+        if key == "reqs":
+            return "%d form(s)" % len(self._targets)
+        return ""
+
+    def _text_home(self):
+        p = self.pet
+        out = menu.bar("DNA", "%db" % p.bits)
+        for i, (key, label) in enumerate(_HOME):
+            out.append_text(menu.row("%-13s%s" % (label, self._home_tag(key)), i == self.home_i))
+        out.append_text(menu.blanks(1))
+        out.append_text(menu.row("[%s]" % (self.last or "")[:34], False))
+        out.append_text(menu.footer("↑↓ pick  ENTER open  ESC out"))
+        return out
+
+    def _text_charge(self):
+        p = self.pet
+        out = menu.bar("DNA · CHARGE", "%db  x%d" % (p.bits, self.amount))
         for i, f in enumerate(self.fields):
             own = p.dna_owned.get(f, 0)
             chg = p.dna_applied.get(f, 0)
             pct = p.dna_percent(f)
             tag = "*" if f == p.field else " "           # * = your own Field (cheaper)
-            label = f"{tag}{data.pretty_field(f)[:16]:<16}{own:>3}b {chg:>3}c {pct:>3}%"
+            label = "%s%-15s%3db %3dc %3d%%" % (tag, data.pretty_field(f)[:15], own, chg, pct)
             out.append_text(menu.row(label, i == self.cursor))
-        out.append_text(menu.footer("↑↓fld ←→amt  G gen  ENTER chg  ESC"))
+        out.append_text(menu.footer("↑↓fld ←→amt ENTER chg  ESC back"))
+        return out
+
+    def _text_stats(self):
+        p = self.pet
+        out = menu.bar("DNA · STATS", "%d charged" % p.dna_total())
+        for i, f in enumerate(self.fields):
+            pct = p.dna_percent(f)
+            bar = "█" * (pct * 12 // 100)
+            out.append_text(menu.row("%-14s%3d%% %s" % (data.pretty_field(f)[:14], pct, bar),
+                                     i == self.cursor))
+        out.append_text(menu.footer("↑↓ field   ESC back"))
+        return out
+
+    def _text_reqs(self):
+        out = menu.bar("DNA · REQUIREMENTS", "%d form(s)" % len(self._targets))
+        if not self._targets:
+            out.append_text(menu.blanks(1))
+            out.append_text(menu.note("No DNA evolutions from here."))
+            out.append_text(menu.blanks(1))
+            out.append_text(menu.row("Charged DNA only matters where a", False))
+            out.append_text(menu.row("form lists a Field-DNA gate.", False))
+            out.append_text(menu.footer("ESC back"))
+            return out
+        t, name, gates, r = self._targets[self.req_i]
+        met = evolution._dna_ok(self.pet, r)
+        out.append_text(menu.row("%-20s%s" % (name[:20], "✓ MET" if met else "… need"), True))
+        out.append_text(menu.blanks(1))
+        for f, (cond, val) in gates.items():
+            cur = self.pet.dna_percent(f)
+            ok = evolution._cmp(cond, val, cur)
+            sym = "≥" if cond == "GreaterThan" else ("≤" if cond == "LessThan" else "=")
+            mark = "✓" if ok else "·"
+            out.append_text(menu.row("%s %-14s %s%3d%%  now %3d%%"
+                                     % (mark, data.pretty_field(f)[:14], sym, int(val), cur), False))
+        out.append_text(menu.footer("↑↓ form %d/%d   ESC back" % (self.req_i + 1, len(self._targets))))
         return out
 
     def _text_bet(self):
         p = self.pet
-        out = menu.bar("DNA · GENERATE", f"{p.bits}b")
+        out = menu.bar("DNA · GENERATE", "%db" % p.bits)
         out.append_text(menu.note("Wager bits, then mash for DNA."))
         out.append_text(menu.blanks(1))
-        out.append_text(menu.row(f"wager:  {self.bet:>3} b", True))
+        out.append_text(menu.row("wager:  %3d b" % self.bet, True))
         out.append_text(menu.blanks(1))
         out.append_text(menu.row("faster mash → rarer field", False))
         out.append_text(menu.row("too slow / too fast → None", False))
@@ -145,27 +267,27 @@ class DNAPanel:
         rate = self._rate()
         field = dna_field_for_rate(rate)
         left = max(0.0, (MASH_TICKS - self.mash_f) / 10.0)
-        out = menu.bar("DNA · GENERATE", f"wager {self.bet}b")
+        out = menu.bar("DNA · GENERATE", "wager %db" % self.bet)
         out.append_text(menu.note("⚡ MASH  SPACE !"))
         out.append_text(menu.blanks(1))
         out.append_text(menu.row(self._meter(rate), False))
-        out.append_text(menu.row(f"rate {rate:>3}    hits {self.hits:>3}", False))
-        out.append_text(menu.row(f"→ {data.pretty_field(field)}", False))
-        out.append_text(menu.footer(f"{left:0.1f}s left   mash SPACE!"))
+        out.append_text(menu.row("rate %3d    hits %3d" % (rate, self.hits), False))
+        out.append_text(menu.row("→ %s" % data.pretty_field(field), False))
+        out.append_text(menu.footer("%0.1fs left   mash SPACE!" % left))
         return out
 
     def _text_result(self):
         field, wager, rate = self.won
-        out = menu.bar("DNA · GENERATE", f"rate {rate}")
+        show = (self.blink // 2) % 2 == 0            # DVPet unlockingDNA: the Field blinks in
+        name = data.pretty_field(field)
+        out = menu.bar("DNA · GENERATE", "rate %d" % rate)
         out.append_text(menu.blanks(1))
-        # DVPet banks the rolled Field even when it is None (the dud field): over/under
-        # mashing still yields real -- if near-useless -- None-field DNA, not a whiff.
-        out.append_text(menu.note(f"✓ Got {wager} {data.pretty_field(field)} DNA"))
+        out.append_text(menu.note(("✓ Got %d %s DNA" % (wager, name)) if show else "✓"))
         out.append_text(menu.blanks(1))
-        out.append_text(menu.row(f"rate {rate} → {field}", False))
+        out.append_text(menu.row("rate %d → %s" % (rate, name if show else ""), True))
         if field == "None":
             out.append_text(menu.row("None = the dud field (banked)", False))
         else:
-            out.append_text(menu.row(f"banked into {field} DNA", False))
-        out.append_text(menu.footer("any key to continue"))
+            out.append_text(menu.row("banked — open Charge to use it", False))
+        out.append_text(menu.footer("any key  →  DNA menu"))
         return out
