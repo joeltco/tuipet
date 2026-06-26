@@ -80,10 +80,12 @@ class ShopPanel:
         elif k in ("enter", "space") and rows:
             e = rows[min(self.cursor, n - 1)]
             if self.mode == "shop":
+                bits0 = self.pet.bits
                 if e.get("egg_idx") is not None:
                     self.msg = self._buy_egg(e)
                 else:
                     self.msg = self.pet.buy(e)
+                self.sfx = "reward" if self.pet.bits < bits0 else "error"   # bought vs can't-afford
             else:
                 if (e.get("action") or "") in data.TRANSPORT_ACTIONS:
                     return ("done", ("transport", e["key"]))
