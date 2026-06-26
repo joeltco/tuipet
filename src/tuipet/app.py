@@ -47,6 +47,10 @@ SCREEN_COLS, SCREEN_ROWS = 40, 12
 SPRITE_W = 16                                   # native creature sprite width
 
 import re as _re
+# navigation keys: pressing one in a sub-screen plays the scroll blip (unless the
+# screen sets its own sfx) — every list cursor-move beeps, V-Pet style
+_NAV_KEYS = frozenset({"up", "down", "left", "right", "j", "k", "h", "l", "tab"})
+
 HUD_W = 40              # message-box content width (CSS #msg: 44 - 2 border - 2 padding)
 HUD_GAP = "      "      # blank run between marquee wraps so the looped text reads cleanly
 HUD_STEP = 2            # advance the marquee every N frames (10 Hz clock -> ~0.2 s/char)
@@ -845,6 +849,8 @@ class TuiPetApp(App):
             if snd:
                 self.beep(snd, bell=False)
                 self.mode.sfx = None
+            elif event.key in _NAV_KEYS:
+                self.beep("scroll", bell=False)     # cursor-move blip for every list screen
             if result is not None and result[0] == "done":
                 self._close_mode(result[1])
             else:
