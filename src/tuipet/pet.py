@@ -1494,6 +1494,14 @@ class Pet:
         """PhysicalState.isInj: currently nursing an injury (the count persists for evolution)."""
         return self.inj_length > 0
 
+    def is_freezing(self):
+        """Too cold: temperature at or below the freezing threshold."""
+        return self.temp <= wx.FREEZING_TEMP
+
+    def is_overheating(self):
+        """Too hot: temperature above the ideal band's upper bound."""
+        return self.temp >= self.ideal_temp[1] + wx.UPPER_IDEAL
+
     def _sicken(self):
         """PhysicalState.sicken: fall ill for MinSickLength..MaxSickLength recovery lapses;
         it clears on its own once that runs out (or earlier with medicine)."""
@@ -1842,10 +1850,9 @@ class Pet:
             return "fatigued"
         if self.is_injured():
             return "injured"
-        if self.temp <= wx.FREEZING_TEMP:
+        if self.is_freezing():
             return "freezing"
-        lo, hi = self.ideal_temp
-        if self.temp >= hi + wx.UPPER_IDEAL:
+        if self.is_overheating():
             return "overheating"
         if self.hunger == 0:
             return "starving"
