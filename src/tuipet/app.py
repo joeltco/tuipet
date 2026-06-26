@@ -159,18 +159,33 @@ def _weather_overlay(weather, frame_i, cols, px_h):
     n = _PRECIP_N.get(weather, 0)
     if n:
         snow = weather in _SNOW
+        heavy = weather in ("HeavyRain", "HeavySnow")
         for i in range(n):
-            x0 = (i * 7 + 3) % cols
-            base = (i * 5) % px_h
+            # scatter each particle to a pseudo-random spot (Knuth multiplicative
+            # hash) instead of a linear comb, so they fill the whole sky -- random
+            # columns and heights, landing near the bottom as readily as the top
+            seed = (i * 2654435761) & 0xFFFFFFFF
+            x0 = seed % cols
+            base = (seed >> 10) % px_h
             if snow:
-                y = (base + frame_i) % px_h                  # slow, drifting
-                x = (x0 + ((frame_i // 2 + i) % 3 - 1)) % cols
+                # gentle drift with parallax -- ~1/3 of the flakes fall at half
+                # speed so the snow has depth instead of a rigid descending grid;
+                # each flake sways on its own phase
+                far = i % 3 == 0
+                y = (base + ((frame_i + 1) // 2 if far else frame_i)) % px_h
+                x = (x0 + (-1, 0, 1, 0)[(frame_i // 2 + i) % 4]) % cols
                 pts.append((x, y))
             else:
-                y = (base + frame_i * 2) % px_h              # fast, slanted streaks
+                # a real slanted streak: the drop leans down-right as it falls and
+                # the streak tiles its own length each frame (smooth descent, no
+                # sky wrap); heavier rain draws a longer streak
+                length = 3 if heavy else 2
+                y = (base + frame_i * length) % px_h
                 x = (x0 + y // 2) % cols
-                pts.append((x, y))
-                pts.append((x, (y - 1) % px_h))
+                for d in range(length):
+                    yy = y - d
+                    if yy >= 0:                              # don't wrap a streak across the sky
+                        pts.append(((x - d) % cols, yy))
     return pts
 
 
