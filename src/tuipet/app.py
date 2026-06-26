@@ -100,23 +100,6 @@ _SNOW = {"LightSnow", "Snowing", "HeavySnow"}
 _PRECIP = _RAIN | _SNOW
 _PRECIP_N = {"Drizzling": 5, "LightSnow": 6, "Raining": 11, "Snowing": 10,
              "HeavyRain": 18, "HeavySnow": 16}
-CLOUD = ["0011100", "0111111", "1111111"]
-CLOUD_BASES = (1, 21)            # two puffs spread along the top of the sky
-
-
-def _cloud_pts(frame_i, cols):
-    """A drifting overcast: two cloud puffs slide slowly across the top (~1 col
-    every 1.2s) so the sky reads as moving weather, not a frozen corner blob."""
-    drift = frame_i // 3
-    pts = []
-    for bi, bx in enumerate(CLOUD_BASES):
-        ox = bx + drift + bi * 4
-        for y, line in enumerate(CLOUD):
-            for x, ch in enumerate(line):
-                if ch == "1":
-                    pts.append(((ox + x) % cols, 1 + y))
-    return pts
-
 _K = "b cyan"
 KEYS = (
     f"[{_K}]f[/] feed  [{_K}]p[/] play  [{_K}]c[/] clean  [{_K}]h[/] heal  [{_K}]r[/] praise  [{_K}]k[/] scold  [{_K}]s[/] lights\n"
@@ -153,9 +136,9 @@ def _scale_hex(hexcol, f):
 
 
 def _weather_overlay(weather, frame_i, cols, px_h):
+    # no cloud sprites -- the backgrounds carry the cloudy/overcast look; this
+    # overlay only adds falling rain/snow particles.
     pts = []
-    if weather == "Cloudy" or weather in _RAIN or weather in _SNOW:
-        pts += _cloud_pts(frame_i, cols)          # drifting overcast
     n = _PRECIP_N.get(weather, 0)
     if n:
         snow = weather in _SNOW
