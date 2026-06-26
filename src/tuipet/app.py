@@ -184,6 +184,9 @@ def _blit(bm, ox, oy):
 
 COND_W = COND_H = 7                                # state.png cell size (DVPet 7x7 cells)
 COND_PITCH = COND_H + 1
+# Status sprites disabled for now (Joel): the post-cure medicine badge and the
+# misbehave/discipline "light bulb". Cosmetic-only; remove from this set to re-enable.
+_HIDDEN_STATUS_ICONS = {"st_medicine", "st_teach"}
 # DVPet draws the condition icons as a fixed VERTICAL COLUMN down the right edge of
 # the LCD (setLocX ~120), one fixed row each, every active one shown AT ONCE -- not a
 # single cycling slot.  Vertical order is DVPet's setLocY (top->bottom): sick(55),
@@ -230,7 +233,7 @@ def _effect_overlay(pet, frame_i, cols, px_h, tick=0, pet_right=None):
     k = 0
     col_active = False
     for key, active in column:
-        if not active or not E.get(key):
+        if not active or not E.get(key) or key in _HIDDEN_STATUS_ICONS:
             continue
         col_active = True
         y = col_y0 + k * COND_PITCH
@@ -253,7 +256,7 @@ def _effect_overlay(pet, frame_i, cols, px_h, tick=0, pet_right=None):
             bubble.append(E["attention"][0])             # care-call '!'
         teach = ((getattr(pet, "praise_flag", False) or getattr(pet, "scold_flag", False))
                  and pet.lights)
-        if teach and E.get("st_teach"):
+        if teach and E.get("st_teach") and "st_teach" not in _HIDDEN_STATUS_ICONS:
             bubble.append(E["st_teach"][sf])
         if bubble:
             bm = bubble[(tick // 5) % len(bubble)]        # if both present, take turns (rare)
