@@ -851,6 +851,10 @@ class TuiPetApp(App):
                 self.mode.sfx = None
             elif event.key in _NAV_KEYS:
                 self.beep("scroll", bell=False)     # cursor-move blip for every list screen
+            elif event.key == "enter":
+                self.beep("confirm", bell=False)    # menu confirm (a screen's own sfx wins above)
+            elif event.key == "escape":
+                self.beep("cancel", bell=False)     # back/cancel
             if result is not None and result[0] == "done":
                 self._close_mode(result[1])
             else:

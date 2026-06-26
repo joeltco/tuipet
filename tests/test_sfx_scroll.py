@@ -40,10 +40,19 @@ def test_nav_key_plays_scroll():
         assert a._played == ["scroll"], f"{k!r} should beep scroll, got {a._played}"
 
 
-def test_non_nav_key_is_silent_without_screen_sfx():
+def test_enter_confirms_and_escape_cancels():
     a = _app(_Screen())
     a.on_key(_Event("enter"))
-    assert a._played == []          # no nav, no screen sfx -> nothing
+    assert a._played == ["confirm"]
+    a._played.clear()
+    a.on_key(_Event("escape"))
+    assert a._played == ["cancel"]
+
+
+def test_other_key_is_silent_without_screen_sfx():
+    a = _app(_Screen())
+    a.on_key(_Event("x"))           # not nav / enter / escape, no screen sfx
+    assert a._played == []
 
 
 def test_screen_sfx_wins_over_scroll():

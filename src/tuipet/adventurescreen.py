@@ -25,6 +25,8 @@ class AdventurePanel:
     def anim(self):
         if self.sub is not None:
             self.sub.anim()
+            self.sfx = getattr(self.sub, "sfx", None)   # bubble nested battle sfx up to on_frame's drain
+            self.sub.sfx = None
             return
         self.frame_i += 1
         self._travel_t += 1
@@ -35,6 +37,8 @@ class AdventurePanel:
                 self.travelling = False
                 self._pending = (ev[0] == "boss", ev[1])
                 self.sub = BattlePanel(self.pet, ev[1])
+            elif ev and ev[0] == "town":
+                self.sfx = "reward"          # reached the rest-town: life + energy restored
 
     def key(self, k):
         if self.sub is not None:

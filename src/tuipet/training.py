@@ -111,6 +111,7 @@ class TrainingPanel:
         self.result = self.pet.apply_training(hits, power, attribute, game=game)
         self.phase = "done"
         self.flash = self.result + "   (SPACE)"
+        self.sfx = "trainhit" if self.success else "cancel"   # drill outcome (drained in on_frame)
 
     # ---- anim (called each fast tick) ----
     def anim(self):
@@ -181,6 +182,12 @@ class TrainingPanel:
     def _flash(self, pose):
         """Briefly show a strike (6) or recoil (9) pose, like DVPet AttackSuccess/Fail."""
         self._strike_pose, self._strike_t = pose, 4
+        if pose == 9:
+            self.sfx = "cancel"                  # miss
+        elif self.gkey == "vaccine":
+            self.sfx = "scroll"                  # rapid mash -> short tick per tap
+        else:
+            self.sfx = "trainhit"                # discrete hit
 
     def _strike(self):
         gk = self.gkey

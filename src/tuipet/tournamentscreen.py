@@ -25,6 +25,8 @@ class TournamentPanel:
     def anim(self):
         if self.sub is not None:
             self.sub.anim()
+            self.sfx = getattr(self.sub, "sfx", None)   # bubble nested battle sfx up to on_frame's drain
+            self.sub.sfx = None
             return
         self.frame_i += 1
 
@@ -34,6 +36,8 @@ class TournamentPanel:
             if r is not None and r[0] == "done":
                 self.tourney.record(bool(r[1] and r[1].won))
                 self.sub = None
+                if self.tourney.over:                   # cup finished this match
+                    self.sfx = "champion" if self.tourney.champion else "lose"
             return None
         if self.phase == "none":
             if k in ("escape", "enter", "space", "u"):
