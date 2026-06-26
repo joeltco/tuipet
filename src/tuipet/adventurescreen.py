@@ -1,6 +1,5 @@
 """Adventure — travel a zone, fight encounters/boss, all in the display box."""
 from __future__ import annotations
-from rich.text import Text
 from . import data
 from .adventure import Adventure
 from .battlescreen import BattlePanel

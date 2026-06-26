@@ -14,8 +14,8 @@ from __future__ import annotations
 import random
 from rich.text import Text
 from . import data
-from .render import render_screen, render_scene
-from .theme import LCD_ON, LCD_BG, INK, INK_B, DIM, MID, ACCENT, SIL_DAY, SIL_NIGHT
+from .render import render_scene
+from .theme import LCD_ON, LCD_BG, INK, INK_B, DIM, MID, ACCENT, SIL_DAY, SIL_NIGHT  # noqa: F401  (palette names bound for theme.apply propagation)
 from . import menu
 
 # DVPet config (normal difficulty)

@@ -17,7 +17,6 @@ same_day_retry=True, so the won-status exclusion never fires in practice, and th
 If a future data refresh sets same_day_retry=False on a reset_season cup, that
 branch would wrongly keep it locked forever. Documented in TUIPET_AUDIT.md.
 """
-import pytest
 
 from tuipet import data, tournament
 from tuipet.tournament import Tournament, TOURNEY_BITS, TOURNEY_MAX_BITS

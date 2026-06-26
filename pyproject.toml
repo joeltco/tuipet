@@ -19,6 +19,9 @@ classifiers = [
 ]
 dependencies = ["textual>=0.50", "rich>=13", "websockets>=12"]
 
+[project.optional-dependencies]
+dev = ["ruff", "bandit", "mypy", "pytest"]
+
 [project.urls]
 Homepage = "https://github.com/joeltco/tuipet"
 Repository = "https://github.com/joeltco/tuipet"
@@ -43,3 +46,45 @@ tuipet = ["data/*.gz", "data/*.csv", "data/*.json", "data/sounds/*.wav"]
 [tool.pytest.ini_options]
 pythonpath = ["src"]
 testpaths = ["tests"]
+
+# --- ruff: lint only (no auto-format — the codebase uses a deliberately compact
+# style: semicolon statements, one-line if/for). We keep the bug-catching rules
+# (pyflakes F*) and ignore the stylistic E7* the author uses on purpose. ----------
+[tool.ruff]
+target-version = "py310"
+line-length = 120
+extend-exclude = ["tools"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I"]
+ignore = [
+    "E501",  # line length (handled loosely; many intentional long data lines)
+    "E701",  # multiple statements on one line (colon) — author's compact style
+    "E702",  # multiple statements on one line (semicolon) — author's compact style
+    "E731",  # lambda assignment — used as a local idiom
+    "E741",  # ambiguous var name (l/I/O) — fine in tight numeric code
+    "E402",  # module import not at top — a few deliberate late imports
+    "I001",  # import sorting — don't churn the existing import order
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["F841"]   # tests sometimes bind a result purely to assert-by-existence
+
+# --- bandit: security scan. B311 (non-crypto random) is irrelevant — this is a
+# game's gameplay RNG, not security. Specific safe subprocess/urllib/bind lines
+# carry inline `# nosec`. -------------------------------------------------------
+[tool.bandit]
+exclude_dirs = ["tests", "tools", ".release-venv", ".venv"]
+# B311: non-crypto random — this is gameplay RNG, not security.
+# B110: try/except/pass — deliberate fail-soft (offline sync, sound dispatch).
+skips = ["B311", "B110"]
+
+# --- mypy: gradual typing. The code is largely untyped; ignore missing 3rd-party
+# stubs and don't demand annotations yet. Runs in CI as a non-blocking report. ---
+[tool.mypy]
+python_version = "3.10"
+ignore_missing_imports = true
+warn_unused_ignores = false
+check_untyped_defs = false
+disable_error_code = ["annotation-unchecked"]
+exclude = ["tools/", "server/"]

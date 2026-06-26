@@ -5,7 +5,6 @@ Top pixel -> foreground colour, bottom pixel -> background colour. "Off" pixels 
 left transparent (terminal default) unless an LCD background colour is supplied.
 """
 from __future__ import annotations
-from dataclasses import dataclass
 from rich.segment import Segment
 from rich.style import Style
 from rich.text import Text
@@ -55,7 +54,10 @@ def frame_text(rows, on="#e6e6e6", off=None) -> Text:
 
 
 if __name__ == "__main__":
-    import gzip, json, os, sys
+    import gzip
+    import json
+    import os
+    import sys
     here = os.path.dirname(__file__)
     data = json.load(gzip.open(os.path.join(here, "data/sprites.json.gz"), "rt"))
     by = {d["name"]: d for d in data}

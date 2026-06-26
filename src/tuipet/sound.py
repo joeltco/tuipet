@@ -9,7 +9,7 @@ Termux's termux-media-player always plays on the phone, so it's preferred.
 from __future__ import annotations
 import os
 import shutil
-import subprocess
+import subprocess  # nosec B404 - players run from a fixed allowlist, no shell, no user input
 
 _DIR = os.path.join(os.path.dirname(__file__), "data", "sounds")
 
@@ -41,7 +41,7 @@ def play(name):
     if not os.path.exists(f):
         return False
     try:
-        subprocess.Popen(_PLAYER + [f], stdout=subprocess.DEVNULL,
+        subprocess.Popen(_PLAYER + [f], stdout=subprocess.DEVNULL,   # nosec B603 - fixed player cmd, no shell, path is our own data file
                          stderr=subprocess.DEVNULL, stdin=subprocess.DEVNULL)
         return True
     except Exception:

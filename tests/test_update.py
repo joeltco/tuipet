@@ -2,7 +2,6 @@
 bad data, or a source install (no metadata) never raises and never nags."""
 import io
 import json
-import pytest
 from tuipet import update as u
 
 

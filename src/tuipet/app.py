@@ -1105,7 +1105,7 @@ class TuiPetApp(App):
         from .pet import CALORIE_LIMIT, MAX_MACRO, GOOD_NUTRITION_MIN
         p, T = self.pet, theme
         self.stats_w.border_subtitle = f"gen {p.generation}"
-        div = f"[dim]{'\u2500' * 26}[/]"
+        div = "[dim]" + chr(0x2500) * 26 + "[/]"   # no backslash inside an f-string (SyntaxError on py3.10/3.11)
         def mbar(v, col):
             return bar(min(100, v * 100 // MAX_MACRO), 11, col)
         well = (p.nutr_protein >= GOOD_NUTRITION_MIN and p.nutr_mineral >= GOOD_NUTRITION_MIN
