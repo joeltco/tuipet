@@ -564,9 +564,10 @@ class Stats(Static):
             return self._paint_egg(pet)
         T = theme
         div = f"[dim]{'─' * 26}[/]"
+        word = pet.status_word()
         deco = []
         if pet.asleep: deco.append("[blue]Zzz[/]")
-        if pet.sick: deco.append(f"[{T.NEG}]+sick[/]")
+        if pet.sick and word != "sick": deco.append(f"[{T.NEG}]+sick[/]")
         if pet.poop: deco.append(f"[{T.COIN}]~poop x{pet.poop}[/]")
         if getattr(pet, "effect_id", -1) >= 0: deco.append(f"[{T.POS}]\u2726{pet.effect_name()}[/]")
         mins, secs = divmod(int(pet.age_seconds), 60)
@@ -581,7 +582,7 @@ class Stats(Static):
         self.border_subtitle = f"gen {pet.generation}"
         lines = [
             f"[b]{pet.name[:22]}[/]{xm}",
-            f"[dim]{pet.stage} · {pet.attribute}[/]",
+            f"[dim]{pet.stage}{(' · ' + pet.attribute) if pet.attribute else ''}[/]",
             div,
             f"Hunger  {hearts(pet.hunger)}",
             f"Effort  {hearts(pet.strength)}",
@@ -589,12 +590,12 @@ class Stats(Static):
             f"Mood    {bar(pet.mood_pct(), 12, T.MOOD)}",
             div,
             f"Power   [{T.POS}]V{pet.vaccine}[/] [{T.ENERGY}]D{pet.data_power}[/] [{T.MOOD}]Vi{pet.virus}[/]",
-            f"Weight {pet.weight}g   [{T.COIN}]{pet.bits}b[/]",
-            f"Battle {pet.wins}W/{pet.battles}   [{T.COIN}]\u2605{pet.trophies}[/]",
+            f"Weight  {pet.weight}g   [{T.COIN}]{pet.bits}b[/]",
+            f"Battle  {pet.wins}W/{pet.battles}   [{T.COIN}]\u2605{pet.trophies}[/]",
             f"@{pet.habitat_obj()['name'][:14]} {amark} [dim]{pet.season}[/]",
             f"[{T.COIN}]{picon}[/] [dim]{wglyph}{pet.weather} {int(pet.temp)}\u00b0[/] [dim]{mins}m{secs:02d}s[/]",
             f"Life    {bar(lifepct, 12, lifecol)}",
-            _status_line(pet.status_word(), deco),
+            _status_line(word, deco),
         ]
         self.update("\n".join(lines))
 
