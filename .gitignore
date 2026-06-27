@@ -20,7 +20,8 @@ raw_model
 *.save
 
 # Decompiled DVPet Java used only for the porting audit — never commit (copyrighted)
-_audit_src/
+_audit_src/        # PARTIAL — View only; Model/Controller are empty stubs (from /tmp/view.jar)
+_decompiled/       # COMPLETE — full app jar (Model + Controller + View), the canonical reference
 
 # decompilation-derived analysis notes -- keep local, not in the public repo
 ANIMATION_AUDIT.md

@@ -345,12 +345,15 @@ class TrainingPanel:
             if g:
                 gw = max(len(r) for r in g)
                 placements.append((g, COLS - gw - 3, False))
-            # the player's shield: a solid block just right of the pet, raised high or low
-            sx = 2 + pw + 1
-            sy = (px_h - 17) if self.shield_up else (px_h - 7)
-            overlay += _blit(["1111", "1111", "1111", "1111"], sx, sy)
-        elif gk == "hp":                                    # pet RIGHT, bag LEFT, guess buttons below
-            bag = E.get("punching_bag", [None])[0]
+            # the player's shield (DVPet trainShield sprite), raised high or low
+            shield = E.get("train_shield", [None])[0]
+            if shield:
+                shh = len(shield)
+                sx = 2 + pw + 1
+                sy = (px_h - 18) if self.shield_up else (px_h - 4 - shh)
+                overlay += _blit(shield, sx, sy)
+        elif gk == "hp":                                    # pet RIGHT, battle-bag LEFT (the DVPet HP opponent)
+            bag = E.get("battle_bag", [None])[0]
             if bag:
                 placements.append((bag, 2, False))
             pet = self._frame(rec, self._pose_now(0))
