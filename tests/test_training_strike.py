@@ -84,9 +84,10 @@ def test_hp_drill_is_guess_the_hidden_attribute():
             break
         panel.hp_pick = panel.hp_target               # know the answer -> pick it
         panel.key("space")
-    # three correct guesses -> a strong, successful drill
+    # three correct guesses -> a strong, successful drill.  HP has NO projectile
+    # strike (per-round flashes only), so it goes straight to "done".
     assert panel.rounds_won == T.HP_ROUNDS
-    assert panel.phase == "strike" and panel.success and panel._strong
+    assert panel.phase == "done" and panel.success and panel._strong
 
 
 def test_hp_timeout_counts_as_wrong():
@@ -99,15 +100,34 @@ def test_hp_timeout_counts_as_wrong():
     assert panel.rounds_won == 0 and not panel.success
 
 
-def test_data_drill_only_scores_on_the_up_frame():
+def test_data_drill_is_a_shield_block_match():
+    """DVPet controller checkSuccess(Data): success = shieldTop == isUp.  Raise the
+    shield to the side the attack commits to -> block (success); mismatch -> hit."""
+    # matching shield blocks -> success
     panel = _panel("data")
     panel._start_game()
+    panel.locked = True
     panel.tgt_up = True
-    panel.key("space")                                 # shot while UP -> a hit
-    assert panel.hits == 1
-    panel.tgt_up = False
-    panel.key("space")                                 # shot while down -> a miss
-    assert panel.hits == 1                             # unchanged
+    panel.key("up")                                    # shield up vs HIGH attack
+    panel._data_resolve()
+    assert panel.blocked and panel.success
+    # mismatched shield -> the attack gets through
+    panel = _panel("data")
+    panel._start_game()
+    panel.locked = True
+    panel.tgt_up = True
+    panel.key("down")                                  # shield down vs HIGH attack
+    panel._data_resolve()
+    assert not panel.blocked and not panel.success
+
+
+def test_data_attack_commits_after_the_telegraph():
+    panel = _panel("data")
+    panel._start_game()
+    assert not panel.locked
+    for _ in range(T.DATA_TELEGRAPH + 1):
+        panel.anim()
+    assert panel.locked                                # the attack revealed high/low
 
 
 def test_vaccine_drill_counts_mashes():
