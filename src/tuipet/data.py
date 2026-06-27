@@ -19,14 +19,14 @@ _RAW = _DATA  # bundled CSVs (digimon/evolutions/foods) live alongside sprites
 #   3 stretch / yawn          9 dejected / fail / disliked (HP_Training_AttackFail, jeer-up)
 #   4 cheer-down / clean-done 10 collapse / dying (Dying, jeer-down, exhausted)
 #   5 excited / cheer-up(big)
-# State->frames taken from the real animations: Cheering=6,4  Jeering=9,10  Eating=0,7,8,7
+# State->frames taken from the real animations: Cheering=5,7  Jeering=9,10  Eating=8,7(x3)
 # attackDefault=6,0  Cleaning=0,4  Bounce/Jump(play)=1,5  Dying=10.
 ROLES = {
     "idle":   [0, 1],      # Idling / Discovering walk
     "walk":   [0, 1],
     "sleep":  [2, 3],      # idleSleep
-    "happy":  [6, 4],      # Cheering: cheer(false) poseA=6 poseB=4
-    "angry":  [9, 10],     # Jeering: jeer(false) poseA=9 poseB=10
+    "happy":  [5, 7],      # Cheering: cheer(true) up=5 down=7 -- the canonical praise/win/evolve bounce
+    "angry":  [9, 10],     # Jeering: jeer(false) up=9 down=10 (severe/bad-health scold; mild jeer(true) is 6/4)
     "eat":    [8, 7],      # eat(): open-mouth 8 -> chew 7 (verified DVPet order)
     "refuse": [4],         # refuse(): frame 4 (9 if Depressed) shaken by mirror toggle
     "attack": [6, 0],      # attackDefault: strike 6 -> reset 0

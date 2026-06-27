@@ -111,7 +111,9 @@ class TrainingPanel:
         self.result = self.pet.apply_training(hits, power, attribute, game=game)
         self.phase = "done"
         self.flash = self.result + "   (SPACE)"
-        self.sfx = "trainhit" if self.success else "cancel"   # drill outcome (drained in on_frame)
+        # DVPet: a full-success drill upgrades to the strong attack/hit SFX; a normal
+        # success uses the plain hit; a fail is the cancel thud.
+        self.sfx = ("strongHit" if hits >= 3 else "trainhit") if self.success else "cancel"
 
     # ---- anim (called each fast tick) ----
     def anim(self):
