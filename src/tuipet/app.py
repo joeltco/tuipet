@@ -860,6 +860,10 @@ class TuiPetApp(App):
                 self.beep("cancel", bell=False)     # back/cancel
             if result is not None and result[0] == "done":
                 self._close_mode(result[1])
+            elif result is not None and result[0] == "quit":
+                self.action_quit()                  # a screen asked to quit the app (e.g. q on the title)
+            elif event.key == "q" and not getattr(self.mode, "captures_text", False):
+                self.action_quit()                  # QoL: q quits from any non-text screen, not just the main view
             else:
                 self.repaint()
 
