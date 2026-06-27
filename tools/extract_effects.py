@@ -74,12 +74,10 @@ zframes = [to_rows(crop(native_mask(f))) for f in ("sleepLights.png", "sleepLigh
 if zframes:
     effects["zzz"] = zframes
 
-# poop: crop a single mound out of filth.png (a real DVPet sprite -- the sheet
-# is a packed field, so we take one clean mound from it)
-_fil = native_mask("filth.png")
-_p = crop(_fil[6:10, 2:8])
-if _p is not None:
-    effects["poop"] = [to_rows(_p)]
+# poop: NOT generated here.  The authentic poop is the MultiVPet spr_poop_vpet
+# sprite, curated directly into effects.json.gz (commit 7ec383f) -- the old
+# filth.png crop was a crude stand-in.  The merge-on-write below preserves the
+# curated version so a regen never clobbers it.
 
 # copymon: DVPet's real stand-in creature, used as the placeholder sprite
 _cm = split_vertical(native_mask("copymon.png"))
@@ -145,6 +143,16 @@ for name, frames in effects.items():
             print("   " + "".join("#" if c == "1" else "." for c in r))
 
 path = os.path.join(OUT, "effects.json.gz")
+# MERGE, don't clobber: several sprites are curated directly in effects.json.gz
+# (the MultiVPet poop, the hand-tuned unhappy drip, the st_* status icons, the
+# dying emote) and are NOT reproducible from this script.  Existing keys win, so
+# a regen only ADDS new keys (e.g. the training opponents) and never overwrites
+# curated art.  To force-update a sprite from here, delete its key from the file
+# first.  (This is the bug that wiped poop + the status icons in v0.2.0-0.2.1.)
+if os.path.exists(path):
+    with gzip.open(path, "rt") as fh:
+        existing = json.load(fh)
+    effects = {**effects, **existing}
 with gzip.open(path, "wt") as fh:
     json.dump(effects, fh, separators=(",", ":"))
 print(f"\nwrote {path}: {list(effects)}")
