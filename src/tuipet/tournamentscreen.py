@@ -97,7 +97,7 @@ class TournamentPanel:
                 shown += 1
             out.append_text(menu.blanks(vis - shown))
             out.append_text(menu.note("Pick a cup to enter (%d open)." % n))
-            out.append_text(menu.footer("up/dn pick  ENTER enter  ESC out"))
+            out.append_text(menu.footer("↑↓ pick  ENTER enter  ESC out"))
             return out
         # bracket
         t = self.tourney
