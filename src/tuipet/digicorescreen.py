@@ -106,5 +106,5 @@ class DigiCorePanel:
             out.append(f" {label:<9}", style=DIM)
             out.append(f"{val}\n", style=INK_B)
         out.append_text(menu.blanks(9 - len(rows)))
-        out.append_text(menu.footer("←/→ page    ESC close"))
+        out.append_text(menu.footer("←→ page    ESC close"))
         return out

@@ -73,5 +73,5 @@ class HabitatPanel:
             shown += 1
         out.append_text(menu.blanks(vis - shown))
         out.append_text(menu.note(self.msg))
-        out.append_text(menu.footer("up/dn  ENTER buy/move  ESC out"))
+        out.append_text(menu.footer("↑↓  ENTER buy/move  ESC out"))
         return out

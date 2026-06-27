@@ -97,7 +97,7 @@ class ShopPanel:
                     return ("done", ("eat", e["key"]))
         elif k == "r" and self.mode == "bag" and rows:
             self.msg = self.pet.sell(rows[min(self.cursor, n - 1)])
-        elif k in ("escape", "o"):
+        elif k in ("escape", "o", "i"):     # o opens the shop, i opens the bag; both also close
             return ("done", self.msg)
         return None
 

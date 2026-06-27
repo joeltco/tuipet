@@ -96,7 +96,7 @@ class JogressPanel:
             out.append_text(menu.row(f"+{o['partner_name'][:10]} = {o['name'][:12]}({o['attribute'][:2]})", i == self.cursor))
             shown += 1
         out.append_text(menu.blanks(VISIBLE - shown))
-        out.append_text(menu.footer("up/dn pick   ENTER fuse   ESC out"))
+        out.append_text(menu.footer("↑↓ pick   ENTER fuse   ESC out"))
         return out
 
     def _render_fusing(self, out):

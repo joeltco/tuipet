@@ -57,5 +57,5 @@ class ThemePanel:
             out.append_text(Text.from_markup(sw + "\n"))
         out.append_text(menu.blanks(max(0, 4 - len(self.names))))
         out.append_text(menu.note("live preview as you move"))
-        out.append_text(menu.footer("up/dn preview  ENTER keep  ESC cancel"))
+        out.append_text(menu.footer("↑↓ preview  ENTER keep  ESC cancel"))
         return out

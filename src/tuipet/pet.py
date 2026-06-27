@@ -1597,7 +1597,7 @@ class Pet:
         if self.stage == "Egg":
             return "It is still an egg."
         if self.asleep:
-            self._disturbed()
+            return self._disturbed()
         self._set_mood(self.mood + (PRAISE_LOW_DISP_MOOD_INC if self._disposition() < 0
                                     else PRAISE_HIGH_DISP_MOOD_INC))
         if not self.compliance:
@@ -1626,7 +1626,7 @@ class Pet:
         if self.stage == "Egg":
             return "It is still an egg."
         if self.asleep:
-            self._disturbed()
+            return self._disturbed()
         self.obedience += SCOLD_OBED_INC
         self._set_mood(self.mood - (SCOLD_LOW_OBED_MOOD_DEC if self.obedience < SCOLD_HIGH_OBED_MOOD
                                     else SCOLD_HIGH_OBED_MOOD_DEC))
@@ -1652,6 +1652,8 @@ class Pet:
             return "It rests now — press N for a new egg."
         if self.stage == "Egg":
             return "It is still an egg."
+        if self.asleep:
+            return self._disturbed()
         if not self.poop:
             return "Nothing to clean."
         n, self.poop = self.poop, 0
@@ -1665,6 +1667,8 @@ class Pet:
             return "It rests now — press N for a new egg."
         if self.stage == "Egg":
             return "It is still an egg."
+        if self.asleep:
+            return self._disturbed()
         if not self.sick and not self.is_injured():
             return "It's not sick or injured."
         sick0, inj0 = self.sick, self.is_injured()
