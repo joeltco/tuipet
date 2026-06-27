@@ -94,6 +94,15 @@ for name, fn in {"grave": "death.png", "sun": "noon.png", "moon": "night.png"}.i
     if c is not None:
         effects[name] = [to_rows(c)]
 
+# training opponents: the punching bag (vaccine/virus/hp drills) + its broken form,
+# and the green pop-up target (data drill).  DVPet vaccinePrePrep/dataPrePrep opponents
+# -- the thing the pet actually fires its attack at during a drill's strike sequence.
+for name, fn in {"punching_bag": "punchingBag.png", "punching_bag_broken": "punchingBagBroken.png",
+                 "train_green": "trainGreen.png", "train_green_up": "trainGreenUp.png"}.items():
+    c = crop(native_mask(fn))
+    if c is not None:
+        effects[name] = [to_rows(c)]
+
 # per-attribute projectiles: DVPet's real attack sprites (proven via SpriteAnim
 # initAttackButtons: Vaccine=red.png, Data=green.png, Virus=yellow.png -- distinct
 # black silhouettes: an orb, a block, and a dart. Downsampled /2 to ~7px.

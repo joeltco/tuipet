@@ -132,7 +132,7 @@ class BattlePanel:
                 else:
                     ph = max(0, ph - dmg)
                 for s in range(EXPLODE_FRAMES):
-                    tl.append({"m": "hit", "f": (s // EXPLODE_HOLD) % 2, "def": dfn, "ph": ph, "fh": fh})
+                    tl.append({"m": "hit", "f": (s // EXPLODE_HOLD) % 2, "def": dfn, "double": dbl, "ph": ph, "fh": fh})
                 tl += [{"m": "flinch", "view": dfn, "def": dfn, "ph": ph, "fh": fh}] * FLINCH_T
             else:                                            # DODGE: defender weaves, orb whiffs past
                 for s in range(DODGE_T):
@@ -150,12 +150,13 @@ class BattlePanel:
     # ---- driving ----
     def _emit_sfx(self):
         """Fire a one-shot beep at timeline marker edges: orb launch -> attack, impact -> hit."""
-        m = self.timeline[self.i].get("m")
+        entry = self.timeline[self.i]
+        m = entry.get("m")
         if m != self._last_m:
-            if m == "fire_out":
-                self.sfx = "attack"
-            elif m == "hit":
-                self.sfx = "attackHit"
+            if m == "fire_out":                 # DVPet: a doubleAttack launches with the strong sting
+                self.sfx = "strongAttack" if entry.get("double") else "attack"
+            elif m == "hit":                     # ...and lands with the strong impact
+                self.sfx = "strongHit" if entry.get("double") else "attackHit"
         self._last_m = m
 
     def anim(self):
