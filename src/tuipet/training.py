@@ -11,8 +11,9 @@ the hardware (no abstract gauge with the opponent conjured up only at the end):
           best of 3 (drawHPTraining); builds Effort.
   Vaccine — pet HIDDEN, bag on screen: mash the hit button (drawVaccinePre);
           builds Vaccine power.  Pet appears for the strike.
-  Data  — pet LEFT bobbing 4<->1, green target RIGHT popping up/down
-          (drawDataPre): shoot it on the UP frame; fires RIGHT (attackGreen).
+  Data  — pet LEFT, green target RIGHT (drawDataPre): the attack feints, then
+          COMMITS high or low; raise your shield to the matching side to BLOCK it
+          (controller checkSuccess: success = shieldTop == isUp).  Fires RIGHT.
   Virus — pet HIDDEN, bag on screen: stop the sweeping power bar high
           (drawVirusPre); builds Virus power.
 
@@ -31,8 +32,12 @@ VACCINE_HITS_MIN = 20
 VACCINE_WINDOW = 48           # ticks (0.1s each) to mash
 VIRUS_BAR_MIN = 86
 VIRUS_SPEED = 4
-DATA_REPS = 3
-DATA_BOB = 4                  # ticks the green target holds each up/down position (~0.4s)
+# Data is a SHIELD BLOCK (controller checkSuccess: success = shieldTop == isUp): the
+# green target feints, then COMMITS its attack high or low; you raise your shield to
+# the matching side to block it before the window closes.
+DATA_BOB = 3                  # ticks per feint up/down toggle during the telegraph
+DATA_TELEGRAPH = 15           # feint window before the attack commits (~1.5s)
+DATA_WINDOW = 13              # reaction window to set the shield after it commits (~1.3s)
 HP_ROUNDS = 3
 HP_ROUNDS_WON = 2
 HP_ROUND_LEN = 28             # ticks to pick before a round times out (~2.8s)
@@ -59,7 +64,7 @@ def _blit(bm, ox, oy):
 GAMES = [
     ("hp",      "HP Drill", "Effort",  "guess the bag — best of 3"),
     ("vaccine", "Vaccine",  "Vaccine", f"mash the bag to {VACCINE_HITS_MIN}"),
-    ("data",    "Data",     "Data",    "shoot the target on the UP frame"),
+    ("data",    "Data",     "Data",    "block the attack — high or low"),
     ("virus",   "Virus",    "Virus",   f"stop the bar over {VIRUS_BAR_MIN}"),
 ]
 
@@ -87,7 +92,13 @@ class TrainingPanel:
         self.rounds_won = 0
         self.hp_target = 0           # hidden attribute the bag "is" (0/1/2)
         self.hp_pick = 0             # the player's cursor over the 3 guess buttons
-        self.tgt_up = False          # data: is the green target currently UP (vulnerable)?
+        # data shield-block state
+        self.data_t = 0
+        self.feint_up = False        # green's current feint position during the telegraph
+        self.locked = False          # has the attack committed (revealed high/low)?
+        self.tgt_up = False          # the committed attack direction (only once locked)
+        self.shield_up = True        # the player's shield: up (True) or down (False)
+        self.blocked = False
         self._strike_pose = None     # transient hit(6)/miss(9) pose during a drill
         self._strike_t = 0
         self.strike_step = 0         # the post-drill strike clock (fire -> flash -> aftermath)
@@ -111,7 +122,7 @@ class TrainingPanel:
         elif gk == "vaccine":
             self.flash = "MASH the bag!"
         elif gk == "data":
-            self.flash = "shoot it on UP!"
+            self.flash = "watch the feint — block high or low!"
         else:
             self.flash = "stop the bar high!"
 
@@ -141,11 +152,18 @@ class TrainingPanel:
         self.success = hits >= 2
         self._strong = hits >= 3
         self.result = self.pet.apply_training(hits, power, attribute, game=game)
-        # DVPet doesn't reveal the score yet -- it plays the strike (the pet fires at
-        # the bag/target, it breaks or the pet recoils), THEN shows the result.
-        self.phase = "strike"
-        self.strike_step = 0
-        self.flash = ""
+        if game == "hp":
+            # HP training has NO projectile strike -- each guess already flashed pose
+            # 6/9 (drawHPTrainingAttackSuccess/Fail = pose + impact, no orb).  Just
+            # reveal the Effort result.
+            self.phase = "done"
+            self.flash = self.result + "   (SPACE)"
+        else:
+            # attribute drills fire the real attackDefault/attackGreen projectile at
+            # the opponent first, THEN reveal the score.
+            self.phase = "strike"
+            self.strike_step = 0
+            self.flash = ""
 
     # ---- anim (called each fast tick) ----
     def anim(self):
@@ -176,8 +194,17 @@ class TrainingPanel:
                 hits = 3 if ratio >= 1.2 else (2 if ratio >= 0.8 else (1 if ratio >= 0.4 else 0))
                 self._finish(hits, int(self.taps), "Vaccine", "vaccine")
         elif gk == "data":
-            if self.frame_i % DATA_BOB == 0:
-                self.tgt_up = not self.tgt_up               # the green pops up and down
+            self.data_t += 1
+            if not self.locked:                             # telegraph: the green feints up/down
+                if self.data_t % DATA_BOB == 0:
+                    self.feint_up = not self.feint_up
+                if self.data_t >= DATA_TELEGRAPH:           # ...then the attack COMMITS high/low
+                    self.locked = True
+                    self.tgt_up = random.choice((True, False))
+                    self.data_t = 0
+                    self.flash = "block it — UP or DOWN!"
+            elif self.data_t >= DATA_WINDOW:                # window closed -> resolve the block
+                self._data_resolve()
         else:  # virus -- the power bar sweeps; hit to stop it
             self.pos += self.dir * VIRUS_SPEED
             if self.pos >= 100:
@@ -222,9 +249,27 @@ class TrainingPanel:
                 self._hp_resolve(self.hp_pick == self.hp_target)
             elif k in ("space", "enter"):
                 self._hp_resolve(self.hp_pick == self.hp_target)
-        elif k == "space":
+        elif gk == "data":                   # raise the shield to the matching side to block
+            if k in ("up", "k"):
+                self.shield_up = True
+            elif k in ("down", "j"):
+                self.shield_up = False
+        elif k == "space":                   # vaccine mash / virus stop
             self._strike()
         return None
+
+    def _data_resolve(self):
+        """The attack landed: a block (shield matches the attack side) succeeds, else
+        it gets through.  One attempt -> the strike (attackGreen)."""
+        self.blocked = self.shield_up == self.tgt_up
+        if self.blocked:
+            self.flash = "BLOCKED!"
+            self._flash(6)
+            self._finish(3, 60, "Data", "data")
+        else:
+            self.flash = "hit you!"
+            self._flash(9)
+            self._finish(0, 0, "Data", "data")
 
     def _flash(self, pose):
         """Briefly show a strike (6) or recoil (9) pose, like DVPet AttackSuccess/Fail."""
@@ -242,18 +287,6 @@ class TrainingPanel:
             self.taps += 1
             self.flash = f"{self.taps} hits!"
             self._flash(6)
-        elif gk == "data":
-            if self.tgt_up:                      # shot landed while the target was UP
-                self.hits += 1
-                self.power += 16
-                self.flash = "HIT!"
-                self._flash(6)
-            else:
-                self.flash = "missed"
-                self._flash(9)
-            self.rep += 1
-            if self.rep >= DATA_REPS:
-                self._finish(self.hits, self.power, "Data", "data")
         elif gk == "virus":
             v = int(self.pos)
             if v >= VIRUS_BAR_MIN:
@@ -293,14 +326,22 @@ class TrainingPanel:
         gk = self.gkey
         E = data.load_effects()
         on, bgimg = self._scene_palette()
+        px_h = ARENA_ROWS * 2
         placements = []
-        if gk == "data":                                    # pet LEFT bobbing, green target RIGHT
+        overlay = []
+        if gk == "data":                                    # pet LEFT, green target RIGHT, shield block
             pet = self._frame(rec, self._pose_now([1, 4][(self.frame_i // 4) % 2]))
+            pw = max(len(r) for r in pet)
             placements.append((pet, 2, False))
-            g = E.get("train_green_up" if self.tgt_up else "train_green", [None])[0]
+            up = self.tgt_up if self.locked else self.feint_up   # green shows the feint / committed side
+            g = E.get("train_green_up" if up else "train_green", [None])[0]
             if g:
                 gw = max(len(r) for r in g)
                 placements.append((g, COLS - gw - 3, False))
+            # the player's shield: a solid block just right of the pet, raised high or low
+            sx = 2 + pw + 1
+            sy = (px_h - 17) if self.shield_up else (px_h - 7)
+            overlay += _blit(["1111", "1111", "1111", "1111"], sx, sy)
         elif gk == "hp":                                    # pet RIGHT, bag LEFT, guess buttons below
             bag = E.get("punching_bag", [None])[0]
             if bag:
@@ -313,7 +354,7 @@ class TrainingPanel:
             if bag:
                 bw = max(len(r) for r in bag)
                 placements.append((bag, (COLS - bw) // 2 - 4, False))
-        scene = render_scene(placements, COLS, ARENA_ROWS, on, LCD_BG, bgimg=bgimg)
+        scene = render_scene(placements, COLS, ARENA_ROWS, on, LCD_BG, overlay=overlay, bgimg=bgimg)
         scene.append("\n")
         scene.append_text(self._gauge())
         scene.append_text(menu.footer(self._hint()))
@@ -338,10 +379,14 @@ class TrainingPanel:
             done = self.taps >= VACCINE_HITS_MIN
             t.append(f"  {self.taps}/{VACCINE_HITS_MIN} {'!' if done else ''}\n", style=INK_B if done else INK)
         elif gk == "data":
-            t.append("target: ", style=INK)
-            t.append("UP - shoot!" if self.tgt_up else "down...   ", style=INK_B if self.tgt_up else DIM)
-            dots = "●" * self.hits + "○" * (self.rep - self.hits) + "·" * (DATA_REPS - self.rep)
-            t.append("  " + dots + "\n", style=INK)
+            if self.locked:
+                t.append("ATTACK " + ("HIGH! " if self.tgt_up else "LOW!  "), style=INK_B)
+            else:
+                t.append("feinting... ", style=DIM)
+            t.append("shield ", style=INK)
+            t.append("[UP]" if self.shield_up else " up ", style=(f"{ACCENT} on {LCD_BG}") if self.shield_up else INK)
+            t.append("[DN]" if not self.shield_up else " dn ", style=(f"{ACCENT} on {LCD_BG}") if not self.shield_up else INK)
+            t.append("\n", style=INK)
         else:  # virus
             t.append_text(self._powerbar(self.pos))
             t.append(f" {int(self.pos)}/{VIRUS_BAR_MIN}\n", style=INK)
@@ -350,7 +395,7 @@ class TrainingPanel:
     def _hint(self):
         return {"hp": "←→ pick  SPACE guess  ESC out",
                 "vaccine": "SPACE mash   ESC out",
-                "data": "SPACE shoot   ESC out",
+                "data": "↑ block high   ↓ block low   ESC out",
                 "virus": "SPACE stop   ESC out"}[self.gkey]
 
     def _render_strike(self, rec):
