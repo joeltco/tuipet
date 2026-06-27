@@ -202,13 +202,28 @@ APPLIED:
    Canon `playing()` (toy bounce): char 1↔5 every 0.6s ×3, `_playingInteract` on each up-beat,
    3.6s. Canon `jumping()` (hop): pose 5 up / 1 down, 6px/tick, `_happy` per hop. tuipet uses
    the hop (visually distinct from cheer) with `happy.wav` (the only matching ripped asset).
+7. ✅ Battle strong-hit audio: the `dbl` (DVPet doubleAttack) flag was computed and tagged on
+   `fire_out`/`fire_in` but the sfx played flat `attack`/`attackHit`.  Propagated `double` to the
+   `hit` entry and branched `_emit_sfx`: a strong hit now launches with `strongAttack` and lands
+   with `strongHit` (`battlescreen.py`) — the same parity training got in fix #5, using the
+   already-ripped `strongAttack.wav`/`strongHit.wav`.
 
 All asset files (`lastBite.wav`, `smallPoop/largePoop.wav`, `strongHit.wav`, …) already
 shipped in `data/sounds/` — they were ripped but unwired. Tests: `tests/test_anim_canon.py`.
 
+8. ✅ **Training mini-battle** (the big one — `attackDefault`→`hitAnim`→`aftermathDefault`).
+   Training was an abstract UI minigame: pet bobs in place, flashes a hit/miss pose, no opponent.
+   Now, after the skill drill, a **strike phase** plays: the pet (right, facing left) winds to
+   pose 6 and **fires a projectile** at the **punching bag** (vaccine/virus/hp) or **green target**
+   (data) on the left; the impact **flashes**; then the **aftermath** — bag shows **broken**
+   (`punchingBagBroken`) on success, pet **recoils to pose 10** on a fail. Launch/impact use the
+   strong-vs-normal `attack`/`strongAttack` + `attackHit`/`strongHit` sounds (fix #5/#7).
+   Extracted `punching_bag`/`punching_bag_broken`/`train_green`/`train_green_up` into
+   `effects.json.gz` (the projectile + flash art was already there); reused `render_scene` +
+   battle's composition approach. `training.py` strike phase + `tests/test_training_strike.py`.
+
 DEFERRED (genuine features, not fidelity fixes — would change deliberate tuipet design):
 - **Run mode (travelSpeed 2) + sick walk/run** — tuipet has no world-travel-speed model; the
   pet roams (walk) during idle and there is no "running" trigger to hang these on.
-- **Training as a mini-battle** (strike→projectile→impact-flash→aftermath) + the looping
-  `_trainTimer` tension sound — tuipet's training is a deliberate mini-game redesign, and the
-  one-shot `subprocess` sound backend has no looping primitive. Both are real work, not tuning.
+- **The looping `_trainTimer` tension sound** — the one-shot `subprocess` audio backend has no
+  looping primitive, so the during-drill timer hum can't be reproduced without a loop player.

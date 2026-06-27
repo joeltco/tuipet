@@ -33,6 +33,21 @@ HP_ZONE_W = 6
 HP_ROUND_LEN = 26             # ~2.6s/round before it times out (Joel tuned: was 20/2.0s, too fast)
 VBAR_W = 28
 SCENE_ROWS = 9                # grounded play-arena height (full-bleed, like battle/adventure)
+COLS = 40                     # LCD width
+# DVPet attackDefault -> hitAnim -> aftermathDefault: after the skill drill, the pet
+# winds up (pose 6), FIRES a projectile at the punching bag (or green target), the
+# impact flashes, then the bag shows BROKEN (success) or the pet RECOILS (pose 10, fail).
+STRIKE_ROWS = 12              # the strike uses the FULL arena (room for the tall hanging bag)
+STRIKE_FIRE = 8               # projectile travels to the opponent (0.8s)
+STRIKE_FLASH = 6              # impact flash on the opponent (0.6s)
+STRIKE_AFTER = 12             # aftermath: broken-bag / recoil hold (1.2s)
+STRIKE_TOTAL = STRIKE_FIRE + STRIKE_FLASH + STRIKE_AFTER
+
+
+def _blit(bm, ox, oy):
+    """Sprite bitmap -> (x,y) pixel list for render_scene's overlay (projectile / flash)."""
+    return [(ox + x, oy + y) for y, row in enumerate(bm)
+            for x, c in enumerate(row) if c == "1"]
 
 GAMES = [
     ("hp",      "HP Drill", "Effort", "best of 3 — build Effort"),
@@ -68,6 +83,8 @@ class TrainingPanel:
         self.target = 0
         self._strike_pose = None   # transient hit(6)/miss(9) pose during a drill
         self._strike_t = 0
+        self.strike_step = 0       # the post-drill strike sequence clock (fire -> flash -> aftermath)
+        self._strong = False       # a full-success drill -> strong attack/hit (doubled projectile feel)
 
     @property
     def gkey(self):
@@ -108,18 +125,29 @@ class TrainingPanel:
 
     def _finish(self, hits, power, attribute, game):
         self.success = hits >= 2
+        self._strong = hits >= 3
         self.result = self.pet.apply_training(hits, power, attribute, game=game)
-        self.phase = "done"
-        self.flash = self.result + "   (SPACE)"
-        # DVPet: a full-success drill upgrades to the strong attack/hit SFX; a normal
-        # success uses the plain hit; a fail is the cancel thud.
-        self.sfx = ("strongHit" if hits >= 3 else "trainhit") if self.success else "cancel"
+        # DVPet doesn't reveal the result yet -- it plays the strike sequence first
+        # (the pet fires at the bag, it breaks or the pet recoils), THEN shows the score.
+        self.phase = "strike"
+        self.strike_step = 0
+        self.flash = ""
 
     # ---- anim (called each fast tick) ----
     def anim(self):
         self.frame_i += 1
         if self._strike_t > 0:
             self._strike_t -= 1
+        if self.phase == "strike":
+            self.strike_step += 1
+            if self.strike_step == 1:                       # launch: strong vs normal attack sting
+                self.sfx = "strongAttack" if self._strong else "attack"
+            elif self.strike_step == STRIKE_FIRE + 1:       # impact: strong/normal hit, or the miss thud
+                self.sfx = ("strongHit" if self._strong else "attackHit") if self.success else "cancel"
+            if self.strike_step >= STRIKE_TOTAL:            # sequence done -> reveal the score
+                self.phase = "done"
+                self.flash = self.result + "   (SPACE)"
+            return
         if self.phase != "play":
             return
         gk = self.gkey
@@ -157,6 +185,8 @@ class TrainingPanel:
 
     # ---- key ----
     def key(self, k):
+        if self.phase == "strike":
+            return None                  # the strike plays out uninterrupted (DVPet has no skip)
         if self.phase == "menu":
             if k in ("up", "k"):
                 self.gi = (self.gi - 1) % len(GAMES)
@@ -255,6 +285,8 @@ class TrainingPanel:
         rec = data.load_sprites()[1][self.pet.num]
         if self.phase == "menu":
             return self._render_menu()
+        if self.phase == "strike":
+            return self._render_strike(rec)
         idx = self._sprite_idx()
         if idx >= len(rec["frames"]) or not rec["frames"][idx]:
             idx = 0
@@ -289,6 +321,52 @@ class TrainingPanel:
             out.append_text(menu.row(f"{label:<9} {tag}", i == self.gi))
         out.append_text(menu.footer("↑↓ pick   ENTER start   ESC out"))
         return out
+
+    def _render_strike(self, rec):
+        """DVPet attackDefault -> hitAnim -> aftermathDefault: the pet (right, facing
+        left) fires a projectile at the opponent (left); it flashes on impact; then the
+        bag shows broken on success, or the pet recoils to the hurt pose (10) on a fail."""
+        s = self.strike_step
+        fr = rec["frames"]
+        first = next((f for f in fr if f), fr[0])
+        E = data.load_effects()
+        bgimg = self.pet.background()
+        on = SIL_NIGHT if self.pet.day_phase == "night" else (SIL_DAY if bgimg else LCD_ON)
+        px_h = STRIKE_ROWS * 2
+        after = s > STRIKE_FIRE + STRIKE_FLASH
+        pose = (0 if self.success else 10) if after else 6      # strike(6) -> idle(0) / recoil(10)
+        pet_rows = (fr[pose] if pose < len(fr) and fr[pose] else first)
+        pw = max(len(r) for r in pet_rows)
+        pet_x = COLS - pw - 2                                    # pet on the right, faces left
+        # opponent on the left: the green pop-up target for Data, the punching bag otherwise
+        if self.gkey == "data":
+            bag = E.get("train_green", [None])[0]
+        else:
+            broken = after and self.success
+            bag = E.get("punching_bag_broken" if broken else "punching_bag", [None])[0]
+        bag_x = 2
+        bag_w = max((len(r) for r in bag), default=6) if bag else 6
+        placements = [(pet_rows, pet_x, False)]
+        if bag:
+            placements.append((bag, bag_x, False))
+        overlay = []
+        if s <= STRIKE_FIRE:                                    # the projectile crosses to the bag
+            orb = E.get("attack") or []
+            of = orb[min((s - 1) // 2, len(orb) - 1)] if orb else None
+            if of:
+                ow = max(len(r) for r in of)
+                x0, x1 = pet_x - ow, bag_x + bag_w              # leaves the pet's left edge -> the bag
+                ox = int(x0 + (x1 - x0) * (s / STRIKE_FIRE))
+                overlay += _blit(of, ox, px_h - 12)             # mid-body height
+        elif not after:                                        # impact flash strobes on the bag
+            fl = (E.get("flash") or E.get("hit") or [None])[0]
+            if fl and (s // 2) % 2 == 0:
+                overlay += _blit(fl, bag_x, px_h - 14)
+        scene = render_scene(placements, COLS, STRIKE_ROWS, on, LCD_BG, overlay=overlay, bgimg=bgimg)
+        scene.append("\n")
+        scene.append_text(menu.note(self.result if after else "..."))
+        scene.append_text(menu.footer(""))
+        return scene
 
     def _render_hud(self):
         # One compact gauge line; round/score/power live in the side panel
