@@ -96,10 +96,19 @@ for name, fn in {"grave": "death.png", "sun": "noon.png", "moon": "night.png"}.i
 # and the green pop-up target (data drill).  DVPet vaccinePrePrep/dataPrePrep opponents
 # -- the thing the pet actually fires its attack at during a drill's strike sequence.
 for name, fn in {"punching_bag": "punchingBag.png", "punching_bag_broken": "punchingBagBroken.png",
-                 "train_green": "trainGreen.png", "train_green_up": "trainGreenUp.png"}.items():
+                 "train_green": "trainGreen.png", "train_green_up": "trainGreenUp.png",
+                 "train_shield": "trainShield.png"}.items():       # data-drill shield
     c = crop(native_mask(fn))
     if c is not None:
         effects[name] = [to_rows(c)]
+
+# HP-drill opponent: one dummy from the battleBags.png sheet (3x2 grid; top-left cell)
+_bb = np.array(Image.open(os.path.join(RES, "battleBags.png")).convert("RGBA"))[0:72, 0:40]
+_bbon = ((_bb[:, :, 3] > 60) & (np.abs(_bb[:, :, :3].astype(int) - np.array(CYAN)).sum(axis=2) > 60))
+_h, _w = _bbon.shape[0] // F, _bbon.shape[1] // F
+_bbc = crop(_bbon[:_h * F, :_w * F].reshape(_h, F, _w, F).mean(axis=(1, 3)) > 0.4)
+if _bbc is not None:
+    effects["battle_bag"] = [to_rows(_bbc)]
 
 # per-attribute projectiles: DVPet's real attack sprites (proven via SpriteAnim
 # initAttackButtons: Vaccine=red.png, Data=green.png, Virus=yellow.png -- distinct
