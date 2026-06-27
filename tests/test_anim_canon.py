@@ -44,3 +44,21 @@ def test_mood_pose_indices_are_valid_sprite_frames():
     # every pose mood_pose can return must be a real frame on the 11-frame strip
     for p in (10, 9, 2, 4, 6, 5):
         assert 0 <= p <= 10
+
+
+def test_play_is_the_jump_pair_not_the_cheer_pair():
+    # DVPet jumping()/playing() bounces poses 1<->5; cheer bounces 5<->7.  Play must
+    # render its own hop, not reuse the cheer animation.
+    from tuipet import app
+    assert data.ROLES["play"] == [1, 5]
+    assert app.PLAY_HOP > 0 and app.PLAY_HOP_H > 0
+
+
+def test_render_yshift_lifts_the_sprite():
+    """yshift raises the sprite (the play hop); enough yshift lifts it off the top."""
+    from tuipet.render import render_screen
+    sprite = ["1111", "1111"]
+    empty = render_screen([], 8, 6)
+    ground = render_screen(sprite, 8, 6)
+    assert ground.spans != empty.spans                          # a grounded sprite is visible
+    assert render_screen(sprite, 8, 6, yshift=99).spans == empty.spans   # hopped clean off-screen

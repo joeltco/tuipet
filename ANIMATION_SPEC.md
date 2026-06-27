@@ -193,6 +193,15 @@ APPLIED:
 4. ✅ Poop size-keyed sounds (`smallPoop`/`poop`/`largePoop` by new pile count) + net-zero
    sick shuffle (`sick_frame` now holds −1/0/+1/0 across the ranges, summing to zero).
 5. ✅ Training strong-hit SFX: a full-success drill (`hits>=3`) plays `strongHit` (`training.py`).
+6. ✅ Play action: was rendering the **cheer** fx (poses 5↔7). DVPet has a dedicated play
+   animation — `jumping()` (L17308) / `playing()` (L16914), poses **1↔5** = `ROLES["play"]`.
+   Added a real "play" hop fx: the pet leaves the ground (pose 5 up / 1 land) on a triangle
+   `yshift`, `happy` chirp at each hop's launch (`app.py` + a zero-default `yshift` on
+   `render_screen`). `ROLES["play"]=[1,5]` was correct but had been **dead code**.
+
+   Canon `playing()` (toy bounce): char 1↔5 every 0.6s ×3, `_playingInteract` on each up-beat,
+   3.6s. Canon `jumping()` (hop): pose 5 up / 1 down, 6px/tick, `_happy` per hop. tuipet uses
+   the hop (visually distinct from cheer) with `happy.wav` (the only matching ripped asset).
 
 All asset files (`lastBite.wav`, `smallPoop/largePoop.wav`, `strongHit.wav`, …) already
 shipped in `data/sounds/` — they were ripped but unwired. Tests: `tests/test_anim_canon.py`.

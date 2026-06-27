@@ -184,6 +184,8 @@ def _blit(bm, ox, oy):
 
 
 COND_W = COND_H = 7                                # state.png cell size (DVPet 7x7 cells)
+PLAY_HOP = 12                                      # DVPet jumping(): ticks per up+down hop
+PLAY_HOP_H = 6                                     # apex height in px (LCD is 24px tall)
 COND_PITCH = COND_H + 1
 # Status sprites disabled for now (Joel): the post-cure medicine badge and the
 # misbehave/discipline "light bulb". Cosmetic-only; remove from this set to re-enable.
@@ -392,7 +394,7 @@ class Screen(Static):
 
     # ---- care-action animations (DVPet SpriteAnim eat/clean/cheer) -----------
     def start_fx(self, kind, icon=None, poop=0, old_num=None, pet=None):
-        steps = {"eat": 35, "cheer": 31, "jeer": 31, "clean": 22, "spit": 11, "evolve": 18, "dying": 18, "dna_charge": 16}.get(kind, 12)
+        steps = {"eat": 35, "cheer": 31, "jeer": 31, "clean": 22, "spit": 11, "evolve": 18, "dying": 18, "dna_charge": 16, "play": 37}.get(kind, 12)
         self.fx = {"kind": kind, "step": 0, "steps": steps, "icon": icon, "poop": poop, "old_num": old_num}
         if kind == "eat":
             # DVPet eat(): each chew beat is scaled by pow(N, mod) -- a glutton wolfs
@@ -464,6 +466,7 @@ class Screen(Static):
         rows = self._pose_rows(pet, pose, step // 2)
         overlay = _weather_overlay(pet.weather, self.frame_i, SCREEN_COLS, px_h)
         xshift = 0
+        yshift = 0
         if fx["kind"] == "eat":
             # DVPet eat(): 24px food descends in 4 stages (beats 0/2/4/6) toward the
             # mouth, then a chew triad alternates open-mouth(+8)/chew(+7) at beats
@@ -521,6 +524,15 @@ class Screen(Static):
                     # DVPet cheer(): the pet stays CENTRED and the emote rides its right
                     # edge (adjustEmotionLabel) -- not pinned to the far corner.
                     overlay += _blit(hf, (SCREEN_COLS - SPRITE_W) // 2 + SPRITE_W, 1)
+        elif fx["kind"] == "play":
+            # DVPet jumping() (SpriteAnim 17308): the pet bounces with joy -- hops UP on
+            # the excited pose (5) and lands on the neutral pose (1), a happy chirp at the
+            # top of each hop.  Distinct from cheer (which bounces in place on 5/7 with an
+            # emote bubble) -- here the body actually leaves the ground.
+            ph = step % PLAY_HOP
+            up = ph < PLAY_HOP // 2
+            rows = self._pose_rows_idx(pet, 5 if up else 1)
+            yshift = int(PLAY_HOP_H * (1 - abs(ph / (PLAY_HOP / 2) - 1)))   # triangle: 0 -> apex -> 0
         elif fx["kind"] == "jeer":
             # DVPet jeer(): pose alternates down(+10)/up(+9) every 6 intervals with an
             # "unhappy" emote bubble; ends ~beat 30 (the scold reaction).
@@ -578,7 +590,7 @@ class Screen(Static):
                 df = dye[(step // 5) % len(dye)]
                 overlay += _blit(df, (SCREEN_COLS - SPRITE_W) // 2 + SPRITE_W + xshift, 1)
         self.update(render_screen(rows, SCREEN_COLS, SCREEN_ROWS, on, bg,
-                                  xshift=xshift, overlay=overlay, bgimg=bgimg,
+                                  xshift=xshift, yshift=yshift, overlay=overlay, bgimg=bgimg,
                                   mirror=(fx["kind"] == "dying")))
 
 
@@ -1242,6 +1254,8 @@ class TuiPetApp(App):
                     if snd:                    # _eat on bites 1-2, _lastBite on the final chew
                         self.beep(snd, bell=False)
                     self._status_eat()
+                elif sc.fx["kind"] == "play" and sc.fx["step"] % PLAY_HOP == 1:
+                    self.beep("happy", bell=False)   # DVPet jumping(): a chirp at each hop's launch
             elif self._dying_fx:               # dying beat finished -> memorial
                 self._dying_fx = False
                 self._open_mode(deathscreen.DeathPanel(self.pet), self._after_death)
@@ -1505,8 +1519,7 @@ class TuiPetApp(App):
             return
         msg = self.pet.play()
         if self.pet.anim == "play":
-            self.screen_w.start_fx("cheer")
-            self.beep("happy", bell=False)
+            self.screen_w.start_fx("play")       # the DVPet jumping() hop; SFX fires per-hop in the fx loop
         self._do(msg)
     def action_clean(self):
         if self.screen_w.fx is not None:        # let the current care animation finish before acting again
