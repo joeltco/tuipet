@@ -58,7 +58,7 @@ class AdventurePanel:
             return None
         if k == "space" and not self.adv.done:
             self.travelling = not self.travelling
-        elif k == "escape":
+        elif k in ("escape", "a"):          # a (the opening key) also closes, like shop/habitat
             return ("done", None)
         return None
 

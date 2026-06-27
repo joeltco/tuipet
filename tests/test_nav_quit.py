@@ -77,3 +77,24 @@ def test_eggselect_captures_text_only_while_entering_a_code():
     assert p.captures_text is False           # browsing eggs -> q quits
     p.entering = True
     assert p.captures_text is True            # typing a secret code -> q is text
+
+
+# --- toggle-close consistency: a screen's opening key also closes it -----------
+
+def test_adventure_closes_with_its_opening_key():
+    from tuipet import adventurescreen
+    p = adventurescreen.AdventurePanel.__new__(adventurescreen.AdventurePanel)
+    p.sub = None
+    p.adv = type("A", (), {"done": False})()
+    p.travelling = False
+    assert p.key("a") == ("done", None)       # 'a' (opened it) also closes it
+
+
+def test_tournament_closes_with_its_opening_key_in_all_phases():
+    from tuipet import tournamentscreen
+    p = tournamentscreen.TournamentPanel.__new__(tournamentscreen.TournamentPanel)
+    p.sub = None
+    p.phase = "select"
+    p.trophies = []
+    p.cursor = 0
+    assert p.key("u") == ("done", None)       # 'u' closes the cup, not just ESC
