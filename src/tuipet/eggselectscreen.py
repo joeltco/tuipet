@@ -69,6 +69,10 @@ class EggSelectPanel:
     def _flash(self, text):
         self.msg, self.msg_t = text, 22
 
+    @property
+    def captures_text(self):
+        return self.entering           # only swallow q-as-text while typing a secret code
+
     def key(self, k):
         if self.entering:
             return self._key_code(k)

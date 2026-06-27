@@ -101,7 +101,7 @@ class DNAPanel:
                 self.phase = "bet"
                 self.bet = max(1, min(MAX_DNA_INVENTORY, self.amount))
             self.sfx = "select"
-        elif k in ("escape", "x", "q"):
+        elif k in ("escape", "x"):
             return ("done", None)
         return None
 
@@ -123,7 +123,7 @@ class DNAPanel:
             elif p.apply_dna(f, amt):
                 self.sfx = "compatible"
                 return ("done", ("charged", f, amt))   # close -> DNA_Feeding absorb fx
-        elif k in ("escape", "q"):
+        elif k == "escape":
             self.phase = "home"
         return None
 
@@ -132,7 +132,7 @@ class DNAPanel:
             self.cursor = (self.cursor - 1) % len(self.fields)
         elif k in ("down", "j"):
             self.cursor = (self.cursor + 1) % len(self.fields)
-        elif k in ("escape", "q", "enter"):
+        elif k in ("escape", "enter"):
             self.phase = "home"
         return None
 
@@ -142,7 +142,7 @@ class DNAPanel:
             self.req_i = (self.req_i - 1) % n
         elif k in ("down", "j"):
             self.req_i = (self.req_i + 1) % n
-        elif k in ("escape", "q", "enter"):
+        elif k in ("escape", "enter"):
             self.phase = "home"
         return None
 
@@ -160,7 +160,7 @@ class DNAPanel:
                 self.last = "Not enough bits to wager."
                 self.sfx = "error"
                 self.phase = "home"
-        elif k in ("escape", "q"):
+        elif k == "escape":
             self.phase = "home"
         return None
 

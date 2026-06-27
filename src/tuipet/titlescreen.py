@@ -31,7 +31,7 @@ WORD = _wordmark("TUIPET")
 
 
 class TitlePanel:
-    """Shows a bobbing mascot + the TUIPET wordmark; any key starts the game."""
+    """Shows a bobbing mascot + the TUIPET wordmark; any key starts the game (q quits)."""
 
     def __init__(self):
         _, by = data.load_sprites()
@@ -45,6 +45,8 @@ class TitlePanel:
         self.frame_i += 1
 
     def key(self, k):
+        if k == "q":
+            return ("quit", None)      # q quits the app rather than starting the game
         return ("done", None)
 
     def text(self):

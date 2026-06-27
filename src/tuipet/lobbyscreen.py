@@ -71,6 +71,7 @@ class AccountPanel:
         self.field = "pw" if name else "name"
         self.note = note
         self.sfx = None
+        self.captures_text = True       # typing a name/password — never treat q as quit
 
     def key(self, k):
         if k == "escape":
@@ -117,6 +118,7 @@ class LobbyPanel:
         self.on_connect = on_connect
         self.client = None
         self.state = None
+        self.captures_text = True      # chat input — q is a typed character, never quit
         self.entry = None              # AccountPanel while logging in
         self._last_name = name or ""
         self.buf = ""
