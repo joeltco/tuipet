@@ -19,6 +19,7 @@ TURN_CHANCE = 0.06 # stepFrame flips travelRight now and then so the pet wanders
 WALK_BEAT = 5      # idleWalk advances at _frame 0 and _frame 5 -> a step every 5 intervals
 SLEEP_BEAT = 10    # idleSleep: pose 2 at 0, pose 3 at 10, back at 20 (period 20)
 SICK_PERIOD = 50   # idleUnwell: collapse held, tiny shuffle 30..45, weary flash at 50
+IDLE_EXPR_CHANCE = 0.30   # stepFrame: a fraction of idle steps show a mood pose, not the walk toggle
 
 
 def idle_hold(restless):
@@ -46,22 +47,49 @@ def sleep_zzz_level(frame, levels):
 
 def sick_frame(frame):
     """idleUnwell: returns (sprite_index, dx_px).  Collapse pose (10) dominates the
-    50-interval cycle with a 1px shuffle at 30/35/40/45; the weary pose (9) only
-    flashes on the reset beat."""
+    50-interval cycle; the weary pose (9) only flashes on the reset beat.  DVPet's
+    shuffle is moveLeft1@30, moveRight1@35, moveRight1@40, moveLeft1@45 -- which is
+    net-zero: the body sits 1px left over [30,35), back to centre [35,40), 1px right
+    over [40,45), centre after.  (The pose offset is HELD across each range, not a
+    one-frame blip.)"""
     f = frame % SICK_PERIOD
     if f == 49:
         idx = 9                            # brief weary flash before the reset
     else:
         idx = 10                           # collapsed the rest of the time
-    dx = {30: -1, 35: 1, 40: 2, 45: 1}.get(f, 0)
+    if 30 <= f < 35:
+        dx = -1
+    elif 40 <= f < 45:
+        dx = 1
+    else:
+        dx = 0
     return idx, dx
 
 
+def mood_pose(pet):
+    """DVPet stepFrame substitutes a `checkMoodFrame` expression pose for the plain
+    walk toggle on a fraction of idle steps, so a resting pet *reads* its state:
+    weary when tired/spent, sour when unhappy, bright when content.  Returns a
+    sprite index, or None to keep the neutral walk toggle.
+
+    Mapping condensed from checkMoodFrame's offset table: tired/no-energy -> 9/10/2,
+    unhappy -> 4/6, happy & spirited -> 5, otherwise neutral (None)."""
+    if pet.energy <= 0 or pet.is_fatigued():
+        return random.choice((10, 9, 2))      # weary / collapsed / droop
+    if pet.mood < 0:
+        return random.choice((4, 6))          # sour faces
+    if pet.mood > 0 and pet.enthusiasm >= 0:
+        return 5                              # bright/excited
+    return None                               # neutral -> ordinary walk pose
+
+
 class Roamer:
-    """Full-width pacing with edge-wrap, reproducing SpriteAnim.idleWalk: the pet
-    steps STEP_PX every WALK_BEAT intervals, toggling its two walk poses, and wraps
-    around the screen edges (walks off one side, reappears on the other).  A filth
-    pile on the floor is a hard left wall it turns at instead of wrapping through."""
+    """Full-width pacing, after SpriteAnim.idleWalk: the pet steps STEP_PX every
+    WALK_BEAT intervals, toggling its two walk poses.  DVPet's idleWalk *wraps*
+    around the screen edges; on tuipet's tiny LCD we instead *turn around* at the
+    walls (so the pet never vanishes) and occasionally about-face mid-room
+    (TURN_CHANCE) so it wanders rather than marches.  A filth pile on the floor is
+    a hard left wall it turns at."""
 
     def __init__(self, x, cols, sprite_w, face=1):
         self.x = float(x)

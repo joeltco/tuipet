@@ -6,6 +6,7 @@ from __future__ import annotations
 # cube-color #5f5f5f -- flattening the ground into a featureless gray block. Modern
 # terminals (Termux, etc.) support truecolor; advertise it unless the user set otherwise.
 import os as _os
+import random
 if not _os.environ.get("COLORTERM"):
     _os.environ["COLORTERM"] = "truecolor"
 from textual.app import App, ComposeResult
@@ -275,6 +276,7 @@ class Screen(Static):
         self.anim_key = None  # last anim state, so cadences restart on a state change
         self.roamer = anim.Roamer(int(SCREEN_COLS * 0.28), SCREEN_COLS, SPRITE_W)  # left-of-centre anchor
         self.fx = None        # active care-action animation
+        self._idle_expr = None    # DVPet stepFrame mood-pose held for the current idle step (None = walk toggle)
 
     def paint(self, pet: Pet):
         if self.fx:
@@ -326,9 +328,11 @@ class Screen(Static):
             rows = (_fr[si] if si < len(_fr) else None) or first
             xshift = dx
         elif pet.anim in ("idle", "walk") and pet.num != -1:
-            # full-width roam with edge-wrap (DVPet idleWalk); pose follows the roamer's
-            # step and a filth pile is a left wall it turns at (filthLabel walk bound).
-            idx = frames[self.roamer.pose % len(frames)]
+            # full-width roam (DVPet idleWalk); pose follows the roamer's step, and a
+            # filth pile is a left wall it turns at (filthLabel walk bound).  On some
+            # steps DVPet's stepFrame shows a mood pose instead of the walk toggle.
+            expr = self._idle_expr if pet.anim == "idle" else None
+            idx = expr if expr is not None else frames[self.roamer.pose % len(frames)]
             rows = (_fr[idx] if idx < len(_fr) else None) or first
             xshift, mirror = self.roamer.xshift, self.roamer.mirror
         else:
@@ -378,7 +382,13 @@ class Screen(Static):
             cond = (pet.is_injured() or pet.is_fatigued() or pet.has_vitamin()
                     or pet.has_medicine() or pet.has_bandage())
             right_bound = (SCREEN_COLS - COND_W - 1 - SPRITE_W) if cond else None   # clear the right-edge column
+            prev_pose = self.roamer.pose
             self.roamer.step(left_bound=poop_right, right_bound=right_bound)
+            if self.roamer.pose != prev_pose:                    # a fresh step landed (DVPet stepFrame):
+                self._idle_expr = (anim.mood_pose(pet)           # sometimes show a mood pose instead of
+                                   if random.random() < anim.IDLE_EXPR_CHANCE else None)  # the plain walk toggle
+        else:
+            self._idle_expr = None                               # any non-idle state clears the held expression
 
     # ---- care-action animations (DVPet SpriteAnim eat/clean/cheer) -----------
     def start_fx(self, kind, icon=None, poop=0, old_num=None, pet=None):
@@ -393,7 +403,10 @@ class Screen(Static):
             bite = 9 if (pet is not None and getattr(pet, "_last_meal_disliked", False)) else 7
             beats = [int(b ** mod) for b in (10, 14, 18, 22, 26, 30)]
             self.fx["chew"] = {b: (8 if i % 2 == 0 else bite) for i, b in enumerate(beats)}
-            self.fx["food_beats"] = (beats[1], beats[3], beats[5])
+            fb = (beats[1], beats[3], beats[5])
+            self.fx["food_beats"] = fb
+            # DVPet eat(): _eat on the first two bites, _lastBite on the third (the chew beats).
+            self.fx["bite_snds"] = {fb[0]: "eat", fb[1]: "eat", fb[2]: "lastBite"}
             self.fx["steps"] = int(34 ** mod) + 1
 
     def advance_fx(self):
@@ -1225,6 +1238,9 @@ class TuiPetApp(App):
             sc.paint(self.pet)
             if sc.fx:
                 if sc.fx["kind"] == "eat":     # live DVPet feeding readout (calorie + P/M/V)
+                    snd = sc.fx.get("bite_snds", {}).get(sc.fx["step"])
+                    if snd:                    # _eat on bites 1-2, _lastBite on the final chew
+                        self.beep(snd, bell=False)
                     self._status_eat()
             elif self._dying_fx:               # dying beat finished -> memorial
                 self._dying_fx = False
@@ -1262,7 +1278,10 @@ class TuiPetApp(App):
                 self.flash(f"[b]{p.name}![/] evolved to {p.stage}!")
                 self.screen_w.start_fx("evolve", old_num=prev[0])
         elif p.poop > poop0:
-            self.beep("poop", bell=False)
+            # DVPet playPoopSound is size-keyed: small / normal / large.  Map the new
+            # pile count -> first drop is small, a big backup (>=3) is large.
+            poop_snd = "smallPoop" if p.poop == 1 else ("largePoop" if p.poop >= 3 else "poop")
+            self.beep(poop_snd, bell=False)
         # care-need call (classic V-pet nag): alert on onset, then every ~90s
         needs = (not p.dead and p.stage != "Egg" and not p.asleep and not p.call_paused()
                  and (p.hunger == 0 or p.sick or p.poop >= 3 or p.energy <= 0
@@ -1352,8 +1371,7 @@ class TuiPetApp(App):
             return
         msg = self.pet.feed()
         if self.pet.anim == "eat":
-            self.screen_w.start_fx("eat", "f:0", pet=self.pet)
-            self.beep("eat", bell=False)
+            self.screen_w.start_fx("eat", "f:0", pet=self.pet)   # SFX now fires per-bite in the fx loop
         elif "too full" in msg:
             self.screen_w.start_fx("spit", "f:0")
             self.beep("refuse", bell=False)
