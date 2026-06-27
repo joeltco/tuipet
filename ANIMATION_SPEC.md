@@ -211,16 +211,25 @@ APPLIED:
 All asset files (`lastBite.wav`, `smallPoop/largePoop.wav`, `strongHit.wav`, …) already
 shipped in `data/sounds/` — they were ripped but unwired. Tests: `tests/test_anim_canon.py`.
 
-8. ✅ **Training mini-battle** (the big one — `attackDefault`→`hitAnim`→`aftermathDefault`).
-   Training was an abstract UI minigame: pet bobs in place, flashes a hit/miss pose, no opponent.
-   Now, after the skill drill, a **strike phase** plays: the pet (right, facing left) winds to
-   pose 6 and **fires a projectile** at the **punching bag** (vaccine/virus/hp) or **green target**
-   (data) on the left; the impact **flashes**; then the **aftermath** — bag shows **broken**
-   (`punchingBagBroken`) on success, pet **recoils to pose 10** on a fail. Launch/impact use the
-   strong-vs-normal `attack`/`strongAttack` + `attackHit`/`strongHit` sounds (fix #5/#7).
+8. ✅ **Training rebuilt to the real DVPet state machine** (the big one). First pass bolted a
+   strike onto tuipet's abstract minigames — but the *drills themselves* diverged. Traced the
+   actual flow: `*_Training` (`preTraining`→`drawVaccinePre`/`drawDataPre`/`drawVirusPre`/
+   `drawHPTraining`) → `Attacking` (`attackDefault`/`attackGreen`) → `Attack_Contact` (`hitAnim`)
+   → `Attack_Aftermath` (`aftermathDefault`). Corrected structure:
+   - **Opponent present the whole drill** (not conjured for the strike): punching bag, or the
+     green pop-up target for Data.
+   - **HP** = guess which of 3 attributes the hidden bag is, best of 3 (pet RIGHT, bag LEFT, 3
+     guess buttons) — was a hit-the-zone slider.
+   - **Vaccine / Virus** = pet HIDDEN during the drill (`_character.setVisible(false)`), bag on
+     screen; pet appears for the strike — was pet-bobbing-in-place.
+   - **Data** = pet LEFT bobs 4↔1, green target RIGHT pops up/down; shoot on the UP frame; the
+     strike fires RIGHT (`attackGreen`) — was a slot-match ring.
+   - Strike (`attackDefault`/`attackGreen`→`hitAnim`→aftermath) flows from the same sides the
+     drill used: fire → impact flash → bag **broken** (success) / pet **recoil pose 10** (fail),
+     with strong-vs-normal `attack`/`strongAttack` + `attackHit`/`strongHit` (fix #5/#7).
    Extracted `punching_bag`/`punching_bag_broken`/`train_green`/`train_green_up` into
-   `effects.json.gz` (the projectile + flash art was already there); reused `render_scene` +
-   battle's composition approach. `training.py` strike phase + `tests/test_training_strike.py`.
+   `effects.json.gz` (projectile + flash art was already there). `training.py` +
+   `tests/test_training_strike.py` (strike + drill mechanics) + `tests/test_training.py` (gains).
 
 DEFERRED (genuine features, not fidelity fixes — would change deliberate tuipet design):
 - **Run mode (travelSpeed 2) + sick walk/run** — tuipet has no world-travel-speed model; the
