@@ -51,14 +51,14 @@ class TournamentPanel:
             elif k in ("enter", "space"):
                 self.tourney = Tournament(self.pet, self.trophies[self.cursor])
                 self.phase = "bracket"
-            elif k == "escape":
+            elif k in ("escape", "u"):          # u (the opening key) also closes
                 return ("done", None)
             return None
         # bracket
         t = self.tourney
         if k in ("space", "enter") and not (t.over or self.sub):
             self.sub = BattlePanel(self.pet, t.current_opponent())
-        elif k == "escape":
+        elif k in ("escape", "u"):          # u (the opening key) also closes
             return ("done", t.last if t.over else None)
         return None
 
