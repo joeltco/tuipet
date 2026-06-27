@@ -59,8 +59,9 @@ def _blit(bm, ox, oy):
 
 
 def _full(frame):
+    ox = max(0, (COLS - (len(frame[0]) if frame and frame[0] else 0)) // 2)   # centre on the frame's own width
     oy = max(0, (PXH - len(frame)) // 2)
-    return [(OVX + x, oy + y) for y, row in enumerate(frame)
+    return [(ox + x, oy + y) for y, row in enumerate(frame)
             for x, c in enumerate(row) if c == "1"]
 
 

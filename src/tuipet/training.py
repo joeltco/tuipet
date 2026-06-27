@@ -20,12 +20,19 @@ the hardware (no abstract gauge with the opponent conjured up only at the end):
 The stat outcome stays in Pet.apply_training; this module is the presentation.
 """
 from __future__ import annotations
+import json
+import os
 import random
 from rich.text import Text
 from . import data
 from .render import render_scene
 from .theme import LCD_ON, LCD_BG, INK, INK_B, DIM, MID, ACCENT, SIL_DAY, SIL_NIGHT  # noqa: F401  (palette names bound for theme.apply propagation)
 from . import menu
+
+# the full-screen spiky hit burst (attackHit/attackHitFlash), shared with the battle
+# screen -- strobes outline<->filled to flash the LCD on impact (DVPet hitAnim).
+with open(os.path.join(os.path.dirname(__file__), "data", "battle_overlays.json")) as _f:
+    _EXPLODE = json.load(_f)["hit_explosion"]
 
 # DVPet config (normal difficulty)
 VACCINE_HITS_MIN = 20
@@ -444,10 +451,11 @@ class TrainingPanel:
                     src = of
                 ox = int(x0 + (x1 - x0) * (s / STRIKE_FIRE))
                 overlay += _blit(src, ox, fire_y)
-        elif not after:                                        # impact flash strobes on the opponent
-            fl = (E.get("flash") or E.get("hit") or [None])[0]
-            if fl and (s // 2) % 2 == 0:
-                overlay += _blit(fl, opp_x, px_h - 14)
+        elif not after:                                        # impact: the full hit-burst strobes over the LCD
+            ex = _EXPLODE[((s - STRIKE_FIRE - 1) // 2) % len(_EXPLODE)]
+            ox = max(0, (COLS - len(ex[0])) // 2)
+            oy = max(0, (px_h - len(ex)) // 2)
+            overlay += _blit(ex, ox, oy)
         scene = render_scene(placements, COLS, ARENA_ROWS, on, LCD_BG, overlay=overlay, bgimg=bgimg)
         scene.append("\n")
         scene.append_text(menu.note(self.result if after else "..."))
