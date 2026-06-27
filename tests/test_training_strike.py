@@ -69,3 +69,50 @@ def test_strike_opponent_art_exists():
     e = data.load_effects()
     for k in ("punching_bag", "punching_bag_broken", "train_green", "attack", "flash"):
         assert k in e and e[k], f"missing strike asset: {k}"
+
+
+# ---- DVPet-faithful drill mechanics (the rebuild) --------------------------
+
+def test_hp_drill_is_guess_the_hidden_attribute():
+    """HP = pick which of 3 attributes the hidden bag is, best of 3 -> Effort."""
+    panel = _panel("hp")
+    panel._start_game()
+    assert panel.phase == "play"
+    for _ in range(T.HP_ROUNDS):                       # guess correctly every round
+        assert panel.phase in ("play", "strike")
+        if panel.phase != "play":
+            break
+        panel.hp_pick = panel.hp_target               # know the answer -> pick it
+        panel.key("space")
+    # three correct guesses -> a strong, successful drill
+    assert panel.rounds_won == T.HP_ROUNDS
+    assert panel.phase == "strike" and panel.success and panel._strong
+
+
+def test_hp_timeout_counts_as_wrong():
+    panel = _panel("hp")
+    panel._start_game()
+    for _ in range(T.HP_ROUNDS * (T.HP_ROUND_LEN + 1)):
+        if panel.phase != "play":
+            break
+        panel.anim()                                   # never guess -> every round times out
+    assert panel.rounds_won == 0 and not panel.success
+
+
+def test_data_drill_only_scores_on_the_up_frame():
+    panel = _panel("data")
+    panel._start_game()
+    panel.tgt_up = True
+    panel.key("space")                                 # shot while UP -> a hit
+    assert panel.hits == 1
+    panel.tgt_up = False
+    panel.key("space")                                 # shot while down -> a miss
+    assert panel.hits == 1                             # unchanged
+
+
+def test_vaccine_drill_counts_mashes():
+    panel = _panel("vaccine")
+    panel._start_game()
+    for _ in range(5):
+        panel.key("space")
+    assert panel.taps == 5
