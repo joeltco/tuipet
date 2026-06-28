@@ -400,10 +400,12 @@ class TrainingPanel:
         return self._render_play(rec)
 
     def _scene_palette(self):
-        # dot-matrix hybrid: every training scene (drills AND the strike) plays out on a
-        # clean flat LCD -- no downsampled habitat photo to clash with the crisp sprites,
-        # matching the HP/virus drills.
-        return LCD_ON, None
+        # the habitat background IS part of DVPet's layout -- show it during the strike (and
+        # the vaccine/data drills).  The crisp sprites/explosion read fine over it now; only
+        # the HP/virus minigames stay on a flat LCD (their own override) for readability.
+        bgimg = self.pet.background()
+        on = SIL_NIGHT if self.pet.day_phase == "night" else (SIL_DAY if bgimg else LCD_ON)
+        return on, bgimg
 
     def _render_play(self, rec):
         """Faithful to the decompiled DVPet drills.  The LCD is 105x60 logical px and the
