@@ -528,40 +528,37 @@ class TrainingPanel:
         return scene
 
     def _render_menu(self):
-        """DVPet drawTrainingSelect: a diamond of the attribute symbols around the
-        Digimon -- ● Vaccine top, ■ Data left, ▲ Virus right, HP (+) bottom."""
-        on, bgimg = self._scene_palette()
-        px_h = ARENA_ROWS * 2
-        rec = data.load_sprites()[1][self.pet.num]
-        pet = self._frame(rec, 0)
-        pw = max(len(r) for r in pet)
-        placements = [(pet, COLS - pw - 2, False)]
-        overlay = []
-        cx = (COLS - pw - 4) // 2                       # centre of the diamond (left of the pet)
-        # (gi, glyph, x, y) -- the four spokes of the diamond
-        spokes = [
-            (1, _ATTR_SHAPES[0], cx - 4, 0),            # ● Vaccine, top
-            (2, _ATTR_SHAPES[1], cx - 13, px_h // 2 - 4),   # ■ Data, left
-            (3, _ATTR_SHAPES[2], cx + 5, px_h // 2 - 4),    # ▲ Virus, right
-            (0, _HP_GLYPH, cx - 4, px_h - 11),          # + HP, bottom
-        ]
-        for gi, glyph, gx, gy in spokes:
-            overlay += _blit(glyph, gx, gy)
-            if gi == self.gi:                           # cursor box around the selected spoke
-                gw, gh = len(glyph[0]), len(glyph)
-                overlay += [(gx - 2 + x, gy - 2 + y)
-                            for y in range(gh + 4) for x in range(gw + 4)
-                            if x in (0, gw + 3) or y in (0, gh + 3)]
-        scene = render_scene(placements, COLS, ARENA_ROWS, on, LCD_BG, overlay=overlay, bgimg=bgimg)
-        scene.append("\n")
-        sel = self.gkey
-        name = {"hp": "HP", "vaccine": "● Vaccine", "data": "■ Data", "virus": "▲ Virus"}[sel]
-        t = Text()
-        t.append(f"{name}", style=INK_B)
-        t.append(f"  {GAMES[self.gi][3]}\n", style=INK)
-        scene.append_text(t)
-        scene.append_text(menu.footer("↑●  ←■  →▲  ↓HP    ENTER start"))
-        return scene
+        """DVPet drawTrainingSelect diamond, as a CLEAN text layout (crisp glyphs, not
+        chunky pixel shapes): ● Vaccine top, ■ Data left, ▲ Virus right, ♥ HP bottom."""
+        W = 34
+        out = menu.header("TRAINING", "choose a drill")
+        out.append_text(menu.blanks(1))
+
+        def cell(gi, text):
+            sel = gi == self.gi
+            out.append(("▸" + text + "◂") if sel else (" " + text + " "),
+                       style=(f"{ACCENT} on {LCD_BG}") if sel else INK_B)
+
+        def centre(gi, text):
+            pad = (W - (len(text) + 2)) // 2
+            out.append(" " * pad, style=INK)
+            cell(gi, text)
+            out.append("\n")
+
+        centre(1, "● Vaccine")                          # top
+        out.append_text(menu.blanks(1))
+        left, right = "■ Data", "▲ Virus"               # left + right row
+        out.append("  ", style=INK)
+        cell(2, left)
+        out.append(" " * (W - 4 - (len(left) + 2) - (len(right) + 2)), style=INK)
+        cell(3, right)
+        out.append("\n")
+        out.append_text(menu.blanks(1))
+        centre(0, "♥ HP")                               # bottom
+        out.append_text(menu.blanks(1))
+        out.append_text(menu.note(GAMES[self.gi][3]))
+        out.append_text(menu.footer("↑●  ←■  →▲  ↓♥    ENTER start"))
+        return out
 
     def _powerbar(self, pos):
         m = Text()
