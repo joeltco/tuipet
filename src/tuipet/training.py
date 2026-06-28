@@ -224,15 +224,15 @@ class TrainingPanel:
         self.success = hits >= 2
         self._strong = hits >= 3
         self.result = self.pet.apply_training(hits, power, attribute, game=game)
-        if game == "hp":
-            # HP training has NO projectile strike -- each guess already flashed pose
-            # 6/9 (drawHPTrainingAttackSuccess/Fail = pose + impact, no orb).  Just
-            # reveal the Effort result.
+        if game in ("hp", "data"):
+            # No pet counter-attack: HP flashes pose 6/9 per guess; DATA is purely DEFENSIVE
+            # (DVPet attackGreen -> the CANNON shoots the pet, you just block -- the shot +
+            # impact already played out in the drill).  Reveal the result directly.
             self.phase = "done"
             self.flash = self.result + "   (SPACE)"
         else:
-            # attribute drills fire the pet's real orb at the TARGET first (a battle-style
-            # volley), THEN reveal the score.
+            # vaccine/virus fire the pet's real orb at the bag (a battle-style volley), THEN
+            # reveal the score.
             self.strike_attr = attribute
             self._build_strike()
             self.phase = "strike"
@@ -298,15 +298,16 @@ class TrainingPanel:
                 self._finish(hits, int(self.taps), "Vaccine", "vaccine")
         elif gk == "data":
             self.data_t += 1
-            if not self.locked:                             # telegraph: the green feints up/down
+            if not self.locked:                             # telegraph: the cannon's barrel feints up/down
                 if self.data_t % DATA_BOB == 0:
                     self.feint_up = not self.feint_up
-                if self.data_t >= self.data_telegraph:      # ...then the attack COMMITS high/low
+                if self.data_t >= self.data_telegraph:      # ...then the cannon FIRES high or low
                     self.locked = True
                     self.tgt_up = random.choice((True, False))
                     self.data_t = 0
+                    self.sfx = "attack"                     # DVPet turretShoot
                     self.flash = "block it — UP or DOWN!"
-            elif self.data_t >= self.data_window:           # window closed -> resolve the block
+            elif self.data_t >= self.data_window:           # the shot reaches the shield/pet -> resolve
                 self._data_resolve()
         else:  # virus -- DVPet drawVirusPre: the bar FILLS then snaps back to 0 and loops;
             self.pos += self.virus_speed                     # hit captures the level at that instant
@@ -434,8 +435,8 @@ class TrainingPanel:
         """The DVPet drills, rebuilt to match the real game with the real sprites:
           Vaccine: MASH the bag (bag LEFT, 'Hit!' label flashes, pet HIDDEN).
           Virus:   the power bar FILLS L->R; stop it in the zone (bar centred, pet HIDDEN).
-          Data:    the GREEN target attacks HIGH/LOW; raise the matching shield (green LEFT,
-                   two shield slots in front of the pet RIGHT).
+          Data:    a FIXED cannon (left) fires a shot HIGH/LOW at the pet; raise the matching
+                   shield (two slots in front of the pet RIGHT) to block it.  Defensive.
           HP:      read the dummy's attribute, pick the matching icon (dummy LEFT, icons MID,
                    pet RIGHT) -- on a flat LCD."""
         gk = self.gkey
@@ -467,28 +468,41 @@ class TrainingPanel:
                     overlay.extend(_blit([row[:w] for row in fill], fx + 1, fy + 1))
             if int(self.pos) >= VIRUS_BAR_MIN:               # front in the zone -> the goal box lights
                 overlay += [(fx + 32 + x, fy + 1 + y) for y in range(3) for x in range(5)]
-        elif gk == "data":                                  # DVPet drawDataPre: the GREEN target feints,
-            # then attacks HIGH or LOW; raise your shield (top/bot, in front of the pet) to match.
-            up = self.tgt_up if self.locked else self.feint_up
-            green = E.get("train_green_up" if up else "train_green", [None])[0]   # REAL trainGreen target
-            sh_h = len(E.get("train_shield", [[""]])[0])
+        elif gk == "data":                                  # DVPet drawDataPre/attackGreen: the cannon is
+            # FIXED on the left -- only its BARREL sprite feints up/down -- then it FIRES a shot
+            # high or low at the pet.  Raise the shield (top/bot, in front of the pet) to the
+            # matching height to block it.  Defensive: the pet never counter-attacks.
+            aim_up = self.tgt_up if self.locked else self.feint_up
+            cannon = E.get("train_green_up" if aim_up else "train_green", [None])[0]   # barrel aim only
+            shield = E.get("train_shield", [None])[0]
+            sh_h = len(shield) if shield else 6
+            sw = len(shield[0]) if shield else 5
             top_y, bot_y = 3, ph - sh_h - 3
-            if green:                                        # green on the LEFT, at the attack height
-                gy = top_y if up else ph - len(green) - 3    # popped UP (high) / down (low)
-                overlay.extend(_blit(green, 3, gy))
+            cw = len(cannon[0]) if cannon else 10
+            if cannon:                                       # the cannon NEVER moves, just centred-left
+                overlay.extend(_blit(cannon, 1, (ph - len(cannon)) // 2))
             pf = self._frame(rec, self._pose_now(0))         # the pet on the RIGHT
             pw = max(len(r) for r in pf)
             px = COLS - pw - 1
             overlay.extend(_blit(pf, px, ph - len(pf)))
-            shield = E.get("train_shield", [None])[0]        # two stacked shield slots in front of the pet
+            sx = px - sw - 1                                 # two stacked shield slots in front of the pet
             if shield:
-                sw = len(shield[0])
-                sx = px - sw - 1
-                on_y = top_y if self.shield_up else bot_y    # the raised shield = SOLID (DVPet trainShield)
+                on_y = top_y if self.shield_up else bot_y    # the raised shield = SOLID (trainShield)
                 off_y = bot_y if self.shield_up else top_y   # the other slot = faint outline (shieldTransp)
                 overlay.extend(_blit(shield, sx, on_y))
                 overlay += [(sx + x, off_y + y) for y in range(sh_h) for x in range(sw)
                             if x in (0, sw - 1) or y in (0, sh_h - 1)]
+            if self.locked:                                  # the cannon has FIRED: the shot flies high/low
+                ad = E.get("atk_data", [None])[0]
+                if ad:                                       # a small data bullet (core of the real orb)
+                    orb = [r[2:5] for r in ad[2:5]] or ad
+                    ow, oh = len(orb[0]), len(orb)
+                    lane = (top_y if self.tgt_up else bot_y) + (sh_h - oh) // 2
+                    blocked = self.shield_up == self.tgt_up  # shield in the lane -> the shot stops at it
+                    start = cw + 2
+                    end = (sx - ow) if blocked else (px - ow)
+                    prog = min(1.0, self.data_t / max(1, self.data_window))
+                    overlay += _blit(orb, int(start + (end - start) * prog), lane)
         else:                                               # hp: the REAL DVPet drawHPTraining layout
             # Training dummy (bird w/ an attribute symbol on its belly) on the LEFT, the 3
             # stacked icons (Vaccine/Data/Virus) in the MIDDLE, the pet on the RIGHT.  Read
