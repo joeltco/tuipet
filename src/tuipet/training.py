@@ -41,19 +41,22 @@ from .battlescreen import (IDLE, TURN, ATTACK, CHARGE, COLLAPSE,  # noqa: F401
 with open(os.path.join(os.path.dirname(__file__), "data", "battle_overlays.json")) as _f:
     _EXPLODE = json.load(_f)["hit_explosion"]
 
-# DVPet config (normal difficulty)
-# DVPet vaccine drill (config.csv): MASH to a hit threshold that scales with vaccine rank.
-VACCINE_HITS = (16, 20, 24)   # Easy / Normal / Hard  (VaccineGameHitsMin{Easy,,Hard})
-VACCINE_DIFFICULTY = 75       # AttributeTrainDifficultyChange: rank = vaccinePower // this
-VACCINE_WINDOW = 41           # DVPet drawVaccinePre = _interval*41 = 246 frames @60fps ~= 4.1s
-VIRUS_BAR_MIN = 86
-VIRUS_SPEED = 4
-# Data is a SHIELD BLOCK (controller checkSuccess: success = shieldTop == isUp): the
-# green target feints, then COMMITS its attack high or low; you raise your shield to
-# the matching side to block it before the window closes.
+# DVPet config (config.csv).  tuipet ticks at 0.1s == one DVPet _interval (6 frames @60fps),
+# so frame-unit constants are converted to per-tick.  Each attribute drill's difficulty steps
+# up by RANK = attributePower // 75 (AttributeTrainDifficultyChange) -> 0 Easy / 1 Normal / 2 Hard.
+ATTR_TRAIN_DIFFICULTY = 75
+# Vaccine: MASH to a hit threshold (VaccineGameHitsMin{Easy,,Hard}).
+VACCINE_HITS = (16, 20, 24)
+VACCINE_WINDOW = 41           # drawVaccinePre = _interval*41 = 246 frames @60fps ~= 4.1s
+# Virus: a power bar FILLS 0->maxBar and loops; stop it in the zone (>= VirusGameBarMin).
+VIRUS_BAR_MIN = 86            # VirusGameBarMin
+VIRUS_MAX = 94               # DVPet maxBar (bar pixel width) -> the zone 86..94 is the top ~8%
+VIRUS_SPEEDS = (4.8, 6.0, 8.0)  # per-tick fill = DVPet +4 per VirusGameBarSpeed{5,4,3} frames (48/60/80 px/s / 10Hz)
+# Data is a SHIELD BLOCK (checkSuccess: success = shieldTop == isUp): the green target feints,
+# then COMMITS its attack high or low; raise your shield to the matching side before the window closes.
 DATA_BOB = 3                  # ticks per feint up/down toggle during the telegraph
-DATA_TELEGRAPH = 15           # feint window before the attack commits (~1.5s)
-DATA_WINDOW = 13              # reaction window to set the shield after it commits (~1.3s)
+DATA_TELEGRAPH = (21, 17, 15)  # feint window before commit (DVPet frame*8+pad*8 frames, /6 -> ticks)
+DATA_WINDOW = (10, 7, 5)      # reaction window after commit (DataTrainShootFrame{10,7,5}; 6*frame/6 -> ticks)
 HP_ROUNDS = 3
 HP_ROUNDS_WON = 2
 HP_ROUND_LEN = 28             # ticks to pick before a round times out (~2.8s)
@@ -136,7 +139,10 @@ class TrainingPanel:
         self.power = 0
         self.taps = 0
         self.timer = VACCINE_WINDOW
-        self.vaccine_target = VACCINE_HITS[1]   # rank-based hit threshold, set per drill start
+        self.vaccine_target = VACCINE_HITS[1]   # rank-based, set per drill start (below)
+        self.virus_speed = VIRUS_SPEEDS[1]      # rank-based bar fill speed
+        self.data_telegraph = DATA_TELEGRAPH[1]  # rank-based feint window
+        self.data_window = DATA_WINDOW[1]       # rank-based reaction window
         self.round_t = HP_ROUND_LEN
         self.rounds_won = 0
         self.hp_target = 0           # hidden attribute the bag "is" (0/1/2)
@@ -164,9 +170,13 @@ class TrainingPanel:
     def _is_data(self):
         return self.gkey == "data"
 
+    def _attr_rank(self, power):
+        """DVPet difficulty rank for an attribute drill: power // 75 -> 0 Easy/1 Normal/2 Hard."""
+        return min(power // ATTR_TRAIN_DIFFICULTY, 2)
+
     def _vaccine_threshold(self):
-        """DVPet checkSuccess(Vaccine): hits needed scales with vaccine rank (power // 75)."""
-        return VACCINE_HITS[min(self.pet.vaccine // VACCINE_DIFFICULTY, 2)]
+        """DVPet checkSuccess(Vaccine): hits needed scales with vaccine rank."""
+        return VACCINE_HITS[self._attr_rank(self.pet.vaccine)]
 
     # ---- lifecycle ----
     def _start_game(self):
@@ -179,8 +189,11 @@ class TrainingPanel:
             self.vaccine_target = self._vaccine_threshold()
             self.flash = "MASH the bag!"
         elif gk == "data":
+            r = self._attr_rank(self.pet.data_power)
+            self.data_telegraph, self.data_window = DATA_TELEGRAPH[r], DATA_WINDOW[r]
             self.flash = "watch the feint — block high or low!"
         else:
+            self.virus_speed = VIRUS_SPEEDS[self._attr_rank(self.pet.virus)]
             self.flash = "stop the bar high!"
 
     def _new_hp_round(self):
@@ -288,16 +301,16 @@ class TrainingPanel:
             if not self.locked:                             # telegraph: the green feints up/down
                 if self.data_t % DATA_BOB == 0:
                     self.feint_up = not self.feint_up
-                if self.data_t >= DATA_TELEGRAPH:           # ...then the attack COMMITS high/low
+                if self.data_t >= self.data_telegraph:      # ...then the attack COMMITS high/low
                     self.locked = True
                     self.tgt_up = random.choice((True, False))
                     self.data_t = 0
                     self.flash = "block it — UP or DOWN!"
-            elif self.data_t >= DATA_WINDOW:                # window closed -> resolve the block
+            elif self.data_t >= self.data_window:           # window closed -> resolve the block
                 self._data_resolve()
         else:  # virus -- DVPet drawVirusPre: the bar FILLS then snaps back to 0 and loops;
-            self.pos += VIRUS_SPEED                          # hit captures the level at that instant
-            if self.pos >= 100:
+            self.pos += self.virus_speed                     # hit captures the level at that instant
+            if self.pos >= VIRUS_MAX:
                 self.pos = 0
 
     # ---- key ----
@@ -449,7 +462,7 @@ class TrainingPanel:
             if frame:
                 overlay.extend(_blit(frame, fx, fy))
             if fill:                                         # REAL dashed trainBar, grows in the main box
-                w = max(0, min(30, round(30 * min(self.pos, 100) / 100.0)))
+                w = max(0, min(30, round(30 * min(self.pos, VIRUS_MAX) / VIRUS_MAX)))
                 if w:
                     overlay.extend(_blit([row[:w] for row in fill], fx + 1, fy + 1))
             if int(self.pos) >= VIRUS_BAR_MIN:               # front in the zone -> the goal box lights
