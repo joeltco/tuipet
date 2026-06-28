@@ -18,51 +18,56 @@ def test_finish_launches_the_strike_then_reveals_result():
     panel = _panel()
     panel._finish(2, 30, "Vaccine", "vaccine")
     assert panel.phase == "strike"          # not straight to "done"
-    assert panel.strike_step == 0
+    assert panel.si == 0 and panel.strike_tl   # a battle-style volley timeline is built
     assert panel.result                     # the outcome is decided, just not shown yet
     assert panel.flash == ""                # ...held until the strike lands
-    # drive the sequence; it must terminate in exactly STRIKE_TOTAL ticks
-    for _ in range(T.STRIKE_TOTAL):
+    # drive the volley to completion -> the score is revealed
+    for _ in range(len(panel.strike_tl) + 2):
         panel.anim()
     assert panel.phase == "done"
     assert panel.result in panel.flash      # score revealed when the strike completes
 
 
 def test_strike_sfx_timing_and_strength():
-    def sfx_trace(hits):
+    def sfx_seq(hits):
         panel = _panel()
         panel._finish(hits, 30, "Vaccine", "vaccine")
-        trace = {}
-        for _ in range(T.STRIKE_TOTAL):
+        seq = []
+        while panel.phase == "strike":
             panel.sfx = None
             panel.anim()
             if panel.sfx:
-                trace[panel.strike_step] = panel.sfx
-        return trace
+                seq.append(panel.sfx)
+        return seq
 
-    strong = sfx_trace(3)
-    assert strong[1] == "strongAttack"                 # launch sting (full success)
-    assert strong[T.STRIKE_FIRE + 1] == "strongHit"    # impact, on the bag
-    good = sfx_trace(2)
-    assert good[1] == "attack"
-    assert good[T.STRIKE_FIRE + 1] == "attackHit"
-    miss = sfx_trace(0)
-    assert miss[1] == "attack"                         # the pet still fires...
-    assert miss[T.STRIKE_FIRE + 1] == "cancel"         # ...but the impact is the miss thud
+    strong = sfx_seq(3)
+    assert strong[0] == "strongAttack"      # launch sting (full success), then...
+    assert "strongHit" in strong            # ...the strong impact on the target
+    good = sfx_seq(2)
+    assert good[0] == "attack"
+    assert "attackHit" in good
+    miss = sfx_seq(0)
+    assert miss[0] == "attack"              # the pet still fires...
+    assert "cancel" in miss                 # ...but the orb whiffs (no hit -> miss thud)
 
 
-def test_strike_ignores_input_and_renders_every_drill():
+def test_strike_renders_every_drill_and_can_skip():
     for game in ("hp", "vaccine", "data", "virus"):
         for hits in (3, 2, 0):
             panel = _panel(game)
             panel._finish(hits, 30, None if game == "hp" else "Vaccine", game)
             steps_seen = 0
-            while panel.phase == "strike" and steps_seen < 60:
+            while panel.phase == "strike" and steps_seen < 80:
                 assert panel.text() is not None            # composes without error every frame
-                assert panel.key("space") is None          # input is swallowed mid-strike
                 panel.anim()
                 steps_seen += 1
             assert panel.phase == "done"
+    # a key during the volley skips to the end (like the battle screen)
+    panel = _panel("vaccine")
+    panel._finish(2, 30, "Vaccine", "vaccine")
+    assert panel.key("space") is None
+    panel.anim()
+    assert panel.phase == "done"
 
 
 def test_strike_opponent_art_exists():
