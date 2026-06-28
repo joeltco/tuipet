@@ -246,14 +246,10 @@ class TrainingPanel:
                     self.flash = "block it — UP or DOWN!"
             elif self.data_t >= DATA_WINDOW:                # window closed -> resolve the block
                 self._data_resolve()
-        else:  # virus -- the power bar sweeps; hit to stop it
-            self.pos += self.dir * VIRUS_SPEED
+        else:  # virus -- DVPet drawVirusPre: the bar FILLS then snaps back to 0 and loops;
+            self.pos += VIRUS_SPEED                          # hit captures the level at that instant
             if self.pos >= 100:
-                self.pos = 100
-                self.dir = -1
-            elif self.pos <= 0:
                 self.pos = 0
-                self.dir = 1
 
     # ---- key ----
     def key(self, k):
@@ -368,65 +364,58 @@ class TrainingPanel:
         return on, bgimg
 
     def _render_play(self, rec):
-        """The skill phase, matching the DVPet guide minigames:
-        Vaccine = hit the orb ("Hit!!"); Data = a cannon aims high/low and you raise
-        the matching shield to block; Virus = stop the sweeping marker in the target
-        range; HP = match the shown attribute symbol.  The pet watches from the right."""
+        """Faithful to the decompiled DVPet drills.  The LCD is 105x60 logical px and the
+        *PrePrep methods give every sprite's exact position; we map those into tuipet's
+        arena and blit the REAL training sprites at them.
+          Vaccine: bag(0,2) + 'Hit!!'(31,6) + orb(44,31), pet HIDDEN.
+          Virus:   bag(0,2) + filling bar(2,16), pet HIDDEN.
+          Data:    cannon(0,31) bobs then locks aim, shields top(64,7)/bot(64,36), pet right.
+          HP:      pet right(74) + opponent bag(0) + the attribute symbol to match."""
         gk = self.gkey
         E = data.load_effects()
         on, bgimg = self._scene_palette()
-        px_h = ARENA_ROWS * 2
-        placements = []
+        ph = ARENA_ROWS * 2
         overlay = []
-        pet = self._frame(rec, self._pose_now(0))
-        pw = max(len(r) for r in pet)
-        pet_x = COLS - pw - 2
-        if gk == "vaccine":                                 # punching bag LEFT, hit-orb CENTRE, pet HIDDEN
-            bag = E.get("punching_bag", [None])[0]           # (drawVaccinePre: _character.setVisible(false))
-            if bag:
-                placements.append((bag, 1, False))
-            orb = _attr_shape(0, 9)                          # the trainButton hit-orb
-            ow = len(orb[0])
-            bob = -2 if self._strike_t > 0 else 0
-            overlay += _blit(orb, COLS // 2 - ow // 2, px_h - 11 + bob)
-        elif gk == "data":                                  # CANNON aims high/low -> raise the matching SHIELD
-            placements.append((pet, pet_x, False))
+
+        def put(sprite, dx, dy):                            # DVPet (105x60) logical -> tuipet arena
+            if sprite:
+                overlay.extend(_blit(sprite, round(dx * COLS / 105.0), round(dy * ph / 60.0)))
+
+        def put_pet():                                      # the pet, right-aligned at DVPet y=9
+            pf = self._frame(rec, self._pose_now(0))
+            overlay.extend(_blit(pf, COLS - max(len(r) for r in pf) - 1, round(9 * ph / 60.0)))
+
+        if gk == "vaccine":                                 # bag + 'Hit!!' + orb, pet HIDDEN
+            put(E.get("punching_bag", [None])[0], 0, 2)
+            if self._strike_t > 0:                          # 'Hit!!' flashes on each hit
+                put(E.get("train_hit", [None])[0], 31, 6)
+            put(E.get("train_button", [None])[0], 44, 31 - (1 if self._strike_t > 0 else 0))
+        elif gk == "virus":                                 # bag + filling bar, pet HIDDEN
+            put(E.get("punching_bag", [None])[0], 0, 2)
+            put(E.get("train_bar_empty", [None])[0], 2, 16)
+            fill = E.get("train_bar", [None])[0]
+            if fill:
+                w = max(1, round(len(fill[0]) * min(self.pos, 100) / 100.0))
+                put([row[:w] for row in fill], 6, 20)
+            tx = round((6 + 94 * VIRUS_BAR_MIN / 100.0) * COLS / 105.0)        # the win threshold
+            ty = round(15 * ph / 60.0)
+            overlay += [(tx, ty + d) for d in range(round(14 * ph / 60.0))]
+        elif gk == "data":                                  # cannon + two shields + pet right
             up = self.tgt_up if self.locked else self.feint_up
-            cannon = E.get("train_green_up" if up else "train_green", [None])[0]
-            if cannon:
-                ch = len(cannon)
-                cy = (px_h - 6 - ch - 7) if up else (px_h - 6 - ch)   # cannon sits high (up) or low
-                overlay += _blit(cannon, 4, max(0, cy))
-            shield = E.get("train_shield", [None])[0]        # two slots by the pet; the active one is solid
-            if shield:
-                sw, shh = len(shield[0]), len(shield)
-                sx = pet_x - sw - 2
-                top_y, bot_y = px_h - 6 - shh - 7, px_h - 6 - shh
-                overlay += _blit(shield, sx, top_y if self.shield_up else bot_y)
-                ey = bot_y if self.shield_up else top_y      # the empty slot: a faint outline
-                overlay += [(sx + x, ey + y) for y in range(shh) for x in range(sw)
-                            if x in (0, sw - 1) or y in (0, shh - 1)]
-        elif gk == "hp":                                    # match the shown attribute symbol
-            bag = E.get("battle_bag", [None])[0]
-            if bag:
-                placements.append((bag, 2, False))
-            placements.append((pet, pet_x, False))
-            sym = _ATTR_SHAPES[self.hp_target]
-            sw, shh = len(sym[0]), len(sym)
-            overlay += _blit(sym, (COLS - sw) // 2, (px_h - shh) // 2 - 1)
-        else:                                               # virus: bag LEFT + sweeping bar, pet HIDDEN
-            bag = E.get("punching_bag", [None])[0]           # (virusPrePrep: _character hidden, punchingBag)
-            if bag:
-                placements.append((bag, 1, False))
-            bx, bw, by = 3, COLS - 7, 6                     # a wide bar across the top of the LCD
-            lo = bx + int(VIRUS_BAR_MIN / 100 * bw)
-            overlay += [(bx + x, by) for x in range(bw)]                       # the bar rail
-            for x in range(lo, bx + bw):                                       # the target zone (a box)
-                overlay += [(x, by - 2), (x, by + 2)]
-            overlay += [(lo, by + dy) for dy in (-2, -1, 0, 1, 2)]             # zone left edge
-            mx = bx + int(self.pos / 100 * bw)
-            overlay += [(mx, by + dy) for dy in (-3, -2, -1, 0, 1, 2, 3)]      # the sweeping marker
-        scene = render_scene(placements, COLS, ARENA_ROWS, on, LCD_BG, overlay=overlay, bgimg=bgimg)
+            put(E.get("train_cannon_up" if up else "train_cannon", [None])[0], 0, 31)
+            shield = E.get("train_shield", [None])[0]
+            put(shield, 64, 7 if self.shield_up else 36)    # the ACTIVE shield (solid)
+            if shield:                                      # the empty slot: a faint outline
+                ex, ey = round(64 * COLS / 105.0), round((36 if self.shield_up else 7) * ph / 60.0)
+                sw, sh = len(shield[0]), len(shield)
+                overlay += [(ex + x, ey + y) for y in range(sh) for x in range(sw)
+                            if x in (0, sw - 1) or y in (0, sh - 1)]
+            put_pet()
+        else:                                               # hp: pet right + opponent + attribute to match
+            put_pet()
+            put(E.get("battle_bag", [None])[0], 0, 8)
+            put(_ATTR_SHAPES[self.hp_target], 6, 4)         # the opponent's attribute, above the bag
+        scene = render_scene([], COLS, ARENA_ROWS, on, LCD_BG, overlay=overlay, bgimg=bgimg)
         scene.append("\n")
         scene.append_text(self._gauge())
         scene.append_text(menu.footer(self._hint()))
