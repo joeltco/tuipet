@@ -25,52 +25,14 @@ import os
 import random
 from rich.text import Text
 from . import data
+from .render import render_scene
 from .theme import LCD_ON, LCD_BG, INK, INK_B, DIM, MID, ACCENT, SIL_DAY, SIL_NIGHT  # noqa: F401  (palette names bound for theme.apply propagation)
 from . import menu
 
-# native-resolution training sprites (1-bit), rendered on a full DVPet-size 105x60 LCD
-# so they stay crisp instead of being downsampled into the 40-wide arena.
-import gzip as _gzip
-with _gzip.open(os.path.join(os.path.dirname(__file__), "data", "train_hires.json.gz"), "rt") as _hf:
-    _HIRES = json.load(_hf)
-
-# DVPet native LCD + a soft muted LCD palette (matches the real device, not vivid photo bg)
-DV_W, DV_H = 105, 60
-_SKY = "#9fb4cc"        # soft LCD sky
-_GND = "#a6bca6"        # soft LCD ground
-_DARK = "#27302a"       # crisp dark sprite ink
-_SKY_BAND = 28          # rows of sky before the ground
-
-
-_FLASH = "#f4ead0"            # impact-burst fill (DVPet attackHitFlash strobe)
-
-
-def _render_hires(layers, note_text="", footer_text="", flash=False):
-    """Render a DVPet-native 105x60 LCD as half-block text (105 cols x 30 rows): a soft
-    sky/ground background + the given (sprite_rows, x, y) layers blitted at exact px.
-    Keeps native sprites crisp instead of cramming them into the 40-wide arena.
-    `flash` strobes the whole LCD bright for the impact frames."""
-    if flash:
-        buf = [[_FLASH for _ in range(DV_W)] for _ in range(DV_H)]
-    else:
-        buf = [[_SKY if y < _SKY_BAND else _GND for _ in range(DV_W)] for y in range(DV_H)]
-        for rows, ox, oy in layers:
-            if not rows:
-                continue
-            for y, line in enumerate(rows):
-                for x, c in enumerate(line):
-                    if c == "1" and 0 <= oy + y < DV_H and 0 <= ox + x < DV_W:
-                        buf[oy + y][ox + x] = _DARK
-    t = Text()
-    for cy in range(0, DV_H, 2):
-        for cx in range(DV_W):
-            t.append("▀", style=f"{buf[cy][cx]} on {buf[cy + 1][cx]}")
-        t.append("\n")
-    if note_text:
-        t.append(note_text + "\n", style=INK_B)
-    if footer_text:
-        t.append(footer_text, style=DIM)
-    return t
+# the full-screen spiky hit burst (attackHit/attackHitFlash), shared with the battle
+# screen -- strobes outline<->filled to flash the LCD on impact (DVPet hitAnim).
+with open(os.path.join(os.path.dirname(__file__), "data", "battle_overlays.json")) as _f:
+    _EXPLODE = json.load(_f)["hit_explosion"]
 
 # DVPet config (normal difficulty)
 VACCINE_HITS_MIN = 20
@@ -102,6 +64,12 @@ STRIKE_TOTAL = STRIKE_FIRE + STRIKE_FLASH + STRIKE_AFTER
 ATTR_SYM = ["●", "■", "▲"]   # ● ■ ▲  (Vaccine / Data / Virus) for the HP-drill guess
 
 
+def _blit(bm, ox, oy):
+    """Sprite bitmap -> (x,y) pixel list for render_scene's overlay (projectile / flash)."""
+    return [(ox + x, oy + y) for y, row in enumerate(bm)
+            for x, c in enumerate(row) if c == "1"]
+
+
 def _attr_shape(kind, h=9):
     """Clean attribute symbol as a 1-bit bitmap (procedural, not hand-authored):
     0=circle (Vaccine), 1=square (Data), 2=triangle (Virus)."""
@@ -122,14 +90,6 @@ def _attr_shape(kind, h=9):
 
 
 _ATTR_SHAPES = [_attr_shape(0), _attr_shape(1), _attr_shape(2)]   # ● ■ ▲
-
-
-def _box(w, h):
-    """Hollow 1-bit rectangle -- the HP-drill cursor framing the picked attribute."""
-    return ["1" * w if y in (0, h - 1) else "1" + "0" * (w - 2) + "1" for y in range(h)]
-
-
-_SEL_FRAME = _box(13, 13)
 
 
 def _plus_glyph(h=9):
@@ -398,39 +358,68 @@ class TrainingPanel:
             return self._render_strike(rec)
         return self._render_play(rec)
 
+    def _scene_palette(self):
+        bgimg = self.pet.background()
+        on = SIL_NIGHT if self.pet.day_phase == "night" else (SIL_DAY if bgimg else LCD_ON)
+        return on, bgimg
+
     def _render_play(self, rec):
-        """Render the drill on a full DVPet-native 105x60 LCD (crisp half-blocks), the
-        REAL sprites at their exact code positions -- vaccinePrePrep/drawDataPre/etc."""
+        """Faithful to the decompiled DVPet drills.  The LCD is 105x60 logical px and the
+        *PrePrep methods give every sprite's exact position; we map those into tuipet's
+        arena and blit the REAL training sprites at them.
+          Vaccine: bag(0,2) + 'Hit!!'(31,6) + orb(44,31), pet HIDDEN.
+          Virus:   bag(0,2) + filling bar(2,16), pet HIDDEN.
+          Data:    cannon(0,31) bobs then locks aim, shields top(64,7)/bot(64,36), pet right.
+          HP:      pet right(74) + opponent bag(0) + the attribute symbol to match."""
         gk = self.gkey
-        H = _HIRES
-        layers = []
-        if gk == "vaccine":                                 # bag(0,2) + 'Hit!!'(31,6) + orb(44,31)
-            layers.append((H.get("bag"), 0, 2))
-            if self._strike_t > 0:
-                layers.append((H.get("hit"), 31, 6))
-            layers.append((H.get("button_pressed" if self._strike_t > 0 else "button"), 44, 31))
-        elif gk == "virus":                                 # bag + filling bar(2,16)
-            layers.append((H.get("bag"), 0, 2))
-            layers.append((H.get("bar_empty"), 2, 16))
-            fill = H.get("bar")
+        E = data.load_effects()
+        on, bgimg = self._scene_palette()
+        ph = ARENA_ROWS * 2
+        overlay = []
+
+        def put(sprite, dx, dy):                            # DVPet (105x60) logical -> tuipet arena
+            if sprite:
+                overlay.extend(_blit(sprite, round(dx * COLS / 105.0), round(dy * ph / 60.0)))
+
+        def put_pet():                                      # the pet, right-aligned at DVPet y=9
+            pf = self._frame(rec, self._pose_now(0))
+            overlay.extend(_blit(pf, COLS - max(len(r) for r in pf) - 1, round(9 * ph / 60.0)))
+
+        if gk == "vaccine":                                 # bag + 'Hit!!' + orb, pet HIDDEN
+            put(E.get("punching_bag", [None])[0], 0, 2)
+            if self._strike_t > 0:                          # 'Hit!!' flashes on each hit
+                put(E.get("train_hit", [None])[0], 31, 6)
+            put(E.get("train_button", [None])[0], 44, 31 - (1 if self._strike_t > 0 else 0))
+        elif gk == "virus":                                 # bag + filling bar, pet HIDDEN
+            put(E.get("punching_bag", [None])[0], 0, 2)
+            put(E.get("train_bar_empty", [None])[0], 2, 16)
+            fill = E.get("train_bar", [None])[0]
             if fill:
                 w = max(1, round(len(fill[0]) * min(self.pos, 100) / 100.0))
-                layers.append(([row[:w] for row in fill], 6, 20))
-        elif gk == "data":                                  # cannon(0,31) + shields(64,7/36) + pet(74,9)
+                put([row[:w] for row in fill], 6, 20)
+            tx = round((6 + 94 * VIRUS_BAR_MIN / 100.0) * COLS / 105.0)        # the win threshold
+            ty = round(15 * ph / 60.0)
+            overlay += [(tx, ty + d) for d in range(round(14 * ph / 60.0))]
+        elif gk == "data":                                  # cannon + two shields + pet right
             up = self.tgt_up if self.locked else self.feint_up
-            layers.append((H.get("cannon_up" if up else "cannon"), 0, 31))
-            layers.append((H.get("shield"), 64, 7 if self.shield_up else 36))
-            layers.append((self._frame(rec, self._pose_now(0)), 74, 9))
-        else:                                               # hp: pet RIGHT + opponent bag LEFT + stacked chooser
-            layers.append((self._frame(rec, self._pose_now(0)), 74, 9))
-            layers.append((H.get("bag"), 2, 22))            # native opponent bag (no blobby low-res sprite)
-            layers.append((_attr_shape(self.hp_target, 13), 12, 3))   # the symbol to MATCH
-            for i in range(3):                              # the 3 guess icons stacked left of the pet
-                iy = 6 + i * 16
-                layers.append((_ATTR_SHAPES[i], 60, iy + 2))
-                if i == self.hp_pick:
-                    layers.append((_SEL_FRAME, 58, iy))     # cursor box over the current guess
-        return _render_hires(layers, self.flash, self._hint())
+            put(E.get("train_cannon_up" if up else "train_cannon", [None])[0], 0, 31)
+            shield = E.get("train_shield", [None])[0]
+            put(shield, 64, 7 if self.shield_up else 36)    # the ACTIVE shield (solid)
+            if shield:                                      # the empty slot: a faint outline
+                ex, ey = round(64 * COLS / 105.0), round((36 if self.shield_up else 7) * ph / 60.0)
+                sw, sh = len(shield[0]), len(shield)
+                overlay += [(ex + x, ey + y) for y in range(sh) for x in range(sw)
+                            if x in (0, sw - 1) or y in (0, sh - 1)]
+            put_pet()
+        else:                                               # hp: pet right + opponent + attribute to match
+            put_pet()
+            put(E.get("battle_bag", [None])[0], 0, 8)
+            put(_ATTR_SHAPES[self.hp_target], 6, 4)         # the opponent's attribute, above the bag
+        scene = render_scene([], COLS, ARENA_ROWS, on, LCD_BG, overlay=overlay, bgimg=bgimg)
+        scene.append("\n")
+        scene.append_text(self._gauge())
+        scene.append_text(menu.footer(self._hint()))
+        return scene
 
     def _gauge(self):
         """One compact status line under the arena, specific to the drill."""
@@ -481,29 +470,55 @@ class TrainingPanel:
         the green target, everything else fires LEFT at the punching bag -- the same
         sides the drill used, so the strike flows straight out of it."""
         s = self.strike_step
-        H = _HIRES
+        E = data.load_effects()
+        on, bgimg = self._scene_palette()
+        px_h = ARENA_ROWS * 2
         after = s > STRIKE_FIRE + STRIKE_FLASH
-        firing = s <= STRIKE_FIRE
-        impact = (not firing) and (not after)
         pose = (0 if self.success else 10) if after else 6      # strike(6) -> idle(0) / recoil(10)
         pet = self._frame(rec, pose)
-        layers = []
-        if self._is_data:                                       # cannon LEFT, pet RIGHT, proj flies right 55->67
-            layers.append((H.get("cannon"), 0, 31))
-            layers.append((pet, 74, 9))
-            if firing:
-                x = round(55 + (67 - 55) * (s / STRIKE_FIRE))
-                layers.append((H.get("green"), x, 30))
-        else:                                                   # bag LEFT, pet RIGHT, proj flies left 85->51
+        pw = max(len(r) for r in pet)
+        fire_y = px_h - 12
+        if self._is_data:                                       # pet LEFT (faces right), green RIGHT
+            opp = E.get("train_green", [None])[0]
+            ow = max((len(r) for r in opp), default=10) if opp else 10
+            pet_x, opp_x = 2, COLS - ow - 3
+            placements = [(pet, pet_x, True)]
+            if opp:
+                placements.append((opp, opp_x, False))
+            x_from, x_to, rightward = pet_x + pw, opp_x, True
+        else:                                                   # pet RIGHT (faces left), bag LEFT
             broken = after and self.success
-            layers.append((H.get("bag_broken" if broken else "bag"), 0, 2))
-            layers.append((pet, 74, 9))
-            if firing:
-                x = round(85 - (85 - 51) * (s / STRIKE_FIRE))
-                layers.append((H.get("green"), x, 26))
-        flash = impact and (s % 2 == 0)                         # strobe the burst 3x over the impact window
-        note = self.result if after else "..."
-        return _render_hires(layers, note, "", flash=flash)
+            opp = E.get("punching_bag_broken" if broken else "punching_bag", [None])[0]
+            ow = max((len(r) for r in opp), default=6) if opp else 6
+            pet_x, opp_x = COLS - pw - 3, 2
+            placements = [(pet, pet_x, False)]
+            if opp:
+                placements.append((opp, opp_x, False))
+            x_from, x_to, rightward = pet_x, opp_x + ow, False
+        overlay = []
+        if s <= STRIKE_FIRE:                                    # the projectile crosses to the opponent
+            orb = E.get("attack") or []
+            of = orb[min((s - 1) // 2, len(orb) - 1)] if orb else None
+            if of:
+                ow_orb = max(len(r) for r in of)
+                if rightward:
+                    x0, x1 = x_from, x_to - ow_orb
+                    src = [r[::-1] for r in of]                 # orb art faces left -> flip to fly right
+                else:
+                    x0, x1 = x_from - ow_orb, x_to
+                    src = of
+                ox = int(x0 + (x1 - x0) * (s / STRIKE_FIRE))
+                overlay += _blit(src, ox, fire_y)
+        elif not after:                                        # impact: the full hit-burst strobes over the LCD
+            ex = _EXPLODE[((s - STRIKE_FIRE - 1) // 2) % len(_EXPLODE)]
+            ox = max(0, (COLS - len(ex[0])) // 2)
+            oy = max(0, (px_h - len(ex)) // 2)
+            overlay += _blit(ex, ox, oy)
+        scene = render_scene(placements, COLS, ARENA_ROWS, on, LCD_BG, overlay=overlay, bgimg=bgimg)
+        scene.append("\n")
+        scene.append_text(menu.note(self.result if after else "..."))
+        scene.append_text(menu.footer(""))
+        return scene
 
     def _render_menu(self):
         """DVPet drawTrainingSelect diamond, as a CLEAN text layout (crisp glyphs, not
