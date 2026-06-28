@@ -70,26 +70,17 @@ def _blit(bm, ox, oy):
             for x, c in enumerate(row) if c == "1"]
 
 
-def _attr_shape(kind, h=9):
-    """Clean attribute symbol as a 1-bit bitmap (procedural, not hand-authored):
-    0=circle (Vaccine), 1=square (Data), 2=triangle (Virus)."""
-    if kind == 1:                                   # square
-        return ["1" * h for _ in range(h)]
-    rows = []
-    if kind == 0:                                   # filled circle
-        c = (h - 1) / 2
-        for y in range(h):
-            rows.append("".join("1" if (x - c) ** 2 + (y - c) ** 2 <= (c + 0.4) ** 2 else "0"
-                                 for x in range(h)))
-    else:                                           # filled upward triangle
-        for y in range(h):
-            w = 1 + int(y / (h - 1) * (h - 1))
-            pad = (h - w) // 2
-            rows.append("0" * pad + "1" * w + "0" * (h - w - pad))
-    return rows
+# The REAL DVPet attribute icons, extracted 1:1 from the game's red/green/yellow.png
+# (SpriteAnim _vaccineAttack/_dataAttack/_virusAttack) -- circle/square/triangle, each
+# with DVPet's top-left highlight pixel.  'big' = native 14x14, 'small' = 7x7.  NOT
+# hand-drawn -- pulled from the source art.
+with open(os.path.join(os.path.dirname(__file__), "data", "attr_icons.json")) as _f:
+    _ATTR_ICONS = json.load(_f)        # {'big': [v,d,v], 'small': [v,d,v]}  order Vaccine/Data/Virus
 
 
-_ATTR_SHAPES = [_attr_shape(0), _attr_shape(1), _attr_shape(2)]   # ● ■ ▲
+def _box(w, h):
+    """Hollow 1-bit rectangle -- the HP-drill cursor framing the picked attribute."""
+    return ["1" * w if y in (0, h - 1) else "1" + "0" * (w - 2) + "1" for y in range(h)]
 
 
 def _plus_glyph(h=9):
@@ -182,9 +173,11 @@ class TrainingPanel:
             self.flash = "wrong!"
             self._flash(9)
         self.rep += 1
-        if self.rep >= HP_ROUNDS:
+        # DVPet loops while round < _hpTrainingRounds AND roundsWon < _hpTrainingRoundsWon:
+        # win the instant you hit 2, or stop once the 3 rounds are spent.
+        if self.rounds_won >= HP_ROUNDS_WON or self.rep >= HP_ROUNDS:
             won = self.rounds_won
-            hits = 3 if won >= 3 else (2 if won >= HP_ROUNDS_WON else won)
+            hits = 3 if won >= HP_ROUNDS_WON else won      # a 2-win is a full success (full Effort)
             self._finish(hits, 0, None, "hp")
         else:
             self._new_hp_round()
@@ -411,10 +404,19 @@ class TrainingPanel:
                 overlay += [(ex + x, ey + y) for y in range(sh) for x in range(sw)
                             if x in (0, sw - 1) or y in (0, sh - 1)]
             put_pet()
-        else:                                               # hp: pet right + opponent + attribute to match
-            put_pet()
-            put(E.get("battle_bag", [None])[0], 0, 8)
-            put(_ATTR_SHAPES[self.hp_target], 6, 4)         # the opponent's attribute, above the bag
+        else:                                               # hp: read the dummy (right), pick the matching icon
+            # DVPet drawHPTraining: pet + a training dummy that SHOWS a random attribute,
+            # and 3 stacked icons (Vaccine/Data/Virus) you pick from.  Clean flat LCD,
+            # no habitat photo -- matches the guide's HP minigame screen.
+            on, bgimg = LCD_ON, None
+            pf = self._frame(rec, self._pose_now(0))        # the pet, left
+            overlay.extend(_blit(pf, 1, ph - len(pf)))
+            for i in range(3):                              # the 3 stacked guess icons (real ● ■ ▲)
+                iy = i * 8                                   # 6px icon + 2px gap = exact 22px fit
+                overlay.extend(_blit(_ATTR_ICONS["small"][i], 17, iy))
+                if i == self.hp_pick:                       # cursor frame around the current guess
+                    overlay.extend(_blit(_box(8, 8), 16, iy - 1))
+            overlay.extend(_blit(_ATTR_ICONS["big"][self.hp_target], 25, 4))  # the dummy's shown attribute
         scene = render_scene([], COLS, ARENA_ROWS, on, LCD_BG, overlay=overlay, bgimg=bgimg)
         scene.append("\n")
         scene.append_text(self._gauge())
@@ -426,15 +428,10 @@ class TrainingPanel:
         gk = self.gkey
         t = Text()
         if gk == "hp":
-            t.append("bag ", style=INK)
-            t.append(ATTR_SYM[self.hp_target], style=INK_B)        # the symbol you must match
-            t.append("  match ", style=INK)
-            for i, sym in enumerate(ATTR_SYM):
-                sel = i == self.hp_pick
-                t.append(f"[{sym}]" if sel else f" {sym} ",
-                         style=(f"{ACCENT} on {LCD_BG}") if sel else INK_B)
-            tb = int((max(self.round_t, 0) / HP_ROUND_LEN) * 5)
-            t.append(" " + "▓" * tb + "░" * (5 - tb) + "\n", style=f"{ACCENT} on {LCD_BG}")
+            t.append("match the dummy  ", style=INK)
+            t.append(ATTR_SYM[self.hp_target], style=INK_B)        # the attribute the dummy shows
+            tb = int((max(self.round_t, 0) / HP_ROUND_LEN) * 9)
+            t.append("   time " + "▓" * tb + "░" * (9 - tb) + "\n", style=f"{ACCENT} on {LCD_BG}")
         elif gk == "vaccine":
             hit = self._strike_t > 0
             t.append("HIT!! " if hit else "hit!  ", style=INK_B if hit else INK)

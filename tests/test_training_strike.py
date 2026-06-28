@@ -73,20 +73,20 @@ def test_strike_opponent_art_exists():
 
 # ---- DVPet-faithful drill mechanics (the rebuild) --------------------------
 
-def test_hp_drill_is_guess_the_hidden_attribute():
-    """HP = pick which of 3 attributes the hidden bag is, best of 3 -> Effort."""
+def test_hp_drill_matches_the_dummy_attribute():
+    """HP = read the dummy's attribute, pick the matching icon; first to 2 wins -> Effort
+    (DVPet drawHPTraining: loop while round < 3 AND roundsWon < 2)."""
     panel = _panel("hp")
     panel._start_game()
     assert panel.phase == "play"
-    for _ in range(T.HP_ROUNDS):                       # guess correctly every round
-        assert panel.phase in ("play", "strike")
+    for _ in range(T.HP_ROUNDS):                       # match correctly every round
         if panel.phase != "play":
             break
-        panel.hp_pick = panel.hp_target               # know the answer -> pick it
+        panel.hp_pick = panel.hp_target               # read the dummy -> pick the match
         panel.key("space")
-    # three correct guesses -> a strong, successful drill.  HP has NO projectile
-    # strike (per-round flashes only), so it goes straight to "done".
-    assert panel.rounds_won == T.HP_ROUNDS
+    # two correct matches ends it immediately (early-exit at _hpTrainingRoundsWon), a full
+    # success.  HP has NO projectile strike (per-round flashes only) -> straight to "done".
+    assert panel.rounds_won == T.HP_ROUNDS_WON
     assert panel.phase == "done" and panel.success and panel._strong
 
 
