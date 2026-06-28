@@ -77,6 +77,12 @@ def _blit(bm, ox, oy):
 with open(os.path.join(os.path.dirname(__file__), "data", "attr_icons.json")) as _f:
     _ATTR_ICONS = json.load(_f)        # {'big': [v,d,v], 'small': [v,d,v]}  order Vaccine/Data/Virus
 
+# The REAL DVPet HP training dummy -- the bird "battle bag" (battleBags.png frames 0/2/4)
+# that holds the attribute symbol on its belly.  This is the "image on the training dummy"
+# the player reads and matches.  Extracted 1:1 from the source art.
+with open(os.path.join(os.path.dirname(__file__), "data", "hp_dummies.json")) as _f:
+    _HP_DUMMIES = json.load(_f)         # {'vaccine','data','virus'} -> 1-bit bird w/ belly symbol
+
 
 def _box(w, h):
     """Hollow 1-bit rectangle -- the HP-drill cursor framing the picked attribute."""
@@ -404,19 +410,20 @@ class TrainingPanel:
                 overlay += [(ex + x, ey + y) for y in range(sh) for x in range(sw)
                             if x in (0, sw - 1) or y in (0, sh - 1)]
             put_pet()
-        else:                                               # hp: read the dummy (right), pick the matching icon
-            # DVPet drawHPTraining: pet + a training dummy that SHOWS a random attribute,
-            # and 3 stacked icons (Vaccine/Data/Virus) you pick from.  Clean flat LCD,
-            # no habitat photo -- matches the guide's HP minigame screen.
+        else:                                               # hp: the REAL DVPet drawHPTraining layout
+            # Training dummy (bird w/ an attribute symbol on its belly) on the LEFT, the 3
+            # stacked icons (Vaccine/Data/Virus) in the MIDDLE, the pet on the RIGHT.  Read
+            # the dummy's belly symbol, click the matching icon.  Clean flat LCD (no photo).
             on, bgimg = LCD_ON, None
-            pf = self._frame(rec, self._pose_now(0))        # the pet, left
-            overlay.extend(_blit(pf, 1, ph - len(pf)))
+            dummy = _HP_DUMMIES[("vaccine", "data", "virus")[self.hp_target]]
+            overlay.extend(_blit(dummy, 1, ph - len(dummy)))            # dummy LEFT, baseline
             for i in range(3):                              # the 3 stacked guess icons (real ● ■ ▲)
                 iy = i * 8                                   # 6px icon + 2px gap = exact 22px fit
-                overlay.extend(_blit(_ATTR_ICONS["small"][i], 17, iy))
+                overlay.extend(_blit(_ATTR_ICONS["small"][i], 19, iy))
                 if i == self.hp_pick:                       # cursor frame around the current guess
-                    overlay.extend(_blit(_box(8, 8), 16, iy - 1))
-            overlay.extend(_blit(_ATTR_ICONS["big"][self.hp_target], 25, 4))  # the dummy's shown attribute
+                    overlay.extend(_blit(_box(8, 8), 18, iy - 1))
+            pf = self._frame(rec, self._pose_now(0))        # the pet RIGHT
+            overlay.extend(_blit(pf, COLS - max(len(r) for r in pf) - 1, ph - len(pf)))
         scene = render_scene([], COLS, ARENA_ROWS, on, LCD_BG, overlay=overlay, bgimg=bgimg)
         scene.append("\n")
         scene.append_text(self._gauge())
