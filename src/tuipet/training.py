@@ -58,7 +58,8 @@ HP_ROUND_LEN = 28             # ticks to pick before a round times out (~2.8s)
 VBAR_W = 24
 
 COLS = 40
-ARENA_ROWS = 11               # play & strike share one arena height (room for the tall hanging bag)
+ARENA_ROWS = 12               # the app's ONE locked LCD area (== app SCREEN_ROWS / battle ROWS).
+                              # DVPet's native LCD is 105x60px; tuipet shows it at 40x24 everywhere.
 
 # strike sequence: a battle-style volley (windup -> fire_out -> fire_in -> hit -> break),
 # beats imported from the battle screen so they march at the same pace.  The orb rides the
@@ -399,9 +400,10 @@ class TrainingPanel:
         return self._render_play(rec)
 
     def _scene_palette(self):
-        bgimg = self.pet.background()
-        on = SIL_NIGHT if self.pet.day_phase == "night" else (SIL_DAY if bgimg else LCD_ON)
-        return on, bgimg
+        # dot-matrix hybrid: every training scene (drills AND the strike) plays out on a
+        # clean flat LCD -- no downsampled habitat photo to clash with the crisp sprites,
+        # matching the HP/virus drills.
+        return LCD_ON, None
 
     def _render_play(self, rec):
         """Faithful to the decompiled DVPet drills.  The LCD is 105x60 logical px and the

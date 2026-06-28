@@ -17,7 +17,7 @@ import os
 from . import data
 from .battle import Battle
 from .render import render_scene
-from .theme import LCD_ON, LCD_BG, SIL_DAY, SIL_NIGHT
+from .theme import LCD_ON, LCD_BG
 from . import menu
 
 COLS, ROWS = 40, 12
@@ -214,9 +214,9 @@ class BattlePanel:
         return (fr[pose] if pose < len(fr) else None) or fr[0]
 
     def _scene(self, placements, overlay):
-        bgimg = self.pet.background()
-        on = SIL_NIGHT if self.pet.day_phase == "night" else (SIL_DAY if bgimg else LCD_ON)
-        return render_scene(placements, COLS, ROWS, on, LCD_BG, overlay=overlay, bgimg=bgimg)
+        # dot-matrix hybrid: the battle plays on a clean flat LCD (no photo background),
+        # so the crisp sprites + orbs read cleanly instead of over a downsampled photo.
+        return render_scene(placements, COLS, ROWS, LCD_ON, LCD_BG, overlay=overlay, bgimg=None)
 
     def _place_one(self, view, rows, xshift=0):
         """Place the ONE monster currently on screen. Player stands RIGHT (faces left), enemy
