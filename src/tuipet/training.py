@@ -70,6 +70,28 @@ def _blit(bm, ox, oy):
             for x, c in enumerate(row) if c == "1"]
 
 
+def _attr_shape(kind, h=9):
+    """Clean attribute symbol as a 1-bit bitmap (procedural, not hand-authored):
+    0=circle (Vaccine), 1=square (Data), 2=triangle (Virus)."""
+    if kind == 1:                                   # square
+        return ["1" * h for _ in range(h)]
+    rows = []
+    if kind == 0:                                   # filled circle
+        c = (h - 1) / 2
+        for y in range(h):
+            rows.append("".join("1" if (x - c) ** 2 + (y - c) ** 2 <= (c + 0.4) ** 2 else "0"
+                                 for x in range(h)))
+    else:                                           # filled upward triangle
+        for y in range(h):
+            w = 1 + int(y / (h - 1) * (h - 1))
+            pad = (h - w) // 2
+            rows.append("0" * pad + "1" * w + "0" * (h - w - pad))
+    return rows
+
+
+_ATTR_SHAPES = [_attr_shape(0), _attr_shape(1), _attr_shape(2)]   # ● ■ ▲
+
+
 GAMES = [
     ("hp",      "HP Drill", "Effort",  "guess the bag — best of 3"),
     ("vaccine", "Vaccine",  "Vaccine", f"mash the bag to {VACCINE_HITS_MIN}"),
@@ -361,6 +383,10 @@ class TrainingPanel:
             pet = self._frame(rec, self._pose_now(0))
             pw = max(len(r) for r in pet)
             placements.append((pet, COLS - pw - 3, False))
+            # the bag's attribute SYMBOL, shown big in the middle -- this is what you MATCH
+            sym = _ATTR_SHAPES[self.hp_target]
+            sw, shh = len(sym[0]), len(sym)
+            overlay += _blit(sym, (COLS - sw) // 2, (px_h - shh) // 2 - 1)
         else:                                               # vaccine / virus: pet HIDDEN, just the bag
             bag = E.get("punching_bag", [None])[0]
             if bag:
@@ -377,15 +403,15 @@ class TrainingPanel:
         gk = self.gkey
         t = Text()
         if gk == "hp":
-            t.append("guess: ", style=INK)
+            t.append("bag ", style=INK)
+            t.append(ATTR_SYM[self.hp_target], style=INK_B)        # the symbol you must match
+            t.append("  match ", style=INK)
             for i, sym in enumerate(ATTR_SYM):
                 sel = i == self.hp_pick
                 t.append(f"[{sym}]" if sel else f" {sym} ",
                          style=(f"{ACCENT} on {LCD_BG}") if sel else INK_B)
-            tb = int((max(self.round_t, 0) / HP_ROUND_LEN) * 6)
-            t.append("  " + "█" * tb + "░" * (6 - tb) + " ", style=f"{ACCENT} on {LCD_BG}")
-            dots = "●" * self.rounds_won + "○" * (self.rep - self.rounds_won) + "·" * (HP_ROUNDS - self.rep)
-            t.append(dots + "\n", style=INK)
+            tb = int((max(self.round_t, 0) / HP_ROUND_LEN) * 5)
+            t.append(" " + "▓" * tb + "░" * (5 - tb) + "\n", style=f"{ACCENT} on {LCD_BG}")
         elif gk == "vaccine":
             filled = int((max(self.timer, 0) / VACCINE_WINDOW) * 13)
             t.append("time " + "█" * filled + "░" * (13 - filled), style=f"{ACCENT} on {LCD_BG}")
@@ -406,10 +432,10 @@ class TrainingPanel:
         return t
 
     def _hint(self):
-        return {"hp": "←→ pick  SPACE guess  ESC out",
-                "vaccine": "SPACE mash   ESC out",
-                "data": "↑ block high   ↓ block low   ESC out",
-                "virus": "SPACE stop   ESC out"}[self.gkey]
+        return {"hp": "←→ match the bag's symbol   SPACE strike",
+                "vaccine": "SPACE mash the bag   ESC out",
+                "data": "↑ block high   ↓ block low",
+                "virus": "SPACE stop the bar high   ESC out"}[self.gkey]
 
     def _render_strike(self, rec):
         """DVPet attackDefault/attackGreen -> hitAnim -> aftermathDefault.  The pet
