@@ -873,6 +873,7 @@ class TuiPetApp(App):
             event.stop()
             event.prevent_default()      # a panel owns the keyboard: don't fire global BINDINGS
             result = self.mode.key(event.key)
+            self._sync_train_box()              # ENTER may have started/ended a drill -> resize the LCD
             snd = getattr(self.mode, "sfx", None)
             if snd:
                 self.beep(snd, bell=False)
@@ -892,9 +893,32 @@ class TuiPetApp(App):
             else:
                 self.repaint()
 
+    def _lcd_size(self, w, h):
+        """Resize the LCD box (and its column) -- training renders a full DVPet-native
+        105x60 screen, so the box grows to fit the crisp render, then shrinks back."""
+        try:
+            self.screen_w.styles.width = w
+            self.screen_w.styles.height = h
+            self.query_one("#left").styles.width = w
+        except Exception:
+            pass
+
+    def _sync_train_box(self):
+        """The drills (play/strike) render a full DVPet-native 105x60 LCD, so the box
+        grows for them; the menu + result screens stay in the compact 44-wide box they
+        were laid out for.  Called each tick/keypress so the box tracks the phase."""
+        if not isinstance(self.mode, training.TrainingPanel):
+            return
+        if self.mode.phase == "menu":
+            self._lcd_size(44, 14)              # the diamond was laid out for the compact box
+        else:
+            self._lcd_size(109, 34)             # play/strike/done -> full crisp 105-wide LCD
+
     def _open_mode(self, panel, on_close=None):
         self.mode = panel
         self._mode_close = on_close
+        if isinstance(panel, training.TrainingPanel):
+            self._sync_train_box()              # menu starts compact; drills grow the LCD
         # clear the message strip so a screen never shows the PREVIOUS screen's
         # farewell flash; each sub-screen carries its own note inside the LCD
         if getattr(self, "msg_w", None) is not None:
@@ -903,8 +927,11 @@ class TuiPetApp(App):
 
     def _close_mode(self, result):
         cb = self._mode_close
+        was_training = isinstance(self.mode, training.TrainingPanel)
         self.mode = None
         self._mode_close = None
+        if was_training:
+            self._lcd_size(44, 14)              # restore the compact LCD
         if cb:
             cb(result)
         else:
@@ -1238,6 +1265,7 @@ class TuiPetApp(App):
                 if isinstance(self.mode, adventurescreen.AdventurePanel):
                     self._status_adventure()
                 elif isinstance(self.mode, training.TrainingPanel):
+                    self._sync_train_box()      # phase may have advanced this tick
                     self._status_training()
                 elif isinstance(self.mode, battlescreen.BattlePanel):
                     self._status_battle()
