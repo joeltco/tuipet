@@ -646,7 +646,7 @@ class Stats(Static):
             f"Energy  {bar(pet.energy_pct(), 12, T.ENERGY)}",
             f"Mood    {bar(pet.mood_pct(), 12, T.MOOD)}",
             div,
-            f"Power   [{T.POS}]V{pet.vaccine}[/] [{T.ENERGY}]D{pet.data_power}[/] [{T.MOOD}]Vi{pet.virus}[/]",
+            f"Power   [{T.POS}]●{pet.vaccine}[/] [{T.ENERGY}]■{pet.data_power}[/] [{T.MOOD}]▲{pet.virus}[/]",
             f"Weight  {pet.weight}g   [{T.COIN}]{pet.bits}b[/]",
             f"Battle  {pet.wins}W/{pet.battles}   [{T.COIN}]\u2605{pet.trophies}[/]",
             f"@{pet.habitat_obj()['name'][:14]} {amark} [dim]{pet.season}[/]",
@@ -1054,7 +1054,7 @@ class TuiPetApp(App):
                 div,
                 f"Effort   {hearts(p.strength)}",
                 f"Energy   {bar(p.energy_pct(), 11, T.ENERGY)}",
-                f"Power    [{T.POS}]V{p.vaccine}[/] [{T.ENERGY}]D{p.data_power}[/] [{T.MOOD}]Vi{p.virus}[/]",
+                f"Power    [{T.POS}]●{p.vaccine}[/] [{T.ENERGY}]■{p.data_power}[/] [{T.MOOD}]▲{p.virus}[/]",
                 div,
                 "[dim]fight for the cup[/]",
             ]
@@ -1068,7 +1068,7 @@ class TuiPetApp(App):
         div = f"[dim]{'-' * 26}[/]".replace("-", "\u2500")
         eff = hearts(p.strength)
         energy = bar(p.energy_pct(), 11, T.ENERGY)
-        power = f"[{T.POS}]V{p.vaccine}[/] [{T.ENERGY}]D{p.data_power}[/] [{T.MOOD}]Vi{p.virus}[/]"
+        power = f"[{T.POS}]●{p.vaccine}[/] [{T.ENERGY}]■{p.data_power}[/] [{T.MOOD}]▲{p.virus}[/]"
         label = GAMES[tp.gi][1]
         gk = tp.gkey
         if tp.phase == "menu":
@@ -1190,7 +1190,7 @@ class TuiPetApp(App):
         self.stats_w.border_subtitle = f"gen {p.generation}"
         div = f"[dim]{'─' * 26}[/]"
         lives = "♥" * a.lives + "[dim]·[/]" * (3 - a.lives)
-        power = f"[{T.POS}]V{p.vaccine}[/] [{T.ENERGY}]D{p.data_power}[/] [{T.MOOD}]Vi{p.virus}[/]"
+        power = f"[{T.POS}]●{p.vaccine}[/] [{T.ENERGY}]■{p.data_power}[/] [{T.MOOD}]▲{p.virus}[/]"
         if self.mode.sub is not None:                       # mid-encounter battle
             e = self.mode.sub.battle.enemy
             tag = f" [{T.NEG}]BOSS[/]" if e.get("boss") else ""
