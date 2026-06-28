@@ -408,32 +408,27 @@ class TrainingPanel:
         return on, bgimg
 
     def _render_play(self, rec):
-        """Faithful to the decompiled DVPet drills.  The LCD is 105x60 logical px and the
-        *PrePrep methods give every sprite's exact position; we map those into tuipet's
-        arena and blit the REAL training sprites at them.
-          Vaccine: bag(0,2) + 'Hit!!'(31,6) + orb(44,31), pet HIDDEN.
-          Virus:   bag(0,2) + filling bar(2,16), pet HIDDEN.
-          Data:    cannon(0,31) bobs then locks aim, shields top(64,7)/bot(64,36), pet right.
-          HP:      pet right(74) + opponent bag(0) + the attribute symbol to match."""
+        """The DVPet drills, rebuilt to match the real game with the real sprites:
+          Vaccine: MASH the bag (bag LEFT, 'Hit!' label flashes, pet HIDDEN).
+          Virus:   the power bar FILLS L->R; stop it in the zone (bar centred, pet HIDDEN).
+          Data:    the GREEN target attacks HIGH/LOW; raise the matching shield (green LEFT,
+                   two shield slots in front of the pet RIGHT).
+          HP:      read the dummy's attribute, pick the matching icon (dummy LEFT, icons MID,
+                   pet RIGHT) -- on a flat LCD."""
         gk = self.gkey
         E = data.load_effects()
         on, bgimg = self._scene_palette()
         ph = ARENA_ROWS * 2
         overlay = []
 
-        def put(sprite, dx, dy):                            # DVPet (105x60) logical -> tuipet arena
-            if sprite:
-                overlay.extend(_blit(sprite, round(dx * COLS / 105.0), round(dy * ph / 60.0)))
-
-        def put_pet():                                      # the pet, right-aligned at DVPet y=9
-            pf = self._frame(rec, self._pose_now(0))
-            overlay.extend(_blit(pf, COLS - max(len(r) for r in pf) - 1, round(9 * ph / 60.0)))
-
-        if gk == "vaccine":                                 # bag + 'Hit!!' + orb, pet HIDDEN
-            put(E.get("punching_bag", [None])[0], 0, 2)
-            if self._strike_t > 0:                          # 'Hit!!' flashes on each hit
-                put(E.get("train_hit", [None])[0], 31, 6)
-            put(E.get("train_button", [None])[0], 44, 31 - (1 if self._strike_t > 0 else 0))
+        if gk == "vaccine":                                 # DVPet drawVaccinePre: MASH to charge power.
+            bag = E.get("punching_bag", [None])[0]           # the bag is the target; the pet is HIDDEN
+            if bag:                                          # (it appears only for the strike).  The hit
+                overlay.extend(_blit(bag, 6, ph - len(bag)))  # button is a DEVICE button (off-LCD) -> not
+            if self._strike_t > 0:                           # drawn here.  Bag on the LEFT (DVPet ~locX 26),
+                hit = E.get("train_hit", [None])[0]          # lined up with the strike's target side.
+                if hit:                                      # the "Hit!" label (DVPet hitLabel) flashes per press
+                    overlay.extend(_blit(hit, (COLS - len(hit[0])) // 2, 3))
         elif gk == "virus":                                 # DVPet drawVirusPre: pet AND bag HIDDEN
             frame = E.get("train_bar_empty", [None])[0]      # only the power bar shows -- it FILLS
             fill = E.get("train_bar", [None])[0]             # L->R, loops 0->100, press to stop high
@@ -449,17 +444,28 @@ class TrainingPanel:
                     overlay.extend(_blit([row[:w] for row in fill], fx + 1, fy + 1))
             if int(self.pos) >= VIRUS_BAR_MIN:               # front in the zone -> the goal box lights
                 overlay += [(fx + 32 + x, fy + 1 + y) for y in range(3) for x in range(5)]
-        elif gk == "data":                                  # cannon + two shields + pet right
+        elif gk == "data":                                  # DVPet drawDataPre: the GREEN target feints,
+            # then attacks HIGH or LOW; raise your shield (top/bot, in front of the pet) to match.
             up = self.tgt_up if self.locked else self.feint_up
-            put(E.get("train_cannon_up" if up else "train_cannon", [None])[0], 0, 31)
-            shield = E.get("train_shield", [None])[0]
-            put(shield, 64, 7 if self.shield_up else 36)    # the ACTIVE shield (solid)
-            if shield:                                      # the empty slot: a faint outline
-                ex, ey = round(64 * COLS / 105.0), round((36 if self.shield_up else 7) * ph / 60.0)
-                sw, sh = len(shield[0]), len(shield)
-                overlay += [(ex + x, ey + y) for y in range(sh) for x in range(sw)
-                            if x in (0, sw - 1) or y in (0, sh - 1)]
-            put_pet()
+            green = E.get("train_green_up" if up else "train_green", [None])[0]   # REAL trainGreen target
+            sh_h = len(E.get("train_shield", [[""]])[0])
+            top_y, bot_y = 3, ph - sh_h - 3
+            if green:                                        # green on the LEFT, at the attack height
+                gy = top_y if up else ph - len(green) - 3    # popped UP (high) / down (low)
+                overlay.extend(_blit(green, 3, gy))
+            pf = self._frame(rec, self._pose_now(0))         # the pet on the RIGHT
+            pw = max(len(r) for r in pf)
+            px = COLS - pw - 1
+            overlay.extend(_blit(pf, px, ph - len(pf)))
+            shield = E.get("train_shield", [None])[0]        # two stacked shield slots in front of the pet
+            if shield:
+                sw = len(shield[0])
+                sx = px - sw - 1
+                on_y = top_y if self.shield_up else bot_y    # the raised shield = SOLID (DVPet trainShield)
+                off_y = bot_y if self.shield_up else top_y   # the other slot = faint outline (shieldTransp)
+                overlay.extend(_blit(shield, sx, on_y))
+                overlay += [(sx + x, off_y + y) for y in range(sh_h) for x in range(sw)
+                            if x in (0, sw - 1) or y in (0, sh_h - 1)]
         else:                                               # hp: the REAL DVPet drawHPTraining layout
             # Training dummy (bird w/ an attribute symbol on its belly) on the LEFT, the 3
             # stacked icons (Vaccine/Data/Virus) in the MIDDLE, the pet on the RIGHT.  Read
