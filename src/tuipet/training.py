@@ -352,46 +352,60 @@ class TrainingPanel:
         return on, bgimg
 
     def _render_play(self, rec):
-        """The skill phase, with the opponent present the whole time (DVPet
-        drawHPTraining / drawVaccinePre / drawDataPre / drawVirusPre layouts)."""
+        """The skill phase, matching the DVPet guide minigames:
+        Vaccine = hit the orb ("Hit!!"); Data = a cannon aims high/low and you raise
+        the matching shield to block; Virus = stop the sweeping marker in the target
+        range; HP = match the shown attribute symbol.  The pet watches from the right."""
         gk = self.gkey
         E = data.load_effects()
         on, bgimg = self._scene_palette()
         px_h = ARENA_ROWS * 2
         placements = []
         overlay = []
-        if gk == "data":                                    # pet LEFT, green target RIGHT, shield block
-            pet = self._frame(rec, self._pose_now([1, 4][(self.frame_i // 4) % 2]))
-            pw = max(len(r) for r in pet)
-            placements.append((pet, 2, False))
-            up = self.tgt_up if self.locked else self.feint_up   # green shows the feint / committed side
-            g = E.get("train_green_up" if up else "train_green", [None])[0]
-            if g:
-                gw = max(len(r) for r in g)
-                placements.append((g, COLS - gw - 3, False))
-            # the player's shield (DVPet trainShield sprite), raised high or low
-            shield = E.get("train_shield", [None])[0]
+        pet = self._frame(rec, self._pose_now(0))
+        pw = max(len(r) for r in pet)
+        pet_x = COLS - pw - 2
+        if gk == "vaccine":                                 # HIT the orb (DVPet "Hit!!")
+            placements.append((pet, pet_x, False))
+            orb = _attr_shape(0, 11)                         # a solid black orb
+            ow, oh = len(orb[0]), len(orb)
+            bob = -2 if self._strike_t > 0 else (1 if (self.frame_i // 3) % 2 else 0)
+            overlay += _blit(orb, COLS // 2 - ow, (px_h - oh) // 2 + bob)
+        elif gk == "data":                                  # CANNON aims high/low -> raise the matching SHIELD
+            placements.append((pet, pet_x, False))
+            up = self.tgt_up if self.locked else self.feint_up
+            cannon = E.get("train_green_up" if up else "train_green", [None])[0]
+            if cannon:
+                ch = len(cannon)
+                cy = (px_h - 6 - ch - 7) if up else (px_h - 6 - ch)   # cannon sits high (up) or low
+                overlay += _blit(cannon, 4, max(0, cy))
+            shield = E.get("train_shield", [None])[0]        # two slots by the pet; the active one is solid
             if shield:
-                shh = len(shield)
-                sx = 2 + pw + 1
-                sy = (px_h - 18) if self.shield_up else (px_h - 4 - shh)
-                overlay += _blit(shield, sx, sy)
-        elif gk == "hp":                                    # pet RIGHT, battle-bag LEFT (the DVPet HP opponent)
+                sw, shh = len(shield[0]), len(shield)
+                sx = pet_x - sw - 2
+                top_y, bot_y = px_h - 6 - shh - 7, px_h - 6 - shh
+                overlay += _blit(shield, sx, top_y if self.shield_up else bot_y)
+                ey = bot_y if self.shield_up else top_y      # the empty slot: a faint outline
+                overlay += [(sx + x, ey + y) for y in range(shh) for x in range(sw)
+                            if x in (0, sw - 1) or y in (0, shh - 1)]
+        elif gk == "hp":                                    # match the shown attribute symbol
             bag = E.get("battle_bag", [None])[0]
             if bag:
                 placements.append((bag, 2, False))
-            pet = self._frame(rec, self._pose_now(0))
-            pw = max(len(r) for r in pet)
-            placements.append((pet, COLS - pw - 3, False))
-            # the bag's attribute SYMBOL, shown big in the middle -- this is what you MATCH
+            placements.append((pet, pet_x, False))
             sym = _ATTR_SHAPES[self.hp_target]
             sw, shh = len(sym[0]), len(sym)
             overlay += _blit(sym, (COLS - sw) // 2, (px_h - shh) // 2 - 1)
-        else:                                               # vaccine / virus: pet HIDDEN, just the bag
-            bag = E.get("punching_bag", [None])[0]
-            if bag:
-                bw = max(len(r) for r in bag)
-                placements.append((bag, (COLS - bw) // 2 - 4, False))
+        else:                                               # virus: stop the marker in the target range
+            placements.append((pet, pet_x, False))
+            bx, bw, by = 3, COLS - 7, 6                     # a wide bar across the top of the LCD
+            lo = bx + int(VIRUS_BAR_MIN / 100 * bw)
+            overlay += [(bx + x, by) for x in range(bw)]                       # the bar rail
+            for x in range(lo, bx + bw):                                       # the target zone (a box)
+                overlay += [(x, by - 2), (x, by + 2)]
+            overlay += [(lo, by + dy) for dy in (-2, -1, 0, 1, 2)]             # zone left edge
+            mx = bx + int(self.pos / 100 * bw)
+            overlay += [(mx, by + dy) for dy in (-3, -2, -1, 0, 1, 2, 3)]      # the sweeping marker
         scene = render_scene(placements, COLS, ARENA_ROWS, on, LCD_BG, overlay=overlay, bgimg=bgimg)
         scene.append("\n")
         scene.append_text(self._gauge())
@@ -413,29 +427,32 @@ class TrainingPanel:
             tb = int((max(self.round_t, 0) / HP_ROUND_LEN) * 5)
             t.append(" " + "▓" * tb + "░" * (5 - tb) + "\n", style=f"{ACCENT} on {LCD_BG}")
         elif gk == "vaccine":
-            filled = int((max(self.timer, 0) / VACCINE_WINDOW) * 13)
-            t.append("time " + "█" * filled + "░" * (13 - filled), style=f"{ACCENT} on {LCD_BG}")
+            hit = self._strike_t > 0
+            t.append("HIT!! " if hit else "hit!  ", style=INK_B if hit else INK)
             done = self.taps >= VACCINE_HITS_MIN
-            t.append(f"  {self.taps}/{VACCINE_HITS_MIN} {'!' if done else ''}\n", style=INK_B if done else INK)
+            t.append(f"{self.taps}/{VACCINE_HITS_MIN}  ", style=INK_B if done else INK)
+            filled = int((max(self.timer, 0) / VACCINE_WINDOW) * 9)
+            t.append("time " + "▓" * filled + "░" * (9 - filled) + "\n", style=f"{ACCENT} on {LCD_BG}")
         elif gk == "data":
             if self.locked:
-                t.append("ATTACK " + ("HIGH! " if self.tgt_up else "LOW!  "), style=INK_B)
+                t.append("CANNON " + ("HIGH! " if self.tgt_up else "LOW!  "), style=INK_B)
             else:
-                t.append("feinting... ", style=DIM)
+                t.append("aiming...  ", style=DIM)
             t.append("shield ", style=INK)
             t.append("[UP]" if self.shield_up else " up ", style=(f"{ACCENT} on {LCD_BG}") if self.shield_up else INK)
             t.append("[DN]" if not self.shield_up else " dn ", style=(f"{ACCENT} on {LCD_BG}") if not self.shield_up else INK)
             t.append("\n", style=INK)
-        else:  # virus
-            t.append_text(self._powerbar(self.pos))
-            t.append(f" {int(self.pos)}/{VIRUS_BAR_MIN}\n", style=INK)
+        else:  # virus -- the bar is drawn in the LCD; the gauge just calls the zone
+            inzone = int(self.pos) >= VIRUS_BAR_MIN
+            t.append("IN THE ZONE - hit!" if inzone else "stop it in the zone", style=INK_B if inzone else INK)
+            t.append(f"   {int(self.pos)}\n", style=INK)
         return t
 
     def _hint(self):
-        return {"hp": "←→ match the bag's symbol   SPACE strike",
-                "vaccine": "SPACE mash the bag   ESC out",
-                "data": "↑ block high   ↓ block low",
-                "virus": "SPACE stop the bar high   ESC out"}[self.gkey]
+        return {"hp": "←→ match the symbol   SPACE strike",
+                "vaccine": "SPACE hit the orb!   ESC out",
+                "data": "↑ / ↓ raise the shield the cannon faces",
+                "virus": "SPACE stop the marker in the zone"}[self.gkey]
 
     def _render_strike(self, rec):
         """DVPet attackDefault/attackGreen -> hitAnim -> aftermathDefault.  The pet
