@@ -389,17 +389,17 @@ class TrainingPanel:
             if self._strike_t > 0:                          # 'Hit!!' flashes on each hit
                 put(E.get("train_hit", [None])[0], 31, 6)
             put(E.get("train_button", [None])[0], 44, 31 - (1 if self._strike_t > 0 else 0))
-        elif gk == "virus":                                 # DVPet drawVirusPre: pet HIDDEN, the
-            on, bgimg = LCD_ON, None                         # power bar FILLS L->R and loops;
-            bag = E.get("punching_bag", [None])[0]           # stop it high (into the zone box)
-            if bag:                                          # bag hangs left-of-centre (DVPet locX=26),
-                overlay.extend(_blit(bag, 6, 0))             # lined up with the strike's target side
-            frame = E.get("train_bar_empty", [None])[0]      # REAL trainBarEmpty: bordered bar
-            fill = E.get("train_bar", [None])[0]             # REAL trainBar: dashed fill (94x4)
-            fx, fy = 1, ph - 5                               # the bar spans the bottom of the LCD
+        elif gk == "virus":                                 # DVPet drawVirusPre: pet AND bag HIDDEN
+            on, bgimg = LCD_ON, None                         # (virusPrePrep never shows the opponent);
+            frame = E.get("train_bar_empty", [None])[0]      # only the power bar shows -- it FILLS
+            fill = E.get("train_bar", [None])[0]             # L->R, loops 0->100, press to stop high
+            fw = len(frame[0]) if frame else 38
+            fh = len(frame) if frame else 5
+            fx = (COLS - fw) // 2                            # REAL trainBarEmpty, centred on a clean LCD
+            fy = (ph - fh) // 2
             if frame:
                 overlay.extend(_blit(frame, fx, fy))
-            if fill:                                         # dashed fill grows in the main box (30w)
+            if fill:                                         # REAL dashed trainBar, grows in the main box
                 w = max(0, min(30, round(30 * min(self.pos, 100) / 100.0)))
                 if w:
                     overlay.extend(_blit([row[:w] for row in fill], fx + 1, fy + 1))
