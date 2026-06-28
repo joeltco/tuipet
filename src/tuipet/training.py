@@ -389,16 +389,22 @@ class TrainingPanel:
             if self._strike_t > 0:                          # 'Hit!!' flashes on each hit
                 put(E.get("train_hit", [None])[0], 31, 6)
             put(E.get("train_button", [None])[0], 44, 31 - (1 if self._strike_t > 0 else 0))
-        elif gk == "virus":                                 # bag + filling bar, pet HIDDEN
-            put(E.get("punching_bag", [None])[0], 0, 2)
-            put(E.get("train_bar_empty", [None])[0], 2, 16)
-            fill = E.get("train_bar", [None])[0]
-            if fill:
-                w = max(1, round(len(fill[0]) * min(self.pos, 100) / 100.0))
-                put([row[:w] for row in fill], 6, 20)
-            tx = round((6 + 94 * VIRUS_BAR_MIN / 100.0) * COLS / 105.0)        # the win threshold
-            ty = round(15 * ph / 60.0)
-            overlay += [(tx, ty + d) for d in range(round(14 * ph / 60.0))]
+        elif gk == "virus":                                 # DVPet drawVirusPre: pet HIDDEN, the
+            on, bgimg = LCD_ON, None                         # power bar FILLS L->R and loops;
+            bag = E.get("punching_bag", [None])[0]           # stop it high (into the zone box)
+            if bag:                                          # bag hangs left-of-centre (DVPet locX=26),
+                overlay.extend(_blit(bag, 6, 0))             # lined up with the strike's target side
+            frame = E.get("train_bar_empty", [None])[0]      # REAL trainBarEmpty: bordered bar
+            fill = E.get("train_bar", [None])[0]             # REAL trainBar: dashed fill (94x4)
+            fx, fy = 1, ph - 5                               # the bar spans the bottom of the LCD
+            if frame:
+                overlay.extend(_blit(frame, fx, fy))
+            if fill:                                         # dashed fill grows in the main box (30w)
+                w = max(0, min(30, round(30 * min(self.pos, 100) / 100.0)))
+                if w:
+                    overlay.extend(_blit([row[:w] for row in fill], fx + 1, fy + 1))
+            if int(self.pos) >= VIRUS_BAR_MIN:               # front in the zone -> the goal box lights
+                overlay += [(fx + 32 + x, fy + 1 + y) for y in range(3) for x in range(5)]
         elif gk == "data":                                  # cannon + two shields + pet right
             up = self.tgt_up if self.locked else self.feint_up
             put(E.get("train_cannon_up" if up else "train_cannon", [None])[0], 0, 31)
