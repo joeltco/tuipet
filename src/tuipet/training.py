@@ -59,7 +59,9 @@ STRIKE_FLASH = 6              # impact flash (0.6s)
 STRIKE_AFTER = 12             # aftermath: broken-bag / recoil hold (1.2s)
 STRIKE_TOTAL = STRIKE_FIRE + STRIKE_FLASH + STRIKE_AFTER
 
-ATTR_SHORT = ["Vac", "Dat", "Vir"]   # HP-drill guess buttons (Vaccine / Data / Virus)
+# the attribute symbols (DVPet: Vaccine=orb/red, Data=block/green, Virus=dart/yellow)
+# -> circle / square / triangle.
+ATTR_SYM = ["●", "■", "▲"]   # ● ■ ▲  (Vaccine / Data / Virus) for the HP-drill guess
 
 
 def _blit(bm, ox, oy):
@@ -375,10 +377,11 @@ class TrainingPanel:
         gk = self.gkey
         t = Text()
         if gk == "hp":
-            for i, name in enumerate(ATTR_SHORT):
+            t.append("guess: ", style=INK)
+            for i, sym in enumerate(ATTR_SYM):
                 sel = i == self.hp_pick
-                t.append(f"[{name}]" if sel else f" {name} ",
-                         style=(f"{ACCENT} on {LCD_BG}") if sel else INK)
+                t.append(f"[{sym}]" if sel else f" {sym} ",
+                         style=(f"{ACCENT} on {LCD_BG}") if sel else INK_B)
             tb = int((max(self.round_t, 0) / HP_ROUND_LEN) * 6)
             t.append("  " + "█" * tb + "░" * (6 - tb) + " ", style=f"{ACCENT} on {LCD_BG}")
             dots = "●" * self.rounds_won + "○" * (self.rep - self.rounds_won) + "·" * (HP_ROUNDS - self.rep)
