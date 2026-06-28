@@ -92,6 +92,16 @@ def _attr_shape(kind, h=9):
 _ATTR_SHAPES = [_attr_shape(0), _attr_shape(1), _attr_shape(2)]   # ● ■ ▲
 
 
+def _plus_glyph(h=9):
+    """A plus/cross for the HP option (health = +)."""
+    t = h // 3
+    return ["1" * h if t <= y < h - t else "0" * t + "1" * (h - 2 * t) + "0" * t
+            for y in range(h)]
+
+
+_HP_GLYPH = _plus_glyph()
+
+
 GAMES = [
     ("hp",      "HP Drill", "Effort",  "guess the bag — best of 3"),
     ("vaccine", "Vaccine",  "Vaccine", f"mash the bag to {VACCINE_HITS_MIN}"),
@@ -250,10 +260,16 @@ class TrainingPanel:
         if self.phase == "strike":
             return None                  # the strike plays out uninterrupted (DVPet has no skip)
         if self.phase == "menu":
+            # DVPet drawTrainingSelect diamond: ● Vaccine top, ■ Data left,
+            # ▲ Virus right, HP bottom -- each arrow selects the drill in that direction.
             if k in ("up", "k"):
-                self.gi = (self.gi - 1) % len(GAMES)
+                self.gi = 1            # ● Vaccine (top)
+            elif k in ("left", "h"):
+                self.gi = 2            # ■ Data (left)
+            elif k in ("right", "l"):
+                self.gi = 3            # ▲ Virus (right)
             elif k in ("down", "j"):
-                self.gi = (self.gi + 1) % len(GAMES)
+                self.gi = 0            # HP (bottom)
             elif k in ("1", "2", "3", "4"):
                 self.gi = int(k) - 1
                 self._start_game()
@@ -512,14 +528,40 @@ class TrainingPanel:
         return scene
 
     def _render_menu(self):
-        out = menu.header("TRAINING", "pick a drill")
-        out.append_text(menu.note(GAMES[self.gi][3]))
-        out.append_text(menu.blanks(1))
-        for i, (gk, label, attr, blurb) in enumerate(GAMES):
-            tag = "effort" if gk == "hp" else f"{attr[:4]} pow"
-            out.append_text(menu.row(f"{label:<9} {tag}", i == self.gi))
-        out.append_text(menu.footer("↑↓ pick   ENTER start   ESC out"))
-        return out
+        """DVPet drawTrainingSelect: a diamond of the attribute symbols around the
+        Digimon -- ● Vaccine top, ■ Data left, ▲ Virus right, HP (+) bottom."""
+        on, bgimg = self._scene_palette()
+        px_h = ARENA_ROWS * 2
+        rec = data.load_sprites()[1][self.pet.num]
+        pet = self._frame(rec, 0)
+        pw = max(len(r) for r in pet)
+        placements = [(pet, COLS - pw - 2, False)]
+        overlay = []
+        cx = (COLS - pw - 4) // 2                       # centre of the diamond (left of the pet)
+        # (gi, glyph, x, y) -- the four spokes of the diamond
+        spokes = [
+            (1, _ATTR_SHAPES[0], cx - 4, 0),            # ● Vaccine, top
+            (2, _ATTR_SHAPES[1], cx - 13, px_h // 2 - 4),   # ■ Data, left
+            (3, _ATTR_SHAPES[2], cx + 5, px_h // 2 - 4),    # ▲ Virus, right
+            (0, _HP_GLYPH, cx - 4, px_h - 11),          # + HP, bottom
+        ]
+        for gi, glyph, gx, gy in spokes:
+            overlay += _blit(glyph, gx, gy)
+            if gi == self.gi:                           # cursor box around the selected spoke
+                gw, gh = len(glyph[0]), len(glyph)
+                overlay += [(gx - 2 + x, gy - 2 + y)
+                            for y in range(gh + 4) for x in range(gw + 4)
+                            if x in (0, gw + 3) or y in (0, gh + 3)]
+        scene = render_scene(placements, COLS, ARENA_ROWS, on, LCD_BG, overlay=overlay, bgimg=bgimg)
+        scene.append("\n")
+        sel = self.gkey
+        name = {"hp": "HP", "vaccine": "● Vaccine", "data": "■ Data", "virus": "▲ Virus"}[sel]
+        t = Text()
+        t.append(f"{name}", style=INK_B)
+        t.append(f"  {GAMES[self.gi][3]}\n", style=INK)
+        scene.append_text(t)
+        scene.append_text(menu.footer("↑●  ←■  →▲  ↓HP    ENTER start"))
+        return scene
 
     def _powerbar(self, pos):
         m = Text()

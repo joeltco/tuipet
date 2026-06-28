@@ -41,6 +41,20 @@ java -jar ~/cfr.jar /tmp/dvpet_full.jar --outputdir _decompiled
 - `Model/Battle.java`, `Model/Evolution.java`, `Model/Tournament.java`, `Model/Enum.java`,
   `Model/Habitat.java`, `Model/DNA.java`, `Model/Consumable.java`, `Model/FoodType.java`.
 
+## The official guide — the VISUAL ground truth (use this!)
+
+`_extract/game/DVPetTest/guide.pdf` (82 pages) is the official manual with **actual
+screenshots of every screen** — training minigames, battle, menus, stats.  Reading
+decompiled code and *guessing what it renders to* is how the training came out
+"nothing like" DVPet through v0.2.0-0.2.7.  **Before building/fixing any screen, look
+at its guide page** (`Read` the PDF — it renders the images), then match the layout.
+
+- Training minigames: pages 51-53.  Vaccine = hit an orb ("Hit!!"); Data = a cannon
+  aims high/low, raise the matching shield (two shield slots); Virus = stop a sweeping
+  marker in a target range on a horizontal bar; HP = match the shown attribute, 5 wins.
+- Verify your build by SCREENSHOTTING the running app (`app.run_test()` →
+  `save_screenshot` → cairosvg→PNG → Read) and comparing to the guide page.
+
 ## Other DVPet data (already vendored)
 
 - **CSV tables** → `raw_model/*.csv` (digimon, evolutions, foods, items, tournies,
