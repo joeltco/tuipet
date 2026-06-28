@@ -435,12 +435,11 @@ class TrainingPanel:
                 put(E.get("train_hit", [None])[0], 31, 6)
             put(E.get("train_button", [None])[0], 44, 31 - (1 if self._strike_t > 0 else 0))
         elif gk == "virus":                                 # DVPet drawVirusPre: pet AND bag HIDDEN
-            on, bgimg = LCD_ON, None                         # (virusPrePrep never shows the opponent);
             frame = E.get("train_bar_empty", [None])[0]      # only the power bar shows -- it FILLS
             fill = E.get("train_bar", [None])[0]             # L->R, loops 0->100, press to stop high
             fw = len(frame[0]) if frame else 38
             fh = len(frame) if frame else 5
-            fx = (COLS - fw) // 2                            # REAL trainBarEmpty, centred on a clean LCD
+            fx = (COLS - fw) // 2                            # REAL trainBarEmpty, centred over the habitat
             fy = (ph - fh) // 2
             if frame:
                 overlay.extend(_blit(frame, fx, fy))
