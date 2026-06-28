@@ -381,12 +381,14 @@ class TrainingPanel:
         pet = self._frame(rec, self._pose_now(0))
         pw = max(len(r) for r in pet)
         pet_x = COLS - pw - 2
-        if gk == "vaccine":                                 # HIT the orb (DVPet "Hit!!")
-            placements.append((pet, pet_x, False))
-            orb = _attr_shape(0, 11)                         # a solid black orb
-            ow, oh = len(orb[0]), len(orb)
-            bob = -2 if self._strike_t > 0 else (1 if (self.frame_i // 3) % 2 else 0)
-            overlay += _blit(orb, COLS // 2 - ow, (px_h - oh) // 2 + bob)
+        if gk == "vaccine":                                 # punching bag LEFT, hit-orb CENTRE, pet HIDDEN
+            bag = E.get("punching_bag", [None])[0]           # (drawVaccinePre: _character.setVisible(false))
+            if bag:
+                placements.append((bag, 1, False))
+            orb = _attr_shape(0, 9)                          # the trainButton hit-orb
+            ow = len(orb[0])
+            bob = -2 if self._strike_t > 0 else 0
+            overlay += _blit(orb, COLS // 2 - ow // 2, px_h - 11 + bob)
         elif gk == "data":                                  # CANNON aims high/low -> raise the matching SHIELD
             placements.append((pet, pet_x, False))
             up = self.tgt_up if self.locked else self.feint_up
@@ -412,8 +414,10 @@ class TrainingPanel:
             sym = _ATTR_SHAPES[self.hp_target]
             sw, shh = len(sym[0]), len(sym)
             overlay += _blit(sym, (COLS - sw) // 2, (px_h - shh) // 2 - 1)
-        else:                                               # virus: stop the marker in the target range
-            placements.append((pet, pet_x, False))
+        else:                                               # virus: bag LEFT + sweeping bar, pet HIDDEN
+            bag = E.get("punching_bag", [None])[0]           # (virusPrePrep: _character hidden, punchingBag)
+            if bag:
+                placements.append((bag, 1, False))
             bx, bw, by = 3, COLS - 7, 6                     # a wide bar across the top of the LCD
             lo = bx + int(VIRUS_BAR_MIN / 100 * bw)
             overlay += [(bx + x, by) for x in range(bw)]                       # the bar rail
