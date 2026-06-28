@@ -130,7 +130,7 @@ def test_data_attack_commits_after_the_telegraph():
     panel = _panel("data")
     panel._start_game()
     assert not panel.locked
-    for _ in range(T.DATA_TELEGRAPH + 1):
+    for _ in range(panel.data_telegraph + 1):          # rank-based feint window (DATA_TELEGRAPH[rank])
         panel.anim()
     assert panel.locked                                # the attack revealed high/low
 
