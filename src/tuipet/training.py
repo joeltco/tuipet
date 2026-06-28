@@ -28,6 +28,13 @@ from . import data
 from .render import render_scene
 from .theme import LCD_ON, LCD_BG, INK, INK_B, DIM, MID, ACCENT, SIL_DAY, SIL_NIGHT  # noqa: F401  (palette names bound for theme.apply propagation)
 from . import menu
+# the post-drill strike CLONES the battle screen's alternating-view volley (one combatant
+# on screen at a time: pet rears back & fires the real orb off the near edge -> view switches
+# to the TARGET as the orb arrives -> fullscreen explosion -> break).  Reuse the battle's
+# pose ids + beat timings + column-bounds helper so the two stay in lockstep.
+from .battlescreen import (IDLE, TURN, ATTACK, CHARGE, COLLAPSE,  # noqa: F401
+                           WINDUP_T, FIRE_T, EXPLODE_FRAMES, EXPLODE_HOLD, FLINCH_T,
+                           _cbounds)
 
 # the full-screen spiky hit burst (attackHit/attackHitFlash), shared with the battle
 # screen -- strobes outline<->filled to flash the LCD on impact (DVPet hitAnim).
@@ -53,11 +60,11 @@ VBAR_W = 24
 COLS = 40
 ARENA_ROWS = 11               # play & strike share one arena height (room for the tall hanging bag)
 
-# strike sequence (attackDefault/attackGreen -> hitAnim -> aftermathDefault)
-STRIKE_FIRE = 8               # projectile travels to the opponent (0.8s)
-STRIKE_FLASH = 6              # impact flash (0.6s)
-STRIKE_AFTER = 12             # aftermath: broken-bag / recoil hold (1.2s)
-STRIKE_TOTAL = STRIKE_FIRE + STRIKE_FLASH + STRIKE_AFTER
+# strike sequence: a battle-style volley (windup -> fire_out -> fire_in -> hit -> break),
+# beats imported from the battle screen so they march at the same pace.  The orb rides the
+# lower 16px creature band, recomputed for the training arena's own height.
+STRIKE_BAND_TOP = ARENA_ROWS * 2 - 18    # == battle BAND_TOP, relative to this LCD's height
+STRIKE_BAND_BOT = ARENA_ROWS * 2 - 2
 
 # the attribute symbols (DVPet: Vaccine=orb/red, Data=block/green, Virus=dart/yellow)
 # -> circle / square / triangle.
@@ -139,7 +146,10 @@ class TrainingPanel:
         self.blocked = False
         self._strike_pose = None     # transient hit(6)/miss(9) pose during a drill
         self._strike_t = 0
-        self.strike_step = 0         # the post-drill strike clock (fire -> flash -> aftermath)
+        self.strike_tl = []          # the post-drill strike timeline (battle-style volley)
+        self.si = 0                  # index into strike_tl
+        self.strike_attr = None      # the orb's attribute ("Vaccine"/"Data"/"Virus")
+        self._last_sm = None         # last strike marker, for one-shot sfx at beat edges
         self._strong = False         # a full-success drill -> strong attack/hit
 
     @property
@@ -199,11 +209,42 @@ class TrainingPanel:
             self.phase = "done"
             self.flash = self.result + "   (SPACE)"
         else:
-            # attribute drills fire the real attackDefault/attackGreen projectile at
-            # the opponent first, THEN reveal the score.
+            # attribute drills fire the pet's real orb at the TARGET first (a battle-style
+            # volley), THEN reveal the score.
+            self.strike_attr = attribute
+            self._build_strike()
             self.phase = "strike"
-            self.strike_step = 0
             self.flash = ""
+
+    def _build_strike(self):
+        """The battle volley, cloned for training: the pet rears back, fires its orb off the
+        near edge, the view switches to the TARGET as the orb arrives, then the fullscreen
+        explosion + break (success) or a whiff (fail).  Same beats as battlescreen."""
+        strong = self._strong
+        tl = []
+        tl += [{"m": "windup", "wu": s} for s in range(WINDUP_T)]
+        tl += [{"m": "fire_out", "prog": (s + 1) / FIRE_T, "double": strong} for s in range(FIRE_T)]
+        tl += [{"m": "fire_in", "prog": (s + 1) / FIRE_T, "double": strong} for s in range(FIRE_T)]
+        if self.success:                                    # HIT: strobing explosion, then the broken target
+            tl += [{"m": "hit", "f": (s // EXPLODE_HOLD) % 2} for s in range(EXPLODE_FRAMES)]
+            tl += [{"m": "break"}] * FLINCH_T
+        else:                                               # FAIL: orb fizzles, target intact, pet deflates
+            tl += [{"m": "miss"}] * FLINCH_T
+        self.strike_tl = tl
+        self.si = 0
+        self._last_sm = None
+
+    def _strike_sfx(self):
+        """One-shot beep at each strike-beat edge -- launch sting, then the impact."""
+        m = self.strike_tl[self.si].get("m")
+        if m != self._last_sm:
+            if m == "fire_out":
+                self.sfx = "strongAttack" if self._strong else "attack"
+            elif m == "hit":
+                self.sfx = "strongHit" if self._strong else "attackHit"
+            elif m == "miss":
+                self.sfx = "cancel"
+        self._last_sm = m
 
     # ---- anim (called each fast tick) ----
     def anim(self):
@@ -211,12 +252,10 @@ class TrainingPanel:
         if self._strike_t > 0:
             self._strike_t -= 1
         if self.phase == "strike":
-            self.strike_step += 1
-            if self.strike_step == 1:                       # launch: strong vs normal attack sting
-                self.sfx = "strongAttack" if self._strong else "attack"
-            elif self.strike_step == STRIKE_FIRE + 1:       # impact: strong/normal hit, or the miss thud
-                self.sfx = ("strongHit" if self._strong else "attackHit") if self.success else "cancel"
-            if self.strike_step >= STRIKE_TOTAL:            # sequence done -> reveal the score
+            if self.si < len(self.strike_tl) - 1:
+                self.si += 1
+                self._strike_sfx()
+            else:                                           # volley done -> reveal the score
                 self.phase = "done"
                 self.flash = self.result + "   (SPACE)"
             return
@@ -253,7 +292,9 @@ class TrainingPanel:
     # ---- key ----
     def key(self, k):
         if self.phase == "strike":
-            return None                  # the strike plays out uninterrupted (DVPet has no skip)
+            if k in ("space", "enter", "escape"):       # skip to the end of the volley (like battle)
+                self.si = len(self.strike_tl) - 1
+            return None
         if self.phase == "menu":
             # DVPet drawTrainingSelect diamond: ● Vaccine top, ■ Data left,
             # ▲ Virus right, HP bottom -- each arrow selects the drill in that direction.
@@ -473,60 +514,82 @@ class TrainingPanel:
                 "data": "↑ / ↓ raise the shield the cannon faces",
                 "virus": "SPACE stop the marker in the zone"}[self.gkey]
 
-    def _render_strike(self, rec):
-        """DVPet attackDefault/attackGreen -> hitAnim -> aftermathDefault.  The pet
-        fires its projectile at the opponent; it flashes on impact; then the bag shows
-        BROKEN on success / the pet RECOILS to pose 10 on a fail.  Data fires RIGHT at
-        the green target, everything else fires LEFT at the punching bag -- the same
-        sides the drill used, so the strike flows straight out of it."""
-        s = self.strike_step
+    def _attr_pow(self):
+        """The pet's power in the strike's attribute -> the orb tier (as the battle does)."""
+        return {"Vaccine": self.pet.vaccine, "Data": self.pet.data_power,
+                "Virus": self.pet.virus}.get(self.strike_attr, 0)
+
+    def _target_sprite(self, broken):
+        """The thing being struck: the green target (Data drill) or the punching bag, which
+        shows its BROKEN frame on a successful break (DVPet aftermathDefault)."""
         E = data.load_effects()
+        if self._is_data:
+            return E.get("train_green", [None])[0]              # no broken variant for the target
+        return E.get("punching_bag_broken" if broken else "punching_bag", [None])[0]
+
+    def _strike_orb(self, leg, mouth, fr):
+        """The pet's REAL orb (data.attack_orb) flying LEFT toward the target: off the near
+        (left) edge on fire_out, in from the far (right) edge to the target's edge on fire_in.
+        Mirrors battlescreen._orb_overlay (player fires left -> no flip)."""
+        orb = data.attack_orb(self.pet.num, self.strike_attr, self._attr_pow())
+        if not orb:
+            return []
+        w, h = len(orb[0]), len(orb)
+        if leg == "out":                                        # leaves the mouth, off the near edge
+            x0, x1 = mouth - w, -w
+        else:                                                   # arrives from the far edge, stops at target
+            x0, x1 = COLS, mouth
+        x = int(x0 + (x1 - x0) * fr["prog"])
+        if fr.get("double"):                                    # doubleAttack: BOTH orbs, top & bottom of band
+            return _blit(orb, x, STRIKE_BAND_TOP) + _blit(orb, x, STRIKE_BAND_BOT - h)
+        return _blit(orb, x, STRIKE_BAND_TOP + (16 - h) // 2)
+
+    def _render_strike(self, rec):
+        """A battle-style volley (battlescreen clone) with the TARGET in place of an enemy:
+        ONE combatant on screen at a time.  windup -> the pet rears back; fire_out -> pose 6,
+        the orb leaves off the near edge; fire_in -> the view switches to the TARGET as the orb
+        arrives; hit -> the fullscreen explosion; break/miss -> the broken target / deflated pet.
+        Pet stands RIGHT (faces left) and fires LEFT, exactly like the player in a battle."""
+        fr = self.strike_tl[min(self.si, len(self.strike_tl) - 1)]
+        m = fr["m"]
         on, bgimg = self._scene_palette()
-        px_h = ARENA_ROWS * 2
-        after = s > STRIKE_FIRE + STRIKE_FLASH
-        pose = (0 if self.success else 10) if after else 6      # strike(6) -> idle(0) / recoil(10)
-        pet = self._frame(rec, pose)
-        pw = max(len(r) for r in pet)
-        fire_y = px_h - 12
-        if self._is_data:                                       # pet LEFT (faces right), green RIGHT
-            opp = E.get("train_green", [None])[0]
-            ow = max((len(r) for r in opp), default=10) if opp else 10
-            pet_x, opp_x = 2, COLS - ow - 3
-            placements = [(pet, pet_x, True)]
-            if opp:
-                placements.append((opp, opp_x, False))
-            x_from, x_to, rightward = pet_x + pw, opp_x, True
-        else:                                                   # pet RIGHT (faces left), bag LEFT
-            broken = after and self.success
-            opp = E.get("punching_bag_broken" if broken else "punching_bag", [None])[0]
-            ow = max((len(r) for r in opp), default=6) if opp else 6
-            pet_x, opp_x = COLS - pw - 3, 2
-            placements = [(pet, pet_x, False)]
-            if opp:
-                placements.append((opp, opp_x, False))
-            x_from, x_to, rightward = pet_x, opp_x + ow, False
-        overlay = []
-        if s <= STRIKE_FIRE:                                    # the projectile crosses to the opponent
-            orb = E.get("attack") or []
-            of = orb[min((s - 1) // 2, len(orb) - 1)] if orb else None
-            if of:
-                ow_orb = max(len(r) for r in of)
-                if rightward:
-                    x0, x1 = x_from, x_to - ow_orb
-                    src = [r[::-1] for r in of]                 # orb art faces left -> flip to fly right
-                else:
-                    x0, x1 = x_from - ow_orb, x_to
-                    src = of
-                ox = int(x0 + (x1 - x0) * (s / STRIKE_FIRE))
-                overlay += _blit(src, ox, fire_y)
-        elif not after:                                        # impact: the full hit-burst strobes over the LCD
-            ex = _EXPLODE[((s - STRIKE_FIRE - 1) // 2) % len(_EXPLODE)]
-            ox = max(0, (COLS - len(ex[0])) // 2)
-            oy = max(0, (px_h - len(ex)) // 2)
-            overlay += _blit(ex, ox, oy)
+        ph = ARENA_ROWS * 2
+        overlay, placements, note = [], [], ""
+        if m == "hit":                                          # fullscreen impact strobe, nothing else
+            ex = _EXPLODE[fr["f"]]
+            ox, oy = max(0, (COLS - len(ex[0])) // 2), max(0, (ph - len(ex)) // 2)
+            overlay = _blit(ex, ox, oy)
+            note = "HIT!"
+        elif m in ("windup", "fire_out", "miss"):               # the PET is on screen (right, faces left)
+            if m == "windup":
+                pose = (TURN, TURN, IDLE, IDLE, CHARGE, CHARGE)[min(fr.get("wu", 0), 5)]
+                xshift = min(3, fr.get("wu", 0) + 1)            # rear back toward the right wall
+            elif m == "fire_out":
+                pose = ATTACK
+                xshift = -2 if fr["prog"] < 0.35 else 0         # lunge toward the target on release
+            else:                                               # miss: deflated pose, DVPet getSpriteNum()+10
+                pose, xshift = COLLAPSE, 0
+            pet = self._frame(rec, pose)
+            lo, hi = _cbounds(pet)
+            x = ((COLS - 2) - hi) + xshift
+            placements = [(pet, x, False)]
+            if m == "fire_out":
+                overlay = self._strike_orb("out", x + lo, fr)   # mouth = the pet's left edge
+            note = {"windup": "...", "fire_out": "Fire!", "miss": self.result}[m]
+        else:                                                   # fire_in / break: the TARGET is on screen (left)
+            tgt = self._target_sprite(m == "break")
+            mouth = 2
+            if tgt:
+                lo, hi = _cbounds(tgt)
+                tx = 1 - lo
+                placements = [(tgt, tx, False)]
+                mouth = tx + hi + 1                             # the target's right edge, toward the pet
+            if m == "fire_in":
+                overlay = self._strike_orb("in", mouth, fr)
+            note = "Incoming!" if m == "fire_in" else self.result
         scene = render_scene(placements, COLS, ARENA_ROWS, on, LCD_BG, overlay=overlay, bgimg=bgimg)
         scene.append("\n")
-        scene.append_text(menu.note(self.result if after else "..."))
+        scene.append_text(menu.note(note or "..."))
         scene.append_text(menu.footer(""))
         return scene
 
