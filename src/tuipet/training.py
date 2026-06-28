@@ -42,8 +42,10 @@ with open(os.path.join(os.path.dirname(__file__), "data", "battle_overlays.json"
     _EXPLODE = json.load(_f)["hit_explosion"]
 
 # DVPet config (normal difficulty)
-VACCINE_HITS_MIN = 20
-VACCINE_WINDOW = 48           # ticks (0.1s each) to mash
+# DVPet vaccine drill (config.csv): MASH to a hit threshold that scales with vaccine rank.
+VACCINE_HITS = (16, 20, 24)   # Easy / Normal / Hard  (VaccineGameHitsMin{Easy,,Hard})
+VACCINE_DIFFICULTY = 75       # AttributeTrainDifficultyChange: rank = vaccinePower // this
+VACCINE_WINDOW = 41           # DVPet drawVaccinePre = _interval*41 = 246 frames @60fps ~= 4.1s
 VIRUS_BAR_MIN = 86
 VIRUS_SPEED = 4
 # Data is a SHIELD BLOCK (controller checkSuccess: success = shieldTop == isUp): the
@@ -109,7 +111,7 @@ _HP_GLYPH = _plus_glyph()
 
 GAMES = [
     ("hp",      "HP Drill", "Effort",  "guess the bag — best of 3"),
-    ("vaccine", "Vaccine",  "Vaccine", f"mash the bag to {VACCINE_HITS_MIN}"),
+    ("vaccine", "Vaccine",  "Vaccine", "mash the bag — fast!"),
     ("data",    "Data",     "Data",    "block the attack — high or low"),
     ("virus",   "Virus",    "Virus",   f"stop the bar over {VIRUS_BAR_MIN}"),
 ]
@@ -134,6 +136,7 @@ class TrainingPanel:
         self.power = 0
         self.taps = 0
         self.timer = VACCINE_WINDOW
+        self.vaccine_target = VACCINE_HITS[1]   # rank-based hit threshold, set per drill start
         self.round_t = HP_ROUND_LEN
         self.rounds_won = 0
         self.hp_target = 0           # hidden attribute the bag "is" (0/1/2)
@@ -161,6 +164,10 @@ class TrainingPanel:
     def _is_data(self):
         return self.gkey == "data"
 
+    def _vaccine_threshold(self):
+        """DVPet checkSuccess(Vaccine): hits needed scales with vaccine rank (power // 75)."""
+        return VACCINE_HITS[min(self.pet.vaccine // VACCINE_DIFFICULTY, 2)]
+
     # ---- lifecycle ----
     def _start_game(self):
         self.phase = "play"
@@ -169,6 +176,7 @@ class TrainingPanel:
         if gk == "hp":
             self._new_hp_round()
         elif gk == "vaccine":
+            self.vaccine_target = self._vaccine_threshold()
             self.flash = "MASH the bag!"
         elif gk == "data":
             self.flash = "watch the feint — block high or low!"
@@ -270,8 +278,10 @@ class TrainingPanel:
         elif gk == "vaccine":
             self.timer -= 1
             if self.timer <= 0:
-                ratio = self.taps / VACCINE_HITS_MIN
-                hits = 3 if ratio >= 1.2 else (2 if ratio >= 0.8 else (1 if ratio >= 0.4 else 0))
+                thr = self.vaccine_target                    # DVPet success = taps >= threshold (binary);
+                hits = (3 if self.taps >= thr * 1.2 else     # tuipet keeps a graded reward around that
+                        2 if self.taps >= thr else           # boundary: meeting the threshold = success,
+                        1 if self.taps >= thr * 0.5 else 0)  # a clear overshoot = strong, near-miss = partial
                 self._finish(hits, int(self.taps), "Vaccine", "vaccine")
         elif gk == "data":
             self.data_t += 1
@@ -498,8 +508,8 @@ class TrainingPanel:
         elif gk == "vaccine":
             hit = self._strike_t > 0
             t.append("HIT!! " if hit else "hit!  ", style=INK_B if hit else INK)
-            done = self.taps >= VACCINE_HITS_MIN
-            t.append(f"{self.taps}/{VACCINE_HITS_MIN}  ", style=INK_B if done else INK)
+            done = self.taps >= self.vaccine_target
+            t.append(f"{self.taps}/{self.vaccine_target}  ", style=INK_B if done else INK)
             filled = int((max(self.timer, 0) / VACCINE_WINDOW) * 9)
             t.append("time " + "▓" * filled + "░" * (9 - filled) + "\n", style=f"{ACCENT} on {LCD_BG}")
         elif gk == "data":

@@ -1061,8 +1061,7 @@ class TuiPetApp(App):
         self.stats_w.update("\n".join(lines))
 
     def _status_training(self):
-        from .training import (GAMES, VACCINE_HITS_MIN, VACCINE_WINDOW,
-                               HP_ROUNDS, VIRUS_BAR_MIN)
+        from .training import GAMES, VACCINE_WINDOW, HP_ROUNDS, VIRUS_BAR_MIN
         p, tp, T = self.pet, self.mode, theme
         self.stats_w.border_subtitle = f"gen {p.generation}"
         div = f"[dim]{'-' * 26}[/]".replace("-", "\u2500")
@@ -1089,7 +1088,7 @@ class TuiPetApp(App):
                 target, flav = f"Effort   {eff}", "build your effort"
             elif gk == "vaccine":
                 tpct = max(0, tp.timer) / VACCINE_WINDOW * 100
-                prog, prog2 = f"Hits     {tp.taps} / {VACCINE_HITS_MIN}", f"Time     {bar(tpct, 11, T.MOOD)}"
+                prog, prog2 = f"Hits     {tp.taps} / {tp.vaccine_target}", f"Time     {bar(tpct, 11, T.MOOD)}"
                 target, flav = f"Vaccine  [{T.POS}]{p.vaccine}[/]", "mash it up!"
             elif gk == "data":
                 atk = ("HIGH" if tp.tgt_up else "LOW") if tp.locked else "feint\u2026"
