@@ -528,18 +528,20 @@ class TrainingPanel:
                 pw = max(len(r) for r in pf)
                 phh = len(pf)
                 # Data layout, composed for tuipet's real estate (not a pixel-port -- our creature is a
-                # tiny dot-matrix, DVPet's is a 48px giant): cannon LEFT (barrel feints then commits
-                # high/low), pet RIGHT centred, and the two shields are a clearly-separated HIGH/LOW
-                # guard pair hugging the pet's front (high in the upper band, low in the lower) with the
-                # pet sitting in the gap between them.  Raised side = SOLID, other = faint (shieldTransp).
+                # tiny dot-matrix, DVPet's is a 48px giant): everything GROUNDED on the idle floor --
+                # turret LEFT (barrel feints then commits high/low), pet RIGHT, and the two shields a
+                # tight HIGH/LOW 2-stack (bottom directly under top) hugging the pet's front.  The two
+                # orb lanes line up turret -> shields -> pet.  Raised side = SOLID, other = faint.
+                cw = max(len(r) for r in cannon) if cannon else 10
+                floor = ph - 2                                     # idle-gameplay ground line (render_screen baseline)
                 px = COLS - pw - 3                                 # pet on the right, fully on-screen
-                py = (ph - phh) // 2                               # centred in the LCD band (like the virus bar)
-                cy = (ph - ch) // 2                                # cannon centred, level with the pet
+                py = floor - phh                                   # sits on the ground, like idle gameplay
+                cy = floor - ch                                    # turret grounded, level with the pet
                 overlay.extend(_blit(cannon, DATA_MARGIN, cy))
                 overlay.extend(_blit(pf, px, py))
                 sx = px - sw - 1                                   # shields stand just in front of the pet
-                hi_y = 2                                           # HIGH guard: upper band
-                lo_y = ph - sh_h - 2                               # LOW guard: lower band (clear gap between)
+                lo_y = floor - sh_h                                # LOW guard grounded; HIGH guard stacked
+                hi_y = lo_y - sh_h                                 # directly on top of it (one tight 2-stack)
                 on_y = hi_y if self.shield_up else lo_y            # raised side = SOLID (trainShield)
                 off_y = lo_y if self.shield_up else hi_y           # other side = faint (DVPet shieldTransp:
                 if shield:                                         #   25% alpha -> a clean 1-in-4 dither)
@@ -553,7 +555,7 @@ class TrainingPanel:
                     ow, oh = len(orb[0]), len(orb)
                     lane_top = hi_y if self.tgt_up else lo_y       # the lane follows the ATTACK (tgt_up)
                     lane_y = lane_top + sh_h // 2 - oh // 2         # orb centred on that shield row
-                    mx, end_x = 6, sx - ow + 3                     # muzzle -> pressed against the shield
+                    mx, end_x = DATA_MARGIN + cw - 3, sx - ow + 3  # muzzle -> pressed against the shield
                     prog = (DATA_FLY - self.fly_t) / (DATA_FLY - 1)
                     overlay += _blit(orb, int(mx + (end_x - mx) * prog), lane_y)
         else:                                               # hp: the REAL DVPet drawHPTraining layout
