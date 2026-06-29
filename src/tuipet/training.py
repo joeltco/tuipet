@@ -57,6 +57,7 @@ VIRUS_SPEEDS = (4.8, 6.0, 8.0)  # per-tick fill = DVPet +4 per VirusGameBarSpeed
 DATA_BOB = 3                  # ticks per feint up/down toggle during the telegraph
 DATA_TELEGRAPH = (21, 17, 15)  # feint window before commit (DVPet frame*8+pad*8 frames, /6 -> ticks)
 DATA_WINDOW = (10, 7, 5)      # reaction window after commit (DataTrainShootFrame{10,7,5}; 6*frame/6 -> ticks)
+DATA_IMPACT = 6               # the shot's impact flash (DVPet hitAnim: attackHit/Flash strobe, ~6 frames)
 HP_ROUNDS = 3
 HP_ROUNDS_WON = 2
 HP_ROUND_LEN = 28             # ticks to pick before a round times out (~2.8s)
@@ -154,6 +155,8 @@ class TrainingPanel:
         self.tgt_up = False          # the committed attack direction (only once locked)
         self.shield_up = True        # the player's shield: up (True) or down (False)
         self.blocked = False
+        self.impact_t = 0            # DVPet hitAnim countdown: the shot's impact flash plays out
+        self._impact_args = None     # the staged _finish() call, fired when the flash ends
         self._strike_pose = None     # transient hit(6)/miss(9) pose during a drill
         self._strike_t = 0
         self.strike_tl = []          # the post-drill strike timeline (battle-style volley)
@@ -297,6 +300,11 @@ class TrainingPanel:
                         1 if self.taps >= thr * 0.5 else 0)  # a clear overshoot = strong, near-miss = partial
                 self._finish(hits, int(self.taps), "Vaccine", "vaccine")
         elif gk == "data":
+            if self.impact_t > 0:                           # DVPet hitAnim -> aftermathGreen: the impact
+                self.impact_t -= 1                          # flash strobes, THEN the result is revealed
+                if self.impact_t == 0:
+                    self._finish(*self._impact_args)
+                return
             self.data_t += 1
             if not self.locked:                             # telegraph: the cannon's barrel feints up/down
                 if self.data_t % DATA_BOB == 0:
@@ -367,17 +375,21 @@ class TrainingPanel:
         return None
 
     def _data_resolve(self):
-        """The attack landed: a block (shield matches the attack side) succeeds, else
-        it gets through.  One attempt -> the strike (attackGreen)."""
+        """The shot lands (DVPet checkSuccess: success = shieldActiveTop == isUp).  A block
+        (shield matches the attack side) succeeds, else it gets through.  Either way the
+        impact flash (DVPet hitAnim) plays, THEN the result is revealed -- the _finish is
+        staged in _impact_args and fired once impact_t counts down."""
         self.blocked = self.shield_up == self.tgt_up
         if self.blocked:
             self.flash = "BLOCKED!"
             self._flash(6)
-            self._finish(3, 60, "Data", "data")
+            self._impact_args = (3, 60, "Data", "data")
         else:
             self.flash = "hit you!"
             self._flash(9)
-            self._finish(0, 0, "Data", "data")
+            self._impact_args = (0, 0, "Data", "data")
+        self.sfx = "attackHit"                              # DVPet hitAnim impact sound
+        self.impact_t = DATA_IMPACT
 
     def _flash(self, pose):
         """Briefly show a strike (6) or recoil (9) pose, like DVPet AttackSuccess/Fail."""
@@ -481,7 +493,12 @@ class TrainingPanel:
             cw = len(cannon[0]) if cannon else 10
             if cannon:                                       # the cannon NEVER moves, just centred-left
                 overlay.extend(_blit(cannon, 1, (ph - len(cannon)) // 2))
-            pf = self._frame(rec, self._pose_now(0))         # the pet on the RIGHT
+            if self.impact_t > 0:                            # DVPet aftermathGreen: block -> the pet stands
+                pose = IDLE if self.blocked else COLLAPSE    # normal; a clean hit -> the hurt pose (+10)
+            else:                                            # DVPet drawDataPre bobs the pet (sprite 4<->1)
+                bob = 1 if (not self.locked and (self.frame_i // 2) % 2) else 0
+                pose = self._pose_now(bob)
+            pf = self._frame(rec, pose)                      # the pet on the RIGHT
             pw = max(len(r) for r in pf)
             px = COLS - pw - 1
             overlay.extend(_blit(pf, px, ph - len(pf)))
@@ -492,17 +509,20 @@ class TrainingPanel:
                 overlay.extend(_blit(shield, sx, on_y))
                 overlay += [(sx + x, off_y + y) for y in range(sh_h) for x in range(sw)
                             if x in (0, sw - 1) or y in (0, sh_h - 1)]
-            if self.locked:                                  # the cannon has FIRED: the shot flies high/low
-                ad = E.get("atk_data", [None])[0]
-                if ad:                                       # a small data bullet (core of the real orb)
-                    orb = [r[2:5] for r in ad[2:5]] or ad
-                    ow, oh = len(orb[0]), len(orb)
-                    lane = (top_y if self.tgt_up else bot_y) + (sh_h - oh) // 2
-                    blocked = self.shield_up == self.tgt_up  # shield in the lane -> the shot stops at it
-                    start = cw + 2
-                    end = (sx - ow) if blocked else (px - ow)
-                    prog = min(1.0, self.data_t / max(1, self.data_window))
-                    overlay += _blit(orb, int(start + (end - start) * prog), lane)
+            if self.locked and self.impact_t == 0:           # the cannon has FIRED: the shot flies high/low
+                orb = data.attack_orb(self.pet.num, "Data", self.pet.data_power)  # DVPet attackGreen orb
+                ow, oh = len(orb[0]), len(orb)
+                lane = (top_y if self.tgt_up else bot_y) + (sh_h - oh) // 2
+                blocked = self.shield_up == self.tgt_up      # shield in the lane -> the shot stops at it
+                start = cw + 2
+                end = (sx - ow) if blocked else (px - ow)
+                prog = min(1.0, self.data_t / max(1, self.data_window))
+                overlay += _blit(orb, int(start + (end - start) * prog), lane)
+            if self.impact_t > 0:                            # DVPet hitAnim: the fullscreen impact flash
+                ex = _EXPLODE[self.impact_t % len(_EXPLODE)]
+                ix = max(0, (sx if self.blocked else px) + 2 - len(ex[0]) // 2)
+                ix = min(ix, COLS - len(ex[0]))
+                overlay += _blit(ex, max(0, ix), max(0, (ph - len(ex)) // 2))
         else:                                               # hp: the REAL DVPet drawHPTraining layout
             # Training dummy (bird w/ an attribute symbol on its belly) on the LEFT, the 3
             # stacked icons (Vaccine/Data/Virus) in the MIDDLE, the pet on the RIGHT.  Read

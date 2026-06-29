@@ -108,13 +108,18 @@ def test_hp_timeout_counts_as_wrong():
 def test_data_drill_is_a_shield_block_match():
     """DVPet controller checkSuccess(Data): success = shieldTop == isUp.  Raise the
     shield to the side the attack commits to -> block (success); mismatch -> hit."""
+    def _settle(p):
+        """The shot lands, the impact flash (DVPet hitAnim) plays, then the result reveals."""
+        p._data_resolve()
+        while p.impact_t > 0:                          # drive the impact flash to completion
+            p.anim()
     # matching shield blocks -> success
     panel = _panel("data")
     panel._start_game()
     panel.locked = True
     panel.tgt_up = True
     panel.key("up")                                    # shield up vs HIGH attack
-    panel._data_resolve()
+    _settle(panel)
     assert panel.blocked and panel.success
     # mismatched shield -> the attack gets through
     panel = _panel("data")
@@ -122,7 +127,7 @@ def test_data_drill_is_a_shield_block_match():
     panel.locked = True
     panel.tgt_up = True
     panel.key("down")                                  # shield down vs HIGH attack
-    panel._data_resolve()
+    _settle(panel)
     assert not panel.blocked and not panel.success
 
 
