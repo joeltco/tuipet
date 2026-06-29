@@ -55,11 +55,15 @@ structure/sprites, applying the JP↔EN romanization map (see sources.json `roma
 
 ## Status
 - [x] Session rosters persisted: `canon/humulos/<dev>/roster.txt` (dm/dm20/dmx/pen/pen20).
-- [ ] Per-version humulos evolution tables + manuals (the big pull).
-- [ ] wikimon per-device + per-digimon data.
-- [ ] Authentic 16×16 sprite rips per device.
-- [ ] Mechanics docs.
-- [ ] Build `db/digimon.json`.
+- [x] Fan repos pulled (`fan/`, gitignored): wayland-vpets (sprites+timers), digilib, RG_Digimon, DigimonVPet.
+- [x] **DM20 evolution conditions** → `canon/humulos/dm20/evo_ver1-5.md`, `evo_special.md`, `evo_extra.md`.
+- [x] **DM20 unified DB built** → `db/dm20.json` (154 mons; 134 playable + 20 colosseum-only; via `db/build_dm20.py`).
+- [ ] dmx evolution conditions + DB.
+- [ ] pen/pen20 evolution conditions (re-pull clean) + DB.
+- [ ] dm evolution conditions + DB.
+- [ ] Extract wayland sprites → usable atlas (downsample /4 + split frames).
+- [ ] wikimon / mechanics docs (as needed).
+- [ ] Merge per-device DBs → one `db/digimon.json` if desired.
 
 ⚠ `pen`/`pen20` humulos roster fetches were CONTAMINATED (modern non-Pendulum mons) — must
 re-pull per-version and cross-check wikimon before trusting. dm/dm20/dmx looked clean.
