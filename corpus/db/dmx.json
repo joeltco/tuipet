@@ -1,86 +1,19 @@
 {
  "_meta": {
   "device": "dmx",
-  "count": 178,
-  "source": "humulos /dmx (V1 XA/XB) + /dmx/2 (V2 XC/XD) + /dmx/3 Kera line; wayland sprites+timers",
-  "complete": "V1+V2+Kera evolution conditions CLEAN; V3 XE/XF main trees pending (see canon/humulos/dmx/evo_v3_STATUS.md)",
-  "v3_pending_count": 71,
+  "count": 175,
+  "source": "humulos /dmx (V1 XA/XB) + /dmx/2 (V2 XC/XD) + /dmx/3 (XE/XF chart-parsed + Kera); wayland sprites+timers",
+  "complete": "ALL versions captured. V1/V2/Kera from markdown; V3 XE/XF edges parsed deterministically from the humulos chart HTML (corpus/db/parse_dmx3_chart.py -> evo_v3_edges.json). Stages for pure-V3 mons inferred by propagating along the edge graph. GAPS: attributes null for pure-V3 mons (chart has no attribute data -> backfill from wikimon/DVPet); 3 orphan sprites with no extracted edge (v3_pending).",
+  "v3_pending_count": 3,
   "v3_pending": [
-   "Alphamon Ouryuken",
-   "Angewomon X",
-   "Anomalocarimon X",
-   "Cannonbeemon",
-   "Cherubimon (Virtue) X",
-   "Cocomon",
-   "Crys Paledramon",
-   "Cyberdramon X",
-   "DORUgamon",
-   "DORUguremon",
-   "DORUmon",
-   "Dinotigermon",
-   "Duftmon X",
-   "Dynasmon X",
-   "Ebemon X",
    "Examon",
-   "Examon X",
-   "Gaioumon",
-   "Gankoomon X",
-   "Garudamon X",
-   "Ginryumon",
-   "Goddramon X",
-   "Grademon",
-   "Grand Dracumon",
-   "Gummymon",
-   "Hexeblaumon",
-   "Hisyaryumon",
-   "Holydramon X",
-   "Hououmon X",
-   "Jararchimon",
-   "Jazamon",
-   "Jazardmon",
-   "Jazarichmon",
-   "Jesmon GX",
-   "Justimon X",
-   "Keemon",
-   "Lopmon X",
-   "Lord Kightmon X",
-   "Magidramon X",
-   "Magnamon X",
-   "Mamemon X",
-   "Meramon X",
-   "Metallicdramon",
-   "Monzaemon X",
-   "Noble Pumpmon",
    "Ofanimon Falldown Mode",
-   "Ofanimon X",
-   "Omega Shoutmon X",
-   "Omekamon",
-   "Ouryumon",
-   "Paledramon",
-   "Palmon X",
-   "Pegasmon X",
-   "Plesiomon X",
-   "Pteranmon X",
-   "Pteranomon X",
-   "Pumpmon",
-   "Rapidmon X",
-   "Rize Greymon X",
-   "Ryudamon",
-   "Shakomon X",
-   "Siesamon X",
-   "Tailmon X",
-   "Terriermon X",
-   "Tiger Vespamon",
-   "Togemon X",
-   "Tylomon X",
-   "Ulforce V-dramon X",
-   "Voltobautamon",
-   "Wizarmon X",
-   "Zerimon"
+   "Voltobautamon"
   ],
   "sprite_gaps": [
    "Digitama X",
    "Digitama X2",
+   "Evolution Failure",
    "Sistermon Ciel"
   ],
   "condition_fields": "care_mistakes, effort, level, area_cleared[], area_not_cleared[], defeat_stage6, cumulative_battles, special_encounter, sub_version (XA-XF), time_min, alternatives[]"
@@ -296,23 +229,20 @@
   },
   {
    "id": "alphamonouryuken",
-   "name": "Alphamon Ouryuken",
-   "stage": null,
+   "name": "Alphamon: Ouryuken",
+   "stage": "Super Ultimate",
    "attribute": null,
    "devices": {
     "dmx": {
-     "versions": [
-      3
-     ],
+     "versions": [],
      "stage_time": null,
      "evolves_to": []
     }
    },
    "sprite": "fan/wayland-vpets/assets/dmx/Alphamon Ouryuken.png",
    "sources": [
-    "wayland-vpets:dmx"
-   ],
-   "evolution_status": "v3_pending"
+    "humulos:dmx"
+   ]
   },
   {
    "id": "ancientsphinxmon",
@@ -336,42 +266,114 @@
   {
    "id": "angewomonx",
    "name": "Angewomon X",
-   "stage": null,
+   "stage": "Perfect",
    "attribute": null,
    "devices": {
     "dmx": {
-     "versions": [
-      3
-     ],
-     "stage_time": null,
+     "versions": [],
+     "stage_time": "40 h",
      "evolves_to": []
     }
    },
    "sprite": "fan/wayland-vpets/assets/dmx/Angewomon X.png",
    "sources": [
-    "wayland-vpets:dmx"
-   ],
-   "evolution_status": "v3_pending"
+    "humulos:dmx"
+   ]
   },
   {
    "id": "anomalocarimonx",
    "name": "Anomalocarimon X",
-   "stage": null,
+   "stage": "Perfect",
    "attribute": null,
    "devices": {
     "dmx": {
      "versions": [
       3
      ],
-     "stage_time": null,
-     "evolves_to": []
+     "stage_time": "40 h",
+     "evolves_to": [
+      {
+       "to": "Plesiomon X",
+       "to_id": "plesiomonx",
+       "raw": "0-2 CM, Level 7-8, Area 18 cleared",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "level": "7-8",
+        "area_cleared": "18"
+       },
+       "sub_version": "XF"
+      },
+      {
+       "to": "Plesiomon X",
+       "to_id": "plesiomonx",
+       "raw": "0-2 CM, Level 1-3, Area 45 cleared",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "level": "1-3",
+        "area_cleared": "45"
+       },
+       "sub_version": "XF"
+      },
+      {
+       "to": "Gaioumon",
+       "to_id": "gaioumon",
+       "raw": "Area 9 cleared, (catch-all)",
+       "parsed": {
+        "catch_all": true,
+        "area_cleared": "9"
+       },
+       "sub_version": "XF"
+      },
+      {
+       "to": "Gaioumon",
+       "to_id": "gaioumon",
+       "raw": "0-2 CM, Level 1-6, Area 9 cleared",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "level": "1-6",
+        "area_cleared": "9"
+       },
+       "sub_version": "XF"
+      },
+      {
+       "to": "Dinotigermon",
+       "to_id": "dinotigermon",
+       "raw": "Area 45 cleared, (catch-all)",
+       "parsed": {
+        "catch_all": true,
+        "area_cleared": "45"
+       },
+       "sub_version": "XF"
+      },
+      {
+       "to": "Ebemon X",
+       "to_id": "ebemonx",
+       "raw": "3 CM, Level 5-7, Area 23 cleared",
+       "parsed": {
+        "care_mistakes": "3",
+        "level": "5-7",
+        "area_cleared": "23"
+       },
+       "sub_version": "XF"
+      },
+      {
+       "to": "Evolution Failure",
+       "to_id": "evolutionfailure",
+       "raw": "3-4 CM, Level 1-4, Area 45 cleared",
+       "parsed": {
+        "care_mistakes": "3-4",
+        "level": "1-4",
+        "area_cleared": "45"
+       },
+       "sub_version": "XF"
+      }
+     ]
     }
    },
    "sprite": "fan/wayland-vpets/assets/dmx/Anomalocarimon X.png",
    "sources": [
-    "wayland-vpets:dmx"
-   ],
-   "evolution_status": "v3_pending"
+    "humulos:dmx"
+   ]
   },
   {
    "id": "bagramon",
@@ -609,24 +611,146 @@
    ]
   },
   {
+   "id": "blucomon",
+   "name": "Blucomon",
+   "stage": "Child",
+   "attribute": null,
+   "devices": {
+    "dmx": {
+     "versions": [],
+     "stage_time": "24 h",
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dmall/Blucomon.png",
+   "sources": [
+    "humulos:dmx"
+   ]
+  },
+  {
    "id": "cannonbeemon",
    "name": "Cannonbeemon",
-   "stage": null,
+   "stage": "Perfect",
    "attribute": null,
    "devices": {
     "dmx": {
      "versions": [
       3
      ],
-     "stage_time": null,
-     "evolves_to": []
+     "stage_time": "40 h",
+     "evolves_to": [
+      {
+       "to": "Tiger Vespamon",
+       "to_id": "tigervespamon",
+       "raw": "0-2 CM, Level 7-8, Area 16 cleared",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "level": "7-8",
+        "area_cleared": "16"
+       },
+       "sub_version": "XE"
+      },
+      {
+       "to": "Tiger Vespamon",
+       "to_id": "tigervespamon",
+       "raw": "0-2 CM, Level 1-3, Area 45 cleared",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "level": "1-3",
+        "area_cleared": "45"
+       },
+       "sub_version": "XE"
+      },
+      {
+       "to": "Gaioumon",
+       "to_id": "gaioumon",
+       "raw": "Area 9 cleared, (catch-all)",
+       "parsed": {
+        "catch_all": true,
+        "area_cleared": "9"
+       },
+       "sub_version": "XE"
+      },
+      {
+       "to": "Dinotigermon",
+       "to_id": "dinotigermon",
+       "raw": "Area 45 cleared, (catch-all)",
+       "parsed": {
+        "catch_all": true,
+        "area_cleared": "45"
+       },
+       "sub_version": "XE"
+      },
+      {
+       "to": "Holydramon X",
+       "to_id": "holydramonx",
+       "raw": "3 CM, Level 8, Area 45 cleared",
+       "parsed": {
+        "care_mistakes": "3",
+        "level": "8",
+        "area_cleared": "45"
+       },
+       "sub_version": "XE"
+      },
+      {
+       "to": "Ebemon X",
+       "to_id": "ebemonx",
+       "raw": "3 CM, Area 22 cleared",
+       "parsed": {
+        "care_mistakes": "3",
+        "area_cleared": "22"
+       },
+       "sub_version": "XE"
+      },
+      {
+       "to": "Ebemon X",
+       "to_id": "ebemonx",
+       "raw": "Area 22 cleared",
+       "parsed": {
+        "area_cleared": "22"
+       },
+       "sub_version": "XE"
+      },
+      {
+       "to": "Ebemon X",
+       "to_id": "ebemonx",
+       "raw": "3 CM, Level 1-4, Area 21 cleared",
+       "parsed": {
+        "care_mistakes": "3",
+        "level": "1-4",
+        "area_cleared": "21"
+       },
+       "sub_version": "XE"
+      },
+      {
+       "to": "Ebemon X",
+       "to_id": "ebemonx",
+       "raw": "3 CM, Level 5-7, Area 16 cleared",
+       "parsed": {
+        "care_mistakes": "3",
+        "level": "5-7",
+        "area_cleared": "16"
+       },
+       "sub_version": "XE"
+      },
+      {
+       "to": "Evolution Failure",
+       "to_id": "evolutionfailure",
+       "raw": "3-4 CM, Level 1-4, Area 45 cleared",
+       "parsed": {
+        "care_mistakes": "3-4",
+        "level": "1-4",
+        "area_cleared": "45"
+       },
+       "sub_version": "XE"
+      }
+     ]
     }
    },
    "sprite": "fan/wayland-vpets/assets/dmx/Cannonbeemon.png",
    "sources": [
-    "wayland-vpets:dmx"
-   ],
-   "evolution_status": "v3_pending"
+    "humulos:dmx"
+   ]
   },
   {
    "id": "cerberumonx",
@@ -836,22 +960,167 @@
   {
    "id": "cherubimonvirtuex",
    "name": "Cherubimon (Virtue) X",
-   "stage": null,
+   "stage": "Perfect",
+   "attribute": null,
+   "devices": {
+    "dmx": {
+     "versions": [],
+     "stage_time": "40 h",
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dmx/Cherubimon (Virtue) X.png",
+   "sources": [
+    "humulos:dmx"
+   ]
+  },
+  {
+   "id": "chocomon",
+   "name": "Chocomon",
+   "stage": "Baby II",
    "attribute": null,
    "devices": {
     "dmx": {
      "versions": [
       3
      ],
-     "stage_time": null,
-     "evolves_to": []
+     "stage_time": "12 h",
+     "evolves_to": [
+      {
+       "to": "Lopmon X",
+       "to_id": "lopmonx",
+       "raw": "0 CM, 0-3 Effort, Area 40 cleared",
+       "parsed": {
+        "care_mistakes": "0",
+        "effort": "0-3",
+        "area_cleared": "40"
+       },
+       "sub_version": "XF"
+      },
+      {
+       "to": "Lopmon X",
+       "to_id": "lopmonx",
+       "raw": "1 CM, 0-3 Effort, Area 45 not cleared",
+       "parsed": {
+        "care_mistakes": "1",
+        "effort": "0-3",
+        "area_not_cleared": "45"
+       },
+       "sub_version": "XF"
+      },
+      {
+       "to": "Shakomon X",
+       "to_id": "shakomonx",
+       "raw": "2-4 CM, Area 45 not cleared",
+       "parsed": {
+        "care_mistakes": "2-4",
+        "area_not_cleared": "45"
+       },
+       "sub_version": "XF"
+      },
+      {
+       "to": "Shakomon X",
+       "to_id": "shakomonx",
+       "raw": "Area 45 not cleared",
+       "parsed": {
+        "area_not_cleared": "45"
+       },
+       "sub_version": "XF"
+      },
+      {
+       "to": "Ryudamon",
+       "to_id": "ryudamon",
+       "raw": "0 CM, 4 Effort, Area 45 not cleared",
+       "parsed": {
+        "care_mistakes": "0",
+        "effort": "4",
+        "area_not_cleared": "45"
+       },
+       "sub_version": "XF"
+      },
+      {
+       "to": "Ryudamon",
+       "to_id": "ryudamon",
+       "raw": "1 CM, 4 Effort, Area 45 not cleared",
+       "parsed": {
+        "care_mistakes": "1",
+        "effort": "4",
+        "area_not_cleared": "45"
+       },
+       "sub_version": "XF"
+      },
+      {
+       "to": "Blucomon",
+       "to_id": "blucomon",
+       "raw": "1 CM, 2-4 Effort, Area 45 cleared",
+       "parsed": {
+        "care_mistakes": "1",
+        "effort": "2-4",
+        "area_cleared": "45"
+       },
+       "sub_version": "XF"
+      },
+      {
+       "to": "Jazamon",
+       "to_id": "jazamon",
+       "raw": "1 CM, 0-1 Effort, Area 45 cleared",
+       "parsed": {
+        "care_mistakes": "1",
+        "effort": "0-1",
+        "area_cleared": "45"
+       },
+       "sub_version": "XF"
+      },
+      {
+       "to": "Pegasmon X",
+       "to_id": "pegasmonx",
+       "raw": "0-2 CM, 4 Effort, Area 10 cleared",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "effort": "4",
+        "area_cleared": "10"
+       },
+       "sub_version": "XF"
+      },
+      {
+       "to": "Pegasmon X",
+       "to_id": "pegasmonx",
+       "raw": "0-1 CM, 0-2 Effort, Area 10 cleared",
+       "parsed": {
+        "care_mistakes": "0-1",
+        "effort": "0-2",
+        "area_cleared": "10"
+       },
+       "sub_version": "XF"
+      },
+      {
+       "to": "Pegasmon X",
+       "to_id": "pegasmonx",
+       "raw": "0-2 CM, 0-1 Effort, Area 45 cleared",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "effort": "0-1",
+        "area_cleared": "45"
+       },
+       "sub_version": "XF"
+      },
+      {
+       "to": "Wizarmon X",
+       "to_id": "wizarmonx",
+       "raw": "Area 45 cleared, (catch-all)",
+       "parsed": {
+        "catch_all": true,
+        "area_cleared": "45"
+       },
+       "sub_version": "XF"
+      }
+     ]
     }
    },
-   "sprite": "fan/wayland-vpets/assets/dmx/Cherubimon (Virtue) X.png",
+   "sprite": "fan/wayland-vpets/assets/dmall/Chocomon.png",
    "sources": [
-    "wayland-vpets:dmx"
-   ],
-   "evolution_status": "v3_pending"
+    "humulos:dmx"
+   ]
   },
   {
    "id": "chohakkaimon",
@@ -978,22 +1247,21 @@
   {
    "id": "cocomon",
    "name": "Cocomon",
-   "stage": null,
+   "stage": "Baby I",
    "attribute": null,
    "devices": {
     "dmx": {
      "versions": [
       3
      ],
-     "stage_time": null,
+     "stage_time": "10 min",
      "evolves_to": []
     }
    },
    "sprite": "fan/wayland-vpets/assets/dmx/Cocomon.png",
    "sources": [
     "wayland-vpets:dmx"
-   ],
-   "evolution_status": "v3_pending"
+   ]
   },
   {
    "id": "craniummonx",
@@ -1046,42 +1314,36 @@
   {
    "id": "cryspaledramon",
    "name": "Crys Paledramon",
-   "stage": null,
+   "stage": "Perfect",
    "attribute": null,
    "devices": {
     "dmx": {
-     "versions": [
-      3
-     ],
-     "stage_time": null,
+     "versions": [],
+     "stage_time": "40 h",
      "evolves_to": []
     }
    },
    "sprite": "fan/wayland-vpets/assets/dmx/Crys Paledramon.png",
    "sources": [
-    "wayland-vpets:dmx"
-   ],
-   "evolution_status": "v3_pending"
+    "humulos:dmx"
+   ]
   },
   {
    "id": "cyberdramonx",
    "name": "Cyberdramon X",
-   "stage": null,
+   "stage": "Adult",
    "attribute": null,
    "devices": {
     "dmx": {
-     "versions": [
-      3
-     ],
-     "stage_time": null,
+     "versions": [],
+     "stage_time": "32 h",
      "evolves_to": []
     }
    },
    "sprite": "fan/wayland-vpets/assets/dmx/Cyberdramon X.png",
    "sources": [
-    "wayland-vpets:dmx"
-   ],
-   "evolution_status": "v3_pending"
+    "humulos:dmx"
+   ]
   },
   {
    "id": "damemon",
@@ -1512,7 +1774,7 @@
   {
    "id": "dinotigermon",
    "name": "Dinotigermon",
-   "stage": null,
+   "stage": "Ultimate",
    "attribute": null,
    "devices": {
     "dmx": {
@@ -1520,74 +1782,441 @@
       3
      ],
      "stage_time": null,
-     "evolves_to": []
+     "evolves_to": [
+      {
+       "to": "Craniummon X",
+       "to_id": "craniummonx",
+       "raw": "0-2 CM, Level 5-7, Area 32 cleared",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "level": "5-7",
+        "area_cleared": "32"
+       },
+       "sub_version": "XE"
+      },
+      {
+       "to": "Lord Knightmon X",
+       "to_id": "lordknightmonx",
+       "raw": "0-2 CM, Level 8-10, Area 27 cleared",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "level": "8-10",
+        "area_cleared": "27"
+       },
+       "sub_version": "XE"
+      },
+      {
+       "to": "Sleipmon X",
+       "to_id": "sleipmonx",
+       "raw": "0-2 CM, Level 5-7, Area 28 cleared",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "level": "5-7",
+        "area_cleared": "28"
+       },
+       "sub_version": "XF"
+      },
+      {
+       "to": "Sleipmon X",
+       "to_id": "sleipmonx",
+       "raw": "0-2 CM, Level 8-10, Area 30 cleared",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "level": "8-10",
+        "area_cleared": "30"
+       },
+       "sub_version": "XF"
+      },
+      {
+       "to": "Sleipmon X",
+       "to_id": "sleipmonx",
+       "raw": "0-2 CM, Level 8-10, Area 28 cleared",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "level": "8-10",
+        "area_cleared": "28"
+       },
+       "sub_version": "XF"
+      },
+      {
+       "to": "Jesmon X",
+       "to_id": "jesmonx",
+       "raw": "0-2 CM, Level 8-10, Area SP not cleared",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "level": "8-10",
+        "area_not_cleared": "SP"
+       },
+       "sub_version": "XF"
+      }
+     ]
     }
    },
    "sprite": "fan/wayland-vpets/assets/dmx/Dinotigermon.png",
    "sources": [
-    "wayland-vpets:dmx"
-   ],
-   "evolution_status": "v3_pending"
+    "humulos:dmx"
+   ]
   },
   {
    "id": "dorugamon",
    "name": "DORUgamon",
-   "stage": null,
+   "stage": "Adult",
    "attribute": null,
    "devices": {
     "dmx": {
      "versions": [
       3
      ],
-     "stage_time": null,
-     "evolves_to": []
+     "stage_time": "32 h",
+     "evolves_to": [
+      {
+       "to": "DORUguremon",
+       "to_id": "doruguremon",
+       "raw": "0-2 CM, Level 4-6, Area 11 cleared",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "level": "4-6",
+        "area_cleared": "11"
+       },
+       "sub_version": "XE"
+      },
+      {
+       "to": "Mamemon X",
+       "to_id": "mamemonx",
+       "raw": "3-4 CM, Area 9 cleared",
+       "parsed": {
+        "care_mistakes": "3-4",
+        "area_cleared": "9"
+       },
+       "sub_version": "XE"
+      },
+      {
+       "to": "Mamemon X",
+       "to_id": "mamemonx",
+       "raw": "Area 9 cleared",
+       "parsed": {
+        "area_cleared": "9"
+       },
+       "sub_version": "XE"
+      }
+     ]
     }
    },
    "sprite": "fan/wayland-vpets/assets/dmx/DORUgamon.png",
    "sources": [
-    "wayland-vpets:dmx"
-   ],
-   "evolution_status": "v3_pending"
+    "humulos:dmx"
+   ]
   },
   {
    "id": "doruguremon",
    "name": "DORUguremon",
-   "stage": null,
+   "stage": "Adult",
    "attribute": null,
    "devices": {
     "dmx": {
      "versions": [
       3
      ],
-     "stage_time": null,
-     "evolves_to": []
+     "stage_time": "32 h",
+     "evolves_to": [
+      {
+       "to": "Alphamon",
+       "to_id": "alphamon",
+       "raw": "0-2 CM, Level 7-8, Area 22 cleared",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "level": "7-8",
+        "area_cleared": "22"
+       },
+       "sub_version": "XE"
+      },
+      {
+       "to": "Alphamon",
+       "to_id": "alphamon",
+       "raw": "0-1 CM, Level 6-8, Area 9 cleared",
+       "parsed": {
+        "care_mistakes": "0-1",
+        "level": "6-8",
+        "area_cleared": "9"
+       },
+       "sub_version": "XE"
+      },
+      {
+       "to": "Alphamon",
+       "to_id": "alphamon",
+       "raw": "3 CM, Level 8, Defeat 3 Stage VI, Area 45 cleared",
+       "parsed": {
+        "care_mistakes": "3",
+        "level": "8",
+        "defeat_stage6": "3",
+        "area_cleared": "45"
+       },
+       "sub_version": "XE"
+      },
+      {
+       "to": "Hououmon X",
+       "to_id": "hououmonx",
+       "raw": "0-2 CM, Level 5-6, Area 27 cleared",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "level": "5-6",
+        "area_cleared": "27"
+       },
+       "sub_version": "XE"
+      },
+      {
+       "to": "Hououmon X",
+       "to_id": "hououmonx",
+       "raw": "0-2 CM, Level 7-8, Area 27 cleared",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "level": "7-8",
+        "area_cleared": "27"
+       },
+       "sub_version": "XE"
+      },
+      {
+       "to": "Hououmon X",
+       "to_id": "hououmonx",
+       "raw": "3 CM, Level 8, Defeat 3 Stage VI, Area 45 cleared",
+       "parsed": {
+        "care_mistakes": "3",
+        "level": "8",
+        "defeat_stage6": "3",
+        "area_cleared": "45"
+       },
+       "sub_version": "XE"
+      },
+      {
+       "to": "Hououmon X",
+       "to_id": "hououmonx",
+       "raw": "2-3 CM, Level 8, Defeat 5 Stage VI, Area 27 cleared",
+       "parsed": {
+        "care_mistakes": "2-3",
+        "level": "8",
+        "defeat_stage6": "5",
+        "area_cleared": "27"
+       },
+       "sub_version": "XE"
+      },
+      {
+       "to": "Tiger Vespamon",
+       "to_id": "tigervespamon",
+       "raw": "3 CM, Level 8, Defeat 3 Stage VI, Area 21 cleared",
+       "parsed": {
+        "care_mistakes": "3",
+        "level": "8",
+        "defeat_stage6": "3",
+        "area_cleared": "21"
+       },
+       "sub_version": "XE"
+      },
+      {
+       "to": "Tiger Vespamon",
+       "to_id": "tigervespamon",
+       "raw": "0-2 CM, Level 1-4, Area 16 cleared",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "level": "1-4",
+        "area_cleared": "16"
+       },
+       "sub_version": "XE"
+      },
+      {
+       "to": "Gaioumon",
+       "to_id": "gaioumon",
+       "raw": "0-2 CM, Level 1-6, Area 9 cleared",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "level": "1-6",
+        "area_cleared": "9"
+       },
+       "sub_version": "XE"
+      },
+      {
+       "to": "Gaioumon",
+       "to_id": "gaioumon",
+       "raw": "3 CM, Level 8, Area 16 cleared",
+       "parsed": {
+        "care_mistakes": "3",
+        "level": "8",
+        "area_cleared": "16"
+       },
+       "sub_version": "XE"
+      }
+     ]
     }
    },
    "sprite": "fan/wayland-vpets/assets/dmx/DORUguremon.png",
    "sources": [
-    "wayland-vpets:dmx"
-   ],
-   "evolution_status": "v3_pending"
+    "humulos:dmx"
+   ]
   },
   {
    "id": "dorumon",
    "name": "DORUmon",
-   "stage": null,
+   "stage": "Child",
    "attribute": null,
    "devices": {
     "dmx": {
      "versions": [
       3
      ],
-     "stage_time": null,
-     "evolves_to": []
+     "stage_time": "24 h",
+     "evolves_to": [
+      {
+       "to": "DORUgamon",
+       "to_id": "dorugamon",
+       "raw": "0-1 CM, 1-4 Effort, Area 11 not cleared",
+       "parsed": {
+        "care_mistakes": "0-1",
+        "effort": "1-4",
+        "area_not_cleared": "11"
+       },
+       "sub_version": "XE"
+      },
+      {
+       "to": "Omekamon",
+       "to_id": "omekamon",
+       "raw": "2-4 CM, 0-2 Effort, Area 45 cleared",
+       "parsed": {
+        "care_mistakes": "2-4",
+        "effort": "0-2",
+        "area_cleared": "45"
+       },
+       "sub_version": "XE"
+      },
+      {
+       "to": "Omekamon",
+       "to_id": "omekamon",
+       "raw": "2-4 CM, 3-4 Effort, Area 9 not cleared",
+       "parsed": {
+        "care_mistakes": "2-4",
+        "effort": "3-4",
+        "area_not_cleared": "9"
+       },
+       "sub_version": "XE"
+      },
+      {
+       "to": "Paledramon",
+       "to_id": "paledramon",
+       "raw": "0-1 CM, 2-4 Effort, Area 45 cleared",
+       "parsed": {
+        "care_mistakes": "0-1",
+        "effort": "2-4",
+        "area_cleared": "45"
+       },
+       "sub_version": "XE"
+      },
+      {
+       "to": "Jazardmon",
+       "to_id": "jazardmon",
+       "raw": "0-2 CM, 2-4 Effort, Area 45 cleared",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "effort": "2-4",
+        "area_cleared": "45"
+       },
+       "sub_version": "XE"
+      },
+      {
+       "to": "Omega Shoutmon X",
+       "to_id": "omegashoutmonx",
+       "raw": "0-2 CM, Level 5-6, Area 22 cleared",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "level": "5-6",
+        "area_cleared": "22"
+       },
+       "sub_version": "XE"
+      },
+      {
+       "to": "Omega Shoutmon X",
+       "to_id": "omegashoutmonx",
+       "raw": "3-4 CM, Level 6, Defeat 1 Stage VI, Area 22 cleared",
+       "parsed": {
+        "care_mistakes": "3-4",
+        "level": "6",
+        "defeat_stage6": "1",
+        "area_cleared": "22"
+       },
+       "sub_version": "XE"
+      },
+      {
+       "to": "Omega Shoutmon X",
+       "to_id": "omegashoutmonx",
+       "raw": "0-1 CM, Level 5-6, Area 22 cleared",
+       "parsed": {
+        "care_mistakes": "0-1",
+        "level": "5-6",
+        "area_cleared": "22"
+       },
+       "sub_version": "XE"
+      },
+      {
+       "to": "Cyberdramon X",
+       "to_id": "cyberdramonx",
+       "raw": "0-2 CM, Level 4-6, Area 21 cleared",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "level": "4-6",
+        "area_cleared": "21"
+       },
+       "sub_version": "XE"
+      },
+      {
+       "to": "Cyberdramon X",
+       "to_id": "cyberdramonx",
+       "raw": "2-4 CM, Level 6, Defeat 1 Stage VI, Area 21 cleared",
+       "parsed": {
+        "care_mistakes": "2-4",
+        "level": "6",
+        "defeat_stage6": "1",
+        "area_cleared": "21"
+       },
+       "sub_version": "XE"
+      },
+      {
+       "to": "Cyberdramon X",
+       "to_id": "cyberdramonx",
+       "raw": "3-4 CM, Level 6, Defeat 1 Stage VI, Area 45 cleared",
+       "parsed": {
+        "care_mistakes": "3-4",
+        "level": "6",
+        "defeat_stage6": "1",
+        "area_cleared": "45"
+       },
+       "sub_version": "XE"
+      },
+      {
+       "to": "DORUguremon",
+       "to_id": "doruguremon",
+       "raw": "0-2 CM, Level 1-4, Area 11 cleared",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "level": "1-4",
+        "area_cleared": "11"
+       },
+       "sub_version": "XE"
+      },
+      {
+       "to": "DORUguremon",
+       "to_id": "doruguremon",
+       "raw": "0-2 CM, Level 5-6, Area 11 cleared",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "level": "5-6",
+        "area_cleared": "11"
+       },
+       "sub_version": "XE"
+      }
+     ]
     }
    },
    "sprite": "fan/wayland-vpets/assets/dmx/DORUmon.png",
    "sources": [
-    "wayland-vpets:dmx"
-   ],
-   "evolution_status": "v3_pending"
+    "humulos:dmx"
+   ]
   },
   {
    "id": "dracomonx",
@@ -1652,22 +2281,19 @@
   {
    "id": "duftmonx",
    "name": "Duftmon X",
-   "stage": null,
+   "stage": "Ultimate",
    "attribute": null,
    "devices": {
     "dmx": {
-     "versions": [
-      3
-     ],
+     "versions": [],
      "stage_time": null,
      "evolves_to": []
     }
    },
    "sprite": "fan/wayland-vpets/assets/dmx/Duftmon X.png",
    "sources": [
-    "wayland-vpets:dmx"
-   ],
-   "evolution_status": "v3_pending"
+    "humulos:dmx"
+   ]
   },
   {
    "id": "dukemonx",
@@ -1748,27 +2374,24 @@
   {
    "id": "dynasmonx",
    "name": "Dynasmon X",
-   "stage": null,
+   "stage": "Ultimate",
    "attribute": null,
    "devices": {
     "dmx": {
-     "versions": [
-      3
-     ],
+     "versions": [],
      "stage_time": null,
      "evolves_to": []
     }
    },
    "sprite": "fan/wayland-vpets/assets/dmx/Dynasmon X.png",
    "sources": [
-    "wayland-vpets:dmx"
-   ],
-   "evolution_status": "v3_pending"
+    "humulos:dmx"
+   ]
   },
   {
    "id": "ebemonx",
    "name": "Ebemon X",
-   "stage": null,
+   "stage": "Ultimate",
    "attribute": null,
    "devices": {
     "dmx": {
@@ -1776,14 +2399,150 @@
       3
      ],
      "stage_time": null,
-     "evolves_to": []
+     "evolves_to": [
+      {
+       "to": "Lord Knightmon X",
+       "to_id": "lordknightmonx",
+       "raw": "0-2 CM, Level 10, Area 40 not cleared",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "level": "10",
+        "area_not_cleared": "40"
+       },
+       "sub_version": "XE"
+      },
+      {
+       "to": "Lord Knightmon X",
+       "to_id": "lordknightmonx",
+       "raw": "0-2 CM, Level 1-7, Area 45 cleared",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "level": "1-7",
+        "area_cleared": "45"
+       },
+       "sub_version": "XE"
+      },
+      {
+       "to": "Dukemon X",
+       "to_id": "dukemonx",
+       "raw": "0-2 CM, Level 9-10, Area RE cleared",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "level": "9-10",
+        "area_cleared": "RE"
+       },
+       "sub_version": "XE"
+      },
+      {
+       "to": "Dukemon X",
+       "to_id": "dukemonx",
+       "raw": "0-2 CM, Level 8-10, Area 45 cleared",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "level": "8-10",
+        "area_cleared": "45"
+       },
+       "sub_version": "XE"
+      },
+      {
+       "to": "Alphamon: Ouryuken",
+       "to_id": "alphamonouryuken",
+       "raw": "0-2 CM, Level 8-10, Area SP cleared",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "level": "8-10",
+        "area_cleared": "SP"
+       },
+       "sub_version": "XE"
+      },
+      {
+       "to": "Alphamon: Ouryuken",
+       "to_id": "alphamonouryuken",
+       "raw": "0-2 CM, Level 10, Area SP cleared",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "level": "10",
+        "area_cleared": "SP"
+       },
+       "sub_version": "XE"
+      },
+      {
+       "to": "Jesmon GX",
+       "to_id": "jesmongx",
+       "raw": "Area 40 cleared",
+       "parsed": {
+        "area_cleared": "40"
+       },
+       "sub_version": "XE"
+      },
+      {
+       "to": "Jesmon X",
+       "to_id": "jesmonx",
+       "raw": "0-2 CM, Level 10, Area 39 not cleared",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "level": "10",
+        "area_not_cleared": "39"
+       },
+       "sub_version": "XF"
+      },
+      {
+       "to": "Jesmon X",
+       "to_id": "jesmonx",
+       "raw": "0-2 CM, Level 1-4, Area 45 cleared",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "level": "1-4",
+        "area_cleared": "45"
+       },
+       "sub_version": "XF"
+      },
+      {
+       "to": "Omegamon X",
+       "to_id": "omegamonx",
+       "raw": "0-2 CM, Level 9-10, Area RE cleared",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "level": "9-10",
+        "area_cleared": "RE"
+       },
+       "sub_version": "XF"
+      },
+      {
+       "to": "Omegamon X",
+       "to_id": "omegamonx",
+       "raw": "0-2 CM, Level 8-10, Area 45 cleared",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "level": "8-10",
+        "area_cleared": "45"
+       },
+       "sub_version": "XF"
+      }
+     ]
     }
    },
    "sprite": "fan/wayland-vpets/assets/dmx/Ebemon X.png",
    "sources": [
-    "wayland-vpets:dmx"
-   ],
-   "evolution_status": "v3_pending"
+    "humulos:dmx"
+   ]
+  },
+  {
+   "id": "evolutionfailure",
+   "name": "Evolution Failure",
+   "stage": "Ultimate",
+   "attribute": null,
+   "devices": {
+    "dmx": {
+     "versions": [],
+     "stage_time": null,
+     "evolves_to": []
+    }
+   },
+   "sprite": null,
+   "sources": [
+    "humulos:dmx"
+   ]
   },
   {
    "id": "examon",
@@ -1808,22 +2567,19 @@
   {
    "id": "examonx",
    "name": "Examon X",
-   "stage": null,
+   "stage": "Ultimate",
    "attribute": null,
    "devices": {
     "dmx": {
-     "versions": [
-      3
-     ],
+     "versions": [],
      "stage_time": null,
      "evolves_to": []
     }
    },
    "sprite": "fan/wayland-vpets/assets/dmx/Examon X.png",
    "sources": [
-    "wayland-vpets:dmx"
-   ],
-   "evolution_status": "v3_pending"
+    "humulos:dmx"
+   ]
   },
   {
    "id": "filmon",
@@ -1975,62 +2731,111 @@
   {
    "id": "gaioumon",
    "name": "Gaioumon",
-   "stage": null,
+   "stage": "Perfect",
    "attribute": null,
    "devices": {
     "dmx": {
      "versions": [
       3
      ],
-     "stage_time": null,
-     "evolves_to": []
+     "stage_time": "40 h",
+     "evolves_to": [
+      {
+       "to": "Craniummon X",
+       "to_id": "craniummonx",
+       "raw": "0-2 CM, Level 5-9, Area RE not cleared",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "level": "5-9",
+        "area_not_cleared": "RE"
+       },
+       "sub_version": "XE"
+      },
+      {
+       "to": "Craniummon X",
+       "to_id": "craniummonx",
+       "raw": "0-2 CM, Level 1-4, Area 45 cleared",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "level": "1-4",
+        "area_cleared": "45"
+       },
+       "sub_version": "XE"
+      },
+      {
+       "to": "Lord Knightmon X",
+       "to_id": "lordknightmonx",
+       "raw": "0-2 CM, Level 5-7, Area 27 cleared",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "level": "5-7",
+        "area_cleared": "27"
+       },
+       "sub_version": "XE"
+      },
+      {
+       "to": "Jesmon X",
+       "to_id": "jesmonx",
+       "raw": "0-2 CM, Level 5-9, Area SP not cleared",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "level": "5-9",
+        "area_not_cleared": "SP"
+       },
+       "sub_version": "XF"
+      },
+      {
+       "to": "Jesmon X",
+       "to_id": "jesmonx",
+       "raw": "0-2 CM, Level 10, Area SP not cleared",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "level": "10",
+        "area_not_cleared": "SP"
+       },
+       "sub_version": "XF"
+      }
+     ]
     }
    },
    "sprite": "fan/wayland-vpets/assets/dmx/Gaioumon.png",
    "sources": [
-    "wayland-vpets:dmx"
-   ],
-   "evolution_status": "v3_pending"
+    "humulos:dmx"
+   ]
   },
   {
    "id": "gankoomonx",
    "name": "Gankoomon X",
-   "stage": null,
+   "stage": "Ultimate",
    "attribute": null,
    "devices": {
     "dmx": {
-     "versions": [
-      3
-     ],
+     "versions": [],
      "stage_time": null,
      "evolves_to": []
     }
    },
    "sprite": "fan/wayland-vpets/assets/dmx/Gankoomon X.png",
    "sources": [
-    "wayland-vpets:dmx"
-   ],
-   "evolution_status": "v3_pending"
+    "humulos:dmx"
+   ]
   },
   {
    "id": "garudamonx",
    "name": "Garudamon X",
-   "stage": null,
+   "stage": "Perfect",
    "attribute": null,
    "devices": {
     "dmx": {
-     "versions": [
-      3
-     ],
-     "stage_time": null,
+     "versions": [],
+     "stage_time": "40 h",
      "evolves_to": []
     }
    },
    "sprite": "fan/wayland-vpets/assets/dmx/Garudamon X.png",
    "sources": [
-    "wayland-vpets:dmx"
-   ],
-   "evolution_status": "v3_pending"
+    "humulos:dmx"
+   ]
   },
   {
    "id": "gigaseadramon",
@@ -2078,42 +2883,94 @@
   {
    "id": "ginryumon",
    "name": "Ginryumon",
-   "stage": null,
+   "stage": "Adult",
    "attribute": null,
    "devices": {
     "dmx": {
      "versions": [
       3
      ],
-     "stage_time": null,
-     "evolves_to": []
+     "stage_time": "32 h",
+     "evolves_to": [
+      {
+       "to": "Hisyaryumon",
+       "to_id": "hisyaryumon",
+       "raw": "0-2 CM, Level 4-6, Area 10 cleared",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "level": "4-6",
+        "area_cleared": "10"
+       },
+       "sub_version": "XF"
+      },
+      {
+       "to": "Anomalocarimon X",
+       "to_id": "anomalocarimonx",
+       "raw": "3-4 CM, Level 5-6, Area 12 cleared",
+       "parsed": {
+        "care_mistakes": "3-4",
+        "level": "5-6",
+        "area_cleared": "12"
+       },
+       "sub_version": "XF"
+      },
+      {
+       "to": "Anomalocarimon X",
+       "to_id": "anomalocarimonx",
+       "raw": "3-4 CM, Level 6, Area 45 cleared",
+       "parsed": {
+        "care_mistakes": "3-4",
+        "level": "6",
+        "area_cleared": "45"
+       },
+       "sub_version": "XF"
+      },
+      {
+       "to": "Grademon",
+       "to_id": "grademon",
+       "raw": "3-4 CM, Level 1-6, Area 10 cleared",
+       "parsed": {
+        "care_mistakes": "3-4",
+        "level": "1-6",
+        "area_cleared": "10"
+       },
+       "sub_version": "XF"
+      },
+      {
+       "to": "Grademon",
+       "to_id": "grademon",
+       "raw": "0-2 CM, Level 1-3, Area 10 cleared",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "level": "1-3",
+        "area_cleared": "10"
+       },
+       "sub_version": "XF"
+      }
+     ]
     }
    },
    "sprite": "fan/wayland-vpets/assets/dmx/Ginryumon.png",
    "sources": [
-    "wayland-vpets:dmx"
-   ],
-   "evolution_status": "v3_pending"
+    "humulos:dmx"
+   ]
   },
   {
    "id": "goddramonx",
    "name": "Goddramon X",
-   "stage": null,
+   "stage": "Perfect",
    "attribute": null,
    "devices": {
     "dmx": {
-     "versions": [
-      3
-     ],
-     "stage_time": null,
+     "versions": [],
+     "stage_time": "40 h",
      "evolves_to": []
     }
    },
    "sprite": "fan/wayland-vpets/assets/dmx/Goddramon X.png",
    "sources": [
-    "wayland-vpets:dmx"
-   ],
-   "evolution_status": "v3_pending"
+    "humulos:dmx"
+   ]
   },
   {
    "id": "gomamonx",
@@ -2170,42 +3027,19 @@
   {
    "id": "grademon",
    "name": "Grademon",
-   "stage": null,
+   "stage": "Perfect",
    "attribute": null,
    "devices": {
     "dmx": {
-     "versions": [
-      3
-     ],
-     "stage_time": null,
+     "versions": [],
+     "stage_time": "40 h",
      "evolves_to": []
     }
    },
    "sprite": "fan/wayland-vpets/assets/dmx/Grademon.png",
    "sources": [
-    "wayland-vpets:dmx"
-   ],
-   "evolution_status": "v3_pending"
-  },
-  {
-   "id": "granddracumon",
-   "name": "Grand Dracumon",
-   "stage": null,
-   "attribute": null,
-   "devices": {
-    "dmx": {
-     "versions": [
-      3
-     ],
-     "stage_time": null,
-     "evolves_to": []
-    }
-   },
-   "sprite": "fan/wayland-vpets/assets/dmx/Grand Dracumon.png",
-   "sources": [
-    "wayland-vpets:dmx"
-   ],
-   "evolution_status": "v3_pending"
+    "humulos:dmx"
+   ]
   },
   {
    "id": "grandiskuwagamon",
@@ -2347,22 +3181,149 @@
   {
    "id": "gummymon",
    "name": "Gummymon",
-   "stage": null,
+   "stage": "Baby II",
    "attribute": null,
    "devices": {
     "dmx": {
      "versions": [
       3
      ],
-     "stage_time": null,
-     "evolves_to": []
+     "stage_time": "12 h",
+     "evolves_to": [
+      {
+       "to": "Terriermon X",
+       "to_id": "terriermonx",
+       "raw": "0 CM, 0-3 Effort",
+       "parsed": {
+        "care_mistakes": "0",
+        "effort": "0-3"
+       },
+       "sub_version": "XE"
+      },
+      {
+       "to": "Terriermon X",
+       "to_id": "terriermonx",
+       "raw": "1 CM, 0-3 Effort, Area 45 not cleared",
+       "parsed": {
+        "care_mistakes": "1",
+        "effort": "0-3",
+        "area_not_cleared": "45"
+       },
+       "sub_version": "XE"
+      },
+      {
+       "to": "Palmon X",
+       "to_id": "palmonx",
+       "raw": "2-4 CM, Area 45 not cleared",
+       "parsed": {
+        "care_mistakes": "2-4",
+        "area_not_cleared": "45"
+       },
+       "sub_version": "XE"
+      },
+      {
+       "to": "Palmon X",
+       "to_id": "palmonx",
+       "raw": "Area 45 not cleared",
+       "parsed": {
+        "area_not_cleared": "45"
+       },
+       "sub_version": "XE"
+      },
+      {
+       "to": "DORUmon",
+       "to_id": "dorumon",
+       "raw": "0 CM, 4 Effort, Area 45 not cleared",
+       "parsed": {
+        "care_mistakes": "0",
+        "effort": "4",
+        "area_not_cleared": "45"
+       },
+       "sub_version": "XE"
+      },
+      {
+       "to": "DORUmon",
+       "to_id": "dorumon",
+       "raw": "1 CM, 4 Effort, Area 45 not cleared",
+       "parsed": {
+        "care_mistakes": "1",
+        "effort": "4",
+        "area_not_cleared": "45"
+       },
+       "sub_version": "XE"
+      },
+      {
+       "to": "Blucomon",
+       "to_id": "blucomon",
+       "raw": "1 CM, 2-4 Effort, Area 45 cleared",
+       "parsed": {
+        "care_mistakes": "1",
+        "effort": "2-4",
+        "area_cleared": "45"
+       },
+       "sub_version": "XE"
+      },
+      {
+       "to": "Jazamon",
+       "to_id": "jazamon",
+       "raw": "1 CM, 0-1 Effort, Area 45 cleared",
+       "parsed": {
+        "care_mistakes": "1",
+        "effort": "0-1",
+        "area_cleared": "45"
+       },
+       "sub_version": "XE"
+      },
+      {
+       "to": "Siesamon X",
+       "to_id": "siesamonx",
+       "raw": "0-2 CM, 3-4 Effort, Area 11 cleared",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "effort": "3-4",
+        "area_cleared": "11"
+       },
+       "sub_version": "XE"
+      },
+      {
+       "to": "Siesamon X",
+       "to_id": "siesamonx",
+       "raw": "0-1 CM, 0 Effort, Area 11 cleared",
+       "parsed": {
+        "care_mistakes": "0-1",
+        "effort": "0",
+        "area_cleared": "11"
+       },
+       "sub_version": "XE"
+      },
+      {
+       "to": "Siesamon X",
+       "to_id": "siesamonx",
+       "raw": "0-1 CM, 0-1 Effort, Area 45 cleared",
+       "parsed": {
+        "care_mistakes": "0-1",
+        "effort": "0-1",
+        "area_cleared": "45"
+       },
+       "sub_version": "XE"
+      },
+      {
+       "to": "Meramon X",
+       "to_id": "meramonx",
+       "raw": "Area 45 cleared, (catch-all)",
+       "parsed": {
+        "catch_all": true,
+        "area_cleared": "45"
+       },
+       "sub_version": "XE"
+      }
+     ]
     }
    },
    "sprite": "fan/wayland-vpets/assets/dmx/Gummymon.png",
    "sources": [
-    "wayland-vpets:dmx"
-   ],
-   "evolution_status": "v3_pending"
+    "humulos:dmx"
+   ]
   },
   {
    "id": "herissmon",
@@ -2465,47 +3426,145 @@
   {
    "id": "hexeblaumon",
    "name": "Hexeblaumon",
-   "stage": null,
+   "stage": "Ultimate",
    "attribute": null,
    "devices": {
     "dmx": {
-     "versions": [
-      3
-     ],
+     "versions": [],
      "stage_time": null,
      "evolves_to": []
     }
    },
    "sprite": "fan/wayland-vpets/assets/dmx/Hexeblaumon.png",
    "sources": [
-    "wayland-vpets:dmx"
-   ],
-   "evolution_status": "v3_pending"
+    "humulos:dmx"
+   ]
   },
   {
    "id": "hisyaryumon",
    "name": "Hisyaryumon",
-   "stage": null,
+   "stage": "Perfect",
    "attribute": null,
    "devices": {
     "dmx": {
      "versions": [
       3
      ],
-     "stage_time": null,
-     "evolves_to": []
+     "stage_time": "40 h",
+     "evolves_to": [
+      {
+       "to": "Ouryumon",
+       "to_id": "ouryumon",
+       "raw": "0-2 CM, Level 7-8, Area 18 cleared",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "level": "7-8",
+        "area_cleared": "18"
+       },
+       "sub_version": "XF"
+      },
+      {
+       "to": "Ouryumon",
+       "to_id": "ouryumon",
+       "raw": "0-1 CM, Level 4-5, Area 9 cleared",
+       "parsed": {
+        "care_mistakes": "0-1",
+        "level": "4-5",
+        "area_cleared": "9"
+       },
+       "sub_version": "XF"
+      },
+      {
+       "to": "Ouryumon",
+       "to_id": "ouryumon",
+       "raw": "0-1 CM, Level 6-8, Area 9 cleared",
+       "parsed": {
+        "care_mistakes": "0-1",
+        "level": "6-8",
+        "area_cleared": "9"
+       },
+       "sub_version": "XF"
+      },
+      {
+       "to": "Ouryumon",
+       "to_id": "ouryumon",
+       "raw": "3 CM, Level 8, Defeat 3 Stage VI, Area 45 cleared",
+       "parsed": {
+        "care_mistakes": "3",
+        "level": "8",
+        "defeat_stage6": "3",
+        "area_cleared": "45"
+       },
+       "sub_version": "XF"
+      },
+      {
+       "to": "Ofanimon X",
+       "to_id": "ofanimonx",
+       "raw": "0-2 CM, Level 8, Area 28 cleared",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "level": "8",
+        "area_cleared": "28"
+       },
+       "sub_version": "XF"
+      },
+      {
+       "to": "Ofanimon X",
+       "to_id": "ofanimonx",
+       "raw": "0-2 CM, Level 7-8, Area 28 cleared",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "level": "7-8",
+        "area_cleared": "28"
+       },
+       "sub_version": "XF"
+      },
+      {
+       "to": "Ofanimon X",
+       "to_id": "ofanimonx",
+       "raw": "0-2 CM, Level 4-6, Area 45 cleared",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "level": "4-6",
+        "area_cleared": "45"
+       },
+       "sub_version": "XF"
+      },
+      {
+       "to": "Plesiomon X",
+       "to_id": "plesiomonx",
+       "raw": "3 CM, Level 8, Defeat 3 Stage VI, Area 18 cleared",
+       "parsed": {
+        "care_mistakes": "3",
+        "level": "8",
+        "defeat_stage6": "3",
+        "area_cleared": "18"
+       },
+       "sub_version": "XF"
+      },
+      {
+       "to": "Plesiomon X",
+       "to_id": "plesiomonx",
+       "raw": "3 CM, Level 8, Area 18 cleared",
+       "parsed": {
+        "care_mistakes": "3",
+        "level": "8",
+        "area_cleared": "18"
+       },
+       "sub_version": "XF"
+      }
+     ]
     }
    },
    "sprite": "fan/wayland-vpets/assets/dmx/Hisyaryumon.png",
    "sources": [
-    "wayland-vpets:dmx"
-   ],
-   "evolution_status": "v3_pending"
+    "humulos:dmx"
+   ]
   },
   {
    "id": "holydramonx",
    "name": "Holydramon X",
-   "stage": null,
+   "stage": "Ultimate",
    "attribute": null,
    "devices": {
     "dmx": {
@@ -2513,34 +3572,64 @@
       3
      ],
      "stage_time": null,
-     "evolves_to": []
+     "evolves_to": [
+      {
+       "to": "Lord Knightmon X",
+       "to_id": "lordknightmonx",
+       "raw": "0-2 CM, Level 10, Area 36 not cleared",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "level": "10",
+        "area_not_cleared": "36"
+       },
+       "sub_version": "XE"
+      },
+      {
+       "to": "Sleipmon X",
+       "to_id": "sleipmonx",
+       "raw": "0-2 CM, Level 10, Area 37 not cleared",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "level": "10",
+        "area_not_cleared": "37"
+       },
+       "sub_version": "XF"
+      },
+      {
+       "to": "Sleipmon X",
+       "to_id": "sleipmonx",
+       "raw": "0-2 CM, Level 1-4, Area 45 cleared",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "level": "1-4",
+        "area_cleared": "45"
+       },
+       "sub_version": "XF"
+      }
+     ]
     }
    },
    "sprite": "fan/wayland-vpets/assets/dmx/Holydramon X.png",
    "sources": [
-    "wayland-vpets:dmx"
-   ],
-   "evolution_status": "v3_pending"
+    "humulos:dmx"
+   ]
   },
   {
    "id": "hououmonx",
    "name": "Hououmon X",
-   "stage": null,
+   "stage": "Perfect",
    "attribute": null,
    "devices": {
     "dmx": {
-     "versions": [
-      3
-     ],
-     "stage_time": null,
+     "versions": [],
+     "stage_time": "40 h",
      "evolves_to": []
     }
    },
    "sprite": "fan/wayland-vpets/assets/dmx/Hououmon X.png",
    "sources": [
-    "wayland-vpets:dmx"
-   ],
-   "evolution_status": "v3_pending"
+    "humulos:dmx"
+   ]
   },
   {
    "id": "impmonx",
@@ -2609,104 +3698,72 @@
    ]
   },
   {
-   "id": "jararchimon",
-   "name": "Jararchimon",
-   "stage": null,
-   "attribute": null,
-   "devices": {
-    "dmx": {
-     "versions": [
-      3
-     ],
-     "stage_time": null,
-     "evolves_to": []
-    }
-   },
-   "sprite": "fan/wayland-vpets/assets/dmx/Jararchimon.png",
-   "sources": [
-    "wayland-vpets:dmx"
-   ],
-   "evolution_status": "v3_pending"
-  },
-  {
    "id": "jazamon",
    "name": "Jazamon",
-   "stage": null,
+   "stage": "Child",
    "attribute": null,
    "devices": {
     "dmx": {
-     "versions": [
-      3
-     ],
-     "stage_time": null,
+     "versions": [],
+     "stage_time": "24 h",
      "evolves_to": []
     }
    },
    "sprite": "fan/wayland-vpets/assets/dmx/Jazamon.png",
    "sources": [
-    "wayland-vpets:dmx"
-   ],
-   "evolution_status": "v3_pending"
+    "humulos:dmx"
+   ]
   },
   {
    "id": "jazardmon",
    "name": "Jazardmon",
-   "stage": null,
+   "stage": "Adult",
    "attribute": null,
    "devices": {
     "dmx": {
-     "versions": [
-      3
-     ],
-     "stage_time": null,
+     "versions": [],
+     "stage_time": "32 h",
      "evolves_to": []
     }
    },
    "sprite": "fan/wayland-vpets/assets/dmx/Jazardmon.png",
    "sources": [
-    "wayland-vpets:dmx"
-   ],
-   "evolution_status": "v3_pending"
+    "humulos:dmx"
+   ]
   },
   {
    "id": "jazarichmon",
    "name": "Jazarichmon",
-   "stage": null,
+   "stage": "Perfect",
    "attribute": null,
    "devices": {
     "dmx": {
-     "versions": [
-      3
-     ],
-     "stage_time": null,
+     "versions": [],
+     "stage_time": "40 h",
      "evolves_to": []
     }
    },
    "sprite": "fan/wayland-vpets/assets/dmx/Jazarichmon.png",
    "sources": [
-    "wayland-vpets:dmx"
-   ],
-   "evolution_status": "v3_pending"
+    "humulos:dmx"
+   ]
   },
   {
    "id": "jesmongx",
    "name": "Jesmon GX",
-   "stage": null,
+   "stage": "Super Ultimate",
    "attribute": null,
    "devices": {
     "dmx": {
-     "versions": [
-      3
-     ],
+     "versions": [],
      "stage_time": null,
      "evolves_to": []
     }
    },
    "sprite": "fan/wayland-vpets/assets/dmx/Jesmon GX.png",
    "sources": [
-    "wayland-vpets:dmx"
-   ],
-   "evolution_status": "v3_pending"
+    "humulos:dmx"
+   ]
   },
   {
    "id": "jesmonx",
@@ -2716,7 +3773,8 @@
    "devices": {
     "dmx": {
      "versions": [
-      1
+      1,
+      3
      ],
      "stage_time": null,
      "evolves_to": [
@@ -2728,6 +3786,15 @@
         "care_mistakes": "0-2",
         "level": "10"
        }
+      },
+      {
+       "to": "Jesmon GX",
+       "to_id": "jesmongx",
+       "raw": "Area SP cleared",
+       "parsed": {
+        "area_cleared": "SP"
+       },
+       "sub_version": "XF"
       }
      ]
     }
@@ -2740,22 +3807,19 @@
   {
    "id": "justimonx",
    "name": "Justimon X",
-   "stage": null,
+   "stage": "Perfect",
    "attribute": null,
    "devices": {
     "dmx": {
-     "versions": [
-      3
-     ],
-     "stage_time": null,
+     "versions": [],
+     "stage_time": "40 h",
      "evolves_to": []
     }
    },
    "sprite": "fan/wayland-vpets/assets/dmx/Justimon X.png",
    "sources": [
-    "wayland-vpets:dmx"
-   ],
-   "evolution_status": "v3_pending"
+    "humulos:dmx"
+   ]
   },
   {
    "id": "kaiserleomon",
@@ -2843,26 +3907,6 @@
    "sources": [
     "humulos:dmx"
    ]
-  },
-  {
-   "id": "keemon",
-   "name": "Keemon",
-   "stage": null,
-   "attribute": null,
-   "devices": {
-    "dmx": {
-     "versions": [
-      3
-     ],
-     "stage_time": null,
-     "evolves_to": []
-    }
-   },
-   "sprite": "fan/wayland-vpets/assets/dmx/Keemon.png",
-   "sources": [
-    "wayland-vpets:dmx"
-   ],
-   "evolution_status": "v3_pending"
   },
   {
    "id": "keramonx",
@@ -3359,42 +4403,66 @@
   {
    "id": "lopmonx",
    "name": "Lopmon X",
-   "stage": null,
+   "stage": "Child",
    "attribute": null,
    "devices": {
     "dmx": {
      "versions": [
       3
      ],
-     "stage_time": null,
-     "evolves_to": []
+     "stage_time": "24 h",
+     "evolves_to": [
+      {
+       "to": "Ginryumon",
+       "to_id": "ginryumon",
+       "raw": "3-4 CM, 0-3 Effort, Area 45 cleared",
+       "parsed": {
+        "care_mistakes": "3-4",
+        "effort": "0-3",
+        "area_cleared": "45"
+       },
+       "sub_version": "XF"
+      },
+      {
+       "to": "Ginryumon",
+       "to_id": "ginryumon",
+       "raw": "3-4 CM, 4 Effort, Area 12 not cleared",
+       "parsed": {
+        "care_mistakes": "3-4",
+        "effort": "4",
+        "area_not_cleared": "12"
+       },
+       "sub_version": "XF"
+      },
+      {
+       "to": "Tailmon X",
+       "to_id": "tailmonx",
+       "raw": "0-2 CM, 0-3 Effort, Area 45 cleared",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "effort": "0-3",
+        "area_cleared": "45"
+       },
+       "sub_version": "XF"
+      },
+      {
+       "to": "Tailmon X",
+       "to_id": "tailmonx",
+       "raw": "0-2 CM, 4 Effort, Area 10 not cleared",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "effort": "4",
+        "area_not_cleared": "10"
+       },
+       "sub_version": "XF"
+      }
+     ]
     }
    },
    "sprite": "fan/wayland-vpets/assets/dmx/Lopmon X.png",
    "sources": [
-    "wayland-vpets:dmx"
-   ],
-   "evolution_status": "v3_pending"
-  },
-  {
-   "id": "lordkightmonx",
-   "name": "Lord Kightmon X",
-   "stage": null,
-   "attribute": null,
-   "devices": {
-    "dmx": {
-     "versions": [
-      3
-     ],
-     "stage_time": null,
-     "evolves_to": []
-    }
-   },
-   "sprite": "fan/wayland-vpets/assets/dmx/Lord Kightmon X.png",
-   "sources": [
-    "wayland-vpets:dmx"
-   ],
-   "evolution_status": "v3_pending"
+    "humulos:dmx"
+   ]
   },
   {
    "id": "lordknightmonx",
@@ -3548,64 +4616,497 @@
    ]
   },
   {
-   "id": "magidramonx",
-   "name": "Magidramon X",
-   "stage": null,
-   "attribute": null,
-   "devices": {
-    "dmx": {
-     "versions": [
-      3
-     ],
-     "stage_time": null,
-     "evolves_to": []
-    }
-   },
-   "sprite": "fan/wayland-vpets/assets/dmx/Magidramon X.png",
-   "sources": [
-    "wayland-vpets:dmx"
-   ],
-   "evolution_status": "v3_pending"
-  },
-  {
    "id": "magnamonx",
    "name": "Magnamon X",
-   "stage": null,
+   "stage": "Ultimate",
    "attribute": null,
    "devices": {
     "dmx": {
-     "versions": [
-      3
-     ],
+     "versions": [],
      "stage_time": null,
      "evolves_to": []
     }
    },
    "sprite": "fan/wayland-vpets/assets/dmx/Magnamon X.png",
    "sources": [
-    "wayland-vpets:dmx"
-   ],
-   "evolution_status": "v3_pending"
+    "humulos:dmx"
+   ]
   },
   {
    "id": "mamemonx",
    "name": "Mamemon X",
-   "stage": null,
+   "stage": "Perfect",
    "attribute": null,
    "devices": {
     "dmx": {
      "versions": [
       3
      ],
-     "stage_time": null,
-     "evolves_to": []
+     "stage_time": "40 h",
+     "evolves_to": [
+      {
+       "to": "Dinotigermon",
+       "to_id": "dinotigermon",
+       "raw": "2-3 CM, Level 8, Area 45 cleared",
+       "parsed": {
+        "care_mistakes": "2-3",
+        "level": "8",
+        "area_cleared": "45"
+       },
+       "sub_version": "XE"
+      },
+      {
+       "to": "Holydramon X",
+       "to_id": "holydramonx",
+       "raw": "0-2 CM, Level 1-4, Area 21 cleared",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "level": "1-4",
+        "area_cleared": "21"
+       },
+       "sub_version": "XE"
+      },
+      {
+       "to": "Holydramon X",
+       "to_id": "holydramonx",
+       "raw": "0-2 CM, Level 5-6, Area 21 cleared",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "level": "5-6",
+        "area_cleared": "21"
+       },
+       "sub_version": "XE"
+      },
+      {
+       "to": "Holydramon X",
+       "to_id": "holydramonx",
+       "raw": "0-2 CM, Level 7-8, Area 21 cleared",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "level": "7-8",
+        "area_cleared": "21"
+       },
+       "sub_version": "XE"
+      },
+      {
+       "to": "Holydramon X",
+       "to_id": "holydramonx",
+       "raw": "Area 45 cleared, (catch-all)",
+       "parsed": {
+        "catch_all": true,
+        "area_cleared": "45"
+       },
+       "sub_version": "XE"
+      },
+      {
+       "to": "Ebemon X",
+       "to_id": "ebemonx",
+       "raw": "2-3 CM, Level 5-7, Area 9 cleared",
+       "parsed": {
+        "care_mistakes": "2-3",
+        "level": "5-7",
+        "area_cleared": "9"
+       },
+       "sub_version": "XE"
+      },
+      {
+       "to": "Ebemon X",
+       "to_id": "ebemonx",
+       "raw": "3 CM, Level 5-8, Area 45 cleared",
+       "parsed": {
+        "care_mistakes": "3",
+        "level": "5-8",
+        "area_cleared": "45"
+       },
+       "sub_version": "XE"
+      },
+      {
+       "to": "Hexeblaumon",
+       "to_id": "hexeblaumon",
+       "raw": "0-2 CM, Level 7-8, Area 45 cleared",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "level": "7-8",
+        "area_cleared": "45"
+       },
+       "sub_version": "XE"
+      },
+      {
+       "to": "Hexeblaumon",
+       "to_id": "hexeblaumon",
+       "raw": "2-3 CM, Level 8, Defeat 5 Stage VI, Area 45 cleared",
+       "parsed": {
+        "care_mistakes": "2-3",
+        "level": "8",
+        "defeat_stage6": "5",
+        "area_cleared": "45"
+       },
+       "sub_version": "XE"
+      },
+      {
+       "to": "Metallicdramon",
+       "to_id": "metallicdramon",
+       "raw": "0-2 CM, Level 7-8, Area 45 cleared",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "level": "7-8",
+        "area_cleared": "45"
+       },
+       "sub_version": "XE"
+      },
+      {
+       "to": "Noble Pumpmon",
+       "to_id": "noblepumpmon",
+       "raw": "0-2 CM, Level 7-8, Area 45 cleared",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "level": "7-8",
+        "area_cleared": "45"
+       },
+       "sub_version": "XE"
+      },
+      {
+       "to": "Noble Pumpmon",
+       "to_id": "noblepumpmon",
+       "raw": "3 CM, Level 8, Defeat 3 Stage VI, Area 45 cleared",
+       "parsed": {
+        "care_mistakes": "3",
+        "level": "8",
+        "defeat_stage6": "3",
+        "area_cleared": "45"
+       },
+       "sub_version": "XE"
+      },
+      {
+       "to": "Noble Pumpmon",
+       "to_id": "noblepumpmon",
+       "raw": "2-3 CM, Level 8, Defeat 5 Stage VI, Area 45 cleared",
+       "parsed": {
+        "care_mistakes": "2-3",
+        "level": "8",
+        "defeat_stage6": "5",
+        "area_cleared": "45"
+       },
+       "sub_version": "XE"
+      },
+      {
+       "to": "Evolution Failure",
+       "to_id": "evolutionfailure",
+       "raw": "4 CM, Area 21 cleared",
+       "parsed": {
+        "care_mistakes": "4",
+        "area_cleared": "21"
+       },
+       "sub_version": "XE"
+      },
+      {
+       "to": "Evolution Failure",
+       "to_id": "evolutionfailure",
+       "raw": "Area 21 cleared",
+       "parsed": {
+        "area_cleared": "21"
+       },
+       "sub_version": "XE"
+      },
+      {
+       "to": "Evolution Failure",
+       "to_id": "evolutionfailure",
+       "raw": "2-4 CM, Level 1-4, Area 9 cleared",
+       "parsed": {
+        "care_mistakes": "2-4",
+        "level": "1-4",
+        "area_cleared": "9"
+       },
+       "sub_version": "XE"
+      },
+      {
+       "to": "Magnamon X",
+       "to_id": "magnamonx",
+       "raw": "0-2 CM, Level 8-10, Area 45 cleared",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "level": "8-10",
+        "area_cleared": "45"
+       },
+       "sub_version": "XE"
+      },
+      {
+       "to": "Magnamon X",
+       "to_id": "magnamonx",
+       "raw": "0-2 CM, Level 10, Area 36 cleared",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "level": "10",
+        "area_cleared": "36"
+       },
+       "sub_version": "XE"
+      },
+      {
+       "to": "Magnamon X",
+       "to_id": "magnamonx",
+       "raw": "0-2 CM, Level 5-7, Area 45 cleared",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "level": "5-7",
+        "area_cleared": "45"
+       },
+       "sub_version": "XE"
+      },
+      {
+       "to": "Gankoomon X",
+       "to_id": "gankoomonx",
+       "raw": "0-2 CM, Level 8-10, Area 45 cleared",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "level": "8-10",
+        "area_cleared": "45"
+       },
+       "sub_version": "XE"
+      },
+      {
+       "to": "Gankoomon X",
+       "to_id": "gankoomonx",
+       "raw": "0-2 CM, Level 10, Area 40 cleared",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "level": "10",
+        "area_cleared": "40"
+       },
+       "sub_version": "XE"
+      },
+      {
+       "to": "Dynasmon X",
+       "to_id": "dynasmonx",
+       "raw": "0-2 CM, Level 8-10, Area 34 cleared",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "level": "8-10",
+        "area_cleared": "34"
+       },
+       "sub_version": "XE"
+      },
+      {
+       "to": "Dynasmon X",
+       "to_id": "dynasmonx",
+       "raw": "0-2 CM, Level 5-7, Area 45 cleared",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "level": "5-7",
+        "area_cleared": "45"
+       },
+       "sub_version": "XE"
+      },
+      {
+       "to": "Holydramon X",
+       "to_id": "holydramonx",
+       "raw": "0-2 CM, Level 6-7, Area 20 cleared",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "level": "6-7",
+        "area_cleared": "20"
+       },
+       "sub_version": "XF"
+      },
+      {
+       "to": "Holydramon X",
+       "to_id": "holydramonx",
+       "raw": "0-2 CM, Level 1-4, Area 18 cleared",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "level": "1-4",
+        "area_cleared": "18"
+       },
+       "sub_version": "XF"
+      },
+      {
+       "to": "Holydramon X",
+       "to_id": "holydramonx",
+       "raw": "0-2 CM, Level 5-6, Area 23 cleared",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "level": "5-6",
+        "area_cleared": "23"
+       },
+       "sub_version": "XF"
+      },
+      {
+       "to": "Holydramon X",
+       "to_id": "holydramonx",
+       "raw": "3 CM, Level 8, Defeat 3 Stage VI, Area 23 cleared",
+       "parsed": {
+        "care_mistakes": "3",
+        "level": "8",
+        "defeat_stage6": "3",
+        "area_cleared": "23"
+       },
+       "sub_version": "XF"
+      },
+      {
+       "to": "Ebemon X",
+       "to_id": "ebemonx",
+       "raw": "3 CM, Area 20 cleared",
+       "parsed": {
+        "care_mistakes": "3",
+        "area_cleared": "20"
+       },
+       "sub_version": "XF"
+      },
+      {
+       "to": "Ebemon X",
+       "to_id": "ebemonx",
+       "raw": "Area 20 cleared",
+       "parsed": {
+        "area_cleared": "20"
+       },
+       "sub_version": "XF"
+      },
+      {
+       "to": "Ebemon X",
+       "to_id": "ebemonx",
+       "raw": "3 CM, Level 1-4, Area 18 cleared",
+       "parsed": {
+        "care_mistakes": "3",
+        "level": "1-4",
+        "area_cleared": "18"
+       },
+       "sub_version": "XF"
+      },
+      {
+       "to": "Metallicdramon",
+       "to_id": "metallicdramon",
+       "raw": "0-1 CM, Level 6-8, Area 45 cleared",
+       "parsed": {
+        "care_mistakes": "0-1",
+        "level": "6-8",
+        "area_cleared": "45"
+       },
+       "sub_version": "XF"
+      },
+      {
+       "to": "Evolution Failure",
+       "to_id": "evolutionfailure",
+       "raw": "4 CM, Area 18 cleared",
+       "parsed": {
+        "care_mistakes": "4",
+        "area_cleared": "18"
+       },
+       "sub_version": "XF"
+      },
+      {
+       "to": "Evolution Failure",
+       "to_id": "evolutionfailure",
+       "raw": "Area 18 cleared",
+       "parsed": {
+        "area_cleared": "18"
+       },
+       "sub_version": "XF"
+      },
+      {
+       "to": "Ulforce V-dramon X",
+       "to_id": "ulforcevdramonx",
+       "raw": "0-2 CM, Level 8-10, Area 45 cleared",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "level": "8-10",
+        "area_cleared": "45"
+       },
+       "sub_version": "XF"
+      },
+      {
+       "to": "Ulforce V-dramon X",
+       "to_id": "ulforcevdramonx",
+       "raw": "0-2 CM, Level 10, Area 37 cleared",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "level": "10",
+        "area_cleared": "37"
+       },
+       "sub_version": "XF"
+      },
+      {
+       "to": "Ulforce V-dramon X",
+       "to_id": "ulforcevdramonx",
+       "raw": "0-2 CM, Level 5-7, Area 45 cleared",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "level": "5-7",
+        "area_cleared": "45"
+       },
+       "sub_version": "XF"
+      },
+      {
+       "to": "Examon X",
+       "to_id": "examonx",
+       "raw": "0-2 CM, Level 8-10, Area 45 cleared",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "level": "8-10",
+        "area_cleared": "45"
+       },
+       "sub_version": "XF"
+      },
+      {
+       "to": "Examon X",
+       "to_id": "examonx",
+       "raw": "0-2 CM, Level 10, Area 39 cleared",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "level": "10",
+        "area_cleared": "39"
+       },
+       "sub_version": "XF"
+      },
+      {
+       "to": "Duftmon X",
+       "to_id": "duftmonx",
+       "raw": "0-2 CM, Level 8-10, Area 35 cleared",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "level": "8-10",
+        "area_cleared": "35"
+       },
+       "sub_version": "XF"
+      },
+      {
+       "to": "Duftmon X",
+       "to_id": "duftmonx",
+       "raw": "0-2 CM, Level 5-7, Area 45 cleared",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "level": "5-7",
+        "area_cleared": "45"
+       },
+       "sub_version": "XF"
+      },
+      {
+       "to": "Duftmon X",
+       "to_id": "duftmonx",
+       "raw": "0-2 CM, Level 1-7, Area 45 cleared",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "level": "1-7",
+        "area_cleared": "45"
+       },
+       "sub_version": "XF"
+      },
+      {
+       "to": "Duftmon X",
+       "to_id": "duftmonx",
+       "raw": "0-2 CM, Level 8-10, Area 45 cleared",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "level": "8-10",
+        "area_cleared": "45"
+       },
+       "sub_version": "XF"
+      }
+     ]
     }
    },
    "sprite": "fan/wayland-vpets/assets/dmx/Mamemon X.png",
    "sources": [
-    "wayland-vpets:dmx"
-   ],
-   "evolution_status": "v3_pending"
+    "humulos:dmx"
+   ]
   },
   {
    "id": "mametyramon",
@@ -4167,22 +5668,19 @@
   {
    "id": "meramonx",
    "name": "Meramon X",
-   "stage": null,
+   "stage": "Child",
    "attribute": null,
    "devices": {
     "dmx": {
-     "versions": [
-      3
-     ],
-     "stage_time": null,
+     "versions": [],
+     "stage_time": "24 h",
      "evolves_to": []
     }
    },
    "sprite": "fan/wayland-vpets/assets/dmx/Meramon X.png",
    "sources": [
-    "wayland-vpets:dmx"
-   ],
-   "evolution_status": "v3_pending"
+    "humulos:dmx"
+   ]
   },
   {
    "id": "metalfantomon",
@@ -4492,22 +5990,19 @@
   {
    "id": "metallicdramon",
    "name": "Metallicdramon",
-   "stage": null,
+   "stage": "Ultimate",
    "attribute": null,
    "devices": {
     "dmx": {
-     "versions": [
-      3
-     ],
+     "versions": [],
      "stage_time": null,
      "evolves_to": []
     }
    },
    "sprite": "fan/wayland-vpets/assets/dmx/Metallicdramon.png",
    "sources": [
-    "wayland-vpets:dmx"
-   ],
-   "evolution_status": "v3_pending"
+    "humulos:dmx"
+   ]
   },
   {
    "id": "metalpiranimon",
@@ -4757,22 +6252,19 @@
   {
    "id": "monzaemonx",
    "name": "Monzaemon X",
-   "stage": null,
+   "stage": "Adult",
    "attribute": null,
    "devices": {
     "dmx": {
-     "versions": [
-      3
-     ],
-     "stage_time": null,
+     "versions": [],
+     "stage_time": "32 h",
      "evolves_to": []
     }
    },
    "sprite": "fan/wayland-vpets/assets/dmx/Monzaemon X.png",
    "sources": [
-    "wayland-vpets:dmx"
-   ],
-   "evolution_status": "v3_pending"
+    "humulos:dmx"
+   ]
   },
   {
    "id": "nefertimonx",
@@ -4829,22 +6321,19 @@
   {
    "id": "noblepumpmon",
    "name": "Noble Pumpmon",
-   "stage": null,
+   "stage": "Ultimate",
    "attribute": null,
    "devices": {
     "dmx": {
-     "versions": [
-      3
-     ],
+     "versions": [],
      "stage_time": null,
      "evolves_to": []
     }
    },
    "sprite": "fan/wayland-vpets/assets/dmx/Noble Pumpmon.png",
    "sources": [
-    "wayland-vpets:dmx"
-   ],
-   "evolution_status": "v3_pending"
+    "humulos:dmx"
+   ]
   },
   {
    "id": "numemonx",
@@ -5048,22 +6537,19 @@
   {
    "id": "ofanimonx",
    "name": "Ofanimon X",
-   "stage": null,
+   "stage": "Ultimate",
    "attribute": null,
    "devices": {
     "dmx": {
-     "versions": [
-      3
-     ],
+     "versions": [],
      "stage_time": null,
      "evolves_to": []
     }
    },
    "sprite": "fan/wayland-vpets/assets/dmx/Ofanimon X.png",
    "sources": [
-    "wayland-vpets:dmx"
-   ],
-   "evolution_status": "v3_pending"
+    "humulos:dmx"
+   ]
   },
   {
    "id": "ogremonx",
@@ -5234,42 +6720,540 @@
   {
    "id": "omegashoutmonx",
    "name": "Omega Shoutmon X",
-   "stage": null,
+   "stage": "Adult",
    "attribute": null,
    "devices": {
     "dmx": {
-     "versions": [
-      3
-     ],
-     "stage_time": null,
+     "versions": [],
+     "stage_time": "32 h",
      "evolves_to": []
     }
    },
    "sprite": "fan/wayland-vpets/assets/dmx/Omega Shoutmon X.png",
    "sources": [
-    "wayland-vpets:dmx"
-   ],
-   "evolution_status": "v3_pending"
+    "humulos:dmx"
+   ]
   },
   {
    "id": "omekamon",
    "name": "Omekamon",
-   "stage": null,
+   "stage": "Adult",
    "attribute": null,
    "devices": {
     "dmx": {
      "versions": [
       3
      ],
-     "stage_time": null,
-     "evolves_to": []
+     "stage_time": "32 h",
+     "evolves_to": [
+      {
+       "to": "DORUguremon",
+       "to_id": "doruguremon",
+       "raw": "0-1 CM, Level 1-4, Area 45 not cleared",
+       "parsed": {
+        "care_mistakes": "0-1",
+        "level": "1-4",
+        "area_not_cleared": "45"
+       },
+       "sub_version": "XE"
+      },
+      {
+       "to": "DORUguremon",
+       "to_id": "doruguremon",
+       "raw": "0-1 CM, Level 5-6, Area 22 not cleared",
+       "parsed": {
+        "care_mistakes": "0-1",
+        "level": "5-6",
+        "area_not_cleared": "22"
+       },
+       "sub_version": "XE"
+      },
+      {
+       "to": "DORUguremon",
+       "to_id": "doruguremon",
+       "raw": "3-4 CM, Level 6, Area 45 cleared",
+       "parsed": {
+        "care_mistakes": "3-4",
+        "level": "6",
+        "area_cleared": "45"
+       },
+       "sub_version": "XE"
+      },
+      {
+       "to": "Garudamon X",
+       "to_id": "garudamonx",
+       "raw": "3-4 CM, Level 6, Area 16 cleared",
+       "parsed": {
+        "care_mistakes": "3-4",
+        "level": "6",
+        "area_cleared": "16"
+       },
+       "sub_version": "XE"
+      },
+      {
+       "to": "Garudamon X",
+       "to_id": "garudamonx",
+       "raw": "0-2 CM, Level 4-6, Area 16 cleared",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "level": "4-6",
+        "area_cleared": "16"
+       },
+       "sub_version": "XE"
+      },
+      {
+       "to": "Garudamon X",
+       "to_id": "garudamonx",
+       "raw": "0-1 CM, Level 3-6, Area 16 cleared",
+       "parsed": {
+        "care_mistakes": "0-1",
+        "level": "3-6",
+        "area_cleared": "16"
+       },
+       "sub_version": "XE"
+      },
+      {
+       "to": "Garudamon X",
+       "to_id": "garudamonx",
+       "raw": "3-4 CM, Level 6, Defeat 1 Stage VI, Area 45 cleared",
+       "parsed": {
+        "care_mistakes": "3-4",
+        "level": "6",
+        "defeat_stage6": "1",
+        "area_cleared": "45"
+       },
+       "sub_version": "XE"
+      },
+      {
+       "to": "Mamemon X",
+       "to_id": "mamemonx",
+       "raw": "2-4 CM, Level 6, Area 45 not cleared",
+       "parsed": {
+        "care_mistakes": "2-4",
+        "level": "6",
+        "area_not_cleared": "45"
+       },
+       "sub_version": "XE"
+      },
+      {
+       "to": "Mamemon X",
+       "to_id": "mamemonx",
+       "raw": "2-4 CM, Level 1-5, Area 45 not cleared",
+       "parsed": {
+        "care_mistakes": "2-4",
+        "level": "1-5",
+        "area_not_cleared": "45"
+       },
+       "sub_version": "XE"
+      },
+      {
+       "to": "Crys Paledramon",
+       "to_id": "cryspaledramon",
+       "raw": "0-1 CM, Level 1-4, Area 45 cleared",
+       "parsed": {
+        "care_mistakes": "0-1",
+        "level": "1-4",
+        "area_cleared": "45"
+       },
+       "sub_version": "XE"
+      },
+      {
+       "to": "Crys Paledramon",
+       "to_id": "cryspaledramon",
+       "raw": "0-2 CM, Level 4-6, Area 45 cleared",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "level": "4-6",
+        "area_cleared": "45"
+       },
+       "sub_version": "XE"
+      },
+      {
+       "to": "Jazarichmon",
+       "to_id": "jazarichmon",
+       "raw": "2-4 CM, Level 6, Area 45 cleared",
+       "parsed": {
+        "care_mistakes": "2-4",
+        "level": "6",
+        "area_cleared": "45"
+       },
+       "sub_version": "XE"
+      },
+      {
+       "to": "Jazarichmon",
+       "to_id": "jazarichmon",
+       "raw": "0-2 CM, Level 5-6, Area 45 cleared",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "level": "5-6",
+        "area_cleared": "45"
+       },
+       "sub_version": "XE"
+      },
+      {
+       "to": "Pumpmon",
+       "to_id": "pumpmon",
+       "raw": "Area 45 cleared, (catch-all)",
+       "parsed": {
+        "catch_all": true,
+        "area_cleared": "45"
+       },
+       "sub_version": "XE"
+      },
+      {
+       "to": "Rapidmon X",
+       "to_id": "rapidmonx",
+       "raw": "0-2 CM, Level 8, Area 32 cleared",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "level": "8",
+        "area_cleared": "32"
+       },
+       "sub_version": "XE"
+      },
+      {
+       "to": "Rapidmon X",
+       "to_id": "rapidmonx",
+       "raw": "3 CM, Level 8, Defeat 5 Stage VI, Area 32 cleared",
+       "parsed": {
+        "care_mistakes": "3",
+        "level": "8",
+        "defeat_stage6": "5",
+        "area_cleared": "32"
+       },
+       "sub_version": "XE"
+      },
+      {
+       "to": "Rapidmon X",
+       "to_id": "rapidmonx",
+       "raw": "0-2 CM, Level 4-6, Area 45 cleared",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "level": "4-6",
+        "area_cleared": "45"
+       },
+       "sub_version": "XE"
+      },
+      {
+       "to": "Justimon X",
+       "to_id": "justimonx",
+       "raw": "0-2 CM, Level 7-8, Area 29 cleared",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "level": "7-8",
+        "area_cleared": "29"
+       },
+       "sub_version": "XE"
+      },
+      {
+       "to": "Justimon X",
+       "to_id": "justimonx",
+       "raw": "0-1 CM, Level 4-5, Area 29 cleared",
+       "parsed": {
+        "care_mistakes": "0-1",
+        "level": "4-5",
+        "area_cleared": "29"
+       },
+       "sub_version": "XE"
+      },
+      {
+       "to": "Justimon X",
+       "to_id": "justimonx",
+       "raw": "0-1 CM, Level 6-8, Area 29 cleared",
+       "parsed": {
+        "care_mistakes": "0-1",
+        "level": "6-8",
+        "area_cleared": "29"
+       },
+       "sub_version": "XE"
+      },
+      {
+       "to": "Justimon X",
+       "to_id": "justimonx",
+       "raw": "2-3 CM, Level 8, Defeat 5 Stage VI, Area 29 cleared",
+       "parsed": {
+        "care_mistakes": "2-3",
+        "level": "8",
+        "defeat_stage6": "5",
+        "area_cleared": "29"
+       },
+       "sub_version": "XE"
+      },
+      {
+       "to": "Justimon X",
+       "to_id": "justimonx",
+       "raw": "0-2 CM, Level 4-6, Area 45 cleared",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "level": "4-6",
+        "area_cleared": "45"
+       },
+       "sub_version": "XE"
+      },
+      {
+       "to": "Alphamon",
+       "to_id": "alphamon",
+       "raw": "0-2 CM, Level 6-7, Area 22 cleared",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "level": "6-7",
+        "area_cleared": "22"
+       },
+       "sub_version": "XE"
+      },
+      {
+       "to": "Alphamon",
+       "to_id": "alphamon",
+       "raw": "0-2 CM, Level 8, Area 22 cleared",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "level": "8",
+        "area_cleared": "22"
+       },
+       "sub_version": "XE"
+      },
+      {
+       "to": "Hisyaryumon",
+       "to_id": "hisyaryumon",
+       "raw": "1 CM, Level 5-6, Area 20 not cleared",
+       "parsed": {
+        "care_mistakes": "1",
+        "level": "5-6",
+        "area_not_cleared": "20"
+       },
+       "sub_version": "XF"
+      },
+      {
+       "to": "Hisyaryumon",
+       "to_id": "hisyaryumon",
+       "raw": "0-1 CM, Level 1-4, Area 45 not cleared",
+       "parsed": {
+        "care_mistakes": "0-1",
+        "level": "1-4",
+        "area_not_cleared": "45"
+       },
+       "sub_version": "XF"
+      },
+      {
+       "to": "Hisyaryumon",
+       "to_id": "hisyaryumon",
+       "raw": "3-4 CM, Level 6, Area 45 cleared",
+       "parsed": {
+        "care_mistakes": "3-4",
+        "level": "6",
+        "area_cleared": "45"
+       },
+       "sub_version": "XF"
+      },
+      {
+       "to": "Angewomon X",
+       "to_id": "angewomonx",
+       "raw": "3-4 CM, Level 6, Defeat 1 Stage VI, Area 45 cleared",
+       "parsed": {
+        "care_mistakes": "3-4",
+        "level": "6",
+        "defeat_stage6": "1",
+        "area_cleared": "45"
+       },
+       "sub_version": "XF"
+      },
+      {
+       "to": "Angewomon X",
+       "to_id": "angewomonx",
+       "raw": "0-1 CM, Level 3-6, Area 23 cleared",
+       "parsed": {
+        "care_mistakes": "0-1",
+        "level": "3-6",
+        "area_cleared": "23"
+       },
+       "sub_version": "XF"
+      },
+      {
+       "to": "Anomalocarimon X",
+       "to_id": "anomalocarimonx",
+       "raw": "0-2 CM, Level 1-3, Area 12 cleared",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "level": "1-3",
+        "area_cleared": "12"
+       },
+       "sub_version": "XF"
+      },
+      {
+       "to": "Anomalocarimon X",
+       "to_id": "anomalocarimonx",
+       "raw": "0-2 CM, Level 4-6, Area 12 cleared",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "level": "4-6",
+        "area_cleared": "12"
+       },
+       "sub_version": "XF"
+      },
+      {
+       "to": "Grademon",
+       "to_id": "grademon",
+       "raw": "2-4 CM, Level 1-5, Area 45 not cleared",
+       "parsed": {
+        "care_mistakes": "2-4",
+        "level": "1-5",
+        "area_not_cleared": "45"
+       },
+       "sub_version": "XF"
+      },
+      {
+       "to": "Grademon",
+       "to_id": "grademon",
+       "raw": "2-4 CM, Level 6, Area 45 not cleared",
+       "parsed": {
+        "care_mistakes": "2-4",
+        "level": "6",
+        "area_not_cleared": "45"
+       },
+       "sub_version": "XF"
+      },
+      {
+       "to": "Grademon",
+       "to_id": "grademon",
+       "raw": "0 CM, Level 5-6, Area 20 not cleared",
+       "parsed": {
+        "care_mistakes": "0",
+        "level": "5-6",
+        "area_not_cleared": "20"
+       },
+       "sub_version": "XF"
+      },
+      {
+       "to": "Cherubimon (Virtue) X",
+       "to_id": "cherubimonvirtuex",
+       "raw": "0-2 CM, Level 8, Area 30 cleared",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "level": "8",
+        "area_cleared": "30"
+       },
+       "sub_version": "XF"
+      },
+      {
+       "to": "Cherubimon (Virtue) X",
+       "to_id": "cherubimonvirtuex",
+       "raw": "3 CM, Level 8, Defeat 5 Stage VI, Area 30 cleared",
+       "parsed": {
+        "care_mistakes": "3",
+        "level": "8",
+        "defeat_stage6": "5",
+        "area_cleared": "30"
+       },
+       "sub_version": "XF"
+      },
+      {
+       "to": "Cherubimon (Virtue) X",
+       "to_id": "cherubimonvirtuex",
+       "raw": "0-1 CM, Level 6-8, Area 30 cleared",
+       "parsed": {
+        "care_mistakes": "0-1",
+        "level": "6-8",
+        "area_cleared": "30"
+       },
+       "sub_version": "XF"
+      },
+      {
+       "to": "Cherubimon (Virtue) X",
+       "to_id": "cherubimonvirtuex",
+       "raw": "3 CM, Level 8, Defeat 3 Stage VI, Area 45 cleared",
+       "parsed": {
+        "care_mistakes": "3",
+        "level": "8",
+        "defeat_stage6": "3",
+        "area_cleared": "45"
+       },
+       "sub_version": "XF"
+      },
+      {
+       "to": "Cherubimon (Virtue) X",
+       "to_id": "cherubimonvirtuex",
+       "raw": "0-2 CM, Level 4-6, Area 45 cleared",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "level": "4-6",
+        "area_cleared": "45"
+       },
+       "sub_version": "XF"
+      },
+      {
+       "to": "Goddramon X",
+       "to_id": "goddramonx",
+       "raw": "0-2 CM, Level 7-8, Area 31 cleared",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "level": "7-8",
+        "area_cleared": "31"
+       },
+       "sub_version": "XF"
+      },
+      {
+       "to": "Goddramon X",
+       "to_id": "goddramonx",
+       "raw": "0-1 CM, Level 6-8, Area 31 cleared",
+       "parsed": {
+        "care_mistakes": "0-1",
+        "level": "6-8",
+        "area_cleared": "31"
+       },
+       "sub_version": "XF"
+      },
+      {
+       "to": "Goddramon X",
+       "to_id": "goddramonx",
+       "raw": "2-3 CM, Level 8, Defeat 5 Stage VI, Area 31 cleared",
+       "parsed": {
+        "care_mistakes": "2-3",
+        "level": "8",
+        "defeat_stage6": "5",
+        "area_cleared": "31"
+       },
+       "sub_version": "XF"
+      },
+      {
+       "to": "Goddramon X",
+       "to_id": "goddramonx",
+       "raw": "0-2 CM, Level 4-6, Area 45 cleared",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "level": "4-6",
+        "area_cleared": "45"
+       },
+       "sub_version": "XF"
+      },
+      {
+       "to": "Ouryumon",
+       "to_id": "ouryumon",
+       "raw": "0-2 CM, Level 5-6, Area 18 cleared",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "level": "5-6",
+        "area_cleared": "18"
+       },
+       "sub_version": "XF"
+      },
+      {
+       "to": "Ouryumon",
+       "to_id": "ouryumon",
+       "raw": "0-2 CM, Level 7-8, Area 18 cleared",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "level": "7-8",
+        "area_cleared": "18"
+       },
+       "sub_version": "XF"
+      }
+     ]
     }
    },
    "sprite": "fan/wayland-vpets/assets/dmx/Omekamon.png",
    "sources": [
-    "wayland-vpets:dmx"
-   ],
-   "evolution_status": "v3_pending"
+    "humulos:dmx"
+   ]
   },
   {
    "id": "otamamonx",
@@ -5354,82 +7338,161 @@
   {
    "id": "ouryumon",
    "name": "Ouryumon",
-   "stage": null,
+   "stage": "Perfect",
    "attribute": null,
    "devices": {
     "dmx": {
      "versions": [
       3
      ],
-     "stage_time": null,
-     "evolves_to": []
+     "stage_time": "40 h",
+     "evolves_to": [
+      {
+       "to": "Jesmon X",
+       "to_id": "jesmonx",
+       "raw": "0-2 CM, Level 5-7, Area 31 cleared",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "level": "5-7",
+        "area_cleared": "31"
+       },
+       "sub_version": "XF"
+      },
+      {
+       "to": "Jesmon X",
+       "to_id": "jesmonx",
+       "raw": "0-2 CM, Level 8-10, Area 31 cleared",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "level": "8-10",
+        "area_cleared": "31"
+       },
+       "sub_version": "XF"
+      },
+      {
+       "to": "Jesmon X",
+       "to_id": "jesmonx",
+       "raw": "0-2 CM, Level 8-10, Area SP not cleared",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "level": "8-10",
+        "area_not_cleared": "SP"
+       },
+       "sub_version": "XF"
+      }
+     ]
     }
    },
    "sprite": "fan/wayland-vpets/assets/dmx/Ouryumon.png",
    "sources": [
-    "wayland-vpets:dmx"
-   ],
-   "evolution_status": "v3_pending"
+    "humulos:dmx"
+   ]
   },
   {
    "id": "paledramon",
    "name": "Paledramon",
-   "stage": null,
+   "stage": "Adult",
    "attribute": null,
    "devices": {
     "dmx": {
-     "versions": [
-      3
-     ],
-     "stage_time": null,
+     "versions": [],
+     "stage_time": "32 h",
      "evolves_to": []
     }
    },
    "sprite": "fan/wayland-vpets/assets/dmx/Paledramon.png",
    "sources": [
-    "wayland-vpets:dmx"
-   ],
-   "evolution_status": "v3_pending"
+    "humulos:dmx"
+   ]
   },
   {
    "id": "palmonx",
    "name": "Palmon X",
-   "stage": null,
+   "stage": "Child",
    "attribute": null,
    "devices": {
     "dmx": {
      "versions": [
       3
      ],
-     "stage_time": null,
-     "evolves_to": []
+     "stage_time": "24 h",
+     "evolves_to": [
+      {
+       "to": "Pteranomon X",
+       "to_id": "pteranomonx",
+       "raw": "0-2 CM, 0-1 Effort, Area 45 cleared",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "effort": "0-1",
+        "area_cleared": "45"
+       },
+       "sub_version": "XE"
+      },
+      {
+       "to": "Togemon X",
+       "to_id": "togemonx",
+       "raw": "0-2 CM, 2-4 Effort, Area 9 not cleared",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "effort": "2-4",
+        "area_not_cleared": "9"
+       },
+       "sub_version": "XE"
+      },
+      {
+       "to": "Togemon X",
+       "to_id": "togemonx",
+       "raw": "2-4 CM, 4 Effort, Area 45 cleared",
+       "parsed": {
+        "care_mistakes": "2-4",
+        "effort": "4",
+        "area_cleared": "45"
+       },
+       "sub_version": "XE"
+      },
+      {
+       "to": "Omekamon",
+       "to_id": "omekamon",
+       "raw": "3-4 CM, Area 45 cleared",
+       "parsed": {
+        "care_mistakes": "3-4",
+        "area_cleared": "45"
+       },
+       "sub_version": "XE"
+      },
+      {
+       "to": "Omekamon",
+       "to_id": "omekamon",
+       "raw": "Area 45 cleared",
+       "parsed": {
+        "area_cleared": "45"
+       },
+       "sub_version": "XE"
+      }
+     ]
     }
    },
    "sprite": "fan/wayland-vpets/assets/dmx/Palmon X.png",
    "sources": [
-    "wayland-vpets:dmx"
-   ],
-   "evolution_status": "v3_pending"
+    "humulos:dmx"
+   ]
   },
   {
    "id": "pegasmonx",
    "name": "Pegasmon X",
-   "stage": null,
+   "stage": "Child",
    "attribute": null,
    "devices": {
     "dmx": {
-     "versions": [
-      3
-     ],
-     "stage_time": null,
+     "versions": [],
+     "stage_time": "24 h",
      "evolves_to": []
     }
    },
    "sprite": "fan/wayland-vpets/assets/dmx/Pegasmon X.png",
    "sources": [
-    "wayland-vpets:dmx"
-   ],
-   "evolution_status": "v3_pending"
+    "humulos:dmx"
+   ]
   },
   {
    "id": "platinumnumemon",
@@ -5467,7 +7530,7 @@
   {
    "id": "plesiomonx",
    "name": "Plesiomon X",
-   "stage": null,
+   "stage": "Ultimate",
    "attribute": null,
    "devices": {
     "dmx": {
@@ -5475,14 +7538,25 @@
       3
      ],
      "stage_time": null,
-     "evolves_to": []
+     "evolves_to": [
+      {
+       "to": "Sleipmon X",
+       "to_id": "sleipmonx",
+       "raw": "0-2 CM, Level 9-10, Area RE not cleared",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "level": "9-10",
+        "area_not_cleared": "RE"
+       },
+       "sub_version": "XF"
+      }
+     ]
     }
    },
    "sprite": "fan/wayland-vpets/assets/dmx/Plesiomon X.png",
    "sources": [
-    "wayland-vpets:dmx"
-   ],
-   "evolution_status": "v3_pending"
+    "humulos:dmx"
+   ]
   },
   {
    "id": "plotmonx",
@@ -5576,64 +7650,51 @@
    ]
   },
   {
-   "id": "pteranmonx",
-   "name": "Pteranmon X",
-   "stage": null,
-   "attribute": null,
-   "devices": {
-    "dmx": {
-     "versions": [
-      3
-     ],
-     "stage_time": null,
-     "evolves_to": []
-    }
-   },
-   "sprite": "fan/wayland-vpets/assets/dmx/Pteranmon X.png",
-   "sources": [
-    "wayland-vpets:dmx"
-   ],
-   "evolution_status": "v3_pending"
-  },
-  {
    "id": "pteranomonx",
    "name": "Pteranomon X",
-   "stage": null,
+   "stage": "Adult",
    "attribute": null,
    "devices": {
     "dmx": {
      "versions": [
       3
      ],
-     "stage_time": null,
-     "evolves_to": []
+     "stage_time": "32 h",
+     "evolves_to": [
+      {
+       "to": "Cannonbeemon",
+       "to_id": "cannonbeemon",
+       "raw": "Area 45 cleared, (catch-all)",
+       "parsed": {
+        "catch_all": true,
+        "area_cleared": "45"
+       },
+       "sub_version": "XE"
+      }
+     ]
     }
    },
    "sprite": "fan/wayland-vpets/assets/dmx/Pteranomon X.png",
    "sources": [
-    "wayland-vpets:dmx"
-   ],
-   "evolution_status": "v3_pending"
+    "humulos:dmx"
+   ]
   },
   {
    "id": "pumpmon",
    "name": "Pumpmon",
-   "stage": null,
+   "stage": "Perfect",
    "attribute": null,
    "devices": {
     "dmx": {
-     "versions": [
-      3
-     ],
-     "stage_time": null,
+     "versions": [],
+     "stage_time": "40 h",
      "evolves_to": []
     }
    },
    "sprite": "fan/wayland-vpets/assets/dmx/Pumpmon.png",
    "sources": [
-    "wayland-vpets:dmx"
-   ],
-   "evolution_status": "v3_pending"
+    "humulos:dmx"
+   ]
   },
   {
    "id": "puttimon",
@@ -5760,22 +7821,19 @@
   {
    "id": "rapidmonx",
    "name": "Rapidmon X",
-   "stage": null,
+   "stage": "Perfect",
    "attribute": null,
    "devices": {
     "dmx": {
-     "versions": [
-      3
-     ],
-     "stage_time": null,
+     "versions": [],
+     "stage_time": "40 h",
      "evolves_to": []
     }
    },
    "sprite": "fan/wayland-vpets/assets/dmx/Rapidmon X.png",
    "sources": [
-    "wayland-vpets:dmx"
-   ],
-   "evolution_status": "v3_pending"
+    "humulos:dmx"
+   ]
   },
   {
    "id": "rasenmon",
@@ -6005,22 +8063,19 @@
   {
    "id": "rizegreymonx",
    "name": "Rize Greymon X",
-   "stage": null,
+   "stage": "Adult",
    "attribute": null,
    "devices": {
     "dmx": {
-     "versions": [
-      3
-     ],
-     "stage_time": null,
+     "versions": [],
+     "stage_time": "32 h",
      "evolves_to": []
     }
    },
    "sprite": "fan/wayland-vpets/assets/dmx/Rize Greymon X.png",
    "sources": [
-    "wayland-vpets:dmx"
-   ],
-   "evolution_status": "v3_pending"
+    "humulos:dmx"
+   ]
   },
   {
    "id": "rosemonx",
@@ -6083,22 +8138,220 @@
   {
    "id": "ryudamon",
    "name": "Ryudamon",
-   "stage": null,
+   "stage": "Child",
    "attribute": null,
    "devices": {
     "dmx": {
      "versions": [
       3
      ],
-     "stage_time": null,
-     "evolves_to": []
+     "stage_time": "24 h",
+     "evolves_to": [
+      {
+       "to": "Ginryumon",
+       "to_id": "ginryumon",
+       "raw": "0-1 CM, 3-4 Effort, Area 12 not cleared",
+       "parsed": {
+        "care_mistakes": "0-1",
+        "effort": "3-4",
+        "area_not_cleared": "12"
+       },
+       "sub_version": "XF"
+      },
+      {
+       "to": "Ginryumon",
+       "to_id": "ginryumon",
+       "raw": "2-4 CM, 3-4 Effort, Area 45 cleared",
+       "parsed": {
+        "care_mistakes": "2-4",
+        "effort": "3-4",
+        "area_cleared": "45"
+       },
+       "sub_version": "XF"
+      },
+      {
+       "to": "Tylomon X",
+       "to_id": "tylomonx",
+       "raw": "0-1 CM, 0-2 Effort, Area 10 not cleared",
+       "parsed": {
+        "care_mistakes": "0-1",
+        "effort": "0-2",
+        "area_not_cleared": "10"
+       },
+       "sub_version": "XF"
+      },
+      {
+       "to": "Tylomon X",
+       "to_id": "tylomonx",
+       "raw": "3-4 CM, Area 45 cleared",
+       "parsed": {
+        "care_mistakes": "3-4",
+        "area_cleared": "45"
+       },
+       "sub_version": "XF"
+      },
+      {
+       "to": "Tylomon X",
+       "to_id": "tylomonx",
+       "raw": "Area 45 cleared",
+       "parsed": {
+        "area_cleared": "45"
+       },
+       "sub_version": "XF"
+      },
+      {
+       "to": "Omekamon",
+       "to_id": "omekamon",
+       "raw": "2-4 CM, 0-2 Effort, Area 45 cleared",
+       "parsed": {
+        "care_mistakes": "2-4",
+        "effort": "0-2",
+        "area_cleared": "45"
+       },
+       "sub_version": "XF"
+      },
+      {
+       "to": "Omekamon",
+       "to_id": "omekamon",
+       "raw": "2-4 CM, 3-4 Effort, Area 12 not cleared",
+       "parsed": {
+        "care_mistakes": "2-4",
+        "effort": "3-4",
+        "area_not_cleared": "12"
+       },
+       "sub_version": "XF"
+      },
+      {
+       "to": "Paledramon",
+       "to_id": "paledramon",
+       "raw": "0-1 CM, 2-4 Effort, Area 45 cleared",
+       "parsed": {
+        "care_mistakes": "0-1",
+        "effort": "2-4",
+        "area_cleared": "45"
+       },
+       "sub_version": "XF"
+      },
+      {
+       "to": "Jazardmon",
+       "to_id": "jazardmon",
+       "raw": "0-2 CM, 2-4 Effort, Area 45 cleared",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "effort": "2-4",
+        "area_cleared": "45"
+       },
+       "sub_version": "XF"
+      },
+      {
+       "to": "Monzaemon X",
+       "to_id": "monzaemonx",
+       "raw": "0-2 CM, Level 5-6, Area 20 cleared",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "level": "5-6",
+        "area_cleared": "20"
+       },
+       "sub_version": "XF"
+      },
+      {
+       "to": "Monzaemon X",
+       "to_id": "monzaemonx",
+       "raw": "3-4 CM, Level 6, Defeat 1 Stage VI, Area 20 cleared",
+       "parsed": {
+        "care_mistakes": "3-4",
+        "level": "6",
+        "defeat_stage6": "1",
+        "area_cleared": "20"
+       },
+       "sub_version": "XF"
+      },
+      {
+       "to": "Monzaemon X",
+       "to_id": "monzaemonx",
+       "raw": "0-1 CM, Level 3-6, Area 20 cleared",
+       "parsed": {
+        "care_mistakes": "0-1",
+        "level": "3-6",
+        "area_cleared": "20"
+       },
+       "sub_version": "XF"
+      },
+      {
+       "to": "Monzaemon X",
+       "to_id": "monzaemonx",
+       "raw": "0-1 CM, Level 5-6, Area 20 cleared",
+       "parsed": {
+        "care_mistakes": "0-1",
+        "level": "5-6",
+        "area_cleared": "20"
+       },
+       "sub_version": "XF"
+      },
+      {
+       "to": "Rize Greymon X",
+       "to_id": "rizegreymonx",
+       "raw": "0-2 CM, Level 4-6, Area 18 cleared",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "level": "4-6",
+        "area_cleared": "18"
+       },
+       "sub_version": "XF"
+      },
+      {
+       "to": "Rize Greymon X",
+       "to_id": "rizegreymonx",
+       "raw": "2-4 CM, Level 6, Defeat 1 Stage VI, Area 18 cleared",
+       "parsed": {
+        "care_mistakes": "2-4",
+        "level": "6",
+        "defeat_stage6": "1",
+        "area_cleared": "18"
+       },
+       "sub_version": "XF"
+      },
+      {
+       "to": "Rize Greymon X",
+       "to_id": "rizegreymonx",
+       "raw": "3-4 CM, Level 6, Defeat 1 Stage VI, Area 45 cleared",
+       "parsed": {
+        "care_mistakes": "3-4",
+        "level": "6",
+        "defeat_stage6": "1",
+        "area_cleared": "45"
+       },
+       "sub_version": "XF"
+      },
+      {
+       "to": "Hisyaryumon",
+       "to_id": "hisyaryumon",
+       "raw": "0-2 CM, Level 1-4, Area 10 cleared",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "level": "1-4",
+        "area_cleared": "10"
+       },
+       "sub_version": "XF"
+      },
+      {
+       "to": "Hisyaryumon",
+       "to_id": "hisyaryumon",
+       "raw": "0-2 CM, Level 5-6, Area 10 cleared",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "level": "5-6",
+        "area_cleared": "10"
+       },
+       "sub_version": "XF"
+      }
+     ]
     }
    },
    "sprite": "fan/wayland-vpets/assets/dmx/Ryudamon.png",
    "sources": [
-    "wayland-vpets:dmx"
-   ],
-   "evolution_status": "v3_pending"
+    "humulos:dmx"
+   ]
   },
   {
    "id": "sakuyamonx",
@@ -6253,42 +8506,80 @@
   {
    "id": "shakomonx",
    "name": "Shakomon X",
-   "stage": null,
+   "stage": "Child",
    "attribute": null,
    "devices": {
     "dmx": {
      "versions": [
       3
      ],
-     "stage_time": null,
-     "evolves_to": []
+     "stage_time": "24 h",
+     "evolves_to": [
+      {
+       "to": "Ginryumon",
+       "to_id": "ginryumon",
+       "raw": "0-2 CM, 0-1 Effort, Area 12 not cleared",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "effort": "0-1",
+        "area_not_cleared": "12"
+       },
+       "sub_version": "XF"
+      },
+      {
+       "to": "Tylomon X",
+       "to_id": "tylomonx",
+       "raw": "0-2 CM, 2-4 Effort, Area 10 not cleared",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "effort": "2-4",
+        "area_not_cleared": "10"
+       },
+       "sub_version": "XF"
+      },
+      {
+       "to": "Omekamon",
+       "to_id": "omekamon",
+       "raw": "3-4 CM, Area 45 cleared",
+       "parsed": {
+        "care_mistakes": "3-4",
+        "area_cleared": "45"
+       },
+       "sub_version": "XF"
+      },
+      {
+       "to": "Omekamon",
+       "to_id": "omekamon",
+       "raw": "Area 45 cleared",
+       "parsed": {
+        "area_cleared": "45"
+       },
+       "sub_version": "XF"
+      }
+     ]
     }
    },
    "sprite": "fan/wayland-vpets/assets/dmx/Shakomon X.png",
    "sources": [
-    "wayland-vpets:dmx"
-   ],
-   "evolution_status": "v3_pending"
+    "humulos:dmx"
+   ]
   },
   {
    "id": "siesamonx",
    "name": "Siesamon X",
-   "stage": null,
+   "stage": "Child",
    "attribute": null,
    "devices": {
     "dmx": {
-     "versions": [
-      3
-     ],
-     "stage_time": null,
+     "versions": [],
+     "stage_time": "24 h",
      "evolves_to": []
     }
    },
    "sprite": "fan/wayland-vpets/assets/dmx/Siesamon X.png",
    "sources": [
-    "wayland-vpets:dmx"
-   ],
-   "evolution_status": "v3_pending"
+    "humulos:dmx"
+   ]
   },
   {
    "id": "sistermonblanc",
@@ -6702,62 +8993,139 @@
   {
    "id": "tailmonx",
    "name": "Tailmon X",
-   "stage": null,
+   "stage": "Adult",
    "attribute": null,
    "devices": {
     "dmx": {
      "versions": [
       3
      ],
-     "stage_time": null,
-     "evolves_to": []
+     "stage_time": "32 h",
+     "evolves_to": [
+      {
+       "to": "Grademon",
+       "to_id": "grademon",
+       "raw": "0-1 CM, Level 1-2, Area 10 cleared",
+       "parsed": {
+        "care_mistakes": "0-1",
+        "level": "1-2",
+        "area_cleared": "10"
+       },
+       "sub_version": "XF"
+      },
+      {
+       "to": "Grademon",
+       "to_id": "grademon",
+       "raw": "0-1 CM, Level 3-6, Area 20 not cleared",
+       "parsed": {
+        "care_mistakes": "0-1",
+        "level": "3-6",
+        "area_not_cleared": "20"
+       },
+       "sub_version": "XF"
+      }
+     ]
     }
    },
    "sprite": "fan/wayland-vpets/assets/dmx/Tailmon X.png",
    "sources": [
-    "wayland-vpets:dmx"
-   ],
-   "evolution_status": "v3_pending"
+    "humulos:dmx"
+   ]
   },
   {
    "id": "terriermonx",
    "name": "Terriermon X",
-   "stage": null,
+   "stage": "Child",
    "attribute": null,
    "devices": {
     "dmx": {
      "versions": [
       3
      ],
-     "stage_time": null,
-     "evolves_to": []
+     "stage_time": "24 h",
+     "evolves_to": [
+      {
+       "to": "DORUgamon",
+       "to_id": "dorugamon",
+       "raw": "0-2 CM, 0-2 Effort, Area 45 cleared",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "effort": "0-2",
+        "area_cleared": "45"
+       },
+       "sub_version": "XE"
+      },
+      {
+       "to": "DORUgamon",
+       "to_id": "dorugamon",
+       "raw": "0-2 CM, 3-4 Effort, Area 11 not cleared",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "effort": "3-4",
+        "area_not_cleared": "11"
+       },
+       "sub_version": "XE"
+      },
+      {
+       "to": "Togemon X",
+       "to_id": "togemonx",
+       "raw": "3-4 CM, 0-1 Effort, Area 45 cleared",
+       "parsed": {
+        "care_mistakes": "3-4",
+        "effort": "0-1",
+        "area_cleared": "45"
+       },
+       "sub_version": "XE"
+      },
+      {
+       "to": "Togemon X",
+       "to_id": "togemonx",
+       "raw": "3-4 CM, 2-4 Effort, Area 9 not cleared",
+       "parsed": {
+        "care_mistakes": "3-4",
+        "effort": "2-4",
+        "area_not_cleared": "9"
+       },
+       "sub_version": "XE"
+      }
+     ]
     }
    },
    "sprite": "fan/wayland-vpets/assets/dmx/Terriermon X.png",
    "sources": [
-    "wayland-vpets:dmx"
-   ],
-   "evolution_status": "v3_pending"
+    "humulos:dmx"
+   ]
   },
   {
    "id": "tigervespamon",
    "name": "Tiger Vespamon",
-   "stage": null,
+   "stage": "Perfect",
    "attribute": null,
    "devices": {
     "dmx": {
      "versions": [
       3
      ],
-     "stage_time": null,
-     "evolves_to": []
+     "stage_time": "40 h",
+     "evolves_to": [
+      {
+       "to": "Craniummon X",
+       "to_id": "craniummonx",
+       "raw": "0-2 CM, Level 9-10, Area RE not cleared",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "level": "9-10",
+        "area_not_cleared": "RE"
+       },
+       "sub_version": "XE"
+      }
+     ]
     }
    },
    "sprite": "fan/wayland-vpets/assets/dmx/Tiger Vespamon.png",
    "sources": [
-    "wayland-vpets:dmx"
-   ],
-   "evolution_status": "v3_pending"
+    "humulos:dmx"
+   ]
   },
   {
    "id": "tobucatmon",
@@ -6871,22 +9239,84 @@
   {
    "id": "togemonx",
    "name": "Togemon X",
-   "stage": null,
+   "stage": "Adult",
    "attribute": null,
    "devices": {
     "dmx": {
      "versions": [
       3
      ],
-     "stage_time": null,
-     "evolves_to": []
+     "stage_time": "32 h",
+     "evolves_to": [
+      {
+       "to": "DORUguremon",
+       "to_id": "doruguremon",
+       "raw": "0-1 CM, Level 1-4, Area 11 cleared",
+       "parsed": {
+        "care_mistakes": "0-1",
+        "level": "1-4",
+        "area_cleared": "11"
+       },
+       "sub_version": "XE"
+      },
+      {
+       "to": "Cannonbeemon",
+       "to_id": "cannonbeemon",
+       "raw": "0-1 CM, Level 5-6, Area 45 cleared",
+       "parsed": {
+        "care_mistakes": "0-1",
+        "level": "5-6",
+        "area_cleared": "45"
+       },
+       "sub_version": "XE"
+      },
+      {
+       "to": "Cannonbeemon",
+       "to_id": "cannonbeemon",
+       "raw": "3-4 CM, Level 6, Area 45 cleared",
+       "parsed": {
+        "care_mistakes": "3-4",
+        "level": "6",
+        "area_cleared": "45"
+       },
+       "sub_version": "XE"
+      },
+      {
+       "to": "Grademon",
+       "to_id": "grademon",
+       "raw": "Area 9 cleared, (catch-all)",
+       "parsed": {
+        "catch_all": true,
+        "area_cleared": "9"
+       },
+       "sub_version": "XE"
+      },
+      {
+       "to": "Mamemon X",
+       "to_id": "mamemonx",
+       "raw": "2-4 CM, Area 9 cleared",
+       "parsed": {
+        "care_mistakes": "2-4",
+        "area_cleared": "9"
+       },
+       "sub_version": "XE"
+      },
+      {
+       "to": "Mamemon X",
+       "to_id": "mamemonx",
+       "raw": "Area 9 cleared",
+       "parsed": {
+        "area_cleared": "9"
+       },
+       "sub_version": "XE"
+      }
+     ]
     }
    },
    "sprite": "fan/wayland-vpets/assets/dmx/Togemon X.png",
    "sources": [
-    "wayland-vpets:dmx"
-   ],
-   "evolution_status": "v3_pending"
+    "humulos:dmx"
+   ]
   },
   {
    "id": "tokomonx",
@@ -7096,22 +9526,32 @@
   {
    "id": "tylomonx",
    "name": "Tylomon X",
-   "stage": null,
+   "stage": "Adult",
    "attribute": null,
    "devices": {
     "dmx": {
      "versions": [
       3
      ],
-     "stage_time": null,
-     "evolves_to": []
+     "stage_time": "32 h",
+     "evolves_to": [
+      {
+       "to": "Mamemon X",
+       "to_id": "mamemonx",
+       "raw": "Area 12 cleared, (catch-all)",
+       "parsed": {
+        "catch_all": true,
+        "area_cleared": "12"
+       },
+       "sub_version": "XF"
+      }
+     ]
     }
    },
    "sprite": "fan/wayland-vpets/assets/dmx/Tylomon X.png",
    "sources": [
-    "wayland-vpets:dmx"
-   ],
-   "evolution_status": "v3_pending"
+    "humulos:dmx"
+   ]
   },
   {
    "id": "tyranomonx",
@@ -7203,22 +9643,19 @@
   {
    "id": "ulforcevdramonx",
    "name": "Ulforce V-dramon X",
-   "stage": null,
+   "stage": "Ultimate",
    "attribute": null,
    "devices": {
     "dmx": {
-     "versions": [
-      3
-     ],
+     "versions": [],
      "stage_time": null,
      "evolves_to": []
     }
    },
    "sprite": "fan/wayland-vpets/assets/dmx/Ulforce V-dramon X.png",
    "sources": [
-    "wayland-vpets:dmx"
-   ],
-   "evolution_status": "v3_pending"
+    "humulos:dmx"
+   ]
   },
   {
    "id": "ultimatebrachiomon",
@@ -7628,22 +10065,19 @@
   {
    "id": "wizarmonx",
    "name": "Wizarmon X",
-   "stage": null,
+   "stage": "Child",
    "attribute": null,
    "devices": {
     "dmx": {
-     "versions": [
-      3
-     ],
-     "stage_time": null,
+     "versions": [],
+     "stage_time": "24 h",
      "evolves_to": []
     }
    },
    "sprite": "fan/wayland-vpets/assets/dmx/Wizarmon X.png",
    "sources": [
-    "wayland-vpets:dmx"
-   ],
-   "evolution_status": "v3_pending"
+    "humulos:dmx"
+   ]
   },
   {
    "id": "yaamon",
@@ -7884,22 +10318,21 @@
   {
    "id": "zerimon",
    "name": "Zerimon",
-   "stage": null,
+   "stage": "Baby I",
    "attribute": null,
    "devices": {
     "dmx": {
      "versions": [
       3
      ],
-     "stage_time": null,
+     "stage_time": "10 min",
      "evolves_to": []
     }
    },
    "sprite": "fan/wayland-vpets/assets/dmx/Zerimon.png",
    "sources": [
     "wayland-vpets:dmx"
-   ],
-   "evolution_status": "v3_pending"
+   ]
   }
  ]
 }

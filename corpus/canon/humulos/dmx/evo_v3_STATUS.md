@@ -1,8 +1,9 @@
-# DMX Version 3 (XE/XF) — EXTRACTION INCOMPLETE
-# humulos /dmx/3/ is a dense branching evolution tree (XE ~40 + XF ~45 mons).
-# WebFetch's extractor truncates it (XE child/adult targets "not detailed") and
-# produces artifacts in XF (self-loops "Goddramon X -> Goddramon X", garbled stage
-# labels Adolescent/Mega). The Kera special line (evo_v3_kera.md) DID extract clean.
-# TODO before trusting V3: re-pull per-STAGE (child, then adult, then perfect...) for XE
-# and XF separately, OR cross-reference wikimon per-Digimon evolution pages.
-# V1 (XA/XB) and V2 (XC/XD) are complete and clean.
+# DMX Version 3 (XE/XF) — RESOLVED 2026-06-29
+# WebFetch's markdown extractor truncated/self-looped on this dense chart, so V3 was
+# instead parsed DETERMINISTICALLY from the raw chart HTML:
+#   curl https://humulos.com/digimon/dmx/3/ -> corpus/db/parse_dmx3_chart.py -> evo_v3_edges.json (264 edges)
+# The chart encodes edges via CSS classes (xe_<src>_line -> reqs gifs -> xe_<tgt>_Req_line),
+# conditions as named gifs (mistakeN/effortN/levelcN/defeatultN/jogresswith/areaN), and area
+# gating via row area=/areamax= attributes. evo_v1.md (XA/XB) + evo_v2.md (XC/XD) + evo_v3_kera.md
+# came from clean WebFetch markdown. Pure-V3 mon STAGES inferred by propagating along the edge
+# graph; ATTRIBUTES are null (the chart has no attribute data — backfill from wikimon/DVPet).

@@ -104,20 +104,83 @@ for fn in sorted(glob.glob(os.path.join(HUM, "evo_v*.md"))):
             r["devices"]["dmx"]["evolves_to"].append(e)
             rec(to)  # ensure target exists as a record
 
+# ---- V3 (XE/XF) edges parsed deterministically from the humulos chart ----
+def cond_raw(c):
+    bits = []
+    if "care_mistakes" in c: bits.append(f"{c['care_mistakes']} CM")
+    if "effort" in c: bits.append(f"{c['effort']} Effort")
+    if "level" in c: bits.append(f"Level {c['level']}")
+    if "defeat_stage6" in c: bits.append(f"Defeat {c['defeat_stage6']} Stage VI")
+    if c.get("jogress"): bits.append("Jogress")
+    if "area_cleared_as_self" in c: bits.append(f"Clear Area {c['area_cleared_as_self']} as self")
+    if "area_cleared" in c: bits.append(f"Area {c['area_cleared']} cleared")
+    if "area_not_cleared" in c: bits.append(f"Area {c['area_not_cleared']} not cleared")
+    if c.get("catch_all"): bits.append("(catch-all)")
+    return ", ".join(bits)
+
+v3path = os.path.join(HUM, "evo_v3_edges.json")
+if os.path.exists(v3path):
+    v3resolved = set()
+    for e in json.load(open(v3path)):
+        src, tgt = e["src_name"], e["tgt_name"]
+        r = rec(src); t = rec(tgt)
+        if 3 not in r["devices"]["dmx"]["versions"]: r["devices"]["dmx"]["versions"].append(3)
+        cond = dict(e["cond"])
+        raw = cond_raw(cond)
+        seen = {(x["to"], x["raw"]) for x in r["devices"]["dmx"]["evolves_to"]}
+        if (tgt, raw) not in seen:
+            r["devices"]["dmx"]["evolves_to"].append({
+                "to": tgt, "to_id": norm(tgt), "raw": raw, "parsed": cond, "sub_version": e["sub"].upper()})
+        v3resolved.add(norm(src)); v3resolved.add(norm(tgt))
+        for x in (r, t):
+            if x.get("evolution_status") == "v3_pending": x.pop("evolution_status", None)
+
 # ---- spine: every wayland dmx sprite name becomes a record (V3-only mons get stubs) ----
+# wayland filename romanization quirks -> canonical record id
+WAYLAND_ALIAS = {"jararchimon": "jazarichmon", "magidramonx": "megidramonx",
+                 "pteranmonx": "pteranomonx", "keemon": "kiimon",
+                 "lordkightmonx": "lordknightmonx", "granddracumon": "grandiskuwagamon"}
 for k, path in SPI.items():
-    if k not in records:
-        # recover a display name from the filename
-        fn = os.path.basename(path)[:-4]
-        records[k] = {"id": k, "name": fn, "stage": None, "attribute": None,
-            "devices": {"dmx": {"versions": [3], "stage_time": None, "evolves_to": []}},
-            "sprite": path, "sources": ["wayland-vpets:dmx"], "evolution_status": "v3_pending"}
+    canon = WAYLAND_ALIAS.get(k, k)
+    if canon in records:
+        if not records[canon]["sprite"]: records[canon]["sprite"] = path
+        continue
+    fn = os.path.basename(path)[:-4]
+    records[k] = {"id": k, "name": fn, "stage": None, "attribute": None,
+        "devices": {"dmx": {"versions": [3], "stage_time": None, "evolves_to": []}},
+        "sprite": path, "sources": ["wayland-vpets:dmx"], "evolution_status": "v3_pending"}
+
+# ---- stage inference: propagate stages along the evolution graph from known anchors ----
+STAGES = ["Egg", "Baby I", "Baby II", "Child", "Adult", "Perfect", "Ultimate", "Super Ultimate", "Hyper Ultimate"]
+SEED = {"gummymon": "Baby II", "chocomon": "Baby II", "zerimon": "Baby I", "cocomon": "Baby I",
+        "digitamax": "Egg", "digitamax2": "Egg", "digitamax3": "Egg"}
+for sid, st in SEED.items():
+    if sid in records and not records[sid]["stage"]:
+        records[sid]["stage"] = st
+for _ in range(12):  # iterate to fixpoint
+    changed = False
+    for r in records.values():
+        s = r["stage"]
+        if not s or s not in STAGES:
+            continue
+        nxt = STAGES[min(STAGES.index(s) + 1, len(STAGES) - 1)]
+        for e in r["devices"]["dmx"]["evolves_to"]:
+            t = records.get(e["to_id"])
+            if t and not t["stage"]:
+                t["stage"] = nxt; changed = True
+    if not changed:
+        break
+for r in records.values():  # attach timer + clear pending where stage now known
+    if r["stage"] and not r["devices"]["dmx"]["stage_time"]:
+        r["devices"]["dmx"]["stage_time"] = STAGE_TIMER.get(r["stage"])
+    if r["stage"] and r.get("evolution_status") == "v3_pending":
+        r.pop("evolution_status", None)
 
 no_sprite = sorted(r["name"] for r in records.values() if not r["sprite"])
 v3pending = sorted(r["name"] for r in records.values() if r.get("evolution_status") == "v3_pending")
 out = {"_meta": {"device": "dmx", "count": len(records),
-        "source": "humulos /dmx (V1 XA/XB) + /dmx/2 (V2 XC/XD) + /dmx/3 Kera line; wayland sprites+timers",
-        "complete": "V1+V2+Kera evolution conditions CLEAN; V3 XE/XF main trees pending (see canon/humulos/dmx/evo_v3_STATUS.md)",
+        "source": "humulos /dmx (V1 XA/XB) + /dmx/2 (V2 XC/XD) + /dmx/3 (XE/XF chart-parsed + Kera); wayland sprites+timers",
+        "complete": "ALL versions captured. V1/V2/Kera from markdown; V3 XE/XF edges parsed deterministically from the humulos chart HTML (corpus/db/parse_dmx3_chart.py -> evo_v3_edges.json). Stages for pure-V3 mons inferred by propagating along the edge graph. GAPS: attributes null for pure-V3 mons (chart has no attribute data -> backfill from wikimon/DVPet); 3 orphan sprites with no extracted edge (v3_pending).",
         "v3_pending_count": len(v3pending), "v3_pending": v3pending,
         "sprite_gaps": no_sprite,
         "condition_fields": "care_mistakes, effort, level, area_cleared[], area_not_cleared[], defeat_stage6, cumulative_battles, special_encounter, sub_version (XA-XF), time_min, alternatives[]"},
