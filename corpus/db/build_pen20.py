@@ -82,10 +82,9 @@ def rec(name, stage=None, attr=None):
     if attr and not r["attribute"]: r["attribute"] = attr
     return r
 
-for fn in sorted(glob.glob(os.path.join(HUM, "evo_v*.md"))):
+for fn in sorted(glob.glob(os.path.join(HUM, "evo_*.md"))):
     meta = VER.get(os.path.basename(fn))
-    if not meta: continue
-    vnum, vname = meta
+    vnum, vname = meta if meta else ("20th", "20th additions")
     for line in open(fn):
         line = line.strip()
         if not line or line.startswith("#") or "|" not in line: continue
@@ -111,8 +110,15 @@ for fn in sorted(glob.glob(os.path.join(HUM, "evo_v*.md"))):
             dev["evolves_to"].append({"to": to, "to_id": norm(to), "raw": cond, "parsed": parse_cond(cond)})
             rec(to)
 
+# wayland filename romanization typos -> canonical record id
+WAYLAND_ALIAS = {"guimon": "guilmon", "monchromon": "monochromon", "hangymon": "hangyomon",
+                 "porcupmon": "porcupamon", "mambomon": "manbomon", "beowulfmon": "beowolfmon"}
 # spine: wayland pen20 sprites -> records; 20th-addition lines (no version data) flagged
 for k, path in SPI.items():
+    canon = WAYLAND_ALIAS.get(k, k)
+    if canon in records:
+        if not records[canon]["sprite"]: records[canon]["sprite"] = path
+        continue
     if k not in records:
         records[k] = {"id": k, "name": os.path.basename(path)[:-4], "stage": None, "attribute": None,
             "devices": {"pen20": {"versions": [], "stage_time": None, "evolves_to": []}},
@@ -124,7 +130,7 @@ withevo = sum(1 for r in records.values() if r["devices"]["pen20"]["evolves_to"]
 out = {"_meta": {"device": "pen20", "count": len(records),
         "source": "humulos /pen20/ per-version (NS/DS/NSo/WG/ME) + wayland sprites/timers",
         "with_evolutions": withevo,
-        "complete": "5 CLASSIC versions captured (Nature Spirits/Deep Savers/Nightmare Soldiers/Wind Guardians/Metal Empire). pen20's 20th-anniversary BONUS lines (Guilmon/V-mon/Terriermon/DORUmon/Ryudamon/etc.) NOT yet pulled -> addition_pending. Minor extraction noise: a few branch targets dropped (see device._unresolved), Mugendra=Mugendramon. JOGRESS is the key mechanic (jogress_attrs/jogress_partner/jogress_partners).",
+        "complete": "5 CLASSIC versions + MAJOR 20th bonus lines captured (Adventure/Virus-Busters main, Tamers, 02, DORU->Alphamon, Ryudamon, Lalamon, Hackmon, Zuba, Draco->Slayer/Break, Meicoo, Ludomon). 123/239 with evolution data. addition_pending = the EXTENDED Virus-Busters/Adventure alt-evolution roster (Angemon/Devimon/angel line/Mamemon/etc.) + misc small forms — WebFetch extracts these too noisily to trust (it hallucinated Agumon->Angemon), so they're left flagged for a deterministic chart-parse or manual pass, NOT ingested as bad data. JOGRESS mechanic parsed (jogress_attrs/partner/partners).",
         "addition_pending_count": len(pending), "sprite_gaps": no_sprite},
        "digimon": [records[k] for k in sorted(records)]}
 with open(os.path.join(HERE, "pen20.json"), "w") as fh: json.dump(out, fh, indent=1, ensure_ascii=False)

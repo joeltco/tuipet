@@ -3,13 +3,17 @@
   "device": "pen20",
   "count": 239,
   "source": "humulos /pen20/ per-version (NS/DS/NSo/WG/ME) + wayland sprites/timers",
-  "with_evolutions": 58,
-  "complete": "5 CLASSIC versions captured (Nature Spirits/Deep Savers/Nightmare Soldiers/Wind Guardians/Metal Empire). pen20's 20th-anniversary BONUS lines (Guilmon/V-mon/Terriermon/DORUmon/Ryudamon/etc.) NOT yet pulled -> addition_pending. Minor extraction noise: a few branch targets dropped (see device._unresolved), Mugendra=Mugendramon. JOGRESS is the key mechanic (jogress_attrs/jogress_partner/jogress_partners).",
-  "addition_pending_count": 133,
+  "with_evolutions": 123,
+  "complete": "5 CLASSIC versions + MAJOR 20th bonus lines captured (Adventure/Virus-Busters main, Tamers, 02, DORU->Alphamon, Ryudamon, Lalamon, Hackmon, Zuba, Draco->Slayer/Break, Meicoo, Ludomon). 123/239 with evolution data. addition_pending = the EXTENDED Virus-Busters/Adventure alt-evolution roster (Angemon/Devimon/angel line/Mamemon/etc.) + misc small forms — WebFetch extracts these too noisily to trust (it hallucinated Agumon->Angemon), so they're left flagged for a deterministic chart-parse or manual pass, NOT ingested as bad data. JOGRESS mechanic parsed (jogress_attrs/partner/partners).",
+  "addition_pending_count": 57,
   "sprite_gaps": [
+   "Babydmon",
    "Beelzebumon",
    "Belphemon: Rage Mode",
-   "Imperialdramon: Paladin Mode",
+   "Chocomon",
+   "Duftmon",
+   "Dukemon",
+   "Imperialdramon Paladin Mode",
    "Ulforce V-dramon"
   ]
  },
@@ -46,20 +50,30 @@
   {
    "id": "agumon",
    "name": "Agumon",
-   "stage": null,
-   "attribute": null,
+   "stage": "Child",
+   "attribute": "Free",
    "devices": {
     "pen20": {
-     "versions": [],
-     "stage_time": null,
-     "evolves_to": []
+     "versions": [
+      "20th"
+     ],
+     "stage_time": "24 h",
+     "evolves_to": [
+      {
+       "to": "Greymon",
+       "to_id": "greymon",
+       "raw": "2-4 CM",
+       "parsed": {
+        "care_mistakes": "2-4"
+       }
+      }
+     ]
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Agumon.png",
    "sources": [
-    "wayland-vpets:pen20"
-   ],
-   "addition_pending": true
+    "humulos:pen20"
+   ]
   },
   {
    "id": "agumonhakase",
@@ -82,20 +96,30 @@
   {
    "id": "alphamon",
    "name": "Alphamon",
-   "stage": null,
-   "attribute": null,
+   "stage": "Ultimate",
+   "attribute": "Free",
    "devices": {
     "pen20": {
-     "versions": [],
+     "versions": [
+      "20th"
+     ],
      "stage_time": null,
-     "evolves_to": []
+     "evolves_to": [
+      {
+       "to": "Alphamon Ouryuken",
+       "to_id": "alphamonouryuken",
+       "raw": "Jogress with Ouryumon",
+       "parsed": {
+        "jogress_partner": "Ouryumon"
+       }
+      }
+     ]
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Alphamon.png",
    "sources": [
-    "wayland-vpets:pen20"
-   ],
-   "addition_pending": true
+    "humulos:pen20"
+   ]
   },
   {
    "id": "alphamonouryuken",
@@ -111,27 +135,34 @@
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Alphamon Ouryuken.png",
    "sources": [
-    "wayland-vpets:pen20"
-   ],
-   "addition_pending": true
+    "humulos:pen20"
+   ]
   },
   {
    "id": "andiramon",
    "name": "Andiramon",
-   "stage": null,
-   "attribute": null,
+   "stage": "Adult",
+   "attribute": "Free",
    "devices": {
     "pen20": {
-     "versions": [],
-     "stage_time": null,
-     "evolves_to": []
+     "versions": [
+      "20th"
+     ],
+     "stage_time": "40 h",
+     "evolves_to": [
+      {
+       "to": "Cherubimon",
+       "to_id": "cherubimon",
+       "raw": "",
+       "parsed": {}
+      }
+     ]
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Andiramon.png",
    "sources": [
-    "wayland-vpets:pen20"
-   ],
-   "addition_pending": true
+    "humulos:pen20"
+   ]
   },
   {
    "id": "andromon",
@@ -331,6 +362,32 @@
    ]
   },
   {
+   "id": "babydmon",
+   "name": "Babydmon",
+   "stage": "Baby II",
+   "attribute": "Free",
+   "devices": {
+    "pen20": {
+     "versions": [
+      "20th"
+     ],
+     "stage_time": "12 h",
+     "evolves_to": [
+      {
+       "to": "Dracomon",
+       "to_id": "dracomon",
+       "raw": "",
+       "parsed": {}
+      }
+     ]
+    }
+   },
+   "sprite": null,
+   "sources": [
+    "humulos:pen20"
+   ]
+  },
+  {
    "id": "bakemon",
    "name": "Bakemon",
    "stage": null,
@@ -387,20 +444,31 @@
   {
    "id": "baohackmon",
    "name": "Bao Hackmon",
-   "stage": null,
-   "attribute": null,
+   "stage": "Adult",
+   "attribute": "Free",
    "devices": {
     "pen20": {
-     "versions": [],
-     "stage_time": null,
-     "evolves_to": []
+     "versions": [
+      "20th"
+     ],
+     "stage_time": "40 h",
+     "evolves_to": [
+      {
+       "to": "Savior Hackmon",
+       "to_id": "saviorhackmon",
+       "raw": "0-2 CM, battles",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "battles": true
+       }
+      }
+     ]
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Bao Hackmon.png",
    "sources": [
-    "wayland-vpets:pen20"
-   ],
-   "addition_pending": true
+    "humulos:pen20"
+   ]
   },
   {
    "id": "beelzebumon",
@@ -461,38 +529,31 @@
   {
    "id": "beowolfmon",
    "name": "Beowolfmon",
-   "stage": null,
-   "attribute": null,
+   "stage": "Adult",
+   "attribute": "Free",
    "devices": {
     "pen20": {
-     "versions": [],
-     "stage_time": null,
-     "evolves_to": []
+     "versions": [
+      "20th"
+     ],
+     "stage_time": "40 h",
+     "evolves_to": [
+      {
+       "to": "Dukemon",
+       "to_id": "dukemon",
+       "raw": "0-2 CM, battles",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "battles": true
+       }
+      }
+     ]
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Beowolfmon.png",
    "sources": [
-    "wayland-vpets:pen20"
-   ],
-   "addition_pending": true
-  },
-  {
-   "id": "beowulfmon",
-   "name": "Beowulfmon",
-   "stage": null,
-   "attribute": null,
-   "devices": {
-    "pen20": {
-     "versions": [],
-     "stage_time": null,
-     "evolves_to": []
-    }
-   },
-   "sprite": "fan/wayland-vpets/assets/pen20/Beowulfmon.png",
-   "sources": [
-    "wayland-vpets:pen20"
-   ],
-   "addition_pending": true
+    "humulos:pen20"
+   ]
   },
   {
    "id": "bigmamemon",
@@ -604,20 +665,30 @@
   {
    "id": "botamon",
    "name": "Botamon",
-   "stage": null,
-   "attribute": null,
+   "stage": "Baby I",
+   "attribute": "Free",
    "devices": {
     "pen20": {
-     "versions": [],
-     "stage_time": null,
-     "evolves_to": []
+     "versions": [
+      "20th"
+     ],
+     "stage_time": "10 min",
+     "evolves_to": [
+      {
+       "to": "Koromon",
+       "to_id": "koromon",
+       "raw": "0 CM",
+       "parsed": {
+        "care_mistakes": "0"
+       }
+      }
+     ]
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Botamon.png",
    "sources": [
-    "wayland-vpets:pen20"
-   ],
-   "addition_pending": true
+    "humulos:pen20"
+   ]
   },
   {
    "id": "breakdramon",
@@ -651,9 +722,8 @@
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Bryweludramon.png",
    "sources": [
-    "wayland-vpets:pen20"
-   ],
-   "addition_pending": true
+    "humulos:pen20"
+   ]
   },
   {
    "id": "bubbmon",
@@ -677,20 +747,28 @@
   {
    "id": "budmon",
    "name": "Budmon",
-   "stage": null,
-   "attribute": null,
+   "stage": "Baby I",
+   "attribute": "Free",
    "devices": {
     "pen20": {
-     "versions": [],
-     "stage_time": null,
-     "evolves_to": []
+     "versions": [
+      "20th"
+     ],
+     "stage_time": "10 min",
+     "evolves_to": [
+      {
+       "to": "Lalamon",
+       "to_id": "lalamon",
+       "raw": "",
+       "parsed": {}
+      }
+     ]
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Budmon.png",
    "sources": [
-    "wayland-vpets:pen20"
-   ],
-   "addition_pending": true
+    "humulos:pen20"
+   ]
   },
   {
    "id": "bushiagumon",
@@ -822,27 +900,34 @@
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Cherubimon.png",
    "sources": [
-    "wayland-vpets:pen20"
-   ],
-   "addition_pending": true
+    "humulos:pen20"
+   ]
   },
   {
    "id": "chibimon",
    "name": "Chibimon",
-   "stage": null,
-   "attribute": null,
+   "stage": "Baby I",
+   "attribute": "Free",
    "devices": {
     "pen20": {
-     "versions": [],
-     "stage_time": null,
-     "evolves_to": []
+     "versions": [
+      "20th"
+     ],
+     "stage_time": "10 min",
+     "evolves_to": [
+      {
+       "to": "V-mon",
+       "to_id": "vmon",
+       "raw": "",
+       "parsed": {}
+      }
+     ]
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Chibimon.png",
    "sources": [
-    "wayland-vpets:pen20"
-   ],
-   "addition_pending": true
+    "humulos:pen20"
+   ]
   },
   {
    "id": "chicomon",
@@ -861,6 +946,32 @@
     "wayland-vpets:pen20"
    ],
    "addition_pending": true
+  },
+  {
+   "id": "chocomon",
+   "name": "Chocomon",
+   "stage": "Baby I",
+   "attribute": "Free",
+   "devices": {
+    "pen20": {
+     "versions": [
+      "20th"
+     ],
+     "stage_time": "10 min",
+     "evolves_to": [
+      {
+       "to": "Lopmon",
+       "to_id": "lopmon",
+       "raw": "",
+       "parsed": {}
+      }
+     ]
+    }
+   },
+   "sprite": null,
+   "sources": [
+    "humulos:pen20"
+   ]
   },
   {
    "id": "choromon",
@@ -935,20 +1046,28 @@
   {
    "id": "cocomon",
    "name": "Cocomon",
-   "stage": null,
-   "attribute": null,
+   "stage": "Baby I",
+   "attribute": "Free",
    "devices": {
     "pen20": {
-     "versions": [],
-     "stage_time": null,
-     "evolves_to": []
+     "versions": [
+      "20th"
+     ],
+     "stage_time": "10 min",
+     "evolves_to": [
+      {
+       "to": "Lopmon",
+       "to_id": "lopmon",
+       "raw": "",
+       "parsed": {}
+      }
+     ]
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Cocomon.png",
    "sources": [
-    "wayland-vpets:pen20"
-   ],
-   "addition_pending": true
+    "humulos:pen20"
+   ]
   },
   {
    "id": "coelamon",
@@ -991,20 +1110,35 @@
   {
    "id": "coredramonblue",
    "name": "Coredramon (Blue)",
-   "stage": null,
-   "attribute": null,
+   "stage": "Adult",
+   "attribute": "Free",
    "devices": {
     "pen20": {
-     "versions": [],
-     "stage_time": null,
-     "evolves_to": []
+     "versions": [
+      "20th"
+     ],
+     "stage_time": "40 h",
+     "evolves_to": [
+      {
+       "to": "Wingdramon",
+       "to_id": "wingdramon",
+       "raw": "Jogress Va+Fr, 0-2 CM, battles",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "battles": true,
+        "jogress_partners": [
+         "Va",
+         "Fr, 0-2 CM, battles"
+        ]
+       }
+      }
+     ]
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Coredramon (Blue).png",
    "sources": [
-    "wayland-vpets:pen20"
-   ],
-   "addition_pending": true
+    "humulos:pen20"
+   ]
   },
   {
    "id": "coredramongreen",
@@ -1020,9 +1154,8 @@
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Coredramon (Green).png",
    "sources": [
-    "wayland-vpets:pen20"
-   ],
-   "addition_pending": true
+    "humulos:pen20"
+   ]
   },
   {
    "id": "cotsucomon",
@@ -1105,9 +1238,8 @@
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Darkdramon.png",
    "sources": [
-    "wayland-vpets:pen20"
-   ],
-   "addition_pending": true
+    "humulos:pen20"
+   ]
   },
   {
    "id": "darkknightmon",
@@ -1252,128 +1384,269 @@
   {
    "id": "dorugamon",
    "name": "DORUgamon",
-   "stage": null,
-   "attribute": null,
+   "stage": "Adult",
+   "attribute": "Free",
    "devices": {
     "pen20": {
-     "versions": [],
-     "stage_time": null,
-     "evolves_to": []
+     "versions": [
+      "20th"
+     ],
+     "stage_time": "40 h",
+     "evolves_to": [
+      {
+       "to": "DORUguremon",
+       "to_id": "doruguremon",
+       "raw": "0 CM, battles",
+       "parsed": {
+        "care_mistakes": "0",
+        "battles": true
+       }
+      }
+     ]
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/DORUgamon.png",
    "sources": [
-    "wayland-vpets:pen20"
-   ],
-   "addition_pending": true
+    "humulos:pen20"
+   ]
   },
   {
    "id": "dorugoramon",
    "name": "DORUgoramon",
-   "stage": null,
-   "attribute": null,
+   "stage": "Perfect",
+   "attribute": "Free",
    "devices": {
     "pen20": {
-     "versions": [],
-     "stage_time": null,
-     "evolves_to": []
+     "versions": [
+      "20th"
+     ],
+     "stage_time": "48 h",
+     "evolves_to": [
+      {
+       "to": "Alphamon",
+       "to_id": "alphamon",
+       "raw": "1-3 CM, battles",
+       "parsed": {
+        "care_mistakes": "1-3",
+        "battles": true
+       }
+      }
+     ]
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/DORUgoramon.png",
    "sources": [
-    "wayland-vpets:pen20"
-   ],
-   "addition_pending": true
+    "humulos:pen20"
+   ]
   },
   {
    "id": "doruguremon",
    "name": "DORUguremon",
-   "stage": null,
-   "attribute": null,
+   "stage": "Perfect",
+   "attribute": "Free",
    "devices": {
     "pen20": {
-     "versions": [],
-     "stage_time": null,
-     "evolves_to": []
+     "versions": [
+      "20th"
+     ],
+     "stage_time": "48 h",
+     "evolves_to": [
+      {
+       "to": "DORUgoramon",
+       "to_id": "dorugoramon",
+       "raw": "Jogress with Ouryumon",
+       "parsed": {
+        "jogress_partner": "Ouryumon"
+       }
+      }
+     ]
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/DORUguremon.png",
    "sources": [
-    "wayland-vpets:pen20"
-   ],
-   "addition_pending": true
+    "humulos:pen20"
+   ]
   },
   {
    "id": "dorumon",
    "name": "DORUmon",
-   "stage": null,
-   "attribute": null,
+   "stage": "Child",
+   "attribute": "Free",
    "devices": {
     "pen20": {
-     "versions": [],
-     "stage_time": null,
-     "evolves_to": []
+     "versions": [
+      "20th"
+     ],
+     "stage_time": "24 h",
+     "evolves_to": [
+      {
+       "to": "DORUgamon",
+       "to_id": "dorugamon",
+       "raw": "0 CM, battles",
+       "parsed": {
+        "care_mistakes": "0",
+        "battles": true
+       }
+      }
+     ]
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/DORUmon.png",
    "sources": [
-    "wayland-vpets:pen20"
-   ],
-   "addition_pending": true
+    "humulos:pen20"
+   ]
   },
   {
    "id": "dracomon",
    "name": "Dracomon",
-   "stage": null,
-   "attribute": null,
+   "stage": "Child",
+   "attribute": "Free",
    "devices": {
     "pen20": {
-     "versions": [],
-     "stage_time": null,
-     "evolves_to": []
+     "versions": [
+      "20th"
+     ],
+     "stage_time": "24 h",
+     "evolves_to": [
+      {
+       "to": "Coredramon (Blue)",
+       "to_id": "coredramonblue",
+       "raw": "0-2 CM, battles",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "battles": true
+       }
+      },
+      {
+       "to": "Coredramon (Green)",
+       "to_id": "coredramongreen",
+       "raw": "2-4 CM",
+       "parsed": {
+        "care_mistakes": "2-4"
+       }
+      }
+     ]
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Dracomon.png",
    "sources": [
-    "wayland-vpets:pen20"
-   ],
-   "addition_pending": true
+    "humulos:pen20"
+   ]
+  },
+  {
+   "id": "duftmon",
+   "name": "Duftmon",
+   "stage": null,
+   "attribute": null,
+   "devices": {
+    "pen20": {
+     "versions": [],
+     "stage_time": null,
+     "evolves_to": []
+    }
+   },
+   "sprite": null,
+   "sources": [
+    "humulos:pen20"
+   ]
+  },
+  {
+   "id": "dukemon",
+   "name": "Dukemon",
+   "stage": "Perfect",
+   "attribute": "Free",
+   "devices": {
+    "pen20": {
+     "versions": [
+      "20th"
+     ],
+     "stage_time": "48 h",
+     "evolves_to": [
+      {
+       "to": "Duftmon",
+       "to_id": "duftmon",
+       "raw": "",
+       "parsed": {}
+      }
+     ]
+    }
+   },
+   "sprite": null,
+   "sources": [
+    "humulos:pen20"
+   ]
   },
   {
    "id": "duramon",
    "name": "Duramon",
-   "stage": null,
-   "attribute": null,
+   "stage": "Adult",
+   "attribute": "Free",
    "devices": {
     "pen20": {
-     "versions": [],
-     "stage_time": null,
-     "evolves_to": []
+     "versions": [
+      "20th"
+     ],
+     "stage_time": "40 h",
+     "evolves_to": [
+      {
+       "to": "Durandamon",
+       "to_id": "durandamon",
+       "raw": "Jogress with Bryweludramon",
+       "parsed": {
+        "jogress_partner": "Bryweludramon"
+       }
+      },
+      {
+       "to": "Durandamon",
+       "to_id": "durandamon",
+       "raw": "Jogress Vi OR 0-1 CM, battles",
+       "parsed": {
+        "alternatives": [
+         {
+          "jogress_attrs": [
+           "Virus"
+          ]
+         },
+         {
+          "care_mistakes": "0-1",
+          "battles": true
+         }
+        ]
+       }
+      }
+     ]
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Duramon.png",
    "sources": [
-    "wayland-vpets:pen20"
-   ],
-   "addition_pending": true
+    "humulos:pen20"
+   ]
   },
   {
    "id": "durandamon",
    "name": "Durandamon",
-   "stage": null,
-   "attribute": null,
+   "stage": "Perfect",
+   "attribute": "Free",
    "devices": {
     "pen20": {
-     "versions": [],
-     "stage_time": null,
-     "evolves_to": []
+     "versions": [
+      "20th"
+     ],
+     "stage_time": "48 h",
+     "evolves_to": [
+      {
+       "to": "Ragna Lordmon",
+       "to_id": "ragnalordmon",
+       "raw": "",
+       "parsed": {}
+      }
+     ]
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Durandamon.png",
    "sources": [
-    "wayland-vpets:pen20"
-   ],
-   "addition_pending": true
+    "humulos:pen20"
+   ]
   },
   {
    "id": "ebidramon",
@@ -1507,38 +1780,59 @@
   {
    "id": "gabumon",
    "name": "Gabumon",
-   "stage": null,
-   "attribute": null,
+   "stage": "Child",
+   "attribute": "Free",
    "devices": {
     "pen20": {
-     "versions": [],
-     "stage_time": null,
-     "evolves_to": []
+     "versions": [
+      "20th"
+     ],
+     "stage_time": "24 h",
+     "evolves_to": [
+      {
+       "to": "Garurumon",
+       "to_id": "garurumon",
+       "raw": "2-4 CM",
+       "parsed": {
+        "care_mistakes": "2-4"
+       }
+      }
+     ]
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Gabumon.png",
    "sources": [
-    "wayland-vpets:pen20"
-   ],
-   "addition_pending": true
+    "humulos:pen20"
+   ]
   },
   {
    "id": "galgomon",
    "name": "Galgomon",
-   "stage": null,
-   "attribute": null,
+   "stage": "Child",
+   "attribute": "Free",
    "devices": {
     "pen20": {
-     "versions": [],
-     "stage_time": null,
-     "evolves_to": []
+     "versions": [
+      "20th"
+     ],
+     "stage_time": "24 h",
+     "evolves_to": [
+      {
+       "to": "Rapidmon",
+       "to_id": "rapidmon",
+       "raw": "0-2 CM, battles",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "battles": true
+       }
+      }
+     ]
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Galgomon.png",
    "sources": [
-    "wayland-vpets:pen20"
-   ],
-   "addition_pending": true
+    "humulos:pen20"
+   ]
   },
   {
    "id": "ganimon",
@@ -1580,20 +1874,44 @@
   {
    "id": "garurumon",
    "name": "Garurumon",
-   "stage": null,
-   "attribute": null,
+   "stage": "Adult",
+   "attribute": "Free",
    "devices": {
     "pen20": {
-     "versions": [],
-     "stage_time": null,
-     "evolves_to": []
+     "versions": [
+      "20th"
+     ],
+     "stage_time": "40 h",
+     "evolves_to": [
+      {
+       "to": "Were Garurumon",
+       "to_id": "weregarurumon",
+       "raw": "Jogress Vi+Da",
+       "parsed": {
+        "jogress_attrs": [
+         "Virus",
+         "Data"
+        ]
+       }
+      },
+      {
+       "to": "Metal Garurumon",
+       "to_id": "metalgarurumon",
+       "raw": "Jogress Va+Vi",
+       "parsed": {
+        "jogress_attrs": [
+         "Vaccine",
+         "Virus"
+        ]
+       }
+      }
+     ]
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Garurumon.png",
    "sources": [
-    "wayland-vpets:pen20"
-   ],
-   "addition_pending": true
+    "humulos:pen20"
+   ]
   },
   {
    "id": "gekomon",
@@ -1688,20 +2006,31 @@
   {
    "id": "ginryumon",
    "name": "Ginryumon",
-   "stage": null,
-   "attribute": null,
+   "stage": "Adult",
+   "attribute": "Free",
    "devices": {
     "pen20": {
-     "versions": [],
-     "stage_time": null,
-     "evolves_to": []
+     "versions": [
+      "20th"
+     ],
+     "stage_time": "40 h",
+     "evolves_to": [
+      {
+       "to": "Hisyaryumon",
+       "to_id": "hisyaryumon",
+       "raw": "0-2 CM, battles",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "battles": true
+       }
+      }
+     ]
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Ginryumon.png",
    "sources": [
-    "wayland-vpets:pen20"
-   ],
-   "addition_pending": true
+    "humulos:pen20"
+   ]
   },
   {
    "id": "gomamon",
@@ -1792,10 +2121,11 @@
    "id": "greymon",
    "name": "Greymon",
    "stage": "Adult",
-   "attribute": "Vaccine",
+   "attribute": "Free",
    "devices": {
     "pen20": {
      "versions": [
+      "20th",
       5
      ],
      "stage_time": "40 h",
@@ -1812,15 +2142,6 @@
        }
       },
       {
-       "to": "Megadramon",
-       "to_id": "megadramon",
-       "raw": "1 CM, battles",
-       "parsed": {
-        "care_mistakes": "1",
-        "battles": true
-       }
-      },
-      {
        "to": "War Greymon",
        "to_id": "wargreymon",
        "raw": "Jogress Da",
@@ -1828,6 +2149,15 @@
         "jogress_attrs": [
          "Data"
         ]
+       }
+      },
+      {
+       "to": "Megadramon",
+       "to_id": "megadramon",
+       "raw": "1 CM, battles",
+       "parsed": {
+        "care_mistakes": "1",
+        "battles": true
        }
       }
      ]
@@ -1878,20 +2208,45 @@
   {
    "id": "growmon",
    "name": "Growmon",
-   "stage": null,
-   "attribute": null,
+   "stage": "Child",
+   "attribute": "Free",
    "devices": {
     "pen20": {
-     "versions": [],
-     "stage_time": null,
-     "evolves_to": []
+     "versions": [
+      "20th"
+     ],
+     "stage_time": "24 h",
+     "evolves_to": [
+      {
+       "to": "Rize Greymon",
+       "to_id": "rizegreymon",
+       "raw": "Jogress Vi, 0-2 CM, battles",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "battles": true,
+        "jogress_raw": "Vi, 0-2 CM, battles"
+       }
+      },
+      {
+       "to": "Megalo Growmon",
+       "to_id": "megalogrowmon",
+       "raw": "Jogress Da+Vi, 0-2 CM, battles",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "battles": true,
+        "jogress_partners": [
+         "Da",
+         "Vi, 0-2 CM, battles"
+        ]
+       }
+      }
+     ]
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Growmon.png",
    "sources": [
-    "wayland-vpets:pen20"
-   ],
-   "addition_pending": true
+    "humulos:pen20"
+   ]
   },
   {
    "id": "guardromon",
@@ -1926,58 +2281,87 @@
    ]
   },
   {
-   "id": "guimon",
-   "name": "Guimon",
-   "stage": null,
-   "attribute": null,
+   "id": "guilmon",
+   "name": "Guilmon",
+   "stage": "Baby II",
+   "attribute": "Free",
    "devices": {
     "pen20": {
-     "versions": [],
-     "stage_time": null,
-     "evolves_to": []
+     "versions": [
+      "20th"
+     ],
+     "stage_time": "12 h",
+     "evolves_to": [
+      {
+       "to": "Growmon",
+       "to_id": "growmon",
+       "raw": "2-4 CM",
+       "parsed": {
+        "care_mistakes": "2-4"
+       }
+      }
+     ]
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Guimon.png",
    "sources": [
-    "wayland-vpets:pen20"
-   ],
-   "addition_pending": true
+    "humulos:pen20"
+   ]
   },
   {
    "id": "gummymon",
    "name": "Gummymon",
-   "stage": null,
-   "attribute": null,
+   "stage": "Baby I",
+   "attribute": "Free",
    "devices": {
     "pen20": {
-     "versions": [],
-     "stage_time": null,
-     "evolves_to": []
+     "versions": [
+      "20th"
+     ],
+     "stage_time": "10 min",
+     "evolves_to": [
+      {
+       "to": "Terriermon",
+       "to_id": "terriermon",
+       "raw": "",
+       "parsed": {}
+      }
+     ]
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Gummymon.png",
    "sources": [
-    "wayland-vpets:pen20"
-   ],
-   "addition_pending": true
+    "humulos:pen20"
+   ]
   },
   {
    "id": "hackmon",
    "name": "Hackmon",
-   "stage": null,
-   "attribute": null,
+   "stage": "Child",
+   "attribute": "Free",
    "devices": {
     "pen20": {
-     "versions": [],
-     "stage_time": null,
-     "evolves_to": []
+     "versions": [
+      "20th"
+     ],
+     "stage_time": "24 h",
+     "evolves_to": [
+      {
+       "to": "Bao Hackmon",
+       "to_id": "baohackmon",
+       "raw": "0-2 CM, battles",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "battles": true
+       }
+      }
+     ]
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Hackmon.png",
    "sources": [
-    "wayland-vpets:pen20"
-   ],
-   "addition_pending": true
+    "humulos:pen20"
+   ]
   },
   {
    "id": "hagurumon",
@@ -2025,24 +2409,6 @@
    "sources": [
     "humulos:pen20"
    ]
-  },
-  {
-   "id": "hangymon",
-   "name": "Hangymon",
-   "stage": null,
-   "attribute": null,
-   "devices": {
-    "pen20": {
-     "versions": [],
-     "stage_time": null,
-     "evolves_to": []
-    }
-   },
-   "sprite": "fan/wayland-vpets/assets/pen20/Hangymon.png",
-   "sources": [
-    "wayland-vpets:pen20"
-   ],
-   "addition_pending": true
   },
   {
    "id": "hangyomon",
@@ -2103,20 +2469,30 @@
   {
    "id": "hisyaryumon",
    "name": "Hisyaryumon",
-   "stage": null,
-   "attribute": null,
+   "stage": "Perfect",
+   "attribute": "Free",
    "devices": {
     "pen20": {
-     "versions": [],
-     "stage_time": null,
-     "evolves_to": []
+     "versions": [
+      "20th"
+     ],
+     "stage_time": "48 h",
+     "evolves_to": [
+      {
+       "to": "Ouryumon",
+       "to_id": "ouryumon",
+       "raw": "Jogress with Ouryu",
+       "parsed": {
+        "jogress_partner": "Ouryu"
+       }
+      }
+     ]
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Hisyaryumon.png",
    "sources": [
-    "wayland-vpets:pen20"
-   ],
-   "addition_pending": true
+    "humulos:pen20"
+   ]
   },
   {
    "id": "holyangemon",
@@ -2237,29 +2613,40 @@
   {
    "id": "imperialdramonfightermode",
    "name": "Imperialdramon Fighter Mode",
-   "stage": null,
-   "attribute": null,
+   "stage": "Perfect",
+   "attribute": "Free",
    "devices": {
     "pen20": {
-     "versions": [],
-     "stage_time": null,
-     "evolves_to": []
+     "versions": [
+      "20th"
+     ],
+     "stage_time": "48 h",
+     "evolves_to": [
+      {
+       "to": "Imperialdramon Paladin Mode",
+       "to_id": "imperialdramonpaladinmode",
+       "raw": "Jogress with Omegamon",
+       "parsed": {
+        "jogress_partner": "Omegamon"
+       }
+      }
+     ]
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Imperialdramon Fighter Mode.png",
    "sources": [
-    "wayland-vpets:pen20"
-   ],
-   "addition_pending": true
+    "humulos:pen20"
+   ]
   },
   {
    "id": "imperialdramonpaladinmode",
-   "name": "Imperialdramon: Paladin Mode",
+   "name": "Imperialdramon Paladin Mode",
    "stage": "Ultimate",
-   "attribute": "Vaccine",
+   "attribute": "Free",
    "devices": {
     "pen20": {
      "versions": [
+      "20th",
       5
      ],
      "stage_time": null,
@@ -2312,20 +2699,30 @@
   {
    "id": "jesmon",
    "name": "Jesmon",
-   "stage": null,
-   "attribute": null,
+   "stage": "Ultimate",
+   "attribute": "Free",
    "devices": {
     "pen20": {
-     "versions": [],
+     "versions": [
+      "20th"
+     ],
      "stage_time": null,
-     "evolves_to": []
+     "evolves_to": [
+      {
+       "to": "Jesmon X",
+       "to_id": "jesmonx",
+       "raw": "battle with Alphamon",
+       "parsed": {
+        "battles": true
+       }
+      }
+     ]
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Jesmon.png",
    "sources": [
-    "wayland-vpets:pen20"
-   ],
-   "addition_pending": true
+    "humulos:pen20"
+   ]
   },
   {
    "id": "jesmonx",
@@ -2341,9 +2738,8 @@
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Jesmon X.png",
    "sources": [
-    "wayland-vpets:pen20"
-   ],
-   "addition_pending": true
+    "humulos:pen20"
+   ]
   },
   {
    "id": "jyagamon",
@@ -2534,20 +2930,30 @@
   {
    "id": "koromon",
    "name": "Koromon",
-   "stage": null,
-   "attribute": null,
+   "stage": "Baby II",
+   "attribute": "Free",
    "devices": {
     "pen20": {
-     "versions": [],
-     "stage_time": null,
-     "evolves_to": []
+     "versions": [
+      "20th"
+     ],
+     "stage_time": "12 h",
+     "evolves_to": [
+      {
+       "to": "Agumon",
+       "to_id": "agumon",
+       "raw": "1 CM",
+       "parsed": {
+        "care_mistakes": "1"
+       }
+      }
+     ]
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Koromon.png",
    "sources": [
-    "wayland-vpets:pen20"
-   ],
-   "addition_pending": true
+    "humulos:pen20"
+   ]
   },
   {
    "id": "kuwagamon",
@@ -2619,56 +3025,86 @@
   {
    "id": "lalamon",
    "name": "Lalamon",
-   "stage": null,
-   "attribute": null,
+   "stage": "Child",
+   "attribute": "Free",
    "devices": {
     "pen20": {
-     "versions": [],
-     "stage_time": null,
-     "evolves_to": []
+     "versions": [
+      "20th"
+     ],
+     "stage_time": "24 h",
+     "evolves_to": [
+      {
+       "to": "Sunflowmon",
+       "to_id": "sunflowmon",
+       "raw": "0-2 CM, battles",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "battles": true
+       }
+      }
+     ]
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Lalamon.png",
    "sources": [
-    "wayland-vpets:pen20"
-   ],
-   "addition_pending": true
+    "humulos:pen20"
+   ]
   },
   {
    "id": "lavogaritamon",
    "name": "Lavogaritamon",
-   "stage": null,
-   "attribute": null,
+   "stage": "Perfect",
+   "attribute": "Free",
    "devices": {
     "pen20": {
-     "versions": [],
-     "stage_time": null,
-     "evolves_to": []
+     "versions": [
+      "20th"
+     ],
+     "stage_time": "48 h",
+     "evolves_to": [
+      {
+       "to": "Volcanicdramon",
+       "to_id": "volcanicdramon",
+       "raw": "",
+       "parsed": {}
+      }
+     ]
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Lavogaritamon.png",
    "sources": [
-    "wayland-vpets:pen20"
-   ],
-   "addition_pending": true
+    "humulos:pen20"
+   ]
   },
   {
    "id": "lavorvomon",
    "name": "Lavorvomon",
-   "stage": null,
-   "attribute": null,
+   "stage": "Adult",
+   "attribute": "Free",
    "devices": {
     "pen20": {
-     "versions": [],
-     "stage_time": null,
-     "evolves_to": []
+     "versions": [
+      "20th"
+     ],
+     "stage_time": "40 h",
+     "evolves_to": [
+      {
+       "to": "Lavogaritamon",
+       "to_id": "lavogaritamon",
+       "raw": "0-2 CM, battles",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "battles": true
+       }
+      }
+     ]
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Lavorvomon.png",
    "sources": [
-    "wayland-vpets:pen20"
-   ],
-   "addition_pending": true
+    "humulos:pen20"
+   ]
   },
   {
    "id": "leomon",
@@ -2691,20 +3127,30 @@
   {
    "id": "lilamon",
    "name": "Lilamon",
-   "stage": null,
-   "attribute": null,
+   "stage": "Perfect",
+   "attribute": "Free",
    "devices": {
     "pen20": {
-     "versions": [],
-     "stage_time": null,
-     "evolves_to": []
+     "versions": [
+      "20th"
+     ],
+     "stage_time": "48 h",
+     "evolves_to": [
+      {
+       "to": "Lotusmon",
+       "to_id": "lotusmon",
+       "raw": "Jogress with Rosemon",
+       "parsed": {
+        "jogress_partner": "Rosemon"
+       }
+      }
+     ]
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Lilamon.png",
    "sources": [
-    "wayland-vpets:pen20"
-   ],
-   "addition_pending": true
+    "humulos:pen20"
+   ]
   },
   {
    "id": "lilimon",
@@ -2728,56 +3174,86 @@
   {
    "id": "lopmon",
    "name": "Lopmon",
-   "stage": null,
-   "attribute": null,
+   "stage": "Baby II",
+   "attribute": "Free",
    "devices": {
     "pen20": {
-     "versions": [],
-     "stage_time": null,
-     "evolves_to": []
+     "versions": [
+      "20th"
+     ],
+     "stage_time": "12 h",
+     "evolves_to": [
+      {
+       "to": "Turuiemon",
+       "to_id": "turuiemon",
+       "raw": "0-2 CM, battles",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "battles": true
+       }
+      }
+     ]
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Lopmon.png",
    "sources": [
-    "wayland-vpets:pen20"
-   ],
-   "addition_pending": true
+    "humulos:pen20"
+   ]
   },
   {
    "id": "lotusmon",
    "name": "Lotusmon",
-   "stage": null,
-   "attribute": null,
+   "stage": "Perfect",
+   "attribute": "Free",
    "devices": {
     "pen20": {
-     "versions": [],
-     "stage_time": null,
-     "evolves_to": []
+     "versions": [
+      "20th"
+     ],
+     "stage_time": "48 h",
+     "evolves_to": [
+      {
+       "to": "Rafflesimon",
+       "to_id": "rafflesimon",
+       "raw": "",
+       "parsed": {}
+      }
+     ]
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Lotusmon.png",
    "sources": [
-    "wayland-vpets:pen20"
-   ],
-   "addition_pending": true
+    "humulos:pen20"
+   ]
   },
   {
    "id": "ludomon",
    "name": "Ludomon",
-   "stage": null,
-   "attribute": null,
+   "stage": "Child",
+   "attribute": "Free",
    "devices": {
     "pen20": {
-     "versions": [],
-     "stage_time": null,
-     "evolves_to": []
+     "versions": [
+      "20th"
+     ],
+     "stage_time": "24 h",
+     "evolves_to": [
+      {
+       "to": "Tia Ludomon",
+       "to_id": "tialudomon",
+       "raw": "0-2 CM, battles",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "battles": true
+       }
+      }
+     ]
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Ludomon.png",
    "sources": [
-    "wayland-vpets:pen20"
-   ],
-   "addition_pending": true
+    "humulos:pen20"
+   ]
   },
   {
    "id": "madleomon",
@@ -2978,20 +3454,31 @@
   {
    "id": "megalogrowmon",
    "name": "Megalo Growmon",
-   "stage": null,
-   "attribute": null,
+   "stage": "Adult",
+   "attribute": "Free",
    "devices": {
     "pen20": {
-     "versions": [],
-     "stage_time": null,
-     "evolves_to": []
+     "versions": [
+      "20th"
+     ],
+     "stage_time": "40 h",
+     "evolves_to": [
+      {
+       "to": "Dukemon",
+       "to_id": "dukemon",
+       "raw": "1-3 CM, battles",
+       "parsed": {
+        "care_mistakes": "1-3",
+        "battles": true
+       }
+      }
+     ]
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Megalo Growmon.png",
    "sources": [
-    "wayland-vpets:pen20"
-   ],
-   "addition_pending": true
+    "humulos:pen20"
+   ]
   },
   {
    "id": "megaseadramon",
@@ -3015,38 +3502,59 @@
   {
    "id": "meicoomon",
    "name": "Meicoomon",
-   "stage": null,
-   "attribute": null,
+   "stage": "Adult",
+   "attribute": "Free",
    "devices": {
     "pen20": {
-     "versions": [],
-     "stage_time": null,
-     "evolves_to": []
+     "versions": [
+      "20th"
+     ],
+     "stage_time": "40 h",
+     "evolves_to": [
+      {
+       "to": "Meicrackmon Vicious Mode",
+       "to_id": "meicrackmonviciousmode",
+       "raw": "0-2 CM, battles",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "battles": true
+       }
+      }
+     ]
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Meicoomon.png",
    "sources": [
-    "wayland-vpets:pen20"
-   ],
-   "addition_pending": true
+    "humulos:pen20"
+   ]
   },
   {
    "id": "meicrackmonviciousmode",
    "name": "Meicrackmon Vicious Mode",
-   "stage": null,
-   "attribute": null,
+   "stage": "Perfect",
+   "attribute": "Free",
    "devices": {
     "pen20": {
-     "versions": [],
-     "stage_time": null,
-     "evolves_to": []
+     "versions": [
+      "20th"
+     ],
+     "stage_time": "48 h",
+     "evolves_to": [
+      {
+       "to": "Raguelmon",
+       "to_id": "raguelmon",
+       "raw": "Jogress with Ofanimon",
+       "parsed": {
+        "jogress_partner": "Ofanimon"
+       }
+      }
+     ]
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Meicrackmon Vicious Mode.png",
    "sources": [
-    "wayland-vpets:pen20"
-   ],
-   "addition_pending": true
+    "humulos:pen20"
+   ]
   },
   {
    "id": "meramon",
@@ -3088,14 +3596,15 @@
   {
    "id": "metalgarurumon",
    "name": "Metal Garurumon",
-   "stage": "Ultimate",
-   "attribute": "Vaccine",
+   "stage": "Perfect",
+   "attribute": "Free",
    "devices": {
     "pen20": {
      "versions": [
+      "20th",
       5
      ],
-     "stage_time": null,
+     "stage_time": "48 h",
      "evolves_to": [
       {
        "to": "Omegamon",
@@ -3117,10 +3626,11 @@
    "id": "metalgreymon",
    "name": "Metal Greymon",
    "stage": "Perfect",
-   "attribute": "Vaccine",
+   "attribute": "Free",
    "devices": {
     "pen20": {
      "versions": [
+      "20th",
       5
      ],
      "stage_time": "48 h",
@@ -3222,24 +3732,6 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Mokumon.png",
-   "sources": [
-    "wayland-vpets:pen20"
-   ],
-   "addition_pending": true
-  },
-  {
-   "id": "monchromon",
-   "name": "Monchromon",
-   "stage": null,
-   "attribute": null,
-   "devices": {
-    "pen20": {
-     "versions": [],
-     "stage_time": null,
-     "evolves_to": []
-    }
-   },
-   "sprite": "fan/wayland-vpets/assets/pen20/Monchromon.png",
    "sources": [
     "wayland-vpets:pen20"
    ],
@@ -3446,10 +3938,11 @@
    "id": "omegamon",
    "name": "Omegamon",
    "stage": "Ultimate",
-   "attribute": "Vaccine",
+   "attribute": "Free",
    "devices": {
     "pen20": {
      "versions": [
+      "20th",
       5
      ],
      "stage_time": null,
@@ -3475,9 +3968,8 @@
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Ordinemon.png",
    "sources": [
-    "wayland-vpets:pen20"
-   ],
-   "addition_pending": true
+    "humulos:pen20"
+   ]
   },
   {
    "id": "otamamon",
@@ -3501,38 +3993,60 @@
   {
    "id": "ouryumon",
    "name": "Ouryumon",
-   "stage": null,
-   "attribute": null,
+   "stage": "Perfect",
+   "attribute": "Free",
    "devices": {
     "pen20": {
-     "versions": [],
-     "stage_time": null,
-     "evolves_to": []
+     "versions": [
+      "20th"
+     ],
+     "stage_time": "48 h",
+     "evolves_to": [
+      {
+       "to": "Alphamon Ouryuken",
+       "to_id": "alphamonouryuken",
+       "raw": "Jogress with Alphamon",
+       "parsed": {
+        "jogress_partner": "Alphamon"
+       }
+      }
+     ]
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Ouryumon.png",
    "sources": [
-    "wayland-vpets:pen20"
-   ],
-   "addition_pending": true
+    "humulos:pen20"
+   ]
   },
   {
    "id": "paildramon",
    "name": "Paildramon",
-   "stage": null,
-   "attribute": null,
+   "stage": "Adult",
+   "attribute": "Free",
    "devices": {
     "pen20": {
-     "versions": [],
-     "stage_time": null,
-     "evolves_to": []
+     "versions": [
+      "20th"
+     ],
+     "stage_time": "40 h",
+     "evolves_to": [
+      {
+       "to": "Imperialdramon Fighter Mode",
+       "to_id": "imperialdramonfightermode",
+       "raw": "Jogress Vi, 0-2 CM, battles",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "battles": true,
+        "jogress_raw": "Vi, 0-2 CM, battles"
+       }
+      }
+     ]
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Paildramon.png",
    "sources": [
-    "wayland-vpets:pen20"
-   ],
-   "addition_pending": true
+    "humulos:pen20"
+   ]
   },
   {
    "id": "palmon",
@@ -3613,20 +4127,28 @@
   {
    "id": "petitmon",
    "name": "Petitmon",
-   "stage": null,
-   "attribute": null,
+   "stage": "Baby I",
+   "attribute": "Free",
    "devices": {
     "pen20": {
-     "versions": [],
-     "stage_time": null,
-     "evolves_to": []
+     "versions": [
+      "20th"
+     ],
+     "stage_time": "10 min",
+     "evolves_to": [
+      {
+       "to": "Babydmon",
+       "to_id": "babydmon",
+       "raw": "",
+       "parsed": {}
+      }
+     ]
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Petitmon.png",
    "sources": [
-    "wayland-vpets:pen20"
-   ],
-   "addition_pending": true
+    "humulos:pen20"
+   ]
   },
   {
    "id": "phascomon",
@@ -3913,24 +4435,6 @@
    ]
   },
   {
-   "id": "porcupmon",
-   "name": "Porcupmon",
-   "stage": null,
-   "attribute": null,
-   "devices": {
-    "pen20": {
-     "versions": [],
-     "stage_time": null,
-     "evolves_to": []
-    }
-   },
-   "sprite": "fan/wayland-vpets/assets/pen20/Porcupmon.png",
-   "sources": [
-    "wayland-vpets:pen20"
-   ],
-   "addition_pending": true
-  },
-  {
    "id": "pukamon",
    "name": "Pukamon",
    "stage": "Baby II",
@@ -4055,63 +4559,88 @@
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Ragna Lordmon.png",
    "sources": [
-    "wayland-vpets:pen20"
-   ],
-   "addition_pending": true
+    "humulos:pen20"
+   ]
   },
   {
    "id": "raguelmon",
    "name": "Raguelmon",
-   "stage": null,
-   "attribute": null,
+   "stage": "Ultimate",
+   "attribute": "Free",
    "devices": {
     "pen20": {
-     "versions": [],
+     "versions": [
+      "20th"
+     ],
      "stage_time": null,
-     "evolves_to": []
+     "evolves_to": [
+      {
+       "to": "Ordinemon",
+       "to_id": "ordinemon",
+       "raw": "",
+       "parsed": {}
+      }
+     ]
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Raguelmon.png",
    "sources": [
-    "wayland-vpets:pen20"
-   ],
-   "addition_pending": true
+    "humulos:pen20"
+   ]
   },
   {
    "id": "raijiludomon",
    "name": "Raiji Ludomon",
-   "stage": null,
-   "attribute": null,
+   "stage": "Perfect",
+   "attribute": "Free",
    "devices": {
     "pen20": {
-     "versions": [],
-     "stage_time": null,
-     "evolves_to": []
+     "versions": [
+      "20th"
+     ],
+     "stage_time": "48 h",
+     "evolves_to": [
+      {
+       "to": "Bryweludramon",
+       "to_id": "bryweludramon",
+       "raw": "Jogress with Durandamon",
+       "parsed": {
+        "jogress_partner": "Durandamon"
+       }
+      }
+     ]
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Raiji Ludomon.png",
    "sources": [
-    "wayland-vpets:pen20"
-   ],
-   "addition_pending": true
+    "humulos:pen20"
+   ]
   },
   {
    "id": "rapidmon",
    "name": "Rapidmon",
-   "stage": null,
-   "attribute": null,
+   "stage": "Adult",
+   "attribute": "Free",
    "devices": {
     "pen20": {
-     "versions": [],
-     "stage_time": null,
-     "evolves_to": []
+     "versions": [
+      "20th"
+     ],
+     "stage_time": "40 h",
+     "evolves_to": [
+      {
+       "to": "Saint Galgomon",
+       "to_id": "saintgalgomon",
+       "raw": "",
+       "parsed": {}
+      }
+     ]
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Rapidmon.png",
    "sources": [
-    "wayland-vpets:pen20"
-   ],
-   "addition_pending": true
+    "humulos:pen20"
+   ]
   },
   {
    "id": "redvegimon",
@@ -4195,20 +4724,40 @@
   {
    "id": "rizegreymon",
    "name": "Rize Greymon",
-   "stage": null,
-   "attribute": null,
+   "stage": "Adult",
+   "attribute": "Free",
    "devices": {
     "pen20": {
-     "versions": [],
-     "stage_time": null,
-     "evolves_to": []
+     "versions": [
+      "20th"
+     ],
+     "stage_time": "40 h",
+     "evolves_to": [
+      {
+       "to": "Dukemon",
+       "to_id": "dukemon",
+       "raw": "1-3 CM, battles",
+       "parsed": {
+        "care_mistakes": "1-3",
+        "battles": true
+       }
+      },
+      {
+       "to": "Beowolfmon",
+       "to_id": "beowolfmon",
+       "raw": "0 CM, battles",
+       "parsed": {
+        "care_mistakes": "0",
+        "battles": true
+       }
+      }
+     ]
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Rize Greymon.png",
    "sources": [
-    "wayland-vpets:pen20"
-   ],
-   "addition_pending": true
+    "humulos:pen20"
+   ]
   },
   {
    "id": "rosemon",
@@ -4270,20 +4819,30 @@
   {
    "id": "ryudamon",
    "name": "Ryudamon",
-   "stage": null,
-   "attribute": null,
+   "stage": "Child",
+   "attribute": "Free",
    "devices": {
     "pen20": {
-     "versions": [],
-     "stage_time": null,
-     "evolves_to": []
+     "versions": [
+      "20th"
+     ],
+     "stage_time": "24 h",
+     "evolves_to": [
+      {
+       "to": "Ginryumon",
+       "to_id": "ginryumon",
+       "raw": "battles",
+       "parsed": {
+        "battles": true
+       }
+      }
+     ]
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Ryudamon.png",
    "sources": [
-    "wayland-vpets:pen20"
-   ],
-   "addition_pending": true
+    "humulos:pen20"
+   ]
   },
   {
    "id": "saberleomon",
@@ -4318,63 +4877,91 @@
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Saint Galgomon.png",
    "sources": [
-    "wayland-vpets:pen20"
-   ],
-   "addition_pending": true
+    "humulos:pen20"
+   ]
   },
   {
    "id": "sakumon",
    "name": "Sakumon",
-   "stage": null,
-   "attribute": null,
+   "stage": "Baby I",
+   "attribute": "Free",
    "devices": {
     "pen20": {
-     "versions": [],
-     "stage_time": null,
-     "evolves_to": []
+     "versions": [
+      "20th"
+     ],
+     "stage_time": "10 min",
+     "evolves_to": [
+      {
+       "to": "Sakuttomon",
+       "to_id": "sakuttomon",
+       "raw": "",
+       "parsed": {}
+      }
+     ]
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Sakumon.png",
    "sources": [
-    "wayland-vpets:pen20"
-   ],
-   "addition_pending": true
+    "humulos:pen20"
+   ]
   },
   {
    "id": "sakuttomon",
    "name": "Sakuttomon",
-   "stage": null,
-   "attribute": null,
+   "stage": "Baby II",
+   "attribute": "Free",
    "devices": {
     "pen20": {
-     "versions": [],
-     "stage_time": null,
-     "evolves_to": []
+     "versions": [
+      "20th"
+     ],
+     "stage_time": "12 h",
+     "evolves_to": [
+      {
+       "to": "Zubamon",
+       "to_id": "zubamon",
+       "raw": "0-1 CM",
+       "parsed": {
+        "care_mistakes": "0-1"
+       }
+      }
+     ]
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Sakuttomon.png",
    "sources": [
-    "wayland-vpets:pen20"
-   ],
-   "addition_pending": true
+    "humulos:pen20"
+   ]
   },
   {
    "id": "saviorhackmon",
    "name": "Savior Hackmon",
-   "stage": null,
-   "attribute": null,
+   "stage": "Perfect",
+   "attribute": "Free",
    "devices": {
     "pen20": {
-     "versions": [],
-     "stage_time": null,
-     "evolves_to": []
+     "versions": [
+      "20th"
+     ],
+     "stage_time": "48 h",
+     "evolves_to": [
+      {
+       "to": "Jesmon",
+       "to_id": "jesmon",
+       "raw": "0-1 CM, battles",
+       "parsed": {
+        "care_mistakes": "0-1",
+        "battles": true
+       }
+      }
+     ]
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Savior Hackmon.png",
    "sources": [
-    "wayland-vpets:pen20"
-   ],
-   "addition_pending": true
+    "humulos:pen20"
+   ]
   },
   {
    "id": "seadramon",
@@ -4540,20 +5127,30 @@
   {
    "id": "slayerdramon",
    "name": "Slayerdramon",
-   "stage": null,
-   "attribute": null,
+   "stage": "Perfect",
+   "attribute": "Free",
    "devices": {
     "pen20": {
-     "versions": [],
-     "stage_time": null,
-     "evolves_to": []
+     "versions": [
+      "20th"
+     ],
+     "stage_time": "48 h",
+     "evolves_to": [
+      {
+       "to": "Darkdramon",
+       "to_id": "darkdramon",
+       "raw": "Jogress with Breakdramon",
+       "parsed": {
+        "jogress_partner": "Breakdramon"
+       }
+      }
+     ]
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Slayerdramon.png",
    "sources": [
-    "wayland-vpets:pen20"
-   ],
-   "addition_pending": true
+    "humulos:pen20"
+   ]
   },
   {
    "id": "starmon",
@@ -4577,20 +5174,31 @@
   {
    "id": "sunflowmon",
    "name": "Sunflowmon",
-   "stage": null,
-   "attribute": null,
+   "stage": "Adult",
+   "attribute": "Free",
    "devices": {
     "pen20": {
-     "versions": [],
-     "stage_time": null,
-     "evolves_to": []
+     "versions": [
+      "20th"
+     ],
+     "stage_time": "40 h",
+     "evolves_to": [
+      {
+       "to": "Lilamon",
+       "to_id": "lilamon",
+       "raw": "0-2 CM, battles",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "battles": true
+       }
+      }
+     ]
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Sunflowmon.png",
    "sources": [
-    "wayland-vpets:pen20"
-   ],
-   "addition_pending": true
+    "humulos:pen20"
+   ]
   },
   {
    "id": "tailmon",
@@ -4727,20 +5335,31 @@
   {
    "id": "terriermon",
    "name": "Terriermon",
-   "stage": null,
-   "attribute": null,
+   "stage": "Baby II",
+   "attribute": "Free",
    "devices": {
     "pen20": {
-     "versions": [],
-     "stage_time": null,
-     "evolves_to": []
+     "versions": [
+      "20th"
+     ],
+     "stage_time": "12 h",
+     "evolves_to": [
+      {
+       "to": "Galgomon",
+       "to_id": "galgomon",
+       "raw": "0-2 CM, battles",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "battles": true
+       }
+      }
+     ]
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Terriermon.png",
    "sources": [
-    "wayland-vpets:pen20"
-   ],
-   "addition_pending": true
+    "humulos:pen20"
+   ]
   },
   {
    "id": "thunderballmon",
@@ -4774,20 +5393,31 @@
   {
    "id": "tialudomon",
    "name": "Tia Ludomon",
-   "stage": null,
-   "attribute": null,
+   "stage": "Adult",
+   "attribute": "Free",
    "devices": {
     "pen20": {
-     "versions": [],
-     "stage_time": null,
-     "evolves_to": []
+     "versions": [
+      "20th"
+     ],
+     "stage_time": "40 h",
+     "evolves_to": [
+      {
+       "to": "Raiji Ludomon",
+       "to_id": "raijiludomon",
+       "raw": "0-1 CM, battles",
+       "parsed": {
+        "care_mistakes": "0-1",
+        "battles": true
+       }
+      }
+     ]
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Tia Ludomon.png",
    "sources": [
-    "wayland-vpets:pen20"
-   ],
-   "addition_pending": true
+    "humulos:pen20"
+   ]
   },
   {
    "id": "togemon",
@@ -4953,20 +5583,31 @@
   {
    "id": "turuiemon",
    "name": "Turuiemon",
-   "stage": null,
-   "attribute": null,
+   "stage": "Child",
+   "attribute": "Free",
    "devices": {
     "pen20": {
-     "versions": [],
-     "stage_time": null,
-     "evolves_to": []
+     "versions": [
+      "20th"
+     ],
+     "stage_time": "24 h",
+     "evolves_to": [
+      {
+       "to": "Andiramon",
+       "to_id": "andiramon",
+       "raw": "0-2 CM, battles",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "battles": true
+       }
+      }
+     ]
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Turuiemon.png",
    "sources": [
-    "wayland-vpets:pen20"
-   ],
-   "addition_pending": true
+    "humulos:pen20"
+   ]
   },
   {
    "id": "ulforcevdramon",
@@ -5067,20 +5708,38 @@
   {
    "id": "vmon",
    "name": "V-mon",
-   "stage": null,
-   "attribute": null,
+   "stage": "Baby II",
+   "attribute": "Free",
    "devices": {
     "pen20": {
-     "versions": [],
-     "stage_time": null,
-     "evolves_to": []
+     "versions": [
+      "20th"
+     ],
+     "stage_time": "12 h",
+     "evolves_to": [
+      {
+       "to": "XV-mon",
+       "to_id": "xvmon",
+       "raw": "2-4 CM",
+       "parsed": {
+        "care_mistakes": "2-4"
+       }
+      },
+      {
+       "to": "Paildramon",
+       "to_id": "paildramon",
+       "raw": "Jogress with Stingmon",
+       "parsed": {
+        "jogress_partner": "Stingmon"
+       }
+      }
+     ]
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/V-mon.png",
    "sources": [
-    "wayland-vpets:pen20"
-   ],
-   "addition_pending": true
+    "humulos:pen20"
+   ]
   },
   {
    "id": "volcanicdramon",
@@ -5096,9 +5755,8 @@
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Volcanicdramon.png",
    "sources": [
-    "wayland-vpets:pen20"
-   ],
-   "addition_pending": true
+    "humulos:pen20"
+   ]
   },
   {
    "id": "voltobautamon",
@@ -5121,32 +5779,44 @@
   {
    "id": "vorvomon",
    "name": "Vorvomon",
-   "stage": null,
-   "attribute": null,
+   "stage": "Child",
+   "attribute": "Free",
    "devices": {
     "pen20": {
-     "versions": [],
-     "stage_time": null,
-     "evolves_to": []
+     "versions": [
+      "20th"
+     ],
+     "stage_time": "24 h",
+     "evolves_to": [
+      {
+       "to": "Lavorvomon",
+       "to_id": "lavorvomon",
+       "raw": "0-2 CM, battles",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "battles": true
+       }
+      }
+     ]
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Vorvomon.png",
    "sources": [
-    "wayland-vpets:pen20"
-   ],
-   "addition_pending": true
+    "humulos:pen20"
+   ]
   },
   {
    "id": "wargreymon",
    "name": "War Greymon",
-   "stage": "Ultimate",
-   "attribute": "Vaccine",
+   "stage": "Perfect",
+   "attribute": "Free",
    "devices": {
     "pen20": {
      "versions": [
+      "20th",
       5
      ],
-     "stage_time": null,
+     "stage_time": "48 h",
      "evolves_to": [
       {
        "to": "Omegamon",
@@ -5186,20 +5856,32 @@
   {
    "id": "weregarurumon",
    "name": "Were Garurumon",
-   "stage": null,
-   "attribute": null,
+   "stage": "Perfect",
+   "attribute": "Free",
    "devices": {
     "pen20": {
-     "versions": [],
-     "stage_time": null,
-     "evolves_to": []
+     "versions": [
+      "20th"
+     ],
+     "stage_time": "48 h",
+     "evolves_to": [
+      {
+       "to": "Metal Garurumon",
+       "to_id": "metalgarurumon",
+       "raw": "Jogress Da",
+       "parsed": {
+        "jogress_attrs": [
+         "Data"
+        ]
+       }
+      }
+     ]
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Were Garurumon.png",
    "sources": [
-    "wayland-vpets:pen20"
-   ],
-   "addition_pending": true
+    "humulos:pen20"
+   ]
   },
   {
    "id": "whamon",
@@ -5265,20 +5947,31 @@
   {
    "id": "wingdramon",
    "name": "Wingdramon",
-   "stage": null,
-   "attribute": null,
+   "stage": "Perfect",
+   "attribute": "Free",
    "devices": {
     "pen20": {
-     "versions": [],
-     "stage_time": null,
-     "evolves_to": []
+     "versions": [
+      "20th"
+     ],
+     "stage_time": "48 h",
+     "evolves_to": [
+      {
+       "to": "Slayerdramon",
+       "to_id": "slayerdramon",
+       "raw": "0-2 CM, battles",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "battles": true
+       }
+      }
+     ]
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Wingdramon.png",
    "sources": [
-    "wayland-vpets:pen20"
-   ],
-   "addition_pending": true
+    "humulos:pen20"
+   ]
   },
   {
    "id": "wizarmon",
@@ -5347,20 +6040,30 @@
   {
    "id": "xvmon",
    "name": "XV-mon",
-   "stage": null,
-   "attribute": null,
+   "stage": "Child",
+   "attribute": "Free",
    "devices": {
     "pen20": {
-     "versions": [],
-     "stage_time": null,
-     "evolves_to": []
+     "versions": [
+      "20th"
+     ],
+     "stage_time": "24 h",
+     "evolves_to": [
+      {
+       "to": "Paildramon",
+       "to_id": "paildramon",
+       "raw": "Jogress with Stingmon",
+       "parsed": {
+        "jogress_partner": "Stingmon"
+       }
+      }
+     ]
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/XV-mon.png",
    "sources": [
-    "wayland-vpets:pen20"
-   ],
-   "addition_pending": true
+    "humulos:pen20"
+   ]
   },
   {
    "id": "yukimibotamon",
@@ -5401,38 +6104,84 @@
   {
    "id": "zubaeagermon",
    "name": "Zubaeagermon",
-   "stage": null,
-   "attribute": null,
+   "stage": "Adult",
+   "attribute": "Free",
    "devices": {
     "pen20": {
-     "versions": [],
-     "stage_time": null,
-     "evolves_to": []
+     "versions": [
+      "20th"
+     ],
+     "stage_time": "40 h",
+     "evolves_to": [
+      {
+       "to": "Duramon",
+       "to_id": "duramon",
+       "raw": "Jogress Va+Fr OR Jogress Va+Da OR Jogress Vi, battles",
+       "parsed": {
+        "alternatives": [
+         {
+          "jogress_attrs": [
+           "Vaccine",
+           "Free"
+          ]
+         },
+         {
+          "jogress_attrs": [
+           "Vaccine",
+           "Data"
+          ]
+         },
+         {
+          "battles": true,
+          "jogress_raw": "Vi, battles"
+         }
+        ]
+       }
+      }
+     ]
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Zubaeagermon.png",
    "sources": [
-    "wayland-vpets:pen20"
-   ],
-   "addition_pending": true
+    "humulos:pen20"
+   ]
   },
   {
    "id": "zubamon",
    "name": "Zubamon",
-   "stage": null,
-   "attribute": null,
+   "stage": "Child",
+   "attribute": "Free",
    "devices": {
     "pen20": {
-     "versions": [],
-     "stage_time": null,
-     "evolves_to": []
+     "versions": [
+      "20th"
+     ],
+     "stage_time": "24 h",
+     "evolves_to": [
+      {
+       "to": "Zubaeagermon",
+       "to_id": "zubaeagermon",
+       "raw": "2-4 CM, 4 Effort OR 0-1 CM, 0-3 Effort",
+       "parsed": {
+        "alternatives": [
+         {
+          "care_mistakes": "2-4",
+          "effort": "4"
+         },
+         {
+          "care_mistakes": "0-1",
+          "effort": "0-3"
+         }
+        ]
+       }
+      }
+     ]
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Zubamon.png",
    "sources": [
-    "wayland-vpets:pen20"
-   ],
-   "addition_pending": true
+    "humulos:pen20"
+   ]
   },
   {
    "id": "zudomon",

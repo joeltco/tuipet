@@ -46,7 +46,7 @@
         "dm20": {"roster": "have", "evolutions": "HAVE (canon/humulos/dm20/evo_ver1-5.md + evo_special.md, 130 entries, full branching conditions)", "manual": "todo", "note": "10 special lines captured"},
         "dmx":  {"roster": "have", "evolutions": "COMPLETE — V1/V2/Kera from markdown; V3 XE/XF edges parsed deterministically from the humulos chart HTML (evo_v3_edges.json, 264 edges). Attributes null for pure-V3 mons (chart has none)", "manual": "todo", "note": "X-Antibody. db/dmx.json: 175 mons, 119 w/ evolutions, 3 orphan v3_pending. V3 via chart-parse not LLM"},
         "pen":  {"roster": "have", "evolutions": "DERIVED from pen20 classic versions (db/pen.json, 143 mons, pen timers). Clean /pen/ per-version pull would refine", "manual": "todo"},
-        "pen20":{"roster": "have", "evolutions": "5 CLASSIC versions (NS/DS/NSo/WG/ME) CLEAN via per-version WebFetch+icon-legend (canon/humulos/pen20/evo_v1-5_*.md); db/pen20.json 239 mons, 58 w/ evolutions, 133 addition_pending (20th bonus lines Guilmon/Vmon/Terriermon/DORU/etc NOT pulled)", "manual": "todo"}
+        "pen20":{"roster": "have", "evolutions": "5 classic versions + major 20th bonus lines (Adventure/Tamers/02/DORU/Ryuda/Lala/Hackmon/Zuba/Draco/Meicoo/Ludomon). db/pen20.json 239 mons, 123 w/ evolutions, 57 pending (extended-Adventure/misc, WebFetch-noisy)", "manual": "todo"}
       },
       "tier": "canon"
     },

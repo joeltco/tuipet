@@ -1,0 +1,20 @@
+# Pen20 20th BONUS lines — DORU / Ryudamon / Lalamon / Hackmon-Zuba (humulos).
+DORUmon | Child | Free | -> DORUgamon (0 CM, battles)
+DORUgamon | Adult | Free | -> DORUguremon (0 CM, battles)
+DORUguremon | Perfect | Free | -> DORUgoramon (Jogress with Ouryumon)
+DORUgoramon | Perfect | Free | -> Alphamon (1-3 CM, battles)
+Alphamon | Ultimate | Free | -> Alphamon Ouryuken (Jogress with Ouryumon)
+Ryudamon | Child | Free | -> Ginryumon (battles)
+Ginryumon | Adult | Free | -> Hisyaryumon (0-2 CM, battles)
+Hisyaryumon | Perfect | Free | -> Ouryumon (Jogress with Ouryu)
+Ouryumon | Perfect | Free | -> Alphamon Ouryuken (Jogress with Alphamon)
+Lalamon | Child | Free | -> Sunflowmon (0-2 CM, battles)
+Sunflowmon | Adult | Free | -> Lilamon (0-2 CM, battles)
+Lilamon | Perfect | Free | -> Lotusmon (Jogress with Rosemon)
+Lotusmon | Perfect | Free | -> Rafflesimon
+Hackmon | Child | Free | -> Bao Hackmon (0-2 CM, battles)
+Bao Hackmon | Adult | Free | -> Savior Hackmon (0-2 CM, battles)
+Savior Hackmon | Perfect | Free | -> Jesmon (0-1 CM, battles)
+Jesmon | Ultimate | Free | -> Jesmon X (battle with Alphamon)
+Duramon | Adult | Free | -> Durandamon (Jogress with Bryweludramon)
+Durandamon | Perfect | Free | -> Ragna Lordmon
