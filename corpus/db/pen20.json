@@ -1,11 +1,16 @@
 {
  "_meta": {
   "device": "pen20",
-  "count": 262,
+  "count": 264,
   "with_evolutions": 207,
-  "source": "humulos inline `result` DB (canon/humulos/pen20/result.json) — authoritative + complete",
-  "complete": "ALL pen20 mons (5 classic versions + 20th bonus lines) from the page's own structured data: exact evo conditions (evo*_req), stages, attributes, versions (egg1/egg2), jogress, sleep times, strength. Supersedes the earlier WebFetch .md extraction.",
-  "version_tags_note": "evolves_to[].version_tag = the version that branch belongs to (NSp/DSa/NSo/WGu/MEm/VBu/etc); evo conditions can differ per version.",
+  "source": "humulos pen20 (parse_humulos.py: inline result)",
+  "stage_timers": {
+   "Baby I": "10 min",
+   "Baby II": "12 h",
+   "Child": "24 h",
+   "Adult": "40 h",
+   "Perfect": "48 h"
+  },
   "sprite_gaps": [
    "Apocalymon",
    "Babydmon",
@@ -27,6 +32,8 @@
    "Leviamon",
    "Lord Knightmon",
    "Lucemon: Falldown Mode",
+   "Magnamon",
+   "N.E.O",
    "Ofanimon: Falldown Mode",
    "Omegamon Alter-S",
    "Rust Tyranomon",
@@ -37,7 +44,9 @@
    "Stingmon",
    "Susanoomon",
    "Ulforce V-dramon"
-  ]
+  ],
+  "attribute_gaps": [],
+  "note": "exact evo conditions from humulos (raw + parsed). real-time stage timers per device. sleep/power included."
  },
  "digimon": [
   {
@@ -50,18 +59,18 @@
    "devices": {
     "pen20": {
      "versions": [
-      "Wind Guardians",
-      "V"
+      "Wind Guardians V"
      ],
      "stage_time": "48 h",
      "evolves_to": [
       {
        "to": "Ulforce V-dramon",
        "to_id": "ulforcevdramon",
-       "via_slug": "ulforcevdra",
        "raw": "0 Care Mistakes, 15 Battles, 12-15 Victories*",
        "parsed": {
         "care_mistakes": "0",
+        "victories": "12-15",
+        "battles_n": 15,
         "battles": true
        },
        "version_tag": "WGu"
@@ -69,10 +78,11 @@
       {
        "to": "Hououmon",
        "to_id": "hououmon",
-       "via_slug": "houou",
        "raw": "1-2 Care Mistakes, 15 Battles, 12-15 Victories*",
        "parsed": {
         "care_mistakes": "1-2",
+        "victories": "12-15",
+        "battles_n": 15,
         "battles": true
        },
        "version_tag": "WGu"
@@ -80,10 +90,11 @@
       {
        "to": "Ulforce V-dramon (V",
        "to_id": "ulforcevdramonv",
-       "via_slug": "ulforcevdra",
        "raw": "0-2 Care Mistakes, 15 Battles, 12-15 Victories*",
        "parsed": {
         "care_mistakes": "0-2",
+        "victories": "12-15",
+        "battles_n": 15,
         "battles": true
        }
       }
@@ -91,11 +102,10 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Aero V-dramon.png",
-   "jogress_capable": false,
    "sleep": "23:00",
-   "strength": "130",
+   "power": "130",
    "sources": [
-    "humulos:pen20:result"
+    "humulos:pen20"
    ]
   },
   {
@@ -115,7 +125,6 @@
       {
        "to": "Greymon",
        "to_id": "greymon",
-       "via_slug": "grey",
        "raw": "0-1 Care Mistakes, 4 Effort",
        "parsed": {
         "care_mistakes": "0-1",
@@ -125,7 +134,6 @@
       {
        "to": "Leomon",
        "to_id": "leomon",
-       "via_slug": "leo",
        "raw": "2+ Care Mistakes, 0-1 Effort",
        "parsed": {
         "care_mistakes": "2+",
@@ -135,7 +143,6 @@
       {
        "to": "Garurumon",
        "to_id": "garurumon",
-       "via_slug": "garuru",
        "raw": "2+ Care Mistakes, 2-4 Effort",
        "parsed": {
         "care_mistakes": "2+",
@@ -145,7 +152,6 @@
       {
        "to": "Angemon",
        "to_id": "angemon",
-       "via_slug": "ange",
        "raw": "0-1 Care Mistakes, 0-3 Effort",
        "parsed": {
         "care_mistakes": "0-1",
@@ -156,11 +162,10 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Agumon.png",
-   "jogress_capable": false,
    "sleep": "21:00",
-   "strength": "16",
+   "power": "16",
    "sources": [
-    "humulos:pen20:result"
+    "humulos:pen20"
    ]
   },
   {
@@ -180,17 +185,22 @@
       {
        "to": "Devidramon",
        "to_id": "devidramon",
-       "via_slug": "devidra",
        "raw": "0-1 Care Mistakes, 0-3 Effort OR 2+ Care Mistakes",
        "parsed": {
-        "care_mistakes": "0-1",
-        "effort": "0-3"
+        "alternatives": [
+         {
+          "care_mistakes": "0-1",
+          "effort": "0-3"
+         },
+         {
+          "care_mistakes": "2+"
+         }
+        ]
        }
       },
       {
        "to": "Coredramon (Green)",
        "to_id": "coredramongreen",
-       "via_slug": "coredra_g",
        "raw": "0-1 Care Mistakes, 4 Effort",
        "parsed": {
         "care_mistakes": "0-1",
@@ -201,11 +211,10 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Agumon Hakase.png",
-   "jogress_capable": false,
    "sleep": "21:00",
-   "strength": "22",
+   "power": "22",
    "sources": [
-    "humulos:pen20:result"
+    "humulos:pen20"
    ]
   },
   {
@@ -225,7 +234,6 @@
       {
        "to": "Alphamon: Ouryuken",
        "to_id": "alphamonouryuken",
-       "via_slug": "alpha_o",
        "raw": "Jogress with Ouryumon",
        "parsed": {
         "jogress_partner": "Ouryumon"
@@ -235,12 +243,12 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Alphamon.png",
-   "jogress_capable": true,
    "sleep": "00:00",
-   "strength": "214",
+   "power": "214",
    "sources": [
-    "humulos:pen20:result"
-   ]
+    "humulos:pen20"
+   ],
+   "jogress_capable": true
   },
   {
    "id": "alphamonouryuken",
@@ -259,11 +267,10 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Alphamon Ouryuken.png",
-   "jogress_capable": false,
    "sleep": "00:00",
-   "strength": "232",
+   "power": "232",
    "sources": [
-    "humulos:pen20:result"
+    "humulos:pen20"
    ]
   },
   {
@@ -283,10 +290,11 @@
       {
        "to": "Cherubimon",
        "to_id": "cherubimon",
-       "via_slug": "cherubi",
        "raw": "0-2 Care Mistakes, 15 Battles, 12-15 Victories*",
        "parsed": {
         "care_mistakes": "0-2",
+        "victories": "12-15",
+        "battles_n": 15,
         "battles": true
        }
       }
@@ -294,11 +302,10 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Andiramon.png",
-   "jogress_capable": false,
    "sleep": "23:00",
-   "strength": "124",
+   "power": "124",
    "sources": [
-    "humulos:pen20:result"
+    "humulos:pen20"
    ]
   },
   {
@@ -318,7 +325,6 @@
       {
        "to": "Mugendramon",
        "to_id": "mugendramon",
-       "via_slug": "mugendra",
        "raw": "Jogress with Vaccine Perfect",
        "parsed": {
         "jogress_partner": "Vaccine Perfect"
@@ -328,12 +334,12 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Andromon.png",
-   "jogress_capable": true,
    "sleep": "23:00",
-   "strength": "118",
+   "power": "118",
    "sources": [
-    "humulos:pen20:result"
-   ]
+    "humulos:pen20"
+   ],
+   "jogress_capable": true
   },
   {
    "id": "angemon",
@@ -352,17 +358,17 @@
       {
        "to": "Holy Angemon",
        "to_id": "holyangemon",
-       "via_slug": "holyange",
        "raw": "0-1 Care Mistakes, 15 Battles, 12-15 Victories*",
        "parsed": {
         "care_mistakes": "0-1",
+        "victories": "12-15",
+        "battles_n": 15,
         "battles": true
        }
       },
       {
        "to": "Angewomon",
        "to_id": "angewomon",
-       "via_slug": "angewo",
        "raw": "Jogress with Vaccine Adult",
        "parsed": {
         "jogress_partner": "Vaccine Adult"
@@ -371,7 +377,6 @@
       {
        "to": "Metal Mamemon",
        "to_id": "metalmamemon",
-       "via_slug": "metalmame",
        "raw": "Jogress with Data or Virus Adult",
        "parsed": {
         "jogress_partner": "Data or Virus Adult"
@@ -381,12 +386,12 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Angemon.png",
-   "jogress_capable": true,
    "sleep": "22:00",
-   "strength": "58",
+   "power": "58",
    "sources": [
-    "humulos:pen20:result"
-   ]
+    "humulos:pen20"
+   ],
+   "jogress_capable": true
   },
   {
    "id": "angewomon",
@@ -398,35 +403,35 @@
    "devices": {
     "pen20": {
      "versions": [
-      "Nature Spirits",
-      "Virus Busters"
+      "Nature Spirits Virus Busters"
      ],
      "stage_time": "48 h",
      "evolves_to": [
       {
        "to": "Holydramon",
        "to_id": "holydramon",
-       "via_slug": "holydra",
        "raw": "0 Care Mistakes, 15 Battles, 12-15 Victories*",
        "parsed": {
         "care_mistakes": "0",
+        "victories": "12-15",
+        "battles_n": 15,
         "battles": true
        }
       },
       {
        "to": "Ofanimon",
        "to_id": "ofanimon",
-       "via_slug": "ofani",
        "raw": "0-1 Care Mistakes, 15 Battles, 12-15 Victories*",
        "parsed": {
         "care_mistakes": "0-1",
+        "victories": "12-15",
+        "battles_n": 15,
         "battles": true
        }
       },
       {
        "to": "Mastemon",
        "to_id": "mastemon",
-       "via_slug": "maste",
        "raw": "Jogress with Lady Devimon",
        "parsed": {
         "jogress_partner": "Lady Devimon"
@@ -436,12 +441,12 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Angewomon.png",
-   "jogress_capable": true,
    "sleep": "23:00",
-   "strength": "118",
+   "power": "118",
    "sources": [
-    "humulos:pen20:result"
-   ]
+    "humulos:pen20"
+   ],
+   "jogress_capable": true
   },
   {
    "id": "anomalocarimon",
@@ -460,7 +465,6 @@
       {
        "to": "Metal Seadramon",
        "to_id": "metalseadramon",
-       "via_slug": "metalseadra",
        "raw": "Jogress with Data Perfect",
        "parsed": {
         "jogress_partner": "Data Perfect"
@@ -470,12 +474,12 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Anomalocarimon.png",
-   "jogress_capable": true,
    "sleep": "23:00",
-   "strength": "112",
+   "power": "112",
    "sources": [
-    "humulos:pen20:result"
-   ]
+    "humulos:pen20"
+   ],
+   "jogress_capable": true
   },
   {
    "id": "apocalymon",
@@ -494,11 +498,10 @@
     }
    },
    "sprite": null,
-   "jogress_capable": false,
    "sleep": "NA",
-   "strength": "228",
+   "power": "228",
    "sources": [
-    "humulos:pen20:result"
+    "humulos:pen20"
    ]
   },
   {
@@ -518,17 +521,17 @@
       {
        "to": "Rize Greymon",
        "to_id": "rizegreymon",
-       "via_slug": "rizegrey",
        "raw": "0-2 Care Mistakes, 15 Battles, 12-15 Victories*",
        "parsed": {
         "care_mistakes": "0-2",
+        "victories": "12-15",
+        "battles_n": 15,
         "battles": true
        }
       },
       {
        "to": "Megalo Growmon",
        "to_id": "megalogrowmon",
-       "via_slug": "megalogrow",
        "raw": "Jogress with Virus Adult",
        "parsed": {
         "jogress_partner": "Virus Adult"
@@ -538,12 +541,12 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Arresterdramon.png",
-   "jogress_capable": true,
    "sleep": "22:00",
-   "strength": "82",
+   "power": "82",
    "sources": [
-    "humulos:pen20:result"
-   ]
+    "humulos:pen20"
+   ],
+   "jogress_capable": true
   },
   {
    "id": "astamon",
@@ -562,10 +565,11 @@
       {
        "to": "Belphemon: Rage Mode",
        "to_id": "belphemonragemode",
-       "via_slug": "belphe_r",
        "raw": "0-2 Care Mistakes, 15 Battles, 12-15 Victories*",
        "parsed": {
         "care_mistakes": "0-2",
+        "victories": "12-15",
+        "battles_n": 15,
         "battles": true
        }
       }
@@ -573,11 +577,10 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Astamon.png",
-   "jogress_capable": false,
    "sleep": "23:00",
-   "strength": "130",
+   "power": "130",
    "sources": [
-    "humulos:pen20:result"
+    "humulos:pen20"
    ]
   },
   {
@@ -597,10 +600,11 @@
       {
        "to": "War Greymon",
        "to_id": "wargreymon",
-       "via_slug": "wargrey",
        "raw": "0-1 Care Mistakes, 15 Battles, 12-15 Victories*",
        "parsed": {
         "care_mistakes": "0-1",
+        "victories": "12-15",
+        "battles_n": 15,
         "battles": true
        }
       }
@@ -608,11 +612,10 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Asuramon.png",
-   "jogress_capable": false,
    "sleep": "23:00",
-   "strength": "106",
+   "power": "106",
    "sources": [
-    "humulos:pen20:result"
+    "humulos:pen20"
    ]
   },
   {
@@ -632,10 +635,11 @@
       {
        "to": "Herakle Kabuterimon",
        "to_id": "heraklekabuterimon",
-       "via_slug": "heraklekabuteri",
        "raw": "0 Care Mistakes, 15 Battles, 12-15 Victories*",
        "parsed": {
         "care_mistakes": "0",
+        "victories": "12-15",
+        "battles_n": 15,
         "battles": true
        }
       }
@@ -643,11 +647,10 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Atlur Kabuterimon.png",
-   "jogress_capable": false,
    "sleep": "23:00",
-   "strength": "124",
+   "power": "124",
    "sources": [
-    "humulos:pen20:result"
+    "humulos:pen20"
    ]
   },
   {
@@ -667,10 +670,11 @@
       {
        "to": "Beelzebumon",
        "to_id": "beelzebumon",
-       "via_slug": "beelzebu",
        "raw": "0-2 Care Mistakes, 15 Battles, 12-15 Victories*",
        "parsed": {
         "care_mistakes": "0-2",
+        "victories": "12-15",
+        "battles_n": 15,
         "battles": true
        }
       }
@@ -678,11 +682,10 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Baalmon.png",
-   "jogress_capable": false,
    "sleep": "23:00",
-   "strength": "112",
+   "power": "112",
    "sources": [
-    "humulos:pen20:result"
+    "humulos:pen20"
    ]
   },
   {
@@ -702,7 +705,6 @@
       {
        "to": "Dracomon",
        "to_id": "dracomon",
-       "via_slug": "draco",
        "raw": "0-1 Care Mistakes",
        "parsed": {
         "care_mistakes": "0-1"
@@ -711,7 +713,6 @@
       {
        "to": "Agumon Hakase",
        "to_id": "agumonhakase",
-       "via_slug": "agu_h",
        "raw": "2+ Care Mistakes",
        "parsed": {
         "care_mistakes": "2+"
@@ -721,11 +722,10 @@
     }
    },
    "sprite": null,
-   "jogress_capable": false,
    "sleep": "21:00",
-   "strength": null,
+   "power": null,
    "sources": [
-    "humulos:pen20:result"
+    "humulos:pen20"
    ]
   },
   {
@@ -745,7 +745,6 @@
       {
        "to": "Fantomon",
        "to_id": "fantomon",
-       "via_slug": "fanto",
        "raw": "Jogress with Data or Virus Adult",
        "parsed": {
         "jogress_partner": "Data or Virus Adult"
@@ -754,7 +753,6 @@
       {
        "to": "Pumpmon",
        "to_id": "pumpmon",
-       "via_slug": "pump",
        "raw": "Jogress with Vaccine or Free Adult",
        "parsed": {
         "jogress_partner": "Vaccine or Free Adult"
@@ -763,10 +761,11 @@
       {
        "to": "Lady Devimon",
        "to_id": "ladydevimon",
-       "via_slug": "ladydevi",
        "raw": "0-1 Care Mistakes, 15 Battles, 12-15 Victories*",
        "parsed": {
         "care_mistakes": "0-1",
+        "victories": "12-15",
+        "battles_n": 15,
         "battles": true
        }
       }
@@ -774,12 +773,12 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Bakemon.png",
-   "jogress_capable": true,
    "sleep": "22:00",
-   "strength": "40",
+   "power": "40",
    "sources": [
-    "humulos:pen20:result"
-   ]
+    "humulos:pen20"
+   ],
+   "jogress_capable": true
   },
   {
    "id": "bakumon",
@@ -798,7 +797,6 @@
       {
        "to": "Hanumon",
        "to_id": "hanumon",
-       "via_slug": "hanu",
        "raw": "0-1 Care Mistakes, 2-4 Effort",
        "parsed": {
         "care_mistakes": "0-1",
@@ -808,7 +806,6 @@
       {
        "to": "Garurumon",
        "to_id": "garurumon",
-       "via_slug": "garuru",
        "raw": "2+ Care Mistakes, 0-3 Effort",
        "parsed": {
         "care_mistakes": "2+",
@@ -818,7 +815,6 @@
       {
        "to": "Meramon",
        "to_id": "meramon",
-       "via_slug": "mera",
        "raw": "0-1 Care Mistakes, 0-1 Effort",
        "parsed": {
         "care_mistakes": "0-1",
@@ -828,7 +824,6 @@
       {
        "to": "Wizarmon",
        "to_id": "wizarmon",
-       "via_slug": "wizar",
        "raw": "2+ Care Mistakes, 4 Effort",
        "parsed": {
         "care_mistakes": "2+",
@@ -839,11 +834,10 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Bakumon.png",
-   "jogress_capable": false,
    "sleep": "21:00",
-   "strength": "16",
+   "power": "16",
    "sources": [
-    "humulos:pen20:result"
+    "humulos:pen20"
    ]
   },
   {
@@ -863,7 +857,6 @@
       {
        "to": "Chaosmon",
        "to_id": "chaosmon",
-       "via_slug": "chaos",
        "raw": "Jogress with Darkdramon",
        "parsed": {
         "jogress_partner": "Darkdramon"
@@ -873,12 +866,12 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Bancho Leomon.png",
-   "jogress_capable": true,
    "sleep": "00:00",
-   "strength": "190",
+   "power": "190",
    "sources": [
-    "humulos:pen20:result"
-   ]
+    "humulos:pen20"
+   ],
+   "jogress_capable": true
   },
   {
    "id": "baohackmon",
@@ -897,17 +890,17 @@
       {
        "to": "Savior Hackmon",
        "to_id": "saviorhackmon",
-       "via_slug": "saviorhack",
        "raw": "0-2 Care Mistakes, 15 Battles, 12-15 Victories*",
        "parsed": {
         "care_mistakes": "0-2",
+        "victories": "12-15",
+        "battles_n": 15,
         "battles": true
        }
       },
       {
        "to": "Etemon",
        "to_id": "etemon",
-       "via_slug": "ete",
        "raw": "Jogress with Virus Adult",
        "parsed": {
         "jogress_partner": "Virus Adult"
@@ -916,7 +909,6 @@
       {
        "to": "Duramon",
        "to_id": "duramon",
-       "via_slug": "dura",
        "raw": "Jogress with Vaccine or Data Adult",
        "parsed": {
         "jogress_partner": "Vaccine or Data Adult"
@@ -926,12 +918,12 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Bao Hackmon.png",
-   "jogress_capable": true,
    "sleep": "22:00",
-   "strength": "82",
+   "power": "82",
    "sources": [
-    "humulos:pen20:result"
-   ]
+    "humulos:pen20"
+   ],
+   "jogress_capable": true
   },
   {
    "id": "barbamon",
@@ -950,11 +942,10 @@
     }
    },
    "sprite": null,
-   "jogress_capable": false,
    "sleep": "NA",
-   "strength": null,
+   "power": null,
    "sources": [
-    "humulos:pen20:result"
+    "humulos:pen20"
    ]
   },
   {
@@ -974,7 +965,6 @@
       {
        "to": "Beelzebumon: Blast Mode",
        "to_id": "beelzebumonblastmode",
-       "via_slug": "beelzebu_b",
        "raw": "Jogress with Beelzebumon",
        "parsed": {
         "jogress_partner": "Beelzebumon"
@@ -984,12 +974,12 @@
     }
    },
    "sprite": null,
-   "jogress_capable": true,
    "sleep": "NA",
-   "strength": "204",
+   "power": "204",
    "sources": [
-    "humulos:pen20:result"
-   ]
+    "humulos:pen20"
+   ],
+   "jogress_capable": true
   },
   {
    "id": "beelzebumon",
@@ -1008,7 +998,6 @@
       {
        "to": "Beelzebumon: Blast Mode",
        "to_id": "beelzebumonblastmode",
-       "via_slug": "beelzebu_b",
        "raw": "Jogress with Beel Starmon",
        "parsed": {
         "jogress_partner": "Beel Starmon"
@@ -1018,12 +1007,12 @@
     }
    },
    "sprite": null,
-   "jogress_capable": true,
    "sleep": "00:00",
-   "strength": "208",
+   "power": "208",
    "sources": [
-    "humulos:pen20:result"
-   ]
+    "humulos:pen20"
+   ],
+   "jogress_capable": true
   },
   {
    "id": "beelzebumonblastmode",
@@ -1042,11 +1031,10 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Beelzebumon Blast Mode.png",
-   "jogress_capable": false,
    "sleep": "00:00",
-   "strength": "232",
+   "power": "232",
    "sources": [
-    "humulos:pen20:result"
+    "humulos:pen20"
    ]
   },
   {
@@ -1066,7 +1054,6 @@
       {
        "to": "Ogudomon",
        "to_id": "ogudomon",
-       "via_slug": "ogudo",
        "raw": "Jogress with Demon",
        "parsed": {
         "jogress_partner": "Demon"
@@ -1076,12 +1063,12 @@
     }
    },
    "sprite": null,
-   "jogress_capable": true,
    "sleep": "00:00",
-   "strength": "214",
+   "power": "214",
    "sources": [
-    "humulos:pen20:result"
-   ]
+    "humulos:pen20"
+   ],
+   "jogress_capable": true
   },
   {
    "id": "beowolfmon",
@@ -1100,10 +1087,11 @@
       {
        "to": "Duftmon",
        "to_id": "duftmon",
-       "via_slug": "duft",
        "raw": "0-2 Care Mistakes, 15 Battles, 12-15 Victories*",
        "parsed": {
         "care_mistakes": "0-2",
+        "victories": "12-15",
+        "battles_n": 15,
         "battles": true
        }
       }
@@ -1111,11 +1099,10 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Beowolfmon.png",
-   "jogress_capable": false,
    "sleep": "23:00",
-   "strength": "142",
+   "power": "142",
    "sources": [
-    "humulos:pen20:result"
+    "humulos:pen20"
    ]
   },
   {
@@ -1135,7 +1122,6 @@
       {
        "to": "Metal Garurumon",
        "to_id": "metalgarurumon",
-       "via_slug": "metalgaruru",
        "raw": "Jogress with Data Perfect",
        "parsed": {
         "jogress_partner": "Data Perfect"
@@ -1145,12 +1131,12 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Big Mamemon.png",
-   "jogress_capable": true,
    "sleep": "23:00",
-   "strength": "112",
+   "power": "112",
    "sources": [
-    "humulos:pen20:result"
-   ]
+    "humulos:pen20"
+   ],
+   "jogress_capable": true
   },
   {
    "id": "birdramon",
@@ -1169,17 +1155,17 @@
       {
        "to": "Garudamon",
        "to_id": "garudamon",
-       "via_slug": "garuda",
        "raw": "0-2 Care Mistakes, 15 Battles, 12-15 Victories*",
        "parsed": {
         "care_mistakes": "0-2",
+        "victories": "12-15",
+        "battles_n": 15,
         "battles": true
        }
       },
       {
        "to": "Aero V-dramon",
        "to_id": "aerovdramon",
-       "via_slug": "aerovdra",
        "raw": "Jogress with Vaccine or Data Adult",
        "parsed": {
         "jogress_partner": "Vaccine or Data Adult"
@@ -1188,7 +1174,6 @@
       {
        "to": "Delumon",
        "to_id": "delumon",
-       "via_slug": "delu",
        "raw": "Jogress with Virus Adult",
        "parsed": {
         "jogress_partner": "Virus Adult"
@@ -1198,12 +1183,12 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Birdramon.png",
-   "jogress_capable": true,
    "sleep": "22:00",
-   "strength": "58",
+   "power": "58",
    "sources": [
-    "humulos:pen20:result"
-   ]
+    "humulos:pen20"
+   ],
+   "jogress_capable": true
   },
   {
    "id": "blossomon",
@@ -1222,7 +1207,6 @@
       {
        "to": "Griffomon",
        "to_id": "griffomon",
-       "via_slug": "griffo",
        "raw": "Jogress with Data Perfect",
        "parsed": {
         "jogress_partner": "Data Perfect"
@@ -1232,12 +1216,12 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Blossomon.png",
-   "jogress_capable": true,
    "sleep": "23:00",
-   "strength": "124",
+   "power": "124",
    "sources": [
-    "humulos:pen20:result"
-   ]
+    "humulos:pen20"
+   ],
+   "jogress_capable": true
   },
   {
    "id": "blucomon",
@@ -1256,11 +1240,10 @@
     }
    },
    "sprite": null,
-   "jogress_capable": false,
    "sleep": "NA",
-   "strength": "34",
+   "power": "34",
    "sources": [
-    "humulos:pen20:result"
+    "humulos:pen20"
    ]
   },
   {
@@ -1280,11 +1263,10 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Boltmon.png",
-   "jogress_capable": false,
    "sleep": "00:00",
-   "strength": "160",
+   "power": "160",
    "sources": [
-    "humulos:pen20:result"
+    "humulos:pen20"
    ]
   },
   {
@@ -1304,7 +1286,6 @@
       {
        "to": "Koromon",
        "to_id": "koromon",
-       "via_slug": "koro",
        "raw": "No requirements",
        "parsed": {}
       }
@@ -1312,11 +1293,10 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Botamon.png",
-   "jogress_capable": false,
    "sleep": "NA",
-   "strength": null,
+   "power": null,
    "sources": [
-    "humulos:pen20:result"
+    "humulos:pen20"
    ]
   },
   {
@@ -1336,7 +1316,6 @@
       {
        "to": "Examon",
        "to_id": "examon",
-       "via_slug": "exa",
        "raw": "Jogress with Slayerdramon",
        "parsed": {
         "jogress_partner": "Slayerdramon"
@@ -1346,12 +1325,12 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Breakdramon.png",
-   "jogress_capable": true,
    "sleep": "00:00",
-   "strength": "184",
+   "power": "184",
    "sources": [
-    "humulos:pen20:result"
-   ]
+    "humulos:pen20"
+   ],
+   "jogress_capable": true
   },
   {
    "id": "bryweludramon",
@@ -1370,7 +1349,6 @@
       {
        "to": "Ragna Lordmon",
        "to_id": "ragnalordmon",
-       "via_slug": "ragnalord",
        "raw": "Jogress with Durandamon",
        "parsed": {
         "jogress_partner": "Durandamon"
@@ -1380,12 +1358,12 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Bryweludramon.png",
-   "jogress_capable": true,
    "sleep": "00:00",
-   "strength": "208",
+   "power": "208",
    "sources": [
-    "humulos:pen20:result"
-   ]
+    "humulos:pen20"
+   ],
+   "jogress_capable": true
   },
   {
    "id": "bubbmon",
@@ -1404,7 +1382,6 @@
       {
        "to": "Mochimon",
        "to_id": "mochimon",
-       "via_slug": "mochi",
        "raw": "No requirements",
        "parsed": {}
       }
@@ -1412,11 +1389,10 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Bubbmon.png",
-   "jogress_capable": false,
    "sleep": "NA",
-   "strength": null,
+   "power": null,
    "sources": [
-    "humulos:pen20:result"
+    "humulos:pen20"
    ]
   },
   {
@@ -1436,7 +1412,6 @@
       {
        "to": "Lalamon",
        "to_id": "lalamon",
-       "via_slug": "lala",
        "raw": "No requirements",
        "parsed": {}
       }
@@ -1444,11 +1419,10 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Budmon.png",
-   "jogress_capable": false,
    "sleep": "21:00",
-   "strength": null,
+   "power": null,
    "sources": [
-    "humulos:pen20:result"
+    "humulos:pen20"
    ]
   },
   {
@@ -1468,7 +1442,6 @@
       {
        "to": "Reppamon",
        "to_id": "reppamon",
-       "via_slug": "reppa",
        "raw": "0-1 Care Mistakes, 0-3 Effort",
        "parsed": {
         "care_mistakes": "0-1",
@@ -1478,7 +1451,6 @@
       {
        "to": "Arresterdramon",
        "to_id": "arresterdramon",
-       "via_slug": "arresterdra",
        "raw": "0-1 Care Mistakes, 4 Effort",
        "parsed": {
         "care_mistakes": "0-1",
@@ -1488,7 +1460,6 @@
       {
        "to": "Manbomon",
        "to_id": "manbomon",
-       "via_slug": "manbo",
        "raw": "2+ Care Mistakes",
        "parsed": {
         "care_mistakes": "2+"
@@ -1498,11 +1469,10 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Bushi Agumon.png",
-   "jogress_capable": false,
    "sleep": "21:00",
-   "strength": "34",
+   "power": "34",
    "sources": [
-    "humulos:pen20:result"
+    "humulos:pen20"
    ]
   },
   {
@@ -1522,7 +1492,6 @@
       {
        "to": "Meramon",
        "to_id": "meramon",
-       "via_slug": "mera",
        "raw": "0-1 Care Mistakes, 0-1 Effort",
        "parsed": {
         "care_mistakes": "0-1",
@@ -1532,7 +1501,6 @@
       {
        "to": "Wizarmon",
        "to_id": "wizarmon",
-       "via_slug": "wizar",
        "raw": "2+ Care Mistakes, 0 Effort",
        "parsed": {
         "care_mistakes": "2+",
@@ -1542,7 +1510,6 @@
       {
        "to": "Hanumon",
        "to_id": "hanumon",
-       "via_slug": "hanu",
        "raw": "0-1 Care Mistakes, 2-4 Effort",
        "parsed": {
         "care_mistakes": "0-1",
@@ -1552,7 +1519,6 @@
       {
        "to": "Devimon",
        "to_id": "devimon",
-       "via_slug": "devi",
        "raw": "2+ Care Mistakes, 1-4 Effort",
        "parsed": {
         "care_mistakes": "2+",
@@ -1563,11 +1529,10 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Candmon.png",
-   "jogress_capable": false,
    "sleep": "21:00",
-   "strength": "10",
+   "power": "10",
    "sources": [
-    "humulos:pen20:result"
+    "humulos:pen20"
    ]
   },
   {
@@ -1580,15 +1545,13 @@
    "devices": {
     "pen20": {
      "versions": [
-      "Metal Empire",
-      "Ver.20th Nightmare Soldiers"
+      "Metal Empire Ver.20th Nightmare Soldiers"
      ],
      "stage_time": "12 h",
      "evolves_to": [
       {
        "to": "Toy Agumon",
        "to_id": "toyagumon",
-       "via_slug": "toyagu",
        "raw": "0 Care Mistakes",
        "parsed": {
         "care_mistakes": "0"
@@ -1598,17 +1561,13 @@
       {
        "to": "Kokuwamon",
        "to_id": "kokuwamon",
-       "via_slug": "kokuwa",
        "raw": "1 Care Mistake",
-       "parsed": {
-        "care_mistakes": "1"
-       },
+       "parsed": {},
        "version_tag": "MEm"
       },
       {
        "to": "Hagurumon",
        "to_id": "hagurumon",
-       "via_slug": "haguru",
        "raw": "2+ Care Mistakes",
        "parsed": {
         "care_mistakes": "2+"
@@ -1618,7 +1577,6 @@
       {
        "to": "Phascomon (NSo20)",
        "to_id": "phascomonnso20",
-       "via_slug": "phasco",
        "raw": "0-1 Care Mistakes",
        "parsed": {
         "care_mistakes": "0-1"
@@ -1627,7 +1585,6 @@
       {
        "to": "Impmon (NSo20)",
        "to_id": "impmonnso20",
-       "via_slug": "imp",
        "raw": "2+ Care Mistakes",
        "parsed": {
         "care_mistakes": "2+"
@@ -1637,11 +1594,10 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Caprimon.png",
-   "jogress_capable": false,
    "sleep": "21:00",
-   "strength": null,
+   "power": null,
    "sources": [
-    "humulos:pen20:result"
+    "humulos:pen20"
    ]
   },
   {
@@ -1661,11 +1617,10 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Chaosmon.png",
-   "jogress_capable": false,
    "sleep": "00:00",
-   "strength": "214",
+   "power": "214",
    "sources": [
-    "humulos:pen20:result"
+    "humulos:pen20"
    ]
   },
   {
@@ -1685,11 +1640,10 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Cherubimon.png",
-   "jogress_capable": false,
    "sleep": "00:00",
-   "strength": "184",
+   "power": "184",
    "sources": [
-    "humulos:pen20:result"
+    "humulos:pen20"
    ]
   },
   {
@@ -1709,7 +1663,6 @@
       {
        "to": "V-mon",
        "to_id": "vmon",
-       "via_slug": "v",
        "raw": "No requirements",
        "parsed": {}
       }
@@ -1717,11 +1670,10 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Chibimon.png",
-   "jogress_capable": false,
    "sleep": "21:00",
-   "strength": null,
+   "power": null,
    "sources": [
-    "humulos:pen20:result"
+    "humulos:pen20"
    ]
   },
   {
@@ -1741,7 +1693,6 @@
       {
        "to": "Chibimon",
        "to_id": "chibimon",
-       "via_slug": "chibi",
        "raw": "No requirements",
        "parsed": {}
       }
@@ -1749,11 +1700,10 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Chicomon.png",
-   "jogress_capable": false,
    "sleep": "NA",
-   "strength": null,
+   "power": null,
    "sources": [
-    "humulos:pen20:result"
+    "humulos:pen20"
    ]
   },
   {
@@ -1773,7 +1723,6 @@
       {
        "to": "Lopmon",
        "to_id": "lopmon",
-       "via_slug": "lop",
        "raw": "No requirements",
        "parsed": {}
       }
@@ -1781,11 +1730,10 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Cocomon.png",
-   "jogress_capable": false,
    "sleep": "21:00",
-   "strength": null,
+   "power": null,
    "sources": [
-    "humulos:pen20:result"
+    "humulos:pen20"
    ]
   },
   {
@@ -1798,15 +1746,13 @@
    "devices": {
     "pen20": {
      "versions": [
-      "Metal Empire",
-      "Ver.20th Nightmare Soldiers"
+      "Metal Empire Ver.20th Nightmare Soldiers"
      ],
      "stage_time": "10 min",
      "evolves_to": [
       {
        "to": "Caprimon",
        "to_id": "caprimon",
-       "via_slug": "capri",
        "raw": "No requirements",
        "parsed": {}
       }
@@ -1814,11 +1760,10 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Choromon.png",
-   "jogress_capable": false,
    "sleep": "NA",
-   "strength": null,
+   "power": null,
    "sources": [
-    "humulos:pen20:result"
+    "humulos:pen20"
    ]
   },
   {
@@ -1838,17 +1783,17 @@
       {
        "to": "Knightmon",
        "to_id": "knightmon",
-       "via_slug": "knight",
        "raw": "0-3 Care Mistakes, 15 Battles, 12-15 Victories*",
        "parsed": {
         "care_mistakes": "0-3",
+        "victories": "12-15",
+        "battles_n": 15,
         "battles": true
        }
       },
       {
        "to": "Big Mamemon",
        "to_id": "bigmamemon",
-       "via_slug": "bigmame",
        "raw": "Jogress with Data Adult",
        "parsed": {
         "jogress_partner": "Data Adult"
@@ -1857,16 +1802,14 @@
       {
        "to": "Andromon",
        "to_id": "andromon",
-       "via_slug": "andro",
        "raw": "Jogress wtih Vaccine Adult",
        "parsed": {
-        "jogress_partner": "wtih Vaccine Adult"
+        "jogress": true
        }
       },
       {
        "to": "Warumonzaemon",
        "to_id": "warumonzaemon",
-       "via_slug": "warumonzae",
        "raw": "Jogress with Virus Adult",
        "parsed": {
         "jogress_partner": "Virus Adult"
@@ -1876,12 +1819,12 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Clockmon.png",
-   "jogress_capable": true,
    "sleep": "22:00",
-   "strength": "52",
+   "power": "52",
    "sources": [
-    "humulos:pen20:result"
-   ]
+    "humulos:pen20"
+   ],
+   "jogress_capable": true
   },
   {
    "id": "cocomon",
@@ -1900,7 +1843,6 @@
       {
        "to": "Chocomon",
        "to_id": "chocomon",
-       "via_slug": "choco",
        "raw": "No requirements",
        "parsed": {}
       }
@@ -1908,11 +1850,10 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Cocomon.png",
-   "jogress_capable": false,
    "sleep": "NA",
-   "strength": null,
+   "power": null,
    "sources": [
-    "humulos:pen20:result"
+    "humulos:pen20"
    ]
   },
   {
@@ -1932,17 +1873,17 @@
       {
        "to": "Mega Seadramon",
        "to_id": "megaseadramon",
-       "via_slug": "megaseadra",
        "raw": "0-3 Care Mistakes, 15 Battles, 12-15 Victories*",
        "parsed": {
         "care_mistakes": "0-3",
+        "victories": "12-15",
+        "battles_n": 15,
         "battles": true
        }
       },
       {
        "to": "Anomalocarimon",
        "to_id": "anomalocarimon",
-       "via_slug": "anomalocari",
        "raw": "Jogress with Data Adult",
        "parsed": {
         "jogress_partner": "Data Adult"
@@ -1951,7 +1892,6 @@
       {
        "to": "Whamon",
        "to_id": "whamon",
-       "via_slug": "wha",
        "raw": "Jogress with Vaccine Adult",
        "parsed": {
         "jogress_partner": "Vaccine Adult"
@@ -1960,7 +1900,6 @@
       {
        "to": "Dagomon",
        "to_id": "dagomon",
-       "via_slug": "dago",
        "raw": "Jogress with Virus Adult",
        "parsed": {
         "jogress_partner": "Virus Adult"
@@ -1970,12 +1909,12 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Coelamon.png",
-   "jogress_capable": true,
    "sleep": "22:00",
-   "strength": "46",
+   "power": "46",
    "sources": [
-    "humulos:pen20:result"
-   ]
+    "humulos:pen20"
+   ],
+   "jogress_capable": true
   },
   {
    "id": "coredramonblue",
@@ -1994,17 +1933,17 @@
       {
        "to": "Wingdramon",
        "to_id": "wingdramon",
-       "via_slug": "wingdra",
        "raw": "0-2 Care Mistakes, 15 Battles, 12-15 Victories*",
        "parsed": {
         "care_mistakes": "0-2",
+        "victories": "12-15",
+        "battles_n": 15,
         "battles": true
        }
       },
       {
        "to": "Groundramon",
        "to_id": "groundramon",
-       "via_slug": "groundra",
        "raw": "Jogress with Vaccine Adult",
        "parsed": {
         "jogress_partner": "Vaccine Adult"
@@ -2013,7 +1952,6 @@
       {
        "to": "Megadramon",
        "to_id": "megadramon",
-       "via_slug": "megadra",
        "raw": "Jogress with Data or Virus Adult",
        "parsed": {
         "jogress_partner": "Data or Virus Adult"
@@ -2023,12 +1961,12 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Coredramon (Blue).png",
-   "jogress_capable": true,
    "sleep": "22:00",
-   "strength": "76",
+   "power": "76",
    "sources": [
-    "humulos:pen20:result"
-   ]
+    "humulos:pen20"
+   ],
+   "jogress_capable": true
   },
   {
    "id": "coredramongreen",
@@ -2047,17 +1985,17 @@
       {
        "to": "Groundramon",
        "to_id": "groundramon",
-       "via_slug": "groundra",
        "raw": "0-2 Care Mistakes, 15 Battles, 12-15 Victories*",
        "parsed": {
         "care_mistakes": "0-2",
+        "victories": "12-15",
+        "battles_n": 15,
         "battles": true
        }
       },
       {
        "to": "Wingdramon",
        "to_id": "wingdramon",
-       "via_slug": "wingdra",
        "raw": "Jogress with Vaccine or Free Adult",
        "parsed": {
         "jogress_partner": "Vaccine or Free Adult"
@@ -2066,7 +2004,6 @@
       {
        "to": "Megadramon",
        "to_id": "megadramon",
-       "via_slug": "megadra",
        "raw": "Jogress with Data or Virus Adult",
        "parsed": {
         "jogress_partner": "Data or Virus Adult"
@@ -2076,12 +2013,12 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Coredramon (Green).png",
-   "jogress_capable": true,
    "sleep": "22:00",
-   "strength": "76",
+   "power": "76",
    "sources": [
-    "humulos:pen20:result"
-   ]
+    "humulos:pen20"
+   ],
+   "jogress_capable": true
   },
   {
    "id": "cotsucomon",
@@ -2100,7 +2037,6 @@
       {
        "to": "Kakkinmon",
        "to_id": "kakkinmon",
-       "via_slug": "kakkin",
        "raw": "No requirements",
        "parsed": {}
       }
@@ -2108,11 +2044,10 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Cotsucomon.png",
-   "jogress_capable": false,
    "sleep": "NA",
-   "strength": null,
+   "power": null,
    "sources": [
-    "humulos:pen20:result"
+    "humulos:pen20"
    ]
   },
   {
@@ -2132,11 +2067,10 @@
     }
    },
    "sprite": null,
-   "jogress_capable": false,
    "sleep": "NA",
-   "strength": "218",
+   "power": "218",
    "sources": [
-    "humulos:pen20:result"
+    "humulos:pen20"
    ]
   },
   {
@@ -2156,7 +2090,6 @@
       {
        "to": "War Greymon",
        "to_id": "wargreymon",
-       "via_slug": "wargrey",
        "raw": "Jogress with Vaccine Perfect",
        "parsed": {
         "jogress_partner": "Vaccine Perfect"
@@ -2166,12 +2099,12 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Cyberdramon.png",
-   "jogress_capable": true,
    "sleep": "23:00",
-   "strength": "100",
+   "power": "100",
    "sources": [
-    "humulos:pen20:result"
-   ]
+    "humulos:pen20"
+   ],
+   "jogress_capable": true
   },
   {
    "id": "dagomon",
@@ -2190,7 +2123,6 @@
       {
        "to": "Pukumon",
        "to_id": "pukumon",
-       "via_slug": "puku",
        "raw": "Jogress with Virus Perfect",
        "parsed": {
         "jogress_partner": "Virus Perfect"
@@ -2200,12 +2132,12 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Dagomon.png",
-   "jogress_capable": true,
    "sleep": "23:00",
-   "strength": "118",
+   "power": "118",
    "sources": [
-    "humulos:pen20:result"
-   ]
+    "humulos:pen20"
+   ],
+   "jogress_capable": true
   },
   {
    "id": "darkdramon",
@@ -2224,7 +2156,6 @@
       {
        "to": "Chaosmon",
        "to_id": "chaosmon",
-       "via_slug": "chaos",
        "raw": "Jogress with Bancho Leomon",
        "parsed": {
         "jogress_partner": "Bancho Leomon"
@@ -2234,12 +2165,12 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Darkdramon.png",
-   "jogress_capable": true,
    "sleep": "00:00",
-   "strength": "190",
+   "power": "190",
    "sources": [
-    "humulos:pen20:result"
-   ]
+    "humulos:pen20"
+   ],
+   "jogress_capable": true
   },
   {
    "id": "darkknightmon",
@@ -2258,20 +2189,22 @@
       {
        "to": "Belphemon: Rage Mode",
        "to_id": "belphemonragemode",
-       "via_slug": "belphe_r",
        "raw": "0 Care Mistakes, 15 Battles, 12-15 Victories*",
        "parsed": {
         "care_mistakes": "0",
+        "victories": "12-15",
+        "battles_n": 15,
         "battles": true
        }
       },
       {
        "to": "Beelzebumon",
        "to_id": "beelzebumon",
-       "via_slug": "beelzebu",
        "raw": "1-3 Care Mistakes, 15 Battles, 12-15 Victories*",
        "parsed": {
         "care_mistakes": "1-3",
+        "victories": "12-15",
+        "battles_n": 15,
         "battles": true
        }
       }
@@ -2279,11 +2212,10 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Dark Knightmon.png",
-   "jogress_capable": false,
    "sleep": "23:00",
-   "strength": "148",
+   "power": "148",
    "sources": [
-    "humulos:pen20:result"
+    "humulos:pen20"
    ]
   },
   {
@@ -2303,7 +2235,6 @@
       {
        "to": "Boltmon",
        "to_id": "boltmon",
-       "via_slug": "bolt",
        "raw": "Jogress with Data Perfect",
        "parsed": {
         "jogress_partner": "Data Perfect"
@@ -2312,10 +2243,11 @@
       {
        "to": "Skull Mammon",
        "to_id": "skullmammon",
-       "via_slug": "skullmam",
        "raw": "0 Care Mistakes, 15 Battles, 12-15 Victories*",
        "parsed": {
         "care_mistakes": "0",
+        "victories": "12-15",
+        "battles_n": 15,
         "battles": true
        }
       }
@@ -2323,12 +2255,12 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Death Meramon.png",
-   "jogress_capable": true,
    "sleep": "23:00",
-   "strength": "118",
+   "power": "118",
    "sources": [
-    "humulos:pen20:result"
-   ]
+    "humulos:pen20"
+   ],
+   "jogress_capable": true
   },
   {
    "id": "delumon",
@@ -2347,7 +2279,6 @@
       {
        "to": "Griffomon",
        "to_id": "griffomon",
-       "via_slug": "griffo",
        "raw": "Jogress with Data Perfect",
        "parsed": {
         "jogress_partner": "Data Perfect"
@@ -2356,10 +2287,11 @@
       {
        "to": "Hououmon",
        "to_id": "hououmon",
-       "via_slug": "houou",
        "raw": "0-1 Care Mistakes, 15 Battles, 12-15 Victories*",
        "parsed": {
         "care_mistakes": "0-1",
+        "victories": "12-15",
+        "battles_n": 15,
         "battles": true
        }
       }
@@ -2367,12 +2299,12 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Delumon.png",
-   "jogress_capable": true,
    "sleep": "23:00",
-   "strength": "106",
+   "power": "106",
    "sources": [
-    "humulos:pen20:result"
-   ]
+    "humulos:pen20"
+   ],
+   "jogress_capable": true
   },
   {
    "id": "demon",
@@ -2391,7 +2323,6 @@
       {
        "to": "Ogudomon",
        "to_id": "ogudomon",
-       "via_slug": "ogudo",
        "raw": "Jogress with Belphemon: Rage Mode",
        "parsed": {
         "jogress_partner": "Belphemon: Rage Mode"
@@ -2401,11 +2332,10 @@
     }
    },
    "sprite": null,
-   "jogress_capable": false,
    "sleep": "00:00",
-   "strength": "178",
+   "power": "178",
    "sources": [
-    "humulos:pen20:result"
+    "humulos:pen20"
    ]
   },
   {
@@ -2425,17 +2355,17 @@
       {
        "to": "Megadramon",
        "to_id": "megadramon",
-       "via_slug": "megadra",
        "raw": "0-1 Care Mistakes, 15 Battles, 12-15 Victories*",
        "parsed": {
         "care_mistakes": "0-1",
+        "victories": "12-15",
+        "battles_n": 15,
         "battles": true
        }
       },
       {
        "to": "Wingdramon",
        "to_id": "wingdramon",
-       "via_slug": "wingdra",
        "raw": "Jogress with Vaccine or Free Adult",
        "parsed": {
         "jogress_partner": "Vaccine or Free Adult"
@@ -2444,7 +2374,6 @@
       {
        "to": "Groundramon",
        "to_id": "groundramon",
-       "via_slug": "groundra",
        "raw": "Jogress with Data or Virus Adult",
        "parsed": {
         "jogress_partner": "Data or Virus Adult"
@@ -2454,12 +2383,12 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Devidramon.png",
-   "jogress_capable": true,
    "sleep": "22:00",
-   "strength": "52",
+   "power": "52",
    "sources": [
-    "humulos:pen20:result"
-   ]
+    "humulos:pen20"
+   ],
+   "jogress_capable": true
   },
   {
    "id": "devimon",
@@ -2478,17 +2407,17 @@
       {
        "to": "Vamdemon",
        "to_id": "vamdemon",
-       "via_slug": "vamde",
        "raw": "0-1 Care Mistakes, 15 Battles, 12-15 Victories*",
        "parsed": {
         "care_mistakes": "0-1",
+        "victories": "12-15",
+        "battles_n": 15,
         "battles": true
        }
       },
       {
        "to": "Lady Devimon",
        "to_id": "ladydevimon",
-       "via_slug": "ladydevi",
        "raw": "Jogress with Data or Virus Adult",
        "parsed": {
         "jogress_partner": "Data or Virus Adult"
@@ -2497,7 +2426,6 @@
       {
        "to": "Pumpmon",
        "to_id": "pumpmon",
-       "via_slug": "pump",
        "raw": "Jogress with Vaccine or Free Adult",
        "parsed": {
         "jogress_partner": "Vaccine or Free Adult"
@@ -2507,12 +2435,12 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Devimon.png",
-   "jogress_capable": true,
    "sleep": "22:00",
-   "strength": "58",
+   "power": "58",
    "sources": [
-    "humulos:pen20:result"
-   ]
+    "humulos:pen20"
+   ],
+   "jogress_capable": true
   },
   {
    "id": "dodomon",
@@ -2531,7 +2459,6 @@
       {
        "to": "Dorimon",
        "to_id": "dorimon",
-       "via_slug": "dori",
        "raw": "No requirements",
        "parsed": {}
       }
@@ -2539,11 +2466,10 @@
     }
    },
    "sprite": null,
-   "jogress_capable": false,
    "sleep": "NA",
-   "strength": null,
+   "power": null,
    "sources": [
-    "humulos:pen20:result"
+    "humulos:pen20"
    ]
   },
   {
@@ -2563,17 +2489,17 @@
       {
        "to": "Lady Devimon",
        "to_id": "ladydevimon",
-       "via_slug": "ladydevi",
        "raw": "0-1 Care Mistakes, 15 Battles, 12-15 Victories*",
        "parsed": {
         "care_mistakes": "0-1",
+        "victories": "12-15",
+        "battles_n": 15,
         "battles": true
        }
       },
       {
        "to": "Vamdemon",
        "to_id": "vamdemon",
-       "via_slug": "vamde",
        "raw": "Jogress with Data or Virus Adult",
        "parsed": {
         "jogress_partner": "Data or Virus Adult"
@@ -2582,7 +2508,6 @@
       {
        "to": "Pumpmon",
        "to_id": "pumpmon",
-       "via_slug": "pump",
        "raw": "Jogress with Vaccine or Free Adult",
        "parsed": {
         "jogress_partner": "Vaccine or Free Adult"
@@ -2592,12 +2517,12 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Dokugumon.png",
-   "jogress_capable": true,
    "sleep": "22:00",
-   "strength": "70",
+   "power": "70",
    "sources": [
-    "humulos:pen20:result"
-   ]
+    "humulos:pen20"
+   ],
+   "jogress_capable": true
   },
   {
    "id": "dorimon",
@@ -2616,7 +2541,6 @@
       {
        "to": "DORUmon",
        "to_id": "dorumon",
-       "via_slug": "doru",
        "raw": "No requirements",
        "parsed": {}
       }
@@ -2624,11 +2548,10 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Dorimon.png",
-   "jogress_capable": false,
    "sleep": "21:00",
-   "strength": null,
+   "power": null,
    "sources": [
-    "humulos:pen20:result"
+    "humulos:pen20"
    ]
   },
   {
@@ -2648,10 +2571,11 @@
       {
        "to": "DORUguremon",
        "to_id": "doruguremon",
-       "via_slug": "dorugure",
        "raw": "0-2 Care Mistakes, 15 Battles, 12-15 Victories*",
        "parsed": {
         "care_mistakes": "0-2",
+        "victories": "12-15",
+        "battles_n": 15,
         "battles": true
        }
       }
@@ -2659,11 +2583,10 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/DORUgamon.png",
-   "jogress_capable": false,
    "sleep": "22:00",
-   "strength": "88",
+   "power": "88",
    "sources": [
-    "humulos:pen20:result"
+    "humulos:pen20"
    ]
   },
   {
@@ -2683,11 +2606,10 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/DORUgoramon.png",
-   "jogress_capable": false,
    "sleep": "00:00",
-   "strength": "190",
+   "power": "190",
    "sources": [
-    "humulos:pen20:result"
+    "humulos:pen20"
    ]
   },
   {
@@ -2707,20 +2629,22 @@
       {
        "to": "DORUgoramon",
        "to_id": "dorugoramon",
-       "via_slug": "dorugora",
        "raw": "1-3 Care Mistakes, 15 Battles, 12-15 Victories*",
        "parsed": {
         "care_mistakes": "1-3",
+        "victories": "12-15",
+        "battles_n": 15,
         "battles": true
        }
       },
       {
        "to": "Alphamon",
        "to_id": "alphamon",
-       "via_slug": "alpha",
        "raw": "0 Care Mistakes, 15 Battles, 12-15 Victories*",
        "parsed": {
         "care_mistakes": "0",
+        "victories": "12-15",
+        "battles_n": 15,
         "battles": true
        }
       }
@@ -2728,11 +2652,10 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/DORUguremon.png",
-   "jogress_capable": false,
    "sleep": "23:00",
-   "strength": "142",
+   "power": "142",
    "sources": [
-    "humulos:pen20:result"
+    "humulos:pen20"
    ]
   },
   {
@@ -2752,7 +2675,6 @@
       {
        "to": "DORUgamon",
        "to_id": "dorugamon",
-       "via_slug": "doruga",
        "raw": "No requirements",
        "parsed": {}
       }
@@ -2760,11 +2682,10 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/DORUmon.png",
-   "jogress_capable": false,
    "sleep": "21:00",
-   "strength": "28",
+   "power": "28",
    "sources": [
-    "humulos:pen20:result"
+    "humulos:pen20"
    ]
   },
   {
@@ -2784,7 +2705,6 @@
       {
        "to": "Coredramon",
        "to_id": "coredramon",
-       "via_slug": "coredra_b",
        "raw": "0-1 Care Mistakes, 4 Effort",
        "parsed": {
         "care_mistakes": "0-1",
@@ -2795,22 +2715,27 @@
       {
        "to": "Coredramon (Green)",
        "to_id": "coredramongreen",
-       "via_slug": "coredra_g",
        "raw": "0-1 Care Mistakes, 0-3 Effort OR 2+ Care Mistakes",
        "parsed": {
-        "care_mistakes": "0-1",
-        "effort": "0-3"
+        "alternatives": [
+         {
+          "care_mistakes": "0-1",
+          "effort": "0-3"
+         },
+         {
+          "care_mistakes": "2+"
+         }
+        ]
        }
       }
      ]
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Dracomon.png",
-   "jogress_capable": false,
    "sleep": "21:00",
-   "strength": "28",
+   "power": "28",
    "sources": [
-    "humulos:pen20:result"
+    "humulos:pen20"
    ]
   },
   {
@@ -2830,11 +2755,10 @@
     }
    },
    "sprite": null,
-   "jogress_capable": false,
    "sleep": "00:00",
-   "strength": "208",
+   "power": "208",
    "sources": [
-    "humulos:pen20:result"
+    "humulos:pen20"
    ]
   },
   {
@@ -2854,11 +2778,10 @@
     }
    },
    "sprite": null,
-   "jogress_capable": false,
    "sleep": "00:00",
-   "strength": "214",
+   "power": "214",
    "sources": [
-    "humulos:pen20:result"
+    "humulos:pen20"
    ]
   },
   {
@@ -2878,10 +2801,11 @@
       {
        "to": "Durandamon",
        "to_id": "durandamon",
-       "via_slug": "duranda",
        "raw": "0-2 Care Mistakes, 15 Battles, 12-15 Victories*",
        "parsed": {
         "care_mistakes": "0-2",
+        "victories": "12-15",
+        "battles_n": 15,
         "battles": true
        }
       }
@@ -2889,11 +2813,10 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Duramon.png",
-   "jogress_capable": false,
    "sleep": "23:00",
-   "strength": "142",
+   "power": "142",
    "sources": [
-    "humulos:pen20:result"
+    "humulos:pen20"
    ]
   },
   {
@@ -2913,7 +2836,6 @@
       {
        "to": "Ragna Lordmon",
        "to_id": "ragnalordmon",
-       "via_slug": "ragnalord",
        "raw": "Jogress with Bryweludramon",
        "parsed": {
         "jogress_partner": "Bryweludramon"
@@ -2923,12 +2845,12 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Durandamon.png",
-   "jogress_capable": true,
    "sleep": "00:00",
-   "strength": "208",
+   "power": "208",
    "sources": [
-    "humulos:pen20:result"
-   ]
+    "humulos:pen20"
+   ],
+   "jogress_capable": true
   },
   {
    "id": "dynasmon",
@@ -2947,11 +2869,10 @@
     }
    },
    "sprite": null,
-   "jogress_capable": false,
    "sleep": "NA",
-   "strength": "218",
+   "power": "218",
    "sources": [
-    "humulos:pen20:result"
+    "humulos:pen20"
    ]
   },
   {
@@ -2971,17 +2892,17 @@
       {
        "to": "Mega Seadramon",
        "to_id": "megaseadramon",
-       "via_slug": "megaseadra",
        "raw": "0-3 Care Mistakes, 15 Battles, 12-15 Victories*",
        "parsed": {
         "care_mistakes": "0-3",
+        "victories": "12-15",
+        "battles_n": 15,
         "battles": true
        }
       },
       {
        "to": "Hangyomon",
        "to_id": "hangyomon",
-       "via_slug": "hangyo",
        "raw": "Jogress with Data Adult",
        "parsed": {
         "jogress_partner": "Data Adult"
@@ -2990,7 +2911,6 @@
       {
        "to": "Whamon",
        "to_id": "whamon",
-       "via_slug": "wha",
        "raw": "Jogress with Vaccine Adult",
        "parsed": {
         "jogress_partner": "Vaccine Adult"
@@ -2999,7 +2919,6 @@
       {
        "to": "Dagomon",
        "to_id": "dagomon",
-       "via_slug": "dago",
        "raw": "Jogress with Virus Adult",
        "parsed": {
         "jogress_partner": "Virus Adult"
@@ -3009,12 +2928,12 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Ebidramon.png",
-   "jogress_capable": true,
    "sleep": "22:00",
-   "strength": "52",
+   "power": "52",
    "sources": [
-    "humulos:pen20:result"
-   ]
+    "humulos:pen20"
+   ],
+   "jogress_capable": true
   },
   {
    "id": "etemon",
@@ -3033,10 +2952,11 @@
       {
        "to": "Bancho Leomon",
        "to_id": "bancholeomon",
-       "via_slug": "bancholeo",
        "raw": "0-1 Care Mistakes, 15 Battles, 12-15 Victories*",
        "parsed": {
         "care_mistakes": "0-1",
+        "victories": "12-15",
+        "battles_n": 15,
         "battles": true
        }
       }
@@ -3044,11 +2964,10 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Etemon.png",
-   "jogress_capable": false,
    "sleep": "23:00",
-   "strength": "106",
+   "power": "106",
    "sources": [
-    "humulos:pen20:result"
+    "humulos:pen20"
    ]
   },
   {
@@ -3068,11 +2987,10 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Examon.png",
-   "jogress_capable": false,
    "sleep": "00:00",
-   "strength": "232",
+   "power": "232",
    "sources": [
-    "humulos:pen20:result"
+    "humulos:pen20"
    ]
   },
   {
@@ -3092,7 +3010,6 @@
       {
        "to": "Piemon",
        "to_id": "piemon",
-       "via_slug": "pie",
        "raw": "Jogress with Virus Perfect",
        "parsed": {
         "jogress_partner": "Virus Perfect"
@@ -3102,12 +3019,12 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Fantomon.png",
-   "jogress_capable": true,
    "sleep": "23:00",
-   "strength": "100",
+   "power": "100",
    "sources": [
-    "humulos:pen20:result"
-   ]
+    "humulos:pen20"
+   ],
+   "jogress_capable": true
   },
   {
    "id": "floramon",
@@ -3126,7 +3043,6 @@
       {
        "to": "Kiwimon",
        "to_id": "kiwimon",
-       "via_slug": "kiwi",
        "raw": "0-1 Care Mistakes, 0-2 Effort",
        "parsed": {
         "care_mistakes": "0-1",
@@ -3136,7 +3052,6 @@
       {
        "to": "Togemon",
        "to_id": "togemon",
-       "via_slug": "toge",
        "raw": "2+ Care Mistakes, 4 Effort",
        "parsed": {
         "care_mistakes": "2+",
@@ -3146,7 +3061,6 @@
       {
        "to": "V-dramon",
        "to_id": "vdramon",
-       "via_slug": "vdra",
        "raw": "0-1 Care Mistakes, 3-4 Effort",
        "parsed": {
         "care_mistakes": "0-1",
@@ -3156,7 +3070,6 @@
       {
        "to": "Red Vegimon",
        "to_id": "redvegimon",
-       "via_slug": "redvegi",
        "raw": "2+ Care Mistakes, 0-3 Effort",
        "parsed": {
         "care_mistakes": "2+",
@@ -3167,11 +3080,10 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Floramon.png",
-   "jogress_capable": false,
    "sleep": "21:00",
-   "strength": "10",
+   "power": "10",
    "sources": [
-    "humulos:pen20:result"
+    "humulos:pen20"
    ]
   },
   {
@@ -3191,7 +3103,6 @@
       {
        "to": "Kyokyomon",
        "to_id": "kyokyomon",
-       "via_slug": "kyokyo",
        "raw": "No requirements",
        "parsed": {}
       }
@@ -3199,11 +3110,10 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Fufumon.png",
-   "jogress_capable": false,
    "sleep": "NA",
-   "strength": null,
+   "power": null,
    "sources": [
-    "humulos:pen20:result"
+    "humulos:pen20"
    ]
   },
   {
@@ -3223,7 +3133,6 @@
       {
        "to": "Garurumon",
        "to_id": "garurumon",
-       "via_slug": "garuru",
        "raw": "0-1 Care Mistakes, 0-3 Effort",
        "parsed": {
         "care_mistakes": "0-1",
@@ -3233,7 +3142,6 @@
       {
        "to": "Igamon",
        "to_id": "igamon",
-       "via_slug": "iga",
        "raw": "2+ Care Mistakes, 2-4 Effort",
        "parsed": {
         "care_mistakes": "2+",
@@ -3243,7 +3151,6 @@
       {
        "to": "Leomon",
        "to_id": "leomon",
-       "via_slug": "leo",
        "raw": "0-1 Care Mistakes, 4 Effort",
        "parsed": {
         "care_mistakes": "0-1",
@@ -3253,7 +3160,6 @@
       {
        "to": "Tailmon",
        "to_id": "tailmon",
-       "via_slug": "tail",
        "raw": "2+ Care Mistakes, 0-1 Effort",
        "parsed": {
         "care_mistakes": "2+",
@@ -3264,11 +3170,10 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Gabumon.png",
-   "jogress_capable": false,
    "sleep": "21:00",
-   "strength": "10",
+   "power": "10",
    "sources": [
-    "humulos:pen20:result"
+    "humulos:pen20"
    ]
   },
   {
@@ -3288,10 +3193,11 @@
       {
        "to": "Rapidmon",
        "to_id": "rapidmon",
-       "via_slug": "rapid",
        "raw": "0-2 Care Mistakes, 15 Battles, 12-15 Victories*",
        "parsed": {
         "care_mistakes": "0-2",
+        "victories": "12-15",
+        "battles_n": 15,
         "battles": true
        }
       }
@@ -3299,11 +3205,10 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Galgomon.png",
-   "jogress_capable": false,
    "sleep": "22:00",
-   "strength": "76",
+   "power": "76",
    "sources": [
-    "humulos:pen20:result"
+    "humulos:pen20"
    ]
   },
   {
@@ -3323,7 +3228,6 @@
       {
        "to": "Seadramon",
        "to_id": "seadramon",
-       "via_slug": "seadra",
        "raw": "0-1 Care Mistakes, 0-3 Effort",
        "parsed": {
         "care_mistakes": "0-1",
@@ -3333,7 +3237,6 @@
       {
        "to": "Ebidramon",
        "to_id": "ebidramon",
-       "via_slug": "ebidra",
        "raw": "2+ Care Mistakes, 2-4 Effort",
        "parsed": {
         "care_mistakes": "2+",
@@ -3343,7 +3246,6 @@
       {
        "to": "Rukamon",
        "to_id": "rukamon",
-       "via_slug": "ruka",
        "raw": "0-1 Care Mistakes, 4 Effort",
        "parsed": {
         "care_mistakes": "0-1",
@@ -3353,7 +3255,6 @@
       {
        "to": "Octmon",
        "to_id": "octmon",
-       "via_slug": "oct",
        "raw": "2+ Care Mistakes, 0-1 Effort",
        "parsed": {
         "care_mistakes": "2+",
@@ -3364,11 +3265,10 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Ganimon.png",
-   "jogress_capable": false,
    "sleep": "21:00",
-   "strength": "10",
+   "power": "10",
    "sources": [
-    "humulos:pen20:result"
+    "humulos:pen20"
    ]
   },
   {
@@ -3388,11 +3288,10 @@
     }
    },
    "sprite": null,
-   "jogress_capable": false,
    "sleep": "NA",
-   "strength": "204",
+   "power": "204",
    "sources": [
-    "humulos:pen20:result"
+    "humulos:pen20"
    ]
   },
   {
@@ -3412,10 +3311,11 @@
       {
        "to": "Hououmon",
        "to_id": "hououmon",
-       "via_slug": "houou",
        "raw": "0-2 Care Mistakes, 15 Battles, 12-15 Victories*",
        "parsed": {
         "care_mistakes": "0-2",
+        "victories": "12-15",
+        "battles_n": 15,
         "battles": true
        }
       }
@@ -3423,11 +3323,10 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Garudamon.png",
-   "jogress_capable": false,
    "sleep": "23:00",
-   "strength": "112",
+   "power": "112",
    "sources": [
-    "humulos:pen20:result"
+    "humulos:pen20"
    ]
   },
   {
@@ -3440,18 +3339,18 @@
    "devices": {
     "pen20": {
      "versions": [
-      "Nightmare Soldiers",
-      "Virus Busters"
+      "Nightmare Soldiers Virus Busters"
      ],
      "stage_time": "40 h",
      "evolves_to": [
       {
        "to": "Were Garurumon",
        "to_id": "weregarurumon",
-       "via_slug": "weregaruru",
        "raw": "0-2 Care Mistakes, 15 Battles, 12-15 Victories*",
        "parsed": {
         "care_mistakes": "0-2",
+        "victories": "12-15",
+        "battles_n": 15,
         "battles": true
        },
        "version_tag": "VBu"
@@ -3459,10 +3358,11 @@
       {
        "to": "Mammon",
        "to_id": "mammon",
-       "via_slug": "mam",
        "raw": "0-2 Care Mistakes, 15 Battles, 12-15 Victories*",
        "parsed": {
         "care_mistakes": "0-2",
+        "victories": "12-15",
+        "battles_n": 15,
         "battles": true
        },
        "version_tag": "NSo"
@@ -3470,7 +3370,6 @@
       {
        "to": "Weregarurumon",
        "to_id": "weregarurumon",
-       "via_slug": "weregaruru",
        "raw": "Jogress with Vaccine or Data Adult",
        "parsed": {
         "jogress_partner": "Vaccine or Data Adult"
@@ -3480,7 +3379,6 @@
       {
        "to": "Pumpmon",
        "to_id": "pumpmon",
-       "via_slug": "pump",
        "raw": "Jogress with Virus Adult",
        "parsed": {
         "jogress_partner": "Virus Adult"
@@ -3490,7 +3388,6 @@
       {
        "to": "Angewomon",
        "to_id": "angewomon",
-       "via_slug": "angewo",
        "raw": "Jogress with Vaccine Adult",
        "parsed": {
         "jogress_partner": "Vaccine Adult"
@@ -3500,7 +3397,6 @@
       {
        "to": "Metal Mamemon (VBu",
        "to_id": "metalmamemonvbu",
-       "via_slug": "metalmame",
        "raw": "Jogress with Data or Virus Adult",
        "parsed": {
         "jogress_partner": "Data or Virus Adult"
@@ -3510,12 +3406,12 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Garurumon.png",
-   "jogress_capable": true,
    "sleep": "22:00",
-   "strength": "64",
+   "power": "64",
    "sources": [
-    "humulos:pen20:result"
-   ]
+    "humulos:pen20"
+   ],
+   "jogress_capable": true
   },
   {
    "id": "gekomon",
@@ -3534,18 +3430,24 @@
       {
        "to": "Tonosama Gekomon",
        "to_id": "tonosamagekomon",
-       "via_slug": "tonosamageko",
        "raw": "0-2 Care Mistakes, 15 Battles, 12-15 Victories* OR Jogress with Data or Virus Adult",
        "parsed": {
-        "care_mistakes": "0-2",
-        "battles": true,
-        "jogress_partner": "Data or Virus Adult"
+        "alternatives": [
+         {
+          "care_mistakes": "0-2",
+          "victories": "12-15",
+          "battles_n": 15,
+          "battles": true
+         },
+         {
+          "jogress_partner": "Data or Virus Adult"
+         }
+        ]
        }
       },
       {
        "to": "Piccolomon",
        "to_id": "piccolomon",
-       "via_slug": "piccolo",
        "raw": "Jogress with Vaccine or Free Adult",
        "parsed": {
         "jogress_partner": "Vaccine or Free Adult"
@@ -3555,12 +3457,12 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Gekomon.png",
-   "jogress_capable": true,
    "sleep": "22:00",
-   "strength": "40",
+   "power": "40",
    "sources": [
-    "humulos:pen20:result"
-   ]
+    "humulos:pen20"
+   ],
+   "jogress_capable": true
   },
   {
    "id": "gerbemon",
@@ -3579,7 +3481,6 @@
       {
        "to": "Pinochimon",
        "to_id": "pinochimon",
-       "via_slug": "pinochi",
        "raw": "Jogress with Virus Perfect",
        "parsed": {
         "jogress_partner": "Virus Perfect"
@@ -3589,12 +3490,12 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Gerbemon.png",
-   "jogress_capable": true,
    "sleep": "23:00",
-   "strength": "100",
+   "power": "100",
    "sources": [
-    "humulos:pen20:result"
-   ]
+    "humulos:pen20"
+   ],
+   "jogress_capable": true
   },
   {
    "id": "gesomon",
@@ -3613,17 +3514,17 @@
       {
        "to": "Marin Devimon",
        "to_id": "marindevimon",
-       "via_slug": "marindevi",
        "raw": "0-4 Care Mistakes, 15 Battles, 12-15 Victories*",
        "parsed": {
         "care_mistakes": "0-4",
+        "victories": "12-15",
+        "battles_n": 15,
         "battles": true
        }
       },
       {
        "to": "Dagomon",
        "to_id": "dagomon",
-       "via_slug": "dago",
        "raw": "Jogress with Data or Virus Adult",
        "parsed": {
         "jogress_partner": "Data or Virus Adult"
@@ -3632,7 +3533,6 @@
       {
        "to": "Hangyomon",
        "to_id": "hangyomon",
-       "via_slug": "hangyo",
        "raw": "Jogress with Vaccine or Free Adult",
        "parsed": {
         "jogress_partner": "Vaccine or Free Adult"
@@ -3642,12 +3542,12 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Gesomon.png",
-   "jogress_capable": true,
    "sleep": "22:00",
-   "strength": "40",
+   "power": "40",
    "sources": [
-    "humulos:pen20:result"
-   ]
+    "humulos:pen20"
+   ],
+   "jogress_capable": true
   },
   {
    "id": "ginryumon",
@@ -3666,10 +3566,11 @@
       {
        "to": "Hisyaryumon",
        "to_id": "hisyaryumon",
-       "via_slug": "hisyaryu",
        "raw": "0-2 Care Mistakes, 15 Battles, 12-15 Victories*",
        "parsed": {
         "care_mistakes": "0-2",
+        "victories": "12-15",
+        "battles_n": 15,
         "battles": true
        }
       }
@@ -3677,11 +3578,10 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Ginryumon.png",
-   "jogress_capable": false,
    "sleep": "22:00",
-   "strength": "88",
+   "power": "88",
    "sources": [
-    "humulos:pen20:result"
+    "humulos:pen20"
    ]
   },
   {
@@ -3701,7 +3601,6 @@
       {
        "to": "Ikkakumon",
        "to_id": "ikkakumon",
-       "via_slug": "ikkaku",
        "raw": "0-1 Care Mistakes, 4 Effort",
        "parsed": {
         "care_mistakes": "0-1",
@@ -3711,7 +3610,6 @@
       {
        "to": "Rukamon",
        "to_id": "rukamon",
-       "via_slug": "ruka",
        "raw": "0-1 Care Mistakes, 0-3 Effort",
        "parsed": {
         "care_mistakes": "0-1",
@@ -3721,7 +3619,6 @@
       {
        "to": "Coelamon",
        "to_id": "coelamon",
-       "via_slug": "coela",
        "raw": "2+ Care Mistakes, 4 Effort",
        "parsed": {
         "care_mistakes": "2+",
@@ -3731,7 +3628,6 @@
       {
        "to": "Gesomon",
        "to_id": "gesomon",
-       "via_slug": "geso",
        "raw": "2+ Care Mistakes, 0-3 Effort",
        "parsed": {
         "care_mistakes": "2+",
@@ -3742,11 +3638,10 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Gomamon.png",
-   "jogress_capable": false,
    "sleep": "21:00",
-   "strength": "16",
+   "power": "16",
    "sources": [
-    "humulos:pen20:result"
+    "humulos:pen20"
    ]
   },
   {
@@ -3766,7 +3661,6 @@
       {
        "to": "Monochromon",
        "to_id": "monochromon",
-       "via_slug": "monochro",
        "raw": "0-1 Care Mistakes, 4 Effort",
        "parsed": {
         "care_mistakes": "0-1",
@@ -3776,7 +3670,6 @@
       {
        "to": "Starmon",
        "to_id": "starmon",
-       "via_slug": "star",
        "raw": "2+ Care Mistakes, 2-4 Effort",
        "parsed": {
         "care_mistakes": "2+",
@@ -3786,7 +3679,6 @@
       {
        "to": "Tortamon",
        "to_id": "tortamon",
-       "via_slug": "torta",
        "raw": "0-1 Care Mistakes, 0-3 Effort",
        "parsed": {
         "care_mistakes": "0-1",
@@ -3796,7 +3688,6 @@
       {
        "to": "Gekomon",
        "to_id": "gekomon",
-       "via_slug": "geko",
        "raw": "2+ Care Mistakes, 0-1 Effort",
        "parsed": {
         "care_mistakes": "2+",
@@ -3807,11 +3698,10 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Gottsumon.png",
-   "jogress_capable": false,
    "sleep": "21:00",
-   "strength": "10",
+   "power": "10",
    "sources": [
-    "humulos:pen20:result"
+    "humulos:pen20"
    ]
   },
   {
@@ -3831,11 +3721,10 @@
     }
    },
    "sprite": null,
-   "jogress_capable": false,
    "sleep": "NA",
-   "strength": null,
+   "power": null,
    "sources": [
-    "humulos:pen20:result"
+    "humulos:pen20"
    ]
   },
   {
@@ -3848,25 +3737,24 @@
    "devices": {
     "pen20": {
      "versions": [
-      "Metal Empire",
-      "Virus Busters"
+      "Metal Empire Virus Busters"
      ],
      "stage_time": "40 h",
      "evolves_to": [
       {
        "to": "Metal Greymon",
        "to_id": "metalgreymon",
-       "via_slug": "metalgrey_va",
        "raw": "0-1 Care Mistakes, 15 Battles, 12-15 Victories*",
        "parsed": {
         "care_mistakes": "0-1",
+        "victories": "12-15",
+        "battles_n": 15,
         "battles": true
        }
       },
       {
        "to": "Cyberdramon",
        "to_id": "cyberdramon",
-       "via_slug": "cyberdra",
        "raw": "Jogress with Vaccine or Data Adult",
        "parsed": {
         "jogress_partner": "Vaccine or Data Adult"
@@ -3876,7 +3764,6 @@
       {
        "to": "Big Mamemon",
        "to_id": "bigmamemon",
-       "via_slug": "bigmame",
        "raw": "Jogress with Virus Adult",
        "parsed": {
         "jogress_partner": "Virus Adult"
@@ -3886,7 +3773,6 @@
       {
        "to": "Asuramon",
        "to_id": "asuramon",
-       "via_slug": "asura",
        "raw": "Jogress with Vaccine or Data Adult",
        "parsed": {
         "jogress_partner": "Vaccine or Data Adult"
@@ -3896,7 +3782,6 @@
       {
        "to": "Metal Mamemon (VBu",
        "to_id": "metalmamemonvbu",
-       "via_slug": "metalmame",
        "raw": "Jogress with Virus Adult",
        "parsed": {
         "jogress_partner": "Virus Adult"
@@ -3906,12 +3791,12 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Greymon.png",
-   "jogress_capable": true,
    "sleep": "22:00",
-   "strength": "70",
+   "power": "70",
    "sources": [
-    "humulos:pen20:result"
-   ]
+    "humulos:pen20"
+   ],
+   "jogress_capable": true
   },
   {
    "id": "griffomon",
@@ -3930,11 +3815,10 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Griffomon.png",
-   "jogress_capable": false,
    "sleep": "00:00",
-   "strength": "172",
+   "power": "172",
    "sources": [
-    "humulos:pen20:result"
+    "humulos:pen20"
    ]
   },
   {
@@ -3954,10 +3838,11 @@
       {
        "to": "Breakdramon",
        "to_id": "breakdramon",
-       "via_slug": "breakdra",
        "raw": "0-2 Care Mistakes, 15 Battles, 12-15 Victories*",
        "parsed": {
         "care_mistakes": "0-2",
+        "victories": "12-15",
+        "battles_n": 15,
         "battles": true
        }
       }
@@ -3965,11 +3850,10 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Groundramon.png",
-   "jogress_capable": false,
    "sleep": "23:00",
-   "strength": "136",
+   "power": "136",
    "sources": [
-    "humulos:pen20:result"
+    "humulos:pen20"
    ]
   },
   {
@@ -3989,17 +3873,17 @@
       {
        "to": "Megalo Growmon",
        "to_id": "megalogrowmon",
-       "via_slug": "megalogrow",
        "raw": "0-2 Care Mistakes, 15 Battles, 12-15 Victories*",
        "parsed": {
         "care_mistakes": "0-2",
+        "victories": "12-15",
+        "battles_n": 15,
         "battles": true
        }
       },
       {
        "to": "Rize Greymon",
        "to_id": "rizegreymon",
-       "via_slug": "rizegrey",
        "raw": "Jogress with Vaccine or Free Adult",
        "parsed": {
         "jogress_partner": "Vaccine or Free Adult"
@@ -4008,7 +3892,6 @@
       {
        "to": "Beowolfmon",
        "to_id": "beowolfmon",
-       "via_slug": "beowolf",
        "raw": "Jogress with Data or Virus Adult",
        "parsed": {
         "jogress_partner": "Data or Virus Adult"
@@ -4018,12 +3901,12 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Growmon.png",
-   "jogress_capable": true,
    "sleep": "22:00",
-   "strength": "70",
+   "power": "70",
    "sources": [
-    "humulos:pen20:result"
-   ]
+    "humulos:pen20"
+   ],
+   "jogress_capable": true
   },
   {
    "id": "guardromon",
@@ -4042,17 +3925,17 @@
       {
        "to": "Megadramon",
        "to_id": "megadramon",
-       "via_slug": "megadra",
        "raw": "0-3 Care Mistakes, 15 Battles, 12-15 Victories*",
        "parsed": {
         "care_mistakes": "0-3",
+        "victories": "12-15",
+        "battles_n": 15,
         "battles": true
        }
       },
       {
        "to": "Warumonzaemon",
        "to_id": "warumonzaemon",
-       "via_slug": "warumonzae",
        "raw": "Jogress with Data or Virus Adult",
        "parsed": {
         "jogress_partner": "Data or Virus Adult"
@@ -4061,7 +3944,6 @@
       {
        "to": "Big Mamemon",
        "to_id": "bigmamemon",
-       "via_slug": "bigmame",
        "raw": "Jogress with Vaccine or Free Adult",
        "parsed": {
         "jogress_partner": "Vaccine or Free Adult"
@@ -4071,12 +3953,12 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Guardromon.png",
-   "jogress_capable": true,
    "sleep": "22:00",
-   "strength": "64",
+   "power": "64",
    "sources": [
-    "humulos:pen20:result"
-   ]
+    "humulos:pen20"
+   ],
+   "jogress_capable": true
   },
   {
    "id": "guilmon",
@@ -4095,7 +3977,6 @@
       {
        "to": "Growmon",
        "to_id": "growmon",
-       "via_slug": "grow",
        "raw": "0-1 Care Mistakes, 4 Effort",
        "parsed": {
         "care_mistakes": "0-1",
@@ -4105,7 +3986,6 @@
       {
        "to": "Arresterdramon",
        "to_id": "arresterdramon",
-       "via_slug": "arresterdra",
        "raw": "0-1 Care Mistakes, 0-3 Effort",
        "parsed": {
         "care_mistakes": "0-1",
@@ -4115,7 +3995,6 @@
       {
        "to": "Manbomon",
        "to_id": "manbomon",
-       "via_slug": "manbo",
        "raw": "2+ Care Mistakes",
        "parsed": {
         "care_mistakes": "2+"
@@ -4125,11 +4004,10 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Guimon.png",
-   "jogress_capable": false,
    "sleep": "21:00",
-   "strength": "22",
+   "power": "22",
    "sources": [
-    "humulos:pen20:result"
+    "humulos:pen20"
    ]
   },
   {
@@ -4149,7 +4027,6 @@
       {
        "to": "Terriermon",
        "to_id": "terriermon",
-       "via_slug": "terrier",
        "raw": "No requirements",
        "parsed": {}
       }
@@ -4157,11 +4034,10 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Gummymon.png",
-   "jogress_capable": false,
    "sleep": "21:00",
-   "strength": null,
+   "power": null,
    "sources": [
-    "humulos:pen20:result"
+    "humulos:pen20"
    ]
   },
   {
@@ -4181,7 +4057,6 @@
       {
        "to": "Bao Hackmon",
        "to_id": "baohackmon",
-       "via_slug": "baohack",
        "raw": "0-1 Care Mistakes, 4 Effort",
        "parsed": {
         "care_mistakes": "0-1",
@@ -4191,22 +4066,27 @@
       {
        "to": "Targetmon",
        "to_id": "targetmon",
-       "via_slug": "target",
        "raw": "0-1 Care Mistakes, 0-3 Effort OR 2+ Care Mistakes",
        "parsed": {
-        "care_mistakes": "0-1",
-        "effort": "0-3"
+        "alternatives": [
+         {
+          "care_mistakes": "0-1",
+          "effort": "0-3"
+         },
+         {
+          "care_mistakes": "2+"
+         }
+        ]
        }
       }
      ]
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Hackmon.png",
-   "jogress_capable": false,
    "sleep": "21:00",
-   "strength": "28",
+   "power": "28",
    "sources": [
-    "humulos:pen20:result"
+    "humulos:pen20"
    ]
   },
   {
@@ -4226,7 +4106,6 @@
       {
        "to": "Guardromon",
        "to_id": "guardromon",
-       "via_slug": "guardro",
        "raw": "2+ Care Mistakes, 3-4 Effort",
        "parsed": {
         "care_mistakes": "2+",
@@ -4236,7 +4115,6 @@
       {
        "to": "Mechanorimon",
        "to_id": "mechanorimon",
-       "via_slug": "mechanori",
        "raw": "2+ Care Mistakes, 0-2 Effort",
        "parsed": {
         "care_mistakes": "2+",
@@ -4246,7 +4124,6 @@
       {
        "to": "Greymon",
        "to_id": "greymon",
-       "via_slug": "grey",
        "raw": "0-1 Care Mistakes, 4 Effort",
        "parsed": {
         "care_mistakes": "0-1",
@@ -4256,7 +4133,6 @@
       {
        "to": "Tankmon",
        "to_id": "tankmon",
-       "via_slug": "tank",
        "raw": "0-1 Care Mistakes, 0-3 Effort",
        "parsed": {
         "care_mistakes": "0-1",
@@ -4267,11 +4143,10 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Hagurumon.png",
-   "jogress_capable": false,
    "sleep": "21:00",
-   "strength": "4",
+   "power": "4",
    "sources": [
-    "humulos:pen20:result"
+    "humulos:pen20"
    ]
   },
   {
@@ -4291,7 +4166,6 @@
       {
        "to": "Plesiomon",
        "to_id": "plesiomon",
-       "via_slug": "plesio",
        "raw": "Jogress with Data Perfect",
        "parsed": {
         "jogress_partner": "Data Perfect"
@@ -4301,12 +4175,12 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Hangyomon.png",
-   "jogress_capable": true,
    "sleep": "23:00",
-   "strength": "100",
+   "power": "100",
    "sources": [
-    "humulos:pen20:result"
-   ]
+    "humulos:pen20"
+   ],
+   "jogress_capable": true
   },
   {
    "id": "hanumon",
@@ -4325,17 +4199,17 @@
       {
        "to": "Mammon",
        "to_id": "mammon",
-       "via_slug": "mam",
        "raw": "0-2 Care Mistakes, 15 Battles, 12-15 Victories*",
        "parsed": {
         "care_mistakes": "0-2",
+        "victories": "12-15",
+        "battles_n": 15,
         "battles": true
        }
       },
       {
        "to": "Were Garurumon",
        "to_id": "weregarurumon",
-       "via_slug": "weregaruru",
        "raw": "Jogress with Vaccine or Data Adult",
        "parsed": {
         "jogress_partner": "Vaccine or Data Adult"
@@ -4344,7 +4218,6 @@
       {
        "to": "Pumpmon",
        "to_id": "pumpmon",
-       "via_slug": "pump",
        "raw": "Jogress with Virus Adult",
        "parsed": {
         "jogress_partner": "Virus Adult"
@@ -4354,12 +4227,12 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Hanumon.png",
-   "jogress_capable": true,
    "sleep": "22:00",
-   "strength": "52",
+   "power": "52",
    "sources": [
-    "humulos:pen20:result"
-   ]
+    "humulos:pen20"
+   ],
+   "jogress_capable": true
   },
   {
    "id": "heraklekabuterimon",
@@ -4378,11 +4251,10 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Herakle Kabuterimon.png",
-   "jogress_capable": false,
    "sleep": "00:00",
-   "strength": "178",
+   "power": "178",
    "sources": [
-    "humulos:pen20:result"
+    "humulos:pen20"
    ]
   },
   {
@@ -4402,11 +4274,10 @@
     }
    },
    "sprite": null,
-   "jogress_capable": false,
    "sleep": "NA",
-   "strength": "34",
+   "power": "34",
    "sources": [
-    "humulos:pen20:result"
+    "humulos:pen20"
    ]
   },
   {
@@ -4426,10 +4297,11 @@
       {
        "to": "Ouryumon",
        "to_id": "ouryumon",
-       "via_slug": "ouryu",
        "raw": "0-2 Care Mistakes, 15 Battles, 12-15 Victories*",
        "parsed": {
         "care_mistakes": "0-2",
+        "victories": "12-15",
+        "battles_n": 15,
         "battles": true
        }
       }
@@ -4437,11 +4309,10 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Hisyaryumon.png",
-   "jogress_capable": false,
    "sleep": "23:00",
-   "strength": "142",
+   "power": "142",
    "sources": [
-    "humulos:pen20:result"
+    "humulos:pen20"
    ]
   },
   {
@@ -4461,10 +4332,11 @@
       {
        "to": "Seraphimon",
        "to_id": "seraphimon",
-       "via_slug": "seraphi",
        "raw": "0-1 Care Mistakes, 15 Battles, 12-15 Victories*",
        "parsed": {
         "care_mistakes": "0-1",
+        "victories": "12-15",
+        "battles_n": 15,
         "battles": true
        }
       }
@@ -4472,11 +4344,10 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Holy Angemon.png",
-   "jogress_capable": false,
    "sleep": "23:00",
-   "strength": "130",
+   "power": "130",
    "sources": [
-    "humulos:pen20:result"
+    "humulos:pen20"
    ]
   },
   {
@@ -4496,11 +4367,10 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Holydramon.png",
-   "jogress_capable": false,
    "sleep": "00:00",
-   "strength": "166",
+   "power": "166",
    "sources": [
-    "humulos:pen20:result"
+    "humulos:pen20"
    ]
   },
   {
@@ -4520,11 +4390,10 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Hououmon.png",
-   "jogress_capable": false,
    "sleep": "00:00",
-   "strength": "178",
+   "power": "178",
    "sources": [
-    "humulos:pen20:result"
+    "humulos:pen20"
    ]
   },
   {
@@ -4544,17 +4413,17 @@
       {
        "to": "Were Garurumon",
        "to_id": "weregarurumon",
-       "via_slug": "weregaruru",
        "raw": "0-2 Care Mistakes, 15 Battles, 12-15 Victories*",
        "parsed": {
         "care_mistakes": "0-2",
+        "victories": "12-15",
+        "battles_n": 15,
         "battles": true
        }
       },
       {
        "to": "Metal Mamemon",
        "to_id": "metalmamemon",
-       "via_slug": "metalmame",
        "raw": "Jogress with Data Adult",
        "parsed": {
         "jogress_partner": "Data Adult"
@@ -4563,7 +4432,6 @@
       {
        "to": "Asuramon",
        "to_id": "asuramon",
-       "via_slug": "asura",
        "raw": "Jogress with Vaccine or Virus Adult",
        "parsed": {
         "jogress_partner": "Vaccine or Virus Adult"
@@ -4573,12 +4441,12 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Igamon.png",
-   "jogress_capable": true,
    "sleep": "22:00",
-   "strength": "46",
+   "power": "46",
    "sources": [
-    "humulos:pen20:result"
-   ]
+    "humulos:pen20"
+   ],
+   "jogress_capable": true
   },
   {
    "id": "ikkakumon",
@@ -4597,17 +4465,17 @@
       {
        "to": "Zudomon",
        "to_id": "zudomon",
-       "via_slug": "zudo",
        "raw": "0-2 Care Mistakes, 15 Battles, 12-15 Victories*",
        "parsed": {
         "care_mistakes": "0-2",
+        "victories": "12-15",
+        "battles_n": 15,
         "battles": true
        }
       },
       {
        "to": "Whamon",
        "to_id": "whamon",
-       "via_slug": "wha",
        "raw": "Jogress with Vaccine or Data Adult",
        "parsed": {
         "jogress_partner": "Vaccine or Data Adult"
@@ -4616,7 +4484,6 @@
       {
        "to": "Anomalocarimon",
        "to_id": "anomalocarimon",
-       "via_slug": "anomalocari",
        "raw": "Jogress with Virus Adult",
        "parsed": {
         "jogress_partner": "Virus Adult"
@@ -4626,12 +4493,12 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Ikkakumon.png",
-   "jogress_capable": true,
    "sleep": "22:00",
-   "strength": "58",
+   "power": "58",
    "sources": [
-    "humulos:pen20:result"
-   ]
+    "humulos:pen20"
+   ],
+   "jogress_capable": true
   },
   {
    "id": "imperialdramonfightermode",
@@ -4650,7 +4517,6 @@
       {
        "to": "Imperialdramon: Paladin Mode",
        "to_id": "imperialdramonpaladinmode",
-       "via_slug": "imperialdra_p",
        "raw": "Jogress with Omegamon",
        "parsed": {
         "jogress_partner": "Omegamon"
@@ -4660,12 +4526,12 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Imperialdramon Fighter Mode.png",
-   "jogress_capable": true,
    "sleep": "00:00",
-   "strength": "190",
+   "power": "190",
    "sources": [
-    "humulos:pen20:result"
-   ]
+    "humulos:pen20"
+   ],
+   "jogress_capable": true
   },
   {
    "id": "imperialdramonpaladinmode",
@@ -4684,11 +4550,10 @@
     }
    },
    "sprite": null,
-   "jogress_capable": false,
    "sleep": "00:00",
-   "strength": "238",
+   "power": "238",
    "sources": [
-    "humulos:pen20:result"
+    "humulos:pen20"
    ]
   },
   {
@@ -4708,7 +4573,6 @@
       {
        "to": "Mad Leomon",
        "to_id": "madleomon",
-       "via_slug": "madleo",
        "raw": "0-1 Care Mistakes, 4 Effort",
        "parsed": {
         "care_mistakes": "0-1",
@@ -4718,7 +4582,6 @@
       {
        "to": "Shadramon",
        "to_id": "shadramon",
-       "via_slug": "shadra",
        "raw": "0-1 Care Mistakes, 0-3 Effort",
        "parsed": {
         "care_mistakes": "0-1",
@@ -4728,7 +4591,6 @@
       {
        "to": "Troopmon",
        "to_id": "troopmon",
-       "via_slug": "troop",
        "raw": "2+ Care Mistakes",
        "parsed": {
         "care_mistakes": "2+"
@@ -4738,11 +4600,10 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Impmon.png",
-   "jogress_capable": false,
    "sleep": "21:00",
-   "strength": "22",
+   "power": "22",
    "sources": [
-    "humulos:pen20:result"
+    "humulos:pen20"
    ]
   },
   {
@@ -4762,21 +4623,17 @@
       {
        "to": "Jesmon X",
        "to_id": "jesmonx",
-       "via_slug": "jes_x",
        "raw": "Battle against Alphamon",
-       "parsed": {
-        "battles": true
-       }
+       "parsed": {}
       }
      ]
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Jesmon.png",
-   "jogress_capable": false,
    "sleep": "00:00",
-   "strength": "196",
+   "power": "196",
    "sources": [
-    "humulos:pen20:result"
+    "humulos:pen20"
    ]
   },
   {
@@ -4796,11 +4653,10 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Jesmon X.png",
-   "jogress_capable": false,
    "sleep": "00:00",
-   "strength": "232",
+   "power": "232",
    "sources": [
-    "humulos:pen20:result"
+    "humulos:pen20"
    ]
   },
   {
@@ -4820,7 +4676,6 @@
       {
        "to": "Holydramon",
        "to_id": "holydramon",
-       "via_slug": "holydra",
        "raw": "Jogress with Vaccine Perfect",
        "parsed": {
         "jogress_partner": "Vaccine Perfect"
@@ -4830,12 +4685,12 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Jyagamon.png",
-   "jogress_capable": true,
    "sleep": "23:00",
-   "strength": "112",
+   "power": "112",
    "sources": [
-    "humulos:pen20:result"
-   ]
+    "humulos:pen20"
+   ],
+   "jogress_capable": true
   },
   {
    "id": "jyureimon",
@@ -4854,7 +4709,6 @@
       {
        "to": "Pinochimon",
        "to_id": "pinochimon",
-       "via_slug": "pinochi",
        "raw": "Jogress with Virus Perfect",
        "parsed": {
         "jogress_partner": "Virus Perfect"
@@ -4864,12 +4718,12 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Jyureimon.png",
-   "jogress_capable": true,
    "sleep": "23:00",
-   "strength": "118",
+   "power": "118",
    "sources": [
-    "humulos:pen20:result"
-   ]
+    "humulos:pen20"
+   ],
+   "jogress_capable": true
   },
   {
    "id": "kabuterimon",
@@ -4888,17 +4742,17 @@
       {
        "to": "Atlur Kabuterimon",
        "to_id": "atlurkabuterimon",
-       "via_slug": "atlurkabuteri",
        "raw": "0 Care Mistakes, 15 Battles, 12-15 Victories*",
        "parsed": {
         "care_mistakes": "0",
+        "victories": "12-15",
+        "battles_n": 15,
         "battles": true
        }
       },
       {
        "to": "Jyagamon",
        "to_id": "jyagamon",
-       "via_slug": "jyaga",
        "raw": "Jogress with Vaccine or Data Adult",
        "parsed": {
         "jogress_partner": "Vaccine or Data Adult"
@@ -4907,7 +4761,6 @@
       {
        "to": "Piccolomon",
        "to_id": "piccolomon",
-       "via_slug": "piccolo",
        "raw": "Jogress with Virus Adult",
        "parsed": {
         "jogress_partner": "Virus Adult"
@@ -4917,12 +4770,12 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Kabuterimon.png",
-   "jogress_capable": true,
    "sleep": "22:00",
-   "strength": "70",
+   "power": "70",
    "sources": [
-    "humulos:pen20:result"
-   ]
+    "humulos:pen20"
+   ],
+   "jogress_capable": true
   },
   {
    "id": "kakkinmon",
@@ -4941,7 +4794,6 @@
       {
        "to": "Ludomon",
        "to_id": "ludomon",
-       "via_slug": "ludo",
        "raw": "No requirements",
        "parsed": {}
       }
@@ -4949,11 +4801,10 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Kakkinmon.png",
-   "jogress_capable": false,
    "sleep": "21:00",
-   "strength": null,
+   "power": null,
    "sources": [
-    "humulos:pen20:result"
+    "humulos:pen20"
    ]
   },
   {
@@ -4973,17 +4824,17 @@
       {
        "to": "Blossomon",
        "to_id": "blossomon",
-       "via_slug": "blosso",
        "raw": "0-2 Care Mistakes, 15 Battles, 12-15 Victories*",
        "parsed": {
         "care_mistakes": "0-2",
+        "victories": "12-15",
+        "battles_n": 15,
         "battles": true
        }
       },
       {
        "to": "Delumon",
        "to_id": "delumon",
-       "via_slug": "delu",
        "raw": "Jogress with Data Adult",
        "parsed": {
         "jogress_partner": "Data Adult"
@@ -4992,7 +4843,6 @@
       {
        "to": "Garudamon",
        "to_id": "garudamon",
-       "via_slug": "garuda",
        "raw": "Jogress with Vaccine Adult",
        "parsed": {
         "jogress_partner": "Vaccine Adult"
@@ -5001,7 +4851,6 @@
       {
        "to": "Gerbemon",
        "to_id": "gerbemon",
-       "via_slug": "gerbe",
        "raw": "Jogress with Virus Adult",
        "parsed": {
         "jogress_partner": "Virus Adult"
@@ -5011,12 +4860,12 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Kiwimon.png",
-   "jogress_capable": true,
    "sleep": "22:00",
-   "strength": "46",
+   "power": "46",
    "sources": [
-    "humulos:pen20:result"
-   ]
+    "humulos:pen20"
+   ],
+   "jogress_capable": true
   },
   {
    "id": "knightmon",
@@ -5035,17 +4884,17 @@
       {
        "to": "War Greymon",
        "to_id": "wargreymon",
-       "via_slug": "wargrey",
        "raw": "0-1 Care Mistakes, 15 Battles, 12-15 Victories*",
        "parsed": {
         "care_mistakes": "0-1",
+        "victories": "12-15",
+        "battles_n": 15,
         "battles": true
        }
       },
       {
        "to": "Metal Garurumon",
        "to_id": "metalgarurumon",
-       "via_slug": "metalgaruru",
        "raw": "Jogress with Data Perfect",
        "parsed": {
         "jogress_partner": "Data Perfect"
@@ -5055,12 +4904,12 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Knightmon.png",
-   "jogress_capable": true,
    "sleep": "23:00",
-   "strength": "124",
+   "power": "124",
    "sources": [
-    "humulos:pen20:result"
-   ]
+    "humulos:pen20"
+   ],
+   "jogress_capable": true
   },
   {
    "id": "kokuwamon",
@@ -5079,7 +4928,6 @@
       {
        "to": "Clockmon",
        "to_id": "clockmon",
-       "via_slug": "clock",
        "raw": "2+ Care Mistakes, 3-4 Effort",
        "parsed": {
         "care_mistakes": "2+",
@@ -5089,7 +4937,6 @@
       {
        "to": "Thunderballmon",
        "to_id": "thunderballmon",
-       "via_slug": "thunderball",
        "raw": "0-1 Care Mistakes, 0-3 Effort",
        "parsed": {
         "care_mistakes": "0-1",
@@ -5099,7 +4946,6 @@
       {
        "to": "Revolmon",
        "to_id": "revolmon",
-       "via_slug": "revol",
        "raw": "0-1 Care Mistakes, 4 Effort",
        "parsed": {
         "care_mistakes": "0-1",
@@ -5109,7 +4955,6 @@
       {
        "to": "Guardromon",
        "to_id": "guardromon",
-       "via_slug": "guardro",
        "raw": "2+ Care Mistakes, 0-2 Effort",
        "parsed": {
         "care_mistakes": "2+",
@@ -5120,11 +4965,10 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Kokuwamon.png",
-   "jogress_capable": false,
    "sleep": "21:00",
-   "strength": "10",
+   "power": "10",
    "sources": [
-    "humulos:pen20:result"
+    "humulos:pen20"
    ]
   },
   {
@@ -5144,7 +4988,6 @@
       {
        "to": "Guilmon",
        "to_id": "guilmon",
-       "via_slug": "guil",
        "raw": "0-1 Care Mistakes",
        "parsed": {
         "care_mistakes": "0-1"
@@ -5153,7 +4996,6 @@
       {
        "to": "Bushi Agumon",
        "to_id": "bushiagumon",
-       "via_slug": "bushiagu",
        "raw": "2+ Care Mistakes",
        "parsed": {
         "care_mistakes": "2+"
@@ -5163,11 +5005,10 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Koromon.png",
-   "jogress_capable": false,
    "sleep": "21:00",
-   "strength": null,
+   "power": null,
    "sources": [
-    "humulos:pen20:result"
+    "humulos:pen20"
    ]
   },
   {
@@ -5187,17 +5028,17 @@
       {
        "to": "Okuwamon",
        "to_id": "okuwamon",
-       "via_slug": "okuwa",
        "raw": "0-2 Care Mistakes, 15 Battles, 12-15 Victories*",
        "parsed": {
         "care_mistakes": "0-2",
+        "victories": "12-15",
+        "battles_n": 15,
         "battles": true
        }
       },
       {
        "to": "Tonosama Gekomon",
        "to_id": "tonosamagekomon",
-       "via_slug": "tonosamageko",
        "raw": "Jogress with Data or Virus Adult",
        "parsed": {
         "jogress_partner": "Data or Virus Adult"
@@ -5206,7 +5047,6 @@
       {
        "to": "Piccolomon",
        "to_id": "piccolomon",
-       "via_slug": "piccolo",
        "raw": "Jogress with Vaccine or Free Adult",
        "parsed": {
         "jogress_partner": "Vaccine or Free Adult"
@@ -5216,12 +5056,12 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Kuwagamon.png",
-   "jogress_capable": true,
    "sleep": "22:00",
-   "strength": "64",
+   "power": "64",
    "sources": [
-    "humulos:pen20:result"
-   ]
+    "humulos:pen20"
+   ],
+   "jogress_capable": true
   },
   {
    "id": "kyokyomon",
@@ -5240,7 +5080,6 @@
       {
        "to": "Ryudamon",
        "to_id": "ryudamon",
-       "via_slug": "ryuda",
        "raw": "No requirements",
        "parsed": {}
       }
@@ -5248,11 +5087,10 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Kyokyomon.png",
-   "jogress_capable": false,
    "sleep": "21:00",
-   "strength": null,
+   "power": null,
    "sources": [
-    "humulos:pen20:result"
+    "humulos:pen20"
    ]
   },
   {
@@ -5272,7 +5110,6 @@
       {
        "to": "Demon",
        "to_id": "demon",
-       "via_slug": "de",
        "raw": "Jogress with Virus Perfect",
        "parsed": {
         "jogress_partner": "Virus Perfect"
@@ -5281,7 +5118,6 @@
       {
        "to": "Mastemon",
        "to_id": "mastemon",
-       "via_slug": "maste",
        "raw": "Jogress with Angewomon",
        "parsed": {
         "jogress_partner": "Angewomon"
@@ -5291,12 +5127,12 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Lady Devimon.png",
-   "jogress_capable": true,
    "sleep": "23:00",
-   "strength": "118",
+   "power": "118",
    "sources": [
-    "humulos:pen20:result"
-   ]
+    "humulos:pen20"
+   ],
+   "jogress_capable": true
   },
   {
    "id": "lalamon",
@@ -5315,7 +5151,6 @@
       {
        "to": "Sunflowmon",
        "to_id": "sunflowmon",
-       "via_slug": "sunflow",
        "raw": "No requirements",
        "parsed": {}
       }
@@ -5323,11 +5158,10 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Lalamon.png",
-   "jogress_capable": false,
    "sleep": "21:00",
-   "strength": "16",
+   "power": "16",
    "sources": [
-    "humulos:pen20:result"
+    "humulos:pen20"
    ]
   },
   {
@@ -5347,10 +5181,11 @@
       {
        "to": "Volcanicdramon",
        "to_id": "volcanicdramon",
-       "via_slug": "volcanicdra",
        "raw": "0-2 Care Mistakes, 15 Battles, 12-15 Victories*",
        "parsed": {
         "care_mistakes": "0-2",
+        "victories": "12-15",
+        "battles_n": 15,
         "battles": true
        }
       }
@@ -5358,11 +5193,10 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Lavogaritamon.png",
-   "jogress_capable": false,
    "sleep": "23:00",
-   "strength": "136",
+   "power": "136",
    "sources": [
-    "humulos:pen20:result"
+    "humulos:pen20"
    ]
   },
   {
@@ -5382,10 +5216,11 @@
       {
        "to": "Lavogaritamon",
        "to_id": "lavogaritamon",
-       "via_slug": "lavogarita",
        "raw": "0-2 Care Mistakes, 15 Battles, 12-15 Victories*",
        "parsed": {
         "care_mistakes": "0-2",
+        "victories": "12-15",
+        "battles_n": 15,
         "battles": true
        }
       }
@@ -5393,11 +5228,10 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Lavorvomon.png",
-   "jogress_capable": false,
    "sleep": "22:00",
-   "strength": "82",
+   "power": "82",
    "sources": [
-    "humulos:pen20:result"
+    "humulos:pen20"
    ]
   },
   {
@@ -5417,17 +5251,17 @@
       {
        "to": "Metal Greymon",
        "to_id": "metalgreymon",
-       "via_slug": "metalgrey_va",
        "raw": "0-1 Care Mistakes, 15 Battles, 12-15 Victories*",
        "parsed": {
         "care_mistakes": "0-1",
+        "victories": "12-15",
+        "battles_n": 15,
         "battles": true
        }
       },
       {
        "to": "Asuramon",
        "to_id": "asuramon",
-       "via_slug": "asura",
        "raw": "Jogress with Vaccine or Data Adult",
        "parsed": {
         "jogress_partner": "Vaccine or Data Adult"
@@ -5436,7 +5270,6 @@
       {
        "to": "Metal Mamemon",
        "to_id": "metalmamemon",
-       "via_slug": "metalmame",
        "raw": "Jogress with Virus Adult",
        "parsed": {
         "jogress_partner": "Virus Adult"
@@ -5446,12 +5279,12 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Leomon.png",
-   "jogress_capable": true,
    "sleep": "22:00",
-   "strength": "70",
+   "power": "70",
    "sources": [
-    "humulos:pen20:result"
-   ]
+    "humulos:pen20"
+   ],
+   "jogress_capable": true
   },
   {
    "id": "leviamon",
@@ -5470,11 +5303,10 @@
     }
    },
    "sprite": null,
-   "jogress_capable": false,
    "sleep": "NA",
-   "strength": null,
+   "power": null,
    "sources": [
-    "humulos:pen20:result"
+    "humulos:pen20"
    ]
   },
   {
@@ -5494,10 +5326,11 @@
       {
        "to": "Lotusmon",
        "to_id": "lotusmon",
-       "via_slug": "lotus",
        "raw": "0-2 Care Mistakes, 15 Battles, 12-15 Victories*",
        "parsed": {
         "care_mistakes": "0-2",
+        "victories": "12-15",
+        "battles_n": 15,
         "battles": true
        }
       }
@@ -5505,11 +5338,10 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Lilamon.png",
-   "jogress_capable": false,
    "sleep": "23:00",
-   "strength": "118",
+   "power": "118",
    "sources": [
-    "humulos:pen20:result"
+    "humulos:pen20"
    ]
   },
   {
@@ -5529,10 +5361,11 @@
       {
        "to": "Rosemon",
        "to_id": "rosemon",
-       "via_slug": "rose",
        "raw": "0-1 Care Mistakes, 15 Battles, 12-15 Victories*",
        "parsed": {
         "care_mistakes": "0-1",
+        "victories": "12-15",
+        "battles_n": 15,
         "battles": true
        }
       }
@@ -5540,11 +5373,10 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Lilimon.png",
-   "jogress_capable": false,
    "sleep": "23:00",
-   "strength": "118",
+   "power": "118",
    "sources": [
-    "humulos:pen20:result"
+    "humulos:pen20"
    ]
   },
   {
@@ -5564,11 +5396,10 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Lilimon.png",
-   "jogress_capable": false,
    "sleep": "NA",
-   "strength": null,
+   "power": null,
    "sources": [
-    "humulos:pen20:result"
+    "humulos:pen20"
    ]
   },
   {
@@ -5588,7 +5419,6 @@
       {
        "to": "Turuiemon",
        "to_id": "turuiemon",
-       "via_slug": "turuie",
        "raw": "No requirements",
        "parsed": {}
       }
@@ -5596,11 +5426,10 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Lopmon.png",
-   "jogress_capable": false,
    "sleep": "21:00",
-   "strength": "22",
+   "power": "22",
    "sources": [
-    "humulos:pen20:result"
+    "humulos:pen20"
    ]
   },
   {
@@ -5620,11 +5449,10 @@
     }
    },
    "sprite": null,
-   "jogress_capable": false,
    "sleep": "NA",
-   "strength": "210",
+   "power": "210",
    "sources": [
-    "humulos:pen20:result"
+    "humulos:pen20"
    ]
   },
   {
@@ -5644,7 +5472,6 @@
       {
        "to": "Rafflesimon",
        "to_id": "rafflesimon",
-       "via_slug": "rafflesi",
        "raw": "Jogress with Rosemon",
        "parsed": {
         "jogress_partner": "Rosemon"
@@ -5654,12 +5481,12 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Lotusmon.png",
-   "jogress_capable": true,
    "sleep": "00:00",
-   "strength": "166",
+   "power": "166",
    "sources": [
-    "humulos:pen20:result"
-   ]
+    "humulos:pen20"
+   ],
+   "jogress_capable": true
   },
   {
    "id": "lucemonfalldownmode",
@@ -5678,11 +5505,10 @@
     }
    },
    "sprite": null,
-   "jogress_capable": false,
    "sleep": "NA",
-   "strength": null,
+   "power": null,
    "sources": [
-    "humulos:pen20:result"
+    "humulos:pen20"
    ]
   },
   {
@@ -5702,7 +5528,6 @@
       {
        "to": "Tia Ludomon",
        "to_id": "tialudomon",
-       "via_slug": "tialudo",
        "raw": "No requirements",
        "parsed": {}
       }
@@ -5710,11 +5535,10 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Ludomon.png",
-   "jogress_capable": false,
    "sleep": "21:00",
-   "strength": "34",
+   "power": "34",
    "sources": [
-    "humulos:pen20:result"
+    "humulos:pen20"
    ]
   },
   {
@@ -5734,17 +5558,17 @@
       {
        "to": "Baalmon",
        "to_id": "baalmon",
-       "via_slug": "baal",
        "raw": "0-2 Care Mistakes, 15 Battles, 12-15 Victories*",
        "parsed": {
         "care_mistakes": "0-2",
+        "victories": "12-15",
+        "battles_n": 15,
         "battles": true
        }
       },
       {
        "to": "Astamon",
        "to_id": "astamon",
-       "via_slug": "asta",
        "raw": "Jogress with Virus Adult",
        "parsed": {
         "jogress_partner": "Virus Adult"
@@ -5754,11 +5578,34 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Mad Leomon.png",
-   "jogress_capable": true,
    "sleep": "22:00",
-   "strength": "70",
+   "power": "70",
    "sources": [
-    "humulos:pen20:result"
+    "humulos:pen20"
+   ],
+   "jogress_capable": true
+  },
+  {
+   "id": "magnamon",
+   "name": "Magnamon",
+   "stage": null,
+   "level": "Armor",
+   "attribute": "Free",
+   "alt_attribute": null,
+   "devices": {
+    "pen20": {
+     "versions": [
+      "Copymon"
+     ],
+     "stage_time": null,
+     "evolves_to": []
+    }
+   },
+   "sprite": null,
+   "sleep": "NA",
+   "power": "192",
+   "sources": [
+    "humulos:pen20"
    ]
   },
   {
@@ -5778,10 +5625,11 @@
       {
        "to": "Skull Mammon",
        "to_id": "skullmammon",
-       "via_slug": "skullmam",
        "raw": "0 Care Mistakes, 15 Battles, 12-15 Victories*",
        "parsed": {
         "care_mistakes": "0",
+        "victories": "12-15",
+        "battles_n": 15,
         "battles": true
        }
       }
@@ -5789,11 +5637,10 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Mammon.png",
-   "jogress_capable": false,
    "sleep": "23:00",
-   "strength": "112",
+   "power": "112",
    "sources": [
-    "humulos:pen20:result"
+    "humulos:pen20"
    ]
   },
   {
@@ -5813,10 +5660,11 @@
       {
        "to": "Rize Greymon",
        "to_id": "rizegreymon",
-       "via_slug": "rizegrey",
        "raw": "0-2 Care Mistakes, 15 Battles, 12-15 Victories*",
        "parsed": {
         "care_mistakes": "0-2",
+        "victories": "12-15",
+        "battles_n": 15,
         "battles": true
        }
       }
@@ -5824,11 +5672,10 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Manbomon.png",
-   "jogress_capable": false,
    "sleep": "22:00",
-   "strength": "40",
+   "power": "40",
    "sources": [
-    "humulos:pen20:result"
+    "humulos:pen20"
    ]
   },
   {
@@ -5848,11 +5695,10 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Marin Angemon.png",
-   "jogress_capable": false,
    "sleep": "00:00",
-   "strength": "166",
+   "power": "166",
    "sources": [
-    "humulos:pen20:result"
+    "humulos:pen20"
    ]
   },
   {
@@ -5872,7 +5718,6 @@
       {
        "to": "Pukumon",
        "to_id": "pukumon",
-       "via_slug": "puku",
        "raw": "Jogress with Virus Perfect",
        "parsed": {
         "jogress_partner": "Virus Perfect"
@@ -5882,12 +5727,12 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Marin Devimon.png",
-   "jogress_capable": true,
    "sleep": "23:00",
-   "strength": "106",
+   "power": "106",
    "sources": [
-    "humulos:pen20:result"
-   ]
+    "humulos:pen20"
+   ],
+   "jogress_capable": true
   },
   {
    "id": "mastemon",
@@ -5906,11 +5751,10 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Mastemon.png",
-   "jogress_capable": false,
    "sleep": "00:00",
-   "strength": "184",
+   "power": "184",
    "sources": [
-    "humulos:pen20:result"
+    "humulos:pen20"
    ]
   },
   {
@@ -5930,17 +5774,17 @@
       {
        "to": "Megadramon",
        "to_id": "megadramon",
-       "via_slug": "megadra",
        "raw": "0-3 Care Mistakes, 15 Battles, 12-15 Victories*",
        "parsed": {
         "care_mistakes": "0-3",
+        "victories": "12-15",
+        "battles_n": 15,
         "battles": true
        }
       },
       {
        "to": "Warumonzaemon",
        "to_id": "warumonzaemon",
-       "via_slug": "warumonzae",
        "raw": "Jogress with Data or Virus Adult",
        "parsed": {
         "jogress_partner": "Data or Virus Adult"
@@ -5949,7 +5793,6 @@
       {
        "to": "Big Mamemon",
        "to_id": "bigmamemon",
-       "via_slug": "bigmame",
        "raw": "Jogress with Vaccine or Free Adult",
        "parsed": {
         "jogress_partner": "Vaccine or Free Adult"
@@ -5959,12 +5802,12 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Mechanorimon.png",
-   "jogress_capable": true,
    "sleep": "22:00",
-   "strength": "40",
+   "power": "40",
    "sources": [
-    "humulos:pen20:result"
-   ]
+    "humulos:pen20"
+   ],
+   "jogress_capable": true
   },
   {
    "id": "megadramon",
@@ -5976,15 +5819,13 @@
    "devices": {
     "pen20": {
      "versions": [
-      "Metal Empire",
-      "Draco"
+      "Metal Empire Draco"
      ],
      "stage_time": "48 h",
      "evolves_to": [
       {
        "to": "Mugendramon",
        "to_id": "mugendramon",
-       "via_slug": "mugendra",
        "raw": "Jogress with Virus Perfect",
        "parsed": {
         "jogress_partner": "Virus Perfect"
@@ -5994,7 +5835,6 @@
       {
        "to": "Darkdramon (Draco)",
        "to_id": "darkdramondraco",
-       "via_slug": "darkdra",
        "raw": "Jogress with Virus Perfect",
        "parsed": {
         "jogress_partner": "Virus Perfect"
@@ -6004,12 +5844,12 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Megadramon.png",
-   "jogress_capable": true,
    "sleep": "23:00",
-   "strength": "106",
+   "power": "106",
    "sources": [
-    "humulos:pen20:result"
-   ]
+    "humulos:pen20"
+   ],
+   "jogress_capable": true
   },
   {
    "id": "megalogrowmon",
@@ -6028,10 +5868,11 @@
       {
        "to": "Dukemon",
        "to_id": "dukemon",
-       "via_slug": "duke",
        "raw": "0-2 Care Mistakes, 15 Battles, 12-15 Victories*",
        "parsed": {
         "care_mistakes": "0-2",
+        "victories": "12-15",
+        "battles_n": 15,
         "battles": true
        }
       }
@@ -6039,11 +5880,10 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Megalo Growmon.png",
-   "jogress_capable": false,
    "sleep": "23:00",
-   "strength": "124",
+   "power": "124",
    "sources": [
-    "humulos:pen20:result"
+    "humulos:pen20"
    ]
   },
   {
@@ -6063,17 +5903,17 @@
       {
        "to": "Marin Angemon",
        "to_id": "marinangemon",
-       "via_slug": "marinange",
        "raw": "0 Care Mistakes, 15 Battles, 12-15 Victories*",
        "parsed": {
         "care_mistakes": "0",
+        "victories": "12-15",
+        "battles_n": 15,
         "battles": true
        }
       },
       {
        "to": "Metal Seadramon",
        "to_id": "metalseadramon",
-       "via_slug": "metalseadra",
        "raw": "Jogress with Data Perfect",
        "parsed": {
         "jogress_partner": "Data Perfect"
@@ -6083,12 +5923,12 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Mega Seadramon.png",
-   "jogress_capable": true,
    "sleep": "23:00",
-   "strength": "124",
+   "power": "124",
    "sources": [
-    "humulos:pen20:result"
-   ]
+    "humulos:pen20"
+   ],
+   "jogress_capable": true
   },
   {
    "id": "meicoomon",
@@ -6107,10 +5947,11 @@
       {
        "to": "Meicrackmon: Vicious Mode",
        "to_id": "meicrackmonviciousmode",
-       "via_slug": "meicrack_v",
        "raw": "0-2 Care Mistakes, 15 Battles, 12-15 Victories*",
        "parsed": {
         "care_mistakes": "0-2",
+        "victories": "12-15",
+        "battles_n": 15,
         "battles": true
        }
       }
@@ -6118,11 +5959,10 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Meicoomon.png",
-   "jogress_capable": false,
    "sleep": "22:00",
-   "strength": "64",
+   "power": "64",
    "sources": [
-    "humulos:pen20:result"
+    "humulos:pen20"
    ]
   },
   {
@@ -6142,10 +5982,11 @@
       {
        "to": "Raguelmon",
        "to_id": "raguelmon",
-       "via_slug": "raguel",
        "raw": "0-2 Care Mistakes, 15 Battles, 12-15 Victories*",
        "parsed": {
         "care_mistakes": "0-2",
+        "victories": "12-15",
+        "battles_n": 15,
         "battles": true
        }
       }
@@ -6153,11 +5994,10 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Meicrackmon Vicious Mode.png",
-   "jogress_capable": false,
    "sleep": "23:00",
-   "strength": "142",
+   "power": "142",
    "sources": [
-    "humulos:pen20:result"
+    "humulos:pen20"
    ]
   },
   {
@@ -6177,17 +6017,17 @@
       {
        "to": "Death Meramon",
        "to_id": "deathmeramon",
-       "via_slug": "deathmera",
        "raw": "0-4 Care Mistakes, 15 Battles, 12-15 Victories*",
        "parsed": {
         "care_mistakes": "0-4",
+        "victories": "12-15",
+        "battles_n": 15,
         "battles": true
        }
       },
       {
        "to": "Pumpmon",
        "to_id": "pumpmon",
-       "via_slug": "pump",
        "raw": "Jogress with Data Adult",
        "parsed": {
         "jogress_partner": "Data Adult"
@@ -6196,7 +6036,6 @@
       {
        "to": "Were Garurumon",
        "to_id": "weregarurumon",
-       "via_slug": "weregaruru",
        "raw": "Jogress with Vaccine Adult",
        "parsed": {
         "jogress_partner": "Vaccine Adult"
@@ -6205,7 +6044,6 @@
       {
        "to": "Fantomon",
        "to_id": "fantomon",
-       "via_slug": "fanto",
        "raw": "Jogress with Virus Adult",
        "parsed": {
         "jogress_partner": "Virus Adult"
@@ -6215,12 +6053,12 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Meramon.png",
-   "jogress_capable": true,
    "sleep": "22:00",
-   "strength": "46",
+   "power": "46",
    "sources": [
-    "humulos:pen20:result"
-   ]
+    "humulos:pen20"
+   ],
+   "jogress_capable": true
   },
   {
    "id": "metaletemon",
@@ -6239,11 +6077,10 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Metal Etemon.png",
-   "jogress_capable": false,
    "sleep": "00:00",
-   "strength": "160",
+   "power": "160",
    "sources": [
-    "humulos:pen20:result"
+    "humulos:pen20"
    ]
   },
   {
@@ -6256,15 +6093,13 @@
    "devices": {
     "pen20": {
      "versions": [
-      "Metal Empire",
-      "Virus Busters"
+      "Metal Empire Virus Busters"
      ],
      "stage_time": null,
      "evolves_to": [
       {
        "to": "Omegamon",
        "to_id": "omegamon",
-       "via_slug": "omega",
        "raw": "Jogress with War Greymon",
        "parsed": {
         "jogress_partner": "War Greymon"
@@ -6274,12 +6109,12 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Metal Garurumon.png",
-   "jogress_capable": true,
    "sleep": "00:00",
-   "strength": "190",
+   "power": "190",
    "sources": [
-    "humulos:pen20:result"
-   ]
+    "humulos:pen20"
+   ],
+   "jogress_capable": true
   },
   {
    "id": "metalgreymon",
@@ -6291,18 +6126,18 @@
    "devices": {
     "pen20": {
      "versions": [
-      "Metal Empire",
-      "Virus Busters"
+      "Metal Empire Virus Busters"
      ],
      "stage_time": "48 h",
      "evolves_to": [
       {
        "to": "War Greymon",
        "to_id": "wargreymon",
-       "via_slug": "wargrey",
        "raw": "0-1 Care Mistakes, 15 Battles, 12-15 Victories*",
        "parsed": {
         "care_mistakes": "0-1",
+        "victories": "12-15",
+        "battles_n": 15,
         "battles": true
        }
       }
@@ -6310,11 +6145,10 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Metal Greymon.png",
-   "jogress_capable": false,
    "sleep": "23:00",
-   "strength": "124",
+   "power": "124",
    "sources": [
-    "humulos:pen20:result"
+    "humulos:pen20"
    ]
   },
   {
@@ -6334,7 +6168,6 @@
       {
        "to": "Metal Garurumon",
        "to_id": "metalgarurumon",
-       "via_slug": "metalgaruru",
        "raw": "Jogress with Data Perfect",
        "parsed": {
         "jogress_partner": "Data Perfect"
@@ -6344,12 +6177,12 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Metal Mamemon.png",
-   "jogress_capable": true,
    "sleep": "23:00",
-   "strength": "118",
+   "power": "118",
    "sources": [
-    "humulos:pen20:result"
-   ]
+    "humulos:pen20"
+   ],
+   "jogress_capable": true
   },
   {
    "id": "metalseadramon",
@@ -6368,11 +6201,10 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Metal Seadramon.png",
-   "jogress_capable": false,
    "sleep": "00:00",
-   "strength": "178",
+   "power": "178",
    "sources": [
-    "humulos:pen20:result"
+    "humulos:pen20"
    ]
   },
   {
@@ -6392,7 +6224,6 @@
       {
        "to": "Tentomon",
        "to_id": "tentomon",
-       "via_slug": "tento",
        "raw": "0 Care Mistakes",
        "parsed": {
         "care_mistakes": "0"
@@ -6401,7 +6232,6 @@
       {
        "to": "Gottsumon",
        "to_id": "gottsumon",
-       "via_slug": "gottsu",
        "raw": "1-2 Care Mistakes",
        "parsed": {
         "care_mistakes": "1-2"
@@ -6410,7 +6240,6 @@
       {
        "to": "Otamamon",
        "to_id": "otamamon",
-       "via_slug": "otama",
        "raw": "3+ Care Mistakes",
        "parsed": {
         "care_mistakes": "3+"
@@ -6420,11 +6249,10 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Mochimon.png",
-   "jogress_capable": false,
    "sleep": "21:00",
-   "strength": null,
+   "power": null,
    "sources": [
-    "humulos:pen20:result"
+    "humulos:pen20"
    ]
   },
   {
@@ -6437,15 +6265,13 @@
    "devices": {
     "pen20": {
      "versions": [
-      "Nightmare Soldiers",
-      "Vorvo"
+      "Nightmare Soldiers Vorvo"
      ],
      "stage_time": "10 min",
      "evolves_to": [
       {
        "to": "Peti Meramon",
        "to_id": "petimeramon",
-       "via_slug": "petimera",
        "raw": "No requirements",
        "parsed": {}
       }
@@ -6453,11 +6279,10 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Mokumon.png",
-   "jogress_capable": false,
    "sleep": "NA",
-   "strength": null,
+   "power": null,
    "sources": [
-    "humulos:pen20:result"
+    "humulos:pen20"
    ]
   },
   {
@@ -6477,17 +6302,17 @@
       {
        "to": "Triceramon",
        "to_id": "triceramon",
-       "via_slug": "tricera",
        "raw": "0-2 Care Mistakes, 15 Battles, 12-15 Victories*",
        "parsed": {
         "care_mistakes": "0-2",
+        "victories": "12-15",
+        "battles_n": 15,
         "battles": true
        }
       },
       {
        "to": "Piccolomon",
        "to_id": "piccolomon",
-       "via_slug": "piccolo",
        "raw": "Jogress with Data Adult",
        "parsed": {
         "jogress_partner": "Data Adult"
@@ -6496,7 +6321,6 @@
       {
        "to": "Angewomon",
        "to_id": "angewomon",
-       "via_slug": "angewo",
        "raw": "Jogress with Vaccine Adult",
        "parsed": {
         "jogress_partner": "Vaccine Adult"
@@ -6505,7 +6329,6 @@
       {
        "to": "Tonosama Gekomon",
        "to_id": "tonosamagekomon",
-       "via_slug": "tonosamageko",
        "raw": "Jogress with Virus Adult",
        "parsed": {
         "jogress_partner": "Virus Adult"
@@ -6515,12 +6338,12 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Monochromon.png",
-   "jogress_capable": true,
    "sleep": "22:00",
-   "strength": "58",
+   "power": "58",
    "sources": [
-    "humulos:pen20:result"
-   ]
+    "humulos:pen20"
+   ],
+   "jogress_capable": true
   },
   {
    "id": "mugendramon",
@@ -6539,11 +6362,10 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Mugendramon.png",
-   "jogress_capable": false,
    "sleep": "00:00",
-   "strength": "202",
+   "power": "202",
    "sources": [
-    "humulos:pen20:result"
+    "humulos:pen20"
    ]
   },
   {
@@ -6563,7 +6385,6 @@
       {
        "to": "Woodmon",
        "to_id": "woodmon",
-       "via_slug": "wood",
        "raw": "2+ Care Mistakes, 2-4 Effort",
        "parsed": {
         "care_mistakes": "2+",
@@ -6573,7 +6394,6 @@
       {
        "to": "Red Vegimon",
        "to_id": "redvegimon",
-       "via_slug": "redvegi",
        "raw": "2+ Care Mistakes, 0-1 Effort",
        "parsed": {
         "care_mistakes": "2+",
@@ -6583,7 +6403,6 @@
       {
        "to": "V-dramon",
        "to_id": "vdramon",
-       "via_slug": "vdra",
        "raw": "0-1 Care Mistakes, 4 Effort",
        "parsed": {
         "care_mistakes": "0-1",
@@ -6593,7 +6412,6 @@
       {
        "to": "Birdramon",
        "to_id": "birdramon",
-       "via_slug": "birdra",
        "raw": "0-1 Care Mistakes, 0-3 Effort",
        "parsed": {
         "care_mistakes": "0-1",
@@ -6604,11 +6422,33 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Mushmon.png",
-   "jogress_capable": false,
    "sleep": "21:00",
-   "strength": "4",
+   "power": "4",
    "sources": [
-    "humulos:pen20:result"
+    "humulos:pen20"
+   ]
+  },
+  {
+   "id": "neo",
+   "name": "N.E.O",
+   "stage": null,
+   "level": "???",
+   "attribute": "Free",
+   "alt_attribute": null,
+   "devices": {
+    "pen20": {
+     "versions": [
+      "Copymon"
+     ],
+     "stage_time": null,
+     "evolves_to": []
+    }
+   },
+   "sprite": null,
+   "sleep": "NA",
+   "power": "228",
+   "sources": [
+    "humulos:pen20"
    ]
   },
   {
@@ -6621,15 +6461,13 @@
    "devices": {
     "pen20": {
      "versions": [
-      "Virus Busters",
-      "Meicoo"
+      "Virus Busters Meicoo"
      ],
      "stage_time": "12 h",
      "evolves_to": [
       {
        "to": "Agumon",
        "to_id": "agumon",
-       "via_slug": "agu",
        "raw": "0 Care Mistakes",
        "parsed": {
         "care_mistakes": "0"
@@ -6638,16 +6476,12 @@
       {
        "to": "Gabumon",
        "to_id": "gabumon",
-       "via_slug": "gabu",
        "raw": "1 Care Mistake",
-       "parsed": {
-        "care_mistakes": "1"
-       }
+       "parsed": {}
       },
       {
        "to": "Plotmon",
        "to_id": "plotmon",
-       "via_slug": "plot",
        "raw": "2+ Care Mistakes",
        "parsed": {
         "care_mistakes": "2+"
@@ -6657,11 +6491,10 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Nyaromon.png",
-   "jogress_capable": false,
    "sleep": "21:00",
-   "strength": null,
+   "power": null,
    "sources": [
-    "humulos:pen20:result"
+    "humulos:pen20"
    ]
   },
   {
@@ -6674,15 +6507,13 @@
    "devices": {
     "pen20": {
      "versions": [
-      "Wind Guardians",
-      "Lala"
+      "Wind Guardians Lala"
      ],
      "stage_time": "10 min",
      "evolves_to": [
       {
        "to": "Pyocomon",
        "to_id": "pyocomon",
-       "via_slug": "pyoco",
        "raw": "No requirements",
        "parsed": {},
        "version_tag": "WGu"
@@ -6690,7 +6521,6 @@
       {
        "to": "Budmon",
        "to_id": "budmon",
-       "via_slug": "bud",
        "raw": "No requirements",
        "parsed": {},
        "version_tag": "Lala"
@@ -6699,11 +6529,10 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Nyokimon.png",
-   "jogress_capable": false,
    "sleep": "NA",
-   "strength": null,
+   "power": null,
    "sources": [
-    "humulos:pen20:result"
+    "humulos:pen20"
    ]
   },
   {
@@ -6723,17 +6552,17 @@
       {
        "to": "Marin Devimon",
        "to_id": "marindevimon",
-       "via_slug": "marindevi",
        "raw": "0-4 Care Mistakes, 15 Battles, 12-15 Victories*",
        "parsed": {
         "care_mistakes": "0-4",
+        "victories": "12-15",
+        "battles_n": 15,
         "battles": true
        }
       },
       {
        "to": "Dagomon",
        "to_id": "dagomon",
-       "via_slug": "dago",
        "raw": "Jogress with Data or Virus Adult",
        "parsed": {
         "jogress_partner": "Data or Virus Adult"
@@ -6742,7 +6571,6 @@
       {
        "to": "Anomalocarimon",
        "to_id": "anomalocarimon",
-       "via_slug": "anomalocari",
        "raw": "Jogress with Vaccine or Free Adult",
        "parsed": {
         "jogress_partner": "Vaccine or Free Adult"
@@ -6752,12 +6580,12 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Octmon.png",
-   "jogress_capable": true,
    "sleep": "22:00",
-   "strength": "52",
+   "power": "52",
    "sources": [
-    "humulos:pen20:result"
-   ]
+    "humulos:pen20"
+   ],
+   "jogress_capable": true
   },
   {
    "id": "ofanimon",
@@ -6776,11 +6604,10 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Ofanimon.png",
-   "jogress_capable": false,
    "sleep": "00:00",
-   "strength": "184",
+   "power": "184",
    "sources": [
-    "humulos:pen20:result"
+    "humulos:pen20"
    ]
   },
   {
@@ -6800,7 +6627,6 @@
       {
        "to": "Ordinemon",
        "to_id": "ordinemon",
-       "via_slug": "ordine",
        "raw": "Jogress with Raguelmon",
        "parsed": {
         "jogress_partner": "Raguelmon"
@@ -6810,12 +6636,12 @@
     }
    },
    "sprite": null,
-   "jogress_capable": true,
    "sleep": "NA",
-   "strength": "198",
+   "power": "198",
    "sources": [
-    "humulos:pen20:result"
-   ]
+    "humulos:pen20"
+   ],
+   "jogress_capable": true
   },
   {
    "id": "ogudomon",
@@ -6834,11 +6660,10 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Ogudomon.png",
-   "jogress_capable": false,
    "sleep": "00:00",
-   "strength": "232",
+   "power": "232",
    "sources": [
-    "humulos:pen20:result"
+    "humulos:pen20"
    ]
   },
   {
@@ -6858,17 +6683,17 @@
       {
        "to": "Herakle Kabuterimon",
        "to_id": "heraklekabuterimon",
-       "via_slug": "heraklekabuteri",
        "raw": "0 Care Mistakes, 15 Battles, 12-15 Victories*",
        "parsed": {
         "care_mistakes": "0",
+        "victories": "12-15",
+        "battles_n": 15,
         "battles": true
        }
       },
       {
        "to": "Metal Etemon",
        "to_id": "metaletemon",
-       "via_slug": "metalete",
        "raw": "Jogress with Virus Perfect",
        "parsed": {
         "jogress_partner": "Virus Perfect"
@@ -6878,12 +6703,12 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Okuwamon.png",
-   "jogress_capable": true,
    "sleep": "23:00",
-   "strength": "118",
+   "power": "118",
    "sources": [
-    "humulos:pen20:result"
-   ]
+    "humulos:pen20"
+   ],
+   "jogress_capable": true
   },
   {
    "id": "omegamon",
@@ -6902,7 +6727,6 @@
       {
        "to": "Imperialdramon:  Paladin Mode",
        "to_id": "imperialdramonpaladinmode",
-       "via_slug": "imperialdra_p",
        "raw": "Jogress with Imperialdramon: Fighter Mode",
        "parsed": {
         "jogress_partner": "Imperialdramon: Fighter Mode"
@@ -6912,12 +6736,12 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Omegamon.png",
-   "jogress_capable": true,
    "sleep": "00:00",
-   "strength": "232",
+   "power": "232",
    "sources": [
-    "humulos:pen20:result"
-   ]
+    "humulos:pen20"
+   ],
+   "jogress_capable": true
   },
   {
    "id": "omegamonalters",
@@ -6936,11 +6760,10 @@
     }
    },
    "sprite": null,
-   "jogress_capable": false,
    "sleep": "NA",
-   "strength": null,
+   "power": null,
    "sources": [
-    "humulos:pen20:result"
+    "humulos:pen20"
    ]
   },
   {
@@ -6960,11 +6783,10 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Ordinemon.png",
-   "jogress_capable": false,
    "sleep": "00:00",
-   "strength": "232",
+   "power": "232",
    "sources": [
-    "humulos:pen20:result"
+    "humulos:pen20"
    ]
   },
   {
@@ -6984,7 +6806,6 @@
       {
        "to": "Gekomon",
        "to_id": "gekomon",
-       "via_slug": "geko",
        "raw": "2+ Care Mistakes, 0-1 Effort",
        "parsed": {
         "care_mistakes": "2+",
@@ -6994,7 +6815,6 @@
       {
        "to": "Kuwagamon",
        "to_id": "kuwagamon",
-       "via_slug": "kuwaga",
        "raw": "2+ Care Mistakes, 2-4 Effort",
        "parsed": {
         "care_mistakes": "2+",
@@ -7004,7 +6824,6 @@
       {
        "to": "Tailmon",
        "to_id": "tailmon",
-       "via_slug": "tail",
        "raw": "0-1 Care Mistakes, 4 Effort",
        "parsed": {
         "care_mistakes": "0-1",
@@ -7014,7 +6833,6 @@
       {
        "to": "Starmon",
        "to_id": "starmon",
-       "via_slug": "star",
        "raw": "0-1 Care Mistakes, 0-3 Effort",
        "parsed": {
         "care_mistakes": "0-1",
@@ -7025,11 +6843,10 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Otamamon.png",
-   "jogress_capable": false,
    "sleep": "21:00",
-   "strength": "4",
+   "power": "4",
    "sources": [
-    "humulos:pen20:result"
+    "humulos:pen20"
    ]
   },
   {
@@ -7049,7 +6866,6 @@
       {
        "to": "Alphamon: Ouryuken",
        "to_id": "alphamonouryuken",
-       "via_slug": "alpha_o",
        "raw": "Jogress with Alphamon",
        "parsed": {
         "jogress_partner": "Alphamon"
@@ -7059,12 +6875,12 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Ouryumon.png",
-   "jogress_capable": true,
    "sleep": "00:00",
-   "strength": "202",
+   "power": "202",
    "sources": [
-    "humulos:pen20:result"
-   ]
+    "humulos:pen20"
+   ],
+   "jogress_capable": true
   },
   {
    "id": "paildramon",
@@ -7083,10 +6899,11 @@
       {
        "to": "Imperialdramon: Fighter Mode",
        "to_id": "imperialdramonfightermode",
-       "via_slug": "imperialdra_f",
        "raw": "0-2 Care Mistakes, 15 Battles, 12-15 Victories*",
        "parsed": {
         "care_mistakes": "0-2",
+        "victories": "12-15",
+        "battles_n": 15,
         "battles": true
        }
       }
@@ -7094,11 +6911,10 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Paildramon.png",
-   "jogress_capable": false,
    "sleep": "23:00",
-   "strength": "136",
+   "power": "136",
    "sources": [
-    "humulos:pen20:result"
+    "humulos:pen20"
    ]
   },
   {
@@ -7118,7 +6934,6 @@
       {
        "to": "Togemon",
        "to_id": "togemon",
-       "via_slug": "toge",
        "raw": "0-1 Care Mistakes, 3-4 Effort",
        "parsed": {
         "care_mistakes": "0-1",
@@ -7128,7 +6943,6 @@
       {
        "to": "Kiwimon",
        "to_id": "kiwimon",
-       "via_slug": "kiwi",
        "raw": "0-1 Care Mistakes, 0-2 Effort",
        "parsed": {
         "care_mistakes": "0-1",
@@ -7138,7 +6952,6 @@
       {
        "to": "Red Vegimon",
        "to_id": "redvegimon",
-       "via_slug": "redvegi",
        "raw": "2+ Care Mistakes, 0-3 Effort",
        "parsed": {
         "care_mistakes": "2+",
@@ -7148,7 +6961,6 @@
       {
        "to": "Birdramon",
        "to_id": "birdramon",
-       "via_slug": "birdra",
        "raw": "2+ Care Mistakes, 4 Effort",
        "parsed": {
         "care_mistakes": "2+",
@@ -7159,11 +6971,10 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Palmon.png",
-   "jogress_capable": false,
    "sleep": "21:00",
-   "strength": "10",
+   "power": "10",
    "sources": [
-    "humulos:pen20:result"
+    "humulos:pen20"
    ]
   },
   {
@@ -7176,15 +6987,13 @@
    "devices": {
     "pen20": {
      "versions": [
-      "Nightmare Soldiers",
-      "Vorvo"
+      "Nightmare Soldiers Vorvo"
      ],
      "stage_time": "12 h",
      "evolves_to": [
       {
        "to": "Bakumon",
        "to_id": "bakumon",
-       "via_slug": "baku",
        "raw": "0 Care Mistakes",
        "parsed": {
         "care_mistakes": "0"
@@ -7194,7 +7003,6 @@
       {
        "to": "Candmon",
        "to_id": "candmon",
-       "via_slug": "cand",
        "raw": "1-2 Care Mistakes",
        "parsed": {
         "care_mistakes": "1-2"
@@ -7204,7 +7012,6 @@
       {
        "to": "Pico Devimon",
        "to_id": "picodevimon",
-       "via_slug": "picodevi",
        "raw": "3+ Care Mistakes",
        "parsed": {
         "care_mistakes": "3+"
@@ -7214,7 +7021,6 @@
       {
        "to": "Vorvomon (Vorvo)",
        "to_id": "vorvomonvorvo",
-       "via_slug": "vorvo",
        "raw": "No requirements",
        "parsed": {}
       }
@@ -7222,11 +7028,10 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Peti Meramon.png",
-   "jogress_capable": false,
    "sleep": "21:00",
-   "strength": null,
+   "power": null,
    "sources": [
-    "humulos:pen20:result"
+    "humulos:pen20"
    ]
   },
   {
@@ -7246,7 +7051,6 @@
       {
        "to": "Babydmon",
        "to_id": "babydmon",
-       "via_slug": "babyd",
        "raw": "No requirements",
        "parsed": {}
       }
@@ -7254,11 +7058,10 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Petitmon.png",
-   "jogress_capable": false,
    "sleep": "NA",
-   "strength": null,
+   "power": null,
    "sources": [
-    "humulos:pen20:result"
+    "humulos:pen20"
    ]
   },
   {
@@ -7278,7 +7081,6 @@
       {
        "to": "Porcupamon",
        "to_id": "porcupamon",
-       "via_slug": "porcupa",
        "raw": "0-1 Care Mistakes, 4 Effort",
        "parsed": {
         "care_mistakes": "0-1",
@@ -7288,7 +7090,6 @@
       {
        "to": "Shadramon",
        "to_id": "shadramon",
-       "via_slug": "shadra",
        "raw": "0-1 Care Mistakes, 0-3 Effort",
        "parsed": {
         "care_mistakes": "0-1",
@@ -7298,7 +7099,6 @@
       {
        "to": "Troopmon",
        "to_id": "troopmon",
-       "via_slug": "troop",
        "raw": "2+ Care Mistakes",
        "parsed": {
         "care_mistakes": "2+"
@@ -7308,11 +7108,10 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Phascomon.png",
-   "jogress_capable": false,
    "sleep": "21:00",
-   "strength": "16",
+   "power": "16",
    "sources": [
-    "humulos:pen20:result"
+    "humulos:pen20"
    ]
   },
   {
@@ -7332,7 +7131,6 @@
       {
        "to": "Saber Leomon",
        "to_id": "saberleomon",
-       "via_slug": "saberleo",
        "raw": "Jogress with Data Perfect",
        "parsed": {
         "jogress_partner": "Data Perfect"
@@ -7342,12 +7140,12 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Piccolomon.png",
-   "jogress_capable": true,
    "sleep": "23:00",
-   "strength": "106",
+   "power": "106",
    "sources": [
-    "humulos:pen20:result"
-   ]
+    "humulos:pen20"
+   ],
+   "jogress_capable": true
   },
   {
    "id": "picodevimon",
@@ -7366,7 +7164,6 @@
       {
        "to": "Devimon",
        "to_id": "devimon",
-       "via_slug": "devi",
        "raw": "0-1 Care Mistakes, 2-4 Effort",
        "parsed": {
         "care_mistakes": "0-1",
@@ -7376,7 +7173,6 @@
       {
        "to": "Bakemon",
        "to_id": "bakemon",
-       "via_slug": "bake",
        "raw": "0-1 Care Mistakes, 0-1 Effort",
        "parsed": {
         "care_mistakes": "0-1",
@@ -7386,7 +7182,6 @@
       {
        "to": "Dokugumon",
        "to_id": "dokugumon",
-       "via_slug": "dokugu",
        "raw": "2+ Care Mistakes, 0-3 Effort",
        "parsed": {
         "care_mistakes": "2+",
@@ -7396,7 +7191,6 @@
       {
        "to": "Wizarmon",
        "to_id": "wizarmon",
-       "via_slug": "wizar",
        "raw": "2+ Care Mistakes, 4 Effort",
        "parsed": {
         "care_mistakes": "2+",
@@ -7407,11 +7201,10 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Pico Devimon.png",
-   "jogress_capable": false,
    "sleep": "21:00",
-   "strength": "4",
+   "power": "4",
    "sources": [
-    "humulos:pen20:result"
+    "humulos:pen20"
    ]
   },
   {
@@ -7431,7 +7224,6 @@
       {
        "to": "Voltobautamon",
        "to_id": "voltobautamon",
-       "via_slug": "voltobauta",
        "raw": "Jogress with Vamdemon",
        "parsed": {
         "jogress_partner": "Vamdemon"
@@ -7441,12 +7233,12 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Piemon.png",
-   "jogress_capable": true,
    "sleep": "00:00",
-   "strength": "166",
+   "power": "166",
    "sources": [
-    "humulos:pen20:result"
-   ]
+    "humulos:pen20"
+   ],
+   "jogress_capable": true
   },
   {
    "id": "pinochimon",
@@ -7465,11 +7257,10 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Pinochimon.png",
-   "jogress_capable": false,
    "sleep": "00:00",
-   "strength": "166",
+   "power": "166",
    "sources": [
-    "humulos:pen20:result"
+    "humulos:pen20"
    ]
   },
   {
@@ -7489,7 +7280,6 @@
       {
        "to": "Pukamon",
        "to_id": "pukamon",
-       "via_slug": "puka",
        "raw": "No requirements",
        "parsed": {}
       }
@@ -7497,11 +7287,10 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Pitchmon.png",
-   "jogress_capable": false,
    "sleep": "NA",
-   "strength": null,
+   "power": null,
    "sources": [
-    "humulos:pen20:result"
+    "humulos:pen20"
    ]
   },
   {
@@ -7521,7 +7310,6 @@
       {
        "to": "Birdramon",
        "to_id": "birdramon",
-       "via_slug": "birdra",
        "raw": "0-1 Care Mistakes, 0-2 Effort",
        "parsed": {
         "care_mistakes": "0-1",
@@ -7531,7 +7319,6 @@
       {
        "to": "V-dramon",
        "to_id": "vdramon",
-       "via_slug": "vdra",
        "raw": "0-1 Care Mistakes, 3-4 Effort",
        "parsed": {
         "care_mistakes": "0-1",
@@ -7541,7 +7328,6 @@
       {
        "to": "Togemon",
        "to_id": "togemon",
-       "via_slug": "toge",
        "raw": "2+ Care Mistakes, 4 Effort",
        "parsed": {
         "care_mistakes": "2+",
@@ -7551,7 +7337,6 @@
       {
        "to": "Woodmon",
        "to_id": "woodmon",
-       "via_slug": "wood",
        "raw": "2+ Care Mistakes, 0-3 Effort",
        "parsed": {
         "care_mistakes": "2+",
@@ -7562,11 +7347,10 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Piyomon.png",
-   "jogress_capable": false,
    "sleep": "21:00",
-   "strength": "16",
+   "power": "16",
    "sources": [
-    "humulos:pen20:result"
+    "humulos:pen20"
    ]
   },
   {
@@ -7586,11 +7370,10 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Plesiomon.png",
-   "jogress_capable": false,
    "sleep": "00:00",
-   "strength": "172",
+   "power": "172",
    "sources": [
-    "humulos:pen20:result"
+    "humulos:pen20"
    ]
   },
   {
@@ -7603,15 +7386,13 @@
    "devices": {
     "pen20": {
      "versions": [
-      "Virus Busters",
-      "Meicoo"
+      "Virus Busters Meicoo"
      ],
      "stage_time": "24 h",
      "evolves_to": [
       {
        "to": "Tailmon",
        "to_id": "tailmon",
-       "via_slug": "tail",
        "raw": "0-1 Care Mistakes, 4 Effort",
        "parsed": {
         "care_mistakes": "0-1",
@@ -7622,7 +7403,6 @@
       {
        "to": "Angemon",
        "to_id": "angemon",
-       "via_slug": "ange",
        "raw": "0-1 Care Mistakes, 0-3 Effort",
        "parsed": {
         "care_mistakes": "0-1",
@@ -7633,7 +7413,6 @@
       {
        "to": "Greymon",
        "to_id": "greymon",
-       "via_slug": "grey",
        "raw": "2+ Care Mistakes, 2-4 Effort",
        "parsed": {
         "care_mistakes": "2+",
@@ -7644,7 +7423,6 @@
       {
        "to": "Igamon",
        "to_id": "igamon",
-       "via_slug": "iga",
        "raw": "2+ Care Mistakes, 0-1 Effort",
        "parsed": {
         "care_mistakes": "2+",
@@ -7655,7 +7433,6 @@
       {
        "to": "Meicoomon (Meicoo)",
        "to_id": "meicoomonmeicoo",
-       "via_slug": "meicoo",
        "raw": "No requirements",
        "parsed": {}
       }
@@ -7663,11 +7440,10 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Plotmon.png",
-   "jogress_capable": false,
    "sleep": "21:00",
-   "strength": "4",
+   "power": "4",
    "sources": [
-    "humulos:pen20:result"
+    "humulos:pen20"
    ]
   },
   {
@@ -7687,17 +7463,17 @@
       {
        "to": "Astamon",
        "to_id": "astamon",
-       "via_slug": "asta",
        "raw": "0-2 Care Mistakes, 15 Battles, 12-15 Victories*",
        "parsed": {
         "care_mistakes": "0-2",
+        "victories": "12-15",
+        "battles_n": 15,
         "battles": true
        }
       },
       {
        "to": "Baalmon",
        "to_id": "baalmon",
-       "via_slug": "baal",
        "raw": "Jogress with Vaccine or Free Adult",
        "parsed": {
         "jogress_partner": "Vaccine or Free Adult"
@@ -7706,7 +7482,6 @@
       {
        "to": "Dark Knightmon",
        "to_id": "darkknightmon",
-       "via_slug": "darkknight",
        "raw": "Jogress with Data for Virus Adult",
        "parsed": {
         "jogress_partner": "Data for Virus Adult"
@@ -7716,12 +7491,12 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Porcupamon.png",
-   "jogress_capable": true,
    "sleep": "22:00",
-   "strength": "76",
+   "power": "76",
    "sources": [
-    "humulos:pen20:result"
-   ]
+    "humulos:pen20"
+   ],
+   "jogress_capable": true
   },
   {
    "id": "pukamon",
@@ -7740,7 +7515,6 @@
       {
        "to": "Gomamon",
        "to_id": "gomamon",
-       "via_slug": "goma",
        "raw": "0 Care Mistakes",
        "parsed": {
         "care_mistakes": "0"
@@ -7749,7 +7523,6 @@
       {
        "to": "Ganimon",
        "to_id": "ganimon",
-       "via_slug": "gani",
        "raw": "1-2 Care Mistakes",
        "parsed": {
         "care_mistakes": "1-2"
@@ -7758,7 +7531,6 @@
       {
        "to": "Shakomon",
        "to_id": "shakomon",
-       "via_slug": "shako",
        "raw": "3+ Care Mistakes",
        "parsed": {
         "care_mistakes": "3+"
@@ -7768,11 +7540,10 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Pukamon.png",
-   "jogress_capable": false,
    "sleep": "21:00",
-   "strength": null,
+   "power": null,
    "sources": [
-    "humulos:pen20:result"
+    "humulos:pen20"
    ]
   },
   {
@@ -7792,11 +7563,10 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Pukumon.png",
-   "jogress_capable": false,
    "sleep": "00:00",
-   "strength": "160",
+   "power": "160",
    "sources": [
-    "humulos:pen20:result"
+    "humulos:pen20"
    ]
   },
   {
@@ -7816,7 +7586,6 @@
       {
        "to": "Boltmon",
        "to_id": "boltmon",
-       "via_slug": "bolt",
        "raw": "Jogress with Data Perfect",
        "parsed": {
         "jogress_partner": "Data Perfect"
@@ -7826,12 +7595,12 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Pumpmon.png",
-   "jogress_capable": true,
    "sleep": "23:00",
-   "strength": "106",
+   "power": "106",
    "sources": [
-    "humulos:pen20:result"
-   ]
+    "humulos:pen20"
+   ],
+   "jogress_capable": true
   },
   {
    "id": "pyocomon",
@@ -7850,7 +7619,6 @@
       {
        "to": "Piyomon",
        "to_id": "piyomon",
-       "via_slug": "piyo",
        "raw": "0 Care Mistakes",
        "parsed": {
         "care_mistakes": "0"
@@ -7859,16 +7627,12 @@
       {
        "to": "Floramon",
        "to_id": "floramon",
-       "via_slug": "flora",
        "raw": "1 Care Mistake",
-       "parsed": {
-        "care_mistakes": "1"
-       }
+       "parsed": {}
       },
       {
        "to": "Palmon",
        "to_id": "palmon",
-       "via_slug": "pal",
        "raw": "2 Care Mistakes",
        "parsed": {
         "care_mistakes": "2"
@@ -7877,7 +7641,6 @@
       {
        "to": "Mushmon",
        "to_id": "mushmon",
-       "via_slug": "mush",
        "raw": "3+ Care Mistakes",
        "parsed": {
         "care_mistakes": "3+"
@@ -7887,11 +7650,10 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Pyocomon.png",
-   "jogress_capable": false,
    "sleep": "21:00",
-   "strength": null,
+   "power": null,
    "sources": [
-    "humulos:pen20:result"
+    "humulos:pen20"
    ]
   },
   {
@@ -7911,11 +7673,10 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Rafflesimon.png",
-   "jogress_capable": false,
    "sleep": "00:00",
-   "strength": "232",
+   "power": "232",
    "sources": [
-    "humulos:pen20:result"
+    "humulos:pen20"
    ]
   },
   {
@@ -7935,11 +7696,10 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Ragna Lordmon.png",
-   "jogress_capable": false,
    "sleep": "00:00",
-   "strength": "232",
+   "power": "232",
    "sources": [
-    "humulos:pen20:result"
+    "humulos:pen20"
    ]
   },
   {
@@ -7959,7 +7719,6 @@
       {
        "to": "Ordinemon",
        "to_id": "ordinemon",
-       "via_slug": "ordine",
        "raw": "Jogress with Ofanimon: Falldown Mode",
        "parsed": {
         "jogress_partner": "Ofanimon: Falldown Mode"
@@ -7969,11 +7728,10 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Raguelmon.png",
-   "jogress_capable": false,
    "sleep": "00:00",
-   "strength": "196",
+   "power": "196",
    "sources": [
-    "humulos:pen20:result"
+    "humulos:pen20"
    ]
   },
   {
@@ -7993,10 +7751,11 @@
       {
        "to": "Bryweludramon",
        "to_id": "bryweludramon",
-       "via_slug": "bryweludra",
        "raw": "0-1 Care Mistakes, 15 Battles, 12-15 Victories*",
        "parsed": {
         "care_mistakes": "0-1",
+        "victories": "12-15",
+        "battles_n": 15,
         "battles": true
        }
       }
@@ -8004,11 +7763,10 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Raiji Ludomon.png",
-   "jogress_capable": false,
    "sleep": "23:00",
-   "strength": "148",
+   "power": "148",
    "sources": [
-    "humulos:pen20:result"
+    "humulos:pen20"
    ]
   },
   {
@@ -8028,10 +7786,11 @@
       {
        "to": "Saint Galgomon",
        "to_id": "saintgalgomon",
-       "via_slug": "saintgalgo",
        "raw": "0-2 Care Mistakes, 15 Battles, 12-15 Victories*",
        "parsed": {
         "care_mistakes": "0-2",
+        "victories": "12-15",
+        "battles_n": 15,
         "battles": true
        }
       }
@@ -8039,11 +7798,10 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Rapidmon.png",
-   "jogress_capable": false,
    "sleep": "23:00",
-   "strength": "124",
+   "power": "124",
    "sources": [
-    "humulos:pen20:result"
+    "humulos:pen20"
    ]
   },
   {
@@ -8063,17 +7821,17 @@
       {
        "to": "Jyureimon",
        "to_id": "jyureimon",
-       "via_slug": "jyurei",
        "raw": "0-3 Care Mistakes, 15 Battles, 12-15 Victories*",
        "parsed": {
         "care_mistakes": "0-3",
+        "victories": "12-15",
+        "battles_n": 15,
         "battles": true
        }
       },
       {
        "to": "Gerbemon",
        "to_id": "gerbemon",
-       "via_slug": "gerbe",
        "raw": "Jogress with Data or Virus Adult",
        "parsed": {
         "jogress_partner": "Data or Virus Adult"
@@ -8082,7 +7840,6 @@
       {
        "to": "Delumon",
        "to_id": "delumon",
-       "via_slug": "delu",
        "raw": "Jogress with Vaccine or Free Adult",
        "parsed": {
         "jogress_partner": "Vaccine or Free Adult"
@@ -8092,12 +7849,12 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Red Vegimon.png",
-   "jogress_capable": true,
    "sleep": "22:00",
-   "strength": "40",
+   "power": "40",
    "sources": [
-    "humulos:pen20:result"
-   ]
+    "humulos:pen20"
+   ],
+   "jogress_capable": true
   },
   {
    "id": "reppamon",
@@ -8116,17 +7873,17 @@
       {
        "to": "Beowolfmon",
        "to_id": "beowolfmon",
-       "via_slug": "beowolf",
        "raw": "0-2 Care Mistakes, 15 Battles, 12-15 Victories*",
        "parsed": {
         "care_mistakes": "0-2",
+        "victories": "12-15",
+        "battles_n": 15,
         "battles": true
        }
       },
       {
        "to": "Rize Greymon",
        "to_id": "rizegreymon",
-       "via_slug": "rizegrey",
        "raw": "Jogress with Vaccine or Data Adult",
        "parsed": {
         "jogress_partner": "Vaccine or Data Adult"
@@ -8135,7 +7892,6 @@
       {
        "to": "Megalogrow",
        "to_id": "megalogrow",
-       "via_slug": "megalogrow",
        "raw": "Jogress with Virus Adult",
        "parsed": {
         "jogress_partner": "Virus Adult"
@@ -8145,12 +7901,12 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Reppamon.png",
-   "jogress_capable": true,
    "sleep": "22:00",
-   "strength": "64",
+   "power": "64",
    "sources": [
-    "humulos:pen20:result"
-   ]
+    "humulos:pen20"
+   ],
+   "jogress_capable": true
   },
   {
    "id": "revolmon",
@@ -8169,17 +7925,17 @@
       {
        "to": "Metal Greymon",
        "to_id": "metalgreymon",
-       "via_slug": "metalgrey_va",
        "raw": "0-1 Care Mistakes, 15 Battles, 12-15 Victories*",
        "parsed": {
         "care_mistakes": "0-1",
+        "victories": "12-15",
+        "battles_n": 15,
         "battles": true
        }
       },
       {
        "to": "Andromon",
        "to_id": "andromon",
-       "via_slug": "andro",
        "raw": "Jogress with Vaccine or Data Adult",
        "parsed": {
         "jogress_partner": "Vaccine or Data Adult"
@@ -8188,7 +7944,6 @@
       {
        "to": "Big Mamemon",
        "to_id": "bigmamemon",
-       "via_slug": "bigmame",
        "raw": "Jogress with Virus Adult",
        "parsed": {
         "jogress_partner": "Virus Adult"
@@ -8198,12 +7953,12 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Revolmon.png",
-   "jogress_capable": true,
    "sleep": "22:00",
-   "strength": "58",
+   "power": "58",
    "sources": [
-    "humulos:pen20:result"
-   ]
+    "humulos:pen20"
+   ],
+   "jogress_capable": true
   },
   {
    "id": "rizegreymon",
@@ -8222,20 +7977,22 @@
       {
        "to": "Dukemon",
        "to_id": "dukemon",
-       "via_slug": "duke",
        "raw": "0 Care Mistakes, 15 Battles, 12-15 Victories*",
        "parsed": {
         "care_mistakes": "0",
+        "victories": "12-15",
+        "battles_n": 15,
         "battles": true
        }
       },
       {
        "to": "Duftmon",
        "to_id": "duftmon",
-       "via_slug": "duft",
        "raw": "1-3 Care Mistakes, 15 Battles, 12-15 Victories*",
        "parsed": {
         "care_mistakes": "1-3",
+        "victories": "12-15",
+        "battles_n": 15,
         "battles": true
        }
       }
@@ -8243,11 +8000,10 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Rize Greymon.png",
-   "jogress_capable": false,
    "sleep": "23:00",
-   "strength": "136",
+   "power": "136",
    "sources": [
-    "humulos:pen20:result"
+    "humulos:pen20"
    ]
   },
   {
@@ -8267,7 +8023,6 @@
       {
        "to": "Rafflesimon",
        "to_id": "rafflesimon",
-       "via_slug": "rafflesi",
        "raw": "Jogress with Lotusmon",
        "parsed": {
         "jogress_partner": "Lotusmon"
@@ -8277,12 +8032,12 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Rosemon.png",
-   "jogress_capable": true,
    "sleep": "00:00",
-   "strength": "160",
+   "power": "160",
    "sources": [
-    "humulos:pen20:result"
-   ]
+    "humulos:pen20"
+   ],
+   "jogress_capable": true
   },
   {
    "id": "rukamon",
@@ -8301,17 +8056,17 @@
       {
        "to": "Zudomon",
        "to_id": "zudomon",
-       "via_slug": "zudo",
        "raw": "0-2 Care Mistakes, 15 Battles, 12-15 Victories*",
        "parsed": {
         "care_mistakes": "0-2",
+        "victories": "12-15",
+        "battles_n": 15,
         "battles": true
        }
       },
       {
        "to": "Whamon",
        "to_id": "whamon",
-       "via_slug": "wha",
        "raw": "Jogress with Vaccine or Data Adult",
        "parsed": {
         "jogress_partner": "Vaccine or Data Adult"
@@ -8320,7 +8075,6 @@
       {
        "to": "Hangyomon",
        "to_id": "hangyomon",
-       "via_slug": "hangyo",
        "raw": "Jogress with Virus Adult",
        "parsed": {
         "jogress_partner": "Virus Adult"
@@ -8330,12 +8084,12 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Rukamon.png",
-   "jogress_capable": true,
    "sleep": "22:00",
-   "strength": "70",
+   "power": "70",
    "sources": [
-    "humulos:pen20:result"
-   ]
+    "humulos:pen20"
+   ],
+   "jogress_capable": true
   },
   {
    "id": "rusttyranomon",
@@ -8354,11 +8108,10 @@
     }
    },
    "sprite": null,
-   "jogress_capable": false,
    "sleep": "NA",
-   "strength": null,
+   "power": null,
    "sources": [
-    "humulos:pen20:result"
+    "humulos:pen20"
    ]
   },
   {
@@ -8378,7 +8131,6 @@
       {
        "to": "Ginryumon",
        "to_id": "ginryumon",
-       "via_slug": "ginryu",
        "raw": "No requirements",
        "parsed": {}
       }
@@ -8386,11 +8138,10 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Ryudamon.png",
-   "jogress_capable": false,
    "sleep": "21:00",
-   "strength": "28",
+   "power": "28",
    "sources": [
-    "humulos:pen20:result"
+    "humulos:pen20"
    ]
   },
   {
@@ -8410,11 +8161,10 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Saber Leomon.png",
-   "jogress_capable": false,
    "sleep": "00:00",
-   "strength": "172",
+   "power": "172",
    "sources": [
-    "humulos:pen20:result"
+    "humulos:pen20"
    ]
   },
   {
@@ -8434,11 +8184,10 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Saint Galgomon.png",
-   "jogress_capable": false,
    "sleep": "00:00",
-   "strength": "172",
+   "power": "172",
    "sources": [
-    "humulos:pen20:result"
+    "humulos:pen20"
    ]
   },
   {
@@ -8458,7 +8207,6 @@
       {
        "to": "Sakuttomon",
        "to_id": "sakuttomon",
-       "via_slug": "sakutto",
        "raw": "No requirements",
        "parsed": {}
       }
@@ -8466,11 +8214,10 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Sakumon.png",
-   "jogress_capable": false,
    "sleep": "NA",
-   "strength": null,
+   "power": null,
    "sources": [
-    "humulos:pen20:result"
+    "humulos:pen20"
    ]
   },
   {
@@ -8490,7 +8237,6 @@
       {
        "to": "Zubamon",
        "to_id": "zubamon",
-       "via_slug": "zuba",
        "raw": "0-1 Care Mistakes",
        "parsed": {
         "care_mistakes": "0-1"
@@ -8499,7 +8245,6 @@
       {
        "to": "Hackmon",
        "to_id": "hackmon",
-       "via_slug": "hack",
        "raw": "2+ Care Mistakes",
        "parsed": {
         "care_mistakes": "2+"
@@ -8509,11 +8254,10 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Sakuttomon.png",
-   "jogress_capable": false,
    "sleep": "21:00",
-   "strength": null,
+   "power": null,
    "sources": [
-    "humulos:pen20:result"
+    "humulos:pen20"
    ]
   },
   {
@@ -8533,10 +8277,11 @@
       {
        "to": "Jesmon",
        "to_id": "jesmon",
-       "via_slug": "jes",
        "raw": "0-2 Care Mistakes, 15 Battles, 12-15 Victories*",
        "parsed": {
         "care_mistakes": "0-2",
+        "victories": "12-15",
+        "battles_n": 15,
         "battles": true
        }
       }
@@ -8544,11 +8289,10 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Savior Hackmon.png",
-   "jogress_capable": false,
    "sleep": "23:00",
-   "strength": "136",
+   "power": "136",
    "sources": [
-    "humulos:pen20:result"
+    "humulos:pen20"
    ]
   },
   {
@@ -8568,17 +8312,17 @@
       {
        "to": "Mega Seadramon",
        "to_id": "megaseadramon",
-       "via_slug": "megaseadra",
        "raw": "0-3 Care Mistakes, 15 Battles, 12-15 Victories*",
        "parsed": {
         "care_mistakes": "0-3",
+        "victories": "12-15",
+        "battles_n": 15,
         "battles": true
        }
       },
       {
        "to": "Hangyomon",
        "to_id": "hangyomon",
-       "via_slug": "hangyo",
        "raw": "Jogress with Data Adult",
        "parsed": {
         "jogress_partner": "Data Adult"
@@ -8587,7 +8331,6 @@
       {
        "to": "Whamon",
        "to_id": "whamon",
-       "via_slug": "wha",
        "raw": "Jogress with Vaccine Adult",
        "parsed": {
         "jogress_partner": "Vaccine Adult"
@@ -8596,7 +8339,6 @@
       {
        "to": "Dagomon",
        "to_id": "dagomon",
-       "via_slug": "dago",
        "raw": "Jogress with Virus Adult",
        "parsed": {
         "jogress_partner": "Virus Adult"
@@ -8606,12 +8348,12 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Seadramon.png",
-   "jogress_capable": true,
    "sleep": "22:00",
-   "strength": "58",
+   "power": "58",
    "sources": [
-    "humulos:pen20:result"
-   ]
+    "humulos:pen20"
+   ],
+   "jogress_capable": true
   },
   {
    "id": "seraphimon",
@@ -8630,11 +8372,10 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Seraphimon.png",
-   "jogress_capable": false,
    "sleep": "00:00",
-   "strength": "196",
+   "power": "196",
    "sources": [
-    "humulos:pen20:result"
+    "humulos:pen20"
    ]
   },
   {
@@ -8654,17 +8395,17 @@
       {
        "to": "Dark Knightmon",
        "to_id": "darkknightmon",
-       "via_slug": "darkknight",
        "raw": "0-1 Care Mistakes, 15 Battles, 12-15 Victories*",
        "parsed": {
         "care_mistakes": "0-1",
+        "victories": "12-15",
+        "battles_n": 15,
         "battles": true
        }
       },
       {
        "to": "Astamon",
        "to_id": "astamon",
-       "via_slug": "asta",
        "raw": "Jogress with Virus Adult",
        "parsed": {
         "jogress_partner": "Virus Adult"
@@ -8674,12 +8415,12 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Shadramon.png",
-   "jogress_capable": true,
    "sleep": "22:00",
-   "strength": "64",
+   "power": "64",
    "sources": [
-    "humulos:pen20:result"
-   ]
+    "humulos:pen20"
+   ],
+   "jogress_capable": true
   },
   {
    "id": "shakomon",
@@ -8698,7 +8439,6 @@
       {
        "to": "Octmon",
        "to_id": "octmon",
-       "via_slug": "oct",
        "raw": "1+ Care Mistakes, 2-4 Effort",
        "parsed": {
         "care_mistakes": "1+",
@@ -8708,7 +8448,6 @@
       {
        "to": "Gesomon",
        "to_id": "gesomon",
-       "via_slug": "geso",
        "raw": "1+ Care Mistakes, 0-1 Effort",
        "parsed": {
         "care_mistakes": "1+",
@@ -8718,7 +8457,6 @@
       {
        "to": "Ikkakumon",
        "to_id": "ikkakumon",
-       "via_slug": "ikkaku",
        "raw": "0 Care Mistakes, 4 Effort",
        "parsed": {
         "care_mistakes": "0",
@@ -8728,7 +8466,6 @@
       {
        "to": "Seadramon",
        "to_id": "seadramon",
-       "via_slug": "seadra",
        "raw": "0 Care Mistakes, 0-3 Effort",
        "parsed": {
         "care_mistakes": "0",
@@ -8739,11 +8476,10 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Shakomon.png",
-   "jogress_capable": false,
    "sleep": "21:00",
-   "strength": "4",
+   "power": "4",
    "sources": [
-    "humulos:pen20:result"
+    "humulos:pen20"
    ]
   },
   {
@@ -8763,11 +8499,10 @@
     }
    },
    "sprite": null,
-   "jogress_capable": false,
    "sleep": "NA",
-   "strength": null,
+   "power": null,
    "sources": [
-    "humulos:pen20:result"
+    "humulos:pen20"
    ]
   },
   {
@@ -8787,11 +8522,10 @@
     }
    },
    "sprite": null,
-   "jogress_capable": false,
    "sleep": "22:00",
-   "strength": "82",
+   "power": "82",
    "sources": [
-    "humulos:pen20:result"
+    "humulos:pen20"
    ]
   },
   {
@@ -8811,11 +8545,10 @@
     }
    },
    "sprite": null,
-   "jogress_capable": false,
    "sleep": "NA",
-   "strength": null,
+   "power": null,
    "sources": [
-    "humulos:pen20:result"
+    "humulos:pen20"
    ]
   },
   {
@@ -8835,11 +8568,10 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Skull Mammon.png",
-   "jogress_capable": false,
    "sleep": "00:00",
-   "strength": "172",
+   "power": "172",
    "sources": [
-    "humulos:pen20:result"
+    "humulos:pen20"
    ]
   },
   {
@@ -8859,7 +8591,6 @@
       {
        "to": "Examon",
        "to_id": "examon",
-       "via_slug": "exa",
        "raw": "Jogress with Breakdramon",
        "parsed": {
         "jogress_partner": "Breakdramon"
@@ -8869,12 +8600,12 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Slayerdramon.png",
-   "jogress_capable": true,
    "sleep": "00:00",
-   "strength": "184",
+   "power": "184",
    "sources": [
-    "humulos:pen20:result"
-   ]
+    "humulos:pen20"
+   ],
+   "jogress_capable": true
   },
   {
    "id": "sleipmon",
@@ -8893,11 +8624,10 @@
     }
    },
    "sprite": null,
-   "jogress_capable": false,
    "sleep": "NA",
-   "strength": "210",
+   "power": "210",
    "sources": [
-    "humulos:pen20:result"
+    "humulos:pen20"
    ]
   },
   {
@@ -8917,17 +8647,17 @@
       {
        "to": "Triceramon",
        "to_id": "triceramon",
-       "via_slug": "tricera",
        "raw": "0-2 Care Mistakes, 15 Battles, 12-15 Victories*",
        "parsed": {
         "care_mistakes": "0-2",
+        "victories": "12-15",
+        "battles_n": 15,
         "battles": true
        }
       },
       {
        "to": "Piccolomon",
        "to_id": "piccolomon",
-       "via_slug": "piccolo",
        "raw": "Jogress with Data Adult",
        "parsed": {
         "jogress_partner": "Data Adult"
@@ -8936,7 +8666,6 @@
       {
        "to": "Angewomon",
        "to_id": "angewomon",
-       "via_slug": "angewo",
        "raw": "Jogress with Vaccine Adult",
        "parsed": {
         "jogress_partner": "Vaccine Adult"
@@ -8945,7 +8674,6 @@
       {
        "to": "Tonosama Gekomon",
        "to_id": "tonosamagekomon",
-       "via_slug": "tonosamageko",
        "raw": "Jogress with Virus Adult",
        "parsed": {
         "jogress_partner": "Virus Adult"
@@ -8955,12 +8683,12 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Starmon.png",
-   "jogress_capable": true,
    "sleep": "22:00",
-   "strength": "46",
+   "power": "46",
    "sources": [
-    "humulos:pen20:result"
-   ]
+    "humulos:pen20"
+   ],
+   "jogress_capable": true
   },
   {
    "id": "stingmon",
@@ -8979,22 +8707,21 @@
       {
        "to": "Paildramon",
        "to_id": "paildramon",
-       "via_slug": "paildra",
        "raw": "Jogress wtih XV-mon",
        "parsed": {
-        "jogress_partner": "wtih XV"
+        "jogress": true
        }
       }
      ]
     }
    },
    "sprite": null,
-   "jogress_capable": true,
    "sleep": "22:00",
-   "strength": "76",
+   "power": "76",
    "sources": [
-    "humulos:pen20:result"
-   ]
+    "humulos:pen20"
+   ],
+   "jogress_capable": true
   },
   {
    "id": "sunflowmon",
@@ -9013,10 +8740,11 @@
       {
        "to": "Lilamon",
        "to_id": "lilamon",
-       "via_slug": "lila",
        "raw": "0-2 Care Mistakes, 15 Battles, 12-15 Victories*",
        "parsed": {
         "care_mistakes": "0-2",
+        "victories": "12-15",
+        "battles_n": 15,
         "battles": true
        }
       }
@@ -9024,11 +8752,10 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Sunflowmon.png",
-   "jogress_capable": false,
    "sleep": "22:00",
-   "strength": "58",
+   "power": "58",
    "sources": [
-    "humulos:pen20:result"
+    "humulos:pen20"
    ]
   },
   {
@@ -9048,11 +8775,10 @@
     }
    },
    "sprite": null,
-   "jogress_capable": false,
    "sleep": "NA",
-   "strength": "228",
+   "power": "228",
    "sources": [
-    "humulos:pen20:result"
+    "humulos:pen20"
    ]
   },
   {
@@ -9065,18 +8791,18 @@
    "devices": {
     "pen20": {
      "versions": [
-      "Nature Spirits",
-      "Virus Busters"
+      "Nature Spirits Virus Busters"
      ],
      "stage_time": "40 h",
      "evolves_to": [
       {
        "to": "Angewomon",
        "to_id": "angewomon",
-       "via_slug": "angewo",
        "raw": "0 Care Mistakes, 15 Battles, 12-15 Victories*",
        "parsed": {
         "care_mistakes": "0",
+        "victories": "12-15",
+        "battles_n": 15,
         "battles": true
        },
        "version_tag": "NSp"
@@ -9084,7 +8810,6 @@
       {
        "to": "Jyagamon",
        "to_id": "jyagamon",
-       "via_slug": "jyaga",
        "raw": "Jogress with Vaccine or Data Adult",
        "parsed": {
         "jogress_partner": "Vaccine or Data Adult"
@@ -9094,7 +8819,6 @@
       {
        "to": "Piccolomon",
        "to_id": "piccolomon",
-       "via_slug": "piccolo",
        "raw": "Jogress with Virus Adult",
        "parsed": {
         "jogress_partner": "Virus Adult"
@@ -9104,10 +8828,11 @@
       {
        "to": "Angewomon",
        "to_id": "angewomon",
-       "via_slug": "angewo",
        "raw": "0-1 Care Mistakes, 15 Battles, 12-15 Victories*",
        "parsed": {
         "care_mistakes": "0-1",
+        "victories": "12-15",
+        "battles_n": 15,
         "battles": true
        },
        "version_tag": "VBu"
@@ -9115,7 +8840,6 @@
       {
        "to": "Holy Angemon",
        "to_id": "holyangemon",
-       "via_slug": "holyange",
        "raw": "Jogress with Vaccine Adult",
        "parsed": {
         "jogress_partner": "Vaccine Adult"
@@ -9125,7 +8849,6 @@
       {
        "to": "Metal Mamemon (VBu",
        "to_id": "metalmamemonvbu",
-       "via_slug": "metalmame",
        "raw": "Jogress with Data or Virus Adult",
        "parsed": {
         "jogress_partner": "Data or Virus Adult"
@@ -9135,12 +8858,12 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Tailmon.png",
-   "jogress_capable": true,
    "sleep": "22:00",
-   "strength": "64",
+   "power": "64",
    "sources": [
-    "humulos:pen20:result"
-   ]
+    "humulos:pen20"
+   ],
+   "jogress_capable": true
   },
   {
    "id": "tankmon",
@@ -9159,17 +8882,17 @@
       {
        "to": "Knightmon",
        "to_id": "knightmon",
-       "via_slug": "knight",
        "raw": "0-3 Care Mistakes, 15 Battles, 12-15 Victories*",
        "parsed": {
         "care_mistakes": "0-3",
+        "victories": "12-15",
+        "battles_n": 15,
         "battles": true
        }
       },
       {
        "to": "Big Mamemon",
        "to_id": "bigmamemon",
-       "via_slug": "bigmame",
        "raw": "Jogress with Data Adult",
        "parsed": {
         "jogress_partner": "Data Adult"
@@ -9178,7 +8901,6 @@
       {
        "to": "Andromon",
        "to_id": "andromon",
-       "via_slug": "andro",
        "raw": "Jogress with Vaccine Adult",
        "parsed": {
         "jogress_partner": "Vaccine Adult"
@@ -9187,7 +8909,6 @@
       {
        "to": "Warumonzaemon",
        "to_id": "warumonzaemon",
-       "via_slug": "warumonzae",
        "raw": "Jogress with Virus Adult",
        "parsed": {
         "jogress_partner": "Virus Adult"
@@ -9197,12 +8918,12 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Tankmon.png",
-   "jogress_capable": true,
    "sleep": "22:00",
-   "strength": "46",
+   "power": "46",
    "sources": [
-    "humulos:pen20:result"
-   ]
+    "humulos:pen20"
+   ],
+   "jogress_capable": true
   },
   {
    "id": "targetmon",
@@ -9221,17 +8942,17 @@
       {
        "to": "Etemon",
        "to_id": "etemon",
-       "via_slug": "ete",
        "raw": "0-1 Care Mistakes, 15 Battles, 12-15 Victories*",
        "parsed": {
         "care_mistakes": "0-1",
+        "victories": "12-15",
+        "battles_n": 15,
         "battles": true
        }
       },
       {
        "to": "Duramon",
        "to_id": "duramon",
-       "via_slug": "dura",
        "raw": "Jogress with Vaccine or Free Adult",
        "parsed": {
         "jogress_partner": "Vaccine or Free Adult"
@@ -9240,7 +8961,6 @@
       {
        "to": "Savior Hackmon",
        "to_id": "saviorhackmon",
-       "via_slug": "saviorhack",
        "raw": "Jogress with Data or Virus Adult",
        "parsed": {
         "jogress_partner": "Data or Virus Adult"
@@ -9250,12 +8970,12 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Targetmon.png",
-   "jogress_capable": true,
    "sleep": "22:00",
-   "strength": "82",
+   "power": "82",
    "sources": [
-    "humulos:pen20:result"
-   ]
+    "humulos:pen20"
+   ],
+   "jogress_capable": true
   },
   {
    "id": "tentomon",
@@ -9274,7 +8994,6 @@
       {
        "to": "Kabuterimon",
        "to_id": "kabuterimon",
-       "via_slug": "kabuteri",
        "raw": "0-1 Care Mistakes, 4 Effort",
        "parsed": {
         "care_mistakes": "0-1",
@@ -9284,7 +9003,6 @@
       {
        "to": "Tailmon",
        "to_id": "tailmon",
-       "via_slug": "tail",
        "raw": "0-1 Care Mistakes, 0-3 Effort",
        "parsed": {
         "care_mistakes": "0-1",
@@ -9294,7 +9012,6 @@
       {
        "to": "Kuwagamon",
        "to_id": "kuwagamon",
-       "via_slug": "kuwaga",
        "raw": "2+ Care Mistakes, 4 Effort",
        "parsed": {
         "care_mistakes": "2+",
@@ -9304,7 +9021,6 @@
       {
        "to": "Gekomon",
        "to_id": "gekomon",
-       "via_slug": "geko",
        "raw": "2+ Care Mistakes, 0-3 Effort",
        "parsed": {
         "care_mistakes": "2+",
@@ -9315,11 +9031,10 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Tentomon.png",
-   "jogress_capable": false,
    "sleep": "21:00",
-   "strength": "16",
+   "power": "16",
    "sources": [
-    "humulos:pen20:result"
+    "humulos:pen20"
    ]
   },
   {
@@ -9339,7 +9054,6 @@
       {
        "to": "Galgomon",
        "to_id": "galgomon",
-       "via_slug": "galgo",
        "raw": "No requirements",
        "parsed": {}
       }
@@ -9347,11 +9061,10 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Terriermon.png",
-   "jogress_capable": false,
    "sleep": "21:00",
-   "strength": "22",
+   "power": "22",
    "sources": [
-    "humulos:pen20:result"
+    "humulos:pen20"
    ]
   },
   {
@@ -9371,17 +9084,17 @@
       {
        "to": "Knightmon",
        "to_id": "knightmon",
-       "via_slug": "knight",
        "raw": "0-3 Care Mistakes, 15 Battles, 12-15 Victories*",
        "parsed": {
         "care_mistakes": "0-3",
+        "victories": "12-15",
+        "battles_n": 15,
         "battles": true
        }
       },
       {
        "to": "Cyberdramon",
        "to_id": "cyberdramon",
-       "via_slug": "cyberdra",
        "raw": "Jogress with Vaccine Adult",
        "parsed": {
         "jogress_partner": "Vaccine Adult"
@@ -9390,7 +9103,6 @@
       {
        "to": "Big Mamemon",
        "to_id": "bigmamemon",
-       "via_slug": "bigmame",
        "raw": "Jogress with Data Adult",
        "parsed": {
         "jogress_partner": "Data Adult"
@@ -9399,7 +9111,6 @@
       {
        "to": "Warumonzaemon",
        "to_id": "warumonzaemon",
-       "via_slug": "warumonzae",
        "raw": "Jogress with Virus Adult",
        "parsed": {
         "jogress_partner": "Virus Adult"
@@ -9409,12 +9120,12 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Thunderballmon.png",
-   "jogress_capable": true,
    "sleep": "22:00",
-   "strength": "46",
+   "power": "46",
    "sources": [
-    "humulos:pen20:result"
-   ]
+    "humulos:pen20"
+   ],
+   "jogress_capable": true
   },
   {
    "id": "tialudomon",
@@ -9433,10 +9144,11 @@
       {
        "to": "Raiji Ludomon",
        "to_id": "raijiludomon",
-       "via_slug": "raijiludo",
        "raw": "0-2 Care Mistakes, 15 Battles, 12-15 Victories*",
        "parsed": {
         "care_mistakes": "0-2",
+        "victories": "12-15",
+        "battles_n": 15,
         "battles": true
        }
       }
@@ -9444,11 +9156,10 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Tia Ludomon.png",
-   "jogress_capable": false,
    "sleep": "22:00",
-   "strength": "94",
+   "power": "94",
    "sources": [
-    "humulos:pen20:result"
+    "humulos:pen20"
    ]
   },
   {
@@ -9468,17 +9179,17 @@
       {
        "to": "Lilimon",
        "to_id": "lilimon",
-       "via_slug": "lili",
        "raw": "0-2 Care Mistakes, 15 Battles, 12-15 Victories*",
        "parsed": {
         "care_mistakes": "0-2",
+        "victories": "12-15",
+        "battles_n": 15,
         "battles": true
        }
       },
       {
        "to": "Delumon",
        "to_id": "delumon",
-       "via_slug": "delu",
        "raw": "Jogress with Data Adult",
        "parsed": {
         "jogress_partner": "Data Adult"
@@ -9487,7 +9198,6 @@
       {
        "to": "Garudamon",
        "to_id": "garudamon",
-       "via_slug": "garuda",
        "raw": "Jogress with Vaccine Adult",
        "parsed": {
         "jogress_partner": "Vaccine Adult"
@@ -9496,7 +9206,6 @@
       {
        "to": "Gerbemon",
        "to_id": "gerbemon",
-       "via_slug": "gerbe",
        "raw": "Jogress with Virus Adult",
        "parsed": {
         "jogress_partner": "Virus Adult"
@@ -9506,12 +9215,12 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Togemon.png",
-   "jogress_capable": true,
    "sleep": "22:00",
-   "strength": "64",
+   "power": "64",
    "sources": [
-    "humulos:pen20:result"
-   ]
+    "humulos:pen20"
+   ],
+   "jogress_capable": true
   },
   {
    "id": "tonosamagekomon",
@@ -9530,7 +9239,6 @@
       {
        "to": "Metal Etemon",
        "to_id": "metaletemon",
-       "via_slug": "metalete",
        "raw": "Jogress with Virus Perfect",
        "parsed": {
         "jogress_partner": "Virus Perfect"
@@ -9540,12 +9248,12 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Tonosama Gekomon.png",
-   "jogress_capable": true,
    "sleep": "23:00",
-   "strength": "100",
+   "power": "100",
    "sources": [
-    "humulos:pen20:result"
-   ]
+    "humulos:pen20"
+   ],
+   "jogress_capable": true
   },
   {
    "id": "tortamon",
@@ -9564,7 +9272,6 @@
       {
        "to": "Jyagamon",
        "to_id": "jyagamon",
-       "via_slug": "jyaga",
        "raw": "Jogress with Vaccine or Data Adult",
        "parsed": {
         "jogress_partner": "Vaccine or Data Adult"
@@ -9573,7 +9280,6 @@
       {
        "to": "Piccolomon",
        "to_id": "piccolomon",
-       "via_slug": "piccolo",
        "raw": "Jogress with Virus Adult",
        "parsed": {
         "jogress_partner": "Virus Adult"
@@ -9582,10 +9288,11 @@
       {
        "to": "Atlur Kabuterimon",
        "to_id": "atlurkabuterimon",
-       "via_slug": "atlurkabuteri",
        "raw": "0 Care Mistakes, 15 Battles, 12-15 Victories*",
        "parsed": {
         "care_mistakes": "0",
+        "victories": "12-15",
+        "battles_n": 15,
         "battles": true
        }
       }
@@ -9593,12 +9300,12 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Tortamon.png",
-   "jogress_capable": true,
    "sleep": "22:00",
-   "strength": "52",
+   "power": "52",
    "sources": [
-    "humulos:pen20:result"
-   ]
+    "humulos:pen20"
+   ],
+   "jogress_capable": true
   },
   {
    "id": "toyagumon",
@@ -9617,7 +9324,6 @@
       {
        "to": "Greymon",
        "to_id": "greymon",
-       "via_slug": "grey",
        "raw": "0-1 Care Mistakes, 4 Effort",
        "parsed": {
         "care_mistakes": "0-1",
@@ -9627,7 +9333,6 @@
       {
        "to": "Revolmon",
        "to_id": "revolmon",
-       "via_slug": "revol",
        "raw": "0-1 Care Mistakes, 0-3 Effort",
        "parsed": {
         "care_mistakes": "0-1",
@@ -9637,7 +9342,6 @@
       {
        "to": "Clockmon",
        "to_id": "clockmon",
-       "via_slug": "clock",
        "raw": "2+ Care Mistakes, 0-2 Effort",
        "parsed": {
         "care_mistakes": "2+",
@@ -9647,7 +9351,6 @@
       {
        "to": "Thunderballmon",
        "to_id": "thunderballmon",
-       "via_slug": "thunderball",
        "raw": "2+ Care Mistakes, 3-4 Effort",
        "parsed": {
         "care_mistakes": "2+",
@@ -9658,11 +9361,10 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Toy Agumon.png",
-   "jogress_capable": false,
    "sleep": "21:00",
-   "strength": "16",
+   "power": "16",
    "sources": [
-    "humulos:pen20:result"
+    "humulos:pen20"
    ]
   },
   {
@@ -9682,7 +9384,6 @@
       {
        "to": "Saber Leomon",
        "to_id": "saberleomon",
-       "via_slug": "saberleo",
        "raw": "Jogress with Data Perfect",
        "parsed": {
         "jogress_partner": "Data Perfect"
@@ -9692,12 +9393,12 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Triceramon.png",
-   "jogress_capable": true,
    "sleep": "23:00",
-   "strength": "130",
+   "power": "130",
    "sources": [
-    "humulos:pen20:result"
-   ]
+    "humulos:pen20"
+   ],
+   "jogress_capable": true
   },
   {
    "id": "troopmon",
@@ -9716,10 +9417,11 @@
       {
        "to": "Dark Knightmon",
        "to_id": "darkknightmon",
-       "via_slug": "darkknight",
        "raw": "0-2 Care Mistakes, 15 Battles, 12-15 Victories*",
        "parsed": {
         "care_mistakes": "0-2",
+        "victories": "12-15",
+        "battles_n": 15,
         "battles": true
        }
       }
@@ -9727,11 +9429,10 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Troopmon.png",
-   "jogress_capable": false,
    "sleep": "22:00",
-   "strength": "58",
+   "power": "58",
    "sources": [
-    "humulos:pen20:result"
+    "humulos:pen20"
    ]
   },
   {
@@ -9751,10 +9452,11 @@
       {
        "to": "Andiramon",
        "to_id": "andiramon",
-       "via_slug": "andira",
        "raw": "0-2 Care Mistakes, 15 Battles, 12-15 Victories*",
        "parsed": {
         "care_mistakes": "0-2",
+        "victories": "12-15",
+        "battles_n": 15,
         "battles": true
        }
       }
@@ -9762,11 +9464,10 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Turuiemon.png",
-   "jogress_capable": false,
    "sleep": "22:00",
-   "strength": "76",
+   "power": "76",
    "sources": [
-    "humulos:pen20:result"
+    "humulos:pen20"
    ]
   },
   {
@@ -9779,19 +9480,17 @@
    "devices": {
     "pen20": {
      "versions": [
-      "V",
-      "Wind Guardians"
+      "V Wind Guardians"
      ],
      "stage_time": null,
      "evolves_to": []
     }
    },
    "sprite": null,
-   "jogress_capable": false,
    "sleep": "00:00",
-   "strength": "214",
+   "power": "214",
    "sources": [
-    "humulos:pen20:result"
+    "humulos:pen20"
    ]
   },
   {
@@ -9811,7 +9510,6 @@
       {
        "to": "Piemon",
        "to_id": "piemon",
-       "via_slug": "pie",
        "raw": "Jogress with Virus Perfect",
        "parsed": {
         "jogress_partner": "Virus Perfect"
@@ -9820,7 +9518,6 @@
       {
        "to": "Voltobautamon",
        "to_id": "voltobautamon",
-       "via_slug": "voltobauta",
        "raw": "Jogress with Piemon)",
        "parsed": {
         "jogress_partner": "Piemon"
@@ -9830,12 +9527,12 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Vamdemon.png",
-   "jogress_capable": true,
    "sleep": "23:00",
-   "strength": "130",
+   "power": "130",
    "sources": [
-    "humulos:pen20:result"
-   ]
+    "humulos:pen20"
+   ],
+   "jogress_capable": true
   },
   {
    "id": "vdramon",
@@ -9847,25 +9544,24 @@
    "devices": {
     "pen20": {
      "versions": [
-      "Wind Guardians",
-      "V"
+      "Wind Guardians V"
      ],
      "stage_time": "40 h",
      "evolves_to": [
       {
        "to": "Aero V-dramon",
        "to_id": "aerovdramon",
-       "via_slug": "aerovdra",
        "raw": "0-2 Care Mistakes, 15 Battles, 12-15 Victories*",
        "parsed": {
         "care_mistakes": "0-2",
+        "victories": "12-15",
+        "battles_n": 15,
         "battles": true
        }
       },
       {
        "to": "Garudamon",
        "to_id": "garudamon",
-       "via_slug": "garuda",
        "raw": "Jogress with Vaccine or Data Adult",
        "parsed": {
         "jogress_partner": "Vaccine or Data Adult"
@@ -9874,7 +9570,6 @@
       {
        "to": "Delumon",
        "to_id": "delumon",
-       "via_slug": "delu",
        "raw": "Jogress with Virus Adult",
        "parsed": {
         "jogress_partner": "Virus Adult"
@@ -9884,12 +9579,12 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/V-dramon.png",
-   "jogress_capable": true,
    "sleep": "22:00",
-   "strength": "70",
+   "power": "70",
    "sources": [
-    "humulos:pen20:result"
-   ]
+    "humulos:pen20"
+   ],
+   "jogress_capable": true
   },
   {
    "id": "venomvamdemon",
@@ -9908,11 +9603,10 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Venom Vamdemon.png",
-   "jogress_capable": false,
    "sleep": "00:00",
-   "strength": "184",
+   "power": "184",
    "sources": [
-    "humulos:pen20:result"
+    "humulos:pen20"
    ]
   },
   {
@@ -9932,7 +9626,6 @@
       {
        "to": "XV-mon",
        "to_id": "xvmon",
-       "via_slug": "xv",
        "raw": "0-1 Care Mistakes",
        "parsed": {
         "care_mistakes": "0-1"
@@ -9941,7 +9634,6 @@
       {
        "to": "V-dramon",
        "to_id": "vdramon",
-       "via_slug": "vdra",
        "raw": "2+ Care Mistakes",
        "parsed": {
         "care_mistakes": "2+"
@@ -9951,11 +9643,10 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/V-mon.png",
-   "jogress_capable": false,
    "sleep": "21:00",
-   "strength": "22",
+   "power": "22",
    "sources": [
-    "humulos:pen20:result"
+    "humulos:pen20"
    ]
   },
   {
@@ -9975,11 +9666,10 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Volcanicdramon.png",
-   "jogress_capable": false,
    "sleep": "00:00",
-   "strength": "202",
+   "power": "202",
    "sources": [
-    "humulos:pen20:result"
+    "humulos:pen20"
    ]
   },
   {
@@ -9999,11 +9689,10 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Voltobautamon.png",
-   "jogress_capable": false,
    "sleep": "00:00",
-   "strength": "208",
+   "power": "208",
    "sources": [
-    "humulos:pen20:result"
+    "humulos:pen20"
    ]
   },
   {
@@ -10023,7 +9712,6 @@
       {
        "to": "Lavorvomon",
        "to_id": "lavorvomon",
-       "via_slug": "lavorvo",
        "raw": "No requirements",
        "parsed": {}
       }
@@ -10031,11 +9719,10 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Vorvomon.png",
-   "jogress_capable": false,
    "sleep": "21:00",
-   "strength": "28",
+   "power": "28",
    "sources": [
-    "humulos:pen20:result"
+    "humulos:pen20"
    ]
   },
   {
@@ -10048,15 +9735,13 @@
    "devices": {
     "pen20": {
      "versions": [
-      "Metal Empire",
-      "Virus Busters"
+      "Metal Empire Virus Busters"
      ],
      "stage_time": null,
      "evolves_to": [
       {
        "to": "Omegamon",
        "to_id": "omegamon",
-       "via_slug": "omega",
        "raw": "Jogress with Metal Garurumon",
        "parsed": {
         "jogress_partner": "Metal Garurumon"
@@ -10066,12 +9751,12 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/War Greymon.png",
-   "jogress_capable": true,
    "sleep": "00:00",
-   "strength": "190",
+   "power": "190",
    "sources": [
-    "humulos:pen20:result"
-   ]
+    "humulos:pen20"
+   ],
+   "jogress_capable": true
   },
   {
    "id": "warumonzaemon",
@@ -10090,7 +9775,6 @@
       {
        "to": "Venomvamdemon",
        "to_id": "venomvamdemon",
-       "via_slug": "venomvamde",
        "raw": "Jogress with Virus Perfect",
        "parsed": {
         "jogress_partner": "Virus Perfect"
@@ -10100,12 +9784,12 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Waru Monzaemon.png",
-   "jogress_capable": true,
    "sleep": "23:00",
-   "strength": "130",
+   "power": "130",
    "sources": [
-    "humulos:pen20:result"
-   ]
+    "humulos:pen20"
+   ],
+   "jogress_capable": true
   },
   {
    "id": "weregarurumon",
@@ -10117,18 +9801,18 @@
    "devices": {
     "pen20": {
      "versions": [
-      "Nightmare Soldiers",
-      "Virus Busters"
+      "Nightmare Soldiers Virus Busters"
      ],
      "stage_time": "48 h",
      "evolves_to": [
       {
        "to": "Skull Mammon",
        "to_id": "skullmammon",
-       "via_slug": "skullmam",
        "raw": "0 Care Mistakes, 15 Battles, 12-15 Victories*",
        "parsed": {
         "care_mistakes": "0",
+        "victories": "12-15",
+        "battles_n": 15,
         "battles": true
        },
        "version_tag": "NSo"
@@ -10136,10 +9820,11 @@
       {
        "to": "Metal Garurumon",
        "to_id": "metalgarurumon",
-       "via_slug": "metalgaruru",
        "raw": "0-1 Care Mistakes, 15 Battles, 12-15 Victories*",
        "parsed": {
         "care_mistakes": "0-1",
+        "victories": "12-15",
+        "battles_n": 15,
         "battles": true
        },
        "version_tag": "VBu"
@@ -10148,11 +9833,10 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Were Garurumon.png",
-   "jogress_capable": false,
    "sleep": "23:00",
-   "strength": "124",
+   "power": "124",
    "sources": [
-    "humulos:pen20:result"
+    "humulos:pen20"
    ]
   },
   {
@@ -10172,7 +9856,6 @@
       {
        "to": "Plesiomon",
        "to_id": "plesiomon",
-       "via_slug": "plesio",
        "raw": "Jogress with Vaccine Perfect",
        "parsed": {
         "jogress_partner": "Vaccine Perfect"
@@ -10182,12 +9865,12 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Whamon.png",
-   "jogress_capable": true,
    "sleep": "23:00",
-   "strength": "118",
+   "power": "118",
    "sources": [
-    "humulos:pen20:result"
-   ]
+    "humulos:pen20"
+   ],
+   "jogress_capable": true
   },
   {
    "id": "wingdramon",
@@ -10206,10 +9889,11 @@
       {
        "to": "Slayerdramon",
        "to_id": "slayerdramon",
-       "via_slug": "slayerdra",
        "raw": "0-2 Care Mistakes, 15 Battles, 12-15 Victories*",
        "parsed": {
         "care_mistakes": "0-2",
+        "victories": "12-15",
+        "battles_n": 15,
         "battles": true
        }
       }
@@ -10217,11 +9901,10 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Wingdramon.png",
-   "jogress_capable": false,
    "sleep": "23:00",
-   "strength": "136",
+   "power": "136",
    "sources": [
-    "humulos:pen20:result"
+    "humulos:pen20"
    ]
   },
   {
@@ -10241,17 +9924,17 @@
       {
        "to": "Death Meramon",
        "to_id": "deathmeramon",
-       "via_slug": "deathmera",
        "raw": "0-4 Care Mistakes, 15 Battles, 12-15 Victories*",
        "parsed": {
         "care_mistakes": "0-4",
+        "victories": "12-15",
+        "battles_n": 15,
         "battles": true
        }
       },
       {
        "to": "Pumpmon",
        "to_id": "pumpmon",
-       "via_slug": "pump",
        "raw": "Jogress with Data Adult",
        "parsed": {
         "jogress_partner": "Data Adult"
@@ -10260,7 +9943,6 @@
       {
        "to": "Were Garurumon",
        "to_id": "weregarurumon",
-       "via_slug": "weregaruru",
        "raw": "Jogress with Vaccine Adult",
        "parsed": {
         "jogress_partner": "Vaccine Adult"
@@ -10269,7 +9951,6 @@
       {
        "to": "Fantomon",
        "to_id": "fantomon",
-       "via_slug": "fanto",
        "raw": "Jogress with Virus Adult",
        "parsed": {
         "jogress_partner": "Virus Adult"
@@ -10279,12 +9960,12 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Wizarmon.png",
-   "jogress_capable": true,
    "sleep": "22:00",
-   "strength": "70",
+   "power": "70",
    "sources": [
-    "humulos:pen20:result"
-   ]
+    "humulos:pen20"
+   ],
+   "jogress_capable": true
   },
   {
    "id": "woodmon",
@@ -10303,17 +9984,17 @@
       {
        "to": "Jyureimon",
        "to_id": "jyureimon",
-       "via_slug": "jyurei",
        "raw": "0-3 Care Mistakes, 15 Battles, 12-15 Victories*",
        "parsed": {
         "care_mistakes": "0-3",
+        "victories": "12-15",
+        "battles_n": 15,
         "battles": true
        }
       },
       {
        "to": "Gerbemon",
        "to_id": "gerbemon",
-       "via_slug": "gerbe",
        "raw": "Jogress with Data or Virus Adult",
        "parsed": {
         "jogress_partner": "Data or Virus Adult"
@@ -10322,7 +10003,6 @@
       {
        "to": "Delumon",
        "to_id": "delumon",
-       "via_slug": "delu",
        "raw": "Jogress with Vaccine or Free Adult",
        "parsed": {
         "jogress_partner": "Vaccine or Free Adult"
@@ -10332,12 +10012,12 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Woodmon.png",
-   "jogress_capable": true,
    "sleep": "22:00",
-   "strength": "52",
+   "power": "52",
    "sources": [
-    "humulos:pen20:result"
-   ]
+    "humulos:pen20"
+   ],
+   "jogress_capable": true
   },
   {
    "id": "xvmon",
@@ -10356,7 +10036,6 @@
       {
        "to": "Paildramon",
        "to_id": "paildramon",
-       "via_slug": "paildra",
        "raw": "Jogress with Stingmon",
        "parsed": {
         "jogress_partner": "Stingmon"
@@ -10365,7 +10044,6 @@
       {
        "to": "Aero V-dramon",
        "to_id": "aerovdramon",
-       "via_slug": "aerovdra",
        "raw": "Jogress with Virus Adult",
        "parsed": {
         "jogress_partner": "Virus Adult"
@@ -10375,12 +10053,12 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/XV-mon.png",
-   "jogress_capable": true,
    "sleep": "22:00",
-   "strength": "76",
+   "power": "76",
    "sources": [
-    "humulos:pen20:result"
-   ]
+    "humulos:pen20"
+   ],
+   "jogress_capable": true
   },
   {
    "id": "yukimibotamon",
@@ -10392,15 +10070,13 @@
    "devices": {
     "pen20": {
      "versions": [
-      "Virus Busters",
-      "Meicoo"
+      "Virus Busters Meicoo"
      ],
      "stage_time": "10 min",
      "evolves_to": [
       {
        "to": "Nyaromon",
        "to_id": "nyaromon",
-       "via_slug": "nyaro",
        "raw": "No requirements",
        "parsed": {}
       }
@@ -10408,11 +10084,10 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Yukimi Botamon.png",
-   "jogress_capable": false,
    "sleep": "NA",
-   "strength": null,
+   "power": null,
    "sources": [
-    "humulos:pen20:result"
+    "humulos:pen20"
    ]
   },
   {
@@ -10432,7 +10107,6 @@
       {
        "to": "Gummymon",
        "to_id": "gummymon",
-       "via_slug": "gummy",
        "raw": "No requirements",
        "parsed": {}
       }
@@ -10440,11 +10114,10 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Zerimon.png",
-   "jogress_capable": false,
    "sleep": "NA",
-   "strength": null,
+   "power": null,
    "sources": [
-    "humulos:pen20:result"
+    "humulos:pen20"
    ]
   },
   {
@@ -10464,17 +10137,17 @@
       {
        "to": "Duramon",
        "to_id": "duramon",
-       "via_slug": "dura",
        "raw": "0-2 Care Mistakes, 15 Battles, 12-15 Victories*",
        "parsed": {
         "care_mistakes": "0-2",
+        "victories": "12-15",
+        "battles_n": 15,
         "battles": true
        }
       },
       {
        "to": "Etemon",
        "to_id": "etemon",
-       "via_slug": "ete",
        "raw": "Jogress with Virus Adult",
        "parsed": {
         "jogress_partner": "Virus Adult"
@@ -10483,7 +10156,6 @@
       {
        "to": "Savior Hackmon",
        "to_id": "saviorhackmon",
-       "via_slug": "saviorhack",
        "raw": "Jogress with Vaccine or Data Adult",
        "parsed": {
         "jogress_partner": "Vaccine or Data Adult"
@@ -10493,12 +10165,12 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Zubaeagermon.png",
-   "jogress_capable": true,
    "sleep": "22:00",
-   "strength": "88",
+   "power": "88",
    "sources": [
-    "humulos:pen20:result"
-   ]
+    "humulos:pen20"
+   ],
+   "jogress_capable": true
   },
   {
    "id": "zubamon",
@@ -10517,7 +10189,6 @@
       {
        "to": "Zubaeagermon",
        "to_id": "zubaeagermon",
-       "via_slug": "zubaeager",
        "raw": "0-1 Care Mistakes, 4 Effort",
        "parsed": {
         "care_mistakes": "0-1",
@@ -10527,22 +10198,27 @@
       {
        "to": "Targetmon",
        "to_id": "targetmon",
-       "via_slug": "target",
        "raw": "0-1 Care Mistakes, 0-3 Effort OR 2+ Care Mistakes",
        "parsed": {
-        "care_mistakes": "0-1",
-        "effort": "0-3"
+        "alternatives": [
+         {
+          "care_mistakes": "0-1",
+          "effort": "0-3"
+         },
+         {
+          "care_mistakes": "2+"
+         }
+        ]
        }
       }
      ]
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Zubamon.png",
-   "jogress_capable": false,
    "sleep": "21:00",
-   "strength": "34",
+   "power": "34",
    "sources": [
-    "humulos:pen20:result"
+    "humulos:pen20"
    ]
   },
   {
@@ -10562,10 +10238,11 @@
       {
        "to": "Marin Angemon",
        "to_id": "marinangemon",
-       "via_slug": "marinange",
        "raw": "0 Care Mistakes, 15 Battles, 12-15 Victories*",
        "parsed": {
         "care_mistakes": "0",
+        "victories": "12-15",
+        "battles_n": 15,
         "battles": true
        }
       }
@@ -10573,11 +10250,10 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Zudomon.png",
-   "jogress_capable": false,
    "sleep": "23:00",
-   "strength": "130",
+   "power": "130",
    "sources": [
-    "humulos:pen20:result"
+    "humulos:pen20"
    ]
   }
  ]

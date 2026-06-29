@@ -1,0 +1,2867 @@
+{
+ "_meta": {
+  "device": "dm",
+  "count": 81,
+  "with_evolutions": 63,
+  "source": "humulos dm (parse_humulos.py: detail cards)",
+  "stage_timers": {
+   "Baby I": "10 min",
+   "Baby II": "6 h",
+   "Child": "24 h",
+   "Adult": "36 h",
+   "Perfect": "48 h"
+  },
+  "sprite_gaps": [
+   "Karatuki Numemon",
+   "Tekkamon"
+  ],
+  "attribute_gaps": [],
+  "note": "exact evo conditions from humulos (raw + parsed). real-time stage timers per device. sleep/power included."
+ },
+ "digimon": [
+  {
+   "id": "agumon",
+   "name": "Agumon",
+   "stage": "Child",
+   "level": null,
+   "attribute": "Vaccine",
+   "alt_attribute": null,
+   "devices": {
+    "dm": {
+     "versions": [],
+     "stage_time": "24 h",
+     "evolves_to": [
+      {
+       "to": "Greymon",
+       "to_id": "greymon",
+       "raw": "0-3 Care Mistakes, 32+ Training",
+       "parsed": {
+        "care_mistakes": "0-3",
+        "training": "32+"
+       }
+      },
+      {
+       "to": "Tyranomon",
+       "to_id": "tyranomon",
+       "raw": "4+ Care Mistakes, 5-15 Training, 3+ Overfeed, 0-4 Sleep Disturbances",
+       "parsed": {
+        "care_mistakes": "4+",
+        "training": "5-15",
+        "overfeed": "3+"
+       }
+      },
+      {
+       "to": "Devimon",
+       "to_id": "devimon",
+       "raw": "0-3 Care Mistakes, 0-31 Training",
+       "parsed": {
+        "care_mistakes": "0-3",
+        "training": "0-31"
+       }
+      },
+      {
+       "to": "Meramon",
+       "to_id": "meramon",
+       "raw": "4+ Care Mistakes, 16+ Training, 3+ Overfeed, 0-6 Sleep Disturbances",
+       "parsed": {
+        "care_mistakes": "4+",
+        "training": "16+",
+        "overfeed": "3+"
+       }
+      },
+      {
+       "to": "Numemon",
+       "to_id": "numemon",
+       "raw": "",
+       "parsed": {}
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm/Agumon.png",
+   "sleep": null,
+   "power": null,
+   "sources": [
+    "humulos:dm"
+   ]
+  },
+  {
+   "id": "airdramon",
+   "name": "Airdramon",
+   "stage": "Adult",
+   "level": null,
+   "attribute": "Vaccine",
+   "alt_attribute": null,
+   "devices": {
+    "dm": {
+     "versions": [],
+     "stage_time": "36 h",
+     "evolves_to": [
+      {
+       "to": "Metal Greymon",
+       "to_id": "metalgreymon",
+       "raw": "15 Battles, 12-15 Victories at both the Child and Adult Stage*",
+       "parsed": {
+        "victories": "12-15",
+        "battles_n": 15,
+        "battles": true
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm/Airdramon.png",
+   "sleep": null,
+   "power": null,
+   "sources": [
+    "humulos:dm"
+   ]
+  },
+  {
+   "id": "andromon",
+   "name": "Andromon",
+   "stage": "Perfect",
+   "level": null,
+   "attribute": "Vaccine",
+   "alt_attribute": null,
+   "devices": {
+    "dm": {
+     "versions": [],
+     "stage_time": "48 h",
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm/Andromon.png",
+   "sleep": null,
+   "power": null,
+   "sources": [
+    "humulos:dm"
+   ]
+  },
+  {
+   "id": "angemon",
+   "name": "Angemon",
+   "stage": "Adult",
+   "level": null,
+   "attribute": "Vaccine",
+   "alt_attribute": null,
+   "devices": {
+    "dm": {
+     "versions": [],
+     "stage_time": "36 h",
+     "evolves_to": [
+      {
+       "to": "Skull Greymon",
+       "to_id": "skullgreymon",
+       "raw": "15 Battles, 12-15 Victories at both the Child and Adult Stage*",
+       "parsed": {
+        "victories": "12-15",
+        "battles_n": 15,
+        "battles": true
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm/Angemon.png",
+   "sleep": null,
+   "power": null,
+   "sources": [
+    "humulos:dm"
+   ]
+  },
+  {
+   "id": "atlurkabuterimon",
+   "name": "Atlur Kabuterimon",
+   "stage": "Perfect",
+   "level": null,
+   "attribute": "Vaccine",
+   "alt_attribute": null,
+   "devices": {
+    "dm": {
+     "versions": [],
+     "stage_time": "48 h",
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm/Atlur Kabuterimon.png",
+   "sleep": null,
+   "power": null,
+   "sources": [
+    "humulos:dm"
+   ]
+  },
+  {
+   "id": "bakemon",
+   "name": "Bakemon",
+   "stage": "Adult",
+   "level": null,
+   "attribute": "Virus",
+   "alt_attribute": null,
+   "devices": {
+    "dm": {
+     "versions": [],
+     "stage_time": "36 h",
+     "evolves_to": [
+      {
+       "to": "Giromon",
+       "to_id": "giromon",
+       "raw": "15 Battles, 12-15 Victories at both the Child and Adult Stage*",
+       "parsed": {
+        "victories": "12-15",
+        "battles_n": 15,
+        "battles": true
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm/Bakemon.png",
+   "sleep": null,
+   "power": null,
+   "sources": [
+    "humulos:dm"
+   ]
+  },
+  {
+   "id": "betamon",
+   "name": "Betamon",
+   "stage": "Child",
+   "level": null,
+   "attribute": "Virus",
+   "alt_attribute": null,
+   "devices": {
+    "dm": {
+     "versions": [],
+     "stage_time": "24 h",
+     "evolves_to": [
+      {
+       "to": "Devimon",
+       "to_id": "devimon",
+       "raw": "0-3 Care Mistakes, 48+ Training",
+       "parsed": {
+        "care_mistakes": "0-3",
+        "training": "48+"
+       }
+      },
+      {
+       "to": "Meramon",
+       "to_id": "meramon",
+       "raw": "0-3 Care Mistakes, 0-47 Training",
+       "parsed": {
+        "care_mistakes": "0-3",
+        "training": "0-47"
+       }
+      },
+      {
+       "to": "Airdramon",
+       "to_id": "airdramon",
+       "raw": "4+ Care Mistakes, 8-31 Training, 0-3 Overfeed, 9+ Sleep Disturbances",
+       "parsed": {
+        "care_mistakes": "4+",
+        "training": "8-31",
+        "overfeed": "0-3"
+       }
+      },
+      {
+       "to": "Seadramon",
+       "to_id": "seadramon",
+       "raw": "4+ Care Mistakes, 8-31 Training, 4+ Overfeed, 0-8 Sleep Disturbances",
+       "parsed": {
+        "care_mistakes": "4+",
+        "training": "8-31",
+        "overfeed": "4+"
+       }
+      },
+      {
+       "to": "Numemon",
+       "to_id": "numemon",
+       "raw": "",
+       "parsed": {}
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm/Betamon.png",
+   "sleep": null,
+   "power": null,
+   "sources": [
+    "humulos:dm"
+   ]
+  },
+  {
+   "id": "birdramon",
+   "name": "Birdramon",
+   "stage": "Adult",
+   "level": null,
+   "attribute": "Vaccine",
+   "alt_attribute": null,
+   "devices": {
+    "dm": {
+     "versions": [],
+     "stage_time": "36 h",
+     "evolves_to": [
+      {
+       "to": "Skull Greymon",
+       "to_id": "skullgreymon",
+       "raw": "15 Battles, 12-15 Victories at both the Child and Adult Stage*",
+       "parsed": {
+        "victories": "12-15",
+        "battles_n": 15,
+        "battles": true
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm/Birdramon.png",
+   "sleep": null,
+   "power": null,
+   "sources": [
+    "humulos:dm"
+   ]
+  },
+  {
+   "id": "botamon",
+   "name": "Botamon",
+   "stage": "Baby I",
+   "level": null,
+   "attribute": "Free",
+   "alt_attribute": null,
+   "devices": {
+    "dm": {
+     "versions": [],
+     "stage_time": "10 min",
+     "evolves_to": [
+      {
+       "to": "Koromon",
+       "to_id": "koromon",
+       "raw": "No requirements",
+       "parsed": {}
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm/Botamon.png",
+   "sleep": null,
+   "power": null,
+   "sources": [
+    "humulos:dm"
+   ]
+  },
+  {
+   "id": "bubbmon",
+   "name": "Bubbmon",
+   "stage": "Baby I",
+   "level": null,
+   "attribute": "Free",
+   "alt_attribute": null,
+   "devices": {
+    "dm": {
+     "versions": [],
+     "stage_time": "10 min",
+     "evolves_to": [
+      {
+       "to": "Mochimon",
+       "to_id": "mochimon",
+       "raw": "No requirements",
+       "parsed": {}
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm/Bubbmon.png",
+   "sleep": null,
+   "power": null,
+   "sources": [
+    "humulos:dm"
+   ]
+  },
+  {
+   "id": "centalmon",
+   "name": "Centalmon",
+   "stage": "Adult",
+   "level": null,
+   "attribute": "Data",
+   "alt_attribute": null,
+   "devices": {
+    "dm": {
+     "versions": [],
+     "stage_time": "36 h",
+     "evolves_to": [
+      {
+       "to": "Giromon",
+       "to_id": "giromon",
+       "raw": "15 Battles, 12-15 Victories at both the Child and Adult Stage*",
+       "parsed": {
+        "victories": "12-15",
+        "battles_n": 15,
+        "battles": true
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm/Centalmon.png",
+   "sleep": null,
+   "power": null,
+   "sources": [
+    "humulos:dm"
+   ]
+  },
+  {
+   "id": "cockatrimon",
+   "name": "Cockatrimon",
+   "stage": "Adult",
+   "level": null,
+   "attribute": "Data",
+   "alt_attribute": null,
+   "devices": {
+    "dm": {
+     "versions": [],
+     "stage_time": "36 h",
+     "evolves_to": [
+      {
+       "to": "Piccolomon",
+       "to_id": "piccolomon",
+       "raw": "15 Battles, 12-15 Victories at both the Child and Adult Stage*",
+       "parsed": {
+        "victories": "12-15",
+        "battles_n": 15,
+        "battles": true
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm/Cockatrimon.png",
+   "sleep": null,
+   "power": null,
+   "sources": [
+    "humulos:dm"
+   ]
+  },
+  {
+   "id": "coelamon",
+   "name": "Coelamon",
+   "stage": "Adult",
+   "level": null,
+   "attribute": "Data",
+   "alt_attribute": null,
+   "devices": {
+    "dm": {
+     "versions": [],
+     "stage_time": "36 h",
+     "evolves_to": [
+      {
+       "to": "Megadramon",
+       "to_id": "megadramon",
+       "raw": "15 Battles, 12-15 Victories at both the Child and Adult Stage*",
+       "parsed": {
+        "victories": "12-15",
+        "battles_n": 15,
+        "battles": true
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm/Coelamon.png",
+   "sleep": null,
+   "power": null,
+   "sources": [
+    "humulos:dm"
+   ]
+  },
+  {
+   "id": "cyclomon",
+   "name": "Cyclomon",
+   "stage": "Adult",
+   "level": null,
+   "attribute": "Virus",
+   "alt_attribute": null,
+   "devices": {
+    "dm": {
+     "versions": [],
+     "stage_time": "36 h",
+     "evolves_to": [
+      {
+       "to": "Nanomon",
+       "to_id": "nanomon",
+       "raw": "15 Battles, 12-15 Victories at both the Child and Adult Stage*",
+       "parsed": {
+        "victories": "12-15",
+        "battles_n": 15,
+        "battles": true
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm/Cyclomon.png",
+   "sleep": null,
+   "power": null,
+   "sources": [
+    "humulos:dm"
+   ]
+  },
+  {
+   "id": "darktyranomon",
+   "name": "Dark Tyranomon",
+   "stage": "Adult",
+   "level": null,
+   "attribute": "Virus",
+   "alt_attribute": null,
+   "devices": {
+    "dm": {
+     "versions": [],
+     "stage_time": "36 h",
+     "evolves_to": [
+      {
+       "to": "Metal Tyranomon",
+       "to_id": "metaltyranomon",
+       "raw": "15 Battles, 12-15 Victories at both the Child and Adult Stage*",
+       "parsed": {
+        "victories": "12-15",
+        "battles_n": 15,
+        "battles": true
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm/Dark Tyranomon.png",
+   "sleep": null,
+   "power": null,
+   "sources": [
+    "humulos:dm"
+   ]
+  },
+  {
+   "id": "deltamon",
+   "name": "Deltamon",
+   "stage": "Adult",
+   "level": null,
+   "attribute": "Virus",
+   "alt_attribute": null,
+   "devices": {
+    "dm": {
+     "versions": [],
+     "stage_time": "36 h",
+     "evolves_to": [
+      {
+       "to": "Nanomon",
+       "to_id": "nanomon",
+       "raw": "15 Battles, 12-15 Victories at both the Child and Adult Stage*",
+       "parsed": {
+        "victories": "12-15",
+        "battles_n": 15,
+        "battles": true
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm/Deltamon.png",
+   "sleep": null,
+   "power": null,
+   "sources": [
+    "humulos:dm"
+   ]
+  },
+  {
+   "id": "devidramon",
+   "name": "Devidramon",
+   "stage": "Adult",
+   "level": null,
+   "attribute": "Virus",
+   "alt_attribute": null,
+   "devices": {
+    "dm": {
+     "versions": [],
+     "stage_time": "36 h",
+     "evolves_to": [
+      {
+       "to": "Metal Tyranomon",
+       "to_id": "metaltyranomon",
+       "raw": "15 Battles, 12-15 Victories at both the Child and Adult Stage*",
+       "parsed": {
+        "victories": "12-15",
+        "battles_n": 15,
+        "battles": true
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm/Devidramon.png",
+   "sleep": null,
+   "power": null,
+   "sources": [
+    "humulos:dm"
+   ]
+  },
+  {
+   "id": "devimon",
+   "name": "Devimon",
+   "stage": "Adult",
+   "level": null,
+   "attribute": "Virus",
+   "alt_attribute": null,
+   "devices": {
+    "dm": {
+     "versions": [],
+     "stage_time": "36 h",
+     "evolves_to": [
+      {
+       "to": "Metal Greymon",
+       "to_id": "metalgreymon",
+       "raw": "15 Battles, 12-15 Victories at both the Child and Adult Stage*",
+       "parsed": {
+        "victories": "12-15",
+        "battles_n": 15,
+        "battles": true
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm/Devimon.png",
+   "sleep": null,
+   "power": null,
+   "sources": [
+    "humulos:dm"
+   ]
+  },
+  {
+   "id": "digitamamon",
+   "name": "Digitamamon",
+   "stage": "Perfect",
+   "level": null,
+   "attribute": "Data",
+   "alt_attribute": null,
+   "devices": {
+    "dm": {
+     "versions": [],
+     "stage_time": "48 h",
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm/Digitamamon.png",
+   "sleep": null,
+   "power": null,
+   "sources": [
+    "humulos:dm"
+   ]
+  },
+  {
+   "id": "drimogemon",
+   "name": "Drimogemon",
+   "stage": "Adult",
+   "level": null,
+   "attribute": "Data",
+   "alt_attribute": null,
+   "devices": {
+    "dm": {
+     "versions": [],
+     "stage_time": "36 h",
+     "evolves_to": [
+      {
+       "to": "Giromon",
+       "to_id": "giromon",
+       "raw": "15 Battles, 12-15 Victories at both the Child and Adult Stage*",
+       "parsed": {
+        "victories": "12-15",
+        "battles_n": 15,
+        "battles": true
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm/Drimogemon.png",
+   "sleep": null,
+   "power": null,
+   "sources": [
+    "humulos:dm"
+   ]
+  },
+  {
+   "id": "elecmon",
+   "name": "Elecmon",
+   "stage": "Child",
+   "level": null,
+   "attribute": "Data",
+   "alt_attribute": null,
+   "devices": {
+    "dm": {
+     "versions": [],
+     "stage_time": "24 h",
+     "evolves_to": [
+      {
+       "to": "Angemon",
+       "to_id": "angemon",
+       "raw": "0-3 Care Mistakes, 48+ Training",
+       "parsed": {
+        "care_mistakes": "0-3",
+        "training": "48+"
+       }
+      },
+      {
+       "to": "Yukidarumon",
+       "to_id": "yukidarumon",
+       "raw": "4+ Care Mistakes, 8-31 Training, 0-5 Overfeed, 5+ Sleep Disturbances",
+       "parsed": {
+        "care_mistakes": "4+",
+        "training": "8-31",
+        "overfeed": "0-5"
+       }
+      },
+      {
+       "to": "Birdramon",
+       "to_id": "birdramon",
+       "raw": "0-3 Care Mistakes, 0-47 Training",
+       "parsed": {
+        "care_mistakes": "0-3",
+        "training": "0-47"
+       }
+      },
+      {
+       "to": "Whamon",
+       "to_id": "whamon",
+       "raw": "4+ Care Mistakes, 32+ Training, 6+ Overfeed, 0-4 Sleep Disturbances",
+       "parsed": {
+        "care_mistakes": "4+",
+        "training": "32+",
+        "overfeed": "6+"
+       }
+      },
+      {
+       "to": "Vegimon",
+       "to_id": "vegimon",
+       "raw": "",
+       "parsed": {}
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm/Elecmon.png",
+   "sleep": null,
+   "power": null,
+   "sources": [
+    "humulos:dm"
+   ]
+  },
+  {
+   "id": "etemon",
+   "name": "Etemon",
+   "stage": "Perfect",
+   "level": null,
+   "attribute": "Virus",
+   "alt_attribute": null,
+   "devices": {
+    "dm": {
+     "versions": [],
+     "stage_time": "48 h",
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm/Etemon.png",
+   "sleep": null,
+   "power": null,
+   "sources": [
+    "humulos:dm"
+   ]
+  },
+  {
+   "id": "extyranomon",
+   "name": "Ex-Tyranomon",
+   "stage": "Perfect",
+   "level": null,
+   "attribute": "Vaccine",
+   "alt_attribute": null,
+   "devices": {
+    "dm": {
+     "versions": [],
+     "stage_time": "48 h",
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm/Ex-Tyranomon.png",
+   "sleep": null,
+   "power": null,
+   "sources": [
+    "humulos:dm"
+   ]
+  },
+  {
+   "id": "flymon",
+   "name": "Flymon",
+   "stage": "Adult",
+   "level": null,
+   "attribute": "Virus",
+   "alt_attribute": null,
+   "devices": {
+    "dm": {
+     "versions": [],
+     "stage_time": "36 h",
+     "evolves_to": [
+      {
+       "to": "Metal Tyranomon",
+       "to_id": "metaltyranomon",
+       "raw": "15 Battles, 12-15 Victories at both the Child and Adult Stage*",
+       "parsed": {
+        "victories": "12-15",
+        "battles_n": 15,
+        "battles": true
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm/Flymon.png",
+   "sleep": null,
+   "power": null,
+   "sources": [
+    "humulos:dm"
+   ]
+  },
+  {
+   "id": "gabumon",
+   "name": "Gabumon",
+   "stage": "Child",
+   "level": null,
+   "attribute": "Data",
+   "alt_attribute": null,
+   "devices": {
+    "dm": {
+     "versions": [],
+     "stage_time": "24 h",
+     "evolves_to": [
+      {
+       "to": "Kabuterimon",
+       "to_id": "kabuterimon",
+       "raw": "0-3 Care Mistakes, 48+ Training",
+       "parsed": {
+        "care_mistakes": "0-3",
+        "training": "48+"
+       }
+      },
+      {
+       "to": "Garurumon",
+       "to_id": "garurumon",
+       "raw": "4+ Care Mistakes, 5-31 Training, 3+ Overfeed, 0-4 Sleep Disturbances",
+       "parsed": {
+        "care_mistakes": "4+",
+        "training": "5-31",
+        "overfeed": "3+"
+       }
+      },
+      {
+       "to": "Angemon",
+       "to_id": "angemon",
+       "raw": "0-3 Care Mistakes, 0-47 Training",
+       "parsed": {
+        "care_mistakes": "0-3",
+        "training": "0-47"
+       }
+      },
+      {
+       "to": "Yukidarumon",
+       "to_id": "yukidarumon",
+       "raw": "4+ Care Mistakes, 32+ Training, 3+ Overfeed, 0-6 Sleep Disturbances",
+       "parsed": {
+        "care_mistakes": "4+",
+        "training": "32+",
+        "overfeed": "3+"
+       }
+      },
+      {
+       "to": "Vegimon",
+       "to_id": "vegimon",
+       "raw": "",
+       "parsed": {}
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm/Gabumon.png",
+   "sleep": null,
+   "power": null,
+   "sources": [
+    "humulos:dm"
+   ]
+  },
+  {
+   "id": "garurumon",
+   "name": "Garurumon",
+   "stage": "Adult",
+   "level": null,
+   "attribute": "Vaccine",
+   "alt_attribute": null,
+   "devices": {
+    "dm": {
+     "versions": [],
+     "stage_time": "36 h",
+     "evolves_to": [
+      {
+       "to": "Metal Mamemon",
+       "to_id": "metalmamemon",
+       "raw": "15 Battles, 12-15 Victories at both the Child and Adult Stage*",
+       "parsed": {
+        "victories": "12-15",
+        "battles_n": 15,
+        "battles": true
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm/Garurumon.png",
+   "sleep": null,
+   "power": null,
+   "sources": [
+    "humulos:dm"
+   ]
+  },
+  {
+   "id": "gazimon",
+   "name": "Gazimon",
+   "stage": "Child",
+   "level": null,
+   "attribute": "Virus",
+   "alt_attribute": null,
+   "devices": {
+    "dm": {
+     "versions": [],
+     "stage_time": "24 h",
+     "evolves_to": [
+      {
+       "to": "Dark Tyranomon",
+       "to_id": "darktyranomon",
+       "raw": "0-3 Care Mistakes, 48+ Training",
+       "parsed": {
+        "care_mistakes": "0-3",
+        "training": "48+"
+       }
+      },
+      {
+       "to": "Cyclomon",
+       "to_id": "cyclomon",
+       "raw": "4+ Care Mistakes, 5-31 Training, 3+ Overfeed, 0-4 Sleep Disturbances",
+       "parsed": {
+        "care_mistakes": "4+",
+        "training": "5-31",
+        "overfeed": "3+"
+       }
+      },
+      {
+       "to": "Devidramon",
+       "to_id": "devidramon",
+       "raw": "0-3 Care Mistakes, 0-47 Training",
+       "parsed": {
+        "care_mistakes": "0-3",
+        "training": "0-47"
+       }
+      },
+      {
+       "to": "Tuskmon",
+       "to_id": "tuskmon",
+       "raw": "4+ Care Mistakes, 32+ Training, 3+ Overfeed, 0-6 Sleep Disturbances",
+       "parsed": {
+        "care_mistakes": "4+",
+        "training": "32+",
+        "overfeed": "3+"
+       }
+      },
+      {
+       "to": "Raremon",
+       "to_id": "raremon",
+       "raw": "",
+       "parsed": {}
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm/Gazimon.png",
+   "sleep": null,
+   "power": null,
+   "sources": [
+    "humulos:dm"
+   ]
+  },
+  {
+   "id": "gekomon",
+   "name": "Gekomon",
+   "stage": "Adult",
+   "level": null,
+   "attribute": "Virus",
+   "alt_attribute": null,
+   "devices": {
+    "dm": {
+     "versions": [],
+     "stage_time": "36 h",
+     "evolves_to": [
+      {
+       "to": "Tonosama Gekomon",
+       "to_id": "tonosamagekomon",
+       "raw": "15 Battles, 12-15 Victories at both the Child and Adult Stage*",
+       "parsed": {
+        "victories": "12-15",
+        "battles_n": 15,
+        "battles": true
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm/Gekomon.png",
+   "sleep": null,
+   "power": null,
+   "sources": [
+    "humulos:dm"
+   ]
+  },
+  {
+   "id": "giromon",
+   "name": "Giromon",
+   "stage": "Perfect",
+   "level": null,
+   "attribute": "Vaccine",
+   "alt_attribute": null,
+   "devices": {
+    "dm": {
+     "versions": [],
+     "stage_time": "48 h",
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm/Giromon.png",
+   "sleep": null,
+   "power": null,
+   "sources": [
+    "humulos:dm"
+   ]
+  },
+  {
+   "id": "gizamon",
+   "name": "Gizamon",
+   "stage": "Child",
+   "level": null,
+   "attribute": "Virus",
+   "alt_attribute": null,
+   "devices": {
+    "dm": {
+     "versions": [],
+     "stage_time": "24 h",
+     "evolves_to": [
+      {
+       "to": "Devidramon",
+       "to_id": "devidramon",
+       "raw": "0-3 Care Mistakes, 48+ Training",
+       "parsed": {
+        "care_mistakes": "0-3",
+        "training": "48+"
+       }
+      },
+      {
+       "to": "Tuskmon",
+       "to_id": "tuskmon",
+       "raw": "4+ Care Mistakes, 8-31 Training, 0-5 Overfeed, 5+ Sleep Disturbances",
+       "parsed": {
+        "care_mistakes": "4+",
+        "training": "8-31",
+        "overfeed": "0-5"
+       }
+      },
+      {
+       "to": "Flymon",
+       "to_id": "flymon",
+       "raw": "0-3 Care Mistakes, 0-47 Training",
+       "parsed": {
+        "care_mistakes": "0-3",
+        "training": "0-47"
+       }
+      },
+      {
+       "to": "Deltamon",
+       "to_id": "deltamon",
+       "raw": "4+ Care Mistakes, 32+ Training, 6+ Overfeed, 0-4 Sleep Disturbances",
+       "parsed": {
+        "care_mistakes": "4+",
+        "training": "32+",
+        "overfeed": "6+"
+       }
+      },
+      {
+       "to": "Raremon",
+       "to_id": "raremon",
+       "raw": "",
+       "parsed": {}
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm/Gizamon.png",
+   "sleep": null,
+   "power": null,
+   "sources": [
+    "humulos:dm"
+   ]
+  },
+  {
+   "id": "greymon",
+   "name": "Greymon",
+   "stage": "Adult",
+   "level": null,
+   "attribute": "Vaccine",
+   "alt_attribute": null,
+   "devices": {
+    "dm": {
+     "versions": [],
+     "stage_time": "36 h",
+     "evolves_to": [
+      {
+       "to": "Metal Greymon",
+       "to_id": "metalgreymon",
+       "raw": "15 Battles, 12-15 Victories at both the Child and Adult Stage*",
+       "parsed": {
+        "victories": "12-15",
+        "battles_n": 15,
+        "battles": true
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm/Greymon.png",
+   "sleep": null,
+   "power": null,
+   "sources": [
+    "humulos:dm"
+   ]
+  },
+  {
+   "id": "kabuterimon",
+   "name": "Kabuterimon",
+   "stage": "Adult",
+   "level": null,
+   "attribute": "Vaccine",
+   "alt_attribute": null,
+   "devices": {
+    "dm": {
+     "versions": [],
+     "stage_time": "36 h",
+     "evolves_to": [
+      {
+       "to": "Skull Greymon",
+       "to_id": "skullgreymon",
+       "raw": "15 Battles, 12-15 Victories at both the Child and Adult Stage*",
+       "parsed": {
+        "victories": "12-15",
+        "battles_n": 15,
+        "battles": true
+       }
+      },
+      {
+       "to": "Atlur Kabuterimon",
+       "to_id": "atlurkabuterimon",
+       "raw": "15 Battles, 12-15 Victories at both the Child and Adult Stage*",
+       "parsed": {
+        "victories": "12-15",
+        "battles_n": 15,
+        "battles": true
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm/Kabuterimon.png",
+   "sleep": null,
+   "power": null,
+   "sources": [
+    "humulos:dm"
+   ]
+  },
+  {
+   "id": "karatukinumemon",
+   "name": "Karatuki Numemon",
+   "stage": "Adult",
+   "level": null,
+   "attribute": "Virus",
+   "alt_attribute": null,
+   "devices": {
+    "dm": {
+     "versions": [],
+     "stage_time": "36 h",
+     "evolves_to": [
+      {
+       "to": "Tekkamon",
+       "to_id": "tekkamon",
+       "raw": "15 Battles, 12-15 Victories at both the Child and Adult Stage*",
+       "parsed": {
+        "victories": "12-15",
+        "battles_n": 15,
+        "battles": true
+       }
+      }
+     ]
+    }
+   },
+   "sprite": null,
+   "sleep": null,
+   "power": null,
+   "sources": [
+    "humulos:dm"
+   ]
+  },
+  {
+   "id": "koromon",
+   "name": "Koromon",
+   "stage": "Baby II",
+   "level": null,
+   "attribute": "Free",
+   "alt_attribute": null,
+   "devices": {
+    "dm": {
+     "versions": [],
+     "stage_time": "6 h",
+     "evolves_to": [
+      {
+       "to": "Agumon",
+       "to_id": "agumon",
+       "raw": "0-3 Care Mistakes",
+       "parsed": {
+        "care_mistakes": "0-3"
+       }
+      },
+      {
+       "to": "Betamon",
+       "to_id": "betamon",
+       "raw": "4+ Care Mistakes",
+       "parsed": {
+        "care_mistakes": "4+"
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm/Koromon.png",
+   "sleep": null,
+   "power": null,
+   "sources": [
+    "humulos:dm"
+   ]
+  },
+  {
+   "id": "kunemon",
+   "name": "Kunemon",
+   "stage": "Child",
+   "level": null,
+   "attribute": "Virus",
+   "alt_attribute": null,
+   "devices": {
+    "dm": {
+     "versions": [],
+     "stage_time": "24 h",
+     "evolves_to": [
+      {
+       "to": "Ogremon",
+       "to_id": "ogremon",
+       "raw": "0-3 Care Mistakes, 48+ Training",
+       "parsed": {
+        "care_mistakes": "0-3",
+        "training": "48+"
+       }
+      },
+      {
+       "to": "Bakemon",
+       "to_id": "bakemon",
+       "raw": "4+ Care Mistakes, 8-31 Training, 0-5 Overfeed, 5+ Sleep Disturbances",
+       "parsed": {
+        "care_mistakes": "4+",
+        "training": "8-31",
+        "overfeed": "0-5"
+       }
+      },
+      {
+       "to": "Shellmon",
+       "to_id": "shellmon",
+       "raw": "0-3 Care Mistakes, 0-47 Training",
+       "parsed": {
+        "care_mistakes": "0-3",
+        "training": "0-47"
+       }
+      },
+      {
+       "to": "Drimogemon",
+       "to_id": "drimogemon",
+       "raw": "4+ Care Mistakes, 32+ Training, 6+ Overfeed, 0-4 Sleep Disturbances",
+       "parsed": {
+        "care_mistakes": "4+",
+        "training": "32+",
+        "overfeed": "6+"
+       }
+      },
+      {
+       "to": "Scumon",
+       "to_id": "scumon",
+       "raw": "",
+       "parsed": {}
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm/Kunemon.png",
+   "sleep": null,
+   "power": null,
+   "sources": [
+    "humulos:dm"
+   ]
+  },
+  {
+   "id": "kuwagamon",
+   "name": "Kuwagamon",
+   "stage": "Adult",
+   "level": null,
+   "attribute": "Virus",
+   "alt_attribute": null,
+   "devices": {
+    "dm": {
+     "versions": [],
+     "stage_time": "36 h",
+     "evolves_to": [
+      {
+       "to": "Piccolomon",
+       "to_id": "piccolomon",
+       "raw": "15 Battles, 12-15 Victories at both the Child and Adult Stage*",
+       "parsed": {
+        "victories": "12-15",
+        "battles_n": 15,
+        "battles": true
+       }
+      },
+      {
+       "to": "Tekkamon",
+       "to_id": "tekkamon",
+       "raw": "15 Battles, 12-15 Victories at both the Child and Adult Stage*",
+       "parsed": {
+        "victories": "12-15",
+        "battles_n": 15,
+        "battles": true
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm/Kuwagamon.png",
+   "sleep": null,
+   "power": null,
+   "sources": [
+    "humulos:dm"
+   ]
+  },
+  {
+   "id": "leomon",
+   "name": "Leomon",
+   "stage": "Adult",
+   "level": null,
+   "attribute": "Vaccine",
+   "alt_attribute": null,
+   "devices": {
+    "dm": {
+     "versions": [],
+     "stage_time": "36 h",
+     "evolves_to": [
+      {
+       "to": "Megadramon",
+       "to_id": "megadramon",
+       "raw": "15 Battles, 12-15 Victories at both the Child and Adult Stage*",
+       "parsed": {
+        "victories": "12-15",
+        "battles_n": 15,
+        "battles": true
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm/Leomon.png",
+   "sleep": null,
+   "power": null,
+   "sources": [
+    "humulos:dm"
+   ]
+  },
+  {
+   "id": "mamemon",
+   "name": "Mamemon",
+   "stage": "Perfect",
+   "level": null,
+   "attribute": "Data",
+   "alt_attribute": null,
+   "devices": {
+    "dm": {
+     "versions": [],
+     "stage_time": "48 h",
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm/Mamemon.png",
+   "sleep": null,
+   "power": null,
+   "sources": [
+    "humulos:dm"
+   ]
+  },
+  {
+   "id": "megadramon",
+   "name": "Megadramon",
+   "stage": "Perfect",
+   "level": null,
+   "attribute": "Virus",
+   "alt_attribute": null,
+   "devices": {
+    "dm": {
+     "versions": [],
+     "stage_time": "48 h",
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm/Megadramon.png",
+   "sleep": null,
+   "power": null,
+   "sources": [
+    "humulos:dm"
+   ]
+  },
+  {
+   "id": "meramon",
+   "name": "Meramon",
+   "stage": "Adult",
+   "level": null,
+   "attribute": "Data",
+   "alt_attribute": null,
+   "devices": {
+    "dm": {
+     "versions": [],
+     "stage_time": "36 h",
+     "evolves_to": [
+      {
+       "to": "Mamemon",
+       "to_id": "mamemon",
+       "raw": "15 Battles, 12-15 Victories at both the Child and Adult Stage*",
+       "parsed": {
+        "victories": "12-15",
+        "battles_n": 15,
+        "battles": true
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm/Meramon.png",
+   "sleep": null,
+   "power": null,
+   "sources": [
+    "humulos:dm"
+   ]
+  },
+  {
+   "id": "metalgreymon",
+   "name": "Metal Greymon",
+   "stage": "Perfect",
+   "level": null,
+   "attribute": "Virus",
+   "alt_attribute": null,
+   "devices": {
+    "dm": {
+     "versions": [],
+     "stage_time": "48 h",
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm/Metal Greymon.png",
+   "sleep": null,
+   "power": null,
+   "sources": [
+    "humulos:dm"
+   ]
+  },
+  {
+   "id": "metalmamemon",
+   "name": "Metal Mamemon",
+   "stage": "Perfect",
+   "level": null,
+   "attribute": "Data",
+   "alt_attribute": null,
+   "devices": {
+    "dm": {
+     "versions": [],
+     "stage_time": "48 h",
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm/Metal Mamemon.png",
+   "sleep": null,
+   "power": null,
+   "sources": [
+    "humulos:dm"
+   ]
+  },
+  {
+   "id": "metaltyranomon",
+   "name": "Metal Tyranomon",
+   "stage": "Perfect",
+   "level": null,
+   "attribute": "Virus",
+   "alt_attribute": null,
+   "devices": {
+    "dm": {
+     "versions": [],
+     "stage_time": "48 h",
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm/Metal Tyranomon.png",
+   "sleep": null,
+   "power": null,
+   "sources": [
+    "humulos:dm"
+   ]
+  },
+  {
+   "id": "mochimon",
+   "name": "Mochimon",
+   "stage": "Baby II",
+   "level": null,
+   "attribute": "Free",
+   "alt_attribute": null,
+   "devices": {
+    "dm": {
+     "versions": [],
+     "stage_time": "6 h",
+     "evolves_to": [
+      {
+       "to": "Tentomon",
+       "to_id": "tentomon",
+       "raw": "0-3 Care Mistakes",
+       "parsed": {
+        "care_mistakes": "0-3"
+       }
+      },
+      {
+       "to": "Otamamon",
+       "to_id": "otamamon",
+       "raw": "4+ Care Mistakes",
+       "parsed": {
+        "care_mistakes": "4+"
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm/Mochimon.png",
+   "sleep": null,
+   "power": null,
+   "sources": [
+    "humulos:dm"
+   ]
+  },
+  {
+   "id": "mojyamon",
+   "name": "Mojyamon",
+   "stage": "Adult",
+   "level": null,
+   "attribute": "Vaccine",
+   "alt_attribute": null,
+   "devices": {
+    "dm": {
+     "versions": [],
+     "stage_time": "36 h",
+     "evolves_to": [
+      {
+       "to": "Piccolomon",
+       "to_id": "piccolomon",
+       "raw": "15 Battles, 12-15 Victories at both the Child and Adult Stage*",
+       "parsed": {
+        "victories": "12-15",
+        "battles_n": 15,
+        "battles": true
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm/Mojyamon.png",
+   "sleep": null,
+   "power": null,
+   "sources": [
+    "humulos:dm"
+   ]
+  },
+  {
+   "id": "monochromon",
+   "name": "Monochromon",
+   "stage": "Adult",
+   "level": null,
+   "attribute": "Data",
+   "alt_attribute": null,
+   "devices": {
+    "dm": {
+     "versions": [],
+     "stage_time": "36 h",
+     "evolves_to": [
+      {
+       "to": "Megadramon",
+       "to_id": "megadramon",
+       "raw": "15 Battles, 12-15 Victories at both the Child and Adult Stage*",
+       "parsed": {
+        "victories": "12-15",
+        "battles_n": 15,
+        "battles": true
+       }
+      },
+      {
+       "to": "Atlur Kabuterimon",
+       "to_id": "atlurkabuterimon",
+       "raw": "15 Battles, 12-15 Victories at both the Child and Adult Stage*",
+       "parsed": {
+        "victories": "12-15",
+        "battles_n": 15,
+        "battles": true
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm/Monochromon.png",
+   "sleep": null,
+   "power": null,
+   "sources": [
+    "humulos:dm"
+   ]
+  },
+  {
+   "id": "monzaemon",
+   "name": "Monzaemon",
+   "stage": "Perfect",
+   "level": null,
+   "attribute": "Vaccine",
+   "alt_attribute": null,
+   "devices": {
+    "dm": {
+     "versions": [],
+     "stage_time": "48 h",
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm/Monzaemon.png",
+   "sleep": null,
+   "power": null,
+   "sources": [
+    "humulos:dm"
+   ]
+  },
+  {
+   "id": "nanimon",
+   "name": "Nanimon",
+   "stage": "Adult",
+   "level": null,
+   "attribute": "Virus",
+   "alt_attribute": null,
+   "devices": {
+    "dm": {
+     "versions": [],
+     "stage_time": "36 h",
+     "evolves_to": [
+      {
+       "to": "Digitamamon",
+       "to_id": "digitamamon",
+       "raw": "15 Battles, 12-15 Victories at both the Child and Adult Stage*",
+       "parsed": {
+        "victories": "12-15",
+        "battles_n": 15,
+        "battles": true
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm/Nanimon.png",
+   "sleep": null,
+   "power": null,
+   "sources": [
+    "humulos:dm"
+   ]
+  },
+  {
+   "id": "nanomon",
+   "name": "Nanomon",
+   "stage": "Perfect",
+   "level": null,
+   "attribute": "Virus",
+   "alt_attribute": null,
+   "devices": {
+    "dm": {
+     "versions": [],
+     "stage_time": "48 h",
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm/Nanomon.png",
+   "sleep": null,
+   "power": null,
+   "sources": [
+    "humulos:dm"
+   ]
+  },
+  {
+   "id": "numemon",
+   "name": "Numemon",
+   "stage": "Adult",
+   "level": null,
+   "attribute": "Virus",
+   "alt_attribute": null,
+   "devices": {
+    "dm": {
+     "versions": [],
+     "stage_time": "36 h",
+     "evolves_to": [
+      {
+       "to": "Monzaemon",
+       "to_id": "monzaemon",
+       "raw": "15 Battles, 12-15 Victories at both the Child and Adult Stage*",
+       "parsed": {
+        "victories": "12-15",
+        "battles_n": 15,
+        "battles": true
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm/Numemon.png",
+   "sleep": null,
+   "power": null,
+   "sources": [
+    "humulos:dm"
+   ]
+  },
+  {
+   "id": "ogremon",
+   "name": "Ogremon",
+   "stage": "Adult",
+   "level": null,
+   "attribute": "Virus",
+   "alt_attribute": null,
+   "devices": {
+    "dm": {
+     "versions": [],
+     "stage_time": "36 h",
+     "evolves_to": [
+      {
+       "to": "Andromon",
+       "to_id": "andromon",
+       "raw": "15 Battles, 12-15 Victories at both the Child and Adult Stage*",
+       "parsed": {
+        "victories": "12-15",
+        "battles_n": 15,
+        "battles": true
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm/Ogremon.png",
+   "sleep": null,
+   "power": null,
+   "sources": [
+    "humulos:dm"
+   ]
+  },
+  {
+   "id": "otamamon",
+   "name": "Otamamon",
+   "stage": "Child",
+   "level": null,
+   "attribute": "Virus",
+   "alt_attribute": null,
+   "devices": {
+    "dm": {
+     "versions": [],
+     "stage_time": "24 h",
+     "evolves_to": [
+      {
+       "to": "Tortamon",
+       "to_id": "tortamon",
+       "raw": "0-3 Care Mistakes, 48+ Training",
+       "parsed": {
+        "care_mistakes": "0-3",
+        "training": "48+"
+       }
+      },
+      {
+       "to": "Kuwagamon",
+       "to_id": "kuwagamon",
+       "raw": "4+ Care Mistakes, 8-31 Training, 0-5 Overfeed, 5+ Sleep Disturbances",
+       "parsed": {
+        "care_mistakes": "4+",
+        "training": "8-31",
+        "overfeed": "0-5"
+       }
+      },
+      {
+       "to": "Monochromon",
+       "to_id": "monochromon",
+       "raw": "0-3 Care Mistakes, 0-47 Training",
+       "parsed": {
+        "care_mistakes": "0-3",
+        "training": "0-47"
+       }
+      },
+      {
+       "to": "Karatuki Numemon",
+       "to_id": "karatukinumemon",
+       "raw": "4+ Care Mistakes, 32+ Training, 6+ Overfeed, 0-4 Sleep Disturbances",
+       "parsed": {
+        "care_mistakes": "4+",
+        "training": "32+",
+        "overfeed": "6+"
+       }
+      },
+      {
+       "to": "Gekomon",
+       "to_id": "gekomon",
+       "raw": "",
+       "parsed": {}
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm/Otamamon.png",
+   "sleep": null,
+   "power": null,
+   "sources": [
+    "humulos:dm"
+   ]
+  },
+  {
+   "id": "pagumon",
+   "name": "Pagumon",
+   "stage": "Baby II",
+   "level": null,
+   "attribute": "Free",
+   "alt_attribute": null,
+   "devices": {
+    "dm": {
+     "versions": [],
+     "stage_time": "6 h",
+     "evolves_to": [
+      {
+       "to": "Gazimon",
+       "to_id": "gazimon",
+       "raw": "0-3 Care Mistakes",
+       "parsed": {
+        "care_mistakes": "0-3"
+       }
+      },
+      {
+       "to": "Gizamon",
+       "to_id": "gizamon",
+       "raw": "4+ Care Mistakes",
+       "parsed": {
+        "care_mistakes": "4+"
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm/Pagumon.png",
+   "sleep": null,
+   "power": null,
+   "sources": [
+    "humulos:dm"
+   ]
+  },
+  {
+   "id": "palmon",
+   "name": "Palmon",
+   "stage": "Child",
+   "level": null,
+   "attribute": "Data",
+   "alt_attribute": null,
+   "devices": {
+    "dm": {
+     "versions": [],
+     "stage_time": "24 h",
+     "evolves_to": [
+      {
+       "to": "Leomon",
+       "to_id": "leomon",
+       "raw": "0-3 Care Mistakes, 48+ Training",
+       "parsed": {
+        "care_mistakes": "0-3",
+        "training": "48+"
+       }
+      },
+      {
+       "to": "Kuwagamon",
+       "to_id": "kuwagamon",
+       "raw": "4+ Care Mistakes, 8-31 Training, 0-5 Overfeed, 5+ Sleep Disturbances",
+       "parsed": {
+        "care_mistakes": "4+",
+        "training": "8-31",
+        "overfeed": "0-5"
+       }
+      },
+      {
+       "to": "Coelamon",
+       "to_id": "coelamon",
+       "raw": "0-3 Care Mistakes, 0-47 Training",
+       "parsed": {
+        "care_mistakes": "0-3",
+        "training": "0-47"
+       }
+      },
+      {
+       "to": "Mojyamon",
+       "to_id": "mojyamon",
+       "raw": "4+ Care Mistakes, 32+ Training, 6+ Overfeed, 0-4 Sleep Disturbances",
+       "parsed": {
+        "care_mistakes": "4+",
+        "training": "32+",
+        "overfeed": "6+"
+       }
+      },
+      {
+       "to": "Nanimon",
+       "to_id": "nanimon",
+       "raw": "",
+       "parsed": {}
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm/Palmon.png",
+   "sleep": null,
+   "power": null,
+   "sources": [
+    "humulos:dm"
+   ]
+  },
+  {
+   "id": "patamon",
+   "name": "Patamon",
+   "stage": "Child",
+   "level": null,
+   "attribute": "Data",
+   "alt_attribute": null,
+   "devices": {
+    "dm": {
+     "versions": [],
+     "stage_time": "24 h",
+     "evolves_to": [
+      {
+       "to": "Unimon",
+       "to_id": "unimon",
+       "raw": "0-3 Care Mistakes, 48+ Training",
+       "parsed": {
+        "care_mistakes": "0-3",
+        "training": "48+"
+       }
+      },
+      {
+       "to": "Centalmon",
+       "to_id": "centalmon",
+       "raw": "4+ Care Mistakes, 5-31 Training, 3+ Overfeed, 0-4 Sleep Disturbances",
+       "parsed": {
+        "care_mistakes": "4+",
+        "training": "5-31",
+        "overfeed": "3+"
+       }
+      },
+      {
+       "to": "Ogremon",
+       "to_id": "ogremon",
+       "raw": "0-3 Care Mistakes, 0-47 Training",
+       "parsed": {
+        "care_mistakes": "0-3",
+        "training": "0-47"
+       }
+      },
+      {
+       "to": "Bakemon",
+       "to_id": "bakemon",
+       "raw": "4+ Care Mistakes, 32+ Training, 3+ Overfeed, 0-6 Sleep Disturbances",
+       "parsed": {
+        "care_mistakes": "4+",
+        "training": "32+",
+        "overfeed": "3+"
+       }
+      },
+      {
+       "to": "Scumon",
+       "to_id": "scumon",
+       "raw": "",
+       "parsed": {}
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm/Patamon.png",
+   "sleep": null,
+   "power": null,
+   "sources": [
+    "humulos:dm"
+   ]
+  },
+  {
+   "id": "piccolomon",
+   "name": "Piccolomon",
+   "stage": "Perfect",
+   "level": null,
+   "attribute": "Data",
+   "alt_attribute": null,
+   "devices": {
+    "dm": {
+     "versions": [],
+     "stage_time": "48 h",
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm/Piccolomon.png",
+   "sleep": null,
+   "power": null,
+   "sources": [
+    "humulos:dm"
+   ]
+  },
+  {
+   "id": "piyomon",
+   "name": "Piyomon",
+   "stage": "Child",
+   "level": null,
+   "attribute": "Vaccine",
+   "alt_attribute": null,
+   "devices": {
+    "dm": {
+     "versions": [],
+     "stage_time": "24 h",
+     "evolves_to": [
+      {
+       "to": "Monochromon",
+       "to_id": "monochromon",
+       "raw": "0-3 Care Mistakes, 48+ Training",
+       "parsed": {
+        "care_mistakes": "0-3",
+        "training": "48+"
+       }
+      },
+      {
+       "to": "Cockatrimon",
+       "to_id": "cockatrimon",
+       "raw": "4+ Care Mistakes, 5-31 Training, 3+ Overfeed, 0-4 Sleep Disturbances",
+       "parsed": {
+        "care_mistakes": "4+",
+        "training": "5-31",
+        "overfeed": "3+"
+       }
+      },
+      {
+       "to": "Leomon",
+       "to_id": "leomon",
+       "raw": "0-3 Care Mistakes, 0-47 Training",
+       "parsed": {
+        "care_mistakes": "0-3",
+        "training": "0-47"
+       }
+      },
+      {
+       "to": "Kuwagamon",
+       "to_id": "kuwagamon",
+       "raw": "4+ Care Mistakes, 32+ Training, 3+ Overfeed, 0-6 Sleep Disturbances",
+       "parsed": {
+        "care_mistakes": "4+",
+        "training": "32+",
+        "overfeed": "3+"
+       }
+      },
+      {
+       "to": "Nanimon",
+       "to_id": "nanimon",
+       "raw": "",
+       "parsed": {}
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm/Piyomon.png",
+   "sleep": null,
+   "power": null,
+   "sources": [
+    "humulos:dm"
+   ]
+  },
+  {
+   "id": "poyomon",
+   "name": "Poyomon",
+   "stage": "Baby I",
+   "level": null,
+   "attribute": "Free",
+   "alt_attribute": null,
+   "devices": {
+    "dm": {
+     "versions": [],
+     "stage_time": "10 min",
+     "evolves_to": [
+      {
+       "to": "Tokomon",
+       "to_id": "tokomon",
+       "raw": "No requirements",
+       "parsed": {}
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm/Poyomon.png",
+   "sleep": null,
+   "power": null,
+   "sources": [
+    "humulos:dm"
+   ]
+  },
+  {
+   "id": "punimon",
+   "name": "Punimon",
+   "stage": "Baby I",
+   "level": null,
+   "attribute": "Free",
+   "alt_attribute": null,
+   "devices": {
+    "dm": {
+     "versions": [],
+     "stage_time": "10 min",
+     "evolves_to": [
+      {
+       "to": "Tunomon",
+       "to_id": "tunomon",
+       "raw": "No requirements",
+       "parsed": {}
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm/Punimon.png",
+   "sleep": null,
+   "power": null,
+   "sources": [
+    "humulos:dm"
+   ]
+  },
+  {
+   "id": "raremon",
+   "name": "Raremon",
+   "stage": "Adult",
+   "level": null,
+   "attribute": "Virus",
+   "alt_attribute": null,
+   "devices": {
+    "dm": {
+     "versions": [],
+     "stage_time": "36 h",
+     "evolves_to": [
+      {
+       "to": "Ex-Tyranomon",
+       "to_id": "extyranomon",
+       "raw": "15 Battles, 12-15 Victories at both the Child and Adult Stage*",
+       "parsed": {
+        "victories": "12-15",
+        "battles_n": 15,
+        "battles": true
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm/Raremon.png",
+   "sleep": null,
+   "power": null,
+   "sources": [
+    "humulos:dm"
+   ]
+  },
+  {
+   "id": "scumon",
+   "name": "Scumon",
+   "stage": "Adult",
+   "level": null,
+   "attribute": "Virus",
+   "alt_attribute": null,
+   "devices": {
+    "dm": {
+     "versions": [],
+     "stage_time": "36 h",
+     "evolves_to": [
+      {
+       "to": "Etemon",
+       "to_id": "etemon",
+       "raw": "15 Battles, 12-15 Victories at both the Child and Adult Stage*",
+       "parsed": {
+        "victories": "12-15",
+        "battles_n": 15,
+        "battles": true
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm/Scumon.png",
+   "sleep": null,
+   "power": null,
+   "sources": [
+    "humulos:dm"
+   ]
+  },
+  {
+   "id": "seadramon",
+   "name": "Seadramon",
+   "stage": "Adult",
+   "level": null,
+   "attribute": "Data",
+   "alt_attribute": null,
+   "devices": {
+    "dm": {
+     "versions": [],
+     "stage_time": "36 h",
+     "evolves_to": [
+      {
+       "to": "Mamemon",
+       "to_id": "mamemon",
+       "raw": "15 Battles, 12-15 Victories at both the Child and Adult Stage*",
+       "parsed": {
+        "victories": "12-15",
+        "battles_n": 15,
+        "battles": true
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm/Seadramon.png",
+   "sleep": null,
+   "power": null,
+   "sources": [
+    "humulos:dm"
+   ]
+  },
+  {
+   "id": "shellmon",
+   "name": "Shellmon",
+   "stage": "Adult",
+   "level": null,
+   "attribute": "Data",
+   "alt_attribute": null,
+   "devices": {
+    "dm": {
+     "versions": [],
+     "stage_time": "36 h",
+     "evolves_to": [
+      {
+       "to": "Andromon",
+       "to_id": "andromon",
+       "raw": "15 Battles, 12-15 Victories at both the Child and Adult Stage*",
+       "parsed": {
+        "victories": "12-15",
+        "battles_n": 15,
+        "battles": true
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm/Shellmon.png",
+   "sleep": null,
+   "power": null,
+   "sources": [
+    "humulos:dm"
+   ]
+  },
+  {
+   "id": "skullgreymon",
+   "name": "Skull Greymon",
+   "stage": "Perfect",
+   "level": null,
+   "attribute": "Virus",
+   "alt_attribute": null,
+   "devices": {
+    "dm": {
+     "versions": [],
+     "stage_time": "48 h",
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm/Skull Greymon.png",
+   "sleep": null,
+   "power": null,
+   "sources": [
+    "humulos:dm"
+   ]
+  },
+  {
+   "id": "starmon",
+   "name": "Starmon",
+   "stage": "Adult",
+   "level": null,
+   "attribute": "Data",
+   "alt_attribute": null,
+   "devices": {
+    "dm": {
+     "versions": [],
+     "stage_time": "36 h",
+     "evolves_to": [
+      {
+       "to": "Tekkamon",
+       "to_id": "tekkamon",
+       "raw": "15 Battles, 12-15 Victories at both the Child and Adult Stage*",
+       "parsed": {
+        "victories": "12-15",
+        "battles_n": 15,
+        "battles": true
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm/Starmon.png",
+   "sleep": null,
+   "power": null,
+   "sources": [
+    "humulos:dm"
+   ]
+  },
+  {
+   "id": "tanemon",
+   "name": "Tanemon",
+   "stage": "Baby II",
+   "level": null,
+   "attribute": "Free",
+   "alt_attribute": null,
+   "devices": {
+    "dm": {
+     "versions": [],
+     "stage_time": "6 h",
+     "evolves_to": [
+      {
+       "to": "Piyomon",
+       "to_id": "piyomon",
+       "raw": "0-3 Care Mistakes",
+       "parsed": {
+        "care_mistakes": "0-3"
+       }
+      },
+      {
+       "to": "Palmon",
+       "to_id": "palmon",
+       "raw": "4+ Care Mistakes",
+       "parsed": {
+        "care_mistakes": "4+"
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm/Tanemon.png",
+   "sleep": null,
+   "power": null,
+   "sources": [
+    "humulos:dm"
+   ]
+  },
+  {
+   "id": "tekkamon",
+   "name": "Tekkamon",
+   "stage": "Perfect",
+   "level": null,
+   "attribute": "Virus",
+   "alt_attribute": null,
+   "devices": {
+    "dm": {
+     "versions": [],
+     "stage_time": "48 h",
+     "evolves_to": []
+    }
+   },
+   "sprite": null,
+   "sleep": null,
+   "power": null,
+   "sources": [
+    "humulos:dm"
+   ]
+  },
+  {
+   "id": "tentomon",
+   "name": "Tentomon",
+   "stage": "Child",
+   "level": null,
+   "attribute": "Vaccine",
+   "alt_attribute": null,
+   "devices": {
+    "dm": {
+     "versions": [],
+     "stage_time": "24 h",
+     "evolves_to": [
+      {
+       "to": "Kabuterimon",
+       "to_id": "kabuterimon",
+       "raw": "0-3 Care Mistakes, 48+ Training",
+       "parsed": {
+        "care_mistakes": "0-3",
+        "training": "48+"
+       }
+      },
+      {
+       "to": "Starmon",
+       "to_id": "starmon",
+       "raw": "4+ Care Mistakes, 5-31 Training, 3+ Overfeed, 0-4 Sleep Disturbances",
+       "parsed": {
+        "care_mistakes": "4+",
+        "training": "5-31",
+        "overfeed": "3+"
+       }
+      },
+      {
+       "to": "Tortamon",
+       "to_id": "tortamon",
+       "raw": "0-3 Care Mistakes, 0-47 Training",
+       "parsed": {
+        "care_mistakes": "0-3",
+        "training": "0-47"
+       }
+      },
+      {
+       "to": "Kuwagamon",
+       "to_id": "kuwagamon",
+       "raw": "4+ Care Mistakes, 32+ Training, 3+ Overfeed, 0-6 Sleep Disturbances",
+       "parsed": {
+        "care_mistakes": "4+",
+        "training": "32+",
+        "overfeed": "3+"
+       }
+      },
+      {
+       "to": "Gekomon",
+       "to_id": "gekomon",
+       "raw": "",
+       "parsed": {}
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm/Tentomon.png",
+   "sleep": null,
+   "power": null,
+   "sources": [
+    "humulos:dm"
+   ]
+  },
+  {
+   "id": "tokomon",
+   "name": "Tokomon",
+   "stage": "Baby II",
+   "level": null,
+   "attribute": "Free",
+   "alt_attribute": null,
+   "devices": {
+    "dm": {
+     "versions": [],
+     "stage_time": "6 h",
+     "evolves_to": [
+      {
+       "to": "Patamon",
+       "to_id": "patamon",
+       "raw": "0-3 Care Mistakes",
+       "parsed": {
+        "care_mistakes": "0-3"
+       }
+      },
+      {
+       "to": "Kunemon",
+       "to_id": "kunemon",
+       "raw": "4+ Care Mistakes",
+       "parsed": {
+        "care_mistakes": "4+"
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm/Tokomon.png",
+   "sleep": null,
+   "power": null,
+   "sources": [
+    "humulos:dm"
+   ]
+  },
+  {
+   "id": "tonosamagekomon",
+   "name": "Tonosama Gekomon",
+   "stage": "Perfect",
+   "level": null,
+   "attribute": "Virus",
+   "alt_attribute": null,
+   "devices": {
+    "dm": {
+     "versions": [],
+     "stage_time": "48 h",
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm/Tonosama Gekomon.png",
+   "sleep": null,
+   "power": null,
+   "sources": [
+    "humulos:dm"
+   ]
+  },
+  {
+   "id": "tortamon",
+   "name": "Tortamon",
+   "stage": "Adult",
+   "level": null,
+   "attribute": "Vaccine",
+   "alt_attribute": null,
+   "devices": {
+    "dm": {
+     "versions": [],
+     "stage_time": "36 h",
+     "evolves_to": [
+      {
+       "to": "Atlur Kabuterimon",
+       "to_id": "atlurkabuterimon",
+       "raw": "15 Battles, 12-15 Victories at both the Child and Adult Stage*",
+       "parsed": {
+        "victories": "12-15",
+        "battles_n": 15,
+        "battles": true
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm/Tortamon.png",
+   "sleep": null,
+   "power": null,
+   "sources": [
+    "humulos:dm"
+   ]
+  },
+  {
+   "id": "tunomon",
+   "name": "Tunomon",
+   "stage": "Baby II",
+   "level": null,
+   "attribute": "Free",
+   "alt_attribute": null,
+   "devices": {
+    "dm": {
+     "versions": [],
+     "stage_time": "6 h",
+     "evolves_to": [
+      {
+       "to": "Gabumon",
+       "to_id": "gabumon",
+       "raw": "0-3 Care Mistakes",
+       "parsed": {
+        "care_mistakes": "0-3"
+       }
+      },
+      {
+       "to": "Elecmon",
+       "to_id": "elecmon",
+       "raw": "4+ Care Mistakes",
+       "parsed": {
+        "care_mistakes": "4+"
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm/Tunomon.png",
+   "sleep": null,
+   "power": null,
+   "sources": [
+    "humulos:dm"
+   ]
+  },
+  {
+   "id": "tuskmon",
+   "name": "Tuskmon",
+   "stage": "Adult",
+   "level": null,
+   "attribute": "Virus",
+   "alt_attribute": null,
+   "devices": {
+    "dm": {
+     "versions": [],
+     "stage_time": "36 h",
+     "evolves_to": [
+      {
+       "to": "Nanomon",
+       "to_id": "nanomon",
+       "raw": "15 Battles, 12-15 Victories at both the Child and Adult Stage*",
+       "parsed": {
+        "victories": "12-15",
+        "battles_n": 15,
+        "battles": true
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm/Tuskmon.png",
+   "sleep": null,
+   "power": null,
+   "sources": [
+    "humulos:dm"
+   ]
+  },
+  {
+   "id": "tyranomon",
+   "name": "Tyranomon",
+   "stage": "Adult",
+   "level": null,
+   "attribute": "Data",
+   "alt_attribute": null,
+   "devices": {
+    "dm": {
+     "versions": [],
+     "stage_time": "36 h",
+     "evolves_to": [
+      {
+       "to": "Mamemon",
+       "to_id": "mamemon",
+       "raw": "15 Battles, 12-15 Victories at both the Child and Adult Stage*",
+       "parsed": {
+        "victories": "12-15",
+        "battles_n": 15,
+        "battles": true
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm/Tyranomon.png",
+   "sleep": null,
+   "power": null,
+   "sources": [
+    "humulos:dm"
+   ]
+  },
+  {
+   "id": "unimon",
+   "name": "Unimon",
+   "stage": "Adult",
+   "level": null,
+   "attribute": "Vaccine",
+   "alt_attribute": null,
+   "devices": {
+    "dm": {
+     "versions": [],
+     "stage_time": "36 h",
+     "evolves_to": [
+      {
+       "to": "Andromon",
+       "to_id": "andromon",
+       "raw": "15 Battles, 12-15 Victories at both the Child and Adult Stage*",
+       "parsed": {
+        "victories": "12-15",
+        "battles_n": 15,
+        "battles": true
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm/Unimon.png",
+   "sleep": null,
+   "power": null,
+   "sources": [
+    "humulos:dm"
+   ]
+  },
+  {
+   "id": "vademon",
+   "name": "Vademon",
+   "stage": "Perfect",
+   "level": null,
+   "attribute": "Virus",
+   "alt_attribute": null,
+   "devices": {
+    "dm": {
+     "versions": [],
+     "stage_time": "48 h",
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm/Vademon.png",
+   "sleep": null,
+   "power": null,
+   "sources": [
+    "humulos:dm"
+   ]
+  },
+  {
+   "id": "vegimon",
+   "name": "Vegimon",
+   "stage": "Adult",
+   "level": null,
+   "attribute": "Virus",
+   "alt_attribute": null,
+   "devices": {
+    "dm": {
+     "versions": [],
+     "stage_time": "36 h",
+     "evolves_to": [
+      {
+       "to": "Vademon",
+       "to_id": "vademon",
+       "raw": "15 Battles, 12-15 Victories at both the Child and Adult Stage*",
+       "parsed": {
+        "victories": "12-15",
+        "battles_n": 15,
+        "battles": true
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm/Vegimon.png",
+   "sleep": null,
+   "power": null,
+   "sources": [
+    "humulos:dm"
+   ]
+  },
+  {
+   "id": "whamon",
+   "name": "Whamon",
+   "stage": "Adult",
+   "level": null,
+   "attribute": "Vaccine",
+   "alt_attribute": null,
+   "devices": {
+    "dm": {
+     "versions": [],
+     "stage_time": "36 h",
+     "evolves_to": [
+      {
+       "to": "Metal Mamemon",
+       "to_id": "metalmamemon",
+       "raw": "15 Battles, 12-15 Victories at both the Child and Adult Stage*",
+       "parsed": {
+        "victories": "12-15",
+        "battles_n": 15,
+        "battles": true
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm/Whamon.png",
+   "sleep": null,
+   "power": null,
+   "sources": [
+    "humulos:dm"
+   ]
+  },
+  {
+   "id": "yukidarumon",
+   "name": "Yukidarumon",
+   "stage": "Adult",
+   "level": null,
+   "attribute": "Vaccine",
+   "alt_attribute": null,
+   "devices": {
+    "dm": {
+     "versions": [],
+     "stage_time": "36 h",
+     "evolves_to": [
+      {
+       "to": "Metal Mamemon",
+       "to_id": "metalmamemon",
+       "raw": "15 Battles, 12-15 Victories at both the Child and Adult Stage*",
+       "parsed": {
+        "victories": "12-15",
+        "battles_n": 15,
+        "battles": true
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm/Yukidarumon.png",
+   "sleep": null,
+   "power": null,
+   "sources": [
+    "humulos:dm"
+   ]
+  },
+  {
+   "id": "yuramon",
+   "name": "Yuramon",
+   "stage": "Baby I",
+   "level": null,
+   "attribute": "Free",
+   "alt_attribute": null,
+   "devices": {
+    "dm": {
+     "versions": [],
+     "stage_time": "10 min",
+     "evolves_to": [
+      {
+       "to": "Tanemon",
+       "to_id": "tanemon",
+       "raw": "No requirements",
+       "parsed": {}
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm/Yuramon.png",
+   "sleep": null,
+   "power": null,
+   "sources": [
+    "humulos:dm"
+   ]
+  },
+  {
+   "id": "zurumon",
+   "name": "Zurumon",
+   "stage": "Baby I",
+   "level": null,
+   "attribute": "Free",
+   "alt_attribute": null,
+   "devices": {
+    "dm": {
+     "versions": [],
+     "stage_time": "10 min",
+     "evolves_to": [
+      {
+       "to": "Pagumon",
+       "to_id": "pagumon",
+       "raw": "No requirements",
+       "parsed": {}
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm/Zurumon.png",
+   "sleep": null,
+   "power": null,
+   "sources": [
+    "humulos:dm"
+   ]
+  }
+ ]
+}

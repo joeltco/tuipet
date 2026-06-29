@@ -53,19 +53,25 @@ One record per canonical Digimon:
 Build it by reconciling canon (humulos/wikimon) as truth, using DVPet only to fill
 structure/sprites, applying the JP↔EN romanization map (see sources.json `romanization`).
 
-## Status
-- [x] Session rosters persisted: `canon/humulos/<dev>/roster.txt` (dm/dm20/dmx/pen/pen20).
-- [x] Fan repos pulled (`fan/`, gitignored): wayland-vpets (sprites+timers), digilib, RG_Digimon, DigimonVPet.
-- [x] **DM20 evolution conditions** → `canon/humulos/dm20/evo_ver1-5.md`, `evo_special.md`, `evo_extra.md`.
-- [x] **DM20 unified DB built** → `db/dm20.json` (154 mons; 134 playable + 20 colosseum-only; via `db/build_dm20.py`).
-- [x] **dmx complete** → `db/dmx.json` (175 mons, 119 w/ evolutions). V3 XE/XF edges parsed deterministically from the chart HTML (`db/parse_dmx3_chart.py`); pure-V3 attributes null (chart has none — backfill later).
-- [x] **pen20 COMPLETE** → `db/pen20.json` (262 mons, 207 w/ evolutions) rebuilt from humulos' AUTHORITATIVE inline `result` DB (`canon/humulos/pen20/result.json` via `db/extract_humulos_result.py`). Exact conditions, per-branch version tags, jogress, sleep times. 30 sprite gaps (jogress-finals/Royal Knights/Demon Lords absent from wayland — DVPet fallback).
-- [ ] **APPLY result-DB technique to dm20/dmx/pen/dm** — every humulos page embeds `result=[...]`; rebuilding from it supersedes the WebFetch/chart-parse work with clean+complete data (would fill dmx pure-V3 attributes, make dm20 100%, give pen its own data).
-- [~] pen: DERIVED from pen20 classic data + pen timers (`db/pen.json`, 143). Clean /pen/ pull would refine.
-- [ ] dm evolution conditions + DB.
-- [ ] Extract wayland sprites → usable atlas (downsample /4 + split frames).
-- [ ] wikimon / mechanics docs (as needed).
-- [ ] Merge per-device DBs → one `db/digimon.json` if desired.
+## Status — ALL FIVE DEVICES BUILT from authoritative humulos data (2026-06-29)
+Pipeline (`db/rebuild_all.sh`): fetch device pages → `db/parse_humulos.py` (inline `result`
+for pen20 / detail cards for the rest → `canon/humulos/<dev>/records.json`) → `db/build_device.py`
+(structured conditions + correct per-device real-time stage timers + wayland sprites) → `db/<dev>.json`.
+
+| dev | mons | w/ evolutions | sprite gaps | attr gaps |
+|-----|------|---------------|-------------|-----------|
+| dm    | 81  | 63  | 2  | 0  |
+| dm20  | 154 | 114 | 20 | 0  |
+| dmx   | 177 | 113 | 9  | 53 (V3 XE/XF chart-only — no attribute in source) |
+| pen   | 115 | 88  | 1  | 0  |
+| pen20 | 264 | 207 | 32 | 0  |
+
+Each record: id/name/stage/level/attribute/devices.<dev>{versions,stage_time,evolves_to[{to,raw,parsed}]}/sprite/sleep/power.
+Exact conditions (verbatim `raw` + structured `parsed`), real-time stage timers, sleep schedule, power.
+- Sprite gaps = mons absent from wayland's set (jogress-finals/Royal Knights/Demon Lords/colosseum) → DVPet fallback.
+- dmx attr gaps = the V3 XE/XF mons (chart had no attribute data) → backfill from wikimon/DVPet.
+- Remaining: backfill dmx V3 attributes + the missing sprites; then the CODE rebuild.
+
 
 ⚠ `pen`/`pen20` humulos roster fetches were CONTAMINATED (modern non-Pendulum mons) — must
 re-pull per-version and cross-check wikimon before trusting. dm/dm20/dmx looked clean.

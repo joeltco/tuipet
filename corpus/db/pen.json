@@ -1,50 +1,43 @@
 {
  "_meta": {
   "device": "pen",
-  "approximate": true,
-  "count": 143,
-  "source": "humulos /pen/ per-version (NS/DS/NSo/WG/ME) + wayland sprites/timers",
-  "with_evolutions": 58,
-  "derived_note": "pen.json is DERIVED from pen20 classic-version evo data (the 5 versions are largely shared) with pen ORIGINAL timers + pen 127-sprite roster. A separate clean humulos /pen/ per-version pull would refine fidelity (pen has no 20th additions; some pen20 evo targets here may be 20th-only and show as sprite_gaps). 5 CLASSIC versions captured (Nature Spirits/Deep Savers/Nightmare Soldiers/Wind Guardians/Metal Empire). pen20's 20th-anniversary BONUS lines (Guilmon/V-mon/Terriermon/DORUmon/Ryudamon/etc.) NOT yet pulled -> addition_pending. Minor extraction noise: a few branch targets dropped (see device._unresolved), Mugendra=Mugendramon. JOGRESS is the key mechanic (jogress_attrs/jogress_partner/jogress_partners).",
-  "addition_pending_count": 37,
+  "count": 115,
+  "with_evolutions": 88,
+  "source": "humulos pen (parse_humulos.py: detail cards)",
+  "stage_timers": {
+   "Baby I": "1 h",
+   "Baby II": "16 h",
+   "Child": "20 h",
+   "Adult": "60 h",
+   "Perfect": "68 h"
+  },
   "sprite_gaps": [
-   "Astamon",
-   "Baalmon",
-   "Beelzebumon",
-   "Belphemon: Rage Mode",
-   "Dark Knightmon",
-   "Imperialdramon: Paladin Mode",
-   "Impmon",
-   "Mad Leomon",
-   "Mastemon",
-   "Ogudomon",
-   "Phascomon",
-   "Porcupamon",
-   "Rafflesimon",
-   "Shadramon",
-   "Troopmon",
-   "Ulforce V-dramon"
-  ]
+   "Demon"
+  ],
+  "attribute_gaps": [],
+  "note": "exact evo conditions from humulos (raw + parsed). real-time stage timers per device. sleep/power included."
  },
  "digimon": [
   {
    "id": "aerovdramon",
    "name": "Aero V-dramon",
    "stage": "Perfect",
-   "attribute": "Free",
+   "level": null,
+   "attribute": "Vaccine",
+   "alt_attribute": null,
    "devices": {
     "pen": {
-     "versions": [
-      4
-     ],
+     "versions": [],
      "stage_time": "68 h",
      "evolves_to": [
       {
-       "to": "Garudamon",
-       "to_id": "garudamon",
-       "raw": "0-3 CM, battles",
+       "to": "Hououmon",
+       "to_id": "hououmon",
+       "raw": "0-1 Care Mistakes, 30 Battles, 24-29 Victories",
        "parsed": {
-        "care_mistakes": "0-3",
+        "care_mistakes": "0-1",
+        "victories": "24-29",
+        "battles_n": 30,
         "battles": true
        }
       }
@@ -52,375 +45,347 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen/Aero V-dramon.png",
+   "sleep": "22:00",
+   "power": null,
    "sources": [
-    "humulos:pen20"
+    "humulos:pen"
    ]
-  },
-  {
-   "id": "agumon",
-   "name": "Agumon",
-   "stage": null,
-   "attribute": null,
-   "devices": {
-    "pen": {
-     "versions": [],
-     "stage_time": null,
-     "evolves_to": []
-    }
-   },
-   "sprite": "fan/wayland-vpets/assets/pen/Agumon.png",
-   "sources": [
-    "wayland-vpets:pen20"
-   ],
-   "addition_pending": true
   },
   {
    "id": "andromon",
    "name": "Andromon",
    "stage": "Perfect",
+   "level": null,
    "attribute": "Vaccine",
-   "devices": {
-    "pen": {
-     "versions": [
-      5
-     ],
-     "stage_time": "68 h",
-     "evolves_to": [
-      {
-       "to": "Mugendramon",
-       "to_id": "mugendramon",
-       "raw": "Jogress Vi",
-       "parsed": {
-        "jogress_attrs": [
-         "Virus"
-        ]
-       }
-      }
-     ]
-    }
-   },
-   "sprite": "fan/wayland-vpets/assets/pen/Andromon.png",
-   "sources": [
-    "humulos:pen20"
-   ]
-  },
-  {
-   "id": "angemon",
-   "name": "Angemon",
-   "stage": null,
-   "attribute": null,
+   "alt_attribute": null,
    "devices": {
     "pen": {
      "versions": [],
-     "stage_time": null,
+     "stage_time": "68 h",
      "evolves_to": []
     }
    },
-   "sprite": "fan/wayland-vpets/assets/pen/Angemon.png",
+   "sprite": "fan/wayland-vpets/assets/pen/Andromon.png",
+   "sleep": "22:00",
+   "power": null,
    "sources": [
-    "wayland-vpets:pen20"
-   ],
-   "addition_pending": true
+    "humulos:pen"
+   ]
   },
   {
    "id": "angewomon",
    "name": "Angewomon",
    "stage": "Perfect",
+   "level": null,
    "attribute": "Vaccine",
+   "alt_attribute": null,
    "devices": {
     "pen": {
-     "versions": [
-      1
-     ],
+     "versions": [],
      "stage_time": "68 h",
-     "evolves_to": [
-      {
-       "to": "Holydramon",
-       "to_id": "holydramon",
-       "raw": "Jogress with Lady Devimon",
-       "parsed": {
-        "jogress_partner": "Lady Devimon"
-       }
-      }
-     ]
+     "evolves_to": []
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen/Angewomon.png",
+   "sleep": "22:00",
+   "power": null,
    "sources": [
-    "humulos:pen20"
+    "humulos:pen"
    ]
   },
   {
    "id": "anomalocarimon",
    "name": "Anomalocarimon",
    "stage": "Perfect",
-   "attribute": "Free",
-   "devices": {
-    "pen": {
-     "versions": [
-      2
-     ],
-     "stage_time": "68 h",
-     "evolves_to": []
-    }
-   },
-   "sprite": "fan/wayland-vpets/assets/pen/Anomalocarimon.png",
-   "sources": [
-    "humulos:pen20"
-   ]
-  },
-  {
-   "id": "astamon",
-   "name": "Astamon",
-   "stage": "Perfect",
-   "attribute": "Virus",
-   "devices": {
-    "pen": {
-     "versions": [
-      3
-     ],
-     "stage_time": "68 h",
-     "evolves_to": []
-    }
-   },
-   "sprite": null,
-   "sources": [
-    "humulos:pen20"
-   ]
-  },
-  {
-   "id": "asuramon",
-   "name": "Asuramon",
-   "stage": null,
-   "attribute": null,
+   "level": null,
+   "attribute": "Data",
+   "alt_attribute": null,
    "devices": {
     "pen": {
      "versions": [],
-     "stage_time": null,
-     "evolves_to": []
-    }
-   },
-   "sprite": "fan/wayland-vpets/assets/pen/Asuramon.png",
-   "sources": [
-    "wayland-vpets:pen20"
-   ],
-   "addition_pending": true
-  },
-  {
-   "id": "atlurkabuterimon",
-   "name": "Atlur Kabuterimon",
-   "stage": "Perfect",
-   "attribute": "Data",
-   "devices": {
-    "pen": {
-     "versions": [
-      1
-     ],
-     "stage_time": "68 h",
-     "evolves_to": []
-    }
-   },
-   "sprite": "fan/wayland-vpets/assets/pen/Atlur Kabuterimon.png",
-   "sources": [
-    "humulos:pen20"
-   ]
-  },
-  {
-   "id": "baalmon",
-   "name": "Baalmon",
-   "stage": "Perfect",
-   "attribute": "Virus",
-   "devices": {
-    "pen": {
-     "versions": [
-      3
-     ],
      "stage_time": "68 h",
      "evolves_to": [
       {
-       "to": "Beelzebumon",
-       "to_id": "beelzebumon",
-       "raw": "Jogress with Demon",
+       "to": "Metal Seadramon",
+       "to_id": "metalseadramon",
+       "raw": "Jogress with Data Perfect 1",
        "parsed": {
-        "jogress_partner": "Demon"
+        "jogress_partner": "Data Perfect 1"
        }
       }
      ]
     }
    },
-   "sprite": null,
+   "sprite": "fan/wayland-vpets/assets/pen/Anomalocarimon.png",
+   "sleep": "22:00",
+   "power": null,
    "sources": [
-    "humulos:pen20"
+    "humulos:pen"
+   ]
+  },
+  {
+   "id": "atlurkabuterimon",
+   "name": "Atlur Kabuterimon",
+   "stage": "Perfect",
+   "level": null,
+   "attribute": "Vaccine",
+   "alt_attribute": null,
+   "devices": {
+    "pen": {
+     "versions": [],
+     "stage_time": "68 h",
+     "evolves_to": [
+      {
+       "to": "Herakle Kabuterimon (1.0)",
+       "to_id": "heraklekabuterimon10",
+       "raw": "0 Care Mistakes, 30 Battles, 24-29 Victories",
+       "parsed": {
+        "care_mistakes": "0",
+        "victories": "24-29",
+        "battles_n": 30,
+        "battles": true
+       }
+      },
+      {
+       "to": "Holydramon (1.5)",
+       "to_id": "holydramon15",
+       "raw": "0 Care Mistakes, 30 Battles, 24-29 Victories",
+       "parsed": {
+        "care_mistakes": "0",
+        "victories": "24-29",
+        "battles_n": 30,
+        "battles": true
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen/Atlur Kabuterimon.png",
+   "sleep": "22:00",
+   "power": null,
+   "sources": [
+    "humulos:pen"
    ]
   },
   {
    "id": "bakemon",
    "name": "Bakemon",
-   "stage": null,
-   "attribute": null,
+   "stage": "Adult",
+   "level": null,
+   "attribute": "Virus",
+   "alt_attribute": null,
    "devices": {
     "pen": {
      "versions": [],
-     "stage_time": null,
-     "evolves_to": []
+     "stage_time": "60 h",
+     "evolves_to": [
+      {
+       "to": "Vamdemon",
+       "to_id": "vamdemon",
+       "raw": "0-1 Care Mistakes, 30 Battles, 24-29 Victories",
+       "parsed": {
+        "care_mistakes": "0-1",
+        "victories": "24-29",
+        "battles_n": 30,
+        "battles": true
+       }
+      },
+      {
+       "to": "Fantomon",
+       "to_id": "fantomon",
+       "raw": "",
+       "parsed": {}
+      },
+      {
+       "to": "Pumpmon",
+       "to_id": "pumpmon",
+       "raw": "Jogress with any Vaccine Adult",
+       "parsed": {
+        "jogress_partner": "any Vaccine Adult"
+       }
+      }
+     ]
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen/Bakemon.png",
+   "sleep": "21:00",
+   "power": null,
    "sources": [
-    "wayland-vpets:pen20"
-   ],
-   "addition_pending": true
+    "humulos:pen"
+   ]
   },
   {
    "id": "bakumon",
    "name": "Bakumon",
-   "stage": null,
-   "attribute": null,
+   "stage": "Child",
+   "level": null,
+   "attribute": "Vaccine",
+   "alt_attribute": null,
    "devices": {
     "pen": {
      "versions": [],
-     "stage_time": null,
-     "evolves_to": []
+     "stage_time": "20 h",
+     "evolves_to": [
+      {
+       "to": "Hanumon",
+       "to_id": "hanumon",
+       "raw": "0-2 Care Mistakes, 25+ Training",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "training": "25+"
+       }
+      },
+      {
+       "to": "Garurumon",
+       "to_id": "garurumon",
+       "raw": "3+ Care Mistakes, 0-29 Training",
+       "parsed": {
+        "care_mistakes": "3+",
+        "training": "0-29"
+       }
+      },
+      {
+       "to": "Meramon",
+       "to_id": "meramon",
+       "raw": "0-2 Care Mistakes, 0-24 Training",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "training": "0-24"
+       }
+      },
+      {
+       "to": "Wizarmon",
+       "to_id": "wizarmon",
+       "raw": "3+ Care Mistakes, 30+ Training",
+       "parsed": {
+        "care_mistakes": "3+",
+        "training": "30+"
+       }
+      }
+     ]
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen/Bakumon.png",
+   "sleep": "20:00",
+   "power": null,
    "sources": [
-    "wayland-vpets:pen20"
-   ],
-   "addition_pending": true
-  },
-  {
-   "id": "beelzebumon",
-   "name": "Beelzebumon",
-   "stage": "Ultimate",
-   "attribute": "Virus",
-   "devices": {
-    "pen": {
-     "versions": [
-      3
-     ],
-     "stage_time": null,
-     "evolves_to": []
-    }
-   },
-   "sprite": null,
-   "sources": [
-    "humulos:pen20"
-   ]
-  },
-  {
-   "id": "belphemonragemode",
-   "name": "Belphemon: Rage Mode",
-   "stage": "Perfect",
-   "attribute": "Virus",
-   "devices": {
-    "pen": {
-     "versions": [
-      3
-     ],
-     "stage_time": "68 h",
-     "evolves_to": []
-    }
-   },
-   "sprite": null,
-   "sources": [
-    "humulos:pen20"
+    "humulos:pen"
    ]
   },
   {
    "id": "bigmamemon",
    "name": "Big Mamemon",
    "stage": "Perfect",
-   "attribute": "Vaccine",
+   "level": null,
+   "attribute": "Data",
+   "alt_attribute": null,
    "devices": {
     "pen": {
-     "versions": [
-      5
-     ],
+     "versions": [],
      "stage_time": "68 h",
-     "evolves_to": []
+     "evolves_to": [
+      {
+       "to": "Metal Garurumon",
+       "to_id": "metalgarurumon",
+       "raw": "Jogress with Data Perfect 1",
+       "parsed": {
+        "jogress_partner": "Data Perfect 1"
+       }
+      }
+     ]
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen/Big Mamemon.png",
+   "sleep": "22:00",
+   "power": null,
    "sources": [
-    "humulos:pen20"
+    "humulos:pen"
    ]
   },
   {
    "id": "birdramon",
    "name": "Birdramon",
    "stage": "Adult",
+   "level": null,
    "attribute": "Vaccine",
+   "alt_attribute": null,
    "devices": {
     "pen": {
-     "versions": [
-      4
-     ],
+     "versions": [],
      "stage_time": "60 h",
      "evolves_to": [
       {
-       "to": "Red Vegimon",
-       "to_id": "redvegimon",
-       "raw": "0-2 CM, battles",
+       "to": "Aero V-Dramon",
+       "to_id": "aerovdramon",
+       "raw": "0-2 Care Mistakes, 30 Battles, 24-29 Victories",
        "parsed": {
         "care_mistakes": "0-2",
+        "victories": "24-29",
+        "battles_n": 30,
         "battles": true
        }
       },
       {
-       "to": "Aero V-dramon",
-       "to_id": "aerovdramon",
-       "raw": "Jogress Va+Da OR 0-2 CM, battles",
+       "to": "Garudamon",
+       "to_id": "garudamon",
+       "raw": "",
+       "parsed": {}
+      },
+      {
+       "to": "Delumon",
+       "to_id": "delumon",
+       "raw": "Jogress with any Virus Adult",
        "parsed": {
-        "alternatives": [
-         {
-          "jogress_attrs": [
-           "Vaccine",
-           "Data"
-          ]
-         },
-         {
-          "care_mistakes": "0-2",
-          "battles": true
-         }
-        ]
+        "jogress_partner": "any Virus Adult"
        }
       }
      ]
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen/Birdramon.png",
+   "sleep": "21:00",
+   "power": null,
    "sources": [
-    "humulos:pen20"
+    "humulos:pen"
    ]
   },
   {
    "id": "blossomon",
    "name": "Blossomon",
    "stage": "Perfect",
+   "level": null,
    "attribute": "Data",
+   "alt_attribute": null,
    "devices": {
     "pen": {
-     "versions": [
-      4
-     ],
+     "versions": [],
      "stage_time": "68 h",
-     "evolves_to": [],
-     "_unresolved": [
-      "0 CM, battles"
+     "evolves_to": [
+      {
+       "to": "Griffomon",
+       "to_id": "griffomon",
+       "raw": "Jogress with Data Perfect 2",
+       "parsed": {
+        "jogress_partner": "Data Perfect 2"
+       }
+      }
      ]
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen/Blossomon.png",
+   "sleep": "22:00",
+   "power": null,
    "sources": [
-    "humulos:pen20"
+    "humulos:pen"
    ]
   },
   {
    "id": "boltmon",
    "name": "Boltmon",
-   "stage": null,
-   "attribute": null,
+   "stage": "Ultimate",
+   "level": null,
+   "attribute": "Data",
+   "alt_attribute": null,
    "devices": {
     "pen": {
      "versions": [],
@@ -429,921 +394,1371 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen/Boltmon.png",
+   "sleep": "22:00",
+   "power": null,
    "sources": [
-    "wayland-vpets:pen20"
-   ],
-   "addition_pending": true
+    "humulos:pen"
+   ]
   },
   {
    "id": "bubbmon",
    "name": "Bubbmon",
    "stage": "Baby I",
+   "level": null,
    "attribute": "Free",
+   "alt_attribute": null,
    "devices": {
     "pen": {
-     "versions": [
-      1
-     ],
+     "versions": [],
      "stage_time": "1 h",
-     "evolves_to": []
+     "evolves_to": [
+      {
+       "to": "Mochimon",
+       "to_id": "mochimon",
+       "raw": "No requirements",
+       "parsed": {}
+      }
+     ]
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen/Bubbmon.png",
+   "sleep": "NA",
+   "power": null,
    "sources": [
-    "humulos:pen20"
+    "humulos:pen"
    ]
   },
   {
    "id": "candmon",
    "name": "Candmon",
-   "stage": null,
-   "attribute": null,
+   "stage": "Child",
+   "level": null,
+   "attribute": "Data",
+   "alt_attribute": null,
    "devices": {
     "pen": {
      "versions": [],
-     "stage_time": null,
-     "evolves_to": []
+     "stage_time": "20 h",
+     "evolves_to": [
+      {
+       "to": "Hanumon",
+       "to_id": "hanumon",
+       "raw": "0-1 Care Mistakes, 30+ Training",
+       "parsed": {
+        "care_mistakes": "0-1",
+        "training": "30+"
+       }
+      },
+      {
+       "to": "Meramon",
+       "to_id": "meramon",
+       "raw": "0-1 Care Mistakes, 0-29 Training",
+       "parsed": {
+        "care_mistakes": "0-1",
+        "training": "0-29"
+       }
+      },
+      {
+       "to": "Wizarmon",
+       "to_id": "wizarmon",
+       "raw": "2+ Care Mistakes, 0-29 Training",
+       "parsed": {
+        "care_mistakes": "2+",
+        "training": "0-29"
+       }
+      },
+      {
+       "to": "Devimon",
+       "to_id": "devimon",
+       "raw": "2+ Care Mistakes, 30+ Training",
+       "parsed": {
+        "care_mistakes": "2+",
+        "training": "30+"
+       }
+      }
+     ]
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen/Candmon.png",
+   "sleep": "20:00",
+   "power": null,
    "sources": [
-    "wayland-vpets:pen20"
-   ],
-   "addition_pending": true
+    "humulos:pen"
+   ]
   },
   {
    "id": "caprimon",
    "name": "Caprimon",
    "stage": "Baby II",
-   "attribute": "Vaccine",
+   "level": null,
+   "attribute": "Free",
+   "alt_attribute": null,
    "devices": {
     "pen": {
-     "versions": [
-      3,
-      5
-     ],
+     "versions": [],
      "stage_time": "16 h",
      "evolves_to": [
       {
-       "to": "Phascomon",
-       "to_id": "phascomon",
-       "raw": "2-4 CM",
+       "to": "Toy Agumon",
+       "to_id": "toyagumon",
+       "raw": "0-2 Care Mistakes",
        "parsed": {
-        "care_mistakes": "2-4"
+        "care_mistakes": "0-2"
        }
       },
       {
-       "to": "Impmon",
-       "to_id": "impmon",
-       "raw": "2-4 CM",
+       "to": "Kokuwamon",
+       "to_id": "kokuwamon",
+       "raw": "3-4 Care Mistakes",
        "parsed": {
-        "care_mistakes": "2-4"
-       }
-      },
-      {
-       "to": "Troopmon",
-       "to_id": "troopmon",
-       "raw": "0-1 CM, 0-3 Effort",
-       "parsed": {
-        "care_mistakes": "0-1",
-        "effort": "0-3"
+        "care_mistakes": "3-4"
        }
       },
       {
        "to": "Hagurumon",
        "to_id": "hagurumon",
-       "raw": "0 CM",
+       "raw": "5+ Care Mistakes",
        "parsed": {
-        "care_mistakes": "0"
-       }
-      },
-      {
-       "to": "Toy Agumon",
-       "to_id": "toyagumon",
-       "raw": "1 CM",
-       "parsed": {
-        "care_mistakes": "1"
+        "care_mistakes": "5+"
        }
       }
      ]
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen/Caprimon.png",
+   "sleep": "19:00",
+   "power": null,
    "sources": [
-    "humulos:pen20"
+    "humulos:pen"
    ]
   },
   {
    "id": "choromon",
    "name": "Choromon",
    "stage": "Baby I",
-   "attribute": "Vaccine",
+   "level": null,
+   "attribute": "Free",
+   "alt_attribute": null,
    "devices": {
     "pen": {
-     "versions": [
-      3,
-      5
-     ],
+     "versions": [],
      "stage_time": "1 h",
      "evolves_to": [
       {
        "to": "Caprimon",
        "to_id": "caprimon",
-       "raw": "",
+       "raw": "No requirements",
        "parsed": {}
       }
      ]
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen/Choromon.png",
+   "sleep": "NA",
+   "power": null,
    "sources": [
-    "humulos:pen20"
+    "humulos:pen"
    ]
   },
   {
    "id": "clockmon",
    "name": "Clockmon",
    "stage": "Adult",
-   "attribute": "Vaccine",
+   "level": null,
+   "attribute": "Data",
+   "alt_attribute": null,
    "devices": {
     "pen": {
-     "versions": [
-      5
-     ],
+     "versions": [],
      "stage_time": "60 h",
      "evolves_to": [
       {
-       "to": "Guardromon",
-       "to_id": "guardromon",
-       "raw": "Jogress Va+Da",
+       "to": "Knightmon",
+       "to_id": "knightmon",
+       "raw": "0-3 Care Mistakes, 30 Battles, 24-29 Victories",
        "parsed": {
-        "jogress_attrs": [
-         "Vaccine",
-         "Data"
-        ]
+        "care_mistakes": "0-3",
+        "victories": "24-29",
+        "battles_n": 30,
+        "battles": true
        }
       },
       {
-       "to": "Andromon",
-       "to_id": "andromon",
-       "raw": "Jogress Vi+Da+Fr",
+       "to": "Big Mamemon",
+       "to_id": "bigmamemon",
+       "raw": "",
+       "parsed": {}
+      },
+      {
+       "to": "Andromon (5.0)",
+       "to_id": "andromon50",
+       "raw": "Jogress with any Vaccine Adult",
        "parsed": {
-        "jogress_attrs": [
-         "Virus",
-         "Data",
-         "Free"
-        ]
+        "jogress_partner": "any Vaccine Adult"
+       }
+      },
+      {
+       "to": "Cyberdramon (5.5)",
+       "to_id": "cyberdramon55",
+       "raw": "Jogress with any Vaccine Adult",
+       "parsed": {
+        "jogress_partner": "any Vaccine Adult"
+       }
+      },
+      {
+       "to": "Waru Monzaemon",
+       "to_id": "warumonzaemon",
+       "raw": "Jogress with any Virus Adult",
+       "parsed": {
+        "jogress_partner": "any Virus Adult"
        }
       }
      ]
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen/Clockmon.png",
+   "sleep": "21:00",
+   "power": null,
    "sources": [
-    "humulos:pen20"
+    "humulos:pen"
    ]
   },
   {
    "id": "coelamon",
    "name": "Coelamon",
-   "stage": "Child",
-   "attribute": "Free",
+   "stage": "Adult",
+   "level": null,
+   "attribute": "Data",
+   "alt_attribute": null,
    "devices": {
     "pen": {
-     "versions": [
-      2
-     ],
-     "stage_time": "20 h",
+     "versions": [],
+     "stage_time": "60 h",
      "evolves_to": [
       {
-       "to": "Ebidramon",
-       "to_id": "ebidramon",
-       "raw": "2-4 CM, 0-3 Effort",
+       "to": "Mega Seadramon",
+       "to_id": "megaseadramon",
+       "raw": "0-3 Care Mistakes, 30 Battles, 24-29 Victories",
        "parsed": {
-        "care_mistakes": "2-4",
-        "effort": "0-3"
+        "care_mistakes": "0-3",
+        "victories": "24-29",
+        "battles_n": 30,
+        "battles": true
        }
       },
       {
-       "to": "Gesomon",
-       "to_id": "gesomon",
-       "raw": "0-1 CM, 0-3 Effort",
+       "to": "Anomalocarimon",
+       "to_id": "anomalocarimon",
+       "raw": "",
+       "parsed": {}
+      },
+      {
+       "to": "Whamon",
+       "to_id": "whamon",
+       "raw": "Jogress with any Vaccine Adult",
        "parsed": {
-        "care_mistakes": "0-1",
-        "effort": "0-3"
+        "jogress_partner": "any Vaccine Adult"
+       }
+      },
+      {
+       "to": "Dagomon",
+       "to_id": "dagomon",
+       "raw": "Jogress with any Virus Adult",
+       "parsed": {
+        "jogress_partner": "any Virus Adult"
        }
       }
      ]
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen/Coelamon.png",
+   "sleep": "21:00",
+   "power": null,
    "sources": [
-    "humulos:pen20"
+    "humulos:pen"
    ]
   },
   {
    "id": "cyberdramon",
    "name": "Cyberdramon",
    "stage": "Perfect",
-   "attribute": "Data",
+   "level": null,
+   "attribute": "Vaccine",
+   "alt_attribute": null,
    "devices": {
     "pen": {
-     "versions": [
-      5
-     ],
+     "versions": [],
      "stage_time": "68 h",
-     "evolves_to": [
-      {
-       "to": "Mugendramon",
-       "to_id": "mugendramon",
-       "raw": "Jogress Vi",
-       "parsed": {
-        "jogress_attrs": [
-         "Virus"
-        ]
-       }
-      }
-     ]
+     "evolves_to": []
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen/Cyberdramon.png",
+   "sleep": "22:00",
+   "power": null,
    "sources": [
-    "humulos:pen20"
+    "humulos:pen"
    ]
   },
   {
    "id": "dagomon",
    "name": "Dagomon",
    "stage": "Perfect",
+   "level": null,
    "attribute": "Virus",
+   "alt_attribute": null,
    "devices": {
     "pen": {
-     "versions": [
-      2
-     ],
-     "stage_time": "68 h",
-     "evolves_to": []
-    }
-   },
-   "sprite": "fan/wayland-vpets/assets/pen/Dagomon.png",
-   "sources": [
-    "humulos:pen20"
-   ]
-  },
-  {
-   "id": "darkknightmon",
-   "name": "Dark Knightmon",
-   "stage": "Perfect",
-   "attribute": "Virus",
-   "devices": {
-    "pen": {
-     "versions": [
-      3
-     ],
+     "versions": [],
      "stage_time": "68 h",
      "evolves_to": [
       {
-       "to": "Ogudomon",
-       "to_id": "ogudomon",
-       "raw": "Jogress with Beelzebumon",
+       "to": "Pukumon",
+       "to_id": "pukumon",
+       "raw": "Jogress with Virus Perfect 1 from Versions 3 through ZERO",
        "parsed": {
-        "jogress_partner": "Beelzebumon"
+        "jogress_partner": "Virus Perfect 1 from Versions 3 through ZERO"
        }
       }
      ]
     }
    },
-   "sprite": null,
+   "sprite": "fan/wayland-vpets/assets/pen/Dagomon.png",
+   "sleep": "22:00",
+   "power": null,
    "sources": [
-    "humulos:pen20"
+    "humulos:pen"
    ]
   },
   {
    "id": "deathmeramon",
    "name": "Death Meramon",
-   "stage": null,
-   "attribute": null,
+   "stage": "Perfect",
+   "level": null,
+   "attribute": "Data",
+   "alt_attribute": null,
    "devices": {
     "pen": {
      "versions": [],
-     "stage_time": null,
-     "evolves_to": []
+     "stage_time": "68 h",
+     "evolves_to": [
+      {
+       "to": "Boltmon",
+       "to_id": "boltmon",
+       "raw": "Jogress with Data Perfect 2",
+       "parsed": {
+        "jogress_partner": "Data Perfect 2"
+       }
+      }
+     ]
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen/Death Meramon.png",
+   "sleep": "22:00",
+   "power": null,
    "sources": [
-    "wayland-vpets:pen20"
-   ],
-   "addition_pending": true
+    "humulos:pen"
+   ]
   },
   {
    "id": "delumon",
    "name": "Delumon",
    "stage": "Perfect",
+   "level": null,
    "attribute": "Data",
+   "alt_attribute": null,
    "devices": {
     "pen": {
-     "versions": [
-      4
-     ],
+     "versions": [],
      "stage_time": "68 h",
-     "evolves_to": [],
-     "_unresolved": [
-      "0-2 CM, battles"
+     "evolves_to": [
+      {
+       "to": "Hououmon",
+       "to_id": "hououmon",
+       "raw": "0-1 Care Mistakes, 30 Battles, 24-29 Victories",
+       "parsed": {
+        "care_mistakes": "0-1",
+        "victories": "24-29",
+        "battles_n": 30,
+        "battles": true
+       }
+      },
+      {
+       "to": "Griffomon (4.0)",
+       "to_id": "griffomon40",
+       "raw": "Jogress with Data Perfect 1",
+       "parsed": {
+        "jogress_partner": "Data Perfect 1"
+       }
+      },
+      {
+       "to": "Rosemon (4.5)",
+       "to_id": "rosemon45",
+       "raw": "Jogress with Data Perfect 1",
+       "parsed": {
+        "jogress_partner": "Data Perfect 1"
+       }
+      }
      ]
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen/Delumon.png",
+   "sleep": "22:00",
+   "power": null,
    "sources": [
-    "humulos:pen20"
+    "humulos:pen"
+   ]
+  },
+  {
+   "id": "demon",
+   "name": "Demon",
+   "stage": "Ultimate",
+   "level": null,
+   "attribute": "Virus",
+   "alt_attribute": null,
+   "devices": {
+    "pen": {
+     "versions": [],
+     "stage_time": null,
+     "evolves_to": []
+    }
+   },
+   "sprite": null,
+   "sleep": "22:00",
+   "power": null,
+   "sources": [
+    "humulos:pen"
    ]
   },
   {
    "id": "devimon",
    "name": "Devimon",
-   "stage": null,
-   "attribute": null,
+   "stage": "Adult",
+   "level": null,
+   "attribute": "Virus",
+   "alt_attribute": null,
    "devices": {
     "pen": {
      "versions": [],
-     "stage_time": null,
-     "evolves_to": []
+     "stage_time": "60 h",
+     "evolves_to": [
+      {
+       "to": "Vamdemon (3.0)",
+       "to_id": "vamdemon30",
+       "raw": "0-1 Care Mistakes, 30 Battles, 24-29 Victories",
+       "parsed": {
+        "care_mistakes": "0-1",
+        "victories": "24-29",
+        "battles_n": 30,
+        "battles": true
+       }
+      },
+      {
+       "to": "Lady Devimon (3.5)",
+       "to_id": "ladydevimon35",
+       "raw": "0-1 Care Mistakes, 30 Battles, 24-29 Victories",
+       "parsed": {
+        "care_mistakes": "0-1",
+        "victories": "24-29",
+        "battles_n": 30,
+        "battles": true
+       }
+      },
+      {
+       "to": "Fantomon",
+       "to_id": "fantomon",
+       "raw": "",
+       "parsed": {}
+      },
+      {
+       "to": "Pumpmon",
+       "to_id": "pumpmon",
+       "raw": "Jogress with any Vaccine Adult",
+       "parsed": {
+        "jogress_partner": "any Vaccine Adult"
+       }
+      }
+     ]
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen/Devimon.png",
+   "sleep": "21:00",
+   "power": null,
    "sources": [
-    "wayland-vpets:pen20"
-   ],
-   "addition_pending": true
+    "humulos:pen"
+   ]
   },
   {
    "id": "dokugumon",
    "name": "Dokugumon",
-   "stage": null,
-   "attribute": null,
+   "stage": "Adult",
+   "level": null,
+   "attribute": "Virus",
+   "alt_attribute": null,
    "devices": {
     "pen": {
      "versions": [],
-     "stage_time": null,
-     "evolves_to": []
+     "stage_time": "60 h",
+     "evolves_to": [
+      {
+       "to": "Lady Devimon",
+       "to_id": "ladydevimon",
+       "raw": "0-1 Care Mistakes, 30 Battles, 24-29 Victories",
+       "parsed": {
+        "care_mistakes": "0-1",
+        "victories": "24-29",
+        "battles_n": 30,
+        "battles": true
+       }
+      },
+      {
+       "to": "Fantomon",
+       "to_id": "fantomon",
+       "raw": "",
+       "parsed": {}
+      },
+      {
+       "to": "Pumpmon",
+       "to_id": "pumpmon",
+       "raw": "Jogress with any Vaccine Adult",
+       "parsed": {
+        "jogress_partner": "any Vaccine Adult"
+       }
+      }
+     ]
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen/Dokugumon.png",
+   "sleep": "21:00",
+   "power": null,
    "sources": [
-    "wayland-vpets:pen20"
-   ],
-   "addition_pending": true
+    "humulos:pen"
+   ]
   },
   {
    "id": "ebidramon",
    "name": "Ebidramon",
    "stage": "Adult",
-   "attribute": "Free",
+   "level": null,
+   "attribute": "Data",
+   "alt_attribute": null,
    "devices": {
     "pen": {
-     "versions": [
-      2
-     ],
+     "versions": [],
      "stage_time": "60 h",
      "evolves_to": [
       {
-       "to": "Gesomon",
-       "to_id": "gesomon",
-       "raw": "1-4 CM, 0-3 Effort",
+       "to": "Mega Seadramon",
+       "to_id": "megaseadramon",
+       "raw": "0-3 Care Mistakes, 30 Battles, 24-29 Victories",
        "parsed": {
-        "care_mistakes": "1-4",
-        "effort": "0-3"
+        "care_mistakes": "0-3",
+        "victories": "24-29",
+        "battles_n": 30,
+        "battles": true
        }
       },
       {
-       "to": "Seadramon",
-       "to_id": "seadramon",
-       "raw": "1-4 CM, 0-1 Effort",
+       "to": "Hangyomon",
+       "to_id": "hangyomon",
+       "raw": "",
+       "parsed": {}
+      },
+      {
+       "to": "Whamon",
+       "to_id": "whamon",
+       "raw": "Jogress with any Vaccine Adult",
        "parsed": {
-        "care_mistakes": "1-4",
-        "effort": "0-1"
+        "jogress_partner": "any Vaccine Adult"
+       }
+      },
+      {
+       "to": "Dagomon",
+       "to_id": "dagomon",
+       "raw": "Jogress with any Virus Adult",
+       "parsed": {
+        "jogress_partner": "any Virus Adult"
        }
       }
      ]
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen/Ebidramon.png",
+   "sleep": "21:00",
+   "power": null,
    "sources": [
-    "humulos:pen20"
+    "humulos:pen"
    ]
   },
   {
    "id": "fantomon",
    "name": "Fantomon",
-   "stage": null,
-   "attribute": null,
+   "stage": "Perfect",
+   "level": null,
+   "attribute": "Virus",
+   "alt_attribute": null,
    "devices": {
     "pen": {
      "versions": [],
-     "stage_time": null,
-     "evolves_to": []
+     "stage_time": "68 h",
+     "evolves_to": [
+      {
+       "to": "Piemon (3.0)",
+       "to_id": "piemon30",
+       "raw": "Jogress with Virus Perfect 1 from Versions 4 through ZERO",
+       "parsed": {
+        "jogress_partner": "Virus Perfect 1 from Versions 4 through ZERO"
+       }
+      },
+      {
+       "to": "Demon (3.5)",
+       "to_id": "demon35",
+       "raw": "Jogress with Virus Perfect 1 from all Versions except 4.0/4.5",
+       "parsed": {
+        "win_ratio": "0/4",
+        "jogress_partner": "Virus Perfect 1 from all Versions except 4"
+       }
+      }
+     ]
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen/Fantomon.png",
+   "sleep": "22:00",
+   "power": null,
    "sources": [
-    "wayland-vpets:pen20"
-   ],
-   "addition_pending": true
+    "humulos:pen"
+   ]
   },
   {
    "id": "floramon",
    "name": "Floramon",
    "stage": "Child",
+   "level": null,
    "attribute": "Data",
-   "devices": {
-    "pen": {
-     "versions": [
-      4
-     ],
-     "stage_time": "20 h",
-     "evolves_to": []
-    }
-   },
-   "sprite": "fan/wayland-vpets/assets/pen/Floramon.png",
-   "sources": [
-    "humulos:pen20"
-   ]
-  },
-  {
-   "id": "gabumon",
-   "name": "Gabumon",
-   "stage": null,
-   "attribute": null,
+   "alt_attribute": null,
    "devices": {
     "pen": {
      "versions": [],
-     "stage_time": null,
-     "evolves_to": []
+     "stage_time": "20 h",
+     "evolves_to": [
+      {
+       "to": "Togemon",
+       "to_id": "togemon",
+       "raw": "0-2 Care Mistakes, 25+ Training",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "training": "25+"
+       }
+      },
+      {
+       "to": "Kiwimon",
+       "to_id": "kiwimon",
+       "raw": "0-2 Care Mistakes, 0-24 Training",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "training": "0-24"
+       }
+      },
+      {
+       "to": "Woodmon",
+       "to_id": "woodmon",
+       "raw": "3+ Care Mistakes, 30+ Training",
+       "parsed": {
+        "care_mistakes": "3+",
+        "training": "30+"
+       }
+      },
+      {
+       "to": "Red Vegimon",
+       "to_id": "redvegimon",
+       "raw": "3+ Care Mistakes, 0-29 Training",
+       "parsed": {
+        "care_mistakes": "3+",
+        "training": "0-29"
+       }
+      }
+     ]
     }
    },
-   "sprite": "fan/wayland-vpets/assets/pen/Gabumon.png",
+   "sprite": "fan/wayland-vpets/assets/pen/Floramon.png",
+   "sleep": "20:00",
+   "power": null,
    "sources": [
-    "wayland-vpets:pen20"
-   ],
-   "addition_pending": true
+    "humulos:pen"
+   ]
   },
   {
    "id": "ganimon",
    "name": "Ganimon",
-   "stage": null,
-   "attribute": null,
+   "stage": "Child",
+   "level": null,
+   "attribute": "Data",
+   "alt_attribute": null,
    "devices": {
     "pen": {
      "versions": [],
-     "stage_time": null,
-     "evolves_to": []
+     "stage_time": "20 h",
+     "evolves_to": [
+      {
+       "to": "Rukamon",
+       "to_id": "rukamon",
+       "raw": "0-2, Care Mistakes, 30+ Training",
+       "parsed": {
+        "training": "30+"
+       }
+      },
+      {
+       "to": "Seadramon",
+       "to_id": "seadramon",
+       "raw": "0-2 Care Mistakes, 0-29 Training",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "training": "0-29"
+       }
+      },
+      {
+       "to": "Coelamon (2.0)",
+       "to_id": "coelamon20",
+       "raw": "3+ Care Mistakes, 20+ Training",
+       "parsed": {
+        "care_mistakes": "3+",
+        "training": "20+"
+       }
+      },
+      {
+       "to": "Ebidramon (2.5)",
+       "to_id": "ebidramon25",
+       "raw": "3+ Care Mistakes, 20+ Training",
+       "parsed": {
+        "care_mistakes": "3+",
+        "training": "20+"
+       }
+      },
+      {
+       "to": "Gesomon",
+       "to_id": "gesomon",
+       "raw": "3+ Care Mistakes, 0-19 Training",
+       "parsed": {
+        "care_mistakes": "3+",
+        "training": "0-19"
+       }
+      }
+     ]
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen/Ganimon.png",
+   "sleep": "20:00",
+   "power": null,
    "sources": [
-    "wayland-vpets:pen20"
-   ],
-   "addition_pending": true
+    "humulos:pen"
+   ]
   },
   {
    "id": "garudamon",
    "name": "Garudamon",
    "stage": "Perfect",
+   "level": null,
    "attribute": "Vaccine",
+   "alt_attribute": null,
    "devices": {
     "pen": {
-     "versions": [
-      4
-     ],
+     "versions": [],
      "stage_time": "68 h",
      "evolves_to": []
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen/Garudamon.png",
+   "sleep": "22:00",
+   "power": null,
    "sources": [
-    "humulos:pen20"
+    "humulos:pen"
    ]
   },
   {
    "id": "garurumon",
    "name": "Garurumon",
-   "stage": null,
-   "attribute": null,
+   "stage": "Adult",
+   "level": null,
+   "attribute": "Vaccine",
+   "alt_attribute": null,
    "devices": {
     "pen": {
      "versions": [],
-     "stage_time": null,
-     "evolves_to": []
+     "stage_time": "60 h",
+     "evolves_to": [
+      {
+       "to": "Mammon",
+       "to_id": "mammon",
+       "raw": "0-2 Care Mistakes, 30 Battles, 24-29 Victories",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "victories": "24-29",
+        "battles_n": 30,
+        "battles": true
+       }
+      },
+      {
+       "to": "Were Garurumon",
+       "to_id": "weregarurumon",
+       "raw": "",
+       "parsed": {}
+      },
+      {
+       "to": "Pumpmon",
+       "to_id": "pumpmon",
+       "raw": "Jogress with any Virus Adult",
+       "parsed": {
+        "jogress_partner": "any Virus Adult"
+       }
+      }
+     ]
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen/Garurumon.png",
+   "sleep": "21:00",
+   "power": null,
    "sources": [
-    "wayland-vpets:pen20"
-   ],
-   "addition_pending": true
+    "humulos:pen"
+   ]
   },
   {
    "id": "gekomon",
    "name": "Gekomon",
    "stage": "Adult",
-   "attribute": "Data",
+   "level": null,
+   "attribute": "Virus",
+   "alt_attribute": null,
    "devices": {
     "pen": {
-     "versions": [
-      1
-     ],
+     "versions": [],
      "stage_time": "60 h",
      "evolves_to": [
       {
+       "to": "Okuwamon",
+       "to_id": "okuwamon",
+       "raw": "0-4 Care Mistakes, 30 Battles, 24-29 Victories",
+       "parsed": {
+        "care_mistakes": "0-4",
+        "victories": "24-29",
+        "battles_n": 30,
+        "battles": true
+       }
+      },
+      {
        "to": "Tonosama Gekomon",
        "to_id": "tonosamagekomon",
-       "raw": "0-2 CM, battles",
+       "raw": "",
+       "parsed": {}
+      },
+      {
+       "to": "Piccolomon",
+       "to_id": "piccolomon",
+       "raw": "Jogress with any Vaccine Adult",
        "parsed": {
-        "care_mistakes": "0-2",
-        "battles": true
+        "jogress_partner": "any Vaccine Adult"
        }
       }
      ]
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen/Gekomon.png",
+   "sleep": "21:00",
+   "power": null,
    "sources": [
-    "humulos:pen20"
+    "humulos:pen"
    ]
   },
   {
    "id": "gerbemon",
    "name": "Gerbemon",
    "stage": "Perfect",
-   "attribute": "Vaccine",
+   "level": null,
+   "attribute": "Virus",
+   "alt_attribute": null,
    "devices": {
     "pen": {
-     "versions": [
-      4
-     ],
+     "versions": [],
      "stage_time": "68 h",
-     "evolves_to": [],
-     "_unresolved": [
-      "0-2 CM, battles"
+     "evolves_to": [
+      {
+       "to": "Pinochimon",
+       "to_id": "pinochimon",
+       "raw": "Jogress with Virus Perfect 1 from all Versions except 4.0/4.5",
+       "parsed": {
+        "win_ratio": "0/4",
+        "jogress_partner": "Virus Perfect 1 from all Versions except 4"
+       }
+      }
      ]
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen/Gerbemon.png",
+   "sleep": "22:00",
+   "power": null,
    "sources": [
-    "humulos:pen20"
+    "humulos:pen"
    ]
   },
   {
    "id": "gesomon",
    "name": "Gesomon",
    "stage": "Adult",
-   "attribute": "Free",
+   "level": null,
+   "attribute": "Virus",
+   "alt_attribute": null,
    "devices": {
     "pen": {
-     "versions": [
-      2
-     ],
+     "versions": [],
      "stage_time": "60 h",
      "evolves_to": [
       {
-       "to": "Octmon",
-       "to_id": "octmon",
-       "raw": "0-2 CM, battles 12/15",
+       "to": "Marin Devimon",
+       "to_id": "marindevimon",
+       "raw": "0-4 Care Mistakes, 30 Battles, 24-29 Victories",
        "parsed": {
-        "care_mistakes": "0-2",
-        "win_ratio": "12/15",
+        "care_mistakes": "0-4",
+        "victories": "24-29",
+        "battles_n": 30,
         "battles": true
        }
       },
       {
-       "to": "Seadramon",
-       "to_id": "seadramon",
-       "raw": "2-4 CM, 0-1 Effort",
+       "to": "Dagomon",
+       "to_id": "dagomon",
+       "raw": "",
+       "parsed": {}
+      },
+      {
+       "to": "Anomalocarimon (2.0)",
+       "to_id": "anomalocarimon20",
+       "raw": "Jogress with any Vaccine Adult",
        "parsed": {
-        "care_mistakes": "2-4",
-        "effort": "0-1"
+        "jogress_partner": "any Vaccine Adult"
+       }
+      },
+      {
+       "to": "Hangyomon (2.5)",
+       "to_id": "hangyomon25",
+       "raw": "Jogress with any Vaccine Adult",
+       "parsed": {
+        "jogress_partner": "any Vaccine Adult"
        }
       }
      ]
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen/Gesomon.png",
+   "sleep": "21:00",
+   "power": null,
    "sources": [
-    "humulos:pen20"
+    "humulos:pen"
    ]
   },
   {
    "id": "gomamon",
    "name": "Gomamon",
    "stage": "Child",
-   "attribute": "Free",
+   "level": null,
+   "attribute": "Vaccine",
+   "alt_attribute": null,
    "devices": {
     "pen": {
-     "versions": [
-      2
-     ],
+     "versions": [],
      "stage_time": "20 h",
      "evolves_to": [
       {
-       "to": "Shakomon",
-       "to_id": "shakomon",
-       "raw": "2-4 CM, 4 Effort",
+       "to": "Ikkakumon",
+       "to_id": "ikkakumon",
+       "raw": "0-2 Care Mistakes, 30+ Training",
        "parsed": {
-        "care_mistakes": "2-4",
-        "effort": "4"
-       }
-      },
-      {
-       "to": "Coelamon",
-       "to_id": "coelamon",
-       "raw": "0-1 CM, 0-3 Effort",
-       "parsed": {
-        "care_mistakes": "0-1",
-        "effort": "0-3"
+        "care_mistakes": "0-2",
+        "training": "30+"
        }
       },
       {
        "to": "Rukamon",
        "to_id": "rukamon",
-       "raw": "0-1 CM, 4 Effort",
+       "raw": "0-2 Care Mistakes, 0-29 Training",
        "parsed": {
-        "care_mistakes": "0-1",
-        "effort": "4"
+        "care_mistakes": "0-2",
+        "training": "0-29"
+       }
+      },
+      {
+       "to": "Coelamon (2.0)",
+       "to_id": "coelamon20",
+       "raw": "3+ Care Mistakes, 30+ Training",
+       "parsed": {
+        "care_mistakes": "3+",
+        "training": "30+"
+       }
+      },
+      {
+       "to": "Ebidramon (2.5)",
+       "to_id": "ebidramon25",
+       "raw": "3+ Care Mistakes, 30+ Training",
+       "parsed": {
+        "care_mistakes": "3+",
+        "training": "30+"
+       }
+      },
+      {
+       "to": "Octmon",
+       "to_id": "octmon",
+       "raw": "3+ Care Mistakes, 0-29 Training",
+       "parsed": {
+        "care_mistakes": "3+",
+        "training": "0-29"
        }
       }
      ]
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen/Gomamon.png",
+   "sleep": "20:00",
+   "power": null,
    "sources": [
-    "humulos:pen20"
+    "humulos:pen"
    ]
   },
   {
    "id": "gottsumon",
    "name": "Gottsumon",
    "stage": "Child",
+   "level": null,
    "attribute": "Data",
+   "alt_attribute": null,
    "devices": {
     "pen": {
-     "versions": [
-      1
-     ],
+     "versions": [],
      "stage_time": "20 h",
      "evolves_to": [
       {
-       "to": "Kabuterimon",
-       "to_id": "kabuterimon",
-       "raw": "0-1 CM, 4 Effort",
+       "to": "Tortamon (1.0)",
+       "to_id": "tortamon10",
+       "raw": "0-2 Care Mistakes, 0-29 Training",
        "parsed": {
-        "care_mistakes": "0-1",
-        "effort": "4"
+        "care_mistakes": "0-2",
+        "training": "0-29"
        }
       },
       {
-       "to": "Kuwagamon",
-       "to_id": "kuwagamon",
-       "raw": "0-1 CM, 0-3 Effort",
+       "to": "Tailmon (1.5)",
+       "to_id": "tailmon15",
+       "raw": "0-2 Care Mistakes, 0-29 Training",
        "parsed": {
-        "care_mistakes": "0-1",
-        "effort": "0-3"
+        "care_mistakes": "0-2",
+        "training": "0-29"
+       }
+      },
+      {
+       "to": "Monochromon",
+       "to_id": "monochromon",
+       "raw": "0-2 Care Mistakes, 30+ Training",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "training": "30+"
+       }
+      },
+      {
+       "to": "Starmon",
+       "to_id": "starmon",
+       "raw": "3+ Care Mistakes, 30+ Training",
+       "parsed": {
+        "care_mistakes": "3+",
+        "training": "30+"
+       }
+      },
+      {
+       "to": "Gekomon",
+       "to_id": "gekomon",
+       "raw": "3+ Care Mistakes, 0-29 Training",
+       "parsed": {
+        "care_mistakes": "3+",
+        "training": "0-29"
        }
       }
      ]
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen/Gottsumon.png",
+   "sleep": "20:00",
+   "power": null,
    "sources": [
-    "humulos:pen20"
+    "humulos:pen"
    ]
   },
   {
    "id": "greymon",
    "name": "Greymon",
    "stage": "Adult",
+   "level": null,
    "attribute": "Vaccine",
+   "alt_attribute": null,
    "devices": {
     "pen": {
-     "versions": [
-      5
-     ],
+     "versions": [],
      "stage_time": "60 h",
      "evolves_to": [
       {
        "to": "Metal Greymon",
        "to_id": "metalgreymon",
-       "raw": "Jogress Va+Da",
+       "raw": "0-1 Care Mistakes, 30 Battles, 24-29 Victories",
        "parsed": {
-        "jogress_attrs": [
-         "Vaccine",
-         "Data"
-        ]
-       }
-      },
-      {
-       "to": "Megadramon",
-       "to_id": "megadramon",
-       "raw": "1 CM, battles",
-       "parsed": {
-        "care_mistakes": "1",
+        "care_mistakes": "0-1",
+        "victories": "24-29",
+        "battles_n": 30,
         "battles": true
        }
       },
       {
-       "to": "War Greymon",
-       "to_id": "wargreymon",
-       "raw": "Jogress Da",
+       "to": "Andromon (5.0)",
+       "to_id": "andromon50",
+       "raw": "",
+       "parsed": {}
+      },
+      {
+       "to": "Cyberdramon (5.5)",
+       "to_id": "cyberdramon55",
+       "raw": "",
+       "parsed": {}
+      },
+      {
+       "to": "Big Mamemon",
+       "to_id": "bigmamemon",
+       "raw": "Jogress with any Virus Adult",
        "parsed": {
-        "jogress_attrs": [
-         "Data"
-        ]
+        "jogress_partner": "any Virus Adult"
        }
       }
      ]
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen/Greymon.png",
+   "sleep": "21:00",
+   "power": null,
    "sources": [
-    "humulos:pen20"
+    "humulos:pen"
    ]
   },
   {
    "id": "griffomon",
    "name": "Griffomon",
    "stage": "Ultimate",
+   "level": null,
    "attribute": "Data",
+   "alt_attribute": null,
    "devices": {
     "pen": {
-     "versions": [
-      4
-     ],
+     "versions": [],
      "stage_time": null,
      "evolves_to": []
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen/Griffomon.png",
+   "sleep": "22:00",
+   "power": null,
    "sources": [
-    "humulos:pen20"
+    "humulos:pen"
    ]
   },
   {
    "id": "guardromon",
    "name": "Guardromon",
    "stage": "Adult",
-   "attribute": "Vaccine",
+   "level": null,
+   "attribute": "Virus",
+   "alt_attribute": null,
    "devices": {
     "pen": {
-     "versions": [
-      5
-     ],
+     "versions": [],
      "stage_time": "60 h",
      "evolves_to": [
       {
-       "to": "Andromon",
-       "to_id": "andromon",
-       "raw": "Jogress Vi+Da+Fr",
+       "to": "Megadramon",
+       "to_id": "megadramon",
+       "raw": "0-4 Care Mistakes, 30 Battles, 24-29 Victories",
        "parsed": {
-        "jogress_attrs": [
-         "Virus",
-         "Data",
-         "Free"
-        ]
+        "care_mistakes": "0-4",
+        "victories": "24-29",
+        "battles_n": 30,
+        "battles": true
+       }
+      },
+      {
+       "to": "Waru Monzaemon",
+       "to_id": "warumonzaemon",
+       "raw": "",
+       "parsed": {}
+      },
+      {
+       "to": "Big Mamemon",
+       "to_id": "bigmamemon",
+       "raw": "Jogress with any Vaccine Adult",
+       "parsed": {
+        "jogress_partner": "any Vaccine Adult"
        }
       }
      ]
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen/Guardromon.png",
+   "sleep": "21:00",
+   "power": null,
    "sources": [
-    "humulos:pen20"
+    "humulos:pen"
    ]
   },
   {
    "id": "hagurumon",
    "name": "Hagurumon",
    "stage": "Child",
-   "attribute": "Vaccine",
+   "level": null,
+   "attribute": "Virus",
+   "alt_attribute": null,
    "devices": {
     "pen": {
-     "versions": [
-      5
-     ],
+     "versions": [],
      "stage_time": "20 h",
      "evolves_to": [
       {
-       "to": "Revolmon",
-       "to_id": "revolmon",
-       "raw": "1 CM, 2-3 Effort",
+       "to": "Greymon",
+       "to_id": "greymon",
+       "raw": "0-1 Care Mistakes, 30+ Training",
        "parsed": {
-        "care_mistakes": "1",
-        "effort": "2-3"
+        "care_mistakes": "0-1",
+        "training": "30+"
        }
       },
       {
-       "to": "Clockmon",
-       "to_id": "clockmon",
-       "raw": "1 CM, 3-4 Effort",
+       "to": "Tankmon (5.0)",
+       "to_id": "tankmon50",
+       "raw": "0-1 Care Mistakes, 0-29 Training",
        "parsed": {
-        "care_mistakes": "1",
-        "effort": "3-4"
+        "care_mistakes": "0-1",
+        "training": "0-29"
        }
       },
       {
-       "to": "Thunderballmon",
-       "to_id": "thunderballmon",
-       "raw": "1 CM, 4 Effort",
+       "to": "Thunderballmon (5.5)",
+       "to_id": "thunderballmon55",
+       "raw": "0-1 Care Mistakes, 0-29 Training",
        "parsed": {
-        "care_mistakes": "1",
-        "effort": "4"
+        "care_mistakes": "0-1",
+        "training": "0-29"
+       }
+      },
+      {
+       "to": "Guardromon",
+       "to_id": "guardromon",
+       "raw": "2+ Care Mistakes, 25+ Training",
+       "parsed": {
+        "care_mistakes": "2+",
+        "training": "25+"
+       }
+      },
+      {
+       "to": "Mechanorimon",
+       "to_id": "mechanorimon",
+       "raw": "2+ Care Mistakes, 0-24 Training",
+       "parsed": {
+        "care_mistakes": "2+",
+        "training": "0-24"
        }
       }
      ]
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen/Hagurumon.png",
+   "sleep": "20:00",
+   "power": null,
    "sources": [
-    "humulos:pen20"
+    "humulos:pen"
    ]
-  },
-  {
-   "id": "hangymon",
-   "name": "Hangymon",
-   "stage": null,
-   "attribute": null,
-   "devices": {
-    "pen": {
-     "versions": [],
-     "stage_time": null,
-     "evolves_to": []
-    }
-   },
-   "sprite": "fan/wayland-vpets/assets/pen/Hangymon.png",
-   "sources": [
-    "wayland-vpets:pen20"
-   ],
-   "addition_pending": true
   },
   {
    "id": "hangyomon",
    "name": "Hangyomon",
    "stage": "Perfect",
-   "attribute": "Free",
+   "level": null,
+   "attribute": "Data",
+   "alt_attribute": null,
    "devices": {
     "pen": {
-     "versions": [
-      2
-     ],
+     "versions": [],
      "stage_time": "68 h",
-     "evolves_to": []
+     "evolves_to": [
+      {
+       "to": "Plesiomon",
+       "to_id": "plesiomon",
+       "raw": "Jogress with Data Perfect 1",
+       "parsed": {
+        "jogress_partner": "Data Perfect 1"
+       }
+      }
+     ]
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen/Hangyomon.png",
+   "sleep": "22:00",
+   "power": null,
    "sources": [
-    "humulos:pen20"
+    "humulos:pen"
    ]
   },
   {
    "id": "hanumon",
    "name": "Hanumon",
-   "stage": null,
-   "attribute": null,
+   "stage": "Adult",
+   "level": null,
+   "attribute": "Vaccine",
+   "alt_attribute": null,
    "devices": {
     "pen": {
      "versions": [],
-     "stage_time": null,
-     "evolves_to": []
+     "stage_time": "60 h",
+     "evolves_to": [
+      {
+       "to": "Mammon",
+       "to_id": "mammon",
+       "raw": "0-2 Care Mistakes, 30 Battles, 24-29 Victories",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "victories": "24-29",
+        "battles_n": 30,
+        "battles": true
+       }
+      },
+      {
+       "to": "Were Garurumon",
+       "to_id": "weregarurumon",
+       "raw": "",
+       "parsed": {}
+      },
+      {
+       "to": "Pumpmon",
+       "to_id": "pumpmon",
+       "raw": "Jogress with any Virus Adult",
+       "parsed": {
+        "jogress_partner": "any Virus Adult"
+       }
+      }
+     ]
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen/Hanumon.png",
+   "sleep": "21:00",
+   "power": null,
    "sources": [
-    "wayland-vpets:pen20"
-   ],
-   "addition_pending": true
+    "humulos:pen"
+   ]
   },
   {
    "id": "heraklekabuterimon",
    "name": "Herakle Kabuterimon",
-   "stage": "Perfect",
-   "attribute": "Data",
-   "devices": {
-    "pen": {
-     "versions": [
-      1
-     ],
-     "stage_time": "68 h",
-     "evolves_to": []
-    }
-   },
-   "sprite": "fan/wayland-vpets/assets/pen/Herakle Kabuterimon.png",
-   "sources": [
-    "humulos:pen20"
-   ]
-  },
-  {
-   "id": "holyangemon",
-   "name": "Holy Angemon",
-   "stage": null,
-   "attribute": null,
+   "stage": "Ultimate",
+   "level": null,
+   "attribute": "Vaccine",
+   "alt_attribute": null,
    "devices": {
     "pen": {
      "versions": [],
@@ -1351,55 +1766,41 @@
      "evolves_to": []
     }
    },
-   "sprite": "fan/wayland-vpets/assets/pen/Holy Angemon.png",
+   "sprite": "fan/wayland-vpets/assets/pen/Herakle Kabuterimon.png",
+   "sleep": "22:00",
+   "power": null,
    "sources": [
-    "wayland-vpets:pen20"
-   ],
-   "addition_pending": true
+    "humulos:pen"
+   ]
   },
   {
    "id": "holydramon",
    "name": "Holydramon",
    "stage": "Ultimate",
+   "level": null,
    "attribute": "Vaccine",
+   "alt_attribute": null,
    "devices": {
     "pen": {
-     "versions": [
-      1
-     ],
+     "versions": [],
      "stage_time": null,
      "evolves_to": []
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen/Holydramon.png",
+   "sleep": "22:00",
+   "power": null,
    "sources": [
-    "humulos:pen20"
+    "humulos:pen"
    ]
   },
   {
    "id": "hououmon",
    "name": "Hououmon",
    "stage": "Ultimate",
+   "level": null,
    "attribute": "Vaccine",
-   "devices": {
-    "pen": {
-     "versions": [
-      4
-     ],
-     "stage_time": null,
-     "evolves_to": []
-    }
-   },
-   "sprite": "fan/wayland-vpets/assets/pen/Hououmon.png",
-   "sources": [
-    "humulos:pen20"
-   ]
-  },
-  {
-   "id": "igamon",
-   "name": "Igamon",
-   "stage": null,
-   "attribute": null,
+   "alt_attribute": null,
    "devices": {
     "pen": {
      "versions": [],
@@ -1407,409 +1808,495 @@
      "evolves_to": []
     }
    },
-   "sprite": "fan/wayland-vpets/assets/pen/Igamon.png",
+   "sprite": "fan/wayland-vpets/assets/pen/Hououmon.png",
+   "sleep": "22:00",
+   "power": null,
    "sources": [
-    "wayland-vpets:pen20"
-   ],
-   "addition_pending": true
+    "humulos:pen"
+   ]
   },
   {
    "id": "ikkakumon",
    "name": "Ikkakumon",
    "stage": "Adult",
-   "attribute": "Free",
+   "level": null,
+   "attribute": "Vaccine",
+   "alt_attribute": null,
    "devices": {
     "pen": {
-     "versions": [
-      2
-     ],
+     "versions": [],
      "stage_time": "60 h",
      "evolves_to": [
       {
        "to": "Zudomon",
        "to_id": "zudomon",
-       "raw": "Jogress Va+Da",
+       "raw": "0-2 Care Mistakes, 30 Battles, 24-29 Victories",
        "parsed": {
-        "jogress_attrs": [
-         "Vaccine",
-         "Data"
-        ]
+        "care_mistakes": "0-2",
+        "victories": "24-29",
+        "battles_n": 30,
+        "battles": true
        }
       },
       {
        "to": "Whamon",
        "to_id": "whamon",
-       "raw": "Jogress Da+Vi",
+       "raw": "",
+       "parsed": {}
+      },
+      {
+       "to": "Anomalocarimon (2.0)",
+       "to_id": "anomalocarimon20",
+       "raw": "Jogress with any Virus Adult",
        "parsed": {
-        "jogress_attrs": [
-         "Data",
-         "Virus"
-        ]
+        "jogress_partner": "any Virus Adult"
+       }
+      },
+      {
+       "to": "Hangyomon (2.5)",
+       "to_id": "hangyomon25",
+       "raw": "Jogress with any Virus Adult",
+       "parsed": {
+        "jogress_partner": "any Virus Adult"
        }
       }
      ]
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen/Ikkakumon.png",
+   "sleep": "21:00",
+   "power": null,
    "sources": [
-    "humulos:pen20"
-   ]
-  },
-  {
-   "id": "imperialdramonpaladinmode",
-   "name": "Imperialdramon: Paladin Mode",
-   "stage": "Ultimate",
-   "attribute": "Vaccine",
-   "devices": {
-    "pen": {
-     "versions": [
-      5
-     ],
-     "stage_time": null,
-     "evolves_to": []
-    }
-   },
-   "sprite": null,
-   "sources": [
-    "humulos:pen20"
-   ]
-  },
-  {
-   "id": "impmon",
-   "name": "Impmon",
-   "stage": "Child",
-   "attribute": "Vaccine",
-   "devices": {
-    "pen": {
-     "versions": [
-      3
-     ],
-     "stage_time": "20 h",
-     "evolves_to": [
-      {
-       "to": "Troopmon",
-       "to_id": "troopmon",
-       "raw": "0-1 CM, 0-3 Effort",
-       "parsed": {
-        "care_mistakes": "0-1",
-        "effort": "0-3"
-       }
-      },
-      {
-       "to": "Mad Leomon",
-       "to_id": "madleomon",
-       "raw": "0-2 CM, battles",
-       "parsed": {
-        "care_mistakes": "0-2",
-        "battles": true
-       }
-      }
-     ]
-    }
-   },
-   "sprite": null,
-   "sources": [
-    "humulos:pen20"
+    "humulos:pen"
    ]
   },
   {
    "id": "jyagamon",
    "name": "Jyagamon",
    "stage": "Perfect",
-   "attribute": "Data",
+   "level": null,
+   "attribute": "Vaccine",
+   "alt_attribute": null,
    "devices": {
     "pen": {
-     "versions": [
-      1
-     ],
+     "versions": [],
      "stage_time": "68 h",
-     "evolves_to": [
-      {
-       "to": "Piccolomon",
-       "to_id": "piccolomon",
-       "raw": "Jogress Vi+Fr+Da",
-       "parsed": {
-        "jogress_attrs": [
-         "Virus",
-         "Free",
-         "Data"
-        ]
-       }
-      }
-     ]
+     "evolves_to": []
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen/Jyagamon.png",
+   "sleep": "22:00",
+   "power": null,
    "sources": [
-    "humulos:pen20"
+    "humulos:pen"
    ]
   },
   {
    "id": "jyureimon",
    "name": "Jyureimon",
    "stage": "Perfect",
-   "attribute": "Data",
+   "level": null,
+   "attribute": "Virus",
+   "alt_attribute": null,
    "devices": {
     "pen": {
-     "versions": [
-      4
-     ],
+     "versions": [],
      "stage_time": "68 h",
-     "evolves_to": []
+     "evolves_to": [
+      {
+       "to": "Pinochimon",
+       "to_id": "pinochimon",
+       "raw": "Jogress with Virus Perfect 2 from all Versions except 4.0/4.5",
+       "parsed": {
+        "win_ratio": "0/4",
+        "jogress_partner": "Virus Perfect 2 from all Versions except 4"
+       }
+      }
+     ]
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen/Jyureimon.png",
+   "sleep": "22:00",
+   "power": null,
    "sources": [
-    "humulos:pen20"
+    "humulos:pen"
    ]
   },
   {
    "id": "kabuterimon",
    "name": "Kabuterimon",
    "stage": "Adult",
-   "attribute": "Data",
+   "level": null,
+   "attribute": "Vaccine",
+   "alt_attribute": null,
    "devices": {
     "pen": {
-     "versions": [
-      1
-     ],
+     "versions": [],
      "stage_time": "60 h",
      "evolves_to": [
       {
        "to": "Atlur Kabuterimon",
        "to_id": "atlurkabuterimon",
-       "raw": "0-2 CM, battles",
+       "raw": "0 Care Mistakes, 30 Battles, 24-29 Victories",
        "parsed": {
-        "care_mistakes": "0-2",
+        "care_mistakes": "0",
+        "victories": "24-29",
+        "battles_n": 30,
         "battles": true
        }
       },
       {
-       "to": "Okuwamon",
-       "to_id": "okuwamon",
-       "raw": "Jogress Va+Da",
+       "to": "Jyagamon (1.0)",
+       "to_id": "jyagamon10",
+       "raw": "",
+       "parsed": {}
+      },
+      {
+       "to": "Angewomon (1.5)",
+       "to_id": "angewomon15",
+       "raw": "",
+       "parsed": {}
+      },
+      {
+       "to": "Piccolomon",
+       "to_id": "piccolomon",
+       "raw": "Jogress with any Virus Adult",
        "parsed": {
-        "jogress_attrs": [
-         "Vaccine",
-         "Data"
-        ]
+        "jogress_partner": "any Virus Adult"
        }
       }
      ]
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen/Kabuterimon.png",
+   "sleep": "21:00",
+   "power": null,
    "sources": [
-    "humulos:pen20"
+    "humulos:pen"
    ]
   },
   {
    "id": "kiwimon",
    "name": "Kiwimon",
    "stage": "Adult",
+   "level": null,
    "attribute": "Data",
+   "alt_attribute": null,
    "devices": {
     "pen": {
-     "versions": [
-      4
-     ],
+     "versions": [],
      "stage_time": "60 h",
      "evolves_to": [
       {
-       "to": "Red Vegimon",
-       "to_id": "redvegimon",
-       "raw": "0-2 CM, battles",
+       "to": "Blossomon (4.0)",
+       "to_id": "blossomon40",
+       "raw": "0-3 Care Mistakes, 30 Battles, 24-29 Victories",
        "parsed": {
-        "care_mistakes": "0-2",
+        "care_mistakes": "0-3",
+        "victories": "24-29",
+        "battles_n": 30,
         "battles": true
        }
       },
       {
-       "to": "Aero V-dramon",
-       "to_id": "aerovdramon",
-       "raw": "Jogress Va+Da",
+       "to": "Lilimon (4.5)",
+       "to_id": "lilimon45",
+       "raw": "0-3 Care Mistakes, 30 Battles, 24-29 Victories",
        "parsed": {
-        "jogress_attrs": [
-         "Vaccine",
-         "Data"
-        ]
+        "care_mistakes": "0-3",
+        "victories": "24-29",
+        "battles_n": 30,
+        "battles": true
+       }
+      },
+      {
+       "to": "Delumon",
+       "to_id": "delumon",
+       "raw": "",
+       "parsed": {}
+      },
+      {
+       "to": "Garudamon",
+       "to_id": "garudamon",
+       "raw": "Jogress with any Vaccine Adult",
+       "parsed": {
+        "jogress_partner": "any Vaccine Adult"
+       }
+      },
+      {
+       "to": "Gerbemon",
+       "to_id": "gerbemon",
+       "raw": "Jogress with any Virus Adult",
+       "parsed": {
+        "jogress_partner": "any Virus Adult"
        }
       }
      ]
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen/Kiwimon.png",
+   "sleep": "21:00",
+   "power": null,
    "sources": [
-    "humulos:pen20"
+    "humulos:pen"
    ]
   },
   {
    "id": "knightmon",
    "name": "Knightmon",
    "stage": "Perfect",
-   "attribute": "Vaccine",
+   "level": null,
+   "attribute": "Data",
+   "alt_attribute": null,
    "devices": {
     "pen": {
-     "versions": [
-      5
-     ],
+     "versions": [],
      "stage_time": "68 h",
-     "evolves_to": []
+     "evolves_to": [
+      {
+       "to": "War Greymon",
+       "to_id": "wargreymon",
+       "raw": "0-1 Care Mistakes, 30 Battles, 24-29 Victories",
+       "parsed": {
+        "care_mistakes": "0-1",
+        "victories": "24-29",
+        "battles_n": 30,
+        "battles": true
+       }
+      },
+      {
+       "to": "Metal Garurumon",
+       "to_id": "metalgarurumon",
+       "raw": "Jogress with Data Perfect 2",
+       "parsed": {
+        "jogress_partner": "Data Perfect 2"
+       }
+      }
+     ]
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen/Knightmon.png",
+   "sleep": "22:00",
+   "power": null,
    "sources": [
-    "humulos:pen20"
+    "humulos:pen"
    ]
   },
   {
    "id": "kokuwamon",
    "name": "Kokuwamon",
-   "stage": null,
-   "attribute": null,
+   "stage": "Child",
+   "level": null,
+   "attribute": "Data",
+   "alt_attribute": null,
    "devices": {
     "pen": {
      "versions": [],
-     "stage_time": null,
-     "evolves_to": []
+     "stage_time": "20 h",
+     "evolves_to": [
+      {
+       "to": "Revolmon",
+       "to_id": "revolmon",
+       "raw": "0-2 Care Mistakes, 30+ Training",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "training": "30+"
+       }
+      },
+      {
+       "to": "Tankmon (5.0)",
+       "to_id": "tankmon50",
+       "raw": "0-2 Care Mistakes, 0-29 Training",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "training": "0-29"
+       }
+      },
+      {
+       "to": "Thunderballmon (5.5)",
+       "to_id": "thunderballmon55",
+       "raw": "0-2 Care Mistakes, 0-29 Training",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "training": "0-29"
+       }
+      },
+      {
+       "to": "Clockmon",
+       "to_id": "clockmon",
+       "raw": "3+ Care Mistakes, 20+ Training",
+       "parsed": {
+        "care_mistakes": "3+",
+        "training": "20+"
+       }
+      },
+      {
+       "to": "Guardromon",
+       "to_id": "guardromon",
+       "raw": "3+ Care Mistakes, 0-19 Training",
+       "parsed": {
+        "care_mistakes": "3+",
+        "training": "0-19"
+       }
+      }
+     ]
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen/Kokuwamon.png",
+   "sleep": "20:00",
+   "power": null,
    "sources": [
-    "wayland-vpets:pen20"
-   ],
-   "addition_pending": true
+    "humulos:pen"
+   ]
   },
   {
    "id": "kuwagamon",
    "name": "Kuwagamon",
    "stage": "Adult",
-   "attribute": "Data",
+   "level": null,
+   "attribute": "Virus",
+   "alt_attribute": null,
    "devices": {
     "pen": {
-     "versions": [
-      1
-     ],
+     "versions": [],
      "stage_time": "60 h",
      "evolves_to": [
       {
        "to": "Okuwamon",
        "to_id": "okuwamon",
-       "raw": "Jogress Va+Da",
+       "raw": "0-4 Care Mistakes, 30 Battles, 24-29 Victories",
        "parsed": {
-        "jogress_attrs": [
-         "Vaccine",
-         "Data"
-        ]
+        "care_mistakes": "0-4",
+        "victories": "24-29",
+        "battles_n": 30,
+        "battles": true
+       }
+      },
+      {
+       "to": "Tonosama Gekomon",
+       "to_id": "tonosamagekomon",
+       "raw": "",
+       "parsed": {}
+      },
+      {
+       "to": "Piccolomon",
+       "to_id": "piccolomon",
+       "raw": "Jogress with any Vaccine Adult",
+       "parsed": {
+        "jogress_partner": "any Vaccine Adult"
        }
       }
      ]
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen/Kuwagamon.png",
+   "sleep": "21:00",
+   "power": null,
    "sources": [
-    "humulos:pen20"
+    "humulos:pen"
    ]
   },
   {
    "id": "ladydevimon",
    "name": "Lady Devimon",
-   "stage": null,
-   "attribute": null,
-   "devices": {
-    "pen": {
-     "versions": [],
-     "stage_time": null,
-     "evolves_to": []
-    }
-   },
-   "sprite": "fan/wayland-vpets/assets/pen/Lady Devimon.png",
-   "sources": [
-    "wayland-vpets:pen20"
-   ],
-   "addition_pending": true
-  },
-  {
-   "id": "leomon",
-   "name": "Leomon",
-   "stage": null,
-   "attribute": null,
-   "devices": {
-    "pen": {
-     "versions": [],
-     "stage_time": null,
-     "evolves_to": []
-    }
-   },
-   "sprite": "fan/wayland-vpets/assets/pen/Leomon.png",
-   "sources": [
-    "wayland-vpets:pen20"
-   ],
-   "addition_pending": true
-  },
-  {
-   "id": "lilimon",
-   "name": "Lilimon",
    "stage": "Perfect",
-   "attribute": "Data",
+   "level": null,
+   "attribute": "Virus",
+   "alt_attribute": null,
    "devices": {
     "pen": {
-     "versions": [
-      4
-     ],
+     "versions": [],
      "stage_time": "68 h",
-     "evolves_to": []
-    }
-   },
-   "sprite": "fan/wayland-vpets/assets/pen/Lilimon.png",
-   "sources": [
-    "humulos:pen20"
-   ]
-  },
-  {
-   "id": "madleomon",
-   "name": "Mad Leomon",
-   "stage": "Adult",
-   "attribute": "Vaccine",
-   "devices": {
-    "pen": {
-     "versions": [
-      3
-     ],
-     "stage_time": "60 h",
      "evolves_to": [
       {
-       "to": "Dark Knightmon",
-       "to_id": "darkknightmon",
-       "raw": "Jogress Da+Vi",
+       "to": "Demon",
+       "to_id": "demon",
+       "raw": "Jogress with Virus Perfect 2 from all Versions except 4.0/4.5",
        "parsed": {
-        "jogress_attrs": [
-         "Data",
-         "Virus"
-        ]
-       }
-      },
-      {
-       "to": "Beelzebumon",
-       "to_id": "beelzebumon",
-       "raw": "Jogress with Demon",
-       "parsed": {
-        "jogress_partner": "Demon"
+        "win_ratio": "0/4",
+        "jogress_partner": "Virus Perfect 2 from all Versions except 4"
        }
       }
      ]
     }
    },
-   "sprite": null,
+   "sprite": "fan/wayland-vpets/assets/pen/Lady Devimon.png",
+   "sleep": "22:00",
+   "power": null,
    "sources": [
-    "humulos:pen20"
+    "humulos:pen"
+   ]
+  },
+  {
+   "id": "lilimon",
+   "name": "Lilimon",
+   "stage": "Perfect",
+   "level": null,
+   "attribute": "Data",
+   "alt_attribute": null,
+   "devices": {
+    "pen": {
+     "versions": [],
+     "stage_time": "68 h",
+     "evolves_to": [
+      {
+       "to": "Rosemon",
+       "to_id": "rosemon",
+       "raw": "Jogress with Data Perfect 2",
+       "parsed": {
+        "jogress_partner": "Data Perfect 2"
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen/Lilimon.png",
+   "sleep": "22:00",
+   "power": null,
+   "sources": [
+    "humulos:pen"
    ]
   },
   {
    "id": "mammon",
    "name": "Mammon",
-   "stage": null,
-   "attribute": null,
+   "stage": "Perfect",
+   "level": null,
+   "attribute": "Vaccine",
+   "alt_attribute": null,
+   "devices": {
+    "pen": {
+     "versions": [],
+     "stage_time": "68 h",
+     "evolves_to": [
+      {
+       "to": "Skull Mammon",
+       "to_id": "skullmammon",
+       "raw": "0 Care Mistakes, 30 Battles, 24-29 Victories",
+       "parsed": {
+        "care_mistakes": "0",
+        "victories": "24-29",
+        "battles_n": 30,
+        "battles": true
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen/Mammon.png",
+   "sleep": "22:00",
+   "power": null,
+   "sources": [
+    "humulos:pen"
+   ]
+  },
+  {
+   "id": "marinangemon",
+   "name": "Marin Angemon",
+   "stage": "Ultimate",
+   "level": null,
+   "attribute": "Vaccine",
+   "alt_attribute": null,
    "devices": {
     "pen": {
      "versions": [],
@@ -1817,139 +2304,241 @@
      "evolves_to": []
     }
    },
-   "sprite": "fan/wayland-vpets/assets/pen/Mammon.png",
-   "sources": [
-    "wayland-vpets:pen20"
-   ],
-   "addition_pending": true
-  },
-  {
-   "id": "marinangemon",
-   "name": "Marin Angemon",
-   "stage": "Perfect",
-   "attribute": "Vaccine",
-   "devices": {
-    "pen": {
-     "versions": [
-      2
-     ],
-     "stage_time": "68 h",
-     "evolves_to": []
-    }
-   },
    "sprite": "fan/wayland-vpets/assets/pen/Marin Angemon.png",
+   "sleep": "22:00",
+   "power": null,
    "sources": [
-    "humulos:pen20"
+    "humulos:pen"
    ]
   },
   {
    "id": "marindevimon",
    "name": "Marin Devimon",
    "stage": "Perfect",
+   "level": null,
    "attribute": "Virus",
+   "alt_attribute": null,
    "devices": {
     "pen": {
-     "versions": [
-      2
-     ],
+     "versions": [],
      "stage_time": "68 h",
-     "evolves_to": []
+     "evolves_to": [
+      {
+       "to": "Pukumon",
+       "to_id": "pukumon",
+       "raw": "Jogress with Virus Perfect 2 from Versions 3 through ZERO",
+       "parsed": {
+        "jogress_partner": "Virus Perfect 2 from Versions 3 through ZERO"
+       }
+      }
+     ]
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen/Marin Devimon.png",
+   "sleep": "22:00",
+   "power": null,
    "sources": [
-    "humulos:pen20"
-   ]
-  },
-  {
-   "id": "mastemon",
-   "name": "Mastemon",
-   "stage": "Ultimate",
-   "attribute": "Free",
-   "devices": {
-    "pen": {
-     "versions": [
-      1
-     ],
-     "stage_time": null,
-     "evolves_to": []
-    }
-   },
-   "sprite": null,
-   "sources": [
-    "humulos:pen20"
+    "humulos:pen"
    ]
   },
   {
    "id": "mechanorimon",
    "name": "Mechanorimon",
-   "stage": null,
-   "attribute": null,
+   "stage": "Adult",
+   "level": null,
+   "attribute": "Virus",
+   "alt_attribute": null,
    "devices": {
     "pen": {
      "versions": [],
-     "stage_time": null,
-     "evolves_to": []
+     "stage_time": "60 h",
+     "evolves_to": [
+      {
+       "to": "Megadramon",
+       "to_id": "megadramon",
+       "raw": "0-4 Care Mistakes, 30 Battles, 24-29 Victories",
+       "parsed": {
+        "care_mistakes": "0-4",
+        "victories": "24-29",
+        "battles_n": 30,
+        "battles": true
+       }
+      },
+      {
+       "to": "Waru Monzaemon",
+       "to_id": "warumonzaemon",
+       "raw": "",
+       "parsed": {}
+      },
+      {
+       "to": "Big Mamemon",
+       "to_id": "bigmamemon",
+       "raw": "Jogress with any Vaccine Adult",
+       "parsed": {
+        "jogress_partner": "any Vaccine Adult"
+       }
+      }
+     ]
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen/Mechanorimon.png",
+   "sleep": "21:00",
+   "power": null,
    "sources": [
-    "humulos:pen20"
+    "humulos:pen"
    ]
   },
   {
    "id": "megadramon",
    "name": "Megadramon",
    "stage": "Perfect",
-   "attribute": "Vaccine",
+   "level": null,
+   "attribute": "Virus",
+   "alt_attribute": null,
    "devices": {
     "pen": {
-     "versions": [
-      5
-     ],
+     "versions": [],
      "stage_time": "68 h",
      "evolves_to": [
       {
-       "to": "War Greymon",
-       "to_id": "wargreymon",
-       "raw": "1 CM, battles",
+       "to": "Mugendramon (5.0)",
+       "to_id": "mugendramon50",
+       "raw": "Jogress with Virus Perfect 2 from all Versions except 5.0/5.5",
        "parsed": {
-        "care_mistakes": "1",
-        "battles": true
+        "win_ratio": "0/5",
+        "jogress_partner": "Virus Perfect 2 from all Versions except 5"
+       }
+      },
+      {
+       "to": "Venom Vamdemon (5.5)",
+       "to_id": "venomvamdemon55",
+       "raw": "Jogress with Virus Perfect 2 from all Versions except 5.0/5.5",
+       "parsed": {
+        "win_ratio": "0/5",
+        "jogress_partner": "Virus Perfect 2 from all Versions except 5"
        }
       }
      ]
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen/Megadramon.png",
+   "sleep": "22:00",
+   "power": null,
    "sources": [
-    "humulos:pen20"
+    "humulos:pen"
    ]
   },
   {
    "id": "megaseadramon",
    "name": "Mega Seadramon",
    "stage": "Perfect",
-   "attribute": "Free",
+   "level": null,
+   "attribute": "Data",
+   "alt_attribute": null,
    "devices": {
     "pen": {
-     "versions": [
-      2
-     ],
+     "versions": [],
      "stage_time": "68 h",
-     "evolves_to": []
+     "evolves_to": [
+      {
+       "to": "Metal Seadramon (2.0)",
+       "to_id": "metalseadramon20",
+       "raw": "Jogress with Data Perfect 2",
+       "parsed": {
+        "jogress_partner": "Data Perfect 2"
+       }
+      },
+      {
+       "to": "Plesiomon (2.5)",
+       "to_id": "plesiomon25",
+       "raw": "Jogress with Data Perfect 2",
+       "parsed": {
+        "jogress_partner": "Data Perfect 2"
+       }
+      },
+      {
+       "to": "Marin Angemon",
+       "to_id": "marinangemon",
+       "raw": "0 Care Mistakes, 30 Battles, 24-29 Victories",
+       "parsed": {
+        "care_mistakes": "0",
+        "victories": "24-29",
+        "battles_n": 30,
+        "battles": true
+       }
+      }
+     ]
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen/Mega Seadramon.png",
+   "sleep": "22:00",
+   "power": null,
    "sources": [
-    "humulos:pen20"
+    "humulos:pen"
    ]
   },
   {
    "id": "meramon",
    "name": "Meramon",
-   "stage": null,
-   "attribute": null,
+   "stage": "Adult",
+   "level": null,
+   "attribute": "Data",
+   "alt_attribute": null,
+   "devices": {
+    "pen": {
+     "versions": [],
+     "stage_time": "60 h",
+     "evolves_to": [
+      {
+       "to": "Death Meramon",
+       "to_id": "deathmeramon",
+       "raw": "0-4 Care Mistakes, 30 Battles, 24-29 Victories",
+       "parsed": {
+        "care_mistakes": "0-4",
+        "victories": "24-29",
+        "battles_n": 30,
+        "battles": true
+       }
+      },
+      {
+       "to": "Pumpmon",
+       "to_id": "pumpmon",
+       "raw": "",
+       "parsed": {}
+      },
+      {
+       "to": "Were Garurumon",
+       "to_id": "weregarurumon",
+       "raw": "Jogress with any Vaccine Adult",
+       "parsed": {
+        "jogress_partner": "any Vaccine Adult"
+       }
+      },
+      {
+       "to": "Fantomon",
+       "to_id": "fantomon",
+       "raw": "Jogress with any Virus Adult",
+       "parsed": {
+        "jogress_partner": "any Virus Adult"
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen/Meramon.png",
+   "sleep": "21:00",
+   "power": null,
+   "sources": [
+    "humulos:pen"
+   ]
+  },
+  {
+   "id": "metaletemon",
+   "name": "Metal Etemon",
+   "stage": "Ultimate",
+   "level": null,
+   "attribute": "Virus",
+   "alt_attribute": null,
    "devices": {
     "pen": {
      "versions": [],
@@ -1957,104 +2546,74 @@
      "evolves_to": []
     }
    },
-   "sprite": "fan/wayland-vpets/assets/pen/Meramon.png",
-   "sources": [
-    "wayland-vpets:pen20"
-   ],
-   "addition_pending": true
-  },
-  {
-   "id": "metaletemon",
-   "name": "Metal Etemon",
-   "stage": "Ultimate",
-   "attribute": "Vaccine",
-   "devices": {
-    "pen": {
-     "versions": [
-      1
-     ],
-     "stage_time": null,
-     "evolves_to": []
-    }
-   },
    "sprite": "fan/wayland-vpets/assets/pen/Metal Etemon.png",
+   "sleep": "22:00",
+   "power": null,
    "sources": [
-    "humulos:pen20"
+    "humulos:pen"
    ]
   },
   {
    "id": "metalgarurumon",
    "name": "Metal Garurumon",
    "stage": "Ultimate",
-   "attribute": "Vaccine",
+   "level": null,
+   "attribute": "Data",
+   "alt_attribute": null,
    "devices": {
     "pen": {
-     "versions": [
-      5
-     ],
+     "versions": [],
      "stage_time": null,
-     "evolves_to": [
-      {
-       "to": "Omegamon",
-       "to_id": "omegamon",
-       "raw": "Jogress with War Greymon",
-       "parsed": {
-        "jogress_partner": "War Greymon"
-       }
-      }
-     ]
+     "evolves_to": []
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen/Metal Garurumon.png",
+   "sleep": "22:00",
+   "power": null,
    "sources": [
-    "humulos:pen20"
+    "humulos:pen"
    ]
   },
   {
    "id": "metalgreymon",
    "name": "Metal Greymon",
    "stage": "Perfect",
+   "level": null,
    "attribute": "Vaccine",
+   "alt_attribute": null,
    "devices": {
     "pen": {
-     "versions": [
-      5
-     ],
+     "versions": [],
      "stage_time": "68 h",
      "evolves_to": [
       {
        "to": "War Greymon",
        "to_id": "wargreymon",
-       "raw": "Jogress Da",
+       "raw": "0-1 Care Mistakes, 30 Battles, 24-29 Victories",
        "parsed": {
-        "jogress_attrs": [
-         "Data"
-        ]
-       }
-      },
-      {
-       "to": "Mugendramon",
-       "to_id": "mugendramon",
-       "raw": "Jogress Vi",
-       "parsed": {
-        "jogress_attrs": [
-         "Virus"
-        ]
+        "care_mistakes": "0-1",
+        "victories": "24-29",
+        "battles_n": 30,
+        "battles": true
        }
       }
      ]
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen/Metal Greymon.png",
+   "sleep": "22:00",
+   "power": null,
    "sources": [
-    "humulos:pen20"
+    "humulos:pen"
    ]
   },
   {
-   "id": "metalmamemon",
-   "name": "Metal Mamemon",
-   "stage": null,
-   "attribute": null,
+   "id": "metalseadramon",
+   "name": "Metal Seadramon",
+   "stage": "Ultimate",
+   "level": null,
+   "attribute": "Data",
+   "alt_attribute": null,
    "devices": {
     "pen": {
      "versions": [],
@@ -2062,462 +2621,639 @@
      "evolves_to": []
     }
    },
-   "sprite": "fan/wayland-vpets/assets/pen/Metal Mamemon.png",
-   "sources": [
-    "wayland-vpets:pen20"
-   ],
-   "addition_pending": true
-  },
-  {
-   "id": "metalseadramon",
-   "name": "Metal Seadramon",
-   "stage": "Perfect",
-   "attribute": "Free",
-   "devices": {
-    "pen": {
-     "versions": [
-      2
-     ],
-     "stage_time": "68 h",
-     "evolves_to": []
-    }
-   },
    "sprite": "fan/wayland-vpets/assets/pen/Metal Seadramon.png",
+   "sleep": "22:00",
+   "power": null,
    "sources": [
-    "humulos:pen20"
+    "humulos:pen"
    ]
   },
   {
    "id": "mochimon",
    "name": "Mochimon",
-   "stage": "Baby I",
+   "stage": "Baby II",
+   "level": null,
    "attribute": "Free",
+   "alt_attribute": null,
    "devices": {
     "pen": {
-     "versions": [
-      1
-     ],
-     "stage_time": "1 h",
-     "evolves_to": []
+     "versions": [],
+     "stage_time": "16 h",
+     "evolves_to": [
+      {
+       "to": "Tentomon",
+       "to_id": "tentomon",
+       "raw": "0-1 Care Mistakes",
+       "parsed": {
+        "care_mistakes": "0-1"
+       }
+      },
+      {
+       "to": "Gottsumon",
+       "to_id": "gottsumon",
+       "raw": "2-4 Care Mistakes",
+       "parsed": {
+        "care_mistakes": "2-4"
+       }
+      },
+      {
+       "to": "Otamamon",
+       "to_id": "otamamon",
+       "raw": "5+ Care Mistakes",
+       "parsed": {
+        "care_mistakes": "5+"
+       }
+      }
+     ]
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen/Mochimon.png",
+   "sleep": "19:00",
+   "power": null,
    "sources": [
-    "humulos:pen20"
+    "humulos:pen"
    ]
   },
   {
    "id": "mokumon",
    "name": "Mokumon",
-   "stage": null,
-   "attribute": null,
+   "stage": "Baby I",
+   "level": null,
+   "attribute": "Free",
+   "alt_attribute": null,
    "devices": {
     "pen": {
      "versions": [],
-     "stage_time": null,
-     "evolves_to": []
+     "stage_time": "1 h",
+     "evolves_to": [
+      {
+       "to": "Peti Meramon",
+       "to_id": "petimeramon",
+       "raw": "No requirements",
+       "parsed": {}
+      }
+     ]
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen/Mokumon.png",
+   "sleep": "NA",
+   "power": null,
    "sources": [
-    "wayland-vpets:pen20"
-   ],
-   "addition_pending": true
+    "humulos:pen"
+   ]
   },
   {
    "id": "monochromon",
    "name": "Monochromon",
    "stage": "Adult",
-   "attribute": "Vaccine",
+   "level": null,
+   "attribute": "Data",
+   "alt_attribute": null,
    "devices": {
     "pen": {
-     "versions": [
-      1
-     ],
+     "versions": [],
      "stage_time": "60 h",
      "evolves_to": [
       {
-       "to": "Atlur Kabuterimon",
-       "to_id": "atlurkabuterimon",
-       "raw": "0 CM, battles",
+       "to": "Triceramon",
+       "to_id": "triceramon",
+       "raw": "0-2 Care Mistakes, 30 Battles, 24-29 Victories",
        "parsed": {
-        "care_mistakes": "0",
+        "care_mistakes": "0-2",
+        "victories": "24-29",
+        "battles_n": 30,
         "battles": true
+       }
+      },
+      {
+       "to": "Piccolomon",
+       "to_id": "piccolomon",
+       "raw": "",
+       "parsed": {}
+      },
+      {
+       "to": "Jyagamon (1.0)",
+       "to_id": "jyagamon10",
+       "raw": "Jogress with any Vaccine Adult",
+       "parsed": {
+        "jogress_partner": "any Vaccine Adult"
+       }
+      },
+      {
+       "to": "Angewomon (1.5)",
+       "to_id": "angewomon15",
+       "raw": "Jogress with any Vaccine Adult",
+       "parsed": {
+        "jogress_partner": "any Vaccine Adult"
+       }
+      },
+      {
+       "to": "Tonosama Gekomon",
+       "to_id": "tonosamagekomon",
+       "raw": "Jogress with any Virus Adult",
+       "parsed": {
+        "jogress_partner": "any Virus Adult"
        }
       }
      ]
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen/Monochromon.png",
+   "sleep": "21:00",
+   "power": null,
    "sources": [
-    "humulos:pen20"
+    "humulos:pen"
    ]
   },
   {
    "id": "mugendramon",
    "name": "Mugendramon",
    "stage": "Ultimate",
+   "level": null,
    "attribute": "Virus",
+   "alt_attribute": null,
    "devices": {
     "pen": {
-     "versions": [
-      5
-     ],
+     "versions": [],
      "stage_time": null,
      "evolves_to": []
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen/Mugendramon.png",
+   "sleep": "22:00",
+   "power": null,
    "sources": [
-    "humulos:pen20"
+    "humulos:pen"
    ]
   },
   {
    "id": "mushmon",
    "name": "Mushmon",
    "stage": "Child",
+   "level": null,
    "attribute": "Virus",
-   "devices": {
-    "pen": {
-     "versions": [
-      4
-     ],
-     "stage_time": "20 h",
-     "evolves_to": []
-    }
-   },
-   "sprite": "fan/wayland-vpets/assets/pen/Mushmon.png",
-   "sources": [
-    "humulos:pen20"
-   ]
-  },
-  {
-   "id": "nyaromon",
-   "name": "Nyaromon",
-   "stage": null,
-   "attribute": null,
+   "alt_attribute": null,
    "devices": {
     "pen": {
      "versions": [],
-     "stage_time": null,
-     "evolves_to": []
+     "stage_time": "20 h",
+     "evolves_to": [
+      {
+       "to": "V-dramon",
+       "to_id": "vdramon",
+       "raw": "0-1 Care Mistakes, 30+ Training",
+       "parsed": {
+        "care_mistakes": "0-1",
+        "training": "30+"
+       }
+      },
+      {
+       "to": "Birdramon",
+       "to_id": "birdramon",
+       "raw": "0-1 Care Mistakes, 0-29 Training",
+       "parsed": {
+        "care_mistakes": "0-1",
+        "training": "0-29"
+       }
+      },
+      {
+       "to": "Woodmon",
+       "to_id": "woodmon",
+       "raw": "2+ Care Mistakes, 25+ Training",
+       "parsed": {
+        "care_mistakes": "2+",
+        "training": "25+"
+       }
+      },
+      {
+       "to": "Red Vegimon",
+       "to_id": "redvegimon",
+       "raw": "2+ Care Mistakes, 0-24 Training",
+       "parsed": {
+        "care_mistakes": "2+",
+        "training": "0-24"
+       }
+      }
+     ]
     }
    },
-   "sprite": "fan/wayland-vpets/assets/pen/Nyaromon.png",
+   "sprite": "fan/wayland-vpets/assets/pen/Mushmon.png",
+   "sleep": "20:00",
+   "power": null,
    "sources": [
-    "wayland-vpets:pen20"
-   ],
-   "addition_pending": true
+    "humulos:pen"
+   ]
   },
   {
    "id": "nyokimon",
    "name": "Nyokimon",
    "stage": "Baby I",
+   "level": null,
    "attribute": "Free",
+   "alt_attribute": null,
    "devices": {
     "pen": {
-     "versions": [
-      4
-     ],
+     "versions": [],
      "stage_time": "1 h",
      "evolves_to": [
       {
        "to": "Pyocomon",
        "to_id": "pyocomon",
-       "raw": "",
+       "raw": "No requirements",
        "parsed": {}
       }
      ]
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen/Nyokimon.png",
+   "sleep": "NA",
+   "power": null,
    "sources": [
-    "humulos:pen20"
+    "humulos:pen"
    ]
   },
   {
    "id": "octmon",
    "name": "Octmon",
    "stage": "Adult",
-   "attribute": "Free",
+   "level": null,
+   "attribute": "Virus",
+   "alt_attribute": null,
    "devices": {
     "pen": {
-     "versions": [
-      2
-     ],
+     "versions": [],
      "stage_time": "60 h",
      "evolves_to": [
       {
-       "to": "Anomalocarimon",
-       "to_id": "anomalocarimon",
-       "raw": "0-3 CM, battles 12/15",
+       "to": "Marin Devimon",
+       "to_id": "marindevimon",
+       "raw": "0-4 Care Mistakes, 30 Battles, 24-29 Victories",
        "parsed": {
-        "care_mistakes": "0-3",
-        "win_ratio": "12/15",
+        "care_mistakes": "0-4",
+        "victories": "24-29",
+        "battles_n": 30,
         "battles": true
+       }
+      },
+      {
+       "to": "Dagomon",
+       "to_id": "dagomon",
+       "raw": "",
+       "parsed": {}
+      },
+      {
+       "to": "Anomalocarimon (2.0)",
+       "to_id": "anomalocarimon20",
+       "raw": "Jogress with any Vaccine Adult",
+       "parsed": {
+        "jogress_partner": "any Vaccine Adult"
+       }
+      },
+      {
+       "to": "Hangyomon (2.5)",
+       "to_id": "hangyomon25",
+       "raw": "Jogress with any Vaccine Adult",
+       "parsed": {
+        "jogress_partner": "any Vaccine Adult"
        }
       }
      ]
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen/Octmon.png",
+   "sleep": "21:00",
+   "power": null,
    "sources": [
-    "humulos:pen20"
-   ]
-  },
-  {
-   "id": "ogudomon",
-   "name": "Ogudomon",
-   "stage": "Ultimate",
-   "attribute": "Virus",
-   "devices": {
-    "pen": {
-     "versions": [
-      3
-     ],
-     "stage_time": null,
-     "evolves_to": []
-    }
-   },
-   "sprite": null,
-   "sources": [
-    "humulos:pen20"
+    "humulos:pen"
    ]
   },
   {
    "id": "okuwamon",
    "name": "Okuwamon",
    "stage": "Perfect",
-   "attribute": "Data",
+   "level": null,
+   "attribute": "Virus",
+   "alt_attribute": null,
    "devices": {
     "pen": {
-     "versions": [
-      1
-     ],
+     "versions": [],
      "stage_time": "68 h",
-     "evolves_to": []
+     "evolves_to": [
+      {
+       "to": "Herakle Kabuterimon (1.0)",
+       "to_id": "heraklekabuterimon10",
+       "raw": "0 Care Mistakes, 30 Battles, 24-29 Victories",
+       "parsed": {
+        "care_mistakes": "0",
+        "victories": "24-29",
+        "battles_n": 30,
+        "battles": true
+       }
+      },
+      {
+       "to": "Holydramon (1.5)",
+       "to_id": "holydramon15",
+       "raw": "0 Care Mistakes, 30 Battles, 24-29 Victories",
+       "parsed": {
+        "care_mistakes": "0",
+        "victories": "24-29",
+        "battles_n": 30,
+        "battles": true
+       }
+      },
+      {
+       "to": "Metaletemon",
+       "to_id": "metaletemon",
+       "raw": "Jogress with Virus Perfect 2 from Versions 2 through ZERO",
+       "parsed": {
+        "jogress_partner": "Virus Perfect 2 from Versions 2 through ZERO"
+       }
+      }
+     ]
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen/Okuwamon.png",
+   "sleep": "22:00",
+   "power": null,
    "sources": [
-    "humulos:pen20"
-   ]
-  },
-  {
-   "id": "omegamon",
-   "name": "Omegamon",
-   "stage": "Ultimate",
-   "attribute": "Vaccine",
-   "devices": {
-    "pen": {
-     "versions": [
-      5
-     ],
-     "stage_time": null,
-     "evolves_to": []
-    }
-   },
-   "sprite": "fan/wayland-vpets/assets/pen/Omegamon.png",
-   "sources": [
-    "humulos:pen20"
+    "humulos:pen"
    ]
   },
   {
    "id": "otamamon",
    "name": "Otamamon",
-   "stage": "Baby II",
-   "attribute": "Data",
+   "stage": "Child",
+   "level": null,
+   "attribute": "Virus",
+   "alt_attribute": null,
    "devices": {
     "pen": {
-     "versions": [
-      1
-     ],
-     "stage_time": "16 h",
-     "evolves_to": []
+     "versions": [],
+     "stage_time": "20 h",
+     "evolves_to": [
+      {
+       "to": "Tortamon (1.0)",
+       "to_id": "tortamon10",
+       "raw": "0-2 Care Mistakes, 40+ Training",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "training": "40+"
+       }
+      },
+      {
+       "to": "Tailmon (1.5)",
+       "to_id": "tailmon15",
+       "raw": "0-2 Care Mistakes, 40+ Training",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "training": "40+"
+       }
+      },
+      {
+       "to": "Starmon",
+       "to_id": "starmon",
+       "raw": "0-2 Care Mistakes, 0-39 Training",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "training": "0-39"
+       }
+      },
+      {
+       "to": "Kuwagamon",
+       "to_id": "kuwagamon",
+       "raw": "3+ Care Mistakes, 20+ Training",
+       "parsed": {
+        "care_mistakes": "3+",
+        "training": "20+"
+       }
+      },
+      {
+       "to": "Gekomon",
+       "to_id": "gekomon",
+       "raw": "3+ Care Mistakes, 0-19 Training",
+       "parsed": {
+        "care_mistakes": "3+",
+        "training": "0-19"
+       }
+      }
+     ]
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen/Otamamon.png",
+   "sleep": "20:00",
+   "power": null,
    "sources": [
-    "humulos:pen20"
+    "humulos:pen"
    ]
   },
   {
    "id": "palmon",
    "name": "Palmon",
    "stage": "Child",
+   "level": null,
    "attribute": "Data",
+   "alt_attribute": null,
    "devices": {
     "pen": {
-     "versions": [
-      4
-     ],
+     "versions": [],
      "stage_time": "20 h",
      "evolves_to": [
       {
-       "to": "V-dramon",
-       "to_id": "vdramon",
-       "raw": "2-4 CM, 0-3 Effort OR 2-4 CM, 2-4 Effort",
+       "to": "Togemon",
+       "to_id": "togemon",
+       "raw": "0-2 Care Mistakes, 25+ Training",
        "parsed": {
-        "alternatives": [
-         {
-          "care_mistakes": "2-4",
-          "effort": "0-3"
-         },
-         {
-          "care_mistakes": "2-4",
-          "effort": "2-4"
-         }
-        ]
+        "care_mistakes": "0-2",
+        "training": "25+"
+       }
+      },
+      {
+       "to": "Kiwimon",
+       "to_id": "kiwimon",
+       "raw": "0-2 Care Mistakes, 0-24 Training",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "training": "0-24"
        }
       },
       {
        "to": "Woodmon",
        "to_id": "woodmon",
-       "raw": "0-1 CM, 0-2 Effort OR 0-1 CM, 0-3 Effort OR 2-4 CM, 4 Effort",
+       "raw": "3+ Care Mistakes, 30+ Training",
        "parsed": {
-        "alternatives": [
-         {
-          "care_mistakes": "0-1",
-          "effort": "0-2"
-         },
-         {
-          "care_mistakes": "0-1",
-          "effort": "0-3"
-         },
-         {
-          "care_mistakes": "2-4",
-          "effort": "4"
-         }
-        ]
+        "care_mistakes": "3+",
+        "training": "30+"
+       }
+      },
+      {
+       "to": "Red Vegimon",
+       "to_id": "redvegimon",
+       "raw": "3+ Care Mistakes, 0-29 Training",
+       "parsed": {
+        "care_mistakes": "3+",
+        "training": "0-29"
        }
       }
      ]
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen/Palmon.png",
+   "sleep": "20:00",
+   "power": null,
    "sources": [
-    "humulos:pen20"
+    "humulos:pen"
    ]
   },
   {
    "id": "petimeramon",
    "name": "Peti Meramon",
-   "stage": null,
-   "attribute": null,
+   "stage": "Baby II",
+   "level": null,
+   "attribute": "Free",
+   "alt_attribute": null,
    "devices": {
     "pen": {
      "versions": [],
-     "stage_time": null,
-     "evolves_to": []
-    }
-   },
-   "sprite": "fan/wayland-vpets/assets/pen/Peti Meramon.png",
-   "sources": [
-    "wayland-vpets:pen20"
-   ],
-   "addition_pending": true
-  },
-  {
-   "id": "phascomon",
-   "name": "Phascomon",
-   "stage": "Child",
-   "attribute": "Vaccine",
-   "devices": {
-    "pen": {
-     "versions": [
-      3
-     ],
-     "stage_time": "20 h",
+     "stage_time": "16 h",
      "evolves_to": [
       {
-       "to": "Shadramon",
-       "to_id": "shadramon",
-       "raw": "0-1 CM, 0-3 Effort",
+       "to": "Bakumon",
+       "to_id": "bakumon",
+       "raw": "0-2 Care Mistakes",
        "parsed": {
-        "care_mistakes": "0-1",
-        "effort": "0-3"
+        "care_mistakes": "0-2"
        }
       },
       {
-       "to": "Porcupamon",
-       "to_id": "porcupamon",
-       "raw": "0-1 CM, 4 Effort",
+       "to": "Candmon",
+       "to_id": "candmon",
+       "raw": "3-5 Care Mistakes",
        "parsed": {
-        "care_mistakes": "0-1",
-        "effort": "4"
+        "care_mistakes": "3-5"
+       }
+      },
+      {
+       "to": "Pico Devimon",
+       "to_id": "picodevimon",
+       "raw": "6+ Care Mistakes",
+       "parsed": {
+        "care_mistakes": "6+"
        }
       }
      ]
     }
    },
-   "sprite": null,
+   "sprite": "fan/wayland-vpets/assets/pen/Peti Meramon.png",
+   "sleep": "19:00",
+   "power": null,
    "sources": [
-    "humulos:pen20"
+    "humulos:pen"
    ]
   },
   {
    "id": "piccolomon",
    "name": "Piccolomon",
    "stage": "Perfect",
-   "attribute": "Free",
+   "level": null,
+   "attribute": "Data",
+   "alt_attribute": null,
    "devices": {
     "pen": {
-     "versions": [
-      1
-     ],
+     "versions": [],
      "stage_time": "68 h",
      "evolves_to": [
       {
-       "to": "Angewomon",
-       "to_id": "angewomon",
-       "raw": "Jogress Va",
+       "to": "Saberleomon",
+       "to_id": "saberleomon",
+       "raw": "Jogress with Data Perfect 1",
        "parsed": {
-        "jogress_attrs": [
-         "Vaccine"
-        ]
-       }
-      },
-      {
-       "to": "Herakle Kabuterimon",
-       "to_id": "heraklekabuterimon",
-       "raw": "Jogress Va",
-       "parsed": {
-        "jogress_attrs": [
-         "Vaccine"
-        ]
+        "jogress_partner": "Data Perfect 1"
        }
       }
      ]
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen/Piccolomon.png",
+   "sleep": "22:00",
+   "power": null,
    "sources": [
-    "humulos:pen20"
+    "humulos:pen"
    ]
   },
   {
    "id": "picodevimon",
    "name": "Pico Devimon",
-   "stage": null,
-   "attribute": null,
+   "stage": "Child",
+   "level": null,
+   "attribute": "Virus",
+   "alt_attribute": null,
    "devices": {
     "pen": {
      "versions": [],
-     "stage_time": null,
-     "evolves_to": []
+     "stage_time": "20 h",
+     "evolves_to": [
+      {
+       "to": "Meramon",
+       "to_id": "meramon",
+       "raw": "0-2 Care Mistakes, 0-29 Training",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "training": "0-29"
+       }
+      },
+      {
+       "to": "Wizarmon",
+       "to_id": "wizarmon",
+       "raw": "3+ Care Mistakes, 25+ Training",
+       "parsed": {
+        "care_mistakes": "3+",
+        "training": "25+"
+       }
+      },
+      {
+       "to": "Devimon",
+       "to_id": "devimon",
+       "raw": "0-2 Care Mistakes, 30+ Training",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "training": "30+"
+       }
+      },
+      {
+       "to": "Bakemon (3.0)",
+       "to_id": "bakemon30",
+       "raw": "3+ Care Mistakes, 0-24 Training",
+       "parsed": {
+        "care_mistakes": "3+",
+        "training": "0-24"
+       }
+      },
+      {
+       "to": "Dokugumon (3.5)",
+       "to_id": "dokugumon35",
+       "raw": "3+ Care Mistakes, 0-24 Training",
+       "parsed": {
+        "care_mistakes": "3+",
+        "training": "0-24"
+       }
+      }
+     ]
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen/Pico Devimon.png",
+   "sleep": "20:00",
+   "power": null,
    "sources": [
-    "wayland-vpets:pen20"
-   ],
-   "addition_pending": true
+    "humulos:pen"
+   ]
   },
   {
    "id": "piemon",
    "name": "Piemon",
-   "stage": null,
-   "attribute": null,
+   "stage": "Ultimate",
+   "level": null,
+   "attribute": "Virus",
+   "alt_attribute": null,
    "devices": {
     "pen": {
      "versions": [],
@@ -2526,130 +3262,19 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen/Piemon.png",
+   "sleep": "22:00",
+   "power": null,
    "sources": [
-    "wayland-vpets:pen20"
-   ],
-   "addition_pending": true
+    "humulos:pen"
+   ]
   },
   {
    "id": "pinochimon",
    "name": "Pinochimon",
    "stage": "Ultimate",
+   "level": null,
    "attribute": "Virus",
-   "devices": {
-    "pen": {
-     "versions": [
-      4
-     ],
-     "stage_time": null,
-     "evolves_to": [],
-     "_unresolved": [
-      "0-1 CM, battles"
-     ]
-    }
-   },
-   "sprite": "fan/wayland-vpets/assets/pen/Pinochimon.png",
-   "sources": [
-    "humulos:pen20"
-   ]
-  },
-  {
-   "id": "pitchmon",
-   "name": "Pitchmon",
-   "stage": "Baby I",
-   "attribute": "Free",
-   "devices": {
-    "pen": {
-     "versions": [
-      2
-     ],
-     "stage_time": "1 h",
-     "evolves_to": [
-      {
-       "to": "Pukamon",
-       "to_id": "pukamon",
-       "raw": "0 CM",
-       "parsed": {
-        "care_mistakes": "0"
-       }
-      }
-     ]
-    }
-   },
-   "sprite": "fan/wayland-vpets/assets/pen/Pitchmon.png",
-   "sources": [
-    "humulos:pen20"
-   ]
-  },
-  {
-   "id": "piyomon",
-   "name": "Piyomon",
-   "stage": "Child",
-   "attribute": "Data",
-   "devices": {
-    "pen": {
-     "versions": [
-      4
-     ],
-     "stage_time": "20 h",
-     "evolves_to": [
-      {
-       "to": "Floramon",
-       "to_id": "floramon",
-       "raw": "3-4 CM",
-       "parsed": {
-        "care_mistakes": "3-4"
-       }
-      },
-      {
-       "to": "Palmon",
-       "to_id": "palmon",
-       "raw": "0-1 CM, 3-4 Effort OR 0-1 CM, 4 Effort",
-       "parsed": {
-        "alternatives": [
-         {
-          "care_mistakes": "0-1",
-          "effort": "3-4"
-         },
-         {
-          "care_mistakes": "0-1",
-          "effort": "4"
-         }
-        ]
-       }
-      }
-     ]
-    }
-   },
-   "sprite": "fan/wayland-vpets/assets/pen/Piyomon.png",
-   "sources": [
-    "humulos:pen20"
-   ]
-  },
-  {
-   "id": "plesiomon",
-   "name": "Plesiomon",
-   "stage": "Ultimate",
-   "attribute": "Free",
-   "devices": {
-    "pen": {
-     "versions": [
-      2
-     ],
-     "stage_time": null,
-     "evolves_to": []
-    }
-   },
-   "sprite": "fan/wayland-vpets/assets/pen/Plesiomon.png",
-   "sources": [
-    "humulos:pen20"
-   ]
-  },
-  {
-   "id": "plotmon",
-   "name": "Plotmon",
-   "stage": null,
-   "attribute": null,
+   "alt_attribute": null,
    "devices": {
     "pen": {
      "versions": [],
@@ -2657,83 +3282,173 @@
      "evolves_to": []
     }
    },
-   "sprite": "fan/wayland-vpets/assets/pen/Plotmon.png",
+   "sprite": "fan/wayland-vpets/assets/pen/Pinochimon.png",
+   "sleep": "22:00",
+   "power": null,
    "sources": [
-    "wayland-vpets:pen20"
-   ],
-   "addition_pending": true
+    "humulos:pen"
+   ]
   },
   {
-   "id": "porcupamon",
-   "name": "Porcupamon",
-   "stage": "Adult",
-   "attribute": "Data",
+   "id": "pitchmon",
+   "name": "Pitchmon",
+   "stage": "Baby I",
+   "level": null,
+   "attribute": "Free",
+   "alt_attribute": null,
    "devices": {
     "pen": {
-     "versions": [
-      3
-     ],
-     "stage_time": "60 h",
+     "versions": [],
+     "stage_time": "1 h",
      "evolves_to": [
       {
-       "to": "Baalmon",
-       "to_id": "baalmon",
-       "raw": "0 CM, battles",
+       "to": "Pukamon",
+       "to_id": "pukamon",
+       "raw": "No requirements",
+       "parsed": {}
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen/Pitchmon.png",
+   "sleep": "NA",
+   "power": null,
+   "sources": [
+    "humulos:pen"
+   ]
+  },
+  {
+   "id": "piyomon",
+   "name": "Piyomon",
+   "stage": "Child",
+   "level": null,
+   "attribute": "Vaccine",
+   "alt_attribute": null,
+   "devices": {
+    "pen": {
+     "versions": [],
+     "stage_time": "20 h",
+     "evolves_to": [
+      {
+       "to": "V-dramon",
+       "to_id": "vdramon",
+       "raw": "0-3 Care Mistakes, 25+ Training",
        "parsed": {
-        "care_mistakes": "0",
-        "battles": true
+        "care_mistakes": "0-3",
+        "training": "25+"
        }
       },
       {
-       "to": "Belphemon: Rage Mode",
-       "to_id": "belphemonragemode",
-       "raw": "1-3 CM, battles",
+       "to": "Birdramon",
+       "to_id": "birdramon",
+       "raw": "0-3 Care Mistakes, 0-24 Training",
        "parsed": {
-        "care_mistakes": "1-3",
-        "battles": true
+        "care_mistakes": "0-3",
+        "training": "0-24"
+       }
+      },
+      {
+       "to": "Togemon",
+       "to_id": "togemon",
+       "raw": "4+ Care Mistakes, 30+ Training",
+       "parsed": {
+        "care_mistakes": "4+",
+        "training": "30+"
+       }
+      },
+      {
+       "to": "Woodmon",
+       "to_id": "woodmon",
+       "raw": "4+ Care Mistakes, 0-29 Training",
+       "parsed": {
+        "care_mistakes": "4+",
+        "training": "0-29"
        }
       }
      ]
     }
    },
-   "sprite": null,
+   "sprite": "fan/wayland-vpets/assets/pen/Piyomon.png",
+   "sleep": "20:00",
+   "power": null,
    "sources": [
-    "humulos:pen20"
+    "humulos:pen"
+   ]
+  },
+  {
+   "id": "plesiomon",
+   "name": "Plesiomon",
+   "stage": "Ultimate",
+   "level": null,
+   "attribute": "Data",
+   "alt_attribute": null,
+   "devices": {
+    "pen": {
+     "versions": [],
+     "stage_time": null,
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen/Plesiomon.png",
+   "sleep": "22:00",
+   "power": null,
+   "sources": [
+    "humulos:pen"
    ]
   },
   {
    "id": "pukamon",
    "name": "Pukamon",
    "stage": "Baby II",
+   "level": null,
    "attribute": "Free",
+   "alt_attribute": null,
    "devices": {
     "pen": {
-     "versions": [
-      2
-     ],
+     "versions": [],
      "stage_time": "16 h",
      "evolves_to": [
       {
        "to": "Gomamon",
        "to_id": "gomamon",
-       "raw": "1-2 CM",
+       "raw": "0-1 Care Mistakes",
        "parsed": {
-        "care_mistakes": "1-2"
+        "care_mistakes": "0-1"
+       }
+      },
+      {
+       "to": "Ganimon",
+       "to_id": "ganimon",
+       "raw": "2-3 Care Mistakes",
+       "parsed": {
+        "care_mistakes": "2-3"
+       }
+      },
+      {
+       "to": "Shakomon",
+       "to_id": "shakomon",
+       "raw": "4+ Care Mistakes",
+       "parsed": {
+        "care_mistakes": "4+"
        }
       }
      ]
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen/Pukamon.png",
+   "sleep": "19:00",
+   "power": null,
    "sources": [
-    "humulos:pen20"
+    "humulos:pen"
    ]
   },
   {
    "id": "pukumon",
    "name": "Pukumon",
-   "stage": null,
-   "attribute": null,
+   "stage": "Ultimate",
+   "level": null,
+   "attribute": "Virus",
+   "alt_attribute": null,
    "devices": {
     "pen": {
      "versions": [],
@@ -2742,16 +3457,203 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen/Pukumon.png",
+   "sleep": "22:00",
+   "power": null,
    "sources": [
-    "wayland-vpets:pen20"
-   ],
-   "addition_pending": true
+    "humulos:pen"
+   ]
   },
   {
    "id": "pumpmon",
    "name": "Pumpmon",
-   "stage": null,
-   "attribute": null,
+   "stage": "Perfect",
+   "level": null,
+   "attribute": "Data",
+   "alt_attribute": null,
+   "devices": {
+    "pen": {
+     "versions": [],
+     "stage_time": "68 h",
+     "evolves_to": [
+      {
+       "to": "Boltmon",
+       "to_id": "boltmon",
+       "raw": "Jogress with Data Perfect 1",
+       "parsed": {
+        "jogress_partner": "Data Perfect 1"
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen/Pumpmon.png",
+   "sleep": "22:00",
+   "power": null,
+   "sources": [
+    "humulos:pen"
+   ]
+  },
+  {
+   "id": "pyocomon",
+   "name": "Pyocomon",
+   "stage": "Baby II",
+   "level": null,
+   "attribute": "Free",
+   "alt_attribute": null,
+   "devices": {
+    "pen": {
+     "versions": [],
+     "stage_time": "16 h",
+     "evolves_to": [
+      {
+       "to": "Piyomon",
+       "to_id": "piyomon",
+       "raw": "0-3 Care Mistakes",
+       "parsed": {
+        "care_mistakes": "0-3"
+       }
+      },
+      {
+       "to": "Floramon (4.0)",
+       "to_id": "floramon40",
+       "raw": "4-5 Care Mistakes",
+       "parsed": {
+        "care_mistakes": "4-5"
+       }
+      },
+      {
+       "to": "Palmon (4.5)",
+       "to_id": "palmon45",
+       "raw": "4-5 Care Mistakes",
+       "parsed": {
+        "care_mistakes": "4-5"
+       }
+      },
+      {
+       "to": "Mushmon",
+       "to_id": "mushmon",
+       "raw": "6+ Care Mistakes",
+       "parsed": {
+        "care_mistakes": "6+"
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen/Pyocomon.png",
+   "sleep": "19:00",
+   "power": null,
+   "sources": [
+    "humulos:pen"
+   ]
+  },
+  {
+   "id": "redvegimon",
+   "name": "Red Vegimon",
+   "stage": "Adult",
+   "level": null,
+   "attribute": "Virus",
+   "alt_attribute": null,
+   "devices": {
+    "pen": {
+     "versions": [],
+     "stage_time": "60 h",
+     "evolves_to": [
+      {
+       "to": "Jyureimon",
+       "to_id": "jyureimon",
+       "raw": "0-4 Care Mistakes, 30 Battles, 24-29 Victories",
+       "parsed": {
+        "care_mistakes": "0-4",
+        "victories": "24-29",
+        "battles_n": 30,
+        "battles": true
+       }
+      },
+      {
+       "to": "Gerbemon",
+       "to_id": "gerbemon",
+       "raw": "",
+       "parsed": {}
+      },
+      {
+       "to": "Delumon",
+       "to_id": "delumon",
+       "raw": "Jogress with any Vaccine Adult",
+       "parsed": {
+        "jogress_partner": "any Vaccine Adult"
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen/Red Vegimon.png",
+   "sleep": "21:00",
+   "power": null,
+   "sources": [
+    "humulos:pen"
+   ]
+  },
+  {
+   "id": "revolmon",
+   "name": "Revolmon",
+   "stage": "Adult",
+   "level": null,
+   "attribute": "Vaccine",
+   "alt_attribute": null,
+   "devices": {
+    "pen": {
+     "versions": [],
+     "stage_time": "60 h",
+     "evolves_to": [
+      {
+       "to": "Metal Greymon",
+       "to_id": "metalgreymon",
+       "raw": "0-1 Care Mistakes, 30 Battles, 24-29 Victories",
+       "parsed": {
+        "care_mistakes": "0-1",
+        "victories": "24-29",
+        "battles_n": 30,
+        "battles": true
+       }
+      },
+      {
+       "to": "Andromon (5.0)",
+       "to_id": "andromon50",
+       "raw": "",
+       "parsed": {}
+      },
+      {
+       "to": "Cyberdramon (5.5)",
+       "to_id": "cyberdramon55",
+       "raw": "",
+       "parsed": {}
+      },
+      {
+       "to": "Big Mamemon",
+       "to_id": "bigmamemon",
+       "raw": "Jogress with any Virus Adult",
+       "parsed": {
+        "jogress_partner": "any Virus Adult"
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen/Revolmon.png",
+   "sleep": "21:00",
+   "power": null,
+   "sources": [
+    "humulos:pen"
+   ]
+  },
+  {
+   "id": "rosemon",
+   "name": "Rosemon",
+   "stage": "Ultimate",
+   "level": null,
+   "attribute": "Data",
+   "alt_attribute": null,
    "devices": {
     "pen": {
      "versions": [],
@@ -2759,326 +3661,215 @@
      "evolves_to": []
     }
    },
-   "sprite": "fan/wayland-vpets/assets/pen/Pumpmon.png",
-   "sources": [
-    "wayland-vpets:pen20"
-   ],
-   "addition_pending": true
-  },
-  {
-   "id": "pyocomon",
-   "name": "Pyocomon",
-   "stage": "Baby II",
-   "attribute": "Free",
-   "devices": {
-    "pen": {
-     "versions": [
-      4
-     ],
-     "stage_time": "16 h",
-     "evolves_to": [
-      {
-       "to": "Piyomon",
-       "to_id": "piyomon",
-       "raw": "0 CM",
-       "parsed": {
-        "care_mistakes": "0"
-       }
-      }
-     ]
-    }
-   },
-   "sprite": "fan/wayland-vpets/assets/pen/Pyocomon.png",
-   "sources": [
-    "humulos:pen20"
-   ]
-  },
-  {
-   "id": "rafflesimon",
-   "name": "Rafflesimon",
-   "stage": "Ultimate",
-   "attribute": "Data",
-   "devices": {
-    "pen": {
-     "versions": [
-      4
-     ],
-     "stage_time": null,
-     "evolves_to": []
-    }
-   },
-   "sprite": null,
-   "sources": [
-    "humulos:pen20"
-   ]
-  },
-  {
-   "id": "redvegimon",
-   "name": "Red Vegimon",
-   "stage": "Perfect",
-   "attribute": "Data",
-   "devices": {
-    "pen": {
-     "versions": [
-      4
-     ],
-     "stage_time": "68 h",
-     "evolves_to": [
-      {
-       "to": "Aero V-dramon",
-       "to_id": "aerovdramon",
-       "raw": "Jogress Va",
-       "parsed": {
-        "jogress_attrs": [
-         "Vaccine"
-        ]
-       }
-      }
-     ]
-    }
-   },
-   "sprite": "fan/wayland-vpets/assets/pen/Red Vegimon.png",
-   "sources": [
-    "humulos:pen20"
-   ]
-  },
-  {
-   "id": "revolmon",
-   "name": "Revolmon",
-   "stage": "Adult",
-   "attribute": "Vaccine",
-   "devices": {
-    "pen": {
-     "versions": [
-      5
-     ],
-     "stage_time": "60 h",
-     "evolves_to": [
-      {
-       "to": "Metal Greymon",
-       "to_id": "metalgreymon",
-       "raw": "Jogress Va+Da",
-       "parsed": {
-        "jogress_attrs": [
-         "Vaccine",
-         "Data"
-        ]
-       }
-      }
-     ]
-    }
-   },
-   "sprite": "fan/wayland-vpets/assets/pen/Revolmon.png",
-   "sources": [
-    "humulos:pen20"
-   ]
-  },
-  {
-   "id": "rosemon",
-   "name": "Rosemon",
-   "stage": "Ultimate",
-   "attribute": "Data",
-   "devices": {
-    "pen": {
-     "versions": [
-      4
-     ],
-     "stage_time": null,
-     "evolves_to": []
-    }
-   },
    "sprite": "fan/wayland-vpets/assets/pen/Rosemon.png",
+   "sleep": "22:00",
+   "power": null,
    "sources": [
-    "humulos:pen20"
+    "humulos:pen"
    ]
   },
   {
    "id": "rukamon",
    "name": "Rukamon",
-   "stage": "Child",
-   "attribute": "Free",
+   "stage": "Adult",
+   "level": null,
+   "attribute": "Vaccine",
+   "alt_attribute": null,
    "devices": {
     "pen": {
-     "versions": [
-      2
-     ],
-     "stage_time": "20 h",
+     "versions": [],
+     "stage_time": "60 h",
      "evolves_to": [
       {
-       "to": "Ikkakumon",
-       "to_id": "ikkakumon",
-       "raw": "2-4 CM, 2-4 Effort",
+       "to": "Zudomon",
+       "to_id": "zudomon",
+       "raw": "0-2 Care Mistakes, 30 Battles, 24-29 Victories",
        "parsed": {
-        "care_mistakes": "2-4",
-        "effort": "2-4"
+        "care_mistakes": "0-2",
+        "victories": "24-29",
+        "battles_n": 30,
+        "battles": true
        }
       },
       {
-       "to": "Seadramon",
-       "to_id": "seadramon",
-       "raw": "2-4 CM, 0-1 Effort",
+       "to": "Whamon",
+       "to_id": "whamon",
+       "raw": "",
+       "parsed": {}
+      },
+      {
+       "to": "Anomalocarimon (2.0)",
+       "to_id": "anomalocarimon20",
+       "raw": "Jogress with any Virus Adult",
        "parsed": {
-        "care_mistakes": "2-4",
-        "effort": "0-1"
+        "jogress_partner": "any Virus Adult"
+       }
+      },
+      {
+       "to": "Hangyomon (2.5)",
+       "to_id": "hangyomon25",
+       "raw": "Jogress with any Virus Adult",
+       "parsed": {
+        "jogress_partner": "any Virus Adult"
        }
       }
      ]
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen/Rukamon.png",
+   "sleep": "21:00",
+   "power": null,
    "sources": [
-    "humulos:pen20"
+    "humulos:pen"
    ]
   },
   {
    "id": "saberleomon",
    "name": "Saber Leomon",
    "stage": "Ultimate",
-   "attribute": "Vaccine",
+   "level": null,
+   "attribute": "Data",
+   "alt_attribute": null,
    "devices": {
     "pen": {
-     "versions": [
-      1
-     ],
+     "versions": [],
      "stage_time": null,
      "evolves_to": []
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen/Saber Leomon.png",
+   "sleep": "22:00",
+   "power": null,
    "sources": [
-    "humulos:pen20"
+    "humulos:pen"
    ]
   },
   {
    "id": "seadramon",
    "name": "Seadramon",
    "stage": "Adult",
-   "attribute": "Free",
+   "level": null,
+   "attribute": "Data",
+   "alt_attribute": null,
    "devices": {
     "pen": {
-     "versions": [
-      2
-     ],
+     "versions": [],
      "stage_time": "60 h",
      "evolves_to": [
       {
-       "to": "Zudomon",
-       "to_id": "zudomon",
-       "raw": "Jogress Va+Da",
+       "to": "Mega Seadramon",
+       "to_id": "megaseadramon",
+       "raw": "0-3 Care Mistakes, 30 Battles, 24-29 Victories",
        "parsed": {
-        "jogress_attrs": [
-         "Vaccine",
-         "Data"
-        ]
+        "care_mistakes": "0-3",
+        "victories": "24-29",
+        "battles_n": 30,
+        "battles": true
        }
+      },
+      {
+       "to": "Anomalocarimon (2.0)",
+       "to_id": "anomalocarimon20",
+       "raw": "",
+       "parsed": {}
+      },
+      {
+       "to": "Hangyomon (2.5)",
+       "to_id": "hangyomon25",
+       "raw": "",
+       "parsed": {}
       },
       {
        "to": "Whamon",
        "to_id": "whamon",
-       "raw": "Jogress Da+Vi",
+       "raw": "Jogress with any Vaccine Adult",
        "parsed": {
-        "jogress_attrs": [
-         "Data",
-         "Virus"
-        ]
+        "jogress_partner": "any Vaccine Adult"
        }
       },
       {
-       "to": "Mega Seadramon",
-       "to_id": "megaseadramon",
-       "raw": "Jogress Vi+Da",
+       "to": "Dagomon",
+       "to_id": "dagomon",
+       "raw": "Jogress with any Virus Adult",
        "parsed": {
-        "jogress_attrs": [
-         "Virus",
-         "Data"
-        ]
+        "jogress_partner": "any Virus Adult"
        }
       }
      ]
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen/Seadramon.png",
+   "sleep": "21:00",
+   "power": null,
    "sources": [
-    "humulos:pen20"
-   ]
-  },
-  {
-   "id": "shadramon",
-   "name": "Shadramon",
-   "stage": "Adult",
-   "attribute": "Data",
-   "devices": {
-    "pen": {
-     "versions": [
-      3
-     ],
-     "stage_time": "60 h",
-     "evolves_to": [
-      {
-       "to": "Dark Knightmon",
-       "to_id": "darkknightmon",
-       "raw": "Jogress Vi",
-       "parsed": {
-        "jogress_attrs": [
-         "Virus"
-        ]
-       }
-      },
-      {
-       "to": "Astamon",
-       "to_id": "astamon",
-       "raw": "Jogress Va+Fr, 0-2 CM, battles",
-       "parsed": {
-        "care_mistakes": "0-2",
-        "battles": true,
-        "jogress_partners": [
-         "Va",
-         "Fr, 0-2 CM, battles"
-        ]
-       }
-      }
-     ]
-    }
-   },
-   "sprite": null,
-   "sources": [
-    "humulos:pen20"
+    "humulos:pen"
    ]
   },
   {
    "id": "shakomon",
    "name": "Shakomon",
    "stage": "Child",
-   "attribute": "Free",
+   "level": null,
+   "attribute": "Virus",
+   "alt_attribute": null,
    "devices": {
     "pen": {
-     "versions": [
-      2
-     ],
+     "versions": [],
      "stage_time": "20 h",
      "evolves_to": [
       {
        "to": "Ikkakumon",
        "to_id": "ikkakumon",
-       "raw": "2-4 CM, 2-4 Effort",
+       "raw": "0 Care Mistakes, 35+ Training",
        "parsed": {
-        "care_mistakes": "2-4",
-        "effort": "2-4"
+        "care_mistakes": "0",
+        "training": "35+"
+       }
+      },
+      {
+       "to": "Seadramon",
+       "to_id": "seadramon",
+       "raw": "0 Care Mistakes, 0-34 Training",
+       "parsed": {
+        "care_mistakes": "0",
+        "training": "0-34"
+       }
+      },
+      {
+       "to": "Gesomon",
+       "to_id": "gesomon",
+       "raw": "1+ Care Mistakes, 30+ Training",
+       "parsed": {
+        "care_mistakes": "1+",
+        "training": "30+"
+       }
+      },
+      {
+       "to": "Octmon",
+       "to_id": "octmon",
+       "raw": "1+ Care Mistakes, 0-29 Training",
+       "parsed": {
+        "care_mistakes": "1+",
+        "training": "0-29"
        }
       }
      ]
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen/Shakomon.png",
+   "sleep": "20:00",
+   "power": null,
    "sources": [
-    "humulos:pen20"
+    "humulos:pen"
    ]
   },
   {
    "id": "skullmammon",
    "name": "Skull Mammon",
-   "stage": null,
-   "attribute": null,
+   "stage": "Ultimate",
+   "level": null,
+   "attribute": "Vaccine",
+   "alt_attribute": null,
    "devices": {
     "pen": {
      "versions": [],
@@ -3087,676 +3878,884 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen/Skull Mammon.png",
+   "sleep": "22:00",
+   "power": null,
    "sources": [
-    "wayland-vpets:pen20"
-   ],
-   "addition_pending": true
+    "humulos:pen"
+   ]
   },
   {
    "id": "starmon",
    "name": "Starmon",
    "stage": "Adult",
-   "attribute": "Free",
+   "level": null,
+   "attribute": "Data",
+   "alt_attribute": null,
    "devices": {
     "pen": {
-     "versions": [
-      1
-     ],
+     "versions": [],
      "stage_time": "60 h",
-     "evolves_to": []
+     "evolves_to": [
+      {
+       "to": "Triceramon",
+       "to_id": "triceramon",
+       "raw": "0-2 Care Mistakes, 30 Battles, 24-29 Victories",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "victories": "24-29",
+        "battles_n": 30,
+        "battles": true
+       }
+      },
+      {
+       "to": "Piccolomon",
+       "to_id": "piccolomon",
+       "raw": "",
+       "parsed": {}
+      },
+      {
+       "to": "Jyagamon (1.0)",
+       "to_id": "jyagamon10",
+       "raw": "Jogress with any Vaccine Adult",
+       "parsed": {
+        "jogress_partner": "any Vaccine Adult"
+       }
+      },
+      {
+       "to": "Angewomon (1.5)",
+       "to_id": "angewomon15",
+       "raw": "Jogress with any Vaccine Adult",
+       "parsed": {
+        "jogress_partner": "any Vaccine Adult"
+       }
+      },
+      {
+       "to": "Tonosama Gekomon",
+       "to_id": "tonosamagekomon",
+       "raw": "Jogress with any Virus Adult",
+       "parsed": {
+        "jogress_partner": "any Virus Adult"
+       }
+      }
+     ]
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen/Starmon.png",
+   "sleep": "21:00",
+   "power": null,
    "sources": [
-    "humulos:pen20"
+    "humulos:pen"
    ]
   },
   {
    "id": "tailmon",
    "name": "Tailmon",
    "stage": "Adult",
-   "attribute": "Free",
+   "level": null,
+   "attribute": "Vaccine",
+   "alt_attribute": null,
    "devices": {
     "pen": {
-     "versions": [
-      1
-     ],
+     "versions": [],
      "stage_time": "60 h",
      "evolves_to": [
       {
-       "to": "Angewomon",
-       "to_id": "angewomon",
-       "raw": "2-4 CM, 4 Effort OR 2-4 CM, 2-4 Effort",
+       "to": "Atlur Kabuterimon",
+       "to_id": "atlurkabuterimon",
+       "raw": "0 Care Mistakes, 30 Battles, 24-29 Victories",
        "parsed": {
-        "alternatives": [
-         {
-          "care_mistakes": "2-4",
-          "effort": "4"
-         },
-         {
-          "care_mistakes": "2-4",
-          "effort": "2-4"
-         }
-        ]
+        "care_mistakes": "0",
+        "victories": "24-29",
+        "battles_n": 30,
+        "battles": true
        }
       },
       {
-       "to": "Okuwamon",
-       "to_id": "okuwamon",
-       "raw": "Jogress Va+Da",
+       "to": "Angewomon",
+       "to_id": "angewomon",
+       "raw": "",
+       "parsed": {}
+      },
+      {
+       "to": "Piccolomon",
+       "to_id": "piccolomon",
+       "raw": "Jogress with any Virus Adult",
        "parsed": {
-        "jogress_attrs": [
-         "Vaccine",
-         "Data"
-        ]
+        "jogress_partner": "any Virus Adult"
        }
       }
      ]
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen/Tailmon.png",
+   "sleep": "21:00",
+   "power": null,
    "sources": [
-    "humulos:pen20"
+    "humulos:pen"
    ]
   },
   {
    "id": "tankmon",
    "name": "Tankmon",
    "stage": "Adult",
-   "attribute": "Vaccine",
+   "level": null,
+   "attribute": "Data",
+   "alt_attribute": null,
    "devices": {
     "pen": {
-     "versions": [
-      5
-     ],
+     "versions": [],
      "stage_time": "60 h",
      "evolves_to": [
       {
-       "to": "Mechanorimon",
-       "to_id": "mechanorimon",
-       "raw": "0 CM, battles",
+       "to": "Knightmon",
+       "to_id": "knightmon",
+       "raw": "0-3 Care Mistakes, 30 Battles, 24-29 Victories",
        "parsed": {
-        "care_mistakes": "0",
+        "care_mistakes": "0-3",
+        "victories": "24-29",
+        "battles_n": 30,
         "battles": true
+       }
+      },
+      {
+       "to": "Big Mamemon",
+       "to_id": "bigmamemon",
+       "raw": "",
+       "parsed": {}
+      },
+      {
+       "to": "Andromon",
+       "to_id": "andromon",
+       "raw": "Jogress with any Vaccine Adult",
+       "parsed": {
+        "jogress_partner": "any Vaccine Adult"
+       }
+      },
+      {
+       "to": "Waru Monzaemon",
+       "to_id": "warumonzaemon",
+       "raw": "Jogress with any Virus Adult",
+       "parsed": {
+        "jogress_partner": "any Virus Adult"
        }
       }
      ]
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen/Tankmon.png",
+   "sleep": "21:00",
+   "power": null,
    "sources": [
-    "humulos:pen20"
+    "humulos:pen"
    ]
   },
   {
    "id": "tentomon",
    "name": "Tentomon",
-   "stage": "Baby II",
-   "attribute": "Data",
+   "stage": "Child",
+   "level": null,
+   "attribute": "Vaccine",
+   "alt_attribute": null,
    "devices": {
     "pen": {
-     "versions": [
-      1
-     ],
-     "stage_time": "16 h",
+     "versions": [],
+     "stage_time": "20 h",
      "evolves_to": [
       {
        "to": "Kabuterimon",
        "to_id": "kabuterimon",
-       "raw": "3-4 CM",
+       "raw": "0-2 Care Mistakes, 40+ Training",
        "parsed": {
-        "care_mistakes": "3-4"
+        "care_mistakes": "0-2",
+        "training": "40+"
+       }
+      },
+      {
+       "to": "Tortamon (1.0)",
+       "to_id": "tortamon10",
+       "raw": "0-2 Care Mistakes, 0-39 Training",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "training": "0-39"
+       }
+      },
+      {
+       "to": "Tailmon (1.5)",
+       "to_id": "tailmon15",
+       "raw": "0-2 Care Mistakes, 0-29 Training",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "training": "0-29"
        }
       },
       {
        "to": "Kuwagamon",
        "to_id": "kuwagamon",
-       "raw": "2-4 CM, 0-1 Effort",
+       "raw": "3+ Care Mistakes, 20+ Training",
        "parsed": {
-        "care_mistakes": "2-4",
-        "effort": "0-1"
+        "care_mistakes": "3+",
+        "training": "20+"
+       }
+      },
+      {
+       "to": "Gekomon",
+       "to_id": "gekomon",
+       "raw": "3+ Care Mistakes, 0-19 Training",
+       "parsed": {
+        "care_mistakes": "3+",
+        "training": "0-19"
        }
       }
      ]
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen/Tentomon.png",
+   "sleep": "20:00",
+   "power": null,
    "sources": [
-    "humulos:pen20"
+    "humulos:pen"
    ]
   },
   {
    "id": "thunderballmon",
    "name": "Thunderballmon",
    "stage": "Adult",
-   "attribute": "Vaccine",
+   "level": null,
+   "attribute": "Data",
+   "alt_attribute": null,
    "devices": {
     "pen": {
-     "versions": [
-      5
-     ],
+     "versions": [],
      "stage_time": "60 h",
      "evolves_to": [
       {
+       "to": "Knightmon",
+       "to_id": "knightmon",
+       "raw": "0-3 Care Mistakes, 30 Battles, 24-29 Victories",
+       "parsed": {
+        "care_mistakes": "0-3",
+        "victories": "24-29",
+        "battles_n": 30,
+        "battles": true
+       }
+      },
+      {
        "to": "Big Mamemon",
        "to_id": "bigmamemon",
-       "raw": "2-3 CM, battles",
+       "raw": "",
+       "parsed": {}
+      },
+      {
+       "to": "Cyberdramon",
+       "to_id": "cyberdramon",
+       "raw": "Jogress with any Vaccine Adult",
        "parsed": {
-        "care_mistakes": "2-3",
-        "battles": true
+        "jogress_partner": "any Vaccine Adult"
+       }
+      },
+      {
+       "to": "Waru Monzaemon",
+       "to_id": "warumonzaemon",
+       "raw": "Jogress with any Virus Adult",
+       "parsed": {
+        "jogress_partner": "any Virus Adult"
        }
       }
      ]
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen/Thunderballmon.png",
+   "sleep": "21:00",
+   "power": null,
    "sources": [
-    "humulos:pen20"
+    "humulos:pen"
    ]
   },
   {
    "id": "togemon",
    "name": "Togemon",
    "stage": "Adult",
+   "level": null,
    "attribute": "Data",
+   "alt_attribute": null,
    "devices": {
     "pen": {
-     "versions": [
-      4
-     ],
+     "versions": [],
      "stage_time": "60 h",
-     "evolves_to": []
+     "evolves_to": [
+      {
+       "to": "Blossomon (4.0)",
+       "to_id": "blossomon40",
+       "raw": "0-3 Care Mistakes, 30 Battles, 24-29 Victories",
+       "parsed": {
+        "care_mistakes": "0-3",
+        "victories": "24-29",
+        "battles_n": 30,
+        "battles": true
+       }
+      },
+      {
+       "to": "Lilimon (4.5)",
+       "to_id": "lilimon45",
+       "raw": "0-3 Care Mistakes, 30 Battles, 24-29 Victories",
+       "parsed": {
+        "care_mistakes": "0-3",
+        "victories": "24-29",
+        "battles_n": 30,
+        "battles": true
+       }
+      },
+      {
+       "to": "Delumon",
+       "to_id": "delumon",
+       "raw": "",
+       "parsed": {}
+      },
+      {
+       "to": "Garudamon",
+       "to_id": "garudamon",
+       "raw": "Jogress with any Vaccine Adult",
+       "parsed": {
+        "jogress_partner": "any Vaccine Adult"
+       }
+      },
+      {
+       "to": "Gerbemon",
+       "to_id": "gerbemon",
+       "raw": "Jogress with any Virus Adult",
+       "parsed": {
+        "jogress_partner": "any Virus Adult"
+       }
+      }
+     ]
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen/Togemon.png",
+   "sleep": "21:00",
+   "power": null,
    "sources": [
-    "humulos:pen20"
+    "humulos:pen"
    ]
   },
   {
    "id": "tonosamagekomon",
    "name": "Tonosama Gekomon",
    "stage": "Perfect",
-   "attribute": "Data",
+   "level": null,
+   "attribute": "Virus",
+   "alt_attribute": null,
    "devices": {
     "pen": {
-     "versions": [
-      1
-     ],
+     "versions": [],
      "stage_time": "68 h",
-     "evolves_to": []
+     "evolves_to": [
+      {
+       "to": "Metaletemon",
+       "to_id": "metaletemon",
+       "raw": "Jogress with Virus Perfect 1 from Versions 2 through ZERO",
+       "parsed": {
+        "jogress_partner": "Virus Perfect 1 from Versions 2 through ZERO"
+       }
+      }
+     ]
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen/Tonosama Gekomon.png",
+   "sleep": "22:00",
+   "power": null,
    "sources": [
-    "humulos:pen20"
+    "humulos:pen"
    ]
   },
   {
    "id": "tortamon",
    "name": "Tortamon",
    "stage": "Adult",
-   "attribute": "Free",
+   "level": null,
+   "attribute": "Vaccine",
+   "alt_attribute": null,
    "devices": {
     "pen": {
-     "versions": [
-      1
-     ],
+     "versions": [],
      "stage_time": "60 h",
-     "evolves_to": []
+     "evolves_to": [
+      {
+       "to": "Atlur Kabuterimon",
+       "to_id": "atlurkabuterimon",
+       "raw": "0 Care Mistakes, 30 Battles, 24-29 Victories",
+       "parsed": {
+        "care_mistakes": "0",
+        "victories": "24-29",
+        "battles_n": 30,
+        "battles": true
+       }
+      },
+      {
+       "to": "Jyagamon",
+       "to_id": "jyagamon",
+       "raw": "",
+       "parsed": {}
+      },
+      {
+       "to": "Piccolomon",
+       "to_id": "piccolomon",
+       "raw": "Jogress with any Virus Adult",
+       "parsed": {
+        "jogress_partner": "any Virus Adult"
+       }
+      }
+     ]
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen/Tortamon.png",
+   "sleep": "21:00",
+   "power": null,
    "sources": [
-    "humulos:pen20"
+    "humulos:pen"
    ]
   },
   {
    "id": "toyagumon",
    "name": "Toy Agumon",
    "stage": "Child",
+   "level": null,
    "attribute": "Vaccine",
+   "alt_attribute": null,
    "devices": {
     "pen": {
-     "versions": [
-      5
-     ],
+     "versions": [],
      "stage_time": "20 h",
      "evolves_to": [
       {
        "to": "Greymon",
        "to_id": "greymon",
-       "raw": "0-1 CM, 2+ Effort",
+       "raw": "0-2 Care Mistakes, 30+ Training",
        "parsed": {
-        "care_mistakes": "0-1",
-        "effort": "2+"
+        "care_mistakes": "0-2",
+        "training": "30+"
        }
       },
       {
-       "to": "Guardromon",
-       "to_id": "guardromon",
-       "raw": "1 CM, 3+ Effort",
+       "to": "Revolmon",
+       "to_id": "revolmon",
+       "raw": "0-2 Care Mistakes, 0-29 Training",
        "parsed": {
-        "care_mistakes": "1",
-        "effort": "3+"
+        "care_mistakes": "0-2",
+        "training": "0-29"
+       }
+      },
+      {
+       "to": "Tankmon (5.0)",
+       "to_id": "tankmon50",
+       "raw": "3+ Care Mistakes, 25+ Training",
+       "parsed": {
+        "care_mistakes": "3+",
+        "training": "25+"
+       }
+      },
+      {
+       "to": "Thunderballmon (5.5)",
+       "to_id": "thunderballmon55",
+       "raw": "3+ Care Mistakes, 25+ Training",
+       "parsed": {
+        "care_mistakes": "3+",
+        "training": "25+"
+       }
+      },
+      {
+       "to": "Clockmon",
+       "to_id": "clockmon",
+       "raw": "3+ Care Mistakes, 0-24 Training",
+       "parsed": {
+        "care_mistakes": "3+",
+        "training": "0-24"
        }
       }
      ]
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen/Toy Agumon.png",
+   "sleep": "20:00",
+   "power": null,
    "sources": [
-    "humulos:pen20"
+    "humulos:pen"
    ]
   },
   {
    "id": "triceramon",
    "name": "Triceramon",
    "stage": "Perfect",
-   "attribute": "Vaccine",
+   "level": null,
+   "attribute": "Data",
+   "alt_attribute": null,
    "devices": {
     "pen": {
-     "versions": [
-      1
-     ],
+     "versions": [],
      "stage_time": "68 h",
      "evolves_to": [
       {
-       "to": "Holydramon",
-       "to_id": "holydramon",
-       "raw": "Jogress with Lady Devimon",
+       "to": "Saberleomon",
+       "to_id": "saberleomon",
+       "raw": "Jogress with Data Perfect 2",
        "parsed": {
-        "jogress_partner": "Lady Devimon"
+        "jogress_partner": "Data Perfect 2"
        }
       }
      ]
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen/Triceramon.png",
+   "sleep": "22:00",
+   "power": null,
    "sources": [
-    "humulos:pen20"
-   ]
-  },
-  {
-   "id": "troopmon",
-   "name": "Troopmon",
-   "stage": "Child",
-   "attribute": "Vaccine",
-   "devices": {
-    "pen": {
-     "versions": [
-      3
-     ],
-     "stage_time": "20 h",
-     "evolves_to": [
-      {
-       "to": "Shadramon",
-       "to_id": "shadramon",
-       "raw": "0-1 CM, 0-3 Effort",
-       "parsed": {
-        "care_mistakes": "0-1",
-        "effort": "0-3"
-       }
-      },
-      {
-       "to": "Porcupamon",
-       "to_id": "porcupamon",
-       "raw": "0-1 CM, 4 Effort",
-       "parsed": {
-        "care_mistakes": "0-1",
-        "effort": "4"
-       }
-      }
-     ]
-    }
-   },
-   "sprite": null,
-   "sources": [
-    "humulos:pen20"
-   ]
-  },
-  {
-   "id": "ulforcevdramon",
-   "name": "Ulforce V-dramon",
-   "stage": "Perfect",
-   "attribute": "Free",
-   "devices": {
-    "pen": {
-     "versions": [
-      4
-     ],
-     "stage_time": "68 h",
-     "evolves_to": [],
-     "_unresolved": [
-      "0-2 CM, battles"
-     ]
-    }
-   },
-   "sprite": null,
-   "sources": [
-    "humulos:pen20"
+    "humulos:pen"
    ]
   },
   {
    "id": "vamdemon",
    "name": "Vamdemon",
-   "stage": null,
-   "attribute": null,
+   "stage": "Perfect",
+   "level": null,
+   "attribute": "Virus",
+   "alt_attribute": null,
    "devices": {
     "pen": {
      "versions": [],
-     "stage_time": null,
-     "evolves_to": []
+     "stage_time": "68 h",
+     "evolves_to": [
+      {
+       "to": "Piemon",
+       "to_id": "piemon",
+       "raw": "Jogress with Virus Perfect 2 from Versions 4 through ZERO",
+       "parsed": {
+        "jogress_partner": "Virus Perfect 2 from Versions 4 through ZERO"
+       }
+      },
+      {
+       "to": "Skull Mammon",
+       "to_id": "skullmammon",
+       "raw": "0 Care Mistakes, 30 Battles, 24-29 Victories",
+       "parsed": {
+        "care_mistakes": "0",
+        "victories": "24-29",
+        "battles_n": 30,
+        "battles": true
+       }
+      }
+     ]
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen/Vamdemon.png",
+   "sleep": "22:00",
+   "power": null,
    "sources": [
-    "wayland-vpets:pen20"
-   ],
-   "addition_pending": true
+    "humulos:pen"
+   ]
   },
   {
    "id": "vdramon",
    "name": "V-dramon",
    "stage": "Adult",
-   "attribute": "Free",
+   "level": null,
+   "attribute": "Vaccine",
+   "alt_attribute": null,
    "devices": {
     "pen": {
-     "versions": [
-      4
-     ],
+     "versions": [],
      "stage_time": "60 h",
      "evolves_to": [
       {
-       "to": "Birdramon",
-       "to_id": "birdramon",
-       "raw": "2-4 CM, 4 Effort OR 0-1 CM, 3-4 Effort",
+       "to": "Aero V-Dramon",
+       "to_id": "aerovdramon",
+       "raw": "0-2 Care Mistakes, 30 Battles, 24-29 Victories",
        "parsed": {
-        "alternatives": [
-         {
-          "care_mistakes": "2-4",
-          "effort": "4"
-         },
-         {
-          "care_mistakes": "0-1",
-          "effort": "3-4"
-         }
-        ]
+        "care_mistakes": "0-2",
+        "victories": "24-29",
+        "battles_n": 30,
+        "battles": true
+       }
+      },
+      {
+       "to": "Garudamon",
+       "to_id": "garudamon",
+       "raw": "",
+       "parsed": {}
+      },
+      {
+       "to": "Delumon",
+       "to_id": "delumon",
+       "raw": "Jogress with any Virus Adult",
+       "parsed": {
+        "jogress_partner": "any Virus Adult"
        }
       }
      ]
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen/V-dramon.png",
+   "sleep": "21:00",
+   "power": null,
    "sources": [
-    "humulos:pen20"
+    "humulos:pen"
    ]
   },
   {
    "id": "venomvamdemon",
    "name": "Venom Vamdemon",
    "stage": "Ultimate",
+   "level": null,
    "attribute": "Virus",
+   "alt_attribute": null,
    "devices": {
     "pen": {
-     "versions": [
-      5
-     ],
+     "versions": [],
      "stage_time": null,
      "evolves_to": []
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen/Venom Vamdemon.png",
+   "sleep": "22:00",
+   "power": null,
    "sources": [
-    "humulos:pen20"
+    "humulos:pen"
    ]
   },
   {
    "id": "wargreymon",
    "name": "War Greymon",
    "stage": "Ultimate",
+   "level": null,
    "attribute": "Vaccine",
+   "alt_attribute": null,
    "devices": {
     "pen": {
-     "versions": [
-      5
-     ],
+     "versions": [],
      "stage_time": null,
-     "evolves_to": [
-      {
-       "to": "Omegamon",
-       "to_id": "omegamon",
-       "raw": "Jogress with Metal Garurumon",
-       "parsed": {
-        "jogress_partner": "Metal Garurumon"
-       }
-      }
-     ]
+     "evolves_to": []
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen/War Greymon.png",
+   "sleep": "22:00",
+   "power": null,
    "sources": [
-    "humulos:pen20"
+    "humulos:pen"
    ]
   },
   {
    "id": "warumonzaemon",
    "name": "Waru Monzaemon",
    "stage": "Perfect",
-   "attribute": "Vaccine",
-   "devices": {
-    "pen": {
-     "versions": [
-      5
-     ],
-     "stage_time": "68 h",
-     "evolves_to": []
-    }
-   },
-   "sprite": "fan/wayland-vpets/assets/pen/Waru Monzaemon.png",
-   "sources": [
-    "humulos:pen20"
-   ]
-  },
-  {
-   "id": "weregarurumon",
-   "name": "Were Garurumon",
-   "stage": null,
-   "attribute": null,
+   "level": null,
+   "attribute": "Virus",
+   "alt_attribute": null,
    "devices": {
     "pen": {
      "versions": [],
-     "stage_time": null,
-     "evolves_to": []
-    }
-   },
-   "sprite": "fan/wayland-vpets/assets/pen/Were Garurumon.png",
-   "sources": [
-    "wayland-vpets:pen20"
-   ],
-   "addition_pending": true
-  },
-  {
-   "id": "whamon",
-   "name": "Whamon",
-   "stage": "Perfect",
-   "attribute": "Free",
-   "devices": {
-    "pen": {
-     "versions": [
-      2
-     ],
      "stage_time": "68 h",
      "evolves_to": [
       {
-       "to": "Anomalocarimon",
-       "to_id": "anomalocarimon",
-       "raw": "0-3 CM, battles 12/15",
+       "to": "Mugendramon (5.0)",
+       "to_id": "mugendramon50",
+       "raw": "Jogress with Virus Perfect 1 from all Versions except 5.0/5.5",
        "parsed": {
-        "care_mistakes": "0-3",
-        "win_ratio": "12/15",
-        "battles": true
+        "win_ratio": "0/5",
+        "jogress_partner": "Virus Perfect 1 from all Versions except 5"
        }
       },
       {
-       "to": "Mega Seadramon",
-       "to_id": "megaseadramon",
-       "raw": "Jogress Vi",
+       "to": "Venom Vamdemon (5.5)",
+       "to_id": "venomvamdemon55",
+       "raw": "Jogress with Virus Perfect 1 from all Versions except 5.0/5.5",
        "parsed": {
-        "jogress_attrs": [
-         "Virus"
-        ]
-       }
-      },
-      {
-       "to": "Dagomon",
-       "to_id": "dagomon",
-       "raw": "Jogress Vi+Da",
-       "parsed": {
-        "jogress_attrs": [
-         "Virus",
-         "Data"
-        ]
-       }
-      },
-      {
-       "to": "Marin Angemon",
-       "to_id": "marinangemon",
-       "raw": "Jogress Da",
-       "parsed": {
-        "jogress_attrs": [
-         "Data"
-        ]
+        "win_ratio": "0/5",
+        "jogress_partner": "Virus Perfect 1 from all Versions except 5"
        }
       }
      ]
     }
    },
-   "sprite": "fan/wayland-vpets/assets/pen/Whamon.png",
+   "sprite": "fan/wayland-vpets/assets/pen/Waru Monzaemon.png",
+   "sleep": "22:00",
+   "power": null,
    "sources": [
-    "humulos:pen20"
+    "humulos:pen"
+   ]
+  },
+  {
+   "id": "weregarurumon",
+   "name": "Were Garurumon",
+   "stage": "Perfect",
+   "level": null,
+   "attribute": "Vaccine",
+   "alt_attribute": null,
+   "devices": {
+    "pen": {
+     "versions": [],
+     "stage_time": "68 h",
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen/Were Garurumon.png",
+   "sleep": "22:00",
+   "power": null,
+   "sources": [
+    "humulos:pen"
+   ]
+  },
+  {
+   "id": "whamon",
+   "name": "Whamon",
+   "stage": "Perfect",
+   "level": null,
+   "attribute": "Vaccine",
+   "alt_attribute": null,
+   "devices": {
+    "pen": {
+     "versions": [],
+     "stage_time": "68 h",
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen/Whamon.png",
+   "sleep": "22:00",
+   "power": null,
+   "sources": [
+    "humulos:pen"
    ]
   },
   {
    "id": "wizarmon",
    "name": "Wizarmon",
-   "stage": null,
-   "attribute": null,
+   "stage": "Adult",
+   "level": null,
+   "attribute": "Data",
+   "alt_attribute": null,
    "devices": {
     "pen": {
      "versions": [],
-     "stage_time": null,
-     "evolves_to": []
+     "stage_time": "60 h",
+     "evolves_to": [
+      {
+       "to": "Death Meramon",
+       "to_id": "deathmeramon",
+       "raw": "0-4 Care Mistakes, 30 Battles, 24-29 Victories",
+       "parsed": {
+        "care_mistakes": "0-4",
+        "victories": "24-29",
+        "battles_n": 30,
+        "battles": true
+       }
+      },
+      {
+       "to": "Pumpmon",
+       "to_id": "pumpmon",
+       "raw": "",
+       "parsed": {}
+      },
+      {
+       "to": "Were Garurumon",
+       "to_id": "weregarurumon",
+       "raw": "Jogress with any Vaccine Adult",
+       "parsed": {
+        "jogress_partner": "any Vaccine Adult"
+       }
+      },
+      {
+       "to": "Fantomon",
+       "to_id": "fantomon",
+       "raw": "Jogress with any Virus Adult",
+       "parsed": {
+        "jogress_partner": "any Virus Adult"
+       }
+      }
+     ]
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen/Wizarmon.png",
+   "sleep": "21:00",
+   "power": null,
    "sources": [
-    "wayland-vpets:pen20"
-   ],
-   "addition_pending": true
+    "humulos:pen"
+   ]
   },
   {
    "id": "woodmon",
    "name": "Woodmon",
    "stage": "Adult",
-   "attribute": "Data",
+   "level": null,
+   "attribute": "Virus",
+   "alt_attribute": null,
    "devices": {
     "pen": {
-     "versions": [
-      4
-     ],
+     "versions": [],
      "stage_time": "60 h",
      "evolves_to": [
       {
-       "to": "Togemon",
-       "to_id": "togemon",
-       "raw": "0-1 CM, 0-2 Effort",
+       "to": "Jyureimon",
+       "to_id": "jyureimon",
+       "raw": "0-4 Care Mistakes, 30 Battles, 24-29 Victories",
        "parsed": {
-        "care_mistakes": "0-1",
-        "effort": "0-2"
+        "care_mistakes": "0-4",
+        "victories": "24-29",
+        "battles_n": 30,
+        "battles": true
        }
       },
       {
-       "to": "Kiwimon",
-       "to_id": "kiwimon",
-       "raw": "2-4 CM, 0-3 Effort OR 2-4 CM, 0-1 Effort",
+       "to": "Gerbemon",
+       "to_id": "gerbemon",
+       "raw": "",
+       "parsed": {}
+      },
+      {
+       "to": "Delumon",
+       "to_id": "delumon",
+       "raw": "Jogress with any Vaccine Adult",
        "parsed": {
-        "alternatives": [
-         {
-          "care_mistakes": "2-4",
-          "effort": "0-3"
-         },
-         {
-          "care_mistakes": "2-4",
-          "effort": "0-1"
-         }
-        ]
+        "jogress_partner": "any Vaccine Adult"
        }
       }
      ]
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen/Woodmon.png",
+   "sleep": "21:00",
+   "power": null,
    "sources": [
-    "humulos:pen20"
+    "humulos:pen"
    ]
-  },
-  {
-   "id": "yukimibotamon",
-   "name": "Yukimi Botamon",
-   "stage": null,
-   "attribute": null,
-   "devices": {
-    "pen": {
-     "versions": [],
-     "stage_time": null,
-     "evolves_to": []
-    }
-   },
-   "sprite": "fan/wayland-vpets/assets/pen/Yukimi Botamon.png",
-   "sources": [
-    "wayland-vpets:pen20"
-   ],
-   "addition_pending": true
   },
   {
    "id": "zudomon",
    "name": "Zudomon",
    "stage": "Perfect",
-   "attribute": "Free",
+   "level": null,
+   "attribute": "Vaccine",
+   "alt_attribute": null,
    "devices": {
     "pen": {
-     "versions": [
-      2
-     ],
+     "versions": [],
      "stage_time": "68 h",
      "evolves_to": [
       {
-       "to": "Whamon",
-       "to_id": "whamon",
-       "raw": "Jogress Va",
+       "to": "Marin Angemon",
+       "to_id": "marinangemon",
+       "raw": "0 Care Mistakes, 30 Battles, 24-29 Victories",
        "parsed": {
-        "jogress_attrs": [
-         "Vaccine"
-        ]
-       }
-      },
-      {
-       "to": "Plesiomon",
-       "to_id": "plesiomon",
-       "raw": "Jogress Vi",
-       "parsed": {
-        "jogress_attrs": [
-         "Virus"
-        ]
+        "care_mistakes": "0",
+        "victories": "24-29",
+        "battles_n": 30,
+        "battles": true
        }
       }
      ]
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen/Zudomon.png",
+   "sleep": "22:00",
+   "power": null,
    "sources": [
-    "humulos:pen20"
+    "humulos:pen"
    ]
   }
  ]
