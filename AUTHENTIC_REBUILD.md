@@ -261,10 +261,15 @@ whether it's identical to DM20's; build the authentic one(s).)
 
 Purist approach (§0a): nail ONE device end-to-end, then add the rest. **Start with DM20.**
 
+0. **Reference corpus** lives in `corpus/` (see `corpus/README.md` + `corpus/sources.json`).
+   It's the research layer — mine everything (fan + canon + docs), tag provenance, canon
+   wins, NOT bundled in the wheel. Session rosters already persisted at
+   `corpus/canon/humulos/<dev>/roster.txt`; DVPet fan data registered in place. The unified
+   `corpus/db/digimon.json` (schema in README) is the "one database" we build the game from.
 1. **DM20 data extraction first** (no code churn): scrape humulos per-version + wikimon into
-   clean JSON tables — DM20 Ver.1–5 + the 10 special lines: full rosters & **exact evolution
-   conditions**. Pull the 16×16 sprite sheets (Spriters Resource / Digimon Channel dot
-   archives / withthewill) → atlas. **Do NOT seed from DVPet's csv.**
+   the corpus → clean JSON tables — DM20 Ver.1–5 + the 10 special lines: full rosters &
+   **exact evolution conditions**. Pull the 16×16 sprite sheets (Spriters Resource / Digimon
+   Channel dot archives / withthewill) → atlas. **Do NOT seed from DVPet's csv.**
 2. **Resolution cutover**: 40×24 → 32×16 (8 rows) across render/app/battle/scenes; add the
    separate menu-icon strip. Verify at default terminal size.
 3. **Strip** weather / day-night / habitat bg / DVPet drills / non-authentic features.
