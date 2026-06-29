@@ -59,7 +59,8 @@ structure/sprites, applying the JP↔EN romanization map (see sources.json `roma
 - [x] **DM20 evolution conditions** → `canon/humulos/dm20/evo_ver1-5.md`, `evo_special.md`, `evo_extra.md`.
 - [x] **DM20 unified DB built** → `db/dm20.json` (154 mons; 134 playable + 20 colosseum-only; via `db/build_dm20.py`).
 - [x] **dmx complete** → `db/dmx.json` (175 mons, 119 w/ evolutions). V3 XE/XF edges parsed deterministically from the chart HTML (`db/parse_dmx3_chart.py`); pure-V3 attributes null (chart has none — backfill later).
-- [ ] pen/pen20 evolution conditions (re-pull clean) + DB.
+- [~] pen20: 5 classic versions CLEAN + DB (`db/pen20.json`, 239 mons, 58 w/ evolutions). 20th bonus lines (133) addition_pending.
+- [~] pen: DERIVED from pen20 classic data + pen timers (`db/pen.json`, 143). Clean /pen/ pull would refine.
 - [ ] dm evolution conditions + DB.
 - [ ] Extract wayland sprites → usable atlas (downsample /4 + split frames).
 - [ ] wikimon / mechanics docs (as needed).

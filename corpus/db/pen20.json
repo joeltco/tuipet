@@ -1,0 +1,5478 @@
+{
+ "_meta": {
+  "device": "pen20",
+  "count": 239,
+  "source": "humulos /pen20/ per-version (NS/DS/NSo/WG/ME) + wayland sprites/timers",
+  "with_evolutions": 58,
+  "complete": "5 CLASSIC versions captured (Nature Spirits/Deep Savers/Nightmare Soldiers/Wind Guardians/Metal Empire). pen20's 20th-anniversary BONUS lines (Guilmon/V-mon/Terriermon/DORUmon/Ryudamon/etc.) NOT yet pulled -> addition_pending. Minor extraction noise: a few branch targets dropped (see device._unresolved), Mugendra=Mugendramon. JOGRESS is the key mechanic (jogress_attrs/jogress_partner/jogress_partners).",
+  "addition_pending_count": 133,
+  "sprite_gaps": [
+   "Beelzebumon",
+   "Belphemon: Rage Mode",
+   "Imperialdramon: Paladin Mode",
+   "Ulforce V-dramon"
+  ]
+ },
+ "digimon": [
+  {
+   "id": "aerovdramon",
+   "name": "Aero V-dramon",
+   "stage": "Perfect",
+   "attribute": "Free",
+   "devices": {
+    "pen20": {
+     "versions": [
+      4
+     ],
+     "stage_time": "48 h",
+     "evolves_to": [
+      {
+       "to": "Garudamon",
+       "to_id": "garudamon",
+       "raw": "0-3 CM, battles",
+       "parsed": {
+        "care_mistakes": "0-3",
+        "battles": true
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Aero V-dramon.png",
+   "sources": [
+    "humulos:pen20"
+   ]
+  },
+  {
+   "id": "agumon",
+   "name": "Agumon",
+   "stage": null,
+   "attribute": null,
+   "devices": {
+    "pen20": {
+     "versions": [],
+     "stage_time": null,
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Agumon.png",
+   "sources": [
+    "wayland-vpets:pen20"
+   ],
+   "addition_pending": true
+  },
+  {
+   "id": "agumonhakase",
+   "name": "Agumon Hakase",
+   "stage": null,
+   "attribute": null,
+   "devices": {
+    "pen20": {
+     "versions": [],
+     "stage_time": null,
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Agumon Hakase.png",
+   "sources": [
+    "wayland-vpets:pen20"
+   ],
+   "addition_pending": true
+  },
+  {
+   "id": "alphamon",
+   "name": "Alphamon",
+   "stage": null,
+   "attribute": null,
+   "devices": {
+    "pen20": {
+     "versions": [],
+     "stage_time": null,
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Alphamon.png",
+   "sources": [
+    "wayland-vpets:pen20"
+   ],
+   "addition_pending": true
+  },
+  {
+   "id": "alphamonouryuken",
+   "name": "Alphamon Ouryuken",
+   "stage": null,
+   "attribute": null,
+   "devices": {
+    "pen20": {
+     "versions": [],
+     "stage_time": null,
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Alphamon Ouryuken.png",
+   "sources": [
+    "wayland-vpets:pen20"
+   ],
+   "addition_pending": true
+  },
+  {
+   "id": "andiramon",
+   "name": "Andiramon",
+   "stage": null,
+   "attribute": null,
+   "devices": {
+    "pen20": {
+     "versions": [],
+     "stage_time": null,
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Andiramon.png",
+   "sources": [
+    "wayland-vpets:pen20"
+   ],
+   "addition_pending": true
+  },
+  {
+   "id": "andromon",
+   "name": "Andromon",
+   "stage": "Perfect",
+   "attribute": "Vaccine",
+   "devices": {
+    "pen20": {
+     "versions": [
+      5
+     ],
+     "stage_time": "48 h",
+     "evolves_to": [
+      {
+       "to": "Mugendramon",
+       "to_id": "mugendramon",
+       "raw": "Jogress Vi",
+       "parsed": {
+        "jogress_attrs": [
+         "Virus"
+        ]
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Andromon.png",
+   "sources": [
+    "humulos:pen20"
+   ]
+  },
+  {
+   "id": "angemon",
+   "name": "Angemon",
+   "stage": null,
+   "attribute": null,
+   "devices": {
+    "pen20": {
+     "versions": [],
+     "stage_time": null,
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Angemon.png",
+   "sources": [
+    "wayland-vpets:pen20"
+   ],
+   "addition_pending": true
+  },
+  {
+   "id": "angewomon",
+   "name": "Angewomon",
+   "stage": "Perfect",
+   "attribute": "Vaccine",
+   "devices": {
+    "pen20": {
+     "versions": [
+      1
+     ],
+     "stage_time": "48 h",
+     "evolves_to": [
+      {
+       "to": "Holydramon",
+       "to_id": "holydramon",
+       "raw": "Jogress with Lady Devimon",
+       "parsed": {
+        "jogress_partner": "Lady Devimon"
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Angewomon.png",
+   "sources": [
+    "humulos:pen20"
+   ]
+  },
+  {
+   "id": "anomalocarimon",
+   "name": "Anomalocarimon",
+   "stage": "Perfect",
+   "attribute": "Free",
+   "devices": {
+    "pen20": {
+     "versions": [
+      2
+     ],
+     "stage_time": "48 h",
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Anomalocarimon.png",
+   "sources": [
+    "humulos:pen20"
+   ]
+  },
+  {
+   "id": "arresterdramon",
+   "name": "Arresterdramon",
+   "stage": null,
+   "attribute": null,
+   "devices": {
+    "pen20": {
+     "versions": [],
+     "stage_time": null,
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Arresterdramon.png",
+   "sources": [
+    "wayland-vpets:pen20"
+   ],
+   "addition_pending": true
+  },
+  {
+   "id": "astamon",
+   "name": "Astamon",
+   "stage": "Perfect",
+   "attribute": "Virus",
+   "devices": {
+    "pen20": {
+     "versions": [
+      3
+     ],
+     "stage_time": "48 h",
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Astamon.png",
+   "sources": [
+    "humulos:pen20"
+   ]
+  },
+  {
+   "id": "asuramon",
+   "name": "Asuramon",
+   "stage": null,
+   "attribute": null,
+   "devices": {
+    "pen20": {
+     "versions": [],
+     "stage_time": null,
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Asuramon.png",
+   "sources": [
+    "wayland-vpets:pen20"
+   ],
+   "addition_pending": true
+  },
+  {
+   "id": "atlurkabuterimon",
+   "name": "Atlur Kabuterimon",
+   "stage": "Perfect",
+   "attribute": "Data",
+   "devices": {
+    "pen20": {
+     "versions": [
+      1
+     ],
+     "stage_time": "48 h",
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Atlur Kabuterimon.png",
+   "sources": [
+    "humulos:pen20"
+   ]
+  },
+  {
+   "id": "baalmon",
+   "name": "Baalmon",
+   "stage": "Perfect",
+   "attribute": "Virus",
+   "devices": {
+    "pen20": {
+     "versions": [
+      3
+     ],
+     "stage_time": "48 h",
+     "evolves_to": [
+      {
+       "to": "Beelzebumon",
+       "to_id": "beelzebumon",
+       "raw": "Jogress with Demon",
+       "parsed": {
+        "jogress_partner": "Demon"
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Baalmon.png",
+   "sources": [
+    "humulos:pen20"
+   ]
+  },
+  {
+   "id": "bakemon",
+   "name": "Bakemon",
+   "stage": null,
+   "attribute": null,
+   "devices": {
+    "pen20": {
+     "versions": [],
+     "stage_time": null,
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Bakemon.png",
+   "sources": [
+    "wayland-vpets:pen20"
+   ],
+   "addition_pending": true
+  },
+  {
+   "id": "bakumon",
+   "name": "Bakumon",
+   "stage": null,
+   "attribute": null,
+   "devices": {
+    "pen20": {
+     "versions": [],
+     "stage_time": null,
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Bakumon.png",
+   "sources": [
+    "wayland-vpets:pen20"
+   ],
+   "addition_pending": true
+  },
+  {
+   "id": "bancholeomon",
+   "name": "Bancho Leomon",
+   "stage": null,
+   "attribute": null,
+   "devices": {
+    "pen20": {
+     "versions": [],
+     "stage_time": null,
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Bancho Leomon.png",
+   "sources": [
+    "wayland-vpets:pen20"
+   ],
+   "addition_pending": true
+  },
+  {
+   "id": "baohackmon",
+   "name": "Bao Hackmon",
+   "stage": null,
+   "attribute": null,
+   "devices": {
+    "pen20": {
+     "versions": [],
+     "stage_time": null,
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Bao Hackmon.png",
+   "sources": [
+    "wayland-vpets:pen20"
+   ],
+   "addition_pending": true
+  },
+  {
+   "id": "beelzebumon",
+   "name": "Beelzebumon",
+   "stage": "Ultimate",
+   "attribute": "Virus",
+   "devices": {
+    "pen20": {
+     "versions": [
+      3
+     ],
+     "stage_time": null,
+     "evolves_to": []
+    }
+   },
+   "sprite": null,
+   "sources": [
+    "humulos:pen20"
+   ]
+  },
+  {
+   "id": "beelzebumonblastmode",
+   "name": "Beelzebumon Blast Mode",
+   "stage": null,
+   "attribute": null,
+   "devices": {
+    "pen20": {
+     "versions": [],
+     "stage_time": null,
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Beelzebumon Blast Mode.png",
+   "sources": [
+    "wayland-vpets:pen20"
+   ],
+   "addition_pending": true
+  },
+  {
+   "id": "belphemonragemode",
+   "name": "Belphemon: Rage Mode",
+   "stage": "Perfect",
+   "attribute": "Virus",
+   "devices": {
+    "pen20": {
+     "versions": [
+      3
+     ],
+     "stage_time": "48 h",
+     "evolves_to": []
+    }
+   },
+   "sprite": null,
+   "sources": [
+    "humulos:pen20"
+   ]
+  },
+  {
+   "id": "beowolfmon",
+   "name": "Beowolfmon",
+   "stage": null,
+   "attribute": null,
+   "devices": {
+    "pen20": {
+     "versions": [],
+     "stage_time": null,
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Beowolfmon.png",
+   "sources": [
+    "wayland-vpets:pen20"
+   ],
+   "addition_pending": true
+  },
+  {
+   "id": "beowulfmon",
+   "name": "Beowulfmon",
+   "stage": null,
+   "attribute": null,
+   "devices": {
+    "pen20": {
+     "versions": [],
+     "stage_time": null,
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Beowulfmon.png",
+   "sources": [
+    "wayland-vpets:pen20"
+   ],
+   "addition_pending": true
+  },
+  {
+   "id": "bigmamemon",
+   "name": "Big Mamemon",
+   "stage": "Perfect",
+   "attribute": "Vaccine",
+   "devices": {
+    "pen20": {
+     "versions": [
+      5
+     ],
+     "stage_time": "48 h",
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Big Mamemon.png",
+   "sources": [
+    "humulos:pen20"
+   ]
+  },
+  {
+   "id": "birdramon",
+   "name": "Birdramon",
+   "stage": "Adult",
+   "attribute": "Vaccine",
+   "devices": {
+    "pen20": {
+     "versions": [
+      4
+     ],
+     "stage_time": "40 h",
+     "evolves_to": [
+      {
+       "to": "Red Vegimon",
+       "to_id": "redvegimon",
+       "raw": "0-2 CM, battles",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "battles": true
+       }
+      },
+      {
+       "to": "Aero V-dramon",
+       "to_id": "aerovdramon",
+       "raw": "Jogress Va+Da OR 0-2 CM, battles",
+       "parsed": {
+        "alternatives": [
+         {
+          "jogress_attrs": [
+           "Vaccine",
+           "Data"
+          ]
+         },
+         {
+          "care_mistakes": "0-2",
+          "battles": true
+         }
+        ]
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Birdramon.png",
+   "sources": [
+    "humulos:pen20"
+   ]
+  },
+  {
+   "id": "blossomon",
+   "name": "Blossomon",
+   "stage": "Perfect",
+   "attribute": "Data",
+   "devices": {
+    "pen20": {
+     "versions": [
+      4
+     ],
+     "stage_time": "48 h",
+     "evolves_to": [],
+     "_unresolved": [
+      "0 CM, battles"
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Blossomon.png",
+   "sources": [
+    "humulos:pen20"
+   ]
+  },
+  {
+   "id": "boltmon",
+   "name": "Boltmon",
+   "stage": null,
+   "attribute": null,
+   "devices": {
+    "pen20": {
+     "versions": [],
+     "stage_time": null,
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Boltmon.png",
+   "sources": [
+    "wayland-vpets:pen20"
+   ],
+   "addition_pending": true
+  },
+  {
+   "id": "botamon",
+   "name": "Botamon",
+   "stage": null,
+   "attribute": null,
+   "devices": {
+    "pen20": {
+     "versions": [],
+     "stage_time": null,
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Botamon.png",
+   "sources": [
+    "wayland-vpets:pen20"
+   ],
+   "addition_pending": true
+  },
+  {
+   "id": "breakdramon",
+   "name": "Breakdramon",
+   "stage": null,
+   "attribute": null,
+   "devices": {
+    "pen20": {
+     "versions": [],
+     "stage_time": null,
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Breakdramon.png",
+   "sources": [
+    "wayland-vpets:pen20"
+   ],
+   "addition_pending": true
+  },
+  {
+   "id": "bryweludramon",
+   "name": "Bryweludramon",
+   "stage": null,
+   "attribute": null,
+   "devices": {
+    "pen20": {
+     "versions": [],
+     "stage_time": null,
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Bryweludramon.png",
+   "sources": [
+    "wayland-vpets:pen20"
+   ],
+   "addition_pending": true
+  },
+  {
+   "id": "bubbmon",
+   "name": "Bubbmon",
+   "stage": "Baby I",
+   "attribute": "Free",
+   "devices": {
+    "pen20": {
+     "versions": [
+      1
+     ],
+     "stage_time": "10 min",
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Bubbmon.png",
+   "sources": [
+    "humulos:pen20"
+   ]
+  },
+  {
+   "id": "budmon",
+   "name": "Budmon",
+   "stage": null,
+   "attribute": null,
+   "devices": {
+    "pen20": {
+     "versions": [],
+     "stage_time": null,
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Budmon.png",
+   "sources": [
+    "wayland-vpets:pen20"
+   ],
+   "addition_pending": true
+  },
+  {
+   "id": "bushiagumon",
+   "name": "Bushi Agumon",
+   "stage": null,
+   "attribute": null,
+   "devices": {
+    "pen20": {
+     "versions": [],
+     "stage_time": null,
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Bushi Agumon.png",
+   "sources": [
+    "wayland-vpets:pen20"
+   ],
+   "addition_pending": true
+  },
+  {
+   "id": "candmon",
+   "name": "Candmon",
+   "stage": null,
+   "attribute": null,
+   "devices": {
+    "pen20": {
+     "versions": [],
+     "stage_time": null,
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Candmon.png",
+   "sources": [
+    "wayland-vpets:pen20"
+   ],
+   "addition_pending": true
+  },
+  {
+   "id": "caprimon",
+   "name": "Caprimon",
+   "stage": "Baby II",
+   "attribute": "Vaccine",
+   "devices": {
+    "pen20": {
+     "versions": [
+      3,
+      5
+     ],
+     "stage_time": "12 h",
+     "evolves_to": [
+      {
+       "to": "Phascomon",
+       "to_id": "phascomon",
+       "raw": "2-4 CM",
+       "parsed": {
+        "care_mistakes": "2-4"
+       }
+      },
+      {
+       "to": "Impmon",
+       "to_id": "impmon",
+       "raw": "2-4 CM",
+       "parsed": {
+        "care_mistakes": "2-4"
+       }
+      },
+      {
+       "to": "Troopmon",
+       "to_id": "troopmon",
+       "raw": "0-1 CM, 0-3 Effort",
+       "parsed": {
+        "care_mistakes": "0-1",
+        "effort": "0-3"
+       }
+      },
+      {
+       "to": "Hagurumon",
+       "to_id": "hagurumon",
+       "raw": "0 CM",
+       "parsed": {
+        "care_mistakes": "0"
+       }
+      },
+      {
+       "to": "Toy Agumon",
+       "to_id": "toyagumon",
+       "raw": "1 CM",
+       "parsed": {
+        "care_mistakes": "1"
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Caprimon.png",
+   "sources": [
+    "humulos:pen20"
+   ]
+  },
+  {
+   "id": "chaosmon",
+   "name": "Chaosmon",
+   "stage": null,
+   "attribute": null,
+   "devices": {
+    "pen20": {
+     "versions": [],
+     "stage_time": null,
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Chaosmon.png",
+   "sources": [
+    "wayland-vpets:pen20"
+   ],
+   "addition_pending": true
+  },
+  {
+   "id": "cherubimon",
+   "name": "Cherubimon",
+   "stage": null,
+   "attribute": null,
+   "devices": {
+    "pen20": {
+     "versions": [],
+     "stage_time": null,
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Cherubimon.png",
+   "sources": [
+    "wayland-vpets:pen20"
+   ],
+   "addition_pending": true
+  },
+  {
+   "id": "chibimon",
+   "name": "Chibimon",
+   "stage": null,
+   "attribute": null,
+   "devices": {
+    "pen20": {
+     "versions": [],
+     "stage_time": null,
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Chibimon.png",
+   "sources": [
+    "wayland-vpets:pen20"
+   ],
+   "addition_pending": true
+  },
+  {
+   "id": "chicomon",
+   "name": "Chicomon",
+   "stage": null,
+   "attribute": null,
+   "devices": {
+    "pen20": {
+     "versions": [],
+     "stage_time": null,
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Chicomon.png",
+   "sources": [
+    "wayland-vpets:pen20"
+   ],
+   "addition_pending": true
+  },
+  {
+   "id": "choromon",
+   "name": "Choromon",
+   "stage": "Baby I",
+   "attribute": "Vaccine",
+   "devices": {
+    "pen20": {
+     "versions": [
+      3,
+      5
+     ],
+     "stage_time": "10 min",
+     "evolves_to": [
+      {
+       "to": "Caprimon",
+       "to_id": "caprimon",
+       "raw": "",
+       "parsed": {}
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Choromon.png",
+   "sources": [
+    "humulos:pen20"
+   ]
+  },
+  {
+   "id": "clockmon",
+   "name": "Clockmon",
+   "stage": "Adult",
+   "attribute": "Vaccine",
+   "devices": {
+    "pen20": {
+     "versions": [
+      5
+     ],
+     "stage_time": "40 h",
+     "evolves_to": [
+      {
+       "to": "Guardromon",
+       "to_id": "guardromon",
+       "raw": "Jogress Va+Da",
+       "parsed": {
+        "jogress_attrs": [
+         "Vaccine",
+         "Data"
+        ]
+       }
+      },
+      {
+       "to": "Andromon",
+       "to_id": "andromon",
+       "raw": "Jogress Vi+Da+Fr",
+       "parsed": {
+        "jogress_attrs": [
+         "Virus",
+         "Data",
+         "Free"
+        ]
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Clockmon.png",
+   "sources": [
+    "humulos:pen20"
+   ]
+  },
+  {
+   "id": "cocomon",
+   "name": "Cocomon",
+   "stage": null,
+   "attribute": null,
+   "devices": {
+    "pen20": {
+     "versions": [],
+     "stage_time": null,
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Cocomon.png",
+   "sources": [
+    "wayland-vpets:pen20"
+   ],
+   "addition_pending": true
+  },
+  {
+   "id": "coelamon",
+   "name": "Coelamon",
+   "stage": "Child",
+   "attribute": "Free",
+   "devices": {
+    "pen20": {
+     "versions": [
+      2
+     ],
+     "stage_time": "24 h",
+     "evolves_to": [
+      {
+       "to": "Ebidramon",
+       "to_id": "ebidramon",
+       "raw": "2-4 CM, 0-3 Effort",
+       "parsed": {
+        "care_mistakes": "2-4",
+        "effort": "0-3"
+       }
+      },
+      {
+       "to": "Gesomon",
+       "to_id": "gesomon",
+       "raw": "0-1 CM, 0-3 Effort",
+       "parsed": {
+        "care_mistakes": "0-1",
+        "effort": "0-3"
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Coelamon.png",
+   "sources": [
+    "humulos:pen20"
+   ]
+  },
+  {
+   "id": "coredramonblue",
+   "name": "Coredramon (Blue)",
+   "stage": null,
+   "attribute": null,
+   "devices": {
+    "pen20": {
+     "versions": [],
+     "stage_time": null,
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Coredramon (Blue).png",
+   "sources": [
+    "wayland-vpets:pen20"
+   ],
+   "addition_pending": true
+  },
+  {
+   "id": "coredramongreen",
+   "name": "Coredramon (Green)",
+   "stage": null,
+   "attribute": null,
+   "devices": {
+    "pen20": {
+     "versions": [],
+     "stage_time": null,
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Coredramon (Green).png",
+   "sources": [
+    "wayland-vpets:pen20"
+   ],
+   "addition_pending": true
+  },
+  {
+   "id": "cotsucomon",
+   "name": "Cotsucomon",
+   "stage": null,
+   "attribute": null,
+   "devices": {
+    "pen20": {
+     "versions": [],
+     "stage_time": null,
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Cotsucomon.png",
+   "sources": [
+    "wayland-vpets:pen20"
+   ],
+   "addition_pending": true
+  },
+  {
+   "id": "cyberdramon",
+   "name": "Cyberdramon",
+   "stage": "Perfect",
+   "attribute": "Data",
+   "devices": {
+    "pen20": {
+     "versions": [
+      5
+     ],
+     "stage_time": "48 h",
+     "evolves_to": [
+      {
+       "to": "Mugendramon",
+       "to_id": "mugendramon",
+       "raw": "Jogress Vi",
+       "parsed": {
+        "jogress_attrs": [
+         "Virus"
+        ]
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Cyberdramon.png",
+   "sources": [
+    "humulos:pen20"
+   ]
+  },
+  {
+   "id": "dagomon",
+   "name": "Dagomon",
+   "stage": "Perfect",
+   "attribute": "Virus",
+   "devices": {
+    "pen20": {
+     "versions": [
+      2
+     ],
+     "stage_time": "48 h",
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Dagomon.png",
+   "sources": [
+    "humulos:pen20"
+   ]
+  },
+  {
+   "id": "darkdramon",
+   "name": "Darkdramon",
+   "stage": null,
+   "attribute": null,
+   "devices": {
+    "pen20": {
+     "versions": [],
+     "stage_time": null,
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Darkdramon.png",
+   "sources": [
+    "wayland-vpets:pen20"
+   ],
+   "addition_pending": true
+  },
+  {
+   "id": "darkknightmon",
+   "name": "Dark Knightmon",
+   "stage": "Perfect",
+   "attribute": "Virus",
+   "devices": {
+    "pen20": {
+     "versions": [
+      3
+     ],
+     "stage_time": "48 h",
+     "evolves_to": [
+      {
+       "to": "Ogudomon",
+       "to_id": "ogudomon",
+       "raw": "Jogress with Beelzebumon",
+       "parsed": {
+        "jogress_partner": "Beelzebumon"
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Dark Knightmon.png",
+   "sources": [
+    "humulos:pen20"
+   ]
+  },
+  {
+   "id": "deathmeramon",
+   "name": "Death Meramon",
+   "stage": null,
+   "attribute": null,
+   "devices": {
+    "pen20": {
+     "versions": [],
+     "stage_time": null,
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Death Meramon.png",
+   "sources": [
+    "wayland-vpets:pen20"
+   ],
+   "addition_pending": true
+  },
+  {
+   "id": "delumon",
+   "name": "Delumon",
+   "stage": "Perfect",
+   "attribute": "Data",
+   "devices": {
+    "pen20": {
+     "versions": [
+      4
+     ],
+     "stage_time": "48 h",
+     "evolves_to": [],
+     "_unresolved": [
+      "0-2 CM, battles"
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Delumon.png",
+   "sources": [
+    "humulos:pen20"
+   ]
+  },
+  {
+   "id": "devidramon",
+   "name": "Devidramon",
+   "stage": null,
+   "attribute": null,
+   "devices": {
+    "pen20": {
+     "versions": [],
+     "stage_time": null,
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Devidramon.png",
+   "sources": [
+    "wayland-vpets:pen20"
+   ],
+   "addition_pending": true
+  },
+  {
+   "id": "devimon",
+   "name": "Devimon",
+   "stage": null,
+   "attribute": null,
+   "devices": {
+    "pen20": {
+     "versions": [],
+     "stage_time": null,
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Devimon.png",
+   "sources": [
+    "wayland-vpets:pen20"
+   ],
+   "addition_pending": true
+  },
+  {
+   "id": "dokugumon",
+   "name": "Dokugumon",
+   "stage": null,
+   "attribute": null,
+   "devices": {
+    "pen20": {
+     "versions": [],
+     "stage_time": null,
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Dokugumon.png",
+   "sources": [
+    "wayland-vpets:pen20"
+   ],
+   "addition_pending": true
+  },
+  {
+   "id": "dorimon",
+   "name": "Dorimon",
+   "stage": null,
+   "attribute": null,
+   "devices": {
+    "pen20": {
+     "versions": [],
+     "stage_time": null,
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Dorimon.png",
+   "sources": [
+    "wayland-vpets:pen20"
+   ],
+   "addition_pending": true
+  },
+  {
+   "id": "dorugamon",
+   "name": "DORUgamon",
+   "stage": null,
+   "attribute": null,
+   "devices": {
+    "pen20": {
+     "versions": [],
+     "stage_time": null,
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/DORUgamon.png",
+   "sources": [
+    "wayland-vpets:pen20"
+   ],
+   "addition_pending": true
+  },
+  {
+   "id": "dorugoramon",
+   "name": "DORUgoramon",
+   "stage": null,
+   "attribute": null,
+   "devices": {
+    "pen20": {
+     "versions": [],
+     "stage_time": null,
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/DORUgoramon.png",
+   "sources": [
+    "wayland-vpets:pen20"
+   ],
+   "addition_pending": true
+  },
+  {
+   "id": "doruguremon",
+   "name": "DORUguremon",
+   "stage": null,
+   "attribute": null,
+   "devices": {
+    "pen20": {
+     "versions": [],
+     "stage_time": null,
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/DORUguremon.png",
+   "sources": [
+    "wayland-vpets:pen20"
+   ],
+   "addition_pending": true
+  },
+  {
+   "id": "dorumon",
+   "name": "DORUmon",
+   "stage": null,
+   "attribute": null,
+   "devices": {
+    "pen20": {
+     "versions": [],
+     "stage_time": null,
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/DORUmon.png",
+   "sources": [
+    "wayland-vpets:pen20"
+   ],
+   "addition_pending": true
+  },
+  {
+   "id": "dracomon",
+   "name": "Dracomon",
+   "stage": null,
+   "attribute": null,
+   "devices": {
+    "pen20": {
+     "versions": [],
+     "stage_time": null,
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Dracomon.png",
+   "sources": [
+    "wayland-vpets:pen20"
+   ],
+   "addition_pending": true
+  },
+  {
+   "id": "duramon",
+   "name": "Duramon",
+   "stage": null,
+   "attribute": null,
+   "devices": {
+    "pen20": {
+     "versions": [],
+     "stage_time": null,
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Duramon.png",
+   "sources": [
+    "wayland-vpets:pen20"
+   ],
+   "addition_pending": true
+  },
+  {
+   "id": "durandamon",
+   "name": "Durandamon",
+   "stage": null,
+   "attribute": null,
+   "devices": {
+    "pen20": {
+     "versions": [],
+     "stage_time": null,
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Durandamon.png",
+   "sources": [
+    "wayland-vpets:pen20"
+   ],
+   "addition_pending": true
+  },
+  {
+   "id": "ebidramon",
+   "name": "Ebidramon",
+   "stage": "Adult",
+   "attribute": "Free",
+   "devices": {
+    "pen20": {
+     "versions": [
+      2
+     ],
+     "stage_time": "40 h",
+     "evolves_to": [
+      {
+       "to": "Gesomon",
+       "to_id": "gesomon",
+       "raw": "1-4 CM, 0-3 Effort",
+       "parsed": {
+        "care_mistakes": "1-4",
+        "effort": "0-3"
+       }
+      },
+      {
+       "to": "Seadramon",
+       "to_id": "seadramon",
+       "raw": "1-4 CM, 0-1 Effort",
+       "parsed": {
+        "care_mistakes": "1-4",
+        "effort": "0-1"
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Ebidramon.png",
+   "sources": [
+    "humulos:pen20"
+   ]
+  },
+  {
+   "id": "etemon",
+   "name": "Etemon",
+   "stage": null,
+   "attribute": null,
+   "devices": {
+    "pen20": {
+     "versions": [],
+     "stage_time": null,
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Etemon.png",
+   "sources": [
+    "wayland-vpets:pen20"
+   ],
+   "addition_pending": true
+  },
+  {
+   "id": "examon",
+   "name": "Examon",
+   "stage": null,
+   "attribute": null,
+   "devices": {
+    "pen20": {
+     "versions": [],
+     "stage_time": null,
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Examon.png",
+   "sources": [
+    "wayland-vpets:pen20"
+   ],
+   "addition_pending": true
+  },
+  {
+   "id": "fantomon",
+   "name": "Fantomon",
+   "stage": null,
+   "attribute": null,
+   "devices": {
+    "pen20": {
+     "versions": [],
+     "stage_time": null,
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Fantomon.png",
+   "sources": [
+    "wayland-vpets:pen20"
+   ],
+   "addition_pending": true
+  },
+  {
+   "id": "floramon",
+   "name": "Floramon",
+   "stage": "Child",
+   "attribute": "Data",
+   "devices": {
+    "pen20": {
+     "versions": [
+      4
+     ],
+     "stage_time": "24 h",
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Floramon.png",
+   "sources": [
+    "humulos:pen20"
+   ]
+  },
+  {
+   "id": "fufumon",
+   "name": "Fufumon",
+   "stage": null,
+   "attribute": null,
+   "devices": {
+    "pen20": {
+     "versions": [],
+     "stage_time": null,
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Fufumon.png",
+   "sources": [
+    "wayland-vpets:pen20"
+   ],
+   "addition_pending": true
+  },
+  {
+   "id": "gabumon",
+   "name": "Gabumon",
+   "stage": null,
+   "attribute": null,
+   "devices": {
+    "pen20": {
+     "versions": [],
+     "stage_time": null,
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Gabumon.png",
+   "sources": [
+    "wayland-vpets:pen20"
+   ],
+   "addition_pending": true
+  },
+  {
+   "id": "galgomon",
+   "name": "Galgomon",
+   "stage": null,
+   "attribute": null,
+   "devices": {
+    "pen20": {
+     "versions": [],
+     "stage_time": null,
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Galgomon.png",
+   "sources": [
+    "wayland-vpets:pen20"
+   ],
+   "addition_pending": true
+  },
+  {
+   "id": "ganimon",
+   "name": "Ganimon",
+   "stage": null,
+   "attribute": null,
+   "devices": {
+    "pen20": {
+     "versions": [],
+     "stage_time": null,
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Ganimon.png",
+   "sources": [
+    "wayland-vpets:pen20"
+   ],
+   "addition_pending": true
+  },
+  {
+   "id": "garudamon",
+   "name": "Garudamon",
+   "stage": "Perfect",
+   "attribute": "Vaccine",
+   "devices": {
+    "pen20": {
+     "versions": [
+      4
+     ],
+     "stage_time": "48 h",
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Garudamon.png",
+   "sources": [
+    "humulos:pen20"
+   ]
+  },
+  {
+   "id": "garurumon",
+   "name": "Garurumon",
+   "stage": null,
+   "attribute": null,
+   "devices": {
+    "pen20": {
+     "versions": [],
+     "stage_time": null,
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Garurumon.png",
+   "sources": [
+    "wayland-vpets:pen20"
+   ],
+   "addition_pending": true
+  },
+  {
+   "id": "gekomon",
+   "name": "Gekomon",
+   "stage": "Adult",
+   "attribute": "Data",
+   "devices": {
+    "pen20": {
+     "versions": [
+      1
+     ],
+     "stage_time": "40 h",
+     "evolves_to": [
+      {
+       "to": "Tonosama Gekomon",
+       "to_id": "tonosamagekomon",
+       "raw": "0-2 CM, battles",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "battles": true
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Gekomon.png",
+   "sources": [
+    "humulos:pen20"
+   ]
+  },
+  {
+   "id": "gerbemon",
+   "name": "Gerbemon",
+   "stage": "Perfect",
+   "attribute": "Vaccine",
+   "devices": {
+    "pen20": {
+     "versions": [
+      4
+     ],
+     "stage_time": "48 h",
+     "evolves_to": [],
+     "_unresolved": [
+      "0-2 CM, battles"
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Gerbemon.png",
+   "sources": [
+    "humulos:pen20"
+   ]
+  },
+  {
+   "id": "gesomon",
+   "name": "Gesomon",
+   "stage": "Adult",
+   "attribute": "Free",
+   "devices": {
+    "pen20": {
+     "versions": [
+      2
+     ],
+     "stage_time": "40 h",
+     "evolves_to": [
+      {
+       "to": "Octmon",
+       "to_id": "octmon",
+       "raw": "0-2 CM, battles 12/15",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "win_ratio": "12/15",
+        "battles": true
+       }
+      },
+      {
+       "to": "Seadramon",
+       "to_id": "seadramon",
+       "raw": "2-4 CM, 0-1 Effort",
+       "parsed": {
+        "care_mistakes": "2-4",
+        "effort": "0-1"
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Gesomon.png",
+   "sources": [
+    "humulos:pen20"
+   ]
+  },
+  {
+   "id": "ginryumon",
+   "name": "Ginryumon",
+   "stage": null,
+   "attribute": null,
+   "devices": {
+    "pen20": {
+     "versions": [],
+     "stage_time": null,
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Ginryumon.png",
+   "sources": [
+    "wayland-vpets:pen20"
+   ],
+   "addition_pending": true
+  },
+  {
+   "id": "gomamon",
+   "name": "Gomamon",
+   "stage": "Child",
+   "attribute": "Free",
+   "devices": {
+    "pen20": {
+     "versions": [
+      2
+     ],
+     "stage_time": "24 h",
+     "evolves_to": [
+      {
+       "to": "Shakomon",
+       "to_id": "shakomon",
+       "raw": "2-4 CM, 4 Effort",
+       "parsed": {
+        "care_mistakes": "2-4",
+        "effort": "4"
+       }
+      },
+      {
+       "to": "Coelamon",
+       "to_id": "coelamon",
+       "raw": "0-1 CM, 0-3 Effort",
+       "parsed": {
+        "care_mistakes": "0-1",
+        "effort": "0-3"
+       }
+      },
+      {
+       "to": "Rukamon",
+       "to_id": "rukamon",
+       "raw": "0-1 CM, 4 Effort",
+       "parsed": {
+        "care_mistakes": "0-1",
+        "effort": "4"
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Gomamon.png",
+   "sources": [
+    "humulos:pen20"
+   ]
+  },
+  {
+   "id": "gottsumon",
+   "name": "Gottsumon",
+   "stage": "Child",
+   "attribute": "Data",
+   "devices": {
+    "pen20": {
+     "versions": [
+      1
+     ],
+     "stage_time": "24 h",
+     "evolves_to": [
+      {
+       "to": "Kabuterimon",
+       "to_id": "kabuterimon",
+       "raw": "0-1 CM, 4 Effort",
+       "parsed": {
+        "care_mistakes": "0-1",
+        "effort": "4"
+       }
+      },
+      {
+       "to": "Kuwagamon",
+       "to_id": "kuwagamon",
+       "raw": "0-1 CM, 0-3 Effort",
+       "parsed": {
+        "care_mistakes": "0-1",
+        "effort": "0-3"
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Gottsumon.png",
+   "sources": [
+    "humulos:pen20"
+   ]
+  },
+  {
+   "id": "greymon",
+   "name": "Greymon",
+   "stage": "Adult",
+   "attribute": "Vaccine",
+   "devices": {
+    "pen20": {
+     "versions": [
+      5
+     ],
+     "stage_time": "40 h",
+     "evolves_to": [
+      {
+       "to": "Metal Greymon",
+       "to_id": "metalgreymon",
+       "raw": "Jogress Va+Da",
+       "parsed": {
+        "jogress_attrs": [
+         "Vaccine",
+         "Data"
+        ]
+       }
+      },
+      {
+       "to": "Megadramon",
+       "to_id": "megadramon",
+       "raw": "1 CM, battles",
+       "parsed": {
+        "care_mistakes": "1",
+        "battles": true
+       }
+      },
+      {
+       "to": "War Greymon",
+       "to_id": "wargreymon",
+       "raw": "Jogress Da",
+       "parsed": {
+        "jogress_attrs": [
+         "Data"
+        ]
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Greymon.png",
+   "sources": [
+    "humulos:pen20"
+   ]
+  },
+  {
+   "id": "griffomon",
+   "name": "Griffomon",
+   "stage": "Ultimate",
+   "attribute": "Data",
+   "devices": {
+    "pen20": {
+     "versions": [
+      4
+     ],
+     "stage_time": null,
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Griffomon.png",
+   "sources": [
+    "humulos:pen20"
+   ]
+  },
+  {
+   "id": "groundramon",
+   "name": "Groundramon",
+   "stage": null,
+   "attribute": null,
+   "devices": {
+    "pen20": {
+     "versions": [],
+     "stage_time": null,
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Groundramon.png",
+   "sources": [
+    "wayland-vpets:pen20"
+   ],
+   "addition_pending": true
+  },
+  {
+   "id": "growmon",
+   "name": "Growmon",
+   "stage": null,
+   "attribute": null,
+   "devices": {
+    "pen20": {
+     "versions": [],
+     "stage_time": null,
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Growmon.png",
+   "sources": [
+    "wayland-vpets:pen20"
+   ],
+   "addition_pending": true
+  },
+  {
+   "id": "guardromon",
+   "name": "Guardromon",
+   "stage": "Adult",
+   "attribute": "Vaccine",
+   "devices": {
+    "pen20": {
+     "versions": [
+      5
+     ],
+     "stage_time": "40 h",
+     "evolves_to": [
+      {
+       "to": "Andromon",
+       "to_id": "andromon",
+       "raw": "Jogress Vi+Da+Fr",
+       "parsed": {
+        "jogress_attrs": [
+         "Virus",
+         "Data",
+         "Free"
+        ]
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Guardromon.png",
+   "sources": [
+    "humulos:pen20"
+   ]
+  },
+  {
+   "id": "guimon",
+   "name": "Guimon",
+   "stage": null,
+   "attribute": null,
+   "devices": {
+    "pen20": {
+     "versions": [],
+     "stage_time": null,
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Guimon.png",
+   "sources": [
+    "wayland-vpets:pen20"
+   ],
+   "addition_pending": true
+  },
+  {
+   "id": "gummymon",
+   "name": "Gummymon",
+   "stage": null,
+   "attribute": null,
+   "devices": {
+    "pen20": {
+     "versions": [],
+     "stage_time": null,
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Gummymon.png",
+   "sources": [
+    "wayland-vpets:pen20"
+   ],
+   "addition_pending": true
+  },
+  {
+   "id": "hackmon",
+   "name": "Hackmon",
+   "stage": null,
+   "attribute": null,
+   "devices": {
+    "pen20": {
+     "versions": [],
+     "stage_time": null,
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Hackmon.png",
+   "sources": [
+    "wayland-vpets:pen20"
+   ],
+   "addition_pending": true
+  },
+  {
+   "id": "hagurumon",
+   "name": "Hagurumon",
+   "stage": "Child",
+   "attribute": "Vaccine",
+   "devices": {
+    "pen20": {
+     "versions": [
+      5
+     ],
+     "stage_time": "24 h",
+     "evolves_to": [
+      {
+       "to": "Revolmon",
+       "to_id": "revolmon",
+       "raw": "1 CM, 2-3 Effort",
+       "parsed": {
+        "care_mistakes": "1",
+        "effort": "2-3"
+       }
+      },
+      {
+       "to": "Clockmon",
+       "to_id": "clockmon",
+       "raw": "1 CM, 3-4 Effort",
+       "parsed": {
+        "care_mistakes": "1",
+        "effort": "3-4"
+       }
+      },
+      {
+       "to": "Thunderballmon",
+       "to_id": "thunderballmon",
+       "raw": "1 CM, 4 Effort",
+       "parsed": {
+        "care_mistakes": "1",
+        "effort": "4"
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Hagurumon.png",
+   "sources": [
+    "humulos:pen20"
+   ]
+  },
+  {
+   "id": "hangymon",
+   "name": "Hangymon",
+   "stage": null,
+   "attribute": null,
+   "devices": {
+    "pen20": {
+     "versions": [],
+     "stage_time": null,
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Hangymon.png",
+   "sources": [
+    "wayland-vpets:pen20"
+   ],
+   "addition_pending": true
+  },
+  {
+   "id": "hangyomon",
+   "name": "Hangyomon",
+   "stage": "Perfect",
+   "attribute": "Free",
+   "devices": {
+    "pen20": {
+     "versions": [
+      2
+     ],
+     "stage_time": "48 h",
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Hangyomon.png",
+   "sources": [
+    "humulos:pen20"
+   ]
+  },
+  {
+   "id": "hanumon",
+   "name": "Hanumon",
+   "stage": null,
+   "attribute": null,
+   "devices": {
+    "pen20": {
+     "versions": [],
+     "stage_time": null,
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Hanumon.png",
+   "sources": [
+    "wayland-vpets:pen20"
+   ],
+   "addition_pending": true
+  },
+  {
+   "id": "heraklekabuterimon",
+   "name": "Herakle Kabuterimon",
+   "stage": "Perfect",
+   "attribute": "Data",
+   "devices": {
+    "pen20": {
+     "versions": [
+      1
+     ],
+     "stage_time": "48 h",
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Herakle Kabuterimon.png",
+   "sources": [
+    "humulos:pen20"
+   ]
+  },
+  {
+   "id": "hisyaryumon",
+   "name": "Hisyaryumon",
+   "stage": null,
+   "attribute": null,
+   "devices": {
+    "pen20": {
+     "versions": [],
+     "stage_time": null,
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Hisyaryumon.png",
+   "sources": [
+    "wayland-vpets:pen20"
+   ],
+   "addition_pending": true
+  },
+  {
+   "id": "holyangemon",
+   "name": "Holy Angemon",
+   "stage": null,
+   "attribute": null,
+   "devices": {
+    "pen20": {
+     "versions": [],
+     "stage_time": null,
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Holy Angemon.png",
+   "sources": [
+    "wayland-vpets:pen20"
+   ],
+   "addition_pending": true
+  },
+  {
+   "id": "holydramon",
+   "name": "Holydramon",
+   "stage": "Ultimate",
+   "attribute": "Vaccine",
+   "devices": {
+    "pen20": {
+     "versions": [
+      1
+     ],
+     "stage_time": null,
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Holydramon.png",
+   "sources": [
+    "humulos:pen20"
+   ]
+  },
+  {
+   "id": "hououmon",
+   "name": "Hououmon",
+   "stage": "Ultimate",
+   "attribute": "Vaccine",
+   "devices": {
+    "pen20": {
+     "versions": [
+      4
+     ],
+     "stage_time": null,
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Hououmon.png",
+   "sources": [
+    "humulos:pen20"
+   ]
+  },
+  {
+   "id": "igamon",
+   "name": "Igamon",
+   "stage": null,
+   "attribute": null,
+   "devices": {
+    "pen20": {
+     "versions": [],
+     "stage_time": null,
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Igamon.png",
+   "sources": [
+    "wayland-vpets:pen20"
+   ],
+   "addition_pending": true
+  },
+  {
+   "id": "ikkakumon",
+   "name": "Ikkakumon",
+   "stage": "Adult",
+   "attribute": "Free",
+   "devices": {
+    "pen20": {
+     "versions": [
+      2
+     ],
+     "stage_time": "40 h",
+     "evolves_to": [
+      {
+       "to": "Zudomon",
+       "to_id": "zudomon",
+       "raw": "Jogress Va+Da",
+       "parsed": {
+        "jogress_attrs": [
+         "Vaccine",
+         "Data"
+        ]
+       }
+      },
+      {
+       "to": "Whamon",
+       "to_id": "whamon",
+       "raw": "Jogress Da+Vi",
+       "parsed": {
+        "jogress_attrs": [
+         "Data",
+         "Virus"
+        ]
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Ikkakumon.png",
+   "sources": [
+    "humulos:pen20"
+   ]
+  },
+  {
+   "id": "imperialdramonfightermode",
+   "name": "Imperialdramon Fighter Mode",
+   "stage": null,
+   "attribute": null,
+   "devices": {
+    "pen20": {
+     "versions": [],
+     "stage_time": null,
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Imperialdramon Fighter Mode.png",
+   "sources": [
+    "wayland-vpets:pen20"
+   ],
+   "addition_pending": true
+  },
+  {
+   "id": "imperialdramonpaladinmode",
+   "name": "Imperialdramon: Paladin Mode",
+   "stage": "Ultimate",
+   "attribute": "Vaccine",
+   "devices": {
+    "pen20": {
+     "versions": [
+      5
+     ],
+     "stage_time": null,
+     "evolves_to": []
+    }
+   },
+   "sprite": null,
+   "sources": [
+    "humulos:pen20"
+   ]
+  },
+  {
+   "id": "impmon",
+   "name": "Impmon",
+   "stage": "Child",
+   "attribute": "Vaccine",
+   "devices": {
+    "pen20": {
+     "versions": [
+      3
+     ],
+     "stage_time": "24 h",
+     "evolves_to": [
+      {
+       "to": "Troopmon",
+       "to_id": "troopmon",
+       "raw": "0-1 CM, 0-3 Effort",
+       "parsed": {
+        "care_mistakes": "0-1",
+        "effort": "0-3"
+       }
+      },
+      {
+       "to": "Mad Leomon",
+       "to_id": "madleomon",
+       "raw": "0-2 CM, battles",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "battles": true
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Impmon.png",
+   "sources": [
+    "humulos:pen20"
+   ]
+  },
+  {
+   "id": "jesmon",
+   "name": "Jesmon",
+   "stage": null,
+   "attribute": null,
+   "devices": {
+    "pen20": {
+     "versions": [],
+     "stage_time": null,
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Jesmon.png",
+   "sources": [
+    "wayland-vpets:pen20"
+   ],
+   "addition_pending": true
+  },
+  {
+   "id": "jesmonx",
+   "name": "Jesmon X",
+   "stage": null,
+   "attribute": null,
+   "devices": {
+    "pen20": {
+     "versions": [],
+     "stage_time": null,
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Jesmon X.png",
+   "sources": [
+    "wayland-vpets:pen20"
+   ],
+   "addition_pending": true
+  },
+  {
+   "id": "jyagamon",
+   "name": "Jyagamon",
+   "stage": "Perfect",
+   "attribute": "Data",
+   "devices": {
+    "pen20": {
+     "versions": [
+      1
+     ],
+     "stage_time": "48 h",
+     "evolves_to": [
+      {
+       "to": "Piccolomon",
+       "to_id": "piccolomon",
+       "raw": "Jogress Vi+Fr+Da",
+       "parsed": {
+        "jogress_attrs": [
+         "Virus",
+         "Free",
+         "Data"
+        ]
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Jyagamon.png",
+   "sources": [
+    "humulos:pen20"
+   ]
+  },
+  {
+   "id": "jyureimon",
+   "name": "Jyureimon",
+   "stage": "Perfect",
+   "attribute": "Data",
+   "devices": {
+    "pen20": {
+     "versions": [
+      4
+     ],
+     "stage_time": "48 h",
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Jyureimon.png",
+   "sources": [
+    "humulos:pen20"
+   ]
+  },
+  {
+   "id": "kabuterimon",
+   "name": "Kabuterimon",
+   "stage": "Adult",
+   "attribute": "Data",
+   "devices": {
+    "pen20": {
+     "versions": [
+      1
+     ],
+     "stage_time": "40 h",
+     "evolves_to": [
+      {
+       "to": "Atlur Kabuterimon",
+       "to_id": "atlurkabuterimon",
+       "raw": "0-2 CM, battles",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "battles": true
+       }
+      },
+      {
+       "to": "Okuwamon",
+       "to_id": "okuwamon",
+       "raw": "Jogress Va+Da",
+       "parsed": {
+        "jogress_attrs": [
+         "Vaccine",
+         "Data"
+        ]
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Kabuterimon.png",
+   "sources": [
+    "humulos:pen20"
+   ]
+  },
+  {
+   "id": "kakkinmon",
+   "name": "Kakkinmon",
+   "stage": null,
+   "attribute": null,
+   "devices": {
+    "pen20": {
+     "versions": [],
+     "stage_time": null,
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Kakkinmon.png",
+   "sources": [
+    "wayland-vpets:pen20"
+   ],
+   "addition_pending": true
+  },
+  {
+   "id": "kiwimon",
+   "name": "Kiwimon",
+   "stage": "Adult",
+   "attribute": "Data",
+   "devices": {
+    "pen20": {
+     "versions": [
+      4
+     ],
+     "stage_time": "40 h",
+     "evolves_to": [
+      {
+       "to": "Red Vegimon",
+       "to_id": "redvegimon",
+       "raw": "0-2 CM, battles",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "battles": true
+       }
+      },
+      {
+       "to": "Aero V-dramon",
+       "to_id": "aerovdramon",
+       "raw": "Jogress Va+Da",
+       "parsed": {
+        "jogress_attrs": [
+         "Vaccine",
+         "Data"
+        ]
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Kiwimon.png",
+   "sources": [
+    "humulos:pen20"
+   ]
+  },
+  {
+   "id": "knightmon",
+   "name": "Knightmon",
+   "stage": "Perfect",
+   "attribute": "Vaccine",
+   "devices": {
+    "pen20": {
+     "versions": [
+      5
+     ],
+     "stage_time": "48 h",
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Knightmon.png",
+   "sources": [
+    "humulos:pen20"
+   ]
+  },
+  {
+   "id": "kokuwamon",
+   "name": "Kokuwamon",
+   "stage": null,
+   "attribute": null,
+   "devices": {
+    "pen20": {
+     "versions": [],
+     "stage_time": null,
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Kokuwamon.png",
+   "sources": [
+    "wayland-vpets:pen20"
+   ],
+   "addition_pending": true
+  },
+  {
+   "id": "koromon",
+   "name": "Koromon",
+   "stage": null,
+   "attribute": null,
+   "devices": {
+    "pen20": {
+     "versions": [],
+     "stage_time": null,
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Koromon.png",
+   "sources": [
+    "wayland-vpets:pen20"
+   ],
+   "addition_pending": true
+  },
+  {
+   "id": "kuwagamon",
+   "name": "Kuwagamon",
+   "stage": "Adult",
+   "attribute": "Data",
+   "devices": {
+    "pen20": {
+     "versions": [
+      1
+     ],
+     "stage_time": "40 h",
+     "evolves_to": [
+      {
+       "to": "Okuwamon",
+       "to_id": "okuwamon",
+       "raw": "Jogress Va+Da",
+       "parsed": {
+        "jogress_attrs": [
+         "Vaccine",
+         "Data"
+        ]
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Kuwagamon.png",
+   "sources": [
+    "humulos:pen20"
+   ]
+  },
+  {
+   "id": "kyokyomon",
+   "name": "Kyokyomon",
+   "stage": null,
+   "attribute": null,
+   "devices": {
+    "pen20": {
+     "versions": [],
+     "stage_time": null,
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Kyokyomon.png",
+   "sources": [
+    "wayland-vpets:pen20"
+   ],
+   "addition_pending": true
+  },
+  {
+   "id": "ladydevimon",
+   "name": "Lady Devimon",
+   "stage": null,
+   "attribute": null,
+   "devices": {
+    "pen20": {
+     "versions": [],
+     "stage_time": null,
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Lady Devimon.png",
+   "sources": [
+    "wayland-vpets:pen20"
+   ],
+   "addition_pending": true
+  },
+  {
+   "id": "lalamon",
+   "name": "Lalamon",
+   "stage": null,
+   "attribute": null,
+   "devices": {
+    "pen20": {
+     "versions": [],
+     "stage_time": null,
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Lalamon.png",
+   "sources": [
+    "wayland-vpets:pen20"
+   ],
+   "addition_pending": true
+  },
+  {
+   "id": "lavogaritamon",
+   "name": "Lavogaritamon",
+   "stage": null,
+   "attribute": null,
+   "devices": {
+    "pen20": {
+     "versions": [],
+     "stage_time": null,
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Lavogaritamon.png",
+   "sources": [
+    "wayland-vpets:pen20"
+   ],
+   "addition_pending": true
+  },
+  {
+   "id": "lavorvomon",
+   "name": "Lavorvomon",
+   "stage": null,
+   "attribute": null,
+   "devices": {
+    "pen20": {
+     "versions": [],
+     "stage_time": null,
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Lavorvomon.png",
+   "sources": [
+    "wayland-vpets:pen20"
+   ],
+   "addition_pending": true
+  },
+  {
+   "id": "leomon",
+   "name": "Leomon",
+   "stage": null,
+   "attribute": null,
+   "devices": {
+    "pen20": {
+     "versions": [],
+     "stage_time": null,
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Leomon.png",
+   "sources": [
+    "wayland-vpets:pen20"
+   ],
+   "addition_pending": true
+  },
+  {
+   "id": "lilamon",
+   "name": "Lilamon",
+   "stage": null,
+   "attribute": null,
+   "devices": {
+    "pen20": {
+     "versions": [],
+     "stage_time": null,
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Lilamon.png",
+   "sources": [
+    "wayland-vpets:pen20"
+   ],
+   "addition_pending": true
+  },
+  {
+   "id": "lilimon",
+   "name": "Lilimon",
+   "stage": "Perfect",
+   "attribute": "Data",
+   "devices": {
+    "pen20": {
+     "versions": [
+      4
+     ],
+     "stage_time": "48 h",
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Lilimon.png",
+   "sources": [
+    "humulos:pen20"
+   ]
+  },
+  {
+   "id": "lopmon",
+   "name": "Lopmon",
+   "stage": null,
+   "attribute": null,
+   "devices": {
+    "pen20": {
+     "versions": [],
+     "stage_time": null,
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Lopmon.png",
+   "sources": [
+    "wayland-vpets:pen20"
+   ],
+   "addition_pending": true
+  },
+  {
+   "id": "lotusmon",
+   "name": "Lotusmon",
+   "stage": null,
+   "attribute": null,
+   "devices": {
+    "pen20": {
+     "versions": [],
+     "stage_time": null,
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Lotusmon.png",
+   "sources": [
+    "wayland-vpets:pen20"
+   ],
+   "addition_pending": true
+  },
+  {
+   "id": "ludomon",
+   "name": "Ludomon",
+   "stage": null,
+   "attribute": null,
+   "devices": {
+    "pen20": {
+     "versions": [],
+     "stage_time": null,
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Ludomon.png",
+   "sources": [
+    "wayland-vpets:pen20"
+   ],
+   "addition_pending": true
+  },
+  {
+   "id": "madleomon",
+   "name": "Mad Leomon",
+   "stage": "Adult",
+   "attribute": "Vaccine",
+   "devices": {
+    "pen20": {
+     "versions": [
+      3
+     ],
+     "stage_time": "40 h",
+     "evolves_to": [
+      {
+       "to": "Dark Knightmon",
+       "to_id": "darkknightmon",
+       "raw": "Jogress Da+Vi",
+       "parsed": {
+        "jogress_attrs": [
+         "Data",
+         "Virus"
+        ]
+       }
+      },
+      {
+       "to": "Beelzebumon",
+       "to_id": "beelzebumon",
+       "raw": "Jogress with Demon",
+       "parsed": {
+        "jogress_partner": "Demon"
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Mad Leomon.png",
+   "sources": [
+    "humulos:pen20"
+   ]
+  },
+  {
+   "id": "mambomon",
+   "name": "Mambomon",
+   "stage": null,
+   "attribute": null,
+   "devices": {
+    "pen20": {
+     "versions": [],
+     "stage_time": null,
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Mambomon.png",
+   "sources": [
+    "wayland-vpets:pen20"
+   ],
+   "addition_pending": true
+  },
+  {
+   "id": "mammon",
+   "name": "Mammon",
+   "stage": null,
+   "attribute": null,
+   "devices": {
+    "pen20": {
+     "versions": [],
+     "stage_time": null,
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Mammon.png",
+   "sources": [
+    "wayland-vpets:pen20"
+   ],
+   "addition_pending": true
+  },
+  {
+   "id": "manbomon",
+   "name": "Manbomon",
+   "stage": null,
+   "attribute": null,
+   "devices": {
+    "pen20": {
+     "versions": [],
+     "stage_time": null,
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Manbomon.png",
+   "sources": [
+    "wayland-vpets:pen20"
+   ],
+   "addition_pending": true
+  },
+  {
+   "id": "marinangemon",
+   "name": "Marin Angemon",
+   "stage": "Perfect",
+   "attribute": "Vaccine",
+   "devices": {
+    "pen20": {
+     "versions": [
+      2
+     ],
+     "stage_time": "48 h",
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Marin Angemon.png",
+   "sources": [
+    "humulos:pen20"
+   ]
+  },
+  {
+   "id": "marindevimon",
+   "name": "Marin Devimon",
+   "stage": "Perfect",
+   "attribute": "Virus",
+   "devices": {
+    "pen20": {
+     "versions": [
+      2
+     ],
+     "stage_time": "48 h",
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Marin Devimon.png",
+   "sources": [
+    "humulos:pen20"
+   ]
+  },
+  {
+   "id": "mastemon",
+   "name": "Mastemon",
+   "stage": "Ultimate",
+   "attribute": "Free",
+   "devices": {
+    "pen20": {
+     "versions": [
+      1
+     ],
+     "stage_time": null,
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Mastemon.png",
+   "sources": [
+    "humulos:pen20"
+   ]
+  },
+  {
+   "id": "mechanorimon",
+   "name": "Mechanorimon",
+   "stage": null,
+   "attribute": null,
+   "devices": {
+    "pen20": {
+     "versions": [],
+     "stage_time": null,
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Mechanorimon.png",
+   "sources": [
+    "humulos:pen20"
+   ]
+  },
+  {
+   "id": "megadramon",
+   "name": "Megadramon",
+   "stage": "Perfect",
+   "attribute": "Vaccine",
+   "devices": {
+    "pen20": {
+     "versions": [
+      5
+     ],
+     "stage_time": "48 h",
+     "evolves_to": [
+      {
+       "to": "War Greymon",
+       "to_id": "wargreymon",
+       "raw": "1 CM, battles",
+       "parsed": {
+        "care_mistakes": "1",
+        "battles": true
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Megadramon.png",
+   "sources": [
+    "humulos:pen20"
+   ]
+  },
+  {
+   "id": "megalogrowmon",
+   "name": "Megalo Growmon",
+   "stage": null,
+   "attribute": null,
+   "devices": {
+    "pen20": {
+     "versions": [],
+     "stage_time": null,
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Megalo Growmon.png",
+   "sources": [
+    "wayland-vpets:pen20"
+   ],
+   "addition_pending": true
+  },
+  {
+   "id": "megaseadramon",
+   "name": "Mega Seadramon",
+   "stage": "Perfect",
+   "attribute": "Free",
+   "devices": {
+    "pen20": {
+     "versions": [
+      2
+     ],
+     "stage_time": "48 h",
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Mega Seadramon.png",
+   "sources": [
+    "humulos:pen20"
+   ]
+  },
+  {
+   "id": "meicoomon",
+   "name": "Meicoomon",
+   "stage": null,
+   "attribute": null,
+   "devices": {
+    "pen20": {
+     "versions": [],
+     "stage_time": null,
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Meicoomon.png",
+   "sources": [
+    "wayland-vpets:pen20"
+   ],
+   "addition_pending": true
+  },
+  {
+   "id": "meicrackmonviciousmode",
+   "name": "Meicrackmon Vicious Mode",
+   "stage": null,
+   "attribute": null,
+   "devices": {
+    "pen20": {
+     "versions": [],
+     "stage_time": null,
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Meicrackmon Vicious Mode.png",
+   "sources": [
+    "wayland-vpets:pen20"
+   ],
+   "addition_pending": true
+  },
+  {
+   "id": "meramon",
+   "name": "Meramon",
+   "stage": null,
+   "attribute": null,
+   "devices": {
+    "pen20": {
+     "versions": [],
+     "stage_time": null,
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Meramon.png",
+   "sources": [
+    "wayland-vpets:pen20"
+   ],
+   "addition_pending": true
+  },
+  {
+   "id": "metaletemon",
+   "name": "Metal Etemon",
+   "stage": "Ultimate",
+   "attribute": "Vaccine",
+   "devices": {
+    "pen20": {
+     "versions": [
+      1
+     ],
+     "stage_time": null,
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Metal Etemon.png",
+   "sources": [
+    "humulos:pen20"
+   ]
+  },
+  {
+   "id": "metalgarurumon",
+   "name": "Metal Garurumon",
+   "stage": "Ultimate",
+   "attribute": "Vaccine",
+   "devices": {
+    "pen20": {
+     "versions": [
+      5
+     ],
+     "stage_time": null,
+     "evolves_to": [
+      {
+       "to": "Omegamon",
+       "to_id": "omegamon",
+       "raw": "Jogress with War Greymon",
+       "parsed": {
+        "jogress_partner": "War Greymon"
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Metal Garurumon.png",
+   "sources": [
+    "humulos:pen20"
+   ]
+  },
+  {
+   "id": "metalgreymon",
+   "name": "Metal Greymon",
+   "stage": "Perfect",
+   "attribute": "Vaccine",
+   "devices": {
+    "pen20": {
+     "versions": [
+      5
+     ],
+     "stage_time": "48 h",
+     "evolves_to": [
+      {
+       "to": "War Greymon",
+       "to_id": "wargreymon",
+       "raw": "Jogress Da",
+       "parsed": {
+        "jogress_attrs": [
+         "Data"
+        ]
+       }
+      },
+      {
+       "to": "Mugendramon",
+       "to_id": "mugendramon",
+       "raw": "Jogress Vi",
+       "parsed": {
+        "jogress_attrs": [
+         "Virus"
+        ]
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Metal Greymon.png",
+   "sources": [
+    "humulos:pen20"
+   ]
+  },
+  {
+   "id": "metalmamemon",
+   "name": "Metal Mamemon",
+   "stage": null,
+   "attribute": null,
+   "devices": {
+    "pen20": {
+     "versions": [],
+     "stage_time": null,
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Metal Mamemon.png",
+   "sources": [
+    "wayland-vpets:pen20"
+   ],
+   "addition_pending": true
+  },
+  {
+   "id": "metalseadramon",
+   "name": "Metal Seadramon",
+   "stage": "Perfect",
+   "attribute": "Free",
+   "devices": {
+    "pen20": {
+     "versions": [
+      2
+     ],
+     "stage_time": "48 h",
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Metal Seadramon.png",
+   "sources": [
+    "humulos:pen20"
+   ]
+  },
+  {
+   "id": "mochimon",
+   "name": "Mochimon",
+   "stage": "Baby I",
+   "attribute": "Free",
+   "devices": {
+    "pen20": {
+     "versions": [
+      1
+     ],
+     "stage_time": "10 min",
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Mochimon.png",
+   "sources": [
+    "humulos:pen20"
+   ]
+  },
+  {
+   "id": "mokumon",
+   "name": "Mokumon",
+   "stage": null,
+   "attribute": null,
+   "devices": {
+    "pen20": {
+     "versions": [],
+     "stage_time": null,
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Mokumon.png",
+   "sources": [
+    "wayland-vpets:pen20"
+   ],
+   "addition_pending": true
+  },
+  {
+   "id": "monchromon",
+   "name": "Monchromon",
+   "stage": null,
+   "attribute": null,
+   "devices": {
+    "pen20": {
+     "versions": [],
+     "stage_time": null,
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Monchromon.png",
+   "sources": [
+    "wayland-vpets:pen20"
+   ],
+   "addition_pending": true
+  },
+  {
+   "id": "monochromon",
+   "name": "Monochromon",
+   "stage": "Adult",
+   "attribute": "Vaccine",
+   "devices": {
+    "pen20": {
+     "versions": [
+      1
+     ],
+     "stage_time": "40 h",
+     "evolves_to": [
+      {
+       "to": "Atlur Kabuterimon",
+       "to_id": "atlurkabuterimon",
+       "raw": "0 CM, battles",
+       "parsed": {
+        "care_mistakes": "0",
+        "battles": true
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Monochromon.png",
+   "sources": [
+    "humulos:pen20"
+   ]
+  },
+  {
+   "id": "mugendramon",
+   "name": "Mugendramon",
+   "stage": "Ultimate",
+   "attribute": "Virus",
+   "devices": {
+    "pen20": {
+     "versions": [
+      5
+     ],
+     "stage_time": null,
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Mugendramon.png",
+   "sources": [
+    "humulos:pen20"
+   ]
+  },
+  {
+   "id": "mushmon",
+   "name": "Mushmon",
+   "stage": "Child",
+   "attribute": "Virus",
+   "devices": {
+    "pen20": {
+     "versions": [
+      4
+     ],
+     "stage_time": "24 h",
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Mushmon.png",
+   "sources": [
+    "humulos:pen20"
+   ]
+  },
+  {
+   "id": "nyaromon",
+   "name": "Nyaromon",
+   "stage": null,
+   "attribute": null,
+   "devices": {
+    "pen20": {
+     "versions": [],
+     "stage_time": null,
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Nyaromon.png",
+   "sources": [
+    "wayland-vpets:pen20"
+   ],
+   "addition_pending": true
+  },
+  {
+   "id": "nyokimon",
+   "name": "Nyokimon",
+   "stage": "Baby I",
+   "attribute": "Free",
+   "devices": {
+    "pen20": {
+     "versions": [
+      4
+     ],
+     "stage_time": "10 min",
+     "evolves_to": [
+      {
+       "to": "Pyocomon",
+       "to_id": "pyocomon",
+       "raw": "",
+       "parsed": {}
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Nyokimon.png",
+   "sources": [
+    "humulos:pen20"
+   ]
+  },
+  {
+   "id": "octmon",
+   "name": "Octmon",
+   "stage": "Adult",
+   "attribute": "Free",
+   "devices": {
+    "pen20": {
+     "versions": [
+      2
+     ],
+     "stage_time": "40 h",
+     "evolves_to": [
+      {
+       "to": "Anomalocarimon",
+       "to_id": "anomalocarimon",
+       "raw": "0-3 CM, battles 12/15",
+       "parsed": {
+        "care_mistakes": "0-3",
+        "win_ratio": "12/15",
+        "battles": true
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Octmon.png",
+   "sources": [
+    "humulos:pen20"
+   ]
+  },
+  {
+   "id": "ofanimon",
+   "name": "Ofanimon",
+   "stage": null,
+   "attribute": null,
+   "devices": {
+    "pen20": {
+     "versions": [],
+     "stage_time": null,
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Ofanimon.png",
+   "sources": [
+    "wayland-vpets:pen20"
+   ],
+   "addition_pending": true
+  },
+  {
+   "id": "ogudomon",
+   "name": "Ogudomon",
+   "stage": "Ultimate",
+   "attribute": "Virus",
+   "devices": {
+    "pen20": {
+     "versions": [
+      3
+     ],
+     "stage_time": null,
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Ogudomon.png",
+   "sources": [
+    "humulos:pen20"
+   ]
+  },
+  {
+   "id": "okuwamon",
+   "name": "Okuwamon",
+   "stage": "Perfect",
+   "attribute": "Data",
+   "devices": {
+    "pen20": {
+     "versions": [
+      1
+     ],
+     "stage_time": "48 h",
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Okuwamon.png",
+   "sources": [
+    "humulos:pen20"
+   ]
+  },
+  {
+   "id": "omegamon",
+   "name": "Omegamon",
+   "stage": "Ultimate",
+   "attribute": "Vaccine",
+   "devices": {
+    "pen20": {
+     "versions": [
+      5
+     ],
+     "stage_time": null,
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Omegamon.png",
+   "sources": [
+    "humulos:pen20"
+   ]
+  },
+  {
+   "id": "ordinemon",
+   "name": "Ordinemon",
+   "stage": null,
+   "attribute": null,
+   "devices": {
+    "pen20": {
+     "versions": [],
+     "stage_time": null,
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Ordinemon.png",
+   "sources": [
+    "wayland-vpets:pen20"
+   ],
+   "addition_pending": true
+  },
+  {
+   "id": "otamamon",
+   "name": "Otamamon",
+   "stage": "Baby II",
+   "attribute": "Data",
+   "devices": {
+    "pen20": {
+     "versions": [
+      1
+     ],
+     "stage_time": "12 h",
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Otamamon.png",
+   "sources": [
+    "humulos:pen20"
+   ]
+  },
+  {
+   "id": "ouryumon",
+   "name": "Ouryumon",
+   "stage": null,
+   "attribute": null,
+   "devices": {
+    "pen20": {
+     "versions": [],
+     "stage_time": null,
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Ouryumon.png",
+   "sources": [
+    "wayland-vpets:pen20"
+   ],
+   "addition_pending": true
+  },
+  {
+   "id": "paildramon",
+   "name": "Paildramon",
+   "stage": null,
+   "attribute": null,
+   "devices": {
+    "pen20": {
+     "versions": [],
+     "stage_time": null,
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Paildramon.png",
+   "sources": [
+    "wayland-vpets:pen20"
+   ],
+   "addition_pending": true
+  },
+  {
+   "id": "palmon",
+   "name": "Palmon",
+   "stage": "Child",
+   "attribute": "Data",
+   "devices": {
+    "pen20": {
+     "versions": [
+      4
+     ],
+     "stage_time": "24 h",
+     "evolves_to": [
+      {
+       "to": "V-dramon",
+       "to_id": "vdramon",
+       "raw": "2-4 CM, 0-3 Effort OR 2-4 CM, 2-4 Effort",
+       "parsed": {
+        "alternatives": [
+         {
+          "care_mistakes": "2-4",
+          "effort": "0-3"
+         },
+         {
+          "care_mistakes": "2-4",
+          "effort": "2-4"
+         }
+        ]
+       }
+      },
+      {
+       "to": "Woodmon",
+       "to_id": "woodmon",
+       "raw": "0-1 CM, 0-2 Effort OR 0-1 CM, 0-3 Effort OR 2-4 CM, 4 Effort",
+       "parsed": {
+        "alternatives": [
+         {
+          "care_mistakes": "0-1",
+          "effort": "0-2"
+         },
+         {
+          "care_mistakes": "0-1",
+          "effort": "0-3"
+         },
+         {
+          "care_mistakes": "2-4",
+          "effort": "4"
+         }
+        ]
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Palmon.png",
+   "sources": [
+    "humulos:pen20"
+   ]
+  },
+  {
+   "id": "petimeramon",
+   "name": "Peti Meramon",
+   "stage": null,
+   "attribute": null,
+   "devices": {
+    "pen20": {
+     "versions": [],
+     "stage_time": null,
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Peti Meramon.png",
+   "sources": [
+    "wayland-vpets:pen20"
+   ],
+   "addition_pending": true
+  },
+  {
+   "id": "petitmon",
+   "name": "Petitmon",
+   "stage": null,
+   "attribute": null,
+   "devices": {
+    "pen20": {
+     "versions": [],
+     "stage_time": null,
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Petitmon.png",
+   "sources": [
+    "wayland-vpets:pen20"
+   ],
+   "addition_pending": true
+  },
+  {
+   "id": "phascomon",
+   "name": "Phascomon",
+   "stage": "Child",
+   "attribute": "Vaccine",
+   "devices": {
+    "pen20": {
+     "versions": [
+      3
+     ],
+     "stage_time": "24 h",
+     "evolves_to": [
+      {
+       "to": "Shadramon",
+       "to_id": "shadramon",
+       "raw": "0-1 CM, 0-3 Effort",
+       "parsed": {
+        "care_mistakes": "0-1",
+        "effort": "0-3"
+       }
+      },
+      {
+       "to": "Porcupamon",
+       "to_id": "porcupamon",
+       "raw": "0-1 CM, 4 Effort",
+       "parsed": {
+        "care_mistakes": "0-1",
+        "effort": "4"
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Phascomon.png",
+   "sources": [
+    "humulos:pen20"
+   ]
+  },
+  {
+   "id": "piccolomon",
+   "name": "Piccolomon",
+   "stage": "Perfect",
+   "attribute": "Free",
+   "devices": {
+    "pen20": {
+     "versions": [
+      1
+     ],
+     "stage_time": "48 h",
+     "evolves_to": [
+      {
+       "to": "Angewomon",
+       "to_id": "angewomon",
+       "raw": "Jogress Va",
+       "parsed": {
+        "jogress_attrs": [
+         "Vaccine"
+        ]
+       }
+      },
+      {
+       "to": "Herakle Kabuterimon",
+       "to_id": "heraklekabuterimon",
+       "raw": "Jogress Va",
+       "parsed": {
+        "jogress_attrs": [
+         "Vaccine"
+        ]
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Piccolomon.png",
+   "sources": [
+    "humulos:pen20"
+   ]
+  },
+  {
+   "id": "picodevimon",
+   "name": "Pico Devimon",
+   "stage": null,
+   "attribute": null,
+   "devices": {
+    "pen20": {
+     "versions": [],
+     "stage_time": null,
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Pico Devimon.png",
+   "sources": [
+    "wayland-vpets:pen20"
+   ],
+   "addition_pending": true
+  },
+  {
+   "id": "piemon",
+   "name": "Piemon",
+   "stage": null,
+   "attribute": null,
+   "devices": {
+    "pen20": {
+     "versions": [],
+     "stage_time": null,
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Piemon.png",
+   "sources": [
+    "wayland-vpets:pen20"
+   ],
+   "addition_pending": true
+  },
+  {
+   "id": "pinochimon",
+   "name": "Pinochimon",
+   "stage": "Ultimate",
+   "attribute": "Virus",
+   "devices": {
+    "pen20": {
+     "versions": [
+      4
+     ],
+     "stage_time": null,
+     "evolves_to": [],
+     "_unresolved": [
+      "0-1 CM, battles"
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Pinochimon.png",
+   "sources": [
+    "humulos:pen20"
+   ]
+  },
+  {
+   "id": "pitchmon",
+   "name": "Pitchmon",
+   "stage": "Baby I",
+   "attribute": "Free",
+   "devices": {
+    "pen20": {
+     "versions": [
+      2
+     ],
+     "stage_time": "10 min",
+     "evolves_to": [
+      {
+       "to": "Pukamon",
+       "to_id": "pukamon",
+       "raw": "0 CM",
+       "parsed": {
+        "care_mistakes": "0"
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Pitchmon.png",
+   "sources": [
+    "humulos:pen20"
+   ]
+  },
+  {
+   "id": "piyomon",
+   "name": "Piyomon",
+   "stage": "Child",
+   "attribute": "Data",
+   "devices": {
+    "pen20": {
+     "versions": [
+      4
+     ],
+     "stage_time": "24 h",
+     "evolves_to": [
+      {
+       "to": "Floramon",
+       "to_id": "floramon",
+       "raw": "3-4 CM",
+       "parsed": {
+        "care_mistakes": "3-4"
+       }
+      },
+      {
+       "to": "Palmon",
+       "to_id": "palmon",
+       "raw": "0-1 CM, 3-4 Effort OR 0-1 CM, 4 Effort",
+       "parsed": {
+        "alternatives": [
+         {
+          "care_mistakes": "0-1",
+          "effort": "3-4"
+         },
+         {
+          "care_mistakes": "0-1",
+          "effort": "4"
+         }
+        ]
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Piyomon.png",
+   "sources": [
+    "humulos:pen20"
+   ]
+  },
+  {
+   "id": "plesiomon",
+   "name": "Plesiomon",
+   "stage": "Ultimate",
+   "attribute": "Free",
+   "devices": {
+    "pen20": {
+     "versions": [
+      2
+     ],
+     "stage_time": null,
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Plesiomon.png",
+   "sources": [
+    "humulos:pen20"
+   ]
+  },
+  {
+   "id": "plotmon",
+   "name": "Plotmon",
+   "stage": null,
+   "attribute": null,
+   "devices": {
+    "pen20": {
+     "versions": [],
+     "stage_time": null,
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Plotmon.png",
+   "sources": [
+    "wayland-vpets:pen20"
+   ],
+   "addition_pending": true
+  },
+  {
+   "id": "porcupamon",
+   "name": "Porcupamon",
+   "stage": "Adult",
+   "attribute": "Data",
+   "devices": {
+    "pen20": {
+     "versions": [
+      3
+     ],
+     "stage_time": "40 h",
+     "evolves_to": [
+      {
+       "to": "Baalmon",
+       "to_id": "baalmon",
+       "raw": "0 CM, battles",
+       "parsed": {
+        "care_mistakes": "0",
+        "battles": true
+       }
+      },
+      {
+       "to": "Belphemon: Rage Mode",
+       "to_id": "belphemonragemode",
+       "raw": "1-3 CM, battles",
+       "parsed": {
+        "care_mistakes": "1-3",
+        "battles": true
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Porcupamon.png",
+   "sources": [
+    "humulos:pen20"
+   ]
+  },
+  {
+   "id": "porcupmon",
+   "name": "Porcupmon",
+   "stage": null,
+   "attribute": null,
+   "devices": {
+    "pen20": {
+     "versions": [],
+     "stage_time": null,
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Porcupmon.png",
+   "sources": [
+    "wayland-vpets:pen20"
+   ],
+   "addition_pending": true
+  },
+  {
+   "id": "pukamon",
+   "name": "Pukamon",
+   "stage": "Baby II",
+   "attribute": "Free",
+   "devices": {
+    "pen20": {
+     "versions": [
+      2
+     ],
+     "stage_time": "12 h",
+     "evolves_to": [
+      {
+       "to": "Gomamon",
+       "to_id": "gomamon",
+       "raw": "1-2 CM",
+       "parsed": {
+        "care_mistakes": "1-2"
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Pukamon.png",
+   "sources": [
+    "humulos:pen20"
+   ]
+  },
+  {
+   "id": "pukumon",
+   "name": "Pukumon",
+   "stage": null,
+   "attribute": null,
+   "devices": {
+    "pen20": {
+     "versions": [],
+     "stage_time": null,
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Pukumon.png",
+   "sources": [
+    "wayland-vpets:pen20"
+   ],
+   "addition_pending": true
+  },
+  {
+   "id": "pumpmon",
+   "name": "Pumpmon",
+   "stage": null,
+   "attribute": null,
+   "devices": {
+    "pen20": {
+     "versions": [],
+     "stage_time": null,
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Pumpmon.png",
+   "sources": [
+    "wayland-vpets:pen20"
+   ],
+   "addition_pending": true
+  },
+  {
+   "id": "pyocomon",
+   "name": "Pyocomon",
+   "stage": "Baby II",
+   "attribute": "Free",
+   "devices": {
+    "pen20": {
+     "versions": [
+      4
+     ],
+     "stage_time": "12 h",
+     "evolves_to": [
+      {
+       "to": "Piyomon",
+       "to_id": "piyomon",
+       "raw": "0 CM",
+       "parsed": {
+        "care_mistakes": "0"
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Pyocomon.png",
+   "sources": [
+    "humulos:pen20"
+   ]
+  },
+  {
+   "id": "rafflesimon",
+   "name": "Rafflesimon",
+   "stage": "Ultimate",
+   "attribute": "Data",
+   "devices": {
+    "pen20": {
+     "versions": [
+      4
+     ],
+     "stage_time": null,
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Rafflesimon.png",
+   "sources": [
+    "humulos:pen20"
+   ]
+  },
+  {
+   "id": "ragnalordmon",
+   "name": "Ragna Lordmon",
+   "stage": null,
+   "attribute": null,
+   "devices": {
+    "pen20": {
+     "versions": [],
+     "stage_time": null,
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Ragna Lordmon.png",
+   "sources": [
+    "wayland-vpets:pen20"
+   ],
+   "addition_pending": true
+  },
+  {
+   "id": "raguelmon",
+   "name": "Raguelmon",
+   "stage": null,
+   "attribute": null,
+   "devices": {
+    "pen20": {
+     "versions": [],
+     "stage_time": null,
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Raguelmon.png",
+   "sources": [
+    "wayland-vpets:pen20"
+   ],
+   "addition_pending": true
+  },
+  {
+   "id": "raijiludomon",
+   "name": "Raiji Ludomon",
+   "stage": null,
+   "attribute": null,
+   "devices": {
+    "pen20": {
+     "versions": [],
+     "stage_time": null,
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Raiji Ludomon.png",
+   "sources": [
+    "wayland-vpets:pen20"
+   ],
+   "addition_pending": true
+  },
+  {
+   "id": "rapidmon",
+   "name": "Rapidmon",
+   "stage": null,
+   "attribute": null,
+   "devices": {
+    "pen20": {
+     "versions": [],
+     "stage_time": null,
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Rapidmon.png",
+   "sources": [
+    "wayland-vpets:pen20"
+   ],
+   "addition_pending": true
+  },
+  {
+   "id": "redvegimon",
+   "name": "Red Vegimon",
+   "stage": "Perfect",
+   "attribute": "Data",
+   "devices": {
+    "pen20": {
+     "versions": [
+      4
+     ],
+     "stage_time": "48 h",
+     "evolves_to": [
+      {
+       "to": "Aero V-dramon",
+       "to_id": "aerovdramon",
+       "raw": "Jogress Va",
+       "parsed": {
+        "jogress_attrs": [
+         "Vaccine"
+        ]
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Red Vegimon.png",
+   "sources": [
+    "humulos:pen20"
+   ]
+  },
+  {
+   "id": "reppamon",
+   "name": "Reppamon",
+   "stage": null,
+   "attribute": null,
+   "devices": {
+    "pen20": {
+     "versions": [],
+     "stage_time": null,
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Reppamon.png",
+   "sources": [
+    "wayland-vpets:pen20"
+   ],
+   "addition_pending": true
+  },
+  {
+   "id": "revolmon",
+   "name": "Revolmon",
+   "stage": "Adult",
+   "attribute": "Vaccine",
+   "devices": {
+    "pen20": {
+     "versions": [
+      5
+     ],
+     "stage_time": "40 h",
+     "evolves_to": [
+      {
+       "to": "Metal Greymon",
+       "to_id": "metalgreymon",
+       "raw": "Jogress Va+Da",
+       "parsed": {
+        "jogress_attrs": [
+         "Vaccine",
+         "Data"
+        ]
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Revolmon.png",
+   "sources": [
+    "humulos:pen20"
+   ]
+  },
+  {
+   "id": "rizegreymon",
+   "name": "Rize Greymon",
+   "stage": null,
+   "attribute": null,
+   "devices": {
+    "pen20": {
+     "versions": [],
+     "stage_time": null,
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Rize Greymon.png",
+   "sources": [
+    "wayland-vpets:pen20"
+   ],
+   "addition_pending": true
+  },
+  {
+   "id": "rosemon",
+   "name": "Rosemon",
+   "stage": "Ultimate",
+   "attribute": "Data",
+   "devices": {
+    "pen20": {
+     "versions": [
+      4
+     ],
+     "stage_time": null,
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Rosemon.png",
+   "sources": [
+    "humulos:pen20"
+   ]
+  },
+  {
+   "id": "rukamon",
+   "name": "Rukamon",
+   "stage": "Child",
+   "attribute": "Free",
+   "devices": {
+    "pen20": {
+     "versions": [
+      2
+     ],
+     "stage_time": "24 h",
+     "evolves_to": [
+      {
+       "to": "Ikkakumon",
+       "to_id": "ikkakumon",
+       "raw": "2-4 CM, 2-4 Effort",
+       "parsed": {
+        "care_mistakes": "2-4",
+        "effort": "2-4"
+       }
+      },
+      {
+       "to": "Seadramon",
+       "to_id": "seadramon",
+       "raw": "2-4 CM, 0-1 Effort",
+       "parsed": {
+        "care_mistakes": "2-4",
+        "effort": "0-1"
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Rukamon.png",
+   "sources": [
+    "humulos:pen20"
+   ]
+  },
+  {
+   "id": "ryudamon",
+   "name": "Ryudamon",
+   "stage": null,
+   "attribute": null,
+   "devices": {
+    "pen20": {
+     "versions": [],
+     "stage_time": null,
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Ryudamon.png",
+   "sources": [
+    "wayland-vpets:pen20"
+   ],
+   "addition_pending": true
+  },
+  {
+   "id": "saberleomon",
+   "name": "Saber Leomon",
+   "stage": "Ultimate",
+   "attribute": "Vaccine",
+   "devices": {
+    "pen20": {
+     "versions": [
+      1
+     ],
+     "stage_time": null,
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Saber Leomon.png",
+   "sources": [
+    "humulos:pen20"
+   ]
+  },
+  {
+   "id": "saintgalgomon",
+   "name": "Saint Galgomon",
+   "stage": null,
+   "attribute": null,
+   "devices": {
+    "pen20": {
+     "versions": [],
+     "stage_time": null,
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Saint Galgomon.png",
+   "sources": [
+    "wayland-vpets:pen20"
+   ],
+   "addition_pending": true
+  },
+  {
+   "id": "sakumon",
+   "name": "Sakumon",
+   "stage": null,
+   "attribute": null,
+   "devices": {
+    "pen20": {
+     "versions": [],
+     "stage_time": null,
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Sakumon.png",
+   "sources": [
+    "wayland-vpets:pen20"
+   ],
+   "addition_pending": true
+  },
+  {
+   "id": "sakuttomon",
+   "name": "Sakuttomon",
+   "stage": null,
+   "attribute": null,
+   "devices": {
+    "pen20": {
+     "versions": [],
+     "stage_time": null,
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Sakuttomon.png",
+   "sources": [
+    "wayland-vpets:pen20"
+   ],
+   "addition_pending": true
+  },
+  {
+   "id": "saviorhackmon",
+   "name": "Savior Hackmon",
+   "stage": null,
+   "attribute": null,
+   "devices": {
+    "pen20": {
+     "versions": [],
+     "stage_time": null,
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Savior Hackmon.png",
+   "sources": [
+    "wayland-vpets:pen20"
+   ],
+   "addition_pending": true
+  },
+  {
+   "id": "seadramon",
+   "name": "Seadramon",
+   "stage": "Adult",
+   "attribute": "Free",
+   "devices": {
+    "pen20": {
+     "versions": [
+      2
+     ],
+     "stage_time": "40 h",
+     "evolves_to": [
+      {
+       "to": "Zudomon",
+       "to_id": "zudomon",
+       "raw": "Jogress Va+Da",
+       "parsed": {
+        "jogress_attrs": [
+         "Vaccine",
+         "Data"
+        ]
+       }
+      },
+      {
+       "to": "Whamon",
+       "to_id": "whamon",
+       "raw": "Jogress Da+Vi",
+       "parsed": {
+        "jogress_attrs": [
+         "Data",
+         "Virus"
+        ]
+       }
+      },
+      {
+       "to": "Mega Seadramon",
+       "to_id": "megaseadramon",
+       "raw": "Jogress Vi+Da",
+       "parsed": {
+        "jogress_attrs": [
+         "Virus",
+         "Data"
+        ]
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Seadramon.png",
+   "sources": [
+    "humulos:pen20"
+   ]
+  },
+  {
+   "id": "seraphimon",
+   "name": "Seraphimon",
+   "stage": null,
+   "attribute": null,
+   "devices": {
+    "pen20": {
+     "versions": [],
+     "stage_time": null,
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Seraphimon.png",
+   "sources": [
+    "wayland-vpets:pen20"
+   ],
+   "addition_pending": true
+  },
+  {
+   "id": "shadramon",
+   "name": "Shadramon",
+   "stage": "Adult",
+   "attribute": "Data",
+   "devices": {
+    "pen20": {
+     "versions": [
+      3
+     ],
+     "stage_time": "40 h",
+     "evolves_to": [
+      {
+       "to": "Dark Knightmon",
+       "to_id": "darkknightmon",
+       "raw": "Jogress Vi",
+       "parsed": {
+        "jogress_attrs": [
+         "Virus"
+        ]
+       }
+      },
+      {
+       "to": "Astamon",
+       "to_id": "astamon",
+       "raw": "Jogress Va+Fr, 0-2 CM, battles",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "battles": true,
+        "jogress_partners": [
+         "Va",
+         "Fr, 0-2 CM, battles"
+        ]
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Shadramon.png",
+   "sources": [
+    "humulos:pen20"
+   ]
+  },
+  {
+   "id": "shakomon",
+   "name": "Shakomon",
+   "stage": "Child",
+   "attribute": "Free",
+   "devices": {
+    "pen20": {
+     "versions": [
+      2
+     ],
+     "stage_time": "24 h",
+     "evolves_to": [
+      {
+       "to": "Ikkakumon",
+       "to_id": "ikkakumon",
+       "raw": "2-4 CM, 2-4 Effort",
+       "parsed": {
+        "care_mistakes": "2-4",
+        "effort": "2-4"
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Shakomon.png",
+   "sources": [
+    "humulos:pen20"
+   ]
+  },
+  {
+   "id": "skullmammon",
+   "name": "Skull Mammon",
+   "stage": null,
+   "attribute": null,
+   "devices": {
+    "pen20": {
+     "versions": [],
+     "stage_time": null,
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Skull Mammon.png",
+   "sources": [
+    "wayland-vpets:pen20"
+   ],
+   "addition_pending": true
+  },
+  {
+   "id": "slayerdramon",
+   "name": "Slayerdramon",
+   "stage": null,
+   "attribute": null,
+   "devices": {
+    "pen20": {
+     "versions": [],
+     "stage_time": null,
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Slayerdramon.png",
+   "sources": [
+    "wayland-vpets:pen20"
+   ],
+   "addition_pending": true
+  },
+  {
+   "id": "starmon",
+   "name": "Starmon",
+   "stage": "Adult",
+   "attribute": "Free",
+   "devices": {
+    "pen20": {
+     "versions": [
+      1
+     ],
+     "stage_time": "40 h",
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Starmon.png",
+   "sources": [
+    "humulos:pen20"
+   ]
+  },
+  {
+   "id": "sunflowmon",
+   "name": "Sunflowmon",
+   "stage": null,
+   "attribute": null,
+   "devices": {
+    "pen20": {
+     "versions": [],
+     "stage_time": null,
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Sunflowmon.png",
+   "sources": [
+    "wayland-vpets:pen20"
+   ],
+   "addition_pending": true
+  },
+  {
+   "id": "tailmon",
+   "name": "Tailmon",
+   "stage": "Adult",
+   "attribute": "Free",
+   "devices": {
+    "pen20": {
+     "versions": [
+      1
+     ],
+     "stage_time": "40 h",
+     "evolves_to": [
+      {
+       "to": "Angewomon",
+       "to_id": "angewomon",
+       "raw": "2-4 CM, 4 Effort OR 2-4 CM, 2-4 Effort",
+       "parsed": {
+        "alternatives": [
+         {
+          "care_mistakes": "2-4",
+          "effort": "4"
+         },
+         {
+          "care_mistakes": "2-4",
+          "effort": "2-4"
+         }
+        ]
+       }
+      },
+      {
+       "to": "Okuwamon",
+       "to_id": "okuwamon",
+       "raw": "Jogress Va+Da",
+       "parsed": {
+        "jogress_attrs": [
+         "Vaccine",
+         "Data"
+        ]
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Tailmon.png",
+   "sources": [
+    "humulos:pen20"
+   ]
+  },
+  {
+   "id": "tankmon",
+   "name": "Tankmon",
+   "stage": "Adult",
+   "attribute": "Vaccine",
+   "devices": {
+    "pen20": {
+     "versions": [
+      5
+     ],
+     "stage_time": "40 h",
+     "evolves_to": [
+      {
+       "to": "Mechanorimon",
+       "to_id": "mechanorimon",
+       "raw": "0 CM, battles",
+       "parsed": {
+        "care_mistakes": "0",
+        "battles": true
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Tankmon.png",
+   "sources": [
+    "humulos:pen20"
+   ]
+  },
+  {
+   "id": "targetmon",
+   "name": "Targetmon",
+   "stage": null,
+   "attribute": null,
+   "devices": {
+    "pen20": {
+     "versions": [],
+     "stage_time": null,
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Targetmon.png",
+   "sources": [
+    "wayland-vpets:pen20"
+   ],
+   "addition_pending": true
+  },
+  {
+   "id": "tentomon",
+   "name": "Tentomon",
+   "stage": "Baby II",
+   "attribute": "Data",
+   "devices": {
+    "pen20": {
+     "versions": [
+      1
+     ],
+     "stage_time": "12 h",
+     "evolves_to": [
+      {
+       "to": "Kabuterimon",
+       "to_id": "kabuterimon",
+       "raw": "3-4 CM",
+       "parsed": {
+        "care_mistakes": "3-4"
+       }
+      },
+      {
+       "to": "Kuwagamon",
+       "to_id": "kuwagamon",
+       "raw": "2-4 CM, 0-1 Effort",
+       "parsed": {
+        "care_mistakes": "2-4",
+        "effort": "0-1"
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Tentomon.png",
+   "sources": [
+    "humulos:pen20"
+   ]
+  },
+  {
+   "id": "terriermon",
+   "name": "Terriermon",
+   "stage": null,
+   "attribute": null,
+   "devices": {
+    "pen20": {
+     "versions": [],
+     "stage_time": null,
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Terriermon.png",
+   "sources": [
+    "wayland-vpets:pen20"
+   ],
+   "addition_pending": true
+  },
+  {
+   "id": "thunderballmon",
+   "name": "Thunderballmon",
+   "stage": "Adult",
+   "attribute": "Vaccine",
+   "devices": {
+    "pen20": {
+     "versions": [
+      5
+     ],
+     "stage_time": "40 h",
+     "evolves_to": [
+      {
+       "to": "Big Mamemon",
+       "to_id": "bigmamemon",
+       "raw": "2-3 CM, battles",
+       "parsed": {
+        "care_mistakes": "2-3",
+        "battles": true
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Thunderballmon.png",
+   "sources": [
+    "humulos:pen20"
+   ]
+  },
+  {
+   "id": "tialudomon",
+   "name": "Tia Ludomon",
+   "stage": null,
+   "attribute": null,
+   "devices": {
+    "pen20": {
+     "versions": [],
+     "stage_time": null,
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Tia Ludomon.png",
+   "sources": [
+    "wayland-vpets:pen20"
+   ],
+   "addition_pending": true
+  },
+  {
+   "id": "togemon",
+   "name": "Togemon",
+   "stage": "Adult",
+   "attribute": "Data",
+   "devices": {
+    "pen20": {
+     "versions": [
+      4
+     ],
+     "stage_time": "40 h",
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Togemon.png",
+   "sources": [
+    "humulos:pen20"
+   ]
+  },
+  {
+   "id": "tonosamagekomon",
+   "name": "Tonosama Gekomon",
+   "stage": "Perfect",
+   "attribute": "Data",
+   "devices": {
+    "pen20": {
+     "versions": [
+      1
+     ],
+     "stage_time": "48 h",
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Tonosama Gekomon.png",
+   "sources": [
+    "humulos:pen20"
+   ]
+  },
+  {
+   "id": "tortamon",
+   "name": "Tortamon",
+   "stage": "Adult",
+   "attribute": "Free",
+   "devices": {
+    "pen20": {
+     "versions": [
+      1
+     ],
+     "stage_time": "40 h",
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Tortamon.png",
+   "sources": [
+    "humulos:pen20"
+   ]
+  },
+  {
+   "id": "toyagumon",
+   "name": "Toy Agumon",
+   "stage": "Child",
+   "attribute": "Vaccine",
+   "devices": {
+    "pen20": {
+     "versions": [
+      5
+     ],
+     "stage_time": "24 h",
+     "evolves_to": [
+      {
+       "to": "Greymon",
+       "to_id": "greymon",
+       "raw": "0-1 CM, 2+ Effort",
+       "parsed": {
+        "care_mistakes": "0-1",
+        "effort": "2+"
+       }
+      },
+      {
+       "to": "Guardromon",
+       "to_id": "guardromon",
+       "raw": "1 CM, 3+ Effort",
+       "parsed": {
+        "care_mistakes": "1",
+        "effort": "3+"
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Toy Agumon.png",
+   "sources": [
+    "humulos:pen20"
+   ]
+  },
+  {
+   "id": "triceramon",
+   "name": "Triceramon",
+   "stage": "Perfect",
+   "attribute": "Vaccine",
+   "devices": {
+    "pen20": {
+     "versions": [
+      1
+     ],
+     "stage_time": "48 h",
+     "evolves_to": [
+      {
+       "to": "Holydramon",
+       "to_id": "holydramon",
+       "raw": "Jogress with Lady Devimon",
+       "parsed": {
+        "jogress_partner": "Lady Devimon"
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Triceramon.png",
+   "sources": [
+    "humulos:pen20"
+   ]
+  },
+  {
+   "id": "troopmon",
+   "name": "Troopmon",
+   "stage": "Child",
+   "attribute": "Vaccine",
+   "devices": {
+    "pen20": {
+     "versions": [
+      3
+     ],
+     "stage_time": "24 h",
+     "evolves_to": [
+      {
+       "to": "Shadramon",
+       "to_id": "shadramon",
+       "raw": "0-1 CM, 0-3 Effort",
+       "parsed": {
+        "care_mistakes": "0-1",
+        "effort": "0-3"
+       }
+      },
+      {
+       "to": "Porcupamon",
+       "to_id": "porcupamon",
+       "raw": "0-1 CM, 4 Effort",
+       "parsed": {
+        "care_mistakes": "0-1",
+        "effort": "4"
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Troopmon.png",
+   "sources": [
+    "humulos:pen20"
+   ]
+  },
+  {
+   "id": "turuiemon",
+   "name": "Turuiemon",
+   "stage": null,
+   "attribute": null,
+   "devices": {
+    "pen20": {
+     "versions": [],
+     "stage_time": null,
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Turuiemon.png",
+   "sources": [
+    "wayland-vpets:pen20"
+   ],
+   "addition_pending": true
+  },
+  {
+   "id": "ulforcevdramon",
+   "name": "Ulforce V-dramon",
+   "stage": "Perfect",
+   "attribute": "Free",
+   "devices": {
+    "pen20": {
+     "versions": [
+      4
+     ],
+     "stage_time": "48 h",
+     "evolves_to": [],
+     "_unresolved": [
+      "0-2 CM, battles"
+     ]
+    }
+   },
+   "sprite": null,
+   "sources": [
+    "humulos:pen20"
+   ]
+  },
+  {
+   "id": "vamdemon",
+   "name": "Vamdemon",
+   "stage": null,
+   "attribute": null,
+   "devices": {
+    "pen20": {
+     "versions": [],
+     "stage_time": null,
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Vamdemon.png",
+   "sources": [
+    "wayland-vpets:pen20"
+   ],
+   "addition_pending": true
+  },
+  {
+   "id": "vdramon",
+   "name": "V-dramon",
+   "stage": "Adult",
+   "attribute": "Free",
+   "devices": {
+    "pen20": {
+     "versions": [
+      4
+     ],
+     "stage_time": "40 h",
+     "evolves_to": [
+      {
+       "to": "Birdramon",
+       "to_id": "birdramon",
+       "raw": "2-4 CM, 4 Effort OR 0-1 CM, 3-4 Effort",
+       "parsed": {
+        "alternatives": [
+         {
+          "care_mistakes": "2-4",
+          "effort": "4"
+         },
+         {
+          "care_mistakes": "0-1",
+          "effort": "3-4"
+         }
+        ]
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/V-dramon.png",
+   "sources": [
+    "humulos:pen20"
+   ]
+  },
+  {
+   "id": "venomvamdemon",
+   "name": "Venom Vamdemon",
+   "stage": "Ultimate",
+   "attribute": "Virus",
+   "devices": {
+    "pen20": {
+     "versions": [
+      5
+     ],
+     "stage_time": null,
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Venom Vamdemon.png",
+   "sources": [
+    "humulos:pen20"
+   ]
+  },
+  {
+   "id": "vmon",
+   "name": "V-mon",
+   "stage": null,
+   "attribute": null,
+   "devices": {
+    "pen20": {
+     "versions": [],
+     "stage_time": null,
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/V-mon.png",
+   "sources": [
+    "wayland-vpets:pen20"
+   ],
+   "addition_pending": true
+  },
+  {
+   "id": "volcanicdramon",
+   "name": "Volcanicdramon",
+   "stage": null,
+   "attribute": null,
+   "devices": {
+    "pen20": {
+     "versions": [],
+     "stage_time": null,
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Volcanicdramon.png",
+   "sources": [
+    "wayland-vpets:pen20"
+   ],
+   "addition_pending": true
+  },
+  {
+   "id": "voltobautamon",
+   "name": "Voltobautamon",
+   "stage": null,
+   "attribute": null,
+   "devices": {
+    "pen20": {
+     "versions": [],
+     "stage_time": null,
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Voltobautamon.png",
+   "sources": [
+    "wayland-vpets:pen20"
+   ],
+   "addition_pending": true
+  },
+  {
+   "id": "vorvomon",
+   "name": "Vorvomon",
+   "stage": null,
+   "attribute": null,
+   "devices": {
+    "pen20": {
+     "versions": [],
+     "stage_time": null,
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Vorvomon.png",
+   "sources": [
+    "wayland-vpets:pen20"
+   ],
+   "addition_pending": true
+  },
+  {
+   "id": "wargreymon",
+   "name": "War Greymon",
+   "stage": "Ultimate",
+   "attribute": "Vaccine",
+   "devices": {
+    "pen20": {
+     "versions": [
+      5
+     ],
+     "stage_time": null,
+     "evolves_to": [
+      {
+       "to": "Omegamon",
+       "to_id": "omegamon",
+       "raw": "Jogress with Metal Garurumon",
+       "parsed": {
+        "jogress_partner": "Metal Garurumon"
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/War Greymon.png",
+   "sources": [
+    "humulos:pen20"
+   ]
+  },
+  {
+   "id": "warumonzaemon",
+   "name": "Waru Monzaemon",
+   "stage": "Perfect",
+   "attribute": "Vaccine",
+   "devices": {
+    "pen20": {
+     "versions": [
+      5
+     ],
+     "stage_time": "48 h",
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Waru Monzaemon.png",
+   "sources": [
+    "humulos:pen20"
+   ]
+  },
+  {
+   "id": "weregarurumon",
+   "name": "Were Garurumon",
+   "stage": null,
+   "attribute": null,
+   "devices": {
+    "pen20": {
+     "versions": [],
+     "stage_time": null,
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Were Garurumon.png",
+   "sources": [
+    "wayland-vpets:pen20"
+   ],
+   "addition_pending": true
+  },
+  {
+   "id": "whamon",
+   "name": "Whamon",
+   "stage": "Perfect",
+   "attribute": "Free",
+   "devices": {
+    "pen20": {
+     "versions": [
+      2
+     ],
+     "stage_time": "48 h",
+     "evolves_to": [
+      {
+       "to": "Anomalocarimon",
+       "to_id": "anomalocarimon",
+       "raw": "0-3 CM, battles 12/15",
+       "parsed": {
+        "care_mistakes": "0-3",
+        "win_ratio": "12/15",
+        "battles": true
+       }
+      },
+      {
+       "to": "Mega Seadramon",
+       "to_id": "megaseadramon",
+       "raw": "Jogress Vi",
+       "parsed": {
+        "jogress_attrs": [
+         "Virus"
+        ]
+       }
+      },
+      {
+       "to": "Dagomon",
+       "to_id": "dagomon",
+       "raw": "Jogress Vi+Da",
+       "parsed": {
+        "jogress_attrs": [
+         "Virus",
+         "Data"
+        ]
+       }
+      },
+      {
+       "to": "Marin Angemon",
+       "to_id": "marinangemon",
+       "raw": "Jogress Da",
+       "parsed": {
+        "jogress_attrs": [
+         "Data"
+        ]
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Whamon.png",
+   "sources": [
+    "humulos:pen20"
+   ]
+  },
+  {
+   "id": "wingdramon",
+   "name": "Wingdramon",
+   "stage": null,
+   "attribute": null,
+   "devices": {
+    "pen20": {
+     "versions": [],
+     "stage_time": null,
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Wingdramon.png",
+   "sources": [
+    "wayland-vpets:pen20"
+   ],
+   "addition_pending": true
+  },
+  {
+   "id": "wizarmon",
+   "name": "Wizarmon",
+   "stage": null,
+   "attribute": null,
+   "devices": {
+    "pen20": {
+     "versions": [],
+     "stage_time": null,
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Wizarmon.png",
+   "sources": [
+    "wayland-vpets:pen20"
+   ],
+   "addition_pending": true
+  },
+  {
+   "id": "woodmon",
+   "name": "Woodmon",
+   "stage": "Adult",
+   "attribute": "Data",
+   "devices": {
+    "pen20": {
+     "versions": [
+      4
+     ],
+     "stage_time": "40 h",
+     "evolves_to": [
+      {
+       "to": "Togemon",
+       "to_id": "togemon",
+       "raw": "0-1 CM, 0-2 Effort",
+       "parsed": {
+        "care_mistakes": "0-1",
+        "effort": "0-2"
+       }
+      },
+      {
+       "to": "Kiwimon",
+       "to_id": "kiwimon",
+       "raw": "2-4 CM, 0-3 Effort OR 2-4 CM, 0-1 Effort",
+       "parsed": {
+        "alternatives": [
+         {
+          "care_mistakes": "2-4",
+          "effort": "0-3"
+         },
+         {
+          "care_mistakes": "2-4",
+          "effort": "0-1"
+         }
+        ]
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Woodmon.png",
+   "sources": [
+    "humulos:pen20"
+   ]
+  },
+  {
+   "id": "xvmon",
+   "name": "XV-mon",
+   "stage": null,
+   "attribute": null,
+   "devices": {
+    "pen20": {
+     "versions": [],
+     "stage_time": null,
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/XV-mon.png",
+   "sources": [
+    "wayland-vpets:pen20"
+   ],
+   "addition_pending": true
+  },
+  {
+   "id": "yukimibotamon",
+   "name": "Yukimi Botamon",
+   "stage": null,
+   "attribute": null,
+   "devices": {
+    "pen20": {
+     "versions": [],
+     "stage_time": null,
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Yukimi Botamon.png",
+   "sources": [
+    "wayland-vpets:pen20"
+   ],
+   "addition_pending": true
+  },
+  {
+   "id": "zerimon",
+   "name": "Zerimon",
+   "stage": null,
+   "attribute": null,
+   "devices": {
+    "pen20": {
+     "versions": [],
+     "stage_time": null,
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Zerimon.png",
+   "sources": [
+    "wayland-vpets:pen20"
+   ],
+   "addition_pending": true
+  },
+  {
+   "id": "zubaeagermon",
+   "name": "Zubaeagermon",
+   "stage": null,
+   "attribute": null,
+   "devices": {
+    "pen20": {
+     "versions": [],
+     "stage_time": null,
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Zubaeagermon.png",
+   "sources": [
+    "wayland-vpets:pen20"
+   ],
+   "addition_pending": true
+  },
+  {
+   "id": "zubamon",
+   "name": "Zubamon",
+   "stage": null,
+   "attribute": null,
+   "devices": {
+    "pen20": {
+     "versions": [],
+     "stage_time": null,
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Zubamon.png",
+   "sources": [
+    "wayland-vpets:pen20"
+   ],
+   "addition_pending": true
+  },
+  {
+   "id": "zudomon",
+   "name": "Zudomon",
+   "stage": "Perfect",
+   "attribute": "Free",
+   "devices": {
+    "pen20": {
+     "versions": [
+      2
+     ],
+     "stage_time": "48 h",
+     "evolves_to": [
+      {
+       "to": "Whamon",
+       "to_id": "whamon",
+       "raw": "Jogress Va",
+       "parsed": {
+        "jogress_attrs": [
+         "Vaccine"
+        ]
+       }
+      },
+      {
+       "to": "Plesiomon",
+       "to_id": "plesiomon",
+       "raw": "Jogress Vi",
+       "parsed": {
+        "jogress_attrs": [
+         "Virus"
+        ]
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/pen20/Zudomon.png",
+   "sources": [
+    "humulos:pen20"
+   ]
+  }
+ ]
+}
