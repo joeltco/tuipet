@@ -489,14 +489,9 @@ class TrainingPanel:
             if int(self.pos) >= VIRUS_BAR_MIN:               # front in the zone -> the goal box lights
                 overlay += [(fx + 32 + x, fy + 1 + y) for y in range(3) for x in range(5)]
         elif gk == "data":
-            # DVPet data drill, composed in ONE anchored stage: cannon GROUNDED bottom-left,
-            # pet GROUNDED bottom-right, the shield standing in front of the pet (high OR low),
-            # the shot flying between them.  Everything sits on the same floor with the same
-            # side margins -- nothing floats, nothing touches the edge.
-            on, bgimg = LCD_ON, None                         # FLAT LCD like the HP drill: the data
-            #   drill has many small sprites (cannon/shield/pet), so -- exactly as HP does -- it
-            #   drops the busy habitat photo that drowns them.  (Vaccine/Virus keep the photo:
-            #   they show ONE bold element that reads fine over it.)
+            # Built like the VIRUS drill: the whole stage is CENTRED in the LCD (band-centred,
+            # NOT jammed on the floor) over the same habitat bg.  Cannon LEFT, pet RIGHT, the
+            # shield standing in front of the pet (high OR low), the shot flying between them.
             aim_up = self.tgt_up if self.locked else self.feint_up
             cannon = E.get("train_green_up" if aim_up else "train_green", [None])[0]   # barrel aim only
             shield = E.get("train_shield", [None])[0]
@@ -514,13 +509,15 @@ class TrainingPanel:
             pf = self._frame(rec, pose)
             pw = max(len(r) for r in pf)
             pet_h = len(pf)
-            px = COLS - pw - DATA_MARGIN                     # pet anchored bottom-right (inside the margin)
-            overlay.extend(_blit(pf, px, ph - pet_h))
-            overlay.extend(_blit(cannon, DATA_MARGIN, ph - ch))   # cannon anchored bottom-left, on the floor
-            muzzle_x, muzzle_y = DATA_MARGIN + cw, ph - ch + 1
+            band_top = (ph - pet_h) // 2                     # CENTRE the stage vertically (like virus)
+            floor = band_top + pet_h                         # the shared baseline of the centred band
+            px = COLS - pw - DATA_MARGIN                     # pet RIGHT, inside the margin
+            overlay.extend(_blit(pf, px, floor - pet_h))
+            overlay.extend(_blit(cannon, DATA_MARGIN, floor - ch))   # cannon LEFT, same baseline
+            muzzle_x, muzzle_y = DATA_MARGIN + cw, floor - ch + 1
             sx = px - sw - 1                                 # the shield stands just in front of the pet
-            hi_y = ph - pet_h + 1                            # high slot = the pet's upper body
-            lo_y = ph - sh_h - 1                             # low  slot = down by the pet's feet
+            hi_y = band_top + 1                              # high slot = top of the centred band
+            lo_y = floor - sh_h - 1                          # low  slot = bottom of the centred band
             on_y = hi_y if self.shield_up else lo_y          # the raised shield = SOLID (trainShield)
             off_y = lo_y if self.shield_up else hi_y          # the other slot = a faint dotted ghost
             if shield:
@@ -579,15 +576,10 @@ class TrainingPanel:
             t.append(f"{self.taps}/{self.vaccine_target}  ", style=INK_B if done else INK)
             filled = int((max(self.timer, 0) / VACCINE_WINDOW) * 9)
             t.append("time " + "▓" * filled + "░" * (9 - filled) + "\n", style=f"{ACCENT} on {LCD_BG}")
-        elif gk == "data":
-            if self.locked:
-                t.append("CANNON " + ("HIGH! " if self.tgt_up else "LOW!  "), style=INK_B)
-            else:
-                t.append("aiming...  ", style=DIM)
-            t.append("shield ", style=INK)
-            t.append("[UP]" if self.shield_up else " up ", style=(f"{ACCENT} on {LCD_BG}") if self.shield_up else INK)
-            t.append("[DN]" if not self.shield_up else " dn ", style=(f"{ACCENT} on {LCD_BG}") if not self.shield_up else INK)
-            t.append("\n", style=INK)
+        elif gk == "data":                                  # clean one-liner, like the virus gauge
+            aim = ("CANNON HIGH!" if self.tgt_up else "CANNON LOW! ") if self.locked else "watch the aim..."
+            t.append(aim, style=INK_B if self.locked else DIM)
+            t.append(f"   shield {'UP' if self.shield_up else 'DOWN'}\n", style=INK)
         else:  # virus -- the bar is drawn in the LCD; the gauge just calls the zone
             inzone = int(self.pos) >= VIRUS_BAR_MIN
             t.append("IN THE ZONE - hit!" if inzone else "stop it in the zone", style=INK_B if inzone else INK)
