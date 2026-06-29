@@ -1,0 +1,4774 @@
+{
+ "_meta": {
+  "device": "dm20",
+  "source": "humulos.com/digimon/dm20 (conditions) + wayland-vpets (sprites+timers)",
+  "count": 154,
+  "playable": 134,
+  "enemy_only": 20,
+  "schema": "see corpus/README.md",
+  "note": "conditions: `raw` verbatim from humulos; `parsed` best-effort. versions 1-5 + 'special' lines + evo_extra (fusion terminals + colosseum-only enemies). playable=false => colosseum opponent, not raisable.",
+  "sprite_gaps": [
+   "Dynasmon",
+   "Lord Knightmon",
+   "Magnamon",
+   "Murmukusmon",
+   "Sleipmon"
+  ],
+  "sprite_gaps_note": "all 5 are colosseum enemy-only; wayland-vpets carries only their X-Antibody forms (Murmukusmon absent). Fallback: DVPet roster has them — source enemy sprites there if needed."
+ },
+ "digimon": [
+  {
+   "id": "aegisdramon",
+   "name": "Aegisdramon",
+   "stage": "Ultimate",
+   "attribute": "Vaccine",
+   "devices": {
+    "dm20": {
+     "versions": [
+      4
+     ],
+     "stage_time": "48 h",
+     "evolves_to": [
+      {
+       "to": "Rust Tyranomon",
+       "to_id": "rusttyranomon",
+       "raw": "Tag Battle 5x with Mugendramon",
+       "parsed": {
+        "tag_battle_with": "Mugendramon"
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm20/Aegisdramon.png",
+   "sources": [
+    "humulos:dm20"
+   ]
+  },
+  {
+   "id": "agumon",
+   "name": "Agumon",
+   "stage": "Child",
+   "attribute": "Vaccine",
+   "devices": {
+    "dm20": {
+     "versions": [
+      1
+     ],
+     "stage_time": "6 h",
+     "evolves_to": [
+      {
+       "to": "Greymon",
+       "to_id": "greymon",
+       "raw": "0-2 CM, 16+ Training",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "training": "16+"
+       }
+      },
+      {
+       "to": "Tyranomon",
+       "to_id": "tyranomon",
+       "raw": "3+ CM, 5-15 Training, 3+ Overfeed",
+       "parsed": {
+        "care_mistakes": "3+",
+        "training": "5-15",
+        "overfeed": "3+"
+       }
+      },
+      {
+       "to": "Devimon",
+       "to_id": "devimon",
+       "raw": "0-2 CM, 0-15 Training",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "training": "0-15"
+       }
+      },
+      {
+       "to": "Meramon",
+       "to_id": "meramon",
+       "raw": "3+ CM, 16+ Training, 3+ Overfeed",
+       "parsed": {
+        "care_mistakes": "3+",
+        "training": "16+",
+        "overfeed": "3+"
+       }
+      },
+      {
+       "to": "Numemon",
+       "to_id": "numemon",
+       "raw": "3+ CM, 0-4 Training OR 3+ CM, 5+ Training, 0-2 Overfeed",
+       "parsed": {
+        "alternatives": [
+         {
+          "care_mistakes": "3+",
+          "training": "0-4"
+         },
+         {
+          "care_mistakes": "3+",
+          "training": "5+",
+          "overfeed": "0-2"
+         }
+        ]
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm20/Agumon.png",
+   "sources": [
+    "humulos:dm20"
+   ]
+  },
+  {
+   "id": "airdramon",
+   "name": "Airdramon",
+   "stage": "Adult",
+   "attribute": "Vaccine",
+   "devices": {
+    "dm20": {
+     "versions": [
+      1
+     ],
+     "stage_time": "24 h",
+     "evolves_to": [
+      {
+       "to": "Metal Greymon",
+       "to_id": "metalgreymon",
+       "raw": "15 Battles, 12-15 Victories",
+       "parsed": {
+        "battles": 15,
+        "victories": "12-15"
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm20/Airdramon.png",
+   "sources": [
+    "humulos:dm20"
+   ]
+  },
+  {
+   "id": "alphamon",
+   "name": "Alphamon",
+   "stage": "Ultimate",
+   "attribute": "Vaccine",
+   "devices": {
+    "dm20": {
+     "versions": [
+      "special"
+     ],
+     "stage_time": "48 h",
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm20/Alphamon.png",
+   "sources": [
+    "humulos:dm20"
+   ]
+  },
+  {
+   "id": "andromon",
+   "name": "Andromon",
+   "stage": "Perfect",
+   "attribute": "Vaccine",
+   "devices": {
+    "dm20": {
+     "versions": [
+      3
+     ],
+     "stage_time": "36 h",
+     "evolves_to": [
+      {
+       "to": "Hi Andromon",
+       "to_id": "hiandromon",
+       "raw": "0-2 CM",
+       "parsed": {
+        "care_mistakes": "0-2"
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm20/Andromon.png",
+   "sources": [
+    "humulos:dm20"
+   ]
+  },
+  {
+   "id": "angemon",
+   "name": "Angemon",
+   "stage": "Adult",
+   "attribute": "Vaccine",
+   "devices": {
+    "dm20": {
+     "versions": [
+      2
+     ],
+     "stage_time": "24 h",
+     "evolves_to": [
+      {
+       "to": "Skull Greymon",
+       "to_id": "skullgreymon",
+       "raw": "15 Battles, 12-15 Victories",
+       "parsed": {
+        "battles": 15,
+        "victories": "12-15"
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm20/Angemon.png",
+   "sources": [
+    "humulos:dm20"
+   ]
+  },
+  {
+   "id": "apollomon",
+   "name": "Apollomon",
+   "stage": "Ultimate",
+   "attribute": "Vaccine",
+   "devices": {
+    "dm20": {
+     "versions": [
+      "special"
+     ],
+     "stage_time": "48 h",
+     "evolves_to": [
+      {
+       "to": "Grace Novamon",
+       "to_id": "gracenovamon",
+       "raw": "Tag Battle 5x with Dianamon",
+       "parsed": {
+        "tag_battle_with": "Dianamon"
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm20/Apollomon.png",
+   "sources": [
+    "humulos:dm20"
+   ]
+  },
+  {
+   "id": "babydmon",
+   "name": "Babydmon",
+   "stage": "Baby II",
+   "attribute": "Free",
+   "devices": {
+    "dm20": {
+     "versions": [
+      "special"
+     ],
+     "stage_time": "10 min",
+     "evolves_to": [
+      {
+       "to": "Dracomon",
+       "to_id": "dracomon",
+       "raw": "",
+       "parsed": {}
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm20/Babydmon.png",
+   "sources": [
+    "humulos:dm20"
+   ]
+  },
+  {
+   "id": "bakemon",
+   "name": "Bakemon",
+   "stage": "Adult",
+   "attribute": "Virus",
+   "devices": {
+    "dm20": {
+     "versions": [
+      3
+     ],
+     "stage_time": "24 h",
+     "evolves_to": [
+      {
+       "to": "Giromon",
+       "to_id": "giromon",
+       "raw": "15 Battles, 12-15 Victories",
+       "parsed": {
+        "battles": 15,
+        "victories": "12-15"
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm20/Bakemon.png",
+   "sources": [
+    "humulos:dm20"
+   ]
+  },
+  {
+   "id": "banchomamemon",
+   "name": "Bancho Mamemon",
+   "stage": "Ultimate",
+   "attribute": "Data",
+   "devices": {
+    "dm20": {
+     "versions": [
+      1
+     ],
+     "stage_time": "48 h",
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm20/Bancho Mamemon.png",
+   "sources": [
+    "humulos:dm20"
+   ]
+  },
+  {
+   "id": "baohackmon",
+   "name": "Bao Hackmon",
+   "stage": "Adult",
+   "attribute": "Data",
+   "devices": {
+    "dm20": {
+     "versions": [
+      "special"
+     ],
+     "stage_time": "24 h",
+     "evolves_to": [
+      {
+       "to": "Savior Hackmon",
+       "to_id": "saviorhackmon",
+       "raw": "15 Battles, 12-15 Victories",
+       "parsed": {
+        "battles": 15,
+        "victories": "12-15"
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm20/Bao Hackmon.png",
+   "sources": [
+    "humulos:dm20"
+   ]
+  },
+  {
+   "id": "barbamon",
+   "name": "Barbamon",
+   "stage": "Ultimate",
+   "attribute": "Virus",
+   "devices": {
+    "dm20": {
+     "versions": [
+      "special"
+     ],
+     "stage_time": "48 h",
+     "evolves_to": [
+      {
+       "to": "obtain: colosseum enemy only",
+       "to_id": "obtaincolosseumenemyonly",
+       "raw": "",
+       "parsed": {}
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dmall/Barbamon.png",
+   "sources": [
+    "humulos:dm20"
+   ],
+   "obtain": "colosseum enemy only",
+   "playable": false
+  },
+  {
+   "id": "beelzebumon",
+   "name": "Beelzebumon",
+   "stage": "Ultimate",
+   "attribute": "Virus",
+   "devices": {
+    "dm20": {
+     "versions": [
+      "special"
+     ],
+     "stage_time": "48 h",
+     "evolves_to": [
+      {
+       "to": "obtain: colosseum enemy only",
+       "to_id": "obtaincolosseumenemyonly",
+       "raw": "",
+       "parsed": {}
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dmall/Beelzebumon.png",
+   "sources": [
+    "humulos:dm20"
+   ],
+   "obtain": "colosseum enemy only",
+   "playable": false
+  },
+  {
+   "id": "belialvamdemon",
+   "name": "Belial Vamdemon",
+   "stage": "Ultimate",
+   "attribute": "Virus",
+   "devices": {
+    "dm20": {
+     "versions": [
+      "special"
+     ],
+     "stage_time": "48 h",
+     "evolves_to": [
+      {
+       "to": "obtain: colosseum enemy only",
+       "to_id": "obtaincolosseumenemyonly",
+       "raw": "",
+       "parsed": {}
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dmall/Belial Vamdemon.png",
+   "sources": [
+    "humulos:dm20"
+   ],
+   "obtain": "colosseum enemy only",
+   "playable": false
+  },
+  {
+   "id": "belphemonragemode",
+   "name": "Belphemon: Rage Mode",
+   "stage": "Ultimate",
+   "attribute": "Virus",
+   "devices": {
+    "dm20": {
+     "versions": [
+      "special"
+     ],
+     "stage_time": "48 h",
+     "evolves_to": [
+      {
+       "to": "obtain: colosseum enemy only",
+       "to_id": "obtaincolosseumenemyonly",
+       "raw": "",
+       "parsed": {}
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dmall/Belphemon Rage Mode.png",
+   "sources": [
+    "humulos:dm20"
+   ],
+   "obtain": "colosseum enemy only",
+   "playable": false
+  },
+  {
+   "id": "betamon",
+   "name": "Betamon",
+   "stage": "Child",
+   "attribute": "Virus",
+   "devices": {
+    "dm20": {
+     "versions": [
+      1
+     ],
+     "stage_time": "6 h",
+     "evolves_to": [
+      {
+       "to": "Devimon",
+       "to_id": "devimon",
+       "raw": "0-2 CM, 16+ Training",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "training": "16+"
+       }
+      },
+      {
+       "to": "Meramon",
+       "to_id": "meramon",
+       "raw": "0-2 CM, 0-15 Training",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "training": "0-15"
+       }
+      },
+      {
+       "to": "Airdramon",
+       "to_id": "airdramon",
+       "raw": "3+ CM, 8-15 Training, 0-2 Overfeed",
+       "parsed": {
+        "care_mistakes": "3+",
+        "training": "8-15",
+        "overfeed": "0-2"
+       }
+      },
+      {
+       "to": "Seadramon",
+       "to_id": "seadramon",
+       "raw": "3+ CM, 8-15 Training, 3+ Overfeed",
+       "parsed": {
+        "care_mistakes": "3+",
+        "training": "8-15",
+        "overfeed": "3+"
+       }
+      },
+      {
+       "to": "Numemon",
+       "to_id": "numemon",
+       "raw": "3+ CM, 0-7 Training OR 3+ CM, 16+ Training",
+       "parsed": {
+        "alternatives": [
+         {
+          "care_mistakes": "3+",
+          "training": "0-7"
+         },
+         {
+          "care_mistakes": "3+",
+          "training": "16+"
+         }
+        ]
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm20/Betamon.png",
+   "sources": [
+    "humulos:dm20"
+   ]
+  },
+  {
+   "id": "birdramon",
+   "name": "Birdramon",
+   "stage": "Adult",
+   "attribute": "Vaccine",
+   "devices": {
+    "dm20": {
+     "versions": [
+      2
+     ],
+     "stage_time": "24 h",
+     "evolves_to": [
+      {
+       "to": "Skull Greymon",
+       "to_id": "skullgreymon",
+       "raw": "15 Battles, 12-15 Victories",
+       "parsed": {
+        "battles": 15,
+        "victories": "12-15"
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm20/Birdramon.png",
+   "sources": [
+    "humulos:dm20"
+   ]
+  },
+  {
+   "id": "blitzgreymon",
+   "name": "Blitz Greymon",
+   "stage": "Ultimate",
+   "attribute": "Virus",
+   "devices": {
+    "dm20": {
+     "versions": [
+      1
+     ],
+     "stage_time": "48 h",
+     "evolves_to": [
+      {
+       "to": "Omegamon Alter S",
+       "to_id": "omegamonalters",
+       "raw": "Tag Battle 5x with Cres Garurumon",
+       "parsed": {
+        "tag_battle_with": "Cres Garurumon"
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm20/Blitz Greymon.png",
+   "sources": [
+    "humulos:dm20"
+   ]
+  },
+  {
+   "id": "botamon",
+   "name": "Botamon",
+   "stage": "Baby I",
+   "attribute": "Free",
+   "devices": {
+    "dm20": {
+     "versions": [
+      1
+     ],
+     "stage_time": "1 min (egg hatch)",
+     "evolves_to": [
+      {
+       "to": "Koromon",
+       "to_id": "koromon",
+       "raw": "Wait 10 Minutes",
+       "parsed": {
+        "time_min": 10
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm20/Botamon.png",
+   "sources": [
+    "humulos:dm20"
+   ]
+  },
+  {
+   "id": "breakdramon",
+   "name": "Breakdramon",
+   "stage": "Ultimate",
+   "attribute": "Virus",
+   "devices": {
+    "dm20": {
+     "versions": [
+      "special"
+     ],
+     "stage_time": "48 h",
+     "evolves_to": [
+      {
+       "to": "Examon",
+       "to_id": "examon",
+       "raw": "Tag Battle 5x with Slayerdramon",
+       "parsed": {
+        "tag_battle_with": "Slayerdramon"
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm20/Breakdramon.png",
+   "sources": [
+    "humulos:dm20"
+   ]
+  },
+  {
+   "id": "centalmon",
+   "name": "Centalmon",
+   "stage": "Adult",
+   "attribute": "Data",
+   "devices": {
+    "dm20": {
+     "versions": [
+      3
+     ],
+     "stage_time": "24 h",
+     "evolves_to": [
+      {
+       "to": "Giromon",
+       "to_id": "giromon",
+       "raw": "15 Battles, 12-15 Victories",
+       "parsed": {
+        "battles": 15,
+        "victories": "12-15"
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm20/Centalmon.png",
+   "sources": [
+    "humulos:dm20"
+   ]
+  },
+  {
+   "id": "cockatrimon",
+   "name": "Cockatrimon",
+   "stage": "Adult",
+   "attribute": "Data",
+   "devices": {
+    "dm20": {
+     "versions": [
+      4
+     ],
+     "stage_time": "24 h",
+     "evolves_to": [
+      {
+       "to": "Piccolomon",
+       "to_id": "piccolomon",
+       "raw": "15 Battles, 12-15 Victories",
+       "parsed": {
+        "battles": 15,
+        "victories": "12-15"
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm20/Cockatrimon.png",
+   "sources": [
+    "humulos:dm20"
+   ]
+  },
+  {
+   "id": "coelamon",
+   "name": "Coelamon",
+   "stage": "Adult",
+   "attribute": "Data",
+   "devices": {
+    "dm20": {
+     "versions": [
+      4
+     ],
+     "stage_time": "24 h",
+     "evolves_to": [
+      {
+       "to": "Megadramon",
+       "to_id": "megadramon",
+       "raw": "15 Battles, 12-15 Victories",
+       "parsed": {
+        "battles": 15,
+        "victories": "12-15"
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm20/Coelamon.png",
+   "sources": [
+    "humulos:dm20"
+   ]
+  },
+  {
+   "id": "coredramonblue",
+   "name": "Coredramon (Blue)",
+   "stage": "Adult",
+   "attribute": "Vaccine",
+   "devices": {
+    "dm20": {
+     "versions": [
+      "special"
+     ],
+     "stage_time": "24 h",
+     "evolves_to": [
+      {
+       "to": "Wingdramon",
+       "to_id": "wingdramon",
+       "raw": "15 Battles, 12-15 Victories",
+       "parsed": {
+        "battles": 15,
+        "victories": "12-15"
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm20/Coredramon (Blue).png",
+   "sources": [
+    "humulos:dm20"
+   ]
+  },
+  {
+   "id": "coredramongreen",
+   "name": "Coredramon (Green)",
+   "stage": "Adult",
+   "attribute": "Virus",
+   "devices": {
+    "dm20": {
+     "versions": [
+      "special"
+     ],
+     "stage_time": "24 h",
+     "evolves_to": [
+      {
+       "to": "Groundramon",
+       "to_id": "groundramon",
+       "raw": "15 Battles, 12-15 Victories",
+       "parsed": {
+        "battles": 15,
+        "victories": "12-15"
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm20/Coredramon (Green).png",
+   "sources": [
+    "humulos:dm20"
+   ]
+  },
+  {
+   "id": "coronamon",
+   "name": "Coronamon",
+   "stage": "Child",
+   "attribute": "Vaccine",
+   "devices": {
+    "dm20": {
+     "versions": [
+      "special"
+     ],
+     "stage_time": "6 h",
+     "evolves_to": [
+      {
+       "to": "Firamon",
+       "to_id": "firamon",
+       "raw": "",
+       "parsed": {}
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm20/Coronamon.png",
+   "sources": [
+    "humulos:dm20"
+   ]
+  },
+  {
+   "id": "craniummon",
+   "name": "Craniummon",
+   "stage": "Ultimate",
+   "attribute": "Vaccine",
+   "devices": {
+    "dm20": {
+     "versions": [
+      "special"
+     ],
+     "stage_time": "48 h",
+     "evolves_to": [
+      {
+       "to": "obtain: colosseum enemy only",
+       "to_id": "obtaincolosseumenemyonly",
+       "raw": "",
+       "parsed": {}
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dmall/Craniummon.png",
+   "sources": [
+    "humulos:dm20"
+   ],
+   "obtain": "colosseum enemy only",
+   "playable": false
+  },
+  {
+   "id": "crescemon",
+   "name": "Crescemon",
+   "stage": "Perfect",
+   "attribute": "Data",
+   "devices": {
+    "dm20": {
+     "versions": [
+      "special"
+     ],
+     "stage_time": "36 h",
+     "evolves_to": [
+      {
+       "to": "Dianamon",
+       "to_id": "dianamon",
+       "raw": "0-2 CM",
+       "parsed": {
+        "care_mistakes": "0-2"
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm20/Crescemon.png",
+   "sources": [
+    "humulos:dm20"
+   ]
+  },
+  {
+   "id": "cresgarurumon",
+   "name": "Cres Garurumon",
+   "stage": "Ultimate",
+   "attribute": "Data",
+   "devices": {
+    "dm20": {
+     "versions": [
+      2
+     ],
+     "stage_time": "48 h",
+     "evolves_to": [
+      {
+       "to": "Omegamon Alter S",
+       "to_id": "omegamonalters",
+       "raw": "Tag Battle 5x with Blitz Greymon",
+       "parsed": {
+        "tag_battle_with": "Blitz Greymon"
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm20/Cres Garurumon.png",
+   "sources": [
+    "humulos:dm20"
+   ]
+  },
+  {
+   "id": "cyclomon",
+   "name": "Cyclomon",
+   "stage": "Adult",
+   "attribute": "Virus",
+   "devices": {
+    "dm20": {
+     "versions": [
+      5
+     ],
+     "stage_time": "24 h",
+     "evolves_to": [
+      {
+       "to": "Nanomon",
+       "to_id": "nanomon",
+       "raw": "15 Battles, 12-15 Victories",
+       "parsed": {
+        "battles": 15,
+        "victories": "12-15"
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm20/Cyclomon.png",
+   "sources": [
+    "humulos:dm20"
+   ]
+  },
+  {
+   "id": "darktyranomon",
+   "name": "Dark Tyranomon",
+   "stage": "Adult",
+   "attribute": "Virus",
+   "devices": {
+    "dm20": {
+     "versions": [
+      5
+     ],
+     "stage_time": "24 h",
+     "evolves_to": [
+      {
+       "to": "Metal Tyranomon",
+       "to_id": "metaltyranomon",
+       "raw": "15 Battles, 12-15 Victories",
+       "parsed": {
+        "battles": 15,
+        "victories": "12-15"
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm20/Dark Tyranomon.png",
+   "sources": [
+    "humulos:dm20"
+   ]
+  },
+  {
+   "id": "deathmon",
+   "name": "Deathmon",
+   "stage": "Ultimate",
+   "attribute": "Virus",
+   "devices": {
+    "dm20": {
+     "versions": [
+      "special"
+     ],
+     "stage_time": "48 h",
+     "evolves_to": [
+      {
+       "to": "obtain: colosseum enemy only",
+       "to_id": "obtaincolosseumenemyonly",
+       "raw": "",
+       "parsed": {}
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dmall/Deathmon.png",
+   "sources": [
+    "humulos:dm20"
+   ],
+   "obtain": "colosseum enemy only",
+   "playable": false
+  },
+  {
+   "id": "deltamon",
+   "name": "Deltamon",
+   "stage": "Adult",
+   "attribute": "Virus",
+   "devices": {
+    "dm20": {
+     "versions": [
+      5
+     ],
+     "stage_time": "24 h",
+     "evolves_to": [
+      {
+       "to": "Nanomon",
+       "to_id": "nanomon",
+       "raw": "15 Battles, 12-15 Victories",
+       "parsed": {
+        "battles": 15,
+        "victories": "12-15"
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm20/Deltamon.png",
+   "sources": [
+    "humulos:dm20"
+   ]
+  },
+  {
+   "id": "demon",
+   "name": "Demon",
+   "stage": "Ultimate",
+   "attribute": "Virus",
+   "devices": {
+    "dm20": {
+     "versions": [
+      "special"
+     ],
+     "stage_time": "48 h",
+     "evolves_to": [
+      {
+       "to": "obtain: colosseum enemy only",
+       "to_id": "obtaincolosseumenemyonly",
+       "raw": "",
+       "parsed": {}
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dmall/Demon.png",
+   "sources": [
+    "humulos:dm20"
+   ],
+   "obtain": "colosseum enemy only",
+   "playable": false
+  },
+  {
+   "id": "devidramon",
+   "name": "Devidramon",
+   "stage": "Adult",
+   "attribute": "Virus",
+   "devices": {
+    "dm20": {
+     "versions": [
+      5
+     ],
+     "stage_time": "24 h",
+     "evolves_to": [
+      {
+       "to": "Metal Tyranomon",
+       "to_id": "metaltyranomon",
+       "raw": "15 Battles, 12-15 Victories",
+       "parsed": {
+        "battles": 15,
+        "victories": "12-15"
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm20/Devidramon.png",
+   "sources": [
+    "humulos:dm20"
+   ]
+  },
+  {
+   "id": "devimon",
+   "name": "Devimon",
+   "stage": "Adult",
+   "attribute": "Virus",
+   "devices": {
+    "dm20": {
+     "versions": [
+      1
+     ],
+     "stage_time": "24 h",
+     "evolves_to": [
+      {
+       "to": "Metal Greymon",
+       "to_id": "metalgreymon",
+       "raw": "15 Battles, 12-15 Victories",
+       "parsed": {
+        "battles": 15,
+        "victories": "12-15"
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm20/Devimon.png",
+   "sources": [
+    "humulos:dm20"
+   ]
+  },
+  {
+   "id": "dianamon",
+   "name": "Dianamon",
+   "stage": "Ultimate",
+   "attribute": "Data",
+   "devices": {
+    "dm20": {
+     "versions": [
+      "special"
+     ],
+     "stage_time": "48 h",
+     "evolves_to": [
+      {
+       "to": "Grace Novamon",
+       "to_id": "gracenovamon",
+       "raw": "Tag Battle 5x with Apollomon",
+       "parsed": {
+        "tag_battle_with": "Apollomon"
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm20/Dianamon.png",
+   "sources": [
+    "humulos:dm20"
+   ]
+  },
+  {
+   "id": "digitamamon",
+   "name": "Digitamamon",
+   "stage": "Perfect",
+   "attribute": "Data",
+   "devices": {
+    "dm20": {
+     "versions": [
+      4
+     ],
+     "stage_time": "36 h",
+     "evolves_to": [
+      {
+       "to": "Titamon",
+       "to_id": "titamon",
+       "raw": "0-2 CM",
+       "parsed": {
+        "care_mistakes": "0-2"
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm20/Digitamamon.png",
+   "sources": [
+    "humulos:dm20"
+   ]
+  },
+  {
+   "id": "dodomon",
+   "name": "Dodomon",
+   "stage": "Baby I",
+   "attribute": "Free",
+   "devices": {
+    "dm20": {
+     "versions": [
+      "special"
+     ],
+     "stage_time": "1 min (egg hatch)",
+     "evolves_to": [
+      {
+       "to": "Dorimon",
+       "to_id": "dorimon",
+       "raw": "Wait 10 Minutes",
+       "parsed": {
+        "time_min": 10
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm20/Dodomon.png",
+   "sources": [
+    "humulos:dm20"
+   ]
+  },
+  {
+   "id": "dorimon",
+   "name": "Dorimon",
+   "stage": "Baby II",
+   "attribute": "Free",
+   "devices": {
+    "dm20": {
+     "versions": [
+      "special"
+     ],
+     "stage_time": "10 min",
+     "evolves_to": [
+      {
+       "to": "DORUmon",
+       "to_id": "dorumon",
+       "raw": "",
+       "parsed": {}
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm20/Dorimon.png",
+   "sources": [
+    "humulos:dm20"
+   ]
+  },
+  {
+   "id": "dorugamon",
+   "name": "DORUgamon",
+   "stage": "Adult",
+   "attribute": "Data",
+   "devices": {
+    "dm20": {
+     "versions": [
+      "special"
+     ],
+     "stage_time": "24 h",
+     "evolves_to": [
+      {
+       "to": "DORUguremon",
+       "to_id": "doruguremon",
+       "raw": "15 Battles, 12-15 Victories",
+       "parsed": {
+        "battles": 15,
+        "victories": "12-15"
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm20/DORUgamon.png",
+   "sources": [
+    "humulos:dm20"
+   ]
+  },
+  {
+   "id": "doruguremon",
+   "name": "DORUguremon",
+   "stage": "Perfect",
+   "attribute": "Data",
+   "devices": {
+    "dm20": {
+     "versions": [
+      "special"
+     ],
+     "stage_time": "36 h",
+     "evolves_to": [
+      {
+       "to": "Alphamon",
+       "to_id": "alphamon",
+       "raw": "0-2 CM",
+       "parsed": {
+        "care_mistakes": "0-2"
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm20/DORUguremon.png",
+   "sources": [
+    "humulos:dm20"
+   ]
+  },
+  {
+   "id": "dorumon",
+   "name": "DORUmon",
+   "stage": "Child",
+   "attribute": "Data",
+   "devices": {
+    "dm20": {
+     "versions": [
+      "special"
+     ],
+     "stage_time": "6 h",
+     "evolves_to": [
+      {
+       "to": "DORUgamon",
+       "to_id": "dorugamon",
+       "raw": "",
+       "parsed": {}
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm20/DORUmon.png",
+   "sources": [
+    "humulos:dm20"
+   ]
+  },
+  {
+   "id": "dracomon",
+   "name": "Dracomon",
+   "stage": "Child",
+   "attribute": "Data",
+   "devices": {
+    "dm20": {
+     "versions": [
+      "special"
+     ],
+     "stage_time": "6 h",
+     "evolves_to": [
+      {
+       "to": "Coredramon (Blue)",
+       "to_id": "coredramonblue",
+       "raw": "Slayerdra Egg",
+       "parsed": {
+        "special_egg": "Slayerdra"
+       }
+      },
+      {
+       "to": "Coredramon (Green)",
+       "to_id": "coredramongreen",
+       "raw": "Breakdra Egg",
+       "parsed": {
+        "special_egg": "Breakdra"
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm20/Dracomon.png",
+   "sources": [
+    "humulos:dm20"
+   ]
+  },
+  {
+   "id": "drimogemon",
+   "name": "Drimogemon",
+   "stage": "Adult",
+   "attribute": "Data",
+   "devices": {
+    "dm20": {
+     "versions": [
+      3
+     ],
+     "stage_time": "24 h",
+     "evolves_to": [
+      {
+       "to": "Giromon",
+       "to_id": "giromon",
+       "raw": "15 Battles, 12-15 Victories",
+       "parsed": {
+        "battles": 15,
+        "victories": "12-15"
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm20/Drimogemon.png",
+   "sources": [
+    "humulos:dm20"
+   ]
+  },
+  {
+   "id": "duftmon",
+   "name": "Duftmon",
+   "stage": "Ultimate",
+   "attribute": "Data",
+   "devices": {
+    "dm20": {
+     "versions": [
+      "special"
+     ],
+     "stage_time": "48 h",
+     "evolves_to": [
+      {
+       "to": "obtain: colosseum enemy only",
+       "to_id": "obtaincolosseumenemyonly",
+       "raw": "",
+       "parsed": {}
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dmall/Duftmon.png",
+   "sources": [
+    "humulos:dm20"
+   ],
+   "obtain": "colosseum enemy only",
+   "playable": false
+  },
+  {
+   "id": "dukemon",
+   "name": "Dukemon",
+   "stage": "Ultimate",
+   "attribute": "Virus",
+   "devices": {
+    "dm20": {
+     "versions": [
+      "special"
+     ],
+     "stage_time": "48 h",
+     "evolves_to": [
+      {
+       "to": "obtain: colosseum enemy only",
+       "to_id": "obtaincolosseumenemyonly",
+       "raw": "",
+       "parsed": {}
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dmall/Dukemon.png",
+   "sources": [
+    "humulos:dm20"
+   ],
+   "obtain": "colosseum enemy only",
+   "playable": false
+  },
+  {
+   "id": "duramon",
+   "name": "Duramon",
+   "stage": "Perfect",
+   "attribute": "Vaccine",
+   "devices": {
+    "dm20": {
+     "versions": [
+      "special"
+     ],
+     "stage_time": "36 h",
+     "evolves_to": [
+      {
+       "to": "Durandamon",
+       "to_id": "durandamon",
+       "raw": "0-2 CM",
+       "parsed": {
+        "care_mistakes": "0-2"
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm20/Duramon.png",
+   "sources": [
+    "humulos:dm20"
+   ]
+  },
+  {
+   "id": "durandamon",
+   "name": "Durandamon",
+   "stage": "Ultimate",
+   "attribute": "Vaccine",
+   "devices": {
+    "dm20": {
+     "versions": [
+      "special"
+     ],
+     "stage_time": "48 h",
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm20/Durandamon.png",
+   "sources": [
+    "humulos:dm20"
+   ]
+  },
+  {
+   "id": "dynasmon",
+   "name": "Dynasmon",
+   "stage": "Ultimate",
+   "attribute": "Data",
+   "devices": {
+    "dm20": {
+     "versions": [
+      "special"
+     ],
+     "stage_time": "48 h",
+     "evolves_to": [
+      {
+       "to": "obtain: colosseum enemy only",
+       "to_id": "obtaincolosseumenemyonly",
+       "raw": "",
+       "parsed": {}
+      }
+     ]
+    }
+   },
+   "sprite": null,
+   "sources": [
+    "humulos:dm20"
+   ],
+   "obtain": "colosseum enemy only",
+   "playable": false
+  },
+  {
+   "id": "elecmon",
+   "name": "Elecmon",
+   "stage": "Child",
+   "attribute": "Data",
+   "devices": {
+    "dm20": {
+     "versions": [
+      2
+     ],
+     "stage_time": "6 h",
+     "evolves_to": [
+      {
+       "to": "Angemon",
+       "to_id": "angemon",
+       "raw": "0-2 CM, 16+ Training",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "training": "16+"
+       }
+      },
+      {
+       "to": "Yukidarumon",
+       "to_id": "yukidarumon",
+       "raw": "3+ CM, 8-15 Training, 0-2 Overfeed",
+       "parsed": {
+        "care_mistakes": "3+",
+        "training": "8-15",
+        "overfeed": "0-2"
+       }
+      },
+      {
+       "to": "Birdramon",
+       "to_id": "birdramon",
+       "raw": "0-2 CM, 0-15 Training",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "training": "0-15"
+       }
+      },
+      {
+       "to": "Whamon",
+       "to_id": "whamon",
+       "raw": "3+ CM, 16+ Training, 3+ Overfeed",
+       "parsed": {
+        "care_mistakes": "3+",
+        "training": "16+",
+        "overfeed": "3+"
+       }
+      },
+      {
+       "to": "Vegimon",
+       "to_id": "vegimon",
+       "raw": "3+ CM, 0-7 Training OR 3+ CM, 8-15 Training, 3+ Overfeed OR 3+ CM, 16+ Training, 0-2 Overfeed",
+       "parsed": {
+        "alternatives": [
+         {
+          "care_mistakes": "3+",
+          "training": "0-7"
+         },
+         {
+          "care_mistakes": "3+",
+          "training": "8-15",
+          "overfeed": "3+"
+         },
+         {
+          "care_mistakes": "3+",
+          "training": "16+",
+          "overfeed": "0-2"
+         }
+        ]
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm20/Elecmon.png",
+   "sources": [
+    "humulos:dm20"
+   ]
+  },
+  {
+   "id": "etemon",
+   "name": "Etemon",
+   "stage": "Perfect",
+   "attribute": "Virus",
+   "devices": {
+    "dm20": {
+     "versions": [
+      3
+     ],
+     "stage_time": "36 h",
+     "evolves_to": [
+      {
+       "to": "King Etemon",
+       "to_id": "kingetemon",
+       "raw": "0-2 CM",
+       "parsed": {
+        "care_mistakes": "0-2"
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm20/Etemon.png",
+   "sources": [
+    "humulos:dm20"
+   ]
+  },
+  {
+   "id": "examon",
+   "name": "Examon",
+   "stage": "Super Ultimate",
+   "attribute": "Data",
+   "devices": {
+    "dm20": {
+     "versions": [
+      "special"
+     ],
+     "stage_time": null,
+     "evolves_to": [
+      {
+       "to": "obtain: Tag Battle 5x",
+       "to_id": "obtaintagbattle5x",
+       "raw": "Slayerdramon + Breakdramon",
+       "parsed": {}
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm20/Examon.png",
+   "sources": [
+    "humulos:dm20"
+   ],
+   "obtain": "Tag Battle 5x (Slayerdramon + Breakdramon)",
+   "playable": true
+  },
+  {
+   "id": "extyranomon",
+   "name": "Ex-Tyranomon",
+   "stage": "Perfect",
+   "attribute": "Vaccine",
+   "devices": {
+    "dm20": {
+     "versions": [
+      5
+     ],
+     "stage_time": "36 h",
+     "evolves_to": [
+      {
+       "to": "Pinochimon",
+       "to_id": "pinochimon",
+       "raw": "0-2 CM",
+       "parsed": {
+        "care_mistakes": "0-2"
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm20/Ex-Tyranomon.png",
+   "sources": [
+    "humulos:dm20"
+   ]
+  },
+  {
+   "id": "firamon",
+   "name": "Firamon",
+   "stage": "Adult",
+   "attribute": "Vaccine",
+   "devices": {
+    "dm20": {
+     "versions": [
+      "special"
+     ],
+     "stage_time": "24 h",
+     "evolves_to": [
+      {
+       "to": "Flaremon",
+       "to_id": "flaremon",
+       "raw": "15 Battles, 12-15 Victories",
+       "parsed": {
+        "battles": 15,
+        "victories": "12-15"
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm20/Firamon.png",
+   "sources": [
+    "humulos:dm20"
+   ]
+  },
+  {
+   "id": "flaremon",
+   "name": "Flaremon",
+   "stage": "Perfect",
+   "attribute": "Vaccine",
+   "devices": {
+    "dm20": {
+     "versions": [
+      "special"
+     ],
+     "stage_time": "36 h",
+     "evolves_to": [
+      {
+       "to": "Apollomon",
+       "to_id": "apollomon",
+       "raw": "0-2 CM",
+       "parsed": {
+        "care_mistakes": "0-2"
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm20/Flaremon.png",
+   "sources": [
+    "humulos:dm20"
+   ]
+  },
+  {
+   "id": "flymon",
+   "name": "Flymon",
+   "stage": "Adult",
+   "attribute": "Virus",
+   "devices": {
+    "dm20": {
+     "versions": [
+      5
+     ],
+     "stage_time": "24 h",
+     "evolves_to": [
+      {
+       "to": "Metal Tyranomon",
+       "to_id": "metaltyranomon",
+       "raw": "15 Battles, 12-15 Victories",
+       "parsed": {
+        "battles": 15,
+        "victories": "12-15"
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm20/Flymon.png",
+   "sources": [
+    "humulos:dm20"
+   ]
+  },
+  {
+   "id": "gabumon",
+   "name": "Gabumon",
+   "stage": "Child",
+   "attribute": "Data",
+   "devices": {
+    "dm20": {
+     "versions": [
+      2
+     ],
+     "stage_time": "6 h",
+     "evolves_to": [
+      {
+       "to": "Kabuterimon",
+       "to_id": "kabuterimon",
+       "raw": "0-2 CM, 16+ Training",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "training": "16+"
+       }
+      },
+      {
+       "to": "Garurumon",
+       "to_id": "garurumon",
+       "raw": "3+ CM, 5-15 Training, 3+ Overfeed",
+       "parsed": {
+        "care_mistakes": "3+",
+        "training": "5-15",
+        "overfeed": "3+"
+       }
+      },
+      {
+       "to": "Angemon",
+       "to_id": "angemon",
+       "raw": "0-2 CM, 0-15 Training",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "training": "0-15"
+       }
+      },
+      {
+       "to": "Yukidarumon",
+       "to_id": "yukidarumon",
+       "raw": "3+ CM, 16+ Training, 3+ Overfeed",
+       "parsed": {
+        "care_mistakes": "3+",
+        "training": "16+",
+        "overfeed": "3+"
+       }
+      },
+      {
+       "to": "Vegimon",
+       "to_id": "vegimon",
+       "raw": "3+ CM, 0-4 Training OR 3+ CM, 5+ Training, 0-2 Overfeed",
+       "parsed": {
+        "alternatives": [
+         {
+          "care_mistakes": "3+",
+          "training": "0-4"
+         },
+         {
+          "care_mistakes": "3+",
+          "training": "5+",
+          "overfeed": "0-2"
+         }
+        ]
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm20/Gabumon.png",
+   "sources": [
+    "humulos:dm20"
+   ]
+  },
+  {
+   "id": "gankoomon",
+   "name": "Gankoomon",
+   "stage": "Ultimate",
+   "attribute": "Data",
+   "devices": {
+    "dm20": {
+     "versions": [
+      "special"
+     ],
+     "stage_time": "48 h",
+     "evolves_to": [
+      {
+       "to": "obtain: colosseum enemy only",
+       "to_id": "obtaincolosseumenemyonly",
+       "raw": "",
+       "parsed": {}
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dmall/Gankoomon.png",
+   "sources": [
+    "humulos:dm20"
+   ],
+   "obtain": "colosseum enemy only",
+   "playable": false
+  },
+  {
+   "id": "garurumon",
+   "name": "Garurumon",
+   "stage": "Adult",
+   "attribute": "Vaccine",
+   "devices": {
+    "dm20": {
+     "versions": [
+      2
+     ],
+     "stage_time": "24 h",
+     "evolves_to": [
+      {
+       "to": "Metal Mamemon",
+       "to_id": "metalmamemon",
+       "raw": "15 Battles, 12-15 Victories",
+       "parsed": {
+        "battles": 15,
+        "victories": "12-15"
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm20/Garurumon.png",
+   "sources": [
+    "humulos:dm20"
+   ]
+  },
+  {
+   "id": "gazimon",
+   "name": "Gazimon",
+   "stage": "Child",
+   "attribute": "Virus",
+   "devices": {
+    "dm20": {
+     "versions": [
+      5
+     ],
+     "stage_time": "6 h",
+     "evolves_to": [
+      {
+       "to": "Dark Tyranomon",
+       "to_id": "darktyranomon",
+       "raw": "0-2 CM, 16+ Training",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "training": "16+"
+       }
+      },
+      {
+       "to": "Cyclomon",
+       "to_id": "cyclomon",
+       "raw": "3+ CM, 5-15 Training, 3+ Overfeed",
+       "parsed": {
+        "care_mistakes": "3+",
+        "training": "5-15",
+        "overfeed": "3+"
+       }
+      },
+      {
+       "to": "Devidramon",
+       "to_id": "devidramon",
+       "raw": "0-2 CM, 0-15 Training",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "training": "0-15"
+       }
+      },
+      {
+       "to": "Tuskmon",
+       "to_id": "tuskmon",
+       "raw": "3+ CM, 16+ Training, 3+ Overfeed",
+       "parsed": {
+        "care_mistakes": "3+",
+        "training": "16+",
+        "overfeed": "3+"
+       }
+      },
+      {
+       "to": "Raremon",
+       "to_id": "raremon",
+       "raw": "3+ CM, 0-4 Training OR 3+ CM, 5+ Training, 0-2 Overfeed",
+       "parsed": {
+        "alternatives": [
+         {
+          "care_mistakes": "3+",
+          "training": "0-4"
+         },
+         {
+          "care_mistakes": "3+",
+          "training": "5+",
+          "overfeed": "0-2"
+         }
+        ]
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm20/Gazimon.png",
+   "sources": [
+    "humulos:dm20"
+   ]
+  },
+  {
+   "id": "giromon",
+   "name": "Giromon",
+   "stage": "Perfect",
+   "attribute": "Vaccine",
+   "devices": {
+    "dm20": {
+     "versions": [
+      3
+     ],
+     "stage_time": "36 h",
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm20/Giromon.png",
+   "sources": [
+    "humulos:dm20"
+   ]
+  },
+  {
+   "id": "gizamon",
+   "name": "Gizamon",
+   "stage": "Child",
+   "attribute": "Virus",
+   "devices": {
+    "dm20": {
+     "versions": [
+      5
+     ],
+     "stage_time": "6 h",
+     "evolves_to": [
+      {
+       "to": "Devidramon",
+       "to_id": "devidramon",
+       "raw": "0-2 CM, 16+ Training",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "training": "16+"
+       }
+      },
+      {
+       "to": "Tuskmon",
+       "to_id": "tuskmon",
+       "raw": "3+ CM, 8-15 Training, 0-2 Overfeed",
+       "parsed": {
+        "care_mistakes": "3+",
+        "training": "8-15",
+        "overfeed": "0-2"
+       }
+      },
+      {
+       "to": "Flymon",
+       "to_id": "flymon",
+       "raw": "0-2 CM, 0-15 Training",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "training": "0-15"
+       }
+      },
+      {
+       "to": "Deltamon",
+       "to_id": "deltamon",
+       "raw": "3+ CM, 16+ Training, 3+ Overfeed",
+       "parsed": {
+        "care_mistakes": "3+",
+        "training": "16+",
+        "overfeed": "3+"
+       }
+      },
+      {
+       "to": "Raremon",
+       "to_id": "raremon",
+       "raw": "3+ CM, 0-7 Training OR 3+ CM, 8-15 Training, 3+ Overfeed OR 3+ CM, 16+ Training, 0-2 Overfeed",
+       "parsed": {
+        "alternatives": [
+         {
+          "care_mistakes": "3+",
+          "training": "0-7"
+         },
+         {
+          "care_mistakes": "3+",
+          "training": "8-15",
+          "overfeed": "3+"
+         },
+         {
+          "care_mistakes": "3+",
+          "training": "16+",
+          "overfeed": "0-2"
+         }
+        ]
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm20/Gizamon.png",
+   "sources": [
+    "humulos:dm20"
+   ]
+  },
+  {
+   "id": "gracenovamon",
+   "name": "Grace Novamon",
+   "stage": "Super Ultimate",
+   "attribute": "Vaccine",
+   "devices": {
+    "dm20": {
+     "versions": [
+      "special"
+     ],
+     "stage_time": null,
+     "evolves_to": [
+      {
+       "to": "obtain: Tag Battle 5x",
+       "to_id": "obtaintagbattle5x",
+       "raw": "Apollomon + Dianamon",
+       "parsed": {}
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm20/Grace Novamon.png",
+   "sources": [
+    "humulos:dm20"
+   ],
+   "obtain": "Tag Battle 5x (Apollomon + Dianamon)",
+   "playable": true
+  },
+  {
+   "id": "greymon",
+   "name": "Greymon",
+   "stage": "Adult",
+   "attribute": "Vaccine",
+   "devices": {
+    "dm20": {
+     "versions": [
+      1
+     ],
+     "stage_time": "24 h",
+     "evolves_to": [
+      {
+       "to": "Metal Greymon",
+       "to_id": "metalgreymon",
+       "raw": "15 Battles, 12-15 Victories",
+       "parsed": {
+        "battles": 15,
+        "victories": "12-15"
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm20/Greymon.png",
+   "sources": [
+    "humulos:dm20"
+   ]
+  },
+  {
+   "id": "groundramon",
+   "name": "Groundramon",
+   "stage": "Perfect",
+   "attribute": "Virus",
+   "devices": {
+    "dm20": {
+     "versions": [
+      "special"
+     ],
+     "stage_time": "36 h",
+     "evolves_to": [
+      {
+       "to": "Breakdramon",
+       "to_id": "breakdramon",
+       "raw": "0-2 CM",
+       "parsed": {
+        "care_mistakes": "0-2"
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm20/Groundramon.png",
+   "sources": [
+    "humulos:dm20"
+   ]
+  },
+  {
+   "id": "hackmon",
+   "name": "Hackmon",
+   "stage": "Child",
+   "attribute": "Data",
+   "devices": {
+    "dm20": {
+     "versions": [
+      "special"
+     ],
+     "stage_time": "6 h",
+     "evolves_to": [
+      {
+       "to": "Bao Hackmon",
+       "to_id": "baohackmon",
+       "raw": "",
+       "parsed": {}
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm20/Hackmon.png",
+   "sources": [
+    "humulos:dm20"
+   ]
+  },
+  {
+   "id": "hiandromon",
+   "name": "Hi Andromon",
+   "stage": "Ultimate",
+   "attribute": "Vaccine",
+   "devices": {
+    "dm20": {
+     "versions": [
+      3
+     ],
+     "stage_time": "48 h",
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm20/Hi Andromon.png",
+   "sources": [
+    "humulos:dm20"
+   ]
+  },
+  {
+   "id": "imperialdramonpaladinmode",
+   "name": "Imperialdramon: Paladin Mode",
+   "stage": "Super Ultimate",
+   "attribute": "Free",
+   "devices": {
+    "dm20": {
+     "versions": [
+      "special"
+     ],
+     "stage_time": null,
+     "evolves_to": [
+      {
+       "to": "obtain: colosseum enemy only",
+       "to_id": "obtaincolosseumenemyonly",
+       "raw": "",
+       "parsed": {}
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dmall/Imperialdramon Paladin Mode.png",
+   "sources": [
+    "humulos:dm20"
+   ],
+   "obtain": "colosseum enemy only",
+   "playable": false
+  },
+  {
+   "id": "jesmon",
+   "name": "Jesmon",
+   "stage": "Ultimate",
+   "attribute": "Data",
+   "devices": {
+    "dm20": {
+     "versions": [
+      "special"
+     ],
+     "stage_time": "48 h",
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm20/Jesmon.png",
+   "sources": [
+    "humulos:dm20"
+   ]
+  },
+  {
+   "id": "kabuterimon",
+   "name": "Kabuterimon",
+   "stage": "Adult",
+   "attribute": "Vaccine",
+   "devices": {
+    "dm20": {
+     "versions": [
+      2
+     ],
+     "stage_time": "24 h",
+     "evolves_to": [
+      {
+       "to": "Skull Greymon",
+       "to_id": "skullgreymon",
+       "raw": "15 Battles, 12-15 Victories",
+       "parsed": {
+        "battles": 15,
+        "victories": "12-15"
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm20/Kabuterimon.png",
+   "sources": [
+    "humulos:dm20"
+   ]
+  },
+  {
+   "id": "kingetemon",
+   "name": "King Etemon",
+   "stage": "Ultimate",
+   "attribute": "Virus",
+   "devices": {
+    "dm20": {
+     "versions": [
+      3
+     ],
+     "stage_time": "48 h",
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm20/King Etemon.png",
+   "sources": [
+    "humulos:dm20"
+   ]
+  },
+  {
+   "id": "koromon",
+   "name": "Koromon",
+   "stage": "Baby II",
+   "attribute": "Free",
+   "devices": {
+    "dm20": {
+     "versions": [
+      1
+     ],
+     "stage_time": "10 min",
+     "evolves_to": [
+      {
+       "to": "Agumon",
+       "to_id": "agumon",
+       "raw": "0-2 Care Mistakes, hatched from Version 1 Egg",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "version_egg": 1
+       }
+      },
+      {
+       "to": "Betamon",
+       "to_id": "betamon",
+       "raw": "3+ Care Mistakes, Version 1 Egg",
+       "parsed": {
+        "care_mistakes": "3+",
+        "version_egg": 1
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm20/Koromon.png",
+   "sources": [
+    "humulos:dm20"
+   ]
+  },
+  {
+   "id": "kunemon",
+   "name": "Kunemon",
+   "stage": "Child",
+   "attribute": "Virus",
+   "devices": {
+    "dm20": {
+     "versions": [
+      3
+     ],
+     "stage_time": "6 h",
+     "evolves_to": [
+      {
+       "to": "Ogremon",
+       "to_id": "ogremon",
+       "raw": "0-2 CM, 16+ Training",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "training": "16+"
+       }
+      },
+      {
+       "to": "Bakemon",
+       "to_id": "bakemon",
+       "raw": "3+ CM, 8-15 Training, 0-2 Overfeed",
+       "parsed": {
+        "care_mistakes": "3+",
+        "training": "8-15",
+        "overfeed": "0-2"
+       }
+      },
+      {
+       "to": "Shellmon",
+       "to_id": "shellmon",
+       "raw": "0-2 CM, 0-15 Training",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "training": "0-15"
+       }
+      },
+      {
+       "to": "Drimogemon",
+       "to_id": "drimogemon",
+       "raw": "3+ CM, 16+ Training, 3+ Overfeed",
+       "parsed": {
+        "care_mistakes": "3+",
+        "training": "16+",
+        "overfeed": "3+"
+       }
+      },
+      {
+       "to": "Scumon",
+       "to_id": "scumon",
+       "raw": "3+ CM, 0-7 Training OR 3+ CM, 8-15 Training, 3+ Overfeed OR 3+ CM, 16+ Training, 0-2 Overfeed",
+       "parsed": {
+        "alternatives": [
+         {
+          "care_mistakes": "3+",
+          "training": "0-7"
+         },
+         {
+          "care_mistakes": "3+",
+          "training": "8-15",
+          "overfeed": "3+"
+         },
+         {
+          "care_mistakes": "3+",
+          "training": "16+",
+          "overfeed": "0-2"
+         }
+        ]
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm20/Kunemon.png",
+   "sources": [
+    "humulos:dm20"
+   ]
+  },
+  {
+   "id": "kuwagamon",
+   "name": "Kuwagamon",
+   "stage": "Adult",
+   "attribute": "Virus",
+   "devices": {
+    "dm20": {
+     "versions": [
+      4
+     ],
+     "stage_time": "24 h",
+     "evolves_to": [
+      {
+       "to": "Piccolomon",
+       "to_id": "piccolomon",
+       "raw": "15 Battles, 12-15 Victories",
+       "parsed": {
+        "battles": 15,
+        "victories": "12-15"
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm20/Kuwagamon.png",
+   "sources": [
+    "humulos:dm20"
+   ]
+  },
+  {
+   "id": "lekismon",
+   "name": "Lekismon",
+   "stage": "Adult",
+   "attribute": "Data",
+   "devices": {
+    "dm20": {
+     "versions": [
+      "special"
+     ],
+     "stage_time": "24 h",
+     "evolves_to": [
+      {
+       "to": "Crescemon",
+       "to_id": "crescemon",
+       "raw": "15 Battles, 12-15 Victories",
+       "parsed": {
+        "battles": 15,
+        "victories": "12-15"
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm20/Lekismon.png",
+   "sources": [
+    "humulos:dm20"
+   ]
+  },
+  {
+   "id": "leomon",
+   "name": "Leomon",
+   "stage": "Adult",
+   "attribute": "Vaccine",
+   "devices": {
+    "dm20": {
+     "versions": [
+      4
+     ],
+     "stage_time": "24 h",
+     "evolves_to": [
+      {
+       "to": "Megadramon",
+       "to_id": "megadramon",
+       "raw": "15 Battles, 12-15 Victories",
+       "parsed": {
+        "battles": 15,
+        "victories": "12-15"
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm20/Leomon.png",
+   "sources": [
+    "humulos:dm20"
+   ]
+  },
+  {
+   "id": "leviamon",
+   "name": "Leviamon",
+   "stage": "Ultimate",
+   "attribute": "Virus",
+   "devices": {
+    "dm20": {
+     "versions": [
+      "special"
+     ],
+     "stage_time": "48 h",
+     "evolves_to": [
+      {
+       "to": "obtain: colosseum enemy only",
+       "to_id": "obtaincolosseumenemyonly",
+       "raw": "",
+       "parsed": {}
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dmall/Leviamon.png",
+   "sources": [
+    "humulos:dm20"
+   ],
+   "obtain": "colosseum enemy only",
+   "playable": false
+  },
+  {
+   "id": "lilithmon",
+   "name": "Lilithmon",
+   "stage": "Ultimate",
+   "attribute": "Virus",
+   "devices": {
+    "dm20": {
+     "versions": [
+      "special"
+     ],
+     "stage_time": "48 h",
+     "evolves_to": [
+      {
+       "to": "obtain: colosseum enemy only",
+       "to_id": "obtaincolosseumenemyonly",
+       "raw": "",
+       "parsed": {}
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dmall/Lilithmon.png",
+   "sources": [
+    "humulos:dm20"
+   ],
+   "obtain": "colosseum enemy only",
+   "playable": false
+  },
+  {
+   "id": "lordknightmon",
+   "name": "Lord Knightmon",
+   "stage": "Ultimate",
+   "attribute": "Virus",
+   "devices": {
+    "dm20": {
+     "versions": [
+      "special"
+     ],
+     "stage_time": "48 h",
+     "evolves_to": [
+      {
+       "to": "obtain: colosseum enemy only",
+       "to_id": "obtaincolosseumenemyonly",
+       "raw": "",
+       "parsed": {}
+      }
+     ]
+    }
+   },
+   "sprite": null,
+   "sources": [
+    "humulos:dm20"
+   ],
+   "obtain": "colosseum enemy only",
+   "playable": false
+  },
+  {
+   "id": "lucemonfalldownmode",
+   "name": "Lucemon: Falldown Mode",
+   "stage": "Perfect",
+   "attribute": "Virus",
+   "devices": {
+    "dm20": {
+     "versions": [
+      "special"
+     ],
+     "stage_time": "36 h",
+     "evolves_to": [
+      {
+       "to": "obtain: colosseum enemy only",
+       "to_id": "obtaincolosseumenemyonly",
+       "raw": "",
+       "parsed": {}
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dmall/Lucemon Falldown Mode.png",
+   "sources": [
+    "humulos:dm20"
+   ],
+   "obtain": "colosseum enemy only",
+   "playable": false
+  },
+  {
+   "id": "lunamon",
+   "name": "Lunamon",
+   "stage": "Child",
+   "attribute": "Data",
+   "devices": {
+    "dm20": {
+     "versions": [
+      "special"
+     ],
+     "stage_time": "6 h",
+     "evolves_to": [
+      {
+       "to": "Lekismon",
+       "to_id": "lekismon",
+       "raw": "Luna Egg",
+       "parsed": {
+        "special_egg": "Luna"
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm20/Lunamon.png",
+   "sources": [
+    "humulos:dm20"
+   ]
+  },
+  {
+   "id": "magnamon",
+   "name": "Magnamon",
+   "stage": "Ultimate",
+   "attribute": "Free",
+   "devices": {
+    "dm20": {
+     "versions": [
+      "special"
+     ],
+     "stage_time": "48 h",
+     "evolves_to": [
+      {
+       "to": "obtain: colosseum enemy only",
+       "to_id": "obtaincolosseumenemyonly",
+       "raw": "",
+       "parsed": {}
+      }
+     ]
+    }
+   },
+   "sprite": null,
+   "sources": [
+    "humulos:dm20"
+   ],
+   "obtain": "colosseum enemy only",
+   "playable": false
+  },
+  {
+   "id": "mamemon",
+   "name": "Mamemon",
+   "stage": "Perfect",
+   "attribute": "Data",
+   "devices": {
+    "dm20": {
+     "versions": [
+      1
+     ],
+     "stage_time": "36 h",
+     "evolves_to": [
+      {
+       "to": "Bancho Mamemon",
+       "to_id": "banchomamemon",
+       "raw": "0-2 CM",
+       "parsed": {
+        "care_mistakes": "0-2"
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm20/Mamemon.png",
+   "sources": [
+    "humulos:dm20"
+   ]
+  },
+  {
+   "id": "megadramon",
+   "name": "Megadramon",
+   "stage": "Perfect",
+   "attribute": "Virus",
+   "devices": {
+    "dm20": {
+     "versions": [
+      4
+     ],
+     "stage_time": "36 h",
+     "evolves_to": [
+      {
+       "to": "Aegisdramon",
+       "to_id": "aegisdramon",
+       "raw": "0-2 CM",
+       "parsed": {
+        "care_mistakes": "0-2"
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm20/Megadramon.png",
+   "sources": [
+    "humulos:dm20"
+   ]
+  },
+  {
+   "id": "meicoomon",
+   "name": "Meicoomon",
+   "stage": "Adult",
+   "attribute": "Free",
+   "devices": {
+    "dm20": {
+     "versions": [
+      "special"
+     ],
+     "stage_time": "24 h",
+     "evolves_to": [
+      {
+       "to": "Meicrackmon",
+       "to_id": "meicrackmon",
+       "raw": "15 Battles, 12-15 Victories",
+       "parsed": {
+        "battles": 15,
+        "victories": "12-15"
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm20/Meicoomon.png",
+   "sources": [
+    "humulos:dm20"
+   ]
+  },
+  {
+   "id": "meicrackmon",
+   "name": "Meicrackmon",
+   "stage": "Perfect",
+   "attribute": "Vaccine",
+   "devices": {
+    "dm20": {
+     "versions": [
+      "special"
+     ],
+     "stage_time": "36 h",
+     "evolves_to": [
+      {
+       "to": "Rasielmon",
+       "to_id": "rasielmon",
+       "raw": "0-2 CM",
+       "parsed": {
+        "care_mistakes": "0-2"
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm20/Meicrackmon.png",
+   "sources": [
+    "humulos:dm20"
+   ]
+  },
+  {
+   "id": "meramon",
+   "name": "Meramon",
+   "stage": "Adult",
+   "attribute": "Data",
+   "devices": {
+    "dm20": {
+     "versions": [
+      1
+     ],
+     "stage_time": "24 h",
+     "evolves_to": [
+      {
+       "to": "Mamemon",
+       "to_id": "mamemon",
+       "raw": "15 Battles, 12-15 Victories",
+       "parsed": {
+        "battles": 15,
+        "victories": "12-15"
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm20/Meramon.png",
+   "sources": [
+    "humulos:dm20"
+   ]
+  },
+  {
+   "id": "metalgreymon",
+   "name": "Metal Greymon",
+   "stage": "Perfect",
+   "attribute": "Virus",
+   "devices": {
+    "dm20": {
+     "versions": [
+      1
+     ],
+     "stage_time": "36 h",
+     "evolves_to": [
+      {
+       "to": "Blitz Greymon",
+       "to_id": "blitzgreymon",
+       "raw": "0-2 CM",
+       "parsed": {
+        "care_mistakes": "0-2"
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm20/Metal Greymon.png",
+   "sources": [
+    "humulos:dm20"
+   ]
+  },
+  {
+   "id": "metalmamemon",
+   "name": "Metal Mamemon",
+   "stage": "Perfect",
+   "attribute": "Data",
+   "devices": {
+    "dm20": {
+     "versions": [
+      2
+     ],
+     "stage_time": "36 h",
+     "evolves_to": [
+      {
+       "to": "Cres Garurumon",
+       "to_id": "cresgarurumon",
+       "raw": "0-2 CM",
+       "parsed": {
+        "care_mistakes": "0-2"
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm20/Metal Mamemon.png",
+   "sources": [
+    "humulos:dm20"
+   ]
+  },
+  {
+   "id": "metaltyranomon",
+   "name": "Metal Tyranomon",
+   "stage": "Perfect",
+   "attribute": "Virus",
+   "devices": {
+    "dm20": {
+     "versions": [
+      5
+     ],
+     "stage_time": "36 h",
+     "evolves_to": [
+      {
+       "to": "Mugendramon",
+       "to_id": "mugendramon",
+       "raw": "0-2 CM",
+       "parsed": {
+        "care_mistakes": "0-2"
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm20/Metal Tyranomon.png",
+   "sources": [
+    "humulos:dm20"
+   ]
+  },
+  {
+   "id": "mojyamon",
+   "name": "Mojyamon",
+   "stage": "Adult",
+   "attribute": "Vaccine",
+   "devices": {
+    "dm20": {
+     "versions": [
+      4
+     ],
+     "stage_time": "24 h",
+     "evolves_to": [
+      {
+       "to": "Piccolomon",
+       "to_id": "piccolomon",
+       "raw": "15 Battles, 12-15 Victories",
+       "parsed": {
+        "battles": 15,
+        "victories": "12-15"
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm20/Mojyamon.png",
+   "sources": [
+    "humulos:dm20"
+   ]
+  },
+  {
+   "id": "monochromon",
+   "name": "Monochromon",
+   "stage": "Adult",
+   "attribute": "Data",
+   "devices": {
+    "dm20": {
+     "versions": [
+      4
+     ],
+     "stage_time": "24 h",
+     "evolves_to": [
+      {
+       "to": "Megadramon",
+       "to_id": "megadramon",
+       "raw": "15 Battles, 12-15 Victories",
+       "parsed": {
+        "battles": 15,
+        "victories": "12-15"
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm20/Monochromon.png",
+   "sources": [
+    "humulos:dm20"
+   ]
+  },
+  {
+   "id": "monzaemon",
+   "name": "Monzaemon",
+   "stage": "Perfect",
+   "attribute": "Vaccine",
+   "devices": {
+    "dm20": {
+     "versions": [
+      1
+     ],
+     "stage_time": "36 h",
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm20/Monzaemon.png",
+   "sources": [
+    "humulos:dm20"
+   ]
+  },
+  {
+   "id": "mugendramon",
+   "name": "Mugendramon",
+   "stage": "Ultimate",
+   "attribute": "Virus",
+   "devices": {
+    "dm20": {
+     "versions": [
+      5
+     ],
+     "stage_time": "48 h",
+     "evolves_to": [
+      {
+       "to": "Rust Tyranomon",
+       "to_id": "rusttyranomon",
+       "raw": "Tag Battle 5x with Aegisdramon",
+       "parsed": {
+        "tag_battle_with": "Aegisdramon"
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm20/Mugendramon.png",
+   "sources": [
+    "humulos:dm20"
+   ]
+  },
+  {
+   "id": "murmukusmon",
+   "name": "Murmukusmon",
+   "stage": "Ultimate",
+   "attribute": "Virus",
+   "devices": {
+    "dm20": {
+     "versions": [
+      "special"
+     ],
+     "stage_time": "48 h",
+     "evolves_to": [
+      {
+       "to": "obtain: colosseum enemy only",
+       "to_id": "obtaincolosseumenemyonly",
+       "raw": "",
+       "parsed": {}
+      }
+     ]
+    }
+   },
+   "sprite": null,
+   "sources": [
+    "humulos:dm20"
+   ],
+   "obtain": "colosseum enemy only",
+   "playable": false
+  },
+  {
+   "id": "nanimon",
+   "name": "Nanimon",
+   "stage": "Adult",
+   "attribute": "Virus",
+   "devices": {
+    "dm20": {
+     "versions": [
+      4
+     ],
+     "stage_time": "24 h",
+     "evolves_to": [
+      {
+       "to": "Digitamamon",
+       "to_id": "digitamamon",
+       "raw": "15 Battles, 12-15 Victories",
+       "parsed": {
+        "battles": 15,
+        "victories": "12-15"
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm20/Nanimon.png",
+   "sources": [
+    "humulos:dm20"
+   ]
+  },
+  {
+   "id": "nanomon",
+   "name": "Nanomon",
+   "stage": "Perfect",
+   "attribute": "Virus",
+   "devices": {
+    "dm20": {
+     "versions": [
+      5
+     ],
+     "stage_time": "36 h",
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm20/Nanomon.png",
+   "sources": [
+    "humulos:dm20"
+   ]
+  },
+  {
+   "id": "numemon",
+   "name": "Numemon",
+   "stage": "Adult",
+   "attribute": "Virus",
+   "devices": {
+    "dm20": {
+     "versions": [
+      1
+     ],
+     "stage_time": "24 h",
+     "evolves_to": [
+      {
+       "to": "Monzaemon",
+       "to_id": "monzaemon",
+       "raw": "15 Battles, 12-15 Victories",
+       "parsed": {
+        "battles": 15,
+        "victories": "12-15"
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm20/Numemon.png",
+   "sources": [
+    "humulos:dm20"
+   ]
+  },
+  {
+   "id": "nyaromon",
+   "name": "Nyaromon",
+   "stage": "Baby II",
+   "attribute": "Free",
+   "devices": {
+    "dm20": {
+     "versions": [
+      "special"
+     ],
+     "stage_time": "10 min",
+     "evolves_to": [
+      {
+       "to": "Plotmon",
+       "to_id": "plotmon",
+       "raw": "",
+       "parsed": {}
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm20/Nyaromon.png",
+   "sources": [
+    "humulos:dm20"
+   ]
+  },
+  {
+   "id": "ogremon",
+   "name": "Ogremon",
+   "stage": "Adult",
+   "attribute": "Virus",
+   "devices": {
+    "dm20": {
+     "versions": [
+      3
+     ],
+     "stage_time": "24 h",
+     "evolves_to": [
+      {
+       "to": "Andromon",
+       "to_id": "andromon",
+       "raw": "15 Battles, 12-15 Victories",
+       "parsed": {
+        "battles": 15,
+        "victories": "12-15"
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm20/Ogremon.png",
+   "sources": [
+    "humulos:dm20"
+   ]
+  },
+  {
+   "id": "omegamon",
+   "name": "Omegamon",
+   "stage": "Super Ultimate",
+   "attribute": "Vaccine",
+   "devices": {
+    "dm20": {
+     "versions": [
+      "special"
+     ],
+     "stage_time": null,
+     "evolves_to": [
+      {
+       "to": "obtain: Tag Battle 5x",
+       "to_id": "obtaintagbattle5x",
+       "raw": "Taichi's War Greymon + Yamato's Metal Garurumon",
+       "parsed": {}
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm20/Omegamon.png",
+   "sources": [
+    "humulos:dm20"
+   ],
+   "obtain": "Tag Battle 5x (Taichi's War Greymon + Yamato's Metal Garurumon)",
+   "playable": true
+  },
+  {
+   "id": "omegamonalters",
+   "name": "Omegamon Alter S",
+   "stage": "Super Ultimate",
+   "attribute": "Virus",
+   "devices": {
+    "dm20": {
+     "versions": [
+      "special"
+     ],
+     "stage_time": null,
+     "evolves_to": [
+      {
+       "to": "obtain: Tag Battle 5x",
+       "to_id": "obtaintagbattle5x",
+       "raw": "Blitz Greymon + Cres Garurumon",
+       "parsed": {}
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm20/Omegamon Alter S.png",
+   "sources": [
+    "humulos:dm20"
+   ],
+   "obtain": "Tag Battle 5x (Blitz Greymon + Cres Garurumon)",
+   "playable": true
+  },
+  {
+   "id": "pagumon",
+   "name": "Pagumon",
+   "stage": "Baby II",
+   "attribute": "Free",
+   "devices": {
+    "dm20": {
+     "versions": [
+      5
+     ],
+     "stage_time": "10 min",
+     "evolves_to": [
+      {
+       "to": "Gazimon",
+       "to_id": "gazimon",
+       "raw": "0-2 CM",
+       "parsed": {
+        "care_mistakes": "0-2"
+       }
+      },
+      {
+       "to": "Gizamon",
+       "to_id": "gizamon",
+       "raw": "3+ CM",
+       "parsed": {
+        "care_mistakes": "3+"
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm20/Pagumon.png",
+   "sources": [
+    "humulos:dm20"
+   ]
+  },
+  {
+   "id": "palmon",
+   "name": "Palmon",
+   "stage": "Child",
+   "attribute": "Data",
+   "devices": {
+    "dm20": {
+     "versions": [
+      4
+     ],
+     "stage_time": "6 h",
+     "evolves_to": [
+      {
+       "to": "Leomon",
+       "to_id": "leomon",
+       "raw": "0-2 CM, 16+ Training",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "training": "16+"
+       }
+      },
+      {
+       "to": "Kuwagamon",
+       "to_id": "kuwagamon",
+       "raw": "3+ CM, 8-15 Training, 0-2 Overfeed",
+       "parsed": {
+        "care_mistakes": "3+",
+        "training": "8-15",
+        "overfeed": "0-2"
+       }
+      },
+      {
+       "to": "Coelamon",
+       "to_id": "coelamon",
+       "raw": "0-2 CM, 0-15 Training",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "training": "0-15"
+       }
+      },
+      {
+       "to": "Mojyamon",
+       "to_id": "mojyamon",
+       "raw": "3+ CM, 16+ Training, 3+ Overfeed",
+       "parsed": {
+        "care_mistakes": "3+",
+        "training": "16+",
+        "overfeed": "3+"
+       }
+      },
+      {
+       "to": "Nanimon",
+       "to_id": "nanimon",
+       "raw": "3+ CM, 0-7 Training OR 3+ CM, 8-15 Training, 3+ Overfeed OR 3+ CM, 16+ Training, 0-2 Overfeed",
+       "parsed": {
+        "alternatives": [
+         {
+          "care_mistakes": "3+",
+          "training": "0-7"
+         },
+         {
+          "care_mistakes": "3+",
+          "training": "8-15",
+          "overfeed": "3+"
+         },
+         {
+          "care_mistakes": "3+",
+          "training": "16+",
+          "overfeed": "0-2"
+         }
+        ]
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm20/Palmon.png",
+   "sources": [
+    "humulos:dm20"
+   ]
+  },
+  {
+   "id": "patamon",
+   "name": "Patamon",
+   "stage": "Child",
+   "attribute": "Data",
+   "devices": {
+    "dm20": {
+     "versions": [
+      3
+     ],
+     "stage_time": "6 h",
+     "evolves_to": [
+      {
+       "to": "Unimon",
+       "to_id": "unimon",
+       "raw": "0-2 CM, 16+ Training",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "training": "16+"
+       }
+      },
+      {
+       "to": "Centalmon",
+       "to_id": "centalmon",
+       "raw": "3+ CM, 5-15 Training, 3+ Overfeed",
+       "parsed": {
+        "care_mistakes": "3+",
+        "training": "5-15",
+        "overfeed": "3+"
+       }
+      },
+      {
+       "to": "Ogremon",
+       "to_id": "ogremon",
+       "raw": "0-2 CM, 0-15 Training",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "training": "0-15"
+       }
+      },
+      {
+       "to": "Bakemon",
+       "to_id": "bakemon",
+       "raw": "3+ CM, 16+ Training, 3+ Overfeed",
+       "parsed": {
+        "care_mistakes": "3+",
+        "training": "16+",
+        "overfeed": "3+"
+       }
+      },
+      {
+       "to": "Scumon",
+       "to_id": "scumon",
+       "raw": "3+ CM, 0-4 Training OR 3+ CM, 5+ Training, 0-2 Overfeed",
+       "parsed": {
+        "alternatives": [
+         {
+          "care_mistakes": "3+",
+          "training": "0-4"
+         },
+         {
+          "care_mistakes": "3+",
+          "training": "5+",
+          "overfeed": "0-2"
+         }
+        ]
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm20/Patamon.png",
+   "sources": [
+    "humulos:dm20"
+   ]
+  },
+  {
+   "id": "petitmon",
+   "name": "Petitmon",
+   "stage": "Baby I",
+   "attribute": "Free",
+   "devices": {
+    "dm20": {
+     "versions": [
+      "special"
+     ],
+     "stage_time": "1 min (egg hatch)",
+     "evolves_to": [
+      {
+       "to": "Babydmon",
+       "to_id": "babydmon",
+       "raw": "Wait 10 Minutes",
+       "parsed": {
+        "time_min": 10
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm20/Petitmon.png",
+   "sources": [
+    "humulos:dm20"
+   ]
+  },
+  {
+   "id": "piccolomon",
+   "name": "Piccolomon",
+   "stage": "Perfect",
+   "attribute": "Data",
+   "devices": {
+    "dm20": {
+     "versions": [
+      4
+     ],
+     "stage_time": "36 h",
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm20/Piccolomon.png",
+   "sources": [
+    "humulos:dm20"
+   ]
+  },
+  {
+   "id": "pinochimon",
+   "name": "Pinochimon",
+   "stage": "Ultimate",
+   "attribute": "Virus",
+   "devices": {
+    "dm20": {
+     "versions": [
+      5
+     ],
+     "stage_time": "48 h",
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm20/Pinochimon.png",
+   "sources": [
+    "humulos:dm20"
+   ]
+  },
+  {
+   "id": "pitchmon",
+   "name": "Pitchmon",
+   "stage": "Baby I",
+   "attribute": "Free",
+   "devices": {
+    "dm20": {
+     "versions": [
+      "special"
+     ],
+     "stage_time": "1 min (egg hatch)",
+     "evolves_to": [
+      {
+       "to": "Pukamon",
+       "to_id": "pukamon",
+       "raw": "Wait 10 Minutes",
+       "parsed": {
+        "time_min": 10
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm20/Pitchmon.png",
+   "sources": [
+    "humulos:dm20"
+   ]
+  },
+  {
+   "id": "piyomon",
+   "name": "Piyomon",
+   "stage": "Child",
+   "attribute": "Vaccine",
+   "devices": {
+    "dm20": {
+     "versions": [
+      4
+     ],
+     "stage_time": "6 h",
+     "evolves_to": [
+      {
+       "to": "Monochromon",
+       "to_id": "monochromon",
+       "raw": "0-2 CM, 16+ Training",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "training": "16+"
+       }
+      },
+      {
+       "to": "Cockatrimon",
+       "to_id": "cockatrimon",
+       "raw": "3+ CM, 5-15 Training, 3+ Overfeed",
+       "parsed": {
+        "care_mistakes": "3+",
+        "training": "5-15",
+        "overfeed": "3+"
+       }
+      },
+      {
+       "to": "Leomon",
+       "to_id": "leomon",
+       "raw": "0-2 CM, 0-15 Training",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "training": "0-15"
+       }
+      },
+      {
+       "to": "Kuwagamon",
+       "to_id": "kuwagamon",
+       "raw": "3+ CM, 16+ Training, 3+ Overfeed",
+       "parsed": {
+        "care_mistakes": "3+",
+        "training": "16+",
+        "overfeed": "3+"
+       }
+      },
+      {
+       "to": "Nanimon",
+       "to_id": "nanimon",
+       "raw": "3+ CM, 0-4 Training OR 3+ CM, 5+ Training, 0-2 Overfeed",
+       "parsed": {
+        "alternatives": [
+         {
+          "care_mistakes": "3+",
+          "training": "0-4"
+         },
+         {
+          "care_mistakes": "3+",
+          "training": "5+",
+          "overfeed": "0-2"
+         }
+        ]
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm20/Piyomon.png",
+   "sources": [
+    "humulos:dm20"
+   ]
+  },
+  {
+   "id": "plotmon",
+   "name": "Plotmon",
+   "stage": "Child",
+   "attribute": "Vaccine",
+   "devices": {
+    "dm20": {
+     "versions": [
+      "special"
+     ],
+     "stage_time": "6 h",
+     "evolves_to": [
+      {
+       "to": "Meicoomon",
+       "to_id": "meicoomon",
+       "raw": "",
+       "parsed": {}
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm20/Plotmon.png",
+   "sources": [
+    "humulos:dm20"
+   ]
+  },
+  {
+   "id": "poyomon",
+   "name": "Poyomon",
+   "stage": "Baby I",
+   "attribute": "Free",
+   "devices": {
+    "dm20": {
+     "versions": [
+      3
+     ],
+     "stage_time": "1 min (egg hatch)",
+     "evolves_to": [
+      {
+       "to": "Tokomon",
+       "to_id": "tokomon",
+       "raw": "Wait 10 Minutes",
+       "parsed": {
+        "time_min": 10
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm20/Poyomon.png",
+   "sources": [
+    "humulos:dm20"
+   ]
+  },
+  {
+   "id": "pukamon",
+   "name": "Pukamon",
+   "stage": "Baby II",
+   "attribute": "Free",
+   "devices": {
+    "dm20": {
+     "versions": [
+      "special"
+     ],
+     "stage_time": "10 min",
+     "evolves_to": [
+      {
+       "to": "Coronamon",
+       "to_id": "coronamon",
+       "raw": "Corona Egg",
+       "parsed": {
+        "special_egg": "Corona"
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm20/Pukamon.png",
+   "sources": [
+    "humulos:dm20"
+   ]
+  },
+  {
+   "id": "punimon",
+   "name": "Punimon",
+   "stage": "Baby I",
+   "attribute": "Free",
+   "devices": {
+    "dm20": {
+     "versions": [
+      2
+     ],
+     "stage_time": "1 min (egg hatch)",
+     "evolves_to": [
+      {
+       "to": "Tunomon",
+       "to_id": "tunomon",
+       "raw": "Wait 10 Minutes",
+       "parsed": {
+        "time_min": 10
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm20/Punimon.png",
+   "sources": [
+    "humulos:dm20"
+   ]
+  },
+  {
+   "id": "raremon",
+   "name": "Raremon",
+   "stage": "Adult",
+   "attribute": "Virus",
+   "devices": {
+    "dm20": {
+     "versions": [
+      5
+     ],
+     "stage_time": "24 h",
+     "evolves_to": [
+      {
+       "to": "Ex-Tyranomon",
+       "to_id": "extyranomon",
+       "raw": "15 Battles, 12-15 Victories",
+       "parsed": {
+        "battles": 15,
+        "victories": "12-15"
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm20/Raremon.png",
+   "sources": [
+    "humulos:dm20"
+   ]
+  },
+  {
+   "id": "rasielmon",
+   "name": "Rasielmon",
+   "stage": "Ultimate",
+   "attribute": "Vaccine",
+   "devices": {
+    "dm20": {
+     "versions": [
+      "special"
+     ],
+     "stage_time": "48 h",
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm20/Rasielmon.png",
+   "sources": [
+    "humulos:dm20"
+   ]
+  },
+  {
+   "id": "rusttyranomon",
+   "name": "Rust Tyranomon",
+   "stage": "Super Ultimate",
+   "attribute": "Virus",
+   "devices": {
+    "dm20": {
+     "versions": [
+      "special"
+     ],
+     "stage_time": null,
+     "evolves_to": [
+      {
+       "to": "obtain: Tag Battle 5x",
+       "to_id": "obtaintagbattle5x",
+       "raw": "Aegisdramon + Mugendramon",
+       "parsed": {}
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm20/Rust Tyranomon.png",
+   "sources": [
+    "humulos:dm20"
+   ],
+   "obtain": "Tag Battle 5x (Aegisdramon + Mugendramon)",
+   "playable": true
+  },
+  {
+   "id": "sakumon",
+   "name": "Sakumon",
+   "stage": "Baby I",
+   "attribute": "Free",
+   "devices": {
+    "dm20": {
+     "versions": [
+      "special"
+     ],
+     "stage_time": "1 min (egg hatch)",
+     "evolves_to": [
+      {
+       "to": "Sakuttomon",
+       "to_id": "sakuttomon",
+       "raw": "Wait 10 Minutes",
+       "parsed": {
+        "time_min": 10
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm20/Sakumon.png",
+   "sources": [
+    "humulos:dm20"
+   ]
+  },
+  {
+   "id": "sakuttomon",
+   "name": "Sakuttomon",
+   "stage": "Baby II",
+   "attribute": "Free",
+   "devices": {
+    "dm20": {
+     "versions": [
+      "special"
+     ],
+     "stage_time": "10 min",
+     "evolves_to": [
+      {
+       "to": "Zubamon",
+       "to_id": "zubamon",
+       "raw": "Zuba Egg",
+       "parsed": {
+        "special_egg": "Zuba"
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm20/Sakuttomon.png",
+   "sources": [
+    "humulos:dm20"
+   ]
+  },
+  {
+   "id": "saviorhackmon",
+   "name": "Savior Hackmon",
+   "stage": "Perfect",
+   "attribute": "Data",
+   "devices": {
+    "dm20": {
+     "versions": [
+      "special"
+     ],
+     "stage_time": "36 h",
+     "evolves_to": [
+      {
+       "to": "Jesmon",
+       "to_id": "jesmon",
+       "raw": "0-2 CM",
+       "parsed": {
+        "care_mistakes": "0-2"
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm20/Savior Hackmon.png",
+   "sources": [
+    "humulos:dm20"
+   ]
+  },
+  {
+   "id": "scumon",
+   "name": "Scumon",
+   "stage": "Adult",
+   "attribute": "Virus",
+   "devices": {
+    "dm20": {
+     "versions": [
+      3
+     ],
+     "stage_time": "24 h",
+     "evolves_to": [
+      {
+       "to": "Etemon",
+       "to_id": "etemon",
+       "raw": "15 Battles, 12-15 Victories",
+       "parsed": {
+        "battles": 15,
+        "victories": "12-15"
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm20/Scumon.png",
+   "sources": [
+    "humulos:dm20"
+   ]
+  },
+  {
+   "id": "seadramon",
+   "name": "Seadramon",
+   "stage": "Adult",
+   "attribute": "Data",
+   "devices": {
+    "dm20": {
+     "versions": [
+      1
+     ],
+     "stage_time": "24 h",
+     "evolves_to": [
+      {
+       "to": "Mamemon",
+       "to_id": "mamemon",
+       "raw": "15 Battles, 12-15 Victories",
+       "parsed": {
+        "battles": 15,
+        "victories": "12-15"
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm20/Seadramon.png",
+   "sources": [
+    "humulos:dm20"
+   ]
+  },
+  {
+   "id": "shellmon",
+   "name": "Shellmon",
+   "stage": "Adult",
+   "attribute": "Data",
+   "devices": {
+    "dm20": {
+     "versions": [
+      3
+     ],
+     "stage_time": "24 h",
+     "evolves_to": [
+      {
+       "to": "Andromon",
+       "to_id": "andromon",
+       "raw": "15 Battles, 12-15 Victories",
+       "parsed": {
+        "battles": 15,
+        "victories": "12-15"
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm20/Shellmon.png",
+   "sources": [
+    "humulos:dm20"
+   ]
+  },
+  {
+   "id": "skullgreymon",
+   "name": "Skull Greymon",
+   "stage": "Perfect",
+   "attribute": "Virus",
+   "devices": {
+    "dm20": {
+     "versions": [
+      2
+     ],
+     "stage_time": "36 h",
+     "evolves_to": [
+      {
+       "to": "Skull Mammon",
+       "to_id": "skullmammon",
+       "raw": "0-2 CM",
+       "parsed": {
+        "care_mistakes": "0-2"
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm20/Skull Greymon.png",
+   "sources": [
+    "humulos:dm20"
+   ]
+  },
+  {
+   "id": "skullmammon",
+   "name": "Skull Mammon",
+   "stage": "Ultimate",
+   "attribute": "Vaccine",
+   "devices": {
+    "dm20": {
+     "versions": [
+      2
+     ],
+     "stage_time": "48 h",
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm20/Skull Mammon.png",
+   "sources": [
+    "humulos:dm20"
+   ]
+  },
+  {
+   "id": "slayerdramon",
+   "name": "Slayerdramon",
+   "stage": "Ultimate",
+   "attribute": "Vaccine",
+   "devices": {
+    "dm20": {
+     "versions": [
+      "special"
+     ],
+     "stage_time": "48 h",
+     "evolves_to": [
+      {
+       "to": "Examon",
+       "to_id": "examon",
+       "raw": "Tag Battle 5x with Breakdramon",
+       "parsed": {
+        "tag_battle_with": "Breakdramon"
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm20/Slayerdramon.png",
+   "sources": [
+    "humulos:dm20"
+   ]
+  },
+  {
+   "id": "sleipmon",
+   "name": "Sleipmon",
+   "stage": "Ultimate",
+   "attribute": "Vaccine",
+   "devices": {
+    "dm20": {
+     "versions": [
+      "special"
+     ],
+     "stage_time": "48 h",
+     "evolves_to": [
+      {
+       "to": "obtain: colosseum enemy only",
+       "to_id": "obtaincolosseumenemyonly",
+       "raw": "",
+       "parsed": {}
+      }
+     ]
+    }
+   },
+   "sprite": null,
+   "sources": [
+    "humulos:dm20"
+   ],
+   "obtain": "colosseum enemy only",
+   "playable": false
+  },
+  {
+   "id": "taichisagumon",
+   "name": "Taichi's Agumon",
+   "stage": "Child",
+   "attribute": "Vaccine",
+   "devices": {
+    "dm20": {
+     "versions": [
+      "special"
+     ],
+     "stage_time": "6 h",
+     "evolves_to": [
+      {
+       "to": "Taichi's Greymon",
+       "to_id": "taichisgreymon",
+       "raw": "",
+       "parsed": {}
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm20/Taichis Agumon.png",
+   "sources": [
+    "humulos:dm20"
+   ]
+  },
+  {
+   "id": "taichisgreymon",
+   "name": "Taichi's Greymon",
+   "stage": "Adult",
+   "attribute": "Vaccine",
+   "devices": {
+    "dm20": {
+     "versions": [
+      "special"
+     ],
+     "stage_time": "24 h",
+     "evolves_to": [
+      {
+       "to": "Taichi's Metal Greymon",
+       "to_id": "taichismetalgreymon",
+       "raw": "15 Battles, 12-15 Victories",
+       "parsed": {
+        "battles": 15,
+        "victories": "12-15"
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm20/Taichis Greymon.png",
+   "sources": [
+    "humulos:dm20"
+   ]
+  },
+  {
+   "id": "taichismetalgreymon",
+   "name": "Taichi's Metal Greymon",
+   "stage": "Perfect",
+   "attribute": "Vaccine",
+   "devices": {
+    "dm20": {
+     "versions": [
+      "special"
+     ],
+     "stage_time": "36 h",
+     "evolves_to": [
+      {
+       "to": "Taichi's War Greymon",
+       "to_id": "taichiswargreymon",
+       "raw": "0-2 CM",
+       "parsed": {
+        "care_mistakes": "0-2"
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm20/Taichis Metal Greymon.png",
+   "sources": [
+    "humulos:dm20"
+   ]
+  },
+  {
+   "id": "taichiswargreymon",
+   "name": "Taichi's War Greymon",
+   "stage": "Ultimate",
+   "attribute": "Vaccine",
+   "devices": {
+    "dm20": {
+     "versions": [
+      "special"
+     ],
+     "stage_time": "48 h",
+     "evolves_to": [
+      {
+       "to": "Omegamon",
+       "to_id": "omegamon",
+       "raw": "Tag Battle 5x with Yamato's Metal Garurumon",
+       "parsed": {
+        "tag_battle_with": "Yamato's Metal Garurumon"
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm20/Taichis War Greymon.png",
+   "sources": [
+    "humulos:dm20"
+   ]
+  },
+  {
+   "id": "tanemon",
+   "name": "Tanemon",
+   "stage": "Baby II",
+   "attribute": "Free",
+   "devices": {
+    "dm20": {
+     "versions": [
+      4
+     ],
+     "stage_time": "10 min",
+     "evolves_to": [
+      {
+       "to": "Piyomon",
+       "to_id": "piyomon",
+       "raw": "0-2 CM",
+       "parsed": {
+        "care_mistakes": "0-2"
+       }
+      },
+      {
+       "to": "Palmon",
+       "to_id": "palmon",
+       "raw": "3+ CM",
+       "parsed": {
+        "care_mistakes": "3+"
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm20/Tanemon.png",
+   "sources": [
+    "humulos:dm20"
+   ]
+  },
+  {
+   "id": "titamon",
+   "name": "Titamon",
+   "stage": "Ultimate",
+   "attribute": "Virus",
+   "devices": {
+    "dm20": {
+     "versions": [
+      4
+     ],
+     "stage_time": "48 h",
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm20/Titamon.png",
+   "sources": [
+    "humulos:dm20"
+   ]
+  },
+  {
+   "id": "tokomon",
+   "name": "Tokomon",
+   "stage": "Baby II",
+   "attribute": "Free",
+   "devices": {
+    "dm20": {
+     "versions": [
+      3
+     ],
+     "stage_time": "10 min",
+     "evolves_to": [
+      {
+       "to": "Patamon",
+       "to_id": "patamon",
+       "raw": "0-2 CM",
+       "parsed": {
+        "care_mistakes": "0-2"
+       }
+      },
+      {
+       "to": "Kunemon",
+       "to_id": "kunemon",
+       "raw": "3+ CM",
+       "parsed": {
+        "care_mistakes": "3+"
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm20/Tokomon.png",
+   "sources": [
+    "humulos:dm20"
+   ]
+  },
+  {
+   "id": "tunomon",
+   "name": "Tunomon",
+   "stage": "Baby II",
+   "attribute": "Free",
+   "devices": {
+    "dm20": {
+     "versions": [
+      2
+     ],
+     "stage_time": "10 min",
+     "evolves_to": [
+      {
+       "to": "Gabumon",
+       "to_id": "gabumon",
+       "raw": "0-2 CM, Version 2 Egg",
+       "parsed": {
+        "care_mistakes": "0-2",
+        "version_egg": 2
+       }
+      },
+      {
+       "to": "Elecmon",
+       "to_id": "elecmon",
+       "raw": "3+ CM, Version 2 Egg",
+       "parsed": {
+        "care_mistakes": "3+",
+        "version_egg": 2
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm20/Tunomon.png",
+   "sources": [
+    "humulos:dm20"
+   ]
+  },
+  {
+   "id": "tuskmon",
+   "name": "Tuskmon",
+   "stage": "Adult",
+   "attribute": "Virus",
+   "devices": {
+    "dm20": {
+     "versions": [
+      5
+     ],
+     "stage_time": "24 h",
+     "evolves_to": [
+      {
+       "to": "Nanomon",
+       "to_id": "nanomon",
+       "raw": "15 Battles, 12-15 Victories",
+       "parsed": {
+        "battles": 15,
+        "victories": "12-15"
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm20/Tuskmon.png",
+   "sources": [
+    "humulos:dm20"
+   ]
+  },
+  {
+   "id": "tyranomon",
+   "name": "Tyranomon",
+   "stage": "Adult",
+   "attribute": "Data",
+   "devices": {
+    "dm20": {
+     "versions": [
+      1
+     ],
+     "stage_time": "24 h",
+     "evolves_to": [
+      {
+       "to": "Mamemon",
+       "to_id": "mamemon",
+       "raw": "15 Battles, 12-15 Victories",
+       "parsed": {
+        "battles": 15,
+        "victories": "12-15"
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm20/Tyranomon.png",
+   "sources": [
+    "humulos:dm20"
+   ]
+  },
+  {
+   "id": "ulforcevdramon",
+   "name": "Ulforce V-dramon",
+   "stage": "Ultimate",
+   "attribute": "Vaccine",
+   "devices": {
+    "dm20": {
+     "versions": [
+      "special"
+     ],
+     "stage_time": "48 h",
+     "evolves_to": [
+      {
+       "to": "obtain: colosseum enemy only",
+       "to_id": "obtaincolosseumenemyonly",
+       "raw": "",
+       "parsed": {}
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dmall/Ulforce V-dramon.png",
+   "sources": [
+    "humulos:dm20"
+   ],
+   "obtain": "colosseum enemy only",
+   "playable": false
+  },
+  {
+   "id": "unimon",
+   "name": "Unimon",
+   "stage": "Adult",
+   "attribute": "Vaccine",
+   "devices": {
+    "dm20": {
+     "versions": [
+      3
+     ],
+     "stage_time": "24 h",
+     "evolves_to": [
+      {
+       "to": "Andromon",
+       "to_id": "andromon",
+       "raw": "15 Battles, 12-15 Victories",
+       "parsed": {
+        "battles": 15,
+        "victories": "12-15"
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm20/Unimon.png",
+   "sources": [
+    "humulos:dm20"
+   ]
+  },
+  {
+   "id": "vademon",
+   "name": "Vademon",
+   "stage": "Perfect",
+   "attribute": "Virus",
+   "devices": {
+    "dm20": {
+     "versions": [
+      2
+     ],
+     "stage_time": "36 h",
+     "evolves_to": []
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm20/Vademon.png",
+   "sources": [
+    "humulos:dm20"
+   ]
+  },
+  {
+   "id": "vegimon",
+   "name": "Vegimon",
+   "stage": "Adult",
+   "attribute": "Virus",
+   "devices": {
+    "dm20": {
+     "versions": [
+      2
+     ],
+     "stage_time": "24 h",
+     "evolves_to": [
+      {
+       "to": "Vademon",
+       "to_id": "vademon",
+       "raw": "15 Battles, 12-15 Victories",
+       "parsed": {
+        "battles": 15,
+        "victories": "12-15"
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm20/Vegimon.png",
+   "sources": [
+    "humulos:dm20"
+   ]
+  },
+  {
+   "id": "whamon",
+   "name": "Whamon",
+   "stage": "Adult",
+   "attribute": "Vaccine",
+   "devices": {
+    "dm20": {
+     "versions": [
+      2
+     ],
+     "stage_time": "24 h",
+     "evolves_to": [
+      {
+       "to": "Metal Mamemon",
+       "to_id": "metalmamemon",
+       "raw": "15 Battles, 12-15 Victories",
+       "parsed": {
+        "battles": 15,
+        "victories": "12-15"
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm20/Whamon.png",
+   "sources": [
+    "humulos:dm20"
+   ]
+  },
+  {
+   "id": "wingdramon",
+   "name": "Wingdramon",
+   "stage": "Perfect",
+   "attribute": "Vaccine",
+   "devices": {
+    "dm20": {
+     "versions": [
+      "special"
+     ],
+     "stage_time": "36 h",
+     "evolves_to": [
+      {
+       "to": "Slayerdramon",
+       "to_id": "slayerdramon",
+       "raw": "0-2 CM",
+       "parsed": {
+        "care_mistakes": "0-2"
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm20/Wingdramon.png",
+   "sources": [
+    "humulos:dm20"
+   ]
+  },
+  {
+   "id": "yamatosgabumon",
+   "name": "Yamato's Gabumon",
+   "stage": "Child",
+   "attribute": "Data",
+   "devices": {
+    "dm20": {
+     "versions": [
+      "special"
+     ],
+     "stage_time": "6 h",
+     "evolves_to": [
+      {
+       "to": "Yamato's Garurumon",
+       "to_id": "yamatosgarurumon",
+       "raw": "",
+       "parsed": {}
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm20/Yamatos Gabumon.png",
+   "sources": [
+    "humulos:dm20"
+   ]
+  },
+  {
+   "id": "yamatosgarurumon",
+   "name": "Yamato's Garurumon",
+   "stage": "Adult",
+   "attribute": "Vaccine",
+   "devices": {
+    "dm20": {
+     "versions": [
+      "special"
+     ],
+     "stage_time": "24 h",
+     "evolves_to": [
+      {
+       "to": "Yamato's Were Garurumon",
+       "to_id": "yamatosweregarurumon",
+       "raw": "15 Battles, 12-15 Victories",
+       "parsed": {
+        "battles": 15,
+        "victories": "12-15"
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm20/Yamatos Garurumon.png",
+   "sources": [
+    "humulos:dm20"
+   ]
+  },
+  {
+   "id": "yamatosmetalgarurumon",
+   "name": "Yamato's Metal Garurumon",
+   "stage": "Ultimate",
+   "attribute": "Data",
+   "devices": {
+    "dm20": {
+     "versions": [
+      "special"
+     ],
+     "stage_time": "48 h",
+     "evolves_to": [
+      {
+       "to": "Omegamon",
+       "to_id": "omegamon",
+       "raw": "Tag Battle 5x with Taichi's War Greymon",
+       "parsed": {
+        "tag_battle_with": "Taichi's War Greymon"
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm20/Yamatos Metal Garurumon.png",
+   "sources": [
+    "humulos:dm20"
+   ]
+  },
+  {
+   "id": "yamatosweregarurumon",
+   "name": "Yamato's Were Garurumon",
+   "stage": "Perfect",
+   "attribute": "Vaccine",
+   "devices": {
+    "dm20": {
+     "versions": [
+      "special"
+     ],
+     "stage_time": "36 h",
+     "evolves_to": [
+      {
+       "to": "Yamato's Metal Garurumon",
+       "to_id": "yamatosmetalgarurumon",
+       "raw": "0-2 CM",
+       "parsed": {
+        "care_mistakes": "0-2"
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm20/Yamatos Were Garurumon.png",
+   "sources": [
+    "humulos:dm20"
+   ]
+  },
+  {
+   "id": "yukidarumon",
+   "name": "Yukidarumon",
+   "stage": "Adult",
+   "attribute": "Vaccine",
+   "devices": {
+    "dm20": {
+     "versions": [
+      2
+     ],
+     "stage_time": "24 h",
+     "evolves_to": [
+      {
+       "to": "Metal Mamemon",
+       "to_id": "metalmamemon",
+       "raw": "15 Battles, 12-15 Victories",
+       "parsed": {
+        "battles": 15,
+        "victories": "12-15"
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm20/Yukidarumon.png",
+   "sources": [
+    "humulos:dm20"
+   ]
+  },
+  {
+   "id": "yukimibotamon",
+   "name": "Yukimibotamon",
+   "stage": "Baby I",
+   "attribute": "Free",
+   "devices": {
+    "dm20": {
+     "versions": [
+      "special"
+     ],
+     "stage_time": "1 min (egg hatch)",
+     "evolves_to": [
+      {
+       "to": "Nyaromon",
+       "to_id": "nyaromon",
+       "raw": "Wait 10 Minutes",
+       "parsed": {
+        "time_min": 10
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm20/Yukimibotamon.png",
+   "sources": [
+    "humulos:dm20"
+   ]
+  },
+  {
+   "id": "yuramon",
+   "name": "Yuramon",
+   "stage": "Baby I",
+   "attribute": "Free",
+   "devices": {
+    "dm20": {
+     "versions": [
+      4
+     ],
+     "stage_time": "1 min (egg hatch)",
+     "evolves_to": [
+      {
+       "to": "Tanemon",
+       "to_id": "tanemon",
+       "raw": "Wait 10 Minutes",
+       "parsed": {
+        "time_min": 10
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm20/Yuramon.png",
+   "sources": [
+    "humulos:dm20"
+   ]
+  },
+  {
+   "id": "zubaeagermon",
+   "name": "Zubaeagermon",
+   "stage": "Adult",
+   "attribute": "Vaccine",
+   "devices": {
+    "dm20": {
+     "versions": [
+      "special"
+     ],
+     "stage_time": "24 h",
+     "evolves_to": [
+      {
+       "to": "Duramon",
+       "to_id": "duramon",
+       "raw": "15 Battles, 12-15 Victories",
+       "parsed": {
+        "battles": 15,
+        "victories": "12-15"
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm20/Zubaeagermon.png",
+   "sources": [
+    "humulos:dm20"
+   ]
+  },
+  {
+   "id": "zubamon",
+   "name": "Zubamon",
+   "stage": "Child",
+   "attribute": "Vaccine",
+   "devices": {
+    "dm20": {
+     "versions": [
+      "special"
+     ],
+     "stage_time": "6 h",
+     "evolves_to": [
+      {
+       "to": "Zubaeagermon",
+       "to_id": "zubaeagermon",
+       "raw": "",
+       "parsed": {}
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm20/Zubamon.png",
+   "sources": [
+    "humulos:dm20"
+   ]
+  },
+  {
+   "id": "zurumon",
+   "name": "Zurumon",
+   "stage": "Baby I",
+   "attribute": "Free",
+   "devices": {
+    "dm20": {
+     "versions": [
+      5
+     ],
+     "stage_time": "1 min (egg hatch)",
+     "evolves_to": [
+      {
+       "to": "Pagumon",
+       "to_id": "pagumon",
+       "raw": "Wait 10 Minutes",
+       "parsed": {
+        "time_min": 10
+       }
+      }
+     ]
+    }
+   },
+   "sprite": "fan/wayland-vpets/assets/dm20/Zurumon.png",
+   "sources": [
+    "humulos:dm20"
+   ]
+  }
+ ]
+}
