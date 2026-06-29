@@ -12,38 +12,10 @@
    "Perfect": "48 h"
   },
   "sprite_gaps": [
-   "Apocalymon",
-   "Babydmon",
-   "Barbamon",
-   "Beel Starmon",
-   "Beelzebumon",
-   "Belphemon: Rage Mode",
-   "Blucomon",
-   "Craniummon",
-   "Demon",
-   "Dodomon",
-   "Duftmon",
-   "Dukemon",
-   "Dynasmon",
-   "Gankoomon",
-   "Grace Novamon",
-   "Herissmon",
-   "Imperialdramon: Paladin Mode",
-   "Leviamon",
-   "Lord Knightmon",
-   "Lucemon: Falldown Mode",
-   "Magnamon",
    "N.E.O",
-   "Ofanimon: Falldown Mode",
-   "Omegamon Alter-S",
-   "Rust Tyranomon",
    "Sistermon Blanc",
    "Sistermon Ciel",
-   "Sistermon Noir",
-   "Sleipmon",
-   "Stingmon",
-   "Susanoomon",
-   "Ulforce V-dramon"
+   "Sistermon Noir"
   ],
   "attribute_gaps": [],
   "note": "exact evo conditions from humulos (raw + parsed). real-time stage timers per device. sleep/power included."
@@ -102,6 +74,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Aero V-dramon.png",
+   "sprite_source": "wayland",
    "sleep": "23:00",
    "power": "130",
    "sources": [
@@ -162,6 +135,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Agumon.png",
+   "sprite_source": "wayland",
    "sleep": "21:00",
    "power": "16",
    "sources": [
@@ -211,6 +185,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Agumon Hakase.png",
+   "sprite_source": "wayland",
    "sleep": "21:00",
    "power": "22",
    "sources": [
@@ -243,6 +218,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Alphamon.png",
+   "sprite_source": "wayland",
    "sleep": "00:00",
    "power": "214",
    "sources": [
@@ -267,6 +243,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Alphamon Ouryuken.png",
+   "sprite_source": "wayland",
    "sleep": "00:00",
    "power": "232",
    "sources": [
@@ -302,6 +279,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Andiramon.png",
+   "sprite_source": "wayland",
    "sleep": "23:00",
    "power": "124",
    "sources": [
@@ -334,6 +312,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Andromon.png",
+   "sprite_source": "wayland",
    "sleep": "23:00",
    "power": "118",
    "sources": [
@@ -386,6 +365,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Angemon.png",
+   "sprite_source": "wayland",
    "sleep": "22:00",
    "power": "58",
    "sources": [
@@ -441,6 +421,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Angewomon.png",
+   "sprite_source": "wayland",
    "sleep": "23:00",
    "power": "118",
    "sources": [
@@ -474,6 +455,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Anomalocarimon.png",
+   "sprite_source": "wayland",
    "sleep": "23:00",
    "power": "112",
    "sources": [
@@ -497,7 +479,8 @@
      "evolves_to": []
     }
    },
-   "sprite": null,
+   "sprite": "sprites_dvpet/pen20/apocalymon.png",
+   "sprite_source": "dvpet",
    "sleep": "NA",
    "power": "228",
    "sources": [
@@ -541,6 +524,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Arresterdramon.png",
+   "sprite_source": "wayland",
    "sleep": "22:00",
    "power": "82",
    "sources": [
@@ -577,6 +561,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Astamon.png",
+   "sprite_source": "wayland",
    "sleep": "23:00",
    "power": "130",
    "sources": [
@@ -612,6 +597,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Asuramon.png",
+   "sprite_source": "wayland",
    "sleep": "23:00",
    "power": "106",
    "sources": [
@@ -647,6 +633,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Atlur Kabuterimon.png",
+   "sprite_source": "wayland",
    "sleep": "23:00",
    "power": "124",
    "sources": [
@@ -682,6 +669,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Baalmon.png",
+   "sprite_source": "wayland",
    "sleep": "23:00",
    "power": "112",
    "sources": [
@@ -721,7 +709,8 @@
      ]
     }
    },
-   "sprite": null,
+   "sprite": "sprites_dvpet/pen20/babydmon.png",
+   "sprite_source": "dvpet",
    "sleep": "21:00",
    "power": null,
    "sources": [
@@ -773,6 +762,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Bakemon.png",
+   "sprite_source": "wayland",
    "sleep": "22:00",
    "power": "40",
    "sources": [
@@ -834,6 +824,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Bakumon.png",
+   "sprite_source": "wayland",
    "sleep": "21:00",
    "power": "16",
    "sources": [
@@ -866,6 +857,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Bancho Leomon.png",
+   "sprite_source": "wayland",
    "sleep": "00:00",
    "power": "190",
    "sources": [
@@ -918,6 +910,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Bao Hackmon.png",
+   "sprite_source": "wayland",
    "sleep": "22:00",
    "power": "82",
    "sources": [
@@ -941,7 +934,8 @@
      "evolves_to": []
     }
    },
-   "sprite": null,
+   "sprite": "sprites_dvpet/pen20/barbamon.png",
+   "sprite_source": "dvpet",
    "sleep": "NA",
    "power": null,
    "sources": [
@@ -973,7 +967,8 @@
      ]
     }
    },
-   "sprite": null,
+   "sprite": "sprites_dvpet/pen20/beelstarmon.png",
+   "sprite_source": "dvpet",
    "sleep": "NA",
    "power": "204",
    "sources": [
@@ -1006,7 +1001,8 @@
      ]
     }
    },
-   "sprite": null,
+   "sprite": "sprites_dvpet/pen20/beelzebumon.png",
+   "sprite_source": "dvpet",
    "sleep": "00:00",
    "power": "208",
    "sources": [
@@ -1031,6 +1027,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Beelzebumon Blast Mode.png",
+   "sprite_source": "wayland",
    "sleep": "00:00",
    "power": "232",
    "sources": [
@@ -1062,7 +1059,8 @@
      ]
     }
    },
-   "sprite": null,
+   "sprite": "sprites_dvpet/pen20/belphemonragemode.png",
+   "sprite_source": "dvpet",
    "sleep": "00:00",
    "power": "214",
    "sources": [
@@ -1099,6 +1097,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Beowolfmon.png",
+   "sprite_source": "wayland",
    "sleep": "23:00",
    "power": "142",
    "sources": [
@@ -1131,6 +1130,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Big Mamemon.png",
+   "sprite_source": "wayland",
    "sleep": "23:00",
    "power": "112",
    "sources": [
@@ -1183,6 +1183,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Birdramon.png",
+   "sprite_source": "wayland",
    "sleep": "22:00",
    "power": "58",
    "sources": [
@@ -1216,6 +1217,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Blossomon.png",
+   "sprite_source": "wayland",
    "sleep": "23:00",
    "power": "124",
    "sources": [
@@ -1239,7 +1241,8 @@
      "evolves_to": []
     }
    },
-   "sprite": null,
+   "sprite": "sprites_dvpet/pen20/blucomon.png",
+   "sprite_source": "dvpet",
    "sleep": "NA",
    "power": "34",
    "sources": [
@@ -1263,6 +1266,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Boltmon.png",
+   "sprite_source": "wayland",
    "sleep": "00:00",
    "power": "160",
    "sources": [
@@ -1293,6 +1297,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Botamon.png",
+   "sprite_source": "wayland",
    "sleep": "NA",
    "power": null,
    "sources": [
@@ -1325,6 +1330,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Breakdramon.png",
+   "sprite_source": "wayland",
    "sleep": "00:00",
    "power": "184",
    "sources": [
@@ -1358,6 +1364,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Bryweludramon.png",
+   "sprite_source": "wayland",
    "sleep": "00:00",
    "power": "208",
    "sources": [
@@ -1389,6 +1396,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Bubbmon.png",
+   "sprite_source": "wayland",
    "sleep": "NA",
    "power": null,
    "sources": [
@@ -1419,6 +1427,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Budmon.png",
+   "sprite_source": "wayland",
    "sleep": "21:00",
    "power": null,
    "sources": [
@@ -1469,6 +1478,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Bushi Agumon.png",
+   "sprite_source": "wayland",
    "sleep": "21:00",
    "power": "34",
    "sources": [
@@ -1529,6 +1539,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Candmon.png",
+   "sprite_source": "wayland",
    "sleep": "21:00",
    "power": "10",
    "sources": [
@@ -1594,6 +1605,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Caprimon.png",
+   "sprite_source": "wayland",
    "sleep": "21:00",
    "power": null,
    "sources": [
@@ -1617,6 +1629,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Chaosmon.png",
+   "sprite_source": "wayland",
    "sleep": "00:00",
    "power": "214",
    "sources": [
@@ -1640,6 +1653,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Cherubimon.png",
+   "sprite_source": "wayland",
    "sleep": "00:00",
    "power": "184",
    "sources": [
@@ -1670,6 +1684,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Chibimon.png",
+   "sprite_source": "wayland",
    "sleep": "21:00",
    "power": null,
    "sources": [
@@ -1700,6 +1715,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Chicomon.png",
+   "sprite_source": "wayland",
    "sleep": "NA",
    "power": null,
    "sources": [
@@ -1730,6 +1746,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Cocomon.png",
+   "sprite_source": "wayland",
    "sleep": "21:00",
    "power": null,
    "sources": [
@@ -1760,6 +1777,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Choromon.png",
+   "sprite_source": "wayland",
    "sleep": "NA",
    "power": null,
    "sources": [
@@ -1819,6 +1837,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Clockmon.png",
+   "sprite_source": "wayland",
    "sleep": "22:00",
    "power": "52",
    "sources": [
@@ -1850,6 +1869,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Cocomon.png",
+   "sprite_source": "wayland",
    "sleep": "NA",
    "power": null,
    "sources": [
@@ -1909,6 +1929,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Coelamon.png",
+   "sprite_source": "wayland",
    "sleep": "22:00",
    "power": "46",
    "sources": [
@@ -1961,6 +1982,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Coredramon (Blue).png",
+   "sprite_source": "wayland",
    "sleep": "22:00",
    "power": "76",
    "sources": [
@@ -2013,6 +2035,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Coredramon (Green).png",
+   "sprite_source": "wayland",
    "sleep": "22:00",
    "power": "76",
    "sources": [
@@ -2044,6 +2067,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Cotsucomon.png",
+   "sprite_source": "wayland",
    "sleep": "NA",
    "power": null,
    "sources": [
@@ -2066,7 +2090,8 @@
      "evolves_to": []
     }
    },
-   "sprite": null,
+   "sprite": "sprites_dvpet/pen20/craniummon.png",
+   "sprite_source": "dvpet",
    "sleep": "NA",
    "power": "218",
    "sources": [
@@ -2099,6 +2124,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Cyberdramon.png",
+   "sprite_source": "wayland",
    "sleep": "23:00",
    "power": "100",
    "sources": [
@@ -2132,6 +2158,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Dagomon.png",
+   "sprite_source": "wayland",
    "sleep": "23:00",
    "power": "118",
    "sources": [
@@ -2165,6 +2192,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Darkdramon.png",
+   "sprite_source": "wayland",
    "sleep": "00:00",
    "power": "190",
    "sources": [
@@ -2212,6 +2240,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Dark Knightmon.png",
+   "sprite_source": "wayland",
    "sleep": "23:00",
    "power": "148",
    "sources": [
@@ -2255,6 +2284,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Death Meramon.png",
+   "sprite_source": "wayland",
    "sleep": "23:00",
    "power": "118",
    "sources": [
@@ -2299,6 +2329,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Delumon.png",
+   "sprite_source": "wayland",
    "sleep": "23:00",
    "power": "106",
    "sources": [
@@ -2331,7 +2362,8 @@
      ]
     }
    },
-   "sprite": null,
+   "sprite": "sprites_dvpet/pen20/demon.png",
+   "sprite_source": "dvpet",
    "sleep": "00:00",
    "power": "178",
    "sources": [
@@ -2383,6 +2415,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Devidramon.png",
+   "sprite_source": "wayland",
    "sleep": "22:00",
    "power": "52",
    "sources": [
@@ -2435,6 +2468,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Devimon.png",
+   "sprite_source": "wayland",
    "sleep": "22:00",
    "power": "58",
    "sources": [
@@ -2465,7 +2499,8 @@
      ]
     }
    },
-   "sprite": null,
+   "sprite": "sprites_dvpet/pen20/dodomon.png",
+   "sprite_source": "dvpet",
    "sleep": "NA",
    "power": null,
    "sources": [
@@ -2517,6 +2552,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Dokugumon.png",
+   "sprite_source": "wayland",
    "sleep": "22:00",
    "power": "70",
    "sources": [
@@ -2548,6 +2584,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Dorimon.png",
+   "sprite_source": "wayland",
    "sleep": "21:00",
    "power": null,
    "sources": [
@@ -2583,6 +2620,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/DORUgamon.png",
+   "sprite_source": "wayland",
    "sleep": "22:00",
    "power": "88",
    "sources": [
@@ -2606,6 +2644,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/DORUgoramon.png",
+   "sprite_source": "wayland",
    "sleep": "00:00",
    "power": "190",
    "sources": [
@@ -2652,6 +2691,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/DORUguremon.png",
+   "sprite_source": "wayland",
    "sleep": "23:00",
    "power": "142",
    "sources": [
@@ -2682,6 +2722,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/DORUmon.png",
+   "sprite_source": "wayland",
    "sleep": "21:00",
    "power": "28",
    "sources": [
@@ -2732,6 +2773,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Dracomon.png",
+   "sprite_source": "wayland",
    "sleep": "21:00",
    "power": "28",
    "sources": [
@@ -2754,7 +2796,8 @@
      "evolves_to": []
     }
    },
-   "sprite": null,
+   "sprite": "sprites_dvpet/pen20/duftmon.png",
+   "sprite_source": "dvpet",
    "sleep": "00:00",
    "power": "208",
    "sources": [
@@ -2777,7 +2820,8 @@
      "evolves_to": []
     }
    },
-   "sprite": null,
+   "sprite": "sprites_dvpet/pen20/dukemon.png",
+   "sprite_source": "dvpet",
    "sleep": "00:00",
    "power": "214",
    "sources": [
@@ -2813,6 +2857,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Duramon.png",
+   "sprite_source": "wayland",
    "sleep": "23:00",
    "power": "142",
    "sources": [
@@ -2845,6 +2890,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Durandamon.png",
+   "sprite_source": "wayland",
    "sleep": "00:00",
    "power": "208",
    "sources": [
@@ -2868,7 +2914,8 @@
      "evolves_to": []
     }
    },
-   "sprite": null,
+   "sprite": "sprites_dvpet/pen20/dynasmon.png",
+   "sprite_source": "dvpet",
    "sleep": "NA",
    "power": "218",
    "sources": [
@@ -2928,6 +2975,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Ebidramon.png",
+   "sprite_source": "wayland",
    "sleep": "22:00",
    "power": "52",
    "sources": [
@@ -2964,6 +3012,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Etemon.png",
+   "sprite_source": "wayland",
    "sleep": "23:00",
    "power": "106",
    "sources": [
@@ -2987,6 +3036,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Examon.png",
+   "sprite_source": "wayland",
    "sleep": "00:00",
    "power": "232",
    "sources": [
@@ -3019,6 +3069,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Fantomon.png",
+   "sprite_source": "wayland",
    "sleep": "23:00",
    "power": "100",
    "sources": [
@@ -3080,6 +3131,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Floramon.png",
+   "sprite_source": "wayland",
    "sleep": "21:00",
    "power": "10",
    "sources": [
@@ -3110,6 +3162,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Fufumon.png",
+   "sprite_source": "wayland",
    "sleep": "NA",
    "power": null,
    "sources": [
@@ -3170,6 +3223,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Gabumon.png",
+   "sprite_source": "wayland",
    "sleep": "21:00",
    "power": "10",
    "sources": [
@@ -3205,6 +3259,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Galgomon.png",
+   "sprite_source": "wayland",
    "sleep": "22:00",
    "power": "76",
    "sources": [
@@ -3265,6 +3320,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Ganimon.png",
+   "sprite_source": "wayland",
    "sleep": "21:00",
    "power": "10",
    "sources": [
@@ -3287,7 +3343,8 @@
      "evolves_to": []
     }
    },
-   "sprite": null,
+   "sprite": "sprites_dvpet/pen20/gankoomon.png",
+   "sprite_source": "dvpet",
    "sleep": "NA",
    "power": "204",
    "sources": [
@@ -3323,6 +3380,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Garudamon.png",
+   "sprite_source": "wayland",
    "sleep": "23:00",
    "power": "112",
    "sources": [
@@ -3406,6 +3464,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Garurumon.png",
+   "sprite_source": "wayland",
    "sleep": "22:00",
    "power": "64",
    "sources": [
@@ -3457,6 +3516,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Gekomon.png",
+   "sprite_source": "wayland",
    "sleep": "22:00",
    "power": "40",
    "sources": [
@@ -3490,6 +3550,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Gerbemon.png",
+   "sprite_source": "wayland",
    "sleep": "23:00",
    "power": "100",
    "sources": [
@@ -3542,6 +3603,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Gesomon.png",
+   "sprite_source": "wayland",
    "sleep": "22:00",
    "power": "40",
    "sources": [
@@ -3578,6 +3640,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Ginryumon.png",
+   "sprite_source": "wayland",
    "sleep": "22:00",
    "power": "88",
    "sources": [
@@ -3638,6 +3701,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Gomamon.png",
+   "sprite_source": "wayland",
    "sleep": "21:00",
    "power": "16",
    "sources": [
@@ -3698,6 +3762,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Gottsumon.png",
+   "sprite_source": "wayland",
    "sleep": "21:00",
    "power": "10",
    "sources": [
@@ -3720,7 +3785,8 @@
      "evolves_to": []
     }
    },
-   "sprite": null,
+   "sprite": "sprites_dvpet/pen20/gracenovamon.png",
+   "sprite_source": "dvpet",
    "sleep": "NA",
    "power": null,
    "sources": [
@@ -3791,6 +3857,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Greymon.png",
+   "sprite_source": "wayland",
    "sleep": "22:00",
    "power": "70",
    "sources": [
@@ -3815,6 +3882,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Griffomon.png",
+   "sprite_source": "wayland",
    "sleep": "00:00",
    "power": "172",
    "sources": [
@@ -3850,6 +3918,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Groundramon.png",
+   "sprite_source": "wayland",
    "sleep": "23:00",
    "power": "136",
    "sources": [
@@ -3901,6 +3970,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Growmon.png",
+   "sprite_source": "wayland",
    "sleep": "22:00",
    "power": "70",
    "sources": [
@@ -3953,6 +4023,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Guardromon.png",
+   "sprite_source": "wayland",
    "sleep": "22:00",
    "power": "64",
    "sources": [
@@ -4004,6 +4075,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Guimon.png",
+   "sprite_source": "wayland",
    "sleep": "21:00",
    "power": "22",
    "sources": [
@@ -4034,6 +4106,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Gummymon.png",
+   "sprite_source": "wayland",
    "sleep": "21:00",
    "power": null,
    "sources": [
@@ -4083,6 +4156,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Hackmon.png",
+   "sprite_source": "wayland",
    "sleep": "21:00",
    "power": "28",
    "sources": [
@@ -4143,6 +4217,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Hagurumon.png",
+   "sprite_source": "wayland",
    "sleep": "21:00",
    "power": "4",
    "sources": [
@@ -4175,6 +4250,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Hangyomon.png",
+   "sprite_source": "wayland",
    "sleep": "23:00",
    "power": "100",
    "sources": [
@@ -4227,6 +4303,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Hanumon.png",
+   "sprite_source": "wayland",
    "sleep": "22:00",
    "power": "52",
    "sources": [
@@ -4251,6 +4328,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Herakle Kabuterimon.png",
+   "sprite_source": "wayland",
    "sleep": "00:00",
    "power": "178",
    "sources": [
@@ -4273,7 +4351,8 @@
      "evolves_to": []
     }
    },
-   "sprite": null,
+   "sprite": "sprites_dvpet/pen20/herissmon.png",
+   "sprite_source": "dvpet",
    "sleep": "NA",
    "power": "34",
    "sources": [
@@ -4309,6 +4388,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Hisyaryumon.png",
+   "sprite_source": "wayland",
    "sleep": "23:00",
    "power": "142",
    "sources": [
@@ -4344,6 +4424,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Holy Angemon.png",
+   "sprite_source": "wayland",
    "sleep": "23:00",
    "power": "130",
    "sources": [
@@ -4367,6 +4448,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Holydramon.png",
+   "sprite_source": "wayland",
    "sleep": "00:00",
    "power": "166",
    "sources": [
@@ -4390,6 +4472,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Hououmon.png",
+   "sprite_source": "wayland",
    "sleep": "00:00",
    "power": "178",
    "sources": [
@@ -4441,6 +4524,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Igamon.png",
+   "sprite_source": "wayland",
    "sleep": "22:00",
    "power": "46",
    "sources": [
@@ -4493,6 +4577,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Ikkakumon.png",
+   "sprite_source": "wayland",
    "sleep": "22:00",
    "power": "58",
    "sources": [
@@ -4526,6 +4611,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Imperialdramon Fighter Mode.png",
+   "sprite_source": "wayland",
    "sleep": "00:00",
    "power": "190",
    "sources": [
@@ -4549,7 +4635,8 @@
      "evolves_to": []
     }
    },
-   "sprite": null,
+   "sprite": "sprites_dvpet/pen20/imperialdramonpaladinmode.png",
+   "sprite_source": "dvpet",
    "sleep": "00:00",
    "power": "238",
    "sources": [
@@ -4600,6 +4687,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Impmon.png",
+   "sprite_source": "wayland",
    "sleep": "21:00",
    "power": "22",
    "sources": [
@@ -4630,6 +4718,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Jesmon.png",
+   "sprite_source": "wayland",
    "sleep": "00:00",
    "power": "196",
    "sources": [
@@ -4653,6 +4742,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Jesmon X.png",
+   "sprite_source": "wayland",
    "sleep": "00:00",
    "power": "232",
    "sources": [
@@ -4685,6 +4775,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Jyagamon.png",
+   "sprite_source": "wayland",
    "sleep": "23:00",
    "power": "112",
    "sources": [
@@ -4718,6 +4809,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Jyureimon.png",
+   "sprite_source": "wayland",
    "sleep": "23:00",
    "power": "118",
    "sources": [
@@ -4770,6 +4862,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Kabuterimon.png",
+   "sprite_source": "wayland",
    "sleep": "22:00",
    "power": "70",
    "sources": [
@@ -4801,6 +4894,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Kakkinmon.png",
+   "sprite_source": "wayland",
    "sleep": "21:00",
    "power": null,
    "sources": [
@@ -4860,6 +4954,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Kiwimon.png",
+   "sprite_source": "wayland",
    "sleep": "22:00",
    "power": "46",
    "sources": [
@@ -4904,6 +4999,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Knightmon.png",
+   "sprite_source": "wayland",
    "sleep": "23:00",
    "power": "124",
    "sources": [
@@ -4965,6 +5061,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Kokuwamon.png",
+   "sprite_source": "wayland",
    "sleep": "21:00",
    "power": "10",
    "sources": [
@@ -5005,6 +5102,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Koromon.png",
+   "sprite_source": "wayland",
    "sleep": "21:00",
    "power": null,
    "sources": [
@@ -5056,6 +5154,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Kuwagamon.png",
+   "sprite_source": "wayland",
    "sleep": "22:00",
    "power": "64",
    "sources": [
@@ -5087,6 +5186,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Kyokyomon.png",
+   "sprite_source": "wayland",
    "sleep": "21:00",
    "power": null,
    "sources": [
@@ -5127,6 +5227,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Lady Devimon.png",
+   "sprite_source": "wayland",
    "sleep": "23:00",
    "power": "118",
    "sources": [
@@ -5158,6 +5259,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Lalamon.png",
+   "sprite_source": "wayland",
    "sleep": "21:00",
    "power": "16",
    "sources": [
@@ -5193,6 +5295,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Lavogaritamon.png",
+   "sprite_source": "wayland",
    "sleep": "23:00",
    "power": "136",
    "sources": [
@@ -5228,6 +5331,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Lavorvomon.png",
+   "sprite_source": "wayland",
    "sleep": "22:00",
    "power": "82",
    "sources": [
@@ -5279,6 +5383,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Leomon.png",
+   "sprite_source": "wayland",
    "sleep": "22:00",
    "power": "70",
    "sources": [
@@ -5302,7 +5407,8 @@
      "evolves_to": []
     }
    },
-   "sprite": null,
+   "sprite": "sprites_dvpet/pen20/leviamon.png",
+   "sprite_source": "dvpet",
    "sleep": "NA",
    "power": null,
    "sources": [
@@ -5338,6 +5444,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Lilamon.png",
+   "sprite_source": "wayland",
    "sleep": "23:00",
    "power": "118",
    "sources": [
@@ -5373,6 +5480,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Lilimon.png",
+   "sprite_source": "wayland",
    "sleep": "23:00",
    "power": "118",
    "sources": [
@@ -5396,6 +5504,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Lilimon.png",
+   "sprite_source": "wayland",
    "sleep": "NA",
    "power": null,
    "sources": [
@@ -5426,6 +5535,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Lopmon.png",
+   "sprite_source": "wayland",
    "sleep": "21:00",
    "power": "22",
    "sources": [
@@ -5448,7 +5558,8 @@
      "evolves_to": []
     }
    },
-   "sprite": null,
+   "sprite": "sprites_dvpet/pen20/lordknightmon.png",
+   "sprite_source": "dvpet",
    "sleep": "NA",
    "power": "210",
    "sources": [
@@ -5481,6 +5592,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Lotusmon.png",
+   "sprite_source": "wayland",
    "sleep": "00:00",
    "power": "166",
    "sources": [
@@ -5504,7 +5616,8 @@
      "evolves_to": []
     }
    },
-   "sprite": null,
+   "sprite": "sprites_dvpet/pen20/lucemonfalldownmode.png",
+   "sprite_source": "dvpet",
    "sleep": "NA",
    "power": null,
    "sources": [
@@ -5535,6 +5648,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Ludomon.png",
+   "sprite_source": "wayland",
    "sleep": "21:00",
    "power": "34",
    "sources": [
@@ -5578,6 +5692,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Mad Leomon.png",
+   "sprite_source": "wayland",
    "sleep": "22:00",
    "power": "70",
    "sources": [
@@ -5601,7 +5716,8 @@
      "evolves_to": []
     }
    },
-   "sprite": null,
+   "sprite": "sprites_dvpet/pen20/magnamon.png",
+   "sprite_source": "dvpet",
    "sleep": "NA",
    "power": "192",
    "sources": [
@@ -5637,6 +5753,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Mammon.png",
+   "sprite_source": "wayland",
    "sleep": "23:00",
    "power": "112",
    "sources": [
@@ -5672,6 +5789,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Manbomon.png",
+   "sprite_source": "wayland",
    "sleep": "22:00",
    "power": "40",
    "sources": [
@@ -5695,6 +5813,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Marin Angemon.png",
+   "sprite_source": "wayland",
    "sleep": "00:00",
    "power": "166",
    "sources": [
@@ -5727,6 +5846,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Marin Devimon.png",
+   "sprite_source": "wayland",
    "sleep": "23:00",
    "power": "106",
    "sources": [
@@ -5751,6 +5871,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Mastemon.png",
+   "sprite_source": "wayland",
    "sleep": "00:00",
    "power": "184",
    "sources": [
@@ -5802,6 +5923,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Mechanorimon.png",
+   "sprite_source": "wayland",
    "sleep": "22:00",
    "power": "40",
    "sources": [
@@ -5844,6 +5966,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Megadramon.png",
+   "sprite_source": "wayland",
    "sleep": "23:00",
    "power": "106",
    "sources": [
@@ -5880,6 +6003,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Megalo Growmon.png",
+   "sprite_source": "wayland",
    "sleep": "23:00",
    "power": "124",
    "sources": [
@@ -5923,6 +6047,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Mega Seadramon.png",
+   "sprite_source": "wayland",
    "sleep": "23:00",
    "power": "124",
    "sources": [
@@ -5959,6 +6084,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Meicoomon.png",
+   "sprite_source": "wayland",
    "sleep": "22:00",
    "power": "64",
    "sources": [
@@ -5994,6 +6120,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Meicrackmon Vicious Mode.png",
+   "sprite_source": "wayland",
    "sleep": "23:00",
    "power": "142",
    "sources": [
@@ -6053,6 +6180,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Meramon.png",
+   "sprite_source": "wayland",
    "sleep": "22:00",
    "power": "46",
    "sources": [
@@ -6077,6 +6205,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Metal Etemon.png",
+   "sprite_source": "wayland",
    "sleep": "00:00",
    "power": "160",
    "sources": [
@@ -6109,6 +6238,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Metal Garurumon.png",
+   "sprite_source": "wayland",
    "sleep": "00:00",
    "power": "190",
    "sources": [
@@ -6145,6 +6275,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Metal Greymon.png",
+   "sprite_source": "wayland",
    "sleep": "23:00",
    "power": "124",
    "sources": [
@@ -6177,6 +6308,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Metal Mamemon.png",
+   "sprite_source": "wayland",
    "sleep": "23:00",
    "power": "118",
    "sources": [
@@ -6201,6 +6333,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Metal Seadramon.png",
+   "sprite_source": "wayland",
    "sleep": "00:00",
    "power": "178",
    "sources": [
@@ -6249,6 +6382,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Mochimon.png",
+   "sprite_source": "wayland",
    "sleep": "21:00",
    "power": null,
    "sources": [
@@ -6279,6 +6413,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Mokumon.png",
+   "sprite_source": "wayland",
    "sleep": "NA",
    "power": null,
    "sources": [
@@ -6338,6 +6473,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Monochromon.png",
+   "sprite_source": "wayland",
    "sleep": "22:00",
    "power": "58",
    "sources": [
@@ -6362,6 +6498,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Mugendramon.png",
+   "sprite_source": "wayland",
    "sleep": "00:00",
    "power": "202",
    "sources": [
@@ -6422,6 +6559,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Mushmon.png",
+   "sprite_source": "wayland",
    "sleep": "21:00",
    "power": "4",
    "sources": [
@@ -6445,6 +6583,7 @@
     }
    },
    "sprite": null,
+   "sprite_source": null,
    "sleep": "NA",
    "power": "228",
    "sources": [
@@ -6491,6 +6630,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Nyaromon.png",
+   "sprite_source": "wayland",
    "sleep": "21:00",
    "power": null,
    "sources": [
@@ -6529,6 +6669,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Nyokimon.png",
+   "sprite_source": "wayland",
    "sleep": "NA",
    "power": null,
    "sources": [
@@ -6580,6 +6721,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Octmon.png",
+   "sprite_source": "wayland",
    "sleep": "22:00",
    "power": "52",
    "sources": [
@@ -6604,6 +6746,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Ofanimon.png",
+   "sprite_source": "wayland",
    "sleep": "00:00",
    "power": "184",
    "sources": [
@@ -6635,7 +6778,8 @@
      ]
     }
    },
-   "sprite": null,
+   "sprite": "sprites_dvpet/pen20/ofanimonfalldownmode.png",
+   "sprite_source": "dvpet",
    "sleep": "NA",
    "power": "198",
    "sources": [
@@ -6660,6 +6804,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Ogudomon.png",
+   "sprite_source": "wayland",
    "sleep": "00:00",
    "power": "232",
    "sources": [
@@ -6703,6 +6848,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Okuwamon.png",
+   "sprite_source": "wayland",
    "sleep": "23:00",
    "power": "118",
    "sources": [
@@ -6736,6 +6882,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Omegamon.png",
+   "sprite_source": "wayland",
    "sleep": "00:00",
    "power": "232",
    "sources": [
@@ -6759,7 +6906,8 @@
      "evolves_to": []
     }
    },
-   "sprite": null,
+   "sprite": "sprites_dvpet/pen20/omegamonalters.png",
+   "sprite_source": "dvpet",
    "sleep": "NA",
    "power": null,
    "sources": [
@@ -6783,6 +6931,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Ordinemon.png",
+   "sprite_source": "wayland",
    "sleep": "00:00",
    "power": "232",
    "sources": [
@@ -6843,6 +6992,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Otamamon.png",
+   "sprite_source": "wayland",
    "sleep": "21:00",
    "power": "4",
    "sources": [
@@ -6875,6 +7025,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Ouryumon.png",
+   "sprite_source": "wayland",
    "sleep": "00:00",
    "power": "202",
    "sources": [
@@ -6911,6 +7062,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Paildramon.png",
+   "sprite_source": "wayland",
    "sleep": "23:00",
    "power": "136",
    "sources": [
@@ -6971,6 +7123,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Palmon.png",
+   "sprite_source": "wayland",
    "sleep": "21:00",
    "power": "10",
    "sources": [
@@ -7028,6 +7181,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Peti Meramon.png",
+   "sprite_source": "wayland",
    "sleep": "21:00",
    "power": null,
    "sources": [
@@ -7058,6 +7212,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Petitmon.png",
+   "sprite_source": "wayland",
    "sleep": "NA",
    "power": null,
    "sources": [
@@ -7108,6 +7263,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Phascomon.png",
+   "sprite_source": "wayland",
    "sleep": "21:00",
    "power": "16",
    "sources": [
@@ -7140,6 +7296,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Piccolomon.png",
+   "sprite_source": "wayland",
    "sleep": "23:00",
    "power": "106",
    "sources": [
@@ -7201,6 +7358,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Pico Devimon.png",
+   "sprite_source": "wayland",
    "sleep": "21:00",
    "power": "4",
    "sources": [
@@ -7233,6 +7391,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Piemon.png",
+   "sprite_source": "wayland",
    "sleep": "00:00",
    "power": "166",
    "sources": [
@@ -7257,6 +7416,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Pinochimon.png",
+   "sprite_source": "wayland",
    "sleep": "00:00",
    "power": "166",
    "sources": [
@@ -7287,6 +7447,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Pitchmon.png",
+   "sprite_source": "wayland",
    "sleep": "NA",
    "power": null,
    "sources": [
@@ -7347,6 +7508,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Piyomon.png",
+   "sprite_source": "wayland",
    "sleep": "21:00",
    "power": "16",
    "sources": [
@@ -7370,6 +7532,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Plesiomon.png",
+   "sprite_source": "wayland",
    "sleep": "00:00",
    "power": "172",
    "sources": [
@@ -7440,6 +7603,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Plotmon.png",
+   "sprite_source": "wayland",
    "sleep": "21:00",
    "power": "4",
    "sources": [
@@ -7491,6 +7655,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Porcupamon.png",
+   "sprite_source": "wayland",
    "sleep": "22:00",
    "power": "76",
    "sources": [
@@ -7540,6 +7705,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Pukamon.png",
+   "sprite_source": "wayland",
    "sleep": "21:00",
    "power": null,
    "sources": [
@@ -7563,6 +7729,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Pukumon.png",
+   "sprite_source": "wayland",
    "sleep": "00:00",
    "power": "160",
    "sources": [
@@ -7595,6 +7762,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Pumpmon.png",
+   "sprite_source": "wayland",
    "sleep": "23:00",
    "power": "106",
    "sources": [
@@ -7650,6 +7818,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Pyocomon.png",
+   "sprite_source": "wayland",
    "sleep": "21:00",
    "power": null,
    "sources": [
@@ -7673,6 +7842,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Rafflesimon.png",
+   "sprite_source": "wayland",
    "sleep": "00:00",
    "power": "232",
    "sources": [
@@ -7696,6 +7866,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Ragna Lordmon.png",
+   "sprite_source": "wayland",
    "sleep": "00:00",
    "power": "232",
    "sources": [
@@ -7728,6 +7899,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Raguelmon.png",
+   "sprite_source": "wayland",
    "sleep": "00:00",
    "power": "196",
    "sources": [
@@ -7763,6 +7935,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Raiji Ludomon.png",
+   "sprite_source": "wayland",
    "sleep": "23:00",
    "power": "148",
    "sources": [
@@ -7798,6 +7971,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Rapidmon.png",
+   "sprite_source": "wayland",
    "sleep": "23:00",
    "power": "124",
    "sources": [
@@ -7849,6 +8023,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Red Vegimon.png",
+   "sprite_source": "wayland",
    "sleep": "22:00",
    "power": "40",
    "sources": [
@@ -7901,6 +8076,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Reppamon.png",
+   "sprite_source": "wayland",
    "sleep": "22:00",
    "power": "64",
    "sources": [
@@ -7953,6 +8129,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Revolmon.png",
+   "sprite_source": "wayland",
    "sleep": "22:00",
    "power": "58",
    "sources": [
@@ -8000,6 +8177,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Rize Greymon.png",
+   "sprite_source": "wayland",
    "sleep": "23:00",
    "power": "136",
    "sources": [
@@ -8032,6 +8210,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Rosemon.png",
+   "sprite_source": "wayland",
    "sleep": "00:00",
    "power": "160",
    "sources": [
@@ -8084,6 +8263,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Rukamon.png",
+   "sprite_source": "wayland",
    "sleep": "22:00",
    "power": "70",
    "sources": [
@@ -8107,7 +8287,8 @@
      "evolves_to": []
     }
    },
-   "sprite": null,
+   "sprite": "sprites_dvpet/pen20/rusttyranomon.png",
+   "sprite_source": "dvpet",
    "sleep": "NA",
    "power": null,
    "sources": [
@@ -8138,6 +8319,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Ryudamon.png",
+   "sprite_source": "wayland",
    "sleep": "21:00",
    "power": "28",
    "sources": [
@@ -8161,6 +8343,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Saber Leomon.png",
+   "sprite_source": "wayland",
    "sleep": "00:00",
    "power": "172",
    "sources": [
@@ -8184,6 +8367,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Saint Galgomon.png",
+   "sprite_source": "wayland",
    "sleep": "00:00",
    "power": "172",
    "sources": [
@@ -8214,6 +8398,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Sakumon.png",
+   "sprite_source": "wayland",
    "sleep": "NA",
    "power": null,
    "sources": [
@@ -8254,6 +8439,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Sakuttomon.png",
+   "sprite_source": "wayland",
    "sleep": "21:00",
    "power": null,
    "sources": [
@@ -8289,6 +8475,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Savior Hackmon.png",
+   "sprite_source": "wayland",
    "sleep": "23:00",
    "power": "136",
    "sources": [
@@ -8348,6 +8535,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Seadramon.png",
+   "sprite_source": "wayland",
    "sleep": "22:00",
    "power": "58",
    "sources": [
@@ -8372,6 +8560,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Seraphimon.png",
+   "sprite_source": "wayland",
    "sleep": "00:00",
    "power": "196",
    "sources": [
@@ -8415,6 +8604,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Shadramon.png",
+   "sprite_source": "wayland",
    "sleep": "22:00",
    "power": "64",
    "sources": [
@@ -8476,6 +8666,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Shakomon.png",
+   "sprite_source": "wayland",
    "sleep": "21:00",
    "power": "4",
    "sources": [
@@ -8499,6 +8690,7 @@
     }
    },
    "sprite": null,
+   "sprite_source": null,
    "sleep": "NA",
    "power": null,
    "sources": [
@@ -8522,6 +8714,7 @@
     }
    },
    "sprite": null,
+   "sprite_source": null,
    "sleep": "22:00",
    "power": "82",
    "sources": [
@@ -8545,6 +8738,7 @@
     }
    },
    "sprite": null,
+   "sprite_source": null,
    "sleep": "NA",
    "power": null,
    "sources": [
@@ -8568,6 +8762,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Skull Mammon.png",
+   "sprite_source": "wayland",
    "sleep": "00:00",
    "power": "172",
    "sources": [
@@ -8600,6 +8795,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Slayerdramon.png",
+   "sprite_source": "wayland",
    "sleep": "00:00",
    "power": "184",
    "sources": [
@@ -8623,7 +8819,8 @@
      "evolves_to": []
     }
    },
-   "sprite": null,
+   "sprite": "sprites_dvpet/pen20/sleipmon.png",
+   "sprite_source": "dvpet",
    "sleep": "NA",
    "power": "210",
    "sources": [
@@ -8683,6 +8880,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Starmon.png",
+   "sprite_source": "wayland",
    "sleep": "22:00",
    "power": "46",
    "sources": [
@@ -8715,7 +8913,8 @@
      ]
     }
    },
-   "sprite": null,
+   "sprite": "sprites_dvpet/pen20/stingmon.png",
+   "sprite_source": "dvpet",
    "sleep": "22:00",
    "power": "76",
    "sources": [
@@ -8752,6 +8951,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Sunflowmon.png",
+   "sprite_source": "wayland",
    "sleep": "22:00",
    "power": "58",
    "sources": [
@@ -8774,7 +8974,8 @@
      "evolves_to": []
     }
    },
-   "sprite": null,
+   "sprite": "sprites_dvpet/pen20/susanoomon.png",
+   "sprite_source": "dvpet",
    "sleep": "NA",
    "power": "228",
    "sources": [
@@ -8858,6 +9059,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Tailmon.png",
+   "sprite_source": "wayland",
    "sleep": "22:00",
    "power": "64",
    "sources": [
@@ -8918,6 +9120,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Tankmon.png",
+   "sprite_source": "wayland",
    "sleep": "22:00",
    "power": "46",
    "sources": [
@@ -8970,6 +9173,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Targetmon.png",
+   "sprite_source": "wayland",
    "sleep": "22:00",
    "power": "82",
    "sources": [
@@ -9031,6 +9235,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Tentomon.png",
+   "sprite_source": "wayland",
    "sleep": "21:00",
    "power": "16",
    "sources": [
@@ -9061,6 +9266,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Terriermon.png",
+   "sprite_source": "wayland",
    "sleep": "21:00",
    "power": "22",
    "sources": [
@@ -9120,6 +9326,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Thunderballmon.png",
+   "sprite_source": "wayland",
    "sleep": "22:00",
    "power": "46",
    "sources": [
@@ -9156,6 +9363,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Tia Ludomon.png",
+   "sprite_source": "wayland",
    "sleep": "22:00",
    "power": "94",
    "sources": [
@@ -9215,6 +9423,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Togemon.png",
+   "sprite_source": "wayland",
    "sleep": "22:00",
    "power": "64",
    "sources": [
@@ -9248,6 +9457,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Tonosama Gekomon.png",
+   "sprite_source": "wayland",
    "sleep": "23:00",
    "power": "100",
    "sources": [
@@ -9300,6 +9510,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Tortamon.png",
+   "sprite_source": "wayland",
    "sleep": "22:00",
    "power": "52",
    "sources": [
@@ -9361,6 +9572,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Toy Agumon.png",
+   "sprite_source": "wayland",
    "sleep": "21:00",
    "power": "16",
    "sources": [
@@ -9393,6 +9605,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Triceramon.png",
+   "sprite_source": "wayland",
    "sleep": "23:00",
    "power": "130",
    "sources": [
@@ -9429,6 +9642,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Troopmon.png",
+   "sprite_source": "wayland",
    "sleep": "22:00",
    "power": "58",
    "sources": [
@@ -9464,6 +9678,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Turuiemon.png",
+   "sprite_source": "wayland",
    "sleep": "22:00",
    "power": "76",
    "sources": [
@@ -9486,7 +9701,8 @@
      "evolves_to": []
     }
    },
-   "sprite": null,
+   "sprite": "sprites_dvpet/pen20/ulforcevdramon.png",
+   "sprite_source": "dvpet",
    "sleep": "00:00",
    "power": "214",
    "sources": [
@@ -9527,6 +9743,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Vamdemon.png",
+   "sprite_source": "wayland",
    "sleep": "23:00",
    "power": "130",
    "sources": [
@@ -9579,6 +9796,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/V-dramon.png",
+   "sprite_source": "wayland",
    "sleep": "22:00",
    "power": "70",
    "sources": [
@@ -9603,6 +9821,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Venom Vamdemon.png",
+   "sprite_source": "wayland",
    "sleep": "00:00",
    "power": "184",
    "sources": [
@@ -9643,6 +9862,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/V-mon.png",
+   "sprite_source": "wayland",
    "sleep": "21:00",
    "power": "22",
    "sources": [
@@ -9666,6 +9886,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Volcanicdramon.png",
+   "sprite_source": "wayland",
    "sleep": "00:00",
    "power": "202",
    "sources": [
@@ -9689,6 +9910,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Voltobautamon.png",
+   "sprite_source": "wayland",
    "sleep": "00:00",
    "power": "208",
    "sources": [
@@ -9719,6 +9941,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Vorvomon.png",
+   "sprite_source": "wayland",
    "sleep": "21:00",
    "power": "28",
    "sources": [
@@ -9751,6 +9974,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/War Greymon.png",
+   "sprite_source": "wayland",
    "sleep": "00:00",
    "power": "190",
    "sources": [
@@ -9784,6 +10008,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Waru Monzaemon.png",
+   "sprite_source": "wayland",
    "sleep": "23:00",
    "power": "130",
    "sources": [
@@ -9833,6 +10058,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Were Garurumon.png",
+   "sprite_source": "wayland",
    "sleep": "23:00",
    "power": "124",
    "sources": [
@@ -9865,6 +10091,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Whamon.png",
+   "sprite_source": "wayland",
    "sleep": "23:00",
    "power": "118",
    "sources": [
@@ -9901,6 +10128,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Wingdramon.png",
+   "sprite_source": "wayland",
    "sleep": "23:00",
    "power": "136",
    "sources": [
@@ -9960,6 +10188,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Wizarmon.png",
+   "sprite_source": "wayland",
    "sleep": "22:00",
    "power": "70",
    "sources": [
@@ -10012,6 +10241,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Woodmon.png",
+   "sprite_source": "wayland",
    "sleep": "22:00",
    "power": "52",
    "sources": [
@@ -10053,6 +10283,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/XV-mon.png",
+   "sprite_source": "wayland",
    "sleep": "22:00",
    "power": "76",
    "sources": [
@@ -10084,6 +10315,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Yukimi Botamon.png",
+   "sprite_source": "wayland",
    "sleep": "NA",
    "power": null,
    "sources": [
@@ -10114,6 +10346,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Zerimon.png",
+   "sprite_source": "wayland",
    "sleep": "NA",
    "power": null,
    "sources": [
@@ -10165,6 +10398,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Zubaeagermon.png",
+   "sprite_source": "wayland",
    "sleep": "22:00",
    "power": "88",
    "sources": [
@@ -10215,6 +10449,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Zubamon.png",
+   "sprite_source": "wayland",
    "sleep": "21:00",
    "power": "34",
    "sources": [
@@ -10250,6 +10485,7 @@
     }
    },
    "sprite": "fan/wayland-vpets/assets/pen20/Zudomon.png",
+   "sprite_source": "wayland",
    "sleep": "23:00",
    "power": "130",
    "sources": [

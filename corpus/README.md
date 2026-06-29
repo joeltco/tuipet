@@ -61,7 +61,7 @@ for pen20 / detail cards for the rest â†’ `canon/humulos/<dev>/records.json`) â†
 | dev | mons | w/ evolutions | sprite gaps | attr gaps |
 |-----|------|---------------|-------------|-----------|
 | dm    | 81  | 63  | 2  | 0  |
-| dm20  | 154 | 114 | 20 | 0  |
+| dm20  | 154 | 114 | 1 (Imperialdramon PM only in PM-less sources) | 0 |
 | dmx   | 174 | 113 | 6  | 0 (V3 attrs backfilled from DVPet, `attribute_source` tagged) |
 | pen   | 115 | 88  | 1  | 0  |
 | pen20 | 264 | 207 | 32 | 0  |

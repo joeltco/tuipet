@@ -75,10 +75,26 @@ _J2E = {"tailmon": "gatomon", "vamdemon": "myotismon", "omegamon": "omnimon", "d
         "pinochimon": "puppetmon", "omegashoutmon": "omnishoutmon", "growmon": "growlmon",
         "megalogrowmon": "wargrowmon", "lordknightmon": "crusadermon", "vdramon": "veedramon",
         "doruguremon": "dorugreymon", "shakomon": "syakomon", "siesamon": "seasarmon",
-        "alphamonouryuken": "alphamono"}
+        "alphamonouryuken": "alphamono",
+        # full-name dub/mode mappings for the wayland-absent jogress-finals/Royal-Knights/Demon-Lords
+        "beelzebumon": "beelzemon", "belialvamdemon": "malomyotismon", "craniummon": "craniumon",
+        "murmukusmon": "murmuxmon", "rusttyranomon": "rusttyrannomon", "ulforcevdramon": "ulforceveedramon",
+        "belphemonragemode": "belphemon", "lucemonfalldownmode": "lucemonfm",
+        "ofanimonfalldownmode": "ophanimonfm", "imperialdramonpaladinmode": "imperialdramonpm",
+        "omegamonalters": "omnimonalters", "karatukinumemon": "shellnumemon"}
 _JUNK = {"blank", "rest", "evolution failure"}
 # canon attributes where DVPet can't disambiguate by name (Virtue=Vaccine / Vice=Virus)
 _ATTR_OVERRIDE = {"cherubimonvirtuex": "Vaccine", "cherubimonvicex": "Virus"}
+def _dvpet_candidates(name):
+    """yield DVPet norm-name keys to try for a humulos name (romanization + X-form)."""
+    b = norm(name).replace("virtue", "v").replace("vice", "")
+    yield b
+    yield _J2E.get(b, b)
+    m = re.match(r'(.*?)x$', b)            # X-form: romanize base, re-add x
+    if m:
+        mb = _J2E.get(m.group(1), m.group(1))
+        yield mb + "x"; yield mb
+
 def _dvpet_attr_index():
     dv = {}
     for r in csv.reader(open(os.path.join(CORPUS, "..", "raw_model", "digimon.csv"))):
@@ -87,15 +103,41 @@ def _dvpet_attr_index():
     return dv
 def dvpet_attribute(name, dv):
     if norm(name) in _ATTR_OVERRIDE: return _ATTR_OVERRIDE[norm(name)]
-    b = norm(name).replace("virtue", "v").replace("vice", "")
-    for key in (b, _J2E.get(b, b)):
+    for key in _dvpet_candidates(name):
         if dv.get(key) not in (None, "None", ""): return dv[key]
-    m = re.match(r'(.*?)x$', b)            # X-form: romanize base, re-add x
-    if m:
-        mb = _J2E.get(m.group(1), m.group(1))
-        for key in (mb + "x", mb):
-            if dv.get(key) not in (None, "None", ""): return dv[key]
     return None
+
+# DVPet sprite (16x16 1-bit frames) -> rendered PNG, for mons wayland lacks
+_DVPET_SPR = None
+def _dvpet_sprite_index():
+    global _DVPET_SPR
+    if _DVPET_SPR is None:
+        import gzip
+        _DVPET_SPR = {}
+        for rec in json.load(gzip.open(os.path.join(CORPUS, "..", "src/tuipet/data/sprites.json.gz"), "rt")):
+            fr = next((f for f in rec.get("frames", []) if f), None)
+            if rec.get("name") and fr:
+                _DVPET_SPR.setdefault(norm(rec["name"]), fr)
+    return _DVPET_SPR
+def dvpet_render(name, dev):
+    spi = _dvpet_sprite_index()
+    fr = next((spi[k] for k in _dvpet_candidates(name) if k in spi), None)
+    if not fr: return None
+    try:
+        from PIL import Image
+    except ImportError:
+        return None
+    h, w = len(fr), len(fr[0]); S = 4
+    img = Image.new("RGBA", (w * S, h * S), (0, 0, 0, 0))
+    px = img.load()
+    for y in range(h):
+        for x in range(w):
+            if fr[y][x] == "1":
+                for dy in range(S):
+                    for dx in range(S): px[x * S + dx, y * S + dy] = (40, 40, 40, 255)
+    outdir = os.path.join(CORPUS, "sprites_dvpet", dev); os.makedirs(outdir, exist_ok=True)
+    fn = os.path.join(outdir, norm(name) + ".png"); img.save(fn)
+    return os.path.relpath(fn, CORPUS)
 
 def sprite_index(dev):
     d = os.path.join(CORPUS, f"fan/wayland-vpets/assets/{dev}")
@@ -111,9 +153,12 @@ def build(dev):
     timers = TIMERS[dev]
     def sprite(name, slug):
         h = SPI.get(norm(name)) or SPI.get(norm(slug))
-        if h: return h
+        if h: return h, "wayland"
         m = difflib.get_close_matches(norm(name), SK, n=1, cutoff=0.86)
-        return SPI[m[0]] if m else None
+        if m: return SPI[m[0]], "wayland"
+        dp = dvpet_render(name, dev)        # wayland-absent (jogress-finals/Royal Knights/etc) -> DVPet
+        if dp: return dp, "dvpet"
+        return None, None
 
     out = {}
     for r in recs:
@@ -126,11 +171,12 @@ def build(dev):
             vt = re.search(r'\(([A-Za-z]{2,4})\)\s*$', e.get("to_name") or "")
             if vt: ev["version_tag"] = vt.group(1)
             evos.append(ev)
+        spath, ssrc = sprite(r["name"], r.get("url"))
         rec = {"id": rid, "name": r["name"], "stage": stage, "level": r.get("level"),
                "attribute": r.get("attribute"), "alt_attribute": r.get("alt_attribute"),
                "devices": {dev: {"versions": ([r["version"]] if r.get("version") else []),
                                  "stage_time": timers.get(stage), "evolves_to": evos}},
-               "sprite": sprite(r["name"], r.get("url")),
+               "sprite": spath, "sprite_source": ssrc,
                "sleep": r.get("sleep"), "power": r.get("power"),
                "sources": [f"humulos:{dev}"]}
         if r.get("jogress_capable"): rec["jogress_capable"] = True
@@ -144,10 +190,11 @@ def build(dev):
                 sid, tid = norm(e["src_name"]), norm(e["tgt_name"])
                 for nm, nid in ((e["src_name"], sid), (e["tgt_name"], tid)):
                     if nid not in out:
+                        _sp, _ss = sprite(nm, None)
                         out[nid] = {"id": nid, "name": nm, "stage": None, "level": None,
                                     "attribute": None, "alt_attribute": None,
                                     "devices": {"dmx": {"versions": ["XE/XF"], "stage_time": None, "evolves_to": []}},
-                                    "sprite": sprite(nm, None), "sleep": None, "power": None,
+                                    "sprite": _sp, "sprite_source": _ss, "sleep": None, "power": None,
                                     "sources": ["humulos:dmx:chart"], "attribute_pending": True}
                 src = out[sid]
                 raw = ", ".join(f"{k}={v}" for k, v in e["cond"].items())
