@@ -44,7 +44,7 @@
       "status_by_device": {
         "dm":   {"roster": "have(canon/humulos/dm/roster.txt)", "evolutions": "todo", "manual": "todo"},
         "dm20": {"roster": "have", "evolutions": "HAVE (canon/humulos/dm20/evo_ver1-5.md + evo_special.md, 130 entries, full branching conditions)", "manual": "todo", "note": "10 special lines captured"},
-        "dmx":  {"roster": "have", "evolutions": "todo", "manual": "todo", "note": "X-Antibody/X-evolution"},
+        "dmx":  {"roster": "have", "evolutions": "PARTIAL — V1(XA/XB)+V2(XC/XD)+Kera CLEAN (canon/humulos/dmx/evo_v1,v2,v3_kera.md); V3 XE/XF main trees PENDING (evo_v3_STATUS.md: WebFetch truncates the dense tree)", "manual": "todo", "note": "X-Antibody. db/dmx.json: 178 mons, 92 w/ clean conditions, 71 v3_pending"},
         "pen":  {"roster": "CONTAMINATED-repull", "evolutions": "todo", "manual": "todo"},
         "pen20":{"roster": "CONTAMINATED-repull", "evolutions": "todo", "manual": "todo"}
       },

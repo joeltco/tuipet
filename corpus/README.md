@@ -58,7 +58,7 @@ structure/sprites, applying the JP↔EN romanization map (see sources.json `roma
 - [x] Fan repos pulled (`fan/`, gitignored): wayland-vpets (sprites+timers), digilib, RG_Digimon, DigimonVPet.
 - [x] **DM20 evolution conditions** → `canon/humulos/dm20/evo_ver1-5.md`, `evo_special.md`, `evo_extra.md`.
 - [x] **DM20 unified DB built** → `db/dm20.json` (154 mons; 134 playable + 20 colosseum-only; via `db/build_dm20.py`).
-- [ ] dmx evolution conditions + DB.
+- [~] dmx: V1+V2+Kera conditions CLEAN + DB built (`db/dmx.json`, 178 mons). V3 XE/XF trees PENDING (evo_v3_STATUS.md).
 - [ ] pen/pen20 evolution conditions (re-pull clean) + DB.
 - [ ] dm evolution conditions + DB.
 - [ ] Extract wayland sprites → usable atlas (downsample /4 + split frames).
