@@ -199,14 +199,12 @@ Gallantmon, Hououmon=Phoenixmon, etc. (**LESSON: always romanization-map before 
 mon is missing — a literal string search is what wrongly said "no Bubbmon" in an earlier
 session.**)
 
-**Genuinely missing from DVPet/tuipet (must source ourselves for the rebuild):**
-- **N.E.O** — the clean one. Original-Pendulum secret; absent under any spelling.
-- **DMX X-Antibody forms**: Scorpiomon X (Anomalocarimon X), **BlackWarGreymon X** (no
-  BlackWarGreymon at all in the data), Palmon X, Pegasmon X, Plesiomon X, Syakomon X
-  (Shakomon X), UlforceVeedramon X.
-- **DM20 "Taichi's / Yamato's" partner variants** (8: Agumon→WarGreymon & Gabumon→
-  MetalGarurumon Adventure lines) — only generic forms exist; may be flavor-labels vs base.
-- Possibly **Revolmon** (absent — "revol" only appears in attack names) — but see caveat.
+**Gaps — mostly RESOLVED by the corpus pull:**
+- **N.E.O** — **DROPPED per user 2026-06-29 ("forget neo").** Not building it.
+- **DMX X-Antibody forms** (Scorpiomon X / Anomalocarimon X, BlackWarGreymon X, Palmon X,
+  Pegasmon X, Plesiomon X, etc.) — **PRESENT in wayland-vpets** `dmall/`+`dmx/`. No longer a gap.
+- **DM20 "Taichi's / Yamato's" partner variants** — minor; re-confirm in wayland (may be base-mon flavor).
+- Net: **effectively no roster/sprite gap left.** Sprites come from wayland-vpets (canon-sourced).
 
 **⚠ DATA CAVEAT:** the humulos **pen / pen20** fetch came back CONTAMINATED — it returned
 modern non-Pendulum mons (Herissmon = an *Appmon*, Ludomon, Bryweludramon = Pendulum
@@ -267,9 +265,11 @@ Purist approach (§0a): nail ONE device end-to-end, then add the rest. **Start w
    `corpus/canon/humulos/<dev>/roster.txt`; DVPet fan data registered in place. The unified
    `corpus/db/digimon.json` (schema in README) is the "one database" we build the game from.
 1. **DM20 data extraction first** (no code churn): scrape humulos per-version + wikimon into
-   the corpus → clean JSON tables — DM20 Ver.1–5 + the 10 special lines: full rosters &
-   **exact evolution conditions**. Pull the 16×16 sprite sheets (Spriters Resource / Digimon
-   Channel dot archives / withthewill) → atlas. **Do NOT seed from DVPet's csv.**
+   the corpus → clean JSON tables — DM20 Ver.1–5 + the 10 special lines: **branching
+   evolution conditions** (CM/training/overfeed/weight/win — the one thing wayland lacks).
+   **Sprites + per-device stage timers come from `corpus/fan/wayland-vpets`** (canon-sourced,
+   named per device, 16px native upscaled x4 — downsample /4 + split frames). **Do NOT seed
+   from DVPet's csv.**
 2. **Resolution cutover**: 40×24 → 32×16 (8 rows) across render/app/battle/scenes; add the
    separate menu-icon strip. Verify at default terminal size.
 3. **Strip** weather / day-night / habitat bg / DVPet drills / non-authentic features.
