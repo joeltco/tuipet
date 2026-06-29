@@ -16,6 +16,26 @@
     {"tier": "fan", "kind": "sprites", "path": "../raw_resources/*.png", "count": 347, "status": "have"},
     {"tier": "fan", "kind": "decompiled", "path": "../_decompiled/", "status": "have", "note": "DVPet Java logic for cross-checking mechanics only"}
   ],
+  "fan_pulled_repos": [
+    {"tier": "fan", "name": "wayland-vpets", "repo": "furudbat/wayland-vpets", "path": "fan/wayland-vpets", "status": "have", "GOLDMINE": true,
+     "note": "assets/{dm,dm20,dmx,pen,pen20}/<Name>.png — per-device NAMED 16x16 sprite SHEETS (16px native, upscaled ~4x to 64px, multi-frame horizontal). Names match humulos romanization. COPYRIGHT.md credits humulos as the sprite source -> canon-adjacent. counts: dm 80, dm20 136, dmx 172, pen 127, pen20 235, dmall 669. THIS is our authentic sprite source (downsample /4 + split frames)."},
+    {"tier": "fan", "name": "digilib", "repo": "elliott-wen/digilib", "path": "fan/digilib", "status": "have",
+     "note": "C recreation of Digimon vpets. import-digimon.csv.example = evolution-data schema we want: name;power;wake;sleep;attribute;evolve-time;stage;version; then up to 6x {EvoTarget;Progression;CM(care-mistakes);TR(training);OF(overfeed);SD(sleep-disturb);W(weight)}. Also include/digimon.h + source/digimon.c (generated data)."},
+    {"tier": "fan", "name": "RG_Digimon", "repo": "Teru-dot-png/RG_Digimon", "path": "fan/RG_Digimon", "status": "have",
+     "note": "RG-handheld vpet remake; per-version sprite PNGs (e.g. digimonNIGHTMARE1.png = Pendulum Nightmare Soldiers)."},
+    {"tier": "fan", "name": "DigimonVPet", "repo": "Berational91/DigimonVPet", "path": "fan/DigimonVPet", "status": "have",
+     "note": "ESP32 vpet, compatible with REAL devices (authentic protocol/logic in src/GameLogic, src/VPetLCD). No bundled PNGs (sprites embedded). Good for cross-checking real-device mechanics + comms."},
+    {"_clones_are_gitignored": "corpus/fan/ is in .gitignore (46MB of repos); only slim extracted data + manifests are tracked."}
+  ],
+  "fan_could_not_pull": [
+    {"name": "MultiVPet", "status": "NOT-FOUND-publicly", "note": "user-requested + tuipet already curated one MultiVPet sprite (spr_poop_vpet, GameMaker naming). No public GitHub/itch by that name. NEED USER to provide the source (link/file/Discord/Drive)."},
+    {"name": "Digimon Unlimited / AndroGochi", "by": "bulzipke", "status": "app-only", "note": "freeware Android APK, 460+ mons, not open-source. Data not cleanly extractable; community wiki digital-monster-unlimited.fandom.com has data -> fetch as doc later."},
+    {"name": "RetroMon", "status": "app-only", "note": "mobile app, not pullable as source."},
+    {"name": "Digital Partner Digimon", "by": "Aludeku", "url": "https://aludeku.itch.io/digital-partner-digimon", "status": "itch-binary", "note": "downloadable game, not source; page has design info."},
+    {"name": "DMComm", "url": "https://dmcomm.github.io/vpet/", "status": "todo-doc", "note": "real-vpet protocol/data project — valuable authentic reference, fetch later."},
+    {"name": "dmc-sprite-database + GMMan/DigimonColorSpriteTool + aderekart.github.io", "status": "color-lowpri", "note": "COLOR-focused; lower priority for mono-16x16. DigimonColorSpriteTool clonable if needed."},
+    {"name": "nuxill.neocities.org / withthewill FileIsland", "status": "todo-doc", "note": "web sprite/data archives — fetch as docs later."}
+  ],
   "canon_web": {
     "humulos": {
       "base": "https://humulos.com/digimon/",
