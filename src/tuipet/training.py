@@ -493,6 +493,10 @@ class TrainingPanel:
             # pet GROUNDED bottom-right, the shield standing in front of the pet (high OR low),
             # the shot flying between them.  Everything sits on the same floor with the same
             # side margins -- nothing floats, nothing touches the edge.
+            on, bgimg = LCD_ON, None                         # FLAT LCD like the HP drill: the data
+            #   drill has many small sprites (cannon/shield/pet), so -- exactly as HP does -- it
+            #   drops the busy habitat photo that drowns them.  (Vaccine/Virus keep the photo:
+            #   they show ONE bold element that reads fine over it.)
             aim_up = self.tgt_up if self.locked else self.feint_up
             cannon = E.get("train_green_up" if aim_up else "train_green", [None])[0]   # barrel aim only
             shield = E.get("train_shield", [None])[0]
