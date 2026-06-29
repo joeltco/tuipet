@@ -67,6 +67,36 @@ def parse_req(raw):
     elif re.search(r'\d+\s*Battles|\bbattles\b', raw, re.I): p["battles"] = True
     return p
 
+# ---- attribute backfill from DVPet (canonical per-mon property; needs JP->EN romanization) ----
+import csv
+_J2E = {"tailmon": "gatomon", "vamdemon": "myotismon", "omegamon": "omnimon", "dukemon": "gallantmon",
+        "hououmon": "phoenixmon", "holydramon": "magnadramon", "ofanimon": "ophanimon",
+        "anomalocarimon": "scorpiomon", "gaioumon": "gaiomon", "mugendramon": "machinedramon",
+        "pinochimon": "puppetmon", "omegashoutmon": "omnishoutmon", "growmon": "growlmon",
+        "megalogrowmon": "wargrowmon", "lordknightmon": "crusadermon", "vdramon": "veedramon",
+        "doruguremon": "dorugreymon", "shakomon": "syakomon", "siesamon": "seasarmon",
+        "alphamonouryuken": "alphamono"}
+_JUNK = {"blank", "rest", "evolution failure"}
+# canon attributes where DVPet can't disambiguate by name (Virtue=Vaccine / Vice=Virus)
+_ATTR_OVERRIDE = {"cherubimonvirtuex": "Vaccine", "cherubimonvicex": "Virus"}
+def _dvpet_attr_index():
+    dv = {}
+    for r in csv.reader(open(os.path.join(CORPUS, "..", "raw_model", "digimon.csv"))):
+        if len(r) > 7 and r[2]:
+            dv[norm(r[2])] = r[7]
+    return dv
+def dvpet_attribute(name, dv):
+    if norm(name) in _ATTR_OVERRIDE: return _ATTR_OVERRIDE[norm(name)]
+    b = norm(name).replace("virtue", "v").replace("vice", "")
+    for key in (b, _J2E.get(b, b)):
+        if dv.get(key) not in (None, "None", ""): return dv[key]
+    m = re.match(r'(.*?)x$', b)            # X-form: romanize base, re-add x
+    if m:
+        mb = _J2E.get(m.group(1), m.group(1))
+        for key in (mb + "x", mb):
+            if dv.get(key) not in (None, "None", ""): return dv[key]
+    return None
+
 def sprite_index(dev):
     d = os.path.join(CORPUS, f"fan/wayland-vpets/assets/{dev}")
     idx = {}
@@ -124,6 +154,22 @@ def build(dev):
                 if not any(x["to_id"] == tid for x in src["devices"]["dmx"]["evolves_to"]):
                     src["devices"]["dmx"]["evolves_to"].append(
                         {"to": e["tgt_name"], "to_id": tid, "raw": raw, "parsed": e["cond"], "sub_version": e["sub"].upper()})
+
+    # drop junk placeholder entries (chart artifacts: blank / rest / "Evolution Failure")
+    for k in [k for k, r in out.items() if r["name"].lower() in _JUNK]:
+        del out[k]
+
+    # backfill null attributes from DVPet (romanization-aware); babies (DVPet None) -> Free
+    if any(not r["attribute"] for r in out.values()):
+        dv = _dvpet_attr_index()
+        for r in out.values():
+            if r["attribute"]: continue
+            a = dvpet_attribute(r["name"], dv)
+            if a:
+                r["attribute"] = a; r["attribute_source"] = "dvpet"
+            elif r["stage"] in ("Baby I", "Baby II") or norm(r["name"]) in dv:
+                r["attribute"] = "Free"; r["attribute_source"] = "dvpet:baby/free"
+            r.pop("attribute_pending", None)
 
     no_sprite = sorted(r["name"] for r in out.values() if not r["sprite"])
     no_attr = sorted(r["name"] for r in out.values() if not r["attribute"])

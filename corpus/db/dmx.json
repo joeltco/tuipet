@@ -1,7 +1,7 @@
 {
  "_meta": {
   "device": "dmx",
-  "count": 177,
+  "count": 174,
   "with_evolutions": 113,
   "source": "humulos dmx (parse_humulos.py: detail cards + V3 chart edges)",
   "stage_timers": {
@@ -15,68 +15,11 @@
    "Apocalymon",
    "Belphemon: Rage Mode",
    "Blucomon",
-   "Evolution Failure",
    "Lucemon: Falldown Mode",
    "Sistermon Ciel",
-   "Sistermon Noir",
-   "blank",
-   "rest"
+   "Sistermon Noir"
   ],
-  "attribute_gaps": [
-   "Alphamon: Ouryuken",
-   "Angewomon X",
-   "Anomalocarimon X",
-   "Blucomon",
-   "Cannonbeemon",
-   "Cherubimon (Virtue) X",
-   "Chocomon",
-   "Crys Paledramon",
-   "Cyberdramon X",
-   "DORUgamon",
-   "DORUguremon",
-   "DORUmon",
-   "Dinotigermon",
-   "Ebemon X",
-   "Evolution Failure",
-   "Examon X",
-   "Gaioumon",
-   "Gankoomon X",
-   "Ginryumon",
-   "Gummymon",
-   "Hexeblaumon",
-   "Hisyaryumon",
-   "Hououmon X",
-   "Jazamon",
-   "Jazardmon",
-   "Jazarichmon",
-   "Jesmon GX",
-   "Justimon X",
-   "Lopmon X",
-   "Mamemon X",
-   "Meramon X",
-   "Metallicdramon",
-   "Monzaemon X",
-   "Noble Pumpmon",
-   "Ofanimon X",
-   "Omega Shoutmon X",
-   "Paledramon",
-   "Pegasmon X",
-   "Plesiomon X",
-   "Pteranomon X",
-   "Pumpmon",
-   "Rapidmon X",
-   "Rize Greymon X",
-   "Ryudamon",
-   "Shakomon X",
-   "Siesamon X",
-   "Terriermon X",
-   "Tiger Vespamon",
-   "Togemon X",
-   "Tylomon X",
-   "Wizarmon X",
-   "blank",
-   "rest"
-  ],
+  "attribute_gaps": [],
   "note": "exact evo conditions from humulos (raw + parsed). real-time stage timers per device. sleep/power included."
  },
  "digimon": [
@@ -272,7 +215,7 @@
    "name": "Alphamon: Ouryuken",
    "stage": null,
    "level": null,
-   "attribute": null,
+   "attribute": "Vaccine",
    "alt_attribute": null,
    "devices": {
     "dmx": {
@@ -289,7 +232,7 @@
    "sources": [
     "humulos:dmx:chart"
    ],
-   "attribute_pending": true
+   "attribute_source": "dvpet"
   },
   {
    "id": "ancientsphinxmon",
@@ -317,7 +260,7 @@
    "name": "Angewomon X",
    "stage": null,
    "level": null,
-   "attribute": null,
+   "attribute": "Vaccine",
    "alt_attribute": null,
    "devices": {
     "dmx": {
@@ -334,14 +277,14 @@
    "sources": [
     "humulos:dmx:chart"
    ],
-   "attribute_pending": true
+   "attribute_source": "dvpet"
   },
   {
    "id": "anomalocarimonx",
    "name": "Anomalocarimon X",
    "stage": null,
    "level": null,
-   "attribute": null,
+   "attribute": "Data",
    "alt_attribute": null,
    "devices": {
     "dmx": {
@@ -412,7 +355,7 @@
    "sources": [
     "humulos:dmx:chart"
    ],
-   "attribute_pending": true
+   "attribute_source": "dvpet"
   },
   {
    "id": "apocalymon",
@@ -728,32 +671,11 @@
    ]
   },
   {
-   "id": "blank",
-   "name": "blank",
-   "stage": null,
-   "level": null,
-   "attribute": null,
-   "alt_attribute": null,
-   "devices": {
-    "dmx": {
-     "versions": [],
-     "stage_time": null,
-     "evolves_to": []
-    }
-   },
-   "sprite": null,
-   "sleep": "",
-   "power": null,
-   "sources": [
-    "humulos:dmx"
-   ]
-  },
-  {
    "id": "blucomon",
    "name": "Blucomon",
    "stage": null,
    "level": null,
-   "attribute": null,
+   "attribute": "Data",
    "alt_attribute": null,
    "devices": {
     "dmx": {
@@ -770,14 +692,14 @@
    "sources": [
     "humulos:dmx:chart"
    ],
-   "attribute_pending": true
+   "attribute_source": "dvpet"
   },
   {
    "id": "cannonbeemon",
    "name": "Cannonbeemon",
    "stage": null,
    "level": null,
-   "attribute": null,
+   "attribute": "Virus",
    "alt_attribute": null,
    "devices": {
     "dmx": {
@@ -858,7 +780,7 @@
    "sources": [
     "humulos:dmx:chart"
    ],
-   "attribute_pending": true
+   "attribute_source": "dvpet"
   },
   {
    "id": "cerberumonx",
@@ -1025,7 +947,7 @@
    "name": "Cherubimon (Virtue) X",
    "stage": null,
    "level": null,
-   "attribute": null,
+   "attribute": "Vaccine",
    "alt_attribute": null,
    "devices": {
     "dmx": {
@@ -1042,14 +964,14 @@
    "sources": [
     "humulos:dmx:chart"
    ],
-   "attribute_pending": true
+   "attribute_source": "dvpet"
   },
   {
    "id": "chocomon",
    "name": "Chocomon",
    "stage": null,
    "level": null,
-   "attribute": null,
+   "attribute": "Free",
    "alt_attribute": null,
    "devices": {
     "dmx": {
@@ -1142,7 +1064,7 @@
    "sources": [
     "humulos:dmx:chart"
    ],
-   "attribute_pending": true
+   "attribute_source": "dvpet:baby/free"
   },
   {
    "id": "chohakkaimon",
@@ -1251,7 +1173,7 @@
    "name": "Crys Paledramon",
    "stage": null,
    "level": null,
-   "attribute": null,
+   "attribute": "Data",
    "alt_attribute": null,
    "devices": {
     "dmx": {
@@ -1268,14 +1190,14 @@
    "sources": [
     "humulos:dmx:chart"
    ],
-   "attribute_pending": true
+   "attribute_source": "dvpet"
   },
   {
    "id": "cyberdramonx",
    "name": "Cyberdramon X",
    "stage": null,
    "level": null,
-   "attribute": null,
+   "attribute": "Vaccine",
    "alt_attribute": null,
    "devices": {
     "dmx": {
@@ -1292,7 +1214,7 @@
    "sources": [
     "humulos:dmx:chart"
    ],
-   "attribute_pending": true
+   "attribute_source": "dvpet"
   },
   {
    "id": "damemon",
@@ -1583,7 +1505,7 @@
    "name": "Dinotigermon",
    "stage": null,
    "level": null,
-   "attribute": null,
+   "attribute": "Data",
    "alt_attribute": null,
    "devices": {
     "dmx": {
@@ -1645,14 +1567,14 @@
    "sources": [
     "humulos:dmx:chart"
    ],
-   "attribute_pending": true
+   "attribute_source": "dvpet"
   },
   {
    "id": "dorugamon",
    "name": "DORUgamon",
    "stage": null,
    "level": null,
-   "attribute": null,
+   "attribute": "Data",
    "alt_attribute": null,
    "devices": {
     "dmx": {
@@ -1691,14 +1613,14 @@
    "sources": [
     "humulos:dmx:chart"
    ],
-   "attribute_pending": true
+   "attribute_source": "dvpet"
   },
   {
    "id": "doruguremon",
    "name": "DORUguremon",
    "stage": null,
    "level": null,
-   "attribute": null,
+   "attribute": "Data",
    "alt_attribute": null,
    "devices": {
     "dmx": {
@@ -1761,14 +1683,14 @@
    "sources": [
     "humulos:dmx:chart"
    ],
-   "attribute_pending": true
+   "attribute_source": "dvpet"
   },
   {
    "id": "dorumon",
    "name": "DORUmon",
    "stage": null,
    "level": null,
-   "attribute": null,
+   "attribute": "Data",
    "alt_attribute": null,
    "devices": {
     "dmx": {
@@ -1863,7 +1785,7 @@
    "sources": [
     "humulos:dmx:chart"
    ],
-   "attribute_pending": true
+   "attribute_source": "dvpet"
   },
   {
    "id": "dracomonx",
@@ -2038,7 +1960,7 @@
    "name": "Ebemon X",
    "stage": null,
    "level": null,
-   "attribute": null,
+   "attribute": "Virus",
    "alt_attribute": null,
    "devices": {
     "dmx": {
@@ -2120,31 +2042,7 @@
    "sources": [
     "humulos:dmx:chart"
    ],
-   "attribute_pending": true
-  },
-  {
-   "id": "evolutionfailure",
-   "name": "Evolution Failure",
-   "stage": null,
-   "level": null,
-   "attribute": null,
-   "alt_attribute": null,
-   "devices": {
-    "dmx": {
-     "versions": [
-      "XE/XF"
-     ],
-     "stage_time": null,
-     "evolves_to": []
-    }
-   },
-   "sprite": null,
-   "sleep": null,
-   "power": null,
-   "sources": [
-    "humulos:dmx:chart"
-   ],
-   "attribute_pending": true
+   "attribute_source": "dvpet"
   },
   {
    "id": "examon",
@@ -2172,7 +2070,7 @@
    "name": "Examon X",
    "stage": null,
    "level": null,
-   "attribute": null,
+   "attribute": "Data",
    "alt_attribute": null,
    "devices": {
     "dmx": {
@@ -2189,7 +2087,7 @@
    "sources": [
     "humulos:dmx:chart"
    ],
-   "attribute_pending": true
+   "attribute_source": "dvpet"
   },
   {
    "id": "filmon",
@@ -2331,7 +2229,7 @@
    "name": "Gaioumon",
    "stage": null,
    "level": null,
-   "attribute": null,
+   "attribute": "Virus",
    "alt_attribute": null,
    "devices": {
     "dmx": {
@@ -2382,7 +2280,7 @@
    "sources": [
     "humulos:dmx:chart"
    ],
-   "attribute_pending": true
+   "attribute_source": "dvpet"
   },
   {
    "id": "gankoomon",
@@ -2410,7 +2308,7 @@
    "name": "Gankoomon X",
    "stage": null,
    "level": null,
-   "attribute": null,
+   "attribute": "Data",
    "alt_attribute": null,
    "devices": {
     "dmx": {
@@ -2427,7 +2325,7 @@
    "sources": [
     "humulos:dmx:chart"
    ],
-   "attribute_pending": true
+   "attribute_source": "dvpet"
   },
   {
    "id": "garudamonx",
@@ -2495,7 +2393,7 @@
    "name": "Ginryumon",
    "stage": null,
    "level": null,
-   "attribute": null,
+   "attribute": "Vaccine",
    "alt_attribute": null,
    "devices": {
     "dmx": {
@@ -2546,7 +2444,7 @@
    "sources": [
     "humulos:dmx:chart"
    ],
-   "attribute_pending": true
+   "attribute_source": "dvpet"
   },
   {
    "id": "goddramonx",
@@ -2757,7 +2655,7 @@
    "name": "Gummymon",
    "stage": null,
    "level": null,
-   "attribute": null,
+   "attribute": "Free",
    "alt_attribute": null,
    "devices": {
     "dmx": {
@@ -2849,7 +2747,7 @@
    "sources": [
     "humulos:dmx:chart"
    ],
-   "attribute_pending": true
+   "attribute_source": "dvpet:baby/free"
   },
   {
    "id": "herissmon",
@@ -2939,7 +2837,7 @@
    "name": "Hexeblaumon",
    "stage": null,
    "level": null,
-   "attribute": null,
+   "attribute": "Data",
    "alt_attribute": null,
    "devices": {
     "dmx": {
@@ -2956,14 +2854,14 @@
    "sources": [
     "humulos:dmx:chart"
    ],
-   "attribute_pending": true
+   "attribute_source": "dvpet"
   },
   {
    "id": "hisyaryumon",
    "name": "Hisyaryumon",
    "stage": null,
    "level": null,
-   "attribute": null,
+   "attribute": "Vaccine",
    "alt_attribute": null,
    "devices": {
     "dmx": {
@@ -3015,7 +2913,7 @@
    "sources": [
     "humulos:dmx:chart"
    ],
-   "attribute_pending": true
+   "attribute_source": "dvpet"
   },
   {
    "id": "holydramonx",
@@ -3066,7 +2964,7 @@
    "name": "Hououmon X",
    "stage": null,
    "level": null,
-   "attribute": null,
+   "attribute": "Vaccine",
    "alt_attribute": null,
    "devices": {
     "dmx": {
@@ -3083,7 +2981,7 @@
    "sources": [
     "humulos:dmx:chart"
    ],
-   "attribute_pending": true
+   "attribute_source": "dvpet"
   },
   {
    "id": "impmonx",
@@ -3148,7 +3046,7 @@
    "name": "Jazamon",
    "stage": null,
    "level": null,
-   "attribute": null,
+   "attribute": "Data",
    "alt_attribute": null,
    "devices": {
     "dmx": {
@@ -3165,14 +3063,14 @@
    "sources": [
     "humulos:dmx:chart"
    ],
-   "attribute_pending": true
+   "attribute_source": "dvpet"
   },
   {
    "id": "jazardmon",
    "name": "Jazardmon",
    "stage": null,
    "level": null,
-   "attribute": null,
+   "attribute": "Data",
    "alt_attribute": null,
    "devices": {
     "dmx": {
@@ -3189,14 +3087,14 @@
    "sources": [
     "humulos:dmx:chart"
    ],
-   "attribute_pending": true
+   "attribute_source": "dvpet"
   },
   {
    "id": "jazarichmon",
    "name": "Jazarichmon",
    "stage": null,
    "level": null,
-   "attribute": null,
+   "attribute": "Data",
    "alt_attribute": null,
    "devices": {
     "dmx": {
@@ -3213,14 +3111,14 @@
    "sources": [
     "humulos:dmx:chart"
    ],
-   "attribute_pending": true
+   "attribute_source": "dvpet"
   },
   {
    "id": "jesmongx",
    "name": "Jesmon GX",
    "stage": null,
    "level": null,
-   "attribute": null,
+   "attribute": "Data",
    "alt_attribute": null,
    "devices": {
     "dmx": {
@@ -3237,7 +3135,7 @@
    "sources": [
     "humulos:dmx:chart"
    ],
-   "attribute_pending": true
+   "attribute_source": "dvpet"
   },
   {
    "id": "jesmonx",
@@ -3284,7 +3182,7 @@
    "name": "Justimon X",
    "stage": null,
    "level": null,
-   "attribute": null,
+   "attribute": "Vaccine",
    "alt_attribute": null,
    "devices": {
     "dmx": {
@@ -3301,7 +3199,7 @@
    "sources": [
     "humulos:dmx:chart"
    ],
-   "attribute_pending": true
+   "attribute_source": "dvpet"
   },
   {
    "id": "kaiserleomon",
@@ -3789,7 +3687,7 @@
    "name": "Lopmon X",
    "stage": null,
    "level": null,
-   "attribute": null,
+   "attribute": "Data",
    "alt_attribute": null,
    "devices": {
     "dmx": {
@@ -3829,7 +3727,7 @@
    "sources": [
     "humulos:dmx:chart"
    ],
-   "attribute_pending": true
+   "attribute_source": "dvpet"
   },
   {
    "id": "lordknightmonx",
@@ -3961,7 +3859,7 @@
    "name": "Mamemon X",
    "stage": null,
    "level": null,
-   "attribute": null,
+   "attribute": "Data",
    "alt_attribute": null,
    "devices": {
     "dmx": {
@@ -4121,7 +4019,7 @@
    "sources": [
     "humulos:dmx:chart"
    ],
-   "attribute_pending": true
+   "attribute_source": "dvpet"
   },
   {
    "id": "mametyramon",
@@ -4584,7 +4482,7 @@
    "name": "Meramon X",
    "stage": null,
    "level": null,
-   "attribute": null,
+   "attribute": "Data",
    "alt_attribute": null,
    "devices": {
     "dmx": {
@@ -4601,7 +4499,7 @@
    "sources": [
     "humulos:dmx:chart"
    ],
-   "attribute_pending": true
+   "attribute_source": "dvpet"
   },
   {
    "id": "metalfantomon",
@@ -4834,7 +4732,7 @@
    "name": "Metallicdramon",
    "stage": null,
    "level": null,
-   "attribute": null,
+   "attribute": "Data",
    "alt_attribute": null,
    "devices": {
     "dmx": {
@@ -4851,7 +4749,7 @@
    "sources": [
     "humulos:dmx:chart"
    ],
-   "attribute_pending": true
+   "attribute_source": "dvpet"
   },
   {
    "id": "metalpiranimon",
@@ -5039,7 +4937,7 @@
    "name": "Monzaemon X",
    "stage": null,
    "level": null,
-   "attribute": null,
+   "attribute": "Vaccine",
    "alt_attribute": null,
    "devices": {
     "dmx": {
@@ -5056,7 +4954,7 @@
    "sources": [
     "humulos:dmx:chart"
    ],
-   "attribute_pending": true
+   "attribute_source": "dvpet"
   },
   {
    "id": "nefertimonx",
@@ -5109,7 +5007,7 @@
    "name": "Noble Pumpmon",
    "stage": null,
    "level": null,
-   "attribute": null,
+   "attribute": "Data",
    "alt_attribute": null,
    "devices": {
     "dmx": {
@@ -5126,7 +5024,7 @@
    "sources": [
     "humulos:dmx:chart"
    ],
-   "attribute_pending": true
+   "attribute_source": "dvpet"
   },
   {
    "id": "numemonx",
@@ -5302,7 +5200,7 @@
    "name": "Ofanimon X",
    "stage": null,
    "level": null,
-   "attribute": null,
+   "attribute": "Vaccine",
    "alt_attribute": null,
    "devices": {
     "dmx": {
@@ -5319,7 +5217,7 @@
    "sources": [
     "humulos:dmx:chart"
    ],
-   "attribute_pending": true
+   "attribute_source": "dvpet"
   },
   {
    "id": "ogremonx",
@@ -5452,7 +5350,7 @@
    "name": "Omega Shoutmon X",
    "stage": null,
    "level": null,
-   "attribute": null,
+   "attribute": "Data",
    "alt_attribute": null,
    "devices": {
     "dmx": {
@@ -5469,7 +5367,7 @@
    "sources": [
     "humulos:dmx:chart"
    ],
-   "attribute_pending": true
+   "attribute_source": "dvpet"
   },
   {
    "id": "omekamon",
@@ -5780,7 +5678,7 @@
    "name": "Paledramon",
    "stage": null,
    "level": null,
-   "attribute": null,
+   "attribute": "Data",
    "alt_attribute": null,
    "devices": {
     "dmx": {
@@ -5797,7 +5695,7 @@
    "sources": [
     "humulos:dmx:chart"
    ],
-   "attribute_pending": true
+   "attribute_source": "dvpet"
   },
   {
    "id": "palmonx",
@@ -5858,7 +5756,7 @@
    "name": "Pegasmon X",
    "stage": null,
    "level": null,
-   "attribute": null,
+   "attribute": "Vaccine",
    "alt_attribute": null,
    "devices": {
     "dmx": {
@@ -5875,7 +5773,7 @@
    "sources": [
     "humulos:dmx:chart"
    ],
-   "attribute_pending": true
+   "attribute_source": "dvpet"
   },
   {
    "id": "platinumnumemon",
@@ -5917,7 +5815,7 @@
    "name": "Plesiomon X",
    "stage": null,
    "level": null,
-   "attribute": null,
+   "attribute": "Data",
    "alt_attribute": null,
    "devices": {
     "dmx": {
@@ -5946,7 +5844,7 @@
    "sources": [
     "humulos:dmx:chart"
    ],
-   "attribute_pending": true
+   "attribute_source": "dvpet"
   },
   {
    "id": "plotmonx",
@@ -6053,7 +5951,7 @@
    "name": "Pteranomon X",
    "stage": null,
    "level": null,
-   "attribute": null,
+   "attribute": "Data",
    "alt_attribute": null,
    "devices": {
     "dmx": {
@@ -6081,14 +5979,14 @@
    "sources": [
     "humulos:dmx:chart"
    ],
-   "attribute_pending": true
+   "attribute_source": "dvpet"
   },
   {
    "id": "pumpmon",
    "name": "Pumpmon",
    "stage": null,
    "level": null,
-   "attribute": null,
+   "attribute": "Data",
    "alt_attribute": null,
    "devices": {
     "dmx": {
@@ -6105,7 +6003,7 @@
    "sources": [
     "humulos:dmx:chart"
    ],
-   "attribute_pending": true
+   "attribute_source": "dvpet"
   },
   {
    "id": "puttimon",
@@ -6229,7 +6127,7 @@
    "name": "Rapidmon X",
    "stage": null,
    "level": null,
-   "attribute": null,
+   "attribute": "Vaccine",
    "alt_attribute": null,
    "devices": {
     "dmx": {
@@ -6246,7 +6144,7 @@
    "sources": [
     "humulos:dmx:chart"
    ],
-   "attribute_pending": true
+   "attribute_source": "dvpet"
   },
   {
    "id": "rasenmon",
@@ -6358,27 +6256,6 @@
    ]
   },
   {
-   "id": "rest",
-   "name": "rest",
-   "stage": null,
-   "level": null,
-   "attribute": null,
-   "alt_attribute": null,
-   "devices": {
-    "dmx": {
-     "versions": [],
-     "stage_time": null,
-     "evolves_to": []
-    }
-   },
-   "sprite": null,
-   "sleep": "",
-   "power": null,
-   "sources": [
-    "humulos:dmx"
-   ]
-  },
-  {
    "id": "rhinomonx",
    "name": "Rhinomon X",
    "stage": "Adult",
@@ -6429,7 +6306,7 @@
    "name": "Rize Greymon X",
    "stage": null,
    "level": null,
-   "attribute": null,
+   "attribute": "Vaccine",
    "alt_attribute": null,
    "devices": {
     "dmx": {
@@ -6446,7 +6323,7 @@
    "sources": [
     "humulos:dmx:chart"
    ],
-   "attribute_pending": true
+   "attribute_source": "dvpet"
   },
   {
    "id": "rosemonx",
@@ -6511,7 +6388,7 @@
    "name": "Ryudamon",
    "stage": null,
    "level": null,
-   "attribute": null,
+   "attribute": "Vaccine",
    "alt_attribute": null,
    "devices": {
     "dmx": {
@@ -6617,7 +6494,7 @@
    "sources": [
     "humulos:dmx:chart"
    ],
-   "attribute_pending": true
+   "attribute_source": "dvpet"
   },
   {
    "id": "sakuyamonx",
@@ -6746,7 +6623,7 @@
    "name": "Shakomon X",
    "stage": null,
    "level": null,
-   "attribute": null,
+   "attribute": "Virus",
    "alt_attribute": null,
    "devices": {
     "dmx": {
@@ -6796,14 +6673,14 @@
    "sources": [
     "humulos:dmx:chart"
    ],
-   "attribute_pending": true
+   "attribute_source": "dvpet"
   },
   {
    "id": "siesamonx",
    "name": "Siesamon X",
    "stage": null,
    "level": null,
-   "attribute": null,
+   "attribute": "Vaccine",
    "alt_attribute": null,
    "devices": {
     "dmx": {
@@ -6820,7 +6697,7 @@
    "sources": [
     "humulos:dmx:chart"
    ],
-   "attribute_pending": true
+   "attribute_source": "dvpet"
   },
   {
    "id": "sistermonblanc",
@@ -7204,7 +7081,7 @@
    "name": "Terriermon X",
    "stage": null,
    "level": null,
-   "attribute": null,
+   "attribute": "Vaccine",
    "alt_attribute": null,
    "devices": {
     "dmx": {
@@ -7244,14 +7121,14 @@
    "sources": [
     "humulos:dmx:chart"
    ],
-   "attribute_pending": true
+   "attribute_source": "dvpet"
   },
   {
    "id": "tigervespamon",
    "name": "Tiger Vespamon",
    "stage": null,
    "level": null,
-   "attribute": null,
+   "attribute": "Virus",
    "alt_attribute": null,
    "devices": {
     "dmx": {
@@ -7280,7 +7157,7 @@
    "sources": [
     "humulos:dmx:chart"
    ],
-   "attribute_pending": true
+   "attribute_source": "dvpet"
   },
   {
    "id": "tobucatmon",
@@ -7345,7 +7222,7 @@
    "name": "Togemon X",
    "stage": null,
    "level": null,
-   "attribute": null,
+   "attribute": "Data",
    "alt_attribute": null,
    "devices": {
     "dmx": {
@@ -7405,7 +7282,7 @@
    "sources": [
     "humulos:dmx:chart"
    ],
-   "attribute_pending": true
+   "attribute_source": "dvpet"
   },
   {
    "id": "tokomonx",
@@ -7554,7 +7431,7 @@
    "name": "Tylomon X",
    "stage": null,
    "level": null,
-   "attribute": null,
+   "attribute": "Vaccine",
    "alt_attribute": null,
    "devices": {
     "dmx": {
@@ -7582,7 +7459,7 @@
    "sources": [
     "humulos:dmx:chart"
    ],
-   "attribute_pending": true
+   "attribute_source": "dvpet"
   },
   {
    "id": "tyranomonx",
@@ -7986,7 +7863,7 @@
    "name": "Wizarmon X",
    "stage": null,
    "level": null,
-   "attribute": null,
+   "attribute": "Data",
    "alt_attribute": null,
    "devices": {
     "dmx": {
@@ -8003,7 +7880,7 @@
    "sources": [
     "humulos:dmx:chart"
    ],
-   "attribute_pending": true
+   "attribute_source": "dvpet"
   },
   {
    "id": "yaamon",

@@ -62,15 +62,15 @@ for pen20 / detail cards for the rest → `canon/humulos/<dev>/records.json`) �
 |-----|------|---------------|-------------|-----------|
 | dm    | 81  | 63  | 2  | 0  |
 | dm20  | 154 | 114 | 20 | 0  |
-| dmx   | 177 | 113 | 9  | 53 (V3 XE/XF chart-only — no attribute in source) |
+| dmx   | 174 | 113 | 6  | 0 (V3 attrs backfilled from DVPet, `attribute_source` tagged) |
 | pen   | 115 | 88  | 1  | 0  |
 | pen20 | 264 | 207 | 32 | 0  |
 
 Each record: id/name/stage/level/attribute/devices.<dev>{versions,stage_time,evolves_to[{to,raw,parsed}]}/sprite/sleep/power.
 Exact conditions (verbatim `raw` + structured `parsed`), real-time stage timers, sleep schedule, power.
 - Sprite gaps = mons absent from wayland's set (jogress-finals/Royal Knights/Demon Lords/colosseum) → DVPet fallback.
-- dmx attr gaps = the V3 XE/XF mons (chart had no attribute data) → backfill from wikimon/DVPet.
-- Remaining: backfill dmx V3 attributes + the missing sprites; then the CODE rebuild.
+- Attribute backfill: dmx V3 (chart had no attribute) filled from DVPet's canonical attribute (romanization-aware), `attribute_source` field tags these. ALL 5 devices now 100% attributes.
+- Remaining: the missing sprites (wayland-absent jogress-finals/Royal-Knights/etc → DVPet fallback); then the CODE rebuild.
 
 
 ⚠ `pen`/`pen20` humulos roster fetches were CONTAMINATED (modern non-Pendulum mons) — must
