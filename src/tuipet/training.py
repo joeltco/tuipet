@@ -548,8 +548,7 @@ class TrainingPanel:
                     lane_y = (hi_y if self.tgt_up else lo_y) + (sh_h - oh) // 2
                     prog = (DATA_FLY - self.fly_t) / (DATA_FLY - 1)   # 0 at the muzzle -> 1.0 ARRIVED
                     fx = int(muzzle_x + (end_x - muzzle_x) * prog)
-                    fy = int((muzzle_y - oh // 2) + (lane_y - (muzzle_y - oh // 2)) * prog)
-                    overlay += _blit(orb, fx, fy)
+                    overlay += _blit(orb, fx, lane_y)   # STRAIGHT horizontal shot (DVPet sets Y once, no arc)
         else:                                               # hp: the REAL DVPet drawHPTraining layout
             # Training dummy (bird w/ an attribute symbol on its belly) on the LEFT, the 3
             # stacked icons (Vaccine/Data/Virus) in the MIDDLE, the pet on the RIGHT.  Read
