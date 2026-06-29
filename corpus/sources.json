@@ -18,7 +18,7 @@
   ],
   "fan_pulled_repos": [
     {"tier": "fan", "name": "wayland-vpets", "repo": "furudbat/wayland-vpets", "path": "fan/wayland-vpets", "status": "have", "GOLDMINE": true,
-     "note": "assets/{dm,dm20,dmx,pen,pen20}/<Name>.png — per-device NAMED 16x16 sprite SHEETS (16px native, upscaled ~4x to 64px, multi-frame horizontal). Names match humulos romanization. COPYRIGHT.md credits humulos as the sprite source -> canon-adjacent. counts: dm 80, dm20 136, dmx 172, pen 127, pen20 235, dmall 669. THIS is our authentic sprite source (downsample /4 + split frames)."},
+     "note": "THE sprite + stage-timer source. assets/{dm,dm20,dmx,pen,pen20}/<Name>.png = per-device NAMED 16x16 sprite SHEETS (16px native, upscaled x4 to 64px, multi-frame horizontal). Names match humulos romanization. COPYRIGHT.md: sprites+evo-data sourced from humulos(dm/pen/dm20/pen20/dmx/dmc)+wikimon -> CANON-ADJACENT. counts: dm 80, dm20 136, dmx 172, pen 127, pen20 235, dmall 669 (superset). dmall COVERS the DMX X-forms DVPet lacked (Anomalocarimon X, Black War Greymon X, Palmon X, Pegasmon X, Plesiomon X). ALSO carries per-device real-time STAGE TIMERS in docs/fragments/evol-dm.md (Digitama/BabyI/BabyII/Child/Adult/Perfect/Ultimate durations, differ per device). Does NOT carry branching evo CONDITIONS (CM/TR/OF/weight/win) -> those still from humulos per-version. Downsample /4 + split frames to use. Bandai IP (ripped dot art) -> fine for corpus, same hold-republish caveat for shipping."},
     {"tier": "fan", "name": "digilib", "repo": "elliott-wen/digilib", "path": "fan/digilib", "status": "have",
      "note": "C recreation of Digimon vpets. import-digimon.csv.example = evolution-data schema we want: name;power;wake;sleep;attribute;evolve-time;stage;version; then up to 6x {EvoTarget;Progression;CM(care-mistakes);TR(training);OF(overfeed);SD(sleep-disturb);W(weight)}. Also include/digimon.h + source/digimon.c (generated data)."},
     {"tier": "fan", "name": "RG_Digimon", "repo": "Teru-dot-png/RG_Digimon", "path": "fan/RG_Digimon", "status": "have",
@@ -63,7 +63,8 @@
   ],
   "romanization_map_note": "JP(humulos) -> EN(DVPet) needed for any diff. Canonical map lives in the audit script; key pairs: Bubbmon=Babumon, Vamdemon=Myotismon, Tailmon=Gatomon, Omegamon=Omnimon, Dukemon=Gallantmon, Hououmon=Phoenixmon, Mugendramon=Machinedramon, Pinochimon=Puppetmon, Peti Meramon=DemiMeramon, Anomalocarimon=Scorpiomon, Karatuki Numemon=ShellNumemon, V-dramon=Veedramon.",
   "known_gaps": {
-    "missing_from_dvpet": ["N.E.O", "Scorpiomon X (Anomalocarimon X)", "BlackWarGreymon X", "Palmon X", "Pegasmon X", "Plesiomon X", "Syakomon X (Shakomon X)", "UlforceVeedramon X", "DM20 Taichi's/Yamato's partner variants"],
-    "note": "must source sprites+data for these ourselves"
+    "resolved_by_wayland": ["Scorpiomon X (Anomalocarimon X)", "BlackWarGreymon X", "Palmon X", "Pegasmon X", "Plesiomon X", "Plesiomon", "Anomalocarimon"],
+    "dropped_by_user": ["N.E.O"],
+    "note": "N.E.O dropped per user 2026-06-29 ('forget neo'). The DMX X-forms DVPet lacked are PRESENT in wayland-vpets dmall/+dmx/. Net: effectively no roster/sprite gap left. (Re-confirm DM20 Taichi's/Yamato's partner-variant sprites in wayland; minor.)"
   }
 }
