@@ -28,7 +28,7 @@
     {"_clones_are_gitignored": "corpus/fan/ is in .gitignore (46MB of repos); only slim extracted data + manifests are tracked."}
   ],
   "fan_could_not_pull": [
-    {"name": "MultiVPet", "status": "NOT-FOUND-publicly", "note": "user-requested + tuipet already curated one MultiVPet sprite (spr_poop_vpet, GameMaker naming). No public GitHub/itch by that name. NEED USER to provide the source (link/file/Discord/Drive)."},
+    {"name": "MultiVPet", "status": "DROPPED", "note": "Dropped per user 2026-06-29 — wayland-vpets supersedes it (comprehensive canon-sourced sprite set). Not pursuing."},
     {"name": "Digimon Unlimited / AndroGochi", "by": "bulzipke", "status": "app-only", "note": "freeware Android APK, 460+ mons, not open-source. Data not cleanly extractable; community wiki digital-monster-unlimited.fandom.com has data -> fetch as doc later."},
     {"name": "RetroMon", "status": "app-only", "note": "mobile app, not pullable as source."},
     {"name": "Digital Partner Digimon", "by": "Aludeku", "url": "https://aludeku.itch.io/digital-partner-digimon", "status": "itch-binary", "note": "downloadable game, not source; page has design info."},
@@ -43,7 +43,7 @@
       "per_version_evo": "/digimon/<dev>/<version#>/   (e.g. /digimon/dm20/1/ ... /5/)",
       "status_by_device": {
         "dm":   {"roster": "have(canon/humulos/dm/roster.txt)", "evolutions": "todo", "manual": "todo"},
-        "dm20": {"roster": "have", "evolutions": "todo", "manual": "todo", "note": "10 special lines too"},
+        "dm20": {"roster": "have", "evolutions": "HAVE (canon/humulos/dm20/evo_ver1-5.md + evo_special.md, 130 entries, full branching conditions)", "manual": "todo", "note": "10 special lines captured"},
         "dmx":  {"roster": "have", "evolutions": "todo", "manual": "todo", "note": "X-Antibody/X-evolution"},
         "pen":  {"roster": "CONTAMINATED-repull", "evolutions": "todo", "manual": "todo"},
         "pen20":{"roster": "CONTAMINATED-repull", "evolutions": "todo", "manual": "todo"}
