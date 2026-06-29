@@ -32,3 +32,4 @@ POOP_POSTMORTEM.md
 
 # cloned fan-game repos: local reference only, not tracked (we extract slim data into corpus/)
 corpus/fan/
+corpus/canon/humulos/dmx/raw/
