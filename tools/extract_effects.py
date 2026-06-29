@@ -26,6 +26,26 @@ def native_mask(fn):
     return on[:h*F, :w*F].reshape(h, F, w, F).mean(axis=(1, 3)) > 0.4
 
 
+# Some DVPet sprites are authored at NATIVE LCD resolution (not 3x): the data-drill
+# cannon (trainGreen 32x28) and shield (trainShield 16x18) are sized 1:1 in DVPet code
+# (dataPrePrep setSizeX/Y).  To land them in the right real estate, scale by the LCD
+# ratio (tuipet's 40-px arena / DVPet's 105-px LCD), NOT the 3x downsample -- that would
+# shrink them to ~62% of their true footprint.
+ARENA_PX, NATIVE_LCD_PX = 40, 105
+
+
+def arena_mask(fn):
+    a = np.array(Image.open(os.path.join(RES, fn)).convert("RGBA"))
+    rgb = a[:, :, :3].astype(int); al = a[:, :, 3]
+    nc = (np.abs(rgb[:, :, 0]-CYAN[0]) + np.abs(rgb[:, :, 1]-CYAN[1]) + np.abs(rgb[:, :, 2]-CYAN[2])) > 60
+    on = ((al > 60) & nc).astype("float32")
+    H, W = on.shape
+    tw = max(1, round(W * ARENA_PX / NATIVE_LCD_PX))
+    th = max(1, round(H * ARENA_PX / NATIVE_LCD_PX))
+    img = Image.fromarray(on, "F").resize((tw, th), Image.BILINEAR)
+    return np.array(img) > 0.4
+
+
 def crop(m):
     ys, xs = np.where(m)
     if len(ys) == 0:
@@ -95,10 +115,15 @@ for name, fn in {"grave": "death.png", "sun": "noon.png", "moon": "night.png"}.i
 # training opponents: the punching bag (vaccine/virus/hp drills) + its broken form,
 # and the green pop-up target (data drill).  DVPet vaccinePrePrep/dataPrePrep opponents
 # -- the thing the pet actually fires its attack at during a drill's strike sequence.
-for name, fn in {"punching_bag": "punchingBag.png", "punching_bag_broken": "punchingBagBroken.png",
-                 "train_green": "trainGreen.png", "train_green_up": "trainGreenUp.png",
-                 "train_shield": "trainShield.png"}.items():       # data-drill shield
+for name, fn in {"punching_bag": "punchingBag.png", "punching_bag_broken": "punchingBagBroken.png"}.items():
     c = crop(native_mask(fn))
+    if c is not None:
+        effects[name] = [to_rows(c)]
+
+# data-drill cannon + shield: native-res art -> scale to the arena (see arena_mask).
+for name, fn in {"train_green": "trainGreen.png", "train_green_up": "trainGreenUp.png",
+                 "train_shield": "trainShield.png"}.items():
+    c = crop(arena_mask(fn))
     if c is not None:
         effects[name] = [to_rows(c)]
 
