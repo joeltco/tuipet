@@ -57,6 +57,7 @@ VIRUS_SPEEDS = (4.8, 6.0, 8.0)  # per-tick fill = DVPet +4 per VirusGameBarSpeed
 DATA_BOB = 3                  # ticks per feint up/down toggle during the telegraph
 DATA_TELEGRAPH = (21, 17, 15)  # feint window before commit (DVPet frame*8+pad*8 frames, /6 -> ticks)
 DATA_WINDOW = (10, 7, 5)      # reaction window after commit (DataTrainShootFrame{10,7,5}; 6*frame/6 -> ticks)
+DATA_FLY = 3                  # the committed shot's flight to the target (DVPet attackGreen: 3 intervals)
 DATA_IMPACT = 6               # the shot's impact flash (DVPet hitAnim: attackHit/Flash strobe, ~6 frames)
 HP_ROUNDS = 3
 HP_ROUNDS_WON = 2
@@ -155,6 +156,8 @@ class TrainingPanel:
         self.tgt_up = False          # the committed attack direction (only once locked)
         self.shield_up = True        # the player's shield: up (True) or down (False)
         self.blocked = False
+        self.fired = False           # DVPet onPreFinish: success is LOCKED; the shot now fires (cosmetic)
+        self.fly_t = 0               # DVPet attackGreen countdown: the committed shot flies to the target
         self.impact_t = 0            # DVPet hitAnim countdown: the shot's impact flash plays out
         self._impact_args = None     # the staged _finish() call, fired when the flash ends
         self._strike_pose = None     # transient hit(6)/miss(9) pose during a drill
@@ -300,22 +303,29 @@ class TrainingPanel:
                         1 if self.taps >= thr * 0.5 else 0)  # a clear overshoot = strong, near-miss = partial
                 self._finish(hits, int(self.taps), "Vaccine", "vaccine")
         elif gk == "data":
-            if self.impact_t > 0:                           # DVPet hitAnim -> aftermathGreen: the impact
-                self.impact_t -= 1                          # flash strobes, THEN the result is revealed
-                if self.impact_t == 0:
-                    self._finish(*self._impact_args)
+            if self.fired:                                  # success is locked (DVPet onPreFinish); the
+                if self.fly_t > 0:                          # finale is cosmetic.  DVPet attackGreen: the
+                    self.fly_t -= 1                          # committed shot flies to the shield/pet...
+                    if self.fly_t == 0:
+                        self.sfx = "attackHit"               # ...DVPet hitAnim: it lands
+                        self.impact_t = DATA_IMPACT
+                    return
+                if self.impact_t > 0:                        # the impact flash strobes, THEN aftermathGreen
+                    self.impact_t -= 1                       # reveals the result
+                    if self.impact_t == 0:
+                        self._finish(*self._impact_args)
+                    return
                 return
             self.data_t += 1
             if not self.locked:                             # telegraph: the cannon's barrel feints up/down
                 if self.data_t % DATA_BOB == 0:
                     self.feint_up = not self.feint_up
-                if self.data_t >= self.data_telegraph:      # ...then the cannon FIRES high or low
-                    self.locked = True
-                    self.tgt_up = random.choice((True, False))
+                if self.data_t >= self.data_telegraph:      # ...then it COMMITS high or low: the barrel
+                    self.locked = True                       # locks and the orb appears at the muzzle to
+                    self.tgt_up = random.choice((True, False))  # charge (you can still toggle the shield)
                     self.data_t = 0
-                    self.sfx = "attack"                     # DVPet turretShoot
-                    self.flash = "block it — UP or DOWN!"
-            elif self.data_t >= self.data_window:           # the shot reaches the shield/pet -> resolve
+                    self.flash = "block it — toggle the shield!"
+            elif self.data_t >= self.data_window:           # charge window closes -> EVAL (DVPet onPreFinish)
                 self._data_resolve()
         else:  # virus -- DVPet drawVirusPre: the bar FILLS then snaps back to 0 and loops;
             self.pos += self.virus_speed                     # hit captures the level at that instant
@@ -365,11 +375,9 @@ class TrainingPanel:
                 self._hp_resolve(self.hp_pick == self.hp_target)
             elif k in ("space", "enter"):
                 self._hp_resolve(self.hp_pick == self.hp_target)
-        elif gk == "data":                   # raise the shield to the matching side to block
-            if k in ("up", "k"):
-                self.shield_up = True
-            elif k in ("down", "j"):
-                self.shield_up = False
+        elif gk == "data":                   # DVPet onShield: ONE button toggles the shield top<->bot.
+            if not self.fired and k in ("space", "enter", "up", "down", "k", "j"):
+                self.shield_up = not self.shield_up   # toggleable until the shot commits (onPreFinish)
         elif k == "space":                   # vaccine mash / virus stop
             self._strike()
         return None
@@ -382,14 +390,13 @@ class TrainingPanel:
         self.blocked = self.shield_up == self.tgt_up
         if self.blocked:
             self.flash = "BLOCKED!"
-            self._flash(6)
             self._impact_args = (3, 60, "Data", "data")
         else:
             self.flash = "hit you!"
-            self._flash(9)
             self._impact_args = (0, 0, "Data", "data")
-        self.sfx = "attackHit"                              # DVPet hitAnim impact sound
-        self.impact_t = DATA_IMPACT
+        self.fired = True                                   # success LOCKED -> the shot fires (cosmetic)
+        self.fly_t = DATA_FLY
+        self.sfx = "attack"                                 # DVPet attackGreen turretShoot (cannon fires)
 
     def _flash(self, pose):
         """Briefly show a strike (6) or recoil (9) pose, like DVPet AttackSuccess/Fail."""
@@ -495,6 +502,8 @@ class TrainingPanel:
                 overlay.extend(_blit(cannon, 1, (ph - len(cannon)) // 2))
             if self.impact_t > 0:                            # DVPet aftermathGreen: block -> the pet stands
                 pose = IDLE if self.blocked else COLLAPSE    # normal; a clean hit -> the hurt pose (+10)
+            elif self.fired:                                 # DVPet attackGreen: pet braces for the shot
+                pose = IDLE
             else:                                            # DVPet drawDataPre bobs the pet (sprite 4<->1)
                 bob = 1 if (not self.locked and (self.frame_i // 2) % 2) else 0
                 pose = self._pose_now(bob)
@@ -509,15 +518,22 @@ class TrainingPanel:
                 overlay.extend(_blit(shield, sx, on_y))
                 overlay += [(sx + x, off_y + y) for y in range(sh_h) for x in range(sw)
                             if x in (0, sw - 1) or y in (0, sh_h - 1)]
-            if self.locked and self.impact_t == 0:           # the cannon has FIRED: the shot flies high/low
+            if (self.locked or self.fired) and self.impact_t == 0:
                 orb = data.attack_orb(self.pet.num, "Data", self.pet.data_power)  # DVPet attackGreen orb
                 ow, oh = len(orb[0]), len(orb)
-                lane = (top_y if self.tgt_up else bot_y) + (sh_h - oh) // 2
-                blocked = self.shield_up == self.tgt_up      # shield in the lane -> the shot stops at it
-                start = cw + 2
-                end = (sx - ow) if blocked else (px - ow)
-                prog = min(1.0, self.data_t / max(1, self.data_window))
-                overlay += _blit(orb, int(start + (end - start) * prog), lane)
+                oy = (top_y if self.tgt_up else bot_y) + (sh_h - oh) // 2  # the committed (high/low) lane
+                muzzle = cw + 2
+                if not self.fired:                           # DVPet drawDataPre: the orb CHARGES at the muzzle
+                    if self.frame_i % 2 == 0:                # -- pulses full/core to telegraph the height
+                        overlay += _blit(orb, muzzle, oy)
+                    else:
+                        core = [r[1:-1] for r in orb[1:-1]] or orb
+                        overlay += _blit(core, muzzle + 1, oy + 1)
+                else:                                        # DVPet attackGreen: the shot flies to the target
+                    blocked = self.shield_up == self.tgt_up  # shield in the lane -> the shot stops at it
+                    end = (sx - ow) if blocked else (px - ow)
+                    prog = (DATA_FLY - self.fly_t) / DATA_FLY
+                    overlay += _blit(orb, int(muzzle + (end - muzzle) * prog), oy)
             if self.impact_t > 0:                            # DVPet hitAnim: the fullscreen impact flash
                 ex = _EXPLODE[self.impact_t % len(_EXPLODE)]
                 ix = max(0, (sx if self.blocked else px) + 2 - len(ex[0]) // 2)
@@ -577,7 +593,7 @@ class TrainingPanel:
     def _hint(self):
         return {"hp": "←→ match the symbol   SPACE strike",
                 "vaccine": "SPACE hit the orb!   ESC out",
-                "data": "↑ / ↓ raise the shield the cannon faces",
+                "data": "SPACE toggle the shield to match the cannon",
                 "virus": "SPACE stop the marker in the zone"}[self.gkey]
 
     def _attr_pow(self):

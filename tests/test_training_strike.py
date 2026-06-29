@@ -109,16 +109,17 @@ def test_data_drill_is_a_shield_block_match():
     """DVPet controller checkSuccess(Data): success = shieldTop == isUp.  Raise the
     shield to the side the attack commits to -> block (success); mismatch -> hit."""
     def _settle(p):
-        """The shot lands, the impact flash (DVPet hitAnim) plays, then the result reveals."""
+        """EVAL (DVPet onPreFinish), then the cosmetic finale: the shot fires (attackGreen),
+        the impact flash plays (hitAnim), then the result reveals (aftermathGreen)."""
         p._data_resolve()
-        while p.impact_t > 0:                          # drive the impact flash to completion
+        while p.phase != "done":                       # drive fire -> impact -> reveal to completion
             p.anim()
     # matching shield blocks -> success
     panel = _panel("data")
     panel._start_game()
     panel.locked = True
     panel.tgt_up = True
-    panel.key("up")                                    # shield up vs HIGH attack
+    panel.shield_up = True                             # shield up vs HIGH attack -> match
     _settle(panel)
     assert panel.blocked and panel.success
     # mismatched shield -> the attack gets through
@@ -126,9 +127,23 @@ def test_data_drill_is_a_shield_block_match():
     panel._start_game()
     panel.locked = True
     panel.tgt_up = True
-    panel.key("down")                                  # shield down vs HIGH attack
+    panel.shield_up = False                            # shield down vs HIGH attack -> mismatch
     _settle(panel)
     assert not panel.blocked and not panel.success
+
+
+def test_data_shield_is_a_single_toggle():
+    """DVPet onShield: ONE button flips shieldActiveTop top<->bot (it starts UP via onPreTrain)."""
+    panel = _panel("data")
+    panel._start_game()
+    assert panel.shield_up is True                     # shield starts UP (shieldActiveTop = true)
+    panel.key("space")                                 # one button press toggles
+    assert panel.shield_up is False
+    panel.key("space")
+    assert panel.shield_up is True
+    panel.fired = True                                 # once the shot commits, the shield is locked
+    panel.key("space")
+    assert panel.shield_up is True                     # no longer toggleable
 
 
 def test_data_attack_commits_after_the_telegraph():
