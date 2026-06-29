@@ -518,21 +518,28 @@ class TrainingPanel:
                     bob = 1 if (not self.locked and (self.frame_i // 2) % 2) else 0
                     pose = self._pose_now(bob)
                 pf = self._frame(rec, pose)
+                # the creature sprite is mostly empty padding -> crop to its real body so it can be
+                # placed precisely (centred, hugged by the shields) instead of floating inside the box.
+                _ys = [y for y, row in enumerate(pf) if "1" in row]
+                _xs = [x for x in range(max(len(r) for r in pf))
+                       if any(x < len(r) and r[x] == "1" for r in pf)]
+                if _ys and _xs:
+                    pf = [row[_xs[0]:_xs[-1] + 1] for row in pf[_ys[0]:_ys[-1] + 1]]
                 pw = max(len(r) for r in pf)
                 phh = len(pf)
-                # DVPet data layout (dataPrePrep/attackGreen): cannon far LEFT grounded, barrel
-                # feints then commits high/low; pet far RIGHT; TWO shields stacked in FRONT of the
-                # pet (shieldTop locY 7 = high, shieldBot locY 36 = low), the raised side SOLID and
-                # the other 25%-alpha (shieldTransp); the orb fires from the muzzle in the committed
-                # lane.  DVPet's pet is 48px and the shields bracket the whole LCD; ours is 16px, so
-                # the two shield slots bracket OUR pet's body (upper/lower) -- same relation, our scale.
-                px = COLS - pw - 1                                 # pet far right, fully on-screen
-                py = ph - phh                                      # grounded on the same floor as the cannon
-                overlay.extend(_blit(cannon, 0, ph - ch))          # cannon hard-left, grounded
+                # Data layout, composed for tuipet's real estate (not a pixel-port -- our creature is a
+                # tiny dot-matrix, DVPet's is a 48px giant): cannon LEFT (barrel feints then commits
+                # high/low), pet RIGHT centred, and the two shields are a clearly-separated HIGH/LOW
+                # guard pair hugging the pet's front (high in the upper band, low in the lower) with the
+                # pet sitting in the gap between them.  Raised side = SOLID, other = faint (shieldTransp).
+                px = COLS - pw - 3                                 # pet on the right, fully on-screen
+                py = (ph - phh) // 2                               # centred in the LCD band (like the virus bar)
+                cy = (ph - ch) // 2                                # cannon centred, level with the pet
+                overlay.extend(_blit(cannon, DATA_MARGIN, cy))
                 overlay.extend(_blit(pf, px, py))
-                sx = px - sw + 1                                   # shields stand just in front of the pet
-                hi_y = py + 1                                      # top slot over the pet's upper body (high)
-                lo_y = py + phh - sh_h - 1                         # bot slot over the lower body (low)
+                sx = px - sw - 1                                   # shields stand just in front of the pet
+                hi_y = 2                                           # HIGH guard: upper band
+                lo_y = ph - sh_h - 2                               # LOW guard: lower band (clear gap between)
                 on_y = hi_y if self.shield_up else lo_y            # raised side = SOLID (trainShield)
                 off_y = lo_y if self.shield_up else hi_y           # other side = faint (DVPet shieldTransp:
                 if shield:                                         #   25% alpha -> a clean 1-in-4 dither)
