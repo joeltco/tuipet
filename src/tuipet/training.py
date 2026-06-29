@@ -58,7 +58,7 @@ DATA_BOB = 3                  # ticks per feint up/down toggle during the telegr
 DATA_TELEGRAPH = (21, 17, 15)  # feint window before commit (DVPet frame*8+pad*8 frames, /6 -> ticks)
 DATA_WINDOW = (10, 7, 5)      # reaction window after commit (DataTrainShootFrame{10,7,5}; 6*frame/6 -> ticks)
 DATA_MARGIN = 2               # the data stage's side margin: cannon/pet anchor inside this, never the edge
-DATA_FLY = 3                  # the committed shot's flight to the target (DVPet attackGreen: 3 intervals)
+DATA_FLY = 6                  # the committed shot's flight to the target (enough frames to read clearly)
 #  collision = the battle's exact beats: EXPLODE_FRAMES strobe (hitAnim) + FLINCH_T pose (aftermathGreen)
 HP_ROUNDS = 3
 HP_ROUNDS_WON = 2
@@ -523,10 +523,12 @@ class TrainingPanel:
                 pet_h = len(pf)
                 band_top = (ph - pet_h) // 2                 # CENTRE the stage vertically (like virus)
                 floor = band_top + pet_h                     # the shared baseline of the centred band
-                px = COLS - pw - DATA_MARGIN                 # pet RIGHT, inside the margin
+                # DVPet layout: cannon hard LEFT (locX 0), pet far RIGHT and clipped off the edge
+                # (its 48px sprite shows only the left half) so the shot has a CLEAR firing lane.
+                px = COLS - pw + 4                           # pet RIGHT, clipped -> leaves the orb room
                 overlay.extend(_blit(pf, px, floor - pet_h))
-                overlay.extend(_blit(cannon, DATA_MARGIN, floor - ch))   # cannon LEFT, same baseline
-                muzzle_x, muzzle_y = DATA_MARGIN + cw, floor - ch + 1
+                overlay.extend(_blit(cannon, 0, floor - ch))   # cannon hard LEFT, same baseline
+                muzzle_x, muzzle_y = cw, floor - ch + 1
                 sx = px - sw - 1                             # the shield stands just in front of the pet
                 hi_y = band_top + 1                          # high slot = top of the centred band
                 lo_y = floor - sh_h - 1                      # low  slot = bottom of the centred band
@@ -536,13 +538,15 @@ class TrainingPanel:
                     overlay += [(sx + x, off_y + y) for y in range(sh_h) for x in range(sw)
                                 if shield[y][x] == "1" and (x + y) % 2 == 0]  # dotted = shieldTransp
                     overlay.extend(_blit(shield, sx, on_y))
-                if self.fired and self.fly_t > 0:            # DVPet attackGreen: the shot flies muzzle ->
-                    orb = data.attack_orb(self.pet.num, "Data", self.pet.data_power)  # the committed slot
+                if self.fired and self.fly_t > 0:            # DVPet attackGreen: the shot flies from the
+                    # muzzle to the committed lane.  BLOCK -> it stops at the shield; MISS -> the shield
+                    # isn't there, so the shot gets through and HITS THE MON (DVPet: success=shield==up).
+                    orb = data.load_orbs()["generic"]["Data"][0]   # DVPet spriteSheet[25]: generic Data orb
                     ow, oh = len(orb[0]), len(orb)
                     blocked = self.shield_up == self.tgt_up
-                    end_x = (sx - ow) if blocked else (px - ow)
+                    end_x = (sx - ow) if blocked else (px + 1)     # block: at the shield; miss: into the pet
                     lane_y = (hi_y if self.tgt_up else lo_y) + (sh_h - oh) // 2
-                    prog = (DATA_FLY - self.fly_t) / DATA_FLY
+                    prog = (DATA_FLY - self.fly_t) / (DATA_FLY - 1)   # 0 at the muzzle -> 1.0 ARRIVED
                     fx = int(muzzle_x + (end_x - muzzle_x) * prog)
                     fy = int((muzzle_y - oh // 2) + (lane_y - (muzzle_y - oh // 2)) * prog)
                     overlay += _blit(orb, fx, fy)
