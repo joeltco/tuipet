@@ -59,7 +59,8 @@ structure/sprites, applying the JP↔EN romanization map (see sources.json `roma
 - [x] **DM20 evolution conditions** → `canon/humulos/dm20/evo_ver1-5.md`, `evo_special.md`, `evo_extra.md`.
 - [x] **DM20 unified DB built** → `db/dm20.json` (154 mons; 134 playable + 20 colosseum-only; via `db/build_dm20.py`).
 - [x] **dmx complete** → `db/dmx.json` (175 mons, 119 w/ evolutions). V3 XE/XF edges parsed deterministically from the chart HTML (`db/parse_dmx3_chart.py`); pure-V3 attributes null (chart has none — backfill later).
-- [~] pen20: 5 classic versions + MAJOR 20th bonus lines (`db/pen20.json`, 239 mons, 123 w/ evolutions). 57 extended-Adventure/misc still pending (WebFetch too noisy — needs chart-parse/manual).
+- [x] **pen20 COMPLETE** → `db/pen20.json` (262 mons, 207 w/ evolutions) rebuilt from humulos' AUTHORITATIVE inline `result` DB (`canon/humulos/pen20/result.json` via `db/extract_humulos_result.py`). Exact conditions, per-branch version tags, jogress, sleep times. 30 sprite gaps (jogress-finals/Royal Knights/Demon Lords absent from wayland — DVPet fallback).
+- [ ] **APPLY result-DB technique to dm20/dmx/pen/dm** — every humulos page embeds `result=[...]`; rebuilding from it supersedes the WebFetch/chart-parse work with clean+complete data (would fill dmx pure-V3 attributes, make dm20 100%, give pen its own data).
 - [~] pen: DERIVED from pen20 classic data + pen timers (`db/pen.json`, 143). Clean /pen/ pull would refine.
 - [ ] dm evolution conditions + DB.
 - [ ] Extract wayland sprites → usable atlas (downsample /4 + split frames).

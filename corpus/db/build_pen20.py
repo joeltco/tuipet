@@ -1,137 +1,87 @@
 #!/usr/bin/env python3
-"""Build corpus/db/pen20.json — unified Pendulum Ver.20th database.
+"""Build corpus/db/pen20.json from humulos' authoritative inline `result` database.
 
-Conditions from humulos /pen20/ per-version (Nature Spirits / Deep Savers / Nightmare
-Soldiers / Wind Guardians / Metal Empire). Pendulum's signature mechanic is JOGRESS (DNA):
-combine two partners. Sprites + stage timers from wayland-vpets assets/pen20.
-NOTE: pen20's full roster (~240) = these 5 classic versions + 20th-anniversary bonus lines
-(Guilmon/V-mon/Terriermon/DORUmon/etc.) NOT yet pulled -> those appear sprite-only,
-addition_pending=true.
+Source: corpus/canon/humulos/pen20/result.json (via extract_humulos_result.py from the
+device page HTML). Complete + clean: every mon's stage, attribute, evo1-6 + exact req text,
+parents, version (egg1/egg2 family names), jogress, sleep, strength. Supersedes the earlier
+per-version/bonus WebFetch .md files (kept as backup in canon/humulos/pen20/evo_*.md).
+Sprites: wayland-vpets assets/pen20. Stage timers: wayland docs (pen20 column).
 """
-import os, re, json, glob
+import os, re, json, difflib
 
 HERE = os.path.dirname(os.path.abspath(__file__)); CORPUS = os.path.dirname(HERE)
-HUM = os.path.join(CORPUS, "canon/humulos/pen20")
+RESULT = os.path.join(CORPUS, "canon/humulos/pen20/result.json")
 SPR = os.path.join(CORPUS, "fan/wayland-vpets/assets/pen20")
-
 STAGE_TIMER = {"Baby I": "10 min", "Baby II": "12 h", "Child": "24 h",
-               "Adult": "40 h", "Perfect": "48 h", "Ultimate": None, "Egg": "1 min"}
-STAGE_RE = r'(Baby I{1,2}|Child|Adult|Perfect|Ultimate|Egg)'
-ATTRCODE = {"va": "Vaccine", "da": "Data", "vi": "Virus", "fr": "Free"}
-VER = {"evo_v1_nature_spirits.md": (1, "Nature Spirits"), "evo_v2_deep_savers.md": (2, "Deep Savers"),
-       "evo_v3_nightmare_soldiers.md": (3, "Nightmare Soldiers"), "evo_v4_wind_guardians.md": (4, "Wind Guardians"),
-       "evo_v5_metal_empire.md": (5, "Metal Empire")}
+               "Adult": "40 h", "Perfect": "48 h", "Ultimate": None, "Super Ultimate": None}
 
-def norm(s): return re.sub(r'[^a-z0-9]', '', s.lower())
+def norm(s): return re.sub(r'[^a-z0-9]', '', (s or "").lower())
+def clean_name(n):  # strip trailing version tag like "Angewomon (NSp)"
+    return re.sub(r'\s*\([A-Za-z]{2,4}\)\s*$', '', n or "").strip()
 
-KNOWN = set()
-for f in glob.glob(os.path.join(HUM, "evo_v*.md")):
-    for line in open(f):
-        if "|" in line and not line.startswith("#"):
-            KNOWN.add(norm(line.split("|")[0]))
-
-def split_target(t):
-    t = t.strip()
-    if norm(t) in KNOWN: return t, ""
-    m = re.match(r'^(.*?)\(([^()]*)\)\s*$', t)
-    if m: return m.group(1).strip(), m.group(2).strip()
-    return t, ""
-
-def parse_cond(raw):
-    if not raw or raw.lower() in ("none", "terminal", "?", "next", "terminal?"): return {}
-    if " OR " in raw:
-        return {"alternatives": [parse_cond(a) for a in raw.split(" OR ")]}
+def parse_req(raw):
+    if not raw or raw.strip() in ("", "-"): return {}
     p = {}
-    cm = re.search(r'(\d+\+?|\d+-\d+)\s*CM', raw); p.update(care_mistakes=cm.group(1)) if cm else None
+    cm = re.search(r'(\d+\+?|\d+-\d+)\s*Care Mistakes?', raw); p.update(care_mistakes=cm.group(1)) if cm else None
     ef = re.search(r'(\d+\+?|\d+-\d+)\s*Effort', raw); p.update(effort=ef.group(1)) if ef else None
-    wr = re.search(r'battles?\s*(\d+/\d+)', raw, re.I);
-    if wr: p["win_ratio"] = wr.group(1); p["battles"] = True
-    elif re.search(r'\bbattles?\b', raw, re.I): p["battles"] = True
-    # jogress (DNA) — "with X" (named) | "Va+Da" (attr codes) | "WarGreymon + MetalGarurumon" (named)
-    if "Jogress" in raw:
-        mw = re.search(r'Jogress with ([A-Za-z: ]+)', raw)
-        seg = (re.search(r'Jogress\s+([^();]+)', raw).group(1).strip() if re.search(r'Jogress\s+([^();]+)', raw) else "")
-        if mw:
-            p["jogress_partner"] = mw.group(1).strip()
-        elif re.fullmatch(r'(Va|Da|Vi|Fr)(\s*\+\s*(Va|Da|Vi|Fr))*', seg):
-            p["jogress_attrs"] = [ATTRCODE[x.lower()] for x in re.findall(r'Va|Da|Vi|Fr', seg)]
-        elif "+" in seg:
-            p["jogress_partners"] = [s.strip() for s in seg.split("+")]
-        else:
-            p["jogress_raw"] = seg
+    if re.search(r'\bbattles?\b', raw, re.I): p["battles"] = True
+    wr = re.search(r'(\d+/\d+)', raw); p.update(win_ratio=wr.group(1)) if wr else None
+    jp = re.search(r'Jogress(?: with)?\s+([A-Za-z:][\w :]+)', raw, re.I)
+    if jp: p["jogress_partner"] = jp.group(1).strip()
+    elif re.search(r'jogress', raw, re.I): p["jogress"] = True
     return p
 
-def sprite_index(d):
-    idx = {}
-    if os.path.isdir(d):
-        for fn in os.listdir(d):
-            if fn.endswith(".png"): idx[norm(fn[:-4])] = os.path.relpath(os.path.join(d, fn), CORPUS)
-    return idx
-SPI = sprite_index(SPR)
-def find_sprite(n): return SPI.get(norm(n))
+# sprite index
+SPI = {}
+if os.path.isdir(SPR):
+    for fn in os.listdir(SPR):
+        if fn.endswith(".png"): SPI[norm(fn[:-4])] = os.path.relpath(os.path.join(SPR, fn), CORPUS)
+_SPI_KEYS = list(SPI)
+def find_sprite(name, slug):
+    hit = SPI.get(norm(name)) or SPI.get(norm(slug))
+    if hit: return hit
+    # fuzzy fallback for romanization variants (Guilmon->Guimon, Mugendramon->Mugendra, etc.)
+    m = difflib.get_close_matches(norm(name), _SPI_KEYS, n=1, cutoff=0.86)
+    return SPI[m[0]] if m else None
+
+data = [d for d in json.load(open(RESULT)) if d.get("name") and d.get("evoStage")]
+by_slug = {d["url"]: d for d in data if d.get("url")}
 
 records = {}
-def rec(name, stage=None, attr=None):
-    r = records.get(norm(name))
-    if not r:
-        r = records[norm(name)] = {"id": norm(name), "name": name, "stage": stage, "attribute": attr,
-            "devices": {"pen20": {"versions": [], "stage_time": STAGE_TIMER.get(stage), "evolves_to": []}},
-            "sprite": find_sprite(name), "sources": ["humulos:pen20"]}
-    if stage and not r["stage"]:
-        r["stage"] = stage; r["devices"]["pen20"]["stage_time"] = STAGE_TIMER.get(stage)
-    if attr and not r["attribute"]: r["attribute"] = attr
-    return r
-
-for fn in sorted(glob.glob(os.path.join(HUM, "evo_*.md"))):
-    meta = VER.get(os.path.basename(fn))
-    vnum, vname = meta if meta else ("20th", "20th additions")
-    for line in open(fn):
-        line = line.strip()
-        if not line or line.startswith("#") or "|" not in line: continue
-        parts = [x.strip() for x in line.split("|")]
-        if len(parts) < 4: continue
-        name, stage, attr, rest = parts[0], parts[1], parts[2], "|".join(parts[3:])
-        sm = re.search(STAGE_RE, stage); stage = sm.group(1) if sm else stage
-        r = rec(name, stage, attr)
-        dev = r["devices"]["pen20"]
-        if vnum not in dev["versions"]: dev["versions"].append(vnum)
-        rest = re.sub(r'^->\s*', '', rest).strip()
-        if rest.lower() in ("(terminal)", "(next)", "(?)", "(terminal?)", "(terminal/special)", ""): continue
-        seen = {(e["to"], e["raw"]) for e in dev["evolves_to"]}
-        for chunk in rest.split(";"):
-            chunk = chunk.strip()
-            if not chunk or chunk.startswith("(") and chunk.endswith(")") and "Jogress" not in chunk and norm(chunk) not in KNOWN:
-                # bare "(conditions)" with no target name (extractor dropped the target)
-                dev.setdefault("_unresolved", []).append(chunk.strip("()"))
-                continue
-            to, cond = split_target(chunk)
-            if not to or (to, cond) in seen: continue
-            seen.add((to, cond))
-            dev["evolves_to"].append({"to": to, "to_id": norm(to), "raw": cond, "parsed": parse_cond(cond)})
-            rec(to)
-
-# wayland filename romanization typos -> canonical record id
-WAYLAND_ALIAS = {"guimon": "guilmon", "monchromon": "monochromon", "hangymon": "hangyomon",
-                 "porcupmon": "porcupamon", "mambomon": "manbomon", "beowulfmon": "beowolfmon"}
-# spine: wayland pen20 sprites -> records; 20th-addition lines (no version data) flagged
-for k, path in SPI.items():
-    canon = WAYLAND_ALIAS.get(k, k)
-    if canon in records:
-        if not records[canon]["sprite"]: records[canon]["sprite"] = path
-        continue
-    if k not in records:
-        records[k] = {"id": k, "name": os.path.basename(path)[:-4], "stage": None, "attribute": None,
-            "devices": {"pen20": {"versions": [], "stage_time": None, "evolves_to": []}},
-            "sprite": path, "sources": ["wayland-vpets:pen20"], "addition_pending": True}
+for d in data:
+    name = d["name"]; rid = norm(name); stage = d.get("evoStage")
+    versions = []
+    for vk in ("egg1", "egg2"):
+        if d.get(vk) and d[vk] not in versions: versions.append(d[vk])
+    evos = []
+    for i in range(1, 7):
+        ev = d.get(f"evo{i}")
+        if not ev or ev in ("blank", "rest"): continue
+        tname = clean_name(d.get(f"evo{i}_name") or by_slug.get(ev, {}).get("name") or ev)
+        raw = (d.get(f"evo{i}_req") or "").strip()
+        e = {"to": tname, "to_id": norm(tname), "via_slug": ev, "raw": raw, "parsed": parse_req(raw)}
+        vtag = re.search(r'\(([A-Za-z]{2,4})\)\s*$', d.get(f"evo{i}_name") or "")
+        if vtag: e["version_tag"] = vtag.group(1)
+        evos.append(e)
+    records[rid] = {
+        "id": rid, "name": name, "stage": stage, "level": d.get("level"),
+        "attribute": d.get("attribute") if d.get("attribute") not in ("invalid", "") else None,
+        "alt_attribute": d.get("alt_attribute") or None,
+        "devices": {"pen20": {"versions": versions, "stage_time": STAGE_TIMER.get(stage),
+                              "evolves_to": evos}},
+        "sprite": find_sprite(name, d.get("url")),
+        "jogress_capable": d.get("jogress") == "Yes",
+        "sleep": d.get("sleep") or None, "strength": d.get("strength_value") or None,
+        "sources": ["humulos:pen20:result"]}
 
 no_sprite = sorted(r["name"] for r in records.values() if not r["sprite"])
-pending = sorted(r["name"] for r in records.values() if r.get("addition_pending"))
 withevo = sum(1 for r in records.values() if r["devices"]["pen20"]["evolves_to"])
-out = {"_meta": {"device": "pen20", "count": len(records),
-        "source": "humulos /pen20/ per-version (NS/DS/NSo/WG/ME) + wayland sprites/timers",
-        "with_evolutions": withevo,
-        "complete": "5 CLASSIC versions + MAJOR 20th bonus lines captured (Adventure/Virus-Busters main, Tamers, 02, DORU->Alphamon, Ryudamon, Lalamon, Hackmon, Zuba, Draco->Slayer/Break, Meicoo, Ludomon). 123/239 with evolution data. addition_pending = the EXTENDED Virus-Busters/Adventure alt-evolution roster (Angemon/Devimon/angel line/Mamemon/etc.) + misc small forms — WebFetch extracts these too noisily to trust (it hallucinated Agumon->Angemon), so they're left flagged for a deterministic chart-parse or manual pass, NOT ingested as bad data. JOGRESS mechanic parsed (jogress_attrs/partner/partners).",
-        "addition_pending_count": len(pending), "sprite_gaps": no_sprite},
+out = {"_meta": {"device": "pen20", "count": len(records), "with_evolutions": withevo,
+        "source": "humulos inline `result` DB (canon/humulos/pen20/result.json) — authoritative + complete",
+        "complete": "ALL pen20 mons (5 classic versions + 20th bonus lines) from the page's own structured data: exact evo conditions (evo*_req), stages, attributes, versions (egg1/egg2), jogress, sleep times, strength. Supersedes the earlier WebFetch .md extraction.",
+        "version_tags_note": "evolves_to[].version_tag = the version that branch belongs to (NSp/DSa/NSo/WGu/MEm/VBu/etc); evo conditions can differ per version.",
+        "sprite_gaps": no_sprite},
        "digimon": [records[k] for k in sorted(records)]}
 with open(os.path.join(HERE, "pen20.json"), "w") as fh: json.dump(out, fh, indent=1, ensure_ascii=False)
-print(f"wrote pen20.json: {len(records)} mons | with evolutions {withevo} | addition_pending {len(pending)} | sprite_gaps {len(no_sprite)}")
+print(f"wrote pen20.json: {len(records)} mons | with evolutions {withevo} | sprite_gaps {len(no_sprite)}")
+if no_sprite: print("  no sprite:", ", ".join(no_sprite[:20]), "..." if len(no_sprite) > 20 else "")
