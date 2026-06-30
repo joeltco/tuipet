@@ -1,6 +1,6 @@
 """Load game data. Roster / sprites / stages / evolution graph now come from the
-authentic DM20 corpus via `species` + `data/dm20_sprites.json.gz` (the wayland-native
-atlas). The remaining DVPet CSVs (foods/enemies/care) are still read here until those
+authentic DM20 corpus via `species` + `data/dm20_sprites.json.gz` (DVPet 16x16 art in
+native DVPet frame order). The remaining DVPet CSVs (foods/enemies/care) are still read here until those
 subsystems are rebuilt."""
 from __future__ import annotations
 import csv
@@ -16,7 +16,7 @@ _DATA = os.path.join(_HERE, "data")
 _RAW = _DATA  # bundled CSVs (foods/enemies/care) live alongside sprites
 _ATLAS = os.path.join(_DATA, "dm20_sprites.json.gz")
 
-# Animation roles + growth order now come from the authentic DM20 atlas (wayland-native
+# Animation roles + growth order now come from the authentic DM20 atlas (DVPet-native
 # frame order). See species.ROLES / species.STAGE_ORDER.
 ROLES = species.ROLES
 MIRROR_ROLES = species.MIRROR_ROLES
@@ -50,7 +50,7 @@ def _content_fill(frame):
 
 @lru_cache(maxsize=1)
 def load_sprites():
-    """The authentic DM20 sprite atlas (wayland-native frames), keyed by species num."""
+    """The authentic DM20 sprite atlas (DVPet 16x16 art, native frame order), keyed by species num."""
     from . import placeholder
     with gzip.open(_ATLAS, "rt", encoding="utf-8") as fh:
         data = json.load(fh)["sprites"]

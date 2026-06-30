@@ -433,7 +433,7 @@ class Screen(Static):
             push = max(0, base + clear + SPRITE_W - wx)        # wash shove, measured from the pet's RIGHT edge
             xshift = clear - push                              # pet starts cleared of the filth, then both
             if push > 0:                                       # slide left in lockstep (gap preserved, no mash)
-                rows = self._pose_rows_idx(pet, 4)             # wayland happy(4): pleased while washed
+                rows = self._pose_rows_idx(pet, 4)             # DVPet clean-done(4): pleased while washed
             pm = E.get("poop", [None])[0]
             if pm and fx.get("poop"):
                 pw, ph_ = len(pm[0]), len(pm)
@@ -447,7 +447,7 @@ class Screen(Static):
             # DVPet cheer(): pose alternates up(+5)/down(+7) every 6 intervals with a
             # "happy" emote bubble pulsing on the up-beats; ends ~beat 30.
             up = (step // 6) % 2 == 0
-            rows = self._pose_rows_idx(pet, 4 if up else 0)   # wayland happy(4) <-> idle(0) bounce
+            rows = self._pose_rows_idx(pet, 5 if up else 7)   # DVPet cheer up(5) <-> down(7) bounce
             if up:
                 hap = data.load_effects().get("happy")
                 if hap:
@@ -462,13 +462,13 @@ class Screen(Static):
             # emote bubble) -- here the body actually leaves the ground.
             ph = step % PLAY_HOP
             up = ph < PLAY_HOP // 2
-            rows = self._pose_rows_idx(pet, 4 if up else 1)   # wayland happy(4) on the hop, idle_2(1) on land
+            rows = self._pose_rows_idx(pet, 5 if up else 1)   # DVPet excited(5) on the hop, idle-B(1) on land
             yshift = int(PLAY_HOP_H * (1 - abs(ph / (PLAY_HOP / 2) - 1)))   # triangle: 0 -> apex -> 0
         elif fx["kind"] == "jeer":
             # DVPet jeer(): pose alternates down(+10)/up(+9) every 6 intervals with an
             # "unhappy" emote bubble; ends ~beat 30 (the scold reaction).
             down = (step // 6) % 2 == 0
-            rows = self._pose_rows_idx(pet, 8 if down else 2)   # wayland sad(8) <-> angry(2): scold reaction
+            rows = self._pose_rows_idx(pet, 10 if down else 9)   # DVPet jeer down(10) <-> up(9): scold reaction
             un = data.load_effects().get("unhappy")
             if un:
                 uf = un[(step // 6) % len(un)]

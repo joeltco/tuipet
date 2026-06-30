@@ -73,7 +73,7 @@ if __name__ == "__main__":
     from rich.console import Console
     c = Console()
     c.print(f"[bold]{d['name']}[/] ({d['stage']}, {d['attribute']})  {d['w']}x{d['h']}px  palette={pal}")
-    for i in (0, 1, 4, 6):  # wayland: idle a/b, happy, sleep
+    for i in (0, 1, 2, 6):  # DVPet: idle, idle-b, sleep, attack
         c.print(f"frame {i}:")
         c.print(frame_text(d["frames"][i], on, off))
 
