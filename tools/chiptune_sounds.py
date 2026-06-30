@@ -1,26 +1,29 @@
 #!/usr/bin/env python3
 """Render tuipet's SFX as raw square-wave CHIPTUNE, transcribed from the authentic
-DVPet recordings by CONTINUOUS pitch tracking.
+DVPet recordings by CONTINUOUS pitch tracking, analysed under a slow-motion "lens".
 
 Pipeline: authentic DVPet recording (raw_resources/sounds/*.wav)
-          -> frame the audio every 8 ms (40 ms window)
-          -> per frame: RMS (amplitude gate) + exact fundamental via Harmonic
-             Product Spectrum (FFT) -> a continuous pitch+gate contour
-          -> median-smooth the pitch (kills stray single-frame octave spikes)
-          -> one square-wave voice driven by a phase accumulator that follows the
-             contour sample-for-sample, gated by the amplitude envelope
-          -> mono 16-bit 44.1 kHz WAV.
+          -> time-stretch ANALYSIS_STRETCHx slower, pitch preserved (rubberband) --
+             a transcription microscope: fast sweeps spread out so each note resolves
+             cleanly (halves octave-detection errors). PLAYBACK speed is unaffected.
+          -> frame the slowed audio: RMS (amplitude gate) + exact fundamental via
+             Harmonic Product Spectrum (FFT), median-smoothed -> a fine pitch contour
+          -> render that contour back at the ORIGINAL tempo: one square-wave voice via
+             a phase accumulator following it sample-for-sample, gated by the envelope
+          -> mono 16-bit 44.1 kHz WAV, native game speed.
 
-Why not aubio note-detection (earlier attempts): aubionotes chops the sound into a
-few discrete notes with silent gaps between -> dead air = audible delay, and it
-under-samples the fast pitch sweeps -> wrong melody. aubionotes' pitch is also
-octave-broken and snaps to integer semitones, while the device tones sit ~30-40 c
-flat. Continuous HPS tracking follows the REAL contour, timing-aligned, true tuning.
+Why slow only for analysis: the user wants device-speed SFX, but fast sweeps blur a
+real-time pitch tracker. Slowing the AUDIO (not the output) gives fine musical-time
+resolution while each FFT window still holds full waveform cycles (good freq res) --
+something a shorter real-time window can't do. aubio note-detection was abandoned
+earlier (discrete notes -> silent-gap delay; octave-broken, semitone-snapped pitch).
 
 Nothing is invented -- pitch, timing and dynamics are all measured off the recording.
-Requires numpy. Run: python3 tools/chiptune_sounds.py
+Requires numpy + ffmpeg + rubberband. Run: python3 tools/chiptune_sounds.py
 """
 import os
+import subprocess  # nosec B404 - ffmpeg/rubberband from PATH, no shell, our own files
+import tempfile
 import wave
 
 import numpy as np
@@ -38,10 +41,8 @@ HOP_MS, WIN_MS = 8.0, 40.0
 F0_MIN, F0_MAX = 120.0, 2600.0
 GATE_FRAC = 0.10       # voiced when frame RMS > 10% of the file's peak RMS
 GATE_FLOOR = 0.02
-# Time-stretch (pitch unchanged) the long melodic cues so fast sweeps are heard as a
-# clear tune instead of a blur; UI ticks / combat hits below the threshold stay snappy.
-SLOW = 1.4
-SLOW_MIN_S = 0.8
+ANALYSIS_STRETCH = 4.0 # slow the audio this much for pitch detection ONLY (output stays native)
+SMOOTH = 4             # median window = 2*SMOOTH+1 frames (wider, since slowed frames are short)
 
 # tuipet cue -> authentic DVPet source stem (5 subs have no 1:1 cue; see git history)
 MAP = {
@@ -114,25 +115,41 @@ def track(a, fr):
     vi = np.where(gate)[0]
     sm = f0.copy()
     for j, i in enumerate(vi):
-        lo, hi = max(0, j - 2), min(len(vi), j + 3)
+        lo, hi = max(0, j - SMOOTH), min(len(vi), j + SMOOTH + 1)
         sm[i] = np.median(f0[vi[lo:hi]])
     return sm, gate, hop
 
 
-def render(src):
-    a, fr = load(src)
-    stretch = SLOW if len(a) / fr >= SLOW_MIN_S else 1.0     # slow only the long melodic cues
-    f0, gate, hop = track(a, fr)
-    rep = max(1, int(round(hop * stretch)))                  # hold each frame `rep` samples -> time-stretch
-    f0s = np.repeat(f0, rep)
-    g = np.repeat(gate.astype(np.float64), rep)
+def stretch_for_analysis(src, tmp):
+    """rubberband: a pitch-preserved slow-mo copy of the recording for transcription."""
+    base = os.path.basename(src)
+    t16 = os.path.join(tmp, base + ".16.wav")
+    tsl = os.path.join(tmp, base + ".slow.wav")
+    subprocess.run(["ffmpeg", "-y", "-i", src, "-ar", "44100", "-ac", "1",   # nosec B603,B607
+                    "-c:a", "pcm_s16le", t16],
+                   stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True)
+    subprocess.run(["rubberband", "-t", str(ANALYSIS_STRETCH), t16, tsl],     # nosec B603,B607
+                   stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True)
+    return tsl
+
+
+def render(src, tmp):
+    n_orig = len(load(src)[0])                               # original length -> output stays native speed
+    asl, fr = load(stretch_for_analysis(src, tmp))           # slowed audio, analysed under the lens
+    f0, gate, hop = track(asl, fr)
+    rep = max(1, int(round(hop / ANALYSIS_STRETCH)))         # map slowed frames back to ORIGINAL tempo
+    f0s = np.repeat(f0, rep)[:n_orig]
+    g = np.repeat(gate.astype(np.float64), rep)[:n_orig]
+    if len(f0s) < n_orig:                                    # pad tail to the native length
+        f0s = np.pad(f0s, (0, n_orig - len(f0s)))
+        g = np.pad(g, (0, n_orig - len(g)))
     f0s = np.where(f0s > 0, f0s, 1.0)                        # avoid 0-phase stall (gated off anyway)
     phase = np.cumsum(2.0 * np.pi * f0s / fr)                # phase accumulator -> glitch-free pitch glide
     sig = AMP * np.sign(np.sin(phase))
     ramp = max(1, int(fr * 0.004))                           # 4 ms gate ramp -> no clicks
     g = np.convolve(g, np.ones(ramp) / ramp, "same")
     out = np.clip(sig * g, -1.0, 1.0).astype(np.float32)
-    return out, fr, int(gate.sum()), stretch
+    return out, fr, int(gate.sum())
 
 
 def write_wav(path, buf, fr):
@@ -146,17 +163,16 @@ def write_wav(path, buf, fr):
 
 
 def main():
-    for cue, stem in MAP.items():
-        src = os.path.join(SRC, stem + ".wav")
-        if not os.path.exists(src):
-            print("  MISSING SOURCE:", cue, stem)
-            continue
-        buf, fr, voiced, stretch = render(src)
-        write_wav(os.path.join(OUT, cue + ".wav"), buf, fr)
-        print("  %-14s <- %-13s %.2fs, %d voiced frames%s%s"
-              % (cue, stem + ".wav", len(buf) / fr, voiced,
-                 "  slow%.2gx" % stretch if stretch != 1.0 else "",
-                 "  [SUB]" if cue in SUBS else ""))
+    with tempfile.TemporaryDirectory(prefix="tuipet_sfx_") as tmp:
+        for cue, stem in MAP.items():
+            src = os.path.join(SRC, stem + ".wav")
+            if not os.path.exists(src):
+                print("  MISSING SOURCE:", cue, stem)
+                continue
+            buf, fr, voiced = render(src, tmp)
+            write_wav(os.path.join(OUT, cue + ".wav"), buf, fr)
+            print("  %-14s <- %-13s %.2fs, %d voiced frames%s"
+                  % (cue, stem + ".wav", len(buf) / fr, voiced, "  [SUB]" if cue in SUBS else ""))
 
 
 if __name__ == "__main__":
