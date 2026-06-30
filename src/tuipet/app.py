@@ -43,6 +43,7 @@ SPRITE_W = 16                                   # native creature sprite width
 # vertical). The roamer paces within [PLAY_X0, PLAY_RIGHT]; render.PLAY_COLS clamps the rest.
 PLAY_COLS = 32
 PLAY_X0 = (SCREEN_COLS - PLAY_COLS) // 2        # 4: left edge of the centred play window
+PLAY_R = PLAY_X0 + PLAY_COLS                     # 36: right edge of the play window (HUD icons stay inside)
 PLAY_RIGHT = PLAY_X0 + PLAY_COLS - SPRITE_W     # 20: rightmost sprite-x that fits in the window
 
 import re as _re
@@ -151,7 +152,7 @@ def _effect_overlay(pet, frame_i, cols, px_h, tick=0, pet_right=None):
         pw, ph_ = len(pm[0]), len(pm)
         for i in range(min(pet.poop, POOP_MAX_PILES)):                  # DVPet drawFilthLevel: 3 columns x 2 rows,
             col, up = i // 2, i % 2                         # column-major (bottom pile, then one stacked
-            x = 2 + col * (pw + POOP_PAD)                   # directly above it), each column steps right
+            x = PLAY_X0 + 2 + col * (pw + POOP_PAD)         # directly above it), each column steps right (in-window)
             y = (px_h - 2 - ph_) - up * ph_
             pts += _blit(pm, x, y)
     if pet.num == -1:
@@ -162,12 +163,12 @@ def _effect_overlay(pet, frame_i, cols, px_h, tick=0, pet_right=None):
     if asleep and E.get("zzz"):
         z = E["zzz"][(frame_i // 2) % len(E["zzz"])]
         zw, zz_h = len(z[0]), len(z)
-        pts += _blit(z, cols - zw - 1, 0)
+        pts += _blit(z, PLAY_R - zw - 1, 0)               # top-right of the play window
     # --- condition column: fixed right edge, every active condition stacked + blinking ---
     # DVPet stateNumTic blink: 7 ticks awake / 10 asleep, faster (7) when unwell.
     unwell = pet.sick or pet.is_injured() or pet.is_fatigued()
     sf = (tick // (7 if unwell else (10 if asleep else 7))) % 2
-    col_x = cols - COND_W - 1                              # 1px off the right bezel (DVPet leaves ~2px)
+    col_x = PLAY_R - COND_W - 1                            # 1px off the play-window's right edge
     col_y0 = (zz_h + 1) if (asleep and zz_h) else 0        # even y -> crisp half-block alignment; below Zzz when asleep
     column = (("st_sick", pet.sick), ("st_medicine", pet.has_medicine()),
               ("st_injury", pet.is_injured()), ("st_bandage", pet.has_bandage()),
@@ -203,9 +204,9 @@ def _effect_overlay(pet, frame_i, cols, px_h, tick=0, pet_right=None):
         if bubble:
             bm = bubble[(tick // 5) % len(bubble)]        # if both present, take turns (rare)
             w = len(bm[0])
-            pr = pet_right if pet_right is not None else cols - 1
-            right_limit = (col_x - 1 - w) if col_active else (cols - w - 1)
-            x = max(0, min(pr + 1, right_limit))
+            pr = pet_right if pet_right is not None else PLAY_R - 1
+            right_limit = (col_x - 1 - w) if col_active else (PLAY_R - w - 1)
+            x = max(PLAY_X0, min(pr + 1, right_limit))
             pts += _blit(bm, x, 1)
     return pts
 
