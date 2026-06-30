@@ -659,6 +659,7 @@ class TuiPetApp(App):
         self._dying_fx = False      # playing the death animation before the memorial
         self._mode_close = None
         self.sound = _load_sound()
+        self._sound_warned = False   # one-time "no audio backend" hint shown once in the main view
         self._needs = False
         self._flash_t = 0           # ticks an action flash holds before a care-need re-asserts
         self._showing_need = False
@@ -871,7 +872,11 @@ class TuiPetApp(App):
     def action_sound(self):
         self.sound = not self.sound
         _save_sound(self.sound)
-        self.flash(f"Sound: {'on' if self.sound else 'off'}")
+        if self.sound and not sound.available():
+            # turning sound on with no backend stays silent -- say why instead of nothing
+            self.flash("Sound on — no audio player (install termux-api)")
+        else:
+            self.flash(f"Sound: {'on' if self.sound else 'off'}")
         if self.sound:
             self.bell()
 
@@ -1057,6 +1062,10 @@ class TuiPetApp(App):
     def on_tick(self):
         if self.mode is not None:
             return  # a sub-screen is open -> pause the life-sim (resumes in the main view)
+        if (not self._sound_warned and self.sound and not sound.available()
+                and self._flash_t <= 0):       # once the welcome flash clears, say why it's silent
+            self._sound_warned = True
+            self.flash("No audio player — install termux-api for sound")
         prev = (self.pet.num, self.pet.stage)
         was_dead = self.pet.dead
         poop0 = self.pet.poop

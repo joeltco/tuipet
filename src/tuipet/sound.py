@@ -19,8 +19,9 @@ def _find_player():
         return ["termux-media-player", "play"]      # Termux -> plays on the phone
     if os.environ.get("SSH_CONNECTION") or os.environ.get("SSH_TTY") or os.environ.get("SSH_CLIENT"):
         return None                                  # SSH session: don't play on the server
-    for cmd in (["paplay"], ["aplay", "-q"], ["afplay"],
-                ["ffplay", "-nodisp", "-autoexit", "-loglevel", "quiet"], ["play", "-q"]):
+    for cmd in (["paplay"], ["pw-play"], ["aplay", "-q"], ["afplay"],
+                ["ffplay", "-nodisp", "-autoexit", "-loglevel", "quiet"],
+                ["mpv", "--no-video", "--really-quiet"], ["play", "-q"]):
         if shutil.which(cmd[0]):
             return cmd
     return None
