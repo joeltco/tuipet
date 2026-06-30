@@ -129,14 +129,18 @@ def render_screen(frame_rows, cols, rows, on="#2b2e31", bg="#c6c9cc", baseline=T
     return t
 
 
-def render_scene(placements, cols, rows, on="#2b2e31", bg="#c6c9cc", overlay=None, bgimg=None):
+def render_scene(placements, cols, rows, on="#2b2e31", bg="#c6c9cc", overlay=None, bgimg=None, clip=None):
     """Compose several sprites onto one LCD screen.
 
     placements: list of (frame_rows, x_left, mirror). Each sprite sits on the
     floor (baseline). Used for the battle scene (pet vs enemy facing off).
+    clip: optional (x0, x1) — sprite/overlay pixels outside this column range are
+    dropped, so the play window acts as the screen edge (a rearing combatant or an
+    orb leaving the field is cut off at the boundary instead of crossing the margin).
     """
     from rich.text import Text
     px_h = rows * 2
+    cx0, cx1 = clip if clip else (0, cols)
     buf = [[0] * cols for _ in range(px_h)]
     for frame_rows, x_left, mirror in placements:
         if not frame_rows:
@@ -148,11 +152,11 @@ def render_scene(placements, cols, rows, on="#2b2e31", bg="#c6c9cc", overlay=Non
             for x, ch in enumerate(line):
                 if ch == "1":
                     py, px = oy + y, x_left + x
-                    if 0 <= py < px_h and 0 <= px < cols:
+                    if 0 <= py < px_h and cx0 <= px < cx1:
                         buf[py][px] = 1
     if overlay:                              # projectiles / impact bursts
         for ox_, oy_ in overlay:
-            if 0 <= oy_ < px_h and 0 <= ox_ < cols:
+            if 0 <= oy_ < px_h and cx0 <= ox_ < cx1:
                 buf[oy_][ox_] = 1
     t = Text()
     for cy in range(rows):

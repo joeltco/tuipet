@@ -225,7 +225,10 @@ class BattlePanel:
         # over it now (the clunk was the sprites/explosion, since fixed), so keep it visible.
         bgimg = self.pet.background()
         on = SIL_NIGHT if self.pet.day_phase == "night" else (SIL_DAY if bgimg else LCD_ON)
-        return render_scene(placements, COLS, ROWS, on, LCD_BG, overlay=overlay, bgimg=bgimg)
+        # clip combatants + orbs to the 32-wide play window: the window edge IS the screen
+        # edge, so a rearing mon or a departing orb is cut off there, never crossing the margin.
+        return render_scene(placements, COLS, ROWS, on, LCD_BG, overlay=overlay, bgimg=bgimg,
+                            clip=(PLAY_X0, PLAY_R))
 
     def _place_one(self, view, rows, xshift=0):
         """Place the ONE monster currently on screen. Player stands RIGHT (faces left), enemy
