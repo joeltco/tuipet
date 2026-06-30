@@ -37,8 +37,8 @@ PLAY_R = PLAY_X0 + PLAY_COLS                     # 36
 
 # poses, WAYLAND-native frame order (0 idle_1, 1 idle_2, 2 angry, 3 down, 4 happy,
 # 12 attack_1; >=12 falls back to idle on short sheets).
-IDLE, TURN, ATTACK, CHEER_A, CHEER_B, COLLAPSE = 0, 1, 12, 4, 0, 3
-CHARGE = 2                                       # angry = the rear-back / charge stance
+IDLE, TURN, ATTACK, CHEER_A, CHEER_B, COLLAPSE = 0, 1, 6, 5, 7, 10
+CHARGE = 4                                       # DVPet shoot frame 4: pre-attack / charge pose
 # the 16px creature band on the 24px LCD (y6..y22); orbs must stay INSIDE it
 BAND_TOP = PXH - 18                              # 6: creature/orb top limit
 BAND_BOT = PXH - 2                               # 22: floor
