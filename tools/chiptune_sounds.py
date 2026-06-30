@@ -1,23 +1,26 @@
 #!/usr/bin/env python3
 """Render tuipet's SFX as raw square-wave CHIPTUNE, transcribed from the authentic
-DVPet recordings.
+DVPet recordings by CONTINUOUS pitch tracking.
 
 Pipeline: authentic DVPet recording (raw_resources/sounds/*.wav)
-          -> `aubionotes` for note SEGMENTATION (onset/offset timing -- aubio is good
-             at this)
-          -> per segment, the EXACT fundamental via Harmonic Product Spectrum (NOT
-             aubio's pitch: aubionotes is octave-unreliable on these piezo tones and
-             snaps to integer semitones, while the device's tones sit ~30-40 cents
-             flat of equal temperament -- HPS recovers the true, non-tempered Hz in
-             the correct octave)
-          -> one square-wave voice per segment at that exact Hz (the piezo voice)
-          -> mono 16-bit 44.1kHz WAV.
+          -> frame the audio every 8 ms (40 ms window)
+          -> per frame: RMS (amplitude gate) + exact fundamental via Harmonic
+             Product Spectrum (FFT) -> a continuous pitch+gate contour
+          -> median-smooth the pitch (kills stray single-frame octave spikes)
+          -> one square-wave voice driven by a phase accumulator that follows the
+             contour sample-for-sample, gated by the amplitude envelope
+          -> mono 16-bit 44.1 kHz WAV.
 
-Nothing is invented or hand-corrected -- both timing and pitch are measured off the
-real recording. Requires the `aubio` package + numpy. Run: python3 tools/chiptune_sounds.py
+Why not aubio note-detection (earlier attempts): aubionotes chops the sound into a
+few discrete notes with silent gaps between -> dead air = audible delay, and it
+under-samples the fast pitch sweeps -> wrong melody. aubionotes' pitch is also
+octave-broken and snaps to integer semitones, while the device tones sit ~30-40 c
+flat. Continuous HPS tracking follows the REAL contour, timing-aligned, true tuning.
+
+Nothing is invented -- pitch, timing and dynamics are all measured off the recording.
+Requires numpy. Run: python3 tools/chiptune_sounds.py
 """
 import os
-import subprocess  # nosec B404 - aubionotes from PATH, no shell, our own files
 import wave
 
 import numpy as np
@@ -30,11 +33,13 @@ _SRC_CANDIDATES = [
 SRC = next((p for p in _SRC_CANDIDATES if os.path.isdir(p)), _SRC_CANDIDATES[0])
 OUT = os.path.join(ROOT, "src", "tuipet", "data", "sounds")
 
-SR = 44100
-AMP = 0.6           # uniform level across cues (square peak ~-4.4 dB; loud, leaves headroom)
-RAMP_MS = 1.5       # tiny per-note attack/release so square edges don't click
+AMP = 0.6              # uniform square level (~-4.4 dB)
+HOP_MS, WIN_MS = 8.0, 40.0
+F0_MIN, F0_MAX = 120.0, 2600.0
+GATE_FRAC = 0.10       # voiced when frame RMS > 10% of the file's peak RMS
+GATE_FLOOR = 0.02
 
-# tuipet cue -> authentic DVPet source stem (5 subs have no 1:1 cue, see install_sounds.py)
+# tuipet cue -> authentic DVPet source stem (5 subs have no 1:1 cue; see git history)
 MAP = {
     "alarm": "alarm", "angry": "angry", "attack": "attack", "battle": "battle",
     "eat": "eat", "error": "error", "evolve": "evolve", "happy": "happy",
@@ -48,9 +53,6 @@ MAP = {
 SUBS = {"cancel", "confirm", "menu", "scroll", "death"}
 
 
-F0_MIN, F0_MAX = 120.0, 2600.0   # piezo fundamental search band
-
-
 def load(src):
     w = wave.open(src, "rb")
     fr, sw = w.getframerate(), w.getsampwidth()
@@ -62,29 +64,18 @@ def load(src):
     return a, fr
 
 
-def aubio_segments(src):
-    """[(onset_s, offset_s)] -- aubionotes' note TIMING only (its pitch is unreliable)."""
-    out = subprocess.run(["aubionotes", "-i", src],         # nosec B603,B607 - fixed cmd, no shell
-                         capture_output=True, text=True).stdout
-    segs = []
-    for line in out.splitlines():
-        p = line.split()
-        if len(p) == 3:                                      # midi  start  end
-            segs.append((float(p[1]), float(p[2])))
-    return segs
-
-
 def hps_f0(seg, fr):
-    """Exact fundamental (Hz) via Harmonic Product Spectrum; 0 if unpitched/silent."""
+    """Exact fundamental (Hz) of one frame via Harmonic Product Spectrum; 0 if too quiet."""
     if len(seg) < 256:
         return 0.0
     s = seg - seg.mean()
-    if np.sqrt(np.mean(s * s)) < 0.01:
-        return 0.0
     win = s * np.hanning(len(s))
     n = 1 << int(np.ceil(np.log2(len(win) * 8)))             # zero-pad -> fine freq grid
     spec = np.abs(np.fft.rfft(win, n))
-    spec /= spec.max() + 1e-12                               # normalize -> HPS product can't overflow
+    mx = spec.max()
+    if mx <= 1e-9:
+        return 0.0
+    spec /= mx                                               # normalize -> HPS product can't overflow
     freqs = np.fft.rfftfreq(n, 1.0 / fr)
     hps = spec.copy()
     for h in range(2, 6):                                    # multiply 2nd..5th downsampled spectra
@@ -101,46 +92,53 @@ def hps_f0(seg, fr):
     return float(freqs[k])
 
 
-def square(freq, dur):
-    n = int(SR * dur)
-    if n <= 0 or freq <= 0:
-        return np.zeros(max(0, n), dtype=np.float32)
-    t = np.arange(n, dtype=np.float32)
-    w = AMP * np.sign(np.sin(2.0 * np.pi * freq * t / SR)).astype(np.float32)
-    r = min(n // 2, int(SR * RAMP_MS / 1000))
-    if r > 0:
-        env = np.ones(n, dtype=np.float32)
-        env[:r] = np.linspace(0, 1, r)
-        env[-r:] = np.linspace(1, 0, r)
-        w *= env
-    return w
+def track(a, fr):
+    """Continuous (f0, gate) per hop across the whole recording."""
+    hop = int(fr * HOP_MS / 1000)
+    win = int(fr * WIN_MS / 1000)
+    nfr = max(1, (len(a) - 1) // hop + 1)
+    f0 = np.zeros(nfr)
+    rms = np.zeros(nfr)
+    for i in range(nfr):
+        seg = a[i * hop:i * hop + win]
+        if len(seg) < 64:
+            continue
+        rms[i] = np.sqrt(np.mean(seg * seg))
+        f0[i] = hps_f0(seg, fr)
+    gate = rms > max(GATE_FLOOR, rms.max() * GATE_FRAC)
+    # median-smooth f0 across voiced frames -> drop lone octave spikes
+    vi = np.where(gate)[0]
+    sm = f0.copy()
+    for j, i in enumerate(vi):
+        lo, hi = max(0, j - 2), min(len(vi), j + 3)
+        sm[i] = np.median(f0[vi[lo:hi]])
+    return sm, gate, hop
 
 
 def render(src):
     a, fr = load(src)
-    segs = aubio_segments(src)
-    if not segs:
-        return np.zeros(int(SR * 0.04), dtype=np.float32), 0
-    total = max(off for _, off in segs)
-    buf = np.zeros(int(SR * total) + SR // 100, dtype=np.float32)
-    voiced = 0
-    for on, off in segs:                                     # mono voice: note in its slot, gaps stay silent
-        f0 = hps_f0(a[int(on * fr):int(off * fr)], fr)       # EXACT Hz, correct octave, true tuning
-        if f0 <= 0:
-            continue
-        voiced += 1
-        seg = square(f0, off - on)
-        i = int(SR * on)
-        buf[i:i + len(seg)] += seg
-    return np.clip(buf, -1.0, 1.0), voiced
+    f0, gate, hop = track(a, fr)
+    n = len(a)
+    f0s = np.repeat(f0, hop)[:n]
+    g = np.repeat(gate.astype(np.float64), hop)[:n]
+    if len(f0s) < n:                                         # pad tail
+        f0s = np.pad(f0s, (0, n - len(f0s)))
+        g = np.pad(g, (0, n - len(g)))
+    f0s = np.where(f0s > 0, f0s, 1.0)                        # avoid 0-phase stall (gated off anyway)
+    phase = np.cumsum(2.0 * np.pi * f0s / fr)                # phase accumulator -> glitch-free pitch glide
+    sig = AMP * np.sign(np.sin(phase))
+    ramp = max(1, int(fr * 0.004))                           # 4 ms gate ramp -> no clicks
+    g = np.convolve(g, np.ones(ramp) / ramp, "same")
+    out = np.clip(sig * g, -1.0, 1.0).astype(np.float32)
+    return out, fr, int(gate.sum())
 
 
-def write_wav(path, buf):
+def write_wav(path, buf, fr):
     data = (np.clip(buf, -1.0, 1.0) * 32767.0).astype("<i2").tobytes()
     w = wave.open(path, "wb")
     w.setnchannels(1)
     w.setsampwidth(2)
-    w.setframerate(SR)
+    w.setframerate(fr)
     w.writeframes(data)
     w.close()
 
@@ -151,10 +149,10 @@ def main():
         if not os.path.exists(src):
             print("  MISSING SOURCE:", cue, stem)
             continue
-        buf, voiced = render(src)
-        write_wav(os.path.join(OUT, cue + ".wav"), buf)
-        print("  %-14s <- %-13s %2d notes -> %.2fs chiptune%s"
-              % (cue, stem + ".wav", voiced, len(buf) / SR, "  [SUB]" if cue in SUBS else ""))
+        buf, fr, voiced = render(src)
+        write_wav(os.path.join(OUT, cue + ".wav"), buf, fr)
+        print("  %-14s <- %-13s %.2fs, %d voiced frames%s"
+              % (cue, stem + ".wav", len(buf) / fr, voiced, "  [SUB]" if cue in SUBS else ""))
 
 
 if __name__ == "__main__":
