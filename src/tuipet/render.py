@@ -78,15 +78,22 @@ if __name__ == "__main__":
         c.print(frame_text(d["frames"][i], on, off))
 
 
-def render_screen(frame_rows, cols, rows, on="#2b2e31", bg="#c6c9cc", baseline=True, mirror=False, xshift=0, yshift=0, corner=None, overlay=None, bgimg=None):
+def render_screen(frame_rows, cols, rows, on="#2b2e31", bg="#c6c9cc", baseline=True, mirror=False, xshift=0, yshift=0, corner=None, overlay=None, bgimg=None, clip=None):
     """Compose a sprite centred on a fixed cols x rows (character) LCD screen.
 
     Returns a rich Text. The screen is rows*2 pixels tall; the sprite is blitted
     centred horizontally and sitting on the floor (baseline) so it doesn't bob
     off the ground between frames of different heights.
+
+    clip: optional (x0, x1). When given, the centred 32-wide window is NOT used to
+    anchor (pin) the sprite -- instead the sprite is placed at its raw x and pixels
+    outside [x0, x1) are dropped, so the window edge acts as the screen edge. A care
+    action that slides the pet off the field (clean's wash shove) needs this; pinning
+    would trap the pet at the edge. With clip=None the sprite anchors inside the window.
     """
     from rich.text import Text
     px_h = rows * 2
+    cx0, cx1 = clip if clip else (0, cols)
     buf = [[0] * cols for _ in range(px_h)]
     if frame_rows and mirror:
         frame_rows = [r[::-1] for r in frame_rows]
@@ -94,7 +101,7 @@ def render_screen(frame_rows, cols, rows, on="#2b2e31", bg="#c6c9cc", baseline=T
         sw = max(len(r) for r in frame_rows)
         sh = len(frame_rows)
         ox = (cols - sw) // 2 + xshift
-        if cols > PLAY_COLS and sw <= PLAY_COLS:   # anchor the sprite inside the centred 32-wide play window
+        if clip is None and cols > PLAY_COLS and sw <= PLAY_COLS:   # anchor the sprite inside the centred 32-wide play window
             px0 = (cols - PLAY_COLS) // 2
             ox = max(px0, min(ox, px0 + PLAY_COLS - sw))
         oy = max(0, (px_h - sh - 2) if baseline else (px_h - sh) // 2) - yshift   # +yshift lifts the sprite (a hop)
@@ -102,20 +109,20 @@ def render_screen(frame_rows, cols, rows, on="#2b2e31", bg="#c6c9cc", baseline=T
             for x, ch in enumerate(line):
                 if ch == "1":
                     py, pxx = oy + y, ox + x
-                    if 0 <= py < px_h and 0 <= pxx < cols:
+                    if 0 <= py < px_h and cx0 <= pxx < cx1:
                         buf[py][pxx] = 1
     if corner:                               # sun/moon tucked into the top-right
         cw = max(len(r) for r in corner)
-        cx0 = cols - cw - 1
+        cxr = cols - cw - 1
         for y, line in enumerate(corner):
             for x, ch in enumerate(line):
                 if ch == "1":
-                    py, pxx = 1 + y, cx0 + x
-                    if 0 <= py < px_h and 0 <= pxx < cols:
+                    py, pxx = 1 + y, cxr + x
+                    if 0 <= py < px_h and cx0 <= pxx < cx1:
                         buf[py][pxx] = 1
     if overlay:                              # weather: rain/snow/cloud pixels
         for ox_, oy_ in overlay:
-            if 0 <= oy_ < px_h and 0 <= ox_ < cols:
+            if 0 <= oy_ < px_h and cx0 <= ox_ < cx1:
                 buf[oy_][ox_] = 1
     t = Text()
     for cy in range(rows):

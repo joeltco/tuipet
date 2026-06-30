@@ -431,7 +431,7 @@ class Screen(Static):
             wx = SCREEN_COLS - step * 3                        # wash front: enters right, exits left
             base = (SCREEN_COLS - SPRITE_W) // 2
             pcols = (min(fx.get("poop", 0), 4) + 1) // 2
-            clear = (2 + (pcols - 1) * (POOP_W + POOP_PAD) + POOP_W) - base if fx.get("poop") else 0
+            clear = (PLAY_X0 + (pcols - 1) * (POOP_W + POOP_PAD) + POOP_W) - base if fx.get("poop") else 0
             push = max(0, base + clear + SPRITE_W - wx)        # wash shove, measured from the pet's RIGHT edge
             xshift = clear - push                              # pet starts cleared of the filth, then both
             if push > 0:                                       # slide left in lockstep (gap preserved, no mash)
@@ -441,7 +441,7 @@ class Screen(Static):
                 pw, ph_ = len(pm[0]), len(pm)
                 for i in range(min(fx["poop"], POOP_MAX_PILES)):
                     col, up = i // 2, i % 2                     # filth slides off-screen with the pet
-                    overlay += _blit(pm, 2 + col * (pw + POOP_PAD) - push,
+                    overlay += _blit(pm, PLAY_X0 + col * (pw + POOP_PAD) - push,
                                      (px_h - 2 - ph_) - up * ph_)
             if wash:
                 overlay += _blit(wash, wx, max(0, (px_h - len(wash)) // 2))
@@ -482,7 +482,11 @@ class Screen(Static):
             xshift = 0
             food = self._food_frames(fx.get("icon") or "f:0")
             if food:
-                overlay += _blit(food[0], (SCREEN_COLS - SPRITE_W) // 2, 5 + step * 2)
+                fw = len(food[0][0]) if (food[0] and food[0][0]) else 8
+                # abut the pet's LEFT edge (same offer side as eat) so it falls clear of
+                # the body instead of dropping straight through the silhouette
+                fxx = max(PLAY_X0, (SCREEN_COLS - SPRITE_W) // 2 - fw)
+                overlay += _blit(food[0], fxx, 5 + step * 2)
         elif fx["kind"] == "evolve":
             # DVPet evolveAnim(): the screen strobes dark (lightsOff) <-> bright burst
             # (evol) while changeSprite() swaps the old form for the new one mid-flash --
@@ -507,9 +511,11 @@ class Screen(Static):
             if dye:
                 df = dye[(step // 5) % len(dye)]
                 overlay += _blit(df, (SCREEN_COLS - SPRITE_W) // 2 + SPRITE_W + xshift, 1)
+        # every care-action fx lives inside the 32-wide window: the window edge is the
+        # screen edge (clip, not anchor), so clean's wash can shove the pet clear off it.
         self.update(render_screen(rows, SCREEN_COLS, SCREEN_ROWS, on, bg,
                                   xshift=xshift, yshift=yshift, overlay=overlay, bgimg=bgimg,
-                                  mirror=(fx["kind"] == "dying")))
+                                  mirror=(fx["kind"] == "dying"), clip=(PLAY_X0, PLAY_R)))
 
 
 def _status_line(status, deco, width=26):
