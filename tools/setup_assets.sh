@@ -22,10 +22,7 @@ for f in digimon evolutions foods items enemies maps zones towns shopConsumable 
   cp "raw_model/$f.csv" "src/tuipet/data/$f.csv"
 done
 mkdir -p src/tuipet/data/sounds
-for snd in raw_resources/sounds/*.wav; do
-  b="$(basename "$snd")"
-  case "$b" in fileCityDay.wav|fileCityNight.wav|parade.wav) ;; *) cp "$snd" "src/tuipet/data/sounds/$b" ;; esac
-done
+python tools/install_sounds.py     # authentic DVPet SFX, mapped + normalized (needs ffmpeg)
 python tools/extract_sprites.py
 python tools/extract_effects.py
 python tools/extract_backgrounds.py
