@@ -38,6 +38,10 @@ HOP_MS, WIN_MS = 8.0, 40.0
 F0_MIN, F0_MAX = 120.0, 2600.0
 GATE_FRAC = 0.10       # voiced when frame RMS > 10% of the file's peak RMS
 GATE_FLOOR = 0.02
+# Time-stretch (pitch unchanged) the long melodic cues so fast sweeps are heard as a
+# clear tune instead of a blur; UI ticks / combat hits below the threshold stay snappy.
+SLOW = 1.4
+SLOW_MIN_S = 0.8
 
 # tuipet cue -> authentic DVPet source stem (5 subs have no 1:1 cue; see git history)
 MAP = {
@@ -117,20 +121,18 @@ def track(a, fr):
 
 def render(src):
     a, fr = load(src)
+    stretch = SLOW if len(a) / fr >= SLOW_MIN_S else 1.0     # slow only the long melodic cues
     f0, gate, hop = track(a, fr)
-    n = len(a)
-    f0s = np.repeat(f0, hop)[:n]
-    g = np.repeat(gate.astype(np.float64), hop)[:n]
-    if len(f0s) < n:                                         # pad tail
-        f0s = np.pad(f0s, (0, n - len(f0s)))
-        g = np.pad(g, (0, n - len(g)))
+    rep = max(1, int(round(hop * stretch)))                  # hold each frame `rep` samples -> time-stretch
+    f0s = np.repeat(f0, rep)
+    g = np.repeat(gate.astype(np.float64), rep)
     f0s = np.where(f0s > 0, f0s, 1.0)                        # avoid 0-phase stall (gated off anyway)
     phase = np.cumsum(2.0 * np.pi * f0s / fr)                # phase accumulator -> glitch-free pitch glide
     sig = AMP * np.sign(np.sin(phase))
     ramp = max(1, int(fr * 0.004))                           # 4 ms gate ramp -> no clicks
     g = np.convolve(g, np.ones(ramp) / ramp, "same")
     out = np.clip(sig * g, -1.0, 1.0).astype(np.float32)
-    return out, fr, int(gate.sum())
+    return out, fr, int(gate.sum()), stretch
 
 
 def write_wav(path, buf, fr):
@@ -149,10 +151,12 @@ def main():
         if not os.path.exists(src):
             print("  MISSING SOURCE:", cue, stem)
             continue
-        buf, fr, voiced = render(src)
+        buf, fr, voiced, stretch = render(src)
         write_wav(os.path.join(OUT, cue + ".wav"), buf, fr)
-        print("  %-14s <- %-13s %.2fs, %d voiced frames%s"
-              % (cue, stem + ".wav", len(buf) / fr, voiced, "  [SUB]" if cue in SUBS else ""))
+        print("  %-14s <- %-13s %.2fs, %d voiced frames%s%s"
+              % (cue, stem + ".wav", len(buf) / fr, voiced,
+                 "  slow%.2gx" % stretch if stretch != 1.0 else "",
+                 "  [SUB]" if cue in SUBS else ""))
 
 
 if __name__ == "__main__":
