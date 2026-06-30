@@ -25,7 +25,7 @@ REPO = os.path.abspath(os.path.join(CORPUS, ".."))
 DB = os.path.join(CORPUS, "db", "dm20.json")
 OUT = os.path.join(REPO, "src", "tuipet", "data", "dm20_sprites.json.gz")
 
-THRESH = 0.4   # block coverage to light a 16x16 dot (matches the Agumon eyeball test)
+THRESH = 0.3   # ink coverage to light a 16x16 dot (BOX area-downscale; Agumon eyeball test)
 
 # Native wayland frame names, by index — recorded in the atlas meta for reference.
 FRAME_NAMES = ["idle_1", "idle_2", "angry", "down", "happy", "eat_1", "sleep",
@@ -42,14 +42,15 @@ def _alpha(im):
 
 
 def _to16(blk):
-    """bool HxW -> list of 16 '0'/'1' strings."""
-    H, W = blk.shape
-    if H == 64 and W == 64:
-        small = blk.reshape(16, 4, 16, 4).mean(axis=(1, 3))
-    else:
-        img = Image.fromarray((blk * 255).astype("uint8"))
-        small = np.asarray(img.resize((16, 16), Image.BILINEAR), dtype=float) / 255.0
-    return ["".join("1" if v >= THRESH else "0" for v in row) for row in (small >= THRESH)]
+    """bool HxW ink mask -> list of 16 '0'/'1' strings.
+
+    The wayland art is hand-drawn at ~3px stroke pitch on a 64px canvas (NOT a clean
+    16x16 upscaled x4), so a fixed reshape mis-samples the dot grid and shreds it.
+    A BOX (area-average) resize integrates the ink coverage of each 16x16 cell, which
+    preserves the silhouette; THRESH lights a dot once it's that fraction inked."""
+    img = Image.fromarray((blk * 255).astype("uint8"))
+    small = np.asarray(img.resize((16, 16), Image.BOX), dtype=float) / 255.0
+    return ["".join("1" if v >= THRESH else "0" for v in row) for row in small]
 
 
 def extract(path):
