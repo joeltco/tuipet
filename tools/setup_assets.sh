@@ -22,7 +22,7 @@ for f in digimon evolutions foods items enemies maps zones towns shopConsumable 
   cp "raw_model/$f.csv" "src/tuipet/data/$f.csv"
 done
 mkdir -p src/tuipet/data/sounds
-python tools/install_sounds.py     # authentic DVPet SFX, mapped + normalized (needs ffmpeg)
+python tools/chiptune_sounds.py    # authentic DVPet SFX -> aubio note detection -> square-wave chiptune (needs aubio)
 python tools/extract_sprites.py
 python tools/extract_effects.py
 python tools/extract_backgrounds.py
