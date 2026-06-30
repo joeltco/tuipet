@@ -1,19 +1,23 @@
 #!/usr/bin/env python3
 """Render tuipet's SFX as raw square-wave CHIPTUNE, transcribed from the authentic
-DVPet recordings by aubio.
+DVPet recordings.
 
 Pipeline: authentic DVPet recording (raw_resources/sounds/*.wav)
-          -> `aubionotes` (real monophonic note detection: midi/onset/offset)
-          -> one square-wave voice per detected note (the piezo-buzzer voice)
+          -> `aubionotes` for note SEGMENTATION (onset/offset timing -- aubio is good
+             at this)
+          -> per segment, the EXACT fundamental via Harmonic Product Spectrum (NOT
+             aubio's pitch: aubionotes is octave-unreliable on these piezo tones and
+             snaps to integer semitones, while the device's tones sit ~30-40 cents
+             flat of equal temperament -- HPS recovers the true, non-tempered Hz in
+             the correct octave)
+          -> one square-wave voice per segment at that exact Hz (the piezo voice)
           -> mono 16-bit 44.1kHz WAV.
 
-The melody/timing is aubio's transcription of the REAL sound -- nothing is invented
-and nothing is hand-corrected (rendering aubio's notes verbatim). Requires the
-`aubio` package (provides the aubionotes CLI). Run: python3 tools/chiptune_sounds.py
+Nothing is invented or hand-corrected -- both timing and pitch are measured off the
+real recording. Requires the `aubio` package + numpy. Run: python3 tools/chiptune_sounds.py
 """
 import os
 import subprocess  # nosec B404 - aubionotes from PATH, no shell, our own files
-import struct
 import wave
 
 import numpy as np
@@ -44,20 +48,57 @@ MAP = {
 SUBS = {"cancel", "confirm", "menu", "scroll", "death"}
 
 
-def midi_hz(n):
-    return 440.0 * 2.0 ** ((n - 69.0) / 12.0)
+F0_MIN, F0_MAX = 120.0, 2600.0   # piezo fundamental search band
 
 
-def aubio_notes(src):
-    """[(midi, onset_s, offset_s)] from aubionotes' note-event lines."""
+def load(src):
+    w = wave.open(src, "rb")
+    fr, sw = w.getframerate(), w.getsampwidth()
+    raw = w.readframes(w.getnframes())
+    if sw == 1:                                              # 8-bit unsigned (the DVPet rips)
+        a = (np.frombuffer(raw, np.uint8).astype(np.float64) - 128) / 128.0
+    else:
+        a = np.frombuffer(raw, np.int16).astype(np.float64) / 32768.0
+    return a, fr
+
+
+def aubio_segments(src):
+    """[(onset_s, offset_s)] -- aubionotes' note TIMING only (its pitch is unreliable)."""
     out = subprocess.run(["aubionotes", "-i", src],         # nosec B603,B607 - fixed cmd, no shell
                          capture_output=True, text=True).stdout
-    notes = []
+    segs = []
     for line in out.splitlines():
         p = line.split()
         if len(p) == 3:                                      # midi  start  end
-            notes.append((float(p[0]), float(p[1]), float(p[2])))
-    return notes
+            segs.append((float(p[1]), float(p[2])))
+    return segs
+
+
+def hps_f0(seg, fr):
+    """Exact fundamental (Hz) via Harmonic Product Spectrum; 0 if unpitched/silent."""
+    if len(seg) < 256:
+        return 0.0
+    s = seg - seg.mean()
+    if np.sqrt(np.mean(s * s)) < 0.01:
+        return 0.0
+    win = s * np.hanning(len(s))
+    n = 1 << int(np.ceil(np.log2(len(win) * 8)))             # zero-pad -> fine freq grid
+    spec = np.abs(np.fft.rfft(win, n))
+    spec /= spec.max() + 1e-12                               # normalize -> HPS product can't overflow
+    freqs = np.fft.rfftfreq(n, 1.0 / fr)
+    hps = spec.copy()
+    for h in range(2, 6):                                    # multiply 2nd..5th downsampled spectra
+        d = spec[::h]
+        hps[:len(d)] *= d
+    lo = np.searchsorted(freqs, F0_MIN)
+    hi = np.searchsorted(freqs, F0_MAX)
+    k = lo + int(np.argmax(hps[lo:hi]))
+    if 1 <= k < len(freqs) - 1:                              # parabolic interp for sub-bin precision
+        a, b, c = (np.log(hps[k + d] + 1e-12) for d in (-1, 0, 1))
+        denom = a - 2 * b + c
+        if denom:
+            return float(freqs[k] + 0.5 * (a - c) / denom * (freqs[1] - freqs[0]))
+    return float(freqs[k])
 
 
 def square(freq, dur):
@@ -76,16 +117,22 @@ def square(freq, dur):
 
 
 def render(src):
-    notes = aubio_notes(src)
-    if not notes:
-        return np.zeros(int(SR * 0.04), dtype=np.float32)
-    total = max(off for _, _, off in notes)
+    a, fr = load(src)
+    segs = aubio_segments(src)
+    if not segs:
+        return np.zeros(int(SR * 0.04), dtype=np.float32), 0
+    total = max(off for _, off in segs)
     buf = np.zeros(int(SR * total) + SR // 100, dtype=np.float32)
-    for midi, on, off in notes:                              # mono voice: note in its slot, gaps stay silent
-        seg = square(midi_hz(midi), off - on)
+    voiced = 0
+    for on, off in segs:                                     # mono voice: note in its slot, gaps stay silent
+        f0 = hps_f0(a[int(on * fr):int(off * fr)], fr)       # EXACT Hz, correct octave, true tuning
+        if f0 <= 0:
+            continue
+        voiced += 1
+        seg = square(f0, off - on)
         i = int(SR * on)
         buf[i:i + len(seg)] += seg
-    return np.clip(buf, -1.0, 1.0)
+    return np.clip(buf, -1.0, 1.0), voiced
 
 
 def write_wav(path, buf):
@@ -104,11 +151,10 @@ def main():
         if not os.path.exists(src):
             print("  MISSING SOURCE:", cue, stem)
             continue
-        buf = render(src)
+        buf, voiced = render(src)
         write_wav(os.path.join(OUT, cue + ".wav"), buf)
-        nn = len(aubio_notes(src))
         print("  %-14s <- %-13s %2d notes -> %.2fs chiptune%s"
-              % (cue, stem + ".wav", nn, len(buf) / SR, "  [SUB]" if cue in SUBS else ""))
+              % (cue, stem + ".wav", voiced, len(buf) / SR, "  [SUB]" if cue in SUBS else ""))
 
 
 if __name__ == "__main__":
