@@ -874,7 +874,7 @@ class TuiPetApp(App):
         _save_sound(self.sound)
         if self.sound and not sound.available():
             # turning sound on with no backend stays silent -- say why instead of nothing
-            self.flash("Sound on — no audio player (install termux-api)")
+            self.flash("Sound on — install the Termux:API app for audio")
         else:
             self.flash(f"Sound: {'on' if self.sound else 'off'}")
         if self.sound:
@@ -1065,7 +1065,7 @@ class TuiPetApp(App):
         if (not self._sound_warned and self.sound and not sound.available()
                 and self._flash_t <= 0):       # once the welcome flash clears, say why it's silent
             self._sound_warned = True
-            self.flash("No audio player — install termux-api for sound")
+            self.flash("No audio — install the Termux:API app for sound")
         prev = (self.pet.num, self.pet.stage)
         was_dead = self.pet.dead
         poop0 = self.pet.poop
