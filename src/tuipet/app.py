@@ -82,7 +82,8 @@ MOON = _FX.get("moon", [None])[0]             # real DVPet night.png
 
 _POOP_FR = (_FX.get("poop") or [None])[0]
 POOP_W = len(_POOP_FR[0]) if _POOP_FR else 5
-POOP_PAD = max(1, round(POOP_W * 6 / 30))   # DVPet drawFilthLevel column gap (pad 6 on a 30px cell)
+POOP_PAD = 0    # no inter-pile gap: on the 32-wide window a 2-col filth grid + the 16px pet
+#               just fit, and the poop sprite's own empty edge columns keep the piles distinct
 _FROZEN_FR = (_FX.get("frozen") or [None])[0]
 
 def _sky_icon(pet):
@@ -152,7 +153,7 @@ def _effect_overlay(pet, frame_i, cols, px_h, tick=0, pet_right=None):
         pw, ph_ = len(pm[0]), len(pm)
         for i in range(min(pet.poop, POOP_MAX_PILES)):                  # DVPet drawFilthLevel: 3 columns x 2 rows,
             col, up = i // 2, i % 2                         # column-major (bottom pile, then one stacked
-            x = PLAY_X0 + 2 + col * (pw + POOP_PAD)         # directly above it), each column steps right (in-window)
+            x = PLAY_X0 + col * (pw + POOP_PAD)             # directly above it), each column steps right (in-window)
             y = (px_h - 2 - ph_) - up * ph_
             pts += _blit(pm, x, y)
     if pet.num == -1:
@@ -287,10 +288,10 @@ class Screen(Static):
         # shows the huddle pose above, not a full ice block over the pet.
         if pet.poop:                       # keep the pet clear of the filth row in EVERY state
             pcols = (min(pet.poop, POOP_MAX_PILES) + 1) // 2          # (sleep/sick bypass the roamer bound and would
-            poop_edge = 2 + (pcols - 1) * (POOP_W + POOP_PAD) + POOP_W  # x just past the rightmost pile
+            poop_edge = PLAY_X0 + (pcols - 1) * (POOP_W + POOP_PAD) + POOP_W  # x just past the rightmost pile (in-window)
             base = (SCREEN_COLS - SPRITE_W) // 2
             lo = poop_edge - base                         # min shift to clear the piles (REAL edge, not padded)
-            cap = (SCREEN_COLS - SPRITE_W) - base         # don't push the pet off the right edge
+            cap = (PLAY_R - SPRITE_W) - base              # don't push the pet past the play-window's right edge
             xshift = min(max(xshift, lo), max(cap, 0))    # clear poop on the left; emote follows the pet
         # DVPet adjustEmotionLabel: emote/'!' track the pet's final x, so rebuild the overlay now
         overlay = _effect_overlay(pet, wf, SCREEN_COLS, SCREEN_ROWS * 2, tick=self.frame_i,
@@ -309,11 +310,11 @@ class Screen(Static):
             self.frame_i = -1
         self.frame_i += 1
         if pet is not None and pet.anim in ("idle", "walk") and pet.num != -1 and not pet.sick:
-            poop_cols = (min(pet.poop, POOP_MAX_PILES) + 1) // 2          # 3x2 grid -> ceil(piles/2) columns wide
-            poop_right = (2 + poop_cols * (POOP_W + POOP_PAD) + 1) if pet.poop else 0
+            poop_cols = (min(pet.poop, POOP_MAX_PILES) + 1) // 2          # 2x2 grid -> ceil(piles/2) columns wide
+            poop_right = (PLAY_X0 + poop_cols * (POOP_W + POOP_PAD) + 1) if pet.poop else 0
             cond = (pet.is_injured() or pet.is_fatigued() or pet.has_vitamin()
                     or pet.has_medicine() or pet.has_bandage())
-            right_bound = (SCREEN_COLS - COND_W - 1 - SPRITE_W) if cond else None   # clear the right-edge column
+            right_bound = (PLAY_R - COND_W - 1 - SPRITE_W) if cond else None   # clear the right-edge column
             prev_pose = self.roamer.pose
             # wall the pacing inside the centred 32-wide play window (turns at PLAY_X0/PLAY_RIGHT)
             self.roamer.step(left_bound=max(poop_right, PLAY_X0),
