@@ -41,7 +41,7 @@ HOP_MS, WIN_MS = 8.0, 40.0
 F0_MIN, F0_MAX = 120.0, 2600.0
 GATE_FRAC = 0.10       # voiced when frame RMS > 10% of the file's peak RMS
 GATE_FLOOR = 0.02
-ANALYSIS_STRETCH = 4.0 # slow the audio this much for pitch detection ONLY (output stays native)
+ANALYSIS_STRETCH = 8.0 # slow the audio this much for pitch detection ONLY (output stays native)
 SMOOTH = 4             # median window = 2*SMOOTH+1 frames (wider, since slowed frames are short)
 
 # tuipet cue -> authentic DVPet source stem (5 subs have no 1:1 cue; see git history)
