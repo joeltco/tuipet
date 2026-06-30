@@ -41,8 +41,10 @@ HOP_MS, WIN_MS = 8.0, 40.0
 F0_MIN, F0_MAX = 120.0, 2600.0
 GATE_FRAC = 0.10       # voiced when frame RMS > 10% of the file's peak RMS
 GATE_FLOOR = 0.02
-ANALYSIS_STRETCH = 8.0 # slow the audio this much for pitch detection ONLY (output stays native)
+ANALYSIS_STRETCH = 4.0 # slow the audio this much for pitch detection ONLY (output stays native)
 SMOOTH = 4             # median window = 2*SMOOTH+1 frames (wider, since slowed frames are short)
+STEP_TOL = 0.6         # semitones: pitch wobble within one held note (device steps, doesn't glide)
+STEP_MIN_MS = 25.0     # shorter detected notes get merged (no blips)
 
 # tuipet cue -> authentic DVPet source stem (5 subs have no 1:1 cue; see git history)
 MAP = {
@@ -133,10 +135,47 @@ def stretch_for_analysis(src, tmp):
     return tsl
 
 
+def quantize_steps(f0, gate, hop, fr):
+    """Collapse the continuous contour into discrete HELD notes -- the device sets a
+    tone register and holds it (no portamento). Group consecutive voiced frames that
+    stay within STEP_TOL of the running note; each note plays its median pitch; merge
+    sub-STEP_MIN_MS notes so there are no blips. Output steps cleanly, no glide, no gaps."""
+    out = f0.copy()
+    vi = np.where(gate)[0]
+    if len(vi) == 0:
+        return out
+    # one slowed-frame spans HOP_MS/STRETCH ms of REAL time -> convert the min note length
+    min_frames = max(2, int(STEP_MIN_MS * ANALYSIS_STRETCH / HOP_MS))
+    notes, cur, ref = [], [vi[0]], f0[vi[0]]
+    for idx in range(1, len(vi)):
+        i, prev = vi[idx], vi[idx - 1]
+        contiguous = (i - prev) == 1
+        close = f0[i] > 0 and ref > 0 and abs(12 * np.log2(f0[i] / ref)) <= STEP_TOL
+        if contiguous and close:
+            cur.append(i)
+            ref = np.median([f0[j] for j in cur])
+        else:
+            notes.append(cur)
+            cur, ref = [i], f0[i]
+    notes.append(cur)
+    merged = []
+    for nt in notes:                                         # absorb too-short notes into the previous
+        if merged and len(nt) < min_frames and (nt[0] - merged[-1][-1]) == 1:
+            merged[-1].extend(nt)
+        else:
+            merged.append(nt)
+    for nt in merged:
+        m = float(np.median([f0[j] for j in nt]))
+        for j in nt:
+            out[j] = m
+    return out
+
+
 def render(src, tmp):
     n_orig = len(load(src)[0])                               # original length -> output stays native speed
     asl, fr = load(stretch_for_analysis(src, tmp))           # slowed audio, analysed under the lens
     f0, gate, hop = track(asl, fr)
+    f0 = quantize_steps(f0, gate, hop, fr)                   # discrete held notes, not a glide
     rep = max(1, int(round(hop / ANALYSIS_STRETCH)))         # map slowed frames back to ORIGINAL tempo
     f0s = np.repeat(f0, rep)[:n_orig]
     g = np.repeat(gate.astype(np.float64), rep)[:n_orig]
