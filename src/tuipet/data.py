@@ -1,4 +1,7 @@
-"""Load extracted sprites + game data from the DVPet CSVs."""
+"""Load game data. Roster / sprites / stages / evolution graph now come from the
+authentic DM20 corpus via `species` + `data/dm20_sprites.json.gz` (the wayland-native
+atlas). The remaining DVPet CSVs (foods/enemies/care) are still read here until those
+subsystems are rebuilt."""
 from __future__ import annotations
 import csv
 import gzip
@@ -6,58 +9,23 @@ import json
 import os
 import re
 from functools import lru_cache
+from . import species
 
 _HERE = os.path.dirname(__file__)
 _DATA = os.path.join(_HERE, "data")
-_RAW = _DATA  # bundled CSVs (digimon/evolutions/foods) live alongside sprites
+_RAW = _DATA  # bundled CSVs (foods/enemies/care) live alongside sprites
+_ATLAS = os.path.join(_DATA, "dm20_sprites.json.gz")
 
-# Frame roles VERIFIED against DVPet View/SpriteAnim drawNum() args (each per-Digimon
-# strip is 11 frames, index 0-10; sheet order preserved by extract_sprites col 0..10):
-#   0 idle/neutral base      6 attack / cheer-up (HP_Training_AttackSuccess, attackDefault)
-#   1 idle-B / walk-B / toy   7 eat-chew / cheer-down(big) / wake-end
-#   2 sleep                   8 eat-swallow
-#   3 stretch / yawn          9 dejected / fail / disliked (HP_Training_AttackFail, jeer-up)
-#   4 cheer-down / clean-done 10 collapse / dying (Dying, jeer-down, exhausted)
-#   5 excited / cheer-up(big)
-# State->frames taken from the real animations: Cheering=5,7  Jeering=9,10  Eating=8,7(x3)
-# attackDefault=6,0  Cleaning=0,4  Bounce/Jump(play)=1,5  Dying=10.
-ROLES = {
-    "idle":   [0, 1],      # Idling / Discovering walk
-    "walk":   [0, 1],
-    "sleep":  [2, 3],      # idleSleep
-    "happy":  [5, 7],      # Cheering: cheer(true) up=5 down=7 -- the canonical praise/win/evolve bounce
-    "angry":  [9, 10],     # Jeering: jeer(false) up=9 down=10 (severe/bad-health scold; mild jeer(true) is 6/4)
-    "eat":    [8, 7],      # eat(): open-mouth 8 -> chew 7 (verified DVPet order)
-    "refuse": [4],         # refuse(): frame 4 (9 if Depressed) shaken by mirror toggle
-    "attack": [6, 0],      # attackDefault: strike 6 -> reset 0
-    "tantrum": [9, 10],    # tuipet unhappy-idle -> jeer poses
-    "poop":   [4, 5],      # poop(): squat 4 -> sit 5 (verified)
-    "play":   [1, 5],      # Bounce/Jump toy interact: 1 -> 5
-    "wash":   [0, 4],      # Cleaning/Bathe: scrub 0 -> refreshed 4
-    "heal":   [7, 8],      # recover(): eat-medicine, same as eat
-    "sad":    [9],         # dejected/fail pose (HP_Training_AttackFail)
-    "tired":  [9],         # disliked/weary pose
-    "exhausted": [10],     # collapse pose (Dying)
-    "yawn":   [0, 8],      # yawning(): idle 0 -> open-mouth 8 (verified)
-    "wake":   [2, 3, 1],   # wakeUp(): groggy 2/3 -> settle 1 (verified)
-    "surprise": [1, 5],    # AngrySurprise startle beats 1,5
-    "shield": [4],         # weathering(): rain -> frame 4 (verified)
-    "huddle": [9],         # weathering(): cold/snow -> frame 9 (verified)
-}
-MIRROR_ROLES = {"refuse"}
-
-STAGE_ORDER = ["Fresh", "InTraining", "Rookie", "Champion", "Ultimate", "Mega"]
-# full growth order including the Egg stage, for age/stage-rank gating (shop, tournament)
-STAGE_RANK = ["Egg"] + STAGE_ORDER
+# Animation roles + growth order now come from the authentic DM20 atlas (wayland-native
+# frame order). See species.ROLES / species.STAGE_ORDER.
+ROLES = species.ROLES
+MIRROR_ROLES = species.MIRROR_ROLES
+STAGE_ORDER = species.STAGE_ORDER        # Baby I .. Super Ultimate (authentic, not anime tiers)
+STAGE_RANK = species.STAGE_RANK          # ["Egg"] + STAGE_ORDER
 
 
 def stage_rank(stage):
-    """Index of `stage` in the full growth order (Egg..Mega); an unknown stage
-    counts as fully grown (gates shop unlocks and tournament age limits)."""
-    try:
-        return STAGE_RANK.index(stage)
-    except ValueError:
-        return len(STAGE_RANK)      # unknown stage -> treat as fully grown
+    return species.stage_rank(stage)
 
 
 def pretty_field(name):
@@ -82,23 +50,19 @@ def _content_fill(frame):
 
 @lru_cache(maxsize=1)
 def load_sprites():
+    """The authentic DM20 sprite atlas (wayland-native frames), keyed by species num."""
     from . import placeholder
-    with gzip.open(os.path.join(_DATA, "sprites.json.gz"), "rt") as fh:
-        data = json.load(fh)
+    with gzip.open(_ATLAS, "rt", encoding="utf-8") as fh:
+        data = json.load(fh)["sprites"]
     for rec in data:
         frames = rec["frames"]
         first = next((f for f in frames if f), None)
-        best = max((sum(r.count("1") for r in f) for f in frames if f), default=0)
-        # unfinished cells (solid square, near-blank, or fully empty) -> blob
-        if (first is None or best < 10 or _content_fill(first) > 0.97
-                or rec["name"].strip().upper() in ("EMPTY", "", "NA", "NULL", "NONE")):
+        if first is None:                       # no sprite extracted (the 6 unsourceable mons)
             PLACEHOLDER_NUMS.add(rec["num"])
-            rec["frames"] = placeholder.FRAMES
-            rec["w"], rec["h"] = placeholder.W, placeholder.H
+            rec["frames"], rec["w"], rec["h"] = placeholder.FRAMES, placeholder.W, placeholder.H
             rec["_placeholder"] = True
         else:
-            # fill empty animation frames with the first real frame so no role
-            # (idle/eat/sleep/...) ever renders blank
+            # fill any empty role frame with the first real one so nothing renders blank
             rec["frames"] = [f if f else first for f in frames]
     by_num = {d["num"]: d for d in data}
     return data, by_num
@@ -111,18 +75,14 @@ def is_placeholder(num):
 
 @lru_cache(maxsize=1)
 def load_evolutions():
-    """num -> list of target nums it can evolve into."""
-    path = os.path.join(_RAW, "evolutions.csv")
+    """num -> list of target nums it can evolve into (from the species evolution graph)."""
+    by_id = {r["id"]: r["num"] for r in species.roster()}
     evo = {}
-    with open(path) as fh:
-        r = csv.reader(fh)
-        next(r)
-        for row in r:
-            cells = [c for c in row if c.strip() != ""]
-            if not cells:
-                continue
-            src = int(cells[0])
-            evo[src] = [int(x) for x in cells[1:]]
+    for r in species.roster():
+        targets = [by_id[e["to_id"]] for e in r["evolves_to"]
+                   if e.get("to_id") in by_id]
+        if targets:
+            evo[r["num"]] = targets
     return evo
 
 
@@ -153,7 +113,10 @@ def load_foods():
 
 
 def next_stage(stage):
-    i = STAGE_ORDER.index(stage)
+    try:
+        i = STAGE_ORDER.index(stage)
+    except ValueError:
+        return None
     return STAGE_ORDER[i + 1] if i + 1 < len(STAGE_ORDER) else None
 
 
@@ -172,67 +135,8 @@ def evolution_targets(num, stage):
         out = [n for n, rec in by_num.items() if rec["stage"] == want]
     return out
 
-# ---------------------------------------------------------------------------
-# Evolution requirements (parsed from digimon.csv).  Each Digimon's row holds
-# the care/training conditions to evolve INTO that Digimon, as Key/Value gates
-# where Key is a comparison operator and Value the threshold.  Mirrors the
-# game's Model/EvolutionInfo + Model/Evolution.checkEvolReq exactly.
-# ---------------------------------------------------------------------------
-def _temp_range(s):
-    try:
-        a, b = (s or "40t60").split("t")
-        return (int(a), int(b))
-    except (ValueError, AttributeError):
-        return (40, 60)
-
-
-def _temp_req(s):
-    """Evolution temperature requirement (TempReq "lo t hi"), or None if unset
-    ("0t-1" means no requirement)."""
-    try:
-        lo, hi = (s or "0t-1").split("t")
-        lo, hi = int(lo), int(hi)
-        return (lo, hi) if (hi >= lo and hi >= 0) else None
-    except (ValueError, AttributeError):
-        return None
-
-
-def _int_or(s, default):
-    try:
-        return int(float(s))
-    except (ValueError, TypeError):
-        return default
-
-
-# DVPet DNA fields by name ("None" is Enum.Field ordinal 0 = a REAL bankable/chargeable
-# slot; only NA is excluded). Order here is tuipet's menu display order -- inventory and
-# evolution gates are keyed by NAME (digimon.csv {Field}Key/{Field}Value matched by name),
-# so this tuple's order is independent of Enum.Field ordinals.
+# Food taste categories (still used by the feeding/taste system in pet.py).
 FOOD_CATEGORIES = ("Meat", "Fish", "Veg", "Fruit", "Med", "Junk", "Grain", "Dairy")
-DNA_FIELDS = ("VirusBuster", "MetalEmpire", "DragonsRoar", "JungleTrooper",
-              "DeepSaver", "NightmareSoldier", "WindGuardian", "NatureSpirit",
-              "DarkArea", "None")
-
-
-def _gate(row, key, val):
-    cond = (row.get(key) or "None").strip() or "None"
-    try:
-        v = float(row.get(val) or 0)
-    except ValueError:
-        v = 0.0
-    return (cond, v)
-
-
-def _attack_index(s):
-    """digimon.csv col 55 'vaccineNum:dataNum:virusNum' -> per-attribute special-orb index (-1 = none)."""
-    parts = (s or "").split(":")
-    out = {}
-    for attr, i in (("Vaccine", 0), ("Data", 1), ("Virus", 2)):
-        try:
-            out[attr] = int(parts[i])
-        except (ValueError, IndexError):
-            out[attr] = -1
-    return out
 
 
 @lru_cache(maxsize=1)
@@ -242,15 +146,10 @@ def load_orbs():
 
 
 def attack_orb(num, attribute, power):
-    """DVPet checkAttackSprite: the Digimon's per-species special orb (attackSpritesSpecial.png,
-    digimon.csv col 55) if set for this attribute, else the generic per-attribute orb at the
-    power tier floor(power/25) from attackSprites.png."""
+    """The generic per-attribute battle orb at the power tier floor(power/25). Authentic
+    mono v-pet battle has no per-mon special attacks — the projectile is purely the
+    attribute, scaled by power."""
     orbs = load_orbs()
-    idx = (load_requirements().get(num, {}).get("attack_index") or {}).get(attribute, -1)
-    if idx is not None and idx >= 0:
-        sp = orbs["special"].get(str(idx))
-        if sp:
-            return sp
     tiers = orbs["generic"].get(attribute) or orbs["generic"]["Vaccine"]
     t = max(0, min(int(power) // 25, len(tiers) - 1))
     return tiers[t] or next((x for x in tiers if x), None)
@@ -258,97 +157,16 @@ def attack_orb(num, attribute, power):
 
 @lru_cache(maxsize=1)
 def load_requirements():
-    path = os.path.join(_RAW, "digimon.csv")
-    reqs = {}
-    for r in csv.DictReader(open(path)):
-        try:
-            num = int(r["DigimonNum"])
-        except (KeyError, ValueError):
-            continue
-        prob = (r.get("Probability") or "100;100").split(";")
-        try:
-            p0, p1 = int(prob[0]), int(prob[1]) if len(prob) > 1 else 100
-        except ValueError:
-            p0, p1 = 100, 100
-        reqs[num] = {
-            "priority": float(r.get("Priority Default") or 0),
-            "prob": p0, "probBound": p1,
-            "mistakes": _gate(r, "MistakesKey", "MistakesValue"),
-            "overeat": _gate(r, "OvereatKey", "OvereatValue"),
-            "sick": _gate(r, "SickKey", "SickValue"),
-            "injured": _gate(r, "InjuredKey", "InjuredValue"),
-            "disturb": _gate(r, "DisturbKey", "DisturbValue"),
-            "obedience": _gate(r, "ObedienceKey", "ObedienceValue"),
-            "battles": _gate(r, "BattlesKey", "BattlesValue"),
-            "wins": _gate(r, "WinsKey", "WinsValue"),
-            "vaccine": [_gate(r, "VaccinePowerFirstKey", "VaccinePowerFirstValue"),
-                        _gate(r, "VaccinePowerSecondKey", "VaccinePowerSecondValue")],
-            "data": [_gate(r, "DataPowerFirstKey", "DataPowerFirstValue"),
-                     _gate(r, "DataPowerSecondKey", "DataPowerSecondValue")],
-            "virus": [_gate(r, "VirusPowerFirstKey", "VirusPowerFirstValue"),
-                      _gate(r, "VirusPowerSecondKey", "VirusPowerSecondValue")],
-            "weight": (r.get("Weight") or "None").strip(),
-            "base_weight": int(float(r.get("NewWeight") or 20)),
-            "ideal_temp": _temp_range(r.get("IdealTemp")),
-            "xantibody": (r.get("Xantibody") or "None").strip() or "None",
-            "temp_req": _temp_req(r.get("TempReq")),
-            "habitat_req": _int_or(r.get("Habitat"), -1),
-            "field": (r.get("NewField") or "None").strip() or "None",
-            "element": (r.get("Element") or "None").strip() or "None",
-            "mood": (r.get("Mood") or "None").strip(),
-            "time": (r.get("Time") or "None").strip(),
-            "special": (r.get("SpecialEvolution") or "None").strip() or "None",
-            "level_fought_min": _int_or(r.get("MinLevelFought (vaccine+data+virus+[health*100])/100"), 0),
-            "level_fought": _gate(r, "LevelFoughtKey", "LevelFoughtValue"),
-            "dna": {f: _gate(r, f + "Key", f + "Value") for f in DNA_FIELDS},
-            "evol_item": _int_or(r.get("EvolItemID"), -1),   # item that triggers this form
-            "attack_index": _attack_index(r.get("SpecialAttacksVaccineDataVirus")),
-            "food_pref": (r.get("FoodPreference") or "None").strip() or "None",
-            "food_aversion": (r.get("FoodAversion") or "None").strip() or "None",
-            "food_intol": [x.strip() for x in (r.get("FoodIntolerance(; separator)") or "").split(";")
-                           if x.strip() and x.strip() != "None"],
-            "major_food": (r.get("MajorFood") or "None").strip() or "None",
-            "hunger_decay": _int_or(r.get("HungerDecayCoefficient"), 60),
-            "strength_decay": _int_or(r.get("StrengthDecayCoefficient"), 50),
-            "poop_lapse": _int_or(r.get("PoopLapseInc"), 1),
-            "poop_limit": _int_or(r.get("PoopLimit"), 64),
-            "poop_sick_mult": float(r.get("PoopSickChanceBoundMultiplier") or 1.0),
-            "filth_mood": _int_or(r.get("FilthLapseMoodChange"), -1),
-            "max_strength": _int_or(r.get("MaxStrength"), 4),
-            "vaccine_change": _int_or(r.get("VaccineChange"), 0),    # attributeEvolChange
-            "data_change": _int_or(r.get("DataChange"), 0),
-            "virus_change": _int_or(r.get("VirusChange"), 0),
-            "lifespan_mod": _int_or(r.get("LifespanMod"), 0),        # per-form lifespan delta
-            "give_item": _int_or(r.get("GiveItem"), -1),             # consumable granted on evolve
-            "incarnations": _gate(r, "IncarnationsKey", "IncarnationsValue"),  # generation-count gate
-            "max_energy": _int_or(r.get("MaxEnergy"), 24),          # DVPet per-Digimon maxEnergy
-            "sleep_energy_gain": _int_or(r.get("SleepEnergyGain"), 3),
-        }
-    return reqs
-
-
-@lru_cache(maxsize=1)
-def _canonical_habitat_by_name():
-    """DVPet stores duplicate species rows: the egg-hatch duplicates carry
-    Habitat -1 while the base row carries the real habitat. Map name -> habitat."""
-    path = os.path.join(_RAW, "digimon.csv")
-    out = {}
-    for r in csv.DictReader(open(path)):
-        h = _int_or(r.get("Habitat"), -1)
-        if h >= 0:
-            out.setdefault((r.get("Name") or "").strip(), h)
-    return out
+    """Per-mon evolution/physiology gates were DVPet digimon.csv data (keyed by DVPet
+    nums, absent for the authentic species roster). The engine now reads everything
+    from `species` + the corpus, so this is an empty map — every `.get(num, {})` caller
+    falls back to its sensible default. (digimon.csv is gone.)"""
+    return {}
 
 
 def natural_habitat(num):
-    """The habitat a Digimon calls home (-1 = none). Resolves DVPet's duplicate
-    rows so egg-hatched forms still find their species' habitat."""
-    h = load_requirements().get(num, {}).get("habitat_req", -1)
-    if h is not None and h >= 0:
-        return h
-    _, by_num = load_sprites()
-    name = (by_num.get(num, {}).get("name") or "").strip()
-    return _canonical_habitat_by_name().get(name, -1)
+    """Authentic mono mons have no per-species home habitat (that was DVPet data)."""
+    return -1
 
 # ---------------------------------------------------------------------------
 # Battle enemies (parsed from enemies.csv).  Each enemy references a Digimon by
@@ -357,89 +175,21 @@ def natural_habitat(num):
 _MOVES = None
 
 
-_ATTACKS = None
-
-
-def _load_attacks():
-    global _ATTACKS
-    if _ATTACKS is None:
-        _ATTACKS = {}
-        cols = {"Vaccine": "VaccineName:Effect", "Data": "DataName:Effect", "Virus": "VirusName:Effect"}
-        for r in csv.DictReader(open(os.path.join(_DATA, "digimon.csv"))):
-            try:
-                n = int(r["DigimonNum"])
-            except (KeyError, ValueError):
-                continue
-            info = {}
-            for a, c in cols.items():
-                parts = [p.strip() for p in (r.get(c, "") or "").split(":")]
-                effect = parts[1] if len(parts) > 1 and parts[1] else "None"
-                info[a] = {"name": parts[0] if parts else "", "effect": effect,
-                           "conditions": [p for p in parts[2:] if p]}
-            _ATTACKS[n] = info
-    return _ATTACKS
-
-
+# Authentic mono v-pet battle: attacks are by ATTRIBUTE, not per-mon named moves with
+# effect "chips" (those VaccineName/Effect columns were DVPet/colour-device data, absent
+# from the humulos corpus). The "move" is simply the attribute attack; there are no effects.
 def move_name(num, attribute):
-    """The flavour name of a Digimon's attack for an attribute (DVPet
-    VaccineName/DataName/VirusName columns), e.g. 'Exhaust Flame'."""
-    return (_load_attacks().get(num) or {}).get(attribute, {}).get("name", "")
+    """The attribute attack a Digimon throws (mono devices don't name per-mon moves)."""
+    return attribute
 
 
 def attack_info(num, attribute):
-    """Full DVPet attack for an attribute: {name, effect, conditions[]} parsed from
-    the digimon.csv Name:Effect:Condition(s) cell (AttackEffectProcess input)."""
-    return (_load_attacks().get(num) or {}).get(attribute) or {"name": "", "effect": "None", "conditions": []}
-
-
-@lru_cache(maxsize=1)
-def load_enemies():
-    _, by_num = load_sprites()
-    path = os.path.join(_DATA, "enemies.csv")
-    enemies = []
-    for r in csv.DictReader(open(path)):
-        try:
-            dnum = int(r["Name"])
-        except (KeyError, ValueError):
-            continue
-        rec = by_num.get(dnum)
-        if not rec:
-            continue  # enemy has no usable sprite (placeholder) -> skip
-        vac = int(r.get("VaccinePower") or 0)
-        dat = int(r.get("DataPower") or 0)
-        vir = int(r.get("VirusPower") or 0)
-        attr = rec["attribute"]
-        if attr not in ("Vaccine", "Data", "Virus"):
-            attr = max((("Vaccine", vac), ("Data", dat), ("Virus", vir)), key=lambda t: t[1])[0]
-        bits = (r.get("BitsWon") or "1t5").split("t")
-        try:
-            blo, bhi = int(bits[0]), int(bits[-1])
-        except ValueError:
-            blo, bhi = 1, 5
-        enemies.append({
-            "num": dnum, "name": rec["name"], "stage": rec["stage"],
-            "hp": max(2, int(r.get("Health") or 5)),
-            "vaccine": vac, "data_power": dat, "virus": vir, "attribute": attr,
-            "boss": (r.get("IsZoneBoss") or "FALSE").strip().upper() == "TRUE",
-            "map": int(r.get("Map") or 1), "zone": int(r.get("Zone") or 1),
-            "bits": (blo, bhi),
-            "location": int(r.get("Location") or 0),
-            "penalty": int(r.get("Penalty") or 0),
-            "chance": int(r.get("AppearanceChance/100") or 100),
-            "loot_table": int(r.get("LootTableID") or -1),
-        })
-    return enemies
-
-
-def enemies_for_stage(stage):
-    """Enemies whose Digimon are at the given stage (fallback: all)."""
-    pool = [e for e in load_enemies() if e["stage"] == stage]
-    return pool or load_enemies()
+    """Mono battle has no attack-effect chips -> a plain attribute attack, no effect."""
+    return {"name": attribute, "effect": "None", "conditions": []}
 
 
 # ---------------------------------------------------------------------------
-# Adventure maps: ordered maps -> ordered zones, each with its random-encounter
-# enemies and zone boss(es), parsed from zones.csv + enemies.csv.
+# Tournament cups (tournies.csv) — kept for trophy/egg-unlock data; menu stripped.
 # ---------------------------------------------------------------------------
 @lru_cache(maxsize=1)
 def load_tournies():
@@ -495,29 +245,6 @@ def load_tournies():
         })
     return out
 
-
-@lru_cache(maxsize=1)
-def load_maps():
-    from collections import defaultdict
-    enemies = load_enemies()
-    by_mz = defaultdict(lambda: {"randoms": [], "bosses": []})
-    for e in enemies:
-        slot = "bosses" if e["boss"] else "randoms"
-        by_mz[(e["map"], e["zone"])][slot].append(e)
-    zmap = defaultdict(list)
-    for z in csv.DictReader(open(os.path.join(_DATA, "zones.csv"))):
-        try:
-            m, zn = int(z["MapNum"]), int(z["ZoneNum"])
-        except (KeyError, ValueError):
-            continue
-        ent = by_mz.get((m, zn), {"randoms": [], "bosses": []})
-        zmap[m].append({
-            "map": m, "zone": zn,
-            "total_steps": int(z.get("TotalSteps") or 10000),
-            "randoms": ent["randoms"], "bosses": ent["bosses"],
-        })
-    return [{"map": m, "zones": sorted(zmap[m], key=lambda z: z["zone"])}
-            for m in sorted(zmap)]
 
 # ---------------------------------------------------------------------------
 # Shop & consumables (foods.csv / items.csv sold via shopConsumable.csv).
@@ -640,7 +367,7 @@ def item_is_functional(e):
 # ---------------------------------------------------------------------------
 _SPECIAL_ANIMS = {"ItemEvol", "X_Program", "Inherit", "PhoenixTransport",
                   "BirdraTransport", "GarudaTransport", "WhaTransport", "PortToilet"}
-_UNLOCK_STAGES = ["Fresh", "Rookie", "Champion", "Ultimate", "Mega"]
+_UNLOCK_STAGES = ["Baby I", "Child", "Adult", "Perfect", "Ultimate"]
 
 
 def shop_category(e):
@@ -821,47 +548,6 @@ def consumable_by_key(key):
 
 
 @lru_cache(maxsize=1)
-def load_loot_tables():
-    """DVPet loot tables: table_id -> ordered list of {key, name, rate}.
-
-    Built from lootTable.csv (table -> drop-rate IDs) and dropRate.csv
-    (drop-rate ID -> consumable + percentage). A single 0..100 draw walks the
-    list; the slack below 100 is the chance nothing drops (see loot.roll)."""
-    foods, items = _load_consumables()
-    rates = {}
-    with open(os.path.join(_DATA, "dropRate.csv")) as fh:
-        rd = csv.reader(fh)
-        next(rd, None)
-        for row in rd:
-            if len(row) < 4 or not row[0].strip():
-                continue
-            try:
-                did, cid, rate = int(row[0]), int(row[1]), int(row[3])
-            except ValueError:
-                continue
-            is_food = row[2].strip().upper() == "TRUE"
-            base = (foods if is_food else items).get(cid)
-            if not base or not item_is_functional(base):   # no inert loot drops
-                continue
-            rates[did] = {"key": ("f:%d" if is_food else "i:%d") % cid,
-                          "name": base["name"], "rate": rate}
-    tables = {}
-    with open(os.path.join(_DATA, "lootTable.csv")) as fh:
-        rd = csv.reader(fh)
-        next(rd, None)
-        for row in rd:
-            if not row or not row[0].strip():
-                continue
-            try:
-                tid = int(row[0])
-            except ValueError:
-                continue
-            tables[tid] = [rates[int(c)] for c in row[1:]
-                           if c.strip().isdigit() and int(c) in rates]
-    return tables
-
-
-@lru_cache(maxsize=1)
 def load_backgrounds():
     """Habitat background scenes (per time-of-day/weather frame) keyed by file name."""
     path = os.path.join(_DATA, "backgrounds.json.gz")
@@ -945,25 +631,6 @@ def load_care_effects():
             "strength": pair(r.get("StrengthChange")),
             "can_reapply": flag(r.get("CanReapply")),
         }
-    return out
-
-
-@lru_cache(maxsize=1)
-def load_digicore_icons():
-    """DVPet digicoreMenuConfig.csv -> {digimon_num: core_label}. The Data Book core
-    badge (Burst / Twelve / Two / Dark) the device shows for certain Digimon."""
-    label = {"burstCore.png": "Burst", "twelveCore.png": "Twelve",
-             "twoCore.png": "Two", "darkcore.png": "Dark"}
-    out = {}
-    path = os.path.join(_DATA, "digicoreMenuConfig.csv")
-    if not os.path.exists(path):
-        return out
-    for r in csv.reader(open(path)):
-        if len(r) < 2 or not r[0].strip().isdigit():
-            continue
-        lbl = label.get((r[1] or "").strip())
-        if lbl:
-            out[int(r[0])] = lbl
     return out
 
 

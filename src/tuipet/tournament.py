@@ -11,7 +11,7 @@ from __future__ import annotations
 from . import battle, data
 
 # config TourneyRookieBits/ChampBits/UltBits/MegaBits + TourneyMaxBits
-TOURNEY_BITS = {"Rookie": 125, "Champion": 150, "Ultimate": 175, "Mega": 200}
+TOURNEY_BITS = {"Child": 125, "Adult": 150, "Perfect": 175, "Ultimate": 200, "Super Ultimate": 225}
 TOURNEY_MAX_BITS = 225
 ROUNDS = ["Quarterfinal", "Semifinal", "Final"]
 
@@ -27,7 +27,7 @@ def trophy_label(t):
 def available(pet):
     """Trophies the pet may enter right now: current season + field/attribute restriction
     met + old enough + not already won this season (unless same-day retry)."""
-    if pet.stage in ("Egg", "Fresh", "InTraining"):
+    if pet.stage in ("Egg", "Baby I", "Baby II"):
         return []
     won = getattr(pet, "trophies_won", {}) or {}
     season = pet.season
@@ -50,7 +50,7 @@ def available(pet):
 
 
 def can_enter(pet):
-    if pet.stage in ("Egg", "Fresh", "InTraining"):
+    if pet.stage in ("Egg", "Baby I", "Baby II"):
         return "Too young for the cup."
     if pet.asleep:
         return "zzz... asleep"
@@ -102,7 +102,7 @@ class Tournament:
         if self.round >= 3:
             self.over = True
             self.champion = True
-            base = TOURNEY_BITS.get(self.pet.stage, TOURNEY_BITS["Rookie"])
+            base = TOURNEY_BITS.get(self.pet.stage, TOURNEY_BITS["Child"])
             self.reward_bits = min(TOURNEY_MAX_BITS, int(base * self.trophy["bit_mod"]))
             self.pet.bits += self.reward_bits
             self.pet.trophies += 1

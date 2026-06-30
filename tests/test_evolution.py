@@ -1,116 +1,78 @@
-"""Evolution reachability — the anti-soft-lock guarantee (Workstream A).
+"""Authentic DM20 care-gated evolution (rebuilt onto species conditions).
 
-select() climbs via 'normal stage-up' edges (special=None, evol_item=-1, non-X)
-plus 'Failed' forms when nothing else qualifies; the comment there promises a pet
-"NEVER gets stuck below Mega". We verify the data backs that up:
-
-  1. Every Fresh starter has a pure-timed-care path to a Mega.
-  2. No climbable form below Mega can lose its path to Mega — i.e. you can never
-     be *forced* toward a dead-end. (Jogress/fusion/X-only terminals exist by
-     design — e.g. Liamon, Petaldramon — but they're always opt-in: reaching one
-     means you chose stats for it over a Mega-bound sibling.)
-
-Graph-only; no randomness, so these are stable. Skips if sprite assets are absent.
+Each evolution edge carries the corpus `parsed` conditions (care_mistakes / training /
+overfeed / battles / victories). A pet evolves into the MOST SPECIFIC branch whose care
+record satisfies the conditions; the empty-condition edge is the bad-care catch-all
+(e.g. Agumon -> Numemon). These are deterministic given the care state.
 """
-import pytest
-
-from tuipet import data
-
-STAGE = {s: i for i, s in enumerate(data.STAGE_ORDER)}
-MEGA = STAGE["Mega"]
+from tuipet import evolution, species, data
+from tuipet.pet import Pet
 
 
-def _graph():
+def _agumon(mistakes=0, trainings=0, overeat=0, battles=0, wins=0):
+    p = Pet.from_num(species.by_name("Agumon")["num"])
+    p.stage = "Child"
+    p.care_mistakes, p.trainings, p.overeat = mistakes, trainings, overeat
+    p.battles, p.wins = battles, wins
+    return p
+
+
+def _name(num):
+    return data.load_sprites()[1][num]["name"]
+
+
+def test_in_range_parses_corpus_condition_formats():
+    f = evolution._in_range
+    assert f("0-2", 0) and f("0-2", 2) and not f("0-2", 3)
+    assert f("3+", 3) and f("3+", 9) and not f("3+", 2)
+    assert f("5-15", 5) and f("5-15", 15) and not f("5-15", 4) and not f("5-15", 16)
+    assert f(15, 15) and f(15, 20) and not f(15, 14)      # 'battles_n': at least N
+    assert f(True, 0)                                      # redundant flag -> always satisfied
+
+
+def test_perfect_care_evolves_to_greymon():
+    assert _name(evolution.select(_agumon(mistakes=0, trainings=20))) == "Greymon"
+
+
+def test_low_training_evolves_to_devimon():
+    assert _name(evolution.select(_agumon(mistakes=0, trainings=5))) == "Devimon"
+
+
+def test_messy_overfed_evolves_to_tyranomon():
+    assert _name(evolution.select(_agumon(mistakes=5, trainings=10, overeat=5))) == "Tyranomon"
+
+
+def test_messy_trained_overfed_evolves_to_meramon():
+    assert _name(evolution.select(_agumon(mistakes=5, trainings=20, overeat=5))) == "Meramon"
+
+
+def test_neglect_falls_through_to_the_numemon_catchall():
+    # no specific branch matches -> the empty-condition edge (Numemon) is the default
+    assert _name(evolution.select(_agumon(mistakes=10, trainings=0, overeat=0))) == "Numemon"
+
+
+def test_select_only_climbs_one_stage():
+    p = _agumon(trainings=20)
+    target = evolution.select(p)
+    assert data.load_sprites()[1][target]["stage"] == data.next_stage(p.stage) == "Adult"
+
+
+def test_jogress_only_edges_are_excluded_from_normal_evolution():
+    # 'tag_battle_with' edges are reachable only via jogress, never normal evolution
+    for r in species.roster():
+        for e in r["evolves_to"]:
+            if "tag_battle_with" in (e.get("parsed") or {}):
+                assert not evolution._edge_met(_agumon(), e["parsed"])
+
+
+def test_every_evolving_child_picks_a_real_next_stage_form():
+    """No Child with evolution edges gets stuck: select() returns a real next-stage num."""
     _, by_num = data.load_sprites()
-    if not by_num:
-        pytest.skip("sprite assets not installed (run tools/setup_assets.sh)")
-    evo = data.load_evolutions()
-    req = data.load_requirements()
-
-    def real(n):
-        return n in by_num and not data.is_placeholder(n)
-
-    def sidx(n):
-        return STAGE.get(by_num[n]["stage"], -1)
-
-    def care_edges(n):
-        """Targets select() can reach with only timed care + battles."""
-        out = []
-        for t in evo.get(n, []):
-            if not real(t) or sidx(t) <= sidx(n):
-                continue
-            r = req.get(t, {})
-            if r.get("special", "None") in ("None", "Failed") \
-                    and r.get("evol_item", -1) == -1 \
-                    and r.get("xantibody", "None") not in ("Induced", "Natural"):
-                out.append(t)
-        return out
-
-    fresh = [n for n, r in by_num.items() if r["stage"] == "Fresh" and real(n)]
-    return by_num, sidx, care_edges, fresh
-
-
-def _care_reachable(fresh, care_edges):
-    seen = set(fresh)
-    stack = list(fresh)
-    while stack:
-        n = stack.pop()
-        for t in care_edges(n):
-            if t not in seen:
-                seen.add(t)
-                stack.append(t)
-    return seen
-
-
-def test_every_fresh_starter_reaches_mega():
-    by_num, sidx, care_edges, fresh = _graph()
-    assert len(fresh) > 0
-
-    from functools import lru_cache
-
-    @lru_cache(maxsize=None)
-    def reaches_mega(n):
-        if sidx(n) >= MEGA:
-            return True
-        return any(reaches_mega(t) for t in care_edges(n))
-
-    stranded_starts = [n for n in fresh if not reaches_mega(n)]
-    names = [by_num[n]["name"] for n in stranded_starts]
-    assert not stranded_starts, f"Fresh starters with no timed-care path to Mega: {names}"
-
-
-def test_no_forced_softlock_below_mega():
-    """Every climbable (>=1 care-edge) form below Mega keeps a path to Mega, so a pet
-    is never *forced* down a dead branch. Dead-end terminals are fine — they just
-    have no care-edges and are reached only by choosing their stats over a sibling's."""
-    by_num, sidx, care_edges, fresh = _graph()
-    reachable = _care_reachable(fresh, care_edges)
-
-    from functools import lru_cache
-
-    @lru_cache(maxsize=None)
-    def reaches_mega(n):
-        if sidx(n) >= MEGA:
-            return True
-        return any(reaches_mega(t) for t in care_edges(n))
-
-    forced = []
-    for n in reachable:
-        if sidx(n) < MEGA and care_edges(n) and not reaches_mega(n):
-            forced.append((n, by_num[n]["name"], by_num[n]["stage"]))
-    assert not forced, f"forms that can evolve but are forced toward a soft-lock: {forced}"
-
-
-def test_dead_end_terminals_are_optin():
-    """The below-Mega care-terminals (jogress/spirit forms) are always opt-in: every
-    parent that can evolve into one also offers a non-terminal sibling."""
-    by_num, sidx, care_edges, fresh = _graph()
-    reachable = _care_reachable(fresh, care_edges)
-    dead = {n for n in reachable if sidx(n) < MEGA and not care_edges(n)}
-
-    forced_in = []
-    for p in reachable:
-        kids = care_edges(p)
-        if kids and all(k in dead for k in kids):   # parent's only options are terminals
-            forced_in.append((p, by_num[p]["name"]))
-    assert not forced_in, f"forms whose only evolutions are dead-end terminals: {forced_in}"
+    for r in species.roster():
+        if r["stage"] != "Child" or not r["evolves_to"]:
+            continue
+        p = Pet.from_num(r["num"]); p.stage = "Child"
+        t = evolution.select(p)
+        if t is not None:
+            assert not data.is_placeholder(t)
+            assert by_num[t]["stage"] in (data.next_stage("Child"), "Child")

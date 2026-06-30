@@ -5,6 +5,7 @@ from dataclasses import dataclass, field as _dcf
 from . import data
 from . import egg as egg_mod
 from . import evolution
+from . import species as sp
 from . import weather as wx
 from . import theme
 
@@ -22,10 +23,6 @@ def _enemy_level(enemy):
     return max(1, int((v + d + vir + (h - 5) * 10) / 100))
 
 
-_RAIN = {"Drizzling", "Raining", "HeavyRain"}
-_SNOW = {"LightSnow", "Snowing", "HeavySnow"}
-_PRECIP = _RAIN | _SNOW
-
 
 def _dvpet_time(phase):
     """Map tuipet's day phase to DVPet's training Time (Morning/Noon/Night)."""
@@ -36,7 +33,8 @@ def _dvpet_time(phase):
 # in total; reaching higher stages extends it; neglect (sickness/starvation/
 # fatigue) burns it down faster. The final stretch is the geriatric "old age".
 LIFE_START = 259200.0          # 3 days (egg/baby base lifespan)
-STAGE_LIFE = {"Rookie": 345600.0, "Champion": 388800.0, "Ultimate": 432000.0, "Mega": 432000.0}  # 4-5 days
+STAGE_LIFE = {"Child": 345600.0, "Adult": 388800.0, "Perfect": 432000.0,
+              "Ultimate": 432000.0, "Super Ultimate": 432000.0}  # 4-5 days
 GERIATRIC_REMAIN = 21600.0   # last N seconds of life = elderly
 
 # DVPet mood model (config.csv): a signed score mapped to a Mood enum.
@@ -94,24 +92,6 @@ SURR_EFFECT_REQ_LOWHP_OBED = 15         # SurrenderEffectRequestLowHealthObedien
 SURR_REJECT_MOOD_DEC = 10               # SurrenderRejectMoodDec
 SURR_REJECT_OBED_INC = 1                # SurrenderRejectObedienceInc
 SURR_ENTH_DEC = 3                       # SurrenderEnthusiasmDec
-# --- DNA system (DVPet DNA.class + PhysicalState.applyDNA + config.csv) ---
-MAX_DNA_INVENTORY = 99                  # config MaxDNAInventory
-DNA_STRENGTH_CHANGE = 1                 # config DNAStrengthChange
-DNA_SAME_FIELD_MOOD, DNA_DIFF_FIELD_MOOD = 1, -1
-DNA_SAME_FIELD_ENTH_DEC, DNA_DIFF_FIELD_ENTH_DEC = 3, 6
-DNA_SAME_FIELD_SICK, DNA_DIFF_FIELD_SICK = 1, 2     # checkSick target out of SICK_BOUND
-DNA_SICK_BOUND = 100                    # config SickChance / WorseSickChance bound
-DNA_FULFILLED_RATE = 2                  # config DNAFulfilledRate (priority weight per met field)
-
-# DVPet ClockTic.getDNARate: the DNA-generate mini-game maps your mash-rate (which,
-# at the 10s mark, equals your total presses) onto one of these 8-wide Field bands
-# (config _<field>RateMaxMiniGame). Too slow (<=8) or over-mashed (>80) -> None = a
-# wasted wager. Faster mashing reaches the rarer late fields (DarkArea needs 73-80).
-DNA_RATE_BANDS = (
-    (8, "None"), (16, "DeepSaver"), (24, "JungleTrooper"), (32, "NatureSpirit"),
-    (40, "WindGuardian"), (48, "DragonsRoar"), (56, "MetalEmpire"),
-    (64, "NightmareSoldier"), (72, "VirusBuster"), (80, "DarkArea"),
-)
 
 
 def dna_field_for_rate(rate):
@@ -314,8 +294,7 @@ class Pet:
     asleep: bool = False
     lights: bool = True             # DVPet _lights: room-light toggle, SEPARATE from sleep
     care_mistakes: int = 0
-    dna_owned: dict = _dcf(default_factory=lambda: {f: 0 for f in data.DNA_FIELDS})    # banked
-    dna_applied: dict = _dcf(default_factory=lambda: {f: 0 for f in data.DNA_FIELDS})  # charged
+    trainings: int = 0              # successful training sessions this stage (gates DM20 evolution)
     food_ranks: dict = _dcf(default_factory=lambda: {c: 0 for c in data.FOOD_CATEGORIES})
     food_eaten: dict = _dcf(default_factory=lambda: {c: 0 for c in data.FOOD_CATEGORIES})
     favorite_food: str = ""             # emerges at rank +RankLimit
@@ -357,17 +336,11 @@ class Pet:
     bits: int = 0
     trophies: int = 0
     trophies_won: dict = _dcf(default_factory=dict)   # trophy id -> season won (per-season earned)
-    adv_map: int = 0
-    adv_zone: int = 0
-    adv_seek: bool = False    # Disaster Transport: next adventure leg forces an encounter
     egg_type: int = 0
     lifespan: float = LIFE_START
     generation: int = 1
     dead: bool = False
     world_seconds: float = 0.0
-    temp: float = 50.0
-    day_temp: float = 50.0
-    weather: str = "Clear"
     field: str = ""
     element: str = ""
     habitat: int = 2                # current home (2 = Plains, a temperate default)
@@ -400,17 +373,16 @@ class Pet:
     # seconds in each stage before it is eligible to evolve (accelerated time)
     EGG_DURATION = 180     # seconds an egg incubates before hatching (~3 min)
 
-    STAGE_DURATION = {                       # seconds in a stage before it may evolve
-        "Fresh": 1800, "InTraining": 2400, "Rookie": 3000,
-        "Champion": 3600, "Ultimate": 3600, "Mega": 9e9,
-    }
+    # Authentic DM20 real-time stage timers (seconds): Baby I 10min .. Perfect 48h.
+    # Ultimate/Super Ultimate have no further timer -> terminal (9e9) barring jogress.
+    STAGE_DURATION = {st: (sp.stage_time(st) or 9e9) for st in sp.STAGE_ORDER}
 
     @classmethod
     def hatch(cls, num=None):
         _, by_num = data.load_sprites()
         if num is None:
-            fresh = [n for n, r in by_num.items() if r["stage"] == "Fresh" and not data.is_placeholder(n)]
-            num = random.choice(fresh)
+            babies = [n for n, r in by_num.items() if r["stage"] == "Baby I" and not data.is_placeholder(n)]
+            num = random.choice(babies)
         return cls.from_num(num)
 
     @classmethod
@@ -426,8 +398,8 @@ class Pet:
         _, by_num = data.load_sprites()
         target = egg_mod.hatch_target(self.egg_type)
         if target is None or target not in by_num or data.is_placeholder(target):
-            fresh = [n for n, r in by_num.items() if r["stage"] == "Fresh" and not data.is_placeholder(n)]
-            target = random.choice(fresh)
+            babies = [n for n, r in by_num.items() if r["stage"] == "Baby I" and not data.is_placeholder(n)]
+            target = random.choice(babies)
         self.evolve_to(target)
         self.hatching = False
         self._rand_personality_traits()               # fix disposition/glutton/restless for life
@@ -470,7 +442,6 @@ class Pet:
     # ---- per-tick simulation -------------------------------------------------
     def tick(self, dt):
         self.world_seconds += dt          # the day/night clock runs even past death
-        self._update_weather(dt)          # ...and so does the weather, over the grave
         if self.dead:
             return
         if self.x_antibody == "Temporary":          # a protoform fades if unused
@@ -494,7 +465,6 @@ class Pet:
             return
 
         if self.stage != "Egg":
-            self._temperature_effects(dt)
             self._track_time_pref(dt)
             day = int(self.world_seconds // DAY_LENGTH)
             if getattr(self, "_exercise_day", -1) != day:    # DVPet checkExerciseTime: daily reset
@@ -668,7 +638,7 @@ class Pet:
     @property
     def is_geriatric(self):
         return (not self.dead
-                and self.stage in ("Rookie", "Champion", "Ultimate", "Mega")
+                and self.stage in ("Child", "Adult", "Perfect", "Ultimate", "Super Ultimate")
                 and (self.lifespan - self.age_seconds) < GERIATRIC_REMAIN)
 
     @property
@@ -683,24 +653,18 @@ class Pet:
     def season(self):
         return wx.season_for_day(int(self.world_seconds // DAY_LENGTH))
 
-    @property
-    def ideal_temp(self):
-        return data.load_requirements().get(self.num, {}).get("ideal_temp", (40, 60))
-
     def habitat_obj(self):
         habs = data.load_habitats()
         return habs.get(self.habitat) or habs.get(0) or next(iter(habs.values()))
 
     def background(self):
-        """The habitat background frame for the current weather/time (or None)."""
-        frames = data.load_backgrounds().get(self.habitat_obj().get("bg", ""))
+        """The backdrop for the current device/field + time of day (or None). It's fixed
+        per device (DM20 = Plains), not a switchable habitat — see species.background_key."""
+        frames = data.load_backgrounds().get(sp.background_key(getattr(self, "field", None)))
         if not frames:
             return None
-        if self.weather in _PRECIP and len(frames) > 4:
-            idx = 4
-        else:
-            idx = {"dawn": 0, "day": 1, "dusk": 2, "night": 3}.get(self.day_phase, 1)
-        return theme.weather_tint(frames[min(idx, len(frames) - 1)], self.weather)
+        idx = {"dawn": 0, "day": 1, "dusk": 2, "night": 3}.get(self.day_phase, 1)
+        return frames[min(idx, len(frames) - 1)]
 
     def _affinity(self):
         """Net Field/Element fit with the current home: +compatible, -incompatible."""
@@ -748,28 +712,6 @@ class Pet:
     def disliked_time(self):
         return min(self.time_pref, key=self.time_pref.get) if any(v < 0 for v in self.time_pref.values()) else None
 
-    def _update_weather(self, dt):
-        hab = self.habitat_obj()
-        lo_i, hi_i = self.ideal_temp
-        if hab["weather_chance"] <= 0:        # climate-controlled home (Hard Disk)
-            self.weather = "Clear"
-            target = self.day_temp = (lo_i + hi_i) / 2
-        else:
-            day = int(self.world_seconds // DAY_LENGTH)
-            if getattr(self, "_weather_day", -1) != day:
-                self._weather_day = day
-                lo, hi = hab["temps"][self.season]
-                self.day_temp = random.randint(min(lo, hi), max(lo, hi))
-            self._weather_t = getattr(self, "_weather_t", 0.0) + dt
-            if self._weather_t >= wx.WEATHER_CHECK_SEC:
-                self._weather_t = 0.0
-                self.weather = wx.next_weather(self.weather, self.season, self.day_temp, hab)
-            target = wx.adjusted_day_temp(self.day_temp, self.weather, self.day_phase, hab)
-        if self.temp < target:
-            self.temp = min(target, self.temp + wx.TEMP_RATE * dt)
-        elif self.temp > target:
-            self.temp = max(target, self.temp - wx.TEMP_RATE * dt)
-
     def _set_xantibody(self, state):
         """Raise the X-Antibody state (never downgrades except by expiry)."""
         if _XA_ORDER[state] > _XA_ORDER.get(self.x_antibody, 0):
@@ -788,7 +730,6 @@ class Pet:
         self.bits -= h["price"]
         self.habitats = sorted(set(self.habitats) | {hid})
         self.habitat = hid                 # buying a new home moves you in (moving is free anyway)
-        self._weather_day = -1             # fresh climate roll on arrival, like move_to
         return f"Bought {h['name']} — moved in!"
 
     def move_to(self, hid):
@@ -799,7 +740,6 @@ class Pet:
         if hid not in self.habitats:
             return "You don't own that habitat."
         self.habitat = hid
-        self._weather_day = -1            # force a fresh climate roll on arrival
         return f"Moved to {h['name']}."
 
     def _tick_effect(self, dt):
@@ -841,31 +781,6 @@ class Pet:
         eff = data.load_care_effects().get(self.effect_id)
         return bool(eff and eff["pause_call"])
 
-    def _temperature_effects(self, dt):
-        if self.effect_id >= 0:
-            eff = data.load_care_effects().get(self.effect_id)
-            if eff and eff["pause_temp"]:
-                return                                       # Futon: temperature paused
-        lo, hi = self.ideal_temp
-        aff = self._affinity()                # compatible home helps, incompatible hurts
-        too_hot = self.temp >= hi + wx.UPPER_IDEAL
-        too_cold = self.temp <= lo - wx.LOWER_IDEAL
-        self._comfort_t = getattr(self, "_comfort_t", 0.0) + dt
-        if self._comfort_t >= wx.IDEAL_TEMP_MOOD_SEC:
-            self._comfort_t = 0.0
-            if lo <= self.temp <= hi:
-                self._set_mood(self.mood + wx.IDEAL_TEMP_INC + aff)
-            elif too_hot or too_cold:
-                self._set_mood(self.mood - wx.IDEAL_TEMP_DEC + aff)
-        # bad-temperature sickness is DISABLED in classic mode (config SickChanceBadTemp=0;
-        # only hardcore enables it) -- temperature drives mood, not illness. An incompatible
-        # habitat is still unhealthy (DVPet incompatibleField/ElementSickChanceChange).
-        self._btemp_t = getattr(self, "_btemp_t", 0.0) + dt
-        if self._btemp_t >= wx.BAD_TEMP_SICK_SEC:
-            self._btemp_t = 0.0
-            if not self.sick and aff < 0 and random.random() < 0.004 * (-aff):
-                self._sicken()
-
     def _die(self):
         self.dead = True
         self.asleep = False
@@ -903,88 +818,6 @@ class Pet:
             if hr not in self.habitats:
                 self.habitats = sorted(set(self.habitats) | {hr})
 
-    # ---- DNA (DVPet DNA.class) -------------------------------------------
-    def dna_total(self):
-        return sum(self.dna_applied.get(f, 0) for f in data.DNA_FIELDS)
-
-    def dna_percent(self, field):
-        """DNA.getPercent: this field's share of all charged DNA (the evolution gate)."""
-        t = self.dna_total()
-        return int(100 * self.dna_applied.get(field, 0) / t) if t else 0
-
-    def can_charge_dna(self):
-        if self.dead:
-            return "It rests now — press N for a new egg."
-        if self.stage == "Egg":
-            return "An egg has no DNA yet."
-        if self.asleep:
-            return self._disturbed()
-        return None
-
-    def generate_dna(self, field, amount):
-        """DNA_GenerateValidate: spend `amount` bits 1:1 -> owned[field]; cap 99 (overflow refunds)."""
-        if field not in self.dna_owned or amount <= 0 or self.bits < amount:
-            return False
-        self.bits -= amount
-        total = self.dna_owned.get(field, 0) + amount
-        if total > MAX_DNA_INVENTORY:
-            self.bits += total - MAX_DNA_INVENTORY          # refund the overflow as bits
-            total = MAX_DNA_INVENTORY
-        self.dna_owned[field] = total
-        return True
-
-    def dna_bet(self, amount):
-        """DVPet DNA_GenerateValidate (onEnter): pay the wager up front, before the mash
-        mini-game runs. Returns False (and jeers) if the pet can't afford it."""
-        if amount <= 0 or self.bits < amount:
-            self._set_anim("refuse", 1.0)                   # Jeering: can't afford the wager
-            return False
-        self.bits -= amount
-        return True
-
-    def dna_minigame_award(self, amount, rate):
-        """DVPet onDNAGenerate: the mash `rate` picks the Field; bank `amount` DNA of it
-        (the wager was already spent in dna_bet). Overflow past the 99 cap refunds as
-        bits, exactly like the device. Returns the Field won ("None" = wasted)."""
-        field = dna_field_for_rate(rate)
-        total = self.dna_owned.get(field, 0) + amount
-        if total > MAX_DNA_INVENTORY:
-            self.bits += total - MAX_DNA_INVENTORY          # refund the overflow as bits
-            total = MAX_DNA_INVENTORY
-        self.dna_owned[field] = total
-        return field
-
-    def apply_dna(self, field, amount):
-        """PhysicalState.applyDNA: owned -> charged, at a cost (disturb/strength/mood/spirit/sick)."""
-        owned = self.dna_owned.get(field, 0)
-        if amount <= 0 or owned < amount:
-            self._set_anim("refuse", 1.0)                   # Jeering: not enough DNA
-            return False
-        self.dna_owned[field] = owned - amount
-        self.dna_applied[field] = self.dna_applied.get(field, 0) + amount
-        self.disturb += 1                                   # DVPet disturb()
-        self.strength = _clamp(self.strength + DNA_STRENGTH_CHANGE * amount, 0, 4)
-        same = field == self.field
-        self._set_mood(self.mood + (DNA_SAME_FIELD_MOOD if same else DNA_DIFF_FIELD_MOOD) * amount)
-        self._set_enthusiasm(self.enthusiasm
-                             - (DNA_SAME_FIELD_ENTH_DEC if same else DNA_DIFF_FIELD_ENTH_DEC) * amount)
-        # DVPet applyDNA calls checkWorseSick(...) THEN checkSick(...): these are
-        # mutually exclusive on sick-state (worsen an existing illness vs. roll a brand
-        # new one), so EXACTLY ONE roll ever takes effect -- not two independent
-        # new-sickness chances (the old range(2) ~doubled the real sicken rate). The
-        # Same/DiffField Sick and WorseSick chances are equal in config (1 / 2), so one
-        # `chance` value covers both branches; both bounds are 100 (= DNA_SICK_BOUND).
-        chance = (DNA_SAME_FIELD_SICK if same else DNA_DIFF_FIELD_SICK) * amount
-        if random.random() < chance / DNA_SICK_BOUND:
-            if self.sick:
-                self._worsen_sick()                         # checkWorseSick: aggravate it
-            else:
-                self._sicken()                              # checkSick: a brand-new illness
-        return True
-
-    def reset_dna(self):
-        """DNA.resetDNA (via resetEvolVar): charged DNA clears on evolution; owned inventory persists."""
-        self.dna_applied = {f: 0 for f in data.DNA_FIELDS}
 
     # ---- per-species physiology (DVPet calcNeedDecay coefficients) -------
     def _phys(self):
@@ -1099,12 +932,11 @@ class Pet:
             self._set_xantibody("Permanent")          # the X-Antibody locks in
         self.stage_seconds = 0.0
         # per-stage care record resets; the next stage's care decides the next form
-        self.care_mistakes = self.overeat = self.disturb = 0
+        self.care_mistakes = self.overeat = self.disturb = self.trainings = 0
         self.injuries = self.sick_count = 0
         self.sick = False
         self.sick_length = self.inj_length = self.fatigue_length = 0.0
         self.levels_fought = []
-        self.reset_dna()                # DNA.resetDNA: charged DNA clears each evolution
         self.food_eaten = {c: 0 for c in data.FOOD_CATEGORIES}   # MajorFood resets per stage
         self.weight = self._base_weight()
         # DVPet attributeEvolChange: a form raises/lowers the carried attribute powers
@@ -1194,14 +1026,9 @@ class Pet:
         return "zzz... mind its sleep!"
 
     def _special_idle(self):
-        """An occasional idle quirk reflecting weather + mood (DVPet
-        weathering()/personalityMood*): huddle in bad weather, a happy hop
-        when content, a grumpy tantrum when unhappy."""
-        if self.weather in _RAIN:
-            self._set_anim("shield", 2.0)
-        elif self.weather in _SNOW:
-            self._set_anim("huddle", 2.0)
-        elif self.mood >= MIN_HAPPY_MOOD:
+        """An occasional idle quirk reflecting mood (DVPet personalityMood*):
+        a happy hop when content, a grumpy tantrum when unhappy."""
+        if self.mood >= MIN_HAPPY_MOOD:
             self._set_anim(random.choice(("play", "surprise")), 2.0)
         elif self.mood <= MIN_UNHAPPY_MOOD:
             self._set_anim(random.choice(("angry", "tantrum")), 2.0)
@@ -1265,6 +1092,8 @@ class Pet:
             self.strength = _clamp(self.strength + 1, 0, 4)
             self.obedience += 1
         success = hits >= 2
+        if success:
+            self.trainings += 1                           # DM20 onExerciseFinish: +1 Training (gates evolution)
         # DVPet onExerciseFinish adds +1 per drill, but the real device's stages last
         # real-DAYS (hundreds of trainings) while tuipet compresses them to ~2h. A flat
         # +1 can't reach the real-data attribute-power thresholds (digimon.csv median 50)
@@ -1310,7 +1139,7 @@ class Pet:
     def can_battle(self):
         if self.dead:
             return "It rests now — press N for a new egg."
-        if self.stage in ("Egg", "Fresh"):
+        if self.stage in ("Egg", "Baby I"):
             return "Too young to battle."
         if self.asleep:
             return self._disturbed()
@@ -1472,7 +1301,7 @@ class Pet:
         gating from DVPet is approximated by running this only while awake.)"""
         if self.scold_flag or self.praise_flag:          # checkCall(): already mid-discipline
             return
-        if self.obedience >= DISCIPLINE_OBEDIENCE_MAX and self.stage not in ("Fresh", "InTraining"):
+        if self.obedience >= DISCIPLINE_OBEDIENCE_MAX and self.stage not in ("Baby I", "Baby II"):
             return
         adjust = 0
         if self.hunger < 4 and self.glutton > 0:          # hungry glutton frets
@@ -1493,14 +1322,6 @@ class Pet:
     def is_injured(self):
         """PhysicalState.isInj: currently nursing an injury (the count persists for evolution)."""
         return self.inj_length > 0
-
-    def is_freezing(self):
-        """Too cold: temperature at or below the freezing threshold."""
-        return self.temp <= wx.FREEZING_TEMP
-
-    def is_overheating(self):
-        """Too hot: temperature above the ideal band's upper bound."""
-        return self.temp >= self.ideal_temp[1] + wx.UPPER_IDEAL
 
     def _sicken(self):
         """PhysicalState.sicken: fall ill for MinSickLength..MaxSickLength recovery lapses;
@@ -1785,17 +1606,10 @@ class Pet:
             self._set_anim("happy", 1.4)
             made = (data.consumable_by_key(got) or {}).get("name", got)
             return f"{self.name} got a {made}!"
-        if e.get("action") == "ItemEvol":           # item-triggered evolution (Digimental/etc.)
-            target = evolution.item_select(self, e["id"])
-            if target is None and e.get("dexnum", -1) >= 0:
-                target = evolution.item_direct(self, e["dexnum"])
-            if target is None:
-                self.inventory[key] = self.inventory.get(key, 0) + 1   # refund: not usable now
-                self._set_anim("refuse", 1.0)
-                return f"{self.name} can't use that yet."
-            self.evolve_to(target)
-            self._set_anim("happy", 1.4)
-            return f"{self.name} evolved!"
+        if e.get("action") == "ItemEvol":           # item-digivolution is not a DM20 mechanic
+            self.inventory[key] = self.inventory.get(key, 0) + 1   # refund the item, unused
+            self._set_anim("refuse", 1.0)
+            return f"{self.name} can't use that yet."
         is_food = key.startswith("f:")
         if e["hunger"]:
             self.hunger = _clamp(self.hunger + e["hunger"], 0, 4)
@@ -1828,10 +1642,6 @@ class Pet:
             self.bandage_lapse = BANDAGE_HOURS           # recovery item -> getBandage indicator
         if e.get("seconds"):
             self.lifespan += e["seconds"]                # DVPet setTotalLifespan: +/- lifespan
-        if e.get("temp"):
-            new_temp = self.temp + e["temp"]             # DVPet applies only if it stays in range
-            if 0 <= new_temp <= wx.MAX_TEMP:             # config MaxTemp=100, floor 0
-                self.temp = new_temp
         if e.get("sleep") and not self.asleep:
             self.asleep = True                           # DVPet item Sleep flag forces sleep
         if is_food:
@@ -1855,10 +1665,6 @@ class Pet:
             return "fatigued"
         if self.is_injured():
             return "injured"
-        if self.is_freezing():
-            return "freezing"
-        if self.is_overheating():
-            return "overheating"
         if self.hunger == 0:
             return "starving"
         if self.poop >= 3:

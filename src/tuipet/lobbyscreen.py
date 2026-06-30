@@ -6,8 +6,8 @@ right. Phases:
   name     type a handle, Enter to join  (only when no cached tamer name)
   lobby    chat default; Up/Down pick a player; Enter on empty input opens that
            player's action menu ([B]attle / [J]ogress); invites pop a [Y]/[N]
-  jogress  both relay their pet's attribute, each resolves its fusion locally
-           (jogress.resolve), shows the result, Enter evolves the pet
+  jogress  both relay their pet's species (num), each resolves its fusion locally
+           against the canonical partner pairs (jogress.resolve), Enter evolves the pet
   battle   host-authoritative PvP: both relay battle cards, each round both pick
            an attribute, the inviter (host) resolves via the real engine and
            relays the absolute result; the guest displays it. PvP wins record
@@ -264,7 +264,7 @@ class LobbyPanel:
         if kind == "jogress" and self.phase == "jogress" and self.jphase == "waiting":
             self.partner_species = payload.get("name")
             reason = jogress.can_jogress(self.pet)      # honour asleep / too-young, like offline
-            self.jresult = None if reason else jogress.resolve(self.pet, payload.get("attr"))
+            self.jresult = None if reason else jogress.resolve(self.pet, payload.get("num"))
             if self.jresult:
                 self.jphase, self.sfx = "result", "jogress"
             else:

@@ -20,6 +20,11 @@ PALETTES = {
 
 UPPER, LOWER, FULL, EMPTY = "▀", "▄", "█", " "
 
+# Authentic play field: 16×16 sprites live in a 32-dot-wide window. The LCD canvas itself
+# stays wider (e.g. 40) and shows background in the margins; sprites ANCHOR (no clip) inside
+# a centred 32-wide band. cols<=PLAY_COLS => the whole width is the play field (no clamp).
+PLAY_COLS = 32
+
 
 def frame_segments(rows, on="#e6e6e6", off=None):
     """Yield Rich Segments for one bitmap frame (list of '0'/'1' strings)."""
@@ -59,7 +64,7 @@ if __name__ == "__main__":
     import os
     import sys
     here = os.path.dirname(__file__)
-    data = json.load(gzip.open(os.path.join(here, "data/sprites.json.gz"), "rt"))
+    data = json.load(gzip.open(os.path.join(here, "data/dm20_sprites.json.gz"), "rt"))["sprites"]
     by = {d["name"]: d for d in data}
     name = sys.argv[1] if len(sys.argv) > 1 else "Agumon"
     pal = sys.argv[2] if len(sys.argv) > 2 else "lcd"
@@ -68,7 +73,7 @@ if __name__ == "__main__":
     from rich.console import Console
     c = Console()
     c.print(f"[bold]{d['name']}[/] ({d['stage']}, {d['attribute']})  {d['w']}x{d['h']}px  palette={pal}")
-    for i in (0, 1, 2, 6):  # idle a/b, happy, sleep-ish
+    for i in (0, 1, 4, 6):  # wayland: idle a/b, happy, sleep
         c.print(f"frame {i}:")
         c.print(frame_text(d["frames"][i], on, off))
 
@@ -89,6 +94,9 @@ def render_screen(frame_rows, cols, rows, on="#2b2e31", bg="#c6c9cc", baseline=T
         sw = max(len(r) for r in frame_rows)
         sh = len(frame_rows)
         ox = (cols - sw) // 2 + xshift
+        if cols > PLAY_COLS and sw <= PLAY_COLS:   # anchor the sprite inside the centred 32-wide play window
+            px0 = (cols - PLAY_COLS) // 2
+            ox = max(px0, min(ox, px0 + PLAY_COLS - sw))
         oy = max(0, (px_h - sh - 2) if baseline else (px_h - sh) // 2) - yshift   # +yshift lifts the sprite (a hop)
         for y, line in enumerate(frame_rows):
             for x, ch in enumerate(line):
