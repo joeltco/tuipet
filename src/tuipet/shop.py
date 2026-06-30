@@ -16,7 +16,7 @@ RESELL_DIV = 4                      # resell value = price // 4
 
 def unlocked(pet, category):
     """Items in `category` unlocked at the pet's current stage, cheapest first."""
-    pr = data.stage_rank(getattr(pet, "stage", "Mega"))
+    pr = data.stage_rank(getattr(pet, "stage", "Super Ultimate"))
     out = [e for e in data.shop_catalog()
            if e["shop_cat"] == category and data.stage_rank(e["unlock_stage"]) <= pr]
     out.sort(key=lambda e: e["price"])

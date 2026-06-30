@@ -57,13 +57,10 @@ _current = _DEFAULT
 _NAMES = ("LCD_ON", "LCD_BG", "MID", "INK", "INK_B", "DIM", "SEL", "ACCENT",
           "POS", "NEG", "BORDER", "SIL_DAY", "SIL_NIGHT", "PHASE_PALETTE",
           "HEART", "ENERGY", "MOOD", "LIFE", "COIN")
-_SCREEN_MODULES = ("app", "menu", "battlescreen", "training", "adventurescreen",
-                   "tournamentscreen", "shopscreen", "habitatscreen",
-                   "jogressscreen", "digicorescreen", "eggselectscreen",
+_SCREEN_MODULES = ("app", "menu", "battlescreen", "training",
+                   "jogressscreen", "eggselectscreen",
                    "lobbyscreen", "titlescreen", "deathscreen", "themescreen")
 
-_RAIN = {"Drizzling", "Raining", "HeavyRain"}
-_SNOW = {"LightSnow", "Snowing", "HeavySnow"}
 
 # Static declarations of the palette names so linters/type-checkers can see them.
 # apply(_DEFAULT) runs at import (bottom of file) and overwrites these with the live
@@ -117,35 +114,6 @@ def names():
 
 def cycle():
     return apply(_ORDER[(_ORDER.index(_current) + 1) % len(_ORDER)])
-
-
-def _wcat(weather):
-    if weather in _RAIN:
-        return "rain"
-    if weather in _SNOW:
-        return "snow"
-    if weather == "Cloudy":
-        return "cloud"
-    return None
-
-
-def weather_tint(frame, weather):
-    """Blend a habitat background frame toward the active theme's weather tint
-    (rain/snow/cloud). `frame` is a list of rows of 6-hex-char cells; returns a
-    new tinted frame (or the original when the weather is clear)."""
-    spec = WEATHER.get(_wcat(weather)) if frame else None
-    if not spec:
-        return frame
-    hexcol, a = spec
-    tr, tg, tb = int(hexcol[1:3], 16), int(hexcol[3:5], 16), int(hexcol[5:7], 16)
-    out = []
-    for row in frame:
-        cells = []
-        for i in range(0, len(row), 6):
-            r = int(row[i:i + 2], 16); g = int(row[i + 2:i + 4], 16); b = int(row[i + 4:i + 6], 16)
-            cells.append("%02x%02x%02x" % (int(r + (tr - r) * a), int(g + (tg - g) * a), int(b + (tb - b) * a)))
-        out.append("".join(cells))
-    return out
 
 
 # --- persistence of the chosen theme ---

@@ -3,10 +3,9 @@ the happy/cheer pose pair, the net-zero sick shuffle, and the idle mood poses.""
 from tuipet import anim, data
 
 
-def test_happy_role_is_the_praise_pair_not_the_scold_pair():
-    # DVPet cheer(true) bounces up=5/down=7; [6,4] was the cheer(false)/scold pair.
-    # battlescreen.py already uses 5/7 for the win pose -- the ROLE must match it.
-    assert data.ROLES["happy"] == [5, 7]
+def test_happy_role_is_the_wayland_happy_frame():
+    # wayland-native ROLES: happy is frame 4; the bounce is driven by yshift, not a pose pair.
+    assert data.ROLES["happy"] == [4]
 
 
 def test_sick_shuffle_is_net_zero():
@@ -46,11 +45,11 @@ def test_mood_pose_indices_are_valid_sprite_frames():
         assert 0 <= p <= 10
 
 
-def test_play_is_the_jump_pair_not_the_cheer_pair():
-    # DVPet jumping()/playing() bounces poses 1<->5; cheer bounces 5<->7.  Play must
-    # render its own hop, not reuse the cheer animation.
+def test_play_renders_its_own_hop():
+    # wayland-native ROLES: play is the happy frame (4); the jump is the yshift hop,
+    # which must be a real on-screen lift (PLAY_HOP/PLAY_HOP_H), not a reused cheer pair.
     from tuipet import app
-    assert data.ROLES["play"] == [1, 5]
+    assert data.ROLES["play"] == [4]
     assert app.PLAY_HOP > 0 and app.PLAY_HOP_H > 0
 
 

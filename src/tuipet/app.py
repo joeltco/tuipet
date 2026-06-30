@@ -18,20 +18,12 @@ from . import anim
 from . import egg as egg_mod
 from . import training
 from . import battlescreen
-from . import dnascreen
-from . import transportscreen
-from . import adventurescreen
-from . import shopscreen
-from . import habitatscreen
-from . import digicorescreen
 from . import eggselectscreen
 from . import persistence
 from . import jogressscreen
 from . import jogress
 from . import net
 from . import lobbyscreen
-from . import tournament
-from . import tournamentscreen
 from . import titlescreen
 from . import themescreen
 from . import deathscreen
@@ -46,6 +38,12 @@ from . import theme
 from .theme import LCD_ON, LCD_BG, PHASE_PALETTE, SIL_DAY, SIL_NIGHT
 SCREEN_COLS, SCREEN_ROWS = 40, 12
 SPRITE_W = 16                                   # native creature sprite width
+# Authentic 32×16 play window, anchored (not clipped) inside the unchanged 40×24 LCD:
+# centred horizontally, floor 2px from the border (render_screen's baseline already does the
+# vertical). The roamer paces within [PLAY_X0, PLAY_RIGHT]; render.PLAY_COLS clamps the rest.
+PLAY_COLS = 32
+PLAY_X0 = (SCREEN_COLS - PLAY_COLS) // 2        # 4: left edge of the centred play window
+PLAY_RIGHT = PLAY_X0 + PLAY_COLS - SPRITE_W     # 20: rightmost sprite-x that fits in the window
 
 import re as _re
 # navigation keys: pressing one in a sub-screen plays the scroll blip (unless the
@@ -86,32 +84,16 @@ POOP_W = len(_POOP_FR[0]) if _POOP_FR else 5
 POOP_PAD = max(1, round(POOP_W * 6 / 30))   # DVPet drawFilthLevel column gap (pad 6 on a 30px cell)
 _FROZEN_FR = (_FX.get("frozen") or [None])[0]
 
-WEATHER_GLYPH = {
-    "Clear": "", "Cloudy": chr(0x2601), "Drizzling": chr(0x2602),
-    "Raining": chr(0x2602), "HeavyRain": chr(0x2614),
-    "LightSnow": chr(0x2744), "Snowing": chr(0x2744), "HeavySnow": chr(0x2744),
-}
 def _sky_icon(pet):
-    """One time+weather glyph for the status line: a sun only in clear daytime, a
-    moon in clear night, otherwise the cloud/rain/snow symbol -- never a sun behind
-    rain.  Returns (glyph, colour)."""
-    if pet.weather == "Clear":
-        return (chr(0x2600), theme.COIN) if pet.is_daytime else (chr(0x263E), "blue")
-    g = WEATHER_GLYPH.get(pet.weather) or chr(0x2601)
-    col = "cyan" if pet.weather in _SNOW else ("blue" if pet.weather in _RAIN else "white")
-    return g, col
+    """A sun by day, a moon by night, for the status line. Returns (glyph, colour)."""
+    return (chr(0x2600), theme.COIN) if pet.is_daytime else (chr(0x263E), "blue")
 
 
-_RAIN = {"Drizzling", "Raining", "HeavyRain"}
-_SNOW = {"LightSnow", "Snowing", "HeavySnow"}
-_PRECIP = _RAIN | _SNOW
-_PRECIP_N = {"Drizzling": 5, "LightSnow": 6, "Raining": 11, "Snowing": 10,
-             "HeavyRain": 18, "HeavySnow": 16}
 _K = "b cyan"
 KEYS = (
     f"[{_K}]f[/] feed  [{_K}]p[/] play  [{_K}]c[/] clean  [{_K}]h[/] heal  [{_K}]r[/] praise  [{_K}]k[/] scold  [{_K}]s[/] lights\n"
-    f"[{_K}]t[/] train  [{_K}]b[/] battle  [{_K}]a[/] adventure  [{_K}]u[/] cup  [{_K}]j[/] jogress  [{_K}]l[/] lobby  [{_K}]x[/] DNA\n"
-    f"[{_K}]o[/] shop  [{_K}]i[/] bag  [{_K}]e[/] habitat  [{_K}]d[/] data  [{_K}]g[/] theme  [{_K}]m[/] sound  [{_K}]n[/] new  [{_K}]q[/] quit"
+    f"[{_K}]t[/] train  [{_K}]b[/] battle  [{_K}]j[/] jogress  [{_K}]l[/] lobby  [{_K}]x[/] DNA\n"
+    f"[{_K}]g[/] theme  [{_K}]m[/] sound  [{_K}]n[/] new  [{_K}]q[/] quit"
 )
 
 
@@ -133,49 +115,6 @@ def _save_sound(on):
             fh.write("on" if on else "off")
     except OSError:
         pass
-
-
-def _scale_hex(hexcol, f):
-    h = hexcol.lstrip("#")
-    r, g, b = (int(h[i:i + 2], 16) for i in (0, 2, 4))
-    cl = lambda v: max(0, min(255, int(v * f)))
-    return "#%02x%02x%02x" % (cl(r), cl(g), cl(b))
-
-
-def _weather_overlay(weather, frame_i, cols, px_h):
-    # no cloud sprites -- the backgrounds carry the cloudy/overcast look; this
-    # overlay only adds falling rain/snow particles.
-    pts = []
-    n = _PRECIP_N.get(weather, 0)
-    if n:
-        snow = weather in _SNOW
-        heavy = weather in ("HeavyRain", "HeavySnow")
-        for i in range(n):
-            # scatter each particle to a pseudo-random spot (Knuth multiplicative
-            # hash) instead of a linear comb, so they fill the whole sky -- random
-            # columns and heights, landing near the bottom as readily as the top
-            seed = (i * 2654435761) & 0xFFFFFFFF
-            x0 = seed % cols
-            base = (seed >> 10) % px_h
-            if snow:
-                # gentle drift with parallax -- ~1/3 of the flakes fall at half
-                # speed so the snow has depth instead of a rigid descending grid;
-                # each flake sways on its own phase
-                far = i % 3 == 0
-                y = (base + ((frame_i + 1) // 2 if far else frame_i)) % px_h
-                x = (x0 + (-1, 0, 1, 0)[(frame_i // 2 + i) % 4]) % cols
-                pts.append((x, y))
-            else:
-                # a straight vertical streak falling straight down; it tiles its
-                # own length each frame for a smooth descent (no sky wrap), and
-                # heavier rain draws a longer streak
-                length = 3 if heavy else 2
-                y = (base + frame_i * length) % px_h
-                for d in range(length):
-                    yy = y - d
-                    if yy >= 0:                              # don't wrap a streak across the sky
-                        pts.append((x0, yy))
-    return pts
 
 
 def _blit(bm, ox, oy):
@@ -292,17 +231,8 @@ class Screen(Static):
         elif bgimg:
             on = SIL_DAY   # dark silhouette day OR night -- the pet is never white;
             #                white (SIL_NIGHT) is reserved for the lights-out Zzz below
-        else:
-            w = pet.weather
-            if w in _RAIN:
-                bg = _scale_hex(bg, 0.78)
-            elif w in _SNOW:
-                bg = _scale_hex(bg, 0.85)
-            elif w == "Cloudy":
-                bg = _scale_hex(bg, 0.9)
-        wf = self.frame_i // 4                  # weather/effect overlays keep their ~0.4s cadence
-        overlay = (_weather_overlay(pet.weather, wf, SCREEN_COLS, SCREEN_ROWS * 2)
-                   + _effect_overlay(pet, wf, SCREEN_COLS, SCREEN_ROWS * 2, tick=self.frame_i))
+        wf = self.frame_i // 4                  # effect overlay keeps its ~0.4s cadence
+        overlay = _effect_overlay(pet, wf, SCREEN_COLS, SCREEN_ROWS * 2, tick=self.frame_i)
         if pet.dead:                           # a grave marker
             self.update(render_screen(GRAVESTONE, SCREEN_COLS, SCREEN_ROWS, on, bg,
                                       corner=corner, overlay=overlay, bgimg=bgimg))
@@ -362,9 +292,8 @@ class Screen(Static):
             cap = (SCREEN_COLS - SPRITE_W) - base         # don't push the pet off the right edge
             xshift = min(max(xshift, lo), max(cap, 0))    # clear poop on the left; emote follows the pet
         # DVPet adjustEmotionLabel: emote/'!' track the pet's final x, so rebuild the overlay now
-        overlay = (_weather_overlay(pet.weather, wf, SCREEN_COLS, SCREEN_ROWS * 2)
-                   + _effect_overlay(pet, wf, SCREEN_COLS, SCREEN_ROWS * 2, tick=self.frame_i,
-                                     pet_right=(SCREEN_COLS - SPRITE_W) // 2 + xshift + SPRITE_W))
+        overlay = _effect_overlay(pet, wf, SCREEN_COLS, SCREEN_ROWS * 2, tick=self.frame_i,
+                                  pet_right=(SCREEN_COLS - SPRITE_W) // 2 + xshift + SPRITE_W)
         if not pet.lights:                 # lights off: DVPet's lightsOff is a fully-opaque black
             rows, xshift, mirror = [], 0, False   # cover -> the pet is hidden; only black (+ Zzz) shows
         self.update(render_screen(rows, SCREEN_COLS, SCREEN_ROWS, on, bg,
@@ -385,7 +314,9 @@ class Screen(Static):
                     or pet.has_medicine() or pet.has_bandage())
             right_bound = (SCREEN_COLS - COND_W - 1 - SPRITE_W) if cond else None   # clear the right-edge column
             prev_pose = self.roamer.pose
-            self.roamer.step(left_bound=poop_right, right_bound=right_bound)
+            # wall the pacing inside the centred 32-wide play window (turns at PLAY_X0/PLAY_RIGHT)
+            self.roamer.step(left_bound=max(poop_right, PLAY_X0),
+                             right_bound=(PLAY_RIGHT if right_bound is None else min(right_bound, PLAY_RIGHT)))
             if self.roamer.pose != prev_pose:                    # a fresh step landed (DVPet stepFrame):
                 self._idle_expr = (anim.mood_pose(pet)           # sometimes show a mood pose instead of
                                    if random.random() < anim.IDLE_EXPR_CHANCE else None)  # the plain walk toggle
@@ -394,7 +325,7 @@ class Screen(Static):
 
     # ---- care-action animations (DVPet SpriteAnim eat/clean/cheer) -----------
     def start_fx(self, kind, icon=None, poop=0, old_num=None, pet=None):
-        steps = {"eat": 35, "cheer": 31, "jeer": 31, "clean": 22, "spit": 11, "evolve": 18, "dying": 18, "dna_charge": 16, "play": 37}.get(kind, 12)
+        steps = {"eat": 35, "cheer": 31, "jeer": 31, "clean": 22, "spit": 11, "evolve": 18, "dying": 18, "play": 37}.get(kind, 12)
         self.fx = {"kind": kind, "step": 0, "steps": steps, "icon": icon, "poop": poop, "old_num": old_num}
         if kind == "eat":
             # DVPet eat(): each chew beat is scaled by pow(N, mod) -- a glutton wolfs
@@ -464,7 +395,7 @@ class Screen(Static):
         step = fx["step"]
         pose = {"eat": "eat", "clean": "idle", "cheer": "happy", "spit": "refuse", "dying": "exhausted"}.get(fx["kind"], "idle")
         rows = self._pose_rows(pet, pose, step // 2)
-        overlay = _weather_overlay(pet.weather, self.frame_i, SCREEN_COLS, px_h)
+        overlay = []
         xshift = 0
         yshift = 0
         if fx["kind"] == "eat":
@@ -502,7 +433,7 @@ class Screen(Static):
             push = max(0, base + clear + SPRITE_W - wx)        # wash shove, measured from the pet's RIGHT edge
             xshift = clear - push                              # pet starts cleared of the filth, then both
             if push > 0:                                       # slide left in lockstep (gap preserved, no mash)
-                rows = self._pose_rows_idx(pet, 4)             # DVPet drawNum(4) while being washed
+                rows = self._pose_rows_idx(pet, 4)             # wayland happy(4): pleased while washed
             pm = E.get("poop", [None])[0]
             if pm and fx.get("poop"):
                 pw, ph_ = len(pm[0]), len(pm)
@@ -516,7 +447,7 @@ class Screen(Static):
             # DVPet cheer(): pose alternates up(+5)/down(+7) every 6 intervals with a
             # "happy" emote bubble pulsing on the up-beats; ends ~beat 30.
             up = (step // 6) % 2 == 0
-            rows = self._pose_rows_idx(pet, 5 if up else 7)
+            rows = self._pose_rows_idx(pet, 4 if up else 0)   # wayland happy(4) <-> idle(0) bounce
             if up:
                 hap = data.load_effects().get("happy")
                 if hap:
@@ -531,13 +462,13 @@ class Screen(Static):
             # emote bubble) -- here the body actually leaves the ground.
             ph = step % PLAY_HOP
             up = ph < PLAY_HOP // 2
-            rows = self._pose_rows_idx(pet, 5 if up else 1)
+            rows = self._pose_rows_idx(pet, 4 if up else 1)   # wayland happy(4) on the hop, idle_2(1) on land
             yshift = int(PLAY_HOP_H * (1 - abs(ph / (PLAY_HOP / 2) - 1)))   # triangle: 0 -> apex -> 0
         elif fx["kind"] == "jeer":
             # DVPet jeer(): pose alternates down(+10)/up(+9) every 6 intervals with an
             # "unhappy" emote bubble; ends ~beat 30 (the scold reaction).
             down = (step // 6) % 2 == 0
-            rows = self._pose_rows_idx(pet, 10 if down else 9)
+            rows = self._pose_rows_idx(pet, 8 if down else 2)   # wayland sad(8) <-> angry(2): scold reaction
             un = data.load_effects().get("unhappy")
             if un:
                 uf = un[(step // 6) % len(un)]
@@ -565,21 +496,6 @@ class Screen(Static):
             if step < n - 3 and step % 3 == 1:
                 overlay = overlay + [(x, y) for y in range(px_h) for x in range(SCREEN_COLS)]
             # the final steps drop the flash -> the evolved form is revealed
-        elif fx["kind"] == "dna_charge":
-            # DVPet dnaCharge(): the field drops into the pet and a "dnaWash" sweep
-            # passes DOWN over it (moveDown) while the pet feeds on the DNA; bright
-            # "flash" pulses mark the absorb.  Pet stays centred.  ~16 beats.
-            rows = self._pose_rows_idx(pet, 0 if (step // 2) % 2 == 0 else 7)
-            E = data.load_effects()
-            wash = E.get("wash", [None])[0]
-            if wash:
-                wy = -len(wash) + step * 3                 # wash front: enters top, exits bottom
-                overlay += _blit(wash, (SCREEN_COLS - SPRITE_W) // 2, wy)
-            if step % 3 == 1 and step < fx["steps"] - 2:
-                fl = E.get("flash")
-                if fl:
-                    overlay += _blit(fl[(step // 3) % len(fl)],
-                                     (SCREEN_COLS - SPRITE_W) // 2 + SPRITE_W, 1)
         elif fx["kind"] == "dying":
             # DVPet dying() (SpriteAnim 13179): the collapsed pet sways gently (+/-1)
             # while the 'dying' emote (dying/dying2) pulses at its right edge, tracking
@@ -624,8 +540,6 @@ class Stats(Static):
         if pet.sick and word != "sick": deco.append(f"[{T.NEG}]+sick[/]")
         if pet.is_fatigued() and word != "fatigued": deco.append(f"[{T.NEG}]+tired[/]")
         if pet.is_injured() and word != "injured": deco.append(f"[{T.NEG}]+hurt[/]")
-        if pet.is_freezing() and word != "freezing": deco.append("[blue]+cold[/]")
-        if pet.is_overheating() and word != "overheating": deco.append(f"[{T.NEG}]+hot[/]")
         if pet.poop: deco.append(f"[{T.COIN}]~poop x{pet.poop}[/]")
         if getattr(pet, "effect_id", -1) >= 0: deco.append(f"[{T.POS}]\u2726{pet.effect_name()}[/]")
         mins, secs = divmod(int(pet.age_seconds), 60)
@@ -650,7 +564,7 @@ class Stats(Static):
             f"Weight  {pet.weight}g   [{T.COIN}]{pet.bits}b[/]",
             f"Battle  {pet.wins}W/{pet.battles}   [{T.COIN}]\u2605{pet.trophies}[/]",
             f"@{pet.habitat_obj()['name'][:14]} {amark} [dim]{pet.season}[/]",
-            f"[{skycol}]{sky}[/] [dim]{pet.weather} {int(pet.temp)}\u00b0[/] [dim]{mins}m{secs:02d}s[/]",
+            f"[{skycol}]{sky}[/] [dim]{mins}m{secs:02d}s[/]",
             f"Life    {bar(lifepct, 12, lifecol)}",
             _status_line(word, deco),
         ]
@@ -717,9 +631,7 @@ class TuiPetApp(App):
         ("f", "feed", "Feed"), ("t", "train", "Train"), ("b", "battle", "Battle"),
         ("p", "play", "Play"), ("c", "clean", "Clean"), ("h", "heal", "Heal"),
         ("r", "praise", "Praise"), ("k", "scold", "Scold"),
-        ("a", "adventure", "Adventure"), ("o", "shop", "Shop"), ("i", "inventory", "Inventory"), ("e", "habitat", "Habitat"),
-        ("d", "digicore", "DigiCore"),
-        ("j", "jogress", "Jogress"), ("u", "tournament", "Cup"), ("x", "dna", "DNA"),
+        ("j", "jogress", "Jogress"),
         ("l", "lobby", "Lobby"),
         ("s", "sleep", "Lights"), ("g", "theme", "Theme"), ("m", "sound", "Sound"), ("n", "new", "New pet"), ("q", "quit", "Quit"),
     ]
@@ -1005,16 +917,10 @@ class TuiPetApp(App):
                                           "Destined to hatch", f"  [b]{egg_mod.hatch_name(idx)}[/]",
                                           f"  {badge}", "",
                                           "[dim]←→ browse  ENTER pick[/]"])
-        elif isinstance(self.mode, adventurescreen.AdventurePanel):
-            self._status_adventure()
-        elif isinstance(self.mode, tournamentscreen.TournamentPanel):
-            self._status_tournament()
         elif isinstance(self.mode, training.TrainingPanel):
             self._status_training()
         elif isinstance(self.mode, battlescreen.BattlePanel):
             self._status_battle()
-        elif isinstance(self.mode, dnascreen.DNAPanel):
-            self._status_dna()
         else:
             # data/digicore browses in the LCD; keep live vitals on the right
             self.stats_w.paint(self.pet)
@@ -1024,82 +930,29 @@ class TuiPetApp(App):
         body = [f"[b]{title}[/]", f"[dim]{'─' * 26}[/]"] + lines
         self.stats_w.update("\n".join(body))
 
-    def _status_tournament(self):
-        p, t, T = self.pet, self.mode.tourney, theme
-        self.stats_w.border_subtitle = f"gen {p.generation}"
-        if t is None:                      # cup-select phase (no bout yet)
-            self._status_card("Cup", [f"[dim]{p.season} season[/]", "", "Pick a cup", "to enter."])
-            return
-        div = f"[dim]{'─' * 26}[/]"
-        if t.over and t.champion:
-            lines = [f"[b]{p.name[:14]}[/] [dim]· cup[/]", div,
-                     f"[b]{t.name[:24]}[/]", "",
-                     f"[{T.POS}]\u2605 CHAMPION \u2605[/]", "",
-                     f"Trophy   [{T.COIN}]\u2605{p.trophies}[/]",
-                     f"Reward   [{T.COIN}]+{t.reward_bits}b[/]", div,
-                     "[dim]you took the cup![/]"]
-        elif t.over:
-            lines = [f"[b]{p.name[:14]}[/] [dim]· cup[/]", div,
-                     f"[b]{t.name[:24]}[/]", "",
-                     f"[{T.NEG}]eliminated[/]",
-                     f"[dim]in the {t.round_name}[/]", "",
-                     f"Trophy   [{T.COIN}]\u2605{p.trophies}[/]", div,
-                     "[dim]train up, try again[/]"]
-        else:
-            lines = [
-                f"[b]{p.name[:14]}[/] [dim]· cup[/]", div,
-                f"[b]{t.name[:24]}[/]",
-                f"Match    {t.round + 1} / 3",
-                f"Trophy   [{T.COIN}]\u2605{p.trophies}[/]",
-                div,
-                f"Effort   {hearts(p.strength)}",
-                f"Energy   {bar(p.energy_pct(), 11, T.ENERGY)}",
-                f"Power    [{T.POS}]●{p.vaccine}[/] [{T.ENERGY}]■{p.data_power}[/] [{T.MOOD}]▲{p.virus}[/]",
-                div,
-                "[dim]fight for the cup[/]",
-            ]
-        self.stats_w.update("\n".join(lines))
-
     def _status_training(self):
-        from .training import GAMES, VACCINE_WINDOW, HP_ROUNDS, VIRUS_BAR_MIN
+        from .training import MASH_TARGET, MASH_WINDOW
         p, tp, T = self.pet, self.mode, theme
         self.stats_w.border_subtitle = f"gen {p.generation}"
-        div = f"[dim]{'-' * 26}[/]".replace("-", "\u2500")
+        div = f"[dim]{chr(0x2500) * 26}[/]"
         eff = hearts(p.strength)
         energy = bar(p.energy_pct(), 11, T.ENERGY)
-        power = f"[{T.POS}]●{p.vaccine}[/] [{T.ENERGY}]■{p.data_power}[/] [{T.MOOD}]▲{p.virus}[/]"
-        label = GAMES[tp.gi][1]
-        gk = tp.gkey
-        if tp.phase == "menu":
-            lines = [f"[b]{p.name[:14]}[/] [dim]\u00b7 train[/]", div,
-                     "[b]choose a drill[/]", "",
-                     f"Effort   {eff}", f"Power    {power}", f"Energy   {energy}",
-                     div, "[dim]pick what to build[/]"]
-        elif tp.phase == "done":
-            verdict = f"[{T.POS}]drill complete[/]" if tp.success else f"[{T.NEG}]needs work[/]"
-            lines = [f"[b]{p.name[:14]}[/] [dim]\u00b7 train[/]", div,
-                     f"[b]{label}[/]", "", verdict, "",
+        if tp.phase == "done":
+            verdict = (f"[{T.POS}]wall smashed![/]" if tp.full
+                       else (f"[{T.MOOD}]some hits landed[/]" if tp.success else f"[{T.NEG}]too slow[/]"))
+            lines = [f"[b]{p.name[:14]}[/] [dim]{chr(0xb7)} train[/]", div,
+                     "[b]Wall Drill[/]", "", verdict, "",
                      f"Effort   {eff}", f"Energy   {energy}", div,
                      f"[dim]{(tp.result or '')[:24]}[/]"]
         else:
-            if gk == "hp":
-                dots = "\u25cf" * tp.rounds_won + "\u25cb" * (HP_ROUNDS - tp.rep) + "\u00b7" * (tp.rep - tp.rounds_won)
-                prog, prog2 = f"Round    {min(tp.rep + 1, HP_ROUNDS)} / {HP_ROUNDS}", f"Won      {dots}"
-                target, flav = f"Effort   {eff}", "build your effort"
-            elif gk == "vaccine":
-                tpct = max(0, tp.timer) / VACCINE_WINDOW * 100
-                prog, prog2 = f"Hits     {tp.taps} / {tp.vaccine_target}", f"Time     {bar(tpct, 11, T.MOOD)}"
-                target, flav = f"Vaccine  [{T.POS}]{p.vaccine}[/]", "mash it up!"
-            elif gk == "data":
-                atk = ("HIGH" if tp.tgt_up else "LOW") if tp.locked else "feint\u2026"
-                prog, prog2 = f"Attack   {atk}", f"Shield   {'UP' if tp.shield_up else 'DOWN'}"
-                target, flav = f"Data     [{T.ENERGY}]{p.data_power}[/]", "block high or low"
-            else:
-                prog, prog2 = f"Power    {int(tp.pos)}", f"Need     {VIRUS_BAR_MIN}"
-                target, flav = f"Virus    [{T.MOOD}]{p.virus}[/]", "stop it high"
-            lines = [f"[b]{p.name[:14]}[/] [dim]\u00b7 train[/]", div,
-                     f"[b]{label}[/]", prog, prog2, div,
-                     target, f"Energy   {energy}", div, f"[dim]{flav}[/]"]
+            hitbar = bar(min(tp.taps, MASH_TARGET) / MASH_TARGET * 100, 11, T.POS)
+            timebar = bar(max(0, tp.timer) / MASH_WINDOW * 100, 11, T.MOOD)
+            lines = [f"[b]{p.name[:14]}[/] [dim]{chr(0xb7)} train[/]", div,
+                     "[b]Wall Drill[/]",
+                     f"Hits     {tp.taps} / {MASH_TARGET}", f"Wall     {hitbar}",
+                     f"Time     {timebar}", div,
+                     f"Effort   {eff}", f"Energy   {energy}", div,
+                     "[dim]MASH to smash it![/]"]
         self.stats_w.update("\n".join(lines))
 
     def _status_battle(self):
@@ -1152,77 +1005,6 @@ class TuiPetApp(App):
         ]
         self.stats_w.update("\n".join(lines))
 
-    def _status_dna(self):
-        p, m, T = self.pet, self.mode, theme
-        self.stats_w.border_subtitle = f"gen {p.generation}"
-        div = f"[dim]{'─' * 26}[/]"
-        f = m.field
-        same = f == p.field
-        own, chg = p.dna_owned.get(f, 0), p.dna_applied.get(f, 0)
-        cost = "spirit -3/ea  mood+" if same else "spirit -6/ea  mood-  ill?"
-        from . import data, evolution
-        reqs = data.load_requirements()
-        dna_t = [t for t in data.load_evolutions().get(p.num, [])
-                 if reqs.get(t) and any(g[0] != "None" for g in reqs[t]["dna"].values())]
-        unlocked = sum(1 for t in dna_t if evolution._dna_ok(p, reqs[t]))
-        screen = {"home": "menu", "charge": "charge", "stats": "stats",
-                  "reqs": "requirements", "bet": "generate", "mash": "generate",
-                  "result": "generate"}.get(m.phase, "menu")
-        lines = [
-            f"[b]{p.name[:14]}[/] [dim]· DNA · {screen}[/]", div,
-            f"Bits     [{T.COIN}]{p.bits}[/]",
-            f"Field    {data.pretty_field(f)}" + ("  [dim](own)[/]" if same else ""),
-            f"Banked   {own}     Charged {chg}",
-            f"Share    {p.dna_percent(f)}%    [dim]x{m.amount}[/]",
-            f"Unlocks  [b]{unlocked}[/]/{len(dna_t)} form(s)",
-            div,
-            f"[dim]{cost}[/]",
-            f"[dim]{(m.last or '')[:24]}[/]",
-            "",
-            "[dim]own Field * = cheaper charge[/]",
-            "[dim]ESC steps back out[/]",
-        ]
-        self.stats_w.update("\n".join(lines))
-
-    def _status_adventure(self):
-        p, a, T = self.pet, self.mode.adv, theme
-        self.stats_w.border_subtitle = f"gen {p.generation}"
-        div = f"[dim]{'─' * 26}[/]"
-        lives = "♥" * a.lives + "[dim]·[/]" * (3 - a.lives)
-        power = f"[{T.POS}]●{p.vaccine}[/] [{T.ENERGY}]■{p.data_power}[/] [{T.MOOD}]▲{p.virus}[/]"
-        if self.mode.sub is not None:                       # mid-encounter battle
-            e = self.mode.sub.battle.enemy
-            tag = f" [{T.NEG}]BOSS[/]" if e.get("boss") else ""
-            lines = [
-                f"[b]{p.name[:14]}[/] [dim]· battle[/]",
-                div,
-                f"vs [b]{e['name'][:14]}[/]{tag}",
-                f"Lives    {lives}",
-                div,
-                f"Effort   {hearts(p.strength)}",
-                f"Energy   {bar(p.energy_pct(), 11, T.ENERGY)}",
-                f"Power    {power}",
-                div,
-                "[dim]a wild foe blocks[/]",
-                "[dim]the path — fight![/]",
-            ]
-        else:                                               # travelling
-            lines = [
-                f"[b]{p.name[:14]}[/] [dim]· away[/]",
-                div,
-                f"Map      {a.mi + 1}-{a.zi + 1}",
-                f"Lives    {lives}",
-                f"Progress {a.pct}%",
-                f"Bag      {sum(p.inventory.values())}   [{T.COIN}]{p.bits}b[/]",
-                div,
-                f"Hunger   {hearts(p.hunger)}",
-                f"Energy   {bar(p.energy_pct(), 11, T.ENERGY)}",
-                f"Power    {power}",
-                div,
-                "[dim]out exploring —[/]",
-                "[dim]survive the zone[/]",
-            ]
-        self.stats_w.update("\n".join(lines))
 
     def on_frame(self):                        # single DVPet interval clock (10 Hz, 0.1s): main view AND sub-screens
         self._hud_marquee()                    # scroll any over-long HUD message (independent of the LCD)
@@ -1234,14 +1016,10 @@ class TuiPetApp(App):
                     self.beep(snd, bell=False)
                     self.mode.sfx = None
                 self.screen_w.update(self._center(self.mode.text()))
-                if isinstance(self.mode, adventurescreen.AdventurePanel):
-                    self._status_adventure()
-                elif isinstance(self.mode, training.TrainingPanel):
+                if isinstance(self.mode, training.TrainingPanel):
                     self._status_training()
                 elif isinstance(self.mode, battlescreen.BattlePanel):
                     self._status_battle()
-                elif isinstance(self.mode, dnascreen.DNAPanel):
-                    self._status_dna()
             return
         sc = self.screen_w
         if sc.fx:
@@ -1432,17 +1210,6 @@ class TuiPetApp(App):
             self.beep("angry", bell=False)
         self._do(msg)
 
-    def action_tournament(self):
-        err = tournament.can_enter(self.pet)   # single source of entry gating (young/asleep/no-cup)
-        if err:
-            self._do(err); return
-        self._open_mode(tournamentscreen.TournamentPanel(self.pet), self._after_cup)
-
-    def _after_cup(self, msg):
-        if msg:
-            self.flash(msg)
-        self.repaint()
-
     def action_jogress(self):
         reason = jogress.can_jogress(self.pet)
         if reason:
@@ -1455,63 +1222,6 @@ class TuiPetApp(App):
             self.beep("jogress")
         self.repaint()
 
-    def action_dna(self):
-        reason = self.pet.can_charge_dna()
-        if reason:
-            self._do(reason); return
-        self._open_mode(dnascreen.DNAPanel(self.pet), self._after_dna)
-
-    def _after_dna(self, result=None):
-        self.autosave()
-        if isinstance(result, tuple) and result and result[0] == "charged":
-            _, field, amount = result          # DVPet applyDNA -> DNA_Feeding -> main view
-            self.screen_w.start_fx("dna_charge", icon=field, pet=self.pet)
-            self.flash("%s absorbed %d %s DNA" % (self.pet.name, amount, data.pretty_field(field)))
-        else:
-            self.repaint()
-
-    def action_shop(self):
-        self._open_mode(shopscreen.ShopPanel(self.pet), self._after_shop)
-    def action_inventory(self):
-        self._open_mode(shopscreen.ShopPanel(self.pet, start_mode="bag"), self._after_shop)
-
-    def action_habitat(self):
-        self._open_mode(habitatscreen.HabitatPanel(self.pet), self._after_habitat)
-
-    def action_digicore(self):
-        self._open_mode(digicorescreen.DigiCorePanel(self.pet), lambda _=None: self.repaint())
-
-    def _after_habitat(self, msg):
-        if msg:
-            self.flash(msg)
-        self.repaint()
-
-    def _after_shop(self, msg):
-        if isinstance(msg, tuple) and msg and msg[0] == "eat":
-            self.screen_w.start_fx("eat", msg[1], pet=self.pet)        # the pet eats what you fed from the bag
-        elif isinstance(msg, tuple) and msg and msg[0] == "evolve":
-            self.beep("evolve")
-            self.flash(f"[b]{self.pet.name}![/] evolved to {self.pet.stage}!")
-            self.screen_w.start_fx("evolve", old_num=msg[1])
-        elif isinstance(msg, tuple) and msg and msg[0] == "transport":
-            self._open_mode(transportscreen.TransportPanel(self.pet, msg[1]), self._after_transport)
-            return
-        elif msg:
-            self.flash(msg)
-        self.repaint()
-
-    def _after_transport(self, msg):
-        if msg:
-            self.flash(msg)
-        self.autosave()
-        self.repaint()
-
-    def action_adventure(self):
-        if self.pet.stage in ("Egg", "Fresh"):
-            self._do("Too young to adventure."); return
-        if self.pet.asleep:
-            self._do("zzz... asleep"); return
-        self._open_mode(adventurescreen.AdventurePanel(self.pet), lambda _=None: self.repaint())
 
     def action_play(self):
         if self.screen_w.fx is not None:        # let the current care animation finish before acting again

@@ -11,8 +11,12 @@ monochrome dot-matrix device documented on humulos** — i.e. the classic 32×16
 - **Digimon Pendulum Original (pen)** — 1998–99 Ver.1–5 (+5.5)
 - **Digimon Pendulum Ver.20th (pen20)** — 20th revival of the original Pendulum
 
-**Render: MONOCHROME** (dot ON = ink / OFF = LCD bg). Color stripped entirely — keep the
-classic black 32×16 LCD look. (User decision 2026-06-29: "mono 16×16 only.")
+**Render: MONOCHROME 1-bit sprites on COLOR backgrounds.** (User decision 2026-06-29.)
+- **Sprites: monochrome, always** — 1-bit dot art, dark silhouette (`SIL_DAY` ink). Unchanged.
+- **Backgrounds: color** — KEEP DVPet's habitat scenes + day/night, re-fit to 32×16. (Weather DROPPED.)
+The 32×16 dot GRID is locked. The only thing dropped from the old spec is the *whole-screen*
+1-bit look (blank LCD / no color bg); the pet ink stays 1-bit either way. (Authenticity note:
+real mono devices had a blank LCD — the color bg is a deliberate aesthetic choice.)
 
 **EXCLUDED.** The dividing line is SPRITE SIZE, not color:
 - *Color 16×16 devices* (excluded by the mono-only decision): Digital Monster Color (dmc),
@@ -110,35 +114,46 @@ When data is missing: say so and flag for verification. **Never fabricate stats/
 ## 1. Authentic hardware spec (CONFIRMED)
 
 - **Dot-matrix field: 32 dots wide × 16 dots tall.** (Confirmed: "original v-pets prior to
-  Pendulum Progress (2002) were always 16×16 sprites on a 32×16 screen.") DM20 and Pen20
-  both revive pre-2002 devices → **32×16**.
-- **Creature sprites: 16×16 dots.** So the field is exactly 2 sprites wide, 1 tall.
-- Monochrome LCD: dot ON = dark ink, dot OFF = LCD background. No grays, no color.
+  Pendulum Progress (2002) were always 16×16 sprites on a 32×16 screen.") In tuipet this is
+  a logical PLAY WINDOW anchored inside the existing 40×24 LCD (see rendering implication
+  below) — the LCD canvas itself is NOT resized.
+- **Creature sprites: 16×16 dots.** So the play field is exactly 2 sprites wide, 1 tall.
+- COLOR LCD (DVPet background kept): the color day/night scene fills the field; the
+  creature is a dark 1-bit silhouette over it. Dot grid is 32×16; the COLOR is in the bg.
 - The **menu icon row** (feed / light / training / battle / status / clean / heal /
   call pictograms) is a row of *fixed LCD segment icons*, SEPARATE from the 32×16 dot
   field — not drawn in the dot matrix. Render it as its own UI strip.
 
-### tuipet rendering implication
-- Current: `SCREEN_COLS, SCREEN_ROWS = 40, 12` (= 40×24 px half-block). **Wrong.**
-- New dot field: **32 px wide × 16 px tall = 32 cols × 8 half-block rows.**
-- Update `SCREEN_COLS/SCREEN_ROWS` (app.py:47), `COLS, ROWS` (battlescreen.py:23), and
-  every drill/scene/overlay that assumed 40×24. `SPRITE_W=16` stays; add `SPRITE_H=16`.
-- 32 cols is NARROWER than today's 40 → fits any terminal comfortably (LCD-resize memory
-  was about never *widening* past terminal width; shrinking to authentic is fine).
-- Menu icons: a separate small row above/below the LCD box (their own glyphs), the way
-  the real bezel shows them.
+### tuipet rendering implication — REVISED 2026-06-29 (anchor-only, NOT a resize)
+- **DO NOT resize the LCD.** Keep `SCREEN_COLS, SCREEN_ROWS = 40, 12` (40×24px), keep the
+  backgrounds at current resolution, keep the HUD, keep the themes/palettes. (User: "this
+  should be a pretty big relief of work." Big-resize + bg re-downsample + HUD/theme rework
+  all CANCELLED.)
+- **32×16 = a logical PLAY WINDOW anchored inside the 40×24 canvas**, NOT the canvas itself:
+  - horizontally CENTERED: `PLAY_X0 = (40-32)//2 = 4`, window x ∈ [4, 36).
+  - bottom-aligned 2px from the border: window y ∈ [px_h-2-16, px_h-2) = [6, 22).
+  - **anchor-only (no clipping)** — sprites are positioned within the window but may overflow
+    into the margin; all sprites are 16-wide so overflow won't happen in practice.
+  - Left 16-cell = action/enemy/food (x≈4); right 16-cell = the mon's home (x≈20).
+- **NICE FACT: the single idle mon already satisfies this.** `render_screen` already does
+  `ox=(40-16)//2=12` (centered) and `oy=px_h-16-2=6` (2px from bottom) → identical. So the
+  anchor window only changes TWO-sprite scenes (battle) + the feed/action cell + roam bounds.
+- Weather still STRIPPED (separate decision). No menu-icon row in the dots (TUI chrome only).
 
 ---
 
 ## 2. STRIP list (remove entirely)
 
-- **Weather** (`weather.py`, `_weather_overlay`, rain/snow/cloud palette scaling). Real
-  v-pets have no weather.
-- **Day/night** (`day_phase`, SIL_DAY/SIL_NIGHT split, noon/night bg, time-of-day palette).
-  Authentic devices only have a **sleep schedule** (lights out when the Digimon sleeps),
-  not a day/night world. Keep the sleep/lights mechanic; drop the cosmetic day/night world.
-- **Habitat photo backgrounds** (`pet.background()`, desert/forest bgimg). Real LCD has a
-  flat background + simple dot-matrix scenery only. Drop the photographic habitats.
+- **Weather — STRIP** (2026-06-29 user decision: "drop weather"). Remove `weather.py`,
+  `_weather_overlay`, the rain/snow/cloud particle overlay, `pet.weather`, and the
+  weather-chance/precipitation columns' effect. Weather is a SEPARATE layer from the
+  background — dropping it does not touch the background art or day/night.
+- **Day/night — KEPT**. `day_phase`, SIL_DAY/SIL_NIGHT, time-of-day bg tint all stay;
+  the day-phase background strips re-downsample from the 104×513 source to 32×16.
+- ~~Habitat photo backgrounds~~ **KEPT**. `pet.background()` / habitat bgimg stay; the
+  16 color habitat scenes re-downsample from source PNGs to 32×16. (Open: whether the
+  habitat SIM mechanics — seasons/temperature/field-affinity affecting the pet — stay or
+  go is a §4-mechanics decision, separate from keeping the visual backgrounds.)
 - **All DVPet-derived sprites/art/sounds** bundled in `src/tuipet/data/` that came from
   `raw_resources/` / `_extract/`. Replace with authentic 16×16 LCD rips (or original art).
 - **DVPet-style training drills** (the cannon/shield "Data" drill, the power-bar "Virus"

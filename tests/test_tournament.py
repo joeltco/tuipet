@@ -39,7 +39,7 @@ def _patch(monkeypatch, trophies):
     monkeypatch.setattr(data, "load_tournies", lambda: trophies)
 
 
-def _pet(stage="Rookie", season_day=0, **kw):
+def _pet(stage="Child", season_day=0, **kw):
     return Pet(num=-1, stage=stage, world_seconds=season_day * DAY_LENGTH, **kw)
 
 
@@ -47,7 +47,7 @@ def _pet(stage="Rookie", season_day=0, **kw):
 
 def test_too_young_stages_cannot_enter(monkeypatch):
     _patch(monkeypatch, [_trophy()])
-    for st in ("Egg", "Fresh", "InTraining"):
+    for st in ("Egg", "Baby I", "Baby II"):
         p = _pet(stage=st)
         assert tournament.available(p) == []
         assert "young" in tournament.can_enter(p).lower()
@@ -85,9 +85,9 @@ def test_attribute_restriction(monkeypatch):
 
 
 def test_age_limit(monkeypatch):
-    _patch(monkeypatch, [_trophy(age_limit="Champion")])
-    assert tournament.available(_pet("Rookie")) == []
-    assert len(tournament.available(_pet("Champion"))) == 1
+    _patch(monkeypatch, [_trophy(age_limit="Adult")])
+    assert tournament.available(_pet("Child")) == []
+    assert len(tournament.available(_pet("Adult"))) == 1
 
 
 def test_same_day_retry_allows_reentry(monkeypatch):
@@ -109,14 +109,14 @@ def test_won_blocks_without_retry(monkeypatch):
 def test_champion_reward_and_trophy_persistence(monkeypatch):
     from tuipet import persistence
     t = _trophy(id=7, bit_mod=1.0)
-    p = _pet("Rookie")
+    p = _pet("Child")
     bits0 = p.bits
     tm = Tournament(p, t)
     for _ in range(3):
         assert not tm.over
         tm.record(True)
     assert tm.over and tm.champion
-    assert tm.reward_bits == min(TOURNEY_MAX_BITS, int(TOURNEY_BITS["Rookie"] * 1.0))
+    assert tm.reward_bits == min(TOURNEY_MAX_BITS, int(TOURNEY_BITS["Child"] * 1.0))
     assert p.bits == bits0 + tm.reward_bits
     assert p.trophies == 1
     assert p.trophies_won.get(7) == p.season

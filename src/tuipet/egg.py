@@ -56,29 +56,30 @@ def frames(egg_type=0):
 ROLES = {"idle": [0, 1], "egg_idle": [0, 1], "hatch": [0, 1, 2]}  # frames: egg -> crack -> baby
 
 
+def _babies():
+    from . import species
+    return species.babies()
+
+
 def hatch_target(egg_type=0):
-    """A Fresh creature (DigimonNum) this egg hatches into -- chosen at random among
-    the egg's targets, so generic "mystery" eggs surprise you (DVPet behaviour)."""
-    eggs = _real_eggs()
-    if not eggs:
-        return None
-    return random.choice(eggs[egg_type % len(eggs)]["hatch"])
+    """The Baby I species num this egg hatches into (authentic DM20 roster)."""
+    babies = _babies()
+    return babies[egg_type % len(babies)]["num"] if babies else None
 
 
 def hatch_targets(egg_type=0):
-    """All DigimonNums this egg can hatch into (to preview its habitat)."""
-    eggs = _real_eggs()
-    return list(eggs[egg_type % len(eggs)]["hatch"]) if eggs else []
+    """All species nums this egg can hatch into (one Baby I per egg here)."""
+    t = hatch_target(egg_type)
+    return [t] if t is not None else []
 
 
 def hatch_name(egg_type=0):
-    eggs = _real_eggs()
-    return eggs[egg_type % len(eggs)]["hatch_name"] if eggs else "?"
+    babies = _babies()
+    return babies[egg_type % len(babies)]["name"] if babies else "?"
 
 
 def count():
-    eggs = _real_eggs()
-    return len(eggs) if eggs else 1
+    return len(_babies()) or 1
 
 
 def record(egg_type=0):

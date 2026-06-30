@@ -36,7 +36,7 @@ class TitlePanel:
     def __init__(self):
         _, by = data.load_sprites()
         pool = [n for n, r in by.items()
-                if r["stage"] in ("Rookie", "Champion", "Ultimate", "Mega")
+                if r["stage"] in ("Child", "Adult", "Perfect", "Ultimate", "Super Ultimate")
                 and not data.is_placeholder(n)]
         self.num = random.choice(pool) if pool else next(iter(by))
         self.frame_i = 0

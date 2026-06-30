@@ -8,6 +8,9 @@ from .render import render_scene
 from .theme import LCD_ON, LCD_BG, INK, INK_B, DIM, SEL  # noqa: F401  (palette names bound for theme.apply propagation)
 from . import menu
 COLS, ROWS = 40, 7
+PLAY_COLS = 32
+PLAY_X0 = (COLS - PLAY_COLS) // 2                # 4: centred 32-wide play window
+PLAY_R = PLAY_X0 + PLAY_COLS                     # 36
 VISIBLE = 3
 FUSE_STEPS = 16
 
@@ -72,7 +75,7 @@ class JogressPanel:
             return self._render_fusing(out)
 
         if self.phase == "fused":
-            scene = render_scene([(self._sprite(self.fused["num"], "happy"), (COLS - 16) // 2, False)],
+            scene = render_scene([(self._sprite(self.fused["num"], "happy"), PLAY_X0 + (PLAY_COLS - 16) // 2, False)],
                                  COLS, ROWS, LCD_ON, LCD_BG)
             out.append_text(scene)
             out.append("\n")
@@ -85,7 +88,7 @@ class JogressPanel:
         pet_rows = self._sprite(self.pet.num)
         par_rows = self._sprite(opt["partner_num"]) if opt["partner_num"] else []
         pw = max((len(r) for r in par_rows), default=0)
-        scene = render_scene([(pet_rows, 2, False), (par_rows, COLS - pw - 2, True)],
+        scene = render_scene([(pet_rows, PLAY_X0, False), (par_rows, PLAY_R - pw, True)],
                              COLS, ROWS, LCD_ON, LCD_BG)
         out.append_text(scene)
         out.append("\n")
@@ -105,10 +108,10 @@ class JogressPanel:
         pw = max((len(r) for r in pet_rows), default=0)
         rw = max((len(r) for r in par_rows), default=0)
         t = self.fuse_step / FUSE_STEPS
-        pet_target = (COLS - pw) // 2
-        par_target = (COLS - rw) // 2
-        pet_x = int(2 + (pet_target - 2) * t)                 # parents slide to centre and merge
-        par_x = int((COLS - rw - 2) - ((COLS - rw - 2) - par_target) * t)
+        pet_target = PLAY_X0 + (PLAY_COLS - pw) // 2
+        par_target = PLAY_X0 + (PLAY_COLS - rw) // 2
+        pet_x = int(PLAY_X0 + (pet_target - PLAY_X0) * t)     # parents slide to centre and merge
+        par_x = int((PLAY_R - rw) - ((PLAY_R - rw) - par_target) * t)
         overlay = []
         if self.fuse_step >= FUSE_STEPS - 5:                  # a flash as the DNA merges
             px_h = ROWS * 2

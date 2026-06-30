@@ -46,8 +46,8 @@ Win/lose (Battle.checkFinish / battleEnd): the battle ends the instant either
 HP <= 0; the player loses iff its OWN HP <= 0 (a double-KO is therefore a loss).
 
 Companion systems (ported elsewhere, faithful):
-  - AttackEffect/AttackCondition chip layer -> battlefx.py (the per-attribute
-    effect+condition data is pre-baked into digimon.csv and resolved per round).
+  - Round resolution / initiative -> battlefx.py (authentic mono model: attribute
+    attacks + checkFirst initiative, NO effect chips — those were DVPet/colour data).
   - Player-side surrender/escape (PhysicalState.checkSurrender) -> pet.py
     (check_surrender / surrender_effect); battlescreen drives the Y/N request and
     Battle.surrender() ends the bout as neither win nor loss.
@@ -56,14 +56,14 @@ from __future__ import annotations
 import random
 from . import data
 from . import battlefx
+from . import species
 
 ATTRS = ("Vaccine", "Data", "Virus")
 
-# config.csv *BaseAttack (per growth stage)
-BASE_ATTACK = {"Fresh": 1, "InTraining": 2, "Rookie": 5,
-               "Champion": 5, "Ultimate": 5, "Mega": 5}
-# config.csv MaxHealth* — getOppMaxHealth(stage)
-MAX_HEALTH = {"Rookie": 10, "Champion": 15, "Ultimate": 20, "Mega": 25}  # config MaxHealth* (classic)
+# base attack per authentic growth stage (Baby I .. Super Ultimate)
+BASE_ATTACK = {"Baby I": 1, "Baby II": 2, "Child": 5,
+               "Adult": 5, "Perfect": 5, "Ultimate": 5, "Super Ultimate": 5}
+MAX_HEALTH = {"Child": 10, "Adult": 15, "Perfect": 20, "Ultimate": 25, "Super Ultimate": 30}
 MAX_HEALTH_DEFAULT = 10
 # config.csv *AIWins thresholds (player win count -> enemy AI tier)
 AI_RANDOM, AI_BRUTE, AI_STRAT_BRUTE, AI_STRAT_DEFENSE, AI_STRAT_BALANCED = 0, 15, 30, 45, 60
@@ -93,11 +93,29 @@ def calc_attack_power(attr, my, opp):
     return 0
 
 
+def _enemy_from_species(r, boss=False):
+    """Build an opponent dict from an authentic species record. The single `power`
+    value is split across the attribute triangle — the bulk into the mon's primary
+    attribute — to give the battle engine its per-attribute counts."""
+    power = r.get("power") or 30
+    attr = r.get("attribute") if r.get("attribute") in ATTRS else "Vaccine"
+    counts = {a: max(1, power // 4) for a in ATTRS}
+    counts[attr] = power
+    return {"num": r["num"], "name": r["name"], "stage": r["stage"], "attribute": attr,
+            "vaccine": counts["Vaccine"], "data_power": counts["Data"], "virus": counts["Virus"],
+            "hp": MAX_HEALTH.get(r["stage"], MAX_HEALTH_DEFAULT), "boss": boss}
+
+
 def pick_enemy(pet, boss=False):
-    pool = [e for e in data.enemies_for_stage(pet.stage) if e["boss"] == boss] \
-        or data.enemies_for_stage(pet.stage)
-    real = [e for e in pool if not data.is_placeholder(e["num"])]
-    return random.choice(real or pool)
+    """A stage-appropriate opponent drawn from the authentic DM20 roster."""
+    pool = [r for r in species.roster()
+            if r["stage"] == pet.stage and not data.is_placeholder(r["num"])]
+    if not pool:
+        pool = [r for r in species.roster() if not data.is_placeholder(r["num"])]
+    if boss:                                     # a boss is the strongest of a small sample
+        pool = sorted(random.sample(pool, min(5, len(pool))),
+                      key=lambda r: r.get("power") or 0)[-1:] or pool
+    return _enemy_from_species(random.choice(pool), boss)
 
 
 def battle_card(pet):
