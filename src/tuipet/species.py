@@ -46,37 +46,40 @@ def background_key(field=None):
         return FIELD_BG[field]
     return DEVICE_BG.get(DEVICE, "egg1Back")
 
-# Wayland native sprite-sheet frame order (include/graphics/sprite_sheet.h):
-FRAME_NAMES = ["idle_1", "idle_2", "angry", "down", "happy", "eat_1", "sleep",
-               "refuse", "sad", "lose_1", "eat_2", "lose_2", "attack_1",
-               "movement_1", "movement_2", "attack_2"]
+# DVPet native sprite-strip frame order (11 frames, index 0-10), VERIFIED against
+# DVPet View/SpriteAnim drawNum() args. The art atlas, anim.py, and the pose constants
+# all index this order:
+#   0 idle/neutral     6 attack / cheer-up
+#   1 idle-B / walk-B  7 eat-chew / cheer-down(big) / wake-end
+#   2 sleep            8 eat-swallow
+#   3 stretch / yawn   9 dejected / fail / disliked
+#   4 cheer-down       10 collapse / dying / exhausted
+#   5 excited / cheer-up(big)
+FRAME_NAMES = ["idle", "idle_b", "sleep", "stretch", "cheer_down", "excited",
+               "attack", "eat_chew", "eat_swallow", "dejected", "collapse"]
 
-# Animation role -> wayland frame indices. Anchored on frames 0-8 (present in every
-# multi-frame sheet); indices >=9 fall back to frame 0 on shorter sheets, and the 20
-# dvpet-fallback mons (frame 0 only) render their idle pose for every role. This is the
-# wayland-native rebuild of the old DVPet-ordered data.ROLES.
+# Animation role -> DVPet frame indices, taken from the real DVPet animations:
+#   Cheering=5,7  Jeering=9,10  Eating=8,7  attackDefault=6,0  Cleaning=0,4  Bounce=1,5  Dying=10.
 ROLES = {
-    "idle":      [0, 1],   # idle_1 / idle_2 toggle (also the walk shuffle)
-    "walk":      [0, 1],
-    "angry":     [2],
-    "tantrum":   [2],
-    "down":      [3],
-    "exhausted": [3],      # collapse / dying
-    "poop":      [3],
-    "happy":     [4],      # cheer / praise / win / evolve bounce (hop comes from yshift)
-    "play":      [4],
-    "eat":       [5, 10],  # eat_1 -> eat_2 chew (eat_2 falls back to idle on 9-frame sheets)
-    "heal":      [5, 10],  # eat medicine = same chew
-    "sleep":     [6],
-    "wake":      [6, 0],   # sleep -> idle
-    "refuse":    [7],
-    "wash":      [0],
-    "sad":       [8],
-    "tired":     [8],
-    "yawn":      [0, 6],   # idle -> sleep-ish
-    "surprise":  [2, 4],
-    "lose":      [9, 11],  # lose_1 / lose_2
-    "attack":    [12, 15], # attack_1 / attack_2 (fall back to idle when absent)
+    "idle":   [0, 1],      # Idling / Discovering walk
+    "walk":   [0, 1],
+    "sleep":  [2, 3],      # idleSleep
+    "happy":  [5, 7],      # Cheering up=5 down=7 — praise / win / evolve bounce
+    "angry":  [9, 10],     # Jeering up=9 down=10 (scold)
+    "eat":    [8, 7],      # eat(): open-mouth 8 -> chew 7
+    "refuse": [4],         # refuse(): frame 4 shaken by the mirror toggle
+    "attack": [6, 0],      # attackDefault: strike 6 -> reset 0
+    "tantrum": [9, 10],    # unhappy-idle -> jeer poses
+    "poop":   [4, 5],      # poop(): squat 4 -> sit 5
+    "play":   [1, 5],      # Bounce/Jump toy interact: 1 -> 5
+    "wash":   [0, 4],      # Cleaning/Bathe: scrub 0 -> refreshed 4
+    "heal":   [7, 8],      # recover(): eat-medicine, same as eat
+    "sad":    [9],         # dejected/fail pose
+    "tired":  [9],         # disliked/weary pose
+    "exhausted": [10],     # collapse pose (Dying)
+    "yawn":   [0, 8],      # yawning(): idle 0 -> open-mouth 8
+    "wake":   [2, 3, 1],   # wakeUp(): groggy 2/3 -> settle 1
+    "surprise": [1, 5],    # startle beats 1,5
 }
 MIRROR_ROLES = {"refuse"}
 

@@ -14,9 +14,8 @@ DVPet frames are in DVPet pose order (11 frames):
   0 idle      1 idle-B/walk-B  2 sleep   3 stretch/yawn  4 cheer-down  5 excited
   6 attack/cheer-up  7 eat-chew  8 eat-swallow  9 dejected/fail  10 collapse/dying
 
-The runtime (species.ROLES + battlescreen/training/app pose constants) indexes a
-16-slot WAYLAND layout, so we splay the DVPet frames into those 16 slots by pose
-meaning via W2D below -- no runtime file has to change.
+We keep frames in DVPet NATIVE order (species.ROLES + the pose constants + anim.py
+all index this order, exactly as they did before the rebuild).
 
 Output: src/tuipet/data/dm20_sprites.json.gz  (list of {num,id,name,stage,attribute,w,h,frames,source})
 Run: python3 corpus/db/build_dm20_atlas.py
@@ -32,15 +31,10 @@ DB = os.path.join(CORPUS, "db", "dm20.json")
 ART = os.path.join(CORPUS, "db", "dvpet_sprites.json.gz")
 OUT = os.path.join(REPO, "src", "tuipet", "data", "dm20_sprites.json.gz")
 
-# Wayland slot names, by index (the layout species.ROLES / pose constants index into).
-FRAME_NAMES = ["idle_1", "idle_2", "angry", "down", "happy", "eat_1", "sleep",
-               "refuse", "sad", "lose_1", "eat_2", "lose_2", "attack_1",
-               "movement_1", "movement_2", "attack_2"]
-
-# wayland slot -> DVPet frame index, mapped by pose meaning.
-#         0  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15
-#       idl idl ang dwn hap eat slp ref sad los eat los atk mv mv atk
-W2D = [0, 1, 9, 10, 5, 7, 2, 1, 9, 9, 8, 10, 6, 0, 1, 0]
+# DVPet native frame names, by index (the order species.ROLES / pose constants / anim.py
+# all index into — verified against DVPet View/SpriteAnim drawNum() args).
+FRAME_NAMES = ["idle", "idle_b", "sleep", "stretch", "cheer_down", "excited",
+               "attack", "eat_chew", "eat_swallow", "dejected", "collapse"]
 
 # Corpus name -> DVPet sprite name, for the 42 mons the two sources spell differently
 # (romanization, dub names, and partner skins that fall back to their base form).
@@ -84,16 +78,6 @@ def _load_art():
     return by
 
 
-def _splay(dv_frames):
-    """DVPet pose-ordered frames -> 16 wayland slots (fall back to frame 0, then BLANK)."""
-    base = dv_frames[0] if dv_frames else BLANK
-    out = []
-    for di in W2D:
-        f = dv_frames[di] if di < len(dv_frames) and dv_frames[di] else base
-        out.append(f)
-    return out
-
-
 def main():
     db = json.load(open(DB))
     art = _load_art()
@@ -102,7 +86,7 @@ def main():
         name = r["name"]
         src = art.get(_norm(ALIASES.get(name, name))) or art.get(_norm(name))
         if src:
-            frames = _splay(src["frames"])
+            frames = src["frames"] or [BLANK]    # native DVPet order, positions preserved (runtime fills empties)
             source = "dvpet:" + src["name"]
         else:
             frames = []
