@@ -22,7 +22,7 @@ for f in digimon evolutions foods items enemies maps zones towns shopConsumable 
   cp "raw_model/$f.csv" "src/tuipet/data/$f.csv"
 done
 mkdir -p src/tuipet/data/sounds
-python tools/chiptune_sounds.py    # authentic DVPet SFX -> slowed YIN pitch-trace -> band-limited stepped chiptune (needs ffmpeg+rubberband+aubio)
+python tools/chiptune_sounds.py    # authentic DVPet SFX -> 1-bit square comparator -> chiptune (pure numpy, exact source pitch)
 python tools/extract_sprites.py
 python tools/extract_effects.py
 python tools/extract_backgrounds.py
