@@ -74,6 +74,7 @@ def _derive(t):
         "ACCENT": t["accent"], "POS": t["pos"], "NEG": t["neg"], "BORDER": t["border"],
         "SIL_DAY": t["sil_day"], "SIL_NIGHT": t["sil_night"], "PHASE_PALETTE": t["phases"],
         "HEART": t["heart"], "ENERGY": t["energy"], "MOOD": t["mood"],
+        "LIFE": t["life"], "COIN": t["coin"],
     }
 
 
