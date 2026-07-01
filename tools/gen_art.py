@@ -79,22 +79,22 @@ def _attention():                                   # 4x8 exclamation mark
     return [c.rows()]
 
 
-def _zzz():                                         # 8x6 two blocky Z's rising right
+def _zzz():                                         # 8x6 crisp Z, pulsing small<->big
     f0 = G("""
-....####
-.....##.
-....##..
-###.####
-.##.....
-###.....
+.#####..
+....#...
+...#....
+..#.....
+.#####..
+........
 """)
     f1 = G("""
-...####.
-....##..
-...##...
-.###.###
-..##....
-.###....
+.######.
+.....#..
+....#...
+...#....
+..#.....
+.######.
 """)
     return [f0, f1]
 
@@ -147,15 +147,28 @@ def _unhappy():                                     # 7x8 rain cloud (gloomy emo
     return [f0, f1]
 
 
-def _poop():                                        # 8x8 swirl pile, 2 frames
-    def f(w):
-        c = C(8, 8)
-        c.hline(2, 5, 7); c.hline(1, 6, 6)           # base mound
-        c.hline(2, 5, 5); c.hline(2, 4, 4)
-        c.hline(3, 4, 3); c.px(3 + w, 2)             # swirl tip
-        c.px(2, 5); c.px(5, 4)                       # texture
-        return c.rows()
-    return [f(0), f(1)]
+def _poop():                                        # 8x8 pile + stink flecks, 2 frames
+    f0 = G("""
+.....#..
+..#.....
+...#....
+...##...
+..#.##..
+.##..##.
+.######.
+.######.
+""")
+    f1 = G("""
+.#......
+.....#..
+....#...
+...##...
+..##.#..
+.##..##.
+.######.
+.######.
+""")
+    return [f0, f1]
 
 
 def _dying():                                       # 7x8 bold X (crossed-out / done for)
