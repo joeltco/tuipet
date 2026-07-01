@@ -80,7 +80,7 @@ class TrainingPanel:
         hits = 3 if self.full else (2 if self.success else 1)
         self.result = self.pet.apply_training(hits, 0, game="hp")
         self.phase = "done"
-        self.sfx = "evolve" if self.full else ("attack" if self.success else "refuse")
+        self.sfx = "win" if self.full else ("attack" if self.success else "refuse")
         self.flash = ("WALL SMASHED!" if self.full
                       else ("nice — some hits landed" if self.success else "too slow…")) + "   (SPACE)"
 
