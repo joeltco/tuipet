@@ -38,10 +38,10 @@ def test_effective_power_bonus():
 
 
 def test_hit_chance_scales_and_clamps():
-    assert hit_chance(100, 100) == 0.55                          # even power
+    assert hit_chance(100, 100) == 0.72                          # even power (high base -> most land)
     assert hit_chance(200, 100) > hit_chance(120, 100)           # bigger gap -> more likely
-    assert hit_chance(999, 0) == 0.90                            # clamped high
-    assert hit_chance(0, 999) == 0.15                            # clamped low
+    assert hit_chance(999, 0) == 0.95                            # clamped high
+    assert hit_chance(0, 999) == 0.40                            # clamped low
 
 
 # ---- pet power = species base + training -----------------------------------
