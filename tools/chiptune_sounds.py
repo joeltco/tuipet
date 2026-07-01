@@ -40,11 +40,11 @@ RAMP_MS = 4.0          # gate-edge ramp -> no clicks
 
 # tuipet cue -> authentic DVPet source stem (5 subs have no 1:1 cue; see git history)
 MAP = {
-    "alarm": "alarm", "angry": "angry", "attack": "attack", "battle": "battle",
-    "eat": "eat", "error": "error", "evolve": "evolve", "happy": "happy",
+    "alarm": "alarm", "attack": "attack", "battle": "battle",
+    "eat": "eat", "evolve": "evolve", "happy": "happy",
     "hatch": "hatch", "jogress": "jogress", "largePoop": "largePoop",
     "lastBite": "lastBite", "lose": "lose", "poop": "poop", "refuse": "refuse",
-    "select": "select", "smallPoop": "smallPoop", "strongAttack": "strongAttack",
+    "smallPoop": "smallPoop", "strongAttack": "strongAttack",
     "strongHit": "strongHit", "wash": "wash", "win": "win",
     "compatible": "compatible",   # DVPet pairing-handshake beep (battle/jogress match)
     "cancel": "error", "confirm": "click", "menu": "select", "scroll": "select",

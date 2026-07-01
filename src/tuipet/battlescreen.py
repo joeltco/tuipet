@@ -164,7 +164,7 @@ class BattlePanel:
             if m == "fire_out":                 # DVPet: a doubleAttack launches with the strong sting
                 self.sfx = "strongAttack" if entry.get("double") else "attack"
             elif m == "hit":                     # ...and lands with the strong impact
-                self.sfx = "strongHit" if entry.get("double") else "attackHit"
+                self.sfx = "strongHit" if entry.get("double") else "attack"
         self._last_m = m
 
     def anim(self):

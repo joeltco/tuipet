@@ -8,7 +8,7 @@ def _sleeping():
     p = Pet(num=-1, stage="Rookie")
     p.asleep = True
     p.poop = 3            # so clean would otherwise have work to do
-    p.sick = True         # so heal would otherwise have work to do
+    p._injure()           # so heal would otherwise have work to do
     return p
 
 
@@ -21,12 +21,12 @@ def test_all_care_actions_block_while_asleep():
 
 def test_blocked_action_changes_nothing():
     p = _sleeping()
-    poop0, sick0 = p.poop, p.sick
+    poop0, inj0 = p.poop, p.is_injured()
     p.heal()
-    assert p.sick is True, "heal-while-asleep must not cure"
+    assert p.is_injured(), "heal-while-asleep must not cure"
     p.clean()
     assert p.poop == poop0, "clean-while-asleep must not tidy up"
-    assert p.sick == sick0, "care while asleep is a no-op (DM20: waking is free)"
+    assert p.is_injured() == inj0, "care while asleep is a no-op (DM20: waking is free)"
 
 
 def test_care_works_again_once_awake():

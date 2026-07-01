@@ -23,7 +23,7 @@ def _styled(text):
 
 
 def _pet(**kw):
-    base = dict(dead=False, num=1, poop=0, asleep=False, sick=False, anim="idle",
+    base = dict(dead=False, num=1, poop=0, asleep=False, anim="idle",
                 is_injured=lambda: False, hunger=2)
     base.update(kw)
     return NS(**base)
@@ -44,10 +44,10 @@ def test_band_constants_describe_a_16_dot_screen():
 def test_status_overlay_never_leaves_the_band():
     states = [
         _pet(asleep=True),                                             # Zzz above head
-        _pet(sick=True, is_injured=lambda: True),                      # condition markers
+        _pet(is_injured=lambda: True),                                 # injury marker beside pet
         _pet(poop=3),                                                  # droppings on the floor
         _pet(hunger=0),                                                # care-call '!'
-        _pet(asleep=True, sick=True, poop=3),                          # everything at once
+        _pet(asleep=True, is_injured=lambda: True, poop=3),            # everything at once
     ]
     for pet in states:
         for x, y in _bounds(pet):

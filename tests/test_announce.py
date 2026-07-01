@@ -1,6 +1,6 @@
 """The HUD care-need announcement (the alarm's on-screen half).
 
-When the pet has an unmet need (hungry/sick/dirty/exhausted/misbehaving) the box
+When the pet has an unmet need (hungry/hurt/dirty) the box
 under the LCD announces it, in sync with the alarm beep. It yields to a fresh
 action flash for a few seconds, then re-asserts, and clears once the need is met.
 Persistence is sandboxed by the autouse isolate_save fixture.
@@ -18,9 +18,9 @@ def test_need_message_priority_and_text():
     assert app._need_message(p) == ""             # no need -> nothing to announce
     p.hunger = 0
     assert "hungry" in app._need_message(p)
-    p.sick = True
-    assert "sick" in app._need_message(p)         # sick outranks hunger
-    p.sick = False
+    p._injure()
+    assert "hurt" in app._need_message(p)         # injury outranks hunger
+    p.inj_length = 0.0
     p.hunger = 4
     p.poop = 4
     assert "cleaning" in app._need_message(p)
@@ -49,8 +49,6 @@ def test_hud_announces_yields_and_clears():
         import pytest
         pytest.skip("sprite assets not installed")
     persistence.set_account("Tester", "x")
-    pet._sicken = lambda *a, **k: None   # deterministic: sick is the only need that
-    # outranks hunger, so block random illness and the announced need stays "hungry"
 
     async def go():
         app = TuiPetApp(pet=pet)

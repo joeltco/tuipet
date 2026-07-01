@@ -157,14 +157,14 @@ def _blit(bm, ox, oy):
 COND_W = COND_H = 7                                # state.png cell size (DVPet 7x7 cells)
 COND_PITCH = COND_H + 1
 # Condition markers float beside the creature, stacked, every active one at once.  DM20
-# conditions only: sickness + injury.  (medicine/bandage recovery indicators, vitamin,
+# conditions only: injury.  (medicine/bandage recovery indicators, vitamin,
 # and fatigue were all DVPet -- stripped with those mechanics.)
 
 
 def _effect_overlay(pet, frame_i, cols, px_h, tick=0, pet_right=None):
     """Status sprites laid out the DM20 dot-matrix way, inside the 16-dot screen band:
     droppings as a single low row along the floor that the Digimon walks in FRONT of,
-    the sleep Zzz above its head, the sickness/injury marker floating beside it, and a
+    the sleep Zzz above its head, the injury marker floating beside it, and a
     care-call bubble by its head (DM20 manual). Returns (front, back): `back` draws
     behind the creature (the droppings), `front` over it (Zzz / markers / bubble)."""
     E = data.load_effects()
@@ -198,11 +198,10 @@ def _effect_overlay(pet, frame_i, cols, px_h, tick=0, pet_right=None):
         zw = len(z[0])
         zx = max(PLAY_X0, min(head_cx - zw // 2, PLAY_R - zw))
         front += _blit(z, zx, band_top)
-    # --- condition marker: the sick/injury icon floats beside the creature, tracking it ---
+    # --- condition marker: the injury skull floats beside the creature, tracking it ---
     # DVPet stateNumTic blink: 7 ticks awake / 10 asleep, faster (7) when unwell.
-    unwell = pet.sick or pet.is_injured()
-    sf = (tick // (7 if unwell else (10 if asleep else 7))) % 2
-    column = (("st_sick", pet.sick), ("st_injury", pet.is_injured()))
+    sf = (tick // (7 if pet.is_injured() else (10 if asleep else 7))) % 2
+    column = (("st_injury", pet.is_injured()),)
     k = 0
     cond_active = False
     for key, active in column:
@@ -268,7 +267,7 @@ class Screen(Static):
         idx = frames[(self.frame_i // hold) % len(frames)]
         rows = (_fr[idx] if idx < len(_fr) else None) or first
         xshift, mirror = 0, False
-        if pet.anim in ("idle", "walk") and pet.sick and pet.num != -1:
+        if pet.anim in ("idle", "walk") and pet.is_injured() and pet.num != -1:
             si, dx = anim.sick_frame(self.frame_i)               # DVPet idleUnwell: collapse(10), weary(9) flash
             rows = (_fr[si] if si < len(_fr) else None) or first
             xshift = dx
@@ -315,10 +314,10 @@ class Screen(Static):
             self.anim_key = pet.anim            # new state -> restart its cadence at beat 0
             self.frame_i = -1
         self.frame_i += 1
-        if pet is not None and pet.anim in ("idle", "walk") and pet.num != -1 and not pet.sick:
+        if pet is not None and pet.anim in ("idle", "walk") and pet.num != -1 and not pet.is_injured():
             prev_pose = self.roamer.pose
             # DM20: the Digimon paces the FULL 32-wide window (turns at PLAY_X0/PLAY_RIGHT);
-            # droppings are floor decoration it walks in front of, not a wall, and the sick
+            # droppings are floor decoration it walks in front of, not a wall, and the injury
             # marker rides beside it -- so nothing bounds the roam but the screen edges.
             self.roamer.step(left_bound=PLAY_X0, right_bound=PLAY_RIGHT)
             if self.roamer.pose != prev_pose:                    # a fresh step landed (DVPet stepFrame):
@@ -489,7 +488,7 @@ class Screen(Static):
 def _status_line(status, deco, width=26):
     """Assemble the status word + deco glyphs, bounded to `width` visible cols
     so the Stats box never wraps past its 16-row height. Drops the lowest-priority
-    deco that would overflow (rare: only when asleep+sick+poop+effect pile up)."""
+    deco that would overflow (rare: only when asleep+injured+poop+effect pile up)."""
     from rich.text import Text
     used = len(status) + 3                      # the status word + 3 spaces
     shown = []
@@ -513,7 +512,6 @@ class Stats(Static):
         word = pet.status_word()
         deco = []
         if pet.asleep and word != "asleep": deco.append("[blue]Zzz[/]")
-        if pet.sick and word != "sick": deco.append(f"[{T.NEG}]+sick[/]")
         if pet.is_injured() and word != "injured": deco.append(f"[{T.NEG}]+hurt[/]")
         if pet.poop and word != "needs cleaning": deco.append(f"[{T.COIN}]~poop x{pet.poop}[/]")
         sky, skycol = _sky_icon(pet)
@@ -1028,7 +1026,7 @@ class TuiPetApp(App):
             self.beep(poop_snd, bell=False)
         # care-need call (classic V-pet nag): alert on onset, then every ~90s
         needs = (not p.dead and p.stage != "Egg" and not p.asleep
-                 and (p.hunger == 0 or p.sick or p.poop >= 3))
+                 and (p.hunger == 0 or p.is_injured() or p.poop >= 3))
         if needs and not self._needs:
             self.beep("alarm")
             self._nag_t = 0.0
@@ -1097,7 +1095,7 @@ class TuiPetApp(App):
     def _need_message(self, p):
         """HUD announcement for the pet's most urgent unmet care need (or '')."""
         name = p.name or "Your pet"
-        if p.sick:          msg = f"{name} is sick!"
+        if p.is_injured():  msg = f"{name} is hurt!"
         elif p.hunger == 0: msg = f"{name} is hungry!"
         elif p.poop >= 3:   msg = f"{name} needs cleaning!"
         else:               return ""
