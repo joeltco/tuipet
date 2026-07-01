@@ -1,0 +1,167 @@
+#ifndef BONGOCAT_WAYLAND_SHARED_MEMORY_H
+#define BONGOCAT_WAYLAND_SHARED_MEMORY_H
+
+#include "graphics/animation_context.h"
+
+#include <stdatomic.h>
+#include <wayland-client.h>
+
+namespace bongocat::platform::wayland {
+// single-, double- or triple-buffer
+// @FIXME: fix for double buffer on (KWin)
+inline static constexpr size_t WAYLAND_NUM_BUFFERS = 1;
+
+struct wayland_shm_buffer_t;
+void cleanup_shm_buffer(wayland_shm_buffer_t& buffer);
+
+struct wayland_thread_context;
+
+// Pre-scaled frame cache (avoids repeated scaling of constant source images)
+struct cached_frame_t {
+  MMapArray<uint8_t> data;
+  int width;
+  int height;
+};
+
+struct wayland_context_t;
+}  // namespace bongocat::platform::wayland
+
+namespace bongocat::animation {
+void invalidate_cache_frames(platform::wayland::wayland_context_t& ctx);
+}  // namespace bongocat::animation
+
+namespace bongocat::platform::wayland {
+
+struct wayland_shm_buffer_t {
+  wl_buffer *buffer{BONGOCAT_NULLPTR};
+  MMapFileBuffer<uint8_t> pixels;
+  atomic_bool busy{false};     // 0: free / 1: busy
+  atomic_bool pending{false};  // 0/1: a render was requested while busy
+  size_t index{0};             // index track from wayland_shared_memory_t.buffers
+
+  // extra context for listeners
+  animation::animation_context_t *_animation_context{BONGOCAT_NULLPTR};
+  wayland_thread_context *_wayland_thread_context{BONGOCAT_NULLPTR};  // parent ref. for buffer_release
+
+  // Physical (buffer-coordinate) dimensions of the active buffer.
+  int32_t _physical_buffer_width{0};
+  int32_t _physical_buffer_height{0};
+
+  /// @TODO: add caching for frame buffer
+  // cached_frame_t _cached_frames[animation::MAX_NUM_FRAMES];
+
+  wayland_shm_buffer_t() = default;
+  ~wayland_shm_buffer_t() {
+    cleanup_shm_buffer(*this);
+  }
+
+  wayland_shm_buffer_t(const wayland_shm_buffer_t&) = delete;
+  wayland_shm_buffer_t& operator=(const wayland_shm_buffer_t&) = delete;
+
+  wayland_shm_buffer_t(wayland_shm_buffer_t&& other) noexcept
+      : buffer(other.buffer)
+      , pixels(bongocat::move(other.pixels))
+      , index(other.index)
+      , _animation_context(other._animation_context)
+      , _wayland_thread_context(other._wayland_thread_context)
+      , _physical_buffer_width(other._physical_buffer_width)
+      , _physical_buffer_height(other._physical_buffer_height) {
+    atomic_store(&busy, atomic_load(&other.busy));
+    atomic_store(&pending, atomic_load(&other.pending));
+
+    other.buffer = BONGOCAT_NULLPTR;
+    other.index = 0;
+    other._animation_context = BONGOCAT_NULLPTR;
+    atomic_store(&other.busy, false);
+    atomic_store(&other.pending, false);
+    other._physical_buffer_width = 0;
+    other._physical_buffer_height = 0;
+  }
+  wayland_shm_buffer_t& operator=(wayland_shm_buffer_t&& other) noexcept {
+    if (this != &other) {
+      buffer = other.buffer;
+      pixels = bongocat::move(other.pixels);
+      atomic_store(&busy, atomic_load(&other.busy));
+      atomic_store(&pending, atomic_load(&other.pending));
+      index = other.index;
+      _animation_context = other._animation_context;
+      _wayland_thread_context = other._wayland_thread_context;
+      _physical_buffer_width = other._physical_buffer_width;
+      _physical_buffer_height = other._physical_buffer_height;
+
+      other.buffer = BONGOCAT_NULLPTR;
+      other.index = 0;
+      other._animation_context = BONGOCAT_NULLPTR;
+      other._wayland_thread_context = BONGOCAT_NULLPTR;
+      atomic_store(&other.busy, false);
+      atomic_store(&other.pending, false);
+      other._physical_buffer_width = 0;
+      other._physical_buffer_height = 0;
+    }
+    return *this;
+  }
+};
+
+// Wayland globals
+struct wayland_shared_memory_t {
+  wayland_shm_buffer_t buffers[WAYLAND_NUM_BUFFERS];
+  size_t current_buffer_index{0};
+  atomic_bool configured{false};
+
+  wayland_shared_memory_t() = default;
+  ~wayland_shared_memory_t() {
+    atomic_store(&configured, false);
+    current_buffer_index = 0;
+    for (size_t i = 0; i < WAYLAND_NUM_BUFFERS; i++) {
+      cleanup_shm_buffer(buffers[i]);
+    }
+  }
+
+  wayland_shared_memory_t(const wayland_shared_memory_t&) = delete;
+  wayland_shared_memory_t& operator=(const wayland_shared_memory_t&) = delete;
+
+  wayland_shared_memory_t(wayland_shared_memory_t&& other) noexcept : buffers{} {
+    atomic_store(&configured, false);
+    current_buffer_index = other.current_buffer_index;
+    // Manually move each buffer
+    for (size_t i = 0; i < WAYLAND_NUM_BUFFERS; i++) {
+      buffers[i] = bongocat::move(other.buffers[i]);
+    }
+    atomic_store(&configured, atomic_load(&other.configured));
+
+    other.current_buffer_index = 0;
+    atomic_store(&other.configured, false);
+  }
+  wayland_shared_memory_t& operator=(wayland_shared_memory_t&& other) noexcept {
+    if (this != &other) {
+      atomic_store(&configured, false);
+      current_buffer_index = other.current_buffer_index;
+      for (size_t i = 0; i < WAYLAND_NUM_BUFFERS; ++i) {
+        buffers[i] = move(other.buffers[i]);
+      }
+      atomic_store(&configured, atomic_load(&other.configured));
+
+      other.current_buffer_index = 0;
+      atomic_store(&other.configured, false);
+    }
+    return *this;
+  }
+};
+
+inline void cleanup_shm_buffer(wayland_shm_buffer_t& buffer) {
+  atomic_store(&buffer.pending, false);
+  atomic_store(&buffer.busy, true);
+  BONGOCAT_LOG_VERBOSE("cleanup_shm_buffer: destroy buffer");
+  if (buffer.buffer != BONGOCAT_NULLPTR) {
+    wl_buffer_destroy(buffer.buffer);
+    buffer.buffer = BONGOCAT_NULLPTR;
+  }
+  release_allocated_mmap_file_buffer(buffer.pixels);
+  atomic_store(&buffer.busy, false);
+  buffer.index = 0;
+  buffer._animation_context = BONGOCAT_NULLPTR;
+  buffer._wayland_thread_context = BONGOCAT_NULLPTR;
+}
+}  // namespace bongocat::platform::wayland
+
+#endif  // BONGOCAT_WAYLAND_SHARED_MEMORY_H

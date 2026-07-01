@@ -14,29 +14,13 @@ import subprocess  # nosec B404 - players run from a fixed allowlist, no shell, 
 _DIR = os.path.join(os.path.dirname(__file__), "data", "sounds")
 
 
-def _termux_broker_ok():
-    """termux-media-player's CLI exists from the `termux-api` package, but it HANGS
-    forever if the Termux:API app (the broker it talks to) isn't installed or is from
-    a mismatched source. Probe it with a short timeout: a live broker answers `info`
-    fast; a dead one times out. Without this every beep would Popen a stuck process
-    that never exits, and the app would report sound as working when it's silent."""
-    try:
-        subprocess.run(["termux-media-player", "info"], timeout=1.0,   # nosec B603,B607 - fixed cmd, no shell
-                       stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
-                       stdin=subprocess.DEVNULL)
-        return True
-    except Exception:
-        return False                                 # timed out / no broker -> unusable
-
-
 def _find_player():
-    if shutil.which("termux-media-player") and _termux_broker_ok():
+    if shutil.which("termux-media-player"):
         return ["termux-media-player", "play"]      # Termux -> plays on the phone
     if os.environ.get("SSH_CONNECTION") or os.environ.get("SSH_TTY") or os.environ.get("SSH_CLIENT"):
         return None                                  # SSH session: don't play on the server
-    for cmd in (["paplay"], ["pw-play"], ["aplay", "-q"], ["afplay"],
-                ["ffplay", "-nodisp", "-autoexit", "-loglevel", "quiet"],
-                ["mpv", "--no-video", "--really-quiet"], ["play", "-q"]):
+    for cmd in (["paplay"], ["aplay", "-q"], ["afplay"],
+                ["ffplay", "-nodisp", "-autoexit", "-loglevel", "quiet"], ["play", "-q"]):
         if shutil.which(cmd[0]):
             return cmd
     return None

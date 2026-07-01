@@ -1,0 +1,139 @@
+#### dm20
+Digital Monster Ver.20th.
+
+- Aegisdramon
+- Agumon
+- Airdramon
+- Alphamon
+- Andromon
+- Angemon
+- Apollomon
+- Babydmon
+- Bakemon
+- Bancho Mamemon
+- Bao Hackmon
+- Betamon
+- Birdramon
+- Blitz Greymon
+- Botamon
+- Breakdramon
+- Centalmon
+- Cockatrimon
+- Coelamon
+- Coredramon (Blue)
+- Coredramon (Green)
+- Coronamon
+- Crescemon
+- Cres Garurumon
+- Cyclomon
+- Dark Tyranomon
+- Deltamon
+- Devidramon
+- Devimon
+- Dianamon
+- Digitamamon
+- Dodomon
+- Dorimon
+- DORUgamon
+- DORUguremon
+- DORUmon
+- Dracomon
+- Drimogemon
+- Duramon
+- Durandamon
+- Elecmon
+- Etemon
+- Examon
+- Ex-Tyranomon
+- Firamon
+- Flaremon
+- Flymon
+- Gabumon
+- Garurumon
+- Gazimon
+- Giromon
+- Gizamon
+- Grace Novamon
+- Greymon
+- Groundramon
+- Hackmon
+- Hi Andromon
+- Jesmon
+- Kabuterimon
+- King Etemon
+- Koromon
+- Kunemon
+- Kuwagamon
+- Lekismon
+- Leomon
+- Lunamon
+- Mamemon
+- Megadramon
+- Meicoomon
+- Meicrackmon
+- Meramon
+- Metal Garurumon
+- Metal Greymon
+- Metal Mamemon
+- Metal Tyranomon
+- Mojyamon
+- Monochromon
+- Monzaemon
+- Mugendramon
+- Nanimon
+- Nanomon
+- Numemon
+- Nyaromon
+- Ogremon
+- Omegamon Alter S
+- Omegamon
+- Pagumon
+- Palmon
+- Patamon
+- Petitmon
+- Piccolomon
+- Pinochimon
+- Pitchmon
+- Piyomon
+- Plotmon
+- Poyomon
+- Pukamon
+- Punimon
+- Raremon
+- Rasielmon
+- Rust Tyranomon
+- Sakumon
+- Sakuttomon
+- Savior Hackmon
+- Scumon
+- Seadramon
+- Shellmon
+- Skull Greymon
+- Skull Mammon
+- Slayerdramon
+- Taichis Agumon
+- Taichis Greymon
+- Taichis Metal Greymon
+- Taichis War Greymon
+- Tanemon
+- Titamon
+- Tokomon
+- Tsunomon
+- Tunomon
+- Tuskmon
+- Tyranomon
+- Unimon
+- Vademon
+- Vegimon
+- Whamon
+- Wingdramon
+- Yamatos Gabumon
+- Yamatos Garurumon
+- Yamatos Metal Garurumon
+- Yamatos Were Garurumon
+- Yukidarumon
+- Yukimibotamon
+- Yuramon
+- Zubaeagermon
+- Zubamon
+- Zurumon

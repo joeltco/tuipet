@@ -1,0 +1,130 @@
+#### pen
+Digimon Pendulum
+
+- Aero V-dramon
+- Agumon
+- Andromon
+- Angemon
+- Angewomon
+- Anomalocarimon
+- Asuramon
+- Atlur Kabuterimon
+- Bakemon
+- Bakumon
+- Big Mamemon
+- Birdramon
+- Blossomon
+- Boltmon
+- Bubbmon
+- Candmon
+- Caprimon
+- Choromon
+- Clockmon
+- Coelamon
+- Cyberdramon
+- Dagomon
+- Death Meramon
+- Delumon
+- Devimon
+- Dokugumon
+- Ebidramon
+- Fantomon
+- Floramon
+- Gabumon
+- Ganimon
+- Garudamon
+- Garurumon
+- Gekomon
+- Gerbemon
+- Gesomon
+- Gomamon
+- Gottsumon
+- Greymon
+- Griffomon
+- Guardromon
+- Hagurumon
+- Hangymon
+- Hangyomon
+- Hanumon
+- Herakle Kabuterimon
+- Holy Angemon
+- Holydramon
+- Hououmon
+- Igamon
+- Ikkakumon
+- Jyagamon
+- Jyureimon
+- Kabuterimon
+- Kiwimon
+- Knightmon
+- Kokuwamon
+- Kuwagamon
+- Lady Devimon
+- Leomon
+- Lilimon
+- Mammon
+- Marin Angemon
+- Marin Devimon
+- Mechanorimon
+- Megadramon
+- Mega Seadramon
+- Meramon
+- Metal Etemon
+- Metal Garurumon
+- Metal Greymon
+- Metal Mamemon
+- Metal Seadramon
+- Mochimon
+- Mokumon
+- Monochromon
+- Mugendramon
+- Mushmon
+- Nyaromon
+- Nyokimon
+- Octmon
+- Okuwamon
+- Omegamon
+- Otamamon
+- Palmon
+- Peti Meramon
+- Piccolomon
+- Pico Devimon
+- Piemon
+- Pinochimon
+- Pitchmon
+- Piyomon
+- Plesiomon
+- Plotmon
+- Pukamon
+- Pukumon
+- Pumpmon
+- Pyocomon
+- Red Vegimon
+- Revolmon
+- Rosemon
+- Rukamon
+- Saber Leomon
+- Seadramon
+- Shakomon
+- Skull Mammon
+- Starmon
+- Tailmon
+- Tankmon
+- Tentomon
+- Thunderballmon
+- Togemon
+- Tonosama Gekomon
+- Tortamon
+- Toy Agumon
+- Triceramon
+- Vamdemon
+- V-dramon
+- Venom Vamdemon
+- War Greymon
+- Waru Monzaemon
+- Were Garurumon
+- Whamon
+- Wizarmon
+- Woodmon
+- Yukimi Botamon
+- Zudomon

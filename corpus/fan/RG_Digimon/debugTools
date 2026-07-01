@@ -1,0 +1,51 @@
+local debugTools = {} -- create an empty table to store the functions
+
+function debugTools.debugPrint(time, debugB, level, ...)
+    -- Only show debugging messages if the `debug` flag is set to `true`
+    if debugB then
+        -- Add timestamps to the output
+        if time == nil then
+            timestamp = "[nil:nil:nil]"
+        else
+            timestamp = string.format("[%02d:%02d:%02d]", time.hours, time.minutes, time.seconds)
+        end
+
+        if level == "error" then
+            setFgColor(91) -- red
+            print(timestamp, "ERROR:")
+            setFgColor(39) -- default color
+            print(...)
+        elseif level == "warning" then
+            setFgColor(93) -- yellow
+            print(timestamp, "WARNING:")
+            setFgColor(39) -- default color
+            print(...)
+        elseif level == "info" then
+            setFgColor(92) -- green
+            print(timestamp, "INFO:")
+            setFgColor(39) -- default color
+            print(...)
+        elseif level == "debug" then
+            setFgColor(94) -- blue
+            print(timestamp, "DEBUG:")
+            setFgColor(39) -- default color
+            print(...)
+        elseif level == "time" then
+            setFgColor(95) -- magenta
+            print(timestamp)
+            setFgColor(39) -- default color
+        elseif level == "digimon" then
+            setFgColor(33) -- magenta
+            print(timestamp, "DIGIMON:")
+            setFgColor(39) -- default color
+            print(...)
+        else
+            setFgColor(91) -- red
+            print(timestamp, "UNKNOWN:")
+            setFgColor(39) -- default color
+            print(...)
+        end
+    end
+end
+
+return debugTools -- return the table containing the functions

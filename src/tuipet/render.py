@@ -20,11 +20,6 @@ PALETTES = {
 
 UPPER, LOWER, FULL, EMPTY = "▀", "▄", "█", " "
 
-# Authentic play field: 16×16 sprites live in a 32-dot-wide window. The LCD canvas itself
-# stays wider (e.g. 40) and shows background in the margins; sprites ANCHOR (no clip) inside
-# a centred 32-wide band. cols<=PLAY_COLS => the whole width is the play field (no clamp).
-PLAY_COLS = 32
-
 
 def frame_segments(rows, on="#e6e6e6", off=None):
     """Yield Rich Segments for one bitmap frame (list of '0'/'1' strings)."""
@@ -64,7 +59,7 @@ if __name__ == "__main__":
     import os
     import sys
     here = os.path.dirname(__file__)
-    data = json.load(gzip.open(os.path.join(here, "data/dm20_sprites.json.gz"), "rt"))["sprites"]
+    data = json.load(gzip.open(os.path.join(here, "data/sprites.json.gz"), "rt"))
     by = {d["name"]: d for d in data}
     name = sys.argv[1] if len(sys.argv) > 1 else "Agumon"
     pal = sys.argv[2] if len(sys.argv) > 2 else "lcd"
@@ -73,27 +68,20 @@ if __name__ == "__main__":
     from rich.console import Console
     c = Console()
     c.print(f"[bold]{d['name']}[/] ({d['stage']}, {d['attribute']})  {d['w']}x{d['h']}px  palette={pal}")
-    for i in (0, 1, 2, 6):  # DVPet: idle, idle-b, sleep, attack
+    for i in (0, 1, 2, 6):  # idle a/b, happy, sleep-ish
         c.print(f"frame {i}:")
         c.print(frame_text(d["frames"][i], on, off))
 
 
-def render_screen(frame_rows, cols, rows, on="#2b2e31", bg="#c6c9cc", baseline=True, mirror=False, xshift=0, yshift=0, corner=None, overlay=None, bgimg=None, clip=None):
+def render_screen(frame_rows, cols, rows, on="#2b2e31", bg="#c6c9cc", baseline=True, mirror=False, xshift=0, yshift=0, corner=None, overlay=None, bgimg=None):
     """Compose a sprite centred on a fixed cols x rows (character) LCD screen.
 
     Returns a rich Text. The screen is rows*2 pixels tall; the sprite is blitted
     centred horizontally and sitting on the floor (baseline) so it doesn't bob
     off the ground between frames of different heights.
-
-    clip: optional (x0, x1). When given, the centred 32-wide window is NOT used to
-    anchor (pin) the sprite -- instead the sprite is placed at its raw x and pixels
-    outside [x0, x1) are dropped, so the window edge acts as the screen edge. A care
-    action that slides the pet off the field (clean's wash shove) needs this; pinning
-    would trap the pet at the edge. With clip=None the sprite anchors inside the window.
     """
     from rich.text import Text
     px_h = rows * 2
-    cx0, cx1 = clip if clip else (0, cols)
     buf = [[0] * cols for _ in range(px_h)]
     if frame_rows and mirror:
         frame_rows = [r[::-1] for r in frame_rows]
@@ -101,28 +89,25 @@ def render_screen(frame_rows, cols, rows, on="#2b2e31", bg="#c6c9cc", baseline=T
         sw = max(len(r) for r in frame_rows)
         sh = len(frame_rows)
         ox = (cols - sw) // 2 + xshift
-        if clip is None and cols > PLAY_COLS and sw <= PLAY_COLS:   # anchor the sprite inside the centred 32-wide play window
-            px0 = (cols - PLAY_COLS) // 2
-            ox = max(px0, min(ox, px0 + PLAY_COLS - sw))
         oy = max(0, (px_h - sh - 2) if baseline else (px_h - sh) // 2) - yshift   # +yshift lifts the sprite (a hop)
         for y, line in enumerate(frame_rows):
             for x, ch in enumerate(line):
                 if ch == "1":
                     py, pxx = oy + y, ox + x
-                    if 0 <= py < px_h and cx0 <= pxx < cx1:
+                    if 0 <= py < px_h and 0 <= pxx < cols:
                         buf[py][pxx] = 1
     if corner:                               # sun/moon tucked into the top-right
         cw = max(len(r) for r in corner)
-        cxr = cols - cw - 1
+        cx0 = cols - cw - 1
         for y, line in enumerate(corner):
             for x, ch in enumerate(line):
                 if ch == "1":
-                    py, pxx = 1 + y, cxr + x
-                    if 0 <= py < px_h and cx0 <= pxx < cx1:
+                    py, pxx = 1 + y, cx0 + x
+                    if 0 <= py < px_h and 0 <= pxx < cols:
                         buf[py][pxx] = 1
     if overlay:                              # weather: rain/snow/cloud pixels
         for ox_, oy_ in overlay:
-            if 0 <= oy_ < px_h and cx0 <= ox_ < cx1:
+            if 0 <= oy_ < px_h and 0 <= ox_ < cols:
                 buf[oy_][ox_] = 1
     t = Text()
     for cy in range(rows):
@@ -136,18 +121,14 @@ def render_screen(frame_rows, cols, rows, on="#2b2e31", bg="#c6c9cc", baseline=T
     return t
 
 
-def render_scene(placements, cols, rows, on="#2b2e31", bg="#c6c9cc", overlay=None, bgimg=None, clip=None):
+def render_scene(placements, cols, rows, on="#2b2e31", bg="#c6c9cc", overlay=None, bgimg=None):
     """Compose several sprites onto one LCD screen.
 
     placements: list of (frame_rows, x_left, mirror). Each sprite sits on the
     floor (baseline). Used for the battle scene (pet vs enemy facing off).
-    clip: optional (x0, x1) — sprite/overlay pixels outside this column range are
-    dropped, so the play window acts as the screen edge (a rearing combatant or an
-    orb leaving the field is cut off at the boundary instead of crossing the margin).
     """
     from rich.text import Text
     px_h = rows * 2
-    cx0, cx1 = clip if clip else (0, cols)
     buf = [[0] * cols for _ in range(px_h)]
     for frame_rows, x_left, mirror in placements:
         if not frame_rows:
@@ -159,11 +140,11 @@ def render_scene(placements, cols, rows, on="#2b2e31", bg="#c6c9cc", overlay=Non
             for x, ch in enumerate(line):
                 if ch == "1":
                     py, px = oy + y, x_left + x
-                    if 0 <= py < px_h and cx0 <= px < cx1:
+                    if 0 <= py < px_h and 0 <= px < cols:
                         buf[py][px] = 1
     if overlay:                              # projectiles / impact bursts
         for ox_, oy_ in overlay:
-            if 0 <= oy_ < px_h and cx0 <= ox_ < cx1:
+            if 0 <= oy_ < px_h and 0 <= ox_ < cols:
                 buf[oy_][ox_] = 1
     t = Text()
     for cy in range(rows):

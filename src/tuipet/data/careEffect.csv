@@ -1,0 +1,2 @@
+EffectID,SpriteNum,SpriteSet,Name,Description,MinDuration,MaxDuration,EndOnSleepChange,PauseHunger,PauseStrength,PauseTemp,PauseCall,MoodChange,EnergyChange,HungerChange,StrengthChange,SleepLapseChange,AwakeLapseChange,CanReapply
+0,-1,-1,Futon,Increased energy rate; Temperature paused; Increased mood rate,960,960,TRUE,FALSE,FALSE,TRUE,TRUE,1;60,1;60,0;0,0;0,0;0,0;0,FALSE

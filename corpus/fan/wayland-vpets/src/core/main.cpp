@@ -1,0 +1,1175 @@
+#include "config/config.h"
+#include "core/bongocat.h"
+#include "embedded_assets/bongocat/assets_bongocat_features.h"
+#include "embedded_assets/dm20/assets_dm20_features.h"
+#include "embedded_assets/dmall/assets_dmall_features.h"
+#include "embedded_assets/dmc/assets_dmc_features.h"
+#include "embedded_assets/dmx/assets_dmx_features.h"
+#include "embedded_assets/ms_agent/assets_ms_agent_features.h"
+#include "embedded_assets/pen/assets_pen_features.h"
+#include "embedded_assets/pen20/assets_pen20_features.h"
+#include "embedded_assets/pkmn/assets_pkmn_features.h"
+#include "embedded_assets/pmd/assets_pmd_features.h"
+#include "graphics/animation.h"
+#include "graphics/embedded_assets_dms.h"
+#include "image_loader/load_images.h"
+#include "platform/input.h"
+#include "platform/update.h"
+#include "platform/wayland.h"
+#include "utils/error.h"
+#include "utils/memory.h"
+#include "utils/system_error.h"
+
+#include <cassert>
+#include <cerrno>
+#include <csignal>
+#include <cstdio>
+#include <cstdlib>
+#include <fcntl.h>
+#include <libgen.h>
+#include <sys/file.h>
+#include <sys/signalfd.h>
+#include <sys/wait.h>
+#include <unistd.h>
+
+// =============================================================================
+// GLOBAL STATE AND CONFIGURATION
+// =============================================================================
+
+namespace bongocat {
+static inline constexpr platform::time_ms_t WAIT_FOR_SHUTDOWN_MS = 5000;
+static inline constexpr platform::time_ms_t SLEEP_WAIT_FOR_SHUTDOWN_MS = 100;
+static_assert(SLEEP_WAIT_FOR_SHUTDOWN_MS > 0);
+
+static inline constexpr platform::time_ms_t WAIT_FOR_SHUTDOWN_ANIMATION_THREAD_MS = 5000;
+static inline constexpr platform::time_ms_t WAIT_FOR_SHUTDOWN_INPUT_THREAD_MS = 2000;
+static inline constexpr platform::time_ms_t WAIT_FOR_SHUTDOWN_UPDATE_THREAD_MS = 5000;
+static inline constexpr platform::time_ms_t WAIT_FOR_SHUTDOWN_CONFIG_WATCHER_THREAD_MS = 1000;
+inline static constexpr platform::time_ms_t COND_RELOAD_CONFIG_TIMEOUT_MS = 5000;
+inline static constexpr platform::time_ms_t COND_INIT_TIMEOUT_MS = 5000;
+
+inline static constexpr platform::time_ms_t WAIT_FOR_FLUSH_BEFORE_EXIT_MS = 100;
+
+struct main_context_t;
+void stop_threads(main_context_t& context);
+void cleanup(main_context_t& context);
+
+struct main_context_t {
+  volatile sig_atomic_t running{0};
+  platform::FileDescriptor signal_fd{-1};
+
+  config::config_t config;
+  config::load_config_overwrite_parameters_t overwrite_config_parameters;
+
+  AllocatedMemory<config::config_watcher_t> config_watcher;
+  AllocatedMemory<platform::input::input_context_t> input;
+  AllocatedMemory<platform::update::update_context_t> update;
+  AllocatedMemory<animation::animation_context_t> animation;
+  AllocatedMemory<platform::wayland::wayland_context_t> wayland;
+
+  AllocatedString signal_watch_path{BONGOCAT_NULLPTR};
+  atomic_uint64_t config_generation{0};
+  platform::CondVariable configs_reloaded_cond;
+  platform::Mutex sync_configs;
+
+  AllocatedString pid_filename{BONGOCAT_NULLPTR};
+
+  struct timespec program_start_time;
+
+  main_context_t() = default;
+  ~main_context_t() {
+    cleanup(*this);
+  }
+  main_context_t(const main_context_t&) = delete;
+  main_context_t& operator=(const main_context_t&) = delete;
+  main_context_t(main_context_t&& other) noexcept = delete;
+  main_context_t& operator=(main_context_t&& other) noexcept = delete;
+};
+inline void stop_threads(main_context_t& context) {
+  context.running = 0;
+  // stop threads
+  if (context.animation != BONGOCAT_NULLPTR) {
+    atomic_store(&context.animation->thread_context._animation_running, false);
+  }
+  if (context.input != BONGOCAT_NULLPTR) {
+    atomic_store(&context.input->_capture_input_running, false);
+  }
+  if (context.update != BONGOCAT_NULLPTR) {
+    atomic_store(&context.update->_running, false);
+  }
+  if (context.config_watcher != BONGOCAT_NULLPTR) {
+    atomic_store(&context.config_watcher->_running, false);
+  }
+
+  // wait for threads
+  if (context.animation != BONGOCAT_NULLPTR) {
+    platform::join_thread_with_timeout(context.animation->thread_context._anim_thread,
+                                       WAIT_FOR_SHUTDOWN_ANIMATION_THREAD_MS);
+  }
+  if (context.input != BONGOCAT_NULLPTR) {
+    platform::join_thread_with_timeout(context.input->_input_thread, WAIT_FOR_SHUTDOWN_INPUT_THREAD_MS);
+  }
+  if (context.update != BONGOCAT_NULLPTR) {
+    platform::join_thread_with_timeout(context.update->_update_thread, WAIT_FOR_SHUTDOWN_UPDATE_THREAD_MS);
+  }
+  if (context.config_watcher != BONGOCAT_NULLPTR) {
+    platform::join_thread_with_timeout(context.config_watcher->_watcher_thread,
+                                       WAIT_FOR_SHUTDOWN_CONFIG_WATCHER_THREAD_MS);
+  }
+
+  // stop threads
+  if (context.animation != BONGOCAT_NULLPTR) {
+    animation::stop(*context.animation);
+  }
+  if (context.input != BONGOCAT_NULLPTR) {
+    platform::input::stop(*context.input);
+  }
+  if (context.update != BONGOCAT_NULLPTR) {
+    platform::update::stop(*context.update);
+  }
+  if (context.config_watcher != BONGOCAT_NULLPTR) {
+    config::stop_watcher(*context.config_watcher);
+  }
+
+  context.config_generation = 0;
+}
+void cleanup(main_context_t& context) {
+  stop_threads(context);
+
+  // Cleanup Wayland
+  if (context.wayland != BONGOCAT_NULLPTR) {
+    cleanup_wayland(*context.wayland);
+  }
+
+  // remove references (avoid dangling pointers)
+  if (context.wayland != BONGOCAT_NULLPTR) {
+    context.wayland->animation_context = BONGOCAT_NULLPTR;
+  }
+  if (context.animation != BONGOCAT_NULLPTR) {
+    context.animation->_input = BONGOCAT_NULLPTR;
+  }
+
+  // Cleanup systems
+  if (context.animation != BONGOCAT_NULLPTR) {
+    cleanup(*context.animation);
+  }
+  if (context.input != BONGOCAT_NULLPTR) {
+    cleanup(*context.input);
+  }
+  if (context.update != BONGOCAT_NULLPTR) {
+    cleanup(*context.update);
+  }
+  if (context.signal_fd._fd >= 0) {
+    close_fd(context.signal_fd);
+  }
+  if (context.config_watcher != BONGOCAT_NULLPTR) {
+    cleanup_watcher(*context.config_watcher);
+  }
+  context.signal_watch_path = BONGOCAT_NULLPTR;
+
+  release_allocated_memory(context.config_watcher);
+  release_allocated_memory(context.input);
+  release_allocated_memory(context.update);
+  release_allocated_memory(context.animation);
+  release_allocated_memory(context.wayland);
+
+  // Cleanup configuration
+  cleanup(context.config);
+  context.overwrite_config_parameters.output_name = BONGOCAT_NULLPTR;
+
+  // cleanup signals handler
+  platform::close_fd(context.signal_fd);
+
+  release_allocated_string(context.pid_filename);
+}
+
+inline main_context_t& get_main_context() {
+  static main_context_t g_instance;
+  return g_instance;
+}
+
+// =============================================================================
+// COMMAND LINE ARGUMENTS STRUCTURE
+// =============================================================================
+
+struct cli_args_t {
+  const char *config_file{BONGOCAT_NULLPTR};
+  bool watch_config{false};
+  bool toggle_mode{false};
+  bool show_help{false};
+  bool show_version{false};
+  const char *output_name{BONGOCAT_NULLPTR};
+  int32_t randomize_index{-1};
+  int32_t strict{-1};
+  bool ignore_running{false};
+  int64_t nr{-1};
+  int32_t debug{-1};
+
+  bool nr_set{false};
+  bool output_name_set{false};
+  bool config_file_set{false};
+};
+
+// =============================================================================
+// PROCESS MANAGEMENT MODULE
+// =============================================================================
+
+inline static constexpr size_t PID_STR_BUF = 64;
+
+/*
+inline static constexpr auto DEFAULT_PID_FILE = "/tmp/bongocat.pid";
+inline static constexpr auto PID_FILE_WITH_SUFFIX_TEMPLATE = "/tmp/bongocat-%s.pid";
+inline static constexpr auto PID_FILE_WITH_SUFFIX_MULTI_TEMPLATE = "/tmp/bongocat-%s.%" PRIu32 ".pid";
+inline static constexpr auto PID_FILE_WITH_SUFFIX_NR_TEMPLATE = "/tmp/bongocat-%" PRId64 ".pid";
+*/
+
+inline static constexpr auto DEFAULT_PID_FILE_PATH_TEMPLATE = "%s/bongocat.pid";
+inline static constexpr auto PID_FILE_WITH_SUFFIX_PATH_TEMPLATE = "%s/bongocat-%s.pid";
+inline static constexpr auto PID_FILE_WITH_SUFFIX_MULTI_PATH_TEMPLATE = "%s/bongocat-%s.%" PRIu32 ".pid";
+inline static constexpr auto PID_FILE_WITH_SUFFIX_NR_PATH_TEMPLATE = "%s/bongocat-%" PRId64 ".pid";
+
+inline static constexpr auto DEFAULT_CONF_FILENAME = "bongocat.conf";
+
+static platform::FileDescriptor process_create_pid_file(const char *pid_filename) {
+  platform::FileDescriptor fd =
+      platform::FileDescriptor(open(pid_filename, O_CREAT | O_WRONLY | O_TRUNC | O_NOFOLLOW, 0600));
+  if (fd._fd < 0) {
+    BONGOCAT_LOG_ERROR("Failed to create PID file: %s", strerror(errno));
+    return platform::FileDescriptor(-1);
+  }
+
+  if (flock(fd._fd, LOCK_EX | LOCK_NB) < 0) {
+    if (errno == EWOULDBLOCK) {
+      BONGOCAT_LOG_INFO("Another instance is already running");
+      return platform::FileDescriptor(-2);  // Already running
+    }
+    BONGOCAT_LOG_ERROR("Failed to lock PID file: %s", strerror(errno));
+    return platform::FileDescriptor(-1);
+  }
+
+  char pid_str[PID_STR_BUF] = {};
+  snprintf(pid_str, sizeof(pid_str), "%d\n", getpid());
+  if (write(fd._fd, pid_str, strlen(pid_str)) < 0) {
+    BONGOCAT_LOG_ERROR("Failed to write PID to file: %s", strerror(errno));
+    return platform::FileDescriptor(-1);
+  }
+
+  return fd;  // Keep file descriptor open to maintain lock
+}
+
+static void process_remove_pid_file(const char *pid_filename) {
+  assert(pid_filename);
+  unlink(pid_filename);
+}
+
+static pid_t process_get_running_pid(const char *program_name, const char *pid_filename) {
+  assert(program_name);
+  assert(pid_filename);
+  platform::FileDescriptor fd = platform::FileDescriptor(::open(pid_filename, O_RDONLY));
+  if (fd._fd < 0) {
+    return -1;  // No PID file exists
+  }
+
+  // Try to get a shared lock to read the file
+  if (flock(fd._fd, LOCK_SH | LOCK_NB) < 0) {
+    if (errno == EWOULDBLOCK) {
+      // File is locked by another process, so it's running
+      // We need to read the PID anyway, so let's try without lock
+      fd = platform::FileDescriptor(::open(pid_filename, O_RDONLY));
+      if (fd._fd < 0) {
+        return -1;
+      }
+    } else {
+      return -1;
+    }
+  }
+
+  char pid_str[PID_STR_BUF] = {0};
+  const ssize_t bytes_read = read(fd._fd, pid_str, sizeof(pid_str) - 1);
+  platform::close_fd(fd);
+  if (bytes_read <= 0) {
+    return -1;
+  }
+  pid_str[bytes_read] = '\0';
+  pid_str[strcspn(pid_str, "\r\n")] = '\0';
+  for (char *p = pid_str; *p; ++p) {
+    if (*p == '\n' || *p == '\r' || *p == ' ' || *p == '\t') {
+      *p = '\0';
+      break;
+    }
+  }
+
+  char *endptr = BONGOCAT_NULLPTR;
+  errno = 0;  // Reset errno before call
+  const auto pid_read = strtol(pid_str, &endptr, 10);
+  if (endptr == pid_str) {
+    return -1;  // no digits at all
+  }
+  if ((errno == ERANGE) || pid_read < 0) {
+    BONGOCAT_LOG_ERROR("'%s' out of range for pid_t", pid_str);
+    return -1;
+  }
+  if (errno != 0 || endptr == pid_str || (*endptr != '\n' && *endptr != '\0' && *endptr != '\r')) {
+    BONGOCAT_LOG_ERROR("Invalid PID in PID file");
+    return -1;
+  }
+  if (pid_read <= 1 || pid_read > INT32_MAX) {
+    BONGOCAT_LOG_ERROR("PID value out of safe range: %ld", pid_read);
+    return -1;
+  }
+  const pid_t pid = static_cast<pid_t>(pid_read);
+
+  char exe_path[PATH_MAX] = {0};
+  snprintf(exe_path, sizeof(exe_path), "/proc/%d/exe", pid);
+  char buf[PATH_MAX] = {0};
+  const ssize_t len = readlink(exe_path, buf, sizeof(buf) - 1);
+  if (len > 0) {
+    buf[len] = '\0';
+
+    const char *exe_basename = strrchr(buf, '/');
+    exe_basename = exe_basename != BONGOCAT_NULLPTR ? exe_basename + 1 : buf;
+
+    const char *prog_basename = strrchr(program_name, '/');
+    prog_basename = prog_basename != BONGOCAT_NULLPTR ? prog_basename + 1 : program_name;
+
+    if (strcmp(exe_basename, prog_basename) != 0) {
+      return -1;
+    }
+  }
+
+  // Check if process is actually running
+  if (kill(pid, 0) != 0) {
+    // Process is not running, remove stale PID file
+    return -1;
+  }
+
+  // Verify the running process is actually bongocat via /proc/PID/comm
+  char proc_path[64] = {0};
+  snprintf(proc_path, sizeof(proc_path), "/proc/%d/comm", pid);
+  FILE *fp = fopen(proc_path, "r");
+  if (fp != BONGOCAT_NULLPTR) {
+    char comm[64] = {0};
+    if (fgets(comm, sizeof(comm), fp) != BONGOCAT_NULLPTR) {
+      comm[strcspn(comm, "\n")] = '\0';
+      /// @TODO: better process name validation
+      if (strcmp(comm, "bongocat") != 0 || strcmp(comm, "wpets") != 0 || strcmp(comm, "wpets-all") != 0 ||
+          strcmp(comm, "wpets-dm") != 0 || strcmp(comm, "wpets-dm-classic") != 0 ||
+          strcmp(comm, "wpets-ms-agent") != 0 || strcmp(comm, "wpets-pkmn") != 0) {
+        fclose(fp);
+        BONGOCAT_LOG_INFO("PID %d is not bongocat (is %s), removing stale file", pid, comm);
+        return -1;
+      }
+    }
+    fclose(fp);
+  }
+
+  return pid;
+}
+
+static AllocatedString get_pid_file_path(const cli_args_t& args, const config::config_t& config) {
+  constexpr size_t pid_path_size = PATH_MAX;
+  static_assert(pid_path_size > 1, "pid path length must be fot minimal string");
+  AllocatedString pid_path = make_allocated_string(pid_path_size - 1);
+
+  constexpr const char *tmp_dir = "/tmp";
+  const char *runtime_dir = getenv("XDG_RUNTIME_DIR");
+  const char *pid_dir = (runtime_dir != BONGOCAT_NULLPTR && runtime_dir[0] != '\0') ? runtime_dir : tmp_dir;
+
+  BONGOCAT_LOG_VERBOSE("Use path for PID file: %s", pid_dir);
+
+  if (args.nr >= 0) {
+    // set pid file, based on nr
+    if (pid_path) {
+      snprintf(pid_path.ptr, pid_path.capacity(), PID_FILE_WITH_SUFFIX_NR_PATH_TEMPLATE, pid_dir, args.nr);
+    }
+  } else if (config.output_name.length() > 0) {
+    // set pid file, based on output_name
+    if (!args.ignore_running) {
+      if (pid_path) {
+        snprintf(pid_path.ptr, pid_path.capacity(), PID_FILE_WITH_SUFFIX_PATH_TEMPLATE, pid_dir,
+                 config.output_name.c_str());
+      }
+    } else {
+      if (pid_path) {
+        snprintf(pid_path.ptr, pid_path.capacity(), PID_FILE_WITH_SUFFIX_MULTI_PATH_TEMPLATE, pid_dir,
+                 config.output_name.c_str(), platform::slow_rand());
+      }
+    }
+  } else {
+    if (pid_path) {
+      snprintf(pid_path.ptr, pid_path.capacity(), DEFAULT_PID_FILE_PATH_TEMPLATE, pid_dir);
+    }
+  }
+
+  return pid_path;
+}
+
+static int process_handle_toggle(const char *program_name, const char *pid_filename) {
+  const pid_t running_pid = process_get_running_pid(program_name, pid_filename);
+  if (running_pid < 0) {
+    // Process is not running, remove stale PID file
+    process_remove_pid_file(pid_filename);
+  }
+
+  if (running_pid > 0) {
+    // Process is running, kill it
+    BONGOCAT_LOG_INFO("Stopping bongocat (PID: %d)", running_pid);
+    if (kill(running_pid, SIGTERM) == 0) {
+      // Wait a bit for graceful shutdown
+      for (int i = 0; i < WAIT_FOR_SHUTDOWN_MS / SLEEP_WAIT_FOR_SHUTDOWN_MS; i++) {
+        if (kill(running_pid, 0) != 0) {
+          BONGOCAT_LOG_INFO("Bongocat stopped successfully");
+          return 0;
+        }
+        usleep(SLEEP_WAIT_FOR_SHUTDOWN_MS * 1000);  // 100ms
+      }
+
+      // Force kill if still running
+      BONGOCAT_LOG_WARNING("Force killing bongocat");
+      kill(running_pid, SIGKILL);
+      BONGOCAT_LOG_INFO("Bongocat force stopped");
+    } else {
+      BONGOCAT_LOG_ERROR("Failed to stop bongocat: %s", strerror(errno));
+      return 1;
+    }
+  } else {
+    BONGOCAT_LOG_INFO("Bongocat is not running, starting it now");
+    return -1;  // Signal to continue with normal startup
+  }
+
+  return 0;
+}
+
+// =============================================================================
+// CONFIGURATION MANAGEMENT MODULE
+// =============================================================================
+
+struct madvise_region {
+  const char *start{};
+  const char *stop{};
+  const char *name{};
+};
+void unload_config_readonly_sections() {
+  static constexpr madvise_region evictable_regions[] = {
+      {config::__start_config_str, config::__stop_config_str, ".config.str"},
+  };
+
+  for (const auto& region : evictable_regions) {
+    const uintptr_t start = reinterpret_cast<uintptr_t>(region.start);
+    const uintptr_t stop = reinterpret_cast<uintptr_t>(region.stop);
+    assert(stop >= start);
+    const size_t size = stop - start;
+    if (size == 0) {
+      continue;
+    }
+
+    // @TODO: check for MAXPAGESIZE
+    // assert((start % 4096) == 0);
+    // assert((size % 4096) == 0);
+
+    if (madvise(reinterpret_cast<void *>(start), size, MADV_DONTNEED) != 0) {
+      BONGOCAT_LOG_WARNING("madvise: failed to evict %s: %s", region.name, strerror(errno));
+    } else {
+      BONGOCAT_LOG_VERBOSE("madvise: evicted %s: %zu kb", region.name, size / 1024);
+    }
+  }
+}
+
+static bool config_devices_changed(const config::config_t& old_config, const config::config_t& new_config) {
+  if (old_config.num_keyboard_devices != new_config.num_keyboard_devices) {
+    return true;
+  }
+
+  // Check if any device paths changed
+  for (int i = 0; i < new_config.num_keyboard_devices; i++) {
+    bool found = false;
+    for (int j = 0; j < old_config.num_keyboard_devices; j++) {
+      if (strcmp(new_config.keyboard_devices[i].c_str(), old_config.keyboard_devices[j].c_str()) == 0) {
+        found = true;
+        break;
+      }
+    }
+    if (!found) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+static void config_reload_callback() {
+  assert(get_main_context().input != BONGOCAT_NULLPTR);
+  assert(get_main_context().animation != BONGOCAT_NULLPTR);
+  assert(get_main_context().signal_watch_path);
+  BONGOCAT_LOG_INFO(
+      "Reloading configuration from: %s (config_watcher=%s)", get_main_context().signal_watch_path.c_str(),
+      (get_main_context().config_watcher) ? get_main_context().config_watcher->config_path.c_str() : "OFF");
+  assert(get_main_context().config_watcher == BONGOCAT_NULLPTR ||
+         strcmp(get_main_context().config_watcher->config_path.c_str(), get_main_context().signal_watch_path.c_str()) ==
+             0);
+
+  if (strcmp(get_main_context().signal_watch_path.c_str(), "-") == 0) {
+    BONGOCAT_LOG_WARNING("No reload config for stdin");
+    BONGOCAT_LOG_INFO("Keeping current configuration");
+    return;
+  }
+
+  // Create a temporary config to test loading
+  auto [new_config, errors] =
+      config::load(get_main_context().signal_watch_path.c_str(), get_main_context().overwrite_config_parameters);
+  if (errors.errors != config::config_parsing_error_t::Success) [[unlikely]] {
+    BONGOCAT_LOG_ERROR("Failed to reload config", static_cast<uint64_t>(errors.errors));
+    BONGOCAT_LOG_INFO("Keeping current configuration");
+    return;
+  }
+
+  // If successful, update the global config
+  bool devices_changed = false;
+  bool update_needed = false;
+  {
+    platform::LockGuard guard(get_main_context().sync_configs);
+    config::config_t old_config = get_main_context().config;
+    // keep old animation, don't randomize
+    if (old_config.randomize_index && new_config.randomize_index &&
+        old_config.animation_sprite_sheet_layout == new_config.animation_sprite_sheet_layout &&
+        old_config.animation_dm_set == new_config.animation_dm_set &&
+        old_config.animation_custom_set == new_config.animation_custom_set) {
+      new_config._keep_old_animation_index = !new_config.randomize_on_reload;
+    } else if (features::EnableEvolution && !new_config.randomize_on_reload &&
+               old_config.animation_sprite_sheet_layout == new_config.animation_sprite_sheet_layout &&
+               old_config.animation_dm_set == new_config.animation_dm_set &&
+               old_config.animation_custom_set == new_config.animation_custom_set) {
+      // assume anim_index has changed, evolution
+      new_config._keep_old_animation_index = old_config.evolution != config::evolution_time_mode_t::NONE;
+    } else if (((old_config.randomize_index != new_config.randomize_index && new_config.randomize_index) ||
+                (new_config.randomize_index && old_config.randomize_on_reload != new_config.randomize_on_reload &&
+                 new_config.randomize_on_reload)) &&
+               old_config.animation_sprite_sheet_layout == new_config.animation_sprite_sheet_layout &&
+               old_config.animation_dm_set == new_config.animation_dm_set &&
+               old_config.animation_custom_set == new_config.animation_custom_set) {
+      new_config._keep_old_animation_index = false;
+    }
+    // If successful, check if input devices changed before updating config
+    devices_changed = config_devices_changed(old_config, new_config);
+    // update features had been re-enabled
+    update_needed = (new_config.cpu_threshold > old_config.cpu_threshold &&
+                     old_config.cpu_threshold < platform::ENABLED_MIN_CPU_PERCENT &&
+                     new_config.cpu_threshold >= platform::ENABLED_MIN_CPU_PERCENT) ||
+                    (new_config.update_rate_ms > 0 && old_config.update_rate_ms <= 0) ||
+                    (new_config.evolution != config::evolution_time_mode_t::NONE);
+    get_main_context().config = bongocat::move(new_config);
+    /// @NOTE: don't use new_config after move
+    new_config = {};
+    // Initialize error system with debug setting
+    bongocat::error_init(get_main_context().config.enable_debug >= 1);
+
+    // Increment generation atomically
+    // Update the running systems with new config
+    assert(get_main_context().wayland);
+    assert(get_main_context().animation);
+    assert(get_main_context().input);
+    assert(get_main_context().update);
+    update_config(*get_main_context().wayland, get_main_context().config, *get_main_context().animation);
+    atomic_fetch_add(&get_main_context().config_generation, 1);
+    uint64_t new_gen{atomic_load(&get_main_context().config_generation)};
+    platform::input::trigger_update_config(*get_main_context().input, get_main_context().config, new_gen);
+    platform::update::trigger_update_config(*get_main_context().update, get_main_context().config, new_gen);
+    animation::trigger_update_config(*get_main_context().animation, get_main_context().config, new_gen);
+
+    // Wait for both workers to catch up
+    int timedwait_result{0};
+    timedwait_result |= get_main_context().input->config_updated.timedwait(
+        [&] {
+          return !atomic_load(&get_main_context().input->_capture_input_running) ||
+                 atomic_load(&get_main_context().input->config_seen_generation) >= new_gen;
+        },
+        COND_RELOAD_CONFIG_TIMEOUT_MS);
+    timedwait_result |= get_main_context().update->config_updated.timedwait(
+        [&] {
+          return !atomic_load(&get_main_context().update->_running) ||
+                 atomic_load(&get_main_context().update->config_seen_generation) >= new_gen;
+        },
+        COND_RELOAD_CONFIG_TIMEOUT_MS);
+    timedwait_result |= get_main_context().animation->thread_context.config_updated.timedwait(
+        [&] {
+          return !atomic_load(&get_main_context().animation->thread_context._animation_running) ||
+                 atomic_load(&get_main_context().animation->thread_context.config_seen_generation) >= new_gen;
+        },
+        COND_RELOAD_CONFIG_TIMEOUT_MS);
+
+    // reset config internal state
+    get_main_context().config._keep_old_animation_index = false;
+    if (timedwait_result != 0) {
+      // fallback when cond hits timeout (sync config generations)
+      if (atomic_load(&get_main_context().input->_capture_input_running)) {
+        atomic_store(&get_main_context().input->config_seen_generation, new_gen);
+      }
+      if (atomic_load(&get_main_context().update->_running)) {
+        atomic_store(&get_main_context().update->config_seen_generation, new_gen);
+      }
+      if (atomic_load(&get_main_context().animation->thread_context._animation_running)) {
+        atomic_store(&get_main_context().animation->thread_context.config_seen_generation, new_gen);
+      }
+      BONGOCAT_LOG_VERBOSE("timedwait timeouted, sync all config gen: %d", timedwait_result);
+    }
+    atomic_store(&get_main_context().config_generation, new_gen);
+
+    BONGOCAT_LOG_VERBOSE("Input: config gen: %d", atomic_load(&get_main_context().input->config_seen_generation));
+    BONGOCAT_LOG_VERBOSE("Update: config gen: %d", atomic_load(&get_main_context().update->config_seen_generation));
+    BONGOCAT_LOG_VERBOSE("Animation: config gen: %d",
+                         atomic_load(&get_main_context().animation->thread_context.config_seen_generation));
+    BONGOCAT_LOG_VERBOSE("Main: config gen: %d", atomic_load(&get_main_context().config_generation));
+  }
+  // Tell workers they can continue
+  get_main_context().configs_reloaded_cond.notify_all();
+
+  BONGOCAT_LOG_INFO("Configuration reloaded successfully!");
+  BONGOCAT_LOG_INFO("New screen dimensions: %dx%d", get_main_context().wayland->thread_context._screen_width,
+                    get_main_context().wayland->thread_context._overlay_height);
+
+  assert(get_main_context().animation != BONGOCAT_NULLPTR);
+  animation::trigger(*get_main_context().animation, animation::trigger_animation_cause_mask_t::UpdateConfig);
+
+  // Check if input devices changed and restart monitoring if needed
+  if (devices_changed) {
+    BONGOCAT_LOG_INFO("Input devices changed, restarting input monitoring");
+    const bongocat_error_t input_result =
+        platform::input::restart(*get_main_context().input, *get_main_context().animation, get_main_context().config,
+                                 get_main_context().configs_reloaded_cond, get_main_context().config_generation);
+    if (input_result != bongocat_error_t::BONGOCAT_SUCCESS) [[unlikely]] {
+      BONGOCAT_LOG_ERROR("Failed to restart input monitoring: %s", bongocat::error_string(input_result));
+    } else {
+      BONGOCAT_LOG_INFO("Input monitoring restarted successfully");
+    }
+  }
+
+  // Check if update features are enabled and restart update if needed
+  if (update_needed) {
+    BONGOCAT_LOG_INFO("Update features enabled, restarting update thread");
+    const bongocat_error_t update_result =
+        platform::update::restart(*get_main_context().update, *get_main_context().animation, get_main_context().config,
+                                  get_main_context().configs_reloaded_cond, get_main_context().config_generation);
+    if (update_result != bongocat_error_t::BONGOCAT_SUCCESS) [[unlikely]] {
+      BONGOCAT_LOG_ERROR("Failed to restart update thread: %s", bongocat::error_string(update_result));
+    } else {
+      {
+        assert(get_main_context().update);
+        platform::LockGuard guard(get_main_context().update->update_lock);
+        assert(get_main_context().update->shm);
+        auto& update_shm = *get_main_context().update->shm;
+        update_shm.program_start_time = get_main_context().program_start_time;
+      }
+
+      BONGOCAT_LOG_INFO("Update thread restarted successfully");
+    }
+  }
+
+  // Wait for (new) threads to be ready
+  // wait for context
+  if (atomic_load(&get_main_context().animation->thread_context._animation_running)) {
+    get_main_context().animation->init_cond.timedwait(
+        [&]() {
+          return !atomic_load(&get_main_context().input->_capture_input_running) ||
+                 atomic_load(&get_main_context().animation->ready);
+        },
+        COND_INIT_TIMEOUT_MS);
+  }
+  if (atomic_load(&get_main_context().input->_capture_input_running)) {
+    get_main_context().input->init_cond.timedwait(
+        [&]() {
+          return !atomic_load(&get_main_context().input->_capture_input_running) ||
+                 atomic_load(&get_main_context().input->ready);
+        },
+        COND_INIT_TIMEOUT_MS);
+  }
+  if (atomic_load(&get_main_context().update->_running)) {
+    get_main_context().update->init_cond.timedwait(
+        [&]() {
+          return !atomic_load(&get_main_context().update->_running) || atomic_load(&get_main_context().update->ready);
+        },
+        COND_INIT_TIMEOUT_MS);
+  }
+  BONGOCAT_LOG_VERBOSE("Animation: running %d (ready=%d)",
+                       atomic_load(&get_main_context().animation->thread_context._animation_running),
+                       atomic_load(&get_main_context().animation->ready));
+  BONGOCAT_LOG_VERBOSE("Input: running %d (ready=%d)", atomic_load(&get_main_context().input->_capture_input_running),
+                       atomic_load(&get_main_context().input->ready));
+  BONGOCAT_LOG_VERBOSE("Update: running %d (ready=%d)", atomic_load(&get_main_context().update->_running),
+                       atomic_load(&get_main_context().update->ready));
+
+  {
+    platform::LockGuard guard(get_main_context().sync_configs);
+    unload_config_readonly_sections();
+  }
+}
+
+static bongocat_error_t start_config_watcher(main_context_t& ctx, const char *config_file) {
+  auto [config_watcher, error] = config::create_watcher(config_file);
+  if (error == bongocat_error_t::BONGOCAT_SUCCESS) [[unlikely]] {
+    ctx.config_watcher = bongocat::move(config_watcher);
+    config::start_watcher(*ctx.config_watcher);
+    BONGOCAT_LOG_INFO("Config file watching enabled for: %s", config_file);
+  } else {
+    BONGOCAT_LOG_WARNING("Failed to initialize config watcher, continuing without hot-reload");
+  }
+  return error;
+}
+
+// =============================================================================
+// SIGNAL HANDLING MODULE
+// =============================================================================
+
+static bongocat_error_t signal_setup_handlers(main_context_t& ctx) {
+  sigset_t mask;
+  sigemptyset(&mask);
+  sigaddset(&mask, SIGINT);
+  sigaddset(&mask, SIGTERM);
+  sigaddset(&mask, SIGCHLD);
+  sigaddset(&mask, SIGUSR1);
+  sigaddset(&mask, SIGUSR2);
+  sigaddset(&mask, SIGQUIT);
+  sigaddset(&mask, SIGHUP);
+
+  // Block signals globally so they are only delivered via signalfd
+  if (sigprocmask(SIG_BLOCK, &mask, BONGOCAT_NULLPTR) == -1) [[unlikely]] {
+    BONGOCAT_LOG_ERROR("Failed to block signals: %s", strerror(errno));
+    return bongocat_error_t::BONGOCAT_ERROR_THREAD;
+  }
+
+  ctx.signal_fd = platform::FileDescriptor(signalfd(-1, &mask, SFD_NONBLOCK | SFD_CLOEXEC));
+  if (ctx.signal_fd._fd == -1) [[unlikely]] {
+    BONGOCAT_LOG_ERROR("Failed to create signalfd: %s", strerror(errno));
+    return bongocat_error_t::BONGOCAT_ERROR_THREAD;
+  }
+
+  return bongocat_error_t::BONGOCAT_SUCCESS;
+}
+
+// =============================================================================
+// SYSTEM INITIALIZATION AND CLEANUP MODULE
+// =============================================================================
+
+static void init_program_timer(main_context_t& ctx) {
+  clock_gettime(CLOCK_MONOTONIC, &ctx.program_start_time);
+}
+
+static bongocat_error_t system_initialize_components(main_context_t& ctx) {
+  // Initialize input system
+  {
+    auto [input, input_error] = platform::input::create(ctx.config);
+    if (input_error != bongocat_error_t::BONGOCAT_SUCCESS) [[unlikely]] {
+      BONGOCAT_LOG_ERROR("Failed to initialize input system: %s", bongocat::error_string(input_error));
+      return input_error;
+    }
+    ctx.input = bongocat::move(input);
+  }
+
+  // Initialize update system
+  {
+    auto [update, update_error] = platform::update::create(ctx.config);
+    if (update_error != bongocat_error_t::BONGOCAT_SUCCESS) [[unlikely]] {
+      BONGOCAT_LOG_ERROR("Failed to initialize updfate system: %s", bongocat::error_string(update_error));
+      return update_error;
+    }
+    ctx.update = bongocat::move(update);
+  }
+
+  // Initialize animation system
+  {
+    animation::init_image_loader();
+    auto [animation, animation_error] = animation::create(ctx.config);
+    if (animation_error != bongocat_error_t::BONGOCAT_SUCCESS) [[unlikely]] {
+      BONGOCAT_LOG_ERROR("Failed to initialize animation system: %s", bongocat::error_string(animation_error));
+      return animation_error;
+    }
+    ctx.animation = bongocat::move(animation);
+  }
+
+  // Initialize Wayland
+  {
+    assert(ctx.animation != BONGOCAT_NULLPTR);
+    /// @NOTE: animation needed only for reference
+    auto [wayland, wayland_error] = platform::wayland::create(*ctx.animation, ctx.config);
+    if (wayland_error != bongocat_error_t::BONGOCAT_SUCCESS) [[unlikely]] {
+      BONGOCAT_LOG_ERROR("Failed to initialize Wayland: %s", bongocat::error_string(wayland_error));
+      return wayland_error;
+    }
+    ctx.wayland = bongocat::move(wayland);
+  }
+
+  {
+    init_program_timer(ctx);
+
+    assert(ctx.update);
+    platform::LockGuard guard(ctx.update->update_lock);
+    assert(ctx.update->shm);
+    auto& update_shm = *ctx.update->shm;
+    update_shm.program_start_time = ctx.program_start_time;
+  }
+
+  // Setup wayland
+  {
+    assert(ctx.wayland != BONGOCAT_NULLPTR);
+    assert(ctx.animation != BONGOCAT_NULLPTR);
+    bongocat_error_t setup_wayland_result = setup(*ctx.wayland, *ctx.animation);
+    if (setup_wayland_result != bongocat_error_t::BONGOCAT_SUCCESS) [[unlikely]] {
+      BONGOCAT_LOG_ERROR("Failed to setup wayland: %s", bongocat::error_string(setup_wayland_result));
+      return setup_wayland_result;
+    }
+  }
+
+  // Start animation thread
+  {
+    assert(ctx.animation != BONGOCAT_NULLPTR);
+    assert(ctx.input != BONGOCAT_NULLPTR);
+    assert(ctx.update != BONGOCAT_NULLPTR);
+    bongocat_error_t start_animation_result =
+        animation::start(*ctx.animation, *ctx.input, *ctx.update, ctx.config, get_main_context().configs_reloaded_cond,
+                         get_main_context().config_generation);
+    if (start_animation_result != bongocat_error_t::BONGOCAT_SUCCESS) [[unlikely]] {
+      BONGOCAT_LOG_ERROR("Failed to start animation thread: %s", bongocat::error_string(start_animation_result));
+      return start_animation_result;
+    }
+  }
+
+  // Start input monitoring
+  {
+    assert(ctx.animation != BONGOCAT_NULLPTR);
+    assert(ctx.input != BONGOCAT_NULLPTR);
+    bongocat_error_t start_input_result =
+        platform::input::start(*ctx.input, *ctx.animation, ctx.config, get_main_context().configs_reloaded_cond,
+                               get_main_context().config_generation);
+    if (start_input_result != bongocat_error_t::BONGOCAT_SUCCESS) [[unlikely]] {
+      BONGOCAT_LOG_ERROR("Failed to start input monitoring: %s", bongocat::error_string(start_input_result));
+      return start_input_result;
+    }
+  }
+
+  // Start update monitoring
+  {
+    assert(ctx.animation != BONGOCAT_NULLPTR);
+    assert(ctx.update != BONGOCAT_NULLPTR);
+    bongocat_error_t start_update_result =
+        platform::update::start(*ctx.update, *ctx.animation, ctx.config, get_main_context().configs_reloaded_cond,
+                                get_main_context().config_generation);
+    if (start_update_result != bongocat_error_t::BONGOCAT_SUCCESS) [[unlikely]] {
+      BONGOCAT_LOG_ERROR("Failed to start update thread: %s", bongocat::error_string(start_update_result));
+      return start_update_result;
+    }
+  }
+
+  return bongocat_error_t::BONGOCAT_SUCCESS;
+}
+
+[[noreturn]] static void system_cleanup_and_exit(main_context_t& ctx, int exit_code) {
+  BONGOCAT_LOG_INFO("Stop threads...");
+  ctx.running = 0;
+  stop_threads(ctx);
+
+  BONGOCAT_LOG_INFO("Performing cleanup...");
+  process_remove_pid_file(ctx.pid_filename.c_str());
+  // clean up context before global cleanup (log mutex, etc.)
+  cleanup(ctx);
+
+  BONGOCAT_LOG_INFO("Cleanup complete, exiting with code %d", exit_code);
+  usleep(WAIT_FOR_FLUSH_BEFORE_EXIT_MS * 1000);
+  exit(exit_code);
+}
+
+// =============================================================================
+// COMMAND LINE PROCESSING MODULE
+// =============================================================================
+
+static void cli_show_help(const char *program_name) {
+  auto base_program_name = duplicate_string(program_name);
+  if (!base_program_name) [[unlikely]] {
+    perror("strdup");
+    return;
+  }
+
+  // clang-format: off
+  printf("Bongo Cat Wayland Overlay.\n\n");
+  printf("Usage: %s [OPTIONS]\n\n", basename(base_program_name.ptr));
+  printf("Options:\n");
+  printf("  -h, --help                  Show this help message\n");
+  printf("  -v, --version               Show version information\n");
+  printf("  -c, --config                Specify config file (default: ~/.config/bongocat.conf)\n");
+  printf("  -w, --watch-config          Watch config file for changes and reload automatically\n");
+  printf("  -t, --toggle                Toggle bongocat on/off (start if not running, stop if running)\n");
+  printf("  -o, --output-name NAME      Specify output name (overwrite output_name from config)\n");
+  printf("  -m, --monitor NAME          Bind to a specific monitor output (same as --output-name)\n");
+  printf(
+      "      --random                Enable random animation_index, at start (overwrite random_index from config)\n");
+  printf("      --strict                Enable strict mode, only start up with a valid config and valid parameter\n");
+  printf("      --nr NR                 Specify Nr. for PID file to avoid conflicting ruinning instances\n");
+  printf("      --ignore-running        Ignore current running instance\n");
+  printf("      --debug                 Override enable_debug setting\n");
+  printf("\n");
+  printf("Included sets:\n");
+  // clang-format: on
+  if constexpr (features::EnableBongocatEmbeddedAssets) {
+    printf("  %8s - Classic Bongo cat\n", "bongocat");
+  }
+  if constexpr (features::EnableDmEmbeddedAssets) {
+    if constexpr (features::EnableDmEmbeddedAssets) {
+      printf("  %8s - Digital Monster Original\n", "dm");
+    }
+    if constexpr (features::EnableDm20EmbeddedAssets) {
+      printf("  %8s - Digital Monster Ver.20th\n", "dm20");
+    }
+    if constexpr (features::EnableDmxEmbeddedAssets) {
+      printf("  %8s - Digital Monster X\n", "dmx");
+    }
+    if constexpr (features::EnablePenEmbeddedAssets) {
+      printf("  %8s - Digimon Pendulum\n", "pen");
+    }
+    if constexpr (features::EnablePen20EmbeddedAssets) {
+      printf("  %8s - Digimon Pendulum Ver.20th\n", "pen20");
+    }
+    if constexpr (features::EnableDmcEmbeddedAssets) {
+      printf("  %8s - Digital Monster Color\n", "dmc");
+    }
+    if constexpr (features::EnableDmAllEmbeddedAssets) {
+      printf("  %8s - Custom Digital Monster Colored (fan sprites)\n", "dmall");
+    }
+  }
+  if constexpr (features::EnablePkmnEmbeddedAssets) {
+    printf("  %8s - Pokemon, up to Gen 5\n", "pkmn");
+  }
+  if constexpr (features::EnablePmdEmbeddedAssets) {
+    printf("  %8s - Pokemon Mystery Dungeon, up to Gen 8 (fan sprites)\n", "pmd");
+  }
+  if constexpr (features::EnableMsAgentEmbeddedAssets) {
+    printf("  %8s - MS Agent\n", "ms_agent");
+  }
+  printf("\n");
+}
+
+static void cli_show_version() {
+  printf("bongocat version %s\n", BONGOCAT_VERSION);
+}
+
+static created_result_t<cli_args_t> cli_parse_arguments(int argc, char *argv[]) {
+  cli_args_t args{};
+
+  for (int i = 1; i < argc; i++) {
+    if (strcmp(argv[i], "--help") == 0 || strcmp(argv[i], "-h") == 0) {
+      args.show_help = true;
+    } else if (strcmp(argv[i], "--version") == 0 || strcmp(argv[i], "-v") == 0) {
+      args.show_version = true;
+    } else if (strcmp(argv[i], "--config") == 0 || strcmp(argv[i], "-c") == 0) {
+      args.config_file_set = true;
+      if (i + 1 < argc) {
+        args.config_file = argv[i + 1];
+        i++;  // Skip the next argument since it's the config file path
+      } else {
+        BONGOCAT_LOG_ERROR("--config option requires a file path");
+        return bongocat_error_t::BONGOCAT_ERROR_INVALID_PARAM;
+      }
+    } else if (strcmp(argv[i], "--watch-config") == 0 || strcmp(argv[i], "-w") == 0) {
+      args.watch_config = true;
+    } else if (strcmp(argv[i], "--toggle") == 0 || strcmp(argv[i], "-t") == 0) {
+      args.toggle_mode = true;
+    } else if (strcmp(argv[i], "--random") == 0) {
+      args.randomize_index = 1;
+    } else if (strcmp(argv[i], "--strict") == 0) {
+      args.strict = 1;
+    } else if (strcmp(argv[i], "--ignore-running") == 0) {
+      args.ignore_running = true;
+    } else if (strcmp(argv[i], "--debug") == 0) {
+      args.debug = 1;
+    } else if (strcmp(argv[i], "--nr") == 0) {
+      args.nr_set = true;
+      if (i + 1 < argc) {
+        char *endptr{BONGOCAT_NULLPTR};
+        args.nr = strtoll(argv[i + 1], &endptr, 10);
+        if (*endptr != '\0' || errno == ERANGE) {
+          BONGOCAT_LOG_ERROR("--nr option requires a valid number");
+          return bongocat_error_t::BONGOCAT_ERROR_INVALID_PARAM;
+        }
+        i++;  // Skip the next argument since it's the nr value
+      } else {
+        BONGOCAT_LOG_ERROR("--nr option requires a number");
+        return bongocat_error_t::BONGOCAT_ERROR_INVALID_PARAM;
+      }
+    } else if ((strcmp(argv[i], "--output-name") == 0 || strcmp(argv[i], "-o") == 0) ||
+               strcmp(argv[i], "--monitor") == 0 || strcmp(argv[i], "-m") == 0) {
+      args.output_name_set = true;
+      if (i + 1 < argc) {
+        args.output_name = argv[i + 1];
+        i++;  // Skip the next argument since it's the output name
+      } else {
+        BONGOCAT_LOG_ERROR("--output-name option requires a output name");
+        return bongocat_error_t::BONGOCAT_ERROR_INVALID_PARAM;
+      }
+    } else {
+      BONGOCAT_LOG_WARNING("Unknown argument: %s", argv[i]);
+    }
+  }
+
+  return args;
+}
+}  // namespace bongocat
+
+// =============================================================================
+// MAIN APPLICATION ENTRY POINT
+// =============================================================================
+
+int main(int argc, char *argv[]) {
+  using namespace bongocat;
+  // Initialize error system early
+  bongocat::error_init(true);  // Enable debug initially
+
+  // Parse command line arguments
+  const auto [args, args_result] = cli_parse_arguments(argc, argv);
+  if (args_result != bongocat_error_t::BONGOCAT_SUCCESS) {
+    return EXIT_FAILURE;
+  }
+
+  // Handle help and version requests
+  if (args.show_help) {
+    cli_show_help(argv[0]);
+    return EXIT_SUCCESS;
+  }
+  if (args.show_version) {
+    cli_show_version();
+    return EXIT_SUCCESS;
+  }
+
+  BONGOCAT_LOG_INFO("Starting Bongo Cat Overlay v%s", BONGOCAT_VERSION);
+
+  main_context_t& ctx = get_main_context();
+
+  // Load configuration
+  ctx.overwrite_config_parameters = {
+      .output_name = args.output_name,
+      .randomize_index = args.randomize_index,
+      .strict = args.strict,
+      .debug = args.debug,
+  };
+  AllocatedString existing_config_file = config::resolve_path(args.config_file);
+  const char *config_file = existing_config_file ? existing_config_file.c_str() : "";
+  if (args.strict >= 1) {
+    if (strcmp(config_file, "-") != 0 && access(config_file, F_OK) != 0) {
+      BONGOCAT_LOG_ERROR("Configuration file required: %s", config_file);
+      return EXIT_FAILURE;
+    }
+  }
+
+  {
+    if (ctx.overwrite_config_parameters.debug >= 0) {
+      bongocat::error_init(ctx.overwrite_config_parameters.debug);
+    }
+    BONGOCAT_LOG_VERBOSE("Try to load Configuration file: %s", config_file);
+    auto config_result = config::load(config_file, ctx.overwrite_config_parameters);
+    if (!is_valid_config_result(config_result)) {
+      BONGOCAT_LOG_ERROR("Failed to load configuration");
+      return EXIT_FAILURE;
+    }
+    ctx.config = bongocat::move(config_result.config);
+    bongocat::error_init(ctx.config.enable_debug);
+  }
+
+  // validate args
+  if (ctx.config._strict) {
+    if (args.nr_set && args.nr < 0) {
+      BONGOCAT_LOG_ERROR("--nr needs to be a positive number");
+      return EXIT_FAILURE;
+    }
+    if (args.output_name_set && (args.output_name == BONGOCAT_NULLPTR || strlen(args.output_name) <= 0)) {
+      BONGOCAT_LOG_ERROR("--output_name value is missing");
+      return EXIT_FAILURE;
+    }
+  }
+
+  ctx.pid_filename = get_pid_file_path(args, ctx.config);
+  if (!ctx.pid_filename) [[unlikely]] {
+    BONGOCAT_LOG_ERROR("Failed to allocate PID filename");
+    return EXIT_FAILURE;
+  }
+
+  // Handle toggle mode
+  if (args.toggle_mode) {
+    BONGOCAT_LOG_INFO("Toggle... (pid=%s)", ctx.pid_filename.c_str());
+    if (const int toggle_result = process_handle_toggle(argv[0], ctx.pid_filename.c_str()); toggle_result >= 0) {
+      return toggle_result;  // Either successfully toggled off or error
+    }
+    // toggle_result == -1 means continue with startup
+  }
+
+  // Create PID file to track this instance
+  const platform::FileDescriptor pid_fd = process_create_pid_file(ctx.pid_filename.c_str());
+  if (pid_fd._fd < 0) {
+    BONGOCAT_LOG_ERROR("Failed to create PID file: %s", ctx.pid_filename.c_str());
+    return EXIT_FAILURE;
+  }
+  if (!args.ignore_running) {
+    if (pid_fd._fd == -2) {
+      BONGOCAT_LOG_ERROR("Another instance of bongocat is already running: %s", ctx.pid_filename.c_str());
+      return EXIT_FAILURE;
+    }
+  }
+  BONGOCAT_LOG_INFO("PID file created: %s", ctx.pid_filename.c_str());
+  BONGOCAT_LOG_INFO("bongocat PID: %d", getpid());
+
+  // Setup signal handlers
+  ctx.signal_watch_path = duplicate_string(config_file);
+  const bongocat_error_t signal_result = signal_setup_handlers(ctx);
+  if (signal_result != bongocat_error_t::BONGOCAT_SUCCESS) {
+    BONGOCAT_LOG_ERROR("Failed to setup signal handlers: %s", bongocat::error_string(signal_result));
+    return EXIT_FAILURE;
+  }
+  BONGOCAT_LOG_INFO("Signal handler configure (fd=%i)", ctx.signal_fd._fd);
+
+  // Initialize config watcher if requested
+  if (args.watch_config) {
+    if (strcmp(config_file, "-") != 0) {
+      start_config_watcher(ctx, config_file);
+    } else {
+      BONGOCAT_LOG_INFO("Skip config watcher, no config watcher for stdin");
+    }
+  } else {
+    BONGOCAT_LOG_INFO("No config watcher, continuing without hot-reload");
+  }
+
+  // Initialize all system components
+  bongocat_error_t result = system_initialize_components(ctx);
+  if (result != bongocat_error_t::BONGOCAT_SUCCESS) {
+    system_cleanup_and_exit(ctx, EXIT_FAILURE);
+  }
+  init_program_timer(ctx);
+
+  assert(ctx.input != BONGOCAT_NULLPTR);
+  assert(ctx.animation != BONGOCAT_NULLPTR);
+  assert(ctx.wayland != BONGOCAT_NULLPTR);
+
+  if (abs(ctx.config.cat_x_offset) > ctx.wayland->thread_context._screen_width) {
+    BONGOCAT_LOG_WARNING("cat_x_offset %d may position cat off-screen (screen width: %d)", ctx.config.cat_x_offset,
+                         ctx.wayland->thread_context._screen_width);
+  }
+
+  BONGOCAT_LOG_INFO("Bar dimensions: %dx%d", ctx.wayland->thread_context._screen_width, ctx.config.overlay_height);
+
+  BONGOCAT_LOG_INFO("Bongo Cat Overlay configured successfully");
+  unload_config_readonly_sections();
+
+  // trigger initial rendering
+  platform::wayland::request_render(*ctx.animation);
+  // Main Wayland event loop with graceful shutdown
+  assert(ctx.wayland != BONGOCAT_NULLPTR);
+  assert(ctx.input != BONGOCAT_NULLPTR);
+  /// @NOTE: config_watcher os optional
+  result = run(*ctx.wayland, ctx.running, ctx.signal_fd._fd, *ctx.input, ctx.config, ctx.config_watcher.ptr,
+               config_reload_callback);
+  if (result != bongocat_error_t::BONGOCAT_SUCCESS) {
+    BONGOCAT_LOG_ERROR("Wayland event loop error: %s", bongocat::error_string(result));
+    system_cleanup_and_exit(ctx, EXIT_FAILURE);
+  }
+
+  BONGOCAT_LOG_INFO("Main loop exited, shutting down");
+  system_cleanup_and_exit(ctx, EXIT_SUCCESS);
+
+  BONGOCAT_UNREACHABLE();
+  // Never reached
+  // return EXIT_SUCCESS;
+}

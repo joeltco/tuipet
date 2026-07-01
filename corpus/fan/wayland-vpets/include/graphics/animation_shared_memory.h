@@ -1,0 +1,318 @@
+#ifndef BONGOCAT_ANIMATION_SHARED_MEMORY_H
+#define BONGOCAT_ANIMATION_SHARED_MEMORY_H
+
+#include "config/config.h"
+#include "sprite_sheet.h"
+#include "utils/system_memory.h"
+#include "utils/time.h"
+
+namespace bongocat::animation {
+enum class animation_player_custom_overwrite_mirror_x : uint8_t {
+  None,
+  NoMirror,
+  Mirror
+};
+struct animation_player_result_t {
+  int32_t sprite_sheet_col{0};
+  int32_t sprite_sheet_row{0};
+  animation_player_custom_overwrite_mirror_x overwrite_mirror_x{animation_player_custom_overwrite_mirror_x::None};
+};
+
+struct animation_evolution_conditions_t {
+  platform::time_sec_t next_evolution_time_sec{-1};
+  int32_t min_lvl{-1};
+};
+
+inline static constexpr int32_t MIN_ANIMATION_EVOLUTION_LEVEL = 1;
+inline static constexpr int32_t MAX_ANIMATION_EVOLUTION_LEVEL = 100;
+
+inline static constexpr size_t MAX_ANIMATION_EVOLUTION_INDICIES = 15;
+static_assert(MAX_ANIMATION_EVOLUTION_INDICIES <= INT32_MAX);
+struct animation_evolution_data_t {
+  animation_evolution_conditions_t conditions;
+
+  int32_t num_animation_indices{0};
+  int32_t animation_indices[MAX_ANIMATION_EVOLUTION_INDICIES];
+};
+struct animation_evolution_t {
+  animation_evolution_data_t data;
+
+  platform::time_sec_t uptime_sec{0};
+  platform::time_sec_t time_since_start_sec{0};
+  platform::timestamp_ms_t last_evolution_timestamp{0};              ///< since last evolution happens
+  platform::timestamp_ms_t last_animation_name_change_timestamp{0};  ///< since last animation name change ("hatching")
+
+  platform::time_sec_t current_stage_life_time_sec{0};
+  platform::time_sec_t lvl_per_time_sec{0};  ///< for pkmn (time pass -> Levels)
+  int32_t _lvl{MIN_ANIMATION_EVOLUTION_LEVEL};
+
+  // bool _night_time{false};
+
+  bool _evolution_pending{false};  ///< evolution got triggerred but state is not idle
+  int32_t _evolution_pending_animation_index{-1};
+  bool _swap_animation{false};
+};
+
+// =============================================================================
+// ANIMATION STATE (shared memory between threads)
+// =============================================================================
+
+enum class anim_index_changed_t : uint32_t {
+  None = 0,
+  NoChange = (1u << 0),
+  FromConfig = (1u << 1),
+  Randomize = (1u << 2),
+  Evolution = (1u << 3),
+};
+
+struct animation_shared_memory_t {
+  inline static constexpr int DEFAULT_PREFER_SCALE120 = 120;
+
+  // animation state
+  animation_player_result_t animation_player_result{};
+  int32_t anim_index{0};
+  config::config_animation_sprite_sheet_layout_t anim_type{config::config_animation_sprite_sheet_layout_t::None};
+  config::config_animation_dm_set_t anim_dm_set{config::config_animation_dm_set_t::None};
+  config::config_animation_custom_set_t anim_custom_set{config::config_animation_custom_set_t::None};
+  float movement_offset_x{0.0};
+  float anim_direction{0.0};
+  platform::timestamp_ms_t last_wakeup_timestamp{0};  ///< wake up from latest idle sleep
+  int scale120{DEFAULT_PREFER_SCALE120};              ///< up/down-scale graphic for fractional scaling
+  int cat_height_phys{0};                             ///< cat_height from config.cat_height * scale
+
+  // Animation frame data for sprite sheet preload
+  platform::MMapArray<animation_t> bongocat_anims;
+  platform::MMapArray<animation_t> dm_anims;
+  platform::MMapArray<animation_t> dm20_anims;
+  platform::MMapArray<animation_t> dmc_anims;
+  platform::MMapArray<animation_t> dmx_anims;
+  platform::MMapArray<animation_t> pen_anims;
+  platform::MMapArray<animation_t> pen20_anims;
+  platform::MMapArray<animation_t> dmall_anims;
+  platform::MMapArray<animation_t> min_dm_anims;
+  platform::MMapArray<animation_t> ms_anims;
+  platform::MMapArray<animation_t> pkmn_anims;
+  platform::MMapArray<animation_t> misc_anims;
+  platform::MMapArray<animation_t> pmd_anims;
+
+  // for sprite sheet hot reload (or custom sprite sheet)
+  animation_t anim;
+
+  animation_evolution_t evolution;
+
+  int32_t _old_anim_index_from_config{0};
+  anim_index_changed_t _anim_index_changed{anim_index_changed_t::None};
+
+  animation_shared_memory_t() = default;
+  ~animation_shared_memory_t() {
+    anim_type = config::config_animation_sprite_sheet_layout_t::None;
+    anim_dm_set = config::config_animation_dm_set_t::None;
+    anim_custom_set = config::config_animation_custom_set_t::None;
+    animation_player_result = {};
+    anim_index = 0;
+    movement_offset_x = 0;
+    anim_direction = 0;
+    last_wakeup_timestamp = 0;
+    scale120 = DEFAULT_PREFER_SCALE120;
+    cat_height_phys = 0;
+    evolution = {};
+    _old_anim_index_from_config = 0;
+    _anim_index_changed = anim_index_changed_t::None;
+
+    for (size_t i = 0; i < bongocat_anims.count; i++) {
+      cleanup_animation(bongocat_anims[i]);
+    }
+    platform::release_allocated_mmap_array(bongocat_anims);
+
+    for (size_t i = 0; i < dm_anims.count; i++) {
+      cleanup_animation(dm_anims[i]);
+    }
+    platform::release_allocated_mmap_array(dm_anims);
+
+    for (size_t i = 0; i < dm20_anims.count; i++) {
+      cleanup_animation(dm20_anims[i]);
+    }
+    platform::release_allocated_mmap_array(dm20_anims);
+
+    for (size_t i = 0; i < dmc_anims.count; i++) {
+      cleanup_animation(dmc_anims[i]);
+    }
+    platform::release_allocated_mmap_array(dmc_anims);
+
+    for (size_t i = 0; i < dmx_anims.count; i++) {
+      cleanup_animation(dmx_anims[i]);
+    }
+    platform::release_allocated_mmap_array(dmx_anims);
+
+    for (size_t i = 0; i < pen_anims.count; i++) {
+      cleanup_animation(pen_anims[i]);
+    }
+    platform::release_allocated_mmap_array(pen_anims);
+
+    for (size_t i = 0; i < pen20_anims.count; i++) {
+      cleanup_animation(pen20_anims[i]);
+    }
+    platform::release_allocated_mmap_array(pen20_anims);
+
+    for (size_t i = 0; i < dmall_anims.count; i++) {
+      cleanup_animation(dmall_anims[i]);
+    }
+    platform::release_allocated_mmap_array(dmall_anims);
+
+    for (size_t i = 0; i < min_dm_anims.count; i++) {
+      cleanup_animation(min_dm_anims[i]);
+    }
+    platform::release_allocated_mmap_array(min_dm_anims);
+
+    for (size_t i = 0; i < ms_anims.count; i++) {
+      cleanup_animation(ms_anims[i]);
+    }
+    platform::release_allocated_mmap_array(ms_anims);
+
+    for (size_t i = 0; i < pkmn_anims.count; i++) {
+      cleanup_animation(pkmn_anims[i]);
+    }
+    platform::release_allocated_mmap_array(pkmn_anims);
+
+    for (size_t i = 0; i < misc_anims.count; i++) {
+      cleanup_animation(misc_anims[i]);
+    }
+    platform::release_allocated_mmap_array(misc_anims);
+
+    for (size_t i = 0; i < pmd_anims.count; i++) {
+      cleanup_animation(pmd_anims[i]);
+    }
+    platform::release_allocated_mmap_array(pmd_anims);
+
+    cleanup_animation(anim);
+  }
+
+  animation_shared_memory_t(const animation_shared_memory_t& other) = default;
+  animation_shared_memory_t& operator=(const animation_shared_memory_t& other) = default;
+
+  animation_shared_memory_t(animation_shared_memory_t&& other) noexcept
+      : animation_player_result(other.animation_player_result)
+      , anim_index(other.anim_index)
+      , anim_type(other.anim_type)
+      , anim_dm_set(other.anim_dm_set)
+      , anim_custom_set(other.anim_custom_set)
+      , movement_offset_x(other.movement_offset_x)
+      , anim_direction(other.anim_direction)
+      , last_wakeup_timestamp(other.last_wakeup_timestamp)
+      , scale120(other.scale120)
+      , cat_height_phys(other.cat_height_phys)
+      , _old_anim_index_from_config(other._old_anim_index_from_config)
+      , _anim_index_changed(other._anim_index_changed) {
+    bongocat_anims = bongocat::move(other.bongocat_anims);
+    dm_anims = bongocat::move(other.dm_anims);
+    dm20_anims = bongocat::move(other.dm20_anims);
+    dmc_anims = bongocat::move(other.dmc_anims);
+    dmx_anims = bongocat::move(other.dmx_anims);
+    pen_anims = bongocat::move(other.pen_anims);
+    pen20_anims = bongocat::move(other.pen20_anims);
+    dmall_anims = bongocat::move(other.dmall_anims);
+    min_dm_anims = bongocat::move(other.min_dm_anims);
+    ms_anims = bongocat::move(other.ms_anims);
+    pkmn_anims = bongocat::move(other.pkmn_anims);
+    misc_anims = bongocat::move(other.misc_anims);
+    pmd_anims = bongocat::move(other.pmd_anims);
+
+    anim = bongocat::move(other.anim);
+
+    evolution = bongocat::move(other.evolution);
+
+    cleanup_animation(other.anim);
+    platform::release_allocated_mmap_array(other.bongocat_anims);
+    platform::release_allocated_mmap_array(other.dm_anims);
+    platform::release_allocated_mmap_array(other.dm20_anims);
+    platform::release_allocated_mmap_array(other.dmc_anims);
+    platform::release_allocated_mmap_array(other.dmx_anims);
+    platform::release_allocated_mmap_array(other.pen_anims);
+    platform::release_allocated_mmap_array(other.pen20_anims);
+    platform::release_allocated_mmap_array(other.dmall_anims);
+    platform::release_allocated_mmap_array(other.min_dm_anims);
+    platform::release_allocated_mmap_array(other.ms_anims);
+    platform::release_allocated_mmap_array(other.pkmn_anims);
+    platform::release_allocated_mmap_array(other.misc_anims);
+    platform::release_allocated_mmap_array(other.pmd_anims);
+
+    other.anim_type = config::config_animation_sprite_sheet_layout_t::None;
+    other.anim_dm_set = config::config_animation_dm_set_t::None;
+    other.anim_custom_set = config::config_animation_custom_set_t::None;
+    other.anim_index = 0;
+    other.animation_player_result = {};
+    other.movement_offset_x = 0;
+    other.anim_direction = 0;
+    other.last_wakeup_timestamp = 0;
+    other.scale120 = DEFAULT_PREFER_SCALE120;
+    other.cat_height_phys = 0;
+    other._old_anim_index_from_config = 0;
+    other._anim_index_changed = anim_index_changed_t::None;
+  }
+  animation_shared_memory_t& operator=(animation_shared_memory_t&& other) noexcept {
+    if (this != &other) {
+      animation_player_result = other.animation_player_result;
+      anim_index = other.anim_index;
+      anim_type = other.anim_type;
+      anim_dm_set = other.anim_dm_set;
+      anim_custom_set = other.anim_custom_set;
+      movement_offset_x = other.movement_offset_x;
+      anim_direction = other.anim_direction;
+      last_wakeup_timestamp = other.last_wakeup_timestamp;
+      scale120 = other.scale120;
+      cat_height_phys = other.cat_height_phys;
+      _old_anim_index_from_config = other._old_anim_index_from_config;
+      _anim_index_changed = other._anim_index_changed;
+
+      bongocat_anims = bongocat::move(other.bongocat_anims);
+      dm_anims = bongocat::move(other.dm_anims);
+      dm20_anims = bongocat::move(other.dm20_anims);
+      dmc_anims = bongocat::move(other.dmc_anims);
+      dmx_anims = bongocat::move(other.dmx_anims);
+      pen_anims = bongocat::move(other.pen_anims);
+      pen20_anims = bongocat::move(other.pen20_anims);
+      dmall_anims = bongocat::move(other.dmall_anims);
+      min_dm_anims = bongocat::move(other.min_dm_anims);
+      ms_anims = bongocat::move(other.ms_anims);
+      pkmn_anims = bongocat::move(other.pkmn_anims);
+      misc_anims = bongocat::move(other.misc_anims);
+      pmd_anims = bongocat::move(other.pmd_anims);
+
+      anim = bongocat::move(other.anim);
+
+      evolution = bongocat::move(other.evolution);
+
+      cleanup_animation(other.anim);
+      platform::release_allocated_mmap_array(other.bongocat_anims);
+      platform::release_allocated_mmap_array(other.dm_anims);
+      platform::release_allocated_mmap_array(other.dm20_anims);
+      platform::release_allocated_mmap_array(other.dmc_anims);
+      platform::release_allocated_mmap_array(other.dmx_anims);
+      platform::release_allocated_mmap_array(other.pen_anims);
+      platform::release_allocated_mmap_array(other.pen20_anims);
+      platform::release_allocated_mmap_array(other.dmall_anims);
+      platform::release_allocated_mmap_array(other.min_dm_anims);
+      platform::release_allocated_mmap_array(other.ms_anims);
+      platform::release_allocated_mmap_array(other.pkmn_anims);
+      platform::release_allocated_mmap_array(other.misc_anims);
+      platform::release_allocated_mmap_array(other.pmd_anims);
+
+      other.anim_type = config::config_animation_sprite_sheet_layout_t::None;
+      other.anim_dm_set = config::config_animation_dm_set_t::None;
+      other.anim_custom_set = config::config_animation_custom_set_t::None;
+      other.anim_index = 0;
+      other.animation_player_result = {};
+      other.movement_offset_x = 0;
+      other.anim_direction = 0;
+      other.last_wakeup_timestamp = 0;
+      other.scale120 = DEFAULT_PREFER_SCALE120;
+      other.cat_height_phys = 0;
+      other._old_anim_index_from_config = 0;
+      other._anim_index_changed = anim_index_changed_t::None;
+    }
+    return *this;
+  }
+};
+}  // namespace bongocat::animation
+
+#endif  // BONGOCAT_ANIMATION_SHARED_MEMORY_H

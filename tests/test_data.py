@@ -7,6 +7,24 @@ egg screen or Futon misbehaved in play.
 from tuipet import data, egg
 
 
+def test_care_effects_load():
+    eff = data.load_care_effects()
+    assert isinstance(eff, dict) and eff, "careEffect.csv produced no effects"
+    for e in eff.values():
+        for k in ("name", "duration", "mood", "energy", "hunger", "strength",
+                  "end_on_sleep", "pause_temp", "pause_call", "can_reapply"):
+            assert k in e
+        # rate fields are (amount, every_n_ticks) pairs
+        assert len(e["mood"]) == 2 and len(e["energy"]) == 2
+
+
+def test_digicore_icons_load():
+    icons = data.load_digicore_icons()
+    assert isinstance(icons, dict) and icons, "digicoreMenuConfig.csv produced no badges"
+    assert set(icons.values()) <= {"Burst", "Twelve", "Two", "Dark"}
+    assert all(isinstance(k, int) for k in icons)
+
+
 def test_egg_unlock_load():
     rules = data.load_egg_unlock()
     assert isinstance(rules, dict) and rules, "eggUnlock.csv produced no rules"
@@ -14,9 +32,9 @@ def test_egg_unlock_load():
     # every rule index is a real egg
     assert all(0 <= k < egg.count() for k in rules)
     # every rule carries the full evaluated condition set egg.py reads
-    needed = {"start", "price", "map", "stage", "zone", "gen",
+    needed = {"start", "price", "map", "stage", "xanti", "tourney", "zone", "gen",
               "prev_field", "prev_attr", "prev_elem", "history", "food", "item",
-              "password", "obedience", "mood", "desc", "can_perm"}
+              "habitat", "password", "obedience", "mood", "desc", "can_perm"}
     for rule in rules.values():
         assert needed <= set(rule)
     # at least one starter egg, and at least one egg behind a price (a real bits sink)
@@ -45,11 +63,11 @@ def test_pretty_field():
 
 
 def test_stage_rank_helper():
-    """The authentic growth rank (Egg, Baby I .. Super Ultimate); unknown = fully grown."""
+    """The consolidated 7-stage rank (Egg..Mega); unknown stage = fully grown."""
     assert data.STAGE_RANK == ["Egg"] + data.STAGE_ORDER
     assert data.stage_rank("Egg") == 0
-    assert data.stage_rank("Baby I") == 1
-    assert data.stage_rank(data.STAGE_ORDER[-1]) == len(data.STAGE_RANK) - 1
+    assert data.stage_rank("Fresh") == 1
+    assert data.stage_rank("Mega") == len(data.STAGE_RANK) - 1
     assert data.stage_rank("Bogus") == len(data.STAGE_RANK)
     # the rank must be monotonic in growth order
     ranks = [data.stage_rank(s) for s in data.STAGE_RANK]

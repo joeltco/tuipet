@@ -1,0 +1,81 @@
+name: Release Build
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+      - 'v*-*'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    container:
+      image: archlinux:latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Install base dependencies
+        run: |
+          pacman -Syu --noconfirm
+          pacman -S --noconfirm \
+            base-devel \
+            gcc \
+            cmake \
+            ninja \
+            git \
+            pkgconf \
+            libinput \
+            wayland \
+            wayland-protocols \
+            unzip \
+            pandoc-cli
+
+      - name: Configure CMake (Release)
+        run: |
+          mkdir -p build
+          cd build
+          cmake .. -DCMAKE_BUILD_TYPE=Release -DSKIP_CPM=ON
+
+      - name: Build
+        run: |
+          cd build
+          cmake --build . -- -j$(nproc)
+
+      - name: Package (TGZ + ZIP)
+        run: |
+          cd build
+          cpack -G TGZ
+          cpack -G ZIP
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-${{ matrix.compiler }}
+          path: |
+            build/*.tar.gz
+            build/*.zip
+
+  publish:
+    needs: build
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: Release ${{ github.ref_name }}
+          prerelease: ${{ contains(github.ref_name, '-') }}
+          files: |
+            artifacts/**/*.tar.gz
+            artifacts/**/*.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
