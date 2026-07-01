@@ -105,7 +105,7 @@ def _stat_head(name, tag):
 # old triple-power glyphs so the association stays familiar). The status box shows the
 # pet's ONE attribute here, DM20-style, not three separate power counters.
 _ATTR_GLYPH = {"Vaccine": ("●", "POS"), "Data": ("■", "ENERGY"),
-               "Virus": ("▲", "MOOD"), "Free": ("◆", "MID")}
+               "Virus": ("▲", "ACCENT"), "Free": ("◆", "MID")}
 
 
 def _attr_badge(attribute):
@@ -253,7 +253,7 @@ class Screen(Static):
         self.anim_key = None  # last anim state, so cadences restart on a state change
         self.roamer = anim.Roamer(int(SCREEN_COLS * 0.28), SCREEN_COLS, SPRITE_W)  # left-of-centre anchor
         self.fx = None        # active care-action animation
-        self._idle_expr = None    # DVPet stepFrame mood-pose held for the current idle step (None = walk toggle)
+        self._idle_expr = None    # DVPet stepFrame care-state pose held for the current idle step (None = walk toggle)
 
     def paint(self, pet: Pet):
         if self.fx:
@@ -298,7 +298,7 @@ class Screen(Static):
         elif pet.anim in ("idle", "walk") and pet.num != -1:
             # full-width roam (DVPet idleWalk); pose follows the roamer's step, and a
             # filth pile is a left wall it turns at (filthLabel walk bound).  On some
-            # steps DVPet's stepFrame shows a mood pose instead of the walk toggle.
+            # steps DVPet's stepFrame shows a care-state pose instead of the walk toggle.
             expr = self._idle_expr if pet.anim == "idle" else None
             idx = expr if expr is not None else frames[self.roamer.pose % len(frames)]
             rows = (_fr[idx] if idx < len(_fr) else None) or first
@@ -355,7 +355,7 @@ class Screen(Static):
             self.roamer.step(left_bound=max(poop_right, PLAY_X0),
                              right_bound=(PLAY_RIGHT if right_bound is None else min(right_bound, PLAY_RIGHT)))
             if self.roamer.pose != prev_pose:                    # a fresh step landed (DVPet stepFrame):
-                self._idle_expr = (anim.mood_pose(pet)           # sometimes show a mood pose instead of
+                self._idle_expr = (anim.care_pose(pet)           # sometimes show a care-state pose instead of
                                    if random.random() < anim.IDLE_EXPR_CHANCE else None)  # the plain walk toggle
         else:
             self._idle_expr = None                               # any non-idle state clears the held expression
@@ -571,7 +571,6 @@ class Stats(Static):
             f"Hunger  {hearts(pet.hunger)}",
             f"Effort  {hearts(pet.strength)}",
             f"Energy  {bar(pet.energy_pct(), 12, T.ENERGY)}",
-            f"Mood    {bar(pet.mood_pct(), 12, T.MOOD)}",
             div,
             f"Attrib  {_attr_badge(pet.attribute)}",
             f"DP      {pet.dp}",
@@ -940,14 +939,14 @@ class TuiPetApp(App):
         energy = bar(p.energy_pct(), 11, T.ENERGY)
         if tp.phase == "done":
             verdict = (f"[{T.POS}]wall smashed![/]" if tp.full
-                       else (f"[{T.MOOD}]some hits landed[/]" if tp.success else f"[{T.NEG}]too slow[/]"))
+                       else (f"[{T.COIN}]some hits landed[/]" if tp.success else f"[{T.NEG}]too slow[/]"))
             lines = [head, div,
                      "[b]Wall Drill[/]", "", verdict, "",
                      f"Effort   {eff}", f"Energy   {energy}", div,
                      f"[dim]{(tp.result or '')[:24]}[/]"]
         else:
             hitbar = bar(min(tp.taps, MASH_TARGET) / MASH_TARGET * 100, 11, T.POS)
-            timebar = bar(max(0, tp.timer) / MASH_WINDOW * 100, 11, T.MOOD)
+            timebar = bar(max(0, tp.timer) / MASH_WINDOW * 100, 11, T.COIN)
             lines = [head, div,
                      "[b]Wall Drill[/]",
                      f"Hits     {tp.taps} / {MASH_TARGET}", f"Wall     {hitbar}",

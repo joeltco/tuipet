@@ -1,7 +1,7 @@
 """Save/load the pet to disk, with bounded offline catch-up.
 
 The pet is a flat dataclass, so it serialises straight to JSON. On load we apply
-a gentle "while you were away" decay (hunger/energy/mood/poop) scaled to the real
+a gentle "while you were away" decay (hunger/poop) scaled to the real
 elapsed time — but never run evolution or death offline, so reopening is always
 safe and predictable.
 """
@@ -127,7 +127,6 @@ def _offline(pet, elapsed):
     mins = elapsed / 60.0
     # DVPet has no passive energy decay; just re-clamp to the (per-pet) range.
     pet.energy = _clamp(pet.energy, -pet.max_energy, pet.max_energy)
-    pet.mood = _clamp(pet.mood - min(50, mins * 2), -300, 300)
     drop = min(pet.hunger, int(mins // 5))
     pet.hunger -= drop
     if mins > 10 and pet.hunger == 0:

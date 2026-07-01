@@ -72,16 +72,16 @@ def test_future_timestamp_no_time_travel():
 # ---- offline catch-up at extremes ------------------------------------------
 
 def test_offline_zero_elapsed():
-    p = Pet(num=-1, stage="Rookie", mood=100, hunger=4)
+    p = Pet(num=-1, stage="Rookie", hunger=4, poop=0)
     assert persistence._offline(p, 0) == ""
-    assert p.mood == 100 and p.hunger == 4         # nothing decays at 0s
+    assert p.hunger == 4 and p.poop == 0           # nothing decays at 0s
 
 
 def test_offline_huge_elapsed_stays_bounded():
-    p = Pet(num=-1, stage="Rookie", mood=300, hunger=4)
+    p = Pet(num=-1, stage="Rookie", hunger=4)
     persistence._offline(p, 10 ** 9)               # absurd gap
-    assert -300 <= p.mood <= 300                    # mood stays clamped
     assert 0 <= p.hunger <= 4                        # hunger stays in range
+    assert 0 <= p.poop <= 4                          # mess stays capped
 
 
 # ---- egg helpers tolerate out-of-range indices -----------------------------

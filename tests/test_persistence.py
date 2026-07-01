@@ -50,20 +50,20 @@ def test_old_save_migration():
 
 def test_offline_egg_does_not_decay():
     egg = Pet(num=-1, stage="Egg")
-    egg.mood, egg.hunger = 0, 4
+    egg.hunger = 4
     msg = persistence._offline(egg, 7200)        # 2h away
     assert msg == ""
-    assert egg.hunger == 4 and egg.mood == 0     # eggs are inert offline
+    assert egg.hunger == 4                        # eggs are inert offline
     assert egg.world_seconds == 7200             # ...but the clock still advances
     assert egg.age_seconds == 7200
 
 
 def test_offline_decay_applies():
     pet = Pet(num=-1, stage="Rookie")
-    pet.mood, pet.hunger = 100, 4
+    pet.hunger, pet.poop = 4, 0
     msg = persistence._offline(pet, 2 * 3600)    # 2h
-    assert pet.mood < 100, "mood should decay while away"
     assert pet.hunger < 4, "hunger should drop while away"
+    assert pet.poop > 0, "mess should build up while away"
     assert "away" in msg
 
 
