@@ -188,63 +188,6 @@ def attack_info(num, attribute):
     return {"name": attribute, "effect": "None", "conditions": []}
 
 
-# ---------------------------------------------------------------------------
-# Tournament cups (tournies.csv) — kept for trophy/egg-unlock data; menu stripped.
-# ---------------------------------------------------------------------------
-@lru_cache(maxsize=1)
-def load_tournies():
-    """Tournament trophies (tournies.csv): per-season cups with field/attribute/age
-    restrictions, a BitModifier prize, ItemWon/FoodWon prizes, and enemy overrides."""
-    path = os.path.join(_DATA, "tournies.csv")
-    rows = list(csv.DictReader(open(path)))
-    if not rows:
-        return []
-    hdr = list(rows[0].keys())
-    age_col = next((k for k in hdr if k.startswith("AgeLimit")), "AgeLimit")
-    food_col = next((k for k in hdr if k.startswith("FoodWon")), "FoodWonqAmount")
-
-    def na(v):
-        v = (v or "NA").strip()
-        return "" if v in ("NA", "None", "") else v
-
-    out = []
-    for r in rows:
-        try:
-            tid = int(r["Trophy"])
-        except (KeyError, ValueError):
-            continue
-        fid, famt = -1, 0
-        fw = r.get(food_col) or "-1q-1"
-        if "q" in fw:
-            a, b = fw.split("q", 1)
-            try:
-                fid, famt = int(a), int(b)
-            except ValueError:
-                pass
-        try:
-            item = int(r.get("ItemWon") or -1)
-        except ValueError:
-            item = -1
-        try:
-            bm = float(r.get("BitModifier") or 1)
-        except ValueError:
-            bm = 1.0
-        out.append({
-            "id": tid, "sprite": int(r.get("SpriteNum") or 0),
-            "season": na(r.get("Season")) or "Spring",
-            "field_req": na(r.get("FieldRestriction")),
-            "attr_req": na(r.get("AttributeRestriction")),
-            "age_limit": na(r.get(age_col)),
-            "bit_mod": bm, "item": item, "food_id": fid, "food_amt": famt,
-            "reset_season": (r.get("ResetWonOnSeasonChange") or "FALSE").strip().upper() == "TRUE",
-            "same_day_retry": (r.get("SameDayRetry") or "FALSE").strip().upper() == "TRUE",
-            "enemy_stage": na(r.get("OverrideEnemyStage")),
-            "enemy_attr": na(r.get("OverrideEnemyAttribute")),
-            "enemy_elem": na(r.get("OverrideEnemyElement")),
-            "enemy_field": na(r.get("OverrideEnemyField")),
-        })
-    return out
-
 
 # ---------------------------------------------------------------------------
 # Shop & consumables (foods.csv / items.csv sold via shopConsumable.csv).
@@ -673,7 +616,6 @@ def load_egg_unlock():
             "map": _int(r[3]) if (_int(r[3]) is not None and _int(r[3]) >= 0) else None,
             "stage": _opt(r[4]),
             "xanti": r[5].strip() == "TRUE",
-            "tourney": _int(r[6]) if (_int(r[6]) is not None and _int(r[6]) >= 0) else None,
             "zone": _opt(r[7]),
             "gen": _int(r[8]) if (_int(r[8]) is not None and _int(r[8]) >= 0) else None,
             "prev_field": _opt(r[9]),

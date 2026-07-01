@@ -111,8 +111,6 @@ def _conditions_met(rule, prog):
             return False
     if rule["xanti"] and not (prog["last_xanti"] or prog["xanti_ever"]):
         return False
-    if rule["tourney"] is not None and rule["tourney"] not in prog["tourneys"]:
-        return False
     if rule["map"] is not None and rule["map"] not in prog["maps"]:
         return False
     if rule["history"] and not all(n in prog["album"] for n in rule["history"]):
