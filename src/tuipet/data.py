@@ -105,43 +105,12 @@ def next_stage(stage):
 
 
 @lru_cache(maxsize=1)
-def load_orbs():
-    with gzip.open(os.path.join(_DATA, "orbs.json.gz")) as fh:
-        return json.load(fh)
-
-
-def attack_orb(num, attribute, power):
-    """The generic per-attribute battle orb at the power tier floor(power/25). Authentic
-    mono v-pet battle has no per-mon special attacks — the projectile is purely the
-    attribute, scaled by power."""
-    orbs = load_orbs()
-    tiers = orbs["generic"].get(attribute) or orbs["generic"]["Vaccine"]
-    t = max(0, min(int(power) // 25, len(tiers) - 1))
-    return tiers[t] or next((x for x in tiers if x), None)
-
-
-@lru_cache(maxsize=1)
 def load_requirements():
     """Per-mon evolution/physiology gates were DVPet digimon.csv data (keyed by DVPet
     nums, absent for the authentic species roster). The engine now reads everything
     from `species` + the corpus, so this is an empty map — every `.get(num, {})` caller
     falls back to its sensible default. (digimon.csv is gone.)"""
     return {}
-
-
-# ---------------------------------------------------------------------------
-# Battle enemies (parsed from enemies.csv).  Each enemy references a Digimon by
-# number (its sprite + attribute) and carries battle Health and attribute power.
-# ---------------------------------------------------------------------------
-_MOVES = None
-
-
-# Authentic mono v-pet battle: attacks are by ATTRIBUTE, not per-mon named moves with
-# effect "chips" (those VaccineName/Effect columns were DVPet/colour-device data, absent
-# from the humulos corpus). The "move" is simply the attribute attack; there are no effects.
-def move_name(num, attribute):
-    """The attribute attack a Digimon throws (mono devices don't name per-mon moves)."""
-    return attribute
 
 
 @lru_cache(maxsize=1)
