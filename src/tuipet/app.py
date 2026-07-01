@@ -126,8 +126,8 @@ def _sky_icon(pet):
 
 _K = "b cyan"
 KEYS = (
-    f"[{_K}]f[/] feed  [{_K}]p[/] play  [{_K}]c[/] clean  [{_K}]h[/] heal  [{_K}]r[/] praise  [{_K}]k[/] scold  [{_K}]s[/] lights\n"
-    f"[{_K}]t[/] train  [{_K}]b[/] battle  [{_K}]j[/] jogress  [{_K}]l[/] lobby\n"
+    f"[{_K}]f[/] feed  [{_K}]t[/] train  [{_K}]c[/] clean  [{_K}]h[/] heal  [{_K}]s[/] lights\n"
+    f"[{_K}]b[/] battle  [{_K}]j[/] jogress  [{_K}]l[/] lobby\n"
     f"[{_K}]g[/] theme  [{_K}]m[/] sound  [{_K}]n[/] new  [{_K}]q[/] quit"
 )
 
@@ -218,23 +218,18 @@ def _effect_overlay(pet, frame_i, cols, px_h, tick=0, pet_right=None):
             break
         pts += _blit(E[key][sf], col_x, y)
         k += 1
-    # --- creature-tracking bubble: emote / care-call '!' / teach (awake only) ---
-    # DVPet's emotionLabel + teachState both ride the creature (adjustEmotionLabel /
-    # setDynamicComponentLocation); reactions don't fire while it sleeps, so this slot
-    # is awake-only and is clamped to stay left of the condition column.
+    # --- creature-tracking bubble: emote / care-call '!' (awake only) ---
+    # DVPet's emotionLabel rides the creature (adjustEmotionLabel); reactions don't
+    # fire while it sleeps, so this slot is awake-only and clamped left of the column.
     if not asleep:
         emo = ("happy" if pet.anim == "happy" else
                "unhappy" if pet.anim in ("sad", "refuse", "angry", "tantrum") else None)
         bubble = []
-        if emo and E.get(emo):                            # cheer -> happy, jeer -> unhappy (DVPet)
+        if emo and E.get(emo):                            # happy / unhappy reaction emote
             bubble.append(E[emo][frame_i % len(E[emo])])
         elif (pet.anim in ("idle", "walk") and E.get("attention")
               and (pet.hunger == 0 or pet.poop >= 3 or pet.energy <= 0)):
             bubble.append(E["attention"][0])             # care-call '!'
-        teach = ((getattr(pet, "praise_flag", False) or getattr(pet, "scold_flag", False))
-                 and pet.lights)
-        if teach and E.get("st_teach") and "st_teach" not in _HIDDEN_STATUS_ICONS:
-            bubble.append(E["st_teach"][sf])
         if bubble:
             bm = bubble[(tick // 5) % len(bubble)]        # if both present, take turns (rare)
             w = len(bm[0])
@@ -285,7 +280,7 @@ class Screen(Static):
         # per-state cadence: hold each pose for its DVPet interval count rather than
         # flipping every tick (root-cause #2 -- one tick == one _interval; see anim.py).
         # idle holds 5/6/7, sleep holds its 2/3 poses for 10 each, reactions ~6.
-        hold = (anim.idle_hold(pet._restless()) if pet.anim in ("idle", "walk")
+        hold = (anim.idle_hold(0) if pet.anim in ("idle", "walk")
                 else anim.SLEEP_BEAT if pet.anim == "sleep" else 6)
         idx = frames[(self.frame_i // hold) % len(frames)]
         rows = (_fr[idx] if idx < len(_fr) else None) or first
@@ -662,8 +657,7 @@ class TuiPetApp(App):
     """
     BINDINGS = [
         ("f", "feed", "Feed"), ("t", "train", "Train"), ("b", "battle", "Battle"),
-        ("p", "play", "Play"), ("c", "clean", "Clean"), ("h", "heal", "Heal"),
-        ("r", "praise", "Praise"), ("k", "scold", "Scold"),
+        ("c", "clean", "Clean"), ("h", "heal", "Heal"),
         ("j", "jogress", "Jogress"),
         ("l", "lobby", "Lobby"),
         ("s", "sleep", "Lights"), ("g", "theme", "Theme"), ("m", "sound", "Sound"), ("n", "new", "New pet"), ("q", "quit", "Quit"),
@@ -1005,27 +999,23 @@ class TuiPetApp(App):
         self.stats_w.update("\n".join(lines))
 
     def _status_eat(self):
-        """DVPet feeding readout: the calorie (hunger) buffer plus the protein/mineral/
-        vitamin macros, shown live while the eat animation plays."""
-        from .pet import CALORIE_LIMIT, MAX_MACRO, GOOD_NUTRITION_MIN
+        """DM20 feeding readout: the hunger hearts + calorie (fullness) buffer, shown
+        live while the eat animation plays."""
+        from .pet import CALORIE_LIMIT
         p, T = self.pet, theme
         self.stats_w.border_subtitle = f"gen {p.generation}"
         div = STAT_DIV
-        def mbar(v, col):
-            return bar(min(100, v * 100 // MAX_MACRO), 11, col)
-        well = (p.nutr_protein >= GOOD_NUTRITION_MIN and p.nutr_mineral >= GOOD_NUTRITION_MIN
-                and p.nutr_vitamin >= GOOD_NUTRITION_MIN)
         lines = [
             _stat_head(p.name, "feeding"), div,
-            f"Calorie  {hearts(p.hunger)}",
+            f"Hunger   {hearts(p.hunger)}",
+            f"Effort   {hearts(p.strength)}",
             f"Fuel     {bar(p.calories * 100 // CALORIE_LIMIT, 12, T.COIN)}",
             div,
-            f"Protein  {mbar(p.nutr_protein, T.POS)}",
-            f"Mineral  {mbar(p.nutr_mineral, T.ENERGY)}",
-            f"Vitamin  {mbar(p.nutr_vitamin, T.MOOD)}",
-            div,
-            f"Weight {p.weight}g",
-            (f"[{T.POS}]well nourished[/]" if well else "[dim]a varied diet helps[/]"),
+            f"Weight   {p.weight}g",
+            f"DP       {p.dp}",
+            "",
+            "[dim]Meat fills hunger,[/]",
+            "[dim]protein builds strength.[/]",
         ]
         self.stats_w.update("\n".join(lines))
 
@@ -1103,8 +1093,7 @@ class TuiPetApp(App):
             self.beep(poop_snd, bell=False)
         # care-need call (classic V-pet nag): alert on onset, then every ~90s
         needs = (not p.dead and p.stage != "Egg" and not p.asleep
-                 and (p.hunger == 0 or p.sick or p.poop >= 3 or p.energy <= 0
-                      or p.scold_flag))
+                 and (p.hunger == 0 or p.sick or p.poop >= 3 or p.energy <= 0))
         if needs and not self._needs:
             self.beep("alarm")
             self._nag_t = 0.0
@@ -1177,7 +1166,6 @@ class TuiPetApp(App):
         elif p.hunger == 0: msg = f"{name} is hungry!"
         elif p.poop >= 3:   msg = f"{name} needs cleaning!"
         elif p.energy <= 0: msg = f"{name} is exhausted!"
-        elif p.scold_flag:  msg = f"{name} is misbehaving!"
         else:               return ""
         return f"[{theme.NEG}]\u26a0 {msg}[/]"
 
@@ -1218,24 +1206,6 @@ class TuiPetApp(App):
             self.beep("win") if battle.won else self.beep("lose", bell=False)
         self.repaint()
 
-    def action_praise(self):
-        if self.screen_w.fx is not None:        # let the current care animation finish before acting again
-            return
-        msg = self.pet.praise()
-        if self.pet.anim == "happy":                # the praise lands -> DVPet cheer()
-            self.screen_w.start_fx("cheer")
-            self.beep("happy", bell=False)
-        self._do(msg)
-
-    def action_scold(self):
-        if self.screen_w.fx is not None:        # let the current care animation finish before acting again
-            return
-        msg = self.pet.scold()
-        if self.pet.anim == "angry":                # the scold lands -> DVPet jeer()
-            self.screen_w.start_fx("jeer")
-            self.beep("angry", bell=False)
-        self._do(msg)
-
     def action_jogress(self):
         reason = jogress.can_jogress(self.pet)
         if reason:
@@ -1249,13 +1219,6 @@ class TuiPetApp(App):
         self.repaint()
 
 
-    def action_play(self):
-        if self.screen_w.fx is not None:        # let the current care animation finish before acting again
-            return
-        msg = self.pet.play()
-        if self.pet.anim == "play":
-            self.screen_w.start_fx("play")       # the DVPet jumping() hop; SFX fires per-hop in the fx loop
-        self._do(msg)
     def action_clean(self):
         if self.screen_w.fx is not None:        # let the current care animation finish before acting again
             return

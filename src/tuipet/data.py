@@ -78,6 +78,8 @@ def load_evolutions():
 
 @lru_cache(maxsize=1)
 def load_foods():
+    """DM20's two foods: Meat (fills a hunger heart) and Protein (fills a strength
+    heart, adds weight, restores DP). No taste/nutrient columns (all DVPet)."""
     path = os.path.join(_RAW, "foods.csv")
     foods = []
     with open(path) as fh:
@@ -85,17 +87,9 @@ def load_foods():
             try:
                 foods.append({
                     "name": row["Name"],
-                    "hunger": int(row["Hunger"] or 0),
-                    "weight": int(row["Weight"] or 0),
-                    "mood": int(row["Mood"] or 0),
-                    "energy": int(row["Energy"] or 0),
-                    "strength": int(row["Strength"] or 0),
-                    "obedience": int(row["Obedience"] or 0),
-                    "enthusiasm": int(row["Enthusiasm"] or 0),
-                    "category": (row.get("Type") or "").strip(),
-                    "protein": int(row.get("Proteins") or 0),
-                    "vitamin_n": int(row.get("Vitamins") or 0),
-                    "mineral": int(row.get("Minerals") or 0),
+                    "hunger": int(row.get("Hunger") or 0),
+                    "strength": int(row.get("Strength") or 0),
+                    "weight": int(row.get("Weight") or 0),
                 })
             except (KeyError, ValueError):
                 continue
@@ -108,10 +102,6 @@ def next_stage(stage):
     except ValueError:
         return None
     return STAGE_ORDER[i + 1] if i + 1 < len(STAGE_ORDER) else None
-
-
-# Food taste categories (still used by the feeding/taste system in pet.py).
-FOOD_CATEGORIES = ("Meat", "Fish", "Veg", "Fruit", "Med", "Junk", "Grain", "Dairy")
 
 
 @lru_cache(maxsize=1)

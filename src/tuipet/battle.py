@@ -48,8 +48,7 @@ HP <= 0; the player loses iff its OWN HP <= 0 (a double-KO is therefore a loss).
 Companion systems (ported elsewhere, faithful):
   - Round resolution / initiative -> battlefx.py (authentic mono model: attribute
     attacks + checkFirst initiative, NO effect chips — those were DVPet/colour data).
-  - Player-side surrender/escape (PhysicalState.checkSurrender) -> pet.py
-    (check_surrender / surrender_effect); battlescreen drives the Y/N request and
+  - Player-side surrender/escape: battlescreen drives the flee request and
     Battle.surrender() ends the bout as neither win nor loss.
 """
 from __future__ import annotations
@@ -226,13 +225,10 @@ class Battle:
 
     def surrender(self):
         """Battle.surrender: the pet bows out -- the bout ends as neither win nor loss.
-        Costs SurrenderEnthusiasmDec spirit; a fixed (non-random) foe still counts as a
-        battle fought.  SurrenderEnergyDec/SurrenderWeightDec are 0 in the shipped config."""
-        from .pet import SURR_ENTH_DEC
+        A fixed (non-random) foe still counts as a battle fought."""
         self.over = True
         self.won = False
         self.surrendered = True
         self.reward = "Surrendered."
-        self.pet._set_enthusiasm(self.pet.enthusiasm - SURR_ENTH_DEC)
         if self.enemy.get("boss"):          # getIsRandom() == false -> battles += 1
             self.pet.battles += 1

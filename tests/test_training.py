@@ -1,12 +1,13 @@
 """Training-minigame gains (Workstream A) — the last correctness piece in A.
 
 apply_training(hits, power, attribute, game):
-  - game="hp": a success (hits>=2) builds Effort (strength) +1 and obedience +1;
-    a fail (hits<2) costs mood and obedience, no strength.
+  - game="hp": a success (hits>=2) builds Effort (strength) +1; a fail (hits<2)
+    costs mood, no strength.
   - game in {vaccine,data,virus}: a success adds hits*TRAIN_POWER_PER_HIT to that
-    attribute's lifelong power count; a fail adds nothing. Training a non-favored
-    attribute costs extra mood/spirit.
+    attribute's lifelong power (DP) count; a fail adds nothing.
   - every drill: +1 exercise, -2 weight, -1 energy.
+
+(DM20: no obedience/discipline and no food/attribute preferences — those were DVPet.)
 
 TRAIN_POWER_PER_HIT=2 is a deliberate tuipet adaptation (DVPet adds a flat +1/drill,
 but its stages last real-DAYS; under tuipet's ~60x-compressed stage a flat +1 can
@@ -22,7 +23,7 @@ from tuipet.pet import Pet, TRAIN_POWER_PER_HIT
 def _trainee(attribute="Vaccine", **kw):
     # high energy, normal weight -> no fatigue / overweight randomness
     defaults = dict(energy=24, max_energy=24, weight=20, vaccine=0, data_power=0,
-                    virus=0, strength=0, mood=0, obedience=0)
+                    virus=0, strength=0, mood=0)
     defaults.update(kw)
     return Pet(num=-1, stage="Rookie", attribute=attribute, **defaults)
 
@@ -33,18 +34,17 @@ def test_constant_is_two():
 
 # ---- HP (Effort) drill -----------------------------------------------------
 
-def test_hp_success_builds_strength_and_obedience():
+def test_hp_success_builds_strength():
     p = _trainee()
     p.apply_training(2, 100, game="hp")
     assert p.strength == 1
-    assert p.obedience == 1
+    assert p.trainings == 1
 
 
 def test_hp_fail_penalises():
-    p = _trainee(strength=2, obedience=2, mood=50)
+    p = _trainee(strength=2, mood=50)
     p.apply_training(1, 100, game="hp")        # hits<2 -> fail
     assert p.strength == 2, "a failed drill gives no Effort"
-    assert p.obedience == 1, "fail costs obedience"
     assert p.mood < 50, "fail costs mood"
 
 
@@ -72,17 +72,12 @@ def test_attribute_routing():
     assert v.virus == 4 and v.vaccine == 0 and v.data_power == 0
 
 
-def test_disliked_attribute_costs_mood():
-    p = _trainee(attribute="Vaccine")          # favours Vaccine
-    p.apply_training(2, 100, attribute="Data", game="data")   # drills disliked Data
-    assert p.data_power == 4
-    assert p.mood < 0, "training a non-favoured attribute costs mood"
-
-
-def test_favoured_attribute_no_mood_cost():
+def test_attribute_drill_no_mood_cost():
+    # DM20 has no attribute preferences, so a successful drill of ANY attribute is free
     p = _trainee(attribute="Vaccine")
-    p.apply_training(2, 100, attribute="Vaccine", game="vaccine")
-    assert p.mood == 0, "favoured-attribute training does not cost mood"
+    p.apply_training(2, 100, attribute="Data", game="data")
+    assert p.data_power == 4
+    assert p.mood == 0, "a successful drill costs no mood (no favoured/disliked attrs)"
 
 
 # ---- shared per-drill costs ------------------------------------------------

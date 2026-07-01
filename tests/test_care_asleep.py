@@ -1,6 +1,6 @@
 """A sleeping pet must not be silently cared for: every care action is blocked
-(and counts as a sleep disturbance), consistently. Previously only feed/play
-blocked; praise/scold penalised-then-acted-anyway, and clean/heal ignored sleep."""
+while it sleeps. (DM20 Ver.20th no longer penalises waking, so blocking is a plain
+no-op with a 'mind its sleep' nudge — no stat change.)"""
 from tuipet.pet import Pet
 
 
@@ -13,21 +13,20 @@ def _sleeping():
 
 
 def test_all_care_actions_block_while_asleep():
-    for action in ("feed", "play", "praise", "scold", "clean", "heal"):
+    for action in ("feed", "clean", "heal"):
         p = _sleeping()
         msg = getattr(p, action)()
         assert "sleep" in msg.lower(), f"{action} did not block while asleep: {msg!r}"
 
 
-def test_disturbing_sleep_costs_mood_and_counts():
+def test_blocked_action_changes_nothing():
     p = _sleeping()
-    mood0, disturb0 = p.mood, p.disturb
-    p.praise()                          # used to praise-anyway; now it's a disturbance
-    assert p.disturb == disturb0 + 1
-    assert p.mood < mood0               # DisturbMoodDec applied
-    assert p.sick is True               # heal-while-asleep didn't secretly cure
+    mood0, poop0 = p.mood, p.poop
     p.heal()
-    assert p.sick is True               # still blocked — the illness remains
+    assert p.sick is True, "heal-while-asleep must not cure"
+    p.clean()
+    assert p.poop == poop0, "clean-while-asleep must not tidy up"
+    assert p.mood == mood0, "waking is free on the DM20 — no mood penalty"
 
 
 def test_care_works_again_once_awake():
