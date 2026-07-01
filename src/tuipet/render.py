@@ -78,7 +78,7 @@ if __name__ == "__main__":
         c.print(frame_text(d["frames"][i], on, off))
 
 
-def render_screen(frame_rows, cols, rows, on="#2b2e31", bg="#c6c9cc", baseline=True, mirror=False, xshift=0, yshift=0, corner=None, overlay=None, bgimg=None, clip=None, band=None, back_overlay=None):
+def render_screen(frame_rows, cols, rows, on="#2b2e31", bg="#c6c9cc", baseline=True, mirror=False, xshift=0, yshift=0, overlay=None, bgimg=None, clip=None, band=None, back_overlay=None):
     """Compose a sprite centred on a fixed cols x rows (character) LCD screen.
 
     Returns a rich Text. The screen is rows*2 pixels tall; the sprite is blitted
@@ -119,15 +119,6 @@ def render_screen(frame_rows, cols, rows, on="#2b2e31", bg="#c6c9cc", baseline=T
             for x, ch in enumerate(line):
                 if ch == "1":
                     py, pxx = oy + y, ox + x
-                    if by0 <= py < by1 and cx0 <= pxx < cx1:
-                        buf[py][pxx] = 1
-    if corner:                               # sun/moon tucked into the top-right
-        cw = max(len(r) for r in corner)
-        cxr = cols - cw - 1
-        for y, line in enumerate(corner):
-            for x, ch in enumerate(line):
-                if ch == "1":
-                    py, pxx = 1 + y, cxr + x
                     if by0 <= py < by1 and cx0 <= pxx < cx1:
                         buf[py][pxx] = 1
     if overlay:                              # effect pixels: emote bubbles / food / poop
