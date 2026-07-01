@@ -156,17 +156,20 @@ def _blit(bm, ox, oy):
 
 COND_W = COND_H = 7                                # state.png cell size (DVPet 7x7 cells)
 POOP_W = 8                                         # poop sprite width
-STATUS_LANE = 8                                    # right-edge lane reserved for the injury skull / call '!'
+STATUS_LANE = 8                                    # right-edge lane reserved for the injury skull
 # HARD RULE ([[feedback_tuipet_sprites_never_overlap]]): NOTHING overlaps the creature.
-# Poop gets a LEFT lane, the injury skull / care-call gets a RIGHT lane, and the creature
-# is bounded to the clear zone between them.  wayland (source of truth) renders no poop and
-# no Zzz sprite -- it shows SLEEP as the pose -- so there is no Zzz bubble at all.
+# Poop gets a LEFT lane, the injury skull gets a RIGHT lane, and the creature is bounded to
+# the clear zone between them.  wayland (source of truth) renders no poop and no Zzz sprite
+# -- it shows SLEEP as the pose -- so there is no Zzz bubble, and DM20's care alert is a beep,
+# not a floating '!'.
 
 
 def _status_active(pet):
-    """Is the right-lane status marker (injury skull, or the care-call '!') showing?"""
-    return bool(pet.is_injured() or (not pet.asleep and getattr(pet, "anim", "") in ("idle", "walk")
-                                     and (pet.hunger == 0 or pet.poop >= 3)))
+    """Is the right-lane status marker showing?  DM20's only floating marker is the injury
+    skull ("it will have a skull floating next to it").  A care need (hungry / needs cleaning)
+    is signalled by a beep + the shell's call icon on the real device, NOT a floating '!' over
+    the pet -- so it does not reserve a play-field lane."""
+    return bool(pet.is_injured())
 
 
 def _care_zones(pet):
@@ -188,16 +191,17 @@ def _care_zones(pet):
 
 def _effect_overlay(pet, frame_i, cols, px_h, tick=0):
     """Care overlays, laid out so NOTHING overlaps the creature (hard rule): droppings in
-    a bottom-LEFT lane, the injury skull / care-call '!' in a RIGHT lane, and the creature
-    bounded to the clear zone between them (see _care_zones).  No sleep Zzz -- wayland (the
-    source of truth) shows sleep as the POSE, no floating Z bubble."""
+    a bottom-LEFT lane, the injury skull in a RIGHT lane, and the creature bounded to the
+    clear zone between them (see _care_zones).  No sleep Zzz and no care-call '!' -- wayland
+    (the source of truth) shows sleep as the POSE, and DM20's care alert is a beep + the
+    shell call icon, not a floating bubble."""
     E = data.load_effects()
     front = []
     if pet.dead:
         return front
     band_top = max(0, px_h - 2 - 16)                      # 16-dot screen band, 2px floor (=6 on 24px canvas)
     band_bot = px_h - 2                                    # =22
-    _lb, _rb, poop_cols, status_active = _care_zones(pet)
+    _lb, _rb, poop_cols, _sa = _care_zones(pet)
     # --- droppings: a left lane, piles stacked (2 per column); the creature stays clear ---
     poopfr = E.get("poop") or []
     if pet.poop and poopfr and poop_cols:
@@ -212,12 +216,10 @@ def _effect_overlay(pet, frame_i, cols, px_h, tick=0):
                 n += 1
     if pet.num == -1:
         return front
-    # --- right lane: the injury skull, or (awake) the care-call '!' ---
+    # --- right lane: the injury skull (DM20's only floating-beside-the-pet marker) ---
     sx = PLAY_R - STATUS_LANE
     if pet.is_injured() and E.get("st_injury"):
         front += _blit(E["st_injury"][(tick // 7) % 2], sx, band_top)
-    elif status_active and E.get("attention"):
-        front += _blit(E["attention"][0], sx, band_top)
     return front
 
 
