@@ -159,6 +159,25 @@ def stage_time(stage):
     return _load()["timers"].get(stage)
 
 
+# Per-stage base Power fallback for the mons humulos lists no power for (chart-only /
+# dvpet-fallback), taken from the median of each stage's real humulos values.
+_STAGE_BASE_POWER = {"Baby I": 5, "Baby II": 8, "Child": 20, "Adult": 60,
+                     "Perfect": 130, "Ultimate": 190, "Super Ultimate": 238}
+
+
+def base_power(num):
+    """A species' base battle Power (from humulos); a per-stage default when the source
+    lists none.  Returns 0 for eggs / unknown nums (they never battle)."""
+    if num is None or num < 0:
+        return 0
+    r = get(num)
+    if not r:
+        return _STAGE_BASE_POWER["Child"]
+    if r.get("power") is not None:
+        return int(r["power"])
+    return _STAGE_BASE_POWER.get(r["stage"], _STAGE_BASE_POWER["Child"])
+
+
 def stage_rank(stage):
     try:
         return STAGE_RANK.index(stage)

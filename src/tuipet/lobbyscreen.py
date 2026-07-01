@@ -18,6 +18,8 @@ the WebSocket worker's lifecycle. Colours come from the live theme.
 """
 from __future__ import annotations
 
+import random
+
 from rich.text import Text
 
 from . import data
@@ -28,7 +30,6 @@ from .theme import INK, INK_B, DIM, SEL
 CHATW = 25
 ROSTW = 12
 BODY = 8
-ATTACK_KEYS = {"1": "Vaccine", "2": "Data", "3": "Virus"}
 
 
 def _fit(s, w):
@@ -136,9 +137,7 @@ class LobbyPanel:
         self.is_host = False
         self.battle = None
         self.opp_card = None
-        self.bphase = None            # "card" | "choose" | "wait" | "over"
-        self.bt_my_choice = None
-        self.bt_opp_choice = None
+        self.bphase = None            # "card" | "clash" | "over"
         self.my_hp = self.my_max = 0
         self.opp_hp = self.opp_max = 0
         self.bt_log = ""
@@ -240,7 +239,6 @@ class LobbyPanel:
         self.partner = self.partner_species = self.jresult = None
         self.jphase = self.fail_reason = None
         self.battle = self.opp_card = self.bphase = None
-        self.bt_my_choice = self.bt_opp_choice = None
         self.bt_log = self.bt_outcome = ""
         self.bt_reward = self.bt_payload = None
         self.is_host = False
@@ -275,87 +273,66 @@ class LobbyPanel:
             bt = payload.get("t")
             if bt == "card":
                 self._battle_begin(payload.get("card") or {})
-            elif bt == "choice" and self.is_host:
-                self.bt_opp_choice = payload.get("attr")
-                self._host_resolve()
             elif bt == "result" and not self.is_host:
                 self._apply_result(payload, as_host=False)
 
-    # ---- battle ----------------------------------------------------------
+    # ---- battle (host-authoritative auto-clash on the new DM20 engine) ----
     def _battle_begin(self, opp_card):
         self.opp_card = opp_card
-        if self.is_host:
-            self.battle = battle.Battle(self.pet, enemy=dict(opp_card))
-            self.my_max = self.my_hp = self.battle.pet_max
-            self.opp_max = self.opp_hp = self.battle.enemy_max
-        else:
-            self.my_max = self.my_hp = battle.MAX_HEALTH.get(self.pet.stage, battle.MAX_HEALTH_DEFAULT)
-            self.opp_max = self.opp_hp = max(2, opp_card.get("hp", 10))
-        self.bphase, self.bt_log = "choose", ""
-        self.sfx = "battle"                        # battle-start beep, like the offline battle screen
+        self.battle = battle.Battle(self.pet, enemy=dict(opp_card))   # both build it (HP + record)
+        self.my_max = self.my_hp = self.battle.pet_max
+        self.opp_max = self.opp_hp = self.battle.enemy_max
+        self.bphase, self.bt_log = "clash", "Power clash!"
+        self.sfx = "battle"                        # battle-start beep
+        if self.is_host:                           # the host has both cards -> resolve authoritatively
+            self._host_resolve()
 
     def _host_resolve(self):
-        if self.battle is None or not (self.bt_my_choice and self.bt_opp_choice):
+        if self.battle is None:
             return
         b = self.battle
-        b._forced_enemy_attr = self.bt_opp_choice
-        b.play_round(self.bt_my_choice)               # auto-records onto the host pet when it ends
-        res = {"kind": "battle", "t": "result",
-               "host_dealt": b.last_player_damage, "guest_dealt": b.last_enemy_damage,
-               "hhp": max(0, b.pet_hp), "ghp": max(0, b.enemy_hp),
-               "over": b.over, "host_alive": b.pet_hp > 0, "guest_alive": b.enemy_hp > 0}
+        seed = random.randrange(1_000_000)
+        first = random.random() < 0.5              # PvP attack order: a fair coin
+        b.resolve(player_first=first, rng=random.Random(seed))   # records onto the host pet
+        res = {"kind": "battle", "t": "result", "host_won": bool(b.won),
+               "hhp": b.pet_hp, "ghp": b.enemy_hp, "reward": getattr(b, "reward", None)}
         self.client.relay(self.partner[0], res)
         self._apply_result(res, as_host=True)
 
     def _apply_result(self, res, as_host):
         if as_host:
-            self.my_hp, self.opp_hp = res["hhp"], res["ghp"]
-            dealt, taken = res["host_dealt"], res["guest_dealt"]
-            my_alive, opp_alive = res["host_alive"], res["guest_alive"]
+            self.my_hp, self.opp_hp, my_won = res["hhp"], res["ghp"], res["host_won"]
         else:
-            self.my_hp, self.opp_hp = res["ghp"], res["hhp"]
-            dealt, taken = res["guest_dealt"], res["host_dealt"]
-            my_alive, opp_alive = res["guest_alive"], res["host_alive"]
-        self.bt_log = f"you hit {dealt} · took {taken}"
-        self.bt_my_choice = self.bt_opp_choice = None
-        if res.get("over"):
-            self.bphase = "over"
-            won = my_alive and not opp_alive
-            if not my_alive:                       # own HP gone (incl. double-KO) = loss (battleEnd)
-                self.bt_outcome = "YOU LOSE…"
-            elif not opp_alive:
-                self.bt_outcome = "★ YOU WIN! ★"
-            else:
-                self.bt_outcome = "DRAW"
-            self.sfx = "win" if won else "lose"    # outcome sound (was wrongly "attack")
-            if as_host:
-                self.bt_reward = getattr(self.battle, "reward", None)
-                self.bt_payload = ("battle_msg", self.bt_outcome)   # engine already recorded
-            else:
-                self.bt_reward = None
-                self.bt_payload = ("battle_record", won, self.opp_card)
+            self.my_hp, self.opp_hp, my_won = res["ghp"], res["hhp"], self.my_hp_won(res)
+        self.bphase = "over"
+        if self.my_hp <= 0 and self.opp_hp <= 0:
+            self.bt_outcome, won = "DRAW", False
+        elif my_won:
+            self.bt_outcome, won = "★ YOU WIN! ★", True
         else:
-            self.bphase = "choose"
-            self.sfx = "attack"                    # each exchange trades hits (parity with offline battle)
+            self.bt_outcome, won = "YOU LOSE…", False
+        self.bt_log = f"you {self.my_hp} · foe {self.opp_hp}"
+        self.sfx = "win" if won else "lose"
+        if as_host:
+            self.bt_reward = getattr(self.battle, "reward", None)   # engine already recorded
+            self.bt_payload = ("battle_msg", self.bt_outcome)
+        else:
+            self.bt_reward = None
+            self.bt_payload = ("battle_record", won, self.opp_card)  # guest records its own result
+
+    @staticmethod
+    def my_hp_won(res):
+        """The guest wins iff its pet (the host's enemy, ghp) survived and the host didn't."""
+        return res["ghp"] > 0 and res["hhp"] <= 0
 
     def _key_battle(self, k):
         if self.bphase == "over":
             if k in ("enter", "space", "escape"):
                 if self.bt_payload and self.bt_payload[0] == "battle_record":
-                    self.pet.record_battle(self.bt_payload[1], self.bt_payload[2])  # guest records its own result
-                self._return_to_lobby(self.bt_outcome)   # host already recorded via the engine
+                    self.pet.record_battle(self.bt_payload[1], self.bt_payload[2])
+                self._return_to_lobby(self.bt_outcome)
             return None
-        if self.bphase == "choose":
-            if k in ATTACK_KEYS:
-                self.bt_my_choice = ATTACK_KEYS[k]
-                self.client.relay(self.partner[0], {"kind": "battle", "t": "choice", "attr": ATTACK_KEYS[k]})
-                self.bphase = "wait"
-                if self.is_host:
-                    self._host_resolve()
-            elif k == "escape":
-                self._forfeit()
-            return None
-        if self.bphase in ("card", "wait") and k == "escape":
+        if self.bphase in ("card", "clash") and k == "escape":
             self._forfeit()
         return None
 
@@ -497,10 +474,7 @@ class LobbyPanel:
         t.append(f"  {_fit(me, 10)}{self.my_hp:>3}/{self.my_max:<2} [{_hpbar(self.my_hp, self.my_max)}]\n", style=INK_B)
         t.append(f"  {_fit(pname, 10)}{self.opp_hp:>3}/{self.opp_max:<2} [{_hpbar(self.opp_hp, self.opp_max)}]\n\n", style=INK)
         t.append(f"  {self.bt_log}\n\n" if self.bt_log else "\n\n", style=INK)
-        if self.bphase == "wait":
-            t.append("  waiting for opponent…", style=DIM)
-        else:
-            t.append("  attack:  [1] Vaccine  [2] Data  [3] Virus", style=INK_B)
+        t.append("  clashing…  [ESC] forfeit", style=DIM)   # host-authoritative auto-clash
         return t
 
     def _text_lobby(self):

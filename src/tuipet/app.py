@@ -929,9 +929,21 @@ class TuiPetApp(App):
         if m.done_anim:
             res = f"[{T.POS}]VICTORY![/]" if m.won else f"[{T.NEG}]DEFEAT[/]"
             lines += [res, f"[dim]{(b.reward or '')[:24]}[/]", "", "[dim]SPACE  continue[/]"]
+        elif getattr(m, "phase", "") == "minigame":
+            # attack-order minigame: a marker sweeps a track; land it in the zone to strike first
+            pos, lo, hi = m.minigame_cells(14)
+            cells = []
+            for i in range(14):
+                if i == pos:
+                    cells.append(f"[{T.HEART}]◆[/]")
+                elif lo <= i <= hi:
+                    cells.append(f"[{T.POS}]▬[/]")
+                else:
+                    cells.append("[dim]─[/]")
+            lines += ["[b]Attack order[/]", "", "".join(cells), "",
+                      "[dim]SPACE strike  ESC flee[/]"]
         else:
-            hint = "↑↓ ENTER pick" if getattr(m, "phase", "") == "menu" else "SPACE  skip"
-            lines += [f"[dim]{(m.hud_note or '')[:24]}[/]", "", f"[dim]{hint}[/]"]
+            lines += [f"[dim]{(m.hud_note or '')[:24]}[/]", "", "[dim]SPACE  skip[/]"]
         self.stats_w.update("\n".join(lines))
 
     def _status_eat(self):

@@ -406,9 +406,15 @@ class Pet:
         return max(0, self.dp) * 100 // self.dp_max if self.dp_max else 0
 
     @property
-    def power(self):
-        """DM20 Power: the pet's total attribute power (vaccine+data+virus), from training."""
+    def train_bonus(self):
+        """Attribute-training bonus accumulated this life (vaccine+data+virus drills)."""
         return self.vaccine + self.data_power + self.virus
+
+    @property
+    def power(self):
+        """DM20 Power = the species' base power (canon, humulos) + training bonuses.  This
+        is the number battle compares -- so it's on the same scale as the roster's foes."""
+        return sp.base_power(self.num) + self.train_bonus
 
     def _do_poop(self):
         """PhysicalState.poop: weight shed and a new pile added to the filth (capped).
@@ -529,11 +535,14 @@ class Pet:
         return None
 
     def record_battle(self, won, enemy=None):
-        """Resolve a finished battle: update battles/wins and rewards."""
+        """Resolve a finished battle: update battles/wins and rewards.  DM20 manual: you
+        may get injured whether you win OR lose (losing more often)."""
         self.battles += 1
         self._set_dp(self.dp - BATTLE_DP_COST)           # DM20: battling spends DP stamina
         if won:
             self.wins += 1
+            if random.random() < 0.1:                    # "also a chance you may get injured"
+                self._injure()
             self._set_anim("happy", 2.0)                  # reactive cheer (no mood meter)
             return "Victory!"
         if random.random() < 0.3:
