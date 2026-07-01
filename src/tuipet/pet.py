@@ -6,7 +6,6 @@ from . import data
 from . import egg as egg_mod
 from . import evolution
 from . import species as sp
-from . import theme
 
 
 def _clamp(v, lo, hi):
@@ -20,7 +19,6 @@ def _enemy_level(enemy):
     vir = enemy.get("virus", 0)
     h = enemy.get("hp", 5)
     return max(1, int((v + d + vir + (h - 5) * 10) / 100))
-
 
 
 # Lifespan (seconds), scaled from DVPet's real-time model. A pet lives this long
@@ -88,12 +86,6 @@ SURR_REJECT_OBED_INC = 1                # SurrenderRejectObedienceInc
 SURR_ENTH_DEC = 3                       # SurrenderEnthusiasmDec
 
 
-def dna_field_for_rate(rate):
-    """DVPet getDNARate: the Field a mini-game rate yields (None if over/under-mashed)."""
-    for hi, field in DNA_RATE_BANDS:
-        if rate <= hi:
-            return field
-    return "None"
 # --- food taste (DVPet Taste<Food> + Rank + config.csv) ---
 RANK_LIMIT, RANK_MIN = 200, -200       # config RankLimit / RankMinimum
 RANK_CHANGE_FOOD = 1                    # config RankChangeFood (per meal)
@@ -770,13 +762,6 @@ class Pet:
         return (r.get("food_pref", "None"), r.get("food_aversion", "None"),
                 r.get("food_intol", []))
 
-    def major_food(self):
-        """PhysicalState.getMajorFood: the strictly most-eaten category, else None."""
-        best = max(self.food_eaten.values(), default=0)
-        if best <= 0:
-            return None
-        top = [c for c in data.FOOD_CATEGORIES if self.food_eaten.get(c, 0) == best]
-        return top[0] if len(top) == 1 else None
 
     def _change_rank(self, cat):
         """Taste.changeRank: bump the eaten category's rank (+/- species pref bias); eating
@@ -1189,11 +1174,6 @@ class Pet:
         if surrender_val == 2 and health < enemy_health:
             self.obedience = SURR_EFFECT_REQ_LOWHP_OBED          # setObedience(15), verbatim (a SET, not +=)
 
-    def surrender_reject(self):
-        """ClockTic: the trainer refuses the pet's surrender request (surrender==2) and
-        sends it back in — it sulks but obeys a touch more."""
-        self._set_mood(self.mood - SURR_REJECT_MOOD_DEC)
-        self.obedience += SURR_REJECT_OBED_INC
 
     # ---- discipline: praise / scold (PhysicalState) --------------------------
     def _open_praise(self):
@@ -1249,17 +1229,6 @@ class Pet:
         self._set_mood(self.mood - SICK_MOOD_DEC)
         self._set_enthusiasm(self.enthusiasm + SICK_ENTH_CHANGE)
 
-    def _worsen_sick(self):
-        """PhysicalState.checkWorseSick (effect body): an already-sick pet gets worse --
-        the illness drags on one lapse longer, with mood/obedience/spirit costs and a
-        fresh mess. (The WorseSickLifeDec lifespan hit is omitted, as in _worsen_injury.)"""
-        self.obedience += WORSE_MALADY_OBED_DEC
-        self._set_mood(self.mood + WORSE_MALADY_MOOD_DEC)
-        self._set_enthusiasm(self.enthusiasm + SICK_ENTH_CHANGE)  # WorseSickEnthusiasmChange == -1
-        self.sick_length += SICK_LAPSE_MIN                        # setSickLength(_sickLength + 1) = +1 lapse
-        if self.poop < POOP_MAX_PILES:                           # checkWorseSick -> startPoop()
-            self.poop += 1
-            self.poop_sizes.append(self._poop_size())
 
     def _injure(self):
         """PhysicalState.injure: take an injury for MinInjLength..MaxInjLength recovery

@@ -27,24 +27,6 @@ def idle_hold(restless):
     return 5 if restless > 0 else (7 if restless < 0 else 6)
 
 
-def sleep_pose(frame):
-    """idleSleep pose index into ROLES['sleep'] ([2,3]): 0 for [0,10), 1 for [10,20)."""
-    return 0 if (frame % (2 * SLEEP_BEAT)) < SLEEP_BEAT else 1
-
-
-def sleep_zzz_level(frame, levels):
-    """Graduated Zzz meter: idleSleep swaps between two indicator sprites on the
-    same 10-interval beat as the body pose. With more than two extracted frames
-    we ramp through them so the Zzz grows/shrinks instead of a 2-frame blink."""
-    if levels <= 1:
-        return 0
-    half = 2 * SLEEP_BEAT
-    phase = (frame % half) / half          # 0..1 across one full sleep cycle
-    # rise to the top of the stack at mid-cycle, fall back -> a breathing Zzz
-    tri = 1.0 - abs(phase * 2.0 - 1.0)
-    return min(levels - 1, int(round(tri * (levels - 1))))
-
-
 def sick_frame(frame):
     """idleUnwell: returns (sprite_index, dx_px).  Collapse pose (10) dominates the
     50-interval cycle; the weary pose (9) only flashes on the reset beat.  DVPet's
@@ -97,12 +79,6 @@ class Roamer:
         self.sw = sprite_w
         self.face = face          # +1 moving/looking right, -1 left
         self.pose = 0             # index into the two walk frames [0, 1]
-        self._t = 0
-
-    def reset_to(self, x, face=None):
-        self.x = float(x)
-        if face is not None:
-            self.face = face
         self._t = 0
 
     def step(self, left_bound=0, right_bound=None):

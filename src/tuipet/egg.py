@@ -7,7 +7,6 @@ xshift at render time, not baked into extra frames. No drawn art.
 """
 from __future__ import annotations
 import gzip
-import random
 import json
 import os
 from functools import lru_cache
@@ -65,12 +64,6 @@ def hatch_target(egg_type=0):
     """The Baby I species num this egg hatches into (authentic DM20 roster)."""
     babies = _babies()
     return babies[egg_type % len(babies)]["num"] if babies else None
-
-
-def hatch_targets(egg_type=0):
-    """All species nums this egg can hatch into (one Baby I per egg here)."""
-    t = hatch_target(egg_type)
-    return [t] if t is not None else []
 
 
 def hatch_name(egg_type=0):
@@ -207,18 +200,6 @@ def hatchable_eggs(prog, owned):
     """Eggs ready to hatch right now (owned + temp) -- what the egg select shows."""
     st = egg_states(prog, owned)
     return sorted(i for i, (s, _) in st.items() if s in ("owned", "temp"))
-
-
-def buyable_eggs(prog, owned):
-    """(idx, price) for eggs whose condition is met but that cost bits -- the egg shop."""
-    st = egg_states(prog, owned)
-    return [(i, p) for i, (s, p) in sorted(st.items()) if s == "buyable"]
-
-
-def shop_egg_entry(idx, price):
-    """A shop-row dict for a buyable egg (compatible with shopscreen rendering)."""
-    return {"key": "egg:%d" % idx, "name": hatch_name(idx), "price": int(price),
-            "egg_idx": idx}
 
 
 def locked_hint(prog, owned):
