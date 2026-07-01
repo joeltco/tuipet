@@ -109,7 +109,9 @@ def _attr_badge(attribute):
 
 
 _FX = data.load_effects()
-GRAVESTONE = _FX.get("grave", [None])[0]      # generated tombstone (tools/gen_art.py)
+GRAVESTONE = _FX.get("grave", [None])[0]      # real DVPet death.png
+SUN = _FX.get("sun", [None])[0]               # real DVPet noon.png
+MOON = _FX.get("moon", [None])[0]             # real DVPet night.png
 
 _POOP_FR = (_FX.get("poop") or [None])[0]
 POOP_W = len(_POOP_FR[0]) if _POOP_FR else 5
@@ -159,9 +161,9 @@ COND_W = COND_H = 7                                # state.png cell size (DVPet 
 PLAY_HOP = 12                                      # DVPet jumping(): ticks per up+down hop
 PLAY_HOP_H = 6                                     # apex height in px (LCD is 24px tall)
 COND_PITCH = COND_H + 1
-# Status sprite disabled for now (Joel): the post-cure medicine badge.
-# Cosmetic-only; remove from this set to re-enable.
-_HIDDEN_STATUS_ICONS = {"st_medicine"}
+# Status sprites disabled for now (Joel): the post-cure medicine badge and the
+# misbehave/discipline "light bulb". Cosmetic-only; remove from this set to re-enable.
+_HIDDEN_STATUS_ICONS = {"st_medicine", "st_teach"}
 # DVPet draws the condition icons as a fixed VERTICAL COLUMN down the right edge of
 # the LCD (setLocX ~120), one fixed row each, every active one shown AT ONCE -- not a
 # single cycling slot.  Vertical order is DVPet's setLocY (top->bottom): sick(55),
