@@ -37,130 +37,6 @@ def save_settings(d, path=None):
     os.replace(tmp, path)
 
 
-def get_album():
-    """Set of distinct Digimon species nums ever raised (the DM20-style zukan)."""
-    return set(load_settings().get("progress", {}).get("album", []))
-
-
-def get_wins():
-    """Lifetime battle wins across all pets/generations."""
-    return int(load_settings().get("progress", {}).get("wins", 0))
-
-
-def album_add(num):
-    if num is None or num < 0:
-        return
-    d = load_settings()
-    prog = d.setdefault("progress", {})
-    album = set(prog.get("album", []))
-    if num in album:
-        return                       # already registered -> no write
-    album.add(num)
-    prog["album"] = sorted(album)
-    save_settings(d)
-
-
-def wins_add(n=1):
-    d = load_settings()
-    prog = d.setdefault("progress", {})
-    prog["wins"] = int(prog.get("wins", 0)) + int(n)
-    save_settings(d)
-
-
-# --- cross-generation egg-unlock progress (DVPet eggUnlock.csv signals) -----------
-# These outlive any single pet and feed egg.evaluate(): permanent milestones (album,
-# wins, max generation/stage, maps cleared) plus
-# a snapshot of the pet that just freed the slot, for the "previous generation" gates.
-
-def _prog():
-    return load_settings().get("progress", {})
-
-
-def get_eggs_owned():
-    """Egg indices permanently licensed (bought, or a met price-0 permanent unlock)."""
-    return set(_prog().get("eggs_owned", []))
-
-
-def egg_own(idx):
-    if idx is None:
-        return
-    d = load_settings()
-    prog = d.setdefault("progress", {})
-    owned = set(prog.get("eggs_owned", []))
-    if idx in owned:
-        return
-    owned.add(idx)
-    prog["eggs_owned"] = sorted(owned)
-    save_settings(d)
-
-
-def _note_max(key, value):
-    d = load_settings()
-    prog = d.setdefault("progress", {})
-    if int(value) > int(prog.get(key, 0)):
-        prog[key] = int(value)
-        save_settings(d)
-
-
-def note_generation(g):
-    _note_max("max_gen", g)
-
-
-def note_stage_index(i):
-    _note_max("max_stage", i)
-
-
-
-
-def _note_set(key, value):
-    d = load_settings()
-    prog = d.setdefault("progress", {})
-    cur = set(prog.get(key, []))
-    if value in cur:
-        return
-    cur.add(value)
-    prog[key] = sorted(cur)
-    save_settings(d)
-
-
-def map_complete_add(map_index):
-    _note_set("maps", int(map_index))
-
-
-def snapshot_prev_gen(pet):
-    """Record the just-ended pet's traits for the 'previous generation' egg gates."""
-    if pet is None or getattr(pet, "stage", "Egg") == "Egg":
-        return
-    d = load_settings()
-    prog = d.setdefault("progress", {})
-    prog["last_gen"] = {
-        "field": getattr(pet, "field", "") or "None",
-        "attribute": getattr(pet, "attribute", "") or "None",
-        "element": getattr(pet, "element", "") or "None",
-        "mood": int(getattr(pet, "mood", 0)),
-        "obedience": int(getattr(pet, "obedience", 0)),
-    }
-    save_settings(d)
-
-
-def get_progress():
-    """Assemble the full progress view egg.evaluate() consumes."""
-    prog = _prog()
-    last = prog.get("last_gen", {}) or {}
-    return {
-        "album": set(prog.get("album", [])),
-        "wins": int(prog.get("wins", 0)),
-        "max_gen": int(prog.get("max_gen", 1)),
-        "max_stage": int(prog.get("max_stage", 0)),
-        "maps": set(prog.get("maps", [])),
-        "last_field": last.get("field", "None"),
-        "last_attr": last.get("attribute", "None"),
-        "last_elem": last.get("element", "None"),
-        "last_mood": int(last.get("mood", 0)),
-        "last_obed": int(last.get("obedience", 0)),
-    }
-
-
 def get_tamer():
     return (load_settings().get("tamer") or "").strip()
 
@@ -202,8 +78,6 @@ def save(pet, path=None):
     with open(tmp, "w") as fh:
         json.dump(data, fh)
     os.replace(tmp, path)  # atomic
-    if getattr(pet, "num", -1) >= 0 and pet.stage != "Egg":
-        album_add(pet.num)            # grow the cross-pet album (gates egg unlocks)
 
 
 def write_save_dict(data, path=None):

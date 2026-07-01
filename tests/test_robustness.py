@@ -17,15 +17,9 @@ from tuipet.pet import Pet
 # ---- brand-new empty account (gen 1, no previous-generation snapshot) ------
 
 def test_empty_account_egg_flow():
-    prog = persistence.get_progress()           # nothing saved yet
-    assert prog["max_gen"] == 1
-    assert prog["last_field"] == "None"         # no prev-gen snapshot -> safe defaults
-    states = egg.egg_states(prog, set())
-    assert states                               # no crash, full map
-    sel = egg.selectable_eggs(prog, set())
-    assert sel, "a fresh account must still have its starter eggs selectable"
-    assert egg.locked_hint(prog, set()) is not None
-    assert egg.auto_owned(prog, set()) is not None
+    # DM20: every version's starter is freely pickable — no unlock/progress gating.
+    assert egg.count() >= 5, "a fresh account must have its starter eggs available"
+    assert egg.hatch_name(0) is not None
 
 
 
@@ -95,4 +89,4 @@ def test_offline_huge_elapsed_stays_bounded():
 def test_egg_helpers_out_of_range():
     assert egg.frames(10 ** 6)                       # modulo-wrapped, returns frames
     assert egg.hatch_name(10 ** 6) is not None
-    assert egg.password_egg(None) is None
+    assert egg.hatch_target(10 ** 6) is not None
