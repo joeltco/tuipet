@@ -115,10 +115,6 @@ def _attr_badge(attribute):
 
 _FX = data.load_effects()
 GRAVESTONE = _FX.get("grave", [None])[0]      # real DVPet death.png
-SUN = _FX.get("sun", [None])[0]               # real DVPet noon.png
-MOON = _FX.get("moon", [None])[0]             # real DVPet night.png
-
-_FROZEN_FR = (_FX.get("frozen") or [None])[0]
 
 def _sky_icon(pet):
     """A sun by day, a moon by night, for the status line. Returns (glyph, colour)."""
@@ -160,12 +156,9 @@ def _blit(bm, ox, oy):
 
 COND_W = COND_H = 7                                # state.png cell size (DVPet 7x7 cells)
 COND_PITCH = COND_H + 1
-# Status sprites disabled for now (Joel): the post-cure medicine badge and the
-# misbehave/discipline "light bulb". Cosmetic-only; remove from this set to re-enable.
-_HIDDEN_STATUS_ICONS = {"st_medicine", "st_teach"}
-# Condition icons draw as a fixed VERTICAL COLUMN down the right edge of the LCD, one
-# fixed row each, every active one shown AT ONCE.  DM20 conditions only: sick, medicine,
-# injury, bandage.  (vitamin/fatigue were DVPet -- stripped with those mechanics.)
+# Condition markers float beside the creature, stacked, every active one at once.  DM20
+# conditions only: sickness + injury.  (medicine/bandage recovery indicators, vitamin,
+# and fatigue were all DVPet -- stripped with those mechanics.)
 
 
 def _effect_overlay(pet, frame_i, cols, px_h, tick=0, pet_right=None):
@@ -209,12 +202,11 @@ def _effect_overlay(pet, frame_i, cols, px_h, tick=0, pet_right=None):
     # DVPet stateNumTic blink: 7 ticks awake / 10 asleep, faster (7) when unwell.
     unwell = pet.sick or pet.is_injured()
     sf = (tick // (7 if unwell else (10 if asleep else 7))) % 2
-    column = (("st_sick", pet.sick), ("st_medicine", pet.has_medicine()),
-              ("st_injury", pet.is_injured()), ("st_bandage", pet.has_bandage()))
+    column = (("st_sick", pet.sick), ("st_injury", pet.is_injured()))
     k = 0
     cond_active = False
     for key, active in column:
-        if not active or not E.get(key) or key in _HIDDEN_STATUS_ICONS:
+        if not active or not E.get(key):
             continue
         cond_active = True
         y = band_top + k * COND_PITCH
@@ -252,7 +244,6 @@ class Screen(Static):
         phase = pet.day_phase
         on, bg = PHASE_PALETTE.get(phase, (LCD_ON, LCD_BG))
         bgimg = self._background(pet)
-        corner = None                      # DVPet shows time via bg frame + palette, no corner icon
         if not pet.lights:                 # lights off (the 's' lights button): dark room (+ Zzz if asleep)
             bgimg, bg, on = None, "#000000", SIL_NIGHT   # DVPet lightsOff.png is pure (0,0,0)
         elif bgimg:
@@ -262,7 +253,7 @@ class Screen(Static):
         overlay, back = _effect_overlay(pet, wf, SCREEN_COLS, SCREEN_ROWS * 2, tick=self.frame_i)
         if pet.dead:                           # a grave marker
             self.update(render_screen(GRAVESTONE, SCREEN_COLS, SCREEN_ROWS, on, bg,
-                                      corner=corner, overlay=overlay, bgimg=bgimg, band=PLAY_BAND))
+                                      overlay=overlay, bgimg=bgimg, band=PLAY_BAND))
             return
         if pet.num == -1:                      # egg
             rec = egg_mod.record(pet.egg_type)
@@ -318,7 +309,7 @@ class Screen(Static):
         if not pet.lights:                 # lights off: DVPet's lightsOff is a fully-opaque black
             rows, xshift, mirror = [], 0, False   # cover -> the pet is hidden; only black (+ Zzz) shows
         self.update(render_screen(rows, SCREEN_COLS, SCREEN_ROWS, on, bg,
-                                  mirror=mirror, xshift=xshift, corner=corner, overlay=overlay,
+                                  mirror=mirror, xshift=xshift, overlay=overlay,
                                   bgimg=bgimg, band=PLAY_BAND, back_overlay=back))
 
     def _background(self, pet):

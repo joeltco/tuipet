@@ -31,11 +31,10 @@ GERIATRIC_REMAIN = 21600.0   # last N seconds of life = elderly
 # (PROTEIN_DP_RESTORE / BATTLE_DP_COST / SLEEP_DP_GAIN live in the DP block below.)
 
 # DVPet poop / filth (config.csv, PhysicalState.poop).  A bowel movement sheds a little
-# weight and drops a pile of a size set by the Digimon's base weight (capped).
+# weight and drops a pile (uniform -- the DVPet per-pile size bytes aren't rendered on a
+# 16-dot screen, so they were stripped).
 POOP_WEIGHT_DEC_COEF = 0.1             # PoopWeightDecCoefficient
 POOP_WEIGHT_LIMIT = 4                   # PoopWeightLimit (max weight lost per poop)
-POOP_INC_WEIGHT_FACTOR = 40            # PoopIncWeightFactor -> size 3 at/above
-POOP_INC_WEIGHT_FACTOR_SMALL = 15      # PoopIncWeightFactorSmall -> size 1 at/below
 POOP_MAX_PILES = 4                      # classic Digimon V-Pet max poops (DVPet's _filth[] is 6; Joel set 4 to match the real toy)
 
 # DM20 hunger: whole hearts only (manual -- "hunger depletes in whole hearts only").  The
@@ -63,8 +62,8 @@ MIN_SICK_LENGTH, MAX_SICK_LENGTH = 1, 10     # Min/MaxSickLength (recovery lapse
 MIN_INJ_LENGTH, MAX_INJ_LENGTH = 1, 12       # Min/MaxInjLength
 SICK_LAPSE_MIN = 29                      # SickLapseMin (game-min per recovery lapse)
 INJ_LAPSE_MIN = 29                       # InjLapseMin
-MEDICINE_HOURS = 60                      # MedicineHours (game-min the medicine indicator lingers, config.csv)
-BANDAGE_HOURS = 60                       # BandageHours (game-min the bandage indicator lingers, config.csv)
+# (No lingering medicine/bandage indicator: DM20 healing removes the condition outright --
+# manual "no recovery-phase visual feedback or bandage icon persists".)
 
 # DM20 DP (battle stamina): restored by protein feeding + sleeping >=3h; consumed by battle.
 PROTEIN_DP_RESTORE = 6                   # DP a protein feed restores (also +1 strength)
@@ -101,7 +100,6 @@ class Pet:
     dp_max: int = 24                # per-Digimon DP capacity
     weight: int = 20
     poop: int = 0                   # pile count == DVPet countFilth()
-    poop_sizes: list = _dcf(default_factory=list)   # per-pile size 1..4 (DVPet _filth bytes)
     sick: bool = False
     asleep: bool = False
     lights: bool = True             # DVPet _lights: room-light toggle, SEPARATE from sleep
@@ -114,13 +112,10 @@ class Pet:
     virus: int = 0
     # care-quality counters that drive DM20 evolution
     overeat: int = 0
-    sick_count: int = 0
     injuries: int = 0
     exercise_today: int = 0         # DM20 _exercise: drills done today (resets daily)
     sick_length: float = 0.0        # DVPet _sickLength (game-min until natural recovery)
     inj_length: float = 0.0         # DVPet _injLength (game-min until the injury heals)
-    med_lapse: float = 0.0          # DVPet _medLapse: medicine indicator after curing sickness (getMed)
-    bandage_lapse: float = 0.0      # DVPet _bandageLapse: bandage indicator after mending an injury (getBandage)
     battles: int = 0
     egg_type: int = 0
     lifespan: float = LIFE_START
@@ -228,10 +223,6 @@ class Pet:
                     self.sick = False
             if self.inj_length > 0:                           # injLapse: the injury heals over time
                 self.inj_length = max(0.0, self.inj_length - _rec)
-            if self.med_lapse > 0:                            # medLapse: medicine wears off (getMed icon)
-                self.med_lapse = max(0.0, self.med_lapse - dt)
-            if self.bandage_lapse > 0:                        # bandageLapse: bandage wears off (getBandage icon)
-                self.bandage_lapse = max(0.0, self.bandage_lapse - dt)
         if self.asleep:
             # DM20: sleeping >=3h restores DP (stamina); recover it gradually while asleep.
             self._sleep_dp_t = getattr(self, "_sleep_dp_t", 0.0) + dt
@@ -391,7 +382,7 @@ class Pet:
         self.stage_seconds = 0.0
         # per-stage care record resets; the next stage's care decides the next form
         self.care_mistakes = self.overeat = self.trainings = 0
-        self.injuries = self.sick_count = 0
+        self.injuries = 0
         self.sick = False
         self.sick_length = self.inj_length = 0.0
         self.weight = self._base_weight()
@@ -432,24 +423,13 @@ class Pet:
         """DM20 Power: the pet's total attribute power (vaccine+data+virus), from training."""
         return self.vaccine + self.data_power + self.virus
 
-    def _poop_size(self):
-        """DVPet poop(): pile size from base weight (heavier mons drop bigger)."""
-        bw = self._base_weight()
-        if bw >= POOP_INC_WEIGHT_FACTOR:
-            return 3
-        if bw <= POOP_INC_WEIGHT_FACTOR_SMALL:
-            return 1
-        return 2
-
     def _do_poop(self):
-        """PhysicalState.poop: weight shed and a new sized pile added to the filth
-        (capped at the _filth array length).  The bmGauge timer that schedules this is
-        replaced by tuipet's poop interval."""
+        """PhysicalState.poop: weight shed and a new pile added to the filth (capped).
+        The bmGauge timer that schedules this is replaced by tuipet's poop interval."""
         wdec = min(int(self._base_weight() * POOP_WEIGHT_DEC_COEF), POOP_WEIGHT_LIMIT)
         self.weight = max(1, self.weight - wdec)
         if self.poop < POOP_MAX_PILES:                            # addFilth: first free slot (capped)
             self.poop += 1                                        # poop == countFilth()
-            self.poop_sizes.append(self._poop_size())
 
     def _disturbed(self):
         """It's asleep — the DM20 Ver.20th no longer penalises waking, so this is just
@@ -584,23 +564,14 @@ class Pet:
         if self.sick:
             return
         self.sick = True
-        self.sick_count += 1
         self.sick_length = random.randint(MIN_SICK_LENGTH, MAX_SICK_LENGTH) * SICK_LAPSE_MIN
 
     def _injure(self):
         """PhysicalState.injure: take an injury for MinInjLength..MaxInjLength recovery
-        lapses; the cumulative injury count (used by evolution) also ticks up."""
+        lapses; the cumulative injury count (drives the neglect-death trigger) ticks up."""
         self.injuries += 1
         rolled = random.randint(MIN_INJ_LENGTH, MAX_INJ_LENGTH) * INJ_LAPSE_MIN
         self.inj_length = max(self.inj_length, rolled)
-
-    def has_medicine(self):
-        """PhysicalState.getMed: medicine is still active (the medicine state icon shows)."""
-        return self.med_lapse > 0
-
-    def has_bandage(self):
-        """PhysicalState.getBandage: a bandage is still on (the bandage state icon shows)."""
-        return self.bandage_lapse > 0
 
     def clean(self):
         if self.dead:
@@ -611,8 +582,7 @@ class Pet:
             return self._disturbed()
         if not self.poop:
             return "Nothing to clean."
-        n, self.poop = self.poop, 0
-        self.poop_sizes = []                        # clearFilth()
+        n, self.poop = self.poop, 0                 # clearFilth()
         self._set_anim("wash", 1.2)
         return f"Cleaned {n} poop."
 
@@ -628,11 +598,9 @@ class Pet:
         sick0, inj0 = self.sick, self.is_injured()
         if self.sick:
             self.sick = False
-            self.sick_length = 0.0                  # medicine cures the illness outright
-            self.med_lapse = MEDICINE_HOURS         # DVPet feedMed: medicine indicator runs as it wears off
+            self.sick_length = 0.0                  # medicine cures the illness outright (DM20: instant)
         if self.is_injured():
-            self.inj_length = 0.0                   # first aid mends the active injury (DVPet bath/recovery)
-            self.bandage_lapse = BANDAGE_HOURS      # DVPet applyBandage: the bandage shows during recovery
+            self.inj_length = 0.0                   # first aid mends the active injury (DM20: instant)
         self._set_anim("heal", 1.5)
         what = "illness and injury" if (sick0 and inj0) else ("injury" if inj0 else "illness")
         return f"Treated {self.name}'s {what}."

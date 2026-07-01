@@ -8,9 +8,7 @@ from tuipet import data
 
 def test_curated_effect_sprites_are_present():
     e = data.load_effects()
-    curated = ("poop", "unhappy", "dying",
-               "st_sick", "st_bandage",
-               "st_injury", "st_medicine", "st_teach")
+    curated = ("poop", "unhappy", "dying", "st_sick", "st_injury")
     missing = [k for k in curated if not e.get(k)]
     assert not missing, f"curated effect sprites missing (clobbered?): {missing}"
 
