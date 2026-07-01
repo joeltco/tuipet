@@ -45,6 +45,11 @@ PLAY_COLS = 32
 PLAY_X0 = (SCREEN_COLS - PLAY_COLS) // 2        # 4: left edge of the centred play window
 PLAY_R = PLAY_X0 + PLAY_COLS                     # 36: right edge of the play window (HUD icons stay inside)
 PLAY_RIGHT = PLAY_X0 + PLAY_COLS - SPRITE_W     # 20: rightmost sprite-x that fits in the window
+# The authentic DM20 dot-matrix is 16 dots tall. The LCD canvas is taller (24px) so a
+# background can show in the margins, but every game pixel lives inside this 16-dot band:
+BAND_BOT = SCREEN_ROWS * 2 - 2                   # 22: floor, 2px above the border
+BAND_TOP = BAND_BOT - 16                         # 6:  ceiling (16-dot screen)
+PLAY_BAND = (BAND_TOP, BAND_BOT)
 
 import re as _re
 # navigation keys: pressing one in a sub-screen plays the scroll blip (unless the
@@ -170,38 +175,41 @@ _HIDDEN_STATUS_ICONS = {"st_medicine", "st_teach"}
 
 
 def _effect_overlay(pet, frame_i, cols, px_h, tick=0, pet_right=None):
-    """Status sprites overlaid on the LCD, laid out like the DM20 hardware: poop
-    bottom-left, the sleep Zzz top-right, a fixed condition column down the right
-    edge (all active conditions at once), and a creature-tracking emote/'!'/teach
-    bubble -- each in its own zone so nothing overlaps."""
+    """Status sprites overlaid on the LCD, laid out like the real DM20 dot-matrix and
+    kept strictly inside the 16-dot screen band: droppings along the floor, the sleep
+    Zzz floating above the Digimon's head, the sickness/injury marker beside it, and a
+    care-call bubble over its head (DM20 manual). Nothing sits in the LCD margin."""
     E = data.load_effects()
     pts = []
     if pet.dead:
         return pts
+    band_top = max(0, px_h - 2 - 16)                      # 16-dot screen band, 2px floor (=6 on 24px canvas)
+    band_bot = px_h - 2                                    # =22
     poopfr = E.get("poop") or []
-    if pet.poop and poopfr:                               # piles stack in a 2-wide grid (DVPet filth)
+    if pet.poop and poopfr:                               # piles stack in a 2-wide grid along the floor
         pm = poopfr[(tick // (10 if pet.asleep else 7)) % len(poopfr)]   # DVPet animFilth swap
         pw, ph_ = len(pm[0]), len(pm)
-        for i in range(min(pet.poop, POOP_MAX_PILES)):                  # DVPet drawFilthLevel: 3 columns x 2 rows,
-            col, up = i // 2, i % 2                         # column-major (bottom pile, then one stacked
-            x = PLAY_X0 + col * (pw + POOP_PAD)             # directly above it), each column steps right (in-window)
-            y = (px_h - 2 - ph_) - up * ph_
+        for i in range(min(pet.poop, POOP_MAX_PILES)):                  # column-major (bottom pile, then one
+            col, up = i // 2, i % 2                         # stacked directly above it), each column steps right
+            x = PLAY_X0 + col * (pw + POOP_PAD)
+            y = (band_bot - ph_) - up * ph_
             pts += _blit(pm, x, y)
     if pet.num == -1:
         return pts
     asleep = bool(getattr(pet, "asleep", False))
-    # --- sleep Zzz: fixed TOP-RIGHT corner (DVPet sleepLabel: width - w - 8, y1) ---
-    zz_h = 0
+    # pet centre-x (its head), so head-tracked elements sit over the Digimon, not a fixed corner
+    head_cx = (pet_right - SPRITE_W // 2) if pet_right is not None else (PLAY_X0 + PLAY_COLS // 2)
+    # --- sleep Zzz: floats above the Digimon's head at the top of the screen (DM20 manual) ---
     if asleep and E.get("zzz"):
         z = E["zzz"][(frame_i // 2) % len(E["zzz"])]
-        zw, zz_h = len(z[0]), len(z)
-        pts += _blit(z, PLAY_R - zw - 1, 0)               # top-right of the play window
-    # --- condition column: fixed right edge, every active condition stacked + blinking ---
+        zw = len(z[0])
+        zx = max(PLAY_X0, min(head_cx - zw // 2, PLAY_R - zw))
+        pts += _blit(z, zx, band_top)
+    # --- condition marker: the sick/injury icon floats beside the pet at the screen edge ---
     # DVPet stateNumTic blink: 7 ticks awake / 10 asleep, faster (7) when unwell.
     unwell = pet.sick or pet.is_injured() or pet.is_fatigued()
     sf = (tick // (7 if unwell else (10 if asleep else 7))) % 2
     col_x = PLAY_R - COND_W - 1                            # 1px off the play-window's right edge
-    col_y0 = (zz_h + 1) if (asleep and zz_h) else 0        # even y -> crisp half-block alignment; below Zzz when asleep
     column = (("st_sick", pet.sick), ("st_medicine", pet.has_medicine()),
               ("st_injury", pet.is_injured()), ("st_bandage", pet.has_bandage()),
               ("st_vitamin", pet.has_vitamin()), ("st_fatigue", pet.is_fatigued()))
@@ -211,14 +219,14 @@ def _effect_overlay(pet, frame_i, cols, px_h, tick=0, pet_right=None):
         if not active or not E.get(key) or key in _HIDDEN_STATUS_ICONS:
             continue
         col_active = True
-        y = col_y0 + k * COND_PITCH
-        if y + COND_H > px_h:                             # out of vertical room (rare: 3+ at once)
+        y = band_top + k * COND_PITCH
+        if y + COND_H > band_bot:                         # keep the stack inside the 16-dot band
             break
         pts += _blit(E[key][sf], col_x, y)
         k += 1
-    # --- creature-tracking bubble: emote / care-call '!' (awake only) ---
-    # DVPet's emotionLabel rides the creature (adjustEmotionLabel); reactions don't
-    # fire while it sleeps, so this slot is awake-only and clamped left of the column.
+    # --- care-call / reaction bubble: rides above the creature's head, awake only ---
+    # DVPet's emotionLabel rides the creature (adjustEmotionLabel); reactions don't fire
+    # while it sleeps, so this slot is awake-only and clamped left of the condition marker.
     if not asleep:
         emo = ("happy" if pet.anim == "happy" else
                "unhappy" if pet.anim in ("sad", "refuse", "angry", "tantrum") else None)
@@ -234,7 +242,7 @@ def _effect_overlay(pet, frame_i, cols, px_h, tick=0, pet_right=None):
             pr = pet_right if pet_right is not None else PLAY_R - 1
             right_limit = (col_x - 1 - w) if col_active else (PLAY_R - w - 1)
             x = max(PLAY_X0, min(pr + 1, right_limit))
-            pts += _blit(bm, x, 1)
+            pts += _blit(bm, x, band_top)
     return pts
 
 
@@ -263,7 +271,7 @@ class Screen(Static):
         overlay = _effect_overlay(pet, wf, SCREEN_COLS, SCREEN_ROWS * 2, tick=self.frame_i)
         if pet.dead:                           # a grave marker
             self.update(render_screen(GRAVESTONE, SCREEN_COLS, SCREEN_ROWS, on, bg,
-                                      corner=corner, overlay=overlay, bgimg=bgimg))
+                                      corner=corner, overlay=overlay, bgimg=bgimg, band=PLAY_BAND))
             return
         if pet.num == -1:                      # egg
             rec = egg_mod.record(pet.egg_type)
@@ -325,7 +333,8 @@ class Screen(Static):
         if not pet.lights:                 # lights off: DVPet's lightsOff is a fully-opaque black
             rows, xshift, mirror = [], 0, False   # cover -> the pet is hidden; only black (+ Zzz) shows
         self.update(render_screen(rows, SCREEN_COLS, SCREEN_ROWS, on, bg,
-                                  mirror=mirror, xshift=xshift, corner=corner, overlay=overlay, bgimg=bgimg))
+                                  mirror=mirror, xshift=xshift, corner=corner, overlay=overlay,
+                                  bgimg=bgimg, band=PLAY_BAND))
 
     def _background(self, pet):
         return pet.background()
@@ -517,7 +526,7 @@ class Screen(Static):
         # screen edge (clip, not anchor), so clean's wash can shove the pet clear off it.
         self.update(render_screen(rows, SCREEN_COLS, SCREEN_ROWS, on, bg,
                                   xshift=xshift, yshift=yshift, overlay=overlay, bgimg=bgimg,
-                                  mirror=(fx["kind"] == "dying"), clip=(PLAY_X0, PLAY_R)))
+                                  mirror=(fx["kind"] == "dying"), clip=(PLAY_X0, PLAY_R), band=PLAY_BAND))
 
 
 def _status_line(status, deco, width=26):
