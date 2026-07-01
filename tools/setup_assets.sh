@@ -24,6 +24,6 @@ done
 mkdir -p src/tuipet/data/sounds
 python tools/chiptune_sounds.py    # authentic DVPet SFX -> 1-bit square comparator -> chiptune (pure numpy, exact source pitch)
 python tools/extract_sprites.py
-python tools/extract_effects.py
+python tools/gen_art.py --out src/tuipet/data   # effects/orbs/overlays/food-icon: generated 1-bit art (NOT ripped)
 python tools/extract_backgrounds.py
 echo "Done. Game data written to src/tuipet/data/ — you can now run: tuipet"
