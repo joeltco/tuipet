@@ -86,7 +86,7 @@ def record(egg_type=0):
 
 # --- DVPet eggUnlock.csv-driven egg unlock (real data; see data.load_egg_unlock) ---
 # Each egg gates on the same signals the device tracks (generation, album/history,
-# X-Antibody, reached stage, maps cleared, previous-generation
+# reached stage, maps cleared, previous-generation
 # attribute/element/field). Condition met + price 0 -> auto-unlocked (free to hatch,
 # or temp for this generation); condition met + price > 0 -> BUYABLE in the egg shop
 # (shopscreen Eggs tab) and bought eggs are owned permanently. The egg SELECT shows
@@ -102,8 +102,6 @@ def _conditions_met(rule, prog):
         want = data.STAGE_ORDER.index(rule["stage"]) if rule["stage"] in data.STAGE_ORDER else 99
         if prog["max_stage"] < want:
             return False
-    if rule["xanti"] and not (prog["last_xanti"] or prog["xanti_ever"]):
-        return False
     if rule["map"] is not None and rule["map"] not in prog["maps"]:
         return False
     if rule["history"] and not all(n in prog["album"] for n in rule["history"]):

@@ -219,14 +219,6 @@ VITAMIN_HOURS = 60                       # VitaminHours (game-min of injury-wors
 MEDICINE_HOURS = 60                      # MedicineHours (game-min the medicine indicator lingers, config.csv)
 BANDAGE_HOURS = 60                       # BandageHours (game-min the bandage indicator lingers, config.csv)
 
-# X-Antibody: a special state that unlocks evolution into the "X" Digimon forms.
-# None -> Temporary (decays) -> Permanent -> XProgram.  Acquired by a rare natural
-# birth roll or the X-Antibody / X-Program items.  (DVPet birth is 1/1000; bumped
-# for tuipet so it is an occasional surprise rather than never seen.)
-X_COUNT_MAX = 3600.0
-X_BIRTH_TARGET, X_BIRTH_BOUND = 1, 50
-_XA_ORDER = {"None": 0, "Temporary": 1, "Permanent": 2, "XProgram": 3}
-
 # Personality: DVPet's 3x3x3 table over (disposition, glutton, restless), each in
 # {-1 low, 0 neutral, +1 high}.  Ported verbatim from PhysicalState.checkPersonality.
 _PERSONALITY = {
@@ -326,8 +318,6 @@ class Pet:
     field: str = ""
     element: str = ""
     time_pref: dict = _dcf(default_factory=lambda: {"dawn": 0, "day": 0, "dusk": 0, "night": 0})
-    x_antibody: str = "None"
-    x_count: float = 0.0
     # transient animation request, consumed by the UI
     anim: str = "idle"
     anim_ttl: float = 0.0
@@ -377,8 +367,6 @@ class Pet:
         self.evolve_to(target)
         self.hatching = False
         self._rand_personality_traits()               # fix disposition/glutton/restless for life
-        if self.x_antibody == "None" and random.randint(0, X_BIRTH_BOUND - 1) < X_BIRTH_TARGET:
-            self._set_xantibody("Permanent")          # born a natural X-Antibody carrier
 
     def advance_hatch(self, dt):
         """Advance the 3s hatch animation at frame cadence (10 Hz) so every DVPet
@@ -417,10 +405,6 @@ class Pet:
         self.world_seconds += dt          # the day/night clock runs even past death
         if self.dead:
             return
-        if self.x_antibody == "Temporary":          # a protoform fades if unused
-            self.x_count -= dt
-            if self.x_count <= 0:
-                self.x_antibody, self.x_count = "None", 0.0
         self.age_seconds += dt
         self.stage_seconds += dt
         if self.anim_ttl > 0:
@@ -659,11 +643,6 @@ class Pet:
     def disliked_time(self):
         return min(self.time_pref, key=self.time_pref.get) if any(v < 0 for v in self.time_pref.values()) else None
 
-    def _set_xantibody(self, state):
-        """Raise the X-Antibody state (never downgrades except by expiry)."""
-        if _XA_ORDER[state] > _XA_ORDER.get(self.x_antibody, 0):
-            self.x_antibody = state
-        self.x_count = X_COUNT_MAX if self.x_antibody == "Temporary" else 0.0
 
 
     def _die(self):
@@ -785,8 +764,6 @@ class Pet:
         self.max_energy = _req.get("max_energy", self.max_energy)
         self._sleep_energy_gain = _req.get("sleep_energy_gain", 3)
         self.energy = min(self.energy, self.max_energy)   # DVPet clamps to new max (no auto-refill)
-        if data.load_requirements().get(num, {}).get("xantibody", "None") in ("Induced", "Natural"):
-            self._set_xantibody("Permanent")          # the X-Antibody locks in
         self.stage_seconds = 0.0
         # per-stage care record resets; the next stage's care decides the next form
         self.care_mistakes = self.overeat = self.disturb = self.trainings = 0
