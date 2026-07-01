@@ -69,7 +69,7 @@ def wins_add(n=1):
 
 # --- cross-generation egg-unlock progress (DVPet eggUnlock.csv signals) -----------
 # These outlive any single pet and feed egg.evaluate(): permanent milestones (album,
-# wins, max generation/stage, maps cleared, X-Antibody ever) plus
+# wins, max generation/stage, maps cleared) plus
 # a snapshot of the pet that just freed the slot, for the "previous generation" gates.
 
 def _prog():
@@ -110,12 +110,6 @@ def note_stage_index(i):
     _note_max("max_stage", i)
 
 
-def note_xanti():
-    d = load_settings()
-    prog = d.setdefault("progress", {})
-    if not prog.get("xanti_ever"):
-        prog["xanti_ever"] = True
-        save_settings(d)
 
 
 def _note_set(key, value):
@@ -145,7 +139,6 @@ def snapshot_prev_gen(pet):
         "element": getattr(pet, "element", "") or "None",
         "mood": int(getattr(pet, "mood", 0)),
         "obedience": int(getattr(pet, "obedience", 0)),
-        "xanti": getattr(pet, "x_antibody", "None") != "None",
     }
     save_settings(d)
 
@@ -159,14 +152,12 @@ def get_progress():
         "wins": int(prog.get("wins", 0)),
         "max_gen": int(prog.get("max_gen", 1)),
         "max_stage": int(prog.get("max_stage", 0)),
-        "xanti_ever": bool(prog.get("xanti_ever", False)),
         "maps": set(prog.get("maps", [])),
         "last_field": last.get("field", "None"),
         "last_attr": last.get("attribute", "None"),
         "last_elem": last.get("element", "None"),
         "last_mood": int(last.get("mood", 0)),
         "last_obed": int(last.get("obedience", 0)),
-        "last_xanti": bool(last.get("xanti", False)),
     }
 
 

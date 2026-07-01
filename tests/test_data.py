@@ -14,7 +14,7 @@ def test_egg_unlock_load():
     # every rule index is a real egg
     assert all(0 <= k < egg.count() for k in rules)
     # every rule carries the full evaluated condition set egg.py reads
-    needed = {"start", "price", "map", "stage", "xanti", "zone", "gen",
+    needed = {"start", "price", "map", "stage", "zone", "gen",
               "prev_field", "prev_attr", "prev_elem", "history", "food", "item",
               "password", "obedience", "mood", "desc", "can_perm"}
     for rule in rules.values():

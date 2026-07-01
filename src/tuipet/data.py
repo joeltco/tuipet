@@ -231,7 +231,6 @@ def load_egg_unlock():
             "price": price if price > 0 else 0,
             "map": _int(r[3]) if (_int(r[3]) is not None and _int(r[3]) >= 0) else None,
             "stage": _opt(r[4]),
-            "xanti": r[5].strip() == "TRUE",
             "zone": _opt(r[7]),
             "gen": _int(r[8]) if (_int(r[8]) is not None and _int(r[8]) >= 0) else None,
             "prev_field": _opt(r[9]),

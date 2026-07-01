@@ -87,33 +87,29 @@ def test_progress_signals_round_trip():
     persistence.note_generation(5)
     persistence.note_generation(3)   # max-only: must not lower
     persistence.note_stage_index(4)
-    persistence.note_xanti()
     persistence.map_complete_add(2)
 
     assert persistence.get_eggs_owned() == {7}
     prog = persistence.get_progress()
     assert prog["max_gen"] == 5
     assert prog["max_stage"] == 4
-    assert prog["xanti_ever"] is True
     assert 2 in prog["maps"]
     # full shape the egg evaluator depends on
-    for k in ("album", "wins", "max_gen", "max_stage", "xanti_ever", "maps",
+    for k in ("album", "wins", "max_gen", "max_stage", "maps",
               "last_field", "last_attr", "last_elem", "last_mood",
-              "last_obed", "last_xanti"):
+              "last_obed"):
         assert k in prog
 
 
 def test_snapshot_prev_gen():
     pet = Pet(num=-1, stage="Champion", attribute="Vaccine", mood=50, obedience=7)
     pet.field = "Nature Spirits"
-    pet.x_antibody = "Permanent"
     persistence.snapshot_prev_gen(pet)
     prog = persistence.get_progress()
     assert prog["last_field"] == "Nature Spirits"
     assert prog["last_attr"] == "Vaccine"
     assert prog["last_mood"] == 50
     assert prog["last_obed"] == 7
-    assert prog["last_xanti"] is True
 
 
 def test_snapshot_ignores_egg():

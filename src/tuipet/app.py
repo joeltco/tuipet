@@ -94,7 +94,7 @@ def _sky_icon(pet):
 _K = "b cyan"
 KEYS = (
     f"[{_K}]f[/] feed  [{_K}]p[/] play  [{_K}]c[/] clean  [{_K}]h[/] heal  [{_K}]r[/] praise  [{_K}]k[/] scold  [{_K}]s[/] lights\n"
-    f"[{_K}]t[/] train  [{_K}]b[/] battle  [{_K}]j[/] jogress  [{_K}]l[/] lobby  [{_K}]x[/] DNA\n"
+    f"[{_K}]t[/] train  [{_K}]b[/] battle  [{_K}]j[/] jogress  [{_K}]l[/] lobby\n"
     f"[{_K}]g[/] theme  [{_K}]m[/] sound  [{_K}]n[/] new  [{_K}]q[/] quit"
 )
 
@@ -551,12 +551,11 @@ class Stats(Static):
         if pet.poop: deco.append(f"[{T.COIN}]~poop x{pet.poop}[/]")
         mins, secs = divmod(int(pet.age_seconds), 60)
         sky, skycol = _sky_icon(pet)
-        xm = f" [b {T.ACCENT}]X[/]" if pet.x_antibody != "None" else ""
         lifepct = max(0, int((pet.lifespan - pet.age_seconds) / max(1, pet.lifespan) * 100))
         lifecol = T.NEG if pet.is_geriatric else T.LIFE
         self.border_subtitle = f"gen {pet.generation}"
         lines = [
-            f"[b]{pet.name[:22]}[/]{xm}",
+            f"[b]{pet.name[:22]}[/]",
             f"[dim]{pet.stage}{(' · ' + pet.attribute) if pet.attribute else ''}[/]",
             div,
             f"Hunger  {hearts(pet.hunger)}",
@@ -766,8 +765,6 @@ class TuiPetApp(App):
         persistence.note_generation(p.generation)
         if p.stage in data.STAGE_ORDER:
             persistence.note_stage_index(data.STAGE_ORDER.index(p.stage))
-        if getattr(p, "x_antibody", "None") != "None":
-            persistence.note_xanti()
 
     def on_unmount(self):
         persistence.save(self.pet)
