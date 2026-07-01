@@ -472,19 +472,16 @@ class Screen(Static):
                 overlay = overlay + [(x, y) for y in range(px_h) for x in range(SCREEN_COLS)]
             # the final steps drop the flash -> the evolved form is revealed
         elif fx["kind"] == "dying":
-            # DVPet dying() (SpriteAnim 13179): the collapsed pet sways gently (+/-1)
-            # while the 'dying' emote (dying/dying2) pulses at its right edge, tracking
-            # it -- frame swap and sway in lockstep, just before the memorial.
+            # DM20's "dying song": the collapsed pet (frame 10) sways gently as it sings,
+            # then the screen cuts to the grave (deathscreen).  No floating emote and no
+            # mirror -- DM20 shows the dying song through the pet's own pose, and wayland
+            # (source of truth) has no death glyph at all.
             xshift = 1 if (step // 5) % 2 == 0 else -1
-            dye = data.load_effects().get("dying")
-            if dye:
-                df = dye[(step // 5) % len(dye)]
-                overlay += _blit(df, (SCREEN_COLS - SPRITE_W) // 2 + SPRITE_W + xshift, 1)
         # every care-action fx lives inside the 32-wide window: the window edge is the
         # screen edge (clip, not anchor), so clean's wash can shove the pet clear off it.
         self.update(render_screen(rows, SCREEN_COLS, SCREEN_ROWS, on, bg,
                                   xshift=xshift, yshift=yshift, overlay=overlay, bgimg=bgimg,
-                                  mirror=(fx["kind"] == "dying"), clip=(PLAY_X0, PLAY_R), band=PLAY_BAND))
+                                  clip=(PLAY_X0, PLAY_R), band=PLAY_BAND))
 
 
 def _status_line(status, deco, width=26):
