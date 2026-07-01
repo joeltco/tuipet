@@ -96,6 +96,18 @@ def _stat_head(name, tag):
     return f"[b]{name[:14]}[/] [dim]· {tag}[/]"
 
 
+# DM20 attribute badge: each type gets a distinct glyph + palette colour (matching the
+# old triple-power glyphs so the association stays familiar). The status box shows the
+# pet's ONE attribute here, DM20-style, not three separate power counters.
+_ATTR_GLYPH = {"Vaccine": ("●", "POS"), "Data": ("■", "ENERGY"),
+               "Virus": ("▲", "MOOD"), "Free": ("◆", "MID")}
+
+
+def _attr_badge(attribute):
+    glyph, cname = _ATTR_GLYPH.get(attribute, ("·", "MID"))
+    return f"[{getattr(theme, cname)}]{glyph}[/] {attribute or '—'}"
+
+
 _FX = data.load_effects()
 GRAVESTONE = _FX.get("grave", [None])[0]      # real DVPet death.png
 SUN = _FX.get("sun", [None])[0]               # real DVPet noon.png
@@ -576,14 +588,15 @@ class Stats(Static):
         self.border_subtitle = f"gen {pet.generation}"
         lines = [
             f"[b]{pet.name[:22]}[/]",
-            f"[dim]{pet.stage}{(' · ' + pet.attribute) if pet.attribute else ''}[/]",
+            f"[dim]{pet.stage}[/]",
             div,
             f"Hunger  {hearts(pet.hunger)}",
             f"Effort  {hearts(pet.strength)}",
             f"Energy  {bar(pet.energy_pct(), 12, T.ENERGY)}",
             f"Mood    {bar(pet.mood_pct(), 12, T.MOOD)}",
             div,
-            f"Power   [{T.POS}]●{pet.vaccine}[/] [{T.ENERGY}]■{pet.data_power}[/] [{T.MOOD}]▲{pet.virus}[/]",
+            f"Attrib  {_attr_badge(pet.attribute)}",
+            f"DP      {pet.dp}",
             f"Weight  {pet.weight}g",
             f"Battle  {pet.wins}W/{pet.battles}",
             f"[{skycol}]{sky}[/] [dim]{_age_str(pet.age_seconds)}[/]",
