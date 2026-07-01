@@ -1,6 +1,6 @@
 """A sleeping pet must not be silently cared for: every care action is blocked
-while it sleeps. (DM20 Ver.20th no longer penalises waking, so blocking is a plain
-no-op with a 'mind its sleep' nudge — no stat change.)"""
+(and counts as a sleep disturbance), consistently. Previously only feed/play
+blocked; praise/scold penalised-then-acted-anyway, and clean/heal ignored sleep."""
 from tuipet.pet import Pet
 
 
@@ -8,25 +8,26 @@ def _sleeping():
     p = Pet(num=-1, stage="Rookie")
     p.asleep = True
     p.poop = 3            # so clean would otherwise have work to do
-    p._injure()           # so heal would otherwise have work to do
+    p.sick = True         # so heal would otherwise have work to do
     return p
 
 
 def test_all_care_actions_block_while_asleep():
-    for action in ("feed", "clean", "heal"):
+    for action in ("feed", "play", "praise", "scold", "clean", "heal"):
         p = _sleeping()
         msg = getattr(p, action)()
         assert "sleep" in msg.lower(), f"{action} did not block while asleep: {msg!r}"
 
 
-def test_blocked_action_changes_nothing():
+def test_disturbing_sleep_costs_mood_and_counts():
     p = _sleeping()
-    poop0, inj0 = p.poop, p.is_injured()
+    mood0, disturb0 = p.mood, p.disturb
+    p.praise()                          # used to praise-anyway; now it's a disturbance
+    assert p.disturb == disturb0 + 1
+    assert p.mood < mood0               # DisturbMoodDec applied
+    assert p.sick is True               # heal-while-asleep didn't secretly cure
     p.heal()
-    assert p.is_injured(), "heal-while-asleep must not cure"
-    p.clean()
-    assert p.poop == poop0, "clean-while-asleep must not tidy up"
-    assert p.is_injured() == inj0, "care while asleep is a no-op (DM20: waking is free)"
+    assert p.sick is True               # still blocked — the illness remains
 
 
 def test_care_works_again_once_awake():

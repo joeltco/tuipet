@@ -67,32 +67,9 @@ def test_worst_case_pet_fits():
     p.vaccine = p.data_power = p.virus = 999
     p.weight = 999
     p.wins = 999; p.battles = 999
-    p.asleep = True; p.poop = 4
-    p.inj_length = 100          # pile on the +hurt deco
+    p.asleep = True; p.sick = True; p.poop = 4
+    p.fatigue_length = 100; p.inj_length = 100  # pile on the +tired / +hurt decos
     _assert_fits(_render(p))
-
-
-def test_dm20_attribute_and_power_shown():
-    """DM20 status shows the pet's ONE attribute + aggregate Power, not three counters."""
-    from tuipet import species
-    p = Pet.from_num(_top_num())
-    p.attribute = "Vaccine"
-    p.vaccine, p.data_power, p.virus = 40, 30, 20
-    content = _render(p)
-    plain = Text.from_markup(content).plain
-    assert "Attrib" in plain and "Vaccine" in plain
-    assert f"Power   {species.base_power(p.num) + 90}" in plain   # base power + training
-    # the old ●■▲ triple-power row is gone: ■/▲ appeared only there (a Vaccine badge is ●)
-    assert "■" not in plain and "▲" not in plain
-    _assert_fits(content)
-
-
-def test_power_property_is_base_plus_training():
-    from tuipet import species
-    num = next(x["num"] for x in species.roster() if x["stage"] == "Child")
-    p = Pet(num=num, stage="Child")
-    p.vaccine, p.data_power, p.virus = 11, 22, 33
-    assert p.power == species.base_power(num) + 66
 
 
 def test_egg_view_fits():
@@ -109,11 +86,11 @@ def test_grave_view_fits():
 def test_all_status_words_fit():
     """Each possible status word, paired with poop deco, still fits."""
     p = Pet.from_num(_top_num())
-    for word in ["ok", "happy", "elderly", "needs cleaning",
-                 "injured", "sleepy", "asleep",
-                 "starving", "passed away", "did great!"]:
+    for word in ["ok", "happy", "unhappy", "elderly", "needs cleaning",
+                 "sick", "fatigued", "injured", "sleepy", "asleep",
+                 "starving", "misbehaving", "did great!"]:
         p.status_word = lambda w=word: w
-        p.poop = 4; p.inj_length = 100
+        p.poop = 4; p.sick = True
         _assert_fits(_render(p))
 
 

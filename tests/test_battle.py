@@ -1,120 +1,132 @@
-"""Battle engine — the authentic DM20 model (see battle.py).
+"""Battle resolution math (Workstream A).
 
-Power (species base + training) plus the Vaccine>Virus>Data triangle (+32) decide the
-hit chance; the clash auto-resolves.  record_battle's persistence side effects are
+tuipet's combat is DVPet's Model.Battle: per-round damage is
+    base_attack(stage) + calc_attack_power(attr)  (+ affinity, which is 0)
+floored at 0, where calc_attack_power is -1/0/+1 from comparing this side's
+attribute count against the opponent's. (The "attribute triangle" is a real-
+hardware concept; tuipet's actual modifier is this count comparison.)
+
+A num=-1 pet/enemy carries no attack-effect chips, so battlefx is a no-op and
+rounds are deterministic except for checkFirst ties — which we avoid by giving
+the two sides different power sums. Persistence side effects of record_battle are
 sandboxed by the autouse fixture in conftest.
 """
 import random
 
-from tuipet import battle, species
-from tuipet.battle import (Battle, beats, effective_power, hit_chance,
-                           MAX_HEALTH, ATTR_BONUS)
+
+from tuipet import battle, battlefx
+from tuipet.battle import Battle, calc_attack_power, BASE_ATTACK, MAX_HEALTH
 from tuipet.pet import Pet
 
 
-def _enemy(stage="Child", power=20, attribute="Data", hp=3, num=-1, boss=False):
-    return {"num": num, "name": "Foe", "stage": stage, "attribute": attribute,
-            "power": power, "hp": hp, "boss": boss}
+def _enemy(stage="Child", v=0, d=0, vi=0, hp=10, num=-1, boss=False):
+    return {"num": num, "name": "Foe", "stage": stage, "vaccine": v,
+            "data_power": d, "virus": vi, "hp": hp, "boss": boss, "bits": (1, 5)}
 
 
-def _pet(stage="Child", v=0, d=0, vi=0, attribute="Vaccine", wins=0):
-    return Pet(num=-1, stage=stage, vaccine=v, data_power=d, virus=vi,
-               attribute=attribute, wins=wins)
+def _pet(stage="Child", v=5, d=5, vi=5, wins=0):
+    return Pet(num=-1, stage=stage, vaccine=v, data_power=d, virus=vi, wins=wins)
 
 
-# ---- attribute triangle ----------------------------------------------------
+# ---- pure math -------------------------------------------------------------
 
-def test_triangle_beats():
-    assert beats("Vaccine", "Virus") and beats("Virus", "Data") and beats("Data", "Vaccine")
-    assert not beats("Vaccine", "Data")          # Vaccine loses to Data
-    assert not beats("Free", "Vaccine")          # Free has no advantage
-    assert not beats("Vaccine", "Vaccine")
-
-
-def test_effective_power_bonus():
-    assert effective_power(50, "Vaccine", "Virus") == 50 + ATTR_BONUS
-    assert effective_power(50, "Vaccine", "Data") == 50          # disadvantage: no bonus
-    assert effective_power(50, "Free", "Virus") == 50
+def test_calc_attack_power():
+    assert calc_attack_power("Vaccine", {"Vaccine": 3}, {"Vaccine": 1}) == 1
+    assert calc_attack_power("Vaccine", {"Vaccine": 1}, {"Vaccine": 3}) == -1
+    assert calc_attack_power("Vaccine", {"Vaccine": 2}, {"Vaccine": 2}) == 0
 
 
-def test_hit_chance_scales_and_clamps():
-    assert hit_chance(100, 100) == 0.72                          # even power (high base -> most land)
-    assert hit_chance(200, 100) > hit_chance(120, 100)           # bigger gap -> more likely
-    assert hit_chance(999, 0) == 0.95                            # clamped high
-    assert hit_chance(0, 999) == 0.40                            # clamped low
-
-
-# ---- pet power = species base + training -----------------------------------
-
-def test_pet_power_is_base_plus_training():
-    num = next(x["num"] for x in species.roster()
-               if x["stage"] == "Child" and x.get("power"))
-    p = Pet(num=num, stage="Child")
-    p.vaccine, p.data_power, p.virus = 3, 4, 5
-    assert p.power == species.base_power(num) + 12
+def test_damage_base_plus_power_floored():
+    b = Battle(_pet("Child"), _enemy("Child"))
+    strong = {"Vaccine": 9, "Data": 0, "Virus": 0}
+    weak = {"Vaccine": 1, "Data": 0, "Virus": 0}
+    even = {"Vaccine": 5, "Data": 0, "Virus": 0}
+    assert b._damage("Child", "Vaccine", strong, weak) == BASE_ATTACK["Child"] + 1   # 6
+    assert b._damage("Child", "Vaccine", even, even) == BASE_ATTACK["Child"]          # 5
+    assert b._damage("Child", "Vaccine", weak, strong) == BASE_ATTACK["Child"] - 1    # 4
+    # Baby I base 1 with a disadvantage -> 1 + (-1) = 0, floored (never negative)
+    assert b._damage("Baby I", "Vaccine", weak, strong) == 0
 
 
 # ---- setup -----------------------------------------------------------------
 
-def test_hp_per_stage():
-    assert Battle(_pet("Child"), _enemy()).pet_hp == MAX_HEALTH["Child"]
-    assert Battle(_pet("Ultimate"), _enemy()).pet_hp == MAX_HEALTH["Ultimate"]
+def test_hp_setup_per_stage():
+    assert Battle(_pet("Child"), _enemy(hp=10)).pet_hp == MAX_HEALTH["Child"]
+    assert Battle(_pet("Adult"), _enemy(hp=10)).pet_hp == MAX_HEALTH["Adult"]
+    assert Battle(_pet("Ultimate"), _enemy(hp=10)).pet_hp == MAX_HEALTH["Ultimate"]
+    # enemy HP is taken from its sheet, floored to a minimum of 2
+    assert Battle(_pet(), _enemy(hp=1)).enemy_hp == 2
+    assert Battle(_pet(), _enemy(hp=20)).enemy_hp == 20
 
 
-def test_effective_power_includes_triangle():
-    b = Battle(_pet(attribute="Vaccine"), _enemy(attribute="Virus", power=20))
-    assert b.pet_ep == b.pet_power + ATTR_BONUS   # Vaccine beats Virus -> +32
-    assert b.enemy_ep == b.enemy_power            # Virus does not beat Vaccine
-
-
-# ---- resolve ---------------------------------------------------------------
-
-def test_resolve_terminates_and_stays_bounded():
-    b = Battle(_pet("Adult", v=10), _enemy("Adult", power=60, hp=4))
-    attacks = b.resolve(player_first=True, rng=random.Random(7))
-    assert b.over and b.won in (True, False)
-    assert 0 <= b.pet_hp <= b.pet_max and 0 <= b.enemy_hp <= b.enemy_max
-    assert attacks and all(a["dmg"] in (0, 1, 2) for a in attacks)
-
-
-def test_resolve_is_deterministic_with_seed():
-    a1 = Battle(_pet("Child", v=5), _enemy()).resolve(player_first=True, rng=random.Random(99))
-    a2 = Battle(_pet("Child", v=5), _enemy()).resolve(player_first=True, rng=random.Random(99))
-    assert a1 == a2
-
-
-def test_ko_ends_the_clash_immediately():
-    """Every attack but the last leaves BOTH sides alive -- the bout ends the instant a
-    side hits 0 (no attack lands after a KO)."""
-    b = Battle(_pet("Adult", v=20), _enemy("Adult", power=50, hp=4))
-    b.resolve(player_first=True, rng=random.Random(3))
-    for a in b.attacks[:-1]:
-        assert a["ph"] > 0 and a["fh"] > 0
-    assert b.attacks[-1]["ph"] == 0 or b.attacks[-1]["fh"] == 0
-
-
-def test_higher_power_usually_wins():
-    """Over many seeds a hugely-favoured pet wins the clear majority."""
-    wins = 0
-    for s in range(40):
-        b = Battle(_pet("Ultimate", v=300, attribute="Vaccine"),
-                   _enemy("Ultimate", power=20, attribute="Virus", hp=5))
-        b.resolve(player_first=True, rng=random.Random(s))
-        wins += bool(b.won)
-    assert wins >= 34, wins
+def test_enemy_attribute_is_strongest_count():
+    b = Battle(_pet(), _enemy(v=1, d=9, vi=2))
+    assert b.enemy["attribute"] == "Data"
 
 
 # ---- win / loss ------------------------------------------------------------
 
-def test_double_ko_is_a_loss():
+def test_win_when_pet_survives():
     b = Battle(_pet(), _enemy())
-    b.pet_hp = b.enemy_hp = 0
+    b.pet_hp, b.enemy_hp = 3, 0
     b._finish()
-    assert b.over and b.won is False
+    assert b.over is True and b.won is True
 
 
-def test_surrender_is_neither_win():
-    b = Battle(_pet(), _enemy(boss=True))
-    n = b.pet.battles
-    b.surrender()
-    assert b.over and b.won is False and b.surrendered and b.pet.battles == n + 1
+def test_loss_when_pet_down():
+    b = Battle(_pet(), _enemy())
+    b.pet_hp, b.enemy_hp = 0, 3
+    b._finish()
+    assert b.won is False
+
+
+def test_double_ko_is_a_loss():
+    """battleEnd: the player loses iff its OWN hp <= 0 — a mutual KO is a loss."""
+    b = Battle(_pet(), _enemy())
+    b.pet_hp, b.enemy_hp = 0, 0
+    b._finish()
+    assert b.won is False
+
+
+# ---- initiative ------------------------------------------------------------
+
+def test_initiative_favours_greater_power():
+    strong = Battle(_pet(v=10, d=10, vi=10), _enemy(v=0, d=0, vi=0))
+    assert battlefx._check_first(strong) is True
+    weak = Battle(_pet(v=0, d=0, vi=0), _enemy(v=10, d=10, vi=10, hp=10))
+    assert battlefx._check_first(weak) is False
+
+
+def test_first_striker_ko_prevents_retaliation():
+    """If the player goes first and the blow is lethal, the enemy never hits back."""
+    b = Battle(_pet(v=20, d=20, vi=20), _enemy("Rookie", v=0, d=0, vi=0, hp=1))
+    assert b.pet_hp == b.pet_max
+    b.play_round("Vaccine")
+    assert b.over is True and b.won is True
+    assert b.pet_hp == b.pet_max, "a first-strike KO must not let the enemy retaliate"
+
+
+# ---- AI difficulty ramp (adapted, but the thresholds are pinned) ----------
+
+def test_ai_ramp_thresholds():
+    assert battle.ai_for_wins(0, False) == "Random"
+    assert battle.ai_for_wins(15, False) == "Brute"
+    assert battle.ai_for_wins(30, False) == "StrategicBrute"
+    assert battle.ai_for_wins(45, False) == "StrategicDefense"
+    assert battle.ai_for_wins(60, True) == "StrategicDefense"
+    assert battle.ai_for_wins(60, False) == "StrategicBalanced"
+
+
+# ---- full bout invariants --------------------------------------------------
+
+def test_full_battle_terminates_and_stays_bounded():
+    random.seed(1234)
+    b = Battle(_pet("Rookie", v=4, d=4, vi=4), _enemy("Rookie", v=3, d=3, vi=3, hp=8))
+    for _ in range(200):
+        if b.over:
+            break
+        b.play_round("Vaccine")
+        assert b.pet_hp <= b.pet_max, "HP must never exceed the cap (heal clamp)"
+        assert b.enemy_hp <= b.enemy_max
+    assert b.over is True
+    assert b.won in (True, False)

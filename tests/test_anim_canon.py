@@ -1,10 +1,10 @@
 """Canon-fidelity fixes from the SpriteAnim sweep (see ANIMATION_SPEC.md):
-the happy/cheer pose pair, the net-zero sick shuffle, and the idle care-state poses."""
+the happy/cheer pose pair, the net-zero sick shuffle, and the idle mood poses."""
 from tuipet import anim, data
 
 
 def test_happy_role_is_the_dvpet_cheer_pair():
-    # DVPet Cheering: cheer-up 5 -> cheer-down 7 (the canonical win/evolve pair).
+    # DVPet Cheering: cheer-up 5 -> cheer-down 7 (the canonical praise/win/evolve pair).
     assert data.ROLES["happy"] == [5, 7]
 
 
@@ -24,31 +24,37 @@ def test_sick_shuffle_is_net_zero():
 
 
 class _StubPet:
-    def __init__(self, needs_care=False):
-        self._need = needs_care
+    def __init__(self, energy=10, fatigued=False, mood=0, enthusiasm=0):
+        self.energy, self._fat, self.mood, self.enthusiasm = energy, fatigued, mood, enthusiasm
 
-    def needs_care(self):
-        return self._need
-
-
-def test_care_pose_reads_state():
-    assert anim.care_pose(_StubPet(needs_care=True)) in (4, 6)       # hungry/sick/injured/messy -> sour
-    assert anim.care_pose(_StubPet()) is None                        # content -> ordinary walk pose
+    def is_fatigued(self):
+        return self._fat
 
 
-def test_care_pose_indices_are_valid_sprite_frames():
-    # every pose care_pose can return must be a real frame on the 11-frame strip
-    for p in (4, 6):
+def test_mood_pose_reads_state():
+    assert anim.mood_pose(_StubPet(energy=0)) in (10, 9, 2)          # spent -> weary
+    assert anim.mood_pose(_StubPet(fatigued=True)) in (10, 9, 2)     # tired -> weary
+    assert anim.mood_pose(_StubPet(mood=-5)) in (4, 6)               # unhappy -> sour
+    assert anim.mood_pose(_StubPet(mood=5, enthusiasm=0)) == 5       # content & spirited -> bright
+    assert anim.mood_pose(_StubPet(mood=0)) is None                  # neutral -> ordinary walk pose
+
+
+def test_mood_pose_indices_are_valid_sprite_frames():
+    # every pose mood_pose can return must be a real frame on the 11-frame strip
+    for p in (10, 9, 2, 4, 6, 5):
         assert 0 <= p <= 10
 
 
-def test_play_pose_pair_is_the_content_idle_hop():
-    # the "play" pose pair (1 -> 5) drives the content idle hop (pet._special_idle).
+def test_play_renders_its_own_hop():
+    # DVPet Bounce/Jump toy interact is its own pose pair (1 -> 5); the jump is also a
+    # real on-screen lift via the yshift hop (PLAY_HOP/PLAY_HOP_H).
+    from tuipet import app
     assert data.ROLES["play"] == [1, 5]
+    assert app.PLAY_HOP > 0 and app.PLAY_HOP_H > 0
 
 
 def test_render_yshift_lifts_the_sprite():
-    """yshift raises the sprite; enough yshift lifts it clean off the top."""
+    """yshift raises the sprite (the play hop); enough yshift lifts it off the top."""
     from tuipet.render import render_screen
     sprite = ["1111", "1111"]
     empty = render_screen([], 8, 6)
@@ -57,8 +63,19 @@ def test_render_yshift_lifts_the_sprite():
     assert render_screen(sprite, 8, 6, yshift=99).spans == empty.spans   # hopped clean off-screen
 
 
-def test_battle_pose_constants_match_dvpet_atlas_order():
-    """The clean pose-animation battle indexes the DVPet-native atlas order: 6=attack,
-    4/5=cheer down/up, 10=collapse.  Pin them so a re-order can't silently mispose."""
-    from tuipet import battlescreen as B
-    assert (B.ATTACK, B.CHEER_UP, B.CHEER_DN, B.COLLAPSE) == (6, 5, 4, 10)
+def test_battle_strong_hit_sfx_branches_on_double():
+    """DVPet doubleAttack launches/lands with the strong sting/impact; a normal hit
+    uses the plain ones.  _emit_sfx is pure over (timeline[i], _last_m) -- drive it on
+    a stub so we don't have to build a whole battle."""
+    from tuipet.battlescreen import BattlePanel
+
+    def _sfx(marker, double):
+        stub = type("S", (), {"sfx": None, "_last_m": None, "i": 0,
+                              "timeline": [{"m": marker, "double": double}]})()
+        BattlePanel._emit_sfx(stub)
+        return stub.sfx
+
+    assert _sfx("fire_out", True) == "strongAttack"
+    assert _sfx("fire_out", False) == "attack"
+    assert _sfx("hit", True) == "strongHit"
+    assert _sfx("hit", False) == "attackHit"

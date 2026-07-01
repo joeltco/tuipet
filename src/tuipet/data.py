@@ -78,8 +78,6 @@ def load_evolutions():
 
 @lru_cache(maxsize=1)
 def load_foods():
-    """DM20's two foods: Meat (fills a hunger heart) and Protein (fills a strength
-    heart, adds weight, restores DP). No taste/nutrient columns (all DVPet)."""
     path = os.path.join(_RAW, "foods.csv")
     foods = []
     with open(path) as fh:
@@ -87,9 +85,17 @@ def load_foods():
             try:
                 foods.append({
                     "name": row["Name"],
-                    "hunger": int(row.get("Hunger") or 0),
-                    "strength": int(row.get("Strength") or 0),
-                    "weight": int(row.get("Weight") or 0),
+                    "hunger": int(row["Hunger"] or 0),
+                    "weight": int(row["Weight"] or 0),
+                    "mood": int(row["Mood"] or 0),
+                    "energy": int(row["Energy"] or 0),
+                    "strength": int(row["Strength"] or 0),
+                    "obedience": int(row["Obedience"] or 0),
+                    "enthusiasm": int(row["Enthusiasm"] or 0),
+                    "category": (row.get("Type") or "").strip(),
+                    "protein": int(row.get("Proteins") or 0),
+                    "vitamin_n": int(row.get("Vitamins") or 0),
+                    "mineral": int(row.get("Minerals") or 0),
                 })
             except (KeyError, ValueError):
                 continue
@@ -104,6 +110,26 @@ def next_stage(stage):
     return STAGE_ORDER[i + 1] if i + 1 < len(STAGE_ORDER) else None
 
 
+# Food taste categories (still used by the feeding/taste system in pet.py).
+FOOD_CATEGORIES = ("Meat", "Fish", "Veg", "Fruit", "Med", "Junk", "Grain", "Dairy")
+
+
+@lru_cache(maxsize=1)
+def load_orbs():
+    with gzip.open(os.path.join(_DATA, "orbs.json.gz")) as fh:
+        return json.load(fh)
+
+
+def attack_orb(num, attribute, power):
+    """The generic per-attribute battle orb at the power tier floor(power/25). Authentic
+    mono v-pet battle has no per-mon special attacks — the projectile is purely the
+    attribute, scaled by power."""
+    orbs = load_orbs()
+    tiers = orbs["generic"].get(attribute) or orbs["generic"]["Vaccine"]
+    t = max(0, min(int(power) // 25, len(tiers) - 1))
+    return tiers[t] or next((x for x in tiers if x), None)
+
+
 @lru_cache(maxsize=1)
 def load_requirements():
     """Per-mon evolution/physiology gates were DVPet digimon.csv data (keyed by DVPet
@@ -113,9 +139,24 @@ def load_requirements():
     return {}
 
 
+# ---------------------------------------------------------------------------
+# Battle enemies (parsed from enemies.csv).  Each enemy references a Digimon by
+# number (its sprite + attribute) and carries battle Health and attribute power.
+# ---------------------------------------------------------------------------
+_MOVES = None
+
+
+# Authentic mono v-pet battle: attacks are by ATTRIBUTE, not per-mon named moves with
+# effect "chips" (those VaccineName/Effect columns were DVPet/colour-device data, absent
+# from the humulos corpus). The "move" is simply the attribute attack; there are no effects.
+def move_name(num, attribute):
+    """The attribute attack a Digimon throws (mono devices don't name per-mon moves)."""
+    return attribute
+
+
 @lru_cache(maxsize=1)
 def load_backgrounds():
-    """Background scenes (per time-of-day frame: day/night) keyed by file name."""
+    """Habitat background scenes (per time-of-day/weather frame) keyed by file name."""
     path = os.path.join(_DATA, "backgrounds.json.gz")
     if not os.path.exists(path):
         return {}
@@ -152,4 +193,57 @@ def load_icons():
         return {}
 
 
+@lru_cache(maxsize=1)
+def load_egg_unlock():
+    """DVPet eggUnlock.csv -> {egg_index: rule}. Joined to tuipet egg indices by the
+    egg's hatch name. Each rule is the parsed set of conditions that gate the egg;
+    egg.evaluate() tests them against persistence.get_progress()."""
+    from . import egg as egg_mod
+    name_to_idx = {}
+    for i in range(egg_mod.count()):
+        name_to_idx.setdefault(egg_mod.hatch_name(i), i)
+
+    def _int(v):
+        v = (v or "").strip()
+        return int(v) if v.lstrip("-").isdigit() else None
+
+    def _opt(v):
+        v = (v or "").strip()
+        return None if v in ("", "-1", "None", "FALSE") else v
+
+    rules = {}
+    path = os.path.join(_DATA, "eggUnlock.csv")
+    rows = list(csv.reader(open(path)))
+    for r in rows[1:]:
+        if len(r) < 23:
+            continue
+        idx = name_to_idx.get(r[0].strip())
+        if idx is None:
+            continue                      # egg not in this tuipet build
+        hist = None
+        if _opt(r[12]):
+            hist = [int(x) for x in r[12].split(":") if x.strip().isdigit()]
+        price = _int(r[2]) or 0
+        rules[idx] = {
+            "idx": idx,
+            "name": r[0].strip(),
+            "start": r[1].strip() == "TRUE",
+            "price": price if price > 0 else 0,
+            "map": _int(r[3]) if (_int(r[3]) is not None and _int(r[3]) >= 0) else None,
+            "stage": _opt(r[4]),
+            "zone": _opt(r[7]),
+            "gen": _int(r[8]) if (_int(r[8]) is not None and _int(r[8]) >= 0) else None,
+            "prev_field": _opt(r[9]),
+            "prev_attr": _opt(r[10]),
+            "prev_elem": _opt(r[11]),
+            "history": hist,
+            "food": _int(r[13]) if (_int(r[13]) is not None and _int(r[13]) >= 0) else None,
+            "item": _int(r[14]) if (_int(r[14]) is not None and _int(r[14]) >= 0) else None,
+            "password": _opt(r[16]),
+            "obedience": _int(r[17]) if (_int(r[17]) is not None and _int(r[17]) >= 0) else None,
+            "mood": _int(r[19]) if (_int(r[19]) is not None and _int(r[19]) >= 0) else None,
+            "desc": (r[21] or "").strip(),
+            "can_perm": r[22].strip() == "TRUE",
+        }
+    return rules
 

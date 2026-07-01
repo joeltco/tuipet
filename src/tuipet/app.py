@@ -45,11 +45,6 @@ PLAY_COLS = 32
 PLAY_X0 = (SCREEN_COLS - PLAY_COLS) // 2        # 4: left edge of the centred play window
 PLAY_R = PLAY_X0 + PLAY_COLS                     # 36: right edge of the play window (HUD icons stay inside)
 PLAY_RIGHT = PLAY_X0 + PLAY_COLS - SPRITE_W     # 20: rightmost sprite-x that fits in the window
-# The authentic DM20 dot-matrix is 16 dots tall. The LCD canvas is taller (24px) so a
-# background can show in the margins, but every game pixel lives inside this 16-dot band:
-BAND_BOT = SCREEN_ROWS * 2 - 2                   # 22: floor, 2px above the border
-BAND_TOP = BAND_BOT - 16                         # 6:  ceiling (16-dot screen)
-PLAY_BAND = (BAND_TOP, BAND_BOT)
 
 import re as _re
 # navigation keys: pressing one in a sub-screen plays the scroll blip (unless the
@@ -101,20 +96,16 @@ def _stat_head(name, tag):
     return f"[b]{name[:14]}[/] [dim]· {tag}[/]"
 
 
-# DM20 attribute badge: each type gets a distinct glyph + palette colour (matching the
-# old triple-power glyphs so the association stays familiar). The status box shows the
-# pet's ONE attribute here, DM20-style, not three separate power counters.
-_ATTR_GLYPH = {"Vaccine": ("●", "POS"), "Data": ("■", "ENERGY"),
-               "Virus": ("▲", "ACCENT"), "Free": ("◆", "MID")}
-
-
-def _attr_badge(attribute):
-    glyph, cname = _ATTR_GLYPH.get(attribute, ("·", "MID"))
-    return f"[{getattr(theme, cname)}]{glyph}[/] {attribute or '—'}"
-
-
 _FX = data.load_effects()
 GRAVESTONE = _FX.get("grave", [None])[0]      # real DVPet death.png
+SUN = _FX.get("sun", [None])[0]               # real DVPet noon.png
+MOON = _FX.get("moon", [None])[0]             # real DVPet night.png
+
+_POOP_FR = (_FX.get("poop") or [None])[0]
+POOP_W = len(_POOP_FR[0]) if _POOP_FR else 5
+POOP_PAD = 0    # no inter-pile gap: on the 32-wide window a 2-col filth grid + the 16px pet
+#               just fit, and the poop sprite's own empty edge columns keep the piles distinct
+_FROZEN_FR = (_FX.get("frozen") or [None])[0]
 
 def _sky_icon(pet):
     """A sun by day, a moon by night, for the status line. Returns (glyph, colour)."""
@@ -123,8 +114,8 @@ def _sky_icon(pet):
 
 _K = "b cyan"
 KEYS = (
-    f"[{_K}]f[/] feed  [{_K}]t[/] train  [{_K}]c[/] clean  [{_K}]h[/] heal  [{_K}]s[/] lights\n"
-    f"[{_K}]b[/] battle  [{_K}]j[/] jogress  [{_K}]l[/] lobby\n"
+    f"[{_K}]f[/] feed  [{_K}]p[/] play  [{_K}]c[/] clean  [{_K}]h[/] heal  [{_K}]r[/] praise  [{_K}]k[/] scold  [{_K}]s[/] lights\n"
+    f"[{_K}]t[/] train  [{_K}]b[/] battle  [{_K}]j[/] jogress  [{_K}]l[/] lobby\n"
     f"[{_K}]g[/] theme  [{_K}]m[/] sound  [{_K}]n[/] new  [{_K}]q[/] quit"
 )
 
@@ -155,72 +146,91 @@ def _blit(bm, ox, oy):
 
 
 COND_W = COND_H = 7                                # state.png cell size (DVPet 7x7 cells)
-POOP_W = 8                                         # poop sprite width
-STATUS_LANE = 8                                    # right-edge lane reserved for the injury skull
-# HARD RULE ([[feedback_tuipet_sprites_never_overlap]]): NOTHING overlaps the creature.
-# Poop gets a LEFT lane, the injury skull gets a RIGHT lane, and the creature is bounded to
-# the clear zone between them.  wayland (source of truth) renders no poop and no Zzz sprite
-# -- it shows SLEEP as the pose -- so there is no Zzz bubble, and DM20's care alert is a beep,
-# not a floating '!'.
+PLAY_HOP = 12                                      # DVPet jumping(): ticks per up+down hop
+PLAY_HOP_H = 6                                     # apex height in px (LCD is 24px tall)
+COND_PITCH = COND_H + 1
+# Status sprites disabled for now (Joel): the post-cure medicine badge and the
+# misbehave/discipline "light bulb". Cosmetic-only; remove from this set to re-enable.
+_HIDDEN_STATUS_ICONS = {"st_medicine", "st_teach"}
+# DVPet draws the condition icons as a fixed VERTICAL COLUMN down the right edge of
+# the LCD (setLocX ~120), one fixed row each, every active one shown AT ONCE -- not a
+# single cycling slot.  Vertical order is DVPet's setLocY (top->bottom): sick(55),
+# medicine(64), injury(73), bandage(83), vitamin(93), fatigue(103).  teach is NOT in
+# the column -- DVPet gives it setDynamicComponentLocation, so it tracks the creature.
 
 
-def _status_active(pet):
-    """Is the right-lane status marker showing?  DM20's only floating marker is the injury
-    skull ("it will have a skull floating next to it").  A care need (hungry / needs cleaning)
-    is signalled by a beep + the shell's call icon on the real device, NOT a floating '!' over
-    the pet -- so it does not reserve a play-field lane."""
-    return bool(pet.is_injured())
-
-
-def _care_zones(pet):
-    """Reserved-lane bounds so the creature never overlaps the poop (left) or the status
-    marker (right).  Returns (left_bound, right_bound) as the creature's sprite-x roam
-    limits, plus (poop_cols, status_active) for the overlay layout."""
-    if pet.dead or pet.num == -1:
-        return PLAY_X0, PLAY_RIGHT, 0, False
-    status_active = _status_active(pet)
-    status_left = PLAY_R - (STATUS_LANE if status_active else 0)
-    poop_cols = 0
-    if pet.poop:
-        room = (status_left - PLAY_X0) - SPRITE_W          # px left for poop after the creature
-        poop_cols = max(0, min((min(pet.poop, POOP_MAX_PILES) + 1) // 2, room // POOP_W))
-    left_bound = PLAY_X0 + poop_cols * POOP_W
-    right_bound = max(left_bound, status_left - SPRITE_W)
-    return left_bound, right_bound, poop_cols, status_active
-
-
-def _effect_overlay(pet, frame_i, cols, px_h, tick=0):
-    """Care overlays, laid out so NOTHING overlaps the creature (hard rule): droppings in
-    a bottom-LEFT lane, the injury skull in a RIGHT lane, and the creature bounded to the
-    clear zone between them (see _care_zones).  No sleep Zzz and no care-call '!' -- wayland
-    (the source of truth) shows sleep as the POSE, and DM20's care alert is a beep + the
-    shell call icon, not a floating bubble."""
+def _effect_overlay(pet, frame_i, cols, px_h, tick=0, pet_right=None):
+    """Status sprites overlaid on the LCD, laid out like the DM20 hardware: poop
+    bottom-left, the sleep Zzz top-right, a fixed condition column down the right
+    edge (all active conditions at once), and a creature-tracking emote/'!'/teach
+    bubble -- each in its own zone so nothing overlaps."""
     E = data.load_effects()
-    front = []
+    pts = []
     if pet.dead:
-        return front
-    band_top = max(0, px_h - 2 - 16)                      # 16-dot screen band, 2px floor (=6 on 24px canvas)
-    band_bot = px_h - 2                                    # =22
-    _lb, _rb, poop_cols, _sa = _care_zones(pet)
-    # --- droppings: a left lane, piles stacked (2 per column); the creature stays clear ---
+        return pts
     poopfr = E.get("poop") or []
-    if pet.poop and poopfr and poop_cols:
+    if pet.poop and poopfr:                               # piles stack in a 2-wide grid (DVPet filth)
         pm = poopfr[(tick // (10 if pet.asleep else 7)) % len(poopfr)]   # DVPet animFilth swap
         pw, ph_ = len(pm[0]), len(pm)
-        cap, n = min(pet.poop, POOP_MAX_PILES), 0
-        for c in range(poop_cols):
-            for r in range(2):                            # bottom pile, then one stacked above
-                if n >= cap:
-                    break
-                front += _blit(pm, PLAY_X0 + c * pw, (band_bot - ph_) - r * ph_)
-                n += 1
+        for i in range(min(pet.poop, POOP_MAX_PILES)):                  # DVPet drawFilthLevel: 3 columns x 2 rows,
+            col, up = i // 2, i % 2                         # column-major (bottom pile, then one stacked
+            x = PLAY_X0 + col * (pw + POOP_PAD)             # directly above it), each column steps right (in-window)
+            y = (px_h - 2 - ph_) - up * ph_
+            pts += _blit(pm, x, y)
     if pet.num == -1:
-        return front
-    # --- right lane: the injury skull (DM20's only floating-beside-the-pet marker) ---
-    sx = PLAY_R - STATUS_LANE
-    if pet.is_injured() and E.get("st_injury"):
-        front += _blit(E["st_injury"][(tick // 7) % 2], sx, band_top)
-    return front
+        return pts
+    asleep = bool(getattr(pet, "asleep", False))
+    # --- sleep Zzz: fixed TOP-RIGHT corner (DVPet sleepLabel: width - w - 8, y1) ---
+    zz_h = 0
+    if asleep and E.get("zzz"):
+        z = E["zzz"][(frame_i // 2) % len(E["zzz"])]
+        zw, zz_h = len(z[0]), len(z)
+        pts += _blit(z, PLAY_R - zw - 1, 0)               # top-right of the play window
+    # --- condition column: fixed right edge, every active condition stacked + blinking ---
+    # DVPet stateNumTic blink: 7 ticks awake / 10 asleep, faster (7) when unwell.
+    unwell = pet.sick or pet.is_injured() or pet.is_fatigued()
+    sf = (tick // (7 if unwell else (10 if asleep else 7))) % 2
+    col_x = PLAY_R - COND_W - 1                            # 1px off the play-window's right edge
+    col_y0 = (zz_h + 1) if (asleep and zz_h) else 0        # even y -> crisp half-block alignment; below Zzz when asleep
+    column = (("st_sick", pet.sick), ("st_medicine", pet.has_medicine()),
+              ("st_injury", pet.is_injured()), ("st_bandage", pet.has_bandage()),
+              ("st_vitamin", pet.has_vitamin()), ("st_fatigue", pet.is_fatigued()))
+    k = 0
+    col_active = False
+    for key, active in column:
+        if not active or not E.get(key) or key in _HIDDEN_STATUS_ICONS:
+            continue
+        col_active = True
+        y = col_y0 + k * COND_PITCH
+        if y + COND_H > px_h:                             # out of vertical room (rare: 3+ at once)
+            break
+        pts += _blit(E[key][sf], col_x, y)
+        k += 1
+    # --- creature-tracking bubble: emote / care-call '!' / teach (awake only) ---
+    # DVPet's emotionLabel + teachState both ride the creature (adjustEmotionLabel /
+    # setDynamicComponentLocation); reactions don't fire while it sleeps, so this slot
+    # is awake-only and is clamped to stay left of the condition column.
+    if not asleep:
+        emo = ("happy" if pet.anim == "happy" else
+               "unhappy" if pet.anim in ("sad", "refuse", "angry", "tantrum") else None)
+        bubble = []
+        if emo and E.get(emo):                            # cheer -> happy, jeer -> unhappy (DVPet)
+            bubble.append(E[emo][frame_i % len(E[emo])])
+        elif (pet.anim in ("idle", "walk") and E.get("attention")
+              and (pet.hunger == 0 or pet.poop >= 3 or pet.energy <= 0)):
+            bubble.append(E["attention"][0])             # care-call '!'
+        teach = ((getattr(pet, "praise_flag", False) or getattr(pet, "scold_flag", False))
+                 and pet.lights)
+        if teach and E.get("st_teach") and "st_teach" not in _HIDDEN_STATUS_ICONS:
+            bubble.append(E["st_teach"][sf])
+        if bubble:
+            bm = bubble[(tick // 5) % len(bubble)]        # if both present, take turns (rare)
+            w = len(bm[0])
+            pr = pet_right if pet_right is not None else PLAY_R - 1
+            right_limit = (col_x - 1 - w) if col_active else (PLAY_R - w - 1)
+            x = max(PLAY_X0, min(pr + 1, right_limit))
+            pts += _blit(bm, x, 1)
+    return pts
 
 
 class Screen(Static):
@@ -230,7 +240,7 @@ class Screen(Static):
         self.anim_key = None  # last anim state, so cadences restart on a state change
         self.roamer = anim.Roamer(int(SCREEN_COLS * 0.28), SCREEN_COLS, SPRITE_W)  # left-of-centre anchor
         self.fx = None        # active care-action animation
-        self._idle_expr = None    # DVPet stepFrame care-state pose held for the current idle step (None = walk toggle)
+        self._idle_expr = None    # DVPet stepFrame mood-pose held for the current idle step (None = walk toggle)
 
     def paint(self, pet: Pet):
         if self.fx:
@@ -238,15 +248,17 @@ class Screen(Static):
         phase = pet.day_phase
         on, bg = PHASE_PALETTE.get(phase, (LCD_ON, LCD_BG))
         bgimg = self._background(pet)
+        corner = None                      # DVPet shows time via bg frame + palette, no corner icon
         if not pet.lights:                 # lights off (the 's' lights button): dark room (+ Zzz if asleep)
             bgimg, bg, on = None, "#000000", SIL_NIGHT   # DVPet lightsOff.png is pure (0,0,0)
         elif bgimg:
             on = SIL_DAY   # dark silhouette day OR night -- the pet is never white;
             #                white (SIL_NIGHT) is reserved for the lights-out Zzz below
         wf = self.frame_i // 4                  # effect overlay keeps its ~0.4s cadence
+        overlay = _effect_overlay(pet, wf, SCREEN_COLS, SCREEN_ROWS * 2, tick=self.frame_i)
         if pet.dead:                           # a grave marker
             self.update(render_screen(GRAVESTONE, SCREEN_COLS, SCREEN_ROWS, on, bg,
-                                      bgimg=bgimg, band=PLAY_BAND))
+                                      corner=corner, overlay=overlay, bgimg=bgimg))
             return
         if pet.num == -1:                      # egg
             rec = egg_mod.record(pet.egg_type)
@@ -261,19 +273,19 @@ class Screen(Static):
         # per-state cadence: hold each pose for its DVPet interval count rather than
         # flipping every tick (root-cause #2 -- one tick == one _interval; see anim.py).
         # idle holds 5/6/7, sleep holds its 2/3 poses for 10 each, reactions ~6.
-        hold = (anim.idle_hold(0) if pet.anim in ("idle", "walk")
+        hold = (anim.idle_hold(pet._restless()) if pet.anim in ("idle", "walk")
                 else anim.SLEEP_BEAT if pet.anim == "sleep" else 6)
         idx = frames[(self.frame_i // hold) % len(frames)]
         rows = (_fr[idx] if idx < len(_fr) else None) or first
         xshift, mirror = 0, False
-        if pet.anim in ("idle", "walk") and pet.is_injured() and pet.num != -1:
+        if pet.anim in ("idle", "walk") and pet.sick and pet.num != -1:
             si, dx = anim.sick_frame(self.frame_i)               # DVPet idleUnwell: collapse(10), weary(9) flash
             rows = (_fr[si] if si < len(_fr) else None) or first
             xshift = dx
         elif pet.anim in ("idle", "walk") and pet.num != -1:
             # full-width roam (DVPet idleWalk); pose follows the roamer's step, and a
             # filth pile is a left wall it turns at (filthLabel walk bound).  On some
-            # steps DVPet's stepFrame shows a care-state pose instead of the walk toggle.
+            # steps DVPet's stepFrame shows a mood pose instead of the walk toggle.
             expr = self._idle_expr if pet.anim == "idle" else None
             idx = expr if expr is not None else frames[self.roamer.pose % len(frames)]
             rows = (_fr[idx] if idx < len(_fr) else None) or first
@@ -295,18 +307,20 @@ class Screen(Static):
         # NOTE: DVPet's frozen.png (the ice encasement) is its GAME-PAUSED indicator
         # (setFrozenIcon only fires when !isPlaying), not a cold-weather state -- so cold
         # shows the huddle pose above, not a full ice block over the pet.
-        # HARD RULE: keep the creature inside its clear zone so it never overlaps the poop
-        # (left lane) or the injury/call marker (right lane).
-        if pet.num != -1 and not (pet.num == -1 and pet.hatching):
-            lb, rb, _, _ = _care_zones(pet)
+        if pet.poop:                       # keep the pet clear of the filth row in EVERY state
+            pcols = (min(pet.poop, POOP_MAX_PILES) + 1) // 2          # (sleep/sick bypass the roamer bound and would
+            poop_edge = PLAY_X0 + (pcols - 1) * (POOP_W + POOP_PAD) + POOP_W  # x just past the rightmost pile (in-window)
             base = (SCREEN_COLS - SPRITE_W) // 2
-            xshift = max(lb - base, min(xshift, rb - base))
-        overlay = _effect_overlay(pet, wf, SCREEN_COLS, SCREEN_ROWS * 2, tick=self.frame_i)
+            lo = poop_edge - base                         # min shift to clear the piles (REAL edge, not padded)
+            cap = (PLAY_R - SPRITE_W) - base              # don't push the pet past the play-window's right edge
+            xshift = min(max(xshift, lo), max(cap, 0))    # clear poop on the left; emote follows the pet
+        # DVPet adjustEmotionLabel: emote/'!' track the pet's final x, so rebuild the overlay now
+        overlay = _effect_overlay(pet, wf, SCREEN_COLS, SCREEN_ROWS * 2, tick=self.frame_i,
+                                  pet_right=(SCREEN_COLS - SPRITE_W) // 2 + xshift + SPRITE_W)
         if not pet.lights:                 # lights off: DVPet's lightsOff is a fully-opaque black
-            rows, xshift, mirror = [], 0, False   # cover -> the pet is hidden; only black shows
+            rows, xshift, mirror = [], 0, False   # cover -> the pet is hidden; only black (+ Zzz) shows
         self.update(render_screen(rows, SCREEN_COLS, SCREEN_ROWS, on, bg,
-                                  mirror=mirror, xshift=xshift, overlay=overlay,
-                                  bgimg=bgimg, band=PLAY_BAND))
+                                  mirror=mirror, xshift=xshift, corner=corner, overlay=overlay, bgimg=bgimg))
 
     def _background(self, pet):
         return pet.background()
@@ -316,31 +330,40 @@ class Screen(Static):
             self.anim_key = pet.anim            # new state -> restart its cadence at beat 0
             self.frame_i = -1
         self.frame_i += 1
-        if pet is not None and pet.anim in ("idle", "walk") and pet.num != -1 and not pet.is_injured():
+        if pet is not None and pet.anim in ("idle", "walk") and pet.num != -1 and not pet.sick:
+            poop_cols = (min(pet.poop, POOP_MAX_PILES) + 1) // 2          # 2x2 grid -> ceil(piles/2) columns wide
+            poop_right = (PLAY_X0 + poop_cols * (POOP_W + POOP_PAD) + 1) if pet.poop else 0
+            cond = (pet.is_injured() or pet.is_fatigued() or pet.has_vitamin()
+                    or pet.has_medicine() or pet.has_bandage())
+            right_bound = (PLAY_R - COND_W - 1 - SPRITE_W) if cond else None   # clear the right-edge column
             prev_pose = self.roamer.pose
-            # the Digimon paces only its CLEAR zone -- it turns at the poop lane (left) and
-            # the injury/call lane (right) so it never overlaps them.
-            lb, rb, _, _ = _care_zones(pet)
-            self.roamer.step(left_bound=lb, right_bound=rb)
+            # wall the pacing inside the centred 32-wide play window (turns at PLAY_X0/PLAY_RIGHT)
+            self.roamer.step(left_bound=max(poop_right, PLAY_X0),
+                             right_bound=(PLAY_RIGHT if right_bound is None else min(right_bound, PLAY_RIGHT)))
             if self.roamer.pose != prev_pose:                    # a fresh step landed (DVPet stepFrame):
-                self._idle_expr = (anim.care_pose(pet)           # sometimes show a care-state pose instead of
+                self._idle_expr = (anim.mood_pose(pet)           # sometimes show a mood pose instead of
                                    if random.random() < anim.IDLE_EXPR_CHANCE else None)  # the plain walk toggle
         else:
             self._idle_expr = None                               # any non-idle state clears the held expression
 
     # ---- care-action animations (DVPet SpriteAnim eat/clean/cheer) -----------
-    def start_fx(self, kind, icon=None, poop=0, old_num=None):
-        steps = {"eat": 35, "cheer": 31, "clean": 22, "spit": 11, "evolve": 18, "dying": 18}.get(kind, 12)
+    def start_fx(self, kind, icon=None, poop=0, old_num=None, pet=None):
+        steps = {"eat": 35, "cheer": 31, "jeer": 31, "clean": 22, "spit": 11, "evolve": 18, "dying": 18, "play": 37}.get(kind, 12)
         self.fx = {"kind": kind, "step": 0, "steps": steps, "icon": icon, "poop": poop, "old_num": old_num}
         if kind == "eat":
-            # DVPet eat(): 24px food descends (beats 0/2/4/6), then a chew triad alternates
-            # open-mouth(+8)/chew(+7) at beats 10/14/18/22/26/30 while the food is eaten; ends ~34.
-            beats = (10, 14, 18, 22, 26, 30)
-            self.fx["chew"] = {b: (8 if i % 2 == 0 else 7) for i, b in enumerate(beats)}
+            # DVPet eat(): each chew beat is scaled by pow(N, mod) -- a glutton wolfs
+            # food down (mod 0.9, ends ~beat 23), a picky eater dawdles (mod 1.1, ~48);
+            # food descent (beats 0/2/4/6) is NOT scaled.  Disliked food -> +9 grimace.
+            glut = getattr(pet, "glutton", 0) if pet else 0
+            mod = 0.9 if glut > 0 else (1.1 if glut < 0 else 1.0)
+            bite = 9 if (pet is not None and getattr(pet, "_last_meal_disliked", False)) else 7
+            beats = [int(b ** mod) for b in (10, 14, 18, 22, 26, 30)]
+            self.fx["chew"] = {b: (8 if i % 2 == 0 else bite) for i, b in enumerate(beats)}
             fb = (beats[1], beats[3], beats[5])
             self.fx["food_beats"] = fb
             # DVPet eat(): _eat on the first two bites, _lastBite on the third (the chew beats).
             self.fx["bite_snds"] = {fb[0]: "eat", fb[1]: "eat", fb[2]: "lastBite"}
+            self.fx["steps"] = int(34 ** mod) + 1
 
     def advance_fx(self):
         if not self.fx:
@@ -402,6 +425,7 @@ class Screen(Static):
             # DVPet eat(): 24px food descends in 4 stages (beats 0/2/4/6) toward the
             # mouth, then a chew triad alternates open-mouth(+8)/chew(+7) at beats
             # 10/14/18/22/26/30 while the food is consumed frame-by-frame; ends ~34.
+            xshift = -1                                        # DVPet centres the pet (char x29 of the 104px display)
             chew = fx.get("chew") or {10: 8, 14: 7, 18: 8, 22: 7, 26: 8, 30: 7}
             pose_i = 0
             for b in sorted(chew):
@@ -411,46 +435,68 @@ class Screen(Static):
             food = self._food_frames(fx.get("icon") or "f:0")
             if food:
                 fw = len(food[0][0]) if (food[0] and food[0][0]) else 8
-                # DVPet: the food's RIGHT edge meets the pet's LEFT edge, so it descends into
-                # the mouth.  The pet is centred (x12 on our 32-wide window) and the food abuts
-                # its left edge -- clamped to PLAY_X0 so the whole icon stays inside the clip
-                # (the old -1 pet bias pushed the food to x3 and clipped its left column).
-                fx_x = max(PLAY_X0, (SCREEN_COLS - SPRITE_W) // 2 - fw)
+                # DVPet: the food's RIGHT edge meets the pet's LEFT edge (foodLabel x31+24 == char x55),
+                # so it descends right into the mouth -- abut it instead of stranding it on the far left.
+                fx_x = max(0, (SCREEN_COLS - SPRITE_W) // 2 + xshift - fw)
                 stage = 0 if step < 2 else 1 if step < 4 else 2 if step < 6 else 3
                 fy = (0, 4, 9, 13)[stage]                      # DVPet descent y 0/11/22/33 of 60 -> *(24/60)
                 fb = fx.get("food_beats") or (14, 22, 30)
                 fi = 0 if step < fb[0] else 1 if step < fb[1] else 2 if step < fb[2] else 3
                 overlay += _blit(food[min(fi, len(food) - 1)], fx_x, fy)
         elif fx["kind"] == "clean":
-            # Cross-source consensus (real-device DigimonVPet + digilib -- 2 of 3, incl. the
-            # real hardware): the PET STAYS PUT and the poop is flushed off-screen while it
-            # watches.  DVPet's shove-the-pet-off-screen was the outlier.  The left-lane poop
-            # slides off the left edge with a wash spray riding over it; the pet holds its
-            # idle pose (pose map: clean -> idle), unmoved.
+            # DVPet clean(): the wash enters from the right and, once it reaches the pet,
+            # shoves the pet AND the filth left together until they slide off-screen (pet
+            # in its clean pose, frame 4); the chained cheer then brings the pet back.
             E = data.load_effects()
             wash = E.get("wash", [None])[0]
+            wx = SCREEN_COLS - step * 3                        # wash front: enters right, exits left
+            base = (SCREEN_COLS - SPRITE_W) // 2
+            pcols = (min(fx.get("poop", 0), 4) + 1) // 2
+            clear = (PLAY_X0 + (pcols - 1) * (POOP_W + POOP_PAD) + POOP_W) - base if fx.get("poop") else 0
+            push = max(0, base + clear + SPRITE_W - wx)        # wash shove, measured from the pet's RIGHT edge
+            xshift = clear - push                              # pet starts cleared of the filth, then both
+            if push > 0:                                       # slide left in lockstep (gap preserved, no mash)
+                rows = self._pose_rows_idx(pet, 4)             # DVPet clean-done(4): pleased while washed
             pm = E.get("poop", [None])[0]
-            npoop = min(fx.get("poop", 0), POOP_MAX_PILES)
-            cols = (npoop + 1) // 2                             # left-lane poop columns (2 piles per column)
-            xshift = max(0, cols - 1) * POOP_W                  # pet stands clear to the RIGHT of the lane (as on
-            slide = step * 3                                   # the care screen) and holds still -- never shoved
-            if pm and npoop:
+            if pm and fx.get("poop"):
                 pw, ph_ = len(pm[0]), len(pm)
-                n = 0
-                for c in range(cols):
-                    for r in range(2):
-                        if n >= npoop:
-                            break
-                        overlay += _blit(pm, PLAY_X0 + c * pw - slide, (px_h - 2 - ph_) - r * ph_)
-                        n += 1
+                for i in range(min(fx["poop"], POOP_MAX_PILES)):
+                    col, up = i // 2, i % 2                     # filth slides off-screen with the pet
+                    overlay += _blit(pm, PLAY_X0 + col * (pw + POOP_PAD) - push,
+                                     (px_h - 2 - ph_) - up * ph_)
             if wash:
-                wslice = [row[:POOP_W] for row in wash]        # 8-wide slice -> confined to the left lane, never the pet
-                overlay += _blit(wslice, PLAY_X0 - slide, max(0, (px_h - len(wslice)) // 2))
+                overlay += _blit(wash, wx, max(0, (px_h - len(wash)) // 2))
         elif fx["kind"] == "cheer":
-            # a happy bounce: the pose alternates up(+5)/down(+7) every 6 intervals.  (The
-            # DVPet sparkle emote bubble on the up-beats was stripped -- DM20 emotes by pose.)
+            # DVPet cheer(): pose alternates up(+5)/down(+7) every 6 intervals with a
+            # "happy" emote bubble pulsing on the up-beats; ends ~beat 30.
             up = (step // 6) % 2 == 0
-            rows = self._pose_rows_idx(pet, 5 if up else 7)   # cheer up(5) <-> down(7) bounce
+            rows = self._pose_rows_idx(pet, 5 if up else 7)   # DVPet cheer up(5) <-> down(7) bounce
+            if up:
+                hap = data.load_effects().get("happy")
+                if hap:
+                    hf = hap[(step // 6) % len(hap)]
+                    # DVPet cheer(): the pet stays CENTRED and the emote rides its right
+                    # edge (adjustEmotionLabel) -- not pinned to the far corner.
+                    overlay += _blit(hf, (SCREEN_COLS - SPRITE_W) // 2 + SPRITE_W, 1)
+        elif fx["kind"] == "play":
+            # DVPet jumping() (SpriteAnim 17308): the pet bounces with joy -- hops UP on
+            # the excited pose (5) and lands on the neutral pose (1), a happy chirp at the
+            # top of each hop.  Distinct from cheer (which bounces in place on 5/7 with an
+            # emote bubble) -- here the body actually leaves the ground.
+            ph = step % PLAY_HOP
+            up = ph < PLAY_HOP // 2
+            rows = self._pose_rows_idx(pet, 5 if up else 1)   # DVPet excited(5) on the hop, idle-B(1) on land
+            yshift = int(PLAY_HOP_H * (1 - abs(ph / (PLAY_HOP / 2) - 1)))   # triangle: 0 -> apex -> 0
+        elif fx["kind"] == "jeer":
+            # DVPet jeer(): pose alternates down(+10)/up(+9) every 6 intervals with an
+            # "unhappy" emote bubble; ends ~beat 30 (the scold reaction).
+            down = (step // 6) % 2 == 0
+            rows = self._pose_rows_idx(pet, 10 if down else 9)   # DVPet jeer down(10) <-> up(9): scold reaction
+            un = data.load_effects().get("unhappy")
+            if un:
+                uf = un[(step // 6) % len(un)]
+                # DVPet jeer(): centred pet, emote at its right edge (not the corner).
+                overlay += _blit(uf, (SCREEN_COLS - SPRITE_W) // 2 + SPRITE_W, 1)
         elif fx["kind"] == "spit":
             # DVPet refuse(): the pet stays CENTRED and shakes its head; the rejected
             # food drops away from its mouth (on its left) rather than off to one side.
@@ -478,22 +524,25 @@ class Screen(Static):
                 overlay = overlay + [(x, y) for y in range(px_h) for x in range(SCREEN_COLS)]
             # the final steps drop the flash -> the evolved form is revealed
         elif fx["kind"] == "dying":
-            # DM20's "dying song": the collapsed pet (frame 10) sways gently as it sings,
-            # then the screen cuts to the grave (deathscreen).  No floating emote and no
-            # mirror -- DM20 shows the dying song through the pet's own pose, and wayland
-            # (source of truth) has no death glyph at all.
+            # DVPet dying() (SpriteAnim 13179): the collapsed pet sways gently (+/-1)
+            # while the 'dying' emote (dying/dying2) pulses at its right edge, tracking
+            # it -- frame swap and sway in lockstep, just before the memorial.
             xshift = 1 if (step // 5) % 2 == 0 else -1
+            dye = data.load_effects().get("dying")
+            if dye:
+                df = dye[(step // 5) % len(dye)]
+                overlay += _blit(df, (SCREEN_COLS - SPRITE_W) // 2 + SPRITE_W + xshift, 1)
         # every care-action fx lives inside the 32-wide window: the window edge is the
         # screen edge (clip, not anchor), so clean's wash can shove the pet clear off it.
         self.update(render_screen(rows, SCREEN_COLS, SCREEN_ROWS, on, bg,
                                   xshift=xshift, yshift=yshift, overlay=overlay, bgimg=bgimg,
-                                  clip=(PLAY_X0, PLAY_R), band=PLAY_BAND))
+                                  mirror=(fx["kind"] == "dying"), clip=(PLAY_X0, PLAY_R)))
 
 
 def _status_line(status, deco, width=26):
     """Assemble the status word + deco glyphs, bounded to `width` visible cols
     so the Stats box never wraps past its 16-row height. Drops the lowest-priority
-    deco that would overflow (rare: only when asleep+injured+poop+effect pile up)."""
+    deco that would overflow (rare: only when asleep+sick+poop+effect pile up)."""
     from rich.text import Text
     used = len(status) + 3                      # the status word + 3 spaces
     shown = []
@@ -517,6 +566,8 @@ class Stats(Static):
         word = pet.status_word()
         deco = []
         if pet.asleep and word != "asleep": deco.append("[blue]Zzz[/]")
+        if pet.sick and word != "sick": deco.append(f"[{T.NEG}]+sick[/]")
+        if pet.is_fatigued() and word != "fatigued": deco.append(f"[{T.NEG}]+tired[/]")
         if pet.is_injured() and word != "injured": deco.append(f"[{T.NEG}]+hurt[/]")
         if pet.poop and word != "needs cleaning": deco.append(f"[{T.COIN}]~poop x{pet.poop}[/]")
         sky, skycol = _sky_icon(pet)
@@ -525,14 +576,14 @@ class Stats(Static):
         self.border_subtitle = f"gen {pet.generation}"
         lines = [
             f"[b]{pet.name[:22]}[/]",
-            f"[dim]{pet.stage}[/]",
+            f"[dim]{pet.stage}{(' · ' + pet.attribute) if pet.attribute else ''}[/]",
             div,
             f"Hunger  {hearts(pet.hunger)}",
             f"Effort  {hearts(pet.strength)}",
-            f"DP      {bar(pet.dp_pct(), 12, T.ENERGY)}",
+            f"Energy  {bar(pet.energy_pct(), 12, T.ENERGY)}",
+            f"Mood    {bar(pet.mood_pct(), 12, T.MOOD)}",
             div,
-            f"Attrib  {_attr_badge(pet.attribute)}",
-            f"Power   {pet.power}",
+            f"Power   [{T.POS}]●{pet.vaccine}[/] [{T.ENERGY}]■{pet.data_power}[/] [{T.MOOD}]▲{pet.virus}[/]",
             f"Weight  {pet.weight}g",
             f"Battle  {pet.wins}W/{pet.battles}",
             f"[{skycol}]{sky}[/] [dim]{_age_str(pet.age_seconds)}[/]",
@@ -598,7 +649,8 @@ class TuiPetApp(App):
     """
     BINDINGS = [
         ("f", "feed", "Feed"), ("t", "train", "Train"), ("b", "battle", "Battle"),
-        ("c", "clean", "Clean"), ("h", "heal", "Heal"),
+        ("p", "play", "Play"), ("c", "clean", "Clean"), ("h", "heal", "Heal"),
+        ("r", "praise", "Praise"), ("k", "scold", "Scold"),
         ("j", "jogress", "Jogress"),
         ("l", "lobby", "Lobby"),
         ("s", "sleep", "Lights"), ("g", "theme", "Theme"), ("m", "sound", "Sound"), ("n", "new", "New pet"), ("q", "quit", "Quit"),
@@ -720,7 +772,17 @@ class TuiPetApp(App):
 
     def autosave(self):
         persistence.save(self.pet)
+        self._note_progress()
         self._push_cloud()              # mirror the autosave up to the cloud
+
+    def _note_progress(self):
+        """Record cross-generation egg-unlock milestones from the live pet."""
+        p = self.pet
+        if p is None or p.stage in ("", "Egg"):
+            return
+        persistence.note_generation(p.generation)
+        if p.stage in data.STAGE_ORDER:
+            persistence.note_stage_index(data.STAGE_ORDER.index(p.stage))
 
     def on_unmount(self):
         persistence.save(self.pet)
@@ -870,10 +932,13 @@ class TuiPetApp(App):
                                          "[dim]press ENTER[/]", "[dim]to begin[/]"])
         elif isinstance(self.mode, eggselectscreen.EggSelectPanel):
             m = self.mode
-            self._status_card("New Egg", [f"[dim]{m.i + 1} of {m.n} versions[/]", "",
-                                          "Destined to hatch",
-                                          f"  [b]{egg_mod.hatch_name(m.i)}[/]",
-                                          "  [dim]ready[/]", "", "",
+            idx = m.unlocked[m.i] if m.unlocked else 0
+            state = m.states.get(idx, ("owned", 0))[0]
+            badge = {"temp": "[dim]this gen only[/]"}.get(state, "[dim]ready[/]")
+            self._status_card("New Egg", [f"[dim]{m.i + 1} of {m.n} available[/]",
+                                          f"[dim]{m.locked} still locked[/]", "",
+                                          "Destined to hatch", f"  [b]{egg_mod.hatch_name(idx)}[/]",
+                                          f"  {badge}", "",
                                           "[dim]←→ browse  ENTER pick[/]"])
         elif isinstance(self.mode, training.TrainingPanel):
             self._status_training()
@@ -895,22 +960,22 @@ class TuiPetApp(App):
         div = STAT_DIV
         head = _stat_head(p.name, "train")
         eff = hearts(p.strength)
-        dp = bar(p.dp_pct(), 11, T.ENERGY)
+        energy = bar(p.energy_pct(), 11, T.ENERGY)
         if tp.phase == "done":
             verdict = (f"[{T.POS}]wall smashed![/]" if tp.full
-                       else (f"[{T.COIN}]some hits landed[/]" if tp.success else f"[{T.NEG}]too slow[/]"))
+                       else (f"[{T.MOOD}]some hits landed[/]" if tp.success else f"[{T.NEG}]too slow[/]"))
             lines = [head, div,
                      "[b]Wall Drill[/]", "", verdict, "",
-                     f"Effort   {eff}", f"DP       {dp}", div,
+                     f"Effort   {eff}", f"Energy   {energy}", div,
                      f"[dim]{(tp.result or '')[:24]}[/]"]
         else:
             hitbar = bar(min(tp.taps, MASH_TARGET) / MASH_TARGET * 100, 11, T.POS)
-            timebar = bar(max(0, tp.timer) / MASH_WINDOW * 100, 11, T.COIN)
+            timebar = bar(max(0, tp.timer) / MASH_WINDOW * 100, 11, T.MOOD)
             lines = [head, div,
                      "[b]Wall Drill[/]",
                      f"Hits     {tp.taps} / {MASH_TARGET}", f"Wall     {hitbar}",
                      f"Time     {timebar}", div,
-                     f"Effort   {eff}", f"DP       {dp}", div,
+                     f"Effort   {eff}", f"Energy   {energy}", div,
                      "[dim]MASH to smash it![/]"]
         self.stats_w.update("\n".join(lines))
 
@@ -934,40 +999,33 @@ class TuiPetApp(App):
         if m.done_anim:
             res = f"[{T.POS}]VICTORY![/]" if m.won else f"[{T.NEG}]DEFEAT[/]"
             lines += [res, f"[dim]{(b.reward or '')[:24]}[/]", "", "[dim]SPACE  continue[/]"]
-        elif getattr(m, "phase", "") == "minigame":
-            # attack-order minigame: a marker sweeps a track; land it in the zone to strike first
-            pos, lo, hi = m.minigame_cells(14)
-            cells = []
-            for i in range(14):
-                if i == pos:
-                    cells.append(f"[{T.HEART}]◆[/]")
-                elif lo <= i <= hi:
-                    cells.append(f"[{T.POS}]▬[/]")
-                else:
-                    cells.append("[dim]─[/]")
-            lines += ["[b]Attack order[/]", "", "".join(cells), "",
-                      "[dim]SPACE strike  ESC flee[/]"]
         else:
-            lines += [f"[dim]{(m.hud_note or '')[:24]}[/]", "", "[dim]SPACE  skip[/]"]
+            hint = "↑↓ ENTER pick" if getattr(m, "phase", "") == "menu" else "SPACE  skip"
+            lines += [f"[dim]{(m.hud_note or '')[:24]}[/]", "", f"[dim]{hint}[/]"]
         self.stats_w.update("\n".join(lines))
 
     def _status_eat(self):
-        """DM20 feeding readout: the hunger + effort hearts and DP, shown live while the
-        eat animation plays."""
+        """DVPet feeding readout: the calorie (hunger) buffer plus the protein/mineral/
+        vitamin macros, shown live while the eat animation plays."""
+        from .pet import CALORIE_LIMIT, MAX_MACRO, GOOD_NUTRITION_MIN
         p, T = self.pet, theme
         self.stats_w.border_subtitle = f"gen {p.generation}"
         div = STAT_DIV
+        def mbar(v, col):
+            return bar(min(100, v * 100 // MAX_MACRO), 11, col)
+        well = (p.nutr_protein >= GOOD_NUTRITION_MIN and p.nutr_mineral >= GOOD_NUTRITION_MIN
+                and p.nutr_vitamin >= GOOD_NUTRITION_MIN)
         lines = [
             _stat_head(p.name, "feeding"), div,
-            f"Hunger   {hearts(p.hunger)}",
-            f"Effort   {hearts(p.strength)}",
-            f"DP       {bar(p.dp_pct(), 12, T.ENERGY)}",
+            f"Calorie  {hearts(p.hunger)}",
+            f"Fuel     {bar(p.calories * 100 // CALORIE_LIMIT, 12, T.COIN)}",
             div,
-            f"Weight   {p.weight}g",
-            f"Power    {p.power}",
-            "",
-            "[dim]Meat fills hunger; protein[/]",
-            "[dim]builds strength + DP.[/]",
+            f"Protein  {mbar(p.nutr_protein, T.POS)}",
+            f"Mineral  {mbar(p.nutr_mineral, T.ENERGY)}",
+            f"Vitamin  {mbar(p.nutr_vitamin, T.MOOD)}",
+            div,
+            f"Weight {p.weight}g",
+            (f"[{T.POS}]well nourished[/]" if well else "[dim]a varied diet helps[/]"),
         ]
         self.stats_w.update("\n".join(lines))
 
@@ -992,11 +1050,13 @@ class TuiPetApp(App):
             sc.advance_fx()
             sc.paint(self.pet)
             if sc.fx:
-                if sc.fx["kind"] == "eat":     # live feeding readout (hunger/effort/DP)
+                if sc.fx["kind"] == "eat":     # live DVPet feeding readout (calorie + P/M/V)
                     snd = sc.fx.get("bite_snds", {}).get(sc.fx["step"])
                     if snd:                    # _eat on bites 1-2, _lastBite on the final chew
                         self.beep(snd, bell=False)
                     self._status_eat()
+                elif sc.fx["kind"] == "play" and sc.fx["step"] % PLAY_HOP == 1:
+                    self.beep("happy", bell=False)   # DVPet jumping(): a chirp at each hop's launch
             elif self._dying_fx:               # dying beat finished -> memorial
                 self._dying_fx = False
                 self._open_mode(deathscreen.DeathPanel(self.pet), self._after_death)
@@ -1043,7 +1103,8 @@ class TuiPetApp(App):
             self.beep(poop_snd, bell=False)
         # care-need call (classic V-pet nag): alert on onset, then every ~90s
         needs = (not p.dead and p.stage != "Egg" and not p.asleep
-                 and (p.hunger == 0 or p.is_injured() or p.poop >= 3))
+                 and (p.hunger == 0 or p.sick or p.poop >= 3 or p.energy <= 0
+                      or p.scold_flag))
         if needs and not self._needs:
             self.beep("alarm")
             self._nag_t = 0.0
@@ -1112,9 +1173,11 @@ class TuiPetApp(App):
     def _need_message(self, p):
         """HUD announcement for the pet's most urgent unmet care need (or '')."""
         name = p.name or "Your pet"
-        if p.is_injured():  msg = f"{name} is hurt!"
+        if p.sick:          msg = f"{name} is sick!"
         elif p.hunger == 0: msg = f"{name} is hungry!"
         elif p.poop >= 3:   msg = f"{name} needs cleaning!"
+        elif p.energy <= 0: msg = f"{name} is exhausted!"
+        elif p.scold_flag:  msg = f"{name} is misbehaving!"
         else:               return ""
         return f"[{theme.NEG}]\u26a0 {msg}[/]"
 
@@ -1127,7 +1190,7 @@ class TuiPetApp(App):
             return
         msg = self.pet.feed()
         if self.pet.anim == "eat":
-            self.screen_w.start_fx("eat", "f:0")   # SFX now fires per-bite in the fx loop
+            self.screen_w.start_fx("eat", "f:0", pet=self.pet)   # SFX now fires per-bite in the fx loop
         elif "too full" in msg:
             self.screen_w.start_fx("spit", "f:0")
             self.beep("refuse", bell=False)
@@ -1151,9 +1214,29 @@ class TuiPetApp(App):
 
     def _after_battle(self, battle):
         if battle is not None:
+            if battle.won:
+                persistence.wins_add(1)        # lifetime wins gate the mystery eggs
             self.flash(battle.reward)
             self.beep("win") if battle.won else self.beep("lose", bell=False)
         self.repaint()
+
+    def action_praise(self):
+        if self.screen_w.fx is not None:        # let the current care animation finish before acting again
+            return
+        msg = self.pet.praise()
+        if self.pet.anim == "happy":                # the praise lands -> DVPet cheer()
+            self.screen_w.start_fx("cheer")
+            self.beep("happy", bell=False)
+        self._do(msg)
+
+    def action_scold(self):
+        if self.screen_w.fx is not None:        # let the current care animation finish before acting again
+            return
+        msg = self.pet.scold()
+        if self.pet.anim == "angry":                # the scold lands -> DVPet jeer()
+            self.screen_w.start_fx("jeer")
+            self.beep("angry", bell=False)
+        self._do(msg)
 
     def action_jogress(self):
         reason = jogress.can_jogress(self.pet)
@@ -1168,6 +1251,13 @@ class TuiPetApp(App):
         self.repaint()
 
 
+    def action_play(self):
+        if self.screen_w.fx is not None:        # let the current care animation finish before acting again
+            return
+        msg = self.pet.play()
+        if self.pet.anim == "play":
+            self.screen_w.start_fx("play")       # the DVPet jumping() hop; SFX fires per-hop in the fx loop
+        self._do(msg)
     def action_clean(self):
         if self.screen_w.fx is not None:        # let the current care animation finish before acting again
             return
@@ -1187,6 +1277,7 @@ class TuiPetApp(App):
         self._do(msg)
     def action_sleep(self): self._do(self.pet.toggle_lights())   # the "s" key is the LIGHTS toggle
     def action_new(self):
+        persistence.snapshot_prev_gen(self.pet)   # previous-generation egg gates
         gen = self.pet.generation + 1
         self._open_mode(eggselectscreen.EggSelectPanel(self.pet),
                         lambda et: self._hatch_new(et, gen))

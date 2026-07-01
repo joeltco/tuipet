@@ -64,8 +64,8 @@ ROLES = {
     "idle":   [0, 1],      # Idling / Discovering walk
     "walk":   [0, 1],
     "sleep":  [2, 3],      # idleSleep
-    "happy":  [5, 7],      # Cheering up=5 down=7 — win / evolve / content bounce
-    "angry":  [9, 10],     # unhappy poses up=9 down=10
+    "happy":  [5, 7],      # Cheering up=5 down=7 — praise / win / evolve bounce
+    "angry":  [9, 10],     # Jeering up=9 down=10 (scold)
     "eat":    [8, 7],      # eat(): open-mouth 8 -> chew 7
     "refuse": [4],         # refuse(): frame 4 shaken by the mirror toggle
     "attack": [6, 0],      # attackDefault: strike 6 -> reset 0
@@ -157,25 +157,6 @@ def by_name(name):
 def stage_time(stage):
     """Real-time seconds a Digimon spends in `stage` before it can evolve."""
     return _load()["timers"].get(stage)
-
-
-# Per-stage base Power fallback for the mons humulos lists no power for (chart-only /
-# dvpet-fallback), taken from the median of each stage's real humulos values.
-_STAGE_BASE_POWER = {"Baby I": 5, "Baby II": 8, "Child": 20, "Adult": 60,
-                     "Perfect": 130, "Ultimate": 190, "Super Ultimate": 238}
-
-
-def base_power(num):
-    """A species' base battle Power (from humulos); a per-stage default when the source
-    lists none.  Returns 0 for eggs / unknown nums (they never battle)."""
-    if num is None or num < 0:
-        return 0
-    r = get(num)
-    if not r:
-        return _STAGE_BASE_POWER["Child"]
-    if r.get("power") is not None:
-        return int(r["power"])
-    return _STAGE_BASE_POWER.get(r["stage"], _STAGE_BASE_POWER["Child"])
 
 
 def stage_rank(stage):

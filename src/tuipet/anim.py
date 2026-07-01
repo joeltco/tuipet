@@ -19,7 +19,7 @@ TURN_CHANCE = 0.06 # stepFrame flips travelRight now and then so the pet wanders
 WALK_BEAT = 5      # idleWalk advances at _frame 0 and _frame 5 -> a step every 5 intervals
 SLEEP_BEAT = 10    # idleSleep: pose 2 at 0, pose 3 at 10, back at 20 (period 20)
 SICK_PERIOD = 50   # idleUnwell: collapse held, tiny shuffle 30..45, weary flash at 50
-IDLE_EXPR_CHANCE = 0.30   # stepFrame: a fraction of idle steps show a care-state pose, not the walk toggle
+IDLE_EXPR_CHANCE = 0.30   # stepFrame: a fraction of idle steps show a mood pose, not the walk toggle
 
 
 def idle_hold(restless):
@@ -48,17 +48,21 @@ def sick_frame(frame):
     return idx, dx
 
 
-def care_pose(pet):
-    """On a fraction of idle steps the pet shows an expression pose instead of the plain
-    walk toggle, so a resting pet *reads* its live care state (DM20 has no mood meter --
-    this is state-driven, not a stored value).  Returns a sprite index, or None to keep
-    the neutral walk toggle.
+def mood_pose(pet):
+    """DVPet stepFrame substitutes a `checkMoodFrame` expression pose for the plain
+    walk toggle on a fraction of idle steps, so a resting pet *reads* its state:
+    weary when tired/spent, sour when unhappy, bright when content.  Returns a
+    sprite index, or None to keep the neutral walk toggle.
 
-    needs-care (hungry/injured/messy) -> 4/6 (sour), otherwise neutral (None -- a
-    content pet just walks)."""
-    if pet.needs_care():
-        return random.choice((4, 6))          # sour faces (hungry / injured / messy)
-    return None                               # content -> ordinary walk pose
+    Mapping condensed from checkMoodFrame's offset table: tired/no-energy -> 9/10/2,
+    unhappy -> 4/6, happy & spirited -> 5, otherwise neutral (None)."""
+    if pet.energy <= 0 or pet.is_fatigued():
+        return random.choice((10, 9, 2))      # weary / collapsed / droop
+    if pet.mood < 0:
+        return random.choice((4, 6))          # sour faces
+    if pet.mood > 0 and pet.enthusiasm >= 0:
+        return 5                              # bright/excited
+    return None                               # neutral -> ordinary walk pose
 
 
 class Roamer:

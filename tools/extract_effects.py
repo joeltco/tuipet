@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Extract DVPet's auxiliary effect sprites (Zzz, wash, emotes, grave, sun/moon)
+"""Extract DVPet's auxiliary effect sprites (poop, Zzz, frozen, wash, emotes)
 into a 1-bit halfblock atlas: src/tuipet/data/effects.json.gz.
 
 These are small status/emote overlays drawn on the LCD on top of the creature.
@@ -52,15 +52,18 @@ def split_vertical(m):
 
 effects = {}
 
-# single-frame overlays (authentic DM20 status set only)
-for name, fn in {"attention": "attention.png", "wash": "wash.png"}.items():
+# single-frame overlays
+for name, fn in {"frozen": "frozen.png", "attention": "attention.png",
+                 "call": "callLabel.png", "praise": "praise.png",
+                 "scold": "scold.png", "wash": "wash.png"}.items():
     c = crop(native_mask(fn))
     if c is not None:
         effects[name] = [to_rows(c)]
 
 # two-frame emotes (base + "2" variant)
 for name, files in {"happy": ("happy.png", "happy2.png"),
-                    "unhappy": ("unhappy.png", "unhappy2.png")}.items():
+                    "unhappy": ("unhappy.png", "unhappy2.png"),
+                    "depressed": ("depressed.png", "depressed2.png")}.items():
     fr = [to_rows(crop(native_mask(f))) for f in files if crop(native_mask(f)) is not None]
     if fr:
         effects[name] = fr
@@ -89,10 +92,59 @@ for name, fn in {"grave": "death.png", "sun": "noon.png", "moon": "night.png"}.i
     if c is not None:
         effects[name] = [to_rows(c)]
 
-# NOTE: the DVPet training-drill dummies (punching bag / green target / shield), the
-# per-attribute attack projectiles, and the attack/hit/flash bursts are NOT generated
-# here anymore.  DM20 solo training is wall-mash (no drill opponents) and mono battle
-# uses the generic attribute orbs (orbs.json.gz), so those glyphs were orphaned art.
+# training opponents: the punching bag (vaccine/virus/hp drills) + its broken form,
+# and the green pop-up target (data drill).  DVPet vaccinePrePrep/dataPrePrep opponents
+# -- the thing the pet actually fires its attack at during a drill's strike sequence.
+# All authored at 3x like the creatures (trainGreen 32x28 / trainShield 16x18 are clean
+# 3x3-block art); native_mask's /3 block-mean recovers the true crisp dot-matrix sprite.
+# (A non-integer "arena scale" resize antialiased these into mush -- v0.2.27 regression.)
+for name, fn in {"punching_bag": "punchingBag.png", "punching_bag_broken": "punchingBagBroken.png",
+                 "train_green": "trainGreen.png", "train_green_up": "trainGreenUp.png",
+                 "train_shield": "trainShield.png"}.items():       # data-drill cannon + shield
+    c = crop(native_mask(fn))
+    if c is not None:
+        effects[name] = [to_rows(c)]
+
+# HP-drill opponent: one dummy from the battleBags.png sheet (3x2 grid; top-left cell)
+_bb = np.array(Image.open(os.path.join(RES, "battleBags.png")).convert("RGBA"))[0:72, 0:40]
+_bbon = ((_bb[:, :, 3] > 60) & (np.abs(_bb[:, :, :3].astype(int) - np.array(CYAN)).sum(axis=2) > 60))
+_h, _w = _bbon.shape[0] // F, _bbon.shape[1] // F
+_bbc = crop(_bbon[:_h * F, :_w * F].reshape(_h, F, _w, F).mean(axis=(1, 3)) > 0.4)
+if _bbc is not None:
+    effects["battle_bag"] = [to_rows(_bbc)]
+
+# per-attribute projectiles: DVPet's real attack sprites (proven via SpriteAnim
+# initAttackButtons: Vaccine=red.png, Data=green.png, Virus=yellow.png -- distinct
+# black silhouettes: an orb, a block, and a dart. Downsampled /2 to ~7px.
+for _fn, _key in (("red.png", "atk_vaccine"), ("green.png", "atk_data"), ("yellow.png", "atk_virus")):
+    _a = np.array(Image.open(os.path.join(RES, _fn)).convert("RGBA"))
+    _m = _a[:, :, 3] > 120
+    _h, _w = _m.shape
+    _m2 = _m[:_h // 2 * 2, :_w // 2 * 2].reshape(_h // 2, 2, _w // 2, 2).mean(axis=(1, 3)) > 0.4
+    _c = crop(_m2)
+    if _c is not None:
+        effects[_key] = [to_rows(_c)]
+
+# attack projectile: the leading orb, animated across several attackSprites frames
+ap = split_vertical(native_mask("attackSprites.png"))
+if ap:
+    fr = []
+    for i in (0, 6, 12, 18):
+        if i < len(ap):
+            orb = crop(ap[i][:, :9])
+            if orb is not None:
+                fr.append(to_rows(orb))
+    if fr:
+        effects["attack"] = fr
+# impact: small burst core of attackHit, plus the bright attackHitFlash burst
+hb = native_mask("attackHit.png")
+burst = crop(hb[5:15, 12:22])
+if burst is not None:
+    effects["hit"] = [to_rows(burst)]
+hf = native_mask("attackHitFlash.png")
+flash = crop(hf[3:17, 9:25])
+if flash is not None:
+    effects["flash"] = [to_rows(flash)]
 
 # ---- preview ----
 for name, frames in effects.items():

@@ -7,6 +7,23 @@ egg screen or Futon misbehaved in play.
 from tuipet import data, egg
 
 
+def test_egg_unlock_load():
+    rules = data.load_egg_unlock()
+    assert isinstance(rules, dict) and rules, "eggUnlock.csv produced no rules"
+    assert all(isinstance(k, int) for k in rules), "rules must be keyed by egg index"
+    # every rule index is a real egg
+    assert all(0 <= k < egg.count() for k in rules)
+    # every rule carries the full evaluated condition set egg.py reads
+    needed = {"start", "price", "map", "stage", "zone", "gen",
+              "prev_field", "prev_attr", "prev_elem", "history", "food", "item",
+              "password", "obedience", "mood", "desc", "can_perm"}
+    for rule in rules.values():
+        assert needed <= set(rule)
+    # at least one starter egg, and at least one egg behind a price (a real bits sink)
+    assert any(r["start"] for r in rules.values())
+    assert any(r["price"] > 0 for r in rules.values())
+
+
 def test_egg_count_sane():
     assert egg.count() >= 5, "expected the base egg roster to load"
 
