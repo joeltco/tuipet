@@ -14,16 +14,15 @@ but its stages last real-DAYS; under tuipet's ~60x-compressed stage a flat +1 ca
 never reach the digimon.csv power thresholds, stranding good forms). So 2 hits=+4,
 3 hits=+6. Pinned here so a future tweak is a conscious choice.
 
-Pets keep high energy (no fatigue roll) and normal weight (no overweight-injury
-roll) so the gains under test are deterministic. num=-1 keeps it sprite-free.
+Pets keep normal weight (no overweight-injury roll) so the gains under test are
+deterministic. num=-1 keeps it sprite-free. (DM20 training spends no DP/energy.)
 """
 from tuipet.pet import Pet, TRAIN_POWER_PER_HIT
 
 
 def _trainee(attribute="Vaccine", **kw):
-    # high energy, normal weight -> no fatigue / overweight randomness
-    defaults = dict(energy=24, max_energy=24, weight=20, vaccine=0, data_power=0,
-                    virus=0, strength=0)
+    # normal weight -> no overweight-injury randomness
+    defaults = dict(weight=20, vaccine=0, data_power=0, virus=0, strength=0)
     defaults.update(kw)
     return Pet(num=-1, stage="Rookie", attribute=attribute, **defaults)
 
@@ -83,10 +82,10 @@ def test_attribute_drill_is_free():
 
 # ---- shared per-drill costs ------------------------------------------------
 
-def test_drill_costs_weight_energy_and_counts_exercise():
+def test_drill_costs_weight_and_counts_exercise():
     p = _trainee()
-    e0 = p.energy
     p.apply_training(2, 100, attribute="Vaccine", game="vaccine")
     assert p.weight == 18          # -2
-    assert p.energy == e0 - 1
     assert p.exercise_today == 1
+    # DM20 training does NOT spend DP (only battling does)
+    assert p.dp == p.dp_max

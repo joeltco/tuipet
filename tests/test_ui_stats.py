@@ -72,24 +72,24 @@ def test_worst_case_pet_fits():
     _assert_fits(_render(p))
 
 
-def test_dm20_attribute_and_dp_shown():
-    """DM20 status shows the pet's ONE attribute + aggregate DP, not three power counters."""
+def test_dm20_attribute_and_power_shown():
+    """DM20 status shows the pet's ONE attribute + aggregate Power, not three counters."""
     p = Pet.from_num(_top_num())
     p.attribute = "Vaccine"
     p.vaccine, p.data_power, p.virus = 40, 30, 20
     content = _render(p)
     plain = Text.from_markup(content).plain
     assert "Attrib" in plain and "Vaccine" in plain
-    assert "DP      90" in plain                  # dp == vaccine + data + virus
+    assert "Power   90" in plain                  # power == vaccine + data + virus
     # the old ●■▲ triple-power row is gone: ■/▲ appeared only there (a Vaccine badge is ●)
     assert "■" not in plain and "▲" not in plain
     _assert_fits(content)
 
 
-def test_dp_property_is_attribute_sum():
+def test_power_property_is_attribute_sum():
     p = Pet(num=-1, stage="Rookie")
     p.vaccine, p.data_power, p.virus = 11, 22, 33
-    assert p.dp == 66
+    assert p.power == 66
 
 
 def test_egg_view_fits():
@@ -106,9 +106,9 @@ def test_grave_view_fits():
 def test_all_status_words_fit():
     """Each possible status word, paired with poop deco, still fits."""
     p = Pet.from_num(_top_num())
-    for word in ["ok", "happy", "unhappy", "elderly", "needs cleaning",
-                 "sick", "fatigued", "injured", "sleepy", "asleep",
-                 "starving", "misbehaving", "did great!"]:
+    for word in ["ok", "happy", "elderly", "needs cleaning",
+                 "sick", "injured", "sleepy", "asleep",
+                 "starving", "passed away", "did great!"]:
         p.status_word = lambda w=word: w
         p.poop = 4; p.sick = True
         _assert_fits(_render(p))

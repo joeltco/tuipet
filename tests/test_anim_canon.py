@@ -24,26 +24,21 @@ def test_sick_shuffle_is_net_zero():
 
 
 class _StubPet:
-    def __init__(self, energy=10, fatigued=False, needs_care=False):
-        self.energy, self._fat, self._need = energy, fatigued, needs_care
-
-    def is_fatigued(self):
-        return self._fat
+    def __init__(self, needs_care=False):
+        self._need = needs_care
 
     def needs_care(self):
         return self._need
 
 
 def test_care_pose_reads_state():
-    assert anim.care_pose(_StubPet(energy=0)) in (10, 9, 2)          # spent -> weary
-    assert anim.care_pose(_StubPet(fatigued=True)) in (10, 9, 2)     # tired -> weary
-    assert anim.care_pose(_StubPet(needs_care=True)) in (4, 6)       # hungry/sick/messy -> sour
+    assert anim.care_pose(_StubPet(needs_care=True)) in (4, 6)       # hungry/sick/injured/messy -> sour
     assert anim.care_pose(_StubPet()) is None                        # content -> ordinary walk pose
 
 
 def test_care_pose_indices_are_valid_sprite_frames():
     # every pose care_pose can return must be a real frame on the 11-frame strip
-    for p in (10, 9, 2, 4, 6):
+    for p in (4, 6):
         assert 0 <= p <= 10
 
 
