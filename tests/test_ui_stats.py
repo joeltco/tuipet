@@ -46,28 +46,29 @@ def _assert_fits(content):
         assert w <= INNER_W, f"line {w}>{INNER_W} cols: {vis!r}"
 
 
-def _mega_num():
+def _top_num():
+    """A real top-stage Digimon (Super Ultimate) — the widest name/stat strings."""
     _, by = data.load_sprites()
-    n = next((k for k, r in by.items() if r["stage"] == "Mega" and not data.is_placeholder(k)), None)
+    n = next((k for k, r in by.items()
+              if r["stage"] == "Super Ultimate" and not data.is_placeholder(k)), None)
     if n is None:
         pytest.skip("sprite assets not installed")
     return n
 
 
 def test_normal_pet_fits():
-    _assert_fits(_render(Pet.from_num(_mega_num())))
+    _assert_fits(_render(Pet.from_num(_top_num())))
 
 
 def test_worst_case_pet_fits():
-    p = Pet.from_num(_mega_num())
-    p.stage = "Mega"
+    p = Pet.from_num(_top_num())
     p.name = "Wargreymonmonmonmonmon"          # over the 22-cap
-    p.weather = "HeavyRain"; p.temp = 100
-    p.age_seconds = 4320 * 60 + 59             # max-ish age string
+    p.age_seconds = 99 * 3600 + 59 * 60        # max-ish age string ('99h59m')
     p.vaccine = p.data_power = p.virus = 999
-    p.weight = 999; p.bits = 99999
-    p.wins = 999; p.battles = 999; p.trophies = 99
-    p.asleep = True; p.sick = True; p.poop = 4; p.effect_id = 0
+    p.weight = 999
+    p.wins = 999; p.battles = 999
+    p.asleep = True; p.sick = True; p.poop = 4
+    p.fatigue_length = 100; p.inj_length = 100  # pile on the +tired / +hurt decos
     _assert_fits(_render(p))
 
 
@@ -76,7 +77,7 @@ def test_egg_view_fits():
 
 
 def test_grave_view_fits():
-    p = Pet.from_num(_mega_num())
+    p = Pet.from_num(_top_num())
     p.dead = True
     p.name = "Wargreymonmonmonmonmon"
     _assert_fits(_render(p))
@@ -84,9 +85,10 @@ def test_grave_view_fits():
 
 def test_all_status_words_fit():
     """Each possible status word, paired with poop deco, still fits."""
-    p = Pet.from_num(_mega_num())
+    p = Pet.from_num(_top_num())
     for word in ["ok", "happy", "unhappy", "elderly", "needs cleaning",
-                 "overheating", "freezing", "starving", "misbehaving"]:
+                 "sick", "fatigued", "injured", "sleepy", "asleep",
+                 "starving", "misbehaving", "did great!"]:
         p.status_word = lambda w=word: w
         p.poop = 4; p.sick = True
         _assert_fits(_render(p))

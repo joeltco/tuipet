@@ -75,6 +75,27 @@ def bar(v, width=12, color=None):
     return f"[{color}]" + "█" * fill + "[/][dim]" + "─" * (width - fill) + "[/dim]"
 
 
+# One source of truth for the Stats-box furniture: the 26-col divider (the inner box
+# is 26 wide), the compact age readout, and the one-line mode header.  Every status
+# readout builds from these so they stay visually identical and markup-valid.
+STAT_DIV = "[dim]" + "─" * 26 + "[/]"
+
+
+def _age_str(seconds):
+    """Compact age: 'Hh Mm' once past an hour (a pet lives for hours), else 'Mm Ss'."""
+    s = max(0, int(seconds))
+    if s >= 3600:
+        h, rem = divmod(s, 3600)
+        return f"{h}h{rem // 60:02d}m"
+    m, sec = divmod(s, 60)
+    return f"{m}m{sec:02d}s"
+
+
+def _stat_head(name, tag):
+    """The one-line header shared by the mode readouts: bold name + a dim mode tag."""
+    return f"[b]{name[:14]}[/] [dim]· {tag}[/]"
+
+
 _FX = data.load_effects()
 GRAVESTONE = _FX.get("grave", [None])[0]      # real DVPet death.png
 SUN = _FX.get("sun", [None])[0]               # real DVPet noon.png
@@ -541,15 +562,14 @@ class Stats(Static):
         if pet.num == -1 or pet.stage == "Egg":
             return self._paint_egg(pet)
         T = theme
-        div = f"[dim]{'─' * 26}[/]"
+        div = STAT_DIV
         word = pet.status_word()
         deco = []
         if pet.asleep and word != "asleep": deco.append("[blue]Zzz[/]")
         if pet.sick and word != "sick": deco.append(f"[{T.NEG}]+sick[/]")
         if pet.is_fatigued() and word != "fatigued": deco.append(f"[{T.NEG}]+tired[/]")
         if pet.is_injured() and word != "injured": deco.append(f"[{T.NEG}]+hurt[/]")
-        if pet.poop: deco.append(f"[{T.COIN}]~poop x{pet.poop}[/]")
-        mins, secs = divmod(int(pet.age_seconds), 60)
+        if pet.poop and word != "needs cleaning": deco.append(f"[{T.COIN}]~poop x{pet.poop}[/]")
         sky, skycol = _sky_icon(pet)
         lifepct = max(0, int((pet.lifespan - pet.age_seconds) / max(1, pet.lifespan) * 100))
         lifecol = T.NEG if pet.is_geriatric else T.LIFE
@@ -566,16 +586,15 @@ class Stats(Static):
             f"Power   [{T.POS}]●{pet.vaccine}[/] [{T.ENERGY}]■{pet.data_power}[/] [{T.MOOD}]▲{pet.virus}[/]",
             f"Weight  {pet.weight}g",
             f"Battle  {pet.wins}W/{pet.battles}",
-            f"[{skycol}]{sky}[/] [dim]{mins}m{secs:02d}s[/]",
+            f"[{skycol}]{sky}[/] [dim]{_age_str(pet.age_seconds)}[/]",
             f"Life    {bar(lifepct, 12, lifecol)}",
             _status_line(word, deco),
         ]
         self.update("\n".join(lines))
 
     def _paint_egg(self, pet):
-        mins, secs = divmod(int(pet.age_seconds), 60)
         self.border_subtitle = f"gen {pet.generation}"
-        div = f"[dim]{'─' * 26}[/]"
+        div = STAT_DIV
         lines = [
             "[b]Digitama[/] [dim]· egg[/]",
             div,
@@ -584,7 +603,7 @@ class Stats(Static):
             "Destined to hatch",
             f"  [b]{egg_mod.hatch_name(pet.egg_type)}[/]",
             div,
-            f"Age     {mins}m{secs:02d}s",
+            f"Age     {_age_str(pet.age_seconds)}",
             "",
             "[dim]keep it cosy — it[/]",
             "[dim]hatches on its own[/]",
@@ -592,15 +611,14 @@ class Stats(Static):
         self.update("\n".join(lines))
 
     def _paint_grave(self, pet):
-        mins = int(pet.age_seconds) // 60
         self.border_subtitle = f"gen {pet.generation}"
-        div = f"[dim]{'─' * 26}[/]"
+        div = STAT_DIV
         lines = [
             f"[b]{pet.name[:16]}[/] [dim]· rest[/]",
             div,
             "[dim]a life remembered[/]",
             "",
-            f"Lived    {mins}m",
+            f"Lived    {_age_str(pet.age_seconds)}",
             f"Reached  {pet.stage}",
             f"Attrib   {pet.attribute}",
             f"Record   {pet.wins}W / {pet.battles}",
@@ -932,27 +950,28 @@ class TuiPetApp(App):
 
     def _status_card(self, title, lines):
         self.stats_w.border_subtitle = ""
-        body = [f"[b]{title}[/]", f"[dim]{'─' * 26}[/]"] + lines
+        body = [f"[b]{title}[/]", STAT_DIV] + lines
         self.stats_w.update("\n".join(body))
 
     def _status_training(self):
         from .training import MASH_TARGET, MASH_WINDOW
         p, tp, T = self.pet, self.mode, theme
         self.stats_w.border_subtitle = f"gen {p.generation}"
-        div = f"[dim]{chr(0x2500) * 26}[/]"
+        div = STAT_DIV
+        head = _stat_head(p.name, "train")
         eff = hearts(p.strength)
         energy = bar(p.energy_pct(), 11, T.ENERGY)
         if tp.phase == "done":
             verdict = (f"[{T.POS}]wall smashed![/]" if tp.full
                        else (f"[{T.MOOD}]some hits landed[/]" if tp.success else f"[{T.NEG}]too slow[/]"))
-            lines = [f"[b]{p.name[:14]}[/] [dim]{chr(0xb7)} train[/]", div,
+            lines = [head, div,
                      "[b]Wall Drill[/]", "", verdict, "",
                      f"Effort   {eff}", f"Energy   {energy}", div,
                      f"[dim]{(tp.result or '')[:24]}[/]"]
         else:
             hitbar = bar(min(tp.taps, MASH_TARGET) / MASH_TARGET * 100, 11, T.POS)
             timebar = bar(max(0, tp.timer) / MASH_WINDOW * 100, 11, T.MOOD)
-            lines = [f"[b]{p.name[:14]}[/] [dim]{chr(0xb7)} train[/]", div,
+            lines = [head, div,
                      "[b]Wall Drill[/]",
                      f"Hits     {tp.taps} / {MASH_TARGET}", f"Wall     {hitbar}",
                      f"Time     {timebar}", div,
@@ -964,14 +983,14 @@ class TuiPetApp(App):
         p, m, T = self.pet, self.mode, theme
         b = m.battle
         self.stats_w.border_subtitle = f"gen {p.generation}"
-        div = f"[dim]{'─' * 26}[/]"
+        div = STAT_DIV
         php = getattr(m, "hud_php", b.pet_hp)
         fhp = getattr(m, "hud_fhp", b.enemy_hp)
         pp = int(100 * php / b.pet_max) if b.pet_max else 0
         fp = int(100 * fhp / b.enemy_max) if b.enemy_max else 0
         tag = f" [{T.NEG}]BOSS[/]" if b.enemy.get("boss") else ""
         lines = [
-            f"[b]{p.name[:14]}[/] [dim]· battle[/]", div,
+            _stat_head(p.name, "battle"), div,
             f"vs [b]{b.enemy['name'][:14]}[/]{tag}", "",
             f"You  {bar(pp, 11, T.POS)} {php}/{b.pet_max}",
             f"Foe  {bar(fp, 11, T.NEG)} {fhp}/{b.enemy_max}",
@@ -991,13 +1010,13 @@ class TuiPetApp(App):
         from .pet import CALORIE_LIMIT, MAX_MACRO, GOOD_NUTRITION_MIN
         p, T = self.pet, theme
         self.stats_w.border_subtitle = f"gen {p.generation}"
-        div = "[dim]" + chr(0x2500) * 26 + "[/]"   # no backslash inside an f-string (SyntaxError on py3.10/3.11)
+        div = STAT_DIV
         def mbar(v, col):
             return bar(min(100, v * 100 // MAX_MACRO), 11, col)
         well = (p.nutr_protein >= GOOD_NUTRITION_MIN and p.nutr_mineral >= GOOD_NUTRITION_MIN
                 and p.nutr_vitamin >= GOOD_NUTRITION_MIN)
         lines = [
-            f"[b]{p.name[:14]}[/] [dim]\u00b7 feeding[/]", div,
+            _stat_head(p.name, "feeding"), div,
             f"Calorie  {hearts(p.hunger)}",
             f"Fuel     {bar(p.calories * 100 // CALORIE_LIMIT, 12, T.COIN)}",
             div,
