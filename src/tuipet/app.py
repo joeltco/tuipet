@@ -118,10 +118,6 @@ GRAVESTONE = _FX.get("grave", [None])[0]      # real DVPet death.png
 SUN = _FX.get("sun", [None])[0]               # real DVPet noon.png
 MOON = _FX.get("moon", [None])[0]             # real DVPet night.png
 
-_POOP_FR = (_FX.get("poop") or [None])[0]
-POOP_W = len(_POOP_FR[0]) if _POOP_FR else 5
-POOP_PAD = 0    # no inter-pile gap: on the 32-wide window a 2-col filth grid + the 16px pet
-#               just fit, and the poop sprite's own empty edge columns keep the piles distinct
 _FROZEN_FR = (_FX.get("frozen") or [None])[0]
 
 def _sky_icon(pet):
@@ -173,74 +169,72 @@ _HIDDEN_STATUS_ICONS = {"st_medicine", "st_teach"}
 
 
 def _effect_overlay(pet, frame_i, cols, px_h, tick=0, pet_right=None):
-    """Status sprites overlaid on the LCD, laid out like the real DM20 dot-matrix and
-    kept strictly inside the 16-dot screen band: droppings along the floor, the sleep
-    Zzz floating above the Digimon's head, the sickness/injury marker beside it, and a
-    care-call bubble over its head (DM20 manual). Nothing sits in the LCD margin."""
+    """Status sprites laid out the DM20 dot-matrix way, inside the 16-dot screen band:
+    droppings as a single low row along the floor that the Digimon walks in FRONT of,
+    the sleep Zzz above its head, the sickness/injury marker floating beside it, and a
+    care-call bubble by its head (DM20 manual). Returns (front, back): `back` draws
+    behind the creature (the droppings), `front` over it (Zzz / markers / bubble)."""
     E = data.load_effects()
-    pts = []
+    front, back = [], []
     if pet.dead:
-        return pts
+        return front, back
     band_top = max(0, px_h - 2 - 16)                      # 16-dot screen band, 2px floor (=6 on 24px canvas)
     band_bot = px_h - 2                                    # =22
+    # --- droppings: a single low row along the floor, BEHIND the creature (DM20) ---
     poopfr = E.get("poop") or []
-    if pet.poop and poopfr:                               # piles stack in a 2-wide grid along the floor
+    if pet.poop and poopfr:
         pm = poopfr[(tick // (10 if pet.asleep else 7)) % len(poopfr)]   # DVPet animFilth swap
         pw, ph_ = len(pm[0]), len(pm)
-        for i in range(min(pet.poop, POOP_MAX_PILES)):                  # column-major (bottom pile, then one
-            col, up = i // 2, i % 2                         # stacked directly above it), each column steps right
-            x = PLAY_X0 + col * (pw + POOP_PAD)
-            y = (band_bot - ph_) - up * ph_
-            pts += _blit(pm, x, y)
+        for i in range(min(pet.poop, POOP_MAX_PILES)):
+            x = min(PLAY_X0 + i * pw, PLAY_R - pw)         # left-to-right along the floor, clamped in-window
+            back += _blit(pm, x, band_bot - ph_)
     if pet.num == -1:
-        return pts
+        return front, back
     asleep = bool(getattr(pet, "asleep", False))
-    # pet centre-x (its head), so head-tracked elements sit over the Digimon, not a fixed corner
-    head_cx = (pet_right - SPRITE_W // 2) if pet_right is not None else (PLAY_X0 + PLAY_COLS // 2)
-    # --- sleep Zzz: floats above the Digimon's head at the top of the screen (DM20 manual) ---
+    pl = (pet_right - SPRITE_W) if pet_right is not None else (PLAY_X0 + (PLAY_COLS - SPRITE_W) // 2)
+    pr = pl + SPRITE_W
+    head_cx = pl + SPRITE_W // 2
+
+    def _beside(w):
+        """A slot just outside the creature on whichever side has room (DM20: 'next to it')."""
+        return pr + 1 if (pr + 1 + w) <= PLAY_R else max(PLAY_X0, pl - 1 - w)
+
+    # --- sleep Zzz: floats above the Digimon's head ---
     if asleep and E.get("zzz"):
         z = E["zzz"][(frame_i // 2) % len(E["zzz"])]
         zw = len(z[0])
         zx = max(PLAY_X0, min(head_cx - zw // 2, PLAY_R - zw))
-        pts += _blit(z, zx, band_top)
-    # --- condition marker: the sick/injury icon floats beside the pet at the screen edge ---
+        front += _blit(z, zx, band_top)
+    # --- condition marker: the sick/injury icon floats beside the creature, tracking it ---
     # DVPet stateNumTic blink: 7 ticks awake / 10 asleep, faster (7) when unwell.
     unwell = pet.sick or pet.is_injured()
     sf = (tick // (7 if unwell else (10 if asleep else 7))) % 2
-    col_x = PLAY_R - COND_W - 1                            # 1px off the play-window's right edge
     column = (("st_sick", pet.sick), ("st_medicine", pet.has_medicine()),
               ("st_injury", pet.is_injured()), ("st_bandage", pet.has_bandage()))
     k = 0
-    col_active = False
+    cond_active = False
     for key, active in column:
         if not active or not E.get(key) or key in _HIDDEN_STATUS_ICONS:
             continue
-        col_active = True
+        cond_active = True
         y = band_top + k * COND_PITCH
         if y + COND_H > band_bot:                         # keep the stack inside the 16-dot band
             break
-        pts += _blit(E[key][sf], col_x, y)
+        front += _blit(E[key][sf], _beside(COND_W), y)
         k += 1
-    # --- care-call / reaction bubble: rides above the creature's head, awake only ---
-    # DVPet's emotionLabel rides the creature (adjustEmotionLabel); reactions don't fire
-    # while it sleeps, so this slot is awake-only and clamped left of the condition marker.
-    if not asleep:
+    # --- care-call / reaction bubble: beside the head, awake only; yields to the marker ---
+    if not asleep and not cond_active:
         emo = ("happy" if pet.anim == "happy" else
                "unhappy" if pet.anim in ("sad", "refuse", "angry", "tantrum") else None)
-        bubble = []
+        bubble = None
         if emo and E.get(emo):                            # happy / unhappy reaction emote
-            bubble.append(E[emo][frame_i % len(E[emo])])
+            bubble = E[emo][frame_i % len(E[emo])]
         elif (pet.anim in ("idle", "walk") and E.get("attention")
               and (pet.hunger == 0 or pet.poop >= 3)):
-            bubble.append(E["attention"][0])             # care-call '!'
+            bubble = E["attention"][0]                    # care-call '!'
         if bubble:
-            bm = bubble[(tick // 5) % len(bubble)]        # if both present, take turns (rare)
-            w = len(bm[0])
-            pr = pet_right if pet_right is not None else PLAY_R - 1
-            right_limit = (col_x - 1 - w) if col_active else (PLAY_R - w - 1)
-            x = max(PLAY_X0, min(pr + 1, right_limit))
-            pts += _blit(bm, x, band_top)
-    return pts
+            front += _blit(bubble, _beside(len(bubble[0])), band_top)
+    return front, back
 
 
 class Screen(Static):
@@ -265,7 +259,7 @@ class Screen(Static):
             on = SIL_DAY   # dark silhouette day OR night -- the pet is never white;
             #                white (SIL_NIGHT) is reserved for the lights-out Zzz below
         wf = self.frame_i // 4                  # effect overlay keeps its ~0.4s cadence
-        overlay = _effect_overlay(pet, wf, SCREEN_COLS, SCREEN_ROWS * 2, tick=self.frame_i)
+        overlay, back = _effect_overlay(pet, wf, SCREEN_COLS, SCREEN_ROWS * 2, tick=self.frame_i)
         if pet.dead:                           # a grave marker
             self.update(render_screen(GRAVESTONE, SCREEN_COLS, SCREEN_ROWS, on, bg,
                                       corner=corner, overlay=overlay, bgimg=bgimg, band=PLAY_BAND))
@@ -317,21 +311,15 @@ class Screen(Static):
         # NOTE: DVPet's frozen.png (the ice encasement) is its GAME-PAUSED indicator
         # (setFrozenIcon only fires when !isPlaying), not a cold-weather state -- so cold
         # shows the huddle pose above, not a full ice block over the pet.
-        if pet.poop:                       # keep the pet clear of the filth row in EVERY state
-            pcols = (min(pet.poop, POOP_MAX_PILES) + 1) // 2          # (sleep/sick bypass the roamer bound and would
-            poop_edge = PLAY_X0 + (pcols - 1) * (POOP_W + POOP_PAD) + POOP_W  # x just past the rightmost pile (in-window)
-            base = (SCREEN_COLS - SPRITE_W) // 2
-            lo = poop_edge - base                         # min shift to clear the piles (REAL edge, not padded)
-            cap = (PLAY_R - SPRITE_W) - base              # don't push the pet past the play-window's right edge
-            xshift = min(max(xshift, lo), max(cap, 0))    # clear poop on the left; emote follows the pet
-        # DVPet adjustEmotionLabel: emote/'!' track the pet's final x, so rebuild the overlay now
-        overlay = _effect_overlay(pet, wf, SCREEN_COLS, SCREEN_ROWS * 2, tick=self.frame_i,
-                                  pet_right=(SCREEN_COLS - SPRITE_W) // 2 + xshift + SPRITE_W)
+        # DM20: the Digimon roams freely over the floor (droppings sit BEHIND it, drawn as
+        # the back layer); the marker/emote track the pet's final x, so rebuild the overlay now.
+        overlay, back = _effect_overlay(pet, wf, SCREEN_COLS, SCREEN_ROWS * 2, tick=self.frame_i,
+                                        pet_right=(SCREEN_COLS - SPRITE_W) // 2 + xshift + SPRITE_W)
         if not pet.lights:                 # lights off: DVPet's lightsOff is a fully-opaque black
             rows, xshift, mirror = [], 0, False   # cover -> the pet is hidden; only black (+ Zzz) shows
         self.update(render_screen(rows, SCREEN_COLS, SCREEN_ROWS, on, bg,
                                   mirror=mirror, xshift=xshift, corner=corner, overlay=overlay,
-                                  bgimg=bgimg, band=PLAY_BAND))
+                                  bgimg=bgimg, band=PLAY_BAND, back_overlay=back))
 
     def _background(self, pet):
         return pet.background()
@@ -342,14 +330,11 @@ class Screen(Static):
             self.frame_i = -1
         self.frame_i += 1
         if pet is not None and pet.anim in ("idle", "walk") and pet.num != -1 and not pet.sick:
-            poop_cols = (min(pet.poop, POOP_MAX_PILES) + 1) // 2          # 2x2 grid -> ceil(piles/2) columns wide
-            poop_right = (PLAY_X0 + poop_cols * (POOP_W + POOP_PAD) + 1) if pet.poop else 0
-            cond = (pet.is_injured() or pet.has_medicine() or pet.has_bandage())
-            right_bound = (PLAY_R - COND_W - 1 - SPRITE_W) if cond else None   # clear the right-edge column
             prev_pose = self.roamer.pose
-            # wall the pacing inside the centred 32-wide play window (turns at PLAY_X0/PLAY_RIGHT)
-            self.roamer.step(left_bound=max(poop_right, PLAY_X0),
-                             right_bound=(PLAY_RIGHT if right_bound is None else min(right_bound, PLAY_RIGHT)))
+            # DM20: the Digimon paces the FULL 32-wide window (turns at PLAY_X0/PLAY_RIGHT);
+            # droppings are floor decoration it walks in front of, not a wall, and the sick
+            # marker rides beside it -- so nothing bounds the roam but the screen edges.
+            self.roamer.step(left_bound=PLAY_X0, right_bound=PLAY_RIGHT)
             if self.roamer.pose != prev_pose:                    # a fresh step landed (DVPet stepFrame):
                 self._idle_expr = (anim.care_pose(pet)           # sometimes show a care-state pose instead of
                                    if random.random() < anim.IDLE_EXPR_CHANCE else None)  # the plain walk toggle
@@ -456,19 +441,16 @@ class Screen(Static):
             wash = E.get("wash", [None])[0]
             wx = SCREEN_COLS - step * 3                        # wash front: enters right, exits left
             base = (SCREEN_COLS - SPRITE_W) // 2
-            pcols = (min(fx.get("poop", 0), 4) + 1) // 2
-            clear = (PLAY_X0 + (pcols - 1) * (POOP_W + POOP_PAD) + POOP_W) - base if fx.get("poop") else 0
-            push = max(0, base + clear + SPRITE_W - wx)        # wash shove, measured from the pet's RIGHT edge
-            xshift = clear - push                              # pet starts cleared of the filth, then both
-            if push > 0:                                       # slide left in lockstep (gap preserved, no mash)
+            push = max(0, base + SPRITE_W - wx)                # wash shove, measured from the pet's RIGHT edge
+            xshift = -push                                     # pet slides left as the wash reaches it
+            if push > 0:
                 rows = self._pose_rows_idx(pet, 4)             # DVPet clean-done(4): pleased while washed
             pm = E.get("poop", [None])[0]
             if pm and fx.get("poop"):
                 pw, ph_ = len(pm[0]), len(pm)
-                for i in range(min(fx["poop"], POOP_MAX_PILES)):
-                    col, up = i // 2, i % 2                     # filth slides off-screen with the pet
-                    overlay += _blit(pm, PLAY_X0 + col * (pw + POOP_PAD) - push,
-                                     (px_h - 2 - ph_) - up * ph_)
+                for i in range(min(fx["poop"], POOP_MAX_PILES)):   # the floor row slides off with the pet
+                    x = min(PLAY_X0 + i * pw, PLAY_R - pw) - push
+                    overlay += _blit(pm, x, px_h - 2 - ph_)
             if wash:
                 overlay += _blit(wash, wx, max(0, (px_h - len(wash)) // 2))
         elif fx["kind"] == "cheer":

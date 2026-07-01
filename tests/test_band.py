@@ -33,7 +33,8 @@ def _pet(**kw):
 def _bounds(pet):
     px_h = app.SCREEN_ROWS * 2
     pr = (app.SCREEN_COLS - app.SPRITE_W) // 2 + app.SPRITE_W
-    return app._effect_overlay(pet, 0, app.SCREEN_COLS, px_h, tick=0, pet_right=pr)
+    front, back = app._effect_overlay(pet, 0, app.SCREEN_COLS, px_h, tick=0, pet_right=pr)
+    return front + back              # both layers must stay inside the band + window
 
 
 def test_band_constants_describe_a_16_dot_screen():
