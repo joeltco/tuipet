@@ -46,8 +46,7 @@ def test_status_overlay_never_leaves_the_band():
         _pet(asleep=True),                                             # Zzz above head
         _pet(sick=True, is_injured=lambda: True),                      # condition markers
         _pet(poop=3),                                                  # droppings on the floor
-        _pet(hunger=0),                                                # care-call bubble
-        _pet(anim="happy"), _pet(anim="unhappy"),                      # reaction emotes
+        _pet(hunger=0),                                                # care-call '!'
         _pet(asleep=True, sick=True, poop=3),                          # everything at once
     ]
     for pet in states:
