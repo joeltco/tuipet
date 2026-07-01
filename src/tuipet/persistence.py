@@ -69,7 +69,7 @@ def wins_add(n=1):
 
 # --- cross-generation egg-unlock progress (DVPet eggUnlock.csv signals) -----------
 # These outlive any single pet and feed egg.evaluate(): permanent milestones (album,
-# wins, max generation/stage, maps cleared, tournament trophies, X-Antibody ever) plus
+# wins, max generation/stage, maps cleared, X-Antibody ever) plus
 # a snapshot of the pet that just freed the slot, for the "previous generation" gates.
 
 def _prog():

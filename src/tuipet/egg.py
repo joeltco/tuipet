@@ -86,7 +86,7 @@ def record(egg_type=0):
 
 # --- DVPet eggUnlock.csv-driven egg unlock (real data; see data.load_egg_unlock) ---
 # Each egg gates on the same signals the device tracks (generation, album/history,
-# X-Antibody, reached stage, maps cleared, tournament trophies, previous-generation
+# X-Antibody, reached stage, maps cleared, previous-generation
 # attribute/element/field). Condition met + price 0 -> auto-unlocked (free to hatch,
 # or temp for this generation); condition met + price > 0 -> BUYABLE in the egg shop
 # (shopscreen Eggs tab) and bought eggs are owned permanently. The egg SELECT shows

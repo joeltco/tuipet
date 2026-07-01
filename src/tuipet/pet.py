@@ -168,8 +168,7 @@ DISCIPLINE_OBEDIENCE_MAX = 50            # DisciplineCallObedienceMax (grown + o
 # exhaustion can leave the pet fatigued for FatigueMin..FatigueMax game-minutes -- a big
 # one-time mood/energy/spirit hit, and it cannot act until it has rested off the clock.
 # isFatigued() == fatigue_length > 0; the length counts down in game-minutes (1 game-min
-# ~= 1s under tuipet's clock).  Habitat-compatibility length mods and the lifespan hit
-# are omitted (documented); deltas verbatim.
+# ~= 1s under tuipet's clock).  The lifespan hit is omitted (documented); deltas verbatim.
 FATIGUE_MIN = 5                          # FatigueMin
 FATIGUE_MAX = 60                         # FatigueMax
 FATIGUE_MOOD_DEC = 50                    # FatigueMoodDec (the exhaustion hit)
@@ -181,8 +180,8 @@ FATIGUE_CHANCE = 60                      # FatigueChance (% on an exhausting dri
 
 # DVPet sickness & injury durations (config.csv, PhysicalState.sicken / injure): an
 # illness or injury lasts Min..MaxLength recovery lapses (SickLapseMin/InjLapseMin game-min
-# each) and then clears on its own; onset costs mood/spirit.  Habitat-compat length mods
-# omitted (documented); deltas verbatim.  Cured early by medicine as before.
+# each) and then clears on its own; onset costs mood/spirit.  Deltas verbatim;
+# cured early by medicine as before.
 SICK_MOOD_DEC = 50                       # SickMoodDec
 INJ_MOOD_DEC = 50                        # InjuryMoodDec
 SICK_ENTH_CHANGE = -1                    # SickEnthusiasmChange
