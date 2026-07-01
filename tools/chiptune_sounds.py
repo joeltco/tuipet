@@ -60,9 +60,11 @@ MAP = {
     "compatible": "compatible",   # DVPet pairing-handshake beep (battle/jogress match)
     "cancel": "error", "confirm": "click", "menu": "select", "scroll": "select",
     "death": "lose",
-    # clone-only triggered cues (not in the stripped refactor) -- same comparator, own recording
     "angry": "angry", "error": "error", "select": "select", "attackHit": "attackHit",
     "champion": "champion", "reward": "reward", "trainhit": "trainhit",
+    # bundled-but-currently-unused DVPet cues -- convert them too so the whole non-weather
+    # set is consistent chiptune (ready if a feature ever wires them up)
+    "click": "click", "mischief": "mischief", "startBattle": "startBattle",
 }
 SUBS = {"cancel", "confirm", "menu", "scroll", "death"}
 
