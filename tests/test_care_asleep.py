@@ -21,12 +21,12 @@ def test_all_care_actions_block_while_asleep():
 
 def test_blocked_action_changes_nothing():
     p = _sleeping()
-    mood0, poop0 = p.mood, p.poop
+    poop0, sick0 = p.poop, p.sick
     p.heal()
     assert p.sick is True, "heal-while-asleep must not cure"
     p.clean()
     assert p.poop == poop0, "clean-while-asleep must not tidy up"
-    assert p.mood == mood0, "waking is free on the DM20 — no mood penalty"
+    assert p.sick == sick0, "care while asleep is a no-op (DM20: waking is free)"
 
 
 def test_care_works_again_once_awake():

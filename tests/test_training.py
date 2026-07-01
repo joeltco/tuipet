@@ -2,7 +2,7 @@
 
 apply_training(hits, power, attribute, game):
   - game="hp": a success (hits>=2) builds Effort (strength) +1; a fail (hits<2)
-    costs mood, no strength.
+    gives no Effort (and the pet shows its dejected pose -- no mood meter on DM20).
   - game in {vaccine,data,virus}: a success adds hits*TRAIN_POWER_PER_HIT to that
     attribute's lifelong power (DP) count; a fail adds nothing.
   - every drill: +1 exercise, -2 weight, -1 energy.
@@ -23,7 +23,7 @@ from tuipet.pet import Pet, TRAIN_POWER_PER_HIT
 def _trainee(attribute="Vaccine", **kw):
     # high energy, normal weight -> no fatigue / overweight randomness
     defaults = dict(energy=24, max_energy=24, weight=20, vaccine=0, data_power=0,
-                    virus=0, strength=0, mood=0)
+                    virus=0, strength=0)
     defaults.update(kw)
     return Pet(num=-1, stage="Rookie", attribute=attribute, **defaults)
 
@@ -41,11 +41,11 @@ def test_hp_success_builds_strength():
     assert p.trainings == 1
 
 
-def test_hp_fail_penalises():
-    p = _trainee(strength=2, mood=50)
+def test_hp_fail_gives_no_effort():
+    p = _trainee(strength=2)
     p.apply_training(1, 100, game="hp")        # hits<2 -> fail
     assert p.strength == 2, "a failed drill gives no Effort"
-    assert p.mood < 50, "fail costs mood"
+    assert p.anim == "sad", "a failed drill shows the dejected pose (reactive, no mood meter)"
 
 
 # ---- attribute drills ------------------------------------------------------
@@ -72,12 +72,13 @@ def test_attribute_routing():
     assert v.virus == 4 and v.vaccine == 0 and v.data_power == 0
 
 
-def test_attribute_drill_no_mood_cost():
-    # DM20 has no attribute preferences, so a successful drill of ANY attribute is free
+def test_attribute_drill_is_free():
+    # DM20 has no attribute preferences (and no mood meter), so a drill of ANY attribute
+    # just routes its gain -- no side effects.
     p = _trainee(attribute="Vaccine")
     p.apply_training(2, 100, attribute="Data", game="data")
     assert p.data_power == 4
-    assert p.mood == 0, "a successful drill costs no mood (no favoured/disliked attrs)"
+    assert p.vaccine == 0 and p.virus == 0
 
 
 # ---- shared per-drill costs ------------------------------------------------

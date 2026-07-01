@@ -20,29 +20,22 @@ STAGE_LIFE = {"Child": 345600.0, "Adult": 388800.0, "Perfect": 432000.0,
               "Ultimate": 432000.0, "Super Ultimate": 432000.0}  # 4-5 days
 GERIATRIC_REMAIN = 21600.0   # last N seconds of life = elderly
 
-# DVPet mood model (config.csv): a signed score mapped to a Mood enum.
-MOOD_MIN, MOOD_MAX = -300, 300        # MinMood / MaxMood
-MIN_HAPPY_MOOD = 150                  # MinHappyMood
-MIN_UNHAPPY_MOOD = -1                 # MinUnhappyMood
-TO_DEPRESSED_MOOD = -250              # ToDepressedMoodMin
-NEW_UNDEPRESSED_MOOD = -50            # NewUndepressedMood
+# NOTE: DM20 tracks NO mood/happiness meter (manual: "does not track happiness, mood,
+# emotion ... unlike traditional Tamagotchi devices").  The whole DVPet signed-mood model
+# was stripped 2026-07-01.  The pet still emotes, but reactively from live care state
+# (needs_care / hunger / sickness / energy), never a stored value.
 
 # DM20 feeding (manual): two foods only. Meat fills a hunger heart; Protein fills a
 # strength heart, adds weight and restores a little DP. No taste/favourites, no
 # multi-nutrient system, no enthusiasm/obedience side effects (all DVPet — stripped).
-MEAT_MOOD_INC = 5                       # a good meal lifts the mood a little
 PROTEIN_DP_RESTORE = 1                  # DM20 protein restores DP (manual: +0.25/feed, scaled)
 
-# DVPet poop / filth (config.csv, PhysicalState.poop / poopWaitMoodCheck).  A bowel
-# movement bumps mood, sheds a little weight and drops a pile of a size set by the
-# Digimon's base weight; an uncleaned mess then nags the mood until it is cleaned.
-POOP_MOOD_INC = 10                      # PoopMoodInc (relief)
+# DVPet poop / filth (config.csv, PhysicalState.poop).  A bowel movement sheds a little
+# weight and drops a pile of a size set by the Digimon's base weight (capped).
 POOP_WEIGHT_DEC_COEF = 0.1             # PoopWeightDecCoefficient
 POOP_WEIGHT_LIMIT = 4                   # PoopWeightLimit (max weight lost per poop)
 POOP_INC_WEIGHT_FACTOR = 40            # PoopIncWeightFactor -> size 3 at/above
 POOP_INC_WEIGHT_FACTOR_SMALL = 15      # PoopIncWeightFactorSmall -> size 1 at/below
-POOP_WAIT_MOOD = -1                     # PoopWaitMoodChange (mess nags)
-LARGE_POOP_WAIT_MOOD = -2              # LargePoopWaitMoodChange (a big mess nags more)
 POOP_MAX_PILES = 4                      # classic Digimon V-Pet max poops (DVPet's _filth[] is 6; Joel set 4 to match the real toy)
 
 # DVPet calorie buffer (config.csv, PhysicalState.calorieChange / setCalories): a
@@ -64,24 +57,19 @@ POOP_INTERVAL_BASE = 2700     # tuipet's tuned poop interval at the modal ratio
 STRENGTH_DECAY_BASE = 3000    # gentle effort decay at the modal coefficient (~50 min/heart)
 
 # DVPet fatigue (config.csv, PhysicalState.fatigue / checkFatigueLapse): training to
-# exhaustion can leave the pet fatigued for FatigueMin..FatigueMax game-minutes -- a big
-# one-time mood/energy/spirit hit, and it cannot act until it has rested off the clock.
+# exhaustion can leave the pet fatigued for FatigueMin..FatigueMax game-minutes -- a
+# one-time energy hit, and it cannot act until it has rested off the clock.
 # isFatigued() == fatigue_length > 0; the length counts down in game-minutes (1 game-min
 # ~= 1s under tuipet's clock).  The lifespan hit is omitted (documented); deltas verbatim.
 FATIGUE_MIN = 5                          # FatigueMin
 FATIGUE_MAX = 60                         # FatigueMax
-FATIGUE_MOOD_DEC = 50                    # FatigueMoodDec (the exhaustion hit)
 FATIGUE_ENERGY_DEC = 1                   # FatigueEnergyDec
-ALREADY_FATIGUED_MOOD_DEC = 35           # alreadyFatiguedMoodDec (re-fatigued while down)
 TRAIN_POWER_PER_HIT = 2     # attribute power per drill-hit (compression-scaled from DVPet's flat +1)
 FATIGUE_CHANCE = 60                      # FatigueChance (% on an exhausting drill)
 
 # DVPet sickness & injury durations (config.csv, PhysicalState.sicken / injure): an
 # illness or injury lasts Min..MaxLength recovery lapses (SickLapseMin/InjLapseMin game-min
-# each) and then clears on its own; onset costs mood/spirit.  Deltas verbatim;
-# cured early by medicine as before.
-SICK_MOOD_DEC = 50                       # SickMoodDec
-INJ_MOOD_DEC = 50                        # InjuryMoodDec
+# each) and then clears on its own.  Cured early by medicine as before.
 MIN_SICK_LENGTH, MAX_SICK_LENGTH = 1, 10     # Min/MaxSickLength (recovery lapses)
 MIN_INJ_LENGTH, MAX_INJ_LENGTH = 1, 12       # Min/MaxInjLength
 SICK_LAPSE_MIN = 29                      # SickLapseMin (game-min per recovery lapse)
@@ -89,15 +77,14 @@ INJ_LAPSE_MIN = 29                       # InjLapseMin
 
 # DVPet injury worsening + vitamins (config.csv, calcWorse{Exercise,Battle}Inj /
 # worsenedInjury / feedVitamin): pushing an injured pet (training/battling) can worsen the
-# injury -- extending it and costing mood/obedience/energy/spirit -- at a chance set by
-# weight and whether a vitamin is active.  Chances are factor/WorseInjuryChance.  No shipped
-# item is flagged Vitamin in items.csv, so has_vitamin() defaults false (the no-vitamin
-# rates apply); the grant path (feed_vitamin / a "vitamin" consumable flag) is wired and
-# ready.  Values verbatim from config.csv column 1; WorseInjuryLifeDec lifespan hit omitted.
+# injury -- extending it and costing energy -- at a chance set by weight and whether a
+# vitamin is active.  Chances are factor/WorseInjuryChance.  No shipped item is flagged
+# Vitamin in items.csv, so has_vitamin() defaults false (the no-vitamin rates apply); the
+# grant path (feed_vitamin / a "vitamin" consumable flag) is wired and ready.  Values
+# verbatim from config.csv column 1; WorseInjuryLifeDec lifespan hit omitted.
 WORSE_INJ_CHANCE = 100                   # WorseInjuryChance / WorseBattleInjuryChance (bound)
 WORSE_INJ_EXERCISE = {"bad_nv": 10, "good_nv": 1, "good_v": 0, "bad_v": 5}   # WorseInjury*
 WORSE_INJ_BATTLE = {"bad_nv": 15, "good_nv": 5, "good_v": 0, "bad_v": 5}     # WorseBattleInjury*
-WORSE_MALADY_MOOD_DEC = -35              # worseMaladyMoodDec
 WORSE_INJ_ENERGY_DEC = 1                 # WorseInjuryEnergyDec
 VITAMIN_HOURS = 60                       # VitaminHours (game-min of injury-worsening protection)
 MEDICINE_HOURS = 60                      # MedicineHours (game-min the medicine indicator lingers, config.csv)
@@ -132,7 +119,6 @@ class Pet:
     strength: int = 2               # effort hearts 0..4; FullStrength=4
     energy: int = 24                # DVPet energy, -max_energy..+max_energy (full at max_energy)
     max_energy: int = 24            # per-Digimon (digimon.csv MaxEnergy)
-    mood: int = 0                   # DVPet signed mood (MinMood..MaxMood); Neutral at 0
     weight: int = 20
     poop: int = 0                   # pile count == DVPet countFilth()
     poop_sizes: list = _dcf(default_factory=list)   # per-pile size 1..4 (DVPet _filth bytes)
@@ -289,25 +275,8 @@ class Pet:
 
         night = self.day_phase == "night"
         # DVPet has NO passive energy decay -- energy only drops from activity
-        # (exercise/battle/travel) and refills during sleep.
-        # DVPet mood lapse (~MoodLapseMin game-min): Happy drains, Unhappy recovers,
-        # Neutral settles toward 0 (config *MoodLapse* values).
-        self._mood_lapse_t = getattr(self, "_mood_lapse_t", 0.0) + dt
-        if self._mood_lapse_t >= 59:
-            self._mood_lapse_t = 0.0
-            m = self.current_mood()
-            if m == "Happy":
-                self._set_mood(self.mood - 10)           # HappyMoodLapseDec
-            elif m == "Depressed":
-                self._set_mood(self.mood + 10)           # VeryUnhappyMoodLapseInc (climb out)
-            elif m == "Unhappy":
-                self._set_mood(self.mood + 5)            # UnhappyMoodLapseInc
-            elif self.mood > 0:
-                self._set_mood(self.mood - 1)            # NeutralMoodLapseDec toward 0
-            elif self.mood < 0:
-                self._set_mood(self.mood + 1)
-            if self.poop > 0 and self._phys().get("filth_mood", -1):   # some species are unbothered by filth
-                self._set_mood(self.mood + (LARGE_POOP_WAIT_MOOD if self.poop >= 3 else POOP_WAIT_MOOD))
+        # (exercise/battle/travel) and refills during sleep.  (No mood lapse: DM20 has
+        # no mood meter -- see the module note; distress is read live from care state.)
         # hunger: the DVPet calorie buffer drains each lapse; emptying it drops a hunger
         # heart (or logs a care mistake at zero), then refills for the next heart.
         self._cal_t = getattr(self, "_cal_t", 0.0) + dt
@@ -320,7 +289,7 @@ class Pet:
                 else:
                     self.care_mistakes += 1      # DM20: starving with the call unanswered
                 self.calories = CALORIE_LIMIT
-        # pooping (DVPet poop(): relief mood bump, sheds weight, drops a sized pile)
+        # pooping (DVPet poop(): sheds a little weight, drops a sized pile)
         self._poop_t = getattr(self, "_poop_t", 0) + dt
         if self._poop_t >= self._poop_interval:
             self._poop_t = 0
@@ -479,31 +448,19 @@ class Pet:
     def _set_anim(self, name, ttl):
         self.anim, self.anim_ttl = name, ttl
 
-    def _set_mood(self, value):
-        """PhysicalState.setMood: clamp to [MinMood, MaxMood]."""
-        self.mood = _clamp(int(round(value)), MOOD_MIN, MOOD_MAX)
+    def needs_care(self):
+        """Any unmet care need (DM20 reads live state, not a mood meter): hungry, sick,
+        injured, or a big mess.  Drives the pet's distress emoting + status word."""
+        return (self.hunger == 0 or self.sick or self.is_injured() or self.poop >= 3)
 
-    def mood_pct(self):
-        """Mood as 0..100 for the status bar."""
-        return (self.mood - MOOD_MIN) * 100 // (MOOD_MAX - MOOD_MIN)
-
-    def current_mood(self):
-        """PhysicalState.setCurrentMood -> Mood enum word."""
-        if self.mood <= TO_DEPRESSED_MOOD:
-            return "Depressed"
-        if self.mood >= MIN_HAPPY_MOOD:
-            return "Happy"
-        if self.mood <= MIN_UNHAPPY_MOOD:
-            return "Unhappy"
-        return "Neutral"
+    def _well_cared(self):
+        """Every need comfortably met -- the pet reads as content (happy idle hop)."""
+        return (self.hunger >= 3 and self.energy > self.max_energy // 2 and self.poop == 0
+                and not self.sick and not self.is_injured() and not self.is_fatigued())
 
     def _set_energy(self, value):
-        """DVPet setEnergy: clamp to [-max_energy, +max_energy]; dropping into the
-        red saps mood (NegativeEnergyMoodDec)."""
-        value = _clamp(int(round(value)), -self.max_energy, self.max_energy)
-        if value < 0 and value < self.energy:
-            self._set_mood(self.mood - 10)       # NegativeEnergyMoodDec (per step into the red)
-        self.energy = value
+        """DVPet setEnergy: clamp to [-max_energy, +max_energy]."""
+        self.energy = _clamp(int(round(value)), -self.max_energy, self.max_energy)
 
     def energy_pct(self):
         return max(0, self.energy) * 100 // self.max_energy if self.max_energy else 0
@@ -523,10 +480,9 @@ class Pet:
         return 2
 
     def _do_poop(self):
-        """PhysicalState.poop: relief mood bump, weight shed, and a new sized pile
-        added to the filth (capped at the _filth array length).  The bmGauge timer
-        that schedules this is replaced by tuipet's poop interval."""
-        self._set_mood(self.mood + POOP_MOOD_INC)                 # PoopMoodInc
+        """PhysicalState.poop: weight shed and a new sized pile added to the filth
+        (capped at the _filth array length).  The bmGauge timer that schedules this is
+        replaced by tuipet's poop interval."""
         wdec = min(int(self._base_weight() * POOP_WEIGHT_DEC_COEF), POOP_WEIGHT_LIMIT)
         self.weight = max(1, self.weight - wdec)
         if self.poop < POOP_MAX_PILES:                            # addFilth: first free slot (capped)
@@ -539,11 +495,11 @@ class Pet:
         return "zzz... mind its sleep!"
 
     def _special_idle(self):
-        """An occasional idle quirk reflecting mood (DVPet personalityMood*):
-        a happy hop when content, a grumpy tantrum when unhappy."""
-        if self.mood >= MIN_HAPPY_MOOD:
+        """An occasional idle quirk that reads the pet's live care state (no mood meter):
+        a happy hop when well cared for, a grumpy fuss when it needs care."""
+        if self._well_cared():
             self._set_anim(random.choice(("play", "surprise")), 2.0)
-        elif self.mood <= MIN_UNHAPPY_MOOD:
+        elif self.needs_care():
             self._set_anim(random.choice(("angry", "tantrum")), 2.0)
         elif random.random() < 0.5:
             self._set_anim("surprise", 1.6)
@@ -591,7 +547,6 @@ class Pet:
         self.hunger = _clamp(self.hunger + max(1, food["hunger"]), 0, 4)
         self.calories = CALORIE_LIMIT                       # a meal refills the calorie buffer
         self.weight += food.get("weight", 1)
-        self._set_mood(self.mood + MEAT_MOOD_INC)
         self._set_anim("eat", 1.4)
         return f"Fed {food['name']}."
 
@@ -640,8 +595,6 @@ class Pet:
         self._set_energy(self.energy - 1)               # ExerciseEnergyDec
         if self.energy <= 0 and random.randint(0, 99) < FATIGUE_CHANCE:   # trained to exhaustion
             self._fatigue()
-        if not success:
-            self._set_mood(self.mood - 10)               # ExerciseFailMoodDec
         # training while overweight risks an injury
         if evolution.weight_category(self.weight, self._base_weight()) == "Over" and random.random() < 0.5:
             self._injure()
@@ -677,13 +630,11 @@ class Pet:
         self._check_worse_injury(in_battle=True)         # battling injured can worsen it
         if won:
             self.wins += 1
-            self._set_mood(self.mood + 10)               # BattleWonMoodInc
-            self._set_anim("happy", 2.0)
+            self._set_anim("happy", 2.0)                  # reactive cheer (no mood meter)
             return "Victory!"
-        self._set_mood(self.mood - 20)               # BattleLostMoodDec
         if random.random() < 0.3:
             self._injure()
-        self._set_anim("sad", 2.0)
+        self._set_anim("sad", 2.0)                        # reactive dejection
         return "Defeat..."
 
     def is_fatigued(self):
@@ -702,7 +653,6 @@ class Pet:
         self.sick = True
         self.sick_count += 1
         self.sick_length = random.randint(MIN_SICK_LENGTH, MAX_SICK_LENGTH) * SICK_LAPSE_MIN
-        self._set_mood(self.mood - SICK_MOOD_DEC)
 
     def _injure(self):
         """PhysicalState.injure: take an injury for MinInjLength..MaxInjLength recovery
@@ -710,7 +660,6 @@ class Pet:
         self.injuries += 1
         rolled = random.randint(MIN_INJ_LENGTH, MAX_INJ_LENGTH) * INJ_LAPSE_MIN
         self.inj_length = max(self.inj_length, rolled)
-        self._set_mood(self.mood - INJ_MOOD_DEC)
 
     def has_vitamin(self):
         """PhysicalState.hasVitamin: a vitamin is active, guarding against worse injuries."""
@@ -729,9 +678,8 @@ class Pet:
         self.vitamin_lapse = VITAMIN_HOURS
 
     def _worsen_injury(self):
-        """PhysicalState.worsenedInjury: the injury gets worse -- extended, with mood/
-        energy costs (the WorseInjuryLifeDec lifespan hit is omitted)."""
-        self._set_mood(self.mood + WORSE_MALADY_MOOD_DEC)
+        """PhysicalState.worsenedInjury: the injury gets worse -- extended, with an energy
+        cost (the WorseInjuryLifeDec lifespan hit is omitted)."""
         self.inj_length += random.randint(MIN_INJ_LENGTH, MAX_INJ_LENGTH) * INJ_LAPSE_MIN
         self._set_energy(self.energy - WORSE_INJ_ENERGY_DEC)
 
@@ -750,15 +698,10 @@ class Pet:
             self._worsen_injury()
 
     def _fatigue(self):
-        """PhysicalState.fatigue: the pet collapses from over-exertion — a heavy one-time
-        mood/energy hit (worse if it was already fatigued), then it must rest the
-        fatigue length off (FatigueMin..FatigueMax game-min)."""
-        already = self.is_fatigued()
+        """PhysicalState.fatigue: the pet collapses from over-exertion — an energy hit,
+        then it must rest the fatigue length off (FatigueMin..FatigueMax game-min)."""
         self.fatigue_length = max(FATIGUE_MIN, random.randint(FATIGUE_MIN, FATIGUE_MAX))
         self._set_energy(self.energy - FATIGUE_ENERGY_DEC)
-        self._set_mood(self.mood - FATIGUE_MOOD_DEC)
-        if already:
-            self._set_mood(self.mood - ALREADY_FATIGUED_MOOD_DEC)
         self._set_anim("exhausted", 2.0)
 
     def clean(self):
@@ -772,7 +715,6 @@ class Pet:
             return "Nothing to clean."
         n, self.poop = self.poop, 0
         self.poop_sizes = []                        # clearFilth()
-        self._set_mood(self.mood + 6)               # CleanMoodInc
         self._set_anim("wash", 1.2)
         return f"Cleaned {n} poop."
 
@@ -793,7 +735,6 @@ class Pet:
         if self.is_injured():
             self.inj_length = 0.0                   # first aid mends the active injury (DVPet bath/recovery)
             self.bandage_lapse = BANDAGE_HOURS      # DVPet applyBandage: the bandage shows during recovery
-        self._set_mood(self.mood + 75)              # curedMoodBonus
         self._set_anim("heal", 1.5)
         what = "illness and injury" if (sick0 and inj0) else ("injury" if inj0 else "illness")
         return f"Treated {self.name}'s {what}."
@@ -827,8 +768,6 @@ class Pet:
             return "needs cleaning"
         if self.day_phase == "night" and not self.asleep and self.energy < self.max_energy // 2:
             return "sleepy"
-        if self.mood <= MIN_UNHAPPY_MOOD:
-            return "unhappy"
-        if self.mood >= MIN_HAPPY_MOOD:
+        if self._well_cared():
             return "happy"
         return "ok"
