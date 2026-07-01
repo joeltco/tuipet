@@ -327,8 +327,6 @@ class Pet:
     element: str = ""
     time_pref: dict = _dcf(default_factory=lambda: {"dawn": 0, "day": 0, "dusk": 0, "night": 0})
     x_antibody: str = "None"
-    effect_id: int = -1            # active care effect (careEffect.csv id; -1 = none)
-    effect_t: float = 0.0          # remaining duration of the active care effect
     x_count: float = 0.0
     # transient animation request, consumed by the UI
     anim: str = "idle"
@@ -460,7 +458,6 @@ class Pet:
                 self.med_lapse = max(0.0, self.med_lapse - dt)
             if self.bandage_lapse > 0:                        # bandageLapse: bandage wears off (getBandage icon)
                 self.bandage_lapse = max(0.0, self.bandage_lapse - dt)
-        self._tick_effect(dt)
         if self.asleep:
             # DVPet sleep recovery: +SleepEnergyGain every SleepMinutesToEnergyGain.
             self._sleep_e_t = getattr(self, "_sleep_e_t", 0.0) + dt
@@ -668,44 +665,6 @@ class Pet:
             self.x_antibody = state
         self.x_count = X_COUNT_MAX if self.x_antibody == "Temporary" else 0.0
 
-    def _tick_effect(self, dt):
-        """Advance the active care effect (Futon): rate gains; end on sleep change / expiry."""
-        if self.effect_id < 0:
-            return
-        eff = data.load_care_effects().get(self.effect_id)
-        if not eff:
-            self.effect_id, self.effect_t = -1, 0.0
-            return
-        if eff["end_on_sleep"] and getattr(self, "_eff_asleep", self.asleep) != self.asleep:
-            self.effect_id, self.effect_t = -1, 0.0          # dozing off / waking ends it
-            return
-        self._eff_asleep = self.asleep
-        self.effect_t -= dt
-        if self.effect_t <= 0:
-            self.effect_id, self.effect_t = -1, 0.0
-            return
-        self._eff_acc = getattr(self, "_eff_acc", 0.0) + dt
-        while self._eff_acc >= 60:                            # uniform 60-tick cadence (the one defined effect)
-            self._eff_acc -= 60
-            if eff["mood"][0]:
-                self._set_mood(self.mood + eff["mood"][0])
-            if eff["energy"][0]:
-                self._set_energy(self.energy + eff["energy"][0])
-            if eff["hunger"][0]:
-                self.hunger = _clamp(self.hunger + eff["hunger"][0], 0, 4)
-            if eff["strength"][0]:
-                self.strength = _clamp(self.strength + eff["strength"][0], 0, 4)
-
-    def effect_name(self):
-        eff = data.load_care_effects().get(self.effect_id) if self.effect_id >= 0 else None
-        return eff["name"] if eff else ""
-
-    def call_paused(self):
-        """True if the active care effect suppresses the care-need call (Futon PauseCall)."""
-        if self.effect_id < 0:
-            return False
-        eff = data.load_care_effects().get(self.effect_id)
-        return bool(eff and eff["pause_call"])
 
     def _die(self):
         self.dead = True

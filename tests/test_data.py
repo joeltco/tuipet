@@ -7,17 +7,6 @@ egg screen or Futon misbehaved in play.
 from tuipet import data, egg
 
 
-def test_care_effects_load():
-    eff = data.load_care_effects()
-    assert isinstance(eff, dict) and eff, "careEffect.csv produced no effects"
-    for e in eff.values():
-        for k in ("name", "duration", "mood", "energy", "hunger", "strength",
-                  "end_on_sleep", "pause_temp", "pause_call", "can_reapply"):
-            assert k in e
-        # rate fields are (amount, every_n_ticks) pairs
-        assert len(e["mood"]) == 2 and len(e["energy"]) == 2
-
-
 def test_egg_unlock_load():
     rules = data.load_egg_unlock()
     assert isinstance(rules, dict) and rules, "eggUnlock.csv produced no rules"
