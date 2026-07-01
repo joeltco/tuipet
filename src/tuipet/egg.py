@@ -7,6 +7,7 @@ xshift at render time, not baked into extra frames. No drawn art.
 """
 from __future__ import annotations
 import gzip
+import random
 import json
 import os
 from functools import lru_cache
@@ -55,24 +56,29 @@ def frames(egg_type=0):
 ROLES = {"idle": [0, 1], "egg_idle": [0, 1], "hatch": [0, 1, 2]}  # frames: egg -> crack -> baby
 
 
-def _babies():
-    from . import species
-    return species.babies()
-
-
 def hatch_target(egg_type=0):
-    """The Baby I species num this egg hatches into (authentic DM20 roster)."""
-    babies = _babies()
-    return babies[egg_type % len(babies)]["num"] if babies else None
+    """A Fresh creature (DigimonNum) this egg hatches into -- chosen at random among
+    the egg's targets, so generic "mystery" eggs surprise you (DVPet behaviour)."""
+    eggs = _real_eggs()
+    if not eggs:
+        return None
+    return random.choice(eggs[egg_type % len(eggs)]["hatch"])
+
+
+def hatch_targets(egg_type=0):
+    """All DigimonNums this egg can hatch into (to preview its habitat)."""
+    eggs = _real_eggs()
+    return list(eggs[egg_type % len(eggs)]["hatch"]) if eggs else []
 
 
 def hatch_name(egg_type=0):
-    babies = _babies()
-    return babies[egg_type % len(babies)]["name"] if babies else "?"
+    eggs = _real_eggs()
+    return eggs[egg_type % len(eggs)]["hatch_name"] if eggs else "?"
 
 
 def count():
-    return len(_babies()) or 1
+    eggs = _real_eggs()
+    return len(eggs) if eggs else 1
 
 
 def record(egg_type=0):
@@ -86,7 +92,7 @@ def record(egg_type=0):
 
 # --- DVPet eggUnlock.csv-driven egg unlock (real data; see data.load_egg_unlock) ---
 # Each egg gates on the same signals the device tracks (generation, album/history,
-# reached stage, maps cleared, previous-generation
+# X-Antibody, reached stage, maps cleared, tournament trophies, previous-generation
 # attribute/element/field). Condition met + price 0 -> auto-unlocked (free to hatch,
 # or temp for this generation); condition met + price > 0 -> BUYABLE in the egg shop
 # (shopscreen Eggs tab) and bought eggs are owned permanently. The egg SELECT shows
@@ -102,6 +108,10 @@ def _conditions_met(rule, prog):
         want = data.STAGE_ORDER.index(rule["stage"]) if rule["stage"] in data.STAGE_ORDER else 99
         if prog["max_stage"] < want:
             return False
+    if rule["xanti"] and not (prog["last_xanti"] or prog["xanti_ever"]):
+        return False
+    if rule["tourney"] is not None and rule["tourney"] not in prog["tourneys"]:
+        return False
     if rule["map"] is not None and rule["map"] not in prog["maps"]:
         return False
     if rule["history"] and not all(n in prog["album"] for n in rule["history"]):
@@ -119,7 +129,7 @@ def _conditions_met(rule, prog):
     # gates tuipet does not model -> egg stays locked (e.g. password, food/item used)
     if rule["password"] is not None:
         return False
-    if rule["food"] is not None or rule["item"] is not None:
+    if rule["food"] is not None or rule["item"] is not None or rule["habitat"] is not None:
         return False
     if rule["zone"] is not None:
         return False
@@ -198,6 +208,18 @@ def hatchable_eggs(prog, owned):
     """Eggs ready to hatch right now (owned + temp) -- what the egg select shows."""
     st = egg_states(prog, owned)
     return sorted(i for i, (s, _) in st.items() if s in ("owned", "temp"))
+
+
+def buyable_eggs(prog, owned):
+    """(idx, price) for eggs whose condition is met but that cost bits -- the egg shop."""
+    st = egg_states(prog, owned)
+    return [(i, p) for i, (s, p) in sorted(st.items()) if s == "buyable"]
+
+
+def shop_egg_entry(idx, price):
+    """A shop-row dict for a buyable egg (compatible with shopscreen rendering)."""
+    return {"key": "egg:%d" % idx, "name": hatch_name(idx), "price": int(price),
+            "egg_idx": idx}
 
 
 def locked_hint(prog, owned):

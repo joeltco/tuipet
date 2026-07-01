@@ -28,15 +28,50 @@ def test_empty_account_egg_flow():
     assert egg.auto_owned(prog, set()) is not None
 
 
+# ---- purchase / inventory bounds -------------------------------------------
+
+def test_buy_with_zero_bits():
+    p = Pet(num=-1, stage="Rookie", bits=0)
+    assert p.buy({"key": "f:1", "name": "Meat", "price": 5, "max_uses": 3}) == "Not enough bits."
+    assert p.bits == 0 and "f:1" not in p.inventory
+
+
+def test_sell_empty_bag():
+    p = Pet(num=-1, stage="Rookie")
+    assert p.sell({"key": "f:1", "name": "Meat"}) == "None to sell."
+
+
+def test_use_missing_item():
+    assert Pet(num=-1, stage="Rookie").use_item("i:99999") == "None left."
+
+
+def test_consumable_by_key_bad_input():
+    assert data.consumable_by_key("zzz") is None
+    assert data.consumable_by_key("i:99999") is None
+
+
+def test_habitat_bad_ids():
+    p = Pet(num=-1, stage="Rookie")
+    # a nonexistent habitat -> not-found "?" (buy and move both short-circuit here)
+    assert p.buy_habitat(99999) == "?"
+    assert p.move_to(99999) == "?"
+    # a real but unowned habitat -> the ownership message
+    unowned = next((h for h in data.load_habitats() if h not in p.habitats), None)
+    if unowned is not None:
+        assert p.move_to(unowned) == "You don't own that habitat."
+
 
 # ---- dead-pet interactions are inert and safe ------------------------------
 
 def test_dead_pet_actions_safe():
     p = Pet(num=-1, stage="Rookie", dead=True)
-    # none of these may crash, and the pet stays dead
+    p.inventory["f:1"] = 1
+    # none of these may crash, and the pet stays dead with its bag intact
+    assert isinstance(p.use_item("f:1"), str)
     p.apply_training(2, 100, game="hp")
     p.tick(100)
     assert p.dead is True
+    assert p.inventory.get("f:1") == 1, "a dead pet must not consume items"
 
 
 # ---- save/load resilience --------------------------------------------------

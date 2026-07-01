@@ -1,7 +1,7 @@
 """Choose-your-egg: a smooth horizontal carousel of full-size egg sprites. Only
 eggs you can HATCH appear — the base starters plus everything unlocked through play
-(generation, album/history, reached stage, maps cleared,
-previous-generation traits; see data.load_egg_unlock). ←→ glide, ENTER
+(generation, album/history, X-Antibody, reached stage, maps cleared, tournament
+trophies, previous-generation traits; see data.load_egg_unlock). ←→ glide, ENTER
 hatches the centred egg, ESC backs out."""
 from __future__ import annotations
 from . import egg as egg_mod

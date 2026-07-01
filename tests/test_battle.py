@@ -19,12 +19,12 @@ from tuipet.battle import Battle, calc_attack_power, BASE_ATTACK, MAX_HEALTH
 from tuipet.pet import Pet
 
 
-def _enemy(stage="Child", v=0, d=0, vi=0, hp=10, num=-1, boss=False):
+def _enemy(stage="Rookie", v=0, d=0, vi=0, hp=10, num=-1, boss=False):
     return {"num": num, "name": "Foe", "stage": stage, "vaccine": v,
             "data_power": d, "virus": vi, "hp": hp, "boss": boss, "bits": (1, 5)}
 
 
-def _pet(stage="Child", v=5, d=5, vi=5, wins=0):
+def _pet(stage="Rookie", v=5, d=5, vi=5, wins=0):
     return Pet(num=-1, stage=stage, vaccine=v, data_power=d, virus=vi, wins=wins)
 
 
@@ -37,23 +37,23 @@ def test_calc_attack_power():
 
 
 def test_damage_base_plus_power_floored():
-    b = Battle(_pet("Child"), _enemy("Child"))
+    b = Battle(_pet("Rookie"), _enemy("Rookie"))
     strong = {"Vaccine": 9, "Data": 0, "Virus": 0}
     weak = {"Vaccine": 1, "Data": 0, "Virus": 0}
     even = {"Vaccine": 5, "Data": 0, "Virus": 0}
-    assert b._damage("Child", "Vaccine", strong, weak) == BASE_ATTACK["Child"] + 1   # 6
-    assert b._damage("Child", "Vaccine", even, even) == BASE_ATTACK["Child"]          # 5
-    assert b._damage("Child", "Vaccine", weak, strong) == BASE_ATTACK["Child"] - 1    # 4
-    # Baby I base 1 with a disadvantage -> 1 + (-1) = 0, floored (never negative)
-    assert b._damage("Baby I", "Vaccine", weak, strong) == 0
+    assert b._damage("Rookie", "Vaccine", strong, weak) == BASE_ATTACK["Rookie"] + 1   # 6
+    assert b._damage("Rookie", "Vaccine", even, even) == BASE_ATTACK["Rookie"]          # 5
+    assert b._damage("Rookie", "Vaccine", weak, strong) == BASE_ATTACK["Rookie"] - 1    # 4
+    # Fresh base 1 with a disadvantage -> 1 + (-1) = 0, floored (never negative)
+    assert b._damage("Fresh", "Vaccine", weak, strong) == 0
 
 
 # ---- setup -----------------------------------------------------------------
 
 def test_hp_setup_per_stage():
-    assert Battle(_pet("Child"), _enemy(hp=10)).pet_hp == MAX_HEALTH["Child"]
-    assert Battle(_pet("Adult"), _enemy(hp=10)).pet_hp == MAX_HEALTH["Adult"]
-    assert Battle(_pet("Ultimate"), _enemy(hp=10)).pet_hp == MAX_HEALTH["Ultimate"]
+    assert Battle(_pet("Rookie"), _enemy(hp=10)).pet_hp == MAX_HEALTH["Rookie"]
+    assert Battle(_pet("Champion"), _enemy(hp=10)).pet_hp == MAX_HEALTH["Champion"]
+    assert Battle(_pet("Mega"), _enemy(hp=10)).pet_hp == MAX_HEALTH["Mega"]
     # enemy HP is taken from its sheet, floored to a minimum of 2
     assert Battle(_pet(), _enemy(hp=1)).enemy_hp == 2
     assert Battle(_pet(), _enemy(hp=20)).enemy_hp == 20

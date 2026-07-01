@@ -6,8 +6,8 @@ right. Phases:
   name     type a handle, Enter to join  (only when no cached tamer name)
   lobby    chat default; Up/Down pick a player; Enter on empty input opens that
            player's action menu ([B]attle / [J]ogress); invites pop a [Y]/[N]
-  jogress  both relay their pet's species (num), each resolves its fusion locally
-           against the canonical partner pairs (jogress.resolve), Enter evolves the pet
+  jogress  both relay their pet's attribute, each resolves its fusion locally
+           (jogress.resolve), shows the result, Enter evolves the pet
   battle   host-authoritative PvP: both relay battle cards, each round both pick
            an attribute, the inviter (host) resolves via the real engine and
            relays the absolute result; the guest displays it. PvP wins record
@@ -219,7 +219,6 @@ class LobbyPanel:
     # ---- session orchestration ------------------------------------------
     def _enter_session(self, pid, pname, kind, host):
         self.partner = (pid, pname)
-        self.sfx = "compatible"        # DVPet's pairing handshake beep (battle or jogress)
         if kind == "jogress":
             card = self._card()
             self.client.relay(pid, {"kind": "jogress", "attr": card["attr"],
@@ -265,7 +264,7 @@ class LobbyPanel:
         if kind == "jogress" and self.phase == "jogress" and self.jphase == "waiting":
             self.partner_species = payload.get("name")
             reason = jogress.can_jogress(self.pet)      # honour asleep / too-young, like offline
-            self.jresult = None if reason else jogress.resolve(self.pet, payload.get("num"))
+            self.jresult = None if reason else jogress.resolve(self.pet, payload.get("attr"))
             if self.jresult:
                 self.jphase, self.sfx = "result", "jogress"
             else:
@@ -292,7 +291,6 @@ class LobbyPanel:
             self.my_max = self.my_hp = battle.MAX_HEALTH.get(self.pet.stage, battle.MAX_HEALTH_DEFAULT)
             self.opp_max = self.opp_hp = max(2, opp_card.get("hp", 10))
         self.bphase, self.bt_log = "choose", ""
-        self.sfx = "battle"                        # battle-start beep, like the offline battle screen
 
     def _host_resolve(self):
         if self.battle is None or not (self.bt_my_choice and self.bt_opp_choice):
@@ -319,7 +317,7 @@ class LobbyPanel:
         self.bt_log = f"you hit {dealt} · took {taken}"
         self.bt_my_choice = self.bt_opp_choice = None
         if res.get("over"):
-            self.bphase = "over"
+            self.bphase, self.sfx = "over", "attack"
             won = my_alive and not opp_alive
             if not my_alive:                       # own HP gone (incl. double-KO) = loss (battleEnd)
                 self.bt_outcome = "YOU LOSE…"
@@ -327,7 +325,6 @@ class LobbyPanel:
                 self.bt_outcome = "★ YOU WIN! ★"
             else:
                 self.bt_outcome = "DRAW"
-            self.sfx = "win" if won else "lose"    # outcome sound (was wrongly "attack")
             if as_host:
                 self.bt_reward = getattr(self.battle, "reward", None)
                 self.bt_payload = ("battle_msg", self.bt_outcome)   # engine already recorded
@@ -336,7 +333,6 @@ class LobbyPanel:
                 self.bt_payload = ("battle_record", won, self.opp_card)
         else:
             self.bphase = "choose"
-            self.sfx = "attack"                    # each exchange trades hits (parity with offline battle)
 
     def _key_battle(self, k):
         if self.bphase == "over":

@@ -1,68 +1,163 @@
-"""The authentic DM20 wall-mash training (see training.py / AUTHENTIC_REBUILD.md):
-your Digimon attacks a brick wall; MASH the button to smash it. >= MASH_TARGET hits
-in the window destroys the wall -> full success (+1 Effort, a training credit toward
-evolution); a partial showing still lands some hits; too few -> it fails.
-"""
-from tuipet import training as T
+"""The DVPet training strike sequence (ANIMATION_SPEC.md §6): after the skill drill
+the pet fires at the punching bag (or green target), it flashes, then breaks on
+success / the pet recoils on a fail -- attackDefault -> hitAnim -> aftermathDefault.
+Reuses the projectile + impact-flash art already in effects.json.gz and battle's
+strong-vs-normal attack/hit sounds."""
+from tuipet import training as T, data
 from tuipet.pet import Pet
 
 
-def _panel(**kw):
-    # high energy / normal weight so the gain under test is deterministic
-    p = Pet(num=1, stage="Child", strength=0, obedience=0, trainings=0,
-            energy=24, max_energy=24, weight=20, **kw)
-    return p, T.TrainingPanel(p)
+def _panel(game="vaccine"):
+    p = Pet(num=1, stage="Rookie", vaccine=5, data_power=5, virus=5)
+    panel = T.TrainingPanel(p)
+    panel.gi = {"hp": 0, "vaccine": 1, "data": 2, "virus": 3}[game]
+    return panel
 
 
-def _mash(panel, n):
-    for _ in range(n):
-        panel.key(" ")
-
-
-def test_starts_in_play_no_drill_menu():
-    _, panel = _panel()
-    assert panel.phase == "play"          # single game: straight into the mash, no drill picker
-    assert panel.taps == 0
-
-
-def test_full_smash_succeeds_and_builds_effort():
-    pet, panel = _panel()
-    _mash(panel, T.MASH_TARGET)           # >= 13 hits destroys the wall...
-    assert panel.phase == "done"          # ...and ends the drill early
-    assert panel.full and panel.success
-    assert pet.strength == 1              # +1 Effort
-    assert pet.trainings == 1             # a training credit toward evolution
-
-
-def test_timeout_with_too_few_hits_fails():
-    pet, panel = _panel()
-    _mash(panel, 3)                       # below MASH_PARTIAL
-    while panel.phase == "play":
-        panel.anim()                      # let the window run out
-    assert panel.phase == "done"
-    assert not panel.success and not panel.full
-    assert pet.strength == 0 and pet.trainings == 0   # a failed drill builds nothing
-
-
-def test_partial_lands_some_hits_short_of_a_full_break():
-    pet, panel = _panel()
-    _mash(panel, T.MASH_PARTIAL)          # enough to count, not enough to smash it
-    while panel.phase == "play":
+def test_finish_launches_the_strike_then_reveals_result():
+    panel = _panel()
+    panel._finish(2, 30, "Vaccine", "vaccine")
+    assert panel.phase == "strike"          # not straight to "done"
+    assert panel.si == 0 and panel.strike_tl   # a battle-style volley timeline is built
+    assert panel.result                     # the outcome is decided, just not shown yet
+    assert panel.flash == ""                # ...held until the strike lands
+    # drive the volley to completion -> the score is revealed
+    for _ in range(len(panel.strike_tl) + 2):
         panel.anim()
-    assert panel.success and not panel.full
-    assert pet.strength == 1 and pet.trainings == 1
-
-
-def test_wall_crumbles_as_you_mash():
-    # the rendered wall has fewer bricks the more you hit it (visual feedback is real)
-    full = len(T._wall_overlay(0))
-    half = len(T._wall_overlay(T.MASH_TARGET // 2))
-    gone = len(T._wall_overlay(T.MASH_TARGET))
-    assert full > half > gone == 0
-
-
-def test_done_key_closes_with_the_result():
-    pet, panel = _panel()
-    _mash(panel, T.MASH_TARGET)
     assert panel.phase == "done"
-    assert panel.key(" ") == ("done", panel.result)   # closing returns the outcome message
+    assert panel.result in panel.flash      # score revealed when the strike completes
+
+
+def test_strike_sfx_timing_and_strength():
+    def sfx_seq(hits):
+        panel = _panel()
+        panel._finish(hits, 30, "Vaccine", "vaccine")
+        seq = []
+        while panel.phase == "strike":
+            panel.sfx = None
+            panel.anim()
+            if panel.sfx:
+                seq.append(panel.sfx)
+        return seq
+
+    strong = sfx_seq(3)
+    assert strong[0] == "strongAttack"      # launch sting (full success), then...
+    assert "strongHit" in strong            # ...the strong impact on the target
+    good = sfx_seq(2)
+    assert good[0] == "attack"
+    assert "attackHit" in good
+    miss = sfx_seq(0)
+    assert miss[0] == "attack"              # the pet still fires...
+    assert "cancel" in miss                 # ...but the orb whiffs (no hit -> miss thud)
+
+
+def test_strike_renders_every_drill_and_can_skip():
+    for game in ("hp", "vaccine", "data", "virus"):
+        for hits in (3, 2, 0):
+            panel = _panel(game)
+            panel._finish(hits, 30, None if game == "hp" else "Vaccine", game)
+            steps_seen = 0
+            while panel.phase == "strike" and steps_seen < 80:
+                assert panel.text() is not None            # composes without error every frame
+                panel.anim()
+                steps_seen += 1
+            assert panel.phase == "done"
+    # a key during the volley skips to the end (like the battle screen)
+    panel = _panel("vaccine")
+    panel._finish(2, 30, "Vaccine", "vaccine")
+    assert panel.key("space") is None
+    panel.anim()
+    assert panel.phase == "done"
+
+
+def test_strike_opponent_art_exists():
+    e = data.load_effects()
+    for k in ("punching_bag", "punching_bag_broken", "train_green", "attack", "flash"):
+        assert k in e and e[k], f"missing strike asset: {k}"
+
+
+# ---- DVPet-faithful drill mechanics (the rebuild) --------------------------
+
+def test_hp_drill_matches_the_dummy_attribute():
+    """HP = read the dummy's attribute, pick the matching icon; first to 2 wins -> Effort
+    (DVPet drawHPTraining: loop while round < 3 AND roundsWon < 2)."""
+    panel = _panel("hp")
+    panel._start_game()
+    assert panel.phase == "play"
+    for _ in range(T.HP_ROUNDS):                       # match correctly every round
+        if panel.phase != "play":
+            break
+        panel.hp_pick = panel.hp_target               # read the dummy -> pick the match
+        panel.key("space")
+    # two correct matches ends it immediately (early-exit at _hpTrainingRoundsWon), a full
+    # success.  HP has NO projectile strike (per-round flashes only) -> straight to "done".
+    assert panel.rounds_won == T.HP_ROUNDS_WON
+    assert panel.phase == "done" and panel.success and panel._strong
+
+
+def test_hp_timeout_counts_as_wrong():
+    panel = _panel("hp")
+    panel._start_game()
+    for _ in range(T.HP_ROUNDS * (T.HP_ROUND_LEN + 1)):
+        if panel.phase != "play":
+            break
+        panel.anim()                                   # never guess -> every round times out
+    assert panel.rounds_won == 0 and not panel.success
+
+
+def test_data_drill_is_a_shield_block_match():
+    """DVPet controller checkSuccess(Data): success = shieldTop == isUp.  Raise the
+    shield to the side the attack commits to -> block (success); mismatch -> hit."""
+    def _settle(p):
+        """EVAL (DVPet onPreFinish), then the cosmetic finale: the shot fires (attackGreen),
+        the impact flash plays (hitAnim), then the result reveals (aftermathGreen)."""
+        p._data_resolve()
+        while p.phase != "done":                       # drive fire -> impact -> reveal to completion
+            p.anim()
+    # matching shield blocks -> success
+    panel = _panel("data")
+    panel._start_game()
+    panel.locked = True
+    panel.tgt_up = True
+    panel.shield_up = True                             # shield up vs HIGH attack -> match
+    _settle(panel)
+    assert panel.blocked and panel.success
+    # mismatched shield -> the attack gets through
+    panel = _panel("data")
+    panel._start_game()
+    panel.locked = True
+    panel.tgt_up = True
+    panel.shield_up = False                            # shield down vs HIGH attack -> mismatch
+    _settle(panel)
+    assert not panel.blocked and not panel.success
+
+
+def test_data_shield_is_a_single_toggle():
+    """DVPet onShield: ONE button flips shieldActiveTop top<->bot (it starts UP via onPreTrain)."""
+    panel = _panel("data")
+    panel._start_game()
+    assert panel.shield_up is True                     # shield starts UP (shieldActiveTop = true)
+    panel.key("space")                                 # one button press toggles
+    assert panel.shield_up is False
+    panel.key("space")
+    assert panel.shield_up is True
+    panel.fired = True                                 # once the shot commits, the shield is locked
+    panel.key("space")
+    assert panel.shield_up is True                     # no longer toggleable
+
+
+def test_data_attack_commits_after_the_telegraph():
+    panel = _panel("data")
+    panel._start_game()
+    assert not panel.locked
+    for _ in range(panel.data_telegraph + 1):          # rank-based feint window (DATA_TELEGRAPH[rank])
+        panel.anim()
+    assert panel.locked                                # the attack revealed high/low
+
+
+def test_vaccine_drill_counts_mashes():
+    panel = _panel("vaccine")
+    panel._start_game()
+    for _ in range(5):
+        panel.key("space")
+    assert panel.taps == 5

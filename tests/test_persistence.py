@@ -17,13 +17,16 @@ def test_isolation_is_real(tmp_path):
 
 
 def test_round_trip_preserves_fields():
-    pet = Pet(num=-1, name="Testmon", stage="Rookie",
-              care_mistakes=3, generation=4)
+    pet = Pet(num=-1, name="Testmon", stage="Rookie", bits=99,
+              effect_id=2, effect_t=42.0, care_mistakes=3, generation=4)
     persistence.save(pet)
     loaded, _ = persistence.load()
     assert loaded is not None
     assert loaded.name == "Testmon"
     assert loaded.stage == "Rookie"
+    assert loaded.bits == 99
+    assert loaded.effect_id == 2
+    assert loaded.effect_t == 42.0
     assert loaded.care_mistakes == 3
     assert loaded.generation == 4
 
@@ -45,7 +48,8 @@ def test_old_save_migration():
     loaded, _ = persistence.load()
     assert loaded is not None
     assert loaded.name == "Oldmon"
-    assert loaded.generation == 1      # field absent in the save -> dataclass default
+    assert loaded.effect_id == -1      # field absent in the save -> dataclass default
+    assert loaded.effect_t == 0.0
 
 
 def test_offline_egg_does_not_decay():
@@ -87,29 +91,35 @@ def test_progress_signals_round_trip():
     persistence.note_generation(5)
     persistence.note_generation(3)   # max-only: must not lower
     persistence.note_stage_index(4)
+    persistence.note_xanti()
     persistence.map_complete_add(2)
+    persistence.tourney_add(9)
 
     assert persistence.get_eggs_owned() == {7}
     prog = persistence.get_progress()
     assert prog["max_gen"] == 5
     assert prog["max_stage"] == 4
+    assert prog["xanti_ever"] is True
     assert 2 in prog["maps"]
+    assert 9 in prog["tourneys"]
     # full shape the egg evaluator depends on
-    for k in ("album", "wins", "max_gen", "max_stage", "maps",
-              "last_field", "last_attr", "last_elem", "last_mood",
-              "last_obed"):
+    for k in ("album", "wins", "max_gen", "max_stage", "xanti_ever", "maps",
+              "tourneys", "last_field", "last_attr", "last_elem", "last_mood",
+              "last_obed", "last_xanti"):
         assert k in prog
 
 
 def test_snapshot_prev_gen():
     pet = Pet(num=-1, stage="Champion", attribute="Vaccine", mood=50, obedience=7)
     pet.field = "Nature Spirits"
+    pet.x_antibody = "Permanent"
     persistence.snapshot_prev_gen(pet)
     prog = persistence.get_progress()
     assert prog["last_field"] == "Nature Spirits"
     assert prog["last_attr"] == "Vaccine"
     assert prog["last_mood"] == 50
     assert prog["last_obed"] == 7
+    assert prog["last_xanti"] is True
 
 
 def test_snapshot_ignores_egg():
