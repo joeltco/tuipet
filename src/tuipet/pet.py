@@ -13,8 +13,8 @@ def _clamp(v, lo, hi):
 
 
 # Lifespan (seconds), scaled from DVPet's real-time model. A pet lives this long
-# in total; reaching higher stages extends it; neglect (sickness/starvation/
-# fatigue) burns it down faster. The final stretch is the geriatric "old age".
+# in total; reaching higher stages extends it; neglect (sickness/starvation)
+# burns it down faster. The final stretch is the geriatric "old age".
 LIFE_START = 259200.0          # 3 days (egg/baby base lifespan)
 STAGE_LIFE = {"Child": 345600.0, "Adult": 388800.0, "Perfect": 432000.0,
               "Ultimate": 432000.0, "Super Ultimate": 432000.0}  # 4-5 days
@@ -23,12 +23,12 @@ GERIATRIC_REMAIN = 21600.0   # last N seconds of life = elderly
 # NOTE: DM20 tracks NO mood/happiness meter (manual: "does not track happiness, mood,
 # emotion ... unlike traditional Tamagotchi devices").  The whole DVPet signed-mood model
 # was stripped 2026-07-01.  The pet still emotes, but reactively from live care state
-# (needs_care / hunger / sickness / energy), never a stored value.
+# (needs_care / hunger / sickness), never a stored value.
 
 # DM20 feeding (manual): two foods only. Meat fills a hunger heart; Protein fills a
-# strength heart, adds weight and restores a little DP. No taste/favourites, no
+# strength heart, adds weight and restores DP (stamina). No taste/favourites, no
 # multi-nutrient system, no enthusiasm/obedience side effects (all DVPet — stripped).
-PROTEIN_DP_RESTORE = 1                  # DM20 protein restores DP (manual: +0.25/feed, scaled)
+# (PROTEIN_DP_RESTORE / BATTLE_DP_COST / SLEEP_DP_GAIN live in the DP block below.)
 
 # DVPet poop / filth (config.csv, PhysicalState.poop).  A bowel movement sheds a little
 # weight and drops a pile of a size set by the Digimon's base weight (capped).
@@ -38,16 +38,12 @@ POOP_INC_WEIGHT_FACTOR = 40            # PoopIncWeightFactor -> size 3 at/above
 POOP_INC_WEIGHT_FACTOR_SMALL = 15      # PoopIncWeightFactorSmall -> size 1 at/below
 POOP_MAX_PILES = 4                      # classic Digimon V-Pet max poops (DVPet's _filth[] is 6; Joel set 4 to match the real toy)
 
-# DVPet calorie buffer (config.csv, PhysicalState.calorieChange / setCalories): a
-# -CalorieLimit..+CalorieLimit "fullness within the current hunger heart".  Each lapse
-# the buffer drains (faster when geriatric); when it empties the hunger heart drops a
-# level (or, at zero, logs a care mistake).  Eating refills it; overfilling speeds the
-# next poop.  DVPet's two coupled timers collapse here to one buffer whose drain rate is
-# tuned to preserve tuipet's ~1800s-per-heart hunger pace (col-1 calorie mods are 0).
-CALORIE_LIMIT = 4                       # CalorieLimit (buffer half-range)
-CALORIE_LAPSE_CHANGE = -1               # CalorieLapseChange (drain per lapse)
-CALORIE_LAPSE_GERIATRIC_EXTRA = -3      # CalorieLapseChangeGeriatric (added when elderly)
-CALORIE_DECAY_SEC = 1800 / (2 * CALORIE_LIMIT)   # keep ~1800s per hunger heart
+# DM20 hunger: whole hearts only (manual -- "hunger depletes in whole hearts only").  The
+# DVPet sub-heart calorie/fullness buffer was stripped 2026-07-01.  A heart drops every
+# HUNGER_HEART_SEC (scaled per species); at zero with the call unanswered it logs a care
+# mistake.  The elderly get hungry faster.
+HUNGER_HEART_SEC = 1800                 # seconds per hunger heart at the modal decay
+GERIATRIC_HUNGER_FACTOR = 4             # the elderly get hungry ~4x faster
 # DVPet per-species physiology (calcNeedDecay: higher coefficient = SLOWER decay). ~85% of
 # species share the modal values below, so only outliers diverge from tuipet's tuned pace.
 REF_HUNGER_COEF = 60          # modal HungerDecayCoefficient
@@ -56,39 +52,24 @@ REF_POOP_RATIO = 64           # modal PoopLimit / PoopLapseInc
 POOP_INTERVAL_BASE = 2700     # tuipet's tuned poop interval at the modal ratio
 STRENGTH_DECAY_BASE = 3000    # gentle effort decay at the modal coefficient (~50 min/heart)
 
-# DVPet fatigue (config.csv, PhysicalState.fatigue / checkFatigueLapse): training to
-# exhaustion can leave the pet fatigued for FatigueMin..FatigueMax game-minutes -- a
-# one-time energy hit, and it cannot act until it has rested off the clock.
-# isFatigued() == fatigue_length > 0; the length counts down in game-minutes (1 game-min
-# ~= 1s under tuipet's clock).  The lifespan hit is omitted (documented); deltas verbatim.
-FATIGUE_MIN = 5                          # FatigueMin
-FATIGUE_MAX = 60                         # FatigueMax
-FATIGUE_ENERGY_DEC = 1                   # FatigueEnergyDec
 TRAIN_POWER_PER_HIT = 2     # attribute power per drill-hit (compression-scaled from DVPet's flat +1)
-FATIGUE_CHANCE = 60                      # FatigueChance (% on an exhausting drill)
+# (No fatigue: DM20 has no over-training exhaustion state -- manual "no such system".)
 
 # DVPet sickness & injury durations (config.csv, PhysicalState.sicken / injure): an
 # illness or injury lasts Min..MaxLength recovery lapses (SickLapseMin/InjLapseMin game-min
-# each) and then clears on its own.  Cured early by medicine as before.
+# each) and then clears on its own.  Cured early by medicine as before.  (No vitamins /
+# injury-worsening: those were DVPet -- manual "no vitamins".)
 MIN_SICK_LENGTH, MAX_SICK_LENGTH = 1, 10     # Min/MaxSickLength (recovery lapses)
 MIN_INJ_LENGTH, MAX_INJ_LENGTH = 1, 12       # Min/MaxInjLength
 SICK_LAPSE_MIN = 29                      # SickLapseMin (game-min per recovery lapse)
 INJ_LAPSE_MIN = 29                       # InjLapseMin
-
-# DVPet injury worsening + vitamins (config.csv, calcWorse{Exercise,Battle}Inj /
-# worsenedInjury / feedVitamin): pushing an injured pet (training/battling) can worsen the
-# injury -- extending it and costing energy -- at a chance set by weight and whether a
-# vitamin is active.  Chances are factor/WorseInjuryChance.  No shipped item is flagged
-# Vitamin in items.csv, so has_vitamin() defaults false (the no-vitamin rates apply); the
-# grant path (feed_vitamin / a "vitamin" consumable flag) is wired and ready.  Values
-# verbatim from config.csv column 1; WorseInjuryLifeDec lifespan hit omitted.
-WORSE_INJ_CHANCE = 100                   # WorseInjuryChance / WorseBattleInjuryChance (bound)
-WORSE_INJ_EXERCISE = {"bad_nv": 10, "good_nv": 1, "good_v": 0, "bad_v": 5}   # WorseInjury*
-WORSE_INJ_BATTLE = {"bad_nv": 15, "good_nv": 5, "good_v": 0, "bad_v": 5}     # WorseBattleInjury*
-WORSE_INJ_ENERGY_DEC = 1                 # WorseInjuryEnergyDec
-VITAMIN_HOURS = 60                       # VitaminHours (game-min of injury-worsening protection)
 MEDICINE_HOURS = 60                      # MedicineHours (game-min the medicine indicator lingers, config.csv)
 BANDAGE_HOURS = 60                       # BandageHours (game-min the bandage indicator lingers, config.csv)
+
+# DM20 DP (battle stamina): restored by protein feeding + sleeping >=3h; consumed by battle.
+PROTEIN_DP_RESTORE = 6                   # DP a protein feed restores (also +1 strength)
+BATTLE_DP_COST = 4                       # DP spent per battle
+SLEEP_DP_GAIN = 3                        # DP recovered per sleep lapse (SleepMinutesToGain)
 
 # Day/night: the world runs on an accelerated clock. One full DAY_LENGTH-second
 # cycle runs dawn -> day -> dusk -> night. Night makes the pet sleepy: kept awake
@@ -115,10 +96,9 @@ class Pet:
     age_seconds: float = 0.0
     stage_seconds: float = 0.0      # time spent in the current stage
     hunger: int = 4                 # hearts 0..4 (4 = full); FullHunger=4
-    calories: int = 4               # DVPet calorie buffer, -CALORIE_LIMIT..+CALORIE_LIMIT
     strength: int = 2               # effort hearts 0..4; FullStrength=4
-    energy: int = 24                # DVPet energy, -max_energy..+max_energy (full at max_energy)
-    max_energy: int = 24            # per-Digimon (digimon.csv MaxEnergy)
+    dp: int = 24                    # DM20 battle stamina, 0..dp_max (restored by sleep >=3h + protein)
+    dp_max: int = 24                # per-Digimon DP capacity
     weight: int = 20
     poop: int = 0                   # pile count == DVPet countFilth()
     poop_sizes: list = _dcf(default_factory=list)   # per-pile size 1..4 (DVPet _filth bytes)
@@ -137,10 +117,8 @@ class Pet:
     sick_count: int = 0
     injuries: int = 0
     exercise_today: int = 0         # DM20 _exercise: drills done today (resets daily)
-    fatigue_length: float = 0.0     # DVPet _fatigueLength (game-min remaining; >0 == fatigued)
     sick_length: float = 0.0        # DVPet _sickLength (game-min until natural recovery)
     inj_length: float = 0.0         # DVPet _injLength (game-min until the injury heals)
-    vitamin_lapse: float = 0.0      # DVPet _vitaminLapse (game-min of injury-worsening protection)
     med_lapse: float = 0.0          # DVPet _medLapse: medicine indicator after curing sickness (getMed)
     bandage_lapse: float = 0.0      # DVPet _bandageLapse: bandage indicator after mending an injury (getBandage)
     battles: int = 0
@@ -150,7 +128,6 @@ class Pet:
     dead: bool = False
     world_seconds: float = 0.0
     field: str = ""
-    element: str = ""
     # transient animation request, consumed by the UI
     anim: str = "idle"
     anim_ttl: float = 0.0
@@ -161,12 +138,10 @@ class Pet:
             rec = by_num.get(self.num)
             if rec and not self.field:
                 self.field = rec.get("field", "")
-                self.element = rec.get("element", "")
             req = data.load_requirements().get(self.num, {})
-            self.max_energy = req.get("max_energy", 24)        # per-Digimon maxEnergy
-            self._sleep_energy_gain = req.get("sleep_energy_gain", 3)
-            if self.energy > self.max_energy:
-                self.energy = self.max_energy
+            self.dp_max = req.get("dp_max", 24)                # per-Digimon DP capacity
+            if self.dp > self.dp_max:
+                self.dp = self.dp_max
 
     # seconds in each stage before it is eligible to evolve (accelerated time)
     EGG_DURATION = 180     # seconds an egg incubates before hatching (~3 min)
@@ -217,7 +192,7 @@ class Pet:
         _, by_num = data.load_sprites()
         r = by_num[num]
         pet = cls(num=num, name=r["name"], stage=r["stage"], attribute=r["attribute"],
-                  field=r.get("field", ""), element=r.get("element", ""))
+                  field=r.get("field", ""))
         return pet
 
     # ---- per-tick simulation -------------------------------------------------
@@ -246,49 +221,39 @@ class Pet:
             if getattr(self, "_exercise_day", -1) != day:    # DM20 checkExerciseTime: daily reset
                 self._exercise_day = day
                 self.exercise_today = 0
-            _rec = dt                                         # sickness/injury/fatigue recover in real time
-            if self.fatigue_length > 0:                       # checkFatigueLapse: rest it off (even asleep)
-                self.fatigue_length = max(0.0, self.fatigue_length - _rec)
+            _rec = dt                                         # sickness/injury recover in real time
             if self.sick_length > 0:                          # sickLapse: illness recovers in time
                 self.sick_length = max(0.0, self.sick_length - _rec)
                 if self.sick_length == 0:
                     self.sick = False
             if self.inj_length > 0:                           # injLapse: the injury heals over time
                 self.inj_length = max(0.0, self.inj_length - _rec)
-            if self.vitamin_lapse > 0:                        # vitaminLapse: protection wears off
-                self.vitamin_lapse = max(0.0, self.vitamin_lapse - dt)
             if self.med_lapse > 0:                            # medLapse: medicine wears off (getMed icon)
                 self.med_lapse = max(0.0, self.med_lapse - dt)
             if self.bandage_lapse > 0:                        # bandageLapse: bandage wears off (getBandage icon)
                 self.bandage_lapse = max(0.0, self.bandage_lapse - dt)
         if self.asleep:
-            # DVPet sleep recovery: +SleepEnergyGain every SleepMinutesToEnergyGain.
-            self._sleep_e_t = getattr(self, "_sleep_e_t", 0.0) + dt
-            if self._sleep_e_t >= 60:                # SleepMinutesToEnergyGain (game-min)
-                self._sleep_e_t = 0.0
-                self._set_energy(self.energy + getattr(self, "_sleep_energy_gain", 3))
-            # sleep through the night; wake in the morning once fully rested
-            if self.day_phase != "night" and self.energy >= self.max_energy:
+            # DM20: sleeping >=3h restores DP (stamina); recover it gradually while asleep.
+            self._sleep_dp_t = getattr(self, "_sleep_dp_t", 0.0) + dt
+            if self._sleep_dp_t >= 60:               # SleepMinutesToGain (game-min)
+                self._sleep_dp_t = 0.0
+                self._set_dp(self.dp + SLEEP_DP_GAIN)
+            if self.day_phase != "night":            # wake in the morning
                 self.asleep = False
                 self._set_anim("wake", 1.6)  # morning stretch (DVPet wakeUp())
             return
 
         night = self.day_phase == "night"
-        # DVPet has NO passive energy decay -- energy only drops from activity
-        # (exercise/battle/travel) and refills during sleep.  (No mood lapse: DM20 has
-        # no mood meter -- see the module note; distress is read live from care state.)
-        # hunger: the DVPet calorie buffer drains each lapse; emptying it drops a hunger
-        # heart (or logs a care mistake at zero), then refills for the next heart.
-        self._cal_t = getattr(self, "_cal_t", 0.0) + dt
-        if self._cal_t >= self._hunger_interval:
-            self._cal_t = 0.0
-            self.calories += CALORIE_LAPSE_CHANGE + (CALORIE_LAPSE_GERIATRIC_EXTRA if self.is_geriatric else 0)
-            if self.calories <= -CALORIE_LIMIT:
-                if self.hunger > 0:
-                    self.hunger -= 1
-                else:
-                    self.care_mistakes += 1      # DM20: starving with the call unanswered
-                self.calories = CALORIE_LIMIT
+        # DM20 has no passive DP decay (DP only drops from battling) and no mood lapse;
+        # only hunger drains here: a whole heart every _hunger_interval, and at zero the
+        # unanswered call logs a care mistake.
+        self._hunger_t = getattr(self, "_hunger_t", 0.0) + dt
+        if self._hunger_t >= self._hunger_interval:
+            self._hunger_t = 0.0
+            if self.hunger > 0:
+                self.hunger -= 1
+            else:
+                self.care_mistakes += 1      # DM20: starving with the call unanswered
         # pooping (DVPet poop(): sheds a little weight, drops a sized pile)
         self._poop_t = getattr(self, "_poop_t", 0) + dt
         if self._poop_t >= self._poop_interval:
@@ -318,10 +283,10 @@ class Pet:
         if (self.poop >= 3 or self.hunger == 0) and not self.sick \
                 and random.random() < 0.02 / self._phys().get("poop_sick_mult", 1.0) * dt:
             self._sicken()
-        # bedtime: sleep through the night, or pass out if run to exhaustion by
-        # day; a grace window after a manual wake lets you interact at night
+        # bedtime: sleep through the night (DM20 sleeps on the clock, not from exhaustion);
+        # a grace window after a manual wake lets you interact at night
         self._wake_grace = max(0.0, getattr(self, "_wake_grace", 0.0) - dt)
-        if not self.asleep and self._wake_grace <= 0 and (night or self.energy <= 0):
+        if not self.asleep and self._wake_grace <= 0 and night:
             self.asleep = True
             self._set_anim("yawn", 1.8)   # yawn, then settle into sleep
 
@@ -342,8 +307,6 @@ class Pet:
             extra += 0.8
         if self.hunger == 0:
             extra += 0.4
-        if self.energy <= 0:
-            extra += 0.2
         if self.is_geriatric:
             extra += 0.2
         self.lifespan -= extra * dt
@@ -404,7 +367,8 @@ class Pet:
 
     @property
     def _hunger_interval(self):
-        return CALORIE_DECAY_SEC * (self._phys().get("hunger_decay", 60) / REF_HUNGER_COEF)
+        base = HUNGER_HEART_SEC * (self._phys().get("hunger_decay", 60) / REF_HUNGER_COEF)
+        return base / (GERIATRIC_HUNGER_FACTOR if self.is_geriatric else 1)
 
     @property
     def _poop_interval(self):
@@ -421,17 +385,15 @@ class Pet:
         self.num, self.name = num, r["name"]
         self.stage, self.attribute = r["stage"], r["attribute"]
         self.field = r.get("field", self.field)
-        self.element = r.get("element", self.element)
         _req = data.load_requirements().get(num, {})
-        self.max_energy = _req.get("max_energy", self.max_energy)
-        self._sleep_energy_gain = _req.get("sleep_energy_gain", 3)
-        self.energy = min(self.energy, self.max_energy)   # DVPet clamps to new max (no auto-refill)
+        self.dp_max = _req.get("dp_max", self.dp_max)
+        self.dp = min(self.dp, self.dp_max)               # clamp to the new capacity (no auto-refill)
         self.stage_seconds = 0.0
         # per-stage care record resets; the next stage's care decides the next form
         self.care_mistakes = self.overeat = self.trainings = 0
         self.injuries = self.sick_count = 0
         self.sick = False
-        self.sick_length = self.inj_length = self.fatigue_length = 0.0
+        self.sick_length = self.inj_length = 0.0
         self.weight = self._base_weight()
         # DVPet attributeEvolChange: a form raises/lowers the carried attribute powers
         self.vaccine = max(0, self.vaccine + _req.get("vaccine_change", 0))
@@ -455,19 +417,19 @@ class Pet:
 
     def _well_cared(self):
         """Every need comfortably met -- the pet reads as content (happy idle hop)."""
-        return (self.hunger >= 3 and self.energy > self.max_energy // 2 and self.poop == 0
-                and not self.sick and not self.is_injured() and not self.is_fatigued())
+        return (self.hunger >= 3 and self.poop == 0
+                and not self.sick and not self.is_injured())
 
-    def _set_energy(self, value):
-        """DVPet setEnergy: clamp to [-max_energy, +max_energy]."""
-        self.energy = _clamp(int(round(value)), -self.max_energy, self.max_energy)
+    def _set_dp(self, value):
+        """DM20 DP (battle stamina): clamp to [0, dp_max]."""
+        self.dp = _clamp(int(round(value)), 0, self.dp_max)
 
-    def energy_pct(self):
-        return max(0, self.energy) * 100 // self.max_energy if self.max_energy else 0
+    def dp_pct(self):
+        return max(0, self.dp) * 100 // self.dp_max if self.dp_max else 0
 
     @property
-    def dp(self):
-        """DM20 battle power (DP): the pet's total attribute power (vaccine+data+virus)."""
+    def power(self):
+        """DM20 Power: the pet's total attribute power (vaccine+data+virus), from training."""
         return self.vaccine + self.data_power + self.virus
 
     def _poop_size(self):
@@ -504,19 +466,9 @@ class Pet:
         elif random.random() < 0.5:
             self._set_anim("surprise", 1.6)
 
-    def _add_dp(self, amount):
-        """Route DP gain into the pet's own attribute pool (DM20 protein DP restore)."""
-        attr = self.attribute if self.attribute in ("Vaccine", "Data", "Virus") else "Vaccine"
-        if attr == "Vaccine":
-            self.vaccine += amount
-        elif attr == "Data":
-            self.data_power += amount
-        else:
-            self.virus += amount
-
     def feed(self, food=None):
         """DM20 feeding: two foods only. Meat fills a hunger heart; Protein fills a
-        strength heart, adds weight and restores a little DP (manual). No taste,
+        strength heart, adds weight and restores DP stamina (manual). No taste,
         favourites, or nutrition macros (all DVPet — stripped)."""
         if self.dead:
             return "It rests now — press N for a new egg."
@@ -534,18 +486,17 @@ class Pet:
                 return f"{self.name} is already strong!"
             self.strength = _clamp(self.strength + max(1, food["strength"]), 0, 4)
             self.weight += food.get("weight", 2)
-            self._add_dp(PROTEIN_DP_RESTORE)                # DM20: protein restores DP
+            self._set_dp(self.dp + PROTEIN_DP_RESTORE)      # DM20: protein restores DP stamina
             self._set_anim("eat", 1.4)
             return f"Fed {food['name']}."
         if self.hunger >= 4:                                 # Meat, already full -> overfeed
             self.weight += 1
             self.overeat += 1
-            self.calories = CALORIE_LIMIT
             self._poop_t = min(self._poop_interval, getattr(self, "_poop_t", 0) + 900)   # overeat -> sooner poop
             self._set_anim("refuse", 1.0)
             return f"{self.name} is too full!"
         self.hunger = _clamp(self.hunger + max(1, food["hunger"]), 0, 4)
-        self.calories = CALORIE_LIMIT                       # a meal refills the calorie buffer
+        self._hunger_t = 0.0                                # a meal resets the hunger timer
         self.weight += food.get("weight", 1)
         self._set_anim("eat", 1.4)
         return f"Fed {food['name']}."
@@ -557,12 +508,6 @@ class Pet:
             return "It is still an egg."
         if self.asleep:
             return self._disturbed()
-        if self.is_fatigued():
-            self._set_anim("exhausted", 1.2)
-            return "Too fatigued — let it rest."
-        if self.energy <= 0:                            # MinEnergyForActivity
-            self._set_anim("refuse", 1.0)
-            return "Too tired to train."
         return None
 
     def apply_training(self, hits, power, attribute=None, game="hp"):
@@ -592,13 +537,9 @@ class Pet:
             elif attr == "Virus":
                 self.virus += gain
         self.weight = max(1, self.weight - 2)
-        self._set_energy(self.energy - 1)               # ExerciseEnergyDec
-        if self.energy <= 0 and random.randint(0, 99) < FATIGUE_CHANCE:   # trained to exhaustion
-            self._fatigue()
-        # training while overweight risks an injury
+        # training while overweight risks an injury (DM20 has no over-training fatigue)
         if evolution.weight_category(self.weight, self._base_weight()) == "Over" and random.random() < 0.5:
             self._injure()
-        self._check_worse_injury(in_battle=False)        # drilling an injured pet can worsen it
         # DVPet HP_Training_AttackSuccess = hit pose (frame 6); AttackFail = dejected pose
         # (frame 9). A failed drill shows the dejected reaction (which surfaces the "unhappy"
         # discourage emote), not an attack pose.
@@ -615,19 +556,15 @@ class Pet:
             return "Too young to battle."
         if self.asleep:
             return self._disturbed()
-        if self.is_fatigued():
-            self._set_anim("exhausted", 1.2)
-            return "Too fatigued — let it rest."
-        if self.energy <= 0:                            # MinEnergyForActivity
+        if self.dp <= 0:                                # DM20: DP is the stamina battling needs
             self._set_anim("refuse", 1.0)
-            return "Too tired to battle."
+            return "No DP — feed protein or let it sleep."
         return None
 
     def record_battle(self, won, enemy=None):
         """Resolve a finished battle: update battles/wins and rewards."""
         self.battles += 1
-        self._set_energy(self.energy - 1)               # battle energy (BattleWon/LostEnergyDec)
-        self._check_worse_injury(in_battle=True)         # battling injured can worsen it
+        self._set_dp(self.dp - BATTLE_DP_COST)           # DM20: battling spends DP stamina
         if won:
             self.wins += 1
             self._set_anim("happy", 2.0)                  # reactive cheer (no mood meter)
@@ -636,10 +573,6 @@ class Pet:
             self._injure()
         self._set_anim("sad", 2.0)                        # reactive dejection
         return "Defeat..."
-
-    def is_fatigued(self):
-        """PhysicalState.isFatigued: worn out until the fatigue length counts down."""
-        return self.fatigue_length > 0
 
     def is_injured(self):
         """PhysicalState.isInj: currently nursing an injury (the count persists for evolution)."""
@@ -661,10 +594,6 @@ class Pet:
         rolled = random.randint(MIN_INJ_LENGTH, MAX_INJ_LENGTH) * INJ_LAPSE_MIN
         self.inj_length = max(self.inj_length, rolled)
 
-    def has_vitamin(self):
-        """PhysicalState.hasVitamin: a vitamin is active, guarding against worse injuries."""
-        return self.vitamin_lapse > 0
-
     def has_medicine(self):
         """PhysicalState.getMed: medicine is still active (the medicine state icon shows)."""
         return self.med_lapse > 0
@@ -672,37 +601,6 @@ class Pet:
     def has_bandage(self):
         """PhysicalState.getBandage: a bandage is still on (the bandage state icon shows)."""
         return self.bandage_lapse > 0
-
-    def feed_vitamin(self):
-        """PhysicalState.feedVitamin: top up injury-worsening protection."""
-        self.vitamin_lapse = VITAMIN_HOURS
-
-    def _worsen_injury(self):
-        """PhysicalState.worsenedInjury: the injury gets worse -- extended, with an energy
-        cost (the WorseInjuryLifeDec lifespan hit is omitted)."""
-        self.inj_length += random.randint(MIN_INJ_LENGTH, MAX_INJ_LENGTH) * INJ_LAPSE_MIN
-        self._set_energy(self.energy - WORSE_INJ_ENERGY_DEC)
-
-    def _check_worse_injury(self, in_battle):
-        """calcWorse{Exercise,Battle}Inj: pushing an already-injured pet can worsen the
-        injury, at a chance set by weight and whether a vitamin is active."""
-        if not self.is_injured():
-            return
-        table = WORSE_INJ_BATTLE if in_battle else WORSE_INJ_EXERCISE
-        good_weight = evolution.weight_category(self.weight, self._base_weight()) == "Healthy"
-        if good_weight:
-            factor = table["good_v"] if self.has_vitamin() else table["good_nv"]
-        else:
-            factor = table["bad_v"] if self.has_vitamin() else table["bad_nv"]
-        if random.randint(0, WORSE_INJ_CHANCE - 1) < factor:
-            self._worsen_injury()
-
-    def _fatigue(self):
-        """PhysicalState.fatigue: the pet collapses from over-exertion — an energy hit,
-        then it must rest the fatigue length off (FatigueMin..FatigueMax game-min)."""
-        self.fatigue_length = max(FATIGUE_MIN, random.randint(FATIGUE_MIN, FATIGUE_MAX))
-        self._set_energy(self.energy - FATIGUE_ENERGY_DEC)
-        self._set_anim("exhausted", 2.0)
 
     def clean(self):
         if self.dead:
@@ -758,15 +656,13 @@ class Pet:
             return "asleep"
         if self.sick:
             return "sick"
-        if self.is_fatigued():
-            return "fatigued"
         if self.is_injured():
             return "injured"
         if self.hunger == 0:
             return "starving"
         if self.poop >= 3:
             return "needs cleaning"
-        if self.day_phase == "night" and not self.asleep and self.energy < self.max_energy // 2:
+        if self.day_phase == "night" and not self.asleep:
             return "sleepy"
         if self._well_cared():
             return "happy"

@@ -167,11 +167,9 @@ COND_PITCH = COND_H + 1
 # Status sprites disabled for now (Joel): the post-cure medicine badge and the
 # misbehave/discipline "light bulb". Cosmetic-only; remove from this set to re-enable.
 _HIDDEN_STATUS_ICONS = {"st_medicine", "st_teach"}
-# DVPet draws the condition icons as a fixed VERTICAL COLUMN down the right edge of
-# the LCD (setLocX ~120), one fixed row each, every active one shown AT ONCE -- not a
-# single cycling slot.  Vertical order is DVPet's setLocY (top->bottom): sick(55),
-# medicine(64), injury(73), bandage(83), vitamin(93), fatigue(103).  teach is NOT in
-# the column -- DVPet gives it setDynamicComponentLocation, so it tracks the creature.
+# Condition icons draw as a fixed VERTICAL COLUMN down the right edge of the LCD, one
+# fixed row each, every active one shown AT ONCE.  DM20 conditions only: sick, medicine,
+# injury, bandage.  (vitamin/fatigue were DVPet -- stripped with those mechanics.)
 
 
 def _effect_overlay(pet, frame_i, cols, px_h, tick=0, pet_right=None):
@@ -207,12 +205,11 @@ def _effect_overlay(pet, frame_i, cols, px_h, tick=0, pet_right=None):
         pts += _blit(z, zx, band_top)
     # --- condition marker: the sick/injury icon floats beside the pet at the screen edge ---
     # DVPet stateNumTic blink: 7 ticks awake / 10 asleep, faster (7) when unwell.
-    unwell = pet.sick or pet.is_injured() or pet.is_fatigued()
+    unwell = pet.sick or pet.is_injured()
     sf = (tick // (7 if unwell else (10 if asleep else 7))) % 2
     col_x = PLAY_R - COND_W - 1                            # 1px off the play-window's right edge
     column = (("st_sick", pet.sick), ("st_medicine", pet.has_medicine()),
-              ("st_injury", pet.is_injured()), ("st_bandage", pet.has_bandage()),
-              ("st_vitamin", pet.has_vitamin()), ("st_fatigue", pet.is_fatigued()))
+              ("st_injury", pet.is_injured()), ("st_bandage", pet.has_bandage()))
     k = 0
     col_active = False
     for key, active in column:
@@ -234,7 +231,7 @@ def _effect_overlay(pet, frame_i, cols, px_h, tick=0, pet_right=None):
         if emo and E.get(emo):                            # happy / unhappy reaction emote
             bubble.append(E[emo][frame_i % len(E[emo])])
         elif (pet.anim in ("idle", "walk") and E.get("attention")
-              and (pet.hunger == 0 or pet.poop >= 3 or pet.energy <= 0)):
+              and (pet.hunger == 0 or pet.poop >= 3)):
             bubble.append(E["attention"][0])             # care-call '!'
         if bubble:
             bm = bubble[(tick // 5) % len(bubble)]        # if both present, take turns (rare)
@@ -347,8 +344,7 @@ class Screen(Static):
         if pet is not None and pet.anim in ("idle", "walk") and pet.num != -1 and not pet.sick:
             poop_cols = (min(pet.poop, POOP_MAX_PILES) + 1) // 2          # 2x2 grid -> ceil(piles/2) columns wide
             poop_right = (PLAY_X0 + poop_cols * (POOP_W + POOP_PAD) + 1) if pet.poop else 0
-            cond = (pet.is_injured() or pet.is_fatigued() or pet.has_vitamin()
-                    or pet.has_medicine() or pet.has_bandage())
+            cond = (pet.is_injured() or pet.has_medicine() or pet.has_bandage())
             right_bound = (PLAY_R - COND_W - 1 - SPRITE_W) if cond else None   # clear the right-edge column
             prev_pose = self.roamer.pose
             # wall the pacing inside the centred 32-wide play window (turns at PLAY_X0/PLAY_RIGHT)
@@ -557,7 +553,6 @@ class Stats(Static):
         deco = []
         if pet.asleep and word != "asleep": deco.append("[blue]Zzz[/]")
         if pet.sick and word != "sick": deco.append(f"[{T.NEG}]+sick[/]")
-        if pet.is_fatigued() and word != "fatigued": deco.append(f"[{T.NEG}]+tired[/]")
         if pet.is_injured() and word != "injured": deco.append(f"[{T.NEG}]+hurt[/]")
         if pet.poop and word != "needs cleaning": deco.append(f"[{T.COIN}]~poop x{pet.poop}[/]")
         sky, skycol = _sky_icon(pet)
@@ -570,10 +565,10 @@ class Stats(Static):
             div,
             f"Hunger  {hearts(pet.hunger)}",
             f"Effort  {hearts(pet.strength)}",
-            f"Energy  {bar(pet.energy_pct(), 12, T.ENERGY)}",
+            f"DP      {bar(pet.dp_pct(), 12, T.ENERGY)}",
             div,
             f"Attrib  {_attr_badge(pet.attribute)}",
-            f"DP      {pet.dp}",
+            f"Power   {pet.power}",
             f"Weight  {pet.weight}g",
             f"Battle  {pet.wins}W/{pet.battles}",
             f"[{skycol}]{sky}[/] [dim]{_age_str(pet.age_seconds)}[/]",
@@ -936,13 +931,13 @@ class TuiPetApp(App):
         div = STAT_DIV
         head = _stat_head(p.name, "train")
         eff = hearts(p.strength)
-        energy = bar(p.energy_pct(), 11, T.ENERGY)
+        dp = bar(p.dp_pct(), 11, T.ENERGY)
         if tp.phase == "done":
             verdict = (f"[{T.POS}]wall smashed![/]" if tp.full
                        else (f"[{T.COIN}]some hits landed[/]" if tp.success else f"[{T.NEG}]too slow[/]"))
             lines = [head, div,
                      "[b]Wall Drill[/]", "", verdict, "",
-                     f"Effort   {eff}", f"Energy   {energy}", div,
+                     f"Effort   {eff}", f"DP       {dp}", div,
                      f"[dim]{(tp.result or '')[:24]}[/]"]
         else:
             hitbar = bar(min(tp.taps, MASH_TARGET) / MASH_TARGET * 100, 11, T.POS)
@@ -951,7 +946,7 @@ class TuiPetApp(App):
                      "[b]Wall Drill[/]",
                      f"Hits     {tp.taps} / {MASH_TARGET}", f"Wall     {hitbar}",
                      f"Time     {timebar}", div,
-                     f"Effort   {eff}", f"Energy   {energy}", div,
+                     f"Effort   {eff}", f"DP       {dp}", div,
                      "[dim]MASH to smash it![/]"]
         self.stats_w.update("\n".join(lines))
 
@@ -981,9 +976,8 @@ class TuiPetApp(App):
         self.stats_w.update("\n".join(lines))
 
     def _status_eat(self):
-        """DM20 feeding readout: the hunger hearts + calorie (fullness) buffer, shown
-        live while the eat animation plays."""
-        from .pet import CALORIE_LIMIT
+        """DM20 feeding readout: the hunger + effort hearts and DP, shown live while the
+        eat animation plays."""
         p, T = self.pet, theme
         self.stats_w.border_subtitle = f"gen {p.generation}"
         div = STAT_DIV
@@ -991,13 +985,13 @@ class TuiPetApp(App):
             _stat_head(p.name, "feeding"), div,
             f"Hunger   {hearts(p.hunger)}",
             f"Effort   {hearts(p.strength)}",
-            f"Fuel     {bar(p.calories * 100 // CALORIE_LIMIT, 12, T.COIN)}",
+            f"DP       {bar(p.dp_pct(), 12, T.ENERGY)}",
             div,
             f"Weight   {p.weight}g",
-            f"DP       {p.dp}",
+            f"Power    {p.power}",
             "",
-            "[dim]Meat fills hunger,[/]",
-            "[dim]protein builds strength.[/]",
+            "[dim]Meat fills hunger; protein[/]",
+            "[dim]builds strength + DP.[/]",
         ]
         self.stats_w.update("\n".join(lines))
 
@@ -1022,7 +1016,7 @@ class TuiPetApp(App):
             sc.advance_fx()
             sc.paint(self.pet)
             if sc.fx:
-                if sc.fx["kind"] == "eat":     # live DVPet feeding readout (calorie + P/M/V)
+                if sc.fx["kind"] == "eat":     # live feeding readout (hunger/effort/DP)
                     snd = sc.fx.get("bite_snds", {}).get(sc.fx["step"])
                     if snd:                    # _eat on bites 1-2, _lastBite on the final chew
                         self.beep(snd, bell=False)
@@ -1073,7 +1067,7 @@ class TuiPetApp(App):
             self.beep(poop_snd, bell=False)
         # care-need call (classic V-pet nag): alert on onset, then every ~90s
         needs = (not p.dead and p.stage != "Egg" and not p.asleep
-                 and (p.hunger == 0 or p.sick or p.poop >= 3 or p.energy <= 0))
+                 and (p.hunger == 0 or p.sick or p.poop >= 3))
         if needs and not self._needs:
             self.beep("alarm")
             self._nag_t = 0.0
@@ -1145,7 +1139,6 @@ class TuiPetApp(App):
         if p.sick:          msg = f"{name} is sick!"
         elif p.hunger == 0: msg = f"{name} is hungry!"
         elif p.poop >= 3:   msg = f"{name} needs cleaning!"
-        elif p.energy <= 0: msg = f"{name} is exhausted!"
         else:               return ""
         return f"[{theme.NEG}]\u26a0 {msg}[/]"
 

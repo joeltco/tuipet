@@ -13,7 +13,7 @@ from tuipet.app import TuiPetApp
 
 
 def test_need_message_priority_and_text():
-    p = Pet(num=-1, stage="Rookie", name="Pico", hunger=4, energy=10)
+    p = Pet(num=-1, stage="Rookie", name="Pico", hunger=4)
     app = TuiPetApp(pet=p)                         # __init__ only; no mount needed
     assert app._need_message(p) == ""             # no need -> nothing to announce
     p.hunger = 0
@@ -24,11 +24,8 @@ def test_need_message_priority_and_text():
     p.hunger = 4
     p.poop = 4
     assert "cleaning" in app._need_message(p)
-    p.poop = 0
-    p.energy = 0
-    assert "exhausted" in app._need_message(p)
     # the pet's name appears in the announcement
-    p.energy = 10
+    p.poop = 0
     p.hunger = 0
     assert "Pico" in app._need_message(p)
 
@@ -42,7 +39,6 @@ def _hungry_rookie():
     p = Pet.from_num(num)
     p.name = "Pico"
     p.hunger = 0          # hungry
-    p.energy = 24         # awake, not exhausted
     p.world_seconds = 0   # daytime -> stays awake
     return p
 

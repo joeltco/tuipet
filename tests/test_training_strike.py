@@ -8,9 +8,8 @@ from tuipet.pet import Pet
 
 
 def _panel(**kw):
-    # high energy / normal weight so the gain under test is deterministic
-    p = Pet(num=1, stage="Child", strength=0, trainings=0,
-            energy=24, max_energy=24, weight=20, **kw)
+    # normal weight so the gain under test is deterministic
+    p = Pet(num=1, stage="Child", strength=0, trainings=0, weight=20, **kw)
     return p, T.TrainingPanel(p)
 
 

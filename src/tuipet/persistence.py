@@ -125,8 +125,8 @@ def _offline(pet, elapsed):
     if elapsed < 30 or pet.stage == "Egg":
         return ""
     mins = elapsed / 60.0
-    # DVPet has no passive energy decay; just re-clamp to the (per-pet) range.
-    pet.energy = _clamp(pet.energy, -pet.max_energy, pet.max_energy)
+    # DM20 DP has no passive decay (only battling spends it); just re-clamp to range.
+    pet.dp = _clamp(pet.dp, 0, pet.dp_max)
     drop = min(pet.hunger, int(mins // 5))
     pet.hunger -= drop
     if mins > 10 and pet.hunger == 0:

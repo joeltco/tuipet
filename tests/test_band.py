@@ -24,9 +24,8 @@ def _styled(text):
 
 def _pet(**kw):
     base = dict(dead=False, num=1, poop=0, asleep=False, sick=False, anim="idle",
-                is_injured=lambda: False, is_fatigued=lambda: False,
-                has_medicine=lambda: False, has_bandage=lambda: False,
-                has_vitamin=lambda: False, energy=5, hunger=2)
+                is_injured=lambda: False,
+                has_medicine=lambda: False, has_bandage=lambda: False, hunger=2)
     base.update(kw)
     return NS(**base)
 
