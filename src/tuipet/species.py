@@ -92,15 +92,6 @@ ATTRIBUTES = ["Vaccine", "Virus", "Data", "Free"]
 _BEATS = {"Vaccine": "Virus", "Virus": "Data", "Data": "Vaccine"}
 
 
-def attribute_edge(a, b):
-    """+1 if attribute `a` beats `b`, -1 if it loses, 0 if neutral/even (Free or same)."""
-    if _BEATS.get(a) == b:
-        return 1
-    if _BEATS.get(b) == a:
-        return -1
-    return 0
-
-
 def _timer_seconds(s):
     """'10 min' / '6 h' / '36 h' -> seconds. None/unknown -> None."""
     if not s:

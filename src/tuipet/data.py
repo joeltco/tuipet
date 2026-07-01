@@ -38,16 +38,6 @@ def pretty_field(name):
 PLACEHOLDER_NUMS: set[int] = set()
 
 
-def _content_fill(frame):
-    rows = [r for r in frame if "1" in r]
-    if not rows:
-        return 0.0
-    left = min(r.find("1") for r in rows)
-    right = max(r.rfind("1") for r in rows)
-    w = right - left + 1
-    return sum(r[left:right + 1].count("1") for r in rows) / (w * len(rows))
-
-
 @lru_cache(maxsize=1)
 def load_sprites():
     """The authentic DM20 sprite atlas (DVPet 16x16 art, native frame order), keyed by species num."""
@@ -120,21 +110,6 @@ def next_stage(stage):
     return STAGE_ORDER[i + 1] if i + 1 < len(STAGE_ORDER) else None
 
 
-def evolution_targets(num, stage):
-    """Real evolution targets whose stage is the next stage up (with sprites)."""
-    _, by_num = load_sprites()
-    evo = load_evolutions()
-    want = next_stage(stage)
-    out = []
-    for t in evo.get(num, []):
-        rec = by_num.get(t)
-        if rec and (want is None or rec["stage"] == want):
-            out.append(t)
-    # fall back to any next-stage creature if the graph has no usable target
-    if not out and want:
-        out = [n for n, rec in by_num.items() if rec["stage"] == want]
-    return out
-
 # Food taste categories (still used by the feeding/taste system in pet.py).
 FOOD_CATEGORIES = ("Meat", "Fish", "Veg", "Fruit", "Med", "Junk", "Grain", "Dairy")
 
@@ -177,12 +152,6 @@ _MOVES = None
 def move_name(num, attribute):
     """The attribute attack a Digimon throws (mono devices don't name per-mon moves)."""
     return attribute
-
-
-def attack_info(num, attribute):
-    """Mono battle has no attack-effect chips -> a plain attribute attack, no effect."""
-    return {"name": attribute, "effect": "None", "conditions": []}
-
 
 
 # ---------------------------------------------------------------------------
