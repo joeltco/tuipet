@@ -402,7 +402,6 @@ class Screen(Static):
             # DVPet eat(): 24px food descends in 4 stages (beats 0/2/4/6) toward the
             # mouth, then a chew triad alternates open-mouth(+8)/chew(+7) at beats
             # 10/14/18/22/26/30 while the food is consumed frame-by-frame; ends ~34.
-            xshift = -1                                        # DVPet centres the pet (char x29 of the 104px display)
             chew = fx.get("chew") or {10: 8, 14: 7, 18: 8, 22: 7, 26: 8, 30: 7}
             pose_i = 0
             for b in sorted(chew):
@@ -412,9 +411,11 @@ class Screen(Static):
             food = self._food_frames(fx.get("icon") or "f:0")
             if food:
                 fw = len(food[0][0]) if (food[0] and food[0][0]) else 8
-                # DVPet: the food's RIGHT edge meets the pet's LEFT edge (foodLabel x31+24 == char x55),
-                # so it descends right into the mouth -- abut it instead of stranding it on the far left.
-                fx_x = max(0, (SCREEN_COLS - SPRITE_W) // 2 + xshift - fw)
+                # DVPet: the food's RIGHT edge meets the pet's LEFT edge, so it descends into
+                # the mouth.  The pet is centred (x12 on our 32-wide window) and the food abuts
+                # its left edge -- clamped to PLAY_X0 so the whole icon stays inside the clip
+                # (the old -1 pet bias pushed the food to x3 and clipped its left column).
+                fx_x = max(PLAY_X0, (SCREEN_COLS - SPRITE_W) // 2 - fw)
                 stage = 0 if step < 2 else 1 if step < 4 else 2 if step < 6 else 3
                 fy = (0, 4, 9, 13)[stage]                      # DVPet descent y 0/11/22/33 of 60 -> *(24/60)
                 fb = fx.get("food_beats") or (14, 22, 30)
