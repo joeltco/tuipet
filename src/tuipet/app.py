@@ -155,72 +155,70 @@ def _blit(bm, ox, oy):
 
 
 COND_W = COND_H = 7                                # state.png cell size (DVPet 7x7 cells)
-COND_PITCH = COND_H + 1
-# Condition markers float beside the creature, stacked, every active one at once.  DM20
-# conditions only: injury.  (medicine/bandage recovery indicators, vitamin,
-# and fatigue were all DVPet -- stripped with those mechanics.)
+POOP_W = 8                                         # poop sprite width
+STATUS_LANE = 8                                    # right-edge lane reserved for the injury skull / call '!'
+# HARD RULE ([[feedback_tuipet_sprites_never_overlap]]): NOTHING overlaps the creature.
+# Poop gets a LEFT lane, the injury skull / care-call gets a RIGHT lane, and the creature
+# is bounded to the clear zone between them.  wayland (source of truth) renders no poop and
+# no Zzz sprite -- it shows SLEEP as the pose -- so there is no Zzz bubble at all.
 
 
-def _effect_overlay(pet, frame_i, cols, px_h, tick=0, pet_right=None):
-    """Status sprites laid out the DM20 dot-matrix way, inside the 16-dot screen band:
-    droppings as a single low row along the floor that the Digimon walks in FRONT of,
-    the sleep Zzz above its head, the injury marker floating beside it, and a
-    care-call bubble by its head (DM20 manual). Returns (front, back): `back` draws
-    behind the creature (the droppings), `front` over it (Zzz / markers / bubble)."""
+def _status_active(pet):
+    """Is the right-lane status marker (injury skull, or the care-call '!') showing?"""
+    return bool(pet.is_injured() or (not pet.asleep and getattr(pet, "anim", "") in ("idle", "walk")
+                                     and (pet.hunger == 0 or pet.poop >= 3)))
+
+
+def _care_zones(pet):
+    """Reserved-lane bounds so the creature never overlaps the poop (left) or the status
+    marker (right).  Returns (left_bound, right_bound) as the creature's sprite-x roam
+    limits, plus (poop_cols, status_active) for the overlay layout."""
+    if pet.dead or pet.num == -1:
+        return PLAY_X0, PLAY_RIGHT, 0, False
+    status_active = _status_active(pet)
+    status_left = PLAY_R - (STATUS_LANE if status_active else 0)
+    poop_cols = 0
+    if pet.poop:
+        room = (status_left - PLAY_X0) - SPRITE_W          # px left for poop after the creature
+        poop_cols = max(0, min((min(pet.poop, POOP_MAX_PILES) + 1) // 2, room // POOP_W))
+    left_bound = PLAY_X0 + poop_cols * POOP_W
+    right_bound = max(left_bound, status_left - SPRITE_W)
+    return left_bound, right_bound, poop_cols, status_active
+
+
+def _effect_overlay(pet, frame_i, cols, px_h, tick=0):
+    """Care overlays, laid out so NOTHING overlaps the creature (hard rule): droppings in
+    a bottom-LEFT lane, the injury skull / care-call '!' in a RIGHT lane, and the creature
+    bounded to the clear zone between them (see _care_zones).  No sleep Zzz -- wayland (the
+    source of truth) shows sleep as the POSE, no floating Z bubble."""
     E = data.load_effects()
-    front, back = [], []
+    front = []
     if pet.dead:
-        return front, back
+        return front
     band_top = max(0, px_h - 2 - 16)                      # 16-dot screen band, 2px floor (=6 on 24px canvas)
     band_bot = px_h - 2                                    # =22
-    # --- droppings: a single low row along the floor, BEHIND the creature (DM20) ---
+    _lb, _rb, poop_cols, status_active = _care_zones(pet)
+    # --- droppings: a left lane, piles stacked (2 per column); the creature stays clear ---
     poopfr = E.get("poop") or []
-    if pet.poop and poopfr:
+    if pet.poop and poopfr and poop_cols:
         pm = poopfr[(tick // (10 if pet.asleep else 7)) % len(poopfr)]   # DVPet animFilth swap
         pw, ph_ = len(pm[0]), len(pm)
-        for i in range(min(pet.poop, POOP_MAX_PILES)):
-            x = min(PLAY_X0 + i * pw, PLAY_R - pw)         # left-to-right along the floor, clamped in-window
-            back += _blit(pm, x, band_bot - ph_)
+        cap, n = min(pet.poop, POOP_MAX_PILES), 0
+        for c in range(poop_cols):
+            for r in range(2):                            # bottom pile, then one stacked above
+                if n >= cap:
+                    break
+                front += _blit(pm, PLAY_X0 + c * pw, (band_bot - ph_) - r * ph_)
+                n += 1
     if pet.num == -1:
-        return front, back
-    asleep = bool(getattr(pet, "asleep", False))
-    pl = (pet_right - SPRITE_W) if pet_right is not None else (PLAY_X0 + (PLAY_COLS - SPRITE_W) // 2)
-    pr = pl + SPRITE_W
-    head_cx = pl + SPRITE_W // 2
-
-    def _beside(w):
-        """A slot just outside the creature on whichever side has room (DM20: 'next to it')."""
-        return pr + 1 if (pr + 1 + w) <= PLAY_R else max(PLAY_X0, pl - 1 - w)
-
-    # --- sleep Zzz: floats above the Digimon's head ---
-    if asleep and E.get("zzz"):
-        z = E["zzz"][(frame_i // 2) % len(E["zzz"])]
-        zw = len(z[0])
-        zx = max(PLAY_X0, min(head_cx - zw // 2, PLAY_R - zw))
-        front += _blit(z, zx, band_top)
-    # --- condition marker: the injury skull floats beside the creature, tracking it ---
-    # DVPet stateNumTic blink: 7 ticks awake / 10 asleep, faster (7) when unwell.
-    sf = (tick // (7 if pet.is_injured() else (10 if asleep else 7))) % 2
-    column = (("st_injury", pet.is_injured()),)
-    k = 0
-    cond_active = False
-    for key, active in column:
-        if not active or not E.get(key):
-            continue
-        cond_active = True
-        y = band_top + k * COND_PITCH
-        if y + COND_H > band_bot:                         # keep the stack inside the 16-dot band
-            break
-        front += _blit(E[key][sf], _beside(COND_W), y)
-        k += 1
-    # --- care-call: the '!' beside the head when a need goes unmet, awake only.  DM20 emotes
-    #     through the creature's POSE (angry/sad/happy frames), not floating happy/unhappy
-    #     face bubbles -- those were DVPet's emotionLabel, stripped. ---
-    if (not asleep and not cond_active and E.get("attention")
-            and pet.anim in ("idle", "walk") and (pet.hunger == 0 or pet.poop >= 3)):
-        att = E["attention"][0]
-        front += _blit(att, _beside(len(att[0])), band_top)
-    return front, back
+        return front
+    # --- right lane: the injury skull, or (awake) the care-call '!' ---
+    sx = PLAY_R - STATUS_LANE
+    if pet.is_injured() and E.get("st_injury"):
+        front += _blit(E["st_injury"][(tick // 7) % 2], sx, band_top)
+    elif status_active and E.get("attention"):
+        front += _blit(E["attention"][0], sx, band_top)
+    return front
 
 
 class Screen(Static):
@@ -244,10 +242,9 @@ class Screen(Static):
             on = SIL_DAY   # dark silhouette day OR night -- the pet is never white;
             #                white (SIL_NIGHT) is reserved for the lights-out Zzz below
         wf = self.frame_i // 4                  # effect overlay keeps its ~0.4s cadence
-        overlay, back = _effect_overlay(pet, wf, SCREEN_COLS, SCREEN_ROWS * 2, tick=self.frame_i)
         if pet.dead:                           # a grave marker
             self.update(render_screen(GRAVESTONE, SCREEN_COLS, SCREEN_ROWS, on, bg,
-                                      overlay=overlay, bgimg=bgimg, band=PLAY_BAND))
+                                      bgimg=bgimg, band=PLAY_BAND))
             return
         if pet.num == -1:                      # egg
             rec = egg_mod.record(pet.egg_type)
@@ -296,15 +293,18 @@ class Screen(Static):
         # NOTE: DVPet's frozen.png (the ice encasement) is its GAME-PAUSED indicator
         # (setFrozenIcon only fires when !isPlaying), not a cold-weather state -- so cold
         # shows the huddle pose above, not a full ice block over the pet.
-        # DM20: the Digimon roams freely over the floor (droppings sit BEHIND it, drawn as
-        # the back layer); the marker/emote track the pet's final x, so rebuild the overlay now.
-        overlay, back = _effect_overlay(pet, wf, SCREEN_COLS, SCREEN_ROWS * 2, tick=self.frame_i,
-                                        pet_right=(SCREEN_COLS - SPRITE_W) // 2 + xshift + SPRITE_W)
+        # HARD RULE: keep the creature inside its clear zone so it never overlaps the poop
+        # (left lane) or the injury/call marker (right lane).
+        if pet.num != -1 and not (pet.num == -1 and pet.hatching):
+            lb, rb, _, _ = _care_zones(pet)
+            base = (SCREEN_COLS - SPRITE_W) // 2
+            xshift = max(lb - base, min(xshift, rb - base))
+        overlay = _effect_overlay(pet, wf, SCREEN_COLS, SCREEN_ROWS * 2, tick=self.frame_i)
         if not pet.lights:                 # lights off: DVPet's lightsOff is a fully-opaque black
-            rows, xshift, mirror = [], 0, False   # cover -> the pet is hidden; only black (+ Zzz) shows
+            rows, xshift, mirror = [], 0, False   # cover -> the pet is hidden; only black shows
         self.update(render_screen(rows, SCREEN_COLS, SCREEN_ROWS, on, bg,
                                   mirror=mirror, xshift=xshift, overlay=overlay,
-                                  bgimg=bgimg, band=PLAY_BAND, back_overlay=back))
+                                  bgimg=bgimg, band=PLAY_BAND))
 
     def _background(self, pet):
         return pet.background()
@@ -316,10 +316,10 @@ class Screen(Static):
         self.frame_i += 1
         if pet is not None and pet.anim in ("idle", "walk") and pet.num != -1 and not pet.is_injured():
             prev_pose = self.roamer.pose
-            # DM20: the Digimon paces the FULL 32-wide window (turns at PLAY_X0/PLAY_RIGHT);
-            # droppings are floor decoration it walks in front of, not a wall, and the injury
-            # marker rides beside it -- so nothing bounds the roam but the screen edges.
-            self.roamer.step(left_bound=PLAY_X0, right_bound=PLAY_RIGHT)
+            # the Digimon paces only its CLEAR zone -- it turns at the poop lane (left) and
+            # the injury/call lane (right) so it never overlaps them.
+            lb, rb, _, _ = _care_zones(pet)
+            self.roamer.step(left_bound=lb, right_bound=rb)
             if self.roamer.pose != prev_pose:                    # a fresh step landed (DVPet stepFrame):
                 self._idle_expr = (anim.care_pose(pet)           # sometimes show a care-state pose instead of
                                    if random.random() < anim.IDLE_EXPR_CHANCE else None)  # the plain walk toggle
