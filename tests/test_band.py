@@ -35,9 +35,9 @@ def _bounds(pet):
 
 
 _STATES = [
-    _pet(is_injured=lambda: True),                                 # injury marker (right lane)
+    _pet(is_injured=lambda: True),                                 # injury skull (right lane)
     _pet(poop=3),                                                  # droppings (left lane)
-    _pet(hunger=0),                                                # care-call '!'
+    _pet(hunger=0),                                                # care need -> beep only, no glyph
     _pet(poop=4, is_injured=lambda: True),                         # poop + skull (crowded)
     _pet(asleep=True, poop=4),                                     # asleep + poop
 ]
