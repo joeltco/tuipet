@@ -31,9 +31,16 @@ def _pet(**kw):
 
 def _bounds(pet):
     px_h = app.SCREEN_ROWS * 2
-    pr = (app.SCREEN_COLS - app.SPRITE_W) // 2 + app.SPRITE_W
-    front, back = app._effect_overlay(pet, 0, app.SCREEN_COLS, px_h, tick=0, pet_right=pr)
-    return front + back              # both layers must stay inside the band + window
+    return app._effect_overlay(pet, 0, app.SCREEN_COLS, px_h, tick=0)
+
+
+_STATES = [
+    _pet(is_injured=lambda: True),                                 # injury marker (right lane)
+    _pet(poop=3),                                                  # droppings (left lane)
+    _pet(hunger=0),                                                # care-call '!'
+    _pet(poop=4, is_injured=lambda: True),                         # poop + skull (crowded)
+    _pet(asleep=True, poop=4),                                     # asleep + poop
+]
 
 
 def test_band_constants_describe_a_16_dot_screen():
@@ -42,17 +49,21 @@ def test_band_constants_describe_a_16_dot_screen():
 
 
 def test_status_overlay_never_leaves_the_band():
-    states = [
-        _pet(asleep=True),                                             # Zzz above head
-        _pet(is_injured=lambda: True),                                 # injury marker beside pet
-        _pet(poop=3),                                                  # droppings on the floor
-        _pet(hunger=0),                                                # care-call '!'
-        _pet(asleep=True, is_injured=lambda: True, poop=3),            # everything at once
-    ]
-    for pet in states:
+    for pet in _STATES:
         for x, y in _bounds(pet):
             assert app.PLAY_X0 <= x < app.PLAY_R, f"x={x} outside play window"
             assert app.BAND_TOP <= y < app.BAND_BOT, f"y={y} outside 16-dot band"
+
+
+def test_overlays_never_overlap_the_creature_zone():
+    """HARD RULE: poop sits left of the creature's clear zone and the status marker sits
+    right of it -- no overlay pixel is ever where the creature can be."""
+    for pet in _STATES:
+        lb, rb, _cols, _sa = app._care_zones(pet)
+        creature_right = rb + app.SPRITE_W           # the creature can span [lb, creature_right)
+        for x, y in _bounds(pet):
+            assert x < lb or x >= creature_right, (
+                f"overlay pixel x={x} is inside the creature zone [{lb},{creature_right})")
 
 
 def test_render_screen_band_clips_out_of_band_pixels():
