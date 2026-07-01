@@ -57,19 +57,8 @@ def test_render_yshift_lifts_the_sprite():
     assert render_screen(sprite, 8, 6, yshift=99).spans == empty.spans   # hopped clean off-screen
 
 
-def test_battle_strong_hit_sfx_branches_on_double():
-    """DVPet doubleAttack launches/lands with the strong sting/impact; a normal hit
-    uses the plain ones.  _emit_sfx is pure over (timeline[i], _last_m) -- drive it on
-    a stub so we don't have to build a whole battle."""
-    from tuipet.battlescreen import BattlePanel
-
-    def _sfx(marker, double):
-        stub = type("S", (), {"sfx": None, "_last_m": None, "i": 0,
-                              "timeline": [{"m": marker, "double": double}]})()
-        BattlePanel._emit_sfx(stub)
-        return stub.sfx
-
-    assert _sfx("fire_out", True) == "strongAttack"
-    assert _sfx("fire_out", False) == "attack"
-    assert _sfx("hit", True) == "strongHit"
-    assert _sfx("hit", False) == "attack"     # normal hit reuses the attack beep (no attackHit.wav)
+def test_battle_pose_constants_match_dvpet_atlas_order():
+    """The clean pose-animation battle indexes the DVPet-native atlas order: 6=attack,
+    4/5=cheer down/up, 10=collapse.  Pin them so a re-order can't silently mispose."""
+    from tuipet import battlescreen as B
+    assert (B.ATTACK, B.CHEER_UP, B.CHEER_DN, B.COLLAPSE) == (6, 5, 4, 10)

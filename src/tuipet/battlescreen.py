@@ -1,69 +1,41 @@
-"""Battle View — the authentic DM20 sequence (one monster on screen at a time).
+"""Battle View — clean single-screen pose animation (wayland style).
 
-Flow: a BATTLE! banner, then a pre-battle ATTACK-ORDER minigame (time your strike --
-land it in the zone and you strike first), then the clash resolves automatically on
-Power + the attribute triangle (see battle.py) and animates as an orb duel.
+Presentation follows wayland-vpets' approach: the Digimon are shown together on one
+screen and the fight reads through their POSES cycling (idle -> attack lunge -> the
+outcome cheer/collapse), NOT DVPet's orb-clash spectacle (no projectiles, no fullscreen
+explosions, no HP bars on the LCD, no attacker/defender view-switching).  The bout is
+resolved by the DM20 engine (battle.py: Power + the attribute triangle); this just
+animates it.  Player stands RIGHT (faces left), enemy LEFT (faces right).
 
-Per DVPet's battle View the monsters are never shown together during a volley: whoever
-has initiative rears back and FIRES an orb off the near edge; the screen switches to the
-DEFENDER, and the orb arrives from the far edge -- the defender DODGES (a 0-damage miss)
-or is HIT (a fullscreen flash), then the roles reverse.  Player stands RIGHT (faces left),
-enemy LEFT (faces right).  You do NOT pick an attribute -- your Digimon's is fixed.
+Flow: face-off -> attack-order minigame (time your strike) -> a short pose flurry ->
+the result pose.  You do NOT pick an attribute; your Digimon's is fixed.
 """
 from __future__ import annotations
-import json
-import os
 from . import data
 from .battle import Battle
 from .render import render_scene
 from .theme import LCD_ON, LCD_BG, SIL_DAY, SIL_NIGHT
-from . import menu
 
 COLS, ROWS = 40, 12
 PXH = ROWS * 2                                   # 24 px tall
-with open(os.path.join(os.path.dirname(__file__), "data", "battle_overlays.json")) as _f:
-    _OV = json.load(_f)
-BANNER = _OV["battle_banner"]
-EXPLODE = _OV["hit_explosion"]
 
 # the authentic 32-wide play window, centred inside the 40-wide LCD canvas.
 PLAY_COLS = 32
 PLAY_X0 = (COLS - PLAY_COLS) // 2                # 4
 PLAY_R = PLAY_X0 + PLAY_COLS                     # 36
 
-# poses, WAYLAND-native frame order (0 idle_1, 1 idle_2, 4 happy, 5/7 cheer, 6 attack,
-# 10 collapse; >=12 falls back to idle on short sheets).
-IDLE, TURN, ATTACK, CHEER_A, CHEER_B, COLLAPSE = 0, 1, 6, 5, 7, 10
-CHARGE = 4                                       # DVPet shoot frame 4: pre-attack / charge pose
-BAND_TOP = PXH - 18                              # 6: creature/orb top limit
-BAND_BOT = PXH - 2                               # 22: floor
-FIRE_Y = PXH - 14                                # orb mid-body height (centred in the band)
+# poses, DVPet native frame order (matches the bundled crisp DVPet atlas):
+# 0 idle  1 idle-B  2 sleep  3 stretch  4 cheer-down  5 excited  6 attack
+# 7 eat-chew  8 eat-swallow  9 dejected  10 collapse
+IDLE, IDLE_B, ATTACK, CHEER_UP, CHEER_DN, COLLAPSE = 0, 1, 6, 5, 4, 10
 
-# timeline tuning (ticks per beat, 1 tick == 0.1s) -- snappy: a full attack is ~2s, so a
-# whole bout of a few trades reads in ~10-15s (and SPACE skips it).
-BANNER_FLASHES, BANNER_HOLD = 2, 3
-FACEOFF_T = 5
-WINDUP_T = 4
-FIRE_T = 6
-EXPLODE_HOLD, EXPLODE_FRAMES = 2, 6
-FLINCH_T = 5
-DODGE_T = 6
-
-# attack-order minigame: a marker sweeps the track; SPACE in the centre zone = strike first
-MG_SPEED = 0.06                                  # marker travel per tick (0..1)
-MG_ZONE = 0.14                                   # half-width of the "first strike" zone
-
-
-def _blit(bm, ox, oy):
-    return [(ox + x, oy + y) for y, row in enumerate(bm)
-            for x, c in enumerate(row) if c == "1"]
-
-
-def _full(frame):
-    ox = max(0, (COLS - (len(frame[0]) if frame and frame[0] else 0)) // 2)
-    oy = max(0, (PXH - len(frame)) // 2)
-    return [(ox + x, oy + y) for y, row in enumerate(frame)
-            for x, c in enumerate(row) if c == "1"]
+# timing (ticks, 1 == 0.1s) -- brief and readable
+FACEOFF_T = 8                                    # 0.8s square-off before the minigame
+CLASH_BEAT = 4                                   # pose held per beat
+CLASH_EXCHANGES = 4                              # attack lunges in the flurry
+LUNGE = 3                                        # px the mon leans in on its attack beat
+MG_SPEED = 0.06                                  # attack-order marker travel per tick
+MG_ZONE = 0.14                                   # half-width of the "strike first" zone
 
 
 def _cbounds(rows):
@@ -76,115 +48,73 @@ class BattlePanel:
     def __init__(self, pet, enemy=None):
         self.pet = pet
         self.battle = Battle(pet, enemy)
-        self.pet_attr = self.battle.pet_attr
-        self.foe_attr = self.battle.enemy_attr
         self.frame_i = 0
         self.done_anim = False
         self.won = None
         self.hud_php = self.battle.pet_hp
         self.hud_fhp = self.battle.enemy_hp
         self.hud_note = "Battle start!"
-        self.phase = "intro"
+        self.phase = "faceoff"
         self.sfx = "battle"
-        self._last_m = None
-        # attack-order minigame state
+        # attack-order minigame
         self.mg_pos = 0.0
         self.mg_dir = 1
-        self.mg_result = None            # True = player struck first
-        tl = []
-        for _ in range(BANNER_FLASHES):
-            tl += [{"m": "banner", "f": 0}] * BANNER_HOLD
-            tl += [{"m": "banner", "f": 1}] * BANNER_HOLD
-        self.timeline = tl
-        self.i = 0
-
-    # ---- resolve the whole clash, then build the full orb-duel timeline ----
-    def _resolve_and_build(self, player_first):
-        b = self.battle
-        b.resolve(player_first=player_first)
-        tl = []
-        ph, fh = b.pet_max, b.enemy_max
-        tl += [{"m": "faceoff", "view": "pet", "ph": ph, "fh": fh}] * FACEOFF_T
-        for a in b.attacks:
-            atk = a["atk"]
-            dfn = "foe" if atk == "pet" else "pet"
-            dmg, dbl = a["dmg"], a["double"]
-            for s in range(WINDUP_T):
-                tl.append({"m": "windup", "view": atk, "atk": atk, "wu": s, "ph": ph, "fh": fh})
-            for s in range(FIRE_T):                          # attacker: orb leaves off-screen
-                tl.append({"m": "fire_out", "view": atk, "atk": atk, "double": dbl,
-                           "prog": (s + 1) / FIRE_T, "ph": ph, "fh": fh})
-            for s in range(FIRE_T):                          # defender: orb arrives off-screen
-                tl.append({"m": "fire_in", "view": dfn, "atk": atk, "def": dfn, "double": dbl,
-                           "prog": (s + 1) / FIRE_T, "ph": ph, "fh": fh})
-            ph, fh = a["ph"], a["fh"]                         # HP after this attack lands
-            if dmg > 0:                                      # HIT: fullscreen flash, then flinch
-                for s in range(EXPLODE_FRAMES):
-                    tl.append({"m": "hit", "f": (s // EXPLODE_HOLD) % 2, "def": dfn, "double": dbl, "ph": ph, "fh": fh})
-                tl += [{"m": "flinch", "view": dfn, "def": dfn, "ph": ph, "fh": fh}] * FLINCH_T
-            else:                                            # DODGE: defender weaves, orb whiffs
-                for s in range(DODGE_T):
-                    tl.append({"m": "dodge", "view": dfn, "atk": atk, "def": dfn,
-                               "prog": (s + 1) / DODGE_T, "ph": ph, "fh": fh})
-        self.timeline = tl
-        self.i = 0
-        self.phase = "anim"
-
-    def _enter_result(self):
-        self.done_anim = True
-        self.won = bool(self.battle.won)
-        self.phase = "result"
+        self.mg_result = None
+        self._t = 0                              # phase-local tick counter
+        self._clash_len = 0
 
     # ---- driving ----
-    def _emit_sfx(self):
-        entry = self.timeline[self.i]
-        m = entry.get("m")
-        if m != self._last_m:
-            if m == "fire_out":
-                self.sfx = "strongAttack" if entry.get("double") else "attack"
-            elif m == "hit":
-                self.sfx = "strongHit" if entry.get("double") else "attack"
-        self._last_m = m
+    def _start_clash(self, player_first):
+        self.battle.resolve(player_first=player_first)
+        self.hud_php, self.hud_fhp = self.battle.pet_hp, self.battle.enemy_hp
+        self._clash_len = FACEOFF_T + CLASH_EXCHANGES * 2 * CLASH_BEAT
+        self._t = 0
+        self.phase = "clash"
 
     def anim(self):
         self.frame_i += 1
-        if self.phase in ("result",):
-            return
-        if self.phase == "minigame":
-            self.mg_pos += self.mg_dir * MG_SPEED            # marker sweeps + bounces
+        self._t += 1
+        if self.phase == "faceoff":
+            if self._t >= FACEOFF_T:
+                self.phase, self._t = "minigame", 0
+        elif self.phase == "minigame":
+            self.mg_pos += self.mg_dir * MG_SPEED
             if self.mg_pos >= 1.0:
                 self.mg_pos, self.mg_dir = 1.0, -1
             elif self.mg_pos <= 0.0:
                 self.mg_pos, self.mg_dir = 0.0, 1
-            return
-        if self.i < len(self.timeline) - 1:
-            self.i += 1
-            self._emit_sfx()
-        elif self.phase == "intro":
-            self.phase = "minigame"                          # banner done -> the attack-order minigame
-        elif self.battle.over:
-            self._enter_result()
+        elif self.phase == "clash":
+            # one attack "clink" sound near the middle of each exchange
+            if self._t > FACEOFF_T and (self._t - FACEOFF_T) % (2 * CLASH_BEAT) == CLASH_BEAT:
+                self.sfx = "attack"
+            if self._t >= self._clash_len:
+                self.done_anim = True
+                self.won = bool(self.battle.won)
+                self.sfx = "win" if self.won else "lose"
+                self.phase, self._t = "result", 0
 
     def key(self, k):
-        if self.phase == "intro":
-            if k in ("space", "enter", "escape"):
-                self.i = len(self.timeline) - 1
-                self.phase = "minigame"
+        if self.phase == "faceoff":
+            if k in ("space", "enter"):
+                self._t, self.phase = 0, "minigame"
+            elif k == "escape":
+                self.battle.surrender()
+                return ("done", None)
             return None
         if self.phase == "minigame":
-            if k in ("space", "enter"):                      # lock the strike
+            if k in ("space", "enter"):
                 self.mg_result = abs(self.mg_pos - 0.5) <= MG_ZONE
                 self.sfx = "confirm"
-                self._resolve_and_build(self.mg_result)
+                self._start_clash(self.mg_result)
             elif k in ("escape", "s"):
                 self.battle.surrender()
                 return ("done", None)
             return None
-        if self.phase == "anim":
+        if self.phase == "clash":
             if k in ("space", "enter", "escape"):
-                self.i = len(self.timeline) - 1              # skip to the end of the clash
+                self._t = self._clash_len            # skip to the result
             return None
-        if k in ("space", "enter", "escape"):                # result -> close
+        if k in ("space", "enter", "escape"):
             return ("done", self.battle)
         return None
 
@@ -193,102 +123,47 @@ class BattlePanel:
         fr = data.load_sprites()[1][num]["frames"]
         return (fr[pose] if pose < len(fr) else None) or fr[0]
 
-    def _scene(self, placements, overlay):
+    def _both(self, ppose, fpose, plunge=0, flunge=0):
+        """Both combatants on one screen: enemy LEFT (faces right), pet RIGHT (faces left).
+        `*lunge` leans a mon toward the centre (its attack beat)."""
+        prows = self._rows(self.pet.num, ppose)
+        frows = self._rows(self.battle.enemy["num"], fpose)
+        lo, hi = _cbounds(prows)
+        px = ((PLAY_R - 2) - hi) - plunge                    # pet at the right, leans left
+        fsrc = [r[::-1] for r in frows]
+        flo, fhi = _cbounds(fsrc)
+        fx = (PLAY_X0 + 1 - flo) + flunge                    # enemy at the left, leans right
+        placements = [(frows, fx, True), (prows, px, False)]
         bgimg = self.pet.background()
         on = SIL_NIGHT if self.pet.day_phase == "night" else (SIL_DAY if bgimg else LCD_ON)
-        return render_scene(placements, COLS, ROWS, on, LCD_BG, overlay=overlay, bgimg=bgimg,
-                            clip=(PLAY_X0, PLAY_R))
+        return render_scene(placements, COLS, ROWS, on, LCD_BG, bgimg=bgimg, clip=(PLAY_X0, PLAY_R))
 
-    def _place_one(self, view, rows, xshift=0):
-        if view == "foe":
-            src = [r[::-1] for r in rows]
-            lo, hi = _cbounds(src)
-            x = (PLAY_X0 + 1 - lo) + xshift
-            return [(rows, x, True)], x + hi + 1
-        lo, hi = _cbounds(rows)
-        x = ((PLAY_R - 2) - hi) + xshift
-        return [(rows, x, False)], x + lo
-
-    def _faceoff_scene(self):
-        """Both combatants staring each other down (used for the minigame + intro)."""
-        pl_foe = self._place_one("foe", self._rows(self.battle.enemy["num"], IDLE))[0]
-        pl_pet = self._place_one("pet", self._rows(self.pet.num, IDLE))[0]
-        return self._scene(pl_foe + pl_pet, [])
-
-    def _pow(self, side):
-        return self.pet.power if side == "pet" else self.battle.enemy_power
-
-    def _orb_overlay(self, fr, mouth):
-        atk, m, prog = fr["atk"], fr["m"], fr["prog"]
-        if atk == "pet":
-            orb = data.attack_orb(self.pet.num, self.pet_attr, self._pow("pet"))
-        else:
-            orb = data.attack_orb(self.battle.enemy["num"], self.foe_attr, self._pow("foe"))
-        if not orb:
-            return []
-        w = len(orb[0])
-        left = (atk == "pet")
-        if m == "fire_out":
-            x0, x1 = (mouth - w, PLAY_X0 - w) if left else (mouth, PLAY_R)
-        else:
-            x0, x1 = (PLAY_R, mouth) if left else (PLAY_X0 - w, mouth - w)
-            if m == "dodge":
-                x1 = PLAY_X0 - w if left else PLAY_R
-        src = orb if left else [r[::-1] for r in orb]
-        x = int(x0 + (x1 - x0) * prog)
-        h = len(src)
-        mid = BAND_TOP + (16 - h) // 2
-        if fr.get("double"):
-            pts = _blit(src, x, BAND_TOP) + _blit(src, x, BAND_BOT - h)
-        else:
-            pts = _blit(src, x, mid)
-        return pts
-
-    def _render_scene_frame(self, fr):
+    def text(self):
         b = self.battle
-        m = fr["m"]
-        ph = fr.get("ph", b.pet_hp)
-        fh = fr.get("fh", b.enemy_hp)
-        if m == "banner":
-            scene = self._scene([], _full(BANNER[fr["f"]]))
-            note = "BATTLE!"
-        elif m == "hit":
-            scene = self._scene([], _full(EXPLODE[fr["f"]]))
-            note = "HIT!"
-        else:
-            view = fr.get("view", "pet")
-            if m == "result":
-                pose = (CHEER_A, CHEER_B)[self.frame_i % 2] if self.won else COLLAPSE
-            elif m == "windup":
-                pose = (TURN, TURN, IDLE, IDLE, CHARGE, CHARGE)[min(fr.get("wu", 0), 5)]
-            elif m == "fire_out":
-                pose = ATTACK
-            elif m == "dodge":
-                pose = TURN if self.frame_i % 2 else IDLE
-            elif m == "flinch":
-                pose = COLLAPSE
-            elif m == "fire_in":
-                pose = CHARGE if self.frame_i % 2 else IDLE
-            else:                                            # faceoff
-                pose = IDLE
-            num = self.pet.num if view == "pet" else b.enemy["num"]
-            rows = self._rows(num, pose)
-            xshift = 0
-            back = 1 if view == "pet" else -1
-            if m == "windup":
-                xshift = back * min(3, fr.get("wu", 0) + 1)
-            elif m == "fire_out" and fr.get("prog", 1) < 0.35:
-                xshift = -back * 2
-            elif m == "dodge":
-                xshift = back * (3 if self.frame_i % 2 else 2)
-            place, mouth = self._place_one(view, rows, xshift)
-            overlay = self._orb_overlay(fr, mouth) if m in ("fire_out", "fire_in", "dodge") else []
-            scene = self._scene(place, overlay)
-            note = {"faceoff": f"{self.pet.name[:8]} vs {b.enemy['name'][:8]}",
-                    "windup": "...", "fire_out": "Fire!", "fire_in": "Incoming!",
-                    "dodge": "Dodge!", "flinch": "Hit!", "result": ""}.get(m, "")
-        self.hud_php, self.hud_fhp, self.hud_note = ph, fh, note
-        return scene
+        if self.phase == "faceoff":
+            self.hud_note = f"{self.pet.name[:8]} vs {b.enemy['name'][:8]}"
+            bob = IDLE_B if (self.frame_i // 3) % 2 else IDLE
+            return self._both(bob, bob)
+        if self.phase == "minigame":
+            self.hud_note = "Time your strike!"
+            return self._both(IDLE, IDLE)
+        if self.phase == "clash":
+            # both trade attack lunges: on the first half of each exchange the pet strikes,
+            # the second half the foe strikes (poses + a lean toward centre)
+            k = (self._t - FACEOFF_T) // CLASH_BEAT if self._t > FACEOFF_T else -1
+            pet_strike = k >= 0 and k % 2 == 0
+            foe_strike = k >= 0 and k % 2 == 1
+            self.hud_note = "Clash!"
+            return self._both(ATTACK if pet_strike else IDLE,
+                              ATTACK if foe_strike else IDLE,
+                              plunge=LUNGE if pet_strike else 0,
+                              flunge=LUNGE if foe_strike else 0)
+        # result: winner cheers (up/down bounce), loser collapses
+        self.hud_note = ""
+        cheer = CHEER_UP if (self.frame_i // 4) % 2 else CHEER_DN
+        if self.won:
+            return self._both(cheer, COLLAPSE)
+        return self._both(COLLAPSE, cheer)
 
     def minigame_cells(self, width=14):
         """(marker_index, zone_lo, zone_hi) for the status-HUD attack-order track."""
@@ -296,13 +171,3 @@ class BattlePanel:
         zone_lo = int(round((0.5 - MG_ZONE) * (width - 1)))
         zone_hi = int(round((0.5 + MG_ZONE) * (width - 1)))
         return pos, zone_lo, zone_hi
-
-    def text(self):
-        if self.phase == "minigame":
-            self.hud_php, self.hud_fhp = self.battle.pet_hp, self.battle.enemy_hp
-            self.hud_note = "Time your strike!"
-            return self._faceoff_scene()
-        if self.phase == "result":
-            return self._render_scene_frame({"m": "result", "view": "pet"})
-        fr = self.timeline[min(self.i, len(self.timeline) - 1)]
-        return self._render_scene_frame(fr)
