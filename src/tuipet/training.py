@@ -552,9 +552,9 @@ class TrainingPanel:
             # and the filled square icon reads as a wall).  So keep the ESSENCE, not the pixels:
             # the bird "battle bag" shows the round's target as a cutout symbol on its belly and
             # stands LEFT; the pet stands RIGHT; both GROUNDED on the floor like every other drill
-            # (via render_scene placements).  The player reads the belly and picks the matching
-            # attribute from the crisp glyph strip in the gauge (● Vaccine / ■ Data / ▲ Virus).
-            on, bgimg = LCD_ON, None
+            # (via render_scene placements), OVER THE HABITAT BACKGROUND like every other drill
+            # (no flat-LCD override).  The player reads the belly and picks the matching attribute
+            # from the crisp glyph strip in the gauge (● Vaccine / ■ Data / ▲ Virus).
             dummy = _HP_DUMMIES[("vaccine", "data", "virus")[self.hp_target]]
             pf = self._frame(rec, self._pose_now(0))
             placements = [(dummy, 2, False),                            # bird bag LEFT, grounded
