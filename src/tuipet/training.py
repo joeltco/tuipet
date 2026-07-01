@@ -7,8 +7,9 @@ Every drill is fought against an on-screen OPPONENT that is present the whole ti
 the skill phase flows straight into the strike -> impact -> aftermath, exactly like
 the hardware (no abstract gauge with the opponent conjured up only at the end):
 
-  HP    — pet RIGHT, bag LEFT: guess which of 3 attributes the hidden bag is,
-          best of 3 (drawHPTraining); builds Effort.
+  HP    — the round's target attribute shows LEFT (big icon), 3 pickable option
+          icons MIDDLE, pet RIGHT: read the symbol, pick the match, best of 3
+          (drawHPTraining, first to 2 wins); builds Effort.
   Vaccine — pet HIDDEN, bag on screen: mash the hit button (drawVaccinePre);
           builds Vaccine power.  Pet appears for the strike.
   Data  — pet LEFT, green target RIGHT (drawDataPre): the attack feints, then
@@ -60,9 +61,11 @@ DATA_WINDOW = (10, 7, 5)      # reaction window after commit (DataTrainShootFram
 DATA_MARGIN = 2               # the data stage's side margin: cannon/pet anchor inside this, never the edge
 DATA_FLY = 3                  # DVPet attackGreen: the shot moves over 3 intervals (locX 55->61->67)
 #  collision = the battle's exact beats: EXPLODE_FRAMES strobe (hitAnim) + FLINCH_T pose (aftermathGreen)
-HP_ROUNDS = 3
-HP_ROUNDS_WON = 2
-HP_ROUND_LEN = 28             # ticks to pick before a round times out (~2.8s)
+HP_ROUNDS = 3                 # DVPet _hpTrainingRounds
+HP_ROUNDS_WON = 2             # DVPet _hpTrainingRoundsWon (first to 2 wins the drill)
+HP_TRAIN_DIFFICULTY = 11      # DVPet _hpTrainDifficultyChange: rank = fullHealthPoints // 11
+HP_ROUND_LEN = (30, 20, 10)   # ticks/round by rank (Easy/Normal/Hard) -- DVPet _hpTrainingRoundLength{Easy,,Hard};
+                              # the timer SHRINKS as battle HP grows (the drill gets harder)
 VBAR_W = 24
 
 COLS = 40
@@ -74,11 +77,6 @@ ARENA_ROWS = 12               # the app's ONE locked LCD area (== app SCREEN_ROW
 # lower 16px creature band, recomputed for the training arena's own height.
 STRIKE_BAND_TOP = ARENA_ROWS * 2 - 18    # == battle BAND_TOP, relative to this LCD's height
 STRIKE_BAND_BOT = ARENA_ROWS * 2 - 2
-
-# the attribute symbols (DVPet: Vaccine=orb/red, Data=block/green, Virus=dart/yellow)
-# -> circle / square / triangle.
-ATTR_SYM = ["●", "■", "▲"]   # ● ■ ▲  (Vaccine / Data / Virus) for the HP-drill guess
-
 
 def _blit(bm, ox, oy):
     """Sprite bitmap -> (x,y) pixel list for render_scene's overlay (projectile / flash)."""
@@ -92,12 +90,6 @@ def _blit(bm, ox, oy):
 # hand-drawn -- pulled from the source art.
 with open(os.path.join(os.path.dirname(__file__), "data", "attr_icons.json")) as _f:
     _ATTR_ICONS = json.load(_f)        # {'big': [v,d,v], 'small': [v,d,v]}  order Vaccine/Data/Virus
-
-# The REAL DVPet HP training dummy -- the bird "battle bag" (battleBags.png frames 0/2/4)
-# that holds the attribute symbol on its belly.  This is the "image on the training dummy"
-# the player reads and matches.  Extracted 1:1 from the source art.
-with open(os.path.join(os.path.dirname(__file__), "data", "hp_dummies.json")) as _f:
-    _HP_DUMMIES = json.load(_f)         # {'vaccine','data','virus'} -> 1-bit bird w/ belly symbol
 
 
 def _box(w, h):
@@ -146,7 +138,8 @@ class TrainingPanel:
         self.virus_speed = VIRUS_SPEEDS[1]      # rank-based bar fill speed
         self.data_telegraph = DATA_TELEGRAPH[1]  # rank-based feint window
         self.data_window = DATA_WINDOW[1]       # rank-based reaction window
-        self.round_t = HP_ROUND_LEN
+        self.round_len = HP_ROUND_LEN[1]
+        self.round_t = self.round_len
         self.rounds_won = 0
         self.hp_target = 0           # hidden attribute the bag "is" (0/1/2)
         self.hp_pick = 0             # the player's cursor over the 3 guess buttons
@@ -204,11 +197,20 @@ class TrainingPanel:
             self.virus_speed = VIRUS_SPEEDS[self._attr_rank(self.pet.virus)]
             self.flash = "stop the bar high!"
 
+    def _hp_round_len(self):
+        """DVPet drawHPTraining: the per-round timer shrinks as the pet's battle HP grows
+        (rank = fullHealthPoints // _hpTrainDifficultyChange -> Easy/Normal/Hard).  tuipet's
+        battle HP is stage-based (battle.MAX_HEALTH)."""
+        from .battle import MAX_HEALTH, MAX_HEALTH_DEFAULT
+        full_hp = MAX_HEALTH.get(self.pet.stage, MAX_HEALTH_DEFAULT)
+        return HP_ROUND_LEN[min(full_hp // HP_TRAIN_DIFFICULTY, 2)]
+
     def _new_hp_round(self):
         self.hp_target = random.randrange(3)
         self.hp_pick = 0
-        self.round_t = HP_ROUND_LEN
-        self.flash = f"round {self.rep + 1}/{HP_ROUNDS} — which attribute?"
+        self.round_len = self._hp_round_len()
+        self.round_t = self.round_len
+        self.flash = f"round {self.rep + 1}/{HP_ROUNDS} — match the symbol"
 
     def _hp_resolve(self, correct):
         if correct:
@@ -558,18 +560,22 @@ class TrainingPanel:
                     mx, end_x = DATA_MARGIN + cw - 3, sx - ow + 3  # muzzle -> pressed against the shield
                     prog = (DATA_FLY - self.fly_t) / (DATA_FLY - 1)
                     overlay += _blit(orb, int(mx + (end_x - mx) * prog), lane_y)
-        else:                                               # hp: the REAL DVPet drawHPTraining layout
-            # Training dummy (bird w/ an attribute symbol on its belly) on the LEFT, the 3
-            # stacked icons (Vaccine/Data/Virus) in the MIDDLE, the pet on the RIGHT.  Read
-            # the dummy's belly symbol, click the matching icon.  Clean flat LCD (no photo).
+        else:                                               # hp: DVPet drawHPTraining, adapted for the LCD
+            # DVPet shows the round's target attribute on a bird "battle bag"'s belly and you
+            # click the matching Vaccine/Data/Virus icon (read-and-match, best of 3).  At
+            # tuipet's 40x24 that belly symbol is sub-pixel and unreadable -- the three bird
+            # frames differ by ~4 pixels -- so the drill collapsed into a blind guess.  Present
+            # the target as the REAL attribute icon (same red/green/yellow.png art) at readable
+            # size: big target LEFT, the 3 pickable option icons stacked MIDDLE (cursor on the
+            # current pick), pet RIGHT.
             on, bgimg = LCD_ON, None
-            dummy = _HP_DUMMIES[("vaccine", "data", "virus")[self.hp_target]]
-            overlay.extend(_blit(dummy, 1, ph - len(dummy)))            # dummy LEFT, baseline
-            for i in range(3):                              # the 3 stacked guess icons (real ● ■ ▲)
-                iy = i * 8                                   # 6px icon + 2px gap = exact 22px fit
-                overlay.extend(_blit(_ATTR_ICONS["small"][i], 19, iy))
+            big = _ATTR_ICONS["big"][self.hp_target]         # the symbol to match, drawn large & clear
+            overlay.extend(_blit(big, 3, (ph - len(big)) // 2))
+            for i in range(3):                              # the 3 stacked option icons (real ● ■ ▲)
+                iy = 2 + i * 7                               # 6px icon + 1px gap, cursor-boxed pick
+                overlay.extend(_blit(_ATTR_ICONS["small"][i], 20, iy))
                 if i == self.hp_pick:                       # cursor frame around the current guess
-                    overlay.extend(_blit(_box(8, 8), 18, iy - 1))
+                    overlay.extend(_blit(_box(8, 8), 19, iy - 1))
             pf = self._frame(rec, self._pose_now(0))        # the pet RIGHT
             overlay.extend(_blit(pf, COLS - max(len(r) for r in pf) - 1, ph - len(pf)))
         scene = render_scene([], COLS, ARENA_ROWS, on, LCD_BG, overlay=overlay, bgimg=bgimg)
@@ -583,9 +589,8 @@ class TrainingPanel:
         gk = self.gkey
         t = Text()
         if gk == "hp":
-            t.append("match the dummy  ", style=INK)
-            t.append(ATTR_SYM[self.hp_target], style=INK_B)        # the attribute the dummy shows
-            tb = int((max(self.round_t, 0) / HP_ROUND_LEN) * 9)
+            t.append(f"match it!  {self.rounds_won}/{HP_ROUNDS_WON} won", style=INK)
+            tb = int((max(self.round_t, 0) / max(self.round_len, 1)) * 9)
             t.append("   time " + "▓" * tb + "░" * (9 - tb) + "\n", style=f"{ACCENT} on {LCD_BG}")
         elif gk == "vaccine":
             hit = self._strike_t > 0
@@ -605,7 +610,7 @@ class TrainingPanel:
         return t
 
     def _hint(self):
-        return {"hp": "←→ match the symbol   SPACE strike",
+        return {"hp": "←→ pick   1/2/3 or SPACE to lock",
                 "vaccine": "SPACE hit the orb!   ESC out",
                 "data": "SPACE toggle the shield to match the cannon",
                 "virus": "SPACE stop the marker in the zone"}[self.gkey]
