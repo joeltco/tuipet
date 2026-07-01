@@ -13,7 +13,7 @@ def _clamp(v, lo, hi):
 
 
 # Lifespan (seconds), scaled from DVPet's real-time model. A pet lives this long
-# in total; reaching higher stages extends it; neglect (sickness/starvation)
+# in total; reaching higher stages extends it; neglect (injury/starvation)
 # burns it down faster. The final stretch is the geriatric "old age".
 LIFE_START = 259200.0          # 3 days (egg/baby base lifespan)
 STAGE_LIFE = {"Child": 345600.0, "Adult": 388800.0, "Perfect": 432000.0,
@@ -23,7 +23,7 @@ GERIATRIC_REMAIN = 21600.0   # last N seconds of life = elderly
 # NOTE: DM20 tracks NO mood/happiness meter (manual: "does not track happiness, mood,
 # emotion ... unlike traditional Tamagotchi devices").  The whole DVPet signed-mood model
 # was stripped 2026-07-01.  The pet still emotes, but reactively from live care state
-# (needs_care / hunger / sickness), never a stored value.
+# (needs_care / hunger / injury), never a stored value.
 
 # DM20 feeding (manual): two foods only. Meat fills a hunger heart; Protein fills a
 # strength heart, adds weight and restores DP (stamina). No taste/favourites, no
@@ -54,13 +54,11 @@ STRENGTH_DECAY_BASE = 3000    # gentle effort decay at the modal coefficient (~5
 TRAIN_POWER_PER_HIT = 2     # attribute power per drill-hit (compression-scaled from DVPet's flat +1)
 # (No fatigue: DM20 has no over-training exhaustion state -- manual "no such system".)
 
-# DVPet sickness & injury durations (config.csv, PhysicalState.sicken / injure): an
-# illness or injury lasts Min..MaxLength recovery lapses (SickLapseMin/InjLapseMin game-min
-# each) and then clears on its own.  Cured early by medicine as before.  (No vitamins /
-# injury-worsening: those were DVPet -- manual "no vitamins".)
-MIN_SICK_LENGTH, MAX_SICK_LENGTH = 1, 10     # Min/MaxSickLength (recovery lapses)
+# DM20 injury (config.csv, PhysicalState.injure): the DM20 has ONE unwell state -- the
+# injury skull (manual: "no separate sick indicator"), from battle loss / over-training.
+# It lasts Min..MaxLength recovery lapses and clears on its own, or Heal cures it outright.
+# (The separate DVPet illness state, vitamins, and injury-worsening were all stripped.)
 MIN_INJ_LENGTH, MAX_INJ_LENGTH = 1, 12       # Min/MaxInjLength
-SICK_LAPSE_MIN = 29                      # SickLapseMin (game-min per recovery lapse)
 INJ_LAPSE_MIN = 29                       # InjLapseMin
 # (No lingering medicine/bandage indicator: DM20 healing removes the condition outright --
 # manual "no recovery-phase visual feedback or bandage icon persists".)
@@ -100,7 +98,6 @@ class Pet:
     dp_max: int = 24                # per-Digimon DP capacity
     weight: int = 20
     poop: int = 0                   # pile count == DVPet countFilth()
-    sick: bool = False
     asleep: bool = False
     lights: bool = True             # DVPet _lights: room-light toggle, SEPARATE from sleep
     care_mistakes: int = 0
@@ -114,7 +111,6 @@ class Pet:
     overeat: int = 0
     injuries: int = 0
     exercise_today: int = 0         # DM20 _exercise: drills done today (resets daily)
-    sick_length: float = 0.0        # DVPet _sickLength (game-min until natural recovery)
     inj_length: float = 0.0         # DVPet _injLength (game-min until the injury heals)
     battles: int = 0
     egg_type: int = 0
@@ -216,13 +212,8 @@ class Pet:
             if getattr(self, "_exercise_day", -1) != day:    # DM20 checkExerciseTime: daily reset
                 self._exercise_day = day
                 self.exercise_today = 0
-            _rec = dt                                         # sickness/injury recover in real time
-            if self.sick_length > 0:                          # sickLapse: illness recovers in time
-                self.sick_length = max(0.0, self.sick_length - _rec)
-                if self.sick_length == 0:
-                    self.sick = False
             if self.inj_length > 0:                           # injLapse: the injury heals over time
-                self.inj_length = max(0.0, self.inj_length - _rec)
+                self.inj_length = max(0.0, self.inj_length - dt)
         if self.asleep:
             # DM20: sleeping >=3h restores DP (stamina); recover it gradually while asleep.
             self._sleep_dp_t = getattr(self, "_sleep_dp_t", 0.0) + dt
@@ -270,10 +261,8 @@ class Pet:
                     self.care_mistakes += 1  # DM20: left in filth with the call unanswered
         else:
             self._filth_t = 0                # cleaned / under the limit resets the call timer
-        # sickness from filth / starvation
-        if (self.poop >= 3 or self.hunger == 0) and not self.sick \
-                and random.random() < 0.02 / self._phys().get("poop_sick_mult", 1.0) * dt:
-            self._sicken()
+        # (Neglect -- unanswered filth/hunger calls -- is punished via care mistakes above;
+        # DM20 has no separate illness state, so filth/starvation don't spawn a "sick" here.)
         # bedtime: sleep through the night (DM20 sleeps on the clock, not from exhaustion);
         # a grace window after a manual wake lets you interact at night
         self._wake_grace = max(0.0, getattr(self, "_wake_grace", 0.0) - dt)
@@ -294,7 +283,7 @@ class Pet:
             self._starve_t = 0.0
         # lifespan: neglect burns life down faster than the natural clock
         extra = 0.0
-        if self.sick:
+        if self.is_injured():
             extra += 0.8
         if self.hunger == 0:
             extra += 0.4
@@ -306,7 +295,7 @@ class Pet:
             return
 
         if (self.anim in ("idle", "walk") and self.anim_ttl <= 0 and not self.poop
-                and not self.sick and random.random() < 0.03 * dt):
+                and not self.is_injured() and random.random() < 0.03 * dt):
             self._special_idle()
 
         self._maybe_evolve()
@@ -344,7 +333,7 @@ class Pet:
         return data.load_requirements().get(self.num, {}).get("base_weight", 20)
 
     def _maybe_evolve(self):
-        if self.sick or self.asleep or self.is_geriatric:
+        if self.is_injured() or self.asleep or self.is_geriatric:
             return
         if self.stage_seconds < self.STAGE_DURATION.get(self.stage, 9e9):
             return
@@ -383,8 +372,7 @@ class Pet:
         # per-stage care record resets; the next stage's care decides the next form
         self.care_mistakes = self.overeat = self.trainings = 0
         self.injuries = 0
-        self.sick = False
-        self.sick_length = self.inj_length = 0.0
+        self.inj_length = 0.0
         self.weight = self._base_weight()
         # DVPet attributeEvolChange: a form raises/lowers the carried attribute powers
         self.vaccine = max(0, self.vaccine + _req.get("vaccine_change", 0))
@@ -402,14 +390,13 @@ class Pet:
         self.anim, self.anim_ttl = name, ttl
 
     def needs_care(self):
-        """Any unmet care need (DM20 reads live state, not a mood meter): hungry, sick,
-        injured, or a big mess.  Drives the pet's distress emoting + status word."""
-        return (self.hunger == 0 or self.sick or self.is_injured() or self.poop >= 3)
+        """Any unmet care need (DM20 reads live state, not a mood meter): hungry, injured,
+        or a big mess.  Drives the pet's distress emoting + status word."""
+        return (self.hunger == 0 or self.is_injured() or self.poop >= 3)
 
     def _well_cared(self):
         """Every need comfortably met -- the pet reads as content (happy idle hop)."""
-        return (self.hunger >= 3 and self.poop == 0
-                and not self.sick and not self.is_injured())
+        return (self.hunger >= 3 and self.poop == 0 and not self.is_injured())
 
     def _set_dp(self, value):
         """DM20 DP (battle stamina): clamp to [0, dp_max]."""
@@ -558,14 +545,6 @@ class Pet:
         """PhysicalState.isInj: currently nursing an injury (the count persists for evolution)."""
         return self.inj_length > 0
 
-    def _sicken(self):
-        """PhysicalState.sicken: fall ill for MinSickLength..MaxSickLength recovery lapses;
-        it clears on its own once that runs out (or earlier with medicine)."""
-        if self.sick:
-            return
-        self.sick = True
-        self.sick_length = random.randint(MIN_SICK_LENGTH, MAX_SICK_LENGTH) * SICK_LAPSE_MIN
-
     def _injure(self):
         """PhysicalState.injure: take an injury for MinInjLength..MaxInjLength recovery
         lapses; the cumulative injury count (drives the neglect-death trigger) ticks up."""
@@ -593,17 +572,11 @@ class Pet:
             return "It is still an egg."
         if self.asleep:
             return self._disturbed()
-        if not self.sick and not self.is_injured():
-            return "It's not sick or injured."
-        sick0, inj0 = self.sick, self.is_injured()
-        if self.sick:
-            self.sick = False
-            self.sick_length = 0.0                  # medicine cures the illness outright (DM20: instant)
-        if self.is_injured():
-            self.inj_length = 0.0                   # first aid mends the active injury (DM20: instant)
+        if not self.is_injured():
+            return "It's not injured."
+        self.inj_length = 0.0                       # medicine mends the injury outright (DM20: instant)
         self._set_anim("heal", 1.5)
-        what = "illness and injury" if (sick0 and inj0) else ("injury" if inj0 else "illness")
-        return f"Treated {self.name}'s {what}."
+        return f"Treated {self.name}'s injury."
 
     def toggle_lights(self):
         """The lights button (DVPet setLights): toggles the room light ONLY. The pet
@@ -622,8 +595,6 @@ class Pet:
             return "elderly"
         if self.asleep:
             return "asleep"
-        if self.sick:
-            return "sick"
         if self.is_injured():
             return "injured"
         if self.hunger == 0:

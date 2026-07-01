@@ -67,8 +67,8 @@ def test_worst_case_pet_fits():
     p.vaccine = p.data_power = p.virus = 999
     p.weight = 999
     p.wins = 999; p.battles = 999
-    p.asleep = True; p.sick = True; p.poop = 4
-    p.fatigue_length = 100; p.inj_length = 100  # pile on the +tired / +hurt decos
+    p.asleep = True; p.poop = 4
+    p.inj_length = 100          # pile on the +hurt deco
     _assert_fits(_render(p))
 
 
@@ -107,10 +107,10 @@ def test_all_status_words_fit():
     """Each possible status word, paired with poop deco, still fits."""
     p = Pet.from_num(_top_num())
     for word in ["ok", "happy", "elderly", "needs cleaning",
-                 "sick", "injured", "sleepy", "asleep",
+                 "injured", "sleepy", "asleep",
                  "starving", "passed away", "did great!"]:
         p.status_word = lambda w=word: w
-        p.poop = 4; p.sick = True
+        p.poop = 4; p.inj_length = 100
         _assert_fits(_render(p))
 
 

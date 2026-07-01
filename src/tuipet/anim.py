@@ -54,10 +54,10 @@ def care_pose(pet):
     this is state-driven, not a stored value).  Returns a sprite index, or None to keep
     the neutral walk toggle.
 
-    needs-care (hungry/sick/injured/messy) -> 4/6 (sour), otherwise neutral (None -- a
+    needs-care (hungry/injured/messy) -> 4/6 (sour), otherwise neutral (None -- a
     content pet just walks)."""
     if pet.needs_care():
-        return random.choice((4, 6))          # sour faces (hungry / sick / injured / messy)
+        return random.choice((4, 6))          # sour faces (hungry / injured / messy)
     return None                               # content -> ordinary walk pose
 
 

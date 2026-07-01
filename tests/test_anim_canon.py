@@ -72,4 +72,4 @@ def test_battle_strong_hit_sfx_branches_on_double():
     assert _sfx("fire_out", True) == "strongAttack"
     assert _sfx("fire_out", False) == "attack"
     assert _sfx("hit", True) == "strongHit"
-    assert _sfx("hit", False) == "attackHit"
+    assert _sfx("hit", False) == "attack"     # normal hit reuses the attack beep (no attackHit.wav)
