@@ -318,7 +318,6 @@ class Pet:
     nutr_vitamin: int = 0           # DVPet _vitamin, from fruit
     battles: int = 0
     levels_fought: list = _dcf(default_factory=list)  # opponent levels beaten this stage (DVPet _levelsFought)
-    bits: int = 0
     egg_type: int = 0
     lifespan: float = LIFE_START
     generation: int = 1
@@ -331,7 +330,6 @@ class Pet:
     effect_id: int = -1            # active care effect (careEffect.csv id; -1 = none)
     effect_t: float = 0.0          # remaining duration of the active care effect
     x_count: float = 0.0
-    inventory: dict = _dcf(default_factory=dict)
     # transient animation request, consumed by the UI
     anim: str = "idle"
     anim_ttl: float = 0.0
@@ -848,8 +846,6 @@ class Pet:
         # in real days while tuipet's evolve timer is compressed, so the scales don't align.
         self.lifespan = max(self.lifespan,
                             STAGE_LIFE.get(self.stage, self.lifespan) + _req.get("lifespan_mod", 0))
-        if _req.get("give_item", -1) >= 0:        # GiveItem: grant a consumable (dormant in data)
-            self.add_item(f"i:{_req['give_item']}")
         self._set_anim("happy", 2.5)
 
     # ---- care actions --------------------------------------------------------
@@ -1062,11 +1058,8 @@ class Pet:
             self._open_praise()                          # a win is praiseworthy
             self._set_mood(self.mood + 10)               # BattleWonMoodInc
             self._set_enthusiasm(self.enthusiasm - 3)    # BattleWonEnthusiasmDec
-            lo, hi = (enemy or {}).get("bits", (1, 5))
-            gained = random.randint(lo, hi)
-            self.bits += gained
             self._set_anim("happy", 2.0)
-            return f"Victory! +{gained} bits"
+            return "Victory!"
         self._set_mood(self.mood - 20)               # BattleLostMoodDec
         self._set_enthusiasm(self.enthusiasm - 6)    # BattleLostEnthusiasmDec
         if random.random() < 0.3:
@@ -1412,127 +1405,6 @@ class Pet:
         self._set_anim("play", 1.5)
         return "Played together -- happy, but a bit spoiled."
 
-    # ---- shop / items --------------------------------------------------------
-    def buy(self, entry):
-        """Purchase one consumable at its list price, capped at the item's bag stack."""
-        from . import shop
-        price = shop.purchase_price(entry)
-        if self.bits < price:
-            return "Not enough bits."
-        key = entry["key"]
-        cap = entry.get("max_uses") or 99
-        if self.inventory.get(key, 0) >= cap:
-            return f"Can't carry more {entry['name']} (max {cap})."
-        self.bits -= price
-        self.inventory[key] = self.inventory.get(key, 0) + 1
-        return f"Bought {entry['name']}."
-
-    def sell(self, entry):
-        """Resell one from the bag for a fraction of its price (shop.resell_price)."""
-        from . import shop
-        key = entry["key"]
-        if self.inventory.get(key, 0) <= 0:
-            return "None to sell."
-        val = shop.resell_price(entry)
-        if val <= 0:
-            return f"{entry['name']} can't be resold."
-        self.inventory[key] -= 1
-        if self.inventory[key] <= 0:
-            self.inventory.pop(key, None)
-        self.bits += val
-        return f"Sold {entry['name']} for {val}b."
-
-    def add_item(self, key, n=1):
-        """Drop loot / grants straight into the bag."""
-        self.inventory[key] = self.inventory.get(key, 0) + n
-
-    def use_item(self, key):
-        if self.inventory.get(key, 0) <= 0:
-            return "None left."
-        e = data.consumable_by_key(key)
-        if not e:
-            return "?"
-        if not data.item_is_functional(e):
-            return f"{e['name']} has no use yet."   # action-item whose system is unbuilt
-        if self.dead:
-            return "It rests now — press N for a new egg."
-        if self.stage == "Egg":
-            return "It is still an egg."
-        self.inventory[key] -= 1
-        if self.inventory[key] <= 0:
-            del self.inventory[key]
-        if e.get("special") == "xantibody":
-            self._set_anim("happy", 1.5)
-            if key == "i:14":
-                self._set_xantibody("Permanent")
-                return "X-Program complete! The X-Antibody is permanent."
-            self._set_xantibody("Temporary")
-            return "X-Antibody induced! Evolve soon to make it stick."
-        if e.get("effect_id", -1) >= 0:                 # Futon: lay out a temporary care buff
-            eff = data.load_care_effects().get(e["effect_id"])
-            if eff:
-                self.effect_id = e["effect_id"]
-                self.effect_t = float(eff["duration"])
-                self._eff_acc = 0.0
-                self._eff_asleep = self.asleep
-                self._set_anim("happy", 1.4)
-                return f"{self.name} settles onto the {e['name']}."
-        # crafter (DVPet FoodID/ItemID unlock list): yields a random treat from its list --
-        # the Toy Oven bakes a random food, the Chocolate Egg pops a random capsule.
-        targets = [f"f:{n}" for n in e.get("unlocks_food", [])] + \
-                  [f"i:{n}" for n in e.get("unlocks_item", [])]
-        if targets:
-            got = random.choice(targets)
-            self.add_item(got)
-            self._set_anim("happy", 1.4)
-            made = (data.consumable_by_key(got) or {}).get("name", got)
-            return f"{self.name} got a {made}!"
-        if e.get("action") == "ItemEvol":           # item-digivolution is not a DM20 mechanic
-            self.inventory[key] = self.inventory.get(key, 0) + 1   # refund the item, unused
-            self._set_anim("refuse", 1.0)
-            return f"{self.name} can't use that yet."
-        is_food = key.startswith("f:")
-        if e["hunger"]:
-            self.hunger = _clamp(self.hunger + e["hunger"], 0, 4)
-            self.calories = CALORIE_LIMIT               # food refills the calorie buffer
-        self._set_mood(self.mood + e["mood"])
-        self._set_enthusiasm(self.enthusiasm + e.get("enthusiasm", 0))
-        self.weight = max(1, self.weight + e["weight"])
-        if e["energy"]:
-            self._set_energy(self.energy + e["energy"])
-        if e["strength"]:
-            self.strength = _clamp(self.strength + e["strength"], 0, 4)
-        self.obedience += e["obedience"]
-        self.vaccine = max(0, self.vaccine + e["vaccine"])
-        self.data_power = max(0, self.data_power + e["data"])
-        self.virus = max(0, self.virus + e["virus"])
-        if e.get("vitamin"):
-            self.feed_vitamin()                          # guards against injury worsening
-        if e["unfatigue"]:
-            self.fatigue_length = 0.0                    # DVPet Fatigued flag only clears
-            # fatigue-length; energy stays driven by the item's Energy column, not a full refill
-        if e["undepressed"]:
-            self._set_mood(max(self.mood, NEW_UNDEPRESSED_MOOD))  # leave depression
-        if e["cured"]:
-            self.sick = False
-            self.sick_length = 0.0
-            self.med_lapse = MEDICINE_HOURS              # medicine item -> getMed indicator
-        if e["healed"]:
-            self.injuries = max(0, self.injuries - 1)
-            self.inj_length = 0.0
-            self.bandage_lapse = BANDAGE_HOURS           # recovery item -> getBandage indicator
-        if e.get("seconds"):
-            self.lifespan += e["seconds"]                # DVPet setTotalLifespan: +/- lifespan
-        if e.get("sleep") and not self.asleep:
-            self.asleep = True                           # DVPet item Sleep flag forces sleep
-        if is_food:
-            self._eat_food(e.get("category", ""))           # bag food -> same taste system
-            self._apply_nutrition(e)
-        if not e.get("sleep"):                           # a sleep item leaves the pet dozing,
-            self._set_anim("eat" if is_food else "happy", 1.4)   # not in the happy/eat pose
-        return f"Used {e['name']}."
-
-    # ---- presentation helpers -----------------------------------------------
     def status_word(self):
         if self.dead:
             return "passed away"

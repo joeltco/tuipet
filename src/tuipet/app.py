@@ -566,7 +566,7 @@ class Stats(Static):
             f"Mood    {bar(pet.mood_pct(), 12, T.MOOD)}",
             div,
             f"Power   [{T.POS}]●{pet.vaccine}[/] [{T.ENERGY}]■{pet.data_power}[/] [{T.MOOD}]▲{pet.virus}[/]",
-            f"Weight  {pet.weight}g   [{T.COIN}]{pet.bits}b[/]",
+            f"Weight  {pet.weight}g",
             f"Battle  {pet.wins}W/{pet.battles}",
             f"[{skycol}]{sky}[/] [dim]{mins}m{secs:02d}s[/]",
             f"Life    {bar(lifepct, 12, lifecol)}",
