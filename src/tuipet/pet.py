@@ -6,7 +6,6 @@ from . import data
 from . import egg as egg_mod
 from . import evolution
 from . import species as sp
-from . import weather as wx
 from . import theme
 
 
@@ -22,11 +21,6 @@ def _enemy_level(enemy):
     h = enemy.get("hp", 5)
     return max(1, int((v + d + vir + (h - 5) * 10) / 100))
 
-
-
-def _dvpet_time(phase):
-    """Map tuipet's day phase to DVPet's training Time (Morning/Noon/Night)."""
-    return {"dawn": "Morning", "day": "Noon", "dusk": "Noon", "night": "Night"}.get(phase, "Noon")
 
 
 # Lifespan (seconds), scaled from DVPet's real-time model. A pet lives this long
@@ -334,8 +328,6 @@ class Pet:
     battles: int = 0
     levels_fought: list = _dcf(default_factory=list)  # opponent levels beaten this stage (DVPet _levelsFought)
     bits: int = 0
-    trophies: int = 0
-    trophies_won: dict = _dcf(default_factory=dict)   # trophy id -> season won (per-season earned)
     egg_type: int = 0
     lifespan: float = LIFE_START
     generation: int = 1
@@ -351,7 +343,6 @@ class Pet:
     effect_id: int = -1            # active care effect (careEffect.csv id; -1 = none)
     effect_t: float = 0.0          # remaining duration of the active care effect
     x_count: float = 0.0
-    train_time: str = ""            # time of day of the last training (gates some evolutions)
     inventory: dict = _dcf(default_factory=dict)
     # transient animation request, consumed by the UI
     anim: str = "idle"
@@ -648,10 +639,6 @@ class Pet:
     @property
     def is_daytime(self):
         return self.day_phase in ("dawn", "day")
-
-    @property
-    def season(self):
-        return wx.season_for_day(int(self.world_seconds // DAY_LENGTH))
 
     def habitat_obj(self):
         habs = data.load_habitats()
@@ -1086,7 +1073,6 @@ class Pet:
         DVPet. Training a non-favored attribute costs a little mood
         (DVPet NoneTrainingAttributeMoodRankChange).
         """
-        self.train_time = _dvpet_time(self.day_phase)
         self.exercise_today += 1                          # DVPet _exercise (incExerciseTime)
         if hits >= 2:
             self.strength = _clamp(self.strength + 1, 0, 4)

@@ -133,10 +133,6 @@ def map_complete_add(map_index):
     _note_set("maps", int(map_index))
 
 
-def tourney_add(trophy_id):
-    _note_set("tourneys", int(trophy_id))
-
-
 def snapshot_prev_gen(pet):
     """Record the just-ended pet's traits for the 'previous generation' egg gates."""
     if pet is None or getattr(pet, "stage", "Egg") == "Egg":
@@ -165,7 +161,6 @@ def get_progress():
         "max_stage": int(prog.get("max_stage", 0)),
         "xanti_ever": bool(prog.get("xanti_ever", False)),
         "maps": set(prog.get("maps", [])),
-        "tourneys": set(prog.get("tourneys", [])),
         "last_field": last.get("field", "None"),
         "last_attr": last.get("attribute", "None"),
         "last_elem": last.get("element", "None"),

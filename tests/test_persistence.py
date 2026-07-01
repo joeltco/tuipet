@@ -93,7 +93,6 @@ def test_progress_signals_round_trip():
     persistence.note_stage_index(4)
     persistence.note_xanti()
     persistence.map_complete_add(2)
-    persistence.tourney_add(9)
 
     assert persistence.get_eggs_owned() == {7}
     prog = persistence.get_progress()
@@ -101,10 +100,9 @@ def test_progress_signals_round_trip():
     assert prog["max_stage"] == 4
     assert prog["xanti_ever"] is True
     assert 2 in prog["maps"]
-    assert 9 in prog["tourneys"]
     # full shape the egg evaluator depends on
     for k in ("album", "wins", "max_gen", "max_stage", "xanti_ever", "maps",
-              "tourneys", "last_field", "last_attr", "last_elem", "last_mood",
+              "last_field", "last_attr", "last_elem", "last_mood",
               "last_obed", "last_xanti"):
         assert k in prog
 
