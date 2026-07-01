@@ -29,10 +29,11 @@ ATTRS = ("Vaccine", "Data", "Virus")
 ATTR_BEATS = {"Vaccine": "Virus", "Virus": "Data", "Data": "Vaccine"}
 ATTR_BONUS = 32                                  # manual: an attribute advantage = +32 Power
 
-# clash "hearts" per authentic growth stage -- small, so a bout is a few decisive trades
-MAX_HEALTH = {"Baby I": 2, "Baby II": 2, "Child": 3,
-              "Adult": 4, "Perfect": 4, "Ultimate": 5, "Super Ultimate": 5}
-MAX_HEALTH_DEFAULT = 3
+# clash "hearts" per authentic growth stage -- kept SMALL so a bout is a few decisive
+# trades (not a long slog of whiffs); the whole clash should read in ~10-15s.
+MAX_HEALTH = {"Baby I": 2, "Baby II": 2, "Child": 2,
+              "Adult": 3, "Perfect": 3, "Ultimate": 3, "Super Ultimate": 4}
+MAX_HEALTH_DEFAULT = 2
 
 
 def _clamp(v, lo, hi):
@@ -50,8 +51,9 @@ def effective_power(power, my_attr, opp_attr):
 
 
 def hit_chance(my_ep, opp_ep):
-    """Manual: higher power -> more likely to hit, bigger gap -> higher likelihood."""
-    return _clamp(0.55 + (my_ep - opp_ep) / 160.0, 0.15, 0.90)
+    """Manual: higher power -> more likely to hit, bigger gap -> higher likelihood.  Base
+    is high so most attacks LAND (whiffs are the exception, not a slog); power tilts it."""
+    return _clamp(0.72 + (my_ep - opp_ep) / 180.0, 0.40, 0.95)
 
 
 def _hit_damage(margin, rng):

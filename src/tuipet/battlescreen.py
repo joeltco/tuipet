@@ -39,14 +39,15 @@ BAND_TOP = PXH - 18                              # 6: creature/orb top limit
 BAND_BOT = PXH - 2                               # 22: floor
 FIRE_Y = PXH - 14                                # orb mid-body height (centred in the band)
 
-# timeline tuning (ticks per beat, 1 tick == 0.1s)
-BANNER_FLASHES, BANNER_HOLD = 3, 4
-FACEOFF_T = 9
-WINDUP_T = 9
-FIRE_T = 12
-EXPLODE_HOLD, EXPLODE_FRAMES = 3, 9
-FLINCH_T = 12
-DODGE_T = 14
+# timeline tuning (ticks per beat, 1 tick == 0.1s) -- snappy: a full attack is ~2s, so a
+# whole bout of a few trades reads in ~10-15s (and SPACE skips it).
+BANNER_FLASHES, BANNER_HOLD = 2, 3
+FACEOFF_T = 5
+WINDUP_T = 4
+FIRE_T = 6
+EXPLODE_HOLD, EXPLODE_FRAMES = 2, 6
+FLINCH_T = 5
+DODGE_T = 6
 
 # attack-order minigame: a marker sweeps the track; SPACE in the centre zone = strike first
 MG_SPEED = 0.06                                  # marker travel per tick (0..1)
