@@ -84,34 +84,12 @@ def _blit(bm, ox, oy):
             for x, c in enumerate(row) if c == "1"]
 
 
-# The REAL DVPet attribute icons, extracted 1:1 from the game's red/green/yellow.png
-# (SpriteAnim _vaccineAttack/_dataAttack/_virusAttack) -- circle/square/triangle, each
-# with DVPet's top-left highlight pixel.  'big' = native 14x14, 'small' = 7x7.  NOT
-# hand-drawn -- pulled from the source art.
-with open(os.path.join(os.path.dirname(__file__), "data", "attr_icons.json")) as _f:
-    _ATTR_ICONS = json.load(_f)        # {'big': [v,d,v], 'small': [v,d,v]}  order Vaccine/Data/Virus
-
 # The REAL DVPet HP training dummy -- the bird "battle bag" (battleBags.png top row, the clean
 # frames DVPet's getBattleBagSprite maps as Vaccine=circle / Virus=triangle / Data=square).
 # The target attribute shows as a cutout symbol on the bird's belly; the player reads it and
-# picks the matching icon.  1-bit, cropped-to-content, downscaled to fit the LCD.  From source art.
+# picks the matching attribute.  1-bit, cropped-to-content, downscaled to fit the LCD.  From source art.
 with open(os.path.join(os.path.dirname(__file__), "data", "hp_dummies.json")) as _f:
     _HP_DUMMIES = json.load(_f)         # {'vaccine','virus','data'} -> 1-bit bird w/ belly symbol
-
-
-def _box(w, h):
-    """Hollow 1-bit rectangle -- the HP-drill cursor framing the picked attribute."""
-    return ["1" * w if y in (0, h - 1) else "1" + "0" * (w - 2) + "1" for y in range(h)]
-
-
-def _plus_glyph(h=9):
-    """A plus/cross for the HP option (health = +)."""
-    t = h // 3
-    return ["1" * h if t <= y < h - t else "0" * t + "1" * (h - 2 * t) + "0" * t
-            for y in range(h)]
-
-
-_HP_GLYPH = _plus_glyph()
 
 
 GAMES = [
@@ -472,13 +450,14 @@ class TrainingPanel:
           Virus:   the power bar FILLS L->R; stop it in the zone (bar centred, pet HIDDEN).
           Data:    a FIXED cannon (left) fires a shot HIGH/LOW at the pet; raise the matching
                    shield (two slots in front of the pet RIGHT) to block it.  Defensive.
-          HP:      read the dummy's attribute, pick the matching icon (dummy LEFT, icons MID,
-                   pet RIGHT) -- on a flat LCD."""
+          HP:      read the bird bag's belly symbol, pick the matching attribute (bird LEFT,
+                   pet RIGHT face-off; the picker glyphs live in the gauge) -- on a flat LCD."""
         gk = self.gkey
         E = data.load_effects()
         on, bgimg = self._scene_palette()
         ph = ARENA_ROWS * 2
         overlay = []
+        placements = []
 
         if gk == "vaccine":                                 # DVPet drawVaccinePre: MASH to charge power.
             bag = E.get("punching_bag", [None])[0]           # the bag is the target; the pet is HIDDEN
@@ -567,23 +546,20 @@ class TrainingPanel:
                     mx, end_x = DATA_MARGIN + cw - 3, sx - ow + 3  # muzzle -> pressed against the shield
                     prog = (DATA_FLY - self.fly_t) / (DATA_FLY - 1)
                     overlay += _blit(orb, int(mx + (end_x - mx) * prog), lane_y)
-        else:                                               # hp: the REAL DVPet drawHPTraining layout
-            # Verified against the live game (Xvfb capture): the bird "battle bag" holds the
-            # round's target attribute as a cutout symbol on its belly and stands on the LEFT;
-            # the 3 pickable option icons (● Vaccine / ■ Data / ▲ Virus) stack in the CENTRE;
-            # the pet stands on the RIGHT.  Read the bag's symbol, move the cursor to the
-            # matching option, press to lock.  Flat LCD (DVPet blanks the habitat here).
+        else:                                               # hp: a CLEAN tuipet face-off.
+            # DVPet stacks 3 attribute icons vertically beside the pet; that doesn't survive the
+            # drop to tuipet's 24px LCD (three 6px icons + a cursor box render as one black blob,
+            # and the filled square icon reads as a wall).  So keep the ESSENCE, not the pixels:
+            # the bird "battle bag" shows the round's target as a cutout symbol on its belly and
+            # stands LEFT; the pet stands RIGHT; both GROUNDED on the floor like every other drill
+            # (via render_scene placements).  The player reads the belly and picks the matching
+            # attribute from the crisp glyph strip in the gauge (● Vaccine / ■ Data / ▲ Virus).
             on, bgimg = LCD_ON, None
             dummy = _HP_DUMMIES[("vaccine", "data", "virus")[self.hp_target]]
-            overlay.extend(_blit(dummy, 0, ph - len(dummy)))           # bird bag LEFT, baseline
-            for i in range(3):                              # the 3 stacked option icons (real ● ■ ▲)
-                iy = 2 + i * 7                               # 6px icon + 1px gap = the 3-high stack
-                overlay.extend(_blit(_ATTR_ICONS["small"][i], 20, iy))
-                if i == self.hp_pick:                       # cursor frame around the current guess
-                    overlay.extend(_blit(_box(8, 8), 19, iy - 1))
-            pf = self._frame(rec, self._pose_now(0))        # the pet RIGHT
-            overlay.extend(_blit(pf, COLS - max(len(r) for r in pf) - 1, ph - len(pf)))
-        scene = render_scene([], COLS, ARENA_ROWS, on, LCD_BG, overlay=overlay, bgimg=bgimg)
+            pf = self._frame(rec, self._pose_now(0))
+            placements = [(dummy, 2, False),                            # bird bag LEFT, grounded
+                          (pf, COLS - max(len(r) for r in pf) - 2, False)]  # pet RIGHT, grounded
+        scene = render_scene(placements, COLS, ARENA_ROWS, on, LCD_BG, overlay=overlay, bgimg=bgimg)
         scene.append("\n")
         scene.append_text(self._gauge())
         scene.append_text(menu.footer(self._hint()))
@@ -594,9 +570,12 @@ class TrainingPanel:
         gk = self.gkey
         t = Text()
         if gk == "hp":
-            t.append(f"match it!  {self.rounds_won}/{HP_ROUNDS_WON} won", style=INK)
+            t.append("match: ", style=INK)                     # crisp glyph picker (● Vaccine ■ Data ▲ Virus)
+            for i, sym in enumerate(("●", "■", "▲")):
+                sel = i == self.hp_pick
+                t.append(f"[{sym}]" if sel else f" {sym} ", style=INK_B if sel else DIM)
             tb = int((max(self.round_t, 0) / max(self.round_len, 1)) * 9)
-            t.append("   time " + "▓" * tb + "░" * (9 - tb) + "\n", style=f"{ACCENT} on {LCD_BG}")
+            t.append("  " + "▓" * tb + "░" * (9 - tb) + "\n", style=f"{ACCENT} on {LCD_BG}")
         elif gk == "vaccine":
             hit = self._strike_t > 0
             t.append("HIT!! " if hit else "hit!  ", style=INK_B if hit else INK)
