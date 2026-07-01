@@ -27,7 +27,7 @@ def test_egg_unlock_load():
     # every rule carries the full evaluated condition set egg.py reads
     needed = {"start", "price", "map", "stage", "xanti", "zone", "gen",
               "prev_field", "prev_attr", "prev_elem", "history", "food", "item",
-              "habitat", "password", "obedience", "mood", "desc", "can_perm"}
+              "password", "obedience", "mood", "desc", "can_perm"}
     for rule in rules.values():
         assert needed <= set(rule)
     # at least one starter egg, and at least one egg behind a price (a real bits sink)

@@ -128,7 +128,7 @@ def _conditions_met(rule, prog):
     # gates tuipet does not model -> egg stays locked (e.g. password, food/item used)
     if rule["password"] is not None:
         return False
-    if rule["food"] is not None or rule["item"] is not None or rule["habitat"] is not None:
+    if rule["food"] is not None or rule["item"] is not None:
         return False
     if rule["zone"] is not None:
         return False

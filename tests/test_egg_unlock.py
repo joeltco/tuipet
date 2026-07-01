@@ -69,7 +69,7 @@ def test_signal_gated_eggs_are_reachable():
     for i in range(egg.count()):
         rule = rules.get(i)
         if rule and (rule["password"] or rule["food"] or rule["item"]
-                     or rule["habitat"] or rule["zone"]):
+                     or rule["zone"]):
             continue                       # intentionally gated on an unmodelled system
         state, _ = egg.egg_state(i, _prog_for(rule), owned=set())
         if state == "locked":
@@ -85,7 +85,7 @@ def test_no_egg_gated_on_an_unmodeled_system():
     for idx, rule in rules.items():
         if rule["start"]:
             continue
-        if any(rule[k] is not None for k in ("food", "item", "habitat", "zone")):
-            stranded.append((idx, [k for k in ("food", "item", "habitat", "zone")
+        if any(rule[k] is not None for k in ("food", "item", "zone")):
+            stranded.append((idx, [k for k in ("food", "item", "zone")
                                    if rule[k] is not None]))
     assert not stranded, f"eggs gated on unmodeled systems (permanently locked): {stranded}"
