@@ -78,7 +78,7 @@ if __name__ == "__main__":
         c.print(frame_text(d["frames"][i], on, off))
 
 
-def render_screen(frame_rows, cols, rows, on="#2b2e31", bg="#c6c9cc", baseline=True, mirror=False, xshift=0, yshift=0, corner=None, overlay=None, bgimg=None, clip=None, band=None):
+def render_screen(frame_rows, cols, rows, on="#2b2e31", bg="#c6c9cc", baseline=True, mirror=False, xshift=0, yshift=0, corner=None, overlay=None, bgimg=None, clip=None, band=None, back_overlay=None):
     """Compose a sprite centred on a fixed cols x rows (character) LCD screen.
 
     Returns a rich Text. The screen is rows*2 pixels tall; the sprite is blitted
@@ -101,6 +101,10 @@ def render_screen(frame_rows, cols, rows, on="#2b2e31", bg="#c6c9cc", baseline=T
     cx0, cx1 = clip if clip else (0, cols)
     by0, by1 = band if band else (0, px_h)
     buf = [[0] * cols for _ in range(px_h)]
+    if back_overlay:                          # pixels BEHIND the sprite (e.g. droppings the pet stands in front of)
+        for ox_, oy_ in back_overlay:
+            if by0 <= oy_ < by1 and cx0 <= ox_ < cx1:
+                buf[oy_][ox_] = 1
     if frame_rows and mirror:
         frame_rows = [r[::-1] for r in frame_rows]
     if frame_rows:
