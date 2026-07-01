@@ -214,18 +214,13 @@ def _effect_overlay(pet, frame_i, cols, px_h, tick=0, pet_right=None):
             break
         front += _blit(E[key][sf], _beside(COND_W), y)
         k += 1
-    # --- care-call / reaction bubble: beside the head, awake only; yields to the marker ---
-    if not asleep and not cond_active:
-        emo = ("happy" if pet.anim == "happy" else
-               "unhappy" if pet.anim in ("sad", "refuse", "angry", "tantrum") else None)
-        bubble = None
-        if emo and E.get(emo):                            # happy / unhappy reaction emote
-            bubble = E[emo][frame_i % len(E[emo])]
-        elif (pet.anim in ("idle", "walk") and E.get("attention")
-              and (pet.hunger == 0 or pet.poop >= 3)):
-            bubble = E["attention"][0]                    # care-call '!'
-        if bubble:
-            front += _blit(bubble, _beside(len(bubble[0])), band_top)
+    # --- care-call: the '!' beside the head when a need goes unmet, awake only.  DM20 emotes
+    #     through the creature's POSE (angry/sad/happy frames), not floating happy/unhappy
+    #     face bubbles -- those were DVPet's emotionLabel, stripped. ---
+    if (not asleep and not cond_active and E.get("attention")
+            and pet.anim in ("idle", "walk") and (pet.hunger == 0 or pet.poop >= 3)):
+        att = E["attention"][0]
+        front += _blit(att, _beside(len(att[0])), band_top)
     return front, back
 
 
@@ -445,17 +440,10 @@ class Screen(Static):
             if wash:
                 overlay += _blit(wash, wx, max(0, (px_h - len(wash)) // 2))
         elif fx["kind"] == "cheer":
-            # DVPet cheer(): pose alternates up(+5)/down(+7) every 6 intervals with a
-            # "happy" emote bubble pulsing on the up-beats; ends ~beat 30.
+            # a happy bounce: the pose alternates up(+5)/down(+7) every 6 intervals.  (The
+            # DVPet sparkle emote bubble on the up-beats was stripped -- DM20 emotes by pose.)
             up = (step // 6) % 2 == 0
-            rows = self._pose_rows_idx(pet, 5 if up else 7)   # DVPet cheer up(5) <-> down(7) bounce
-            if up:
-                hap = data.load_effects().get("happy")
-                if hap:
-                    hf = hap[(step // 6) % len(hap)]
-                    # DVPet cheer(): the pet stays CENTRED and the emote rides its right
-                    # edge (adjustEmotionLabel) -- not pinned to the far corner.
-                    overlay += _blit(hf, (SCREEN_COLS - SPRITE_W) // 2 + SPRITE_W, 1)
+            rows = self._pose_rows_idx(pet, 5 if up else 7)   # cheer up(5) <-> down(7) bounce
         elif fx["kind"] == "spit":
             # DVPet refuse(): the pet stays CENTRED and shakes its head; the rejected
             # food drops away from its mouth (on its left) rather than off to one side.
