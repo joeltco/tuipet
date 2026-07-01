@@ -91,6 +91,13 @@ def _blit(bm, ox, oy):
 with open(os.path.join(os.path.dirname(__file__), "data", "attr_icons.json")) as _f:
     _ATTR_ICONS = json.load(_f)        # {'big': [v,d,v], 'small': [v,d,v]}  order Vaccine/Data/Virus
 
+# The REAL DVPet HP training dummy -- the bird "battle bag" (battleBags.png top row, the clean
+# frames DVPet's getBattleBagSprite maps as Vaccine=circle / Virus=triangle / Data=square).
+# The target attribute shows as a cutout symbol on the bird's belly; the player reads it and
+# picks the matching icon.  1-bit, cropped-to-content, downscaled to fit the LCD.  From source art.
+with open(os.path.join(os.path.dirname(__file__), "data", "hp_dummies.json")) as _f:
+    _HP_DUMMIES = json.load(_f)         # {'vaccine','virus','data'} -> 1-bit bird w/ belly symbol
+
 
 def _box(w, h):
     """Hollow 1-bit rectangle -- the HP-drill cursor framing the picked attribute."""
@@ -374,10 +381,10 @@ class TrainingPanel:
         if k in ("escape", "t"):
             return ("done", None)
         gk = self.gkey
-        if gk == "hp":                       # pick which attribute the bag is, then guess
-            if k in ("left", "h"):
-                self.hp_pick = (self.hp_pick - 1) % 3
-            elif k in ("right", "l"):
+        if gk == "hp":                       # read the bag's belly symbol, pick the match
+            if k in ("up", "k", "left", "h"):           # the options stack vertically -> up/down
+                self.hp_pick = (self.hp_pick - 1) % 3   # (left/right also work)
+            elif k in ("down", "j", "right", "l"):
                 self.hp_pick = (self.hp_pick + 1) % 3
             elif k in ("1", "2", "3"):
                 self.hp_pick = int(k) - 1
@@ -560,19 +567,17 @@ class TrainingPanel:
                     mx, end_x = DATA_MARGIN + cw - 3, sx - ow + 3  # muzzle -> pressed against the shield
                     prog = (DATA_FLY - self.fly_t) / (DATA_FLY - 1)
                     overlay += _blit(orb, int(mx + (end_x - mx) * prog), lane_y)
-        else:                                               # hp: DVPet drawHPTraining, adapted for the LCD
-            # DVPet shows the round's target attribute on a bird "battle bag"'s belly and you
-            # click the matching Vaccine/Data/Virus icon (read-and-match, best of 3).  At
-            # tuipet's 40x24 that belly symbol is sub-pixel and unreadable -- the three bird
-            # frames differ by ~4 pixels -- so the drill collapsed into a blind guess.  Present
-            # the target as the REAL attribute icon (same red/green/yellow.png art) at readable
-            # size: big target LEFT, the 3 pickable option icons stacked MIDDLE (cursor on the
-            # current pick), pet RIGHT.
+        else:                                               # hp: the REAL DVPet drawHPTraining layout
+            # Verified against the live game (Xvfb capture): the bird "battle bag" holds the
+            # round's target attribute as a cutout symbol on its belly and stands on the LEFT;
+            # the 3 pickable option icons (● Vaccine / ■ Data / ▲ Virus) stack in the CENTRE;
+            # the pet stands on the RIGHT.  Read the bag's symbol, move the cursor to the
+            # matching option, press to lock.  Flat LCD (DVPet blanks the habitat here).
             on, bgimg = LCD_ON, None
-            big = _ATTR_ICONS["big"][self.hp_target]         # the symbol to match, drawn large & clear
-            overlay.extend(_blit(big, 3, (ph - len(big)) // 2))
+            dummy = _HP_DUMMIES[("vaccine", "data", "virus")[self.hp_target]]
+            overlay.extend(_blit(dummy, 0, ph - len(dummy)))           # bird bag LEFT, baseline
             for i in range(3):                              # the 3 stacked option icons (real ● ■ ▲)
-                iy = 2 + i * 7                               # 6px icon + 1px gap, cursor-boxed pick
+                iy = 2 + i * 7                               # 6px icon + 1px gap = the 3-high stack
                 overlay.extend(_blit(_ATTR_ICONS["small"][i], 20, iy))
                 if i == self.hp_pick:                       # cursor frame around the current guess
                     overlay.extend(_blit(_box(8, 8), 19, iy - 1))
@@ -610,7 +615,7 @@ class TrainingPanel:
         return t
 
     def _hint(self):
-        return {"hp": "←→ pick   1/2/3 or SPACE to lock",
+        return {"hp": "↑↓ pick   1/2/3 or SPACE to lock",
                 "vaccine": "SPACE hit the orb!   ESC out",
                 "data": "SPACE toggle the shield to match the cannon",
                 "virus": "SPACE stop the marker in the zone"}[self.gkey]
