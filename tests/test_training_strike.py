@@ -98,7 +98,7 @@ def test_hp_drill_matches_the_dummy_attribute():
 def test_hp_timeout_counts_as_wrong():
     panel = _panel("hp")
     panel._start_game()
-    for _ in range(T.HP_ROUNDS * (T.HP_ROUND_LEN + 1)):
+    for _ in range(T.HP_ROUNDS * (max(T.HP_ROUND_LEN) + 1)):
         if panel.phase != "play":
             break
         panel.anim()                                   # never guess -> every round times out
