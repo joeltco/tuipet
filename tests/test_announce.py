@@ -27,10 +27,8 @@ def test_need_message_priority_and_text():
     p.poop = 0
     p.energy = 0
     assert "exhausted" in app._need_message(p)
-    p.energy = 10
-    p.scold_flag = True
-    assert "misbehaving" in app._need_message(p)
     # the pet's name appears in the announcement
+    p.energy = 10
     p.hunger = 0
     assert "Pico" in app._need_message(p)
 

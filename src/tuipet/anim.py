@@ -60,7 +60,7 @@ def mood_pose(pet):
         return random.choice((10, 9, 2))      # weary / collapsed / droop
     if pet.mood < 0:
         return random.choice((4, 6))          # sour faces
-    if pet.mood > 0 and pet.enthusiasm >= 0:
+    if pet.mood > 0:
         return 5                              # bright/excited
     return None                               # neutral -> ordinary walk pose
 
