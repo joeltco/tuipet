@@ -17,14 +17,13 @@ def test_isolation_is_real(tmp_path):
 
 
 def test_round_trip_preserves_fields():
-    pet = Pet(num=-1, name="Testmon", stage="Rookie", bits=99,
+    pet = Pet(num=-1, name="Testmon", stage="Rookie",
               effect_id=2, effect_t=42.0, care_mistakes=3, generation=4)
     persistence.save(pet)
     loaded, _ = persistence.load()
     assert loaded is not None
     assert loaded.name == "Testmon"
     assert loaded.stage == "Rookie"
-    assert loaded.bits == 99
     assert loaded.effect_id == 2
     assert loaded.effect_t == 42.0
     assert loaded.care_mistakes == 3
