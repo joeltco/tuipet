@@ -1466,6 +1466,7 @@ class TuiPetApp(App):
         if isinstance(result, tuple) and result and result[0] == "charged":
             _, field, amount = result          # DVPet applyDNA -> DNA_Feeding -> main view
             self.screen_w.start_fx("dna_charge", icon=field, pet=self.pet)
+            self.beep("compatible", bell=False)   # the DNA charge/absorb beep (no dedicated dna rip)
             self.flash("%s absorbed %d %s DNA" % (self.pet.name, amount, data.pretty_field(field)))
         else:
             self.repaint()
@@ -1537,7 +1538,9 @@ class TuiPetApp(App):
             self.screen_w.start_fx("cheer")
             self.beep("happy", bell=False)
         self._do(msg)
-    def action_sleep(self): self._do(self.pet.toggle_lights())   # the "s" key is the LIGHTS toggle
+    def action_sleep(self):                                     # the "s" key is the LIGHTS toggle
+        self.beep("confirm", bell=False)                        # a button blip on the lights on/off press
+        self._do(self.pet.toggle_lights())
     def action_new(self):
         persistence.snapshot_prev_gen(self.pet)   # previous-generation egg gates
         gen = self.pet.generation + 1
