@@ -124,7 +124,7 @@ def battle_card(pet):
     return {"num": pet.num,
             "name": getattr(pet, "name", None) or by.get(pet.num, {}).get("name") or "?",
             "stage": pet.stage, "vaccine": pet.vaccine, "data_power": pet.data_power,
-            "virus": pet.virus, "hp": MAX_HEALTH.get(pet.stage, MAX_HEALTH_DEFAULT), "bits": (1, 5)}
+            "virus": pet.virus, "hp": MAX_HEALTH.get(pet.stage, MAX_HEALTH_DEFAULT)}
 
 
 class Battle:

@@ -785,17 +785,7 @@ class TuiPetApp(App):
 
     def autosave(self):
         persistence.save(self.pet)
-        self._note_progress()
         self._push_cloud()              # mirror the autosave up to the cloud
-
-    def _note_progress(self):
-        """Record cross-generation egg-unlock milestones from the live pet."""
-        p = self.pet
-        if p is None or p.stage in ("", "Egg"):
-            return
-        persistence.note_generation(p.generation)
-        if p.stage in data.STAGE_ORDER:
-            persistence.note_stage_index(data.STAGE_ORDER.index(p.stage))
 
     def on_unmount(self):
         persistence.save(self.pet)
@@ -945,13 +935,10 @@ class TuiPetApp(App):
                                          "[dim]press ENTER[/]", "[dim]to begin[/]"])
         elif isinstance(self.mode, eggselectscreen.EggSelectPanel):
             m = self.mode
-            idx = m.unlocked[m.i] if m.unlocked else 0
-            state = m.states.get(idx, ("owned", 0))[0]
-            badge = {"temp": "[dim]this gen only[/]"}.get(state, "[dim]ready[/]")
-            self._status_card("New Egg", [f"[dim]{m.i + 1} of {m.n} available[/]",
-                                          f"[dim]{m.locked} still locked[/]", "",
-                                          "Destined to hatch", f"  [b]{egg_mod.hatch_name(idx)}[/]",
-                                          f"  {badge}", "",
+            self._status_card("New Egg", [f"[dim]{m.i + 1} of {m.n} versions[/]", "",
+                                          "Destined to hatch",
+                                          f"  [b]{egg_mod.hatch_name(m.i)}[/]",
+                                          "  [dim]ready[/]", "", "",
                                           "[dim]←→ browse  ENTER pick[/]"])
         elif isinstance(self.mode, training.TrainingPanel):
             self._status_training()
@@ -1227,8 +1214,6 @@ class TuiPetApp(App):
 
     def _after_battle(self, battle):
         if battle is not None:
-            if battle.won:
-                persistence.wins_add(1)        # lifetime wins gate the mystery eggs
             self.flash(battle.reward)
             self.beep("win") if battle.won else self.beep("lose", bell=False)
         self.repaint()
@@ -1290,7 +1275,6 @@ class TuiPetApp(App):
         self._do(msg)
     def action_sleep(self): self._do(self.pet.toggle_lights())   # the "s" key is the LIGHTS toggle
     def action_new(self):
-        persistence.snapshot_prev_gen(self.pet)   # previous-generation egg gates
         gen = self.pet.generation + 1
         self._open_mode(eggselectscreen.EggSelectPanel(self.pet),
                         lambda et: self._hatch_new(et, gen))

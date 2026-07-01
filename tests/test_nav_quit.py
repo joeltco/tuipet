@@ -70,13 +70,6 @@ def test_title_q_quits_other_keys_start():
     assert t.key("a") == ("done", None)
 
 
-def test_eggselect_captures_text_only_while_entering_a_code():
-    from tuipet import eggselectscreen
-    p = eggselectscreen.EggSelectPanel.__new__(eggselectscreen.EggSelectPanel)
-    p.entering = False
-    assert p.captures_text is False           # browsing eggs -> q quits
-    p.entering = True
-    assert p.captures_text is True            # typing a secret code -> q is text
-
-
 # (adventure/tournament toggle-close tests removed — those screens were stripped.)
+# (eggselect secret-code test removed — the DVPet password/unlock path was stripped;
+#  DM20 egg select is a free version-starter picker with no text entry.)

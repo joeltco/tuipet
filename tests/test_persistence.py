@@ -81,39 +81,3 @@ def test_offline_cap_at_36h():
     assert "36h" in msg
 
 
-def test_progress_signals_round_trip():
-    persistence.egg_own(7)
-    persistence.egg_own(7)            # idempotent
-    persistence.note_generation(5)
-    persistence.note_generation(3)   # max-only: must not lower
-    persistence.note_stage_index(4)
-    persistence.map_complete_add(2)
-
-    assert persistence.get_eggs_owned() == {7}
-    prog = persistence.get_progress()
-    assert prog["max_gen"] == 5
-    assert prog["max_stage"] == 4
-    assert 2 in prog["maps"]
-    # full shape the egg evaluator depends on
-    for k in ("album", "wins", "max_gen", "max_stage", "maps",
-              "last_field", "last_attr", "last_elem", "last_mood",
-              "last_obed"):
-        assert k in prog
-
-
-def test_snapshot_prev_gen():
-    pet = Pet(num=-1, stage="Champion", attribute="Vaccine", mood=50, obedience=7)
-    pet.field = "Nature Spirits"
-    persistence.snapshot_prev_gen(pet)
-    prog = persistence.get_progress()
-    assert prog["last_field"] == "Nature Spirits"
-    assert prog["last_attr"] == "Vaccine"
-    assert prog["last_mood"] == 50
-    assert prog["last_obed"] == 7
-
-
-def test_snapshot_ignores_egg():
-    egg = Pet(num=-1, stage="Egg")
-    persistence.snapshot_prev_gen(egg)
-    # no last_gen written -> defaults
-    assert persistence.get_progress()["last_field"] == "None"

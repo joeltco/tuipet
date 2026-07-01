@@ -12,15 +12,6 @@ def _clamp(v, lo, hi):
     return max(lo, min(hi, v))
 
 
-def _enemy_level(enemy):
-    """DVPet getLevel: (vaccine+data+virus + (health-5)*10) / 100, min 1."""
-    v = enemy.get("vaccine", 0)
-    d = enemy.get("data_power", 0)
-    vir = enemy.get("virus", 0)
-    h = enemy.get("hp", 5)
-    return max(1, int((v + d + vir + (h - 5) * 10) / 100))
-
-
 # Lifespan (seconds), scaled from DVPet's real-time model. A pet lives this long
 # in total; reaching higher stages extends it; neglect (sickness/starvation/
 # fatigue) burns it down faster. The final stretch is the geriatric "old age".
@@ -309,7 +300,6 @@ class Pet:
     nutr_mineral: int = 0           # DVPet _mineral, from vegetables
     nutr_vitamin: int = 0           # DVPet _vitamin, from fruit
     battles: int = 0
-    levels_fought: list = _dcf(default_factory=list)  # opponent levels beaten this stage (DVPet _levelsFought)
     egg_type: int = 0
     lifespan: float = LIFE_START
     generation: int = 1
@@ -770,7 +760,6 @@ class Pet:
         self.injuries = self.sick_count = 0
         self.sick = False
         self.sick_length = self.inj_length = self.fatigue_length = 0.0
-        self.levels_fought = []
         self.food_eaten = {c: 0 for c in data.FOOD_CATEGORIES}   # MajorFood resets per stage
         self.weight = self._base_weight()
         # DVPet attributeEvolChange: a form raises/lowers the carried attribute powers
@@ -831,8 +820,7 @@ class Pet:
 
     @property
     def dp(self):
-        """DM20 battle power (DP): the pet's total attribute power — the same sum the
-        battle level is derived from (see _enemy_level)."""
+        """DM20 battle power (DP): the pet's total attribute power (vaccine+data+virus)."""
         return self.vaccine + self.data_power + self.virus
 
     def _poop_size(self):
@@ -995,8 +983,6 @@ class Pet:
         self._check_worse_injury(in_battle=True)         # battling injured can worsen it
         if won:
             self.wins += 1
-            if enemy:
-                self.levels_fought.append(_enemy_level(enemy))
             self._open_praise()                          # a win is praiseworthy
             self._set_mood(self.mood + 10)               # BattleWonMoodInc
             self._set_enthusiasm(self.enthusiasm - 3)    # BattleWonEnthusiasmDec
