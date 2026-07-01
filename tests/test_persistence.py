@@ -50,20 +50,20 @@ def test_old_save_migration():
 
 def test_offline_egg_does_not_decay():
     egg = Pet(num=-1, stage="Egg")
-    egg.hunger = 4
+    egg.mood, egg.hunger = 0, 4
     msg = persistence._offline(egg, 7200)        # 2h away
     assert msg == ""
-    assert egg.hunger == 4                        # eggs are inert offline
+    assert egg.hunger == 4 and egg.mood == 0     # eggs are inert offline
     assert egg.world_seconds == 7200             # ...but the clock still advances
     assert egg.age_seconds == 7200
 
 
 def test_offline_decay_applies():
     pet = Pet(num=-1, stage="Rookie")
-    pet.hunger, pet.poop = 4, 0
+    pet.mood, pet.hunger = 100, 4
     msg = persistence._offline(pet, 2 * 3600)    # 2h
+    assert pet.mood < 100, "mood should decay while away"
     assert pet.hunger < 4, "hunger should drop while away"
-    assert pet.poop > 0, "mess should build up while away"
     assert "away" in msg
 
 
@@ -81,3 +81,39 @@ def test_offline_cap_at_36h():
     assert "36h" in msg
 
 
+def test_progress_signals_round_trip():
+    persistence.egg_own(7)
+    persistence.egg_own(7)            # idempotent
+    persistence.note_generation(5)
+    persistence.note_generation(3)   # max-only: must not lower
+    persistence.note_stage_index(4)
+    persistence.map_complete_add(2)
+
+    assert persistence.get_eggs_owned() == {7}
+    prog = persistence.get_progress()
+    assert prog["max_gen"] == 5
+    assert prog["max_stage"] == 4
+    assert 2 in prog["maps"]
+    # full shape the egg evaluator depends on
+    for k in ("album", "wins", "max_gen", "max_stage", "maps",
+              "last_field", "last_attr", "last_elem", "last_mood",
+              "last_obed"):
+        assert k in prog
+
+
+def test_snapshot_prev_gen():
+    pet = Pet(num=-1, stage="Champion", attribute="Vaccine", mood=50, obedience=7)
+    pet.field = "Nature Spirits"
+    persistence.snapshot_prev_gen(pet)
+    prog = persistence.get_progress()
+    assert prog["last_field"] == "Nature Spirits"
+    assert prog["last_attr"] == "Vaccine"
+    assert prog["last_mood"] == 50
+    assert prog["last_obed"] == 7
+
+
+def test_snapshot_ignores_egg():
+    egg = Pet(num=-1, stage="Egg")
+    persistence.snapshot_prev_gen(egg)
+    # no last_gen written -> defaults
+    assert persistence.get_progress()["last_field"] == "None"

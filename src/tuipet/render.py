@@ -78,7 +78,7 @@ if __name__ == "__main__":
         c.print(frame_text(d["frames"][i], on, off))
 
 
-def render_screen(frame_rows, cols, rows, on="#2b2e31", bg="#c6c9cc", baseline=True, mirror=False, xshift=0, yshift=0, overlay=None, bgimg=None, clip=None, band=None, back_overlay=None):
+def render_screen(frame_rows, cols, rows, on="#2b2e31", bg="#c6c9cc", baseline=True, mirror=False, xshift=0, yshift=0, corner=None, overlay=None, bgimg=None, clip=None):
     """Compose a sprite centred on a fixed cols x rows (character) LCD screen.
 
     Returns a rich Text. The screen is rows*2 pixels tall; the sprite is blitted
@@ -90,21 +90,11 @@ def render_screen(frame_rows, cols, rows, on="#2b2e31", bg="#c6c9cc", baseline=T
     outside [x0, x1) are dropped, so the window edge acts as the screen edge. A care
     action that slides the pet off the field (clean's wash shove) needs this; pinning
     would trap the pet at the edge. With clip=None the sprite anchors inside the window.
-
-    band: optional (y0, y1). The authentic DM20 dot-matrix is only 16 dots tall, so the
-    LCD canvas can be taller (background in the margins) while nothing the game draws --
-    sprite, overlay, or back_overlay pixels -- is allowed outside this vertical band.
-    Defaults to the full screen height (no vertical clip).
     """
     from rich.text import Text
     px_h = rows * 2
     cx0, cx1 = clip if clip else (0, cols)
-    by0, by1 = band if band else (0, px_h)
     buf = [[0] * cols for _ in range(px_h)]
-    if back_overlay:                          # pixels BEHIND the sprite (e.g. droppings the pet stands in front of)
-        for ox_, oy_ in back_overlay:
-            if by0 <= oy_ < by1 and cx0 <= ox_ < cx1:
-                buf[oy_][ox_] = 1
     if frame_rows and mirror:
         frame_rows = [r[::-1] for r in frame_rows]
     if frame_rows:
@@ -119,11 +109,20 @@ def render_screen(frame_rows, cols, rows, on="#2b2e31", bg="#c6c9cc", baseline=T
             for x, ch in enumerate(line):
                 if ch == "1":
                     py, pxx = oy + y, ox + x
-                    if by0 <= py < by1 and cx0 <= pxx < cx1:
+                    if 0 <= py < px_h and cx0 <= pxx < cx1:
                         buf[py][pxx] = 1
-    if overlay:                              # effect pixels: emote bubbles / food / poop
+    if corner:                               # sun/moon tucked into the top-right
+        cw = max(len(r) for r in corner)
+        cxr = cols - cw - 1
+        for y, line in enumerate(corner):
+            for x, ch in enumerate(line):
+                if ch == "1":
+                    py, pxx = 1 + y, cxr + x
+                    if 0 <= py < px_h and cx0 <= pxx < cx1:
+                        buf[py][pxx] = 1
+    if overlay:                              # weather: rain/snow/cloud pixels
         for ox_, oy_ in overlay:
-            if by0 <= oy_ < by1 and cx0 <= ox_ < cx1:
+            if 0 <= oy_ < px_h and cx0 <= ox_ < cx1:
                 buf[oy_][ox_] = 1
     t = Text()
     for cy in range(rows):

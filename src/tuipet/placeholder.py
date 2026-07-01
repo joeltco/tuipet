@@ -1,7 +1,7 @@
-"""Stand-in sprite for any creature whose art is unfinished. In the current data
-set this never triggers (all 1525 creatures have real, extracted art); if a future
-build ever has an unfinished cell it renders blank rather than a drawn-in glyph --
-we never invent art."""
+"""Stand-in sprite for any creature whose art is unfinished -- DVPet's own
+`copymon`. In the current data set this never triggers (all 1525 creatures have
+real, extracted art), but if a future build has an unfinished cell we show a real
+DVPet sprite, never a drawn one."""
 from __future__ import annotations
 from . import data
 

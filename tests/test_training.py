@@ -1,28 +1,28 @@
 """Training-minigame gains (Workstream A) — the last correctness piece in A.
 
 apply_training(hits, power, attribute, game):
-  - game="hp": a success (hits>=2) builds Effort (strength) +1; a fail (hits<2)
-    gives no Effort (and the pet shows its dejected pose -- no mood meter on DM20).
+  - game="hp": a success (hits>=2) builds Effort (strength) +1 and obedience +1;
+    a fail (hits<2) costs mood and obedience, no strength.
   - game in {vaccine,data,virus}: a success adds hits*TRAIN_POWER_PER_HIT to that
-    attribute's lifelong power (DP) count; a fail adds nothing.
+    attribute's lifelong power count; a fail adds nothing. Training a non-favored
+    attribute costs extra mood/spirit.
   - every drill: +1 exercise, -2 weight, -1 energy.
-
-(DM20: no obedience/discipline and no food/attribute preferences — those were DVPet.)
 
 TRAIN_POWER_PER_HIT=2 is a deliberate tuipet adaptation (DVPet adds a flat +1/drill,
 but its stages last real-DAYS; under tuipet's ~60x-compressed stage a flat +1 can
 never reach the digimon.csv power thresholds, stranding good forms). So 2 hits=+4,
 3 hits=+6. Pinned here so a future tweak is a conscious choice.
 
-Pets keep normal weight (no overweight-injury roll) so the gains under test are
-deterministic. num=-1 keeps it sprite-free. (DM20 training spends no DP/energy.)
+Pets keep high energy (no fatigue roll) and normal weight (no overweight-injury
+roll) so the gains under test are deterministic. num=-1 keeps it sprite-free.
 """
 from tuipet.pet import Pet, TRAIN_POWER_PER_HIT
 
 
 def _trainee(attribute="Vaccine", **kw):
-    # normal weight -> no overweight-injury randomness
-    defaults = dict(weight=20, vaccine=0, data_power=0, virus=0, strength=0)
+    # high energy, normal weight -> no fatigue / overweight randomness
+    defaults = dict(energy=24, max_energy=24, weight=20, vaccine=0, data_power=0,
+                    virus=0, strength=0, mood=0, obedience=0)
     defaults.update(kw)
     return Pet(num=-1, stage="Rookie", attribute=attribute, **defaults)
 
@@ -33,18 +33,19 @@ def test_constant_is_two():
 
 # ---- HP (Effort) drill -----------------------------------------------------
 
-def test_hp_success_builds_strength():
+def test_hp_success_builds_strength_and_obedience():
     p = _trainee()
     p.apply_training(2, 100, game="hp")
     assert p.strength == 1
-    assert p.trainings == 1
+    assert p.obedience == 1
 
 
-def test_hp_fail_gives_no_effort():
-    p = _trainee(strength=2)
+def test_hp_fail_penalises():
+    p = _trainee(strength=2, obedience=2, mood=50)
     p.apply_training(1, 100, game="hp")        # hits<2 -> fail
     assert p.strength == 2, "a failed drill gives no Effort"
-    assert p.anim == "sad", "a failed drill shows the dejected pose (reactive, no mood meter)"
+    assert p.obedience == 1, "fail costs obedience"
+    assert p.mood < 50, "fail costs mood"
 
 
 # ---- attribute drills ------------------------------------------------------
@@ -71,21 +72,25 @@ def test_attribute_routing():
     assert v.virus == 4 and v.vaccine == 0 and v.data_power == 0
 
 
-def test_attribute_drill_is_free():
-    # DM20 has no attribute preferences (and no mood meter), so a drill of ANY attribute
-    # just routes its gain -- no side effects.
-    p = _trainee(attribute="Vaccine")
-    p.apply_training(2, 100, attribute="Data", game="data")
+def test_disliked_attribute_costs_mood():
+    p = _trainee(attribute="Vaccine")          # favours Vaccine
+    p.apply_training(2, 100, attribute="Data", game="data")   # drills disliked Data
     assert p.data_power == 4
-    assert p.vaccine == 0 and p.virus == 0
+    assert p.mood < 0, "training a non-favoured attribute costs mood"
+
+
+def test_favoured_attribute_no_mood_cost():
+    p = _trainee(attribute="Vaccine")
+    p.apply_training(2, 100, attribute="Vaccine", game="vaccine")
+    assert p.mood == 0, "favoured-attribute training does not cost mood"
 
 
 # ---- shared per-drill costs ------------------------------------------------
 
-def test_drill_costs_weight_and_counts_exercise():
+def test_drill_costs_weight_energy_and_counts_exercise():
     p = _trainee()
+    e0 = p.energy
     p.apply_training(2, 100, attribute="Vaccine", game="vaccine")
     assert p.weight == 18          # -2
+    assert p.energy == e0 - 1
     assert p.exercise_today == 1
-    # DM20 training does NOT spend DP (only battling does)
-    assert p.dp == p.dp_max

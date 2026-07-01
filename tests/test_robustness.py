@@ -17,9 +17,15 @@ from tuipet.pet import Pet
 # ---- brand-new empty account (gen 1, no previous-generation snapshot) ------
 
 def test_empty_account_egg_flow():
-    # DM20: every version's starter is freely pickable — no unlock/progress gating.
-    assert egg.count() >= 5, "a fresh account must have its starter eggs available"
-    assert egg.hatch_name(0) is not None
+    prog = persistence.get_progress()           # nothing saved yet
+    assert prog["max_gen"] == 1
+    assert prog["last_field"] == "None"         # no prev-gen snapshot -> safe defaults
+    states = egg.egg_states(prog, set())
+    assert states                               # no crash, full map
+    sel = egg.selectable_eggs(prog, set())
+    assert sel, "a fresh account must still have its starter eggs selectable"
+    assert egg.locked_hint(prog, set()) is not None
+    assert egg.auto_owned(prog, set()) is not None
 
 
 
@@ -72,16 +78,16 @@ def test_future_timestamp_no_time_travel():
 # ---- offline catch-up at extremes ------------------------------------------
 
 def test_offline_zero_elapsed():
-    p = Pet(num=-1, stage="Rookie", hunger=4, poop=0)
+    p = Pet(num=-1, stage="Rookie", mood=100, hunger=4)
     assert persistence._offline(p, 0) == ""
-    assert p.hunger == 4 and p.poop == 0           # nothing decays at 0s
+    assert p.mood == 100 and p.hunger == 4         # nothing decays at 0s
 
 
 def test_offline_huge_elapsed_stays_bounded():
-    p = Pet(num=-1, stage="Rookie", hunger=4)
+    p = Pet(num=-1, stage="Rookie", mood=300, hunger=4)
     persistence._offline(p, 10 ** 9)               # absurd gap
+    assert -300 <= p.mood <= 300                    # mood stays clamped
     assert 0 <= p.hunger <= 4                        # hunger stays in range
-    assert 0 <= p.poop <= 4                          # mess stays capped
 
 
 # ---- egg helpers tolerate out-of-range indices -----------------------------
@@ -89,4 +95,4 @@ def test_offline_huge_elapsed_stays_bounded():
 def test_egg_helpers_out_of_range():
     assert egg.frames(10 ** 6)                       # modulo-wrapped, returns frames
     assert egg.hatch_name(10 ** 6) is not None
-    assert egg.hatch_target(10 ** 6) is not None
+    assert egg.password_egg(None) is None

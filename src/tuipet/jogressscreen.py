@@ -108,19 +108,16 @@ class JogressPanel:
         pw = max((len(r) for r in pet_rows), default=0)
         rw = max((len(r) for r in par_rows), default=0)
         t = self.fuse_step / FUSE_STEPS
-        centre = PLAY_X0 + PLAY_COLS // 2
-        if self.fuse_step >= FUSE_STEPS - 5:                  # DNA-merge flash: the two become one
-            px_h = ROWS * 2                                   # UNDER the flash -- sprites hidden, never overlap
+        pet_target = PLAY_X0 + (PLAY_COLS - pw) // 2
+        par_target = PLAY_X0 + (PLAY_COLS - rw) // 2
+        pet_x = int(PLAY_X0 + (pet_target - PLAY_X0) * t)     # parents slide to centre and merge
+        par_x = int((PLAY_R - rw) - ((PLAY_R - rw) - par_target) * t)
+        overlay = []
+        if self.fuse_step >= FUSE_STEPS - 5:                  # a flash as the DNA merges
+            px_h = ROWS * 2
             overlay = [(x, y) for y in range(px_h) for x in range(COLS) if (x + y + self.fuse_step) % 2 == 0]
-            scene = render_scene([], COLS, ROWS, LCD_ON, LCD_BG, overlay=overlay)
-        else:
-            # converge until they MEET at the centre, edge-to-edge -- never overlapping
-            pet_target = centre - pw                         # pet's right edge reaches the centre
-            par_target = centre                              # partner's left edge reaches the centre
-            pet_x = int(PLAY_X0 + (pet_target - PLAY_X0) * t)
-            par_x = int((PLAY_R - rw) - ((PLAY_R - rw) - par_target) * t)
-            scene = render_scene([(pet_rows, pet_x, False), (par_rows, par_x, True)],
-                                 COLS, ROWS, LCD_ON, LCD_BG)
+        scene = render_scene([(pet_rows, pet_x, False), (par_rows, par_x, True)],
+                             COLS, ROWS, LCD_ON, LCD_BG, overlay=overlay)
         out.append_text(scene)
         out.append("\n")
         out.append_text(menu.note("DNA... connect!"))

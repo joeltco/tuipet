@@ -53,7 +53,7 @@ class ThemePanel:
             sel = i == self.cursor
             out.append(("▸ " if sel else "  ") + f"{name:<10}", style=SEL if sel else INK)
             sw = "".join(f"[{c}]██[/]" for c in
-                         (t["on"], t["heart"], t["energy"], t["life"], t["coin"]))
+                         (t["on"], t["heart"], t["energy"], t["mood"], t["coin"]))
             out.append_text(Text.from_markup(sw + "\n"))
         out.append_text(menu.blanks(max(0, 4 - len(self.names))))
         out.append_text(menu.note("live preview as you move"))
