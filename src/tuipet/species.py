@@ -64,8 +64,8 @@ ROLES = {
     "idle":   [0, 1],      # Idling / Discovering walk
     "walk":   [0, 1],
     "sleep":  [2, 3],      # idleSleep
-    "happy":  [5, 7],      # Cheering up=5 down=7 — praise / win / evolve bounce
-    "angry":  [9, 10],     # Jeering up=9 down=10 (scold)
+    "happy":  [5, 7],      # Cheering up=5 down=7 — win / evolve / content bounce
+    "angry":  [9, 10],     # unhappy poses up=9 down=10
     "eat":    [8, 7],      # eat(): open-mouth 8 -> chew 7
     "refuse": [4],         # refuse(): frame 4 shaken by the mirror toggle
     "attack": [6, 0],      # attackDefault: strike 6 -> reset 0

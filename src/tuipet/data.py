@@ -146,7 +146,7 @@ def move_name(num, attribute):
 
 @lru_cache(maxsize=1)
 def load_backgrounds():
-    """Habitat background scenes (per time-of-day/weather frame) keyed by file name."""
+    """Background scenes (per time-of-day frame: day/night) keyed by file name."""
     path = os.path.join(_DATA, "backgrounds.json.gz")
     if not os.path.exists(path):
         return {}

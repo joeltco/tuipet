@@ -120,7 +120,7 @@ def render_screen(frame_rows, cols, rows, on="#2b2e31", bg="#c6c9cc", baseline=T
                     py, pxx = 1 + y, cxr + x
                     if 0 <= py < px_h and cx0 <= pxx < cx1:
                         buf[py][pxx] = 1
-    if overlay:                              # weather: rain/snow/cloud pixels
+    if overlay:                              # effect pixels: emote bubbles / food / poop
         for ox_, oy_ in overlay:
             if 0 <= oy_ < px_h and cx0 <= ox_ < cx1:
                 buf[oy_][ox_] = 1
