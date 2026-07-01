@@ -421,25 +421,30 @@ class Screen(Static):
                 fi = 0 if step < fb[0] else 1 if step < fb[1] else 2 if step < fb[2] else 3
                 overlay += _blit(food[min(fi, len(food) - 1)], fx_x, fy)
         elif fx["kind"] == "clean":
-            # DVPet clean(): the wash enters from the right and, once it reaches the pet,
-            # shoves the pet AND the filth left together until they slide off-screen (pet
-            # in its clean pose, frame 4); the chained cheer then brings the pet back.
+            # Cross-source consensus (real-device DigimonVPet + digilib -- 2 of 3, incl. the
+            # real hardware): the PET STAYS PUT and the poop is flushed off-screen while it
+            # watches.  DVPet's shove-the-pet-off-screen was the outlier.  The left-lane poop
+            # slides off the left edge with a wash spray riding over it; the pet holds its
+            # idle pose (pose map: clean -> idle), unmoved.
             E = data.load_effects()
             wash = E.get("wash", [None])[0]
-            wx = SCREEN_COLS - step * 3                        # wash front: enters right, exits left
-            base = (SCREEN_COLS - SPRITE_W) // 2
-            push = max(0, base + SPRITE_W - wx)                # wash shove, measured from the pet's RIGHT edge
-            xshift = -push                                     # pet slides left as the wash reaches it
-            if push > 0:
-                rows = self._pose_rows_idx(pet, 4)             # DVPet clean-done(4): pleased while washed
             pm = E.get("poop", [None])[0]
-            if pm and fx.get("poop"):
+            npoop = min(fx.get("poop", 0), POOP_MAX_PILES)
+            cols = (npoop + 1) // 2                             # left-lane poop columns (2 piles per column)
+            xshift = max(0, cols - 1) * POOP_W                  # pet stands clear to the RIGHT of the lane (as on
+            slide = step * 3                                   # the care screen) and holds still -- never shoved
+            if pm and npoop:
                 pw, ph_ = len(pm[0]), len(pm)
-                for i in range(min(fx["poop"], POOP_MAX_PILES)):   # the floor row slides off with the pet
-                    x = min(PLAY_X0 + i * pw, PLAY_R - pw) - push
-                    overlay += _blit(pm, x, px_h - 2 - ph_)
+                n = 0
+                for c in range(cols):
+                    for r in range(2):
+                        if n >= npoop:
+                            break
+                        overlay += _blit(pm, PLAY_X0 + c * pw - slide, (px_h - 2 - ph_) - r * ph_)
+                        n += 1
             if wash:
-                overlay += _blit(wash, wx, max(0, (px_h - len(wash)) // 2))
+                wslice = [row[:POOP_W] for row in wash]        # 8-wide slice -> confined to the left lane, never the pet
+                overlay += _blit(wslice, PLAY_X0 - slide, max(0, (px_h - len(wslice)) // 2))
         elif fx["kind"] == "cheer":
             # a happy bounce: the pose alternates up(+5)/down(+7) every 6 intervals.  (The
             # DVPet sparkle emote bubble on the up-beats was stripped -- DM20 emotes by pose.)
