@@ -549,7 +549,6 @@ class Stats(Static):
         if pet.is_fatigued() and word != "fatigued": deco.append(f"[{T.NEG}]+tired[/]")
         if pet.is_injured() and word != "injured": deco.append(f"[{T.NEG}]+hurt[/]")
         if pet.poop: deco.append(f"[{T.COIN}]~poop x{pet.poop}[/]")
-        if getattr(pet, "effect_id", -1) >= 0: deco.append(f"[{T.POS}]\u2726{pet.effect_name()}[/]")
         mins, secs = divmod(int(pet.age_seconds), 60)
         sky, skycol = _sky_icon(pet)
         xm = f" [b {T.ACCENT}]X[/]" if pet.x_antibody != "None" else ""
@@ -1087,7 +1086,7 @@ class TuiPetApp(App):
             poop_snd = "smallPoop" if p.poop == 1 else ("largePoop" if p.poop >= 3 else "poop")
             self.beep(poop_snd, bell=False)
         # care-need call (classic V-pet nag): alert on onset, then every ~90s
-        needs = (not p.dead and p.stage != "Egg" and not p.asleep and not p.call_paused()
+        needs = (not p.dead and p.stage != "Egg" and not p.asleep
                  and (p.hunger == 0 or p.sick or p.poop >= 3 or p.energy <= 0
                       or p.scold_flag))
         if needs and not self._needs:
