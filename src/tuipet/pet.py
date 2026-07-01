@@ -829,6 +829,12 @@ class Pet:
     def energy_pct(self):
         return max(0, self.energy) * 100 // self.max_energy if self.max_energy else 0
 
+    @property
+    def dp(self):
+        """DM20 battle power (DP): the pet's total attribute power — the same sum the
+        battle level is derived from (see _enemy_level)."""
+        return self.vaccine + self.data_power + self.virus
+
     def _poop_size(self):
         """DVPet poop(): pile size from base weight (heavier mons drop bigger)."""
         bw = self._base_weight()
