@@ -552,9 +552,6 @@ class Stats(Static):
         if getattr(pet, "effect_id", -1) >= 0: deco.append(f"[{T.POS}]\u2726{pet.effect_name()}[/]")
         mins, secs = divmod(int(pet.age_seconds), 60)
         sky, skycol = _sky_icon(pet)
-        aff = pet._affinity()
-        amark = (f"[{T.POS}]" + chr(0x2665) + "[/]" if aff > 0
-                 else (f"[{T.NEG}]" + chr(0x2716) + "[/]" if aff < 0 else "[dim]·[/dim]"))
         xm = f" [b {T.ACCENT}]X[/]" if pet.x_antibody != "None" else ""
         lifepct = max(0, int((pet.lifespan - pet.age_seconds) / max(1, pet.lifespan) * 100))
         lifecol = T.NEG if pet.is_geriatric else T.LIFE
@@ -571,7 +568,6 @@ class Stats(Static):
             f"Power   [{T.POS}]●{pet.vaccine}[/] [{T.ENERGY}]■{pet.data_power}[/] [{T.MOOD}]▲{pet.virus}[/]",
             f"Weight  {pet.weight}g   [{T.COIN}]{pet.bits}b[/]",
             f"Battle  {pet.wins}W/{pet.battles}",
-            f"@{pet.habitat_obj()['name'][:14]} {amark}",
             f"[{skycol}]{sky}[/] [dim]{mins}m{secs:02d}s[/]",
             f"Life    {bar(lifepct, 12, lifecol)}",
             _status_line(word, deco),

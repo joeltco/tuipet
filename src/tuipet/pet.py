@@ -335,9 +335,6 @@ class Pet:
     world_seconds: float = 0.0
     field: str = ""
     element: str = ""
-    habitat: int = 2                # current home (2 = Plains, a temperate default)
-    habitats: list = _dcf(default_factory=lambda: [0, 2])
-    habitat_record: dict = _dcf(default_factory=dict)   # time-in-each-habitat -> getMajorHabitat
     time_pref: dict = _dcf(default_factory=lambda: {"dawn": 0, "day": 0, "dusk": 0, "night": 0})
     x_antibody: str = "None"
     effect_id: int = -1            # active care effect (careEffect.csv id; -1 = none)
@@ -382,7 +379,6 @@ class Pet:
             egg_type = random.randrange(egg_mod.count())
         pet = cls(num=-1, name="Digitama", stage="Egg",
                   egg_type=egg_type, generation=generation)
-        pet._apply_egg_habitat()
         return pet
 
     def _hatch_into_fresh(self):
@@ -427,7 +423,6 @@ class Pet:
         r = by_num[num]
         pet = cls(num=num, name=r["name"], stage=r["stage"], attribute=r["attribute"],
                   field=r.get("field", ""), element=r.get("element", ""))
-        pet._apply_natural_habitat()
         return pet
 
     # ---- per-tick simulation -------------------------------------------------
@@ -604,7 +599,6 @@ class Pet:
                 self._die(); return
         else:
             self._starve_t = 0.0
-        self.habitat_record[self.habitat] = self.habitat_record.get(self.habitat, 0) + dt
         # lifespan: neglect burns life down faster than the natural clock
         extra = 0.0
         if self.sick:
@@ -640,10 +634,6 @@ class Pet:
     def is_daytime(self):
         return self.day_phase in ("dawn", "day")
 
-    def habitat_obj(self):
-        habs = data.load_habitats()
-        return habs.get(self.habitat) or habs.get(0) or next(iter(habs.values()))
-
     def background(self):
         """The backdrop for the current device/field + time of day (or None). It's fixed
         per device (DM20 = Plains), not a switchable habitat — see species.background_key."""
@@ -652,22 +642,6 @@ class Pet:
             return None
         idx = {"dawn": 0, "day": 1, "dusk": 2, "night": 3}.get(self.day_phase, 1)
         return frames[min(idx, len(frames) - 1)]
-
-    def _affinity(self):
-        """Net Field/Element fit with the current home: +compatible, -incompatible."""
-        h = self.habitat_obj()
-        f, e = self.field, self.element
-        compat = (f in h["compat_fields"]) + (e in h["compat_elements"])
-        incompat = (f in h["incompat_fields"]) + (e in h["incompat_elements"])
-        return compat - incompat
-
-    def major_habitat(self):
-        """DVPet getMajorHabitat: the habitat lived in the MOST (evolution gates on this,
-        not the current home). Falls back to the current habitat early on / on ties."""
-        rec = self.habitat_record
-        if not rec:
-            return self.habitat
-        return max(rec, key=lambda hid: (rec[hid], hid == self.habitat))
 
     def _track_time_pref(self, dt):
         # the pet warms to the times of day it spends happy in, and sours on the
@@ -704,30 +678,6 @@ class Pet:
         if _XA_ORDER[state] > _XA_ORDER.get(self.x_antibody, 0):
             self.x_antibody = state
         self.x_count = X_COUNT_MAX if self.x_antibody == "Temporary" else 0.0
-
-    def buy_habitat(self, hid):
-        habs = data.load_habitats()
-        h = habs.get(hid)
-        if not h:
-            return "?"
-        if hid in self.habitats:
-            return f"You already own {h['name']}."
-        if self.bits < h["price"]:
-            return "Not enough bits."
-        self.bits -= h["price"]
-        self.habitats = sorted(set(self.habitats) | {hid})
-        self.habitat = hid                 # buying a new home moves you in (moving is free anyway)
-        return f"Bought {h['name']} — moved in!"
-
-    def move_to(self, hid):
-        habs = data.load_habitats()
-        h = habs.get(hid)
-        if not h:
-            return "?"
-        if hid not in self.habitats:
-            return "You don't own that habitat."
-        self.habitat = hid
-        return f"Moved to {h['name']}."
 
     def _tick_effect(self, dt):
         """Advance the active care effect (Futon): rate gains; end on sleep change / expiry."""
@@ -785,26 +735,6 @@ class Pet:
         target = evolution.select(self)
         if target is not None:
             self.evolve_to(target)
-
-    def _apply_egg_habitat(self):
-        """Show the destined habitat as soon as the egg is chosen (DVPet)."""
-        for t in egg_mod.hatch_targets(self.egg_type):
-            h = data.natural_habitat(t)
-            if h >= 0:
-                self.habitat = h
-                if h not in self.habitats:
-                    self.habitats = sorted(set(self.habitats) | {h})
-                return
-
-    def _apply_natural_habitat(self):
-        """Move to this species' natural habitat (digimon.csv Habitat) so each
-        Digimon shows its own background. -1 = no preference -> keep current."""
-        hr = data.natural_habitat(self.num)
-        if hr is not None and hr >= 0:
-            self.habitat = hr
-            if hr not in self.habitats:
-                self.habitats = sorted(set(self.habitats) | {hr})
-
 
     # ---- per-species physiology (DVPet calcNeedDecay coefficients) -------
     def _phys(self):
@@ -910,7 +840,6 @@ class Pet:
         self.stage, self.attribute = r["stage"], r["attribute"]
         self.field = r.get("field", self.field)
         self.element = r.get("element", self.element)
-        self._apply_natural_habitat()
         _req = data.load_requirements().get(num, {})
         self.max_energy = _req.get("max_energy", self.max_energy)
         self._sleep_energy_gain = _req.get("sleep_energy_gain", 3)
@@ -1317,7 +1246,6 @@ class Pet:
         self.sick = True
         self.sick_count += 1
         self.sick_length = random.randint(MIN_SICK_LENGTH, MAX_SICK_LENGTH) * SICK_LAPSE_MIN
-        self.sick_length = max(SICK_LAPSE_MIN, self.sick_length - self._affinity() * SICK_LAPSE_MIN)
         self._set_mood(self.mood - SICK_MOOD_DEC)
         self._set_enthusiasm(self.enthusiasm + SICK_ENTH_CHANGE)
 
@@ -1338,7 +1266,6 @@ class Pet:
         lapses; the cumulative injury count (used by evolution) also ticks up."""
         self.injuries += 1
         rolled = random.randint(MIN_INJ_LENGTH, MAX_INJ_LENGTH) * INJ_LAPSE_MIN
-        rolled = max(INJ_LAPSE_MIN, rolled - self._affinity() * INJ_LAPSE_MIN)   # habitat-compat length mod
         self.inj_length = max(self.inj_length, rolled)
         self._set_mood(self.mood - INJ_MOOD_DEC)
         self._set_enthusiasm(self.enthusiasm + INJ_ENTH_CHANGE)
@@ -1387,7 +1314,7 @@ class Pet:
         mood/energy/spirit hit (worse if it was already fatigued), then it must rest the
         fatigue length off (FatigueMin..FatigueMax game-min)."""
         already = self.is_fatigued()
-        self.fatigue_length = max(FATIGUE_MIN, random.randint(FATIGUE_MIN, FATIGUE_MAX) - self._affinity())   # habitat-compat length mod
+        self.fatigue_length = max(FATIGUE_MIN, random.randint(FATIGUE_MIN, FATIGUE_MAX))
         self._set_energy(self.energy - FATIGUE_ENERGY_DEC)
         self._set_enthusiasm(self.enthusiasm + FATIGUE_ENTH_CHANGE)
         self._set_mood(self.mood - FATIGUE_MOOD_DEC)
