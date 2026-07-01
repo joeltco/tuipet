@@ -4,7 +4,7 @@ from tuipet import anim, data
 
 
 def test_happy_role_is_the_dvpet_cheer_pair():
-    # DVPet Cheering: cheer-up 5 -> cheer-down 7 (the canonical praise/win/evolve pair).
+    # DVPet Cheering: cheer-up 5 -> cheer-down 7 (the canonical win/evolve pair).
     assert data.ROLES["happy"] == [5, 7]
 
 
@@ -24,8 +24,8 @@ def test_sick_shuffle_is_net_zero():
 
 
 class _StubPet:
-    def __init__(self, energy=10, fatigued=False, mood=0, enthusiasm=0):
-        self.energy, self._fat, self.mood, self.enthusiasm = energy, fatigued, mood, enthusiasm
+    def __init__(self, energy=10, fatigued=False, mood=0):
+        self.energy, self._fat, self.mood = energy, fatigued, mood
 
     def is_fatigued(self):
         return self._fat
@@ -35,7 +35,7 @@ def test_mood_pose_reads_state():
     assert anim.mood_pose(_StubPet(energy=0)) in (10, 9, 2)          # spent -> weary
     assert anim.mood_pose(_StubPet(fatigued=True)) in (10, 9, 2)     # tired -> weary
     assert anim.mood_pose(_StubPet(mood=-5)) in (4, 6)               # unhappy -> sour
-    assert anim.mood_pose(_StubPet(mood=5, enthusiasm=0)) == 5       # content & spirited -> bright
+    assert anim.mood_pose(_StubPet(mood=5)) == 5                     # content -> bright
     assert anim.mood_pose(_StubPet(mood=0)) is None                  # neutral -> ordinary walk pose
 
 
@@ -45,16 +45,13 @@ def test_mood_pose_indices_are_valid_sprite_frames():
         assert 0 <= p <= 10
 
 
-def test_play_renders_its_own_hop():
-    # DVPet Bounce/Jump toy interact is its own pose pair (1 -> 5); the jump is also a
-    # real on-screen lift via the yshift hop (PLAY_HOP/PLAY_HOP_H).
-    from tuipet import app
+def test_play_pose_pair_is_the_happy_idle_hop():
+    # the "play" pose pair (1 -> 5) drives the mood-idle happy hop (pet._special_idle).
     assert data.ROLES["play"] == [1, 5]
-    assert app.PLAY_HOP > 0 and app.PLAY_HOP_H > 0
 
 
 def test_render_yshift_lifts_the_sprite():
-    """yshift raises the sprite (the play hop); enough yshift lifts it off the top."""
+    """yshift raises the sprite; enough yshift lifts it clean off the top."""
     from tuipet.render import render_screen
     sprite = ["1111", "1111"]
     empty = render_screen([], 8, 6)

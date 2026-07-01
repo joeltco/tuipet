@@ -9,10 +9,9 @@ frame. Two correctness concerns:
 
 The state machine is tested directly here (methods bound onto a plain object, no
 Textual mount). The per-action gating is verified by inspection: action_feed /
-_clean / _praise / _scold / _play / _heal each early-return on
-`self.screen_w.fx is not None` (and this test guards that the guard is present in
-source). Pinning the engine means a refactor can't silently break completion or
-the clean->cheer chain.
+action_clean / action_heal each early-return on `self.screen_w.fx is not None`
+(and this test guards that the guard is present in source). Pinning the engine
+means a refactor can't silently break completion or the clean->cheer chain.
 """
 import os
 import re

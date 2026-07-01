@@ -158,8 +158,6 @@ def _blit(bm, ox, oy):
 
 
 COND_W = COND_H = 7                                # state.png cell size (DVPet 7x7 cells)
-PLAY_HOP = 12                                      # DVPet jumping(): ticks per up+down hop
-PLAY_HOP_H = 6                                     # apex height in px (LCD is 24px tall)
 COND_PITCH = COND_H + 1
 # Status sprites disabled for now (Joel): the post-cure medicine badge and the
 # misbehave/discipline "light bulb". Cosmetic-only; remove from this set to re-enable.
@@ -354,23 +352,18 @@ class Screen(Static):
             self._idle_expr = None                               # any non-idle state clears the held expression
 
     # ---- care-action animations (DVPet SpriteAnim eat/clean/cheer) -----------
-    def start_fx(self, kind, icon=None, poop=0, old_num=None, pet=None):
-        steps = {"eat": 35, "cheer": 31, "jeer": 31, "clean": 22, "spit": 11, "evolve": 18, "dying": 18, "play": 37}.get(kind, 12)
+    def start_fx(self, kind, icon=None, poop=0, old_num=None):
+        steps = {"eat": 35, "cheer": 31, "clean": 22, "spit": 11, "evolve": 18, "dying": 18}.get(kind, 12)
         self.fx = {"kind": kind, "step": 0, "steps": steps, "icon": icon, "poop": poop, "old_num": old_num}
         if kind == "eat":
-            # DVPet eat(): each chew beat is scaled by pow(N, mod) -- a glutton wolfs
-            # food down (mod 0.9, ends ~beat 23), a picky eater dawdles (mod 1.1, ~48);
-            # food descent (beats 0/2/4/6) is NOT scaled.  Disliked food -> +9 grimace.
-            glut = getattr(pet, "glutton", 0) if pet else 0
-            mod = 0.9 if glut > 0 else (1.1 if glut < 0 else 1.0)
-            bite = 9 if (pet is not None and getattr(pet, "_last_meal_disliked", False)) else 7
-            beats = [int(b ** mod) for b in (10, 14, 18, 22, 26, 30)]
-            self.fx["chew"] = {b: (8 if i % 2 == 0 else bite) for i, b in enumerate(beats)}
+            # DVPet eat(): 24px food descends (beats 0/2/4/6), then a chew triad alternates
+            # open-mouth(+8)/chew(+7) at beats 10/14/18/22/26/30 while the food is eaten; ends ~34.
+            beats = (10, 14, 18, 22, 26, 30)
+            self.fx["chew"] = {b: (8 if i % 2 == 0 else 7) for i, b in enumerate(beats)}
             fb = (beats[1], beats[3], beats[5])
             self.fx["food_beats"] = fb
             # DVPet eat(): _eat on the first two bites, _lastBite on the third (the chew beats).
             self.fx["bite_snds"] = {fb[0]: "eat", fb[1]: "eat", fb[2]: "lastBite"}
-            self.fx["steps"] = int(34 ** mod) + 1
 
     def advance_fx(self):
         if not self.fx:
@@ -485,25 +478,6 @@ class Screen(Static):
                     # DVPet cheer(): the pet stays CENTRED and the emote rides its right
                     # edge (adjustEmotionLabel) -- not pinned to the far corner.
                     overlay += _blit(hf, (SCREEN_COLS - SPRITE_W) // 2 + SPRITE_W, 1)
-        elif fx["kind"] == "play":
-            # DVPet jumping() (SpriteAnim 17308): the pet bounces with joy -- hops UP on
-            # the excited pose (5) and lands on the neutral pose (1), a happy chirp at the
-            # top of each hop.  Distinct from cheer (which bounces in place on 5/7 with an
-            # emote bubble) -- here the body actually leaves the ground.
-            ph = step % PLAY_HOP
-            up = ph < PLAY_HOP // 2
-            rows = self._pose_rows_idx(pet, 5 if up else 1)   # DVPet excited(5) on the hop, idle-B(1) on land
-            yshift = int(PLAY_HOP_H * (1 - abs(ph / (PLAY_HOP / 2) - 1)))   # triangle: 0 -> apex -> 0
-        elif fx["kind"] == "jeer":
-            # DVPet jeer(): pose alternates down(+10)/up(+9) every 6 intervals with an
-            # "unhappy" emote bubble; ends ~beat 30 (the scold reaction).
-            down = (step // 6) % 2 == 0
-            rows = self._pose_rows_idx(pet, 10 if down else 9)   # DVPet jeer down(10) <-> up(9): scold reaction
-            un = data.load_effects().get("unhappy")
-            if un:
-                uf = un[(step // 6) % len(un)]
-                # DVPet jeer(): centred pet, emote at its right edge (not the corner).
-                overlay += _blit(uf, (SCREEN_COLS - SPRITE_W) // 2 + SPRITE_W, 1)
         elif fx["kind"] == "spit":
             # DVPet refuse(): the pet stays CENTRED and shakes its head; the rejected
             # food drops away from its mouth (on its left) rather than off to one side.
@@ -1045,8 +1019,6 @@ class TuiPetApp(App):
                     if snd:                    # _eat on bites 1-2, _lastBite on the final chew
                         self.beep(snd, bell=False)
                     self._status_eat()
-                elif sc.fx["kind"] == "play" and sc.fx["step"] % PLAY_HOP == 1:
-                    self.beep("happy", bell=False)   # DVPet jumping(): a chirp at each hop's launch
             elif self._dying_fx:               # dying beat finished -> memorial
                 self._dying_fx = False
                 self._open_mode(deathscreen.DeathPanel(self.pet), self._after_death)
@@ -1178,7 +1150,7 @@ class TuiPetApp(App):
             return
         msg = self.pet.feed()
         if self.pet.anim == "eat":
-            self.screen_w.start_fx("eat", "f:0", pet=self.pet)   # SFX now fires per-bite in the fx loop
+            self.screen_w.start_fx("eat", "f:0")   # SFX now fires per-bite in the fx loop
         elif "too full" in msg:
             self.screen_w.start_fx("spit", "f:0")
             self.beep("refuse", bell=False)
