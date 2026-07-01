@@ -93,8 +93,8 @@ def render_screen(frame_rows, cols, rows, on="#2b2e31", bg="#c6c9cc", baseline=T
 
     band: optional (y0, y1). The authentic DM20 dot-matrix is only 16 dots tall, so the
     LCD canvas can be taller (background in the margins) while nothing the game draws --
-    sprite, corner, or overlay pixels -- is allowed outside this vertical band. Defaults
-    to the full screen height (no vertical clip).
+    sprite, overlay, or back_overlay pixels -- is allowed outside this vertical band.
+    Defaults to the full screen height (no vertical clip).
     """
     from rich.text import Text
     px_h = rows * 2
