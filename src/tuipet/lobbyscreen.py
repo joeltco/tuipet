@@ -219,6 +219,7 @@ class LobbyPanel:
     # ---- session orchestration ------------------------------------------
     def _enter_session(self, pid, pname, kind, host):
         self.partner = (pid, pname)
+        self.sfx = "compatible"        # DVPet's pairing handshake beep (battle or jogress)
         if kind == "jogress":
             card = self._card()
             self.client.relay(pid, {"kind": "jogress", "attr": card["attr"],

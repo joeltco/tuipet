@@ -46,6 +46,7 @@ MAP = {
     "lastBite": "lastBite", "lose": "lose", "poop": "poop", "refuse": "refuse",
     "select": "select", "smallPoop": "smallPoop", "strongAttack": "strongAttack",
     "strongHit": "strongHit", "wash": "wash", "win": "win",
+    "compatible": "compatible",   # DVPet pairing-handshake beep (battle/jogress match)
     "cancel": "error", "confirm": "click", "menu": "select", "scroll": "select",
     "death": "lose",
 }
