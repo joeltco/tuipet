@@ -123,47 +123,46 @@ class BattlePanel:
         fr = data.load_sprites()[1][num]["frames"]
         return (fr[pose] if pose < len(fr) else None) or fr[0]
 
-    def _both(self, ppose, fpose, plunge=0, flunge=0):
-        """Both combatants on one screen: enemy LEFT (faces right), pet RIGHT (faces left).
-        `*lunge` leans a mon toward the centre (its attack beat)."""
-        prows = self._rows(self.pet.num, ppose)
-        frows = self._rows(self.battle.enemy["num"], fpose)
-        lo, hi = _cbounds(prows)
-        px = ((PLAY_R - 2) - hi) - plunge                    # pet at the right, leans left
-        fsrc = [r[::-1] for r in frows]
-        flo, fhi = _cbounds(fsrc)
-        fx = (PLAY_X0 + 1 - flo) + flunge                    # enemy at the left, leans right
-        placements = [(frows, fx, True), (prows, px, False)]
+    def _one(self, view, pose, dx=0):
+        """ONE Digimon on screen at a time, centred in the play window -- NEVER two sprites
+        sharing the LCD (two 16px mons don't fit a 32px window without overlapping).  The
+        pet faces left, the enemy faces right; `dx` nudges it (a small attack lunge)."""
+        num = self.pet.num if view == "pet" else self.battle.enemy["num"]
+        rows = self._rows(num, pose)
+        mirror = (view == "foe")
+        src = [r[::-1] for r in rows] if mirror else rows
+        lo, hi = _cbounds(src)
+        w = hi - lo + 1
+        x = PLAY_X0 + (PLAY_COLS - w) // 2 - lo + dx         # centre the mon's ink
         bgimg = self.pet.background()
         on = SIL_NIGHT if self.pet.day_phase == "night" else (SIL_DAY if bgimg else LCD_ON)
-        return render_scene(placements, COLS, ROWS, on, LCD_BG, bgimg=bgimg, clip=(PLAY_X0, PLAY_R))
+        return render_scene([(rows, x, mirror)], COLS, ROWS, on, LCD_BG, bgimg=bgimg,
+                            clip=(PLAY_X0, PLAY_R))
 
     def text(self):
         b = self.battle
-        if self.phase == "faceoff":
-            self.hud_note = f"{self.pet.name[:8]} vs {b.enemy['name'][:8]}"
+        if self.phase == "faceoff":                          # the wild foe appears
+            self.hud_note = f"vs {b.enemy['name'][:12]}"
             bob = IDLE_B if (self.frame_i // 3) % 2 else IDLE
-            return self._both(bob, bob)
-        if self.phase == "minigame":
+            return self._one("foe", bob)
+        if self.phase == "minigame":                         # your Digimon readies up
             self.hud_note = "Time your strike!"
-            return self._both(IDLE, IDLE)
+            return self._one("pet", IDLE)
         if self.phase == "clash":
-            # both trade attack lunges: on the first half of each exchange the pet strikes,
-            # the second half the foe strikes (poses + a lean toward centre)
-            k = (self._t - FACEOFF_T) // CLASH_BEAT if self._t > FACEOFF_T else -1
-            pet_strike = k >= 0 and k % 2 == 0
-            foe_strike = k >= 0 and k % 2 == 1
-            self.hud_note = "Clash!"
-            return self._both(ATTACK if pet_strike else IDLE,
-                              ATTACK if foe_strike else IDLE,
-                              plunge=LUNGE if pet_strike else 0,
-                              flunge=LUNGE if foe_strike else 0)
-        # result: winner cheers (up/down bounce), loser collapses
+            # ONE mon at a time: the striker is shown alone in its attack pose, lunging
+            # forward; then the other. No projectiles, no overlap.
+            k = (self._t - FACEOFF_T) // CLASH_BEAT if self._t > FACEOFF_T else 0
+            if k % 2 == 0:
+                self.hud_note = f"{self.pet.name[:10]} strikes!"
+                return self._one("pet", ATTACK, dx=-LUNGE)   # pet lunges left
+            self.hud_note = f"{b.enemy['name'][:10]} strikes!"
+            return self._one("foe", ATTACK, dx=LUNGE)        # foe lunges right
+        # result: the winner cheers alone (up/down bounce), or you collapse
         self.hud_note = ""
-        cheer = CHEER_UP if (self.frame_i // 4) % 2 else CHEER_DN
         if self.won:
-            return self._both(cheer, COLLAPSE)
-        return self._both(COLLAPSE, cheer)
+            cheer = CHEER_UP if (self.frame_i // 4) % 2 else CHEER_DN
+            return self._one("pet", cheer)
+        return self._one("pet", COLLAPSE)
 
     def minigame_cells(self, width=14):
         """(marker_index, zone_lo, zone_hi) for the status-HUD attack-order track."""
