@@ -146,6 +146,34 @@ flash = crop(hf[3:17, 9:25])
 if flash is not None:
     effects["flash"] = [to_rows(flash)]
 
+# evol: the evolution strobe mask (SpriteAnim evolveAnim alternates roomEffect
+# "lightsOff" <-> "evol").  evol.png is a 50% dither -- a 1px checkerboard at the
+# 3x art scale; /3 recovers the native pattern, which the evolve fx TILES over
+# the room so it flickers half-dark between the full-black beats.
+_ev = native_mask("evol.png")
+effects["evol"] = [to_rows(_ev)]
+
+# dnaWash: the full-screen DNA-absorb wave that sweeps DOWN over the pet during
+# dnaCharge (SpriteAnim 12860: roomEffect "dnaWash" 105x120, moveDown 9/tick).
+# /3 block-mean gives a ~35x40 overlay for the 40x24 LCD sweep.
+_dw = crop(native_mask("dnaWash.png"))
+if _dw is not None:
+    effects["dna_wash"] = [to_rows(_dw)]
+
+# field badges: fields.png is the vertical badge sheet indexed by SpriteAnim
+# checkField -- 0 VirusBuster, 1 MetalEmpire, 2 DragonsRoar, 3 JungleTrooper,
+# 4 DeepSaver, 5 NightmareSoldier, 6 WindGuardian, 7 NatureSpirit, 8 DarkArea,
+# 9 None (== data.DNA_FIELDS order).  Used by the dnaCharge drop-in animation.
+_fb = split_vertical(native_mask("fields.png"))
+_FIELD_ORDER = ("VirusBuster", "MetalEmpire", "DragonsRoar", "JungleTrooper",
+                "DeepSaver", "NightmareSoldier", "WindGuardian", "NatureSpirit",
+                "DarkArea", "None")
+for _i, _fr in enumerate(_fb):
+    if _i < len(_FIELD_ORDER):
+        _c = crop(_fr)
+        if _c is not None:
+            effects["field_" + _FIELD_ORDER[_i]] = [to_rows(_c)]
+
 # ---- preview ----
 for name, frames in effects.items():
     print(f"\n===== {name}  ({len(frames)} frame(s)) =====")
