@@ -40,6 +40,7 @@ from . import update as update_check
 from . import cloudsync
 from .pet import Pet, POOP_MAX_PILES
 from .render import render_screen
+from . import grid
 import os
 
 from . import theme
@@ -212,7 +213,7 @@ def _effect_overlay(pet, frame_i, cols, px_h, tick=0, pet_right=None):
         pw, ph_ = len(pm[0]), len(pm)
         for i in range(min(pet.poop, POOP_MAX_PILES)):                  # DVPet drawFilthLevel: 3 columns x 2 rows,
             col, up = i // 2, i % 2                         # column-major (bottom pile, then one stacked
-            x = 2 + col * (pw + POOP_PAD)                   # directly above it), each column steps right
+            x = grid.X0 + col * (pw + POOP_PAD)             # directly above it), each column steps right (grid left edge)
             y = (px_h - 2 - ph_) - up * ph_
             pts += _blit(pm, x, y)
     if pet.num == -1:
@@ -223,12 +224,12 @@ def _effect_overlay(pet, frame_i, cols, px_h, tick=0, pet_right=None):
     if asleep and E.get("zzz"):
         z = E["zzz"][(frame_i // 2) % len(E["zzz"])]
         zw, zz_h = len(z[0]), len(z)
-        pts += _blit(z, cols - zw - 1, 0)
+        pts += _blit(z, grid.X1 - zw, 0)                      # top-right, inside the grid's right edge
     # --- condition column: fixed right edge, every active condition stacked + blinking ---
     # DVPet stateNumTic blink: 7 ticks awake / 10 asleep, faster (7) when unwell.
     unwell = pet.sick or pet.is_injured() or pet.is_fatigued()
     sf = (tick // (7 if unwell else (10 if asleep else 7))) % 2
-    col_x = cols - COND_W - 1                              # 1px off the right bezel (DVPet leaves ~2px)
+    col_x = grid.X1 - COND_W                               # condition column hugs the grid's right edge (x29)
     col_y0 = (zz_h + 1) if (asleep and zz_h) else 0        # even y -> crisp half-block alignment; below Zzz when asleep
     column = (("st_sick", pet.sick), ("st_medicine", pet.has_medicine()),
               ("st_injury", pet.is_injured()), ("st_bandage", pet.has_bandage()),
@@ -264,9 +265,9 @@ def _effect_overlay(pet, frame_i, cols, px_h, tick=0, pet_right=None):
         if bubble:
             bm = bubble[(tick // 5) % len(bubble)]        # if both present, take turns (rare)
             w = len(bm[0])
-            pr = pet_right if pet_right is not None else cols - 1
-            right_limit = (col_x - 1 - w) if col_active else (cols - w - 1)
-            x = max(0, min(pr + 1, right_limit))
+            pr = pet_right if pet_right is not None else grid.X1 - 1
+            right_limit = (col_x - 1 - w) if col_active else (grid.X1 - w)
+            x = max(grid.X0, min(pr + 1, right_limit))
             pts += _blit(bm, x, 1)
     return pts
 
@@ -356,10 +357,10 @@ class Screen(Static):
         # shows the huddle pose above, not a full ice block over the pet.
         if pet.poop:                       # keep the pet clear of the filth row in EVERY state
             pcols = (min(pet.poop, POOP_MAX_PILES) + 1) // 2          # (sleep/sick bypass the roamer bound and would
-            poop_edge = 2 + (pcols - 1) * (POOP_W + POOP_PAD) + POOP_W  # x just past the rightmost pile
+            poop_edge = grid.X0 + (pcols - 1) * (POOP_W + POOP_PAD) + POOP_W  # x just past the rightmost pile
             base = (SCREEN_COLS - SPRITE_W) // 2
             lo = poop_edge - base                         # min shift to clear the piles (REAL edge, not padded)
-            cap = (SCREEN_COLS - SPRITE_W) - base         # don't push the pet off the right edge
+            cap = (grid.X1 - SPRITE_W) - base             # stay inside the grid's right edge
             xshift = min(max(xshift, lo), max(cap, 0))    # clear poop on the left; emote follows the pet
         # DVPet adjustEmotionLabel: emote/'!' track the pet's final x, so rebuild the overlay now
         overlay = (_weather_overlay(pet.weather, wf, SCREEN_COLS, SCREEN_ROWS * 2)
@@ -380,10 +381,11 @@ class Screen(Static):
         self.frame_i += 1
         if pet is not None and pet.anim in ("idle", "walk") and pet.num != -1 and not pet.sick:
             poop_cols = (min(pet.poop, POOP_MAX_PILES) + 1) // 2          # 3x2 grid -> ceil(piles/2) columns wide
-            poop_right = (2 + poop_cols * (POOP_W + POOP_PAD) + 1) if pet.poop else 0
+            poop_right = (grid.X0 + poop_cols * (POOP_W + POOP_PAD) + 1) if pet.poop else grid.X0
             cond = (pet.is_injured() or pet.is_fatigued() or pet.has_vitamin()
                     or pet.has_medicine() or pet.has_bandage())
-            right_bound = (SCREEN_COLS - COND_W - 1 - SPRITE_W) if cond else None   # clear the right-edge column
+            # keep the pet inside the grid: left of the condition column when it's up, else the grid's right edge
+            right_bound = (grid.X1 - COND_W - SPRITE_W) if cond else (grid.X1 - SPRITE_W)
             prev_pose = self.roamer.pose
             self.roamer.step(left_bound=poop_right, right_bound=right_bound)
             if self.roamer.pose != prev_pose:                    # a fresh step landed (DVPet stepFrame):

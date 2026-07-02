@@ -5,6 +5,7 @@ from . import tournament
 from .tournament import Tournament
 from .battlescreen import BattlePanel
 from .render import render_scene
+from . import grid
 
 from .theme import LCD_ON, LCD_BG, INK, INK_B, DIM, SIL_DAY, SIL_NIGHT  # noqa: F401  (palette names bound for theme.apply propagation)
 from . import menu
@@ -106,7 +107,7 @@ class TournamentPanel:
         if t.over:
             out = menu.bar(t.name, "RESULT")
             pose = "happy" if t.champion else "tired"
-            scene = render_scene([(self._frames(self.pet.num, pose), (COLS - 16) // 2, False)],
+            scene = render_scene([grid.center(self._frames(self.pet.num, pose), ph=ROWS * 2)],
                                  COLS, ROWS, on, LCD_BG, bgimg=bgimg)
             out.append_text(scene)
             if t.champion:
@@ -119,8 +120,7 @@ class TournamentPanel:
         opp = t.current_opponent()
         pet_rows = self._frames(self.pet.num)
         opp_rows = self._frames(opp["num"])
-        ow = max(len(r) for r in opp_rows)
-        scene = render_scene([(pet_rows, 2, True), (opp_rows, COLS - ow - 2, False)],
+        scene = render_scene(grid.faceoff(pet_rows, opp_rows, left_mirror=True, right_mirror=False, ph=ROWS * 2),
                              COLS, ROWS, on, LCD_BG, bgimg=bgimg)
         out = menu.bar(t.name, "%s %d/3" % (t.round_name, t.round + 1))
         out.append_text(scene)

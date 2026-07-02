@@ -4,6 +4,7 @@ from . import data
 from .adventure import Adventure
 from .battlescreen import BattlePanel
 from .render import render_scene
+from . import grid
 
 from .theme import LCD_ON, LCD_BG, INK, INK_B, DIM
 from . import menu
@@ -72,9 +73,10 @@ class AdventurePanel:
         if self.sub is not None:
             return self.sub.text()
         a = self.adv
-        pet_rows = self._frames()
-        ew = max(len(r) for r in pet_rows)
-        x = 1 + int((COLS - ew - 2) * (a.pct / 100))
+        pet_rows = grid.prep(self._frames(), ph=ROWS * 2)     # fit to the strip, grounded
+        ew = grid.width(pet_rows)
+        lo, hi = grid.roam_bounds(ew)                         # walk within the 32 grid (x4..36)
+        x = lo + int((hi - lo) * (a.pct / 100))
         scene = render_scene([(pet_rows, x, True)], COLS, ROWS, LCD_ON, LCD_BG)
         fill = round(a.pct / 100 * BAR_W)
         lives = "♥" * a.lives + "·" * (3 - a.lives)   # dot = lost life (heart glyph reads hollow)
