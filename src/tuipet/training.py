@@ -477,14 +477,17 @@ class TrainingPanel:
         return self._render_play(rec)
 
     def _render_done(self, rec):
-        """After the volley: show the PET (the mon) with the result -- NOT the frozen minigame.
-        SPACE returns to the main view."""
+        """DVPet aftermath (aftermathDefault / aftermathGreen): the pet stands in its NORMAL pose
+        beside the BROKEN target on success, or in the HURT pose (sprite +10) beside the intact
+        target on a fail -- understated, NOT a cheer.  The happy/sad reaction plays back on the
+        main view (apply_training _set_anim).  SPACE returns to the main view."""
         on, bgimg = self._scene_palette()
-        pose = 5 if self.success else 10                    # DVPet 11-frame: cheer (win) / slumped (fail)
-        pf = self._frame(rec, pose)
-        scene = render_scene([grid.center(pf)], COLS, ARENA_ROWS, on, LCD_BG, bgimg=bgimg)
+        pf = self._frame(rec, IDLE if self.success else COLLAPSE)   # normal / hurt(+10), like DVPet
+        tgt = self._target_sprite(self.success)                     # broken target on success (bag drills)
+        placements = grid.faceoff(tgt, pf, left_mirror=False, right_mirror=False) if tgt else [grid.center(pf)]
+        scene = render_scene(placements, COLS, ARENA_ROWS, on, LCD_BG, bgimg=bgimg)
         scene.append("\n")
-        scene.append_text(menu.note(self.result or ("Nice!" if self.success else "Keep at it!")))
+        scene.append_text(menu.note(self.result or ""))
         scene.append_text(menu.footer("SPACE  finish"))
         return scene
 
