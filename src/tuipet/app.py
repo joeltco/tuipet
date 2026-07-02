@@ -82,10 +82,15 @@ GRAVESTONE = _FX.get("grave", [None])[0]      # real DVPet death.png
 SUN = _FX.get("sun", [None])[0]               # real DVPet noon.png
 MOON = _FX.get("moon", [None])[0]             # real DVPet night.png
 
-# DVPet drawFilthLevel lays piles in FIXED 30x27 slots (pad 6) regardless of the
-# pile's size sprite -- at /3 native that's a 10x9 cell with a 2px gap.
-POOP_W = 10
-POOP_PAD = 2
+# The filth block is ONE CREATURE CELL: 8x8 slots in a 2x2 grid, so the max 4
+# piles span exactly 16x16 -- the same footprint as a 16x16 creature, filling
+# the band (y6..22) with no clamp.  (DVPet's raw 30x27+pad slots would scale to
+# a 22x18 block -- wider than a cell, taller than the band, and with 3-4 piles
+# it left no room for the pet to stand clear inside the 32 grid.  Joel's rule:
+# 4 poops == 16x16, and the mon NEVER walks over them.)  The extracted pile
+# sizes 1-3 (7x7 / 8x7 / 8x8 -- all _poop_size produces) fit the slot natively.
+POOP_W = 8
+POOP_PAD = 0
 _FROZEN_FR = (_FX.get("frozen") or [None])[0]
 
 WEATHER_GLYPH = {
@@ -213,11 +218,15 @@ def _filth_pts(pet, tick, count=None, sizes=None, push=0, px_h=None):
         if not frames:
             continue
         pm = frames[fi % len(frames)]
+        if len(pm[0]) > POOP_W:                     # safety: only the unused size-4 art exceeds the slot
+            pm = grid.fit_w(pm, POOP_W)
+        if len(pm) > POOP_W:
+            pm = grid.fit_band(pm, (POOP_W + 2) * 2)
         ph_ = len(pm)
         col, up = i // 2, i % 2
         x = grid.X0 + col * (POOP_W + POOP_PAD) - push
-        if up:      # top slot sits on the bottom SLOT (9px cell), clamped into the band
-            y = max(px_h - 18, px_h - 2 - 9 - ph_)
+        if up:      # top slot sits on the 8-tall bottom slot -> the 2x2 block tops out at the band (y6)
+            y = px_h - 2 - POOP_W - ph_
         else:       # bottom slot grounds 2px above the border
             y = px_h - 2 - ph_
         pts += _blit(pm, x, y)
@@ -422,7 +431,7 @@ class Screen(Static):
             self.frame_i = -1
         self.frame_i += 1
         if pet is not None and pet.anim in ("idle", "walk") and pet.num != -1 and not pet.sick:
-            poop_right = (_filth_right(pet.poop) + POOP_PAD + 1) if pet.poop else grid.X0
+            poop_right = _filth_right(pet.poop) if pet.poop else grid.X0
             cond = (pet.is_injured() or pet.is_fatigued() or pet.has_vitamin()
                     or pet.has_medicine() or pet.has_bandage())
             # keep the pet inside the grid: left of the condition column when it's up, else the grid's right edge
@@ -583,7 +592,8 @@ class Screen(Static):
             # DVPet eat(): 24px food descends in 4 stages (beats 0/2/4/6) toward the
             # mouth, then a chew triad alternates open-mouth(+8)/chew(+7) at beats
             # 10/14/18/22/26/30 while the food is consumed frame-by-frame; ends ~34.
-            xshift -= 1                                        # DVPet char x29 of 104 (~28%), plus any filth clear
+            if xshift == 0:
+                xshift = -1                                    # no filth: DVPet char x29 of 104 (~28%)
             chew = fx.get("chew") or {10: 8, 14: 7, 18: 8, 22: 7, 26: 8, 30: 7}
             pose_i = 0
             for b in sorted(chew):
@@ -593,6 +603,9 @@ class Screen(Static):
             food = self._food_frames(fx.get("icon") or "f:0")
             if food:
                 fw = len(food[0][0]) if (food[0] and food[0][0]) else 8
+                if xshift > 0:                                 # filth on screen: DVPet pads BOTH the food and
+                    xshift += fw                               # the char right of it (foodLabel x31+pad), so the
+                #                                                food descends beside the piles, never onto them
                 # DVPet: the food's RIGHT edge meets the pet's LEFT edge (foodLabel x31+24 == char x55),
                 # so it descends right into the mouth -- abut it instead of stranding it on the far left.
                 fx_x = max(0, (SCREEN_COLS - SPRITE_W) // 2 + xshift - fw)
