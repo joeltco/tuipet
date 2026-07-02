@@ -58,7 +58,7 @@ _NAMES = ("LCD_ON", "LCD_BG", "MID", "INK", "INK_B", "DIM", "SEL", "ACCENT",
           "POS", "NEG", "BORDER", "SIL_DAY", "SIL_NIGHT", "PHASE_PALETTE",
           "HEART", "ENERGY", "MOOD", "LIFE", "COIN")
 _SCREEN_MODULES = ("app", "menu", "battlescreen", "training", "adventurescreen",
-                   "tournamentscreen", "shopscreen", "habitatscreen",
+                   "tournamentscreen", "shopscreen", "habitatscreen", "feedscreen",
                    "jogressscreen", "digicorescreen", "eggselectscreen",
                    "lobbyscreen", "titlescreen", "deathscreen", "themescreen")
 
