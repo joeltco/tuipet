@@ -113,14 +113,35 @@ def _blit(bm, ox, oy):
 
 # The REAL DVPet HP training dummy -- the bird "battle bag" (battleBags.png top row, the clean
 # frames DVPet's getBattleBagSprite maps as Vaccine=circle / Virus=triangle / Data=square).
-# The target attribute shows as a cutout symbol on the bird's belly; the player reads it and
-# picks the matching attribute.  1-bit, cropped-to-content, downscaled to fit the LCD.  From source art.
 with open(os.path.join(os.path.dirname(__file__), "data", "hp_dummies.json")) as _f:
     _HP_DUMMIES = json.load(_f)         # {'vaccine','virus','data'} -> 1-bit bird w/ belly symbol
 
+# HP target symbol: the bird's belly cutout is illegible at 16px (all three birds look the
+# same), so the round's target attribute is shown as a CLEAR icon -- the real DVPet attribute
+# symbol (atk_vaccine=circle / atk_data=square / atk_virus=triangle, 7x7) upscaled 2x to 14x14
+# so its shape reads instantly and matches the ● ■ ▲ picker glyphs in the gauge.
+_HP_ICON_KEYS = ("atk_vaccine", "atk_data", "atk_virus")   # index == hp_target (0/1/2)
+HP_SYMS = ("●", "■", "▲")                                   # picker glyphs mirror the icon shapes
+
+
+def _upscale2(sprite):
+    """Nearest-neighbour 2x (each pixel -> 2x2): 7x7 real icon -> crisp 14x14."""
+    out = []
+    for row in sprite:
+        doubled = "".join(c * 2 for c in row)
+        out.append(doubled)
+        out.append(doubled)
+    return out
+
+
+def _hp_target_icon(target):
+    """The round's target as a clear 14x14 attribute symbol (real DVPet art, 2x)."""
+    fr = data.load_effects().get(_HP_ICON_KEYS[target], [None])[0]
+    return _upscale2(fr) if fr else fr
+
 
 GAMES = [
-    ("hp",      "HP Drill", "Effort",  "guess the bag — best of 3"),
+    ("hp",      "HP Drill", "Effort",  "match the symbol — best of 3"),
     ("vaccine", "Vaccine",  "Vaccine", "mash the bag — fast!"),
     ("data",    "Data",     "Data",    "block the attack — high or low"),
     ("virus",   "Virus",    "Virus",   f"stop the bar over {VIRUS_BAR_MIN}"),
@@ -222,7 +243,7 @@ class TrainingPanel:
         self.hp_pick = 0
         self.round_len = self._hp_round_len()
         self.round_t = self.round_len
-        self.flash = f"round {self.rep + 1}/{HP_ROUNDS} — match the symbol"
+        self.flash = f"round {self.rep + 1}/{HP_ROUNDS} — pick the matching symbol"
 
     def _hp_resolve(self, correct):
         if correct:
@@ -582,18 +603,14 @@ class TrainingPanel:
                     mx, end_x = DATA_MARGIN + cw - 3, sx - ow + 3  # muzzle -> pressed against the shield
                     prog = (DATA_FLY - self.fly_t) / (DATA_FLY - 1)
                     overlay += _blit(orb, int(mx + (end_x - mx) * prog), lane_y)
-        else:                                               # hp: a CLEAN tuipet face-off.
-            # DVPet stacks 3 attribute icons vertically beside the pet; that doesn't survive the
-            # drop to tuipet's 24px LCD (three 6px icons + a cursor box render as one black blob,
-            # and the filled square icon reads as a wall).  So keep the ESSENCE, not the pixels:
-            # the bird "battle bag" shows the round's target as a cutout symbol on its belly and
-            # stands LEFT; the pet stands RIGHT; both GROUNDED on the floor like every other drill
-            # (via render_scene placements), OVER THE HABITAT BACKGROUND like every other drill
-            # (no flat-LCD override).  The player reads the belly and picks the matching attribute
-            # from the crisp glyph strip in the gauge (● Vaccine / ■ Data / ▲ Virus).
-            dummy = _HP_DUMMIES[("vaccine", "data", "virus")[self.hp_target]]
+        else:                                               # hp: read the target, pick the match.
+            # DVPet: bird bag shows the target attribute + you pick the matching one of three
+            # (best of 3).  tuipet's 16px bird belly is illegible (all three birds look identical),
+            # so the target is shown as a CLEAR attribute icon LEFT (circle/square/triangle) whose
+            # shape matches the ● ■ ▲ picker in the gauge; the pet stands RIGHT.
+            tgt_icon = _hp_target_icon(self.hp_target)
             pf = self._frame(rec, self._pose_now(0))
-            placements = [_cell(dummy, 0),                              # bird bag LEFT cell, grounded
+            placements = [_cell(tgt_icon, 0),                          # TARGET symbol LEFT cell, grounded
                           _cell(pf, 1)]                                 # pet RIGHT cell, grounded
         scene = render_scene(placements, COLS, ARENA_ROWS, on, LCD_BG, overlay=overlay, bgimg=bgimg)
         scene.append("\n")
@@ -606,12 +623,17 @@ class TrainingPanel:
         gk = self.gkey
         t = Text()
         if gk == "hp":
-            t.append("match: ", style=INK)                     # crisp glyph picker (● Vaccine ■ Data ▲ Virus)
-            for i, sym in enumerate(("●", "■", "▲")):
+            # show the TARGET explicitly, then the picker with the cursor -> foolproof match
+            t.append("match ", style=INK)
+            t.append(HP_SYMS[self.hp_target], style=INK_B)     # the target symbol (== the icon on the left)
+            t.append("   you ", style=DIM)
+            for i, sym in enumerate(HP_SYMS):
                 sel = i == self.hp_pick
-                t.append(f"[{sym}]" if sel else f" {sym} ", style=INK_B if sel else DIM)
-            tb = int((max(self.round_t, 0) / max(self.round_len, 1)) * 9)
-            t.append("  " + "▓" * tb + "░" * (9 - tb) + "\n", style=f"{ACCENT} on {LCD_BG}")
+                matched = sel and i == self.hp_target
+                t.append(f"[{sym}]" if sel else f" {sym} ",
+                         style=(ACCENT if matched else INK_B) if sel else DIM)
+            tb = int((max(self.round_t, 0) / max(self.round_len, 1)) * 6)
+            t.append("  " + "▓" * tb + "░" * (6 - tb) + "\n", style=f"{ACCENT} on {LCD_BG}")
         elif gk == "vaccine":
             hit = self._strike_t > 0
             t.append("HIT!! " if hit else "hit!  ", style=INK_B if hit else INK)
@@ -630,7 +652,7 @@ class TrainingPanel:
         return t
 
     def _hint(self):
-        return {"hp": "↑↓ pick   1/2/3 or SPACE to lock",
+        return {"hp": "↑↓ move to the symbol on the left   SPACE lock",
                 "vaccine": "SPACE hit the orb!   ESC out",
                 "data": "SPACE toggle the shield to match the cannon",
                 "virus": "SPACE stop the marker in the zone"}[self.gkey]
