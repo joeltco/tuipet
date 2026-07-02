@@ -405,7 +405,7 @@ class Screen(Static):
 
     # ---- care-action animations (DVPet SpriteAnim eat/clean/cheer) -----------
     def start_fx(self, kind, icon=None, poop=0, old_num=None, pet=None, starving=False):
-        steps = {"eat": 35, "cheer": 31, "jeer": 31, "clean": 22, "spit": 25, "evolve": 37, "dying": 18, "dna_charge": 44, "play": 37}.get(kind, 12)
+        steps = {"eat": 35, "cheer": 31, "jeer": 31, "clean": 22, "spit": 25, "evolve": 37, "dying": 18, "dna_charge": 44, "play": 37, "heal": 24}.get(kind, 12)
         self.fx = {"kind": kind, "step": 0, "steps": steps, "icon": icon, "poop": poop, "old_num": old_num}
         if kind == "eat":
             # DVPet eat(): each chew beat is scaled by pow(N, mod) -- a starving pet or
@@ -432,8 +432,20 @@ class Screen(Static):
                 self.fx["steps"] = int(34 ** mod) + 1
             self.fx["food_beats"] = fb
         elif kind == "spit":
-            # DVPet refuse(): _refuse fires on EVERY head-shake flip (0/6/12/18).
-            self.fx["snds"] = {0: "refuse", 6: "refuse", 12: "refuse", 18: "refuse"}
+            # DVPet refuse(): _refuse fires on EVERY head-shake flip (t0/6/12/18).
+            # (t0 sounds key as 1 -- the drain runs after the first advance.)
+            self.fx["snds"] = {1: "refuse", 6: "refuse", 12: "refuse", 18: "refuse"}
+        elif kind == "cheer":
+            # DVPet cheer(): its sound (praise/_happy) plays at the anim's t0 --
+            # keyed here so chained cheers (wash/evolve/heal tails) sound too.
+            self.fx["snds"] = {1: "happy"}
+        elif kind == "jeer":
+            # DVPet jeer(): the sound fires at the first UP beat (t6).
+            self.fx["snds"] = {6: "angry"}
+        elif kind == "heal":
+            # DVPet bandage(): _useBandage on each application, _lastBandage on the
+            # final one (no ripped bandage cues -- click/confirm are the substitutes).
+            self.fx["snds"] = {8: "click", 13: "click", 18: "confirm"}
         elif kind == "evolve":
             # DVPet evolveAnim(): _evolve sounds at the first burst beat (t5).
             self.fx["snds"] = {5: "evolve"}
@@ -456,6 +468,9 @@ class Screen(Static):
             self.start_fx("cheer")
         elif kind == "evolve":
             # DVPet evolFinish(true): every evolution ends in cheer(true, _happy).
+            self.start_fx("cheer")
+        elif kind == "heal":
+            # DVPet bandage() beat 23 -> Cheering: treatment ends in the praise bounce.
             self.start_fx("cheer")
         return self.fx is not None
 
@@ -662,6 +677,20 @@ class Screen(Static):
             if wash and step >= 21:
                 wy = -len(wash) + (step - 21) * 4              # 9px/tick of 120 -> ~4px/tick of 48
                 overlay += _blit(wash, max(0, (SCREEN_COLS - len(wash[0])) // 2), wy)
+        elif fx["kind"] == "heal":
+            # DVPet bandage(): the item drops in on the pet's LEFT (x31 vs char x55,
+            # like the food) and steps through its 4-frame application strip at beats
+            # 0/8/13/18 while the pet holds the HURT pose (+9, being treated); ends 23
+            # and chains into cheer(true).
+            rows = self._pose_rows_idx(pet, 9)
+            item = data.load_icons().get(fx.get("icon") or "i:80")
+            if item:
+                fi = 0 if step < 8 else 1 if step < 13 else 2 if step < 18 else 3
+                bm = item[min(fi, len(item) - 1)]
+                bw = len(bm[0])
+                ix = max(0, (SCREEN_COLS - SPRITE_W) // 2 - bw)
+                iy = 0 if step < 4 else 4                      # setLocY 53 -> 64 at beat 4
+                overlay += _blit(bm, ix, iy)
         elif fx["kind"] == "dying":
             # DVPet dying() (SpriteAnim 13179): the collapsed pet (pose 10, mirrored)
             # sways +/-1 as the 'dying' emote (dying/dying2) swaps at its right edge,
@@ -1485,6 +1514,14 @@ class TuiPetApp(App):
     def _after_train(self, msg):
         if msg:
             self.flash(msg)
+        # DVPet onExerciseFinish: success -> setPraise(true) -> the cheer(true) fx;
+        # anything less -> State.Jeering -> jeer(true, _angry).  apply_training left
+        # the verdict in pet.anim (happy/sad; the sim is paused while the drill is
+        # open, so it's still fresh here).
+        if self.pet.anim == "happy":
+            self.screen_w.start_fx("cheer")
+        elif self.pet.anim == "sad":
+            self.screen_w.start_fx("jeer")
         self.repaint()
 
     def action_battle(self):
@@ -1506,8 +1543,7 @@ class TuiPetApp(App):
             return
         msg = self.pet.praise()
         if self.pet.anim == "happy":                # the praise lands -> DVPet cheer()
-            self.screen_w.start_fx("cheer")
-            self.beep("happy", bell=False)
+            self.screen_w.start_fx("cheer")         # (its _happy sound is fx-scripted)
         self._do(msg)
 
     def action_scold(self):
@@ -1515,8 +1551,7 @@ class TuiPetApp(App):
             return
         msg = self.pet.scold()
         if self.pet.anim == "angry":                # the scold lands -> DVPet jeer()
-            self.screen_w.start_fx("jeer")
-            self.beep("angry", bell=False)
+            self.screen_w.start_fx("jeer")          # (its _angry sound is fx-scripted)
         self._do(msg)
 
     def action_tournament(self):
@@ -1622,8 +1657,9 @@ class TuiPetApp(App):
             return
         msg = self.pet.heal()
         if self.pet.anim == "heal":
-            self.screen_w.start_fx("cheer")
-            self.beep("happy", bell=False)
+            # DVPet bandage(): the treatment anim (item strip on the hurt pose),
+            # which chains into cheer(true, _happy) at its beat 23.
+            self.screen_w.start_fx("heal", icon="i:80")
         self._do(msg)
     def action_sleep(self):                                     # the "s" key is the LIGHTS toggle
         self.beep("confirm", bell=False)                        # a button blip on the lights on/off press
