@@ -1561,7 +1561,7 @@ class TuiPetApp(App):
         if not result:
             self.repaint(); return
         outcome, food, msg = result
-        icon = food.get("key") or ("f:0" if food["name"] == "Meat" else "f:5")
+        icon = food.get("key", "f:0")               # the food's REAL icon rides the eat fx
         starving = self.pet.hunger == 0         # DVPet eat(): hunger==0 -> wolfed down (mod 0.9)
         if outcome == "fed" and self.pet.anim == "eat":
             self.screen_w.start_fx("eat", icon, pet=self.pet, starving=starving)   # SFX per-bite in the fx loop

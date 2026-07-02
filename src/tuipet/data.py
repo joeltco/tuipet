@@ -133,7 +133,10 @@ def load_foods():
     with open(path) as fh:
         for row in csv.DictReader(fh):
             try:
+                fid = int(row["FoodIdentificationNum"])
                 foods.append({
+                    "id": fid,
+                    "key": f"f:{fid}",
                     "name": row["Name"],
                     "hunger": int(row["Hunger"] or 0),
                     "weight": int(row["Weight"] or 0),
@@ -146,6 +149,13 @@ def load_foods():
                     "protein": int(row.get("Proteins") or 0),
                     "vitamin_n": int(row.get("Vitamins") or 0),
                     "mineral": int(row.get("Minerals") or 0),
+                    # inventory model (DVPet Consumable): StartingQuantity seeds what
+                    # you own; CanDec=false = never depletes (the staples: Meat/Fish/
+                    # Fruit/Vegetable); ShowInInventory=false = not on the feed page
+                    # (Med/Vitamin ride the heal flows instead)
+                    "start": int(row.get("StartingQuantity") or 0),
+                    "can_dec": (row.get("CanDec") or "").strip().lower() == "true",
+                    "show": (row.get("ShowInInventory") or "").strip().upper() == "TRUE",
                 })
             except (KeyError, ValueError):
                 continue

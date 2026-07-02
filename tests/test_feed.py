@@ -1,12 +1,14 @@
-"""Feeding system: the DM20 Meat/Protein split + the DVPet applyFood modifier.
+"""Feeding system: DVPet's Food_Inventory model, driven entirely by foods.csv.
 
-Guards the two behaviours a prior build got wrong:
-  - `f` used to blind-feed Meat with only hunger/weight/mood applied;
-  - a strength-food couldn't be fed to a full pet (it should, since it never fills).
+- The staples (Meat/Fish/Fruit/Vegetable) come from StartingQuantity=99 +
+  CanDec=false in the DATA -- infinite, always on the feed page.
+- ShowInInventory=false foods (Med/Vitamin) never appear (they're heal flows).
+- Bought foods (CanDec=true) are consumed per bite.
+- feed() applies the full applyFood effect set with the fullness modifier.
 """
 from tuipet.pet import Pet, FULL_HUNGER, OVEREAT_LIMIT
-from tuipet import feedscreen
-from tuipet.feedscreen import FeedPanel, _staples
+from tuipet import data
+from tuipet.feedscreen import FeedPanel, feedable, food_qty
 
 
 def _pet(**kw):
@@ -16,53 +18,65 @@ def _pet(**kw):
     return p
 
 
-def test_meat_fills_hunger_protein_builds_strength():
-    meat, prot = _staples()
-    assert meat["name"] == "Meat" and int(meat["hunger"]) > 0
-    assert prot["name"] == "Protein" and int(prot.get("hunger", 0)) == 0 and int(prot["strength"]) > 0
+def _food(name):
+    return next(f for f in data.load_foods() if f["name"] == name)
+
+
+def test_staples_come_from_the_data():
+    p = _pet()
+    names = [f["name"] for f in feedable(p)]
+    # foods.csv: StartingQuantity 99 + CanDec false + ShowInInventory TRUE
+    assert names[:4] == ["Meat", "Fish", "Fruit", "Vegetable"]
+    # Med/Vitamin are ShowInInventory FALSE -> never on the feed page
+    assert "Med" not in names and "Vitamin" not in names
+
+
+def test_staples_never_deplete_bought_food_does():
+    p = _pet(hunger=0)
+    meat = _food("Meat")
+    q0 = food_qty(p, meat)
+    panel = FeedPanel(p)
+    panel.key("enter")                       # eat the Meat
+    assert food_qty(p, meat) == q0           # CanDec=false: pinned at StartingQuantity
+    # a bought food is consumed per bite
+    cake = _food("Cake")
+    p2 = _pet(hunger=0)
+    p2.inventory[cake["key"]] = 2
+    panel2 = FeedPanel(p2)
+    i = [f["name"] for f in panel2.options].index("Cake")
+    for _ in range(i):
+        panel2.key("down")
+    panel2.key("enter")
+    assert p2.inventory.get(cake["key"], 0) == 1
 
 
 def test_meat_refuses_a_full_stomach():
     p = _pet(hunger=FULL_HUNGER, glutton=0, anim="")
-    meat, _ = _staples()
-    msg = p.feed(meat)
+    msg = p.feed(_food("Meat"))
     assert p.anim == "refuse" and "full" in msg
-    assert p.hunger == FULL_HUNGER          # no change
-
-
-def test_protein_feeds_a_full_pet_and_builds_strength():
-    p = _pet(hunger=FULL_HUNGER, strength=1, anim="")
-    _, prot = _staples()
-    s0 = p.strength
-    msg = p.feed(prot)
-    assert p.anim == "eat"                  # a strength-food never refuses on fullness
-    assert p.strength == s0 + 1
-    assert p.hunger == FULL_HUNGER          # it doesn't fill the stomach
+    assert p.hunger == FULL_HUNGER
 
 
 def test_full_food_effect_set_applies():
-    # Meat carries mood +5; feeding a hungry pet applies hunger AND mood (not just hunger)
+    # Meat carries mood +5; feeding applies hunger AND mood (not just hunger)
     p = _pet(hunger=1)
     m0 = p.mood
-    meat, _ = _staples()
-    p.feed(meat)
+    p.feed(_food("Meat"))
     assert p.hunger == 2
-    assert p.mood > m0                      # intrinsic food mood applied (was dropped before)
+    assert p.mood > m0
 
 
 def test_glutton_eats_one_past_full():
     p = _pet(hunger=FULL_HUNGER, glutton=1)
-    meat, _ = _staples()
-    p.feed(meat)
-    assert p.hunger == OVEREAT_LIMIT         # a glutton fills one heart past full
+    p.feed(_food("Meat"))
+    assert p.hunger == OVEREAT_LIMIT
 
 
 def test_fullness_modifier_diminishes_a_near_full_meal():
-    # a 2-hunger food into a near-full glutton gains LESS than into an empty stomach
     big = {"name": "Steak", "hunger": 2, "category": "Meat"}
     empty = _pet(hunger=0)
     empty.feed(big)
-    near = _pet(hunger=FULL_HUNGER, glutton=1)     # over-full: modifier < 1
+    near = _pet(hunger=FULL_HUNGER, glutton=1)
     g0 = near.hunger
     near.feed(big)
     assert (empty.hunger - 0) >= (near.hunger - g0)
@@ -71,16 +85,8 @@ def test_fullness_modifier_diminishes_a_near_full_meal():
 def test_feed_panel_feeds_and_closes():
     p = _pet(hunger=1)
     panel = FeedPanel(p)
-    r = panel.key("enter")                  # feed the highlighted staple (Meat)
+    r = panel.key("enter")
     assert r is not None and r[0] == "done"
     outcome, food, msg = r[1]
     assert outcome == "fed" and food["name"] == "Meat"
     assert p.anim == "eat"
-
-
-def test_feed_panel_lists_owned_bag_foods():
-    p = _pet(hunger=1)
-    # a bag food (if any resolve to a real food) appears after the two staples
-    panel = FeedPanel(p)
-    names = [o["name"] for o in panel.options]
-    assert names[:2] == ["Meat", "Protein"]
