@@ -635,17 +635,16 @@ class TrainingPanel:
         gk = self.gkey
         t = Text()
         if gk == "hp":
-            # target glyph (the dummy's belly mark is illegible at this scale), the
-            # ● ■ ▲ picker with the selection bracketed, round count + timer bar
+            # target glyph (the dummy's belly mark is illegible at this scale), a
+            # compact CAROUSEL picker -- one shape, ◂ ▸ scroll arrows either side
+            # (the eggselect browse language) -- round count + timer bar
             t.append("match ", style=INK)
             t.append(HP_SYMS[self.hp_target], style=INK_B)
-            t.append("  ", style=INK)
-            for i, sym in enumerate(HP_SYMS):
-                if i == self.hp_pick:
-                    t.append("▸" + sym + "◂", style=f"{ACCENT} on {LCD_BG}")
-                else:
-                    t.append(" " + sym + " ", style=DIM)
-            t.append(f"  {self.rep + 1}/{HP_ROUNDS} ", style=INK)
+            t.append("    ", style=INK)
+            t.append("◂ ", style=f"{ACCENT} on {LCD_BG}")
+            t.append(HP_SYMS[self.hp_pick], style=INK_B)
+            t.append(" ▸", style=f"{ACCENT} on {LCD_BG}")
+            t.append(f"    {self.rep + 1}/{HP_ROUNDS} ", style=INK)
             tb = int((max(self.round_t, 0) / max(self.round_len, 1)) * 8)
             t.append("▓" * tb + "░" * (8 - tb) + "\n", style=f"{ACCENT} on {LCD_BG}")
         elif gk == "vaccine":
