@@ -405,7 +405,7 @@ class Screen(Static):
 
     # ---- care-action animations (DVPet SpriteAnim eat/clean/cheer) -----------
     def start_fx(self, kind, icon=None, poop=0, old_num=None, pet=None, starving=False):
-        steps = {"eat": 35, "cheer": 31, "jeer": 31, "clean": 22, "spit": 25, "evolve": 37, "dying": 18, "dna_charge": 44, "play": 37, "heal": 24}.get(kind, 12)
+        steps = {"eat": 35, "cheer": 31, "jeer": 31, "clean": 22, "spit": 25, "evolve": 37, "dying": 18, "dna_charge": 44, "play": 37, "heal": 24, "poop": 25}.get(kind, 12)
         self.fx = {"kind": kind, "step": 0, "steps": steps, "icon": icon, "poop": poop, "old_num": old_num}
         if kind == "eat":
             # DVPet eat(): each chew beat is scaled by pow(N, mod) -- a starving pet or
@@ -505,13 +505,13 @@ class Screen(Static):
         f = max(1, 24 // px)
         return [downsample(fr, f) for fr in raw]           # 24px source -> ~px tall on the LCD
 
-    def _fx_filth(self, pet, tick):
+    def _fx_filth(self, pet, tick, count=None):
         """DVPet checkFilth: the care anims (eat/cheer/jeer/refuse) keep the filth
         piles on screen and stand the pet clear of them (adjustCharacterForFilth).
         Returns (overlay_pts, clear_xshift)."""
         E = data.load_effects()
         poopfr = E.get("poop") or []
-        n = min(getattr(pet, "poop", 0) or 0, POOP_MAX_PILES)
+        n = min((getattr(pet, "poop", 0) or 0) if count is None else count, POOP_MAX_PILES)
         if not n or not poopfr:
             return [], 0
         px_h = SCREEN_ROWS * 2
@@ -546,6 +546,17 @@ class Screen(Static):
             filth_pts, filth_clear = self._fx_filth(pet, self.frame_i)
             overlay += filth_pts
             xshift = filth_clear
+        elif fx["kind"] == "poop":
+            # DVPet poop(): squat (+4, MIRRORED) clear of the old piles, net-zero
+            # sway every 3 ticks; the new pile lands at t18 with the size-keyed
+            # sound (fx snds) and the relieved pose (+5); ends 24.
+            new = fx["step"] >= 18
+            filth_pts, filth_clear = self._fx_filth(pet, self.frame_i,
+                                                    count=fx.get("poop", 0) + (1 if new else 0))
+            overlay += filth_pts
+            sway = -1 if (3 <= step < 18 and (step // 3) % 2 == 1) else 0
+            xshift = filth_clear + sway
+            rows = self._pose_rows_idx(pet, 5 if new else 4)
         if fx["kind"] == "eat":
             # DVPet eat(): 24px food descends in 4 stages (beats 0/2/4/6) toward the
             # mouth, then a chew triad alternates open-mouth(+8)/chew(+7) at beats
@@ -700,7 +711,7 @@ class Screen(Static):
             if dye:
                 df = dye[(step // 10) % len(dye)]
                 overlay += _blit(df, (SCREEN_COLS - SPRITE_W) // 2 + SPRITE_W + xshift, 1)
-        mirror = (fx["kind"] == "dying"
+        mirror = (fx["kind"] in ("dying", "poop")
                   or (fx["kind"] == "spit" and (step // 6) % 2 == 0))   # refuse(): head-shake flips
         self.update(render_screen(rows, SCREEN_COLS, SCREEN_ROWS, on, bg,
                                   xshift=xshift, yshift=yshift, overlay=overlay, bgimg=bgimg,
@@ -1377,10 +1388,16 @@ class TuiPetApp(App):
             else:                              # any other fx just finished -> restore the HUD
                 self.repaint()
         else:
-            if self.pet.hatching and self.pet.advance_hatch(0.1):
-                p = self.pet
-                self.beep("hatch")
-                self.flash(f"[b]{p.name}[/] hatched!")
+            if self.pet.hatching:
+                ht0 = getattr(self.pet, "_hatch_t", 3.0)
+                done = self.pet.advance_hatch(0.1)
+                # DVPet hatch(): _hatch sounds at t0.6 of the rock (interval 6), not at
+                # the reveal -- fire as the timer crosses that beat (3.0s total - 0.6).
+                if ht0 > 2.4 >= getattr(self.pet, "_hatch_t", 0.0):
+                    self.beep("hatch")
+                if done:
+                    p = self.pet
+                    self.flash(f"[b]{p.name}[/] hatched!")
             sc.advance(self.pet)
             sc.paint(self.pet)
 
@@ -1410,7 +1427,12 @@ class TuiPetApp(App):
             # DVPet playPoopSound is size-keyed: small / normal / large.  Map the new
             # pile count -> first drop is small, a big backup (>=3) is large.
             poop_snd = "smallPoop" if p.poop == 1 else ("largePoop" if p.poop >= 3 else "poop")
-            self.beep(poop_snd, bell=False)
+            if self.screen_w.fx is None:
+                # DVPet poop(): squat/sway then the pile lands at t18 with its sound
+                self.screen_w.start_fx("poop", poop=poop0)
+                self.screen_w.fx["snds"] = {18: poop_snd}
+            else:
+                self.beep(poop_snd, bell=False)
         # care-need call (classic V-pet nag): alert on onset, then every ~90s
         needs = (not p.dead and p.stage != "Egg" and not p.asleep and not p.call_paused()
                  and (p.hunger == 0 or p.sick or p.poop >= 3 or p.energy <= 0
