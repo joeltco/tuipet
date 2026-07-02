@@ -1,6 +1,6 @@
 """Memorial screen shown when the pet passes away."""
 from __future__ import annotations
-from . import data, menu
+from . import data, menu, grid
 from .render import render_screen
 from .theme import LCD_ON, LCD_BG, DIM
 
@@ -36,7 +36,7 @@ class DeathPanel:
         p = self.pet
         out = menu.bar("MEMORIAL", "")
         if GRAVE:
-            out.append_text(render_screen(GRAVE, COLS, ROWS, LCD_ON, LCD_BG))
+            out.append_text(render_screen(grid.prep(GRAVE, ph=ROWS * 2), COLS, ROWS, LCD_ON, LCD_BG))
             out.append("\n")
         out.append_text(menu.note(f"R.I.P.  {p.name}"))
         out.append(f"gen {p.generation}  ·  lived {_age_str(p.age_seconds)}  ·  {p.stage}\n", style=DIM)

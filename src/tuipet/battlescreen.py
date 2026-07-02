@@ -19,6 +19,7 @@ from .battle import Battle
 from .render import render_scene
 from .theme import LCD_ON, LCD_BG, SIL_DAY, SIL_NIGHT
 from . import menu
+from . import grid
 
 COLS, ROWS = 40, 12
 PXH = ROWS * 2                                   # 24 px tall
@@ -69,6 +70,13 @@ def _cbounds(rows):
     w = max(len(r) for r in rows)
     cols = [x for x in range(w) if any(x < len(r) and r[x] == "1" for r in rows)]
     return (min(cols), max(cols)) if cols else (0, w - 1)
+
+
+def _clamp_grid(x, lo, hi):
+    """Clamp x so the sprite's lit content [x+lo, x+hi] stays inside the grid [X0, X1).
+    Steady poses hug the grid wall; a rear-back that would push past it compresses
+    against the wall instead of escaping (the lunge-forward beat still reads)."""
+    return max(grid.X0 - lo, min(x, (grid.X1 - 1) - hi))
 
 
 class BattlePanel:
@@ -227,10 +235,10 @@ class BattlePanel:
         if view == "foe":
             src = [r[::-1] for r in rows]                    # mirror=True -> faces right
             lo, hi = _cbounds(src)
-            x = (1 - lo) + xshift
+            x = _clamp_grid((grid.X0 - lo) + xshift, lo, hi) # content LEFT edge hugs the grid (x4), clamped in-grid
             return [(rows, x, True)], x + hi + 1             # mouth = right edge (toward pet)
         lo, hi = _cbounds(rows)                              # mirror=False -> faces left
-        x = ((COLS - 2) - hi) + xshift
+        x = _clamp_grid(((grid.X1 - 1) - hi) + xshift, lo, hi)  # content RIGHT edge hugs the grid (x35), clamped
         return [(rows, x, False)], x + lo                    # mouth = left edge (toward foe)
 
     def _pow(self, side, attr):
@@ -254,12 +262,12 @@ class BattlePanel:
             return []
         w = len(orb[0])
         left = (atk == "pet")                                # player fires left; enemy fires right
-        if m == "fire_out":                                  # orb leaves the mouth, off the near edge
-            x0, x1 = (mouth - w, -w) if left else (mouth, COLS)
-        else:                                                # fire_in / dodge: arrives, STOPS at the defender's edge
-            x0, x1 = (COLS, mouth) if left else (-w, mouth - w)
-            if m == "dodge":                                 # whiffs past to the far edge
-                x1 = -w if left else COLS
+        if m == "fire_out":                                  # orb leaves the mouth, off the near GRID edge
+            x0, x1 = (mouth - w, grid.X0 - w) if left else (mouth, grid.X1)
+        else:                                                # fire_in / dodge: arrives from the far GRID edge, STOPS at the defender's edge
+            x0, x1 = (grid.X1, mouth) if left else (grid.X0 - w, mouth - w)
+            if m == "dodge":                                 # whiffs past to the far grid edge
+                x1 = grid.X0 - w if left else grid.X1
         # the orb art faces LEFT natively; flip it to point in its travel direction
         # (player/foe orbs are directional, so a rightward orb must be mirrored)
         src = orb if left else [r[::-1] for r in orb]

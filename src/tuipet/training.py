@@ -26,6 +26,7 @@ import os
 import random
 from rich.text import Text
 from . import data
+from . import grid
 from .render import render_scene
 from .theme import LCD_ON, LCD_BG, INK, INK_B, DIM, MID, ACCENT, SIL_DAY, SIL_NIGHT  # noqa: F401  (palette names bound for theme.apply propagation)
 from . import menu
@@ -35,7 +36,7 @@ from . import menu
 # pose ids + beat timings + column-bounds helper so the two stay in lockstep.
 from .battlescreen import (IDLE, TURN, ATTACK, CHARGE, COLLAPSE,  # noqa: F401
                            WINDUP_T, FIRE_T, EXPLODE_FRAMES, EXPLODE_HOLD, FLINCH_T,
-                           _cbounds)
+                           _cbounds, _clamp_grid)
 
 # the full-screen spiky hit burst (attackHit/attackHitFlash), shared with the battle
 # screen -- strobes outline<->filled to flash the LCD on impact (DVPet hitAnim).
@@ -73,14 +74,13 @@ ARENA_ROWS = 12               # the app's ONE locked LCD area (== app SCREEN_ROW
                               # DVPet's native LCD is 105x60px; tuipet shows it at 40x24 everywhere.
 PXH = ARENA_ROWS * 2          # 24px tall
 
-# The ONE creature grid every drill sits on: two 16x16 cells side by side (== 32x16), centred in
-# the 40-wide LCD, resting on the floor 2px above the bottom border -- identical to the battle
-# screen's band (battlescreen.BAND_TOP/BAND_BOT).  Opponent = left cell, pet = right cell.
-CELL = 16
-GRID_W = CELL * 2                 # 32
-GRID_X0 = (COLS - GRID_W) // 2    # 4: left margin (32 grid centred in 40)
-BAND_TOP = PXH - 18               # 6: top of the 16px band
-BASE_Y = PXH - 2                  # 22: the floor -- every sprite baselines here, 2px above bottom
+# The ONE creature grid every drill sits on -- shared with every other screen via grid.py
+# (two 16x16 cells side by side == 32x16, centred in the 40-wide LCD, floor 2px above bottom).
+CELL = grid.CELL                  # 16
+GRID_W = grid.W                   # 32
+GRID_X0 = grid.X0                 # 4: left margin (32 grid centred in 40)
+BAND_TOP = grid.TOP               # 6: top of the 16px band
+BASE_Y = grid.FLOOR               # 22: the floor -- every sprite baselines here, 2px above bottom
 
 # strike sequence: a battle-style volley (windup -> fire_out -> fire_in -> hit -> break),
 # beats imported from the battle screen so they march at the same pace.  The orb rides the
@@ -89,50 +89,20 @@ STRIKE_BAND_TOP = BAND_TOP
 STRIKE_BAND_BOT = BASE_Y
 
 
+# drill sprite helpers -- thin aliases over the shared grid module (single source of truth)
 def _fit_cell(sprite):
-    """Cap a sprite to the 16px band height so it fits the grid like the 16x16 creatures
-    (box-downscale if taller).  Props like the punching bag come in a hair taller than a
-    creature; this keeps every drill sprite in the same 16-tall grid."""
-    h = len(sprite)
-    if h <= CELL:
-        return sprite
-    w = max(len(r) for r in sprite)
-    rows = [r.ljust(w, "0") for r in sprite]
-    sc = h / CELL
-    out = []
-    for y in range(CELL):
-        y0, y1 = int(y * sc), max(int(y * sc) + 1, int((y + 1) * sc))
-        line = []
-        for x in range(w):
-            filled = sum(rows[yy][x] == "1" for yy in range(y0, y1))
-            line.append("1" if filled * 2 >= (y1 - y0) else "0")
-        out.append("".join(line))
-    return out
+    """Cap a sprite to the 16px band height so it fits the grid like the 16x16 creatures."""
+    return grid.fit_band(sprite)
 
 
 def _cell(sprite, cell):
-    """(sprite, x_left, mirror) placement in cell 0 (left) or 1 (right) of the 32x16 grid,
-    horizontally centred in its 16-wide cell.  render_scene baselines it 2px above the floor."""
-    s = _fit_cell(sprite)
-    w = max(len(r) for r in s)
-    return (s, GRID_X0 + cell * CELL + (CELL - w) // 2, False)
+    """(sprite, x_left, mirror) placement in cell 0 (left) or 1 (right) of the 32x16 grid."""
+    return grid.cell(sprite, cell)
 
 
 def _fit_width(sprite, target_w):
     """Box-downscale a sprite horizontally to <= target_w so a wide gauge fits the 32-grid."""
-    w = max(len(r) for r in sprite)
-    if w <= target_w:
-        return sprite
-    rows = [r.ljust(w, "0") for r in sprite]
-    sc = w / target_w
-    out = []
-    for r in rows:
-        line = []
-        for x in range(target_w):
-            x0, x1 = int(x * sc), max(int(x * sc) + 1, int((x + 1) * sc))
-            line.append("1" if sum(r[xx] == "1" for xx in range(x0, x1)) * 2 >= (x1 - x0) else "0")
-        out.append("".join(line))
-    return out
+    return grid.fit_w(sprite, target_w)
 
 
 def _blit(bm, ox, oy):
@@ -685,10 +655,10 @@ class TrainingPanel:
         if not orb:
             return []
         w, h = len(orb[0]), len(orb)
-        if leg == "out":                                        # leaves the mouth, off the near edge
-            x0, x1 = mouth - w, -w
-        else:                                                   # arrives from the far edge, stops at target
-            x0, x1 = COLS, mouth
+        if leg == "out":                                        # leaves the mouth, off the near GRID edge
+            x0, x1 = mouth - w, grid.X0 - w
+        else:                                                   # arrives from the far GRID edge, stops at target
+            x0, x1 = grid.X1, mouth
         x = int(x0 + (x1 - x0) * fr["prog"])
         if fr.get("double"):                                    # doubleAttack: BOTH orbs, top & bottom of band
             return _blit(orb, x, STRIKE_BAND_TOP) + _blit(orb, x, STRIKE_BAND_BOT - h)
@@ -721,17 +691,17 @@ class TrainingPanel:
                 pose, xshift = COLLAPSE, 0
             pet = self._frame(rec, pose)
             lo, hi = _cbounds(pet)
-            x = ((COLS - 2) - hi) + xshift
+            x = _clamp_grid(((grid.X1 - 1) - hi) + xshift, lo, hi)   # pet's content right edge hugs the grid (x35), clamped
             placements = [(pet, x, False)]
             if m == "fire_out":
                 overlay = self._strike_orb("out", x + lo, fr)   # mouth = the pet's left edge
             note = {"windup": "...", "fire_out": "Fire!", "miss": self.result}[m]
         else:                                                   # fire_in / break: the TARGET is on screen (left)
             tgt = self._target_sprite(m == "break")
-            mouth = 2
+            mouth = grid.X0 + 1
             if tgt:
                 lo, hi = _cbounds(tgt)
-                tx = 1 - lo
+                tx = grid.X0 - lo                               # target's content left edge hugs the grid (x4)
                 placements = [(tgt, tx, False)]
                 mouth = tx + hi + 1                             # the target's right edge, toward the pet
             if m == "fire_in":

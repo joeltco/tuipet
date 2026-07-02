@@ -4,6 +4,7 @@ startJogressAnim -> jogressFlash -> fused."""
 from __future__ import annotations
 from . import data, jogress
 from .render import render_scene
+from . import grid
 
 from .theme import LCD_ON, LCD_BG, INK, INK_B, DIM, SEL  # noqa: F401  (palette names bound for theme.apply propagation)
 from . import menu
@@ -72,7 +73,7 @@ class JogressPanel:
             return self._render_fusing(out)
 
         if self.phase == "fused":
-            scene = render_scene([(self._sprite(self.fused["num"], "happy"), (COLS - 16) // 2, False)],
+            scene = render_scene([grid.center(self._sprite(self.fused["num"], "happy"), ph=ROWS * 2)],
                                  COLS, ROWS, LCD_ON, LCD_BG)
             out.append_text(scene)
             out.append("\n")
@@ -84,8 +85,7 @@ class JogressPanel:
         opt = self.options[self.cursor]
         pet_rows = self._sprite(self.pet.num)
         par_rows = self._sprite(opt["partner_num"]) if opt["partner_num"] else []
-        pw = max((len(r) for r in par_rows), default=0)
-        scene = render_scene([(pet_rows, 2, False), (par_rows, COLS - pw - 2, True)],
+        scene = render_scene(grid.faceoff(pet_rows, par_rows, ph=ROWS * 2),
                              COLS, ROWS, LCD_ON, LCD_BG)
         out.append_text(scene)
         out.append("\n")
@@ -100,20 +100,22 @@ class JogressPanel:
         return out
 
     def _render_fusing(self, out):
-        pet_rows = self._sprite(self.old_num)
-        par_rows = self._sprite(self.partner_num) if self.partner_num else []
-        pw = max((len(r) for r in pet_rows), default=0)
-        rw = max((len(r) for r in par_rows), default=0)
+        ph = ROWS * 2
+        pf = grid.prep(self._sprite(self.old_num), ph)
+        rf = grid.prep(self._sprite(self.partner_num), ph) if self.partner_num else []
+        pw = grid.width(pf)
+        rw = grid.width(rf)
         t = self.fuse_step / FUSE_STEPS
-        pet_target = (COLS - pw) // 2
-        par_target = (COLS - rw) // 2
-        pet_x = int(2 + (pet_target - 2) * t)                 # parents slide to centre and merge
-        par_x = int((COLS - rw - 2) - ((COLS - rw - 2) - par_target) * t)
+        pet_start, par_start = grid.X0, grid.X1 - rw           # parents start at the grid edges...
+        pet_target = grid.X0 + (grid.W - pw) // 2              # ...and slide to the grid centre and merge
+        par_target = grid.X0 + (grid.W - rw) // 2
+        pet_x = int(pet_start + (pet_target - pet_start) * t)
+        par_x = int(par_start + (par_target - par_start) * t)
         overlay = []
-        if self.fuse_step >= FUSE_STEPS - 5:                  # a flash as the DNA merges
-            px_h = ROWS * 2
-            overlay = [(x, y) for y in range(px_h) for x in range(COLS) if (x + y + self.fuse_step) % 2 == 0]
-        scene = render_scene([(pet_rows, pet_x, False), (par_rows, par_x, True)],
+        if self.fuse_step >= FUSE_STEPS - 5:                  # a flash as the DNA merges (grid-bounded)
+            overlay = [(x, y) for y in range(ph) for x in range(grid.X0, grid.X1)
+                       if (x + y + self.fuse_step) % 2 == 0]
+        scene = render_scene([(pf, pet_x, False), (rf, par_x, True)],
                              COLS, ROWS, LCD_ON, LCD_BG, overlay=overlay)
         out.append_text(scene)
         out.append("\n")
