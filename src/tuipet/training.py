@@ -580,20 +580,20 @@ class TrainingPanel:
                     pf = [row[_xs[0]:_xs[-1] + 1] for row in pf[_ys[0]:_ys[-1] + 1]]
                 pw = max(len(r) for r in pf)
                 phh = len(pf)
-                # Data layout, composed for tuipet's real estate (not a pixel-port -- our creature is a
-                # tiny dot-matrix, DVPet's is a 48px giant): turret LEFT (barrel feints then commits
-                # high/low), pet RIGHT, both grounded, and TWO LANE GATES in front of the pet -- HIGH
-                # near the band top, LOW on the floor, a clear gap between.  The one solid shield sits
-                # in whichever lane it guards; the orb flies its lane turret -> gate -> pet.
+                # Data layout, HP-drill style (Joel): during the TELEGRAPH only the turret
+                # and the shield gates are on screen -- no mon.  When the shot commits the
+                # MON APPEARS braced behind its shield and the turret plays its SHOOT
+                # animation toward it: a 1px recoil as the pellet bursts out of the barrel
+                # and flies the lane into the gate; then hitAnim's fullscreen strobe.
                 cw = max(len(r) for r in cannon) if cannon else 10
                 floor = BASE_Y                                     # the shared grid floor (2px above bottom)
                 px = GRID_X0 + GRID_W - pw                          # pet's right edge on the grid's right edge (36)
                 py = floor - phh                                   # sits on the ground, like idle gameplay
-                cy = floor - ch                                    # turret grounded, level with the pet
-                if not self.fired:                                 # telegraph: turret + pet face off; once the
-                    overlay.extend(_blit(cannon, DATA_MARGIN, cy))  # shot FIRES the view cuts to the impact
-                overlay.extend(_blit(pf, px, py))                  # (battle fire_in idiom -- turret off-view,
-                #                                                    the orb flies in across open field)
+                cy = floor - ch                                    # turret grounded
+                recoil = -1 if (self.fired and self.fly_t >= DATA_FLY - 1) else 0
+                overlay.extend(_blit(cannon, max(0, DATA_MARGIN + recoil), cy))
+                if self.fired:                                     # the mon appears for the shot
+                    overlay.extend(_blit(pf, px, py))
                 sx = px - sw - 2                                   # the shield stands just in front of the pet
                 hi_y = STRIKE_BAND_TOP + 1                         # HIGH lane gate: up near the band top
                 lo_y = floor - sh_h                                # LOW lane gate: grounded on the floor
@@ -604,15 +604,17 @@ class TrainingPanel:
                 on_y = hi_y if self.shield_up else lo_y
                 if shield:
                     overlay.extend(_blit(shield, sx, on_y))
-                if self.fired and self.fly_t > 0:                  # the impact view (DVPet attackGreen):
-                    # turret off-view, the shot flies IN from the grid's left edge along its
-                    # committed lane and lands pressing the gate -- exactly the battle's
-                    # fire_in beat; then hitAnim's fullscreen flash takes over.
-                    orb = data.load_orbs()["generic"]["Data"][0]   # DVPet spriteSheet[25]: generic Data orb
-                    ow, oh = len(orb[0]), len(orb)
+                if self.fired and self.fly_t > 0:                  # the shoot animation (DVPet attackGreen):
+                    # the PELLET (the Data orb, /2 through the standard downsample pipeline --
+                    # the full 8px orb is wider than the turret->gate gap) bursts out of the
+                    # barrel and flies its committed lane into the gate.
+                    from .render import downsample
+                    orb = downsample(data.load_orbs()["generic"]["Data"][0], 2)
+                    ow, oh = max(len(r) for r in orb), len(orb)
                     lane_top = hi_y if self.tgt_up else lo_y       # the lane follows the ATTACK (tgt_up)
-                    lane_y = lane_top + sh_h // 2 - oh // 2         # orb centred on that gate's row
-                    mx, end_x = GRID_X0, sx - ow + 2               # left edge -> pressing the gate by 2px
+                    lane_y = lane_top + sh_h // 2 - oh // 2         # pellet centred on that gate's row
+                    mx = DATA_MARGIN + cw - ow - 2                 # in the barrel's mouth...
+                    end_x = sx - ow + 2                            # ...to pressing the gate by 2px
                     prog = (DATA_FLY - self.fly_t) / (DATA_FLY - 1)
                     overlay += _blit(orb, int(mx + (end_x - mx) * prog), lane_y)
         else:                                               # hp: pick the shape the dummy wants
