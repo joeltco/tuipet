@@ -113,12 +113,12 @@ def _blit(bm, ox, oy):
             for x, c in enumerate(row) if c == "1"]
 
 
-# The REAL DVPet HP training dummy -- the bird "battle bag" (battleBags.png top row, the clean
-# frames DVPet's getBattleBagSprite maps as Vaccine=circle / Virus=triangle / Data=square).
+# The REAL DVPet HP training dummy -- the "battle bag" figure on a stand (battleBags.png top row,
+# the clean frames DVPet's getBattleBagSprite maps as Vaccine=circle / Virus=triangle / Data=square).
 with open(os.path.join(os.path.dirname(__file__), "data", "hp_dummies.json")) as _f:
-    _HP_DUMMIES = json.load(_f)         # {'vaccine','virus','data'} -> 1-bit bird w/ belly symbol
+    _HP_DUMMIES = json.load(_f)         # {'vaccine','virus','data'} -> 1-bit training dummy w/ belly symbol
 
-# HP target symbol: the bird's belly cutout is illegible at 16px (all three birds look the
+# HP target symbol: the dummy's belly cutout is illegible at this scale (all three look the
 # same), so the round's target attribute is shown as a CLEAR icon -- the real DVPet attribute
 # symbol (atk_vaccine=circle / atk_data=square / atk_virus=triangle, 7x7) upscaled 2x to 14x14
 # so its shape reads instantly and matches the ● ■ ▲ picker glyphs in the gauge.
@@ -488,7 +488,7 @@ class TrainingPanel:
           Virus:   the power bar FILLS L->R; stop it in the zone (bar centred, pet HIDDEN).
           Data:    a FIXED cannon (left) fires a shot HIGH/LOW at the pet; raise the matching
                    shield (two slots in front of the pet RIGHT) to block it.  Defensive.
-          HP:      read the bird bag's belly symbol, pick the matching attribute (bird LEFT,
+          HP:      read the target the training dummy wants, pick the matching attribute (dummy LEFT,
                    pet RIGHT face-off; the picker glyphs live in the gauge) -- on a flat LCD."""
         gk = self.gkey
         E = data.load_effects()
@@ -593,13 +593,15 @@ class TrainingPanel:
                     mx, end_x = DATA_MARGIN + cw - 3, sx - ow + 3  # muzzle -> pressed against the shield
                     prog = (DATA_FLY - self.fly_t) / (DATA_FLY - 1)
                     overlay += _blit(orb, int(mx + (end_x - mx) * prog), lane_y)
-        else:                                               # hp: pick the shape the bird bag wants (NO pet
-            # here -- the pet appears only for the volley).  DVPet layout: the bird bag (the target
-            # dummy) LEFT; the three attribute icons (○ Vaccine / □ Data / △ Virus) you scroll a
-            # cursor through RIGHT.  The bird's belly symbol is illegible at 16px, so the gauge names
-            # the target glyph; the bird is the recognizable dummy the volley then fires at.
-            bird = _HP_DUMMIES[("vaccine", "data", "virus")[self.hp_target]]
-            placements = [_cell(bird, 0)]                              # the target dummy, grounded LEFT
+        else:                                               # hp: pick the shape the training dummy wants
+            # (NO pet here -- it appears only for the volley).  DVPet layout: the training dummy (the
+            # "battle bag" figure on its stand) LEFT; the three attribute icons (○ Vaccine / □ Data /
+            # △ Virus) you scroll a cursor through RIGHT.  The dummy's belly symbol is illegible at
+            # this scale, so the gauge names the target glyph; the dummy is what the volley fires at.
+            dummy = _HP_DUMMIES[("vaccine", "data", "virus")[self.hp_target]]
+            dw = max(len(r) for r in dummy)
+            dx = GRID_X0 + (CELL - dw) // 2                            # centred in the left cell
+            placements = [(dummy, dx, False)]                         # full-height dummy, grounded 2px up
             picks = [E.get(k, [None])[0] for k in _HP_ICON_KEYS]       # 7x7 ○ □ △, stacked (DVPet order)
             col_x = GRID_X0 + CELL + 8                                 # right-cell column (x28, icons end x34)
             for i, ic in enumerate(picks):
@@ -621,7 +623,7 @@ class TrainingPanel:
         gk = self.gkey
         t = Text()
         if gk == "hp":
-            # name the target glyph (the bird belly is illegible at 16px) + round + timer
+            # name the target glyph (the dummy's belly is illegible at this scale) + round + timer
             t.append("match ", style=INK)
             t.append(HP_SYMS[self.hp_target], style=INK_B)
             t.append(f"   round {self.rep + 1}/{HP_ROUNDS}   ", style=INK)
@@ -662,8 +664,8 @@ class TrainingPanel:
         E = data.load_effects()
         if self._is_data:
             return _fit_cell(E.get("train_green", [None])[0])   # no broken variant for the target
-        if self.gkey == "hp":                                   # HP fires at the bird bag (the dummy)
-            return _fit_cell(_HP_DUMMIES[("vaccine", "data", "virus")[self.hp_target]])
+        if self.gkey == "hp":                                   # HP fires at the training dummy (full height)
+            return _HP_DUMMIES[("vaccine", "data", "virus")[self.hp_target]]
         return _fit_cell(E.get("punching_bag_broken" if broken else "punching_bag", [None])[0])
 
     def _strike_orb(self, leg, mouth, fr):
