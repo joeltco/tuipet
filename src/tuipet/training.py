@@ -611,19 +611,28 @@ class TrainingPanel:
                     mx, end_x = DATA_MARGIN + cw - 3, sx - ow + 3  # muzzle -> pressed against the shield
                     prog = (DATA_FLY - self.fly_t) / (DATA_FLY - 1)
                     overlay += _blit(orb, int(mx + (end_x - mx) * prog), lane_y)
-        else:                                               # hp: DVPet drawHPTraining, guide p.54
-            # A clean two-figure arena, like the guide: the marked training dummy
-            # (battle bag) LEFT, full height, grounded; the PET RIGHT (canon --
-            # DVPet's _character stays visible on pose 0, and flashes its
-            # AttackSuccess(6)/AttackFail(9) reaction on each guess).  The 32 grid
-            # has no room for DVPet's middle icon column (dummy 15 + pet 16), and
-            # pixel icons floating in the sky collide with the figures' heads --
-            # so the PICKER lives in the gauge as crisp text glyphs, selection
-            # bracketed (the menu's ▸ ◂ language).
+        else:                                               # hp: pick the shape the dummy wants
+            # The marked training dummy (battle bag) LEFT, full height, grounded --
+            # and the PICKER as an on-arena CAROUSEL in the free right half: ONE
+            # shape icon (the real 7x7 attribute symbol) flanked by ◂ ▸ pixel
+            # arrows, band-centred.  ←→ scrolls the shapes (Joel's compact layout;
+            # no pet here -- it appears for the strike volley).
             dummy = _HP_DUMMIES[("vaccine", "data", "virus")[self.hp_target]]
             placements = [(dummy, GRID_X0, False)]                    # left, grounded 2px up
-            pf = self._frame(rec, self._pose_now(IDLE))
-            placements.append(grid.right(pf, mirror=False))           # pet right, facing the dummy
+            ic = E.get(_HP_ICON_KEYS[self.hp_pick], [None])[0]
+            if ic:
+                iw, ih = len(ic[0]), len(ic)
+                LA = ["0001", "0011", "0111", "0011", "0001"]         # ◂ ▸ wedges (UI chrome,
+                RA = ["1000", "1100", "1110", "1100", "1000"]         #  the old cursor's shape)
+                free_x0 = GRID_X0 + 15 + 1                            # just right of the dummy
+                span = GRID_X0 + GRID_W - free_x0
+                total = 4 + 1 + iw + 1 + 4
+                cx = free_x0 + max(0, (span - total) // 2)
+                cy = BAND_TOP + (CELL - ih) // 2                      # band-centred
+                ay = cy + (ih - 5) // 2
+                overlay.extend(_blit(LA, cx, ay))
+                overlay.extend(_blit(ic, cx + 5, cy))
+                overlay.extend(_blit(RA, cx + 5 + iw + 1, ay))
         scene = render_scene(placements, COLS, ARENA_ROWS, on, LCD_BG, overlay=overlay, bgimg=bgimg)
         scene.append("\n")
         scene.append_text(self._gauge())
@@ -635,16 +644,11 @@ class TrainingPanel:
         gk = self.gkey
         t = Text()
         if gk == "hp":
-            # target glyph (the dummy's belly mark is illegible at this scale), a
-            # compact CAROUSEL picker -- one shape, ◂ ▸ scroll arrows either side
-            # (the eggselect browse language) -- round count + timer bar
+            # the target glyph (the dummy's belly mark is illegible at this scale)
+            # + round count + timer; the picker carousel lives ON the arena
             t.append("match ", style=INK)
             t.append(HP_SYMS[self.hp_target], style=INK_B)
-            t.append("    ", style=INK)
-            t.append("◂ ", style=f"{ACCENT} on {LCD_BG}")
-            t.append(HP_SYMS[self.hp_pick], style=INK_B)
-            t.append(" ▸", style=f"{ACCENT} on {LCD_BG}")
-            t.append(f"    {self.rep + 1}/{HP_ROUNDS} ", style=INK)
+            t.append(f"   round {self.rep + 1}/{HP_ROUNDS}   ", style=INK)
             tb = int((max(self.round_t, 0) / max(self.round_len, 1)) * 8)
             t.append("▓" * tb + "░" * (8 - tb) + "\n", style=f"{ACCENT} on {LCD_BG}")
         elif gk == "vaccine":
