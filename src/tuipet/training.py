@@ -58,7 +58,7 @@ VIRUS_SPEEDS = (4.8, 6.0, 8.0)  # per-tick fill = DVPet +4 per VirusGameBarSpeed
 DATA_BOB = 3                  # ticks per feint up/down toggle during the telegraph
 DATA_TELEGRAPH = (21, 17, 15)  # feint window before commit (DVPet frame*8+pad*8 frames, /6 -> ticks)
 DATA_WINDOW = (10, 7, 5)      # reaction window after commit (DataTrainShootFrame{10,7,5}; 6*frame/6 -> ticks)
-DATA_MARGIN = 2               # the data stage's side margin: cannon/pet anchor inside this, never the edge
+DATA_MARGIN = 4               # the data stage's side margin == GRID_X0: cannon anchors on the grid's left edge
 DATA_FLY = 3                  # DVPet attackGreen: the shot moves over 3 intervals (locX 55->61->67)
 #  collision = the battle's exact beats: EXPLODE_FRAMES strobe (hitAnim) + FLINCH_T pose (aftermathGreen)
 HP_ROUNDS = 3                 # DVPet _hpTrainingRounds
@@ -71,12 +71,69 @@ VBAR_W = 24
 COLS = 40
 ARENA_ROWS = 12               # the app's ONE locked LCD area (== app SCREEN_ROWS / battle ROWS).
                               # DVPet's native LCD is 105x60px; tuipet shows it at 40x24 everywhere.
+PXH = ARENA_ROWS * 2          # 24px tall
+
+# The ONE creature grid every drill sits on: two 16x16 cells side by side (== 32x16), centred in
+# the 40-wide LCD, resting on the floor 2px above the bottom border -- identical to the battle
+# screen's band (battlescreen.BAND_TOP/BAND_BOT).  Opponent = left cell, pet = right cell.
+CELL = 16
+GRID_W = CELL * 2                 # 32
+GRID_X0 = (COLS - GRID_W) // 2    # 4: left margin (32 grid centred in 40)
+BAND_TOP = PXH - 18               # 6: top of the 16px band
+BASE_Y = PXH - 2                  # 22: the floor -- every sprite baselines here, 2px above bottom
 
 # strike sequence: a battle-style volley (windup -> fire_out -> fire_in -> hit -> break),
 # beats imported from the battle screen so they march at the same pace.  The orb rides the
-# lower 16px creature band, recomputed for the training arena's own height.
-STRIKE_BAND_TOP = ARENA_ROWS * 2 - 18    # == battle BAND_TOP, relative to this LCD's height
-STRIKE_BAND_BOT = ARENA_ROWS * 2 - 2
+# lower 16px creature band -- the SAME band the drill sprites stand in.
+STRIKE_BAND_TOP = BAND_TOP
+STRIKE_BAND_BOT = BASE_Y
+
+
+def _fit_cell(sprite):
+    """Cap a sprite to the 16px band height so it fits the grid like the 16x16 creatures
+    (box-downscale if taller).  Props like the punching bag come in a hair taller than a
+    creature; this keeps every drill sprite in the same 16-tall grid."""
+    h = len(sprite)
+    if h <= CELL:
+        return sprite
+    w = max(len(r) for r in sprite)
+    rows = [r.ljust(w, "0") for r in sprite]
+    sc = h / CELL
+    out = []
+    for y in range(CELL):
+        y0, y1 = int(y * sc), max(int(y * sc) + 1, int((y + 1) * sc))
+        line = []
+        for x in range(w):
+            filled = sum(rows[yy][x] == "1" for yy in range(y0, y1))
+            line.append("1" if filled * 2 >= (y1 - y0) else "0")
+        out.append("".join(line))
+    return out
+
+
+def _cell(sprite, cell):
+    """(sprite, x_left, mirror) placement in cell 0 (left) or 1 (right) of the 32x16 grid,
+    horizontally centred in its 16-wide cell.  render_scene baselines it 2px above the floor."""
+    s = _fit_cell(sprite)
+    w = max(len(r) for r in s)
+    return (s, GRID_X0 + cell * CELL + (CELL - w) // 2, False)
+
+
+def _fit_width(sprite, target_w):
+    """Box-downscale a sprite horizontally to <= target_w so a wide gauge fits the 32-grid."""
+    w = max(len(r) for r in sprite)
+    if w <= target_w:
+        return sprite
+    rows = [r.ljust(w, "0") for r in sprite]
+    sc = w / target_w
+    out = []
+    for r in rows:
+        line = []
+        for x in range(target_w):
+            x0, x1 = int(x * sc), max(int(x * sc) + 1, int((x + 1) * sc))
+            line.append("1" if sum(r[xx] == "1" for xx in range(x0, x1)) * 2 >= (x1 - x0) else "0")
+        out.append("".join(line))
+    return out
+
 
 def _blit(bm, ox, oy):
     """Sprite bitmap -> (x,y) pixel list for render_scene's overlay (projectile / flash)."""
@@ -462,7 +519,7 @@ class TrainingPanel:
         if gk == "vaccine":                                 # DVPet drawVaccinePre: MASH to charge power.
             bag = E.get("punching_bag", [None])[0]           # the bag is the target; the pet is HIDDEN
             if bag:                                          # (it appears only for the strike).  The hit
-                overlay.extend(_blit(bag, 6, ph - len(bag)))  # button is a DEVICE button (off-LCD) -> not
+                placements.append(_cell(bag, 0))             # bag in the LEFT grid cell, grounded 2px up
             if self._strike_t > 0:                           # drawn here.  Bag on the LEFT (DVPet ~locX 26),
                 hit = E.get("train_hit", [None])[0]          # lined up with the strike's target side.
                 if hit:                                      # the "Hit!" label (DVPet hitLabel) flashes per press
@@ -470,18 +527,25 @@ class TrainingPanel:
         elif gk == "virus":                                 # DVPet drawVirusPre: pet AND bag HIDDEN
             frame = E.get("train_bar_empty", [None])[0]      # only the power bar shows -- it FILLS
             fill = E.get("train_bar", [None])[0]             # L->R, loops 0->100, press to stop high
-            fw = len(frame[0]) if frame else 38
+            if frame:
+                frame = _fit_width(frame, GRID_W)            # confine the gauge to the 32-grid
+            fw = max(len(r) for r in frame) if frame else GRID_W
             fh = len(frame) if frame else 5
-            fx = (COLS - fw) // 2                            # REAL trainBarEmpty, centred over the habitat
-            fy = (ph - fh) // 2
+            fx = GRID_X0 + (GRID_W - fw) // 2               # centred on the grid (x4..36)
+            fy = BASE_Y - fh                                 # grounded on the floor (2px above bottom), like every drill
+            interior = fw - 8                                # bar track inside the frame (leave room for the goal box)
+            if fill:
+                fill = _fit_width(fill, interior)
             if frame:
                 overlay.extend(_blit(frame, fx, fy))
-            if fill:                                         # REAL dashed trainBar, grows in the main box
-                w = max(0, min(30, round(30 * min(self.pos, VIRUS_MAX) / VIRUS_MAX)))
+            if fill:                                         # REAL dashed trainBar, grows in the track
+                fw_fill = max(len(r) for r in fill)
+                w = max(0, min(fw_fill, round(fw_fill * min(self.pos, VIRUS_MAX) / VIRUS_MAX)))
                 if w:
                     overlay.extend(_blit([row[:w] for row in fill], fx + 1, fy + 1))
             if int(self.pos) >= VIRUS_BAR_MIN:               # front in the zone -> the goal box lights
-                overlay += [(fx + 32 + x, fy + 1 + y) for y in range(3) for x in range(5)]
+                gx = fx + fw - 6
+                overlay += [(gx + x, fy + 1 + y) for y in range(3) for x in range(5)]
         elif gk == "data":
             # Built like the VIRUS drill: the whole stage is CENTRED in the LCD (band-centred,
             # NOT jammed on the floor) over the same habitat bg.  Cannon LEFT, pet RIGHT, the
@@ -521,8 +585,8 @@ class TrainingPanel:
                 # tight HIGH/LOW 2-stack (bottom directly under top) hugging the pet's front.  The two
                 # orb lanes line up turret -> shields -> pet.  Raised side = SOLID, other = faint.
                 cw = max(len(r) for r in cannon) if cannon else 10
-                floor = ph - 2                                     # idle-gameplay ground line (render_screen baseline)
-                px = COLS - pw - 3                                 # pet on the right, fully on-screen
+                floor = BASE_Y                                     # the shared grid floor (2px above bottom)
+                px = GRID_X0 + GRID_W - pw                          # pet's right edge on the grid's right edge (36)
                 py = floor - phh                                   # sits on the ground, like idle gameplay
                 cy = floor - ch                                    # turret grounded, level with the pet
                 overlay.extend(_blit(cannon, DATA_MARGIN, cy))
@@ -557,8 +621,8 @@ class TrainingPanel:
             # from the crisp glyph strip in the gauge (● Vaccine / ■ Data / ▲ Virus).
             dummy = _HP_DUMMIES[("vaccine", "data", "virus")[self.hp_target]]
             pf = self._frame(rec, self._pose_now(0))
-            placements = [(dummy, 2, False),                            # bird bag LEFT, grounded
-                          (pf, COLS - max(len(r) for r in pf) - 2, False)]  # pet RIGHT, grounded
+            placements = [_cell(dummy, 0),                              # bird bag LEFT cell, grounded
+                          _cell(pf, 1)]                                 # pet RIGHT cell, grounded
         scene = render_scene(placements, COLS, ARENA_ROWS, on, LCD_BG, overlay=overlay, bgimg=bgimg)
         scene.append("\n")
         scene.append_text(self._gauge())
@@ -606,11 +670,12 @@ class TrainingPanel:
 
     def _target_sprite(self, broken):
         """The thing being struck: the green target (Data drill) or the punching bag, which
-        shows its BROKEN frame on a successful break (DVPet aftermathDefault)."""
+        shows its BROKEN frame on a successful break (DVPet aftermathDefault).  Fit to the
+        16px band so the strike animation sits in the same grid as the drill sprites."""
         E = data.load_effects()
         if self._is_data:
-            return E.get("train_green", [None])[0]              # no broken variant for the target
-        return E.get("punching_bag_broken" if broken else "punching_bag", [None])[0]
+            return _fit_cell(E.get("train_green", [None])[0])   # no broken variant for the target
+        return _fit_cell(E.get("punching_bag_broken" if broken else "punching_bag", [None])[0])
 
     def _strike_orb(self, leg, mouth, fr):
         """The pet's REAL orb (data.attack_orb) flying LEFT toward the target: off the near
