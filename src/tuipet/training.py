@@ -611,25 +611,19 @@ class TrainingPanel:
                     mx, end_x = DATA_MARGIN + cw - 3, sx - ow + 3  # muzzle -> pressed against the shield
                     prog = (DATA_FLY - self.fly_t) / (DATA_FLY - 1)
                     overlay += _blit(orb, int(mx + (end_x - mx) * prog), lane_y)
-        else:                                               # hp: pick the shape the training dummy wants
-            # (NO pet here -- it appears only for the volley).  DVPet layout: the training dummy (the
-            # "battle bag" figure on its stand) LEFT; the three attribute icons (○ Vaccine / □ Data /
-            # △ Virus) you scroll a cursor through RIGHT.  The dummy's belly symbol is illegible at
-            # this scale, so the gauge names the target glyph; the dummy is what the volley fires at.
+        else:                                               # hp: DVPet drawHPTraining, guide p.54
+            # A clean two-figure arena, like the guide: the marked training dummy
+            # (battle bag) LEFT, full height, grounded; the PET RIGHT (canon --
+            # DVPet's _character stays visible on pose 0, and flashes its
+            # AttackSuccess(6)/AttackFail(9) reaction on each guess).  The 32 grid
+            # has no room for DVPet's middle icon column (dummy 15 + pet 16), and
+            # pixel icons floating in the sky collide with the figures' heads --
+            # so the PICKER lives in the gauge as crisp text glyphs, selection
+            # bracketed (the menu's ▸ ◂ language).
             dummy = _HP_DUMMIES[("vaccine", "data", "virus")[self.hp_target]]
-            dw = max(len(r) for r in dummy)
-            dx = GRID_X0 + (CELL - dw) // 2                            # centred in the left cell
-            placements = [(dummy, dx, False)]                         # full-height dummy, grounded 2px up
-            picks = [E.get(k, [None])[0] for k in _HP_ICON_KEYS]       # 7x7 ○ □ △, stacked (DVPet order)
-            col_x = GRID_X0 + CELL + 8                                 # right-cell column (x28, icons end x34)
-            for i, ic in enumerate(picks):
-                if not ic:
-                    continue
-                iy = 1 + i * 8                                         # stacked with a 1px gap: y1 / y9 / y17
-                overlay.extend(_blit(ic, col_x, iy))
-                if i == self.hp_pick:                                  # ► cursor in the gap, beside the selected
-                    cur = ["1000", "1100", "1110", "1100", "1000"]
-                    overlay.extend(_blit(cur, col_x - 5, iy + 1))
+            placements = [(dummy, GRID_X0, False)]                    # left, grounded 2px up
+            pf = self._frame(rec, self._pose_now(IDLE))
+            placements.append(grid.right(pf, mirror=False))           # pet right, facing the dummy
         scene = render_scene(placements, COLS, ARENA_ROWS, on, LCD_BG, overlay=overlay, bgimg=bgimg)
         scene.append("\n")
         scene.append_text(self._gauge())
@@ -641,10 +635,17 @@ class TrainingPanel:
         gk = self.gkey
         t = Text()
         if gk == "hp":
-            # name the target glyph (the dummy's belly is illegible at this scale) + round + timer
+            # target glyph (the dummy's belly mark is illegible at this scale), the
+            # ● ■ ▲ picker with the selection bracketed, round count + timer bar
             t.append("match ", style=INK)
             t.append(HP_SYMS[self.hp_target], style=INK_B)
-            t.append(f"   round {self.rep + 1}/{HP_ROUNDS}   ", style=INK)
+            t.append("  ", style=INK)
+            for i, sym in enumerate(HP_SYMS):
+                if i == self.hp_pick:
+                    t.append("▸" + sym + "◂", style=f"{ACCENT} on {LCD_BG}")
+                else:
+                    t.append(" " + sym + " ", style=DIM)
+            t.append(f"  {self.rep + 1}/{HP_ROUNDS} ", style=INK)
             tb = int((max(self.round_t, 0) / max(self.round_len, 1)) * 8)
             t.append("▓" * tb + "░" * (8 - tb) + "\n", style=f"{ACCENT} on {LCD_BG}")
         elif gk == "vaccine":
@@ -666,7 +667,7 @@ class TrainingPanel:
 
     def _hint(self):
         # keep every hint <= menu.W (38 cols) or footer() clips it mid-word
-        return {"hp": "↑↓ match the target   SPACE fire",
+        return {"hp": "←→ pick the symbol   SPACE fire",
                 "vaccine": "SPACE hit the orb!   ESC out",
                 "data": "SPACE flip the shield   ESC out",
                 "virus": "SPACE stop the marker in the zone"}[self.gkey]
