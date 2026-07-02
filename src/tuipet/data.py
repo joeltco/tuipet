@@ -153,6 +153,7 @@ def load_foods():
                     # you own; CanDec=false = never depletes (the staples: Meat/Fish/
                     # Fruit/Vegetable); ShowInInventory=false = not on the feed page
                     # (Med/Vitamin ride the heal flows instead)
+                    "bm": int(row.get("BMGauge") or 0),
                     "start": int(row.get("StartingQuantity") or 0),
                     "can_dec": (row.get("CanDec") or "").strip().lower() == "true",
                     "show": (row.get("ShowInInventory") or "").strip().upper() == "TRUE",

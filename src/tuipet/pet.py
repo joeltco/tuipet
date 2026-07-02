@@ -636,9 +636,14 @@ class Pet:
                 self.calories = CALORIE_LIMIT
         # pooping (DVPet poop(): relief mood bump, sheds weight, drops a sized pile)
         self._poop_t = getattr(self, "_poop_t", 0) + dt
-        if self._poop_t >= self._poop_interval:
-            self._poop_t = 0
-            self._do_poop()
+        # startPoop: a sleeping pet HOLDS it unless truly desperate (gauge >= 2x max)
+        _poop_due = self._poop_interval * (2 if self.asleep else 1)
+        if self._poop_t >= _poop_due:
+            self._poop_t -= self._poop_interval  # gauge -= bmMax (the remainder carries)
+            backlog = self._poop_t >= self._poop_interval / 2
+            if backlog:                          # big backlog: bigger pile + extra shed,
+                self._poop_t = 0                 # gauge zeroed (DVPet poop())
+            self._do_poop(backlog=backlog)
             self._set_anim("poop", 2.2)          # squat-and-go (DVPet poop())
         # effort decays per species (DVPet calcStrengthDecayLapse): keep training or it slips
         self._str_t = getattr(self, "_str_t", 0.0) + dt
@@ -1228,16 +1233,21 @@ class Pet:
             return 1
         return 2
 
-    def _do_poop(self):
+    def _do_poop(self, backlog=False):
         """PhysicalState.poop: relief mood bump, weight shed, and a new sized pile
-        added to the filth (capped at the _filth array length).  The bmGauge timer
-        that schedules this is replaced by tuipet's poop interval."""
+        added to the filth (capped at the _filth array length).  A big BACKLOG
+        (gauge still >= bmMax/2 after the poop) makes the pile one size bigger --
+        the only source of size-4 piles -- and sheds an extra half weight."""
         self._set_mood(self.mood + POOP_MOOD_INC)                 # PoopMoodInc
         wdec = min(int(self._base_weight() * POOP_WEIGHT_DEC_COEF), POOP_WEIGHT_LIMIT)
         self.weight = max(1, self.weight - wdec)
+        size = self._poop_size()
+        if backlog:
+            size = min(4, size + 1)
+            self.weight = max(1, self.weight - math.ceil(wdec / 2))
         if self.poop < POOP_MAX_PILES:                            # addFilth: first free slot (capped)
             self.poop += 1                                        # poop == countFilth()
-            self.poop_sizes.append(self._poop_size())
+            self.poop_sizes.append(size)
 
     def _disturbed(self):
         """Bothering the pet mid-sleep: counts toward restlessness AND costs mood
@@ -1312,6 +1322,12 @@ class Pet:
         self._set_enthusiasm(self.enthusiasm + scaled("enthusiasm"))
         self.calories = CALORIE_LIMIT                       # a meal refills the calorie buffer
         self.weight += int(food.get("weight", 1))
+        # every meal advances the bowel gauge (applyFood: bmGauge += food.BMGauge):
+        # eating more means pooping sooner, proportional to the species bmMax
+        bm = int(food.get("bm", 0))
+        if bm > 0:
+            self._poop_t = getattr(self, "_poop_t", 0) \
+                + self._poop_interval * bm / max(1, self._phys().get("poop_limit", 64))
         tier = self._eat_food(food.get("category", ""))     # DVPet taste: fav/disliked/neutral
         self._last_meal_disliked = (tier == "disliked")      # eat(): disliked -> +9 grimace bite
         self._apply_nutrition(food, modifier)                # GoodNutrition macros (scaled)
