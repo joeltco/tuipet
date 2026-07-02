@@ -20,6 +20,7 @@ from .render import render_scene
 from .theme import LCD_ON, LCD_BG, SIL_DAY, SIL_NIGHT
 from . import menu
 from . import grid
+from . import strikefx
 
 COLS, ROWS = 40, 12
 PXH = ROWS * 2                                   # 24 px tall
@@ -66,17 +67,10 @@ def _full(frame):
             for x, c in enumerate(row) if c == "1"]
 
 
-def _cbounds(rows):
-    w = max(len(r) for r in rows)
-    cols = [x for x in range(w) if any(x < len(r) and r[x] == "1" for r in rows)]
-    return (min(cols), max(cols)) if cols else (0, w - 1)
-
-
-def _clamp_grid(x, lo, hi):
-    """Clamp x so the sprite's lit content [x+lo, x+hi] stays inside the grid [X0, X1).
-    Steady poses hug the grid wall; a rear-back that would push past it compresses
-    against the wall instead of escaping (the lunge-forward beat still reads)."""
-    return max(grid.X0 - lo, min(x, (grid.X1 - 1) - hi))
+# the creature-placement + grid helpers live in strikefx now (shared with training);
+# keep the old module names as aliases so nothing downstream breaks.
+_cbounds = strikefx.cbounds
+_clamp_grid = strikefx.clamp_grid
 
 
 class BattlePanel:
@@ -232,14 +226,8 @@ class BattlePanel:
         """Place the ONE monster currently on screen. Player stands RIGHT (faces left), enemy
         LEFT (faces right). Returns (placements, mouth_edge) -- the inner edge the orb leaves
         from / arrives at."""
-        if view == "foe":
-            src = [r[::-1] for r in rows]                    # mirror=True -> faces right
-            lo, hi = _cbounds(src)
-            x = _clamp_grid((grid.X0 - lo) + xshift, lo, hi) # content LEFT edge hugs the grid (x4), clamped in-grid
-            return [(rows, x, True)], x + hi + 1             # mouth = right edge (toward pet)
-        lo, hi = _cbounds(rows)                              # mirror=False -> faces left
-        x = _clamp_grid(((grid.X1 - 1) - hi) + xshift, lo, hi)  # content RIGHT edge hugs the grid (x35), clamped
-        return [(rows, x, False)], x + lo                    # mouth = left edge (toward foe)
+        # shared placement: pet (view!="foe") faces left on the right; foe faces right on the left
+        return strikefx.place_combatant(view != "foe", rows, xshift)
 
     def _pow(self, side, attr):
         if side == "pet":
@@ -250,35 +238,14 @@ class BattlePanel:
                 "Virus": e.get("virus", 0)}.get(attr, 0)
 
     def _orb_overlay(self, fr, mouth):
-        """The attacker's real orb, flying OFF the near edge (fire_out) or IN from the far edge
-        (fire_in/dodge). No clamp -- render_scene clips anything off-screen. Player fires left,
-        enemy fires right; the orb keeps a constant world direction across the screen switch."""
-        atk, m, prog = fr["atk"], fr["m"], fr["prog"]
+        """The attacker's real orb, flown by the shared strikefx (player fires left, enemy
+        fires right; the orb keeps a constant world direction across the screen switch)."""
+        atk = fr["atk"]
         if atk == "pet":
             orb = data.attack_orb(self.pet.num, self.pet_attr, self._pow("pet", self.pet_attr))
         else:
             orb = data.attack_orb(self.battle.enemy["num"], self.foe_attr, self._pow("foe", self.foe_attr))
-        if not orb:
-            return []
-        w = len(orb[0])
-        left = (atk == "pet")                                # player fires left; enemy fires right
-        if m == "fire_out":                                  # orb leaves the mouth, off the near GRID edge
-            x0, x1 = (mouth - w, grid.X0 - w) if left else (mouth, grid.X1)
-        else:                                                # fire_in / dodge: arrives from the far GRID edge, STOPS at the defender's edge
-            x0, x1 = (grid.X1, mouth) if left else (grid.X0 - w, mouth - w)
-            if m == "dodge":                                 # whiffs past to the far grid edge
-                x1 = grid.X0 - w if left else grid.X1
-        # the orb art faces LEFT natively; flip it to point in its travel direction
-        # (player/foe orbs are directional, so a rightward orb must be mirrored)
-        src = orb if left else [r[::-1] for r in orb]
-        x = int(x0 + (x1 - x0) * prog)
-        h = len(src)
-        mid = BAND_TOP + (16 - h) // 2                        # centre the orb in the 16px creature band
-        if fr.get("double"):                                 # doubleAttack: BOTH orbs kept inside the band
-            pts = _blit(src, x, BAND_TOP) + _blit(src, x, BAND_BOT - h)
-        else:
-            pts = _blit(src, x, mid)
-        return pts
+        return strikefx.orb_flight(orb, atk == "pet", fr["m"], fr["prog"], mouth, fr.get("double"))
 
     def _render_scene_frame(self, fr):
         b = self.battle

@@ -27,6 +27,7 @@ import random
 from rich.text import Text
 from . import data
 from . import grid
+from . import strikefx
 from .render import render_scene
 from .theme import LCD_ON, LCD_BG, INK, INK_B, DIM, MID, ACCENT, SIL_DAY, SIL_NIGHT  # noqa: F401  (palette names bound for theme.apply propagation)
 from . import menu
@@ -267,35 +268,23 @@ class TrainingPanel:
         self.success = hits >= 2
         self._strong = hits >= 3
         self.result = self.pet.apply_training(hits, power, attribute, game=game)
-        if game in ("hp", "data"):
-            # No pet counter-attack: HP flashes pose 6/9 per guess; DATA is purely DEFENSIVE
-            # (DVPet attackGreen -> the CANNON shoots the pet, you just block -- the shot +
-            # impact already played out in the drill).  Reveal the result directly.
+        if game == "data":
+            # DATA is purely DEFENSIVE (DVPet attackGreen -> the CANNON shoots the pet, you
+            # just block -- the shot + impact already played out in the drill).  Reveal directly.
             self.phase = "done"
             self.flash = self.result + "   (SPACE)"
         else:
-            # vaccine/virus fire the pet's real orb at the bag (a battle-style volley), THEN
-            # reveal the score.
-            self.strike_attr = attribute
+            # hp / vaccine / virus: after the skill phase the pet fires its orb at the target
+            # (the SAME battle volley for all three) -> hit (success) or miss -> reveal the score.
+            self.strike_attr = attribute or ("Vaccine", "Data", "Virus")[self.hp_target]
             self._build_strike()
             self.phase = "strike"
             self.flash = ""
 
     def _build_strike(self):
-        """The battle volley, cloned for training: the pet rears back, fires its orb off the
-        near edge, the view switches to the TARGET as the orb arrives, then the fullscreen
-        explosion + break (success) or a whiff (fail).  Same beats as battlescreen."""
-        strong = self._strong
-        tl = []
-        tl += [{"m": "windup", "wu": s} for s in range(WINDUP_T)]
-        tl += [{"m": "fire_out", "prog": (s + 1) / FIRE_T, "double": strong} for s in range(FIRE_T)]
-        tl += [{"m": "fire_in", "prog": (s + 1) / FIRE_T, "double": strong} for s in range(FIRE_T)]
-        if self.success:                                    # HIT: strobing explosion, then the broken target
-            tl += [{"m": "hit", "f": (s // EXPLODE_HOLD) % 2} for s in range(EXPLODE_FRAMES)]
-            tl += [{"m": "break"}] * FLINCH_T
-        else:                                               # FAIL: orb fizzles, target intact, pet deflates
-            tl += [{"m": "miss"}] * FLINCH_T
-        self.strike_tl = tl
+        """The pet's attack volley -- the SAME animation the battle screen fires (strikefx),
+        with the training target in place of an enemy."""
+        self.strike_tl = strikefx.build_volley(self.success, self._strong)
         self.si = 0
         self._last_sm = None
 
@@ -603,15 +592,23 @@ class TrainingPanel:
                     mx, end_x = DATA_MARGIN + cw - 3, sx - ow + 3  # muzzle -> pressed against the shield
                     prog = (DATA_FLY - self.fly_t) / (DATA_FLY - 1)
                     overlay += _blit(orb, int(mx + (end_x - mx) * prog), lane_y)
-        else:                                               # hp: read the target, pick the match.
-            # DVPet: bird bag shows the target attribute + you pick the matching one of three
-            # (best of 3).  tuipet's 16px bird belly is illegible (all three birds look identical),
-            # so the target is shown as a CLEAR attribute icon LEFT (circle/square/triangle) whose
-            # shape matches the ● ■ ▲ picker in the gauge; the pet stands RIGHT.
-            tgt_icon = _hp_target_icon(self.hp_target)
-            pf = self._frame(rec, self._pose_now(0))
-            placements = [_cell(tgt_icon, 0),                          # TARGET symbol LEFT cell, grounded
-                          _cell(pf, 1)]                                 # pet RIGHT cell, grounded
+        else:                                               # hp: pick the matching shape (NO pet here --
+            # the pet appears only for the volley).  DVPet layout: the bird bag shows the target on
+            # the LEFT; the three attribute icons (○ Vaccine / □ Data / △ Virus) you scroll a cursor
+            # through are on the RIGHT.  tuipet's bird belly is illegible at 16px, so the LEFT shows
+            # the target as a big CLEAR shape; the RIGHT is the 3-shape picker with a cursor.
+            tgt_icon = _hp_target_icon(self.hp_target)                 # big clear target shape (14x14)
+            placements = [_cell(tgt_icon, 0)]                          # "match this" -- LEFT cell, grounded
+            picks = [E.get(k, [None])[0] for k in _HP_ICON_KEYS]       # 7x7 ○ □ △, stacked (DVPet order)
+            col_x = GRID_X0 + CELL + 8                                 # right-cell column (x28, icons end x34)
+            for i, ic in enumerate(picks):
+                if not ic:
+                    continue
+                iy = 1 + i * 8                                         # stacked with a 1px gap: y1 / y9 / y17
+                overlay.extend(_blit(ic, col_x, iy))
+                if i == self.hp_pick:                                  # ► cursor in the gap, beside the selected
+                    cur = ["1000", "1100", "1110", "1100", "1000"]
+                    overlay.extend(_blit(cur, col_x - 5, iy + 1))
         scene = render_scene(placements, COLS, ARENA_ROWS, on, LCD_BG, overlay=overlay, bgimg=bgimg)
         scene.append("\n")
         scene.append_text(self._gauge())
@@ -623,17 +620,10 @@ class TrainingPanel:
         gk = self.gkey
         t = Text()
         if gk == "hp":
-            # show the TARGET explicitly, then the picker with the cursor -> foolproof match
-            t.append("match ", style=INK)
-            t.append(HP_SYMS[self.hp_target], style=INK_B)     # the target symbol (== the icon on the left)
-            t.append("   you ", style=DIM)
-            for i, sym in enumerate(HP_SYMS):
-                sel = i == self.hp_pick
-                matched = sel and i == self.hp_target
-                t.append(f"[{sym}]" if sel else f" {sym} ",
-                         style=(ACCENT if matched else INK_B) if sel else DIM)
-            tb = int((max(self.round_t, 0) / max(self.round_len, 1)) * 6)
-            t.append("  " + "▓" * tb + "░" * (6 - tb) + "\n", style=f"{ACCENT} on {LCD_BG}")
+            # the target + picker are ON SCREEN now; the gauge just tracks round + time
+            t.append(f"round {self.rep + 1}/{HP_ROUNDS}   ", style=INK)
+            tb = int((max(self.round_t, 0) / max(self.round_len, 1)) * 12)
+            t.append("time " + "▓" * tb + "░" * (12 - tb) + "\n", style=f"{ACCENT} on {LCD_BG}")
         elif gk == "vaccine":
             hit = self._strike_t > 0
             t.append("HIT!! " if hit else "hit!  ", style=INK_B if hit else INK)
@@ -652,7 +642,7 @@ class TrainingPanel:
         return t
 
     def _hint(self):
-        return {"hp": "↑↓ move to the symbol on the left   SPACE lock",
+        return {"hp": "↑↓ pick the shape matching the target   SPACE fire",
                 "vaccine": "SPACE hit the orb!   ESC out",
                 "data": "SPACE toggle the shield to match the cannon",
                 "virus": "SPACE stop the marker in the zone"}[self.gkey]
@@ -669,24 +659,15 @@ class TrainingPanel:
         E = data.load_effects()
         if self._is_data:
             return _fit_cell(E.get("train_green", [None])[0])   # no broken variant for the target
+        if self.gkey == "hp":                                   # HP fires at the bird bag (the dummy)
+            return _fit_cell(_HP_DUMMIES[("vaccine", "data", "virus")[self.hp_target]])
         return _fit_cell(E.get("punching_bag_broken" if broken else "punching_bag", [None])[0])
 
     def _strike_orb(self, leg, mouth, fr):
-        """The pet's REAL orb (data.attack_orb) flying LEFT toward the target: off the near
-        (left) edge on fire_out, in from the far (right) edge to the target's edge on fire_in.
-        Mirrors battlescreen._orb_overlay (player fires left -> no flip)."""
+        """The pet's REAL orb, flown by the shared strikefx (the pet always fires left)."""
         orb = data.attack_orb(self.pet.num, self.strike_attr, self._attr_pow())
-        if not orb:
-            return []
-        w, h = len(orb[0]), len(orb)
-        if leg == "out":                                        # leaves the mouth, off the near GRID edge
-            x0, x1 = mouth - w, grid.X0 - w
-        else:                                                   # arrives from the far GRID edge, stops at target
-            x0, x1 = grid.X1, mouth
-        x = int(x0 + (x1 - x0) * fr["prog"])
-        if fr.get("double"):                                    # doubleAttack: BOTH orbs, top & bottom of band
-            return _blit(orb, x, STRIKE_BAND_TOP) + _blit(orb, x, STRIKE_BAND_BOT - h)
-        return _blit(orb, x, STRIKE_BAND_TOP + (16 - h) // 2)
+        m = "fire_out" if leg == "out" else "fire_in"
+        return strikefx.orb_flight(orb, True, m, fr["prog"], mouth, fr.get("double"))
 
     def _render_strike(self, rec):
         """A battle-style volley (battlescreen clone) with the TARGET in place of an enemy:
@@ -714,11 +695,9 @@ class TrainingPanel:
             else:                                               # miss: deflated pose, DVPet getSpriteNum()+10
                 pose, xshift = COLLAPSE, 0
             pet = self._frame(rec, pose)
-            lo, hi = _cbounds(pet)
-            x = _clamp_grid(((grid.X1 - 1) - hi) + xshift, lo, hi)   # pet's content right edge hugs the grid (x35), clamped
-            placements = [(pet, x, False)]
+            placements, mouth = strikefx.place_combatant(True, pet, xshift)  # shared: pet right, faces left
             if m == "fire_out":
-                overlay = self._strike_orb("out", x + lo, fr)   # mouth = the pet's left edge
+                overlay = self._strike_orb("out", mouth, fr)    # mouth = the pet's left edge
             note = {"windup": "...", "fire_out": "Fire!", "miss": self.result}[m]
         else:                                                   # fire_in / break: the TARGET is on screen (left)
             tgt = self._target_sprite(m == "break")

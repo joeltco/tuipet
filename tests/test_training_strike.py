@@ -89,10 +89,14 @@ def test_hp_drill_matches_the_dummy_attribute():
             break
         panel.hp_pick = panel.hp_target               # read the dummy -> pick the match
         panel.key("space")
-    # two correct matches ends it immediately (early-exit at _hpTrainingRoundsWon), a full
-    # success.  HP has NO projectile strike (per-round flashes only) -> straight to "done".
+    # two correct matches ends it immediately (early-exit at _hpTrainingRoundsWon), a full success.
     assert panel.rounds_won == T.HP_ROUNDS_WON
-    assert panel.phase == "done" and panel.success and panel._strong
+    assert panel.success and panel._strong
+    # HP now fires the SAME battle volley as vaccine/virus before revealing the score
+    assert panel.phase == "strike"
+    for _ in range(len(panel.strike_tl) + 2):
+        panel.anim()
+    assert panel.phase == "done"
 
 
 def test_hp_timeout_counts_as_wrong():
