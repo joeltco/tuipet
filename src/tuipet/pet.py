@@ -157,6 +157,13 @@ STOMACH_CAPACITY = 4                    # StomachCapacity: the applyFood fullnes
 OVEREAT_LIMIT = 5                       # OvereatLimit: a glutton may fill one heart past full
 CALORIE_LIMIT = 4                       # CalorieLimit (buffer half-range)
 LESS_HUNGER_CHANCE = 9                  # LessHungerChance: the glutton decay-jitter odds
+# sleep (DVPet setAsleep / lightsCall / the morning wake roll)
+LIGHTS_MISTAKE_SEC = 60.0               # MinutesToMistakeLights(60) as ~12% of the sleep,
+#                                         scaled to tuipet's ~6-min night -- one mistake/night
+MORNING_MOOD_CHANCE = 5                 # MorningMoodChance: 1/5 bad, 1/5 terrible-if-happy, 1/5 good
+BAD_MORNING_MOOD = {"Happy": -150, "Neutral": -100, "Unhappy": -10, "Depressed": -10}
+GOOD_MORNING_MOOD = {"Happy": 50, "Neutral": 100, "Unhappy": 150, "Depressed": 150}
+WORST_MORNING_MOOD = -10                # WorstMorningMood (TerribleMorning sets mood TO this)
 STARVE_WEIGHT_DEC = 1                   # ActivityWeightChange: starving sheds weight per lapse
 HUNGER_MISTAKE_LIFE_DEC = 3600.0        # MistakeHungerLifeDec 21600s of a ~500h DVPet life,
 #                                         scaled to tuipet's ~84h: ~1.2% of life x total mistakes
@@ -527,6 +534,13 @@ class Pet:
                 self.bandage_lapse = max(0.0, self.bandage_lapse - dt)
         self._tick_effect(dt)
         if self.asleep:
+            # lightsCall (DVPet): sleeping with the room light ON is neglect --
+            # one care mistake per sleep once the counter crosses the threshold.
+            if self.lights:
+                self._lights_t = getattr(self, "_lights_t", 0.0) + dt
+                if 0 <= self._lights_t >= LIGHTS_MISTAKE_SEC:
+                    self._lights_t = float("-inf")       # AfterMistakeMinutesPostponed: once/night
+                    self.care_mistakes += 1
             # DVPet sleep recovery: +SleepEnergyGain every SleepMinutesToEnergyGain.
             self._sleep_e_t = getattr(self, "_sleep_e_t", 0.0) + dt
             if self._sleep_e_t >= 60:                # SleepMinutesToEnergyGain (game-min)
@@ -543,6 +557,18 @@ class Pet:
             # sleep through the night; wake in the morning once fully rested
             if self.day_phase != "night" and self.energy >= self.max_energy:
                 self.asleep = False
+                if not self.lights:
+                    self.lights = True       # DVPet wake: setLights(true) with the sun
+                # the morning roll (setAsleep wake): 1/5 bad, 1/5 terrible (only if
+                # Happy: mood SET to WorstMorningMood), 1/5 good, else neutral
+                r = random.randrange(MORNING_MOOD_CHANCE)
+                m = self.current_mood()
+                if r == 0:
+                    self._set_mood(self.mood + BAD_MORNING_MOOD.get(m, -10))
+                elif r == 1 and m == "Happy":
+                    self._set_mood(WORST_MORNING_MOOD)
+                elif r == 2:
+                    self._set_mood(self.mood + GOOD_MORNING_MOOD.get(m, 100))
                 self._set_anim("wake", 1.6)  # morning stretch (DVPet wakeUp())
             return
 
@@ -651,6 +677,7 @@ class Pet:
         self._wake_grace = max(0.0, getattr(self, "_wake_grace", 0.0) - dt)
         if not self.asleep and self._wake_grace <= 0 and (night or self.energy <= 0):
             self.asleep = True
+            self._lights_t = 0.0          # setAsleep resets _callMinutesLights
             self._set_anim("yawn", 1.8)   # yawn, then settle into sleep
 
         # DVPet discrete neglect-death triggers (config.csv): real abandonment is fatal,
