@@ -124,9 +124,11 @@ def cell(sprite, side, mirror=False, ph=PXH):
     return (s, X0 + side * CELL + (CELL - width(s)) // 2, mirror)
 
 
-def faceoff(left_sprite, right_sprite, left_mirror=False, right_mirror=True, ph=PXH):
+def faceoff(left_sprite, right_sprite, left_mirror=True, right_mirror=False, ph=PXH):
     """Two creatures facing off: left hugs X0, right hugs X1, each fitted to a cell so a
     centre GAP always remains (no overlap).  Returns [left_placement, right_placement].
+    Sprites face LEFT natively, so the defaults (left mirrored, right not) turn them to
+    face EACH OTHER across the gap -- the consistent battle/tournament/jogress convention.
     If cropped widths would still collide, both are width-fit to CELL first (they can't
     exceed 16 each -> 32 total == the grid, worst case touching, normally a gap)."""
     ls = _crop(fit(left_sprite, ph)) if left_sprite else None
