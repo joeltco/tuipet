@@ -9,6 +9,10 @@ from . import grid
 from .theme import LCD_ON, LCD_BG, INK, INK_B, DIM, SEL  # noqa: F401  (palette names bound for theme.apply propagation)
 from . import menu
 COLS, ROWS = 40, 7
+# the fusing/fused cinematics have no menu list below them, so they get a taller
+# scene: 9 rows == an 18px box -> the full 16px band -> NATIVE 16x16 sprites at
+# the fusion payoff (the pick strip keeps 7 rows to leave room for the partner list)
+FUSE_ROWS = 9
 VISIBLE = 3
 FUSE_STEPS = 16
 
@@ -73,8 +77,8 @@ class JogressPanel:
             return self._render_fusing(out)
 
         if self.phase == "fused":
-            scene = render_scene([grid.center(self._sprite(self.fused["num"], "happy"), ph=ROWS * 2)],
-                                 COLS, ROWS, LCD_ON, LCD_BG)
+            scene = render_scene([grid.center(self._sprite(self.fused["num"], "happy"), ph=FUSE_ROWS * 2)],
+                                 COLS, FUSE_ROWS, LCD_ON, LCD_BG)
             out.append_text(scene)
             out.append("\n")
             out.append_text(menu.note(self.result_msg))
@@ -100,7 +104,7 @@ class JogressPanel:
         return out
 
     def _render_fusing(self, out):
-        ph = ROWS * 2
+        ph = FUSE_ROWS * 2
         pf = grid.prep(self._sprite(self.old_num), ph)
         rf = grid.prep(self._sprite(self.partner_num), ph) if self.partner_num else []
         pw = grid.width(pf)
@@ -116,7 +120,7 @@ class JogressPanel:
             overlay = [(x, y) for y in range(ph) for x in range(grid.X0, grid.X1)
                        if (x + y + self.fuse_step) % 2 == 0]
         scene = render_scene([(pf, pet_x, True), (rf, par_x, False)],   # face inward as they converge
-                             COLS, ROWS, LCD_ON, LCD_BG, overlay=overlay)
+                             COLS, FUSE_ROWS, LCD_ON, LCD_BG, overlay=overlay)
         out.append_text(scene)
         out.append("\n")
         out.append_text(menu.note("DNA... connect!"))

@@ -178,8 +178,9 @@ class ShopPanel:
                 out.append(icon[r] + "  ", style=INK)
                 out.append(tx[:tw] + "\n", style=INK_B if r == 0 else INK)
         else:
-            out.append("(nothing here)\n", style=DIM)   # left-aligned; no phantom icon offset
-            out.append_text(menu.blanks(IC_ROWS - 1))
+            # nothing selected == the tab is empty; the list below already prints the
+            # context-aware empty label, so the icon panel stays quiet (one message, not two)
+            out.append_text(menu.blanks(IC_ROWS))
 
         # item list for this tab
         vis = 3

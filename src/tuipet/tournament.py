@@ -21,7 +21,7 @@ def trophy_label(t):
         return "%s Cup" % data.pretty_field(t["field_req"])
     if t["attr_req"]:
         return "%s Cup" % t["attr_req"]
-    return "%s Open #%d" % (t["season"], t["id"])
+    return "%s Open #%d" % (t["season"], t["id"] + 1)   # display 1-based ("#0" reads like a bug)
 
 
 def available(pet):
