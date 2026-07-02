@@ -484,7 +484,7 @@ class TrainingPanel:
         on, bgimg = self._scene_palette()
         pf = self._frame(rec, IDLE if self.success else COLLAPSE)   # normal / hurt(+10), like DVPet
         tgt = self._target_sprite(self.success)                     # broken target on success (bag drills)
-        placements = grid.faceoff(tgt, pf, left_mirror=False, right_mirror=False) if tgt else [grid.center(pf)]
+        placements = grid.faceoff(tgt, pf) if tgt else [grid.center(pf)]   # target + pet face each other
         scene = render_scene(placements, COLS, ARENA_ROWS, on, LCD_BG, bgimg=bgimg)
         scene.append("\n")
         scene.append_text(menu.note(self.result or ""))
@@ -724,11 +724,8 @@ class TrainingPanel:
         else:                                                   # fire_in / break: the TARGET is on screen (left)
             tgt = self._target_sprite(m == "break")
             mouth = grid.X0 + 1
-            if tgt:
-                lo, hi = _cbounds(tgt)
-                tx = grid.X0 - lo                               # target's content left edge hugs the grid (x4)
-                placements = [(tgt, tx, False)]
-                mouth = tx + hi + 1                             # the target's right edge, toward the pet
+            if tgt:                                             # shared placement: target LEFT, faces the pet
+                placements, mouth = strikefx.place_combatant(False, tgt)
             if m == "fire_in":
                 overlay = self._strike_orb("in", mouth, fr)
             note = "Incoming!" if m == "fire_in" else self.result

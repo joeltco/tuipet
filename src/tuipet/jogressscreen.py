@@ -115,7 +115,7 @@ class JogressPanel:
         if self.fuse_step >= FUSE_STEPS - 5:                  # a flash as the DNA merges (grid-bounded)
             overlay = [(x, y) for y in range(ph) for x in range(grid.X0, grid.X1)
                        if (x + y + self.fuse_step) % 2 == 0]
-        scene = render_scene([(pf, pet_x, False), (rf, par_x, True)],
+        scene = render_scene([(pf, pet_x, True), (rf, par_x, False)],   # face inward as they converge
                              COLS, ROWS, LCD_ON, LCD_BG, overlay=overlay)
         out.append_text(scene)
         out.append("\n")
