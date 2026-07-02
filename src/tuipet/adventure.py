@@ -21,9 +21,11 @@ DVPet constants/formulas (verified in config.csv + WorldMap/Zone bytecode):
   - towns restore adventure life to MaxAdventureLife(3) (WorldMap.step).
   - a lost battle costs an adventure life; at 0 life, applyLifePenalty retreats the pet
     to the closest town (reset to zone start, life refilled) -- it does NOT end the run.
-APPROXIMATION: tuipet's vendored zone data does not carry the town's step-location or the
-boss time-gates, so the rest-town is placed at zone midpoint and the zone boss sits at the
-end; mid-zone location/time-gated bosses are not yet modelled.
+Towns, bosses and random territories all use the REAL data: towns.csv TownRange
+step-spans (rest + encounter suppression inside), enemies.csv Location as each
+boss's exact step (multi-boss zones like Piedmon@18000 + Apocalymon@22000 work)
+and each random's territory floor (they only roam from their Location onward --
+the zone's difficulty curve).  Time gates are all 'None' in this dataset.
 """
 from __future__ import annotations
 import random
@@ -75,7 +77,8 @@ class Adventure:
         self.last = "Adventure begins!"
         self.loot = None
         self._energy_dec = 0
-        self._town_done = False      # the zone's rest-town has been reached this pass
+        self._rested = set()         # town spans already rested at this pass
+        self._cleared = set()        # zone bosses beaten this pass (by enemy num)
 
     # --- zone helpers ---
     @property
@@ -128,6 +131,12 @@ class Adventure:
             self.pet.weight = max(1, self.pet.weight - 1)
             self.pet.calories = CALORIE_LIMIT
 
+    def _in_town(self, loc):
+        return any(lo <= loc <= hi for lo, hi in self.zone.get("towns", ()))
+
+    def _boss_loc(self, b):
+        return b.get("location") or self.total_steps     # unplaced boss guards the gate
+
     def travel(self):
         """Advance one interactive step. Returns ('encounter'|'boss', enemy) or ('town'|None)."""
         if self.boss_pending or self.done:
@@ -142,27 +151,40 @@ class Adventure:
         prev = self.location
         self.location = min(self.total_steps, self.location + self.stride)
         self._travel_drain()
-        # Town at zone midpoint restores adventure life to full (WorldMap.step in a town).
-        mid = self.total_steps // 2
-        if not self._town_done and prev < mid <= self.location:
-            self._town_done = True
-            self.life = MAX_LIFE
-            self.pet._set_energy(self.pet.max_energy)   # a town is a rest stop: refill energy too
-            self.last = "Reached a town -- rested (life + energy)."
-            return ("town", None)
-        # Zone boss gates the end of the zone.
-        if self.location >= self.total_steps:
-            self.boss_pending = True
-            boss = _pick_weighted(self.zone["bosses"]) or _pick_weighted(self.zone["randoms"])
-            self.last = f"Zone boss: {boss['name']}!"
-            return ("boss", boss)
-        # Wild encounter (real chance formula).
-        if self.zone["randoms"] and self._encounter_roll():
-            e = _pick_weighted(self.zone["randoms"])
+        # Bosses stand at their REAL steps (Zone.checkBattle: location[0] == step) --
+        # the walk stops AT the first uncleared boss the stride would cross.
+        for b in sorted(self.zone["bosses"], key=self._boss_loc):
+            bloc = self._boss_loc(b)
+            if b["num"] not in self._cleared and prev < bloc <= self.location:
+                self.location = bloc
+                self.boss_pending = True
+                self._boss = b
+                self.last = f"Zone boss: {b['name']}!"
+                return ("boss", b)
+        # Towns at their REAL step-spans (towns.csv TownRange): entering one rests the
+        # pet (adventure life + energy, WorldMap.step), and no encounters roll inside.
+        for lo, hi in self.zone.get("towns", ()):
+            if lo not in self._rested and prev < lo <= self.location:
+                self._rested.add(lo)
+                self.life = MAX_LIFE
+                self.pet._set_energy(self.pet.max_energy)
+                self.last = "Reached a town -- rested (life + energy)."
+                return ("town", None)
+        if self.location >= self.total_steps:              # gate clear, path clear -> done
+            return self._advance_or_finish()
+        # Wild encounter (real chance formula); towns suppress it, and each random
+        # only roams its territory (from its Location step onward).
+        here = [e for e in self.zone["randoms"] if e.get("location", 0) <= self.location]
+        if here and not self._in_town(self.location) and self._encounter_roll():
+            e = _pick_weighted(here)
             self.last = f"Wild {e['name']} appeared!"
             return ("encounter", e)
         self.last = f"Travelling... ({self.pct}%)"
         return None
+
+    def _advance_or_finish(self):
+        res = self._complete_zone()
+        return (res, None) if res else None
 
     def resolve(self, won, was_boss, enemy):
         """Apply a battle result; roll loot on a win, lose adventure life on a loss."""
@@ -175,10 +197,16 @@ class Adventure:
         if was_boss:
             self.boss_pending = False
             if won:
-                res = self._complete_zone()
+                self._cleared.add(enemy["num"])            # this boss no longer blocks
+                if self.location >= self.total_steps:      # the gate boss falls -> zone done
+                    res = self._complete_zone()
+                    if self.loot:
+                        self.last += f"  Loot: {self.loot['name']}!"
+                    return res
+                self.last = f"{enemy['name']} falls! The path is open."
                 if self.loot:
                     self.last += f"  Loot: {self.loot['name']}!"
-                return res
+                return None
             self._lose_life(f"Lost to {enemy['name']}...")
         elif not won:
             self._lose_life("Knocked back!")
@@ -196,10 +224,11 @@ class Adventure:
             self._apply_life_penalty()
 
     def _apply_life_penalty(self):
-        """WorldMap.applyLifePenalty: retreat to the closest town (zone start), refill life.
-        Does NOT end the run -- the pet regroups and may press on."""
-        self.location = 0
-        self._town_done = False
+        """WorldMap.applyLifePenalty: toClosestTown() -- retreat to the nearest town at
+        or behind the pet (zone start when none), refill life.  Does NOT end the run."""
+        behind = [lo for lo, hi in self.zone.get("towns", ()) if lo <= self.location]
+        self.location = max(behind) if behind else 0
+        self._rested.clear()
         self.life = MAX_LIFE
         self.boss_pending = False
         self.pet._set_energy(self.pet.max_energy)       # regrouped at a town -> rested
@@ -208,7 +237,8 @@ class Adventure:
     def _complete_zone(self):
         zones = self.maps[self.mi]["zones"]
         self.location = 0
-        self._town_done = False
+        self._rested.clear()
+        self._cleared.clear()
         if self.zi + 1 < len(zones):
             self.zi += 1
             self.last = "Zone cleared! Onward."

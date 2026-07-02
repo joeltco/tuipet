@@ -507,6 +507,18 @@ def load_tournies():
     return out
 
 
+def _town_ranges():
+    """towns.csv TownRange ("4201t4300") per TownID -- the REAL step spans."""
+    out = {}
+    for t in csv.DictReader(open(os.path.join(_DATA, "towns.csv"))):
+        try:
+            lo, hi = (t.get("TownRange") or "0t0").split("t")
+            out[int(t["TownID"])] = (int(lo), int(hi))
+        except (KeyError, ValueError):
+            continue
+    return out
+
+
 @lru_cache(maxsize=1)
 def load_maps():
     from collections import defaultdict
@@ -515,6 +527,7 @@ def load_maps():
     for e in enemies:
         slot = "bosses" if e["boss"] else "randoms"
         by_mz[(e["map"], e["zone"])][slot].append(e)
+    towns = _town_ranges()
     zmap = defaultdict(list)
     for z in csv.DictReader(open(os.path.join(_DATA, "zones.csv"))):
         try:
@@ -522,10 +535,13 @@ def load_maps():
         except (KeyError, ValueError):
             continue
         ent = by_mz.get((m, zn), {"randoms": [], "bosses": []})
+        tids = [int(x) for x in (z.get("TownID;") or "").split(";") if x.strip().isdigit()]
         zmap[m].append({
             "map": m, "zone": zn,
             "total_steps": int(z.get("TotalSteps") or 10000),
             "randoms": ent["randoms"], "bosses": ent["bosses"],
+            # the zone's REAL town step-spans (WorldMap towns; rest + no encounters)
+            "towns": sorted(towns[t] for t in tids if t in towns),
         })
     return [{"map": m, "zones": sorted(zmap[m], key=lambda z: z["zone"])}
             for m in sorted(zmap)]
