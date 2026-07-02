@@ -82,9 +82,10 @@ GRAVESTONE = _FX.get("grave", [None])[0]      # real DVPet death.png
 SUN = _FX.get("sun", [None])[0]               # real DVPet noon.png
 MOON = _FX.get("moon", [None])[0]             # real DVPet night.png
 
-_POOP_FR = (_FX.get("poop") or [None])[0]
-POOP_W = len(_POOP_FR[0]) if _POOP_FR else 5
-POOP_PAD = max(1, round(POOP_W * 6 / 30))   # DVPet drawFilthLevel column gap (pad 6 on a 30px cell)
+# DVPet drawFilthLevel lays piles in FIXED 30x27 slots (pad 6) regardless of the
+# pile's size sprite -- at /3 native that's a 10x9 cell with a 2px gap.
+POOP_W = 10
+POOP_PAD = 2
 _FROZEN_FR = (_FX.get("frozen") or [None])[0]
 
 WEATHER_GLYPH = {
@@ -184,6 +185,45 @@ def _blit(bm, ox, oy):
             for x, c in enumerate(row) if c == "1"]
 
 
+def _filth_right(count):
+    """Right edge x of the filth block: fixed POOP_W columns like DVPet's 30px slots."""
+    n = min(count or 0, POOP_MAX_PILES)
+    if n <= 0:
+        return grid.X0
+    return grid.X0 + ((n + 1) // 2 - 1) * (POOP_W + POOP_PAD) + POOP_W
+
+
+def _filth_pts(pet, tick, count=None, sizes=None, push=0, px_h=None):
+    """DVPet drawFilthLevel + animFilth: per-pile SIZED sprites (the real filth.png
+    sizes 1-4, two anim frames each, from pet.poop_sizes) laid in fixed 2-high
+    columns stepping right from the grid's left edge; the frame swaps every
+    7 ticks awake / 10 asleep."""
+    E = data.load_effects()
+    n = min((pet.poop if count is None else count) or 0, POOP_MAX_PILES)
+    if n <= 0:
+        return []
+    if px_h is None:
+        px_h = SCREEN_ROWS * 2
+    sz = list(pet.poop_sizes if sizes is None else (sizes or []))
+    fi = (tick // (10 if getattr(pet, "asleep", False) else 7)) % 2
+    pts = []
+    for i in range(n):
+        s = max(1, min(4, sz[i] if i < len(sz) else 2))
+        frames = E.get("poop_s%d" % s) or E.get("poop") or []
+        if not frames:
+            continue
+        pm = frames[fi % len(frames)]
+        ph_ = len(pm)
+        col, up = i // 2, i % 2
+        x = grid.X0 + col * (POOP_W + POOP_PAD) - push
+        if up:      # top slot sits on the bottom SLOT (9px cell), clamped into the band
+            y = max(px_h - 18, px_h - 2 - 9 - ph_)
+        else:       # bottom slot grounds 2px above the border
+            y = px_h - 2 - ph_
+        pts += _blit(pm, x, y)
+    return pts
+
+
 COND_W = COND_H = 7                                # state.png cell size (DVPet 7x7 cells)
 PLAY_HOP = 14                                      # DVPet jumping(): 6 up + 6 down + rest per hop
 PLAY_HOP_H = 6                                     # apex height in px (LCD is 24px tall)
@@ -207,15 +247,8 @@ def _effect_overlay(pet, frame_i, cols, px_h, tick=0, pet_right=None):
     pts = []
     if pet.dead:
         return pts
-    poopfr = E.get("poop") or []
-    if pet.poop and poopfr:                               # piles stack in a 2-wide grid (DVPet filth)
-        pm = poopfr[(tick // (10 if pet.asleep else 7)) % len(poopfr)]   # DVPet animFilth swap
-        pw, ph_ = len(pm[0]), len(pm)
-        for i in range(min(pet.poop, POOP_MAX_PILES)):                  # DVPet drawFilthLevel: 3 columns x 2 rows,
-            col, up = i // 2, i % 2                         # column-major (bottom pile, then one stacked
-            x = grid.X0 + col * (pw + POOP_PAD)             # directly above it), each column steps right (grid left edge)
-            y = (px_h - 2 - ph_) - up * ph_
-            pts += _blit(pm, x, y)
+    if pet.poop:                                          # sized piles in the DVPet slot grid
+        pts += _filth_pts(pet, tick, px_h=px_h)
     if pet.num == -1:
         return pts
     asleep = bool(getattr(pet, "asleep", False))
@@ -365,8 +398,8 @@ class Screen(Static):
         # (setFrozenIcon only fires when !isPlaying), not a cold-weather state -- so cold
         # shows the huddle pose above, not a full ice block over the pet.
         if pet.poop:                       # keep the pet clear of the filth row in EVERY state
-            pcols = (min(pet.poop, POOP_MAX_PILES) + 1) // 2          # (sleep/sick bypass the roamer bound and would
-            poop_edge = grid.X0 + (pcols - 1) * (POOP_W + POOP_PAD) + POOP_W  # x just past the rightmost pile
+            poop_edge = _filth_right(pet.poop)            # x just past the rightmost pile slot (sleep/sick
+            #                                               bypass the roamer bound and would
             base = (SCREEN_COLS - SPRITE_W) // 2
             lo = poop_edge - base                         # min shift to clear the piles (REAL edge, not padded)
             cap = (grid.X1 - SPRITE_W) - base             # stay inside the grid's right edge
@@ -389,8 +422,7 @@ class Screen(Static):
             self.frame_i = -1
         self.frame_i += 1
         if pet is not None and pet.anim in ("idle", "walk") and pet.num != -1 and not pet.sick:
-            poop_cols = (min(pet.poop, POOP_MAX_PILES) + 1) // 2          # 3x2 grid -> ceil(piles/2) columns wide
-            poop_right = (grid.X0 + poop_cols * (POOP_W + POOP_PAD) + 1) if pet.poop else grid.X0
+            poop_right = (_filth_right(pet.poop) + POOP_PAD + 1) if pet.poop else grid.X0
             cond = (pet.is_injured() or pet.is_fatigued() or pet.has_vitamin()
                     or pet.has_medicine() or pet.has_bandage())
             # keep the pet inside the grid: left of the condition column when it's up, else the grid's right edge
@@ -506,26 +538,16 @@ class Screen(Static):
         return [downsample(fr, f) for fr in raw]           # 24px source -> ~px tall on the LCD
 
     def _fx_filth(self, pet, tick, count=None):
-        """DVPet checkFilth: the care anims (eat/cheer/jeer/refuse) keep the filth
-        piles on screen and stand the pet clear of them (adjustCharacterForFilth).
-        Returns (overlay_pts, clear_xshift)."""
-        E = data.load_effects()
-        poopfr = E.get("poop") or []
+        """DVPet checkFilth: the care anims (eat/cheer/jeer/refuse/poop) keep the
+        filth piles on screen and stand the pet clear of them
+        (adjustCharacterForFilth).  Returns (overlay_pts, clear_xshift)."""
         n = min((getattr(pet, "poop", 0) or 0) if count is None else count, POOP_MAX_PILES)
-        if not n or not poopfr:
+        if not n:
             return [], 0
-        px_h = SCREEN_ROWS * 2
-        pm = poopfr[(tick // 7) % len(poopfr)]              # DVPet animFilth swap
-        pw, ph_ = len(pm[0]), len(pm)
-        pts = []
-        for i in range(n):                                  # same 2-high column grid as paint()
-            col, up = i // 2, i % 2
-            pts += _blit(pm, grid.X0 + col * (pw + POOP_PAD), (px_h - 2 - ph_) - up * ph_)
-        pcols = (n + 1) // 2
-        poop_edge = grid.X0 + (pcols - 1) * (POOP_W + POOP_PAD) + POOP_W
+        pts = _filth_pts(pet, tick, count=n)
         base = (SCREEN_COLS - SPRITE_W) // 2
         cap = max(0, grid.X1 - SPRITE_W - base)             # stay inside the grid's right edge
-        return pts, min(max(0, poop_edge - base), cap)
+        return pts, min(max(0, _filth_right(n) - base), cap)
 
     def _paint_fx(self, pet):
         fx = self.fx
@@ -587,19 +609,14 @@ class Screen(Static):
             wash = E.get("wash", [None])[0]
             wx = SCREEN_COLS - step * 3                        # wash front: enters right, exits left
             base = (SCREEN_COLS - SPRITE_W) // 2
-            pcols = (min(fx.get("poop", 0), 4) + 1) // 2
-            clear = (2 + (pcols - 1) * (POOP_W + POOP_PAD) + POOP_W) - base if fx.get("poop") else 0
+            clear = (_filth_right(fx.get("poop", 0)) - base) if fx.get("poop") else 0
             push = max(0, base + clear + SPRITE_W - wx)        # wash shove, measured from the pet's RIGHT edge
             xshift = clear - push                              # pet starts cleared of the filth, then both
             if push > 0:                                       # slide left in lockstep (gap preserved, no mash)
                 rows = self._pose_rows_idx(pet, 4)             # DVPet drawNum(4) while being washed
-            pm = E.get("poop", [None])[0]
-            if pm and fx.get("poop"):
-                pw, ph_ = len(pm[0]), len(pm)
-                for i in range(min(fx["poop"], POOP_MAX_PILES)):
-                    col, up = i // 2, i % 2                     # filth slides off-screen with the pet
-                    overlay += _blit(pm, 2 + col * (pw + POOP_PAD) - push,
-                                     (px_h - 2 - ph_) - up * ph_)
+            if fx.get("poop"):                                 # the sized piles slide off with the pet
+                overlay += _filth_pts(pet, self.frame_i, count=fx["poop"],
+                                      sizes=fx.get("sizes"), push=push, px_h=px_h)
             if wash:
                 overlay += _blit(wash, wx, max(0, (px_h - len(wash)) // 2))
         elif fx["kind"] == "cheer":
@@ -1669,9 +1686,11 @@ class TuiPetApp(App):
         if self.screen_w.fx is not None:        # let the current care animation finish before acting again
             return
         poop = self.pet.poop
+        sizes0 = list(self.pet.poop_sizes)      # clean() wipes them; the fx still shows the piles
         msg = self.pet.clean()
         if self.pet.anim == "wash":
             self.screen_w.start_fx("clean", poop=poop)
+            self.screen_w.fx["sizes"] = sizes0
             self.beep("wash", bell=False)
         self._do(msg)
     def action_heal(self):

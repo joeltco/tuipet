@@ -534,7 +534,8 @@ class TrainingPanel:
                 frame = [row[:GRID_W] for row in frame]      # cols 0..31 = the track box (== the 32 grid)
             fh = len(frame) if frame else 5
             fx = GRID_X0                                     # track box on the grid's left edge (x4..35)
-            fy = BASE_Y - fh                                 # grounded on the floor (2px above bottom)
+            fy = BAND_TOP                                    # DVPet trainBar y16 of 60 -> the band top
+            #                                                  (upper third, like the guide screenshot)
             track_w = GRID_W - 2                             # interior between the box borders (30 == native fill width)
             if frame:
                 overlay.extend(_blit(frame, fx, fy))

@@ -174,6 +174,29 @@ for _i, _fr in enumerate(_fb):
         if _c is not None:
             effects["field_" + _FIELD_ORDER[_i]] = [to_rows(_c)]
 
+# filth sizes: filth.png is DVPet's pile sheet -- 30x27 cells (gutter 2), 4 sizes
+# x 2 anim frames.  SpriteObj sheets index COLUMN-major (proven by battleBags:
+# getBattleBagSprite 0/2/4 = the three top-row bags), so drawFilthLevel's pairs
+# (0,1)/(2,3)/(4,5)/(6,7) = column N's two rows = size N's two anim frames.
+# /3 block-mean -> up to 10x9 native.  Each size pair is cropped with a SHARED
+# bbox so its two frames stay registered when animated.
+_fs = np.array(Image.open(os.path.join(RES, "filth.png")).convert("RGBA"))
+_frgb = _fs[:, :, :3].astype(int); _fal = _fs[:, :, 3]
+_fon = ((_fal > 60) & ((np.abs(_frgb[:, :, 0]-CYAN[0]) + np.abs(_frgb[:, :, 1]-CYAN[1])
+                        + np.abs(_frgb[:, :, 2]-CYAN[2])) > 60))
+def _filth_cell(col, row):
+    m = _fon[2 + 29*row:2 + 29*row + 27, 2 + 32*col:2 + 32*col + 30]
+    h, w = m.shape[0] // F, m.shape[1] // F
+    return m[:h*F, :w*F].reshape(h, F, w, F).mean(axis=(1, 3)) > 0.4
+for _size in range(4):
+    _a1 = _filth_cell(_size, 0)
+    _b1 = _filth_cell(_size, 1)
+    _u = _a1 | _b1
+    ys, xs = np.where(_u)
+    if len(ys):
+        sl = (slice(ys.min(), ys.max()+1), slice(xs.min(), xs.max()+1))
+        effects[f"poop_s{_size + 1}"] = [to_rows(_a1[sl]), to_rows(_b1[sl])]
+
 # ---- preview ----
 for name, frames in effects.items():
     print(f"\n===== {name}  ({len(frames)} frame(s)) =====")
