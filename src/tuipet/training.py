@@ -66,8 +66,9 @@ DATA_FLY = 3                  # DVPet attackGreen: the shot moves over 3 interva
 HP_ROUNDS = 3                 # DVPet _hpTrainingRounds
 HP_ROUNDS_WON = 2             # DVPet _hpTrainingRoundsWon (first to 2 wins the drill)
 HP_TRAIN_DIFFICULTY = 11      # DVPet _hpTrainDifficultyChange: rank = fullHealthPoints // 11
-HP_ROUND_LEN = (30, 20, 10)   # ticks/round by rank (Easy/Normal/Hard) -- DVPet _hpTrainingRoundLength{Easy,,Hard};
-                              # the timer SHRINKS as battle HP grows (the drill gets harder)
+HP_ROUND_LEN = (60, 50, 40)   # ticks/round by rank (Easy/Normal/Hard).  DVPet shrinks this with HP,
+                              # but at tuipet's 10Hz that left only ~1s/round on a grown pet (you
+                              # couldn't move + lock after round 1) -- floored generous: 6/5/4s.
 VBAR_W = 24
 
 COLS = 40
@@ -592,13 +593,13 @@ class TrainingPanel:
                     mx, end_x = DATA_MARGIN + cw - 3, sx - ow + 3  # muzzle -> pressed against the shield
                     prog = (DATA_FLY - self.fly_t) / (DATA_FLY - 1)
                     overlay += _blit(orb, int(mx + (end_x - mx) * prog), lane_y)
-        else:                                               # hp: pick the matching shape (NO pet here --
-            # the pet appears only for the volley).  DVPet layout: the bird bag shows the target on
-            # the LEFT; the three attribute icons (○ Vaccine / □ Data / △ Virus) you scroll a cursor
-            # through are on the RIGHT.  tuipet's bird belly is illegible at 16px, so the LEFT shows
-            # the target as a big CLEAR shape; the RIGHT is the 3-shape picker with a cursor.
-            tgt_icon = _hp_target_icon(self.hp_target)                 # big clear target shape (14x14)
-            placements = [_cell(tgt_icon, 0)]                          # "match this" -- LEFT cell, grounded
+        else:                                               # hp: pick the shape the bird bag wants (NO pet
+            # here -- the pet appears only for the volley).  DVPet layout: the bird bag (the target
+            # dummy) LEFT; the three attribute icons (○ Vaccine / □ Data / △ Virus) you scroll a
+            # cursor through RIGHT.  The bird's belly symbol is illegible at 16px, so the gauge names
+            # the target glyph; the bird is the recognizable dummy the volley then fires at.
+            bird = _HP_DUMMIES[("vaccine", "data", "virus")[self.hp_target]]
+            placements = [_cell(bird, 0)]                              # the target dummy, grounded LEFT
             picks = [E.get(k, [None])[0] for k in _HP_ICON_KEYS]       # 7x7 ○ □ △, stacked (DVPet order)
             col_x = GRID_X0 + CELL + 8                                 # right-cell column (x28, icons end x34)
             for i, ic in enumerate(picks):
@@ -620,10 +621,12 @@ class TrainingPanel:
         gk = self.gkey
         t = Text()
         if gk == "hp":
-            # the target + picker are ON SCREEN now; the gauge just tracks round + time
-            t.append(f"round {self.rep + 1}/{HP_ROUNDS}   ", style=INK)
-            tb = int((max(self.round_t, 0) / max(self.round_len, 1)) * 12)
-            t.append("time " + "▓" * tb + "░" * (12 - tb) + "\n", style=f"{ACCENT} on {LCD_BG}")
+            # name the target glyph (the bird belly is illegible at 16px) + round + timer
+            t.append("match ", style=INK)
+            t.append(HP_SYMS[self.hp_target], style=INK_B)
+            t.append(f"   round {self.rep + 1}/{HP_ROUNDS}   ", style=INK)
+            tb = int((max(self.round_t, 0) / max(self.round_len, 1)) * 8)
+            t.append("▓" * tb + "░" * (8 - tb) + "\n", style=f"{ACCENT} on {LCD_BG}")
         elif gk == "vaccine":
             hit = self._strike_t > 0
             t.append("HIT!! " if hit else "hit!  ", style=INK_B if hit else INK)
