@@ -664,9 +664,10 @@ class TrainingPanel:
         return t
 
     def _hint(self):
-        return {"hp": "↑↓ pick the shape matching the target   SPACE fire",
+        # keep every hint <= menu.W (38 cols) or footer() clips it mid-word
+        return {"hp": "↑↓ match the target   SPACE fire",
                 "vaccine": "SPACE hit the orb!   ESC out",
-                "data": "SPACE toggle the shield to match the cannon",
+                "data": "SPACE flip the shield   ESC out",
                 "virus": "SPACE stop the marker in the zone"}[self.gkey]
 
     def _attr_pow(self):

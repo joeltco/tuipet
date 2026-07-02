@@ -10,6 +10,10 @@ from . import grid
 from .theme import LCD_ON, LCD_BG, INK, INK_B, DIM, SIL_DAY, SIL_NIGHT  # noqa: F401  (palette names bound for theme.apply propagation)
 from . import menu
 COLS, ROWS = 40, 7
+# the bracket/result scenes only carry ONE info line + note + footer below the bar,
+# so they afford an 8-row (16px) box -> a 14px band: most creatures render at
+# native size (crop-first fit), only full-16px sprites get a gentle 16->14 fit
+FIGHT_ROWS = 8
 
 
 class TournamentPanel:
@@ -107,8 +111,8 @@ class TournamentPanel:
         if t.over:
             out = menu.bar(t.name, "RESULT")
             pose = "happy" if t.champion else "tired"
-            scene = render_scene([grid.center(self._frames(self.pet.num, pose), ph=ROWS * 2)],
-                                 COLS, ROWS, on, LCD_BG, bgimg=bgimg)
+            scene = render_scene([grid.center(self._frames(self.pet.num, pose), ph=FIGHT_ROWS * 2)],
+                                 COLS, FIGHT_ROWS, on, LCD_BG, bgimg=bgimg)
             out.append_text(scene)
             if t.champion:
                 out.append("\n%s\n" % ("★" * min(self.pet.trophies, 14)), style=INK_B)
@@ -120,8 +124,8 @@ class TournamentPanel:
         opp = t.current_opponent()
         pet_rows = self._frames(self.pet.num)
         opp_rows = self._frames(opp["num"])
-        scene = render_scene(grid.faceoff(pet_rows, opp_rows, left_mirror=True, right_mirror=False, ph=ROWS * 2),
-                             COLS, ROWS, on, LCD_BG, bgimg=bgimg)
+        scene = render_scene(grid.faceoff(pet_rows, opp_rows, left_mirror=True, right_mirror=False, ph=FIGHT_ROWS * 2),
+                             COLS, FIGHT_ROWS, on, LCD_BG, bgimg=bgimg)
         out = menu.bar(t.name, "%s %d/3" % (t.round_name, t.round + 1))
         out.append_text(scene)
         out.append("\nvs %s[%s]   Trophy %d\n" % (opp["name"], opp["attribute"][:2], self.pet.trophies), style=INK)

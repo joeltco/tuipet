@@ -86,8 +86,13 @@ def fit_w(sprite, target):
 
 
 def fit(sprite, ph=PXH):
-    """Cap a sprite to one grid cell: <= band_h(ph) tall AND <= CELL wide."""
-    return fit_w(fit_band(sprite, ph), CELL)
+    """Cap a sprite to one grid cell: <= band_h(ph) tall AND <= CELL wide.
+
+    Crops to lit content FIRST so transparent padding never forces a downscale --
+    a 16x16 frame whose creature is only 12px tall renders pixel-perfect in a
+    12px band instead of being box-mushed; scaling only kicks in when the real
+    ink is genuinely taller/wider than the cell."""
+    return fit_w(fit_band(_crop(sprite), ph), CELL)
 
 
 def width(sprite):
