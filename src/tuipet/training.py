@@ -495,27 +495,29 @@ class TrainingPanel:
                 if hit:                                      # the "Hit!" label (DVPet hitLabel) flashes per press
                     overlay.extend(_blit(hit, (COLS - len(hit[0])) // 2, 3))
         elif gk == "virus":                                 # DVPet drawVirusPre: pet AND bag HIDDEN
+            # The real DVPet trainBar sprite is a 32-wide TRACK box (cols 0..31) + a separate
+            # goal compartment (cols 32..37) == 38 wide.  Crop to the 32-wide track box so it
+            # lands EXACTLY on the grid (x4..35) at NATIVE resolution -- no downscale (the old
+            # _fit_width squashed the crisp box + dashes into glitch).  Fill = the native 30-wide
+            # dashed trainBar, cropped to the level (1:1 with the 30px track interior, crisp).
             frame = E.get("train_bar_empty", [None])[0]      # only the power bar shows -- it FILLS
-            fill = E.get("train_bar", [None])[0]             # L->R, loops 0->100, press to stop high
+            fill = E.get("train_bar", [None])[0]             # L->R, loops 0->max, press to stop high
             if frame:
-                frame = _fit_width(frame, GRID_W)            # confine the gauge to the 32-grid
-            fw = max(len(r) for r in frame) if frame else GRID_W
+                frame = [row[:GRID_W] for row in frame]      # cols 0..31 = the track box (== the 32 grid)
             fh = len(frame) if frame else 5
-            fx = GRID_X0 + (GRID_W - fw) // 2               # centred on the grid (x4..36)
-            fy = BASE_Y - fh                                 # grounded on the floor (2px above bottom), like every drill
-            interior = fw - 8                                # bar track inside the frame (leave room for the goal box)
-            if fill:
-                fill = _fit_width(fill, interior)
+            fx = GRID_X0                                     # track box on the grid's left edge (x4..35)
+            fy = BASE_Y - fh                                 # grounded on the floor (2px above bottom)
+            track_w = GRID_W - 2                             # interior between the box borders (30 == native fill width)
             if frame:
                 overlay.extend(_blit(frame, fx, fy))
-            if fill:                                         # REAL dashed trainBar, grows in the track
+            if fill:                                         # REAL dashed trainBar, crisp, grows in the track
                 fw_fill = max(len(r) for r in fill)
-                w = max(0, min(fw_fill, round(fw_fill * min(self.pos, VIRUS_MAX) / VIRUS_MAX)))
+                w = max(0, min(fw_fill, track_w, round(track_w * min(self.pos, VIRUS_MAX) / VIRUS_MAX)))
                 if w:
                     overlay.extend(_blit([row[:w] for row in fill], fx + 1, fy + 1))
-            if int(self.pos) >= VIRUS_BAR_MIN:               # front in the zone -> the goal box lights
-                gx = fx + fw - 6
-                overlay += [(gx + x, fy + 1 + y) for y in range(3) for x in range(5)]
+            # target line: a 1px tick at the zone threshold (VIRUS_BAR_MIN) so you can see where to stop
+            zx = fx + 1 + min(track_w - 1, int(track_w * VIRUS_BAR_MIN / VIRUS_MAX))
+            overlay += [(zx, fy + y) for y in range(fh)]
         elif gk == "data":
             # Built like the VIRUS drill: the whole stage is CENTRED in the LCD (band-centred,
             # NOT jammed on the floor) over the same habitat bg.  Cannon LEFT, pet RIGHT, the
