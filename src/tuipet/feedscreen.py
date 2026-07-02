@@ -82,11 +82,32 @@ class FeedPanel:
         return None
 
     def _icon(self, food):
+        """The food's icon at NATIVE resolution: the 24px source art is authored
+        at 3x (like all DVPet sprites), so /3 recovers the crisp 8px original --
+        the same factor the eat fx uses.  (A /2 lands off the 3px art blocks and
+        mushes the sprite.)"""
         raw = data.load_icons().get(food["key"])
         if not raw:
             return None
-        fr = raw[self.frame_i // 4 % len(raw)] if len(raw) > 1 else raw[0]
-        return downsample(fr, 2)                     # 24px source -> ~12px
+        return downsample(raw[0], 3)
+
+    @staticmethod
+    def _icon_lines(rows):
+        """1-bit rows -> half-block Text lines (square pixels, like the LCD)."""
+        from .theme import LCD_ON, LCD_BG
+        w = max(len(r) for r in rows)
+        g = [r.ljust(w, "0") for r in rows]
+        if len(g) % 2:
+            g.append("0" * w)
+        out = []
+        for y in range(0, len(g), 2):
+            t = Text()
+            for x in range(w):
+                top, bot = g[y][x] == "1", g[y + 1][x] == "1"
+                ch = "█" if top and bot else "▀" if top else "▄" if bot else " "
+                t.append(ch, style=f"{LCD_ON} on {LCD_BG}")
+            out.append(t)
+        return out
 
     def text(self):
         p = self.pet
@@ -99,22 +120,24 @@ class FeedPanel:
             out.append_text(menu.footer("ESC out"))
             return out
         sel = self.options[self.cursor]
-        icon = self._icon(sel) or []
+        icon = self._icon(sel)
+        ilines = self._icon_lines(icon) if icon else []
         eff = _effect_line(sel)
         qty = food_qty(p, sel)
-        for i in range(3):
-            line = icon[i] if i < len(icon) else ""
+        info = [sel["name"][:24], eff[:24],
+                "x∞" if not sel.get("can_dec") else f"x{qty}", ""]
+        istyle = [INK_B, INK, DIM, INK]
+        for i in range(4):
             t = Text()
-            t.append(("".join("█" if c == "1" else " " for c in line)).ljust(14), style=INK_B)
-            if i == 0:
-                t.append(sel["name"][:20], style=INK_B)
-            elif i == 1:
-                t.append(eff[:20], style=INK)
-            elif i == 2:
-                t.append("x∞" if not sel.get("can_dec") else f"x{qty}", style=DIM)
+            t.append("  ", style=INK)
+            pad = 12
+            if i < len(ilines):
+                t.append_text(ilines[i])
+                pad = max(1, 12 - len(ilines[i].plain))
+            t.append(" " * pad, style=INK)
+            t.append(info[i], style=istyle[i])
             t.append("\n")
             out.append_text(t)
-        out.append_text(menu.blanks(1))
         vis = 3
         lo = max(0, min(self.cursor - vis // 2, len(self.options) - vis))
         shown = 0
