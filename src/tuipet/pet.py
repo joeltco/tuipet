@@ -311,8 +311,8 @@ class Pet:
     age_seconds: float = 0.0
     stage_seconds: float = 0.0      # time spent in the current stage
     hunger: int = 4                 # hearts 0..4 (4 = full); FullHunger=4
-    calories: int = 4               # DVPet calorie buffer, -CALORIE_LIMIT..+CALORIE_LIMIT
-    strength: int = 2               # effort hearts 0..4; FullStrength=4
+    calories: int = 0               # DVPet calorie buffer; resetToEgg StartingCalories=0
+    strength: int = 4               # effort hearts 0..4; resetToEgg sets FullStrength(4)
     energy: int = 24                # DVPet energy, -max_energy..+max_energy (full at max_energy)
     max_energy: int = 24            # per-Digimon (digimon.csv MaxEnergy)
     mood: int = 0                   # DVPet signed mood (MinMood..MaxMood); Neutral at 0
