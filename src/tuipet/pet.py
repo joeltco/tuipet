@@ -156,6 +156,11 @@ FULL_HUNGER = 4                         # FullHunger: a satisfied stomach (4 hea
 STOMACH_CAPACITY = 4                    # StomachCapacity: the applyFood fullness-modifier divisor
 OVEREAT_LIMIT = 5                       # OvereatLimit: a glutton may fill one heart past full
 CALORIE_LIMIT = 4                       # CalorieLimit (buffer half-range)
+LESS_HUNGER_CHANCE = 9                  # LessHungerChance: the glutton decay-jitter odds
+STARVE_WEIGHT_DEC = 1                   # ActivityWeightChange: starving sheds weight per lapse
+HUNGER_MISTAKE_LIFE_DEC = 3600.0        # MistakeHungerLifeDec 21600s of a ~500h DVPet life,
+#                                         scaled to tuipet's ~84h: ~1.2% of life x total mistakes
+HUNGER_MISTAKE_OBEDIENCE = 1            # HungerMistakeObedienceChange
 CALORIE_LAPSE_CHANGE = -1               # CalorieLapseChange (drain per lapse)
 CALORIE_LAPSE_GERIATRIC_EXTRA = -3      # CalorieLapseChangeGeriatric (added when elderly)
 CALORIE_DECAY_SEC = 1800 / (2 * CALORIE_LIMIT)   # keep ~1800s per hunger heart
@@ -588,9 +593,20 @@ class Pet:
             if self.calories <= -CALORIE_LIMIT:
                 if self.hunger > 0:
                     self.hunger -= 1
-                else:
+                elif not self.asleep:
+                    # DVPet hungerCall() requires !asleep: a sleeping pet never racks
+                    # hunger mistakes overnight.  The mistake carries its canon teeth
+                    # (hungerMistakePenalty): lifespan -(dec x total mistakes) +
+                    # obedience change, and the pet acts up.
                     self.care_mistakes += 1
+                    self.lifespan = max(0.0, self.lifespan
+                                        - HUNGER_MISTAKE_LIFE_DEC * max(1, self.care_mistakes))
+                    self.obedience += HUNGER_MISTAKE_OBEDIENCE
                     self._open_scold()           # neglect: the pet acts up
+                if self.hunger == 0:
+                    # starvation (setHunger below zero): the calorie crash sheds weight
+                    # every further lapse (StarvationCalorieChange -> ActivityWeightChange)
+                    self.weight = max(1, self.weight - STARVE_WEIGHT_DEC)
                 self.calories = CALORIE_LIMIT
         # pooping (DVPet poop(): relief mood bump, sheds weight, drops a sized pile)
         self._poop_t = getattr(self, "_poop_t", 0) + dt
@@ -642,11 +658,11 @@ class Pet:
         # reset on evolution); the starvation timer persists across evolutions.
         if self.care_mistakes >= 20 or self.injuries >= 20:   # MaxCareMistakes / MaxInjuries
             self._die(); return
-        if self.hunger == 0:
+        if self.hunger == 0 and not self.asleep:              # awake-only, like hungerCall()
             self._starve_t = getattr(self, "_starve_t", 0.0) + dt
             if self._starve_t >= 12 * 3600:                   # empty hunger 12h -> death
                 self._die(); return
-        else:
+        elif self.hunger > 0:
             self._starve_t = 0.0
         self.habitat_record[self.habitat] = self.habitat_record.get(self.habitat, 0) + dt
         # lifespan: neglect burns life down faster than the natural clock
@@ -997,7 +1013,11 @@ class Pet:
 
     @property
     def _hunger_interval(self):
-        return CALORIE_DECAY_SEC * (self._phys().get("hunger_decay", 60) / REF_HUNGER_COEF)
+        # checkNeedDecay's glutton jitter: each lapse has a 1-in-LessHungerChance(9)
+        # roll shifted by glutton -- in expectation a glutton drains ~11% faster,
+        # a picky eater ~11% slower.  Applied as a steady coefficient.
+        glut = 1.0 - (self.glutton * (1.0 / LESS_HUNGER_CHANCE))
+        return CALORIE_DECAY_SEC * (self._phys().get("hunger_decay", 60) / REF_HUNGER_COEF) * glut
 
     @property
     def _poop_interval(self):
