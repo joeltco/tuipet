@@ -61,7 +61,8 @@ DATA_BOB = 3                  # ticks per feint up/down toggle during the telegr
 DATA_TELEGRAPH = (21, 17, 15)  # feint window before commit (DVPet frame*8+pad*8 frames, /6 -> ticks)
 DATA_WINDOW = (10, 7, 5)      # reaction window after commit (DataTrainShootFrame{10,7,5}; 6*frame/6 -> ticks)
 DATA_MARGIN = 4               # the data stage's side margin == GRID_X0: cannon anchors on the grid's left edge
-DATA_FLY = 3                  # DVPet attackGreen: the shot moves over 3 intervals (locX 55->61->67)
+DATA_FLY = 4                  # shot flight ticks (DVPet attackGreen used 3 for its 12px nudge;
+                              # our longer 10px lane gets 4 -- ~2.5px/tick)
 #  collision = the battle's exact beats: EXPLODE_FRAMES strobe (hitAnim) + FLINCH_T pose (aftermathGreen)
 HP_ROUNDS = 3                 # DVPet _hpTrainingRounds
 HP_ROUNDS_WON = 2             # DVPet _hpTrainingRoundsWon (first to 2 wins the drill)
@@ -580,21 +581,23 @@ class TrainingPanel:
                     pf = [row[_xs[0]:_xs[-1] + 1] for row in pf[_ys[0]:_ys[-1] + 1]]
                 pw = max(len(r) for r in pf)
                 phh = len(pf)
-                # Data layout, HP-drill style (Joel): during the TELEGRAPH only the turret
-                # and the shield gates are on screen -- no mon.  When the shot commits the
-                # MON APPEARS braced behind its shield and the turret plays its SHOOT
-                # animation toward it: a 1px recoil as the pellet bursts out of the barrel
-                # and flies the lane into the gate; then hitAnim's fullscreen strobe.
-                cw = max(len(r) for r in cannon) if cannon else 10
+                # Data layout, HP-drill style (Joel), on FIXED roomy columns:
+                #   turret x4..13  ·  6px of open air  ·  shield gate x20..24  ·  mon x27+
+                # Three staged acts, so the transition reads:
+                #   AIM    -- turret + gate only, barrel feinting (no mon)
+                #   LOCK   -- the barrel commits and the MON STEPS IN braced behind its
+                #             shield; the toggle window runs ("block it!")
+                #   SHOOT  -- the turret recoils, the pellet bursts out of the barrel and
+                #             flies the lane into the gate; then hitAnim's strobe.
                 floor = BASE_Y                                     # the shared grid floor (2px above bottom)
-                px = GRID_X0 + GRID_W - pw                          # pet's right edge on the grid's right edge (36)
-                py = floor - phh                                   # sits on the ground, like idle gameplay
+                sx = 20                                            # the gate: 6px clear of the turret
+                px = sx + sw + 2                                   # the mon braces just behind its gate
+                py = floor - phh
                 cy = floor - ch                                    # turret grounded
                 recoil = -1 if (self.fired and self.fly_t >= DATA_FLY - 1) else 0
                 overlay.extend(_blit(cannon, max(0, DATA_MARGIN + recoil), cy))
-                if self.fired:                                     # the mon appears for the shot
+                if self.locked:                                    # the mon steps in at the LOCK
                     overlay.extend(_blit(pf, px, py))
-                sx = px - sw - 2                                   # the shield stands just in front of the pet
                 hi_y = STRIKE_BAND_TOP + 1                         # HIGH lane gate: up near the band top
                 lo_y = floor - sh_h                                # LOW lane gate: grounded on the floor
                 #  ONE solid shield, drawn only in the lane it guards -- the open lane
@@ -606,14 +609,14 @@ class TrainingPanel:
                     overlay.extend(_blit(shield, sx, on_y))
                 if self.fired and self.fly_t > 0:                  # the shoot animation (DVPet attackGreen):
                     # the PELLET (the Data orb, /2 through the standard downsample pipeline --
-                    # the full 8px orb is wider than the turret->gate gap) bursts out of the
-                    # barrel and flies its committed lane into the gate.
+                    # the full 8px orb is wider than the old gap) bursts out of the barrel
+                    # and flies the committed lane into the gate: 10px over DATA_FLY ticks.
                     from .render import downsample
                     orb = downsample(data.load_orbs()["generic"]["Data"][0], 2)
                     ow, oh = max(len(r) for r in orb), len(orb)
                     lane_top = hi_y if self.tgt_up else lo_y       # the lane follows the ATTACK (tgt_up)
                     lane_y = lane_top + sh_h // 2 - oh // 2         # pellet centred on that gate's row
-                    mx = DATA_MARGIN + cw - ow - 2                 # in the barrel's mouth...
+                    mx = DATA_MARGIN + 4                           # in the barrel's mouth...
                     end_x = sx - ow + 2                            # ...to pressing the gate by 2px
                     prog = (DATA_FLY - self.fly_t) / (DATA_FLY - 1)
                     overlay += _blit(orb, int(mx + (end_x - mx) * prog), lane_y)
