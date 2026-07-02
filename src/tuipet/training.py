@@ -581,34 +581,38 @@ class TrainingPanel:
                 pw = max(len(r) for r in pf)
                 phh = len(pf)
                 # Data layout, composed for tuipet's real estate (not a pixel-port -- our creature is a
-                # tiny dot-matrix, DVPet's is a 48px giant): everything GROUNDED on the idle floor --
-                # turret LEFT (barrel feints then commits high/low), pet RIGHT, and the two shields a
-                # tight HIGH/LOW 2-stack (bottom directly under top) hugging the pet's front.  The two
-                # orb lanes line up turret -> shields -> pet.  Raised side = SOLID, other = faint.
+                # tiny dot-matrix, DVPet's is a 48px giant): turret LEFT (barrel feints then commits
+                # high/low), pet RIGHT, both grounded, and TWO LANE GATES in front of the pet -- HIGH
+                # near the band top, LOW on the floor, a clear gap between.  The one solid shield sits
+                # in whichever lane it guards; the orb flies its lane turret -> gate -> pet.
                 cw = max(len(r) for r in cannon) if cannon else 10
                 floor = BASE_Y                                     # the shared grid floor (2px above bottom)
                 px = GRID_X0 + GRID_W - pw                          # pet's right edge on the grid's right edge (36)
                 py = floor - phh                                   # sits on the ground, like idle gameplay
                 cy = floor - ch                                    # turret grounded, level with the pet
-                overlay.extend(_blit(cannon, DATA_MARGIN, cy))
-                overlay.extend(_blit(pf, px, py))
-                sx = px - sw - 1                                   # shields stand just in front of the pet
-                lo_y = floor - sh_h                                # LOW guard grounded; HIGH guard stacked
-                hi_y = lo_y - sh_h                                 # directly on top of it (one tight 2-stack)
-                on_y = hi_y if self.shield_up else lo_y            # raised side = SOLID (trainShield)
-                off_y = lo_y if self.shield_up else hi_y           # other side = faint (DVPet shieldTransp:
-                if shield:                                         #   25% alpha -> a clean 1-in-4 dither)
-                    overlay += [(sx + x, off_y + y) for y in range(sh_h) for x in range(sw)
-                                if shield[y][x] == "1" and x % 2 == 0 and y % 2 == 0]
+                if not self.fired:                                 # telegraph: turret + pet face off; once the
+                    overlay.extend(_blit(cannon, DATA_MARGIN, cy))  # shot FIRES the view cuts to the impact
+                overlay.extend(_blit(pf, px, py))                  # (battle fire_in idiom -- turret off-view,
+                #                                                    the orb flies in across open field)
+                sx = px - sw - 2                                   # the shield stands just in front of the pet
+                hi_y = STRIKE_BAND_TOP + 1                         # HIGH lane gate: up near the band top
+                lo_y = floor - sh_h                                # LOW lane gate: grounded on the floor
+                #  ONE solid shield, drawn only in the lane it guards -- the open lane
+                #  is empty.  (DVPet's transparent shieldTransp ghost was a mouse
+                #  click-target; on a 1-bit LCD with a keyboard toggle it's just
+                #  noise -- the old 1-in-4 dither read as scattered dots.)
+                on_y = hi_y if self.shield_up else lo_y
+                if shield:
                     overlay.extend(_blit(shield, sx, on_y))
-                if self.fired and self.fly_t > 0:                  # DVPet attackGreen: a SHORT hop from the
-                    # muzzle in the committed lane (high=top shield row, low=bottom), pressing into the
-                    # shield slot; then hitAnim's fullscreen flash plays (the orb never reaches the pet).
+                if self.fired and self.fly_t > 0:                  # the impact view (DVPet attackGreen):
+                    # turret off-view, the shot flies IN from the grid's left edge along its
+                    # committed lane and lands pressing the gate -- exactly the battle's
+                    # fire_in beat; then hitAnim's fullscreen flash takes over.
                     orb = data.load_orbs()["generic"]["Data"][0]   # DVPet spriteSheet[25]: generic Data orb
                     ow, oh = len(orb[0]), len(orb)
                     lane_top = hi_y if self.tgt_up else lo_y       # the lane follows the ATTACK (tgt_up)
-                    lane_y = lane_top + sh_h // 2 - oh // 2         # orb centred on that shield row
-                    mx, end_x = DATA_MARGIN + cw - 3, sx - ow + 3  # muzzle -> pressed against the shield
+                    lane_y = lane_top + sh_h // 2 - oh // 2         # orb centred on that gate's row
+                    mx, end_x = GRID_X0, sx - ow + 2               # left edge -> pressing the gate by 2px
                     prog = (DATA_FLY - self.fly_t) / (DATA_FLY - 1)
                     overlay += _blit(orb, int(mx + (end_x - mx) * prog), lane_y)
         else:                                               # hp: pick the shape the dummy wants
