@@ -472,7 +472,21 @@ class TrainingPanel:
             return self._render_menu()
         if self.phase == "strike":
             return self._render_strike(rec)
+        if self.phase == "done":
+            return self._render_done(rec)
         return self._render_play(rec)
+
+    def _render_done(self, rec):
+        """After the volley: show the PET (the mon) with the result -- NOT the frozen minigame.
+        SPACE returns to the main view."""
+        on, bgimg = self._scene_palette()
+        pose = 5 if self.success else 10                    # DVPet 11-frame: cheer (win) / slumped (fail)
+        pf = self._frame(rec, pose)
+        scene = render_scene([grid.center(pf)], COLS, ARENA_ROWS, on, LCD_BG, bgimg=bgimg)
+        scene.append("\n")
+        scene.append_text(menu.note(self.result or ("Nice!" if self.success else "Keep at it!")))
+        scene.append_text(menu.footer("SPACE  finish"))
+        return scene
 
     def _scene_palette(self):
         # the habitat background IS part of DVPet's layout -- show it during the strike (and
