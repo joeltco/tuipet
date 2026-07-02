@@ -38,13 +38,28 @@ def test_fx_runs_exactly_steps_then_ends():
     assert s.fx is None, "fx must end after exactly `steps` frames"
 
 
-def test_clean_chains_into_cheer():
+def test_clean_chains_into_cheer_only_when_filthy():
+    # DVPet clean(): cheer(true) chains ONLY if filth was actually washed;
+    # an empty-room wash just ends (no celebration).
     s = _FakeScreen()
-    s.start_fx("clean")
-    steps = s.fx["steps"]
-    for _ in range(steps):
+    s.start_fx("clean", poop=2)
+    for _ in range(s.fx["steps"]):
         s.advance_fx()
-    assert s.fx is not None and s.fx["kind"] == "cheer", "a wash ends in the sunshine cheer"
+    assert s.fx is not None and s.fx["kind"] == "cheer", "a filthy wash ends in the sunshine cheer"
+    s2 = _FakeScreen()
+    s2.start_fx("clean")                 # nothing to wash
+    for _ in range(s2.fx["steps"]):
+        s2.advance_fx()
+    assert s2.fx is None, "an empty-room wash ends without a cheer"
+
+
+def test_evolve_chains_into_cheer():
+    # DVPet evolFinish(true): every evolution ends in cheer(true, _happy).
+    s = _FakeScreen()
+    s.start_fx("evolve", old_num=-1)
+    for _ in range(s.fx["steps"]):
+        s.advance_fx()
+    assert s.fx is not None and s.fx["kind"] == "cheer", "evolution ends in the praise cheer"
 
 
 def test_eat_fx_scales_with_glutton():

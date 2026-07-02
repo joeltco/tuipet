@@ -185,7 +185,7 @@ def _blit(bm, ox, oy):
 
 
 COND_W = COND_H = 7                                # state.png cell size (DVPet 7x7 cells)
-PLAY_HOP = 12                                      # DVPet jumping(): ticks per up+down hop
+PLAY_HOP = 14                                      # DVPet jumping(): 6 up + 6 down + rest per hop
 PLAY_HOP_H = 6                                     # apex height in px (LCD is 24px tall)
 COND_PITCH = COND_H + 1
 # Status sprites disabled for now (Joel): the post-cure medicine badge and the
@@ -219,18 +219,27 @@ def _effect_overlay(pet, frame_i, cols, px_h, tick=0, pet_right=None):
     if pet.num == -1:
         return pts
     asleep = bool(getattr(pet, "asleep", False))
-    # --- sleep Zzz: fixed TOP-RIGHT corner (DVPet sleepLabel: width - w - 8, y1) ---
-    zz_h = 0
+    # --- sleep Zzz (DVPet idleSleep, frame swap on the 10-tick sleep beat) ---
+    # lights ON: the Zzz is the EMOTION label -- it rides the pet's right edge
+    # (o = _emotionLabel; adjustEmotionLabel = char right edge + 3).
+    # lights OFF: the Zzz is punched out of sleepLightsOff.png at (77..100, 12..29)
+    # of 104x60 -> upper-right, a step below the border on our 40x24 grid.
+    zz_bot = 0
     if asleep and E.get("zzz"):
-        z = E["zzz"][(frame_i // 2) % len(E["zzz"])]
-        zw, zz_h = len(z[0]), len(z)
-        pts += _blit(z, grid.X1 - zw, 0)                      # top-right, inside the grid's right edge
+        z = E["zzz"][(tick // 10) % len(E["zzz"])]
+        zw, zh = len(z[0]), len(z)
+        if pet.lights:
+            pr = pet_right if pet_right is not None else (cols - 16) // 2 + 16
+            pts += _blit(z, max(grid.X0, min(pr + 1, grid.X1 - zw)), 1)
+        else:
+            pts += _blit(z, grid.X1 - zw, 4)
+            zz_bot = 4 + zh
     # --- condition column: fixed right edge, every active condition stacked + blinking ---
     # DVPet stateNumTic blink: 7 ticks awake / 10 asleep, faster (7) when unwell.
     unwell = pet.sick or pet.is_injured() or pet.is_fatigued()
     sf = (tick // (7 if unwell else (10 if asleep else 7))) % 2
     col_x = grid.X1 - COND_W                               # condition column hugs the grid's right edge (x29)
-    col_y0 = (zz_h + 1) if (asleep and zz_h) else 0        # even y -> crisp half-block alignment; below Zzz when asleep
+    col_y0 = (zz_bot + 1) if zz_bot else 0                 # below the lights-off Zzz when it holds the corner
     column = (("st_sick", pet.sick), ("st_medicine", pet.has_medicine()),
               ("st_injury", pet.is_injured()), ("st_bandage", pet.has_bandage()),
               ("st_vitamin", pet.has_vitamin()), ("st_fatigue", pet.is_fatigued()))
@@ -395,23 +404,42 @@ class Screen(Static):
             self._idle_expr = None                               # any non-idle state clears the held expression
 
     # ---- care-action animations (DVPet SpriteAnim eat/clean/cheer) -----------
-    def start_fx(self, kind, icon=None, poop=0, old_num=None, pet=None):
-        steps = {"eat": 35, "cheer": 31, "jeer": 31, "clean": 22, "spit": 11, "evolve": 18, "dying": 18, "dna_charge": 16, "play": 37}.get(kind, 12)
+    def start_fx(self, kind, icon=None, poop=0, old_num=None, pet=None, starving=False):
+        steps = {"eat": 35, "cheer": 31, "jeer": 31, "clean": 22, "spit": 25, "evolve": 37, "dying": 18, "dna_charge": 44, "play": 37}.get(kind, 12)
         self.fx = {"kind": kind, "step": 0, "steps": steps, "icon": icon, "poop": poop, "old_num": old_num}
         if kind == "eat":
-            # DVPet eat(): each chew beat is scaled by pow(N, mod) -- a glutton wolfs
-            # food down (mod 0.9, ends ~beat 23), a picky eater dawdles (mod 1.1, ~48);
-            # food descent (beats 0/2/4/6) is NOT scaled.  Disliked food -> +9 grimace.
+            # DVPet eat(): each chew beat is scaled by pow(N, mod) -- a starving pet or
+            # a glutton wolfs food down (mod 0.9, ends ~beat 23), a picky eater dawdles
+            # (mod 1.1, ~48); food descent (beats 0/2/4/6) is NOT scaled.  Disliked
+            # food -> +9 grimace.  A heavy species (baseWeight>=40) skips a chew cycle
+            # (DVPet's frame jump 18->26): two bites instead of three, ends ~beat 26.
             glut = getattr(pet, "glutton", 0) if pet else 0
-            mod = 0.9 if glut > 0 else (1.1 if glut < 0 else 1.0)
+            mod = 0.9 if (glut > 0 or starving) else (1.1 if glut < 0 else 1.0)
             bite = 9 if (pet is not None and getattr(pet, "_last_meal_disliked", False)) else 7
-            beats = [int(b ** mod) for b in (10, 14, 18, 22, 26, 30)]
-            self.fx["chew"] = {b: (8 if i % 2 == 0 else bite) for i, b in enumerate(beats)}
-            fb = (beats[1], beats[3], beats[5])
+            heavy = pet is not None and pet.num != -1 and pet._base_weight() >= 40
+            if heavy:
+                beats = [int(b ** mod) for b in (10, 14, 18, 22)]
+                self.fx["chew"] = {beats[0]: 8, beats[1]: bite, beats[2]: 8, beats[3]: bite}
+                fb = (beats[1], beats[3], beats[3])         # food frames 0 -> 1 -> 3 (skips 2)
+                self.fx["bite_snds"] = {beats[1]: "eat", beats[3]: "lastBite"}
+                self.fx["steps"] = int(26 ** mod) + 1
+            else:
+                beats = [int(b ** mod) for b in (10, 14, 18, 22, 26, 30)]
+                self.fx["chew"] = {b: (8 if i % 2 == 0 else bite) for i, b in enumerate(beats)}
+                fb = (beats[1], beats[3], beats[5])
+                # DVPet eat(): _eat on the first two bites, _lastBite on the third.
+                self.fx["bite_snds"] = {fb[0]: "eat", fb[1]: "eat", fb[2]: "lastBite"}
+                self.fx["steps"] = int(34 ** mod) + 1
             self.fx["food_beats"] = fb
-            # DVPet eat(): _eat on the first two bites, _lastBite on the third (the chew beats).
-            self.fx["bite_snds"] = {fb[0]: "eat", fb[1]: "eat", fb[2]: "lastBite"}
-            self.fx["steps"] = int(34 ** mod) + 1
+        elif kind == "spit":
+            # DVPet refuse(): _refuse fires on EVERY head-shake flip (0/6/12/18).
+            self.fx["snds"] = {0: "refuse", 6: "refuse", 12: "refuse", 18: "refuse"}
+        elif kind == "evolve":
+            # DVPet evolveAnim(): _evolve sounds at the first burst beat (t5).
+            self.fx["snds"] = {5: "evolve"}
+        elif kind == "dna_charge":
+            # dnaCharge(): _dnaWash as the sweep enters (t21).
+            self.fx["snds"] = {21: "wash"}
 
     def advance_fx(self):
         if not self.fx:
@@ -420,8 +448,14 @@ class Screen(Static):
         if self.fx["step"] < self.fx["steps"]:
             return True
         kind = self.fx["kind"]
+        had_filth = self.fx.get("poop", 0) > 0
         self.fx = None
-        if kind == "clean":            # a good wash ends in the happy 'sunshine'
+        if kind == "clean" and had_filth:
+            # DVPet clean(): the cheer chains ONLY when filth was actually washed
+            # (an empty-room wash just ends -- no celebration).
+            self.start_fx("cheer")
+        elif kind == "evolve":
+            # DVPet evolFinish(true): every evolution ends in cheer(true, _happy).
             self.start_fx("cheer")
         return self.fx is not None
 
@@ -456,6 +490,28 @@ class Screen(Static):
         f = max(1, 24 // px)
         return [downsample(fr, f) for fr in raw]           # 24px source -> ~px tall on the LCD
 
+    def _fx_filth(self, pet, tick):
+        """DVPet checkFilth: the care anims (eat/cheer/jeer/refuse) keep the filth
+        piles on screen and stand the pet clear of them (adjustCharacterForFilth).
+        Returns (overlay_pts, clear_xshift)."""
+        E = data.load_effects()
+        poopfr = E.get("poop") or []
+        n = min(getattr(pet, "poop", 0) or 0, POOP_MAX_PILES)
+        if not n or not poopfr:
+            return [], 0
+        px_h = SCREEN_ROWS * 2
+        pm = poopfr[(tick // 7) % len(poopfr)]              # DVPet animFilth swap
+        pw, ph_ = len(pm[0]), len(pm)
+        pts = []
+        for i in range(n):                                  # same 2-high column grid as paint()
+            col, up = i // 2, i % 2
+            pts += _blit(pm, grid.X0 + col * (pw + POOP_PAD), (px_h - 2 - ph_) - up * ph_)
+        pcols = (n + 1) // 2
+        poop_edge = grid.X0 + (pcols - 1) * (POOP_W + POOP_PAD) + POOP_W
+        base = (SCREEN_COLS - SPRITE_W) // 2
+        cap = max(0, grid.X1 - SPRITE_W - base)             # stay inside the grid's right edge
+        return pts, min(max(0, poop_edge - base), cap)
+
     def _paint_fx(self, pet):
         fx = self.fx
         on, bg = PHASE_PALETTE.get(pet.day_phase, (LCD_ON, LCD_BG))
@@ -469,11 +525,17 @@ class Screen(Static):
         overlay = _weather_overlay(pet.weather, self.frame_i, SCREEN_COLS, px_h)
         xshift = 0
         yshift = 0
+        if fx["kind"] in ("eat", "cheer", "jeer", "spit"):
+            # DVPet checkFilth runs inside these anims: piles stay visible and the
+            # pet (and its food) stands clear of them.
+            filth_pts, filth_clear = self._fx_filth(pet, self.frame_i)
+            overlay += filth_pts
+            xshift = filth_clear
         if fx["kind"] == "eat":
             # DVPet eat(): 24px food descends in 4 stages (beats 0/2/4/6) toward the
             # mouth, then a chew triad alternates open-mouth(+8)/chew(+7) at beats
             # 10/14/18/22/26/30 while the food is consumed frame-by-frame; ends ~34.
-            xshift = -1                                        # DVPet centres the pet (char x29 of the 104px display)
+            xshift -= 1                                        # DVPet char x29 of 104 (~28%), plus any filth clear
             chew = fx.get("chew") or {10: 8, 14: 7, 18: 8, 22: 7, 26: 8, 30: 7}
             pose_i = 0
             for b in sorted(chew):
@@ -525,7 +587,7 @@ class Screen(Static):
                     hf = hap[(step // 6) % len(hap)]
                     # DVPet cheer(): the pet stays CENTRED and the emote rides its right
                     # edge (adjustEmotionLabel) -- not pinned to the far corner.
-                    overlay += _blit(hf, (SCREEN_COLS - SPRITE_W) // 2 + SPRITE_W, 1)
+                    overlay += _blit(hf, (SCREEN_COLS - SPRITE_W) // 2 + xshift + SPRITE_W, 1)
         elif fx["kind"] == "play":
             # DVPet jumping() (SpriteAnim 17308): the pet bounces with joy -- hops UP on
             # the excited pose (5) and lands on the neutral pose (1), a happy chirp at the
@@ -536,64 +598,84 @@ class Screen(Static):
             rows = self._pose_rows_idx(pet, 5 if up else 1)
             yshift = int(PLAY_HOP_H * (1 - abs(ph / (PLAY_HOP / 2) - 1)))   # triangle: 0 -> apex -> 0
         elif fx["kind"] == "jeer":
-            # DVPet jeer(): pose alternates down(+10)/up(+9) every 6 intervals with an
-            # "unhappy" emote bubble; ends ~beat 30 (the scold reaction).
+            # DVPet jeer(goodScold): the SCOLD reaction -- pose alternates down(+4)/up(+6)
+            # every 6 intervals, leading DOWN, with the "unhappy" emote riding the pet;
+            # ends ~beat 30.  (Poses 9/10 belong to badHealthJeer, the dying variant.)
             down = (step // 6) % 2 == 0
-            rows = self._pose_rows_idx(pet, 10 if down else 9)
+            rows = self._pose_rows_idx(pet, 4 if down else 6)
             un = data.load_effects().get("unhappy")
             if un:
                 uf = un[(step // 6) % len(un)]
                 # DVPet jeer(): centred pet, emote at its right edge (not the corner).
-                overlay += _blit(uf, (SCREEN_COLS - SPRITE_W) // 2 + SPRITE_W, 1)
+                overlay += _blit(uf, (SCREEN_COLS - SPRITE_W) // 2 + xshift + SPRITE_W, 1)
         elif fx["kind"] == "spit":
-            # DVPet refuse(): the pet stays CENTRED and shakes its head; the rejected
-            # food drops away from its mouth (on its left) rather than off to one side.
-            xshift = 0
-            food = self._food_frames(fx.get("icon") or "f:0")
-            if food:
-                overlay += _blit(food[0], (SCREEN_COLS - SPRITE_W) // 2, 5 + step * 2)
+            # DVPet refuse(): pose 4 (9 while Depressed) held the whole beat while the
+            # head SHAKES via mirror flips T/F/T/F at 0/6/12/18 (_refuse on each flip,
+            # wired in start_fx); ends at 24.  No food drops -- the meal never appears.
+            sprite = 9 if pet.current_mood() == "Depressed" else 4
+            rows = self._pose_rows_idx(pet, sprite)
         elif fx["kind"] == "evolve":
-            # DVPet evolveAnim(): the screen strobes dark (lightsOff) <-> bright burst
-            # (evol) while changeSprite() swaps the old form for the new one mid-flash --
-            # the digimon flashes as a silhouette and emerges as its evolved form.
-            n = fx["steps"]
-            swap = n // 2                                      # changeSprite() midway
+            # DVPet evolveAnim(): the room plunges DARK (lightsOff, fully opaque -- the
+            # pet vanishes) and the bright "evol" burst strobes over it at beats
+            # 5/12/19/25/29/34 (each icon holds until the next beat); changeSprite()
+            # swaps in the evolved form at beat 21 UNDER darkness, so it emerges on the
+            # next burst.  _evolve sounds at the first burst (start_fx snds).  The
+            # chained cheer(true) afterwards is DVPet evolFinish.
             old = fx.get("old_num")
-            if step < swap and old not in (None, -1):          # old form until the swap...
+            if step < 21 and old not in (None, -1):            # old form until the covered swap
                 rec = data.load_sprites()[1].get(old)
                 if rec and rec["frames"][0]:
                     rows = rec["frames"][0]
-            # ...with bright full-screen "evol" flashes punctuating the transition
-            if step < n - 3 and step % 3 == 1:
-                overlay = overlay + [(x, y) for y in range(px_h) for x in range(SCREEN_COLS)]
-            # the final steps drop the flash -> the evolved form is revealed
+            burst = any(a <= step < b for a, b in
+                        ((5, 10), (12, 14), (19, 21), (25, 27), (29, 32), (34, 99)))
+            if burst:
+                # "evol" burst: the room shows through DVPet's 50% dither mask --
+                # tile the extracted checkerboard over the whole LCD in ink.
+                ev = (data.load_effects().get("evol") or [None])[0]
+                if ev:
+                    mh, mw = len(ev), len(ev[0])
+                    overlay += [(x, y) for y in range(px_h) for x in range(SCREEN_COLS)
+                                if ev[y % mh][x % mw] == "1"]
+            else:                                              # lightsOff beats: pure black, pet hidden
+                rows, bgimg, bg = [], None, "#000000"
         elif fx["kind"] == "dna_charge":
-            # DVPet dnaCharge(): the field drops into the pet and a "dnaWash" sweep
-            # passes DOWN over it (moveDown) while the pet feeds on the DNA; bright
-            # "flash" pulses mark the absorb.  Pet stays centred.  ~16 beats.
-            rows = self._pose_rows_idx(pet, 0 if (step // 2) % 2 == 0 else 7)
+            # DVPet dnaCharge() (SpriteAnim 12860): the FIELD badge drops in beside the
+            # pet (t1-7), wobbles (9/11/13), inserts (t16), then the full-screen dnaWash
+            # wave sweeps DOWN over everything (t21+, ~9px/tick of 120) while the pet
+            # strains (pose 9 from the collide at t27); the badge sinks away at the tail
+            # (t37+).  Pet nudged 1 right (setLocX 3+x), pose 0 until the collide.
             E = data.load_effects()
-            wash = E.get("wash", [None])[0]
-            if wash:
-                wy = -len(wash) + step * 3                 # wash front: enters top, exits bottom
-                overlay += _blit(wash, (SCREEN_COLS - SPRITE_W) // 2, wy)
-            if step % 3 == 1 and step < fx["steps"] - 2:
-                fl = E.get("flash")
-                if fl:
-                    overlay += _blit(fl[(step // 3) % len(fl)],
-                                     (SCREEN_COLS - SPRITE_W) // 2 + SPRITE_W, 1)
+            rows = self._pose_rows_idx(pet, 9 if step >= 27 else 0)
+            xshift = 1
+            badge = (E.get("field_" + str(fx.get("icon") or "")) or E.get("field_None") or [None])[0]
+            if badge:
+                bw, bh = len(badge[0]), len(badge)
+                base = (SCREEN_COLS - SPRITE_W) // 2 + xshift
+                bx = max(0, base - 2 - bw) + ({9: -1, 10: -1, 11: 1, 12: 1}.get(step, 0))
+                rest = 8                                       # DVPet rest y21 of 60 -> ~8 of 24
+                if step < 8:
+                    by = -bh + int((rest + bh) * step / 7)     # moveDown 6/tick descent
+                else:
+                    by = rest + (1 if step >= 16 else 0) + max(0, step - 36)   # insert nudge + sink tail
+                overlay += _blit(badge, bx, by)
+            wash = (E.get("dna_wash") or [None])[0]
+            if wash and step >= 21:
+                wy = -len(wash) + (step - 21) * 4              # 9px/tick of 120 -> ~4px/tick of 48
+                overlay += _blit(wash, max(0, (SCREEN_COLS - len(wash[0])) // 2), wy)
         elif fx["kind"] == "dying":
-            # DVPet dying() (SpriteAnim 13179): the collapsed pet sways gently (+/-1)
-            # while the 'dying' emote (dying/dying2) pulses at its right edge, tracking
-            # it -- frame swap and sway in lockstep, just before the memorial.
-            xshift = 1 if (step // 5) % 2 == 0 else -1
+            # DVPet dying() (SpriteAnim 13179): the collapsed pet (pose 10, mirrored)
+            # sways +/-1 as the 'dying' emote (dying/dying2) swaps at its right edge,
+            # BOTH on a 10-tick beat (frame % (10*interval)), just before the memorial.
+            xshift = 1 if (step // 10) % 2 == 0 else -1
             dye = data.load_effects().get("dying")
             if dye:
-                df = dye[(step // 5) % len(dye)]
+                df = dye[(step // 10) % len(dye)]
                 overlay += _blit(df, (SCREEN_COLS - SPRITE_W) // 2 + SPRITE_W + xshift, 1)
+        mirror = (fx["kind"] == "dying"
+                  or (fx["kind"] == "spit" and (step // 6) % 2 == 0))   # refuse(): head-shake flips
         self.update(render_screen(rows, SCREEN_COLS, SCREEN_ROWS, on, bg,
                                   xshift=xshift, yshift=yshift, overlay=overlay, bgimg=bgimg,
-                                  mirror=(fx["kind"] == "dying")))
+                                  mirror=mirror))
 
 
 def _status_line(status, deco, width=26):
@@ -1250,10 +1332,13 @@ class TuiPetApp(App):
             sc.advance_fx()
             sc.paint(self.pet)
             if sc.fx:
+                # beat-scripted fx sounds: eat's per-bite map + the generic snds map
+                # (refuse head-shakes, the evolve burst, the dnaWash entry, ...)
+                snd = (sc.fx.get("bite_snds", {}).get(sc.fx["step"])
+                       or sc.fx.get("snds", {}).get(sc.fx["step"]))
+                if snd:
+                    self.beep(snd, bell=False)
                 if sc.fx["kind"] == "eat":     # live DVPet feeding readout (calorie + P/M/V)
-                    snd = sc.fx.get("bite_snds", {}).get(sc.fx["step"])
-                    if snd:                    # _eat on bites 1-2, _lastBite on the final chew
-                        self.beep(snd, bell=False)
                     self._status_eat()
                 elif sc.fx["kind"] == "play" and sc.fx["step"] % PLAY_HOP == 1:
                     self.beep("happy", bell=False)   # DVPet jumping(): a chirp at each hop's launch
@@ -1289,7 +1374,7 @@ class TuiPetApp(App):
                 self.flash(f"[b]{p.name}[/] hatched!")
                 # hatch has NO evolve dither -- the egg already shook; the Fresh just appears
             else:
-                self.beep("evolve")
+                # _evolve sounds INSIDE the strobe (fx snds beat 5), like DVPet evolveAnim
                 self.flash(f"[b]{p.name}![/] evolved to {p.stage}!")
                 self.screen_w.start_fx("evolve", old_num=prev[0])
         elif p.poop > poop0:
@@ -1384,12 +1469,12 @@ class TuiPetApp(App):
     def action_feed(self):
         if self.screen_w.fx is not None:        # let the current care animation finish before acting again
             return
+        starving = self.pet.hunger == 0         # DVPet eat(): hunger==0 -> wolfed down (mod 0.9)
         msg = self.pet.feed()
         if self.pet.anim == "eat":
-            self.screen_w.start_fx("eat", "f:0", pet=self.pet)   # SFX now fires per-bite in the fx loop
+            self.screen_w.start_fx("eat", "f:0", pet=self.pet, starving=starving)   # SFX fires per-bite in the fx loop
         elif "too full" in msg:
-            self.screen_w.start_fx("spit", "f:0")
-            self.beep("refuse", bell=False)
+            self.screen_w.start_fx("spit", "f:0")   # _refuse fires on each head-shake (fx snds)
         self._do(msg)
     def action_train(self):
         reason = self.pet.can_train()
@@ -1493,7 +1578,7 @@ class TuiPetApp(App):
         if isinstance(msg, tuple) and msg and msg[0] == "eat":
             self.screen_w.start_fx("eat", msg[1], pet=self.pet)        # the pet eats what you fed from the bag
         elif isinstance(msg, tuple) and msg and msg[0] == "evolve":
-            self.beep("evolve")
+            # _evolve sounds INSIDE the strobe (fx snds beat 5), like DVPet evolveAnim
             self.flash(f"[b]{self.pet.name}![/] evolved to {self.pet.stage}!")
             self.screen_w.start_fx("evolve", old_num=msg[1])
         elif isinstance(msg, tuple) and msg and msg[0] == "transport":
