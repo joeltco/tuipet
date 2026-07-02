@@ -23,7 +23,6 @@ from . import transportscreen
 from . import adventurescreen
 from . import shopscreen
 from . import habitatscreen
-from . import feedscreen
 from . import digicorescreen
 from . import eggselectscreen
 from . import persistence
@@ -1551,22 +1550,12 @@ class TuiPetApp(App):
     def action_feed(self):
         if self.screen_w.fx is not None:        # let the current care animation finish before acting again
             return
-        reason = self.pet.can_feed()            # egg/asleep/dead -> flash the reason, no menu
-        if reason:
-            self._do(reason); return
-        self._open_mode(feedscreen.FeedPanel(self.pet), self._after_feed)
-
-    def _after_feed(self, result):
-        # result: ("fed"|"full", food, msg) from the picker; None on cancel
-        if not result:
-            self.repaint(); return
-        outcome, food, msg = result
-        icon = food.get("key") or ("f:0" if food["name"] == "Meat" else "f:5")
         starving = self.pet.hunger == 0         # DVPet eat(): hunger==0 -> wolfed down (mod 0.9)
-        if outcome == "fed" and self.pet.anim == "eat":
-            self.screen_w.start_fx("eat", icon, pet=self.pet, starving=starving)   # SFX per-bite in the fx loop
-        elif outcome == "full":
-            self.screen_w.start_fx("spit", icon)  # _refuse fires on each head-shake (fx snds)
+        msg = self.pet.feed()
+        if self.pet.anim == "eat":
+            self.screen_w.start_fx("eat", "f:0", pet=self.pet, starving=starving)   # SFX fires per-bite in the fx loop
+        elif "too full" in msg:
+            self.screen_w.start_fx("spit", "f:0")   # _refuse fires on each head-shake (fx snds)
         self._do(msg)
     def action_train(self):
         reason = self.pet.can_train()

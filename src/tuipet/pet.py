@@ -1,6 +1,5 @@
 """DVPet game model: a single virtual pet, its stats, and care logic."""
 from __future__ import annotations
-import math
 import random
 from dataclasses import dataclass, field as _dcf
 from . import data
@@ -151,10 +150,6 @@ POOP_MAX_PILES = 4                      # classic Digimon V-Pet max poops (DVPet
 # level (or, at zero, logs a care mistake).  Eating refills it; overfilling speeds the
 # next poop.  DVPet's two coupled timers collapse here to one buffer whose drain rate is
 # tuned to preserve tuipet's ~1800s-per-heart hunger pace (col-1 calorie mods are 0).
-# hunger / stomach (DVPet FullHunger / StomachCapacity / OvereatLimit)
-FULL_HUNGER = 4                         # FullHunger: a satisfied stomach (4 hearts)
-STOMACH_CAPACITY = 4                    # StomachCapacity: the applyFood fullness-modifier divisor
-OVEREAT_LIMIT = 5                       # OvereatLimit: a glutton may fill one heart past full
 CALORIE_LIMIT = 4                       # CalorieLimit (buffer half-range)
 CALORIE_LAPSE_CHANGE = -1               # CalorieLapseChange (drain per lapse)
 CALORIE_LAPSE_GERIATRIC_EXTRA = -3      # CalorieLapseChangeGeriatric (added when elderly)
@@ -1013,13 +1008,11 @@ class Pet:
         return (self.nutr_protein >= GOOD_NUTRITION_MIN and self.nutr_mineral >= GOOD_NUTRITION_MIN
                 and self.nutr_vitamin >= GOOD_NUTRITION_MIN)
 
-    def _apply_nutrition(self, food, modifier=1.0):
-        """PhysicalState.applyNutrition: a meal adds ceil(macro * modifier) (clamped 0..MaxMacro)."""
-        def m(v):
-            return math.ceil(int(v) * modifier)
-        self.nutr_protein = _clamp(self.nutr_protein + m(food.get("protein", 0)), 0, MAX_MACRO)
-        self.nutr_mineral = _clamp(self.nutr_mineral + m(food.get("mineral", 0)), 0, MAX_MACRO)
-        self.nutr_vitamin = _clamp(self.nutr_vitamin + m(food.get("vitamin_n", 0)), 0, MAX_MACRO)
+    def _apply_nutrition(self, food):
+        """PhysicalState.applyNutrition: a meal adds its macros (clamped 0..MaxMacro)."""
+        self.nutr_protein = _clamp(self.nutr_protein + int(food.get("protein", 0)), 0, MAX_MACRO)
+        self.nutr_mineral = _clamp(self.nutr_mineral + int(food.get("mineral", 0)), 0, MAX_MACRO)
+        self.nutr_vitamin = _clamp(self.nutr_vitamin + int(food.get("vitamin_n", 0)), 0, MAX_MACRO)
 
     # ---- food taste (DVPet Taste<Food>) ----------------------------------
     def _species_food(self):
@@ -1215,21 +1208,7 @@ class Pet:
         elif random.random() < 0.5:
             self._set_anim("surprise", 1.6)
 
-    def can_feed(self):
-        """Guard for opening the feed menu (mirrors feed()'s own gates)."""
-        if self.dead:
-            return "It rests now — press N for a new egg."
-        if self.stage == "Egg":
-            return "It is still an egg."
-        if self.asleep:
-            return self._disturbed()
-        return None
-
     def feed(self, food=None):
-        """PhysicalState.feed -> applyFood: apply a food's FULL effect set, each
-        scaled by DVPet's fullness modifier.  A hunger-food (Meat) refuses a full
-        stomach; a strength-food (Protein/Vitamin, hunger 0) never fills, so it
-        builds strength/DP even on a full pet -- the classic Meat/Protein split."""
         if self.dead:
             return "It rests now — press N for a new egg."
         if self.stage == "Egg":
@@ -1238,36 +1217,20 @@ class Pet:
             return self._disturbed()
         foods = data.load_foods()
         food = food or (foods[0] if foods else {"name": "Meat", "hunger": 1, "weight": 4, "mood": 5})
-        fills = int(food.get("hunger", 0)) > 0
-        # a hunger-food on a full stomach -> too full (a glutton eats past FULL_HUNGER)
-        if fills and self.hunger >= FULL_HUNGER and self.glutton <= 0:
+        if self.hunger >= 4:
             self.weight += 1
             self.overeat += 1
             self.calories = CALORIE_LIMIT
             self._poop_t = min(self._poop_interval, getattr(self, "_poop_t", 0) + 900)   # overeat -> sooner poop
-            self._last_meal_disliked = False
             self._set_anim("refuse", 1.0)
             return f"{self.name} is too full!"
-        # DVPet applyFood modifier: a near-full stomach diminishes a hunger-food's
-        # effects (1 - overfull/stomach); a strength-food (hunger 0) is always full-value.
-        over = self.hunger - FULL_HUNGER
-        modifier = 1.0 if (over <= 0 or not fills) else max(0.0, 1.0 - over / STOMACH_CAPACITY)
-
-        def scaled(key):
-            return math.ceil(food.get(key, 0) * modifier) if food.get(key, 0) > 0 else int(round(food.get(key, 0) * modifier))
-
-        cap = OVEREAT_LIMIT if self.glutton > 0 else FULL_HUNGER
-        self.hunger = _clamp(self.hunger + scaled("hunger"), 0, cap)
-        self.strength = _clamp(self.strength + scaled("strength"), 0, 4)   # Protein builds Effort/DP
-        self._set_energy(self.energy + scaled("energy"))
-        self._set_mood(self.mood + scaled("mood"))          # foods.csv intrinsic mood (Cake +60, Veg -10)
-        self.obedience += scaled("obedience")
-        self._set_enthusiasm(self.enthusiasm + scaled("enthusiasm"))
+        self.hunger = _clamp(self.hunger + max(1, food["hunger"]), 0, 4)
         self.calories = CALORIE_LIMIT                       # a meal refills the calorie buffer
-        self.weight += int(food.get("weight", 1))
+        self.weight += food.get("weight", 1)
+        self._set_mood(self.mood + food.get("mood", 0))     # foods.csv intrinsic mood
         tier = self._eat_food(food.get("category", ""))     # DVPet taste: fav/disliked/neutral
         self._last_meal_disliked = (tier == "disliked")      # eat(): disliked -> +9 grimace bite
-        self._apply_nutrition(food, modifier)                # GoodNutrition macros (scaled)
+        self._apply_nutrition(food)                          # GoodNutrition macros
         self._set_anim("eat", 1.4)
         tag = {"favorite": "  It loves it!", "disliked": "  It dislikes that."}.get(tier, "")
         return f"Fed {food['name']}.{tag}"
