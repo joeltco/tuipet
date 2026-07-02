@@ -46,9 +46,13 @@ def run():
             iid = int(r["ItemIdentificationNum"]); col = int(r["SpriteNum"]) // 9
         except (KeyError, ValueError):
             continue
-        ic = _icon(items, col, 0, 1, 16)
-        if ic:
-            icons[f"i:{iid}"] = [ic]
+        # 4 frames like the foods: DVPet's item ANIMS step down the strip
+        # (bandage() drawNumMirror 0..3 = the wrap sequence).  Frame 0 stays
+        # the plain icon, so single-frame users are unaffected.
+        frames = [_icon(items, col, fr, 1, 16) for fr in range(4)]
+        frames = [f for f in frames if f]
+        if frames:
+            icons[f"i:{iid}"] = frames
     with gzip.open(os.path.join(OUT, "icons.json.gz"), "wt") as fh:
         json.dump(icons, fh)
     print(f"extracted {len(icons)} icons -> icons.json.gz")
