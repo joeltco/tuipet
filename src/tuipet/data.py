@@ -614,6 +614,12 @@ def _consumable(row, id_field):
         "cure_lapse": int(num("CureLapseChange")),
         "heal_lapse": int(num("HealLapseChange")),
         "fatigue_lapse_change": int(num("FatigueLapseChange")),
+        # toy engagement (applyItemNoObedience) + personality mood shaping
+        "diminishing": flag("DiminishingReturns"),
+        "interest_change": int(num("ItemDisinterestChange")),
+        "t_glutton": int(num("Glutton")),
+        "t_restless": int(num("Restless")),
+        "t_disposition": int(num("Disposition")),
         "health": int(num("Health")),   # permanent fullHealthPoints gain (HP Chip)
 
         "uses_per": int(num("UsesPerFood") or num("UsesPerItem") or 1),

@@ -114,6 +114,13 @@ FAV_EXERCISE_TIME_ENTH = 1          # FavExerciseTimeEnthusiasmChange
 NOTFAV_EXERCISE_TIME_MOOD = 2       # NotFavExerciseTimeMoodDec
 DISLIKED_TIME_EXERCISE_ENTH = -1    # DislikedTimeExerciseEnthusiasmChange
 MODE_CHANGE_ENERGY = -1             # ModeChangeEnergyChange
+# toy engagement (applyItemNoObedience): a bored pet gets less from its toys
+MAX_ITEM_INTEREST = 5               # MaxItemInterest
+ITEM_INTEREST_TIMER = 60            # ItemInterestTimer (game-min per -1 decay; 40 sunny / 80 sour)
+ITEM_INTEREST_LOW_TIMER = 40        # ItemInterestLowTimer (disposition +1)
+ITEM_INTEREST_HIGH_TIMER = 80       # ItemInterestHighTimer (disposition -1)
+PERSONALITY_MOOD_MATCH = 10         # ConsumablePersonalityMatchMoodChange
+PERSONALITY_MOOD_UNMATCH = -10      # ConsumablePersonalityUnmatchMoodChange
 # perfect-conditions energy save (checkEnergyIncFromPerfectConditions):
 # an energy DROP during the pet's favourite time may bounce back +1 --
 # roll nextInt(base + mods) == 1, so perfect conditions shrink the range
@@ -465,6 +472,7 @@ class Pet:
     awake_lapse: float = 0.0        # minutes slept so far
     awake_limit: float = MIN_AWAKE_LIMIT                 # minutes of sleep owed
     nap: bool = False               # a lights-out nap (shallow; lights-on wakes it)
+    item_interest: int = 0          # _itemInterest: toy boredom 0..5 (decays over time)
     gift: str = ""                  # pending gift-call present (consumable key; "" = none)
     gift_t: float = 0.0             # seconds toward the next GiftChanceMin roll
     # ---- home tournament (PhysicalState _trophySchedule/_foughtTrophiesToday) ----
@@ -608,6 +616,15 @@ class Pet:
         self.age_seconds += dt
         self.stage_seconds += dt
         shop.check_restock_tick(self, dt)           # checkRestock: bank shop restock credits
+        # setItemInterestLapse: toy boredom fades -1 per timer -- a sunny pet
+        # (disposition +1) re-engages in 40 game-min, a sour one takes 80
+        if self.item_interest > 0:
+            self._interest_t = getattr(self, "_interest_t", 0.0) + dt
+            timer = (ITEM_INTEREST_LOW_TIMER if self.disposition > 0
+                     else ITEM_INTEREST_HIGH_TIMER if self.disposition < 0 else ITEM_INTEREST_TIMER)
+            if self._interest_t >= timer:
+                self._interest_t = 0.0
+                self.item_interest -= 1
         self._check_gift_call(dt)                   # checkGiftCall: a happy pet may find a present
         if self.anim_ttl > 0:
             self.anim_ttl -= dt
@@ -1729,7 +1746,8 @@ class Pet:
         self.hunger = _clamp(self.hunger + scaled("hunger"), 0, cap)
         self.strength = _clamp(self.strength + scaled("strength"), 0, 4)   # Protein builds Effort/DP
         self._set_energy(self.energy + scaled("energy"))
-        self._set_mood(self.mood + scaled("mood"))          # foods.csv intrinsic mood (Cake +60, Veg -10)
+        self._set_mood(self.mood + scaled("mood")           # foods.csv intrinsic mood (Cake +60, Veg -10)
+                       + int(math.ceil(self._personality_mood(food) * modifier)))
         self.obedience += scaled("obedience")
         self._set_enthusiasm(self.enthusiasm + scaled("enthusiasm"))
         if food.get("health"):                              # HP Chip: permanent trained-HP gain
@@ -2452,6 +2470,17 @@ class Pet:
         """Drop loot / grants straight into the bag."""
         self.inventory[key] = self.inventory.get(key, 0) + n
 
+    def _personality_mood(self, e):
+        """consumablePersonalityMoodChange: +-10 per personality tag the
+        consumable shares/clashes with the pet (disposition/restless/glutton)."""
+        total = 0
+        for trait, key in ((self.disposition, "t_disposition"),
+                           (self.restless, "t_restless"), (self.glutton, "t_glutton")):
+            fv = int(e.get(key, 0) or 0)
+            if fv != 0:
+                total += PERSONALITY_MOOD_MATCH if fv == trait else PERSONALITY_MOOD_UNMATCH
+        return total
+
     def use_item(self, key):
         if self.inventory.get(key, 0) <= 0:
             return "None left."
@@ -2505,20 +2534,35 @@ class Pet:
             self._set_anim("happy", 1.4)
             return f"{self.name} evolved!"
         is_food = key.startswith("f:")
+        # applyItemNoObedience: a DiminishingReturns toy scales by 1 - interest/5
+        # (canon quirk: at FULL boredom the scale is skipped and the toy lands at
+        # full strength again); every item use bores the pet a step further
+        mod = 1.0
+        if not is_food:
+            if e.get("diminishing"):
+                m = 1.0 - self.item_interest / MAX_ITEM_INTEREST
+                if 0.0 < m < mod:
+                    mod = m
+            self.item_interest = _clamp(self.item_interest + e.get("interest_change", 0),
+                                        0, MAX_ITEM_INTEREST)
+
+        def _sc(v):
+            return math.ceil(v * mod) if v > 0 else int(round(v * mod))
         if e["hunger"]:
-            self.hunger = _clamp(self.hunger + e["hunger"], 0, 4)
+            self.hunger = _clamp(self.hunger + _sc(e["hunger"]), 0, 4)
             self.calories = CALORIE_LIMIT               # food refills the calorie buffer
-        self._set_mood(self.mood + e["mood"])
-        self._set_enthusiasm(self.enthusiasm + e.get("enthusiasm", 0))
+        # applyConsumable: the consumable's mood is shaped by personality tags
+        self._set_mood(self.mood + _sc(e["mood"]) + _sc(self._personality_mood(e)))
+        self._set_enthusiasm(self.enthusiasm + _sc(e.get("enthusiasm", 0)))
         self.weight = max(1, self.weight + e["weight"])
         if e["energy"]:
-            self._set_energy(self.energy + e["energy"])
+            self._set_energy(self.energy + _sc(e["energy"]))
         if e["strength"]:
-            self.strength = _clamp(self.strength + e["strength"], 0, 4)
-        self.obedience += e["obedience"]
-        self.vaccine = max(0, self.vaccine + e["vaccine"])
-        self.data_power = max(0, self.data_power + e["data"])
-        self.virus = max(0, self.virus + e["virus"])
+            self.strength = _clamp(self.strength + _sc(e["strength"]), 0, 4)
+        self.obedience += e["obedience"]                 # canon: obedience is UNscaled
+        self.vaccine = max(0, self.vaccine + _sc(e["vaccine"]))
+        self.data_power = max(0, self.data_power + _sc(e["data"]))
+        self.virus = max(0, self.virus + _sc(e["virus"]))
         if e.get("vitamin"):
             self.feed_vitamin()                          # guards against injury worsening
         if e["unfatigue"]:

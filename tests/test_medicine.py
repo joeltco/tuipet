@@ -83,3 +83,52 @@ def test_bad_vitamin_overdose():
     p.feed_vitamin()
     assert p.lifespan == life0 - 7200.0        # BadVitaminLifeDec
     assert p.mood < m0
+
+
+# ---- toys (applyItemNoObedience: interest + personality mood) ----------------
+
+def test_toys_bore_the_pet_with_diminishing_returns():
+    p = _pet()
+    ball = data.consumable_by_key("i:3")             # Ball: mood 50, diminishing
+    assert ball["diminishing"] and ball["interest_change"] == 1
+    p.inventory["i:3"] = 10
+    gains = []
+    for _ in range(4):
+        m0 = p.mood
+        p.use_item("i:3")
+        gains.append(p.mood - m0)
+    assert gains[0] > gains[-1]                      # 1 - interest/5 scale bites
+    assert p.item_interest == 4
+
+
+def test_full_boredom_skips_the_scale():
+    # canon quirk: at interest 5 the modifier (1 - 5/5 = 0) fails the >0 guard
+    # and the toy lands at FULL strength again
+    p = _pet(item_interest=5)
+    p.inventory["i:3"] = 1
+    m0 = p.mood
+    p.use_item("i:3")
+    assert p.mood - m0 >= 50
+
+
+def test_interest_decays_faster_for_sunny_pets():
+    p = _pet(item_interest=3, disposition=1)
+    for _ in range(41):
+        p.tick(1.0)
+    assert p.item_interest == 2                      # ItemInterestLowTimer 40
+    p2 = _pet(item_interest=3, disposition=-1)
+    for _ in range(41):
+        p2.tick(1.0)
+    assert p2.item_interest == 3                     # sour pets stay bored (80)
+
+
+def test_personality_mood_shapes_the_toy():
+    dumbbell = data.consumable_by_key("i:7")         # dispo -1, restless +1
+    grump = _pet(disposition=-1, restless=1)         # a match: +20 extra
+    sunny = _pet(disposition=1, restless=-1)         # a clash: -20
+    grump.inventory["i:7"] = sunny.inventory["i:7"] = 1
+    g0, s0 = grump.mood, sunny.mood
+    grump.use_item("i:7")
+    sunny.use_item("i:7")
+    # +-20 personality spread, +-1 each from setMood's disposition nudge
+    assert (grump.mood - g0) - (sunny.mood - s0) == 38
