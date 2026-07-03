@@ -93,3 +93,48 @@ def test_roster_survives_the_save_round_trip():
     d = persistence.to_save_dict(p)
     p2, _ = persistence.pet_from_save(d, catch_up=False)
     assert p2.shop_food == p.shop_food and p2.shop_day == p.shop_day
+
+
+# ---- gift call (checkGiftCall / getGift / giftEnd) ---------------------------
+
+def test_gift_needs_a_happy_grown_awake_pet():
+    p = _pet(mood=0)                                # Neutral: never rolls
+    p.gift_t = 999.0
+    p._check_gift_call(0.0)
+    assert p.gift == ""
+    p2 = _pet(mood=300, obedience=150, stage="Egg")
+    p2.gift_t = 999.0
+    p2._check_gift_call(0.0)
+    assert p2.gift == ""
+
+
+def test_gift_roll_matches_the_canon_range():
+    # mood 300 + obedience 150 -> nextInt(100-150+0+70) = 1/20 per window
+    random.seed(0)
+    p = _pet(mood=300, obedience=150)
+    hits = 0
+    for _ in range(2000):
+        p.gift = ""
+        p.gift_t = 999.0
+        p._check_gift_call(0.0)
+        hits += bool(p.gift)
+    assert 0.02 < hits / 2000 < 0.09                # ~1/20
+
+
+def test_gift_pool_is_giftchance_gated():
+    random.seed(1)
+    p = _pet(mood=300, obedience=150)
+    for _ in range(30):
+        key = p._pick_gift()
+        assert key
+        e = data.consumable_by_key(key)
+        assert e["gift_chance"] > 0 and e["can_inc"]
+
+
+def test_claim_gift_bags_it_and_cheers():
+    p = _pet()
+    p.gift = "f:8"                                  # Steak
+    msg = p.claim_gift()
+    assert "Steak" in msg and p.inventory.get("f:8") == 1
+    assert p.gift == "" and p.anim == "happy"
+    assert p.claim_gift() == ""                     # nothing pending -> no-op

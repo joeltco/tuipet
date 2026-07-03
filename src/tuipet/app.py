@@ -877,6 +877,7 @@ class TuiPetApp(App):
         ("j", "jogress", "Jogress"), ("u", "tournament", "Cup"), ("x", "dna", "DNA"),
         ("l", "lobby", "Lobby"),
         ("s", "sleep", "Lights"), ("g", "theme", "Theme"), ("m", "sound", "Sound"), ("n", "new", "New pet"), ("q", "quit", "Quit"),
+        ("enter", "gift", "Accept gift"),
     ]
 
     def __init__(self, pet: Pet | None = None):
@@ -1464,6 +1465,13 @@ class TuiPetApp(App):
                 self.screen_w.fx["snds"] = {18: poop_snd}
             else:
                 self.beep(poop_snd, bell=False)
+        # gift call (DVPet GiftCall): onset chime, then the attention bounce
+        # (poses 5/7, like DVPet attention(5,7)) until the present is claimed
+        if p.gift and not getattr(self, "_gift_seen", False):
+            self.beep("reward", bell=False)
+        self._gift_seen = bool(p.gift)
+        if p.gift and p.anim == "idle" and self.screen_w.fx is None:
+            p._set_anim("happy", 1.2)
         # care-need call (classic V-pet nag): alert on onset, then every ~90s
         needs = (not p.dead and p.stage != "Egg" and not p.asleep and not p.call_paused()
                  and (p.hunger == 0 or p.sick or p.poop >= 3 or p.energy <= 0
@@ -1485,6 +1493,10 @@ class TuiPetApp(App):
         elif needs:
             self._hud(self._need_message(p))
             self._showing_need = True
+            self._showing_update = False
+        elif p.gift:
+            self._hud(f"[b]{p.name}[/] has a present for you! ENTER to accept")
+            self._showing_need = True           # reuse the clear-on-resolve flag
             self._showing_update = False
         elif self._showing_need:
             self._hud("")
@@ -1703,6 +1715,14 @@ class TuiPetApp(App):
         if refused:
             self._do(f"{self.pet.name} refuses to go!"); return
         self._open_mode(adventurescreen.AdventurePanel(self.pet), lambda _=None: self.repaint())
+
+    def action_gift(self):
+        if self.mode is not None or self.screen_w.fx is not None or not self.pet.gift:
+            return
+        msg = self.pet.claim_gift()
+        if msg:
+            self.screen_w.start_fx("cheer")     # giftEnd -> State.Cheering
+            self._do(msg)
 
     def action_play(self):
         if self.screen_w.fx is not None:        # let the current care animation finish before acting again

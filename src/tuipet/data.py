@@ -601,6 +601,8 @@ def _consumable(row, id_field):
         # DVPet Consumable uses-model: a held consumable carries uses up to MaxUses;
         # using spends UsesPer*; can_inc/can_dec gate buying/using (foods/items.csv).
         "max_uses": int(num("MaxUses") or 1),
+        "gift_chance": int(num("GiftChance/100")),   # per-item odds of being the gift-call present
+
         "uses_per": int(num("UsesPerFood") or num("UsesPerItem") or 1),
         "can_inc": (row.get("CanIncUses") or "TRUE").strip().upper() != "FALSE",
         "can_dec": (row.get("CanDecUses") or "TRUE").strip().upper() != "FALSE",

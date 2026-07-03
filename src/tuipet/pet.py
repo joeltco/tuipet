@@ -93,6 +93,10 @@ BATTLE_LOW_DISPO_FACTOR = 50.0      # LowDispositionBattleObedienceFactor (docil
 REFUSE_TRAVEL_COEFF = 3000.0        # RefuseTravelCoefficient (roll range 100..300100)
 REFUSE_TRAVEL_WALK = 5.0            # RefuseTravelModWalkFactor (run=20; tuipet has no run mode)
 REFUSE_TRAVEL_DISPO = 35.0          # RefuseTravelDispositionCoefficient
+# gift call (config.csv col 1): a HAPPY pet may find you a present
+GIFT_CHANCE_MIN = 57.0              # GiftChanceMin: game-min between rolls
+GIFT_CHANCE_FACTOR = 70             # GiftChanceFactor
+GIFT_CHANCE_MOOD_COEFF = 0.5        # GiftChanceMoodCoefficient
 DEPRESSED_OBEDIENCE = 50.0          # DepressedObedience
 SURR_HEALTH_COEF = 5.0              # SurrenderChanceHealthCoefficient
 SURR_DISP_COEF = 5.0                # HighDispositionSurrenderChanceDispositionCoefficient
@@ -399,6 +403,8 @@ class Pet:
     shop_day: int = -1                              # game day of the current roster (dailyChange)
     shop_restock: int = 0                           # banked restock credits (max RestockMax)
     shop_restock_t: float = 0.0                     # seconds toward the next credit roll
+    gift: str = ""                  # pending gift-call present (consumable key; "" = none)
+    gift_t: float = 0.0             # seconds toward the next GiftChanceMin roll
     adv_map: int = 0
     adv_zone: int = 0
     adv_seek: bool = False    # Disaster Transport: next adventure leg forces an encounter
@@ -522,6 +528,7 @@ class Pet:
         self.age_seconds += dt
         self.stage_seconds += dt
         shop.check_restock_tick(self, dt)           # checkRestock: bank shop restock credits
+        self._check_gift_call(dt)                   # checkGiftCall: a happy pet may find a present
         if self.anim_ttl > 0:
             self.anim_ttl -= dt
             if self.anim_ttl <= 0:
@@ -1994,6 +2001,44 @@ class Pet:
             self.inventory.pop(key, None)
         self.bits += val
         return f"Sold {entry['name']} for {val}b."
+
+    def _check_gift_call(self, dt):
+        """PhysicalState.checkGiftCall + checkGift: every GiftChanceMin game-min,
+        a grown, awake, HAPPY pet rolls nextInt(cap - obedience +
+        (maxMood - mood) * 0.5 + 70) -- a 0 means it found you a present (the
+        better cared-for the pet, the narrower the range).  The pet then calls
+        for attention (GiftCall, poses 5/7) until the gift is claimed."""
+        self.gift_t += dt
+        if self.gift_t < GIFT_CHANCE_MIN:
+            return
+        self.gift_t = 0.0
+        if (self.gift or self.asleep or self.stage in ("Egg", "Fresh", "InTraining")
+                or self.current_mood() != "Happy"):
+            return
+        chance = int(OBEDIENCE_REFUSAL_CAP - self.obedience
+                     + (MOOD_MAX - self.mood) * GIFT_CHANCE_MOOD_COEFF + GIFT_CHANCE_FACTOR)
+        if chance > 0 and random.randrange(chance) == 0:
+            self.gift = self._pick_gift()
+
+    def _pick_gift(self):
+        """PhysicalState.getGift: each CanInc consumable enters the pool at its
+        own GiftChance/100 odds (getCanGift is a per-roll randomChance); the
+        present is a uniform pick from the passers."""
+        pool = [e["key"] for e in data.home_shop_pool()
+                if e.get("can_inc") and e.get("gift_chance", 0) > 0
+                and data.item_is_functional(e)
+                and random.randrange(100) < e["gift_chance"]]
+        return random.choice(pool) if pool else ""
+
+    def claim_gift(self):
+        """ClockTic.giftEnd: the present lands in the bag and the pet cheers."""
+        key, self.gift = self.gift, ""
+        if not key:
+            return ""
+        e = data.consumable_by_key(key) or {}
+        self.add_item(key)
+        self._set_anim("happy", 2.0)                # giftEnd -> State.Cheering
+        return f"{self.name} gives you {e.get('name', 'a present')}!"
 
     def add_item(self, key, n=1):
         """Drop loot / grants straight into the bag."""
