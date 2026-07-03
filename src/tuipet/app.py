@@ -317,7 +317,9 @@ def _effect_overlay(pet, frame_i, cols, px_h, tick=0, pet_right=None):
         if emo and E.get(emo):                            # cheer -> happy, jeer -> unhappy (DVPet)
             bubble.append(E[emo][frame_i % len(E[emo])])
         elif (pet.anim in ("idle", "walk") and E.get("attention")
-              and (pet.hunger == 0 or pet.poop >= 3 or pet.energy <= 0)):
+              and pet.needs_attention()):
+            # design call (polish 2026-07): the '!' bubble and the HUD alarm now
+            # share ONE predicate -- a sick or misbehaving pet flags on-LCD too
             bubble.append(E["attention"][0])             # care-call '!'
         teach = ((getattr(pet, "praise_flag", False) or getattr(pet, "scold_flag", False))
                  and pet.lights)
@@ -581,6 +583,11 @@ class Screen(Static):
         bgimg = self._background(pet)
         if bgimg:
             on = SIL_NIGHT if pet.day_phase == "night" else SIL_DAY
+        if not pet.lights and fx["kind"] != "evolve":
+            # design call (polish 2026-07): the dark room stays dark through a
+            # care fx -- lights-off is room STATE (DVPet's lightsOff roomEffect),
+            # not a backdrop an anim may replace; evolve owns its own darkness
+            bgimg, bg, on = None, "#000000", SIL_NIGHT
         step = fx["step"]
         c = _FxCtx()
         c.px_h = SCREEN_ROWS * 2
@@ -1483,6 +1490,9 @@ class TuiPetApp(App):
                     self._status_eat()
                 elif sc.fx["kind"] == "play" and sc.fx["step"] % PLAY_HOP == 1:
                     self.beep("happy", bell=False)   # DVPet jumping(): a chirp at each hop's launch
+            elif getattr(self, "_pending_evolve", None) is not None and self.screen_w.fx is None:
+                old_num, self._pending_evolve = self._pending_evolve, None
+                self.screen_w.start_fx("evolve", old_num=old_num)
             elif self._dying_fx:               # dying beat finished: saved, or the memorial
                 self._dying_fx = False
                 hits = getattr(self, "_revive_hits", 0)
@@ -1535,9 +1545,14 @@ class TuiPetApp(App):
                 self.flash(f"[b]{p.name}[/] hatched!")
                 # hatch has NO evolve dither -- the egg already shook; the Fresh just appears
             else:
-                # _evolve sounds INSIDE the strobe (fx snds beat 5), like DVPet evolveAnim
+                # _evolve sounds INSIDE the strobe (fx snds beat 5), like DVPet evolveAnim.
+                # design call (polish 2026-07): an evolution landing mid-fx WAITS for
+                # the current animation instead of truncating it (death still overrides)
                 self.flash(f"[b]{p.name}![/] evolved to {p.stage}!")
-                self.screen_w.start_fx("evolve", old_num=prev[0])
+                if self.screen_w.fx is None:
+                    self.screen_w.start_fx("evolve", old_num=prev[0])
+                else:
+                    self._pending_evolve = prev[0]
         elif p.poop > poop0:
             # DVPet playPoopSound is size-keyed: small / normal / large.  Map the new
             # pile count -> first drop is small, a big backup (>=3) is large.
@@ -1568,9 +1583,7 @@ class TuiPetApp(App):
         if p.gift and p.anim == "idle" and self.screen_w.fx is None:
             p._set_anim("happy", 1.2)
         # care-need call (classic V-pet nag): alert on onset, then every ~90s
-        needs = (not p.dead and p.stage != "Egg" and not p.asleep and not p.call_paused()
-                 and (p.hunger == 0 or p.sick or p.poop >= 3 or p.energy <= 0
-                      or p.scold_flag))
+        needs = p.needs_attention()
         if needs and not self._needs:
             self.beep("alarm")
             self._nag_t = 0.0

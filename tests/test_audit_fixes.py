@@ -129,3 +129,50 @@ def test_wolf_down_decided_before_the_meal():
     meat = next(f for f in data.load_foods() if f["name"] == "Meat")
     p.feed(meat)
     assert p._last_meal_starving is True              # pre-meal hunger, not post
+
+
+# ---- polish design decisions (2026-07-04) ------------------------------------
+
+def test_dark_room_stays_dark_through_fx():
+    import tuipet.app as app
+    seen = {}
+    real = app.render_screen
+    def spy(rows, cols, r, on, bg, **kw):
+        seen.update(bg=bg, bgimg=kw.get("bgimg"))
+        return real(rows, cols, r, on, bg, **kw)
+    app.render_screen = spy
+    try:
+        class S(app.Screen):
+            def __init__(self):
+                self.fx = None; self.frame_i = 0; self.roamer = None
+            def update(self, t): pass
+        p = _pet()
+        p.lights = False
+        s = S()
+        s.start_fx("eat", icon="f:8", pet=p)
+        s.fx["step"] = 5
+        s._paint_fx(p)
+        assert seen["bg"] == "#000000" and seen["bgimg"] is None
+    finally:
+        app.render_screen = real
+
+
+def test_attention_predicate_is_shared():
+    p = _pet()
+    assert not p.needs_attention()
+    p.sick = True
+    assert p.needs_attention()          # the '!' bubble now flags sickness too
+    p.sick = False
+    p.scold_flag = True
+    assert p.needs_attention()          # ...and misbehavior
+
+
+def test_nap_mood_farm_is_closed():
+    p = _pet()
+    p.world_seconds = 10 * 60.0
+    m0 = p.mood
+    for _ in range(6):                  # toggle lights off/on six times fast
+        p.lights = False
+        p.tick(1.0)                     # nap starts
+        p.toggle_lights()               # lights on wakes it
+    assert p.mood - m0 <= 10 + 6        # ONE +10 bonus (a few wake nudges aside), not +60

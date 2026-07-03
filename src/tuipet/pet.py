@@ -948,8 +948,13 @@ class Pet:
                     self._fall_asleep()                     # close enough to bedtime
                 else:
                     # checkNap: a shallow doze that BORROWS the current cycle --
-                    # pressure keeps accruing, so real bedtime still arrives on time
-                    self._set_mood(self.mood + ON_NAP_MOOD_INC)
+                    # pressure keeps accruing, so real bedtime still arrives on time.
+                    # design call (polish 2026-07): the +10 nap mood pays at most
+                    # once per game-hour of accrued pressure -- toggling the
+                    # lights was a 2-keypress infinite mood farm
+                    if self.sleep_lapse - getattr(self, "_nap_bonus_lapse", -9e9) >= 60:
+                        self._nap_bonus_lapse = self.sleep_lapse
+                        self._set_mood(self.mood + ON_NAP_MOOD_INC)
                     self.asleep, self.nap = True, True
                     self._lights_t = 0.0
                     self.awake_lapse = max(0.0, self.awake_limit - self.sleep_lapse)
@@ -1220,6 +1225,15 @@ class Pet:
             self.injuries = min(self.injuries, 19)
         self._set_anim("happy", 2.0)                  # the rescue ends in a cheer
         return old if targets else None
+
+    def needs_attention(self):
+        """The ONE care-call predicate behind the '!' bubble AND the HUD alarm
+        (they had drifted; design call, polish 2026-07): an awake, hatched pet
+        that is starving, sick, filthy, exhausted or misbehaving."""
+        return (not self.dead and self.stage != "Egg" and not self.asleep
+                and not self.call_paused()
+                and (self.hunger == 0 or self.sick or self.poop >= 3
+                     or self.energy <= 0 or self.scold_flag))
 
     def _guard(self, asleep_blocks=True):
         """The shared action gate: dead / still-an-egg / asleep (a sleeping pet
