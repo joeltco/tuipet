@@ -327,6 +327,7 @@ def load_requirements():
             "incarnations": _gate(r, "IncarnationsKey", "IncarnationsValue"),  # generation-count gate
             "max_energy": _int_or(r.get("MaxEnergy"), 24),          # DVPet per-Digimon maxEnergy
             "sleep_energy_gain": _int_or(r.get("SleepEnergyGain"), 3),
+            "awake_inc": _int_or(r.get("AwakeLapseInc"), 1),   # 1 adult / 16 babies: short naps
             "can_assist": (r.get("CanAssist") or "").strip().upper() == "TRUE",   # AI Assistant pool
         }
     return reqs

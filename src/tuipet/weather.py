@@ -6,9 +6,9 @@ subtracts another, and the pet's per-species ideal band turns the resulting
 temperature into mood / sickness / energy effects. We use DVPet's default
 Habitat constants and its checkWeather/calcWeather state machine verbatim.
 
-The one deliberate deviation: WEATHER_CHANCE is scaled down from DVPet's 250
-(checked every 10 in-game minutes) so precipitation actually shows up on
-tuipet's compressed clock. The transition algorithm itself is unchanged.
+Canon re-audit 2026-07: every constant here matches config.csv column 1
+verbatim (WeatherChangeChance IS 7 -- an older comment claimed a scaled-down
+deviation that never existed).  The transition machine is line-for-line.
 """
 from __future__ import annotations
 import random

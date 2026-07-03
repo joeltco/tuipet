@@ -187,6 +187,15 @@ DAY_MINUTES = 1440                  # HoursDay * MinutesHour
 MIN_AWAKE_LIMIT = 360.0             # MinAwakeLimit (shortest sleep: 6 game-hours)
 MAX_AWAKE_LIMIT = 900.0             # MaxAwakeLimit (longest: 15)
 MORE_SLEEP_CHANCE = 9               # MoreSleepChance (the per-minute sleep jitter roll)
+LIGHTS_ON_AWAKE_STALL = 50          # LightsOnAwakeLapseUnchangedChance: lit rest is poor rest
+CHANGE_NAP_TO_SLEEP = 240           # ChangeNapToSleepMinutes: a held nap becomes the night
+NAP_TO_SLEEP_RESTLESS = 10          # ChangeNapToSleepMinutesRestlessCoefficient
+NAP_ENERGY_INC = 30                 # NapEnergyInc (checkNapEnergy's accumulator threshold)
+NEGATIVE_ENERGY_GAIN = 6            # NegativeEnergyGain: a DRAINED pet recovers faster
+SLEEP_MIN_HUNGER_DECAY = 3          # SleepMinHungerDecay: asleep the stomach floors here
+SLEEP_MIN_TO_GAIN = 60.0            # SleepMinutesToEnergyGain (uniform across the corpus)
+SICK_TEMP_DEC_CHANCE = 100          # SickTempDecChance (the fever/chills roll bound)
+SICK_TEMP_SWING = 30                # SickTempInc / SickTempDec
 AWAKE_RESTLESS_COEF = 1             # AwakeLapseRestlessCoefficient
 BONUS_SLEEP_ENERGY = 2              # BonusSleepEnergy (a restless skip still rests)
 NAP_ENERGY_MIN = 1                  # NapEnergyMin
@@ -801,14 +810,6 @@ class Pet:
                 self._lights_t = float("-inf")       # AfterMistakeMinutesPostponed: once/night
                 self.care_mistakes += 1
                 self.mistake_day += 1  # MistakeIncMissedDayChange
-        # DVPet sleep recovery: +SleepEnergyGain every SleepMinutesToEnergyGain
-        # (deep sleep only -- a nap restores just the jitter's scraps)
-        if self.nap:
-            self._sleep_e_t = 0.0                    # a nap earns only the jitter scraps
-        self._sleep_e_t = getattr(self, "_sleep_e_t", 0.0) + dt
-        if self._sleep_e_t >= 60 and not self.nap:   # SleepMinutesToEnergyGain
-            self._sleep_e_t = 0.0
-            self._set_energy(self.energy + getattr(self, "_sleep_energy_gain", 3))
         # asleep enthusiasmLapse: spirit settles toward 0 while resting
         self._enth_lapse_t = getattr(self, "_enth_lapse_t", 0.0) + dt
         if self._enth_lapse_t >= 59:
@@ -817,21 +818,66 @@ class Pet:
                 self._set_enthusiasm(self.enthusiasm - ENTHUSIASM_LAPSE_DEC)
             elif self.enthusiasm < 0:
                 self._set_enthusiasm(self.enthusiasm + ENTHUSIASM_LAPSE_INC)
-        # setAwakeLapse: +1/min with the restless jitter -- a restless
-        # sleeper skips ahead (with a scrap of bonus rest), a mellow one
-        # lies in; at the limit it's morning (the morning roll lives in _wake)
-        step = dt
-        r = random.randrange(MORE_SLEEP_CHANCE) + self.restless * AWAKE_RESTLESS_COEF
-        if r < 0:
+        # sleepDecay/setAwakeLapse (canon re-audit 2026-07): the wake clock steps
+        # by the species AwakeLapseInc; a LIT room stalls it half the time
+        # (LightsOnAwakeLapseUnchangedChance -- lit rest is poor rest); the
+        # MoreSleepChance jitter lets a mellow pet lie in and a restless one
+        # skip ahead, its bonus routed through the ACCUMULATORS like canon
+        # (the old code paid energy directly, misreading NapEnergyMin -- a
+        # cadence -- as an amount).
+        phys = self._phys()
+        awake_inc = phys.get("awake_inc", 1)
+
+        def _inc_sleep_minutes(gain):
+            # incSleepMinutes: the meter fills by AwakeLapseInc; a crossing pays
+            self._sleep_min = getattr(self, "_sleep_min", 0.0) + awake_inc * dt
+            if self._sleep_min >= SLEEP_MIN_TO_GAIN:
+                self._sleep_min -= SLEEP_MIN_TO_GAIN
+                self._set_energy(self.energy + gain)
+
+        def _nap_energy(mult=1):
+            # checkNapEnergy: the nap's own accumulator pays NapEnergyGain (1)
+            self._nap_e = getattr(self, "_nap_e", 0.0) + awake_inc * dt * mult
+            if self._nap_e >= NAP_ENERGY_INC:
+                self._nap_e -= NAP_ENERGY_INC
+                self._set_energy(self.energy + 1)
+
+        step = awake_inc * dt
+        if self.lights and not self.call_paused() and random.randrange(100) < LIGHTS_ON_AWAKE_STALL:
             step = 0.0
+        r = random.randrange(MORE_SLEEP_CHANCE) + self.restless * AWAKE_RESTLESS_COEF
+        bonus = False
+        if r < 0:
+            step = max(0.0, step - dt)
         elif r > MORE_SLEEP_CHANCE - 1:
             step += dt
-            self._set_energy(self.energy + (NAP_ENERGY_MIN if self.nap else BONUS_SLEEP_ENERGY))
+            bonus = True
         if self.nap:
-            self.sleep_lapse += dt * self._sleep_inc()   # a nap only BORROWS the cycle
+            # canon: a nap PAYS DOWN bedtime pressure (sleepLapse -= inc) -- the
+            # old '+=' inverted it -- and, held past ChangeNapToSleepMinutes
+            # (+restless coef), the nap BECOMES the night: pressure clears, the
+            # accumulator residue rolls into the sleep meter, nap=false
+            self.sleep_lapse = max(0.0, self.sleep_lapse - awake_inc * dt)
+            self._nap_cycle = getattr(self, "_nap_cycle", 0.0) + dt
+            _nap_energy(2 if bonus else 1)
+            if self._nap_cycle >= CHANGE_NAP_TO_SLEEP + self.restless * NAP_TO_SLEEP_RESTLESS:
+                self._sleep_min = (getattr(self, "_sleep_min", 0.0)
+                                   + max(0.0, getattr(self, "_nap_e", 0.0) - 1))
+                self._nap_cycle = self._nap_e = 0.0
+                self.sleep_lapse = 0.0
+                self.nap = False
+        else:
+            _inc_sleep_minutes(NEGATIVE_ENERGY_GAIN if self.energy < 0
+                               else getattr(self, "_sleep_energy_gain", 3))
+            if bonus:
+                _inc_sleep_minutes(BONUS_SLEEP_ENERGY)
         self.awake_lapse += step
         if self.awake_lapse >= self.awake_limit:
             self._wake(morning=not self.nap)
+        # hungerDecay: asleep the stomach drains only ABOVE the floor
+        # (SleepMinHungerDecay=3) -- one heart overnight, then it holds
+        if self.hunger > SLEEP_MIN_HUNGER_DECAY:
+            self._tick_hunger(dt)
         # death does not wait for morning: the mistake cap and old age
         # apply asleep too (only the starvation clock freezes; audit 2026-07)
         if self.care_mistakes >= 20 or self.injuries >= 20:
@@ -1163,6 +1209,14 @@ class Pet:
             self.temp = min(target, self.temp + wx.TEMP_RATE * dt)
         elif self.temp > target:
             self.temp = max(target, self.temp - wx.TEMP_RATE * dt)
+        # checkTemp's fever/chills (canon re-audit 2026-07): a SICK pet's
+        # temperature lurches -- 1% chill (-30) / 1% fever (+30) per check
+        if self.sick:
+            i = random.randrange(SICK_TEMP_DEC_CHANCE)
+            if i == 1:
+                self.temp = max(0, self.temp - SICK_TEMP_SWING)
+            elif i == 2:
+                self.temp = min(wx.MAX_TEMP, self.temp + SICK_TEMP_SWING)
 
     def _set_xantibody(self, state):
         """Raise the X-Antibody state (never downgrades except by expiry)."""

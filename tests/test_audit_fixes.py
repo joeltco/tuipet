@@ -103,15 +103,26 @@ def test_death_checks_apply_while_asleep():
     assert p.dead                                     # the mistake cap doesn't wait for morning
 
 
-def test_nap_pressure_keeps_accruing():
+def test_nap_pays_down_bedtime_pressure():
+    # canon re-audit 2026-07 (sleepDecay): a nap REDUCES sleepLapse (the old
+    # '+=' pin encoded an inversion), and a nap held past ChangeNapToSleepMinutes
+    # becomes the night: pressure clears and the nap flag drops
     p = _pet()
-    p.sleep_lapse = 200.0
+    p.sleep_lapse = 500.0
     p.lights = False
     p.tick(1.0)                                       # nap starts
     assert p.asleep and p.nap
     lapse0 = p.sleep_lapse
     p.tick(1.0)
-    assert p.sleep_lapse > lapse0                     # bedtime still approaches
+    assert p.sleep_lapse < lapse0                     # bedtime RECEDES while napping
+    from tuipet.pet import CHANGE_NAP_TO_SLEEP
+    p.awake_limit = 9e9                               # hold the nap past the threshold
+    for _ in range(CHANGE_NAP_TO_SLEEP + 20):
+        p.tick(1.0)
+        if not p.nap:
+            break
+    assert p.asleep and not p.nap                     # the long nap BECAME the night
+    assert p.sleep_lapse == 0.0
 
 
 def test_sleeping_pet_battle_disturbs_before_refusing():

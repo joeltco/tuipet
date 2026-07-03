@@ -4,8 +4,8 @@ import random
 from tuipet.pet import Pet, LIGHTS_MISTAKE_SEC, DAY_LENGTH
 
 
-def _sleeper(lights):
-    p = Pet(num=1, stage="Rookie", attribute="Vaccine")
+def _sleeper(lights, num=1, stage="Rookie"):
+    p = Pet(num=num, stage=stage, attribute="Vaccine")
     p.energy = 5
     p.sleep_lapse = p.sleep_limit              # pressure clock rolls over (canon sleep())
     p.tick(1.0)                                # falls asleep (resets the lights counter)
@@ -15,7 +15,9 @@ def _sleeper(lights):
 
 
 def test_sleeping_with_lights_on_is_a_care_mistake():
-    p = _sleeper(lights=True)
+    # an ADULT sleeper: babies (AwakeLapseInc 16) now canonically wake before
+    # the lights-neglect threshold can land
+    p = _sleeper(lights=True, num=100, stage="Champion")
     m0 = p.care_mistakes
     for _ in range(int(LIGHTS_MISTAKE_SEC) + 2):
         p.tick(1.0)
