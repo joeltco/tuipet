@@ -314,7 +314,18 @@ BAD_MORNING_MOOD = {"Happy": -150, "Neutral": -100, "Unhappy": -10, "Depressed":
 GOOD_MORNING_MOOD = {"Happy": 50, "Neutral": 100, "Unhappy": 150, "Depressed": 150}
 WORST_MORNING_MOOD = -10                # WorstMorningMood (TerribleMorning sets mood TO this)
 STARVE_WEIGHT_DEC = 1                   # ActivityWeightChange: starving sheds weight per lapse
-HUNGER_MISTAKE_LIFE_DEC = 3600.0        # MistakeHungerLifeDec 21600s of a ~500h DVPet life,
+HUNGER_MISTAKE_LIFE_DEC = 360.0         # MistakeHungerLifeDec 21600 real-sec on the /60 game
+#                                         scale (x TOTAL mistakes per event; the old 3600 was a
+#                                         bespoke rescale -- the BadMed audit's bug class)
+SICK_LIFE_DEC = 180.0                   # SickLifeDec 10800: every illness costs 3 real-hours
+INJURY_LIFE_DEC = 180.0                 # InjuryLifeDec 10800
+WORSE_MALADY_LIFE_DEC = 180.0           # WorseSick/WorseInjuryLifeDec 10800 (each worsening)
+FATIGUE_LIFE_DEC = 360.0                # FatigueLifeDec 21600
+GERIATRIC_FATIGUE_LIFE_DEC = 60.0       # GeriatricFatigueLifeDec 3600 (an old body pays extra)
+X_LIFE_DEC = 1440.0                     # XAntibodyLifeDec 86400: the X-Program's price in LIFE
+X_LIFE_DEC_BOUND = 7                    # XAntibodyLifeDecModifierBound (86400/nextInt(7); 0 = free)
+INSTANT_DEATH_GRACE = 60.0              # InstantDeathGracePeriod 3600: a burn cannot kill in
+#                                         under the grace -- setTotalLifespan's clamp, verbatim
 #                                         scaled to tuipet's ~84h: ~1.2% of life x total mistakes
 HUNGER_MISTAKE_OBEDIENCE = 1            # HungerMistakeObedienceChange
 CALORIE_LAPSE_CHANGE = -1               # CalorieLapseChange (drain per lapse)
@@ -1074,8 +1085,7 @@ class Pet:
                     # obedience change, and the pet acts up.
                     self.care_mistakes += 1
                     self.mistake_day += 1  # MistakeIncMissedDayChange
-                    self.lifespan = max(0.0, self.lifespan
-                                        - HUNGER_MISTAKE_LIFE_DEC * max(1, self.care_mistakes))
+                    self._burn_life(HUNGER_MISTAKE_LIFE_DEC * max(1, self.care_mistakes))
                     self.obedience += HUNGER_MISTAKE_OBEDIENCE
                     self.mistake_day += 1        # HungerDecAtZeroMissedDayChange
                     self._open_scold()           # neglect: the pet acts up
@@ -1172,11 +1182,20 @@ class Pet:
                     self.awake_lapse = max(0.0, self.awake_limit - self.sleep_lapse)
                     self._set_anim("yawn", 1.8)
 
+    def _burn_life(self, amount):
+        """setTotalLifespan's penalty path (canon re-audit 2026-07): every
+        neglect event BURNS lifespan, clamped so a cut can never kill inside
+        InstantDeathGracePeriod of now -- death always gives you the grace."""
+        self.lifespan = max(self.age_seconds + INSTANT_DEATH_GRACE, self.lifespan - amount)
+
     def _tick_mortality(self, dt):
-        """DVPet discrete neglect-death triggers (config.csv): real abandonment
-        is fatal, not merely a faster lifespan burn.  Care mistakes + injuries
-        are per-form (reset on evolution); the starvation timer persists across
-        evolutions.  Returns True when the pet died this tick."""
+        """Canon death is ONE trigger -- old age (lapsedLife >= totalLifespan)
+        -- with every neglect event BURNING lifespan toward it (the Sick/Injury/
+        Fatigue/Mistake/X LifeDec economy; canon re-audit 2026-07).  The discrete
+        caps (20 mistakes / 20 injuries / 12h starving) are tuipet SAFETY NETS
+        kept beneath the burn economy, not canon (an earlier docstring claimed
+        otherwise); under correct burns they almost never fire first.  Returns
+        True when the pet died this tick."""
         if self.care_mistakes >= 20 or self.injuries >= 20:   # MaxCareMistakes / MaxInjuries
             self._die(); return True
         if self.hunger == 0 and not self.asleep:              # awake-only, like hungerCall()
@@ -1186,17 +1205,8 @@ class Pet:
         elif self.hunger > 0:
             self._starve_t = 0.0
         self.habitat_record[self.habitat] = self.habitat_record.get(self.habitat, 0) + dt
-        # lifespan: neglect burns life down faster than the natural clock
-        extra = 0.0
-        if self.sick:
-            extra += 0.8
-        if self.hunger == 0:
-            extra += 0.4
-        if self.energy <= 0:
-            extra += 0.2
-        if self.is_geriatric:
-            extra += 0.2
-        self.lifespan -= extra * dt * (GOOD_NUTR_LIFESPAN_COEF if self.good_nutrition() else 1.0)
+        # (the old continuous per-second "extra" drain was invented -- canon
+        # burns lifespan through the EVENT penalties wired below instead)
         if self.age_seconds >= self.lifespan:
             self._die()
             return True
@@ -2639,6 +2649,7 @@ class Pet:
             return
         self.sick = True
         self.sick_count += 1
+        self._burn_life(SICK_LIFE_DEC)          # sicken(): every illness costs life
         self.sick_length = random.randint(MIN_SICK_LENGTH, MAX_SICK_LENGTH) * SICK_LAPSE_MIN
         self.sick_length = max(SICK_LAPSE_MIN, self.sick_length - self._affinity() * SICK_LAPSE_MIN)
         self._set_mood(self.mood - SICK_MOOD_DEC)
@@ -2646,8 +2657,10 @@ class Pet:
 
     def _worsen_sick(self):
         """PhysicalState.checkWorseSick (effect body): an already-sick pet gets worse --
-        the illness drags on one lapse longer, with mood/obedience/spirit costs and a
-        fresh mess. (The WorseSickLifeDec lifespan hit is omitted, as in _worsen_injury.)"""
+        the illness drags on one lapse longer, with mood/obedience/spirit costs, a
+        fresh mess -- and the WorseSickLifeDec burn (canon re-audit 2026-07: the
+        old omission note is gone; every worsening costs 3 real-hours of life)."""
+        self._burn_life(WORSE_MALADY_LIFE_DEC)
         self.obedience += WORSE_MALADY_OBED_DEC
         self._set_mood(self.mood + WORSE_MALADY_MOOD_DEC)
         self._set_enthusiasm(self.enthusiasm + SICK_ENTH_CHANGE)  # WorseSickEnthusiasmChange == -1
@@ -2656,8 +2669,10 @@ class Pet:
 
     def _injure(self):
         """PhysicalState.injure: take an injury for MinInjLength..MaxInjLength recovery
-        lapses; the cumulative injury count (used by evolution) also ticks up."""
+        lapses; the cumulative injury count (used by evolution) also ticks up.
+        Every injury burns InjuryLifeDec of life (canon re-audit 2026-07)."""
         self.injuries += 1
+        self._burn_life(INJURY_LIFE_DEC)
         rolled = random.randint(MIN_INJ_LENGTH, MAX_INJ_LENGTH) * INJ_LAPSE_MIN
         rolled = max(INJ_LAPSE_MIN, rolled - self._affinity() * INJ_LAPSE_MIN)   # habitat-compat length mod
         self.inj_length = max(self.inj_length, rolled)
@@ -2686,7 +2701,7 @@ class Pet:
                 self._worsen_sick()
             self._advance_bm(BAD_VITAMIN_BM_INC)
             self._set_mood(self.mood - BAD_VITAMIN_MOOD_DEC)
-            self.lifespan = max(0.0, self.lifespan - BAD_VITAMIN_LIFE_DEC)
+            self._burn_life(BAD_VITAMIN_LIFE_DEC)
             if not self.sick and random.randrange(REFUSE_CHANCE) < VITAMIN_OVERFED_SICK_CHANCE:
                 self._sicken()                               # vitaminOverfedSickChance
             self._start_poop()
@@ -2695,7 +2710,8 @@ class Pet:
 
     def _worsen_injury(self):
         """PhysicalState.worsenedInjury: the injury gets worse -- extended, with mood/
-        obedience/energy/spirit costs (the WorseInjuryLifeDec lifespan hit is omitted)."""
+        obedience/energy/spirit costs and the WorseInjuryLifeDec burn."""
+        self._burn_life(WORSE_MALADY_LIFE_DEC)   # WorseInjuryLifeDec (canon re-audit)
         self.obedience += WORSE_MALADY_OBED_DEC
         self._set_mood(self.mood + WORSE_MALADY_MOOD_DEC)
         self._set_enthusiasm(self.enthusiasm + WORSE_INJ_ENTH_CHANGE)
@@ -2722,6 +2738,10 @@ class Pet:
         fatigue length off (FatigueMin..FatigueMax game-min)."""
         already = self.is_fatigued()
         self.mistake_day += 1                    # FatigueMissedDay
+        # FatigueLifeDec (+ the geriatric surcharge) -- canon re-audit 2026-07:
+        # the fatigue arc had documented this hit as omitted
+        self._burn_life(FATIGUE_LIFE_DEC
+                        + (GERIATRIC_FATIGUE_LIFE_DEC if self.is_geriatric else 0.0))
         self.fatigue_length = max(FATIGUE_MIN, random.randint(FATIGUE_MIN, FATIGUE_MAX) - self._affinity())   # habitat-compat length mod
         self._set_energy(self.energy - FATIGUE_ENERGY_DEC)
         self._set_enthusiasm(self.enthusiasm + FATIGUE_ENTH_CHANGE)
@@ -2817,7 +2837,7 @@ class Pet:
             return f"{self.name} spits out the medicine!"
         if self.med_lapse > 0:                               # getMed(): double dose
             self.mistake_day += 1                            # BadMedMissedDayChange
-            self.lifespan = max(0.0, self.lifespan - BAD_MED_LIFE_DEC)
+            self._burn_life(BAD_MED_LIFE_DEC)
             self._advance_bm(BAD_MED_BM_INC)
             self._start_poop()
             self._set_anim("refuse", 1.5)                    # Bad_Health_Jeering
@@ -3031,7 +3051,7 @@ class Pet:
             self._set_anim("happy", 2.0)                     # Birthday_Good
             self.birthday_note = f"A wonderful day! {self.name} earned a Cupcake!"
         elif major == "Unhappy" and self.mistake_day >= MIN_MISTAKE_DAY_DEC:
-            self.lifespan = max(0.0, self.lifespan - BONUS_LIFE_DEC)
+            self._burn_life(BONUS_LIFE_DEC)
             if self.evol_bonus > 0:
                 self.evol_bonus -= 1
             self.add_item(f"f:{BAD_BIRTHDAY_FOOD}")
@@ -3124,6 +3144,13 @@ class Pet:
         if e.get("special") == "xantibody":
             self._set_anim("happy", 1.5)
             if key == "i:14":
+                if self.x_antibody == "None":
+                    # xEvolve: the X-Program charges its price in LIFE on an
+                    # unmarked pet -- 86400/nextInt(7) real-sec (/60 scale; a
+                    # 0 draw is free), canon calcXAntibodyLifeDec verbatim
+                    d = random.randrange(X_LIFE_DEC_BOUND)
+                    if d:
+                        self._burn_life(X_LIFE_DEC / d)
                 self._set_xantibody("Permanent")
                 return "X-Program complete! The X-Antibody is permanent."
             self._set_xantibody("Temporary")

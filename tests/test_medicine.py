@@ -83,7 +83,9 @@ def test_bad_vitamin_overdose():
     p.vitamin_lapse = 30.0                     # the last dose still runs
     life0, m0 = p.lifespan, p.mood
     p.feed_vitamin()
-    assert p.lifespan == life0 - 7200.0        # BadVitaminLifeDec
+    # BadVitaminLifeDec -- plus SickLifeDec (180) when the overdose roll sickens
+    # (the canon burn economy, audit 2026-07)
+    assert p.lifespan == life0 - 7200.0 - (180.0 if p.sick else 0.0)
     assert p.mood < m0
 
 
