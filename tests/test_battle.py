@@ -210,3 +210,63 @@ def test_orders_pay_obedience_and_prouder_wins():
     free.free_style = True
     free.record_battle(True, _enemy(hp=10))
     assert p.mood > free.mood                  # OrdersWonMoodInc only under orders
+
+
+# ---- the surrender system (checkSurrender / onSurrender, wired 2026-07) ------
+
+def _bp(obedience=500, mood=0):
+    import tuipet.battlescreen as bs
+    from tuipet.pet import Pet
+    p = Pet(num=100, stage="Champion", attribute="Vaccine", obedience=obedience)
+    p.mood = mood
+    p.full_health = 10
+    panel = bs.BattlePanel(p, {"num": 4, "name": "Foe", "stage": "Champion",
+                               "vaccine": 5, "data_power": 5, "virus": 5,
+                               "hp": 10, "bits": (0, 0)})
+    return p, panel
+
+
+def test_obedient_pet_never_asks_to_quit():
+    import random
+    random.seed(0)
+    p, panel = _bp(obedience=500)
+    for _ in range(60):
+        panel._on_round_end()
+        assert panel.phase == "menu"              # cont score towers over the roll
+
+
+def test_broken_pet_falters_and_the_trainer_decides():
+    import random
+    random.seed(0)
+    p, panel = _bp(obedience=-400, mood=-200)
+    panel.battle.pet_hp = 1                       # bleeding: the low-HP factors bite
+    asked = False
+    for _ in range(80):
+        panel.phase = "anim"
+        panel._on_round_end()
+        if panel.phase == "surrender_ask":
+            asked = True
+            break
+        if panel.phase == "result":               # sv==1: it ran outright -- also valid
+            asked = True
+            break
+    assert asked
+    if panel.phase == "surrender_ask":
+        o0 = p.obedience
+        panel.key("n")                            # send it back in
+        assert panel.phase == "menu"
+        assert p.obedience == o0 + 1              # surrender_reject: obeys a touch more
+
+
+def test_player_surrender_can_be_refused():
+    import random
+    random.seed(0)
+    p, panel = _bp(obedience=-500)                # non-compliant: refusal certain
+    panel.phase = "menu"
+    r = panel._player_surrender()
+    assert r is None                              # it would NOT give up
+    assert p.scold_flag                           # the defiance opens the scold window
+    p2, panel2 = _bp(obedience=500)
+    p2.compliance = True                          # compliant: the surrender proceeds
+    r2 = panel2._player_surrender()
+    assert r2 == ("done", None)

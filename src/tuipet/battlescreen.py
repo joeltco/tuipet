@@ -71,6 +71,8 @@ class BattlePanel:
         self.foe_attr = None
         self.done_anim = False
         self.won = None
+        self.ran_away = False        # checkSurrender==1/accepted 2: it left the fight
+        self.surrender_refused = False   # onSurrender: it wouldn't quit
         self.hud_php = self.battle.pet_hp
         self.hud_fhp = self.battle.enemy_hp
         self.hud_note = "Battle start!"
@@ -85,6 +87,18 @@ class BattlePanel:
         self.i = 0
 
     # ---- one round: pick attack, resolve, build the alternating-view timeline ----
+    def _player_surrender(self):
+        """ClockTic.onSurrender: giving up is the pet's to refuse -- a proud one
+        won't quit ('doesn't want to give up'), opens the scold window, and
+        fights the round its OWN way instead."""
+        if self.pet.check_refused():
+            self.sfx = "refuse"
+            self.surrender_refused = True        # the menu note shows the defiance
+            self._resolve_and_build(self.battle._own_choice())
+            return None
+        self.battle.surrender()
+        return ("done", None)
+
     def _resolve_and_build(self, attr):
         b = self.battle
         ph0, fh0 = b.pet_hp, b.enemy_hp
@@ -136,6 +150,8 @@ class BattlePanel:
     def _enter_result(self):
         self.done_anim = True
         self.won = bool(self.battle.won)
+        if self.ran_away and not self.won:
+            self.battle.reward = f"{self.pet.name} fled the fight."
         self.phase = "result"
 
     # ---- driving ----
@@ -163,12 +179,43 @@ class BattlePanel:
             if self.battle.over:
                 self._enter_result()
             else:
-                self.phase = "menu"
+                self._on_round_end()
+
+    def _on_round_end(self):
+        """ClockTic.onRoundEnd: after every resolved round the pet's morale
+        rolls checkSurrender -- 0 fights on, 2 ASKS the trainer to quit, 1 it
+        simply RUNS (scoldable)."""
+        b = self.battle
+        sv = self.pet.check_surrender(b.pet_hp, b.enemy_hp, b.enemy_max, b.pet_max)
+        if sv == 2:
+            self.phase = "surrender_ask"
+            self.sfx = "refuse"
+        elif sv == 1:
+            self.pet.surrender_effect(1, b.pet_hp, b.enemy_hp)
+            self.pet._open_scold()               # setScold(true): it fled without asking
+            b.surrender()
+            self.ran_away = True
+            self._enter_result()
+        else:
+            self.phase = "menu"
 
     def key(self, k):
         if self.phase == "intro":
             if k in ("space", "enter", "escape"):
                 self.i = len(self.timeline) - 1
+                self.phase = "menu"
+            return None
+        if self.phase == "surrender_ask":
+            # Surrender_Validation: allow the quit, or send it back in
+            if k in ("y", "enter"):
+                b = self.battle
+                self.pet.surrender_effect(2, b.pet_hp, b.enemy_hp)
+                b.surrender()
+                self.ran_away = True
+                self._enter_result()
+            elif k in ("n", "escape", "space"):
+                self.pet.surrender_reject()      # sent back in: sulks, obeys a touch more
+                self.sfx = "confirm"
                 self.phase = "menu"
             return None
         if self.phase == "menu":
@@ -180,16 +227,13 @@ class BattlePanel:
                 self.sel = int(k) - 1
                 self._resolve_and_build(OPTS[self.sel][1])
             elif k == "4":                          # the 4th row: Surrender
-                self.battle.surrender()
-                return ("done", None)
+                return self._player_surrender()
             elif k in ("enter", "space"):
                 if OPTS[self.sel][1] is None:
-                    self.battle.surrender()
-                    return ("done", None)
+                    return self._player_surrender()
                 self._resolve_and_build(OPTS[self.sel][1])
             elif k == "s":
-                self.battle.surrender()
-                return ("done", None)
+                return self._player_surrender()
             elif k == "f":
                 # Battle_Style: Free (it fights its own way, +1 all powers)
                 # vs Orders (your call; refusable, but discipline pays)
@@ -299,6 +343,9 @@ class BattlePanel:
         out = menu.header("BATTLE", f"vs {b.enemy['name'][:14]} · {style}")
         tag = " BOSS" if b.enemy.get("boss") else ""
         ignored = "  It IGNORED you!" if getattr(b, "refused_order", False) else ""
+        if getattr(self, "surrender_refused", False):
+            self.surrender_refused = False
+            ignored = "  It won't give up!"       # onSurrender: refuseSurrender
         out.append_text(menu.note(
             f"You HP {b.pet_hp}/{b.pet_max}   Foe HP {b.enemy_hp}/{b.enemy_max}{tag}{ignored}"))
         out.append_text(menu.blanks(1))
@@ -313,6 +360,14 @@ class BattlePanel:
     def text(self):
         if self.phase == "menu":
             return self._render_menu()
+        if self.phase == "surrender_ask":
+            out = menu.header("BATTLE", "it falters...")
+            out.append_text(menu.blanks(1))
+            out.append_text(menu.row(f"{self.pet.name} wants to give up!"))
+            out.append_text(menu.blanks(3))
+            out.append_text(menu.note("allow the retreat, or send it back in?"))
+            out.append_text(menu.footer("Y allow   N fight on"))
+            return out
         if self.phase == "result":
             return self._render_scene_frame({"m": "result", "view": "pet"})
         fr = self.timeline[min(self.i, len(self.timeline) - 1)]

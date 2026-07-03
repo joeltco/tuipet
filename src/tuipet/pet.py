@@ -2193,9 +2193,8 @@ class Pet:
         total = exercise_factor + time_factor + mood_factor + unwell_factor + enth_factor
         return (base, mood_factor, total)
 
-    # -- UNWIRED CANON (audit 2026-07): the pet-initiated surrender request
-    # (ClockTic's "Your Digimon doesn't want to give up" flow).  Ported but the
-    # battlescreen hook was never added -- wire it in the polish phase or cut it.
+    # -- the pet-initiated surrender request (ClockTic onRoundEnd ->
+    # checkSurrender; wired into battlescreen 2026-07-04) --
     def check_surrender(self, health, enemy_health, enemy_max_health, full_hp):
         """PhysicalState.checkSurrender (verbatim two-pass formula).  Returns
         0 = fight on, 2 = the pet REQUESTS to give up (the trainer decides), or
