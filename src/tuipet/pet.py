@@ -276,6 +276,10 @@ FULL_HUNGER = 4                         # FullHunger: a satisfied stomach (4 hea
 STOMACH_CAPACITY = 4                    # StomachCapacity: the applyFood fullness-modifier divisor
 OVEREAT_LIMIT = 5                       # OvereatLimit: a glutton may fill one heart past full
 CALORIE_LIMIT = 4                       # CalorieLimit (buffer half-range)
+FOOD_WEIGHT_CHANGE = 1                  # FoodWeightChange: calories rising while positive fattens
+DIRTY_EATING_MOOD_DEC = 10              # DirtyEatingMoodDec (a meal amid the filth)
+DIRTY_EATING_WORSE_CHANCE = 16          # DirtyEatingWorseSickChance (% per pile)
+DIRTY_EATING_SICK_CHANCE = 8            # DirtyEatingSickChance (% per pile)
 LESS_HUNGER_CHANCE = 9                  # LessHungerChance: the glutton decay-jitter odds
 # sleep (DVPet setAsleep / lightsCall / the morning wake roll)
 LIGHTS_MISTAKE_SEC = 60.0               # MinutesToMistakeLights(60) as ~12% of the sleep,
@@ -414,7 +418,9 @@ WORSE_INJ_ENTH_CHANGE = -1               # WorseInjuryEnthusiasmChange
 VITAMIN_HOURS = 60                       # VitaminHours (game-min of injury-worsening protection)
 CURED_MOOD_BONUS = 75                    # CuredMoodBonus (divided by Max{Sick,Inj}Length per treatment)
 CURED_OBED_BONUS = 25                    # CuredObedienceBonus
-BAD_MED_LIFE_DEC = 3600.0                # BadMedLifeDec: a double dose is poison
+BAD_MED_LIFE_DEC = 60.0                  # BadMedLifeDec 3600 real-sec (1h) -> the game-min
+#                                          scale, like BonusEvolutionLife/DigimemoryLifeInc
+#                                          (the old 3600 game-sec was 60x too harsh)
 BAD_MED_BM_INC = 6                       # BadMedBMInc (bowel gauge lurch)
 BAD_VITAMIN_MOOD_DEC = 8                 # BadVitaminMoodDec
 BAD_VITAMIN_LIFE_DEC = 7200.0            # BadVitaminLifeDec
@@ -2028,14 +2034,40 @@ class Pet:
         if food.get("health"):                              # HP Chip: permanent trained-HP gain
             self.full_health = min(self.max_health(),
                                    self.full_health + math.ceil(food["health"] * modifier))
-        self.calories = CALORIE_LIMIT                       # a meal refills the calorie buffer
-        self.weight += int(food.get("weight", 1))
+        # canon re-audit 2026-07: applyConsumable's remaining food effects --
+        # the old flat calorie refill ignored the per-food Calories column
+        # (setCaloriesAndChangeWeight: a rich meal buffers longer, and calories
+        # rising while ALREADY positive fatten by FoodWeightChange)
+        cal = scaled("calories")
+        if cal > 0 and self.calories > 0:
+            self.weight += FOOD_WEIGHT_CHANGE
+        self.calories = _clamp(self.calories + cal, -CALORIE_LIMIT, CALORIE_LIMIT)
+        self.vaccine = max(0, self.vaccine + scaled("vaccine"))       # attribute foods
+        self.data_power = max(0, self.data_power + scaled("data"))
+        self.virus = max(0, self.virus + scaled("virus"))
+        if food.get("seconds"):                             # lifespan foods (real-sec -> game /60)
+            self.lifespan = max(0.0, self.lifespan + scaled("seconds") / 60.0)
+        if food.get("sleep_lapse"):                         # bedtime nudge (Hot Milk)
+            self.sleep_lapse = max(0.0, self.sleep_lapse + scaled("sleep_lapse"))
+        t = food.get("temp", 0)
+        if t and 0 <= self.temp + t <= 100:                 # MaxTemp guard, verbatim
+            self.temp += math.ceil(t * modifier) if t > 0 else t
+        self.weight += math.ceil(food.get("weight", 1) * modifier)    # modifier-scaled, like canon
         # every meal advances the bowel gauge (applyFood: bmGauge += food.BMGauge):
         # eating more means pooping sooner, proportional to the species bmMax
         bm = int(food.get("bm", 0))
         if bm > 0:
             self._poop_t = getattr(self, "_poop_t", 0) \
                 + self._poop_interval * bm / max(1, self._phys().get("poop_limit", 64))
+        # checkDirtyEating: a meal amid the filth sours it, and each pile is a
+        # sickness risk (worse 16%/pile if already sick, else sick 8%/pile)
+        if self.poop > 0:
+            self._set_mood(self.mood - DIRTY_EATING_MOOD_DEC)
+            if self.sick:
+                if random.randrange(100) < DIRTY_EATING_WORSE_CHANCE * self.poop:
+                    self._worsen_sick()
+            elif random.randrange(100) < DIRTY_EATING_SICK_CHANCE * self.poop:
+                self._sicken()
         tier = self._eat_food(food.get("category", ""))     # DVPet taste: fav/disliked/neutral
         self._last_meal_disliked = (tier == "disliked")      # eat(): disliked -> +9 grimace bite
         self._apply_nutrition(food, modifier)                # GoodNutrition macros (scaled)

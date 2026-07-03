@@ -39,7 +39,9 @@ def test_double_dose_is_poison():
     life0, poop0 = p.lifespan, p.poop
     msg = p.heal()
     assert "poison" in msg
-    assert p.lifespan == life0 - 3600.0        # BadMedLifeDec
+    # BadMedLifeDec 3600 REAL-sec -> 60 on the game-min scale (audit 2026-07:
+    # the old 3600 game-sec pin encoded a 60x-too-harsh scaling bug)
+    assert p.lifespan == life0 - 60.0
     assert p.poop == poop0 + 1                 # startPoop: it comes right up
     assert p.sick_length == 5 * SICK_LAPSE_MIN  # no healing from a bad dose
 

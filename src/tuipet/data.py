@@ -155,6 +155,16 @@ def load_foods():
                     # Fruit/Vegetable); ShowInInventory=false = not on the feed page
                     # (Med/Vitamin ride the heal flows instead)
                     "bm": int(row.get("BMGauge") or 0),
+                    # canon re-audit 2026-07: applyConsumable reads these for FOODS
+                    # too -- 39 calorie foods, 3 lifespan foods, 7 attribute foods,
+                    # a sleep food and 2 temp foods were silently dropped
+                    "calories": int(row.get("Calories") or 0),
+                    "seconds": int(row.get("Seconds") or 0),
+                    "vaccine": int(row.get("Vaccine") or 0),
+                    "data": int(row.get("Data") or 0),
+                    "virus": int(row.get("Virus") or 0),
+                    "sleep_lapse": int(row.get("SleepLapse") or 0),
+                    "temp": int(row.get("Temp") or 0),
                     # trait affinity (checkRefused personality mods): a food that
                     # suits the pet's temperament goes down easier
                     "t_glutton": int(row.get("Glutton") or 0),
