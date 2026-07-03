@@ -290,6 +290,7 @@ def load_requirements():
         reqs[num] = {
             "priority": float(r.get("Priority Default") or 0),
             "tournament_able": (r.get("TournamentAble") or "TRUE").strip().upper() != "FALSE",
+            "sleep_lapse_inc": int(float(r.get("SleepLapseInc") or 1)),   # sleep-pressure rate (babies 9)
             "prob": p0, "probBound": p1,
             "mistakes": _gate(r, "MistakesKey", "MistakesValue"),
             "overeat": _gate(r, "OvereatKey", "OvereatValue"),

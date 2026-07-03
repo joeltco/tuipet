@@ -128,6 +128,22 @@ ENERGY_BONUS_INCOMPAT_F = 2
 ENERGY_BONUS_INCOMPAT_E = 1
 GOOD_NUTRITION_FATIGUE_CHANCE = 40  # GoodNutritionFatigueChance (else FatigueChance 60)
 FATIGUE_COMPAT_CHANGE = 5           # Compatible/Incompatible{Field,Element}FatigueChanceChange
+# the sleep cycle (config.csv col 1): a free-running ~24h pressure rhythm --
+# sleepLapse accrues awake (species SleepLapseInc/min) until sleepLimit, the
+# pet sleeps long enough to refill its energy, and the cycle re-anchors
+DAY_MINUTES = 1440                  # HoursDay * MinutesHour
+MIN_AWAKE_LIMIT = 360.0             # MinAwakeLimit (shortest sleep: 6 game-hours)
+MAX_AWAKE_LIMIT = 900.0             # MaxAwakeLimit (longest: 15)
+MORE_SLEEP_CHANCE = 9               # MoreSleepChance (the per-minute sleep jitter roll)
+AWAKE_RESTLESS_COEF = 1             # AwakeLapseRestlessCoefficient
+BONUS_SLEEP_ENERGY = 2              # BonusSleepEnergy (a restless skip still rests)
+NAP_ENERGY_MIN = 1                  # NapEnergyMin
+SLEEP_NOT_NAP_MIN = 90              # SleepNotNapMinutes (- restless*60): lights-out near
+SLEEP_NOT_NAP_RESTLESS = 60         #   bedtime starts REAL sleep instead of a nap
+ON_NAP_MOOD_INC = 10                # OnNapMoodInc
+DISTURB_POSTPONE = (10, 60)         # DisturbPostponeMin/Max (game-min until it re-sleeps)
+FULL_AWAKE_DISTURB = 480.0          # MaxMinutesToFullAwakeDisturb (- restless*60)
+FULL_AWAKE_DISTURB_RESTLESS = 60.0
 DEPRESSED_OBEDIENCE = 50.0          # DepressedObedience
 SURR_HEALTH_COEF = 5.0              # SurrenderChanceHealthCoefficient
 SURR_DISP_COEF = 5.0                # HighDispositionSurrenderChanceDispositionCoefficient
@@ -434,6 +450,12 @@ class Pet:
     shop_day: int = -1                              # game day of the current roster (dailyChange)
     shop_restock: int = 0                           # banked restock credits (max RestockMax)
     shop_restock_t: float = 0.0                     # seconds toward the next credit roll
+    # sleep cycle (PhysicalState _sleepLapse/_sleepLimit/_awakeLapse/_awakeLimit/_nap)
+    sleep_lapse: float = 0.0        # pressure toward the next sleep (accrues awake)
+    sleep_limit: float = DAY_MINUTES - MIN_AWAKE_LIMIT   # pressure cap for this cycle
+    awake_lapse: float = 0.0        # minutes slept so far
+    awake_limit: float = MIN_AWAKE_LIMIT                 # minutes of sleep owed
+    nap: bool = False               # a lights-out nap (shallow; lights-on wakes it)
     gift: str = ""                  # pending gift-call present (consumable key; "" = none)
     gift_t: float = 0.0             # seconds toward the next GiftChanceMin roll
     # ---- home tournament (PhysicalState _trophySchedule/_foughtTrophiesToday) ----
@@ -623,9 +645,10 @@ class Pet:
                 if 0 <= self._lights_t >= LIGHTS_MISTAKE_SEC:
                     self._lights_t = float("-inf")       # AfterMistakeMinutesPostponed: once/night
                     self.care_mistakes += 1
-            # DVPet sleep recovery: +SleepEnergyGain every SleepMinutesToEnergyGain.
+            # DVPet sleep recovery: +SleepEnergyGain every SleepMinutesToEnergyGain
+            # (deep sleep only -- a nap restores just the jitter's scraps)
             self._sleep_e_t = getattr(self, "_sleep_e_t", 0.0) + dt
-            if self._sleep_e_t >= 60:                # SleepMinutesToEnergyGain (game-min)
+            if self._sleep_e_t >= 60 and not self.nap:   # SleepMinutesToEnergyGain
                 self._sleep_e_t = 0.0
                 self._set_energy(self.energy + getattr(self, "_sleep_energy_gain", 3))
             # asleep enthusiasmLapse: spirit settles toward 0 while resting
@@ -636,22 +659,19 @@ class Pet:
                     self._set_enthusiasm(self.enthusiasm - ENTHUSIASM_LAPSE_DEC)
                 elif self.enthusiasm < 0:
                     self._set_enthusiasm(self.enthusiasm + ENTHUSIASM_LAPSE_INC)
-            # sleep through the night; wake in the morning once fully rested
-            if self.day_phase != "night" and self.energy >= self.max_energy:
-                self.asleep = False
-                if not self.lights:
-                    self.lights = True       # DVPet wake: setLights(true) with the sun
-                # the morning roll (setAsleep wake): 1/5 bad, 1/5 terrible (only if
-                # Happy: mood SET to WorstMorningMood), 1/5 good, else neutral
-                r = random.randrange(MORNING_MOOD_CHANCE)
-                m = self.current_mood()
-                if r == 0:
-                    self._set_mood(self.mood + BAD_MORNING_MOOD.get(m, -10))
-                elif r == 1 and m == "Happy":
-                    self._set_mood(WORST_MORNING_MOOD)
-                elif r == 2:
-                    self._set_mood(self.mood + GOOD_MORNING_MOOD.get(m, 100))
-                self._set_anim("wake", 1.6)  # morning stretch (DVPet wakeUp())
+            # setAwakeLapse: +1/min with the restless jitter -- a restless
+            # sleeper skips ahead (with a scrap of bonus rest), a mellow one
+            # lies in; at the limit it's morning (the morning roll lives in _wake)
+            step = dt
+            r = random.randrange(MORE_SLEEP_CHANCE) + self.restless * AWAKE_RESTLESS_COEF
+            if r < 0:
+                step = 0.0
+            elif r > MORE_SLEEP_CHANCE - 1:
+                step += dt
+                self._set_energy(self.energy + (NAP_ENERGY_MIN if self.nap else BONUS_SLEEP_ENERGY))
+            self.awake_lapse += step
+            if self.awake_lapse >= self.awake_limit:
+                self._wake(morning=not self.nap)
             # startPoop: even asleep, a truly DESPERATE gauge (>= 2x max) goes --
             # this must live in the sleep branch (the awake poop block below is
             # unreachable while asleep; latent until the canon day bands landed)
@@ -662,7 +682,6 @@ class Pet:
                 self._set_anim("poop", 2.2)
             return
 
-        night = self.day_phase == "night"
         # DVPet has NO passive energy decay -- energy only drops from activity
         # (exercise/battle/travel) and refills during sleep.
         # DVPet mood lapse (~MoodLapseMin game-min): Happy drains, Unhappy recovers,
@@ -766,13 +785,27 @@ class Pet:
                 and random.random() < 0.02 / self._phys().get("poop_sick_mult", 1.0) * dt \
                         * (GOOD_NUTR_SICK_MULT if self.good_nutrition() else 1.0):
             self._sicken()
-        # bedtime: sleep through the night, or pass out if run to exhaustion by
-        # day; a grace window after a manual wake lets you interact at night
-        self._wake_grace = max(0.0, getattr(self, "_wake_grace", 0.0) - dt)
-        if not self.asleep and self._wake_grace <= 0 and (night or self.energy <= 0):
-            self.asleep = True
-            self._lights_t = 0.0          # setAsleep resets _callMinutesLights
-            self._set_anim("yawn", 1.8)   # yawn, then settle into sleep
+        # bedtime is a PRESSURE clock, not the sun (setSleepLapse): SleepLapseInc
+        # per game-min while awake; at the limit the pet drops off by itself --
+        # babies (inc 9) nap constantly, adults run a free ~24h rhythm.
+        # checkNap: LIGHTS OUT while awake starts a shallow nap right away
+        # (real sleep instead when the pressure is nearly full -- sleepNotNap)
+        if not self.asleep:
+            self.sleep_lapse += dt * self._sleep_inc()
+            if self.sleep_lapse >= self.sleep_limit:
+                self._fall_asleep()
+            elif not self.lights:
+                edge = SLEEP_NOT_NAP_MIN - self.restless * SLEEP_NOT_NAP_RESTLESS
+                if self.sleep_lapse >= self.sleep_limit - edge:
+                    self._fall_asleep()                     # close enough to bedtime
+                else:
+                    # checkNap: a shallow doze that BORROWS the current cycle --
+                    # pressure keeps accruing, so real bedtime still arrives on time
+                    self._set_mood(self.mood + ON_NAP_MOOD_INC)
+                    self.asleep, self.nap = True, True
+                    self._lights_t = 0.0
+                    self.awake_lapse = max(0.0, self.awake_limit - self.sleep_lapse)
+                    self._set_anim("yawn", 1.8)
 
         # DVPet discrete neglect-death triggers (config.csv): real abandonment is fatal,
         # not merely a faster lifespan burn. Care mistakes + injuries are per-form (they
@@ -1454,12 +1487,65 @@ class Pet:
             self.poop += 1                                        # poop == countFilth()
             self.poop_sizes.append(size)
 
+    def _sleep_inc(self):
+        """Species sleep-pressure rate (SleepLapseInc: 1 adult / 2 / 9 baby)."""
+        return data.load_requirements().get(self.num, {}).get("sleep_lapse_inc", 1)
+
+    def _fall_asleep(self, nap=False):
+        """PhysicalState.sleep(): the pressure clock rolls over -- sleep long
+        enough to refill the energy bar (clamped 6..15 game-hours), and the
+        next awake stretch is whatever remains of the 24."""
+        self.sleep_lapse = 0.0
+        self.asleep = True
+        self.nap = nap
+        self._lights_t = 0.0                        # setAsleep resets _callMinutesLights
+        gain = max(1, getattr(self, "_sleep_energy_gain", 3))
+        need = math.ceil(max(0, self.max_energy - self.energy) / gain) * 60.0
+        self.awake_limit = _clamp(need, MIN_AWAKE_LIMIT, MAX_AWAKE_LIMIT)
+        self.sleep_limit = DAY_MINUTES - self.awake_limit
+        self._set_anim("yawn", 1.8)
+
+    def _wake(self, morning=True):
+        """setAsleep(false): up for the day (the morning roll skips for naps)."""
+        self.asleep = False
+        self.nap = False
+        self.awake_lapse = 0.0
+        self.sleep_limit = DAY_MINUTES - self.awake_limit
+        if not self.lights:
+            self.lights = True                      # wake: setLights(true)
+        if morning:
+            r = random.randrange(MORNING_MOOD_CHANCE)
+            m = self.current_mood()
+            if r == 0:
+                self._set_mood(self.mood + BAD_MORNING_MOOD.get(m, -10))
+            elif r == 1 and m == "Happy":
+                self._set_mood(WORST_MORNING_MOOD)
+            elif r == 2:
+                self._set_mood(self.mood + GOOD_MORNING_MOOD.get(m, 100))
+        self._set_anim("wake", 1.6)
+
     def _disturbed(self):
-        """Bothering the pet mid-sleep: counts toward restlessness AND costs mood
-        now (DVPet DisturbMoodDec)."""
+        """PhysicalState.disturb(): bothering REAL sleep wakes the pet grumpy --
+        nearly-rested (or full energy) it just gets up; otherwise the sleep is
+        POSTPONED: it will drop back off in DisturbPostpone game-minutes, still
+        owing the missed rest.  Naps aren't disturbable (lights wake them)."""
+        if not self.asleep or self.nap:
+            return "zzz..."
         self.disturb += 1
         self._set_mood(self.mood - 10)              # DisturbMoodDec
-        self._set_enthusiasm(self.enthusiasm - 2)   # DisturbEnthusiasmDec
+        enth = {1: -1, 0: -2, -1: -3}.get(self.restless, -2)   # DisturbEnthusiasmDec*
+        self._set_enthusiasm(self.enthusiasm + enth)
+        rested = (self.awake_lapse >= FULL_AWAKE_DISTURB - self.restless * FULL_AWAKE_DISTURB_RESTLESS
+                  or self.energy >= self.max_energy)
+        if rested:
+            self.sleep_lapse = 0.0
+            self._wake(morning=False)
+            return "It grumbles awake."
+        postpone = random.randint(*DISTURB_POSTPONE)
+        self.sleep_lapse = max(0.0, self.sleep_limit - postpone / max(1, self._sleep_inc()))
+        self.awake_lapse = max(0.0, self.awake_lapse - postpone)
+        self._wake(morning=False)
+        self._set_anim("angry", 1.8)                # Sad_Jeering: woken too soon
         return "zzz... mind its sleep!"
 
     def _special_idle(self):
@@ -2174,6 +2260,13 @@ class Pet:
         if self.stage == "Egg":
             return "It is still an egg."
         self.lights = not self.lights
+        if self.lights and self.asleep and self.nap:
+            # lightSwitch: lights ON rouses a NAPPING pet (deep sleep ignores it;
+            # sick or injured, the lost doze pushes bedtime a minute closer)
+            if self.sick or self.is_injured():
+                self.sleep_lapse += 1
+            self._wake(morning=False)
+            return "Lights on — up from its nap."
         return "Lights off." if not self.lights else "Lights on."
 
     def play(self):

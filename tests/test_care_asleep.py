@@ -1,33 +1,48 @@
-"""A sleeping pet must not be silently cared for: every care action is blocked
-(and counts as a sleep disturbance), consistently. Previously only feed/play
-blocked; praise/scold penalised-then-acted-anyway, and clean/heal ignored sleep."""
+"""Care actions on a SLEEPING pet: the first press is a disturbance, never the
+action (PhysicalState.disturb()).  Canon disturb semantics: the pet WAKES
+grumpy -- fully if it's nearly rested (or its energy bar is full), otherwise
+its sleep is postponed and it drops back off shortly.  Either way the pressed
+action does NOT apply on that press."""
 from tuipet.pet import Pet
 
 
-def _sleeping():
+def _sleeping(energy=0):
     p = Pet(num=-1, stage="Rookie")
-    p.asleep = True
+    p.energy = energy
+    p.sleep_lapse = p.sleep_limit
+    p.tick(1.0)                         # falls asleep via the pressure clock
+    assert p.asleep
     p.poop = 3            # so clean would otherwise have work to do
     p.sick = True         # so heal would otherwise have work to do
     return p
 
 
-def test_all_care_actions_block_while_asleep():
+def test_care_actions_disturb_instead_of_acting():
     for action in ("feed", "play", "praise", "scold", "clean", "heal"):
         p = _sleeping()
+        sick0, poop0, hunger0 = p.sick, p.poop, p.hunger
         msg = getattr(p, action)()
-        assert "sleep" in msg.lower(), f"{action} did not block while asleep: {msg!r}"
+        assert ("sleep" in msg.lower() or "awake" in msg.lower()), \
+            f"{action} did not disturb: {msg!r}"
+        assert (p.sick, p.poop, p.hunger) == (sick0, poop0, hunger0), \
+            f"{action} applied through the sleep"
 
 
 def test_disturbing_sleep_costs_mood_and_counts():
     p = _sleeping()
     mood0, disturb0 = p.mood, p.disturb
-    p.praise()                          # used to praise-anyway; now it's a disturbance
+    p.praise()                          # a disturbance, not a praise
     assert p.disturb == disturb0 + 1
     assert p.mood < mood0               # DisturbMoodDec applied
-    assert p.sick is True               # heal-while-asleep didn't secretly cure
-    p.heal()
-    assert p.sick is True               # still blocked — the illness remains
+    assert p.sick is True               # heal never fired through the sleep
+
+
+def test_unrested_disturb_postpones_the_sleep():
+    p = _sleeping(energy=0)             # barely slept: not fully-awake material
+    p.awake_lapse = 0.0
+    p.praise()
+    assert not p.asleep                 # woken grumpy...
+    assert p.sleep_lapse > 0            # ...but bedtime is only postpone-minutes away
 
 
 def test_care_works_again_once_awake():
