@@ -405,6 +405,10 @@ class Pet:
     shop_restock_t: float = 0.0                     # seconds toward the next credit roll
     gift: str = ""                  # pending gift-call present (consumable key; "" = none)
     gift_t: float = 0.0             # seconds toward the next GiftChanceMin roll
+    # ---- home tournament (PhysicalState _trophySchedule/_foughtTrophiesToday) ----
+    tourney_schedule: list = _dcf(default_factory=list)   # 24 hourly trophy ids (dailyChange re-roll)
+    tourney_day: int = -1                                  # game day of the schedule
+    fought_today: list = _dcf(default_factory=list)        # trophy ids fought today (SameDayRetry exempt)
     adv_map: int = 0
     adv_zone: int = 0
     adv_seek: bool = False    # Disaster Transport: next adventure leg forces an encounter

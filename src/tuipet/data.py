@@ -288,6 +288,7 @@ def load_requirements():
             p0, p1 = 100, 100
         reqs[num] = {
             "priority": float(r.get("Priority Default") or 0),
+            "tournament_able": (r.get("TournamentAble") or "TRUE").strip().upper() != "FALSE",
             "prob": p0, "probBound": p1,
             "mistakes": _gate(r, "MistakesKey", "MistakesValue"),
             "overeat": _gate(r, "OvereatKey", "OvereatValue"),
@@ -495,7 +496,12 @@ def load_tournies():
             bm = float(r.get("BitModifier") or 1)
         except ValueError:
             bm = 1.0
+        try:
+            prelim = int(r.get("Prelim") or 0)
+        except ValueError:
+            prelim = 0
         out.append({
+            "prelim": prelim,
             "id": tid, "sprite": int(r.get("SpriteNum") or 0),
             "season": na(r.get("Season")) or "Spring",
             "field_req": na(r.get("FieldRestriction")),

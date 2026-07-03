@@ -22,9 +22,10 @@ class TournamentPanel:
         self.frame_i = 0
         self.sub = None
         self.tourney = None
-        self.trophies = tournament.available(pet)
-        self.cursor = 0
-        self.phase = "select" if self.trophies else "none"
+        self.sched = tournament.schedule(pet)      # today's 24 hourly cups
+        self.cursor = tournament._hour(pet)        # start the list on NOW
+        self.msg = "One cup per hour — only NOW is open."
+        self.phase = "select"
 
     def anim(self):
         if self.sub is not None:
@@ -43,18 +44,26 @@ class TournamentPanel:
                 if self.tourney.over:                   # cup finished this match
                     self.sfx = "champion" if self.tourney.champion else "lose"
             return None
-        if self.phase == "none":
-            if k in ("escape", "enter", "space", "u"):
-                return ("done", None)
-            return None
         if self.phase == "select":
-            n = len(self.trophies)
+            n = len(self.sched)
             if k in ("up", "k"):
                 self.cursor = (self.cursor - 1) % n
             elif k in ("down", "j"):
                 self.cursor = (self.cursor + 1) % n
             elif k in ("enter", "space"):
-                self.tourney = Tournament(self.pet, self.trophies[self.cursor])
+                # checkTourneyClosed: only the current hour's cup takes entries
+                hour = tournament._hour(self.pet)
+                tr = tournament.open_now(self.pet)
+                if self.cursor != hour or tr is None:
+                    self.msg = "That cup is closed — only the %02d:00 one runs now." % hour
+                    self.sfx = "error"
+                    return None
+                err = tournament.eligibility(self.pet, tr)   # isEligible
+                if err:
+                    self.msg = err
+                    self.sfx = "error"
+                    return None
+                self.tourney = Tournament(self.pet, tr)
                 self.phase = "bracket"
             elif k in ("escape", "u"):          # u (the opening key) also closes
                 return ("done", None)
@@ -73,36 +82,27 @@ class TournamentPanel:
         idx = roles[self.frame_i % len(roles)]
         return rec["frames"][idx] or rec["frames"][0]
 
-    def _prize_bits(self, tr):
-        base = tournament.TOURNEY_BITS.get(self.pet.stage, 125)
-        return min(tournament.TOURNEY_MAX_BITS, int(base * tr["bit_mod"]))
-
     def text(self):
         if self.sub is not None:
             return self.sub.text()
-        if self.phase == "none":
-            out = menu.header("CUP", self.pet.season)
-            out.append_text(menu.blanks(1))
-            out.append_text(menu.row("No cup open this season."))
-            out.append_text(menu.blanks(3))
-            out.append_text(menu.note("Cups rotate by season & your field."))
-            out.append_text(menu.footer("ESC leave"))
-            return out
         if self.phase == "select":
-            out = menu.header("CUP", self.pet.season)
-            n = len(self.trophies)
+            hour = tournament._hour(self.pet)
+            out = menu.header("CUP", "%s %02d:00" % (self.pet.season, hour))
+            n = len(self.sched)
             vis = 5
             lo = max(0, min(self.cursor - vis // 2, n - vis))
             shown = 0
             for i in range(lo, min(lo + vis, n)):
-                tr = self.trophies[i]
-                extra = " +item" if tr["item"] >= 0 else ""
-                label = "%-21s %db%s" % (tournament.trophy_label(tr)[:21], self._prize_bits(tr), extra)
+                tr = tournament.trophy_by_id(self.sched[i]) if self.sched[i] >= 0 else None
+                name = tournament.trophy_label(tr)[:22] if tr else "—"
+                extra = " +item" if (tr and tr["item"] >= 0) else ""
+                mark = "» OPEN" if i == hour else ""
+                label = "%02dh %-22s%s %s" % (i, name, extra, mark)
                 out.append_text(menu.row(label, i == self.cursor))
                 shown += 1
             out.append_text(menu.blanks(vis - shown))
-            out.append_text(menu.note("Pick a cup to enter (%d open)." % n))
-            out.append_text(menu.footer("↑↓ pick  ENTER enter  ESC out"))
+            out.append_text(menu.note(self.msg))
+            out.append_text(menu.footer("↑↓ browse  ENTER enter NOW  ESC out"))
             return out
         # bracket
         t = self.tourney

@@ -95,6 +95,6 @@ def test_tournament_closes_with_its_opening_key_in_all_phases():
     p = tournamentscreen.TournamentPanel.__new__(tournamentscreen.TournamentPanel)
     p.sub = None
     p.phase = "select"
-    p.trophies = []
+    p.sched = []
     p.cursor = 0
     assert p.key("u") == ("done", None)       # 'u' closes the cup, not just ESC
