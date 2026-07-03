@@ -87,6 +87,11 @@ REFUSE_PERSONALITY_UNMATCH = -10.0  # RefuseFavMod*UnmatchFactor
 EXERCISE_REFUSE_LOW_ENTH = 20.0     # ExerciseRefuseLowEnthusiasmFactor (fav attr, dispirited)
 BATTLE_DISPO_COEF = 10.0            # HighDispositionBattleObedienceDispositionCoefficient
 BATTLE_LOW_DISPO_FACTOR = 50.0      # LowDispositionBattleObedienceFactor (docile pets fight when told)
+# checkStopTravel (config.csv col 1).  MinEnergyForActivity is -127 in classic --
+# the energy floor never gates, so it is not ported.
+REFUSE_TRAVEL_COEFF = 3000.0        # RefuseTravelCoefficient (roll range 100..300100)
+REFUSE_TRAVEL_WALK = 5.0            # RefuseTravelModWalkFactor (run=20; tuipet has no run mode)
+REFUSE_TRAVEL_DISPO = 35.0          # RefuseTravelDispositionCoefficient
 DEPRESSED_OBEDIENCE = 50.0          # DepressedObedience
 SURR_HEALTH_COEF = 5.0              # SurrenderChanceHealthCoefficient
 SURR_DISP_COEF = 5.0                # HighDispositionSurrenderChanceDispositionCoefficient
@@ -1343,6 +1348,25 @@ class Pet:
             self.scold_flag, self.scold_window = True, 0     # _scold = true: correct it!
             self._set_anim("refuse", 1.5)
         return refused
+
+    def check_stop_travel(self):
+        """PhysicalState.checkStopTravel: the mid-journey balk.  One draw per
+        controller fire, r in [cap, cap + chance*3000); the energy fraction
+        scales it DOWN, so a rested pet essentially never stops but a drained
+        one plants its feet: refuse when r*(energy+1)/max - dispo*35 + obey - 5
+        <= cap - obedience.  A refusal marks _scold (correct it!)."""
+        if self.dead or self.compliance:
+            return False
+        r = random.randrange(int(REFUSE_CHANCE * REFUSE_TRAVEL_COEFF)) + OBEDIENCE_REFUSAL_CAP
+        obey = self._obedience_factors()[2]
+        energy_mod = 1.0 - (self.max_energy - (self.energy + 1)) / max(1, self.max_energy)
+        prob = r * energy_mod - self.disposition * REFUSE_TRAVEL_DISPO + obey - REFUSE_TRAVEL_WALK
+        if prob <= OBEDIENCE_REFUSAL_CAP - self.obedience:
+            self.refused = True
+            self.scold_flag, self.scold_window = True, 0     # _scold = true
+            self._set_anim("refuse", 1.5)
+            return True
+        return False
 
     def check_compliant(self):
         """PhysicalState.checkCompliant: obeying while compliant CONSUMES the

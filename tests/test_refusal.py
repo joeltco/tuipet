@@ -81,3 +81,34 @@ def test_docile_pet_battles_low_disposition_grace():
     p = _pet(compliance=False, obedience=REFUSE_CHANCE, disposition=-1)
     refusals = sum(p.check_refused() for _ in range(50))
     assert refusals == 0                            # obed 100 + 50 grace >= any roll
+
+
+# ---- travel (canTravel / checkStopTravel) -----------------------------------
+
+def test_compliant_pet_never_stops_walking():
+    p = _pet(compliance=True)
+    assert not any(p.check_stop_travel() for _ in range(200))
+
+
+def test_rested_pet_essentially_never_stops():
+    # full energy: refuse needs r <= ~(cap - obed + mods), r starts AT cap
+    p = _pet(compliance=False, obedience=50)
+    stops = sum(p.check_stop_travel() for _ in range(500))
+    assert stops == 0
+
+
+def test_drained_disobedient_pet_plants_its_feet():
+    p = _pet(compliance=False, obedience=-200, disposition=1)
+    p._set_energy(0)                                # energy_mod ~ 1/max
+    assert any(p.check_stop_travel() for _ in range(300))
+    assert p.scold_flag and p.anim == "refuse"      # _scold: correct it
+
+
+def test_travel_refusal_halts_the_journey():
+    from tuipet.adventure import Adventure
+    p = _pet(compliance=False, obedience=-100000)   # forces the very first fire
+    p._set_energy(0)
+    adv = Adventure(p)
+    ev = adv.travel()
+    assert ev == ("refused", None)
+    assert adv.location == 0                        # not a single step taken

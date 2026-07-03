@@ -39,6 +39,9 @@ class AdventurePanel:
                 self.sub = BattlePanel(self.pet, ev[1])
             elif ev and ev[0] == "town":
                 self.sfx = "reward"          # reached the rest-town: life + energy restored
+            elif ev and ev[0] == "refused":
+                self.travelling = False      # Refusing: travelSpeed 0 -- SPACE re-issues the walk
+                self.sfx = "refuse"
 
     def key(self, k):
         if self.sub is not None:
@@ -58,6 +61,14 @@ class AdventurePanel:
                 self.travelling = not self.adv.done
             return None
         if k == "space" and not self.adv.done:
+            if not self.travelling:
+                # re-issuing the walk = DVPet canTravel: checkRefused; checkCompliant
+                refused = self.pet.check_refused()
+                self.pet.check_compliant()
+                if refused:
+                    self.adv.last = f"{self.pet.name} refuses to walk!"
+                    self.sfx = "refuse"
+                    return None
             self.travelling = not self.travelling
         elif k in ("escape", "a"):          # a (the opening key) also closes, like shop/habitat
             return ("done", None)

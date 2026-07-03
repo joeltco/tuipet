@@ -1698,6 +1698,10 @@ class TuiPetApp(App):
             self._do("Too young to adventure."); return
         if self.pet.asleep:
             self._do("zzz... asleep"); return
+        refused = self.pet.check_refused()          # canTravel: checkRefused ...
+        self.pet.check_compliant()                  # ... ; checkCompliant
+        if refused:
+            self._do(f"{self.pet.name} refuses to go!"); return
         self._open_mode(adventurescreen.AdventurePanel(self.pet), lambda _=None: self.repaint())
 
     def action_play(self):

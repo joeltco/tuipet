@@ -161,6 +161,12 @@ class Adventure:
             if e:
                 self.last = f"Ambush! {e['name']}!"
                 return ("encounter", e)
+        # WorldMap.step: checkStopTravel rolls per controller fire (9 per walked
+        # step, like the encounter roll) -- a refusal halts the journey in place
+        for _ in range(WALK_STEP_MIN):
+            if self.pet.check_stop_travel():
+                self.last = f"{self.pet.name} refuses to walk!"
+                return ("refused", None)
         prev = self.location
         self.location = min(self.total_steps, self.location + self.stride)
         self._travel_drain()
