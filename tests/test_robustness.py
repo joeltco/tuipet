@@ -130,4 +130,4 @@ def test_offline_huge_elapsed_stays_bounded():
 def test_egg_helpers_out_of_range():
     assert egg.frames(10 ** 6)                       # modulo-wrapped, returns frames
     assert egg.hatch_name(10 ** 6) is not None
-    assert egg.password_egg(None) is None
+    assert egg.redeem_password(None) is None

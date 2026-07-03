@@ -169,32 +169,7 @@ def load_foods():
     return foods
 
 
-def next_stage(stage):
-    i = STAGE_ORDER.index(stage)
-    return STAGE_ORDER[i + 1] if i + 1 < len(STAGE_ORDER) else None
 
-
-def evolution_targets(num, stage):
-    """Real evolution targets whose stage is the next stage up (with sprites)."""
-    _, by_num = load_sprites()
-    evo = load_evolutions()
-    want = next_stage(stage)
-    out = []
-    for t in evo.get(num, []):
-        rec = by_num.get(t)
-        if rec and (want is None or rec["stage"] == want):
-            out.append(t)
-    # fall back to any next-stage creature if the graph has no usable target
-    if not out and want:
-        out = [n for n, rec in by_num.items() if rec["stage"] == want]
-    return out
-
-# ---------------------------------------------------------------------------
-# Evolution requirements (parsed from digimon.csv).  Each Digimon's row holds
-# the care/training conditions to evolve INTO that Digimon, as Key/Value gates
-# where Key is a comparison operator and Value the threshold.  Mirrors the
-# game's Model/EvolutionInfo + Model/Evolution.checkEvolReq exactly.
-# ---------------------------------------------------------------------------
 def _temp_range(s):
     try:
         a, b = (s or "40t60").split("t")
@@ -373,7 +348,6 @@ def natural_habitat(num):
 # Battle enemies (parsed from enemies.csv).  Each enemy references a Digimon by
 # number (its sprite + attribute) and carries battle Health and attribute power.
 # ---------------------------------------------------------------------------
-_MOVES = None
 
 
 _ATTACKS = None

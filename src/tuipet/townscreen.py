@@ -121,7 +121,7 @@ class TownPanel:
                 self.msg = "They won't buy that here."
                 self.sfx = "error"
                 return None
-            self.msg = p.sell(dict(e, key=key))
+            self.msg = p.sell(dict(e, key=key, **self._town_econ(e)))
             return None
         if self.phase == "cups" and rows:
             i = min(self.cursor, len(rows) - 1)
@@ -143,6 +143,17 @@ class TownPanel:
             self.msg = self.tourney.last
             return None
         return None
+
+    def _town_econ(self, e):
+        """The town's shopConsumable override econ for a consumable (else {}) --
+        so the sell counter pays the TOWN's resell rate, not home's."""
+        ov = data.load_shop_overrides()
+        pool = self.town["foods_override" if e["key"].startswith("f:") else "items_override"]
+        for sid in pool:
+            o = ov.get(sid)
+            if o and o["consumable_id"] == e.get("id"):
+                return {"resell_factor": o["resell_factor"], "price": o["price"]}
+        return {}
 
     # ---- render ----
     def text(self):
@@ -177,8 +188,8 @@ class TownPanel:
                 label = "%-18s %4s%s %5db" % (e["name"][:18], qty,
                                               "*" if r.get("sale") else " ", price)
             elif self.phase == "sell":
-                e = data.consumable_by_key(r) or {"name": "?"}
-                val = shop.resell_price(dict(e, key=r))
+                e = data.consumable_by_key(r) or {"name": "?", "key": r}
+                val = shop.resell_price(dict(e, key=r, **self._town_econ(dict(e, key=r))))
                 label = "%-18s x%-2d  %4db" % (e["name"][:18], p.inventory.get(r, 0), val)
             else:                                    # cups
                 tr = tournament.trophy_by_id(r) if r >= 0 else None

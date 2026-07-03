@@ -80,8 +80,6 @@ def bar(v, width=12, color=None):
 
 _FX = data.load_effects()
 GRAVESTONE = _FX.get("grave", [None])[0]      # real DVPet death.png
-SUN = _FX.get("sun", [None])[0]               # real DVPet noon.png
-MOON = _FX.get("moon", [None])[0]             # real DVPet night.png
 
 # The filth block is ONE CREATURE CELL: 8x8 slots in a 2x2 grid, so the max 4
 # piles span exactly 16x16 -- the same footprint as a 16x16 creature, filling
@@ -92,7 +90,6 @@ MOON = _FX.get("moon", [None])[0]             # real DVPet night.png
 # sizes 1-3 (7x7 / 8x7 / 8x8 -- all _poop_size produces) fit the slot natively.
 POOP_W = 8
 POOP_PAD = 0
-_FROZEN_FR = (_FX.get("frozen") or [None])[0]
 
 WEATHER_GLYPH = {
     "Clear": "", "Cloudy": chr(0x2601), "Drizzling": chr(0x2602),
@@ -112,7 +109,6 @@ def _sky_icon(pet):
 
 _RAIN = {"Drizzling", "Raining", "HeavyRain"}
 _SNOW = {"LightSnow", "Snowing", "HeavySnow"}
-_PRECIP = _RAIN | _SNOW
 _PRECIP_N = {"Drizzling": 5, "LightSnow": 6, "Raining": 11, "Snowing": 10,
              "HeavyRain": 18, "HeavySnow": 16}
 _K = "b cyan"
@@ -346,7 +342,6 @@ class Screen(Static):
         phase = pet.day_phase
         on, bg = PHASE_PALETTE.get(phase, (LCD_ON, LCD_BG))
         bgimg = self._background(pet)
-        corner = None                      # DVPet shows time via bg frame + palette, no corner icon
         if not pet.lights:                 # lights off (the 's' lights button): dark room (+ Zzz if asleep)
             bgimg, bg, on = None, "#000000", SIL_NIGHT   # DVPet lightsOff.png is pure (0,0,0)
         elif bgimg:
@@ -364,8 +359,7 @@ class Screen(Static):
         overlay = (_weather_overlay(pet.weather, wf, SCREEN_COLS, SCREEN_ROWS * 2)
                    + _effect_overlay(pet, wf, SCREEN_COLS, SCREEN_ROWS * 2, tick=self.frame_i))
         if pet.dead:                           # a grave marker
-            self.update(render_screen(GRAVESTONE, SCREEN_COLS, SCREEN_ROWS, on, bg,
-                                      corner=corner, overlay=overlay, bgimg=bgimg))
+            self.update(render_screen(GRAVESTONE, SCREEN_COLS, SCREEN_ROWS, on, bg, overlay=overlay, bgimg=bgimg))
             return
         if pet.num == -1:                      # egg
             rec = egg_mod.record(pet.egg_type)
@@ -428,7 +422,7 @@ class Screen(Static):
         if not pet.lights:                 # lights off: DVPet's lightsOff is a fully-opaque black
             rows, xshift, mirror = [], 0, False   # cover -> the pet is hidden; only black (+ Zzz) shows
         self.update(render_screen(rows, SCREEN_COLS, SCREEN_ROWS, on, bg,
-                                  mirror=mirror, xshift=xshift, corner=corner, overlay=overlay, bgimg=bgimg))
+                                  mirror=mirror, xshift=xshift, overlay=overlay, bgimg=bgimg))
 
     def _background(self, pet):
         return pet.background()
@@ -579,7 +573,9 @@ class Screen(Static):
             on = SIL_NIGHT if pet.day_phase == "night" else SIL_DAY
         px_h = SCREEN_ROWS * 2
         step = fx["step"]
-        pose = {"eat": "eat", "clean": "idle", "cheer": "happy", "spit": "refuse", "dying": "exhausted"}.get(fx["kind"], "idle")
+        # only clean/dying rely on this default pose; eat/cheer/spit/etc branches
+        # override `rows` unconditionally below (dead entries removed, audit 2026-07)
+        pose = {"clean": "idle", "dying": "exhausted"}.get(fx["kind"], "idle")
         rows = self._pose_rows(pet, pose, step // 2)
         overlay = _weather_overlay(pet.weather, self.frame_i // 4, SCREEN_COLS, px_h)   # paint()'s 0.4s cadence
         xshift = 0

@@ -147,8 +147,7 @@ class AdventurePanel:
         if a.done:
             out.append_text(menu.footer("Journey complete!   ESC"))
         elif self.travelling:
-            out.append_text(menu.footer("investigate? ENTER yes  ESC no" if self.discovering
-                                        else "travelling...   SPACE stop   ESC out"))
+            out.append_text(menu.footer("travelling...   SPACE stop   ESC out"))
         else:
             if getattr(self, "town_prompt", None) is not None:
                 foot = "visit the town? ENTER yes  ESC no"

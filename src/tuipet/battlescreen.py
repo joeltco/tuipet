@@ -28,16 +28,11 @@ with open(os.path.join(os.path.dirname(__file__), "data", "battle_overlays.json"
     _OV = json.load(_f)
 BANNER = _OV["battle_banner"]
 EXPLODE = _OV["hit_explosion"]
-OVW = len(BANNER[0][0])
-OVX = (COLS - OVW) // 2
 
 # poses (tuipet DVPet 11-frame layout)
 IDLE, TURN, ATTACK, CHEER_A, CHEER_B, COLLAPSE = 0, 1, 6, 5, 7, 10
 CHARGE = 4                                      # DVPet shoot frame 4: pre-attack/charge pose
 # the 16px creature band on the 24px LCD (y6..y22); orbs must stay INSIDE it
-BAND_TOP = PXH - 18                              # 6: creature/orb top limit
-BAND_BOT = PXH - 2                               # 22: floor
-FIRE_Y = PXH - 14                                # orb mid-body height (centred in the band)
 
 # timeline tuning (ticks per beat, 1 tick == 0.1s); slowed for a readable vpet pace
 BANNER_FLASHES, BANNER_HOLD = 3, 4
@@ -55,11 +50,6 @@ EFFECT_LABEL = {"DefenseUp": "Blocked!", "AttackUp": "Power up!", "Counter": "Co
                 "Absorb": "Absorb!", "Heal": "Heal!", "First": "First strike!", "Second": "Second!"}
 
 
-def _blit(bm, ox, oy):
-    return [(ox + x, oy + y) for y, row in enumerate(bm)
-            for x, c in enumerate(row) if c == "1"]
-
-
 def _full(frame):
     ox = max(0, (COLS - (len(frame[0]) if frame and frame[0] else 0)) // 2)   # centre on the frame's own width
     oy = max(0, (PXH - len(frame)) // 2)
@@ -69,8 +59,6 @@ def _full(frame):
 
 # the creature-placement + grid helpers live in strikefx now (shared with training);
 # keep the old module names as aliases so nothing downstream breaks.
-_cbounds = strikefx.cbounds
-_clamp_grid = strikefx.clamp_grid
 
 
 class BattlePanel:

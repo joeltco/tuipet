@@ -96,10 +96,9 @@ class EggSelectPanel:
             self.entering, self.buf = False, ""
             return None
         if k == "enter":
-            idx = egg_mod.password_egg(self.buf)
+            idx = egg_mod.redeem_password(self.buf)   # one matcher for both entries; it persists
             self.entering = False
             if idx is not None:
-                persistence.egg_own(idx)
                 self._refresh()
                 if idx in self.unlocked:
                     self.i = self.unlocked.index(idx)

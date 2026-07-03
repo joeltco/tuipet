@@ -301,8 +301,8 @@ def _offline(pet, elapsed):
 
 
 def load(path=None, catch_up=True):
-    path = path or SAVE_PATH
     """Return (pet, message) or (None, '') if no valid save exists."""
+    path = path or SAVE_PATH
     if not os.path.exists(path):
         return None, ""
     try:

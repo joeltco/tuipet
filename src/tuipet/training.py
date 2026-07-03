@@ -36,8 +36,7 @@ from . import menu
 # to the TARGET as the orb arrives -> fullscreen explosion -> break).  Reuse the battle's
 # pose ids + beat timings + column-bounds helper so the two stay in lockstep.
 from .battlescreen import (IDLE, TURN, ATTACK, CHARGE, COLLAPSE,  # noqa: F401
-                           WINDUP_T, FIRE_T, EXPLODE_FRAMES, EXPLODE_HOLD, FLINCH_T,
-                           _cbounds, _clamp_grid)
+                           EXPLODE_FRAMES, EXPLODE_HOLD, FLINCH_T)
 
 # the full-screen spiky hit burst (attackHit/attackHitFlash), shared with the battle
 # screen -- strobes outline<->filled to flash the LCD on impact (DVPet hitAnim).
@@ -70,7 +69,6 @@ HP_TRAIN_DIFFICULTY = 11      # DVPet _hpTrainDifficultyChange: rank = fullHealt
 HP_ROUND_LEN = (60, 50, 40)   # ticks/round by rank (Easy/Normal/Hard).  DVPet shrinks this with HP,
                               # but at tuipet's 10Hz that left only ~1s/round on a grown pet (you
                               # couldn't move + lock after round 1) -- floored generous: 6/5/4s.
-VBAR_W = 24
 
 COLS = 40
 ARENA_ROWS = 12               # the app's ONE locked LCD area (== app SCREEN_ROWS / battle ROWS).
@@ -101,11 +99,6 @@ def _fit_cell(sprite):
 def _cell(sprite, cell):
     """(sprite, x_left, mirror) placement in cell 0 (left) or 1 (right) of the 32x16 grid."""
     return grid.cell(sprite, cell)
-
-
-def _fit_width(sprite, target_w):
-    """Box-downscale a sprite horizontally to <= target_w so a wide gauge fits the 32-grid."""
-    return grid.fit_w(sprite, target_w)
 
 
 def _blit(bm, ox, oy):
@@ -796,17 +789,3 @@ class TrainingPanel:
         out.append_text(menu.footer("↑●  ←■  →▲  ↓♥    ENTER start"))
         return out
 
-    def _powerbar(self, pos):
-        m = Text()
-        m.append("[", style=INK)
-        fill = int(pos / 100 * VBAR_W)
-        needx = int(VIRUS_BAR_MIN / 100 * VBAR_W)
-        for i in range(VBAR_W):
-            if i == needx:
-                m.append("|", style=INK_B)
-            elif i < fill:
-                m.append("█", style=f"{ACCENT} on {LCD_BG}")
-            else:
-                m.append("─", style=f"{MID} on {LCD_BG}")
-        m.append("]", style=INK)
-        return m

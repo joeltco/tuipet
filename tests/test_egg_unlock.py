@@ -62,11 +62,11 @@ def test_something_is_locked_initially():
 
 def test_password_egg_resolves():
     # 'Accentier' -> Carimon (case-insensitive); blanks/garbage resolve to None.
-    idx = egg.password_egg("accentier")
+    idx = egg.redeem_password("accentier")
     assert isinstance(idx, int)
-    assert egg.password_egg("ACCENTIER") == idx
-    assert egg.password_egg("") is None
-    assert egg.password_egg("definitely-not-a-code") is None
+    assert egg.redeem_password("ACCENTIER") == idx
+    assert egg.redeem_password("") is None
+    assert egg.redeem_password("definitely-not-a-code") is None
     # the password egg stays locked through ordinary play (only the code frees it)
     state, _ = egg.egg_state(idx, _prog_for(data.load_egg_unlock().get(idx)), owned=set())
     assert state == "locked"

@@ -105,16 +105,6 @@ def prep(sprite, ph=PXH):
     return _crop(fit(sprite, ph))
 
 
-def left(sprite, mirror=False, ph=PXH):
-    """(sprite, x, mirror) hugging the grid's LEFT edge (x == X0), fitted + cropped."""
-    s = _crop(fit(sprite, ph))
-    return (s, X0, mirror)
-
-
-def right(sprite, mirror=True, ph=PXH):
-    """(sprite, x, mirror) hugging the grid's RIGHT edge (right pixel at X1-1)."""
-    s = _crop(fit(sprite, ph))
-    return (s, X1 - width(s), mirror)
 
 
 def center(sprite, mirror=False, ph=PXH):

@@ -5,75 +5,10 @@ Top pixel -> foreground colour, bottom pixel -> background colour. "Off" pixels 
 left transparent (terminal default) unless an LCD background colour is supplied.
 """
 from __future__ import annotations
-from rich.segment import Segment
-from rich.style import Style
 from rich.text import Text
 
 # A few palettes. "on" = creature ink, "off" = LCD background (None = transparent).
-PALETTES = {
-    "lcd":   ("#2b2e31", "#c6c9cc"),   # grey pocket-LCD
-    "vpet":  ("#1a1a1a", "#8cb89a"),   # grey-green pocket LCD
-    "amber": ("#3a1f00", "#ffb000"),
-    "mono":  ("#e6e6e6", None),        # white ink, transparent bg
-    "ink":   ("#101010", None),        # black ink, transparent bg
-}
-
-UPPER, LOWER, FULL, EMPTY = "▀", "▄", "█", " "
-
-
-def frame_segments(rows, on="#e6e6e6", off=None):
-    """Yield Rich Segments for one bitmap frame (list of '0'/'1' strings)."""
-    if not rows:
-        return
-    w = max(len(r) for r in rows)
-    rows = [r.ljust(w, "0") for r in rows]
-    if len(rows) % 2:
-        rows.append("0" * w)
-    for y in range(0, len(rows), 2):
-        top, bot = rows[y], rows[y + 1]
-        for x in range(w):
-            t, b = top[x] == "1", bot[x] == "1"
-            if t and b:
-                yield Segment(FULL, Style(color=on))
-            elif t and not b:
-                yield Segment(UPPER, Style(color=on, bgcolor=off))
-            elif b and not t:
-                yield Segment(LOWER, Style(color=on, bgcolor=off))
-            else:
-                yield Segment(EMPTY if off is None else UPPER,
-                              Style(bgcolor=off) if off else Style())
-        yield Segment("\n")
-
-
-def frame_text(rows, on="#e6e6e6", off=None) -> Text:
-    """Build a Rich Text (handy inside Textual Static widgets)."""
-    t = Text()
-    for seg in frame_segments(rows, on, off):
-        t.append(seg.text, seg.style)
-    return t
-
-
-if __name__ == "__main__":
-    import gzip
-    import json
-    import os
-    import sys
-    here = os.path.dirname(__file__)
-    data = json.load(gzip.open(os.path.join(here, "data/sprites.json.gz"), "rt"))
-    by = {d["name"]: d for d in data}
-    name = sys.argv[1] if len(sys.argv) > 1 else "Agumon"
-    pal = sys.argv[2] if len(sys.argv) > 2 else "lcd"
-    on, off = PALETTES.get(pal, PALETTES["lcd"])
-    d = by.get(name) or data[0]
-    from rich.console import Console
-    c = Console()
-    c.print(f"[bold]{d['name']}[/] ({d['stage']}, {d['attribute']})  {d['w']}x{d['h']}px  palette={pal}")
-    for i in (0, 1, 2, 6):  # idle a/b, happy, sleep-ish
-        c.print(f"frame {i}:")
-        c.print(frame_text(d["frames"][i], on, off))
-
-
-def render_screen(frame_rows, cols, rows, on="#2b2e31", bg="#c6c9cc", baseline=True, mirror=False, xshift=0, yshift=0, corner=None, overlay=None, bgimg=None):
+def render_screen(frame_rows, cols, rows, on="#2b2e31", bg="#c6c9cc", baseline=True, mirror=False, xshift=0, yshift=0, overlay=None, bgimg=None):
     """Compose a sprite centred on a fixed cols x rows (character) LCD screen.
 
     Returns a rich Text. The screen is rows*2 pixels tall; the sprite is blitted
@@ -94,15 +29,6 @@ def render_screen(frame_rows, cols, rows, on="#2b2e31", bg="#c6c9cc", baseline=T
             for x, ch in enumerate(line):
                 if ch == "1":
                     py, pxx = oy + y, ox + x
-                    if 0 <= py < px_h and 0 <= pxx < cols:
-                        buf[py][pxx] = 1
-    if corner:                               # sun/moon tucked into the top-right
-        cw = max(len(r) for r in corner)
-        cx0 = cols - cw - 1
-        for y, line in enumerate(corner):
-            for x, ch in enumerate(line):
-                if ch == "1":
-                    py, pxx = 1 + y, cx0 + x
                     if 0 <= py < px_h and 0 <= pxx < cols:
                         buf[py][pxx] = 1
     if overlay:                              # weather: rain/snow/cloud pixels

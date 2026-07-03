@@ -53,6 +53,8 @@ MAX_ENTHUSIASM_MOOD_PENALTY = 10           # MaxEnthusiasmMoodPenalty
 # unspent spirit sours the mood (mood -= |enth*EnthusiasmMoodDecCoefficient|) and an energetic
 # pet's spirit climbs; asleep it decays toward 0.  Spending spirit on activities keeps the
 # drain small -- a "stay engaged" mechanic.
+# DEFERRED awake enthusiasmLapse constants (see tick's measured rationale --
+# ported faithfully it collapses mood within ~15 real-min on the compressed clock)
 ENTHUSIASM_MOOD_DEC_COEF = 2               # EnthusiasmMoodDecCoefficient
 ENTHUSIASM_CHANGE_ENERGY_COEF = 24         # EnthusiasmChangeEnergyCoefficient
 HIGH_ENERGY_ENTH_CHANGE = 1                # HighEnergyEnthusiasmChange (energetic -> spirit up)
@@ -211,7 +213,6 @@ DNA_SAME_FIELD_MOOD, DNA_DIFF_FIELD_MOOD = 1, -1
 DNA_SAME_FIELD_ENTH_DEC, DNA_DIFF_FIELD_ENTH_DEC = 3, 6
 DNA_SAME_FIELD_SICK, DNA_DIFF_FIELD_SICK = 1, 2     # checkSick target out of SICK_BOUND
 DNA_SICK_BOUND = 100                    # config SickChance / WorseSickChance bound
-DNA_FULFILLED_RATE = 2                  # config DNAFulfilledRate (priority weight per met field)
 
 # DVPet ClockTic.getDNARate: the DNA-generate mini-game maps your mash-rate (which,
 # at the 10s mark, equals your total presses) onto one of these 8-wide Field bands
@@ -309,7 +310,6 @@ SCOLD_ENTH = -3                         # ScoldEnthusiasmChange (scold outside a
 SCOLD_PRAISE_MOOD_DEC = 10              # ScoldPraiseMoodDec (mis-scold during praise window)
 SCOLD_PRAISE_ENTH_DEC = 6              # ScoldPraiseEnthusiasmDec
 SCOLD_PRAISE_OBED = {0: 1, 1: 3, -1: 0}     # ScoldPraiseObedienceInc[/High/Low]
-DISCIPLINE_SCOLD_OBED_INC = 2           # DisciplineCallScoldObedienceInc (a fair scold)
 PRAISE_WINDOW_MAX = 2                    # PraiseWindowMax (lapses the window stays open)
 SCOLD_WINDOW_MAX = 2                     # ScoldWindowMax
 # auto disciplineCall (checkDisciplineCall): the pet spontaneously acts up on the
@@ -416,15 +416,6 @@ _PERSONALITY = {
 # it tires and sulks faster, while rest is deepest then.
 DAY_LENGTH = 1440.0           # 24 min per day/night cycle
 
-
-def _phase_of(p):
-    if p < 0.08:
-        return "dawn"
-    if p < 0.55:
-        return "day"
-    if p < 0.70:
-        return "dusk"
-    return "night"
 
 
 @dataclass
@@ -581,14 +572,6 @@ class Pet:
         "Fresh": 1800, "InTraining": 2400, "Rookie": 3000,
         "Champion": 3600, "Ultimate": 3600, "Mega": 9e9,
     }
-
-    @classmethod
-    def hatch(cls, num=None):
-        _, by_num = data.load_sprites()
-        if num is None:
-            fresh = [n for n, r in by_num.items() if r["stage"] == "Fresh" and not data.is_placeholder(n)]
-            num = random.choice(fresh)
-        return cls.from_num(num)
 
     @classmethod
     def new_egg(cls, generation=1, egg_type=None):
@@ -1251,18 +1234,6 @@ class Pet:
             return self._disturbed()
         return None
 
-    def generate_dna(self, field, amount):
-        """DNA_GenerateValidate: spend `amount` bits 1:1 -> owned[field]; cap 99 (overflow refunds)."""
-        if field not in self.dna_owned or amount <= 0 or self.bits < amount:
-            return False
-        self.bits -= amount
-        total = self.dna_owned.get(field, 0) + amount
-        if total > MAX_DNA_INVENTORY:
-            self.bits += total - MAX_DNA_INVENTORY          # refund the overflow as bits
-            total = MAX_DNA_INVENTORY
-        self.dna_owned[field] = total
-        return True
-
     def dna_bet(self, amount):
         """DVPet DNA_GenerateValidate (onEnter): pay the wager up front, before the mash
         mini-game runs. Returns False (and jeers) if the pet can't afford it."""
@@ -1649,13 +1620,13 @@ class Pet:
         """Species sleep-pressure rate (SleepLapseInc: 1 adult / 2 / 9 baby)."""
         return data.load_requirements().get(self.num, {}).get("sleep_lapse_inc", 1)
 
-    def _fall_asleep(self, nap=False):
+    def _fall_asleep(self):
         """PhysicalState.sleep(): the pressure clock rolls over -- sleep long
         enough to refill the energy bar (clamped 6..15 game-hours), and the
         next awake stretch is whatever remains of the 24."""
         self.sleep_lapse = 0.0
         self.asleep = True
-        self.nap = nap
+        self.nap = False
         self._lights_t = 0.0                        # setAsleep resets _callMinutesLights
         gain = max(1, getattr(self, "_sleep_energy_gain", 3))
         need = math.ceil(max(0, self.max_energy - self.energy) / gain) * 60.0
@@ -2161,6 +2132,9 @@ class Pet:
         total = exercise_factor + time_factor + mood_factor + unwell_factor + enth_factor
         return (base, mood_factor, total)
 
+    # -- UNWIRED CANON (audit 2026-07): the pet-initiated surrender request
+    # (ClockTic's "Your Digimon doesn't want to give up" flow).  Ported but the
+    # battlescreen hook was never added -- wire it in the polish phase or cut it.
     def check_surrender(self, health, enemy_health, enemy_max_health, full_hp):
         """PhysicalState.checkSurrender (verbatim two-pass formula).  Returns
         0 = fight on, 2 = the pet REQUESTS to give up (the trainer decides), or

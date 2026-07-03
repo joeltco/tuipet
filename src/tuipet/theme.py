@@ -115,9 +115,6 @@ def names():
     return list(_ORDER)
 
 
-def cycle():
-    return apply(_ORDER[(_ORDER.index(_current) + 1) % len(_ORDER)])
-
 
 def _wcat(weather):
     if weather in _RAIN:

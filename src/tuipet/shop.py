@@ -130,7 +130,6 @@ def roll_town_shop(pet, town, is_food):
             seen.add(e["key"])
             slot = _mk_slot(pet, e, True)
             slot["price"] = e["price"]          # the town's own price rides the slot
-            slot["resell_factor"] = e["resell_factor"]
             slots.append(slot)
     return slots
 
