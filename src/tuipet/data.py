@@ -317,8 +317,15 @@ def load_requirements():
             "incarnations": _gate(r, "IncarnationsKey", "IncarnationsValue"),  # generation-count gate
             "max_energy": _int_or(r.get("MaxEnergy"), 24),          # DVPet per-Digimon maxEnergy
             "sleep_energy_gain": _int_or(r.get("SleepEnergyGain"), 3),
+            "can_assist": (r.get("CanAssist") or "").strip().upper() == "TRUE",   # AI Assistant pool
         }
     return reqs
+
+
+def assist_pool():
+    """The digimon.csv CanAssist pool -- Evolution.getRandomAssistDigimon's
+    candidates for WHICH Digimon answers an AI Assistant contract."""
+    return sorted(n for n, r in load_requirements().items() if r.get("can_assist"))
 
 
 @lru_cache(maxsize=1)

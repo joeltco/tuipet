@@ -324,6 +324,26 @@ DISCIPLINE_TARGET_RESTLESS_HI = 3        # restless & under-exercised acts up mo
 DISCIPLINE_TARGET_RESTLESS_LO = -1
 DISCIPLINE_OBEDIENCE_MAX = 50            # DisciplineCallObedienceMax (grown + obedient => exempt)
 
+# DVPet AI Assistant (config.csv AutoCare*, PhysicalState.setAutoCare / doAutoCare /
+# checkAutoCare / processAutoCarePrice).  A hired helper keeps house while you're
+# away: awake it cleans filth, then feeds a starving pet (food 44), then a drained
+# one (food 43); asleep it cleans, then dims a lit room (unless the Futon already
+# holds the night).  Every visit bills the stage price AND costs bond -- mood -10,
+# obedience -1, enthusiasm -1: hired care is not YOUR care.  An hourly retainer
+# (or a visit) it cannot cover puts the assistant off duty.
+AUTO_CARE_VISIT_PRICE = {"Egg": 50, "Fresh": 50, "InTraining": 100, "Rookie": 200,
+                         "Champion": 400, "Ultimate": 800, "Mega": 1600}   # AutoCareStage*Price
+AUTO_CARE_HOUR_PRICE = {"Egg": 0, "Fresh": 0, "InTraining": 0, "Rookie": 100,
+                        "Champion": 100, "Ultimate": 100, "Mega": 100}     # AutoCareStage*HourPrice
+AUTO_CARE_HUNGER_FOOD = 44               # AutoCareHungerFoodID (the AI Food Pill)
+AUTO_CARE_STRENGTH_FOOD = 43             # AutoCareStrengthFoodID (the AI Supplement)
+AUTO_CARE_MOOD = -10                     # _autoCareMoodChange
+AUTO_CARE_OBEDIENCE = -1                 # _autoCareObedienceChange
+AUTO_CARE_ENTHUSIASM = -1                # _autoCareEnthusiasmChange
+AUTO_CARE_PAYMENT_MIN = 60               # _autoCarePaymentMin: the retainer bills hourly
+AUTO_CARE_VISIT_SPACING = 3              # game-min between visits (DVPet spaces them via the
+#                                          ASSISTANT_ANIM guard -- one helper on screen at a time)
+
 # DVPet fatigue (config.csv, PhysicalState.fatigue / checkFatigueLapse): training to
 # exhaustion can leave the pet fatigued for FatigueMin..FatigueMax game-minutes -- a big
 # one-time mood/energy/spirit hit, and it cannot act until it has rested off the clock.
@@ -439,6 +459,8 @@ class Pet:
     sick: bool = False
     asleep: bool = False
     lights: bool = True             # DVPet _lights: room-light toggle, SEPARATE from sleep
+    auto_care: bool = False         # DVPet _autoCare: the hired AI Assistant is on duty
+    assistant_num: int = -1         # DVPet _assistantID: WHICH Digimon answered the contract
     care_mistakes: int = 0
     dna_owned: dict = _dcf(default_factory=lambda: {f: 0 for f in data.DNA_FIELDS})    # banked
     dna_applied: dict = _dcf(default_factory=lambda: {f: 0 for f in data.DNA_FIELDS})  # charged
@@ -642,6 +664,7 @@ class Pet:
             return
         self._tick_recovery(dt)
         self._tick_effect(dt)
+        self._tick_auto_care(dt)     # the assistant serves awake AND asleep (never an egg)
         if self.asleep:
             self._tick_asleep(dt)
             return
@@ -1912,17 +1935,19 @@ class Pet:
             return _g
         return None
 
-    def feed(self, food=None):
+    def feed(self, food=None, assisted=False):
         """PhysicalState.feed -> applyFood: apply a food's FULL effect set, each
         scaled by DVPet's fullness modifier.  A hunger-food (Meat) refuses a full
         stomach; a strength-food (Protein/Vitamin, hunger 0) never fills, so it
-        builds strength/DP even on a full pet -- the classic Meat/Protein split."""
+        builds strength/DP even on a full pet -- the classic Meat/Protein split.
+        assisted = DVPet assistantFeed (canRefuse=false): the same path minus
+        the refusal roll -- a pet never turns down the hired help."""
         if (_g := self._guard()) is not None:
             return _g
         foods = data.load_foods()
         food = food or (foods[0] if foods else {"name": "Meat", "hunger": 1, "weight": 4, "mood": 5})
         self._last_meal_starving = self.hunger == 0          # eat(): wolfed down (decided PRE-meal)
-        refused = self.check_refused(food=food)              # applyFood: checkRefused ...
+        refused = False if assisted else self.check_refused(food=food)   # applyFood: checkRefused ...
         self.check_compliant()                               # ... then the compliance is spent
         if refused:
             return f"{self.name} refuses to eat!"
@@ -2547,6 +2572,86 @@ class Pet:
         self._set_anim("heal", 1.5)
         return ("All patched up!" if self.inj_length == 0
                 else f"{self.name} is bandaged — it needs rest now.")
+
+    def set_auto_care(self, on):
+        """SpriteAnim's Set_AutoCare switch -> PhysicalState.setAutoCare: hiring
+        the assistant also rolls WHICH Digimon answers, from the digimon.csv
+        CanAssist pool (Evolution.getRandomAssistDigimon)."""
+        if self.dead:
+            return "It rests now — press N for a new egg."
+        self.auto_care = bool(on)
+        if self.auto_care:
+            pool = data.assist_pool()
+            self.assistant_num = random.choice(pool) if pool else -1
+            _, by_num = data.load_sprites()
+            name = (by_num.get(self.assistant_num) or {}).get("name", "The assistant")
+            return f"{name} is on duty."
+        return "The assistant was dismissed."
+
+    def _tick_auto_care(self, dt):
+        """PhysicalState.checkAutoCare, one game-min cadence.  The hourly retainer
+        bills first (unpaid -> off duty); then at most one visit per spacing --
+        awake: filth > hunger > strength; asleep: filth > a lit room (unless the
+        Futon is active, DVPet's !isFuton()).  doAutoCare also walks off duty when
+        the pet cannot afford the NEXT visit.  ADAPTATION: DVPet charges when the
+        assistant animation ends; a headless tuipet pet applies state (and the
+        processAutoCarePrice fee + bond costs) here in the tick, and the app-side
+        assistant fx is pure presentation via the assist_event mailbox."""
+        if not self.auto_care:
+            return
+        self._ac_pay = getattr(self, "_ac_pay", 0.0) + dt
+        while self._ac_pay >= AUTO_CARE_PAYMENT_MIN:
+            self._ac_pay -= AUTO_CARE_PAYMENT_MIN
+            hourly = AUTO_CARE_HOUR_PRICE.get(self.stage, 0)
+            if self.bits < hourly:
+                self.auto_care = False
+                self.assist_note = "The assistant left — the retainer went unpaid."
+                return
+            self.bits -= hourly
+        self._ac_cool = max(0.0, getattr(self, "_ac_cool", 0.0) - dt)
+        if self._ac_cool > 0:
+            return
+        act = None
+        if not self.asleep:
+            if self.poop > 0:
+                act = "clean"
+            elif self.hunger == 0:
+                act = "feed"
+            elif self.strength == 0:
+                act = "strength"
+        else:
+            if self.poop > 0:
+                act = "clean"
+            elif self.lights and self.effect_id != 0:   # !isFuton(): the Futon already holds the night
+                act = "lights"
+        if act is None:
+            return
+        price = AUTO_CARE_VISIT_PRICE.get(self.stage, 0)
+        if self.bits < price:                            # doAutoCare: can't cover the visit
+            self.auto_care = False
+            self.assist_note = "The assistant left — it couldn't cover a visit."
+            return
+        piles, sizes = self.poop, list(self.poop_sizes)
+        if act == "clean":
+            # Assistant_Clean -> onClean: the standard clean, minus YOUR wash pose
+            self.poop, self.poop_sizes = 0, []
+            self._set_mood(self.mood + 6)                # CleanMoodInc
+            self._filth_t = 0                            # mess handled: the filth call resets
+        elif act in ("feed", "strength"):
+            fid = AUTO_CARE_HUNGER_FOOD if act == "feed" else AUTO_CARE_STRENGTH_FOOD
+            food = data.consumable_by_key(f"f:{fid}")
+            if food is None:
+                return
+            self.feed(food, assisted=True)               # assistantFeed: the full path, no refusal
+        elif act == "lights":
+            self.lights = False                          # Assistant_Lights -> onLights
+        # processAutoCarePrice: the visit fee, and the bond cost of hired care
+        self.bits -= price
+        self._set_mood(self.mood + AUTO_CARE_MOOD)
+        self.obedience = max(0, self.obedience + AUTO_CARE_OBEDIENCE)   # setObedience floors at 0
+        self._set_enthusiasm(self.enthusiasm + AUTO_CARE_ENTHUSIASM)
+        self._ac_cool = AUTO_CARE_VISIT_SPACING
+        self.assist_event = (act, piles, sizes)          # the app plays the visit
 
     def toggle_lights(self):
         """The lights button (DVPet setLights): toggles the room light ONLY. The pet

@@ -23,6 +23,7 @@ from . import transportscreen
 from . import adventurescreen
 from . import shopscreen
 from . import habitatscreen
+from . import assistscreen
 from . import feedscreen
 from . import digicorescreen
 from . import eggselectscreen
@@ -119,7 +120,7 @@ _PRECIP_N = {"Drizzling": 5, "LightSnow": 6, "Raining": 11, "Snowing": 10,
              "HeavyRain": 18, "HeavySnow": 16}
 _K = "b cyan"
 KEYS = (
-    f"[{_K}]f[/] feed  [{_K}]p[/] play  [{_K}]c[/] clean  [{_K}]h[/] heal  [{_K}]r[/] praise  [{_K}]k[/] scold  [{_K}]s[/] lights\n"
+    f"[{_K}]f[/] feed  [{_K}]p[/] play  [{_K}]c[/] clean  [{_K}]h[/] heal  [{_K}]r[/] praise  [{_K}]k[/] scold  [{_K}]s[/] lights  [{_K}]v[/] assist\n"
     f"[{_K}]t[/] train  [{_K}]b[/] battle  [{_K}]a[/] adventure  [{_K}]u[/] cup  [{_K}]j[/] jogress  [{_K}]l[/] lobby  [{_K}]x[/] DNA\n"
     f"[{_K}]o[/] shop  [{_K}]i[/] bag  [{_K}]e[/] habitat  [{_K}]d[/] data  [{_K}]g[/] theme  [{_K}]m[/] sound  [{_K}]n[/] new  [{_K}]q[/] quit"
 )
@@ -457,7 +458,7 @@ class Screen(Static):
     # ---- care-action animations (DVPet SpriteAnim eat/clean/cheer) -----------
     def start_fx(self, kind, icon=None, poop=0, old_num=None, pet=None, starving=False):
         steps = {"eat": 35, "cheer": 31, "jeer": 31, "clean": 22, "spit": 25, "evolve": 37, "dying": 50, "dna_charge": 44, "play": 37, "heal": 24, "poop": 25,
-                 "gift": GIFT_OUT + GIFT_BACK + GIFT_HOLD}.get(kind, 12)
+                 "gift": GIFT_OUT + GIFT_BACK + GIFT_HOLD, "assist": 28}.get(kind, 12)
         self.fx = {"kind": kind, "step": 0, "steps": steps, "icon": icon, "poop": poop, "old_num": old_num}
         if kind == "eat":
             # DVPet eat(): each chew beat is scaled by pow(N, mod) -- a starving pet or
@@ -583,12 +584,16 @@ class Screen(Static):
         bgimg = self._background(pet)
         if bgimg:
             on = SIL_NIGHT if pet.day_phase == "night" else SIL_DAY
-        if not pet.lights and fx["kind"] != "evolve":
+        step = fx["step"]
+        # an Assistant_Lights visit is the one anim that CAUSES the darkness: the
+        # room stays lit until the helper reaches the switch (DVPet toggles at the
+        # anim's final beat), then the dark-room rule below takes over
+        lit_visit = fx["kind"] == "assist" and fx.get("act") == "lights" and step < 18
+        if not pet.lights and fx["kind"] != "evolve" and not lit_visit:
             # design call (polish 2026-07): the dark room stays dark through a
             # care fx -- lights-off is room STATE (DVPet's lightsOff roomEffect),
             # not a backdrop an anim may replace; evolve owns its own darkness
             bgimg, bg, on = None, "#000000", SIL_NIGHT
-        step = fx["step"]
         c = _FxCtx()
         c.px_h = SCREEN_ROWS * 2
         c.bg, c.bgimg = bg, bgimg
@@ -671,6 +676,60 @@ class Screen(Static):
                                     sizes=fx.get("sizes"), push=push, px_h=c.px_h)
         if wash:
             c.overlay += _blit(wash, wx, max(0, (c.px_h - len(wash)) // 2))
+
+    def _fxk_assist(self, pet, fx, step, c):
+        # DVPet assistantClean/assistantFeed/assistantLights: the hired helper
+        # descends from the top on the LEFT (locX 6, icon flipped to face the
+        # pet), does its round, and rises away (moveUp beats 18/19).  Mapped to
+        # 28 steps: descend 0-7, act 8-19 (with the wiggle), leave 20+.  During
+        # a clean the piles sweep RIGHT off-screen (filthLabel.moveRight(4) each
+        # descent beat) -- the OPPOSITE of your wash, which shoves them left.
+        act = fx.get("act")
+        # the pet gives ground as the helper arrives (DVPet assistantLights
+        # moveRight(2) per descent beat) and drifts back as it leaves --
+        # 4+16 | 20+16 fills the grid band x[4,36) with both sprites abutted
+        if step < 8:
+            c.xshift = min(8, step * 2)
+        elif step < 20:
+            c.xshift = 8
+        else:
+            c.xshift = max(0, 8 - (step - 19) * 2)
+        if act in ("feed", "strength") and 8 <= step < 20:
+            # Assistant_Feed shares eatAnim: open-mouth(+8)/chew(+7) alternation
+            c.rows = self._pose_rows_idx(pet, 8 if (step // 3) % 2 == 0 else 7)
+        elif pet.asleep:
+            c.rows = self._pose_rows(pet, "sleep", step // 2)
+        if act == "clean" and fx.get("poop"):
+            c.overlay += _filth_pts(pet, self.frame_i, count=fx["poop"],
+                                    sizes=fx.get("sizes"), push=-step * 3, px_h=c.px_h)
+        if act in ("feed", "strength") and step >= 4:
+            food = self._food_frames(fx.get("icon") or "f:44")
+            if food:
+                fw = len(food[0][0]) if (food[0] and food[0][0]) else 8
+                fb = fx.get("food_beats") or (12, 16, 20)
+                fi = 0 if step < fb[0] else 1 if step < fb[1] else 2 if step < fb[2] else 3
+                fr_ = food[min(fi, len(food) - 1)]
+                if fr_:                                    # a consumed-away frame may be empty
+                    # handed straight to the mouth -- no descent; it appears held out
+                    c.overlay += _blit(fr_, max(0, PET_BASE_X + c.xshift - fw),
+                                       c.px_h - 2 - 8 - 4)
+        _, by_num = data.load_sprites()
+        rec = by_num.get(fx.get("helper", -1))
+        fr = rec["frames"] if rec else None
+        hf = (fr[0] if fr and fr[0] else next((f for f in fr if f), None)) if fr else None
+        if hf:
+            hf = [row[::-1] for row in hf]                 # flipped to face the pet
+            hh = len(hf)
+            ground = c.px_h - hh - 2
+            if step < 8:
+                hy = -hh + (step + 1) * (ground + hh) // 8   # moveDown beats
+            elif step < 20:
+                hy = ground
+            else:
+                hy = ground - (step - 19) * 6              # moveUp(24) x2: off the top
+            hx = 4 + (0 if not (16 <= step < 20) else (-1 if step % 2 == 0 else 1))   # the wiggle
+            if hy > -hh:
+                c.overlay += _blit(hf, hx, hy)
 
     def _fxk_cheer(self, pet, fx, step, c):
         # DVPet cheer(): pose alternates up(+5)/down(+7) every 6 intervals with a
@@ -941,7 +1000,7 @@ class TuiPetApp(App):
         ("d", "digicore", "DigiCore"),
         ("j", "jogress", "Jogress"), ("u", "tournament", "Cup"), ("x", "dna", "DNA"),
         ("l", "lobby", "Lobby"),
-        ("s", "sleep", "Lights"), ("g", "theme", "Theme"), ("m", "sound", "Sound"), ("n", "new", "New pet"), ("q", "quit", "Quit"),
+        ("s", "sleep", "Lights"), ("v", "assist", "Assistant"), ("g", "theme", "Theme"), ("m", "sound", "Sound"), ("n", "new", "New pet"), ("q", "quit", "Quit"),
         ("enter", "gift", "Accept gift"),
     ]
 
@@ -1563,6 +1622,23 @@ class TuiPetApp(App):
                 self.screen_w.fx["snds"] = {18: poop_snd}
             else:
                 self.beep(poop_snd, bell=False)
+        # AI Assistant rounds (checkAutoCare): play the visit, flash the quit notes
+        ev = getattr(p, "assist_event", None)
+        if ev and self.screen_w.fx is None:
+            p.assist_event = None
+            act, piles, sizes = ev
+            self.screen_w.start_fx("assist", pet=p, poop=piles,
+                                   icon="f:44" if act == "feed" else ("f:43" if act == "strength" else None))
+            self.screen_w.fx["act"] = act
+            self.screen_w.fx["sizes"] = sizes
+            self.screen_w.fx["helper"] = p.assistant_num
+            if act in ("feed", "strength"):
+                # Assistant_Feed shares eatAnim's sounds: _eat per bite, _lastBite last
+                self.screen_w.fx["snds"] = {12: "eat", 16: "eat", 20: "lastBite"}
+        note = getattr(p, "assist_note", "")
+        if note:
+            self.flash(note)
+            p.assist_note = ""
         # birthday (setTimeToAge age-up): announce the day's verdict
         if p.birthday_note:
             self.flash(p.birthday_note)
@@ -1796,6 +1872,9 @@ class TuiPetApp(App):
 
     def action_habitat(self):
         self._open_mode(habitatscreen.HabitatPanel(self.pet), self._after_habitat)
+
+    def action_assist(self):
+        self._open_mode(assistscreen.AssistPanel(self.pet), lambda _=None: self.repaint())
 
     def action_digicore(self):
         self._open_mode(digicorescreen.DigiCorePanel(self.pet), self._after_digicore)
