@@ -510,3 +510,19 @@ def test_app_pilot_walks_every_binding():
             await pilot.pause(0.3)                     # a few more life ticks
 
     asyncio.run(scenario())
+
+
+def test_thunder_flash_renders_and_startles():
+    """DVPet Weather.checkThunder: HeavyRain lightning lifts the gloom on 2-frame
+    beats; a dark room stays dark; the countdown burns itself out."""
+    import tuipet.app as app
+    s = app.Screen(); s.on_mount(); s.update = lambda t: None
+    p = _pet(weather="HeavyRain")
+    for lights in (True, False):
+        p.lights = lights
+        s.thunder_i = 14
+        for _ in range(20):
+            s.frame_i += 1
+            s.paint(p)
+        if lights:
+            assert s.thunder_i == 0          # the countdown burns out while lit

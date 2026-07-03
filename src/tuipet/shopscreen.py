@@ -131,6 +131,8 @@ class ShopPanel:
                     return None                            # refused / blank: stay in the bag
                 num0 = self.pet.num
                 self.msg = self.pet.use_item(e["key"])
+                if (e.get("unlocks_food") or e.get("unlocks_item")) and "got a" in self.msg:
+                    self.sfx = "mischief"      # soundConfig unlockConsumable -> mischief.wav
                 if self.pet.num != num0:
                     return ("done", ("evolve", num0))
                 if e["key"].startswith("f:") and self.pet.anim == "eat":

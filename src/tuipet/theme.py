@@ -163,14 +163,9 @@ def _wcat(weather):
     return None
 
 
-def weather_tint(frame, weather):
-    """Blend a habitat background frame toward the active theme's weather tint
-    (rain/snow/cloud). `frame` is a list of rows of 6-hex-char cells; returns a
-    new tinted frame (or the original when the weather is clear)."""
-    spec = WEATHER.get(_wcat(weather)) if frame else None
-    if not spec:
-        return frame
-    hexcol, a = spec
+def blend_frame(frame, hexcol, a):
+    """Blend a full-colour frame (rows of 6-hex-char cells) toward `hexcol` by
+    alpha `a`.  Shared by the weather tints and the lightning flash."""
     tr, tg, tb = int(hexcol[1:3], 16), int(hexcol[3:5], 16), int(hexcol[5:7], 16)
     out = []
     for row in frame:
@@ -180,6 +175,16 @@ def weather_tint(frame, weather):
             cells.append("%02x%02x%02x" % (int(r + (tr - r) * a), int(g + (tg - g) * a), int(b + (tb - b) * a)))
         out.append("".join(cells))
     return out
+
+
+def weather_tint(frame, weather):
+    """Blend a habitat background frame toward the active theme's weather tint
+    (rain/snow/cloud). `frame` is a list of rows of 6-hex-char cells; returns a
+    new tinted frame (or the original when the weather is clear)."""
+    spec = WEATHER.get(_wcat(weather)) if frame else None
+    if not spec:
+        return frame
+    return blend_frame(frame, *spec)
 
 
 # --- persistence of the chosen theme ---

@@ -62,6 +62,7 @@ class TournamentPanel(menu.SubHost):
                     return None
                 self.tourney = Tournament(self.pet, tr)
                 self.phase = "bracket"
+                self.sfx = "mischief"          # soundConfig tourneyStart -> mischief.wav
             elif k == "a":
                 # onTourneyAlarm: toggle the wake-me call on this slot's cup
                 tid = self.sched[self.cursor] if 0 <= self.cursor < len(self.sched) else -1

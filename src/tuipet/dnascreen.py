@@ -81,7 +81,7 @@ class DNAPanel:
                 self.won = (field, self.bet, rate)
                 self.phase = "result"
                 self.blink = 0
-                self.sfx = "select"      # DVPet banks even None (UnlockDNA) -- never a jeer
+                self.sfx = "mischief"    # soundConfig unlockDNA -> mischief.wav (banks even None -- never a jeer)
         elif self.phase == "result":
             self.blink += 1              # drive the won-Field blink reveal
 

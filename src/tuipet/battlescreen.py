@@ -77,6 +77,7 @@ class BattlePanel:
         self.hud_fhp = self.battle.enemy_hp
         self.hud_note = "Battle start!"
         self.phase = "intro"
+        self.sfx = "startBattle"      # SpriteAnim battle setup: _startBattle at the reveal
         self.sfx = "battle"          # play the battle-start beep on the first frame
         self._last_m = None          # tracks timeline marker edges for per-event sfx
         tl = []

@@ -364,6 +364,16 @@ class Screen(Static):
                 bg = _scale_hex(bg, 0.85)
             elif w == "Cloudy":
                 bg = _scale_hex(bg, 0.9)
+        if getattr(self, "thunder_i", 0) > 0 and pet.lights:
+            # DVPet Weather.checkThunder: while thunder runs, the storm gloom LIFTS
+            # on alternating 2-frame beats (rect.changeColor(0,0,0,0)) -- lightning
+            # whitens the scene, then the rain tint snaps back.  A dark room stays dark.
+            self.thunder_i -= 1
+            if (self.thunder_i % 4) < 2:
+                if bgimg:
+                    bgimg = theme.blend_frame(bgimg, "#f2f6fa", 0.55)
+                else:
+                    on, bg = "#1a2026", "#e8eef2"
         wf = self.frame_i // 4                  # weather/effect overlays keep their ~0.4s cadence
         if pet.dead:                           # a grave marker (the live path builds its own overlay below)
             overlay = (_weather_overlay(pet.weather, wf, SCREEN_COLS, SCREEN_ROWS * 2)
@@ -1646,6 +1656,18 @@ class TuiPetApp(App):
                 if done:
                     p = self.pet
                     self.flash(f"[b]{p.name}[/] hatched!")
+            # DVPet Weather.precipitate: HeavyRain rolls thunder (nextInt(500)==0
+            # per frame); the crack sound keys at the flash onset, and an idling
+            # awake pet startles (checkSpecialIdleAnim -> Surprising)
+            p = self.pet
+            if (p.weather == "HeavyRain" and not p.dead and p.stage != "Egg"
+                    and getattr(sc, "thunder_i", 0) <= 0 and random.randint(0, 499) == 0):
+                sc.thunder_i = 14
+                r = random.randint(0, 4)              # sharp 1/5, long 2/5, short 2/5
+                self.beep("thunder" if r == 0 else ("thunder2" if r <= 2 else "thunder3"),
+                          bell=False)
+                if p.anim in ("idle", "walk") and not p.asleep:
+                    p._set_anim("surprise", 1.4)
             sc.advance(self.pet)
             sc.paint(self.pet)
 

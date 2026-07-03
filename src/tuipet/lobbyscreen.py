@@ -298,7 +298,8 @@ class LobbyPanel:
             reason = jogress.can_jogress(self.pet)      # honour asleep / too-young, like offline
             self.jresult = None if reason else jogress.resolve(self.pet, payload.get("attr"))
             if self.jresult:
-                self.jphase, self.sfx = "result", "jogress"
+                self.jphase = "result"
+                self.sfx = "jogress"
             else:
                 self.fail_reason = reason or "No resonance with that partner."
                 self.jphase = "failed"
@@ -358,7 +359,8 @@ class LobbyPanel:
             self.sfx = "strongHit" if dealt >= taken and dealt > 0 else "attackHit"
         self.bt_my_choice = self.bt_opp_choice = None
         if res.get("over"):
-            self.bphase, self.sfx = "over", "attack"
+            self.bphase = "over"
+            self.sfx = "attack"
             won = my_alive and not opp_alive
             if not my_alive:                       # own HP gone (incl. double-KO) = loss (battleEnd)
                 self.bt_outcome = "YOU LOSE…"
