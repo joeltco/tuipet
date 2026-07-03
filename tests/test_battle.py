@@ -146,11 +146,18 @@ def test_battle_win_grows_dominant_attribute():
 
 def test_battle_loss_saps_obedience():
     from tuipet.pet import Pet
+    # under ORDERS the unconditional BattleFreeObedienceInc (+1) nets a loss to 0
+    # (canon battleEnd); FREE style forgoes it, so the loss bites in full
     p = Pet(num=1, stage="Rookie", attribute="Vaccine")
     o0 = p.obedience
     p.record_battle(False, {"stage": "Rookie", "hp": 10, "num": 1,
                             "vaccine": 1, "data_power": 1, "virus": 1})
-    assert p.obedience == o0 - 1
+    assert p.obedience == o0                       # -1 loss + 1 discipline
+    f = Pet(num=1, stage="Rookie", attribute="Vaccine", free_style=True)
+    o0 = f.obedience
+    f.record_battle(False, {"stage": "Rookie", "hp": 10, "num": 1,
+                            "vaccine": 1, "data_power": 1, "virus": 1})
+    assert f.obedience == o0 - 1
 
 
 def test_hollow_win_is_joyless():
@@ -163,3 +170,43 @@ def test_hollow_win_is_joyless():
     p.record_battle(True, {"stage": "Champion", "hp": 3, "bits": (0, 0), "num": 1,
                            "vaccine": 1, "data_power": 1, "virus": 1})
     assert p.mood < 10        # the +10 win bump got eaten by the -20 hollow-win penalty
+
+
+# ---- battle style (Battle_Style: Free vs Orders) -----------------------------
+
+def test_free_style_adds_one_to_all_powers_and_self_picks():
+    p = _pet("Rookie")
+    p.vaccine, p.data_power, p.virus = 10, 5, 5
+    p.free_style = True
+    b = Battle(p, _enemy(hp=10))
+    assert b._pet_counts == {"Vaccine": 11, "Data": 6, "Virus": 6}
+    b.play_round("Virus")                      # the order is moot: it picks its own
+    assert b.last_player_attr == b._own_choice() or b.last_player_attr in ("Vaccine", "Data", "Virus")
+    assert not b.refused_order                 # Free never "refuses" -- no orders given
+
+
+def test_orders_can_be_refused_mid_fight():
+    import random
+    random.seed(0)
+    p = _pet("Rookie")
+    p.vaccine, p.data_power, p.virus = 10, 5, 5
+    p.obedience = -500                         # rock bottom: refusals certain
+    p.full_health = 10
+    b = Battle(p, _enemy(hp=10))
+    b.play_round("Virus")
+    assert b.refused_order                     # refuseAttack overrode the order
+    assert p.scold_flag                        # setScold(true) mid-fight
+
+
+def test_orders_pay_obedience_and_prouder_wins():
+    p = _pet("Rookie")
+    p.obedience = 50
+    p.free_style = False
+    m0 = p.mood
+    p.record_battle(True, _enemy(hp=10))
+    assert p.obedience >= 51                   # BattleFreeObedienceInc (+win rewards)
+    free = _pet("Rookie")
+    free.obedience = 50
+    free.free_style = True
+    free.record_battle(True, _enemy(hp=10))
+    assert p.mood > free.mood                  # OrdersWonMoodInc only under orders

@@ -199,6 +199,11 @@ class BattlePanel:
             elif k == "s":
                 self.battle.surrender()
                 return ("done", None)
+            elif k == "f":
+                # Battle_Style: Free (it fights its own way, +1 all powers)
+                # vs Orders (your call; refusable, but discipline pays)
+                self.pet.free_style = not self.pet.free_style
+                self.sfx = "confirm"
             elif k == "escape":
                 return ("done", None)
             return None
@@ -299,10 +304,12 @@ class BattlePanel:
 
     def _render_menu(self):
         b = self.battle
-        out = menu.header("BATTLE", f"vs {b.enemy['name'][:16]}")
+        style = "FREE" if getattr(self.pet, "free_style", False) else "ORDERS"
+        out = menu.header("BATTLE", f"vs {b.enemy['name'][:14]} · {style}")
         tag = " BOSS" if b.enemy.get("boss") else ""
+        ignored = "  It IGNORED you!" if getattr(b, "refused_order", False) else ""
         out.append_text(menu.note(
-            f"You HP {b.pet_hp}/{b.pet_max}   Foe HP {b.enemy_hp}/{b.enemy_max}{tag}"))
+            f"You HP {b.pet_hp}/{b.pet_max}   Foe HP {b.enemy_hp}/{b.enemy_max}{tag}{ignored}"))
         out.append_text(menu.blanks(1))
         powr = {"Vaccine": self.pet.vaccine, "Data": self.pet.data_power, "Virus": self.pet.virus}
         for i, (label, attr) in enumerate(OPTS):

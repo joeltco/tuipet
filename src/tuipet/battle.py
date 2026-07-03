@@ -115,7 +115,9 @@ class Battle:
     def __init__(self, pet, enemy=None):
         self.pet = pet
         self.enemy = dict(enemy or pick_enemy(pet))
-        self._pet_counts = {"Vaccine": pet.vaccine, "Data": pet.data_power, "Virus": pet.virus}
+        _fb = 1 if getattr(pet, "free_style", False) else 0   # Free: +1 all powers (canon)
+        self._pet_counts = {"Vaccine": pet.vaccine + _fb, "Data": pet.data_power + _fb,
+                            "Virus": pet.virus + _fb}
         self._enemy_counts = {"Vaccine": self.enemy["vaccine"],
                               "Data": self.enemy["data_power"], "Virus": self.enemy["virus"]}
         # Enemy.getOppAttribute = its strongest power (battle "type")
@@ -163,10 +165,31 @@ class Battle:
         top = [a for a in cand if calc_attack_power(a, ec, pc) == best]
         return max(top, key=lambda a: ec[a])
 
+    def _own_choice(self):
+        """The pet's OWN pick (Free style / a refused order): the same brute
+        chooser the enemy uses, run on the pet's side."""
+        pc, ec = self._pet_counts, self._enemy_counts
+        nonzero = [a for a in ATTRS if pc[a] > 0]
+        if not nonzero:
+            return self.pet.attribute if self.pet.attribute in ATTRS else "Vaccine"
+        cand = nonzero
+        best = max(calc_attack_power(a, pc, ec) for a in cand)
+        top = [a for a in cand if calc_attack_power(a, pc, ec) == best]
+        return max(top, key=lambda a: pc[a])
+
     def play_round(self, player_attr):
         if self.over:
             return self.last
         self.round += 1
+        # Battle Style (Battle_Style menu): Free = the pet attacks its own way;
+        # Orders = your call, but refuseAttack may override it mid-fight (the
+        # pet swaps in its OWN pick and the scold window opens)
+        self.refused_order = False
+        if getattr(self.pet, "free_style", False):
+            player_attr = self._own_choice()
+        elif player_attr in ATTRS and self.pet.refuse_attack(self.pet_hp, self.enemy_hp):
+            self.refused_order = True
+            player_attr = self._own_choice()
         enemy_attr = self._enemy_choice()
         self.last_player_attr = player_attr
         pdmg = self._damage(self.pet.stage, player_attr, self._pet_counts, self._enemy_counts)

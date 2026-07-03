@@ -140,6 +140,20 @@ HITS_TO_SAVE = 30                   # HitsToSave 175 mouse-clicks over DVPet's ~
 REVIVAL_LIFE = 750.0                # RevivalLifeInc 45000 real-sec -> game-min scale (~12.5 game-h left)
 HUNGER_AFTER_SAVED = 0              # HungerAfterSavedFromDeath (alive, but starving)
 BONUS_AFTER_SAVED = -1              # BonusChangeAfterSavedFromDeath
+# battle style (Battle_Style menu): Free = the pet fights its own way (+1 all
+# powers, never refuses an order it never got); Orders = you call each attack
+# (it may refuse mid-fight, but discipline pays obedience and prouder wins)
+BATTLE_FREE_OBED_INC = 1            # BattleFreeObedienceInc (fighting under orders)
+ORDERS_WON_MOOD_INC = 10            # OrdersWonMoodInc
+BATTLE_DISPO_MOOD_FACTOR = -5       # BattleDispositionMoodFactor (x -disposition)
+OBED_HEALTH_COEF = 5                # ObedienceChanceHealthCoefficient (hp >= full/5 = "healthy")
+HI_DISPO_OBED_HIGH_HP = 0           # HighDispositionObedienceChanceHighHealthFactor
+HI_DISPO_OBED_LOW_HP = -10          # ...LowHealthFactor (a hurt pet obeys less)
+HI_DISPO_REFUSE_COEF = 10           # HighDispositionRefuseChanceDispositionCoefficient
+LO_DISPO_OBED_HIGH_HP = 10          # LowDispositionObedienceChanceHighHealthFactor
+LO_DISPO_OBED_LOW_HP = -10
+LO_DISPO_REFUSE_LOW_ENEMY = 0       # LowDispositionRefuseChanceLowEnemyHealthFactor
+LO_DISPO_REFUSE_HIGH_ENEMY = 10     # ...HighEnemyHealthFactor (a docile pet balks when losing)
 # perfect-conditions energy save (checkEnergyIncFromPerfectConditions):
 # an energy DROP during the pet's favourite time may bounce back +1 --
 # roll nextInt(base + mods) == 1, so perfect conditions shrink the range
@@ -499,6 +513,7 @@ class Pet:
     evol_bonus: int = 0             # _bonus: birthday/win-rate credit fed into evolution odds
     birthday_note: str = ""         # transient: the HUD's birthday announcement
     saved_from_death: int = 0       # _savedFromDeath: each rescue raises the next bar
+    free_style: bool = False        # _isFree: Battle Style toggle (Free vs Orders)
     gift: str = ""                  # pending gift-call present (consumable key; "" = none)
     gift_t: float = 0.0             # seconds toward the next GiftChanceMin roll
     # ---- home tournament (PhysicalState _trophySchedule/_foughtTrophiesToday) ----
@@ -1746,6 +1761,29 @@ class Pet:
             self._set_anim("refuse", 1.5)
         return refused
 
+    def refuse_attack(self, my_hp, enemy_hp):
+        """PhysicalState.refuseAttack (Orders style only): mid-fight, an ORDERED
+        attack may be refused -- a hurt pet obeys less; a feisty (+1) pet
+        refuses more on principle, a docile (-1) one balks when it's losing.
+        On refusal the pet attacks its own way and the scold window opens."""
+        if self.free_style or self.dead:
+            return False
+        r = random.randrange(REFUSE_CHANCE)
+        obey = self._obedience_factors()[2]
+        obed = self._adjusted_obedience()
+        healthy = my_hp >= self.full_health / OBED_HEALTH_COEF
+        if self.disposition >= 0:
+            obed_chance = obed + obey + (HI_DISPO_OBED_HIGH_HP if healthy else HI_DISPO_OBED_LOW_HP)
+            refuse_chance = r + self.disposition * HI_DISPO_REFUSE_COEF
+        else:
+            obed_chance = obed + obey + (LO_DISPO_OBED_HIGH_HP if healthy else LO_DISPO_OBED_LOW_HP)
+            refuse_chance = r + (LO_DISPO_REFUSE_LOW_ENEMY if my_hp >= enemy_hp
+                                 else LO_DISPO_REFUSE_HIGH_ENEMY)
+        if refuse_chance >= obed_chance:
+            self.scold_flag, self.scold_window = True, 0    # setScold(true) mid-fight
+            return True
+        return False
+
     def check_stop_travel(self):
         """PhysicalState.checkStopTravel: the mid-journey balk.  One draw per
         controller fire, r in [cap, cap + chance*3000); the energy fraction
@@ -1991,6 +2029,8 @@ class Pet:
     def record_battle(self, won, enemy=None):
         """Resolve a finished battle: update battles/wins and rewards."""
         self.battles += 1
+        if not self.free_style:
+            self.obedience += BATTLE_FREE_OBED_INC       # fighting under orders builds discipline
         self._set_energy(self.energy - 1)               # battle energy (BattleWon/LostEnergyDec)
         self._check_worse_injury(in_battle=True)         # battling injured can worsen it
         if won:
@@ -2026,6 +2066,9 @@ class Pet:
                     self.virus += 1
                 grew = f"  +1 {dom}"
             self._set_enthusiasm(self.enthusiasm - 3)    # BattleWonEnthusiasmDec
+            if not self.free_style:                      # battleEnd: a win UNDER ORDERS is prouder
+                self._set_mood(self.mood + ORDERS_WON_MOOD_INC
+                               + BATTLE_DISPO_MOOD_FACTOR * -self.disposition)
             lo, hi = (enemy or {}).get("bits", (1, 5))
             gained = random.randint(lo, hi)
             self.bits += gained
