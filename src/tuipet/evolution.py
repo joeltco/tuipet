@@ -104,13 +104,15 @@ def _dna_ok(pet, req):
     return all(_cmp(cond, val, pet.dna_percent(f)) for f, (cond, val) in dna.items())
 
 
-def check(pet, num, item=-1):
+def check(pet, num, item=-1, connecting=False):
     """checkEvolReq: every gate must pass, OR the form\'s DNA requirement is met
-    (DVPet\'s `testX || getDNA` bypass). checkStatTotal + probability are never bypassed."""
+    (DVPet\'s `testX || getDNA` bypass). checkStatTotal + probability are never bypassed.
+    `connecting` (the jogress/fusion handshake) waives ONLY the special-type gate --
+    every other requirement still applies to the fusion form, exactly like DVPet."""
     req = data.load_requirements().get(num)
     if req is None:
         return False
-    if req.get("special", "None") != "None":
+    if req.get("special", "None") != "None" and not connecting:
         return False  # jogress/fusion/mode need a special trigger, not normal evolution
     ev_item = req.get("evol_item", -1)
     if item == -1:

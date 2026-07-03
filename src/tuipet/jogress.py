@@ -6,6 +6,9 @@ the "DNA"), so it's a deliberate fusion the player triggers."""
 from __future__ import annotations
 import random
 from . import data
+from . import evolution
+
+JOGRESS_ENERGY_COST = 0.66     # JogressEnergyChange -0.66: a fusion drinks 66% of max energy
 
 # attributeJogress.csv as (result, digimon, partner) attribute triples. BOTH matrix blocks
 # are included (DVPet Affinity.readAttributeInfo reads all rows), so None/Free-attribute
@@ -57,6 +60,12 @@ def options(pet):
         partners = required_partners(pet.attribute, by[t]["attribute"])
         if not partners:
             continue
+        # DVPet getValidEvolutions(connecting=true): the fusion form's FULL
+        # requirement list (or its DNA bypass) still gates the jogress -- the
+        # handshake only waives the special-type check.  Evaluated once per
+        # menu open (the probability roll rides inside, like checkEvolReq).
+        if not evolution.check(pet, t, connecting=True):
+            continue
         seen.add(t)
         pnum, pname = _partner_for(pet, partners)
         out.append({
@@ -97,8 +106,10 @@ def resolve(pet, partner_attr):
 
 
 def fuse(pet, target_num):
-    """Perform the fusion: the pet jogress-evolves into the target form."""
+    """Perform the fusion: the pet jogress-evolves into the target form.
+    A fusion drinks 66% of max energy (JogressEnergyChange -0.66)."""
     _, by = data.load_sprites()
     name = by[target_num]["name"]
+    pet._set_energy(pet.energy - int(round(pet.max_energy * JOGRESS_ENERGY_COST)))
     pet.evolve_to(target_num)   # special evolution; partner supplies the DNA
     return f"Jogress! Fused into {name}!"
