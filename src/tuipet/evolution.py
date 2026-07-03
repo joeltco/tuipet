@@ -385,6 +385,105 @@ def pre_evolution(num):
     return None
 
 
+_SYM = {"GreaterThan": ">", "LessThan": "<", "EqualTo": "="}
+
+
+def requirement_report(pet, num):
+    """The data book's requirement checklist for one evolution target: a list of
+    (met, text) rows, one per CONSTRAINED gate, mirroring check()'s reads exactly
+    (unconstrained "None" gates are skipped).  met is True/False, or None for an
+    informational row (the probability line, the DNA-bypass note)."""
+    req = data.load_requirements().get(num)
+    if req is None:
+        return [(False, "unknown form")]
+    rows = []
+
+    def cmp_row(label, gate, actual, pct=False):
+        cond, val = gate
+        if cond == "None":
+            return
+        unit = "%" if pct else ""
+        rows.append((_cmp(cond, val, actual),
+                     f"{label} {_SYM.get(cond, '?')}{val:g}{unit}  (now {actual:g}{unit})"))
+
+    # hard locks first: forms normal timed care can never reach
+    if req.get("special", "None") != "None":
+        rows.append((False, f"via {req['special']} only"))
+    ev_item = req.get("evol_item", -1)
+    if ev_item != -1:
+        item = data.consumable_by_key(f"i:{ev_item}")
+        rows.append((f"i:{ev_item}" in getattr(pet, "inventory", {}),
+                     f"use {(item or {}).get('name', f'item {ev_item}')}"))
+    if req.get("xantibody", "None") in ("Induced", "Natural"):
+        rows.append((getattr(pet, "x_antibody", "None") != "None", "X-Antibody"))
+
+    vac, dat, vir = _stats(pet)
+    total = vac + dat + vir
+    floor = 0
+    for key in ("vaccine", "data", "virus"):
+        cond, val = req[key][0]
+        if cond in ("GreaterThan", "EqualTo"):
+            floor += int(val) + (1 if cond == "GreaterThan" else 0)
+    if floor:
+        rows.append((total >= floor, f"power total \u2265{floor}  (now {total})"))
+    for key, label, actual in (("vaccine", "Va", vac), ("data", "D", dat), ("virus", "Vi", vir)):
+        for gate in req[key]:
+            cond, val = gate
+            if cond == "None":
+                continue
+            if 0.0 < val < 1.0:
+                share = actual / total if total > 0 else 0.0
+                rows.append((_attr(gate, actual, total),
+                             f"{label} share {_SYM.get(cond, '?')}{int(val * 100)}%"
+                             f"  (now {int(share * 100)}%)"))
+            else:
+                cmp_row(label, gate, actual)
+    cmp_row("battles", req["battles"], pet.battles)
+    cmp_row("win rate", req["wins"], _win_rate(pet), pct=True)
+    cmp_row("disturbs", req["disturb"], pet.disturb)
+    cmp_row("overeats", req["overeat"], pet.overeat)
+    cmp_row("sickness", req["sick"], pet.sick_count)
+    cmp_row("injuries", req["injured"], pet.injuries)
+    cmp_row("obedience", req["obedience"], pet.obedience)
+    cmp_row("care slips", req["mistakes"], pet.care_mistakes)
+    cmp_row("generation", req.get("incarnations", ("None", 0)), getattr(pet, "generation", 1))
+    if req["time"] != "None":
+        rows.append((req["time"] == getattr(pet, "train_time", ""), f"trains at {req['time']}"))
+    if req["weight"] != "None":
+        rows.append((req["weight"] == weight_category(pet.weight, pet._base_weight()),
+                     f"weight: {req['weight']}"))
+    if req["mood"] != "None":
+        rows.append((req["mood"] == mood_category(pet.mood), f"mood: {req['mood']}"))
+    if req.get("major_food", "None") != "None":
+        rows.append((req["major_food"] == (pet.major_food() if hasattr(pet, "major_food") else None),
+                     f"diet mostly {req['major_food']}"))
+    lf_min = req.get("level_fought_min", 0)
+    if lf_min and req["level_fought"][0] != "None":
+        cnt = sum(1 for lv in getattr(pet, "levels_fought", ()) if lv >= lf_min)
+        cmp_row(f"foes \u2265lv{lf_min}", req["level_fought"], cnt)
+    tr = req.get("temp_req")
+    if tr is not None:
+        rows.append((tr[0] <= getattr(pet, "temp", 50) <= tr[1],
+                     f"temp {tr[0]}-{tr[1]}\u00b0  (now {int(getattr(pet, 'temp', 50))}\u00b0)"))
+    hr = req.get("habitat_req", -1)
+    if hr != -1:
+        hname = (data.load_habitats().get(hr) or {}).get("name", f"#{hr}")
+        rows.append((_major_hab(pet) == hr, f"raised in {hname}"))
+    dna = req.get("dna") or {}
+    dna_gated = [(f, g) for f, g in dna.items() if g[0] != "None"]
+    for f, (cond, val) in dna_gated:
+        rows.append((_cmp(cond, val, pet.dna_percent(f)),
+                     f"DNA {data.pretty_field(f)} {_SYM.get(cond, '?')}{val:g}%"
+                     f"  (now {pet.dna_percent(f):g}%)"))
+    if dna_gated and _dna_ok(pet, req):
+        rows.append((None, "DNA charge met: care gates bypassed"))
+    prob, bound = req["prob"], req["probBound"]
+    if prob < bound:
+        boost = getattr(pet, "evol_bonus", 0) + int(_win_rate(pet) * WIN_RATE_PROB_COEF)
+        rows.append((None, f"then a {min(prob + boost, bound)}/{bound} chance"))
+    return rows or [(True, "no requirements \u2014 time alone")]
+
+
 def candidates(pet):
     """Debug helper: (num, name, passes, fulfilled) for each target."""
     _, by_num = data.load_sprites()

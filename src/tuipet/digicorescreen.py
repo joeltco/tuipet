@@ -98,19 +98,21 @@ def _mins(s):
 
 
 def _evo_rows(pet):
-    """The evolution line for the data book: what this Digimon can become,
-    closest-first, with the ones whose requirements are already met flagged."""
+    """The evolution line for the data book: (num, name, ready, unmet) per
+    candidate, closest-first.  unmet counts the failing checklist gates
+    (evolution.requirement_report) -- the page shows it as distance-to-go."""
     if pet.num == -1 or pet.stage in ("Egg", "Fresh"):
-        return [("(too young)", "")]
+        return "(too young)"
     try:
         cands = sorted(evolution.candidates(pet), key=lambda c: (not c[2], c[3]))
     except Exception:
         cands = []
     if not cands:
-        return [("(final form)", "")]
+        return "(final form)"
     rows = []
-    for num, name, ready, dev in cands[:9]:
-        rows.append((name[:14], chr(0x2713) + " ready" if ready else ""))
+    for num, name, ready, dev in cands[:8]:
+        unmet = sum(1 for met, _ in evolution.requirement_report(pet, num) if met is False)
+        rows.append((num, name, ready, unmet))
     return rows
 
 
@@ -173,6 +175,9 @@ class DigiCorePanel:
         self.teaser = False       # EvolSilhouette view (SPACE on the core)
         self.frame_i = 0
         self.note = "the core stirs..."
+        self.evo_sel = 0          # EVOLVES page: the highlighted candidate
+        self.detail = None        # (num, name): the open requirement checklist
+        self.det_off = 0          # ...and its scroll offset
 
     def anim(self):
         self.frame_i += 1
@@ -199,6 +204,29 @@ class DigiCorePanel:
             self.note = msg
             self.sfx = "error"
             return None
+        if self.detail is not None:                    # the requirement checklist
+            if k in ("up", "k"):
+                self.det_off = max(0, self.det_off - 1)
+            elif k in ("down", "j"):
+                self.det_off += 1                      # text() clamps to the list
+            elif k in ("escape", "enter", "space", "d"):
+                self.detail = None
+                self.det_off = 0
+            return None
+        on_evo = self.pages[self.i][0] == "EVOLVES"
+        rows = self.pages[self.i][1] if on_evo else None
+        if on_evo and isinstance(rows, list) and rows:
+            if k in ("up", "k"):
+                self.evo_sel = (self.evo_sel - 1) % len(rows)
+                return None
+            if k in ("down", "j"):
+                self.evo_sel = (self.evo_sel + 1) % len(rows)
+                return None
+            if k == "enter":
+                num, name = rows[self.evo_sel][0], rows[self.evo_sel][1]
+                self.detail = (num, name)
+                self.det_off = 0
+                return None
         if k in ("right", "l") or (k == "space" and self.i > 0):
             self.i = (self.i + 1) % len(self.pages)
         elif k in ("left", "h"):
@@ -265,13 +293,53 @@ class DigiCorePanel:
         out.append_text(menu.footer("SPACE back   ESC out"))
         return out
 
+    def _detail_scene(self):
+        """One candidate's requirement checklist (evolution.requirement_report):
+        met gates dim out of the way, the unmet ones are the raising guide."""
+        num, name = self.detail
+        report = evolution.requirement_report(self.pet, num)
+        vis = 8
+        self.det_off = max(0, min(self.det_off, max(0, len(report) - vis)))
+        out = menu.header(f"DIGICORE  {name[:16].upper()}", "req")
+        for met, txt in report[self.det_off:self.det_off + vis]:
+            mark = {True: " " + chr(0x2713) + " ", False: " " + chr(0x2717) + " ",
+                    None: "   "}[met]
+            out.append(mark, style=DIM if met else INK_B)
+            out.append(txt[:35] + "\n", style=DIM if met is not False else INK_B)
+        out.append_text(menu.blanks(vis - min(vis, len(report) - self.det_off)))
+        more = "" if len(report) <= vis else f"  ({self.det_off + 1}-{min(len(report), self.det_off + vis)}/{len(report)})"
+        out.append_text(menu.footer(f"↑↓ scroll{more}   ESC back"))
+        return out
+
+    def _evolves_scene(self, rows, dots):
+        out = menu.header("DIGICORE  EVOLVES", dots)
+        if isinstance(rows, str):                      # "(too young)" / "(final form)"
+            out.append(f" {rows}\n", style=DIM)
+            out.append_text(menu.blanks(8))
+            out.append_text(menu.footer("←→ page    ESC close"))
+            return out
+        self.evo_sel = min(self.evo_sel, len(rows) - 1)
+        for j, (num, name, ready, unmet) in enumerate(rows):
+            cur = j == self.evo_sel
+            tag = chr(0x2713) + " ready" if ready else f"{unmet} to go"
+            out.append(("▸" if cur else " ") + f" {name[:20]:<21}", style=INK_B if cur else INK)
+            out.append(f"{tag:>10}\n", style=INK_B if ready else DIM)
+        out.append_text(menu.blanks(8 - len(rows)))
+        out.append_text(menu.note("ENTER: what it takes"))
+        out.append_text(menu.footer("↑↓ pick  ENTER req  ←→ page  ESC"))
+        return out
+
     def text(self):
         if self.teaser:
             return self._teaser_scene()
+        if self.detail is not None:
+            return self._detail_scene()
         if self.i == 0:
             return self._core_scene()
         title, rows = self.pages[self.i]
         dots = " ".join((chr(0x25CF) if j == self.i else chr(0x25CB)) for j in range(len(self.pages)))
+        if title == "EVOLVES":
+            return self._evolves_scene(rows, dots)
         out = menu.header(f"DIGICORE  {title}", dots)
         for label, val in rows:
             out.append(f" {label:<9}", style=DIM)

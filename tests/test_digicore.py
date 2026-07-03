@@ -134,3 +134,61 @@ def test_dna_charge_overflow_lands_one_short_of_the_cap():
     p2.dna_owned["DragonsRoar"] = 10
     p2.apply_dna("DragonsRoar", 1)
     assert p2.strength == 2                          # a fitting charge adds normally
+
+
+# ---- EVOLVES page: the requirement checklist (data-book polish 2026-07) ------
+
+def _champ():
+    p = Pet(num=100, stage="Champion", attribute="Vaccine", obedience=500)
+    p.world_seconds = 600.0
+    p.vaccine, p.data_power, p.virus = 140, 40, 60
+    return p
+
+
+def test_requirement_report_mirrors_check():
+    from tuipet import evolution
+    p = _champ()
+    for num, name, ready, _ in evolution.candidates(p):
+        rows = evolution.requirement_report(p, num)
+        assert rows
+        hard = [met for met, _ in rows if met is not None]
+        if ready:
+            # every displayable gate met (the probability row is informational)
+            assert all(hard), f"{name}: ready but the checklist shows unmet gates"
+        # (not-ready with all gates met is possible: the probability roll failed)
+
+
+def test_requirement_report_skips_unconstrained_gates():
+    from tuipet import evolution
+    p = _champ()
+    num = evolution.candidates(p)[0][0]
+    for met, txt in evolution.requirement_report(p, num):
+        assert "None" not in txt.split("  ")[0] or "DNA" in txt   # no bare None gates leak
+
+
+def test_evolves_page_selects_and_opens_the_checklist():
+    p = _champ()
+    pan = DigiCorePanel(p)
+    while pan.pages[pan.i][0] != "EVOLVES":
+        pan.key("right")
+    t = pan.text().plain
+    assert "to go" in t or "ready" in t
+    assert t.count("\n") <= 12                       # fits the LCD
+    pan.key("down")
+    sel = pan.evo_sel
+    pan.key("enter")
+    assert pan.detail is not None and pan.detail[0] == pan.pages[pan.i][1][sel][0]
+    d = pan.text().plain
+    assert ("✓" in d or "✗" in d) and d.count("\n") <= 12
+    pan.key("escape")
+    assert pan.detail is None                        # back to the list, not out
+
+
+def test_evolves_page_edges():
+    egg = Pet(num=-1, stage="Egg", attribute="None")
+    egg.world_seconds = 600.0
+    pan = DigiCorePanel(egg)
+    while pan.pages[pan.i][0] != "EVOLVES":
+        pan.key("right")
+    assert "(too young)" in pan.text().plain
+    assert pan.key("enter") is None                  # nothing to open
