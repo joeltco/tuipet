@@ -270,8 +270,24 @@ POOP_WEIGHT_DEC_COEF = 0.1             # PoopWeightDecCoefficient
 POOP_WEIGHT_LIMIT = 4                   # PoopWeightLimit (max weight lost per poop)
 POOP_INC_WEIGHT_FACTOR = 40            # PoopIncWeightFactor -> size 3 at/above
 POOP_INC_WEIGHT_FACTOR_SMALL = 15      # PoopIncWeightFactorSmall -> size 1 at/below
-POOP_WAIT_MOOD = -1                     # PoopWaitMoodChange (mess nags)
-LARGE_POOP_WAIT_MOOD = -2              # LargePoopWaitMoodChange (a big mess nags more)
+POOP_WAIT_MOOD = -1                     # PoopWaitMoodChange (the HELD gauge nags)
+LARGE_POOP_WAIT_MOOD = -2               # LargePoopWaitMoodChange (a desperate gauge nags more)
+FILTH_MOOD_DEC_MIN = 300.0              # FilthMoodDecMin 5 game-min: species filth_mood x piles
+FILTH_SICK_BOUND = 200                  # FilthSickChanceBound 12000 real-min -> /60 game scale
+FILTH_SICK_CHANCE = 1                   # FilthSickChance (x piles, per game-min)
+FILTH_WORSE_CHANCE = 20                 # FilthWorseSickChance (x piles, already sick)
+BAD_WEIGHT_MOOD_DEC = 2                 # BadWeightMoodLapseDec (per lapse off Healthy)
+VERY_NEUTRAL_MOOD_DEC = 5               # VeryNeutralMoodLapseDec (neutral [5,150) drains faster)
+DEPRESSED_LAPSE_MIN = 59.0              # DepressedLapseMin
+DEPRESSED_CHANCE = 1000                 # DepressedChance (the roll bound)
+DEPRESSED_EXIT_NEG = 100                # DepressedToUnhappyNegativeMoodChance
+DEPRESSED_EXIT_POS = 500                # DepressedToUnhappyPositiveMoodChance
+UNDEPRESSED_OBED_INC = 33               # UndepressedObedienceIncPositiveMood
+DEPRESSED_MOOD_CHANGE = 50              # DepressedMoodChange (each interval while depressed)
+DEPRESSED_OBED_CHANGE = -5              # DepressedObedienceChange (each interval)
+DEPRESSED_ENTH_CHANGE = -1              # DepressedEnthusiasmChange
+TO_DEPRESSED_ROLL_NEG = 10              # negativeMoodDepressedChance (mood <= -250)
+TO_DEPRESSED_ROLL_NORM = 1              # normalMoodDepressedChance
 POOP_MAX_PILES = 4                      # classic Digimon V-Pet max poops (DVPet's _filth[] is 6; Joel set 4 to match the real toy)
 
 # DVPet calorie buffer (config.csv, PhysicalState.calorieChange / setCalories): a
@@ -407,7 +423,6 @@ NUTRITION_LAPSE_CHANGE = -3    # NutritionLapseChange (decay per lapse)
 NUTRITION_LAPSE_SEC = 600.0    # tuipet cadence for macro decay (real-time adaptation)
 GOOD_NUTR_RECOVERY_MULT = 2.0  # GoodNutrition{Sick,Inj,Fatigue}LapseChange=-1 -> ~2x recovery
 GOOD_NUTR_LIFESPAN_COEF = 0.5  # GoodNutritionLifespanDecCoefficient (slower lifespan loss)
-GOOD_NUTR_SICK_MULT = 40 / 60  # GoodNutritionFatigueChance(40) / FatigueChance(60)
 INJ_LAPSE_MIN = 29                       # InjLapseMin
 
 # DVPet injury worsening + vitamins (config.csv, calcWorse{Exercise,Battle}Inj /
@@ -489,6 +504,8 @@ class Pet:
     sick: bool = False
     asleep: bool = False
     lights: bool = True             # DVPet _lights: room-light toggle, SEPARATE from sleep
+    depressed: bool = False         # DVPet _currentMood==Depressed: a sticky STATE entered and
+    #                                 left by checkDepressed's rolls, not a mood threshold
     auto_care: bool = False         # DVPet _autoCare: the hired AI Assistant is on duty
     assistant_num: int = -1         # DVPet _assistantID: WHICH Digimon answered the contract
     care_mistakes: int = 0
@@ -878,6 +895,19 @@ class Pet:
         # (SleepMinHungerDecay=3) -- one heart overnight, then it holds
         if self.hunger > SLEEP_MIN_HUNGER_DECAY:
             self._tick_hunger(dt)
+        # canon runs these in bed too: the mood lapse (MinMoodAsleep only mutes
+        # a rock-bottom sleeper), depression's rolls, the filth nag+risk, and
+        # poopWaitMoodCheck -- the HELD gauge (only a sleeper holds it) nags
+        self._mood_lapse(dt)
+        self._check_depressed(dt)
+        self._filth_effects(dt)
+        if self._poop_t >= self._poop_interval:
+            self._poop_wait_t = getattr(self, "_poop_wait_t", 0.0) + dt
+            if self._poop_wait_t >= 60.0:                # PoopWaitMin, game-min lapse
+                self._poop_wait_t = 0.0
+                self._set_mood(self.mood + (LARGE_POOP_WAIT_MOOD
+                                            if self._poop_t >= self._poop_interval * 1.5
+                                            else POOP_WAIT_MOOD))
         # death does not wait for morning: the mistake cap and old age
         # apply asleep too (only the starvation clock freezes; audit 2026-07)
         if self.care_mistakes >= 20 or self.injuries >= 20:
@@ -896,25 +926,13 @@ class Pet:
     def _tick_mood_discipline(self, dt):
         """The mood lapse + the discipline windows.  (DVPet has NO passive
         energy decay -- energy only moves via activity and sleep.)"""
-        # DVPet mood lapse (~MoodLapseMin game-min): Happy drains, Unhappy recovers,
-        # Neutral settles toward 0 (config *MoodLapse* values).
-        self._mood_lapse_t = getattr(self, "_mood_lapse_t", 0.0) + dt
-        if self._mood_lapse_t >= 59:
-            self._mood_lapse_t = 0.0
-            m = self.current_mood()
-            if m == "Happy":
-                self._set_mood(self.mood - 10)           # HappyMoodLapseDec
-            elif m == "Depressed":
-                self._set_mood(self.mood + 10)           # VeryUnhappyMoodLapseInc (climb out)
-            elif m == "Unhappy":
-                self._set_mood(self.mood + 5)            # UnhappyMoodLapseInc
-            elif self.mood > 0:
-                self._set_mood(self.mood - 1)            # NeutralMoodLapseDec toward 0
-            elif self.mood < 0:
-                self._set_mood(self.mood + 1)
-            if self.poop > 0 and self._phys().get("filth_mood", -1):   # some species are unbothered by filth
-                self._set_mood(self.mood + (LARGE_POOP_WAIT_MOOD if self.poop >= 3 else POOP_WAIT_MOOD))
-            # discipline windows age (checkPraiseScoldWindow); a missed window closes
+        self._mood_lapse(dt)
+        self._check_depressed(dt)
+        self._filth_effects(dt)
+        # discipline windows age (checkPraiseScoldWindow); a missed window closes
+        self._mood_lapse_t2 = getattr(self, "_mood_lapse_t2", 0.0) + dt
+        if self._mood_lapse_t2 >= 59:
+            self._mood_lapse_t2 = 0.0
             if self.praise_flag:
                 self.praise_window += 1
                 if self.praise_window > PRAISE_WINDOW_MAX:
@@ -943,6 +961,101 @@ class Pet:
             # activities cost -3..-6, so under tuipet's ~60x clock |enthusiasm| pins at 10 and the drain
             # sticks at -20/lapse (active play is WORSE, driving enth to -10). It needs the real-time
             # clock to balance; DVPet numbers are NOT softened. Asleep decay (below) IS ported.
+
+    def _mood_lapse(self, dt):
+        """PhysicalState.moodLapse, verbatim (canon re-audit 2026-07).  Gated off
+        while sick/injured or while a care call begs (checkCall) -- misery and
+        need FREEZE the drift; it runs ASLEEP too (MinMoodAsleep only mutes a
+        rock-bottom sleeper).  Per lapse: the personality drifts (glutton x
+        hunger band; the restless term compares the TRAIT to fullStrength/2 --
+        a shipped DVPet quirk that makes it a constant drift -- kept verbatim),
+        then Happy -10 / Unhappy +5 (or +10 below minMood/2) / Neutral -5 in
+        [5, maxMood/2) else -1, and -2 whenever the weight is off Healthy."""
+        self._mood_lapse_t = getattr(self, "_mood_lapse_t", 0.0) + dt
+        if self._mood_lapse_t < 59:                       # MoodLapseMin
+            return
+        self._mood_lapse_t = 0.0
+        if self.asleep and self.mood <= -300:             # MinMoodAsleep
+            return
+        if self.sick or self.is_injured() or self.needs_attention():
+            return
+        if self.hunger <= FULL_HUNGER // 2:
+            self._set_mood(self.mood + (-1 if self.glutton == 1 else 1 if self.glutton == -1 else 0))
+        elif self.hunger > FULL_HUNGER:
+            self._set_mood(self.mood + (1 if self.glutton == 1 else -1 if self.glutton == -1 else 0))
+        # the restless term: canon compares _restless (the trait) to fullStrength/2,
+        # so the "low strength" branch ALWAYS holds -- a restless pet drifts -1 and
+        # a mellow one +1 every lapse.  Shipped behavior, kept verbatim.
+        self._set_mood(self.mood + (-1 if self.restless == 1 else 1 if self.restless == -1 else 0))
+        m = self.current_mood()
+        if m == "Happy":
+            self._set_mood(self.mood - 10)                # HappyMoodLapseDec
+        elif m == "Unhappy":
+            if self.mood > -150:                          # minMood/2
+                self._set_mood(self.mood + 5)             # UnhappyMoodLapseInc
+            elif self.mood < -150:
+                self._set_mood(self.mood + 10)            # VeryUnhappyMoodLapseInc
+        elif m == "Neutral":
+            if VERY_NEUTRAL_MOOD_DEC <= self.mood < 150:  # [5, maxMood/2)
+                self._set_mood(self.mood - VERY_NEUTRAL_MOOD_DEC)
+            else:
+                self._set_mood(self.mood - 1)             # NeutralMoodLapseDec
+        if evolution.weight_category(self.weight, self._base_weight()) != "Healthy":
+            self._set_mood(self.mood - BAD_WEIGHT_MOOD_DEC)
+
+    def _check_depressed(self, dt):
+        """PhysicalState.checkDepressed: depression is a sticky STATE with random
+        entry/exit rolls -- while down, mood climbs +50 an interval but obedience
+        -5 and spirit -1; the exits snap mood to NewUndepressedMood (-50), the
+        positive-mood exit paying +33 obedience for weathering it."""
+        self._depress_t = getattr(self, "_depress_t", 0.0) + dt
+        if self._depress_t < DEPRESSED_LAPSE_MIN:
+            return
+        self._depress_t = 0.0
+        r = random.randrange(DEPRESSED_CHANCE)
+        if self.depressed:
+            if r < DEPRESSED_EXIT_NEG and self.mood < 0:
+                self.depressed = False
+                self._set_mood(NEW_UNDEPRESSED_MOOD)
+            elif r < DEPRESSED_EXIT_POS and self.mood > 0:
+                self.depressed = False
+                self.obedience += UNDEPRESSED_OBED_INC
+                self._set_mood(NEW_UNDEPRESSED_MOOD)
+            else:
+                self._set_mood(self.mood + DEPRESSED_MOOD_CHANGE)
+                self.obedience = max(0, self.obedience + DEPRESSED_OBED_CHANGE)
+                self._set_enthusiasm(self.enthusiasm + DEPRESSED_ENTH_CHANGE)
+        elif (self.mood <= MIN_UNHAPPY_MOOD and not self.depressed
+                and self.stage not in ("Fresh", "InTraining")):
+            if self.mood <= TO_DEPRESSED_MOOD and r < TO_DEPRESSED_ROLL_NEG:
+                self.depressed = True
+            elif r < TO_DEPRESSED_ROLL_NORM:
+                self.depressed = True
+
+    def _filth_effects(self, dt):
+        """checkFilthMoodDec + the filth sickness rolls (canon re-audit 2026-07):
+        every FilthMoodDecMin the mess costs species filth_mood x piles; every
+        game-min each pile is a sickness risk (chance x piles vs the bound x the
+        species multiplier -- the 12000 real-min bound rides the /60 game scale,
+        which lands within a hair of the old hand-rolled rate while gaining the
+        per-pile scaling and the worse-sick path the flat roll lacked)."""
+        if self.poop <= 0:
+            return
+        fm = self._phys().get("filth_mood", -1)
+        if fm:
+            self._filth_mood_t = getattr(self, "_filth_mood_t", 0.0) + dt
+            if self._filth_mood_t >= FILTH_MOOD_DEC_MIN:
+                self._filth_mood_t = 0.0
+                self._set_mood(self.mood + fm * self.poop)
+        bound = int(FILTH_SICK_BOUND * self._phys().get("poop_sick_mult", 1.0))
+        self._filth_sick_t = getattr(self, "_filth_sick_t", 0.0) + dt
+        if self._filth_sick_t >= 60.0:                    # FilthSickMin, on the game-min lapse
+            self._filth_sick_t = 0.0
+            if self.sick:
+                if random.randrange(max(1, bound)) < FILTH_WORSE_CHANCE * self.poop:
+                    self._worsen_sick()
+            elif random.randrange(max(1, bound)) < FILTH_SICK_CHANCE * self.poop:
+                self._sicken()
 
     def _tick_hunger(self, dt):
         """hunger: the DVPet calorie buffer drains each lapse; emptying it drops
@@ -1028,11 +1141,8 @@ class Pet:
                     self._open_scold()       # left in filth: the pet acts up
         else:
             self._filth_t = 0                # cleaned / under the limit resets the call timer
-        # sickness from filth / starvation
-        if (self.poop >= 3 or self.hunger == 0) and not self.sick \
-                and random.random() < 0.02 / self._phys().get("poop_sick_mult", 1.0) * dt \
-                        * (GOOD_NUTR_SICK_MULT if self.good_nutrition() else 1.0):
-            self._sicken()
+        # (the filth sickness rolls moved to _filth_effects -- canon shape; the
+        # old flat roll also invented a STARVATION sickness canon does not have)
 
     def _tick_sleep_pressure(self, dt):
         """bedtime is a PRESSURE clock, not the sun (setSleepLapse): SleepLapseInc
@@ -1726,8 +1836,10 @@ class Pet:
         return (self.mood - MOOD_MIN) * 100 // (MOOD_MAX - MOOD_MIN)
 
     def current_mood(self):
-        """PhysicalState.setCurrentMood -> Mood enum word."""
-        if self.mood <= TO_DEPRESSED_MOOD:
+        """PhysicalState _currentMood: Depressed is a sticky STATE (checkDepressed's
+        entry/exit rolls -- canon re-audit 2026-07; a mood threshold only biases the
+        entry roll), the rest are value bands."""
+        if self.depressed:
             return "Depressed"
         if self.mood >= MIN_HAPPY_MOOD:
             return "Happy"
@@ -3085,6 +3197,7 @@ class Pet:
             self.fatigue_length = 0.0                    # DVPet Fatigued flag only clears
             # fatigue-length; energy stays driven by the item's Energy column, not a full refill
         if e["undepressed"]:
+            self.depressed = False               # the item snaps the STATE, not just the mood
             self._set_mood(max(self.mood, NEW_UNDEPRESSED_MOOD))  # leave depression
         if self.sick and e.get("cure_lapse"):
             self.sick_length = max(0.0, self.sick_length + e["cure_lapse"] * SICK_LAPSE_MIN)
