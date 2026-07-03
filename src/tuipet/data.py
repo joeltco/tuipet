@@ -1073,6 +1073,11 @@ def load_habitats():
             "weather_change": num("Weather Change (make worse or clear up)", 100),
             "night_tf": num("NightTempFactor", 10),
             "morning_tf": num("MorningTempFactor", 3),
+            # per-season daylight triple [morningStart, noonStart, nightStart]
+            # (PhysicalState.checkTime bands the day by the HOME's latitude)
+            "times": {season: tuple(int(x) for x in ((r.get(col) or "6;14;19").split(";") + [19, 19])[:3])
+                      for season, col in (("Spring", "SpringTime"), ("Summer", "SummerTime"),
+                                          ("Fall", "FallTime"), ("Winter", "WinterTime"))},
             "compat_fields": lst("CompatibleField"), "compat_elements": lst("CompatibleElement"),
             "incompat_fields": lst("IncompatibleField"), "incompat_elements": lst("IncompatibleElement"),
         }

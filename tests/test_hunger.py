@@ -56,6 +56,7 @@ def test_starve_death_timer_pauses_while_asleep():
     p.tick(1.0)
     assert not p.dead and p._starve_t == 11.9 * 3600   # frozen overnight
     p.asleep = False
+    p.world_seconds = 10 * 60.0                        # mid-day: stays awake
     for _ in range(400):
         p.tick(1.0)
         if p.dead:

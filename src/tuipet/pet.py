@@ -114,6 +114,20 @@ FAV_EXERCISE_TIME_ENTH = 1          # FavExerciseTimeEnthusiasmChange
 NOTFAV_EXERCISE_TIME_MOOD = 2       # NotFavExerciseTimeMoodDec
 DISLIKED_TIME_EXERCISE_ENTH = -1    # DislikedTimeExerciseEnthusiasmChange
 MODE_CHANGE_ENERGY = -1             # ModeChangeEnergyChange
+# perfect-conditions energy save (checkEnergyIncFromPerfectConditions):
+# an energy DROP during the pet's favourite time may bounce back +1 --
+# roll nextInt(base + mods) == 1, so perfect conditions shrink the range
+ENERGY_BONUS_BASE = 10              # BonusEnergyIncChance
+ENERGY_BONUS_WEATHER = -2           # EnergyBonusChanceGoodWeather
+ENERGY_BONUS_MOOD = -1              # EnergyBonusChanceGoodMood
+ENERGY_BONUS_TEMP = -1              # EnergyBonusChanceGoodTemp
+ENERGY_BONUS_NUTRITION = -2         # EnergyBonusChanceGoodNutrition
+ENERGY_BONUS_COMPAT_F = -1          # Compatible/IncompatibleField/Element*Change
+ENERGY_BONUS_COMPAT_E = -1
+ENERGY_BONUS_INCOMPAT_F = 2
+ENERGY_BONUS_INCOMPAT_E = 1
+GOOD_NUTRITION_FATIGUE_CHANCE = 40  # GoodNutritionFatigueChance (else FatigueChance 60)
+FATIGUE_COMPAT_CHANGE = 5           # Compatible/Incompatible{Field,Element}FatigueChanceChange
 DEPRESSED_OBEDIENCE = 50.0          # DepressedObedience
 SURR_HEALTH_COEF = 5.0              # SurrenderChanceHealthCoefficient
 SURR_DISP_COEF = 5.0                # HighDispositionSurrenderChanceDispositionCoefficient
@@ -638,6 +652,14 @@ class Pet:
                 elif r == 2:
                     self._set_mood(self.mood + GOOD_MORNING_MOOD.get(m, 100))
                 self._set_anim("wake", 1.6)  # morning stretch (DVPet wakeUp())
+            # startPoop: even asleep, a truly DESPERATE gauge (>= 2x max) goes --
+            # this must live in the sleep branch (the awake poop block below is
+            # unreachable while asleep; latent until the canon day bands landed)
+            self._poop_t = getattr(self, "_poop_t", 0) + dt
+            if self._poop_t >= self._poop_interval * 2:
+                self._poop_t = 0                 # gauge zeroed (DVPet poop())
+                self._do_poop(backlog=True)
+                self._set_anim("poop", 2.2)
             return
 
         night = self.day_phase == "night"
@@ -704,9 +726,8 @@ class Pet:
                 self.calories = CALORIE_LIMIT
         # pooping (DVPet poop(): relief mood bump, sheds weight, drops a sized pile)
         self._poop_t = getattr(self, "_poop_t", 0) + dt
-        # startPoop: a sleeping pet HOLDS it unless truly desperate (gauge >= 2x max)
-        _poop_due = self._poop_interval * (2 if self.asleep else 1)
-        if self._poop_t >= _poop_due:
+        # (a sleeping pet held it above -- only the desperate 2x gauge goes at night)
+        if self._poop_t >= self._poop_interval:
             self._poop_t -= self._poop_interval  # gauge -= bmMax (the remainder carries)
             backlog = self._poop_t >= self._poop_interval / 2
             if backlog:                          # big backlog: bigger pile + extra shed,
@@ -794,7 +815,19 @@ class Pet:
 
     @property
     def day_phase(self):
-        return _phase_of((self.world_seconds % DAY_LENGTH) / DAY_LENGTH)
+        # PhysicalState.checkTime: the day's bands come from the HOME's
+        # per-season daylight triple [morningStart, noonStart, nightStart]
+        # (Winter reads the FALL triple -- a DVPet quirk kept as canon); the
+        # last Noon hour is the sunset (isSunset) -> tuipet's dusk.
+        hour = (self.world_seconds % DAY_LENGTH) / DAY_LENGTH * 24
+        season = "Fall" if self.season == "Winter" else self.season
+        tri = self.habitat_obj().get("times", {}).get(season, (6, 14, 19))
+        m, n, night = tri
+        if m <= hour < n:
+            return "dawn"
+        if n <= hour < night:
+            return "dusk" if hour >= night - 1 else "day"
+        return "night"
 
     @property
     def is_daytime(self):
@@ -978,14 +1011,11 @@ class Pet:
                 self._set_mood(self.mood + wx.IDEAL_TEMP_INC + aff)
             elif too_hot or too_cold:
                 self._set_mood(self.mood - wx.IDEAL_TEMP_DEC + aff)
-        # bad-temperature sickness is DISABLED in classic mode (config SickChanceBadTemp=0;
-        # only hardcore enables it) -- temperature drives mood, not illness. An incompatible
-        # habitat is still unhealthy (DVPet incompatibleField/ElementSickChanceChange).
-        self._btemp_t = getattr(self, "_btemp_t", 0.0) + dt
-        if self._btemp_t >= wx.BAD_TEMP_SICK_SEC:
-            self._btemp_t = 0.0
-            if not self.sick and aff < 0 and random.random() < 0.004 * (-aff):
-                self._sicken()
+        # bad-temperature sickness is DISABLED in classic mode (SickChanceBadTemp=0),
+        # and so is the incompatible-habitat sick check (checkIncompatibleHabitat:
+        # Incompatible{Field,Element}SickChance are BOTH 0 in the classic column) --
+        # an unfit home hurts through longer sick/injury/fatigue spells, the missed
+        # energy saves and the fatigue odds, never through direct illness.
 
     def _die(self):
         self.dead = True
@@ -1355,9 +1385,46 @@ class Pet:
         """DVPet setEnergy: clamp to [-max_energy, +max_energy]; dropping into the
         red saps mood (NegativeEnergyMoodDec)."""
         value = _clamp(int(round(value)), -self.max_energy, self.max_energy)
+        if value < self.energy:
+            value = self._energy_bonus_save(value)   # checkEnergyIncFromPerfectConditions
         if value < 0 and value < self.energy:
             self._set_mood(self.mood - 10)       # NegativeEnergyMoodDec (per step into the red)
         self.energy = value
+
+    def _nice_weather(self):
+        """checkNiceWeather: DeepSaver/Water pets love the rain, cold-blooded
+        (freezing ideal) or Ice pets love the snow."""
+        import tuipet.weather as wx_
+        if self.weather in wx_.RAIN:
+            return self.field == "DeepSaver" or self.element == "Water"
+        if self.weather in wx_.SNOW:
+            return self.ideal_temp[0] <= wx.FREEZING_TEMP or self.element == "Ice"
+        return False
+
+    def _energy_bonus_save(self, new):
+        """An energy drop during the pet's FAVOURITE time can bounce back +1
+        when conditions are perfect: good weather / mood / temp / nutrition and
+        a compatible home each shrink the roll range (best case ~1 in 2)."""
+        if self.favorite_time() != self.day_phase:
+            return new
+        h = self.habitat_obj()
+        rng = ENERGY_BONUS_BASE
+        rng += ENERGY_BONUS_COMPAT_F if self.field in h["compat_fields"] else 0
+        rng += ENERGY_BONUS_COMPAT_E if self.element in h["compat_elements"] else 0
+        rng += ENERGY_BONUS_INCOMPAT_F if self.field in h["incompat_fields"] else 0
+        rng += ENERGY_BONUS_INCOMPAT_E if self.element in h["incompat_elements"] else 0
+        if self.weather in ("Clear", "Cloudy") or self._nice_weather():
+            rng += ENERGY_BONUS_WEATHER
+        if self.current_mood() == "Happy":
+            rng += ENERGY_BONUS_MOOD
+        lo, hi = self.ideal_temp
+        if lo <= self.temp <= hi:
+            rng += ENERGY_BONUS_TEMP
+        if self.good_nutrition():
+            rng += ENERGY_BONUS_NUTRITION
+        if rng > 1 and random.randrange(rng) == 1:
+            new += 1
+        return new
 
     def energy_pct(self):
         return max(0, self.energy) * 100 // self.max_energy if self.max_energy else 0
@@ -1616,6 +1683,7 @@ class Pet:
         self.train_time = _dvpet_time(self.day_phase)
         self.exercise_today += 1                          # DVPet _exercise (incExerciseTime)
         complied = self.check_compliant()                 # onExerciseFinish: checkCompliant
+        strength0 = self.strength
         if hits >= 2:
             self.strength = _clamp(self.strength + 1, 0, 4)
             self.obedience += 1
@@ -1663,8 +1731,17 @@ class Pet:
         self.weight = max(1, self.weight - 2)
         self.calories -= EXERCISE_CALORIE_DEC             # ExerciseCalorieDec
         self._set_energy(self.energy - 1)               # ExerciseEnergyDec
-        if self.energy <= 0 and random.randint(0, 99) < FATIGUE_CHANCE:   # trained to exhaustion
-            self._fatigue()
+        # setExercise: driving the Effort gauge past its LIMIT risks fatigue --
+        # good nutrition softens the odds, the home's compatibility bends them
+        if success and strength0 >= 4:
+            h = self.habitat_obj()
+            chance = GOOD_NUTRITION_FATIGUE_CHANCE if self.good_nutrition() else FATIGUE_CHANCE
+            chance += FATIGUE_COMPAT_CHANGE * ((self.field in h["incompat_fields"])
+                                               + (self.element in h["incompat_elements"])
+                                               - (self.field in h["compat_fields"])
+                                               - (self.element in h["compat_elements"]))
+            if random.randrange(100) < chance:
+                self._fatigue()
         if not success:                                  # DVPet exercise-fail penalties
             self._set_mood(self.mood - 10)               # ExerciseFailMoodDec
             self.obedience -= 1                          # ExerciseFailObedienceDec

@@ -10,7 +10,9 @@ def _pet(**kw):
     p = Pet(num=1, stage="Rookie", attribute="Vaccine", energy=24, max_energy=24,
             weight=20, obedience=500)
     p.weight = p._base_weight()      # Healthy: keep the 50% overweight-injury roll out
+    p.strength = 0                   # off the Effort cap: no canon fatigue roll
     p.age_seconds = 2 * DAY_LENGTH
+    p.world_seconds = 10 * 60.0      # mid-day under the canon daylight bands
     for k, v in kw.items():
         setattr(p, k, v)
     return p

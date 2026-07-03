@@ -16,6 +16,9 @@ from tuipet.pet import Pet
 
 
 def _healthy(stage="Rookie", **kw):
+    # world starts at mid-day: hour 0 is NIGHT under the canon daylight bands,
+    # and a sleeping pet freezes its starvation/care clocks
+    kw.setdefault("world_seconds", 10 * 60.0)
     return Pet(num=-1, stage=stage, hunger=4, poop=0, **kw)
 
 
