@@ -390,6 +390,11 @@ class Screen(Static):
         _fr = rec["frames"]
         first = next((f for f in rec["frames"] if f), rec["frames"][0])
         frames = roles.get(pet.anim, [0])
+        # stepFrame: a GERIATRIC pet idles on spriteNum+9 -- the aged shuffle
+        # toggles the dejected/collapse frames (canon re-audit 2026-07)
+        if (pet.anim in ("idle", "walk") and pet.num != -1
+                and getattr(pet, "is_geriatric", False)):
+            frames = [f + 9 for f in frames]
         # per-state cadence: hold each pose for its DVPet interval count rather than
         # flipping every tick (root-cause #2 -- one tick == one _interval; see anim.py).
         # idle holds 5/6/7, sleep holds its 2/3 poses for 10 each, reactions ~6.
@@ -478,7 +483,12 @@ class Screen(Static):
             # (DVPet's frame jump 18->26): two bites instead of three, ends ~beat 26.
             glut = getattr(pet, "glutton", 0) if pet else 0
             mod = 0.9 if (glut > 0 or starving) else (1.1 if glut < 0 else 1.0)
-            bite = 9 if (pet is not None and getattr(pet, "_last_meal_disliked", False)) else 7
+            # eat(): the grimace bite (+9) fires on DISLIKED food OR an overeating
+            # stomach (canon also keys the Med sprite; tuipet's Med rides the heal
+            # anim instead) -- canon re-audit 2026-07
+            from .pet import OVEREAT_LIMIT as _OVL
+            bite = 9 if (pet is not None and (getattr(pet, "_last_meal_disliked", False)
+                                              or pet.hunger >= _OVL)) else 7
             heavy = pet is not None and pet.num != -1 and pet._base_weight() >= 40
             if heavy:
                 beats = [int(b ** mod) for b in (10, 14, 18, 22)]
