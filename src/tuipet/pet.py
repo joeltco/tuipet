@@ -4,6 +4,7 @@ import math
 import random
 from dataclasses import dataclass, field as _dcf
 from . import data
+from . import shop
 from . import egg as egg_mod
 from . import evolution
 from . import weather as wx
@@ -392,6 +393,12 @@ class Pet:
     bits: int = 0
     trophies: int = 0
     trophies_won: dict = _dcf(default_factory=dict)   # trophy id -> season won (per-season earned)
+    # ---- home shop (PhysicalState _homeFoodShop/_homeItemShop/_restock) ----
+    shop_food: list = _dcf(default_factory=list)    # rolled food slots {key, stock, sale}
+    shop_item: list = _dcf(default_factory=list)    # rolled item slots
+    shop_day: int = -1                              # game day of the current roster (dailyChange)
+    shop_restock: int = 0                           # banked restock credits (max RestockMax)
+    shop_restock_t: float = 0.0                     # seconds toward the next credit roll
     adv_map: int = 0
     adv_zone: int = 0
     adv_seek: bool = False    # Disaster Transport: next adventure leg forces an encounter
@@ -514,6 +521,7 @@ class Pet:
                 self.x_antibody, self.x_count = "None", 0.0
         self.age_seconds += dt
         self.stage_seconds += dt
+        shop.check_restock_tick(self, dt)           # checkRestock: bank shop restock credits
         if self.anim_ttl > 0:
             self.anim_ttl -= dt
             if self.anim_ttl <= 0:
@@ -1953,10 +1961,15 @@ class Pet:
         return "Played together -- happy, but a bit spoiled."
 
     # ---- shop / items --------------------------------------------------------
-    def buy(self, entry):
-        """Purchase one consumable at its list price, capped at the item's bag stack."""
-        from . import shop
-        price = shop.purchase_price(entry)
+    def buy_slot(self, slot):
+        """Buy one from a rolled shop slot: pay the sale-aware purchase price,
+        decrement the slot's stock (decStock) and bag it."""
+        entry = data.consumable_by_key(slot["key"])
+        if not entry:
+            return "?"
+        if slot.get("stock", 0) <= 0:
+            return "Sold out."
+        price = shop.purchase_price(slot)
         if self.bits < price:
             return "Not enough bits."
         key = entry["key"]
@@ -1964,12 +1977,12 @@ class Pet:
         if self.inventory.get(key, 0) >= cap:
             return f"Can't carry more {entry['name']} (max {cap})."
         self.bits -= price
+        slot["stock"] -= 1
         self.inventory[key] = self.inventory.get(key, 0) + 1
         return f"Bought {entry['name']}."
 
     def sell(self, entry):
-        """Resell one from the bag for a fraction of its price (shop.resell_price)."""
-        from . import shop
+        """Resell one from the bag at price/DefaultResellFactor (unsellable at 0)."""
         key = entry["key"]
         if self.inventory.get(key, 0) <= 0:
             return "None to sell."

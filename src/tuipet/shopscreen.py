@@ -1,6 +1,7 @@
-"""Shop — category tabs (Food / Medicine / Toys / Chips), each showing only the
-items unlocked at the pet's current evolution stage. Bag mirrors the tabs (plus a
-Special tab for evolution/transport items found as drops). Renders in the LCD box."""
+"""Shop — DVPet's HOME shop: separate Food and Item pages showing the day's
+ROLLED roster (8 food / 12 item slots with real stock counts and sale prices),
+plus tuipet's egg page.  The bag keeps its category tabs (Food / Medicine /
+Toys / Chips / Special).  Renders in the LCD box."""
 from __future__ import annotations
 from . import data
 from . import shop
@@ -12,9 +13,11 @@ from .theme import LCD_ON, LCD_BG, INK, INK_B, DIM, SEL  # noqa: F401  (palette 
 from . import menu
 W = 38
 IC_W, IC_ROWS = 10, 4                      # selected-item icon: auto-sized to fit, never clipped
-SHOP_TABS = shop.CATEGORIES + ["egg"]      # food, medicine, toy, chip, egg
-BAG_TABS = shop.CATEGORIES + ["special"]
-TAB_LABEL = dict(shop.CAT_LABEL, special="Special", egg="Eggs")
+SHOP_TABS = ["food", "item", "egg"]        # DVPet Food_Shop / Item_Shop (+ tuipet eggs)
+BAG_CATEGORIES = ["food", "medicine", "toy", "chip"]
+BAG_TABS = BAG_CATEGORIES + ["special"]
+TAB_LABEL = {"food": "Food", "item": "Items", "egg": "Eggs", "medicine": "Medicine",
+             "toy": "Toys", "chip": "Chips", "special": "Special"}
 
 
 def _effect(e):
@@ -57,7 +60,13 @@ class ShopPanel:
             if cat == "egg":
                 prog, owned = persistence.get_progress(), persistence.get_eggs_owned()
                 return [egg_mod.shop_egg_entry(i, pr) for i, pr in egg_mod.buyable_eggs(prog, owned)]
-            return shop.unlocked(self.pet, cat)
+            # the day's rolled roster (open_shop handles the daily reset + restock)
+            out = []
+            for slot in shop.open_shop(self.pet, cat == "food"):
+                e = shop.entry(slot["key"])
+                if e:
+                    out.append(dict(e, stock=slot["stock"], sale=slot["sale"], _slot=slot))
+            return out
         return self._owned_by_cat(cat)
 
     # ---- input ----
@@ -84,7 +93,8 @@ class ShopPanel:
                 if e.get("egg_idx") is not None:
                     self.msg = self._buy_egg(e)
                 else:
-                    self.msg = self.pet.buy(e)
+                    self.msg = self.pet.buy_slot(e["_slot"])
+                    e["stock"] = e["_slot"]["stock"]
                 self.sfx = "reward" if self.pet.bits < bits0 else "error"   # bought vs can't-afford
             else:
                 if (e.get("action") or "") in data.TRANSPORT_ACTIONS:
@@ -169,9 +179,13 @@ class ShopPanel:
             else:
                 owned = self.pet.inventory.get(sel["key"], 0)
                 if self.mode == "shop":
-                    info = [sel["name"][:tw], "%db" % shop.purchase_price(sel), "own %d" % owned]
+                    price = ("SALE %db" % sel["sale"]) if sel.get("sale") else "%db" % sel["price"]
+                    stock = "SOLD OUT" if sel.get("stock", 0) <= 0 else "stock x%d" % sel["stock"]
+                    info = [sel["name"][:tw], price, "%s  own %d" % (stock, owned)]
                 else:
-                    info = [sel["name"][:tw], "x%d" % owned, "sell %db" % shop.resell_price(sel)]
+                    val = shop.resell_price(sel)
+                    info = [sel["name"][:tw], "x%d" % owned,
+                            ("sell %db" % val) if val else "can't resell"]
                 info.append(_effect(sel)[:tw])
             for r in range(IC_ROWS):
                 tx = info[r] if r < len(info) else ""
@@ -188,7 +202,7 @@ class ShopPanel:
             if self._tabs()[self.tab] == "egg":
                 empty = "(no eggs to buy yet)"
             else:
-                empty = "(locked — grows as you evolve)" if self.mode == "shop" else "(none owned)"
+                empty = "(shelves empty — try tomorrow)" if self.mode == "shop" else "(none owned)"
             out.append_text(menu.row(empty)); shown = 1
         else:
             lo = max(0, min(self.cursor - vis // 2, n - vis))
@@ -196,7 +210,10 @@ class ShopPanel:
             for i in range(lo, min(lo + vis, n)):
                 e = rows[i]
                 if self.mode == "shop":
-                    label = "%-22s %db" % (e["name"][:22], shop.purchase_price(e))
+                    price = e.get("sale") or e.get("price", 0)
+                    qty = "OUT" if e.get("stock", 0) <= 0 else "x%d" % e["stock"]
+                    tag = "*" if e.get("sale") else " "
+                    label = "%-18s %4s%s %5db" % (e["name"][:18], qty, tag, price)
                 else:
                     label = "x%-2d %-26s" % (self.pet.inventory.get(e["key"], 0), e["name"][:26])
                 out.append_text(menu.row(label, i == self.cursor)); shown += 1

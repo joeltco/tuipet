@@ -666,13 +666,12 @@ def item_is_functional(e):
 
 
 # ---------------------------------------------------------------------------
-# Shop taxonomy: every consumable gets a shop category + a price-tier unlock stage.
-# Categories: food / medicine / toy / chip / special. Special (evolution items,
-# transports, X-gear) are NOT sold in the everyday shop -- they come from drops/DNA.
+# Bag taxonomy: shop_category buckets owned consumables into the bag tabs
+# (food / medicine / toy / chip / special).  The SHOP roster itself is the
+# DVPet home-shop roll (shop.py) -- no invented category/stage gating.
 # ---------------------------------------------------------------------------
 _SPECIAL_ANIMS = {"ItemEvol", "X_Program", "Inherit", "PhoenixTransport",
                   "BirdraTransport", "GarudaTransport", "WhaTransport", "PortToilet"}
-_UNLOCK_STAGES = ["Fresh", "Rookie", "Champion", "Ultimate", "Mega"]
 
 
 def shop_category(e):
@@ -686,45 +685,6 @@ def shop_category(e):
             or act in ("Recover", "Bandaging")):  # cures / first-aid (not every healing food)
         return "medicine"
     return "food" if str(e.get("key", "")).startswith("f:") else "toy"
-
-
-def _assign_unlock_stages(catalog):
-    """Price-tier unlock: within each category, the cheapest items unlock first
-    (Fresh) and pricier ones reveal as the pet grows (...Mega), 5 even bands."""
-    from collections import defaultdict
-    by = defaultdict(list)
-    for e in catalog:
-        by[e["shop_cat"]].append(e)
-    for items in by.values():
-        items.sort(key=lambda e: e["price"])
-        n = max(1, len(items))
-        for idx, e in enumerate(items):
-            e["unlock_stage"] = _UNLOCK_STAGES[min(4, idx * 5 // n)]
-
-
-@lru_cache(maxsize=1)
-def shop_catalog():
-    """The full buyable catalog: every functional, NON-special consumable (all
-    foods + items), classified and price-tiered. Special items (evolution /
-    transport / X-gear) are excluded -- those come from drops / DNA, not the shop."""
-    foods, items = _load_consumables()
-    out = []
-    for cid, base in foods.items():
-        e = dict(base); e["key"] = "f:%d" % cid; out.append(e)
-    for cid, base in items.items():
-        e = dict(base); e["key"] = "i:%d" % cid; out.append(e)
-    for e in out:
-        e["shop_cat"] = shop_category(e)
-    shop = [e for e in out if e["shop_cat"] != "special" and e.get("price", 0) > 0
-            and item_is_functional(e)]
-    # collapse identical-named entries (e.g. the 11 gacha "Capsule" items) to one, cheapest
-    seen = {}
-    for e in sorted(shop, key=lambda x: x["price"]):
-        seen.setdefault((e["shop_cat"], e["name"]), e)
-    shop = list(seen.values())
-    _assign_unlock_stages(shop)
-    shop.sort(key=lambda e: (e["shop_cat"], e["price"]))
-    return shop
 
 
 def _shop_season4(val, default=0):
@@ -756,20 +716,24 @@ def _shop_time4(val):
     return out[:4]
 
 
-def _shop_econ(r):
-    """DVPet ShopConsumable economy fields for one shopConsumable.csv row."""
+def _default_econ(r):
+    """DVPet home-shop economy: each consumable's OWN Default* columns
+    (FoodType/Item build their _homeShop ShopConsumable from these).
+    shopConsumable.csv is only the per-TOWN override table -- tuipet has the
+    single home shop, so the Default* columns are the whole economy."""
     def i(k, d):
         try:
             return int(r.get(k) or d)
         except ValueError:
             return d
     return {
-        "min_stock": i("minStock", 1), "max_stock": i("maxStock", 1),
-        "stock_chance": _shop_season4(r.get("stockChance(SpringSummerFallWinter)"), 100),
+        "min_stock": i("DefaultMinStock", 1), "max_stock": i("DefaultMaxStock", 1),
+        "stock_chance": _shop_season4(r.get("DefaultStockChance(SpringSummerFallWinter)"), 100),
         "time_avail": _shop_time4(r.get("DefaultTimeAvailable(HtH;SpringSummerFallWinter)")),
-        "must_stock": (r.get("MustStock") or "false").strip().lower() == "true",
-        "sale_chance": _shop_season4(r.get("SaleChance(SpringSummerFallWinter)"), 0),
-        "sale_factor": i("SaleFactor", 1), "resell_factor": i("ResellFactor", 0),
+        "must_stock": (r.get("DefaultMustStock") or "false").strip().lower() == "true",
+        "sale_chance": _shop_season4(r.get("DefaultSaleChance(SpringSummerFallWinter)"), 0),
+        "sale_factor": i("DefaultSaleFactor", 1), "resell_factor": i("DefaultResellFactor", 0),
+        "shop_unlocked": (r.get("ShopUnlocked") or "FALSE").strip().upper() == "TRUE",
     }
 
 
@@ -784,59 +748,42 @@ def _shop_econ_default():
 
 
 @lru_cache(maxsize=1)
-def load_shop():
-    """Shop inventory: resolved consumables with a stable key and shop price."""
+def home_shop_pool():
+    """Every consumable + its own Default* shop economy.  randomizeShop pools
+    the ones with ShopUnlocked && price > 0 (shop.py applies that filter); the
+    rest are here so bag/loot lookups get data-driven resell factors too."""
     foods, items = _load_consumables()
-    out = []
-    seen = set()
-    for r in csv.DictReader(open(os.path.join(_DATA, "shopConsumable.csv"))):
-        try:
-            cid = int(r["ConsumableID"])
-        except (KeyError, ValueError):
-            continue
-        is_food = (r.get("IsFood") or "false").strip().lower() == "true"
-        src = foods if is_food else items
-        base = src.get(cid)
-        if not base:
-            continue
-        key = f"{'f' if is_food else 'i'}:{cid}"
-        if key in seen:
-            continue
-        seen.add(key)
-        entry = dict(base)
-        entry["key"] = key
-        try:
-            entry["price"] = int(r.get("Price") or entry["price"])
-        except ValueError:
-            pass
-        entry.update(_shop_econ(r))
-        out.append(entry)
-    # special X-Antibody gear — not in shopConsumable.csv, but buyable here (and so
-    # droppable as rare loot); using one induces the X-Antibody state, not care stats
-    for sid, price in ((79, 2000), (14, 4000)):
-        base = items.get(sid)
-        key = f"i:{sid}"
-        if base and key not in seen:
-            entry = dict(base)
-            entry["key"], entry["price"], entry["special"] = key, price, "xantibody"
-            entry.update(_shop_econ_default()); out.append(entry); seen.add(key)
-    # specialty stock not listed in shopConsumable.csv: the Vitamin (injury guard) and the
-    # two "crafter" consumables, so their mechanics are actually reachable.
-    for src_map, prefix, cid, price in ((foods, "f", 5, 300), (foods, "f", 58, 800), (items, "i", 66, 1200)):
-        base = src_map.get(cid); key = f"{prefix}:{cid}"
-        if base and key not in seen:
-            entry = dict(base); entry["key"], entry["price"] = key, price
-            entry.update(_shop_econ_default()); out.append(entry); seen.add(key)
-    out = [e for e in out if item_is_functional(e)]   # hide inert action-items
-    for e in out:
-        e["shop_cat"] = shop_category(e)
-    _assign_unlock_stages(out)
-    out.sort(key=lambda e: e["price"])
-    return out
+    out = {}
+    for fn, id_field, src, prefix in (("foods.csv", "FoodIdentificationNum", foods, "f"),
+                                      ("items.csv", "ItemIdentificationNum", items, "i")):
+        for r in csv.DictReader(open(os.path.join(_DATA, fn))):
+            try:
+                cid = int(r[id_field])
+            except (KeyError, ValueError):
+                continue
+            base = src.get(cid)
+            if not base:
+                continue
+            e = dict(base)
+            e["key"] = f"{prefix}:{cid}"
+            e.update(_default_econ(r))
+            out[e["key"]] = e
+    # tuipet specialty adaptations (kept from the old shop): the X-gear, the plain
+    # Vitamin and the crafters ship with price 0 / ShopUnlocked false in the data,
+    # but their mechanics must stay reachable -- stocked as occasional 20% finds
+    for key, price in (("i:79", 2000), ("i:14", 4000), ("f:5", 300), ("f:58", 800), ("i:66", 1200)):
+        e = out.get(key)
+        if e and not (e.get("shop_unlocked") and e.get("price", 0) > 0):
+            e["price"] = price
+            e.update(_shop_econ_default())
+            e["shop_unlocked"] = True
+            if key in ("i:79", "i:14"):
+                e["special"] = "xantibody"
+    return list(out.values())
 
 
 def consumable_by_key(key):
-    for e in load_shop():
+    for e in home_shop_pool():
         if e["key"] == key:
             return e
     # fall back to the full tables -- crafted/loot consumables need not have a shop slot

@@ -32,8 +32,8 @@ def test_empty_account_egg_flow():
 
 def test_buy_with_zero_bits():
     p = Pet(num=-1, stage="Rookie", bits=0)
-    assert p.buy({"key": "f:1", "name": "Meat", "price": 5, "max_uses": 3}) == "Not enough bits."
-    assert p.bits == 0 and "f:1" not in p.inventory
+    assert p.buy_slot({"key": "f:8", "stock": 3, "sale": 0}) == "Not enough bits."
+    assert p.bits == 0 and "f:8" not in p.inventory
 
 
 def test_sell_empty_bag():
