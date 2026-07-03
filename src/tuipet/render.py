@@ -84,6 +84,12 @@ def render_scene(placements, cols, rows, on="#2b2e31", bg="#c6c9cc", overlay=Non
     return t
 
 
+UPPER, LOWER, FULL = "\u2580", "\u2584", "\u2588"   # half/full blocks (bitmap_text's pixels;
+#                                                      the dead-code sweep deleted them with the
+#                                                      OLD renderer while bitmap_text still reads
+#                                                      them -- the v0.2.166-175 feed-screen crash)
+
+
 def bitmap_text(rows, on, bg, pad_to=0):
     """1-bit rows -> half-block Rich Text lines (square pixels).  The one
     implementation behind every icon/badge mini-render (audit 2026-07: this
