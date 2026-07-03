@@ -51,9 +51,11 @@ def test_damage_base_plus_power_floored():
 # ---- setup -----------------------------------------------------------------
 
 def test_hp_setup_per_stage():
-    assert Battle(_pet("Rookie"), _enemy(hp=10)).pet_hp == MAX_HEALTH["Rookie"]
-    assert Battle(_pet("Champion"), _enemy(hp=10)).pet_hp == MAX_HEALTH["Champion"]
-    assert Battle(_pet("Mega"), _enemy(hp=10)).pet_hp == MAX_HEALTH["Mega"]
+    # battle HP = the pet's TRAINED fullHealthPoints (HP drill grows it);
+    # the flat stage table remains only as the no-field fallback
+    p = _pet("Rookie")
+    p.full_health = 8
+    assert Battle(p, _enemy(hp=10)).pet_hp == 8
     # enemy HP is taken from its sheet, floored to a minimum of 2
     assert Battle(_pet(), _enemy(hp=1)).enemy_hp == 2
     assert Battle(_pet(), _enemy(hp=20)).enemy_hp == 20

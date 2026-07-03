@@ -97,6 +97,22 @@ REFUSE_TRAVEL_DISPO = 35.0          # RefuseTravelDispositionCoefficient
 GIFT_CHANCE_MIN = 57.0              # GiftChanceMin: game-min between rolls
 GIFT_CHANCE_FACTOR = 70             # GiftChanceFactor
 GIFT_CHANCE_MOOD_COEFF = 0.5        # GiftChanceMoodCoefficient
+# trained battle HP (config.csv col 1): the HP drill GROWS fullHealthPoints
+STARTING_HEALTH_POINTS = 5          # StartingHealthPoints (resetToEgg)
+PERFECT_WINS_LIMIT = 5              # PerfectWinsLimit: every 5 wins -> +1 HP
+PERFECT_WINS_HEALTH_INC = 1         # PerfectWinsHealthInc
+# getMaxHealth: the HP CAP rises with lapsed life (real-seconds -> game-days here:
+# 86400s real = 1 day = 1 tuipet DAY_LENGTH); classic MaxHealth* ladder
+HEALTH_CAP_LADDER = ((13, 30), (10, 25), (7, 20), (4, 15), (1, 10))  # (days, cap)
+MAX_HEALTH_DEFAULT_CAP = 10         # MaxHealthDefault (under a day old)
+# exercise() nuances
+EXERCISE_WORSE_SICK_CHANCE = 1      # ExerciseWorseSickChance %
+OBEDIENCE_CHANGE_SICK_FORCED = -5   # ObedienceChangeSickForced (forced a sick pet; it got worse)
+EXERCISE_CALORIE_DEC = 1            # ExerciseCalorieDec
+FAV_EXERCISE_TIME_MOOD = 10         # FavExerciseTimeMoodInc
+FAV_EXERCISE_TIME_ENTH = 1          # FavExerciseTimeEnthusiasmChange
+NOTFAV_EXERCISE_TIME_MOOD = 2       # NotFavExerciseTimeMoodDec
+DISLIKED_TIME_EXERCISE_ENTH = -1    # DislikedTimeExerciseEnthusiasmChange
 DEPRESSED_OBEDIENCE = 50.0          # DepressedObedience
 SURR_HEALTH_COEF = 5.0              # SurrenderChanceHealthCoefficient
 SURR_DISP_COEF = 5.0                # HighDispositionSurrenderChanceDispositionCoefficient
@@ -411,6 +427,8 @@ class Pet:
     fought_today: list = _dcf(default_factory=list)        # trophy ids fought today (SameDayRetry exempt)
     tourney_alarm: int = -1         # _tourneyAlarm: trophy id to be called for (-1 = unset)
     tourney_alert: bool = False     # TournamentAlert: the call is ringing (this hour only)
+    full_health: int = STARTING_HEALTH_POINTS   # _fullHealthPoints: TRAINED battle HP
+    perfect_wins: int = 0           # _perfectWins: HP-drill wins toward the next +1 HP
     adv_map: int = 0
     adv_zone: int = 0
     adv_seek: bool = False    # Disaster Transport: next adventure leg forces an encounter
@@ -1462,6 +1480,9 @@ class Pet:
         self._set_mood(self.mood + scaled("mood"))          # foods.csv intrinsic mood (Cake +60, Veg -10)
         self.obedience += scaled("obedience")
         self._set_enthusiasm(self.enthusiasm + scaled("enthusiasm"))
+        if food.get("health"):                              # HP Chip: permanent trained-HP gain
+            self.full_health = min(self.max_health(),
+                                   self.full_health + math.ceil(food["health"] * modifier))
         self.calories = CALORIE_LIMIT                       # a meal refills the calorie buffer
         self.weight += int(food.get("weight", 1))
         # every meal advances the bowel gauge (applyFood: bmGauge += food.BMGauge):
@@ -1492,6 +1513,26 @@ class Pet:
             return "Too tired to train."
         return None
 
+    def max_health(self):
+        """PhysicalState.getMaxHealth: the trained-HP CAP rises with lapsed life."""
+        days = self.age_seconds / DAY_LENGTH
+        for d, cap in HEALTH_CAP_LADDER:
+            if days >= d:
+                return cap
+        return MAX_HEALTH_DEFAULT_CAP
+
+    def _check_perfect_wins(self):
+        """checkAndIncPerfectWins(PracticeAlwaysIncPerfectWins=TRUE): every HP-drill
+        success counts; each PerfectWinsLimit-th grows fullHealthPoints toward the
+        age cap (HealthInc when it actually lands)."""
+        self.perfect_wins += 1
+        if self.perfect_wins % PERFECT_WINS_LIMIT == 0:
+            before = self.full_health
+            self.full_health = min(self.max_health(), self.full_health + PERFECT_WINS_HEALTH_INC)
+            if self.full_health > before:
+                return " HP +1!"                     # State.HealthInc
+        return ""
+
     def apply_training(self, hits, power, attribute=None, game="hp"):
         """Apply a training-minigame result (hits 0..3, power 0..100).
 
@@ -1503,6 +1544,7 @@ class Pet:
         """
         self.train_time = _dvpet_time(self.day_phase)
         self.exercise_today += 1                          # DVPet _exercise (incExerciseTime)
+        complied = self.check_compliant()                 # onExerciseFinish: checkCompliant
         if hits >= 2:
             self.strength = _clamp(self.strength + 1, 0, 4)
             self.obedience += 1
@@ -1529,7 +1571,26 @@ class Pet:
                 self._set_enthusiasm(self.enthusiasm - 3)  # ExerciseDislikedAttributeEnthusiasmChange
             else:
                 self._set_enthusiasm(self.enthusiasm - 1)  # ExerciseFavAttributeEnthusiasmDec
+        # checkExerciseTime: drilling at the pet's favourite time of day lifts it,
+        # at the disliked time it drags; any other hour still costs a little mood
+        now = self.day_phase
+        if self.favorite_time() == now:
+            self._set_mood(self.mood + FAV_EXERCISE_TIME_MOOD)
+            self._set_enthusiasm(self.enthusiasm + FAV_EXERCISE_TIME_ENTH)
+        elif self.disliked_time() == now:
+            self._set_mood(self.mood - NOTFAV_EXERCISE_TIME_MOOD)
+            self._set_enthusiasm(self.enthusiasm + DISLIKED_TIME_EXERCISE_ENTH)
+        else:
+            self._set_mood(self.mood - NOTFAV_EXERCISE_TIME_MOOD)
+        self._set_mood(self.mood + self.enthusiasm)       # exercise(): mood rides the spirit
+        # checkWorseSick(ExerciseWorseSickChance): drilling a SICK pet can worsen it --
+        # and if it only trained because you spent its compliance, it resents you
+        if self.sick and random.randrange(100) < EXERCISE_WORSE_SICK_CHANCE:
+            self._worsen_sick()
+            if complied:
+                self.obedience += OBEDIENCE_CHANGE_SICK_FORCED
         self.weight = max(1, self.weight - 2)
+        self.calories -= EXERCISE_CALORIE_DEC             # ExerciseCalorieDec
         self._set_energy(self.energy - 1)               # ExerciseEnergyDec
         if self.energy <= 0 and random.randint(0, 99) < FATIGUE_CHANCE:   # trained to exhaustion
             self._fatigue()
@@ -1546,7 +1607,8 @@ class Pet:
         self._set_anim("happy" if hits >= 2 else "sad", 1.8)
         rank = "Perfect!" if hits == 3 else ("Good!" if hits == 2 else ("Meh." if hits == 1 else "Whiff."))
         if game == "hp":
-            return f"{rank} {'Effort up!' if hits >= 2 else 'no gain'}"
+            hp_note = self._check_perfect_wins() if success else ""
+            return f"{rank} {'Effort up!' if hits >= 2 else 'no gain'}{hp_note}"
         return f"{rank} +{gain} {attr}"
 
     def can_battle(self):
@@ -1582,8 +1644,7 @@ class Pet:
             # tougher lower-stage bruiser is a proud one (+10)
             grew = ""
             if enemy:
-                from .battle import MAX_HEALTH, MAX_HEALTH_DEFAULT
-                cap = MAX_HEALTH.get(self.stage, MAX_HEALTH_DEFAULT)
+                cap = self.full_health or 1     # DVPet's HP gates compare vs fullHealthPoints
                 ehp = enemy.get("hp", cap)
                 mine = data.stage_rank(self.stage)
                 theirs = data.stage_rank(enemy.get("stage", self.stage))

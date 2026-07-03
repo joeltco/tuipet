@@ -140,6 +140,7 @@ def load_foods():
                     "name": row["Name"],
                     "hunger": int(row["Hunger"] or 0),
                     "weight": int(row["Weight"] or 0),
+                    "health": int(row.get("Health") or 0),   # permanent HP gain (HP Chip)
                     "mood": int(row["Mood"] or 0),
                     "energy": int(row["Energy"] or 0),
                     "strength": int(row["Strength"] or 0),
@@ -608,6 +609,7 @@ def _consumable(row, id_field):
         # using spends UsesPer*; can_inc/can_dec gate buying/using (foods/items.csv).
         "max_uses": int(num("MaxUses") or 1),
         "gift_chance": int(num("GiftChance/100")),   # per-item odds of being the gift-call present
+        "health": int(num("Health")),   # permanent fullHealthPoints gain (HP Chip)
 
         "uses_per": int(num("UsesPerFood") or num("UsesPerItem") or 1),
         "can_inc": (row.get("CanIncUses") or "TRUE").strip().upper() != "FALSE",

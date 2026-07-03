@@ -79,10 +79,16 @@ def test_disliked_attribute_costs_mood():
     assert p.mood < 0, "training a non-favoured attribute costs mood"
 
 
-def test_favoured_attribute_no_mood_cost():
-    p = _trainee(attribute="Vaccine")
-    p.apply_training(2, 100, attribute="Vaccine", game="vaccine")
-    assert p.mood == 0, "favoured-attribute training does not cost mood"
+def test_favoured_attribute_costs_less_mood():
+    # canon exercise(): every drill carries the time-of-day mood delta and the
+    # mood += enthusiasm coupling; the favoured attribute just skips the
+    # disliked-attribute -1 and the harsher -3 enthusiasm hit
+    fav = _trainee(attribute="Vaccine")
+    fav.apply_training(2, 100, attribute="Vaccine", game="vaccine")
+    off = _trainee(attribute="Vaccine")
+    off.apply_training(2, 100, attribute="Data", game="data")
+    assert fav.mood > off.mood
+    assert fav.enthusiasm > off.enthusiasm
 
 
 # ---- shared per-drill costs ------------------------------------------------

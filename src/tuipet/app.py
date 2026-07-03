@@ -836,7 +836,7 @@ class Stats(Static):
             f"Mood    {bar(pet.mood_pct(), 12, T.MOOD)}",
             div,
             f"Power   [{T.POS}]●{pet.vaccine}[/] [{T.ENERGY}]■{pet.data_power}[/] [{T.MOOD}]▲{pet.virus}[/]",
-            f"Weight  {pet.weight}g   [{T.COIN}]{pet.bits}b[/]",
+            f"HP {pet.full_health}/{pet.max_health()}  Wt {pet.weight}g  [{T.COIN}]{pet.bits}b[/]",
             f"Battle  {pet.wins}W/{pet.battles}   [{T.COIN}]\u2605{pet.trophies}[/]",
             f"@{pet.habitat_obj()['name'][:14]} {amark} [dim]{pet.season}[/]",
             f"[{skycol}]{sky}[/] [dim]{pet.weather} {int(pet.temp)}\u00b0[/] [dim]{mins}m{secs:02d}s[/]",

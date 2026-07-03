@@ -248,6 +248,11 @@ def pet_from_save(data, catch_up=True):
     saved_at = data.pop("_saved_at", None)
     valid = {f.name for f in fields(Pet)}
     kwargs = {k: v for k, v in data.items() if k in valid}
+    if "full_health" not in data and (data.get("stage") or "Egg") != "Egg":
+        # pre-trained-HP save: grandfather the old flat stage HP so a grown pet
+        # isn't nerfed to a hatchling's 5 (new pets start at StartingHealthPoints)
+        from .battle import MAX_HEALTH, MAX_HEALTH_DEFAULT
+        kwargs["full_health"] = MAX_HEALTH.get(data.get("stage"), MAX_HEALTH_DEFAULT)
     try:
         pet = Pet(**kwargs)
     except TypeError:

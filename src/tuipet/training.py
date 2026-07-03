@@ -635,7 +635,11 @@ class TrainingPanel:
             # shape icon (the real 7x7 attribute symbol) flanked by ◂ ▸ pixel
             # arrows, band-centred.  ←→ scrolls the shapes (Joel's compact layout;
             # no pet here -- it appears for the strike volley).
-            dummy = _HP_DUMMIES[("vaccine", "data", "virus")[self.hp_target]]
+            # a wrong pick makes the dummy TAUNT for the flash beat (SpriteAnim
+            # draws getBattleBagSprite(attr)+1 -- the sheet's bottom-row lean)
+            taunting = self._strike_t > 0 and self._strike_pose == 9
+            key = ("vaccine", "data", "virus")[self.hp_target] + ("_taunt" if taunting else "")
+            dummy = _HP_DUMMIES[key]
             placements = [(dummy, GRID_X0, False)]                    # left, grounded 2px up
             ic = E.get(_HP_ICON_KEYS[self.hp_pick], [None])[0]
             if ic:

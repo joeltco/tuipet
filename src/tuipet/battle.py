@@ -106,7 +106,9 @@ def battle_card(pet):
     return {"num": pet.num,
             "name": getattr(pet, "name", None) or by.get(pet.num, {}).get("name") or "?",
             "stage": pet.stage, "vaccine": pet.vaccine, "data_power": pet.data_power,
-            "virus": pet.virus, "hp": MAX_HEALTH.get(pet.stage, MAX_HEALTH_DEFAULT), "bits": (1, 5)}
+            "virus": pet.virus,
+            "hp": getattr(pet, "full_health", 0) or MAX_HEALTH.get(pet.stage, MAX_HEALTH_DEFAULT),
+            "bits": (1, 5)}
 
 
 class Battle:
@@ -118,7 +120,9 @@ class Battle:
                               "Data": self.enemy["data_power"], "Virus": self.enemy["virus"]}
         # Enemy.getOppAttribute = its strongest power (battle "type")
         self.enemy["attribute"] = max(ATTRS, key=lambda a: self._enemy_counts[a])
-        self.pet_max = self.pet_hp = MAX_HEALTH.get(pet.stage, MAX_HEALTH_DEFAULT)
+        # DVPet battle HP = the pet's TRAINED fullHealthPoints (HP drill / HP chips),
+        # not a flat stage table -- the stage caps live in Pet.max_health()'s ladder
+        self.pet_max = self.pet_hp = getattr(pet, "full_health", 0) or MAX_HEALTH.get(pet.stage, MAX_HEALTH_DEFAULT)
         self.enemy_max = self.enemy_hp = max(2, self.enemy["hp"])
         psum = sum(self._pet_counts.values()) + self.pet_hp
         esum = sum(self._enemy_counts.values()) + self.enemy_hp
