@@ -87,6 +87,9 @@ REFUSE_GLUTTON_HUNGER = -15.0       # RefuseGluttonHungerModCoefficient
 REFUSE_NOT_GLUTTON_HUNGER = -30.0   # RefuseNotGluttonHungerModCoefficient
 REFUSE_PERSONALITY_MATCH = 10.0     # RefuseFavMod*MatchFactor (food suits its temperament)
 REFUSE_PERSONALITY_UNMATCH = -10.0  # RefuseFavMod*UnmatchFactor
+REFUSE_INTEREST_MOD = -15.0         # RefuseInterestModCoefficient (a bored pet refuses toys)
+WEAK_CONSUMABLE_COEF = 0.1          # WeakConsumableCoefficient: a COMPLIANT pet takes items
+#                                     grudgingly (Inherit/Recover exempt, like applyItem)
 EXERCISE_REFUSE_LOW_ENTH = 20.0     # ExerciseRefuseLowEnthusiasmFactor (fav attr, dispirited)
 BATTLE_DISPO_COEF = 10.0            # HighDispositionBattleObedienceDispositionCoefficient
 BATTLE_LOW_DISPO_FACTOR = 50.0      # LowDispositionBattleObedienceFactor (docile pets fight when told)
@@ -319,6 +322,11 @@ SCOLD_PRAISE_ENTH_DEC = 6              # ScoldPraiseEnthusiasmDec
 SCOLD_PRAISE_OBED = {0: 1, 1: 3, -1: 0}     # ScoldPraiseObedienceInc[/High/Low]
 PRAISE_WINDOW_MAX = 2                    # PraiseWindowMax (lapses the window stays open)
 SCOLD_WINDOW_MAX = 2                     # ScoldWindowMax
+PRAISE_FAIL_MOOD_PENALTY = 10            # PraiseFailMoodPenalty (a good deed unpraised)
+PRAISE_FAIL_OBED_INC = 3                 # PraiseFailObedienceInc...
+PRAISE_FAIL_OBED_DISPO_COEF = 1          # ...IncDispositionCoefficient (shaded by temperament)
+SCOLD_FAIL_MOOD_INC = 10                 # ScoldFailMoodInc (it got away with it)
+SCOLD_FAIL_OBED_PENALTY = 10             # ScoldFailObediencePenalty
 # auto disciplineCall (checkDisciplineCall): the pet spontaneously acts up on the
 # DisciplineCallMin cadence -- chance = randomChance(TargetChance+careAdjust,
 # DisciplineCallChance-(ObedienceRefusalCap-obedience)); well-behaved grown pets are
@@ -858,10 +866,21 @@ class Pet:
             if self.praise_flag:
                 self.praise_window += 1
                 if self.praise_window > PRAISE_WINDOW_MAX:
+                    # setPraiseWindow overflow: the good deed went UNPRAISED --
+                    # the pet sulks and hardens a little (disposition-shaded)
+                    self._set_mood(self.mood - PRAISE_FAIL_MOOD_PENALTY)
+                    self.obedience += (PRAISE_FAIL_OBED_INC if self._disposition() > 0
+                                       else PRAISE_FAIL_OBED_INC
+                                       + self._disposition() * PRAISE_FAIL_OBED_DISPO_COEF)
                     self.praise_flag, self.praise_window = False, 0
             if self.scold_flag:
                 self.scold_window += 1
                 if self.scold_window > SCOLD_WINDOW_MAX:
+                    # setScoldWindow overflow: it GOT AWAY WITH IT -- happier,
+                    # less obedient, and the refusal is forgiven unscolded
+                    self._set_mood(self.mood + SCOLD_FAIL_MOOD_INC)
+                    self.obedience -= SCOLD_FAIL_OBED_PENALTY
+                    self.refused = False
                     self.scold_flag, self.scold_window = False, 0
                     self.mistake_day += 1        # DisciplineCallFailMissedDayChange
             self._check_discipline_call()                # the pet may spontaneously act up
@@ -1815,7 +1834,7 @@ class Pet:
         elif random.random() < 0.5:
             self._set_anim("surprise", 1.6)
 
-    def check_refused(self, food=None, attr=None, energy_change=0.0):
+    def check_refused(self, food=None, attr=None, energy_change=0.0, item=None):
         """PhysicalState.checkRefused: the obedience refusal roll.  Only a
         NON-COMPLIANT pet (uncorrected misbehavior -- a fair scold restores
         compliance) ever refuses: roll r in [0, RefuseChance) against
@@ -1830,6 +1849,23 @@ class Pet:
         refused = False
         if energy_change and self.energy + math.ceil(energy_change * self.max_energy) < 0:
             refused = True                       # can't afford the energy -> auto-refuse
+        elif item is not None:
+            # refused(Item): medicine by its healing flags, the personality mods,
+            # sick-only unwell, and the BOREDOM term -- a bored pet refuses toys
+            # (itemInterest x RefuseInterestModCoefficient when the item bores)
+            obey = 0.0
+            if item.get("cured") or item.get("healed") or item.get("cure_lapse") or item.get("heal_lapse"):
+                obey += REFUSE_MED_FACTOR * (1 - base)
+            for trait, key in ((self.disposition, "t_disposition"),
+                               (self.restless, "t_restless"), (self.glutton, "t_glutton")):
+                fv = int(item.get(key, 0) or 0)
+                if fv != 0:
+                    obey += REFUSE_PERSONALITY_MATCH if fv == trait else REFUSE_PERSONALITY_UNMATCH
+            obey += (REFUSE_UNWELL_SICK if self.sick else 0.0) * (1 - base)
+            if int(item.get("interest_change", 0) or 0) > 0:
+                obey += self.item_interest * REFUSE_INTEREST_MOD
+            obey += mood_factor
+            refused = r >= obed + obey
         elif food is not None:
             cats = [c for c in (food.get("category") or "").split(";") if c]
             fav = bool(self.favorite_food) and self.favorite_food in cats
@@ -2260,7 +2296,9 @@ class Pet:
         time_factor *= base
         unwell = self.sick or self.is_injured() or self.is_fatigued()   # isSick||isInj||isFatigued
         unwell_factor = (REFUSE_UNWELL_SICK if unwell else 0.0) * (1 - base)
-        ex = self.exercise_today or 1                                  # _exercise!=0 ? _exercise : 1
+        # canon re-audit 2026-07: DVPet's `_exercise` here is the EFFORT GAUGE
+        # (strength hearts) -- the old port divided by drills-done-today
+        ex = self.strength or 1                                        # _exercise!=0 ? _exercise : 1
         if self.energy >= 0:
             exercise_factor = base * (energy_ratio / ex)
         else:
@@ -2861,7 +2899,14 @@ class Pet:
             return f"{e['name']} has no use yet."   # action-item whose system is unbuilt
         if (_g := self._guard(asleep_blocks=False)) is not None:
             return _g
-        refused = self.check_refused(food=e)         # useItem: checkRefused (audit: canon gap)
+        is_item = key.startswith("i:")
+        refused = self.check_refused(item=e) if is_item else self.check_refused(food=e)
+        # checkRefused's compliant-else: a COMPLIANT pet cannot refuse an ITEM,
+        # but it cooperates grudgingly -- the item lands at WeakConsumableCoefficient
+        # strength (0.1), except the Digimemory and healing items (Inherit/Recover)
+        weak = (is_item and self.compliance
+                and e.get("action") not in ("Inherit", "Recover")
+                and not (e.get("cured") or e.get("healed") or e.get("cure_lapse") or e.get("heal_lapse")))
         self.check_compliant()                       # ...; checkCompliant
         if refused:
             return f"{self.name} wants nothing to do with it!"
@@ -2922,7 +2967,7 @@ class Pet:
         # applyItemNoObedience: a DiminishingReturns toy scales by 1 - interest/5
         # (canon quirk: at FULL boredom the scale is skipped and the toy lands at
         # full strength again); every item use bores the pet a step further
-        mod = 1.0
+        mod = WEAK_CONSUMABLE_COEF if weak else 1.0   # applyItem(item, 0.1) when compliant
         if not is_food:
             if e.get("diminishing"):
                 m = 1.0 - self.item_interest / MAX_ITEM_INTEREST
