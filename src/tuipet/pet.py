@@ -113,6 +113,7 @@ FAV_EXERCISE_TIME_MOOD = 10         # FavExerciseTimeMoodInc
 FAV_EXERCISE_TIME_ENTH = 1          # FavExerciseTimeEnthusiasmChange
 NOTFAV_EXERCISE_TIME_MOOD = 2       # NotFavExerciseTimeMoodDec
 DISLIKED_TIME_EXERCISE_ENTH = -1    # DislikedTimeExerciseEnthusiasmChange
+MODE_CHANGE_ENERGY = -1             # ModeChangeEnergyChange
 DEPRESSED_OBEDIENCE = 50.0          # DepressedObedience
 SURR_HEALTH_COEF = 5.0              # SurrenderChanceHealthCoefficient
 SURR_DISP_COEF = 5.0                # HighDispositionSurrenderChanceDispositionCoefficient
@@ -1245,6 +1246,76 @@ class Pet:
         if _req.get("give_item", -1) >= 0:        # GiveItem: grant a consumable (dormant in data)
             self.add_item(f"i:{_req['give_item']}")
         self._set_anim("happy", 2.5)
+
+    def _swap_form(self, num, subtract_current=False):
+        """The Mode/revert half of Evolution.digivolve: swap the SPECIES ONLY.
+        No growth-clock reset, no care-record/DNA/taste reset, no lifespan
+        extension -- the transform shares the life (digivolve skips all of it
+        when SpecialEvol is Mode or reverting)."""
+        cur = data.load_requirements().get(self.num, {})
+        _, by_num = data.load_sprites()
+        r = by_num[num]
+        self.num, self.name = num, r["name"]
+        self.stage, self.attribute = r["stage"], r["attribute"]
+        self.field = r.get("field", self.field)
+        self.element = r.get("element", self.element)
+        self._apply_natural_habitat()
+        _req = data.load_requirements().get(num, {})
+        self.max_energy = _req.get("max_energy", self.max_energy)
+        self._sleep_energy_gain = _req.get("sleep_energy_gain", 3)
+        self.energy = min(self.energy, self.max_energy)
+        if _req.get("xantibody", "None") in ("Induced", "Natural"):
+            self._set_xantibody("Permanent")
+        self.weight = self._base_weight()
+        if subtract_current:            # revert: un-apply the Mode form's changes
+            self.vaccine -= cur.get("vaccine_change", 0)
+            self.data_power -= cur.get("data_change", 0)
+            self.virus -= cur.get("virus_change", 0)
+        else:                           # entering the Mode: its changes apply
+            self.vaccine = max(0, self.vaccine + _req.get("vaccine_change", 0))
+            self.data_power = max(0, self.data_power + _req.get("data_change", 0))
+            self.virus = max(0, self.virus + _req.get("virus_change", 0))
+
+    def mode_change(self):
+        """PhysicalState.modeChange: a Mode form reverts to its first
+        pre-evolution (only if its power changes can be un-applied); anything
+        else evolves along a valid Mode target.  The activity refusal rolls
+        with the energy pre-check, compliance is spent, success costs
+        ModeChangeEnergyChange and plays State.Evolving.
+        Returns (old_num_or_None, message)."""
+        if self.dead:
+            return None, "It rests now — press N for a new egg."
+        if self.asleep:
+            return None, self._disturbed()
+        refused = self.check_refused(energy_change=MODE_CHANGE_ENERGY)
+        self.check_compliant()
+        if refused:
+            return None, f"{self.name} refuses to change!"
+        old = self.num
+        if evolution.is_mode_form(self.num):
+            prev = evolution.pre_evolution(self.num)
+            cur = data.load_requirements().get(self.num, {})
+            if (prev is None
+                    or self.vaccine - cur.get("vaccine_change", 0) < 0
+                    or self.data_power - cur.get("data_change", 0) < 0
+                    or self.virus - cur.get("virus_change", 0) < 0):
+                self._set_anim("refuse", 1.0)             # Jeering
+                return None, "The mode holds — it can't revert."
+            self._swap_form(prev, subtract_current=True)
+        else:
+            targets = evolution.mode_targets(self)
+            if not targets:
+                self._set_anim("refuse", 1.0)             # Jeering
+                return None, "The mode is out of reach."
+            self._swap_form(targets[0])
+        self._set_energy(self.energy + MODE_CHANGE_ENERGY)
+        self._set_anim("happy", 2.5)                      # State.Evolving
+        return old, f"MODE CHANGE — {self.name}!"
+
+    def can_mode_change(self):
+        return (self.num != -1 and not self.dead
+                and self.stage not in ("Egg", "Fresh")
+                and evolution.can_mode_change(self))
 
     # ---- care actions --------------------------------------------------------
     def _set_anim(self, name, ttl):

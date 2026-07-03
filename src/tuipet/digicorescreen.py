@@ -172,6 +172,7 @@ class DigiCorePanel:
         self.i = 0
         self.teaser = False       # EvolSilhouette view (SPACE on the core)
         self.frame_i = 0
+        self.note = "the core stirs..."
 
     def anim(self):
         self.frame_i += 1
@@ -187,6 +188,16 @@ class DigiCorePanel:
             # the dna-wash sweep substitutes, like heal's click/confirm cues)
             self.teaser = True
             self.sfx = "wash"
+            return None
+        if k == "m" and self.i == 0:
+            # the tModeChange button on the EvolutionState page
+            if not self.pet.can_mode_change():
+                return None
+            old_num, msg = self.pet.mode_change()
+            if old_num is not None:
+                return ("done", ("evolve", old_num, msg))
+            self.note = msg
+            self.sfx = "error"
             return None
         if k in ("right", "l") or (k == "space" and self.i > 0):
             self.i = (self.i + 1) % len(self.pages)
@@ -228,8 +239,10 @@ class DigiCorePanel:
         lbl = "evolution nears at 1" if pending else "life meter"
         out.append(f"\n core {chr(0x25C6)} {n}", style=INK_B)
         out.append(f"   {lbl}\n", style=DIM)
-        out.append_text(menu.note("the core stirs..."))
-        out.append_text(menu.footer("SPACE core  → data  ESC out"))
+        out.append_text(menu.note(self.note))
+        foot = "SPACE core  M mode  → data  ESC" if self.pet.can_mode_change() \
+            else "SPACE core  → data  ESC out"
+        out.append_text(menu.footer(foot))
         return out
 
     def _teaser_scene(self):

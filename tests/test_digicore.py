@@ -73,3 +73,48 @@ def test_panel_core_page_and_teaser_flow():
     assert not panel.teaser
     panel.key("right")
     assert panel.pages[panel.i][0] == "STATUS"      # the data book survives
+
+
+# ---- mode change (PhysicalState.modeChange / Evolution.canModeChange) --------
+
+def _mode_pet():
+    from tuipet import evolution
+    p = Pet(num=100, name="Gatomon", stage="Champion", attribute="Vaccine")
+    p.obedience = 500
+    p.vaccine = p.data_power = p.virus = 500
+    p.evol_bonus = 100000                     # deterministic requirement pass
+    p.wins = p.battles = 100
+    p.energy = p.max_energy
+    return p
+
+
+def test_mode_change_round_trip_shares_the_life():
+    p = _mode_pet()
+    p.stage_seconds = 321.0
+    st0 = (p.vaccine, p.data_power, p.virus)
+    old, msg = p.mode_change()
+    assert old == 100 and p.num != 100        # became the Mode form
+    assert p.stage_seconds == 321.0           # digivolve skips the clock for Mode
+    p._set_energy(p.max_energy)
+    p.mode_change()                           # revert to the first pre-evolution
+    assert p.num == 100
+    assert (p.vaccine, p.data_power, p.virus) == st0   # changes un-applied exactly
+
+
+def test_mode_change_demands_a_full_bar():
+    # checkRefused reads ModeChangeEnergyChange as a FRACTION (-1 x maxEnergy):
+    # anything under a full bar auto-refuses; the applied cost is 1 point
+    p = _mode_pet()
+    p._set_energy(p.max_energy - 1)
+    old, msg = p.mode_change()
+    assert old is None and "refuses" in msg
+    p._set_energy(p.max_energy)
+    old, _ = p.mode_change()
+    assert old is not None and p.energy == p.max_energy - 1
+
+
+def test_can_mode_change_gates():
+    from tuipet import evolution
+    assert _mode_pet().can_mode_change()
+    plain = Pet(num=4, name="A", stage="Rookie", attribute="Vaccine")
+    assert plain.can_mode_change() == evolution.can_mode_change(plain)

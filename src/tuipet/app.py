@@ -1724,7 +1724,14 @@ class TuiPetApp(App):
         self._open_mode(habitatscreen.HabitatPanel(self.pet), self._after_habitat)
 
     def action_digicore(self):
-        self._open_mode(digicorescreen.DigiCorePanel(self.pet), lambda _=None: self.repaint())
+        self._open_mode(digicorescreen.DigiCorePanel(self.pet), self._after_digicore)
+
+    def _after_digicore(self, msg):
+        if isinstance(msg, tuple) and msg and msg[0] == "evolve":
+            # modeChange -> State.Evolving: the same strobe as any evolution
+            self.flash(f"[b]{msg[2] if len(msg) > 2 else 'MODE CHANGE!'}[/]")
+            self.screen_w.start_fx("evolve", old_num=msg[1])
+        self.repaint()
 
     def _after_habitat(self, msg):
         if msg:

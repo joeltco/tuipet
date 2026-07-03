@@ -346,6 +346,36 @@ def select(pet):
     return random.choice(top)
 
 
+def is_mode_form(num):
+    """This form IS a Mode (SpecialEvolution=Mode) -- mode change reverts it."""
+    return data.load_requirements().get(num, {}).get("special") == "Mode"
+
+
+def can_mode_change(pet):
+    """Evolution.canModeChange: the current form is a Mode, or any of its
+    evolution targets is one (raw dex check; validity is tested on use)."""
+    if is_mode_form(pet.num):
+        return True
+    return any(is_mode_form(t) for t in data.load_evolutions().get(pet.num, []))
+
+
+def mode_targets(pet):
+    """The valid Mode evolutions right now (checkSpecialCondition Mode + the
+    FULL requirement gates -- check's connecting flag waives only the
+    special-type early-return, exactly like jogress), best-fulfilled first."""
+    out = [t for t in data.load_evolutions().get(pet.num, [])
+           if is_mode_form(t) and check(pet, t, connecting=True)]
+    return sorted(out, key=lambda t: -fulfilled(pet, t))
+
+
+def pre_evolution(num):
+    """getPreEvolutions().get(0): the first dex form that evolves into `num`."""
+    for src in sorted(data.load_evolutions()):
+        if num in data.load_evolutions()[src]:
+            return src
+    return None
+
+
 def candidates(pet):
     """Debug helper: (num, name, passes, fulfilled) for each target."""
     _, by_num = data.load_sprites()
