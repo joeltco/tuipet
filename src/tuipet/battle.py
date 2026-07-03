@@ -101,7 +101,24 @@ def pick_enemy(pet, boss=False):
 
 
 def battle_card(pet):
-    """A pet's battle-relevant snapshot, used as the opponent's Enemy dict in PvP."""
+    """A pet's battle-relevant snapshot, used as the opponent's Enemy dict in PvP.
+
+    Protocol audit 2026-07 vs DVPet's BattleProtocol.setupPlayer -- three
+    documented deltas, none wire-changed:
+    * canon ships (power + freeBonus) x PvPBonusPowerMultiple(2); tuipet ships
+      RAW powers.  calcAttackPower is ordinal, so doubling BOTH sides changes
+      no outcome -- only the recorded magnitudes -- and canon's own local-side
+      scaling is ambiguous in the decompile.  Changing the wire would corrupt
+      cross-version battles mid-upgrade; kept raw.
+    * canon ships getHealthPoints() (CURRENT hp -- a hurt pet enters PvP hurt);
+      tuipet has no persistent battle HP, so full_health stands in (the same
+      adaptation the tournament eligibility notes).
+    * canon exchanges a JAR SHA-256 checksum + difficulty; tuipet's lobby
+      relies on server accounts instead (no anti-tamper handshake).
+    Canon's round exchange is PEER-SYMMETRIC (each device simulates with the
+    exchanged choices -- desyncable through RNG); tuipet's host-authoritative
+    relay resolves once and mirrors absolute results, an intentional
+    improvement."""
     _, by = data.load_sprites()
     return {"num": pet.num,
             "name": getattr(pet, "name", None) or by.get(pet.num, {}).get("name") or "?",
