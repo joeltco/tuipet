@@ -81,6 +81,12 @@ def can_jogress(pet):
         return "Too young to jogress."
     if pet.asleep:
         return "zzz... asleep"
+    # canJogress -> checkRefused(energyChange=-0.66): a non-compliant pet may balk,
+    # and one that can't afford the fusion's energy auto-refuses
+    refused = pet.check_refused(energy_change=-JOGRESS_ENERGY_COST)
+    pet.check_compliant()                        # canJogress: checkRefused; checkCompliant
+    if refused:
+        return f"{pet.name} refuses to fuse!"
     if not options(pet):
         return "No fusion partner resonates now."
     return None

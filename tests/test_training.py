@@ -22,7 +22,7 @@ from tuipet.pet import Pet, TRAIN_POWER_PER_HIT
 def _trainee(attribute="Vaccine", **kw):
     # high energy, normal weight -> no fatigue / overweight randomness
     defaults = dict(energy=24, max_energy=24, weight=20, vaccine=0, data_power=0,
-                    virus=0, strength=0, mood=0, obedience=0)
+                    virus=0, strength=0, mood=0, obedience=500)  # out-roll checkRefused
     defaults.update(kw)
     return Pet(num=-1, stage="Rookie", attribute=attribute, **defaults)
 
@@ -34,7 +34,7 @@ def test_constant_is_two():
 # ---- HP (Effort) drill -----------------------------------------------------
 
 def test_hp_success_builds_strength_and_obedience():
-    p = _trainee()
+    p = _trainee(obedience=0)    # apply_training is roll-free; watch the +1
     p.apply_training(2, 100, game="hp")
     assert p.strength == 1
     assert p.obedience == 1

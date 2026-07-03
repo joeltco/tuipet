@@ -69,6 +69,8 @@ class FeedPanel:
             if food_qty(self.pet, food) <= 0:
                 return None
             msg = self.pet.feed(food)
+            if self.pet.refused:                     # checkRefused blew the meal off entirely
+                return ("done", ("refused", food, msg))
             fed = self.pet.anim == "eat"
             if fed and food.get("can_dec"):          # Consumable.decQuantity (staples never dec)
                 left = self.pet.inventory.get(food["key"], 0) - 1

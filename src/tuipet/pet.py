@@ -75,6 +75,18 @@ SPOIL_MOOD_INC = 10                 # SpoilMoodInc
 SPOIL_OBEDIENCE_DEC = 10            # SpoilObedienceDec
 OBEDIENCE_ENTH_MOD = 6.0            # ObedienceEnthusiasmModCoefficient
 REFUSE_UNWELL_SICK = -10.0          # RefuseUnwellModSickFactor
+# checkRefused branch mods (config.csv col 1)
+REFUSE_MED_FACTOR = -20.0           # RefuseMedFactor (medicine tastes awful)
+REFUSE_DISLIKED_FOOD = -25.0        # RefuseDislikedFoodCoefficient (x hunger/stomach)
+REFUSE_FAV_STOMACH = 10.0           # RefuseFavModStomachCoefficient (x room left)
+REFUSE_HUNGER_MOD = -25.0           # RefuseHungerModCoefficient (x hunger/stomach)
+REFUSE_GLUTTON_HUNGER = -15.0       # RefuseGluttonHungerModCoefficient
+REFUSE_NOT_GLUTTON_HUNGER = -30.0   # RefuseNotGluttonHungerModCoefficient
+REFUSE_PERSONALITY_MATCH = 10.0     # RefuseFavMod*MatchFactor (food suits its temperament)
+REFUSE_PERSONALITY_UNMATCH = -10.0  # RefuseFavMod*UnmatchFactor
+EXERCISE_REFUSE_LOW_ENTH = 20.0     # ExerciseRefuseLowEnthusiasmFactor (fav attr, dispirited)
+BATTLE_DISPO_COEF = 10.0            # HighDispositionBattleObedienceDispositionCoefficient
+BATTLE_LOW_DISPO_FACTOR = 50.0      # LowDispositionBattleObedienceFactor (docile pets fight when told)
 DEPRESSED_OBEDIENCE = 50.0          # DepressedObedience
 SURR_HEALTH_COEF = 5.0              # SurrenderChanceHealthCoefficient
 SURR_DISP_COEF = 5.0                # HighDispositionSurrenderChanceDispositionCoefficient
@@ -359,7 +371,8 @@ class Pet:
     scold_flag: bool = False        # a bad deed is awaiting a scolding
     praise_window: int = 0          # lapses since the praise flag opened
     scold_window: int = 0
-    compliance: bool = True         # DVPet _compliance (a fair scold restores it)
+    compliance: bool = False        # DVPet _compliance (resetToEgg starts false; a fair scold earns it)
+    refused: bool = False           # DVPet _refused: the last command was blown off (one-shot)
     fatigue_length: float = 0.0     # DVPet _fatigueLength (game-min remaining; >0 == fatigued)
     sick_length: float = 0.0        # DVPet _sickLength (game-min until natural recovery)
     inj_length: float = 0.0         # DVPet _injLength (game-min until the injury heals)
@@ -1272,6 +1285,76 @@ class Pet:
         elif random.random() < 0.5:
             self._set_anim("surprise", 1.6)
 
+    def check_refused(self, food=None, attr=None, energy_change=0.0):
+        """PhysicalState.checkRefused: the obedience refusal roll.  Only a
+        NON-COMPLIANT pet (uncorrected misbehavior -- a fair scold restores
+        compliance) ever refuses: roll r in [0, RefuseChance) against
+        adjustedObedience + the branch's obey mods; past the line, the pet blows
+        you off (Refusing anim + the scold window opens)."""
+        self.refused = False
+        if self.dead or self.compliance:
+            return False
+        r = random.randrange(REFUSE_CHANCE)
+        base, mood_factor, obey_all = self._obedience_factors()
+        obed = self._adjusted_obedience()
+        refused = False
+        if energy_change and self.energy + math.ceil(energy_change * self.max_energy) < 0:
+            refused = True                       # can't afford the energy -> auto-refuse
+        elif food is not None:
+            cats = [c for c in (food.get("category") or "").split(";") if c]
+            fav = bool(self.favorite_food) and self.favorite_food in cats
+            if fav and self.hunger <= FULL_HUNGER:
+                return False                     # favourite food when hungry: never refused
+            obey = 0.0
+            if "Med" in cats:
+                obey += REFUSE_MED_FACTOR * (1 - base)
+            if self.disliked_food and self.disliked_food in cats:
+                obey += self.hunger / STOMACH_CAPACITY * REFUSE_DISLIKED_FOOD
+            elif fav:
+                obey += (1 - self.hunger / STOMACH_CAPACITY) * REFUSE_FAV_STOMACH
+            for trait, key in ((self.disposition, "t_disposition"),
+                               (self.restless, "t_restless"), (self.glutton, "t_glutton")):
+                fv = int(food.get(key, 0) or 0)
+                if fv != 0:
+                    obey += REFUSE_PERSONALITY_MATCH if fv == trait else REFUSE_PERSONALITY_UNMATCH
+            obey += (REFUSE_UNWELL_SICK if self.sick else 0.0) * (1 - base)
+            hcoef = (REFUSE_GLUTTON_HUNGER if self.glutton > 0
+                     else REFUSE_NOT_GLUTTON_HUNGER if self.glutton < 0 else REFUSE_HUNGER_MOD)
+            obey += self.hunger / STOMACH_CAPACITY * hcoef + mood_factor
+            refused = r >= obed + obey
+        elif attr is not None:
+            # training: the species' own attribute obeys while spirited; dispirited,
+            # even the favourite gets a +20 grace line (ExerciseRefuseLowEnthusiasm)
+            if attr == self.attribute:
+                if self.enthusiasm > 0:
+                    return False
+                refused = r >= obed + EXERCISE_REFUSE_LOW_ENTH + obey_all
+            else:
+                refused = r >= obed + obey_all
+        else:
+            # activity (battle/jogress): temperament shapes the temper -- a feisty
+            # (+1) pet refuses more, a docile (-1) one fights when told (+50 grace)
+            if self.disposition >= 0:
+                refused = r + self.disposition * BATTLE_DISPO_COEF >= obed + obey_all
+            else:
+                refused = r >= obed + BATTLE_LOW_DISPO_FACTOR + obey_all
+        if refused:
+            self.refused = True
+            self.scold_flag, self.scold_window = True, 0     # _scold = true: correct it!
+            self._set_anim("refuse", 1.5)
+        return refused
+
+    def check_compliant(self):
+        """PhysicalState.checkCompliant: obeying while compliant CONSUMES the
+        compliance (it covers one feed/jogress, not a lifetime pass) -- and losing
+        it fairly opens the praise window (setCompliance true->false sets _praise:
+        the pet did as it was told; reward it)."""
+        complied = self.compliance
+        if complied:
+            self._open_praise()
+        self.compliance = False
+        return complied
+
     def can_feed(self):
         """Guard for opening the feed menu (mirrors feed()'s own gates)."""
         if self.dead:
@@ -1295,6 +1378,10 @@ class Pet:
             return self._disturbed()
         foods = data.load_foods()
         food = food or (foods[0] if foods else {"name": "Meat", "hunger": 1, "weight": 4, "mood": 5})
+        refused = self.check_refused(food=food)              # applyFood: checkRefused ...
+        self.check_compliant()                               # ... then the compliance is spent
+        if refused:
+            return f"{self.name} refuses to eat!"
         fills = int(food.get("hunger", 0)) > 0
         # a hunger-food on a full stomach -> too full (a glutton eats past FULL_HUNGER)
         if fills and self.hunger >= FULL_HUNGER and self.glutton <= 0:
@@ -1412,6 +1499,8 @@ class Pet:
             return "It rests now — press N for a new egg."
         if self.stage in ("Egg", "Fresh"):
             return "Too young to battle."
+        if self.check_refused():                             # canBattle -> checkRefused
+            return f"{self.name} refuses to fight!"
         if self.asleep:
             return self._disturbed()
         if self.is_fatigued():
@@ -1769,6 +1858,7 @@ class Pet:
             self._set_enthusiasm(self.enthusiasm + CORRECT_SCOLD_ENTH)
             self.obedience += CORRECT_SCOLD_OBED[self._disposition()]
             self.scold_flag, self.scold_window, self.compliance = False, 0, True
+            self.refused = False                              # setRefused(false): back in line
             self._set_anim("angry", 1.8)
             return f"{self.name} takes the lesson to heart."
         self._set_enthusiasm(self.enthusiasm + SCOLD_ENTH)

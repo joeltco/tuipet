@@ -9,6 +9,7 @@ from tuipet.pet import Pet
 
 def _panel(game="vaccine"):
     p = Pet(num=1, stage="Rookie", vaccine=5, data_power=5, virus=5)
+    p.obedience = 500            # out-roll checkRefused: these tests exercise the drills
     panel = T.TrainingPanel(p)
     panel.gi = {"hp": 0, "vaccine": 1, "data": 2, "virus": 3}[game]
     return panel

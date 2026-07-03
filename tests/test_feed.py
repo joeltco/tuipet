@@ -13,6 +13,7 @@ from tuipet.feedscreen import FeedPanel, feedable, food_qty
 
 def _pet(**kw):
     p = Pet(num=1, stage="Rookie", attribute="Vaccine")
+    p.obedience = 500            # out-roll checkRefused: these tests exercise applyFood
     for k, v in kw.items():
         setattr(p, k, v)
     return p

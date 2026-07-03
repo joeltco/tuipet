@@ -217,6 +217,15 @@ class TrainingPanel:
 
     # ---- lifecycle ----
     def _start_game(self):
+        # onPreTrain -> canExercise -> checkRefused: a non-compliant pet may blow
+        # off the drill (its own attribute obeys while spirited)
+        # canExercise passes the drill's attribute; the HP drill is att=None ->
+        # the activity branch (canon: `att != None ? (null,att,...) : (null,null,true..)`)
+        attr = GAMES[self.gi][2] if GAMES[self.gi][2] in ("Vaccine", "Data", "Virus") else None
+        if self.pet.check_refused(attr=attr):
+            self.flash = f"{self.pet.name} refuses to train!"
+            self.sfx = "refuse"
+            return
         self.phase = "play"
         self._reset()
         gk = self.gkey

@@ -154,6 +154,11 @@ def load_foods():
                     # Fruit/Vegetable); ShowInInventory=false = not on the feed page
                     # (Med/Vitamin ride the heal flows instead)
                     "bm": int(row.get("BMGauge") or 0),
+                    # trait affinity (checkRefused personality mods): a food that
+                    # suits the pet's temperament goes down easier
+                    "t_glutton": int(row.get("Glutton") or 0),
+                    "t_restless": int(row.get("Restless") or 0),
+                    "t_disposition": int(row.get("Disposition") or 0),
                     "start": int(row.get("StartingQuantity") or 0),
                     "can_dec": (row.get("CanDec") or "").strip().lower() == "true",
                     "show": (row.get("ShowInInventory") or "").strip().upper() == "TRUE",

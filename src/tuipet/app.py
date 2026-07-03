@@ -1557,7 +1557,8 @@ class TuiPetApp(App):
         self._open_mode(feedscreen.FeedPanel(self.pet), self._after_feed)
 
     def _after_feed(self, result):
-        # result: ("fed"|"full", food, msg) from the picker; None on cancel
+        # result: ("fed"|"full"|"refused", food, msg); None on cancel.  A refusal
+        # plays no food fx -- the refuse pose (State.Refusing) is already on the pet
         if not result:
             self.repaint(); return
         outcome, food, msg = result
