@@ -189,9 +189,11 @@ def purchase_price(slot):
 
 
 def resell_price(e):
-    """getResellPrice: price / DefaultResellFactor; factor 0 = unsellable."""
+    """getResellPrice: price / DefaultResellFactor; factor 0 = unsellable.
+    (Canon re-audit 2026-07: canon has NO floor -- the old max(1, ...) was
+    not canon; no shipped consumable hits the sell-for-0 edge anyway.)"""
     econ = e if "resell_factor" in e else (entry(e.get("key", "")) or {})
     factor = econ.get("resell_factor", 0)
     if not factor:
         return 0
-    return max(1, econ.get("price", e.get("price", 0)) // factor)
+    return econ.get("price", e.get("price", 0)) // factor
