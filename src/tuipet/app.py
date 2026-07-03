@@ -248,9 +248,11 @@ GIFT_OUT = 40                                      # beats*2 ticks: centre x12 -
 GIFT_BACK = 46                                     # x-8 -> x15 (23px)
 GIFT_HOLD = 18                                     # the % (interval*45) settle before giftEnd
 COND_PITCH = COND_H + 1
-# Status sprites disabled for now (Joel): the post-cure medicine badge and the
-# misbehave/discipline "light bulb". Cosmetic-only; remove from this set to re-enable.
-_HIDDEN_STATUS_ICONS = {"st_medicine", "st_teach"}
+# Icon-audit 2026-07: the 2026-06-26 "for now" hide of st_medicine + st_teach is
+# LIFTED -- both badges carry real information now: the medicine indicator is the
+# double-dose poison warning (getMed), and teach flags a discipline window that
+# EXPIRES with teeth since v0.2.182.  Re-hide by adding keys back to this set.
+_HIDDEN_STATUS_ICONS = set()
 # DVPet draws the condition icons as a fixed VERTICAL COLUMN down the right edge of
 # the LCD (setLocX ~120), one fixed row each, every active one shown AT ONCE -- not a
 # single cycling slot.  Vertical order is DVPet's setLocY (top->bottom): sick(55),
