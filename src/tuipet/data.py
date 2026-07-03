@@ -554,7 +554,7 @@ def load_maps():
             "total_steps": int(z.get("TotalSteps") or 10000),
             "randoms": ent["randoms"], "bosses": ent["bosses"],
             # the zone's REAL town step-spans (WorldMap towns; rest + no encounters)
-            "towns": sorted(towns[t] for t in tids if t in towns),
+            "towns": sorted((*towns[t], t) for t in tids if t in towns),
             # the zone's discoverable loot pools (Zone.checkItem draws uniformly)
             "rand_items": [int(x) for x in (z.get("RandomItems") or "").split(":") if x.strip().isdigit()],
             "rand_foods": [int(x) for x in (z.get("RandomFood") or "").split(":") if x.strip().isdigit()],
@@ -759,6 +759,68 @@ def _default_econ(r):
         "sale_factor": i("DefaultSaleFactor", 1), "resell_factor": i("DefaultResellFactor", 0),
         "shop_unlocked": (r.get("ShopUnlocked") or "FALSE").strip().upper() == "TRUE",
     }
+
+
+@lru_cache(maxsize=1)
+def load_shop_overrides():
+    """shopConsumable.csv: the per-TOWN override table -- towns.csv references
+    these rows by ShopConsumableID to reprice/restock consumables locally."""
+    out = {}
+    path = os.path.join(_DATA, "shopConsumable.csv")
+    if not os.path.exists(path):
+        return out
+    for r in csv.DictReader(open(path)):
+        try:
+            sid = int(r["ShopConsumableID"])
+        except (KeyError, ValueError):
+            continue
+        def i(k, d):
+            try:
+                return int(r.get(k) or d)
+            except ValueError:
+                return d
+        out[sid] = {
+            "consumable_id": i("ConsumableID", -1),
+            "is_food": (r.get("IsFood") or "false").strip().lower() == "true",
+            "price": i("Price", 0),
+            "min_stock": i("minStock", 1), "max_stock": i("maxStock", 1),
+            "stock_chance": _shop_season4(r.get("stockChance(SpringSummerFallWinter)"), 100),
+            "time_avail": _shop_time4(r.get("DefaultTimeAvailable(HtH;SpringSummerFallWinter)")),
+            "must_stock": (r.get("MustStock") or "false").strip().lower() == "true",
+            "sale_chance": _shop_season4(r.get("SaleChance(SpringSummerFallWinter)"), 0),
+            "sale_factor": i("SaleFactor", 1), "resell_factor": i("ResellFactor", 0),
+        }
+    return out
+
+
+@lru_cache(maxsize=1)
+def load_towns():
+    """towns.csv: the full town records -- local shop overrides + inventory
+    sizes, sell permissions, and the town tournament (slots 0-23 are hourly
+    cups; slots past 23 -- where ForceTrophies pin -- are ALWAYS open)."""
+    out = {}
+    for r in csv.DictReader(open(os.path.join(_DATA, "towns.csv"))):
+        try:
+            tid = int(r["TownID"])
+        except (KeyError, ValueError):
+            continue
+        def ids(k):
+            return [int(x) for x in (r.get(k) or "").split(":") if x.strip().isdigit()]
+        forced = [int(x) for x in (r.get("ForceTrophies") or "").split(";")
+                  if x.strip().lstrip("-").isdigit() and int(x) >= 0]
+        out[tid] = {
+            "id": tid,
+            "items_override": ids("OverrideDefaultItemsSettings(ShopConsumableID)"),
+            "foods_override": ids("OverrideDefaultFoodSettings(ShopConsumableID)"),
+            "food_max": int(r.get("FoodShopInventoryMax") or 8),
+            "item_max": int(r.get("ItemShopInventoryMax") or 12),
+            "can_sell_items": (r.get("CanSellItems") or "false").strip().lower() == "true",
+            "can_sell_food": (r.get("CanSellFood") or "false").strip().lower() == "true",
+            "tournament_limit": int(r.get("TournamentLimit (0 to 23 are hours 0 to 23 \u2013 anything higher is always open)") or
+                                    r.get("TournamentLimit") or 0),
+            "forced_trophies": forced,
+        }
+    return out
 
 
 def _shop_econ_default():

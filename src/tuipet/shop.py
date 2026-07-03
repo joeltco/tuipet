@@ -88,6 +88,53 @@ def _roll(pet, is_food, check_sale=True, exclude=()):
     return slots
 
 
+def roll_town_shop(pet, town, is_food):
+    """Town.getFood/ItemShop: the home pool with the TOWN's shopConsumable.csv
+    override econ substituted per consumable (compareConsumables), rolled to
+    the town's own inventory size.  Transient: a fresh roll per visit."""
+    ov = data.load_shop_overrides()
+    by_cid = {}
+    for sid in town["foods_override" if is_food else "items_override"]:
+        o = ov.get(sid)
+        if o and o["is_food"] == is_food:
+            by_cid[o["consumable_id"]] = o
+    si, hr = _season_i(pet), _hour(pet)
+    want = "f:" if is_food else "i:"
+    pool = []
+    for e in data.home_shop_pool():
+        if not (e["key"].startswith(want) and e.get("shop_unlocked")
+                and data.item_is_functional(e)):
+            continue
+        o = by_cid.get(e["id"])
+        if o:
+            e = dict(e, **{k: o[k] for k in ("price", "min_stock", "max_stock",
+                                             "stock_chance", "time_avail", "must_stock",
+                                             "sale_chance", "sale_factor", "resell_factor")})
+        if e.get("price", 0) <= 0:
+            continue
+        t0, t1 = e["time_avail"][si]
+        if t0 <= hr <= t1:
+            pool.append(e)
+    mx = town["food_max" if is_food else "item_max"]
+    must = [e for e in pool if e["must_stock"]]
+    avail = [e for e in pool if not e["must_stock"]
+             and random.randrange(100) < e["stock_chance"][si]]
+    slots, seen = [], set()
+    for group in (must, avail):
+        random.shuffle(group)
+        for e in group:
+            if len(slots) >= mx:
+                break
+            if e["key"] in seen:
+                continue
+            seen.add(e["key"])
+            slot = _mk_slot(pet, e, True)
+            slot["price"] = e["price"]          # the town's own price rides the slot
+            slot["resell_factor"] = e["resell_factor"]
+            slots.append(slot)
+    return slots
+
+
 def open_shop(pet, is_food):
     """Entering the shop page: dailyChange reset, lazy roll, restock-on-open."""
     from .pet import DAY_LENGTH

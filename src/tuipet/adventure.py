@@ -152,7 +152,7 @@ class Adventure:
             self.pet.calories = CALORIE_LIMIT
 
     def _in_town(self, loc):
-        return any(lo <= loc <= hi for lo, hi in self.zone.get("towns", ()))
+        return any(lo <= loc <= hi for lo, hi, _t in self.zone.get("towns", ()))
 
     def _boss_loc(self, b):
         return b.get("location") or self.total_steps     # unplaced boss guards the gate
@@ -197,13 +197,13 @@ class Adventure:
                 return ("boss", b)
         # Towns at their REAL step-spans (towns.csv TownRange): entering one rests the
         # pet (adventure life + energy, WorldMap.step), and no encounters roll inside.
-        for lo, hi in self.zone.get("towns", ()):
+        for lo, hi, tid in self.zone.get("towns", ()):
             if lo not in self._rested and prev < lo <= self.location:
                 self._rested.add(lo)
                 self.life = MAX_LIFE
                 self.pet._set_energy(self.pet.max_energy)
                 self.last = "Reached a town -- rested (life + energy)."
-                return ("town", None)
+                return ("town", tid)
         if self.location >= self.total_steps:              # gate clear, path clear -> done
             return self._advance_or_finish()
         # Wild encounter (real chance formula); towns suppress it, and each random
@@ -295,7 +295,7 @@ class Adventure:
     def _apply_life_penalty(self):
         """WorldMap.applyLifePenalty: toClosestTown() -- retreat to the nearest town at
         or behind the pet (zone start when none), refill life.  Does NOT end the run."""
-        behind = [lo for lo, hi in self.zone.get("towns", ()) if lo <= self.location]
+        behind = [lo for lo, hi, _t in self.zone.get("towns", ()) if lo <= self.location]
         self.location = max(behind) if behind else 0
         self._rested.clear()
         self.life = MAX_LIFE

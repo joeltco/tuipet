@@ -3,6 +3,7 @@ from __future__ import annotations
 from . import data
 from .adventure import Adventure
 from .battlescreen import BattlePanel
+from .townscreen import TownPanel
 from .render import render_scene
 from . import grid
 
@@ -22,7 +23,9 @@ class AdventurePanel:
         self._pending = None
         self._travel_t = 0
         self.discovering = False    # DiscoverCall: pause for the investigate prompt
+        self.town_prompt = None     # a reached town's id: visit or walk on
         self.discovering = False    # DiscoverCall: pause for the investigate prompt
+        self.town_prompt = None     # a reached town's id: visit or walk on
 
     def anim(self):
         if self.sub is not None:
@@ -41,6 +44,8 @@ class AdventurePanel:
                 self.sub = BattlePanel(self.pet, ev[1])
             elif ev and ev[0] == "town":
                 self.sfx = "reward"          # reached the rest-town: life + energy restored
+                self.travelling = False
+                self.town_prompt = ev[1]     # its gates are open -- visit?
             elif ev and ev[0] == "refused":
                 self.travelling = False      # Refusing: travelSpeed 0 -- SPACE re-issues the walk
                 self.sfx = "refuse"
@@ -50,6 +55,13 @@ class AdventurePanel:
                 self.sfx = "reward"
 
     def key(self, k):
+        if isinstance(self.sub, TownPanel):
+            r = self.sub.key(k)
+            if r is not None and r[0] == "done":
+                self.sub = None
+                self.adv.last = "Back on the road."
+                self.travelling = True
+            return None
         if self.sub is not None:
             r = self.sub.key(k)
             if r is not None and r[0] == "done":
@@ -65,6 +77,15 @@ class AdventurePanel:
                 else:
                     self.adv.resolve(r[1].won, was_boss, enemy)
                 self.travelling = not self.adv.done
+            return None
+        if getattr(self, "town_prompt", None) is not None:
+            if k in ("enter", "y"):
+                self.sub = TownPanel(self.pet, self.town_prompt)
+                self.town_prompt = None
+            elif k in ("escape", "n", "space"):
+                self.town_prompt = None
+                self.adv.last = "Passed the town by."
+                self.travelling = True
             return None
         if getattr(self, "discovering", False):
             # Investigate_Validation: ENTER looks, ESC walks on
@@ -129,6 +150,11 @@ class AdventurePanel:
             out.append_text(menu.footer("investigate? ENTER yes  ESC no" if self.discovering
                                         else "travelling...   SPACE stop   ESC out"))
         else:
-            out.append_text(menu.footer("investigate? ENTER yes  ESC no" if self.discovering
-                                        else "stopped.   SPACE go   ESC out"))
+            if getattr(self, "town_prompt", None) is not None:
+                foot = "visit the town? ENTER yes  ESC no"
+            elif self.discovering:
+                foot = "investigate? ENTER yes  ESC no"
+            else:
+                foot = "stopped.   SPACE go   ESC out"
+            out.append_text(menu.footer(foot))
         return out

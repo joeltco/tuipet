@@ -112,6 +112,26 @@ def schedule(pet):
     return pet.tourney_schedule
 
 
+def town_schedule(pet, town):
+    """Town.getTrophies -> randTrophyIDs(season, [tournamentLimit], forced):
+    slots 0-23 are hourly cups; slots PAST 23 (where the forced trophies pin)
+    are ALWAYS open (getTourneyTime returns -1 -> never closed)."""
+    n = max(0, int(town.get("tournament_limit", 0)))
+    sched = _rand_trophy_ids(pet)[:min(n, HOME_LIMIT)]
+    while len(sched) < n:
+        sched.append(-1)
+    forced = [t for t in town.get("forced_trophies", []) if trophy_by_id(t)]
+    for i, tid in enumerate(forced):
+        if n - 1 - i >= 0:
+            sched[n - 1 - i] = tid
+    return sched
+
+
+def town_slot_open(pet, index):
+    """checkTourneyClosed with getTourneyTime: hourly for 0-23, open past 23."""
+    return index > 23 or index == _hour(pet)
+
+
 def open_now(pet):
     """The current game-hour's cup -- every other slot is closed
     (checkTourneyClosed: start hour != current hour)."""
