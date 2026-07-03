@@ -84,6 +84,30 @@ def render_scene(placements, cols, rows, on="#2b2e31", bg="#c6c9cc", overlay=Non
     return t
 
 
+def bitmap_text(rows, on, bg, pad_to=0):
+    """1-bit rows -> half-block Rich Text lines (square pixels).  The one
+    implementation behind every icon/badge mini-render (audit 2026-07: this
+    lived in three drifting copies)."""
+    from rich.text import Text
+    if not rows:
+        return []
+    w = max(len(r) for r in rows)
+    g = [r.ljust(w, "0") for r in rows]
+    if len(g) % 2:
+        g.append("0" * w)
+    out = []
+    for y in range(0, len(g), 2):
+        t = Text()
+        for x in range(w):
+            top, bot = g[y][x] == "1", g[y + 1][x] == "1"
+            ch = FULL if top and bot else UPPER if top else LOWER if bot else " "
+            t.append(ch, style=f"{on} on {bg}")
+        if pad_to and w < pad_to:
+            t.append(" " * (pad_to - w))
+        out.append(t)
+    return out
+
+
 def downsample(rows, f):
     """Box-downsample a 1-bit bitmap by integer factor f (for shrinking 3x icons)."""
     if not rows or f <= 1:

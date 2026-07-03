@@ -630,8 +630,37 @@ class Pet:
 
     # ---- per-tick simulation -------------------------------------------------
     def tick(self, dt):
+        """One game-minute of life.  Decomposed into ordered phases (audit
+        2026-07); each phase's body is verbatim from the old monolith, and the
+        early-return structure (egg / asleep / death) is explicit here."""
+        self._tick_clock(dt)
+        if self.dead:
+            return
+        self._tick_growth(dt)
+        if self.stage == "Egg":
+            self._tick_egg()
+            return
+        self._tick_recovery(dt)
+        self._tick_effect(dt)
+        if self.asleep:
+            self._tick_asleep(dt)
+            return
+        self._tick_mood_discipline(dt)
+        self._tick_hunger(dt)
+        self._tick_body(dt)
+        self._tick_sleep_pressure(dt)
+        if self._tick_mortality(dt):
+            return
+        if (self.anim in ("idle", "walk") and self.anim_ttl <= 0 and not self.poop
+                and not self.sick and random.random() < 0.03 * dt):
+            self._special_idle()
+        self._maybe_evolve()
+
+    def _tick_clock(self, dt):
+        """The world clock: hour rollover (tournament alarm) + weather -- these
+        run even over the grave."""
         hr0 = int((self.world_seconds % DAY_LENGTH) / DAY_LENGTH * 24)
-        self.world_seconds += dt          # the day/night clock runs even past death
+        self.world_seconds += dt
         hr1 = int((self.world_seconds % DAY_LENGTH) / DAY_LENGTH * 24)
         if hr1 != hr0 and not self.dead:
             self.tourney_alert = False    # a ring only lasts its cup's hour
@@ -641,9 +670,11 @@ class Pet:
                 # clear the alarm and raise TournamentAlert (the attention call)
                 self.tourney_alarm = -1
                 self.tourney_alert = True
-        self._update_weather(dt)          # ...and so does the weather, over the grave
-        if self.dead:
-            return
+        self._update_weather(dt)
+
+    def _tick_growth(self, dt):
+        """Aging + the ambient systems: X-decay, shop restock, toy interest,
+        the gift call, the mood record / birthday, the anim clock."""
         if self.x_antibody == "Temporary":          # a protoform fades if unused
             self.x_count -= dt
             if self.x_count <= 0:
@@ -679,96 +710,98 @@ class Pet:
             if self.anim_ttl <= 0:
                 self.anim = "sleep" if self.asleep else "idle"
 
-        if self.stage == "Egg":
-            if not self.hatching and self.stage_seconds >= self.EGG_DURATION:
-                self.hatching = True
-                self._hatch_t = 3.0
-                self._set_anim("hatch", 3.0)
-            # the 3s hatch is advanced at frame cadence (10 Hz) via advance_hatch();
-            # a 1 Hz countdown here would skip the crack frames (only 3 coarse steps).
-            return
+    def _tick_egg(self):
+        """Egg stage: only the hatch trigger (the 3s crack runs at frame cadence
+        via advance_hatch; a 1 Hz countdown here would skip the crack frames)."""
+        if not self.hatching and self.stage_seconds >= self.EGG_DURATION:
+            self.hatching = True
+            self._hatch_t = 3.0
+            self._set_anim("hatch", 3.0)
 
-        if self.stage != "Egg":
-            self._temperature_effects(dt)
-            self._track_time_pref(dt)
-            day = int(self.world_seconds // DAY_LENGTH)
-            if getattr(self, "_exercise_day", -1) != day:    # DVPet checkExerciseTime: daily reset
-                self._exercise_day = day
-                self.exercise_today = 0
-            _rec = dt * (GOOD_NUTR_RECOVERY_MULT if self.good_nutrition() else 1.0)  # well-fed heals faster
-            if self.fatigue_length > 0:                       # checkFatigueLapse: rest it off (even asleep)
-                self.fatigue_length = max(0.0, self.fatigue_length - _rec)
-            if self.sick_length > 0:                          # sickLapse: illness recovers in time
-                self.sick_length = max(0.0, self.sick_length - _rec)
-                if self.sick_length == 0:
-                    self.sick = False
-            if self.inj_length > 0:                           # injLapse: the injury heals over time
-                self.inj_length = max(0.0, self.inj_length - _rec)
-            if self.vitamin_lapse > 0:                        # vitaminLapse: protection wears off
-                self.vitamin_lapse = max(0.0, self.vitamin_lapse - dt)
-            if self.med_lapse > 0:                            # medLapse: medicine wears off (getMed icon)
-                self.med_lapse = max(0.0, self.med_lapse - dt)
-            if self.bandage_lapse > 0:                        # bandageLapse: bandage wears off (getBandage icon)
-                self.bandage_lapse = max(0.0, self.bandage_lapse - dt)
-        self._tick_effect(dt)
-        if self.asleep:
-            # lightsCall (DVPet): sleeping with the room light ON is neglect --
-            # one care mistake per sleep once the counter crosses the threshold.
-            if self.lights:
-                self._lights_t = getattr(self, "_lights_t", 0.0) + dt
-                if 0 <= self._lights_t >= LIGHTS_MISTAKE_SEC:
-                    self._lights_t = float("-inf")       # AfterMistakeMinutesPostponed: once/night
-                    self.care_mistakes += 1
-                    self.mistake_day += 1  # MistakeIncMissedDayChange
-            # DVPet sleep recovery: +SleepEnergyGain every SleepMinutesToEnergyGain
-            # (deep sleep only -- a nap restores just the jitter's scraps)
-            if self.nap:
-                self._sleep_e_t = 0.0                    # a nap earns only the jitter scraps
-            self._sleep_e_t = getattr(self, "_sleep_e_t", 0.0) + dt
-            if self._sleep_e_t >= 60 and not self.nap:   # SleepMinutesToEnergyGain
-                self._sleep_e_t = 0.0
-                self._set_energy(self.energy + getattr(self, "_sleep_energy_gain", 3))
-            # asleep enthusiasmLapse: spirit settles toward 0 while resting
-            self._enth_lapse_t = getattr(self, "_enth_lapse_t", 0.0) + dt
-            if self._enth_lapse_t >= 59:
-                self._enth_lapse_t = 0.0
-                if self.enthusiasm > 0:
-                    self._set_enthusiasm(self.enthusiasm - ENTHUSIASM_LAPSE_DEC)
-                elif self.enthusiasm < 0:
-                    self._set_enthusiasm(self.enthusiasm + ENTHUSIASM_LAPSE_INC)
-            # setAwakeLapse: +1/min with the restless jitter -- a restless
-            # sleeper skips ahead (with a scrap of bonus rest), a mellow one
-            # lies in; at the limit it's morning (the morning roll lives in _wake)
-            step = dt
-            r = random.randrange(MORE_SLEEP_CHANCE) + self.restless * AWAKE_RESTLESS_COEF
-            if r < 0:
-                step = 0.0
-            elif r > MORE_SLEEP_CHANCE - 1:
-                step += dt
-                self._set_energy(self.energy + (NAP_ENERGY_MIN if self.nap else BONUS_SLEEP_ENERGY))
-            if self.nap:
-                self.sleep_lapse += dt * self._sleep_inc()   # a nap only BORROWS the cycle
-            self.awake_lapse += step
-            if self.awake_lapse >= self.awake_limit:
-                self._wake(morning=not self.nap)
-            # death does not wait for morning: the mistake cap and old age
-            # apply asleep too (only the starvation clock freezes; audit 2026-07)
-            if self.care_mistakes >= 20 or self.injuries >= 20:
-                self._die(); return
-            if self.age_seconds >= self.lifespan:
-                self._die(); return
-            # startPoop: even asleep, a truly DESPERATE gauge (>= 2x max) goes --
-            # this must live in the sleep branch (the awake poop block below is
-            # unreachable while asleep; latent until the canon day bands landed)
-            self._poop_t = getattr(self, "_poop_t", 0) + dt
-            if self._poop_t >= self._poop_interval * 2:
-                self._poop_t = 0                 # gauge zeroed (DVPet poop())
-                self._do_poop(backlog=True)
-                self._set_anim("poop", 2.2)
-            return
+    def _tick_recovery(self, dt):
+        """Environment + the recovery lapses (they run asleep or awake)."""
+        self._temperature_effects(dt)
+        self._track_time_pref(dt)
+        day = int(self.world_seconds // DAY_LENGTH)
+        if getattr(self, "_exercise_day", -1) != day:    # DVPet checkExerciseTime: daily reset
+            self._exercise_day = day
+            self.exercise_today = 0
+        _rec = dt * (GOOD_NUTR_RECOVERY_MULT if self.good_nutrition() else 1.0)  # well-fed heals faster
+        if self.fatigue_length > 0:                       # checkFatigueLapse: rest it off (even asleep)
+            self.fatigue_length = max(0.0, self.fatigue_length - _rec)
+        if self.sick_length > 0:                          # sickLapse: illness recovers in time
+            self.sick_length = max(0.0, self.sick_length - _rec)
+            if self.sick_length == 0:
+                self.sick = False
+        if self.inj_length > 0:                           # injLapse: the injury heals over time
+            self.inj_length = max(0.0, self.inj_length - _rec)
+        if self.vitamin_lapse > 0:                        # vitaminLapse: protection wears off
+            self.vitamin_lapse = max(0.0, self.vitamin_lapse - dt)
+        if self.med_lapse > 0:                            # medLapse: medicine wears off (getMed icon)
+            self.med_lapse = max(0.0, self.med_lapse - dt)
+        if self.bandage_lapse > 0:                        # bandageLapse: bandage wears off (getBandage icon)
+            self.bandage_lapse = max(0.0, self.bandage_lapse - dt)
 
-        # DVPet has NO passive energy decay -- energy only drops from activity
-        # (exercise/battle/travel) and refills during sleep.
+    def _tick_asleep(self, dt):
+        """The sleep branch: lights neglect, deep-sleep regen, the awakeLapse
+        clock with the restless jitter, asleep death checks, desperate poop."""
+        # lightsCall (DVPet): sleeping with the room light ON is neglect --
+        # one care mistake per sleep once the counter crosses the threshold.
+        if self.lights:
+            self._lights_t = getattr(self, "_lights_t", 0.0) + dt
+            if 0 <= self._lights_t >= LIGHTS_MISTAKE_SEC:
+                self._lights_t = float("-inf")       # AfterMistakeMinutesPostponed: once/night
+                self.care_mistakes += 1
+                self.mistake_day += 1  # MistakeIncMissedDayChange
+        # DVPet sleep recovery: +SleepEnergyGain every SleepMinutesToEnergyGain
+        # (deep sleep only -- a nap restores just the jitter's scraps)
+        if self.nap:
+            self._sleep_e_t = 0.0                    # a nap earns only the jitter scraps
+        self._sleep_e_t = getattr(self, "_sleep_e_t", 0.0) + dt
+        if self._sleep_e_t >= 60 and not self.nap:   # SleepMinutesToEnergyGain
+            self._sleep_e_t = 0.0
+            self._set_energy(self.energy + getattr(self, "_sleep_energy_gain", 3))
+        # asleep enthusiasmLapse: spirit settles toward 0 while resting
+        self._enth_lapse_t = getattr(self, "_enth_lapse_t", 0.0) + dt
+        if self._enth_lapse_t >= 59:
+            self._enth_lapse_t = 0.0
+            if self.enthusiasm > 0:
+                self._set_enthusiasm(self.enthusiasm - ENTHUSIASM_LAPSE_DEC)
+            elif self.enthusiasm < 0:
+                self._set_enthusiasm(self.enthusiasm + ENTHUSIASM_LAPSE_INC)
+        # setAwakeLapse: +1/min with the restless jitter -- a restless
+        # sleeper skips ahead (with a scrap of bonus rest), a mellow one
+        # lies in; at the limit it's morning (the morning roll lives in _wake)
+        step = dt
+        r = random.randrange(MORE_SLEEP_CHANCE) + self.restless * AWAKE_RESTLESS_COEF
+        if r < 0:
+            step = 0.0
+        elif r > MORE_SLEEP_CHANCE - 1:
+            step += dt
+            self._set_energy(self.energy + (NAP_ENERGY_MIN if self.nap else BONUS_SLEEP_ENERGY))
+        if self.nap:
+            self.sleep_lapse += dt * self._sleep_inc()   # a nap only BORROWS the cycle
+        self.awake_lapse += step
+        if self.awake_lapse >= self.awake_limit:
+            self._wake(morning=not self.nap)
+        # death does not wait for morning: the mistake cap and old age
+        # apply asleep too (only the starvation clock freezes; audit 2026-07)
+        if self.care_mistakes >= 20 or self.injuries >= 20:
+            self._die(); return
+        if self.age_seconds >= self.lifespan:
+            self._die(); return
+        # startPoop: even asleep, a truly DESPERATE gauge (>= 2x max) goes --
+        # this must live in the sleep branch (the awake poop block below is
+        # unreachable while asleep; latent until the canon day bands landed)
+        self._poop_t = getattr(self, "_poop_t", 0) + dt
+        if self._poop_t >= self._poop_interval * 2:
+            self._poop_t = 0                 # gauge zeroed (DVPet poop())
+            self._do_poop(backlog=True)
+            self._set_anim("poop", 2.2)
+
+    def _tick_mood_discipline(self, dt):
+        """The mood lapse + the discipline windows.  (DVPet has NO passive
+        energy decay -- energy only moves via activity and sleep.)"""
         # DVPet mood lapse (~MoodLapseMin game-min): Happy drains, Unhappy recovers,
         # Neutral settles toward 0 (config *MoodLapse* values).
         self._mood_lapse_t = getattr(self, "_mood_lapse_t", 0.0) + dt
@@ -805,8 +838,10 @@ class Pet:
             # activities cost -3..-6, so under tuipet's ~60x clock |enthusiasm| pins at 10 and the drain
             # sticks at -20/lapse (active play is WORSE, driving enth to -10). It needs the real-time
             # clock to balance; DVPet numbers are NOT softened. Asleep decay (below) IS ported.
-        # hunger: the DVPet calorie buffer drains each lapse; emptying it drops a hunger
-        # heart (or logs a care mistake at zero), then refills for the next heart.
+
+    def _tick_hunger(self, dt):
+        """hunger: the DVPet calorie buffer drains each lapse; emptying it drops
+        a hunger heart (or logs a care mistake at zero), then refills."""
         self._cal_t = getattr(self, "_cal_t", 0.0) + dt
         if self._cal_t >= self._hunger_interval:
             self._cal_t = 0.0
@@ -831,6 +866,10 @@ class Pet:
                     # every further lapse (StarvationCalorieChange -> ActivityWeightChange)
                     self.weight = max(1, self.weight - STARVE_WEIGHT_DEC)
                 self.calories = CALORIE_LIMIT
+
+    def _tick_body(self, dt):
+        """The body's slow clocks: pooping, effort decay, nutrition decay, the
+        filth care-mistake, and filth/starvation sickness."""
         # pooping (DVPet poop(): relief mood bump, sheds weight, drops a sized pile)
         self._poop_t = getattr(self, "_poop_t", 0) + dt
         # (a sleeping pet held it above -- only the desperate 2x gauge goes at night)
@@ -876,11 +915,13 @@ class Pet:
                 and random.random() < 0.02 / self._phys().get("poop_sick_mult", 1.0) * dt \
                         * (GOOD_NUTR_SICK_MULT if self.good_nutrition() else 1.0):
             self._sicken()
-        # bedtime is a PRESSURE clock, not the sun (setSleepLapse): SleepLapseInc
-        # per game-min while awake; at the limit the pet drops off by itself --
-        # babies (inc 9) nap constantly, adults run a free ~24h rhythm.
-        # checkNap: LIGHTS OUT while awake starts a shallow nap right away
-        # (real sleep instead when the pressure is nearly full -- sleepNotNap)
+
+    def _tick_sleep_pressure(self, dt):
+        """bedtime is a PRESSURE clock, not the sun (setSleepLapse): SleepLapseInc
+        per game-min while awake; at the limit the pet drops off by itself --
+        babies (inc 9) nap constantly, adults run a free ~24h rhythm.
+        checkNap: LIGHTS OUT while awake starts a shallow nap right away
+        (real sleep instead when the pressure is nearly full -- sleepNotNap)."""
         if not self.asleep:
             self.sleep_lapse += dt * self._sleep_inc()
             if self.sleep_lapse >= self.sleep_limit:
@@ -898,15 +939,17 @@ class Pet:
                     self.awake_lapse = max(0.0, self.awake_limit - self.sleep_lapse)
                     self._set_anim("yawn", 1.8)
 
-        # DVPet discrete neglect-death triggers (config.csv): real abandonment is fatal,
-        # not merely a faster lifespan burn. Care mistakes + injuries are per-form (they
-        # reset on evolution); the starvation timer persists across evolutions.
+    def _tick_mortality(self, dt):
+        """DVPet discrete neglect-death triggers (config.csv): real abandonment
+        is fatal, not merely a faster lifespan burn.  Care mistakes + injuries
+        are per-form (reset on evolution); the starvation timer persists across
+        evolutions.  Returns True when the pet died this tick."""
         if self.care_mistakes >= 20 or self.injuries >= 20:   # MaxCareMistakes / MaxInjuries
-            self._die(); return
+            self._die(); return True
         if self.hunger == 0 and not self.asleep:              # awake-only, like hungerCall()
             self._starve_t = getattr(self, "_starve_t", 0.0) + dt
             if self._starve_t >= 12 * 3600:                   # empty hunger 12h -> death
-                self._die(); return
+                self._die(); return True
         elif self.hunger > 0:
             self._starve_t = 0.0
         self.habitat_record[self.habitat] = self.habitat_record.get(self.habitat, 0) + dt
@@ -923,13 +966,9 @@ class Pet:
         self.lifespan -= extra * dt * (GOOD_NUTR_LIFESPAN_COEF if self.good_nutrition() else 1.0)
         if self.age_seconds >= self.lifespan:
             self._die()
-            return
+            return True
+        return False
 
-        if (self.anim in ("idle", "walk") and self.anim_ttl <= 0 and not self.poop
-                and not self.sick and random.random() < 0.03 * dt):
-            self._special_idle()
-
-        self._maybe_evolve()
 
     @property
     def is_geriatric(self):
@@ -1166,6 +1205,29 @@ class Pet:
         self._set_anim("happy", 2.0)                  # the rescue ends in a cheer
         return old if targets else None
 
+    def _guard(self, asleep_blocks=True):
+        """The shared action gate: dead / still-an-egg / asleep (a sleeping pet
+        is DISTURBED, not served).  Returns the refusal string or None."""
+        if self.dead:
+            return "It rests now — press N for a new egg."
+        if self.stage == "Egg":
+            return "It is still an egg."
+        if asleep_blocks and self.asleep:
+            return self._disturbed()
+        return None
+
+    def _start_poop(self):
+        """DVPet startPoop: drop a sized pile (capped at the classic 4)."""
+        if self.poop < POOP_MAX_PILES:
+            self.poop += 1
+            self.poop_sizes.append(self._poop_size())
+
+    def _advance_bm(self, bm):
+        """applyFood/bad-med/bad-vitamin: the bowel gauge lurches BM units,
+        proportional to the species' own gauge size."""
+        self._poop_t = getattr(self, "_poop_t", 0) \
+            + self._poop_interval * bm / max(1, self._phys().get("poop_limit", 64))
+
     def _die(self):
         self.dead = True
         self.asleep = False
@@ -1396,7 +1458,10 @@ class Pet:
                     break
         return tier
 
-    def evolve_to(self, num):
+    def _become(self, num):
+        """The species-swap prologue shared by evolution and mode change:
+        identity, habitat, energy ceiling, X-antibody lock-in.  Returns the new
+        form's requirements record."""
         _, by_num = data.load_sprites()
         r = by_num[num]
         self.num, self.name = num, r["name"]
@@ -1408,8 +1473,12 @@ class Pet:
         self.max_energy = _req.get("max_energy", self.max_energy)
         self._sleep_energy_gain = _req.get("sleep_energy_gain", 3)
         self.energy = min(self.energy, self.max_energy)   # DVPet clamps to new max (no auto-refill)
-        if data.load_requirements().get(num, {}).get("xantibody", "None") in ("Induced", "Natural"):
+        if _req.get("xantibody", "None") in ("Induced", "Natural"):
             self._set_xantibody("Permanent")          # the X-Antibody locks in
+        return _req
+
+    def evolve_to(self, num):
+        _req = self._become(num)
         self.stage_seconds = 0.0
         # per-stage care record resets; the next stage's care decides the next form
         self.care_mistakes = self.overeat = self.disturb = 0
@@ -1445,19 +1514,7 @@ class Pet:
         extension -- the transform shares the life (digivolve skips all of it
         when SpecialEvol is Mode or reverting)."""
         cur = data.load_requirements().get(self.num, {})
-        _, by_num = data.load_sprites()
-        r = by_num[num]
-        self.num, self.name = num, r["name"]
-        self.stage, self.attribute = r["stage"], r["attribute"]
-        self.field = r.get("field", self.field)
-        self.element = r.get("element", self.element)
-        self._apply_natural_habitat()
-        _req = data.load_requirements().get(num, {})
-        self.max_energy = _req.get("max_energy", self.max_energy)
-        self._sleep_energy_gain = _req.get("sleep_energy_gain", 3)
-        self.energy = min(self.energy, self.max_energy)
-        if _req.get("xantibody", "None") in ("Induced", "Natural"):
-            self._set_xantibody("Permanent")
+        _req = self._become(num)
         self.weight = self._base_weight()
         if subtract_current:            # revert: un-apply the Mode form's changes
             self.vaccine -= cur.get("vaccine_change", 0)
@@ -1821,12 +1878,8 @@ class Pet:
 
     def can_feed(self):
         """Guard for opening the feed menu (mirrors feed()'s own gates)."""
-        if self.dead:
-            return "It rests now — press N for a new egg."
-        if self.stage == "Egg":
-            return "It is still an egg."
-        if self.asleep:
-            return self._disturbed()
+        if (_g := self._guard()) is not None:
+            return _g
         return None
 
     def feed(self, food=None):
@@ -1834,12 +1887,8 @@ class Pet:
         scaled by DVPet's fullness modifier.  A hunger-food (Meat) refuses a full
         stomach; a strength-food (Protein/Vitamin, hunger 0) never fills, so it
         builds strength/DP even on a full pet -- the classic Meat/Protein split."""
-        if self.dead:
-            return "It rests now — press N for a new egg."
-        if self.stage == "Egg":
-            return "It is still an egg."
-        if self.asleep:
-            return self._disturbed()
+        if (_g := self._guard()) is not None:
+            return _g
         foods = data.load_foods()
         food = food or (foods[0] if foods else {"name": "Meat", "hunger": 1, "weight": 4, "mood": 5})
         self._last_meal_starving = self.hunger == 0          # eat(): wolfed down (decided PRE-meal)
@@ -1893,12 +1942,8 @@ class Pet:
         return f"Fed {food['name']}.{tag}"
 
     def can_train(self):
-        if self.dead:
-            return "It rests now — press N for a new egg."
-        if self.stage == "Egg":
-            return "It is still an egg."
-        if self.asleep:
-            return self._disturbed()
+        if (_g := self._guard()) is not None:
+            return _g
         if self.is_fatigued():
             self._set_anim("exhausted", 1.2)
             return "Too fatigued — let it rest."
@@ -2270,9 +2315,7 @@ class Pet:
         self._set_mood(self.mood + WORSE_MALADY_MOOD_DEC)
         self._set_enthusiasm(self.enthusiasm + SICK_ENTH_CHANGE)  # WorseSickEnthusiasmChange == -1
         self.sick_length += SICK_LAPSE_MIN                        # setSickLength(_sickLength + 1) = +1 lapse
-        if self.poop < POOP_MAX_PILES:                           # checkWorseSick -> startPoop()
-            self.poop += 1
-            self.poop_sizes.append(self._poop_size())
+        self._start_poop()
 
     def _injure(self):
         """PhysicalState.injure: take an injury for MinInjLength..MaxInjLength recovery
@@ -2304,15 +2347,12 @@ class Pet:
             self.mistake_day += 1                            # BadVitaminMissedDayChange
             if self.sick and random.randrange(100) < VITAMIN_WORSE_SICK_CHANCE:
                 self._worsen_sick()
-            self._poop_t = getattr(self, "_poop_t", 0) \
-                + self._poop_interval * BAD_VITAMIN_BM_INC / max(1, self._phys().get("poop_limit", 64))
+            self._advance_bm(BAD_VITAMIN_BM_INC)
             self._set_mood(self.mood - BAD_VITAMIN_MOOD_DEC)
             self.lifespan = max(0.0, self.lifespan - BAD_VITAMIN_LIFE_DEC)
             if not self.sick and random.randrange(REFUSE_CHANCE) < VITAMIN_OVERFED_SICK_CHANCE:
                 self._sicken()                               # vitaminOverfedSickChance
-            if self.poop < POOP_MAX_PILES:                   # startPoop
-                self.poop += 1
-                self.poop_sizes.append(self._poop_size())
+            self._start_poop()
             self._set_anim("refuse", 1.5)                    # Bad_Health_Jeering
         self.vitamin_lapse = VITAMIN_HOURS
 
@@ -2357,12 +2397,8 @@ class Pet:
         """PhysicalState.praise: cheering the pet always lifts its mood; doing so inside
         an open praise window trains obedience, but praising while it is misbehaving (a
         scold window is open) spoils it instead."""
-        if self.dead:
-            return "It rests now — press N for a new egg."
-        if self.stage == "Egg":
-            return "It is still an egg."
-        if self.asleep:
-            return self._disturbed()
+        if (_g := self._guard()) is not None:
+            return _g
         self._set_mood(self.mood + (PRAISE_LOW_DISP_MOOD_INC if self._disposition() < 0
                                     else PRAISE_HIGH_DISP_MOOD_INC))
         if not self.compliance:
@@ -2386,12 +2422,8 @@ class Pet:
         """PhysicalState.scold: a scolding nudges obedience up and mood down (more so for
         a low-obedience pet); a well-timed scold (an open scold window) corrects it, while
         scolding a pet that did nothing wrong (an open praise window) is unfair."""
-        if self.dead:
-            return "It rests now — press N for a new egg."
-        if self.stage == "Egg":
-            return "It is still an egg."
-        if self.asleep:
-            return self._disturbed()
+        if (_g := self._guard()) is not None:
+            return _g
         self.obedience += SCOLD_OBED_INC
         self._set_mood(self.mood - (SCOLD_LOW_OBED_MOOD_DEC if self.obedience < SCOLD_HIGH_OBED_MOOD
                                     else SCOLD_HIGH_OBED_MOOD_DEC))
@@ -2414,12 +2446,8 @@ class Pet:
         return f"You scold {self.name}."
 
     def clean(self):
-        if self.dead:
-            return "It rests now — press N for a new egg."
-        if self.stage == "Egg":
-            return "It is still an egg."
-        if self.asleep:
-            return self._disturbed()
+        if (_g := self._guard()) is not None:
+            return _g
         if not self.poop:
             return "Nothing to clean."
         n, self.poop = self.poop, 0
@@ -2433,12 +2461,8 @@ class Pet:
         (feedMed), an injured one gets the Bandage (applyBandage).  Treatment is
         INCREMENTAL -- each dose shortens the spell by its CureLapse/HealLapse
         (-2 lapses); the instant cure is the shop's Elixir (Cured=TRUE, 2000b)."""
-        if self.dead:
-            return "It rests now — press N for a new egg."
-        if self.stage == "Egg":
-            return "It is still an egg."
-        if self.asleep:
-            return self._disturbed()
+        if (_g := self._guard()) is not None:
+            return _g
         if self.sick:
             return self._feed_med()
         if self.is_injured():
@@ -2457,11 +2481,8 @@ class Pet:
         if self.med_lapse > 0:                               # getMed(): double dose
             self.mistake_day += 1                            # BadMedMissedDayChange
             self.lifespan = max(0.0, self.lifespan - BAD_MED_LIFE_DEC)
-            self._poop_t = getattr(self, "_poop_t", 0) \
-                + self._poop_interval * BAD_MED_BM_INC / max(1, self._phys().get("poop_limit", 64))
-            if self.poop < POOP_MAX_PILES:                   # startPoop: it comes right up
-                self.poop += 1
-                self.poop_sizes.append(self._poop_size())
+            self._advance_bm(BAD_MED_BM_INC)
+            self._start_poop()
             self._set_anim("refuse", 1.5)                    # Bad_Health_Jeering
             return "A double dose — that was poison!"
         self._set_mood(self.mood + int(med.get("mood", -10)))          # it tastes awful
@@ -2501,10 +2522,8 @@ class Pet:
     def toggle_lights(self):
         """The lights button (DVPet setLights): toggles the room light ONLY. The pet
         sleeps and wakes on its own schedule -- this does not force sleep or wake."""
-        if self.dead:
-            return "It rests now — press N for a new egg."
-        if self.stage == "Egg":
-            return "It is still an egg."
+        if (_g := self._guard(asleep_blocks=False)) is not None:
+            return _g
         self.lights = not self.lights
         if self.lights and self.asleep and self.nap:
             # lightSwitch: lights ON rouses a NAPPING pet (deep sleep ignores it;
@@ -2516,12 +2535,8 @@ class Pet:
         return "Lights off." if not self.lights else "Lights on."
 
     def play(self):
-        if self.dead:
-            return "It rests now — press N for a new egg."
-        if self.stage == "Egg":
-            return "It is still an egg."
-        if self.asleep:
-            return self._disturbed()
+        if (_g := self._guard()) is not None:
+            return _g
         # tuipet's Play button maps onto PhysicalState.spoil(): setMood(+SpoilMoodInc)
         # AND setObedience(-SpoilObedienceDec) -- a real tradeoff (happier now, but the
         # pet gets cheekier).  The animation is DVPet's jumping()/playing(): the pet
@@ -2657,10 +2672,8 @@ class Pet:
             return "?"
         if not data.item_is_functional(e):
             return f"{e['name']} has no use yet."   # action-item whose system is unbuilt
-        if self.dead:
-            return "It rests now — press N for a new egg."
-        if self.stage == "Egg":
-            return "It is still an egg."
+        if (_g := self._guard(asleep_blocks=False)) is not None:
+            return _g
         self.inventory[key] -= 1
         if self.inventory[key] <= 0:
             del self.inventory[key]

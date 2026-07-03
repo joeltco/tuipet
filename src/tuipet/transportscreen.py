@@ -68,10 +68,7 @@ class TransportPanel:
                           f"at {self.pet.adv_map + 1}-{self.pet.adv_zone + 1}")
         out.append_text(menu.note(self.name))
         out.append_text(menu.blanks(1))
-        VIS = 6
-        lo = max(0, min(self.cursor - VIS // 2, len(self.options) - VIS))
-        for i in range(lo, min(lo + VIS, len(self.options))):
-            out.append_text(menu.row(self.options[i][0], i == self.cursor))
-        out.append_text(menu.blanks(VIS - min(VIS, len(self.options))))
+        self.cursor = menu.list_window(out, self.options, self.cursor, 6,
+                                       lambda o, i: o[0])
         out.append_text(menu.footer("↑↓ pick   ENTER warp   ESC cancel"))
         return out

@@ -16,7 +16,7 @@ COLS, ROWS = 40, 7
 FIGHT_ROWS = 8
 
 
-class TournamentPanel:
+class TournamentPanel(menu.SubHost):
     def __init__(self, pet):
         self.pet = pet
         self.frame_i = 0
@@ -28,10 +28,7 @@ class TournamentPanel:
         self.phase = "select"
 
     def anim(self):
-        if self.sub is not None:
-            self.sub.anim()
-            self.sfx = getattr(self.sub, "sfx", None)   # bubble nested battle sfx up to on_frame's drain
-            self.sub.sfx = None
+        if self.sub_anim():          # SubHost: delegate + sfx bubble
             return
         self.frame_i += 1
 
@@ -99,21 +96,17 @@ class TournamentPanel:
         if self.phase == "select":
             hour = tournament._hour(self.pet)
             out = menu.header("CUP", "%s %02d:00" % (self.pet.season, hour))
-            n = len(self.sched)
-            vis = 5
-            lo = max(0, min(self.cursor - vis // 2, n - vis))
-            shown = 0
-            for i in range(lo, min(lo + vis, n)):
-                tr = tournament.trophy_by_id(self.sched[i]) if self.sched[i] >= 0 else None
-                name = tournament.trophy_label(tr)[:22] if tr else "—"
+
+            def fmt(tid, i):
+                tr = tournament.trophy_by_id(tid) if tid >= 0 else None
+                name = tournament.trophy_label(tr)[:22] if tr else "\u2014"
                 extra = " +item" if (tr and tr["item"] >= 0) else ""
-                mark = "» OPEN" if i == hour else ""
+                mark = "\u00bb OPEN" if i == hour else ""
                 if tr and self.pet.tourney_alarm == tr["id"]:
-                    mark = (mark + " ♦alarm").strip()
-                label = "%02dh %-22s%s %s" % (i, name, extra, mark)
-                out.append_text(menu.row(label, i == self.cursor))
-                shown += 1
-            out.append_text(menu.blanks(vis - shown))
+                    mark = (mark + " \u2666alarm").strip()
+                return "%02dh %-22s%s %s" % (i, name, extra, mark)
+
+            self.cursor = menu.list_window(out, self.sched, self.cursor, 5, fmt)
             out.append_text(menu.note(self.msg))
             out.append_text(menu.footer("↑↓ browse ENTER enter A alarm ESC out"))
             return out

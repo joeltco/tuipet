@@ -55,11 +55,8 @@ class HabitatPanel:
         atxt, astyle = self._aff_parts(sel)
         out.append(atxt + "\n", style=astyle)
         out.append(f"  {climate}\n", style=INK)
-        vis = 5
-        lo = max(0, min(self.cursor - vis // 2, len(self.rows) - vis))
-        shown = 0
-        for i in range(lo, min(lo + vis, len(self.rows))):
-            h = self.rows[i]
+
+        def fmt(h, i):
             if h["id"] == self.pet.habitat:
                 tag = chr(0x25CF) + " here"
             elif h["id"] in self.pet.habitats:
@@ -67,11 +64,10 @@ class HabitatPanel:
             else:
                 tag = f"{h['price']}b"
             a = self._aff(h)
-            amark = (chr(0x2665) if a > 0 else (chr(0x2716) if a < 0 else "·"))
-            label = f"{h['name']:<14}{tag:>7} {amark}"
-            out.append_text(menu.row(label, i == self.cursor))
-            shown += 1
-        out.append_text(menu.blanks(vis - shown))
+            amark = (chr(0x2665) if a > 0 else (chr(0x2716) if a < 0 else "\u00b7"))
+            return f"{h['name']:<14}{tag:>7} {amark}"
+
+        self.cursor = menu.list_window(out, self.rows, self.cursor, 5, fmt)
         out.append_text(menu.note(self.msg))
         out.append_text(menu.footer("↑↓  ENTER buy/move  ESC out"))
         return out

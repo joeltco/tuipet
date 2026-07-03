@@ -93,13 +93,9 @@ class JogressPanel:
                              COLS, ROWS, LCD_ON, LCD_BG)
         out.append_text(scene)
         out.append("\n")
-        lo = max(0, min(self.cursor - VISIBLE // 2, len(self.options) - VISIBLE))
-        shown = 0
-        for i in range(lo, min(lo + VISIBLE, len(self.options))):
-            o = self.options[i]
-            out.append_text(menu.row(f"+{o['partner_name'][:10]} = {o['name'][:12]}({o['attribute'][:2]})", i == self.cursor))
-            shown += 1
-        out.append_text(menu.blanks(VISIBLE - shown))
+        self.cursor = menu.list_window(
+            out, self.options, self.cursor, VISIBLE,
+            lambda o, i: f"+{o['partner_name'][:10]} = {o['name'][:12]}({o['attribute'][:2]})")
         out.append_text(menu.footer("↑↓ pick   ENTER fuse   ESC out"))
         return out
 

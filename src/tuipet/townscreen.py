@@ -16,7 +16,7 @@ _MENU = (("food", "Food shop"), ("items", "Item shop"), ("sell", "Sell"),
          ("cups", "Tournament"), ("leave", "Leave town"))
 
 
-class TownPanel:
+class TownPanel(menu.SubHost):
     def __init__(self, pet, town_id):
         self.pet = pet
         self.town = data.load_towns().get(town_id) or {"id": town_id, "items_override": [],
@@ -36,10 +36,7 @@ class TownPanel:
 
     # ---- plumbing ----
     def anim(self):
-        if self.sub is not None:
-            self.sub.anim()
-            self.sfx = getattr(self.sub, "sfx", None)
-            self.sub.sfx = None
+        if self.sub_anim():          # SubHost: delegate + sfx bubble
             return
         self.frame_i += 1
 
@@ -171,35 +168,28 @@ class TownPanel:
             out.append_text(menu.footer("SPACE fight   ESC forfeit"))
             return out
         rows = self._rows()
-        n = len(rows)
-        self.cursor = min(self.cursor, max(0, n - 1))
         out = menu.header(f"TOWN {self.town['id']}", f"{p.bits}b")
-        vis = 5
-        lo = max(0, min(self.cursor - vis // 2, n - vis))
-        shown = 0
-        for i in range(lo, min(lo + vis, n)):
-            r = rows[i]
+
+        def fmt(r, i):
             if self.phase == "menu":
-                label = r[1]
-            elif self.phase in ("food", "items"):
+                return r[1]
+            if self.phase in ("food", "items"):
                 e = shop.entry(r["key"]) or {"name": "?"}
                 price = r.get("sale") or r.get("price", 0)
                 qty = "OUT" if r.get("stock", 0) <= 0 else "x%d" % r["stock"]
-                label = "%-18s %4s%s %5db" % (e["name"][:18], qty,
-                                              "*" if r.get("sale") else " ", price)
-            elif self.phase == "sell":
-                e = data.consumable_by_key(r) or {"name": "?", "key": r}
+                return "%-18s %4s%s %5db" % (e["name"][:18], qty,
+                                             "*" if r.get("sale") else " ", price)
+            if self.phase == "sell":
+                e = data.consumable_by_key(r) or {"name": "?"}
                 val = shop.resell_price(dict(e, key=r, **self._town_econ(dict(e, key=r))))
-                label = "%-18s x%-2d  %4db" % (e["name"][:18], p.inventory.get(r, 0), val)
-            else:                                    # cups
-                tr = tournament.trophy_by_id(r) if r >= 0 else None
-                nm = tournament.trophy_label(tr)[:20] if tr else "—"
-                mark = ("» OPEN" if tournament.town_slot_open(p, i) and tr else
-                        ("%02dh" % i if i <= 23 else ""))
-                label = "%-22s %s" % (nm, mark)
-            out.append_text(menu.row(label, i == self.cursor))
-            shown += 1
-        out.append_text(menu.blanks(vis - shown))
+                return "%-18s x%-2d  %4db" % (e["name"][:18], p.inventory.get(r, 0), val)
+            tr = tournament.trophy_by_id(r) if r >= 0 else None      # cups
+            nm = tournament.trophy_label(tr)[:20] if tr else "\u2014"
+            mark = ("\u00bb OPEN" if tournament.town_slot_open(p, i) and tr else
+                    ("%02dh" % i if i <= 23 else ""))
+            return "%-22s %s" % (nm, mark)
+
+        self.cursor = menu.list_window(out, rows, self.cursor, 5, fmt)
         out.append_text(menu.note(self.msg))
         out.append_text(menu.footer("↑↓ pick  ENTER go  ESC back"))
         return out

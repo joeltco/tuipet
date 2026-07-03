@@ -167,15 +167,10 @@ class ShopPanel:
         w = max((len(r) for r in bm), default=0)
         if not w:
             return blank
-        if len(bm) % 2:
-            bm.append("0" * w)
-        lines = []
-        for cy in range(0, len(bm), 2):
-            t, b = bm[cy].ljust(w, "0"), bm[cy + 1].ljust(w, "0")
-            seg = "".join("█" if (t[x] == "1" and b[x] == "1") else
-                          ("▀" if t[x] == "1" else ("▄" if b[x] == "1" else " "))
-                          for x in range(w))
-            lines.append(seg.ljust(IC_W))      # w <= IC_W (factor guarantees it) -> pad, never cut
+        from .render import bitmap_text
+        from .theme import LCD_ON, LCD_BG
+        lines = [t.plain.ljust(IC_W)           # w <= IC_W (factor guarantees it) -> pad, never cut
+                 for t in bitmap_text(bm, LCD_ON, LCD_BG)]
         return (lines + blank)[:IC_ROWS]
 
     # ---- render ----
@@ -221,27 +216,20 @@ class ShopPanel:
             out.append_text(menu.blanks(IC_ROWS))
 
         # item list for this tab
-        vis = 3
-        if not rows:
-            if self._tabs()[self.tab] == "egg":
-                empty = "(no eggs to buy — P for a password)"
-            else:
-                empty = "(shelves empty — try tomorrow)" if self.mode == "shop" else "(none owned)"
-            out.append_text(menu.row(empty)); shown = 1
+        if self._tabs()[self.tab] == "egg":
+            empty = "(no eggs to buy \u2014 P for a password)"
         else:
-            lo = max(0, min(self.cursor - vis // 2, n - vis))
-            shown = 0
-            for i in range(lo, min(lo + vis, n)):
-                e = rows[i]
-                if self.mode == "shop":
-                    price = e.get("sale") or e.get("price", 0)
-                    qty = "OUT" if e.get("stock", 0) <= 0 else "x%d" % e["stock"]
-                    tag = "*" if e.get("sale") else " "
-                    label = "%-18s %4s%s %5db" % (e["name"][:18], qty, tag, price)
-                else:
-                    label = "x%-2d %-26s" % (self.pet.inventory.get(e["key"], 0), e["name"][:26])
-                out.append_text(menu.row(label, i == self.cursor)); shown += 1
-        out.append_text(menu.blanks(vis - shown))
+            empty = "(shelves empty \u2014 try tomorrow)" if self.mode == "shop" else "(none owned)"
+
+        def fmt(e, i):
+            if self.mode == "shop":
+                price = e.get("sale") or e.get("price", 0)
+                qty = "OUT" if e.get("stock", 0) <= 0 else "x%d" % e["stock"]
+                tag = "*" if e.get("sale") else " "
+                return "%-18s %4s%s %5db" % (e["name"][:18], qty, tag, price)
+            return "x%-2d %-26s" % (self.pet.inventory.get(e["key"], 0), e["name"][:26])
+
+        self.cursor = menu.list_window(out, rows, self.cursor, 3, fmt, empty=empty)
         out.append_text(menu.note(self.msg))
         if self.mode == "shop":
             foot = "←→ tab ↑↓ ENTER buy P password TAB bag" if tabs[self.tab] == "egg" \

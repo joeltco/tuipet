@@ -48,6 +48,12 @@ from . import theme
 from .theme import LCD_ON, LCD_BG, PHASE_PALETTE, SIL_DAY, SIL_NIGHT
 SCREEN_COLS, SCREEN_ROWS = 40, 12
 SPRITE_W = 16                                   # native creature sprite width
+PET_BASE_X = (SCREEN_COLS - SPRITE_W) // 2      # the fx painter's centred-pet origin
+
+
+class _FxCtx:
+    """Mutable per-frame paint context shared by the _fxk_* painters."""
+    __slots__ = ("rows", "overlay", "xshift", "yshift", "bg", "bgimg", "px_h")
 
 import re as _re
 # navigation keys: pressing one in a sub-screen plays the scroll blip (unless the
@@ -356,9 +362,9 @@ class Screen(Static):
             elif w == "Cloudy":
                 bg = _scale_hex(bg, 0.9)
         wf = self.frame_i // 4                  # weather/effect overlays keep their ~0.4s cadence
-        overlay = (_weather_overlay(pet.weather, wf, SCREEN_COLS, SCREEN_ROWS * 2)
-                   + _effect_overlay(pet, wf, SCREEN_COLS, SCREEN_ROWS * 2, tick=self.frame_i))
-        if pet.dead:                           # a grave marker
+        if pet.dead:                           # a grave marker (the live path builds its own overlay below)
+            overlay = (_weather_overlay(pet.weather, wf, SCREEN_COLS, SCREEN_ROWS * 2)
+                       + _effect_overlay(pet, wf, SCREEN_COLS, SCREEN_ROWS * 2, tick=self.frame_i))
             self.update(render_screen(GRAVESTONE, SCREEN_COLS, SCREEN_ROWS, on, bg, overlay=overlay, bgimg=bgimg))
             return
         if pet.num == -1:                      # egg
@@ -411,14 +417,14 @@ class Screen(Static):
         if pet.poop:                       # keep the pet clear of the filth row in EVERY state
             poop_edge = _filth_right(pet.poop)            # x just past the rightmost pile slot (sleep/sick
             #                                               bypass the roamer bound and would
-            base = (SCREEN_COLS - SPRITE_W) // 2
+            base = PET_BASE_X
             lo = poop_edge - base                         # min shift to clear the piles (REAL edge, not padded)
             cap = (grid.X1 - SPRITE_W) - base             # stay inside the grid's right edge
             xshift = min(max(xshift, lo), max(cap, 0))    # clear poop on the left; emote follows the pet
         # DVPet adjustEmotionLabel: emote/'!' track the pet's final x, so rebuild the overlay now
         overlay = (_weather_overlay(pet.weather, wf, SCREEN_COLS, SCREEN_ROWS * 2)
                    + _effect_overlay(pet, wf, SCREEN_COLS, SCREEN_ROWS * 2, tick=self.frame_i,
-                                     pet_right=(SCREEN_COLS - SPRITE_W) // 2 + xshift + SPRITE_W))
+                                     pet_right=PET_BASE_X + xshift + SPRITE_W))
         if not pet.lights:                 # lights off: DVPet's lightsOff is a fully-opaque black
             rows, xshift, mirror = [], 0, False   # cover -> the pet is hidden; only black (+ Zzz) shows
         self.update(render_screen(rows, SCREEN_COLS, SCREEN_ROWS, on, bg,
@@ -561,31 +567,37 @@ class Screen(Static):
         if not n:
             return [], 0
         pts = _filth_pts(pet, tick, count=n)
-        base = (SCREEN_COLS - SPRITE_W) // 2
+        base = PET_BASE_X
         cap = max(0, grid.X1 - SPRITE_W - base)             # stay inside the grid's right edge
         return pts, min(max(0, _filth_right(n) - base), cap)
 
     def _paint_fx(self, pet):
+        """The care-fx painter, decomposed (audit 2026-07): a shared context is
+        pre-loaded (default pose, weather overlay, the cross-kind FILTH prelude),
+        then the kind's own painter (_fxk_<kind>) mutates it.  Bodies verbatim
+        from the old 210-line chain; behavior pinned by the fx golden."""
         fx = self.fx
         on, bg = PHASE_PALETTE.get(pet.day_phase, (LCD_ON, LCD_BG))
         bgimg = self._background(pet)
         if bgimg:
             on = SIL_NIGHT if pet.day_phase == "night" else SIL_DAY
-        px_h = SCREEN_ROWS * 2
         step = fx["step"]
-        # only clean/dying rely on this default pose; eat/cheer/spit/etc branches
-        # override `rows` unconditionally below (dead entries removed, audit 2026-07)
+        c = _FxCtx()
+        c.px_h = SCREEN_ROWS * 2
+        c.bg, c.bgimg = bg, bgimg
+        # only clean/dying rely on this default pose; the kind painters override
+        # `rows` unconditionally otherwise
         pose = {"clean": "idle", "dying": "exhausted"}.get(fx["kind"], "idle")
-        rows = self._pose_rows(pet, pose, step // 2)
-        overlay = _weather_overlay(pet.weather, self.frame_i // 4, SCREEN_COLS, px_h)   # paint()'s 0.4s cadence
-        xshift = 0
-        yshift = 0
+        c.rows = self._pose_rows(pet, pose, step // 2)
+        c.overlay = _weather_overlay(pet.weather, self.frame_i // 4, SCREEN_COLS, c.px_h)   # paint()'s 0.4s cadence
+        c.xshift = 0
+        c.yshift = 0
         if fx["kind"] in ("eat", "cheer", "jeer", "spit"):
             # DVPet checkFilth runs inside these anims: piles stay visible and the
             # pet (and its food) stands clear of them.
             filth_pts, filth_clear = self._fx_filth(pet, self.frame_i)
-            overlay += filth_pts
-            xshift = filth_clear
+            c.overlay += filth_pts
+            c.xshift = filth_clear
         elif fx["kind"] == "poop":
             # DVPet poop(): squat (+4, MIRRORED) clear of the old piles, net-zero
             # sway every 3 ticks; the new pile lands at t18 with the size-keyed
@@ -593,191 +605,206 @@ class Screen(Static):
             new = fx["step"] >= 18
             filth_pts, filth_clear = self._fx_filth(pet, self.frame_i,
                                                     count=fx.get("poop", 0) + (1 if new else 0))
-            overlay += filth_pts
+            c.overlay += filth_pts
             sway = -1 if (3 <= step < 18 and (step // 3) % 2 == 1) else 0
-            xshift = filth_clear + sway
-            rows = self._pose_rows_idx(pet, 5 if new else 4)
-        if fx["kind"] == "eat":
-            # DVPet eat(): 24px food descends in 4 stages (beats 0/2/4/6) toward the
-            # mouth, then a chew triad alternates open-mouth(+8)/chew(+7) at beats
-            # 10/14/18/22/26/30 while the food is consumed frame-by-frame; ends ~34.
-            if xshift == 0:
-                xshift = -1                                    # no filth: DVPet char x29 of 104 (~28%)
-            chew = fx.get("chew") or {10: 8, 14: 7, 18: 8, 22: 7, 26: 8, 30: 7}
-            pose_i = 0
-            for b in sorted(chew):
-                if step >= b:
-                    pose_i = chew[b]
-            rows = self._pose_rows_idx(pet, pose_i)
-            food = self._food_frames(fx.get("icon") or "f:0")
-            if food:
-                fw = len(food[0][0]) if (food[0] and food[0][0]) else 8
-                if xshift > 0:                                 # filth on screen: DVPet pads BOTH the food and
-                    xshift += fw                               # the char right of it (foodLabel x31+pad), so the
-                #                                                food descends beside the piles, never onto them
-                # DVPet: the food's RIGHT edge meets the pet's LEFT edge (foodLabel x31+24 == char x55),
-                # so it descends right into the mouth -- abut it instead of stranding it on the far left.
-                fx_x = max(0, (SCREEN_COLS - SPRITE_W) // 2 + xshift - fw)
-                stage = 0 if step < 2 else 1 if step < 4 else 2 if step < 6 else 3
-                fy = (0, 4, 9, 13)[stage]                      # DVPet descent y 0/11/22/33 of 60 -> *(24/60)
-                fb = fx.get("food_beats") or (14, 22, 30)
-                fi = 0 if step < fb[0] else 1 if step < fb[1] else 2 if step < fb[2] else 3
-                overlay += _blit(food[min(fi, len(food) - 1)], fx_x, fy)
-        elif fx["kind"] == "clean":
-            # DVPet clean(): the wash enters from the right and, once it reaches the pet,
-            # shoves the pet AND the filth left together until they slide off-screen (pet
-            # in its clean pose, frame 4); the chained cheer then brings the pet back.
-            E = data.load_effects()
-            wash = E.get("wash", [None])[0]
-            wx = SCREEN_COLS - step * 3                        # wash front: enters right, exits left
-            base = (SCREEN_COLS - SPRITE_W) // 2
-            clear = (_filth_right(fx.get("poop", 0)) - base) if fx.get("poop") else 0
-            push = max(0, base + clear + SPRITE_W - wx)        # wash shove, measured from the pet's RIGHT edge
-            xshift = clear - push                              # pet starts cleared of the filth, then both
-            if push > 0:                                       # slide left in lockstep (gap preserved, no mash)
-                rows = self._pose_rows_idx(pet, 4)             # DVPet drawNum(4) while being washed
-            if fx.get("poop"):                                 # the sized piles slide off with the pet
-                overlay += _filth_pts(pet, self.frame_i, count=fx["poop"],
-                                      sizes=fx.get("sizes"), push=push, px_h=px_h)
-            if wash:
-                overlay += _blit(wash, wx, max(0, (px_h - len(wash)) // 2))
-        elif fx["kind"] == "cheer":
-            # DVPet cheer(): pose alternates up(+5)/down(+7) every 6 intervals with a
-            # "happy" emote bubble pulsing on the up-beats; ends ~beat 30.
-            up = (step // 6) % 2 == 0
-            rows = self._pose_rows_idx(pet, 5 if up else 7)
-            if up:
-                hap = data.load_effects().get("happy")
-                if hap:
-                    hf = hap[(step // 6) % len(hap)]
-                    # DVPet cheer(): the pet stays CENTRED and the emote rides its right
-                    # edge (adjustEmotionLabel) -- not pinned to the far corner.
-                    overlay += _blit(hf, (SCREEN_COLS - SPRITE_W) // 2 + xshift + SPRITE_W, 1)
-        elif fx["kind"] == "gift":
-            # DVPet gifting(): walk-toggle poses (spriteNum/spriteNum+1) per beat;
-            # facing follows the leg (drawNumMirror false left / true right).  The
-            # present is only revealed on arrival, beside the pet (locX gap 4/104
-            # ~ 1px), vertically centred -- then pose 5 faces it for the hold.
-            base = (SCREEN_COLS - SPRITE_W) // 2
-            if step < GIFT_OUT:
-                xshift = -(step // 2)                          # off to fetch it
-                rows = self._pose_rows(pet, "walk", step // 2)
-            elif step < GIFT_OUT + GIFT_BACK:
-                xshift = -(GIFT_OUT // 2) + (step - GIFT_OUT) // 2   # ambling back
-                rows = self._pose_rows(pet, "walk", step // 2)
-            else:
-                xshift = -(GIFT_OUT // 2) + GIFT_BACK // 2
-                rows = self._pose_rows_idx(pet, 5)             # ta-dah beside the present
-                gf = self._food_frames(fx.get("icon") or "f:0")
-                if gf:
-                    g0 = gf[0]
-                    gw = max((len(r) for r in g0), default=8)
-                    gh = len(g0)
-                    gx = base + xshift - gw - 1
-                    overlay += _blit(g0, gx, (px_h - gh) // 2)
-        elif fx["kind"] == "play":
-            # DVPet jumping() (SpriteAnim 17308): the pet bounces with joy -- hops UP on
-            # the excited pose (5) and lands on the neutral pose (1), a happy chirp at the
-            # top of each hop.  Distinct from cheer (which bounces in place on 5/7 with an
-            # emote bubble) -- here the body actually leaves the ground.
-            ph = step % PLAY_HOP
-            up = ph < PLAY_HOP // 2
-            rows = self._pose_rows_idx(pet, 5 if up else 1)
-            yshift = int(PLAY_HOP_H * (1 - abs(ph / (PLAY_HOP / 2) - 1)))   # triangle: 0 -> apex -> 0
-        elif fx["kind"] == "jeer":
-            # DVPet jeer(goodScold): the SCOLD reaction -- pose alternates down(+4)/up(+6)
-            # every 6 intervals, leading DOWN, with the "unhappy" emote riding the pet;
-            # ends ~beat 30.  (Poses 9/10 belong to badHealthJeer, the dying variant.)
-            down = (step // 6) % 2 == 0
-            rows = self._pose_rows_idx(pet, 4 if down else 6)
-            un = data.load_effects().get("unhappy")
-            if un:
-                uf = un[(step // 6) % len(un)]
-                # DVPet jeer(): centred pet, emote at its right edge (not the corner).
-                overlay += _blit(uf, (SCREEN_COLS - SPRITE_W) // 2 + xshift + SPRITE_W, 1)
-        elif fx["kind"] == "spit":
-            # DVPet refuse(): pose 4 (9 while Depressed) held the whole beat while the
-            # head SHAKES via mirror flips T/F/T/F at 0/6/12/18 (_refuse on each flip,
-            # wired in start_fx); ends at 24.  No food drops -- the meal never appears.
-            sprite = 9 if pet.current_mood() == "Depressed" else 4
-            rows = self._pose_rows_idx(pet, sprite)
-        elif fx["kind"] == "evolve":
-            # DVPet evolveAnim(): the room plunges DARK (lightsOff, fully opaque -- the
-            # pet vanishes) and the bright "evol" burst strobes over it at beats
-            # 5/12/19/25/29/34 (each icon holds until the next beat); changeSprite()
-            # swaps in the evolved form at beat 21 UNDER darkness, so it emerges on the
-            # next burst.  _evolve sounds at the first burst (start_fx snds).  The
-            # chained cheer(true) afterwards is DVPet evolFinish.
-            old = fx.get("old_num")
-            if step < 21 and old not in (None, -1):            # old form until the covered swap
-                rec = data.load_sprites()[1].get(old)
-                if rec and rec["frames"][0]:
-                    rows = rec["frames"][0]
-            burst = any(a <= step < b for a, b in
-                        ((5, 10), (12, 14), (19, 21), (25, 27), (29, 32), (34, 99)))
-            if burst:
-                # "evol" burst: the room shows through DVPet's 50% dither mask --
-                # tile the extracted checkerboard over the whole LCD in ink.
-                ev = (data.load_effects().get("evol") or [None])[0]
-                if ev:
-                    mh, mw = len(ev), len(ev[0])
-                    overlay += [(x, y) for y in range(px_h) for x in range(SCREEN_COLS)
-                                if ev[y % mh][x % mw] == "1"]
-            else:                                              # lightsOff beats: pure black, pet hidden
-                rows, bgimg, bg = [], None, "#000000"
-        elif fx["kind"] == "dna_charge":
-            # DVPet dnaCharge() (SpriteAnim 12860): the FIELD badge drops in beside the
-            # pet (t1-7), wobbles (9/11/13), inserts (t16), then the full-screen dnaWash
-            # wave sweeps DOWN over everything (t21+, ~9px/tick of 120) while the pet
-            # strains (pose 9 from the collide at t27); the badge sinks away at the tail
-            # (t37+).  Pet nudged 1 right (setLocX 3+x), pose 0 until the collide.
-            E = data.load_effects()
-            rows = self._pose_rows_idx(pet, 9 if step >= 27 else 0)
-            xshift = 1
-            badge = (E.get("field_" + str(fx.get("icon") or "")) or E.get("field_None") or [None])[0]
-            if badge:
-                bw, bh = len(badge[0]), len(badge)
-                base = (SCREEN_COLS - SPRITE_W) // 2 + xshift
-                bx = max(0, base - 2 - bw) + ({9: -1, 10: -1, 11: 1, 12: 1}.get(step, 0))
-                rest = 8                                       # DVPet rest y21 of 60 -> ~8 of 24
-                if step < 8:
-                    by = -bh + int((rest + bh) * step / 7)     # moveDown 6/tick descent
-                else:
-                    by = rest + (1 if step >= 16 else 0) + max(0, step - 36)   # insert nudge + sink tail
-                overlay += _blit(badge, bx, by)
-            wash = (E.get("dna_wash") or [None])[0]
-            if wash and step >= 21:
-                wy = -len(wash) + (step - 21) * 4              # 9px/tick of 120 -> ~4px/tick of 48
-                overlay += _blit(wash, max(0, (SCREEN_COLS - len(wash[0])) // 2), wy)
-        elif fx["kind"] == "heal":
-            # DVPet bandage(): the item drops in on the pet's LEFT (x31 vs char x55,
-            # like the food) and steps through its 4-frame application strip at beats
-            # 0/8/13/18 while the pet holds the HURT pose (+9, being treated); ends 23
-            # and chains into cheer(true).
-            rows = self._pose_rows_idx(pet, 9)
-            item = data.load_icons().get(fx.get("icon") or "i:80")
-            if item:
-                fi = 0 if step < 8 else 1 if step < 13 else 2 if step < 18 else 3
-                bm = item[min(fi, len(item) - 1)]
-                bw = len(bm[0])
-                ix = max(0, (SCREEN_COLS - SPRITE_W) // 2 - bw)
-                iy = 0 if step < 4 else 4                      # setLocY 53 -> 64 at beat 4
-                overlay += _blit(bm, ix, iy)
-        elif fx["kind"] == "dying":
-            # DVPet dying() (SpriteAnim 13179): the collapsed pet (pose 10, mirrored)
-            # sways +/-1 as the 'dying' emote (dying/dying2) swaps at its right edge,
-            # BOTH on a 10-tick beat (frame % (10*interval)), just before the memorial.
-            xshift = 1 if (step // 10) % 2 == 0 else -1
-            dye = data.load_effects().get("dying")
-            if dye:
-                df = dye[(step // 10) % len(dye)]
-                overlay += _blit(df, (SCREEN_COLS - SPRITE_W) // 2 + SPRITE_W + xshift, 1)
+            c.xshift = filth_clear + sway
+            c.rows = self._pose_rows_idx(pet, 5 if new else 4)
+        painter = getattr(self, "_fxk_" + fx["kind"], None)
+        if painter is not None:
+            painter(pet, fx, step, c)
         mirror = (fx["kind"] in ("dying", "poop")
                   or (fx["kind"] == "gift" and GIFT_OUT <= step < GIFT_OUT + GIFT_BACK)  # facing right, ambling back
                   or (fx["kind"] == "spit" and (step // 6) % 2 == 0))   # refuse(): head-shake flips
-        self.update(render_screen(rows, SCREEN_COLS, SCREEN_ROWS, on, bg,
-                                  xshift=xshift, yshift=yshift, overlay=overlay, bgimg=bgimg,
-                                  mirror=mirror))
+        self.update(render_screen(c.rows, SCREEN_COLS, SCREEN_ROWS, on, c.bg,
+                                  xshift=c.xshift, yshift=c.yshift, overlay=c.overlay,
+                                  bgimg=c.bgimg, mirror=mirror))
+
+    def _fxk_eat(self, pet, fx, step, c):
+        # DVPet eat(): 24px food descends in 4 stages (beats 0/2/4/6) toward the
+        # mouth, then a chew triad alternates open-mouth(+8)/chew(+7) at beats
+        # 10/14/18/22/26/30 while the food is consumed frame-by-frame; ends ~34.
+        if c.xshift == 0:
+            c.xshift = -1                                  # no filth: DVPet char x29 of 104 (~28%)
+        chew = fx.get("chew") or {10: 8, 14: 7, 18: 8, 22: 7, 26: 8, 30: 7}
+        pose_i = 0
+        for b in sorted(chew):
+            if step >= b:
+                pose_i = chew[b]
+        c.rows = self._pose_rows_idx(pet, pose_i)
+        food = self._food_frames(fx.get("icon") or "f:0")
+        if food:
+            fw = len(food[0][0]) if (food[0] and food[0][0]) else 8
+            if c.xshift > 0:                               # filth on screen: DVPet pads BOTH the food and
+                c.xshift += fw                             # the char right of it (foodLabel x31+pad), so the
+            #                                                food descends beside the piles, never onto them
+            # DVPet: the food's RIGHT edge meets the pet's LEFT edge (foodLabel x31+24 == char x55),
+            # so it descends right into the mouth -- abut it instead of stranding it on the far left.
+            fx_x = max(0, PET_BASE_X + c.xshift - fw)
+            stage = 0 if step < 2 else 1 if step < 4 else 2 if step < 6 else 3
+            fy = (0, 4, 9, 13)[stage]                      # DVPet descent y 0/11/22/33 of 60 -> *(24/60)
+            fb = fx.get("food_beats") or (14, 22, 30)
+            fi = 0 if step < fb[0] else 1 if step < fb[1] else 2 if step < fb[2] else 3
+            c.overlay += _blit(food[min(fi, len(food) - 1)], fx_x, fy)
+
+    def _fxk_clean(self, pet, fx, step, c):
+        # DVPet clean(): the wash enters from the right and, once it reaches the pet,
+        # shoves the pet AND the filth left together until they slide off-screen (pet
+        # in its clean pose, frame 4); the chained cheer then brings the pet back.
+        E = data.load_effects()
+        wash = E.get("wash", [None])[0]
+        wx = SCREEN_COLS - step * 3                        # wash front: enters right, exits left
+        base = PET_BASE_X
+        clear = (_filth_right(fx.get("poop", 0)) - base) if fx.get("poop") else 0
+        push = max(0, base + clear + SPRITE_W - wx)        # wash shove, measured from the pet's RIGHT edge
+        c.xshift = clear - push                            # pet starts cleared of the filth, then both
+        if push > 0:                                       # slide left in lockstep (gap preserved, no mash)
+            c.rows = self._pose_rows_idx(pet, 4)           # DVPet drawNum(4) while being washed
+        if fx.get("poop"):                                 # the sized piles slide off with the pet
+            c.overlay += _filth_pts(pet, self.frame_i, count=fx["poop"],
+                                    sizes=fx.get("sizes"), push=push, px_h=c.px_h)
+        if wash:
+            c.overlay += _blit(wash, wx, max(0, (c.px_h - len(wash)) // 2))
+
+    def _fxk_cheer(self, pet, fx, step, c):
+        # DVPet cheer(): pose alternates up(+5)/down(+7) every 6 intervals with a
+        # "happy" emote bubble pulsing on the up-beats; ends ~beat 30.
+        up = (step // 6) % 2 == 0
+        c.rows = self._pose_rows_idx(pet, 5 if up else 7)
+        if up:
+            hap = data.load_effects().get("happy")
+            if hap:
+                hf = hap[(step // 6) % len(hap)]
+                # DVPet cheer(): the pet stays CENTRED and the emote rides its right
+                # edge (adjustEmotionLabel) -- not pinned to the far corner.
+                c.overlay += _blit(hf, PET_BASE_X + c.xshift + SPRITE_W, 1)
+
+    def _fxk_gift(self, pet, fx, step, c):
+        # DVPet gifting(): walk-toggle poses (spriteNum/spriteNum+1) per beat;
+        # facing follows the leg (drawNumMirror false left / true right).  The
+        # present is only revealed on arrival, beside the pet (locX gap 4/104
+        # ~ 1px), vertically centred -- then pose 5 faces it for the hold.
+        base = PET_BASE_X
+        if step < GIFT_OUT:
+            c.xshift = -(step // 2)                        # off to fetch it
+            c.rows = self._pose_rows(pet, "walk", step // 2)
+        elif step < GIFT_OUT + GIFT_BACK:
+            c.xshift = -(GIFT_OUT // 2) + (step - GIFT_OUT) // 2   # ambling back
+            c.rows = self._pose_rows(pet, "walk", step // 2)
+        else:
+            c.xshift = -(GIFT_OUT // 2) + GIFT_BACK // 2
+            c.rows = self._pose_rows_idx(pet, 5)           # ta-dah beside the present
+            gf = self._food_frames(fx.get("icon") or "f:0")
+            if gf:
+                g0 = gf[0]
+                gw = max((len(r) for r in g0), default=8)
+                gh = len(g0)
+                gx = base + c.xshift - gw - 1
+                c.overlay += _blit(g0, gx, (c.px_h - gh) // 2)
+
+    def _fxk_play(self, pet, fx, step, c):
+        # DVPet jumping() (SpriteAnim 17308): the pet bounces with joy -- hops UP on
+        # the excited pose (5) and lands on the neutral pose (1), a happy chirp at the
+        # top of each hop.  Distinct from cheer (which bounces in place on 5/7 with an
+        # emote bubble) -- here the body actually leaves the ground.
+        ph = step % PLAY_HOP
+        up = ph < PLAY_HOP // 2
+        c.rows = self._pose_rows_idx(pet, 5 if up else 1)
+        c.yshift = int(PLAY_HOP_H * (1 - abs(ph / (PLAY_HOP / 2) - 1)))   # triangle: 0 -> apex -> 0
+
+    def _fxk_jeer(self, pet, fx, step, c):
+        # DVPet jeer(goodScold): the SCOLD reaction -- pose alternates down(+4)/up(+6)
+        # every 6 intervals, leading DOWN, with the "unhappy" emote riding the pet;
+        # ends ~beat 30.  (Poses 9/10 belong to badHealthJeer, the dying variant.)
+        down = (step // 6) % 2 == 0
+        c.rows = self._pose_rows_idx(pet, 4 if down else 6)
+        un = data.load_effects().get("unhappy")
+        if un:
+            uf = un[(step // 6) % len(un)]
+            # DVPet jeer(): centred pet, emote at its right edge (not the corner).
+            c.overlay += _blit(uf, PET_BASE_X + c.xshift + SPRITE_W, 1)
+
+    def _fxk_spit(self, pet, fx, step, c):
+        # DVPet refuse(): pose 4 (9 while Depressed) held the whole beat while the
+        # head SHAKES via mirror flips T/F/T/F at 0/6/12/18 (_refuse on each flip,
+        # wired in start_fx); ends at 24.  No food drops -- the meal never appears.
+        sprite = 9 if pet.current_mood() == "Depressed" else 4
+        c.rows = self._pose_rows_idx(pet, sprite)
+
+    def _fxk_evolve(self, pet, fx, step, c):
+        # DVPet evolveAnim(): the room plunges DARK (lightsOff, fully opaque -- the
+        # pet vanishes) and the bright "evol" burst strobes over it at beats
+        # 5/12/19/25/29/34 (each icon holds until the next beat); changeSprite()
+        # swaps in the evolved form at beat 21 UNDER darkness, so it emerges on the
+        # next burst.  _evolve sounds at the first burst (start_fx snds).  The
+        # chained cheer(true) afterwards is DVPet evolFinish.
+        old = fx.get("old_num")
+        if step < 21 and old not in (None, -1):            # old form until the covered swap
+            rec = data.load_sprites()[1].get(old)
+            if rec and rec["frames"][0]:
+                c.rows = rec["frames"][0]
+        burst = any(a <= step < b for a, b in
+                    ((5, 10), (12, 14), (19, 21), (25, 27), (29, 32), (34, 99)))
+        if burst:
+            # "evol" burst: the room shows through DVPet's 50% dither mask --
+            # tile the extracted checkerboard over the whole LCD in ink.
+            ev = (data.load_effects().get("evol") or [None])[0]
+            if ev:
+                mh, mw = len(ev), len(ev[0])
+                c.overlay += [(x, y) for y in range(c.px_h) for x in range(SCREEN_COLS)
+                              if ev[y % mh][x % mw] == "1"]
+        else:                                              # lightsOff beats: pure black, pet hidden
+            c.rows, c.bgimg, c.bg = [], None, "#000000"
+
+    def _fxk_dna_charge(self, pet, fx, step, c):
+        # DVPet dnaCharge() (SpriteAnim 12860): the FIELD badge drops in beside the
+        # pet (t1-7), wobbles (9/11/13), inserts (t16), then the full-screen dnaWash
+        # wave sweeps DOWN over everything (t21+, ~9px/tick of 120) while the pet
+        # strains (pose 9 from the collide at t27); the badge sinks away at the tail
+        # (t37+).  Pet nudged 1 right (setLocX 3+x), pose 0 until the collide.
+        E = data.load_effects()
+        c.rows = self._pose_rows_idx(pet, 9 if step >= 27 else 0)
+        c.xshift = 1
+        badge = (E.get("field_" + str(fx.get("icon") or "")) or E.get("field_None") or [None])[0]
+        if badge:
+            bw, bh = len(badge[0]), len(badge)
+            base = PET_BASE_X + c.xshift
+            bx = max(0, base - 2 - bw) + ({9: -1, 10: -1, 11: 1, 12: 1}.get(step, 0))
+            rest = 8                                       # DVPet rest y21 of 60 -> ~8 of 24
+            if step < 8:
+                by = -bh + int((rest + bh) * step / 7)     # moveDown 6/tick descent
+            else:
+                by = rest + (1 if step >= 16 else 0) + max(0, step - 36)   # insert nudge + sink tail
+            c.overlay += _blit(badge, bx, by)
+        wash = (E.get("dna_wash") or [None])[0]
+        if wash and step >= 21:
+            wy = -len(wash) + (step - 21) * 4              # 9px/tick of 120 -> ~4px/tick of 48
+            c.overlay += _blit(wash, max(0, (SCREEN_COLS - len(wash[0])) // 2), wy)
+
+    def _fxk_heal(self, pet, fx, step, c):
+        # DVPet bandage(): the item drops in on the pet's LEFT (x31 vs char x55,
+        # like the food) and steps through its 4-frame application strip at beats
+        # 0/8/13/18 while the pet holds the HURT pose (+9, being treated); ends 23
+        # and chains into cheer(true).
+        c.rows = self._pose_rows_idx(pet, 9)
+        item = data.load_icons().get(fx.get("icon") or "i:80")
+        if item:
+            fi = 0 if step < 8 else 1 if step < 13 else 2 if step < 18 else 3
+            bm = item[min(fi, len(item) - 1)]
+            bw = len(bm[0])
+            ix = max(0, PET_BASE_X - bw)
+            iy = 0 if step < 4 else 4                      # setLocY 53 -> 64 at beat 4
+            c.overlay += _blit(bm, ix, iy)
+
+    def _fxk_dying(self, pet, fx, step, c):
+        # DVPet dying() (SpriteAnim 13179): the collapsed pet (pose 10, mirrored)
+        # sways +/-1 as the 'dying' emote (dying/dying2) swaps at its right edge,
+        # BOTH on a 10-tick beat (frame % (10*interval)), just before the memorial.
+        c.xshift = 1 if (step // 10) % 2 == 0 else -1
+        dye = data.load_effects().get("dying")
+        if dye:
+            df = dye[(step // 10) % len(dye)]
+            c.overlay += _blit(df, PET_BASE_X + SPRITE_W + c.xshift, 1)
+
 
 
 def _status_line(status, deco, width=26):
@@ -1203,19 +1230,24 @@ class TuiPetApp(App):
                                           "Destined to hatch", f"  [b]{egg_mod.hatch_name(idx)}[/]",
                                           f"  {badge}", "",
                                           "[dim]←→ browse  ENTER pick[/]"])
-        elif isinstance(self.mode, adventurescreen.AdventurePanel):
-            self._status_adventure()
-        elif isinstance(self.mode, tournamentscreen.TournamentPanel):
-            self._status_tournament()
-        elif isinstance(self.mode, training.TrainingPanel):
-            self._status_training()
-        elif isinstance(self.mode, battlescreen.BattlePanel):
-            self._status_battle()
-        elif isinstance(self.mode, dnascreen.DNAPanel):
-            self._status_dna()
+        elif (painter := self._status_painter()) is not None:
+            painter()
         else:
             # data/digicore browses in the LCD; keep live vitals on the right
             self.stats_w.paint(self.pet)
+
+    def _status_painter(self):
+        """The mode's live status-panel painter (one table for repaint AND
+        on_frame -- the two hand-rolled dispatches drifted; audit 2026-07)."""
+        table = ((adventurescreen.AdventurePanel, self._status_adventure),
+                 (tournamentscreen.TournamentPanel, self._status_tournament),
+                 (training.TrainingPanel, self._status_training),
+                 (battlescreen.BattlePanel, self._status_battle),
+                 (dnascreen.DNAPanel, self._status_dna))
+        for cls, painter in table:
+            if isinstance(self.mode, cls):
+                return painter
+        return None
 
     def _status_card(self, title, lines):
         self.stats_w.border_subtitle = ""
@@ -1432,14 +1464,9 @@ class TuiPetApp(App):
                     self.beep(snd, bell=False)
                     self.mode.sfx = None
                 self.screen_w.update(self._center(self.mode.text()))
-                if isinstance(self.mode, adventurescreen.AdventurePanel):
-                    self._status_adventure()
-                elif isinstance(self.mode, training.TrainingPanel):
-                    self._status_training()
-                elif isinstance(self.mode, battlescreen.BattlePanel):
-                    self._status_battle()
-                elif isinstance(self.mode, dnascreen.DNAPanel):
-                    self._status_dna()
+                painter = self._status_painter()
+                if painter is not None:
+                    painter()
             return
         sc = self.screen_w
         if sc.fx:

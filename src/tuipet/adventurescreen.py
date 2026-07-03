@@ -13,7 +13,7 @@ COLS, ROWS = 40, 7
 BAR_W = 28
 
 
-class AdventurePanel:
+class AdventurePanel(menu.SubHost):
     def __init__(self, pet):
         self.pet = pet
         self.adv = Adventure(pet)
@@ -28,10 +28,7 @@ class AdventurePanel:
         self.town_prompt = None     # a reached town's id: visit or walk on
 
     def anim(self):
-        if self.sub is not None:
-            self.sub.anim()
-            self.sfx = getattr(self.sub, "sfx", None)   # bubble nested battle sfx up to on_frame's drain
-            self.sub.sfx = None
+        if self.sub_anim():          # SubHost: delegate + sfx bubble
             return
         self.frame_i += 1
         self._travel_t += 1

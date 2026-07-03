@@ -95,21 +95,9 @@ class FeedPanel:
 
     @staticmethod
     def _icon_lines(rows):
-        """1-bit rows -> half-block Text lines (square pixels, like the LCD)."""
         from .theme import LCD_ON, LCD_BG
-        w = max(len(r) for r in rows)
-        g = [r.ljust(w, "0") for r in rows]
-        if len(g) % 2:
-            g.append("0" * w)
-        out = []
-        for y in range(0, len(g), 2):
-            t = Text()
-            for x in range(w):
-                top, bot = g[y][x] == "1", g[y + 1][x] == "1"
-                ch = "█" if top and bot else "▀" if top else "▄" if bot else " "
-                t.append(ch, style=f"{LCD_ON} on {LCD_BG}")
-            out.append(t)
-        return out
+        from .render import bitmap_text
+        return bitmap_text(rows, LCD_ON, LCD_BG)
 
     def text(self):
         p = self.pet
@@ -140,15 +128,12 @@ class FeedPanel:
             t.append(info[i], style=istyle[i])
             t.append("\n")
             out.append_text(t)
-        vis = 3
-        lo = max(0, min(self.cursor - vis // 2, len(self.options) - vis))
-        shown = 0
-        for i in range(lo, min(lo + vis, len(self.options))):
-            f = self.options[i]
+
+        def fmt(f, i):
             q = food_qty(p, f)
             tag = "" if not f.get("can_dec") else f"  x{q}"
-            out.append_text(menu.row(f"{f['name']}{tag}", i == self.cursor))
-            shown += 1
-        out.append_text(menu.blanks(vis - shown))
+            return f"{f['name']}{tag}"
+
+        self.cursor = menu.list_window(out, self.options, self.cursor, 3, fmt)
         out.append_text(menu.footer("↑↓ pick   ENTER feed   ESC out"))
         return out

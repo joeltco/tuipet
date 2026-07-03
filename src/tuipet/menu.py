@@ -57,3 +57,52 @@ def footer(hint):
 
 def blanks(n):
     return Text("\n" * max(0, n), style=INK)
+
+def list_window(out, rows, cursor, vis, fmt, empty=None):
+    """The shared scrolling list body: a vis-row window centred on the cursor,
+    each row through fmt(item, index) -> (label, selected_ok), padded with
+    blanks.  Retires seven hand-rolled copies (audit 2026-07).  Returns the
+    clamped cursor so callers can keep theirs in range."""
+    n = len(rows)
+    cursor = min(cursor, max(0, n - 1))
+    if not n:
+        if empty:
+            out.append_text(row(empty))
+        out.append_text(blanks(vis - (1 if empty else 0)))
+        return cursor
+    lo = max(0, min(cursor - vis // 2, n - vis))
+    shown = 0
+    for i in range(lo, min(lo + vis, n)):
+        out.append_text(row(fmt(rows[i], i), i == cursor))
+        shown += 1
+    out.append_text(blanks(vis - shown))
+    return cursor
+
+
+class SubHost:
+    """Mixin for panels that host a child panel in `self.sub` (battle inside
+    adventure, town inside adventure, battle inside town/cup).  One home for
+    the anim-delegate + sfx-bubble seam that was hand-rolled three ways --
+    the flee-boss bug lived in exactly this kind of drift (audit 2026-07)."""
+
+    sub = None
+
+    def sub_anim(self):
+        """Delegate a frame to the child; bubble its sfx up.  True if handled."""
+        if self.sub is None:
+            return False
+        self.sub.anim()
+        self.sfx = getattr(self.sub, "sfx", None)
+        self.sub.sfx = None
+        return True
+
+    def sub_key(self, k, on_done):
+        """Route a key to the child.  When the child finishes (('done', r)),
+        clear it and hand r to on_done.  Returns True if the child had the key."""
+        if self.sub is None:
+            return False
+        r = self.sub.key(k)
+        if r is not None and r[0] == "done":
+            self.sub = None
+            on_done(r[1])
+        return True
