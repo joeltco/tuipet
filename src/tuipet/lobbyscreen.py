@@ -182,15 +182,15 @@ class LobbyPanel:
                     self.invite_prompt = m
                     self.sfx = "menu"
                 else:
-                    self.client.respond(m["from_id"], m.get("kind"), False, busy=True)  # in a session
+                    self.client.respond(m.get("from_id"), m.get("kind"), False, busy=True)  # in a session
                 s.inbox.remove(m)
             elif t == "invite_resp":
                 s.inbox.remove(m)
                 if m.get("accept"):
                     if self.phase == "lobby":
-                        self._enter_session(m["from_id"], m["from_name"], m.get("kind"), host=True)
+                        self._enter_session(m.get("from_id"), m["from_name"], m.get("kind"), host=True)
                     else:                                  # already busy -> free the accepter
-                        self.client.relay(m["from_id"], {"kind": m.get("kind"), "abort": True})
+                        self.client.relay(m.get("from_id"), {"kind": m.get("kind"), "abort": True})
                 elif m.get("busy"):
                     self.status = f"{m['from_name']} is busy."
                 else:
@@ -400,11 +400,11 @@ class LobbyPanel:
         if self.invite_prompt is not None:
             inv = self.invite_prompt
             if k in ("y", "Y"):
-                self.client.respond(inv["from_id"], inv["kind"], True)
+                self.client.respond(inv.get("from_id"), inv["kind"], True)
                 self.invite_prompt = None
-                self._enter_session(inv["from_id"], inv["from_name"], inv["kind"], host=False)
+                self._enter_session(inv.get("from_id"), inv["from_name"], inv["kind"], host=False)
             elif k in ("n", "N", "escape"):
-                self.client.respond(inv["from_id"], inv["kind"], False)
+                self.client.respond(inv.get("from_id"), inv["kind"], False)
                 self.status, self.invite_prompt = "Declined.", None
             return None
         if self.action_for is not None:

@@ -47,9 +47,14 @@ def get_wins():
     return int(load_settings().get("progress", {}).get("wins", 0))
 
 
+_ALBUM_SEEN = set()          # in-memory mirror: the 10s autosave was re-reading
+                             # settings.json on every save just to no-op (audit 2026-07)
+
+
 def album_add(num):
-    if num is None or num < 0:
+    if num is None or num < 0 or num in _ALBUM_SEEN:
         return
+    _ALBUM_SEEN.add(num)
     d = load_settings()
     prog = d.setdefault("progress", {})
     album = set(prog.get("album", []))

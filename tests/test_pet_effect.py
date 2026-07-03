@@ -21,7 +21,7 @@ def _an_effect():
 
 def test_effect_decrements_and_gains():
     eid, eff = _an_effect()
-    pet = Pet(num=-1, stage="Rookie")
+    pet = Pet(num=-1, stage="Rookie", obedience=500)
     pet.mood = 0
     pet.effect_id, pet.effect_t = eid, float(eff["duration"])
     pet._eff_acc, pet._eff_asleep = 0.0, pet.asleep
@@ -34,7 +34,7 @@ def test_effect_decrements_and_gains():
 
 def test_effect_expires():
     eid, eff = _an_effect()
-    pet = Pet(num=-1, stage="Rookie")
+    pet = Pet(num=-1, stage="Rookie", obedience=500)
     pet.effect_id, pet.effect_t = eid, 5.0
     pet._eff_acc, pet._eff_asleep = 0.0, pet.asleep
     pet._tick_effect(10)                     # past the remaining 5s
@@ -43,7 +43,7 @@ def test_effect_expires():
 
 def test_call_paused_reflects_data():
     eid, eff = _an_effect()
-    pet = Pet(num=-1, stage="Rookie")
+    pet = Pet(num=-1, stage="Rookie", obedience=500)
     pet.effect_id, pet.effect_t = eid, float(eff["duration"])
     assert pet.call_paused() == bool(eff["pause_call"])
     pet.effect_id = -1
@@ -54,7 +54,7 @@ def test_end_on_sleep_change():
     eid, eff = _an_effect()
     if not eff["end_on_sleep"]:
         pytest.skip("this effect does not end on sleep change")
-    pet = Pet(num=-1, stage="Rookie")
+    pet = Pet(num=-1, stage="Rookie", obedience=500)
     pet.asleep = False
     pet.effect_id, pet.effect_t = eid, float(eff["duration"])
     pet._eff_acc, pet._eff_asleep = 0.0, False
@@ -65,7 +65,7 @@ def test_end_on_sleep_change():
 
 def test_effect_name():
     eid, eff = _an_effect()
-    pet = Pet(num=-1, stage="Rookie")
+    pet = Pet(num=-1, stage="Rookie", obedience=500)
     pet.effect_id = eid
     assert pet.effect_name() == eff["name"]
     pet.effect_id = -1

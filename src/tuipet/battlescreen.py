@@ -179,6 +179,9 @@ class BattlePanel:
             elif k in ("1", "2", "3"):
                 self.sel = int(k) - 1
                 self._resolve_and_build(OPTS[self.sel][1])
+            elif k == "4":                          # the 4th row: Surrender
+                self.battle.surrender()
+                return ("done", None)
             elif k in ("enter", "space"):
                 if OPTS[self.sel][1] is None:
                     self.battle.surrender()

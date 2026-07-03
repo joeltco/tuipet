@@ -664,6 +664,9 @@ class Pet:
         hr1 = int((self.world_seconds % DAY_LENGTH) / DAY_LENGTH * 24)
         if hr1 != hr0 and not self.dead:
             self.tourney_alert = False    # a ring only lasts its cup's hour
+            if self.tourney_alarm >= 0:
+                from . import tournament as _tourney
+                _tourney.schedule(self)   # a day rollover re-rolls (and clears the alarm)
             if self.tourney_alarm >= 0 and self.tourney_alarm in (self.tourney_schedule or []) \
                     and (self.tourney_schedule.index(self.tourney_alarm) == hr1):
                 # CurrentTime.setSeconds: on the hour of the alarmed cup's slot,
@@ -887,6 +890,19 @@ class Pet:
             self.strength -= 1
             if self.strength == 0:
                 self.mistake_day += 1            # StrengthDecAtZeroMissedDayChange
+        # strengthCall (canon gap closed, audit 2026-07): an EMPTY effort gauge
+        # left unattended 10 game-min is a care mistake + obedience -5
+        # (strengthMistakePenalty), postponed after one like the other calls
+        if self.strength == 0 and not self.asleep:
+            self._str_call_t = getattr(self, "_str_call_t", 0.0) + dt
+            if self._str_call_t >= 600.0:                    # MinutesToMistakeStrength 10
+                self._str_call_t = -3600.0                   # AfterMistakeMinutesPostponed
+                self.care_mistakes += 1
+                self.mistake_day += 1
+                self.obedience -= 5                          # MistakeStrengthObedienceDec
+                self._open_scold()
+        else:
+            self._str_call_t = 0.0
         # nutrition macros decay each lapse (NutritionLapseChange) -- keep a varied diet up
         self._nutr_t = getattr(self, "_nutr_t", 0.0) + dt
         if self._nutr_t >= NUTRITION_LAPSE_SEC:
@@ -2030,7 +2046,7 @@ class Pet:
             if complied:
                 self.obedience += OBEDIENCE_CHANGE_SICK_FORCED
         self.weight = max(1, self.weight - 2)
-        self.calories -= EXERCISE_CALORIE_DEC             # ExerciseCalorieDec
+        self.calories = max(-CALORIE_LIMIT, self.calories - EXERCISE_CALORIE_DEC)  # ExerciseCalorieDec
         self._set_energy(self.energy - 1)               # ExerciseEnergyDec
         # setExercise: driving the Effort gauge past its LIMIT risks fatigue --
         # good nutrition softens the odds, the home's compatibility bends them
@@ -2674,6 +2690,10 @@ class Pet:
             return f"{e['name']} has no use yet."   # action-item whose system is unbuilt
         if (_g := self._guard(asleep_blocks=False)) is not None:
             return _g
+        refused = self.check_refused(food=e)         # useItem: checkRefused (audit: canon gap)
+        self.check_compliant()                       # ...; checkCompliant
+        if refused:
+            return f"{self.name} wants nothing to do with it!"
         self.inventory[key] -= 1
         if self.inventory[key] <= 0:
             del self.inventory[key]

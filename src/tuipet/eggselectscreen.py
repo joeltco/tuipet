@@ -52,7 +52,7 @@ class EggSelectPanel:
         self.hint = egg_mod.locked_hint(prog, owned)
         self.locked = sum(1 for st, _ in self.states.values() if st == "locked")
         self.n = len(self.unlocked)
-        self.i = min(self.i, self.n - 1)
+        self.i = max(0, min(self.i, self.n - 1))
 
     def anim(self):
         self.frame_i += 1
@@ -81,10 +81,10 @@ class EggSelectPanel:
             return None
         if k in ("right", "l", "down", "j"):
             self.pos += 1
-            self.i = int(self.pos) % self.n
+            self.i = int(self.pos) % self.n if self.n else 0
         elif k in ("left", "h", "up", "k"):
             self.pos -= 1
-            self.i = int(self.pos) % self.n
+            self.i = int(self.pos) % self.n if self.n else 0
         elif k in ("enter", "space"):
             return ("done", self.unlocked[self.i])     # hatch the centred egg
         elif k == "escape":

@@ -45,7 +45,9 @@ def live_pet():
     num = live_num("Rookie")
     if num is None:
         pytest.skip("sprite assets not installed (run tools/setup_assets.sh)")
-    return Pet.from_num(num)
+    p = Pet.from_num(num)
+    p.obedience = 500        # out-roll the canon item/food refusal (audit 2026-07)
+    return p
 
 
 def futon_item():

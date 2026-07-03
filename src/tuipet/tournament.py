@@ -257,6 +257,13 @@ class Tournament:
         if not pool:
             pool = _eligible_forms(pet, dict(trophy, enemy_elem="", enemy_field="",
                                              enemy_attr="", field_req="", attr_req=""))
+        if not pool:
+            # an impossible cup (a tier with no TournamentAble forms): field ANY
+            # tier rather than crash the bracket (audit 2026-07 guard)
+            _, by_num = data.load_sprites()
+            pool = [r for n, r in by_num.items()
+                    if r["stage"] not in ("Egg", "Fresh", "InTraining")
+                    and not data.is_placeholder(n)]
         self.entrants = [_mk_entrant(random.choice(pool), trophy, open_mega)
                          for _ in range(7)]
         # the bracket: entrants + the player at a random slot, pairs (0,1)(2,3)...

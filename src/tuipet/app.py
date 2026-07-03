@@ -691,7 +691,7 @@ class Screen(Static):
             c.xshift = -(GIFT_OUT // 2) + (step - GIFT_OUT) // 2   # ambling back
             c.rows = self._pose_rows(pet, "walk", step // 2)
         else:
-            c.xshift = -(GIFT_OUT // 2) + GIFT_BACK // 2
+            c.xshift = -(GIFT_OUT // 2) + (GIFT_BACK - 1) // 2   # exactly where the walk ended
             c.rows = self._pose_rows_idx(pet, 5)           # ta-dah beside the present
             gf = self._food_frames(fx.get("icon") or "f:0")
             if gf:

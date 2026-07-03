@@ -70,6 +70,9 @@ class TownPanel(menu.SubHost):
             if k in ("space", "enter") and not self.tourney.over:
                 self.sub = BattlePanel(self.pet, self.tourney.current_opponent())
             elif k == "escape":
+                if not self.tourney.over:
+                    self.tourney.record(False)      # forfeiting mid-cup is an elimination
+                self.msg = self.tourney.last
                 self.tourney = None
                 self.phase = "cups"
             return None

@@ -17,6 +17,7 @@ def _key(name):
 
 def _use(name, **pet_kw):
     p = Pet.from_num(29); p.stage = "Rookie"
+    p.obedience = 500        # out-roll the canon item refusal (audit 2026-07)
     for k, v in pet_kw.items():
         setattr(p, k, v)
     key = _key(name)

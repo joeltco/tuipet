@@ -81,7 +81,9 @@ class TournamentPanel(menu.SubHost):
         if k in ("space", "enter") and not (t.over or self.sub):
             self.sub = BattlePanel(self.pet, t.current_opponent())
         elif k in ("escape", "u"):          # u (the opening key) also closes
-            return ("done", t.last if t.over else None)
+            if not t.over:
+                t.record(False)             # walking out forfeits: the elimination is real
+            return ("done", t.last)
         return None
 
     def _frames(self, num, role="idle"):
@@ -94,6 +96,7 @@ class TournamentPanel(menu.SubHost):
         if self.sub is not None:
             return self.sub.text()
         if self.phase == "select":
+            self.sched = tournament.schedule(self.pet)   # live: a day rollover re-rolls
             hour = tournament._hour(self.pet)
             out = menu.header("CUP", "%s %02d:00" % (self.pet.season, hour))
 
