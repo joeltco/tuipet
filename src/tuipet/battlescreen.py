@@ -62,8 +62,9 @@ def _full(frame):
 
 
 class BattlePanel:
-    def __init__(self, pet, enemy=None):
+    def __init__(self, pet, enemy=None, wild=False):
         self.pet = pet
+        self.wild = wild              # adventure PvE_Wild: Esc rolls canEscape, not surrender
         self.battle = Battle(pet, enemy)
         self.frame_i = 0
         self.sel = 0
@@ -89,9 +90,20 @@ class BattlePanel:
 
     # ---- one round: pick attack, resolve, build the alternating-view timeline ----
     def _player_surrender(self):
-        """ClockTic.onSurrender: giving up is the pet's to refuse -- a proud one
-        won't quit ('doesn't want to give up'), opens the scold window, and
-        fights the round its OWN way instead."""
+        """ClockTic.onSurrender / Surrender_Validation: for a WILD (adventure)
+        battle the Esc is an ESCAPE ATTEMPT -- canEscape's power-weighted roll;
+        failing it FORCES a round ('tried to escape but failed', chooseAttack)
+        and the fight goes on.  Elsewhere, giving up is the pet's to refuse --
+        a proud one won't quit, opens the scold window, and fights the round
+        its OWN way instead."""
+        if self.wild:
+            if self.pet.can_escape(self.battle.enemy):
+                self.battle.surrender()          # the bout ends: neither win nor loss
+                return ("done", None)
+            self.sfx = "refuse"
+            self.note = "Tried to escape... but failed!"
+            self._resolve_and_build(self.battle._own_choice())
+            return None
         if self.pet.check_refused():
             self.sfx = "refuse"
             self.surrender_refused = True        # the menu note shows the defiance

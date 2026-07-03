@@ -141,6 +141,17 @@ class Adventure:
             self._calorie_dec(TRAVEL_CALORIE_DEC)
             if self.pet.strength < TRAVEL_EXERCISE_LIMIT:
                 self.pet.strength += TRAVEL_EXERCISE_INC
+            # checkSickInj + the disliked-time leg (canon re-audit 2026-07):
+            # walking UNWELL sours (-1) and risks worsening (1%); marching
+            # through the hated hour costs mood -10 and spirit -1
+            if self.pet.sick or self.pet.is_injured() or self.pet.is_fatigued():
+                self.pet._set_mood(self.pet.mood - 1)          # WalkUnwellMoodDec
+                if self.pet.sick and random.randrange(100) < 1:  # WalkWorseSickChance
+                    self.pet._worsen_sick()
+            self.pet._check_worse_injury(in_battle=False)      # checkWorseTravelInj
+            if self.pet.disliked_time() == self.pet.day_phase:
+                self.pet._set_mood(self.pet.mood - 10)         # DislikedTimeTravelMoodChange
+                self.pet._set_enthusiasm(self.pet.enthusiasm - 1)  # ...EnthusiasmChange
 
     def _calorie_dec(self, n):
         """PhysicalState.setCaloriesAndChangeWeight: spend the calorie buffer; when it
@@ -153,6 +164,17 @@ class Adventure:
 
     def _in_town(self, loc):
         return any(lo <= loc <= hi for lo, hi, _t in self.zone.get("towns", ()))
+
+    def _wilds(self, prev=None):
+        """Eligible randoms (canon re-audit 2026-07): Enemy.location is a POINT
+        territory ([loc,loc] -- checkBattle's location[0] <= cur <= location[1]),
+        not a floor.  Location 0 roams the whole zone; a placed random is a SET
+        AMBUSHER at its exact step.  Strides cross steps, so a point counts when
+        the last stride's span swept it."""
+        lo = self.location - self.stride if prev is None else prev
+        return [e for e in self.zone["randoms"]
+                if e.get("location", 0) == 0
+                or lo < e.get("location", 0) <= self.location]
 
     def _boss_loc(self, b):
         return b.get("location") or self.total_steps     # unplaced boss guards the gate
@@ -213,7 +235,7 @@ class Adventure:
             return self._advance_or_finish()
         # Wild encounter (real chance formula); towns suppress it, and each random
         # only roams its territory (from its Location step onward).
-        here = [e for e in self.zone["randoms"] if e.get("location", 0) <= self.location]
+        here = self._wilds(prev)
         if here and not self._in_town(self.location) and self._encounter_roll():
             e = _pick_weighted(here)
             self.last = f"Wild {e['name']} appeared!"
@@ -248,8 +270,7 @@ class Adventure:
         if random.randrange(INVESTIGATE_ENEMY_CHANCE) == 0:
             found = None
         if found is None:
-            here = [e for e in self.zone["randoms"] if e.get("location", 0) <= self.location]
-            e = _pick_weighted(here) or _pick_weighted(self.zone["randoms"]) \
+            e = _pick_weighted(self._wilds()) or _pick_weighted(self.zone["randoms"]) \
                 or _pick_weighted(self.zone["bosses"])
             if e:
                 self.last = f"An ambush! {e['name']}!"

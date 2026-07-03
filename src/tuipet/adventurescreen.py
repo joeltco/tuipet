@@ -38,7 +38,7 @@ class AdventurePanel(menu.SubHost):
             if ev and ev[0] in ("encounter", "boss"):
                 self.travelling = False
                 self._pending = (ev[0] == "boss", ev[1])
-                self.sub = BattlePanel(self.pet, ev[1])
+                self.sub = BattlePanel(self.pet, ev[1], wild=True)
             elif ev and ev[0] == "town":
                 self.sfx = "reward"          # reached the rest-town: life + energy restored
                 self.travelling = False
@@ -91,7 +91,7 @@ class AdventurePanel(menu.SubHost):
                 kind, thing = self.adv.investigate()
                 if kind == "enemy":
                     self._pending = (False, thing)
-                    self.sub = BattlePanel(self.pet, thing)
+                    self.sub = BattlePanel(self.pet, thing, wild=True)
                 elif kind == "item":
                     self.sfx = "reward"
                     self.travelling = True

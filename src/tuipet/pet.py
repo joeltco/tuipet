@@ -2507,6 +2507,16 @@ class Pet:
 
     # -- the pet-initiated surrender request (ClockTic onRoundEnd ->
     # checkSurrender; wired into battlescreen 2026-07-04) --
+    def can_escape(self, enemy):
+        """PhysicalState.canEscape: a power-weighted roll -- prob = nextInt(mine +
+        theirs); escaped iff prob <= mine, the foe's side padded by
+        BossEscapeChance 50 / RandomEscapeChance 10 (bosses hold you harder)."""
+        mine = self.vaccine + self.data_power + self.virus + (self.full_health or 1)
+        theirs = (enemy.get("vaccine", 0) + enemy.get("data_power", 0)
+                  + enemy.get("virus", 0) + enemy.get("hp", 0)
+                  + (50 if enemy.get("boss") else 10))     # Boss/RandomEscapeChance
+        return random.randrange(max(1, mine + theirs)) <= mine
+
     def check_surrender(self, health, enemy_health, enemy_max_health, full_hp):
         """PhysicalState.checkSurrender (verbatim two-pass formula).  Returns
         0 = fight on, 2 = the pet REQUESTS to give up (the trainer decides), or
