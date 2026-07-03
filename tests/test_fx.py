@@ -23,6 +23,7 @@ from tuipet.pet import Pet
 
 class _FakeScreen:
     fx = None
+    frame_i = 0     # advance_fx keeps weather/filth animating via frame_i
 _FakeScreen.start_fx = Screen.start_fx
 _FakeScreen.advance_fx = Screen.advance_fx
 

@@ -117,7 +117,7 @@ class Adventure:
         return self.life
 
     def _full_hp(self):
-        return MAX_HEALTH.get(self.pet.stage, MAX_HEALTH_DEFAULT)
+        return getattr(self.pet, "full_health", 0) or MAX_HEALTH.get(self.pet.stage, MAX_HEALTH_DEFAULT)
 
     def _save(self):
         self.pet.adv_map, self.pet.adv_zone = self.mi, self.zi
@@ -170,18 +170,23 @@ class Adventure:
                 return ("encounter", e)
         # WorldMap.step: checkStopTravel rolls per controller fire (9 per walked
         # step, like the encounter roll) -- a refusal halts the journey in place
-        for _ in range(WALK_STEP_MIN):
-            if self.pet.check_stop_travel():
-                self.last = f"{self.pet.name} refuses to walk!"
-                return ("refused", None)
-            # Zone.checkInvestigate: a happier, better-raised pet spots more
-            # (obedience+mood SHRINK the seed); night makes finds rarer
-            seed = (INVESTIGATE_CHANCE + INVESTIGATE_WALK
-                    + (INVESTIGATE_NIGHT if self.pet.day_phase == "night" else 0)
-                    - (self.pet.obedience + self.pet.mood))
-            if random.randrange(max(1, int(seed))) == 0:
-                self.last = f"{self.pet.name} noticed something off the path!"
-                return ("discover", None)
+        # per-fire mechanics compound over the WHOLE stride (stride x WalkStepMin
+        # fires), exactly like the encounter roll -- rolling only 9 fires made
+        # walk-refusals and discovers ~stride-times rarer than canon (audit 2026-07)
+        fires = max(1, self.stride) * WALK_STEP_MIN
+        p_stop = self.pet.stop_travel_prob()
+        if p_stop > 0 and random.random() < 1.0 - (1.0 - p_stop) ** fires:
+            self.pet.stop_travel_effects()
+            self.last = f"{self.pet.name} refuses to walk!"
+            return ("refused", None)
+        # Zone.checkInvestigate: a happier, better-raised pet spots more
+        # (obedience+mood SHRINK the seed); night makes finds rarer
+        seed = max(1, int(INVESTIGATE_CHANCE + INVESTIGATE_WALK
+                          + (INVESTIGATE_NIGHT if self.pet.day_phase == "night" else 0)
+                          - (self.pet.obedience + self.pet.mood)))
+        if random.random() < 1.0 - (1.0 - 1.0 / seed) ** fires:
+            self.last = f"{self.pet.name} noticed something off the path!"
+            return ("discover", None)
         prev = self.location
         self.location = min(self.total_steps, self.location + self.stride)
         self._travel_drain()
@@ -215,6 +220,17 @@ class Adventure:
             return ("encounter", e)
         self.last = f"Travelling... ({self.pct}%)"
         return None
+
+    def flee(self, enemy, was_boss=False):
+        """DVPet canEscape success -> WorldMap.lossPenalty(enemy.Penalty): an
+        escape is a KNOCKBACK, not a free pass.  This is also what re-arms a
+        fled gate boss (prev < bloc <= location can fire again); a penalty-0
+        foe still steps back one so a boss can never be skipped by fleeing."""
+        back = max(int(enemy.get("penalty", 0)), 1 if was_boss else 0)
+        self.location = max(0, self.location - back)
+        if was_boss:
+            self.location = min(self.location, self._boss_loc(enemy) - 1)
+        self.boss_pending = False
 
     def investigate(self):
         """Zone.checkItem: a uniform draw across the zone's RandomFood +

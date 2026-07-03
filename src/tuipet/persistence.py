@@ -246,6 +246,18 @@ def pet_from_save(data, catch_up=True):
         return None, ""
     data = dict(data)                            # don't mutate the caller's dict
     saved_at = data.pop("_saved_at", None)
+    # JSON stringifies int dict keys: habitat_record / trophies_won come back
+    # str-keyed, silently breaking habitat-gated evolutions and cup prelim
+    # chains (audit 2026-07).  Coerce them back on every load.
+    for k in ("habitat_record", "trophies_won"):
+        v = data.get(k)
+        if isinstance(v, dict):
+            data[k] = {int(kk) if str(kk).lstrip("-").isdigit() else kk: vv
+                       for kk, vv in v.items()}
+    # _lights_t serializes float("-inf") as Infinity -- json emits it fine, but
+    # guard against a stringified copy from older tooling
+    if isinstance(data.get("_lights_t"), str):
+        data["_lights_t"] = float("-inf")
     valid = {f.name for f in fields(Pet)}
     kwargs = {k: v for k, v in data.items() if k in valid}
     if "full_health" not in data and (data.get("stage") or "Egg") != "Egg":
@@ -277,7 +289,10 @@ def _offline(pet, elapsed):
     pet.hunger -= drop
     if mins > 10 and pet.hunger == 0:
         pet.care_mistakes += 1
-    pet.poop = min(4, pet.poop + int(mins // 8))
+    new_poop = min(4, pet.poop + int(mins // 8))
+    while len(pet.poop_sizes) < new_poop:            # keep poop == len(poop_sizes)
+        pet.poop_sizes.append(pet._poop_size() if hasattr(pet, "_poop_size") else 2)
+    pet.poop = new_poop
     if mins < 1:
         return ""
     if mins < 60:

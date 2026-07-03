@@ -513,6 +513,16 @@ class Pet:
     evol_bonus: int = 0             # _bonus: birthday/win-rate credit fed into evolution odds
     birthday_note: str = ""         # transient: the HUD's birthday announcement
     saved_from_death: int = 0       # _savedFromDeath: each rescue raises the next bar
+    # long-horizon clocks (persisted: losing these on reload forgave starvation,
+    # wiped the bowel gauge and re-armed once-per-night mistakes -- audit 2026-07)
+    _starve_t: float = 0.0          # the 12h starvation death clock
+    _poop_t: float = 0.0            # the bowel gauge (written as durable state by meals)
+    _filth_t: float = 0.0           # filth-mistake grace / post-mistake postpone
+    _lights_t: float = 0.0          # lights-on sleep mistake (float(-inf) = once/night latch)
+    _cal_t: float = 0.0             # calorie/hunger lapse accumulator
+    _str_t: float = 0.0             # effort-decay accumulator
+    _exercise_day: int = -1         # daily exercise counter's day stamp
+    _weather_day: int = -1          # daily temperature roll's day stamp
     free_style: bool = False        # _isFree: Battle Style toggle (Free vs Orders)
     gift: str = ""                  # pending gift-call present (consumable key; "" = none)
     gift_t: float = 0.0             # seconds toward the next GiftChanceMin roll
@@ -729,6 +739,8 @@ class Pet:
                     self.mistake_day += 1  # MistakeIncMissedDayChange
             # DVPet sleep recovery: +SleepEnergyGain every SleepMinutesToEnergyGain
             # (deep sleep only -- a nap restores just the jitter's scraps)
+            if self.nap:
+                self._sleep_e_t = 0.0                    # a nap earns only the jitter scraps
             self._sleep_e_t = getattr(self, "_sleep_e_t", 0.0) + dt
             if self._sleep_e_t >= 60 and not self.nap:   # SleepMinutesToEnergyGain
                 self._sleep_e_t = 0.0
@@ -751,9 +763,17 @@ class Pet:
             elif r > MORE_SLEEP_CHANCE - 1:
                 step += dt
                 self._set_energy(self.energy + (NAP_ENERGY_MIN if self.nap else BONUS_SLEEP_ENERGY))
+            if self.nap:
+                self.sleep_lapse += dt * self._sleep_inc()   # a nap only BORROWS the cycle
             self.awake_lapse += step
             if self.awake_lapse >= self.awake_limit:
                 self._wake(morning=not self.nap)
+            # death does not wait for morning: the mistake cap and old age
+            # apply asleep too (only the starvation clock freezes; audit 2026-07)
+            if self.care_mistakes >= 20 or self.injuries >= 20:
+                self._die(); return
+            if self.age_seconds >= self.lifespan:
+                self._die(); return
             # startPoop: even asleep, a truly DESPERATE gauge (>= 2x max) goes --
             # this must live in the sleep branch (the awake poop block below is
             # unreachable while asleep; latent until the canon day bands landed)
@@ -1682,7 +1702,8 @@ class Pet:
             return "It grumbles awake."
         postpone = random.randint(*DISTURB_POSTPONE)
         self.sleep_lapse = max(0.0, self.sleep_limit - postpone / max(1, self._sleep_inc()))
-        self.awake_lapse = max(0.0, self.awake_lapse - postpone)
+        # (the missed rest is repaid naturally: _fall_asleep re-sizes the next
+        # sleep from the CURRENT energy debt, so nothing is carried by hand)
         self._wake(morning=False)
         self._set_anim("angry", 1.8)                # Sad_Jeering: woken too soon
         return "zzz... mind its sleep!"
@@ -1784,22 +1805,35 @@ class Pet:
             return True
         return False
 
-    def check_stop_travel(self):
-        """PhysicalState.checkStopTravel: the mid-journey balk.  One draw per
-        controller fire, r in [cap, cap + chance*3000); the energy fraction
-        scales it DOWN, so a rested pet essentially never stops but a drained
-        one plants its feet: refuse when r*(energy+1)/max - dispo*35 + obey - 5
-        <= cap - obedience.  A refusal marks _scold (correct it!)."""
+    def stop_travel_prob(self):
+        """PhysicalState.checkStopTravel as a per-fire PROBABILITY (the caller
+        composes it over a full stride).  One draw per controller fire,
+        r in [cap, cap + chance*3000); the energy fraction scales the draw
+        DOWN, so a rested pet essentially never stops but a drained one plants
+        its feet: refuse when r*(energy+1)/max - dispo*35 + obey - 5
+        <= cap - obedience."""
         if self.dead or self.compliance:
-            return False
-        r = random.randrange(int(REFUSE_CHANCE * REFUSE_TRAVEL_COEFF)) + OBEDIENCE_REFUSAL_CAP
+            return 0.0
         obey = self._obedience_factors()[2]
         energy_mod = 1.0 - (self.max_energy - (self.energy + 1)) / max(1, self.max_energy)
-        prob = r * energy_mod - self.disposition * REFUSE_TRAVEL_DISPO + obey - REFUSE_TRAVEL_WALK
-        if prob <= OBEDIENCE_REFUSAL_CAP - self.obedience:
-            self.refused = True
-            self.scold_flag, self.scold_window = True, 0     # _scold = true
-            self._set_anim("refuse", 1.5)
+        if energy_mod <= 0:
+            return 1.0
+        # refuse iff r <= T / energy_mod, r uniform over [cap, cap + span)
+        span = REFUSE_CHANCE * REFUSE_TRAVEL_COEFF
+        t = (OBEDIENCE_REFUSAL_CAP - self.obedience
+             + self.disposition * REFUSE_TRAVEL_DISPO - obey + REFUSE_TRAVEL_WALK)
+        return min(1.0, max(0.0, (t / energy_mod - OBEDIENCE_REFUSAL_CAP) / span))
+
+    def stop_travel_effects(self):
+        """The refusal's side effects (split from the roll so it can compose)."""
+        self.refused = True
+        self.scold_flag, self.scold_window = True, 0         # _scold = true
+        self._set_anim("refuse", 1.5)
+
+    def check_stop_travel(self):
+        """One canonical per-fire draw (kept for tests/direct callers)."""
+        if random.random() < self.stop_travel_prob():
+            self.stop_travel_effects()
             return True
         return False
 
@@ -1837,6 +1871,7 @@ class Pet:
             return self._disturbed()
         foods = data.load_foods()
         food = food or (foods[0] if foods else {"name": "Meat", "hunger": 1, "weight": 4, "mood": 5})
+        self._last_meal_starving = self.hunger == 0          # eat(): wolfed down (decided PRE-meal)
         refused = self.check_refused(food=food)              # applyFood: checkRefused ...
         self.check_compliant()                               # ... then the compliance is spent
         if refused:
@@ -2014,10 +2049,10 @@ class Pet:
             return "It rests now — press N for a new egg."
         if self.stage in ("Egg", "Fresh"):
             return "Too young to battle."
-        if self.check_refused():                             # canBattle -> checkRefused
-            return f"{self.name} refuses to fight!"
         if self.asleep:
             return self._disturbed()
+        if self.check_refused():                             # canBattle -> checkRefused
+            return f"{self.name} refuses to fight!"
         if self.is_fatigued():
             self._set_anim("exhausted", 1.2)
             return "Too fatigued — let it rest."
@@ -2026,10 +2061,13 @@ class Pet:
             return "Too tired to battle."
         return None
 
-    def record_battle(self, won, enemy=None):
-        """Resolve a finished battle: update battles/wins and rewards."""
+    def record_battle(self, won, enemy=None, free_style=None):
+        """Resolve a finished battle: update battles/wins and rewards.  The
+        battle passes its BAKED style so a mid-fight toggle can't split the
+        bonus from the rewards."""
+        style_free = self.free_style if free_style is None else free_style
         self.battles += 1
-        if not self.free_style:
+        if not style_free:
             self.obedience += BATTLE_FREE_OBED_INC       # fighting under orders builds discipline
         self._set_energy(self.energy - 1)               # battle energy (BattleWon/LostEnergyDec)
         self._check_worse_injury(in_battle=True)         # battling injured can worsen it
@@ -2066,7 +2104,7 @@ class Pet:
                     self.virus += 1
                 grew = f"  +1 {dom}"
             self._set_enthusiasm(self.enthusiasm - 3)    # BattleWonEnthusiasmDec
-            if not self.free_style:                      # battleEnd: a win UNDER ORDERS is prouder
+            if not style_free:                           # battleEnd: a win UNDER ORDERS is prouder
                 self._set_mood(self.mood + ORDERS_WON_MOOD_INC
                                + BATTLE_DISPO_MOOD_FACTOR * -self.disposition)
             lo, hi = (enemy or {}).get("bits", (1, 5))
@@ -2748,7 +2786,8 @@ class Pet:
             if 0 <= new_temp <= wx.MAX_TEMP:             # config MaxTemp=100, floor 0
                 self.temp = new_temp
         if e.get("sleep") and not self.asleep:
-            self.asleep = True                           # DVPet item Sleep flag forces sleep
+            self._fall_asleep()                          # DVPet item Sleep flag: a REAL sleep
+                                                         # (limits sized, lights latch reset)
         if is_food:
             self._eat_food(e.get("category", ""))           # bag food -> same taste system
             self._apply_nutrition(e)

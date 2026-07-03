@@ -42,7 +42,15 @@ def pull_save(uri, name, pw, timeout=_TIMEOUT):
 
 
 def push_save(uri, name, pw, save, timeout=_TIMEOUT):
-    """Upload one save dict, blocking. Returns True on a clean send. Never raises."""
+    """Upload one save dict, blocking. Returns True on a clean send. Never raises.
+    Compares timestamps first: a device that missed its startup pull (offline
+    at launch) must not stomp a newer cloud save on quit."""
+    try:
+        cloud = pull_save(uri, name, pw, timeout)
+        if cloud and float(cloud.get("_saved_at") or 0) > float(save.get("_saved_at") or 0):
+            return False                             # the cloud moved on without us
+    except Exception:
+        pass                                         # compare is best-effort; the send decides
     try:
         with _connect(uri, timeout) as ws:
             ws.send(json.dumps({"t": "login", "name": name, "pw": pw, "sync_only": True}))
@@ -64,5 +72,10 @@ def sync_down_at_startup(uri, name, pw, timeout=_TIMEOUT):
     cloud_ts = float(save.get("_saved_at") or 0)
     if cloud_ts <= persistence.local_saved_at():
         return ""                                    # local is as new or newer
+    # never clobber a valid local save with a blob that can't even become a
+    # pet (a malformed cloud payload used to mean a silent fresh-egg wipe)
+    probe, _ = persistence.pet_from_save(dict(save), catch_up=False)
+    if probe is None:
+        return "cloud-save-invalid"
     persistence.write_save_dict(save)
     return "pulled"

@@ -102,7 +102,13 @@ def test_wrong_password_is_blocked(server):
 def test_startup_pull_mirrors_cloud_to_local(server, tmp_path, monkeypatch):
     # isolate_save (autouse) already sandboxes SAVE_PATH; push a cloud save, then
     # a fresh device's startup pull should write it locally.
-    cloudsync.push_save(server, "joel", "secret", {"name": "Greymon", "stage": "Champion", "_saved_at": 9000.0})
+    # the pushed blob must be a REAL save: the pull now validates it can become
+    # a pet before overwriting local (a malformed cloud payload used to mean a
+    # silent fresh-egg wipe)
+    cloud_pet = Pet(num=100, name="Greymon", stage="Champion", attribute="Vaccine")
+    blob = persistence.to_save_dict(cloud_pet)
+    blob["_saved_at"] = 9000.0
+    cloudsync.push_save(server, "joel", "secret", blob)
     assert not os.path.exists(persistence.SAVE_PATH)
     assert cloudsync.sync_down_at_startup(server, "joel", "secret") == "pulled"
     assert json.load(open(persistence.SAVE_PATH))["name"] == "Greymon"

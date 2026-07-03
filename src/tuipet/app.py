@@ -506,6 +506,7 @@ class Screen(Static):
     def advance_fx(self):
         if not self.fx:
             return False
+        self.frame_i += 1        # weather/filth keep animating through an fx (audit 2026-07)
         self.fx["step"] += 1
         if self.fx["step"] < self.fx["steps"]:
             return True
@@ -580,7 +581,7 @@ class Screen(Static):
         step = fx["step"]
         pose = {"eat": "eat", "clean": "idle", "cheer": "happy", "spit": "refuse", "dying": "exhausted"}.get(fx["kind"], "idle")
         rows = self._pose_rows(pet, pose, step // 2)
-        overlay = _weather_overlay(pet.weather, self.frame_i, SCREEN_COLS, px_h)
+        overlay = _weather_overlay(pet.weather, self.frame_i // 4, SCREEN_COLS, px_h)   # paint()'s 0.4s cadence
         xshift = 0
         yshift = 0
         if fx["kind"] in ("eat", "cheer", "jeer", "spit"):
@@ -1076,6 +1077,8 @@ class TuiPetApp(App):
             if snd:
                 self.beep(snd, bell=False)
                 self.mode.sfx = None
+            elif getattr(self.mode, "captures_text", False):
+                pass                                # typing: no nav/confirm blips (audit 2026-07)
             elif event.key in _NAV_KEYS:
                 self.beep("scroll", bell=False)     # cursor-move blip for every list screen
             elif event.key == "enter":
@@ -1585,7 +1588,12 @@ class TuiPetApp(App):
     def _hud(self, markup):
         """Single entry point for the message box.  Any message wider than the box
         is marquee-scrolled (see _hud_marquee) so it is never clipped; messages that
-        fit render as-is with their Rich markup."""
+        fit render as-is with their Rich markup.  Re-sending the SAME text is a
+        no-op: on_tick re-asserts persistent messages every second, and resetting
+        the hold each time froze the marquee on its first window (audit 2026-07)."""
+        if markup == getattr(self, "_hud_text", None):
+            return
+        self._hud_text = markup
         if len(_hud_plain(markup)) <= HUD_W:
             self._hud_scroll = None
             self.msg_w.update(markup)
@@ -1648,7 +1656,9 @@ class TuiPetApp(App):
             self.repaint(); return
         outcome, food, msg = result
         icon = food.get("key", "f:0")               # the food's REAL icon rides the eat fx
-        starving = self.pet.hunger == 0         # DVPet eat(): hunger==0 -> wolfed down (mod 0.9)
+        # eat(): the wolf-down modifier is decided BEFORE the meal (a starving
+        # pet that just ate has hunger>0 -- reading it here was always False)
+        starving = getattr(self.pet, "_last_meal_starving", False)
         if outcome == "fed" and self.pet.anim == "eat":
             self.screen_w.start_fx("eat", icon, pet=self.pet, starving=starving)   # SFX per-bite in the fx loop
         elif outcome == "full":
@@ -1768,7 +1778,8 @@ class TuiPetApp(App):
 
     def _after_shop(self, msg):
         if isinstance(msg, tuple) and msg and msg[0] == "eat":
-            self.screen_w.start_fx("eat", msg[1], pet=self.pet)        # the pet eats what you fed from the bag
+            self.screen_w.start_fx("eat", msg[1], pet=self.pet,
+                                   starving=getattr(self.pet, "_last_meal_starving", False))
         elif isinstance(msg, tuple) and msg and msg[0] == "evolve":
             # _evolve sounds INSIDE the strobe (fx snds beat 5), like DVPet evolveAnim
             self.flash(f"[b]{self.pet.name}![/] evolved to {self.pet.stage}!")

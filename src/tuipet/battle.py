@@ -115,7 +115,10 @@ class Battle:
     def __init__(self, pet, enemy=None):
         self.pet = pet
         self.enemy = dict(enemy or pick_enemy(pet))
-        _fb = 1 if getattr(pet, "free_style", False) else 0   # Free: +1 all powers (canon)
+        # the style is BAKED per battle: toggling mid-fight used to desync the
+        # +1 power bonus from the end rewards (exploitable; audit 2026-07)
+        self.free_style = bool(getattr(pet, "free_style", False))
+        _fb = 1 if self.free_style else 0                     # Free: +1 all powers (canon)
         self._pet_counts = {"Vaccine": pet.vaccine + _fb, "Data": pet.data_power + _fb,
                             "Virus": pet.virus + _fb}
         self._enemy_counts = {"Vaccine": self.enemy["vaccine"],
@@ -185,7 +188,7 @@ class Battle:
         # Orders = your call, but refuseAttack may override it mid-fight (the
         # pet swaps in its OWN pick and the scold window opens)
         self.refused_order = False
-        if getattr(self.pet, "free_style", False):
+        if self.free_style:
             player_attr = self._own_choice()
         elif player_attr in ATTRS and self.pet.refuse_attack(self.pet_hp, self.enemy_hp):
             self.refused_order = True
@@ -231,7 +234,7 @@ class Battle:
     def _finish(self):
         self.over = True
         self.won = self.pet_hp > 0          # battleEnd: player loses iff _health <= 0
-        self.reward = self.pet.record_battle(self.won, self.enemy)
+        self.reward = self.pet.record_battle(self.won, self.enemy, free_style=self.free_style)
 
     def surrender(self):
         """Battle.surrender: the pet bows out -- the bout ends as neither win nor loss.

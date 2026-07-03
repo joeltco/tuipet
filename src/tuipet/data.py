@@ -626,8 +626,11 @@ def _consumable(row, id_field):
         "health": int(num("Health")),   # permanent fullHealthPoints gain (HP Chip)
 
         "uses_per": int(num("UsesPerFood") or num("UsesPerItem") or 1),
-        "can_inc": (row.get("CanIncUses") or "TRUE").strip().upper() != "FALSE",
-        "can_dec": (row.get("CanDecUses") or "TRUE").strip().upper() != "FALSE",
+        # items.csv names these CanIncUses/CanDecUses; foods.csv CanInc/CanDec --
+        # reading only the items name defaulted every FOOD to can_inc=True, letting
+        # staples into the gift/discover pools (audit 2026-07)
+        "can_inc": (row.get("CanIncUses") or row.get("CanInc") or "TRUE").strip().upper() != "FALSE",
+        "can_dec": (row.get("CanDecUses") or row.get("CanDec") or "TRUE").strip().upper() != "FALSE",
         # DVPet getNormalItems: only items flagged ShowInInventory appear in the bag
         # (transports / key / evolution items are hidden). Foods have no column -> shown.
         "show_in_inventory": (row.get("ShowInInventory") or "TRUE").strip().upper() != "FALSE",

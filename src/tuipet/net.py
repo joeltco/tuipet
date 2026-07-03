@@ -96,7 +96,11 @@ class SyncClient:
                 try:
                     await self._ws.send(json.dumps({"t": "save", "save": save}))
                 except Exception:
-                    return
+                    # a failed send must NOT kill the loop (it used to `return`,
+                    # silently ending autosave uploads for the process lifetime);
+                    # keep the save pending -- the reconnect loop re-wakes us
+                    self._wake.set()
+                    await asyncio.sleep(1.0)
 
     def _handle(self, raw):
         try:

@@ -243,11 +243,11 @@ class TrainingPanel:
             self.flash = "stop the bar high!"
 
     def _hp_round_len(self):
-        """DVPet drawHPTraining: the per-round timer shrinks as the pet's battle HP grows
-        (rank = fullHealthPoints // _hpTrainDifficultyChange -> Easy/Normal/Hard).  tuipet's
-        battle HP is stage-based (battle.MAX_HEALTH)."""
-        from .battle import MAX_HEALTH, MAX_HEALTH_DEFAULT
-        full_hp = MAX_HEALTH.get(self.pet.stage, MAX_HEALTH_DEFAULT)
+        """DVPet drawHPTraining: the per-round timer shrinks as the pet's battle
+        HP grows (rank = fullHealthPoints // _hpTrainDifficultyChange).  Battle
+        HP is the TRAINED full_health (perfect wins / HP chips), so the drill
+        genuinely gets harder as you master it."""
+        full_hp = getattr(self.pet, "full_health", 0) or 10
         return HP_ROUND_LEN[min(full_hp // HP_TRAIN_DIFFICULTY, 2)]
 
     def _new_hp_round(self):
