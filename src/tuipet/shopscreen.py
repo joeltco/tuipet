@@ -74,6 +74,30 @@ class ShopPanel:
         tabs = self._tabs()
         rows = self._rows()
         n = len(rows)
+        if getattr(self, "pw_mode", False):
+            # DVPet's password redemption: type the code, ENTER redeems
+            if k == "enter":
+                idx = egg_mod.redeem_password(self.pw_text)
+                self.msg = ("Password accepted — %s egg unlocked!" % egg_mod.hatch_name(idx)
+                            if idx is not None else "Nothing answers that password.")
+                self.sfx = "reward" if idx is not None else "error"
+                self.pw_mode, self.pw_text = False, ""
+                self.captures_text = False
+            elif k == "escape":
+                self.pw_mode, self.pw_text = False, ""
+                self.captures_text = False
+                self.msg = "Never mind."
+            elif k == "backspace":
+                self.pw_text = self.pw_text[:-1]
+            elif len(k) == 1 and (k.isalnum() or k in "-_"):
+                self.pw_text = (self.pw_text + k)[:24]
+            self.msg = ("Password: %s_" % self.pw_text) if self.pw_mode else self.msg
+            return None
+        if k == "p" and self.mode == "shop" and self._tabs()[self.tab] == "egg":
+            self.pw_mode, self.pw_text = True, ""
+            self.captures_text = True       # the app's global q-quit yields to typing
+            self.msg = "Password: _"
+            return None
         if k in ("left", "h"):
             self.tab = (self.tab - 1) % len(tabs); self.cursor = 0
         elif k in ("right", "l"):
@@ -200,7 +224,7 @@ class ShopPanel:
         vis = 3
         if not rows:
             if self._tabs()[self.tab] == "egg":
-                empty = "(no eggs to buy yet)"
+                empty = "(no eggs to buy — P for a password)"
             else:
                 empty = "(shelves empty — try tomorrow)" if self.mode == "shop" else "(none owned)"
             out.append_text(menu.row(empty)); shown = 1
@@ -220,7 +244,9 @@ class ShopPanel:
         out.append_text(menu.blanks(vis - shown))
         out.append_text(menu.note(self.msg))
         if self.mode == "shop":
-            out.append_text(menu.footer("←→ category ↑↓ pick ENTER buy TAB bag"))
+            foot = "←→ tab ↑↓ ENTER buy P password TAB bag" if tabs[self.tab] == "egg" \
+                else "←→ category ↑↓ pick ENTER buy TAB bag"
+            out.append_text(menu.footer(foot))
         else:
             out.append_text(menu.footer("←→ category ENTER use R sell TAB shop"))
         return out

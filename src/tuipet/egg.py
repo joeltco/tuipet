@@ -222,6 +222,20 @@ def shop_egg_entry(idx, price):
             "egg_idx": idx}
 
 
+def redeem_password(text):
+    """DVPet's password redemption (eggUnlock Password column): a matching
+    code unlocks its egg PERMANENTLY.  Returns the egg index or None."""
+    from . import data, persistence
+    code = (text or "").strip().lower()
+    if not code:
+        return None
+    for i, rule in data.load_egg_unlock().items():
+        if rule.get("password") and rule["password"].strip().lower() == code:
+            persistence.egg_own(i)
+            return i
+    return None
+
+
 def locked_hint(prog, owned):
     """Shortest 'what unlocks next' hint among locked eggs ('' if none)."""
     from . import data

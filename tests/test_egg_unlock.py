@@ -182,3 +182,20 @@ def test_egg_shop_buy_unlocks_for_hatching():
     if nxt:
         pet.bits = 0
         assert "Not enough" in panel._buy_egg(egg.shop_egg_entry(*nxt[0]))
+
+
+# ---- password redemption + egg mood (Evolution.egg) --------------------------
+
+def test_password_unlocks_carimon_permanently():
+    from tuipet import egg, persistence, data
+    assert egg.redeem_password("wrong-code") is None
+    idx = egg.redeem_password("  ACCENTIER ")        # case/space-insensitive
+    assert idx is not None
+    assert data.load_egg_unlock()[idx]["password"].lower() == "accentier"
+    assert idx in persistence.get_eggs_owned()       # owned for good
+
+
+def test_new_egg_starts_warm():
+    from tuipet.pet import Pet, EGG_MOOD
+    p = Pet.new_egg(generation=1, egg_type=0)
+    assert p.mood == EGG_MOOD == 100                 # Evolution.egg: setMood(EggMood)

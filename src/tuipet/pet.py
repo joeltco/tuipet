@@ -121,6 +121,7 @@ ITEM_INTEREST_LOW_TIMER = 40        # ItemInterestLowTimer (disposition +1)
 ITEM_INTEREST_HIGH_TIMER = 80       # ItemInterestHighTimer (disposition -1)
 PERSONALITY_MOOD_MATCH = 10         # ConsumablePersonalityMatchMoodChange
 PERSONALITY_MOOD_UNMATCH = -10      # ConsumablePersonalityUnmatchMoodChange
+EGG_MOOD = 100                      # EggMood: a new egg starts warm (Evolution.egg)
 # perfect-conditions energy save (checkEnergyIncFromPerfectConditions):
 # an energy DROP during the pet's favourite time may bounce back +1 --
 # roll nextInt(base + mods) == 1, so perfect conditions shrink the range
@@ -545,6 +546,7 @@ class Pet:
             egg_type = random.randrange(egg_mod.count())
         pet = cls(num=-1, name="Digitama", stage="Egg",
                   egg_type=egg_type, generation=generation)
+        pet.mood = EGG_MOOD                     # Evolution.egg: setMood(EggMood 100)
         pet._apply_egg_habitat()
         return pet
 
