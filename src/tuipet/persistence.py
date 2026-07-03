@@ -159,6 +159,28 @@ def snapshot_prev_gen(pet):
     save_settings(d)
 
 
+def bank_digimemory(mem):
+    """Park the departed's inheritance data in the generational channel (DVPet
+    keeps items across resetToEgg; tuipet's per-save channel is progress, the
+    same place the last_gen egg gates live).  One slot, like the device."""
+    d = load_settings()
+    d.setdefault("progress", {})["digimemory"] = dict(mem)
+    save_settings(d)
+
+
+def peek_digimemory():
+    return _prog().get("digimemory") or None
+
+
+def take_digimemory():
+    """Pop the banked memory (the heir now carries it on its own save)."""
+    d = load_settings()
+    mem = (d.get("progress") or {}).pop("digimemory", None)
+    if mem:
+        save_settings(d)
+    return mem or None
+
+
 def get_progress():
     """Assemble the full progress view egg.evaluate() consumes."""
     prog = _prog()

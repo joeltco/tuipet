@@ -668,6 +668,8 @@ def item_is_functional(e):
         return True
     if e.get("action") == "ItemEvol":   # item-triggered evolution (now implemented)
         return True
+    if e.get("action") == "Inherit":    # the Digimemory (now implemented)
+        return True
     if e.get("action") in TRANSPORT_ACTIONS:   # world-warp items (now implemented)
         return True
     return bool(e.get("special") or e.get("unlocks_food") or e.get("unlocks_item"))

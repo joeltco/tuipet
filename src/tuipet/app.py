@@ -458,7 +458,7 @@ class Screen(Static):
     # ---- care-action animations (DVPet SpriteAnim eat/clean/cheer) -----------
     def start_fx(self, kind, icon=None, poop=0, old_num=None, pet=None, starving=False):
         steps = {"eat": 35, "cheer": 31, "jeer": 31, "clean": 22, "spit": 25, "evolve": 37, "dying": 50, "dna_charge": 44, "play": 37, "heal": 24, "poop": 25,
-                 "gift": GIFT_OUT + GIFT_BACK + GIFT_HOLD, "assist": 28}.get(kind, 12)
+                 "gift": GIFT_OUT + GIFT_BACK + GIFT_HOLD, "assist": 28, "inherit": 50}.get(kind, 12)
         self.fx = {"kind": kind, "step": 0, "steps": steps, "icon": icon, "poop": poop, "old_num": old_num}
         if kind == "eat":
             # DVPet eat(): each chew beat is scaled by pow(N, mod) -- a starving pet or
@@ -502,6 +502,12 @@ class Screen(Static):
         elif kind == "evolve":
             # DVPet evolveAnim(): _evolve sounds at the first burst beat (t5).
             self.fx["snds"] = {5: "evolve"}
+        elif kind == "inherit":
+            # DVPet inheriting(): chip-shrink t11 / parent-grow t17 / parent-shrink
+            # t37 all key the attackHit cue; the flight home pips inheritMove
+            # (=alarm) every 4; the collide lands inheritCollide (=strongHit)
+            self.fx["snds"] = {10: "attackHit", 14: "attackHit", 32: "attackHit",
+                               36: "alarm", 40: "alarm", 44: "alarm", 46: "strongHit"}
         elif kind == "dna_charge":
             # dnaCharge(): _dnaWash as the sweep enters (t21).
             self.fx["snds"] = {21: "wash"}
@@ -528,6 +534,9 @@ class Screen(Static):
             self.start_fx("cheer")
         elif kind == "gift":
             # ClockTic.giftEnd: the handover ends in State.Cheering.
+            self.start_fx("cheer")
+        elif kind == "inherit":
+            # inheriting() tail: the strobe resolves into the celebration poses.
             self.start_fx("cheer")
         return self.fx is not None
 
@@ -821,6 +830,44 @@ class Screen(Static):
         else:                                              # lightsOff beats: pure black, pet hidden
             c.rows, c.bgimg, c.bg = [], None, "#000000"
 
+    def _fxk_inherit(self, pet, fx, step, c):
+        # DVPet inheriting(): the pet stands RIGHT (locX width-3-size); the chip
+        # descends on its left (t1-10), shrinks to a point (t11, chipShrink), the
+        # DEPARTED ancestor rises from it (t17, parentGrow) and greets on poses
+        # 6/1 (t24-33), fades (t37, parentShrink), then the chip reappears and
+        # wobbles home into the pet (t42-64, inheritMove pips) and collides
+        # (t65) into an evol-dither strobe.  Mapped to 50 steps; the sprite
+        # scaling beats become appear/disappear (16px art does not scale).
+        c.xshift = 8                                       # the pet gives the seance room
+        chip = data.load_icons().get("i:32")               # raw: the 8x7 chip art is already
+        cf = chip[0] if chip and chip[0] else None         # LCD-scale (_food_frames' /3 is for 24px food)
+        cw = len(cf[0]) if cf and cf[0] else 8
+        cx = 8
+        _, by_num = data.load_sprites()
+        anc = by_num.get(fx.get("ancestor", -1))
+        if step < 10:                                      # the chip descends
+            if cf:
+                c.overlay += _blit(cf, cx, -8 + step * 2)
+        elif step < 14:                                    # ...and shrinks to a point
+            cy = c.px_h // 2 + 4
+            c.overlay += [(cx + cw // 2 + dx, cy + dy) for dx in (0, 1) for dy in (0, 1)]
+        elif step < 32 and anc:                            # the ancestor's visit
+            fr = anc["frames"]
+            pose = 6 if ((step - 14) // 4) % 2 == 0 else 1
+            af = (fr[pose] if pose < len(fr) and fr[pose] else fr[0]) or next((f for f in fr if f), None)
+            if af:
+                c.overlay += _blit(af, cx - 2, c.px_h - len(af) - 2)
+        elif step < 46:                                    # the chip flies home
+            if cf:
+                wob = -1 if (step % 4) < 2 else 1
+                c.overlay += _blit(cf, cx + (step - 34) * 2, c.px_h // 2 + wob)
+        else:                                              # the collide strobe
+            ev = (data.load_effects().get("evol") or [None])[0]
+            if ev and (step % 2 == 0):
+                mh, mw = len(ev), len(ev[0])
+                c.overlay += [(x, y) for y in range(c.px_h) for x in range(SCREEN_COLS)
+                              if ev[y % mh][x % mw] == "1"]
+
     def _fxk_dna_charge(self, pet, fx, step, c):
         # DVPet dnaCharge() (SpriteAnim 12860): the FIELD badge drops in beside the
         # pet (t1-7), wobbles (9/11/13), inserts (t16), then the full-screen dnaWash
@@ -1103,6 +1150,15 @@ class TuiPetApp(App):
             self._hud(self._welcome)
             self.repaint()
 
+    def _grant_digimemory(self, pet):
+        """Hand the banked inheritance data to the next generation: the payload
+        rides the pet's save; item 32 appears in its bag (DVPet items persist
+        across resetToEgg -- tuipet's generations carry only this one)."""
+        mem = persistence.take_digimemory()
+        if mem:
+            pet.digimemory = dict(mem)
+            pet.add_item("i:32")
+
     def _after_death(self, result):
         if result == "new":
             self.action_new()
@@ -1114,6 +1170,7 @@ class TuiPetApp(App):
             self._open_mode(titlescreen.TitlePanel(), self._after_title)
             return
         self.pet = Pet.new_egg(egg_type=egg_type)
+        self._grant_digimemory(self.pet)
         self.flash("Take good care of your egg!")
         self.repaint()
 
@@ -1567,7 +1624,15 @@ class TuiPetApp(App):
                         self.screen_w.start_fx("cheer")
                     persistence.save(self.pet)
                 else:
-                    self._open_mode(deathscreen.DeathPanel(self.pet), self._after_death)
+                    # UnlockInheritance (onDie with _bonus > 0): the departed etches
+                    # its Digimemory; a second memory raises DVPet's only-one prompt
+                    new_mem = self.pet.make_digimemory()
+                    old_mem = persistence.peek_digimemory()
+                    if new_mem and not old_mem:
+                        persistence.bank_digimemory(new_mem)
+                    persistence.save(self.pet)             # the spent bonus sticks
+                    self._open_mode(deathscreen.DeathPanel(self.pet, new_mem=new_mem,
+                                                           old_mem=old_mem), self._after_death)
             else:                              # any other fx just finished -> restore the HUD
                 self.repaint()
         else:
@@ -1899,6 +1964,12 @@ class TuiPetApp(App):
             # _evolve sounds INSIDE the strobe (fx snds beat 5), like DVPet evolveAnim
             self.flash(f"[b]{self.pet.name}![/] evolved to {self.pet.stage}!")
             self.screen_w.start_fx("evolve", old_num=msg[1])
+        elif isinstance(msg, tuple) and msg and msg[0] == "inherit":
+            mem = msg[1]
+            self.flash(f"[b]{mem.get('name', '?')}[/]'s power lives on!  "
+                       f"Va+{mem.get('vaccine', 0)} D+{mem.get('data', 0)} Vi+{mem.get('virus', 0)}")
+            self.screen_w.start_fx("inherit", pet=self.pet)
+            self.screen_w.fx["ancestor"] = mem.get("num", -1)
         elif isinstance(msg, tuple) and msg and msg[0] == "transport":
             self._open_mode(transportscreen.TransportPanel(self.pet, msg[1]), self._after_transport)
             return
@@ -1973,6 +2044,7 @@ class TuiPetApp(App):
             self._do("Kept your current partner.")
             return
         self.pet = Pet.new_egg(generation=gen, egg_type=egg_type)
+        self._grant_digimemory(self.pet)
         persistence.save(self.pet)
         self._do(f"A new egg appeared! (generation {gen})")
 

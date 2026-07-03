@@ -132,6 +132,13 @@ MIN_MISTAKE_DAY_DEC = 1             # MinMissedDayForBonusDec
 BONUS_LIFE_INC = 360.0              # BonusLifeInc 21600 real-sec -> game-min scale (+6 game-hours)
 BONUS_LIFE_DEC = 360.0              # BonusLifeDec
 BONUS_EVOLUTION_LIFE = 60.0         # BonusEvolutionLife 3600 -> game-min scale, x bonus per evolution
+# DVPet DigiMemory / inheritance (PhysicalState.setNewDigimemory / getDigimemory,
+# item 32 anim Inherit; config.csv DigimemoryAttributeCoefficient / LifeInc).  The
+# departed etches its attack powers -- scaled by the care bonus it died holding --
+# into the Digimemory; the HEIR uses the item to add Va/D/Vi and lifespan.
+DIGIMEMORY_ATTR_COEF = 0.01         # DigimemoryAttributeCoefficient
+DIGIMEMORY_LIFE_INC = 60.0          # DigimemoryLifeIncCoefficient 3600 real-sec (1h) -> the
+#                                     game-min scale, exactly like BonusEvolutionLife above
 GOOD_BIRTHDAY_FOOD = 55             # Cupcake
 BAD_BIRTHDAY_FOOD = 7               # Candy
 NORMAL_BIRTHDAY_FOOD = 54           # Cookie
@@ -524,6 +531,7 @@ class Pet:
     daily_mood: dict = _dcf(default_factory=lambda: {"Happy": 0, "Neutral": 0, "Unhappy": 0, "Depressed": 0})
     last_birthday: int = 0          # last celebrated age-day
     evol_bonus: int = 0             # _bonus: birthday/win-rate credit fed into evolution odds
+    digimemory: dict = _dcf(default_factory=dict)   # held inheritance data (item 32 payload)
     birthday_note: str = ""         # transient: the HUD's birthday announcement
     saved_from_death: int = 0       # _savedFromDeath: each rescue raises the next bar
     # long-horizon clocks (persisted: losing these on reload forgave starvation,
@@ -2573,6 +2581,22 @@ class Pet:
         return ("All patched up!" if self.inj_length == 0
                 else f"{self.name} is bandaged — it needs rest now.")
 
+    def make_digimemory(self):
+        """setNewDigimemory, the dying pet's side: with a care bonus in hand, etch
+        Va/D/Vi = floor(power * bonus * 0.01) and +1 bonus-hour of lifespan into
+        the Digimemory payload; the bonus is spent.  Returns None with no bonus
+        (DVPet onDie only enters UnlockInheritance when _bonus > 0)."""
+        if self.evol_bonus <= 0:
+            return None
+        b = self.evol_bonus
+        mem = {"name": self.name, "num": self.num,
+               "vaccine": int(self.vaccine * b * DIGIMEMORY_ATTR_COEF),
+               "data": int(self.data_power * b * DIGIMEMORY_ATTR_COEF),
+               "virus": int(self.virus * b * DIGIMEMORY_ATTR_COEF),
+               "seconds": DIGIMEMORY_LIFE_INC * b}
+        self.evol_bonus = 0
+        return mem
+
     def set_auto_care(self, on):
         """SpriteAnim's Set_AutoCare switch -> PhysicalState.setAutoCare: hiring
         the assistant also rolls WHICH Digimon answers, from the digimon.csv
@@ -2822,6 +2846,19 @@ class Pet:
                 return "X-Program complete! The X-Antibody is permanent."
             self._set_xantibody("Temporary")
             return "X-Antibody induced! Evolve soon to make it stick."
+        if e.get("action") == "Inherit":                # the Digimemory (item 32)
+            # DVPet useItem routes Inherit around the weak-consumable coefficient
+            # and diminishing returns: applyItem(item, 1.0) -- full strength always
+            mem, self.digimemory = (self.digimemory or {}), {}
+            if not mem:
+                return "The Digimemory is blank."
+            self.vaccine = max(0, self.vaccine + int(mem.get("vaccine", 0)))
+            self.data_power = max(0, self.data_power + int(mem.get("data", 0)))
+            self.virus = max(0, self.virus + int(mem.get("virus", 0)))
+            self.lifespan += float(mem.get("seconds", 0.0))
+            self._set_anim("happy", 1.5)
+            return (f"{mem.get('name', '?')}'s power lives on!  "
+                    f"Va+{mem.get('vaccine', 0)} | D+{mem.get('data', 0)} | Vi+{mem.get('virus', 0)}")
         if e.get("effect_id", -1) >= 0:                 # Futon: lay out a temporary care buff
             eff = data.load_care_effects().get(e["effect_id"])
             if eff:

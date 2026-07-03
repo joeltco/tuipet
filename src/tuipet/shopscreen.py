@@ -123,6 +123,12 @@ class ShopPanel:
             else:
                 if (e.get("action") or "") in data.TRANSPORT_ACTIONS:
                     return ("done", ("transport", e["key"]))
+                if (e.get("action") or "") == "Inherit":
+                    mem0 = dict(getattr(self.pet, "digimemory", {}) or {})
+                    self.msg = self.pet.use_item(e["key"])
+                    if mem0 and not self.pet.digimemory:   # redeemed -> the ceremony
+                        return ("done", ("inherit", mem0))
+                    return None                            # refused / blank: stay in the bag
                 num0 = self.pet.num
                 self.msg = self.pet.use_item(e["key"])
                 if self.pet.num != num0:
