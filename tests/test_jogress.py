@@ -41,8 +41,10 @@ def test_earned_fusion_opens_and_costs_energy():
     p.train_time = "Noon"
     p.overeat = 5
     p.levels_fought = [5, 5, 5, 5]
+    p.evol_bonus = 100000            # push prob >= probBound: skip the (real) dice
     opts = jogress.options(p)
     assert opts, "a fully-raised pet unlocks its fusion"
     e0 = p.energy = p.max_energy
+    cost = int(round(p.max_energy * jogress.JOGRESS_ENERGY_COST))   # 66% of the PRE-fuse max
     jogress.fuse(p, opts[0]["num"])
-    assert p.energy == e0 - int(round(p.max_energy * jogress.JOGRESS_ENERGY_COST))
+    assert p.energy == e0 - cost
