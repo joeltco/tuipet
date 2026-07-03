@@ -2152,6 +2152,14 @@ class Pet:
         self._check_worse_injury(in_battle=True)         # battling injured can worsen it
         if won:
             self.wins += 1
+            # lifetime wins (cross-generation, gates the mystery eggs) -- counted
+            # HERE so every flow that resolves a battle counts: home key, adventure
+            # encounters, tournaments, town cups, lobby.  Late import: persistence
+            # imports pet at module top.
+            from . import persistence as _persist
+            total = _persist.wins_add(1)
+            if total in egg_mod.win_eggs().values():     # a gate just crossed
+                self.egg_unlock_note = "A mysterious egg appeared in the nursery!"
             if enemy:
                 self.levels_fought.append(_enemy_level(enemy))
             self._open_praise()                          # a win is praiseworthy (setPraise)

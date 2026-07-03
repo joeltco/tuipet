@@ -223,6 +223,16 @@ def redeem_password(text):
     return None
 
 
+def win_eggs():
+    """The tuipet-only mystery eggs and their lifetime-win gates ({idx: wins})."""
+    return dict(_WIN_EGGS)
+
+
+def win_gate(idx):
+    """The lifetime-wins requirement for a win-gated egg (None otherwise)."""
+    return _WIN_EGGS.get(idx)
+
+
 def locked_hint(prog, owned):
     """Shortest 'what unlocks next' hint among locked eggs ('' if none)."""
     from . import data
@@ -231,6 +241,9 @@ def locked_hint(prog, owned):
         s, _ = egg_state(i, prog, owned)
         if s == "locked" and rules.get(i) and rules[i]["desc"]:
             return rules[i]["desc"]
+    for i, need in sorted(_WIN_EGGS.items(), key=lambda kv: kv[1]):
+        if egg_state(i, prog, owned)[0] == "locked":
+            return f"a mystery egg at {need} lifetime wins ({prog['wins']}/{need})"
     return ""
 
 

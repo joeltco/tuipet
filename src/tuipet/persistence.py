@@ -70,6 +70,7 @@ def wins_add(n=1):
     prog = d.setdefault("progress", {})
     prog["wins"] = int(prog.get("wins", 0)) + int(n)
     save_settings(d)
+    return prog["wins"]
 
 
 # --- cross-generation egg-unlock progress (DVPet eggUnlock.csv signals) -----------

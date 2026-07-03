@@ -32,7 +32,12 @@ class EggSelectPanel:
         self.total = egg_mod.count()
         self.hint = egg_mod.locked_hint(prog, owned)
         self.locked = sum(1 for s, _ in self.states.values() if s == "locked")
-        self.n = len(self.unlocked)
+        self.wins = prog["wins"]
+        # the win-gated mystery eggs ride the carousel even locked -- a goal you
+        # cannot see is not a goal; ENTER on one reports the gate instead of hatching
+        self.carousel = self.unlocked + [i for i in sorted(egg_mod.win_eggs())
+                                         if self.states.get(i, ("", 0))[0] == "locked"]
+        self.n = len(self.carousel)
         self.i = 0               # cursor opens on the first egg (position 1/N)
         self.pos = 0.0           # continuous carousel target
         self.scroll = 0.0        # eased current position, chases self.pos
@@ -51,7 +56,10 @@ class EggSelectPanel:
         self.unlocked = egg_mod.hatchable_eggs(prog, owned)
         self.hint = egg_mod.locked_hint(prog, owned)
         self.locked = sum(1 for st, _ in self.states.values() if st == "locked")
-        self.n = len(self.unlocked)
+        self.wins = prog["wins"]
+        self.carousel = self.unlocked + [i for i in sorted(egg_mod.win_eggs())
+                                         if self.states.get(i, ("", 0))[0] == "locked"]
+        self.n = len(self.carousel)
         self.i = max(0, min(self.i, self.n - 1))
 
     def anim(self):
@@ -86,7 +94,13 @@ class EggSelectPanel:
             self.pos -= 1
             self.i = int(self.pos) % self.n if self.n else 0
         elif k in ("enter", "space"):
-            return ("done", self.unlocked[self.i])     # hatch the centred egg
+            idx = self.carousel[self.i]
+            need = egg_mod.win_gate(idx)
+            if need is not None and self.states.get(idx, ("", 0))[0] == "locked":
+                self.sfx = "error"
+                self._flash(f"Sealed — {need - self.wins} more wins.")
+                return None
+            return ("done", idx)                       # hatch the centred egg
         elif k == "escape":
             return ("done", None)                      # back out without choosing
         return None
@@ -117,7 +131,7 @@ class EggSelectPanel:
         return None
 
     def _egg(self, pos):
-        return self.unlocked[pos % self.n]
+        return self.carousel[pos % self.n]
 
     def _frame(self, pos, center):
         fr = egg_mod.record(self._egg(pos))["frames"]
@@ -128,6 +142,9 @@ class EggSelectPanel:
     def _note(self, idx):
         state = self.states.get(idx, ("owned", 0))[0]
         name = egg_mod.hatch_name(idx)
+        need = egg_mod.win_gate(idx)
+        if need is not None and state == "locked":
+            return f"sealed — {min(self.wins, need)}/{need} lifetime wins"
         if state == "temp":
             return "hatches: %s  (this gen only)" % name
         return "hatches: %s" % name

@@ -1704,6 +1704,12 @@ class TuiPetApp(App):
         if note:
             self.flash(note)
             p.assist_note = ""
+        # a lifetime-win gate crossed mid-battle: announce it back home
+        note = getattr(p, "egg_unlock_note", "")
+        if note:
+            self.flash(note)
+            self.beep("reward", bell=False)
+            p.egg_unlock_note = ""
         # birthday (setTimeToAge age-up): announce the day's verdict
         if p.birthday_note:
             self.flash(p.birthday_note)
@@ -1868,8 +1874,8 @@ class TuiPetApp(App):
 
     def _after_battle(self, battle):
         if battle is not None:
-            if battle.won:
-                persistence.wins_add(1)        # lifetime wins gate the mystery eggs
+            # lifetime wins are counted in pet.record_battle (single source: every
+            # battle flow -- adventure/cup/lobby included -- resolves through it)
             self.flash(battle.reward)
             self.beep("win") if battle.won else self.beep("lose", bell=False)
         self.repaint()
