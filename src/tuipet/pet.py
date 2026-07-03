@@ -337,6 +337,15 @@ WORSE_MALADY_OBED_DEC = -10              # worseMaladyObedienceDec
 WORSE_INJ_ENERGY_DEC = 1                 # WorseInjuryEnergyDec
 WORSE_INJ_ENTH_CHANGE = -1               # WorseInjuryEnthusiasmChange
 VITAMIN_HOURS = 60                       # VitaminHours (game-min of injury-worsening protection)
+CURED_MOOD_BONUS = 75                    # CuredMoodBonus (divided by Max{Sick,Inj}Length per treatment)
+CURED_OBED_BONUS = 25                    # CuredObedienceBonus
+BAD_MED_LIFE_DEC = 3600.0                # BadMedLifeDec: a double dose is poison
+BAD_MED_BM_INC = 6                       # BadMedBMInc (bowel gauge lurch)
+BAD_VITAMIN_MOOD_DEC = 8                 # BadVitaminMoodDec
+BAD_VITAMIN_LIFE_DEC = 7200.0            # BadVitaminLifeDec
+BAD_VITAMIN_BM_INC = 2                   # BadVitaminBMInc
+VITAMIN_WORSE_SICK_CHANCE = 1            # VitaminWorseSickChance %
+VITAMIN_OVERFED_SICK_CHANCE = 50         # VitaminOverfedSickChance (RefuseChance-bounded roll)
 MEDICINE_HOURS = 60                      # MedicineHours (game-min the medicine indicator lingers, config.csv)
 BANDAGE_HOURS = 60                       # BandageHours (game-min the bandage indicator lingers, config.csv)
 
@@ -2135,7 +2144,22 @@ class Pet:
         return self.bandage_lapse > 0
 
     def feed_vitamin(self):
-        """PhysicalState.feedVitamin: top up injury-worsening protection."""
+        """PhysicalState.feedVitamin: top up injury-worsening protection.  A dose
+        while the last one still runs is a BAD VITAMIN: sick risks, a bowel
+        lurch, mood and lifespan costs, and it comes right up."""
+        if self.vitamin_lapse > 0:
+            if self.sick and random.randrange(100) < VITAMIN_WORSE_SICK_CHANCE:
+                self._worsen_sick()
+            self._poop_t = getattr(self, "_poop_t", 0) \
+                + self._poop_interval * BAD_VITAMIN_BM_INC / max(1, self._phys().get("poop_limit", 64))
+            self._set_mood(self.mood - BAD_VITAMIN_MOOD_DEC)
+            self.lifespan = max(0.0, self.lifespan - BAD_VITAMIN_LIFE_DEC)
+            if not self.sick and random.randrange(REFUSE_CHANCE) < VITAMIN_OVERFED_SICK_CHANCE:
+                self._sicken()                               # vitaminOverfedSickChance
+            if self.poop < POOP_MAX_PILES:                   # startPoop
+                self.poop += 1
+                self.poop_sizes.append(self._poop_size())
+            self._set_anim("refuse", 1.5)                    # Bad_Health_Jeering
         self.vitamin_lapse = VITAMIN_HOURS
 
     def _worsen_injury(self):
@@ -2250,26 +2274,73 @@ class Pet:
         return f"Cleaned {n} poop."
 
     def heal(self):
+        """The First Aid button (Medical menu): a SICK pet takes the Med staple
+        (feedMed), an injured one gets the Bandage (applyBandage).  Treatment is
+        INCREMENTAL -- each dose shortens the spell by its CureLapse/HealLapse
+        (-2 lapses); the instant cure is the shop's Elixir (Cured=TRUE, 2000b)."""
         if self.dead:
             return "It rests now — press N for a new egg."
         if self.stage == "Egg":
             return "It is still an egg."
         if self.asleep:
             return self._disturbed()
-        if not self.sick and not self.is_injured():
-            return "It's not sick or injured."
-        sick0, inj0 = self.sick, self.is_injured()
         if self.sick:
-            self.sick = False
-            self.sick_length = 0.0                  # medicine cures the illness outright
-            self.med_lapse = MEDICINE_HOURS         # DVPet feedMed: medicine indicator runs as it wears off
+            return self._feed_med()
         if self.is_injured():
-            self.inj_length = 0.0                   # first aid mends the active injury (DVPet bath/recovery)
-            self.bandage_lapse = BANDAGE_HOURS      # DVPet applyBandage: the bandage shows during recovery
-        self._set_mood(self.mood + 75)              # curedMoodBonus
+            return self._apply_bandage()
+        return "It's not sick or injured."
+
+    def _feed_med(self):
+        """PhysicalState.feedMed: the Med staple (f:4, infinite, CureLapse -2).
+        Dosing AGAIN while the medicine indicator still runs is a BAD MED --
+        poison: lifespan -BadMedLifeDec, the bowels lurch, and it jeers."""
+        med = data.consumable_by_key("f:4") or {"mood": -10, "cure_lapse": -2}
+        refused = self.check_refused(food=med)               # feed(): the Med -20 obey mod
+        self.check_compliant()
+        if refused:
+            return f"{self.name} spits out the medicine!"
+        if self.med_lapse > 0:                               # getMed(): double dose
+            self.lifespan = max(0.0, self.lifespan - BAD_MED_LIFE_DEC)
+            self._poop_t = getattr(self, "_poop_t", 0) \
+                + self._poop_interval * BAD_MED_BM_INC / max(1, self._phys().get("poop_limit", 64))
+            if self.poop < POOP_MAX_PILES:                   # startPoop: it comes right up
+                self.poop += 1
+                self.poop_sizes.append(self._poop_size())
+            self._set_anim("refuse", 1.5)                    # Bad_Health_Jeering
+            return "A double dose — that was poison!"
+        self._set_mood(self.mood + int(med.get("mood", -10)))          # it tastes awful
+        self.sick_length = max(0.0, self.sick_length
+                               + med.get("cure_lapse", -2) * SICK_LAPSE_MIN)
+        if self.sick_length == 0:
+            self.sick = False                                # the dose finished it off
+        self._set_mood(self.mood + CURED_MOOD_BONUS // MAX_SICK_LENGTH)
+        self.obedience += CURED_OBED_BONUS // MAX_SICK_LENGTH
+        self.med_lapse = MEDICINE_HOURS                      # the indicator runs as it wears off
         self._set_anim("heal", 1.5)
-        what = "illness and injury" if (sick0 and inj0) else ("injury" if inj0 else "illness")
-        return f"Treated {self.name}'s {what}."
+        return ("The medicine worked!" if not self.sick
+                else f"{self.name} keeps the medicine down... it helps.")
+
+    def _apply_bandage(self):
+        """PhysicalState.applyBandage: the Bandage item (i:80, HealLapse -2);
+        an already-bandaged pet jeers the second wrap off."""
+        if self.bandage_lapse > 0:                           # getBandage(): one wrap at a time
+            self._set_anim("refuse", 1.0)                    # Jeering
+            return "It's already bandaged up."
+        bandage = data.consumable_by_key("i:80") or {"heal_lapse": -2}
+        refused = self.check_refused(food=bandage)           # useItem's refusal roll
+        self.check_compliant()
+        if refused:
+            return f"{self.name} squirms away from the bandage!"
+        self.inj_length = max(0.0, self.inj_length
+                              + bandage.get("heal_lapse", -2) * INJ_LAPSE_MIN)
+        if self.inj_length == 0:
+            self.injuries = max(0, self.injuries - 1)        # mended
+        self._set_mood(self.mood + CURED_MOOD_BONUS // MAX_INJ_LENGTH)
+        self.obedience += CURED_OBED_BONUS // MAX_INJ_LENGTH
+        self.bandage_lapse = BANDAGE_HOURS
+        self._set_anim("heal", 1.5)
+        return ("All patched up!" if self.inj_length == 0
+                else f"{self.name} is bandaged — it needs rest now.")
 
     def toggle_lights(self):
         """The lights button (DVPet setLights): toggles the room light ONLY. The pet
@@ -2455,6 +2526,13 @@ class Pet:
             # fatigue-length; energy stays driven by the item's Energy column, not a full refill
         if e["undepressed"]:
             self._set_mood(max(self.mood, NEW_UNDEPRESSED_MOOD))  # leave depression
+        if self.sick and e.get("cure_lapse"):
+            self.sick_length = max(0.0, self.sick_length + e["cure_lapse"] * SICK_LAPSE_MIN)
+            self.sick = self.sick_length > 0             # applyConsumable CureLapseChange
+        if self.is_injured() and e.get("heal_lapse"):
+            self.inj_length = max(0.0, self.inj_length + e["heal_lapse"] * INJ_LAPSE_MIN)
+        if self.is_fatigued() and e.get("fatigue_lapse_change"):
+            self.fatigue_length = max(0.0, self.fatigue_length + e["fatigue_lapse_change"] * 60.0)
         if e["cured"]:
             self.sick = False
             self.sick_length = 0.0

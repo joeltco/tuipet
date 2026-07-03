@@ -610,6 +610,10 @@ def _consumable(row, id_field):
         # using spends UsesPer*; can_inc/can_dec gate buying/using (foods/items.csv).
         "max_uses": int(num("MaxUses") or 1),
         "gift_chance": int(num("GiftChance/100")),   # per-item odds of being the gift-call present
+        # applyConsumable recovery deltas (in LAPSES): Med -2 sick, Bandage -2 injury
+        "cure_lapse": int(num("CureLapseChange")),
+        "heal_lapse": int(num("HealLapseChange")),
+        "fatigue_lapse_change": int(num("FatigueLapseChange")),
         "health": int(num("Health")),   # permanent fullHealthPoints gain (HP Chip)
 
         "uses_per": int(num("UsesPerFood") or num("UsesPerItem") or 1),

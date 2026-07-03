@@ -88,18 +88,23 @@ def test_use_item_applies_effect(live_pet):
 
 # --- bandage / medicine indicators (DVPet getBandage / getMed) --------------
 def test_heal_lights_medicine_and_bandage_then_they_wear_off():
-    """heal() cures sickness+injury and lights the medicine/bandage indicators
-    (DVPet feedMed/applyBandage -> medLapse/bandageLapse), which then wear off."""
+    """The Medical flows light the medicine/bandage indicators (feedMed/
+    applyBandage -> medLapse/bandageLapse), which then wear off.  Treatment is
+    incremental now, so each press treats ONE ailment (sick outranks injury)."""
     from tuipet.pet import Pet, MEDICINE_HOURS, BANDAGE_HOURS
     pet = Pet.from_num(29)
     pet.stage = "Rookie"
+    pet.obedience = 500                     # out-roll the medicine refusal
     pet.sick = True
+    pet.sick_length = 5.0                   # under one dose's worth
     pet.inj_length = 5.0
     assert not pet.has_medicine() and not pet.has_bandage()
 
-    pet.heal()
-    assert not pet.sick and not pet.is_injured(), "heal cures sickness and injury"
+    pet.heal()                              # the med first (Medical: Use Med)
+    assert not pet.sick, "the dose finished the short illness"
     assert pet.has_medicine() and pet.med_lapse == MEDICINE_HOURS
+    pet.heal()                              # then the bandage on the next press
+    assert not pet.is_injured()
     assert pet.has_bandage() and pet.bandage_lapse == BANDAGE_HOURS
 
     for _ in range(int(max(MEDICINE_HOURS, BANDAGE_HOURS))):
