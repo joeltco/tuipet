@@ -1093,8 +1093,13 @@ def load_egg_unlock():
             "item": _int(r[14]) if (_int(r[14]) is not None and _int(r[14]) >= 0) else None,
             "habitat": _int(r[15]) if (_int(r[15]) is not None and _int(r[15]) >= 0) else None,
             "password": _opt(r[16]),
-            "obedience": _int(r[17]) if (_int(r[17]) is not None and _int(r[17]) >= 0) else None,
-            "mood": _int(r[19]) if (_int(r[19]) is not None and _int(r[19]) >= 0) else None,
+            # canon re-audit 2026-07: the checker compares these against the
+            # PREVIOUS generation's snapshot, so they must source the (Temp)
+            # prev-gen columns 18/20 -- the old 17/19 read the CURRENT-pet
+            # columns (a latent mis-map; every one of the four is data-empty
+            # in the corpus, so nothing observable changed)
+            "obedience": _int(r[18]) if (_int(r[18]) is not None and _int(r[18]) >= 0) else None,
+            "mood": _int(r[20]) if (_int(r[20]) is not None and _int(r[20]) >= 0) else None,
             "desc": (r[21] or "").strip(),
             "can_perm": r[22].strip() == "TRUE",
         }
