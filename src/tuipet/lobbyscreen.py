@@ -170,6 +170,15 @@ class LobbyPanel:
     def _others(self):
         return self.state.others() if self.state else []
 
+    def _pet_of(self, pid):
+        """'Agumon · Champion' for a roster id ('' when unknown)."""
+        for pl in (self.state.roster if self.state else []):
+            if pl["id"] == pid:
+                pet = pl.get("pet") or {}
+                nm, st = pet.get("name"), pet.get("stage")
+                return f"{nm} · {st}" if nm and st else (nm or "")
+        return ""
+
     # ---- per-tick refresh (the 0.1s interval clock calls this) -----------
     def anim(self):
         s = self.state
@@ -207,6 +216,29 @@ class LobbyPanel:
             s.error = None
         elif s.connected and self.status == "Connecting…":
             self.status = "Up/Down pick · Enter chat/act · Esc leave"
+        # drop -> the client retries on its own; say so instead of stranding a banner
+        if getattr(s, "reconnecting", False):
+            self._seen_ids = None                  # a refilled roster is not a wave of joins
+            if self.phase == "lobby":
+                self.status = "Connection lost — reconnecting…"
+            self._was_down = True
+        elif s.connected and getattr(self, "_was_down", False):
+            self._was_down = False
+            if self.phase == "lobby":
+                self.status = "Reconnected."
+        # join/leave notices in the chat log (client-side roster diff)
+        if s.connected:
+            ids = {pl["id"]: pl["name"] for pl in s.roster}
+            old_ids = getattr(self, "_seen_ids", None)
+            if old_ids is not None:
+                for pid, nm in ids.items():
+                    if pid not in old_ids and pid != s.me_id:
+                        s.chat.append(("", f"{nm} joined"))
+                for pid, nm in old_ids.items():
+                    if pid not in ids and pid != s.me_id:
+                        s.chat.append(("", f"{nm} left"))
+                del s.chat[:-200]
+            self._seen_ids = ids
         # partner vanished mid-session
         if self.partner and not any(p["id"] == self.partner[0] for p in s.roster):
             if self.phase == "jogress" and self.jphase == "waiting":
@@ -288,7 +320,9 @@ class LobbyPanel:
             self.my_max = self.my_hp = self.battle.pet_max
             self.opp_max = self.opp_hp = self.battle.enemy_max
         else:
-            self.my_max = self.my_hp = battle.MAX_HEALTH.get(self.pet.stage, battle.MAX_HEALTH_DEFAULT)
+            # the guest's own trained HP (its battle_card), not the stage table --
+            # the table under-read a trained pet's bar until round one corrected it
+            self.my_max = self.my_hp = battle.battle_card(self.pet)["hp"]
             self.opp_max = self.opp_hp = max(2, opp_card.get("hp", 10))
         self.bphase, self.bt_log = "choose", ""
 
@@ -300,6 +334,7 @@ class LobbyPanel:
         b.play_round(self.bt_my_choice)               # auto-records onto the host pet when it ends
         res = {"kind": "battle", "t": "result",
                "host_dealt": b.last_player_damage, "guest_dealt": b.last_enemy_damage,
+               "hattr": self.bt_my_choice, "gattr": self.bt_opp_choice,
                "hhp": max(0, b.pet_hp), "ghp": max(0, b.enemy_hp),
                "over": b.over, "host_alive": b.pet_hp > 0, "guest_alive": b.enemy_hp > 0}
         self.client.relay(self.partner[0], res)
@@ -309,12 +344,18 @@ class LobbyPanel:
         if as_host:
             self.my_hp, self.opp_hp = res["hhp"], res["ghp"]
             dealt, taken = res["host_dealt"], res["guest_dealt"]
+            my_attr, opp_attr = res.get("hattr"), res.get("gattr")
             my_alive, opp_alive = res["host_alive"], res["guest_alive"]
         else:
             self.my_hp, self.opp_hp = res["ghp"], res["hhp"]
             dealt, taken = res["guest_dealt"], res["host_dealt"]
+            my_attr, opp_attr = res.get("gattr"), res.get("hattr")
             my_alive, opp_alive = res["guest_alive"], res["host_alive"]
-        self.bt_log = f"you hit {dealt} · took {taken}"
+        mine = data.move_name(self.pet.num, my_attr) or my_attr or "?"
+        theirs = data.move_name((self.opp_card or {}).get("num", -1), opp_attr) or opp_attr or "?"
+        self.bt_log = f"{mine} → {dealt} dmg\n  {theirs} ← {taken} dmg"
+        if not res.get("over"):
+            self.sfx = "strongHit" if dealt >= taken and dealt > 0 else "attackHit"
         self.bt_my_choice = self.bt_opp_choice = None
         if res.get("over"):
             self.bphase, self.sfx = "over", "attack"
@@ -490,6 +531,8 @@ class LobbyPanel:
             t.append("  [Enter] back to lobby", style=DIM)
             return t
         me = self._card()["name"]
+        oc = self.opp_card or {}
+        t.append(f"  vs {pname}'s {oc.get('name', '?')} · {oc.get('stage', '?')}\n\n", style=DIM)
         t.append(f"  {_fit(me, 10)}{self.my_hp:>3}/{self.my_max:<2} [{_hpbar(self.my_hp, self.my_max)}]\n", style=INK_B)
         t.append(f"  {_fit(pname, 10)}{self.opp_hp:>3}/{self.opp_max:<2} [{_hpbar(self.opp_hp, self.opp_max)}]\n\n", style=INK)
         t.append(f"  {self.bt_log}\n\n" if self.bt_log else "\n\n", style=INK)
@@ -510,7 +553,7 @@ class LobbyPanel:
         t.append(f"{online} on".rjust(ROSTW)[:ROSTW] + "\n", style=INK_B)
         lines = []
         for nm, tx in (s.chat if s else []):
-            lines.extend(_wrap(f"{nm}: {tx}", CHATW))
+            lines.extend(_wrap(f"{nm}: {tx}" if nm else f"· {tx}", CHATW))
         lines = lines[-BODY:]
         lines = [""] * (BODY - len(lines)) + lines
         sel = min(self.sel, len(others) - 1) if others else 0
@@ -535,9 +578,18 @@ class LobbyPanel:
         t.append(_fit(shown + "_", fw) + "\n", style=INK)
         if self.invite_prompt is not None:
             inv = self.invite_prompt
-            t.append(f"{inv['from_name']} invites {inv['kind']}  [Y]/[N]", style=INK_B)
+            blurb = self._pet_of(inv.get("from_id"))
+            who = f"{inv['from_name']} ({blurb})" if blurb else inv["from_name"]
+            t.append(_fit(f"{who} invites {inv['kind']}  [Y]/[N]", CHATW + ROSTW + 1), style=INK_B)
         elif self.action_for is not None:
-            t.append(f"{self.action_for[1]}:  [B]attle  [J]ogress  [Esc]", style=INK_B)
+            blurb = self._pet_of(self.action_for[0])
+            who = f"{self.action_for[1]} ({blurb})" if blurb else self.action_for[1]
+            t.append(_fit(f"{who}:  [B]attle  [J]ogress  [Esc]", CHATW + ROSTW + 1), style=INK_B)
         else:
-            t.append(self.status[:CHATW + ROSTW], style=DIM)
+            line = self.status
+            if others and line.startswith("Up/Down"):
+                blurb = self._pet_of(others[sel]["id"])
+                if blurb:
+                    line = f"{others[sel]['name']}: {blurb} — Enter to act"
+            t.append(line[:CHATW + ROSTW + 1], style=DIM)
         return t

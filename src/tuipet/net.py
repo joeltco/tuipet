@@ -28,6 +28,7 @@ class LobbyState:
         self.chat: list[tuple[str, str]] = []  # [(from_name, text)] — capped
         self.inbox: list[dict] = []            # invite / invite_resp / relay — drained by caller
         self.login_failed: str | None = None   # server rejected the login (bad password / name taken)
+        self.reconnecting = False              # dropped -> the client is retrying with backoff
 
     def others(self):
         """Roster minus me — the people you can battle/jogress."""
@@ -124,6 +125,9 @@ class LobbyClient:
         self.state = state or LobbyState()
         self._ws = None
         self._q: asyncio.Queue = asyncio.Queue()
+        self._stop = False                    # rejected login (or teardown) -> no retry
+        self._had_welcome = False             # a past successful login makes drops RECONNECTS
+        self._backoff0 = 2.0                  # first-retry delay (tests shrink it)
 
     # ---- outgoing (called from the UI thread/loop) -----------------------
     def _send(self, obj):
@@ -150,24 +154,41 @@ class LobbyClient:
 
     # ---- lifecycle -------------------------------------------------------
     async def run(self):
-        """Connect, log in, then pump send + recv until the socket closes."""
-        try:
-            async with websockets.connect(self.uri, max_size=64 * 1024) as ws:
-                self._ws = ws
-                await ws.send(json.dumps({"t": "login", "name": self.name,
-                                          "pw": self.pw, "pet": self.pet}))
-                self.state.connected = True
-                sender = asyncio.create_task(self._send_loop())
-                try:
-                    async for raw in ws:
-                        self._handle(raw)
-                finally:
-                    sender.cancel()
-        except Exception as e:                       # surfaced in the lobby as a banner
-            self.state.error = str(e) or e.__class__.__name__
-        finally:
-            self.state.connected = False
-            self._ws = None
+        """Connect, log in, pump send + recv -- and on a DROP, reconnect with
+        backoff (the audit gave SyncClient this loop; the lobby lacked it, so
+        any blip stranded the panel on an error banner until re-entry).  A
+        rejected login stops for good; cancellation tears the task down."""
+        backoff = self._backoff0
+        while not self._stop:
+            try:
+                async with websockets.connect(self.uri, max_size=64 * 1024) as ws:
+                    self._ws = ws
+                    await ws.send(json.dumps({"t": "login", "name": self.name,
+                                              "pw": self.pw, "pet": self.pet}))
+                    self.state.connected = True
+                    self.state.reconnecting = False
+                    backoff = self._backoff0
+                    sender = asyncio.create_task(self._send_loop())
+                    try:
+                        async for raw in ws:
+                            self._handle(raw)
+                    finally:
+                        sender.cancel()
+            except Exception as e:                   # surfaced in the lobby as a banner
+                if not self._had_welcome:
+                    self.state.error = str(e) or e.__class__.__name__
+            finally:
+                self.state.connected = False
+                self._ws = None
+            if self._stop:
+                break
+            # nobody is reachable while down: an empty roster voids any live
+            # session panel-side, exactly like a partner leaving
+            self.state.roster = []
+            self.state.reconnecting = True
+            await asyncio.sleep(backoff)
+            backoff = min(backoff * 2, 30)
+        self.state.reconnecting = False
 
     async def _send_loop(self):
         while True:
@@ -185,6 +206,7 @@ class LobbyClient:
             return
         s = self.state
         if t == "welcome":
+            self._had_welcome = True
             s.me_id = m.get("id")
             s.me_name = m.get("name")
         elif t == "roster":
@@ -195,6 +217,14 @@ class LobbyClient:
         elif t in ("invite", "invite_resp", "relay"):
             s.inbox.append(m)
         elif t == "login_failed":
-            s.login_failed = m.get("msg")
+            msg = m.get("msg") or ""
+            if self._had_welcome and "already online" in msg:
+                # reconnect race: the server hasn't reaped our dead session yet --
+                # NOT a credentials problem, so keep retrying instead of ejecting
+                # the player to the login screen
+                pass
+            else:
+                s.login_failed = msg
+                self._stop = True
         elif t == "error":
             s.error = m.get("msg")
