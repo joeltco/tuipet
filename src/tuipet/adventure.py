@@ -11,9 +11,14 @@ INTERACTIVE_STEPS: a zone is crossed in ~40 player travel actions instead of
 `TotalSteps` ticks. Each travel action advances `stride = TotalSteps/INTERACTIVE_STEPS`
 real steps, and every per-tick mechanic is applied over that stride using the REAL
 DVPet constants/formulas (verified in config.csv + WorldMap/Zone bytecode):
-  - encounter chance: compound the real per-tick 1/chance over `stride` ticks, where
-    chance = RandomEncounterChance(7000) +/- the night/walk coefficients (=2). Day-walk
-    = 10500, night-walk = 7000 -> night is exactly 1.5x as likely.
+  - encounter chance: Zone.checkBattle rolls on EVERY controller step-fire
+    (StepSecondCoefficient = 14/s), while the location advances only once per
+    WalkStepMin(9) fires -- so each walked step carries NINE rolls, not one.
+    Compound the real per-fire 1/chance over `stride * 9` fires, where chance =
+    RandomEncounterChance(7000) +/- the night/walk coefficients (=2): day-walk
+    10500, night-walk 7000 (1.5x).  Real pacing: one location step per 9/14s ~=
+    0.64s, a 10000-step zone = ~1h47m of device walking with ~8.6 encounters;
+    tuipet's 40 actions give the same ~8-9 fights at ~19%/action.
   - travel drain: accrue (stride + WalkEnergyDec) into _energy_dec; on crossing
     TravelEnergyDecMaxCoefficient(80) * fullHP, apply -TravelEnergyDec(1) energy and
     -TravelCalorieDec(1) calories (col0: TravelWeightDec=0, so weight only moves via the
@@ -43,7 +48,10 @@ _CHANCE_NIGHT = ENC_C - ENC_C / NIGHT_COEFF + ENC_C / WALK_COEFF  # 7000 -> 1/70
 TRAVEL_ENERGY_DEC_MAX_COEFF = 80     # TravelEnergyDecMaxCoefficient
 TRAVEL_ENERGY_DEC = 1                # TravelEnergyDec
 TRAVEL_CALORIE_DEC = 1               # TravelCalorieDec
-WALK_ENERGY_DEC = 1                  # WalkEnergyDec (per step-event accrual addend)
+WALK_ENERGY_DEC = 1                  # WalkEnergyDec (accrued per LOCATION step)
+WALK_STEP_MIN = 9                    # WalkStepMin: controller fires per location step at walk
+TRAVEL_EXERCISE_LIMIT = 4            # TravelExerciseChangeLimit: walking tops effort up to 4
+TRAVEL_EXERCISE_INC = 1              # TravelExerciseInc
 
 # The one TUI compression: interactive travel actions to cross a zone.
 INTERACTIVE_STEPS = 40
@@ -109,18 +117,23 @@ class Adventure:
 
     # --- per-tick mechanics applied over one interactive stride ---
     def _encounter_roll(self):
-        """Zone.checkBattle: compound the real per-tick 1/chance over `stride` ticks."""
+        """Zone.checkBattle rolls per CONTROLLER FIRE (14/s), 9 fires per walked
+        step -- compound the real per-fire 1/chance over stride*WalkStepMin fires."""
         denom = _CHANCE_NIGHT if self.pet.day_phase == "night" else _CHANCE_DAY
-        p_none = (1.0 - 1.0 / denom) ** self.stride
+        p_none = (1.0 - 1.0 / denom) ** (self.stride * WALK_STEP_MIN)
         return random.random() < (1.0 - p_none)
 
     def _travel_drain(self):
-        """WorldMap.checkEnergyDec: accrue, and on crossing 80*fullHP drain energy+calories."""
-        self._energy_dec += self.stride + WALK_ENERGY_DEC
+        """WorldMap.checkEnergyDec: accrue WalkEnergyDec per LOCATION step; on
+        crossing 80*fullHP drain energy+calories, and walking tops the effort
+        hearts up to TravelExerciseChangeLimit (travel is light training)."""
+        self._energy_dec += self.stride * WALK_ENERGY_DEC
         if self._energy_dec >= TRAVEL_ENERGY_DEC_MAX_COEFF * self._full_hp():
             self._energy_dec = 0
             self.pet._set_energy(self.pet.energy - TRAVEL_ENERGY_DEC)
             self._calorie_dec(TRAVEL_CALORIE_DEC)
+            if self.pet.strength < TRAVEL_EXERCISE_LIMIT:
+                self.pet.strength += TRAVEL_EXERCISE_INC
 
     def _calorie_dec(self, n):
         """PhysicalState.setCaloriesAndChangeWeight: spend the calorie buffer; when it
@@ -198,6 +211,7 @@ class Adventure:
             self.boss_pending = False
             if won:
                 self._cleared.add(enemy["num"])            # this boss no longer blocks
+                self.life = MAX_LIFE                       # a zone-boss win refills adventure life
                 if self.location >= self.total_steps:      # the gate boss falls -> zone done
                     res = self._complete_zone()
                     if self.loot:
@@ -207,21 +221,26 @@ class Adventure:
                 if self.loot:
                     self.last += f"  Loot: {self.loot['name']}!"
                 return None
-            self._lose_life(f"Lost to {enemy['name']}...")
+            self._lose_life(f"Lost to {enemy['name']}...", enemy.get("penalty", 0))
         elif not won:
-            self._lose_life("Knocked back!")
+            self._lose_life(f"Lost to {enemy['name']}...", enemy.get("penalty", 0))
         else:
             self.last = f"Beat {enemy['name']}!"
             if self.loot:
                 self.last += f"  Loot: {self.loot['name']}!"
         return None
 
-    def _lose_life(self, msg):
-        """A lost adventure battle costs one adventure life; at 0, applyLifePenalty."""
+    def _lose_life(self, msg, penalty=0):
+        """A lost adventure battle costs one adventure life; with life remaining the
+        enemy's Penalty knocks the pet BACK that many steps (WorldMap.lossPenalty);
+        at 0, applyLifePenalty retreats to the closest town."""
         self.life -= 1
         self.last = msg
         if self.life <= 0:
             self._apply_life_penalty()
+        elif penalty > 0:
+            self.location = max(0, self.location - penalty)
+            self.last = msg + f"  Knocked back {penalty} steps!"
 
     def _apply_life_penalty(self):
         """WorldMap.applyLifePenalty: toClosestTown() -- retreat to the nearest town at
