@@ -45,6 +45,9 @@ def test_earned_fusion_opens_and_costs_energy():
     opts = jogress.options(p)
     assert opts, "a fully-raised pet unlocks its fusion"
     e0 = p.energy = p.max_energy
-    cost = int(round(p.max_energy * jogress.JOGRESS_ENERGY_COST))   # 66% of the PRE-fuse max
+    # canon: energy += Math.ceil(-0.66 x max) -- ceil rounds the negative product
+    # TOWARD ZERO (max 24 drains 15, not the old round()'s 16)
+    import math
+    cost = -math.ceil(-jogress.JOGRESS_ENERGY_COST * p.max_energy)
     jogress.fuse(p, opts[0]["num"])
     assert p.energy == e0 - cost

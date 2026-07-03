@@ -100,14 +100,18 @@ def fuse_targets(pet, partner_attr):
 
 
 def resolve(pet, partner_attr):
-    """Choose the fusion form for a partner of `partner_attr` the way DVPet's
-    pairJogressMatch does: the highest-priority valid target, ties broken at random."""
+    """Choose the fusion form the way canon does (canon re-audit 2026-07):
+    pairJogressMatch feeds the matches through getFinalEvolution -- highest
+    fulfilled score, ties broken by smallest deviation, then at random.  (The
+    old pick used the raw Priority column only.)"""
     targets = fuse_targets(pet, partner_attr)
     if not targets:
         return None
-    reqs = data.load_requirements()
-    best = max(reqs.get(o["num"], {}).get("priority", 0.0) for o in targets)
-    top = [o for o in targets if reqs.get(o["num"], {}).get("priority", 0.0) == best]
+    best = max(evolution.fulfilled(pet, o["num"]) for o in targets)
+    top = [o for o in targets if abs(evolution.fulfilled(pet, o["num"]) - best) < 1e-9]
+    if len(top) > 1:
+        mind = min(evolution.deviation(pet, o["num"]) for o in top)
+        top = [o for o in top if evolution.deviation(pet, o["num"]) == mind]
     return random.choice(top)
 
 
@@ -116,6 +120,9 @@ def fuse(pet, target_num):
     A fusion drinks 66% of max energy (JogressEnergyChange -0.66)."""
     _, by = data.load_sprites()
     name = by[target_num]["name"]
-    pet._set_energy(pet.energy - int(round(pet.max_energy * JOGRESS_ENERGY_COST)))
+    # canon PhysicalState.jogress: energy += Math.ceil(-0.66 x max) -- the ceil
+    # rounds TOWARD ZERO on the negative product (max 24 drains 15, not 16)
+    import math
+    pet._set_energy(pet.energy + math.ceil(-JOGRESS_ENERGY_COST * pet.max_energy))
     pet.evolve_to(target_num)   # special evolution; partner supplies the DNA
     return f"Jogress! Fused into {name}!"
