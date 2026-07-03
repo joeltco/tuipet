@@ -134,6 +134,12 @@ GOOD_BIRTHDAY_FOOD = 55             # Cupcake
 BAD_BIRTHDAY_FOOD = 7               # Candy
 NORMAL_BIRTHDAY_FOOD = 54           # Cookie
 WIN_RATE_BONUS_COEF = 0.1           # winRateRookieBonusIncCoefficient (champion: 0.1*winRate - 5)
+# saveFromDeath: frantic taps during the dying beat can pull the pet back
+HITS_TO_SAVE = 30                   # HitsToSave 175 mouse-clicks over DVPet's ~7s jingle,
+                                    #   scaled to a ~6/s keyboard mash over tuipet's 5s beat
+REVIVAL_LIFE = 750.0                # RevivalLifeInc 45000 real-sec -> game-min scale (~12.5 game-h left)
+HUNGER_AFTER_SAVED = 0              # HungerAfterSavedFromDeath (alive, but starving)
+BONUS_AFTER_SAVED = -1              # BonusChangeAfterSavedFromDeath
 # perfect-conditions energy save (checkEnergyIncFromPerfectConditions):
 # an energy DROP during the pet's favourite time may bounce back +1 --
 # roll nextInt(base + mods) == 1, so perfect conditions shrink the range
@@ -492,6 +498,7 @@ class Pet:
     last_birthday: int = 0          # last celebrated age-day
     evol_bonus: int = 0             # _bonus: birthday/win-rate credit fed into evolution odds
     birthday_note: str = ""         # transient: the HUD's birthday announcement
+    saved_from_death: int = 0       # _savedFromDeath: each rescue raises the next bar
     gift: str = ""                  # pending gift-call present (consumable key; "" = none)
     gift_t: float = 0.0             # seconds toward the next GiftChanceMin roll
     # ---- home tournament (PhysicalState _trophySchedule/_foughtTrophiesToday) ----
@@ -1115,6 +1122,31 @@ class Pet:
         # Incompatible{Field,Element}SickChance are BOTH 0 in the classic column) --
         # an unfit home hurts through longer sick/injury/fatigue spells, the missed
         # energy saves and the fatigue odds, never through direct illness.
+
+    def save_from_death(self):
+        """PhysicalState.saveFromDeath: yanked back from the brink -- starving,
+        a bonus point poorer, RevivalLifeInc of life restored -- and the DEATH
+        EVOLUTION fires if a Death-special form will take the body (Devimon /
+        Bakemon / Ponchomon / Dexmon...).  With none valid it lives on as-is.
+        Returns the old num when a death evolution fired, else None."""
+        self.dead = False
+        self.saved_from_death += 1
+        self.hunger = HUNGER_AFTER_SAVED
+        self._starve_t = 0.0                          # the 12h clock restarts
+        self.evol_bonus += BONUS_AFTER_SAVED
+        self.age_seconds = max(0.0, self.lifespan - REVIVAL_LIFE)   # lapsed = total - revival
+        old = self.num
+        targets = evolution.death_targets(self)
+        if targets:
+            self.evolve_to(targets[0])               # evol(dying=true): the dark rebirth
+        else:
+            # no Death form takes it: it lives on -- the continuous death checks
+            # need the fatal counters off the trigger line (a mechanical floor;
+            # DVPet's checks are edge events so canon never faces this)
+            self.care_mistakes = min(self.care_mistakes, 19)
+            self.injuries = min(self.injuries, 19)
+        self._set_anim("happy", 2.0)                  # the rescue ends in a cheer
+        return old if targets else None
 
     def _die(self):
         self.dead = True

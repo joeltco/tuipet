@@ -454,7 +454,7 @@ class Screen(Static):
 
     # ---- care-action animations (DVPet SpriteAnim eat/clean/cheer) -----------
     def start_fx(self, kind, icon=None, poop=0, old_num=None, pet=None, starving=False):
-        steps = {"eat": 35, "cheer": 31, "jeer": 31, "clean": 22, "spit": 25, "evolve": 37, "dying": 18, "dna_charge": 44, "play": 37, "heal": 24, "poop": 25,
+        steps = {"eat": 35, "cheer": 31, "jeer": 31, "clean": 22, "spit": 25, "evolve": 37, "dying": 50, "dna_charge": 44, "play": 37, "heal": 24, "poop": 25,
                  "gift": GIFT_OUT + GIFT_BACK + GIFT_HOLD}.get(kind, 12)
         self.fx = {"kind": kind, "step": 0, "steps": steps, "icon": icon, "poop": poop, "old_num": old_num}
         if kind == "eat":
@@ -1059,6 +1059,15 @@ class TuiPetApp(App):
             pass
 
     def on_key(self, event):
+        fx = getattr(getattr(self, "screen_w", None), "fx", None)
+        if fx is not None and fx.get("kind") == "dying":
+            # dying(): the pet is a BUTTON -- frantic taps can save it
+            # (numHits > HitsToSave x (savedFromDeath + 1))
+            self._revive_hits = getattr(self, "_revive_hits", 0) + 1
+            self.beep("click", bell=False)
+            event.stop()
+            event.prevent_default()
+            return
         if self.mode is not None:
             event.stop()
             event.prevent_default()      # a panel owns the keyboard: don't fire global BINDINGS
@@ -1448,9 +1457,22 @@ class TuiPetApp(App):
                     self._status_eat()
                 elif sc.fx["kind"] == "play" and sc.fx["step"] % PLAY_HOP == 1:
                     self.beep("happy", bell=False)   # DVPet jumping(): a chirp at each hop's launch
-            elif self._dying_fx:               # dying beat finished -> memorial
+            elif self._dying_fx:               # dying beat finished: saved, or the memorial
                 self._dying_fx = False
-                self._open_mode(deathscreen.DeathPanel(self.pet), self._after_death)
+                hits = getattr(self, "_revive_hits", 0)
+                self._revive_hits = 0
+                from .pet import HITS_TO_SAVE
+                if hits > HITS_TO_SAVE * (self.pet.saved_from_death + 1):
+                    old_num = self.pet.save_from_death()
+                    if old_num is not None:            # the dark rebirth
+                        self.flash(f"[b]{self.pet.name}![/] It came back... changed.")
+                        self.screen_w.start_fx("evolve", old_num=old_num)
+                    else:
+                        self.flash(f"[b]{self.pet.name}[/] clings to life!")
+                        self.screen_w.start_fx("cheer")
+                    persistence.save(self.pet)
+                else:
+                    self._open_mode(deathscreen.DeathPanel(self.pet), self._after_death)
             else:                              # any other fx just finished -> restore the HUD
                 self.repaint()
         else:
@@ -1480,6 +1502,7 @@ class TuiPetApp(App):
             self.flash("")
             self.screen_w.start_fx("dying")   # exhausted pose beat, then the memorial
             self._dying_fx = True
+            self._revive_hits = 0
         elif (p.num, p.stage) != prev:
             if prev[1] == "Egg":
                 self.beep("hatch")

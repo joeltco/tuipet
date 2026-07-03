@@ -368,6 +368,15 @@ def mode_targets(pet):
     return sorted(out, key=lambda t: -fulfilled(pet, t))
 
 
+def death_targets(pet):
+    """The valid Death-special evolutions (checkSpecialCondition Death: only a
+    dying pet qualifies; the full requirement gates still apply), best first."""
+    out = [t for t in data.load_evolutions().get(pet.num, [])
+           if data.load_requirements().get(t, {}).get("special") == "Death"
+           and check(pet, t, connecting=True)]
+    return sorted(out, key=lambda t: -fulfilled(pet, t))
+
+
 def pre_evolution(num):
     """getPreEvolutions().get(0): the first dex form that evolves into `num`."""
     for src in sorted(data.load_evolutions()):

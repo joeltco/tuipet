@@ -86,3 +86,49 @@ def test_dead_pet_stays_frozen():
     p.tick(10_000)
     assert p.dead is True
     assert p.care_mistakes == 5, "a dead pet's life-sim state must not advance"
+
+
+# ---- saveFromDeath (the death evolution) -------------------------------------
+
+def test_save_from_death_restores_life_and_costs_bonus():
+    p = _healthy(stage="Champion")
+    p.num = 100                                       # Gatomon (no Death target expected)
+    p.evol_bonus = 2
+    p.lifespan = 10000.0
+    p.age_seconds = 10000.0
+    p.dead = True
+    p.save_from_death()
+    assert not p.dead
+    assert p.saved_from_death == 1
+    assert p.hunger == 0                              # alive, but starving
+    assert p.evol_bonus == 1                          # BonusChangeAfterSavedFromDeath
+    assert p.age_seconds == 10000.0 - 750.0           # RevivalLifeInc restored
+
+
+def test_death_evolution_fires_when_a_dark_form_accepts():
+    from tuipet import data, evolution
+    # find any form with a Death-special evolution target
+    src = next(n for n, targets in data.load_evolutions().items()
+               if any(data.load_requirements().get(t, {}).get("special") == "Death"
+                      for t in targets))
+    _, by = data.load_sprites()
+    p = _healthy(stage=by[src]["stage"])
+    p.num, p.attribute = src, by[src]["attribute"]
+    p.evol_bonus = 100000                             # deterministic gate pass
+    p.wins = p.battles = 50
+    p.vaccine = p.data_power = p.virus = 500
+    p.dead = True
+    old = p.save_from_death()
+    assert old == src and p.num != src                # the dark rebirth
+    assert data.load_requirements()[p.num]["special"] == "Death"
+
+
+def test_unsaved_counters_step_off_the_trigger_line():
+    p = _healthy(stage="Champion")
+    p.num = 100
+    p.care_mistakes = 20
+    p.dead = True
+    p.save_from_death()
+    assert p.care_mistakes == 19                      # off the continuous check
+    p.tick(1.0)
+    assert not p.dead
