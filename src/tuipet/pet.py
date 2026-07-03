@@ -409,6 +409,8 @@ class Pet:
     tourney_schedule: list = _dcf(default_factory=list)   # 24 hourly trophy ids (dailyChange re-roll)
     tourney_day: int = -1                                  # game day of the schedule
     fought_today: list = _dcf(default_factory=list)        # trophy ids fought today (SameDayRetry exempt)
+    tourney_alarm: int = -1         # _tourneyAlarm: trophy id to be called for (-1 = unset)
+    tourney_alert: bool = False     # TournamentAlert: the call is ringing (this hour only)
     adv_map: int = 0
     adv_zone: int = 0
     adv_seek: bool = False    # Disaster Transport: next adventure leg forces an encounter
@@ -521,7 +523,17 @@ class Pet:
 
     # ---- per-tick simulation -------------------------------------------------
     def tick(self, dt):
+        hr0 = int((self.world_seconds % DAY_LENGTH) / DAY_LENGTH * 24)
         self.world_seconds += dt          # the day/night clock runs even past death
+        hr1 = int((self.world_seconds % DAY_LENGTH) / DAY_LENGTH * 24)
+        if hr1 != hr0 and not self.dead:
+            self.tourney_alert = False    # a ring only lasts its cup's hour
+            if self.tourney_alarm >= 0 and self.tourney_alarm in (self.tourney_schedule or []) \
+                    and (self.tourney_schedule.index(self.tourney_alarm) == hr1):
+                # CurrentTime.setSeconds: on the hour of the alarmed cup's slot,
+                # clear the alarm and raise TournamentAlert (the attention call)
+                self.tourney_alarm = -1
+                self.tourney_alert = True
         self._update_weather(dt)          # ...and so does the weather, over the grave
         if self.dead:
             return

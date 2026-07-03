@@ -65,6 +65,17 @@ class TournamentPanel:
                     return None
                 self.tourney = Tournament(self.pet, tr)
                 self.phase = "bracket"
+            elif k == "a":
+                # onTourneyAlarm: toggle the wake-me call on this slot's cup
+                tid = self.sched[self.cursor] if 0 <= self.cursor < len(self.sched) else -1
+                if tid >= 0:
+                    if self.pet.tourney_alarm == tid:
+                        self.pet.tourney_alarm = -1
+                        self.msg = "Alarm off."
+                    else:
+                        self.pet.tourney_alarm = tid
+                        self.msg = "Alarm set — it will call you at %02d:00." % self.cursor
+                    self.sfx = "confirm"
             elif k in ("escape", "u"):          # u (the opening key) also closes
                 return ("done", None)
             return None
@@ -97,12 +108,14 @@ class TournamentPanel:
                 name = tournament.trophy_label(tr)[:22] if tr else "—"
                 extra = " +item" if (tr and tr["item"] >= 0) else ""
                 mark = "» OPEN" if i == hour else ""
+                if tr and self.pet.tourney_alarm == tr["id"]:
+                    mark = (mark + " ♦alarm").strip()
                 label = "%02dh %-22s%s %s" % (i, name, extra, mark)
                 out.append_text(menu.row(label, i == self.cursor))
                 shown += 1
             out.append_text(menu.blanks(vis - shown))
             out.append_text(menu.note(self.msg))
-            out.append_text(menu.footer("↑↓ browse  ENTER enter NOW  ESC out"))
+            out.append_text(menu.footer("↑↓ browse ENTER enter A alarm ESC out"))
             return out
         # bracket
         t = self.tourney

@@ -107,6 +107,8 @@ def schedule(pet):
         pet.tourney_day = day
         pet.tourney_schedule = _rand_trophy_ids(pet)
         pet.fought_today = []
+        pet.tourney_alarm = -1                     # dailyChange: _tourneyAlarm = -1
+        pet.tourney_alert = False
     return pet.tourney_schedule
 
 

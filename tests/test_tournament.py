@@ -175,3 +175,37 @@ def test_champion_feeds_egg_unlock_progress():
         tm.record(True)
     assert p.trophies_won.get(7) == p.season
     assert 7 in persistence.get_progress()["tourneys"]
+
+
+# ---- the tournament alarm (CurrentTime.setSeconds / onTourneyAlarm) ----------
+
+def test_alarm_rings_at_the_cup_hour():
+    p = _pet("Rookie")
+    p.world_seconds = 8.9 * (DAY_LENGTH / 24)   # just before 09:00
+    sched = tournament.schedule(p)
+    p.tourney_alarm = sched[9]                  # alarm the 09:00 cup
+    p.tick(0.2 * (DAY_LENGTH / 24))             # cross the hour line
+    assert p.tourney_alert is True
+    assert p.tourney_alarm == -1                # setTourneyAlarm(-1) on ring
+
+
+def test_alarm_only_rings_on_its_own_hour():
+    p = _pet("Rookie")
+    p.world_seconds = 3.9 * (DAY_LENGTH / 24)
+    sched = tournament.schedule(p)
+    p.tourney_alarm = sched[9]
+    p.tick(0.2 * (DAY_LENGTH / 24))             # 04:00, not the alarm hour
+    assert p.tourney_alert is False and p.tourney_alarm == sched[9]
+
+
+def test_ring_expires_next_hour_and_daily_reset_clears():
+    p = _pet("Rookie")
+    tournament.schedule(p)
+    p.tourney_alert = True
+    p.world_seconds = 9.99 * (DAY_LENGTH / 24)
+    p.tick(0.02 * (DAY_LENGTH / 24))            # hour rolls -> stale ring clears
+    assert p.tourney_alert is False
+    p.tourney_alarm = 42
+    p.world_seconds += DAY_LENGTH               # dailyChange
+    tournament.schedule(p)
+    assert p.tourney_alarm == -1

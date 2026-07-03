@@ -1499,6 +1499,13 @@ class TuiPetApp(App):
                 self.screen_w.fx["snds"] = {18: poop_snd}
             else:
                 self.beep(poop_snd, bell=False)
+        # tournament alarm (TournamentAlert): the alarmed cup's hour arrived --
+        # onset ring, then the same attention bounce as the gift call
+        if p.tourney_alert and not getattr(self, "_cup_alert_seen", False):
+            self.beep("alarm")
+        self._cup_alert_seen = p.tourney_alert
+        if p.tourney_alert and p.anim == "idle" and self.screen_w.fx is None:
+            p._set_anim("happy", 1.2)
         # gift call (DVPet GiftCall): onset chime, then the attention bounce
         # (poses 5/7, like DVPet attention(5,7)) until the present is claimed
         if p.gift and not getattr(self, "_gift_seen", False):
@@ -1527,6 +1534,10 @@ class TuiPetApp(App):
         elif needs:
             self._hud(self._need_message(p))
             self._showing_need = True
+            self._showing_update = False
+        elif p.tourney_alert:
+            self._hud("ALERT — Tournament open! [b]U[/] to enter")
+            self._showing_need = True           # reuse the clear-on-resolve flag
             self._showing_update = False
         elif p.gift:
             self._hud(f"[b]{p.name}[/] has a present for you! ENTER to accept")
@@ -1668,6 +1679,7 @@ class TuiPetApp(App):
         err = tournament.can_enter(self.pet)   # single source of entry gating (young/asleep/no-cup)
         if err:
             self._do(err); return
+        self.pet.tourney_alert = False         # answering the call silences it
         self._open_mode(tournamentscreen.TournamentPanel(self.pet), self._after_cup)
 
     def _after_cup(self, msg):
