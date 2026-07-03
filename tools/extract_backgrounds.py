@@ -45,6 +45,11 @@ def main():
         f = (r.get("File Name (png)") or "").strip()
         if f:
             files.add(f)
+    # the Digicore page's field-flavoured core backdrops (ViewUtil
+    # getDigicoreBackground): single-frame 104x101 sheets, same window crop
+    for fn in ("digicoreN", "digicoreDr", "digicoreDs", "digicoreJt", "digicoreMe",
+               "digicoreNsp", "digicoreWg", "digicoreNs", "digicoreDa", "digicoreVb"):
+        files.add(fn)
     bgs = {}
     for fn in sorted(files):
         fr = frames_for(fn)

@@ -174,6 +174,22 @@ for _i, _fr in enumerate(_fb):
         if _c is not None:
             effects["field_" + _FIELD_ORDER[_i]] = [to_rows(_c)]
 
+# Digicore badges (SpriteAnim setupDigicore): the special cores from
+# digicoreMenuConfig.csv plus the X-antibody state badges (the default face of
+# the core button).  28x28 colored-on-transparent -> /3 block-mean ~9px icons.
+for _fn, _key in (("burstCore.png", "core_burst"), ("twelveCore.png", "core_twelve"),
+                  ("twoCore.png", "core_two"), ("darkcore.png", "core_dark"),
+                  ("xAntibodyReq.png", "core_xreq"), ("xAntibodyTemp.png", "core_xtemp"),
+                  ("xAntibodyNoReq.png", "core_xnone")):
+    _p = os.path.join(RES, _fn)
+    if os.path.exists(_p):
+        _a = np.array(Image.open(_p).convert("RGBA"))
+        _m = _a[:, :, 3] > 60
+        _h, _w = _m.shape[0] // F, _m.shape[1] // F
+        _c = crop(_m[:_h * F, :_w * F].reshape(_h, F, _w, F).mean(axis=(1, 3)) > 0.4)
+        if _c is not None:
+            effects["core_" + _key.split("_", 1)[1]] = [to_rows(_c)]
+
 # filth sizes: filth.png is DVPet's pile sheet -- 30x27 cells (gutter 2), 4 sizes
 # x 2 anim frames.  SpriteObj sheets index COLUMN-major (proven by battleBags:
 # getBattleBagSprite 0/2/4 = the three top-row bags), so drawFilthLevel's pairs

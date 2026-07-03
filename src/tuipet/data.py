@@ -938,11 +938,15 @@ def load_care_effects():
 
 
 @lru_cache(maxsize=1)
-def load_digicore_icons():
-    """DVPet digicoreMenuConfig.csv -> {digimon_num: core_label}. The Data Book core
-    badge (Burst / Twelve / Two / Dark) the device shows for certain Digimon."""
+def load_digicore_config():
+    """DVPet digicoreMenuConfig.csv -> {num: {label, icon, icon_x}}.
+    Icon/IconX name the SPECIAL core badge png (setupDigicore info[1]/info[2]);
+    a literal "null" HIDES the badge for that Digimon; unlisted Digimon get the
+    default X-antibody-state badges."""
     label = {"burstCore.png": "Burst", "twelveCore.png": "Twelve",
              "twoCore.png": "Two", "darkcore.png": "Dark"}
+    key = {"burstCore.png": "core_burst", "twelveCore.png": "core_twelve",
+           "twoCore.png": "core_two", "darkcore.png": "core_dark"}
     out = {}
     path = os.path.join(_DATA, "digicoreMenuConfig.csv")
     if not os.path.exists(path):
@@ -950,10 +954,20 @@ def load_digicore_icons():
     for r in csv.reader(open(path)):
         if len(r) < 2 or not r[0].strip().isdigit():
             continue
-        lbl = label.get((r[1] or "").strip())
-        if lbl:
-            out[int(r[0])] = lbl
+        icon = (r[1] or "").strip()
+        icon_x = (r[2] or "").strip() if len(r) > 2 else ""
+        out[int(r[0])] = {
+            "label": label.get(icon),
+            "icon": "hidden" if icon == "null" else key.get(icon),
+            "icon_x": "hidden" if icon_x == "null" else key.get(icon_x),
+        }
     return out
+
+
+@lru_cache(maxsize=1)
+def load_digicore_icons():
+    """Back-compat: {num: core_label} for the Data Book PERSON page."""
+    return {n: c["label"] for n, c in load_digicore_config().items() if c["label"]}
 
 
 @lru_cache(maxsize=1)
