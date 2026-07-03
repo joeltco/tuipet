@@ -130,3 +130,34 @@ def test_full_battle_terminates_and_stays_bounded():
         assert b.enemy_hp <= b.enemy_max
     assert b.over is True
     assert b.won in (True, False)
+
+
+def test_battle_win_grows_dominant_attribute():
+    # battleEnd incStats: a win adds +1 power in the enemy's dominant attribute
+    from tuipet.pet import Pet
+    p = Pet(num=1, stage="Rookie", attribute="Vaccine", vaccine=5, data_power=5, virus=5)
+    v0 = p.virus
+    msg = p.record_battle(True, {"stage": "Rookie", "hp": 10, "bits": (1, 1),
+                                 "vaccine": 2, "data_power": 3, "virus": 9, "num": 1})
+    assert p.virus == v0 + 1 and "+1 Virus" in msg
+
+
+def test_battle_loss_saps_obedience():
+    from tuipet.pet import Pet
+    p = Pet(num=1, stage="Rookie", attribute="Vaccine")
+    o0 = p.obedience
+    p.record_battle(False, {"stage": "Rookie", "hp": 10, "num": 1,
+                            "vaccine": 1, "data_power": 1, "virus": 1})
+    assert p.obedience == o0 - 1
+
+
+def test_hollow_win_is_joyless():
+    # beating a feeble higher-stage foe costs mood (OverpoweredBattleWonMoodDec)
+    import random as _r
+    _r.seed(0)
+    from tuipet.pet import Pet
+    p = Pet(num=1, stage="Rookie", attribute="Vaccine")
+    p.mood = 0
+    p.record_battle(True, {"stage": "Champion", "hp": 3, "bits": (0, 0), "num": 1,
+                           "vaccine": 1, "data_power": 1, "virus": 1})
+    assert p.mood < 10        # the +10 win bump got eaten by the -20 hollow-win penalty

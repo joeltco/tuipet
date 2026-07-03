@@ -1431,16 +1431,44 @@ class Pet:
             self.wins += 1
             if enemy:
                 self.levels_fought.append(_enemy_level(enemy))
-            self._open_praise()                          # a win is praiseworthy
+            self._open_praise()                          # a win is praiseworthy (setPraise)
             self._set_mood(self.mood + 10)               # BattleWonMoodInc
+            # over/underpowered adjustments (battleEnd compareStage + HP gates):
+            # squashing a hollow higher-stage foe is a JOYLESS win (-20); toppling a
+            # tougher lower-stage bruiser is a proud one (+10)
+            grew = ""
+            if enemy:
+                from .battle import MAX_HEALTH, MAX_HEALTH_DEFAULT
+                cap = MAX_HEALTH.get(self.stage, MAX_HEALTH_DEFAULT)
+                ehp = enemy.get("hp", cap)
+                mine = data.stage_rank(self.stage)
+                theirs = data.stage_rank(enemy.get("stage", self.stage))
+                # (tuipet pet full-HP == its stage cap, so DVPet's two HP gates collapse)
+                if mine < theirs and ehp < cap:
+                    self._set_mood(self.mood - 20)       # OverpoweredBattleWonMoodDec
+                elif mine > theirs and ehp > cap:
+                    self._set_mood(self.mood + 10)       # UnderpoweredBattleWonMoodInc
+                # incStats: the win GROWS the pet's power in the enemy's dominant
+                # attribute -- classic getExtraStats = min(ceil(opp/1), 1) = +1
+                counts = {"Vaccine": enemy.get("vaccine", 0), "Data": enemy.get("data_power", 0),
+                          "Virus": enemy.get("virus", 0)}
+                dom = max(counts, key=counts.get)
+                if dom == "Vaccine":
+                    self.vaccine += 1
+                elif dom == "Data":
+                    self.data_power += 1
+                else:
+                    self.virus += 1
+                grew = f"  +1 {dom}"
             self._set_enthusiasm(self.enthusiasm - 3)    # BattleWonEnthusiasmDec
             lo, hi = (enemy or {}).get("bits", (1, 5))
             gained = random.randint(lo, hi)
             self.bits += gained
             self._set_anim("happy", 2.0)
-            return f"Victory! +{gained} bits"
+            return f"Victory! +{gained} bits{grew}"
         self._set_mood(self.mood - 20)               # BattleLostMoodDec
         self._set_enthusiasm(self.enthusiasm - 6)    # BattleLostEnthusiasmDec
+        self.obedience -= 1                          # BattlesObedienceDec (a loss saps trust)
         if random.random() < 0.3:
             self._injure()
         self._set_anim("sad", 2.0)
