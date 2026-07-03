@@ -47,7 +47,6 @@ class ThemePanel:
 
     def text(self):
         out = menu.header("THEMES", theme.current())
-        out.append_text(menu.blanks(1))
         for i, name in enumerate(self.names):
             t = theme.THEMES[name]
             sel = i == self.cursor
@@ -55,7 +54,7 @@ class ThemePanel:
             sw = "".join(f"[{c}]██[/]" for c in
                          (t["on"], t["heart"], t["energy"], t["mood"], t["coin"]))
             out.append_text(Text.from_markup(sw + "\n"))
-        out.append_text(menu.blanks(max(0, 4 - len(self.names))))
+        out.append_text(menu.blanks(max(0, 8 - len(self.names))))
         out.append_text(menu.note("live preview as you move"))
         out.append_text(menu.footer("↑↓ preview  ENTER keep  ESC cancel"))
         return out

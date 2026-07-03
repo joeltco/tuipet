@@ -70,3 +70,44 @@ def test_apply_unknown_theme_falls_back():
     name = theme.apply("does-not-exist")
     assert name in theme.THEMES                # falls back, never crashes
     theme.apply("grey")
+
+
+# ---- palette completeness (the 2026-07 theme expansion) ----------------------
+
+_REQUIRED = {"on", "bg", "mid", "accent", "pos", "neg", "border",
+             "sil_day", "sil_night", "heart", "energy", "mood", "life", "coin",
+             "weather", "phases"}
+_HEX = re.compile(r"^#[0-9a-fA-F]{6}$")
+
+
+def test_every_theme_carries_the_full_key_set():
+    for name, t in theme.THEMES.items():
+        missing = _REQUIRED - set(t)
+        assert not missing, f"{name} lacks {missing}"
+        for k in _REQUIRED - {"weather", "phases"}:
+            assert _HEX.match(t[k]), f"{name}.{k} = {t[k]!r} is not a hex colour"
+        assert set(t["phases"]) == {"dawn", "day", "dusk", "night"}, name
+        for ph, (on, bg) in t["phases"].items():
+            assert _HEX.match(on) and _HEX.match(bg), f"{name}.phases.{ph}"
+        assert set(t["weather"]) == {"rain", "snow", "cloud"}, name
+        for w, (col, a) in t["weather"].items():
+            assert _HEX.match(col) and 0.0 < a < 1.0, f"{name}.weather.{w}"
+
+
+def test_every_theme_derives_and_applies_cleanly():
+    try:
+        for name in theme.names():
+            theme.apply(name)
+            assert theme.LCD_ON == theme.THEMES[name]["on"]
+    finally:
+        theme.apply("grey")
+
+
+def test_the_picker_fits_the_lcd_with_every_theme():
+    from tuipet.themescreen import ThemePanel
+    pan = ThemePanel()
+    assert pan.text().plain.count("\n") <= 12   # the #lcd box is 12 content rows
+    for name in theme.names():                  # walking previews never crashes
+        pan.key("down")
+    pan.key("escape")
+    assert theme.current() == "grey"

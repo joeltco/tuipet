@@ -49,6 +49,43 @@ THEMES = {
         "phases": {"dawn": ("#b9d2f0", "#15202f"), "day": ("#a9c8ee", "#101826"),
                    "dusk": ("#d0a070", "#181420"), "night": ("#6d86a8", "#0a0f18")},
     },
+    # the classic 4-shade DMG pea-soup LCD (the default stays grey; this is an option)
+    "gameboy": {
+        "on": "#0f380f", "bg": "#9bbc0f", "mid": "#306230",
+        "accent": "#7a3a22", "pos": "#2a5a8a", "neg": "#8a3a2a", "border": "#4a5a28",
+        "sil_day": "#0f380f", "sil_night": "#d8e8a0",
+        "heart": "#8a4a2a", "energy": "#2a6a8a", "mood": "#6a4a8a", "life": "#306230", "coin": "#8a7a1a",
+        "weather": {"rain": ("#1a3020", 0.30), "snow": ("#e0e8c8", 0.26), "cloud": ("#3a4a28", 0.18)},
+        "phases": {"dawn": ("#1a4418", "#a8c83a"), "day": ("#0f380f", "#9bbc0f"),
+                   "dusk": ("#3a3a10", "#a8a838"), "night": ("#7aa060", "#142810")},
+    },
+    "paper": {
+        "on": "#2a2620", "bg": "#efe9dc", "mid": "#8a8274",
+        "accent": "#a04a2a", "pos": "#3a6a8a", "neg": "#a03a2a", "border": "#b8ac97",
+        "sil_day": "#2a2620", "sil_night": "#f4efe4",
+        "heart": "#a04a2a", "energy": "#3a6a8a", "mood": "#7a5a92", "life": "#567a68", "coin": "#967a2a",
+        "weather": {"rain": ("#3a4450", 0.25), "snow": ("#f4f0e6", 0.30), "cloud": ("#6a655c", 0.16)},
+        "phases": {"dawn": ("#332e26", "#f4eee0"), "day": ("#2a2620", "#efe9dc"),
+                   "dusk": ("#463a2c", "#e6dcc8"), "night": ("#9a948a", "#262218")},
+    },
+    "sakura": {
+        "on": "#f0b8c8", "bg": "#241820", "mid": "#8a5a6c",
+        "accent": "#ff8a5a", "pos": "#8ac8e8", "neg": "#ff6a6a", "border": "#4a2a3a",
+        "sil_day": "#2a1a24", "sil_night": "#ffd0dc",
+        "heart": "#ff7a8a", "energy": "#8ac8e8", "mood": "#c89ae8", "life": "#7ad0b0", "coin": "#f0c86a",
+        "weather": {"rain": ("#1a1428", 0.34), "snow": ("#f0dce4", 0.26), "cloud": ("#32222c", 0.20)},
+        "phases": {"dawn": ("#ffc8d8", "#2a1c26"), "day": ("#f0b8c8", "#241820"),
+                   "dusk": ("#f0a878", "#241410"), "night": ("#9a7484", "#140c12")},
+    },
+    "ocean": {
+        "on": "#7fd8d0", "bg": "#0a1e22", "mid": "#3f7a78",
+        "accent": "#f0a05a", "pos": "#8ab8f0", "neg": "#f07a5a", "border": "#1c3a3e",
+        "sil_day": "#0f2a2e", "sil_night": "#c8f0e8",
+        "heart": "#f07a6a", "energy": "#6ac8e0", "mood": "#9a9ae8", "life": "#5ad0a0", "coin": "#e8c86a",
+        "weather": {"rain": ("#06141e", 0.36), "snow": ("#c0dcd8", 0.26), "cloud": ("#0e2a30", 0.22)},
+        "phases": {"dawn": ("#9ae0d8", "#0e262a"), "day": ("#7fd8d0", "#0a1e22"),
+                   "dusk": ("#d0a068", "#14201e"), "night": ("#4a8a84", "#05130f")},
+    },
 }
 _DEFAULT = "grey"
 _ORDER = list(THEMES)
