@@ -555,6 +555,9 @@ def load_maps():
             "randoms": ent["randoms"], "bosses": ent["bosses"],
             # the zone's REAL town step-spans (WorldMap towns; rest + no encounters)
             "towns": sorted(towns[t] for t in tids if t in towns),
+            # the zone's discoverable loot pools (Zone.checkItem draws uniformly)
+            "rand_items": [int(x) for x in (z.get("RandomItems") or "").split(":") if x.strip().isdigit()],
+            "rand_foods": [int(x) for x in (z.get("RandomFood") or "").split(":") if x.strip().isdigit()],
         })
     return [{"map": m, "zones": sorted(zmap[m], key=lambda z: z["zone"])}
             for m in sorted(zmap)]

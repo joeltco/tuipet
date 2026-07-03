@@ -21,6 +21,8 @@ class AdventurePanel:
         self.sub = None
         self._pending = None
         self._travel_t = 0
+        self.discovering = False    # DiscoverCall: pause for the investigate prompt
+        self.discovering = False    # DiscoverCall: pause for the investigate prompt
 
     def anim(self):
         if self.sub is not None:
@@ -42,6 +44,10 @@ class AdventurePanel:
             elif ev and ev[0] == "refused":
                 self.travelling = False      # Refusing: travelSpeed 0 -- SPACE re-issues the walk
                 self.sfx = "refuse"
+            elif ev and ev[0] == "discover":
+                self.travelling = False      # DiscoverCall: stop and ask
+                self.discovering = True
+                self.sfx = "reward"
 
     def key(self, k):
         if self.sub is not None:
@@ -59,6 +65,24 @@ class AdventurePanel:
                 else:
                     self.adv.resolve(r[1].won, was_boss, enemy)
                 self.travelling = not self.adv.done
+            return None
+        if getattr(self, "discovering", False):
+            # Investigate_Validation: ENTER looks, ESC walks on
+            if k in ("enter", "y"):
+                self.discovering = False
+                kind, thing = self.adv.investigate()
+                if kind == "enemy":
+                    self._pending = (False, thing)
+                    self.sub = BattlePanel(self.pet, thing)
+                elif kind == "item":
+                    self.sfx = "reward"
+                    self.travelling = True
+                else:
+                    self.travelling = True
+            elif k in ("escape", "n", "space"):
+                self.discovering = False
+                self.adv.last = "Walked on by."
+                self.travelling = True
             return None
         if k == "space" and not self.adv.done:
             if not self.travelling:
@@ -102,7 +126,9 @@ class AdventurePanel:
         if a.done:
             out.append_text(menu.footer("Journey complete!   ESC"))
         elif self.travelling:
-            out.append_text(menu.footer("travelling...   SPACE stop   ESC out"))
+            out.append_text(menu.footer("investigate? ENTER yes  ESC no" if self.discovering
+                                        else "travelling...   SPACE stop   ESC out"))
         else:
-            out.append_text(menu.footer("stopped.   SPACE go   ESC out"))
+            out.append_text(menu.footer("investigate? ENTER yes  ESC no" if self.discovering
+                                        else "stopped.   SPACE go   ESC out"))
         return out

@@ -50,6 +50,13 @@ TRAVEL_ENERGY_DEC = 1                # TravelEnergyDec
 TRAVEL_CALORIE_DEC = 1               # TravelCalorieDec
 WALK_ENERGY_DEC = 1                  # WalkEnergyDec (accrued per LOCATION step)
 WALK_STEP_MIN = 9                    # WalkStepMin: controller fires per location step at walk
+# the discover system (Zone.checkInvestigate / checkItem): mid-journey the pet
+# may spot something off the path -- investigate for a zone-pool find, at the
+# risk that 1 in InvestigateEnemyChance it's an ambush instead
+INVESTIGATE_CHANCE = 30000           # InvestigateChance (roll seed, per controller fire)
+INVESTIGATE_NIGHT = 15000            # InvestigateNightFactor (rarer at night)
+INVESTIGATE_WALK = -5000             # InvestigateWalkFactor (walking spots more)
+INVESTIGATE_ENEMY_CHANCE = 3         # InvestigateEnemyChance: nextInt(3)==0 -> ambush
 TRAVEL_EXERCISE_LIMIT = 4            # TravelExerciseChangeLimit: walking tops effort up to 4
 TRAVEL_EXERCISE_INC = 1              # TravelExerciseInc
 
@@ -167,6 +174,14 @@ class Adventure:
             if self.pet.check_stop_travel():
                 self.last = f"{self.pet.name} refuses to walk!"
                 return ("refused", None)
+            # Zone.checkInvestigate: a happier, better-raised pet spots more
+            # (obedience+mood SHRINK the seed); night makes finds rarer
+            seed = (INVESTIGATE_CHANCE + INVESTIGATE_WALK
+                    + (INVESTIGATE_NIGHT if self.pet.day_phase == "night" else 0)
+                    - (self.pet.obedience + self.pet.mood))
+            if random.randrange(max(1, int(seed))) == 0:
+                self.last = f"{self.pet.name} noticed something off the path!"
+                return ("discover", None)
         prev = self.location
         self.location = min(self.total_steps, self.location + self.stride)
         self._travel_drain()
@@ -200,6 +215,35 @@ class Adventure:
             return ("encounter", e)
         self.last = f"Travelling... ({self.pct}%)"
         return None
+
+    def investigate(self):
+        """Zone.checkItem: a uniform draw across the zone's RandomFood +
+        RandomItems pools -- then 1 in InvestigateEnemyChance the find is an
+        AMBUSH instead.  A carried-home find opens the praise window
+        (ReturnItem -> giftEnd -> setPraise)."""
+        pool = ([("f", i) for i in self.zone.get("rand_foods", [])]
+                + [("i", i) for i in self.zone.get("rand_items", [])])
+        found = None
+        if pool:
+            kind, cid = random.choice(pool)
+            e = data.consumable_by_key(f"{kind}:{cid}")
+            if e and e.get("can_inc", True):
+                found = e
+        if random.randrange(INVESTIGATE_ENEMY_CHANCE) == 0:
+            found = None
+        if found is None:
+            here = [e for e in self.zone["randoms"] if e.get("location", 0) <= self.location]
+            e = _pick_weighted(here) or _pick_weighted(self.zone["randoms"]) \
+                or _pick_weighted(self.zone["bosses"])
+            if e:
+                self.last = f"An ambush! {e['name']}!"
+                return ("enemy", e)
+            self.last = "Nothing there after all."
+            return (None, None)
+        self.pet.add_item(found["key"])
+        self.pet._open_praise()                  # it brought you something: praise it!
+        self.last = f"{self.pet.name} dug up a {found['name']}!"
+        return ("item", found)
 
     def _advance_or_finish(self):
         res = self._complete_zone()
