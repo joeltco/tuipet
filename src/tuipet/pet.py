@@ -122,6 +122,18 @@ ITEM_INTEREST_HIGH_TIMER = 80       # ItemInterestHighTimer (disposition -1)
 PERSONALITY_MOOD_MATCH = 10         # ConsumablePersonalityMatchMoodChange
 PERSONALITY_MOOD_UNMATCH = -10      # ConsumablePersonalityUnmatchMoodChange
 EGG_MOOD = 100                      # EggMood: a new egg starts warm (Evolution.egg)
+# the missed-day / birthday system (setTimeToAge): each game day of AGE the pet
+# has a birthday judged by the day's MAJOR mood and its missed-day tally
+MOOD_RECORD_MIN = 5                 # MoodRecordMin: sample the mood tier every 5 game-min
+MAX_MISTAKE_DAY_BONUS = 0           # MaxMissedDayForBonusInc: a good day allows ZERO slips
+MIN_MISTAKE_DAY_DEC = 1             # MinMissedDayForBonusDec
+BONUS_LIFE_INC = 360.0              # BonusLifeInc 21600 real-sec -> game-min scale (+6 game-hours)
+BONUS_LIFE_DEC = 360.0              # BonusLifeDec
+BONUS_EVOLUTION_LIFE = 60.0         # BonusEvolutionLife 3600 -> game-min scale, x bonus per evolution
+GOOD_BIRTHDAY_FOOD = 55             # Cupcake
+BAD_BIRTHDAY_FOOD = 7               # Candy
+NORMAL_BIRTHDAY_FOOD = 54           # Cookie
+WIN_RATE_BONUS_COEF = 0.1           # winRateRookieBonusIncCoefficient (champion: 0.1*winRate - 5)
 # perfect-conditions energy save (checkEnergyIncFromPerfectConditions):
 # an energy DROP during the pet's favourite time may bounce back +1 --
 # roll nextInt(base + mods) == 1, so perfect conditions shrink the range
@@ -474,6 +486,12 @@ class Pet:
     awake_limit: float = MIN_AWAKE_LIMIT                 # minutes of sleep owed
     nap: bool = False               # a lights-out nap (shallow; lights-on wakes it)
     item_interest: int = 0          # _itemInterest: toy boredom 0..5 (decays over time)
+    # missed-day / birthday (PhysicalState _mistakeDay / _dailyMoodRecord / _bonus)
+    mistake_day: int = 0            # today's care slips (resets each birthday)
+    daily_mood: dict = _dcf(default_factory=lambda: {"Happy": 0, "Neutral": 0, "Unhappy": 0, "Depressed": 0})
+    last_birthday: int = 0          # last celebrated age-day
+    evol_bonus: int = 0             # _bonus: birthday/win-rate credit fed into evolution odds
+    birthday_note: str = ""         # transient: the HUD's birthday announcement
     gift: str = ""                  # pending gift-call present (consumable key; "" = none)
     gift_t: float = 0.0             # seconds toward the next GiftChanceMin roll
     # ---- home tournament (PhysicalState _trophySchedule/_foughtTrophiesToday) ----
@@ -628,6 +646,19 @@ class Pet:
                 self._interest_t = 0.0
                 self.item_interest -= 1
         self._check_gift_call(dt)                   # checkGiftCall: a happy pet may find a present
+        # checkMoodRecord: sample the mood tier every MoodRecordMin game-min
+        if self.stage != "Egg":
+            self._mood_rec_t = getattr(self, "_mood_rec_t", 0.0) + dt
+            if self._mood_rec_t >= MOOD_RECORD_MIN:
+                self._mood_rec_t = 0.0
+                m = self.current_mood()
+                self.daily_mood[m] = self.daily_mood.get(m, 0) + 1
+            # setTimeToAge: every AgeUp (one game day of age) is a BIRTHDAY,
+            # judged by the day's MAJOR mood and the missed-day tally
+            day = int(self.age_seconds // DAY_LENGTH)
+            if day > self.last_birthday:
+                self.last_birthday = day
+                self._birthday()
         if self.anim_ttl > 0:
             self.anim_ttl -= dt
             if self.anim_ttl <= 0:
@@ -673,6 +704,7 @@ class Pet:
                 if 0 <= self._lights_t >= LIGHTS_MISTAKE_SEC:
                     self._lights_t = float("-inf")       # AfterMistakeMinutesPostponed: once/night
                     self.care_mistakes += 1
+                    self.mistake_day += 1  # MistakeIncMissedDayChange
             # DVPet sleep recovery: +SleepEnergyGain every SleepMinutesToEnergyGain
             # (deep sleep only -- a nap restores just the jitter's scraps)
             self._sleep_e_t = getattr(self, "_sleep_e_t", 0.0) + dt
@@ -739,6 +771,7 @@ class Pet:
                 self.scold_window += 1
                 if self.scold_window > SCOLD_WINDOW_MAX:
                     self.scold_flag, self.scold_window = False, 0
+                    self.mistake_day += 1        # DisciplineCallFailMissedDayChange
             self._check_discipline_call()                # the pet may spontaneously act up
             # awake enthusiasmLapse (mood -= |enth*EnthusiasmMoodDecCoefficient|, then an energetic
             # pet's spirit climbs HighEnergyEnthusiasmChange) stays DEFERRED -- and this was measured,
@@ -762,9 +795,11 @@ class Pet:
                     # (hungerMistakePenalty): lifespan -(dec x total mistakes) +
                     # obedience change, and the pet acts up.
                     self.care_mistakes += 1
+                    self.mistake_day += 1  # MistakeIncMissedDayChange
                     self.lifespan = max(0.0, self.lifespan
                                         - HUNGER_MISTAKE_LIFE_DEC * max(1, self.care_mistakes))
                     self.obedience += HUNGER_MISTAKE_OBEDIENCE
+                    self.mistake_day += 1        # HungerDecAtZeroMissedDayChange
                     self._open_scold()           # neglect: the pet acts up
                 if self.hunger == 0:
                     # starvation (setHunger below zero): the calorie crash sheds weight
@@ -786,6 +821,8 @@ class Pet:
         if not self.asleep and self.strength > 0 and self._str_t >= self._strength_interval:
             self._str_t = 0.0
             self.strength -= 1
+            if self.strength == 0:
+                self.mistake_day += 1            # StrengthDecAtZeroMissedDayChange
         # nutrition macros decay each lapse (NutritionLapseChange) -- keep a varied diet up
         self._nutr_t = getattr(self, "_nutr_t", 0.0) + dt
         if self._nutr_t >= NUTRITION_LAPSE_SEC:
@@ -805,6 +842,7 @@ class Pet:
                 if self._filth_t >= 1800:    # uncleaned grace before it counts
                     self._filth_t = -3600    # AfterMistakeMinutesPostponed grace after one
                     self.care_mistakes += 1
+                    self.mistake_day += 1  # MistakeIncMissedDayChange
                     self._open_scold()       # left in filth: the pet acts up
         else:
             self._filth_t = 0                # cleaned / under the limit resets the call timer
@@ -1353,6 +1391,12 @@ class Pet:
         # in real days while tuipet's evolve timer is compressed, so the scales don't align.
         self.lifespan = max(self.lifespan,
                             STAGE_LIFE.get(self.stage, self.lifespan) + _req.get("lifespan_mod", 0))
+        if self.stage == "Champion" and self.battles:
+            # Evolution.champion: the Rookie career's win rate adjusts the bonus
+            # (0.1 x winRate - 5: below 50% costs credit, above earns it)
+            wr = self.wins / self.battles * 100.0
+            self.evol_bonus += int(WIN_RATE_BONUS_COEF * wr - 5)
+        self.lifespan += BONUS_EVOLUTION_LIFE * self.evol_bonus   # bonusLifespan
         if _req.get("give_item", -1) >= 0:        # GiveItem: grant a consumable (dormant in data)
             self.add_item(f"i:{_req['give_item']}")
         self._set_anim("happy", 2.5)
@@ -1579,6 +1623,7 @@ class Pet:
         if not self.asleep or self.nap:
             return "zzz..."
         self.disturb += 1
+        self.mistake_day += 1                       # DisturbanceMissedDayChange
         self._set_mood(self.mood - 10)              # DisturbMoodDec
         enth = {1: -1, 0: -2, -1: -3}.get(self.restless, -2)   # DisturbEnthusiasmDec*
         self._set_enthusiasm(self.enthusiasm + enth)
@@ -1731,6 +1776,7 @@ class Pet:
         if fills and self.hunger >= FULL_HUNGER and self.glutton <= 0:
             self.weight += 1
             self.overeat += 1
+            self.mistake_day += 1                # OverStomachCapcityMissedDayChange
             self.calories = CALORIE_LIMIT
             self._poop_t = min(self._poop_interval, getattr(self, "_poop_t", 0) + 900)   # overeat -> sooner poop
             self._last_meal_disliked = False
@@ -2168,6 +2214,7 @@ class Pet:
         while the last one still runs is a BAD VITAMIN: sick risks, a bowel
         lurch, mood and lifespan costs, and it comes right up."""
         if self.vitamin_lapse > 0:
+            self.mistake_day += 1                            # BadVitaminMissedDayChange
             if self.sick and random.randrange(100) < VITAMIN_WORSE_SICK_CHANCE:
                 self._worsen_sick()
             self._poop_t = getattr(self, "_poop_t", 0) \
@@ -2210,6 +2257,7 @@ class Pet:
         mood/energy/spirit hit (worse if it was already fatigued), then it must rest the
         fatigue length off (FatigueMin..FatigueMax game-min)."""
         already = self.is_fatigued()
+        self.mistake_day += 1                    # FatigueMissedDay
         self.fatigue_length = max(FATIGUE_MIN, random.randint(FATIGUE_MIN, FATIGUE_MAX) - self._affinity())   # habitat-compat length mod
         self._set_energy(self.energy - FATIGUE_ENERGY_DEC)
         self._set_enthusiasm(self.enthusiasm + FATIGUE_ENTH_CHANGE)
@@ -2320,6 +2368,7 @@ class Pet:
         if refused:
             return f"{self.name} spits out the medicine!"
         if self.med_lapse > 0:                               # getMed(): double dose
+            self.mistake_day += 1                            # BadMedMissedDayChange
             self.lifespan = max(0.0, self.lifespan - BAD_MED_LIFE_DEC)
             self._poop_t = getattr(self, "_poop_t", 0) \
                 + self._poop_interval * BAD_MED_BM_INC / max(1, self._phys().get("poop_limit", 64))
@@ -2429,6 +2478,36 @@ class Pet:
             self.inventory.pop(key, None)
         self.bits += val
         return f"Sold {entry['name']} for {val}b."
+
+    def _birthday(self):
+        """setTimeToAge's age-up: a mostly-Happy, zero-slip day earns a GOOD
+        birthday (+bonus, +lifespan, a Cupcake); a mostly-Unhappy day with slips
+        is a BAD one (-bonus, -lifespan, a consolation Candy); anything else is
+        normal (a Cookie).  getMajority: a TIE yields no major mood -> normal.
+        The slate (missed-days + the mood record) wipes for the new day."""
+        counts = self.daily_mood
+        best = max(counts.values()) if counts else 0
+        tops = [k for k, v in counts.items() if v == best and best > 0]
+        major = tops[0] if len(tops) == 1 else None
+        if major == "Happy" and self.mistake_day <= MAX_MISTAKE_DAY_BONUS:
+            self.lifespan += BONUS_LIFE_INC
+            self.evol_bonus += 1
+            self.add_item(f"f:{GOOD_BIRTHDAY_FOOD}")
+            self._set_anim("happy", 2.0)                     # Birthday_Good
+            self.birthday_note = f"A wonderful day! {self.name} earned a Cupcake!"
+        elif major == "Unhappy" and self.mistake_day >= MIN_MISTAKE_DAY_DEC:
+            self.lifespan = max(0.0, self.lifespan - BONUS_LIFE_DEC)
+            if self.evol_bonus > 0:
+                self.evol_bonus -= 1
+            self.add_item(f"f:{BAD_BIRTHDAY_FOOD}")
+            self._set_anim("sad", 2.0)                       # Birthday_Bad
+            self.birthday_note = "A rough day... just a Candy."
+        else:
+            self.add_item(f"f:{NORMAL_BIRTHDAY_FOOD}")
+            self._set_anim("happy", 1.5)                     # Birthday_Normal
+            self.birthday_note = f"{self.name} is a day older — have a Cookie."
+        self.mistake_day = 0
+        self.daily_mood = {k: 0 for k in self.daily_mood}
 
     def _check_gift_call(self, dt):
         """PhysicalState.checkGiftCall + checkGift: every GiftChanceMin game-min,

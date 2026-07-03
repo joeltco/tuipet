@@ -1499,6 +1499,11 @@ class TuiPetApp(App):
                 self.screen_w.fx["snds"] = {18: poop_snd}
             else:
                 self.beep(poop_snd, bell=False)
+        # birthday (setTimeToAge age-up): announce the day's verdict
+        if p.birthday_note:
+            self.flash(p.birthday_note)
+            self.beep("reward" if "Cupcake" in p.birthday_note or "Cookie" in p.birthday_note else "lose", bell=False)
+            p.birthday_note = ""
         # tournament alarm (TournamentAlert): the alarmed cup's hour arrived --
         # onset ring, then the same attention bounce as the gift call
         if p.tourney_alert and not getattr(self, "_cup_alert_seen", False):
