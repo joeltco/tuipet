@@ -49,12 +49,14 @@ def test_special_core_and_null_hiding(monkeypatch):
     assert core_badge_key(_pet(num=4)) is None
 
 
-def test_backdrop_follows_highest_dna_field():
+def test_backdrop_follows_highest_charged_dna():
     p = _pet()
     p.field = "MetalEmpire"
     assert core_background(p) == data.load_backgrounds()["digicoreMe"][0]
-    p.dna_owned = dict(p.dna_owned, DragonsRoar=5)   # banked DNA outranks own field
+    p.dna_applied = dict(p.dna_applied, DragonsRoar=5)   # CHARGED DNA outranks own field
     assert core_background(p) == data.load_backgrounds()["digicoreDr"][0]
+    p.dna_applied = dict(p.dna_applied, DeepSaver=5)     # a TIE yields none -> own field
+    assert core_background(p) == data.load_backgrounds()["digicoreMe"][0]
 
 
 def test_silhouette_blacks_out_the_body():
@@ -118,3 +120,17 @@ def test_can_mode_change_gates():
     assert _mode_pet().can_mode_change()
     plain = Pet(num=4, name="A", stage="Rookie", attribute="Vaccine")
     assert plain.can_mode_change() == evolution.can_mode_change(plain)
+
+
+def test_dna_charge_overflow_lands_one_short_of_the_cap():
+    # applyDNA: setExercise(getExerciseLimit() - 1) on overflow -- canon quirk
+    p = _pet()
+    p.strength = 3
+    p.dna_owned["DragonsRoar"] = 10
+    p.apply_dna("DragonsRoar", 5)                    # 3 + 5 overflows the gauge
+    assert p.strength == 3                           # lands at limit-1, not 4
+    p2 = _pet()
+    p2.strength = 1
+    p2.dna_owned["DragonsRoar"] = 10
+    p2.apply_dna("DragonsRoar", 1)
+    assert p2.strength == 2                          # a fitting charge adds normally

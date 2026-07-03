@@ -1088,6 +1088,19 @@ class Pet:
                 self.habitats = sorted(set(self.habitats) | {hr})
 
     # ---- DNA (DVPet DNA.class) -------------------------------------------
+    def highest_dna(self):
+        """DNA.getHighestDNA: the CHARGED field with the strict maximum -- a tie
+        (or nothing charged) yields none (the caller falls back to the field)."""
+        best, best_f = 0, ""
+        for f in data.DNA_FIELDS:
+            v = self.dna_applied.get(f, 0)
+            if v > best:
+                best, best_f = v, f
+        if best and sum(1 for f in data.DNA_FIELDS
+                        if self.dna_applied.get(f, 0) == best) == 1:
+            return best_f
+        return ""
+
     def dna_total(self):
         return sum(self.dna_applied.get(f, 0) for f in data.DNA_FIELDS)
 
@@ -1147,7 +1160,13 @@ class Pet:
         self.dna_owned[field] = owned - amount
         self.dna_applied[field] = self.dna_applied.get(field, 0) + amount
         self.disturb += 1                                   # DVPet disturb()
-        self.strength = _clamp(self.strength + DNA_STRENGTH_CHANGE * amount, 0, 4)
+        # applyDNA strength: overflowing the Effort gauge lands at limit-1, NOT
+        # the cap (setExercise(getExerciseLimit() - 1)) -- DNA can't top you off
+        gain = DNA_STRENGTH_CHANGE * amount
+        if self.strength + gain < 4:
+            self.strength = max(0, self.strength + gain)
+        else:
+            self.strength = 3
         same = field == self.field
         self._set_mood(self.mood + (DNA_SAME_FIELD_MOOD if same else DNA_DIFF_FIELD_MOOD) * amount)
         self._set_enthusiasm(self.enthusiasm

@@ -61,9 +61,9 @@ def core_badge_key(pet):
 
 
 def core_background(pet):
-    """The core swirl backdrop by the highest banked DNA field (else own field)."""
-    owned = getattr(pet, "dna_owned", None) or {}
-    field = max(owned, key=owned.get) if any(owned.values()) else pet.field
+    """The core swirl backdrop by the highest CHARGED DNA field (DNA.getHighestDNA:
+    strict max over the charged array, ties yield none) -- else the pet's own field."""
+    field = pet.highest_dna() or pet.field
     frames = data.load_backgrounds().get(_CORE_BG.get(field, "digicoreN"))
     return frames[0] if frames else None
 
