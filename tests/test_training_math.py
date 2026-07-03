@@ -1,0 +1,100 @@
+"""Training/tournament math audit (2026-07): canon re-verification vs the
+decompile (PhysicalState.exercise/setExercise, ClockTic.onExerciseFinish,
+Tournament.java, config.csv column 1).
+
+Verified matching: every minigame constant (VaccineGameHitsMin 16/20/24,
+VirusGameBarMin 86 + speeds 5/4/3, DataTrainShootFrame 10/7/5, difficulty
+ranks //75 and //11, hpRounds 3/won 2), fail penalties (mood -10 /
+obedience -1), fav/disliked-time mood+spirit numbers, fatigue odds
+(60/40 +-5 compat), mood += enthusiasm, the tournament tables (bits/ages/
+powers/health bands), the 7-NPC + player bracket, the attribute power
+split (/2 main, /6 weak, /3 mid) and the QF/semi/final payout ladder.
+
+Fixed (canon divergences):
+ * exercise() runs BEFORE the success check: the Effort +1, the spirit
+   costs and the fatigue-at-cap roll land WIN OR LOSE.
+ * The success obedience+1 was invented; canon grants the PRAISE flag.
+ * ExerciseWeightDec=0 (classic): no flat -2; the body cost is caloric --
+   an activity decrement landing in deficit sheds ActivityWeightChange.
+ * A neutral attribute costs -2 spirit (NotFavDec), not the disliked -3;
+   a sour pet pays -1 on the HP drill (the None branch).
+ * The purse truncates its running total per entrant (calcBits)."""
+import random
+
+from tuipet.pet import Pet
+from tuipet import tournament
+
+
+def _pet(**kw):
+    p = Pet(num=100, stage="Champion", attribute="Vaccine", obedience=500,
+            energy=24, max_energy=24, weight=20, strength=0, mood=0)
+    p.world_seconds = 10 * 60.0
+    for k, v in kw.items():
+        setattr(p, k, v)
+    return p
+
+
+def test_effort_fills_win_or_lose():
+    p = _pet()
+    p.apply_training(0, 0, game="hp")            # a total whiff
+    assert p.strength == 1                       # exercise() ran anyway
+    assert p.praise_flag is False                # ...but no praise for failing
+
+
+def test_success_grants_praise_not_obedience():
+    p = _pet(obedience=7)
+    p.apply_training(3, 100, game="hp")
+    assert p.obedience == 7                      # the +1 was invented
+    assert p.praise_flag is True                 # onExerciseFinish: setPraise
+
+
+def test_weight_sheds_only_in_calorie_deficit():
+    p = _pet(calories=5)
+    p.apply_training(2, 100, attribute="Vaccine", game="vaccine")
+    assert p.weight == 20                        # buffered: no shed
+    q = _pet(calories=-3)
+    q.apply_training(2, 100, attribute="Vaccine", game="vaccine")
+    assert q.weight == 19                        # deficit: ActivityWeightChange -1
+
+
+def test_neutral_attribute_costs_two_spirit_not_three():
+    p = _pet(enthusiasm=0)                       # Vaccine pet drills Data at a neutral hour
+    p.time_pref = {k: 0 for k in p.time_pref}    # no time fav/dislike in play
+    p.apply_training(2, 100, attribute="Data", game="data")
+    assert p.enthusiasm == -2                    # ExerciseNotFavAttributeEnthusiasmDec
+
+
+def test_sour_pet_pays_spirit_on_the_hp_drill():
+    p = _pet(enthusiasm=0, disposition=-1)
+    p.time_pref = {k: 0 for k in p.time_pref}
+    p.apply_training(2, 100, game="hp")
+    assert p.enthusiasm == -1                    # exercise() None-branch
+
+
+def test_fatigue_can_fire_on_a_failed_drill_too():
+    random.seed(0)
+    fired = 0
+    for _ in range(60):
+        p = _pet(strength=4, mood=0)
+        p.nutr_protein = p.nutr_mineral = p.nutr_vitamin = 0
+        p.apply_training(0, 0, game="hp")        # fail; the +1 still pushes the cap
+        fired += p.is_fatigued()
+    assert fired > 10                            # ~60% odds: the roll is win-or-lose
+
+
+def test_purse_truncates_per_entrant():
+    p = _pet()
+    t = object.__new__(tournament.Tournament)
+    t.pet = p
+    t.trophy = {"bit_mod": 1.1}
+    t.entrants = [{"stage": "Rookie"}] * 7       # 125 x 1.1 = 137.5 each
+    assert t._calc_bits() == 959                 # per-step floor; a float sum says 962
+
+
+def test_purse_integer_modifiers_unchanged():
+    p = _pet()
+    t = object.__new__(tournament.Tournament)
+    t.pet = p
+    t.trophy = {"bit_mod": 1}
+    t.entrants = [{"stage": "Champion"}] * 7
+    assert t._calc_bits() == 7 * 150

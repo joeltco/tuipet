@@ -33,17 +33,25 @@ def test_constant_is_two():
 
 # ---- HP (Effort) drill -----------------------------------------------------
 
-def test_hp_success_builds_strength_and_obedience():
-    p = _trainee(obedience=0)    # apply_training is roll-free; watch the +1
+def test_hp_success_builds_strength_and_praise():
+    from tuipet.pet import Pet
+    p = Pet(num=100, stage="Champion", attribute="Vaccine",   # real species: _open_praise gates on num
+            energy=24, max_energy=24, weight=20, strength=0, mood=0, obedience=0)
+    p.world_seconds = 600.0
     p.apply_training(2, 100, game="hp")
     assert p.strength == 1
-    assert p.obedience == 1
+    # canon re-audit 2026-07: onExerciseFinish grants the PRAISE flag on success
+    # (setPraise) -- the old obedience+1 was invented, not canon
+    assert p.obedience == 0
+    assert p.praise_flag
 
 
 def test_hp_fail_penalises():
     p = _trainee(strength=2, obedience=2, mood=50)
     p.apply_training(1, 100, game="hp")        # hits<2 -> fail
-    assert p.strength == 2, "a failed drill gives no Effort"
+    # canon: exercise() runs BEFORE the success check -- the Effort gauge fills
+    # win or lose (onExerciseFinish); the fail costs land on mood/obedience
+    assert p.strength == 3
     assert p.obedience == 1, "fail costs obedience"
     assert p.mood < 50, "fail costs mood"
 
@@ -97,6 +105,6 @@ def test_drill_costs_weight_energy_and_counts_exercise():
     p = _trainee()
     e0 = p.energy
     p.apply_training(2, 100, attribute="Vaccine", game="vaccine")
-    assert p.weight == 18          # -2
+    assert p.weight == 20          # canon ExerciseWeightDec=0: no flat shed
     assert p.energy == e0 - 1
     assert p.exercise_today == 1

@@ -298,13 +298,16 @@ class Tournament:
     def _calc_bits(self):
         """Tournament.calcBits: the purse is the sum of the FIELD's stage bits
         x BitModifier (a Mega entrant pays MaxBits once the pet is past 12d)."""
-        total = 0.0
+        total = 0
         for e in self.entrants:
             base = TOURNEY_BITS.get(e["stage"], 0)
             if e["stage"] == "Mega" and _age_days(self.pet) > TOURNEY_AGES["Mega"]:
                 base = TOURNEY_MAX_BITS
-            total += base * self.trophy["bit_mod"]
-        return int(total)
+            # canon truncates the RUNNING total each step ((int)(bits + term)):
+            # a 1.1-modifier all-Rookie field pays 959, not the float-sum's 962
+            # (identical IEEE doubles Java-side -- the halves floor away per step)
+            total = int(total + base * self.trophy["bit_mod"])
+        return total
 
     def _finish(self, bits):
         self.over = True

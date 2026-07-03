@@ -2051,10 +2051,12 @@ class Pet:
         self.exercise_today += 1                          # DVPet _exercise (incExerciseTime)
         complied = self.check_compliant()                 # onExerciseFinish: checkCompliant
         strength0 = self.strength
-        if hits >= 2:
-            self.strength = _clamp(self.strength + 1, 0, 4)
-            self.obedience += 1
         success = hits >= 2
+        # canon re-audit 2026-07: onExerciseFinish calls exercise() BEFORE checking
+        # success -- the Effort gauge, spirit costs, body costs and the fatigue
+        # roll all land WIN OR LOSE.  (The old success-only +1 and the invented
+        # obedience+1 were not canon; success grants the praise flag + power.)
+        self.strength = _clamp(self.strength + 1, 0, 4)   # setExercise(+1), unconditional
         # DVPet onExerciseFinish adds +1 per drill, but the real device's stages last
         # real-DAYS (hundreds of trainings) while tuipet compresses them to ~2h. A flat
         # +1 can't reach the real-data attribute-power thresholds (digimon.csv median 50)
@@ -2064,6 +2066,9 @@ class Pet:
         gain = hits * TRAIN_POWER_PER_HIT if success else 0
         if game == "hp":
             attr = "Effort"
+            if self.disposition == -1:
+                # exercise() None-branch: a SOUR pet pays the fav-dec on the HP drill
+                self._set_enthusiasm(self.enthusiasm - 1)
         else:
             attr = attribute or (self.attribute if self.attribute in ("Vaccine", "Data", "Virus") else "Vaccine")
             if attr == "Vaccine":
@@ -2072,11 +2077,16 @@ class Pet:
                 self.data_power += gain
             elif attr == "Virus":
                 self.virus += gain
-            if attr != self.attribute:                       # disliked-attribute cost
-                self._set_mood(self.mood - 1)            # NoneTrainingAttributeMoodRankChange
-                self._set_enthusiasm(self.enthusiasm - 3)  # ExerciseDislikedAttributeEnthusiasmChange
-            else:
+            # exercise()'s enthusiasm branches key on the learned attribute RANKS
+            # (TasteRanks, like foods) -- unported; the species attribute stands in
+            # as the favourite.  Canon costs: fav -1, NEUTRAL -2 (NotFavDec) --
+            # the old -3 treated every other attribute as the DISLIKED rank, and
+            # the old mood-1 misread NoneTrainingAttributeMoodRankChange (an
+            # HP-drill moodRANK drift; the rank-drift system is unported).
+            if attr == self.attribute:
                 self._set_enthusiasm(self.enthusiasm - 1)  # ExerciseFavAttributeEnthusiasmDec
+            else:
+                self._set_enthusiasm(self.enthusiasm - 2)  # ExerciseNotFavAttributeEnthusiasmDec
         # checkExerciseTime: drilling at the pet's favourite time of day lifts it,
         # at the disliked time it drags; any other hour still costs a little mood
         now = self.day_phase
@@ -2095,12 +2105,18 @@ class Pet:
             self._worsen_sick()
             if complied:
                 self.obedience += OBEDIENCE_CHANGE_SICK_FORCED
-        self.weight = max(1, self.weight - 2)
+        # canon ExerciseWeightDec = 0 (classic): drills do NOT shed flat weight.
+        # The body cost is CALORIC (setCaloriesAndChangeWeight): an activity
+        # decrement landing while ALREADY in deficit sheds ActivityWeightChange.
+        if self.calories < 0:
+            self.weight = max(1, self.weight - 1)         # ActivityWeightChange -1
         self.calories = max(-CALORIE_LIMIT, self.calories - EXERCISE_CALORIE_DEC)  # ExerciseCalorieDec
         self._set_energy(self.energy - 1)               # ExerciseEnergyDec
         # setExercise: driving the Effort gauge past its LIMIT risks fatigue --
-        # good nutrition softens the odds, the home's compatibility bends them
-        if success and strength0 >= 4:
+        # good nutrition softens the odds, the home's compatibility bends them.
+        # Unconditional like the +1 itself (canon rolls whenever the gauge is
+        # pushed past the cap, win or lose).
+        if strength0 >= 4:
             h = self.habitat_obj()
             chance = GOOD_NUTRITION_FATIGUE_CHANCE if self.good_nutrition() else FATIGUE_CHANCE
             chance += FATIGUE_COMPAT_CHANGE * ((self.field in h["incompat_fields"])
@@ -2109,7 +2125,9 @@ class Pet:
                                                - (self.element in h["compat_elements"]))
             if random.randrange(100) < chance:
                 self._fatigue()
-        if not success:                                  # DVPet exercise-fail penalties
+        if success:
+            self._open_praise()                          # onExerciseFinish: setPraise(true)
+        else:                                            # DVPet exercise-fail penalties
             self._set_mood(self.mood - 10)               # ExerciseFailMoodDec
             self.obedience -= 1                          # ExerciseFailObedienceDec
         # training while overweight risks an injury
