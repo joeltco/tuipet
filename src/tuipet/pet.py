@@ -1567,6 +1567,9 @@ class Pet:
         self.lifespan += BONUS_EVOLUTION_LIFE * self.evol_bonus   # bonusLifespan
         if _req.get("give_item", -1) >= 0:        # GiveItem: grant a consumable (dormant in data)
             self.add_item(f"i:{_req['give_item']}")
+        if _req.get("xantibody", "None") in ("Induced", "Natural"):
+            # Evolution.digivolve: becoming an X form makes the X state PERMANENT
+            self._set_xantibody("Permanent")
         self._set_anim("happy", 2.5)
 
     def _swap_form(self, num, subtract_current=False):

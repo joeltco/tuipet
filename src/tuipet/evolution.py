@@ -105,28 +105,44 @@ def _dna_ok(pet, req):
 
 
 def check(pet, num, item=-1, connecting=False):
-    """checkEvolReq: every gate must pass, OR the form\'s DNA requirement is met
-    (DVPet\'s `testX || getDNA` bypass). checkStatTotal + probability are never bypassed.
-    `connecting` (the jogress/fusion handshake) waives ONLY the special-type gate --
-    every other requirement still applies to the fusion form, exactly like DVPet."""
+    """checkEvolReq, verbatim semantics (canon re-audit 2026-07):
+
+    * the DNA replacement is CONSUME-ONCE: canon's getDNA() clears its flag on
+      the first failing gate it excuses -- so a met DNA charge forgives exactly
+      ONE failed gate, not all of them.  With short-circuit ||, that reduces to:
+      pass iff no gate fails, or (DNA met and exactly one fails).
+    * special types follow checkSpecialCondition + the optional flags:
+      JogressOptional=TRUE (classic) -- a Jogress form IS reachable by normal
+      timed care (its heavy gates still apply); FusionOptional=FALSE -- Fusion
+      needs the handshake; Failed forms compete like anyone; Mode/Death/Xros
+      have their own triggers.  `connecting` waives the whole type gate (the
+      jogress/mode/death helpers all pass it, as before).
+    * only an INDUCED X requirement demands the antibody (canon gates Natural
+      forms by care alone -- 180 corpus forms were wrongly locked); the
+      probability roll applies to X forms like everyone (the old skip was not
+      canon).  checkStatTotal + probability are never DNA-bypassed."""
     req = data.load_requirements().get(num)
     if req is None:
         return False
-    if req.get("special", "None") != "None" and not connecting:
-        return False  # jogress/fusion/mode need a special trigger, not normal evolution
+    special = req.get("special", "None")
+    if not connecting:
+        if special in ("Mode", "Death", "Xros"):
+            return False          # checkSpecialCondition: their own triggers only
+        if special == "Fusion":
+            return False          # FusionOptional=FALSE: the handshake only
+        # "Jogress" (JogressOptional=TRUE), "Failed" and "None" compete normally
     ev_item = req.get("evol_item", -1)
     if item == -1:
         if ev_item != -1:
             return False     # item-locked form: unreachable by timed care (need the item)
     elif ev_item != item:
         return False         # using an item only validates the forms that require it
-    if req.get("xantibody", "None") in ("Induced", "Natural") and getattr(pet, "x_antibody", "None") == "None":
-        return False  # X-Antibody forms are unreachable without the antibody
+    if req.get("xantibody", "None") == "Induced" and getattr(pet, "x_antibody", "None") == "None":
+        return False  # Induced X-forms are unreachable without the antibody (canon: Induced ONLY)
     vac, dat, vir = _stats(pet)
     total = vac + dat + vir
     if not _stat_total_ok(req, total):
         return False
-    dna_ok = _dna_ok(pet, req)            # DVPet: getDNA() bypasses the care/stat/battle gates
     gates = [
         _cmp(*req["battles"], pet.battles),
         _attr(req["data"][0], dat, total), _attr(req["data"][1], dat, total),
@@ -139,32 +155,28 @@ def check(pet, num, item=-1, connecting=False):
         _cmp(*req["sick"], pet.sick_count),
         _cmp(*req["injured"], pet.injuries),
         req["mood"] == "None" or req["mood"] == mood_category(pet.mood),
-        req.get("major_food", "None") == "None"
-        or req["major_food"] == (pet.major_food() if hasattr(pet, "major_food") else None),
-        _cmp(*req.get("incarnations", ("None", 0)), getattr(pet, "generation", 1)),
         _cmp(*req["obedience"], pet.obedience),
         _cmp(*req["wins"], _win_rate(pet)),
         _cmp(*req["mistakes"], pet.care_mistakes),
+        req.get("major_food", "None") == "None"
+        or req["major_food"] == (pet.major_food() if hasattr(pet, "major_food") else None),
+        _cmp(*req.get("incarnations", ("None", 0)), getattr(pet, "generation", 1)),
     ]
-    if not all(g or dna_ok for g in gates):
-        return False
     # LevelFought: enough opponents of at least MinLevelFought power beaten this stage
     lf_min = req.get("level_fought_min", 0)
     if lf_min:
         cnt = sum(1 for lv in getattr(pet, "levels_fought", ()) if lv >= lf_min)
-        if not (_cmp(*req["level_fought"], cnt) or dna_ok):
-            return False
-    # temperature + habitat conditions (DVPet gates evolution on these; we have
-    # both systems, so honour them)
+        gates.append(_cmp(*req["level_fought"], cnt))
+    # temperature + habitat conditions share the same DNA-forgivable pool
     tr = req.get("temp_req")
-    if tr is not None and not (tr[0] <= getattr(pet, "temp", 50) <= tr[1]) and not dna_ok:
-        return False
+    if tr is not None:
+        gates.append(tr[0] <= getattr(pet, "temp", 50) <= tr[1])
     hr = req.get("habitat_req", -1)
-    if hr != -1 and _major_hab(pet) != hr and not dna_ok:
+    if hr != -1:
+        gates.append(_major_hab(pet) == hr)
+    failed = sum(1 for g in gates if not g)
+    if failed > (1 if _dna_ok(pet, req) else 0):     # getDNA(): one forgiveness, then spent
         return False
-    # the antibody commits the pet to its X-form: skip the random prob gate
-    if req.get("xantibody", "None") in ("Induced", "Natural") and getattr(pet, "x_antibody", "None") != "None":
-        return True
     # probability: prob >= probBound -> always; else prob must beat a roll.
     # DVPet boosts prob by the care bonus + winRate*coefficient (checkEvolReq).
     boost = getattr(pet, "evol_bonus", 0) + int(_win_rate(pet) * WIN_RATE_PROB_COEF)
@@ -407,14 +419,21 @@ def requirement_report(pet, num):
                      f"{label} {_SYM.get(cond, '?')}{val:g}{unit}  (now {actual:g}{unit})"))
 
     # hard locks first: forms normal timed care can never reach
-    if req.get("special", "None") != "None":
-        rows.append((False, f"via {req['special']} only"))
+    special = req.get("special", "None")
+    if special == "Fusion":
+        rows.append((False, "via Fusion (jogress handshake) only"))
+    elif special == "Mode":
+        rows.append((False, "via Mode Change only"))
+    elif special == "Death":
+        rows.append((False, "at death's door only"))
+    elif special == "Jogress":
+        rows.append((None, "a Jogress line \u2014 care can reach it"))
     ev_item = req.get("evol_item", -1)
     if ev_item != -1:
         item = data.consumable_by_key(f"i:{ev_item}")
         rows.append((f"i:{ev_item}" in getattr(pet, "inventory", {}),
                      f"use {(item or {}).get('name', f'item {ev_item}')}"))
-    if req.get("xantibody", "None") in ("Induced", "Natural"):
+    if req.get("xantibody", "None") == "Induced":     # canon gates Induced only
         rows.append((getattr(pet, "x_antibody", "None") != "None", "X-Antibody"))
 
     vac, dat, vir = _stats(pet)
