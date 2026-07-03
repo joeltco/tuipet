@@ -90,3 +90,12 @@ def test_care_actions_guard_against_retrigger():
         if "self.screen_w.fx is not None" not in body:
             missing.append(name)
     assert not missing, f"care actions missing the fx re-trigger guard: {missing}"
+
+
+def test_gift_fx_chains_into_cheer():
+    # ClockTic.giftEnd: the gifting amble always ends in State.Cheering
+    s = _FakeScreen()
+    s.start_fx("gift", icon="f:8")
+    for _ in range(s.fx["steps"]):
+        s.advance_fx()
+    assert s.fx is not None and s.fx["kind"] == "cheer"

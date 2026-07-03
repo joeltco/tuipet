@@ -237,6 +237,13 @@ def _filth_pts(pet, tick, count=None, sizes=None, push=0, px_h=None):
 COND_W = COND_H = 7                                # state.png cell size (DVPet 7x7 cells)
 PLAY_HOP = 14                                      # DVPet jumping(): 6 up + 6 down + rest per hop
 PLAY_HOP_H = 6                                     # apex height in px (LCD is 24px tall)
+# DVPet gifting(): amble off LEFT until half off-screen (firstGoal -20/104), amble
+# back RIGHT to just past centre (secondGoal 39/104 ~ x15/40), gift pops in beside
+# the pet (it rides hidden until arrival in DVPet too), pose 5 hold -> giftEnd.
+# 3 logical px per 2-interval beat scales to ~1px/beat here (same ~4s legs).
+GIFT_OUT = 40                                      # beats*2 ticks: centre x12 -> x-8 (20px)
+GIFT_BACK = 46                                     # x-8 -> x15 (23px)
+GIFT_HOLD = 18                                     # the % (interval*45) settle before giftEnd
 COND_PITCH = COND_H + 1
 # Status sprites disabled for now (Joel): the post-cure medicine badge and the
 # misbehave/discipline "light bulb". Cosmetic-only; remove from this set to re-enable.
@@ -447,7 +454,8 @@ class Screen(Static):
 
     # ---- care-action animations (DVPet SpriteAnim eat/clean/cheer) -----------
     def start_fx(self, kind, icon=None, poop=0, old_num=None, pet=None, starving=False):
-        steps = {"eat": 35, "cheer": 31, "jeer": 31, "clean": 22, "spit": 25, "evolve": 37, "dying": 18, "dna_charge": 44, "play": 37, "heal": 24, "poop": 25}.get(kind, 12)
+        steps = {"eat": 35, "cheer": 31, "jeer": 31, "clean": 22, "spit": 25, "evolve": 37, "dying": 18, "dna_charge": 44, "play": 37, "heal": 24, "poop": 25,
+                 "gift": GIFT_OUT + GIFT_BACK + GIFT_HOLD}.get(kind, 12)
         self.fx = {"kind": kind, "step": 0, "steps": steps, "icon": icon, "poop": poop, "old_num": old_num}
         if kind == "eat":
             # DVPet eat(): each chew beat is scaled by pow(N, mod) -- a starving pet or
@@ -513,6 +521,9 @@ class Screen(Static):
             self.start_fx("cheer")
         elif kind == "heal":
             # DVPet bandage() beat 23 -> Cheering: treatment ends in the praise bounce.
+            self.start_fx("cheer")
+        elif kind == "gift":
+            # ClockTic.giftEnd: the handover ends in State.Cheering.
             self.start_fx("cheer")
         return self.fx is not None
 
@@ -645,6 +656,28 @@ class Screen(Static):
                     # DVPet cheer(): the pet stays CENTRED and the emote rides its right
                     # edge (adjustEmotionLabel) -- not pinned to the far corner.
                     overlay += _blit(hf, (SCREEN_COLS - SPRITE_W) // 2 + xshift + SPRITE_W, 1)
+        elif fx["kind"] == "gift":
+            # DVPet gifting(): walk-toggle poses (spriteNum/spriteNum+1) per beat;
+            # facing follows the leg (drawNumMirror false left / true right).  The
+            # present is only revealed on arrival, beside the pet (locX gap 4/104
+            # ~ 1px), vertically centred -- then pose 5 faces it for the hold.
+            base = (SCREEN_COLS - SPRITE_W) // 2
+            if step < GIFT_OUT:
+                xshift = -(step // 2)                          # off to fetch it
+                rows = self._pose_rows(pet, "walk", step // 2)
+            elif step < GIFT_OUT + GIFT_BACK:
+                xshift = -(GIFT_OUT // 2) + (step - GIFT_OUT) // 2   # ambling back
+                rows = self._pose_rows(pet, "walk", step // 2)
+            else:
+                xshift = -(GIFT_OUT // 2) + GIFT_BACK // 2
+                rows = self._pose_rows_idx(pet, 5)             # ta-dah beside the present
+                gf = self._food_frames(fx.get("icon") or "f:0")
+                if gf:
+                    g0 = gf[0]
+                    gw = max((len(r) for r in g0), default=8)
+                    gh = len(g0)
+                    gx = base + xshift - gw - 1
+                    overlay += _blit(g0, gx, (px_h - gh) // 2)
         elif fx["kind"] == "play":
             # DVPet jumping() (SpriteAnim 17308): the pet bounces with joy -- hops UP on
             # the excited pose (5) and lands on the neutral pose (1), a happy chirp at the
@@ -743,6 +776,7 @@ class Screen(Static):
                 df = dye[(step // 10) % len(dye)]
                 overlay += _blit(df, (SCREEN_COLS - SPRITE_W) // 2 + SPRITE_W + xshift, 1)
         mirror = (fx["kind"] in ("dying", "poop")
+                  or (fx["kind"] == "gift" and GIFT_OUT <= step < GIFT_OUT + GIFT_BACK)  # facing right, ambling back
                   or (fx["kind"] == "spit" and (step // 6) % 2 == 0))   # refuse(): head-shake flips
         self.update(render_screen(rows, SCREEN_COLS, SCREEN_ROWS, on, bg,
                                   xshift=xshift, yshift=yshift, overlay=overlay, bgimg=bgimg,
@@ -1719,9 +1753,10 @@ class TuiPetApp(App):
     def action_gift(self):
         if self.mode is not None or self.screen_w.fx is not None or not self.pet.gift:
             return
+        key = self.pet.gift
         msg = self.pet.claim_gift()
         if msg:
-            self.screen_w.start_fx("cheer")     # giftEnd -> State.Cheering
+            self.screen_w.start_fx("gift", icon=key)   # gifting() amble, chains to cheer (giftEnd)
             self._do(msg)
 
     def action_play(self):
