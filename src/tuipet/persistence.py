@@ -20,12 +20,17 @@ SETTINGS_PATH = os.path.join(SAVE_DIR, "settings.json")
 
 
 def load_settings(path=None):
-    """App-level prefs that outlive any single pet (e.g. the tamer name)."""
+    """App-level prefs that outlive any single pet (e.g. the tamer name).
+    Falls back to the .bak rotated by save_settings -- settings hold the album,
+    lifetime wins, owned eggs and the banked Digimemory; one corrupt write must
+    not erase a save file's whole history (audit 2026-07)."""
     path = path or SETTINGS_PATH
-    try:
-        return json.load(open(path))
-    except (OSError, ValueError):
-        return {}
+    for candidate in (path, path + ".bak"):
+        try:
+            return json.load(open(candidate))
+        except (OSError, ValueError):
+            continue
+    return {}
 
 
 def save_settings(d, path=None):
@@ -34,6 +39,8 @@ def save_settings(d, path=None):
     tmp = path + ".tmp"
     with open(tmp, "w") as fh:
         json.dump(d, fh)
+    if os.path.exists(path):
+        os.replace(path, path + ".bak")   # keep one generation back
     os.replace(tmp, path)
 
 
@@ -243,7 +250,10 @@ def save(pet, path=None):
     tmp = path + ".tmp"
     with open(tmp, "w") as fh:
         json.dump(data, fh)
-    os.replace(tmp, path)  # atomic
+    if os.path.exists(path):
+        os.replace(path, path + ".bak")   # one generation back: a corrupt main save
+    os.replace(tmp, path)                 # used to mean a silent new egg -- and the
+    #                                       next autosave then DESTROYED the old pet
     if getattr(pet, "num", -1) >= 0 and pet.stage != "Egg":
         album_add(pet.num)            # grow the cross-pet album (gates egg unlocks)
 
@@ -297,6 +307,19 @@ def pet_from_save(data, catch_up=True):
         pet = Pet(**kwargs)
     except TypeError:
         return None, ""
+    # a dataclass constructor validates NOTHING: a save with the right keys but
+    # wrong-typed values (hand-edited file, corrupt cloud payload) builds a pet
+    # that crashes minutes later in tick().  Reject it here instead -- this also
+    # guards sync_down_at_startup's probe (audit 2026-07).
+    for fname, want in (("hunger", (int, float)), ("energy", (int, float)),
+                        ("mood", (int, float)), ("weight", (int, float)),
+                        ("bits", (int, float)), ("poop", (int, float)),
+                        ("world_seconds", (int, float)), ("age_seconds", (int, float)),
+                        ("lifespan", (int, float)), ("sleep_lapse", (int, float)),
+                        ("stage", str), ("attribute", str),
+                        ("inventory", dict), ("poop_sizes", list)):
+        if not isinstance(getattr(pet, fname), want):
+            return None, ""
     msg = ""
     if catch_up and saved_at:
         elapsed = min(max(0.0, time.time() - saved_at), MAX_OFFLINE)
@@ -329,23 +352,34 @@ def _offline(pet, elapsed):
 
 
 def load(path=None, catch_up=True):
-    """Return (pet, message) or (None, '') if no valid save exists."""
+    """Return (pet, message) or (None, '') if no valid save exists.  A corrupt
+    main save falls back to the .bak rotated by save() -- at most one autosave
+    (~10s) behind, instead of a silent new egg."""
     path = path or SAVE_PATH
-    if not os.path.exists(path):
-        return None, ""
-    try:
-        data = json.load(open(path))
-    except (ValueError, OSError):
-        return None, ""
-    return pet_from_save(data, catch_up=catch_up)
+    for candidate in (path, path + ".bak"):
+        if not os.path.exists(candidate):
+            continue
+        try:
+            data = json.load(open(candidate))
+        except (ValueError, OSError):
+            continue
+        pet, msg = pet_from_save(data, catch_up=catch_up)
+        if pet is not None:
+            if candidate != path:
+                msg = (msg + "  " if msg else "") + "(recovered from the backup save)"
+            return pet, msg
+    return None, ""
 
 
 def delete(path=None):
+    """Remove the save AND its .bak -- a deliberate delete must not come back
+    from the backup on the next launch."""
     path = path or SAVE_PATH
-    try:
-        os.remove(path)
-    except OSError:
-        pass
+    for candidate in (path, path + ".bak"):
+        try:
+            os.remove(candidate)
+        except OSError:
+            pass
 
 
 def exists(path=None):
