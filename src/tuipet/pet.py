@@ -326,6 +326,8 @@ X_LIFE_DEC = 1440.0                     # XAntibodyLifeDec 86400: the X-Program'
 X_LIFE_DEC_BOUND = 7                    # XAntibodyLifeDecModifierBound (86400/nextInt(7); 0 = free)
 INSTANT_DEATH_GRACE = 60.0              # InstantDeathGracePeriod 3600: a burn cannot kill in
 #                                         under the grace -- setTotalLifespan's clamp, verbatim
+MIN_ENERGY_LIFE_PENALTY = 60.0          # MinEnergyLifePenalty 3600: bottoming out at the
+#                                         -maxEnergy floor burns life (setEnergy, per hit)
 #                                         scaled to tuipet's ~84h: ~1.2% of life x total mistakes
 HUNGER_MISTAKE_OBEDIENCE = 1            # HungerMistakeObedienceChange
 CALORIE_LAPSE_CHANGE = -1               # CalorieLapseChange (drain per lapse)
@@ -1867,8 +1869,13 @@ class Pet:
 
     def _set_energy(self, value):
         """DVPet setEnergy: clamp to [-max_energy, +max_energy]; dropping into the
-        red saps mood (NegativeEnergyMoodDec)."""
-        value = _clamp(int(round(value)), -self.max_energy, self.max_energy)
+        red saps mood (NegativeEnergyMoodDec) -- and BOTTOMING OUT at the floor
+        burns MinEnergyLifePenalty of life per hit (canon re-audit 2026-07: the
+        old clamp ran first, so the floor case was undetectable)."""
+        raw = int(round(value))
+        if raw < -self.max_energy:
+            self._burn_life(MIN_ENERGY_LIFE_PENALTY)     # setEnergy's floor penalty
+        value = _clamp(raw, -self.max_energy, self.max_energy)
         if value < self.energy:
             value = self._energy_bonus_save(value)   # checkEnergyIncFromPerfectConditions
         if value < 0 and value < self.energy:
