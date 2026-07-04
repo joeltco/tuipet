@@ -107,6 +107,17 @@ def _blit(bm, ox, oy):
             for x, c in enumerate(row) if c == "1"]
 
 
+def _crop(pf):
+    """Crop a creature frame to its real body (the sheets are mostly padding) so
+    the drills can place it on exact columns.  Shared by vaccine/data/hp."""
+    ys = [y for y, row in enumerate(pf) if "1" in row]
+    xs = [x for x in range(max(len(r) for r in pf))
+          if any(x < len(r) and r[x] == "1" for r in pf)]
+    if ys and xs:
+        return [row[xs[0]:xs[-1] + 1] for row in pf[ys[0]:ys[-1] + 1]]
+    return pf
+
+
 # The REAL DVPet HP training dummy -- the "battle bag" figure on a stand (battleBags.png top row,
 # the clean frames DVPet's getBattleBagSprite maps as Vaccine=circle / Virus=triangle / Data=square).
 with open(os.path.join(os.path.dirname(__file__), "data", "hp_dummies.json")) as _f:
@@ -535,12 +546,7 @@ class TrainingPanel:
                 placements.append((bag, GRID_X0 - (1 if punching else 0), False))
             # the pet throws the punches from the data drill's mon column
             pose = self._pose_now(1 if (self.frame_i // 2) % 2 else 0)  # idle bob between taps
-            pf = self._frame(rec, pose)
-            _ys = [y for y, row in enumerate(pf) if "1" in row]
-            _xs = [x for x in range(max(len(r) for r in pf))
-                   if any(x < len(r) and r[x] == "1" for r in pf)]
-            if _ys and _xs:                                  # crop-to-content, like the data drill
-                pf = [row[_xs[0]:_xs[-1] + 1] for row in pf[_ys[0]:_ys[-1] + 1]]
+            pf = _crop(self._frame(rec, pose))
             px = GRID_X0 + CELL + 6 - (2 if punching else 0)  # LUNGE 2px into the punch
             overlay.extend(_blit(pf, px, BASE_Y - len(pf)))   # grounded; faces left natively
             if punching:
@@ -598,14 +604,9 @@ class TrainingPanel:
                 else:                                        # DVPet drawDataPre bobs the pet (sprite 4<->1)
                     bob = 1 if (not self.locked and (self.frame_i // 2) % 2) else 0
                     pose = self._pose_now(bob)
-                pf = self._frame(rec, pose)
-                # the creature sprite is mostly empty padding -> crop to its real body so it can be
-                # placed precisely (centred, hugged by the shields) instead of floating inside the box.
-                _ys = [y for y, row in enumerate(pf) if "1" in row]
-                _xs = [x for x in range(max(len(r) for r in pf))
-                       if any(x < len(r) and r[x] == "1" for r in pf)]
-                if _ys and _xs:
-                    pf = [row[_xs[0]:_xs[-1] + 1] for row in pf[_ys[0]:_ys[-1] + 1]]
+                # crop to the real body so the mon can be placed precisely
+                # (centred, hugged by the shields) instead of floating in padding
+                pf = _crop(self._frame(rec, pose))
                 pw = max(len(r) for r in pf)
                 phh = len(pf)
                 # Data layout, HP-drill style (Joel), on FIXED roomy columns:
@@ -648,33 +649,27 @@ class TrainingPanel:
                     prog = (DATA_FLY - self.fly_t) / (DATA_FLY - 1)
                     overlay += _blit(orb, int(mx + (end_x - mx) * prog), lane_y)
         else:                                               # hp: pick the shape the dummy wants
-            # The marked training dummy (battle bag) LEFT, full height, grounded --
-            # and the PICKER as an on-arena CAROUSEL in the free right half: ONE
-            # shape icon (the real 7x7 attribute symbol) flanked by ◂ ▸ pixel
-            # arrows, band-centred.  ←→ scrolls the shapes (Joel's compact layout;
-            # no pet here -- it appears for the strike volley).
+            # The marked training dummy (battle bag) LEFT, full height, grounded,
+            # and -- canon drawHPTraining (restaged 2026-07-04, the vaccine
+            # lesson) -- the CHAR on the RIGHT, REACTING to every guess: pose 6
+            # flash on a right pick, 9 on a wrong one (the old layout hid the
+            # pet, so the reaction poses fired invisibly).  The round's TARGET
+            # is the real 7x7 attribute symbol in the free sky lane between
+            # them; the pick lives in the gauge (▸●◂), scrolled with ←→.
             # a wrong pick makes the dummy TAUNT for the flash beat (SpriteAnim
             # draws getBattleBagSprite(attr)+1 -- the sheet's bottom-row lean)
             taunting = self._strike_t > 0 and self._strike_pose == 9
             key = ("vaccine", "data", "virus")[self.hp_target] + ("_taunt" if taunting else "")
             dummy = _HP_DUMMIES[key]
             placements = [(dummy, GRID_X0, True)]                     # left, MIRRORED (canon
-            #                                       drawNPTraining: drawNumMirror(bag, true) --
-            #                                       the dummy faces the picker like a foe)
-            ic = E.get(_HP_ICON_KEYS[self.hp_pick], [None])[0]
+            #                                       drawHPTraining: drawNumMirror(bag, true) --
+            #                                       the dummy faces the char like a foe)
+            pf = _crop(self._frame(rec, self._pose_now(0)))           # char pose 0; 6/9 reactions
+            overlay.extend(_blit(pf, GRID_X0 + CELL + 6, BASE_Y - len(pf)))
+            ic = E.get(_HP_ICON_KEYS[self.hp_target], [None])[0]
             if ic:
-                iw, ih = len(ic[0]), len(ic)
-                LA = ["0001", "0011", "0111", "0011", "0001"]         # ◂ ▸ wedges (UI chrome,
-                RA = ["1000", "1100", "1110", "1100", "1000"]         #  the old cursor's shape)
-                free_x0 = GRID_X0 + 15 + 1                            # just right of the dummy
-                span = GRID_X0 + GRID_W - free_x0
-                total = 4 + 1 + iw + 1 + 4
-                cx = free_x0 + max(0, (span - total) // 2)
-                cy = BAND_TOP + (CELL - ih) // 2                      # band-centred
-                ay = cy + (ih - 5) // 2
-                overlay.extend(_blit(LA, cx, ay))
-                overlay.extend(_blit(ic, cx + 5, cy))
-                overlay.extend(_blit(RA, cx + 5 + iw + 1, ay))
+                iw = max(len(r) for r in ic)
+                overlay.extend(_blit(ic, (COLS - iw) // 2, 0))        # the target, sky-centre
         scene = render_scene(placements, COLS, ARENA_ROWS, on, LCD_BG, overlay=overlay, bgimg=bgimg)
         scene.append("\n")
         scene.append_text(self._gauge())
@@ -687,10 +682,12 @@ class TrainingPanel:
         t = Text()
         if gk == "hp":
             # the target glyph (the dummy's belly mark is illegible at this scale)
-            # + round count + timer; the picker carousel lives ON the arena
+            # + the PICK (▸●◂, scrolled with ←→) + round count + timer
             t.append("match ", style=INK)
             t.append(HP_SYMS[self.hp_target], style=INK_B)
-            t.append(f"   round {self.rep + 1}/{HP_ROUNDS}   ", style=INK)
+            t.append("  pick ", style=INK)
+            t.append(f"▸{HP_SYMS[self.hp_pick]}◂", style=INK_B)
+            t.append(f"  round {self.rep + 1}/{HP_ROUNDS}  ", style=INK)
             tb = int((max(self.round_t, 0) / max(self.round_len, 1)) * 8)
             t.append("▓" * tb + "░" * (8 - tb) + "\n", style=f"{ACCENT} on {LCD_BG}")
         elif gk == "vaccine":

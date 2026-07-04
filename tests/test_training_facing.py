@@ -107,8 +107,23 @@ def test_vaccine_scene_shows_the_punch():
     pan = TrainingPanel(p)
     pan.gi = next(i for i, g in enumerate(GAMES) if g[0] == "vaccine")
     pan._start_game()
-    idle = pan.text().plain
-    pan.key("space")                       # a tap: lunge pose + bag rock + Hit! label
-    punch = pan.text().plain
+    idle = pan.text().markup               # .plain strips the arena (all "▀" cells --
+    pan.key("space")                        # sprites live in the COLORS, audit 2026-07-04)
+    punch = pan.text().markup
     assert punch != idle
     assert pan._strike_t > 0 and pan._strike_pose == 6
+
+
+def test_hp_pick_round_shows_the_reacting_pet():
+    """Restage 2026-07-04: canon drawHPTraining has the char on-screen reacting
+    to every guess -- the reaction pose must be VISIBLE, not a hidden state."""
+    from tuipet.training import TrainingPanel, GAMES
+    from tuipet.pet import Pet
+    p = Pet(num=100, stage="Champion", attribute="Vaccine", obedience=500)
+    p.compliance = True
+    pan = TrainingPanel(p)
+    pan.gi = next(i for i, g in enumerate(GAMES) if g[0] == "hp")
+    pan._start_game()
+    idle = pan.text().markup                   # markup, not plain: the arena is colour
+    pan._strike_pose, pan._strike_t = 6, 4     # the right-pick reaction, target unchanged
+    assert pan.text().markup != idle           # ...and it shows on the arena
