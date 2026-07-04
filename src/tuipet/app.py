@@ -1498,12 +1498,19 @@ class TuiPetApp(App):
                 prog, prog2 = f"Power    {int(tp.pos)}", f"Need     {VIRUS_BAR_MIN}"
                 target, flav = f"Virus    [{T.MOOD}]{p.virus}[/]", "stop it high"
             # the card's flavour slot carries the CONTROLS now -- the in-LCD
-            # footer that used to is gone (box-clip audit 2026-07-04)
-            hint = tp._hint()
+            # footer that used to is gone (box-clip audit 2026-07-04).  Split on
+            # the hints' own triple-space gap so a key stays WITH its action
+            # (a hard [:26] slice cut every hint mid-word -- audit 07-04)
+            parts = [s.strip() for s in tp._hint().split("   ") if s.strip()]
+            if len(parts) >= 2 and all(len(s) <= 26 for s in parts[:2]):
+                h1, h2 = parts[0], "  ".join(parts[1:])[:26]
+            else:
+                import textwrap
+                h1, h2 = (textwrap.wrap(tp._hint(), 26) + ["", ""])[:2]
             lines = [f"[b]{p.name[:14]}[/] [dim]\u00b7 train[/]", div,
                      f"[b]{label}[/]", prog, prog2, div,
                      target, f"Energy   {energy}", div,
-                     f"[dim]{hint[:26]}[/]", f"[dim]{hint[26:52]}[/]"]
+                     f"[dim]{h1}[/]", f"[dim]{h2}[/]"]
         self.stats_w.update("\n".join(lines))
 
     def _status_battle(self):

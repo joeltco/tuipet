@@ -710,7 +710,7 @@ class TrainingPanel:
         return {"hp": "←→ pick the symbol   SPACE fire",
                 "vaccine": "SPACE punch the bag!   ESC out",
                 "data": "SPACE flip the shield   ESC out",
-                "virus": "SPACE stop the marker in the zone"}[self.gkey]
+                "virus": "watch the marker   SPACE stops it"}[self.gkey]
 
     def _attr_pow(self):
         """The pet's power in the strike's attribute -> the orb tier (as the battle does)."""

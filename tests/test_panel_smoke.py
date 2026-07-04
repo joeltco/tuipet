@@ -215,3 +215,16 @@ def test_feed_screen_surfaces_the_dp_meter():
     assert "DP+1" in _effect_line(prot)
     plain = next(f for f in data.load_foods() if f.get("strength", 0) == 0 and f.get("show"))
     assert "DP" not in _effect_line(plain)
+
+
+def test_drill_hints_wrap_clean_on_the_status_card():
+    """Audit 2026-07-04: the card wraps hints at 26 cols -- each hint must
+    split on its triple-space gap with the KEY staying beside its action
+    (the old hard [:26] slice cut every hint mid-word)."""
+    from tuipet.training import TrainingPanel, GAMES
+    p = _pet()
+    for gi in range(len(GAMES)):
+        pan = TrainingPanel(p)
+        pan.gi = gi                              # gkey derives from the pick
+        parts = [w.strip() for w in pan._hint().split("   ") if w.strip()]
+        assert len(parts) >= 2 and all(len(w) <= 26 for w in parts)
