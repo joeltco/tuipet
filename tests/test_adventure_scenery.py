@@ -97,3 +97,13 @@ def test_dna_mash_is_a_staged_scene():
     assert len(idle.plain.split("\n")) >= 15   # the arena, not a bare meter
     pan.key("space")                           # markup, not plain: sprites are colour
     assert pan.text().markup != idle.markup    # a press visibly moves the pet
+
+
+def test_memorial_rests_in_the_home_scenery():
+    from tuipet import deathscreen
+    from tuipet.deathscreen import DeathPanel
+    assert deathscreen.ROWS == 12
+    p = _pet()
+    p.dead = True
+    pan = DeathPanel(p)
+    assert len(pan.text().plain.split("\n")) >= 14   # a placed scene, not a strip

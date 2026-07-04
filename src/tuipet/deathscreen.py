@@ -1,10 +1,10 @@
 """Memorial screen shown when the pet passes away."""
 from __future__ import annotations
 from . import data, menu, grid, persistence
-from .render import render_screen
-from .theme import LCD_ON, LCD_BG, DIM
+from .render import render_scene
+from .theme import LCD_ON, LCD_BG, DIM, SIL_DAY
 
-COLS, ROWS = 40, 7
+COLS, ROWS = 40, 12   # the ONE locked arena: the grave rests in the home scenery
 GRAVE = (data.load_effects().get("grave") or [None])[0]
 
 
@@ -57,7 +57,12 @@ class DeathPanel:
         p = self.pet
         out = menu.bar("MEMORIAL", "")
         if GRAVE:
-            out.append_text(render_screen(grid.prep(GRAVE, ph=ROWS * 2), COLS, ROWS, LCD_ON, LCD_BG))
+            # the memorial is a PLACE too (audit 2026-07-04): the grave stands
+            # grounded in the pet's home scenery, not on a bare pale strip
+            bgimg = p.background()
+            on = SIL_DAY if bgimg else LCD_ON
+            out.append_text(render_scene([grid.center(grid.prep(GRAVE, ph=ROWS * 2))],
+                                         COLS, ROWS, on, LCD_BG, bgimg=bgimg))
             out.append("\n")
         out.append_text(menu.note(f"R.I.P.  {p.name}"))
         out.append(f"gen {p.generation}  ·  lived {_age_str(p.age_seconds)}  ·  {p.stage}\n", style=DIM)
