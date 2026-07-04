@@ -380,13 +380,15 @@ class BattlePanel:
         style = "FREE" if getattr(self.pet, "free_style", False) else "ORDERS"
         out = menu.header("BATTLE", f"vs {b.enemy['name'][:14]} · {style}")
         tag = " BOSS" if b.enemy.get("boss") else ""
-        ignored = "  It IGNORED you!" if getattr(b, "refused_order", False) else ""
+        # the defiance notice gets its OWN line: appended to the HP line it fell
+        # off menu.note's clip edge and never showed (audit 2026-07-04)
+        ignored = "It IGNORED you!" if getattr(b, "refused_order", False) else ""
         if getattr(self, "surrender_refused", False):
             self.surrender_refused = False
-            ignored = "  It won't give up!"       # onSurrender: refuseSurrender
+            ignored = "It won't give up!"         # onSurrender: refuseSurrender
         out.append_text(menu.note(
-            f"You HP {b.pet_hp}/{b.pet_max}   Foe HP {b.enemy_hp}/{b.enemy_max}{tag}{ignored}"))
-        out.append_text(menu.blanks(1))
+            f"You HP {b.pet_hp}/{b.pet_max}   Foe HP {b.enemy_hp}/{b.enemy_max}{tag}"))
+        out.append_text(menu.note(ignored) if ignored else menu.blanks(1))
         powr = {"Vaccine": self.pet.vaccine, "Data": self.pet.data_power, "Virus": self.pet.virus}
         for i, (label, attr) in enumerate(OPTS):
             tagr = f"pow {powr[attr]}" if attr else "bow out"

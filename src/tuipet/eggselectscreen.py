@@ -184,7 +184,7 @@ class EggSelectPanel:
         out = menu.header("CHOOSE YOUR EGG", f"{self.i + 1}/{self.n}")
         out.append_text(scene)
         out.append("\n")                              # scene has no trailing newline
-        out.append_text(menu.note(self._note(self._egg(self.i))))
+        out.append_text(menu.note(self._note(self._egg(self.i)), tick=self.frame_i))
         if self.entering:
             out.append_text(menu.footer(f"code: {self.buf}_   ENTER ok  ESC cancel"))
         elif self.msg:

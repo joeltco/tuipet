@@ -229,7 +229,7 @@ class Adventure:
                 self._rested.add(lo)
                 self.life = MAX_LIFE
                 self.pet._set_energy(self.pet.max_energy)
-                self.last = "Reached a town -- rested (life + energy)."
+                self.last = "Reached a town — rested (life + energy)."
                 return ("town", tid)
         if self.location >= self.total_steps:              # gate clear, path clear -> done
             return self._advance_or_finish()
@@ -279,7 +279,7 @@ class Adventure:
             return (None, None)
         self.pet.add_item(found["key"])
         self.pet._open_praise()                  # it brought you something: praise it!
-        self.last = f"{self.pet.name} dug up a {found['name']}!"
+        self.last = f"{self.pet.name} dug up {found['name']}!"   # no article: "a Oats" read wrong
         return ("item", found)
 
     def _advance_or_finish(self):
@@ -338,7 +338,7 @@ class Adventure:
         self.life = MAX_LIFE
         self.boss_pending = False
         self.pet._set_energy(self.pet.max_energy)       # regrouped at a town -> rested
-        self.last = "Out of life -- retreated to town to regroup."
+        self.last = "Out of life — retreated to town to regroup."
 
     def _complete_zone(self):
         zones = self.maps[self.mi]["zones"]

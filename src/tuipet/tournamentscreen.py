@@ -127,7 +127,7 @@ class TournamentPanel(menu.SubHost):
             style = INK_B if you else INK
             out.append(" %-11s%-11s%s\n" % (c1, c2, c3),
                        style=style if you else (INK if c1 else DIM))
-        out.append_text(menu.note(t.last))
+        out.append_text(menu.note(t.last, tick=self.frame_i))
         if t.over:
             out.append_text(menu.footer("SPACE result   ESC leave"))
         else:
@@ -165,7 +165,7 @@ class TournamentPanel(menu.SubHost):
                 mark = " \u2713 ready" if now >= need else ""
                 out.append("  evolution: %d/%d wins (last %d)%s\n" % (now, need, window, mark),
                            style=INK_B if now >= need else DIM)
-            out.append_text(menu.note(self.msg))
+            out.append_text(menu.note(self.msg, tick=self.frame_i))
             out.append_text(menu.footer("↑↓ browse ENTER enter A alarm ESC out"))
             return out
         # bracket
@@ -184,7 +184,7 @@ class TournamentPanel(menu.SubHost):
                 out.append("\n%s\n" % ("★" * min(self.pet.trophies, 14)), style=INK_B)
             else:
                 out.append("\n\n")
-            out.append_text(menu.note(t.last))
+            out.append_text(menu.note(t.last, tick=self.frame_i))
             out.append_text(menu.footer("ESC leave"))
             return out
         opp = t.current_opponent()
@@ -195,6 +195,6 @@ class TournamentPanel(menu.SubHost):
         out = menu.bar(t.name, "%s %d/3" % (t.round_name, t.round + 1))
         out.append_text(scene)
         out.append("\nvs %s[%s]   Trophy %d\n" % (opp["name"], opp["attribute"][:2], self.pet.trophies), style=INK)
-        out.append_text(menu.note(t.last))
+        out.append_text(menu.note(t.last, tick=self.frame_i))
         out.append_text(menu.footer("SPACE fight   ESC leave"))
         return out

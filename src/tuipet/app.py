@@ -1720,7 +1720,7 @@ class TuiPetApp(App):
                 # _evolve sounds INSIDE the strobe (fx snds beat 5), like DVPet evolveAnim.
                 # design call (polish 2026-07): an evolution landing mid-fx WAITS for
                 # the current animation instead of truncating it (death still overrides)
-                self.flash(f"[b]{p.name}![/] evolved to {p.stage}!")
+                self.flash(self._evolve_msg(prev[0]))
                 if self.screen_w.fx is None:
                     self.screen_w.start_fx("evolve", old_num=prev[0])
                 else:
@@ -1856,6 +1856,15 @@ class TuiPetApp(App):
     def flash(self, text):
         self._hud(text)
         self._flash_t = self.FLASH_HOLD
+
+    def _evolve_msg(self, old_num):
+        """'Koromon evolved into Agumon (Rookie)!' -- old name -> NEW NAME, stage
+        in parentheses.  The old form ('X! evolved to InTraining!') read as if
+        the stage were the pet's NAME (Joel, 2026-07-04: 'the babys name is
+        intraining????'), because the species name never appeared."""
+        _, by = data.load_sprites()
+        old = by.get(old_num, {}).get("name") or "It"
+        return f"[b]{old}[/] evolved into [b]{self.pet.name}[/] ({self.pet.stage})!"
 
     def _need_message(self, p):
         """HUD announcement for the pet's most urgent unmet care need (or '')."""
@@ -2020,7 +2029,7 @@ class TuiPetApp(App):
                                    starving=getattr(self.pet, "_last_meal_starving", False))
         elif isinstance(msg, tuple) and msg and msg[0] == "evolve":
             # _evolve sounds INSIDE the strobe (fx snds beat 5), like DVPet evolveAnim
-            self.flash(f"[b]{self.pet.name}![/] evolved to {self.pet.stage}!")
+            self.flash(self._evolve_msg(msg[1]))
             self.screen_w.start_fx("evolve", old_num=msg[1])
         elif isinstance(msg, tuple) and msg and msg[0] == "inherit":
             mem = msg[1]

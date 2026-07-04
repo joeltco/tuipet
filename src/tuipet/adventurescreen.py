@@ -243,7 +243,8 @@ class AdventurePanel(menu.SubHost):
         out.append(f" {a.pct}%  ", style=INK)
         out.append(lives, style=INK_B)
         out.append(f"  {self.pet.bits}b  bag {sum(self.pet.inventory.values())}\n", style=INK)
-        out.append_text(menu.note(note_over if note_over is not None else (a.last or "")))
+        out.append_text(menu.note(note_over if note_over is not None else (a.last or ""),
+                                  tick=self.frame_i))
         if self._scene is not None:
             out.append_text(menu.footer("investigating...   SPACE skip"))
         elif a.done:

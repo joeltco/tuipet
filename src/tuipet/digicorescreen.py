@@ -299,7 +299,7 @@ class DigiCorePanel:
         lbl = "evolution nears at 1" if pending else "life meter"
         out.append(f"\n core {chr(0x25C6)} {n}", style=INK_B)
         out.append(f"   {lbl}\n", style=DIM)
-        out.append_text(menu.note(self.note))
+        out.append_text(menu.note(self.note, tick=self.frame_i))
         foot = "SPACE core  M mode  → data  ESC" if self.pet.can_mode_change() \
             else "SPACE core  → data  ESC out"
         out.append_text(menu.footer(foot))

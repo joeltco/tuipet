@@ -86,7 +86,7 @@ class JogressPanel:
                                  COLS, FUSE_ROWS, on, LCD_BG, bgimg=bgimg)
             out.append_text(scene)
             out.append("\n")
-            out.append_text(menu.note(self.result_msg))
+            out.append_text(menu.note(self.result_msg, tick=self.frame_i))
             out.append_text(menu.footer("the fusion stabilises...   SPACE"))
             return out
 

@@ -45,9 +45,25 @@ def row(label, selected=False):
     return Text(line + "\n", style=SEL if selected else INK)
 
 
-def note(msg):
-    """A status line (bold)."""
-    return Text(msg[:W] + "\n", style=INK_B)
+NOTE_HOLD = 16   # marquee ticks held on the head each pass (~1.6s at the 10Hz clock)
+NOTE_STEP = 2    # advance one character every N ticks (~5 chars/s, the HUD cadence)
+NOTE_GAP = "      "
+
+
+def note(msg, tick=None):
+    """A status line (bold).  A message wider than the LCD used to CLIP silently
+    (the battle menu's 'It IGNORED you!' vanished off the end -- audit 2026-07-04).
+    Animated panels pass their frame counter as `tick` and long messages marquee
+    with the HUD's proven cadence; without a tick they clip on an ellipsis."""
+    if len(msg) <= W:
+        return Text(msg + "\n", style=INK_B)
+    if tick is None:
+        return Text(msg[:W - 1] + "…\n", style=INK_B)
+    loop = msg + NOTE_GAP
+    cycle = len(loop) + NOTE_HOLD                 # hold on the head again each wrap
+    pos = (tick // NOTE_STEP) % cycle
+    off = max(0, pos - NOTE_HOLD)
+    return Text((loop + loop)[off:off + W] + "\n", style=INK_B)
 
 
 def footer(hint):

@@ -184,7 +184,7 @@ class TownPanel(menu.SubHost):
                              right_mirror=False, ph=24),
                 40, 12, on, LCD_BG, bgimg=bgimg))
             out.append(f"\n {t.name[:22]}  vs {opp['name'][:14]}\n", style=INK)
-            out.append_text(menu.note(t.last))
+            out.append_text(menu.note(t.last, tick=self.frame_i))
             out.append_text(menu.footer("SPACE fight   ESC forfeit"))
             return out
         rows = self._rows()
@@ -209,7 +209,7 @@ class TownPanel(menu.SubHost):
                 out.append(("▸" if cur else " ") + label, style=INK_B if cur else DIM)
                 out.append("  ", style=INK)
             out.append("\n", style=INK)
-            out.append_text(menu.note(self.msg))
+            out.append_text(menu.note(self.msg, tick=self.frame_i))
             out.append_text(menu.footer("←→ pick  ENTER go  ESC leave"))
             return out
 
@@ -233,6 +233,6 @@ class TownPanel(menu.SubHost):
             return "%-22s %s" % (nm, mark)
 
         self.cursor = menu.list_window(out, rows, self.cursor, 5, fmt)
-        out.append_text(menu.note(self.msg))
+        out.append_text(menu.note(self.msg, tick=self.frame_i))
         out.append_text(menu.footer("↑↓ pick  ENTER go  ESC back"))
         return out
