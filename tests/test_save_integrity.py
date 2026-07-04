@@ -57,3 +57,18 @@ def test_egg_saves_are_exempt():
     d = persistence.to_save_dict(Pet.new_egg(egg_type=1))
     q, msg = persistence.pet_from_save(d, catch_up=False, strict=True)
     assert q is not None and q.stage == "Egg"
+
+
+def test_server_refuses_foreign_saves(tmp_path, monkeypatch):
+    """The lobby server itself must not carry old-format saves -- the cloud was
+    the ghost's delivery vehicle in the 'Child' incident."""
+    import sys
+    sys.path.insert(0, "server")
+    import importlib
+    import server as srv
+    importlib.reload(srv)
+    assert not srv._valid_save({"stage": "Child", "name": "", "_saved_at": 1})
+    assert not srv._valid_save({"stage": "Rookie", "name": "", "_saved_at": 1})
+    assert not srv._valid_save("junk")
+    assert srv._valid_save({"stage": "Rookie", "name": "Agumon", "_saved_at": 1})
+    assert srv._valid_save({"stage": "Egg", "name": "", "_saved_at": 1})

@@ -131,4 +131,6 @@ def fuse(pet, target_num):
     pet._set_energy(pet.energy + math.ceil(-JOGRESS_ENERGY_COST * pet.max_energy))
     pet.dp = 0                  # Pen20: the fusion spends the whole DP meter
     pet.evolve_to(target_num)   # special evolution; partner supplies the DNA
+    from . import lines as lines_mod
+    lines_mod.adopt_line(pet)   # stay in the line system if any chart claims the fusion
     return f"Jogress! Fused into {name}!"

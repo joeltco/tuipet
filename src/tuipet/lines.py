@@ -194,6 +194,22 @@ def select_line(pet):
     return None
 
 
+def adopt_line(pet):
+    """Re-anchor the pet to a line whose chart contains its CURRENT form -- a
+    jogress/mode fusion keeps the pet in the line system whenever ANY line
+    claims the target (its own line preferred).  '' = truly off-chart: the
+    legacy corpus engine takes over, as before."""
+    cur = load_lines().get(getattr(pet, "line_id", ""))
+    if cur and pet.num in cur["members"]:
+        return pet.line_id
+    for lid, line in load_lines().items():
+        if pet.num in line["members"]:
+            pet.line_id = lid
+            return lid
+    pet.line_id = ""
+    return ""
+
+
 def win_gate_progress(pet):
     """(now, need, window) for the pet's nearest WIN gate, or None -- the cup
     screen shows how tournament fights feed the evolution window."""

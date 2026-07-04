@@ -49,7 +49,39 @@ HINTS = {
     "petitmon": {"InTraining": ["Babydmon"], "Rookie": ["Dracomon"],
                  "Champion": ["Coredramon"], "Ultimate": ["Wingdramon", "Groundramon"],
                  "Mega": ["Slayerdramon", "Breakdramon"]},
+    "ver3": {"InTraining": ["Tokomon"], "Rookie": ["Patamon", "Kunemon"],
+             "Champion": ["Unimon", "Centarumon", "Centalmon", "Ogremon", "Orgemon",
+                          "Bakemon", "Shellmon", "Drimogemon", "Sukamon", "Scumon"],
+             "Ultimate": ["Andromon", "Giromon", "Etemon"],
+             "Mega": ["HiAndromon", "KingEtemon"]},
+    "ver4": {"InTraining": ["Tanemon"], "Rookie": ["Biyomon", "Piyomon", "Palmon"],
+             "Champion": ["Monochromon", "Kokatorimon", "Cockatrimon", "Leomon",
+                          "Kuwagamon", "Coelamon", "Mojyamon", "Nanimon"],
+             "Ultimate": ["Megadramon", "Piximon", "Piccolomon", "Digitamamon"],
+             "Mega": ["Aegisdramon", "Titamon"]},
+    "ver5": {"InTraining": ["Pagumon"], "Rookie": ["Gazimon", "Gizamon"],
+             "Champion": ["DarkTyrannomon", "Cyclomon", "Devidramon", "Tuskmon",
+                          "Flymon", "Deltamon", "Raremon"],
+             "Ultimate": ["MetalTyrannomon", "Datamon", "Nanomon", "ExTyrannomon"],
+             "Mega": ["Machinedramon", "Mugendramon", "Puppetmon", "Pinochimon"]},
 }
+
+# per-form sleep times (humulos DM20 list, fetched 2026-07-04); 0:00 AM -> 24:00
+# per the ver1 convention.  Applied by NAME; unlisted forms keep stage defaults.
+SLEEP = {}
+for _names, _t in (
+    (("Koromon", "Agumon", "Numemon", "Tsunomon", "Tunomon", "Gabumon",
+      "Vegimon", "Vegiemon"), "21:00"),
+    (("Betamon", "Meramon", "Mamemon", "Elecmon", "Kabuterimon", "Angemon"), "22:00"),
+    (("Greymon", "Tyrannomon", "Tyranomon", "Airdramon", "Seadramon",
+      "MetalGreymon", "Monzaemon", "BlitzGreymon", "Garurumon", "Yukidarumon",
+      "Frigimon", "Birdramon", "Whamon", "MetalMamemon", "Vademon",
+      "CresGarurumon"), "23:00"),
+    (("Devimon", "BanchoMamemon", "SkullGreymon", "SkullMammothmon",
+      "SkullMammon"), "24:00"),
+):
+    for _n in _names:
+        SLEEP[_n] = _t
 
 
 def _slug(name):
@@ -135,28 +167,36 @@ def curate(by_num, evo, reqs, root, line_id, usage):
         pool = candidates(rk, "Champion")
         if not pool:
             continue
+        flav = 0 if line_id in HINTS else (sum(map(ord, line_id)) % 3)
+        T3 = (["CM 0-2, TR 16+", "CM 0-2, TR 0-15", "TIME"],   # care (canon shape)
+              ["TR 16+", "TR 5-15", "TIME"],                    # a training line
+              ["CM 0-2, BTL 4+", "CM 0-2", "TIME"])[flav]       # a battler line
+        T2 = (["CM 0-2", "TIME"], ["TR 8+", "TIME"], ["BTL 4+", "TIME"])[flav]
         if len(pool) >= 3:
             picks = pool[:2] + [failed_last(pool[2:])]
-            rules = ["CM 0-2, TR 16+", "CM 0-2, TR 0-15", "TIME"]
+            rules = T3
         elif len(pool) == 2:
-            picks, rules = [pool[0], failed_last(pool)], ["CM 0-2", "TIME"]
+            picks, rules = [pool[0], failed_last(pool)], T2
             if picks[0] == picks[1]:
-                picks, rules = pool[:2], ["CM 0-2", "TIME"]
+                picks, rules = pool[:2], T2
         else:
             picks, rules = pool[:1], ["TIME"]
         for t, rl in zip(picks, rules):
             add(t, "Champion", [rk], rl)
             champs.append(t)
+    flav = 0 if line_id in HINTS else (sum(map(ord, line_id)) % 3)
+    ult_gate = ("WIN 12/15", "WIN 12/15", "BTL 12+")[flav]      # battlers grind fights
+    mega_gate = ("CM 0-2", "CM 0-2, TR 10+", "KO6 2+")[flav]    # trainers drill, battlers hunt
     ults = []
     for ch in dict.fromkeys(champs):
         pick = candidates(ch, "Ultimate")[:1]
         for t in pick:
-            add(t, "Ultimate", [ch], "WIN 12/15")
+            add(t, "Ultimate", [ch], ult_gate)
             ults.append(t)
     for ul in dict.fromkeys(ults):
         pick = candidates(ul, "Mega")[:1]
         for t in pick:
-            add(t, "Mega", [ul], "CM 0-2")
+            add(t, "Mega", [ul], mega_gate)
     return rows
 
 
@@ -187,9 +227,11 @@ def main(write=False):
         ceiling = max(rows, key=lambda r: STAGE_ORDER.index(r["stage"]))["stage"]
         stats.append((line_id, len(rows), ceiling))
         for r in rows:
+            nm = by_num[r["num"]]["name"]
+            bed = SLEEP.get(nm, BEDTIME[r["stage"]])   # canon per-form, else stage default
             out_rows.append([line_id, r["stage"], str(r["num"]),
                              ";".join(str(p) for p in r["parents"]),
-                             r["rule"], BEDTIME[r["stage"]], by_num[r["num"]]["name"]])
+                             r["rule"], bed, nm])
 
     for lid, n, ceil in stats:
         print(f"{lid:16s} {n:3d} forms   ceiling {ceil}")

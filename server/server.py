@@ -87,9 +87,27 @@ SAVES = _load_saves()
 _saves_lock = asyncio.Lock()
 
 
+_STAGES = {"Egg", "Fresh", "InTraining", "Rookie", "Champion", "Ultimate", "Mega"}
+
+
+def _valid_save(save):
+    """Vocabulary check (2026-07-04 'Child' incident): an OUTDATED client once
+    pushed a rebuild-era save (stage 'Child', empty name) and last-write-wins
+    served it to every device.  The server now refuses formats it doesn't
+    speak; clients also reject on pull, but the cloud must not carry them."""
+    if not isinstance(save, dict):
+        return False
+    stage = save.get("stage")
+    if stage not in _STAGES:
+        return False
+    if stage != "Egg" and not (save.get("name") or "").strip():
+        return False
+    return True
+
+
 async def _store_save(key, save):
     """Last-write-wins by the client-stamped _saved_at: only newer saves land."""
-    if not isinstance(save, dict):
+    if not _valid_save(save):
         return
     incoming = save.get("_saved_at") or 0
     have = (SAVES.get(key) or {}).get("_saved_at") or 0
