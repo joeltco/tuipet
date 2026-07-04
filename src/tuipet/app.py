@@ -949,6 +949,17 @@ class Screen(Static):
 
 
 
+def _age_compact(seconds):
+    """d/h then h/m then m/s -- raw total minutes read as noise on an older
+    pet ('4325m40s', status-box audit 2026-07-04)."""
+    s = int(max(0, seconds))
+    if s >= 86400:
+        return f"{s // 86400}d{(s % 86400) // 3600:02d}h"
+    if s >= 3600:
+        return f"{s // 3600}h{(s % 3600) // 60:02d}m"
+    return f"{s // 60}m{s % 60:02d}s"
+
+
 def _status_line(status, deco, width=26):
     """Assemble the status word + deco glyphs, bounded to `width` visible cols
     so the Stats box never wraps past its 16-row height. Drops the lowest-priority
@@ -983,7 +994,7 @@ class Stats(Static):
         if pet.is_overheating() and word != "overheating": deco.append(f"[{T.NEG}]+hot[/]")
         if pet.poop: deco.append(f"[{T.COIN}]~poop x{pet.poop}[/]")
         if getattr(pet, "effect_id", -1) >= 0: deco.append(f"[{T.POS}]\u2726{pet.effect_name()}[/]")
-        mins, secs = divmod(int(pet.age_seconds), 60)
+        age = _age_compact(pet.age_seconds)
         sky, skycol = _sky_icon(pet)
         aff = pet._affinity()
         amark = (f"[{T.POS}]" + chr(0x2665) + "[/]" if aff > 0
@@ -1001,11 +1012,12 @@ class Stats(Static):
             f"Energy  {bar(pet.energy_pct(), 12, T.ENERGY)}",
             f"Mood    {bar(pet.mood_pct(), 12, T.MOOD)}",
             div,
-            f"Power   [{T.POS}]●{pet.vaccine}[/] [{T.ENERGY}]■{pet.data_power}[/] [{T.MOOD}]▲{pet.virus}[/]",
+            f"Power   [{T.POS}]●{pet.vaccine}[/] [{T.ENERGY}]■{pet.data_power}[/] [{T.MOOD}]▲{pet.virus}[/]"
+            f" [{T.ACCENT}]◆{getattr(pet, 'dp', 0)}[/]",
             f"HP {pet.full_health}/{pet.max_health()}  Wt {pet.weight}g  [{T.COIN}]{pet.bits}b[/]",
             f"Battle  {pet.wins}W/{pet.battles}   [{T.COIN}]\u2605{pet.trophies}[/]",
             f"@{pet.habitat_obj()['name'][:14]} {amark} [dim]{pet.season}[/]",
-            f"[{skycol}]{sky}[/] [dim]{pet.weather} {int(pet.temp)}\u00b0[/] [dim]{mins}m{secs:02d}s[/]",
+            f"[{skycol}]{sky}[/] [dim]{pet.weather} {int(pet.temp)}\u00b0[/] [dim]{age}[/]",
             f"Life    {bar(lifepct, 12, lifecol)}",
             _status_line(word, deco),
         ]
@@ -1031,7 +1043,6 @@ class Stats(Static):
         self.update("\n".join(lines))
 
     def _paint_grave(self, pet):
-        mins = int(pet.age_seconds) // 60
         self.border_subtitle = f"gen {pet.generation}"
         div = f"[dim]{'─' * 26}[/]"
         lines = [
@@ -1039,7 +1050,7 @@ class Stats(Static):
             div,
             "[dim]a life remembered[/]",
             "",
-            f"Lived    {mins}m",
+            f"Lived    {_age_compact(pet.age_seconds)}",
             f"Reached  {pet.stage}",
             f"Attrib   {pet.attribute}",
             f"Record   {pet.wins}W / {pet.battles}",
@@ -1590,7 +1601,7 @@ class TuiPetApp(App):
             f"[dim]{cost}[/]",
             f"[dim]{(m.last or '')[:24]}[/]",
             "",
-            "[dim]own Field * = cheaper charge[/]",
+            "[dim]own Field * charges cheap[/]",
             "[dim]ESC steps back out[/]",
         ]
         self.stats_w.update("\n".join(lines))
