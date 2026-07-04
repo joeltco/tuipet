@@ -54,9 +54,13 @@ def test_town_lobby_is_a_scene_and_arrival_shows_the_town():
     p = _pet()
     pan = TownPanel(p, 0)
     lobby = pan.text()
-    assert len(lobby.plain.split("\n")) >= 15  # header + 12-row scene + strip + footer
+    # box-clip repin 2026-07-04: the lobby fills the PHYSICAL LCD exactly
+    # (12 rows); the errand picker rides the strip under it
+    assert len(lobby.plain.split("\n")) == 12
+    assert "Food" in pan.strip() and "Leave" in pan.strip()
     pan.key("enter")                           # into the food shop: menu grammar returns
-    assert len(pan.text().plain.split("\n")) < 15
+    assert len(pan.text().plain.split("\n")) <= 12
+    assert pan.strip() == ""                   # pages carry their own in-LCD chrome
     # adventure: stepping INSIDE the town's span swaps to the town backdrop
     ap = AdventurePanel(_pet())
     a = ap.adv
@@ -80,7 +84,8 @@ def test_town_cup_interstitial_is_a_scene():
     tr = next((t for t in (tmod.trophy_by_id(i) for i in range(40)) if t), None)
     assert tr is not None
     pan.tourney = tmod.Tournament(p, tr)
-    assert len(pan.text().plain.split("\n")) >= 15   # faceoff arena, not a text box
+    assert len(pan.text().plain.split("\n")) == 12   # the faceoff fills the LCD
+    assert "fight" in pan.strip()                     # controls ride the strip
 
 
 def test_jogress_scenes_use_the_standard_arena():
@@ -94,7 +99,8 @@ def test_dna_mash_is_a_staged_scene():
     pan = DNAPanel(p)
     pan.phase, pan.bet, pan.mash_f, pan.hits = "mash", 10, 20, 14
     idle = pan.text()
-    assert len(idle.plain.split("\n")) >= 15   # the arena, not a bare meter
+    assert len(idle.plain.split("\n")) == 12   # the arena fills the LCD
+    assert "mash SPACE" in pan.strip()          # the meter rides the strip
     pan.key("space")                           # markup, not plain: sprites are colour
     assert pan.text().markup != idle.markup    # a press visibly moves the pet
 
@@ -106,7 +112,8 @@ def test_memorial_rests_in_the_home_scenery():
     p = _pet()
     p.dead = True
     pan = DeathPanel(p)
-    assert len(pan.text().plain.split("\n")) >= 14   # a placed scene, not a strip
+    assert len(pan.text().plain.split("\n")) == 12   # the grave fills the LCD
+    assert "R.I.P." in pan.strip()                    # the epitaph rides the strip
 
 
 # ---- adventure animation audit (2026-07-04): canon walk/discover/investigate ----
@@ -156,13 +163,14 @@ def test_investigate_plays_the_left_walk_and_seals_the_reveal():
     assert pan._scene and pan._scene["kind"] == "item" and pan._scene["icon"]
     sealed = pan._scene["msg"]
     assert "dug up" in sealed
+    # box-clip repin 2026-07-04: the journey note rides the STRIP now
     for _ in range(INV_REVEAL_T - 2):
-        assert sealed not in pan.text().plain     # note text: plain is fine here
+        assert sealed not in pan.strip()          # sealed until the reveal beat
         pan.anim()
     while pan._scene is not None:
         pan.anim()
         assert pan._scene is None or pan._scene["t"] <= INV_END_T
-    assert sealed in pan.text().plain             # revealed
+    assert sealed in pan.strip()                  # revealed
     assert pan.travelling                         # back on the road
 
 

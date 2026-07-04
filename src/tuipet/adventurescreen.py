@@ -231,32 +231,30 @@ class AdventurePanel(menu.SubHost):
             bg_h = tbg if tbg is not None else bg_h
         bgimg = self.pet.background(bg_h) if bg_h is not None else self.pet.background()
         on = SIL_DAY if bgimg else LCD_ON
-        scene = render_scene([(pet_rows, x, mirror)], COLS, ROWS, on, LCD_BG,
-                             overlay=overlay, bgimg=bgimg)
-        fill = round(a.pct / 100 * BAR_W)
-        lives = "♥" * a.lives + "·" * (3 - a.lives)   # dot = lost life (heart glyph reads hollow)
-        out = menu.bar("ADVENTURE", f"Map {a.mi + 1}-{a.zi + 1}")
-        out.append_text(scene)
-        out.append("\n", style=INK)
-        out.append("█" * fill, style=INK_B)               # bright fill, matches STATUS bars
-        out.append("─" * (BAR_W - fill), style=DIM)       # dim empty track
-        out.append(f" {a.pct}%  ", style=INK)
-        out.append(lives, style=INK_B)
-        out.append(f"  {self.pet.bits}b  bag {sum(self.pet.inventory.values())}\n", style=INK)
-        out.append_text(menu.note(note_over if note_over is not None else (a.last or ""),
-                                  tick=self.frame_i))
+        # the scene IS the whole LCD (box-clip audit 2026-07-04: the old
+        # bar/progress/note/footer stack ran 16 lines and the physical 12-row
+        # box clipped everything below the arena).  The journey's numbers live
+        # on the ADVENTURE status card; the note + controls ride the strip.
+        return render_scene([(pet_rows, x, mirror)], COLS, ROWS, on, LCD_BG,
+                            overlay=overlay, bgimg=bgimg)
+
+    def strip(self):
+        """One line under the LCD: the journey note + the controls that apply."""
+        if self.sub is not None:
+            return ""
+        a = self.adv
+        _, _, _, _, note_over = self._pet_placement()
+        note = note_over if note_over is not None else (a.last or "")
         if self._scene is not None:
-            out.append_text(menu.footer("investigating...   SPACE skip"))
+            hint = "SPACE skip"
         elif a.done:
-            out.append_text(menu.footer("Journey complete!   ESC"))
+            hint = "ESC out"
         elif self.travelling:
-            out.append_text(menu.footer("travelling...   SPACE stop   ESC out"))
+            hint = "SPACE stop  ESC out"
+        elif getattr(self, "town_prompt", None) is not None:
+            hint = "ENTER visit  ESC walk on"
+        elif self.discovering:
+            hint = "ENTER investigate  ESC walk on"
         else:
-            if getattr(self, "town_prompt", None) is not None:
-                foot = "visit the town? ENTER yes  ESC no"
-            elif self.discovering:
-                foot = "investigate? ENTER yes  ESC no"
-            else:
-                foot = "stopped.   SPACE go   ESC out"
-            out.append_text(menu.footer(foot))
-        return out
+            hint = "SPACE go  ESC out"
+        return f"{note}  [dim]· {hint}[/]" if note else f"[dim]{hint}[/]"

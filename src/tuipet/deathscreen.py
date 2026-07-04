@@ -47,30 +47,30 @@ class DeathPanel:
             return ("done", None)
         return None
 
-    def _mem_line(self, out):
+    def strip(self):
+        """The epitaph + choices ride the strip under the LCD (box-clip audit
+        2026-07-04: the in-LCD stack ran 16 lines and everything below the
+        grave was clipped off the physical box).  Long lines marquee."""
+        p = self.pet
+        if self.asking:
+            # setNewDigimemory validation: only one Digimemory may exist
+            return (f"One Digimemory only — [b]E[/] etch {p.name}'s data  "
+                    f"[b]K[/] keep {self.old_mem.get('name', '?')}'s")
+        rip = f"R.I.P. [b]{p.name}[/] · gen {p.generation} · lived {_age_str(p.age_seconds)}"
         if self.new_mem:
             m = self.new_mem
-            out.append(f"Inheritance data etched:  Va+{m['vaccine']} | "
-                       f"D+{m['data']} | Vi+{m['virus']}\n", style=DIM)
+            rip += f" · etched Va+{m['vaccine']} D+{m['data']} Vi+{m['virus']}"
+        return rip + "  [dim]· N new egg  ESC rest[/]"
 
     def text(self):
         p = self.pet
-        out = menu.bar("MEMORIAL", "")
-        if GRAVE:
-            # the memorial is a PLACE too (audit 2026-07-04): the grave stands
-            # grounded in the pet's home scenery, not on a bare pale strip
-            bgimg = p.background()
-            on = SIL_DAY if bgimg else LCD_ON
-            out.append_text(render_scene([grid.center(grid.prep(GRAVE, ph=ROWS * 2))],
-                                         COLS, ROWS, on, LCD_BG, bgimg=bgimg))
-            out.append("\n")
-        out.append_text(menu.note(f"R.I.P.  {p.name}"))
-        out.append(f"gen {p.generation}  ·  lived {_age_str(p.age_seconds)}  ·  {p.stage}\n", style=DIM)
-        if self.asking:
-            # setNewDigimemory validation: only one Digimemory may exist
-            out.append(f"You can only have one Digimemory.\n", style=DIM)
-            out.append_text(menu.footer(f"E  etch {p.name}'s data      K  keep {self.old_mem.get('name', '?')}'s"))
+        if not GRAVE:
+            out = menu.bar("MEMORIAL", "")
+            out.append_text(menu.note(f"R.I.P.  {p.name}"))
             return out
-        self._mem_line(out)
-        out.append_text(menu.footer("N  a new egg      ESC  let it rest"))
-        return out
+        # the memorial is a PLACE (audit 2026-07-04): the grave stands grounded
+        # in the pet's home scenery, filling the LCD; words ride the strip
+        bgimg = p.background()
+        on = SIL_DAY if bgimg else LCD_ON
+        return render_scene([grid.center(grid.prep(GRAVE, ph=ROWS * 2))],
+                            COLS, ROWS, on, LCD_BG, bgimg=bgimg)

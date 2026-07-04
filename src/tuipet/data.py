@@ -826,6 +826,17 @@ def load_towns():
             return [int(x) for x in (r.get(k) or "").split(":") if x.strip().isdigit()]
         forced = [int(x) for x in (r.get("ForceTrophies") or "").split(";")
                   if x.strip().lstrip("-").isdigit() and int(x) >= 0]
+
+        def hours(k):
+            """'6t23;6t23;24t17;6t23' -> per-season (start, end) opening spans,
+            keyed Spring/Summer/Fall/Winter.  Canon Utility.isOpen(h, span) is a
+            plain h >= start and h <= end -- so a '24t17' span (start past any
+            real hour) is CLOSED FOR THE SEASON, not a wraparound."""
+            spans = [(s.split("t") + ["", ""])[:2] for s in (r.get(k) or "").split(";")]
+            seasons = ("Spring", "Summer", "Fall", "Winter")
+            return {seasons[i]: (int(a), int(b))
+                    for i, (a, b) in enumerate(spans[:4])
+                    if a.strip().lstrip("-").isdigit() and b.strip().lstrip("-").isdigit()}
         out[tid] = {
             "id": tid,
             "items_override": ids("OverrideDefaultItemsSettings(ShopConsumableID)"),
@@ -837,6 +848,10 @@ def load_towns():
             "tournament_limit": int(r.get("TournamentLimit (0 to 23 are hours 0 to 23 \u2013 anything higher is always open)") or
                                     r.get("TournamentLimit") or 0),
             "forced_trophies": forced,
+            # per-season shop opening hours (FoodShopOpen/ItemShopOpen columns);
+            # winter-market towns (6/13/18) open ONLY in winter by this data
+            "food_hours": hours("FoodShopOpen(SpringSummerFallWinter)"),
+            "item_hours": hours("ItemShopOpen(SpringSummerFallWinter)"),
             # TownBackgroundID: the town's canonical scenery (a habitat id) --
             # shown on arrival in adventure and behind the town lobby
             "bg_habitat": (int(r["TownBackgroundID"])

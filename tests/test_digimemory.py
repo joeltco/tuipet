@@ -80,8 +80,8 @@ def test_memorial_conflict_asks_and_resolves():
     persistence.bank_digimemory(old)
     p = _pet(dead=True)
     pan = DeathPanel(p, new_mem=new, old_mem=old)
-    t = pan.text().plain
-    assert "only have one Digimemory" in t
+    # box-clip repin 2026-07-04: the memorial prompt rides the strip
+    assert "One Digimemory only" in pan.strip()
     assert pan.key("n") is None                               # the prompt gates the memorial keys
     pan.key("e")                                              # etch the new data over the old
     assert persistence.peek_digimemory()["name"] == "Gatomon"

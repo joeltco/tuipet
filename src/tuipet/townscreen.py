@@ -13,8 +13,11 @@ from .tournament import Tournament
 from .battlescreen import BattlePanel
 from .theme import LCD_ON, LCD_BG, INK, INK_B, DIM, SIL_DAY  # noqa: F401  (theme.apply propagation)
 
-_MENU = (("food", "Food shop"), ("items", "Item shop"), ("sell", "Sell"),
-         ("cups", "Tournament"), ("leave", "Leave town"))
+# short labels: the errand strip lives in the 40-col #msg box (the old
+# "Food shop   Item shop   Tournament..." row ran 58 cols and the live
+# compositor clipped it mid-word -- box-clip audit 2026-07-04)
+_MENU = (("food", "Food"), ("items", "Items"), ("sell", "Sell"),
+         ("cups", "Cups"), ("leave", "Leave"))
 
 
 class TownPanel(menu.SubHost):
@@ -102,6 +105,10 @@ class TownPanel(menu.SubHost):
                 self.msg = "This town doesn't buy."
                 self.sfx = "error"
                 return None
+            if key in ("food", "items") and not shop.town_shop_open(p, self.town, key == "food"):
+                self.msg = self._closed_msg(key == "food")
+                self.sfx = "error"
+                return None
             self.phase, self.cursor = key, 0
             self.msg = {"food": "The town's larder.", "items": "The town's wares.",
                         "sell": "What will you part with?", "cups": "The town's cups."}[key]
@@ -145,6 +152,15 @@ class TownPanel(menu.SubHost):
             return None
         return None
 
+    def _closed_msg(self, is_food):
+        """'The food shop is shut. (opens 6:00)' -- or shut for the season when
+        the span can never match an hour (the winter-market towns)."""
+        name = "food shop" if is_food else "item shop"
+        span = shop.town_shop_hours(self.pet, self.town, is_food)
+        if span and span[0] <= 23:
+            return f"The {name} is shut. (opens {span[0]}:00)"
+        return f"The {name} is shut for {self.pet.season.lower()}."
+
     def _town_econ(self, e):
         """The town's shopConsumable override econ for a consumable (else {}) --
         so the sell counter pays the TOWN's resell rate, not home's."""
@@ -157,61 +173,63 @@ class TownPanel(menu.SubHost):
         return {}
 
     # ---- render ----
+    def _scene(self, placements):
+        """A bare 12-row arena over the town's canonical backdrop -- the WHOLE
+        LCD (box-clip audit 2026-07-04: any in-LCD chrome overflowed the
+        physical 12-row box; notes and errands ride the #msg strip instead)."""
+        bg_h = self.town.get("bg_habitat")
+        bgimg = self.pet.background(bg_h) if bg_h is not None else self.pet.background()
+        on = SIL_DAY if bgimg else LCD_ON   # pet over a bg = dark silhouette (paint() rule)
+        return render_scene(placements, 40, 12, on, LCD_BG, bgimg=bgimg)
+
+    def strip(self):
+        """The one-line chrome under the LCD: the errand picker in the lobby,
+        the bout card between cup rounds (marquee'd by the app when long)."""
+        if self.sub is not None:
+            return ""
+        if self.tourney is not None:
+            t = self.tourney
+            opp = t.current_opponent()
+            return (f"{t.round_name} {t.round + 1}/3 vs [b]{opp['name'][:14]}[/]"
+                    f" — SPACE fight  ESC forfeit")
+        if self.phase != "menu":
+            return ""                        # the deeper pages carry in-LCD menus
+        parts = []
+        for i, (key, label) in enumerate(_MENU):
+            shut = (key in ("food", "items")
+                    and not shop.town_shop_open(self.pet, self.town, key == "food"))
+            name = label + ("×" if shut else "")
+            parts.append(f"[b]▸{name}[/]" if i == self.cursor else f"[dim]{name}[/]")
+        return " ".join(parts)
+
     def text(self):
         p = self.pet
         if self.sub is not None:
             return self.sub.text()
         if self.tourney is not None:
-            # the town cup interstitial matches the roadside cup (audit
-            # 2026-07-04): a faceoff SCENE over the town's own backdrop --
-            # it was a bare black text box while every bracket around it
-            # (tournament, then the fight itself) is a themed arena.
+            # the town cup interstitial: the faceoff SCENE fills the LCD; the
+            # round card + controls ride the strip (they were clipped in-LCD)
             t = self.tourney
             opp = t.current_opponent()
-            bg_h = self.town.get("bg_habitat")
-            bgimg = p.background(bg_h) if bg_h is not None else p.background()
-            on = SIL_DAY if bgimg else LCD_ON
             rec = data.load_sprites()[1]
 
             def fr(num):
                 r = rec[num]
                 roles = data.ROLES["idle"]
-                return r["frames"][roles[self.frame_i % len(roles)]] or r["frames"][0]
+                return r["frames"][roles[(self.frame_i // 5) % len(roles)]] or r["frames"][0]
 
-            out = menu.header("TOWN CUP", f"{t.round_name} {t.round + 1}/3")
-            out.append_text(render_scene(
-                grid.faceoff(fr(p.num), fr(opp["num"]), left_mirror=True,
-                             right_mirror=False, ph=24),
-                40, 12, on, LCD_BG, bgimg=bgimg))
-            out.append(f"\n {t.name[:22]}  vs {opp['name'][:14]}\n", style=INK)
-            out.append_text(menu.note(t.last, tick=self.frame_i))
-            out.append_text(menu.footer("SPACE fight   ESC forfeit"))
-            return out
+            return self._scene(grid.faceoff(fr(p.num), fr(opp["num"]),
+                                            left_mirror=True, right_mirror=False, ph=24))
         rows = self._rows()
-        out = menu.header(f"TOWN {self.town['id']}", f"{p.bits}b")
         if self.phase == "menu":
-            # the town LOBBY is a PLACE (restyle 2026-07-04): the pet stands in
-            # the town's canonical scenery (towns.csv TownBackgroundID) and the
-            # errands read as one strip below -- the deeper shop/sell/cup pages
-            # keep the list-menu grammar.
-            bg_h = self.town.get("bg_habitat")
-            bgimg = p.background(bg_h) if bg_h is not None else p.background()
-            on = SIL_DAY if bgimg else LCD_ON   # pet over a bg = dark silhouette (paint() rule)
+            # the town LOBBY is a PLACE: the pet stands in the town's canonical
+            # scenery (towns.csv TownBackgroundID), filling the LCD; the errand
+            # strip reads below in the #msg box.
             rec = data.load_sprites()[1][p.num]
             roles = data.ROLES["idle"]
-            fr = rec["frames"][roles[self.frame_i % len(roles)]] or rec["frames"][0]
-            pet_rows = grid.prep(fr, ph=24)
-            out.append_text(render_scene([grid.center(pet_rows)], 40, 12, on, LCD_BG,
-                                         bgimg=bgimg))
-            out.append("\n ", style=INK)
-            for i, (_, label) in enumerate(_MENU):
-                cur = i == self.cursor
-                out.append(("▸" if cur else " ") + label, style=INK_B if cur else DIM)
-                out.append("  ", style=INK)
-            out.append("\n", style=INK)
-            out.append_text(menu.note(self.msg, tick=self.frame_i))
-            out.append_text(menu.footer("←→ pick  ENTER go  ESC leave"))
-            return out
+            fr = rec["frames"][roles[(self.frame_i // 5) % len(roles)]] or rec["frames"][0]
+            return self._scene([grid.center(grid.prep(fr, ph=24))])
+        out = menu.header(f"TOWN {self.town['id']}", f"{p.bits}b")
 
         def fmt(r, i):
             if self.phase == "menu":

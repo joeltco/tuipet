@@ -88,6 +88,23 @@ def _roll(pet, is_food, check_sale=True, exclude=()):
     return slots
 
 
+def town_shop_hours(pet, town, is_food):
+    """This season's (open, close) span for the town shop, or None when the
+    data carries none (always open)."""
+    return (town.get("food_hours" if is_food else "item_hours") or {}).get(pet.season)
+
+
+def town_shop_open(pet, town, is_food):
+    """Utility.isOpen on the town's per-season shop hours (towns.csv
+    Food/ItemShopOpen): open <= hour <= close, literally -- a '24t17' span can
+    never match a real hour, which is canon for CLOSED THIS SEASON (the
+    winter-market towns 6/13/18 trade only in winter)."""
+    span = town_shop_hours(pet, town, is_food)
+    if not span:
+        return True
+    return span[0] <= _hour(pet) <= span[1]
+
+
 def roll_town_shop(pet, town, is_food):
     """Town.getFood/ItemShop: the home pool with the TOWN's shopConsumable.csv
     override econ substituted per consumable (compareConsumables), rolled to

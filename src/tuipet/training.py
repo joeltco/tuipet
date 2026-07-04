@@ -503,11 +503,8 @@ class TrainingPanel:
         tgt = self._target_sprite(self.success)                     # broken target on success (bag drills)
         placements = (grid.faceoff(tgt, pf, left_mirror=self._target_mirror())
                       if tgt else [grid.center(pf)])   # target + pet face each other (props keep sheet facing)
-        scene = render_scene(placements, COLS, ARENA_ROWS, on, LCD_BG, bgimg=bgimg)
-        scene.append("\n")
-        scene.append_text(menu.note(self.result or ""))
-        scene.append_text(menu.footer("SPACE  finish"))
-        return scene
+        # scene-only: the result + controls ride the strip (box-clip audit 2026-07-04)
+        return render_scene(placements, COLS, ARENA_ROWS, on, LCD_BG, bgimg=bgimg)
 
     def _scene_palette(self):
         # the habitat background IS part of DVPet's layout -- show it during the strike (and
@@ -670,42 +667,43 @@ class TrainingPanel:
             if ic:
                 iw = max(len(r) for r in ic)
                 overlay.extend(_blit(ic, (COLS - iw) // 2, 0))        # the target, sky-centre
-        scene = render_scene(placements, COLS, ARENA_ROWS, on, LCD_BG, overlay=overlay, bgimg=bgimg)
-        scene.append("\n")
-        scene.append_text(self._gauge())
-        scene.append_text(menu.footer(self._hint()))
-        return scene
+        # scene-only: the gauge + hint ride the strip (box-clip audit 2026-07-04)
+        return render_scene(placements, COLS, ARENA_ROWS, on, LCD_BG, overlay=overlay, bgimg=bgimg)
 
     def _gauge(self):
-        """One compact status line under the arena, specific to the drill."""
+        """The drill's live gauge as one MARKUP line: it rides the #msg strip
+        under the LCD (box-clip audit 2026-07-04 -- in-LCD it overflowed the
+        physical box).  Must stay <= 40 visible cols so it never marquees:
+        a live meter has to hold still."""
         gk = self.gkey
-        t = Text()
         if gk == "hp":
-            # the target glyph (the dummy's belly mark is illegible at this scale)
-            # + the PICK (▸●◂, scrolled with ←→) + round count + timer
-            t.append("match ", style=INK)
-            t.append(HP_SYMS[self.hp_target], style=INK_B)
-            t.append("  pick ", style=INK)
-            t.append(f"▸{HP_SYMS[self.hp_pick]}◂", style=INK_B)
-            t.append(f"  round {self.rep + 1}/{HP_ROUNDS}  ", style=INK)
             tb = int((max(self.round_t, 0) / max(self.round_len, 1)) * 8)
-            t.append("▓" * tb + "░" * (8 - tb) + "\n", style=f"{ACCENT} on {LCD_BG}")
-        elif gk == "vaccine":
+            return (f"match [b]{HP_SYMS[self.hp_target]}[/]  pick "
+                    f"[b]▸{HP_SYMS[self.hp_pick]}◂[/]  {self.rep + 1}/{HP_ROUNDS}  "
+                    f"{'▓' * tb}{'░' * (8 - tb)}")
+        if gk == "vaccine":
             hit = self._strike_t > 0
-            t.append("HIT!! " if hit else "hit!  ", style=INK_B if hit else INK)
-            done = self.taps >= self.vaccine_target
-            t.append(f"{self.taps}/{self.vaccine_target}  ", style=INK_B if done else INK)
             filled = int((max(self.timer, 0) / VACCINE_WINDOW) * 9)
-            t.append("time " + "▓" * filled + "░" * (9 - filled) + "\n", style=f"{ACCENT} on {LCD_BG}")
-        elif gk == "data":                                  # clean one-liner, like the virus gauge
-            aim = ("CANNON HIGH!" if self.tgt_up else "CANNON LOW! ") if self.locked else "watch the aim..."
-            t.append(aim, style=INK_B if self.locked else DIM)
-            t.append(f"   shield {'UP' if self.shield_up else 'DOWN'}\n", style=INK)
-        else:  # virus -- the bar is drawn in the LCD; the gauge just calls the zone
-            inzone = int(self.pos) >= VIRUS_BAR_MIN
-            t.append("IN THE ZONE - hit!" if inzone else "stop it in the zone", style=INK_B if inzone else INK)
-            t.append(f"   {int(self.pos)}\n", style=INK)
-        return t
+            head = "[b]HIT!![/]" if hit else "hit!  "
+            return (f"{head} {self.taps}/{self.vaccine_target}  "
+                    f"time {'▓' * filled}{'░' * (9 - filled)}")
+        if gk == "data":
+            aim = ("[b]CANNON HIGH![/]" if self.tgt_up else "[b]CANNON LOW![/]") \
+                if self.locked else "[dim]watch the aim...[/]"
+            return f"{aim}  shield {'UP' if self.shield_up else 'DOWN'}"
+        inzone = int(self.pos) >= VIRUS_BAR_MIN            # virus: call the zone
+        call = "[b]IN THE ZONE - hit![/]" if inzone else "stop it in the zone"
+        return f"{call}  {int(self.pos)}"
+
+    def strip(self):
+        """The one-line chrome under the LCD (menu phase keeps its in-LCD list)."""
+        if self.phase == "menu":
+            return ""
+        if self.phase == "done":
+            return f"{self.result or ''}  [dim]· SPACE finish[/]"
+        if self.phase == "strike":
+            return getattr(self, "_strike_note", "") or "..."
+        return self._gauge()
 
     def _hint(self):
         # keep every hint <= menu.W (38 cols) or footer() clips it mid-word
@@ -783,11 +781,8 @@ class TrainingPanel:
             if m == "fire_in":
                 overlay = self._strike_orb("in", mouth, fr)
             note = "Incoming!" if m == "fire_in" else self.result
-        scene = render_scene(placements, COLS, ARENA_ROWS, on, LCD_BG, overlay=overlay, bgimg=bgimg)
-        scene.append("\n")
-        scene.append_text(menu.note(note or "..."))
-        scene.append_text(menu.footer(""))
-        return scene
+        self._strike_note = note                        # surfaces on the strip
+        return render_scene(placements, COLS, ARENA_ROWS, on, LCD_BG, overlay=overlay, bgimg=bgimg)
 
     def _render_menu(self):
         """DVPet drawTrainingSelect diamond, as a CLEAN text layout (crisp glyphs, not

@@ -1269,13 +1269,25 @@ class TuiPetApp(App):
             else:
                 self.repaint()
 
+    def _mode_strip(self):
+        """A scene panel's one-line strip (note + key hints) rides the #msg box
+        under the LCD -- the box sat BLANK during every sub-screen while the
+        panels stacked that chrome inside the LCD and overflowed its 12 rows
+        (the 2026-07-04 box-clip audit).  _hud gives long strips the marquee."""
+        m = self.mode
+        while getattr(m, "sub", None) is not None:   # the DEEPEST panel owns the strip
+            m = m.sub                                # (town inside adventure, battle inside town)
+        strip = getattr(m, "strip", None)
+        self._hud(strip() if strip is not None else "")
+
     def _open_mode(self, panel, on_close=None):
         self.mode = panel
         self._mode_close = on_close
         # clear the message strip so a screen never shows the PREVIOUS screen's
-        # farewell flash; each sub-screen carries its own note inside the LCD
+        # farewell flash; scene panels put their own strip() here instead
         if getattr(self, "msg_w", None) is not None:
             self._hud("")
+            self._mode_strip()
         self.repaint()
 
     def _close_mode(self, result):
@@ -1366,6 +1378,7 @@ class TuiPetApp(App):
     def repaint(self):
         if self.mode is not None:
             self.screen_w.update(self._center(self.mode.text()))
+            self._mode_strip()
         else:
             self.screen_w.paint(self.pet)
         if isinstance(self.mode, titlescreen.TitlePanel):
@@ -1484,9 +1497,13 @@ class TuiPetApp(App):
             else:
                 prog, prog2 = f"Power    {int(tp.pos)}", f"Need     {VIRUS_BAR_MIN}"
                 target, flav = f"Virus    [{T.MOOD}]{p.virus}[/]", "stop it high"
+            # the card's flavour slot carries the CONTROLS now -- the in-LCD
+            # footer that used to is gone (box-clip audit 2026-07-04)
+            hint = tp._hint()
             lines = [f"[b]{p.name[:14]}[/] [dim]\u00b7 train[/]", div,
                      f"[b]{label}[/]", prog, prog2, div,
-                     target, f"Energy   {energy}", div, f"[dim]{flav}[/]"]
+                     target, f"Energy   {energy}", div,
+                     f"[dim]{hint[:26]}[/]", f"[dim]{hint[26:52]}[/]"]
         self.stats_w.update("\n".join(lines))
 
     def _status_battle(self):
@@ -1571,8 +1588,31 @@ class TuiPetApp(App):
         ]
         self.stats_w.update("\n".join(lines))
 
+    def _status_town(self, m):
+        """The town's numbers + message: the lobby is a bare arena now, so the
+        card carries what the in-LCD header/note used to (box-clip audit)."""
+        p, T = self.pet, theme
+        self.stats_w.border_subtitle = f"gen {p.generation}"
+        div = f"[dim]{'─' * 26}[/]"
+        if m.sub is not None:                              # a cup bout in town
+            e = m.sub.battle.enemy
+            lines = [f"[b]{p.name[:14]}[/] [dim]· town cup[/]", div,
+                     f"vs [b]{e['name'][:14]}[/]",
+                     f"HP you {m.sub.hud_php}  foe {m.sub.hud_fhp}", div,
+                     f"[dim]{(m.sub.hud_note or '')[:24]}[/]"]
+        else:
+            msg = m.msg or ""
+            lines = [f"[b]TOWN {m.town['id']}[/] [dim]· {p.season}[/]", div,
+                     f"Bits     [{T.COIN}]{p.bits}b[/]",
+                     f"Bag      {sum(p.inventory.values())}",
+                     div, msg[:26], msg[26:52]]
+        self.stats_w.update("\n".join(lines))
+
     def _status_adventure(self):
         p, a, T = self.pet, self.mode.adv, theme
+        from . import townscreen
+        if isinstance(self.mode.sub, townscreen.TownPanel):
+            return self._status_town(self.mode.sub)        # visiting: the town card
         self.stats_w.border_subtitle = f"gen {p.generation}"
         div = f"[dim]{'─' * 26}[/]"
         lives = "♥" * a.lives + "[dim]·[/]" * (3 - a.lives)
@@ -1621,6 +1661,7 @@ class TuiPetApp(App):
                     self.beep(snd, bell=False)
                     self.mode.sfx = None
                 self.screen_w.update(self._center(self.mode.text()))
+                self._mode_strip()
                 painter = self._status_painter()
                 if painter is not None:
                     painter()

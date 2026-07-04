@@ -271,9 +271,6 @@ class DNAPanel:
         # 2026-07-04 -- this was a bare text meter): the pet stands centre and
         # visibly throws itself into every press (strike pose, the vaccine
         # convention); rate/hits ride the gauge line below.
-        rate = self._rate()
-        field = dna_field_for_rate(rate)
-        left = max(0.0, (MASH_TICKS - self.mash_f) / 10.0)
         p = self.pet
         flash = getattr(self, "_mash_flash", 0)
         self._mash_flash = max(0, flash - 1)
@@ -283,14 +280,19 @@ class DNAPanel:
         fr = rec["frames"][pose] or rec["frames"][0]
         bgimg = p.background()
         on = SIL_DAY if bgimg else LCD_ON
-        out = menu.bar("DNA · GENERATE", "wager %db" % self.bet)
-        out.append_text(render_scene([grid.center(grid.prep(fr, 24), ph=24)],
-                                     40, 12, on, LCD_BG, bgimg=bgimg))
-        out.append("\n")
-        out.append_text(menu.row("%s rate %3d hits %3d" % (self._meter(rate), rate, self.hits), False))
-        out.append_text(menu.row("→ %s" % data.pretty_field(field), False))
-        out.append_text(menu.footer("%0.1fs left   mash SPACE!" % left))
-        return out
+        # scene-only: the meter rides the strip (box-clip audit 2026-07-04 --
+        # the bar+scene+meter stack ran 16 lines into the physical 12-row box)
+        return render_scene([grid.center(grid.prep(fr, 24), ph=24)],
+                            40, 12, on, LCD_BG, bgimg=bgimg)
+
+    def strip(self):
+        """The live mash meter under the LCD; other phases keep in-LCD menus."""
+        if self.phase != "mash":
+            return ""
+        rate = self._rate()
+        left = max(0.0, (MASH_TICKS - self.mash_f) / 10.0)
+        return ("%s rate %d → [b]%s[/]  %0.1fs · mash SPACE!"
+                % (self._meter(rate), rate, data.pretty_field(dna_field_for_rate(rate)), left))
 
     def _text_result(self):
         field, wager, rate = self.won
