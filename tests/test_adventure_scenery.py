@@ -41,3 +41,27 @@ def test_backdrop_changes_along_the_journey():
     a.location = int(a.total_steps * 0.55)
     late = pan.text().markup
     assert early != late                   # the world moved with the pet
+
+
+def test_towns_carry_their_canonical_backdrop():
+    towns = data.load_towns()
+    assert towns[0]["bg_habitat"] == 13        # towns.csv TownBackgroundID
+    assert towns[0]["bg_habitat"] in data.load_habitats()
+
+
+def test_town_lobby_is_a_scene_and_arrival_shows_the_town():
+    from tuipet.townscreen import TownPanel
+    p = _pet()
+    pan = TownPanel(p, 0)
+    lobby = pan.text()
+    assert len(lobby.plain.split("\n")) >= 15  # header + 12-row scene + strip + footer
+    pan.key("enter")                           # into the food shop: menu grammar returns
+    assert len(pan.text().plain.split("\n")) < 15
+    # adventure: stepping INSIDE the town's span swaps to the town backdrop
+    ap = AdventurePanel(_pet())
+    a = ap.adv
+    a.location = 4250                          # town 0 spans 4201-4300 in zone 1-1
+    in_town = ap.text().markup
+    a.location = 4350                          # same zone-bg span, just past the gates
+    outside = ap.text().markup
+    assert in_town != outside

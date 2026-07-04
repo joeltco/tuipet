@@ -835,6 +835,11 @@ def load_towns():
             "tournament_limit": int(r.get("TournamentLimit (0 to 23 are hours 0 to 23 \u2013 anything higher is always open)") or
                                     r.get("TournamentLimit") or 0),
             "forced_trophies": forced,
+            # TownBackgroundID: the town's canonical scenery (a habitat id) --
+            # shown on arrival in adventure and behind the town lobby
+            "bg_habitat": (int(r["TownBackgroundID"])
+                           if (r.get("TownBackgroundID") or "").strip().lstrip("-").isdigit()
+                           and int(r["TownBackgroundID"]) >= 0 else None),
         }
     return out
 

@@ -7,10 +7,11 @@ and the town TOURNAMENT (Town.getTrophies): tournament_limit slots where 0-23
 are hourly cups and anything past 23 -- the ForceTrophies pins -- is always
 open.  Shops and cups roll fresh per visit (DVPet resets them daily)."""
 from __future__ import annotations
-from . import data, menu, shop, tournament
+from . import data, grid, menu, shop, tournament
+from .render import render_scene
 from .tournament import Tournament
 from .battlescreen import BattlePanel
-from .theme import LCD_ON, LCD_BG, INK, INK_B, DIM  # noqa: F401  (theme.apply propagation)
+from .theme import LCD_ON, LCD_BG, INK, INK_B, DIM, SIL_DAY  # noqa: F401  (theme.apply propagation)
 
 _MENU = (("food", "Food shop"), ("items", "Item shop"), ("sell", "Sell"),
          ("cups", "Tournament"), ("leave", "Leave town"))
@@ -78,9 +79,9 @@ class TownPanel(menu.SubHost):
             return None
         rows = self._rows()
         n = len(rows)
-        if k in ("up", "k") and n:
+        if k in ("up", "k", "left", "h") and n:      # the lobby strip reads sideways
             self.cursor = (self.cursor - 1) % n
-        elif k in ("down", "j") and n:
+        elif k in ("down", "j", "right", "l") and n:
             self.cursor = (self.cursor + 1) % n
         elif k in ("enter", "space"):
             return self._activate(rows)
@@ -172,6 +173,29 @@ class TownPanel(menu.SubHost):
             return out
         rows = self._rows()
         out = menu.header(f"TOWN {self.town['id']}", f"{p.bits}b")
+        if self.phase == "menu":
+            # the town LOBBY is a PLACE (restyle 2026-07-04): the pet stands in
+            # the town's canonical scenery (towns.csv TownBackgroundID) and the
+            # errands read as one strip below -- the deeper shop/sell/cup pages
+            # keep the list-menu grammar.
+            bg_h = self.town.get("bg_habitat")
+            bgimg = p.background(bg_h) if bg_h is not None else p.background()
+            on = SIL_DAY if bgimg else LCD_ON   # pet over a bg = dark silhouette (paint() rule)
+            rec = data.load_sprites()[1][p.num]
+            roles = data.ROLES["idle"]
+            fr = rec["frames"][roles[self.frame_i % len(roles)]] or rec["frames"][0]
+            pet_rows = grid.prep(fr, ph=24)
+            out.append_text(render_scene([grid.center(pet_rows)], 40, 12, on, LCD_BG,
+                                         bgimg=bgimg))
+            out.append("\n ", style=INK)
+            for i, (_, label) in enumerate(_MENU):
+                cur = i == self.cursor
+                out.append(("▸" if cur else " ") + label, style=INK_B if cur else DIM)
+                out.append("  ", style=INK)
+            out.append("\n", style=INK)
+            out.append_text(menu.note(self.msg))
+            out.append_text(menu.footer("←→ pick  ENTER go  ESC leave"))
+            return out
 
         def fmt(r, i):
             if self.phase == "menu":

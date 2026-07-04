@@ -138,6 +138,11 @@ class AdventurePanel(menu.SubHost):
         # ALWAYS the dark silhouette (paint() rule, v0.2.197).
         bg_h = next((hid for (blo, bhi, hid) in a.zone.get("bgs", [])
                      if blo <= a.location <= bhi), None)
+        # arriving at a town shows the TOWN's scenery (towns.csv TownBackgroundID)
+        tspan = next((t for t in a.zone.get("towns", []) if t[0] <= a.location <= t[1]), None)
+        if tspan is not None:
+            tbg = (data.load_towns().get(tspan[2]) or {}).get("bg_habitat")
+            bg_h = tbg if tbg is not None else bg_h
         bgimg = self.pet.background(bg_h) if bg_h is not None else self.pet.background()
         on = SIL_DAY if bgimg else LCD_ON
         scene = render_scene([(pet_rows, x, True)], COLS, ROWS, on, LCD_BG, bgimg=bgimg)
