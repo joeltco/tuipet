@@ -490,7 +490,8 @@ class TrainingPanel:
         on, bgimg = self._scene_palette()
         pf = self._frame(rec, IDLE if self.success else COLLAPSE)   # normal / hurt(+10), like DVPet
         tgt = self._target_sprite(self.success)                     # broken target on success (bag drills)
-        placements = grid.faceoff(tgt, pf) if tgt else [grid.center(pf)]   # target + pet face each other
+        placements = (grid.faceoff(tgt, pf, left_mirror=self._target_mirror())
+                      if tgt else [grid.center(pf)])   # target + pet face each other (props keep sheet facing)
         scene = render_scene(placements, COLS, ARENA_ROWS, on, LCD_BG, bgimg=bgimg)
         scene.append("\n")
         scene.append_text(menu.note(self.result or ""))
@@ -636,7 +637,9 @@ class TrainingPanel:
             taunting = self._strike_t > 0 and self._strike_pose == 9
             key = ("vaccine", "data", "virus")[self.hp_target] + ("_taunt" if taunting else "")
             dummy = _HP_DUMMIES[key]
-            placements = [(dummy, GRID_X0, False)]                    # left, grounded 2px up
+            placements = [(dummy, GRID_X0, True)]                     # left, MIRRORED (canon
+            #                                       drawNPTraining: drawNumMirror(bag, true) --
+            #                                       the dummy faces the picker like a foe)
             ic = E.get(_HP_ICON_KEYS[self.hp_pick], [None])[0]
             if ic:
                 iw, ih = len(ic[0]), len(ic)
@@ -698,6 +701,14 @@ class TrainingPanel:
         return {"Vaccine": self.pet.vaccine, "Data": self.pet.data_power,
                 "Virus": self.pet.virus}.get(self.strike_attr, 0)
 
+    def _target_mirror(self):
+        """Canon facing for the drill's target.  The HP dummy is a CREATURE stand-in:
+        DVPet drawHPTraining places it left with drawNumMirror(.., true) -- mirrored
+        (drawNum keeps _isMirror, so the taunt flips with it).  The punching bag and
+        the cannon are PROPS drawn via setAltIcon -- never flipped (the cannon's
+        barrel faces right off the sheet, toward the pet)."""
+        return self.gkey == "hp"
+
     def _target_sprite(self, broken):
         """The thing being struck: the green target (Data drill) or the punching bag, which
         shows its BROKEN frame on a successful break (DVPet aftermathDefault).  Fit to the
@@ -749,7 +760,8 @@ class TrainingPanel:
             tgt = self._target_sprite(m == "break")
             mouth = grid.X0 + 1
             if tgt:                                             # shared placement: target LEFT, faces the pet
-                placements, mouth = strikefx.place_combatant(False, tgt)
+                placements, mouth = strikefx.place_combatant(False, tgt,
+                                                             mirror=self._target_mirror())
             if m == "fire_in":
                 overlay = self._strike_orb("in", mouth, fr)
             note = "Incoming!" if m == "fire_in" else self.result

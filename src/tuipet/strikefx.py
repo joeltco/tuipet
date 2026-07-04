@@ -35,20 +35,22 @@ def clamp_grid(x, lo, hi):
     return max(grid.X0 - lo, min(x, (grid.X1 - 1) - hi))
 
 
-def place_combatant(faces_left, rows, xshift=0):
+def place_combatant(faces_left, rows, xshift=0, mirror=True):
     """Place the ONE combatant on screen, grounded in the grid, clamped in-bounds.
     faces_left=True  -> attacker/pet: stands RIGHT, faces left, fires left (content right edge
                         hugs the grid); mouth = its LEFT edge (toward the target).
-    faces_left=False -> target/foe: stands LEFT, faces right (mirrored); mouth = its RIGHT edge.
+    faces_left=False -> target/foe: stands LEFT facing right -- mirrored for creatures (they
+                        face left natively); mirror=False keeps a PROP's sheet facing (canon
+                        setAltIcon never flips the punching bag / cannon).  mouth = its RIGHT edge.
     Returns (placements, mouth_x)."""
     if faces_left:
         lo, hi = cbounds(rows)
         x = clamp_grid(((grid.X1 - 1) - hi) + xshift, lo, hi)
         return [(rows, x, False)], x + lo
-    src = [r[::-1] for r in rows]
+    src = [r[::-1] for r in rows] if mirror else rows
     lo, hi = cbounds(src)
     x = clamp_grid((grid.X0 - lo) + xshift, lo, hi)
-    return [(rows, x, True)], x + hi + 1
+    return [(rows, x, mirror)], x + hi + 1
 
 
 def orb_flight(orb, fires_left, m, prog, mouth, double=False):
