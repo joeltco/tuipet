@@ -655,13 +655,17 @@ class Pet:
             if self.energy > self.max_energy:
                 self.energy = self.max_energy
 
-    # seconds in each stage before it is eligible to evolve (accelerated time)
-    EGG_DURATION = 180     # seconds an egg incubates before hatching (~3 min)
+    # seconds in each stage before it is eligible to evolve (accelerated time).
+    # LINES_SPEC §5: the canon curve — babies fly, adults stretch (DM20 timing
+    # mapped to game-hours: 6h baby, Child = one full 24h day, 36h, 48h).
+    EGG_DURATION = 60      # seconds an egg incubates before hatching (~1 game-hour)
 
     STAGE_DURATION = {                       # seconds in a stage before it may evolve
-        "Fresh": 1800, "InTraining": 2400, "Rookie": 3000,
-        "Champion": 3600, "Ultimate": 3600, "Mega": 9e9,
+        "Fresh": 180, "InTraining": 360, "Rookie": 1440,
+        "Champion": 2160, "Ultimate": 2880, "Mega": 9e9,
     }
+    LATE_STAGE_WINDOW = 2880.0   # Pen20: the Stage V/VI "evolution window" for the
+    #                              5-mistake death rule (Ultimate's own duration)
 
     @classmethod
     def new_egg(cls, generation=1, egg_type=None):
@@ -670,6 +674,9 @@ class Pet:
         pet = cls(num=-1, name="Digitama", stage="Egg",
                   egg_type=egg_type, generation=generation)
         pet.mood = EGG_MOOD                     # Evolution.egg: setMood(EggMood 100)
+        # a fresh game dawns at 8:00 -- world_seconds 0 is MIDNIGHT, inside every
+        # bedtime window, and a hatchling born asleep is a rotten first minute
+        pet.world_seconds = 8 * 60.0
         pet._apply_egg_habitat()
         return pet
 
@@ -732,6 +739,8 @@ class Pet:
             self._tick_egg()
             return
         self._tick_recovery(dt)
+        if self.dead:                # the 6h-malady clock can end the life here
+            return
         self._tick_effect(dt)
         self._tick_auto_care(dt)     # the assistant serves awake AND asleep (never an egg)
         if self.asleep:
@@ -836,6 +845,16 @@ class Pet:
             self.med_lapse = max(0.0, self.med_lapse - dt)
         if self.bandage_lapse > 0:                        # bandageLapse: bandage wears off (getBandage icon)
             self.bandage_lapse = max(0.0, self.bandage_lapse - dt)
+        # LINES_SPEC §5 (DM20: "remaining injured for 6 hours causes death"):
+        # 6 continuous game-hours sick-or-injured is fatal.  Natural spells heal
+        # inside the window (sick <=290, injury <=348 game-min), so only a pet
+        # left to WORSEN (filth rolls, battling hurt, double doses) crosses it.
+        if self.sick or self.inj_length > 0:
+            self._malady_t = getattr(self, "_malady_t", 0.0) + dt
+            if self._malady_t >= 360.0 and not self.dead:
+                self._die()
+        else:
+            self._malady_t = 0.0
 
     def _tick_asleep(self, dt):
         """The sleep branch: lights neglect, deep-sleep regen, the awakeLapse
@@ -898,7 +917,9 @@ class Pet:
             self.sleep_lapse = max(0.0, self.sleep_lapse - awake_inc * dt)
             self._nap_cycle = getattr(self, "_nap_cycle", 0.0) + dt
             _nap_energy(2 if bonus else 1)
-            if self._nap_cycle >= CHANGE_NAP_TO_SLEEP + self.restless * NAP_TO_SLEEP_RESTLESS:
+            if (self._nap_cycle >= CHANGE_NAP_TO_SLEEP + self.restless * NAP_TO_SLEEP_RESTLESS
+                    and self._in_sleep_window() is not False):   # a line pet's day-doze
+                #                          never becomes the night; bedtime does that
                 self._sleep_min = (getattr(self, "_sleep_min", 0.0)
                                    + max(0.0, getattr(self, "_nap_e", 0.0) - 1))
                 self._nap_cycle = self._nap_e = 0.0
@@ -910,7 +931,11 @@ class Pet:
             if bonus:
                 _inc_sleep_minutes(BONUS_SLEEP_ENERGY)
         self.awake_lapse += step
-        if self.awake_lapse >= self.awake_limit:
+        iw = self._in_sleep_window()
+        if iw is not None and not self.nap:
+            if iw is False:                      # LINES_SPEC §5: 7:00 sharp, no jitter
+                self._wake(morning=True)
+        elif self.awake_lapse >= self.awake_limit:
             self._wake(morning=not self.nap)
         # hungerDecay: asleep the stomach drains only ABOVE the floor
         # (SleepMinHungerDecay=3) -- one heart overnight, then it holds
@@ -929,10 +954,13 @@ class Pet:
                 self._set_mood(self.mood + (LARGE_POOP_WAIT_MOOD
                                             if self._poop_t >= self._poop_interval * 1.5
                                             else POOP_WAIT_MOOD))
-        # death does not wait for morning: the mistake cap and old age
+        # death does not wait for morning: the mistake caps and old age
         # apply asleep too (only the starvation clock freezes; audit 2026-07)
         if self.care_mistakes >= 20 or self.injuries >= 20:
             self._die(); return
+        if (self.stage in ("Ultimate", "Mega") and self.care_mistakes >= 5
+                and self.stage_seconds >= self.LATE_STAGE_WINDOW):
+            self._die(); return                       # Pen20 late-stage rule (LINES_SPEC §5)
         if self.age_seconds >= self.lifespan:
             self._die(); return
         # startPoop: even asleep, a truly DESPERATE gauge (>= 2x max) goes --
@@ -1080,7 +1108,22 @@ class Pet:
 
     def _tick_hunger(self, dt):
         """hunger: the DVPet calorie buffer drains each lapse; emptying it drops
-        a hunger heart (or logs a care mistake at zero), then refills."""
+        a hunger heart, then refills.  The care MISTAKE is the call light
+        (LINES_SPEC §5, canon on all three devices): hunger empty and unanswered
+        for 10 minutes = ONE mistake, then the call is postponed — it no longer
+        repeats every calorie cycle while starving."""
+        # hungerCall: a single mistake per unanswered call, mirroring strengthCall
+        if self.hunger == 0 and not self.asleep:
+            self._hunger_call_t = getattr(self, "_hunger_call_t", 0.0) + dt
+            if self._hunger_call_t >= 600.0:                 # MinutesToMistake 10
+                self._hunger_call_t = -3600.0                # AfterMistakeMinutesPostponed
+                self.care_mistakes += 1
+                self.mistake_day += 2  # MistakeInc + HungerDecAtZero MissedDayChange
+                self._burn_life(HUNGER_MISTAKE_LIFE_DEC * max(1, self.care_mistakes))
+                self.obedience += HUNGER_MISTAKE_OBEDIENCE
+                self._open_scold()           # neglect: the pet acts up
+        elif self.hunger > 0:
+            self._hunger_call_t = 0.0
         self._cal_t = getattr(self, "_cal_t", 0.0) + dt
         if self._cal_t >= self._hunger_interval:
             self._cal_t = 0.0
@@ -1088,17 +1131,6 @@ class Pet:
             if self.calories <= -CALORIE_LIMIT:
                 if self.hunger > 0:
                     self.hunger -= 1
-                elif not self.asleep:
-                    # DVPet hungerCall() requires !asleep: a sleeping pet never racks
-                    # hunger mistakes overnight.  The mistake carries its canon teeth
-                    # (hungerMistakePenalty): lifespan -(dec x total mistakes) +
-                    # obedience change, and the pet acts up.
-                    self.care_mistakes += 1
-                    self.mistake_day += 1  # MistakeIncMissedDayChange
-                    self._burn_life(HUNGER_MISTAKE_LIFE_DEC * max(1, self.care_mistakes))
-                    self.obedience += HUNGER_MISTAKE_OBEDIENCE
-                    self.mistake_day += 1        # HungerDecAtZeroMissedDayChange
-                    self._open_scold()           # neglect: the pet acts up
                 if self.hunger == 0:
                     # starvation (setHunger below zero): the calorie crash sheds weight
                     # every further lapse (StarvationCalorieChange -> ActivityWeightChange)
@@ -1145,31 +1177,74 @@ class Pet:
             self.nutr_protein = max(0, self.nutr_protein + NUTRITION_LAPSE_CHANGE)
             self.nutr_mineral = max(0, self.nutr_mineral + NUTRITION_LAPSE_CHANGE)
             self.nutr_vitamin = max(0, self.nutr_vitamin + NUTRITION_LAPSE_CHANGE)
-        # Filth care-mistake (DVPet poopCall/incCallMinutes): a mistake is only logged
-        # once the mess reaches the filth limit AND the awake pet leaves it uncleaned for
-        # a grace period; after one, the timer is postponed (AfterMistakeMinutesPostponed)
-        # so they do not stack instantly. DVPet MistakeFilthLimit=7 filth items; tuipet's
-        # coarse `poop` count maps the visible "needs cleaning" level (>=3) to that gate.
-        FILTH_LIMIT = 3                      # MistakeFilthLimit (mapped to tuipet poop scale)
+        # Filth acting-up (LINES_SPEC §5): NO real device counts filth as a care
+        # mistake (Pen20 says so explicitly — mistakes are unanswered call lights
+        # only), so the DVPet poopCall mistake is retired.  Filth keeps its teeth
+        # (sickness rolls + mood drain in _filth_effects); an awake pet left amid
+        # the mess past the grace still ACTS UP (scold window), postponed after one.
+        FILTH_LIMIT = 3                      # the visible "needs cleaning" level
         if self.poop >= FILTH_LIMIT:
-            if not self.asleep:              # DVPet poopCall() only ticks while awake;
-                self._filth_t = getattr(self, "_filth_t", 0) + dt   # sleep pauses, not resets
-                if self._filth_t >= 1800:    # uncleaned grace before it counts
+            if not self.asleep:              # only ticks while awake; sleep pauses, not resets
+                self._filth_t = getattr(self, "_filth_t", 0) + dt
+                if self._filth_t >= 1800:    # uncleaned grace before it acts up
                     self._filth_t = -3600    # AfterMistakeMinutesPostponed grace after one
-                    self.care_mistakes += 1
-                    self.mistake_day += 1  # MistakeIncMissedDayChange
                     self._open_scold()       # left in filth: the pet acts up
         else:
             self._filth_t = 0                # cleaned / under the limit resets the call timer
         # (the filth sickness rolls moved to _filth_effects -- canon shape; the
         # old flat roll also invented a STARVATION sickness canon does not have)
 
+    WAKE_MINUTE = 7 * 60          # LINES_SPEC §5: every line form wakes at 7:00
+
+    def _in_sleep_window(self):
+        """Line pets sleep by the CLOCK: True/False = inside/outside the form's
+        fixed bedtime→7:00 window; None = not a line pet (pressure model)."""
+        bt = lines_mod.bedtime_minutes(self) if lines_mod.active(self) else None
+        if bt is None:
+            return None
+        mod = self.world_seconds % DAY_MINUTES
+        if bt > self.WAKE_MINUTE:                     # the usual wrap past midnight
+            return mod >= bt or mod < self.WAKE_MINUTE
+        return bt <= mod < self.WAKE_MINUTE           # a midnight sleeper (24:00 -> 0)
+
+    def _tick_bedtime(self, dt):
+        """LINES_SPEC §5: the fixed per-form bedtime replaces the pressure clock.
+        Inside the window the pet drops off by itself (a disturb postpones the
+        re-sleep); lights-out OUTSIDE the window is a shallow nap, like checkNap.
+        The nightly ritual: at bedtime the room is still lit — turning the lights
+        off within the grace is the care; a lit sleeper logs the once-per-night
+        lights mistake exactly as before."""
+        if self.asleep:
+            return
+        if self._in_sleep_window():
+            self._bed_postpone_t = getattr(self, "_bed_postpone_t", 0.0) - dt
+            if self._bed_postpone_t > 0:
+                return                                # a disturb bought some grumbling time
+            self._fall_asleep()
+            # the night is the window, not an energy budget: rested checks and
+            # the sleep meter size off the real span (bedtime -> 7:00)
+            bt = lines_mod.bedtime_minutes(self)
+            self.awake_limit = (self.WAKE_MINUTE - bt) % DAY_MINUTES
+            self.sleep_limit = DAY_MINUTES - self.awake_limit
+        elif not self.lights:
+            # a daytime doze: same once-per-game-hour mood bonus guard as checkNap
+            if self.world_seconds - getattr(self, "_nap_bonus_t", -9e9) >= 60:
+                self._nap_bonus_t = self.world_seconds
+                self._set_mood(self.mood + ON_NAP_MOOD_INC)
+            self.asleep, self.nap = True, True
+            self._lights_t = 0.0
+            self._set_anim("yawn", 1.8)
+
     def _tick_sleep_pressure(self, dt):
         """bedtime is a PRESSURE clock, not the sun (setSleepLapse): SleepLapseInc
         per game-min while awake; at the limit the pet drops off by itself --
         babies (inc 9) nap constantly, adults run a free ~24h rhythm.
         checkNap: LIGHTS OUT while awake starts a shallow nap right away
-        (real sleep instead when the pressure is nearly full -- sleepNotNap)."""
+        (real sleep instead when the pressure is nearly full -- sleepNotNap).
+        Line pets sleep by the CLOCK instead (LINES_SPEC §5)."""
+        if self._in_sleep_window() is not None:
+            self._tick_bedtime(dt)
+            return
         if not self.asleep:
             self.sleep_lapse += dt * self._sleep_inc()
             if self.sleep_lapse >= self.sleep_limit:
@@ -1207,6 +1282,11 @@ class Pet:
         otherwise); under correct burns they almost never fire first.  Returns
         True when the pet died this tick."""
         if self.care_mistakes >= 20 or self.injuries >= 20:   # MaxCareMistakes / MaxInjuries
+            self._die(); return True
+        # Pen20 (LINES_SPEC §5): at the last stages, 5 slips once the evolution
+        # window is open = death -- an elder Perfect/Ultimate demands real care
+        if (self.stage in ("Ultimate", "Mega") and self.care_mistakes >= 5
+                and self.stage_seconds >= self.LATE_STAGE_WINDOW):
             self._die(); return True
         if self.hunger == 0 and not self.asleep:              # awake-only, like hungerCall()
             self._starve_t = getattr(self, "_starve_t", 0.0) + dt
@@ -2019,6 +2099,8 @@ class Pet:
             return "It grumbles awake."
         postpone = random.randint(*DISTURB_POSTPONE)
         self.sleep_lapse = max(0.0, self.sleep_limit - postpone / max(1, self._sleep_inc()))
+        if self._in_sleep_window() is not None:
+            self._bed_postpone_t = float(postpone)   # a line pet re-sleeps by the clock
         # (the missed rest is repaid naturally: _fall_asleep re-sizes the next
         # sleep from the CURRENT energy debt, so nothing is carried by hand)
         self._wake(morning=False)

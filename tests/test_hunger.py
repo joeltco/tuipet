@@ -28,12 +28,18 @@ def test_sleeping_pet_never_racks_hunger_mistakes():
 
 
 def test_awake_hunger_neglect_is_a_mistake_with_teeth():
+    # LINES_SPEC §5: the mistake is the unanswered CALL (10 min, one per call,
+    # postponed after) -- no longer repeating every calorie cycle while starving
     p = _pet(hunger=0, asleep=False)
     m0, l0, o0 = p.care_mistakes, p.lifespan, p.obedience
-    _drain_one_lapse(p)
+    p._tick_hunger(599.0)
+    assert p.care_mistakes == m0                # inside the call window: no mistake yet
+    p._tick_hunger(1.0)
     assert p.care_mistakes == m0 + 1
     assert p.lifespan < l0                      # MistakeHungerLifeDec x mistakes
     assert p.obedience == o0 + 1                # HungerMistakeObedienceChange
+    p._tick_hunger(600.0)
+    assert p.care_mistakes == m0 + 1            # postponed: one mistake per call
 
 
 def test_starving_sheds_weight_each_lapse():

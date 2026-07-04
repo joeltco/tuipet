@@ -109,11 +109,20 @@ def active(pet):
 
 
 def bedtime(pet):
-    """The form's fixed bedtime 'HH:MM' ('' if not a line form). Stored per
-    LINES_SPEC §5; behaviour lands in arc 2."""
+    """The form's fixed bedtime 'HH:MM' ('' if not a line form)."""
     line = load_lines().get(getattr(pet, "line_id", ""))
     row = line["members"].get(pet.num) if line else None
     return row["bedtime"] if row else ""
+
+
+def bedtime_minutes(pet):
+    """The bedtime as a minute-of-day (0..1439), or None for non-line forms.
+    '24:00' wraps to 0 (a midnight sleeper like Devimon)."""
+    bt = bedtime(pet)
+    if not bt:
+        return None
+    h, m = bt.split(":", 1)
+    return (int(h) % 24) * 60 + int(m)
 
 
 def _pet_level(pet):
