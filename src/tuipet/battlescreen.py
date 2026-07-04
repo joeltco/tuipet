@@ -345,6 +345,13 @@ class BattlePanel:
             note = {"faceoff": f"{self.pet.name[:8]} vs {b.enemy['name'][:8]}",
                     "windup": "...", "fire_out": "Fire!", "fire_in": "Incoming!",
                     "dodge": "Dodge!", "flinch": "Hit!", "result": ""}.get(m, "")
+            if m == "result":
+                from . import lines as _lines
+                wg = _lines.win_gate_progress(self.pet)
+                if wg:                               # every fight feeds the window
+                    now, need, _win = wg
+                    note = "evolution: %d/%d wins%s" % (
+                        now, need, " \u2713" if now >= need else "")
             if fr.get("fx") and m == "fire_out":             # surface the player's chip effect
                 note = EFFECT_LABEL.get(fr["fx"], fr["fx"])
         self.hud_php, self.hud_fhp, self.hud_note = ph, fh, note

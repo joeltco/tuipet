@@ -261,6 +261,11 @@ class Battle:
         self.over = True
         self.won = False
         self.surrendered = True
+        # the fled fight still lands in the ROLLING WINDOW as a loss (audit
+        # 2026-07-04): without this, surrendering every losing fight kept the
+        # 12-of-15 evolution gate loss-free -- a risk-free filter.  The classic
+        # stats stay canon ("neither win nor loss": wins/battles untouched).
+        self.pet.battle_log = (self.pet.battle_log + [0])[-15:]
         self.reward = "Surrendered."
         self.pet._set_enthusiasm(self.pet.enthusiasm - SURR_ENTH_DEC)
         if self.enemy.get("boss"):          # getIsRandom() == false -> battles += 1

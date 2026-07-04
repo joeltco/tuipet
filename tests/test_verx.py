@@ -130,3 +130,18 @@ def test_antibody_no_longer_steers_selection():
         t = evolution.select(p)
         if t is not None:
             assert by_num[t]["stage"] != p.stage    # same-stage X reformat is gone
+
+
+def test_surrender_lands_a_loss_in_the_rolling_window():
+    """Audit 2026-07-04: surrendering skipped the battle_log entirely, letting
+    a player keep the 12-of-15 window loss-free by fleeing every bad fight."""
+    import random
+    from tuipet.battle import Battle
+    random.seed(3)
+    p = _pet()
+    p.battle_log = [1] * 5
+    b = Battle(p, enemy={"num": 100, "name": "Foe", "stage": "Champion", "hp": 10,
+                         "vaccine": 50, "data_power": 0, "virus": 0, "bits": (1, 2)})
+    b.surrender()
+    assert p.battle_log == [1] * 5 + [0]        # the fled fight counts against you
+    assert p.wins == 0 and b.won is False       # classic stats stay canon
