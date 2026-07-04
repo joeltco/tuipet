@@ -36,15 +36,20 @@ def test_crossing_a_gate_sets_the_announcement():
     assert getattr(p, "egg_unlock_note", "") == ""
 
 
-def test_sealed_eggs_ride_the_carousel_and_refuse_enter():
+def test_nearest_goals_ride_the_carousel_and_refuse_enter():
+    # hardened 2026-07-04: visibility is EARNED -- only the GOALS_SHOWN closest
+    # countable goals ride the tail (all 44 sealed eggs read as no unlock system)
     from tuipet.eggselectscreen import EggSelectPanel
+    persistence.wins_add(30)                             # 30/50: egg 46 leads the goals
     pan = EggSelectPanel()
-    assert 46 in pan.carousel and 47 in pan.carousel     # visible goals
+    goals = [i for i in pan.carousel if pan.states[i][0] == "locked"]
+    assert 0 < len(goals) <= pan.GOALS_SHOWN
+    assert 46 in goals                                   # 60% there: a visible goal
     assert 46 not in pan.unlocked                        # ...but not hatchable
     pan.i = pan.carousel.index(46)
     assert pan.key("enter") is None                      # sealed: no hatch
-    assert "lifetime wins 0/50" in pan.msg      # the arc-3 live-progress wording
-    assert "0/50" in pan._note(46)
+    assert "lifetime wins 30/50" in pan.msg
+    assert "30/50" in pan._note(46)
 
 
 def test_fifty_wins_unlocks_egg_46_and_not_47():

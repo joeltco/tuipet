@@ -252,6 +252,25 @@ def unlock_progress(idx, prog):
     return rule.get("desc", "")
 
 
+def unlock_ratio(idx, prog):
+    """0..1 progress toward a COUNTABLE gate (wins/album/mega/generation), or
+    None when the egg's gate isn't a counter.  Drives the 'next goals' picks."""
+    from . import data
+    rule = data.load_egg_unlock().get(idx)
+    if rule is None:
+        need = _WIN_EGGS.get(idx)
+        return min(1.0, prog["wins"] / need) if need else None
+    if rule.get("wins") is not None:
+        return min(1.0, prog["wins"] / max(1, rule["wins"]))
+    if rule.get("album_n") is not None:
+        return min(1.0, len(prog["album"]) / max(1, rule["album_n"]))
+    if rule.get("mega") is not None:
+        return min(1.0, prog.get("mega_kills", 0) / max(1, rule["mega"]))
+    if rule["gen"] is not None:
+        return min(1.0, prog["max_gen"] / max(1, rule["gen"]))
+    return None
+
+
 def locked_hint(prog, owned):
     """Shortest 'what unlocks next' hint among locked eggs ('' if none)."""
     from . import data

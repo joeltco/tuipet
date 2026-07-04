@@ -1,8 +1,9 @@
 """Choose-your-egg: a smooth horizontal carousel of full-size egg sprites.
-Hatchable eggs lead; every other egg rides along as a SILHOUETTE with its live
-unlock progress (LINES_SPEC §7: a goal you cannot see is not a goal) — buyable
-ones point at the town shop, locked ones show how close you are. ←→ glide,
-ENTER hatches the centred egg, ESC backs out."""
+Hatchable eggs lead, buyable ones follow (pointing at the shop), and the tail
+carries at most GOALS_SHOWN sealed silhouettes — the countable goals you are
+CLOSEST to.  (Hardened 2026-07-04: the arc-3 goal board rode ALL ~44 sealed
+eggs, which read as the unlock system being gone; the rest are a footer count.)
+←→ glide, ENTER hatches the centred egg, ESC backs out."""
 from __future__ import annotations
 from . import egg as egg_mod
 from . import menu
@@ -35,11 +36,11 @@ class EggSelectPanel:
         self.hint = egg_mod.locked_hint(prog, owned)
         self.locked = sum(1 for s, _ in self.states.values() if s == "locked")
         self.wins = prog["wins"]
-        # every egg rides the carousel -- hatchable first, then buyable (the shop
-        # pointer), then locked silhouettes with live progress (LINES_SPEC §7)
-        self.carousel = (self.unlocked
-                         + [i for i, (s, _) in sorted(self.states.items()) if s == "buyable"]
-                         + [i for i, (s, _) in sorted(self.states.items()) if s == "locked"])
+        # hatchable eggs lead, buyable follow, and the tail carries at most
+        # GOALS_SHOWN sealed silhouettes -- the countable goals you're CLOSEST
+        # to (hardened 2026-07-04: the arc-3 board rode all ~44 sealed eggs and
+        # read as the unlock system being gone; the rest stay a footer count)
+        self.carousel = self._build_carousel()
         self.n = len(self.carousel)
         self.i = 0               # cursor opens on the first egg (position 1/N)
         self.pos = 0.0           # continuous carousel target
@@ -61,11 +62,19 @@ class EggSelectPanel:
         self.hint = egg_mod.locked_hint(prog, owned)
         self.locked = sum(1 for st, _ in self.states.values() if st == "locked")
         self.wins = prog["wins"]
-        self.carousel = (self.unlocked
-                         + [i for i, (s, _) in sorted(self.states.items()) if s == "buyable"]
-                         + [i for i, (s, _) in sorted(self.states.items()) if s == "locked"])
+        self.carousel = self._build_carousel()
         self.n = len(self.carousel)
         self.i = max(0, min(self.i, self.n - 1))
+
+    GOALS_SHOWN = 3            # sealed eggs on the carousel: only the nearest goals
+
+    def _build_carousel(self):
+        buyable = [i for i, (st, _) in sorted(self.states.items()) if st == "buyable"]
+        locked = [i for i, (st, _) in sorted(self.states.items()) if st == "locked"]
+        goals = sorted((i for i in locked
+                        if egg_mod.unlock_ratio(i, self.prog) is not None),
+                       key=lambda i: -egg_mod.unlock_ratio(i, self.prog))[:self.GOALS_SHOWN]
+        return self.unlocked + buyable + goals
 
     def anim(self):
         self.frame_i += 1

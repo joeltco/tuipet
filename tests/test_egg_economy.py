@@ -97,23 +97,31 @@ def _panel(prog=None):
     return pan
 
 
-def test_every_egg_rides_the_carousel():
+def test_carousel_is_hatchable_plus_nearest_goals():
+    # hardened 2026-07-04: NOT every egg -- the select stays tight
     pan = _panel()
-    assert pan.n == egg.count()                     # hatchable + buyable + locked = all
+    assert pan.n <= len(pan.unlocked) + sum(
+        1 for st, _ in pan.states.values() if st == "buyable") + pan.GOALS_SHOWN
+    assert pan.n < egg.count()                      # the 49-egg wall is gone
     hatchable = set(pan.unlocked)
     assert all(i in hatchable for i in pan.carousel[:len(hatchable)])
+    for i in pan.carousel[len(pan.unlocked):]:      # the tail is goals, all countable
+        st = pan.states[i][0]
+        assert st in ("buyable", "locked")
+        if st == "locked":
+            assert egg.unlock_ratio(i, pan.prog) is not None
 
 
 def test_locked_eggs_are_silhouettes_with_progress():
     pan = _panel()
-    locked = [i for i, (s, _) in pan.states.items() if s == "locked"]
-    idx = _rule("Sakumon")["idx"]
-    assert idx in locked
+    goals = [i for i in pan.carousel if pan.states[i][0] == "locked"]
+    assert goals                                    # the nearest goals ride the tail
+    idx = goals[0]
     pos = pan.carousel.index(idx)
     fr = pan._frame(pos, center=False)
     raw = egg.record(idx)["frames"][0]
     assert fr != raw                                # blacked out, same shape
-    assert "lifetime wins 0/50" in pan._note(idx)
+    assert "/" in pan._note(idx)               # a live progress counter
     # ENTER on a sealed egg reports, never hatches
     pan.i, pan.pos, pan.scroll = pos, float(pos), float(pos)
     assert pan.key("enter") is None
