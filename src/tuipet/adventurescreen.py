@@ -7,10 +7,10 @@ from .townscreen import TownPanel
 from .render import render_scene
 from . import grid
 
-from .theme import LCD_ON, LCD_BG, INK, INK_B, DIM
+from .theme import LCD_ON, LCD_BG, INK, INK_B, DIM, SIL_DAY
 from . import menu
-COLS, ROWS = 40, 7
-BAR_W = 28
+COLS, ROWS = 40, 12           # the ONE locked LCD arena, like every other screen
+BAR_W = 14
 
 
 class AdventurePanel(menu.SubHost):
@@ -126,11 +126,21 @@ class AdventurePanel(menu.SubHost):
         if self.sub is not None:
             return self.sub.text()
         a = self.adv
-        pet_rows = grid.prep(self._frames(), ph=ROWS * 2)     # fit to the strip, grounded
+        pet_rows = grid.prep(self._frames(), ph=ROWS * 2)     # fit to the arena, grounded
         ew = grid.width(pet_rows)
         lo, hi = grid.roam_bounds(ew)                         # walk within the 32 grid (x4..36)
         x = lo + int((hi - lo) * (a.pct / 100))
-        scene = render_scene([(pet_rows, x, True)], COLS, ROWS, LCD_ON, LCD_BG)
+        # the journey's SCENERY (restyle 2026-07-04 -- the old flat 7-row strip
+        # "looked nothing like the rest of the game"): the zone's canonical
+        # per-step backdrop (zones.csv BackgroundsAndRange), so the world
+        # CHANGES as the pet walks -- desert into forest into mountains.
+        # Home scenery covers spans the data leaves blank.  Pet over a bg is
+        # ALWAYS the dark silhouette (paint() rule, v0.2.197).
+        bg_h = next((hid for (blo, bhi, hid) in a.zone.get("bgs", [])
+                     if blo <= a.location <= bhi), None)
+        bgimg = self.pet.background(bg_h) if bg_h is not None else self.pet.background()
+        on = SIL_DAY if bgimg else LCD_ON
+        scene = render_scene([(pet_rows, x, True)], COLS, ROWS, on, LCD_BG, bgimg=bgimg)
         fill = round(a.pct / 100 * BAR_W)
         lives = "♥" * a.lives + "·" * (3 - a.lives)   # dot = lost life (heart glyph reads hollow)
         out = menu.bar("ADVENTURE", f"Map {a.mi + 1}-{a.zi + 1}")
@@ -138,8 +148,9 @@ class AdventurePanel(menu.SubHost):
         out.append("\n", style=INK)
         out.append("█" * fill, style=INK_B)               # bright fill, matches STATUS bars
         out.append("─" * (BAR_W - fill), style=DIM)       # dim empty track
-        out.append(f" {a.pct}%\n", style=INK)
-        out.append(f"Life {lives}   Bits {self.pet.bits}   Bag {sum(self.pet.inventory.values())}\n", style=INK)
+        out.append(f" {a.pct}%  ", style=INK)
+        out.append(lives, style=INK_B)
+        out.append(f"  {self.pet.bits}b  bag {sum(self.pet.inventory.values())}\n", style=INK)
         out.append_text(menu.note(a.last or ""))
         if a.done:
             out.append_text(menu.footer("Journey complete!   ESC"))

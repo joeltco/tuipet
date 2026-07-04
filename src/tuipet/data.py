@@ -524,6 +524,22 @@ def _town_ranges():
     return out
 
 
+def _zone_bgs(spec):
+    """'0t600:12;601t1300:6;...' -> [(lo, hi, habitat_id)] step spans."""
+    out = []
+    for part in spec.split(";"):
+        part = part.strip()
+        if not part or ":" not in part or "t" not in part:
+            continue
+        span, _, hid = part.partition(":")
+        lo, _, hi = span.partition("t")
+        try:
+            out.append((int(lo), int(hi), int(hid)))
+        except ValueError:
+            continue
+    return out
+
+
 @lru_cache(maxsize=1)
 def load_maps():
     from collections import defaultdict
@@ -550,6 +566,9 @@ def load_maps():
             # the zone's discoverable loot pools (Zone.checkItem draws uniformly)
             "rand_items": [int(x) for x in (z.get("RandomItems") or "").split(":") if x.strip().isdigit()],
             "rand_foods": [int(x) for x in (z.get("RandomFood") or "").split(":") if x.strip().isdigit()],
+            # BackgroundsAndRange: the journey's SCENERY -- "lo t hi : habitat_id"
+            # spans; the backdrop changes as the pet walks the zone (DVPet canon)
+            "bgs": _zone_bgs(z.get("BackgroundsAndRange") or ""),
         })
     return [{"map": m, "zones": sorted(zmap[m], key=lambda z: z["zone"])}
             for m in sorted(zmap)]

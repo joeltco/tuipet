@@ -1356,9 +1356,12 @@ class Pet:
         habs = data.load_habitats()
         return habs.get(self.habitat) or habs.get(0) or next(iter(habs.values()))
 
-    def background(self):
-        """The habitat background frame for the current weather/time (or None)."""
-        frames = data.load_backgrounds().get(self.habitat_obj().get("bg", ""))
+    def background(self, habitat_id=None):
+        """The habitat background frame for the current weather/time (or None).
+        habitat_id overrides the home -- adventure shows the ZONE's scenery."""
+        h = (data.load_habitats().get(habitat_id) if habitat_id is not None
+             else self.habitat_obj()) or {}
+        frames = data.load_backgrounds().get(h.get("bg", ""))
         if not frames:
             return None
         if self.weather in _PRECIP and len(frames) > 4:
