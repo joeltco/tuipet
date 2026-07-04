@@ -17,6 +17,9 @@ from .weather import SEASONS
 
 FOOD_MAX = 8                  # MaxFoodShopInventory
 ITEM_MAX = 12                 # MaxItemShopInventory
+HOME_HOURS = (6, 23)          # config.csv FoodShopTime/ItemShopTime rows 752/753:
+#                               "6t23" all four seasons -- the HOME shop keeps
+#                               canon trading hours (drawShop gates on isShopOpen)
 RESTOCK_MIN = 5               # RestockMin: game-min between credit rolls (1 game-min == 1s)
 RESTOCK_CHANCE = 1            # RestockShopChance %
 RESTOCK_NEW_ITEM = 50         # RestockNewItemChance %
@@ -86,6 +89,12 @@ def _roll(pet, is_food, check_sale=True, exclude=()):
             seen.add(e["key"])
             slots.append(_mk_slot(pet, e, check_sale))
     return slots
+
+
+def home_shop_open(pet):
+    """PhysicalState.isShopOpen on the HOME hours (Utility.isOpen):
+    the shelves trade 6:00-23:00 game time, every season."""
+    return HOME_HOURS[0] <= _hour(pet) <= HOME_HOURS[1]
 
 
 def town_shop_hours(pet, town, is_food):

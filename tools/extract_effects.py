@@ -55,7 +55,8 @@ effects = {}
 # single-frame overlays
 for name, fn in {"frozen": "frozen.png", "attention": "attention.png",
                  "call": "callLabel.png", "praise": "praise.png",
-                 "scold": "scold.png", "wash": "wash.png"}.items():
+                 "scold": "scold.png", "wash": "wash.png",
+                 "shopClosed": "shopClosed.png"}.items():   # drawShop's closed sign
     c = crop(native_mask(fn))
     if c is not None:
         effects[name] = [to_rows(c)]

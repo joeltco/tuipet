@@ -138,3 +138,35 @@ def test_claim_gift_bags_it_and_cheers():
     assert "Steak" in msg and p.inventory.get("f:8") == 1
     assert p.gift == "" and p.anim == "happy"
     assert p.claim_gift() == ""                     # nothing pending -> no-op
+
+
+# ---- home shop hours (audit 2026-07-04): config FoodShopTime/ItemShopTime ----
+
+def test_home_shop_keeps_canon_trading_hours():
+    """drawShop/isShopOpen: the HOME shelves trade 6:00-23:00 (config rows
+    752/753, '6t23' every season) -- they were open around the clock."""
+    from tuipet import shop
+    from tuipet.shopscreen import ShopPanel
+    p = _pet()
+    p.world_seconds = 3 * 60.0                      # 3am
+    assert not shop.home_shop_open(p)
+    pan = ShopPanel(p)
+    assert "Closed" in pan.msg
+    assert pan._rows() == []                        # shutters down: nothing to buy
+    assert "shutters" in pan.text().plain
+    pan.key("enter")                                # no purchase path exists
+    assert "Bought" not in pan.msg
+    pan.key("right"); pan.key("right")              # the egg license counter never closes
+    assert pan._tabs()[pan.tab] == "egg" and not pan._shelves_closed()
+    pan.key("tab")                                  # ...and neither does your bag
+    assert pan._rows() is not None and not pan._shelves_closed()
+    p.world_seconds = 6 * 60.0                      # opening bell
+    pan2 = ShopPanel(p)
+    assert shop.home_shop_open(p) and pan2._rows()
+
+
+def test_shop_closed_sign_is_in_the_effects_atlas():
+    """The canon shopClosed.png rip must survive re-extraction (EXTRACT-not-draw)."""
+    from tuipet import data
+    sign = data.load_effects().get("shopClosed")
+    assert sign and sign[0] and any("1" in r for r in sign[0])

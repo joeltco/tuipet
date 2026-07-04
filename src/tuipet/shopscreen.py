@@ -39,7 +39,12 @@ class ShopPanel:
         self.mode = start_mode
         self.tab = 0
         self.cursor = 0
-        self.msg = "Your bag." if start_mode == "bag" else "Welcome! Spend your bits."
+        if start_mode == "bag":
+            self.msg = "Your bag."
+        elif not shop.home_shop_open(pet):
+            self.msg = "Closed for the night — back at 6:00."
+        else:
+            self.msg = "Welcome! Spend your bits."
 
     # ---- data ----
     def _tabs(self):
@@ -54,12 +59,21 @@ class ShopPanel:
         out.sort(key=lambda e: e.get("price", 0))
         return out
 
+    def _shelves_closed(self):
+        """drawShop/isShopOpen: the HOME food/item shelves keep canon trading
+        hours (6:00-23:00, config FoodShopTime/ItemShopTime).  The egg page is
+        tuipet's own license counter and the bag is yours -- neither closes."""
+        return (self.mode == "shop" and self._tabs()[self.tab] in ("food", "item")
+                and not shop.home_shop_open(self.pet))
+
     def _rows(self):
         cat = self._tabs()[self.tab]
         if self.mode == "shop":
             if cat == "egg":
                 prog, owned = persistence.get_progress(), persistence.get_eggs_owned()
                 return [egg_mod.shop_egg_entry(i, pr) for i, pr in egg_mod.buyable_eggs(prog, owned)]
+            if self._shelves_closed():
+                return []                  # shutters down: nothing to browse or buy
             # the day's rolled roster (open_shop handles the daily reset + restock)
             out = []
             for slot in shop.open_shop(self.pet, cat == "food"):
@@ -218,13 +232,27 @@ class ShopPanel:
                 tx = info[r] if r < len(info) else ""
                 out.append(icon[r] + "  ", style=INK)
                 out.append(tx[:tw] + "\n", style=INK_B if r == 0 else INK)
+        elif self._shelves_closed():
+            # the canon closed sign (drawShop's roomEffect "shopClosed") hangs
+            # in the icon slot; the hours ride the info column beside it
+            from .render import bitmap_text
+            sign = (data.load_effects().get("shopClosed") or [None])[0]
+            lines = [t.plain.ljust(IC_W) for t in bitmap_text(downsample(sign, 2), LCD_ON, LCD_BG)] \
+                if sign else []
+            lines = (lines + [" " * IC_W] * IC_ROWS)[:IC_ROWS]
+            info = ["CLOSED", "hours 6:00-23:00", "", "come back at dawn"]
+            for r in range(IC_ROWS):
+                out.append(lines[r] + "  ", style=INK)
+                out.append(info[r][:W - IC_W - 2] + "\n", style=INK_B if r == 0 else INK)
         else:
             # nothing selected == the tab is empty; the list below already prints the
             # context-aware empty label, so the icon panel stays quiet (one message, not two)
             out.append_text(menu.blanks(IC_ROWS))
 
         # item list for this tab
-        if self._tabs()[self.tab] == "egg":
+        if self._shelves_closed():
+            empty = "(the shutters are down)"
+        elif self._tabs()[self.tab] == "egg":
             empty = "(no eggs to buy \u2014 P for a password)"
         else:
             empty = "(shelves empty \u2014 try tomorrow)" if self.mode == "shop" else "(none owned)"
