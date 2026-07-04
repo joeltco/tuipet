@@ -13,7 +13,8 @@ COLS, ROWS = 40, 7
 # the bracket/result scenes only carry ONE info line + note + footer below the bar,
 # so they afford an 8-row (16px) box -> a 14px band: most creatures render at
 # native size (crop-first fit), only full-16px sprites get a gentle 16->14 fit
-FIGHT_ROWS = 8
+FIGHT_ROWS = 12   # the ONE locked arena (was a squat 8-row band that
+#                   cropped the scenery, then the fight itself jumped to 12)
 
 
 class TournamentPanel(menu.SubHost):

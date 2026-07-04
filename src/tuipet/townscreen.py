@@ -162,12 +162,28 @@ class TownPanel(menu.SubHost):
         if self.sub is not None:
             return self.sub.text()
         if self.tourney is not None:
+            # the town cup interstitial matches the roadside cup (audit
+            # 2026-07-04): a faceoff SCENE over the town's own backdrop --
+            # it was a bare black text box while every bracket around it
+            # (tournament, then the fight itself) is a themed arena.
             t = self.tourney
-            out = menu.header("TOWN CUP", f"{t.round_name} {t.round + 1}/3")
-            out.append(f"  {t.name[:30]}\n", style=INK_B)
             opp = t.current_opponent()
-            out.append(f"  vs {opp['name'][:22]} [{opp['attribute'][:2]}]\n", style=INK)
-            out.append_text(menu.blanks(3))
+            bg_h = self.town.get("bg_habitat")
+            bgimg = p.background(bg_h) if bg_h is not None else p.background()
+            on = SIL_DAY if bgimg else LCD_ON
+            rec = data.load_sprites()[1]
+
+            def fr(num):
+                r = rec[num]
+                roles = data.ROLES["idle"]
+                return r["frames"][roles[self.frame_i % len(roles)]] or r["frames"][0]
+
+            out = menu.header("TOWN CUP", f"{t.round_name} {t.round + 1}/3")
+            out.append_text(render_scene(
+                grid.faceoff(fr(p.num), fr(opp["num"]), left_mirror=True,
+                             right_mirror=False, ph=24),
+                40, 12, on, LCD_BG, bgimg=bgimg))
+            out.append(f"\n {t.name[:22]}  vs {opp['name'][:14]}\n", style=INK)
             out.append_text(menu.note(t.last))
             out.append_text(menu.footer("SPACE fight   ESC forfeit"))
             return out

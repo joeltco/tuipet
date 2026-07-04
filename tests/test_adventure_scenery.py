@@ -65,3 +65,19 @@ def test_town_lobby_is_a_scene_and_arrival_shows_the_town():
     a.location = 4350                          # same zone-bg span, just past the gates
     outside = ap.text().markup
     assert in_town != outside
+
+
+def test_tournament_scenes_use_the_standard_arena():
+    from tuipet.tournamentscreen import FIGHT_ROWS
+    assert FIGHT_ROWS == 12                    # was a squat 8-row band
+
+
+def test_town_cup_interstitial_is_a_scene():
+    from tuipet.townscreen import TownPanel
+    from tuipet import tournament as tmod
+    p = _pet()
+    pan = TownPanel(p, 0)
+    tr = next((t for t in (tmod.trophy_by_id(i) for i in range(40)) if t), None)
+    assert tr is not None
+    pan.tourney = tmod.Tournament(p, tr)
+    assert len(pan.text().plain.split("\n")) >= 15   # faceoff arena, not a text box
