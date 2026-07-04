@@ -270,3 +270,52 @@ def test_player_surrender_can_be_refused():
     p2.compliance = True                          # compliant: the surrender proceeds
     r2 = panel2._player_surrender()
     assert r2 == ("done", None)
+
+
+# ---- battle animation audit (2026-07-04): reveal / dodge fidelity ------------
+
+def test_intro_reveals_the_opponent_with_the_start_sting():
+    """DVPet startBattle(): after the banner the OPPONENT is shown alone,
+    taunting 1->6->1->6, with the _startBattle sting at the reveal edge."""
+    import tuipet.battlescreen as bs
+    _, panel = _bp()
+    ms = [e["m"] for e in panel.timeline]
+    assert ms[-bs.REVEAL_T:] == ["reveal"] * bs.REVEAL_T   # banner, THEN the taunt
+    assert all(e.get("view") == "foe" for e in panel.timeline[-bs.REVEAL_T:])
+    assert panel.sfx == "battle"                  # the banner sting on frame one
+    panel.sfx = None
+    while panel.timeline[panel.i]["m"] != "reveal":
+        panel.anim()
+    assert panel.sfx == "startBattle"             # fired exactly at the reveal edge
+    assert "appears!" in panel.hud_note or panel.text() is not None
+    panel._render_scene_frame(panel.timeline[panel.i])
+    assert "appears!" in panel.hud_note
+
+
+def test_dodge_hides_the_orb_and_hops_the_defender():
+    """Canon dodge(): the attack sprite is HIDDEN (the unhurt hop IS the miss)
+    and the defender leaps toward its wall AND UP, then drops back down.
+    2026-07-04 raster audit: the old whiff-past orb restarted at the far edge
+    (a visible teleport) and merged into the 16px defender like a hit."""
+    from tuipet.theme import SIL_DAY
+    _, panel = _bp()
+    panel.pet_attr = panel.foe_attr = "Vaccine"
+    calls = []
+    panel._orb_overlay = lambda fr, mouth: (calls.append(fr["m"]), [])[1]
+    base = {"view": "foe", "atk": "pet", "def": "foe", "ph": 5, "fh": 5}
+    panel._render_scene_frame({"m": "dodge", "prog": 5 / 14, **base})
+    panel._render_scene_frame({"m": "fire_in", "prog": 0.5, "double": False, **base})
+    assert calls == ["fire_in"]                   # no orb drawn on the dodge
+
+    def top_row(fr):
+        t = panel._render_scene_frame(fr)
+        for i, line in enumerate(t.markup.split("\n")):   # arena = markup, NEVER .plain
+            if SIL_DAY in line:
+                return i
+        return None
+
+    grounded = top_row({"m": "faceoff", **base})
+    apex = top_row({"m": "dodge", "prog": 5 / 14, **base})
+    landed = top_row({"m": "dodge", "prog": 13 / 14, **base})   # an IDLE return beat
+    assert apex < grounded                        # airborne at the apex
+    assert landed == grounded                     # back on its mark for the pose flips

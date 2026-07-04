@@ -36,6 +36,7 @@ CHARGE = 4                                      # DVPet shoot frame 4: pre-attac
 
 # timeline tuning (ticks per beat, 1 tick == 0.1s); slowed for a readable vpet pace
 BANNER_FLASHES, BANNER_HOLD = 3, 4
+REVEAL_T = 12                                    # 1.2s opponent reveal/taunt (startBattle)
 FACEOFF_T = 9                                    # 0.9s stare-down
 WINDUP_T = 9                                     # 0.9s charge / rear-back before firing
 FIRE_T = 12                                      # 1.2s per orb leg (~1.7px/tick, smooth glide)
@@ -78,13 +79,15 @@ class BattlePanel:
         self.hud_fhp = self.battle.enemy_hp
         self.hud_note = "Battle start!"
         self.phase = "intro"
-        self.sfx = "startBattle"      # SpriteAnim battle setup: _startBattle at the reveal
-        self.sfx = "battle"          # play the battle-start beep on the first frame
+        self.sfx = "battle"          # SoundConfig._battleFlash: the banner sting
         self._last_m = None          # tracks timeline marker edges for per-event sfx
         tl = []
         for _ in range(BANNER_FLASHES):
             tl += [{"m": "banner", "f": 0}] * BANNER_HOLD
             tl += [{"m": "banner", "f": 1}] * BANNER_HOLD
+        # DVPet startBattle(): after the banner the OPPONENT is revealed alone,
+        # taunting (drawNum 1 -> 6 -> 1 -> 6) with the _startBattle sting
+        tl += [{"m": "reveal", "view": "foe"}] * REVEAL_T
         self.timeline = tl
         self.i = 0
 
@@ -177,6 +180,8 @@ class BattlePanel:
                 self.sfx = "strongAttack" if entry.get("double") else "attack"
             elif m == "hit":                     # ...and lands with the strong impact
                 self.sfx = "strongHit" if entry.get("double") else "attackHit"
+            elif m == "reveal":                  # setupBattle: _startBattle at the reveal
+                self.sfx = "startBattle"
         self._last_m = m
 
     def anim(self):
@@ -313,20 +318,25 @@ class BattlePanel:
             note = "HIT!"
         else:
             view = fr.get("view", "pet")
+            dt = round(fr.get("prog", 0) * DODGE_T) if m == "dodge" else 0   # dodge beat 1..DODGE_T
             if m == "result":
-                pose = (CHEER_A, CHEER_B)[self.frame_i % 2] if self.won else COLLAPSE
+                pose = (CHEER_A, CHEER_B)[(self.frame_i // 3) % 2] if self.won else COLLAPSE
             elif m == "windup":
                 # DVPet battlePlayerShootAnim sequences poses 1->0->4 (ready->idle->charge)
                 # through the wind-up, then snaps to 6 (attack) only at the moment of firing.
                 pose = (TURN, TURN, IDLE, IDLE, CHARGE, CHARGE)[min(fr.get("wu", 0), 5)]
             elif m == "fire_out":
                 pose = ATTACK
+            elif m == "reveal":
+                # DVPet startBattle: the opponent taunts 1 -> 6 -> 1 -> 6 before the menu
+                pose = ATTACK if (self.frame_i // 3) % 2 else TURN
             elif m == "dodge":
-                pose = TURN if self.frame_i % 2 else IDLE
+                # airborne it holds its pose; canon flips 1/0/1 only on the return steps
+                pose = IDLE if dt <= 10 else (TURN, TURN, IDLE, TURN)[dt - 11]
             elif m == "flinch":
                 pose = COLLAPSE
             elif m == "fire_in":
-                pose = CHARGE if self.frame_i % 2 else IDLE  # DVPet defender bobs 0<->4 awaiting the orb
+                pose = CHARGE if (self.frame_i // 3) % 2 else IDLE  # DVPet defender bobs 0<->4 awaiting the orb
             else:                                            # faceoff
                 pose = IDLE
             num = self.pet.num if view == "pet" else b.enemy["num"]
@@ -337,12 +347,20 @@ class BattlePanel:
                 xshift = back * min(3, fr.get("wu", 0) + 1)  # rear back, charging up
             elif m == "fire_out" and fr.get("prog", 1) < 0.35:
                 xshift = -back * 2                           # lunge toward the foe on release
-            elif m == "dodge":
-                xshift = back * (3 if self.frame_i % 2 else 2)   # weave back toward its wall
+            elif m == "dodge" and 1 <= dt <= 10:
+                # DVPet dodge(): LEAP toward its own wall AND UP, hang at the apex
+                # while the shot whiffs past, then drop back to its mark (dt 11+)
+                out, lift = ((2, 2), (3, 3), (3, 3), (3, 3), (3, 3), (3, 3),
+                             (3, 3), (3, 3), (2, 1), (1, 0))[dt - 1]
+                xshift = back * out
+                if lift:                                     # blank rows below raise it off the floor
+                    rows = rows + ["0" * max(len(r) for r in rows)] * lift
             place, mouth = self._place_one(view, rows, xshift)
-            overlay = self._orb_overlay(fr, mouth) if m in ("fire_out", "fire_in", "dodge") else []
+            # no orb on "dodge": canon hides the attack sprite -- the unhurt hop IS the miss
+            overlay = self._orb_overlay(fr, mouth) if m in ("fire_out", "fire_in") else []
             scene = self._scene(place, overlay)
             note = {"faceoff": f"{self.pet.name[:8]} vs {b.enemy['name'][:8]}",
+                    "reveal": f"{b.enemy['name'][:12]} appears!",
                     "windup": "...", "fire_out": "Fire!", "fire_in": "Incoming!",
                     "dodge": "Dodge!", "flinch": "Hit!", "result": ""}.get(m, "")
             if m == "result":
