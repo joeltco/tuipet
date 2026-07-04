@@ -11,7 +11,7 @@ the lifespan.  Pressing the core plays the silhouette teaser
 The data-book pages after it are tuipet's own readout (kept adaptation).
 """
 from __future__ import annotations
-from . import data, evolution, grid  # noqa: F401  (pet methods drive the data)
+from . import data, evolution, grid, lines  # noqa: F401  (pet methods drive the data)
 from .render import render_scene
 
 from .theme import LCD_ON, LCD_BG, INK, INK_B, DIM, SIL_DAY, SIL_NIGHT  # noqa: F401  (theme.apply propagation)
@@ -81,6 +81,11 @@ def silhouette(rows):
 def next_evolution(pet):
     """The silhouette's subject (getCurrentNaturalEvol first entry): the ready
     candidate first, else the closest one; None past growth / at a final form."""
+    if lines.active(pet):
+        rows = lines.evo_rows(pet)      # line chart: ready first, else fewest-unmet
+        if not rows:
+            return None
+        return sorted(rows, key=lambda r: (not r[2], r[3]))[0][0]
     try:
         cands = sorted(evolution.candidates(pet), key=lambda c: (not c[2], -c[3]))
     except Exception:
@@ -103,6 +108,11 @@ def _evo_rows(pet):
     (evolution.requirement_report) -- the page shows it as distance-to-go."""
     if pet.num == -1 or pet.stage in ("Egg", "Fresh"):
         return "(too young)"
+    if lines.active(pet):
+        # line pets: the line's own chart rows, in first-match order (the order
+        # IS the information -- earlier rows win ties), with live unmet counts
+        rows = lines.evo_rows(pet)
+        return rows or "(final form)"
     try:
         cands = sorted(evolution.candidates(pet), key=lambda c: (not c[2], c[3]))
     except Exception:
@@ -262,8 +272,9 @@ class DigiCorePanel:
                                      overlay=overlay, bgimg=bgimg))
         n = core_number(p)
         growth = p.STAGE_DURATION.get(p.stage)
-        pending = (growth is not None and p.stage_seconds < growth
-                   and bool(data.load_evolutions().get(p.num)))
+        has_next = (bool(lines.evo_rows(p)) if lines.active(p)
+                    else bool(data.load_evolutions().get(p.num)))
+        pending = growth is not None and p.stage_seconds < growth and has_next
         lbl = "evolution nears at 1" if pending else "life meter"
         out.append(f"\n core {chr(0x25C6)} {n}", style=INK_B)
         out.append(f"   {lbl}\n", style=DIM)
@@ -297,7 +308,8 @@ class DigiCorePanel:
         """One candidate's requirement checklist (evolution.requirement_report):
         met gates dim out of the way, the unmet ones are the raising guide."""
         num, name = self.detail
-        report = evolution.requirement_report(self.pet, num)
+        report = (lines.requirement_report(self.pet, num) if lines.active(self.pet)
+                  else evolution.requirement_report(self.pet, num))
         vis = 8
         self.det_off = max(0, min(self.det_off, max(0, len(report) - vis)))
         out = menu.header(f"DIGICORE  {name[:16].upper()}", "req")

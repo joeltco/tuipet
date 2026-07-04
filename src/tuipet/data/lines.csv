@@ -1,0 +1,14 @@
+LineID,Stage,DexNum,Parents,Rule,Bedtime,Notes
+ver1,Fresh,1411,egg,TIME,20:00,Botamon
+ver1,InTraining,1455,1411,TIME,20:00,Koromon
+ver1,Rookie,29,1455,TIME,21:00,Agumon
+ver1,Champion,93,29,"CM 0-2, TR 16+",23:00,Greymon
+ver1,Champion,102,29,"CM 0-2, TR 0-15",24:00,Devimon
+ver1,Champion,95,29,"CM 3+, TR 16+, OF 3+",22:00,Meramon
+ver1,Champion,124,29,"CM 3+, TR 5-15, OF 3+",23:00,Tyrannomon
+ver1,Champion,116,29,CM 3+,21:00,Numemon
+ver1,Ultimate,220,93;102,WIN 12/15,23:00,MetalGreymon
+ver1,Ultimate,237,124;95,WIN 12/15,22:00,Mamemon
+ver1,Ultimate,192,116,WIN 12/15,22:00,Monzaemon
+ver1,Mega,297,220,CM 0-2,23:00,BlitzGreymon
+ver1,Mega,300,237,CM 0-2,22:00,BanchoMamemon

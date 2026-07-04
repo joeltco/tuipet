@@ -7,6 +7,7 @@ from . import data
 from . import shop
 from . import egg as egg_mod
 from . import evolution
+from . import lines as lines_mod
 from . import weather as wx
 from . import theme
 
@@ -563,6 +564,12 @@ class Pet:
     nutr_vitamin: int = 0           # DVPet _vitamin, from fruit
     battles: int = 0
     levels_fought: list = _dcf(default_factory=list)  # opponent levels beaten this stage (DVPet _levelsFought)
+    # ---- evolution lines (LINES_SPEC.md): the legible bracket engine ----
+    line_id: str = ""               # hatched-from line; "" = corpus fuzzy engine
+    stage_trainings: int = 0        # drills attempted this stage (every attempt counts; Pen20)
+    stage_battles: int = 0          # battles fought this stage
+    battle_log: list = _dcf(default_factory=list)   # last-15 results 1/0 (persists across evolution; Pen20)
+    mega_kills: int = 0             # lifetime Ultimate/Mega-class foes beaten (DMX KO6 gate)
     bits: int = 0
     trophies: int = 0
     trophies_won: dict = _dcf(default_factory=dict)   # trophy id -> season won (per-season earned)
@@ -673,6 +680,7 @@ class Pet:
             fresh = [n for n, r in by_num.items() if r["stage"] == "Fresh" and not data.is_placeholder(n)]
             target = random.choice(fresh)
         self.evolve_to(target)
+        self.line_id = lines_mod.line_for_hatch(target)   # a line egg binds the pet to its line for life
         self.hatching = False
         self._rand_personality_traits()               # fix disposition/glutton/restless for life
         if self.x_antibody == "None" and random.randint(0, X_BIRTH_BOUND - 1) < X_BIRTH_TARGET:
@@ -1504,6 +1512,14 @@ class Pet:
             return
         if self.stage_seconds < self.STAGE_DURATION.get(self.stage, 9e9):
             return
+        if lines_mod.active(self):
+            # line pets evolve by their line's first-match bracket table ONLY.
+            # No match = stay and keep re-checking: counters can still earn a
+            # row later (the DM20 Perfect battle gate works exactly so).
+            target = lines_mod.select_line(self)
+            if target is not None:
+                self.evolve_to(target)
+            return
         target = evolution.select(self)
         if target is not None:
             self.evolve_to(target)
@@ -1744,6 +1760,7 @@ class Pet:
         self.stage_seconds = 0.0
         # per-stage care record resets; the next stage's care decides the next form
         self.care_mistakes = self.overeat = self.disturb = 0
+        self.stage_trainings = self.stage_battles = 0     # battle_log persists (Pen20 rolling window)
         self.injuries = self.sick_count = 0
         self.sick = False
         self.sick_length = self.inj_length = self.fatigue_length = 0.0
@@ -2300,6 +2317,7 @@ class Pet:
         """
         self.train_time = _dvpet_time(self.day_phase)
         self.exercise_today += 1                          # DVPet _exercise (incExerciseTime)
+        self.stage_trainings += 1                         # LINES_SPEC TR gate: every attempt counts (Pen20)
         complied = self.check_compliant()                 # onExerciseFinish: checkCompliant
         strength0 = self.strength
         success = hits >= 2
@@ -2418,6 +2436,8 @@ class Pet:
         bonus from the rewards."""
         style_free = self.free_style if free_style is None else free_style
         self.battles += 1
+        self.stage_battles += 1                          # LINES_SPEC BTL gate (per-stage)
+        self.battle_log = (self.battle_log + [1 if won else 0])[-15:]   # Pen20 rolling window
         if not style_free:
             self.obedience += BATTLE_FREE_OBED_INC       # fighting under orders builds discipline
         self._set_energy(self.energy - 1)               # battle energy (BattleWon/LostEnergyDec)
@@ -2434,6 +2454,8 @@ class Pet:
                 self.egg_unlock_note = "A mysterious egg appeared in the nursery!"
             if enemy:
                 self.levels_fought.append(_enemy_level(enemy))
+                if enemy.get("stage") in ("Ultimate", "Mega"):
+                    self.mega_kills += 1                 # LINES_SPEC KO6 gate (DMX Stage-VI kills)
             self._open_praise()                          # a win is praiseworthy (setPraise)
             self._set_mood(self.mood + 10)               # BattleWonMoodInc
             # over/underpowered adjustments (battleEnd compareStage + HP gates):
