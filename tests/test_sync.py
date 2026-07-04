@@ -105,13 +105,14 @@ def test_startup_pull_mirrors_cloud_to_local(server, tmp_path, monkeypatch):
     # the pushed blob must be a REAL save: the pull now validates it can become
     # a pet before overwriting local (a malformed cloud payload used to mean a
     # silent fresh-egg wipe)
-    cloud_pet = Pet(num=100, name="Greymon", stage="Champion", attribute="Vaccine")
+    cloud_pet = Pet.from_num(100)      # a REAL record: the strict probe now rejects
+    #                                    hand-built pets whose name/stage lie about their dex
     blob = persistence.to_save_dict(cloud_pet)
     blob["_saved_at"] = 9000.0
     cloudsync.push_save(server, "joel", "secret", blob)
     assert not os.path.exists(persistence.SAVE_PATH)
     assert cloudsync.sync_down_at_startup(server, "joel", "secret") == "pulled"
-    assert json.load(open(persistence.SAVE_PATH))["name"] == "Greymon"
+    assert json.load(open(persistence.SAVE_PATH))["name"] == "Gatomon"   # dex 100's real name
     # a second pull is a no-op (local is now as new as the cloud)
     assert cloudsync.sync_down_at_startup(server, "joel", "secret") == ""
 

@@ -1691,6 +1691,11 @@ class TuiPetApp(App):
         prev = (self.pet.num, self.pet.stage)
         was_dead = self.pet.dead
         poop0 = self.pet.poop
+        # an evolution must not swap the sprite UNDER a playing animation (the
+        # clean-fx incident 2026-07-04: the pet transformed mid-sweep and the
+        # evolve strobe played on the already-evolved form) -- hold the check
+        # until the screen is quiet; the counters keep and it fires next tick
+        self.pet.fx_hold = self.screen_w.fx is not None
         self.pet.tick(1.0)
         p = self.pet
         if p.dead and not was_dead:

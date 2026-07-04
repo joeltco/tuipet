@@ -287,9 +287,17 @@ def local_saved_at(path=None):
         return 0.0
 
 
-def pet_from_save(data, catch_up=True):
+def pet_from_save(data, catch_up=True, strict=False):
     """Build (pet, message) from a save dict (disk or cloud). Returns (None, '')
-    on malformed data. Applies the bounded offline decay when catch_up is set."""
+    on malformed data. Applies the bounded offline decay when catch_up is set.
+
+    strict=True (the cloud probe) REJECTS foreign-format saves outright --
+    a save whose name/stage disagree with its dex was written by a different
+    tuipet (the 2026-07-04 incident: an outdated client pushed a rebuild-era
+    save with stage 'Child' and an empty name; the probe let it clobber the
+    local pet).  strict=False (the local load) REPAIRS instead: the pet is
+    re-derived from its dex and re-bound to its line, so a corrupted file
+    becomes a playable pet rather than a silent fresh-egg wipe."""
     if not isinstance(data, dict):
         return None, ""
     data = dict(data)                            # don't mutate the caller's dict
@@ -331,9 +339,30 @@ def pet_from_save(data, catch_up=True):
         if not isinstance(getattr(pet, fname), want):
             return None, ""
     msg = ""
+    if pet.num >= 0 and pet.stage != "Egg":
+        from . import data as _data
+        _, by_num = _data.load_sprites()
+        rec = by_num.get(pet.num)
+        if rec is None:
+            # a dex this build has never heard of: the cloud must not push it,
+            # but a LOCAL save survives a data refresh untouched (robustness
+            # contract -- test_load_unknown_num)
+            if strict:
+                return None, ""
+        elif pet.stage != rec["stage"] or pet.name != rec["name"]:
+            if strict:
+                return None, ""              # foreign format: never accept from the cloud
+            # local repair: identity comes from the dex; the line re-binds by name
+            from . import lines as _lines
+            croot, lid = _lines.canonical_root(pet.num)
+            pet._become(croot if croot is not None else pet.num)
+            pet.line_id = lid
+            pet.stage_seconds = 0.0
+            msg = "(save repaired — the pet's records were from another version)"
     if catch_up and saved_at:
         elapsed = min(max(0.0, time.time() - saved_at), MAX_OFFLINE)
-        msg = _offline(pet, elapsed)
+        off = _offline(pet, elapsed)
+        msg = (msg + "  " + off).strip() if off else msg
     return pet, msg
 
 

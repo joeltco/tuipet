@@ -1605,6 +1605,8 @@ class Pet:
     def _maybe_evolve(self):
         if self.sick or self.asleep or self.is_geriatric:
             return
+        if getattr(self, "fx_hold", False):
+            return          # an animation owns the screen; evolve on a quiet tick
         if self.stage_seconds < self.STAGE_DURATION.get(self.stage, 9e9):
             return
         if lines_mod.active(self):

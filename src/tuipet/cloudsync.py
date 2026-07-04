@@ -73,8 +73,10 @@ def sync_down_at_startup(uri, name, pw, timeout=_TIMEOUT):
     if cloud_ts <= persistence.local_saved_at():
         return ""                                    # local is as new or newer
     # never clobber a valid local save with a blob that can't even become a
-    # pet (a malformed cloud payload used to mean a silent fresh-egg wipe)
-    probe, _ = persistence.pet_from_save(dict(save), catch_up=False)
+    # pet (a malformed cloud payload used to mean a silent fresh-egg wipe) --
+    # and never accept a FOREIGN-format save (strict: an outdated client's
+    # push must not replace this build's pet; 2026-07-04 'Child' incident)
+    probe, _ = persistence.pet_from_save(dict(save), catch_up=False, strict=True)
     if probe is None:
         return "cloud-save-invalid"
     persistence.write_save_dict(save)
