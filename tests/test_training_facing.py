@@ -94,3 +94,21 @@ def test_strike_volley_target_facing(monkeypatch):
             if tp.phase == "done":
                 break
         assert seen.get("m") is want, f"{sel}: volley target mirror {seen.get('m')} != canon {want}"
+
+
+def test_vaccine_scene_shows_the_punch():
+    """Polish 2026-07-04: the vaccine drill is a STAGED scene (bag left, pet
+    right), and a tap visibly changes the arena -- the old drill rendered an
+    identical static bag no matter how hard you mashed."""
+    from tuipet.training import TrainingPanel, GAMES
+    from tuipet.pet import Pet
+    p = Pet(num=100, stage="Champion", attribute="Vaccine", obedience=500)
+    p.compliance = True
+    pan = TrainingPanel(p)
+    pan.gi = next(i for i, g in enumerate(GAMES) if g[0] == "vaccine")
+    pan._start_game()
+    idle = pan.text().plain
+    pan.key("space")                       # a tap: lunge pose + bag rock + Hit! label
+    punch = pan.text().plain
+    assert punch != idle
+    assert pan._strike_t > 0 and pan._strike_pose == 6

@@ -522,13 +522,34 @@ class TrainingPanel:
         placements = []
 
         if gk == "vaccine":                                 # DVPet drawVaccinePre: MASH to charge power.
-            bag = E.get("punching_bag", [None])[0]           # the bag is the target; the pet is HIDDEN
-            if bag:                                          # (it appears only for the strike).  The hit
-                placements.append(_cell(bag, 0))             # bag in the LEFT grid cell, grounded 2px up
-            if self._strike_t > 0:                           # drawn here.  Bag on the LEFT (DVPet ~locX 26),
-                hit = E.get("train_hit", [None])[0]          # lined up with the strike's target side.
-                if hit:                                      # the "Hit!" label (DVPet hitLabel) flashes per press
-                    overlay.extend(_blit(hit, (COLS - len(hit[0])) // 2, 3))
+            # Rebuilt to the department's staging standard (polish 2026-07-04) --
+            # the old scene was a STATIC bag alone in a field: nothing on the
+            # arena moved per tap and the Hit! label floated in the sky.  Now it
+            # stages like the data drill's fixed columns: bag LEFT, PET RIGHT,
+            # and every tap SHOWS the punch -- the pet lunges in its strike pose
+            # (the _flash(6) each tap already sets), the bag rocks away 1px, and
+            # the Hit! label (DVPet hitLabel) pops over the BAG it belongs to.
+            punching = self._strike_t > 0
+            bag = _fit_cell(E.get("punching_bag", [None])[0] or [])
+            if bag:
+                placements.append((bag, GRID_X0 - (1 if punching else 0), False))
+            # the pet throws the punches from the data drill's mon column
+            pose = self._pose_now(1 if (self.frame_i // 2) % 2 else 0)  # idle bob between taps
+            pf = self._frame(rec, pose)
+            _ys = [y for y, row in enumerate(pf) if "1" in row]
+            _xs = [x for x in range(max(len(r) for r in pf))
+                   if any(x < len(r) and r[x] == "1" for r in pf)]
+            if _ys and _xs:                                  # crop-to-content, like the data drill
+                pf = [row[_xs[0]:_xs[-1] + 1] for row in pf[_ys[0]:_ys[-1] + 1]]
+            px = GRID_X0 + CELL + 6 - (2 if punching else 0)  # LUNGE 2px into the punch
+            overlay.extend(_blit(pf, px, BASE_Y - len(pf)))   # grounded; faces left natively
+            if punching:
+                hit = E.get("train_hit", [None])[0]
+                if hit:
+                    hw = max(len(r) for r in hit)
+                    bag_top = BASE_Y - (len(bag) if bag else CELL)
+                    overlay.extend(_blit(hit, GRID_X0 + max(0, (CELL - hw) // 2),
+                                         max(0, bag_top - len(hit) - 1)))
         elif gk == "virus":                                 # DVPet drawVirusPre: pet AND bag HIDDEN
             # The real DVPet trainBar sprite is a 32-wide TRACK box (cols 0..31) + a separate
             # goal compartment (cols 32..37) == 38 wide.  Crop to the 32-wide track box so it
@@ -692,7 +713,7 @@ class TrainingPanel:
     def _hint(self):
         # keep every hint <= menu.W (38 cols) or footer() clips it mid-word
         return {"hp": "←→ pick the symbol   SPACE fire",
-                "vaccine": "SPACE hit the orb!   ESC out",
+                "vaccine": "SPACE punch the bag!   ESC out",
                 "data": "SPACE flip the shield   ESC out",
                 "virus": "SPACE stop the marker in the zone"}[self.gkey]
 
