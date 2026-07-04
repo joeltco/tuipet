@@ -19,6 +19,8 @@ from . import menu
 
 DIGICORE_BASE_RATE = 14            # DigicoreBaseRate (config.csv col 1)
 CORE_ROWS = 8                      # 16px scene band, like the tournament fight scenes
+EXPAND_T = 8                       # digicoreExpand: the badge zooms in (canon beats 6-14)
+BACK_T = 6                         # evolSilhouetteBack: the dark blink on the way out
 # ViewUtil.getDigicoreBackground field -> backdrop file suffix
 _CORE_BG = {"": "digicoreN", "None": "digicoreN", "DragonsRoar": "digicoreDr",
             "DeepSaver": "digicoreDs", "JungleTrooper": "digicoreJt",
@@ -204,6 +206,8 @@ class DigiCorePanel:
         self.pages = [("CORE", None)] + build_pages(pet)
         self.i = 0
         self.teaser = False       # EvolSilhouette view (SPACE on the core)
+        self.teaser_t = 0         # ticks into the digicoreExpand zoom
+        self._back_t = 0          # evolSilhouetteBack dark-blink ticks left
         self.frame_i = 0
         self.note = "the core stirs..."
         self.evo_sel = 0          # EVOLVES page: the highlighted candidate
@@ -212,17 +216,23 @@ class DigiCorePanel:
 
     def anim(self):
         self.frame_i += 1
+        if self.teaser:
+            self.teaser_t += 1
+        if self._back_t:
+            self._back_t -= 1
 
     def key(self, k):
         if self.teaser:
             if k in ("escape", "space", "enter", "d"):
-                self.teaser = False           # EvolSilhouetteBack
-                self.sfx = "wash"
+                self.teaser = False           # EvolSilhouetteBack: dark blink out
+                self._back_t = BACK_T
+                self.sfx = "wash"             # _silhouetteFade has no rip; wash substitutes
             return None
         if k in ("space", "enter") and self.i == 0:
             # onDigicore -> EvolSilhouetteTransition (the fade sound has no rip;
             # the dna-wash sweep substitutes, like heal's click/confirm cues)
             self.teaser = True
+            self.teaser_t = 0                 # the badge zooms in first (digicoreExpand)
             self.sfx = "wash"
             return None
         if k == "m" and self.i == 0:
@@ -266,11 +276,12 @@ class DigiCorePanel:
             return ("done", None)
         return None
 
-    def _pet_rows(self, num):
+    def _pet_rows(self, num, idx=None):
         rec = data.load_sprites()[1].get(num)
         if not rec:
             return None
-        idx = data.ROLES["idle"][self.frame_i % 2]
+        if idx is None:
+            idx = data.ROLES["idle"][(self.frame_i // 5) % 2]   # WALK_BEAT bob, not 10Hz
         return rec["frames"][idx] or next((f for f in rec["frames"] if f), None)
 
     def _core_scene(self):
@@ -306,18 +317,36 @@ class DigiCorePanel:
         return out
 
     def _teaser_scene(self):
-        """EvolSilhouette: the next natural evolution, blacked out."""
+        """EvolSilhouetteTransition: the core badge ZOOMS IN (digicoreExpand,
+        canon beats 6-14 grow it 1.5x each), then the next natural evolution
+        holds as a STATIC blacked-out shape (canon draws frame 0 -- the old
+        pose-flicker here was the 10Hz flutter class)."""
         p = self.pet
-        nxt = next_evolution(p)
         out = menu.bar("DIGICORE", "???")
+        if self.teaser_t < EXPAND_T:                      # the zoom-in beat
+            badge = data.load_effects().get(core_badge_key(p) or "core_xnone", [None])[0]
+            overlay = []
+            if badge:
+                k = 1 + (self.teaser_t * 3) // EXPAND_T   # integer upscale 1x -> 3x
+                big = ["".join(ch * k for ch in r) for r in badge for _ in range(k)]
+                bw, bh = max(len(r) for r in big), len(big)
+                ox, oy = (40 - bw) // 2, (CORE_ROWS * 2 - bh) // 2
+                overlay = [(ox + x, oy + y) for y, row in enumerate(big)
+                           for x, c in enumerate(row) if c == "1"]
+            out.append_text(render_scene([], 40, CORE_ROWS, LCD_ON, LCD_BG, overlay=overlay))
+            out.append("\n")
+            out.append_text(menu.note("the core opens..."))
+            out.append_text(menu.footer(""))
+            return out
+        nxt = next_evolution(p)
         if nxt is None:
-            rows = self._pet_rows(p.num)
+            rows = self._pet_rows(p.num, idx=0)
             placements = [grid.center(rows, ph=CORE_ROWS * 2)] if rows else []
             out.append_text(render_scene(placements, 40, CORE_ROWS, LCD_ON, LCD_BG))
             out.append("\n")
             out.append_text(menu.note("Nothing stirs — this is its final form."))
         else:
-            sil = silhouette(self._pet_rows(nxt) or [])
+            sil = silhouette(self._pet_rows(nxt, idx=0) or [])   # canon: frame 0, still
             placements = [grid.center(sil, ph=CORE_ROWS * 2)] if sil else []
             out.append_text(render_scene(placements, 40, CORE_ROWS, LCD_ON, LCD_BG))
             out.append("\n")
@@ -365,6 +394,13 @@ class DigiCorePanel:
     def text(self):
         if self.teaser:
             return self._teaser_scene()
+        if self._back_t:                              # evolSilhouetteBack: dark blink
+            out = menu.bar("DIGICORE", "core")
+            out.append_text(render_scene([], 40, CORE_ROWS, SIL_NIGHT, "#000000"))
+            out.append("\n")
+            out.append_text(menu.note(""))
+            out.append_text(menu.footer(""))
+            return out
         if self.detail is not None:
             return self._detail_scene()
         if self.i == 0:

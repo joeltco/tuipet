@@ -192,3 +192,31 @@ def test_evolves_page_edges():
         pan.key("right")
     assert "(too young)" in pan.text().plain
     assert pan.key("enter") is None                  # nothing to open
+
+
+def test_teaser_zooms_in_then_holds_a_still_silhouette():
+    """Canon EvolSilhouetteTransition (audit 2026-07-04): digicoreExpand zooms
+    the core badge in over the opening beats, then the silhouette holds as a
+    STILL frame-0 shape (the old teaser flickered idle poses at 10Hz), and the
+    way back is the evolSilhouetteBack dark blink."""
+    from tuipet.digicorescreen import EXPAND_T
+    p = _pet()
+    panel = DigiCorePanel(p)
+    panel.key("space")
+    early = panel.text().markup
+    for _ in range(3):                               # k steps 1x -> 2x at beat 3
+        panel.anim()
+    grown = panel.text().markup
+    assert early != grown                            # the badge grows through the beats
+    for _ in range(EXPAND_T):
+        panel.anim()
+    a = panel.text().markup
+    panel.anim()
+    assert panel.text().markup == a                  # the silhouette holds still
+    panel.key("escape")
+    assert panel._back_t > 0
+    assert "000000" in panel.text().markup           # the dark blink out
+    for _ in range(10):
+        panel.anim()
+    assert panel._back_t == 0
+    assert "CORE" == panel.pages[panel.i][0]         # home again
