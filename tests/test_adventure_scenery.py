@@ -107,3 +107,82 @@ def test_memorial_rests_in_the_home_scenery():
     p.dead = True
     pan = DeathPanel(p)
     assert len(pan.text().plain.split("\n")) >= 14   # a placed scene, not a strip
+
+
+# ---- adventure animation audit (2026-07-04): canon walk/discover/investigate ----
+
+def test_travel_walk_steps_on_the_walk_beat():
+    """The journey walk flips poses on WALK_BEAT (idleWalk cadence), not every
+    0.1s tick -- the 10Hz flutter class the battle audit retired."""
+    from tuipet.adventurescreen import WALK_BEAT
+    pan = AdventurePanel(_pet())
+    pan.travelling = True
+    def markup_at(f):
+        pan.frame_i = f
+        return pan.text().markup                  # arena = markup, never .plain
+    assert markup_at(1) == markup_at(WALK_BEAT - 1)          # same beat, same pose
+    assert markup_at(1) != markup_at(WALK_BEAT + 1)          # next beat steps
+
+
+def test_discover_call_is_the_attention_bounce():
+    """Canon DiscoverCall = attention(5,7): the pet bounces its cheer poses
+    while the investigate prompt waits (it used to keep idling, text-only)."""
+    pan = AdventurePanel(_pet())
+    pan.travelling = False
+    pan.discovering = True
+    pan.frame_i = 1
+    call = pan.text().markup
+    pan.frame_i = 7
+    assert pan.text().markup != call              # 5 <-> 7 flip on the 6-tick beat
+    pan.discovering = False
+    pan.frame_i = 1
+    assert pan.text().markup != call              # the bounce is not the idle stand
+
+
+def test_investigate_plays_the_left_walk_and_seals_the_reveal():
+    """Canon investigateLeft: walk LEFT, suspense dots, THEN the reveal -- the
+    result message must not leak into the note before the reveal beat."""
+    from tuipet.adventurescreen import INV_REVEAL_T, INV_END_T
+    random.seed(1)
+    pan = AdventurePanel(_pet())
+    pan.adv.location = pan.adv.total_steps // 2
+    pan.discovering = True
+    for seed in range(120):
+        random.seed(seed)
+        pan.key("enter")                          # resolves + starts the playbook
+        if pan._scene is not None and pan._scene["kind"] == "item":
+            break
+        pan._scene, pan.discovering = None, True
+    assert pan._scene and pan._scene["kind"] == "item" and pan._scene["icon"]
+    sealed = pan._scene["msg"]
+    assert "dug up" in sealed
+    for _ in range(INV_REVEAL_T - 2):
+        assert sealed not in pan.text().plain     # note text: plain is fine here
+        pan.anim()
+    while pan._scene is not None:
+        pan.anim()
+        assert pan._scene is None or pan._scene["t"] <= INV_END_T
+    assert sealed in pan.text().plain             # revealed
+    assert pan.travelling                         # back on the road
+
+
+def test_investigate_ambush_startles_then_opens_the_battle():
+    from tuipet.adventurescreen import INV_REVEAL_T
+    from tuipet.battlescreen import BattlePanel
+    random.seed(1)
+    pan = AdventurePanel(_pet())
+    pan.adv.location = pan.adv.total_steps // 2
+    for seed in range(120):
+        random.seed(seed)
+        pan.discovering = True
+        pan.key("enter")
+        if pan._scene is not None and pan._scene["kind"] == "enemy":
+            break
+        pan._scene = None
+    assert pan._scene and pan._scene["kind"] == "enemy"
+    pan.key("space")                              # skip straight to the reveal
+    assert pan._scene["t"] == INV_REVEAL_T - 1
+    for _ in range(8):
+        pan.anim()
+    assert isinstance(pan.sub, BattlePanel)       # the ambush fight opened
+    assert pan._scene is None
