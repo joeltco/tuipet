@@ -161,6 +161,10 @@ def _weather_overlay(weather, frame_i, cols, px_h):
     if n:
         snow = weather in _SNOW
         heavy = weather in ("HeavyRain", "HeavySnow")
+        # polish 2026-07-04: the old field marched in LOCKSTEP -- every particle
+        # advanced the same amount each frame, so the whole sky translated as
+        # one rigid sheet; and rain fell dead-vertical.  Now both kinds fall in
+        # DEPTH PLANES (far particles slower, shorter) and rain leans with the wind.
         for i in range(n):
             # scatter each particle to a pseudo-random spot (Knuth multiplicative
             # hash) instead of a linear comb, so they fill the whole sky -- random
@@ -169,23 +173,24 @@ def _weather_overlay(weather, frame_i, cols, px_h):
             x0 = seed % cols
             base = (seed >> 10) % px_h
             if snow:
-                # gentle drift with parallax -- ~1/3 of the flakes fall at half
-                # speed so the snow has depth instead of a rigid descending grid;
-                # each flake sways on its own phase
-                far = i % 3 == 0
-                y = (base + ((frame_i + 1) // 2 if far else frame_i)) % px_h
-                x = (x0 + (-1, 0, 1, 0)[(frame_i // 2 + i) % 4]) % cols
-                pts.append((x, y))
+                # three depth planes (half / two-thirds / full speed) and a
+                # smooth six-phase glide on a per-flake phase -- drift, not a tick
+                plane = i % 3
+                fall = ((frame_i + 1) // 2, (frame_i * 2) // 3, frame_i)[plane]
+                sway = (-1, -1, 0, 1, 1, 0)[((frame_i // 3) + i) % 6]
+                pts.append(((x0 + sway) % cols, (base + fall) % px_h))
             else:
-                # a straight vertical streak falling straight down; it tiles its
-                # own length each frame for a smooth descent (no sky wrap), and
-                # heavier rain draws a longer streak
-                length = 3 if heavy else 2
+                # rain leans with the wind: each streak drifts left as it falls
+                # (heavy leans harder) and a third of the drops fall on a FAR
+                # plane -- shorter, slower, behind the storm
+                far = i % 3 == 0
+                length = (2 if far else 3) if heavy else (1 if far else 2)
                 y = (base + frame_i * length) % px_h
+                wind = (frame_i * length) // (2 if heavy else 3)
                 for d in range(length):
                     yy = y - d
                     if yy >= 0:                              # don't wrap a streak across the sky
-                        pts.append((x0, yy))
+                        pts.append(((x0 - wind + (d if heavy else 0) // 2) % cols, yy))
     return pts
 
 
@@ -1676,15 +1681,12 @@ class TuiPetApp(App):
                     p = self.pet
                     self.flash(f"[b]{p.name}[/] hatched!")
             # DVPet Weather.precipitate: HeavyRain rolls thunder (nextInt(500)==0
-            # per frame); the crack sound keys at the flash onset, and an idling
-            # awake pet startles (checkSpecialIdleAnim -> Surprising)
+            # per frame); the FLASH + the startled idle keep playing, but the
+            # crack SFX is retired (Joel 2026-07-04: weather stays visual-only)
             p = self.pet
             if (p.weather == "HeavyRain" and not p.dead and p.stage != "Egg"
                     and getattr(sc, "thunder_i", 0) <= 0 and random.randint(0, 499) == 0):
                 sc.thunder_i = 14
-                r = random.randint(0, 4)              # sharp 1/5, long 2/5, short 2/5
-                self.beep("thunder" if r == 0 else ("thunder2" if r <= 2 else "thunder3"),
-                          bell=False)
                 if p.anim in ("idle", "walk") and not p.asleep:
                     p._set_anim("surprise", 1.4)
             sc.advance(self.pet)
