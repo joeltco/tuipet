@@ -1,0 +1,210 @@
+"""Curate every remaining egg into an evolution line (LINES_SPEC arc 5).
+
+Walks the REAL corpus evolution graph from each egg's hatch root into a
+DM20-shaped subtree (1 Baby I -> 1 Baby II -> 2 Child -> ~3 Adult/Child ->
+shared Perfects -> Megas) and emits lines.csv rows in the established bracket
+grammar. Never invents an edge; never uses a placeholder form.
+
+Canon-name HINTS steer the pick where humulos documents the roster (Ver.2,
+Ver.E, the Corona/Luna pair); a hint that names a form the graph cannot reach
+simply does not fire.  ver1 and verX (hand-curated) are preserved verbatim.
+
+Run:  PYTHONPATH=src python3 tools/curate_lines.py [--write]
+"""
+import csv
+import os
+import sys
+
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
+from tuipet import data  # noqa: E402
+
+LINES_CSV = os.path.join(os.path.dirname(__file__), "..", "src", "tuipet", "data", "lines.csv")
+HAND_CURATED = ("ver1", "verX")
+STAGE_ORDER = ["Fresh", "InTraining", "Rookie", "Champion", "Ultimate", "Mega"]
+BEDTIME = {"Fresh": "20:00", "InTraining": "20:00", "Rookie": "21:00",
+           "Champion": "22:00", "Ultimate": "23:00", "Mega": "23:00"}
+
+# canon egg names -> line ids (DM20 versions); everything else gets a name slug
+LINE_IDS = {"Botamon": "ver1", "Punimon": "ver2", "Poyomon": "ver3",
+            "Yuramon": "ver4", "Zurumon": "ver5", "YukimiBotamon": "verE",
+            "Dodomon": "verX"}
+
+# humulos-documented rosters only -- a hint is a PREFERENCE, never an invention
+HINTS = {
+    "ver2": {"InTraining": ["Tsunomon", "Tunomon"], "Rookie": ["Gabumon", "Elecmon"],
+             "Champion": ["Garurumon", "Kabuterimon", "Angemon", "Frigimon",
+                          "Yukidarumon", "Birdramon", "Whamon", "Vegiemon", "Vegimon"],
+             "Ultimate": ["SkullGreymon", "MetalMamemon", "Vademon"],
+             "Mega": ["CresGarurumon", "SkullMammothmon", "SkullMammon"]},
+    "verE": {"InTraining": ["Nyaromon"], "Rookie": ["Salamon", "Plotmon"],
+             "Champion": ["Meicoomon", "Gatomon", "Tailmon"],
+             "Ultimate": ["Meicrackmon", "Angewomon"],
+             "Mega": ["Rasielmon", "Ophanimon"]},
+    "pichimon": {"Rookie": ["Coronamon", "Lunamon"], "Champion": ["Firamon", "Lekismon"],
+                 "Ultimate": ["Flaremon", "Crescemon"], "Mega": ["Apollomon", "Dianamon"]},
+    "sakumon": {"InTraining": ["Sakuttomon"], "Rookie": ["Zubamon", "Hackmon"],
+                "Champion": ["Zubaeagermon", "BaoHackmon"],
+                "Ultimate": ["Duramon", "SaviorHackmon"],
+                "Mega": ["Durandamon", "Jesmon"]},
+    "petitmon": {"InTraining": ["Babydmon"], "Rookie": ["Dracomon"],
+                 "Champion": ["Coredramon"], "Ultimate": ["Wingdramon", "Groundramon"],
+                 "Mega": ["Slayerdramon", "Breakdramon"]},
+}
+
+
+def _slug(name):
+    return "".join(c for c in name.lower() if c.isalnum())
+
+
+def load_corpus():
+    _, by_num = data.load_sprites()
+    evo = data.load_evolutions()
+    reqs = data.load_requirements()
+    return by_num, evo, reqs
+
+
+def curate(by_num, evo, reqs, root, line_id, usage):
+    """One line: list of row dicts. Deterministic; consults/updates `usage`."""
+    hints = HINTS.get(line_id, {})
+    members = {}          # num -> row
+    rows = []
+
+    def add(num, stage, parents, rule):
+        if num in members:                      # shared child: merge the parents
+            for p in parents:
+                if p not in members[num]["parents"]:
+                    members[num]["parents"].append(p)
+            return
+        row = {"num": num, "stage": stage, "parents": list(parents), "rule": rule}
+        members[num] = row
+        rows.append(row)
+        # usage is keyed by NAME so duplicate dexes count as one identity
+        nm = by_num[num]["name"]
+        usage[nm] = usage.get(nm, 0) + 1
+
+    def candidates(parent, stage):
+        out = []
+        for t in evo.get(parent, []):
+            r = by_num.get(t)
+            if not r or r["stage"] != stage or data.is_placeholder(t):
+                continue
+            if t in members:                    # in-line sharing handled by add()
+                out.append(t)
+                continue
+            if reqs.get(t, {}).get("special", "None") not in ("None", "Failed"):
+                continue                        # jogress/fusion/mode stay special paths
+            out.append(t)
+        hint = {n: i for i, n in enumerate(hints.get(stage, []))}
+        root_field = by_num[root].get("field", "")
+        line_names = {by_num[m]["name"] for m in members}
+        out.sort(key=lambda t: (
+            hint.get(by_num[t]["name"], 99),            # canon roster first
+            0 if t in members else 1,                    # then in-line sharing
+            usage.get(by_num[t]["name"], 0),             # then spread across lines
+            0 if by_num[t].get("field", "") == root_field else 1,   # then flavor
+            t))
+        # de-dupe by NAME: three corpus Gabumons are one Gabumon; a form already
+        # in the line under another dex must not reappear as a sibling
+        seen, uniq = set(), []
+        for t in out:
+            nm = by_num[t]["name"]
+            if nm in seen or (t not in members and nm in line_names):
+                continue
+            seen.add(nm)
+            uniq.append(t)
+        return uniq
+
+    def failed_last(pool):
+        """Catch-all slot prefers a Failed-flagged form (the Numemon of the line)."""
+        f = [t for t in pool if reqs.get(t, {}).get("special") == "Failed"]
+        return f[0] if f else (pool[0] if pool else None)
+
+    add(root, "Fresh", ["egg"], "TIME")
+    baby2 = candidates(root, "InTraining")[:1]
+    for t in baby2:
+        add(t, "InTraining", [root], "TIME")
+    rookies = []
+    for b in baby2:
+        picks = candidates(b, "Rookie")[:2]
+        rules = ["CM 0-2", "CM 3+"] if len(picks) == 2 else ["TIME"]
+        for t, rl in zip(picks, rules):
+            add(t, "Rookie", [b], rl)
+            rookies.append(t)
+    champs = []
+    for rk in rookies:
+        pool = candidates(rk, "Champion")
+        if not pool:
+            continue
+        if len(pool) >= 3:
+            picks = pool[:2] + [failed_last(pool[2:])]
+            rules = ["CM 0-2, TR 16+", "CM 0-2, TR 0-15", "TIME"]
+        elif len(pool) == 2:
+            picks, rules = [pool[0], failed_last(pool)], ["CM 0-2", "TIME"]
+            if picks[0] == picks[1]:
+                picks, rules = pool[:2], ["CM 0-2", "TIME"]
+        else:
+            picks, rules = pool[:1], ["TIME"]
+        for t, rl in zip(picks, rules):
+            add(t, "Champion", [rk], rl)
+            champs.append(t)
+    ults = []
+    for ch in dict.fromkeys(champs):
+        pick = candidates(ch, "Ultimate")[:1]
+        for t in pick:
+            add(t, "Ultimate", [ch], "WIN 12/15")
+            ults.append(t)
+    for ul in dict.fromkeys(ults):
+        pick = candidates(ul, "Mega")[:1]
+        for t in pick:
+            add(t, "Mega", [ul], "CM 0-2")
+    return rows
+
+
+def main(write=False):
+    from tuipet import egg as egg_mod
+    by_num, evo, reqs = load_corpus()
+
+    with open(LINES_CSV, newline="") as fh:
+        kept = [r for r in csv.reader(fh)][0:]
+    header, kept_rows = kept[0], [r for r in kept[1:] if r and r[0] in HAND_CURATED]
+
+    usage = {}
+    for r in kept_rows:
+        nm = by_num[int(r[2])]["name"]
+        usage[nm] = usage.get(nm, 0) + 1
+
+    out_rows, stats = [], []
+    for idx in range(egg_mod.count()):
+        targets = egg_mod.hatch_targets(idx)
+        if len(targets) != 1:
+            continue                            # the "???" pool eggs hatch other lines' roots
+        root = targets[0]
+        name = egg_mod.hatch_name(idx)
+        line_id = LINE_IDS.get(name, _slug(name))
+        if line_id in HAND_CURATED:
+            continue
+        rows = curate(by_num, evo, reqs, root, line_id, usage)
+        ceiling = max(rows, key=lambda r: STAGE_ORDER.index(r["stage"]))["stage"]
+        stats.append((line_id, len(rows), ceiling))
+        for r in rows:
+            out_rows.append([line_id, r["stage"], str(r["num"]),
+                             ";".join(str(p) for p in r["parents"]),
+                             r["rule"], BEDTIME[r["stage"]], by_num[r["num"]]["name"]])
+
+    for lid, n, ceil in stats:
+        print(f"{lid:16s} {n:3d} forms   ceiling {ceil}")
+    print(f"{len(stats)} lines curated, {len(out_rows)} rows"
+          f" (+{len(kept_rows)} hand-curated kept)")
+    if write:
+        import io
+        buf = io.StringIO()
+        w = csv.writer(buf, lineterminator="\n")
+        w.writerow(header)
+        w.writerows(kept_rows)
+        w.writerows(out_rows)
+        open(LINES_CSV, "w").write(buf.getvalue())
+        print("lines.csv written")
+
+
+if __name__ == "__main__":
+    main(write="--write" in sys.argv)

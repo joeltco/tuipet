@@ -100,6 +100,25 @@ def line_for_hatch(dex):
     return ""
 
 
+def canonical_root(dex):
+    """(root_dex, line_id) a hatching `dex` should become.  A dex that IS a
+    root maps to itself; a duplicate twin (the corpus keeps 2-3 dexes per Baby
+    name; the mystery-egg pools hatch the sub-1410 twins) maps to the root
+    sharing its NAME.  (None, '') when no line claims the name -- with every
+    egg curated (arc 5) that means legacy data only."""
+    lid = line_for_hatch(dex)
+    if lid:
+        return dex, lid
+    _, by_num = data.load_sprites()
+    rec = by_num.get(dex)
+    if rec:
+        for lid, line in load_lines().items():
+            root = by_num.get(line["root"])
+            if root and root["name"] == rec["name"]:
+                return line["root"], lid
+    return None, ""
+
+
 def active(pet):
     """This pet evolves by line rules: hatched from a line egg AND still inside
     the line (a jogress/fusion that leaves the subtree falls back to the corpus

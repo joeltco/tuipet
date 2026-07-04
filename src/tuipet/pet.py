@@ -688,8 +688,15 @@ class Pet:
         if target is None or target not in by_num or data.is_placeholder(target):
             fresh = [n for n, r in by_num.items() if r["stage"] == "Fresh" and not data.is_placeholder(n)]
             target = random.choice(fresh)
+        # arc 5: every hatch canonicalizes to a line root -- duplicate twin
+        # dexes (the mystery-egg pools) become the root carrying their name.
+        # The fuzzy corpus engine receives no NEW pets; it remains for legacy
+        # saves and for pets jogressed out of their line.
+        croot, lid = lines_mod.canonical_root(target)
+        if croot is not None:
+            target = croot
         self.evolve_to(target)
-        self.line_id = lines_mod.line_for_hatch(target)   # a line egg binds the pet to its line for life
+        self.line_id = lid                    # binds the pet to its line for life
         self.hatching = False
         self._rand_personality_traits()               # fix disposition/glutton/restless for life
         # (the X-Antibody birth roll is retired -- LINES_SPEC §4: X-forms are
