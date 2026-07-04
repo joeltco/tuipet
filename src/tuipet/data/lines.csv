@@ -12,3 +12,18 @@ ver1,Ultimate,237,124;95,WIN 12/15,22:00,Mamemon
 ver1,Ultimate,192,116,WIN 12/15,22:00,Monzaemon
 ver1,Mega,297,220,CM 0-2,23:00,BlitzGreymon
 ver1,Mega,300,237,CM 0-2,22:00,BanchoMamemon
+verX,Fresh,1426,egg,TIME,20:00,Dodomon
+verX,InTraining,1479,1426,TIME,20:00,Dorimon
+verX,Rookie,41,1479,CM 0-2,21:00,Dorumon
+verX,Rookie,829,1479,CM 3+,21:00,Agumon X
+verX,Champion,86,41,"CM 0-2, TR 8+",22:00,Dorugamon
+verX,Champion,745,41,TIME,21:00,DexDorugamon corrupted catch-all
+verX,Champion,851,829,"CM 0-2, LV 2+",22:00,Greymon X
+verX,Champion,997,829,TIME,21:00,Numemon X catch-all; punishment leaf
+verX,Ultimate,258,86,WIN 12/15,23:00,DoruGreymon
+verX,Ultimate,747,745,BTL 10+,23:00,DexDorugreymon feral: fights count wins do not
+verX,Ultimate,845,851,"WIN 12/15, KO6 1+",23:00,MetalGreymon X
+verX,Mega,330,258,"CM 0-2, KO6 3+, AREA 3",23:00,Alphamon
+verX,Mega,329,258,KO6 3+,23:00,Dorugoramon beast road
+verX,Mega,746,747,BTL 15+,23:00,DexDorugoramon
+verX,Mega,856,845,CM 0-2,23:00,WarGreymon X

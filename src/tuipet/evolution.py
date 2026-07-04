@@ -289,10 +289,6 @@ def _failed_form(pet, by_num):
     return random.choice(failed) if failed else None
 
 
-def _is_xform(num):
-    return data.load_requirements().get(num, {}).get("xantibody", "None") in ("Induced", "Natural")
-
-
 def item_select(pet, item_id):
     """Forms reachable by USING item `item_id`: graph targets whose EvolItemID == item_id
     and whose care gates pass (the item is an extra gate, not a bypass). Best by fulfilled."""
@@ -321,17 +317,18 @@ def item_direct(pet, dexnum):
 def select(pet):
     """Return the chosen evolution target num, or None.
 
-    Normal evolution climbs a stage; with the X-Antibody, an X-form is also
-    reachable -- including a same-stage reformat (e.g. Agumon -> Agumon X)."""
+    Normal evolution climbs a stage.  (The X-Antibody steering and same-stage
+    X reformat are retired -- LINES_SPEC §4: X-forms belong to X egg lines;
+    an antibody-carrying corpus pet still passes check()'s Induced gate, but
+    the antibody no longer hijacks the choice.)"""
     _, by_num = data.load_sprites()
-    has_xa = getattr(pet, "x_antibody", "None") != "None"
     targets = []
     for t in data.load_evolutions().get(pet.num, []):
         if t not in by_num or t == pet.num:
             continue
         if data.is_placeholder(t):
             continue
-        if by_num[t]["stage"] != pet.stage or (has_xa and _is_xform(t)):
+        if by_num[t]["stage"] != pet.stage:
             targets.append(t)
     valid = [t for t in targets if check(pet, t)]
     if not valid:
@@ -346,10 +343,6 @@ def select(pet):
         if stage_up:
             return max(stage_up, key=lambda t: fulfilled(pet, t))
         return None
-    if has_xa:
-        xvalid = [t for t in valid if _is_xform(t)]
-        if xvalid:
-            valid = xvalid          # the X-Antibody steers evolution to an X-form
     best = max(fulfilled(pet, t) for t in valid)
     top = [t for t in valid if abs(fulfilled(pet, t) - best) < 1e-9]
     if len(top) > 1:

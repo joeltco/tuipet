@@ -81,6 +81,11 @@ def can_jogress(pet):
         return "Too young to jogress."
     if pet.asleep:
         return "zzz... asleep"
+    # Pen20 (LINES_SPEC §6): a jogress takes FULL DP -- earned with protein
+    # feeds (+1 each) or a night's sleep (3 game-hours refills the meter)
+    from .pet import DP_MAX
+    if getattr(pet, "dp", 0) < DP_MAX:
+        return f"DP {getattr(pet, 'dp', 0)}/{DP_MAX} — protein or a night's sleep."
     # canJogress -> checkRefused(energyChange=-0.66): a non-compliant pet may balk,
     # and one that can't afford the fusion's energy auto-refuses
     refused = pet.check_refused(energy_change=-JOGRESS_ENERGY_COST)
@@ -124,5 +129,6 @@ def fuse(pet, target_num):
     # rounds TOWARD ZERO on the negative product (max 24 drains 15, not 16)
     import math
     pet._set_energy(pet.energy + math.ceil(-JOGRESS_ENERGY_COST * pet.max_energy))
+    pet.dp = 0                  # Pen20: the fusion spends the whole DP meter
     pet.evolve_to(target_num)   # special evolution; partner supplies the DNA
     return f"Jogress! Fused into {name}!"

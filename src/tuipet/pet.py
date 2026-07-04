@@ -302,6 +302,8 @@ FULL_HUNGER = 4                         # FullHunger: a satisfied stomach (4 hea
 STOMACH_CAPACITY = 4                    # StomachCapacity: the applyFood fullness-modifier divisor
 OVEREAT_LIMIT = 5                       # OvereatLimit: a glutton may fill one heart past full
 CALORIE_LIMIT = 4                       # CalorieLimit (buffer half-range)
+DP_MAX = 4                              # Pen20 DP meter: full (4) required to jogress;
+DP_SLEEP_MIN = 45.0                     # +1 per 45 game-min asleep (3h sleep = a full refill)
 FOOD_WEIGHT_CHANGE = 1                  # FoodWeightChange: calories rising while positive fattens
 DIRTY_EATING_MOOD_DEC = 10              # DirtyEatingMoodDec (a meal amid the filth)
 DIRTY_EATING_WORSE_CHANCE = 16          # DirtyEatingWorseSickChance (% per pile)
@@ -473,7 +475,6 @@ BANDAGE_HOURS = 60                       # BandageHours (game-min the bandage in
 # birth roll or the X-Antibody / X-Program items.  (DVPet birth is 1/1000; bumped
 # for tuipet so it is an occasional surprise rather than never seen.)
 X_COUNT_MAX = 3600.0
-X_BIRTH_TARGET, X_BIRTH_BOUND = 1, 50
 _XA_ORDER = {"None": 0, "Temporary": 1, "Permanent": 2, "XProgram": 3}
 
 # Personality: DVPet's 3x3x3 table over (disposition, glutton, restless), each in
@@ -570,6 +571,7 @@ class Pet:
     stage_battles: int = 0          # battles fought this stage
     battle_log: list = _dcf(default_factory=list)   # last-15 results 1/0 (persists across evolution; Pen20)
     mega_kills: int = 0             # lifetime Ultimate/Mega-class foes beaten (DMX KO6 gate)
+    dp: int = 0                     # Pen20 DP meter 0..4: full to jogress; protein +1, 3h sleep refills
     bits: int = 0
     trophies: int = 0
     trophies_won: dict = _dcf(default_factory=dict)   # trophy id -> season won (per-season earned)
@@ -690,8 +692,8 @@ class Pet:
         self.line_id = lines_mod.line_for_hatch(target)   # a line egg binds the pet to its line for life
         self.hatching = False
         self._rand_personality_traits()               # fix disposition/glutton/restless for life
-        if self.x_antibody == "None" and random.randint(0, X_BIRTH_BOUND - 1) < X_BIRTH_TARGET:
-            self._set_xantibody("Permanent")          # born a natural X-Antibody carrier
+        # (the X-Antibody birth roll is retired -- LINES_SPEC §4: X-forms are
+        # reached by hatching X eggs, not won in a lottery at birth)
 
     def advance_hatch(self, dt):
         """Advance the 3s hatch animation at frame cadence (10 Hz) so every DVPet
@@ -867,6 +869,12 @@ class Pet:
                 self._lights_t = float("-inf")       # AfterMistakeMinutesPostponed: once/night
                 self.care_mistakes += 1
                 self.mistake_day += 1  # MistakeIncMissedDayChange
+        # Pen20 DP: sleep restores jogress power -- 3 game-hours = a full meter
+        if self.dp < DP_MAX:
+            self._dp_t = getattr(self, "_dp_t", 0.0) + dt
+            if self._dp_t >= DP_SLEEP_MIN:
+                self._dp_t -= DP_SLEEP_MIN
+                self.dp += 1
         # asleep enthusiasmLapse: spirit settles toward 0 while resting
         self._enth_lapse_t = getattr(self, "_enth_lapse_t", 0.0) + dt
         if self._enth_lapse_t >= 59:
@@ -2308,6 +2316,8 @@ class Pet:
         cap = OVEREAT_LIMIT if self.glutton > 0 else FULL_HUNGER
         self.hunger = _clamp(self.hunger + scaled("hunger"), 0, cap)
         self.strength = _clamp(self.strength + scaled("strength"), 0, 4)   # Protein builds Effort/DP
+        if food.get("strength", 0) > 0:
+            self.dp = min(DP_MAX, self.dp + 1)   # Pen20: 4 protein items refill the DP meter
         self._set_energy(self.energy + scaled("energy"))
         self._set_mood(self.mood + scaled("mood")           # foods.csv intrinsic mood (Cake +60, Veg -10)
                        + int(math.ceil(self._personality_mood(food) * modifier)))
