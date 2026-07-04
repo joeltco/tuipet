@@ -1102,6 +1102,13 @@ def load_egg_unlock():
             "mood": _int(r[20]) if (_int(r[20]) is not None and _int(r[20]) >= 0) else None,
             "desc": (r[21] or "").strip(),
             "can_perm": r[22].strip() == "TRUE",
+            # tuipet achievement columns (LINES_SPEC §7): unlocks that tell the
+            # story of the egg -- lifetime wins (Sakumon = the battle egg),
+            # album breadth (Petitmon = the collector egg), Mega-class kills
+            # (Dodomon = the X egg)
+            "wins": _int(r[23]) if (len(r) > 23 and _int(r[23]) is not None and _int(r[23]) >= 0) else None,
+            "album_n": _int(r[24]) if (len(r) > 24 and _int(r[24]) is not None and _int(r[24]) >= 0) else None,
+            "mega": _int(r[25]) if (len(r) > 25 and _int(r[25]) is not None and _int(r[25]) >= 0) else None,
         }
     return rules
 

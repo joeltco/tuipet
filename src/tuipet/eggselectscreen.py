@@ -1,12 +1,13 @@
-"""Choose-your-egg: a smooth horizontal carousel of full-size egg sprites. Only
-eggs you can HATCH appear — the base starters plus everything unlocked through play
-(generation, album/history, X-Antibody, reached stage, maps cleared, tournament
-trophies, previous-generation traits; see data.load_egg_unlock). ←→ glide, ENTER
-hatches the centred egg, ESC backs out."""
+"""Choose-your-egg: a smooth horizontal carousel of full-size egg sprites.
+Hatchable eggs lead; every other egg rides along as a SILHOUETTE with its live
+unlock progress (LINES_SPEC §7: a goal you cannot see is not a goal) — buyable
+ones point at the town shop, locked ones show how close you are. ←→ glide,
+ENTER hatches the centred egg, ESC backs out."""
 from __future__ import annotations
 from . import egg as egg_mod
 from . import menu
 from . import persistence
+from .digicorescreen import silhouette
 from .render import render_scene
 from .theme import LCD_ON, LCD_BG
 
@@ -27,16 +28,18 @@ class EggSelectPanel:
         for i in egg_mod.auto_owned(prog, owned):     # newly-permanent eggs stick
             persistence.egg_own(i)
             owned.add(i)
+        self.prog = prog
         self.states = egg_mod.egg_states(prog, owned)
         self.unlocked = egg_mod.hatchable_eggs(prog, owned)    # owned + temp -- only eggs you can hatch
         self.total = egg_mod.count()
         self.hint = egg_mod.locked_hint(prog, owned)
         self.locked = sum(1 for s, _ in self.states.values() if s == "locked")
         self.wins = prog["wins"]
-        # the win-gated mystery eggs ride the carousel even locked -- a goal you
-        # cannot see is not a goal; ENTER on one reports the gate instead of hatching
-        self.carousel = self.unlocked + [i for i in sorted(egg_mod.win_eggs())
-                                         if self.states.get(i, ("", 0))[0] == "locked"]
+        # every egg rides the carousel -- hatchable first, then buyable (the shop
+        # pointer), then locked silhouettes with live progress (LINES_SPEC §7)
+        self.carousel = (self.unlocked
+                         + [i for i, (s, _) in sorted(self.states.items()) if s == "buyable"]
+                         + [i for i, (s, _) in sorted(self.states.items()) if s == "locked"])
         self.n = len(self.carousel)
         self.i = 0               # cursor opens on the first egg (position 1/N)
         self.pos = 0.0           # continuous carousel target
@@ -52,13 +55,15 @@ class EggSelectPanel:
         """Recompute unlock state after a permanent change (purchase / password)."""
         prog = persistence.get_progress()
         owned = persistence.get_eggs_owned()
+        self.prog = prog
         self.states = egg_mod.egg_states(prog, owned)
         self.unlocked = egg_mod.hatchable_eggs(prog, owned)
         self.hint = egg_mod.locked_hint(prog, owned)
         self.locked = sum(1 for st, _ in self.states.values() if st == "locked")
         self.wins = prog["wins"]
-        self.carousel = self.unlocked + [i for i in sorted(egg_mod.win_eggs())
-                                         if self.states.get(i, ("", 0))[0] == "locked"]
+        self.carousel = (self.unlocked
+                         + [i for i, (s, _) in sorted(self.states.items()) if s == "buyable"]
+                         + [i for i, (s, _) in sorted(self.states.items()) if s == "locked"])
         self.n = len(self.carousel)
         self.i = max(0, min(self.i, self.n - 1))
 
@@ -95,10 +100,15 @@ class EggSelectPanel:
             self.i = int(self.pos) % self.n if self.n else 0
         elif k in ("enter", "space"):
             idx = self.carousel[self.i]
-            need = egg_mod.win_gate(idx)
-            if need is not None and self.states.get(idx, ("", 0))[0] == "locked":
+            state, price = self.states.get(idx, ("owned", 0))
+            if state == "locked":
                 self.sfx = "error"
-                self._flash(f"Sealed — {need - self.wins} more wins.")
+                prog_txt = egg_mod.unlock_progress(idx, self.prog)
+                self._flash(f"Sealed — {prog_txt}" if prog_txt else "Sealed.")
+                return None
+            if state == "buyable":
+                self.sfx = "error"
+                self._flash(f"License: {price} bits — at the town shop.")
                 return None
             return ("done", idx)                       # hatch the centred egg
         elif k == "escape":
@@ -134,17 +144,22 @@ class EggSelectPanel:
         return self.carousel[pos % self.n]
 
     def _frame(self, pos, center):
-        fr = egg_mod.record(self._egg(pos))["frames"]
+        idx = self._egg(pos)
+        fr = egg_mod.record(idx)["frames"]
+        if self.states.get(idx, ("owned", 0))[0] == "locked":
+            return silhouette(fr[0])                   # a sealed egg keeps its shape only
         if center and self.scroll == self.pos:         # settled: idle wobble on the chosen egg
             return fr[(self.frame_i // 5) % 2] or fr[0]
         return fr[0]
 
     def _note(self, idx):
-        state = self.states.get(idx, ("owned", 0))[0]
+        state, price = self.states.get(idx, ("owned", 0))
         name = egg_mod.hatch_name(idx)
-        need = egg_mod.win_gate(idx)
-        if need is not None and state == "locked":
-            return f"sealed — {min(self.wins, need)}/{need} lifetime wins"
+        if state == "locked":
+            prog_txt = egg_mod.unlock_progress(idx, self.prog)
+            return f"sealed — {prog_txt}" if prog_txt else "sealed"
+        if state == "buyable":
+            return f"{name} — license {price}b at the shop"
         if state == "temp":
             return "hatches: %s  (this gen only)" % name
         return "hatches: %s" % name

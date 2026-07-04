@@ -19,7 +19,8 @@ def _prog_for(rule):
     which is why reachability is proven per-egg, not with one global maxed state)."""
     p = {
         "album": set(range(0, 4000)),
-        "wins": 99999, "max_gen": 99, "max_stage": 5, "xanti_ever": True,
+        "wins": 99999, "mega_kills": 99999, "max_gen": 99, "max_stage": 5,
+        "xanti_ever": True,
         "maps": set(range(0, 200)), "tourneys": set(range(0, 200)),
         "last_field": "None", "last_attr": "None", "last_elem": "None",
         "last_mood": 99999, "last_obed": 99999, "last_xanti": True,

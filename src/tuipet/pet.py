@@ -2538,6 +2538,7 @@ class Pet:
                 self.levels_fought.append(_enemy_level(enemy))
                 if enemy.get("stage") in ("Ultimate", "Mega"):
                     self.mega_kills += 1                 # LINES_SPEC KO6 gate (DMX Stage-VI kills)
+                    _persist.mega_kills_add(1)           # ...and the lifetime X-egg progress
             self._open_praise()                          # a win is praiseworthy (setPraise)
             self._set_mood(self.mood + 10)               # BattleWonMoodInc
             # over/underpowered adjustments (battleEnd compareStage + HP gates):

@@ -80,6 +80,15 @@ def wins_add(n=1):
     return prog["wins"]
 
 
+def mega_kills_add(n=1):
+    """Lifetime Mega/Ultimate-class foes felled (gates the X egg; LINES_SPEC §7)."""
+    d = load_settings()
+    prog = d.setdefault("progress", {})
+    prog["mega_kills"] = int(prog.get("mega_kills", 0)) + int(n)
+    save_settings(d)
+    return prog["mega_kills"]
+
+
 # --- cross-generation egg-unlock progress (DVPet eggUnlock.csv signals) -----------
 # These outlive any single pet and feed egg.evaluate(): permanent milestones (album,
 # wins, max generation/stage, maps cleared, tournament trophies, X-Antibody ever) plus
@@ -196,6 +205,7 @@ def get_progress():
     return {
         "album": set(prog.get("album", [])),
         "wins": int(prog.get("wins", 0)),
+        "mega_kills": int(prog.get("mega_kills", 0)),
         "max_gen": int(prog.get("max_gen", 1)),
         "max_stage": int(prog.get("max_stage", 0)),
         "xanti_ever": bool(prog.get("xanti_ever", False)),

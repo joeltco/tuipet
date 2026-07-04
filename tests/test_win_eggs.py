@@ -43,7 +43,7 @@ def test_sealed_eggs_ride_the_carousel_and_refuse_enter():
     assert 46 not in pan.unlocked                        # ...but not hatchable
     pan.i = pan.carousel.index(46)
     assert pan.key("enter") is None                      # sealed: no hatch
-    assert "more wins" in pan.msg
+    assert "lifetime wins 0/50" in pan.msg      # the arc-3 live-progress wording
     assert "0/50" in pan._note(46)
 
 

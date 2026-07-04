@@ -104,6 +104,13 @@ def _conditions_met(rule, prog):
     from . import data
     if rule["gen"] is not None and prog["max_gen"] < rule["gen"]:
         return False
+    # tuipet achievement gates (LINES_SPEC §7): the unlock tells the egg's story
+    if rule.get("wins") is not None and prog["wins"] < rule["wins"]:
+        return False
+    if rule.get("album_n") is not None and len(prog["album"]) < rule["album_n"]:
+        return False
+    if rule.get("mega") is not None and prog.get("mega_kills", 0) < rule["mega"]:
+        return False
     if rule["stage"] is not None:
         want = data.STAGE_ORDER.index(rule["stage"]) if rule["stage"] in data.STAGE_ORDER else 99
         if prog["max_stage"] < want:
@@ -136,27 +143,17 @@ def _conditions_met(rule, prog):
     return True
 
 
-def _fallback_pool():
-    """Tuipet-only eggs absent from eggUnlock.csv (excluding the win-eggs), in order."""
-    from . import data
-    rules = data.load_egg_unlock()
-    return [i for i in range(count())
-            if i not in rules and i not in _WIN_EGGS]
-
-
 def egg_state(idx, prog, owned):
     """('owned'|'buyable'|'temp'|'locked', price) for one egg index."""
     from . import data
     rule = data.load_egg_unlock().get(idx)
-    if rule is None:                                   # tuipet-only egg: simple fallback
-        if idx in owned:
-            return ("owned", 0)
+    if rule is None:                    # the "???" mystery eggs: lifetime-win gates
+        if idx in owned:                # (the old album-size fallback pool is gone --
+            return ("owned", 0)         # it was opaque, and every egg now has a rule)
         need = _WIN_EGGS.get(idx)
         if need is not None:
             return ("owned", 0) if prog["wins"] >= need else ("locked", 0)
-        pool = _fallback_pool()
-        rank = pool.index(idx) if idx in pool else 99
-        return ("owned", 0) if len(prog["album"]) > rank else ("locked", 0)
+        return ("locked", 0)
     if rule["start"] or idx in owned:
         return ("owned", 0)
     if not _conditions_met(rule, prog):
@@ -231,6 +228,28 @@ def win_eggs():
 def win_gate(idx):
     """The lifetime-wins requirement for a win-gated egg (None otherwise)."""
     return _WIN_EGGS.get(idx)
+
+
+def unlock_progress(idx, prog):
+    """A live 'how close am I' line for one LOCKED egg (LINES_SPEC §7) --
+    countable gates show numbers ('lifetime wins 37/50'); the rest fall back
+    to the rule's description.  '' when there is nothing useful to say."""
+    from . import data
+    rule = data.load_egg_unlock().get(idx)
+    if rule is None:
+        need = _WIN_EGGS.get(idx)
+        if need is not None:
+            return f"lifetime wins {min(prog['wins'], need)}/{need}"
+        return ""
+    if rule.get("wins") is not None:
+        return f"lifetime wins {min(prog['wins'], rule['wins'])}/{rule['wins']}"
+    if rule.get("album_n") is not None:
+        return f"Digimon raised {min(len(prog['album']), rule['album_n'])}/{rule['album_n']}"
+    if rule.get("mega") is not None:
+        return f"Mega-class felled {min(prog.get('mega_kills', 0), rule['mega'])}/{rule['mega']}"
+    if rule["gen"] is not None:
+        return f"generation {min(prog['max_gen'], rule['gen'])}/{rule['gen']}"
+    return rule.get("desc", "")
 
 
 def locked_hint(prog, owned):
