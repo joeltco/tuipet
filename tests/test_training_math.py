@@ -98,3 +98,35 @@ def test_purse_integer_modifiers_unchanged():
     t.trophy = {"bit_mod": 1}
     t.entrants = [{"stage": "Champion"}] * 7
     assert t._calc_bits() == 7 * 150
+
+
+def test_refused_drill_closes_the_menu_like_canon():
+    """Canon onPreTrain: !canExercise -> _currentMenu = Menu.None + State.Refusing.
+    The old silent stay-in-menu made a refusal look like a DEAD drill (the menu
+    never renders self.flash) -- the 'virus training isn't working' report."""
+    from tuipet import training
+    p = Pet(num=100, stage="Champion", attribute="Vaccine", obedience=0)
+    p.world_seconds = 600.0
+    p.energy = p.max_energy
+    tp = training.TrainingPanel(p)
+    tp.key("right")                                  # select the Virus drill
+    p.check_refused = lambda **kw: True              # force the roll
+    r = tp.key("enter")
+    assert r is not None and r[0] == "done" and "refuses" in r[1]
+    assert tp.phase == "menu"                        # never entered play
+    assert p.anim == "refuse"                        # State.Refusing for the LCD head-shake
+
+
+def test_compliant_start_still_enters_play():
+    from tuipet import training
+    p = Pet(num=100, stage="Champion", attribute="Vaccine", obedience=1000)
+    p.world_seconds = 600.0
+    p.energy = p.max_energy
+    p.check_refused = lambda **kw: False
+    tp = training.TrainingPanel(p)
+    tp.key("right")
+    assert tp.key("enter") is None                   # no close envelope on success
+    assert tp.phase == "play" and tp.gkey == "virus"
+    tp2 = training.TrainingPanel(p)
+    tp2.key("4")                                     # number-key start routes the same
+    assert tp2.phase == "play" and tp2.gkey == "virus"

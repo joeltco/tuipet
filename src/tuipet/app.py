@@ -1898,6 +1898,10 @@ class TuiPetApp(App):
             self.screen_w.start_fx("cheer")
         elif self.pet.anim == "sad":
             self.screen_w.start_fx("jeer")
+        elif self.pet.anim == "refuse":
+            # canon canExercise: _refused -> State.Refusing -- the head-shake plays
+            # back on the LCD after onPreTrain dumps the menu (spit == refuse(); no icon)
+            self.screen_w.start_fx("spit")
         self.repaint()
 
     def action_battle(self):

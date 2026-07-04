@@ -216,9 +216,12 @@ class TrainingPanel:
         # the activity branch (canon: `att != None ? (null,att,...) : (null,null,true..)`)
         attr = GAMES[self.gi][2] if GAMES[self.gi][2] in ("Vaccine", "Data", "Virus") else None
         if self.pet.check_refused(attr=attr):
-            self.flash = f"{self.pet.name} refuses to train!"
+            # canon onPreTrain: !canExercise -> _currentMenu = Menu.None + State.Refusing --
+            # the menu CLOSES and the pet head-shakes on the main LCD.  (The old silent
+            # stay-in-menu made a refusal look like a dead drill.)
+            self.pet._set_anim("refuse", 1.0)
             self.sfx = "refuse"
-            return
+            return ("done", f"{self.pet.name} refuses to train!")
         self.phase = "play"
         self._reset()
         gk = self.gkey
@@ -386,9 +389,9 @@ class TrainingPanel:
                 self.gi = 0            # HP (bottom)
             elif k in ("1", "2", "3", "4"):
                 self.gi = int(k) - 1
-                self._start_game()
+                return self._start_game()          # a refusal closes the menu (canon)
             elif k in ("enter", "space"):
-                self._start_game()
+                return self._start_game()
             elif k in ("escape", "t"):
                 return ("done", None)
             return None
