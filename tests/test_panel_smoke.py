@@ -199,3 +199,19 @@ def test_scene_screens_fit_the_physical_lcd_in_every_state():
     pan = DeathPanel(dead)
     _render(pan)
     assert "R.I.P." in pan.strip()
+
+
+def test_feed_screen_surfaces_the_dp_meter():
+    """Audit 2026-07-04: a strength food banks +1 DP toward a jogress (Pen20),
+    but nothing on the feed screen said so -- protein's whole point was
+    invisible.  The header carries the meter; strength foods carry the tag."""
+    from tuipet import data
+    from tuipet.feedscreen import FeedPanel, _effect_line
+    p = _pet()
+    p.dp = 2
+    pan = FeedPanel(p)
+    assert "DP 2/4" in pan.text().plain
+    prot = next(f for f in data.load_foods() if f.get("strength", 0) > 0)
+    assert "DP+1" in _effect_line(prot)
+    plain = next(f for f in data.load_foods() if f.get("strength", 0) == 0 and f.get("show"))
+    assert "DP" not in _effect_line(plain)

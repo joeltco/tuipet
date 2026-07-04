@@ -36,7 +36,9 @@ def _effect_line(food):
     if int(food.get("hunger", 0)) > 0:
         bits.append(f"hunger +{int(food['hunger'])}")
     if int(food.get("strength", 0)) > 0:
-        bits.append(f"strength +{int(food['strength'])}")
+        # a strength food also banks +1 DP toward a jogress (Pen20 meter) --
+        # unlabelled, protein's whole point was invisible (audit 2026-07-04)
+        bits.append(f"strength +{int(food['strength'])} DP+1")
     if int(food.get("energy", 0)):
         bits.append(f"energy {int(food['energy']):+d}")
     if int(food.get("mood", 0)):
@@ -101,7 +103,9 @@ class FeedPanel:
 
     def text(self):
         p = self.pet
-        out = menu.header("FEED", f"hunger {p.hunger}/4  str {p.strength}/4")
+        from .pet import DP_MAX
+        out = menu.header("FEED", f"hunger {p.hunger}/4  str {p.strength}/4  "
+                                  f"DP {getattr(p, 'dp', 0)}/{DP_MAX}")
         if not self.options:
             out.append_text(menu.blanks(2))
             out.append_text(menu.note("The pantry is empty."))
