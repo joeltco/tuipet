@@ -27,6 +27,7 @@ class TournamentPanel(menu.SubHost):
         self.cursor = tournament._hour(pet)        # start the list on NOW
         self.msg = "One cup per hour — only NOW is open."
         self.phase = "select"
+        self.tree_view = False       # the bracket page (B toggles; shown between rounds)
 
     def anim(self):
         if self.sub_anim():          # SubHost: delegate + sfx bubble
@@ -39,6 +40,7 @@ class TournamentPanel(menu.SubHost):
             if r is not None and r[0] == "done":
                 self.tourney.record(bool(r[1] and r[1].won))
                 self.sub = None
+                self.tree_view = True                   # show the field advancing
                 if self.tourney.over:                   # cup finished this match
                     self.sfx = "champion" if self.tourney.champion else "lose"
             return None
@@ -63,6 +65,7 @@ class TournamentPanel(menu.SubHost):
                     return None
                 self.tourney = Tournament(self.pet, tr)
                 self.phase = "bracket"
+                self.tree_view = True          # the event opens on the field of eight
                 self.sfx = "mischief"          # soundConfig tourneyStart -> mischief.wav
             elif k == "a":
                 # onTourneyAlarm: toggle the wake-me call on this slot's cup
@@ -80,6 +83,15 @@ class TournamentPanel(menu.SubHost):
             return None
         # bracket
         t = self.tourney
+        if k == "b":
+            self.tree_view = not self.tree_view
+            return None
+        if k in ("space", "enter") and self.tree_view and not t.over:
+            self.tree_view = False             # from the field to the faceoff
+            return None
+        if k in ("space", "enter") and t.over and self.tree_view:
+            self.tree_view = False             # from the final tree to the result
+            return None
         if k in ("space", "enter") and not (t.over or self.sub):
             self.sub = BattlePanel(self.pet, t.current_opponent())
         elif k in ("escape", "u"):          # u (the opening key) also closes
@@ -87,6 +99,40 @@ class TournamentPanel(menu.SubHost):
                 t.record(False)             # walking out forfeits: the elimination is real
             return ("done", t.last)
         return None
+
+    def _render_tree(self):
+        """The bracket page: the field of eight and the tree filling in round
+        by round (the entrants always existed in the engine; the player just
+        never SAW the tournament)."""
+        t = self.tourney
+        tree = t.tree
+
+        def nm(e, w):
+            s = (self.pet.name or "YOU") if e == "YOU" else e["name"]
+            return s[:w]
+
+        out = menu.bar(t.name, "BRACKET")
+        champ = tree[3][0] if len(tree) > 3 else None
+        for i in range(8):
+            c1 = nm(tree[0][i], 10)
+            c2 = c3 = ""
+            if i % 2 == 0 and len(tree) > 1:
+                c2 = nm(tree[1][i // 2], 10)
+            if i in (0, 4) and len(tree) > 2:
+                c3 = nm(tree[2][i // 4], 10)
+                if champ is not None and tree[2][i // 4] == champ:
+                    c3 += " ★"
+            you = (tree[0][i] == "YOU" or c2 and tree[1][i // 2] == "YOU"
+                   or c3 and tree[2][i // 4] == "YOU")
+            style = INK_B if you else INK
+            out.append(" %-11s%-11s%s\n" % (c1, c2, c3),
+                       style=style if you else (INK if c1 else DIM))
+        out.append_text(menu.note(t.last))
+        if t.over:
+            out.append_text(menu.footer("SPACE result   ESC leave"))
+        else:
+            out.append_text(menu.footer("SPACE to the %s   ESC forfeit" % t.round_name.lower()))
+        return out
 
     def _frames(self, num, role="idle"):
         rec = data.load_sprites()[1][num]
@@ -117,6 +163,8 @@ class TournamentPanel(menu.SubHost):
             return out
         # bracket
         t = self.tourney
+        if self.tree_view:
+            return self._render_tree()
         bgimg = self.pet.background()
         on = SIL_DAY if bgimg else LCD_ON   # never white (paint() rule)
         if t.over:

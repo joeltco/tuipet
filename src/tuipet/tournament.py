@@ -63,14 +63,26 @@ def _hour(pet):
     return int((pet.world_seconds % DAY_LENGTH) / DAY_LENGTH * 24)
 
 
-def stage_by_age(pet):
-    """Trophy.getStageByAge: an open cup's default field follows the pet's age
-    (<=3d Rookie ... <=12d Mega); past that, None -> a Mega-only field."""
-    d = _age_days(pet)
-    for st in _TIERS:
-        if d <= TOURNEY_AGES[st]:
-            return st
+def pet_tier(pet):
+    """The pet's cup tier by STAGE.  Canon (Trophy.getStageByAge) keyed this to
+    age-days because its clock made age and stage equivalent; the 2026-07 pacing
+    rebuild compressed growth ~4x, leaving age-tiered cups one tier BEHIND the
+    pet for its whole growth arc.  Stage is the truth the tier stood for.
+    None = a Mega (the open field + the max-bits purse, like canon's >12d)."""
+    s = pet.stage
+    if s in ("Egg", "Fresh", "InTraining", "Rookie"):
+        return "Rookie"
+    if s in ("Champion", "Ultimate"):
+        return s
     return None
+
+
+_TIER_RANK = {"Rookie": 0, "Champion": 1, "Ultimate": 2, "Mega": 3}
+
+
+def _pet_tier_rank(pet):
+    t = pet_tier(pet)
+    return _TIER_RANK.get(t, 3)          # None (Mega) ranks past everything
 
 
 def _rand_trophy_ids(pet):
@@ -145,7 +157,7 @@ def eligibility(pet, t):
     battle HP in tuipet).  Returns a refusal reason or None."""
     if t["id"] in (pet.fought_today or []) and not t["same_day_retry"]:
         return "Already fought that cup today."
-    if t["age_limit"] and _age_days(pet) > TOURNEY_AGES.get(t["age_limit"], 0):
+    if t["age_limit"] and _pet_tier_rank(pet) > _TIER_RANK.get(t["age_limit"], 3):
         return "Too old for the %s bracket." % t["age_limit"]
     if t["field_req"] and t["field_req"] != getattr(pet, "field", ""):
         return "%s only." % data.pretty_field(t["field_req"])
@@ -176,7 +188,7 @@ def _eligible_forms(pet, trophy):
     enemy overrides (or, absent those, its restrictions / the pet's age tier)."""
     reqs = data.load_requirements()
     _, by_num = data.load_sprites()
-    tier = trophy["enemy_stage"] or trophy["age_limit"] or stage_by_age(pet) or "Mega"
+    tier = trophy["enemy_stage"] or trophy["age_limit"] or pet_tier(pet) or "Mega"
     out = []
     for num, rec in by_num.items():
         if rec["stage"] in ("Egg", "Fresh", "InTraining") or rec["stage"] != tier:
@@ -249,7 +261,7 @@ class Tournament:
         self.reward_bits = 0
         pool = _eligible_forms(pet, trophy)
         open_mega = not trophy["age_limit"] and not trophy["enemy_stage"] \
-            and stage_by_age(pet) is None
+            and pet_tier(pet) is None
         # randomEnemies draws WITH replacement (duplicates are canon)
         if not pool:                               # no exact match in the dex: relax the
             relaxed = dict(trophy, enemy_elem="")  # element, then the field/attr walls
@@ -271,6 +283,7 @@ class Tournament:
         self.player_i = random.randrange(8)
         self.bracket.insert(self.player_i, "YOU")
         self.results = []
+        self.tree = [list(self.bracket)]     # round-by-round history for the bracket page
         self.last = "%s — 8 enter, one leaves with the trophy." % self.name
 
     @property
@@ -301,8 +314,8 @@ class Tournament:
         total = 0
         for e in self.entrants:
             base = TOURNEY_BITS.get(e["stage"], 0)
-            if e["stage"] == "Mega" and _age_days(self.pet) > TOURNEY_AGES["Mega"]:
-                base = TOURNEY_MAX_BITS
+            if e["stage"] == "Mega" and pet_tier(self.pet) is None:
+                base = TOURNEY_MAX_BITS      # a Mega pet's open field pays the max purse
             # canon truncates the RUNNING total each step ((int)(bits + term)):
             # a 1.1-modifier all-Rookie field pays 959, not the float-sum's 962
             # (identical IEEE doubles Java-side -- the halves floor away per step)
@@ -348,9 +361,11 @@ class Tournament:
             if self.trophy["food_id"] >= 0 and self.trophy["food_amt"] > 0:
                 self.pet.add_item("f:%d" % self.trophy["food_id"], self.trophy["food_amt"]); extras.append("food")
             tail = (" + " + "/".join(extras)) if extras else ""
+            self.tree.append(["YOU"])                     # the top of the bracket
             self.last = "CHAMPION! +%db%s + trophy!" % (self.reward_bits, tail)
         else:
             self._resolve_npc_round()
+            self.tree.append(list(self.bracket))          # the field after this round
             beat = " / ".join(self.results[:2])
             self.last = "Won! %s advance too. Now: the %s." % (beat or "The rest", self.round_name)
         return self.last

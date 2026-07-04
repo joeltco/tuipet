@@ -85,11 +85,16 @@ def test_field_and_attribute_restrictions():
     assert tournament.eligibility(p, _trophy(attr_req="Vaccine")) is None
 
 
-def test_age_gate_blocks_the_old():
-    p = _pet("Rookie")
-    p.age_seconds = (TOURNEY_AGES["Rookie"] + 1) * DAY_LENGTH   # 4 days old
-    assert "old" in tournament.eligibility(p, _trophy(age_limit="Rookie")).lower()
-    assert tournament.eligibility(p, _trophy(age_limit="Champion")) is None
+def test_tier_gate_blocks_the_overgrown():
+    # STAGE is the tier truth (2026-07-04: the pacing rebuild broke age-days --
+    # a compressed-clock Champion pub-stomped Rookie cups as a "1.4-day-old")
+    rook = _pet("Rookie")
+    rook.age_seconds = (TOURNEY_AGES["Rookie"] + 1) * DAY_LENGTH   # age is irrelevant now
+    assert tournament.eligibility(rook, _trophy(age_limit="Rookie")) is None
+    champ = _pet("Champion")
+    assert "old" in tournament.eligibility(champ, _trophy(age_limit="Rookie")).lower()
+    assert tournament.eligibility(champ, _trophy(age_limit="Champion")) is None
+    assert tournament.eligibility(champ, _trophy(age_limit="Ultimate")) is None
 
 
 def test_fought_today_blocks_unless_same_day_retry():
@@ -209,3 +214,32 @@ def test_ring_expires_next_hour_and_daily_reset_clears():
     p.world_seconds += DAY_LENGTH               # dailyChange
     tournament.schedule(p)
     assert p.tourney_alarm == -1
+
+
+def test_bracket_tree_records_every_round():
+    random.seed(4)
+    p = _pet("Rookie")
+    tm = Tournament(p, _trophy())
+    assert [len(r) for r in tm.tree] == [8]
+    tm.record(True)
+    assert [len(r) for r in tm.tree] == [8, 4]
+    tm.record(True)
+    assert [len(r) for r in tm.tree] == [8, 4, 2]
+    tm.record(True)
+    assert [len(r) for r in tm.tree] == [8, 4, 2, 1] and tm.tree[3] == ["YOU"]
+
+
+def test_bracket_page_renders_and_toggles():
+    from tuipet.tournamentscreen import TournamentPanel
+    random.seed(4)
+    p = _pet("Rookie")
+    p.name = "Rookling"
+    pan = TournamentPanel(p)
+    pan.tourney = Tournament(p, _trophy())
+    pan.phase, pan.tree_view = "bracket", True
+    txt = pan.text().plain
+    assert "BRACKET" in txt and "Rookling" in txt   # the field of eight, you included
+    pan.key("space")                                # onward to the faceoff
+    assert not pan.tree_view
+    pan.key("b")                                    # B recalls the tree any time
+    assert pan.tree_view
