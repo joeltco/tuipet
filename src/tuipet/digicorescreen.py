@@ -126,6 +126,26 @@ def _evo_rows(pet):
     return rows
 
 
+def _trophy_rows(pet):
+    """The trophy room: this life's cups (label + the season they fell) topped
+    by the career totals -- lifetime cups persist across generations."""
+    from tuipet import tournament as _t
+    from tuipet import persistence as _p
+    rows = [("This life", "\u2605" * min(pet.trophies, 12) or "none yet")]
+    try:
+        career = len(_p.get_progress().get("tourneys", ()) or ())
+    except Exception:
+        career = 0
+    rows.append(("Career", f"{career} cup(s), all generations"))
+    won = sorted((getattr(pet, "trophies_won", None) or {}).items())
+    for tid, season in won[:6]:                     # keep the page at 9 rows max
+        tr = _t.trophy_by_id(tid)
+        rows.append((_t.trophy_label(tr)[:12] if tr else f"cup {tid}", season))
+    if len(won) > 6:
+        rows.append(("…", f"+{len(won) - 6} more"))
+    return rows
+
+
 def build_pages(pet):
     h = pet.habitat_obj()
     aff = pet._affinity()
@@ -173,6 +193,7 @@ def build_pages(pet):
             ("Ideal", f"{pet.ideal_temp[0]}-{pet.ideal_temp[1]}°"),
         ]),
         ("PERSON", person),
+        ("TROPHIES", _trophy_rows(pet)),
         ("EVOLVES", _evo_rows(pet)),
     ]
 

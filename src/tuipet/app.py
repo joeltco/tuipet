@@ -1369,12 +1369,17 @@ class TuiPetApp(App):
                                          "[dim]press ENTER[/]", "[dim]to begin[/]"])
         elif isinstance(self.mode, eggselectscreen.EggSelectPanel):
             m = self.mode
-            idx = m.unlocked[m.i] if m.unlocked else 0
+            # arc-3 carousel = hatchable + buyable + LOCKED (m.unlocked is only
+            # the first stretch -- indexing it by m.i crashed past the hatchable
+            # eggs; 2026-07-04 Termux report)
+            idx = m.carousel[m.i] if m.carousel else 0
             state = m.states.get(idx, ("owned", 0))[0]
-            badge = {"temp": "[dim]this gen only[/]"}.get(state, "[dim]ready[/]")
-            self._status_card("New Egg", [f"[dim]{m.i + 1} of {m.n} available[/]",
+            badge = {"temp": "[dim]this gen only[/]", "locked": "[dim]sealed[/]",
+                     "buyable": "[dim]license at the shop[/]"}.get(state, "[dim]ready[/]")
+            shown = "???" if state == "locked" else egg_mod.hatch_name(idx)
+            self._status_card("New Egg", [f"[dim]{m.i + 1} of {m.n}[/]",
                                           f"[dim]{m.locked} still locked[/]", "",
-                                          "Destined to hatch", f"  [b]{egg_mod.hatch_name(idx)}[/]",
+                                          "Destined to hatch", f"  [b]{shown}[/]",
                                           f"  {badge}", "",
                                           "[dim]←→ browse  ENTER pick[/]"])
         elif (painter := self._status_painter()) is not None:

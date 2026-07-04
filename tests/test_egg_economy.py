@@ -142,3 +142,14 @@ def test_no_user_facing_name_leaks_html_tags():
         e = d.consumable_by_key(k)
         if e:
             assert "<br>" not in e.get("name", "") + e.get("desc", ""), k
+
+
+def test_status_card_index_survives_the_full_carousel():
+    """2026-07-04 Termux crash: the app's egg status card indexed m.unlocked
+    by the carousel cursor -- past the hatchable eggs = IndexError.  Walk the
+    cursor across the WHOLE carousel and resolve the card's index each stop."""
+    pan = _panel()
+    for i in range(pan.n):
+        pan.i = i
+        idx = pan.carousel[pan.i] if pan.carousel else 0
+        assert pan.states.get(idx, ("owned", 0))[0] in ("owned", "temp", "buyable", "locked")

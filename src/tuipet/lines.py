@@ -194,6 +194,20 @@ def select_line(pet):
     return None
 
 
+def win_gate_progress(pet):
+    """(now, need, window) for the pet's nearest WIN gate, or None -- the cup
+    screen shows how tournament fights feed the evolution window."""
+    line = load_lines().get(getattr(pet, "line_id", ""))
+    if not line or pet.num not in line["members"]:
+        return None
+    for row in line["children"].get(pet.num, []):
+        for alt in row["rule"]:
+            for kind, a, b in alt:
+                if kind == "win":
+                    return (sum(pet.battle_log[-b:]), a, b)
+    return None
+
+
 # ---- data-book presentation (digicorescreen) --------------------------------
 
 _TXT = {"cm": "care slips", "tr": "trainings", "of": "overfeeds",

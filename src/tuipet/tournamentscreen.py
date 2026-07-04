@@ -158,6 +158,13 @@ class TournamentPanel(menu.SubHost):
                 return "%02dh %-22s%s %s" % (i, name, extra, mark)
 
             self.cursor = menu.list_window(out, self.sched, self.cursor, 5, fmt)
+            from . import lines as _lines
+            wg = _lines.win_gate_progress(self.pet)
+            if wg:
+                now, need, window = wg
+                mark = " \u2713 ready" if now >= need else ""
+                out.append("  evolution: %d/%d wins (last %d)%s\n" % (now, need, window, mark),
+                           style=INK_B if now >= need else DIM)
             out.append_text(menu.note(self.msg))
             out.append_text(menu.footer("↑↓ browse ENTER enter A alarm ESC out"))
             return out
