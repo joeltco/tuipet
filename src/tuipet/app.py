@@ -614,7 +614,9 @@ class Screen(Static):
         on, bg = PHASE_PALETTE.get(pet.day_phase, (LCD_ON, LCD_BG))
         bgimg = self._background(pet)
         if bgimg:
-            on = SIL_NIGHT if pet.day_phase == "night" else SIL_DAY
+            on = SIL_DAY   # dark silhouette day OR night, same rule as paint() --
+            #                the pet is never white (the old SIL_NIGHT branch washed
+            #                every night-time care fx white)
         step = fx["step"]
         # an Assistant_Lights visit is the one anim that CAUSES the darkness: the
         # room stays lit until the helper reaches the switch (DVPet toggles at the

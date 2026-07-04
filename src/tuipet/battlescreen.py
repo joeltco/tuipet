@@ -272,7 +272,7 @@ class BattlePanel:
         # the habitat background is part of the scene -- the crisp sprites + orbs read fine
         # over it now (the clunk was the sprites/explosion, since fixed), so keep it visible.
         bgimg = self.pet.background()
-        on = SIL_NIGHT if self.pet.day_phase == "night" else (SIL_DAY if bgimg else LCD_ON)
+        on = SIL_DAY if bgimg else LCD_ON   # never white (paint() rule)
         return render_scene(placements, COLS, ROWS, on, LCD_BG, overlay=overlay, bgimg=bgimg)
 
     def _place_one(self, view, rows, xshift=0):

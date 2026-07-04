@@ -117,7 +117,7 @@ class TournamentPanel(menu.SubHost):
         # bracket
         t = self.tourney
         bgimg = self.pet.background()
-        on = SIL_NIGHT if self.pet.day_phase == "night" else (SIL_DAY if bgimg else LCD_ON)
+        on = SIL_DAY if bgimg else LCD_ON   # never white (paint() rule)
         if t.over:
             out = menu.bar(t.name, "RESULT")
             pose = "happy" if t.champion else "tired"

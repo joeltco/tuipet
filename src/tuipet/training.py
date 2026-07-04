@@ -502,7 +502,7 @@ class TrainingPanel:
         # the vaccine/data drills).  The crisp sprites/explosion read fine over it now; only
         # the HP/virus minigames stay on a flat LCD (their own override) for readability.
         bgimg = self.pet.background()
-        on = SIL_NIGHT if self.pet.day_phase == "night" else (SIL_DAY if bgimg else LCD_ON)
+        on = SIL_DAY if bgimg else LCD_ON   # never white (paint() rule)
         return on, bgimg
 
     def _render_play(self, rec):

@@ -246,7 +246,7 @@ class DigiCorePanel:
         """The canon Digicore page: core backdrop + badge + the meter number."""
         p = self.pet
         bgimg = core_background(p)
-        on = SIL_NIGHT if p.day_phase == "night" else (SIL_DAY if bgimg else LCD_ON)
+        on = SIL_DAY if bgimg else LCD_ON   # never white (paint() rule)
         badge = core_badge_key(p)
         overlay = []
         if badge:
