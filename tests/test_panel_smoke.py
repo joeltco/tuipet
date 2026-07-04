@@ -89,3 +89,24 @@ def test_town_and_adventure_panels_draw():
     p.sleep_limit = 9e9
     pan = AdventurePanel(p)
     _walk(pan, ["down", "up"])
+
+
+def test_shop_egg_tab_renders_the_egg_icon():
+    """The egg tab's preview slot draws the REAL egg sprite (audit 2026-07-04):
+    exercise that icon path with a buyable egg so it can never ship broken."""
+    from tuipet import persistence
+    from tuipet.shopscreen import ShopPanel
+    persistence.wins_add(50)               # sandboxed: Sakumon's license unlocks
+    p = _pet()
+    pan = ShopPanel(p)
+    tabs = pan._tabs()
+    assert "egg" in tabs
+    for _ in range(len(tabs)):             # walk to the egg tab, rendering as we go
+        if tabs[pan.tab] == "egg":
+            break
+        pan.key("right")
+        pan.text()
+    assert tabs[pan.tab] == "egg"
+    pan.text()                             # the egg icon path executes
+    pan.key("down")
+    pan.text()
