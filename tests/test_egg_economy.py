@@ -127,3 +127,18 @@ def test_panel_smoke_walks_and_draws():
         pan.key(k)
         pan.anim()
         pan.text()
+
+
+def test_no_user_facing_name_leaks_html_tags():
+    """DVPet's Java CSVs embed <br> in names ("Vaccine<br>Chip G") -- every
+    loader must strip them (2026-07-04: the food loader showed the tag raw in
+    the shop; the shared consumable parser already stripped it)."""
+    from tuipet import data as d
+    for f in d.load_foods():
+        assert "<br>" not in f["name"] + str(f.get("desc", "")), f["name"]
+    for key in list(getattr(d, "_consumables", lambda: {})() or {}) or []:
+        pass  # items ride the shared parser, verified below via a sample
+    for k in ("i:14", "i:32", "i:80", "f:20", "f:21", "f:33"):
+        e = d.consumable_by_key(k)
+        if e:
+            assert "<br>" not in e.get("name", "") + e.get("desc", ""), k

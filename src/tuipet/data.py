@@ -137,7 +137,9 @@ def load_foods():
                 foods.append({
                     "id": fid,
                     "key": f"f:{fid}",
-                    "name": row["Name"],
+                    # DVPet's Java UI embeds <br> line breaks in names
+                    # ("Vaccine<br>Chip G") -- strip like the consumable parser
+                    "name": (row["Name"] or "?").replace("<br>", " "),
                     "hunger": int(row["Hunger"] or 0),
                     "weight": int(row["Weight"] or 0),
                     "health": int(row.get("Health") or 0),   # permanent HP gain (HP Chip)
@@ -1019,8 +1021,8 @@ def load_care_effects():
         except (ValueError, KeyError, TypeError):
             continue
         out[eid] = {
-            "name": (r.get("Name") or "").strip(),
-            "desc": (r.get("Description") or "").strip(),
+            "name": (r.get("Name") or "").replace("<br>", " ").strip(),
+            "desc": (r.get("Description") or "").replace("<br>", " ").strip(),
             "duration": int(r.get("MaxDuration") or 0),
             "end_on_sleep": flag(r.get("EndOnSleepChange")),
             "pause_temp": flag(r.get("PauseTemp")),
