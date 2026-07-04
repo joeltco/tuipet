@@ -81,3 +81,19 @@ def test_town_cup_interstitial_is_a_scene():
     assert tr is not None
     pan.tourney = tmod.Tournament(p, tr)
     assert len(pan.text().plain.split("\n")) >= 15   # faceoff arena, not a text box
+
+
+def test_jogress_scenes_use_the_standard_arena():
+    from tuipet import jogressscreen
+    assert (jogressscreen.ROWS, jogressscreen.FUSE_ROWS) == (12, 12)
+
+
+def test_dna_mash_is_a_staged_scene():
+    from tuipet.dnascreen import DNAPanel
+    p = _pet()
+    pan = DNAPanel(p)
+    pan.phase, pan.bet, pan.mash_f, pan.hits = "mash", 10, 20, 14
+    idle = pan.text()
+    assert len(idle.plain.split("\n")) >= 15   # the arena, not a bare meter
+    pan.key("space")                           # markup, not plain: sprites are colour
+    assert pan.text().markup != idle.markup    # a press visibly moves the pet

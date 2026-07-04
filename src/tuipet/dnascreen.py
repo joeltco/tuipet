@@ -14,7 +14,9 @@ Home menu (DVPet DNA_Validation): Charge / Generate / Stats / Requirements.
 """
 from __future__ import annotations
 import math
-from . import data, menu, evolution
+from . import data, grid, menu, evolution
+from .render import render_scene
+from .theme import LCD_ON, LCD_BG, SIL_DAY
 from .pet import MAX_DNA_INVENTORY, dna_field_for_rate
 
 MASH_TICKS = 100            # DVPet: 100 intervals x 0.1s = the 10s mini-game window
@@ -167,6 +169,7 @@ class DNAPanel:
     def _key_mash(self, k):
         if k in MASH_KEYS:
             self.hits += 1                # locked in until the 10s timer ends
+            self._mash_flash = 3          # the pet visibly throws itself into it
         return None
 
     def _key_result(self, k):
@@ -264,14 +267,27 @@ class DNAPanel:
         return out
 
     def _text_mash(self):
+        # a MINIGAME is a staged arena scene, like the training drills (audit
+        # 2026-07-04 -- this was a bare text meter): the pet stands centre and
+        # visibly throws itself into every press (strike pose, the vaccine
+        # convention); rate/hits ride the gauge line below.
         rate = self._rate()
         field = dna_field_for_rate(rate)
         left = max(0.0, (MASH_TICKS - self.mash_f) / 10.0)
+        p = self.pet
+        flash = getattr(self, "_mash_flash", 0)
+        self._mash_flash = max(0, flash - 1)
+        rec = data.load_sprites()[1][p.num]
+        pose = 6 if (flash > 0 and len(rec["frames"]) > 6 and rec["frames"][6]) else \
+            data.ROLES["idle"][self.frame_i % 2]
+        fr = rec["frames"][pose] or rec["frames"][0]
+        bgimg = p.background()
+        on = SIL_DAY if bgimg else LCD_ON
         out = menu.bar("DNA · GENERATE", "wager %db" % self.bet)
-        out.append_text(menu.note("⚡ MASH  SPACE !"))
-        out.append_text(menu.blanks(1))
-        out.append_text(menu.row(self._meter(rate), False))
-        out.append_text(menu.row("rate %3d    hits %3d" % (rate, self.hits), False))
+        out.append_text(render_scene([grid.center(grid.prep(fr, 24), ph=24)],
+                                     40, 12, on, LCD_BG, bgimg=bgimg))
+        out.append("\n")
+        out.append_text(menu.row("%s rate %3d hits %3d" % (self._meter(rate), rate, self.hits), False))
         out.append_text(menu.row("→ %s" % data.pretty_field(field), False))
         out.append_text(menu.footer("%0.1fs left   mash SPACE!" % left))
         return out

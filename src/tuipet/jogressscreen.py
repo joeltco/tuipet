@@ -6,14 +6,14 @@ from . import data, jogress
 from .render import render_scene
 from . import grid
 
-from .theme import LCD_ON, LCD_BG, INK, INK_B, DIM, SEL  # noqa: F401  (palette names bound for theme.apply propagation)
+from .theme import LCD_ON, LCD_BG, INK, INK_B, DIM, SEL, SIL_DAY  # noqa: F401  (palette names bound for theme.apply propagation)
 from . import menu
-COLS, ROWS = 40, 7
-# the fusing/fused cinematics have no menu list below them, so they get a taller
-# scene: 9 rows == an 18px box -> the full 16px band -> NATIVE 16x16 sprites at
-# the fusion payoff (the pick strip keeps 7 rows to leave room for the partner list)
-FUSE_ROWS = 9
-VISIBLE = 3
+# every phase rides the ONE locked arena over the habitat scenery (audit
+# 2026-07-04 -- the pick strip was a squat 7-row band, the cinematics 9, all
+# on a flat pale LCD while the rest of the game stages its creatures)
+COLS, ROWS = 40, 12
+FUSE_ROWS = 12
+VISIBLE = 2
 FUSE_STEPS = 16
 
 
@@ -57,6 +57,10 @@ class JogressPanel:
             return ("done", self.result_msg or None)
         return None
 
+    def _palette(self):
+        bgimg = self.pet.background()
+        return (SIL_DAY if bgimg else LCD_ON), bgimg   # never white over a bg (paint() rule)
+
     def _sprite(self, num, role="idle"):
         rec = data.load_sprites()[1][num]
         roles = data.ROLES[role]
@@ -77,8 +81,9 @@ class JogressPanel:
             return self._render_fusing(out)
 
         if self.phase == "fused":
+            on, bgimg = self._palette()
             scene = render_scene([grid.center(self._sprite(self.fused["num"], "happy"), ph=FUSE_ROWS * 2)],
-                                 COLS, FUSE_ROWS, LCD_ON, LCD_BG)
+                                 COLS, FUSE_ROWS, on, LCD_BG, bgimg=bgimg)
             out.append_text(scene)
             out.append("\n")
             out.append_text(menu.note(self.result_msg))
@@ -89,8 +94,9 @@ class JogressPanel:
         opt = self.options[self.cursor]
         pet_rows = self._sprite(self.pet.num)
         par_rows = self._sprite(opt["partner_num"]) if opt["partner_num"] else []
+        on, bgimg = self._palette()
         scene = render_scene(grid.faceoff(pet_rows, par_rows, ph=ROWS * 2),
-                             COLS, ROWS, LCD_ON, LCD_BG)
+                             COLS, ROWS, on, LCD_BG, bgimg=bgimg)
         out.append_text(scene)
         out.append("\n")
         self.cursor = menu.list_window(
@@ -115,8 +121,9 @@ class JogressPanel:
         if self.fuse_step >= FUSE_STEPS - 5:                  # a flash as the DNA merges (grid-bounded)
             overlay = [(x, y) for y in range(ph) for x in range(grid.X0, grid.X1)
                        if (x + y + self.fuse_step) % 2 == 0]
+        on, bgimg = self._palette()
         scene = render_scene([(pf, pet_x, True), (rf, par_x, False)],   # face inward as they converge
-                             COLS, FUSE_ROWS, LCD_ON, LCD_BG, overlay=overlay)
+                             COLS, FUSE_ROWS, on, LCD_BG, bgimg=bgimg, overlay=overlay)
         out.append_text(scene)
         out.append("\n")
         out.append_text(menu.note("DNA... connect!"))
