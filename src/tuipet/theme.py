@@ -158,6 +158,16 @@ def themed_bg(frame):
     return v
 
 
+def sprite_halo():
+    """The 1px outline shade sprites wear over ramp-quantized art -- the pet's
+    silhouette ink IS the darkest ramp shade, so it vanished into dark dithered
+    regions (Joel 2026-07-05: 'background is showing the same colors as the
+    mon').  GB games kept sprites readable on busy 4-shade backgrounds exactly
+    this way.  The lightest ramp shade; None on full-colour themes."""
+    ramp = THEMES[_current].get("bg_ramp")
+    return ramp[-1] if ramp else None
+
+
 def _dither_frame(frame, ramp):
     """Contrast-stretch the frame's luminance to the full ramp, then Bayer
     4x4 ordered dither.  ABSOLUTE luminance wasted the palette -- most art is

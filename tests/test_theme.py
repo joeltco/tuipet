@@ -207,3 +207,25 @@ def test_gameboy_renders_background_art_entirely_on_palette():
         assert "#" + frame[0][0:6] in colours              # grey passes raw art through
     finally:
         theme.apply("grey")
+
+
+def test_gameboy_sprites_wear_a_light_halo_over_dark_art():
+    """The silhouette ink IS the darkest ramp shade, so the mon vanished into
+    dark dithered regions (Joel 2026-07-05).  Sprites get a 1px lightest-shade
+    outline over ramp art -- built from SPRITE pixels only, so weather/orb
+    overlays never grow halo blobs."""
+    from tuipet.render import render_scene
+    dark = ["000000" * 12] * 8                       # uniform dark -> all ramp[0]
+    spr = ["111", "111", "111"]
+    try:
+        theme.apply("gameboy")
+        t = render_scene([(spr, 5, False)], 12, 4, theme.SIL_DAY, theme.LCD_BG, bgimg=dark)
+        assert _DMG[-1] in str(t.markup), "no halo ring around the sprite"
+        t = render_scene([], 12, 4, theme.SIL_DAY, theme.LCD_BG, bgimg=dark,
+                         overlay=[(6, 4), (7, 4), (6, 5)])
+        assert _DMG[-1] not in str(t.markup), "overlays must not grow halos"
+        theme.apply("grey")
+        t = render_scene([(spr, 5, False)], 12, 4, theme.SIL_DAY, theme.LCD_BG, bgimg=dark)
+        assert theme.THEMES["gameboy"]["bg_ramp"][-1] not in str(t.markup)
+    finally:
+        theme.apply("grey")
