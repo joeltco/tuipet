@@ -1448,6 +1448,7 @@ class TuiPetApp(App):
                  (tournamentscreen.TournamentPanel, self._status_tournament),
                  (training.TrainingPanel, self._status_training),
                  (battlescreen.BattlePanel, self._status_battle),
+                 (habitatscreen.HabitatPanel, self._status_habitat),
                  (dnascreen.DNAPanel, self._status_dna))
         for cls, painter in table:
             if isinstance(self.mode, cls):
@@ -1628,6 +1629,23 @@ class TuiPetApp(App):
             "[dim]own Field * charges cheap[/]",
             "[dim]ESC steps back out[/]",
         ]
+        self.stats_w.update("\n".join(lines))
+
+    def _status_habitat(self):
+        """The browsed habitat's dossier: the LCD shows the SCENE, this card
+        carries the words (habitat audit 2026-07-04)."""
+        p, m, T = self.pet, self.mode, theme
+        self.stats_w.border_subtitle = f"gen {p.generation}"
+        div = f"[dim]{'─' * 26}[/]"
+        h = m.rows[m.cursor]
+        msg = m.msg or ""
+        lines = [f"[b]{h['name'][:20]}[/]", div,
+                 f"Status   {m._tag(h)}",
+                 f"Fit      {m._aff_word(h)}",
+                 f"Climate  {m.climate(h)[:17]}",
+                 f"Bits     [{T.COIN}]{p.bits}b[/]", div,
+                 msg[:26], msg[26:52], "",
+                 "[dim]try the view before[/]", "[dim]you pay for it[/]"]
         self.stats_w.update("\n".join(lines))
 
     def _status_town(self, m):

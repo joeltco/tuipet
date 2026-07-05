@@ -1,10 +1,16 @@
-"""Habitat — buy/move homes, rendered in the display box."""
+"""Habitat — buy/move homes, browsed AS SCENES (audit 2026-07-04: habitats are
+scenery, yet the picker was a bare text list — you bought a backdrop sight
+unseen while the theme picker live-previews).  The LCD shows the pet standing
+in the selected habitat; the picker line rides the #msg strip; climate and
+ownership details live on the status card."""
 from __future__ import annotations
-from . import data
+from . import data, grid
+from .render import render_scene
 
-from .theme import LCD_ON, LCD_BG, INK, INK_B, DIM, SEL, POS, NEG  # noqa: F401  (palette names bound for theme.apply propagation)
+from .theme import LCD_ON, LCD_BG, INK, INK_B, DIM, SEL, POS, NEG, SIL_DAY  # noqa: F401  (theme.apply propagation)
 from . import menu
-W = 38
+
+COLS, ROWS = 40, 12
 
 
 class HabitatPanel:
@@ -12,12 +18,16 @@ class HabitatPanel:
         self.pet = pet
         self.rows = sorted(data.load_habitats().values(), key=lambda h: (h["price"], h["id"]))
         self.cursor = next((i for i, h in enumerate(self.rows) if h["id"] == pet.habitat), 0)
+        self.frame_i = 0
         self.msg = "Pick a home."
 
+    def anim(self):
+        self.frame_i += 1
+
     def key(self, k):
-        if k in ("up", "k"):
+        if k in ("up", "k", "left", "h"):          # the strip reads sideways too
             self.cursor = (self.cursor - 1) % len(self.rows)
-        elif k in ("down", "j"):
+        elif k in ("down", "j", "right", "l"):
             self.cursor = (self.cursor + 1) % len(self.rows)
         elif k in ("enter", "space"):
             h = self.rows[self.cursor]
@@ -37,37 +47,42 @@ class HabitatPanel:
         i = (f in h["incompat_fields"]) + (e in h["incompat_elements"])
         return c - i
 
-    def _aff_parts(self, h):
+    def _aff_word(self, h):
         a = self._aff(h)
         if a > 0:
-            return (chr(0x2665) * a + " thrives", f"bold {POS} on {LCD_BG}")
+            return "♥" * a + " thrives"
         if a < 0:
-            return (chr(0x2716) * -a + " suffers", f"bold {NEG} on {LCD_BG}")
-        return ("neutral", DIM)
+            return "✖" * -a + " suffers"
+        return "neutral"
+
+    def _tag(self, h):
+        if h["id"] == self.pet.habitat:
+            return "● here"
+        if h["id"] in self.pet.habitats:
+            return "○ owned"
+        return f"{h['price']}b"
+
+    def climate(self, h):
+        su, wi = h["temps"]["Summer"], h["temps"]["Winter"]
+        return ("climate-controlled" if h["weather_chance"] <= 0
+                else f"Su {su[0]}-{su[1]}°  Wi {wi[0]}-{wi[1]}°")
+
+    def strip(self):
+        h = self.rows[self.cursor]
+        a = self._aff(h)
+        mark = "♥" if a > 0 else ("✖" if a < 0 else "·")
+        return (f"[b]▸{h['name'][:14]}[/] {self._tag(h)} {mark}"
+                f"  {self.cursor + 1}/{len(self.rows)}"
+                f"  [dim]· ←→ ENTER buy/move ESC[/]")
 
     def text(self):
-        out = menu.header("HABITAT", f"{self.pet.bits}b")
-        sel = self.rows[self.cursor]
-        su, wi = sel["temps"]["Summer"], sel["temps"]["Winter"]
-        climate = ("climate-controlled" if sel["weather_chance"] <= 0
-                   else f"Su {su[0]}-{su[1]}°  Wi {wi[0]}-{wi[1]}°")
-        out.append(f"{sel['name'][:20]}  ", style=INK_B)
-        atxt, astyle = self._aff_parts(sel)
-        out.append(atxt + "\n", style=astyle)
-        out.append(f"  {climate}\n", style=INK)
-
-        def fmt(h, i):
-            if h["id"] == self.pet.habitat:
-                tag = chr(0x25CF) + " here"
-            elif h["id"] in self.pet.habitats:
-                tag = chr(0x25CB) + " own"
-            else:
-                tag = f"{h['price']}b"
-            a = self._aff(h)
-            amark = (chr(0x2665) if a > 0 else (chr(0x2716) if a < 0 else "\u00b7"))
-            return f"{h['name']:<14}{tag:>7} {amark}"
-
-        self.cursor = menu.list_window(out, self.rows, self.cursor, 5, fmt)
-        out.append_text(menu.note(self.msg))
-        out.append_text(menu.footer("↑↓  ENTER buy/move  ESC out"))
-        return out
+        """The selected habitat AS A SCENE: the pet stands in the backdrop it
+        would call home — window-shopping included (render-only preview)."""
+        h = self.rows[self.cursor]
+        bgimg = self.pet.background(h["id"])
+        on = SIL_DAY if bgimg else LCD_ON          # never white over a bg (paint() rule)
+        rec = data.load_sprites()[1][self.pet.num]
+        roles = data.ROLES["idle"]
+        fr = rec["frames"][roles[(self.frame_i // 5) % 2]] or rec["frames"][0]
+        return render_scene([grid.center(grid.prep(fr, ph=ROWS * 2))],
+                            COLS, ROWS, on, LCD_BG, bgimg=bgimg)

@@ -251,3 +251,23 @@ def test_jogress_states_fit_the_lcd_with_real_options():
     pan.fused, pan.result_msg = pan.options[0], "Jogress! Fused into Agumon!"
     _render(pan)
     assert "Fused into" in pan.strip()
+
+
+def test_habitat_picker_is_a_scene_with_a_strip():
+    """Habitat audit 2026-07-04: habitats ARE scenery, but the picker was a
+    text list -- you bought a backdrop sight unseen.  The LCD now shows the
+    pet standing in the browsed habitat (render-only preview); the picker
+    line rides the strip; details live on the status card."""
+    from tuipet.habitatscreen import HabitatPanel
+    p = _pet()
+    pan = HabitatPanel(p)
+    _render(pan)
+    assert len(pan.text().plain.split("\n")) == 12   # the scene fills the LCD
+    here = pan.text().markup
+    assert "here" in pan.strip()                     # standing at home
+    home = p.habitat
+    pan.key("right")                                 # browse: the VIEW changes...
+    _render(pan)
+    assert pan.text().markup != here
+    assert p.habitat == home                         # ...but browsing never moves you
+    assert "ENTER buy/move" in pan.strip()
