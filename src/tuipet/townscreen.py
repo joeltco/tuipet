@@ -183,15 +183,24 @@ class TownPanel(menu.SubHost):
         return render_scene(placements, 40, 12, on, LCD_BG, bgimg=bgimg)
 
     def strip(self):
-        """Messages/narration only (layout rule v0.2.272): the bout card
-        between cup rounds.  The errand menu lives IN the LCD like every
-        other menu page."""
-        if self.sub is not None or self.tourney is None:
+        """The one-line chrome under the LCD: the errand picker in the lobby,
+        the bout card between cup rounds (marquee'd by the app when long)."""
+        if self.sub is not None:
             return ""
-        t = self.tourney
-        opp = t.current_opponent()
-        return (f"{t.round_name} {t.round + 1}/3 vs [b]{opp['name'][:14]}[/]"
-                f" — SPACE fight  ESC forfeit")
+        if self.tourney is not None:
+            t = self.tourney
+            opp = t.current_opponent()
+            return (f"{t.round_name} {t.round + 1}/3 vs [b]{opp['name'][:14]}[/]"
+                    f" — SPACE fight  ESC forfeit")
+        if self.phase != "menu":
+            return ""                        # the deeper pages carry in-LCD menus
+        parts = []
+        for i, (key, label) in enumerate(_MENU):
+            shut = (key in ("food", "items")
+                    and not shop.town_shop_open(self.pet, self.town, key == "food"))
+            name = label + ("×" if shut else "")
+            parts.append(f"[b]▸{name}[/]" if i == self.cursor else f"[dim]{name}[/]")
+        return " ".join(parts)
 
     def text(self):
         p = self.pet
@@ -213,35 +222,13 @@ class TownPanel(menu.SubHost):
                                             left_mirror=True, right_mirror=False, ph=24))
         rows = self._rows()
         if self.phase == "menu":
-            # the town LOBBY speaks the menu language like its own deeper
-            # pages (layout-consistency sweep 2026-07-05; the scenery-lobby
-            # put a five-tab MENU on the message box)
-            out = menu.header(f"TOWN {self.town['id']}", f"{p.bits}b")
-            for i, (key, label) in enumerate(_MENU):
-                cur = i == self.cursor
-                if key in ("food", "items"):
-                    is_food = key == "food"
-                    if shop.town_shop_open(p, self.town, is_food):
-                        tag = "open"
-                    else:
-                        span = shop.town_shop_hours(p, self.town, is_food)
-                        tag = (f"opens {span[0]}:00" if span and span[0] <= 23
-                               else "shut this season")
-                elif key == "sell":
-                    tag = ("" if (self.town["can_sell_items"] or self.town["can_sell_food"])
-                           else "won't buy")
-                elif key == "cups":
-                    lim = self.town.get("tournament_limit", 0) + len(self.town.get("forced_trophies", []))
-                    tag = f"{lim} ring(s)" if lim else "no rings"
-                else:
-                    tag = ""
-                name = {"food": "Food shop", "items": "Item shop"}.get(key, label)
-                out.append(("▸" if cur else " ") + f" {name:<12}", style=INK_B if cur else INK)
-                out.append(f"{tag}\n", style=DIM)
-            out.append_text(menu.blanks(9 - len(_MENU) - 1))
-            out.append_text(menu.note(self.msg, tick=self.frame_i))
-            out.append_text(menu.footer("↑↓ pick  ENTER go  ESC leave"))
-            return out
+            # the town LOBBY is a PLACE: the pet stands in the town's canonical
+            # scenery (towns.csv TownBackgroundID), filling the LCD; the errand
+            # strip reads below in the #msg box.
+            rec = data.load_sprites()[1][p.num]
+            roles = data.ROLES["idle"]
+            fr = rec["frames"][roles[(self.frame_i // 5) % len(roles)]] or rec["frames"][0]
+            return self._scene([grid.center(grid.prep(fr, ph=24))])
         out = menu.header(f"TOWN {self.town['id']}", f"{p.bits}b")
 
         def fmt(r, i):
