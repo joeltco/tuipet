@@ -13,10 +13,16 @@ without syncing, so the game always runs.
 """
 from __future__ import annotations
 import json
+import time
 
 from . import persistence
 
 _TIMEOUT = 3.0
+
+# The app-launch stamp: every sync login carries it, and the server grants the
+# save lease only to the NEWEST launch — so a backgrounded device's reconnect
+# can't steal save ownership back from the session the player actually opened.
+BOOT = time.time()
 
 
 def _connect(uri, timeout):
@@ -29,7 +35,8 @@ def pull_save(uri, name, pw, timeout=_TIMEOUT):
     """Return the account's stored cloud save dict, or None. Never raises."""
     try:
         with _connect(uri, timeout) as ws:
-            ws.send(json.dumps({"t": "login", "name": name, "pw": pw, "sync_only": True}))
+            ws.send(json.dumps({"t": "login", "name": name, "pw": pw,
+                                "sync_only": True, "boot": BOOT}))
             for _ in range(5):                       # welcome is the first/early frame
                 m = json.loads(ws.recv(timeout=timeout))
                 if m.get("t") == "welcome":
@@ -53,9 +60,16 @@ def push_save(uri, name, pw, save, timeout=_TIMEOUT):
         pass                                         # compare is best-effort; the send decides
     try:
         with _connect(uri, timeout) as ws:
-            ws.send(json.dumps({"t": "login", "name": name, "pw": pw, "sync_only": True}))
+            ws.send(json.dumps({"t": "login", "name": name, "pw": pw,
+                                "sync_only": True, "boot": BOOT}))
             ws.send(json.dumps({"t": "save", "save": save}))
-            return True
+            for _ in range(5):                   # wait for the server's verdict --
+                m = json.loads(ws.recv(timeout=timeout))
+                if m.get("t") == "saved":        # fire-and-forget used to report
+                    return bool(m.get("ok"))     # True on drops (stale lease etc.)
+                if m.get("t") == "login_failed":
+                    return False
+            return False
     except Exception:
         return False
 

@@ -99,6 +99,124 @@ def test_wrong_password_is_blocked(server):
     assert cloudsync.pull_save(server, "joel", "WRONG") is None
 
 
+# ---- boot-stamped leases (lobby-server audit 2026-07-05) ----------------------
+
+def _conn(uri):
+    from websockets.sync.client import connect
+    return connect(uri, open_timeout=3, close_timeout=1)
+
+
+def _login(ws, name, pw, boot=None, sync_only=True, pet=None):
+    msg = {"t": "login", "name": name, "pw": pw}
+    if sync_only:
+        msg["sync_only"] = True
+    if boot is not None:
+        msg["boot"] = boot
+    if pet is not None:
+        msg["pet"] = pet
+    ws.send(json.dumps(msg))
+    for _ in range(5):
+        m = json.loads(ws.recv(timeout=3))
+        if m.get("t") in ("welcome", "login_failed"):
+            return m
+    return {}
+
+
+def _cloud_name(uri, name, pw):
+    got = cloudsync.pull_save(uri, name, pw)
+    return (got or {}).get("name")
+
+
+def _ack(ws):
+    """Next `saved` verdict, skipping stray broadcasts (rosters reach everyone)."""
+    for _ in range(5):
+        m = json.loads(ws.recv(timeout=3))
+        if m.get("t") == "saved":
+            return m
+    return {}
+
+
+def test_older_launch_cannot_steal_the_lease_back(server):
+    """The wifi-blip hole: a backgrounded phone's RECONNECT must not re-take
+    save ownership from the session the player launched later."""
+    phone = _conn(server)
+    _login(phone, "joel", "secret", boot=100.0)
+    desk = _conn(server)
+    _login(desk, "joel", "secret", boot=200.0)         # the newer launch owns saves
+    phone.close()
+    phone2 = _conn(server)                              # the phone reconnects (same launch)
+    _login(phone2, "joel", "secret", boot=100.0)
+    phone2.send(json.dumps({"t": "save", "save": {
+        "name": "FORK", "stage": "Rookie", "_saved_at": 9999.0}}))
+    assert _ack(phone2) == {"t": "saved", "ok": False}      # dropped, and told so
+    desk.send(json.dumps({"t": "save", "save": {
+        "name": "TRUTH", "stage": "Rookie", "_saved_at": 500.0}}))
+    assert _ack(desk) == {"t": "saved", "ok": True}
+    assert _cloud_name(server, "joel", "secret") == "TRUTH"   # the fork was dropped
+    phone2.close(); desk.close()
+
+
+def test_live_lobby_login_does_not_stale_the_autosync(server):
+    """Entering the lobby is not a device change: the same app's background
+    SyncClient must keep its lease (a crash after a lobby visit used to lose
+    everything since entry)."""
+    sync = _conn(server)
+    _login(sync, "joel", "secret", boot=100.0)
+    lobby = _conn(server)
+    m = _login(lobby, "joel", "secret", sync_only=False, pet={"name": "Agumon"})
+    assert m.get("t") == "welcome"                      # live + sync coexist
+    sync.send(json.dumps({"t": "save", "save": {
+        "name": "KEPT", "stage": "Rookie", "_saved_at": 1000.0}}))
+    assert _ack(sync) == {"t": "saved", "ok": True}         # the lease survived the lobby login
+    assert _cloud_name(server, "joel", "secret") == "KEPT"
+    lobby.close(); sync.close()
+
+
+def test_real_syncclient_keeps_saving_after_a_lobby_login(server):
+    """The full stack on ONE loop (the asyncio.Queue cross-loop gotcha): a real
+    SyncClient autosaving while a real LobbyClient logs in on the same account —
+    the autosave must still land afterwards."""
+    import asyncio
+    from tuipet.net import SyncClient, LobbyClient
+
+    async def scenario():
+        sync = SyncClient(server, "joel", "secret")
+        st = asyncio.create_task(sync.run())
+        for _ in range(60):
+            if sync.connected:
+                break
+            await asyncio.sleep(0.05)
+        assert sync.connected
+        lobby = LobbyClient(server, "joel", "secret", pet={"name": "Agumon"})
+        lt = asyncio.create_task(lobby.run())
+        for _ in range(60):
+            if lobby.state.connected:
+                break
+            await asyncio.sleep(0.05)
+        assert lobby.state.connected                # live + sync coexist
+        sync.push_save({"name": "KEPT", "stage": "Rookie", "_saved_at": 1000.0})
+        await asyncio.sleep(0.5)
+        st.cancel(); lt.cancel()
+
+    asyncio.run(scenario())
+    assert _cloud_name(server, "joel", "secret") == "KEPT"
+
+
+def test_sync_ghost_is_mute_and_uninvitable(server):
+    """A sync_only connection is not in the room: its chat must not reach the
+    lobby and it can't be a session target."""
+    ghost = _conn(server)
+    _login(ghost, "joel", "secret", boot=100.0)
+    live = _conn(server)
+    _login(live, "mika", "pw2", sync_only=False, pet={"name": "Gabumon"})
+    ghost.send(json.dumps({"t": "chat", "text": "boo"}))
+    with pytest.raises(TimeoutError):
+        while True:
+            m = json.loads(live.recv(timeout=1.0))
+            assert m.get("t") != "chat"                 # rosters may arrive; chat must not
+    ghost.close(); live.close()
+
+
 def test_startup_pull_mirrors_cloud_to_local(server, tmp_path, monkeypatch):
     # isolate_save (autouse) already sandboxes SAVE_PATH; push a cloud save, then
     # a fresh device's startup pull should write it locally.

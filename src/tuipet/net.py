@@ -66,8 +66,10 @@ class SyncClient:
             try:
                 async with websockets.connect(self.uri, max_size=64 * 1024) as ws:
                     self._ws = ws
+                    from .cloudsync import BOOT   # one launch stamp per process
                     await ws.send(json.dumps({"t": "login", "name": self.name,
-                                              "pw": self.pw, "sync_only": True}))
+                                              "pw": self.pw, "sync_only": True,
+                                              "boot": BOOT}))
                     self.connected = True
                     backoff = 2
                     if self._pending is not None:

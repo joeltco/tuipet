@@ -106,39 +106,53 @@ def _valid_save(save):
 
 
 async def _store_save(key, save):
-    """Last-write-wins by the client-stamped _saved_at: only newer saves land."""
+    """Last-write-wins by the client-stamped _saved_at: only newer saves land.
+    Returns True when the save was stored (the client is told via the ack)."""
     if not _valid_save(save):
-        return
+        return False
     incoming = save.get("_saved_at") or 0
     have = (SAVES.get(key) or {}).get("_saved_at") or 0
     if incoming < have:
-        return                                    # stale push -> ignore (a newer device won)
+        return False                              # stale push -> ignore (a newer device won)
     SAVES[key] = save
     async with _saves_lock:
         tmp = SAVES_PATH + ".tmp"
         with open(tmp, "w") as f:
             json.dump(SAVES, f)
         os.replace(tmp, SAVES_PATH)               # atomic
+    return True
 
 
-# ---- session leases (the two-device fork, 2026-07-04) -------------------------
+# ---- session leases (the two-device fork, 2026-07-04; boot-stamped 2026-07-05) --
 # A phone left RUNNING keeps autosave-pushing its own fork of the pet with ever
 # NEWER wall-clock stamps, so a fresh desktop session loses every quit to the
-# background device ("things arent getting saved between quits").  Every login
-# to an account bumps its lease serial; only the connection holding the LATEST
-# serial may push saves.  A startup pull is a login, so opening the game
-# anywhere stales every earlier session's pushes; that device re-takes the
-# lease (and pulls the newer cloud save first) the next time it connects.
-LEASES: dict[str, int] = {}
+# background device ("things arent getting saved between quits").  Only the
+# holder of an account's lease may push saves.  The lease belongs to the most
+# recent APP LAUNCH, not the most recent connection: clients stamp their login
+# with `boot` (wall-clock at process start), and a login whose boot is OLDER
+# than the holder's is denied the lease.  Without the stamp, a backgrounded
+# phone re-took the lease on every wifi-blip reconnect and the fork reopened.
+# Only sync_only logins take a lease — a live lobby login never pushes saves,
+# and letting it bump the serial staled its own device's autosync mid-session.
+LEASES: dict[str, tuple[float, int]] = {}     # key -> (boot stamp, serial)
 
 
-def _take_lease(client, key):
-    LEASES[key] = LEASES.get(key, 0) + 1
-    client.lease = LEASES[key]
+def _take_lease(client, key, boot):
+    cur = LEASES.get(key)
+    # boot 0.0 = a legacy client with no stamp: it keeps last-login-wins (and
+    # stores 0.0, so any stamped login can take over) — otherwise un-upgraded
+    # devices would be silently locked out of saving until their next update
+    if cur and boot and boot < cur[0]:
+        client.lease = None            # an older app launch may not push saves
+        return
+    serial = (cur[1] if cur else 0) + 1
+    LEASES[key] = (boot, serial)
+    client.lease = serial
 
 
 def _lease_ok(client, key):
-    return LEASES.get(key) == getattr(client, "lease", None)
+    cur = LEASES.get(key)
+    return cur is not None and cur[1] == getattr(client, "lease", None)
 
 
 class Client:
@@ -212,7 +226,11 @@ async def handler(ws):
                 key = name.lower()
                 acc = ACCOUNTS.get(key)
                 if acc:                                   # existing name -> must match
-                    if not _verify(pw, acc):
+                    # pbkdf2 off the event loop: 100k iterations is tens of ms,
+                    # and the loop is the whole relay — a login flood must not
+                    # freeze every live chat/battle session
+                    if not await asyncio.to_thread(_verify, pw, acc):
+                        await asyncio.sleep(0.4)          # slow down brute force
                         await _send(client, {"t": "login_failed", "msg": "Wrong password for that name."})
                         return
                     name = acc["name"]                    # canonical capitalisation
@@ -220,7 +238,7 @@ async def handler(ws):
                     if not pw:
                         await _send(client, {"t": "login_failed", "msg": "Pick a password to claim this name."})
                         return
-                    ACCOUNTS[key] = _make_account(name, pw)
+                    ACCOUNTS[key] = await asyncio.to_thread(_make_account, name, pw)
                     _save_accounts()
                     LOG.info("registered account %s", name)
                 # A sync_only connection just pulls/pushes the cloud save; it never
@@ -234,7 +252,12 @@ async def handler(ws):
                 client.name = name
                 client.pet = m.get("pet") or {}
                 client.live = not sync_only
-                _take_lease(client, key)          # the newest login owns the saves
+                if sync_only:                     # the newest APP LAUNCH owns the saves
+                    try:
+                        boot = float(m.get("boot") or 0)
+                    except (TypeError, ValueError):
+                        boot = 0.0
+                    _take_lease(client, key, boot)
                 logged_in = True
                 await _send(client, {"t": "welcome", "id": client.id, "name": client.name,
                                      "save": SAVES.get(key)})       # cloud save (or null) for cross-device load
@@ -253,20 +276,26 @@ async def handler(ws):
 
             elif t == "save":
                 key = client.name.lower()
+                ok = False
                 if _lease_ok(client, key):
-                    await _store_save(key, m.get("save"))
+                    ok = await _store_save(key, m.get("save"))
                 else:                             # a newer session took over
                     LOG.info("stale-lease save dropped: %s conn=%s", client.name, client.id)
+                # the ack makes quit-pushes honest: a dropped push must not
+                # report True back to the quitting client
+                await _send(client, {"t": "saved", "ok": ok})
 
             elif t == "chat":
                 text = _clean(m.get("text"), MAX_CHAT)
-                if text:
+                if text and client.live:          # a sync_only ghost isn't in the room
                     await _broadcast({"t": "chat", "from_id": client.id,
                                       "from_name": client.name, "text": text})
 
             elif t in ("invite", "invite_resp", "relay"):
+                if not client.live:               # sessions are for roster members only
+                    continue
                 target = CLIENTS.get(m.get("to"))
-                if target is None:
+                if target is None or not target.live:
                     await _send(client, {"t": "error", "msg": "That player just left."})
                     continue
                 out = {"t": t, "from_id": client.id, "from_name": client.name}

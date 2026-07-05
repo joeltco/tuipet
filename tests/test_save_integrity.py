@@ -88,10 +88,19 @@ def test_session_lease_stops_the_two_device_fork():
     class _C:                                     # a connection, duck-typed
         lease = None
     phone, desktop = _C(), _C()
-    srv._take_lease(phone, "joeltco")             # phone logs in first...
+    srv._take_lease(phone, "joeltco", 100.0)      # phone launches first...
     assert srv._lease_ok(phone, "joeltco")        # ...and may push
-    srv._take_lease(desktop, "joeltco")           # the desktop opens the game
-    assert srv._lease_ok(desktop, "joeltco")      # the new session owns saves
+    srv._take_lease(desktop, "joeltco", 200.0)    # the desktop opens the game LATER
+    assert srv._lease_ok(desktop, "joeltco")      # the newer launch owns saves
     assert not srv._lease_ok(phone, "joeltco")    # the background fork is staled
-    srv._take_lease(phone, "joeltco")             # phone reconnects (pulls first)
-    assert srv._lease_ok(phone, "joeltco") and not srv._lease_ok(desktop, "joeltco")
+    phone2 = _C()
+    srv._take_lease(phone2, "joeltco", 100.0)     # phone RECONNECTS (same launch):
+    assert not srv._lease_ok(phone2, "joeltco")   # a wifi blip must not steal it back
+    assert srv._lease_ok(desktop, "joeltco")
+    srv._take_lease(phone2, "joeltco", 300.0)     # the player relaunches ON the phone
+    assert srv._lease_ok(phone2, "joeltco") and not srv._lease_ok(desktop, "joeltco")
+    legacy = _C()
+    srv._take_lease(legacy, "joeltco", 0.0)       # an un-upgraded client (no stamp):
+    assert srv._lease_ok(legacy, "joeltco")       # keeps last-login-wins until updated
+    srv._take_lease(desktop, "joeltco", 200.0)    # ...and any stamped login takes over
+    assert srv._lease_ok(desktop, "joeltco")
