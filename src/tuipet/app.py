@@ -167,28 +167,35 @@ def _weather_overlay(weather, frame_i, cols, px_h):
         # DEPTH PLANES (far particles slower, shorter) and rain leans with the wind.
         for i in range(n):
             # scatter each particle to a pseudo-random spot (Knuth multiplicative
-            # hash) instead of a linear comb, so they fill the whole sky -- random
-            # columns and heights, landing near the bottom as readily as the top
+            # hash) instead of a linear comb, so they fill the whole sky.
+            # Each particle owns a GROUND line a little past halfway (rows
+            # 13..20 of 24 -- the terrain band): rain SOAKS IN on landing,
+            # snow RESTS a few frames, then both recycle from the sky (Joel
+            # 2026-07-05: precipitation used to fall through the floor).
             seed = (i * 2654435761) & 0xFFFFFFFF
             x0 = seed % cols
             base = (seed >> 10) % px_h
+            ground = 13 + ((seed >> 20) % 8)                 # this particle's terrain
             if snow:
                 # three depth planes (half / two-thirds / full speed) and a
                 # smooth six-phase glide on a per-flake phase -- drift, not a tick
                 plane = i % 3
                 fall = ((frame_i + 1) // 2, (frame_i * 2) // 3, frame_i)[plane]
                 sway = (-1, -1, 0, 1, 1, 0)[((frame_i // 3) + i) % 6]
-                pts.append(((x0 + sway) % cols, (base + fall) % px_h))
+                pos = (base + fall) % (ground + 5)           # +5: frames RESTING on the ground
+                pts.append(((x0 + sway) % cols, min(pos, ground)))
             else:
                 # rain leans with the wind: each streak drifts left as it falls
                 # (heavy leans harder) and a third of the drops fall on a FAR
                 # plane -- shorter, slower, behind the storm
                 far = i % 3 == 0
                 length = (2 if far else 3) if heavy else (1 if far else 2)
-                y = (base + frame_i * length) % px_h
+                pos = (base + frame_i * length) % (ground + 3 * length)
+                if pos > ground:
+                    continue                                 # soaked into the ground
                 wind = (frame_i * length) // (2 if heavy else 3)
                 for d in range(length):
-                    yy = y - d
+                    yy = pos - d
                     if yy >= 0:                              # don't wrap a streak across the sky
                         pts.append(((x0 - wind + (d if heavy else 0) // 2) % cols, yy))
     return pts
