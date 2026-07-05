@@ -98,18 +98,18 @@ def _panel(prog=None):
 
 
 def test_carousel_is_hatchable_plus_nearest_goals():
-    # hardened 2026-07-04: NOT every egg -- the select stays tight
+    # hardened 2026-07-04, tightened again same day (Joel: "i dont want to see
+    # the shop eggs unless theyre already available"): hatchable + goals ONLY
     pan = _panel()
-    assert pan.n <= len(pan.unlocked) + sum(
-        1 for st, _ in pan.states.values() if st == "buyable") + pan.GOALS_SHOWN
+    assert pan.n <= len(pan.unlocked) + pan.GOALS_SHOWN
     assert pan.n < egg.count()                      # the 49-egg wall is gone
     hatchable = set(pan.unlocked)
     assert all(i in hatchable for i in pan.carousel[:len(hatchable)])
     for i in pan.carousel[len(pan.unlocked):]:      # the tail is goals, all countable
         st = pan.states[i][0]
-        assert st in ("buyable", "locked")
-        if st == "locked":
-            assert egg.unlock_ratio(i, pan.prog) is not None
+        assert st == "locked"                       # NEVER a buyable shop egg
+        assert egg.unlock_ratio(i, pan.prog) is not None
+    assert not any(pan.states[i][0] == "buyable" for i in pan.carousel)
 
 
 def test_locked_eggs_are_silhouettes_with_progress():
@@ -161,3 +161,31 @@ def test_status_card_index_survives_the_full_carousel():
         pan.i = i
         idx = pan.carousel[pan.i] if pan.carousel else 0
         assert pan.states.get(idx, ("owned", 0))[0] in ("owned", "temp", "buyable", "locked")
+
+
+def test_buyable_egg_lives_in_the_shop_not_the_select():
+    """Joel 2026-07-04: shop eggs stay OUT of the egg select until bought.
+    End to end: earn Sakumon's license right -> the select hides it, the shop
+    egg tab sells it; buy it -> it joins the select as hatchable."""
+    from tuipet import persistence
+    from tuipet.eggselectscreen import EggSelectPanel
+    from tuipet.shopscreen import ShopPanel
+    from tuipet.pet import Pet
+    idx = _rule("Sakumon")["idx"]
+    persistence.wins_add(50)                        # sandboxed progress
+    pan = EggSelectPanel()
+    assert pan.states[idx][0] == "buyable"
+    assert idx not in pan.carousel                  # hidden from the select
+    p = Pet(num=100, stage="Champion", attribute="Vaccine", obedience=500)
+    p.world_seconds = 12 * 60.0
+    p.bits = 5000
+    shop_pan = ShopPanel(p)
+    while shop_pan._tabs()[shop_pan.tab] != "egg":
+        shop_pan.key("right")
+    rows = shop_pan._rows()
+    assert any(e.get("egg_idx") == idx for e in rows)   # ...but for sale here
+    entry = next(e for e in rows if e.get("egg_idx") == idx)
+    assert "Unlocked" in shop_pan._buy_egg(entry)
+    pan2 = EggSelectPanel()
+    assert idx in pan2.carousel                     # owned now -> hatchable
+    assert pan2.states[idx][0] == "owned"

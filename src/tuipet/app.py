@@ -1398,14 +1398,15 @@ class TuiPetApp(App):
                                          "[dim]press ENTER[/]", "[dim]to begin[/]"])
         elif isinstance(self.mode, eggselectscreen.EggSelectPanel):
             m = self.mode
-            # arc-3 carousel = hatchable + buyable + LOCKED (m.unlocked is only
+            # carousel = hatchable + nearest LOCKED goals (m.unlocked is only
             # the first stretch -- indexing it by m.i crashed past the hatchable
-            # eggs; 2026-07-04 Termux report)
+            # eggs; 2026-07-04 Termux report).  Buyable eggs never ride it
+            # (Joel 2026-07-04) -- masked like sealed if one ever leaks.
             idx = m.carousel[m.i] if m.carousel else 0
             state = m.states.get(idx, ("owned", 0))[0]
             badge = {"temp": "[dim]this gen only[/]", "locked": "[dim]sealed[/]",
-                     "buyable": "[dim]license at the shop[/]"}.get(state, "[dim]ready[/]")
-            shown = "???" if state == "locked" else egg_mod.hatch_name(idx)
+                     "buyable": "[dim]sealed[/]"}.get(state, "[dim]ready[/]")
+            shown = "???" if state in ("locked", "buyable") else egg_mod.hatch_name(idx)
             self._status_card("New Egg", [f"[dim]{m.i + 1} of {m.n}[/]",
                                           f"[dim]{m.locked} still locked[/]", "",
                                           "Destined to hatch", f"  [b]{shown}[/]",

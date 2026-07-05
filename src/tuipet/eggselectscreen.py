@@ -1,8 +1,10 @@
 """Choose-your-egg: a smooth horizontal carousel of full-size egg sprites.
-Hatchable eggs lead, buyable ones follow (pointing at the shop), and the tail
-carries at most GOALS_SHOWN sealed silhouettes — the countable goals you are
-CLOSEST to.  (Hardened 2026-07-04: the arc-3 goal board rode ALL ~44 sealed
-eggs, which read as the unlock system being gone; the rest are a footer count.)
+Hatchable eggs lead and the tail carries at most GOALS_SHOWN sealed
+silhouettes — the countable goals you are CLOSEST to.  Buyable shop eggs are
+NOT shown (Joel 2026-07-04): the shop's egg tab is their storefront; buying a
+license turns one owned and it joins the carousel.  (Hardened 2026-07-04: the
+arc-3 goal board rode ALL ~44 sealed eggs, which read as the unlock system
+being gone; the rest are a footer count.)
 ←→ glide, ENTER hatches the centred egg, ESC backs out."""
 from __future__ import annotations
 from . import egg as egg_mod
@@ -36,10 +38,6 @@ class EggSelectPanel:
         self.hint = egg_mod.locked_hint(prog, owned)
         self.locked = sum(1 for s, _ in self.states.values() if s == "locked")
         self.wins = prog["wins"]
-        # hatchable eggs lead, buyable follow, and the tail carries at most
-        # GOALS_SHOWN sealed silhouettes -- the countable goals you're CLOSEST
-        # to (hardened 2026-07-04: the arc-3 board rode all ~44 sealed eggs and
-        # read as the unlock system being gone; the rest stay a footer count)
         self.carousel = self._build_carousel()
         self.n = len(self.carousel)
         self.i = 0               # cursor opens on the first egg (position 1/N)
@@ -69,12 +67,15 @@ class EggSelectPanel:
     GOALS_SHOWN = 3            # sealed eggs on the carousel: only the nearest goals
 
     def _build_carousel(self):
-        buyable = [i for i, (st, _) in sorted(self.states.items()) if st == "buyable"]
+        # HATCHABLE eggs + the nearest countable goals ONLY.  Buyable shop eggs
+        # are NOT shown here (Joel 2026-07-04: "i dont want to see the shop
+        # eggs unless theyre already available") -- their storefront is the
+        # shop's egg tab; a purchased license turns them owned and they appear.
         locked = [i for i, (st, _) in sorted(self.states.items()) if st == "locked"]
         goals = sorted((i for i in locked
                         if egg_mod.unlock_ratio(i, self.prog) is not None),
                        key=lambda i: -egg_mod.unlock_ratio(i, self.prog))[:self.GOALS_SHOWN]
-        return self.unlocked + buyable + goals
+        return self.unlocked + goals
 
     def anim(self):
         self.frame_i += 1
@@ -110,14 +111,10 @@ class EggSelectPanel:
         elif k in ("enter", "space"):
             idx = self.carousel[self.i]
             state, price = self.states.get(idx, ("owned", 0))
-            if state == "locked":
-                self.sfx = "error"
+            if state in ("locked", "buyable"):         # buyable never rides the
+                self.sfx = "error"                     # carousel; guard anyway
                 prog_txt = egg_mod.unlock_progress(idx, self.prog)
                 self._flash(f"Sealed — {prog_txt}" if prog_txt else "Sealed.")
-                return None
-            if state == "buyable":
-                self.sfx = "error"
-                self._flash(f"License: {price} bits — at the town shop.")
                 return None
             return ("done", idx)                       # hatch the centred egg
         elif k == "escape":
@@ -155,7 +152,7 @@ class EggSelectPanel:
     def _frame(self, pos, center):
         idx = self._egg(pos)
         fr = egg_mod.record(idx)["frames"]
-        if self.states.get(idx, ("owned", 0))[0] == "locked":
+        if self.states.get(idx, ("owned", 0))[0] in ("locked", "buyable"):
             return silhouette(fr[0])                   # a sealed egg keeps its shape only
         if center and self.scroll == self.pos:         # settled: idle wobble on the chosen egg
             return fr[(self.frame_i // 5) % 2] or fr[0]
@@ -164,11 +161,9 @@ class EggSelectPanel:
     def _note(self, idx):
         state, price = self.states.get(idx, ("owned", 0))
         name = egg_mod.hatch_name(idx)
-        if state == "locked":
+        if state in ("locked", "buyable"):
             prog_txt = egg_mod.unlock_progress(idx, self.prog)
             return f"sealed — {prog_txt}" if prog_txt else "sealed"
-        if state == "buyable":
-            return f"{name} — license {price}b at the shop"
         if state == "temp":
             return "hatches: %s  (this gen only)" % name
         return "hatches: %s" % name
