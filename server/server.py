@@ -121,8 +121,28 @@ async def _store_save(key, save):
         os.replace(tmp, SAVES_PATH)               # atomic
 
 
+# ---- session leases (the two-device fork, 2026-07-04) -------------------------
+# A phone left RUNNING keeps autosave-pushing its own fork of the pet with ever
+# NEWER wall-clock stamps, so a fresh desktop session loses every quit to the
+# background device ("things arent getting saved between quits").  Every login
+# to an account bumps its lease serial; only the connection holding the LATEST
+# serial may push saves.  A startup pull is a login, so opening the game
+# anywhere stales every earlier session's pushes; that device re-takes the
+# lease (and pulls the newer cloud save first) the next time it connects.
+LEASES: dict[str, int] = {}
+
+
+def _take_lease(client, key):
+    LEASES[key] = LEASES.get(key, 0) + 1
+    client.lease = LEASES[key]
+
+
+def _lease_ok(client, key):
+    return LEASES.get(key) == getattr(client, "lease", None)
+
+
 class Client:
-    __slots__ = ("id", "ws", "name", "pet", "live")
+    __slots__ = ("id", "ws", "name", "pet", "live", "lease")
 
     def __init__(self, ws):
         self.id = next(_ids)
@@ -130,6 +150,7 @@ class Client:
         self.name = f"guest{self.id}"
         self.pet = {}
         self.live = False
+        self.lease = None
 
 
 CLIENTS: dict[int, Client] = {}
@@ -213,6 +234,7 @@ async def handler(ws):
                 client.name = name
                 client.pet = m.get("pet") or {}
                 client.live = not sync_only
+                _take_lease(client, key)          # the newest login owns the saves
                 logged_in = True
                 await _send(client, {"t": "welcome", "id": client.id, "name": client.name,
                                      "save": SAVES.get(key)})       # cloud save (or null) for cross-device load
@@ -230,7 +252,11 @@ async def handler(ws):
                     await _push_roster()
 
             elif t == "save":
-                await _store_save(client.name.lower(), m.get("save"))
+                key = client.name.lower()
+                if _lease_ok(client, key):
+                    await _store_save(key, m.get("save"))
+                else:                             # a newer session took over
+                    LOG.info("stale-lease save dropped: %s conn=%s", client.name, client.id)
 
             elif t == "chat":
                 text = _clean(m.get("text"), MAX_CHAT)

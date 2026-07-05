@@ -72,3 +72,26 @@ def test_server_refuses_foreign_saves(tmp_path, monkeypatch):
     assert not srv._valid_save("junk")
     assert srv._valid_save({"stage": "Rookie", "name": "Agumon", "_saved_at": 1})
     assert srv._valid_save({"stage": "Egg", "name": "", "_saved_at": 1})
+
+
+def test_session_lease_stops_the_two_device_fork():
+    """2026-07-04 (Joel: 'things arent getting saved between quits'): a phone
+    left running kept autosave-pushing its own FORK with newer wall clocks, so
+    every fresh desktop session lost its play to the background device.  Only
+    the LATEST login's connection may push saves."""
+    import sys
+    sys.path.insert(0, "server")
+    import importlib
+    import server as srv
+    importlib.reload(srv)
+
+    class _C:                                     # a connection, duck-typed
+        lease = None
+    phone, desktop = _C(), _C()
+    srv._take_lease(phone, "joeltco")             # phone logs in first...
+    assert srv._lease_ok(phone, "joeltco")        # ...and may push
+    srv._take_lease(desktop, "joeltco")           # the desktop opens the game
+    assert srv._lease_ok(desktop, "joeltco")      # the new session owns saves
+    assert not srv._lease_ok(phone, "joeltco")    # the background fork is staled
+    srv._take_lease(phone, "joeltco")             # phone reconnects (pulls first)
+    assert srv._lease_ok(phone, "joeltco") and not srv._lease_ok(desktop, "joeltco")

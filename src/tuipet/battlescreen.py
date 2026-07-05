@@ -51,6 +51,50 @@ EFFECT_LABEL = {"DefenseUp": "Blocked!", "AttackUp": "Power up!", "Counter": "Co
                 "Absorb": "Absorb!", "Heal": "Heal!", "First": "First strike!", "Second": "Second!"}
 
 
+def round_timeline(ph0, fh0, pdmg, edmg, player_first, effect=None):
+    """One round's alternating-view volley timeline, from PURE round data --
+    shared by the PvE panel (which reads it off its Battle) and the lobby's
+    PvP replay (which reads it off the relayed result; lobby audit 2026-07-04:
+    PvP rounds were a text log while PvE plays the full animation)."""
+    # strike order: initiative first; a KO'd side does not retaliate
+    if player_first:
+        seq = [("pet", "foe", pdmg)]
+        if fh0 - max(0, pdmg) > 0:
+            seq.append(("foe", "pet", edmg))
+    else:
+        seq = [("foe", "pet", edmg)]
+        if ph0 - max(0, edmg) > 0:
+            seq.append(("pet", "foe", pdmg))
+    tl = []
+    ph, fh = ph0, fh0
+    tl += [{"m": "faceoff", "view": seq[0][0], "ph": ph, "fh": fh}] * FACEOFF_T
+    for atk, dfn, dmg in seq:
+        other = edmg if atk == "pet" else pdmg
+        dbl = dmg >= 2 and dmg >= other                  # DVPet doubleAttack: strong & out/matching power
+        fxn = effect if atk == "pet" else None           # only the player carries chip effects (PvE)
+        for s in range(WINDUP_T):
+            tl.append({"m": "windup", "view": atk, "atk": atk, "wu": s, "ph": ph, "fh": fh})
+        for s in range(FIRE_T):                          # attacker shown: orb leaves off-screen
+            tl.append({"m": "fire_out", "view": atk, "atk": atk, "double": dbl, "fx": fxn,
+                       "prog": (s + 1) / FIRE_T, "ph": ph, "fh": fh})
+        for s in range(FIRE_T):                          # defender shown: orb arrives off-screen
+            tl.append({"m": "fire_in", "view": dfn, "atk": atk, "def": dfn, "double": dbl,
+                       "prog": (s + 1) / FIRE_T, "ph": ph, "fh": fh})
+        if dmg > 0:                                      # HIT: fullscreen flash, then flinch
+            if dfn == "foe":
+                fh = max(0, fh - dmg)
+            else:
+                ph = max(0, ph - dmg)
+            for s in range(EXPLODE_FRAMES):
+                tl.append({"m": "hit", "f": (s // EXPLODE_HOLD) % 2, "def": dfn, "double": dbl, "ph": ph, "fh": fh})
+            tl += [{"m": "flinch", "view": dfn, "def": dfn, "ph": ph, "fh": fh}] * FLINCH_T
+        else:                                            # DODGE: defender weaves, orb whiffs past
+            for s in range(DODGE_T):
+                tl.append({"m": "dodge", "view": dfn, "atk": atk, "def": dfn,
+                           "prog": (s + 1) / DODGE_T, "ph": ph, "fh": fh})
+    return tl
+
+
 def _full(frame):
     ox = max(0, (COLS - (len(frame[0]) if frame and frame[0] else 0)) // 2)   # centre on the frame's own width
     oy = max(0, (PXH - len(frame)) // 2)
@@ -121,45 +165,8 @@ class BattlePanel:
         b.play_round(attr)
         self.pet_attr = b.last_player_attr
         self.foe_attr = b.last_enemy_attr
-        pdmg, edmg = b.last_player_damage, b.last_enemy_damage
-        # strike order: initiative first; a KO'd side does not retaliate
-        if b.last_player_first:
-            seq = [("pet", "foe", pdmg)]
-            if fh0 - max(0, pdmg) > 0:
-                seq.append(("foe", "pet", edmg))
-        else:
-            seq = [("foe", "pet", edmg)]
-            if ph0 - max(0, edmg) > 0:
-                seq.append(("pet", "foe", pdmg))
-
-        tl = []
-        ph, fh = ph0, fh0
-        tl += [{"m": "faceoff", "view": seq[0][0], "ph": ph, "fh": fh}] * FACEOFF_T
-        for atk, dfn, dmg in seq:
-            other = edmg if atk == "pet" else pdmg
-            dbl = dmg >= 2 and dmg >= other                  # DVPet doubleAttack: strong & out/matching power
-            fxn = b.last_effect if atk == "pet" else None    # only the player carries chip effects (PvE)
-            for s in range(WINDUP_T):
-                tl.append({"m": "windup", "view": atk, "atk": atk, "wu": s, "ph": ph, "fh": fh})
-            for s in range(FIRE_T):                          # attacker shown: orb leaves off-screen
-                tl.append({"m": "fire_out", "view": atk, "atk": atk, "double": dbl, "fx": fxn,
-                           "prog": (s + 1) / FIRE_T, "ph": ph, "fh": fh})
-            for s in range(FIRE_T):                          # defender shown: orb arrives off-screen
-                tl.append({"m": "fire_in", "view": dfn, "atk": atk, "def": dfn, "double": dbl,
-                           "prog": (s + 1) / FIRE_T, "ph": ph, "fh": fh})
-            if dmg > 0:                                      # HIT: fullscreen flash, then flinch
-                if dfn == "foe":
-                    fh = max(0, fh - dmg)
-                else:
-                    ph = max(0, ph - dmg)
-                for s in range(EXPLODE_FRAMES):
-                    tl.append({"m": "hit", "f": (s // EXPLODE_HOLD) % 2, "def": dfn, "double": dbl, "ph": ph, "fh": fh})
-                tl += [{"m": "flinch", "view": dfn, "def": dfn, "ph": ph, "fh": fh}] * FLINCH_T
-            else:                                            # DODGE: defender weaves, orb whiffs past
-                for s in range(DODGE_T):
-                    tl.append({"m": "dodge", "view": dfn, "atk": atk, "def": dfn,
-                               "prog": (s + 1) / DODGE_T, "ph": ph, "fh": fh})
-        self.timeline = tl
+        self.timeline = round_timeline(ph0, fh0, b.last_player_damage, b.last_enemy_damage,
+                                       b.last_player_first, effect=b.last_effect)
         self.i = 0
         self.phase = "anim"
 

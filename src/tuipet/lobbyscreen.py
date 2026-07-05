@@ -23,6 +23,8 @@ from rich.text import Text
 from . import data
 from . import jogress
 from . import battle
+from . import battlescreen
+from . import jogressscreen
 from .theme import INK, INK_B, DIM, SEL
 
 CHATW = 25
@@ -65,7 +67,7 @@ class AccountPanel:
     confirms when both are filled. Returns ("done", (name, password)), or
     ("done", None) on Esc. Used at first launch and to recover a failed login."""
 
-    def __init__(self, name="", note="Set your name + password — your name is yours."):
+    def __init__(self, name="", note="Name + password — the name is yours."):
         self.name_buf = name
         self.pw_buf = ""
         self.field = "pw" if name else "name"
@@ -101,13 +103,15 @@ class AccountPanel:
     def text(self):
         t = Text()
         t.append("  TUIPET ACCOUNT\n\n", style=INK_B)
-        nm = self.name_buf + ("_" if self.field == "name" else "")
-        pw = "*" * len(self.pw_buf) + ("_" if self.field == "pw" else "")
+        # tail-window long input so a line never overruns the 40-col LCD
+        # (the box CLIPS overflow live -- lobby audit 2026-07-04)
+        nm = (self.name_buf + ("_" if self.field == "name" else ""))[-26:]
+        pw = ("*" * len(self.pw_buf) + ("_" if self.field == "pw" else ""))[-26:]
         t.append("  name:     ", style=DIM)
         t.append(nm + "\n", style=INK_B if self.field == "name" else INK)
         t.append("  password: ", style=DIM)
         t.append(pw + "\n\n", style=INK_B if self.field == "pw" else INK)
-        t.append(f"  {self.note}\n", style=DIM)
+        t.append(f"  {self.note[:38]}\n", style=DIM)
         t.append("  [Tab] switch  [Enter] go  [Esc] back", style=DIM)
         return t
 
@@ -131,7 +135,9 @@ class LobbyPanel:
         self.partner_species = None
         self.jphase = None
         self.jresult = None
+        self.jshow = None             # the offline fusion scene, replayed here
         self.fail_reason = None
+        self.bshow = None             # the round's volley replay (BattlePanel shim)
         # battle session
         self.is_host = False
         self.battle = None
@@ -181,6 +187,18 @@ class LobbyPanel:
 
     # ---- per-tick refresh (the 0.1s interval clock calls this) -----------
     def anim(self):
+        # session replays advance first (they render whatever the wire does)
+        if self.bshow is not None:
+            b = self.bshow
+            if b.i < len(b.timeline) - 1:
+                b.anim()                        # advances + emits the volley sfx
+                if getattr(b, "sfx", None):
+                    self.sfx = b.sfx
+                    b.sfx = None
+            else:
+                self.bshow = None               # volley done -> choose/over shows
+        if self.jshow is not None and self.jphase == "result":
+            self.jshow.anim()                   # converge -> flash -> fused bounce
         s = self.state
         if not s:
             return
@@ -270,6 +288,7 @@ class LobbyPanel:
         had_partner = self.partner is not None
         self.partner = self.partner_species = self.jresult = None
         self.jphase = self.fail_reason = None
+        self.jshow = self.bshow = None
         self.battle = self.opp_card = self.bphase = None
         self.bt_my_choice = self.bt_opp_choice = None
         self.bt_log = self.bt_outcome = ""
@@ -300,6 +319,17 @@ class LobbyPanel:
             if self.jresult:
                 self.jphase = "result"
                 self.sfx = "jogress"
+                # the REAL fusion scene (lobby audit 2026-07-04: the offline
+                # jogress converges + flashes while the lobby printed text) --
+                # both parents' actual sprites play the offline panel's beats
+                show = jogressscreen.JogressPanel(self.pet)
+                show.options = [True]           # sentinel: skip the empty page
+                show.phase = "fusing"
+                show.old_num = self.pet.num
+                show.partner_num = payload.get("num") or self.pet.num
+                show.fused = {"num": self.jresult["num"]}
+                show.result_msg = ""
+                self.jshow = show
             else:
                 self.fail_reason = reason or "No resonance with that partner."
                 self.jphase = "failed"
@@ -337,21 +367,30 @@ class LobbyPanel:
                "host_dealt": b.last_player_damage, "guest_dealt": b.last_enemy_damage,
                "hattr": self.bt_my_choice, "gattr": self.bt_opp_choice,
                "hhp": max(0, b.pet_hp), "ghp": max(0, b.enemy_hp),
+               "host_first": b.last_player_first,   # additive: drives the volley replay
                "over": b.over, "host_alive": b.pet_hp > 0, "guest_alive": b.enemy_hp > 0}
         self.client.relay(self.partner[0], res)
         self._apply_result(res, as_host=True)
 
     def _apply_result(self, res, as_host):
         if as_host:
-            self.my_hp, self.opp_hp = res["hhp"], res["ghp"]
             dealt, taken = res["host_dealt"], res["guest_dealt"]
             my_attr, opp_attr = res.get("hattr"), res.get("gattr")
             my_alive, opp_alive = res["host_alive"], res["guest_alive"]
+            mine_first = bool(res.get("host_first", True))
         else:
-            self.my_hp, self.opp_hp = res["ghp"], res["hhp"]
             dealt, taken = res["guest_dealt"], res["host_dealt"]
             my_attr, opp_attr = res.get("gattr"), res.get("hattr")
             my_alive, opp_alive = res["guest_alive"], res["host_alive"]
+            mine_first = not res.get("host_first", True)
+        # the round REPLAYS as the real alternating-view volley (lobby audit
+        # 2026-07-04: PvP was a text log while PvE animates) -- built from the
+        # hp BEFORE this round, then the choose/over screen takes over
+        self._stage_volley(dealt, taken, my_attr, opp_attr, mine_first)
+        if as_host:
+            self.my_hp, self.opp_hp = res["hhp"], res["ghp"]
+        else:
+            self.my_hp, self.opp_hp = res["ghp"], res["hhp"]
         mine = data.move_name(self.pet.num, my_attr) or my_attr or "?"
         theirs = data.move_name((self.opp_card or {}).get("num", -1), opp_attr) or opp_attr or "?"
         self.bt_log = f"{mine} → {dealt} dmg\n  {theirs} ← {taken} dmg"
@@ -377,7 +416,30 @@ class LobbyPanel:
         else:
             self.bphase = "choose"
 
+    def _stage_volley(self, dealt, taken, my_attr, opp_attr, mine_first):
+        """A presentation-only BattlePanel replays the round: my pet RIGHT, the
+        opponent's LEFT, orbs/hit/dodge from the relayed numbers."""
+        try:
+            card = dict(self.opp_card or {})
+            if not card.get("num"):
+                return
+            show = battlescreen.BattlePanel(self.pet, enemy=card)
+            show.pet_attr = my_attr or "Vaccine"
+            show.foe_attr = opp_attr or "Vaccine"
+            show.timeline = battlescreen.round_timeline(
+                self.my_hp, self.opp_hp, dealt, taken, mine_first)
+            show.i = 0
+            show.phase = "anim"
+            show._last_m = None
+            self.bshow = show
+        except Exception:
+            self.bshow = None                   # presentation must never break the bout
+
     def _key_battle(self, k):
+        if self.bshow is not None:              # the round is replaying
+            if k in ("space", "enter", "escape"):
+                self.bshow = None               # skip straight to the choose/over screen
+            return None
         if self.bphase == "over":
             if k in ("enter", "space", "escape"):
                 if self.bt_payload and self.bt_payload[0] == "battle_record":
@@ -425,6 +487,9 @@ class LobbyPanel:
     def _key_jogress(self, k):
         if self.jphase == "result":
             if k in ("enter", "space", "escape"):
+                if self.jshow is not None and self.jshow.phase == "fusing":
+                    self.jshow.phase = "fused"          # skip the converge to the reveal
+                    return None
                 msg = jogress.fuse(self.pet, self.jresult["num"])   # same path as offline jogress
                 self.sfx = "jogress"
                 self._return_to_lobby(msg)
@@ -486,6 +551,18 @@ class LobbyPanel:
         return None
 
     # ---- render ----------------------------------------------------------
+    def strip(self):
+        """One line under the LCD while a session SCENE plays (the text phases
+        carry their own prompts in-LCD)."""
+        if self.bshow is not None:
+            return "[dim]SPACE skip[/]"
+        if self.jshow is not None and self.jphase == "result":
+            name = (self.jresult or {}).get("name", "?")
+            if self.jshow.phase == "fused":
+                return f"→ [b]{name}[/]  [dim]· ENTER complete the fusion[/]"
+            return "DNA... connect!  [dim]· ENTER skip[/]"
+        return ""
+
     def text(self):
         if self.phase == "login":
             return self._text_login()
@@ -502,6 +579,8 @@ class LobbyPanel:
         t = Text()
         pname = self.partner[1] if self.partner else "?"
         if self.jphase == "result":
+            if self.jshow is not None:          # the real fusion scene plays
+                return self.jshow.text()
             me = self._card()["name"]
             other = self.partner_species or pname
             t.append("\n  ✦ JOGRESS ✦\n\n", style=INK_B)
@@ -519,6 +598,8 @@ class LobbyPanel:
         return t
 
     def _text_battle(self):
+        if self.bshow is not None:              # the round's volley replay
+            return self.bshow.text()
         t = Text()
         pname = self.partner[1] if self.partner else "?"
         if self.bphase == "card":
@@ -534,14 +615,15 @@ class LobbyPanel:
             return t
         me = self._card()["name"]
         oc = self.opp_card or {}
-        t.append(f"  vs {pname}'s {oc.get('name', '?')} · {oc.get('stage', '?')}\n\n", style=DIM)
+        t.append(f"  vs {pname[:10]}'s {str(oc.get('name', '?'))[:12]}"
+                 f" · {str(oc.get('stage', '?'))[:9]}\n\n", style=DIM)
         t.append(f"  {_fit(me, 10)}{self.my_hp:>3}/{self.my_max:<2} [{_hpbar(self.my_hp, self.my_max)}]\n", style=INK_B)
         t.append(f"  {_fit(pname, 10)}{self.opp_hp:>3}/{self.opp_max:<2} [{_hpbar(self.opp_hp, self.opp_max)}]\n\n", style=INK)
         t.append(f"  {self.bt_log}\n\n" if self.bt_log else "\n\n", style=INK)
         if self.bphase == "wait":
             t.append("  waiting for opponent…", style=DIM)
         else:
-            t.append("  attack:  [1] Vaccine  [2] Data  [3] Virus", style=INK_B)
+            t.append("  attack: [1]Vaccine [2]Data [3]Virus", style=INK_B)
         return t
 
     def _text_lobby(self):
