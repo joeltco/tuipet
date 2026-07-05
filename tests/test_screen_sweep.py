@@ -40,7 +40,8 @@ def test_transport_panel_full_flow():
     p.add_item("i:28")                          # Zone Transport (PhoenixTransport)
     pan = TransportPanel(p, "i:28")
     _step(pan); _step(pan, "down"); _step(pan, "up")
-    r = _step(pan, "enter")
+    assert _step(pan, "enter") is None             # the ride plays first
+    r = _ride_out(pan)
     assert r and r[0] == "done" and "Warped" in r[1]
     pan2 = TransportPanel(p, "i:28")
     assert _step(pan2, "escape") == ("done", None)
@@ -528,6 +529,13 @@ def test_thunder_flash_renders_and_startles():
             assert s.thunder_i == 0          # the countdown burns out while lit
 
 
+def _ride_out(pan):
+    """Skip the transport ride to the arrival hold and close it."""
+    pan.anim()
+    pan.key("space")
+    return pan.key("enter")
+
+
 def test_transports_land_at_canon_arrival_points():
     """Canon PhysicalState.transport (audit 2026-07-04): warps land AT a place
     -- Phoenix at the zone's first town, Birdra moves you to the town AND
@@ -547,7 +555,8 @@ def test_transports_land_at_canon_arrival_points():
     pan = TransportPanel(p, "i:28")
     pan.kind = "zone"                              # Phoenix
     pan.options = pan._options()
-    r = pan.key("enter")
+    assert pan.key("enter") is None                # the ride plays first
+    r = _ride_out(pan)
     assert r and "Warped" in r[1]
     assert p.adv_loc == first_town
     adv = Adventure(p)                             # the next journey consumes it
@@ -558,14 +567,14 @@ def test_transports_land_at_canon_arrival_points():
     pan = TransportPanel(p, "i:28")
     pan.kind = "town"                              # Birdra: moved AND rested
     pan.options = pan._options()
-    pan.key("enter")
+    pan.key("enter"); _ride_out(pan)
     assert p.adv_loc == first_town and p.energy == p.max_energy
 
     p.add_item("i:28")
     pan = TransportPanel(p, "i:28")
     pan.kind = "danger"                            # Garuda: one shy of the boss
     pan.options = pan._options()
-    pan.key("enter")
+    pan.key("enter"); _ride_out(pan)
     assert p.adv_loc == first_boss - 1
     adv = Adventure(p)
     assert adv.location == first_boss - 1
@@ -593,3 +602,39 @@ def test_continent_warp_lists_only_unlocked_maps():
     p.adv_map = 3                                   # already standing on map 4:
     pan = TransportPanel(p, "i:31")                 # never locked out of it
     assert 3 in [o[1] for o in pan.options]
+
+
+def test_every_transport_plays_its_ride_scene():
+    """Canon animates ALL four transports (SpriteAnim whaTransport + transport()):
+    Whamon 193 surfaces/swims for the continent warp; Birdramon 97 / Garudamon
+    234 / Phoenixmon 292 swoop from above, scoop the pet, and drop it bouncing
+    at the destination.  Every frame stays in the 12x40 arena; the done is
+    deferred to the arrival hold; the ticket is consumed at confirm."""
+    from tuipet.transportscreen import TransportPanel, CARRIER
+    for key, kind in (("i:31", "continent"), ("i:28", "zone"),
+                      ("i:29", "town"), ("i:30", "danger")):
+        p = _pet()
+        p.add_item(key)
+        pan = TransportPanel(p, key)
+        assert pan.kind == kind and CARRIER[kind]
+        assert pan.key("enter") is None and pan.ride is not None
+        assert key not in p.inventory
+        stings = []
+        for _ in range(pan.ride["end"] + 6):
+            pan.anim()
+            if pan.sfx:
+                stings.append(pan.sfx)
+                pan.sfx = None
+            lines = pan.text().plain.split("\n")
+            assert len(lines) <= 12 and all(len(ln) <= 40 for ln in lines)
+        assert stings[0] == "happy" and stings[-1] == "reward"
+        assert stings.count("reward") == 1              # the hold must not re-sting
+        assert "ENTER done" in pan.strip()
+        r = pan.key("enter")
+        assert r[0] == "done" and "Warped" in r[1]
+        # skip: one press jumps to the hold, the next closes
+        p.add_item(key)
+        pan2 = TransportPanel(p, key)
+        pan2.key("enter"); pan2.anim(); pan2.key("space")
+        assert pan2.ride["t"] == pan2.ride["end"]
+        assert pan2.key("enter")[0] == "done"
