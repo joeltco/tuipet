@@ -319,3 +319,41 @@ def test_dodge_hides_the_orb_and_hops_the_defender():
     landed = top_row({"m": "dodge", "prog": 13 / 14, **base})   # an IDLE return beat
     assert apex < grounded                        # airborne at the apex
     assert landed == grounded                     # back on its mark for the pose flips
+
+
+def test_round_skip_never_swallows_the_killing_blow():
+    """Joel 2026-07-05 ('it didn't play through to the death'): a bounced
+    double-ENTER right after picking used to vaporise the whole round to the
+    result.  Skips debounce the first beats, then jump TO the final impact
+    (hit/flinch still play); a second press inside the impact finishes."""
+    import random
+    from tuipet.pet import Pet
+    from tuipet.battlescreen import BattlePanel, SKIP_DEBOUNCE
+
+    def run(presses):
+        random.seed(3)
+        p = Pet(num=102, name="D", stage="Champion", attribute="Virus", obedience=500)
+        p.world_seconds = 12 * 60.0
+        p.full_health = 5
+        bp = BattlePanel(p, enemy={"num": 964, "name": "Foe", "stage": "Champion",
+                                   "hp": 15, "vaccine": 8, "data_power": 0,
+                                   "virus": 0, "bits": (1, 2)})
+        bp.key("space")
+        bp.key("1")
+        for when in presses:
+            while bp.i < when and bp.phase == "anim":
+                bp.anim()
+            bp.key("enter")
+        seen, guard = [], 0
+        while bp.phase == "anim" and guard < 400:
+            m = bp.timeline[min(bp.i, len(bp.timeline) - 1)]["m"]
+            if not seen or seen[-1] != m:
+                seen.append(m)
+            bp.anim()
+            guard += 1
+        return seen
+
+    bounce = run([1])                             # the double-tap
+    assert "windup" in bounce and "hit" in bounce and "flinch" in bounce
+    skipped = run([SKIP_DEBOUNCE + 4])            # a deliberate skip
+    assert "hit" in skipped                       # ...still shows the blow

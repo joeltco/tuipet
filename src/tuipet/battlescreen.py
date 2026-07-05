@@ -36,6 +36,7 @@ CHARGE = 4                                      # DVPet shoot frame 4: pre-attac
 
 # timeline tuning (ticks per beat, 1 tick == 0.1s); slowed for a readable vpet pace
 BANNER_FLASHES, BANNER_HOLD = 3, 4
+SKIP_DEBOUNCE = 6                                # anim ticks before a skip key registers
 REVEAL_T = 12                                    # 1.2s opponent reveal/taunt (startBattle)
 FACEOFF_T = 9                                    # 0.9s stare-down
 WINDUP_T = 9                                     # 0.9s charge / rear-back before firing
@@ -268,8 +269,21 @@ class BattlePanel:
                 return ("done", None)
             return None
         if self.phase == "anim":
-            if k in ("space", "enter", "escape"):
-                self.i = len(self.timeline) - 1
+            # Joel 2026-07-05 ("it didn't play through to the death"): a fast
+            # double-ENTER (pick + bounce) used to land here and vaporise the
+            # whole round to the result.  Skips now (a) debounce the first
+            # beats and (b) jump to the FINAL IMPACT, never past it -- even a
+            # deliberate skip always shows the killing blow.
+            if k in ("space", "enter", "escape") and self.i >= SKIP_DEBOUNCE:
+                last = next((j for j in range(len(self.timeline) - 1, -1, -1)
+                             if self.timeline[j]["m"] in ("hit", "dodge")), None)
+                if last is None or self.i >= last - (EXPLODE_FRAMES + 2):
+                    self.i = len(self.timeline) - 1   # already at the impact: finish
+                else:
+                    first = last
+                    while first > 0 and self.timeline[first - 1]["m"] == self.timeline[last]["m"]:
+                        first -= 1
+                    self.i = first
             return None
         if k in ("space", "enter", "escape"):
             return ("done", self.battle)
