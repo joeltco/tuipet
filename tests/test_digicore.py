@@ -203,10 +203,12 @@ def test_teaser_zooms_in_then_holds_a_still_silhouette():
     the core badge in over the opening beats, then the silhouette holds as a
     STILL frame-0 shape (the old teaser flickered idle poses at 10Hz), and the
     way back is the evolSilhouetteBack dark blink."""
-    from tuipet.digicorescreen import EXPAND_T
+    from tuipet.digicorescreen import EXPAND_T, MON_T
     p = _pet()
     panel = DigiCorePanel(p)
     panel.key("space")
+    for _ in range(MON_T):                           # beat one: the mon itself
+        panel.anim()
     early = panel.text().markup
     for _ in range(EXPAND_T // 2):                   # k steps 1x -> 2x at half-beat
         panel.anim()
@@ -269,7 +271,7 @@ def test_every_digicore_page_speaks_the_menu_language():
     p = Pet(num=102, name="Devimon", stage="Champion", attribute="Virus", obedience=500)
     p.world_seconds = 12 * 60.0
     pan = DigiCorePanel(p)
-    assert not hasattr(pan, "strip")
+    assert pan.strip() == ""            # the message box stays a message box
     first = pan.text().plain
     assert "DIGICORE  CORE" in first and chr(0x25CF) in first    # title + dots
     assert "SPACE gaze" in first                                 # in-page footer
@@ -284,8 +286,9 @@ def test_every_digicore_page_speaks_the_menu_language():
 
 
 def test_the_core_gaze_looms_over_the_core_background():
-    """The evolution preview keeps its scene -- now painted over the core
-    backdrop (it floated on a blank LCD)."""
+    """The gaze (round 3): three full-LCD beats -- the mon, the circle, the
+    silhouette -- over the core backdrop, narrated through the message box,
+    with no key hints anywhere."""
     import random
     from tuipet.pet import Pet
     from tuipet import digicorescreen as dc
@@ -303,9 +306,17 @@ def test_the_core_gaze_looms_over_the_core_background():
     dc.render_scene = spy
     try:
         pan.key("space")
-        for _ in range(12):
+        msgs = []
+        for _ in range(24):
             pan.anim()
-            pan.text()
+            t = pan.text()
+            assert len(t.plain.split("\n")) == 12       # the WHOLE arena, no chrome
+            assert "SPACE" not in t.plain                # ...and no hints
+            m = pan.strip()
+            if not msgs or msgs[-1] != m:
+                msgs.append(m)
     finally:
         dc.render_scene = real
     assert cap and all(b is not None for b in cap)   # every gaze frame carries it
+    assert msgs == ["the core stirs...", "the core opens...",
+                    "A shape looms in the core..."]  # the message box narrates

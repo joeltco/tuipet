@@ -23,6 +23,7 @@ SCENE_ROWS = 12                    # the core/teaser pages own the WHOLE arena n
 #                                    Joel 2026-07-05: the 8-row band crammed a 16px mon
 #                                    against the chrome; scene-only + strip() instead
 EXPAND_T = 8                       # digicoreExpand: the badge zooms in (canon beats 6-14)
+MON_T = 10                         # the gaze opens ON the current mon before the core turns
 BACK_T = 6                         # evolSilhouetteBack: the dark blink on the way out
 # ViewUtil.getDigicoreBackground field -> backdrop file suffix
 _CORE_BG = {"": "digicoreN", "None": "digicoreN", "DragonsRoar": "digicoreDr",
@@ -386,45 +387,54 @@ class DigiCorePanel:
         canon beats 6-14 grow it 1.5x each), then the next natural evolution
         holds as a STATIC blacked-out shape (canon draws frame 0 -- the old
         pose-flicker here was the 10Hz flutter class)."""
+        """The gaze (Joel 2026-07-05 round 3): the WHOLE LCD, nothing else --
+        background, the current mon, the circle animation, the silhouette.
+        Boom boom boom.  The narration rides the message box (it IS a
+        message); no key hints anywhere."""
         p = self.pet
         bgimg = core_background(p)
         on = SIL_DAY if bgimg else LCD_ON   # never white (paint() rule)
-        out = menu.bar("DIGICORE", "the core")
-        if self.teaser_t < EXPAND_T:                      # the zoom-in beat
+        t = self.teaser_t
+        if t < MON_T:                                     # beat one: the mon itself
+            rows = self._pet_rows(p.num)
+            placements = [self._core_place(rows)] if rows else []
+            return render_scene(placements, 40, SCENE_ROWS, on, LCD_BG, bgimg=bgimg)
+        if t < MON_T + EXPAND_T:                          # beat two: the core turns
             badge = data.load_effects().get(core_badge_key(p) or "core_xnone", [None])[0]
             overlay = []
             if badge:
-                # the 14px badge zooms 1x -> 2x, clipped at the band's rim
-                k = 1 + self.teaser_t // (EXPAND_T // 2)
+                k = 1 + (t - MON_T) // (EXPAND_T // 2)    # 1x -> 2x zoom
                 k = min(k, 2)
                 big = ["".join(ch * k for ch in r) for r in badge for _ in range(k)]
                 bw, bh = max(len(r) for r in big), len(big)
-                ox, oy = (40 - bw) // 2, (CORE_ROWS * 2 - bh) // 2
+                ox, oy = (40 - bw) // 2, (SCENE_ROWS * 2 - bh) // 2
                 overlay = [(ox + x, oy + y) for y, row in enumerate(big)
                            for x, c in enumerate(row) if c == "1" and oy + y >= 0]
-            out.append_text(render_scene([], 40, CORE_ROWS, on, LCD_BG,
-                                         overlay=overlay, bgimg=bgimg))
-            out.append("\n")
-            out.append_text(menu.note("the core opens..."))
-            out.append_text(menu.footer(""))
-            return out
-        nxt = next_evolution(p)
+            return render_scene([], 40, SCENE_ROWS, on, LCD_BG,
+                                overlay=overlay, bgimg=bgimg)
+        nxt = next_evolution(p)                           # beat three: what stirs
         if nxt is None:
             rows = self._pet_rows(p.num, idx=0)
             placements = [self._core_place(rows)] if rows else []
-            out.append_text(render_scene(placements, 40, CORE_ROWS, on, LCD_BG, bgimg=bgimg))
-            out.append("\n")
-            out.append_text(menu.note("Nothing stirs — this is its final form."))
-        else:
-            # frame 0 mask (canon: still), crisp contour + shimmering interior
-            sil = ghost(silhouette(self._pet_rows(nxt, idx=0) or []),
-                        phase=(self.frame_i // 5) % 2)
-            placements = [self._core_place(sil)] if sil else []
-            out.append_text(render_scene(placements, 40, CORE_ROWS, on, LCD_BG, bgimg=bgimg))
-            out.append("\n")
-            out.append_text(menu.note("A shape looms in the core..."))
-        out.append_text(menu.footer("SPACE back   ESC out"))
-        return out
+            return render_scene(placements, 40, SCENE_ROWS, on, LCD_BG, bgimg=bgimg)
+        sil = ghost(silhouette(self._pet_rows(nxt, idx=0) or []),
+                    phase=(self.frame_i // 5) % 2)
+        placements = [self._core_place(sil)] if sil else []
+        return render_scene(placements, 40, SCENE_ROWS, on, LCD_BG, bgimg=bgimg)
+
+    def strip(self):
+        """Narration only -- the gaze speaks through the message box; every
+        other digicore state leaves it alone."""
+        if not self.teaser:
+            return ""
+        t = self.teaser_t
+        if t < MON_T:
+            return "the core stirs..."
+        if t < MON_T + EXPAND_T:
+            return "the core opens..."
+        return ("Nothing stirs — this is its final form."
+                if next_evolution(self.pet) is None
+                else "A shape looms in the core...")
 
     def _detail_scene(self):
         """One candidate's requirement checklist (evolution.requirement_report):
@@ -467,12 +477,7 @@ class DigiCorePanel:
         if self.teaser:
             return self._teaser_scene()
         if self._back_t:                              # evolSilhouetteBack: dark blink
-            out = menu.bar("DIGICORE", "the core")
-            out.append_text(render_scene([], 40, CORE_ROWS, SIL_NIGHT, "#000000"))
-            out.append("\n")
-            out.append_text(menu.note(""))
-            out.append_text(menu.footer(""))
-            return out
+            return render_scene([], 40, SCENE_ROWS, SIL_NIGHT, "#000000")
         if self.detail is not None:
             return self._detail_scene()
         if self.i == 0:
