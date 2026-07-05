@@ -182,3 +182,56 @@ def test_lights_wake_a_nap_unless_the_futon_holds_it():
     r = _pet(asleep=True, nap=False, lights=False)               # DEEP sleep
     r.toggle_lights()
     assert r.asleep                               # the switch never wakes real sleep
+
+
+# ---- care-mistake audit 2026-07-05 -------------------------------------------
+
+def test_every_mistake_stings_the_mood():
+    """incMistake: a Happy pet is knocked DOWN TO 100 (MistakeHappyMoodChange,
+    absolute on the -300..300 scale); anyone else loses MistakeMoodDec(50).
+    The counters used to tick silently."""
+    from tuipet.pet import Pet, MISTAKE_HAPPY_MOOD, MISTAKE_MOOD_DEC
+    assert (MISTAKE_HAPPY_MOOD, MISTAKE_MOOD_DEC) == (100, 50)
+    p = Pet(num=102, name="D", stage="Champion", attribute="Virus", obedience=500)
+    p.world_seconds = 12 * 60.0
+    p.mood = 280
+    cm0, md0 = p.care_mistakes, p.mistake_day
+    p._inc_mistake()
+    assert p.mood <= 101                      # dropped TO ~100 (disposition nudge +-1)
+    assert (p.care_mistakes, p.mistake_day) == (cm0 + 1, md0 + 1)
+    p.mood = -10
+    p._inc_mistake()
+    assert p.mood <= -59                      # the -50 sting
+
+
+def test_hunger_mistake_obedience_is_glutton_shaded():
+    """hungerMistakePenalty: obedience +1 -- canon really REWARDS a plain pet's
+    endured hunger -- but a glutton pays -1."""
+    from tuipet.pet import Pet
+    for glut, want in ((0, 1), (1, -1)):
+        q = Pet(num=102, name="D", stage="Champion", attribute="Virus",
+                obedience=500, glutton=glut)
+        q.world_seconds = 12 * 60.0
+        q.hunger = 0
+        ob = q.obedience
+        q._tick_hunger(600.0)
+        assert q.obedience == ob + want
+
+
+def test_a_fully_lit_night_costs_four_mistakes_and_one_obedience():
+    """The whole-night integration: lit mistakes at 60 then every 120 lit
+    minutes (~4 over a ver1 midnight-to-seven night); the obedience ding
+    exactly once."""
+    import random
+    from tuipet.pet import Pet
+    random.seed(7)
+    p = Pet(num=102, name="D", stage="Champion", attribute="Virus", obedience=500)
+    p.line_id = "ver1"
+    p.world_seconds = 23 * 60.0 + 30
+    cm0, ob0 = p.care_mistakes, p.obedience
+    for _ in range(10 * 60):
+        p.tick(1.0)
+        p.hunger = 4
+        p.sick = False
+    assert 3 <= p.care_mistakes - cm0 <= 5
+    assert p.obedience - ob0 == -1

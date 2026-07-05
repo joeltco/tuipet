@@ -333,6 +333,13 @@ DIRTY_EATING_WORSE_CHANCE = 16          # DirtyEatingWorseSickChance (% per pile
 DIRTY_EATING_SICK_CHANCE = 8            # DirtyEatingSickChance (% per pile)
 LESS_HUNGER_CHANCE = 9                  # LessHungerChance: the glutton decay-jitter odds
 # sleep (DVPet setAsleep / lightsCall / the morning wake roll)
+MISTAKE_HAPPY_MOOD = 100                # MistakeHappyMoodChange: a Happy pet DROPS TO 100
+MISTAKE_MOOD_DEC = 50                   # MistakeMoodDec: everyone else loses 50
+LIGHTS_MISTAKE_POSTPONE = -60.0         # AfterMistakeMinutesPostponed: the NEXT lit mistake
+#                                         lands 120 lit-minutes on (it REPEATS, not once/night)
+LIGHTS_MISTAKE_OBED = -1                # LightsOnMistakeObedienceChange (once per night)
+HUNGER_MISTAKE_OBED = 1                 # HungerMistakeObedienceChange (canon: +1!)
+HUNGER_MISTAKE_OBED_GLUTTON = -1        # ...ChangeGlutton
 LIGHTS_MISTAKE_SEC = 60.0               # MinutesToMistakeLights(60) as ~12% of the sleep,
 #                                         scaled to tuipet's ~6-min night -- one mistake/night
 MORNING_MOOD_CHANCE = 5                 # MorningMoodChance: 1/5 bad, 1/5 terrible-if-happy, 1/5 good
@@ -355,7 +362,6 @@ INSTANT_DEATH_GRACE = 60.0              # InstantDeathGracePeriod 3600: a burn c
 MIN_ENERGY_LIFE_PENALTY = 60.0          # MinEnergyLifePenalty 3600: bottoming out at the
 #                                         -maxEnergy floor burns life (setEnergy, per hit)
 #                                         scaled to tuipet's ~84h: ~1.2% of life x total mistakes
-HUNGER_MISTAKE_OBEDIENCE = 1            # HungerMistakeObedienceChange
 CALORIE_LAPSE_CHANGE = -1               # CalorieLapseChange (drain per lapse)
 CALORIE_LAPSE_GERIATRIC_EXTRA = -3      # CalorieLapseChangeGeriatric (added when elderly)
 CALORIE_DECAY_SEC = 1800 / (2 * CALORIE_LIMIT)   # keep ~1800s per hunger heart
@@ -897,17 +903,33 @@ class Pet:
         else:
             self._malady_t = 0.0
 
+    def _inc_mistake(self):
+        """PhysicalState.incMistake: EVERY care mistake stings the mood first --
+        a Happy pet is knocked DOWN TO 100 (MistakeHappyMoodChange, absolute),
+        anyone else loses 50 -- then the counters tick (care-mistake audit
+        2026-07-05: the counters ticked silently)."""
+        if self.current_mood() == "Happy":
+            self._set_mood(MISTAKE_HAPPY_MOOD)
+        else:
+            self._set_mood(self.mood - MISTAKE_MOOD_DEC)
+        self.care_mistakes += 1
+        self.mistake_day += 1                        # MistakeIncMissedDayChange
+
     def _tick_asleep(self, dt):
         """The sleep branch: lights neglect, deep-sleep regen, the awakeLapse
         clock with the restless jitter, asleep death checks, desperate poop."""
-        # lightsCall (DVPet): sleeping with the room light ON is neglect --
-        # one care mistake per sleep once the counter crosses the threshold.
+        # lightsCall (DVPet): sleeping with the room light ON is neglect.
+        # AfterMistakeMinutesPostponed is -60, NOT a latch: the mistake REPEATS
+        # every 120 lit minutes (a fully lit night is ~4 mistakes); the
+        # obedience ding lands ONCE per night (_lightsOffMistake flag).
         if self.lights:
             self._lights_t = getattr(self, "_lights_t", 0.0) + dt
-            if 0 <= self._lights_t >= LIGHTS_MISTAKE_SEC:
-                self._lights_t = float("-inf")       # AfterMistakeMinutesPostponed: once/night
-                self.care_mistakes += 1
-                self.mistake_day += 1  # MistakeIncMissedDayChange
+            if self._lights_t >= LIGHTS_MISTAKE_SEC:
+                self._lights_t = LIGHTS_MISTAKE_POSTPONE
+                if not getattr(self, "_lit_obed_hit", False):
+                    self._lit_obed_hit = True
+                    self.obedience += LIGHTS_MISTAKE_OBED
+                self._inc_mistake()
         # Pen20 DP: sleep restores jogress power -- 3 game-hours = a full meter
         if self.dp < DP_MAX:
             self._dp_t = getattr(self, "_dp_t", 0.0) + dt
@@ -1165,10 +1187,12 @@ class Pet:
             self._hunger_call_t = getattr(self, "_hunger_call_t", 0.0) + dt
             if self._hunger_call_t >= 600.0:                 # MinutesToMistake 10
                 self._hunger_call_t = -3600.0                # AfterMistakeMinutesPostponed
-                self.care_mistakes += 1
-                self.mistake_day += 2  # MistakeInc + HungerDecAtZero MissedDayChange
+                self._inc_mistake()
+                self.mistake_day += 1  # + HungerDecAtZero MissedDayChange
                 self._burn_life(HUNGER_MISTAKE_LIFE_DEC * max(1, self.care_mistakes))
-                self.obedience += HUNGER_MISTAKE_OBEDIENCE
+                # hungerMistakePenalty: obedience +1 -- or -1 for a glutton
+                self.obedience += (HUNGER_MISTAKE_OBED_GLUTTON if self.glutton > 0
+                                   else HUNGER_MISTAKE_OBED)
                 self._open_scold()           # neglect: the pet acts up
         elif self.hunger > 0:
             self._hunger_call_t = 0.0
@@ -1216,8 +1240,7 @@ class Pet:
             self._str_call_t = getattr(self, "_str_call_t", 0.0) + dt
             if self._str_call_t >= 600.0:                    # MinutesToMistakeStrength 10
                 self._str_call_t = -3600.0                   # AfterMistakeMinutesPostponed
-                self.care_mistakes += 1
-                self.mistake_day += 1
+                self._inc_mistake()
                 self.obedience -= 5                          # MistakeStrengthObedienceDec
                 self._open_scold()
         else:
@@ -1285,6 +1308,7 @@ class Pet:
                 self._set_mood(self.mood + ON_NAP_MOOD_INC)
             self.asleep, self.nap = True, True
             self._lights_t = 0.0
+            self._lit_obed_hit = False
             self._set_anim("yawn", 1.8)
 
     def _tick_sleep_pressure(self, dt):
@@ -1316,6 +1340,7 @@ class Pet:
                         self._set_mood(self.mood + ON_NAP_MOOD_INC)
                     self.asleep, self.nap = True, True
                     self._lights_t = 0.0
+                    self._lit_obed_hit = False
                     self.awake_lapse = max(0.0, self.awake_limit - self.sleep_lapse)
                     self._set_anim("yawn", 1.8)
 
