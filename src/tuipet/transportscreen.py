@@ -31,8 +31,14 @@ class TransportPanel:
     def _options(self):
         mi = max(0, min(self.pet.adv_map, len(self.maps) - 1))
         if self.kind == "continent":
+            # canon drawMapSelect honours per-map unlock flags: a continent is
+            # reachable once the one before it is beaten (a Wha ticket must not
+            # skip the progression; audit 2026-07-05 -- ALL 5 were listed)
+            from . import persistence
+            beaten = persistence.get_progress().get("maps", set())
             return [(f"Continent {i + 1}   ({len(m['zones'])} zones)", i, 0)
-                    for i, m in enumerate(self.maps)]
+                    for i, m in enumerate(self.maps)
+                    if i == 0 or (i - 1) in beaten or i <= self.pet.adv_map]
         if self.kind == "zone":
             return [(f"Zone {zi + 1}", mi, zi)
                     for zi in range(len(self.maps[mi]["zones"]))]

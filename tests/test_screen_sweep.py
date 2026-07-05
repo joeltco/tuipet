@@ -575,3 +575,21 @@ def test_transports_land_at_canon_arrival_points():
             break
     assert ev and ev[0] == "boss"
     assert adv.location == first_boss
+
+
+def test_continent_warp_lists_only_unlocked_maps():
+    """Canon drawMapSelect honours map unlocks: a Wha ticket day one must not
+    offer Continent 5 (transport re-audit 2026-07-05 -- all maps were listed)."""
+    from tuipet.transportscreen import TransportPanel
+    from tuipet import persistence
+    p = _pet()
+    p.add_item("i:31")                              # Continent Transport (Wha)
+    pan = TransportPanel(p, "i:31")
+    assert len(pan.options) == 1                    # fresh save: Continent 1 only
+    assert pan.options[0][1] == 0
+    persistence.map_complete_add(0)                 # first continent beaten
+    pan = TransportPanel(p, "i:31")
+    assert [o[1] for o in pan.options] == [0, 1]
+    p.adv_map = 3                                   # already standing on map 4:
+    pan = TransportPanel(p, "i:31")                 # never locked out of it
+    assert 3 in [o[1] for o in pan.options]
