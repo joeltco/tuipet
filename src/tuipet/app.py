@@ -54,7 +54,7 @@ PET_BASE_X = (SCREEN_COLS - SPRITE_W) // 2      # the fx painter's centred-pet o
 
 class _FxCtx:
     """Mutable per-frame paint context shared by the _fxk_* painters."""
-    __slots__ = ("rows", "overlay", "xshift", "yshift", "bg", "bgimg", "px_h")
+    __slots__ = ("rows", "overlay", "xshift", "yshift", "bg", "bgimg", "px_h", "mirror")
 
 import re as _re
 # navigation keys: pressing one in a sub-screen plays the scroll blip (unless the
@@ -515,7 +515,18 @@ class Screen(Static):
             bite = 9 if (pet is not None and (getattr(pet, "_last_meal_disliked", False)
                                               or pet.hunger >= _OVL)) else 7
             heavy = pet is not None and pet.num != -1 and pet._base_weight() >= 40
-            if heavy:
+            leftover = pet is not None and getattr(pet, "_last_meal_leftover", False)
+            if leftover:
+                # applyFood: modifier <= DisposeLeftoversMinModifier(0.5) -> the
+                # STUFFED pet's meal is State.Munching -- two beats of chewing,
+                # then disposeFood: it turns away and DROPS the rest off-screen
+                beats = [int(b ** mod) for b in (10, 14, 18)]
+                self.fx["chew"] = {beats[0]: 8, beats[1]: bite, beats[2]: 8}
+                fb = (beats[1], 999, 999)                        # only bite one lands
+                self.fx["bite_snds"] = {beats[1]: "eat"}
+                self.fx["munch_at"] = beats[2]
+                self.fx["steps"] = beats[2] + 22                 # the dispose tail
+            elif heavy:
                 beats = [int(b ** mod) for b in (10, 14, 18, 22)]
                 self.fx["chew"] = {beats[0]: 8, beats[1]: bite, beats[2]: 8, beats[3]: bite}
                 fb = (beats[1], beats[3], beats[3])         # food frames 0 -> 1 -> 3 (skips 2)
@@ -670,6 +681,7 @@ class Screen(Static):
         c.overlay = _weather_overlay(pet.weather, self.frame_i // 4, SCREEN_COLS, c.px_h)   # paint()'s 0.4s cadence
         c.xshift = 0
         c.yshift = 0
+        c.mirror = False
         if fx["kind"] in ("eat", "cheer", "jeer", "spit"):
             # DVPet checkFilth runs inside these anims: piles stay visible and the
             # pet (and its food) stands clear of them.
@@ -690,7 +702,7 @@ class Screen(Static):
         painter = getattr(self, "_fxk_" + fx["kind"], None)
         if painter is not None:
             painter(pet, fx, step, c)
-        mirror = (fx["kind"] in ("dying", "poop")
+        mirror = (c.mirror or fx["kind"] in ("dying", "poop")
                   or (fx["kind"] == "gift" and GIFT_OUT <= step < GIFT_OUT + GIFT_BACK)  # facing right, ambling back
                   or (fx["kind"] == "spit" and (step // 6) % 2 == 0))   # refuse(): head-shake flips
         self.update(render_screen(c.rows, SCREEN_COLS, SCREEN_ROWS, on, c.bg,
@@ -703,6 +715,22 @@ class Screen(Static):
         # 10/14/18/22/26/30 while the food is consumed frame-by-frame; ends ~34.
         if c.xshift == 0:
             c.xshift = -1                                  # no filth: DVPet char x29 of 104 (~28%)
+        ma = fx.get("munch_at")
+        if ma is not None and step >= ma:
+            # disposeFood: the pet turns away (pose 1, flipping at beat 5) and
+            # the half-eaten food FALLS off the bottom of the screen
+            d = step - ma
+            c.rows = self._pose_rows_idx(pet, 1)
+            c.mirror = d >= 5
+            food = self._food_frames(fx.get("icon") or "f:0")
+            if food:
+                fr = food[min(1, len(food) - 1)]
+                if fr:
+                    fw = len(fr[0])
+                    fy = 13 + max(0, d - 10)
+                    if fy < c.px_h:
+                        c.overlay += _blit(fr, max(0, PET_BASE_X + c.xshift - fw), fy)
+            return
         chew = fx.get("chew") or {10: 8, 14: 7, 18: 8, 22: 7, 26: 8, 30: 7}
         pose_i = 0
         for b in sorted(chew):

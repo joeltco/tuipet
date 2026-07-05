@@ -243,3 +243,38 @@ def test_hatch_render_follows_the_canon_beats():
             assert all(x == 0 for w, x in seq[:4]) and all(x == 0 for w, x in seq[16:])
     finally:
         app_mod.render_screen = old
+
+
+def test_stuffed_meal_drops_the_leftovers():
+    """Eating-anim audit 2026-07-05: applyFood at modifier <= 
+    DisposeLeftoversMinModifier(0.5) is State.Munching -- two bites, then
+    disposeFood: the pet turns away and the half-eaten food falls off-screen.
+    tuipet played the full three-bite triad no matter how stuffed the pet."""
+    import random
+    from tuipet import data
+    from tuipet.pet import Pet, DISPOSE_LEFTOVERS_MIN
+    assert DISPOSE_LEFTOVERS_MIN == 0.5
+    random.seed(2)
+    p = Pet(num=102, name="D", stage="Champion", attribute="Virus",
+            obedience=900, glutton=1)
+    p.world_seconds = 12 * 60.0
+    p.hunger = 6                                  # over FULL by 2 -> modifier 0.5
+    p._set_mood(100)
+    meat = next(f for f in data.load_foods() if int(f.get("hunger", 0)) > 0)
+    p.feed(meat)
+    assert p._last_meal_leftover
+    s = _FakeScreen()
+    s.start_fx("eat", "f:0", pet=p)
+    ma = s.fx.get("munch_at")
+    assert ma and s.fx["steps"] == ma + 22        # chew to the third beat + the drop
+    assert list(s.fx["bite_snds"].values()) == ["eat"]   # no lastBite: it never finishes
+    # a normal meal keeps the full triad
+    p2 = Pet(num=102, name="D", stage="Champion", attribute="Virus", obedience=900)
+    p2.world_seconds = 12 * 60.0
+    p2.hunger = 1
+    p2._set_mood(100)
+    p2.feed(meat)
+    assert not p2._last_meal_leftover
+    s2 = _FakeScreen()
+    s2.start_fx("eat", "f:0", pet=p2)
+    assert s2.fx.get("munch_at") is None and len(s2.fx["chew"]) == 6

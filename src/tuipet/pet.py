@@ -312,6 +312,7 @@ POOP_MAX_PILES = 4                      # classic Digimon V-Pet max poops (DVPet
 # hunger / stomach (DVPet FullHunger / StomachCapacity / OvereatLimit)
 FULL_HUNGER = 4                         # FullHunger: a satisfied stomach (4 hearts)
 STOMACH_CAPACITY = 4                    # StomachCapacity: the applyFood fullness-modifier divisor
+DISPOSE_LEFTOVERS_MIN = 0.5             # DisposeLeftoversMinModifier: at/below, Munching drops the rest
 OVEREAT_LIMIT = 5                       # OvereatLimit: a glutton may fill one heart past full
 CALORIE_LIMIT = 4                       # CalorieLimit (buffer half-range)
 DP_MAX = 4                              # Pen20 DP meter: full (4) required to jogress;
@@ -2355,6 +2356,9 @@ class Pet:
         # effects (1 - overfull/stomach); a strength-food (hunger 0) is always full-value.
         over = self.hunger - FULL_HUNGER
         modifier = 1.0 if (over <= 0 or not fills) else max(0.0, 1.0 - over / STOMACH_CAPACITY)
+        # applyFood: modifier <= DisposeLeftoversMinModifier -> State.Munching --
+        # the stuffed pet takes two bites and DROPS the rest (the eat fx reads it)
+        self._last_meal_leftover = fills and modifier <= DISPOSE_LEFTOVERS_MIN
 
         def scaled(key):
             return math.ceil(food.get(key, 0) * modifier) if food.get(key, 0) > 0 else int(round(food.get(key, 0) * modifier))
