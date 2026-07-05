@@ -32,21 +32,15 @@ def _paint_cells(buf, cols, rows, on, bg, bgimg):
     art passes through the active theme's quantizer when it declares one
     (gameboy's 4-shade DMG ramp) -- this is the ONE spot every bgimg crosses,
     so weather tints, cross-fades and lightning all inherit the palette."""
-    q = None
     if bgimg:
         from . import theme
-        q = theme.bg_map()
+        bgimg = theme.themed_bg(bgimg)   # gameboy: Bayer-dithered onto the DMG ramp
     t = Text()
     for cy in range(rows):
         ty, byy = cy * 2, cy * 2 + 1
         for cx in range(cols):
-            if bgimg:
-                tbg = q(bgimg[ty][cx * 6:cx * 6 + 6]) if q else "#" + bgimg[ty][cx * 6:cx * 6 + 6]
-                bbg = q(bgimg[byy][cx * 6:cx * 6 + 6]) if q else "#" + bgimg[byy][cx * 6:cx * 6 + 6]
-            else:
-                tbg = bbg = bg
-            tc = on if buf[ty][cx] else tbg
-            bc = on if buf[byy][cx] else bbg
+            tc = on if buf[ty][cx] else ("#" + bgimg[ty][cx * 6:cx * 6 + 6] if bgimg else bg)
+            bc = on if buf[byy][cx] else ("#" + bgimg[byy][cx * 6:cx * 6 + 6] if bgimg else bg)
             t.append("▀", style=f"{tc} on {bc}")
         if cy != rows - 1:
             t.append("\n")

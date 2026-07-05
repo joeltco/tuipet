@@ -133,34 +133,60 @@ def _derive(t):
     }
 
 
-_BG_MAPS: dict = {}          # theme name -> {6-hex: "#rrggbb"} memo (grows per bg art)
+_BG_QUANT: dict = {}         # (theme, frame) -> dithered frame memo
+_BAYER = ((0, 8, 2, 10), (12, 4, 14, 6), (3, 11, 1, 9), (15, 7, 13, 5))
 
 
-def bg_map():
-    """The active theme's background quantizer, or None for full colour.
-
-    A theme that declares `bg_ramp` (gameboy: the 4 DMG shades) renders ALL
-    habitat/core background art through it -- each pixel's luminance picks a
-    ramp shade, so the LCD never shows a colour off the device's palette
-    (Joel 2026-07-05: gameboy backgrounds looked full-colour).  Returns a
-    memoized 6-hex-chars -> "#rrggbb" mapper; render._paint_cells is the one
-    caller, so every bgimg path (weather tints, cross-fades, lightning)
-    inherits it."""
+def themed_bg(frame):
+    """Background art under the active theme: full colour normally; a theme
+    that declares `bg_ramp` (gameboy: the 4 DMG shades) gets the frame
+    ORDERED-DITHERED onto the ramp -- Bayer 4x4, the way real DMG ports
+    rendered continuous art.  (The first cut was flat luminance bands: large
+    muddy zones -- Joel 2026-07-05.)  Frame-level and memoized, and
+    render._paint_cells is the one caller, so weather tints, cross-fades and
+    lightning blends all inherit the palette."""
     ramp = THEMES[_current].get("bg_ramp")
-    if not ramp:
-        return None
-    cache = _BG_MAPS.setdefault(_current, {})
-    n = len(ramp)
+    if not ramp or not frame:
+        return frame
+    key = (_current, tuple(frame))
+    v = _BG_QUANT.get(key)
+    if v is None:
+        if len(_BG_QUANT) > 512:              # cross-fades mint transient frames
+            _BG_QUANT.clear()
+        v = _dither_frame(frame, ramp)
+        _BG_QUANT[key] = v
+    return v
 
-    def q(h, _c=cache, _r=ramp, _n=n):
-        v = _c.get(h)
-        if v is None:
-            lum = (299 * int(h[0:2], 16) + 587 * int(h[2:4], 16)
-                   + 114 * int(h[4:6], 16)) // 1000
-            v = _r[min(_n - 1, lum * _n // 256)]
-            _c[h] = v
-        return v
-    return q
+
+def _dither_frame(frame, ramp):
+    """Contrast-stretch the frame's luminance to the full ramp, then Bayer
+    4x4 ordered dither.  ABSOLUTE luminance wasted the palette -- most art is
+    bright, so whole frames collapsed into the top two shades and the detail
+    vanished; GB art was hand-authored to span all four, and the per-frame
+    stretch is the automated equivalent (2nd..98th percentile, with a
+    near-uniform guard so a flat frame doesn't amplify noise)."""
+    n1 = len(ramp) - 1
+    strip = [c[1:] for c in ramp]             # bare 6-hex cells for row concat
+    lums = [[(299 * int(row[x:x + 2], 16) + 587 * int(row[x + 2:x + 4], 16)
+              + 114 * int(row[x + 4:x + 6], 16)) / 255000.0
+             for x in range(0, len(row), 6)] for row in frame]
+    flat = sorted(v for r in lums for v in r)
+    lo = flat[int(0.02 * (len(flat) - 1))]
+    hi = flat[int(0.98 * (len(flat) - 1))]
+    span = hi - lo
+    if span < 0.08:                           # near-uniform frame: absolute mapping
+        lo, span = 0.0, 1.0
+    out = []
+    for y, lrow in enumerate(lums):
+        br = _BAYER[y & 3]
+        cells = []
+        for x, lum in enumerate(lrow):
+            t = (lum - lo) / span
+            t = 0.0 if t < 0.0 else (1.0 if t > 1.0 else t)
+            idx = int(t * n1 + (br[x & 3] + 0.5) / 16)
+            cells.append(strip[n1 if idx > n1 else idx])
+        out.append("".join(cells))
+    return out
 
 
 def apply(name, propagate=True):

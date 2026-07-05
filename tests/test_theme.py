@@ -157,16 +157,32 @@ def test_gameboy_declares_the_dmg_ramp():
     assert theme.THEMES["gameboy"]["void"] == "#0f380f"   # lights-off stays on-palette
 
 
-def test_bg_map_quantizes_only_when_the_theme_declares_a_ramp():
+def test_themed_bg_dithers_only_when_the_theme_declares_a_ramp():
+    frame = ["".join("%02x%02x%02x" % (v, v, v) for v in range(0, 240, 30))] * 4
     try:
         theme.apply("grey")
-        assert theme.bg_map() is None                     # full colour passes through
+        assert theme.themed_bg(frame) is frame            # full colour passes through
         theme.apply("gameboy")
-        q = theme.bg_map()
-        assert q is not None
-        for h in ("000000", "ff0000", "00ff00", "ffffff", "9bbc0f", "808080"):
-            assert q(h) in _DMG, f"{h} mapped off-palette: {q(h)}"
-        assert q("000000") == _DMG[0] and q("ffffff") == _DMG[-1]
+        out = theme.themed_bg(frame)
+        cols = {out[y][x:x + 6] for y in range(4) for x in range(0, len(out[0]), 6)}
+        assert cols <= {c[1:] for c in _DMG}, f"off-palette: {cols}"
+        assert theme.themed_bg(frame) is out              # memoized per frame
+    finally:
+        theme.apply("grey")
+
+
+def test_gameboy_dither_stretches_contrast_across_the_ramp():
+    """Absolute luminance collapsed most art into the top two shades (the
+    banded first cut Joel bounced) -- a NARROW mid-luminance frame must still
+    span the whole ramp after the per-frame stretch, and a smooth gradient
+    must dither through more than two shades."""
+    frame = ["".join("%02x%02x%02x" % (v, v, v) for v in range(100, 160, 4))] * 8
+    try:
+        theme.apply("gameboy")
+        out = theme.themed_bg(frame)
+        cols = {out[y][x:x + 6] for y in range(8) for x in range(0, len(out[0]), 6)}
+        assert _DMG[0][1:] in cols and _DMG[-1][1:] in cols, "stretch missing"
+        assert len(cols) >= 3, "gradient should dither through the mid shades"
     finally:
         theme.apply("grey")
 
