@@ -1,9 +1,11 @@
 """Transport items (DVPet Phoenix/Birdra/Garuda/Wha) — warp across the Digital World.
 
 Zone / Continent Transport pick a destination; Town / Disaster Transport are instant.
-All set the pet's persistent world position (adv_map / adv_zone), so the NEXT Adventure
-begins there. Town Transport rests the pet; Disaster Transport forces an encounter on the
-next adventure leg (pet.adv_seek). The ticket is consumed only on a confirmed warp.
+All set the pet's persistent world position (adv_map / adv_zone / adv_loc), so the
+NEXT Adventure begins there.  Arrival points are canon (PhysicalState.transport):
+Phoenix lands at the zone's first town, Birdra moves you to the town AND rests,
+Garuda lands one step shy of the next boss, Wha changes continent.  The ticket is
+consumed only on a confirmed warp.
 """
 from __future__ import annotations
 from . import data, menu
@@ -47,17 +49,31 @@ class TransportPanel:
         elif k in ("enter", "space"):
             _, mi, zi = self.options[self.cursor]
             self.pet.adv_map, self.pet.adv_zone = mi, zi
-            if self.kind == "town":
-                self.pet.energy = self.pet.max_energy          # a town rests the pet
+            zone = self.maps[mi]["zones"][zi]
+            towns = zone.get("towns") or ()
+            # canon arrival points (PhysicalState.transport, audit 2026-07-04):
+            # every warp used to dump you at step 0
+            if self.kind == "zone":
+                # Phoenix lands at the zone's FIRST TOWN (towns[0].range[0])
+                self.pet.adv_loc = towns[0][0] if towns else 0
+            elif self.kind == "town":
+                # Birdra MOVES you to the town (toTravelTown), then the rest
+                self.pet.adv_loc = towns[0][0] if towns else 0
+                self.pet._set_energy(self.pet.max_energy)
             elif self.kind == "danger":
-                self.pet.adv_seek = True                       # forced encounter next leg
+                # Garuda lands one step shy of the NEXT BOSS (e.location - 1)
+                bosses = sorted(b.get("location") or zone.get("total_steps", 10000)
+                                for b in zone.get("bosses", ()))
+                self.pet.adv_loc = max(0, (bosses[0] if bosses else 0) - 1)
+            else:                                              # continent: the map's gate
+                self.pet.adv_loc = 0
             n = self.pet.inventory.get(self.item_key, 1) - 1        # consume the ticket
             if n <= 0:
                 self.pet.inventory.pop(self.item_key, None)
             else:
                 self.pet.inventory[self.item_key] = n
             dest = {"continent": f"Continent {mi + 1}", "zone": f"Zone {zi + 1}",
-                    "town": "the town", "danger": "danger"}[self.kind]
+                    "town": "the town", "danger": "the next boss"}[self.kind]
             return ("done", f"Warped to {dest}!")
         elif k in ("escape", "o"):
             return ("done", None)                              # cancel — ticket kept

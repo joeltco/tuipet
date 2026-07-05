@@ -526,3 +526,52 @@ def test_thunder_flash_renders_and_startles():
             s.paint(p)
         if lights:
             assert s.thunder_i == 0          # the countdown burns out while lit
+
+
+def test_transports_land_at_canon_arrival_points():
+    """Canon PhysicalState.transport (audit 2026-07-04): warps land AT a place
+    -- Phoenix at the zone's first town, Birdra moves you to the town AND
+    rests, Garuda one step shy of the next boss.  Every warp used to dump you
+    at step 0 (and Garuda flagged a random ambush instead of the boss)."""
+    from tuipet import data
+    from tuipet.transportscreen import TransportPanel
+    from tuipet.adventure import Adventure
+
+    zone = data.load_maps()[0]["zones"][0]
+    first_town = zone["towns"][0][0]
+    first_boss = sorted(b.get("location") or zone.get("total_steps", 10000)
+                        for b in zone["bosses"])[0]
+
+    p = _pet()
+    p.add_item("i:28")
+    pan = TransportPanel(p, "i:28")
+    pan.kind = "zone"                              # Phoenix
+    pan.options = pan._options()
+    r = pan.key("enter")
+    assert r and "Warped" in r[1]
+    assert p.adv_loc == first_town
+    adv = Adventure(p)                             # the next journey consumes it
+    assert adv.location == first_town and p.adv_loc == 0
+
+    p.add_item("i:28")
+    p.energy = 1
+    pan = TransportPanel(p, "i:28")
+    pan.kind = "town"                              # Birdra: moved AND rested
+    pan.options = pan._options()
+    pan.key("enter")
+    assert p.adv_loc == first_town and p.energy == p.max_energy
+
+    p.add_item("i:28")
+    pan = TransportPanel(p, "i:28")
+    pan.kind = "danger"                            # Garuda: one shy of the boss
+    pan.options = pan._options()
+    pan.key("enter")
+    assert p.adv_loc == first_boss - 1
+    adv = Adventure(p)
+    assert adv.location == first_boss - 1
+    for _ in range(40):                            # refusals/discovers may stall,
+        ev = adv.travel()                          # but the FIRST real stride
+        if ev and ev[0] == "boss":                 # crosses the gate boss
+            break
+    assert ev and ev[0] == "boss"
+    assert adv.location == first_boss

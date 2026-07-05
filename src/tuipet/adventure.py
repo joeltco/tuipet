@@ -86,7 +86,10 @@ class Adventure:
         zones = self.maps[self.mi]["zones"]
         self.zi = max(0, min(getattr(pet, "adv_zone", 0), len(zones) - 1))
         self.life = MAX_LIFE
-        self.location = 0            # real DVPet step units within the zone (0..total_steps)
+        # transport arrival (canon PhysicalState.transport sets the zone's
+        # currentLocation): a warp lands AT its destination step, consumed here
+        self.location = max(0, min(int(getattr(pet, "adv_loc", 0) or 0), self.total_steps - 1))
+        pet.adv_loc = 0
         self.boss_pending = False
         self.done = False
         self.last = "Adventure begins!"

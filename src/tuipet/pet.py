@@ -620,6 +620,9 @@ class Pet:
     adv_map: int = 0
     adv_zone: int = 0
     adv_seek: bool = False    # Disaster Transport: next adventure leg forces an encounter
+    adv_loc: int = 0          # transport ARRIVAL step (canon warps land AT a place: the
+    #                           zone's first town / the next boss, not step 0) -- the next
+    #                           Adventure starts here, then it clears (audit 2026-07-04)
     egg_type: int = 0
     lifespan: float = LIFE_START
     generation: int = 1
