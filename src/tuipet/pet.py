@@ -333,6 +333,17 @@ DIRTY_EATING_WORSE_CHANCE = 16          # DirtyEatingWorseSickChance (% per pile
 DIRTY_EATING_SICK_CHANCE = 8            # DirtyEatingSickChance (% per pile)
 LESS_HUNGER_CHANCE = 9                  # LessHungerChance: the glutton decay-jitter odds
 # sleep (DVPet setAsleep / lightsCall / the morning wake roll)
+# careBonusOnReset (config col 0): the departed's whole-life REPORT CARD --
+# graded at the next generation's start; the result SEEDS the new egg's bonus.
+# (The Digimemory etch runs FIRST and spends the bonus, so an etched life
+# grades from zero + the card; an unetched one keeps its leftover credit.)
+BONUS_INC_OBEDIENCE = 75                # BonusIncObedience
+BONUS_DEC_OBEDIENCE = 50                # BonusDecObedience
+BONUS_INC_WIN_RATE = 90                 # BonusIncWinRate (lifetime %)
+BONUS_STAGE = {                         # stage base / attribute bar / battles bar
+    "Champion": (0, 175, 30),           # (+1 extra when NOT a Failed form)
+    "Ultimate": (2, 225, 50),
+    "Mega": (3, 300, 75)}
 MISTAKE_HAPPY_MOOD = 100                # MistakeHappyMoodChange: a Happy pet DROPS TO 100
 MISTAKE_MOOD_DEC = 50                   # MistakeMoodDec: everyone else loses 50
 LIGHTS_MISTAKE_POSTPONE = -60.0         # AfterMistakeMinutesPostponed: the NEXT lit mistake
@@ -3156,6 +3167,53 @@ class Pet:
         self._set_anim("heal", 1.5)
         return ("All patched up!" if self.inj_length == 0
                 else f"{self.name} is bandaged — it needs rest now.")
+
+    def _growth_period(self):
+        """The growth curve's total: egg + every stage through the current one
+        (canon _growthPeriod; the longevity leg credits life lived past it)."""
+        order = ("Fresh", "InTraining", "Rookie", "Champion", "Ultimate", "Mega")
+        total = float(self.EGG_DURATION)
+        for st in order:
+            total += self.STAGE_DURATION.get(st, 0)
+            if st == self.stage:
+                break
+        return total
+
+    def _is_failed_form(self):
+        """isFilthyEvol: the current form is a SpecialEvolution=Failed one."""
+        r = data.load_requirements().get(self.num, {})
+        return (r.get("special") or "None") == "Failed"
+
+    def final_care_grade(self):
+        """careBonusOnReset: grade the ending life.  Runs at death AFTER the
+        Digimemory etch (which spends the bonus); the result seeds the next
+        generation's evol_bonus."""
+        b = self.evol_bonus
+        b = b - self.care_mistakes if self.care_mistakes > 0 else b + 1
+        m = self.current_mood()
+        if m == "Happy":
+            b += 1
+        elif m != "Neutral":
+            b -= 1
+        if self.obedience > BONUS_INC_OBEDIENCE:
+            b += 1
+        elif self.obedience < BONUS_DEC_OBEDIENCE:
+            b -= 1
+        if self.battles and (self.wins / self.battles * 100.0) >= BONUS_INC_WIN_RATE:
+            b += 1
+        # longevity: whole days lived past the growth curve (negative if short)
+        b += int((self.age_seconds - self._growth_period()) // DAY_MINUTES)
+        st = BONUS_STAGE.get(self.stage)
+        if st:
+            base, attr_bar, battle_bar = st
+            b += base
+            if self.stage == "Champion" and not self._is_failed_form():
+                b += 1
+            if self.vaccine + self.data_power + self.virus >= attr_bar:
+                b += 1
+            if self.battles > battle_bar:
+                b += 1
+        return max(0, b)
 
     def make_digimemory(self):
         """setNewDigimemory, the dying pet's side: with a care bonus in hand, etch

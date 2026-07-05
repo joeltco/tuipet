@@ -185,6 +185,21 @@ def bank_digimemory(mem):
     save_settings(d)
 
 
+def bank_bonus_seed(n):
+    """Park the departed's care grade (careBonusOnReset) for the next egg."""
+    d = load_settings()
+    d.setdefault("progress", {})["bonus_seed"] = int(n)
+    save_settings(d)
+
+
+def take_bonus_seed():
+    d = load_settings()
+    n = (d.get("progress") or {}).pop("bonus_seed", None)
+    if n is not None:
+        save_settings(d)
+    return int(n or 0)
+
+
 def peek_digimemory():
     return _prog().get("digimemory") or None
 

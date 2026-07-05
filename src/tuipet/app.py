@@ -1412,6 +1412,8 @@ class TuiPetApp(App):
         if mem:
             pet.digimemory = dict(mem)
             pet.add_item("i:32")
+        # the departed's care grade seeds this generation's bonus (careBonusOnReset)
+        pet.evol_bonus = persistence.take_bonus_seed()
 
     def _after_death(self, result):
         if result == "new":
@@ -1975,6 +1977,9 @@ class TuiPetApp(App):
                     old_mem = persistence.peek_digimemory()
                     if new_mem and not old_mem:
                         persistence.bank_digimemory(new_mem)
+                    # careBonusOnReset: the whole-life report card, graded AFTER
+                    # the etch spent the bonus -- it seeds the next egg
+                    persistence.bank_bonus_seed(self.pet.final_care_grade())
                     persistence.save(self.pet)             # the spent bonus sticks
                     self._open_mode(deathscreen.DeathPanel(self.pet, hold=20, new_mem=new_mem,
                                                            old_mem=old_mem), self._after_death)
