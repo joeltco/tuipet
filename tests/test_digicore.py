@@ -320,3 +320,20 @@ def test_the_core_gaze_looms_over_the_core_background():
     assert cap and all(b is not None for b in cap)   # every gaze frame carries it
     assert msgs == ["the core stirs...", "the core opens...",
                     "A shape looms in the core..."]  # the message box narrates
+
+
+def test_evolves_page_windows_instead_of_overflowing():
+    """Refactor 2026-07-05: EVOLVES/detail ride menu.list_window/scroll_window
+    (visuals byte-identical, proven by markup snapshot).  The old hand-rolled
+    EVOLVES loop drew EVERY row -- 9+ candidates overflowed the physical LCD;
+    the shared window scrolls with the cursor instead."""
+    p = _champ()
+    pan = DigiCorePanel(p)
+    while pan.pages[pan.i][0] != "EVOLVES":
+        pan.key("right")
+    fake = [(100 + j, f"Cand{j}", False, j + 1) for j in range(11)]
+    pan.pages[pan.i] = ("EVOLVES", fake)
+    pan.evo_sel = 10
+    t = pan.text().plain
+    assert t.count("\n") <= 12                       # fits the LCD
+    assert "Cand10" in t and "Cand0" not in t        # windowed onto the cursor

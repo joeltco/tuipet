@@ -439,36 +439,46 @@ class DigiCorePanel:
     def _detail_scene(self):
         """One candidate's requirement checklist (evolution.requirement_report):
         met gates dim out of the way, the unmet ones are the raising guide."""
+        from rich.text import Text
         num, name = self.detail
         report = (lines.requirement_report(self.pet, num) if lines.active(self.pet)
                   else evolution.requirement_report(self.pet, num))
         vis = 8
-        self.det_off = max(0, min(self.det_off, max(0, len(report) - vis)))
         out = menu.header(f"DIGICORE  {name[:16].upper()}", "req")
-        for met, txt in report[self.det_off:self.det_off + vis]:
+
+        def fmt(r, i):
+            met, txt = r
             mark = {True: " " + chr(0x2713) + " ", False: " " + chr(0x2717) + " ",
                     None: "   "}[met]
-            out.append(mark, style=DIM if met else INK_B)
-            out.append(txt[:35] + "\n", style=DIM if met is not False else INK_B)
-        out.append_text(menu.blanks(vis - min(vis, len(report) - self.det_off)))
+            t = Text()
+            t.append(mark, style=DIM if met else INK_B)
+            t.append(txt[:35] + "\n", style=DIM if met is not False else INK_B)
+            return t
+
+        self.det_off = menu.scroll_window(out, report, self.det_off, vis, fmt)
         more = "" if len(report) <= vis else f"  ({self.det_off + 1}-{min(len(report), self.det_off + vis)}/{len(report)})"
         out.append_text(menu.footer(f"↑↓ scroll{more}   ESC back"))
         return out
 
     def _evolves_scene(self, rows, dots):
+        from rich.text import Text
         out = menu.header("DIGICORE  EVOLVES", dots)
         if isinstance(rows, str):                      # "(too young)" / "(final form)"
             out.append(f" {rows}\n", style=DIM)
             out.append_text(menu.blanks(8))
             out.append_text(menu.footer("←→ page    ESC close"))
             return out
-        self.evo_sel = min(self.evo_sel, len(rows) - 1)
-        for j, (num, name, ready, unmet) in enumerate(rows):
+
+        def fmt(r, j):
+            num, name, ready, unmet = r
             cur = j == self.evo_sel
             tag = chr(0x2713) + " ready" if ready else f"{unmet} to go"
-            out.append(("▸" if cur else " ") + f" {name[:20]:<21}", style=INK_B if cur else INK)
-            out.append(f"{tag:>10}\n", style=INK_B if ready else DIM)
-        out.append_text(menu.blanks(8 - len(rows)))
+            t = Text()
+            t.append(("▸" if cur else " ") + f" {name[:20]:<21}", style=INK_B if cur else INK)
+            t.append(f"{tag:>10}\n", style=INK_B if ready else DIM)
+            return t
+
+        self.evo_sel = menu.list_window(out, rows, self.evo_sel, 8, fmt)
         out.append_text(menu.note("ENTER: what it takes"))
         out.append_text(menu.footer("↑↓ pick  ENTER req  ←→ page  ESC"))
         return out

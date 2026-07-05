@@ -124,9 +124,11 @@ def icon_info(out, icon, info):
 
 def list_window(out, rows, cursor, vis, fmt, empty=None):
     """The shared scrolling list body: a vis-row window centred on the cursor,
-    each row through fmt(item, index) -> (label, selected_ok), padded with
-    blanks.  Retires seven hand-rolled copies (audit 2026-07).  Returns the
-    clamped cursor so callers can keep theirs in range."""
+    each row through fmt(item, index), padded with blanks.  Retires seven
+    hand-rolled copies (audit 2026-07).  fmt returns a plain label (rendered
+    via row() with the ▸ cursor) OR a styled Text owning its whole line incl.
+    the newline -- for lists with their own row grammar (digicore EVOLVES).
+    Returns the clamped cursor so callers can keep theirs in range."""
     n = len(rows)
     cursor = min(cursor, max(0, n - 1))
     if not n:
@@ -137,10 +139,26 @@ def list_window(out, rows, cursor, vis, fmt, empty=None):
     lo = max(0, min(cursor - vis // 2, n - vis))
     shown = 0
     for i in range(lo, min(lo + vis, n)):
-        out.append_text(row(fmt(rows[i], i), i == cursor))
+        lbl = fmt(rows[i], i)
+        out.append_text(lbl if isinstance(lbl, Text) else row(lbl, i == cursor))
         shown += 1
     out.append_text(blanks(vis - shown))
     return cursor
+
+
+def scroll_window(out, rows, off, vis, fmt):
+    """list_window's cursor-less cousin: a vis-row window at a raw scroll
+    OFFSET (requirement checklists, logs) -- no selection, no centring.  Same
+    fmt contract (plain label or a styled whole-line Text).  Returns the
+    clamped offset."""
+    off = max(0, min(off, max(0, len(rows) - vis)))
+    shown = 0
+    for i in range(off, min(off + vis, len(rows))):
+        lbl = fmt(rows[i], i)
+        out.append_text(lbl if isinstance(lbl, Text) else row(lbl))
+        shown += 1
+    out.append_text(blanks(vis - shown))
+    return off
 
 
 class SubHost:
