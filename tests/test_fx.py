@@ -278,3 +278,25 @@ def test_stuffed_meal_drops_the_leftovers():
     s2 = _FakeScreen()
     s2.start_fx("eat", "f:0", pet=p2)
     assert s2.fx.get("munch_at") is None and len(s2.fx["chew"]) == 6
+
+
+def test_play_hops_on_canon_beats_and_ends_in_cheer():
+    """Play-anim audit 2026-07-05: DVPet jumping() -- a 6-beat grounded
+    lead-in, three hops launching at 6/20/34 (rise 6 / fall 6 / rest 2, happy
+    sting at each launch), apex near the arena top, and frame 48 chains into
+    Cheering.  tuipet hopped instantly with no rests, a 6px apex, and no
+    chained cheer."""
+    from tuipet import app as app_mod
+    s = _FakeScreen()
+    s.start_fx("play", icon="i:0")
+    assert s.fx["steps"] == 48
+    launches = []
+    while s.fx and s.fx["kind"] == "play":
+        st = s.fx["step"]
+        if st >= app_mod.PLAY_LEAD and (st - app_mod.PLAY_LEAD) % app_mod.PLAY_HOP == 0:
+            launches.append(st)
+        if not s.advance_fx():
+            break
+    assert launches == [6, 20, 34]
+    assert s.fx is not None and s.fx["kind"] == "cheer"   # jumping() -> Cheering
+    assert app_mod.PLAY_HOP_H >= 12                       # a real jump, not a shuffle

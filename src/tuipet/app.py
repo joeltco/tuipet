@@ -255,8 +255,10 @@ def _filth_pts(pet, tick, count=None, sizes=None, push=0, px_h=None):
 
 
 COND_W = COND_H = 7                                # state.png cell size (DVPet 7x7 cells)
-PLAY_HOP = 14                                      # DVPet jumping(): 6 up + 6 down + rest per hop
-PLAY_HOP_H = 6                                     # apex height in px (LCD is 24px tall)
+PLAY_HOP = 14                                      # DVPet jumping(): 6 up + 6 down + 2 rest per hop
+PLAY_LEAD = 6                                      # the grounded lead-in before hop one (canon 0..5)
+PLAY_HOP_H = 12                                    # apex px: canon rises 36 of 60 (~14 scaled); 12
+#                                                    keeps half the body readable in the 24px arena
 # DVPet gifting(): amble off LEFT until half off-screen (firstGoal -20/104), amble
 # back RIGHT to just past centre (secondGoal 39/104 ~ x15/40), gift pops in beside
 # the pet (it rides hidden until arrival in DVPet too), pose 5 hold -> giftEnd.
@@ -497,7 +499,7 @@ class Screen(Static):
 
     # ---- care-action animations (DVPet SpriteAnim eat/clean/cheer) -----------
     def start_fx(self, kind, icon=None, poop=0, old_num=None, pet=None, starving=False):
-        steps = {"eat": 35, "cheer": 31, "jeer": 31, "clean": 22, "spit": 25, "evolve": 41, "dying": 50, "dna_charge": 44, "play": 37, "heal": 24, "poop": 25,
+        steps = {"eat": 35, "cheer": 31, "jeer": 31, "clean": 22, "spit": 25, "evolve": 41, "dying": 50, "dna_charge": 44, "play": 48, "heal": 24, "poop": 25,
                  "gift": GIFT_OUT + GIFT_BACK + GIFT_HOLD, "assist": 28, "inherit": 50}.get(kind, 12)
         self.fx = {"kind": kind, "step": 0, "steps": steps, "icon": icon, "poop": poop, "old_num": old_num}
         if kind == "eat":
@@ -600,6 +602,9 @@ class Screen(Static):
             self.start_fx("cheer")
         elif kind == "gift":
             # ClockTic.giftEnd: the handover ends in State.Cheering.
+            self.start_fx("cheer")
+        elif kind == "play":
+            # jumping() frame 48: the hops resolve into Cheering (cheer true, happy)
             self.start_fx("cheer")
         elif kind == "inherit":
             # inheriting() tail: the strobe resolves into the celebration poses.
@@ -866,10 +871,18 @@ class Screen(Static):
         # the excited pose (5) and lands on the neutral pose (1), a happy chirp at the
         # top of each hop.  Distinct from cheer (which bounces in place on 5/7 with an
         # emote bubble) -- here the body actually leaves the ground.
-        ph = step % PLAY_HOP
-        up = ph < PLAY_HOP // 2
-        c.rows = self._pose_rows_idx(pet, 5 if up else 1)
-        c.yshift = int(PLAY_HOP_H * (1 - abs(ph / (PLAY_HOP / 2) - 1)))   # triangle: 0 -> apex -> 0
+        # canon shape: a 6-beat grounded lead-in, then rise(6)/fall(6)/rest(2)
+        # per hop -- rises land on canon's 6/20/34 with the sting at each launch
+        if step < PLAY_LEAD:
+            rise, air, y = False, False, 0
+        else:
+            ph = (step - PLAY_LEAD) % PLAY_HOP
+            rise = ph < 6
+            air = ph < 12
+            y = (PLAY_HOP_H * (ph + 1) // 6 if rise
+                 else PLAY_HOP_H * (12 - ph) // 6 if air else 0)
+        c.rows = self._pose_rows_idx(pet, 5 if rise else 1)
+        c.yshift = y
         # a toy USED from the bag sits on the floor beneath the hop, animating
         # its own frames (canon jumping(): _itemLabel at the pet's feet, 2->1
         # per hop -- the long-flagged unported piece; play audit 2026-07-05)
@@ -878,7 +891,9 @@ class Screen(Static):
             frames = data.load_icons().get(fx["icon"]) or []
             frames = [f for f in frames if f]
             if frames:
-                toy = downsample(frames[(0 if up else 1) % len(frames)], 3)
+                # canon _itemLabel: frame 1 while the pet is AIRBORNE (rise
+                # start -> landing), frame 2 while it rests between hops
+                toy = downsample(frames[(0 if air else 1) % len(frames)], 3)
                 if toy:
                     # BESIDE the feet (the eat fx's item-side convention):
                     # canon keeps the pet elevated over the toy for the whole
@@ -1822,7 +1837,8 @@ class TuiPetApp(App):
                     self.beep(snd, bell=False)
                 if sc.fx["kind"] == "eat":     # live DVPet feeding readout (calorie + P/M/V)
                     self._status_eat()
-                elif sc.fx["kind"] == "play" and sc.fx["step"] % PLAY_HOP == 1:
+                elif (sc.fx["kind"] == "play" and sc.fx["step"] >= PLAY_LEAD
+                        and (sc.fx["step"] - PLAY_LEAD) % PLAY_HOP == 0):
                     self.beep("happy", bell=False)   # DVPet jumping(): a chirp at each hop's launch
             elif getattr(self, "_pending_evolve", None) is not None and self.screen_w.fx is None:
                 old_num, self._pending_evolve = self._pending_evolve, None
