@@ -173,7 +173,17 @@ if _dw is not None:
 # checkField -- 0 VirusBuster, 1 MetalEmpire, 2 DragonsRoar, 3 JungleTrooper,
 # 4 DeepSaver, 5 NightmareSoldier, 6 WindGuardian, 7 NatureSpirit, 8 DarkArea,
 # 9 None (== data.DNA_FIELDS order).  Used by the dnaCharge drop-in animation.
-_fb = split_vertical(native_mask("fields.png"))
+def mask_1x(fn):
+    """Full-resolution mask for 1x-authored art (the /3 block-mean is for the
+    3x creature sheets; it crushed the ~16px field badges to 5x5 specks --
+    digicore polish 2026-07-05)."""
+    a = np.array(Image.open(os.path.join(RES, fn)).convert("RGBA"))
+    rgb = a[:, :, :3].astype(int); al = a[:, :, 3]
+    nc = (np.abs(rgb[:, :, 0]-CYAN[0]) + np.abs(rgb[:, :, 1]-CYAN[1]) + np.abs(rgb[:, :, 2]-CYAN[2])) > 60
+    return (al > 60) & nc
+
+
+_fb = split_vertical(mask_1x("fields.png"))
 _FIELD_ORDER = ("VirusBuster", "MetalEmpire", "DragonsRoar", "JungleTrooper",
                 "DeepSaver", "NightmareSoldier", "WindGuardian", "NatureSpirit",
                 "DarkArea", "None")
@@ -194,8 +204,10 @@ for _fn, _key in (("burstCore.png", "core_burst"), ("twelveCore.png", "core_twel
     if os.path.exists(_p):
         _a = np.array(Image.open(_p).convert("RGBA"))
         _m = _a[:, :, 3] > 60
-        _h, _w = _m.shape[0] // F, _m.shape[1] // F
-        _c = crop(_m[:_h * F, :_w * F].reshape(_h, F, _w, F).mean(axis=(1, 3)) > 0.4)
+        # 28x28 1x art: halve (2x2 block-mean) to ~14px -- crisp at LCD scale,
+        # roomy beside a 16px mon (the /3 crush left 9px blobs)
+        _h, _w = _m.shape[0] // 2, _m.shape[1] // 2
+        _c = crop(_m[:_h * 2, :_w * 2].reshape(_h, 2, _w, 2).astype(float).mean(axis=(1, 3)) > 0.35)
         if _c is not None:
             effects["core_" + _key.split("_", 1)[1]] = [to_rows(_c)]
 

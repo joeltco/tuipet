@@ -19,6 +19,9 @@ from . import menu
 
 DIGICORE_BASE_RATE = 14            # DigicoreBaseRate (config.csv col 1)
 CORE_ROWS = 8                      # 16px scene band, like the tournament fight scenes
+SCENE_ROWS = 12                    # the core/teaser pages own the WHOLE arena now --
+#                                    Joel 2026-07-05: the 8-row band crammed a 16px mon
+#                                    against the chrome; scene-only + strip() instead
 EXPAND_T = 8                       # digicoreExpand: the badge zooms in (canon beats 6-14)
 BACK_T = 6                         # evolSilhouetteBack: the dark blink on the way out
 # ViewUtil.getDigicoreBackground field -> backdrop file suffix
@@ -343,43 +346,46 @@ class DigiCorePanel:
         span, x0 = (grid.W, grid.X0) if cell is None else (grid.CELL, grid.X0 + cell * grid.CELL)
         return (s, x0 + (span - grid.width(s)) // 2, False)
 
+    def _dots(self):
+        return " ".join((chr(0x25CF) if j == self.i else chr(0x25CB))
+                        for j in range(len(self.pages)))
+
     def _core_scene(self):
-        """The canon Digicore page: core backdrop + badge + the meter number."""
+        """The canon Digicore page, scene-only (2026-07-05, Joel: 'crammed'):
+        the pet breathes on the left of the FULL arena, the crisp 14px field
+        badge rides the right, the core backdrop behind -- every number and
+        control moved to the strip/status card (the box-clip law)."""
         p = self.pet
         bgimg = core_background(p)
         on = SIL_DAY if bgimg else LCD_ON   # never white (paint() rule)
-        # two-cell layout (2026-07-04, Joel's Devimon report): the badge used to
-        # draw dead-centre ON TOP of the sprite -- a 16px mon and the ring merged
-        # into one broken-looking mass.  Pet stands in the LEFT cell; the badge
-        # rides the RIGHT (canon puts the badge centre-right and shows no pet).
         badge = core_badge_key(p)
         overlay = []
         if badge:
             b = data.load_effects().get(badge, [None])[0]
             if b:
                 bw, bh = max(len(r) for r in b), len(b)
-                bx = grid.X0 + grid.CELL + (grid.CELL - bw) // 2
-                by = max(0, (CORE_ROWS * 2 - bh) // 2)
+                bx = 25 + (14 - bw) // 2              # centred on the right third
+                by = max(0, (SCENE_ROWS * 2 - bh) // 2)
                 overlay = [(bx + x, by + y) for y, row in enumerate(b)
                            for x, c in enumerate(row) if c == "1"]
         rows = self._pet_rows(p.num)
         placements = [self._core_place(rows, cell=0)] if rows else []
-        out = menu.bar("DIGICORE", "core")
-        out.append_text(render_scene(placements, 40, CORE_ROWS, on, LCD_BG,
-                                     overlay=overlay, bgimg=bgimg))
+        return render_scene(placements, 40, SCENE_ROWS, on, LCD_BG,
+                            overlay=overlay, bgimg=bgimg)
+
+    def _core_strip(self):
+        p = self.pet
         n = core_number(p)
         growth = p.STAGE_DURATION.get(p.stage)
         has_next = (bool(lines.evo_rows(p)) if lines.active(p)
                     else bool(data.load_evolutions().get(p.num)))
         pending = growth is not None and p.stage_seconds < growth and has_next
         lbl = "evolution nears at 1" if pending else "life meter"
-        out.append(f"\n core {chr(0x25C6)} {n}", style=INK_B)
-        out.append(f"   {lbl}\n", style=DIM)
-        out.append_text(menu.note(self.note, tick=self.frame_i))
-        foot = "SPACE core  M mode  → data  ESC" if self.pet.can_mode_change() \
-            else "SPACE core  → data  ESC out"
-        out.append_text(menu.footer(foot))
-        return out
+        note = self.note if self.note != "the core stirs..." else ""
+        head = note or f"core {chr(0x25C6)} {n} · {lbl}"
+        keys = "SPACE core  M mode  → pages" if p.can_mode_change() \
+            else "SPACE core  → pages"
+        return f"{head}  [dim]{self._dots()} · {keys} · ESC[/]"
 
     def _teaser_scene(self):
         """EvolSilhouetteTransition: the core badge ZOOMS IN (digicoreExpand,
@@ -387,42 +393,30 @@ class DigiCorePanel:
         holds as a STATIC blacked-out shape (canon draws frame 0 -- the old
         pose-flicker here was the 10Hz flutter class)."""
         p = self.pet
-        out = menu.bar("DIGICORE", "???")
         if self.teaser_t < EXPAND_T:                      # the zoom-in beat
             badge = data.load_effects().get(core_badge_key(p) or "core_xnone", [None])[0]
             overlay = []
             if badge:
-                # 1x -> 2x only: a 3x nearest-neighbour blow-up read as chunky
-                # pixel soup on the tiny window (the "sloppy" note, 2026-07-04)
+                # the 14px badge zooms 1x -> ~fills the arena at 2x (canon
+                # digicoreExpand); overflow clips harmlessly
                 k = 1 + self.teaser_t // (EXPAND_T // 2)
                 k = min(k, 2)
                 big = ["".join(ch * k for ch in r) for r in badge for _ in range(k)]
                 bw, bh = max(len(r) for r in big), len(big)
-                ox, oy = (40 - bw) // 2, (CORE_ROWS * 2 - bh) // 2
+                ox, oy = (40 - bw) // 2, (SCENE_ROWS * 2 - bh) // 2
                 overlay = [(ox + x, oy + y) for y, row in enumerate(big)
-                           for x, c in enumerate(row) if c == "1"]
-            out.append_text(render_scene([], 40, CORE_ROWS, LCD_ON, LCD_BG, overlay=overlay))
-            out.append("\n")
-            out.append_text(menu.note("the core opens..."))
-            out.append_text(menu.footer(""))
-            return out
+                           for x, c in enumerate(row) if c == "1" and oy + y >= 0]
+            return render_scene([], 40, SCENE_ROWS, LCD_ON, LCD_BG, overlay=overlay)
         nxt = next_evolution(p)
         if nxt is None:
             rows = self._pet_rows(p.num, idx=0)
             placements = [self._core_place(rows)] if rows else []
-            out.append_text(render_scene(placements, 40, CORE_ROWS, LCD_ON, LCD_BG))
-            out.append("\n")
-            out.append_text(menu.note("Nothing stirs — this is its final form."))
-        else:
-            # frame 0 mask (canon: still), crisp contour + shimmering interior
-            sil = ghost(silhouette(self._pet_rows(nxt, idx=0) or []),
-                        phase=(self.frame_i // 5) % 2)
-            placements = [self._core_place(sil)] if sil else []
-            out.append_text(render_scene(placements, 40, CORE_ROWS, LCD_ON, LCD_BG))
-            out.append("\n")
-            out.append_text(menu.note("A shape looms in the core..."))
-        out.append_text(menu.footer("SPACE back   ESC out"))
-        return out
+            return render_scene(placements, 40, SCENE_ROWS, LCD_ON, LCD_BG)
+        # frame 0 mask (canon: still), crisp contour + shimmering interior
+        sil = ghost(silhouette(self._pet_rows(nxt, idx=0) or []),
+                    phase=(self.frame_i // 5) % 2)
+        placements = [self._core_place(sil)] if sil else []
+        return render_scene(placements, 40, SCENE_ROWS, LCD_ON, LCD_BG)
 
     def _detail_scene(self):
         """One candidate's requirement checklist (evolution.requirement_report):
@@ -461,22 +455,31 @@ class DigiCorePanel:
         out.append_text(menu.footer("↑↓ pick  ENTER req  ←→ page  ESC"))
         return out
 
+    def strip(self):
+        """The core/teaser pages are bare scenes; their chrome rides here.
+        The data pages keep their in-text footers (strip stays blank)."""
+        if self.teaser:
+            if self.teaser_t < EXPAND_T:
+                return "the core opens..."
+            msg = ("Nothing stirs — this is its final form."
+                   if next_evolution(self.pet) is None
+                   else "A shape looms in the core...")
+            return f"{msg}  [dim]· SPACE back[/]"
+        if self._back_t or self.detail is not None or self.i != 0:
+            return ""
+        return self._core_strip()
+
     def text(self):
         if self.teaser:
             return self._teaser_scene()
         if self._back_t:                              # evolSilhouetteBack: dark blink
-            out = menu.bar("DIGICORE", "core")
-            out.append_text(render_scene([], 40, CORE_ROWS, SIL_NIGHT, "#000000"))
-            out.append("\n")
-            out.append_text(menu.note(""))
-            out.append_text(menu.footer(""))
-            return out
+            return render_scene([], 40, SCENE_ROWS, SIL_NIGHT, "#000000")
         if self.detail is not None:
             return self._detail_scene()
         if self.i == 0:
             return self._core_scene()
         title, rows = self.pages[self.i]
-        dots = " ".join((chr(0x25CF) if j == self.i else chr(0x25CB)) for j in range(len(self.pages)))
+        dots = self._dots()
         if title == "EVOLVES":
             return self._evolves_scene(rows, dots)
         out = menu.header(f"DIGICORE  {title}", dots)

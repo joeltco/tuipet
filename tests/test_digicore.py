@@ -240,3 +240,78 @@ def test_core_page_keeps_native_pixels_and_separates_the_badge():
     assert len(rows) == 16                       # NOT shrunk to 14
     assert x + grid.width(rows) <= grid.X0 + grid.CELL   # stays in the left cell
     panel.text()                                 # the scene composes without error
+
+
+# ---- digicore polish 2026-07-05 (Joel: "still very sloppy... cant tell theres
+# other pages... symbol sprites messed up... everything crammed") ---------------
+
+def test_badges_are_real_symbols_not_specks():
+    """fields.png is 1x-authored art: the /3 block-mean crushed the ~16px
+    field badges to 5x5 specks (and the 28px cores to 9x9).  Extraction is
+    1x / half-res now -- every badge must stay >= 12px."""
+    from tuipet import data
+    E = data.load_effects()
+    for k, f in E.items():
+        if k.startswith("field_") or k.startswith("core_"):
+            w, h = max(len(r) for r in f[0]), len(f[0])
+            assert w >= 12 and h >= 12, f"{k} is {w}x{h}: the speck regression"
+
+
+def test_core_page_is_a_bare_scene_with_the_strip_chrome():
+    """The core page owns the WHOLE 12-row arena (the 8-row band crammed a
+    16px mon against the chrome); the meter, page dots and keys ride strip()."""
+    import random
+    from tuipet.pet import Pet
+    from tuipet.digicorescreen import DigiCorePanel
+    random.seed(2)
+    p = Pet(num=102, name="Devimon", stage="Champion", attribute="Virus", obedience=500)
+    p.world_seconds = 12 * 60.0
+    pan = DigiCorePanel(p)
+    lines = pan.text().plain.split("\n")
+    assert len(lines) == 12 and all(len(l) <= 40 for l in lines)
+    s = pan.strip()
+    assert "core" in s and chr(0x25CF) in s      # the meter + the page dots
+    assert "SPACE" in s                          # ...and the controls
+    # data pages carry their own in-text footers; the strip stays blank
+    pan.key("right")
+    assert pan.strip() == ""
+    assert chr(0x25CF) in pan.text().plain       # dots in the page header too
+    # the teaser narrates on the strip and stays a bare scene
+    pan.key("left")
+    pan.key("space")
+    for _ in range(10):
+        pan.anim()
+    assert len(pan.text().plain.split("\n")) == 12
+    assert "SPACE back" in pan.strip()
+
+
+def test_core_scene_pet_and_badge_share_the_arena_apart():
+    """Pet on the left third, the 14px badge centred on the right -- never
+    overlapping, both fully inside the 40x24 grid."""
+    import random
+    from tuipet.pet import Pet
+    from tuipet import digicorescreen as dc
+    random.seed(2)
+    p = Pet(num=102, name="Devimon", stage="Champion", attribute="Virus", obedience=500)
+    p.world_seconds = 12 * 60.0
+    p.field = "NightmareSoldier"
+    pan = dc.DigiCorePanel(p)
+    cap = []
+    real = dc.render_scene
+
+    def spy(placements, cols, rows, on, bg, overlay=None, bgimg=None):
+        cap.append((placements, rows, overlay))
+        return real(placements, cols, rows, on, bg, overlay=overlay, bgimg=bgimg)
+
+    dc.render_scene = spy
+    try:
+        pan.text()
+    finally:
+        dc.render_scene = real
+    placements, rows, overlay = cap[0]
+    assert rows == 12
+    (pr, x0, _m), = placements
+    pet_right = x0 + max(len(r) for r in pr)
+    badge_xs = {x for x, y in overlay}
+    assert pet_right <= min(badge_xs)            # apart, not crammed
+    assert max(badge_xs) < 40 and all(0 <= y < 24 for _x, y in overlay)
