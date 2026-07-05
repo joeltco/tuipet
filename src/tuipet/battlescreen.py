@@ -96,6 +96,38 @@ def round_timeline(ph0, fh0, pdmg, edmg, player_first, effect=None):
     return tl
 
 
+BOSSDIE_FLICKERS = 3                             # zoneBossDeath: 3 lit/dark cycles...
+BOSSDIE_ON, BOSSDIE_OFF = 4, 2
+BOSSDIE_STEP_T = 6                               # ...then a 3-step squash into the ground
+
+
+def boss_death_timeline(ph):
+    """SpriteAnim.zoneBossDeath: a beaten ZONE BOSS doesn't just explode -- it
+    blinks out (three lights-flicker cycles over a shaken hurt pose, bossDying
+    stings) and then SQUASHES into the ground in three steps (canon sizeY
+    48->24->12->0 with the feet planted, bossDeath stings)."""
+    tl = []
+    for c in range(BOSSDIE_FLICKERS):
+        for s in range(BOSSDIE_ON):
+            tl.append({"m": "bossdie", "stage": "on", "jit": (c + s) % 2, "ph": ph, "fh": 0})
+        tl += [{"m": "bossdie", "stage": "off", "ph": ph, "fh": 0}] * BOSSDIE_OFF
+    for keep in (8, 4, 2):
+        tl += [{"m": "bossdie", "stage": "squash", "keep": keep, "ph": ph, "fh": 0}] * BOSSDIE_STEP_T
+    tl += [{"m": "bossdie", "stage": "off", "ph": ph, "fh": 0}] * 4
+    return tl
+
+
+def _squash_rows(rows, keep):
+    """Vertical squash with the feet planted: sample `keep` rows across the
+    sprite's height and pad the removed height with blank rows on top."""
+    h = len(rows)
+    if keep >= h:
+        return rows
+    idx = [round(i * (h - 1) / (keep - 1)) for i in range(keep)] if keep > 1 else [h - 1]
+    w = max(len(r) for r in rows)
+    return ["0" * w] * (h - keep) + [rows[i] for i in idx]
+
+
 def _full(frame):
     ox = max(0, (COLS - (len(frame[0]) if frame and frame[0] else 0)) // 2)   # centre on the frame's own width
     oy = max(0, (PXH - len(frame)) // 2)
@@ -168,6 +200,8 @@ class BattlePanel:
         self.foe_attr = b.last_enemy_attr
         self.timeline = round_timeline(ph0, fh0, b.last_player_damage, b.last_enemy_damage,
                                        b.last_player_first, effect=b.last_effect)
+        if b.over and b.won and (b.enemy or {}).get("boss"):
+            self.timeline += boss_death_timeline(b.pet_hp)   # zoneBossDeath beat
         self.i = 0
         self.phase = "anim"
 
@@ -183,7 +217,14 @@ class BattlePanel:
         """Fire a one-shot beep at timeline marker edges: orb launch -> attack, impact -> hit."""
         entry = self.timeline[self.i]
         m = entry.get("m")
-        if m != self._last_m:
+        if m == "bossdie":                       # canon soundConfig: bossDying ->
+            prev = self.timeline[self.i - 1] if self.i else {}
+            st = entry.get("stage")              # strongAttack, bossDeath -> attackHit
+            if st == "on" and prev.get("stage") != "on":
+                self.sfx = "strongAttack"
+            elif st == "squash" and prev.get("keep") != entry.get("keep"):
+                self.sfx = "attackHit"
+        elif m != self._last_m:
             if m == "fire_out":                 # DVPet: a doubleAttack launches with the strong sting
                 self.sfx = "strongAttack" if entry.get("double") else "attack"
             elif m == "hit":                     # ...and lands with the strong impact
@@ -337,6 +378,17 @@ class BattlePanel:
         elif m == "hit":
             scene = self._scene([], _full(EXPLODE[fr["f"]]))
             note = "HIT!"
+        elif m == "bossdie":
+            if fr["stage"] == "off":                     # lights-out beat: it blinks away
+                scene = self._scene([], [])
+            else:
+                rows = self._rows(b.enemy["num"], COLLAPSE)
+                if fr["stage"] == "squash":
+                    rows = _squash_rows(rows, fr["keep"])
+                xshift = (-1 if fr.get("jit") else 1) if fr["stage"] == "on" else 0
+                place, _ = self._place_one("foe", rows, xshift)
+                scene = self._scene(place, [])
+            note = f"{b.enemy['name'][:12]} falls!"
         else:
             view = fr.get("view", "pet")
             dt = round(fr.get("prog", 0) * DODGE_T) if m == "dodge" else 0   # dodge beat 1..DODGE_T

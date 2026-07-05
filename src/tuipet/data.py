@@ -424,7 +424,12 @@ def load_enemies():
         attr = rec["attribute"]
         if attr not in ("Vaccine", "Data", "Virus"):
             attr = max((("Vaccine", vac), ("Data", dat), ("Virus", vir)), key=lambda t: t[1])[0]
-        bits = (r.get("BitsWon") or "1t5").split("t")
+        # the real header is the essay-length "BitsWon (range of random bits -
+        # ...)" -- a bare .get("BitsWon") never matched, so every enemy paid the
+        # 1..5 fallback instead of its real purse (bosses pay 100..2000!):
+        # boss-battle audit 2026-07.  Same trap as "MedicineHours (number...)".
+        raw = next((v for k, v in r.items() if k and k.startswith("BitsWon")), "")
+        bits = (raw or "1t5").split("t")
         try:
             blo, bhi = int(bits[0]), int(bits[-1])
         except ValueError:
@@ -440,6 +445,10 @@ def load_enemies():
             "penalty": int(r.get("Penalty") or 0),
             "chance": int(r.get("AppearanceChance/100") or 100),
             "loot_table": int(r.get("LootTableID") or -1),
+            # only the last boss carries one ("You saved<br>the Digital<br>World!"):
+            # it cues the canon victory parade after the final ZoneChange
+            "parade_msg": ((r.get("BossParadeMessage") or "").replace("<br>", " ").strip()
+                           if (r.get("BossParadeMessage") or "null") != "null" else ""),
         })
     return enemies
 

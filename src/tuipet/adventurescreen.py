@@ -21,6 +21,9 @@ INV_REVEAL_T = 30             # dots done -> the reveal pose fires
 INV_HOLD_T = 42               # reveal held (item shown / startle / dejection)
 INV_END_T = 54                # walk-back (ReturnItem) complete
 REFUSE_T = 24                 # Refusing: the 24-tick mirror head-shake (fx convention)
+PARADE_T = 26                 # victory parade: ticks for one boss to march across
+#                               (canon BossParade shows the map's bosses after the
+#                               final ZoneChange; one at a time -- one-mon LCD rule)
 WALK_BEAT = 5                 # idleWalk pose cadence (anim.WALK_BEAT -- NOT every tick)
 FADE_T = 20                   # habitat cross-fade ticks (canon BackgroundAnim.animateBack:
 #                               BackgroundOpacityChange -0.05/frame -> 20 frames old-over-new)
@@ -55,6 +58,7 @@ class AdventurePanel(menu.SubHost):
         self.town_prompt = None     # a reached town's id: visit or walk on
         self._refuse_t = 0          # Refusing head-shake ticks left
         self._scene = None          # a running investigateLeft playbook
+        self._parade = None         # a running BossParade (map beaten)
 
     def anim(self):
         if self.sub_anim():          # SubHost: delegate + sfx bubble
@@ -65,6 +69,12 @@ class AdventurePanel(menu.SubHost):
         fade = getattr(self, "_bg_fade", None)
         if fade is not None:
             fade["t"] += 1                   # the habitat cross-fade clock
+        if self._parade is not None:
+            self._parade["t"] += 1
+            if self._parade["t"] >= PARADE_T * len(self._parade["nums"]):
+                self._parade = None
+                self.travelling = not self.adv.done
+            return
         if self._scene is not None:
             self._scene_tick()
             return
@@ -129,7 +139,20 @@ class AdventurePanel(menu.SubHost):
                         self.travelling = False         # knocked back from the gate -- SPACE to approach again
                         return None
                 else:
+                    paraders = None
+                    if r[1].won and was_boss and enemy.get("parade_msg"):
+                        # canon ZoneChange tail: the beaten FINAL boss cues the
+                        # map's bosses to parade -- capture them before resolve()
+                        # advances past this map
+                        paraders = [bb["num"] for z in self.adv.maps[self.adv.mi]["zones"]
+                                    for bb in z["bosses"]][:3]      # canon shows three
                     self.adv.resolve(r[1].won, was_boss, enemy)
+                    if paraders:
+                        self._parade = {"t": 0, "nums": paraders}
+                        self.adv.last = enemy["parade_msg"]         # "You saved the Digital World!"
+                        self.sfx = "win"                            # bossParade cue (the parade
+                        self.travelling = False                     # track is music, unbundled)
+                        return None
                 self.travelling = not self.adv.done
             return None
         if getattr(self, "town_prompt", None) is not None:
@@ -140,6 +163,13 @@ class AdventurePanel(menu.SubHost):
                 self.town_prompt = None
                 self.adv.last = "Passed the town by."
                 self.travelling = True
+            return None
+        if getattr(self, "_parade", None) is not None:
+            if k in ("space", "enter", "escape"):     # skip to the next marcher / the end
+                self._parade["t"] = ((self._parade["t"] // PARADE_T) + 1) * PARADE_T
+                if self._parade["t"] >= PARADE_T * len(self._parade["nums"]):
+                    self._parade = None
+                    self.travelling = not self.adv.done
             return None
         if getattr(self, "_scene", None) is not None:
             if k in ("space", "enter", "escape") and self._scene["t"] < INV_REVEAL_T:
@@ -192,6 +222,18 @@ class AdventurePanel(menu.SubHost):
         walk (WALK_BEAT pose flips, per anim.Roamer/idleWalk), the DiscoverCall
         attention bounce (canon attention(5,7)), the Refusing head-shake, or the
         running investigateLeft playbook."""
+        p = self._parade
+        if p is not None:
+            # BossParade: the map's bosses march across, one at a time (canon
+            # moveLeft; the LCD's one-mon rule serialises canon's three-abreast)
+            i = min(p["t"] // PARADE_T, len(p["nums"]) - 1)
+            t = p["t"] % PARADE_T
+            fr = data.load_sprites()[1][p["nums"][i]]["frames"]
+            wi = data.ROLES["walk"][(t // 3) % 2]
+            rows = grid.prep((fr[wi] if wi < len(fr) else None) or fr[0], ph=ROWS * 2)
+            lo, hi = grid.roam_bounds(grid.width(rows))
+            x = round(hi + (lo - hi) * (t / max(1, PARADE_T - 1)))
+            return rows, x, False, [], None       # the strip carries the victory message
         s = self._scene
         if s is not None:
             t = s["t"]
@@ -278,7 +320,9 @@ class AdventurePanel(menu.SubHost):
         a = self.adv
         _, _, _, _, note_over = self._pet_placement()
         note = note_over if note_over is not None else (a.last or "")
-        if self._scene is not None:
+        if self._parade is not None:
+            hint = "SPACE next"
+        elif self._scene is not None:
             hint = "SPACE skip"
         elif a.done:
             hint = "ESC out"
