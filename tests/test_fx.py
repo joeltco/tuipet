@@ -300,3 +300,17 @@ def test_play_hops_on_canon_beats_and_ends_in_cheer():
     assert launches == [6, 20, 34]
     assert s.fx is not None and s.fx["kind"] == "cheer"   # jumping() -> Cheering
     assert app_mod.PLAY_HOP_H >= 12                       # a real jump, not a shuffle
+
+
+def test_bad_praise_and_bad_scold_use_their_own_pose_pairs():
+    """Cheer/jeer audit 2026-07-05: canon cheer(goodPraise)/jeer(goodScold)
+    swap pose pairs by DESERVEDNESS -- Bad_Praise bounces 6/4 (not 5/7),
+    Bad_Scold slumps 10/9 (not 4/6).  tuipet played one variant of each.
+    (Sound stays angry for every scold: soundConfig maps unhappy -> angry.wav.)"""
+    good_cheer = _FakeScreen(); good_cheer.start_fx("cheer")
+    bad_cheer = _FakeScreen(); bad_cheer.start_fx("cheer", good=False)
+    assert good_cheer.fx["good"] and not bad_cheer.fx["good"]
+    good_jeer = _FakeScreen(); good_jeer.start_fx("jeer")
+    bad_jeer = _FakeScreen(); bad_jeer.start_fx("jeer", good=False)
+    assert good_jeer.fx["snds"] == bad_jeer.fx["snds"] == {6: "angry"}
+    assert not bad_jeer.fx["good"]

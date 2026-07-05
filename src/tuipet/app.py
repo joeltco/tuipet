@@ -498,10 +498,11 @@ class Screen(Static):
             self._idle_expr = None                               # any non-idle state clears the held expression
 
     # ---- care-action animations (DVPet SpriteAnim eat/clean/cheer) -----------
-    def start_fx(self, kind, icon=None, poop=0, old_num=None, pet=None, starving=False):
+    def start_fx(self, kind, icon=None, poop=0, old_num=None, pet=None, starving=False, good=True):
         steps = {"eat": 35, "cheer": 31, "jeer": 31, "clean": 22, "spit": 25, "evolve": 41, "dying": 50, "dna_charge": 44, "play": 48, "heal": 24, "poop": 25,
                  "gift": GIFT_OUT + GIFT_BACK + GIFT_HOLD, "assist": 28, "inherit": 50}.get(kind, 12)
-        self.fx = {"kind": kind, "step": 0, "steps": steps, "icon": icon, "poop": poop, "old_num": old_num}
+        self.fx = {"kind": kind, "step": 0, "steps": steps, "icon": icon, "poop": poop,
+                   "old_num": old_num, "good": good}
         if kind == "eat":
             # DVPet eat(): each chew beat is scaled by pow(N, mod) -- a starving pet or
             # a glutton wolfs food down (mod 0.9, ends ~beat 23), a picky eater dawdles
@@ -551,7 +552,10 @@ class Screen(Static):
             # keyed here so chained cheers (wash/evolve/heal tails) sound too.
             self.fx["snds"] = {1: "happy"}
         elif kind == "jeer":
-            # DVPet jeer(): the sound fires at the first UP beat (t6).
+            # DVPet jeer(): the sound fires at the first UP beat (t6).  Canon
+            # routes Bad_Scold through the _unhappy cue, but soundConfig.csv
+            # maps unhappy -> angry.wav -- the same bark either way, so only
+            # the POSES distinguish the variants here.
             self.fx["snds"] = {6: "angry"}
         elif kind == "heal":
             # DVPet bandage(): _useBandage on each application, _lastBandage on the
@@ -832,9 +836,13 @@ class Screen(Static):
 
     def _fxk_cheer(self, pet, fx, step, c):
         # DVPet cheer(): pose alternates up(+5)/down(+7) every 6 intervals with a
-        # "happy" emote bubble pulsing on the up-beats; ends ~beat 30.
+        # "happy" emote bubble pulsing on the up-beats; ends ~beat 30.  A
+        # spoiling Bad_Praise (cheer(false)) bounces on 6/4 instead of 5/7.
         up = (step // 6) % 2 == 0
-        c.rows = self._pose_rows_idx(pet, 5 if up else 7)
+        if fx.get("good", True):
+            c.rows = self._pose_rows_idx(pet, 5 if up else 7)
+        else:
+            c.rows = self._pose_rows_idx(pet, 6 if up else 4)
         if up:
             hap = data.load_effects().get("happy")
             if hap:
@@ -908,7 +916,10 @@ class Screen(Static):
         # every 6 intervals, leading DOWN, with the "unhappy" emote riding the pet;
         # ends ~beat 30.  (Poses 9/10 belong to badHealthJeer, the dying variant.)
         down = (step // 6) % 2 == 0
-        c.rows = self._pose_rows_idx(pet, 4 if down else 6)
+        if fx.get("good", True):                # Jeering: the deserved 4/6 pair
+            c.rows = self._pose_rows_idx(pet, 4 if down else 6)
+        else:                                   # Bad_Scold/Sad_Jeering: the slump (10/9)
+            c.rows = self._pose_rows_idx(pet, 10 if down else 9)
         un = data.load_effects().get("unhappy")
         if un:
             uf = un[(step // 6) % len(un)]
@@ -2147,6 +2158,8 @@ class TuiPetApp(App):
         msg = self.pet.praise()
         if self.pet.anim == "happy":                # the praise lands -> DVPet cheer()
             self.screen_w.start_fx("cheer")         # (its _happy sound is fx-scripted)
+        elif self.pet.anim == "surprise":           # mis-praised a misbehaver ->
+            self.screen_w.start_fx("cheer", good=False)   # Bad_Praise: cheer(false)
         self._do(msg)
 
     def action_scold(self):
@@ -2155,6 +2168,8 @@ class TuiPetApp(App):
         msg = self.pet.scold()
         if self.pet.anim == "angry":                # the scold lands -> DVPet jeer()
             self.screen_w.start_fx("jeer")          # (its _angry sound is fx-scripted)
+        elif self.pet.anim == "sad":                # scolded an innocent -> Bad_Scold:
+            self.screen_w.start_fx("jeer", good=False)   # the sad slump
         self._do(msg)
 
     def action_tournament(self):
