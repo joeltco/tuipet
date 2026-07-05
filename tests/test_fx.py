@@ -132,3 +132,46 @@ def test_eat_fx_survives_a_blank_last_food_frame():
         s.fx["step"] = step
         s.frame_i = step
         s._paint_fx(p)                           # used to TypeError at step 21
+
+
+def test_bag_toy_plays_the_hop_over_its_real_toy():
+    """Play audit 2026-07-05: canon jumping() bounces the pet over its toy
+    (the long-flagged unported piece).  A bag toy now hands the app a
+    ('play', key) and the fx draws the toy's real frames beside the feet."""
+    import random
+    from tuipet import app as app_mod
+    from tuipet.pet import Pet
+    from tuipet.shopscreen import ShopPanel
+
+    random.seed(2)
+    p = Pet(num=102, name="D", stage="Champion", attribute="Virus", obedience=500)
+    p.world_seconds = 12 * 60.0
+    p.compliance = True
+    p.add_item("i:3")                             # the Ball
+    pan = ShopPanel(p, start_mode="bag")
+    while pan._tabs()[pan.tab] != "toy":
+        pan.key("right")
+    rows = pan._rows()
+    pan.cursor = next(i for i, e in enumerate(rows) if e["key"] == "i:3")
+    r = pan.key("enter")
+    assert r == ("done", ("play", "i:3"))         # the bag hands off the toy
+
+    class S(app_mod.Screen):
+        def __init__(self):
+            self.fx = None
+            self.frame_i = 0
+            self.roamer = None
+        def update(self, t):
+            pass
+
+    s = S()
+    s.start_fx("play", icon="i:3", pet=p)
+    c1, c2 = app_mod._FxCtx(), app_mod._FxCtx()
+    for c, icon in ((c1, "i:3"), (c2, None)):
+        c.px_h = 24
+        c.overlay = []
+        c.xshift = c.yshift = 0
+        c.rows = []
+        fx = dict(s.fx, icon=icon, step=3)
+        app_mod.Screen._fxk_play(s, p, fx, 3, c)
+    assert len(c1.overlay) > len(c2.overlay)      # the toy's pixels are there

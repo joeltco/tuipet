@@ -133,3 +133,20 @@ def test_eat_fx_keeps_food_and_pet_clear_of_piles(monkeypatch):
         assert petpx.isdisjoint(piles), "the mon ate standing on a pile"
         extras = overlay - piles                      # everything else (the food) stays right of the block
         assert all(x >= edge for x, _ in extras), "the food descended onto the piles"
+
+
+def test_poop_costs_weight_not_hunger():
+    """Joel 2026-07-05: 'isnt pooping supposed to take away one hunger?' —
+    canon says NO (PhysicalState.poop: mood relief + weight shed + gauge +
+    filth; hunger is untouched — it falls on its own decay clock).  Even the
+    floor-poop obedience change is 0 in the shipped difficulty column."""
+    from tuipet.pet import Pet, POOP_MOOD_INC
+    p = Pet(num=102, name="D", stage="Champion", attribute="Virus")
+    p.world_seconds = 12 * 60.0
+    p.hunger, p.weight, p.mood = 3, 20, 0
+    o0 = p.obedience
+    p._do_poop()
+    assert p.hunger == 3                     # NEVER touched by pooping
+    assert p.weight < 20                     # the canon cost is WEIGHT
+    assert p.mood == POOP_MOOD_INC or p.mood > 0   # relief
+    assert p.obedience == o0                 # FloorPoopObedienceChange = 0 (shipped)

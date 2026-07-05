@@ -151,6 +151,11 @@ class ShopPanel:
                     return ("done", ("evolve", num0))
                 if e["key"].startswith("f:") and self.pet.anim == "eat":
                     return ("done", ("eat", e["key"]))
+                if (data.shop_category(dict(e)) == "toy"
+                        and self.pet.anim == "happy"):
+                    # canon jumping(): playing with a toy hops OVER it -- the
+                    # bag hands the app the toy for the play fx (2026-07-05)
+                    return ("done", ("play", e["key"]))
         elif k == "r" and self.mode == "bag" and rows:
             self.msg = self.pet.sell(rows[min(self.cursor, n - 1)])
         elif k in ("escape", "o", "i"):     # o opens the shop, i opens the bag; both also close

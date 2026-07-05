@@ -819,6 +819,23 @@ class Screen(Static):
         up = ph < PLAY_HOP // 2
         c.rows = self._pose_rows_idx(pet, 5 if up else 1)
         c.yshift = int(PLAY_HOP_H * (1 - abs(ph / (PLAY_HOP / 2) - 1)))   # triangle: 0 -> apex -> 0
+        # a toy USED from the bag sits on the floor beneath the hop, animating
+        # its own frames (canon jumping(): _itemLabel at the pet's feet, 2->1
+        # per hop -- the long-flagged unported piece; play audit 2026-07-05)
+        if fx.get("icon"):
+            from .render import downsample
+            frames = data.load_icons().get(fx["icon"]) or []
+            frames = [f for f in frames if f]
+            if frames:
+                toy = downsample(frames[(0 if up else 1) % len(frames)], 3)
+                if toy:
+                    # BESIDE the feet (the eat fx's item-side convention):
+                    # canon keeps the pet elevated over the toy for the whole
+                    # anim, but our hop grounds out each cycle and would land
+                    # ON it -- next to the pet it stays readable every beat
+                    tw, th = max(len(r) for r in toy), len(toy)
+                    tx = max(0, PET_BASE_X + c.xshift - tw - 1)
+                    c.overlay += _blit(toy, tx, c.px_h - 2 - th)
 
     def _fxk_jeer(self, pet, fx, step, c):
         # DVPet jeer(goodScold): the SCOLD reaction -- pose alternates down(+4)/up(+6)
@@ -2132,6 +2149,9 @@ class TuiPetApp(App):
             # _evolve sounds INSIDE the strobe (fx snds beat 5), like DVPet evolveAnim
             self.flash(self._evolve_msg(msg[1]))
             self.screen_w.start_fx("evolve", old_num=msg[1])
+        elif isinstance(msg, tuple) and msg and msg[0] == "play":
+            # a bag toy: DVPet jumping() -- the pet hops over its real toy
+            self.screen_w.start_fx("play", icon=msg[1])
         elif isinstance(msg, tuple) and msg and msg[0] == "inherit":
             mem = msg[1]
             self.flash(f"[b]{mem.get('name', '?')}[/]'s power lives on!  "
