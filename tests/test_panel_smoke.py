@@ -228,3 +228,26 @@ def test_drill_hints_wrap_clean_on_the_status_card():
         pan.gi = gi                              # gkey derives from the pick
         parts = [w.strip() for w in pan._hint().split("   ") if w.strip()]
         assert len(parts) >= 2 and all(len(w) <= 26 for w in parts)
+
+
+def test_jogress_states_fit_the_lcd_with_real_options():
+    """Box-clip stragglers (audit 2026-07-04): every earlier probe measured
+    jogress EMPTY (fusions are data-rare) -- the real pick/fusing/fused states
+    ran 15-16 lines and clipped.  Scene-only now; the strip carries the pick."""
+    from tuipet.jogressscreen import JogressPanel, FUSE_STEPS
+    p = _pet()
+    pan = JogressPanel(p)
+    pan.options = [{"num": 4, "name": "Agumon", "attribute": "Vaccine",
+                    "stage": "Champion", "partners": ["Vaccine"],
+                    "partner_num": 7, "partner_name": "Gabumon"}]
+    _render(pan)
+    assert "Gabumon" in pan.strip() and "1/1" in pan.strip()
+    pan.phase, pan.old_num, pan.partner_num = "fusing", 100, 7
+    for s in range(FUSE_STEPS):
+        pan.fuse_step = pan.frame_i = s
+        _render(pan)
+    assert pan.strip() == "DNA... connect!"
+    pan.phase = "fused"
+    pan.fused, pan.result_msg = pan.options[0], "Jogress! Fused into Agumon!"
+    _render(pan)
+    assert "Fused into" in pan.strip()

@@ -13,8 +13,8 @@ from . import menu
 # on a flat pale LCD while the rest of the game stages its creatures)
 COLS, ROWS = 40, 12
 FUSE_ROWS = 12
-VISIBLE = 2
-FUSE_STEPS = 16
+POSE_T = 6                     # canon pre-fusion beat: both parents flip 1<->5 together
+FUSE_STEPS = 16 + POSE_T
 
 
 class JogressPanel:
@@ -61,15 +61,34 @@ class JogressPanel:
         bgimg = self.pet.background()
         return (SIL_DAY if bgimg else LCD_ON), bgimg   # never white over a bg (paint() rule)
 
-    def _sprite(self, num, role="idle"):
+    def _sprite(self, num, role="idle", idx=None):
         rec = data.load_sprites()[1][num]
-        roles = data.ROLES[role]
-        idx = roles[self.frame_i % len(roles)]
-        return rec["frames"][idx] or rec["frames"][0]
+        if idx is None:
+            roles = data.ROLES[role]
+            idx = roles[(self.frame_i // 5) % len(roles)]   # WALK_BEAT bob, not 10Hz
+        fr = rec["frames"]
+        return (fr[idx] if idx < len(fr) else None) or fr[0]
+
+    def strip(self):
+        """The one-line chrome under the LCD (box-clip audit 2026-07-04: the
+        pick list / note / footer stacked in-LCD ran 15-16 lines and the
+        physical 12-row box clipped them ALL -- every earlier probe only ever
+        measured the 7-line no-partner state, so the v0.2.223 refit missed
+        this screen)."""
+        if not self.options:
+            return ""
+        if self.phase == "fusing":
+            return "DNA... connect!"
+        if self.phase == "fused":
+            return f"{self.result_msg}  [dim]· SPACE[/]"
+        o = self.options[self.cursor]
+        return (f"[b]+{o['partner_name'][:10]} = {o['name'][:12]}[/]"
+                f" ({o['attribute'][:2]})  {self.cursor + 1}/{len(self.options)}"
+                f"  [dim]· ↑↓ ENTER fuse ESC[/]")
 
     def text(self):
-        out = menu.bar("JOGRESS", "DNA Fusion")
         if not self.options:
+            out = menu.bar("JOGRESS", "DNA Fusion")
             out.append_text(menu.blanks(2))
             out.append_text(menu.note("No partner resonates now."))
             out.append("  Champion+ with a matching partner.\n", style=DIM)
@@ -78,54 +97,47 @@ class JogressPanel:
             return out
 
         if self.phase == "fusing":
-            return self._render_fusing(out)
+            return self._render_fusing()
 
+        on, bgimg = self._palette()
         if self.phase == "fused":
-            on, bgimg = self._palette()
-            scene = render_scene([grid.center(self._sprite(self.fused["num"], "happy"), ph=FUSE_ROWS * 2)],
-                                 COLS, FUSE_ROWS, on, LCD_BG, bgimg=bgimg)
-            out.append_text(scene)
-            out.append("\n")
-            out.append_text(menu.note(self.result_msg, tick=self.frame_i))
-            out.append_text(menu.footer("the fusion stabilises...   SPACE"))
-            return out
-
-        # pick
+            return render_scene([grid.center(self._sprite(self.fused["num"], "happy"),
+                                             ph=FUSE_ROWS * 2)],
+                                COLS, FUSE_ROWS, on, LCD_BG, bgimg=bgimg)
+        # pick: the parents face off; the option strip reads below the LCD
         opt = self.options[self.cursor]
         pet_rows = self._sprite(self.pet.num)
         par_rows = self._sprite(opt["partner_num"]) if opt["partner_num"] else []
-        on, bgimg = self._palette()
-        scene = render_scene(grid.faceoff(pet_rows, par_rows, ph=ROWS * 2),
-                             COLS, ROWS, on, LCD_BG, bgimg=bgimg)
-        out.append_text(scene)
-        out.append("\n")
-        self.cursor = menu.list_window(
-            out, self.options, self.cursor, VISIBLE,
-            lambda o, i: f"+{o['partner_name'][:10]} = {o['name'][:12]}({o['attribute'][:2]})")
-        out.append_text(menu.footer("↑↓ pick   ENTER fuse   ESC out"))
-        return out
+        return render_scene(grid.faceoff(pet_rows, par_rows, ph=ROWS * 2),
+                            COLS, ROWS, on, LCD_BG, bgimg=bgimg)
 
-    def _render_fusing(self, out):
+    def _render_fusing(self):
         ph = FUSE_ROWS * 2
+        if self.fuse_step < POSE_T:
+            # canon pre-fusion beat (the Jogress intro anim): BOTH parents stand
+            # at their marks flipping ready(1) <-> cheer(5) together, then merge
+            idx = 1 if (self.fuse_step // 3) % 2 == 0 else 5
+            pf = grid.prep(self._sprite(self.old_num, idx=idx), ph)
+            rf = grid.prep(self._sprite(self.partner_num, idx=idx), ph) if self.partner_num else []
+            on, bgimg = self._palette()
+            return render_scene([(pf, grid.X0, True), (rf, grid.X1 - grid.width(rf), False)],
+                                COLS, FUSE_ROWS, on, LCD_BG, bgimg=bgimg)
+        step = self.fuse_step - POSE_T
+        total = FUSE_STEPS - POSE_T
         pf = grid.prep(self._sprite(self.old_num), ph)
         rf = grid.prep(self._sprite(self.partner_num), ph) if self.partner_num else []
         pw = grid.width(pf)
         rw = grid.width(rf)
-        t = self.fuse_step / FUSE_STEPS
+        t = step / total
         pet_start, par_start = grid.X0, grid.X1 - rw           # parents start at the grid edges...
         pet_target = grid.X0 + (grid.W - pw) // 2              # ...and slide to the grid centre and merge
         par_target = grid.X0 + (grid.W - rw) // 2
         pet_x = int(pet_start + (pet_target - pet_start) * t)
         par_x = int(par_start + (par_target - par_start) * t)
         overlay = []
-        if self.fuse_step >= FUSE_STEPS - 5:                  # a flash as the DNA merges (grid-bounded)
+        if step >= total - 5:                                  # a flash as the DNA merges (grid-bounded)
             overlay = [(x, y) for y in range(ph) for x in range(grid.X0, grid.X1)
-                       if (x + y + self.fuse_step) % 2 == 0]
+                       if (x + y + step) % 2 == 0]
         on, bgimg = self._palette()
-        scene = render_scene([(pf, pet_x, True), (rf, par_x, False)],   # face inward as they converge
-                             COLS, FUSE_ROWS, on, LCD_BG, bgimg=bgimg, overlay=overlay)
-        out.append_text(scene)
-        out.append("\n")
-        out.append_text(menu.note("DNA... connect!"))
-        out.append_text(menu.footer(""))
-        return out
+        return render_scene([(pf, pet_x, True), (rf, par_x, False)],   # face inward as they converge
+                            COLS, FUSE_ROWS, on, LCD_BG, bgimg=bgimg, overlay=overlay)
