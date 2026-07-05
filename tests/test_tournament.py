@@ -109,8 +109,35 @@ def test_prelim_chain(monkeypatch):
     _patch(monkeypatch, [q, _trophy(id=4, prelim=3)])
     p = _pet("Rookie")
     assert "first" in tournament.eligibility(p, _trophy(id=4, prelim=3))
-    p.trophies_won = {3: p.season}              # qualifier beaten this season
+    p.trophies_won = {3: p.season}              # qualifier beaten
     assert tournament.eligibility(p, _trophy(id=4, prelim=3)) is None
+
+
+def test_prelim_qualification_never_expires(monkeypatch):
+    """seasonBeat is set once and never reset -- every cup in tournies.csv
+    has ResetWonOnSeasonChange=FALSE.  The grand chain crosses seasons
+    (Spring 14 -> Summer 92 -> Fall 170 -> Winter 248), so a beaten-THIS-
+    season check would lock those qualifiers forever (audit 2026-07)."""
+    _patch(monkeypatch, [_trophy(id=3), _trophy(id=4, prelim=3)])
+    p = _pet("Rookie")
+    for past in ("Spring", "Summer", "Fall", "Winter"):
+        p.trophies_won = {3: past}              # beaten in ANY season, ever
+        assert tournament.eligibility(p, _trophy(id=4, prelim=3)) is None
+
+
+def test_cross_season_grand_chain_is_reachable():
+    """The real data: cups 92/170/248 must accept a prelim beaten in the
+    prior season (their prelims live in a different season by design)."""
+    from tuipet import data
+    by = {t["id"]: t for t in data.load_tournies()}
+    for qid, pid in ((92, 14), (170, 92), (248, 170)):
+        assert by[qid]["season"] != by[pid]["season"]   # the data really crosses
+        p = _pet("Rookie")
+        p.field = by[qid].get("field_req") or p.field
+        p.attribute = by[qid].get("attr_req") or p.attribute
+        p.trophies_won = {pid: by[pid]["season"]}
+        r = tournament.eligibility(p, by[qid])
+        assert r is None or "first" not in r            # never blocked on the prelim
 
 
 # ---- the bracket ------------------------------------------------------------

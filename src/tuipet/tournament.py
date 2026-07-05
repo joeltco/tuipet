@@ -164,8 +164,12 @@ def eligibility(pet, t):
     if t["attr_req"] and t["attr_req"] != getattr(pet, "attribute", ""):
         return "%s only." % t["attr_req"]
     if t.get("prelim"):
+        # seasonBeat: set once on a win and NEVER reset -- every cup in
+        # tournies.csv has ResetWonOnSeasonChange=FALSE, so the qualifier
+        # stays beaten for life.  (A ==season check locked the cross-season
+        # grand chain 14->92->170->248 forever: audit 2026-07.)
         won = getattr(pet, "trophies_won", {}) or {}
-        if won.get(t["prelim"]) != pet.season:
+        if t["prelim"] not in won:
             q = trophy_by_id(t["prelim"])
             return "Win the %s first." % (trophy_label(q) if q else "qualifier")
     return None
@@ -352,7 +356,7 @@ class Tournament:
             won_map = getattr(self.pet, "trophies_won", None)
             if won_map is None:
                 self.pet.trophies_won = won_map = {}
-            won_map[self.trophy["id"]] = self.pet.season   # seasonBeat (prelim chains)
+            won_map[self.trophy["id"]] = self.pet.season   # seasonBeat; season kept for the trophy room
             from . import persistence
             persistence.tourney_add(self.trophy["id"])     # gates the tournament egg unlocks
             extras = []
