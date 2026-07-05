@@ -207,9 +207,8 @@ class TransportPanel:
             pose = (10, 9)[(t // 2) % 2] if t < self.ride["end"] else 0
             rows = grid.prep((pf[pose] if pose < len(pf) else None) or pf[0])
             place.append((rows, grid.X0 + 8, False))
-        bgimg = self.pet.background()
-        on = SIL_DAY if bgimg else LCD_ON
-        return render_scene(place, COLS, ROWS, on, LCD_BG, overlay=overlay, bgimg=bgimg)
+        return menu.paint(place, self.pet.background(),
+                          rows=ROWS, cols=COLS, overlay=overlay)
 
     def _ride_scene(self):
         """Canon whaTransport, one beat at a time: ticket up (sting) -> Whamon
@@ -251,9 +250,8 @@ class TransportPanel:
                 else:                                  # off the right edge, traveller aboard
                     x = round(stop + (COLS - stop) * ((t - RIDE_GULP_T - 1) / (RIDE_END_T - RIDE_GULP_T - 1)))
                 place.append((rows, x, True))          # mirrored: swimming right
-        bgimg = self.pet.background()
-        on = SIL_DAY if bgimg else LCD_ON
-        return render_scene(place, COLS, ROWS, on, LCD_BG, overlay=overlay, bgimg=bgimg)
+        return menu.paint(place, self.pet.background(),
+                          rows=ROWS, cols=COLS, overlay=overlay)
 
     def strip(self):
         if self.ride is None:

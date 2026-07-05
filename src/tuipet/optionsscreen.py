@@ -33,11 +33,7 @@ class OptionsPanel(menu.SubHost):
         return self.confirm            # typing YES -- q is a letter here
 
     def key(self, k):
-        if self.sub is not None:
-            r = self.sub.key(k)
-            if r is not None and r[0] == "done":
-                self.sub = None
-                self.msg = f"theme: {theme.current()}"
+        if self.sub_key(k, lambda _r: setattr(self, "msg", f"theme: {theme.current()}")):
             return None
         if self.confirm:
             if k == "escape":

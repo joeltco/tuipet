@@ -19,6 +19,19 @@ MAX_OFFLINE = 36 * 3600  # cap catch-up at 36h of real time
 SETTINGS_PATH = os.path.join(SAVE_DIR, "settings.json")
 
 
+def _atomic_write_json(path, data, keep_bak=False):
+    """Atomic JSON write (tmp + os.replace); keep_bak rotates one generation
+    back first.  This dance lived in three hand-rolled copies (settings, save,
+    cloud-pull; refactor 2026-07-05)."""
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    tmp = path + ".tmp"
+    with open(tmp, "w") as fh:
+        json.dump(data, fh)
+    if keep_bak and os.path.exists(path):
+        os.replace(path, path + ".bak")   # keep one generation back
+    os.replace(tmp, path)
+
+
 def load_settings(path=None):
     """App-level prefs that outlive any single pet (e.g. the tamer name).
     Falls back to the .bak rotated by save_settings -- settings hold the album,
@@ -34,14 +47,7 @@ def load_settings(path=None):
 
 
 def save_settings(d, path=None):
-    path = path or SETTINGS_PATH
-    os.makedirs(os.path.dirname(path), exist_ok=True)
-    tmp = path + ".tmp"
-    with open(tmp, "w") as fh:
-        json.dump(d, fh)
-    if os.path.exists(path):
-        os.replace(path, path + ".bak")   # keep one generation back
-    os.replace(tmp, path)
+    _atomic_write_json(path or SETTINGS_PATH, d, keep_bak=True)
 
 
 def get_album():
@@ -72,21 +78,23 @@ def album_add(num):
     save_settings(d)
 
 
-def wins_add(n=1):
+def _note_add(key, n):
+    """Bump a lifetime progress counter (the generic behind wins/mega_kills --
+    the load-modify-save dance was copied per counter; refactor 2026-07-05)."""
     d = load_settings()
     prog = d.setdefault("progress", {})
-    prog["wins"] = int(prog.get("wins", 0)) + int(n)
+    prog[key] = int(prog.get(key, 0)) + int(n)
     save_settings(d)
-    return prog["wins"]
+    return prog[key]
+
+
+def wins_add(n=1):
+    return _note_add("wins", n)
 
 
 def mega_kills_add(n=1):
     """Lifetime Mega/Ultimate-class foes felled (gates the X egg; LINES_SPEC §7)."""
-    d = load_settings()
-    prog = d.setdefault("progress", {})
-    prog["mega_kills"] = int(prog.get("mega_kills", 0)) + int(n)
-    save_settings(d)
-    return prog["mega_kills"]
+    return _note_add("mega_kills", n)
 
 
 # --- cross-generation egg-unlock progress (DVPet eggUnlock.csv signals) -----------
@@ -104,16 +112,8 @@ def get_eggs_owned():
 
 
 def egg_own(idx):
-    if idx is None:
-        return
-    d = load_settings()
-    prog = d.setdefault("progress", {})
-    owned = set(prog.get("eggs_owned", []))
-    if idx in owned:
-        return
-    owned.add(idx)
-    prog["eggs_owned"] = sorted(owned)
-    save_settings(d)
+    if idx is not None:
+        _note_set("eggs_owned", idx)
 
 
 def _note_max(key, value):
@@ -176,28 +176,36 @@ def snapshot_prev_gen(pet):
     save_settings(d)
 
 
+def _note_put(key, value):
+    """Park a one-slot value in the generational progress channel."""
+    d = load_settings()
+    d.setdefault("progress", {})[key] = value
+    save_settings(d)
+
+
+def _note_take(key):
+    """Pop a one-slot progress value (None when the slot is empty)."""
+    d = load_settings()
+    v = (d.get("progress") or {}).pop(key, None)
+    if v is not None:
+        save_settings(d)
+    return v
+
+
 def bank_digimemory(mem):
     """Park the departed's inheritance data in the generational channel (DVPet
     keeps items across resetToEgg; tuipet's per-save channel is progress, the
     same place the last_gen egg gates live).  One slot, like the device."""
-    d = load_settings()
-    d.setdefault("progress", {})["digimemory"] = dict(mem)
-    save_settings(d)
+    _note_put("digimemory", dict(mem))
 
 
 def bank_bonus_seed(n):
     """Park the departed's care grade (careBonusOnReset) for the next egg."""
-    d = load_settings()
-    d.setdefault("progress", {})["bonus_seed"] = int(n)
-    save_settings(d)
+    _note_put("bonus_seed", int(n))
 
 
 def take_bonus_seed():
-    d = load_settings()
-    n = (d.get("progress") or {}).pop("bonus_seed", None)
-    if n is not None:
-        save_settings(d)
-    return int(n or 0)
+    return int(_note_take("bonus_seed") or 0)
 
 
 def peek_digimemory():
@@ -206,11 +214,7 @@ def peek_digimemory():
 
 def take_digimemory():
     """Pop the banked memory (the heir now carries it on its own save)."""
-    d = load_settings()
-    mem = (d.get("progress") or {}).pop("digimemory", None)
-    if mem:
-        save_settings(d)
-    return mem or None
+    return _note_take("digimemory") or None
 
 
 def get_progress():
@@ -286,28 +290,16 @@ def to_save_dict(pet):
 
 
 def save(pet, path=None):
-    path = path or SAVE_PATH
-    os.makedirs(os.path.dirname(path), exist_ok=True)
-    data = to_save_dict(pet)
-    tmp = path + ".tmp"
-    with open(tmp, "w") as fh:
-        json.dump(data, fh)
-    if os.path.exists(path):
-        os.replace(path, path + ".bak")   # one generation back: a corrupt main save
-    os.replace(tmp, path)                 # used to mean a silent new egg -- and the
-    #                                       next autosave then DESTROYED the old pet
+    # the .bak generation matters: a corrupt main save used to mean a silent
+    # new egg -- and the next autosave then DESTROYED the old pet
+    _atomic_write_json(path or SAVE_PATH, to_save_dict(pet), keep_bak=True)
     if getattr(pet, "num", -1) >= 0 and pet.stage != "Egg":
         album_add(pet.num)            # grow the cross-pet album (gates egg unlocks)
 
 
 def write_save_dict(data, path=None):
     """Atomically write a raw save dict (e.g. one pulled from the cloud) to disk."""
-    path = path or SAVE_PATH
-    os.makedirs(os.path.dirname(path), exist_ok=True)
-    tmp = path + ".tmp"
-    with open(tmp, "w") as fh:
-        json.dump(data, fh)
-    os.replace(tmp, path)
+    _atomic_write_json(path or SAVE_PATH, data)
 
 
 def local_saved_at(path=None):

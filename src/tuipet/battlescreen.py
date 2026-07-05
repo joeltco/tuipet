@@ -225,10 +225,10 @@ class BattlePanel:
             elif st == "squash" and prev.get("keep") != entry.get("keep"):
                 self.sfx = "attackHit"
         elif m != self._last_m:
-            if m == "fire_out":                 # DVPet: a doubleAttack launches with the strong sting
-                self.sfx = "strongAttack" if entry.get("double") else "attack"
-            elif m == "hit":                     # ...and lands with the strong impact
-                self.sfx = "strongHit" if entry.get("double") else "attackHit"
+            # DVPet: a doubleAttack launches AND lands with the strong stings
+            s = strikefx.beat_sfx(m, entry.get("double"))
+            if s:
+                self.sfx = s
             elif m == "reveal":                  # setupBattle: _startBattle at the reveal
                 self.sfx = "startBattle"
         self._last_m = m
@@ -338,9 +338,8 @@ class BattlePanel:
     def _scene(self, placements, overlay):
         # the habitat background is part of the scene -- the crisp sprites + orbs read fine
         # over it now (the clunk was the sprites/explosion, since fixed), so keep it visible.
-        bgimg = self.pet.background()
-        on = SIL_DAY if bgimg else LCD_ON   # never white (paint() rule)
-        return render_scene(placements, COLS, ROWS, on, LCD_BG, overlay=overlay, bgimg=bgimg)
+        return menu.paint(placements, self.pet.background(),
+                          rows=ROWS, cols=COLS, overlay=overlay)
 
     def _place_one(self, view, rows, xshift=0):
         """Place the ONE monster currently on screen. Player stands RIGHT (faces left), enemy

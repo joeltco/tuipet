@@ -7,6 +7,40 @@ left transparent (terminal default) unless an LCD background colour is supplied.
 from __future__ import annotations
 from rich.text import Text
 
+def blit(bm, ox, oy):
+    """Sprite bitmap -> (x,y) pixel list for render_scene/_screen's overlay.
+    Tolerates None/blank frames: 28 foods ship a blank 'eaten away' last frame
+    that extracts as None -- the eat fx crashed on their final bite (2026-07-04).
+    Lived in three verbatim copies (app/training/strikefx; refactor 2026-07-05)."""
+    if not bm:
+        return []
+    return [(ox + x, oy + y) for y, row in enumerate(bm)
+            for x, c in enumerate(row) if c == "1"]
+
+
+def _stamp(buf, pts, cols, px_h):
+    """Overlay pixels -> the buffer, clipped to the LCD."""
+    for ox_, oy_ in pts:
+        if 0 <= oy_ < px_h and 0 <= ox_ < cols:
+            buf[oy_][ox_] = 1
+
+
+def _paint_cells(buf, cols, rows, on, bg, bgimg):
+    """The half-block compositor: a filled pixel buffer -> Rich Text.
+    render_screen and render_scene carried two byte-identical copies of this
+    loop, which had to be edited in lockstep (refactor 2026-07-05)."""
+    t = Text()
+    for cy in range(rows):
+        ty, byy = cy * 2, cy * 2 + 1
+        for cx in range(cols):
+            tc = on if buf[ty][cx] else ("#" + bgimg[ty][cx * 6:cx * 6 + 6] if bgimg else bg)
+            bc = on if buf[byy][cx] else ("#" + bgimg[byy][cx * 6:cx * 6 + 6] if bgimg else bg)
+            t.append("▀", style=f"{tc} on {bc}")
+        if cy != rows - 1:
+            t.append("\n")
+    return t
+
+
 # A few palettes. "on" = creature ink, "off" = LCD background (None = transparent).
 def render_screen(frame_rows, cols, rows, on="#2b2e31", bg="#c6c9cc", baseline=True, mirror=False, xshift=0, yshift=0, overlay=None, bgimg=None):
     """Compose a sprite centred on a fixed cols x rows (character) LCD screen.
@@ -15,7 +49,6 @@ def render_screen(frame_rows, cols, rows, on="#2b2e31", bg="#c6c9cc", baseline=T
     centred horizontally and sitting on the floor (baseline) so it doesn't bob
     off the ground between frames of different heights.
     """
-    from rich.text import Text
     px_h = rows * 2
     buf = [[0] * cols for _ in range(px_h)]
     if frame_rows and mirror:
@@ -32,19 +65,8 @@ def render_screen(frame_rows, cols, rows, on="#2b2e31", bg="#c6c9cc", baseline=T
                     if 0 <= py < px_h and 0 <= pxx < cols:
                         buf[py][pxx] = 1
     if overlay:                              # weather: rain/snow/cloud pixels
-        for ox_, oy_ in overlay:
-            if 0 <= oy_ < px_h and 0 <= ox_ < cols:
-                buf[oy_][ox_] = 1
-    t = Text()
-    for cy in range(rows):
-        ty, byy = cy * 2, cy * 2 + 1
-        for cx in range(cols):
-            tc = on if buf[ty][cx] else ("#" + bgimg[ty][cx * 6:cx * 6 + 6] if bgimg else bg)
-            bc = on if buf[byy][cx] else ("#" + bgimg[byy][cx * 6:cx * 6 + 6] if bgimg else bg)
-            t.append("▀", style=f"{tc} on {bc}")
-        if cy != rows - 1:
-            t.append("\n")
-    return t
+        _stamp(buf, overlay, cols, px_h)
+    return _paint_cells(buf, cols, rows, on, bg, bgimg)
 
 
 def render_scene(placements, cols, rows, on="#2b2e31", bg="#c6c9cc", overlay=None, bgimg=None):
@@ -53,7 +75,6 @@ def render_scene(placements, cols, rows, on="#2b2e31", bg="#c6c9cc", overlay=Non
     placements: list of (frame_rows, x_left, mirror). Each sprite sits on the
     floor (baseline). Used for the battle scene (pet vs enemy facing off).
     """
-    from rich.text import Text
     px_h = rows * 2
     buf = [[0] * cols for _ in range(px_h)]
     for frame_rows, x_left, mirror in placements:
@@ -69,19 +90,8 @@ def render_scene(placements, cols, rows, on="#2b2e31", bg="#c6c9cc", overlay=Non
                     if 0 <= py < px_h and 0 <= px < cols:
                         buf[py][px] = 1
     if overlay:                              # projectiles / impact bursts
-        for ox_, oy_ in overlay:
-            if 0 <= oy_ < px_h and 0 <= ox_ < cols:
-                buf[oy_][ox_] = 1
-    t = Text()
-    for cy in range(rows):
-        ty, byy = cy * 2, cy * 2 + 1
-        for cx in range(cols):
-            tc = on if buf[ty][cx] else ("#" + bgimg[ty][cx * 6:cx * 6 + 6] if bgimg else bg)
-            bc = on if buf[byy][cx] else ("#" + bgimg[byy][cx * 6:cx * 6 + 6] if bgimg else bg)
-            t.append("▀", style=f"{tc} on {bc}")
-        if cy != rows - 1:
-            t.append("\n")
-    return t
+        _stamp(buf, overlay, cols, px_h)
+    return _paint_cells(buf, cols, rows, on, bg, bgimg)
 
 
 UPPER, LOWER, FULL = "\u2580", "\u2584", "\u2588"   # half/full blocks (bitmap_text's pixels;

@@ -1,12 +1,12 @@
 """Theme propagation across screens (Workstream C).
 
 theme.apply() pushes the active palette into every module that imported colour
-names by copy (`from .theme import INK, ...`) -- but only those listed in
-theme._SCREEN_MODULES. A screen that binds colour names yet is missing from that
-list keeps the default (grey) palette after a switch: a stale-theme leak.
-
-Audit result: the list is currently complete and minimal. These tests pin that
-(so a new screen can't silently leak) and verify a switch actually propagates.
+names by copy (`from .theme import INK, ...`).  Refactor 2026-07-05: the
+binders are DISCOVERED from sys.modules (any tuipet module carrying LCD_ON or
+INK), retiring the hand-maintained _SCREEN_MODULES tuple whose omissions
+failed silently (a forgotten registration = stale colours on theme switch).
+These tests pin the discovery: every source-level binder must actually carry
+the new palette after a switch.
 """
 import importlib
 import os
@@ -35,21 +35,35 @@ def _modules_binding_theme_names():
     return out
 
 
-def test_every_theme_binder_is_propagated():
-    """Any module that copies a theme colour name must be in _SCREEN_MODULES."""
+def test_every_theme_binder_is_discovered_and_retinted():
+    """Every module that copies theme colour names must ACTUALLY carry the new
+    palette after apply() -- the behavioral contract the old _SCREEN_MODULES
+    census only approximated.  Discovery requires LCD_ON or INK as the gate,
+    so a binder that imports only exotic names would leak: pin that every
+    real binder binds one of the gate names too."""
     binders = _modules_binding_theme_names()
-    missing = sorted(m for m in binders if m not in theme._SCREEN_MODULES)
-    assert not missing, (
-        f"these modules bind theme colours but aren't in _SCREEN_MODULES, so a "
-        f"theme switch won't reach them (stale-theme leak): {missing}")
-
-
-def test_screen_modules_list_has_no_dead_entries():
-    """Every listed module actually binds a theme name (keeps the list honest)."""
-    binders = _modules_binding_theme_names()
-    # 'app' and 'menu' always bind; a listed module that binds nothing is dead weight
-    dead = sorted(m for m in theme._SCREEN_MODULES if m not in binders)
-    assert not dead, f"_SCREEN_MODULES lists modules that bind no theme names: {dead}"
+    assert binders, "the source scan found no binders at all (regex broke?)"
+    import importlib as _il
+    try:
+        expected = theme._derive(theme.THEMES["amber"])
+        checked = 0
+        for mname, names in binders.items():
+            mod = _il.import_module(f"tuipet.{mname}")
+            theme.apply("amber")               # retint after any fresh import
+            # only MODULE-LEVEL bindings need propagation (the source scan also
+            # sees function-local lazy imports, which read live values)
+            carried = {n for n in names if hasattr(mod, n)}
+            if not carried:
+                continue
+            assert carried & {"LCD_ON", "INK"}, (
+                f"{mname} binds {sorted(carried)} but neither LCD_ON nor INK, "
+                f"so apply()'s discovery gate skips it (stale-theme leak)")
+            for n in sorted(carried):
+                assert getattr(mod, n) == expected[n], f"{mname}.{n} kept stale colours"
+                checked += 1
+        assert checked > 20, "the sweep barely checked anything (scan broke?)"
+    finally:
+        theme.apply("grey")
 
 
 def test_apply_propagates_to_a_screen_module():
@@ -111,3 +125,14 @@ def test_the_picker_fits_the_lcd_with_every_theme():
         pan.key("down")
     pan.key("escape")
     assert theme.current() == "grey"
+
+
+def test_load_sprites_cache_is_intact():
+    """Refactor 2026-07-05 near-miss: inserting a helper above load_sprites
+    STOLE its @lru_cache decorator -- every call re-parsed the gzip atlas and
+    the app crawled (the suite 'hang').  Pin cache identity for the hot atlas
+    loaders so a displaced decorator can never ship again."""
+    from tuipet import data, egg, lines
+    assert data.load_sprites() is data.load_sprites()
+    assert data.load_icons() is data.load_icons()
+    assert data.load_effects() is data.load_effects()

@@ -186,8 +186,7 @@ class TownPanel(menu.SubHost):
         physical 12-row box; notes and errands ride the #msg strip instead)."""
         bg_h = self.town.get("bg_habitat")
         bgimg = self.pet.background(bg_h) if bg_h is not None else self.pet.background()
-        on = SIL_DAY if bgimg else LCD_ON   # pet over a bg = dark silhouette (paint() rule)
-        return render_scene(placements, 40, 12, on, LCD_BG, bgimg=bgimg)
+        return menu.paint(placements, bgimg)
 
     def strip(self):
         """The one-line chrome under the LCD: the errand picker in the lobby,
@@ -218,12 +217,9 @@ class TownPanel(menu.SubHost):
             # round card + controls ride the strip (they were clipped in-LCD)
             t = self.tourney
             opp = t.current_opponent()
-            rec = data.load_sprites()[1]
 
             def fr(num):
-                r = rec[num]
-                roles = data.ROLES["idle"]
-                return r["frames"][roles[(self.frame_i // 5) % len(roles)]] or r["frames"][0]
+                return data.bob_frame(num, self.frame_i)
 
             return self._scene(grid.faceoff(fr(p.num), fr(opp["num"]),
                                             left_mirror=True, right_mirror=False, ph=24))
@@ -232,9 +228,7 @@ class TownPanel(menu.SubHost):
             # the town LOBBY is a PLACE: the pet stands in the town's canonical
             # scenery (towns.csv TownBackgroundID), filling the LCD; the errand
             # strip reads below in the #msg box.
-            rec = data.load_sprites()[1][p.num]
-            roles = data.ROLES["idle"]
-            fr = rec["frames"][roles[(self.frame_i // 5) % len(roles)]] or rec["frames"][0]
+            fr = data.bob_frame(p.num, self.frame_i)
             return self._scene([grid.center(grid.prep(fr, ph=24))])
         out = menu.header(f"TOWN {self.town['id']}", f"{p.bits}b")
         # the selected item's icon+info block -- the SAME icon view as the home

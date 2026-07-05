@@ -58,11 +58,7 @@ class TitlePanel:
         return ("done", None)
 
     def text(self):
-        _, by = data.load_sprites()
-        rec = by[self.num]
-        idx = data.ROLES["idle"][(self.frame_i // 4) % 2]  # gentle bob (~0.5s), not every fast-tick
-        first = next((f for f in rec["frames"] if f), rec["frames"][0])
-        mascot = rec["frames"][idx] or first
+        mascot = data.bob_frame(self.num, self.frame_i, beat=4)  # gentle bob (~0.5s), not every fast-tick
         buf = [[0] * COLS for _ in range(PXH)]
         sw = max(len(r) for r in mascot)
         sh = len(mascot)

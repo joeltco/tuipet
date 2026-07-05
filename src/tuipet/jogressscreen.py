@@ -59,14 +59,12 @@ class JogressPanel:
 
     def _palette(self):
         bgimg = self.pet.background()
-        return (SIL_DAY if bgimg else LCD_ON), bgimg   # never white over a bg (paint() rule)
+        return menu.scene_ink(bgimg), bgimg
 
     def _sprite(self, num, role="idle", idx=None):
-        rec = data.load_sprites()[1][num]
         if idx is None:
-            roles = data.ROLES[role]
-            idx = roles[(self.frame_i // 5) % len(roles)]   # WALK_BEAT bob, not 10Hz
-        fr = rec["frames"]
+            return data.bob_frame(num, self.frame_i, role)  # WALK_BEAT bob, not 10Hz
+        fr = data.load_sprites()[1][num]["frames"]
         return (fr[idx] if idx < len(fr) else None) or fr[0]
 
     def strip(self):

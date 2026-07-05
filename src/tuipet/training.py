@@ -101,12 +101,7 @@ def _cell(sprite, cell):
     return grid.cell(sprite, cell)
 
 
-def _blit(bm, ox, oy):
-    """Sprite bitmap -> (x,y) pixel list for render_scene's overlay (projectile / flash)."""
-    if not bm:
-        return []          # blank/None frames are legal (2026-07-04 eat-fx lesson)
-    return [(ox + x, oy + y) for y, row in enumerate(bm)
-            for x, c in enumerate(row) if c == "1"]
+from .render import blit as _blit    # one blit for app/training/strikefx (refactor 2026-07-05)
 
 
 def _crop(pf):
@@ -312,10 +307,9 @@ class TrainingPanel:
         """One-shot beep at each strike-beat edge -- launch sting, then the impact."""
         m = self.strike_tl[self.si].get("m")
         if m != self._last_sm:
-            if m == "fire_out":
-                self.sfx = "strongAttack" if self._strong else "attack"
-            elif m == "hit":
-                self.sfx = "strongHit" if self._strong else "attackHit"
+            s = strikefx.beat_sfx(m, self._strong)
+            if s:
+                self.sfx = s
             elif m == "miss":
                 self.sfx = "cancel"
         self._last_sm = m
@@ -513,8 +507,7 @@ class TrainingPanel:
         # the vaccine/data drills).  The crisp sprites/explosion read fine over it now; only
         # the HP/virus minigames stay on a flat LCD (their own override) for readability.
         bgimg = self.pet.background()
-        on = SIL_DAY if bgimg else LCD_ON   # never white (paint() rule)
-        return on, bgimg
+        return menu.scene_ink(bgimg), bgimg
 
     def _render_play(self, rec):
         """The DVPet drills, rebuilt to match the real game with the real sprites:

@@ -16,6 +16,65 @@ import websockets
 CHAT_CAP = 200
 
 
+def parse_msg(raw):
+    """One JSON-envelope guard for every lobby message: (msg, type) or
+    (None, None) on anything malformed."""
+    try:
+        m = json.loads(raw)
+        return m, m.get("t")
+    except (ValueError, AttributeError):
+        return None, None
+
+
+class _WsClient:
+    """The transport loop BOTH clients ride: connect -> login -> pump send +
+    recv -> on a drop, retry with exponential backoff; a rejected login sets
+    _stop and ends the loop for good.  This loop lived in two drifting copies
+    (the send-loop `return`-kills-autosave bug lived in exactly this drift;
+    refactor 2026-07-05).  Subclasses supply the login payload, their own
+    _send_loop/_handle, and the connection-state bookkeeping hooks."""
+
+    _backoff0 = 2.0
+    _backoff_cap = 30.0
+
+    async def run(self):
+        backoff = self._backoff0
+        while not self._stop:
+            try:
+                async with websockets.connect(self.uri, max_size=64 * 1024) as ws:
+                    self._ws = ws
+                    await ws.send(json.dumps(self._login_msg()))
+                    self._on_connect()
+                    backoff = self._backoff0
+                    sender = asyncio.create_task(self._send_loop())
+                    try:
+                        async for raw in ws:
+                            self._handle(raw)
+                    finally:
+                        sender.cancel()
+            except Exception as e:
+                self._on_error(e)
+            finally:
+                self._on_disconnect()
+                self._ws = None
+            if self._stop:
+                break
+            self._on_retry_wait()
+            await asyncio.sleep(backoff)
+            backoff = min(backoff * 2, self._backoff_cap)
+        self._on_stopped()
+
+    # hooks -- default no-ops
+    def _on_error(self, e):
+        pass
+
+    def _on_retry_wait(self):
+        pass
+
+    def _on_stopped(self):
+        pass
+
+
 class LobbyState:
     """Render-friendly snapshot of the lobby; the Panel reads this every tick."""
 
@@ -35,7 +94,7 @@ class LobbyState:
         return [p for p in self.roster if p["id"] != self.me_id]
 
 
-class SyncClient:
+class SyncClient(_WsClient):
     """Background cloud-save sync over the same lobby server.
 
     Logs in with `sync_only` so it never joins the live roster (it can coexist with
@@ -44,6 +103,8 @@ class SyncClient:
     local save up (only the newest pending push is kept). Reconnects with backoff;
     a bad password stops the loop. Fully fail-soft — offline just means no sync.
     """
+
+    _backoff_cap = 60.0
 
     def __init__(self, uri, name, pw="", on_pull=None):
         self.uri = uri
@@ -60,35 +121,18 @@ class SyncClient:
         self._pending = save                  # keep only the newest; server is last-write-wins
         self._wake.set()
 
-    async def run(self):
-        backoff = 2
-        while not self._stop:
-            try:
-                async with websockets.connect(self.uri, max_size=64 * 1024) as ws:
-                    self._ws = ws
-                    from .cloudsync import BOOT   # one launch stamp per process
-                    await ws.send(json.dumps({"t": "login", "name": self.name,
-                                              "pw": self.pw, "sync_only": True,
-                                              "boot": BOOT}))
-                    self.connected = True
-                    backoff = 2
-                    if self._pending is not None:
-                        self._wake.set()       # flush anything queued while we were down
-                    sender = asyncio.create_task(self._send_loop())
-                    try:
-                        async for raw in ws:
-                            self._handle(raw)
-                    finally:
-                        sender.cancel()
-            except Exception:
-                pass                           # offline / dropped -> retry after backoff
-            finally:
-                self.connected = False
-                self._ws = None
-            if self._stop:
-                break
-            await asyncio.sleep(backoff)
-            backoff = min(backoff * 2, 60)
+    def _login_msg(self):
+        from .cloudsync import BOOT           # one launch stamp per process
+        return {"t": "login", "name": self.name, "pw": self.pw,
+                "sync_only": True, "boot": BOOT}
+
+    def _on_connect(self):
+        self.connected = True
+        if self._pending is not None:
+            self._wake.set()                  # flush anything queued while we were down
+
+    def _on_disconnect(self):
+        self.connected = False
 
     async def _send_loop(self):
         while True:
@@ -106,11 +150,7 @@ class SyncClient:
                     await asyncio.sleep(1.0)
 
     def _handle(self, raw):
-        try:
-            m = json.loads(raw)
-        except (ValueError, AttributeError):
-            return
-        t = m.get("t")
+        m, t = parse_msg(raw)
         if t == "welcome":
             if self.on_pull is not None:
                 self.on_pull(m.get("save"))    # server's stored save (or None)
@@ -118,7 +158,7 @@ class SyncClient:
             self._stop = True                  # wrong password -> stop retrying
 
 
-class LobbyClient:
+class LobbyClient(_WsClient):
     def __init__(self, uri, name, pw="", pet=None, state=None):
         self.uri = uri
         self.name = name
@@ -154,42 +194,28 @@ class LobbyClient:
     def relay(self, to, payload):
         self._send({"t": "relay", "to": to, "payload": payload})
 
-    # ---- lifecycle -------------------------------------------------------
-    async def run(self):
-        """Connect, log in, pump send + recv -- and on a DROP, reconnect with
-        backoff (the audit gave SyncClient this loop; the lobby lacked it, so
-        any blip stranded the panel on an error banner until re-entry).  A
-        rejected login stops for good; cancellation tears the task down."""
-        backoff = self._backoff0
-        while not self._stop:
-            try:
-                async with websockets.connect(self.uri, max_size=64 * 1024) as ws:
-                    self._ws = ws
-                    await ws.send(json.dumps({"t": "login", "name": self.name,
-                                              "pw": self.pw, "pet": self.pet}))
-                    self.state.connected = True
-                    self.state.reconnecting = False
-                    backoff = self._backoff0
-                    sender = asyncio.create_task(self._send_loop())
-                    try:
-                        async for raw in ws:
-                            self._handle(raw)
-                    finally:
-                        sender.cancel()
-            except Exception as e:                   # surfaced in the lobby as a banner
-                if not self._had_welcome:
-                    self.state.error = str(e) or e.__class__.__name__
-            finally:
-                self.state.connected = False
-                self._ws = None
-            if self._stop:
-                break
-            # nobody is reachable while down: an empty roster voids any live
-            # session panel-side, exactly like a partner leaving
-            self.state.roster = []
-            self.state.reconnecting = True
-            await asyncio.sleep(backoff)
-            backoff = min(backoff * 2, 30)
+    # ---- lifecycle (the loop itself lives on _WsClient) --------------------
+    def _login_msg(self):
+        return {"t": "login", "name": self.name, "pw": self.pw, "pet": self.pet}
+
+    def _on_connect(self):
+        self.state.connected = True
+        self.state.reconnecting = False
+
+    def _on_error(self, e):                          # surfaced in the lobby as a banner
+        if not self._had_welcome:
+            self.state.error = str(e) or e.__class__.__name__
+
+    def _on_disconnect(self):
+        self.state.connected = False
+
+    def _on_retry_wait(self):
+        # nobody is reachable while down: an empty roster voids any live
+        # session panel-side, exactly like a partner leaving
+        self.state.roster = []
+        self.state.reconnecting = True
+
+    def _on_stopped(self):
         self.state.reconnecting = False
 
     async def _send_loop(self):
@@ -201,11 +227,7 @@ class LobbyClient:
                 return
 
     def _handle(self, raw):
-        try:
-            m = json.loads(raw)
-            t = m.get("t")
-        except (ValueError, AttributeError):
-            return
+        m, t = parse_msg(raw)
         s = self.state
         if t == "welcome":
             self._had_welcome = True

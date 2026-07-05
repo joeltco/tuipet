@@ -277,15 +277,13 @@ class DNAPanel:
         flash = getattr(self, "_mash_flash", 0)
         self._mash_flash = max(0, flash - 1)
         rec = data.load_sprites()[1][p.num]
-        pose = 6 if (flash > 0 and len(rec["frames"]) > 6 and rec["frames"][6]) else \
-            data.ROLES["idle"][(self.frame_i // 2) % 2]   # drill-urgency bob, not 10Hz
-        fr = rec["frames"][pose] or rec["frames"][0]
-        bgimg = p.background()
-        on = SIL_DAY if bgimg else LCD_ON
+        if flash > 0 and len(rec["frames"]) > 6 and rec["frames"][6]:
+            fr = rec["frames"][6]                             # strike pose on a press
+        else:
+            fr = data.bob_frame(p.num, self.frame_i, beat=2)  # drill-urgency bob, not 10Hz
         # scene-only: the meter rides the strip (box-clip audit 2026-07-04 --
         # the bar+scene+meter stack ran 16 lines into the physical 12-row box)
-        return render_scene([grid.center(grid.prep(fr, 24), ph=24)],
-                            40, 12, on, LCD_BG, bgimg=bgimg)
+        return menu.paint([grid.center(grid.prep(fr, 24), ph=24)], p.background())
 
     def strip(self):
         """The live mash meter under the LCD; other phases keep in-LCD menus.

@@ -329,11 +329,11 @@ class DigiCorePanel:
         return None
 
     def _pet_rows(self, num, idx=None):
+        if idx is None:
+            return data.bob_frame(num, self.frame_i)   # WALK_BEAT bob, not 10Hz
         rec = data.load_sprites()[1].get(num)
         if not rec:
             return None
-        if idx is None:
-            idx = data.ROLES["idle"][(self.frame_i // 5) % 2]   # WALK_BEAT bob, not 10Hz
         return rec["frames"][idx] or next((f for f in rec["frames"] if f), None)
 
     @staticmethod
@@ -393,7 +393,7 @@ class DigiCorePanel:
         message); no key hints anywhere."""
         p = self.pet
         bgimg = core_background(p)
-        on = SIL_DAY if bgimg else LCD_ON   # never white (paint() rule)
+        on = menu.scene_ink(bgimg)
         t = self.teaser_t
         if t < MON_T:                                     # beat one: the mon itself
             rows = self._pet_rows(p.num)

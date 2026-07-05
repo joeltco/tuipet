@@ -73,11 +73,7 @@ class FeedPanel:
                 return ("done", ("refused", food, msg))
             fed = self.pet.anim == "eat"
             if fed and food.get("can_dec"):          # Consumable.decQuantity (staples never dec)
-                left = self.pet.inventory.get(food["key"], 0) - 1
-                if left <= 0:
-                    self.pet.inventory.pop(food["key"], None)
-                else:
-                    self.pet.inventory[food["key"]] = left
+                self.pet.take_item(food["key"])
             return ("done", ("fed" if fed else "full", food, msg))
         elif k in ("escape", "f"):
             return ("done", None)

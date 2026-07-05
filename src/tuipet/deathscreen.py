@@ -89,7 +89,5 @@ class DeathPanel:
             return out
         # the memorial is a PLACE (audit 2026-07-04): the grave stands grounded
         # in the pet's home scenery, filling the LCD; words ride the strip
-        bgimg = p.background()
-        on = SIL_DAY if bgimg else LCD_ON
-        return render_scene([grid.center(grid.prep(GRAVE, ph=ROWS * 2))],
-                            COLS, ROWS, on, LCD_BG, bgimg=bgimg)
+        return menu.paint([grid.center(grid.prep(GRAVE, ph=ROWS * 2))],
+                          p.background(), rows=ROWS, cols=COLS)

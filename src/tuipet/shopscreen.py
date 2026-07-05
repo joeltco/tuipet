@@ -158,9 +158,8 @@ class ShopPanel:
         idx, price = e["egg_idx"], e["price"]
         if idx in persistence.get_eggs_owned():
             return "Already unlocked."
-        if self.pet.bits < price:
+        if not self.pet.spend_bits(price):
             return "Not enough bits."
-        self.pet.bits -= price
         persistence.egg_own(idx)
         return "Unlocked %s! Hatch it next egg." % e["name"]
 

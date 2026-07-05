@@ -79,10 +79,6 @@ class HabitatPanel:
         """The selected habitat AS A SCENE: the pet stands in the backdrop it
         would call home — window-shopping included (render-only preview)."""
         h = self.rows[self.cursor]
-        bgimg = self.pet.background(h["id"])
-        on = SIL_DAY if bgimg else LCD_ON          # never white over a bg (paint() rule)
-        rec = data.load_sprites()[1][self.pet.num]
-        roles = data.ROLES["idle"]
-        fr = rec["frames"][roles[(self.frame_i // 5) % 2]] or rec["frames"][0]
-        return render_scene([grid.center(grid.prep(fr, ph=ROWS * 2))],
-                            COLS, ROWS, on, LCD_BG, bgimg=bgimg)
+        fr = data.bob_frame(self.pet.num, self.frame_i)
+        return menu.paint([grid.center(grid.prep(fr, ph=ROWS * 2))],
+                          self.pet.background(h["id"]), rows=ROWS, cols=COLS)

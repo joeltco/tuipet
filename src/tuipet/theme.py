@@ -94,11 +94,8 @@ _current = _DEFAULT
 _NAMES = ("LCD_ON", "LCD_BG", "MID", "INK", "INK_B", "DIM", "SEL", "ACCENT",
           "POS", "NEG", "BORDER", "SIL_DAY", "SIL_NIGHT", "PHASE_PALETTE",
           "HEART", "ENERGY", "MOOD", "LIFE", "COIN")
-_SCREEN_MODULES = ("app", "menu", "battlescreen", "training", "adventurescreen",
-                   "tournamentscreen", "townscreen", "shopscreen", "habitatscreen", "feedscreen",
-                   "jogressscreen", "dnascreen", "digicorescreen", "eggselectscreen", "assistscreen",
-                   "lobbyscreen", "titlescreen", "deathscreen", "themescreen",
-                   "transportscreen")
+# (the hand-maintained _SCREEN_MODULES registry is gone -- apply() discovers
+# palette-bound modules from sys.modules; hardening 2026-07-05)
 
 _RAIN = {"Drizzling", "Raining", "HeavyRain"}
 _SNOW = {"LightSnow", "Snowing", "HeavySnow"}
@@ -127,7 +124,12 @@ def _derive(t):
 
 def apply(name, propagate=True):
     """Make `name` the live theme. Rewrites this module's colour names and (when
-    propagate) pushes them into every already-loaded screen module."""
+    propagate) pushes them into every already-loaded screen module.
+
+    Screens are DISCOVERED, not listed: any loaded tuipet module that bound
+    LCD_ON or INK at import gets retinted.  The old hand-maintained
+    _SCREEN_MODULES tuple failed SILENTLY when a new screen wasn't registered
+    -- it kept its import-time colours on theme switch (hardening 2026-07-05)."""
     global _current
     if name not in THEMES:
         name = _DEFAULT
@@ -135,9 +137,11 @@ def apply(name, propagate=True):
     vals = _derive(THEMES[name])
     globals().update(vals)
     if propagate:
-        for m in _SCREEN_MODULES:
-            mod = sys.modules.get(__name__.rsplit(".", 1)[0] + "." + m)
-            if mod is None:
+        pkg = __name__.rsplit(".", 1)[0] + "."
+        for mname, mod in list(sys.modules.items()):
+            if (mod is None or not mname.startswith(pkg)
+                    or mname == __name__
+                    or not (hasattr(mod, "LCD_ON") or hasattr(mod, "INK"))):
                 continue
             for k in _NAMES:
                 if hasattr(mod, k):

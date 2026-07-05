@@ -80,6 +80,23 @@ def _content_fill(frame):
     return sum(r[left:right + 1].count("1") for r in rows) / (w * len(rows))
 
 
+def bob_frame(num, frame_i, role="idle", beat=5):
+    """The idle-bob frame fetch: the role's pose keyed at frame_i // beat
+    (beat 5 = the ~2Hz WALK_BEAT bob every scene screen uses; dna's urgency
+    bob passes 2, the title's gentle bob 4).  This fetch lived in EIGHT
+    hand-rolled copies across the screens, drifting across four cadences
+    (refactor 2026-07-05).  Falls back to the first non-empty frame; None
+    when the mon has no sheet."""
+    rec = load_sprites()[1].get(num)
+    if not rec:
+        return None
+    roles = ROLES.get(role, ROLES["idle"])
+    fr = rec["frames"]
+    idx = roles[(frame_i // beat) % len(roles)]
+    f = fr[idx] if idx < len(fr) else None
+    return f or next((x for x in fr if x), None)
+
+
 @lru_cache(maxsize=1)
 def load_sprites():
     from . import placeholder

@@ -1036,14 +1036,8 @@ class Pet:
                                             else POOP_WAIT_MOOD))
         # death does not wait for morning: the mistake caps and old age
         # apply asleep too (only the starvation clock freezes; audit 2026-07)
-        if self.care_mistakes >= 20 or self.injuries >= 20:
-            self._die("neglect" if self.care_mistakes >= 20 else "its injuries")
+        if self._check_death_caps() or self._check_old_age():
             return
-        if (self.stage in ("Ultimate", "Mega") and self.care_mistakes >= 5
-                and self.stage_seconds >= self.LATE_STAGE_WINDOW):
-            self._die("frailty"); return              # Pen20 late-stage rule (LINES_SPEC §5)
-        if self.age_seconds >= self.lifespan:
-            self._die("old age"); return
         # startPoop: even asleep, a truly DESPERATE gauge (>= 2x max) goes --
         # this must live in the sleep branch (the awake poop block below is
         # unreachable while asleep; latent until the canon day bands landed)
@@ -1355,6 +1349,30 @@ class Pet:
                     self.awake_lapse = max(0.0, self.awake_limit - self.sleep_lapse)
                     self._set_anim("yawn", 1.8)
 
+    def _check_death_caps(self):
+        """The discrete mistake/injury caps + the Pen20 elder-frailty rule:
+        ONE copy for both tick paths -- these gates were duplicated between the
+        sleep tick and _tick_mortality and had to be edited in lockstep
+        (refactor 2026-07-05).  True when the pet died."""
+        if self.care_mistakes >= 20 or self.injuries >= 20:   # MaxCareMistakes / MaxInjuries
+            self._die("neglect" if self.care_mistakes >= 20 else "its injuries")
+            return True
+        # Pen20 (LINES_SPEC §5): at the last stages, 5 slips once the evolution
+        # window is open = death -- an elder Perfect/Ultimate demands real care
+        if (self.stage in ("Ultimate", "Mega") and self.care_mistakes >= 5
+                and self.stage_seconds >= self.LATE_STAGE_WINDOW):
+            self._die("frailty")
+            return True
+        return False
+
+    def _check_old_age(self):
+        """lapsedLife >= totalLifespan -- canon's one true death trigger.
+        True when the pet died."""
+        if self.age_seconds >= self.lifespan:
+            self._die("old age")
+            return True
+        return False
+
     def _burn_life(self, amount):
         """setTotalLifespan's penalty path (canon re-audit 2026-07): every
         neglect event BURNS lifespan, clamped so a cut can never kill inside
@@ -1369,14 +1387,8 @@ class Pet:
         kept beneath the burn economy, not canon (an earlier docstring claimed
         otherwise); under correct burns they almost never fire first.  Returns
         True when the pet died this tick."""
-        if self.care_mistakes >= 20 or self.injuries >= 20:   # MaxCareMistakes / MaxInjuries
-            self._die("neglect" if self.care_mistakes >= 20 else "its injuries")
+        if self._check_death_caps():
             return True
-        # Pen20 (LINES_SPEC §5): at the last stages, 5 slips once the evolution
-        # window is open = death -- an elder Perfect/Ultimate demands real care
-        if (self.stage in ("Ultimate", "Mega") and self.care_mistakes >= 5
-                and self.stage_seconds >= self.LATE_STAGE_WINDOW):
-            self._die("frailty"); return True      # Pen20: elder slips
         if self.hunger == 0 and not self.asleep:              # awake-only, like hungerCall()
             self._starve_t = getattr(self, "_starve_t", 0.0) + dt
             if self._starve_t >= 12 * 3600:                   # empty hunger 12h -> death
@@ -1386,10 +1398,7 @@ class Pet:
         self.habitat_record[self.habitat] = self.habitat_record.get(self.habitat, 0) + dt
         # (the old continuous per-second "extra" drain was invented -- canon
         # burns lifespan through the EVENT penalties wired below instead)
-        if self.age_seconds >= self.lifespan:
-            self._die("old age")
-            return True
-        return False
+        return self._check_old_age()
 
 
     @property
@@ -1548,9 +1557,8 @@ class Pet:
             return "?"
         if hid in self.habitats:
             return f"You already own {h['name']}."
-        if self.bits < h["price"]:
+        if not self.spend_bits(h["price"]):
             return "Not enough bits."
-        self.bits -= h["price"]
         self.habitats = sorted(set(self.habitats) | {hid})
         self.habitat = hid                 # buying a new home moves you in (moving is free anyway)
         self._weather_day = -1             # fresh climate roll on arrival, like move_to
@@ -1767,10 +1775,9 @@ class Pet:
     def dna_bet(self, amount):
         """DVPet DNA_GenerateValidate (onEnter): pay the wager up front, before the mash
         mini-game runs. Returns False (and jeers) if the pet can't afford it."""
-        if amount <= 0 or self.bits < amount:
+        if amount <= 0 or not self.spend_bits(amount):
             self._set_anim("refuse", 1.0)                   # Jeering: can't afford the wager
             return False
-        self.bits -= amount
         return True
 
     def dna_minigame_award(self, amount, rate):
@@ -2172,11 +2179,7 @@ class Pet:
         and applies the toilet's own mood/obedience blessing (canon useItem
         runs on every self-visit), then counts toward training."""
         if spend_use:
-            n = self.inventory.get(key, 0) - 1
-            if n <= 0:
-                self.inventory.pop(key, None)
-            else:
-                self.inventory[key] = n
+            self.take_item(key)
         self._set_mood(self.mood + POOP_MOOD_INC)
         wdec = min(int(self._base_weight() * POOP_WEIGHT_DEC_COEF), POOP_WEIGHT_LIMIT)
         self.weight = max(1, self.weight - wdec)
@@ -3359,13 +3362,13 @@ class Pet:
         if slot.get("stock", 0) <= 0:
             return "Sold out."
         price = shop.purchase_price(slot)
-        if self.bits < price:
+        if self.bits < price:                # gate only: the cap must veto first
             return "Not enough bits."
         key = entry["key"]
         cap = entry.get("max_uses") or 99
         if self.inventory.get(key, 0) >= cap:
             return f"Can't carry more {entry['name']} (max {cap})."
-        self.bits -= price
+        self.spend_bits(price)
         slot["stock"] -= 1
         # canon incQuantity adds UsesPerItem per purchase (a Toilet refill is
         # 100 flushes, a Potty 1), clamped at MaxUses (toilet audit 2026-07-05)
@@ -3381,9 +3384,7 @@ class Pet:
         val = shop.resell_price(entry)
         if val <= 0:
             return f"{entry['name']} can't be resold."
-        self.inventory[key] -= 1
-        if self.inventory[key] <= 0:
-            self.inventory.pop(key, None)
+        self.take_item(key)
         self.bits += val
         return f"Sold {entry['name']} for {val}b."
 
@@ -3459,6 +3460,23 @@ class Pet:
         """Drop loot / grants straight into the bag."""
         self.inventory[key] = self.inventory.get(key, 0) + n
 
+    def take_item(self, key, n=1):
+        """Spend n from the bag, dropping the key at zero -- add_item's mirror
+        (this decrement lived in four hand-rolled copies; refactor 2026-07-05)."""
+        left = self.inventory.get(key, 0) - n
+        if left <= 0:
+            self.inventory.pop(key, None)
+        else:
+            self.inventory[key] = left
+
+    def spend_bits(self, price):
+        """The affordability gate + deduction in ONE place (the 'Not enough
+        bits.' guard lived in four copies).  True when paid."""
+        if self.bits < price:
+            return False
+        self.bits -= price
+        return True
+
     def _personality_mood(self, e):
         """consumablePersonalityMoodChange: +-10 per personality tag the
         consumable shares/clashes with the pet (disposition/restless/glutton)."""
@@ -3491,9 +3509,7 @@ class Pet:
         self.check_compliant()                       # ...; checkCompliant
         if refused:
             return f"{self.name} wants nothing to do with it!"
-        self.inventory[key] -= 1
-        if self.inventory[key] <= 0:
-            del self.inventory[key]
+        self.take_item(key)
         if e.get("special") == "xantibody":
             self._set_anim("happy", 1.5)
             if key == "i:14":

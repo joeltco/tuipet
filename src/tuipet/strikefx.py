@@ -15,12 +15,18 @@ BAND_TOP = grid.TOP          # 6
 BAND_BOT = grid.FLOOR        # 22
 
 
-def blit(bm, ox, oy):
-    """Sprite bitmap -> (x,y) pixel list for render_scene's overlay."""
-    if not bm:
-        return []          # blank/None frames are legal (2026-07-04 eat-fx lesson)
-    return [(ox + x, oy + y) for y, row in enumerate(bm)
-            for x, c in enumerate(row) if c == "1"]
+from .render import blit    # one blit for app/training/strikefx (refactor 2026-07-05)
+
+
+def beat_sfx(m, strong):
+    """The launch/impact stings every strike timeline shares -- battle and
+    training hand-rolled the same two arms (refactor 2026-07-05).  None for
+    markers the caller shades itself (reveal, miss, bossdie)."""
+    if m == "fire_out":
+        return "strongAttack" if strong else "attack"
+    if m == "hit":
+        return "strongHit" if strong else "attackHit"
+    return None
 
 
 def cbounds(rows):

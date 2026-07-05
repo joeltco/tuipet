@@ -135,10 +135,9 @@ class TournamentPanel(menu.SubHost):
         return out
 
     def _frames(self, num, role="idle"):
-        rec = data.load_sprites()[1][num]
-        roles = data.ROLES.get(role, data.ROLES["idle"])
-        idx = roles[self.frame_i % len(roles)]
-        return rec["frames"][idx] or rec["frames"][0]
+        # beat=1 preserves this screen's fast per-tick flip (every other scene
+        # bobs at beat 5 -- flagged in the 2026-07-05 audit, awaiting a call)
+        return data.bob_frame(num, self.frame_i, role, beat=1)
 
     def text(self):
         if self.sub is not None:
@@ -173,7 +172,7 @@ class TournamentPanel(menu.SubHost):
         if self.tree_view:
             return self._render_tree()
         bgimg = self.pet.background()
-        on = SIL_DAY if bgimg else LCD_ON   # never white (paint() rule)
+        on = menu.scene_ink(bgimg)
         if t.over:
             out = menu.bar(t.name, "RESULT")
             pose = "happy" if t.champion else "tired"

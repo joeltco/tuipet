@@ -305,13 +305,12 @@ class AdventurePanel(menu.SubHost):
         else:
             self._bg_fade = None
         self._bg_last = bgimg
-        on = SIL_DAY if bgimg else LCD_ON
         # the scene IS the whole LCD (box-clip audit 2026-07-04: the old
         # bar/progress/note/footer stack ran 16 lines and the physical 12-row
         # box clipped everything below the arena).  The journey's numbers live
         # on the ADVENTURE status card; the note + controls ride the strip.
-        return render_scene([(pet_rows, x, mirror)], COLS, ROWS, on, LCD_BG,
-                            overlay=overlay, bgimg=bgimg)
+        return menu.paint([(pet_rows, x, mirror)], bgimg,
+                          rows=ROWS, cols=COLS, overlay=overlay)
 
     def strip(self):
         """One line under the LCD: the journey note + the controls that apply."""

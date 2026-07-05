@@ -75,6 +75,25 @@ def blanks(n):
     return Text("\n" * max(0, n), style=INK)
 
 
+def scene_ink(bgimg):
+    """The paint() rule: sprites over a background image render as dark
+    silhouettes (SIL_DAY), plain LCD ink otherwise -- NEVER white over a bg.
+    This one-line invariant lived in 13 hand-rolled copies across the scene
+    screens (refactor 2026-07-05)."""
+    from .theme import SIL_DAY, LCD_ON           # read late: theme.apply retints
+    return SIL_DAY if bgimg else LCD_ON
+
+
+def paint(placements, bgimg, rows=12, cols=40, overlay=None):
+    """render_scene under the paint() rule -- the whole-LCD scene call the
+    scene screens share (screens that reuse one ink across several render
+    calls take scene_ink directly)."""
+    from .render import render_scene
+    from .theme import LCD_BG
+    return render_scene(placements, cols, rows, scene_ink(bgimg), LCD_BG,
+                        overlay=overlay, bgimg=bgimg)
+
+
 IC_W, IC_ROWS = 10, 4   # the selected-item icon cell every icon view shares
 
 

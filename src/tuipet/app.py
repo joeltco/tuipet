@@ -201,14 +201,18 @@ def _weather_overlay(weather, frame_i, cols, px_h):
     return pts
 
 
-def _blit(bm, ox, oy):
-    """Bitmap -> overlay pixels.  Tolerates None/empty frames: 28 foods ship a
-    BLANK 'eaten away' last frame that extracts as None -- the eat fx crashed
-    on the final bite of any of them (Joel's Termux launch, 2026-07-04)."""
-    if not bm:
-        return []
-    return [(ox + x, oy + y) for y, row in enumerate(bm)
-            for x, c in enumerate(row) if c == "1"]
+from .render import blit as _blit    # one blit for app/training/strikefx (refactor 2026-07-05)
+
+
+def _evol_strobe(c):
+    """DVPet's 50% 'evol' dither tiled over the whole LCD in ink -- the evolve
+    burst and the inherit collide strobe carried two copies (refactor 2026-07-05)."""
+    ev = (data.load_effects().get("evol") or [None])[0]
+    if not ev:
+        return
+    mh, mw = len(ev), len(ev[0])
+    c.overlay += [(x, y) for y in range(c.px_h) for x in range(SCREEN_COLS)
+                  if ev[y % mh][x % mw] == "1"]
 
 
 def _filth_right(count):
@@ -611,20 +615,10 @@ class Screen(Static):
             # DVPet clean(): the cheer chains ONLY when filth was actually washed
             # (an empty-room wash just ends -- no celebration).
             self.start_fx("cheer")
-        elif kind == "evolve":
-            # DVPet evolFinish(true): every evolution ends in cheer(true, _happy).
-            self.start_fx("cheer")
-        elif kind == "heal":
-            # DVPet bandage() beat 23 -> Cheering: treatment ends in the praise bounce.
-            self.start_fx("cheer")
-        elif kind == "gift":
-            # ClockTic.giftEnd: the handover ends in State.Cheering.
-            self.start_fx("cheer")
-        elif kind == "play":
-            # jumping() frame 48: the hops resolve into Cheering (cheer true, happy)
-            self.start_fx("cheer")
-        elif kind == "toilet":
-            # poopToilet frame 37: toiletTrain'd and proud -- chained cheer
+        elif kind in ("evolve", "heal", "gift", "play", "toilet", "inherit"):
+            # every canon flow that resolves into State.Cheering: evolFinish(true),
+            # bandage() beat 23, giftEnd, jumping() frame 48, poopToilet frame 37,
+            # inheriting()'s strobe tail (six branches collapsed, 2026-07-05)
             self.start_fx("cheer")
         elif kind == "assist" and chain_eat:
             # assistantFeed runs the STANDARD eat underneath (canon
@@ -633,9 +627,6 @@ class Screen(Static):
             self.start_fx("eat", chain_eat, pet=pet_ref,
                           starving=getattr(pet_ref, "_last_meal_starving", False))
             self.fx["step"] = 6
-        elif kind == "inherit":
-            # inheriting() tail: the strobe resolves into the celebration poses.
-            self.start_fx("cheer")
         return self.fx is not None
 
     def _pose_rows(self, pet, role, phase):
@@ -1003,13 +994,8 @@ class Screen(Static):
         burst = any(a <= step < b for a, b in
                     ((5, 10), (12, 14), (19, 21), (25, 27), (29, 32), (34, 99)))
         if burst:
-            # "evol" burst: the room shows through DVPet's 50% dither mask --
-            # tile the extracted checkerboard over the whole LCD in ink.
-            ev = (data.load_effects().get("evol") or [None])[0]
-            if ev:
-                mh, mw = len(ev), len(ev[0])
-                c.overlay += [(x, y) for y in range(c.px_h) for x in range(SCREEN_COLS)
-                              if ev[y % mh][x % mw] == "1"]
+            # "evol" burst: the room shows through DVPet's 50% dither mask
+            _evol_strobe(c)
         else:                                              # lightsOff beats: pure black, pet hidden
             c.rows, c.bgimg, c.bg = [], None, "#000000"
 
@@ -1045,11 +1031,8 @@ class Screen(Static):
                 wob = -1 if (step % 4) < 2 else 1
                 c.overlay += _blit(cf, cx + (step - 34) * 2, c.px_h // 2 + wob)
         else:                                              # the collide strobe
-            ev = (data.load_effects().get("evol") or [None])[0]
-            if ev and (step % 2 == 0):
-                mh, mw = len(ev), len(ev[0])
-                c.overlay += [(x, y) for y in range(c.px_h) for x in range(SCREEN_COLS)
-                              if ev[y % mh][x % mw] == "1"]
+            if step % 2 == 0:
+                _evol_strobe(c)
 
     def _fxk_dna_charge(self, pet, fx, step, c):
         # DVPet dnaCharge() (SpriteAnim 12860): the FIELD badge drops in beside the
