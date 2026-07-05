@@ -284,21 +284,38 @@ class DigiCorePanel:
             idx = data.ROLES["idle"][(self.frame_i // 5) % 2]   # WALK_BEAT bob, not 10Hz
         return rec["frames"][idx] or next((f for f in rec["frames"] if f), None)
 
+    @staticmethod
+    def _core_place(rows, cell=None):
+        """Centre the FULL sprite on the core scene (cell 0/1 = that 16px cell,
+        None = whole grid).  grid.center(ph=16) rides the grounded-2px floor
+        rule (band_h = 14) and box-mushes every 16px-tall mon -- Joel's Devimon
+        read as a broken blob (2026-07-04).  The core has no floor; native
+        pixels, bottom on the scene edge."""
+        s = grid._crop(rows)
+        span, x0 = (grid.W, grid.X0) if cell is None else (grid.CELL, grid.X0 + cell * grid.CELL)
+        return (s, x0 + (span - grid.width(s)) // 2, False)
+
     def _core_scene(self):
         """The canon Digicore page: core backdrop + badge + the meter number."""
         p = self.pet
         bgimg = core_background(p)
         on = SIL_DAY if bgimg else LCD_ON   # never white (paint() rule)
+        # two-cell layout (2026-07-04, Joel's Devimon report): the badge used to
+        # draw dead-centre ON TOP of the sprite -- a 16px mon and the ring merged
+        # into one broken-looking mass.  Pet stands in the LEFT cell; the badge
+        # rides the RIGHT (canon puts the badge centre-right and shows no pet).
         badge = core_badge_key(p)
         overlay = []
         if badge:
             b = data.load_effects().get(badge, [None])[0]
             if b:
-                bw = max(len(r) for r in b)
-                overlay = [(20 - bw // 2 + x, 1 + y) for y, row in enumerate(b)
+                bw, bh = max(len(r) for r in b), len(b)
+                bx = grid.X0 + grid.CELL + (grid.CELL - bw) // 2
+                by = max(0, (CORE_ROWS * 2 - bh) // 2)
+                overlay = [(bx + x, by + y) for y, row in enumerate(b)
                            for x, c in enumerate(row) if c == "1"]
         rows = self._pet_rows(p.num)
-        placements = [grid.center(rows, ph=CORE_ROWS * 2)] if rows else []
+        placements = [self._core_place(rows, cell=0)] if rows else []
         out = menu.bar("DIGICORE", "core")
         out.append_text(render_scene(placements, 40, CORE_ROWS, on, LCD_BG,
                                      overlay=overlay, bgimg=bgimg))
@@ -341,13 +358,13 @@ class DigiCorePanel:
         nxt = next_evolution(p)
         if nxt is None:
             rows = self._pet_rows(p.num, idx=0)
-            placements = [grid.center(rows, ph=CORE_ROWS * 2)] if rows else []
+            placements = [self._core_place(rows)] if rows else []
             out.append_text(render_scene(placements, 40, CORE_ROWS, LCD_ON, LCD_BG))
             out.append("\n")
             out.append_text(menu.note("Nothing stirs — this is its final form."))
         else:
             sil = silhouette(self._pet_rows(nxt, idx=0) or [])   # canon: frame 0, still
-            placements = [grid.center(sil, ph=CORE_ROWS * 2)] if sil else []
+            placements = [self._core_place(sil)] if sil else []
             out.append_text(render_scene(placements, 40, CORE_ROWS, LCD_ON, LCD_BG))
             out.append("\n")
             out.append_text(menu.note("A shape looms in the core..."))

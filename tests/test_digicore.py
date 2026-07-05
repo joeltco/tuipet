@@ -220,3 +220,17 @@ def test_teaser_zooms_in_then_holds_a_still_silhouette():
         panel.anim()
     assert panel._back_t == 0
     assert "CORE" == panel.pages[panel.i][0]         # home again
+
+
+def test_core_page_keeps_native_pixels_and_separates_the_badge():
+    """Joel's Devimon report (2026-07-04): grid.center(ph=16) box-mushed every
+    16px-tall mon to 14 rows AND the badge overlay drew dead-centre on top of
+    it -- the two merged into a broken-looking mass.  Native pixels, pet in
+    the LEFT cell, badge in the RIGHT."""
+    from tuipet import data, grid
+    p = _pet(num=102, stage="Champion")          # Devimon: a full 16px sprite
+    panel = DigiCorePanel(p)
+    rows, x, _mirror = panel._core_place(panel._pet_rows(102, idx=0), cell=0)
+    assert len(rows) == 16                       # NOT shrunk to 14
+    assert x + grid.width(rows) <= grid.X0 + grid.CELL   # stays in the left cell
+    panel.text()                                 # the scene composes without error
