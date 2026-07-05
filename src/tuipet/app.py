@@ -901,13 +901,18 @@ class Screen(Static):
         else:
             c.xshift = -(GIFT_OUT // 2) + (GIFT_BACK - 1) // 2   # exactly where the walk ended
             c.rows = self._pose_rows_idx(pet, 5)           # ta-dah beside the present
+        if step >= GIFT_OUT:
+            # canon: the present RIDES the whole return leg (meatButton
+            # moveRight(3) in lockstep -- the pet pushes it home from
+            # off-screen; it was popping in only at the hold)
             gf = self._food_frames(fx.get("icon") or "f:0")
             if gf:
                 g0 = gf[0]
                 gw = max((len(r) for r in g0), default=8)
                 gh = len(g0)
                 gx = base + c.xshift - gw - 1
-                c.overlay += _blit(g0, gx, (c.px_h - gh) // 2)
+                if gx > -gw:
+                    c.overlay += _blit(g0, gx, (c.px_h - gh) // 2)
 
     def _fxk_play(self, pet, fx, step, c):
         # DVPet jumping() (SpriteAnim 17308): the pet bounces with joy -- hops UP on

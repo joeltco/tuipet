@@ -378,3 +378,38 @@ def test_assistant_feed_drops_off_and_chains_the_real_eat():
     assert s.fx is not None and s.fx["kind"] == "eat"
     assert s.fx["step"] == 6                    # descent skipped: it's already down
     assert s.fx["bite_snds"]                    # the real eat carries its own stings
+
+
+def test_the_present_rides_the_whole_return_leg():
+    """Gift-anim audit 2026-07-05: canon gifting() pushes the present home in
+    LOCKSTEP (meatButton.moveRight(3) beside the pet from off-screen left) --
+    tuipet popped it in only at the arrival hold."""
+    from tuipet import app as app_mod
+    from tuipet.pet import Pet
+    p = Pet(num=102, name="D", stage="Champion", attribute="Virus")
+    p.world_seconds = 12 * 60.0
+
+    class S(app_mod.Screen):
+        def __init__(self):
+            self.anim_key = None
+            self.frame_i = 0
+            self.fx = None
+            self.thunder_i = 0
+
+        def update(self, t):
+            self.last = t
+
+    s = S()
+    s.start_fx("gift", icon="f:5")
+    mid_pixels = end_pixels = 0
+    while s.fx and s.fx["kind"] == "gift":
+        st = s.fx["step"]
+        s._paint_fx(p)
+        n = sum(ch not in " \\n" for ch in s.last.plain)
+        if st == app_mod.GIFT_OUT + app_mod.GIFT_BACK // 2:
+            mid_pixels = n                    # mid-return: pet + present
+        if st == app_mod.GIFT_OUT + app_mod.GIFT_BACK + 2:
+            end_pixels = n                    # the hold: pet + present
+        s.advance_fx()
+    assert s.fx is not None and s.fx["kind"] == "cheer"   # giftEnd -> Cheering
+    assert mid_pixels > 0 and end_pixels > 0
