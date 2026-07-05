@@ -499,7 +499,7 @@ class Screen(Static):
 
     # ---- care-action animations (DVPet SpriteAnim eat/clean/cheer) -----------
     def start_fx(self, kind, icon=None, poop=0, old_num=None, pet=None, starving=False, good=True):
-        steps = {"eat": 35, "cheer": 31, "jeer": 31, "clean": 22, "spit": 25, "evolve": 41, "dying": 50, "dna_charge": 44, "play": 48, "heal": 24, "poop": 25, "poopdance": 21, "toilet": 38,
+        steps = {"eat": 35, "cheer": 31, "jeer": 31, "clean": 22, "spit": 25, "evolve": 41, "dying": 50, "dna_charge": 44, "play": 48, "heal": 24, "poop": 25, "poopdance": 21, "toilet": 38, "losing": 50,
                  "gift": GIFT_OUT + GIFT_BACK + GIFT_HOLD, "assist": 28, "inherit": 50}.get(kind, 12)
         self.fx = {"kind": kind, "step": 0, "steps": steps, "icon": icon, "poop": poop,
                    "old_num": old_num, "good": good}
@@ -551,6 +551,10 @@ class Screen(Static):
             # DVPet cheer(): its sound (praise/_happy) plays at the anim's t0 --
             # keyed here so chained cheers (wash/evolve/heal tails) sound too.
             self.fx["snds"] = {1: "happy"}
+        elif kind == "losing":
+            # DVPet losing(): jeer(disposition, _lose) -- the sound at the
+            # first UP beat, like every jeer
+            self.fx["snds"] = {6: "lose"}
         elif kind == "toilet":
             # poopToilet: the go at t18 (size sting), the FLUSH (wash) at t28 --
             # the Port. Potty (i:83) skips the flush, canon frame-jumps past it
@@ -1060,6 +1064,34 @@ class Screen(Static):
             ix = max(0, PET_BASE_X - bw)
             iy = 0 if step < 4 else 4                      # setLocY 53 -> 64 at beat 4
             c.overlay += _blit(bm, ix, iy)
+
+    def _fxk_losing(self, pet, fx, step, c):
+        # DVPet losing() (the home-battle defeat): the sore loser jeers for 30
+        # beats -- disposition-shaded pose pair (sour 4/6, mild slumps 10/9)
+        # with the "dying" emote strobing on the jeer cadence -- then the WASH
+        # rolls in from the right and sweeps it clean off the screen.
+        E = data.load_effects()
+        if step < 30:
+            down = (step // 6) % 2 == 0
+            sour = pet._disposition() < 0
+            if sour:
+                c.rows = self._pose_rows_idx(pet, 4 if down else 6)
+            else:
+                c.rows = self._pose_rows_idx(pet, 10 if down else 9)
+            dye = E.get("dying")
+            if dye and (step // 6) % 2 == 0:
+                c.overlay += _blit(dye[0], PET_BASE_X + c.xshift + SPRITE_W + 1, 1)
+        else:
+            t = step - 30
+            wash = E.get("wash", [None])[0]
+            wx = SCREEN_COLS - t * 3
+            push = max(0, PET_BASE_X + SPRITE_W - wx)
+            c.xshift = -push
+            c.rows = self._pose_rows_idx(pet, 4)   # shoved in the washed pose
+            if PET_BASE_X + SPRITE_W - push < 0:
+                c.rows = []                        # swept clean off
+            if wash:
+                c.overlay += _blit(wash, wx, max(0, (c.px_h - len(wash)) // 2))
 
     def _fxk_toilet(self, pet, fx, step, c):
         # DVPet poopToilet (SelfToilet/portToilet): the pet squats over its
@@ -2206,9 +2238,15 @@ class TuiPetApp(App):
     def _after_battle(self, battle):
         if battle is not None:
             # lifetime wins are counted in pet.record_battle (single source: every
-            # battle flow -- adventure/cup/lobby included -- resolves through it)
+            # battle flow -- adventure/cup/lobby included -- resolves through it).
+            # Canon endBattle -> State.Winning / Losing ON THE HOME SCREEN:
+            # winning() = cheer(true, _win); losing() = the jeer + wash sweep-off.
             self.flash(battle.reward)
-            self.beep("win") if battle.won else self.beep("lose", bell=False)
+            if battle.won:
+                self.screen_w.start_fx("cheer")
+                self.screen_w.fx["snds"] = {1: "win"}
+            else:
+                self.screen_w.start_fx("losing", pet=self.pet)
         self.repaint()
 
     def action_praise(self):

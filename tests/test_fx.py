@@ -338,3 +338,18 @@ def test_poopdance_wiggles_then_flips_and_never_chains():
         n += 1
         assert n < 30
     assert s.fx is None                    # a special idle: ends, no chained fx
+
+
+def test_battle_defeat_gets_the_wash_sweep_off():
+    """Wash-anim audit 2026-07-05: canon endBattle plays Winning/Losing ON THE
+    HOME SCREEN -- winning() = cheer with the _win sting; losing() = a 30-beat
+    disposition-shaded jeer with the dying emote, then the WASH rolls in and
+    sweeps the sore loser clean off the screen.  tuipet played a bare sting."""
+    s = _FakeScreen()
+    s.start_fx("losing")
+    assert s.fx["steps"] == 50 and s.fx["snds"] == {6: "lose"}
+    n = 0
+    while s.advance_fx():
+        n += 1
+        assert n < 60
+    assert s.fx is None                        # a loss ends unceremonious: no chain
