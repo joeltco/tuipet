@@ -2231,16 +2231,23 @@ class Pet:
         self.sleep_limit = DAY_MINUTES - self.awake_limit
         if not self.lights:
             self.lights = True                      # wake: setLights(true)
+        wake_anim = "wake"
         if morning:
             r = random.randrange(MORNING_MOOD_CHANCE)
             m = self.current_mood()
+            # canon wakeUp poses vary with the morning: 7 normal / 5 good /
+            # 9 bad / 6 terrible (birthday audit 2026-07-05: it always woke
+            # on the plain pose)
             if r == 0:
                 self._set_mood(self.mood + BAD_MORNING_MOOD.get(m, -10))
+                wake_anim = "sad"                    # BadMorning: wakeUp(9)
             elif r == 1 and m == "Happy":
                 self._set_mood(WORST_MORNING_MOOD)
+                wake_anim = "surprise"               # TerribleMorning: wakeUp(6)
             elif r == 2:
                 self._set_mood(self.mood + GOOD_MORNING_MOOD.get(m, 100))
-        self._set_anim("wake", 1.6)
+                wake_anim = "happy"                  # GoodMorning: wakeUp(5)
+        self._set_anim(wake_anim, 1.6)
 
     def _disturbed(self):
         """PhysicalState.disturb(): bothering REAL sleep wakes the pet grumpy --

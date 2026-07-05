@@ -65,3 +65,26 @@ def test_slips_mark_the_day():
     m0 = p.mistake_day
     p._fatigue()                                                # FatigueMissedDay
     assert p.mistake_day == m0 + 1
+
+
+def test_mornings_wake_on_their_quality_pose():
+    """Birthday audit 2026-07-05: canon wakeUp keys the pose to the morning
+    roll -- 7 plain / 5 good / 9 bad / 6 terrible; tuipet always woke plain."""
+    import random
+    from tuipet.pet import Pet
+    anims = set()
+    for seed in range(40):
+        random.seed(seed)
+        p = Pet(num=102, name="D", stage="Champion", attribute="Virus")
+        p.world_seconds = 12 * 60.0
+        p.asleep = True
+        p.mood = 200                       # Happy: all four outcomes reachable
+        p._wake()
+        anims.add(p.anim)
+    assert anims == {"wake", "happy", "sad", "surprise"}
+    # a nap's end never rolls a morning
+    q = Pet(num=102, name="D", stage="Champion", attribute="Virus")
+    q.world_seconds = 12 * 60.0
+    q.asleep = q.nap = True
+    q._wake(morning=False)
+    assert q.anim == "wake"
