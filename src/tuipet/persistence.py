@@ -245,6 +245,23 @@ def set_account(name, pw):
     save_settings(d)
 
 
+def erase_all():
+    """Erase the WHOLE local state: pet save (+bak), settings (progress,
+    account, digimemory, +bak), sound + theme prefs.  The cloud copy stays
+    with the account server-side; with the login gone, nothing pulls it.
+    Options-menu 'Erase all data' (Joel 2026-07-04)."""
+    removed = []
+    for fn in ("save.json", "save.json.bak", "settings.json", "settings.json.bak",
+               "sound.txt", "theme.txt"):
+        p = os.path.join(SAVE_DIR, fn)
+        try:
+            os.remove(p)
+            removed.append(fn)
+        except OSError:
+            pass
+    return removed
+
+
 def to_save_dict(pet):
     """The on-disk/cloud save payload: the flat pet plus a wall-clock stamp used
     for offline catch-up AND last-write-wins cloud merge."""

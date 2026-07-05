@@ -35,7 +35,7 @@ from . import lobbyscreen
 from . import tournament
 from . import tournamentscreen
 from . import titlescreen
-from . import themescreen
+from . import optionsscreen
 from . import deathscreen
 from . import sound
 from . import update as update_check
@@ -122,7 +122,7 @@ _K = "b cyan"
 KEYS = (
     f"[{_K}]f[/] feed  [{_K}]p[/] play  [{_K}]c[/] clean  [{_K}]h[/] heal  [{_K}]r[/] praise  [{_K}]k[/] scold  [{_K}]s[/] lights  [{_K}]v[/] assist\n"
     f"[{_K}]t[/] train  [{_K}]b[/] battle  [{_K}]a[/] adventure  [{_K}]u[/] cup  [{_K}]j[/] jogress  [{_K}]l[/] lobby  [{_K}]x[/] DNA\n"
-    f"[{_K}]o[/] shop  [{_K}]i[/] bag  [{_K}]e[/] habitat  [{_K}]d[/] data  [{_K}]g[/] theme  [{_K}]m[/] sound  [{_K}]n[/] new  [{_K}]q[/] quit"
+    f"[{_K}]o[/] shop  [{_K}]i[/] bag  [{_K}]e[/] habitat  [{_K}]d[/] data  [{_K}]g[/] options  [{_K}]q[/] quit"
 )
 
 
@@ -1087,7 +1087,7 @@ class TuiPetApp(App):
         ("d", "digicore", "DigiCore"),
         ("j", "jogress", "Jogress"), ("u", "tournament", "Cup"), ("x", "dna", "DNA"),
         ("l", "lobby", "Lobby"),
-        ("s", "sleep", "Lights"), ("v", "assist", "Assistant"), ("g", "theme", "Theme"), ("m", "sound", "Sound"), ("n", "new", "New pet"), ("q", "quit", "Quit"),
+        ("s", "sleep", "Lights"), ("v", "assist", "Assistant"), ("g", "options", "Options"), ("q", "quit", "Quit"),
         ("enter", "gift", "Accept gift"),
     ]
 
@@ -1348,10 +1348,10 @@ class TuiPetApp(App):
         if bell:
             self.bell()
 
-    def action_sound(self):
+    def _toggle_sound(self):
+        """The options-menu sound switch (the panel carries its own message)."""
         self.sound = not self.sound
         _save_sound(self.sound)
-        self.flash(f"Sound: {'on' if self.sound else 'off'}")
         if self.sound:
             self.bell()
 
@@ -1368,12 +1368,30 @@ class TuiPetApp(App):
         except Exception:
             pass
 
-    def action_theme(self):
-        self._open_mode(themescreen.ThemePanel(on_change=self._restyle), self._after_theme)
+    def action_options(self):
+        """The OPTIONS menu gathers the app-level switches (theme / sound /
+        new egg / erase) under one key -- g/m/n gave the action bar its
+        breathing room back (Joel 2026-07-04)."""
+        if self.mode is not None:
+            return
+        self._open_mode(optionsscreen.OptionsPanel(
+            self.pet, lambda: self.sound, self._toggle_sound,
+            on_theme_change=self._restyle), self._after_options)
 
-    def _after_theme(self, _=None):
-        self._restyle()
-        self.flash(f"Theme: {theme.current()}")
+    def _after_options(self, result):
+        self._restyle()                             # a previewed theme may have settled
+        if result and result[0] == "new":
+            self.action_new()
+            return
+        if result and result[0] == "erase":
+            if self._sync is not None:              # the pusher must not re-seed the cloud
+                self._sync._stop = True
+                self._sync = None
+            persistence.erase_all()
+            self.pet = Pet.new_egg()
+            self._open_mode(titlescreen.TitlePanel(), self._after_title)
+            self.flash("All data erased — a fresh start.")
+            return
         self.repaint()
 
     def _center(self, text):
