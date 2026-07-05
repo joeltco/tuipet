@@ -67,6 +67,10 @@ def test_town_lobby_is_a_scene_and_arrival_shows_the_town():
     a.location = 4250                          # town 0 spans 4201-4300 in zone 1-1
     in_town = ap.text().markup
     a.location = 4350                          # same zone-bg span, just past the gates
+    from tuipet.adventurescreen import FADE_T
+    for _ in range(FADE_T + 1):                # let the cross-fade settle (v0.2.233)
+        ap.text()
+        ap.anim()
     outside = ap.text().markup
     assert in_town != outside
 
@@ -194,3 +198,25 @@ def test_investigate_ambush_startles_then_opens_the_battle():
         pan.anim()
     assert isinstance(pan.sub, BattlePanel)       # the ambush fight opened
     assert pan._scene is None
+
+
+def test_habitat_change_cross_fades_not_snaps():
+    """Canon BackgroundAnim.animateBack (2026-07-04): crossing into a new
+    backdrop span fades old-over-new at -0.05 opacity/frame (20 ticks); the
+    scenery used to SNAP mid-stride."""
+    from tuipet.adventurescreen import FADE_T
+    random.seed(7)
+    pan = AdventurePanel(_pet())
+    a = pan.adv
+    spans = a.zone.get("bgs", [])
+    assert len(spans) >= 2
+    pan.travelling = False
+    a.location = spans[0][0]
+    pan.text()                                   # settle on the first backdrop
+    a.location = spans[1][0] + 1                 # stride across the boundary
+    frames = []
+    for _ in range(FADE_T + 3):
+        frames.append(pan.text().markup)
+        pan.anim()
+    assert len(set(frames)) >= FADE_T - 2        # a smooth blend, not a snap
+    assert frames[-1] == frames[-2]              # ...that settles on the new world

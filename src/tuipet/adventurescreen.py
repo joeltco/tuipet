@@ -22,6 +22,24 @@ INV_HOLD_T = 42               # reveal held (item shown / startle / dejection)
 INV_END_T = 54                # walk-back (ReturnItem) complete
 REFUSE_T = 24                 # Refusing: the 24-tick mirror head-shake (fx convention)
 WALK_BEAT = 5                 # idleWalk pose cadence (anim.WALK_BEAT -- NOT every tick)
+FADE_T = 20                   # habitat cross-fade ticks (canon BackgroundAnim.animateBack:
+#                               BackgroundOpacityChange -0.05/frame -> 20 frames old-over-new)
+
+
+def _blend_bg(old, new, t):
+    """Per-pixel RGB lerp between two backdrop buffers (rows of packed 6-hex
+    colours) -- the halfblock LCD's honest equivalent of canon's alpha fade."""
+    out = []
+    for ro, rn in zip(old, new):
+        row = []
+        for i in range(0, min(len(ro), len(rn)) - 5, 6):
+            o, n = int(ro[i:i + 6], 16), int(rn[i:i + 6], 16)
+            r = round(((o >> 16) & 255) * (1 - t) + ((n >> 16) & 255) * t)
+            g = round(((o >> 8) & 255) * (1 - t) + ((n >> 8) & 255) * t)
+            b = round((o & 255) * (1 - t) + (n & 255) * t)
+            row.append("%02x%02x%02x" % (r, g, b))
+        out.append("".join(row))
+    return out
 
 
 class AdventurePanel(menu.SubHost):
@@ -44,6 +62,9 @@ class AdventurePanel(menu.SubHost):
         self.frame_i += 1
         if self._refuse_t:
             self._refuse_t -= 1
+        fade = getattr(self, "_bg_fade", None)
+        if fade is not None:
+            fade["t"] += 1                   # the habitat cross-fade clock
         if self._scene is not None:
             self._scene_tick()
             return
@@ -230,6 +251,18 @@ class AdventurePanel(menu.SubHost):
             tbg = (data.load_towns().get(tspan[2]) or {}).get("bg_habitat")
             bg_h = tbg if tbg is not None else bg_h
         bgimg = self.pet.background(bg_h) if bg_h is not None else self.pet.background()
+        # crossing into a new habitat CROSS-FADES the scenery (canon
+        # BackgroundAnim.animateBack: the old backdrop's opacity steps out
+        # over the new at -0.05/frame -- the world used to SNAP mid-stride)
+        if bg_h != getattr(self, "_bg_id", bg_h):
+            self._bg_fade = {"old": getattr(self, "_bg_last", None), "t": 0}
+        self._bg_id = bg_h
+        fade = getattr(self, "_bg_fade", None)
+        if fade and fade["old"] and bgimg and fade["t"] < FADE_T:
+            bgimg = _blend_bg(fade["old"], bgimg, fade["t"] / FADE_T)
+        else:
+            self._bg_fade = None
+        self._bg_last = bgimg
         on = SIL_DAY if bgimg else LCD_ON
         # the scene IS the whole LCD (box-clip audit 2026-07-04: the old
         # bar/progress/note/footer stack ran 16 lines and the physical 12-row
