@@ -11,10 +11,8 @@ Picking a food calls Pet.feed(food) -- the full applyFood effect set -- and the
 app plays the eat animation with that food's real icon.
 """
 from __future__ import annotations
-from rich.text import Text
 from . import data, menu
 from .theme import INK, INK_B, DIM, ACCENT, POS  # noqa: F401  (theme.apply propagation)
-from .render import downsample
 
 
 def food_qty(pet, food):
@@ -85,22 +83,6 @@ class FeedPanel:
             return ("done", None)
         return None
 
-    def _icon(self, food):
-        """The food's icon at NATIVE resolution: the 24px source art is authored
-        at 3x (like all DVPet sprites), so /3 recovers the crisp 8px original --
-        the same factor the eat fx uses.  (A /2 lands off the 3px art blocks and
-        mushes the sprite.)"""
-        raw = data.load_icons().get(food["key"])
-        if not raw:
-            return None
-        return downsample(raw[0], 3)
-
-    @staticmethod
-    def _icon_lines(rows):
-        from .theme import LCD_ON, LCD_BG
-        from .render import bitmap_text
-        return bitmap_text(rows, LCD_ON, LCD_BG)
-
     def text(self):
         p = self.pet
         from .pet import DP_MAX
@@ -114,24 +96,11 @@ class FeedPanel:
             out.append_text(menu.footer("ESC out"))
             return out
         sel = self.options[self.cursor]
-        icon = self._icon(sel)
-        ilines = self._icon_lines(icon) if icon else []
-        eff = _effect_line(sel)
         qty = food_qty(p, sel)
-        info = [sel["name"][:24], eff[:24],
+        tw = menu.W - menu.IC_W - 2
+        info = [sel["name"][:tw], _effect_line(sel)[:tw],
                 "x∞" if not sel.get("can_dec") else f"x{qty}", ""]
-        istyle = [INK_B, INK, DIM, INK]
-        for i in range(4):
-            t = Text()
-            t.append("  ", style=INK)
-            pad = 12
-            if i < len(ilines):
-                t.append_text(ilines[i])
-                pad = max(1, 12 - len(ilines[i].plain))
-            t.append(" " * pad, style=INK)
-            t.append(info[i], style=istyle[i])
-            t.append("\n")
-            out.append_text(t)
+        menu.icon_info(out, menu.item_icon(sel), info)
 
         def fmt(f, i):
             q = food_qty(p, f)

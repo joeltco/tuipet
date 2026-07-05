@@ -12,25 +12,12 @@ from .render import downsample
 from .theme import LCD_ON, LCD_BG, INK, INK_B, DIM, SEL  # noqa: F401  (palette names bound for theme.apply propagation)
 from . import menu
 W = 38
-IC_W, IC_ROWS = 10, 4                      # selected-item icon: auto-sized to fit, never clipped
+IC_W, IC_ROWS = menu.IC_W, menu.IC_ROWS    # the shared selected-item icon cell
 SHOP_TABS = ["food", "item", "egg"]        # DVPet Food_Shop / Item_Shop (+ tuipet eggs)
 BAG_CATEGORIES = ["food", "medicine", "toy", "chip"]
 BAG_TABS = BAG_CATEGORIES + ["special"]
 TAB_LABEL = {"food": "Food", "item": "Items", "egg": "Eggs", "medicine": "Medicine",
              "toy": "Toys", "chip": "Chips", "special": "Special"}
-
-
-def _effect(e):
-    parts = []
-    for k, lbl in (("hunger", "food"), ("mood", "mood"), ("weight", "wt"), ("energy", "en"),
-                   ("strength", "eff"), ("vaccine", "Va"), ("data", "Da"), ("virus", "Vi")):
-        if e.get(k):
-            parts.append("%s%+d" % (lbl, e[k]))
-    if e.get("cured"):
-        parts.append("cure")
-    if e.get("healed"):
-        parts.append("heal")
-    return " ".join(parts) or "-"
 
 
 class ShopPanel:
@@ -90,21 +77,18 @@ class ShopPanel:
         n = len(rows)
         if getattr(self, "pw_mode", False):
             # DVPet's password redemption: type the code, ENTER redeems
-            if k == "enter":
+            self.pw_text, act = egg_mod.code_key(self.pw_text, k)
+            if act == "submit":
                 idx = egg_mod.redeem_password(self.pw_text)
                 self.msg = ("Password accepted — %s egg unlocked!" % egg_mod.hatch_name(idx)
                             if idx is not None else "Nothing answers that password.")
                 self.sfx = "reward" if idx is not None else "error"
                 self.pw_mode, self.pw_text = False, ""
                 self.captures_text = False
-            elif k == "escape":
+            elif act == "cancel":
                 self.pw_mode, self.pw_text = False, ""
                 self.captures_text = False
                 self.msg = "Never mind."
-            elif k == "backspace":
-                self.pw_text = self.pw_text[:-1]
-            elif len(k) == 1 and (k.isalnum() or k in "-_"):
-                self.pw_text = (self.pw_text + k)[:24]
             self.msg = ("Password: %s_" % self.pw_text) if self.pw_mode else self.msg
             return None
         if k == "p" and self.mode == "shop" and self._tabs()[self.tab] == "egg":
@@ -127,13 +111,13 @@ class ShopPanel:
         elif k in ("enter", "space") and rows:
             e = rows[min(self.cursor, n - 1)]
             if self.mode == "shop":
-                bits0 = self.pet.bits
                 if e.get("egg_idx") is not None:
+                    bits0 = self.pet.bits
                     self.msg = self._buy_egg(e)
+                    self.sfx = "reward" if self.pet.bits < bits0 else "error"
                 else:
-                    self.msg = self.pet.buy_slot(e["_slot"])
+                    self.msg, self.sfx = shop.buy(self.pet, e["_slot"])
                     e["stock"] = e["_slot"]["stock"]
-                self.sfx = "reward" if self.pet.bits < bits0 else "error"   # bought vs can't-afford
             else:
                 if (e.get("action") or "") in data.TRANSPORT_ACTIONS:
                     return ("done", ("transport", e["key"]))
@@ -180,32 +164,6 @@ class ShopPanel:
         persistence.egg_own(idx)
         return "Unlocked %s! Hatch it next egg." % e["name"]
 
-    # ---- selected-item icon, auto-sized so it never clips ----
-    def _icon(self, e):
-        blank = [" " * IC_W] * IC_ROWS
-        if e and e.get("egg_idx") is not None:
-            fr = egg_mod.frames(e["egg_idx"])
-        else:
-            fr = data.load_icons().get(e["key"]) if e else None
-        if not fr:
-            return blank
-        src = fr[0]
-        sh = len(src)
-        sw = max((len(r) for r in src), default=0)
-        if not sw:
-            return blank
-        # downsample factor that fits BOTH the cell width (IC_W px) and height (IC_ROWS*2 px)
-        factor = max(1, -(-sw // IC_W), -(-sh // (2 * IC_ROWS)))
-        bm = downsample(src, factor)
-        w = max((len(r) for r in bm), default=0)
-        if not w:
-            return blank
-        from .render import bitmap_text
-        from .theme import LCD_ON, LCD_BG
-        lines = [t.plain.ljust(IC_W)           # w <= IC_W (factor guarantees it) -> pad, never cut
-                 for t in bitmap_text(bm, LCD_ON, LCD_BG)]
-        return (lines + blank)[:IC_ROWS]
-
     # ---- render ----
     def text(self):
         tabs = self._tabs()
@@ -222,27 +180,16 @@ class ShopPanel:
         out.append(bar[:W].ljust(W) + "\n", style=INK_B)
 
         sel = rows[self.cursor] if rows else None
-        icon = self._icon(sel) if sel else [" " * IC_W] * IC_ROWS
         tw = W - IC_W - 2
         if sel:
             if sel.get("egg_idx") is not None:
                 info = [sel["name"][:tw], "%db" % sel["price"], "permanent egg",
                         "hatch it next egg"]
+            elif self.mode == "shop":
+                info = shop.slot_info(self.pet, sel, tw)
             else:
-                owned = self.pet.inventory.get(sel["key"], 0)
-                if self.mode == "shop":
-                    price = ("SALE %db" % sel["sale"]) if sel.get("sale") else "%db" % sel["price"]
-                    stock = "SOLD OUT" if sel.get("stock", 0) <= 0 else "stock x%d" % sel["stock"]
-                    info = [sel["name"][:tw], price, "%s  own %d" % (stock, owned)]
-                else:
-                    val = shop.resell_price(sel)
-                    info = [sel["name"][:tw], "x%d" % owned,
-                            ("sell %db" % val) if val else "can't resell"]
-                info.append(_effect(sel)[:tw])
-            for r in range(IC_ROWS):
-                tx = info[r] if r < len(info) else ""
-                out.append(icon[r] + "  ", style=INK)
-                out.append(tx[:tw] + "\n", style=INK_B if r == 0 else INK)
+                info = shop.sell_info(self.pet, sel, tw)
+            menu.icon_info(out, menu.item_icon(sel), info)
         elif self._shelves_closed():
             # the canon closed sign (drawShop's roomEffect "shopClosed") hangs
             # in the icon slot; the hours ride the info column beside it
@@ -251,10 +198,7 @@ class ShopPanel:
             lines = [t.plain.ljust(IC_W) for t in bitmap_text(downsample(sign, 2), LCD_ON, LCD_BG)] \
                 if sign else []
             lines = (lines + [" " * IC_W] * IC_ROWS)[:IC_ROWS]
-            info = ["CLOSED", "hours 6:00-23:00", "", "come back at dawn"]
-            for r in range(IC_ROWS):
-                out.append(lines[r] + "  ", style=INK)
-                out.append(info[r][:W - IC_W - 2] + "\n", style=INK_B if r == 0 else INK)
+            menu.icon_info(out, lines, ["CLOSED", "hours 6:00-23:00", "", "come back at dawn"])
         else:
             # nothing selected == the tab is empty; the list below already prints the
             # context-aware empty label, so the icon panel stays quiet (one message, not two)
@@ -270,10 +214,7 @@ class ShopPanel:
 
         def fmt(e, i):
             if self.mode == "shop":
-                price = e.get("sale") or e.get("price", 0)
-                qty = "OUT" if e.get("stock", 0) <= 0 else "x%d" % e["stock"]
-                tag = "*" if e.get("sale") else " "
-                return "%-18s %4s%s %5db" % (e["name"][:18], qty, tag, price)
+                return shop.slot_label(e)
             return "x%-2d %-26s" % (self.pet.inventory.get(e["key"], 0), e["name"][:26])
 
         self.cursor = menu.list_window(out, rows, self.cursor, 3, fmt, empty=empty)

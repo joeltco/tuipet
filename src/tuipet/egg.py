@@ -220,6 +220,21 @@ def redeem_password(text):
     return None
 
 
+def code_key(buf, k):
+    """One keystroke of secret-code entry -> (buf, action) with action in
+    ('submit', 'cancel', None).  The shop's P password and the egg select's
+    C code ran two copies of this editor (refactor 2026-07-05)."""
+    if k == "escape":
+        return "", "cancel"
+    if k == "enter":
+        return buf, "submit"
+    if k == "backspace":
+        return buf[:-1], None
+    if len(k) == 1 and k.isprintable():
+        return (buf + k)[:24], None
+    return buf, None
+
+
 def win_eggs():
     """The tuipet-only mystery eggs and their lifetime-win gates ({idx: wins})."""
     return dict(_WIN_EGGS)

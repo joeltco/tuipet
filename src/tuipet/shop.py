@@ -214,6 +214,53 @@ def purchase_price(slot):
     return e["price"] if e else 0
 
 
+def effect_line(e):
+    """One terse readout of a consumable's applyFood/applyItem effects."""
+    parts = []
+    for k, lbl in (("hunger", "food"), ("mood", "mood"), ("weight", "wt"), ("energy", "en"),
+                   ("strength", "eff"), ("vaccine", "Va"), ("data", "Da"), ("virus", "Vi")):
+        if e.get(k):
+            parts.append("%s%+d" % (lbl, e[k]))
+    if e.get("cured"):
+        parts.append("cure")
+    if e.get("healed"):
+        parts.append("heal")
+    return " ".join(parts) or "-"
+
+
+def slot_label(e):
+    """One shop-list row: name / stock / sale tag / price.  The ONE format
+    the home shop and every town shop share (refactor 2026-07-05)."""
+    price = e.get("sale") or e.get("price", 0)
+    qty = "OUT" if e.get("stock", 0) <= 0 else "x%d" % e["stock"]
+    tag = "*" if e.get("sale") else " "
+    return "%-18s %4s%s %5db" % (e["name"][:18], qty, tag, price)
+
+
+def slot_info(pet, e, tw):
+    """The selected shop slot's info column (rides beside the icon cell)."""
+    owned = pet.inventory.get(e["key"], 0)
+    price = ("SALE %db" % e["sale"]) if e.get("sale") else "%db" % e.get("price", 0)
+    stock = "SOLD OUT" if e.get("stock", 0) <= 0 else "stock x%d" % e["stock"]
+    return [e["name"][:tw], price, "%s  own %d" % (stock, owned), effect_line(e)[:tw]]
+
+
+def sell_info(pet, e, tw):
+    """The selected sellable's info column: what you hold and what it fetches."""
+    owned = pet.inventory.get(e["key"], 0)
+    val = resell_price(e)
+    return [e["name"][:tw], "x%d" % owned,
+            ("sell %db" % val) if val else "can't resell", effect_line(e)[:tw]]
+
+
+def buy(pet, slot):
+    """Buy a slot -> (msg, sfx): reward when bits actually moved, else error.
+    The bits-delta sfx rule the home shop and town shops both hand-rolled."""
+    bits0 = pet.bits
+    msg = pet.buy_slot(slot)
+    return msg, ("reward" if pet.bits < bits0 else "error")
+
+
 def resell_price(e):
     """getResellPrice: price / DefaultResellFactor; factor 0 = unsellable.
     (Canon re-audit 2026-07: canon has NO floor -- the old max(1, ...) was

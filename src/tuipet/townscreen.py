@@ -115,21 +115,18 @@ class TownPanel(menu.SubHost):
             return None
         if self.phase in ("food", "items") and rows:
             slot = rows[min(self.cursor, len(rows) - 1)]
-            bits0 = p.bits
-            self.msg = p.buy_slot(slot)
-            self.sfx = "reward" if p.bits < bits0 else "error"
+            self.msg, self.sfx = shop.buy(p, slot)
             return None
         if self.phase == "sell" and rows:
             key = rows[min(self.cursor, len(rows) - 1)]
-            e = data.consumable_by_key(key)
-            if not e:
+            if not data.consumable_by_key(key):
                 return None
             is_food = key.startswith("f:")
             if not self.town["can_sell_food" if is_food else "can_sell_items"]:
                 self.msg = "They won't buy that here."
                 self.sfx = "error"
                 return None
-            self.msg = p.sell(dict(e, key=key, **self._town_econ(e)))
+            self.msg = p.sell(self._sell_entry(key))
             return None
         if self.phase == "cups" and rows:
             i = min(self.cursor, len(rows) - 1)
@@ -171,6 +168,16 @@ class TownPanel(menu.SubHost):
             if o and o["consumable_id"] == e.get("id"):
                 return {"resell_factor": o["resell_factor"], "price": o["price"]}
         return {}
+
+    def _slot_entry(self, r):
+        """A rolled shop slot merged over its consumable entry -- the slot's
+        town-econ fields (price/sale/stock) win."""
+        return dict(shop.entry(r["key"]) or {"name": "?"}, **r)
+
+    def _sell_entry(self, key):
+        """An owned consumable with the TOWN's override econ substituted."""
+        e = dict(data.consumable_by_key(key) or {"name": "?"}, key=key)
+        return dict(e, **self._town_econ(e))
 
     # ---- render ----
     def _scene(self, placements):
@@ -230,27 +237,37 @@ class TownPanel(menu.SubHost):
             fr = rec["frames"][roles[(self.frame_i // 5) % len(roles)]] or rec["frames"][0]
             return self._scene([grid.center(grid.prep(fr, ph=24))])
         out = menu.header(f"TOWN {self.town['id']}", f"{p.bits}b")
+        # the selected item's icon+info block -- the SAME icon view as the home
+        # shop (the town shelves rendered nameplates only; refactor 2026-07-05)
+        if self.phase in ("food", "items", "sell"):
+            sel = rows[min(self.cursor, len(rows) - 1)] if rows else None
+            tw = menu.W - menu.IC_W - 2
+            if sel is None:
+                out.append_text(menu.blanks(menu.IC_ROWS))
+            elif self.phase == "sell":
+                e = self._sell_entry(sel)
+                menu.icon_info(out, menu.item_icon(e), shop.sell_info(p, e, tw))
+            else:
+                e = self._slot_entry(sel)
+                menu.icon_info(out, menu.item_icon(e), shop.slot_info(p, e, tw))
+            vis = 3                               # the home shop's window height
+        else:
+            vis = 5                               # cups: no icons, the taller list
 
         def fmt(r, i):
-            if self.phase == "menu":
-                return r[1]
             if self.phase in ("food", "items"):
-                e = shop.entry(r["key"]) or {"name": "?"}
-                price = r.get("sale") or r.get("price", 0)
-                qty = "OUT" if r.get("stock", 0) <= 0 else "x%d" % r["stock"]
-                return "%-18s %4s%s %5db" % (e["name"][:18], qty,
-                                             "*" if r.get("sale") else " ", price)
+                return shop.slot_label(self._slot_entry(r))
             if self.phase == "sell":
-                e = data.consumable_by_key(r) or {"name": "?"}
-                val = shop.resell_price(dict(e, key=r, **self._town_econ(dict(e, key=r))))
-                return "%-18s x%-2d  %4db" % (e["name"][:18], p.inventory.get(r, 0), val)
+                e = self._sell_entry(r)
+                return "%-18s x%-2d  %4db" % (e["name"][:18], p.inventory.get(r, 0),
+                                              shop.resell_price(e))
             tr = tournament.trophy_by_id(r) if r >= 0 else None      # cups
             nm = tournament.trophy_label(tr)[:20] if tr else "\u2014"
             mark = ("\u00bb OPEN" if tournament.town_slot_open(p, i) and tr else
                     ("%02dh" % i if i <= 23 else ""))
             return "%-22s %s" % (nm, mark)
 
-        self.cursor = menu.list_window(out, rows, self.cursor, 5, fmt)
+        self.cursor = menu.list_window(out, rows, self.cursor, vis, fmt)
         out.append_text(menu.note(self.msg, tick=self.frame_i))
         out.append_text(menu.footer("↑↓ pick  ENTER go  ESC back"))
         return out

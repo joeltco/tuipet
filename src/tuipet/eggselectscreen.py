@@ -122,10 +122,10 @@ class EggSelectPanel:
         return None
 
     def _key_code(self, k):
-        if k == "escape":
-            self.entering, self.buf = False, ""
-            return None
-        if k == "enter":
+        self.buf, act = egg_mod.code_key(self.buf, k)
+        if act == "cancel":
+            self.entering = False
+        elif act == "submit":
             idx = egg_mod.redeem_password(self.buf)   # one matcher for both entries; it persists
             self.entering = False
             if idx is not None:
@@ -139,11 +139,6 @@ class EggSelectPanel:
                 self.sfx = "error"
                 self._flash("No such code.")
             self.buf = ""
-            return None
-        if k == "backspace":
-            self.buf = self.buf[:-1]
-        elif len(k) == 1 and k.isprintable():
-            self.buf = (self.buf + k)[:24]
         return None
 
     def _egg(self, pos):

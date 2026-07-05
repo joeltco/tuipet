@@ -74,6 +74,54 @@ def footer(hint):
 def blanks(n):
     return Text("\n" * max(0, n), style=INK)
 
+
+IC_W, IC_ROWS = 10, 4   # the selected-item icon cell every icon view shares
+
+
+def icon_cell(src):
+    """Rasterise one sprite bitmap into the IC_W x IC_ROWS icon cell,
+    auto-downsampled to fit both dimensions so it never clips."""
+    blank = [" " * IC_W] * IC_ROWS
+    sh = len(src) if src else 0
+    sw = max((len(r) for r in src), default=0) if src else 0
+    if not sw:
+        return blank
+    from .render import downsample, bitmap_text
+    from .theme import LCD_ON, LCD_BG           # read late: theme.apply retints
+    factor = max(1, -(-sw // IC_W), -(-sh // (2 * IC_ROWS)))
+    bm = downsample(src, factor)
+    if not max((len(r) for r in bm), default=0):
+        return blank
+    lines = [t.plain.ljust(IC_W)                # w <= IC_W (factor guarantees it)
+             for t in bitmap_text(bm, LCD_ON, LCD_BG)]
+    return (lines + blank)[:IC_ROWS]
+
+
+def item_icon(e):
+    """A consumable/egg entry's icon as IC_ROWS cell lines.  ONE lookup for
+    every icon view -- the shop, the bag, the feed menu and the town shops
+    (refactor 2026-07-05); shop eggs ride their real egg frames."""
+    fr = None
+    if e and e.get("egg_idx") is not None:
+        from . import egg as egg_mod
+        fr = egg_mod.frames(e["egg_idx"])
+    elif e:
+        from . import data
+        fr = data.load_icons().get(e.get("key"))
+    if not fr:
+        return [" " * IC_W] * IC_ROWS
+    return icon_cell(fr[0])
+
+
+def icon_info(out, icon, info):
+    """The selected-item block: icon column + info column, first line bold --
+    the ONE layout shared by every icon view."""
+    tw = W - IC_W - 2
+    for r in range(IC_ROWS):
+        tx = info[r] if r < len(info) else ""
+        out.append(icon[r] + "  ", style=INK)
+        out.append(tx[:tw] + "\n", style=INK_B if r == 0 else INK)
+
 def list_window(out, rows, cursor, vis, fmt, empty=None):
     """The shared scrolling list body: a vis-row window centred on the cursor,
     each row through fmt(item, index) -> (label, selected_ok), padded with

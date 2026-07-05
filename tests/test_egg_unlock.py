@@ -200,3 +200,19 @@ def test_new_egg_starts_warm():
     from tuipet.pet import Pet, EGG_MOOD
     p = Pet.new_egg(generation=1, egg_type=0)
     assert p.mood == EGG_MOOD == 100                 # Evolution.egg: setMood(EggMood)
+
+
+def test_code_key_is_the_one_secret_code_editor():
+    """Refactor 2026-07-05: the shop's P password and the egg select's C code
+    ran two copies of the keystroke editor; egg.code_key is the single seam."""
+    from tuipet import egg as egg_mod
+    buf, act = egg_mod.code_key("", "a")
+    assert (buf, act) == ("a", None)
+    buf, act = egg_mod.code_key("ab", "backspace")
+    assert (buf, act) == ("a", None)
+    assert egg_mod.code_key("abc", "enter") == ("abc", "submit")
+    assert egg_mod.code_key("abc", "escape") == ("", "cancel")
+    buf, _ = egg_mod.code_key("x" * 24, "y")
+    assert len(buf) == 24                        # capped, like both old editors
+    buf, _ = egg_mod.code_key("a", "space")      # named keys never append
+    assert buf == "a"
