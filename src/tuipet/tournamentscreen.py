@@ -135,9 +135,10 @@ class TournamentPanel(menu.SubHost):
         return out
 
     def _frames(self, num, role="idle"):
-        # beat=1 preserves this screen's fast per-tick flip (every other scene
-        # bobs at beat 5 -- flagged in the 2026-07-05 audit, awaiting a call)
-        return data.bob_frame(num, self.frame_i, role, beat=1)
+        # the standard ~2Hz WALK_BEAT bob -- this screen alone flipped poses
+        # every 0.1s tick (a 10Hz flutter, accidental drift; calmed to match
+        # the rest, Joel 2026-07-05)
+        return data.bob_frame(num, self.frame_i, role)
 
     def text(self):
         if self.sub is not None:

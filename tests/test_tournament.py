@@ -270,3 +270,22 @@ def test_bracket_page_renders_and_toggles():
     assert not pan.tree_view
     pan.key("b")                                    # B recalls the tree any time
     assert pan.tree_view
+
+
+def test_bracket_preview_bobs_at_the_walk_beat():
+    """The bracket faceoff/result idle bob runs at the standard ~2Hz WALK_BEAT
+    (frame_i // 5) like every other scene -- this screen alone flipped poses
+    every fast-tick, a 10Hz flutter calmed on Joel's call (2026-07-05)."""
+    from tuipet.tournamentscreen import TournamentPanel
+    from tuipet import data
+    p = _pet()
+    num = next(n for n in sorted(data.load_sprites()[1])
+               if n >= 0 and not data.is_placeholder(n))
+    pan = TournamentPanel(p)
+    pan.frame_i = 0
+    f0 = pan._frames(num)
+    assert f0 is not None
+    pan.frame_i = 1                       # inside the same beat: no flip
+    assert pan._frames(num) == f0
+    pan.frame_i = 5                       # next beat: the pose flips
+    assert pan._frames(num) != f0
