@@ -49,18 +49,20 @@ def test_towns_carry_their_canonical_backdrop():
     assert towns[0]["bg_habitat"] in data.load_habitats()
 
 
-def test_town_lobby_is_a_scene_and_arrival_shows_the_town():
+def test_town_lobby_speaks_the_menu_language_and_arrival_shows_the_town():
     from tuipet.townscreen import TownPanel
     p = _pet()
     pan = TownPanel(p, 0)
-    lobby = pan.text()
-    # box-clip repin 2026-07-04: the lobby fills the PHYSICAL LCD exactly
-    # (12 rows); the errand picker rides the strip under it
-    assert len(lobby.plain.split("\n")) == 12
-    assert "Food" in pan.strip() and "Leave" in pan.strip()
-    pan.key("enter")                           # into the food shop: menu grammar returns
+    lobby = pan.text().plain
+    # layout-consistency sweep 2026-07-05: the lobby is a MENU page like its
+    # own deeper pages (the errand picker used to be menu chrome on the strip)
+    assert "TOWN" in lobby and "Food shop" in lobby and "Leave" in lobby
+    L = lobby.split("\n")
+    assert len(L) <= 12 and all(len(x) <= 40 for x in L)
+    assert pan.strip() == ""                   # the message box stays a message box
+    pan.key("enter")                           # into the food shop
     assert len(pan.text().plain.split("\n")) <= 12
-    assert pan.strip() == ""                   # pages carry their own in-LCD chrome
+    assert pan.strip() == ""
     # adventure: stepping INSIDE the town's span swaps to the town backdrop
     ap = AdventurePanel(_pet())
     a = ap.adv

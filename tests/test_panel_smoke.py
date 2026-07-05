@@ -171,7 +171,7 @@ def test_scene_screens_fit_the_physical_lcd_in_every_state():
 
     from tuipet.townscreen import TownPanel
     pan = TownPanel(p, 0)
-    _render(pan); assert "Food" in pan.strip()
+    _render(pan); assert pan.strip() == "" and "Food shop" in pan.text().plain
     for key in ("food", "items", "sell", "cups"):
         pan.phase, pan.cursor = key, 0
         _render(pan)
