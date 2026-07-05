@@ -148,7 +148,10 @@ class ShopPanel:
                 if (e.get("unlocks_food") or e.get("unlocks_item")) and "got a" in self.msg:
                     self.sfx = "mischief"      # soundConfig unlockConsumable -> mischief.wav
                 if self.pet.num != num0:
-                    return ("done", ("evolve", num0))
+                    # an ItemEvol (Digimental) carries its key: the app plays
+                    # canon itemEvolve's parade before the strobe
+                    ik = e["key"] if (e.get("action") or "") == "ItemEvol" else None
+                    return ("done", ("evolve", num0, ik))
                 if e["key"].startswith("f:") and self.pet.anim == "eat":
                     return ("done", ("eat", e["key"]))
                 if (data.shop_category(dict(e)) == "toy"

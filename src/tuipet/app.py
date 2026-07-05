@@ -491,7 +491,7 @@ class Screen(Static):
 
     # ---- care-action animations (DVPet SpriteAnim eat/clean/cheer) -----------
     def start_fx(self, kind, icon=None, poop=0, old_num=None, pet=None, starving=False):
-        steps = {"eat": 35, "cheer": 31, "jeer": 31, "clean": 22, "spit": 25, "evolve": 37, "dying": 50, "dna_charge": 44, "play": 37, "heal": 24, "poop": 25,
+        steps = {"eat": 35, "cheer": 31, "jeer": 31, "clean": 22, "spit": 25, "evolve": 41, "dying": 50, "dna_charge": 44, "play": 37, "heal": 24, "poop": 25,
                  "gift": GIFT_OUT + GIFT_BACK + GIFT_HOLD, "assist": 28, "inherit": 50}.get(kind, 12)
         self.fx = {"kind": kind, "step": 0, "steps": steps, "icon": icon, "poop": poop, "old_num": old_num}
         if kind == "eat":
@@ -539,8 +539,18 @@ class Screen(Static):
             # final one (no ripped bandage cues -- click/confirm are the substitutes).
             self.fx["snds"] = {8: "click", 13: "click", 18: "confirm"}
         elif kind == "evolve":
-            # DVPet evolveAnim(): _evolve sounds at the first burst beat (t5).
+            # DVPet evolveAnim(): _evolve sounds at the first burst beat (t5);
+            # digivolve() runs the strobe to evolFinish at 41 (was cut at 37).
+            # An ITEM evolution (Digimental) prepends canon itemEvolve's first
+            # act: the pet parades with the item cycling its own anim frames
+            # (itemEvolveLoop -> jogress.wav), THEN the strobe fires.
+            off = 14 if icon else 0
+            self.fx["off"] = off
+            self.fx["steps"] = 41 + off
             self.fx["snds"] = {5: "evolve"}
+            if off:                       # the parade shifts the strobe's beats
+                self.fx["snds"] = {k + off: v for k, v in self.fx["snds"].items()}
+                self.fx["snds"][1] = "jogress"
         elif kind == "inherit":
             # DVPet inheriting(): chip-shrink t11 / parent-grow t17 / parent-shrink
             # t37 all key the attackHit cue; the flight home pips inheritMove
@@ -871,6 +881,21 @@ class Screen(Static):
         # next burst.  _evolve sounds at the first burst (start_fx snds).  The
         # chained cheer(true) afterwards is DVPet evolFinish.
         old = fx.get("old_num")
+        off = fx.get("off", 0)
+        if step < off:                                     # itemEvolve's first act: the
+            pose = 1 if (step // 4) % 2 == 0 else 4        # pet parades (canon poses
+            rec = data.load_sprites()[1].get(old) if old not in (None, -1) else None
+            if rec:                                        # animValue+1 <-> +4)...
+                fr = rec["frames"]
+                pf = (fr[pose] if pose < len(fr) and fr[pose] else fr[0]) or c.rows
+                c.rows = pf
+            raw = data.load_icons().get(fx.get("icon"))    # ...with the Digimental
+            ic = [f for f in (raw or []) if f]             # cycling its OWN frames
+            if ic:
+                f = ic[(step // 2) % len(ic)]
+                c.overlay += _blit(f, 2, c.px_h - len(f) - 4)
+            return
+        step -= off                                        # the strobe below runs on canon beats
         if step < 21 and old not in (None, -1):            # old form until the covered swap
             rec = data.load_sprites()[1].get(old)
             if rec and rec["frames"][0]:
@@ -2153,9 +2178,12 @@ class TuiPetApp(App):
             self.screen_w.start_fx("eat", msg[1], pet=self.pet,
                                    starving=getattr(self.pet, "_last_meal_starving", False))
         elif isinstance(msg, tuple) and msg and msg[0] == "evolve":
-            # _evolve sounds INSIDE the strobe (fx snds beat 5), like DVPet evolveAnim
+            # _evolve sounds INSIDE the strobe (fx snds beat 5), like DVPet evolveAnim.
+            # msg[2] = an ItemEvol's key: the Digimental's icon frames head the
+            # strobe with canon itemEvolve's parade
+            ik = msg[2] if len(msg) > 2 else None
             self.flash(self._evolve_msg(msg[1]))
-            self.screen_w.start_fx("evolve", old_num=msg[1])
+            self.screen_w.start_fx("evolve", old_num=msg[1], icon=ik)
         elif isinstance(msg, tuple) and msg and msg[0] == "play":
             # a bag toy: DVPet jumping() -- the pet hops over its real toy
             self.screen_w.start_fx("play", icon=msg[1])
