@@ -57,6 +57,8 @@ class DeathPanel:
             return (f"One Digimemory only — [b]E[/] etch {p.name}'s data  "
                     f"[b]K[/] keep {self.old_mem.get('name', '?')}'s")
         rip = f"R.I.P. [b]{p.name}[/] · gen {p.generation} · lived {_age_str(p.age_seconds)}"
+        if getattr(p, "death_cause", ""):
+            rip += f" · of {p.death_cause}"        # what took it (audit 2026-07-05)
         if self.new_mem:
             m = self.new_mem
             rip += f" · etched Va+{m['vaccine']} D+{m['data']} Vi+{m['virus']}"

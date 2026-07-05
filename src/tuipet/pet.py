@@ -627,6 +627,7 @@ class Pet:
     lifespan: float = LIFE_START
     generation: int = 1
     dead: bool = False
+    death_cause: str = ""           # what took it (memorial epitaph, audit 2026-07-05)
     world_seconds: float = 0.0
     temp: float = 50.0
     day_temp: float = 50.0
@@ -864,7 +865,7 @@ class Pet:
         if self.sick or self.inj_length > 0:
             self._malady_t = getattr(self, "_malady_t", 0.0) + dt
             if self._malady_t >= 360.0 and not self.dead:
-                self._die()
+                self._die("sickness" if self.sick else "its wounds")
         else:
             self._malady_t = 0.0
 
@@ -975,12 +976,13 @@ class Pet:
         # death does not wait for morning: the mistake caps and old age
         # apply asleep too (only the starvation clock freezes; audit 2026-07)
         if self.care_mistakes >= 20 or self.injuries >= 20:
-            self._die(); return
+            self._die("neglect" if self.care_mistakes >= 20 else "its injuries")
+            return
         if (self.stage in ("Ultimate", "Mega") and self.care_mistakes >= 5
                 and self.stage_seconds >= self.LATE_STAGE_WINDOW):
-            self._die(); return                       # Pen20 late-stage rule (LINES_SPEC §5)
+            self._die("frailty"); return              # Pen20 late-stage rule (LINES_SPEC §5)
         if self.age_seconds >= self.lifespan:
-            self._die(); return
+            self._die("old age"); return
         # startPoop: even asleep, a truly DESPERATE gauge (>= 2x max) goes --
         # this must live in the sleep branch (the awake poop block below is
         # unreachable while asleep; latent until the canon day bands landed)
@@ -1300,23 +1302,24 @@ class Pet:
         otherwise); under correct burns they almost never fire first.  Returns
         True when the pet died this tick."""
         if self.care_mistakes >= 20 or self.injuries >= 20:   # MaxCareMistakes / MaxInjuries
-            self._die(); return True
+            self._die("neglect" if self.care_mistakes >= 20 else "its injuries")
+            return True
         # Pen20 (LINES_SPEC §5): at the last stages, 5 slips once the evolution
         # window is open = death -- an elder Perfect/Ultimate demands real care
         if (self.stage in ("Ultimate", "Mega") and self.care_mistakes >= 5
                 and self.stage_seconds >= self.LATE_STAGE_WINDOW):
-            self._die(); return True
+            self._die("frailty"); return True      # Pen20: elder slips
         if self.hunger == 0 and not self.asleep:              # awake-only, like hungerCall()
             self._starve_t = getattr(self, "_starve_t", 0.0) + dt
             if self._starve_t >= 12 * 3600:                   # empty hunger 12h -> death
-                self._die(); return True
+                self._die("starvation"); return True
         elif self.hunger > 0:
             self._starve_t = 0.0
         self.habitat_record[self.habitat] = self.habitat_record.get(self.habitat, 0) + dt
         # (the old continuous per-second "extra" drain was invented -- canon
         # burns lifespan through the EVENT penalties wired below instead)
         if self.age_seconds >= self.lifespan:
-            self._die()
+            self._die("old age")
             return True
         return False
 
@@ -1599,8 +1602,9 @@ class Pet:
         self._poop_t = getattr(self, "_poop_t", 0) \
             + self._poop_interval * bm / max(1, self._phys().get("poop_limit", 64))
 
-    def _die(self):
+    def _die(self, cause=""):
         self.dead = True
+        self.death_cause = cause or self.death_cause   # first cause wins
         self.asleep = False
         self.hatching = False
         self._set_anim("idle", 0)

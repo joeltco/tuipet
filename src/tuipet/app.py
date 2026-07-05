@@ -1057,6 +1057,7 @@ class Stats(Static):
             "",
             f"Lived    {_age_compact(pet.age_seconds)}",
             f"Reached  {pet.stage}",
+            f"Cause    {getattr(pet, 'death_cause', '') or 'unknown'}",
             f"Attrib   {pet.attribute}",
             f"Record   {pet.wins}W / {pet.battles}",
             div,

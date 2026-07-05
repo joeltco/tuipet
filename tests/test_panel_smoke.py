@@ -292,3 +292,29 @@ def test_title_boot_flashes_dissolves_then_settles():
     assert frames[BOOT_BLIP] != frames[BOOT_BLIP + 2]   # ...and thins each beat
     settled = frames[BOOT_BLIP + BOOT_FADE:]
     assert len(set(settled)) == 2                 # only the two bob poses remain
+
+
+def test_assist_card_prices_match_canon_and_toggle_names_a_helper():
+    """Assist audit 2026-07-05: drawAutoCareValidation mirror — per-stage visit
+    prices (config AutoCareStage*Price col 1) + the 100b/hour retainer from
+    Rookie up; toggling ON rolls a REAL helper from the CanAssist pool."""
+    import random
+    from tuipet.assistscreen import AssistPanel
+    from tuipet.pet import AUTO_CARE_VISIT_PRICE, AUTO_CARE_HOUR_PRICE
+    assert AUTO_CARE_VISIT_PRICE == {"Egg": 50, "Fresh": 50, "InTraining": 100,
+                                     "Rookie": 200, "Champion": 400,
+                                     "Ultimate": 800, "Mega": 1600}
+    assert AUTO_CARE_HOUR_PRICE["InTraining"] == 0 and AUTO_CARE_HOUR_PRICE["Rookie"] == 100
+    random.seed(2)
+    p = _pet()
+    pan = AssistPanel(p)
+    _render(pan)
+    assert "400b/care" in pan.text().plain        # Champion rates on the card
+    assert "100b/hour" in pan.text().plain
+    pan.key("enter")                              # hire
+    _render(pan)
+    assert p.auto_care and p.assistant_num >= 0
+    assert "on duty" in pan.text().plain
+    pan.key("enter")                              # dismiss
+    assert not p.auto_care
+    assert "dismissed" in pan.msg

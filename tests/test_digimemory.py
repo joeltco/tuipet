@@ -91,3 +91,47 @@ def test_memorial_conflict_asks_and_resolves():
     pan2 = DeathPanel(p, new_mem=dict(new), old_mem=old)
     pan2.key("k")
     assert persistence.peek_digimemory()["name"] == "Elder"
+
+
+def test_every_death_records_its_cause_and_the_memorial_tells_it():
+    """Death audit 2026-07-05: six ways to die, and _die() recorded none of
+    them -- the memorial couldn't say what happened."""
+    from tuipet.deathscreen import DeathPanel
+
+    def dead_pet(**kw):
+        p = Pet(num=102, name="Devimon", stage="Champion", attribute="Virus")
+        p.world_seconds = 12 * 60.0
+        for k, v in kw.items():
+            setattr(p, k, v)
+        return p
+
+    p = dead_pet(hunger=0)
+    p._starve_t = 12 * 3600
+    p._tick_mortality(1.0)
+    assert p.dead and p.death_cause == "starvation"
+
+    p = dead_pet(care_mistakes=20)
+    p._tick_mortality(1.0)
+    assert p.death_cause == "neglect"
+
+    p = dead_pet(injuries=20)
+    p._tick_mortality(1.0)
+    assert p.death_cause == "its injuries"
+
+    p = dead_pet(stage="Mega", care_mistakes=5)
+    p.stage_seconds = p.LATE_STAGE_WINDOW
+    p._tick_mortality(1.0)
+    assert p.death_cause == "frailty"
+
+    p = dead_pet()
+    p.age_seconds = p.lifespan
+    p._tick_mortality(1.0)
+    assert p.death_cause == "old age"
+
+    p = dead_pet(sick=True)
+    p._malady_t = 360.0
+    p._tick_recovery(1.0)
+    assert p.dead and p.death_cause == "sickness"
+
+    pan = DeathPanel(p)
+    assert "of sickness" in pan.strip()            # the epitaph tells it
