@@ -226,8 +226,14 @@ def build_pages(pet):
         ("POWER", power),
         ("CONDITION", [
             ("Hunger", f"{pet.hunger}/4"), ("Energy", f"{int(pet.energy)}/{pet.max_energy}"),
-            ("Mood", pet.current_mood()), ("Spirit", f"{pet.enthusiasm:+d}"), ("Sick", "yes" if pet.sick else "no"),
-            ("Injury", str(pet.injuries)), ("Poop", str(pet.poop)),
+            ("Mood", pet.current_mood()), ("Spirit", f"{pet.enthusiasm:+d}"),
+            ("Ailing", (("sick " if pet.sick else "") + (f"{pet.injuries} inj" if pet.injuries else "")).strip() or "no"),
+            # the nutrition tracks (audit 2026-07-05): browsable at last -- they
+            # only ever flashed by in the eat readout.  ♥ = good nutrition
+            # (all >= 16: faster recovery, fewer fatigues, slower life burn)
+            ("Nutrit.", f"P{pet.nutr_protein} M{pet.nutr_mineral} V{pet.nutr_vitamin}"
+                        + (" ♥" if pet.good_nutrition() else "")),
+            ("Poop", str(pet.poop)),
             ("Care x", str(pet.care_mistakes)), ("Disturb", str(pet.disturb)),
         ]),
         ("HABITAT", [
