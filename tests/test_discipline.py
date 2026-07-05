@@ -163,3 +163,22 @@ def test_heal_flows_and_the_double_dose_sours_the_taste():
     assert q.bandage_lapse > 0
     assert "bandaged" in msg or "patched" in msg
     assert "already bandaged" in q._apply_bandage()   # one wrap at a time
+
+
+def test_lights_wake_a_nap_unless_the_futon_holds_it():
+    """Lights audit 2026-07-05: canon lightSwitch -- lights ON rouses a NAP
+    (sick/injured pets bank +1 sleep pressure for the lost doze) UNLESS the
+    Futon is active (!isFuton, effect_id 0 -- the exemption auto-care already
+    honoured but the switch didn't); deep sleep ignores the switch entirely."""
+    p = _pet(asleep=True, nap=True, lights=False, sick=True)
+    s0 = p.sleep_lapse
+    msg = p.toggle_lights()
+    assert p.lights and not p.asleep              # the nap broke
+    assert p.sleep_lapse == s0 + 1                # ...and the sick pet pays
+    q = _pet(asleep=True, nap=True, lights=False, effect_id=0)   # Futon active
+    msg = q.toggle_lights()
+    assert q.lights and q.asleep and q.nap        # shielded: still dozing
+    assert "futon" in msg.lower()
+    r = _pet(asleep=True, nap=False, lights=False)               # DEEP sleep
+    r.toggle_lights()
+    assert r.asleep                               # the switch never wakes real sleep

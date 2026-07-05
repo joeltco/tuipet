@@ -3158,13 +3158,17 @@ class Pet:
         if (_g := self._guard(asleep_blocks=False)) is not None:
             return _g
         self.lights = not self.lights
-        if self.lights and self.asleep and self.nap:
+        if self.lights and self.asleep and self.nap and self.effect_id != 0:
             # lightSwitch: lights ON rouses a NAPPING pet (deep sleep ignores it;
-            # sick or injured, the lost doze pushes bedtime a minute closer)
+            # sick or injured, the lost doze pushes bedtime a minute closer).
+            # canon !isFuton() (lights audit 2026-07-05): an active Futon
+            # (effect_id 0, the same check auto-care honours) shields the nap
             if self.sick or self.is_injured():
                 self.sleep_lapse += 1
             self._wake(morning=False)
             return "Lights on — up from its nap."
+        if self.lights and self.asleep and self.nap:
+            return "Lights on — the futon keeps it dozing."
         return "Lights off." if not self.lights else "Lights on."
 
     def play(self):
