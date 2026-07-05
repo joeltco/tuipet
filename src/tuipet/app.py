@@ -1818,7 +1818,7 @@ class TuiPetApp(App):
                     if new_mem and not old_mem:
                         persistence.bank_digimemory(new_mem)
                     persistence.save(self.pet)             # the spent bonus sticks
-                    self._open_mode(deathscreen.DeathPanel(self.pet, new_mem=new_mem,
+                    self._open_mode(deathscreen.DeathPanel(self.pet, hold=20, new_mem=new_mem,
                                                            old_mem=old_mem), self._after_death)
             else:                              # any other fx just finished -> restore the HUD
                 self.repaint()

@@ -22,17 +22,32 @@ def _age_str(secs):
 
 
 class DeathPanel:
-    def __init__(self, pet, new_mem=None, old_mem=None):
+    def __init__(self, pet, new_mem=None, old_mem=None, hold=0):
         """new_mem: inheritance data the departed just etched (make_digimemory);
         old_mem: data already banked from an earlier generation.  Both present =
         DVPet's 'You can only have one Digimemory' validation -- the trainer
-        chooses which generation's data survives."""
+        chooses which generation's data survives.
+
+        hold: canon deading()'s grave beat -- 20 ticks of just the grave with
+        the dieLoop sting (x2) before the memorial takes input.  The fresh-
+        death path passes 20; without it the save-mash overshoot lands IN the
+        memorial (and 'n' starts a new egg unread)."""
         self.pet = pet
         self.new_mem = new_mem
         self.old_mem = old_mem
         self.asking = bool(new_mem and old_mem)
+        self._hold = int(hold)
+        self.sfx = "error" if hold else None    # soundConfig dieLoop -> error
+
+    def anim(self):
+        if self._hold > 0:
+            self._hold -= 1
+            if self._hold == 10:
+                self.sfx = "error"              # canon loops dieLoop twice
 
     def key(self, k):
+        if self._hold > 0:                      # the grave beat absorbs the mash
+            return None
         if self.asking:
             if k in ("e", "enter"):                       # etch the new data over the old
                 persistence.bank_digimemory(self.new_mem)
@@ -52,6 +67,8 @@ class DeathPanel:
         2026-07-04: the in-LCD stack ran 16 lines and everything below the
         grave was clipped off the physical box).  Long lines marquee."""
         p = self.pet
+        if self._hold > 0:
+            return "…"                             # deading(): just the grave, no keys yet
         if self.asking:
             # setNewDigimemory validation: only one Digimemory may exist
             return (f"One Digimemory only — [b]E[/] etch {p.name}'s data  "
