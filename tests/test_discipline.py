@@ -136,3 +136,30 @@ def test_cleaning_builds_obedience_by_disposition():
     p = _pet(obedience=10)                        # nothing to clean
     assert p.clean() == "Nothing to clean."
     assert p.obedience == 10
+
+
+def test_heal_flows_and_the_double_dose_sours_the_taste():
+    """Heal audit 2026-07-05: constants verified vs config (curedMoodBonus 75 /
+    curedObedienceBonus 25 / Max lengths 10,12 / hours 60 / BadMedLifeDec 3600
+    real-sec = 60 at the /60 clock scale).  New: a DOUBLE dose dings the Med
+    food-rank (rankChangeSick +Forced) -- the pet grows to dislike medicine.
+    The bandage-free heal is a documented delta (canon gates on OWNING the
+    10b never-depleting Bandage; a broke pet must still be treatable)."""
+    p = _pet(sick=True, obedience=100)
+    p.compliance = True
+    p.sick_length = 10.0
+    msg = p.heal()                                # dose 1: treatment
+    assert p.med_lapse > 0 and p.sick_length < 10.0
+    r0 = p.food_ranks["Med"]
+    p.sick = True
+    p.compliance = True
+    msg = p.heal()                                # dose 2: poison
+    assert "double dose" in msg.lower()
+    assert p.food_ranks["Med"] < r0               # it grows to dislike medicine
+    q = _pet(injuries=1, obedience=100)
+    q.compliance = True
+    q.inj_length = 2.0
+    msg = q.heal()                                # the bandage path
+    assert q.bandage_lapse > 0
+    assert "bandaged" in msg or "patched" in msg
+    assert "already bandaged" in q._apply_bandage()   # one wrap at a time

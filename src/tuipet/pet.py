@@ -262,6 +262,8 @@ def dna_field_for_rate(rate):
 # --- food taste (DVPet Taste<Food> + Rank + config.csv) ---
 RANK_LIMIT, RANK_MIN = 200, -200       # config RankLimit / RankMinimum
 RANK_CHANGE_FOOD = 1                    # config RankChangeFood (per meal)
+RANK_CHANGE_SICK = 5                    # RankChangeSick: a bad dose sours the taste...
+RANK_CHANGE_SICK_FORCED = 5             # RankChangeSickForced: ...more so when force-fed
 RANK_PREF_INC = 2                       # config RankChangeSpeciesPreferenceInc (species like/dislike bias)
 RANK_DISLIKED = -2                      # config RankChangeDisliked
 RANK_AFTER_FAV = 20                     # config RankChangeAfterFav (decay other ranks toward 0)
@@ -3003,13 +3005,20 @@ class Pet:
         poison: lifespan -BadMedLifeDec, the bowels lurch, and it jeers."""
         med = data.consumable_by_key("f:4") or {"mood": -10, "cure_lapse": -2}
         refused = self.check_refused(food=med)               # feed(): the Med -20 obey mod
-        self.check_compliant()
+        complied = self.check_compliant()
         if refused:
             return f"{self.name} spits out the medicine!"
         if self.med_lapse > 0:                               # getMed(): double dose
             self.mistake_day += 1                            # BadMedMissedDayChange
             self._burn_life(BAD_MED_LIFE_DEC)
             self._advance_bm(BAD_MED_BM_INC)
+            # rankChangeSick (+Forced when its compliance was spent): a
+            # double-dosed pet grows to DISLIKE medicine (heal audit 2026-07-05)
+            ding = RANK_CHANGE_SICK + (RANK_CHANGE_SICK_FORCED if complied else 0)
+            self.food_ranks["Med"] = _clamp(self.food_ranks.get("Med", 0) - ding,
+                                            RANK_MIN, RANK_LIMIT)
+            if self.food_ranks["Med"] <= RANK_MIN:
+                self.disliked_food = "Med"
             self._start_poop()
             self._set_anim("refuse", 1.5)                    # Bad_Health_Jeering
             return "A double dose — that was poison!"
