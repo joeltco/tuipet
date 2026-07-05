@@ -318,3 +318,41 @@ def test_assist_card_prices_match_canon_and_toggle_names_a_helper():
     pan.key("enter")                              # dismiss
     assert not p.auto_care
     assert "dismissed" in pan.msg
+
+
+def test_every_drill_completes_through_its_strike_within_budget():
+    """Training-anim audit 2026-07-05: the 30-tick smoke never reached the
+    strike volley or the score reveal -- drive all four drills to DONE with
+    every frame inside the 12x40 arena (menu -> play -> strike -> done)."""
+    import random
+    from tuipet.training import TrainingPanel
+
+    plays = {
+        "vaccine": lambda pan: pan.key("space"),
+        "data": lambda pan: (pan.key("space")
+                             if getattr(pan, "locked", False) and not pan.fired
+                             and pan.shield_up != pan.tgt_up else None),
+        "virus": lambda pan: pan.key("space") if getattr(pan, "pos", 0) > 80 else None,
+        "hp": lambda pan: (setattr(pan, "hp_pick", pan.hp_target), pan.key("enter")),
+    }
+    moves = {"vaccine": ["up", "enter"], "data": ["left", "enter"],
+             "virus": ["right", "enter"], "hp": ["down", "enter"]}
+    for game, mv in moves.items():
+        random.seed(5)
+        p = _pet()
+        p.energy = p.max_energy
+        p._set_mood(100)
+        p.obedience = 900
+        pan = TrainingPanel(p)
+        for m in mv:
+            pan.key(m)
+        assert pan.phase == "play", f"{game} never entered play"
+        frames = 0
+        while pan.phase != "done":
+            pan.anim()
+            _render(pan)
+            if pan.phase == "play":
+                plays[game](pan)
+            frames += 1
+            assert frames < 3000, f"{game} wedged in phase {pan.phase}"
+        assert pan.result                      # the score reveal landed
