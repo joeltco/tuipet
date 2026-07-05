@@ -28,13 +28,25 @@ def _stamp(buf, pts, cols, px_h):
 def _paint_cells(buf, cols, rows, on, bg, bgimg):
     """The half-block compositor: a filled pixel buffer -> Rich Text.
     render_screen and render_scene carried two byte-identical copies of this
-    loop, which had to be edited in lockstep (refactor 2026-07-05)."""
+    loop, which had to be edited in lockstep (refactor 2026-07-05).  Background
+    art passes through the active theme's quantizer when it declares one
+    (gameboy's 4-shade DMG ramp) -- this is the ONE spot every bgimg crosses,
+    so weather tints, cross-fades and lightning all inherit the palette."""
+    q = None
+    if bgimg:
+        from . import theme
+        q = theme.bg_map()
     t = Text()
     for cy in range(rows):
         ty, byy = cy * 2, cy * 2 + 1
         for cx in range(cols):
-            tc = on if buf[ty][cx] else ("#" + bgimg[ty][cx * 6:cx * 6 + 6] if bgimg else bg)
-            bc = on if buf[byy][cx] else ("#" + bgimg[byy][cx * 6:cx * 6 + 6] if bgimg else bg)
+            if bgimg:
+                tbg = q(bgimg[ty][cx * 6:cx * 6 + 6]) if q else "#" + bgimg[ty][cx * 6:cx * 6 + 6]
+                bbg = q(bgimg[byy][cx * 6:cx * 6 + 6]) if q else "#" + bgimg[byy][cx * 6:cx * 6 + 6]
+            else:
+                tbg = bbg = bg
+            tc = on if buf[ty][cx] else tbg
+            bc = on if buf[byy][cx] else bbg
             t.append("▀", style=f"{tc} on {bc}")
         if cy != rows - 1:
             t.append("\n")

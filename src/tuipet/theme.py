@@ -19,6 +19,7 @@ THEMES = {
         "sil_day": "#2b2e31", "sil_night": "#e4e7ea",
         "heart": "#c25a4a", "energy": "#4a90c2", "mood": "#a06ac2", "life": "#3f9a86", "coin": "#c2a24a",
         "weather": {"rain": ("#2e3a4a", 0.30), "snow": ("#d6dee6", 0.26), "cloud": ("#5a5e62", 0.18)},
+        "void": "#000000", "flash": ("#f2f6fa", "#1a2026", "#e8eef2"),
         "phases": {"dawn": ("#33363a", "#d2d5d8"), "day": ("#2b2e31", "#c6c9cc"),
                    "dusk": ("#39352f", "#bdb8b2"), "night": ("#9aa0a6", "#23262a")},
     },
@@ -28,6 +29,7 @@ THEMES = {
         "sil_day": "#101010", "sil_night": "#f0f0f0",
         "heart": "#d8d8d8", "energy": "#b8b8b8", "mood": "#a8a8a8", "life": "#c8c8c8", "coin": "#e8e8e8",
         "weather": {"rain": ("#1c1c1c", 0.32), "snow": ("#dcdcdc", 0.26), "cloud": ("#383838", 0.18)},
+        "void": "#000000", "flash": ("#ffffff", "#0c0c0c", "#e8e8e8"),
         "phases": {"dawn": ("#f0f0f0", "#141414"), "day": ("#e8e8e8", "#0c0c0c"),
                    "dusk": ("#e0c0a0", "#0c0a08"), "night": ("#9a9a9a", "#050505")},
     },
@@ -37,6 +39,7 @@ THEMES = {
         "sil_day": "#2a1c06", "sil_night": "#ffd877",
         "heart": "#ff7a3a", "energy": "#ffb000", "mood": "#e0923a", "life": "#ffc24a", "coin": "#ffd877",
         "weather": {"rain": ("#241a0c", 0.34), "snow": ("#ece0c8", 0.26), "cloud": ("#2e2410", 0.20)},
+        "void": "#000000", "flash": ("#ffe8b0", "#1a1206", "#ffd890"),
         "phases": {"dawn": ("#ffc23a", "#160f05"), "day": ("#ffb000", "#1a1206"),
                    "dusk": ("#ff8a3a", "#1a0f04"), "night": ("#a8741a", "#0d0903")},
     },
@@ -46,6 +49,7 @@ THEMES = {
         "sil_day": "#16202e", "sil_night": "#cfe0f5",
         "heart": "#e0884a", "energy": "#6fb0e0", "mood": "#9a8fe0", "life": "#5fc7b0", "coin": "#e0c060",
         "weather": {"rain": ("#0a1626", 0.36), "snow": ("#c4d8f0", 0.26), "cloud": ("#16223a", 0.22)},
+        "void": "#000000", "flash": ("#dce8f8", "#101826", "#c8d8f0"),
         "phases": {"dawn": ("#b9d2f0", "#15202f"), "day": ("#a9c8ee", "#101826"),
                    "dusk": ("#d0a070", "#181420"), "night": ("#6d86a8", "#0a0f18")},
     },
@@ -56,6 +60,8 @@ THEMES = {
         "sil_day": "#0f380f", "sil_night": "#d8e8a0",
         "heart": "#8a4a2a", "energy": "#2a6a8a", "mood": "#6a4a8a", "life": "#306230", "coin": "#8a7a1a",
         "weather": {"rain": ("#1a3020", 0.30), "snow": ("#e0e8c8", 0.26), "cloud": ("#3a4a28", 0.18)},
+        "void": "#0f380f", "flash": ("#e0f0c0", "#0f380f", "#d8e8a0"),
+        "bg_ramp": ("#0f380f", "#306230", "#8bac0f", "#9bbc0f"),   # the 4 DMG shades, dark -> light
         "phases": {"dawn": ("#1a4418", "#a8c83a"), "day": ("#0f380f", "#9bbc0f"),
                    "dusk": ("#3a3a10", "#a8a838"), "night": ("#7aa060", "#142810")},
     },
@@ -65,6 +71,7 @@ THEMES = {
         "sil_day": "#2a2620", "sil_night": "#f4efe4",
         "heart": "#a04a2a", "energy": "#3a6a8a", "mood": "#7a5a92", "life": "#567a68", "coin": "#967a2a",
         "weather": {"rain": ("#3a4450", 0.25), "snow": ("#f4f0e6", 0.30), "cloud": ("#6a655c", 0.16)},
+        "void": "#000000", "flash": ("#ffffff", "#2a2620", "#faf6ec"),
         "phases": {"dawn": ("#332e26", "#f4eee0"), "day": ("#2a2620", "#efe9dc"),
                    "dusk": ("#463a2c", "#e6dcc8"), "night": ("#9a948a", "#262218")},
     },
@@ -74,6 +81,7 @@ THEMES = {
         "sil_day": "#2a1a24", "sil_night": "#ffd0dc",
         "heart": "#ff7a8a", "energy": "#8ac8e8", "mood": "#c89ae8", "life": "#7ad0b0", "coin": "#f0c86a",
         "weather": {"rain": ("#1a1428", 0.34), "snow": ("#f0dce4", 0.26), "cloud": ("#32222c", 0.20)},
+        "void": "#000000", "flash": ("#ffe8f0", "#241820", "#f8d8e4"),
         "phases": {"dawn": ("#ffc8d8", "#2a1c26"), "day": ("#f0b8c8", "#241820"),
                    "dusk": ("#f0a878", "#241410"), "night": ("#9a7484", "#140c12")},
     },
@@ -83,6 +91,7 @@ THEMES = {
         "sil_day": "#0f2a2e", "sil_night": "#c8f0e8",
         "heart": "#f07a6a", "energy": "#6ac8e0", "mood": "#9a9ae8", "life": "#5ad0a0", "coin": "#e8c86a",
         "weather": {"rain": ("#06141e", 0.36), "snow": ("#c0dcd8", 0.26), "cloud": ("#0e2a30", 0.22)},
+        "void": "#000000", "flash": ("#e0f8f4", "#0a1e22", "#c8ece6"),
         "phases": {"dawn": ("#9ae0d8", "#0e262a"), "day": ("#7fd8d0", "#0a1e22"),
                    "dusk": ("#d0a068", "#14201e"), "night": ("#4a8a84", "#05130f")},
     },
@@ -93,7 +102,7 @@ _current = _DEFAULT
 
 _NAMES = ("LCD_ON", "LCD_BG", "MID", "INK", "INK_B", "DIM", "SEL", "ACCENT",
           "POS", "NEG", "BORDER", "SIL_DAY", "SIL_NIGHT", "PHASE_PALETTE",
-          "HEART", "ENERGY", "MOOD", "LIFE", "COIN")
+          "HEART", "ENERGY", "MOOD", "LIFE", "COIN", "VOID", "FLASH")
 # (the hand-maintained _SCREEN_MODULES registry is gone -- apply() discovers
 # palette-bound modules from sys.modules; hardening 2026-07-05)
 
@@ -104,7 +113,8 @@ _SNOW = {"LightSnow", "Snowing", "HeavySnow"}
 # apply(_DEFAULT) runs at import (bottom of file) and overwrites these with the live
 # theme via globals().update(_derive(...)); they are never actually the empties below.
 LCD_ON = LCD_BG = MID = INK = INK_B = DIM = SEL = ACCENT = POS = NEG = BORDER = ""
-SIL_DAY = SIL_NIGHT = HEART = ENERGY = MOOD = LIFE = COIN = ""
+SIL_DAY = SIL_NIGHT = HEART = ENERGY = MOOD = LIFE = COIN = VOID = ""
+FLASH: tuple = ("", "", "")
 PHASE_PALETTE: dict = {}
 WEATHER: dict = {}
 
@@ -119,7 +129,38 @@ def _derive(t):
         "SIL_DAY": t["sil_day"], "SIL_NIGHT": t["sil_night"], "PHASE_PALETTE": t["phases"],
         "HEART": t["heart"], "ENERGY": t["energy"], "MOOD": t["mood"],
         "LIFE": t["life"], "COIN": t["coin"], "WEATHER": t["weather"],
+        "VOID": t["void"], "FLASH": t["flash"],
     }
+
+
+_BG_MAPS: dict = {}          # theme name -> {6-hex: "#rrggbb"} memo (grows per bg art)
+
+
+def bg_map():
+    """The active theme's background quantizer, or None for full colour.
+
+    A theme that declares `bg_ramp` (gameboy: the 4 DMG shades) renders ALL
+    habitat/core background art through it -- each pixel's luminance picks a
+    ramp shade, so the LCD never shows a colour off the device's palette
+    (Joel 2026-07-05: gameboy backgrounds looked full-colour).  Returns a
+    memoized 6-hex-chars -> "#rrggbb" mapper; render._paint_cells is the one
+    caller, so every bgimg path (weather tints, cross-fades, lightning)
+    inherits it."""
+    ramp = THEMES[_current].get("bg_ramp")
+    if not ramp:
+        return None
+    cache = _BG_MAPS.setdefault(_current, {})
+    n = len(ramp)
+
+    def q(h, _c=cache, _r=ramp, _n=n):
+        v = _c.get(h)
+        if v is None:
+            lum = (299 * int(h[0:2], 16) + 587 * int(h[2:4], 16)
+                   + 114 * int(h[4:6], 16)) // 1000
+            v = _r[min(_n - 1, lum * _n // 256)]
+            _c[h] = v
+        return v
+    return q
 
 
 def apply(name, propagate=True):

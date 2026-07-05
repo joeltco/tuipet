@@ -90,7 +90,7 @@ def test_apply_unknown_theme_falls_back():
 
 _REQUIRED = {"on", "bg", "mid", "accent", "pos", "neg", "border",
              "sil_day", "sil_night", "heart", "energy", "mood", "life", "coin",
-             "weather", "phases"}
+             "weather", "phases", "void", "flash"}
 _HEX = re.compile(r"^#[0-9a-fA-F]{6}$")
 
 
@@ -98,8 +98,16 @@ def test_every_theme_carries_the_full_key_set():
     for name, t in theme.THEMES.items():
         missing = _REQUIRED - set(t)
         assert not missing, f"{name} lacks {missing}"
-        for k in _REQUIRED - {"weather", "phases"}:
+        for k in _REQUIRED - {"weather", "phases", "flash"}:
             assert _HEX.match(t[k]), f"{name}.{k} = {t[k]!r} is not a hex colour"
+        assert len(t["flash"]) == 3 and all(_HEX.match(c) for c in t["flash"]), \
+            f"{name}.flash must be (blend, ink, bg) hex triple"
+        ramp = t.get("bg_ramp")
+        if ramp:                                  # optional: quantized background art
+            assert len(ramp) >= 2 and all(_HEX.match(c) for c in ramp), name
+            lums = [(299 * int(c[1:3], 16) + 587 * int(c[3:5], 16)
+                     + 114 * int(c[5:7], 16)) // 1000 for c in ramp]
+            assert lums == sorted(lums), f"{name}.bg_ramp must run dark -> light"
         assert set(t["phases"]) == {"dawn", "day", "dusk", "night"}, name
         for ph, (on, bg) in t["phases"].items():
             assert _HEX.match(on) and _HEX.match(bg), f"{name}.phases.{ph}"
@@ -136,3 +144,50 @@ def test_load_sprites_cache_is_intact():
     assert data.load_sprites() is data.load_sprites()
     assert data.load_icons() is data.load_icons()
     assert data.load_effects() is data.load_effects()
+
+
+# ---- gameboy background palette (Joel 2026-07-05: "gameboy theme uses
+# gameboy like palettes for lcd backgrounds") ----------------------------------
+
+_DMG = ("#0f380f", "#306230", "#8bac0f", "#9bbc0f")
+
+
+def test_gameboy_declares_the_dmg_ramp():
+    assert theme.THEMES["gameboy"]["bg_ramp"] == _DMG
+    assert theme.THEMES["gameboy"]["void"] == "#0f380f"   # lights-off stays on-palette
+
+
+def test_bg_map_quantizes_only_when_the_theme_declares_a_ramp():
+    try:
+        theme.apply("grey")
+        assert theme.bg_map() is None                     # full colour passes through
+        theme.apply("gameboy")
+        q = theme.bg_map()
+        assert q is not None
+        for h in ("000000", "ff0000", "00ff00", "ffffff", "9bbc0f", "808080"):
+            assert q(h) in _DMG, f"{h} mapped off-palette: {q(h)}"
+        assert q("000000") == _DMG[0] and q("ffffff") == _DMG[-1]
+    finally:
+        theme.apply("grey")
+
+
+def test_gameboy_renders_background_art_entirely_on_palette():
+    """Every bgimg pixel crosses render._paint_cells -- under gameboy the LCD
+    must never show a colour off the 4-shade DMG ramp (sprite ink aside)."""
+    import re as _re
+    from tuipet.render import render_scene
+    rowlen = 8
+    frame = ["".join(("%02x%02x%02x" % (17 * i, 9 * i, 23 * i % 256)) for i in range(rowlen))
+             for _ in range(4)]                            # 2 char-rows of varied colour
+    try:
+        theme.apply("gameboy")
+        txt = render_scene([], rowlen, 2, theme.LCD_ON, theme.LCD_BG, bgimg=frame)
+        colours = set(_re.findall(r"#[0-9a-f]{6}", str(txt.markup)))
+        off = colours - set(_DMG) - {theme.LCD_ON}
+        assert not off, f"off-palette colours leaked: {off}"
+        theme.apply("grey")
+        txt = render_scene([], rowlen, 2, theme.LCD_ON, theme.LCD_BG, bgimg=frame)
+        colours = set(_re.findall(r"#[0-9a-f]{6}", str(txt.markup)))
+        assert "#" + frame[0][0:6] in colours              # grey passes raw art through
+    finally:
+        theme.apply("grey")

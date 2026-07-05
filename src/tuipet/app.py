@@ -46,7 +46,7 @@ from . import grid
 import os
 
 from . import theme
-from .theme import LCD_ON, LCD_BG, PHASE_PALETTE, SIL_DAY, SIL_NIGHT
+from .theme import LCD_ON, LCD_BG, PHASE_PALETTE, SIL_DAY, SIL_NIGHT, VOID, FLASH
 SCREEN_COLS, SCREEN_ROWS = 40, 12
 SPRITE_W = 16                                   # native creature sprite width
 PET_BASE_X = (SCREEN_COLS - SPRITE_W) // 2      # the fx painter's centred-pet origin
@@ -380,7 +380,7 @@ class Screen(Static):
         on, bg = PHASE_PALETTE.get(phase, (LCD_ON, LCD_BG))
         bgimg = self._background(pet)
         if not pet.lights:                 # lights off (the 's' lights button): dark room (+ Zzz if asleep)
-            bgimg, bg, on = None, "#000000", SIL_NIGHT   # DVPet lightsOff.png is pure (0,0,0)
+            bgimg, bg, on = None, VOID, SIL_NIGHT   # DVPet lightsOff.png is pure (0,0,0); VOID keeps it on-palette
         elif bgimg:
             on = SIL_DAY   # dark silhouette day OR night -- the pet is never white;
             #                white (SIL_NIGHT) is reserved for the lights-out Zzz below
@@ -399,9 +399,9 @@ class Screen(Static):
             self.thunder_i -= 1
             if (self.thunder_i % 4) < 2:
                 if bgimg:
-                    bgimg = theme.blend_frame(bgimg, "#f2f6fa", 0.55)
+                    bgimg = theme.blend_frame(bgimg, FLASH[0], 0.55)
                 else:
-                    on, bg = "#1a2026", "#e8eef2"
+                    on, bg = FLASH[1], FLASH[2]
         wf = self.frame_i // 4                  # weather/effect overlays keep their ~0.4s cadence
         if pet.dead:                           # a grave marker (the live path builds its own overlay below)
             overlay = (_weather_overlay(pet.weather, wf, SCREEN_COLS, SCREEN_ROWS * 2)
@@ -693,7 +693,7 @@ class Screen(Static):
             # design call (polish 2026-07): the dark room stays dark through a
             # care fx -- lights-off is room STATE (DVPet's lightsOff roomEffect),
             # not a backdrop an anim may replace; evolve owns its own darkness
-            bgimg, bg, on = None, "#000000", SIL_NIGHT
+            bgimg, bg, on = None, VOID, SIL_NIGHT
         c = _FxCtx()
         c.px_h = SCREEN_ROWS * 2
         c.bg, c.bgimg = bg, bgimg
@@ -996,8 +996,8 @@ class Screen(Static):
         if burst:
             # "evol" burst: the room shows through DVPet's 50% dither mask
             _evol_strobe(c)
-        else:                                              # lightsOff beats: pure black, pet hidden
-            c.rows, c.bgimg, c.bg = [], None, "#000000"
+        else:                                              # lightsOff beats: the void, pet hidden
+            c.rows, c.bgimg, c.bg = [], None, VOID
 
     def _fxk_inherit(self, pet, fx, step, c):
         # DVPet inheriting(): the pet stands RIGHT (locX width-3-size); the chip

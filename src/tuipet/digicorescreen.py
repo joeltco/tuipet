@@ -14,7 +14,7 @@ from __future__ import annotations
 from . import data, evolution, grid, lines  # noqa: F401  (pet methods drive the data)
 from .render import render_scene
 
-from .theme import LCD_ON, LCD_BG, INK, INK_B, DIM, SIL_DAY, SIL_NIGHT  # noqa: F401  (theme.apply propagation)
+from .theme import LCD_ON, LCD_BG, INK, INK_B, DIM, SIL_DAY, SIL_NIGHT, VOID  # noqa: F401  (theme.apply propagation)
 from . import menu
 
 DIGICORE_BASE_RATE = 14            # DigicoreBaseRate (config.csv col 1)
@@ -487,7 +487,7 @@ class DigiCorePanel:
         if self.teaser:
             return self._teaser_scene()
         if self._back_t:                              # evolSilhouetteBack: dark blink
-            return render_scene([], 40, SCENE_ROWS, SIL_NIGHT, "#000000")
+            return render_scene([], 40, SCENE_ROWS, SIL_NIGHT, VOID)
         if self.detail is not None:
             return self._detail_scene()
         if self.i == 0:
