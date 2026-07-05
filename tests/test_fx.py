@@ -175,3 +175,71 @@ def test_bag_toy_plays_the_hop_over_its_real_toy():
         fx = dict(s.fx, icon=icon, step=3)
         app_mod.Screen._fxk_play(s, p, fx, 3, c)
     assert len(c1.overlay) > len(c2.overlay)      # the toy's pixels are there
+
+
+def test_hatch_render_follows_the_canon_beats():
+    """Hatch-anim audit 2026-07-05: DVPet hatch() -- the egg rocks +-3 over
+    beats 4..15 (smooth +3/+6/+3/0 oscillation), cracks (pose 1) at 16, the
+    baby peeks (pose 2) at 19.  int((3.0-t)/0.1) TRUNCATED binary floats and
+    made the rock stutter and the crack land a beat late; the beat is rounded
+    now.  Pinned through the real paint path on both drive styles (direct
+    timer set AND accumulated advance_hatch subtraction)."""
+    from tuipet import app as app_mod
+    from tuipet import egg as egg_mod
+    from tuipet.pet import Pet
+
+    cap = {}
+    real = app_mod.render_screen
+
+    def spy(rows, cols, r, on, bg, mirror=False, xshift=0, overlay=None, bgimg=None):
+        cap["rows"], cap["xshift"] = rows, xshift
+        return real(rows, cols, r, on, bg, mirror=mirror, xshift=xshift,
+                    overlay=overlay, bgimg=bgimg)
+
+    class S(app_mod.Screen):
+        def __init__(self):
+            self.anim_key = None
+            self.frame_i = 0
+            self.fx = None
+            self.thunder_i = 0
+
+        def update(self, t):
+            pass
+
+    old = app_mod.render_screen
+    app_mod.render_screen = spy
+    try:
+        frames = egg_mod.record(1)["frames"]
+
+        def drive(step_fn, pet):
+            seq = []
+            for beat in range(30):
+                step_fn(pet, beat)
+                S.paint(s, pet)
+                which = next((i for i, f in enumerate(frames) if f == cap["rows"]), None)
+                seq.append((which, cap["xshift"]))
+            return seq
+
+        s = S()
+        p = Pet.new_egg(egg_type=1)
+        p.stage_seconds = 9e9
+        p._tick_egg()
+        assert p.hatching
+        direct = drive(lambda q, b: setattr(q, "_hatch_t", 3.0 - b * 0.1), p)
+        p2 = Pet.new_egg(egg_type=1)
+        p2.stage_seconds = 9e9
+        p2._tick_egg()
+        acc = []
+        for beat in range(30):
+            S.paint(s, p2)
+            which = next((i for i, f in enumerate(frames) if f == cap["rows"]), None)
+            acc.append((which, cap["xshift"]))
+            p2.advance_hatch(0.1)
+        for seq in (direct, acc):
+            assert [w for w, x in seq[:16]] == [0] * 16          # whole egg
+            assert [w for w, x in seq[16:19]] == [1] * 3         # the crack
+            assert all(w == 2 for w, x in seq[19:])              # the baby peeks
+            assert [x for w, x in seq[4:16]] == [3, 6, 3, 0] * 3  # the smooth rock
+            assert all(x == 0 for w, x in seq[:4]) and all(x == 0 for w, x in seq[16:])
+    finally:
+        app_mod.render_screen = old

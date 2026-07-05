@@ -440,7 +440,10 @@ class Screen(Static):
             # DVPet hatch() (SpriteAnim 11556), driven by elapsed hatch time (1 interval==0.1s):
             # the egg rocks (moveRight/Left 3) over intervals 4..15, then CRACKS -- drawNum(1)
             # at interval 16, drawNum(2) at interval 19 -- revealing the baby before the Fresh.
-            n = int((3.0 - getattr(pet, "_hatch_t", 3.0)) / 0.1)
+            # round, don't truncate: 0.4/0.1 is 3.999... in binary floats, and a
+            # truncated beat makes the rock STUTTER (0,+6,+3,0,0,...) and the
+            # crack land late (hatch-anim audit 2026-07-05)
+            n = int(round((3.0 - getattr(pet, "_hatch_t", 3.0)) / 0.1))
             pos = 0
             for k in range(4, min(n, 15) + 1):             # +3,+3 then -3,-3, repeating
                 pos += 3 if ((k - 4) // 2) % 2 == 0 else -3
