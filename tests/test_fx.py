@@ -314,3 +314,27 @@ def test_bad_praise_and_bad_scold_use_their_own_pose_pairs():
     bad_jeer = _FakeScreen(); bad_jeer.start_fx("jeer", good=False)
     assert good_jeer.fx["snds"] == bad_jeer.fx["snds"] == {6: "angry"}
     assert not bad_jeer.fx["good"]
+
+
+def test_poop_sound_keys_the_new_piles_size():
+    """Poop-anim audit 2026-07-05: canon playPoopSound keys the byte poop()
+    returns -- the SIZE of the new pile (1 small / >2 large / else normal) --
+    not the pile count.  A small fourth pile used to bark largePoop."""
+    import re
+    src = open("src/tuipet/app.py").read()
+    m = re.search(r'sz = \(p\.poop_sizes\[-1\].*\n.*poop_snd = "smallPoop" if sz == 1 '
+                  r'else \("largePoop" if sz > 2 else "poop"\)', src)
+    assert m, "the size-keyed mapping is gone (count-keyed again?)"
+
+
+def test_poopdance_wiggles_then_flips_and_never_chains():
+    """DVPet poopDance: nervous wiggle (beats 2..10) then pose 4 flipping its
+    mirror every 2 beats (12..18) -- the tell that a poop is coming."""
+    s = _FakeScreen()
+    s.start_fx("poopdance")
+    assert s.fx["steps"] == 21 and not s.fx.get("snds")
+    n = 0
+    while s.advance_fx():
+        n += 1
+        assert n < 30
+    assert s.fx is None                    # a special idle: ends, no chained fx

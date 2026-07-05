@@ -499,7 +499,7 @@ class Screen(Static):
 
     # ---- care-action animations (DVPet SpriteAnim eat/clean/cheer) -----------
     def start_fx(self, kind, icon=None, poop=0, old_num=None, pet=None, starving=False, good=True):
-        steps = {"eat": 35, "cheer": 31, "jeer": 31, "clean": 22, "spit": 25, "evolve": 41, "dying": 50, "dna_charge": 44, "play": 48, "heal": 24, "poop": 25,
+        steps = {"eat": 35, "cheer": 31, "jeer": 31, "clean": 22, "spit": 25, "evolve": 41, "dying": 50, "dna_charge": 44, "play": 48, "heal": 24, "poop": 25, "poopdance": 21,
                  "gift": GIFT_OUT + GIFT_BACK + GIFT_HOLD, "assist": 28, "inherit": 50}.get(kind, 12)
         self.fx = {"kind": kind, "step": 0, "steps": steps, "icon": icon, "poop": poop,
                    "old_num": old_num, "good": good}
@@ -1050,6 +1050,19 @@ class Screen(Static):
             ix = max(0, PET_BASE_X - bw)
             iy = 0 if step < 4 else 4                      # setLocY 53 -> 64 at beat 4
             c.overlay += _blit(bm, ix, iy)
+
+    def _fxk_poopdance(self, pet, fx, step, c):
+        # DVPet poopDance (a special-idle roll while the gauge is full): a
+        # nervous wiggle (+-1 every other beat, 2..10) then pose 4 flipping its
+        # mirror every 2 beats (12..18) -- the tell that a poop is coming.
+        # tuipet's gauge fires the poop the moment it fills, so the dance rolls
+        # while the need APPROACHES instead (>=80%% of the interval).
+        if step <= 10:
+            c.rows = self._pose_rows_idx(pet, 0)
+            c.xshift += -1 if (step // 2) % 2 == 1 else 0
+        else:
+            c.rows = self._pose_rows_idx(pet, 4)
+            c.mirror = ((step - 12) // 2) % 2 == 1
 
     def _fxk_dying(self, pet, fx, step, c):
         # DVPet dying() (SpriteAnim 13179): the collapsed pet (pose 10, mirrored)
@@ -1900,6 +1913,14 @@ class TuiPetApp(App):
                 sc.thunder_i = 14
                 if p.anim in ("idle", "walk") and not p.asleep:
                     p._set_anim("surprise", 1.4)
+            # DVPet poopDance: a special-idle roll while the gauge is full --
+            # tuipet fires the poop the moment the gauge fills, so the nervous
+            # dance rolls while the need APPROACHES (>=80% of the interval)
+            if (not p.dead and p.stage != "Egg" and not p.asleep
+                    and p.anim in ("idle", "walk")
+                    and getattr(p, "_poop_t", 0) >= 0.8 * p._poop_interval
+                    and random.randrange(40) == 0):
+                sc.start_fx("poopdance")
             sc.advance(self.pet)
             sc.paint(self.pet)
 
@@ -1937,9 +1958,11 @@ class TuiPetApp(App):
                 else:
                     self._pending_evolve = prev[0]
         elif p.poop > poop0:
-            # DVPet playPoopSound is size-keyed: small / normal / large.  Map the new
-            # pile count -> first drop is small, a big backup (>=3) is large.
-            poop_snd = "smallPoop" if p.poop == 1 else ("largePoop" if p.poop >= 3 else "poop")
+            # DVPet playPoopSound keys the byte poop() RETURNS -- the SIZE of the
+            # new pile (f==1 small, f>2 large, else normal) -- not the pile count
+            # (poop-anim audit 2026-07-05: a small fourth pile barked largePoop)
+            sz = (p.poop_sizes[-1] if getattr(p, "poop_sizes", None) else 2)
+            poop_snd = "smallPoop" if sz == 1 else ("largePoop" if sz > 2 else "poop")
             if self.screen_w.fx is None:
                 # DVPet poop(): squat/sway then the pile lands at t18 with its sound
                 self.screen_w.start_fx("poop", poop=poop0)
