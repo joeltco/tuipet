@@ -60,7 +60,11 @@ def test_backdrop_follows_highest_charged_dna():
 
 
 def test_silhouette_blacks_out_the_body():
-    assert silhouette(["0110", "1001", "0000"]) == ["0110", "1111", "0000"]
+    # flood-fill mask (2026-07-04): ENCLOSED interior blacks out...
+    assert silhouette(["0110", "1001", "0110"]) == ["0110", "1111", "0110"]
+    # ...but a bay open to the edge stays clear (the old scanline fill bridged
+    # every concavity into one melted blob -- "the shape is out of resolution")
+    assert silhouette(["1001", "1001", "1111"]) == ["1001", "1001", "1111"]
 
 
 def test_panel_core_page_and_teaser_flow():
@@ -204,15 +208,17 @@ def test_teaser_zooms_in_then_holds_a_still_silhouette():
     panel = DigiCorePanel(p)
     panel.key("space")
     early = panel.text().markup
-    for _ in range(3):                               # k steps 1x -> 2x at beat 3
+    for _ in range(EXPAND_T // 2):                   # k steps 1x -> 2x at half-beat
         panel.anim()
     grown = panel.text().markup
     assert early != grown                            # the badge grows through the beats
     for _ in range(EXPAND_T):
         panel.anim()
-    a = panel.text().markup
-    panel.anim()
-    assert panel.text().markup == a                  # the silhouette holds still
+    frames = []
+    for _ in range(21):                              # the ghost SHIMMERS between
+        frames.append(panel.text().markup)           # exactly two dither phases
+        panel.anim()                                 # (no pose flicker)
+    assert len(set(frames)) == 2
     panel.key("escape")
     assert panel._back_t > 0
     assert "000000" in panel.text().markup           # the dark blink out

@@ -71,12 +71,54 @@ def core_background(pet):
 
 
 def silhouette(rows):
-    """ViewUtil.getSilhouetteImage on 1-bit art: black the whole body out
-    (scanline fill between the outline's extremes)."""
+    """ViewUtil.getSilhouetteImage on 1-bit art: black the sprite's OPAQUE
+    MASK.  Canon blackens every non-transparent pixel; our 1-bit equivalent is
+    an exterior flood fill -- any '0' NOT reachable from outside the sprite is
+    enclosed body and goes black, while real gaps (between wings, under arms)
+    stay clear.  (The old per-row scanline fill bridged every concavity into
+    one melted blob -- Joel: 'the shape is out of resolution', 2026-07-04.)"""
+    if not rows:
+        return rows
+    w = max(len(r) for r in rows)
+    g = [list(r.ljust(w, "0")) for r in rows]
+    h = len(g)
+    # flood the EXTERIOR from every border '0' (4-connected)
+    stack = [(x, y) for x in range(w) for y in (0, h - 1) if g[y][x] == "0"]
+    stack += [(x, y) for y in range(h) for x in (0, w - 1) if g[y][x] == "0"]
+    outside = set(stack)
+    while stack:
+        x, y = stack.pop()
+        for nx, ny in ((x - 1, y), (x + 1, y), (x, y - 1), (x, y + 1)):
+            if 0 <= nx < w and 0 <= ny < h and g[ny][nx] == "0" and (nx, ny) not in outside:
+                outside.add((nx, ny))
+                stack.append((nx, ny))
+    return ["".join("0" if (x, y) in outside else "1" for x in range(w))
+            for y in range(h)]
+
+
+def ghost(mask, phase=0):
+    """The teaser's unresolved-data look: the mask's CONTOUR stays crisp while
+    the interior renders as a 50% dither (the evolve strobe's own idiom),
+    shimmering with `phase`.  A solid 16px mask carries no shape information
+    -- it read as a broken blob (Joel: 'the shape is out of resolution');
+    canon's solid silhouette only works at 48px."""
+    if not mask:
+        return mask
+    w = max(len(r) for r in mask)
+    g = [r.ljust(w, "0") for r in mask]
+    h = len(g)
     out = []
-    for r in rows:
-        a, b = r.find("1"), r.rfind("1")
-        out.append(r if a < 0 else r[:a] + "1" * (b - a + 1) + r[b + 1:])
+    for y in range(h):
+        row = []
+        for x in range(w):
+            if g[y][x] != "1":
+                row.append("0")
+                continue
+            edge = (x == 0 or y == 0 or x == w - 1 or y == h - 1
+                    or g[y][x - 1] == "0" or g[y][x + 1] == "0"
+                    or g[y - 1][x] == "0" or g[y + 1][x] == "0")
+            row.append("1" if edge or (x + y + phase) % 2 == 0 else "0")
+        out.append("".join(row))
     return out
 
 
@@ -344,7 +386,10 @@ class DigiCorePanel:
             badge = data.load_effects().get(core_badge_key(p) or "core_xnone", [None])[0]
             overlay = []
             if badge:
-                k = 1 + (self.teaser_t * 3) // EXPAND_T   # integer upscale 1x -> 3x
+                # 1x -> 2x only: a 3x nearest-neighbour blow-up read as chunky
+                # pixel soup on the tiny window (the "sloppy" note, 2026-07-04)
+                k = 1 + self.teaser_t // (EXPAND_T // 2)
+                k = min(k, 2)
                 big = ["".join(ch * k for ch in r) for r in badge for _ in range(k)]
                 bw, bh = max(len(r) for r in big), len(big)
                 ox, oy = (40 - bw) // 2, (CORE_ROWS * 2 - bh) // 2
@@ -363,7 +408,9 @@ class DigiCorePanel:
             out.append("\n")
             out.append_text(menu.note("Nothing stirs — this is its final form."))
         else:
-            sil = silhouette(self._pet_rows(nxt, idx=0) or [])   # canon: frame 0, still
+            # frame 0 mask (canon: still), crisp contour + shimmering interior
+            sil = ghost(silhouette(self._pet_rows(nxt, idx=0) or []),
+                        phase=(self.frame_i // 5) % 2)
             placements = [self._core_place(sil)] if sil else []
             out.append_text(render_scene(placements, 40, CORE_ROWS, LCD_ON, LCD_BG))
             out.append("\n")
