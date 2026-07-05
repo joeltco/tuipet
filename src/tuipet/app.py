@@ -604,6 +604,8 @@ class Screen(Static):
             return True
         kind = self.fx["kind"]
         had_filth = self.fx.get("poop", 0) > 0
+        chain_eat = self.fx.get("chain_eat")
+        pet_ref = self.fx.get("pet_ref")
         self.fx = None
         if kind == "clean" and had_filth:
             # DVPet clean(): the cheer chains ONLY when filth was actually washed
@@ -624,6 +626,13 @@ class Screen(Static):
         elif kind == "toilet":
             # poopToilet frame 37: toiletTrain'd and proud -- chained cheer
             self.start_fx("cheer")
+        elif kind == "assist" and chain_eat:
+            # assistantFeed runs the STANDARD eat underneath (canon
+            # eat(Assistant_Feed)); the meal is already on the floor, so the
+            # chained eat skips its own descent stages
+            self.start_fx("eat", chain_eat, pet=pet_ref,
+                          starving=getattr(pet_ref, "_last_meal_starving", False))
+            self.fx["step"] = 6
         elif kind == "inherit":
             # inheriting() tail: the strobe resolves into the celebration poses.
             self.start_fx("cheer")
@@ -802,42 +811,54 @@ class Screen(Static):
         # a clean the piles sweep RIGHT off-screen (filthLabel.moveRight(4) each
         # descent beat) -- the OPPOSITE of your wash, which shoves them left.
         act = fx.get("act")
-        # the pet gives ground as the helper arrives (DVPet assistantLights
-        # moveRight(2) per descent beat) and drifts back as it leaves --
-        # 4+16 | 20+16 fills the grid band x[4,36) with both sprites abutted
-        if step < 8:
-            c.xshift = min(8, step * 2)
-        elif step < 20:
-            c.xshift = 8
-        else:
-            c.xshift = max(0, 8 - (step - 19) * 2)
-        if act in ("feed", "strength") and 8 <= step < 20:
-            # Assistant_Feed shares eatAnim: open-mouth(+8)/chew(+7) alternation
-            c.rows = self._pose_rows_idx(pet, 8 if (step // 3) % 2 == 0 else 7)
-        elif pet.asleep:
+        feed = act in ("feed", "strength")
+        if not feed:
+            # the pet gives ground as the helper arrives (DVPet assistantLights
+            # moveRight(2) per descent beat) and drifts back as it leaves --
+            # 4+16 | 20+16 fills the grid band x[4,36) with both sprites abutted
+            if step < 8:
+                c.xshift = min(8, step * 2)
+            elif step < 20:
+                c.xshift = 8
+            else:
+                c.xshift = max(0, 8 - (step - 19) * 2)
+        if pet.asleep:
             c.rows = self._pose_rows(pet, "sleep", step // 2)
         if act == "clean" and fx.get("poop"):
             c.overlay += _filth_pts(pet, self.frame_i, count=fx["poop"],
                                     sizes=fx.get("sizes"), push=-step * 3, px_h=c.px_h)
-        if act in ("feed", "strength") and step >= 4:
-            food = self._food_frames(fx.get("icon") or "f:44")
-            if food:
-                fw = len(food[0][0]) if (food[0] and food[0][0]) else 8
-                fb = fx.get("food_beats") or (12, 16, 20)
-                fi = 0 if step < fb[0] else 1 if step < fb[1] else 2 if step < fb[2] else 3
-                fr_ = food[min(fi, len(food) - 1)]
-                if fr_:                                    # a consumed-away frame may be empty
-                    # handed straight to the mouth -- no descent; it appears held out
-                    c.overlay += _blit(fr_, max(0, PET_BASE_X + c.xshift - fw),
-                                       c.px_h - 2 - 8 - 4)
         _, by_num = data.load_sprites()
         rec = by_num.get(fx.get("helper", -1))
         fr = rec["frames"] if rec else None
         hf = (fr[0] if fr and fr[0] else next((f for f in fr if f), None)) if fr else None
+        hh = len(hf) if hf else 16
+        ground = c.px_h - hh - 2
+        if feed:
+            # canon assistantFeed: the helper walks the MEAL in -- descends
+            # WITH the food, sets it down at the eat spot, and EXITS LEFT by
+            # beat 10 (moveLeft 24 x2); the standard eat anim (chained) takes
+            # it from there
+            food = self._food_frames(fx.get("icon") or "f:44")
+            f0 = food[0] if (food and food[0]) else None
+            fw = len(f0[0]) if f0 else 8
+            fx_x = max(0, PET_BASE_X - 1 - fw)             # the eat anim's food spot
+            hff = [row[::-1] for row in hf] if hf else None   # faces the pet
+            if step < 7:                                   # the walk-in
+                hy = -hh + (step + 1) * (ground + hh) // 7
+                hx = 2
+                if hff and hy > -hh:
+                    c.overlay += _blit(hff, hx, hy)
+                if f0:
+                    c.overlay += _blit(f0, hx + 10, max(0, hy + hh // 2))
+            else:                                          # set down + exit left
+                hx = 2 - (step - 6) * 8
+                if hf and hx > -20:                        # native facing: walking LEFT out
+                    c.overlay += _blit(hf, hx, ground)
+                if f0:
+                    c.overlay += _blit(f0, fx_x, c.px_h - 2 - len(f0))
+            return
         if hf:
             hf = [row[::-1] for row in hf]                 # flipped to face the pet
-            hh = len(hf)
-            ground = c.px_h - hh - 2
             if step < 8:
                 hy = -hh + (step + 1) * (ground + hh) // 8   # moveDown beats
             elif step < 20:
@@ -2048,8 +2069,11 @@ class TuiPetApp(App):
             self.screen_w.fx["sizes"] = sizes
             self.screen_w.fx["helper"] = p.assistant_num
             if act in ("feed", "strength"):
-                # Assistant_Feed shares eatAnim's sounds: _eat per bite, _lastBite last
-                self.screen_w.fx["snds"] = {12: "eat", 16: "eat", 20: "lastBite"}
+                # assistantFeed: the drop-off round is short; the REAL eat anim
+                # (with its own bite sounds / pace / grimace) chains after
+                self.screen_w.fx["steps"] = 12
+                self.screen_w.fx["chain_eat"] = self.screen_w.fx["icon"]
+                self.screen_w.fx["pet_ref"] = p
         note = getattr(p, "assist_note", "")
         if note:
             self.flash(note)

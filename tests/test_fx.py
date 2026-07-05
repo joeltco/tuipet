@@ -353,3 +353,28 @@ def test_battle_defeat_gets_the_wash_sweep_off():
         n += 1
         assert n < 60
     assert s.fx is None                        # a loss ends unceremonious: no chain
+
+
+def test_assistant_feed_drops_off_and_chains_the_real_eat():
+    """Assist-anim audit 2026-07-05: canon assistantFeed places the meal and
+    EXITS LEFT by beat 10 while the STANDARD eat anim runs (eat(Assistant_Feed))
+    -- tuipet kept the helper on-screen through a simplified 12-beat chew.
+    Now: a 12-step drop-off, then the real eat fx chains with its descent
+    stages skipped (the meal is already on the floor)."""
+    from tuipet.pet import Pet
+    p = Pet(num=102, name="D", stage="Champion", attribute="Virus")
+    p.world_seconds = 12 * 60.0
+    s = _FakeScreen()
+    s.start_fx("assist", pet=p, poop=0, icon="f:44")
+    s.fx["act"] = "feed"
+    s.fx["steps"] = 12
+    s.fx["chain_eat"] = "f:44"
+    s.fx["pet_ref"] = p
+    n = 0
+    while s.fx and s.fx["kind"] == "assist":
+        s.advance_fx()
+        n += 1
+        assert n < 20
+    assert s.fx is not None and s.fx["kind"] == "eat"
+    assert s.fx["step"] == 6                    # descent skipped: it's already down
+    assert s.fx["bite_snds"]                    # the real eat carries its own stings

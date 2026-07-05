@@ -73,8 +73,9 @@ def _referenced_names():
             if re.search(r"\bsfx\s*=", line):
                 for a, b in re.findall(r'"(\w+)"\s+if\s+.+?\s+else\s+"(\w+)"', line):
                     names.update((a, b))
-        for m in re.finditer(r'snds"?\]?\s*=\s*\{([^}]*)\}', s):   # beat-keyed fx maps
-            names.update(re.findall(r'\d+:\s*"([a-zA-Z][a-zA-Z0-9]*)"', m.group(1)))
+        for m in re.finditer(r'(?:bite_)?snds"?\]?\s*=\s*\{([^}]*)\}', s):   # beat-keyed fx maps
+            # keys may be computed (bite_snds uses pow-scaled beats): match VALUES
+            names.update(re.findall(r'[^,{]+?:\s*"([a-zA-Z][a-zA-Z0-9]*)"', m.group(1)))
         names.update(re.findall(r'"(thunder\d?)"', s))    # the storm crack picks
         names.update(re.findall(r'"((?:small|large)Poop|poop)"', s))   # size-keyed picks
     return names
