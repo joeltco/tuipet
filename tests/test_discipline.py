@@ -113,3 +113,26 @@ def test_nutrition_is_browsable_and_the_pills_are_reachable():
     # minerals come from FOOD (peppers/bread/veg), pinned via the feed loader
     pep = next(f for f in data.load_foods() if f["key"] == "f:35")
     assert (pep.get("mineral") or 0) >= 10
+
+
+def test_cleaning_builds_obedience_by_disposition():
+    """Clean audit 2026-07-05: canon clean() adds CleanObedienceInc (1, sunny
+    2, sour 0) alongside the mood lift -- tuipet was mood-only.  Cleaning an
+    empty room earns nothing (canon gates on isFilth)."""
+    from tuipet.pet import CLEAN_OBED_INC, CLEAN_MOOD_INC
+    import csv, os
+    cfg = {r[0]: r[1] for r in csv.reader(open(os.path.join(
+        os.path.dirname(__file__), "..",
+        "_extract/game/DVPetTest/jar/Model/config.csv"))) if r}
+    assert int(cfg["CleanMoodInc"]) == CLEAN_MOOD_INC
+    assert int(cfg["CleanObedienceInc"]) == CLEAN_OBED_INC[0]
+    assert int(cfg["CleanObedienceIncHighDisposition"]) == CLEAN_OBED_INC[1]
+    assert int(cfg["CleanObedienceIncLowDisposition"]) == CLEAN_OBED_INC[-1]
+    for dispo, gain in ((0, 1), (1, 2), (-1, 0)):
+        p = _pet(disposition=dispo, poop=2, poop_sizes=[2, 2], obedience=10)
+        msg = p.clean()
+        assert "Cleaned 2" in msg and p.poop == 0
+        assert p.obedience == 10 + gain
+    p = _pet(obedience=10)                        # nothing to clean
+    assert p.clean() == "Nothing to clean."
+    assert p.obedience == 10

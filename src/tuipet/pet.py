@@ -275,6 +275,8 @@ INTOL_FOOD_SICK_CHANCE = 50            # config IntolerantFoodSickChance (per ro
 # movement bumps mood, sheds a little weight and drops a pile of a size set by the
 # Digimon's base weight; an uncleaned mess then nags the mood until it is cleaned.
 POOP_MOOD_INC = 10                      # PoopMoodInc (relief)
+CLEAN_MOOD_INC = 6                      # CleanMoodInc
+CLEAN_OBED_INC = {0: 1, 1: 2, -1: 0}    # CleanObedienceInc / HighDisposition / LowDisposition
 POOP_WEIGHT_DEC_COEF = 0.1             # PoopWeightDecCoefficient
 POOP_WEIGHT_LIMIT = 4                   # PoopWeightLimit (max weight lost per poop)
 POOP_INC_WEIGHT_FACTOR = 40            # PoopIncWeightFactor -> size 3 at/above
@@ -2967,13 +2969,18 @@ class Pet:
         return f"You scold {self.name}."
 
     def clean(self):
+        """PhysicalState.clean: sweeping real filth lifts mood (CleanMoodInc)
+        AND builds obedience, disposition-shaded (CleanObedienceInc 1 / sunny 2
+        / sour 0) -- diligent housekeeping is one of the honest obedience
+        earners (clean audit 2026-07-05; it was mood-only)."""
         if (_g := self._guard()) is not None:
             return _g
         if not self.poop:
             return "Nothing to clean."
         n, self.poop = self.poop, 0
         self.poop_sizes = []                        # clearFilth()
-        self._set_mood(self.mood + 6)               # CleanMoodInc
+        self._set_mood(self.mood + CLEAN_MOOD_INC)
+        self.obedience += CLEAN_OBED_INC[self._disposition()]
         self._set_anim("wash", 1.2)
         return f"Cleaned {n} poop."
 
