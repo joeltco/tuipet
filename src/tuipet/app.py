@@ -195,6 +195,11 @@ def _weather_overlay(weather, frame_i, cols, px_h):
 
 
 def _blit(bm, ox, oy):
+    """Bitmap -> overlay pixels.  Tolerates None/empty frames: 28 foods ship a
+    BLANK 'eaten away' last frame that extracts as None -- the eat fx crashed
+    on the final bite of any of them (Joel's Termux launch, 2026-07-04)."""
+    if not bm:
+        return []
     return [(ox + x, oy + y) for y, row in enumerate(bm)
             for x, c in enumerate(row) if c == "1"]
 

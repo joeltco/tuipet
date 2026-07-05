@@ -17,6 +17,8 @@ BAND_BOT = grid.FLOOR        # 22
 
 def blit(bm, ox, oy):
     """Sprite bitmap -> (x,y) pixel list for render_scene's overlay."""
+    if not bm:
+        return []          # blank/None frames are legal (2026-07-04 eat-fx lesson)
     return [(ox + x, oy + y) for y, row in enumerate(bm)
             for x, c in enumerate(row) if c == "1"]
 

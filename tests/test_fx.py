@@ -100,3 +100,35 @@ def test_gift_fx_chains_into_cheer():
     for _ in range(s.fx["steps"]):
         s.advance_fx()
     assert s.fx is not None and s.fx["kind"] == "cheer"
+
+
+def test_eat_fx_survives_a_blank_last_food_frame():
+    """Joel's Termux launch crash (2026-07-04): 28 foods ship a BLANK 'eaten
+    away' final frame that extracts as None; the eat fx crashed on the LAST
+    BITE of any of them (_blit(None) -- the index was guarded, the value not).
+    The golden always fed f:8 (4 real frames), so it never saw one: exercise
+    the exact crashing food, every step."""
+    import random
+    from tuipet import app as app_mod
+    from tuipet import data
+    from tuipet.pet import Pet
+    frames = data.load_icons()["f:7"]
+    assert frames[-1] is None                    # the landmine is real data
+
+    class S(app_mod.Screen):
+        def __init__(self):
+            self.fx = None
+            self.frame_i = 0
+            self.roamer = None
+        def update(self, t):
+            pass
+
+    random.seed(3)
+    p = Pet(num=102, name="Devimon", stage="Champion", attribute="Virus")
+    p.world_seconds = 10 * 60.0
+    s = S()
+    s.start_fx("eat", icon="f:7", pet=p)
+    for step in range(s.fx["steps"]):            # incl. the last-bite beat
+        s.fx["step"] = step
+        s.frame_i = step
+        s._paint_fx(p)                           # used to TypeError at step 21
