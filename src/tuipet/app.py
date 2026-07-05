@@ -297,8 +297,11 @@ def _effect_overlay(pet, frame_i, cols, px_h, tick=0, pet_right=None):
     # lights OFF: the Zzz is punched out of sleepLightsOff.png at (77..100, 12..29)
     # of 104x60 -> upper-right, a step below the border on our 40x24 grid.
     zz_bot = 0
-    if asleep and E.get("zzz"):
-        z = E["zzz"][(tick // 10) % len(E["zzz"])]
+    # a NAP wears its own glyph (getLightsSprites: napLights vs sleepLights);
+    # canon's deepening flash has no tuipet state -- naps never convert here
+    zkey = "zzz_nap" if (getattr(pet, "nap", False) and E.get("zzz_nap")) else "zzz"
+    if asleep and E.get(zkey):
+        z = E[zkey][(tick // 10) % len(E[zkey])]
         zw, zh = len(z[0]), len(z)
         if pet.lights:
             pr = pet_right if pet_right is not None else (cols - 16) // 2 + 16

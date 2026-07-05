@@ -96,3 +96,22 @@ def test_condition_column_shows_all_active_at_once():
     n_all = len(_pts(p))
     q = _pet(sick=True, sick_length=999.0)
     assert n_all > len(_pts(q))                  # a fixed column, not a cycling slot
+
+
+def test_nap_wears_its_own_zzz_glyph():
+    """Sleep-anim audit 2026-07-05: DVPet getLightsSprites picks napLights vs
+    sleepLights -- a nap's indicator differs from the night's.  (Canon's
+    nap-deepening flash keys napToSleepPercent; tuipet naps never convert, so
+    only the static variant exists.)"""
+    E = data.load_effects()
+    assert len(E.get("zzz_nap", [])) == 2 and len(E["zzz"]) == 2
+    assert E["zzz_nap"] != E["zzz"]                  # genuinely different art
+    night = _pet(asleep=True, nap=False)
+    nap = _pet(asleep=True, nap=True)
+    pn = {(x, y) for x, y in _pts(night)}
+    pp = {(x, y) for x, y in _pts(nap)}
+    assert pn != pp                                  # the glyphs render differently
+    # and the dark-room corner Zzz swaps too
+    dark_night = _pet(asleep=True, nap=False, lights=False)
+    dark_nap = _pet(asleep=True, nap=True, lights=False)
+    assert {(x, y) for x, y in _pts(dark_night)} != {(x, y) for x, y in _pts(dark_nap)}

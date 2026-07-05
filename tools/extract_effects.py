@@ -75,6 +75,14 @@ zframes = [to_rows(crop(native_mask(f))) for f in ("sleepLights.png", "sleepLigh
 if zframes:
     effects["zzz"] = zframes
 
+# a NAP has its own indicator (DVPet getLightsSprites: napLights/napLights2);
+# canon's nap-deepening flash (napToSleepPercent) has no tuipet state to key
+# on -- naps never convert here -- so only the static variant is ported
+nframes = [to_rows(crop(native_mask(f))) for f in ("napLights.png", "napLights2.png")
+           if crop(native_mask(f)) is not None]
+if nframes:
+    effects["zzz_nap"] = nframes
+
 # poop: NOT generated here.  The authentic poop is the MultiVPet spr_poop_vpet
 # sprite, curated directly into effects.json.gz (commit 7ec383f) -- the old
 # filth.png crop was a crude stand-in.  The merge-on-write below preserves the
