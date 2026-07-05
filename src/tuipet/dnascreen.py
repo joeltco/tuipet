@@ -21,7 +21,9 @@ from .pet import MAX_DNA_INVENTORY, dna_field_for_rate
 
 MASH_TICKS = 100            # DVPet: 100 intervals x 0.1s = the 10s mini-game window
 MASH_KEYS = ("space",)      # the single "button" you mash
-_METER_W = 22
+_METER_W = 12               # the strip meter: was 22 -> the whole line ran 62 cols and
+#                             MARQUEED mid-minigame (a live meter must hold still --
+#                             the training-audit rule; DNA audit 2026-07-05)
 
 _HOME = (("charge", "Charge"), ("generate", "Generate"),
          ("stats", "Stats"), ("reqs", "Requirements"))
@@ -276,7 +278,7 @@ class DNAPanel:
         self._mash_flash = max(0, flash - 1)
         rec = data.load_sprites()[1][p.num]
         pose = 6 if (flash > 0 and len(rec["frames"]) > 6 and rec["frames"][6]) else \
-            data.ROLES["idle"][self.frame_i % 2]
+            data.ROLES["idle"][(self.frame_i // 2) % 2]   # drill-urgency bob, not 10Hz
         fr = rec["frames"][pose] or rec["frames"][0]
         bgimg = p.background()
         on = SIL_DAY if bgimg else LCD_ON
@@ -286,13 +288,15 @@ class DNAPanel:
                             40, 12, on, LCD_BG, bgimg=bgimg)
 
     def strip(self):
-        """The live mash meter under the LCD; other phases keep in-LCD menus."""
+        """The live mash meter under the LCD; other phases keep in-LCD menus.
+        Kept <= 40 visible cols so it NEVER marquees (a live meter holds still)."""
         if self.phase != "mash":
             return ""
         rate = self._rate()
         left = max(0.0, (MASH_TICKS - self.mash_f) / 10.0)
-        return ("%s rate %d → [b]%s[/]  %0.1fs · mash SPACE!"
-                % (self._meter(rate), rate, data.pretty_field(dna_field_for_rate(rate)), left))
+        fld = data.pretty_field(dna_field_for_rate(rate))[:9]
+        return ("%s r%-2d→[b]%-9s[/] %4.1fs SPACE!"
+                % (self._meter(rate), rate, fld, left))
 
     def _text_result(self):
         field, wager, rate = self.won

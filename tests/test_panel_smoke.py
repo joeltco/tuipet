@@ -192,7 +192,7 @@ def test_scene_screens_fit_the_physical_lcd_in_every_state():
         pan.anim()
         _render(pan)
         pan.key("space")
-    assert "mash" in pan.strip()
+    assert "SPACE" in pan.strip()
 
     from tuipet.deathscreen import DeathPanel
     dead = _pet(dead=True)

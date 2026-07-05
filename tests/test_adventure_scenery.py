@@ -104,7 +104,7 @@ def test_dna_mash_is_a_staged_scene():
     pan.phase, pan.bet, pan.mash_f, pan.hits = "mash", 10, 20, 14
     idle = pan.text()
     assert len(idle.plain.split("\n")) == 12   # the arena fills the LCD
-    assert "mash SPACE" in pan.strip()          # the meter rides the strip
+    assert "SPACE" in pan.strip()               # the meter rides the strip
     pan.key("space")                           # markup, not plain: sprites are colour
     assert pan.text().markup != idle.markup    # a press visibly moves the pet
 
