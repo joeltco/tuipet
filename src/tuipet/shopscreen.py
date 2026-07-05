@@ -152,6 +152,9 @@ class ShopPanel:
                     # canon itemEvolve's parade before the strobe
                     ik = e["key"] if (e.get("action") or "") == "ItemEvol" else None
                     return ("done", ("evolve", num0, ik))
+                if self.pet.anim == "toilet":
+                    # a manual toilet visit: the app plays poopToilet
+                    return ("done", ("toilet", e["key"]))
                 if e["key"].startswith("f:") and self.pet.anim == "eat":
                     return ("done", ("eat", e["key"]))
                 if (data.shop_category(dict(e)) == "toy"

@@ -281,6 +281,16 @@ CLEAN_MOOD_INC = 6                      # CleanMoodInc
 CLEAN_OBED_INC = {0: 1, 1: 2, -1: 0}    # CleanObedienceInc / HighDisposition / LowDisposition
 POOP_WEIGHT_DEC_COEF = 0.1             # PoopWeightDecCoefficient
 POOP_WEIGHT_LIMIT = 4                   # PoopWeightLimit (max weight lost per poop)
+# DVPet toilet training (config col 0): ONE toilet use while InTraining teaches
+# it; from Rookie on (obedience >= 50) the pet takes ITSELF to a stocked toilet
+# at poop time -- no filth, ever (doPoop's SelfToilet branch).
+MIN_TOILET_USES_TO_TRAIN = 1            # MinToiletUsesToTrain
+TOILET_TRAINED_OBED_MIN = 50            # ToiletTrainedObedienceMin
+STAGE_CAN_TOILET_TRAIN = ("InTraining",)                            # StageCanToiletTrain
+STAGE_CAN_AUTO_TOILET = ("Rookie", "Champion", "Ultimate", "Mega")  # StageCanAutoToilet
+TOILET_URGENT_FRAC = 0.8                # tuipet: the manual-use / poop-dance urgency window
+#                                         (canon gates on a FULL gauge; tuipet's gauge fires
+#                                         the poop the moment it fills, so the window leads)
 POOP_INC_WEIGHT_FACTOR = 40            # PoopIncWeightFactor -> size 3 at/above
 POOP_INC_WEIGHT_FACTOR_SMALL = 15      # PoopIncWeightFactorSmall -> size 1 at/below
 POOP_WAIT_MOOD = -1                     # PoopWaitMoodChange (the HELD gauge nags)
@@ -613,6 +623,7 @@ class Pet:
     # wiped the bowel gauge and re-armed once-per-night mistakes -- audit 2026-07)
     _starve_t: float = 0.0          # the 12h starvation death clock
     _poop_t: float = 0.0            # the bowel gauge (written as durable state by meals)
+    toilet_trained: int = 0         # _toiletTrained: InTraining-stage toilet uses (1 trains)
     _filth_t: float = 0.0           # filth-mistake grace / post-mistake postpone
     _lights_t: float = 0.0          # lights-on sleep mistake (float(-inf) = once/night latch)
     _cal_t: float = 0.0             # calorie/hunger lapse accumulator
@@ -697,6 +708,10 @@ class Pet:
         # bedtime window, and a hatchling born asleep is a rotten first minute
         pet.world_seconds = 8 * 60.0
         pet._apply_egg_habitat()
+        if generation <= 1:
+            # canon items.csv StartingUses: the device begins with a stocked
+            # home Toilet (100 flushes) -- granted once, on the first generation
+            pet.inventory["i:82"] = 100
         return pet
 
     def _hatch_into_fresh(self):
@@ -1181,8 +1196,12 @@ class Pet:
             backlog = self._poop_t >= self._poop_interval / 2
             if backlog:                          # big backlog: bigger pile + extra shed,
                 self._poop_t = 0                 # gauge zeroed (DVPet poop())
-            self._do_poop(backlog=backlog)
-            self._set_anim("poop", 2.2)          # squat-and-go (DVPet poop())
+            tk = self._toilet_for_poop()         # doPoop: a trained pet goes by itself
+            if tk:
+                self._toilet_visit(tk, backlog=backlog)
+            else:
+                self._do_poop(backlog=backlog)
+                self._set_anim("poop", 2.2)      # squat-and-go (DVPet poop())
         # effort decays per species (DVPet calcStrengthDecayLapse): keep training or it slips
         self._str_t = getattr(self, "_str_t", 0.0) + dt
         if not self.asleep and self.strength > 0 and self._str_t >= self._strength_interval:
@@ -2080,6 +2099,59 @@ class Pet:
         if bw <= POOP_INC_WEIGHT_FACTOR_SMALL:
             return 1
         return 2
+
+    def is_toilet_trained(self):
+        """PhysicalState.isToiletTrained: enough training uses + obedience +
+        a stage that can go alone."""
+        return (self.toilet_trained >= MIN_TOILET_USES_TO_TRAIN
+                and self.obedience >= TOILET_TRAINED_OBED_MIN
+                and self.stage in STAGE_CAN_AUTO_TOILET)
+
+    def _toilet_train(self):
+        """toiletTrain(): visits count toward training only while the stage
+        still learns (InTraining) and the minimum isn't met yet."""
+        if (self.toilet_trained < MIN_TOILET_USES_TO_TRAIN
+                and self.stage in STAGE_CAN_TOILET_TRAIN):
+            self.toilet_trained += 1
+
+    def _toilet_for_poop(self):
+        """doPoop's SelfToilet branch: the home Toilet (i:82) first, then the
+        Port. Potty (i:83) -- each stocked use is one flush."""
+        if not self.is_toilet_trained():
+            return None
+        if self.inventory.get("i:82", 0) > 0:
+            return "i:82"
+        if self.inventory.get("i:83", 0) > 0:
+            return "i:83"
+        return None
+
+    def poop_urgent(self):
+        """The manual-toilet / poop-dance window: the gauge is nearly full."""
+        return self._poop_t >= TOILET_URGENT_FRAC * self._poop_interval
+
+    def _toilet_visit(self, key, backlog=False, spend_use=True):
+        """poopToilet: the poop lands IN the toilet -- canon poop(true) keeps
+        the relief mood and the weight shed, skips the pile (and the floor-
+        obedience ding, 0 in this column anyway).  Each visit spends one flush
+        and applies the toilet's own mood/obedience blessing (canon useItem
+        runs on every self-visit), then counts toward training."""
+        if spend_use:
+            n = self.inventory.get(key, 0) - 1
+            if n <= 0:
+                self.inventory.pop(key, None)
+            else:
+                self.inventory[key] = n
+        self._set_mood(self.mood + POOP_MOOD_INC)
+        wdec = min(int(self._base_weight() * POOP_WEIGHT_DEC_COEF), POOP_WEIGHT_LIMIT)
+        self.weight = max(1, self.weight - wdec)
+        if backlog:
+            self.weight = max(1, self.weight - math.ceil(wdec / 2))
+        e = data.consumable_by_key(key) or {}
+        self._set_mood(self.mood + int(e.get("mood", 0) or 0))
+        self.obedience += int(e.get("obedience", 0) or 0)
+        self._toilet_train()
+        self._toilet_event = key                  # the app plays poopToilet
+        self._set_anim("toilet", 3.8)
 
     def _do_poop(self, backlog=False):
         """PhysicalState.poop: relief mood bump, weight shed, and a new sized pile
@@ -3205,7 +3277,10 @@ class Pet:
             return f"Can't carry more {entry['name']} (max {cap})."
         self.bits -= price
         slot["stock"] -= 1
-        self.inventory[key] = self.inventory.get(key, 0) + 1
+        # canon incQuantity adds UsesPerItem per purchase (a Toilet refill is
+        # 100 flushes, a Potty 1), clamped at MaxUses (toilet audit 2026-07-05)
+        self.inventory[key] = min(cap, self.inventory.get(key, 0)
+                                  + int(entry.get("uses_per", 1) or 1))
         return f"Bought {entry['name']}."
 
     def sell(self, entry):
@@ -3375,6 +3450,18 @@ class Pet:
             self._set_anim("happy", 1.4)
             made = (data.consumable_by_key(got) or {}).get("name", got)
             return f"{self.name} got a {made}!"
+        if e.get("action") in ("Toilet", "PortToilet"):
+            # canon gates toilet items on a FULL gauge (isMaxBMGauge); tuipet's
+            # urgency window leads the auto-fire.  Using it empties the gauge
+            # into the toilet NOW (no pile); the generic decrement above
+            # already spent the flush.
+            if not self.poop_urgent():
+                self.inventory[key] = self.inventory.get(key, 0) + 1   # refund
+                self._set_anim("refuse", 1.0)
+                return f"{self.name} doesn't need to go."
+            self._poop_t = 0.0
+            self._toilet_visit(key, spend_use=False)
+            return f"{self.name} used the {e['name']} — no mess!"
         if e.get("action") == "ItemEvol":           # item-triggered evolution (Digimental/etc.)
             target = evolution.item_select(self, e["id"])
             if target is None and e.get("dexnum", -1) >= 0:

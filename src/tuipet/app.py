@@ -499,7 +499,7 @@ class Screen(Static):
 
     # ---- care-action animations (DVPet SpriteAnim eat/clean/cheer) -----------
     def start_fx(self, kind, icon=None, poop=0, old_num=None, pet=None, starving=False, good=True):
-        steps = {"eat": 35, "cheer": 31, "jeer": 31, "clean": 22, "spit": 25, "evolve": 41, "dying": 50, "dna_charge": 44, "play": 48, "heal": 24, "poop": 25, "poopdance": 21,
+        steps = {"eat": 35, "cheer": 31, "jeer": 31, "clean": 22, "spit": 25, "evolve": 41, "dying": 50, "dna_charge": 44, "play": 48, "heal": 24, "poop": 25, "poopdance": 21, "toilet": 38,
                  "gift": GIFT_OUT + GIFT_BACK + GIFT_HOLD, "assist": 28, "inherit": 50}.get(kind, 12)
         self.fx = {"kind": kind, "step": 0, "steps": steps, "icon": icon, "poop": poop,
                    "old_num": old_num, "good": good}
@@ -551,6 +551,13 @@ class Screen(Static):
             # DVPet cheer(): its sound (praise/_happy) plays at the anim's t0 --
             # keyed here so chained cheers (wash/evolve/heal tails) sound too.
             self.fx["snds"] = {1: "happy"}
+        elif kind == "toilet":
+            # poopToilet: the go at t18 (size sting), the FLUSH (wash) at t28 --
+            # the Port. Potty (i:83) skips the flush, canon frame-jumps past it
+            if icon == "i:82":
+                self.fx["snds"] = {18: "poop", 28: "wash"}
+            else:
+                self.fx["snds"] = {18: "poop"}
         elif kind == "jeer":
             # DVPet jeer(): the sound fires at the first UP beat (t6).  Canon
             # routes Bad_Scold through the _unhappy cue, but soundConfig.csv
@@ -609,6 +616,9 @@ class Screen(Static):
             self.start_fx("cheer")
         elif kind == "play":
             # jumping() frame 48: the hops resolve into Cheering (cheer true, happy)
+            self.start_fx("cheer")
+        elif kind == "toilet":
+            # poopToilet frame 37: toiletTrain'd and proud -- chained cheer
             self.start_fx("cheer")
         elif kind == "inherit":
             # inheriting() tail: the strobe resolves into the celebration poses.
@@ -1050,6 +1060,25 @@ class Screen(Static):
             ix = max(0, PET_BASE_X - bw)
             iy = 0 if step < 4 else 4                      # setLocY 53 -> 64 at beat 4
             c.overlay += _blit(bm, ix, iy)
+
+    def _fxk_toilet(self, pet, fx, step, c):
+        # DVPet poopToilet (SelfToilet/portToilet): the pet squats over its
+        # toilet -- wiggle beats 3..18 (pose 4), the relieved go at 18 (pose
+        # 5), then it steps off (pose 1) for the flush and the chained cheer.
+        if step < 18:
+            c.rows = self._pose_rows_idx(pet, 4)
+            c.xshift = -1 if (3 <= step and (step // 3) % 2 == 1) else 0
+        elif step < 28:
+            c.rows = self._pose_rows_idx(pet, 5)
+        else:
+            c.rows = self._pose_rows_idx(pet, 1)
+        raw = data.load_icons().get(fx.get("icon") or "i:82")
+        ic = [f for f in (raw or []) if f]
+        if ic:
+            f = ic[0]
+            tw = max(len(r) for r in f)
+            c.overlay += _blit(f, max(0, PET_BASE_X + c.xshift - tw - 1),
+                               c.px_h - 2 - len(f))
 
     def _fxk_poopdance(self, pet, fx, step, c):
         # DVPet poopDance (a special-idle roll while the gauge is full): a
@@ -1957,6 +1986,13 @@ class TuiPetApp(App):
                     self.screen_w.start_fx("evolve", old_num=prev[0])
                 else:
                     self._pending_evolve = prev[0]
+        elif getattr(p, "_toilet_event", None):
+            tev = p._toilet_event
+            p._toilet_event = None
+            if self.screen_w.fx is None:          # the self-visit plays poopToilet
+                self.screen_w.start_fx("toilet", icon=tev)
+            else:
+                self.beep("poop", bell=False)
         elif p.poop > poop0:
             # DVPet playPoopSound keys the byte poop() RETURNS -- the SIZE of the
             # new pile (f==1 small, f>2 large, else normal) -- not the pile count
@@ -2272,6 +2308,9 @@ class TuiPetApp(App):
             ik = msg[2] if len(msg) > 2 else None
             self.flash(self._evolve_msg(msg[1]))
             self.screen_w.start_fx("evolve", old_num=msg[1], icon=ik)
+        elif isinstance(msg, tuple) and msg and msg[0] == "toilet":
+            # a manual visit: poopToilet with the item on the floor
+            self.screen_w.start_fx("toilet", icon=msg[1])
         elif isinstance(msg, tuple) and msg and msg[0] == "play":
             # a bag toy: DVPet jumping() -- the pet hops over its real toy
             self.screen_w.start_fx("play", icon=msg[1])
