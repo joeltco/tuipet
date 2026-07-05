@@ -271,3 +271,24 @@ def test_habitat_picker_is_a_scene_with_a_strip():
     assert pan.text().markup != here
     assert p.habitat == home                         # ...but browsing never moves you
     assert "ENTER buy/move" in pan.strip()
+
+
+def test_title_boot_flashes_dissolves_then_settles():
+    """Title audit 2026-07-04: the power-on sequence was unpinned — all
+    segments flash, static thins into the wordmark, then only the mascot's
+    gentle //4 bob moves.  Budget-checked every frame."""
+    import random
+    from tuipet.titlescreen import TitlePanel, BOOT_BLIP, BOOT_FADE
+    random.seed(11)
+    pan = TitlePanel()
+    frames = []
+    for _ in range(BOOT_BLIP + BOOT_FADE + 9):
+        t = _render(pan)
+        frames.append(t.markup)
+        pan.anim()
+    flash = frames[0]
+    assert flash.count("▀") == 12 * 40            # all segments lit
+    assert frames[BOOT_BLIP] != flash             # the static wipe differs...
+    assert frames[BOOT_BLIP] != frames[BOOT_BLIP + 2]   # ...and thins each beat
+    settled = frames[BOOT_BLIP + BOOT_FADE:]
+    assert len(set(settled)) == 2                 # only the two bob poses remain

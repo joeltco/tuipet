@@ -44,6 +44,14 @@ class TitlePanel:
     def anim(self):
         self.frame_i += 1
 
+    def strip(self):
+        """The press-to-start prompt rides the #msg strip.  It used to be set
+        once by the app and the v0.2.223 strip plumbing blanked it a frame
+        later (title audit 2026-07-04) — panels own their strips now."""
+        if self.frame_i < BOOT_BLIP + BOOT_FADE:
+            return ""                            # let the power-on play in silence
+        return "[b]▸ PRESS ENTER ◂[/b]"
+
     def key(self, k):
         if k == "q":
             return ("quit", None)      # q quits the app rather than starting the game

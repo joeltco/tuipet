@@ -1144,8 +1144,7 @@ class TuiPetApp(App):
         theme.apply(theme.load_choice())
         self._restyle()
         self.repaint()
-        self._open_mode(titlescreen.TitlePanel(), self._after_title)
-        self._hud("[b]▸ PRESS ENTER ◂[/b]")
+        self._open_mode(titlescreen.TitlePanel(), self._after_title)   # the panel's strip() carries PRESS ENTER
         self.set_interval(0.1, self.on_frame)    # single DVPet interval clock: 1 tick == 0.1s (main view AND sub-screens)
         self.set_interval(1.0, self.on_tick)
         self.set_interval(10.0, self.autosave)
