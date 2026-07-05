@@ -189,3 +189,16 @@ def test_buyable_egg_lives_in_the_shop_not_the_select():
     pan2 = EggSelectPanel()
     assert idx in pan2.carousel                     # owned now -> hatchable
     assert pan2.states[idx][0] == "owned"
+
+
+def test_fresh_profile_carousel_never_empty():
+    """Eggselect audit 2026-07-05: _egg() does `pos % self.n` -- an empty
+    carousel would ZeroDivision.  The data guarantees the floor: the
+    DefaultUnlock starters are always hatchable, so the carousel can't be
+    empty even on a wiped profile."""
+    from tuipet.eggselectscreen import EggSelectPanel
+    pan = EggSelectPanel()                        # sandboxed = a fresh profile
+    assert len(pan.unlocked) >= 5                 # the starter floor
+    assert pan.n >= len(pan.unlocked) > 0
+    pan.key("right")                              # nav + render on the floor
+    assert pan.text() is not None

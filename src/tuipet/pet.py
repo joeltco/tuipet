@@ -105,7 +105,15 @@ GIFT_CHANCE_FACTOR = 70             # GiftChanceFactor
 GIFT_CHANCE_MOOD_COEFF = 0.5        # GiftChanceMoodCoefficient
 # trained battle HP (config.csv col 1): the HP drill GROWS fullHealthPoints
 STARTING_HEALTH_POINTS = 5          # StartingHealthPoints (resetToEgg)
-PERFECT_WINS_LIMIT = 5              # PerfectWinsLimit: every 5 wins -> +1 HP
+PERFECT_WINS_LIMIT = 1              # PerfectWinsLimit is 5 in canon -- scaled x5 for the
+#                                     compressed clock EXACTLY like TRAIN_POWER_PER_HIT:
+#                                     a real device stage lasts DAYS; 50 drill wins to
+#                                     reach Champion-foe HP parity (foes 15-25 vs the
+#                                     starting 5) was unreachable in a ~2h tuipet stage,
+#                                     so pets fought at 5 HP forever, lost constantly,
+#                                     and the losses fed the misbehaving spiral
+#                                     (audit 2026-07-05).  Every HP-drill win = +1 HP,
+#                                     still capped by the age ladder (max_health()).
 PERFECT_WINS_HEALTH_INC = 1         # PerfectWinsHealthInc
 # getMaxHealth: the HP CAP rises with lapsed life (real-seconds -> game-days here:
 # 86400s real = 1 day = 1 tuipet DAY_LENGTH); classic MaxHealth* ladder
@@ -1393,12 +1401,27 @@ class Pet:
         return max(rec, key=lambda hid: (rec[hid], hid == self.habitat))
 
     def _track_time_pref(self, dt):
-        # the pet warms to the times of day it spends happy in, and sours on the
-        # rest -- DVPet's timeRanks favorite/disliked, kept lightweight
-        d = 1 if self.mood >= MIN_HAPPY_MOOD else (-1 if self.mood <= MIN_UNHAPPY_MOOD else 0)
+        """The pet warms to the times of day it spends happy in, and sours on
+        the rest (DVPet's timeRanks).  One step per GAME-MINUTE: the old
+        per-SECOND drift saturated a phase to -90 within 90s of sadness and
+        poisoned the whole clock -- disliked-hour drains then kept the pet
+        unhappy, souring MORE hours (the misbehaving ratchet; Joel's Devimon
+        hated all four phases at -60..-90, 2026-07-05).  A neutral-mood minute
+        drifts the current phase back toward 0, so a scarred clock heals."""
+        self._time_pref_t = getattr(self, "_time_pref_t", 0.0) + dt
+        if self._time_pref_t < 60.0:
+            return
+        self._time_pref_t -= 60.0
+        ph = self.day_phase
+        cur = self.time_pref.get(ph, 0)
+        if self.mood >= MIN_HAPPY_MOOD:
+            d = 1
+        elif self.mood <= MIN_UNHAPPY_MOOD:
+            d = -1
+        else:
+            d = 1 if cur < 0 else (-1 if cur > 0 else 0)   # neutral: mend toward 0
         if d:
-            ph = self.day_phase
-            self.time_pref[ph] = _clamp(self.time_pref.get(ph, 0) + d, -90, 90)
+            self.time_pref[ph] = _clamp(cur + d, -90, 90)
 
     def _disposition(self):
         return self.disposition          # DVPet _disposition: fixed personality trait
