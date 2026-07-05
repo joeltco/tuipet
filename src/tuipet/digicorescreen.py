@@ -351,41 +351,35 @@ class DigiCorePanel:
                         for j in range(len(self.pages)))
 
     def _core_scene(self):
-        """The canon Digicore page, scene-only (2026-07-05, Joel: 'crammed'):
-        the pet breathes on the left of the FULL arena, the crisp 14px field
-        badge rides the right, the core backdrop behind -- every number and
-        control moved to the strip/status card (the box-clip law)."""
-        p = self.pet
-        bgimg = core_background(p)
-        on = SIL_DAY if bgimg else LCD_ON   # never white (paint() rule)
-        badge = core_badge_key(p)
-        overlay = []
-        if badge:
-            b = data.load_effects().get(badge, [None])[0]
-            if b:
-                bw, bh = max(len(r) for r in b), len(b)
-                bx = 25 + (14 - bw) // 2              # centred on the right third
-                by = max(0, (SCENE_ROWS * 2 - bh) // 2)
-                overlay = [(bx + x, by + y) for y, row in enumerate(b)
-                           for x, c in enumerate(row) if c == "1"]
-        rows = self._pet_rows(p.num)
-        placements = [self._core_place(rows, cell=0)] if rows else []
-        return render_scene(placements, 40, SCENE_ROWS, on, LCD_BG,
-                            overlay=overlay, bgimg=bgimg)
-
-    def _core_strip(self):
+        """The CORE landing page -- a data-menu page like every other digicore
+        page (Joel 2026-07-05: one layout language for the whole data book;
+        the scene experiment read as inconsistent).  SPACE opens the core
+        gaze, where the visuals live."""
         p = self.pet
         n = core_number(p)
         growth = p.STAGE_DURATION.get(p.stage)
         has_next = (bool(lines.evo_rows(p)) if lines.active(p)
                     else bool(data.load_evolutions().get(p.num)))
         pending = growth is not None and p.stage_seconds < growth and has_next
-        lbl = "evolution nears at 1" if pending else "life meter"
-        note = self.note if self.note != "the core stirs..." else ""
-        head = note or f"core {chr(0x25C6)} {n} · {lbl}"
-        keys = "SPACE core  M mode  → pages" if p.can_mode_change() \
-            else "SPACE core  → pages"
-        return f"{head}  [dim]{self._dots()} · {keys} · ESC[/]"
+        x = getattr(p, "x_antibody", "None")
+        rows = [
+            ("Core", f"{chr(0x25C6)} {n}"),
+            ("Meter", "evolution nears at 1" if pending else "life meter"),
+            ("Field", data.pretty_field(getattr(p, "field", "") or "None")),
+            ("X-State", "none" if x == "None" else x.lower()),
+            ("Mode", ("ready — press M" if p.can_mode_change() else chr(0x2014))),
+        ]
+        out = menu.header("DIGICORE  CORE", self._dots())
+        for label, val in rows:
+            out.append(f" {label:<9}", style=DIM)
+            out.append(f"{val}\n", style=INK_B)
+        out.append_text(menu.blanks(9 - len(rows) - 3))
+        out.append(" gaze into the core to glimpse\n", style=DIM)
+        out.append(" what stirs within...\n", style=DIM)
+        out.append_text(menu.note(self.note if self.note != "the core stirs..." else "",
+                                  tick=self.frame_i))
+        out.append_text(menu.footer("SPACE gaze  ←→ page  ESC close"))
+        return out
 
     def _teaser_scene(self):
         """EvolSilhouetteTransition: the core badge ZOOMS IN (digicoreExpand,
@@ -393,30 +387,44 @@ class DigiCorePanel:
         holds as a STATIC blacked-out shape (canon draws frame 0 -- the old
         pose-flicker here was the 10Hz flutter class)."""
         p = self.pet
+        bgimg = core_background(p)
+        on = SIL_DAY if bgimg else LCD_ON   # never white (paint() rule)
+        out = menu.bar("DIGICORE", "the core")
         if self.teaser_t < EXPAND_T:                      # the zoom-in beat
             badge = data.load_effects().get(core_badge_key(p) or "core_xnone", [None])[0]
             overlay = []
             if badge:
-                # the 14px badge zooms 1x -> ~fills the arena at 2x (canon
-                # digicoreExpand); overflow clips harmlessly
+                # the 14px badge zooms 1x -> 2x, clipped at the band's rim
                 k = 1 + self.teaser_t // (EXPAND_T // 2)
                 k = min(k, 2)
                 big = ["".join(ch * k for ch in r) for r in badge for _ in range(k)]
                 bw, bh = max(len(r) for r in big), len(big)
-                ox, oy = (40 - bw) // 2, (SCENE_ROWS * 2 - bh) // 2
+                ox, oy = (40 - bw) // 2, (CORE_ROWS * 2 - bh) // 2
                 overlay = [(ox + x, oy + y) for y, row in enumerate(big)
                            for x, c in enumerate(row) if c == "1" and oy + y >= 0]
-            return render_scene([], 40, SCENE_ROWS, LCD_ON, LCD_BG, overlay=overlay)
+            out.append_text(render_scene([], 40, CORE_ROWS, on, LCD_BG,
+                                         overlay=overlay, bgimg=bgimg))
+            out.append("\n")
+            out.append_text(menu.note("the core opens..."))
+            out.append_text(menu.footer(""))
+            return out
         nxt = next_evolution(p)
         if nxt is None:
             rows = self._pet_rows(p.num, idx=0)
             placements = [self._core_place(rows)] if rows else []
-            return render_scene(placements, 40, SCENE_ROWS, LCD_ON, LCD_BG)
-        # frame 0 mask (canon: still), crisp contour + shimmering interior
-        sil = ghost(silhouette(self._pet_rows(nxt, idx=0) or []),
-                    phase=(self.frame_i // 5) % 2)
-        placements = [self._core_place(sil)] if sil else []
-        return render_scene(placements, 40, SCENE_ROWS, LCD_ON, LCD_BG)
+            out.append_text(render_scene(placements, 40, CORE_ROWS, on, LCD_BG, bgimg=bgimg))
+            out.append("\n")
+            out.append_text(menu.note("Nothing stirs — this is its final form."))
+        else:
+            # frame 0 mask (canon: still), crisp contour + shimmering interior
+            sil = ghost(silhouette(self._pet_rows(nxt, idx=0) or []),
+                        phase=(self.frame_i // 5) % 2)
+            placements = [self._core_place(sil)] if sil else []
+            out.append_text(render_scene(placements, 40, CORE_ROWS, on, LCD_BG, bgimg=bgimg))
+            out.append("\n")
+            out.append_text(menu.note("A shape looms in the core..."))
+        out.append_text(menu.footer("SPACE back   ESC out"))
+        return out
 
     def _detail_scene(self):
         """One candidate's requirement checklist (evolution.requirement_report):
@@ -455,25 +463,16 @@ class DigiCorePanel:
         out.append_text(menu.footer("↑↓ pick  ENTER req  ←→ page  ESC"))
         return out
 
-    def strip(self):
-        """The core/teaser pages are bare scenes; their chrome rides here.
-        The data pages keep their in-text footers (strip stays blank)."""
-        if self.teaser:
-            if self.teaser_t < EXPAND_T:
-                return "the core opens..."
-            msg = ("Nothing stirs — this is its final form."
-                   if next_evolution(self.pet) is None
-                   else "A shape looms in the core...")
-            return f"{msg}  [dim]· SPACE back[/]"
-        if self._back_t or self.detail is not None or self.i != 0:
-            return ""
-        return self._core_strip()
-
     def text(self):
         if self.teaser:
             return self._teaser_scene()
         if self._back_t:                              # evolSilhouetteBack: dark blink
-            return render_scene([], 40, SCENE_ROWS, SIL_NIGHT, "#000000")
+            out = menu.bar("DIGICORE", "the core")
+            out.append_text(render_scene([], 40, CORE_ROWS, SIL_NIGHT, "#000000"))
+            out.append("\n")
+            out.append_text(menu.note(""))
+            out.append_text(menu.footer(""))
+            return out
         if self.detail is not None:
             return self._detail_scene()
         if self.i == 0:

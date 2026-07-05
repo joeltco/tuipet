@@ -257,9 +257,11 @@ def test_badges_are_real_symbols_not_specks():
             assert w >= 12 and h >= 12, f"{k} is {w}x{h}: the speck regression"
 
 
-def test_core_page_is_a_bare_scene_with_the_strip_chrome():
-    """The core page owns the WHOLE 12-row arena (the 8-row band crammed a
-    16px mon against the chrome); the meter, page dots and keys ride strip()."""
+def test_every_digicore_page_speaks_the_menu_language():
+    """Joel 2026-07-05 round 2: one layout for the whole data book -- the CORE
+    landing page is a header/rows/footer MENU page like every other, the page
+    dots live in EVERY header (core included), and the panel has NO strip:
+    the message box is a message box."""
     import random
     from tuipet.pet import Pet
     from tuipet.digicorescreen import DigiCorePanel
@@ -267,51 +269,43 @@ def test_core_page_is_a_bare_scene_with_the_strip_chrome():
     p = Pet(num=102, name="Devimon", stage="Champion", attribute="Virus", obedience=500)
     p.world_seconds = 12 * 60.0
     pan = DigiCorePanel(p)
-    lines = pan.text().plain.split("\n")
-    assert len(lines) == 12 and all(len(l) <= 40 for l in lines)
-    s = pan.strip()
-    assert "core" in s and chr(0x25CF) in s      # the meter + the page dots
-    assert "SPACE" in s                          # ...and the controls
-    # data pages carry their own in-text footers; the strip stays blank
-    pan.key("right")
-    assert pan.strip() == ""
-    assert chr(0x25CF) in pan.text().plain       # dots in the page header too
-    # the teaser narrates on the strip and stays a bare scene
-    pan.key("left")
-    pan.key("space")
-    for _ in range(10):
-        pan.anim()
-    assert len(pan.text().plain.split("\n")) == 12
-    assert "SPACE back" in pan.strip()
+    assert not hasattr(pan, "strip")
+    first = pan.text().plain
+    assert "DIGICORE  CORE" in first and chr(0x25CF) in first    # title + dots
+    assert "SPACE gaze" in first                                 # in-page footer
+    lines = first.split("\n")
+    assert len(lines) <= 12 and all(len(l) <= 40 for l in lines)
+    for _ in range(len(pan.pages) - 1):
+        pan.key("right")
+        page = pan.text().plain
+        assert chr(0x25CF) in page                               # dots everywhere
+        L = page.split("\n")
+        assert len(L) <= 12 and all(len(x) <= 40 for x in L)
 
 
-def test_core_scene_pet_and_badge_share_the_arena_apart():
-    """Pet on the left third, the 14px badge centred on the right -- never
-    overlapping, both fully inside the 40x24 grid."""
+def test_the_core_gaze_looms_over_the_core_background():
+    """The evolution preview keeps its scene -- now painted over the core
+    backdrop (it floated on a blank LCD)."""
     import random
     from tuipet.pet import Pet
     from tuipet import digicorescreen as dc
     random.seed(2)
     p = Pet(num=102, name="Devimon", stage="Champion", attribute="Virus", obedience=500)
     p.world_seconds = 12 * 60.0
-    p.field = "NightmareSoldier"
     pan = dc.DigiCorePanel(p)
     cap = []
     real = dc.render_scene
 
     def spy(placements, cols, rows, on, bg, overlay=None, bgimg=None):
-        cap.append((placements, rows, overlay))
+        cap.append(bgimg)
         return real(placements, cols, rows, on, bg, overlay=overlay, bgimg=bgimg)
 
     dc.render_scene = spy
     try:
-        pan.text()
+        pan.key("space")
+        for _ in range(12):
+            pan.anim()
+            pan.text()
     finally:
         dc.render_scene = real
-    placements, rows, overlay = cap[0]
-    assert rows == 12
-    (pr, x0, _m), = placements
-    pet_right = x0 + max(len(r) for r in pr)
-    badge_xs = {x for x, y in overlay}
-    assert pet_right <= min(badge_xs)            # apart, not crammed
-    assert max(badge_xs) < 40 and all(0 <= y < 24 for _x, y in overlay)
+    assert cap and all(b is not None for b in cap)   # every gaze frame carries it
