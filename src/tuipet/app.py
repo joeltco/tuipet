@@ -1454,6 +1454,18 @@ class TuiPetApp(App):
             event.stop()
             event.prevent_default()
             return
+        if self.mode is None and self.pet.dead:
+            # A departed pet can DO nothing (the device shows only the grave).
+            # ONE chokepoint ahead of every global binding -- the per-action
+            # can_*() gates kept slipping (a dead mon could still adventure,
+            # Joel 2026-07-05).  Any care key leads back to the memorial;
+            # quit and options stay live beside the grave.
+            if event.key not in ("q", "g"):
+                event.stop()
+                event.prevent_default()
+                self._open_mode(deathscreen.DeathPanel(
+                    self.pet, old_mem=persistence.peek_digimemory()), self._after_death)
+            return
         if self.mode is not None:
             event.stop()
             event.prevent_default()      # a panel owns the keyboard: don't fire global BINDINGS
