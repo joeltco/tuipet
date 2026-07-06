@@ -545,22 +545,29 @@ class TrainingPanel:
             # and every tap SHOWS the punch -- the pet lunges in its strike pose
             # (the _flash(6) each tap already sets), the bag rocks away 1px, and
             # the Hit! label (DVPet hitLabel) pops over the BAG it belongs to.
+            # spacing polish (layout audit 2026-07-06, the hp lesson applied):
+            # placed BY MEASUREMENT -- the GRID anchors ran a 16px mon OFF the
+            # right edge (Devimon spanned x26..41 on the 40px LCD) and the
+            # HIT!! label sat at y0 flush on the top border
             punching = self._strike_t > 0
             bag = _fit_cell(E.get("punching_bag", [None])[0] or [])
+            bw = max(len(r) for r in bag) if bag else 6
+            bag_x = 2 - (1 if punching else 0)                # rocks toward (never onto) the edge
             if bag:
-                placements.append((bag, GRID_X0 - (1 if punching else 0), False))
-            # the pet throws the punches from the data drill's mon column
+                placements.append((bag, bag_x, False))
+            # the pet throws the punches from the right edge, width-clamped
             pose = self._pose_now(1 if (self.frame_i // 2) % 2 else 0)  # idle bob between taps
             pf = _crop(self._frame(rec, pose))
-            px = GRID_X0 + CELL + 6 - (2 if punching else 0)  # LUNGE 2px into the punch
+            pw_ = max(len(r) for r in pf)
+            px = COLS - 1 - pw_ - (2 if punching else 0)      # LUNGE 2px into the punch
             overlay.extend(_blit(pf, px, BASE_Y - len(pf)))   # grounded; faces left natively
             if punching:
                 hit = E.get("train_hit", [None])[0]
                 if hit:
                     hw = max(len(r) for r in hit)
                     bag_top = BASE_Y - (len(bag) if bag else CELL)
-                    overlay.extend(_blit(hit, GRID_X0 + max(0, (CELL - hw) // 2),
-                                         max(0, bag_top - len(hit) - 1)))
+                    overlay.extend(_blit(hit, max(1, bag_x + (bw - hw) // 2),
+                                         max(1, bag_top - len(hit) - 1)))
         elif gk == "virus":                                 # DVPet drawVirusPre: pet AND bag HIDDEN
             # The real DVPet trainBar sprite is a 32-wide TRACK box (cols 0..31) + a separate
             # goal compartment (cols 32..37) == 38 wide.  Crop to the 32-wide track box so it

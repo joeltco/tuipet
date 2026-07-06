@@ -224,3 +224,29 @@ def test_hp_reel_geometry_never_mashes():
     assert char_x >= ix + iw + 1, "the char overlaps the icon column"
     assert char_x + pw <= T.COLS, "the char runs off the LCD"
     panel.text()                                     # and it all renders
+
+
+def test_vaccine_geometry_never_mashes():
+    """Vaccine layout audit (Joel 2026-07-06): the GRID anchors ran a 16px
+    mon OFF the right edge (Devimon spanned x26..41 on the 40px LCD) and the
+    HIT!! label sat at y0 flush on the top border.  Measured layout: bag off
+    the left edge (>=1px even mid-rock), label y>=1, the widest mon inside
+    the LCD at rest AND mid-lunge."""
+    from tuipet import data as _d
+    p = Pet(num=102, stage="Champion", vaccine=5, data_power=5, virus=5)
+    p.obedience = 500
+    panel = T.TrainingPanel(p)
+    panel.gi = 1
+    panel.key("enter")
+    E = _d.load_effects()
+    bag = T._fit_cell(E["punching_bag"][0])
+    bh = len(bag)
+    hit = E["train_hit"][0]
+    assert max(1, (T.BASE_Y - bh) - len(hit) - 1) >= 1     # label off the top border
+    pf = T._crop(panel._frame(_d.load_sprites()[1][102], 0))
+    pw = max(len(r) for r in pf)
+    assert T.COLS - 1 - pw >= 0                            # rest: on the LCD
+    assert T.COLS - 1 - pw - 2 + pw <= T.COLS - 1          # lunge: still on the LCD
+    panel.key("space")                                      # punch frame renders
+    rows = panel.text().plain.split("\n")
+    assert all(len(r) <= T.COLS for r in rows)
