@@ -160,9 +160,29 @@ def tourney_add(trophy_id):
 
 
 def snapshot_prev_gen(pet):
-    """Record the just-ended pet's traits for the 'previous generation' egg gates."""
+    """Record the just-ended pet's traits for the 'previous generation' egg
+    gates -- and the careBonusOnReset math (death/rebirth audit 2026-07-06):
+    the ended life's care ADJUSTS the bonus the next generation inherits.
+    Canon never zeroes _bonus on resetToEgg; tuipet carries it through this
+    channel instead."""
     if pet is None or getattr(pet, "stage", "Egg") == "Egg":
         return
+    # careBonusOnReset: slips subtract (a clean life earns +1), the final mood
+    # tier +-1, and the obedience record +-1 (BonusInc/DecObedience 75/50)
+    bonus = int(getattr(pet, "evol_bonus", 0))
+    mistakes = int(getattr(pet, "care_mistakes", 0))
+    bonus = bonus - mistakes if mistakes > 0 else bonus + 1
+    mood_fn = getattr(pet, "current_mood", None)
+    m = mood_fn() if callable(mood_fn) else "Neutral"
+    if m == "Happy":
+        bonus += 1
+    elif m != "Neutral":
+        bonus -= 1
+    ob = int(getattr(pet, "obedience", 0))
+    if ob > 75:                                  # BonusIncObedience
+        bonus += 1
+    elif ob < 50:                                # BonusDecObedience
+        bonus -= 1
     d = load_settings()
     prog = d.setdefault("progress", {})
     prog["last_gen"] = {
@@ -172,8 +192,15 @@ def snapshot_prev_gen(pet):
         "mood": int(getattr(pet, "mood", 0)),
         "obedience": int(getattr(pet, "obedience", 0)),
         "xanti": getattr(pet, "x_antibody", "None") != "None",
+        "bonus": bonus,
     }
     save_settings(d)
+
+
+def prev_gen_bonus():
+    """The care bonus the next generation inherits (careBonusOnReset carry)."""
+    d = load_settings()
+    return int(((d.get("progress") or {}).get("last_gen") or {}).get("bonus", 0))
 
 
 def _note_put(key, value):

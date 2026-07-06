@@ -86,20 +86,29 @@ def test_a_burn_cannot_kill_inside_the_grace():
     assert not p.dead                            # the grace holds until the clock
 
 
-def test_x_program_charges_life_once():
-    random.seed(2)
+def test_x_program_is_russian_roulette_for_the_unmarked(monkeypatch):
+    """xProgramSurvivalChance 1/1000 (death/rebirth audit 2026-07-06): an
+    UNMARKED pet survives the sample 1 in 1000 -- otherwise it dies on the
+    spot and the revive mash is blocked (savedFromDeath 127).  Any existing
+    antibody state makes it safe."""
+    from tuipet.pet import X_SAVE_BLOCK
+    monkeypatch.setattr(random, "randrange", lambda n: n - 1)   # the survival roll misses
     p = _pet()
     p.add_item("i:14")
-    l0 = p.lifespan
-    p.use_item("i:14")
-    assert p.x_antibody == "Permanent"
-    assert p.lifespan <= l0                      # the price (a 0 draw is free)
-    p2 = _pet(x_antibody="Temporary")            # already marked: no charge
-    p2.add_item("i:14")
-    l2 = p2.lifespan
-    random.seed(2)
-    p2.use_item("i:14")
-    assert p2.lifespan == l2
+    msg = p.use_item("i:14")
+    assert p.dead and "too much" in msg
+    assert p.saved_from_death == X_SAVE_BLOCK    # 128x the mash bar: unrevivable
+    monkeypatch.setattr(random, "randrange", lambda n: 0)       # survived; the life draw is free
+    q = _pet()
+    q.add_item("i:14")
+    q.use_item("i:14")
+    assert not q.dead and q.x_antibody == "Permanent"
+    monkeypatch.setattr(random, "randrange", lambda n: n - 1)
+    m = _pet(x_antibody="Temporary")             # already marked: SAFE, no roulette
+    m.add_item("i:14")
+    l0 = m.lifespan
+    m.use_item("i:14")
+    assert not m.dead and m.x_antibody == "Permanent" and m.lifespan == l0
 
 
 def test_save_from_death_leaves_the_revival_window():
@@ -109,3 +118,21 @@ def test_save_from_death_leaves_the_revival_window():
     p.save_from_death()
     assert not p.dead and p.hunger == 0 and p.evol_bonus == 2
     assert abs((p.lifespan - p.age_seconds) - 750.0) < 1e-6 or p.num != 100
+
+
+def test_the_care_bonus_carries_across_generations():
+    """careBonusOnReset (death/rebirth audit 2026-07-06): canon never zeroes
+    the bonus at resetToEgg -- the ended life's care adjusts what the next
+    generation inherits (slips subtract, else +1; the final mood tier +-1;
+    obedience >75/<50 +-1)."""
+    from tuipet import persistence
+    p = _pet(care_mistakes=0, mood=200, obedience=100, evol_bonus=2)
+    persistence.snapshot_prev_gen(p)
+    assert persistence.prev_gen_bonus() == 2 + 3     # clean +1, Happy +1, obedient +1
+    heir = Pet.new_egg(generation=2)
+    assert heir.evol_bonus == 5                      # the heir starts ahead
+    fresh = Pet.new_egg(generation=1)
+    assert fresh.evol_bonus == 0                     # a fresh game inherits nothing
+    q = _pet(care_mistakes=6, mood=-50, obedience=10, evol_bonus=0)
+    persistence.snapshot_prev_gen(q)
+    assert persistence.prev_gen_bonus() == -8        # -6 slips, Unhappy -1, sloppy -1

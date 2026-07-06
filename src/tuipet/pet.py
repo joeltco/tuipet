@@ -450,6 +450,13 @@ FATIGUE_LIFE_DEC = 360.0                # FatigueLifeDec 21600
 GERIATRIC_FATIGUE_LIFE_DEC = 60.0       # GeriatricFatigueLifeDec 3600 (an old body pays extra)
 X_LIFE_DEC = 1440.0                     # XAntibodyLifeDec 86400: the X-Program's price in LIFE
 X_LIFE_DEC_BOUND = 7                    # XAntibodyLifeDecModifierBound (86400/nextInt(7); 0 = free)
+# xProgramSurvivalChance 1/1000 (death/rebirth audit 2026-07-06): the sample
+# is RUSSIAN ROULETTE for an UNMARKED pet -- 999 in 1000 it dies outright,
+# and that death cannot be mash-revived (savedFromDeath = 127, verbatim).
+# A pet already carrying any antibody state is safe.
+X_SURVIVAL_TARGET = 1                   # XProgramSurvivalChanceTarget
+X_SURVIVAL_BOUND = 1000                 # XProgramSurvivalChanceBound
+X_SAVE_BLOCK = 127                      # the canon revive-block sentinel
 INSTANT_DEATH_GRACE = 60.0              # InstantDeathGracePeriod 3600: a burn cannot kill in
 #                                         under the grace -- setTotalLifespan's clamp, verbatim
 MIN_ENERGY_LIFE_PENALTY = 60.0          # MinEnergyLifePenalty 3600: bottoming out at the
@@ -883,6 +890,12 @@ class Pet:
         pet = cls(num=-1, name="Digitama", stage="Egg",
                   egg_type=egg_type, generation=generation)
         pet.mood = EGG_MOOD                     # Evolution.egg: setMood(EggMood 100)
+        if generation > 1:
+            # careBonusOnReset (death/rebirth audit 2026-07-06): the BONUS
+            # carries across generations, adjusted by the ended life's care --
+            # canon's resetToEgg never zeroes it
+            from . import persistence as _persist
+            pet.evol_bonus = _persist.prev_gen_bonus()
         # a fresh game dawns at 8:00 -- world_seconds 0 is MIDNIGHT, inside every
         # bedtime window, and a hatchling born asleep is a rotten first minute
         pet.world_seconds = 8 * 60.0
@@ -4236,9 +4249,17 @@ class Pet:
             self._set_anim("happy", 1.5)
             if key == "i:14":
                 if self.x_antibody == "None":
-                    # xEvolve: the X-Program charges its price in LIFE on an
-                    # unmarked pet -- 86400/nextInt(7) real-sec (/60 scale; a
-                    # 0 draw is free), canon calcXAntibodyLifeDec verbatim
+                    # the SURVIVAL roll (death/rebirth audit 2026-07-06): an
+                    # unmarked pet survives the sample 1 in 1000 -- otherwise
+                    # it dies on the spot and the mash can't bring it back
+                    # (savedFromDeath = 127; the item warns "if it survives")
+                    if random.randrange(X_SURVIVAL_BOUND) >= X_SURVIVAL_TARGET:
+                        self.saved_from_death = X_SAVE_BLOCK
+                        self._die("the X-Program")
+                        return "The X-Program was too much for it..."
+                    # it SURVIVED: xEvolve charges its price in LIFE --
+                    # 86400/nextInt(7) real-sec (/60 scale; a 0 draw is free),
+                    # canon calcXAntibodyLifeDec verbatim
                     d = random.randrange(X_LIFE_DEC_BOUND)
                     if d:
                         self._burn_life(X_LIFE_DEC / d)
