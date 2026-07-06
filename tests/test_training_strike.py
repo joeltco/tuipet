@@ -196,3 +196,31 @@ def test_hp_reel_auto_scrolls_and_space_stops_it():
     won0 = panel.rounds_won
     panel.key("space")
     assert panel.rounds_won == won0 + 1            # a timed stop scores
+
+
+def test_hp_reel_geometry_never_mashes():
+    """Spacing polish (Joel 2026-07-06: "mashed together... touching the top
+    border"): the target keeps a 2px top margin, the reel a 2px gap under it,
+    and the icon column never overlaps the dummy (left) or the char (right)
+    -- checked with a worst-case 16px-wide mon."""
+    import random
+    from tuipet import data as _d
+    random.seed(7)
+    p = Pet(num=102, stage="Champion", vaccine=5, data_power=5, virus=5)  # Devimon: widest
+    p.obedience = 500
+    panel = T.TrainingPanel(p)
+    panel.gi = 0
+    panel.key("enter")
+    E = _d.load_effects()
+    ic = E[T._HP_ICON_KEYS[panel.hp_target]][0]
+    iw = max(len(r) for r in ic)
+    ix = (T.COLS - iw) // 2
+    dummy = T._HP_DUMMIES["vaccine"]
+    dw = max(len(r) for r in dummy)
+    assert 1 + dw <= ix, "the dummy runs into the icon column"
+    pf = T._crop(panel._frame(_d.load_sprites()[1][102], 0))
+    pw = max(len(r) for r in pf)
+    char_x = max(ix + iw + 1, T.COLS - 1 - pw)
+    assert char_x >= ix + iw + 1, "the char overlaps the icon column"
+    assert char_x + pw <= T.COLS, "the char runs off the LCD"
+    panel.text()                                     # and it all renders

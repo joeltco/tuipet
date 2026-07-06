@@ -666,22 +666,26 @@ class TrainingPanel:
             taunting = self._strike_t > 0 and self._strike_pose == 9
             key = ("vaccine", "data", "virus")[self.hp_target] + ("_taunt" if taunting else "")
             dummy = _HP_DUMMIES[key]
-            placements = [(dummy, GRID_X0, True)]                     # left, MIRRORED (canon
+            # spacing polish (Joel 2026-07-06: "mashed together... touching the
+            # top border"): placed BY MEASUREMENT -- the 13px dummy hugs the
+            # left edge (1px margin), the 7px icon pair rides the true centre
+            # with a 2px top margin, the char hugs the right edge with a
+            # guaranteed 1px gap off the icon column (the old GRID anchors ran
+            # the dummy INTO the icons)
+            placements = [(dummy, 1, True)]                           # MIRRORED (canon
             #                                       drawHPTraining: drawNumMirror(bag, true) --
             #                                       the dummy faces the char like a foe)
             pf = _crop(self._frame(rec, self._pose_now(0)))           # char pose 0; 6/9 reactions
-            overlay.extend(_blit(pf, GRID_X0 + CELL + 6, BASE_Y - len(pf)))
-            # the REDO (Joel 2026-07-06): the target sky-centre and the auto-
-            # scrolling reel STACKED right under it, both in the LCD -- the
-            # match is judged by eye, top against bottom; SPACE stops the reel
+            pw_ = max(len(r) for r in pf)
             ic = E.get(_HP_ICON_KEYS[self.hp_target], [None])[0]
             pk = E.get(_HP_ICON_KEYS[self.hp_pick], [None])[0]
+            iw = max(len(r) for r in ic) if ic else 7
+            ix = (COLS - iw) // 2
+            overlay.extend(_blit(pf, max(ix + iw + 1, COLS - 1 - pw_), BASE_Y - len(pf)))
             if ic:
-                iw = max(len(r) for r in ic)
-                overlay.extend(_blit(ic, (COLS - iw) // 2, 0))        # the target, sky-centre
+                overlay.extend(_blit(ic, ix, 2))                      # the target, off the border
             if pk:
-                pw = max(len(r) for r in pk)
-                overlay.extend(_blit(pk, (COLS - pw) // 2, 9))        # the reel, stacked tight beneath
+                overlay.extend(_blit(pk, ix, 2 + len(ic or pk) + 2))  # the reel, a clean 2px under
         # scene-only: the gauge + hint ride the strip (box-clip audit 2026-07-04)
         return render_scene(placements, COLS, ARENA_ROWS, on, LCD_BG, overlay=overlay, bgimg=bgimg)
 
