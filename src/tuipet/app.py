@@ -1480,6 +1480,17 @@ class TuiPetApp(App):
             event.stop()
             event.prevent_default()
             return
+        if (self.mode is None and not self.pet.dead
+                and getattr(self.screen_w, "fx", None) is not None
+                and event.key != "q"):
+            # canon disableMainMenu: the WHOLE menu locks while an animation
+            # plays (Joel 2026-07-06).  The 8 mutating care actions always
+            # guarded; the browse menus could still open mid-ceremony -- now
+            # every binding waits for the show.  q (quit) stays live; the
+            # dying-fx revive mash is handled above this gate.
+            event.stop()
+            event.prevent_default()
+            return
         if self.mode is None and self.pet.dead:
             # A departed pet can DO nothing (the device shows only the grave).
             # ONE chokepoint ahead of every global binding -- the per-action

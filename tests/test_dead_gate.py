@@ -307,3 +307,101 @@ def test_every_panel_survives_a_direct_sleeper():
                 if hasattr(pan, "anim"):
                     pan.anim()
             pan.text()
+
+
+def test_hatching_state_contracts():
+    """Hatching sweep (2026-07-06): the ONE clean sweep -- no bugs found,
+    so pin the load-bearing contracts.  `hatching` serializes but `_hatch_t`
+    does not: a mid-crack save must SELF-HEAL on load (the timer restarts at
+    3.0 and the egg still becomes a Fresh); offline catch-up must not decay
+    it; every gate holds mid-crack; lights can't cancel the crack; death
+    does (pet._die clears hatching)."""
+    import time
+    from tuipet.pet import Pet
+    from tuipet import persistence
+
+    e = Pet.new_egg()
+    e.name = "Digitama"
+    e.world_seconds = 10 * 60.0
+    e.stage_seconds = e.EGG_DURATION + 1.0
+    e.tick(1.0)                                   # the tick arms the crack
+    assert e.hatching and getattr(e, "_hatch_t", 0) == 3.0
+    e.advance_hatch(1.0)                          # mid-crack
+
+    save = persistence.to_save_dict(e)
+    assert save.get("hatching") is True and "_hatch_t" not in save
+    save["_saved_at"] = time.time() - 3600        # an hour away, mid-crack
+    pet, msg = persistence.pet_from_save(save)
+    assert pet.hatching and pet.stage == "Egg"
+    assert "needs care" not in (msg or "")        # eggs skip offline decay
+    assert pet.can_feed() == "It is still an egg."
+    assert pet.toggle_lights() == "It is still an egg." and pet.hatching
+    hatched = False
+    for _ in range(35):                           # the restarted 3s timer completes
+        hatched = pet.advance_hatch(0.1)
+        if hatched:
+            break
+    assert hatched and pet.stage == "Fresh" and pet.num >= 0
+    d = Pet.new_egg()
+    d.hatching = True
+    d._die("test")
+    assert not d.hatching                         # death cancels the crack
+
+
+def test_mid_strobe_contracts():
+    """Evolution mid-strobe audit (2026-07-06): the strobe is PRESENTATION
+    over an already-evolved pet.  Pin the load-bearers: EVERY binding locks
+    while an animation plays (canon disableMainMenu; Joel: "lock the browse
+    menus during animations like canon" -- only q stays live); a mid-strobe
+    save round-trips clean; the strobe resolves into the chained cheer;
+    death REPLACES the ceremony with the dying flow (correct priority)."""
+    import asyncio
+    from tuipet import data, persistence
+    from tuipet.pet import Pet
+    from tuipet.app import TuiPetApp
+
+    async def go():
+        rec = data.load_sprites()[1][4]
+        p = Pet(num=4, name=rec["name"], stage=rec["stage"], attribute="Vaccine")
+        p.world_seconds = 10 * 60.0
+        app = TuiPetApp(pet=p)
+        out = {}
+        async with app.run_test(size=(82, 32)) as pilot:
+            await pilot.pause(0.3)
+            await pilot.press("enter")
+            await pilot.pause(0.2)
+            app.mode = None
+            app.screen_w.start_fx("evolve", old_num=4)
+            await pilot.pause(0.2)
+            persistence.save(app.pet)                    # mid-strobe save
+            pet2, msg = persistence.load()
+            out["save"] = (pet2.num, msg)
+            opened = []
+            for key, action, _label in TuiPetApp.BINDINGS:
+                if action == "quit":
+                    continue                              # q stays live
+                await pilot.press(key)
+                await pilot.pause(0.03)
+                if app.mode is not None:
+                    opened.append(action)
+                    app.mode = None
+            out["opened"] = opened                       # canon lock: nothing opens
+            for _ in range(90):
+                await pilot.pause(0.1)
+                fx = app.screen_w.fx
+                if fx is None or fx["kind"] != "evolve":
+                    break
+            out["resolved"] = app.screen_w.fx["kind"] if app.screen_w.fx else None
+            # death interrupts a fresh ceremony
+            app.screen_w.start_fx("evolve", old_num=4)
+            app.pet.care_mistakes = 20                   # the neglect cap
+            await pilot.pause(1.5)                       # one on_tick fires
+            fx = app.screen_w.fx
+            out["death"] = fx["kind"] if fx else None
+        return out
+
+    out = asyncio.run(go())
+    assert out["save"] == (4, ""), out["save"]           # clean round-trip, no repair
+    assert out["opened"] == [], f"menus escaped the anim lock: {out['opened']}"
+    assert out["resolved"] == "cheer", out["resolved"]   # evolFinish -> the chained cheer
+    assert out["death"] == "dying", out["death"]         # death outranks the ceremony
