@@ -480,7 +480,14 @@ class TrainingPanel:
         return self._strike_pose if self._strike_t > 0 else default
 
     def text(self):
-        rec = data.load_sprites()[1][self.pet.num]
+        # .get: an egg (num -1) has no roster sheet -- the panel is gated by
+        # can_train, but a raw [num] here CRASHED on direct construction, the
+        # habitat-crash pattern (egg-training audit 2026-07-06); the placeholder
+        # record keeps every drill renderable if a future path ever slips one in
+        rec = (data.load_sprites()[1].get(self.pet.num)
+               or {"frames": [data.bob_frame(self.pet.num, self.frame_i,
+                                             egg_type=getattr(self.pet, "egg_type", 0))
+                              or [""]] * 12})
         if self.phase == "menu":
             return self._render_menu()
         if self.phase == "strike":

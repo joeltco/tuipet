@@ -100,3 +100,23 @@ def test_habitat_browser_renders_the_egg():
         pan.text()                                # crashed before the fix
         pan.key("down")
     assert pan.text().plain.count("\n") == 11     # the 12-row scene renders
+
+
+def test_training_panel_survives_a_direct_egg():
+    """Egg-training audit (2026-07-06): can_train gates the ONE entry path
+    ('It is still an egg.'), but TrainingPanel(egg).text() crashed on a raw
+    [pet.num] sheet lookup -- the habitat-crash pattern.  Walk every drill
+    phase with an egg so a future entry path can never ship a crash."""
+    import random
+    from tuipet.pet import Pet
+    from tuipet.training import TrainingPanel
+    random.seed(3)
+    egg = Pet.new_egg()
+    assert egg.can_train()                        # the gate itself still holds
+    pan = TrainingPanel(egg)
+    for k in ("", "down", "enter", "space", "space", "1", "space", "escape"):
+        if k:
+            pan.key(k)
+        for _ in range(12):
+            pan.anim()
+        pan.text()                                # crashed before the fix
