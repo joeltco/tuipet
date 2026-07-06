@@ -235,3 +235,20 @@ def test_a_fully_lit_night_costs_four_mistakes_and_one_obedience():
         p.sick = False
     assert 3 <= p.care_mistakes - cm0 <= 5
     assert p.obedience - ob0 == -1
+
+
+def test_jogress_and_cup_pokes_disturb_the_sleeper_too():
+    """Joel 2026-07-06: feed/train/battle/dna grumble-wake a sleeper but
+    jogress/cup answered a flat 'zzz' -- now every player poke runs the same
+    disturb mechanic.  (The lobby's REMOTE invites stay pure: _session_gate
+    short-circuits asleep before these gates.)"""
+    from tuipet import jogress, tournament
+    for gate in (jogress.can_jogress, tournament.can_enter):
+        p = Pet(num=4, name="Rex", stage="Rookie", attribute="Vaccine")
+        p.world_seconds = 2 * 60.0
+        p.asleep, p.lights = True, False
+        p.dp = 4
+        d0, m0 = p.disturb, p.mood
+        msg = gate(p)
+        assert msg and "grumbles" in msg, msg
+        assert not p.asleep and p.disturb == d0 + 1 and p.mood < m0, gate

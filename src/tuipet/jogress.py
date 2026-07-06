@@ -84,7 +84,11 @@ def can_jogress(pet):
     if pet.stage in ("Egg", "Fresh", "InTraining"):
         return "Too young to jogress."
     if pet.asleep:
-        return "zzz... asleep"
+        # a PLAYER poke disturbs the sleeper like every other care key (feed/
+        # train/battle/dna all grumble-wake; Joel 2026-07-06).  The lobby's
+        # REMOTE path never reaches here -- _session_gate short-circuits
+        # asleep before this gate, so strangers still can't wake the pet.
+        return pet._disturbed()
     # Pen20 (LINES_SPEC §6): a jogress takes FULL DP -- earned with protein
     # feeds (+1 each) or a night's sleep (3 game-hours refills the meter)
     from .pet import DP_MAX

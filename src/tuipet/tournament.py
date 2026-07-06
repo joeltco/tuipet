@@ -181,7 +181,7 @@ def can_enter(pet):
     if pet.stage in ("Egg", "Fresh", "InTraining"):
         return "Too young for the cup."
     if pet.asleep:
-        return "zzz... asleep"
+        return pet._disturbed()   # a player poke wakes the sleeper, like every care key
     if not data.load_tournies():
         return "No cups exist."
     return None

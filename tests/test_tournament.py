@@ -73,7 +73,9 @@ def test_too_young_and_asleep_gates(monkeypatch):
         assert "young" in tournament.can_enter(Pet(num=-1, stage=st)).lower()
     p = _pet("Rookie")
     p.asleep = True
-    assert "asleep" in tournament.can_enter(p)
+    # a player poke DISTURBS the sleeper like every care key (Joel 2026-07-06)
+    assert "grumbles" in tournament.can_enter(p)
+    assert not p.asleep and p.disturb == 1
 
 
 def test_field_and_attribute_restrictions():
