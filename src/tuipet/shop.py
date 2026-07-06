@@ -264,9 +264,16 @@ def buy(pet, slot):
 def resell_price(e):
     """getResellPrice: price / DefaultResellFactor; factor 0 = unsellable.
     (Canon re-audit 2026-07: canon has NO floor -- the old max(1, ...) was
-    not canon; no shipped consumable hits the sell-for-0 edge anyway.)"""
+    not canon; no shipped consumable hits the sell-for-0 edge anyway.)
+
+    tuipet's bag counts USES (canon quantity IS uses), so a multi-use item
+    resells PER USE: the canon item value / UsesPerItem.  Paying the whole-
+    item price per unit let a fresh egg milk its 100-flush starter Toilet
+    for 100b a FLUSH -- a 10,000b printer (egg-shop audit 2026-07-05); a
+    full toilet still fetches exactly the canon 100b."""
     econ = e if "resell_factor" in e else (entry(e.get("key", "")) or {})
     factor = econ.get("resell_factor", 0)
     if not factor:
         return 0
-    return econ.get("price", e.get("price", 0)) // factor
+    per_item = econ.get("price", e.get("price", 0)) // factor
+    return per_item // max(1, int(econ.get("uses_per", 1) or 1))

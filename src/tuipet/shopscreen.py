@@ -120,6 +120,15 @@ class ShopPanel:
                     e["stock"] = e["_slot"]["stock"]
             else:
                 if (e.get("action") or "") in data.TRANSPORT_ACTIONS:
+                    # the bag handed the app a ride BEFORE any pet gate -- an
+                    # EGG could board Zone Transport (egg-shop audit 2026-07-05);
+                    # mirror the adventure gates: travel needs a walker, awake
+                    if self.pet.stage in ("Egg", "Fresh"):
+                        self.msg = "Too young to travel."
+                        return None
+                    if self.pet.asleep:
+                        self.msg = "zzz... asleep"
+                        return None
                     return ("done", ("transport", e["key"]))
                 if (e.get("action") or "") == "Inherit":
                     mem0 = dict(getattr(self.pet, "digimemory", {}) or {})

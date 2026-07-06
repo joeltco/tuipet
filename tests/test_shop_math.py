@@ -92,3 +92,36 @@ def test_town_override_substitutes_the_whole_econ_block():
         slots = shop.roll_town_shop(p, town, is_food=True)
         for s in slots:
             assert s["stock"] >= 0 and "price" in s        # the town price rides the slot
+
+
+def test_multi_use_items_resell_per_use_not_per_item():
+    """Egg-shop audit 2026-07-05: the bag counts USES (canon quantity IS
+    uses), but resell paid the whole-ITEM value per unit -- the 100-flush
+    starter Toilet printed 100b a flush (10,000b per fresh egg).  Per-use
+    resell = item value / UsesPerItem; a FULL toilet still fetches exactly
+    the canon 100b."""
+    toilet = {"price": 1000, "resell_factor": 10, "uses_per": 100}
+    assert shop.resell_price(toilet) == 1                 # per flush
+    assert shop.resell_price(toilet) * 100 == 100         # the whole item = canon
+    potty = {"price": 100, "resell_factor": 10, "uses_per": 1}
+    assert shop.resell_price(potty) == 10                 # single-use unchanged
+    assert shop.resell_price({"price": 100, "resell_factor": 4}) == 25  # no uses_per = 1
+
+
+def test_bag_transport_is_gated_for_eggs_and_sleepers():
+    """The bag handed the app a TransportPanel before any pet gate -- an egg
+    could board Zone Transport (egg-shop audit 2026-07-05)."""
+    from tuipet.pet import Pet
+    from tuipet.shopscreen import ShopPanel
+    egg = Pet.new_egg()
+    egg.inventory["i:28"] = 1
+    pan = ShopPanel(egg, start_mode="bag")
+    for t in range(len(pan._tabs())):
+        pan.tab = t
+        rows = pan._rows()
+        hit = next((i for i, r in enumerate(rows) if r["key"] == "i:28"), None)
+        if hit is not None:
+            pan.cursor = hit
+            break
+    assert pan.key("enter") is None                       # NOT ("done", ("transport", ...))
+    assert "Too young" in pan.msg
