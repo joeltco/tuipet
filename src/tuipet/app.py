@@ -1433,6 +1433,7 @@ class TuiPetApp(App):
         if egg_type is None:                       # backed out -> return to the title
             self._open_mode(titlescreen.TitlePanel(), self._after_title)
             return
+        self._new_game = False                     # the fresh start is settled
         self.pet = Pet.new_egg(egg_type=egg_type)
         self._grant_digimemory(self.pet)
         self.flash("Take good care of your egg!")
@@ -1628,7 +1629,11 @@ class TuiPetApp(App):
                 self._sync._stop = True
                 self._sync = None
             persistence.erase_all()
-            self.pet = Pet.new_egg()
+            self.pet = Pet.new_egg()                # placeholder until the carousel picks
+            # a fresh start IS a new game: without this flag the post-title flow
+            # skipped the egg-select carousel and kept the placeholder egg
+            # (Joel 2026-07-05: "automatically selected an egg for me??")
+            self._new_game = True
             self._open_mode(titlescreen.TitlePanel(), self._after_title)
             self.flash("All data erased — a fresh start.")
             return

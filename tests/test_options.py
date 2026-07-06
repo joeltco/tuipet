@@ -77,3 +77,44 @@ def test_erase_all_wipes_the_local_state():
     assert not os.path.exists(persistence.SETTINGS_PATH)
     assert persistence.get_account() == (None, "")
     assert persistence.get_progress().get("wins", 0) == 0
+
+
+def test_erase_flows_into_the_egg_carousel_not_an_auto_egg():
+    """Erase -> title -> (re)login -> the EGG-SELECT CAROUSEL.  The erase
+    branch parked a placeholder Pet.new_egg() and reopened the title, but
+    _new_game was only ever set at construction -- the post-title flow went
+    straight home and the player woke up with an egg they never picked
+    (Joel 2026-07-05: "automatically selected an egg for me??")."""
+    import asyncio
+    from tuipet.app import TuiPetApp
+    from tuipet.pet import Pet
+    from tuipet import eggselectscreen, lobbyscreen, titlescreen
+
+    async def go():
+        p = Pet(num=4, name="Rex", stage="Rookie", attribute="Vaccine")
+        p.world_seconds = 10 * 60.0
+        app = TuiPetApp(pet=p)
+        seen = {}
+        async with app.run_test(size=(82, 32)) as pilot:
+            await pilot.pause()
+            app.mode = None
+            app._after_options(("erase",))              # the options panel's verdict
+            await pilot.pause()
+            seen["title"] = isinstance(app.mode, titlescreen.TitlePanel)
+            await pilot.press("enter")                  # past the title
+            await pilot.pause()
+            seen["account"] = isinstance(app.mode, lobbyscreen.AccountPanel)
+            for ch in "joel":                           # re-create the account
+                await pilot.press(ch)
+            await pilot.press("enter")
+            for ch in "pw":
+                await pilot.press(ch)
+            await pilot.press("enter")
+            await pilot.pause()
+            seen["carousel"] = isinstance(app.mode, eggselectscreen.EggSelectPanel)
+        return seen
+
+    seen = asyncio.run(go())
+    assert seen["title"], "erase must return to the title"
+    assert seen["account"], "the erased account must be re-created"
+    assert seen["carousel"], "a fresh start must open the egg carousel, never auto-pick"
