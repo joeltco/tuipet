@@ -53,19 +53,14 @@ THEMES = {
         "phases": {"dawn": ("#b9d2f0", "#15202f"), "day": ("#a9c8ee", "#101826"),
                    "dusk": ("#d0a070", "#181420"), "night": ("#6d86a8", "#0a0f18")},
     },
-    # the classic 4-shade DMG pea-soup LCD in its putty-grey shell
-    # (the default stays grey; this is an option)
+    # the classic 4-shade DMG pea-soup LCD (the default stays grey; this is
+    # an option).  NB the v0.2.284 putty-shell chrome experiment was REVERTED
+    # (Joel 2026-07-05: "this looks bad") -- gameboy rides the fallbacks.
     "gameboy": {
         "on": "#0f380f", "bg": "#9bbc0f", "mid": "#306230",
-        "accent": "#a83a6a",                                  # the A/B button magenta
-        "pos": "#5c5ab8", "neg": "#b04578",                   # the bezel stripes: navy / burgundy
-        "border": "#4a5a28",
-        "bezel": "#565663",     # the dark screen-surround plate (Joel: "lcd border gray like a dmg")
-        "shell": "#b8b4aa",     # the putty body around everything else
-        "label": "#9a968c",     # printed shell text (titles, key hints)
-        "key": "#b04578",       # action-bar letters wear the A/B button magenta
+        "accent": "#7a3a22", "pos": "#2a5a8a", "neg": "#8a3a2a", "border": "#4a5a28",
         "sil_day": "#0f380f", "sil_night": "#d8e8a0",
-        "heart": "#b04578", "energy": "#5c5ab8", "mood": "#8a86c0", "life": "#6f8f26", "coin": "#b0a86a",
+        "heart": "#8a4a2a", "energy": "#2a6a8a", "mood": "#6a4a8a", "life": "#306230", "coin": "#8a7a1a",
         "weather": {"rain": ("#1a3020", 0.30), "snow": ("#e0e8c8", 0.26), "cloud": ("#3a4a28", 0.18)},
         "void": "#0f380f", "flash": ("#e0f0c0", "#0f380f", "#d8e8a0"),
         "bg_ramp": ("#0f380f", "#306230", "#8bac0f", "#9bbc0f"),   # the 4 DMG shades, dark -> light

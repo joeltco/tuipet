@@ -231,25 +231,22 @@ def test_gameboy_sprites_wear_a_light_halo_over_dark_art():
         theme.apply("grey")
 
 
-def test_shell_chrome_keys_fall_back_and_gameboy_declares_them():
-    """DMG shell polish (Joel 2026-07-05): bezel/shell/label/key are OPTIONAL
-    chrome colours -- plain themes must derive them from border/mid/cyan
-    (zero visual change), the gameboy declares the DMG set."""
-    d = theme._derive(theme.THEMES["grey"])
-    assert d["BEZEL"] == d["BORDER"] and d["SHELL"] == d["BORDER"]
-    assert d["LABEL"] == d["MID"] and d["KEY"] == "cyan"
-    g = theme._derive(theme.THEMES["gameboy"])
-    assert g["BEZEL"] != g["SHELL"] != g["LABEL"]     # a real three-part shell
-    for k in ("BEZEL", "SHELL", "LABEL", "KEY"):
-        assert _HEX.match(g[k]), f"gameboy {k} = {g[k]!r}"
+def test_shell_chrome_keys_all_fall_back():
+    """bezel/shell/label/key are OPTIONAL chrome colours deriving from
+    border/mid/cyan.  The v0.2.284 putty-shell gameboy experiment was
+    REVERTED (Joel: "this looks bad") -- EVERY theme, gameboy included, must
+    ride the fallbacks so the chrome renders exactly as it did pre-shell."""
+    for name in theme.THEMES:
+        d = theme._derive(theme.THEMES[name])
+        assert d["BEZEL"] == d["BORDER"] and d["SHELL"] == d["BORDER"], name
+        assert d["LABEL"] == d["MID"] and d["KEY"] == "cyan", name
 
 
-def test_action_bar_letters_wear_the_theme_key_colour():
+def test_action_bar_letters_keep_cyan_on_every_theme():
     from tuipet.app import keys_markup
     try:
-        theme.apply("gameboy")
-        assert theme.THEMES["gameboy"]["key"] in keys_markup()
-        theme.apply("grey")
-        assert "b cyan]" in keys_markup()             # the plain themes keep cyan
+        for name in theme.THEMES:
+            theme.apply(name)
+            assert "b cyan]" in keys_markup(), name
     finally:
         theme.apply("grey")
