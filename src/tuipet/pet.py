@@ -2742,14 +2742,13 @@ class Pet:
         return f"Fed {food['name']}.{tag}"
 
     def can_train(self):
+        """canExercise (energy audit 2026-07-06): NO hard fatigue/energy gate --
+        MinEnergyForActivity is -127 on the classic column (vacuous), and
+        fatigue/sickness only SHADE the refusal roll (unwellMod) and the injury
+        odds.  The roll itself fires at drill start (training.py), like canon's
+        checkRefused inside canExercise.  The old hard gates were invented."""
         if (_g := self._guard()) is not None:
             return _g
-        if self.is_fatigued():
-            self._set_anim("exhausted", 1.2)
-            return "Too fatigued — let it rest."
-        if self.energy <= 0:                            # MinEnergyForActivity
-            self._set_anim("refuse", 1.0)
-            return "Too tired to train."
         return None
 
     def max_health(self):
@@ -2894,14 +2893,13 @@ class Pet:
         if self.asleep:
             return self._disturbed()
         self._calm_discipline_call()                         # canBattle placates the tantrum
+        # canBattle (energy audit 2026-07-06): the refusal roll is the ONLY
+        # gate -- MinEnergyForActivity is -127 on the classic column (vacuous)
+        # and fatigue has no hard gate anywhere in canon; it shades the roll
+        # (unwellMod -10) and the battle-injury odds instead.  A worn pet
+        # fights worse and refuses more, but it CAN fight.
         if self.check_refused():                             # canBattle -> checkRefused
             return f"{self.name} refuses to fight!"
-        if self.is_fatigued():
-            self._set_anim("exhausted", 1.2)
-            return "Too fatigued — let it rest."
-        if self.energy <= 0:                            # MinEnergyForActivity
-            self._set_anim("refuse", 1.0)
-            return "Too tired to battle."
         return None
 
     def record_battle(self, won, enemy=None, free_style=None):
@@ -3736,6 +3734,36 @@ class Pet:
                 total += PERSONALITY_MOOD_MATCH if fv == trait else PERSONALITY_MOOD_UNMATCH
         return total
 
+    def _apply_item_stats(self, e, mod):
+        """The canon applyItem stat core, shared by the generic path AND the
+        special branches that used to skip it (energy audit 2026-07-06: the
+        X-Program applied NONE of its hunger -10 / strength -13 / energy -0.8 /
+        spirit -10 / mood -300, and the Digimentals skipped their -0.66 energy
+        price).  A FRACTIONAL energy is a share of maxEnergy."""
+        def _sc(v):
+            return math.ceil(v * mod) if v > 0 else int(round(v * mod))
+        if e["hunger"]:
+            self.hunger = _clamp(self.hunger + _sc(e["hunger"]), 0, 4)
+            self.calories = CALORIE_LIMIT               # food refills the calorie buffer
+        # applyConsumable: the consumable's mood is shaped by personality tags
+        self._set_mood(self.mood + _sc(e["mood"]) + _sc(self._personality_mood(e)))
+        self._set_enthusiasm(self.enthusiasm + _sc(e.get("enthusiasm", 0)))
+        # canon applyItem scales weight by the modifier like every other stat
+        # (PhysicalState:3502 ceil(item.getWeight() x modifier))
+        self._set_weight(self.weight + _sc(e["weight"]))
+        if e["energy"]:
+            ev = e["energy"]
+            amt = math.ceil(ev * self.max_energy * mod) if ev != int(ev) else _sc(ev)
+            self._set_energy(self.energy + amt)
+        if e["strength"]:
+            self.strength = _clamp(self.strength + _sc(e["strength"]), 0, 4)
+        # canon scales obedience too (PhysicalState:3428) -- the old "obedience
+        # is UNscaled" note misread the decompile (weight audit 2026-07-06)
+        self._set_obedience(self.obedience + _sc(e["obedience"]))
+        self.vaccine = max(0, self.vaccine + _sc(e["vaccine"]))
+        self.data_power = max(0, self.data_power + _sc(e["data"]))
+        self.virus = max(0, self.virus + _sc(e["virus"]))
+
     def use_item(self, key):
         if self.inventory.get(key, 0) <= 0:
             return "None left."
@@ -3747,7 +3775,13 @@ class Pet:
         if (_g := self._guard(asleep_blocks=False)) is not None:
             return _g
         is_item = key.startswith("i:")
-        refused = self.check_refused(item=e) if is_item else self.check_refused(food=e)
+        # canon: an ItemEvol item's fractional energy price feeds the
+        # AFFORDABILITY auto-refuse (a pet that can't pay the Digimental's
+        # -0.66 x max refuses, exactly like jogress)
+        ev = e.get("energy", 0)
+        echange = ev if (e.get("action") == "ItemEvol" and ev != int(ev)) else 0.0
+        refused = (self.check_refused(item=e, energy_change=echange)
+                   if is_item else self.check_refused(food=e))
         # checkRefused's compliant-else: a COMPLIANT pet cannot refuse an ITEM,
         # but it cooperates grudgingly -- the item lands at WeakConsumableCoefficient
         # strength (0.1), except the Digimemory and healing items (Inherit/Recover)
@@ -3760,6 +3794,10 @@ class Pet:
         self._calm_discipline_call()                 # useItem placates the tantrum
         self.take_item(key)
         if e.get("special") == "xantibody":
+            # canon runs applyItem for the X-Program too (PhysicalState:3323/
+            # 3326): the sample is BRUTAL -- hunger -10, strength -13, energy
+            # -0.8 x max, spirit -10, mood -300 -- on top of the life price
+            self._apply_item_stats(e, WEAK_CONSUMABLE_COEF if weak else 1.0)
             self._set_anim("happy", 1.5)
             if key == "i:14":
                 if self.x_antibody == "None":
@@ -3826,6 +3864,9 @@ class Pet:
                 self._set_anim("refuse", 1.0)
                 return f"{self.name} can't use that yet."
             self.evolve_to(target)
+            # canon digivolve-then-applyItem(item, 1.0): the Digimental's
+            # -0.66 x max energy price bills the NEW form's ceiling
+            self._apply_item_stats(e, 1.0)
             self._set_anim("happy", 1.4)
             return f"{self.name} evolved!"
         is_food = key.startswith("f:")
@@ -3841,29 +3882,7 @@ class Pet:
             self.item_interest = _clamp(self.item_interest + e.get("interest_change", 0),
                                         0, MAX_ITEM_INTEREST)
 
-        def _sc(v):
-            return math.ceil(v * mod) if v > 0 else int(round(v * mod))
-        if e["hunger"]:
-            self.hunger = _clamp(self.hunger + _sc(e["hunger"]), 0, 4)
-            self.calories = CALORIE_LIMIT               # food refills the calorie buffer
-        # applyConsumable: the consumable's mood is shaped by personality tags
-        self._set_mood(self.mood + _sc(e["mood"]) + _sc(self._personality_mood(e)))
-        self._set_enthusiasm(self.enthusiasm + _sc(e.get("enthusiasm", 0)))
-        # canon applyItem scales weight by the modifier like every other stat
-        # (PhysicalState:3502 ceil(item.getWeight() x modifier)); the old raw
-        # add pre-dated the weight audit (2026-07-06)
-        self._set_weight(self.weight + _sc(e["weight"]))
-        if e["energy"]:
-            self._set_energy(self.energy + _sc(e["energy"]))
-        if e["strength"]:
-            self.strength = _clamp(self.strength + _sc(e["strength"]), 0, 4)
-        # canon scales obedience too (PhysicalState:3428 ceil(item.getObedience()
-        # x modifier)) -- the old "obedience is UNscaled" note misread the
-        # decompile (weight audit 2026-07-06; canon-first, not the comment)
-        self._set_obedience(self.obedience + _sc(e["obedience"]))
-        self.vaccine = max(0, self.vaccine + _sc(e["vaccine"]))
-        self.data_power = max(0, self.data_power + _sc(e["data"]))
-        self.virus = max(0, self.virus + _sc(e["virus"]))
+        self._apply_item_stats(e, mod)               # the canon applyItem stat core
         if e.get("vitamin"):
             self.feed_vitamin()                          # guards against injury worsening
         if e["unfatigue"]:

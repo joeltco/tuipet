@@ -646,7 +646,11 @@ def _consumable(row, id_field):
         "mood": int(num("Mood")),
         "enthusiasm": int(num("Enthusiasm")),   # DVPet keeps spirit separate from mood
         "weight": int(num("Weight")),
-        "energy": int(num("Energy (<1 * maxEnergy)") or num("Energy")),
+        # a FRACTIONAL energy is a share of maxEnergy (canon applyItem: the
+        # X-Program's -0.8, the Digimentals' -0.66) -- the old int() zeroed
+        # every one of them (energy audit 2026-07-06).  Whole values stay int.
+        "energy": (lambda v: v if v != int(v) else int(v))(
+            num("Energy (<1 * maxEnergy)") or num("Energy")),
         "strength": int(num("Strength")),
         "obedience": int(num("Obedience")),
         "vaccine": int(num("Vaccine")),
