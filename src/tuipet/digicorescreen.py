@@ -175,8 +175,16 @@ def _evo_rows(pet):
     if not cands:
         return "(final form)"
     rows = []
+    from tuipet import persistence as _p
+    reqs = data.load_requirements()
     for num, name, ready, dev in cands[:8]:
         unmet = sum(1 for met, _ in evolution.requirement_report(pet, num) if met is False)
+        # HiddenEvolution (digicore audit 2026-07-06): canon's tree conceals
+        # 130 flagged forms until FIRST reached -- the cross-generation album
+        # is the reveal state (Evolution.setUnlocked).  The slot still shows
+        # (position + distance-to-go intact), only the name is masked.
+        if reqs.get(num, {}).get("hidden_evo") and not _p.album_seen(num):
+            name = "???"
         rows.append((num, name, ready, unmet))
     return rows
 

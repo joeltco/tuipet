@@ -64,6 +64,14 @@ _ALBUM_SEEN = set()          # in-memory mirror: the 10s autosave was re-reading
                              # settings.json on every save just to no-op (audit 2026-07)
 
 
+def album_seen(num):
+    """Has ANY generation been this form? (canon Evolution.setUnlocked --
+    the dex reveal state the hidden-evolution mask keys on)."""
+    if num in _ALBUM_SEEN:
+        return True
+    return num in set(load_settings().get("progress", {}).get("album", []))
+
+
 def album_add(num):
     if num is None or num < 0 or num in _ALBUM_SEEN:
         return

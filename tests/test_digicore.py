@@ -377,3 +377,37 @@ def test_egg_data_pages_leak_no_sentinels_and_labels_never_collide():
     assert "Digitama" in t and "—" in t
     pan.i = next(i for i, (t2, _r) in enumerate(pan.pages) if t2 == "TROPHIES")
     assert "This pet  none yet" in pan.text().plain or "This pet none yet" in pan.text().plain
+
+
+def test_hidden_evolutions_mask_until_first_reached():
+    """HiddenEvolution (digicore audit 2026-07-06): 130 forms are concealed in
+    canon's tree until reached; the album (Evolution.setUnlocked) reveals."""
+    from tuipet import data, persistence, digicorescreen
+    from tuipet.pet import Pet
+    reqs = data.load_requirements()
+    evo = data.load_evolutions()
+    _, by = data.load_sprites()
+    pick = next(((src, t) for src, targets in evo.items() for t in targets
+                 if reqs.get(t, {}).get("hidden_evo") and t in by and src in by
+                 and by[src]["stage"] not in ("Egg", "Fresh")
+                 and not data.is_placeholder(t) and not data.is_placeholder(src)
+                 and by[t]["stage"] != by[src]["stage"]), None)
+    if pick is None:
+        import pytest
+        pytest.skip("no reachable hidden target")
+    src, hidden_t = pick
+    p = Pet(num=src, name=by[src]["name"], stage=by[src]["stage"],
+            attribute=by[src]["attribute"])
+    p.world_seconds = 10 * 60.0
+    p.line_id = ""                                    # the corpus path (lines = Joel's charts)
+    rows = digicorescreen._evo_rows(p)
+    if isinstance(rows, str):
+        import pytest
+        pytest.skip("no candidates surfaced for this pick")
+    named = {n: nm for n, nm, *_ in rows}
+    if hidden_t in named:
+        assert named[hidden_t] == "???"               # concealed until reached
+        persistence.album_add(hidden_t)               # ...a generation gets there
+        rows = digicorescreen._evo_rows(p)
+        named = {n: nm for n, nm, *_ in rows}
+        assert named[hidden_t] == by[hidden_t]["name"]   # revealed for good

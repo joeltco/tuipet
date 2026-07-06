@@ -355,6 +355,9 @@ def load_requirements():
             "attr_pref": (r.get("AttributePreference") or "None").strip() or "None",
             "attr_aversion": (r.get("AttributeAversion") or "None").strip() or "None",
             "time_aversion": (r.get("TimeAversion") or "None").strip() or "None",
+            # HiddenEvolution (digicore audit 2026-07-06): 130 forms are
+            # CONCEALED in canon's evolution tree until first reached
+            "hidden_evo": (r.get("HiddenEvolution") or "FALSE").strip().upper() == "TRUE",
             "food_aversion": (r.get("FoodAversion") or "None").strip() or "None",
             "food_intol": [x.strip() for x in (r.get("FoodIntolerance(; separator)") or "").split(";")
                            if x.strip() and x.strip() != "None"],
