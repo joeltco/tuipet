@@ -2150,9 +2150,15 @@ class Pet:
             return False
         self.dna_owned[field] = owned - amount
         self.dna_applied[field] = self.dna_applied.get(field, 0) + amount
-        self.disturb += 1                                   # DVPet disturb()
+        # canon calls disturb() -- a NO-OP on an awake pet (its whole body is
+        # asleep-gated); the old `disturb += 1` falsely marked the evolution
+        # counter on every charge (jogress/DNA audit 2026-07-06).  The asleep
+        # case never reaches here: can_charge_dna disturbs and blocks first.
         # applyDNA strength: overflowing the Effort gauge lands at limit-1, NOT
-        # the cap (setExercise(getExerciseLimit() - 1)) -- DNA can't top you off
+        # the cap (setExercise(getExerciseLimit() - 1)) -- DNA can't top you
+        # off.  Canon's limit is the species MaxStrength (4..14); tuipet's
+        # gauge is the real toy's FOUR HEARTS everywhere (UI/training/decay),
+        # so the limit folds to 4 -- the established design, kept.
         gain = DNA_STRENGTH_CHANGE * amount
         if self.strength + gain < 4:
             self.strength = max(0, self.strength + gain)
@@ -2162,18 +2168,14 @@ class Pet:
         self._set_mood(self.mood + (DNA_SAME_FIELD_MOOD if same else DNA_DIFF_FIELD_MOOD) * amount)
         self._set_enthusiasm(self.enthusiasm
                              - (DNA_SAME_FIELD_ENTH_DEC if same else DNA_DIFF_FIELD_ENTH_DEC) * amount)
-        # DVPet applyDNA calls checkWorseSick(...) THEN checkSick(...): these are
-        # mutually exclusive on sick-state (worsen an existing illness vs. roll a brand
-        # new one), so EXACTLY ONE roll ever takes effect -- not two independent
-        # new-sickness chances (the old range(2) ~doubled the real sicken rate). The
-        # Same/DiffField Sick and WorseSick chances are equal in config (1 / 2), so one
-        # `chance` value covers both branches; both bounds are 100 (= DNA_SICK_BOUND).
+        # DVPet applyDNA calls checkWorseSick(...) THEN checkSick(...): the
+        # helpers are naturally exclusive on sick-state (worse no-ops unless
+        # sick, fresh no-ops when sick), and since the sickness arc they carry
+        # the BOUND machinery (habitat/geriatric on the fresh bound, fatigue
+        # padding the worse target) the old flat roll lacked.
         chance = (DNA_SAME_FIELD_SICK if same else DNA_DIFF_FIELD_SICK) * amount
-        if random.random() < chance / DNA_SICK_BOUND:
-            if self.sick:
-                self._worsen_sick()                         # checkWorseSick: aggravate it
-            else:
-                self._sicken()                              # checkSick: a brand-new illness
+        self._check_worse_sick(chance)
+        self._check_sick(chance)
         return True
 
     def reset_dna(self):

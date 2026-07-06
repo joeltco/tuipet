@@ -9,6 +9,9 @@ from . import data
 from . import evolution
 
 JOGRESS_ENERGY_COST = 0.66     # JogressEnergyChange -0.66: a fusion drinks 66% of max energy
+JOGRESS_SICK_CHANCE = 90       # startJogress checkSick(90): fusing with a SICK partner is a
+#                                near-certain catch (a hardcoded canon literal, not config;
+#                                jogress audit 2026-07-06)
 
 # attributeJogress.csv as (result, digimon, partner) attribute triples. BOTH matrix blocks
 # are included (DVPet Affinity.readAttributeInfo reads all rows), so None/Free-attribute

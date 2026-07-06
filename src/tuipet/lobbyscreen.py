@@ -302,7 +302,11 @@ class LobbyPanel:
         if kind == "jogress":
             card = self._card()
             self.client.relay(pid, {"kind": "jogress", "attr": card["attr"],
-                                    "num": card["num"], "name": card["name"]})
+                                    "num": card["num"], "name": card["name"],
+                                    # canon JogressProtocol ships the REAL sick
+                                    # state: fusing with a sick partner is a 90%
+                                    # catch (jogress audit 2026-07-06)
+                                    "sick": bool(getattr(self.pet, "sick", False))})
             self.phase, self.jphase = "jogress", "waiting"
             self.status = f"Fusing with {pname}…"
         elif kind == "battle":
@@ -318,6 +322,7 @@ class LobbyPanel:
         had_partner = self.partner is not None
         self.partner = self.partner_species = self.jresult = None
         self.jphase = self.fail_reason = None
+        self.jpartner_sick = False
         self.jshow = self.bshow = None
         self.battle = self.opp_card = self.bphase = None
         self.bt_my_choice = self.bt_opp_choice = None
@@ -344,6 +349,7 @@ class LobbyPanel:
             return
         if kind == "jogress" and self.phase == "jogress" and self.jphase == "waiting":
             self.partner_species = payload.get("name")
+            self.jpartner_sick = bool(payload.get("sick"))   # contagion at the fuse
             reason = jogress.can_jogress(self.pet)      # honour asleep / too-young, like offline
             self.jresult = None if reason else jogress.resolve(self.pet, payload.get("attr"))
             if self.jresult:
@@ -521,6 +527,11 @@ class LobbyPanel:
                     self.jshow.phase = "fused"          # skip the converge to the reveal
                     return None
                 msg = jogress.fuse(self.pet, self.jresult["num"])   # same path as offline jogress
+                if getattr(self, "jpartner_sick", False):
+                    # canon startJogress: checkSick(90) -- swapping DNA with a
+                    # sick partner is a NEAR-CERTAIN catch
+                    if self.pet._check_sick(jogress.JOGRESS_SICK_CHANCE):
+                        msg += "  ...and it caught something."
                 self.sfx = "jogress"
                 self._return_to_lobby(msg)
             return None
