@@ -63,7 +63,11 @@ THEMES = {
         "heart": "#8a4a2a", "energy": "#2a6a8a", "mood": "#6a4a8a", "life": "#306230", "coin": "#8a7a1a",
         "weather": {"rain": ("#1a3020", 0.30), "snow": ("#e0e8c8", 0.26), "cloud": ("#3a4a28", 0.18)},
         "void": "#0f380f", "flash": ("#e0f0c0", "#0f380f", "#d8e8a0"),
-        "bg_ramp": ("#0f380f", "#306230", "#8bac0f", "#9bbc0f"),   # the 4 DMG shades, dark -> light
+        # GB layering (redo 2026-07-05: 4-shade backgrounds ATE the sprites --
+        # "their blending into the background"): backgrounds get the LIGHT
+        # three shades only; the darkest DMG green belongs to sprites alone,
+        # so the mon is always the darkest thing on the LCD
+        "bg_ramp": ("#306230", "#8bac0f", "#9bbc0f"),
         "phases": {"dawn": ("#1a4418", "#a8c83a"), "day": ("#0f380f", "#9bbc0f"),
                    "dusk": ("#3a3a10", "#a8a838"), "night": ("#7aa060", "#142810")},
     },
@@ -168,16 +172,6 @@ def themed_bg(frame):
         v = _dither_frame(frame, ramp)
         _BG_QUANT[key] = v
     return v
-
-
-def sprite_halo():
-    """The 1px outline shade sprites wear over ramp-quantized art -- the pet's
-    silhouette ink IS the darkest ramp shade, so it vanished into dark dithered
-    regions (Joel 2026-07-05: 'background is showing the same colors as the
-    mon').  GB games kept sprites readable on busy 4-shade backgrounds exactly
-    this way.  The lightest ramp shade; None on full-colour themes."""
-    ramp = THEMES[_current].get("bg_ramp")
-    return ramp[-1] if ramp else None
 
 
 def _dither_frame(frame, ramp):

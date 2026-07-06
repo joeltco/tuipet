@@ -149,12 +149,22 @@ def test_load_sprites_cache_is_intact():
 # ---- gameboy background palette (Joel 2026-07-05: "gameboy theme uses
 # gameboy like palettes for lcd backgrounds") ----------------------------------
 
-_DMG = ("#0f380f", "#306230", "#8bac0f", "#9bbc0f")
+_DMG = ("#306230", "#8bac0f", "#9bbc0f")   # the BACKGROUND shades (light three)
 
 
 def test_gameboy_declares_the_dmg_ramp():
     assert theme.THEMES["gameboy"]["bg_ramp"] == _DMG
     assert theme.THEMES["gameboy"]["void"] == "#0f380f"   # lights-off stays on-palette
+
+
+def test_gameboy_backgrounds_never_wear_the_sprite_ink():
+    """GB layering (redo 2026-07-05: "their blending into the background") --
+    the darkest DMG green is the SPRITE ink; background art must never use
+    it, so the mon is always the darkest thing on the LCD.  This replaced
+    the halo-outline experiment (which boxed the mon)."""
+    gb = theme.THEMES["gameboy"]
+    assert gb["sil_day"] == gb["on"] == "#0f380f"
+    assert gb["sil_day"] not in gb["bg_ramp"]
 
 
 def test_themed_bg_dithers_only_when_the_theme_declares_a_ramp():
@@ -209,24 +219,20 @@ def test_gameboy_renders_background_art_entirely_on_palette():
         theme.apply("grey")
 
 
-def test_gameboy_sprites_wear_a_light_halo_over_dark_art():
-    """The silhouette ink IS the darkest ramp shade, so the mon vanished into
-    dark dithered regions (Joel 2026-07-05).  Sprites get a 1px lightest-shade
-    outline over ramp art -- built from SPRITE pixels only, so weather/orb
-    overlays never grow halo blobs."""
+def test_gameboy_render_reserves_the_sprite_ink_for_sprites():
+    """End-to-end layering pin: over ANY background art, the darkest green on
+    the rendered LCD comes only from sprite/overlay ink -- a sprite-less
+    render of dark art must contain no #0f380f at all."""
+    import re as _re
     from tuipet.render import render_scene
-    dark = ["000000" * 12] * 8                       # uniform dark -> all ramp[0]
-    spr = ["111", "111", "111"]
+    dark = ["000000" * 12] * 8
     try:
         theme.apply("gameboy")
-        t = render_scene([(spr, 5, False)], 12, 4, theme.SIL_DAY, theme.LCD_BG, bgimg=dark)
-        assert _DMG[-1] in str(t.markup), "no halo ring around the sprite"
-        t = render_scene([], 12, 4, theme.SIL_DAY, theme.LCD_BG, bgimg=dark,
-                         overlay=[(6, 4), (7, 4), (6, 5)])
-        assert _DMG[-1] not in str(t.markup), "overlays must not grow halos"
-        theme.apply("grey")
-        t = render_scene([(spr, 5, False)], 12, 4, theme.SIL_DAY, theme.LCD_BG, bgimg=dark)
-        assert theme.THEMES["gameboy"]["bg_ramp"][-1] not in str(t.markup)
+        t = render_scene([], 12, 4, theme.SIL_DAY, theme.LCD_BG, bgimg=dark)
+        assert "#0f380f" not in str(t.markup), "background art wore the sprite ink"
+        t = render_scene([(["111", "111"], 5, False)], 12, 4,
+                         theme.SIL_DAY, theme.LCD_BG, bgimg=dark)
+        assert "#0f380f" in str(t.markup)             # the sprite itself still inks
     finally:
         theme.apply("grey")
 

@@ -25,59 +25,25 @@ def _stamp(buf, pts, cols, px_h):
             buf[oy_][ox_] = 1
 
 
-def _halo_mask(buf, cols, px_h, bgimg):
-    """(colour, mask) for the 1px sprite outline over ramp-quantized art, or
-    None.  Built from the SPRITE pixels only -- callers compute it before
-    stamping weather/projectile overlays, so rain never grows halo blobs."""
-    if not bgimg:
-        return None
-    from . import theme
-    col = theme.sprite_halo()
-    if not col:
-        return None
-    hm = [[0] * cols for _ in range(px_h)]
-    for y in range(px_h):
-        row = buf[y]
-        for x in range(cols):
-            if not row[x]:
-                continue
-            for yy in (y - 1, y, y + 1):
-                if 0 <= yy < px_h:
-                    br = buf[yy]
-                    hr = hm[yy]
-                    for xx in (x - 1, x, x + 1):
-                        if 0 <= xx < cols and not br[xx]:
-                            hr[xx] = 1
-    return col, hm
-
-
-def _paint_cells(buf, cols, rows, on, bg, bgimg, halo=None):
+def _paint_cells(buf, cols, rows, on, bg, bgimg):
     """The half-block compositor: a filled pixel buffer -> Rich Text.
     render_screen and render_scene carried two byte-identical copies of this
     loop, which had to be edited in lockstep (refactor 2026-07-05).  Background
     art passes through the active theme's quantizer when it declares one
-    (gameboy's 4-shade DMG ramp) -- this is the ONE spot every bgimg crosses,
-    so weather tints, cross-fades and lightning all inherit the palette."""
+    (gameboy's light DMG shades) -- this is the ONE spot every bgimg crosses,
+    so weather tints, cross-fades and lightning all inherit the palette.
+    Sprites stay readable by LAYERING, not outlines: a ramp theme's darkest
+    ink is reserved for sprites, never handed to background art (the halo
+    experiment this replaced boxed the mon -- redo 2026-07-05)."""
     if bgimg:
         from . import theme
-        bgimg = theme.themed_bg(bgimg)   # gameboy: Bayer-dithered onto the DMG ramp
-    hcol, hm = halo if halo else (None, None)
+        bgimg = theme.themed_bg(bgimg)
     t = Text()
     for cy in range(rows):
         ty, byy = cy * 2, cy * 2 + 1
         for cx in range(cols):
-            if buf[ty][cx]:
-                tc = on
-            elif hm and hm[ty][cx]:
-                tc = hcol
-            else:
-                tc = "#" + bgimg[ty][cx * 6:cx * 6 + 6] if bgimg else bg
-            if buf[byy][cx]:
-                bc = on
-            elif hm and hm[byy][cx]:
-                bc = hcol
-            else:
-                bc = "#" + bgimg[byy][cx * 6:cx * 6 + 6] if bgimg else bg
+            tc = on if buf[ty][cx] else ("#" + bgimg[ty][cx * 6:cx * 6 + 6] if bgimg else bg)
+            bc = on if buf[byy][cx] else ("#" + bgimg[byy][cx * 6:cx * 6 + 6] if bgimg else bg)
             t.append("▀", style=f"{tc} on {bc}")
         if cy != rows - 1:
             t.append("\n")
@@ -107,10 +73,9 @@ def render_screen(frame_rows, cols, rows, on="#2b2e31", bg="#c6c9cc", baseline=T
                     py, pxx = oy + y, ox + x
                     if 0 <= py < px_h and 0 <= pxx < cols:
                         buf[py][pxx] = 1
-    halo = _halo_mask(buf, cols, px_h, bgimg)   # sprite-only: before the overlay stamp
     if overlay:                              # weather: rain/snow/cloud pixels
         _stamp(buf, overlay, cols, px_h)
-    return _paint_cells(buf, cols, rows, on, bg, bgimg, halo)
+    return _paint_cells(buf, cols, rows, on, bg, bgimg)
 
 
 def render_scene(placements, cols, rows, on="#2b2e31", bg="#c6c9cc", overlay=None, bgimg=None):
@@ -133,10 +98,9 @@ def render_scene(placements, cols, rows, on="#2b2e31", bg="#c6c9cc", overlay=Non
                     py, px = oy + y, x_left + x
                     if 0 <= py < px_h and 0 <= px < cols:
                         buf[py][px] = 1
-    halo = _halo_mask(buf, cols, px_h, bgimg)   # sprite-only: before the overlay stamp
     if overlay:                              # projectiles / impact bursts
         _stamp(buf, overlay, cols, px_h)
-    return _paint_cells(buf, cols, rows, on, bg, bgimg, halo)
+    return _paint_cells(buf, cols, rows, on, bg, bgimg)
 
 
 UPPER, LOWER, FULL = "\u2580", "\u2584", "\u2588"   # half/full blocks (bitmap_text's pixels;
