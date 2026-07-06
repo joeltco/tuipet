@@ -219,6 +219,24 @@ def _note_take(key):
     return v
 
 
+def shop_unlock_add(key):
+    """Canon unlockItem/unlockFood (shop/economy audit 2026-07-06): finding a
+    consumable in the wild UNLOCKS its home-shop listing for good -- device-
+    lifetime in canon (the bag survives resetToEgg), so the per-save progress
+    channel here.  The nine Digimentals are the payload: found once, buyable
+    (4000b) forever after."""
+    d = load_settings()
+    got = d.setdefault("progress", {}).setdefault("shop_unlocks", [])
+    if key not in got:
+        got.append(key)
+        save_settings(d)
+
+
+def shop_unlocks():
+    d = load_settings()
+    return set((d.get("progress") or {}).get("shop_unlocks") or [])
+
+
 def bank_digimemory(mem):
     """Park the departed's inheritance data in the generational channel (DVPet
     keeps items across resetToEgg; tuipet's per-save channel is progress, the

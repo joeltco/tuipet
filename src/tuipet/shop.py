@@ -39,14 +39,23 @@ def entry(key):
     return data.consumable_by_key(key)
 
 
+def _unlocked(e, found):
+    """getShopUnlocked: the csv flag, OR earned -- a consumable found in the
+    wild joins the shelves for good (canon unlockItem/unlockFood; shop/economy
+    audit 2026-07-06)."""
+    return e.get("shop_unlocked") or e["key"] in found
+
+
 def _pool(pet, is_food):
-    """randomizeShop's candidate pool: ShopUnlocked, price > 0, within the
-    season's shop hours (and tuipet's functional-item filter)."""
+    """randomizeShop's candidate pool: ShopUnlocked (csv or earned), price > 0,
+    within the season's shop hours (and tuipet's functional-item filter)."""
+    from . import persistence as _persist
+    found = _persist.shop_unlocks()
     si, hr = _season_i(pet), _hour(pet)
     want = "f:" if is_food else "i:"
     out = []
     for e in data.home_shop_pool():
-        if (e["key"].startswith(want) and e.get("shop_unlocked")
+        if (e["key"].startswith(want) and _unlocked(e, found)
                 and e.get("price", 0) > 0 and data.item_is_functional(e)):
             t0, t1 = e["time_avail"][si]
             if t0 <= hr <= t1:
@@ -126,9 +135,11 @@ def roll_town_shop(pet, town, is_food):
             by_cid[o["consumable_id"]] = o
     si, hr = _season_i(pet), _hour(pet)
     want = "f:" if is_food else "i:"
+    from . import persistence as _persist
+    found = _persist.shop_unlocks()
     pool = []
     for e in data.home_shop_pool():
-        if not (e["key"].startswith(want) and e.get("shop_unlocked")
+        if not (e["key"].startswith(want) and _unlocked(e, found)
                 and data.item_is_functional(e)):
             continue
         o = by_cid.get(e["id"])

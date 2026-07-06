@@ -36,6 +36,7 @@ from __future__ import annotations
 import random
 from . import data
 from . import loot
+from . import persistence as _persist
 from .battle import MAX_HEALTH, MAX_HEALTH_DEFAULT
 
 # --- DVPet config.csv (column 0), verified ---
@@ -282,6 +283,7 @@ class Adventure:
             self.last = "Nothing there after all."
             return (None, None)
         self.pet.add_item(found["key"])
+        _persist.shop_unlock_add(found["key"])   # a wild find unlocks its shop listing
         self.pet._open_praise()                  # it brought you something: praise it!
         self.last = f"{self.pet.name} dug up {found['name']}!"   # no article: "a Oats" read wrong
         return ("item", found)
@@ -297,6 +299,9 @@ class Adventure:
             drop = loot.roll(enemy)
             if drop:
                 self.pet.add_item(drop["key"])
+                # canon unlockItem/unlockFood: the drop unlocks its home-shop
+                # listing for good (the Digimental progression)
+                _persist.shop_unlock_add(drop["key"])
                 self.loot = drop
         if was_boss:
             self.boss_pending = False
