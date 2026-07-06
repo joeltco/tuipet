@@ -78,10 +78,10 @@ def test_hp_chip_food_adds_permanent_hp():
 
 
 def test_training_costs_a_calorie_and_couples_mood_to_spirit():
-    p = _pet(calories=10, enthusiasm=3)
+    p = _pet(calories=3, enthusiasm=3)   # inside the +-CalorieLimit(4) buffer
     m0 = p.mood
     p.apply_training(3, 100, game="hp")
-    assert p.calories == 9                          # ExerciseCalorieDec
+    assert p.calories == 2                          # ExerciseCalorieDec
     # mood: +enthusiasm coupling happened (plus time-of-day noise, small)
     assert p.mood != m0
 

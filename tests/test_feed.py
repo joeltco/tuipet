@@ -13,7 +13,9 @@ from tuipet.feedscreen import FeedPanel, feedable, food_qty
 
 def _pet(**kw):
     p = Pet(num=1, stage="Rookie", attribute="Vaccine")
-    p.obedience = 500            # out-roll checkRefused: these tests exercise applyFood
+    p.obedience = 150            # out-roll checkRefused: these tests exercise applyFood
+    p.weight = p._base_weight()  # the dataclass default 20 is past num 1's weight WALL
+    #                              (base 10 +- 8) -- a real pet is seeded at its base
     for k, v in kw.items():
         setattr(p, k, v)
     return p

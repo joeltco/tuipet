@@ -300,6 +300,16 @@ CLEAN_MOOD_INC = 6                      # CleanMoodInc
 CLEAN_OBED_INC = {0: 1, 1: 2, -1: 0}    # CleanObedienceInc / HighDisposition / LowDisposition
 POOP_WEIGHT_DEC_COEF = 0.1             # PoopWeightDecCoefficient
 POOP_WEIGHT_LIMIT = 4                   # PoopWeightLimit (max weight lost per poop)
+# setWeight (weight audit 2026-07-06): the body clamps HARD at baseWeight +-
+# round(baseWeight x WeightLimitMultiple) -- wider than the +-0.5 Over/Under
+# tier band -- and hitting either wall stings (weightLimitPenalty: mood -10,
+# obedience -0 at difficulty 0, spirit -1)
+WEIGHT_LIMIT_MULTIPLE = 0.75            # WeightLimitMultiple
+WEIGHT_LIMIT_MOOD_PENALTY = 10          # WeightLimitMoodPenalty
+WEIGHT_LIMIT_OBED_PENALTY = 0           # WeightLimitObediencePenalty (difficulty 0: no-op)
+WEIGHT_LIMIT_ENTH_PENALTY = 1           # WeightLimitEnthusiasmPenalty
+ABOVE_MAX_CAL_BM = 1                    # AboveMaxCaloriesBMGaugeChange: calorie overflow
+#                                         while rising hastens the poop (setCalories)
 # DVPet toilet training (config col 0): ONE toilet use while InTraining teaches
 # it; from Rookie on (obedience >= 50) the pet takes ITSELF to a stocked toilet
 # at poop time -- no filth, ever (doPoop's SelfToilet branch).
@@ -1290,14 +1300,15 @@ class Pet:
         self._cal_t = getattr(self, "_cal_t", 0.0) + dt
         if self._cal_t >= self._hunger_interval:
             self._cal_t = 0.0
-            self.calories += CALORIE_LAPSE_CHANGE + (CALORIE_LAPSE_GERIATRIC_EXTRA if self.is_geriatric else 0)
+            self._set_calories(self.calories + CALORIE_LAPSE_CHANGE
+                               + (CALORIE_LAPSE_GERIATRIC_EXTRA if self.is_geriatric else 0))
             if self.calories <= -CALORIE_LIMIT:
                 if self.hunger > 0:
                     self.hunger -= 1
                 if self.hunger == 0:
                     # starvation (setHunger below zero): the calorie crash sheds weight
                     # every further lapse (StarvationCalorieChange -> ActivityWeightChange)
-                    self.weight = max(1, self.weight - STARVE_WEIGHT_DEC)
+                    self._set_weight(self.weight - STARVE_WEIGHT_DEC)
                 self.calories = CALORIE_LIMIT
 
     def _tick_body(self, dt):
@@ -2151,6 +2162,44 @@ class Pet:
     def _set_anim(self, name, ttl):
         self.anim, self.anim_ttl = name, ttl
 
+    def _set_weight(self, value):
+        """PhysicalState.setWeight (weight audit 2026-07-06): clamp to
+        baseWeight +- round(baseWeight x WeightLimitMultiple 0.75); slamming
+        into either wall fires weightLimitPenalty (mood -10, obedience -0 at
+        difficulty 0, spirit -1); inside the band the floor is 1."""
+        value = int(round(value))
+        base = self._base_weight()
+        span = round(base * WEIGHT_LIMIT_MULTIPLE)
+        if value < base - span:
+            self.weight = base - span
+            self._weight_limit_penalty()
+        elif value > base + span:
+            self.weight = base + span
+            self._weight_limit_penalty()
+        else:
+            self.weight = max(1, value)
+
+    def _weight_limit_penalty(self):
+        """PhysicalState.weightLimitPenalty: hitting the body's hard wall."""
+        self._set_mood(self.mood - WEIGHT_LIMIT_MOOD_PENALTY)
+        self._set_obedience(self.obedience - WEIGHT_LIMIT_OBED_PENALTY)
+        self._set_enthusiasm(self.enthusiasm - WEIGHT_LIMIT_ENTH_PENALTY)
+
+    def _set_calories(self, value):
+        """DVPet setCalories: the buffer clamps at +-CalorieLimit -- and an
+        OVERFLOW while rising bumps the BM gauge (AboveMaxCaloriesBMGaugeChange:
+        overeating hastens the poop; proportional to the species poop_limit
+        like feed's own gauge line).  Canon's falling-underflow hunger-lapse
+        push is absorbed by tuipet's crash-refill restructure (the refill IS
+        the delay).  The per-pet calorieMax/MinMod metabolism rolls and the
+        Over/Under CalorieLimitModWeight are all 0 at difficulty 0: data-dead."""
+        value = int(round(value))
+        if value > CALORIE_LIMIT and value > self.calories:
+            self._poop_t = (getattr(self, "_poop_t", 0.0)
+                            + self._poop_interval * ABOVE_MAX_CAL_BM
+                            / max(1, self._phys().get("poop_limit", 64)))
+        self.calories = _clamp(value, -CALORIE_LIMIT, CALORIE_LIMIT)
+
     def _set_obedience(self, value):
         """PhysicalState.setObedience (obedience audit 2026-07-06): any CHANGE
         is nudged once AGAINST the disposition (value -= disposition x 1 --
@@ -2299,9 +2348,9 @@ class Pet:
             self.take_item(key)
         self._set_mood(self.mood + POOP_MOOD_INC)
         wdec = min(int(self._base_weight() * POOP_WEIGHT_DEC_COEF), POOP_WEIGHT_LIMIT)
-        self.weight = max(1, self.weight - wdec)
+        self._set_weight(self.weight - wdec)
         if backlog:
-            self.weight = max(1, self.weight - math.ceil(wdec / 2))
+            self._set_weight(self.weight - math.ceil(wdec / 2))
         e = data.consumable_by_key(key) or {}
         self._set_mood(self.mood + int(e.get("mood", 0) or 0))
         self._set_obedience(self.obedience + int(e.get("obedience", 0) or 0))
@@ -2316,11 +2365,11 @@ class Pet:
         the only source of size-4 piles -- and sheds an extra half weight."""
         self._set_mood(self.mood + POOP_MOOD_INC)                 # PoopMoodInc
         wdec = min(int(self._base_weight() * POOP_WEIGHT_DEC_COEF), POOP_WEIGHT_LIMIT)
-        self.weight = max(1, self.weight - wdec)
+        self._set_weight(self.weight - wdec)
         size = self._poop_size()
         if backlog:
             size = min(4, size + 1)
-            self.weight = max(1, self.weight - math.ceil(wdec / 2))
+            self._set_weight(self.weight - math.ceil(wdec / 2))
         if self.poop < POOP_MAX_PILES:                            # addFilth: first free slot (capped)
             self.poop += 1                                        # poop == countFilth()
             self.poop_sizes.append(size)
@@ -2612,7 +2661,7 @@ class Pet:
         fills = int(food.get("hunger", 0)) > 0
         # a hunger-food on a full stomach -> too full (a glutton eats past FULL_HUNGER)
         if fills and self.hunger >= FULL_HUNGER and self.glutton <= 0:
-            self.weight += 1
+            self._set_weight(self.weight + 1)
             self.overeat += 1
             self.mistake_day += 1                # OverStomachCapcityMissedDayChange
             self.calories = CALORIE_LIMIT
@@ -2650,8 +2699,8 @@ class Pet:
         # rising while ALREADY positive fatten by FoodWeightChange)
         cal = scaled("calories")
         if cal > 0 and self.calories > 0:
-            self.weight += FOOD_WEIGHT_CHANGE
-        self.calories = _clamp(self.calories + cal, -CALORIE_LIMIT, CALORIE_LIMIT)
+            self._set_weight(self.weight + FOOD_WEIGHT_CHANGE)
+        self._set_calories(self.calories + cal)   # a rich-meal OVERFLOW hastens the poop
         self.vaccine = max(0, self.vaccine + scaled("vaccine"))       # attribute foods
         self.data_power = max(0, self.data_power + scaled("data"))
         self.virus = max(0, self.virus + scaled("virus"))
@@ -2662,7 +2711,7 @@ class Pet:
         t = food.get("temp", 0)
         if t and 0 <= self.temp + t <= 100:                 # MaxTemp guard, verbatim
             self.temp += math.ceil(t * modifier) if t > 0 else t
-        self.weight += math.ceil(food.get("weight", 1) * modifier)    # modifier-scaled, like canon
+        self._set_weight(self.weight + math.ceil(food.get("weight", 1) * modifier))   # modifier-scaled, like canon
         # every meal advances the bowel gauge (applyFood: bmGauge += food.BMGauge):
         # eating more means pooping sooner, proportional to the species bmMax
         bm = int(food.get("bm", 0))
@@ -2802,8 +2851,8 @@ class Pet:
         # The body cost is CALORIC (setCaloriesAndChangeWeight): an activity
         # decrement landing while ALREADY in deficit sheds ActivityWeightChange.
         if self.calories < 0:
-            self.weight = max(1, self.weight - 1)         # ActivityWeightChange -1
-        self.calories = max(-CALORIE_LIMIT, self.calories - EXERCISE_CALORIE_DEC)  # ExerciseCalorieDec
+            self._set_weight(self.weight - 1)             # ActivityWeightChange -1
+        self._set_calories(self.calories - EXERCISE_CALORIE_DEC)   # ExerciseCalorieDec
         self._set_energy(self.energy - 1)               # ExerciseEnergyDec
         # setExercise: driving the Effort gauge past its LIMIT risks fatigue --
         # good nutrition softens the odds, the home's compatibility bends them.
@@ -3800,12 +3849,18 @@ class Pet:
         # applyConsumable: the consumable's mood is shaped by personality tags
         self._set_mood(self.mood + _sc(e["mood"]) + _sc(self._personality_mood(e)))
         self._set_enthusiasm(self.enthusiasm + _sc(e.get("enthusiasm", 0)))
-        self.weight = max(1, self.weight + e["weight"])
+        # canon applyItem scales weight by the modifier like every other stat
+        # (PhysicalState:3502 ceil(item.getWeight() x modifier)); the old raw
+        # add pre-dated the weight audit (2026-07-06)
+        self._set_weight(self.weight + _sc(e["weight"]))
         if e["energy"]:
             self._set_energy(self.energy + _sc(e["energy"]))
         if e["strength"]:
             self.strength = _clamp(self.strength + _sc(e["strength"]), 0, 4)
-        self._set_obedience(self.obedience + e["obedience"])   # canon: obedience is UNscaled
+        # canon scales obedience too (PhysicalState:3428 ceil(item.getObedience()
+        # x modifier)) -- the old "obedience is UNscaled" note misread the
+        # decompile (weight audit 2026-07-06; canon-first, not the comment)
+        self._set_obedience(self.obedience + _sc(e["obedience"]))
         self.vaccine = max(0, self.vaccine + _sc(e["vaccine"]))
         self.data_power = max(0, self.data_power + _sc(e["data"]))
         self.virus = max(0, self.virus + _sc(e["virus"]))
