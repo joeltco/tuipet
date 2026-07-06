@@ -85,16 +85,26 @@ def test_lights_out_starts_a_nap_that_lights_end():
     p.world_seconds = 10 * 60.0
     p.sleep_lapse = 200.0                      # mid-cycle: nowhere near bedtime
     p.lights = False                           # the player turns in early
-    p.tick(1.0)
+    for _ in range(5):
+        p.tick(1.0)
+    assert not p.asleep                        # the doze-off WAIT holds it up first
+    for _ in range(40):
+        p.tick(1.0)
+        if p.asleep:
+            break
     assert p.asleep and p.nap
-    assert p.awake_lapse == p.awake_limit - 201   # the nap only runs the earned pressure
+    # the nap only runs the pressure earned by the moment it dozed off
+    assert p.awake_lapse == p.awake_limit - p.sleep_lapse
     p.toggle_lights()                          # lights back ON
     assert p.lights and not p.asleep and not p.nap
 
 
 def test_near_bedtime_lights_out_is_real_sleep():
     p = Pet(num=100, stage="Champion", attribute="Vaccine")
-    p.sleep_lapse = p.sleep_limit - 10         # inside the sleepNotNap edge (90min)
+    p.sleep_lapse = p.sleep_limit - 80         # inside the sleepNotNap edge (90min)
     p.lights = False
-    p.tick(1.0)
+    for _ in range(45):                        # ride out the doze-off wait
+        p.tick(1.0)
+        if p.asleep:
+            break
     assert p.asleep and not p.nap              # real sleep, not a nap

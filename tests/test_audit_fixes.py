@@ -110,7 +110,10 @@ def test_nap_pays_down_bedtime_pressure():
     p = _pet()
     p.sleep_lapse = 500.0
     p.lights = False
-    p.tick(1.0)                                       # nap starts
+    for _ in range(45):                               # nap starts after the doze-off wait
+        p.tick(1.0)
+        if p.asleep:
+            break
     assert p.asleep and p.nap
     lapse0 = p.sleep_lapse
     p.tick(1.0)

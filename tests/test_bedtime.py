@@ -102,6 +102,8 @@ def test_daytime_lights_off_is_a_nap_not_the_night():
     p = _line_pet()                       # noon
     p.toggle_lights()
     p.tick(1.0)
+    assert not p.asleep                   # the doze-off WAIT: no instant nap
+    _run(p, 45)                           # calcToSleepNapLapse passes in the dark
     assert p.asleep and p.nap
     _run(p, 300)                          # held for 5 game-hours: still just a nap
     assert p.nap                          # never converts to the night outside the window

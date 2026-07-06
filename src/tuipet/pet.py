@@ -230,6 +230,14 @@ NAP_ENERGY_MIN = 1                  # NapEnergyMin
 SLEEP_NOT_NAP_MIN = 90              # SleepNotNapMinutes (- restless*60): lights-out near
 SLEEP_NOT_NAP_RESTLESS = 60         #   bedtime starts REAL sleep instead of a nap
 ON_NAP_MOOD_INC = 10                # OnNapMoodInc
+# toNapSleepLapse -> calcToSleepNapLapse (sleep audit 2026-07-06): the pet sits
+# in the DARK a while before nodding off -- energetic ~40 game-min, drained 20,
+# +-restless, and a well-drilled pet (obedience >= 75) drops the extra +1.
+# This delay is canon's real anti-farm for the +10 nap mood.
+TO_NAP_HIGH_ENERGY = 40             # ToNapHighEnergyFactor (energy > max/2)
+TO_NAP_LOW_ENERGY = 20              # ToNapLowEnergyFactor
+TO_NAP_OBEDIENCE_FACTOR = 75        # ToNapObedienceFactor
+TO_SLEEP_NAP_RESTLESS = 1           # ToSleepNapLapseRestlessCoefficient
 DISTURB_POSTPONE = (10, 60)         # DisturbPostponeMin/Max (game-min until it re-sleeps)
 FULL_AWAKE_DISTURB = 480.0          # MaxMinutesToFullAwakeDisturb (- restless*60)
 FULL_AWAKE_DISTURB_RESTLESS = 60.0
@@ -1404,6 +1412,12 @@ class Pet:
             self.awake_limit = (self.WAKE_MINUTE - bt) % DAY_MINUTES
             self.sleep_limit = DAY_MINUTES - self.awake_limit
         elif not self.lights:
+            # the daytime doze waits out the same calcToSleepNapLapse as the
+            # pressure model (sleep audit 2026-07-06)
+            self._to_nap_t = getattr(self, "_to_nap_t", 0.0) + dt
+            if self._to_nap_t < self._calc_to_nap():
+                return
+            self._to_nap_t = 0.0
             # a daytime doze: same once-per-game-hour mood bonus guard as checkNap
             if self.world_seconds - getattr(self, "_nap_bonus_t", -9e9) >= 60:
                 self._nap_bonus_t = self.world_seconds
@@ -1412,13 +1426,27 @@ class Pet:
             self._lights_t = 0.0
             self._lit_obed_hit = False
             self._set_anim("yawn", 1.8)
+        else:
+            self._to_nap_t = 0.0
+
+    def _calc_to_nap(self):
+        """calcToSleepNapLapse: how long the pet sits in the DARK before it
+        nods off -- an energetic pet resists (~40 game-min), a drained one
+        folds in 20; restless +-1; a well-drilled pet (obedience >= 75)
+        drops the extra +1."""
+        r = self.restless * TO_SLEEP_NAP_RESTLESS
+        obed_mod = 0 if self.obedience >= TO_NAP_OBEDIENCE_FACTOR else 1
+        return (TO_NAP_HIGH_ENERGY if self.energy > self.max_energy / 2
+                else TO_NAP_LOW_ENERGY) + r + obed_mod
 
     def _tick_sleep_pressure(self, dt):
         """bedtime is a PRESSURE clock, not the sun (setSleepLapse): SleepLapseInc
         per game-min while awake; at the limit the pet drops off by itself --
         babies (inc 9) nap constantly, adults run a free ~24h rhythm.
-        checkNap: LIGHTS OUT while awake starts a shallow nap right away
-        (real sleep instead when the pressure is nearly full -- sleepNotNap).
+        checkNap fires only after the DOZE-OFF WAIT (toNapSleepLapse; sleep
+        audit 2026-07-06 -- the old instant nap skipped it): lights out, the
+        pet sits a calcToSleepNapLapse while, THEN dozes (real sleep instead
+        when the pressure is nearly full -- sleepNotNap).
         Line pets sleep by the CLOCK instead (LINES_SPEC §5)."""
         if self._in_sleep_window() is not None:
             self._tick_bedtime(dt)
@@ -1428,23 +1456,34 @@ class Pet:
             if self.sleep_lapse >= self.sleep_limit:
                 self._fall_asleep()
             elif not self.lights:
+                self._to_nap_t = getattr(self, "_to_nap_t", 0.0) + dt
+                if self._to_nap_t < self._calc_to_nap():
+                    return                                  # still blinking in the dark
+                self._to_nap_t = 0.0
                 edge = SLEEP_NOT_NAP_MIN - self.restless * SLEEP_NOT_NAP_RESTLESS
                 if self.sleep_lapse >= self.sleep_limit - edge:
                     self._fall_asleep()                     # close enough to bedtime
                 else:
                     # checkNap: a shallow doze that BORROWS the current cycle --
-                    # pressure keeps accruing, so real bedtime still arrives on time.
-                    # design call (polish 2026-07): the +10 nap mood pays at most
-                    # once per game-hour of accrued pressure -- toggling the
-                    # lights was a 2-keypress infinite mood farm
+                    # pressure keeps accruing, so real bedtime still arrives on
+                    # time.  The +10 nap mood keeps the extra once-per-game-hour
+                    # guard (belt over the doze-off wait, canon's own anti-farm)
                     if self.sleep_lapse - getattr(self, "_nap_bonus_lapse", -9e9) >= 60:
                         self._nap_bonus_lapse = self.sleep_lapse
                         self._set_mood(self.mood + ON_NAP_MOOD_INC)
                     self.asleep, self.nap = True, True
                     self._lights_t = 0.0
                     self._lit_obed_hit = False
-                    self.awake_lapse = max(0.0, self.awake_limit - self.sleep_lapse)
+                    # checkNap's nap length: a SICK or hurt pet takes a fixed
+                    # hour (awakeLimit - minutesHour); healthy naps repay the
+                    # accrued pressure.  (Canon's end-of-hour 2-hour variant is
+                    # a wall-clock alignment quirk tuipet's clock doesn't have.)
+                    self.awake_lapse = (max(0.0, self.awake_limit - 60.0)
+                                        if (self.sick or self.is_injured())
+                                        else max(0.0, self.awake_limit - self.sleep_lapse))
                     self._set_anim("yawn", 1.8)
+            else:
+                self._to_nap_t = 0.0                        # the light resets the wait
 
     def _check_death_caps(self):
         """The discrete mistake/injury caps + the Pen20 elder-frailty rule:
@@ -3129,9 +3168,14 @@ class Pet:
     def _check_discipline_call(self):
         """checkDisciplineCall: on the DisciplineCallMin cadence, a chance for the pet to
         act up on its own (opening a scold window) — likelier when its needs go unmet,
-        rarer the more obedient it is.  Obedient grown pets are exempt.  (Sleep-approach
-        gating from DVPet is approximated by running this only while awake.)"""
+        rarer the more obedient it is.  Obedient grown pets are exempt, and a pet on
+        the EDGE OF SLEEP never tantrums (canon: toNapSleepLapse about to doze, or
+        bedtime pressure about to tip; sleep audit 2026-07-06)."""
         if self.scold_flag or self.praise_flag:          # checkCall(): already mid-discipline
+            return
+        if (self.sleep_lapse + 1 >= self.sleep_limit
+                or (not self.lights
+                    and getattr(self, "_to_nap_t", 0.0) + 1 >= self._calc_to_nap())):
             return
         if self.obedience >= DISCIPLINE_OBEDIENCE_MAX and self.stage not in ("Fresh", "InTraining"):
             return
