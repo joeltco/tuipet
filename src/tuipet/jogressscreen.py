@@ -63,8 +63,9 @@ class JogressPanel:
 
     def _sprite(self, num, role="idle", idx=None):
         if idx is None:
-            return data.bob_frame(num, self.frame_i, role)  # WALK_BEAT bob, not 10Hz
-        fr = data.load_sprites()[1][num]["frames"]
+            return data.bob_frame(num, self.frame_i, role,
+                                  egg_type=getattr(self.pet, "egg_type", 0))
+        fr = data.frames_for(num, getattr(self.pet, "egg_type", 0))
         return (fr[idx] if idx < len(fr) else None) or fr[0]
 
     def strip(self):

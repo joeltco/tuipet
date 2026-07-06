@@ -276,11 +276,12 @@ class DNAPanel:
         p = self.pet
         flash = getattr(self, "_mash_flash", 0)
         self._mash_flash = max(0, flash - 1)
-        rec = data.load_sprites()[1][p.num]
-        if flash > 0 and len(rec["frames"]) > 6 and rec["frames"][6]:
-            fr = rec["frames"][6]                             # strike pose on a press
+        sheet = data.frames_for(p.num, getattr(p, "egg_type", 0))
+        if flash > 0 and len(sheet) > 6 and sheet[6]:
+            fr = sheet[6]                                     # strike pose on a press
         else:
-            fr = data.bob_frame(p.num, self.frame_i, beat=2)  # drill-urgency bob, not 10Hz
+            fr = data.bob_frame(p.num, self.frame_i, beat=2,
+                                egg_type=getattr(p, "egg_type", 0))  # drill-urgency bob, not 10Hz
         # scene-only: the meter rides the strip (box-clip audit 2026-07-04 --
         # the bar+scene+meter stack ran 16 lines into the physical 12-row box)
         return menu.paint([grid.center(grid.prep(fr, 24), ph=24)], p.background())

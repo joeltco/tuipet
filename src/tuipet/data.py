@@ -80,6 +80,19 @@ def _content_fill(frame):
     return sum(r[left:right + 1].count("1") for r in rows) / (w * len(rows))
 
 
+def frames_for(num, egg_type=0):
+    """The full frames list for a roster num -- or the egg's shell frames for
+    num -1, which has NO roster sheet.  Raw `load_sprites()[1][num]` lookups
+    were the recurring egg-crash pattern (habitat, training, battle, adventure,
+    transport -- five instances; egg sweep 2026-07-06): use THIS instead.
+    Never empty: unknown nums get one blank frame (blit tolerates it)."""
+    if num == -1:
+        from . import egg as egg_mod
+        return egg_mod.frames(egg_type) or [""]
+    rec = load_sprites()[1].get(num)
+    return rec["frames"] if rec else [""]
+
+
 def bob_frame(num, frame_i, role="idle", beat=5, egg_type=0):
     """The idle-bob frame fetch: the role's pose keyed at frame_i // beat
     (beat 5 = the ~2Hz WALK_BEAT bob every scene screen uses; dna's urgency

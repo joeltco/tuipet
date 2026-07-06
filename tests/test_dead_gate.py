@@ -139,3 +139,57 @@ def test_battle_panel_survives_a_direct_egg():
         for _ in range(15):
             pan.anim()
         pan.text()                                # crashed before the fix
+
+
+def test_no_raw_sprite_sheet_indexing_survives():
+    """The egg-crash pattern was ALWAYS the same line: a raw
+    `load_sprites()[1][num]` index with no entry for the egg's -1 (habitat,
+    training, battle, adventure, transport -- five shipped instances).
+    data.frames_for/bob_frame own safe access now; the raw index is BANNED
+    outside data.py (egg sweep 2026-07-06)."""
+    import glob, os
+    root = os.path.join(os.path.dirname(__file__), "..", "src", "tuipet")
+    hits = []
+    for fn in glob.glob(os.path.join(root, "*.py")):
+        if fn.endswith("data.py"):
+            continue
+        for n, line in enumerate(open(fn), 1):
+            if "load_sprites()[1][" in line:
+                hits.append(f"{os.path.basename(fn)}:{n}")
+    assert not hits, f"raw sheet indexing (egg-crash pattern): {hits}"
+
+
+def test_remaining_panels_survive_a_direct_egg():
+    """Direct-construct sweep with forced deep phases (the gates normally
+    block these, but gates move): adventure travel, the transport ride, the
+    DNA mash, the jogress fuse scene."""
+    import random
+    from tuipet.pet import Pet
+    from tuipet.dnascreen import DNAPanel
+    from tuipet.jogressscreen import JogressPanel
+    from tuipet.adventurescreen import AdventurePanel
+    from tuipet.transportscreen import TransportPanel
+
+    def egg():
+        e = Pet.new_egg()
+        e.world_seconds = 10 * 60.0
+        return e
+
+    random.seed(3)
+    for pan, keys, ticks in (
+            (AdventurePanel(egg()), ("enter", "space", "escape"), 30),
+            (TransportPanel(egg(), "i:28"), ("space", "enter"), 20),
+            (DNAPanel(egg()), ("space", "space"), 12),
+            (JogressPanel(egg()), ("space",), 40)):
+        if isinstance(pan, DNAPanel):
+            pan.phase, pan.bet = "mash", 10
+        if isinstance(pan, JogressPanel):
+            pan.phase, pan.old_num, pan.partner_num = "fusing", -1, -1
+            pan.fused = {"num": -1}
+            pan.fuse_step = 0
+        for k in ("",) + keys:
+            if k:
+                pan.key(k)
+            for _ in range(ticks):
+                pan.anim()
+            pan.text()

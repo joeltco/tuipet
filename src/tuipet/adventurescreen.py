@@ -209,7 +209,7 @@ class AdventurePanel(menu.SubHost):
         return None
 
     def _rows(self, idx):
-        fr = data.load_sprites()[1][self.pet.num]["frames"]
+        fr = data.frames_for(self.pet.num, getattr(self.pet, "egg_type", 0))
         return grid.prep((fr[idx] if idx < len(fr) else None) or fr[0], ph=ROWS * 2)
 
     def _jx(self, rows):
@@ -228,7 +228,7 @@ class AdventurePanel(menu.SubHost):
             # moveLeft; the LCD's one-mon rule serialises canon's three-abreast)
             i = min(p["t"] // PARADE_T, len(p["nums"]) - 1)
             t = p["t"] % PARADE_T
-            fr = data.load_sprites()[1][p["nums"][i]]["frames"]
+            fr = data.frames_for(p["nums"][i])
             wi = data.ROLES["walk"][(t // 3) % 2]
             rows = grid.prep((fr[wi] if wi < len(fr) else None) or fr[0], ph=ROWS * 2)
             lo, hi = grid.roam_bounds(grid.width(rows))

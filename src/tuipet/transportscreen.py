@@ -157,7 +157,7 @@ class TransportPanel:
                 self.sfx = "reward"
 
     def _frames(self, num):
-        return data.load_sprites()[1][num]["frames"]
+        return data.frames_for(num, getattr(self.pet, "egg_type", 0))
 
     def _ticket_overlay(self, pet_x):
         raw = data.load_icons().get(self.item_key)
