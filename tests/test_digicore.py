@@ -337,3 +337,23 @@ def test_evolves_page_windows_instead_of_overflowing():
     t = pan.text().plain
     assert t.count("\n") <= 12                       # fits the LCD
     assert "Cand10" in t and "Cand0" not in t        # windowed onto the cursor
+
+
+def test_egg_gaze_shows_the_egg_and_teases_the_hatchling():
+    """Digicore during Egg (audit 2026-07-05): canon setupDigicore counts the
+    hatch as the egg's next evolution -- the gaze said 'final form' over an
+    egg and its first beat rendered an EMPTY LCD (num -1 has no roster sheet;
+    the egg's art lives in egg data)."""
+    from tuipet import theme
+    from tuipet.digicorescreen import next_evolution
+    egg = Pet(num=-1, stage="Egg", attribute="None")
+    egg.world_seconds = 600.0
+    nxt = next_evolution(egg)
+    assert isinstance(nxt, int) and nxt >= 0          # the hatch target, never None
+    pan = DigiCorePanel(egg)
+    pan.key("space")
+    pan.teaser_t = 0                                   # beat one: the egg itself
+    assert pan._pet_rows(-1), "the egg sprite must render (not an empty core)"
+    assert theme.SIL_DAY in str(pan.text().markup), "no sprite ink on the LCD"
+    pan.teaser_t = 20                                  # beat three: the tease
+    assert "A shape looms" in pan.strip(), pan.strip()

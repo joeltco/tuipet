@@ -129,6 +129,13 @@ def ghost(mask, phase=0):
 def next_evolution(pet):
     """The silhouette's subject (getCurrentNaturalEvol first entry): the ready
     candidate first, else the closest one; None past growth / at a final form."""
+    if pet.num == -1:
+        # canon setupDigicore counts an EGG's hatch as its next evolution
+        # (the chart holds Egg -> Fresh), so the gaze teases the hatchling --
+        # it said "final form" over an egg (audit 2026-07-05)
+        from . import egg as egg_mod
+        targets = egg_mod.hatch_targets(getattr(pet, "egg_type", 0))
+        return targets[0] if targets else None
     if lines.active(pet):
         rows = lines.evo_rows(pet)      # line chart: ready first, else fewest-unmet
         if not rows:
@@ -329,6 +336,15 @@ class DigiCorePanel:
         return None
 
     def _pet_rows(self, num, idx=None):
+        if num == -1:
+            # the EGG itself sits in the core (its sheet lives in egg data,
+            # not the roster -- the gaze's first beat rendered an empty LCD;
+            # audit 2026-07-05)
+            from . import egg as egg_mod
+            fr = egg_mod.frames(getattr(self.pet, "egg_type", 0))
+            if not fr:
+                return None
+            return fr[(self.frame_i // 5) % 2] or fr[0]
         if idx is None:
             return data.bob_frame(num, self.frame_i)   # WALK_BEAT bob, not 10Hz
         rec = data.load_sprites()[1].get(num)
