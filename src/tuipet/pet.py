@@ -309,6 +309,29 @@ RANK_CHANGE_SICK_FORCED = 5             # RankChangeSickForced: ...more so when 
 RANK_PREF_INC = 2                       # config RankChangeSpeciesPreferenceInc (species like/dislike bias)
 RANK_DISLIKED = -2                      # config RankChangeDisliked
 RANK_AFTER_FAV = 20                     # config RankChangeAfterFav (decay other ranks toward 0)
+# the ATTRIBUTE taste ledger + the rank-event deltas (taste/rank audit
+# 2026-07-06 -- the standing "rank system unported" deferral closed).  Young
+# pets form tastes faster: the per-event base is stage-scaled.
+RANK_CHANGE_ATTR = 1                    # RankChangeAttribute (per drill)
+RANK_STAGE_INC = {"Fresh": 3, "InTraining": 2, "Rookie": 1}   # RankChangeStage{1,2,3}Inc
+RANK_TRAIN_FORCED = 2                   # RankChangeTrainForced (forced training sours it)
+RANK_INJ_BATTLE_WON = 1                 # RankChangeInjuryBattleWon (hurt by that attribute...)
+RANK_INJ_BATTLE_LOST = 5                # RankChangeInjuryBattleLost (...and beaten by it)
+RANK_BAD_FOOD_FORCED = 3                # RankChangeBadFoodForced (forced the disliked meal)
+RANK_FOOD_FORCED = 1                    # RankChangeFoodForced (any forced meal grates)
+RANK_INTOL_FORCED = 5                   # RankChangeIntolerantForced
+RANK_SICK_FORCED = 5                    # RankChangeSickForced (a forced meal that sickened)
+RANK_TIME_SICK = 5                      # RankChangeSick/Injury: misery sours the HOUR too
+NONE_TRAIN_MOOD_RANK = -1               # NoneTrainingAttributeMoodRankChange (the HP drill)
+# the personality TRACKER (randPersonalityTraits seeds / personalityTracker /
+# randOnChampion): childhood care -- energy kept high, weight kept healthy,
+# mood kept happy -- is tallied through Fresh/InTraining/Rookie and RE-ROLLS
+# the temperament at the Champion evolution (threshold +-42)
+PCHAMP_RANK = 42                        # PersonalityChampRandom{High,Low}*Rank
+PCHAMP_HI_ENERGY = 0.75                 # PersonalityChampRandomHighEnergyCoefficient
+PCHAMP_LO_ENERGY = 0.25                 # PersonalityChampRandomLowEnergyCoefficient
+EXERCISE_DISLIKED_ATTR_ENTH = -3        # ExerciseDislikedAttributeEnthusiasmChange
+ENTH_DISLIKE_FORCED = -1                # EnthusiasmChangeDislikeForced
 FAV_FOOD_MOOD = 10                      # config FavFoodMoodInc
 FOOD_MOOD = 2                           # config FoodMoodInc (neutral food)
 FAV_FOOD_ENTH = 1                       # config FavFoodEnthusiasmInc
@@ -568,6 +591,10 @@ INJ_LAPSE_MIN = 29                       # InjLapseMin
 WORSE_INJ_CHANCE = 100                   # WorseInjuryChance / WorseBattleInjuryChance (bound)
 WORSE_INJ_EXERCISE = {"bad_nv": 10, "good_nv": 1, "good_v": 0, "bad_v": 5}   # WorseInjury*
 WORSE_INJ_BATTLE = {"bad_nv": 15, "good_nv": 5, "good_v": 0, "bad_v": 5}     # WorseBattleInjury*
+# the WEAK tables (taste/rank audit 2026-07-06): drilling the species'
+# ATTRIBUTE AVERSION (a fixed seed -- the aversion never drifts) hurts more
+INJ_WEAK_EXERCISE = {"bad_nv": 20, "good_nv": 5, "good_v": 1, "bad_v": 10}   # WeakInjury*
+WORSE_INJ_WEAK = {"bad_nv": 15, "good_nv": 5, "good_v": 1, "bad_v": 5}       # WorseWeakInjury*
 # FRESH injuries (sickness/injury audit 2026-07-06): the same weight x vitamin
 # matrix vs a 1000 bound, plus a shared additive term -- geriatric/bad-age,
 # fatigue x coefficient, negative energy x coefficient, habitat compatibility
@@ -691,6 +718,16 @@ class Pet:
     dna_owned: dict = _dcf(default_factory=lambda: {f: 0 for f in data.DNA_FIELDS})    # banked
     dna_applied: dict = _dcf(default_factory=lambda: {f: 0 for f in data.DNA_FIELDS})  # charged
     food_ranks: dict = _dcf(default_factory=lambda: {c: 0 for c in data.FOOD_CATEGORIES})
+    # the ATTRIBUTE taste ledger (taste/rank audit 2026-07-06): drills warm the
+    # pet to an attribute, injuries and forced training sour it; a rank at
+    # +-RankLimit becomes the emergent favourite/disliked ("" = none yet)
+    attr_ranks: dict = _dcf(default_factory=lambda: {"Vaccine": 0, "Data": 0, "Virus": 0})
+    favorite_attr: str = ""
+    disliked_attr: str = ""
+    # the personality tracker (childhood care -> the Champion temperament)
+    energy_rank: int = 0
+    weight_rank: int = 0
+    mood_rank: int = 0
     food_eaten: dict = _dcf(default_factory=lambda: {c: 0 for c in data.FOOD_CATEGORIES})
     favorite_food: str = ""             # emerges at rank +RankLimit
     disliked_food: str = ""             # emerges at rank -RankLimit
@@ -890,7 +927,9 @@ class Pet:
 
     def _rand_personality_traits(self):
         """PhysicalState.randPersonalityTraits: each trait rolls Random.nextInt(3) ->
-        {0:-1, 1:0, 2:+1} and is fixed for life (only assigned while still neutral)."""
+        {0:-1, 1:0, 2:+1} (only assigned while still neutral) -- and SEEDS the
+        matching tracker rank at +-42 so the Champion re-roll starts from the
+        rolled temperament, not from zero (taste/rank audit 2026-07-06)."""
         def roll(cur):
             if cur != 0:
                 return cur
@@ -899,6 +938,21 @@ class Pet:
         self.restless = roll(self.restless)
         self.glutton = roll(self.glutton)
         self.disposition = roll(self.disposition)
+        self.energy_rank = self.restless * PCHAMP_RANK      # randPersonalityTraits seeds
+        self.weight_rank = self.glutton * PCHAMP_RANK
+        self.mood_rank = self.disposition * PCHAMP_RANK
+
+    def _rand_on_champion(self):
+        """PhysicalState.randOnChampion: at the CHAMPION evolution the
+        temperament is RE-ROLLED from the tracked childhood ranks -- a pup
+        kept energetic turns restless, one kept fat turns gluttonous, one
+        kept happy turns sunny (threshold +-42, no randomness)."""
+        self.restless = (1 if self.energy_rank >= PCHAMP_RANK
+                         else -1 if self.energy_rank <= -PCHAMP_RANK else 0)
+        self.glutton = (1 if self.weight_rank >= PCHAMP_RANK
+                        else -1 if self.weight_rank <= -PCHAMP_RANK else 0)
+        self.disposition = (1 if self.mood_rank >= PCHAMP_RANK
+                            else -1 if self.mood_rank <= -PCHAMP_RANK else 0)
 
     @classmethod
     def from_num(cls, num):
@@ -1261,6 +1315,26 @@ class Pet:
                     self.refused = False
                     self.scold_flag, self.scold_window = False, 0
             self._check_discipline_call()                # the pet may spontaneously act up
+            # personalityTracker (taste/rank audit 2026-07-06): childhood care
+            # is TALLIED through Fresh/InTraining/Rookie -- energy kept above
+            # 75% of max builds restlessness, weight off Healthy builds
+            # gluttony, the mood tier builds disposition; randOnChampion
+            # cashes the tally in at the Champion evolution
+            if self.stage in ("Fresh", "InTraining", "Rookie"):
+                if self.energy >= PCHAMP_HI_ENERGY * self.max_energy:
+                    self.energy_rank += 1
+                elif self.energy <= PCHAMP_LO_ENERGY * self.max_energy:
+                    self.energy_rank -= 1
+                wc = evolution.weight_category(self.weight, self._base_weight())
+                if wc == "Over":
+                    self.weight_rank += 1
+                elif wc == "Under":
+                    self.weight_rank -= 1
+                m = self.current_mood()
+                if m == "Happy":
+                    self.mood_rank += 1
+                elif m in ("Unhappy", "Depressed"):
+                    self.mood_rank -= 1
             # awake enthusiasmLapse (mood -= |enth*EnthusiasmMoodDecCoefficient|, then an energetic
             # pet's spirit climbs HighEnergyEnthusiasmChange) stays DEFERRED -- and this was measured,
             # not assumed: ported faithfully it collapses mood to Unhappy/Depressed within ~15 real-min
@@ -1722,13 +1796,13 @@ class Pet:
     def _power_bonus_attr(self):
         """set{Vaccine,Data,Virus}Power's bonus gate: the attribute whose gains
         a HAPPY pet doubles -- its own attribute (any stage), or for a None/
-        Free-attribute pet past InTraining its favourite (AttributePreference
-        seeds getFavAtt; the rank-drift favourite is unported)."""
+        Free-attribute pet past InTraining its EMERGENT favourite (the ledger
+        drifts now; the AttributePreference seed stands in until one forms)."""
         if self.attribute in ("Vaccine", "Data", "Virus"):
             return self.attribute
         if self.stage in ("Fresh", "InTraining"):
             return "None"
-        return self._phys().get("attr_pref", "None")
+        return self.favorite_attr or self._phys().get("attr_pref", "None")
 
     def _glutton(self):
         return self.glutton
@@ -2152,6 +2226,65 @@ class Pet:
             elif self.food_ranks[c] <= RANK_MIN:
                 self.disliked_food = c
 
+    _ATTR3 = ("Vaccine", "Data", "Virus")
+
+    def _rank_stage_inc(self):
+        """RankChangeStage*Inc: young pets form tastes faster (+3/+2/+1)."""
+        return RANK_STAGE_INC.get(self.stage, 0)
+
+    def _promote_attr_ranks(self):
+        """A rank at +-RankLimit becomes the emergent favourite/disliked
+        (simplified from Taste.setNewFavDislike like the food port: no
+        repeat-collision reroll -- all three attributes are valid both ways)."""
+        for a in self._ATTR3:
+            if self.attr_ranks[a] >= RANK_LIMIT and self.favorite_attr != a:
+                self.favorite_attr = a
+                if self.disliked_attr == a:
+                    self.disliked_attr = ""
+            elif self.attr_ranks[a] <= RANK_MIN and self.disliked_attr != a:
+                self.disliked_attr = a
+                if self.favorite_attr == a:
+                    self.favorite_attr = ""
+
+    def _change_attr_rank(self, attr):
+        """Taste.changeRank for the attribute ledger: a drill warms the pet to
+        its attribute (stage-scaled base, +-2 species preference/aversion
+        bias); drilling the current favourite decays the others toward 0."""
+        if attr not in self._ATTR3:
+            return
+        req = self._phys()
+        delta = RANK_CHANGE_ATTR + self._rank_stage_inc()
+        if attr == req.get("attr_pref", "None"):
+            delta += RANK_PREF_INC
+        elif attr == req.get("attr_aversion", "None"):
+            delta -= RANK_PREF_INC
+        if attr == self.disliked_attr:
+            delta += RANK_DISLIKED
+            for a in self._ATTR3:                          # incRankExcept toward 0
+                if a != attr and self.attr_ranks[a] < 0:
+                    self.attr_ranks[a] = min(0, self.attr_ranks[a] + RANK_AFTER_FAV)
+        if attr == self.favorite_attr:
+            for a in self._ATTR3:                          # decRankExcept toward 0
+                if a != attr and self.attr_ranks[a] > 0:
+                    self.attr_ranks[a] = max(0, self.attr_ranks[a] - RANK_AFTER_FAV)
+        self.attr_ranks[attr] = _clamp(self.attr_ranks[attr] + delta, RANK_MIN, RANK_LIMIT)
+        self._promote_attr_ranks()
+
+    def _dec_attr_rank(self, attr, change):
+        """decRankAndCheckFavDislikeChange: a bad experience keyed to an
+        attribute sours it (None = all three, like canon's disturb(None))."""
+        for a in ([attr] if attr in self._ATTR3 else self._ATTR3):
+            self.attr_ranks[a] = _clamp(self.attr_ranks[a] - change, RANK_MIN, RANK_LIMIT)
+        self._promote_attr_ranks()
+
+    def _dec_food_ranks(self, cats, change):
+        """The food ledger's negative path (forced meals, forced sickness)."""
+        for c in cats:
+            if c in self.food_ranks:
+                self.food_ranks[c] = _clamp(self.food_ranks[c] - change, RANK_MIN, RANK_LIMIT)
+                if self.food_ranks[c] <= RANK_MIN:
+                    self.disliked_food = c
+
     def _eat_food(self, category, complied=False):
         """DVPet feed taste. A food's Type is a ";"-list of categories (foodType.getType()):
         the tier comes from whether any category is the CURRENT disliked (first) or favourite,
@@ -2184,6 +2317,12 @@ class Pet:
             # x2 fresh loop misread it; sickness/injury audit 2026-07-06)
             self._check_worse_sick(INTOL_WORSE_SICK_CHANCE)
             self._check_sick(INTOL_FOOD_SICK_CHANCE)
+        # the FORCED-meal taste decs (taste/rank audit 2026-07-06): a compliant
+        # pet's grudging meal sours the categories -- the disliked worst
+        if complied and cats:
+            self._dec_food_ranks(cats, RANK_BAD_FOOD_FORCED if tier == "disliked"
+                                 else RANK_INTOL_FORCED if any(c in intol for c in cats)
+                                 else RANK_FOOD_FORCED)
         return tier
 
     def _become(self, num):
@@ -2206,7 +2345,12 @@ class Pet:
         return _req
 
     def evolve_to(self, num):
+        was_young = self.stage in ("Egg", "Fresh", "InTraining", "Rookie")
         _req = self._become(num)
+        if was_young and self.stage == "Champion":
+            # randOnChampion (taste/rank audit 2026-07-06): the childhood-care
+            # tally becomes the adult temperament
+            self._rand_on_champion()
         self.stage_seconds = 0.0
         # per-stage care record resets; the next stage's care decides the next form
         self.care_mistakes = self.overeat = self.disturb = 0
@@ -2861,9 +3005,12 @@ class Pet:
             worse = self._check_worse_sick(DIRTY_EATING_WORSE_CHANCE * self.poop)
             got_ill = self._check_sick(DIRTY_EATING_SICK_CHANCE * self.poop)
             # checkDirtyEating: a COMPLIANT pet forced to eat amid the filth
-            # and sickened by it resents you (obedience audit 2026-07-06)
+            # and sickened by it resents you (obedience audit 2026-07-06) --
+            # and the meal's categories sour hard (RankChangeSickForced)
             if (worse or got_ill) and complied:
                 self._set_obedience(self.obedience + OBEDIENCE_CHANGE_SICK_FORCED)
+                self._dec_food_ranks([c for c in (food.get("category") or "").split(";")
+                                      if c in data.FOOD_CATEGORIES], RANK_SICK_FORCED)
         tier = self._eat_food(food.get("category", ""), complied)   # DVPet taste: fav/disliked/neutral
         self._last_meal_disliked = (tier == "disliked")      # eat(): disliked -> +9 grimace bite
         self._apply_nutrition(food, modifier)                # GoodNutrition macros (scaled)
@@ -2931,6 +3078,7 @@ class Pet:
         gain = hits * TRAIN_POWER_PER_HIT if success else 0
         if game == "hp":
             attr = "Effort"
+            self.mood_rank += NONE_TRAIN_MOOD_RANK   # NoneTrainingAttributeMoodRankChange
             if self.disposition == -1:
                 # exercise() None-branch: a SOUR pet pays the fav-dec on the HP drill
                 self._set_enthusiasm(self.enthusiasm - 1)
@@ -2948,14 +3096,22 @@ class Pet:
                 self.data_power += gain
             elif attr == "Virus":
                 self.virus += gain
-            # exercise()'s enthusiasm branches key on the learned attribute RANKS
-            # (TasteRanks, like foods) -- unported; the species attribute stands in
-            # as the favourite.  Canon costs: fav -1, NEUTRAL -2 (NotFavDec) --
-            # the old -3 treated every other attribute as the DISLIKED rank, and
-            # the old mood-1 misread NoneTrainingAttributeMoodRankChange (an
-            # HP-drill moodRANK drift; the rank-drift system is unported).
-            if attr == self.attribute:
+            # the drill drives the ATTRIBUTE taste ledger (taste/rank audit
+            # 2026-07-06): the trained attribute warms; a FORCED drill sours it
+            self._change_attr_rank(attr)
+            if complied:
+                self._dec_attr_rank(attr, RANK_TRAIN_FORCED)
+            # exercise()'s enthusiasm branches key on the ledger's EMERGENT
+            # favourite/disliked (the species attribute / seed stands in until
+            # a real taste forms); the emergent disliked drags hard (-3, and a
+            # forced drill of it adds -1)
+            fav = self.favorite_attr or (self.attribute if self.attribute in self._ATTR3
+                                         else self._phys().get("attr_pref", "None"))
+            if attr == fav:
                 self._set_enthusiasm(self.enthusiasm - 1)  # ExerciseFavAttributeEnthusiasmDec
+            elif attr == self.disliked_attr:
+                self._set_enthusiasm(self.enthusiasm + EXERCISE_DISLIKED_ATTR_ENTH
+                                     + (ENTH_DISLIKE_FORCED if complied else 0))
             else:
                 self._set_enthusiasm(self.enthusiasm - 2)  # ExerciseNotFavAttributeEnthusiasmDec
         # checkExerciseTime: drilling at the pet's favourite time of day lifts it,
@@ -2999,8 +3155,9 @@ class Pet:
         else:                                            # DVPet exercise-fail penalties
             self._set_mood(self.mood - 10)               # ExerciseFailMoodDec
             self._set_obedience(self.obedience - 1)      # ExerciseFailObedienceDec
-        # checkExerciseInj: worsening first, then the fresh matrix roll
-        self._check_exercise_injury(complied)
+        # checkExerciseInj: worsening first, then the fresh matrix roll (the
+        # species aversion rides the WEAK tables)
+        self._check_exercise_injury(complied, attr if attr in self._ATTR3 else None)
         # DVPet HP_Training_AttackSuccess = hit pose (frame 6); AttackFail = dejected pose
         # (frame 9). A failed drill shows the dejected reaction (which surfaces the "unhappy"
         # discourage emote), not an attack pose.
@@ -3055,8 +3212,9 @@ class Pet:
             self._set_energy(self.energy - BATTLE_HIGH_HP_ENERGY)
             self._set_calories(self.calories - BATTLE_CAL_HIGH)
         # checkBattleInj: worsening, then a fresh roll WIN OR LOSE (a loss
-        # pads +50/1000)
-        self._check_battle_injury(won, complied=complied)
+        # pads +50/1000); a fresh battle injury sours the opponent's attribute
+        self._check_battle_injury(won, complied=complied,
+                                  opp_attr=(enemy or {}).get("attribute"))
         # checkSick: a SICK opponent is contagious at the bout's end (PvP
         # ships the partner's real state), win or lose
         if (enemy or {}).get("sick"):
@@ -3339,6 +3497,10 @@ class Pet:
         self.sick_length = max(SICK_LAPSE_MIN, self.sick_length - self._affinity() * SICK_LAPSE_MIN)
         self._set_mood(self.mood - SICK_MOOD_DEC)
         self._set_enthusiasm(self.enthusiasm + SICK_ENTH_CHANGE)
+        # canon sours the HOUR it fell ill in (timeRanks -RankChangeSick),
+        # mapped onto the tuned time ledger's +-90 scale
+        ph = self.day_phase
+        self.time_pref[ph] = _clamp(self.time_pref.get(ph, 0) - RANK_TIME_SICK, -90, 90)
 
     def _worsen_sick(self):
         """PhysicalState.checkWorseSick (effect body): an already-sick pet gets worse --
@@ -3367,6 +3529,8 @@ class Pet:
         # saps a bar -- inj_length is already set, so the red-energy fatigue
         # trigger's !isInj guard holds like canon's
         self._set_energy(self.energy - INJURY_ENERGY_DEC)
+        ph = self.day_phase                                # timeRanks -RankChangeInjury
+        self.time_pref[ph] = _clamp(self.time_pref.get(ph, 0) - RANK_TIME_SICK, -90, 90)
 
     def has_vitamin(self):
         """PhysicalState.hasVitamin: a vitamin is active, guarding against worse injuries."""
@@ -3427,27 +3591,30 @@ class Pet:
         """-(energy x coef) while in the red: exhaustion pads injury odds."""
         return int(-(self.energy * coef)) if self.energy < 0 else 0
 
-    def _check_exercise_injury(self, complied=False):
+    def _check_exercise_injury(self, complied=False, attr=None):
         """checkExerciseInj: EVERY drill risks worsening, then a fresh injury --
         the old 'overweight -> 50%' paraphrase is gone (canon baseline is
         1/1000 healthy, 10/1000 off-weight, vitamin-blunted, padded by age /
-        fatigue / exhaustion / an incompatible home)."""
-        self._check_worse_injury("exercise", complied=complied)
+        fatigue / exhaustion / an incompatible home).  Drilling the species'
+        ATTRIBUTE AVERSION rides the harsher WEAK tables."""
+        weak = attr is not None and attr == self._phys().get("attr_aversion", "None")
+        self._check_worse_injury("exercise", complied=complied, weak=weak)
         if self.is_injured():
             return
         inj = ((INJ_GERIATRIC if self.is_geriatric else 0)
                + (FATIGUE_MOD * INJ_FATIGUE_COEF if self.is_fatigued() else 0)
                + self._neg_energy_mod(INJ_NEG_ENERGY_COEF)
                + self._compat_inj_change())
-        if self._inj_matrix_roll(INJ_EXERCISE, INJ_CHANCE, inj):
+        if self._inj_matrix_roll(INJ_WEAK_EXERCISE if weak else INJ_EXERCISE, INJ_CHANCE, inj):
             self._injure()
             if complied:
                 self._set_obedience(self.obedience + OBED_INJ_FORCED)
 
-    def _check_battle_injury(self, won, complied=False):
+    def _check_battle_injury(self, won, complied=False, opp_attr=None):
         """checkBattleInj: worsening first, then a fresh roll -- WIN OR LOSE
         (a loss pads +50/1000, being a baby or an elder +10, fatigue +100).
-        The old loss-only 30% flat roll is gone."""
+        The old loss-only 30% flat roll is gone.  A fresh battle injury also
+        SOURS the opponent's attribute (changeBattleRanks: won -1 / lost -5)."""
         self._check_worse_injury("battle", won=won, complied=complied)
         if self.is_injured():
             return
@@ -3459,20 +3626,22 @@ class Pet:
                + self._compat_inj_change())
         if self._inj_matrix_roll(INJ_BATTLE, BATTLE_INJ_CHANCE, inj):
             self._injure()
+            self._dec_attr_rank(opp_attr, RANK_INJ_BATTLE_WON if won else RANK_INJ_BATTLE_LOST)
             if complied:
                 self._set_obedience(self.obedience
                                     + (OBED_INJ_BATTLE_WON if won else OBED_INJ_BATTLE_LOST))
 
-    def _check_worse_injury(self, kind, won=True, complied=False):
+    def _check_worse_injury(self, kind, won=True, complied=False, weak=False):
         """calcWorse{Exercise,Battle}Inj: pushing an already-injured pet can
         worsen the injury.  kind: "exercise" / "battle" / "travel" -- canon's
         checkWorseTravelInj rides the BATTLE table with won=True (the old port
         used the exercise table for walks).  The additive term (age, fatigue,
-        exhaustion, home) was missing entirely."""
+        exhaustion, home) was missing entirely.  weak=True (drilling the
+        species aversion) rides the harsher WorseWeakInjury table."""
         if not self.is_injured():
             return
         if kind == "exercise":
-            table = WORSE_INJ_EXERCISE
+            table = WORSE_INJ_WEAK if weak else WORSE_INJ_EXERCISE
             inj = ((WORSE_INJ_GERIATRIC if self.is_geriatric else 0)
                    + (FATIGUE_MOD if self.is_fatigued() else 0))
         else:                                        # battle / travel share a table
@@ -4026,6 +4195,9 @@ class Pet:
         self.vaccine = max(0, self.vaccine + _sc(e["vaccine"]))
         self.data_power = max(0, self.data_power + _sc(e["data"]))
         self.virus = max(0, self.virus + _sc(e["virus"]))
+        # canon applyItem: a Disposition item nudges the MOOD RANK (the
+        # tracker the Champion re-roll cashes in), scaled like every stat
+        self.mood_rank += _sc(int(e.get("t_disposition", 0) or 0))
 
     def use_item(self, key):
         if self.inventory.get(key, 0) <= 0:

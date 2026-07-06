@@ -348,9 +348,13 @@ def load_requirements():
             "evol_item": _int_or(r.get("EvolItemID"), -1),   # item that triggers this form
             "attack_index": _attack_index(r.get("SpecialAttacksVaccineDataVirus")),
             "food_pref": (r.get("FoodPreference") or "None").strip() or "None",
-            # the rank-drift favourite's SEED (AttributeRanks initial favorite);
-            # stands in for getFavAtt while the rank system is unported
+            # the taste-ledger SEEDS (Taste.setPreference/setAversion): the
+            # preference biases the drift +2, the AVERSION -2 -- and the
+            # attribute aversion also keys the WEAK injury tables (it never
+            # drifts; only favorite/disliked do)
             "attr_pref": (r.get("AttributePreference") or "None").strip() or "None",
+            "attr_aversion": (r.get("AttributeAversion") or "None").strip() or "None",
+            "time_aversion": (r.get("TimeAversion") or "None").strip() or "None",
             "food_aversion": (r.get("FoodAversion") or "None").strip() or "None",
             "food_intol": [x.strip() for x in (r.get("FoodIntolerance(; separator)") or "").split(";")
                            if x.strip() and x.strip() != "None"],
