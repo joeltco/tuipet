@@ -60,6 +60,10 @@ INVESTIGATE_WALK = -5000             # InvestigateWalkFactor (walking spots more
 INVESTIGATE_ENEMY_CHANCE = 3         # InvestigateEnemyChance: nextInt(3)==0 -> ambush
 TRAVEL_EXERCISE_LIMIT = 4            # TravelExerciseChangeLimit: walking tops effort up to 4
 TRAVEL_EXERCISE_INC = 1              # TravelExerciseInc
+# BattleImmunitySeconds 90 (adventure audit 2026-07-06): a WILD win buys ~90
+# controller-seconds of no random encounters -- bosses and investigations
+# bypass it.  In walked steps: 90s x 14 fires/s / WalkStepMin 9 fires/step.
+BATTLE_IMMUNITY_STEPS = 90.0 * 14 / WALK_STEP_MIN
 
 # The one TUI compression: interactive travel actions to cross a zone.
 INTERACTIVE_STEPS = 40
@@ -129,7 +133,10 @@ class Adventure:
     # --- per-tick mechanics applied over one interactive stride ---
     def _encounter_roll(self):
         """Zone.checkBattle rolls per CONTROLLER FIRE (14/s), 9 fires per walked
-        step -- compound the real per-fire 1/chance over stride*WalkStepMin fires."""
+        step -- compound the real per-fire 1/chance over stride*WalkStepMin
+        fires.  A fresh WILD win suppresses the roll (getBattleImmunity)."""
+        if getattr(self, "_immunity_steps", 0.0) > 0:
+            return False
         denom = _CHANCE_NIGHT if self.pet.day_phase == "night" else _CHANCE_DAY
         p_none = (1.0 - 1.0 / denom) ** (self.stride * WALK_STEP_MIN)
         return random.random() < (1.0 - p_none)
@@ -150,8 +157,10 @@ class Adventure:
             # through the hated hour costs mood -10 and spirit -1
             if self.pet.sick or self.pet.is_injured() or self.pet.is_fatigued():
                 self.pet._set_mood(self.pet.mood - 1)          # WalkUnwellMoodDec
-                if self.pet.sick and random.randrange(100) < 1:  # WalkWorseSickChance
-                    self.pet._worsen_sick()
+            # checkWorseSick(WalkWorseSickChance 1) rides the BOUND machinery
+            # (fatigue pads the target, old age thins the bound) -- and canon
+            # rolls it every walk lapse, well or unwell (it no-ops when healthy)
+            self.pet._check_worse_sick(1)
             self.pet._check_worse_injury("travel")             # checkWorseTravelInj
             #   (canon rides the BATTLE table with won=True, not the exercise one)
             if self.pet.disliked_time() == self.pet.day_phase:
@@ -216,6 +225,8 @@ class Adventure:
             return ("discover", None)
         prev = self.location
         self.location = min(self.total_steps, self.location + self.stride)
+        # the post-battle immunity wears off with the walking
+        self._immunity_steps = max(0.0, getattr(self, "_immunity_steps", 0.0) - self.stride)
         self._travel_drain()
         # Bosses stand at their REAL steps (Zone.checkBattle: location[0] == step) --
         # the walk stops AT the first uncleared boss the stride would cross.
@@ -295,6 +306,11 @@ class Adventure:
     def resolve(self, won, was_boss, enemy):
         """Apply a battle result; roll loot on a win, lose adventure life on a loss."""
         self.loot = None
+        if won and not was_boss:
+            # setBattleImmunity: a WILD win buys breathing room -- ~90 canon
+            # seconds of walking with no random encounters (bosses and
+            # investigations bypass it; adventure audit 2026-07-06)
+            self._immunity_steps = BATTLE_IMMUNITY_STEPS
         if won:
             drop = loot.roll(enemy)
             if drop:

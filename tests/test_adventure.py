@@ -219,3 +219,25 @@ def test_mid_journey_contracts():
     adv4.flee({"name": "Blocker", "num": 500, "penalty": 5}, was_boss=True)
     assert adv4.location == 45 and not adv4.boss_pending      # knocked back...
     assert 500 not in adv4._cleared                           # ...and the gate re-arms
+
+
+def test_a_wild_win_buys_encounter_immunity():
+    """BattleImmunitySeconds 90 (adventure audit 2026-07-06): after a random
+    wild win, no random encounters roll until ~140 walked steps pass; bosses
+    are not wild wins and grant nothing."""
+    import random as _r
+    from tuipet.adventure import Adventure, BATTLE_IMMUNITY_STEPS
+    from tuipet.pet import Pet
+    p = Pet(num=102, name="D", stage="Champion", attribute="Virus")
+    p.world_seconds = 10 * 60.0
+    adv = Adventure(p)
+    enemy = {"num": 4, "name": "X", "stage": "Champion", "vaccine": 1,
+             "data_power": 1, "virus": 1, "hp": 5, "bits": (1, 1), "loot_table": -1}
+    adv.resolve(True, was_boss=False, enemy=enemy)
+    assert adv._immunity_steps == BATTLE_IMMUNITY_STEPS
+    _r.seed(1)
+    assert adv._encounter_roll() is False           # suppressed flat
+    adv._immunity_steps = 0.0
+    adv2 = Adventure(p)
+    adv2.resolve(True, was_boss=True, enemy=dict(enemy, boss=True))
+    assert getattr(adv2, "_immunity_steps", 0.0) == 0.0   # bosses grant nothing

@@ -342,3 +342,27 @@ def test_mid_bracket_contracts():
         pan3.key("escape"); pan3.key("enter")
     assert pan3.sub is None and pan3.tourney.over
     assert "Eliminated" in pan3.tourney.last    # the flee IS the elimination
+
+
+def test_champion_wins_the_cup_prizes():
+    """Trophy.ItemWon / FoodWonqAmount (tournament audit 2026-07-06): 73 of the
+    shipped cups award an item alongside the purse; the champion banks them."""
+    random.seed(4)
+    p = _pet("Rookie")
+    tm = Tournament(p, _trophy(item=26, food_id=3, food_amt=2))
+    tm.record(True); tm.record(True); tm.record(True)
+    assert tm.champion
+    assert p.inventory.get("i:26", 0) >= 1
+    assert p.inventory.get("f:3", 0) >= 2
+
+
+def test_the_purse_truncates_per_entrant():
+    """calcBits casts the RUNNING total to int each step ((int)(bits + term)) --
+    a 1.1-modifier all-Rookie field pays 959, not the float-sum's 962."""
+    random.seed(4)
+    p = _pet("Rookie")
+    tm = Tournament(p, _trophy(bit_mod=1.1))
+    total = 0
+    for _ in range(7):
+        total = int(total + TOURNEY_BITS["Rookie"] * 1.1)
+    assert tm._calc_bits() == total == 959
