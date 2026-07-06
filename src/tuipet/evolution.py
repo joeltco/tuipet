@@ -67,16 +67,6 @@ def weight_category(weight, base):
     return "Over" if weight > hi else ("Under" if weight < lo else "Healthy")
 
 
-def mood_category(mood):
-    if mood <= -250:            # ToDepressedMoodMin
-        return "Depressed"
-    if mood >= 150:             # MinHappyMood
-        return "Happy"
-    if mood <= -1:              # MinUnhappyMood
-        return "Unhappy"
-    return "Neutral"
-
-
 def _stats(pet):
     return pet.vaccine, pet.data_power, pet.virus
 
@@ -154,7 +144,11 @@ def check(pet, num, item=-1, connecting=False):
         _cmp(*req["overeat"], pet.overeat),
         _cmp(*req["sick"], pet.sick_count),
         _cmp(*req["injured"], pet.injuries),
-        req["mood"] == "None" or req["mood"] == mood_category(pet.mood),
+        # checkMoodReq: getCurrentMood -- the STICKY tier (Depressed holds until
+        # checkDepressed's exit roll; a threshold recompute is never Depressed).
+        # The old mood_category invented a Depressed tier at <= -250, failing
+        # the 70 Mood=Unhappy requirement rows for any deeply-sad pet.
+        req["mood"] == "None" or req["mood"] == pet.current_mood(),
         _cmp(*req["obedience"], pet.obedience),
         _cmp(*req["wins"], _win_rate(pet)),
         _cmp(*req["mistakes"], pet.care_mistakes),
@@ -214,7 +208,7 @@ def fulfilled(pet, num):
                       ("obedience", pet.obedience)):
         if _met(req[k], actual):
             score += R.get(k, R["injury"] if k == "injured" else 1)
-    if req["mood"] != "None" and req["mood"] == mood_category(pet.mood):
+    if req["mood"] != "None" and req["mood"] == pet.current_mood():
         score += R["mood"]
     if req.get("major_food", "None") != "None" and hasattr(pet, "major_food") \
             and req["major_food"] == pet.major_food():
@@ -465,7 +459,7 @@ def requirement_report(pet, num):
         rows.append((req["weight"] == weight_category(pet.weight, pet._base_weight()),
                      f"weight: {req['weight']}"))
     if req["mood"] != "None":
-        rows.append((req["mood"] == mood_category(pet.mood), f"mood: {req['mood']}"))
+        rows.append((req["mood"] == pet.current_mood(), f"mood: {req['mood']}"))
     if req.get("major_food", "None") != "None":
         rows.append((req["major_food"] == (pet.major_food() if hasattr(pet, "major_food") else None),
                      f"diet mostly {req['major_food']}"))

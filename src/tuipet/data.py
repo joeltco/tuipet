@@ -348,6 +348,9 @@ def load_requirements():
             "evol_item": _int_or(r.get("EvolItemID"), -1),   # item that triggers this form
             "attack_index": _attack_index(r.get("SpecialAttacksVaccineDataVirus")),
             "food_pref": (r.get("FoodPreference") or "None").strip() or "None",
+            # the rank-drift favourite's SEED (AttributeRanks initial favorite);
+            # stands in for getFavAtt while the rank system is unported
+            "attr_pref": (r.get("AttributePreference") or "None").strip() or "None",
             "food_aversion": (r.get("FoodAversion") or "None").strip() or "None",
             "food_intol": [x.strip() for x in (r.get("FoodIntolerance(; separator)") or "").split(";")
                            if x.strip() and x.strip() != "None"],

@@ -2,8 +2,21 @@
 action (PhysicalState.disturb()).  Canon disturb semantics: the pet WAKES
 grumpy -- fully if it's nearly rested (or its energy bar is full), otherwise
 its sleep is postponed and it drops back off shortly.  Either way the pressed
-action does NOT apply on that press."""
+action does NOT apply on that press.
+
+A disturb carries its OWN canon side effects (the worse-sick roll and the
+wake roll -- pinned in test_mood_system); these tests pin the rolls to their
+no-op tails so only the pressed action's effect is measured."""
+import random
+
+import pytest
+
 from tuipet.pet import Pet
+
+
+@pytest.fixture(autouse=True)
+def _quiet_rolls(monkeypatch):
+    monkeypatch.setattr(random, "randrange", lambda n: n - 1)
 
 
 def _sleeping(energy=0):

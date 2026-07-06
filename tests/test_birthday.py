@@ -82,9 +82,19 @@ def test_mornings_wake_on_their_quality_pose():
         p._wake()
         anims.add(p.anim)
     assert anims == {"wake", "happy", "sad", "surprise"}
-    # a nap's end never rolls a morning
-    q = Pet(num=102, name="D", stage="Champion", attribute="Virus")
-    q.world_seconds = 12 * 60.0
-    q.asleep = q.nap = True
-    q._wake(morning=False)
-    assert q.anim == "wake"
+    # a nap's end never rolls the MORNING tiers -- it rolls the smaller
+    # +-NapWakeMoodDec swing (2 of the 5), so "surprise" (TerribleMorning)
+    # and the big tier deltas are unreachable (mood re-audit 2026-07-06)
+    from tuipet.pet import NAP_WAKE_MOOD_DEC
+    moods, naps = set(), set()
+    for seed in range(40):
+        random.seed(seed)
+        q = Pet(num=102, name="D", stage="Champion", attribute="Virus")
+        q.world_seconds = 12 * 60.0
+        q.asleep = q.nap = True
+        q.mood = 200
+        q._wake()
+        naps.add(q.anim)
+        moods.add(q.mood)
+    assert naps == {"wake", "happy", "sad"}
+    assert moods == {200, 200 - NAP_WAKE_MOOD_DEC, 200 + NAP_WAKE_MOOD_DEC}

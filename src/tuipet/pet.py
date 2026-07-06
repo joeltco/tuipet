@@ -357,6 +357,13 @@ MORNING_MOOD_CHANCE = 5                 # MorningMoodChance: 1/5 bad, 1/5 terrib
 BAD_MORNING_MOOD = {"Happy": -150, "Neutral": -100, "Unhappy": -10, "Depressed": -10}
 GOOD_MORNING_MOOD = {"Happy": 50, "Neutral": 100, "Unhappy": 150, "Depressed": 150}
 WORST_MORNING_MOOD = -10                # WorstMorningMood (TerribleMorning sets mood TO this)
+NAP_WAKE_MOOD_DEC = 20                  # NapWakeMoodDec: a NAP wake swings +-20 on 2 of the 5 rolls
+# disturb (setAsleep(false) runs the wake roll after these; canon disturb())
+DISTURB_MOOD_DEC = {1: 0, 0: 10, -1: 20}     # DisturbMoodDec{Restless,,NotRestless}: a restless
+#                                              pet WANTED up (0); a mellow one hates it (20)
+DISTURB_WORSE_SICK_CHANCE = 50          # DisturbWorseSickChance % (an already-sick sleeper worsens)
+DISTURB_SICK_CHANCE = 25                # DisturbSickChance % (vs SickChance bound 100)
+DISTURB_LIMIT_CHECK_SICK = 5            # DisturbLimitCheckSick: the sick risk from the 5th disturb on
 STARVE_WEIGHT_DEC = 1                   # ActivityWeightChange: starving sheds weight per lapse
 HUNGER_MISTAKE_LIFE_DEC = 360.0         # MistakeHungerLifeDec 21600 real-sec on the /60 game
 #                                         scale (x TOTAL mistakes per event; the old 3600 was a
@@ -373,6 +380,14 @@ INSTANT_DEATH_GRACE = 60.0              # InstantDeathGracePeriod 3600: a burn c
 MIN_ENERGY_LIFE_PENALTY = 60.0          # MinEnergyLifePenalty 3600: bottoming out at the
 #                                         -maxEnergy floor burns life (setEnergy, per hit)
 #                                         scaled to tuipet's ~84h: ~1.2% of life x total mistakes
+# setEnergy: a drop INTO the red bills mood/obedience scaled by the depth
+# (dec - newEnergy, i.e. 10 + |new| / 1 + |new|) and fatigues an uninjured pet
+NEGATIVE_ENERGY_MOOD_DEC = 10           # NegativeEnergyMoodDec (base; depth added)
+NEGATIVE_ENERGY_OBEDIENCE_DEC = 1       # NegativeEnergyObedienceDec (base; depth added)
+BONUS_ATTRIBUTE_POWER = 1               # BonusAttributePower: a Happy pet's standard gain in its
+#                                         favoured attribute lands doubled (set*Power; the bonus
+#                                         rides only the battle incStats + training award paths --
+#                                         the only canon callers of the bonus-carrying setters)
 CALORIE_LAPSE_CHANGE = -1               # CalorieLapseChange (drain per lapse)
 CALORIE_LAPSE_GERIATRIC_EXTRA = -3      # CalorieLapseChangeGeriatric (added when elderly)
 CALORIE_DECAY_SEC = 1800 / (2 * CALORIE_LIMIT)   # keep ~1800s per hunger heart
@@ -423,6 +438,16 @@ DISCIPLINE_TARGET_GLUTTON = 3            # DisciplineCallTargetGluttonChange
 DISCIPLINE_TARGET_RESTLESS_HI = 3        # restless & under-exercised acts up more
 DISCIPLINE_TARGET_RESTLESS_LO = -1
 DISCIPLINE_OBEDIENCE_MAX = 50            # DisciplineCallObedienceMax (grown + obedient => exempt)
+# the CALL itself (mood re-audit 2026-07-06): the tantrum is a care light with
+# three exits -- the scold it demands (+2 obedience), any OTHER care placates it
+# (obedience -10, a smug mood +5: it got its way), or it times out ignored
+# (mood -25 and a missed day)
+DISCIPLINE_CALL_SCOLD_OBED_INC = 2       # DisciplineCallScoldObedienceInc (the right answer)
+DISCIPLINE_CALL_OBED_DEC = 10            # DisciplineCallObedienceDec (placated unscolded)
+DISCIPLINE_CALL_MOOD_INC = 5             # DisciplineCallMoodInc (placated: it won)
+DISCIPLINE_CALL_MOOD_PENALTY = 25        # DisciplineCallMoodPenalty (ignored)
+DISCIPLINE_CALL_FAIL_MISSED_DAY = 1      # DisciplineCallFailMissedDayChange
+MINUTES_TO_DISCIPLINE_PENALTY = 180.0    # _minutesToDisciplinePenalty 3 game-min
 
 # DVPet AI Assistant (config.csv AutoCare*, PhysicalState.setAutoCare / doAutoCare /
 # checkAutoCare / processAutoCarePrice).  A hired helper keeps house while you're
@@ -594,6 +619,7 @@ class Pet:
     scold_window: int = 0
     compliance: bool = False        # DVPet _compliance (resetToEgg starts false; a fair scold earns it)
     refused: bool = False           # DVPet _refused: the last command was blown off (one-shot)
+    discipline_call: bool = False   # DVPet _disciplineCall: a tantrum begging to be disciplined
     fatigue_length: float = 0.0     # DVPet _fatigueLength (game-min remaining; >0 == fatigued)
     sick_length: float = 0.0        # DVPet _sickLength (game-min until natural recovery)
     inj_length: float = 0.0         # DVPet _injLength (game-min until the injury heals)
@@ -1014,9 +1040,9 @@ class Pet:
         iw = self._in_sleep_window()
         if iw is not None and not self.nap:
             if iw is False:                      # LINES_SPEC §5: 7:00 sharp, no jitter
-                self._wake(morning=True)
+                self._wake()
         elif self.awake_lapse >= self.awake_limit:
-            self._wake(morning=not self.nap)
+            self._wake()                         # nap wakes take the nap roll inside
         # hungerDecay: asleep the stomach drains only ABOVE the floor
         # (SleepMinHungerDecay=3) -- one heart overnight, then it holds
         if self.hunger > SLEEP_MIN_HUNGER_DECAY:
@@ -1053,6 +1079,15 @@ class Pet:
         self._mood_lapse(dt)
         self._check_depressed(dt)
         self._filth_effects(dt)
+        # the discipline CALL ages on its own clock (canon callMinutesDiscipline):
+        # ignored past _minutesToDisciplinePenalty the tantrum sours -- mood -25,
+        # a missed day -- and the light goes dark
+        if self.discipline_call:
+            self._disc_call_t = getattr(self, "_disc_call_t", 0.0) + dt
+            if self._disc_call_t >= MINUTES_TO_DISCIPLINE_PENALTY:
+                self.discipline_call, self._disc_call_t = False, 0.0
+                self._set_mood(self.mood - DISCIPLINE_CALL_MOOD_PENALTY)
+                self.mistake_day += DISCIPLINE_CALL_FAIL_MISSED_DAY
         # discipline windows age (checkPraiseScoldWindow); a missed window closes
         self._mood_lapse_t2 = getattr(self, "_mood_lapse_t2", 0.0) + dt
         if self._mood_lapse_t2 >= 59:
@@ -1076,7 +1111,6 @@ class Pet:
                     self.obedience -= SCOLD_FAIL_OBED_PENALTY
                     self.refused = False
                     self.scold_flag, self.scold_window = False, 0
-                    self.mistake_day += 1        # DisciplineCallFailMissedDayChange
             self._check_discipline_call()                # the pet may spontaneously act up
             # awake enthusiasmLapse (mood -= |enth*EnthusiasmMoodDecCoefficient|, then an energetic
             # pet's spirit climbs HighEnergyEnthusiasmChange) stays DEFERRED -- and this was measured,
@@ -1103,15 +1137,23 @@ class Pet:
             return
         if self.sick or self.is_injured() or self.needs_attention():
             return
+        # the tier branch reads _currentMood as of the last setMood -- BEFORE
+        # this lapse's raw drift lands (mood re-audit 2026-07-06)
+        m = self.current_mood()
+        # the personality nudges are RAW `_mood +=` in canon: no disposition
+        # kicker, no tier recompute (setMood adds both; routing the +-1 drift
+        # through it doubled or zeroed the nudge for any +-1-disposition pet)
         if self.hunger <= FULL_HUNGER // 2:
-            self._set_mood(self.mood + (-1 if self.glutton == 1 else 1 if self.glutton == -1 else 0))
+            self.mood = _clamp(self.mood + (-1 if self.glutton == 1 else 1 if self.glutton == -1 else 0),
+                               MOOD_MIN, MOOD_MAX)
         elif self.hunger > FULL_HUNGER:
-            self._set_mood(self.mood + (1 if self.glutton == 1 else -1 if self.glutton == -1 else 0))
+            self.mood = _clamp(self.mood + (1 if self.glutton == 1 else -1 if self.glutton == -1 else 0),
+                               MOOD_MIN, MOOD_MAX)
         # the restless term: canon compares _restless (the trait) to fullStrength/2,
         # so the "low strength" branch ALWAYS holds -- a restless pet drifts -1 and
         # a mellow one +1 every lapse.  Shipped behavior, kept verbatim.
-        self._set_mood(self.mood + (-1 if self.restless == 1 else 1 if self.restless == -1 else 0))
-        m = self.current_mood()
+        self.mood = _clamp(self.mood + (-1 if self.restless == 1 else 1 if self.restless == -1 else 0),
+                           MOOD_MIN, MOOD_MAX)
         if m == "Happy":
             self._set_mood(self.mood - 10)                # HappyMoodLapseDec
         elif m == "Unhappy":
@@ -1495,6 +1537,17 @@ class Pet:
     def _disposition(self):
         return self.disposition          # DVPet _disposition: fixed personality trait
 
+    def _power_bonus_attr(self):
+        """set{Vaccine,Data,Virus}Power's bonus gate: the attribute whose gains
+        a HAPPY pet doubles -- its own attribute (any stage), or for a None/
+        Free-attribute pet past InTraining its favourite (AttributePreference
+        seeds getFavAtt; the rank-drift favourite is unported)."""
+        if self.attribute in ("Vaccine", "Data", "Virus"):
+            return self.attribute
+        if self.stage in ("Fresh", "InTraining"):
+            return "None"
+        return self._phys().get("attr_pref", "None")
+
     def _glutton(self):
         return self.glutton
 
@@ -1668,7 +1721,7 @@ class Pet:
         return (not self.dead and self.stage != "Egg" and not self.asleep
                 and not self.call_paused()
                 and (self.hunger == 0 or self.sick or self.poop >= 3
-                     or self.energy <= 0 or self.scold_flag))
+                     or self.energy <= 0 or self.scold_flag or self.discipline_call))
 
     def _guard(self, asleep_blocks=True):
         """The shared action gate: dead / still-an-egg / asleep (a sleeping pet
@@ -2082,19 +2135,23 @@ class Pet:
         self.enthusiasm = value
 
     def _set_energy(self, value):
-        """DVPet setEnergy: clamp to [-max_energy, +max_energy]; dropping into the
-        red saps mood (NegativeEnergyMoodDec) -- and BOTTOMING OUT at the floor
-        burns MinEnergyLifePenalty of life per hit (canon re-audit 2026-07: the
-        old clamp ran first, so the floor case was undetectable)."""
+        """DVPet setEnergy, canon order (mood re-audit 2026-07-06): a drop INTO
+        the red bills mood AND obedience scaled by the depth (dec - newEnergy)
+        and FATIGUES an uninjured pet -- being pushed past empty is the
+        over-exertion mechanic, not a flat sting.  Then the perfect-conditions
+        bounce may save the step, and the clamp runs last (BOTTOMING OUT at
+        the floor burns MinEnergyLifePenalty of life per hit)."""
         raw = int(round(value))
+        if raw < self.energy and raw < 0:
+            self._set_mood(self.mood - (NEGATIVE_ENERGY_MOOD_DEC - raw))
+            self.obedience = max(0, self.obedience - (NEGATIVE_ENERGY_OBEDIENCE_DEC - raw))
+            if not self.is_injured():
+                self._fatigue()                  # canon fatigue(false)
+        if raw < self.energy:
+            raw = self._energy_bonus_save(raw)   # checkEnergyIncFromPerfectConditions
         if raw < -self.max_energy:
             self._burn_life(MIN_ENERGY_LIFE_PENALTY)     # setEnergy's floor penalty
-        value = _clamp(raw, -self.max_energy, self.max_energy)
-        if value < self.energy:
-            value = self._energy_bonus_save(value)   # checkEnergyIncFromPerfectConditions
-        if value < 0 and value < self.energy:
-            self._set_mood(self.mood - 10)       # NegativeEnergyMoodDec (per step into the red)
-        self.energy = value
+        self.energy = _clamp(raw, -self.max_energy, self.max_energy)
 
     def _nice_weather(self):
         """checkNiceWeather: DeepSaver/Water pets love the rain, cold-blooded
@@ -2219,6 +2276,8 @@ class Pet:
         self.sleep_lapse = 0.0
         self.asleep = True
         self.nap = False
+        self._calm_discipline_call()                # bedtime placates the tantrum (canon
+        #                                             sleep-onset setDisciplineCall(false))
         self._lights_t = 0.0                        # setAsleep resets _callMinutesLights
         gain = max(1, getattr(self, "_sleep_energy_gain", 3))
         need = math.ceil(max(0, self.max_energy - self.energy) / gain) * 60.0
@@ -2226,8 +2285,13 @@ class Pet:
         self.sleep_limit = DAY_MINUTES - self.awake_limit
         self._set_anim("yawn", 1.8)
 
-    def _wake(self, morning=True):
-        """setAsleep(false): up for the day (the morning roll skips for naps)."""
+    def _wake(self):
+        """setAsleep(false): the wake roll runs on EVERY rise -- natural,
+        disturbed or lights-on alike (mood re-audit 2026-07-06; canon disturb()
+        funnels through setAsleep(false) unconditionally, so even a grumbled
+        wake takes its chances).  A full sleep wakes into the morning tiers; a
+        NAP wakes with a +-NapWakeMoodDec swing on 2 rolls of the 5."""
+        was_nap = self.nap
         self.asleep = False
         self.nap = False
         self.awake_lapse = 0.0
@@ -2235,9 +2299,16 @@ class Pet:
         if not self.lights:
             self.lights = True                      # wake: setLights(true)
         wake_anim = "wake"
-        if morning:
-            r = random.randrange(MORNING_MOOD_CHANCE)
-            m = self.current_mood()
+        r = random.randrange(MORNING_MOOD_CHANCE)
+        m = self.current_mood()
+        if was_nap:
+            if r == 0:
+                self._set_mood(self.mood - NAP_WAKE_MOOD_DEC)
+                wake_anim = "sad"                    # BadMorning: wakeUp(9)
+            elif r == 1:
+                self._set_mood(self.mood + NAP_WAKE_MOOD_DEC)
+                wake_anim = "happy"                  # GoodMorning: wakeUp(5)
+        else:
             # canon wakeUp poses vary with the morning: 7 normal / 5 good /
             # 9 bad / 6 terrible (birthday audit 2026-07-05: it always woke
             # on the plain pose)
@@ -2253,30 +2324,48 @@ class Pet:
         self._set_anim(wake_anim, 1.6)
 
     def _disturbed(self):
-        """PhysicalState.disturb(): bothering REAL sleep wakes the pet grumpy --
-        nearly-rested (or full energy) it just gets up; otherwise the sleep is
-        POSTPONED: it will drop back off in DisturbPostpone game-minutes, still
-        owing the missed rest.  Naps aren't disturbable (lights wake them)."""
-        if not self.asleep or self.nap:
+        """PhysicalState.disturb(): bothering a sleeper wakes it grumpy.  The
+        bookkeeping (count, missed day, postpone, sick risks) only bills REAL
+        sleep -- but the mood/spirit dec and the wake land on a NAP too (mood
+        re-audit 2026-07-06: canon keeps them outside the !nap guard).  Real
+        sleep: nearly-rested (or full energy) it just gets up; otherwise the
+        sleep is POSTPONED: it drops back off in DisturbPostpone game-minutes,
+        still owing the missed rest."""
+        if not self.asleep:
             return "zzz..."
-        self.disturb += 1
-        self.mistake_day += 1                       # DisturbanceMissedDayChange
-        self._set_mood(self.mood - 10)              # DisturbMoodDec
+        nap, postponed = self.nap, False
+        if not nap:
+            self.disturb += 1
+            self.mistake_day += 1                   # DisturbanceMissedDayChange
+            rested = (self.awake_lapse >= FULL_AWAKE_DISTURB - self.restless * FULL_AWAKE_DISTURB_RESTLESS
+                      or self.energy >= self.max_energy)
+            if rested:
+                self.sleep_lapse = 0.0
+            else:
+                postponed = True
+                postpone = random.randint(*DISTURB_POSTPONE)
+                self.sleep_lapse = max(0.0, self.sleep_limit - postpone / max(1, self._sleep_inc()))
+                if self._in_sleep_window() is not None:
+                    self._bed_postpone_t = float(postpone)   # a line pet re-sleeps by the clock
+                # (the missed rest is repaid naturally: _fall_asleep re-sizes the
+                # next sleep from the CURRENT energy debt, so nothing is carried)
+            # a rough waking is a health hazard: an already-sick sleeper may
+            # worsen, and from the DisturbLimitCheckSick'th disturb every poke
+            # risks fresh illness (canon checkWorseSick / checkSick)
+            if self.sick and random.randrange(100) < DISTURB_WORSE_SICK_CHANCE:
+                self._worsen_sick()
+            elif (not self.sick and self.disturb >= DISTURB_LIMIT_CHECK_SICK
+                    and random.randrange(100) < DISTURB_SICK_CHANCE):
+                self._sicken()
+        # DisturbMoodDec{,Restless,NotRestless}: a restless pet WANTED up
+        self._set_mood(self.mood - DISTURB_MOOD_DEC.get(self.restless, 10))
         enth = {1: -1, 0: -2, -1: -3}.get(self.restless, -2)   # DisturbEnthusiasmDec*
         self._set_enthusiasm(self.enthusiasm + enth)
-        rested = (self.awake_lapse >= FULL_AWAKE_DISTURB - self.restless * FULL_AWAKE_DISTURB_RESTLESS
-                  or self.energy >= self.max_energy)
-        if rested:
-            self.sleep_lapse = 0.0
-            self._wake(morning=False)
+        self._wake()                                # setAsleep(false): the wake roll
+        if nap:
+            return "It stirs from its doze."
+        if not postponed:
             return "It grumbles awake."
-        postpone = random.randint(*DISTURB_POSTPONE)
-        self.sleep_lapse = max(0.0, self.sleep_limit - postpone / max(1, self._sleep_inc()))
-        if self._in_sleep_window() is not None:
-            self._bed_postpone_t = float(postpone)   # a line pet re-sleeps by the clock
-        # (the missed rest is repaid naturally: _fall_asleep re-sizes the next
-        # sleep from the CURRENT energy debt, so nothing is carried by hand)
-        self._wake(morning=False)
         self._set_anim("angry", 1.8)                # Sad_Jeering: woken too soon
         return "zzz... mind its sleep!"
 
@@ -2459,6 +2548,7 @@ class Pet:
         self.check_compliant()                               # ... then the compliance is spent
         if refused:
             return f"{self.name} refuses to eat!"
+        self._calm_discipline_call()                         # a meal placates the tantrum
         fills = int(food.get("hunger", 0)) > 0
         # a hunger-food on a full stomach -> too full (a glutton eats past FULL_HUNGER)
         if fills and self.hunger >= FULL_HUNGER and self.glutton <= 0:
@@ -2576,6 +2666,7 @@ class Pet:
         (DVPet NoneTrainingAttributeMoodRankChange).
         """
         self.train_time = _dvpet_time(self.day_phase)
+        self._calm_discipline_call()                      # exercise() placates the tantrum
         self.exercise_today += 1                          # DVPet _exercise (incExerciseTime)
         self.stage_trainings += 1                         # LINES_SPEC TR gate: every attempt counts (Pen20)
         complied = self.check_compliant()                 # onExerciseFinish: checkCompliant
@@ -2600,6 +2691,12 @@ class Pet:
                 self._set_enthusiasm(self.enthusiasm - 1)
         else:
             attr = attribute or (self.attribute if self.attribute in ("Vaccine", "Data", "Virus") else "Vaccine")
+            # BonusAttributePower under the compressed scale: canon's standard
+            # +1 training award lands +1 extra (doubled) for a HAPPY pet
+            # drilling its favoured attribute -- ours doubles the scaled
+            # standard award the same way (mood re-audit 2026-07-06)
+            if gain and self.current_mood() == "Happy" and attr == self._power_bonus_attr():
+                gain *= 1 + BONUS_ATTRIBUTE_POWER
             if attr == "Vaccine":
                 self.vaccine += gain
             elif attr == "Data":
@@ -2680,6 +2777,7 @@ class Pet:
             return "Too young to battle."
         if self.asleep:
             return self._disturbed()
+        self._calm_discipline_call()                         # canBattle placates the tantrum
         if self.check_refused():                             # canBattle -> checkRefused
             return f"{self.name} refuses to fight!"
         if self.is_fatigued():
@@ -2738,13 +2836,19 @@ class Pet:
                 counts = {"Vaccine": enemy.get("vaccine", 0), "Data": enemy.get("data_power", 0),
                           "Virus": enemy.get("virus", 0)}
                 dom = max(counts, key=counts.get)
+                inc = 1
+                # setPower's BonusAttributePower: a HAPPY pet's +1 in its
+                # favoured attribute lands +2 (canon exact -- the win gain is
+                # always the standard single point here)
+                if self.current_mood() == "Happy" and dom == self._power_bonus_attr():
+                    inc += BONUS_ATTRIBUTE_POWER
                 if dom == "Vaccine":
-                    self.vaccine += 1
+                    self.vaccine += inc
                 elif dom == "Data":
-                    self.data_power += 1
+                    self.data_power += inc
                 else:
-                    self.virus += 1
-                grew = f"  +1 {dom}"
+                    self.virus += inc
+                grew = f"  +{inc} {dom}"
             self._set_enthusiasm(self.enthusiasm - 3)    # BattleWonEnthusiasmDec
             if not style_free:                           # battleEnd: a win UNDER ORDERS is prouder
                 self._set_mood(self.mood + ORDERS_WON_MOOD_INC
@@ -2889,11 +2993,23 @@ class Pet:
 
     def _open_scold(self):
         """A bad deed makes the pet act up: opens a scold window and marks it
-        noncompliant.  DVPet raises this on its periodic disciplineCall timer (deferred
-        here — at tuipet's ~60x clock it would fire far too often) and on battle misdeeds;
-        tuipet opens it on the care-mistake event instead, keeping the deltas faithful."""
+        noncompliant.  Raised by the care-mistake events, battle misdeeds, and
+        the periodic disciplineCall (_check_discipline_call, which also lights
+        the discipline care light)."""
         if self.num != -1 and self.stage != "Egg":
             self.scold_flag, self.scold_window, self.compliance = True, 0, False
+
+    def _calm_discipline_call(self):
+        """setDisciplineCall(false) by any care that ISN'T the scold it demands
+        (feed / item / praise / training / battle / bedtime): the tantrum is
+        PLACATED -- obedience -10 (it learned acting up works), a smug mood +5,
+        and the open scold window closes with it (mood re-audit 2026-07-06)."""
+        if not self.discipline_call:
+            return
+        self.discipline_call, self._disc_call_t = False, 0.0
+        self.obedience = max(0, self.obedience - DISCIPLINE_CALL_OBED_DEC)
+        self._set_mood(self.mood + DISCIPLINE_CALL_MOOD_INC)
+        self.scold_flag, self.scold_window = False, 0        # setScoldWindow(0)
 
     def _check_discipline_call(self):
         """checkDisciplineCall: on the DisciplineCallMin cadence, a chance for the pet to
@@ -2915,6 +3031,8 @@ class Pet:
         bound = max(1, DISCIPLINE_CALL_CHANCE - (OBEDIENCE_REFUSAL_CAP - self.obedience))
         if random.randint(0, bound - 1) < target:
             self._open_scold()
+            self.discipline_call = True          # the care light comes on
+            self._disc_call_t = 0.0
 
     def is_fatigued(self):
         """PhysicalState.isFatigued: worn out until the fatigue length counts down."""
@@ -3033,7 +3151,10 @@ class Pet:
         self._burn_life(FATIGUE_LIFE_DEC
                         + (GERIATRIC_FATIGUE_LIFE_DEC if self.is_geriatric else 0.0))
         self.fatigue_length = max(FATIGUE_MIN, random.randint(FATIGUE_MIN, FATIGUE_MAX) - self._affinity())   # habitat-compat length mod
-        self._set_energy(self.energy - FATIGUE_ENERGY_DEC)
+        # canon fatigue() writes the energy dec RAW (_energy -= dec, never
+        # setEnergy) -- routing it through _set_energy would recurse through
+        # the fatigue trigger it now carries (mood re-audit 2026-07-06)
+        self.energy = _clamp(self.energy - FATIGUE_ENERGY_DEC, -self.max_energy, self.max_energy)
         self._set_enthusiasm(self.enthusiasm + FATIGUE_ENTH_CHANGE)
         self._set_mood(self.mood - FATIGUE_MOOD_DEC)
         if already:
@@ -3046,6 +3167,7 @@ class Pet:
         scold window is open) spoils it instead."""
         if (_g := self._guard()) is not None:
             return _g
+        self._calm_discipline_call()          # canon praise() placates the tantrum first
         self._set_mood(self.mood + (PRAISE_LOW_DISP_MOOD_INC if self._disposition() < 0
                                     else PRAISE_HIGH_DISP_MOOD_INC))
         if not self.compliance:
@@ -3080,17 +3202,26 @@ class Pet:
             self.obedience += SCOLD_PRAISE_OBED[self._disposition()]
             self.praise_flag, self.praise_window = False, 0
             self._set_anim("sad", 1.8)
-            return "It did nothing wrong — that scolding was unfair."
-        if self.scold_flag:                                   # well-timed scold
+            msg = "It did nothing wrong — that scolding was unfair."
+        elif self.scold_flag:                                 # well-timed scold
             self._set_enthusiasm(self.enthusiasm + CORRECT_SCOLD_ENTH)
             self.obedience += CORRECT_SCOLD_OBED[self._disposition()]
             self.scold_flag, self.scold_window, self.compliance = False, 0, True
             self.refused = False                              # setRefused(false): back in line
             self._set_anim("angry", 1.8)
-            return f"{self.name} takes the lesson to heart."
-        self._set_enthusiasm(self.enthusiasm + SCOLD_ENTH)
-        self._set_anim("angry", 1.6)
-        return f"You scold {self.name}."
+            msg = f"{self.name} takes the lesson to heart."
+        else:
+            self._set_enthusiasm(self.enthusiasm + SCOLD_ENTH)
+            self._set_anim("angry", 1.6)
+            msg = f"You scold {self.name}."
+        # scoldDisciplineCall, LAST like canon: answering the tantrum earns the
+        # +2 -- and its compliance=false overrides the correct-scold's true
+        # (the tantrum spent the goodwill even though you handled it right)
+        if self.discipline_call:
+            self.discipline_call, self._disc_call_t = False, 0.0
+            self.compliance = False
+            self.obedience += DISCIPLINE_CALL_SCOLD_OBED_INC
+        return msg
 
     def clean(self):
         """PhysicalState.clean: sweeping real filth lifts mood (CleanMoodInc)
@@ -3334,7 +3465,7 @@ class Pet:
             # (effect_id 0, the same check auto-care honours) shields the nap
             if self.sick or self.is_injured():
                 self.sleep_lapse += 1
-            self._wake(morning=False)
+            self._wake()                         # a nap wake rolls +-NapWakeMoodDec
             return "Lights on — up from its nap."
         if self.lights and self.asleep and self.nap:
             return "Lights on — the futon keeps it dozing."
@@ -3509,6 +3640,7 @@ class Pet:
         self.check_compliant()                       # ...; checkCompliant
         if refused:
             return f"{self.name} wants nothing to do with it!"
+        self._calm_discipline_call()                 # useItem placates the tantrum
         self.take_item(key)
         if e.get("special") == "xantibody":
             self._set_anim("happy", 1.5)

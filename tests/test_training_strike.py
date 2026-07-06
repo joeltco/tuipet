@@ -276,3 +276,34 @@ def test_data_geometry_never_mashes():
         assert all(len(r) <= T.COLS for r in panel.text().plain.split("\n"))
         if panel.phase == "done":
             break
+
+
+def test_virus_geometry_and_the_strike_clamp():
+    """Virus layout audit (Joel 2026-07-06) -- CLEAN, pin the load-bearers:
+    the track keeps symmetric margins (x4..35, y from the band top -- no
+    border touches; the drill has no mon on stage), and the SHARED strike
+    placement (all four drills ride it) clamps the widest mon in-bounds even
+    at full rear-back (place_combatant's clamp_grid)."""
+    import random
+    from tuipet import data as _d, strikefx
+    random.seed(3)
+    p = Pet(num=102, stage="Champion", vaccine=5, data_power=5, virus=5)
+    p.obedience = 500
+    panel = T.TrainingPanel(p)
+    panel.gi = 3
+    panel.key("enter")
+    for _ in range(10):
+        panel.anim()
+        assert all(len(r) <= T.COLS for r in panel.text().plain.split("\n"))
+    pf = _d.load_sprites()[1][102]["frames"][0]
+    for xshift in (0, 3, -2):                       # windup rear-back / release lunge
+        placements, _mouth = strikefx.place_combatant(True, pf, xshift)
+        fr, x, _m = placements[0]
+        assert x + max(len(r) for r in fr) - 1 <= T.COLS - 1, f"clipped at xshift {xshift}"
+    panel.key("space")                              # stop -> the shared volley -> done
+    for _ in range(80):
+        panel.anim()
+        assert all(len(r) <= T.COLS for r in panel.text().plain.split("\n"))
+        if panel.phase == "done":
+            break
+    assert panel.phase == "done"

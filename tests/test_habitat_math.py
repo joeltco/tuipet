@@ -31,7 +31,9 @@ def _pet(**kw):
 
 
 def test_bottoming_out_burns_life():
-    p = _pet(energy=-23, max_energy=24)
+    # injured: canon setEnergy skips the fatigue trigger (and its own life
+    # burn -- pinned in test_mood_system), isolating the floor penalty
+    p = _pet(energy=-23, max_energy=24, inj_length=5.0)
     l0 = p.lifespan
     p._set_energy(p.energy - 5)                   # raw -28 < -24: the floor
     assert p.energy == -24
