@@ -167,3 +167,41 @@ def test_lobby_client_survives_a_server_restart(tmp_path):
             proc.wait(timeout=3)
         except subprocess.TimeoutExpired:
             proc.kill()
+
+
+# ---- presence + PMs (online arc 2026-07-05) ----------------------------------
+
+def test_playing_ghosts_are_message_only_targets():
+    """The roster carries everyone online: a sync ghost (live=False) renders
+    dim in the sidebar, and its action menu offers ONLY [M]essage -- battle
+    and jogress invites need a live lobby login."""
+    s = LobbyState()
+    s.connected = True
+    s.me_id, s.me_name = 1, "joel"
+    s.roster = [{"id": 1, "name": "joel", "pet": {}, "live": True},
+                {"id": 2, "name": "mika", "pet": {}, "live": False}]
+    pan = _panel(s)
+    sent = []
+    pan.client.pm = lambda to, tx: sent.append((to, tx))
+    pan.client.invite = lambda *a: sent.append(("INVITE", a))
+    assert "·mika" in pan.text().plain                      # ghost marker in the sidebar
+    pan.key("enter")                                        # open mika's action menu
+    assert pan.action_for == (2, "mika", False)
+    assert "playing" in pan.text().plain                    # message-only menu
+    pan.key("b")                                            # invites are dead on a ghost
+    assert pan.action_for is not None and not sent
+    pan.key("m")                                            # compose opens
+    assert pan.pm_to == (2, "mika")
+    for ch in "yo":
+        pan.key(ch)
+    pan.key("enter")
+    assert sent == [(2, "yo")] and pan.pm_to is None        # sent + compose closed
+
+
+def test_pm_lands_in_the_lobby_chat_feed():
+    c = LobbyClient("ws://x/", "joel")
+    c._handle('{"t": "welcome", "id": 1, "name": "joel"}')
+    c._handle('{"t": "pm", "from_id": 2, "from_name": "mika", "text": "hey"}')
+    c._handle('{"t": "pm_ok", "to_name": "mika", "text": "sup"}')
+    assert ("✉mika", "hey") in c.state.chat
+    assert ("✉→mika", "sup") in c.state.chat

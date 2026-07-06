@@ -156,7 +156,7 @@ def _lease_ok(client, key):
 
 
 class Client:
-    __slots__ = ("id", "ws", "name", "pet", "live", "lease")
+    __slots__ = ("id", "ws", "name", "pet", "live", "lease", "logged")
 
     def __init__(self, ws):
         self.id = next(_ids)
@@ -165,6 +165,7 @@ class Client:
         self.pet = {}
         self.live = False
         self.lease = None
+        self.logged = False
 
 
 CLIENTS: dict[int, Client] = {}
@@ -190,8 +191,28 @@ async def _broadcast(obj, exclude=None):
 
 
 def _roster():
+    """Everyone ONLINE, not just the lobby room (presence 2026-07-05): lobby
+    logins are `live` (chat/invitable); a player whose app merely holds its
+    sync connection appears as a playing ghost (live false, PM-able).  One
+    entry per account -- the live connection wins the slot."""
+    by_key = {}
+    for c in CLIENTS.values():
+        if not c.logged:
+            continue
+        key = c.name.lower()
+        cur = by_key.get(key)
+        if cur is None or (c.live and not cur.live):
+            by_key[key] = c
     return {"t": "roster", "players": [
-        {"id": c.id, "name": c.name, "pet": c.pet} for c in CLIENTS.values() if c.live]}
+        {"id": c.id, "name": c.name, "pet": c.pet, "live": c.live}
+        for c in by_key.values()]}
+
+
+def _account_conns(name):
+    """Every logged-in connection of an account (the lobby login AND the
+    home-screen sync ghost) -- a PM lands on all of them."""
+    key = name.lower()
+    return [c for c in CLIENTS.values() if c.logged and c.name.lower() == key]
 
 
 async def _push_roster():
@@ -259,10 +280,10 @@ async def handler(ws):
                         boot = 0.0
                     _take_lease(client, key, boot)
                 logged_in = True
+                client.logged = True
                 await _send(client, {"t": "welcome", "id": client.id, "name": client.name,
                                      "save": SAVES.get(key)})       # cloud save (or null) for cross-device load
-                if not sync_only:
-                    await _push_roster()
+                await _push_roster()          # sync ghosts show as "playing" (presence 2026-07-05)
                 LOG.info("login id=%s name=%s sync_only=%s (%d online)",
                          client.id, client.name, sync_only, len(CLIENTS))
 
@@ -290,6 +311,23 @@ async def handler(ws):
                 if text and client.live:          # a sync_only ghost isn't in the room
                     await _broadcast({"t": "chat", "from_id": client.id,
                                       "from_name": client.name, "text": text})
+
+            elif t == "pm":
+                # a private message reaches EVERY connection of the target
+                # account -- their lobby login and the sync ghost their app
+                # holds at the home screen (the alert channel; 2026-07-05)
+                text = _clean(m.get("text"), MAX_CHAT)
+                target = CLIENTS.get(m.get("to"))
+                if not text:
+                    continue
+                if target is None or not target.logged:
+                    await _send(client, {"t": "error", "msg": "That player just left."})
+                    continue
+                out = {"t": "pm", "from_id": client.id,
+                       "from_name": client.name, "text": text}
+                for c in _account_conns(target.name):
+                    await _send(c, out)
+                await _send(client, {"t": "pm_ok", "to_name": target.name, "text": text})
 
             elif t in ("invite", "invite_resp", "relay"):
                 if not client.live:               # sessions are for roster members only

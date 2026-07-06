@@ -240,3 +240,84 @@ def test_offline_is_silent():
     assert cloudsync.pull_save("ws://127.0.0.1:1/", "joel", "secret", timeout=0.5) is None
     assert cloudsync.push_save("ws://127.0.0.1:1/", "joel", "secret", {"_saved_at": 1}, timeout=0.5) is False
     assert cloudsync.sync_down_at_startup("ws://127.0.0.1:1/", "joel", "secret", timeout=0.5) == ""
+
+
+# ---- presence + private messages (online arc 2026-07-05) ---------------------
+
+def _next_of(ws, want, tries=8):
+    for _ in range(tries):
+        m = json.loads(ws.recv(timeout=3))
+        if m.get("t") == want:
+            return m
+    return {}
+
+
+def test_roster_shows_playing_ghosts_deduped_per_account(server):
+    """The lobby shows everyone ONLINE: sync-only players ride the roster as
+    live=False ghosts; an account with BOTH connections gets ONE entry (the
+    live one wins)."""
+    ghost = _conn(server)
+    _login(ghost, "joel", "secret", boot=100.0)
+    live = _conn(server)
+    _login(live, "mika", "pw2", sync_only=False, pet={"name": "Gabumon"})
+    ros = _next_of(live, "roster")
+    by = {p["name"]: p for p in ros["players"]}
+    assert by["joel"]["live"] is False and by["mika"]["live"] is True
+    # joel ALSO opens the lobby: still one entry, now live
+    jlive = _conn(server)
+    _login(jlive, "joel", "secret", sync_only=False, pet={"name": "Agumon"})
+    ros = _next_of(live, "roster")
+    joels = [p for p in ros["players"] if p["name"] == "joel"]
+    assert len(joels) == 1 and joels[0]["live"] is True
+    ghost.close(); live.close(); jlive.close()
+
+
+def test_pm_reaches_every_connection_of_the_account(server):
+    """A PM lands on the target's lobby login AND their home-screen sync
+    ghost (the alert channel), and echoes pm_ok to the sender."""
+    ghost = _conn(server)
+    _login(ghost, "joel", "secret", boot=100.0)
+    jlive = _conn(server)
+    _login(jlive, "joel", "secret", sync_only=False, pet={"name": "Agumon"})
+    mika = _conn(server)
+    _login(mika, "mika", "pw2", sync_only=False, pet={"name": "Gabumon"})
+    ros = _next_of(mika, "roster")
+    joel_id = next(p["id"] for p in ros["players"] if p["name"] == "joel")
+    mika.send(json.dumps({"t": "pm", "to": joel_id, "text": "yo"}))
+    for ws in (jlive, ghost):
+        m = _next_of(ws, "pm")
+        assert (m.get("from_name"), m.get("text")) == ("mika", "yo")
+    ok = _next_of(mika, "pm_ok")
+    assert ok.get("to_name") == "joel" and ok.get("text") == "yo"
+    ghost.close(); jlive.close(); mika.close()
+
+
+def test_syncclient_inbox_carries_pms(server):
+    """The real SyncClient surfaces PMs in .inbox -- the app's home-screen
+    ✉ alert reads exactly this."""
+    import asyncio
+    from tuipet import net
+
+    async def go():
+        sc = net.SyncClient(server, "joel", "secret")
+        task = asyncio.ensure_future(sc.run())
+        for _ in range(40):
+            if sc.connected:
+                break
+            await asyncio.sleep(0.1)
+        assert sc.connected
+        mika = await asyncio.to_thread(_conn, server)
+        await asyncio.to_thread(_login, mika, "mika", "pw2", None, False, {"name": "Gabumon"})
+        ros = await asyncio.to_thread(_next_of, mika, "roster")
+        joel_id = next(p["id"] for p in ros["players"] if p["name"] == "joel")
+        await asyncio.to_thread(mika.send, json.dumps({"t": "pm", "to": joel_id, "text": "hi joel"}))
+        for _ in range(40):
+            if sc.inbox:
+                break
+            await asyncio.sleep(0.1)
+        task.cancel()
+        await asyncio.to_thread(mika.close)
+        return list(sc.inbox)
+
+    inbox = asyncio.run(go())
+    assert inbox and inbox[0] == ("mika", "hi joel")

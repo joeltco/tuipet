@@ -112,6 +112,7 @@ class SyncClient(_WsClient):
         self.pw = pw
         self.on_pull = on_pull
         self.connected = False
+        self.inbox: list = []                 # (from_name, text) PMs -> the home-screen alert
         self._pending = None                  # latest save dict awaiting upload
         self._ws = None
         self._wake: asyncio.Event = asyncio.Event()
@@ -154,6 +155,11 @@ class SyncClient(_WsClient):
         if t == "welcome":
             if self.on_pull is not None:
                 self.on_pull(m.get("save"))    # server's stored save (or None)
+        elif t == "pm":
+            # the sync ghost is the HOME-SCREEN alert channel: the app drains
+            # this into the message box (presence 2026-07-05)
+            self.inbox.append((m.get("from_name", "?"), m.get("text", "")))
+            del self.inbox[:-20]
         elif t == "login_failed":
             self._stop = True                  # wrong password -> stop retrying
 
@@ -184,6 +190,9 @@ class LobbyClient(_WsClient):
 
     def invite(self, to, kind):
         self._send({"t": "invite", "to": to, "kind": kind})
+
+    def pm(self, to, text):
+        self._send({"t": "pm", "to": to, "text": text})
 
     def respond(self, to, kind, accept, busy=False):
         msg = {"t": "invite_resp", "to": to, "kind": kind, "accept": bool(accept)}
@@ -237,6 +246,12 @@ class LobbyClient(_WsClient):
             s.roster = m.get("players") or []
         elif t == "chat":
             s.chat.append((m.get("from_name", "?"), m.get("text", "")))
+            del s.chat[:-CHAT_CAP]
+        elif t == "pm":
+            s.chat.append((f"✉{m.get('from_name', '?')}", m.get("text", "")))
+            del s.chat[:-CHAT_CAP]
+        elif t == "pm_ok":
+            s.chat.append((f"✉→{m.get('to_name', '?')}", m.get("text", "")))
             del s.chat[:-CHAT_CAP]
         elif t in ("invite", "invite_resp", "relay"):
             s.inbox.append(m)

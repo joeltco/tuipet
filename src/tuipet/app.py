@@ -1349,6 +1349,26 @@ class TuiPetApp(App):
         self.run_worker(self._check_update(), name="update", exclusive=False)
         self._start_sync()
 
+    def _drain_pms(self):
+        """Private messages land on the always-on sync connection; surface
+        them as ✉ flashes in the home message box.  While the LOBBY is open
+        its chat already shows them (the server delivers to both connections)
+        -- drop the duplicates; in any other sub-screen they stay queued and
+        flash when you're back home (presence 2026-07-05)."""
+        sync = getattr(self, "_sync", None)
+        if sync is None or not getattr(sync, "inbox", None):
+            return
+        if isinstance(self.mode, lobbyscreen.LobbyPanel):
+            sync.inbox.clear()
+            return
+        if self.mode is not None:
+            return                             # queued: flashes back on the home screen
+        if self._flash_t > 0:
+            return                             # one ✉ at a time: let the current flash hold
+        nm, tx = sync.inbox.pop(0)
+        self.flash(f"✉ [b]{nm}[/]: {tx}")
+        self.beep("menu", bell=False)
+
     def _start_sync(self):
         """Spin up the background cloud-save push client once an account exists
         (idempotent). The startup pull already ran in main(); this handles pushes."""
@@ -1928,6 +1948,7 @@ class TuiPetApp(App):
 
     def on_frame(self):                        # single DVPet interval clock (10 Hz, 0.1s): main view AND sub-screens
         self._hud_marquee()                    # scroll any over-long HUD message (independent of the LCD)
+        self._drain_pms()                      # ✉ alerts ride the message box (presence 2026-07-05)
         if self.mode is not None:
             if hasattr(self.mode, "anim"):
                 self.mode.anim()

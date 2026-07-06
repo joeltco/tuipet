@@ -128,6 +128,7 @@ class LobbyPanel:
         self.buf = ""
         self.sel = 0
         self.action_for = None
+        self.pm_to = None              # (id, name): the input line is a PM compose
         self.invite_prompt = None
         self.sfx = None
         # jogress session
@@ -174,7 +175,11 @@ class LobbyPanel:
                 "attr": getattr(self.pet, "attribute", "") or info.get("attribute") or "None"}
 
     def _others(self):
-        return self.state.others() if self.state else []
+        """Everyone else ONLINE, lobby regulars first, then the playing
+        ghosts (presence 2026-07-05: the roster carries the whole server)."""
+        others = self.state.others() if self.state else []
+        return sorted(others, key=lambda p: (not p.get("live", True),
+                                             str(p.get("name", "")).lower()))
 
     def _pet_of(self, pid):
         """'Agumon · Champion' for a roster id ('' when unknown)."""
@@ -516,28 +521,43 @@ class LobbyPanel:
                 self.status, self.invite_prompt = "Declined.", None
             return None
         if self.action_for is not None:
-            pid, pname = self.action_for
-            if k in ("b", "B"):
+            pid, pname, plive = self.action_for
+            if k in ("b", "B") and plive:
                 self.client.invite(pid, "battle"); self.status = f"Battle invite → {pname}"; self.action_for = None
-            elif k in ("j", "J"):
+            elif k in ("j", "J") and plive:
                 self.client.invite(pid, "jogress"); self.status = f"Jogress invite → {pname}"; self.action_for = None
+            elif k in ("m", "M"):
+                # compose a private message: the input line retargets
+                self.pm_to = (pid, pname)
+                self.buf = ""
+                self.status = f"PM → {pname} — Enter send, Esc cancel"
+                self.action_for = None
             elif k == "escape":
                 self.action_for = None
             return None
         if k == "escape":
+            if self.pm_to is not None:
+                self.pm_to, self.buf = None, ""
+                self.status = "PM cancelled."
+                return None
             return ("done", None)
         if k == "up":
             self.sel = max(0, self.sel - 1); return None
         if k == "down":
             self.sel = min(max(0, len(self._others()) - 1), self.sel + 1); return None
         if k == "enter":
-            if self.buf.strip():
+            if self.pm_to is not None:
+                if self.buf.strip():
+                    self.client.pm(self.pm_to[0], self.buf.strip())
+                    self.status = f"✉ sent to {self.pm_to[1]}"
+                self.pm_to, self.buf = None, ""
+            elif self.buf.strip():
                 self.client.chat(self.buf.strip()); self.buf = ""
             else:
                 others = self._others()
                 if others:
                     p = others[min(self.sel, len(others) - 1)]
-                    self.action_for = (p["id"], p["name"])
+                    self.action_for = (p["id"], p["name"], p.get("live", True))
             return None
         return self._edit(k)
 
@@ -649,15 +669,20 @@ class LobbyPanel:
             if ridx < len(others):
                 pl = others[ridx]
                 cur = ridx == sel
-                t.append(_fit((">" if cur else " ") + pl["name"], ROSTW),
-                         style=SEL if cur else INK)
+                ghost = not pl.get("live", True)     # playing, not in the room
+                t.append(_fit((">" if cur else " ") + ("·" if ghost else "") + pl["name"], ROSTW),
+                         style=SEL if cur else (DIM if ghost else INK))
             elif i == 0 and not others:
                 t.append(_fit(" nobody yet", ROSTW), style=DIM)
             else:
                 t.append(_fit("", ROSTW), style=INK)
             t.append("\n")
-        t.append("say: ", style=INK_B)                       # this is chat, not a login box
-        fw = CHATW + ROSTW - 5
+        if self.pm_to is not None:                           # the input line is a PM compose
+            label = f"✉{self.pm_to[1][:8]}: "
+        else:
+            label = "say: "
+        t.append(label, style=INK_B)
+        fw = CHATW + ROSTW - len(label)
         shown = self.buf if len(self.buf) < fw else self.buf[-(fw - 1):]
         t.append(_fit(shown + "_", fw) + "\n", style=INK)
         if self.invite_prompt is not None:
@@ -666,14 +691,20 @@ class LobbyPanel:
             who = f"{inv['from_name']} ({blurb})" if blurb else inv["from_name"]
             t.append(_fit(f"{who} invites {inv['kind']}  [Y]/[N]", CHATW + ROSTW + 1), style=INK_B)
         elif self.action_for is not None:
-            blurb = self._pet_of(self.action_for[0])
-            who = f"{self.action_for[1]} ({blurb})" if blurb else self.action_for[1]
-            t.append(_fit(f"{who}:  [B]attle  [J]ogress  [Esc]", CHATW + ROSTW + 1), style=INK_B)
+            pid, pname, plive = self.action_for
+            blurb = self._pet_of(pid)
+            who = f"{pname} ({blurb})" if blurb else pname
+            acts = "[B]attle [J]ogress [M]sg [Esc]" if plive else "playing — [M]essage  [Esc]"
+            t.append(_fit(f"{who}:  {acts}", CHATW + ROSTW + 1), style=INK_B)
         else:
             line = self.status
             if others and line.startswith("Up/Down"):
-                blurb = self._pet_of(others[sel]["id"])
-                if blurb:
-                    line = f"{others[sel]['name']}: {blurb} — Enter to act"
+                p = others[sel]
+                if p.get("live", True):
+                    blurb = self._pet_of(p["id"])
+                    if blurb:
+                        line = f"{p['name']}: {blurb} — Enter to act"
+                else:
+                    line = f"{p['name']} is playing — Enter to message"
             t.append(line[:CHATW + ROSTW + 1], style=DIM)
         return t
