@@ -125,6 +125,10 @@ def battle_card(pet):
             "stage": pet.stage, "vaccine": pet.vaccine, "data_power": pet.data_power,
             "virus": pet.virus,
             "hp": getattr(pet, "full_health", 0) or MAX_HEALTH.get(pet.stage, MAX_HEALTH_DEFAULT),
+            # EnemySickChance contagion: PvP ships the partner's REAL sick
+            # state (canon BattleProtocol.setIsSick) -- beating a sick friend
+            # risks catching it (battle-math audit 2026-07-06)
+            "sick": bool(getattr(pet, "sick", False)),
             "bits": (1, 5)}
 
 
@@ -251,7 +255,11 @@ class Battle:
     def _finish(self):
         self.over = True
         self.won = self.pet_hp > 0          # battleEnd: player loses iff _health <= 0
-        self.reward = self.pet.record_battle(self.won, self.enemy, free_style=self.free_style)
+        # BattleLowHealthCoefficient: limping out at/below half HP doubles the
+        # end cost (canon health > fullHealth/2 [int division] = the high band)
+        low = self.pet_hp <= self.pet_max // 2
+        self.reward = self.pet.record_battle(self.won, self.enemy,
+                                             free_style=self.free_style, low_health=low)
 
     def surrender(self):
         """Battle.surrender: the pet bows out -- the bout ends as neither win nor loss.

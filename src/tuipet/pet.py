@@ -253,6 +253,21 @@ SURR_HI_EHP, SURR_LO_EHP = 10.0, 30.0          # SurrenderChance*EnemyHealthFact
 SURR_HI_FACTOR, SURR_LO_FACTOR = 3.0, 0.75     # SurrenderChanceHigh/LowFactor
 SURR_HI_WINRATE_MIN = 0.4                       # SurrenderChanceHighFactorWinRateMin
 # aftermath (ClockTic.surrenderEffect / surrender-reject / Battle.surrender)
+# battleEnd's tail (battle-math audit 2026-07-06)
+BATTLE_WON_WORSE_SICK = 10              # BattleWonWorseSickChance (winning hurt still costs)
+BATTLE_LOST_WORSE_SICK = 20             # BattleLostWorseSickChance
+BATTLE_LOW_HEALTH_COEF = 2              # BattleLowHealthCoefficient (limping = at/below half HP)
+BATTLE_HIGH_HP_ENERGY = 1               # BattleHighHealthEnergyDec
+BATTLE_LOW_HP_ENERGY = 2                # BattleLowHealthEnergyDec (a hard fight drains double)
+BATTLE_CAL_HIGH = 1                     # BattleCalorieDecHighHealth
+BATTLE_CAL_LOW = 2                      # BattleCalorieDecLowHealth
+BATTLE_LOST_MISSED_DAY = 1              # BattleLostMissedDayChange
+SURR_DECLINED_LOST_OBED = 10            # SurrenderRequestDeclinedLostBattleObedienceDec --
+#                                         it BEGGED to quit, you refused, it lost: obedience
+#                                         is SET to 10 (absolute), not decremented
+ENEMY_SICK_CHANCE = 50                  # EnemySickChance: fighting a SICK opponent (PvP
+#                                         contagion -- the partner's real state ships) risks
+#                                         catching it at battle's end, win or lose
 SURR_EFFECT_MOOD_INC = 10               # SurrenderEffectMoodInc
 SURR_EFFECT_LOWDISP_MOOD_DEC = 20       # SurrenderEffectLowDispositionMoodDec
 SURR_EFFECT_REQ_OBED_DEC = 10           # SurrenderEffectRequestObedienceDec
@@ -3013,22 +3028,39 @@ class Pet:
             return f"{self.name} refuses to fight!"
         return None
 
-    def record_battle(self, won, enemy=None, free_style=None):
-        """Resolve a finished battle: update battles/wins and rewards.  The
-        battle passes its BAKED style so a mid-fight toggle can't split the
-        bonus from the rewards."""
+    def record_battle(self, won, enemy=None, free_style=None, low_health=False):
+        """Resolve a finished battle (canon battleEnd; battle-math audit
+        2026-07-06): compliance is SPENT here, the end cost is banded by the
+        finishing HP (limping at/below half = double energy + calories), a
+        SICK opponent is contagious, and the disposition factor shades every
+        win/loss mood.  The battle passes its BAKED style so a mid-fight
+        toggle can't split the bonus from the rewards."""
         style_free = self.free_style if free_style is None else free_style
+        complied = self.check_compliant()                # battleEnd: checkCompliant
+        surr_declined = getattr(self, "_surr_declined", False)   # one bout only
+        self._surr_declined = False
+        self.exercise_today += 1                         # incExerciseTime (the +1 effort
+        #                                                  bump is 0 at difficulty 0)
         self.battles += 1
         self.stage_battles += 1                          # LINES_SPEC BTL gate (per-stage)
         self.battle_log = (self.battle_log + [1 if won else 0])[-15:]   # Pen20 rolling window
         if not style_free:
             self._set_obedience(self.obedience + BATTLE_FREE_OBED_INC)   # fighting under orders builds discipline
-        self._set_energy(self.energy - 1)               # battle energy (BattleWon/LostEnergyDec)
+        # the end cost is banded by the FINISHING health: above half HP the
+        # fight cost energy -1 / calories -1; limping out costs double
+        if low_health:
+            self._set_energy(self.energy - BATTLE_LOW_HP_ENERGY)
+            self._set_calories(self.calories - BATTLE_CAL_LOW)
+        else:
+            self._set_energy(self.energy - BATTLE_HIGH_HP_ENERGY)
+            self._set_calories(self.calories - BATTLE_CAL_HIGH)
         # checkBattleInj: worsening, then a fresh roll WIN OR LOSE (a loss
-        # pads +50/1000; the old loss-only 30% flat roll is gone).  tuipet's
-        # battle flow doesn't thread compliance, so the forced-obedience leg
-        # stays dormant here (complied=False).
-        self._check_battle_injury(won)
+        # pads +50/1000)
+        self._check_battle_injury(won, complied=complied)
+        # checkSick: a SICK opponent is contagious at the bout's end (PvP
+        # ships the partner's real state), win or lose
+        if (enemy or {}).get("sick"):
+            self._check_sick(ENEMY_SICK_CHANCE)
         if won:
             self.wins += 1
             # lifetime wins (cross-generation, gates the mystery eggs) -- counted
@@ -3045,7 +3077,11 @@ class Pet:
                     self.mega_kills += 1                 # LINES_SPEC KO6 gate (DMX Stage-VI kills)
                     _persist.mega_kills_add(1)           # ...and the lifetime X-egg progress
             self._open_praise()                          # a win is praiseworthy (setPraise)
-            self._set_mood(self.mood + 10)               # BattleWonMoodInc
+            # BattleWonMoodInc + BattleDispositionMoodFactor x disposition:
+            # the -5 x dispo shade rides EVERY win/loss, not just orders-won
+            self._set_mood(self.mood + 10 + BATTLE_DISPO_MOOD_FACTOR * self.disposition)
+            if self._check_worse_sick(BATTLE_WON_WORSE_SICK) and complied:
+                self._set_obedience(self.obedience + OBEDIENCE_CHANGE_SICK_FORCED)
             # over/underpowered adjustments (battleEnd compareStage + HP gates):
             # squashing a hollow higher-stage foe is a JOYLESS win (-20); toppling a
             # tougher lower-stage bruiser is a proud one (+10)
@@ -3087,9 +3123,15 @@ class Pet:
             self.bits += gained
             self._set_anim("happy", 2.0)
             return f"Victory! +{gained} bits{grew}"
-        self._set_mood(self.mood - 20)               # BattleLostMoodDec
+        self._set_mood(self.mood - 20 + BATTLE_DISPO_MOOD_FACTOR * self.disposition)   # BattleLostMoodDec
         self._set_enthusiasm(self.enthusiasm - 6)    # BattleLostEnthusiasmDec
         self._set_obedience(self.obedience - 1)      # BattlesObedienceDec (a loss saps trust)
+        self.mistake_day += BATTLE_LOST_MISSED_DAY   # BattleLostMissedDayChange
+        if self._check_worse_sick(BATTLE_LOST_WORSE_SICK) and complied:
+            self._set_obedience(self.obedience + OBEDIENCE_CHANGE_SICK_FORCED)
+        if surr_declined:
+            # it BEGGED to quit, you refused, it lost: obedience is SET to 10
+            self._set_obedience(SURR_DECLINED_LOST_OBED)
         self._set_anim("sad", 2.0)
         return "Defeat..."
 
@@ -3209,9 +3251,11 @@ class Pet:
 
     def surrender_reject(self):
         """ClockTic: the trainer refuses the pet's surrender request (surrender==2) and
-        sends it back in — it sulks but obeys a touch more."""
+        sends it back in — it sulks but obeys a touch more.  If it then LOSES,
+        battleEnd SETS obedience to 10 (the declined-request grudge)."""
         self._set_mood(self.mood - SURR_REJECT_MOOD_DEC)
         self._set_obedience(self.obedience + SURR_REJECT_OBED_INC)
+        self._surr_declined = True                       # consumed by record_battle
 
     # ---- discipline: praise / scold (PhysicalState) --------------------------
     def _open_praise(self):
