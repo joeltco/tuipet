@@ -129,6 +129,10 @@ def battle_card(pet):
             # state (canon BattleProtocol.setIsSick) -- beating a sick friend
             # risks catching it (battle-math audit 2026-07-06)
             "sick": bool(getattr(pet, "sick", False)),
+            # BattleProtocol ships the DECLARED attribute (lobby audit
+            # 2026-07-06) -- it keys the battle-injury attr souring; wild
+            # enemies still derive theirs from the strongest power
+            "attribute": getattr(pet, "attribute", "") or "None",
             "bits": (1, 5)}
 
 
@@ -144,8 +148,11 @@ class Battle:
                             "Virus": pet.virus + _fb}
         self._enemy_counts = {"Vaccine": self.enemy["vaccine"],
                               "Data": self.enemy["data_power"], "Virus": self.enemy["virus"]}
-        # Enemy.getOppAttribute = its strongest power (battle "type")
-        self.enemy["attribute"] = max(ATTRS, key=lambda a: self._enemy_counts[a])
+        # Enemy.getOppAttribute: a PvP card ships the DECLARED attribute; a
+        # wild enemy's battle "type" derives from its strongest power (and a
+        # None/Free declared attribute falls back the same way for the AI)
+        if self.enemy.get("attribute") not in ATTRS:
+            self.enemy["attribute"] = max(ATTRS, key=lambda a: self._enemy_counts[a])
         # DVPet battle HP = the pet's TRAINED fullHealthPoints (HP drill / HP chips),
         # not a flat stage table -- the stage caps live in Pet.max_health()'s ladder
         self.pet_max = self.pet_hp = getattr(pet, "full_health", 0) or MAX_HEALTH.get(pet.stage, MAX_HEALTH_DEFAULT)

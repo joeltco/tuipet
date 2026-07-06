@@ -326,3 +326,22 @@ def test_apply_dna_no_longer_marks_a_false_disturb():
     p.apply_dna("DragonsRoar", 2)
     assert p.disturb == d0
     assert p.dna_applied["DragonsRoar"] == 2
+
+
+def test_pvp_cards_ship_the_declared_attribute():
+    """BattleProtocol ships the declared attribute (lobby audit 2026-07-06):
+    the Battle honours it -- a Vaccine pet whose strongest power is Virus
+    still fights AS Vaccine; wild enemies (and Free pets) derive from power."""
+    from tuipet import battle as battle_mod
+    from tuipet.pet import Pet
+    p = Pet(num=102, name="D", stage="Champion", attribute="Vaccine",
+            vaccine=1, data_power=1, virus=50)
+    card = battle_mod.battle_card(p)
+    assert card["attribute"] == "Vaccine"
+    q = Pet(num=102, name="Q", stage="Champion", attribute="Virus")
+    b = battle_mod.Battle(q, dict(card))
+    assert b.enemy["attribute"] == "Vaccine"       # the declared type stands
+    wild = dict(card)
+    del wild["attribute"]
+    b2 = battle_mod.Battle(q, wild)
+    assert b2.enemy["attribute"] == "Virus"        # wild: strongest power derives
