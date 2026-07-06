@@ -1419,7 +1419,11 @@ class TuiPetApp(App):
         mem = persistence.take_digimemory()
         if mem:
             pet.digimemory = dict(mem)
-            pet.add_item("i:32")
+            # the inherited ESTATE bag may already carry the elder's unused
+            # husk (the re-banked-payload case) -- never a second chip for
+            # one payload (digimemory audit 2026-07-06)
+            if pet.inventory.get("i:32", 0) <= 0:
+                pet.add_item("i:32")
         # the departed's care grade seeds this generation's bonus (careBonusOnReset)
         pet.evol_bonus = persistence.take_bonus_seed()
 
@@ -2012,18 +2016,32 @@ class TuiPetApp(App):
                         self.screen_w.start_fx("cheer")
                     persistence.save(self.pet)
                 else:
-                    # UnlockInheritance (onDie with _bonus > 0): the departed etches
-                    # its Digimemory; a second memory raises DVPet's only-one prompt
+                    # UnlockInheritance (onDie with _bonus > 0): the departed CAN
+                    # etch its Digimemory -- canon's DigiMemory_Validation is a
+                    # real choice (declining keeps the bonus for the heir), so
+                    # the panel asks; the etch is the walk-out default.  A held
+                    # UNUSED payload is device-lifetime (canon item 32 survives
+                    # resetToEgg): back to the bank first (digimemory audit
+                    # 2026-07-06), where the only-one prompt covers it.
+                    if self.pet.digimemory:
+                        persistence.bank_digimemory(dict(self.pet.digimemory))
+                        self.pet.digimemory = {}
+                    b0 = self.pet.evol_bonus
                     new_mem = self.pet.make_digimemory()
+                    grade_spent = self.pet.final_care_grade()   # the etch path's seed
+                    self.pet.evol_bonus = b0
+                    grade_kept = self.pet.final_care_grade()    # the decline path's seed
+                    self.pet.evol_bonus = 0                     # the life is spent either way
                     old_mem = persistence.peek_digimemory()
+                    banked_new = False
                     if new_mem and not old_mem:
-                        persistence.bank_digimemory(new_mem)
-                    # careBonusOnReset: the whole-life report card, graded AFTER
-                    # the etch spent the bonus -- it seeds the next egg
-                    persistence.bank_bonus_seed(self.pet.final_care_grade())
-                    persistence.save(self.pet)             # the spent bonus sticks
+                        persistence.bank_digimemory(new_mem)    # default: etched
+                        banked_new = True
+                    persistence.bank_bonus_seed(grade_spent)    # default seed; B re-banks
+                    persistence.save(self.pet)
                     self._open_mode(deathscreen.DeathPanel(self.pet, hold=20, new_mem=new_mem,
-                                                           old_mem=old_mem), self._after_death)
+                                                           old_mem=old_mem, grade_kept=grade_kept,
+                                                           banked_new=banked_new), self._after_death)
             else:                              # any other fx just finished -> restore the HUD
                 self.repaint()
         else:
@@ -2497,6 +2515,12 @@ class TuiPetApp(App):
         self.beep("confirm", bell=False)                        # a button blip on the lights on/off press
         self._do(self.pet.toggle_lights())
     def action_new(self):
+        if not self.pet.dead:
+            # a LIVE retire skips the death flow entirely: canon resetDigimon
+            # runs careBonusOnReset dead or alive, and a live reset never
+            # offers the etch -- the FULL adjusted bonus carries to the heir
+            # (digimemory audit 2026-07-06; this seed used to be lost)
+            persistence.bank_bonus_seed(self.pet.final_care_grade())
         persistence.snapshot_prev_gen(self.pet)   # previous-generation egg gates
         gen = self.pet.generation + 1
         self._open_mode(eggselectscreen.EggSelectPanel(self.pet),

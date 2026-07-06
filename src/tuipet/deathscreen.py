@@ -22,11 +22,18 @@ def _age_str(secs):
 
 
 class DeathPanel:
-    def __init__(self, pet, new_mem=None, old_mem=None, hold=0):
-        """new_mem: inheritance data the departed just etched (make_digimemory);
-        old_mem: data already banked from an earlier generation.  Both present =
-        DVPet's 'You can only have one Digimemory' validation -- the trainer
-        chooses which generation's data survives.
+    def __init__(self, pet, new_mem=None, old_mem=None, hold=0, grade_kept=0,
+                 banked_new=False):
+        """new_mem: inheritance data the departed CAN etch (make_digimemory);
+        old_mem: data already banked from an earlier generation.
+
+        Canon's DigiMemory_Validation is a real Yes/No (digimemory audit
+        2026-07-06): declining the etch keeps the care bonus for the heir --
+        grade_kept is that path's seed (the app pre-banked the etch default;
+        B re-banks the kept grade and, when banked_new, un-banks the memory).
+        After an etch with old data standing, the only-one prompt picks which
+        generation's data survives (the tuipet agency over canon's silent
+        overwrite, kept from the earlier arc).
 
         hold: canon deading()'s grave beat -- 20 ticks of just the grave with
         the dieLoop sting (x2) before the memorial takes input.  The fresh-
@@ -35,7 +42,10 @@ class DeathPanel:
         self.pet = pet
         self.new_mem = new_mem
         self.old_mem = old_mem
-        self.asking = bool(new_mem and old_mem)
+        self.grade_kept = int(grade_kept)
+        self.banked_new = bool(banked_new)
+        self.ask_etch = bool(new_mem)           # DigiMemory_Validation: etch or carry?
+        self.asking = False                     # the only-one prompt, after an etch
         self._hold = int(hold)
         self.sfx = "error" if hold else None    # soundConfig dieLoop -> error
 
@@ -47,6 +57,18 @@ class DeathPanel:
 
     def key(self, k):
         if self._hold > 0:                      # the grave beat absorbs the mash
+            return None
+        if self.ask_etch:
+            if k in ("e", "enter"):                       # Yes: etch the data
+                self.ask_etch = False
+                if self.old_mem:                          # ...old data standing ->
+                    self.asking = True                    # the only-one prompt
+            elif k in ("b", "escape"):                    # No: the bonus carries instead
+                persistence.bank_bonus_seed(self.grade_kept)
+                if self.banked_new:                       # un-bank the etch default
+                    persistence.take_digimemory()
+                self.new_mem = None
+                self.ask_etch = False
             return None
         if self.asking:
             if k in ("e", "enter"):                       # etch the new data over the old
@@ -69,6 +91,10 @@ class DeathPanel:
         p = self.pet
         if self._hold > 0:
             return "…"                             # deading(): just the grave, no keys yet
+        if self.ask_etch:
+            # DigiMemory_Validation: etch the data, or carry the care bonus
+            return (f"{p.name}'s legacy — [b]E[/] etch its data  "
+                    f"[b]B[/] carry the care bonus (+{self.grade_kept})")
         if self.asking:
             # setNewDigimemory validation: only one Digimemory may exist
             return (f"One Digimemory only — [b]E[/] etch {p.name}'s data  "

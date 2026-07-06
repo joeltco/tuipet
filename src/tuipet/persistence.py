@@ -175,22 +175,9 @@ def snapshot_prev_gen(pet):
     channel instead."""
     if pet is None or getattr(pet, "stage", "Egg") == "Egg":
         return
-    # careBonusOnReset: slips subtract (a clean life earns +1), the final mood
-    # tier +-1, and the obedience record +-1 (BonusInc/DecObedience 75/50)
-    bonus = int(getattr(pet, "evol_bonus", 0))
-    mistakes = int(getattr(pet, "care_mistakes", 0))
-    bonus = bonus - mistakes if mistakes > 0 else bonus + 1
-    mood_fn = getattr(pet, "current_mood", None)
-    m = mood_fn() if callable(mood_fn) else "Neutral"
-    if m == "Happy":
-        bonus += 1
-    elif m != "Neutral":
-        bonus -= 1
-    ob = int(getattr(pet, "obedience", 0))
-    if ob > 75:                                  # BonusIncObedience
-        bonus += 1
-    elif ob < 50:                                # BonusDecObedience
-        bonus -= 1
+    # (the careBonusOnReset math moved to Pet.final_care_grade -> the
+    # bonus_seed channel -- this copy was a second, PARTIAL grading of the
+    # same life that the seed always stomped; digimemory audit 2026-07-06)
     d = load_settings()
     prog = d.setdefault("progress", {})
     prog["last_gen"] = {
@@ -200,7 +187,6 @@ def snapshot_prev_gen(pet):
         "mood": int(getattr(pet, "mood", 0)),
         "obedience": int(getattr(pet, "obedience", 0)),
         "xanti": getattr(pet, "x_antibody", "None") != "None",
-        "bonus": bonus,
         # the DEVICE BAG (item/inventory audit 2026-07-06): canon's resetToEgg
         # never touches bits, the bag, or the beaten-qualifier trophies --
         # they are device-lifetime; the heir inherits them all
@@ -225,12 +211,6 @@ def prev_gen_estate():
             "inventory": dict(last.get("inventory") or {}),
             "trophies": int(last.get("trophies", 0)),
             "trophies_won": tw}
-
-
-def prev_gen_bonus():
-    """The care bonus the next generation inherits (careBonusOnReset carry)."""
-    d = load_settings()
-    return int(((d.get("progress") or {}).get("last_gen") or {}).get("bonus", 0))
 
 
 def _note_put(key, value):

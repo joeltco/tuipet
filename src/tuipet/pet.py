@@ -909,10 +909,12 @@ class Pet:
         pet.mood = EGG_MOOD                     # Evolution.egg: setMood(EggMood 100)
         if generation > 1:
             # the heir's ESTATE (death/rebirth + item audits): canon's
-            # resetToEgg never touches the bonus, bits, the bag or the
-            # trophy room -- all device-lifetime, all inherited
+            # resetToEgg never touches bits, the bag or the trophy room --
+            # all device-lifetime, all inherited.  (The care BONUS rides the
+            # bonus_seed channel, granted by app._grant_digimemory -- the old
+            # last_gen.bonus copy was a second, partial careBonusOnReset that
+            # the seed always stomped; retired, digimemory audit 2026-07-06.)
             from . import persistence as _persist
-            pet.evol_bonus = _persist.prev_gen_bonus()
             est = _persist.prev_gen_estate()
             pet.bits = est["bits"]
             pet.inventory = est["inventory"]
@@ -4021,8 +4023,11 @@ class Pet:
             b -= 1
         if self.battles and (self.wins / self.battles * 100.0) >= BONUS_INC_WIN_RATE:
             b += 1
-        # longevity: whole days lived past the growth curve (negative if short)
-        b += int((self.age_seconds - self._growth_period()) // DAY_MINUTES)
+        # longevity: whole days lived past the growth curve (negative if short).
+        # int(x / D), not x // D: canon's Java long division truncates toward
+        # ZERO, so a short life loses only its WHOLE missing days (digimemory
+        # audit 2026-07-06 -- floor division over-penalized by one)
+        b += int((self.age_seconds - self._growth_period()) / DAY_MINUTES)
         st = BONUS_STAGE.get(self.stage)
         if st:
             base, attr_bar, battle_bar = st

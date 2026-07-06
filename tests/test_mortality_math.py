@@ -121,21 +121,20 @@ def test_save_from_death_leaves_the_revival_window():
 
 
 def test_the_care_bonus_carries_across_generations():
-    """careBonusOnReset (death/rebirth audit 2026-07-06): canon never zeroes
-    the bonus at resetToEgg -- the ended life's care adjusts what the next
-    generation inherits (slips subtract, else +1; the final mood tier +-1;
-    obedience >75/<50 +-1)."""
+    """careBonusOnReset (death/rebirth audit 2026-07-06; unified onto the ONE
+    bonus_seed channel, digimemory audit 2026-07-06): canon never zeroes the
+    bonus at resetToEgg -- the ended life's full report card (final_care_grade)
+    seeds what the next generation inherits, floored at zero."""
     from tuipet import persistence
     p = _pet(care_mistakes=0, mood=200, obedience=100, evol_bonus=2)
-    persistence.snapshot_prev_gen(p)
-    assert persistence.prev_gen_bonus() == 2 + 3     # clean +1, Happy +1, obedient +1
+    persistence.bank_bonus_seed(p.final_care_grade())
     heir = Pet.new_egg(generation=2)
-    assert heir.evol_bonus == 5                      # the heir starts ahead
+    heir.evol_bonus = persistence.take_bonus_seed()  # app._grant_digimemory's hand-off
+    assert heir.evol_bonus == p.final_care_grade() > 2   # clean/Happy/obedient legs land
     fresh = Pet.new_egg(generation=1)
     assert fresh.evol_bonus == 0                     # a fresh game inherits nothing
     q = _pet(care_mistakes=6, mood=-50, obedience=10, evol_bonus=0)
-    persistence.snapshot_prev_gen(q)
-    assert persistence.prev_gen_bonus() == -8        # -6 slips, Unhappy -1, sloppy -1
+    assert q.final_care_grade() == 0                 # a graded wreck floors at zero
 
 
 def test_the_heir_inherits_the_device_bag():
