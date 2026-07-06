@@ -229,3 +229,27 @@ def test_gameboy_sprites_wear_a_light_halo_over_dark_art():
         assert theme.THEMES["gameboy"]["bg_ramp"][-1] not in str(t.markup)
     finally:
         theme.apply("grey")
+
+
+def test_shell_chrome_keys_fall_back_and_gameboy_declares_them():
+    """DMG shell polish (Joel 2026-07-05): bezel/shell/label/key are OPTIONAL
+    chrome colours -- plain themes must derive them from border/mid/cyan
+    (zero visual change), the gameboy declares the DMG set."""
+    d = theme._derive(theme.THEMES["grey"])
+    assert d["BEZEL"] == d["BORDER"] and d["SHELL"] == d["BORDER"]
+    assert d["LABEL"] == d["MID"] and d["KEY"] == "cyan"
+    g = theme._derive(theme.THEMES["gameboy"])
+    assert g["BEZEL"] != g["SHELL"] != g["LABEL"]     # a real three-part shell
+    for k in ("BEZEL", "SHELL", "LABEL", "KEY"):
+        assert _HEX.match(g[k]), f"gameboy {k} = {g[k]!r}"
+
+
+def test_action_bar_letters_wear_the_theme_key_colour():
+    from tuipet.app import keys_markup
+    try:
+        theme.apply("gameboy")
+        assert theme.THEMES["gameboy"]["key"] in keys_markup()
+        theme.apply("grey")
+        assert "b cyan]" in keys_markup()             # the plain themes keep cyan
+    finally:
+        theme.apply("grey")

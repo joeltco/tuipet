@@ -118,12 +118,17 @@ _RAIN = {"Drizzling", "Raining", "HeavyRain"}
 _SNOW = {"LightSnow", "Snowing", "HeavySnow"}
 _PRECIP_N = {"Drizzling": 5, "LightSnow": 6, "Raining": 11, "Snowing": 10,
              "HeavyRain": 18, "HeavySnow": 16}
-_K = "b cyan"
-KEYS = (
-    f"[{_K}]f[/] feed  [{_K}]p[/] play  [{_K}]c[/] clean  [{_K}]h[/] heal  [{_K}]r[/] praise  [{_K}]k[/] scold  [{_K}]s[/] lights  [{_K}]v[/] assist\n"
-    f"[{_K}]t[/] train  [{_K}]b[/] battle  [{_K}]a[/] adventure  [{_K}]u[/] cup  [{_K}]j[/] jogress  [{_K}]l[/] lobby  [{_K}]x[/] DNA\n"
-    f"[{_K}]o[/] shop  [{_K}]i[/] bag  [{_K}]e[/] habitat  [{_K}]d[/] data  [{_K}]g[/] options  [{_K}]q[/] quit"
-)
+def keys_markup():
+    """The action bar, rebuilt per theme: the shortcut letters wear the
+    theme's KEY colour (gameboy = the A/B button magenta; the plain themes
+    keep the old cyan).  Was a module constant with `b cyan` baked in --
+    unreachable by theme.apply (shell polish 2026-07-05)."""
+    k = f"b {theme.KEY}"
+    return (
+        f"[{k}]f[/] feed  [{k}]p[/] play  [{k}]c[/] clean  [{k}]h[/] heal  [{k}]r[/] praise  [{k}]k[/] scold  [{k}]s[/] lights  [{k}]v[/] assist\n"
+        f"[{k}]t[/] train  [{k}]b[/] battle  [{k}]a[/] adventure  [{k}]u[/] cup  [{k}]j[/] jogress  [{k}]l[/] lobby  [{k}]x[/] DNA\n"
+        f"[{k}]o[/] shop  [{k}]i[/] bag  [{k}]e[/] habitat  [{k}]d[/] data  [{k}]g[/] options  [{k}]q[/] quit"
+    )
 
 
 def _sound_path():
@@ -1322,7 +1327,7 @@ class TuiPetApp(App):
                     yield Screen(id="lcd")
                     yield Static("Welcome! Raise your pet.", id="msg")
                 yield Stats(id="stats")
-            yield Static(KEYS, id="keys")
+            yield Static(keys_markup(), id="keys")
 
     def on_mount(self):
         self.screen_w = self.query_one("#lcd", Screen)
@@ -1567,15 +1572,19 @@ class TuiPetApp(App):
             self.bell()
 
     def _restyle(self):
+        # the DMG-shell reading (2026-07-05): the LCD's thick frame is the
+        # screen BEZEL, the round boxes are the SHELL body, the titles/key
+        # hints are printed LABEL text -- plain themes fall back to border/mid
         try:
             for w in (self.screen_w, self.stats_w, self.msg_w, self.keys_w):
-                w.styles.border = ("round", theme.BORDER)
-                w.styles.border_title_color = theme.MID
-            self.screen_w.styles.border = ("thick", theme.BORDER)
+                w.styles.border = ("round", theme.SHELL)
+                w.styles.border_title_color = theme.LABEL
+            self.screen_w.styles.border = ("thick", theme.BEZEL)
             self.screen_w.styles.border_subtitle_color = theme.ACCENT
             self.screen_w.styles.background = theme.LCD_BG
-            self.msg_w.styles.color = theme.MID
-            self.keys_w.styles.color = theme.MID
+            self.msg_w.styles.color = theme.LABEL
+            self.keys_w.styles.color = theme.LABEL
+            self.keys_w.update(keys_markup())   # the shortcut letters re-tint too
         except Exception:
             pass
 

@@ -53,12 +53,19 @@ THEMES = {
         "phases": {"dawn": ("#b9d2f0", "#15202f"), "day": ("#a9c8ee", "#101826"),
                    "dusk": ("#d0a070", "#181420"), "night": ("#6d86a8", "#0a0f18")},
     },
-    # the classic 4-shade DMG pea-soup LCD (the default stays grey; this is an option)
+    # the classic 4-shade DMG pea-soup LCD in its putty-grey shell
+    # (the default stays grey; this is an option)
     "gameboy": {
         "on": "#0f380f", "bg": "#9bbc0f", "mid": "#306230",
-        "accent": "#7a3a22", "pos": "#2a5a8a", "neg": "#8a3a2a", "border": "#4a5a28",
+        "accent": "#a83a6a",                                  # the A/B button magenta
+        "pos": "#5c5ab8", "neg": "#b04578",                   # the bezel stripes: navy / burgundy
+        "border": "#4a5a28",
+        "bezel": "#565663",     # the dark screen-surround plate (Joel: "lcd border gray like a dmg")
+        "shell": "#b8b4aa",     # the putty body around everything else
+        "label": "#9a968c",     # printed shell text (titles, key hints)
+        "key": "#b04578",       # action-bar letters wear the A/B button magenta
         "sil_day": "#0f380f", "sil_night": "#d8e8a0",
-        "heart": "#8a4a2a", "energy": "#2a6a8a", "mood": "#6a4a8a", "life": "#306230", "coin": "#8a7a1a",
+        "heart": "#b04578", "energy": "#5c5ab8", "mood": "#8a86c0", "life": "#6f8f26", "coin": "#b0a86a",
         "weather": {"rain": ("#1a3020", 0.30), "snow": ("#e0e8c8", 0.26), "cloud": ("#3a4a28", 0.18)},
         "void": "#0f380f", "flash": ("#e0f0c0", "#0f380f", "#d8e8a0"),
         "bg_ramp": ("#0f380f", "#306230", "#8bac0f", "#9bbc0f"),   # the 4 DMG shades, dark -> light
@@ -102,7 +109,8 @@ _current = _DEFAULT
 
 _NAMES = ("LCD_ON", "LCD_BG", "MID", "INK", "INK_B", "DIM", "SEL", "ACCENT",
           "POS", "NEG", "BORDER", "SIL_DAY", "SIL_NIGHT", "PHASE_PALETTE",
-          "HEART", "ENERGY", "MOOD", "LIFE", "COIN", "VOID", "FLASH")
+          "HEART", "ENERGY", "MOOD", "LIFE", "COIN", "VOID", "FLASH",
+          "BEZEL", "SHELL", "LABEL", "KEY")
 # (the hand-maintained _SCREEN_MODULES registry is gone -- apply() discovers
 # palette-bound modules from sys.modules; hardening 2026-07-05)
 
@@ -114,6 +122,7 @@ _SNOW = {"LightSnow", "Snowing", "HeavySnow"}
 # theme via globals().update(_derive(...)); they are never actually the empties below.
 LCD_ON = LCD_BG = MID = INK = INK_B = DIM = SEL = ACCENT = POS = NEG = BORDER = ""
 SIL_DAY = SIL_NIGHT = HEART = ENERGY = MOOD = LIFE = COIN = VOID = ""
+BEZEL = SHELL = LABEL = KEY = ""
 FLASH: tuple = ("", "", "")
 PHASE_PALETTE: dict = {}
 WEATHER: dict = {}
@@ -130,6 +139,14 @@ def _derive(t):
         "HEART": t["heart"], "ENERGY": t["energy"], "MOOD": t["mood"],
         "LIFE": t["life"], "COIN": t["coin"], "WEATHER": t["weather"],
         "VOID": t["void"], "FLASH": t["flash"],
+        # shell chrome (optional per theme; the plain themes keep border/mid):
+        # bezel = the LCD's thick frame, shell = the outer boxes, label = the
+        # printed titles/key-hint text, key = the action-bar shortcut letters
+        # (the DMG shell polish, 2026-07-05)
+        "BEZEL": t.get("bezel", t["border"]),
+        "SHELL": t.get("shell", t["border"]),
+        "LABEL": t.get("label", t["mid"]),
+        "KEY": t.get("key", "cyan"),
     }
 
 
