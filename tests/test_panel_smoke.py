@@ -356,3 +356,25 @@ def test_every_drill_completes_through_its_strike_within_budget():
             frames += 1
             assert frames < 3000, f"{game} wedged in phase {pan.phase}"
         assert pan.result                      # the score reveal landed
+
+
+def test_every_drill_strip_follows_the_one_formula():
+    """Consistency audit (Joel 2026-07-06): every drill's strip = action cue
+    (+ progress + meter where the drill has them) -- game objects live in the
+    LCD, numbers on the status card.  data/virus carry NO raw numbers (the
+    old virus gauge trailed the bar position; the old data gauge echoed the
+    card's shield row)."""
+    import re
+    from tuipet.training import TrainingPanel
+    p = _pet()
+    p.obedience = 500
+    for gi, gk in ((0, "hp"), (1, "vaccine"), (2, "data"), (3, "virus")):
+        pan = TrainingPanel(p)
+        pan.gi = gi
+        pan.key("enter")
+        g = pan._gauge()
+        assert "[b]" in g, f"{gk}: no bold action cue"
+        assert "▸" not in g and "●" not in g and "■" not in g and "▲" not in g, \
+            f"{gk}: game glyphs leaked into the strip"
+        if gk in ("data", "virus"):
+            assert not re.search(r"\d", g), f"{gk}: raw numbers belong on the card: {g!r}"

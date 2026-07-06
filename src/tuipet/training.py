@@ -701,19 +701,21 @@ class TrainingPanel:
             tb = int((max(self.round_t, 0) / max(self.round_len, 1)) * 8)
             return (f"[b]SPACE[/] when the shapes match  "
                     f"{self.rep + 1}/{HP_ROUNDS}  {'▓' * tb}{'░' * (8 - tb)}")
+        # ONE strip formula for every drill (consistency audit 2026-07-06):
+        # action cue + progress + meter.  Game OBJECTS live in the LCD, the
+        # NUMBERS live on the status card -- the strip only cues and counts.
         if gk == "vaccine":
-            hit = self._strike_t > 0
-            filled = int((max(self.timer, 0) / VACCINE_WINDOW) * 9)
-            head = "[b]HIT!![/]" if hit else "hit!  "
-            return (f"{head} {self.taps}/{self.vaccine_target}  "
-                    f"time {'▓' * filled}{'░' * (9 - filled)}")
+            filled = int((max(self.timer, 0) / VACCINE_WINDOW) * 8)
+            cue = "[b]HIT!![/]" if self._strike_t > 0 else "[b]SPACE[/] punch!"
+            return (f"{cue}  {self.taps}/{self.vaccine_target}  "
+                    f"{'▓' * filled}{'░' * (8 - filled)}")
         if gk == "data":
-            aim = ("[b]CANNON HIGH![/]" if self.tgt_up else "[b]CANNON LOW![/]") \
-                if self.locked else "[dim]watch the aim...[/]"
-            return f"{aim}  shield {'UP' if self.shield_up else 'DOWN'}"
-        inzone = int(self.pos) >= VIRUS_BAR_MIN            # virus: call the zone
-        call = "[b]IN THE ZONE - hit![/]" if inzone else "stop it in the zone"
-        return f"{call}  {int(self.pos)}"
+            cue = (("[b]CANNON HIGH![/]" if self.tgt_up else "[b]CANNON LOW![/]")
+                   + " — block!") if self.locked else "[b]SPACE[/] flips the shield"
+            return cue                       # the shield itself shows in the scene
+        cue = ("[b]IN THE ZONE — SPACE![/]" if int(self.pos) >= VIRUS_BAR_MIN
+               else "[b]SPACE[/] stops it in the zone")
+        return cue                           # the bar itself shows in the scene
 
     def strip(self):
         """The one-line chrome under the LCD (menu phase keeps its in-LCD list)."""
