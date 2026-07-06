@@ -167,7 +167,10 @@ def check(pet, num, item=-1, connecting=False):
         gates.append(tr[0] <= getattr(pet, "temp", 50) <= tr[1])
     hr = req.get("habitat_req", -1)
     if hr != -1:
-        gates.append(_major_hab(pet) == hr)
+        # checkHabitatReq with EnableTimerBasedRequirements=false compares the
+        # CURRENT habitat, not the lived-in-most one (evolution audit
+        # 2026-07-06 -- the same timer-off misread the mood gate had)
+        gates.append(getattr(pet, "habitat", -1) == hr)
     failed = sum(1 for g in gates if not g)
     if failed > (1 if _dna_ok(pet, req) else 0):     # getDNA(): one forgiveness, then spent
         return False
@@ -224,20 +227,25 @@ def fulfilled(pet, num):
         cnt = sum(1 for lv in getattr(pet, "levels_fought", ()) if lv >= lf_min)
         if _cmp(*req["level_fought"], cnt):
             score += 1  # Config._levelFoughtRate
-    if req.get("xantibody", "None") in ("Induced", "Natural") and getattr(pet, "x_antibody", "None") != "None":
+    # canon scores ONLY an Induced X requirement (evolution audit 2026-07-06:
+    # the old "Natural" arm over-scored 180 corpus forms)
+    if req.get("xantibody", "None") == "Induced" and getattr(pet, "x_antibody", "None") != "None":
         score += X_ANTIBODY_RATE
     tr = req.get("temp_req")
     if tr is not None and tr[0] <= getattr(pet, "temp", 50) <= tr[1]:
         score += 1
-    if req.get("habitat_req", -1) != -1 and _major_hab(pet) == req["habitat_req"]:
-        score += 1
+    if req.get("habitat_req", -1) != -1 and getattr(pet, "habitat", -1) == req["habitat_req"]:
+        score += 1   # checkHabitatReq: the CURRENT habitat (timer-off)
     for f, g in (req.get("dna") or {}).items():     # getDNAReq: priority per met Field gate
         if g[0] != "None" and _cmp(g[0], g[1], pet.dna_percent(f)):
             score += DNA_FULFILLED_RATE
     if _dna_ok(pet, req):                            # getDNAReq: full-match dnaFulfilledRate bonus
         score += DNA_FULFILLED_RATE
-    # element/field affinity vs the pet's habitat (compatible +1, incompatible -1)
-    h = data.load_habitats().get(getattr(pet, "habitat", -1))
+    # element/field affinity of the TARGET form vs the pet's MAJOR habitat
+    # (compatible +1, incompatible -1) -- canon getFulfilledReq keys this
+    # shade on getMajorHabitat even though the habitat GATE uses the current
+    # one (evolution audit 2026-07-06: ours had the two swapped)
+    h = data.load_habitats().get(_major_hab(pet))
     if h:
         if req.get("element", "None") in h["compat_elements"]:
             score += 1   # Config._compatibleElementPriorityChange
@@ -474,7 +482,7 @@ def requirement_report(pet, num):
     hr = req.get("habitat_req", -1)
     if hr != -1:
         hname = (data.load_habitats().get(hr) or {}).get("name", f"#{hr}")
-        rows.append((_major_hab(pet) == hr, f"raised in {hname}"))
+        rows.append((getattr(pet, "habitat", -1) == hr, f"living in {hname}"))
     dna = req.get("dna") or {}
     dna_gated = [(f, g) for f, g in dna.items() if g[0] != "None"]
     for f, (cond, val) in dna_gated:
