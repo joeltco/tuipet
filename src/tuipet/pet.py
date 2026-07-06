@@ -587,12 +587,13 @@ SICK_GERIATRIC_FACTOR = 25               # SickGeriatricFactor
 WORSE_SICK_BOUND = 100                   # WorseSickChance
 WORSE_SICK_GERIATRIC = 25                # WorseSickGeriatricFactor
 INTOL_WORSE_SICK_CHANCE = 50             # IntolerantFoodWorseSickChance
-# incMistake's sickness risks (flagged in the mood arc, closed here): a mistake
-# amid a BEGGING poop gauge rolls 50/50, ordinary filth rolls per pile with a
-# misery pad (|mood| x 0.1 when Unhappy/Depressed), and ANY mistake while
-# fatigued adds a 1/1 whisper
-MISTAKE_FILTH_WORSE = 50                 # MistakeFilthWorseSickChance
-MISTAKE_FILTH_SICK = 50                  # MistakeFilthSickChance
+# incMistake's sickness risks (flagged in the mood arc, closed here): filth
+# rolls per pile with a misery pad (|mood| x 0.1 when Unhappy/Depressed), and
+# ANY mistake while fatigued adds a 1/1 whisper.  The 50/50 MistakeFilth*
+# pair keys on poopCall -- PROVABLY DEAD in the shipped config (the filth
+# array holds 6, MistakeFilthLimit is 7) -- kept as documentation only.
+MISTAKE_FILTH_WORSE = 50                 # MistakeFilthWorseSickChance (dead: poopCall)
+MISTAKE_FILTH_SICK = 50                  # MistakeFilthSickChance (dead: poopCall)
 MISTAKE_LOW_FILTH_WORSE = 5              # MistakeLowFilthWorseSickChance (x piles)
 MISTAKE_LOW_FILTH_SICK = 1               # MistakeLowFilthSickChance (x piles)
 MISTAKE_FILTH_MOOD_COEF = 0.1            # MistakeFilthSickChanceMoodCoefficient
@@ -1046,14 +1047,13 @@ class Pet:
             self._set_mood(self.mood - MISTAKE_MOOD_DEC)
         self.care_mistakes += 1
         self.mistake_day += 1                        # MistakeIncMissedDayChange
-        # incMistake's sickness risks (sickness/injury audit 2026-07-06; the
-        # mood arc flagged them unported): a mistake amid a BEGGING gauge rolls
-        # 50/50; ordinary filth rolls per pile with a misery pad; and ANY
-        # mistake while fatigued adds a 1/1 whisper
-        if self.poop_urgent():
-            self._check_worse_sick(MISTAKE_FILTH_WORSE)
-            self._check_sick(MISTAKE_FILTH_SICK)
-        elif self.poop > 0:
+        # incMistake's sickness risks (sickness/injury audit 2026-07-06):
+        # filth rolls per pile with a misery pad, and ANY mistake while
+        # fatigued adds a 1/1 whisper.  Canon's 50/50 poopCall branch is
+        # PROVABLY DEAD in the shipped config (poop/filth audit: the filth
+        # array holds 6 piles, MistakeFilthLimit is 7 -- countFilth can never
+        # reach it), so it is not ported.
+        if self.poop > 0:
             pad = (int(abs(math.ceil(self.mood * MISTAKE_FILTH_MOOD_COEF)))
                    if self.current_mood() in ("Unhappy", "Depressed") else 0)
             self._check_worse_sick(MISTAKE_LOW_FILTH_WORSE * self.poop + pad)
@@ -1901,11 +1901,24 @@ class Pet:
             return self._disturbed()
         return None
 
-    def _start_poop(self):
-        """DVPet startPoop: drop a sized pile (capped at the classic 4)."""
+    def _add_filth(self, size):
+        """addFilth (poop/filth audit 2026-07-06): below the cap the pile takes
+        the next slot; a FULL room UPGRADES the first pile smaller than the new
+        mess instead of dropping it (canon's overflow rule -- the old cap
+        silently discarded it).  Cap stays Joel's 4 (real-toy match; canon's
+        array is 6 -- with its poopCall threshold at 7, provably dead)."""
         if self.poop < POOP_MAX_PILES:
             self.poop += 1
-            self.poop_sizes.append(self._poop_size())
+            self.poop_sizes.append(size)
+            return
+        for i, s in enumerate(self.poop_sizes):
+            if s < size:
+                self.poop_sizes[i] = size
+                break
+
+    def _start_poop(self):
+        """DVPet startPoop: drop a sized pile."""
+        self._add_filth(self._poop_size())
 
     def _advance_bm(self, bm):
         """applyFood/bad-med/bad-vitamin: the bowel gauge lurches BM units,
@@ -2482,9 +2495,7 @@ class Pet:
         if backlog:
             size = min(4, size + 1)
             self._set_weight(self.weight - math.ceil(wdec / 2))
-        if self.poop < POOP_MAX_PILES:                            # addFilth: first free slot (capped)
-            self.poop += 1                                        # poop == countFilth()
-            self.poop_sizes.append(size)
+        self._add_filth(size)                    # capped; a full room upgrades a smaller pile
 
     def _sleep_inc(self):
         """Species sleep-pressure rate (SleepLapseInc: 1 adult / 2 / 9 baby)."""
