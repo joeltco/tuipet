@@ -407,6 +407,11 @@ def pet_from_save(data, catch_up=True, strict=False):
                         ("inventory", dict), ("poop_sizes", list)):
         if not isinstance(getattr(pet, fname), want):
             return None, ""
+    # a save written mid-adventure carries the ROAD's habitat; the pet comes
+    # home while you're away (habitat audit 2026-07-06 -- adventures are
+    # per-session, so the current habitat always loads as the home)
+    if getattr(pet, "home_habitat", -1) >= 0 and pet.habitat != pet.home_habitat:
+        pet.habitat = pet.home_habitat
     msg = ""
     if pet.num >= 0 and pet.stage != "Egg":
         from . import data as _data

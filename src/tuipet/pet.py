@@ -844,7 +844,12 @@ class Pet:
     weather: str = "Clear"
     field: str = ""
     element: str = ""
-    habitat: int = 2                # current home (2 = Plains, a temperate default)
+    habitat: int = 2                # the CURRENT habitat (canon _currentHabitat --
+    #                                 it follows the zone background on the road)
+    home_habitat: int = -1          # canon _homeHabitat: the OWNED home the pet
+    #                                 returns to after an adventure (-1 = backfill
+    #                                 from `habitat` on first use; habitat audit
+    #                                 2026-07-06)
     habitats: list = _dcf(default_factory=lambda: [0, 2])
     habitat_record: dict = _dcf(default_factory=dict)   # time-in-each-habitat -> getMajorHabitat
     time_pref: dict = _dcf(default_factory=lambda: {"dawn": 0, "day": 0, "dusk": 0, "night": 0})
@@ -1882,7 +1887,7 @@ class Pet:
         if not self.spend_bits(h["price"]):
             return "Not enough bits."
         self.habitats = sorted(set(self.habitats) | {hid})
-        self.habitat = hid                 # buying a new home moves you in (moving is free anyway)
+        self.habitat = self.home_habitat = hid   # buying a new home moves you in
         self._weather_day = -1             # fresh climate roll on arrival, like move_to
         return f"Bought {h['name']} — moved in!"
 
@@ -1893,7 +1898,7 @@ class Pet:
             return "?"
         if hid not in self.habitats:
             return "You don't own that habitat."
-        self.habitat = hid
+        self.habitat = self.home_habitat = hid
         self._weather_day = -1            # force a fresh climate roll on arrival
         return f"Moved to {h['name']}."
 
@@ -2062,19 +2067,29 @@ class Pet:
         for t in egg_mod.hatch_targets(self.egg_type):
             h = data.natural_habitat(t)
             if h >= 0:
-                self.habitat = h
+                self.habitat = self.home_habitat = h
                 if h not in self.habitats:
                     self.habitats = sorted(set(self.habitats) | {h})
                 return
 
     def _apply_natural_habitat(self):
-        """Move to this species' natural habitat (digimon.csv Habitat) so each
-        Digimon shows its own background. -1 = no preference -> keep current."""
+        """Move HOME to this species' natural habitat (digimon.csv Habitat) so
+        each Digimon shows its own background. -1 = no preference -> keep
+        current.  (tuipet design: evolution grants the natural home free --
+        canon's habitat SHOP is provably dead, so tuipet's buy/move economy
+        plus this grant IS the habitat system's agency.)"""
         hr = data.natural_habitat(self.num)
         if hr is not None and hr >= 0:
-            self.habitat = hr
+            self.habitat = self.home_habitat = hr
             if hr not in self.habitats:
                 self.habitats = sorted(set(self.habitats) | {hr})
+
+    def go_home_habitat(self):
+        """setCurrentHabitat(home): back from the road -- the CURRENT habitat
+        returns to the owned home (habitat audit 2026-07-06)."""
+        if self.home_habitat >= 0 and self.habitat != self.home_habitat:
+            self.habitat = self.home_habitat
+            self._weather_day = -1                 # fresh sky back home
 
     # ---- DNA (DVPet DNA.class) -------------------------------------------
     def highest_dna(self):

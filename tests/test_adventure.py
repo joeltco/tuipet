@@ -241,3 +241,31 @@ def test_a_wild_win_buys_encounter_immunity():
     adv2 = Adventure(p)
     adv2.resolve(True, was_boss=True, enemy=dict(enemy, boss=True))
     assert getattr(adv2, "_immunity_steps", 0.0) == 0.0   # bosses grant nothing
+
+
+def test_the_current_habitat_follows_the_road_and_comes_home():
+    """Habitat audit 2026-07-06: canon's currentHabitat is set from the zone
+    BACKGROUND while traveling (WorldMap.step -> setCurrentHabitat) -- climate,
+    compatibility odds and the current-habitat evolution gate all travel; the
+    home resumes when the adventure closes (and on any save load)."""
+    from tuipet.adventure import Adventure
+    from tuipet.pet import Pet
+    from tuipet import data, persistence
+    p = Pet(num=102, name="D", stage="Champion", attribute="Virus")
+    p.world_seconds = 10 * 60.0
+    home = p.habitat
+    adv = Adventure(p)
+    assert p.home_habitat == home                  # old-save backfill on entry
+    bgs = adv.zone.get("bgs", ())
+    if bgs:
+        assert any(lo <= adv.location <= hi and p.habitat == hid
+                   for lo, hi, hid in bgs if hid in data.load_habitats()) or p.habitat == home
+        adv.location = bgs[-1][0]                  # stand on the LAST terrain span
+        adv._set_zone_habitat()
+        assert p.habitat == bgs[-1][2]
+    p.go_home_habitat()
+    assert p.habitat == home                       # the exit hook restores the home
+    # ...and a save written mid-road loads back at home
+    p.habitat = 99 if home != 99 else 98
+    q, _ = persistence.pet_from_save(persistence.to_save_dict(p), catch_up=False)
+    assert q.habitat == home

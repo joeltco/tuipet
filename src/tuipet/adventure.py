@@ -102,6 +102,22 @@ class Adventure:
         self._energy_dec = 0
         self._rested = set()         # town spans already rested at this pass
         self._cleared = set()        # zone bosses beaten this pass (by enemy num)
+        # the CURRENT habitat follows the road (habitat audit 2026-07-06:
+        # canon WorldMap.step -> setCurrentHabitat(zone background)) --
+        # climate, compatibility odds, the comfort mood and the current-
+        # habitat evolution gate all travel with the pet
+        if pet.home_habitat < 0:
+            pet.home_habitat = pet.habitat        # old-save backfill
+        self._set_zone_habitat()
+
+    def _set_zone_habitat(self):
+        """setCurrentHabitat(zone.getCurrentLocationBackground())."""
+        for lo, hi, hid in self.zone.get("bgs", ()):
+            if lo <= self.location <= hi:
+                if hid != self.pet.habitat and hid in data.load_habitats():
+                    self.pet.habitat = hid
+                    self.pet._weather_day = -1    # a fresh sky on the new terrain
+                return
 
     # --- zone helpers ---
     @property
@@ -225,6 +241,7 @@ class Adventure:
             return ("discover", None)
         prev = self.location
         self.location = min(self.total_steps, self.location + self.stride)
+        self._set_zone_habitat()                  # the terrain (and its sky) shifts underfoot
         # the post-battle immunity wears off with the walking
         self._immunity_steps = max(0.0, getattr(self, "_immunity_steps", 0.0) - self.stride)
         self._travel_drain()

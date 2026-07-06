@@ -205,6 +205,8 @@ class AdventurePanel(menu.SubHost):
                     return None
             self.travelling = not self.travelling
         elif k in ("escape", "a"):          # a (the opening key) also closes, like shop/habitat
+            if getattr(self, "pet", None) is not None:
+                self.pet.go_home_habitat()  # back from the road: home climate resumes
             return ("done", None)
         return None
 
