@@ -149,18 +149,18 @@ def _derive(t):
     }
 
 
-_BG_QUANT: dict = {}         # (theme, frame) -> dithered frame memo
-_BAYER = ((0, 8, 2, 10), (12, 4, 14, 6), (3, 11, 1, 9), (15, 7, 13, 5))
+_BG_QUANT: dict = {}         # (theme, frame) -> quantized frame memo
 
 
 def themed_bg(frame):
     """Background art under the active theme: full colour normally; a theme
-    that declares `bg_ramp` (gameboy: the 4 DMG shades) gets the frame
-    ORDERED-DITHERED onto the ramp -- Bayer 4x4, the way real DMG ports
-    rendered continuous art.  (The first cut was flat luminance bands: large
-    muddy zones -- Joel 2026-07-05.)  Frame-level and memoized, and
-    render._paint_cells is the one caller, so weather tints, cross-fades and
-    lightning blends all inherit the palette."""
+    that declares `bg_ramp` (gameboy: the light DMG shades) gets the frame
+    posterized onto the ramp as CLEAN SHAPES -- contrast-stretched bands with
+    a majority-vote smoothing pass, so scenery reads like hand-tiled GB art.
+    (The redo history, all Joel 2026-07-05: flat absolute bands = mud; Bayer
+    dither = static at 40x24 -- "it looks like garbage".)  Frame-level and
+    memoized; render._paint_cells is the one caller, so weather tints,
+    cross-fades and lightning blends all inherit the palette."""
     ramp = THEMES[_current].get("bg_ramp")
     if not ramp or not frame:
         return frame
@@ -169,20 +169,17 @@ def themed_bg(frame):
     if v is None:
         if len(_BG_QUANT) > 512:              # cross-fades mint transient frames
             _BG_QUANT.clear()
-        v = _dither_frame(frame, ramp)
+        v = _quant_frame(frame, ramp)
         _BG_QUANT[key] = v
     return v
 
 
-def _dither_frame(frame, ramp):
-    """Contrast-stretch the frame's luminance to the full ramp, then Bayer
-    4x4 ordered dither.  ABSOLUTE luminance wasted the palette -- most art is
-    bright, so whole frames collapsed into the top two shades and the detail
-    vanished; GB art was hand-authored to span all four, and the per-frame
-    stretch is the automated equivalent (2nd..98th percentile, with a
-    near-uniform guard so a flat frame doesn't amplify noise)."""
-    n1 = len(ramp) - 1
-    strip = [c[1:] for c in ramp]             # bare 6-hex cells for row concat
+def _quant_frame(frame, ramp):
+    """Contrast-stretch (2nd..98th percentile, near-uniform guard) ->
+    posterize to the ramp -> 3x3 MAJORITY VOTE on the shade indices.  The
+    vote is what makes it look authored: it erases the salt-and-pepper that
+    photographic art sheds at 40x24 while keeping edges chunky and solid."""
+    n = len(ramp)
     lums = [[(299 * int(row[x:x + 2], 16) + 587 * int(row[x + 2:x + 4], 16)
               + 114 * int(row[x + 4:x + 6], 16)) / 255000.0
              for x in range(0, len(row), 6)] for row in frame]
@@ -192,15 +189,20 @@ def _dither_frame(frame, ramp):
     span = hi - lo
     if span < 0.08:                           # near-uniform frame: absolute mapping
         lo, span = 0.0, 1.0
+    idx = [[min(n - 1, int(max(0.0, min(1.0, (v - lo) / span)) * n)) for v in row]
+           for row in lums]
+    h, w = len(idx), len(idx[0])
+    strip = [c[1:] for c in ramp]             # bare 6-hex cells for row concat
     out = []
-    for y, lrow in enumerate(lums):
-        br = _BAYER[y & 3]
+    for y in range(h):
         cells = []
-        for x, lum in enumerate(lrow):
-            t = (lum - lo) / span
-            t = 0.0 if t < 0.0 else (1.0 if t > 1.0 else t)
-            idx = int(t * n1 + (br[x & 3] + 0.5) / 16)
-            cells.append(strip[n1 if idx > n1 else idx])
+        for x in range(w):
+            votes = [0] * n
+            for yy in range(max(0, y - 1), min(h, y + 2)):
+                for xx in range(max(0, x - 1), min(w, x + 2)):
+                    votes[idx[yy][xx]] += 1
+            best = max(range(n), key=lambda i: (votes[i], i == idx[y][x]))
+            cells.append(strip[best])
         out.append("".join(cells))
     return out
 
