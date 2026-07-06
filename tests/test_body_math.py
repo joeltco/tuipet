@@ -95,7 +95,10 @@ def test_depression_enters_and_exits_by_roll():
     assert p.depressed is False or p.obedience < o0 or p.mood > m0
 
 
-def test_filth_mood_scales_with_the_pile_count():
+def test_filth_mood_scales_with_the_pile_count(monkeypatch):
+    # climate comfort now ticks on the canon 29s cadence (weather audit
+    # 2026-07-06) -- mute it so only the FILTH signal is measured
+    monkeypatch.setattr(Pet, "_temperature_effects", lambda self, dt: None)
     one = _pet(mood=0, poop=1, poop_sizes=[2])
     four = _pet(mood=0, poop=4, poop_sizes=[2] * 4)
     random.seed(3)
@@ -115,7 +118,8 @@ def test_no_more_starvation_sickness():
         assert not p.sick                      # canon has no hunger==0 sick roll
 
 
-def test_held_gauge_nags_a_sleeper():
+def test_held_gauge_nags_a_sleeper(monkeypatch):
+    monkeypatch.setattr(Pet, "_temperature_effects", lambda self, dt: None)
     random.seed(6)
     p = Pet(num=100, stage="Champion", attribute="Vaccine", obedience=500)
     p.world_seconds = 10 * 60.0
@@ -130,3 +134,21 @@ def test_held_gauge_nags_a_sleeper():
         if not p.asleep:
             break
     assert p.mood < m0                         # poopWaitMoodCheck: -1/-2 a game-min
+
+
+def test_climate_comfort_ticks_on_the_stat_cadence(monkeypatch):
+    """IdealTempMoodMin 29 (weather audit 2026-07-06): the comfort mood is a
+    MOOD-family lapse (canon runs it beside moodLapse), not an environment
+    window -- a comfortable home pays +IdealTempInc(+affinity) every 29s."""
+    import tuipet.weather as wx
+    p = _pet(mood=0)
+    monkeypatch.setattr(Pet, "_update_weather", lambda self, dt: None)  # hold the temp still
+    lo, hi = p.ideal_temp
+    p.temp = (lo + hi) / 2                     # squarely comfortable
+    aff = p._affinity()
+    p._temperature_effects(29.0)
+    assert p.mood == wx.IDEAL_TEMP_INC + aff   # one check per 29s, not per 1800s
+    p.mood = 0
+    p.temp = hi + wx.UPPER_IDEAL + 5           # sweltering
+    p._temperature_effects(29.0)
+    assert p.mood == -wx.IDEAL_TEMP_DEC + aff

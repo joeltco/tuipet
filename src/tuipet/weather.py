@@ -38,9 +38,17 @@ SNOW = {"Snowing", "LightSnow", "HeavySnow"}
 PRECIP = RAIN | SNOW
 
 # --- tuipet clock cadences (seconds) ---
-WEATHER_CHECK_SEC = 600.0
+# TWO deliberate scale families (the filth-arc doctrine): ENVIRONMENT pacing
+# (weather transitions, temp drift) rides the x60 wall-clock scale so skies
+# don't strobe; STAT lapses ride 1 game-min == 1s like the mood/obedience
+# family.  IdealTempMoodMin 29 is a MOOD lapse -- canon runs it in minLapse
+# right beside moodLapse -- so it belongs to the stat family (weather audit
+# 2026-07-06: the old 1800s ran it on the environment scale, making climate
+# comfort 62x weaker than canon's design; a comfortable compatible home now
+# SUSTAINS happiness against the Happy decay, an unfit one drains it).
+WEATHER_CHECK_SEC = 600.0   # WeatherCheckMin 10 (environment family)
 TEMP_RATE = 0.05            # temperature lapses this fast toward its target
-IDEAL_TEMP_MOOD_SEC = 1800.0
+IDEAL_TEMP_MOOD_SEC = 29.0  # IdealTempMoodMin 29 (stat family)
 BAD_TEMP_SICK_SEC = 1200.0   # cadence of the environmental (incompatible-habitat) sick check
 
 
