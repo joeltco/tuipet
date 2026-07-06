@@ -357,3 +357,23 @@ def test_egg_gaze_shows_the_egg_and_teases_the_hatchling():
     assert theme.SIL_DAY in str(pan.text().markup), "no sprite ink on the LCD"
     pan.teaser_t = 20                                  # beat three: the tease
     assert "A shape looms" in pan.strip(), pan.strip()
+
+
+def test_egg_data_pages_leak_no_sentinels_and_labels_never_collide():
+    """Egg-stage data-page audit (2026-07-05): STATUS showed 'No. #-1' (the
+    internal egg sentinel) and TROPHIES rendered 'This lifenone yet' -- a
+    9-char label filling the whole label column, flush against its value
+    (that one hit EVERY stage).  A real egg is named Digitama; No. is a dash
+    until it hatches."""
+    egg = Pet.new_egg()
+    pan = DigiCorePanel(egg)
+    for i, (title, _rows) in enumerate(pan.pages):
+        pan.i = i
+        plain = pan.text().plain
+        assert "#-1" not in plain, f"{title} leaked the egg sentinel"
+        assert "lifenone" not in plain, f"{title} label/value collision"
+    pan.i = next(i for i, (t, _r) in enumerate(pan.pages) if t == "STATUS")
+    t = pan.text().plain
+    assert "Digitama" in t and "—" in t
+    pan.i = next(i for i, (t2, _r) in enumerate(pan.pages) if t2 == "TROPHIES")
+    assert "This pet  none yet" in pan.text().plain or "This pet none yet" in pan.text().plain

@@ -186,7 +186,9 @@ def _trophy_rows(pet):
     by the career totals -- lifetime cups persist across generations."""
     from tuipet import tournament as _t
     from tuipet import persistence as _p
-    rows = [("This life", "\u2605" * min(pet.trophies, 12) or "none yet")]
+    # "This life" is exactly the 9-char label column -- it rendered flush
+    # against its value ("This lifenone yet"; egg-stage audit 2026-07-05)
+    rows = [("This pet", "\u2605" * min(pet.trophies, 12) or "none yet")]
     try:
         career = len(_p.get_progress().get("tourneys", ()) or ())
     except Exception:
@@ -211,7 +213,10 @@ def build_pages(pet):
     disp = ["sour", "even", "sunny"][pet._disposition() + 1]
     fav, dis = pet.favorite_time(), pet.disliked_time()
     status = [
-        ("Name", pet.name), ("No.", f"#{pet.num}"), ("Stage", pet.stage),
+        ("Name", pet.name),
+        # an egg has no dex number yet -- "#-1" leaked the internal sentinel
+        # (egg-stage audit 2026-07-05)
+        ("No.", "—" if pet.num < 0 else f"#{pet.num}"), ("Stage", pet.stage),
         ("Attrib", pet.attribute), ("Field", data.pretty_field(pet.field) or "-"),
         ("Element", pet.element or "-"), ("Gen", str(pet.generation)),
         ("Age", _mins(pet.age_seconds)), ("Life", f"{_mins(rem)} left"),
