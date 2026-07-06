@@ -621,8 +621,11 @@ class TrainingPanel:
                 pf = _crop(self._frame(rec, pose))
                 pw = max(len(r) for r in pf)
                 phh = len(pf)
-                # Data layout, HP-drill style (Joel), on FIXED roomy columns:
-                #   turret x4..13  ·  6px of open air  ·  shield gate x20..24  ·  mon x27+
+                # Data layout on MEASURED columns (layout audit 2026-07-06: the
+                # old x27 mon column ran a 16px mon to x42 -- 3 columns clipped
+                # off the 40px LCD).  The stage shifts left so the WIDEST mon
+                # fits with margins: turret x2..11 · 5px air · gate x17..21 ·
+                # 1px · mon x23..38 · 1px right margin.
                 # Three staged acts, so the transition reads:
                 #   AIM    -- turret + gate only, barrel feinting (no mon)
                 #   LOCK   -- the barrel commits and the MON STEPS IN braced behind its
@@ -630,12 +633,13 @@ class TrainingPanel:
                 #   SHOOT  -- the turret recoils, the pellet bursts out of the barrel and
                 #             flies the lane into the gate; then hitAnim's strobe.
                 floor = BASE_Y                                     # the shared grid floor (2px above bottom)
-                sx = 20                                            # the gate: 6px clear of the turret
-                px = sx + sw + 2                                   # the mon braces just behind its gate
+                cannon_x = 2                                       # recoil (-1) never reaches the border
+                sx = 17                                            # the gate: 5px clear of the turret
+                px = sx + sw + 1                                   # the mon braces 1px behind its gate
                 py = floor - phh
                 cy = floor - ch                                    # turret grounded
                 recoil = -1 if (self.fired and self.fly_t >= DATA_FLY - 1) else 0
-                overlay.extend(_blit(cannon, max(0, DATA_MARGIN + recoil), cy))
+                overlay.extend(_blit(cannon, cannon_x + recoil, cy))
                 if self.locked:                                    # the mon steps in at the LOCK
                     overlay.extend(_blit(pf, px, py))
                 hi_y = STRIKE_BAND_TOP + 1                         # HIGH lane gate: up near the band top
@@ -656,7 +660,7 @@ class TrainingPanel:
                     ow, oh = max(len(r) for r in orb), len(orb)
                     lane_top = hi_y if self.tgt_up else lo_y       # the lane follows the ATTACK (tgt_up)
                     lane_y = lane_top + sh_h // 2 - oh // 2         # pellet centred on that gate's row
-                    mx = DATA_MARGIN + 4                           # in the barrel's mouth...
+                    mx = cannon_x + 4                              # in the barrel's mouth...
                     end_x = sx - ow + 2                            # ...to pressing the gate by 2px
                     prog = (DATA_FLY - self.fly_t) / (DATA_FLY - 1)
                     overlay += _blit(orb, int(mx + (end_x - mx) * prog), lane_y)

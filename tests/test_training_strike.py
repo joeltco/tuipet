@@ -250,3 +250,29 @@ def test_vaccine_geometry_never_mashes():
     panel.key("space")                                      # punch frame renders
     rows = panel.text().plain.split("\n")
     assert all(len(r) <= T.COLS for r in rows)
+
+
+def test_data_geometry_never_mashes():
+    """Data layout audit (Joel 2026-07-06): the old fixed x27 mon column ran
+    a 16px mon to x42 -- 3 columns clipped.  Measured stage (turret x2, gate
+    x17, mon x23): the widest mon fits with a 1px right margin, and every
+    act (aim/lock/shoot/strobe/aftermath) renders inside the LCD."""
+    import random
+    random.seed(3)
+    p = Pet(num=102, stage="Champion", vaccine=5, data_power=5, virus=5)
+    p.obedience = 500
+    panel = T.TrainingPanel(p)
+    panel.gi = 2
+    panel.key("enter")
+    assert 23 + 16 <= T.COLS, "the stage cannot fit the widest mon"
+    for _ in range(40):
+        panel.anim()
+        if panel.locked:
+            break
+    assert panel.locked
+    panel.key("space")
+    for _ in range(60):
+        panel.anim()
+        assert all(len(r) <= T.COLS for r in panel.text().plain.split("\n"))
+        if panel.phase == "done":
+            break
