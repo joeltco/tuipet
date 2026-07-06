@@ -88,3 +88,46 @@ def test_hud_announces_yields_and_clears():
     assert "FRESH-ACTION" in held, "a fresh flash must hold over the care-need"
     assert "hungry" in reasserted, "the need re-asserts after the flash hold"
     assert "hungry" not in cleared and cleared.strip() == "", "met need clears the box"
+
+
+def test_alarm_beeps_on_onset_then_nags_every_90s():
+    """The alarm's SOUND half (sound/notification audit 2026-07-06): canon's
+    `call` cue plays with the care-call animation -- ours rings once on the
+    need's ONSET, nags every ~90s while it stands, and stops when it is met."""
+    pet = _hungry_rookie()
+    if pet is None:
+        import pytest
+        pytest.skip("sprite assets not installed")
+    persistence.set_account("Tester", "x")
+    pet._sicken = lambda *a, **k: None
+    pet.obedience = 100                # exempt from discipline tantrums (a second
+    #                                    need would legitimately ring a fresh onset)
+
+    async def go():
+        app = TuiPetApp(pet=pet)
+        rings = []
+        app.beep = lambda name=None, bell=True: rings.append(name)
+        async with app.run_test(size=(82, 32)) as pilot:
+            await pilot.pause()
+            await pilot.press("enter")
+            await pilot.pause()
+            rings.clear()                          # ignore any title-flow blips
+            app.on_tick()                          # onset
+            onset = rings.count("alarm")
+            for _ in range(60):                    # inside the nag window: silent
+                app.on_tick()
+            mid = rings.count("alarm")
+            for _ in range(40):                    # ...the ~90s nag lands
+                app.on_tick()
+            nagged = rings.count("alarm")
+            pet.hunger = 4                          # fed
+            for _ in range(120):
+                app.on_tick()
+            done = rings.count("alarm")
+            return onset, mid, nagged, done
+
+    onset, mid, nagged, done = asyncio.run(go())
+    assert onset == 1                              # one ring at onset
+    assert mid == 1                                # silent inside the window
+    assert nagged == 2                             # the 90s nag repeats once
+    assert done == 2                               # a met need stops the nagging

@@ -896,19 +896,27 @@ class Pet:
                   egg_type=egg_type, generation=generation)
         pet.mood = EGG_MOOD                     # Evolution.egg: setMood(EggMood 100)
         if generation > 1:
-            # careBonusOnReset (death/rebirth audit 2026-07-06): the BONUS
-            # carries across generations, adjusted by the ended life's care --
-            # canon's resetToEgg never zeroes it
+            # the heir's ESTATE (death/rebirth + item audits): canon's
+            # resetToEgg never touches the bonus, bits, the bag or the
+            # trophy room -- all device-lifetime, all inherited
             from . import persistence as _persist
             pet.evol_bonus = _persist.prev_gen_bonus()
+            est = _persist.prev_gen_estate()
+            pet.bits = est["bits"]
+            pet.inventory = est["inventory"]
+            pet.trophies = est["trophies"]
+            pet.trophies_won = est["trophies_won"]   # beaten qualifiers persist (seasonBeat)
         # a fresh game dawns at 8:00 -- world_seconds 0 is MIDNIGHT, inside every
         # bedtime window, and a hatchling born asleep is a rotten first minute
         pet.world_seconds = 8 * 60.0
         pet._apply_egg_habitat()
         if generation <= 1:
-            # canon items.csv StartingUses: the device begins with a stocked
-            # home Toilet (100 flushes) -- granted once, on the first generation
+            # canon items.csv StartingUses: the device begins with THREE
+            # stocked items (item audit 2026-07-06 -- the old grant was the
+            # Toilet alone): Toilet 100 flushes, Bandage 99, Futon 100
             pet.inventory["i:82"] = 100
+            pet.inventory["i:80"] = 99
+            pet.inventory["i:81"] = 100
         return pet
 
     def _hatch_into_fresh(self):

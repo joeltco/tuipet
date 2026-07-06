@@ -193,8 +193,30 @@ def snapshot_prev_gen(pet):
         "obedience": int(getattr(pet, "obedience", 0)),
         "xanti": getattr(pet, "x_antibody", "None") != "None",
         "bonus": bonus,
+        # the DEVICE BAG (item/inventory audit 2026-07-06): canon's resetToEgg
+        # never touches bits, the bag, or the beaten-qualifier trophies --
+        # they are device-lifetime; the heir inherits them all
+        "bits": int(getattr(pet, "bits", 0)),
+        "inventory": dict(getattr(pet, "inventory", {}) or {}),
+        "trophies": int(getattr(pet, "trophies", 0)),
+        "trophies_won": dict(getattr(pet, "trophies_won", {}) or {}),
     }
     save_settings(d)
+
+
+def prev_gen_estate():
+    """The device-lifetime estate the next generation inherits (bits, the bag,
+    the trophy room -- canon resetToEgg preserves them all)."""
+    d = load_settings()
+    last = (d.get("progress") or {}).get("last_gen") or {}
+    # JSON stringifies int dict keys (the habitat_record/trophies_won load
+    # trap): coerce them back so prelim-chain lookups keep matching
+    tw = {int(k) if str(k).lstrip("-").isdigit() else k: v
+          for k, v in (last.get("trophies_won") or {}).items()}
+    return {"bits": int(last.get("bits", 0)),
+            "inventory": dict(last.get("inventory") or {}),
+            "trophies": int(last.get("trophies", 0)),
+            "trophies_won": tw}
 
 
 def prev_gen_bonus():
