@@ -391,6 +391,11 @@ def pet_from_save(data, catch_up=True, strict=False):
 
 
 def _offline(pet, elapsed):
+    if getattr(pet, "dead", False):
+        # the departed do not decay: the catch-up starved/soiled a corpse and
+        # greeted 'Your pet needs care!' over the grave (dead sweep 2026-07-06);
+        # even the clocks stay still -- its age is part of the epitaph
+        return ""
     pet.world_seconds += elapsed       # keep the day/night clock turning while away
     pet.age_seconds += elapsed         # the pet ages while you're away
     if elapsed < 30 or pet.stage == "Egg":

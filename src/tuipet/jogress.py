@@ -77,6 +77,10 @@ def options(pet):
 
 
 def can_jogress(pet):
+    if getattr(pet, "dead", False):
+        # the missing dead leg let a full-DP corpse pass -- this gate also
+        # drives the lobby invite auto-decline (dead sweep 2026-07-06)
+        return "It rests now — press N for a new egg."
     if pet.stage in ("Egg", "Fresh", "InTraining"):
         return "Too young to jogress."
     if pet.asleep:

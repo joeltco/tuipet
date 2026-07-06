@@ -176,6 +176,8 @@ def eligibility(pet, t):
 
 
 def can_enter(pet):
+    if getattr(pet, "dead", False):
+        return "It rests now — press N for a new egg."   # dead sweep 2026-07-06
     if pet.stage in ("Egg", "Fresh", "InTraining"):
         return "Too young for the cup."
     if pet.asleep:

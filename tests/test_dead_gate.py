@@ -193,3 +193,82 @@ def test_remaining_panels_survive_a_direct_egg():
             for _ in range(ticks):
                 pan.anim()
             pan.text()
+
+
+def _dead():
+    from tuipet.pet import Pet
+    p = Pet(num=4, stage="Rookie", attribute="Vaccine")
+    p.world_seconds = 10 * 60.0
+    p.dead = True
+    return p
+
+
+def test_every_entry_gate_has_the_dead_leg():
+    """Dead sweep (2026-07-06): jogress.can_jogress and tournament.can_enter
+    had NO dead leg -- a full-DP corpse passed the jogress gate (which also
+    drives the lobby invite auto-decline).  Every entry gate must rest."""
+    from tuipet import jogress, tournament
+    d = _dead()
+    d.dp = 4
+    for gate in (d.can_feed, d.can_train, d.can_battle, d.can_charge_dna,
+                 lambda: jogress.can_jogress(d), lambda: tournament.can_enter(d)):
+        assert "rests now" in (gate() or ""), gate
+
+
+def test_offline_catchup_never_decays_a_corpse():
+    """Loading a dead save after hours away starved/soiled the corpse and
+    greeted 'Your pet needs care!' over the grave (dead sweep 2026-07-06)."""
+    import time
+    from tuipet import persistence, data
+    d = _dead()
+    d.name = data.load_sprites()[1][4]["name"]     # dex-true: no repair path
+    save = persistence.to_save_dict(d)
+    save["_saved_at"] = time.time() - 4 * 3600
+    pet, msg = persistence.pet_from_save(save)
+    assert pet.dead
+    assert (pet.hunger, pet.poop, pet.care_mistakes, pet.mood) == (
+        d.hunger, d.poop, d.care_mistakes, d.mood), "the departed do not decay"
+    assert "needs care" not in msg
+
+
+def test_every_panel_survives_a_direct_corpse():
+    """The egg sweep's direct-construct pattern, dead edition: walk every
+    panel with a dead pet (gates move; panels grow new callers)."""
+    import random
+    from tuipet.feedscreen import FeedPanel
+    from tuipet.shopscreen import ShopPanel
+    from tuipet.training import TrainingPanel
+    from tuipet.battlescreen import BattlePanel
+    from tuipet.dnascreen import DNAPanel
+    from tuipet.jogressscreen import JogressPanel
+    from tuipet.tournamentscreen import TournamentPanel
+    from tuipet.townscreen import TownPanel
+    from tuipet.adventurescreen import AdventurePanel
+    from tuipet.transportscreen import TransportPanel
+    from tuipet.habitatscreen import HabitatPanel
+    from tuipet.digicorescreen import DigiCorePanel
+    random.seed(3)
+    walks = (
+        (FeedPanel(_dead()), ("down", "enter", "escape"), 12),
+        (ShopPanel(_dead()), ("right", "enter", "tab", "enter", "r"), 12),
+        (TrainingPanel(_dead()), ("down", "enter", "space", "1", "escape"), 12),
+        (BattlePanel(_dead()), ("enter", "1", "space", "escape"), 15),
+        (DNAPanel(_dead()), ("space", "space"), 12),
+        (JogressPanel(_dead()), ("space",), 40),
+        (TournamentPanel(_dead()), ("down", "enter", "escape"), 12),
+        (TownPanel(_dead(), 0), ("enter", "down", "enter", "escape"), 12),
+        (AdventurePanel(_dead()), ("enter", "space", "escape"), 30),
+        (TransportPanel(_dead(), "i:28"), ("space", "enter"), 20),
+        (HabitatPanel(_dead()), ("down", "escape"), 12),
+        (DigiCorePanel(_dead()), ("space", "right", "down", "enter", "escape"), 12),
+    )
+    for pan, keys, ticks in walks:
+        if isinstance(pan, DNAPanel):
+            pan.phase, pan.bet = "mash", 10
+        for k in ("",) + keys:
+            if k:
+                pan.key(k)
+            for _ in range(ticks):
+                if hasattr(pan, "anim"):
+                    pan.anim()
+            pan.text()
