@@ -79,6 +79,7 @@ def test_lit_sleep_mistakes_repeat_on_the_canon_cadence():
     (LightsOnMistakeObedienceChange -1) lands once per night."""
     p = _line_pet()
     p.world_seconds = 20 * 60 + 59.0
+    p.obedience = 100                     # room to lose (setObedience floors at 0)
     _run(p, 3)
     assert p.asleep and p.lights
     cm0, ob0 = p.care_mistakes, p.obedience

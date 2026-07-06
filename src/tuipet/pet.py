@@ -70,9 +70,28 @@ ENTHUSIASM_LAPSE_INC = 2                   # EnthusiasmLapseInc (asleep, -enth -
 # obedience, health and win-rate.  Every number is verbatim from the binary.
 CAN_REFUSE = True
 REFUSE_CHANCE = 100                 # RefuseRate -> Random.nextInt(REFUSE_CHANCE)
-OBEDIENCE_REFUSAL_CAP = 100         # ObedienceRefusalCap
+OBEDIENCE_REFUSAL_CAP = 100         # ObedienceRefusalCap (the refusal-ROLL bound only)
 OBEDIENCE_MOOD_MOD = 15.0           # ObedienceMoodModCoefficient
 OBEDIENCE_TIME_MOD = 10.0           # ObedienceTimeModCoefficient
+# setObedience (obedience audit 2026-07-06): the stat itself caps at MaxObedience
+# 150, and EVERY change is nudged once AGAINST the disposition (value -=
+# disposition x 1: a sunny pet takes each change a point lower, a sour one a
+# point higher) -- the mirror image of setMood's nudge
+MAX_OBEDIENCE = 150                 # MaxObedience
+OBEDIENCE_DISPO_COEF = 1            # ObedienceChangeDispositionCoefficient (SUBTRACTED)
+# obedienceLapse: discipline FADES while awake -- dec 2 on a disposition-shaded
+# cadence (sunny 180 / neutral 120 / sour 60 game-min), and each dec event also
+# bills the mess (ObedienceChangeFilthScale x piles).  MinObedienceAsleep 150
+# == MaxObedience: the lapse can never run asleep (shipped-config quirk).
+OBEDIENCE_LAPSE_MIN = {0: 120.0, 1: 180.0, -1: 60.0}   # ObedienceLapseMin[/High/Low]
+OBEDIENCE_LAPSE_DEC = 2             # ObedienceLapseDec (same for all dispositions)
+OBEDIENCE_FILTH_SCALE = -1          # ObedienceChangeFilthScale
+# checkRefusedOff: an UNSCOLDED refusal expires on its own -- the pet got away
+# with it (mood up) and hardens a little less (obedience down)
+REFUSED_OFF_MIN = 10.0              # RefusedOffMin (game-min on tuipet's cadence scale)
+REFUSED_OFF_MOOD_INC = 1            # RefusedOffMoodInc
+REFUSED_OFF_OBED_DEC = 1            # RefusedOffObedienceDec
+OBEDIENCE_CHANGE_INTOL_FORCED = -3  # ObedienceChangeIntolerantForced (complied + intolerant meal)
 # PhysicalState.spoil (config SpoilMoodInc / SpoilObedienceDec): a mood lift paired
 # with an obedience cost. tuipet's Play button maps onto this DVPet mechanic.
 SPOIL_MOOD_INC = 10                 # SpoilMoodInc
@@ -965,7 +984,7 @@ class Pet:
                 self._lights_t = LIGHTS_MISTAKE_POSTPONE
                 if not getattr(self, "_lit_obed_hit", False):
                     self._lit_obed_hit = True
-                    self.obedience += LIGHTS_MISTAKE_OBED
+                    self._set_obedience(self.obedience + LIGHTS_MISTAKE_OBED)
                 self._inc_mistake()
         # Pen20 DP: sleep restores jogress power -- 3 game-hours = a full meter
         if self.dp < DP_MAX:
@@ -1079,6 +1098,29 @@ class Pet:
         self._mood_lapse(dt)
         self._check_depressed(dt)
         self._filth_effects(dt)
+        # obedienceLapse (obedience audit 2026-07-06): discipline FADES while
+        # awake -- dec 2 on a disposition-shaded cadence (sunny 180 / neutral
+        # 120 / sour 60), each dec event billing the mess too
+        # (ObedienceChangeFilthScale x piles).  MinObedienceAsleep 150 ==
+        # MaxObedience: canon's lapse can never run asleep, and tick() only
+        # reaches here awake.
+        self._obed_lapse_t = getattr(self, "_obed_lapse_t", 0.0) + dt
+        if self._obed_lapse_t >= OBEDIENCE_LAPSE_MIN.get(self._disposition(), 120.0):
+            self._obed_lapse_t = 0.0
+            self._set_obedience(self.obedience - OBEDIENCE_LAPSE_DEC)
+            if self.poop > 0:
+                self._set_obedience(self.obedience + OBEDIENCE_FILTH_SCALE * self.poop)
+        # checkRefusedOff: an UNSCOLDED refusal expires on its own -- the pet
+        # got away with it (mood +1) and hardens a little less (obedience -1)
+        if self.refused and not self.scold_flag:
+            self._refused_t = getattr(self, "_refused_t", 0.0) + dt
+            if self._refused_t >= REFUSED_OFF_MIN:
+                self._refused_t = 0.0
+                self.refused = False
+                self._set_mood(self.mood + REFUSED_OFF_MOOD_INC)
+                self._set_obedience(self.obedience - REFUSED_OFF_OBED_DEC)
+        else:
+            self._refused_t = 0.0
         # the discipline CALL ages on its own clock (canon callMinutesDiscipline):
         # ignored past _minutesToDisciplinePenalty the tantrum sours -- mood -25,
         # a missed day -- and the light goes dark
@@ -1098,9 +1140,10 @@ class Pet:
                     # setPraiseWindow overflow: the good deed went UNPRAISED --
                     # the pet sulks and hardens a little (disposition-shaded)
                     self._set_mood(self.mood - PRAISE_FAIL_MOOD_PENALTY)
-                    self.obedience += (PRAISE_FAIL_OBED_INC if self._disposition() > 0
-                                       else PRAISE_FAIL_OBED_INC
-                                       + self._disposition() * PRAISE_FAIL_OBED_DISPO_COEF)
+                    self._set_obedience(self.obedience
+                                        + (PRAISE_FAIL_OBED_INC if self._disposition() > 0
+                                           else PRAISE_FAIL_OBED_INC
+                                           + self._disposition() * PRAISE_FAIL_OBED_DISPO_COEF))
                     self.praise_flag, self.praise_window = False, 0
             if self.scold_flag:
                 self.scold_window += 1
@@ -1108,7 +1151,7 @@ class Pet:
                     # setScoldWindow overflow: it GOT AWAY WITH IT -- happier,
                     # less obedient, and the refusal is forgiven unscolded
                     self._set_mood(self.mood + SCOLD_FAIL_MOOD_INC)
-                    self.obedience -= SCOLD_FAIL_OBED_PENALTY
+                    self._set_obedience(self.obedience - SCOLD_FAIL_OBED_PENALTY)
                     self.refused = False
                     self.scold_flag, self.scold_window = False, 0
             self._check_discipline_call()                # the pet may spontaneously act up
@@ -1185,11 +1228,11 @@ class Pet:
                 self._set_mood(NEW_UNDEPRESSED_MOOD)
             elif r < DEPRESSED_EXIT_POS and self.mood > 0:
                 self.depressed = False
-                self.obedience += UNDEPRESSED_OBED_INC
+                self._set_obedience(self.obedience + UNDEPRESSED_OBED_INC)
                 self._set_mood(NEW_UNDEPRESSED_MOOD)
             else:
                 self._set_mood(self.mood + DEPRESSED_MOOD_CHANGE)
-                self.obedience = max(0, self.obedience + DEPRESSED_OBED_CHANGE)
+                self._set_obedience(self.obedience + DEPRESSED_OBED_CHANGE)
                 self._set_enthusiasm(self.enthusiasm + DEPRESSED_ENTH_CHANGE)
         elif (self.mood <= MIN_UNHAPPY_MOOD and not self.depressed
                 and self.stage not in ("Fresh", "InTraining")):
@@ -1238,8 +1281,9 @@ class Pet:
                 self.mistake_day += 1  # + HungerDecAtZero MissedDayChange
                 self._burn_life(HUNGER_MISTAKE_LIFE_DEC * max(1, self.care_mistakes))
                 # hungerMistakePenalty: obedience +1 -- or -1 for a glutton
-                self.obedience += (HUNGER_MISTAKE_OBED_GLUTTON if self.glutton > 0
-                                   else HUNGER_MISTAKE_OBED)
+                self._set_obedience(self.obedience
+                                    + (HUNGER_MISTAKE_OBED_GLUTTON if self.glutton > 0
+                                       else HUNGER_MISTAKE_OBED))
                 self._open_scold()           # neglect: the pet acts up
         elif self.hunger > 0:
             self._hunger_call_t = 0.0
@@ -1288,7 +1332,7 @@ class Pet:
             if self._str_call_t >= 600.0:                    # MinutesToMistakeStrength 10
                 self._str_call_t = -3600.0                   # AfterMistakeMinutesPostponed
                 self._inc_mistake()
-                self.obedience -= 5                          # MistakeStrengthObedienceDec
+                self._set_obedience(self.obedience - 5)      # MistakeStrengthObedienceDec
                 self._open_scold()
         else:
             self._str_call_t = 0.0
@@ -1957,7 +2001,7 @@ class Pet:
             elif self.food_ranks[c] <= RANK_MIN:
                 self.disliked_food = c
 
-    def _eat_food(self, category):
+    def _eat_food(self, category, complied=False):
         """DVPet feed taste. A food's Type is a ";"-list of categories (foodType.getType()):
         the tier comes from whether any category is the CURRENT disliked (first) or favourite,
         then each category's rank/eaten is bumped (incFoodRankAndEaten) and intolerance rolled."""
@@ -1967,7 +2011,7 @@ class Pet:
         if self.disliked_food and self.disliked_food in cats:
             tier = "disliked"
             self._set_mood(self.mood - FAV_FOOD_MOOD)
-            self.obedience += DISLIKED_FOOD_OBEDIENCE
+            self._set_obedience(self.obedience + DISLIKED_FOOD_OBEDIENCE)
         elif self.favorite_food and self.favorite_food in cats:
             tier = "favorite"
             self._set_mood(self.mood + FAV_FOOD_MOOD)
@@ -1980,6 +2024,11 @@ class Pet:
             self._change_rank(c)
         _, _, intol = self._species_food()
         if any(c in intol for c in cats):                  # checkIntolerantFoodSick (x2 rolls)
+            # a COMPLIANT pet forced through an intolerant meal resents you --
+            # sick or not (canon ObedienceChangeIntolerantForced; obedience
+            # audit 2026-07-06)
+            if complied:
+                self._set_obedience(self.obedience + OBEDIENCE_CHANGE_INTOL_FORCED)
             for _ in range(2):
                 if random.random() < INTOL_FOOD_SICK_CHANCE / 100:
                     self._sicken()
@@ -2102,6 +2151,17 @@ class Pet:
     def _set_anim(self, name, ttl):
         self.anim, self.anim_ttl = name, ttl
 
+    def _set_obedience(self, value):
+        """PhysicalState.setObedience (obedience audit 2026-07-06): any CHANGE
+        is nudged once AGAINST the disposition (value -= disposition x 1 --
+        the mirror image of setMood's nudge: a sunny pet takes every change a
+        point lower, a sour one a point higher), then clamped to
+        [0, MaxObedience 150].  The old raw mutations had no ceiling at all."""
+        value = int(round(value))
+        if value != self.obedience:
+            value -= self._disposition() * OBEDIENCE_DISPO_COEF
+        self.obedience = _clamp(value, 0, MAX_OBEDIENCE)
+
     def _set_mood(self, value):
         """PhysicalState.setMood: nudge once by disposition (MoodChangeDispositionCoefficient=1),
         then clamp to [MinMood, MaxMood]."""
@@ -2144,7 +2204,7 @@ class Pet:
         raw = int(round(value))
         if raw < self.energy and raw < 0:
             self._set_mood(self.mood - (NEGATIVE_ENERGY_MOOD_DEC - raw))
-            self.obedience = max(0, self.obedience - (NEGATIVE_ENERGY_OBEDIENCE_DEC - raw))
+            self._set_obedience(self.obedience - (NEGATIVE_ENERGY_OBEDIENCE_DEC - raw))
             if not self.is_injured():
                 self._fatigue()                  # canon fatigue(false)
         if raw < self.energy:
@@ -2244,7 +2304,7 @@ class Pet:
             self.weight = max(1, self.weight - math.ceil(wdec / 2))
         e = data.consumable_by_key(key) or {}
         self._set_mood(self.mood + int(e.get("mood", 0) or 0))
-        self.obedience += int(e.get("obedience", 0) or 0)
+        self._set_obedience(self.obedience + int(e.get("obedience", 0) or 0))
         self._toilet_train()
         self._toilet_event = key                  # the app plays poopToilet
         self._set_anim("toilet", 3.8)
@@ -2545,7 +2605,7 @@ class Pet:
         food = food or (foods[0] if foods else {"name": "Meat", "hunger": 1, "weight": 4, "mood": 5})
         self._last_meal_starving = self.hunger == 0          # eat(): wolfed down (decided PRE-meal)
         refused = False if assisted else self.check_refused(food=food)   # applyFood: checkRefused ...
-        self.check_compliant()                               # ... then the compliance is spent
+        complied = self.check_compliant()                    # ... then the compliance is spent
         if refused:
             return f"{self.name} refuses to eat!"
         self._calm_discipline_call()                         # a meal placates the tantrum
@@ -2579,7 +2639,7 @@ class Pet:
         self._set_energy(self.energy + scaled("energy"))
         self._set_mood(self.mood + scaled("mood")           # foods.csv intrinsic mood (Cake +60, Veg -10)
                        + int(math.ceil(self._personality_mood(food) * modifier)))
-        self.obedience += scaled("obedience")
+        self._set_obedience(self.obedience + scaled("obedience"))
         self._set_enthusiasm(self.enthusiasm + scaled("enthusiasm"))
         if food.get("health"):                              # HP Chip: permanent trained-HP gain
             self.full_health = min(self.max_health(),
@@ -2613,12 +2673,19 @@ class Pet:
         # sickness risk (worse 16%/pile if already sick, else sick 8%/pile)
         if self.poop > 0:
             self._set_mood(self.mood - DIRTY_EATING_MOOD_DEC)
+            got_ill = False
             if self.sick:
                 if random.randrange(100) < DIRTY_EATING_WORSE_CHANCE * self.poop:
                     self._worsen_sick()
+                    got_ill = True
             elif random.randrange(100) < DIRTY_EATING_SICK_CHANCE * self.poop:
                 self._sicken()
-        tier = self._eat_food(food.get("category", ""))     # DVPet taste: fav/disliked/neutral
+                got_ill = True
+            # checkDirtyEating: a COMPLIANT pet forced to eat amid the filth
+            # and sickened by it resents you (obedience audit 2026-07-06)
+            if got_ill and complied:
+                self._set_obedience(self.obedience + OBEDIENCE_CHANGE_SICK_FORCED)
+        tier = self._eat_food(food.get("category", ""), complied)   # DVPet taste: fav/disliked/neutral
         self._last_meal_disliked = (tier == "disliked")      # eat(): disliked -> +9 grimace bite
         self._apply_nutrition(food, modifier)                # GoodNutrition macros (scaled)
         self._set_anim("eat", 1.4)
@@ -2730,7 +2797,7 @@ class Pet:
         if self.sick and random.randrange(100) < EXERCISE_WORSE_SICK_CHANCE:
             self._worsen_sick()
             if complied:
-                self.obedience += OBEDIENCE_CHANGE_SICK_FORCED
+                self._set_obedience(self.obedience + OBEDIENCE_CHANGE_SICK_FORCED)
         # canon ExerciseWeightDec = 0 (classic): drills do NOT shed flat weight.
         # The body cost is CALORIC (setCaloriesAndChangeWeight): an activity
         # decrement landing while ALREADY in deficit sheds ActivityWeightChange.
@@ -2755,7 +2822,7 @@ class Pet:
             self._open_praise()                          # onExerciseFinish: setPraise(true)
         else:                                            # DVPet exercise-fail penalties
             self._set_mood(self.mood - 10)               # ExerciseFailMoodDec
-            self.obedience -= 1                          # ExerciseFailObedienceDec
+            self._set_obedience(self.obedience - 1)      # ExerciseFailObedienceDec
         # training while overweight risks an injury
         if evolution.weight_category(self.weight, self._base_weight()) == "Over" and random.random() < 0.5:
             self._injure()
@@ -2797,7 +2864,7 @@ class Pet:
         self.stage_battles += 1                          # LINES_SPEC BTL gate (per-stage)
         self.battle_log = (self.battle_log + [1 if won else 0])[-15:]   # Pen20 rolling window
         if not style_free:
-            self.obedience += BATTLE_FREE_OBED_INC       # fighting under orders builds discipline
+            self._set_obedience(self.obedience + BATTLE_FREE_OBED_INC)   # fighting under orders builds discipline
         self._set_energy(self.energy - 1)               # battle energy (BattleWon/LostEnergyDec)
         self._check_worse_injury(in_battle=True)         # battling injured can worsen it
         if won:
@@ -2860,7 +2927,7 @@ class Pet:
             return f"Victory! +{gained} bits{grew}"
         self._set_mood(self.mood - 20)               # BattleLostMoodDec
         self._set_enthusiasm(self.enthusiasm - 6)    # BattleLostEnthusiasmDec
-        self.obedience -= 1                          # BattlesObedienceDec (a loss saps trust)
+        self._set_obedience(self.obedience - 1)      # BattlesObedienceDec (a loss saps trust)
         if random.random() < 0.3:
             self._injure()
         self._set_anim("sad", 2.0)
@@ -2975,15 +3042,16 @@ class Pet:
         if surrender_val == 1 and self._disposition() < 0 and health >= enemy_health:
             self._set_mood(self.mood - SURR_EFFECT_LOWDISP_MOOD_DEC)
         if health >= enemy_health:
-            self.obedience -= SURR_EFFECT_REQ_OBED_DEC if surrender_val == 2 else SURR_EFFECT_OBED_DEC
+            self._set_obedience(self.obedience
+                                - (SURR_EFFECT_REQ_OBED_DEC if surrender_val == 2 else SURR_EFFECT_OBED_DEC))
         if surrender_val == 2 and health < enemy_health:
-            self.obedience = SURR_EFFECT_REQ_LOWHP_OBED          # setObedience(15), verbatim (a SET, not +=)
+            self._set_obedience(SURR_EFFECT_REQ_LOWHP_OBED)      # setObedience(15), verbatim (a SET, not +=)
 
     def surrender_reject(self):
         """ClockTic: the trainer refuses the pet's surrender request (surrender==2) and
         sends it back in — it sulks but obeys a touch more."""
         self._set_mood(self.mood - SURR_REJECT_MOOD_DEC)
-        self.obedience += SURR_REJECT_OBED_INC
+        self._set_obedience(self.obedience + SURR_REJECT_OBED_INC)
 
     # ---- discipline: praise / scold (PhysicalState) --------------------------
     def _open_praise(self):
@@ -3007,7 +3075,7 @@ class Pet:
         if not self.discipline_call:
             return
         self.discipline_call, self._disc_call_t = False, 0.0
-        self.obedience = max(0, self.obedience - DISCIPLINE_CALL_OBED_DEC)
+        self._set_obedience(self.obedience - DISCIPLINE_CALL_OBED_DEC)
         self._set_mood(self.mood + DISCIPLINE_CALL_MOOD_INC)
         self.scold_flag, self.scold_window = False, 0        # setScoldWindow(0)
 
@@ -3069,7 +3137,7 @@ class Pet:
         fresh mess -- and the WorseSickLifeDec burn (canon re-audit 2026-07: the
         old omission note is gone; every worsening costs 3 real-hours of life)."""
         self._burn_life(WORSE_MALADY_LIFE_DEC)
-        self.obedience += WORSE_MALADY_OBED_DEC
+        self._set_obedience(self.obedience + WORSE_MALADY_OBED_DEC)
         self._set_mood(self.mood + WORSE_MALADY_MOOD_DEC)
         self._set_enthusiasm(self.enthusiasm + SICK_ENTH_CHANGE)  # WorseSickEnthusiasmChange == -1
         self.sick_length += SICK_LAPSE_MIN                        # setSickLength(_sickLength + 1) = +1 lapse
@@ -3120,7 +3188,7 @@ class Pet:
         """PhysicalState.worsenedInjury: the injury gets worse -- extended, with mood/
         obedience/energy/spirit costs and the WorseInjuryLifeDec burn."""
         self._burn_life(WORSE_MALADY_LIFE_DEC)   # WorseInjuryLifeDec (canon re-audit)
-        self.obedience += WORSE_MALADY_OBED_DEC
+        self._set_obedience(self.obedience + WORSE_MALADY_OBED_DEC)
         self._set_mood(self.mood + WORSE_MALADY_MOOD_DEC)
         self._set_enthusiasm(self.enthusiasm + WORSE_INJ_ENTH_CHANGE)
         self.inj_length += random.randint(MIN_INJ_LENGTH, MAX_INJ_LENGTH) * INJ_LAPSE_MIN
@@ -3171,16 +3239,16 @@ class Pet:
         self._set_mood(self.mood + (PRAISE_LOW_DISP_MOOD_INC if self._disposition() < 0
                                     else PRAISE_HIGH_DISP_MOOD_INC))
         if not self.compliance:
-            self.obedience -= PRAISE_NONCOMPLIANT_OBED_DEC
+            self._set_obedience(self.obedience - PRAISE_NONCOMPLIANT_OBED_DEC)
         if self.scold_flag and not self.praise_flag:          # mis-praised a misbehaving pet
             self._set_mood(self.mood + PRAISE_SCOLD_MOOD_INC)
             self._set_enthusiasm(PRAISE_SCOLD_ENTH)
-            self.obedience -= PRAISE_SCOLD_OBED_DEC
+            self._set_obedience(self.obedience - PRAISE_SCOLD_OBED_DEC)
             self.scold_flag, self.scold_window = False, 0
             self._set_anim("surprise", 1.6)
             return "It was misbehaving — the praise only spoiled it."
         if self.praise_flag:                                  # well-timed praise
-            self.obedience += CORRECT_PRAISE_OBED[self._disposition()]
+            self._set_obedience(self.obedience + CORRECT_PRAISE_OBED[self._disposition()])
             self.praise_flag, self.praise_window = False, 0
             self._set_anim("happy", 2.0)
             return f"{self.name} beams with pride!"
@@ -3193,19 +3261,19 @@ class Pet:
         scolding a pet that did nothing wrong (an open praise window) is unfair."""
         if (_g := self._guard()) is not None:
             return _g
-        self.obedience += SCOLD_OBED_INC
+        self._set_obedience(self.obedience + SCOLD_OBED_INC)
         self._set_mood(self.mood - (SCOLD_LOW_OBED_MOOD_DEC if self.obedience < SCOLD_HIGH_OBED_MOOD
                                     else SCOLD_HIGH_OBED_MOOD_DEC))
         if self.praise_flag and not self.scold_flag:          # mis-scolded a good pet
             self._set_mood(self.mood - SCOLD_PRAISE_MOOD_DEC)
             self._set_enthusiasm(self.enthusiasm - SCOLD_PRAISE_ENTH_DEC)
-            self.obedience += SCOLD_PRAISE_OBED[self._disposition()]
+            self._set_obedience(self.obedience + SCOLD_PRAISE_OBED[self._disposition()])
             self.praise_flag, self.praise_window = False, 0
             self._set_anim("sad", 1.8)
             msg = "It did nothing wrong — that scolding was unfair."
         elif self.scold_flag:                                 # well-timed scold
             self._set_enthusiasm(self.enthusiasm + CORRECT_SCOLD_ENTH)
-            self.obedience += CORRECT_SCOLD_OBED[self._disposition()]
+            self._set_obedience(self.obedience + CORRECT_SCOLD_OBED[self._disposition()])
             self.scold_flag, self.scold_window, self.compliance = False, 0, True
             self.refused = False                              # setRefused(false): back in line
             self._set_anim("angry", 1.8)
@@ -3220,7 +3288,7 @@ class Pet:
         if self.discipline_call:
             self.discipline_call, self._disc_call_t = False, 0.0
             self.compliance = False
-            self.obedience += DISCIPLINE_CALL_SCOLD_OBED_INC
+            self._set_obedience(self.obedience + DISCIPLINE_CALL_SCOLD_OBED_INC)
         return msg
 
     def clean(self):
@@ -3235,7 +3303,7 @@ class Pet:
         n, self.poop = self.poop, 0
         self.poop_sizes = []                        # clearFilth()
         self._set_mood(self.mood + CLEAN_MOOD_INC)
-        self.obedience += CLEAN_OBED_INC[self._disposition()]
+        self._set_obedience(self.obedience + CLEAN_OBED_INC[self._disposition()])
         self._set_anim("wash", 1.2)
         return f"Cleaned {n} poop."
 
@@ -3281,7 +3349,7 @@ class Pet:
         if self.sick_length == 0:
             self.sick = False                                # the dose finished it off
         self._set_mood(self.mood + CURED_MOOD_BONUS // MAX_SICK_LENGTH)
-        self.obedience += CURED_OBED_BONUS // MAX_SICK_LENGTH
+        self._set_obedience(self.obedience + CURED_OBED_BONUS // MAX_SICK_LENGTH)
         self.med_lapse = MEDICINE_HOURS                      # the indicator runs as it wears off
         self._set_anim("heal", 1.5)
         return ("The medicine worked!" if not self.sick
@@ -3303,7 +3371,7 @@ class Pet:
         if self.inj_length == 0:
             self.injuries = max(0, self.injuries - 1)        # mended
         self._set_mood(self.mood + CURED_MOOD_BONUS // MAX_INJ_LENGTH)
-        self.obedience += CURED_OBED_BONUS // MAX_INJ_LENGTH
+        self._set_obedience(self.obedience + CURED_OBED_BONUS // MAX_INJ_LENGTH)
         self.bandage_lapse = BANDAGE_HOURS
         self._set_anim("heal", 1.5)
         return ("All patched up!" if self.inj_length == 0
@@ -3447,7 +3515,7 @@ class Pet:
         # processAutoCarePrice: the visit fee, and the bond cost of hired care
         self.bits -= price
         self._set_mood(self.mood + AUTO_CARE_MOOD)
-        self.obedience = max(0, self.obedience + AUTO_CARE_OBEDIENCE)   # setObedience floors at 0
+        self._set_obedience(self.obedience + AUTO_CARE_OBEDIENCE)
         self._set_enthusiasm(self.enthusiasm + AUTO_CARE_ENTHUSIASM)
         self._ac_cool = AUTO_CARE_VISIT_SPACING
         self.assist_event = (act, piles, sizes)          # the app plays the visit
@@ -3479,7 +3547,7 @@ class Pet:
         # pet gets cheekier).  The animation is DVPet's jumping()/playing(): the pet
         # bounces on poses 1<->5 (ROLES["play"]), rendered as the "play" hop fx.
         self._set_mood(self.mood + SPOIL_MOOD_INC)
-        self.obedience = max(0, self.obedience - SPOIL_OBEDIENCE_DEC)   # DVPet setObedience floors at 0
+        self._set_obedience(self.obedience - SPOIL_OBEDIENCE_DEC)
         self._set_anim("play", 1.5)
         return "Played together -- happy, but a bit spoiled."
 
@@ -3737,7 +3805,7 @@ class Pet:
             self._set_energy(self.energy + _sc(e["energy"]))
         if e["strength"]:
             self.strength = _clamp(self.strength + _sc(e["strength"]), 0, 4)
-        self.obedience += e["obedience"]                 # canon: obedience is UNscaled
+        self._set_obedience(self.obedience + e["obedience"])   # canon: obedience is UNscaled
         self.vaccine = max(0, self.vaccine + _sc(e["vaccine"]))
         self.data_power = max(0, self.data_power + _sc(e["data"]))
         self.virus = max(0, self.virus + _sc(e["virus"]))

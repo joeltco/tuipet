@@ -128,11 +128,16 @@ def test_cleaning_builds_obedience_by_disposition():
     assert int(cfg["CleanObedienceInc"]) == CLEAN_OBED_INC[0]
     assert int(cfg["CleanObedienceIncHighDisposition"]) == CLEAN_OBED_INC[1]
     assert int(cfg["CleanObedienceIncLowDisposition"]) == CLEAN_OBED_INC[-1]
-    for dispo, gain in ((0, 1), (1, 2), (-1, 0)):
+    # the raw config gains are disposition-shaded (1/2/0), but canon routes
+    # them through setObedience whose nudge bends every CHANGE back by
+    # -disposition -- so sunny +2 LANDS +1, and sour +0 is no change at all
+    # (no change, no nudge).  The shipped flattening, pinned as-is
+    # (obedience audit 2026-07-06).
+    for dispo, landed in ((0, 1), (1, 1), (-1, 0)):
         p = _pet(disposition=dispo, poop=2, poop_sizes=[2, 2], obedience=10)
         msg = p.clean()
         assert "Cleaned 2" in msg and p.poop == 0
-        assert p.obedience == 10 + gain
+        assert p.obedience == 10 + landed
     p = _pet(obedience=10)                        # nothing to clean
     assert p.clean() == "Nothing to clean."
     assert p.obedience == 10
@@ -210,7 +215,7 @@ def test_hunger_mistake_obedience_is_glutton_shaded():
     from tuipet.pet import Pet
     for glut, want in ((0, 1), (1, -1)):
         q = Pet(num=102, name="D", stage="Champion", attribute="Virus",
-                obedience=500, glutton=glut)
+                obedience=100, glutton=glut)
         q.world_seconds = 12 * 60.0
         q.hunger = 0
         ob = q.obedience
@@ -225,11 +230,13 @@ def test_a_fully_lit_night_costs_four_mistakes_and_one_obedience():
     import random
     from tuipet.pet import Pet
     random.seed(7)
-    p = Pet(num=102, name="D", stage="Champion", attribute="Virus", obedience=500)
+    p = Pet(num=102, name="D", stage="Champion", attribute="Virus", obedience=100)
     p.line_id = "ver1"
     p.world_seconds = 23 * 60.0 + 30
     cm0, ob0 = p.care_mistakes, p.obedience
-    for _ in range(10 * 60):
+    # stop shortly after the 7:00 wake: a longer awake tail crosses the
+    # obedienceLapse cadence and would muddy the once-per-night ding pin
+    for _ in range(8 * 60):
         p.tick(1.0)
         p.hunger = 4
         p.sick = False

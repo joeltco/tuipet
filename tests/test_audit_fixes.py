@@ -9,7 +9,7 @@ from tuipet.battle import Battle
 
 
 def _pet(**kw):
-    p = Pet(num=100, stage="Champion", attribute="Vaccine", obedience=500)
+    p = Pet(num=100, stage="Champion", attribute="Vaccine", obedience=100)
     p.world_seconds = 10 * 60.0
     for k, v in kw.items():
         setattr(p, k, v)

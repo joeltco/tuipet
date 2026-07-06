@@ -90,7 +90,9 @@ def test_unpraised_window_expires_with_a_sulk():
         if not p.praise_flag:
             break
     assert not p.praise_flag
-    assert p.obedience >= 103                  # PraiseFailObedienceInc (dispo-shaded)
+    # +3 sulk at the window's expiry, -2 from the obedienceLapse the ride
+    # crosses at 120 (obedience audit 2026-07-06)
+    assert p.obedience == 101
 
 
 def test_unanswered_scold_window_means_it_got_away():

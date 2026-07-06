@@ -153,7 +153,8 @@ def test_battle_loss_saps_obedience():
     p.record_battle(False, {"stage": "Rookie", "hp": 10, "num": 1,
                             "vaccine": 1, "data_power": 1, "virus": 1})
     assert p.obedience == o0                       # -1 loss + 1 discipline
-    f = Pet(num=1, stage="Rookie", attribute="Vaccine", free_style=True)
+    # setObedience floors at 0 (canon), so give the free-style pet room to lose
+    f = Pet(num=1, stage="Rookie", attribute="Vaccine", free_style=True, obedience=10)
     o0 = f.obedience
     f.record_battle(False, {"stage": "Rookie", "hp": 10, "num": 1,
                             "vaccine": 1, "data_power": 1, "virus": 1})
