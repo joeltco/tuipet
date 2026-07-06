@@ -272,3 +272,38 @@ def test_every_panel_survives_a_direct_corpse():
                 if hasattr(pan, "anim"):
                     pan.anim()
             pan.text()
+
+
+def test_every_panel_survives_a_direct_sleeper():
+    """Asleep sweep (2026-07-06): the sleeper edition of the direct-construct
+    walk.  Poking a sleeper is a SYSTEM (the disturb mechanic: grumble-wake,
+    mood hit, disturb count) -- these walks assert the panels merely render."""
+    import random
+    from tuipet.pet import Pet
+    from tuipet.feedscreen import FeedPanel
+    from tuipet.shopscreen import ShopPanel
+    from tuipet.training import TrainingPanel
+    from tuipet.battlescreen import BattlePanel
+    from tuipet.habitatscreen import HabitatPanel
+    from tuipet.digicorescreen import DigiCorePanel
+
+    def sleeper():
+        p = Pet(num=4, name="Rex", stage="Rookie", attribute="Vaccine")
+        p.world_seconds = 2 * 60.0
+        p.asleep, p.lights = True, False
+        return p
+
+    random.seed(3)
+    for pan, keys in ((FeedPanel(sleeper()), ("down", "enter", "escape")),
+                      (ShopPanel(sleeper()), ("right", "enter", "tab", "r")),
+                      (TrainingPanel(sleeper()), ("down", "enter", "space", "escape")),
+                      (BattlePanel(sleeper()), ("enter", "1", "space", "escape")),
+                      (HabitatPanel(sleeper()), ("down", "escape")),
+                      (DigiCorePanel(sleeper()), ("space", "right", "enter", "escape"))):
+        for k in ("",) + keys:
+            if k:
+                pan.key(k)
+            for _ in range(15):
+                if hasattr(pan, "anim"):
+                    pan.anim()
+            pan.text()

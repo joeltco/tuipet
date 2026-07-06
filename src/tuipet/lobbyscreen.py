@@ -174,6 +174,23 @@ class LobbyPanel:
                 "stage": self.pet.stage, "num": self.pet.num,
                 "attr": getattr(self.pet, "attribute", "") or info.get("attribute") or "None"}
 
+    def _session_gate(self, kind):
+        """PURE session eligibility for a REMOTE invite.  can_battle is a
+        player-poke: its guard DISTURBS a sleeper (wake + mood hit + disturb
+        count) and rolls a refusal -- a stranger's invite must never touch
+        the pet (asleep sweep 2026-07-06).  Mirrors the gates without the
+        side effects; the SEND side keeps the poke (the player pressed it)."""
+        p = self.pet
+        if getattr(p, "dead", False):
+            return "It rests now — press N for a new egg."
+        if p.asleep:
+            return "zzz... asleep"
+        if kind == "jogress":
+            return jogress.can_jogress(p)      # pure: stage / DP checks
+        if p.stage in ("Egg", "Fresh"):
+            return "Too young to battle."
+        return None
+
     def _others(self):
         """Everyone else ONLINE, lobby regulars first, then the playing
         ghosts (presence 2026-07-05: the roster carries the whole server)."""
@@ -210,8 +227,7 @@ class LobbyPanel:
         for m in list(s.inbox):
             t = m.get("t")
             if t == "invite":
-                gate = (self.pet.can_battle() if m.get("kind") == "battle"
-                        else jogress.can_jogress(self.pet))
+                gate = self._session_gate(m.get("kind"))
                 if gate:
                     # the pet can't honour this session (an egg, asleep...):
                     # auto-decline instead of prompting -- accepting used to

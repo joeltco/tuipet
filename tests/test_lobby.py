@@ -238,3 +238,35 @@ def test_egg_sessions_are_gated_both_directions():
     pan.anim()                                          # incoming invite auto-declines
     assert pan.invite_prompt is None and pan.phase == "lobby"
     assert stub.sent == [("respond", 2, "battle", False)]
+
+
+def test_remote_invite_never_disturbs_a_sleeper():
+    """Asleep sweep (2026-07-06): the invite auto-decline called can_battle,
+    whose guard DISTURBS a sleeper (grumble-wake + mood hit + disturb count)
+    and rolls a refusal -- a stranger's night invite silently woke the pet.
+    The remote gate is PURE now: decline, pet untouched."""
+    from tuipet.pet import Pet
+    s = LobbyState()
+    s.connected = True
+    s.me_id, s.me_name = 1, "joel"
+    s.roster = [{"id": 1, "name": "joel", "pet": {}, "live": True},
+                {"id": 2, "name": "mika", "pet": {"name": "Gabumon"}, "live": True}]
+
+    class _Stub:
+        def __init__(self, state): self.state = state; self.sent = []
+        def respond(self, *a, **k): self.sent.append(("respond",) + a)
+        def relay(self, *a, **k): pass
+        def invite(self, *a, **k): pass
+        def update_pet(self, *a, **k): pass
+        def pm(self, *a, **k): pass
+
+    stub = _Stub(s)
+    pet = Pet(num=4, name="Rex", stage="Rookie", attribute="Vaccine")
+    pet.world_seconds = 2 * 60.0
+    pet.asleep, pet.lights = True, False
+    pan = lobbyscreen.LobbyPanel(pet, lambda n, p, c: stub, name="joel", pw="x")
+    s.inbox.append({"t": "invite", "from_id": 2, "from_name": "mika", "kind": "battle"})
+    pan.anim()
+    assert stub.sent == [("respond", 2, "battle", False)]
+    assert pet.asleep and pet.disturb == 0 and pet.mood == 0
+    assert pan.invite_prompt is None
