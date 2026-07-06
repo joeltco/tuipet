@@ -78,7 +78,10 @@ def test_hp_chip_food_adds_permanent_hp():
 
 
 def test_training_costs_a_calorie_and_couples_mood_to_spirit():
-    p = _pet(calories=3, enthusiasm=3)   # inside the +-CalorieLimit(4) buffer
+    # enthusiasm 5: the HP drill's own spirit dec (the un-emerged-favourite -1,
+    # training audit 2026-07-06) leaves +4, so the mood += enthusiasm coupling
+    # clears the -2 time-of-day dec with margin
+    p = _pet(calories=3, enthusiasm=5)   # inside the +-CalorieLimit(4) buffer
     m0 = p.mood
     p.apply_training(3, 100, game="hp")
     assert p.calories == 2                          # ExerciseCalorieDec

@@ -61,11 +61,18 @@ def test_fav_food_when_hungry_never_refused():
 
 
 def test_fav_attribute_spirited_never_refuses_training():
+    """refused(Attribute) keys on the EMERGENT favourite (training audit
+    2026-07-06): canon's Taste inits favourite to None, so the species
+    attribute earns no grace until a real taste forms."""
     p = _pet(compliance=False, obedience=-500, enthusiasm=2)
+    p.favorite_attr = "Vaccine"                     # the emergent favourite
     for _ in range(20):
-        assert not p.check_refused(attr="Vaccine")  # its own attribute, spirited
+        assert not p.check_refused(attr="Vaccine")  # spirited favourite: never
     p.enthusiasm = 0                                # dispirited: the +20 grace line rolls
     assert p.check_refused(attr="Vaccine")
+    p2 = _pet(compliance=False, obedience=-500, enthusiasm=2)
+    assert not p2.favorite_attr                     # nothing emerged yet...
+    assert p2.check_refused(attr="Vaccine")         # ...species attr gets NO pass
 
 
 def test_energy_shortfall_auto_refuses_jogress():

@@ -563,6 +563,18 @@ FATIGUE_MOOD_DEC = 50                    # FatigueMoodDec (the exhaustion hit)
 FATIGUE_ENERGY_DEC = 1                   # FatigueEnergyDec
 FATIGUE_ENTH_CHANGE = -1                 # FatigueEnthusiasmChange
 ALREADY_FATIGUED_MOOD_DEC = 35           # alreadyFatiguedMoodDec (re-fatigued while down)
+ALREADY_FATIGUED_ENTH_CHANGE = -1        # AlreadyFatiguedEnthusiasmChange
+ALREADY_FATIGUED_OBED_DEC = 5            # alreadyFatiguedObedienceDec
+ALREADY_FATIGUED_SICK_CHANCE = 1         # AlreadyFatiguedSickChance
+FATIGUE_WORSE_SICK_CHANCE = 50           # FatigueWorseSickChance (a collapse can turn a cold critical)
+GERIATRIC_FATIGUE_ENERGY_DEC = 1         # GeriatricFatigueEnergyDec (already-fatigued + old)
+RANK_CHANGE_FATIGUE = 3                  # RankChangeFatigue (the hour + the drill sour on a collapse)
+RANK_FATIGUE_FORCED = 2                  # RankChangeFatigueForced (it was pushed there)
+OBEDIENCE_FATIGUE_FORCED = -3            # obedienceChangeFatigueForced
+RANK_TRAIN_FAIL = 3                      # RankChangeTrainFail (a failed drill sours its attribute)
+SPOIL_OBED_DEC = 10                      # SpoilObedienceDec (spoil(): it only obeys what it likes)
+SPOIL_MOOD_INC = 10                      # SpoilMoodInc
+DISLIKED_ATTR_OBEY = -20                 # DislikedAttributeObeyChange (the hated drill refuses more)
 TRAIN_POWER_PER_HIT = 2     # attribute power per drill-hit (compression-scaled from DVPet's flat +1)
 FATIGUE_CHANCE = 60                      # FatigueChance (% on an exhausting drill)
 
@@ -2872,14 +2884,25 @@ class Pet:
             obey += self.hunger / STOMACH_CAPACITY * hcoef + mood_factor
             refused = r >= obed + obey
         elif attr is not None:
-            # training: the species' own attribute obeys while spirited; dispirited,
-            # even the favourite gets a +20 grace line (ExerciseRefuseLowEnthusiasm)
-            if attr == self.attribute:
+            # refused(Attribute) (training audit 2026-07-06): keyed on the
+            # EMERGENT taste, not the species attribute -- canon's Taste inits
+            # favourite to None, so NO drill gets special treatment until a
+            # real favourite forms.  The emergent favourite never refuses while
+            # spirited -- and doing it with an unresolved refusal outstanding
+            # SPOILS the pet (it only obeys what it likes); dispirited, even
+            # the favourite only gets the +20 grace line.  The emergent
+            # disliked drags the line -20 (it refuses that drill more).
+            if attr == self.favorite_attr:
                 if self.enthusiasm > 0:
+                    if self.scold_flag:          # canon: if (_refused) spoil(); setRefused(false)
+                        self._set_obedience(self.obedience - SPOIL_OBED_DEC)
+                        self._set_mood(self.mood + SPOIL_MOOD_INC)
+                        self.scold_flag, self.scold_window = False, 0
                     return False
                 refused = r >= obed + EXERCISE_REFUSE_LOW_ENTH + obey_all
             else:
-                refused = r >= obed + obey_all
+                obey = obey_all + (DISLIKED_ATTR_OBEY if attr == self.disliked_attr else 0)
+                refused = r >= obed + obey
         else:
             # activity (battle/jogress): temperament shapes the temper -- a feisty
             # (+1) pet refuses more, a docile (-1) one fights when told (+50 grace)
@@ -3080,10 +3103,15 @@ class Pet:
                 return cap
         return MAX_HEALTH_DEFAULT_CAP
 
-    def _check_perfect_wins(self):
-        """checkAndIncPerfectWins(PracticeAlwaysIncPerfectWins=TRUE): every HP-drill
-        success counts; each PerfectWinsLimit-th grows fullHealthPoints toward the
-        age cap (HealthInc when it actually lands)."""
+    def _check_perfect_wins(self, force=True):
+        """checkAndIncPerfectWins: every HP-drill success counts (force ==
+        PracticeAlwaysIncPerfectWins TRUE) and every BATTLE WIN counts while the
+        trained HP sits below its age cap (force=False rides canon's gate --
+        Min{Strength,Hunger} are 0 at difficulty 0, so the HP-below-max clause
+        is the whole test); each PerfectWinsLimit-th grows fullHealthPoints
+        (HealthInc when it actually lands)."""
+        if not force and self.full_health >= self.max_health():
+            return ""
         self.perfect_wins += 1
         if self.perfect_wins % PERFECT_WINS_LIMIT == 0:
             before = self.full_health
@@ -3123,9 +3151,22 @@ class Pet:
         if game == "hp":
             attr = "Effort"
             self.mood_rank += NONE_TRAIN_MOOD_RANK   # NoneTrainingAttributeMoodRankChange
-            if self.disposition == -1:
-                # exercise() None-branch: a SOUR pet pays the fav-dec on the HP drill
+            # exercise()'s None-attribute spirit ladder, SENTINEL QUIRKS included
+            # (training audit 2026-07-06): canon Taste inits favourite AND
+            # disliked to Attribute.None, so the HP drill (None) MATCHES an
+            # un-emerged favourite (the light dec) and, once a favourite exists
+            # but no disliked has formed, matches the None disliked sentinel
+            # (the heavy dec).  Only a fully-formed taste pays the neutral -2.
+            if not self.favorite_attr:
+                self._set_enthusiasm(self.enthusiasm - 1)   # fav branch (None == None)
+            elif self.disposition == -1:
+                # a SOUR pet pays the fav-dec on the HP drill
                 self._set_enthusiasm(self.enthusiasm - 1)
+            elif not self.disliked_attr:
+                self._set_enthusiasm(self.enthusiasm + EXERCISE_DISLIKED_ATTR_ENTH
+                                     + (ENTH_DISLIKE_FORCED if complied else 0))
+            else:
+                self._set_enthusiasm(self.enthusiasm - 2)   # ExerciseNotFavAttributeEnthusiasmDec
         else:
             attr = attribute or (self.attribute if self.attribute in ("Vaccine", "Data", "Virus") else "Vaccine")
             # BonusAttributePower under the compressed scale: canon's standard
@@ -3141,10 +3182,10 @@ class Pet:
             elif attr == "Virus":
                 self.virus += gain
             # the drill drives the ATTRIBUTE taste ledger (taste/rank audit
-            # 2026-07-06): the trained attribute warms; a FORCED drill sours it
+            # 2026-07-06): incAttRank warms the trained attribute.  The forced/
+            # fail sours are changeTrainingRank's and live in the success/fail
+            # block below (training audit 2026-07-06).
             self._change_attr_rank(attr)
-            if complied:
-                self._dec_attr_rank(attr, RANK_TRAIN_FORCED)
             # exercise()'s enthusiasm branches key on the ledger's EMERGENT
             # favourite/disliked (the species attribute / seed stands in until
             # a real taste forms); the emergent disliked drags hard (-3, and a
@@ -3181,11 +3222,12 @@ class Pet:
             self._set_weight(self.weight - 1)             # ActivityWeightChange -1
         self._set_calories(self.calories - EXERCISE_CALORIE_DEC)   # ExerciseCalorieDec
         self._set_energy(self.energy - 1)               # ExerciseEnergyDec
-        # setExercise: driving the Effort gauge past its LIMIT risks fatigue --
-        # good nutrition softens the odds, the home's compatibility bends them.
-        # Unconditional like the +1 itself (canon rolls whenever the gauge is
-        # pushed past the cap, win or lose).
-        if strength0 >= 4:
+        # setExercise: driving the Effort gauge INTO or past its LIMIT risks
+        # fatigue -- good nutrition softens the odds, the home's compatibility
+        # bends them.  Canon rolls whenever newExercise (= old + 1) >= the
+        # limit, so the 3->4 push that FILLS the gauge rolls too (training
+        # audit 2026-07-06; the old >= 4 missed it).  Win or lose.
+        if strength0 >= 3:
             h = self.habitat_obj()
             chance = GOOD_NUTRITION_FATIGUE_CHANCE if self.good_nutrition() else FATIGUE_CHANCE
             chance += FATIGUE_COMPAT_CHANGE * ((self.field in h["incompat_fields"])
@@ -3193,12 +3235,24 @@ class Pet:
                                                - (self.field in h["compat_fields"])
                                                - (self.element in h["compat_elements"]))
             if random.randrange(100) < chance:
-                self._fatigue()
+                # the 3-arg fatigue: the drill that broke it sours + the forced push
+                self._fatigue(complied, attr)
         if success:
             self._open_praise()                          # onExerciseFinish: setPraise(true)
+            if complied and game != "hp":
+                # changeTrainingRank(attr, RankChangeTrainForced): it succeeded,
+                # but only because you spent its compliance -- the drill sours
+                self._dec_attr_rank(attr, RANK_TRAIN_FORCED)
         else:                                            # DVPet exercise-fail penalties
             self._set_mood(self.mood - 10)               # ExerciseFailMoodDec
             self._set_obedience(self.obedience - 1)      # ExerciseFailObedienceDec
+            if game != "hp":
+                # changeTrainingRank(attr, TrainFail + forced): failure sours the
+                # drilled attribute harder, worse still when it was pushed.  (The
+                # None branch's changeMoodRank(+3/+5) stays unported -- sign-odd,
+                # see _fatigue's docstring.)
+                self._dec_attr_rank(attr, RANK_TRAIN_FAIL
+                                    + (RANK_TRAIN_FORCED if complied else 0))
         # checkExerciseInj: worsening first, then the fresh matrix roll (the
         # species aversion rides the WEAK tables)
         self._check_exercise_injury(complied, attr if attr in self._ATTR3 else None)
@@ -3320,6 +3374,11 @@ class Pet:
             if not style_free:                           # battleEnd: a win UNDER ORDERS is prouder
                 self._set_mood(self.mood + ORDERS_WON_MOOD_INC
                                + BATTLE_DISPO_MOOD_FACTOR * -self.disposition)
+            # checkAndIncPerfectWins(false): every battle win counts toward the
+            # next trained-HP point while below the age cap (training audit
+            # 2026-07-06 -- Battle.battleEnd calls it right after incStats; the
+            # x5-compressed PerfectWinsLimit applies to every event type)
+            grew += self._check_perfect_wins(force=False)
             lo, hi = (enemy or {}).get("bits", (1, 5))
             gained = random.randint(lo, hi)
             self.bits += gained
@@ -3731,25 +3790,54 @@ class Pet:
             return True
         return False
 
-    def _fatigue(self):
-        """PhysicalState.fatigue: the pet collapses from over-exertion — a heavy one-time
-        mood/energy/spirit hit (worse if it was already fatigued), then it must rest the
-        fatigue length off (FatigueMin..FatigueMax game-min)."""
+    def _fatigue(self, complied=False, train_attr=None):
+        """PhysicalState.fatigue(complied), full body (training audit 2026-07-06):
+        the collapse sours the HOUR, can turn a sickness critical, and hits far
+        harder when the pet was ALREADY down (the rest ADDS ON, plus sick/spirit/
+        obedience and the geriatric surcharge).  train_attr = the exercise
+        wrapper's extras: the drill that broke it sours ("Effort" = the HP drill
+        sours all three), and a forced push costs obedience.  (The None-keyed
+        changeMoodRank(+3) nudges stay unported -- the sign-odd class the rank
+        audit documented: the same constant DECS the attr ledger but ADDS to
+        moodRank, a canon slip that would make failure breed a happier adult.)"""
         already = self.is_fatigued()
-        self.mistake_day += 1                    # FatigueMissedDay
-        # FatigueLifeDec (+ the geriatric surcharge) -- canon re-audit 2026-07:
-        # the fatigue arc had documented this hit as omitted
-        self._burn_life(FATIGUE_LIFE_DEC
-                        + (GERIATRIC_FATIGUE_LIFE_DEC if self.is_geriatric else 0.0))
-        self.fatigue_length = max(FATIGUE_MIN, random.randint(FATIGUE_MIN, FATIGUE_MAX) - self._affinity())   # habitat-compat length mod
-        # canon fatigue() writes the energy dec RAW (_energy -= dec, never
-        # setEnergy) -- routing it through _set_energy would recurse through
-        # the fatigue trigger it now carries (mood re-audit 2026-07-06)
+        # timeRanks dec RankChangeFatigue: the collapse sours the hour it
+        # happened in (raw onto the tuned +/-90 scale, like the sicken sours)
+        ph = self.day_phase
+        self.time_pref[ph] = _clamp(self.time_pref.get(ph, 0) - RANK_CHANGE_FATIGUE, -90, 90)
+        # checkWorseSick(50) -- and if it only pushed itself because you spent
+        # its compliance, it resents you
+        if self._check_worse_sick(FATIGUE_WORSE_SICK_CHANCE) and complied:
+            self._set_obedience(self.obedience + OBEDIENCE_CHANGE_SICK_FORCED)
+        # length: randomBetween(min, max + habitat change) -- compat shrinks the
+        # ceiling, incompat raises it (canon change == -affinity)
+        span = random.randint(FATIGUE_MIN, max(FATIGUE_MIN, FATIGUE_MAX - self._affinity()))
+        self.mistake_day += 1                    # FatigueMissedDay (both branches)
+        if already:                              # re-fatigued while down: it ADDS ON
+            self.fatigue_length += span
+            self._check_sick(ALREADY_FATIGUED_SICK_CHANCE)
+            self._set_enthusiasm(self.enthusiasm + ALREADY_FATIGUED_ENTH_CHANGE)
+            self._set_mood(self.mood - ALREADY_FATIGUED_MOOD_DEC)
+            self._set_obedience(self.obedience - ALREADY_FATIGUED_OBED_DEC)
+            if self.is_geriatric:                # an old body pays extra, but only re-fatigued
+                self._burn_life(GERIATRIC_FATIGUE_LIFE_DEC)
+                self.energy = _clamp(self.energy - GERIATRIC_FATIGUE_ENERGY_DEC,
+                                     -self.max_energy, self.max_energy)
+        else:
+            self.fatigue_length = span
+        if train_attr is not None:               # the exercise wrapper (3-arg fatigue)
+            change = RANK_CHANGE_FATIGUE + (RANK_FATIGUE_FORCED if complied else 0)
+            for a in (self._ATTR3 if train_attr not in self._ATTR3 else (train_attr,)):
+                self._dec_attr_rank(a, change)
+            if complied:
+                self._set_obedience(self.obedience + OBEDIENCE_FATIGUE_FORCED)
+        # the unconditional tail.  canon fatigue() writes the energy dec RAW
+        # (_energy -= dec, never setEnergy) -- routing it through _set_energy
+        # would recurse through the fatigue trigger it now carries
         self.energy = _clamp(self.energy - FATIGUE_ENERGY_DEC, -self.max_energy, self.max_energy)
+        self._burn_life(FATIGUE_LIFE_DEC)        # FatigueLifeDec
         self._set_enthusiasm(self.enthusiasm + FATIGUE_ENTH_CHANGE)
         self._set_mood(self.mood - FATIGUE_MOOD_DEC)
-        if already:
-            self._set_mood(self.mood - ALREADY_FATIGUED_MOOD_DEC)
         self._set_anim("exhausted", 2.0)
 
     def praise(self):
