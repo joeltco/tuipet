@@ -269,3 +269,61 @@ def test_the_current_habitat_follows_the_road_and_comes_home():
     p.habitat = 99 if home != 99 else 98
     q, _ = persistence.pet_from_save(persistence.to_save_dict(p), catch_up=False)
     assert q.habitat == home
+
+
+def test_garuda_chases_the_next_boss_ahead():
+    """Transport audit 2026-07-06: getNextBoss is the closest boss AHEAD,
+    crossing zones -- the old pick took the current zone's first boss and
+    could warp you BACKWARD."""
+    from tuipet import transportscreen, data
+    from tuipet.pet import Pet
+    p = Pet(num=102, name="D", stage="Champion", attribute="Virus")
+    p.world_seconds = 10 * 60.0
+    maps = data.load_maps()
+    # find a zone whose FIRST boss is not its last, so "past the first" is real
+    pick = None
+    for mi, m in enumerate(maps):
+        for zi, z in enumerate(m["zones"]):
+            locs = sorted(b.get("location") or z.get("total_steps", 10000)
+                          for b in z.get("bosses", ()))
+            if len(locs) >= 2:
+                pick = (mi, zi, locs)
+                break
+        if pick:
+            break
+    if pick is None:
+        import pytest
+        pytest.skip("no multi-boss zone in the data")
+    mi, zi, locs = pick
+    p.adv_map, p.adv_zone = mi, zi
+    p.adv_loc = locs[0] + 1                       # already PAST the first boss
+    p.inventory["i:19"] = 1
+    panel = transportscreen.TransportPanel(p, "i:19")
+    panel.kind = "danger"
+    panel.options = panel._options()
+    panel.key("enter")
+    assert p.adv_loc == locs[1] - 1               # one shy of the NEXT boss, not the first
+
+
+def test_birdra_needs_a_town_and_finds_the_closest():
+    from tuipet import transportscreen, data
+    from tuipet.pet import Pet
+    p = Pet(num=102, name="D", stage="Champion", attribute="Virus")
+    p.world_seconds = 10 * 60.0
+    maps = data.load_maps()
+    mi = next((i for i, m in enumerate(maps)
+               if any(z.get("towns") for z in m["zones"])), None)
+    if mi is None:
+        import pytest
+        pytest.skip("no towns anywhere")
+    p.adv_map, p.adv_zone = mi, 0
+    p.energy = 1
+    p.inventory["i:18"] = 1
+    panel = transportscreen.TransportPanel(p, "i:18")
+    panel.kind = "town"
+    panel.options = panel._options()
+    assert panel.options                          # a town exists: the ride is offered
+    panel.key("enter")
+    z = maps[mi]["zones"][p.adv_zone]
+    assert z.get("towns") and p.adv_loc == z["towns"][0][0]   # landed ON a real town
+    assert p.energy == p.max_energy               # ...and rested there

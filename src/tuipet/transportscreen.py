@@ -79,7 +79,12 @@ class TransportPanel:
             return [(f"Zone {zi + 1}", mi, zi)
                     for zi in range(len(self.maps[mi]["zones"]))]
         if self.kind == "town":
-            return [("Warp to the nearest town  (rest)", mi, 0)]
+            # Birdra rides only where a town EXISTS (canon isTownClose gates
+            # the ticket; transport audit 2026-07-06 -- the townless fallback
+            # was a free warp-to-start with an energy refill)
+            if any(z.get("towns") for z in self.maps[mi]["zones"]):
+                return [("Warp to the nearest town  (rest)", mi, 0)]
+            return []
         zi = max(0, min(self.pet.adv_zone, len(self.maps[mi]["zones"]) - 1))
         return [("Warp toward the nearest enemy", mi, zi)]
 
@@ -106,14 +111,40 @@ class TransportPanel:
                 # Phoenix lands at the zone's FIRST TOWN (towns[0].range[0])
                 self.pet.adv_loc = towns[0][0] if towns else 0
             elif self.kind == "town":
-                # Birdra MOVES you to the town (toTravelTown), then the rest
-                self.pet.adv_loc = towns[0][0] if towns else 0
-                self.pet._set_energy(self.pet.max_energy)
+                # Birdra: the CLOSEST town across the map's zones (canon
+                # getClosestTownZone walks the zone chain; transport audit
+                # 2026-07-06 -- the old hop only knew the current zone), then
+                # the rest (the walk-in town rest can't trigger on a landing)
+                zones = self.maps[mi]["zones"]
+                start = max(0, min(self.pet.adv_zone, len(zones) - 1))
+                for zj in sorted(range(len(zones)), key=lambda j: abs(j - start)):
+                    tw = zones[zj].get("towns") or ()
+                    if tw:
+                        self.pet.adv_zone = zi = zj
+                        zone = zones[zj]
+                        self.pet.adv_loc = tw[0][0]
+                        self.pet._set_energy(self.pet.max_energy)
+                        break
             elif self.kind == "danger":
-                # Garuda lands one step shy of the NEXT BOSS (e.location - 1)
-                bosses = sorted(b.get("location") or zone.get("total_steps", 10000)
-                                for b in zone.get("bosses", ()))
-                self.pet.adv_loc = max(0, (bosses[0] if bosses else 0) - 1)
+                # Garuda: one step shy of the NEXT boss AHEAD -- getNextBoss
+                # chases FORWARD across zones (the old pick took the current
+                # zone's first boss and could warp you BACKWARD)
+                here = int(getattr(self.pet, "adv_loc", 0) or 0)
+                zones = self.maps[mi]["zones"]
+                target = None
+                for zj in range(zi, len(zones)):
+                    floor = here if zj == zi else -1
+                    ahead = sorted(b.get("location") or zones[zj].get("total_steps", 10000)
+                                   for b in zones[zj].get("bosses", ())
+                                   if (b.get("location") or zones[zj].get("total_steps", 10000)) > floor)
+                    if ahead:
+                        target = (zj, ahead[0])
+                        break
+                if target is None:                     # nothing ahead: the zone gate
+                    target = (zi, zone.get("total_steps", 1))
+                self.pet.adv_zone, bloc = target[0], target[1]
+                zi = target[0]
+                self.pet.adv_loc = max(0, bloc - 1)
             else:                                              # continent: the map's gate
                 self.pet.adv_loc = 0
             n = self.pet.inventory.get(self.item_key, 1) - 1        # consume the ticket
