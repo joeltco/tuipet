@@ -1763,12 +1763,18 @@ class Pet:
         habs = data.load_habitats()
         return habs.get(self.habitat) or habs.get(0) or next(iter(habs.values()))
 
-    def background(self, habitat_id=None):
+    def background(self, habitat_id=None, file=None):
         """The habitat background frame for the current weather/time (or None).
-        habitat_id overrides the home -- adventure shows the ZONE's scenery."""
-        h = (data.load_habitats().get(habitat_id) if habitat_id is not None
-             else self.habitat_obj()) or {}
-        frames = data.load_backgrounds().get(h.get("bg", ""))
+        habitat_id overrides the home -- adventure shows the ZONE's scenery;
+        file overrides the sheet entirely (BackgroundAnim checkBack's special
+        rooms: the tournament/PvP arena) while keeping the same time/weather
+        frame pick and tint."""
+        if file is not None:
+            frames = data.load_backgrounds().get(file)
+        else:
+            h = (data.load_habitats().get(habitat_id) if habitat_id is not None
+                 else self.habitat_obj()) or {}
+            frames = data.load_backgrounds().get(h.get("bg", ""))
         if not frames:
             return None
         if self.weather in _PRECIP and len(frames) > 4:

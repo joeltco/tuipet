@@ -143,6 +143,11 @@ class BattlePanel:
     def __init__(self, pet, enemy=None, wild=False):
         self.pet = pet
         self.wild = wild              # adventure PvE_Wild: Esc rolls canEscape, not surrender
+        # BackgroundAnim checkBack: tournament + PvP battles play in the ARENA
+        # (tourneyBack.png); wild + home battles keep the habitat scenery.  An
+        # opponent supplied non-wild is exactly those two (townscreen/
+        # tournamentscreen pass the bracket foe, the lobby passes the card).
+        self.arena = enemy is not None and not wild
         self.battle = Battle(pet, enemy)
         self.frame_i = 0
         self.sel = 0
@@ -345,7 +350,8 @@ class BattlePanel:
     def _scene(self, placements, overlay):
         # the habitat background is part of the scene -- the crisp sprites + orbs read fine
         # over it now (the clunk was the sprites/explosion, since fixed), so keep it visible.
-        return menu.paint(placements, self.pet.background(),
+        return menu.paint(placements,
+                          self.pet.background(file="tourneyBack" if self.arena else None),
                           rows=ROWS, cols=COLS, overlay=overlay)
 
     def _place_one(self, view, rows, xshift=0):

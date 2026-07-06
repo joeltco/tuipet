@@ -358,3 +358,14 @@ def test_round_skip_never_swallows_the_killing_blow():
     assert "windup" in bounce and "hit" in bounce and "flinch" in bounce
     skipped = run([SKIP_DEBOUNCE + 4])            # a deliberate skip
     assert "hit" in skipped                       # ...still shows the blow
+
+
+def test_arena_routing_matches_check_back():
+    """BackgroundAnim checkBack (theme/rendering audit 2026-07-06): a supplied
+    non-wild opponent means tournament or PvP -> the arena backdrop; wild and
+    home-rolled battles keep the habitat scenery."""
+    from tuipet.battlescreen import BattlePanel
+    p = _pet()
+    assert BattlePanel(p, _enemy()).arena is True            # tournament / PvP card
+    assert BattlePanel(p, _enemy(), wild=True).arena is False  # adventure wild
+    assert BattlePanel(p).arena is False                       # home battle roll

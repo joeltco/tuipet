@@ -256,3 +256,28 @@ def test_action_bar_letters_keep_cyan_on_every_theme():
             assert "b cyan]" in keys_markup(), name
     finally:
         theme.apply("grey")
+
+
+def test_the_arena_backdrop_ships_a_full_time_stack():
+    """BackgroundAnim checkBack: tournaments + PvP battles play in front of
+    tourneyBack.png -- a 5-frame sheet (morning/noon/sunset/night/precip)
+    indexed exactly like the habitat sheets (theme/rendering audit 2026-07-06)."""
+    from tuipet import data
+    frames = data.load_backgrounds().get("tourneyBack")
+    assert frames and len(frames) == 5
+    assert all(len(r) == 40 * 6 for fr in frames for r in fr)
+
+
+def test_background_file_override_picks_the_arena_sheet():
+    """Pet.background(file=...) swaps the SHEET while keeping the same
+    time-of-day frame pick -- the arena has its own night, not the home's."""
+    from tuipet import data
+    from tuipet.pet import Pet
+    p = Pet(num=-1, stage="Rookie")
+    p.weather = "Clear"
+    arena = p.background(file="tourneyBack")
+    home = p.background()
+    sheets = data.load_backgrounds()
+    idx = {"dawn": 0, "day": 1, "dusk": 2, "night": 3}[p.day_phase]
+    assert arena == theme.weather_tint(sheets["tourneyBack"][idx], "Clear")
+    assert arena != home

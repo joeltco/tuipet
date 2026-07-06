@@ -366,3 +366,22 @@ def test_the_purse_truncates_per_entrant():
     for _ in range(7):
         total = int(total + TOURNEY_BITS["Rookie"] * 1.1)
     assert tm._calc_bits() == total == 959
+
+
+def test_the_cup_renders_in_the_arena(monkeypatch):
+    """The tournament screen's LCD scenes pull the tourneyBack sheet, not the
+    home habitat (BackgroundAnim checkBack; theme/rendering audit 2026-07-06)."""
+    from tuipet import tournamentscreen
+    random.seed(4)
+    p = _pet("Rookie")
+    seen = []
+    orig = Pet.background
+    monkeypatch.setattr(Pet, "background",
+                        lambda self, habitat_id=None, file=None:
+                        (seen.append(file), orig(self, habitat_id, file))[1])
+    pan = tournamentscreen.TournamentPanel(p)
+    pan.tourney = Tournament(p, _trophy())
+    pan.phase = "bracket"
+    pan.tree_view = False
+    pan.text()
+    assert seen and seen[-1] == "tourneyBack"

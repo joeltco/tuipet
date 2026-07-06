@@ -50,6 +50,10 @@ def main():
     for fn in ("digicoreN", "digicoreDr", "digicoreDs", "digicoreJt", "digicoreMe",
                "digicoreNsp", "digicoreWg", "digicoreNs", "digicoreDa", "digicoreVb"):
         files.add(fn)
+    # the tournament/PvP arena (BackgroundAnim checkBack: tournament active or a
+    # PvP battle -> tourneyBack.png); a full 5-frame time/weather stack like the
+    # habitat sheets
+    files.add("tourneyBack")
     bgs = {}
     for fn in sorted(files):
         fr = frames_for(fn)

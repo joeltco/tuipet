@@ -172,7 +172,9 @@ class TournamentPanel(menu.SubHost):
         t = self.tourney
         if self.tree_view:
             return self._render_tree()
-        bgimg = self.pet.background()
+        # BackgroundAnim checkBack: while the tournament is active every scene
+        # plays in the ARENA (tourneyBack.png), not the home habitat
+        bgimg = self.pet.background(file="tourneyBack")
         on = menu.scene_ink(bgimg)
         if t.over:
             out = menu.bar(t.name, "RESULT")
