@@ -151,7 +151,8 @@ class Adventure:
                 self.pet._set_mood(self.pet.mood - 1)          # WalkUnwellMoodDec
                 if self.pet.sick and random.randrange(100) < 1:  # WalkWorseSickChance
                     self.pet._worsen_sick()
-            self.pet._check_worse_injury(in_battle=False)      # checkWorseTravelInj
+            self.pet._check_worse_injury("travel")             # checkWorseTravelInj
+            #   (canon rides the BATTLE table with won=True, not the exercise one)
             if self.pet.disliked_time() == self.pet.day_phase:
                 self.pet._set_mood(self.pet.mood - 10)         # DislikedTimeTravelMoodChange
                 self.pet._set_enthusiasm(self.pet.enthusiasm - 1)  # ...EnthusiasmChange

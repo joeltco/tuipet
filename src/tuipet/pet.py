@@ -553,6 +553,52 @@ INJ_LAPSE_MIN = 29                       # InjLapseMin
 WORSE_INJ_CHANCE = 100                   # WorseInjuryChance / WorseBattleInjuryChance (bound)
 WORSE_INJ_EXERCISE = {"bad_nv": 10, "good_nv": 1, "good_v": 0, "bad_v": 5}   # WorseInjury*
 WORSE_INJ_BATTLE = {"bad_nv": 15, "good_nv": 5, "good_v": 0, "bad_v": 5}     # WorseBattleInjury*
+# FRESH injuries (sickness/injury audit 2026-07-06): the same weight x vitamin
+# matrix vs a 1000 bound, plus a shared additive term -- geriatric/bad-age,
+# fatigue x coefficient, negative energy x coefficient, habitat compatibility
+# (+-1/axis) -- and battles pad +50 on a LOSS.  The old ports ("overweight ->
+# 50%", "loss -> 30%") were paraphrases; canon's baseline is ~0.1-1%.
+INJ_CHANCE = 1000                        # InjuryChance (exercise bound)
+INJ_EXERCISE = {"bad_nv": 10, "good_nv": 1, "good_v": 0, "bad_v": 5}   # Injury*
+INJ_GERIATRIC = 10                       # InjuryGeriatricFactor
+INJ_FATIGUE_COEF = 10                    # InjuryFatigueCoefficient (x FatigueMod)
+INJ_NEG_ENERGY_COEF = 0.5                # InjuryNegativeEnergyCoefficient
+BATTLE_INJ_CHANCE = 1000                 # BattleInjuryChance
+INJ_BATTLE = {"bad_nv": 100, "good_nv": 3, "good_v": 0, "bad_v": 25}   # BattleInjury*
+BATTLE_INJ_BAD_AGE = 10                  # BattleInjuryBadAgeFactor (elder OR baby)
+BATTLE_INJ_LOSS = 50                     # BattleInjuryWonFactor (added on a LOSS)
+BATTLE_INJ_FATIGUE_COEF = 10             # BattleInjuryFatigueCoefficient
+BATTLE_INJ_NEG_ENERGY_COEF = 1.0         # BattleInjuryNegativeEnergyCoefficient
+FATIGUE_MOD = 10                         # FatigueMod
+WORSE_INJ_GERIATRIC = 10                 # WorseInjuryGeriatricFactor
+WORSE_BATTLE_INJ_BAD_AGE = 10            # WorseBattleInjuryBadAgeFactor
+WORSE_BATTLE_INJ_LOSS = 5                # WorseBattleInjuryWonFactor (on a LOSS)
+WORSE_INJ_NEG_ENERGY_COEF = 1.0          # WorseInjuryNegativeEnergyCoefficient (battle same)
+INJURY_ENERGY_DEC = 1                    # InjuryEnergyDec (a fresh injury saps a bar)
+OBED_INJ_FORCED = -5                     # ObedienceChangeInjuryForced (complied + hurt)
+OBED_INJ_BATTLE_WON = -2                 # ObedienceChangeInjuryBattleWonForced
+OBED_INJ_BATTLE_LOST = -5                # ObedienceChangeInjuryBattleLostForced
+# checkSick/checkWorseSick BOUNDS: the home's compatibility shifts the sick
+# bound (+-5/axis; a compatible home = safer), old age thins both by 25, and
+# fatigue pads a worse-sick TARGET by FatigueMod
+SICK_CHANCE_BOUND = 100                  # SickChance
+SICK_COMPAT_CHANGE = 5                   # Compatible*SickChanceChange
+SICK_GERIATRIC_FACTOR = 25               # SickGeriatricFactor
+WORSE_SICK_BOUND = 100                   # WorseSickChance
+WORSE_SICK_GERIATRIC = 25                # WorseSickGeriatricFactor
+INTOL_WORSE_SICK_CHANCE = 50             # IntolerantFoodWorseSickChance
+# incMistake's sickness risks (flagged in the mood arc, closed here): a mistake
+# amid a BEGGING poop gauge rolls 50/50, ordinary filth rolls per pile with a
+# misery pad (|mood| x 0.1 when Unhappy/Depressed), and ANY mistake while
+# fatigued adds a 1/1 whisper
+MISTAKE_FILTH_WORSE = 50                 # MistakeFilthWorseSickChance
+MISTAKE_FILTH_SICK = 50                  # MistakeFilthSickChance
+MISTAKE_LOW_FILTH_WORSE = 5              # MistakeLowFilthWorseSickChance (x piles)
+MISTAKE_LOW_FILTH_SICK = 1               # MistakeLowFilthSickChance (x piles)
+MISTAKE_FILTH_MOOD_COEF = 0.1            # MistakeFilthSickChanceMoodCoefficient
+ANY_MISTAKE_FATIGUED = 1                 # AnyMistakeWhileFatigued{,Worse}SickChance
+SICK_LAPSE_PENALTY_BM = 48               # SickLapsePenaltyBM: an awake sick pet's gauge races
+SICK_NUTRITION_CHANGE = -1               # SickNutritionChange (per awake sick lapse)
 WORSE_MALADY_MOOD_DEC = -35              # worseMaladyMoodDec
 WORSE_MALADY_OBED_DEC = -10              # worseMaladyObedienceDec
 WORSE_INJ_ENERGY_DEC = 1                 # WorseInjuryEnergyDec
@@ -958,6 +1004,18 @@ class Pet:
             self.sick_length = max(0.0, self.sick_length - _rec)
             if self.sick_length == 0:
                 self.sick = False
+        # sickLapse -> sickPenalty (awake only): illness burns the macros and
+        # RACES the bowels (SickLapsePenaltyBM 48 gauge-units a lapse; the
+        # startPoop it forces fires naturally when the gauge crosses)
+        if self.sick and not self.asleep:
+            self._sick_pen_t = getattr(self, "_sick_pen_t", 0.0) + dt
+            if self._sick_pen_t >= 60.0:                  # SickLapseMin
+                self._sick_pen_t = 0.0
+                for f in ("nutr_protein", "nutr_mineral", "nutr_vitamin"):
+                    setattr(self, f, max(0, getattr(self, f) + SICK_NUTRITION_CHANGE))
+                self._poop_t = (getattr(self, "_poop_t", 0.0)
+                                + self._poop_interval * SICK_LAPSE_PENALTY_BM
+                                / max(1, self._phys().get("poop_limit", 64)))
         if self.inj_length > 0:                           # injLapse: the injury heals over time
             self.inj_length = max(0.0, self.inj_length - _rec)
         if self.vitamin_lapse > 0:                        # vitaminLapse: protection wears off
@@ -988,6 +1046,21 @@ class Pet:
             self._set_mood(self.mood - MISTAKE_MOOD_DEC)
         self.care_mistakes += 1
         self.mistake_day += 1                        # MistakeIncMissedDayChange
+        # incMistake's sickness risks (sickness/injury audit 2026-07-06; the
+        # mood arc flagged them unported): a mistake amid a BEGGING gauge rolls
+        # 50/50; ordinary filth rolls per pile with a misery pad; and ANY
+        # mistake while fatigued adds a 1/1 whisper
+        if self.poop_urgent():
+            self._check_worse_sick(MISTAKE_FILTH_WORSE)
+            self._check_sick(MISTAKE_FILTH_SICK)
+        elif self.poop > 0:
+            pad = (int(abs(math.ceil(self.mood * MISTAKE_FILTH_MOOD_COEF)))
+                   if self.current_mood() in ("Unhappy", "Depressed") else 0)
+            self._check_worse_sick(MISTAKE_LOW_FILTH_WORSE * self.poop + pad)
+            self._check_sick(MISTAKE_LOW_FILTH_SICK * self.poop + pad)
+        if self.is_fatigued():
+            self._check_worse_sick(ANY_MISTAKE_FATIGUED)
+            self._check_sick(ANY_MISTAKE_FATIGUED)
 
     def _tick_asleep(self, dt):
         """The sleep branch: lights neglect, deep-sleep regen, the awakeLapse
@@ -2079,10 +2152,10 @@ class Pet:
             # audit 2026-07-06)
             if complied:
                 self._set_obedience(self.obedience + OBEDIENCE_CHANGE_INTOL_FORCED)
-            for _ in range(2):
-                if random.random() < INTOL_FOOD_SICK_CHANCE / 100:
-                    self._sicken()
-                    break
+            # checkIntolerantFoodSick rolls worse AND fresh once each (the old
+            # x2 fresh loop misread it; sickness/injury audit 2026-07-06)
+            self._check_worse_sick(INTOL_WORSE_SICK_CHANCE)
+            self._check_sick(INTOL_FOOD_SICK_CHANCE)
         return tier
 
     def _become(self, num):
@@ -2500,11 +2573,9 @@ class Pet:
             # a rough waking is a health hazard: an already-sick sleeper may
             # worsen, and from the DisturbLimitCheckSick'th disturb every poke
             # risks fresh illness (canon checkWorseSick / checkSick)
-            if self.sick and random.randrange(100) < DISTURB_WORSE_SICK_CHANCE:
-                self._worsen_sick()
-            elif (not self.sick and self.disturb >= DISTURB_LIMIT_CHECK_SICK
-                    and random.randrange(100) < DISTURB_SICK_CHANCE):
-                self._sicken()
+            self._check_worse_sick(DISTURB_WORSE_SICK_CHANCE)
+            if self.disturb >= DISTURB_LIMIT_CHECK_SICK:
+                self._check_sick(DISTURB_SICK_CHANCE)
         # DisturbMoodDec{,Restless,NotRestless}: a restless pet WANTED up
         self._set_mood(self.mood - DISTURB_MOOD_DEC.get(self.restless, 10))
         enth = {1: -1, 0: -2, -1: -3}.get(self.restless, -2)   # DisturbEnthusiasmDec*
@@ -2761,17 +2832,11 @@ class Pet:
         # sickness risk (worse 16%/pile if already sick, else sick 8%/pile)
         if self.poop > 0:
             self._set_mood(self.mood - DIRTY_EATING_MOOD_DEC)
-            got_ill = False
-            if self.sick:
-                if random.randrange(100) < DIRTY_EATING_WORSE_CHANCE * self.poop:
-                    self._worsen_sick()
-                    got_ill = True
-            elif random.randrange(100) < DIRTY_EATING_SICK_CHANCE * self.poop:
-                self._sicken()
-                got_ill = True
+            worse = self._check_worse_sick(DIRTY_EATING_WORSE_CHANCE * self.poop)
+            got_ill = self._check_sick(DIRTY_EATING_SICK_CHANCE * self.poop)
             # checkDirtyEating: a COMPLIANT pet forced to eat amid the filth
             # and sickened by it resents you (obedience audit 2026-07-06)
-            if got_ill and complied:
+            if (worse or got_ill) and complied:
                 self._set_obedience(self.obedience + OBEDIENCE_CHANGE_SICK_FORCED)
         tier = self._eat_food(food.get("category", ""), complied)   # DVPet taste: fav/disliked/neutral
         self._last_meal_disliked = (tier == "disliked")      # eat(): disliked -> +9 grimace bite
@@ -2881,10 +2946,8 @@ class Pet:
         self._set_mood(self.mood + self.enthusiasm)       # exercise(): mood rides the spirit
         # checkWorseSick(ExerciseWorseSickChance): drilling a SICK pet can worsen it --
         # and if it only trained because you spent its compliance, it resents you
-        if self.sick and random.randrange(100) < EXERCISE_WORSE_SICK_CHANCE:
-            self._worsen_sick()
-            if complied:
-                self._set_obedience(self.obedience + OBEDIENCE_CHANGE_SICK_FORCED)
+        if self._check_worse_sick(EXERCISE_WORSE_SICK_CHANCE) and complied:
+            self._set_obedience(self.obedience + OBEDIENCE_CHANGE_SICK_FORCED)
         # canon ExerciseWeightDec = 0 (classic): drills do NOT shed flat weight.
         # The body cost is CALORIC (setCaloriesAndChangeWeight): an activity
         # decrement landing while ALREADY in deficit sheds ActivityWeightChange.
@@ -2910,10 +2973,8 @@ class Pet:
         else:                                            # DVPet exercise-fail penalties
             self._set_mood(self.mood - 10)               # ExerciseFailMoodDec
             self._set_obedience(self.obedience - 1)      # ExerciseFailObedienceDec
-        # training while overweight risks an injury
-        if evolution.weight_category(self.weight, self._base_weight()) == "Over" and random.random() < 0.5:
-            self._injure()
-        self._check_worse_injury(in_battle=False)        # drilling an injured pet can worsen it
+        # checkExerciseInj: worsening first, then the fresh matrix roll
+        self._check_exercise_injury(complied)
         # DVPet HP_Training_AttackSuccess = hit pose (frame 6); AttackFail = dejected pose
         # (frame 9). A failed drill shows the dejected reaction (which surfaces the "unhappy"
         # discourage emote), not an attack pose.
@@ -2952,7 +3013,11 @@ class Pet:
         if not style_free:
             self._set_obedience(self.obedience + BATTLE_FREE_OBED_INC)   # fighting under orders builds discipline
         self._set_energy(self.energy - 1)               # battle energy (BattleWon/LostEnergyDec)
-        self._check_worse_injury(in_battle=True)         # battling injured can worsen it
+        # checkBattleInj: worsening, then a fresh roll WIN OR LOSE (a loss
+        # pads +50/1000; the old loss-only 30% flat roll is gone).  tuipet's
+        # battle flow doesn't thread compliance, so the forced-obedience leg
+        # stays dormant here (complied=False).
+        self._check_battle_injury(won)
         if won:
             self.wins += 1
             # lifetime wins (cross-generation, gates the mystery eggs) -- counted
@@ -3014,8 +3079,6 @@ class Pet:
         self._set_mood(self.mood - 20)               # BattleLostMoodDec
         self._set_enthusiasm(self.enthusiasm - 6)    # BattleLostEnthusiasmDec
         self._set_obedience(self.obedience - 1)      # BattlesObedienceDec (a loss saps trust)
-        if random.random() < 0.3:
-            self._injure()
         self._set_anim("sad", 2.0)
         return "Defeat..."
 
@@ -3245,6 +3308,10 @@ class Pet:
         self.inj_length = max(self.inj_length, rolled)
         self._set_mood(self.mood - INJ_MOOD_DEC)
         self._set_enthusiasm(self.enthusiasm + INJ_ENTH_CHANGE)
+        # InjuryEnergyDec (sickness/injury audit 2026-07-06): a fresh injury
+        # saps a bar -- inj_length is already set, so the red-energy fatigue
+        # trigger's !isInj guard holds like canon's
+        self._set_energy(self.energy - INJURY_ENERGY_DEC)
 
     def has_vitamin(self):
         """PhysicalState.hasVitamin: a vitamin is active, guarding against worse injuries."""
@@ -3264,8 +3331,7 @@ class Pet:
         lurch, mood and lifespan costs, and it comes right up."""
         if self.vitamin_lapse > 0:
             self.mistake_day += 1                            # BadVitaminMissedDayChange
-            if self.sick and random.randrange(100) < VITAMIN_WORSE_SICK_CHANCE:
-                self._worsen_sick()
+            self._check_worse_sick(VITAMIN_WORSE_SICK_CHANCE)
             self._advance_bm(BAD_VITAMIN_BM_INC)
             self._set_mood(self.mood - BAD_VITAMIN_MOOD_DEC)
             self._burn_life(BAD_VITAMIN_LIFE_DEC)
@@ -3285,19 +3351,117 @@ class Pet:
         self.inj_length += random.randint(MIN_INJ_LENGTH, MAX_INJ_LENGTH) * INJ_LAPSE_MIN
         self._set_energy(self.energy - WORSE_INJ_ENERGY_DEC)
 
-    def _check_worse_injury(self, in_battle):
-        """calcWorse{Exercise,Battle}Inj: pushing an already-injured pet can worsen the
-        injury, at a chance set by weight and whether a vitamin is active."""
+    def _compat_inj_change(self):
+        """getCompatibilityInjChange: the home shifts injury odds +-1 per axis
+        (a compatible field/element = sturdier)."""
+        h = self.habitat_obj()
+        return ((self.field in h["incompat_fields"])
+                + (self.element in h["incompat_elements"])
+                - (self.field in h["compat_fields"])
+                - (self.element in h["compat_elements"]))
+
+    def _inj_matrix_roll(self, table, bound, inj_chance):
+        """The shared weight x vitamin injury matrix (checkExerciseInj /
+        checkBattleInj / calcWorse*Inj all ride it): bad weight is Over OR
+        Under; a vitamin blunts it (sickness/injury audit 2026-07-06)."""
+        healthy = evolution.weight_category(self.weight, self._base_weight()) == "Healthy"
+        key = ("good_" if healthy else "bad_") + ("v" if self.has_vitamin() else "nv")
+        return random.randrange(bound) < table[key] + inj_chance
+
+    def _neg_energy_mod(self, coef):
+        """-(energy x coef) while in the red: exhaustion pads injury odds."""
+        return int(-(self.energy * coef)) if self.energy < 0 else 0
+
+    def _check_exercise_injury(self, complied=False):
+        """checkExerciseInj: EVERY drill risks worsening, then a fresh injury --
+        the old 'overweight -> 50%' paraphrase is gone (canon baseline is
+        1/1000 healthy, 10/1000 off-weight, vitamin-blunted, padded by age /
+        fatigue / exhaustion / an incompatible home)."""
+        self._check_worse_injury("exercise", complied=complied)
+        if self.is_injured():
+            return
+        inj = ((INJ_GERIATRIC if self.is_geriatric else 0)
+               + (FATIGUE_MOD * INJ_FATIGUE_COEF if self.is_fatigued() else 0)
+               + self._neg_energy_mod(INJ_NEG_ENERGY_COEF)
+               + self._compat_inj_change())
+        if self._inj_matrix_roll(INJ_EXERCISE, INJ_CHANCE, inj):
+            self._injure()
+            if complied:
+                self._set_obedience(self.obedience + OBED_INJ_FORCED)
+
+    def _check_battle_injury(self, won, complied=False):
+        """checkBattleInj: worsening first, then a fresh roll -- WIN OR LOSE
+        (a loss pads +50/1000, being a baby or an elder +10, fatigue +100).
+        The old loss-only 30% flat roll is gone."""
+        self._check_worse_injury("battle", won=won, complied=complied)
+        if self.is_injured():
+            return
+        inj = ((BATTLE_INJ_BAD_AGE if (self.is_geriatric
+                                       or self.stage in ("Fresh", "InTraining")) else 0)
+               + (FATIGUE_MOD * BATTLE_INJ_FATIGUE_COEF if self.is_fatigued() else 0)
+               + (0 if won else BATTLE_INJ_LOSS)
+               + self._neg_energy_mod(BATTLE_INJ_NEG_ENERGY_COEF)
+               + self._compat_inj_change())
+        if self._inj_matrix_roll(INJ_BATTLE, BATTLE_INJ_CHANCE, inj):
+            self._injure()
+            if complied:
+                self._set_obedience(self.obedience
+                                    + (OBED_INJ_BATTLE_WON if won else OBED_INJ_BATTLE_LOST))
+
+    def _check_worse_injury(self, kind, won=True, complied=False):
+        """calcWorse{Exercise,Battle}Inj: pushing an already-injured pet can
+        worsen the injury.  kind: "exercise" / "battle" / "travel" -- canon's
+        checkWorseTravelInj rides the BATTLE table with won=True (the old port
+        used the exercise table for walks).  The additive term (age, fatigue,
+        exhaustion, home) was missing entirely."""
         if not self.is_injured():
             return
-        table = WORSE_INJ_BATTLE if in_battle else WORSE_INJ_EXERCISE
-        good_weight = evolution.weight_category(self.weight, self._base_weight()) == "Healthy"
-        if good_weight:
-            factor = table["good_v"] if self.has_vitamin() else table["good_nv"]
-        else:
-            factor = table["bad_v"] if self.has_vitamin() else table["bad_nv"]
-        if random.randint(0, WORSE_INJ_CHANCE - 1) < factor:
+        if kind == "exercise":
+            table = WORSE_INJ_EXERCISE
+            inj = ((WORSE_INJ_GERIATRIC if self.is_geriatric else 0)
+                   + (FATIGUE_MOD if self.is_fatigued() else 0))
+        else:                                        # battle / travel share a table
+            table = WORSE_INJ_BATTLE
+            inj = ((WORSE_BATTLE_INJ_BAD_AGE if (self.is_geriatric
+                                                 or self.stage in ("Fresh", "InTraining")) else 0)
+                   + (FATIGUE_MOD if self.is_fatigued() else 0)
+                   + (0 if won else WORSE_BATTLE_INJ_LOSS))
+        inj += self._neg_energy_mod(WORSE_INJ_NEG_ENERGY_COEF) + self._compat_inj_change()
+        if self._inj_matrix_roll(table, WORSE_INJ_CHANCE, inj):
             self._worsen_injury()
+            if complied:
+                self._set_obedience(self.obedience
+                                    + (OBED_INJ_FORCED if kind == "exercise"
+                                       else (OBED_INJ_BATTLE_WON if won else OBED_INJ_BATTLE_LOST)))
+
+    def _check_sick(self, target):
+        """checkSick(target, bound): the bound is SickChance shaped by the
+        home (+-5/axis, compatible = safer) and old age (-25 = frailer)."""
+        if self.sick or target <= 0:
+            return False
+        h = self.habitat_obj()
+        bound = (SICK_CHANCE_BOUND
+                 + SICK_COMPAT_CHANGE * ((self.element in h["compat_elements"])
+                                         + (self.field in h["compat_fields"])
+                                         - (self.field in h["incompat_fields"])
+                                         - (self.element in h["incompat_elements"]))
+                 - (SICK_GERIATRIC_FACTOR if self.is_geriatric else 0))
+        if random.randrange(max(1, bound)) < target:
+            self._sicken()
+            return True
+        return False
+
+    def _check_worse_sick(self, target):
+        """checkWorseSick(prob): fatigue pads the target (+FatigueMod), old
+        age thins the bound (-25)."""
+        if not self.sick or target <= 0:
+            return False
+        target += FATIGUE_MOD if self.is_fatigued() else 0
+        bound = WORSE_SICK_BOUND - (WORSE_SICK_GERIATRIC if self.is_geriatric else 0)
+        if random.randrange(max(1, bound)) < target:
+            self._worsen_sick()
+            return True
+        return False
 
     def _fatigue(self):
         """PhysicalState.fatigue: the pet collapses from over-exertion — a heavy one-time
