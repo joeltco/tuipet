@@ -205,3 +205,36 @@ def test_pm_lands_in_the_lobby_chat_feed():
     c._handle('{"t": "pm_ok", "to_name": "mika", "text": "sup"}')
     assert ("✉mika", "hey") in c.state.chat
     assert ("✉→mika", "sup") in c.state.chat
+
+
+def test_egg_sessions_are_gated_both_directions():
+    """Egg-battle audit (2026-07-06): the lobby has NO stage gate (chat/PMs
+    are fine for an egg) but sessions must honour the offline gates -- an egg
+    could INVITE battle/jogress and ACCEPT a battle invite, and the PvP round
+    replay then CRASHED on the egg's missing roster sheet."""
+    from tuipet.pet import Pet
+    s = LobbyState()
+    s.connected = True
+    s.me_id, s.me_name = 1, "joel"
+    s.roster = [{"id": 1, "name": "joel", "pet": {}, "live": True},
+                {"id": 2, "name": "mika", "pet": {"name": "Gabumon"}, "live": True}]
+
+    class _Stub:
+        def __init__(self, state): self.state = state; self.sent = []
+        def respond(self, *a, **k): self.sent.append(("respond",) + a)
+        def relay(self, *a, **k): self.sent.append(("relay",) + a)
+        def invite(self, *a, **k): self.sent.append(("invite",) + a)
+        def update_pet(self, *a, **k): pass
+        def pm(self, *a, **k): pass
+
+    stub = _Stub(s)
+    egg = Pet.new_egg()
+    pan = lobbyscreen.LobbyPanel(egg, lambda n, p, c: stub, name="joel", pw="x")
+    pan.key("enter"); pan.key("b")                      # egg tries to invite battle
+    assert "Too young" in pan.status and not stub.sent
+    pan.key("enter"); pan.key("j")                      # ...and jogress
+    assert "Too young" in pan.status and not stub.sent
+    s.inbox.append({"t": "invite", "from_id": 2, "from_name": "mika", "kind": "battle"})
+    pan.anim()                                          # incoming invite auto-declines
+    assert pan.invite_prompt is None and pan.phase == "lobby"
+    assert stub.sent == [("respond", 2, "battle", False)]

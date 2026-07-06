@@ -210,7 +210,16 @@ class LobbyPanel:
         for m in list(s.inbox):
             t = m.get("t")
             if t == "invite":
-                if self.phase == "lobby" and self.invite_prompt is None and self.action_for is None:
+                gate = (self.pet.can_battle() if m.get("kind") == "battle"
+                        else jogress.can_jogress(self.pet))
+                if gate:
+                    # the pet can't honour this session (an egg, asleep...):
+                    # auto-decline instead of prompting -- accepting used to
+                    # start a bout the replay couldn't even render
+                    # (egg-battle audit 2026-07-06)
+                    self.client.respond(m.get("from_id"), m.get("kind"), False)
+                    self.status = gate
+                elif self.phase == "lobby" and self.invite_prompt is None and self.action_for is None:
                     self.invite_prompt = m
                     self.sfx = "menu"
                 else:
@@ -523,8 +532,16 @@ class LobbyPanel:
         if self.action_for is not None:
             pid, pname, plive = self.action_for
             if k in ("b", "B") and plive:
+                err = self.pet.can_battle()      # an egg was free to INVITE (egg-battle audit 2026-07-06)
+                if err:
+                    self.status, self.action_for = err, None
+                    return None
                 self.client.invite(pid, "battle"); self.status = f"Battle invite → {pname}"; self.action_for = None
             elif k in ("j", "J") and plive:
+                err = jogress.can_jogress(self.pet)
+                if err:
+                    self.status, self.action_for = err, None
+                    return None
                 self.client.invite(pid, "jogress"); self.status = f"Jogress invite → {pname}"; self.action_for = None
             elif k in ("m", "M"):
                 # compose a private message: the input line retargets

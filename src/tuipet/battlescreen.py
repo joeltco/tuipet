@@ -332,7 +332,14 @@ class BattlePanel:
 
     # ---- rendering ----
     def _rows(self, num, pose):
-        fr = data.load_sprites()[1][num]["frames"]
+        rec = data.load_sprites()[1].get(num)
+        if rec is None:
+            # no roster sheet (an egg's num -1): render the shell art instead
+            # of crashing -- the lobby PvP replay hit this live before the
+            # session gates landed (egg-battle audit 2026-07-06)
+            return data.bob_frame(num, pose,
+                                  egg_type=getattr(self.pet, "egg_type", 0))
+        fr = rec["frames"]
         return (fr[pose] if pose < len(fr) else None) or fr[0]
 
     def _scene(self, placements, overlay):

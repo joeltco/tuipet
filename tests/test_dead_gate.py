@@ -120,3 +120,22 @@ def test_training_panel_survives_a_direct_egg():
         for _ in range(12):
             pan.anim()
         pan.text()                                # crashed before the fix
+
+
+def test_battle_panel_survives_a_direct_egg():
+    """Egg-battle audit (2026-07-06): can_battle gates the key, but the
+    lobby PvP replay constructed BattlePanel with the pet directly and its
+    raw [num] sheet lookup crashed on an egg -- walk every phase."""
+    import random
+    from tuipet.pet import Pet
+    from tuipet.battlescreen import BattlePanel
+    random.seed(3)
+    egg = Pet.new_egg()
+    assert egg.can_battle()
+    pan = BattlePanel(egg)
+    for k in ("", "enter", "1", "space", "space", "escape"):
+        if k:
+            pan.key(k)
+        for _ in range(15):
+            pan.anim()
+        pan.text()                                # crashed before the fix
