@@ -168,3 +168,54 @@ def test_map_final_boss_cues_the_victory_parade():
     for _ in range(3):
         panel.key("space")
     assert panel._parade is None
+
+
+def test_mid_journey_contracts():
+    """Mid-journey audit (2026-07-06), all CLEAN -- pin the load-bearers:
+    a lost battle costs one adventure life + the enemy's knockback; at zero
+    life the pet RETREATS (toClosestTown; zone start when none behind) with
+    life refilled -- the run never ends; clearing the gate advances the zone
+    ON THE PET (quit-safe: a re-entered adventure resumes the NEXT zone,
+    location per-outing by design); a boss FLEE knocks back and re-arms the
+    gate (per-pass cleared set)."""
+    import random
+    from tuipet import data
+    from tuipet.adventure import Adventure, MAX_LIFE
+    from tuipet.pet import Pet
+
+    def hero():
+        rec = data.load_sprites()[1][100]
+        p = Pet(num=100, name=rec["name"], stage="Champion",
+                attribute="Vaccine", obedience=500)
+        p.world_seconds = 10 * 3600.0
+        p.energy = p.max_energy
+        return p
+
+    random.seed(5)
+    adv = Adventure(hero())
+    adv.location = 750
+    foe = {"name": "TestFoe", "num": 999, "penalty": 3}
+    adv.resolve(False, False, foe)
+    assert (adv.life, adv.location) == (MAX_LIFE - 1, 747)   # life + knockback
+    adv.resolve(False, False, foe)
+    adv.resolve(False, False, foe)                            # third loss: retreat
+    assert adv.life == MAX_LIFE and adv.location == 0         # refilled at the fallback
+    assert not adv.done                                       # the run survives
+
+    p2 = hero()
+    adv2 = Adventure(p2)
+    gate = (adv2.zone["bosses"] or [{"num": 1, "name": "Gate"}])[-1]
+    adv2.location = adv2.total_steps
+    adv2.boss_pending = True
+    adv2.resolve(True, True, dict(gate, parade_msg=""))
+    assert (adv2.zi, p2.adv_zone) == (1, 1)                   # zone advance persists
+    p2.adv_loc = 0
+    adv3 = Adventure(p2)
+    assert (adv3.zi, adv3.location) == (1, 0)                 # resume next zone, fresh outing
+
+    adv4 = Adventure(hero())
+    adv4.location = 50
+    adv4.boss_pending = True
+    adv4.flee({"name": "Blocker", "num": 500, "penalty": 5}, was_boss=True)
+    assert adv4.location == 45 and not adv4.boss_pending      # knocked back...
+    assert 500 not in adv4._cleared                           # ...and the gate re-arms

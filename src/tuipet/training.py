@@ -66,6 +66,10 @@ DATA_FLY = 4                  # shot flight ticks (DVPet attackGreen used 3 for 
 HP_ROUNDS = 3                 # DVPet _hpTrainingRounds
 HP_ROUNDS_WON = 2             # DVPet _hpTrainingRoundsWon (first to 2 wins the drill)
 HP_TRAIN_DIFFICULTY = 11      # DVPet _hpTrainDifficultyChange: rank = fullHealthPoints // 11
+HP_SCROLL = (8, 6, 4)         # ticks between reel steps by rank -- the drill REDO (Joel
+#                               2026-07-06): the selector auto-scrolls under the target in
+#                               the LCD and SPACE stops it on the match; the message box
+#                               is a status strip again, never a gaming area
 HP_ROUND_LEN = (60, 50, 40)   # ticks/round by rank (Easy/Normal/Hard).  DVPet shrinks this with HP,
                               # but at tuipet's 10Hz that left only ~1s/round on a grown pet (you
                               # couldn't move + lock after round 1) -- floored generous: 6/5/4s.
@@ -125,7 +129,7 @@ with open(os.path.join(os.path.dirname(__file__), "data", "hp_dummies.json")) as
 # symbol (atk_vaccine=circle / atk_data=square / atk_virus=triangle, 7x7) upscaled 2x to 14x14
 # so its shape reads instantly and matches the ● ■ ▲ picker glyphs in the gauge.
 _HP_ICON_KEYS = ("atk_vaccine", "atk_data", "atk_virus")   # index == hp_target (0/1/2)
-HP_SYMS = ("●", "■", "▲")                                   # picker glyphs mirror the icon shapes
+# (HP_SYMS picker glyphs retired with the reel redo 2026-07-06 -- the real icons stack in the LCD)
 
 
 def _upscale2(sprite):
@@ -145,7 +149,7 @@ def _hp_target_icon(target):
 
 
 GAMES = [
-    ("hp",      "HP Drill", "Effort",  "match the symbol — best of 3"),
+    ("hp",      "HP Drill", "Effort",  "stop the reel on the match — best of 3"),
     ("vaccine", "Vaccine",  "Vaccine", "mash the bag — fast!"),
     ("data",    "Data",     "Data",    "block the attack — high or low"),
     ("virus",   "Virus",    "Virus",   f"stop the bar over {VIRUS_BAR_MIN}"),
@@ -256,10 +260,15 @@ class TrainingPanel:
 
     def _new_hp_round(self):
         self.hp_target = random.randrange(3)
-        self.hp_pick = 0
+        # the reel never STARTS on the match (a round-open SPACE would be a
+        # free win); it lands there on its own -- that's the timing skill
+        self.hp_pick = (self.hp_target + random.choice((1, 2))) % 3
+        rank = min((getattr(self.pet, "full_health", 0) or 10) // HP_TRAIN_DIFFICULTY, 2)
+        self.hp_scroll = HP_SCROLL[rank]
+        self.hp_scroll_t = self.hp_scroll
         self.round_len = self._hp_round_len()
         self.round_t = self.round_len
-        self.flash = f"round {self.rep + 1}/{HP_ROUNDS} — pick the matching symbol"
+        self.flash = f"round {self.rep + 1}/{HP_ROUNDS} — SPACE on the match"
 
     def _hp_resolve(self, correct):
         if correct:
@@ -331,6 +340,10 @@ class TrainingPanel:
             return
         gk = self.gkey
         if gk == "hp":
+            self.hp_scroll_t -= 1
+            if self.hp_scroll_t <= 0:                       # the reel turns on its own
+                self.hp_scroll_t = self.hp_scroll
+                self.hp_pick = (self.hp_pick + 1) % 3
             self.round_t -= 1
             if self.round_t <= 0:
                 self._hp_resolve(False)                     # timed out -> a wrong guess
@@ -410,15 +423,8 @@ class TrainingPanel:
         if k in ("escape", "t"):
             return ("done", None)
         gk = self.gkey
-        if gk == "hp":                       # read the bag's belly symbol, pick the match
-            if k in ("up", "k", "left", "h"):           # the options stack vertically -> up/down
-                self.hp_pick = (self.hp_pick - 1) % 3   # (left/right also work)
-            elif k in ("down", "j", "right", "l"):
-                self.hp_pick = (self.hp_pick + 1) % 3
-            elif k in ("1", "2", "3"):
-                self.hp_pick = int(k) - 1
-                self._hp_resolve(self.hp_pick == self.hp_target)
-            elif k in ("space", "enter"):
+        if gk == "hp":                       # the reel spins itself: SPACE stops it on the match
+            if k in ("space", "enter"):
                 self._hp_resolve(self.hp_pick == self.hp_target)
         elif gk == "data":                   # DVPet onShield: ONE button toggles the shield top<->bot.
             if not self.fired and k in ("space", "enter", "up", "down", "k", "j"):
@@ -665,10 +671,17 @@ class TrainingPanel:
             #                                       the dummy faces the char like a foe)
             pf = _crop(self._frame(rec, self._pose_now(0)))           # char pose 0; 6/9 reactions
             overlay.extend(_blit(pf, GRID_X0 + CELL + 6, BASE_Y - len(pf)))
+            # the REDO (Joel 2026-07-06): the target sky-centre and the auto-
+            # scrolling reel STACKED right under it, both in the LCD -- the
+            # match is judged by eye, top against bottom; SPACE stops the reel
             ic = E.get(_HP_ICON_KEYS[self.hp_target], [None])[0]
+            pk = E.get(_HP_ICON_KEYS[self.hp_pick], [None])[0]
             if ic:
                 iw = max(len(r) for r in ic)
                 overlay.extend(_blit(ic, (COLS - iw) // 2, 0))        # the target, sky-centre
+            if pk:
+                pw = max(len(r) for r in pk)
+                overlay.extend(_blit(pk, (COLS - pw) // 2, 9))        # the reel, stacked tight beneath
         # scene-only: the gauge + hint ride the strip (box-clip audit 2026-07-04)
         return render_scene(placements, COLS, ARENA_ROWS, on, LCD_BG, overlay=overlay, bgimg=bgimg)
 
@@ -679,10 +692,11 @@ class TrainingPanel:
         a live meter has to hold still."""
         gk = self.gkey
         if gk == "hp":
+            # STATUS only -- the game objects live in the LCD now (the redo,
+            # Joel 2026-07-06: the message box is never a gaming area)
             tb = int((max(self.round_t, 0) / max(self.round_len, 1)) * 8)
-            return (f"match [b]{HP_SYMS[self.hp_target]}[/]  pick "
-                    f"[b]▸{HP_SYMS[self.hp_pick]}◂[/]  {self.rep + 1}/{HP_ROUNDS}  "
-                    f"{'▓' * tb}{'░' * (8 - tb)}")
+            return (f"[b]SPACE[/] when the shapes match  "
+                    f"{self.rep + 1}/{HP_ROUNDS}  {'▓' * tb}{'░' * (8 - tb)}")
         if gk == "vaccine":
             hit = self._strike_t > 0
             filled = int((max(self.timer, 0) / VACCINE_WINDOW) * 9)
@@ -709,7 +723,7 @@ class TrainingPanel:
 
     def _hint(self):
         # keep every hint <= menu.W (38 cols) or footer() clips it mid-word
-        return {"hp": "←→ pick the symbol   SPACE fire",
+        return {"hp": "SPACE stops the reel   ESC out",
                 "vaccine": "SPACE punch the bag!   ESC out",
                 "data": "SPACE flip the shield   ESC out",
                 "virus": "watch the marker   SPACE stops it"}[self.gkey]

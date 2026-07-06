@@ -291,3 +291,54 @@ def test_bracket_preview_bobs_at_the_walk_beat():
     assert pan._frames(num) == f0
     pan.frame_i = 5                       # next beat: the pose flips
     assert pan._frames(num) != f0
+
+
+def test_mid_bracket_contracts():
+    """Mid-bracket audit (2026-07-06), all CLEAN -- pin the semantics:
+    forfeit-from-tree and mid-bout FLEE both record the elimination exactly
+    once (escape after `over` never double-records); same-hour re-entry is
+    CANON (Tourney_Registration gates only checkTourneyClosed + isEligible --
+    no entered flag; the hour window is the throttle)."""
+    import random
+    from tuipet import data
+    from tuipet.tournamentscreen import TournamentPanel
+
+    def champ():
+        rec = data.load_sprites()[1][100]
+        p = Pet(num=100, name=rec["name"], stage="Champion",
+                attribute="Vaccine", obedience=500)
+        p.world_seconds = 10 * 3600.0
+        p.energy = p.max_energy
+        return p
+
+    random.seed(11)
+    p = champ()
+    pan = TournamentPanel(p)
+    pan.cursor = tournament._hour(p)
+    pan.key("enter")
+    assert pan.tourney is not None
+    r1 = pan.key("escape")                     # forfeit from the opening tree
+    assert pan.tourney.over and r1[0] == "done"
+    last = pan.tourney.last
+    assert pan.key("escape") == ("done", last)  # no double record
+    pan2 = TournamentPanel(p)                   # canon: the hour is the throttle
+    pan2.cursor = tournament._hour(p)
+    pan2.key("enter")
+    assert pan2.tourney is not None
+
+    random.seed(11)
+    p3 = champ()
+    pan3 = TournamentPanel(p3)
+    pan3.cursor = tournament._hour(p3)
+    pan3.key("enter")
+    pan3.key("space"); pan3.key("space")        # into the round-one bout
+    assert pan3.sub is not None
+    for _ in range(30):
+        pan3.anim()
+    for _ in range(60):                         # flee the bout
+        pan3.anim()
+        if pan3.sub is None:
+            break
+        pan3.key("escape"); pan3.key("enter")
+    assert pan3.sub is None and pan3.tourney.over
+    assert "Eliminated" in pan3.tourney.last    # the flee IS the elimination

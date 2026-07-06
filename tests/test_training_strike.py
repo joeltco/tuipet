@@ -166,3 +166,33 @@ def test_vaccine_drill_counts_mashes():
     for _ in range(5):
         panel.key("space")
     assert panel.taps == 5
+
+
+def test_hp_reel_auto_scrolls_and_space_stops_it():
+    """The HP drill REDO (Joel 2026-07-06): the selector lives IN THE LCD,
+    stacked under the target, and AUTO-SCROLLS -- SPACE stops it on the
+    match.  The message box is a status strip again (no game glyphs)."""
+    import random
+    random.seed(7)
+    panel = _panel("hp")
+    panel.key("enter")                             # start the drill from the menu
+    assert panel.phase == "play"
+    assert panel.hp_pick != panel.hp_target        # never starts on a free win
+    pick0 = panel.hp_pick
+    for _ in range(panel.hp_scroll):
+        panel.anim()
+    assert panel.hp_pick == (pick0 + 1) % 3        # the reel turned on its own
+    # both icons render in the LCD, stacked (target sky-centre, reel beneath)
+    txt = panel.text()
+    assert txt.plain.count("\n") + 1 >= 12
+    # the strip is STATUS only: no pick glyphs, no shape markers
+    g = panel._gauge()
+    assert "SPACE" in g and "▸" not in g and "●" not in g and "■" not in g
+    # ride the reel onto the target and stop it
+    guard = 0
+    while panel.hp_pick != panel.hp_target and guard < 40:
+        panel.anim(); guard += 1
+    assert panel.hp_pick == panel.hp_target
+    won0 = panel.rounds_won
+    panel.key("space")
+    assert panel.rounds_won == won0 + 1            # a timed stop scores
