@@ -79,6 +79,8 @@ class HabitatPanel:
         """The selected habitat AS A SCENE: the pet stands in the backdrop it
         would call home — window-shopping included (render-only preview)."""
         h = self.rows[self.cursor]
-        fr = data.bob_frame(self.pet.num, self.frame_i)
-        return menu.paint([grid.center(grid.prep(fr, ph=ROWS * 2))],
-                          self.pet.background(h["id"]), rows=ROWS, cols=COLS)
+        fr = data.bob_frame(self.pet.num, self.frame_i,
+                            egg_type=getattr(self.pet, "egg_type", 0))
+        placements = [grid.center(grid.prep(fr, ph=ROWS * 2))] if fr else []
+        return menu.paint(placements, self.pet.background(h["id"]),
+                          rows=ROWS, cols=COLS)

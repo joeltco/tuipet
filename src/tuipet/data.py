@@ -80,13 +80,21 @@ def _content_fill(frame):
     return sum(r[left:right + 1].count("1") for r in rows) / (w * len(rows))
 
 
-def bob_frame(num, frame_i, role="idle", beat=5):
+def bob_frame(num, frame_i, role="idle", beat=5, egg_type=0):
     """The idle-bob frame fetch: the role's pose keyed at frame_i // beat
     (beat 5 = the ~2Hz WALK_BEAT bob every scene screen uses; dna's urgency
     bob passes 2, the title's gentle bob 4).  This fetch lived in EIGHT
     hand-rolled copies across the screens, drifting across four cadences
-    (refactor 2026-07-05).  Falls back to the first non-empty frame; None
-    when the mon has no sheet."""
+    (refactor 2026-07-05).  num -1 = the EGG, whose sheet lives in egg data,
+    not the roster -- the habitat browser CRASHED on an egg (egg-stage audit
+    2026-07-05); pass the pet's egg_type for the right shell art.  Falls back
+    to the first non-empty frame; None when the mon has no sheet."""
+    if num == -1:
+        from . import egg as egg_mod
+        fr = egg_mod.frames(egg_type)
+        if not fr:
+            return None
+        return fr[(frame_i // beat) % 2] or fr[0]
     rec = load_sprites()[1].get(num)
     if not rec:
         return None

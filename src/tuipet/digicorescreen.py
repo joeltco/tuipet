@@ -341,17 +341,11 @@ class DigiCorePanel:
         return None
 
     def _pet_rows(self, num, idx=None):
-        if num == -1:
-            # the EGG itself sits in the core (its sheet lives in egg data,
-            # not the roster -- the gaze's first beat rendered an empty LCD;
-            # audit 2026-07-05)
-            from . import egg as egg_mod
-            fr = egg_mod.frames(getattr(self.pet, "egg_type", 0))
-            if not fr:
-                return None
-            return fr[(self.frame_i // 5) % 2] or fr[0]
-        if idx is None:
-            return data.bob_frame(num, self.frame_i)   # WALK_BEAT bob, not 10Hz
+        if idx is None or num == -1:
+            # WALK_BEAT bob; bob_frame owns the egg's shell art (num -1 has
+            # no roster sheet -- the gaze rendered an empty LCD, audit 2026-07-05)
+            return data.bob_frame(num, self.frame_i,
+                                  egg_type=getattr(self.pet, "egg_type", 0))
         rec = data.load_sprites()[1].get(num)
         if not rec:
             return None
