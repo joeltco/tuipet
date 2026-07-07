@@ -259,3 +259,58 @@ def test_jogress_and_cup_pokes_disturb_the_sleeper_too():
         msg = gate(p)
         assert msg and "grumbles" in msg, msg
         assert not p.asleep and p.disturb == d0 + 1 and p.mood < m0, gate
+
+
+def test_neglect_never_opens_a_scold_window():
+    """Canon sets _scold = true at exactly THREE sites -- refusals, travel
+    refusal, the discipline tantrum.  The hunger/strength care mistakes cost
+    mistakes + obedience, they never make the pet 'act up' (discipline audit
+    2026-07-06: the invented windows leaked -10 obedience per miss and fed
+    the refusal spiral -- the answer to 'why do digimon misbehave so much')."""
+    p = _pet(hunger=0, obedience=50)
+    p._hunger_call_t = 599.0
+    p._tick_hunger(2.0)                              # the hunger mistake lands
+    assert p.care_mistakes >= 1 and not p.scold_flag
+    q = _pet(strength=0, obedience=50)
+    q._str_call_t = 599.0
+    q._tick_body(2.0)                                # the strength mistake lands
+    assert q.care_mistakes >= 1 and not q.scold_flag
+
+
+def test_a_standing_care_call_suppresses_the_tantrum(monkeypatch):
+    """checkDisciplineCall gates on checkCall(): while a care light stands
+    (hunger/strength empty) the pet is asking, not acting up."""
+    import random as _r
+    monkeypatch.setattr(_r, "randint", lambda a, b: 0)   # the roll always fires
+    p = _pet(obedience=0, hunger=0, strength=2)
+    p._check_discipline_call()
+    assert not p.discipline_call                     # hungry: the call light rules
+    p2 = _pet(obedience=0, hunger=4, strength=0)
+    p2._check_discipline_call()
+    assert not p2.discipline_call                    # effort-empty likewise
+    p3 = _pet(obedience=0, hunger=4, strength=2)
+    p3._check_discipline_call()
+    assert p3.discipline_call                        # no call standing: it may tantrum
+
+
+def test_tantrum_personality_mods_read_the_live_gauges(monkeypatch):
+    """The +-target mods key on the LIVE hunger/strength gauges vs full-4
+    (canon _hunger/_exercise), not drills-done-today; a peckish picky eater
+    and a lazy low-effort pet both CALM the roll by 1 (target 15), a fretful
+    one heats it to 19.  Probed by fixing the roll just around the base 16."""
+    import random as _r
+
+    def fires(roll, **kw):
+        monkeypatch.setattr(_r, "randint", lambda a, b: roll)
+        base = {"obedience": 0, "hunger": 4, "strength": 4}
+        base.update(kw)
+        q = _pet(**base)
+        q._check_discipline_call()
+        return q.discipline_call
+
+    assert fires(15)                                          # base target 16
+    assert not fires(16)
+    assert fires(17, strength=2, restless=1)                  # +3 -> 19
+    assert not fires(15, strength=2, restless=-1)             # -1 -> 15
+    assert not fires(15, hunger=2, glutton=-1)                # -1 -> 15
+    assert fires(17, hunger=2, glutton=1)                     # +3 -> 19

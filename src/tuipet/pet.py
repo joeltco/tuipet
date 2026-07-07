@@ -1500,11 +1500,15 @@ class Pet:
                 self._inc_mistake()
                 self.mistake_day += 1  # + HungerDecAtZero MissedDayChange
                 self._burn_life(HUNGER_MISTAKE_LIFE_DEC * max(1, self.care_mistakes))
-                # hungerMistakePenalty: obedience +1 -- or -1 for a glutton
+                # hungerMistakePenalty: obedience +1 -- or -1 for a glutton.
+                # NO scold window: canon opens those for refusals and the
+                # discipline tantrum only -- neglect costs mistakes/obedience,
+                # it never makes the pet "act up" (discipline audit 2026-07-06;
+                # the invented window leaked -10 obedience per miss and fed
+                # the refusal spiral)
                 self._set_obedience(self.obedience
                                     + (HUNGER_MISTAKE_OBED_GLUTTON if self.glutton > 0
                                        else HUNGER_MISTAKE_OBED))
-                self._open_scold()           # neglect: the pet acts up
         elif self.hunger > 0:
             self._hunger_call_t = 0.0
         self._cal_t = getattr(self, "_cal_t", 0.0) + dt
@@ -1554,7 +1558,9 @@ class Pet:
                 self._str_call_t = -3600.0                   # AfterMistakeMinutesPostponed
                 self._inc_mistake()
                 self._set_obedience(self.obedience - 5)      # MistakeStrengthObedienceDec
-                self._open_scold()
+                # no scold window on neglect (canon; discipline audit 2026-07-06)
+                # -- strength drains to 0 on its own species timer, so this one
+                # opened "misbehaving!" windows for free on a loop
         else:
             self._str_call_t = 0.0
         # nutrition macros decay each lapse (NutritionLapseChange) -- keep a varied diet up
@@ -3552,7 +3558,12 @@ class Pet:
         rarer the more obedient it is.  Obedient grown pets are exempt, and a pet on
         the EDGE OF SLEEP never tantrums (canon: toNapSleepLapse about to doze, or
         bedtime pressure about to tip; sleep audit 2026-07-06)."""
-        if self.scold_flag or self.praise_flag:          # checkCall(): already mid-discipline
+        if self.scold_flag or self.praise_flag:          # already mid-discipline
+            return
+        if self.hunger == 0 or self.strength == 0:
+            # checkCall(): a standing CARE CALL suppresses the tantrum -- the
+            # pet is asking for something real, it doesn't also act up
+            # (discipline audit 2026-07-06)
             return
         if (self.sleep_lapse + 1 >= self.sleep_limit
                 or (not self.lights
@@ -3560,12 +3571,18 @@ class Pet:
             return
         if self.obedience >= DISCIPLINE_OBEDIENCE_MAX and self.stage not in ("Fresh", "InTraining"):
             return
+        # the personality mods read the LIVE gauges (canon _hunger/_exercise vs
+        # the full-4 marks; the old exercise_today misread drills-done-today):
+        # a peckish glutton frets +3, a peckish picky eater calms -1; a
+        # low-effort restless pet frets +3 (overrides), a lazy one calms -1
         adjust = 0
-        if self.hunger < 4 and self.glutton > 0:          # hungry glutton frets
+        if self.hunger < 4 and self.glutton > 0:
             adjust = DISCIPLINE_TARGET_GLUTTON
-        if self.exercise_today < 4 and self.restless > 0:  # under-exercised & restless (overrides)
+        elif self.hunger < 4 and self.glutton < 0:
+            adjust = DISCIPLINE_TARGET_RESTLESS_LO       # -1 (canon reuses the value)
+        if self.strength < 4 and self.restless > 0:
             adjust = DISCIPLINE_TARGET_RESTLESS_HI
-        elif self.exercise_today < 4 and self.restless < 0:
+        elif self.strength < 4 and self.restless < 0:
             adjust = DISCIPLINE_TARGET_RESTLESS_LO
         target = DISCIPLINE_TARGET_CHANCE + adjust
         bound = max(1, DISCIPLINE_CALL_CHANCE - (OBEDIENCE_REFUSAL_CAP - self.obedience))
