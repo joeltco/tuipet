@@ -1672,18 +1672,25 @@ class TuiPetApp(App):
 
     def action_options(self):
         """The OPTIONS menu gathers the app-level switches (theme / sound /
-        new egg / erase) under one key -- g/m/n gave the action bar its
-        breathing room back (Joel 2026-07-04)."""
+        account / update / keys / new egg / erase) under one key -- g/m/n gave
+        the action bar its breathing room back (Joel 2026-07-04)."""
         if self.mode is not None:
             return
         self._open_mode(optionsscreen.OptionsPanel(
             self.pet, lambda: self.sound, self._toggle_sound,
-            on_theme_change=self._restyle), self._after_options)
+            on_theme_change=self._restyle,
+            bindings=self.BINDINGS,
+            update_hint=lambda: getattr(self, "_update_msg", "")),
+            self._after_options)
 
     def _after_options(self, result):
         self._restyle()                             # a previewed theme may have settled
         if result and result[0] == "new":
             self.action_new()
+            return
+        if result and result[0] == "account":
+            self.run_worker(self._switch_account(result[1], result[2]),
+                            name="switch", exclusive=False)
             return
         if result and result[0] == "erase":
             if self._sync is not None:              # the pusher must not re-seed the cloud
@@ -1699,6 +1706,62 @@ class TuiPetApp(App):
             self.flash("All data erased — a fresh start.")
             return
         self.repaint()
+
+    async def _switch_account(self, name, pw):
+        """Sign in as another account (OPTIONS → Account).  The current pet is
+        parked with the OLD account's cloud first (switch back any time), then
+        the new account's cloud save replaces the local one — or the egg
+        carousel opens when it has none.  A wrong password or an unreachable
+        lobby aborts WITHOUT switching (probe distinguishes the two — pull_save
+        can't, and a typo'd password must not strand the player on a fresh
+        start).  Device-lifetime progress (album, lifetime wins, owned eggs)
+        stays local, like canon's device-scoped Shared file."""
+        import asyncio
+        old_name, old_pw = persistence.get_account()
+        self.flash("Switching account…")
+        verdict, save = await asyncio.to_thread(
+            cloudsync.probe, _lobby_uri(), name, pw)
+        if verdict == "badpw":
+            self.flash("Wrong password for that name.")
+            self.beep("error", bell=False)
+            return
+        if verdict != "ok":
+            self.flash("Can't reach the lobby — try again online.")
+            self.beep("error", bell=False)
+            return
+        if save is not None:
+            # validate BEFORE committing to the switch: an unreadable cloud
+            # blob must not cost the player their current login (the same
+            # strict probe sync_down_at_startup runs)
+            pet_probe, _ = persistence.pet_from_save(dict(save),
+                                                     catch_up=False, strict=True)
+            if pet_probe is None:
+                self.flash("That cloud save is unreadable — kept your account.")
+                self.beep("error", bell=False)
+                return
+        persistence.save(self.pet)                   # park the pet with the OLD account
+        if old_name and old_name != name:
+            await asyncio.to_thread(                 # last-write-wins guarded upload
+                cloudsync.push_save, _lobby_uri(), old_name, old_pw,
+                persistence.to_save_dict(self.pet))
+        if self._sync is not None:                   # the old pusher must stop first
+            self._sync._stop = True
+            self._sync = None
+        persistence.set_account(name, pw)
+        if save is not None:
+            persistence.write_save_dict(save)
+            loaded, msg = persistence.load()
+            self.pet = loaded or Pet.new_egg()
+            self._start_sync()
+            self.flash(f"Signed in as {_hud_esc(name)} — {msg or 'welcome back!'}")
+            self.repaint()
+        else:
+            persistence.delete()                     # the old pet must not leak in
+            self.pet = Pet.new_egg()                 # placeholder until the carousel picks
+            self._start_sync()
+            self.flash(f"Signed in as {_hud_esc(name)} — a fresh start.")
+            self._open_mode(eggselectscreen.EggSelectPanel(self.pet),
+                            self._after_egg_pick)
 
     def _center(self, text):
         from rich.text import Text

@@ -33,6 +33,13 @@ def available():
     return _PLAYER is not None
 
 
+def backend():
+    """The detected player's command name ('' when none — the app falls back
+    to the terminal bell). Surfaced on the OPTIONS sound row so a silent
+    install self-explains (the Termux no-player mystery)."""
+    return _PLAYER[0] if _PLAYER else ""
+
+
 def play(name):
     """Play data/sounds/<name>.wav non-blocking; True if a player was dispatched."""
     if not _PLAYER:

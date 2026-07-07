@@ -48,6 +48,28 @@ def pull_save(uri, name, pw, timeout=_TIMEOUT):
     return None
 
 
+def probe(uri, name, pw, timeout=_TIMEOUT):
+    """Login check for the account switcher: ('ok', save_or_None) on a welcome
+    (an unknown name is CREATED by the server, like the first-launch flow),
+    ('badpw', None) when the server rejects the login — pull_save can't tell
+    that apart from no-save, and switching onto a typo'd password would
+    silently strand the player on a fresh start — ('offline', None) when the
+    lobby can't be reached. Never raises."""
+    try:
+        with _connect(uri, timeout) as ws:
+            ws.send(json.dumps({"t": "login", "name": name, "pw": pw,
+                                "sync_only": True, "boot": BOOT}))
+            for _ in range(5):                       # welcome is the first/early frame
+                m = json.loads(ws.recv(timeout=timeout))
+                if m.get("t") == "welcome":
+                    return ("ok", m.get("save"))
+                if m.get("t") == "login_failed":
+                    return ("badpw", None)
+    except Exception:
+        return ("offline", None)
+    return ("offline", None)
+
+
 def push_save(uri, name, pw, save, timeout=_TIMEOUT):
     """Upload one save dict, blocking. Returns True on a clean send. Never raises.
     Compares timestamps first: a device that missed its startup pull (offline

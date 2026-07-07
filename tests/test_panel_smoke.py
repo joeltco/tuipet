@@ -97,6 +97,9 @@ def test_the_simple_panels_all_draw():
     _walk(JogressPanel(p, p.num, p.num, p.num), ["space"])
     _walk(EggSelectPanel(), ["right", "right", "left"])
     _walk(ThemePanel(), ["down", "up", "escape"])
+    from tuipet.optionsscreen import KeysPanel
+    _walk(KeysPanel((("f", "feed", "Feed"), ("enter", "gift", "Accept gift"))),
+          ["down", "up"])
     dead = _pet(dead=True)
     _walk(DeathPanel(dead), [])
     _walk(FeedPanel(p), ["down", "up"])
