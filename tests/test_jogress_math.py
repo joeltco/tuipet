@@ -85,3 +85,40 @@ def test_resolve_uses_fulfilled_not_raw_priority(monkeypatch):
                         lambda pet, n: {1: 5.0, 2: 9.0}[n])
     monkeypatch.setattr(evolution, "deviation", lambda pet, n: 0)
     assert jogress.resolve(p, "Vaccine")["name"] == "B"          # the fulfilled winner
+
+
+# ---- online resolve: canon JogressProtocol (lobby session audit 2026-07-07) ----
+
+def _fake_options(monkeypatch, opts):
+    monkeypatch.setattr(jogress, "options", lambda pet: opts)
+    monkeypatch.setattr(evolution, "fulfilled", lambda pet, n: 1.0)
+    monkeypatch.setattr(evolution, "deviation", lambda pet, n: 0)
+
+
+def test_resolve_online_named_intersection_first(monkeypatch):
+    """Canon channel 1: shared fusion NAMES match WITHOUT consulting the
+    attribute pairing or the stage."""
+    p = _pet()
+    _fake_options(monkeypatch, [{"num": 1, "name": "Omegamon", "partners": ["Data"]}])
+    payload = {"attr": "Virus", "stage": "Rookie", "fusions": ["Omegamon"], "attrs": []}
+    assert jogress.resolve_online(p, payload)["name"] == "Omegamon"
+
+
+def test_resolve_online_attr_path_is_mutual_and_same_stage(monkeypatch):
+    """Canon channel 2: the attribute fallback needs the SAME growth stage and
+    MUTUAL compatibility -- both-or-neither, no more one-sided fusions."""
+    p = _pet()                                    # Champion Vaccine
+    _fake_options(monkeypatch, [{"num": 1, "name": "A", "partners": ["Data"]}])
+    base = {"attr": "Data", "stage": "Champion", "fusions": [], "attrs": ["Vaccine"]}
+    assert jogress.resolve_online(p, dict(base))["name"] == "A"
+    assert jogress.resolve_online(p, dict(base, stage="Rookie")) is None      # stage gate
+    assert jogress.resolve_online(p, dict(base, attrs=["Virus"])) is None     # they can't take me
+    assert jogress.resolve_online(p, dict(base, attr="Virus")) is None        # I can't take them
+
+
+def test_resolve_online_legacy_peer_falls_back(monkeypatch):
+    """A pre-v0.2.347 payload ships no lists: keep the old one-sided attr
+    resolve so mixed-version fusions still work."""
+    p = _pet()
+    _fake_options(monkeypatch, [{"num": 1, "name": "A", "partners": ["Data"]}])
+    assert jogress.resolve_online(p, {"attr": "Data"})["name"] == "A"

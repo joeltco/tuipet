@@ -417,3 +417,38 @@ def test_reenter_evicts_stale_session_and_replays_chat(tmp_path):
             proc.wait(timeout=3)
         except subprocess.TimeoutExpired:
             proc.kill()
+
+
+def test_battle_relays_are_phase_gated():
+    """Session audit 2026-07-07: a duplicate 'card' mid-fight used to re-run
+    _battle_begin and RESET both HP bars; a stray 'result' outside the guest's
+    wait re-applied a stale round."""
+    s = LobbyState()
+    pan = _panel(s)
+    pan.phase, pan.partner, pan.is_host = "battle", (9, "kai"), False
+    pan.bphase = "card"
+    pan._on_relay({"from_id": 9, "payload": {"kind": "battle", "t": "card",
+                                             "card": {"num": 4, "name": "X", "stage": "Champion", "hp": 15}}})
+    assert pan.bphase == "choose"
+    pan.my_hp = 3                                       # mid-fight, hurt
+    pan._on_relay({"from_id": 9, "payload": {"kind": "battle", "t": "card",
+                                             "card": {"num": 4, "name": "X", "stage": "Champion", "hp": 15}}})
+    assert pan.my_hp == 3, "a stale card must not reset the fight"
+    pan._on_relay({"from_id": 9, "payload": {"kind": "battle", "t": "result", "host_dealt": 9,
+                                             "guest_dealt": 0, "hhp": 1, "ghp": 1, "over": False,
+                                             "host_alive": True, "guest_alive": True}})
+    assert pan.my_hp == 3, "a result outside 'wait' must be ignored"
+
+
+def test_crossed_invites_consume_the_pending_prompt():
+    """Both players invite each other: entering a session busy-declines and
+    clears the other prompt instead of re-offering a dead invite later."""
+    declines = []
+    s = LobbyState()
+    pan = _panel(s)
+    pan.client.respond = lambda to, kind, accept, busy=False: declines.append((to, accept, busy))
+    pan.client.relay = lambda *a, **k: None
+    pan.invite_prompt = {"from_id": 7, "from_name": "kai", "kind": "battle"}
+    pan._enter_session(7, "kai", "battle", host=True)
+    assert pan.invite_prompt is None
+    assert declines == [(7, False, True)]

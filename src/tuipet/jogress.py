@@ -115,20 +115,61 @@ def fuse_targets(pet, partner_attr):
     return [o for o in options(pet) if pa in o["partners"]]
 
 
-def resolve(pet, partner_attr):
-    """Choose the fusion form the way canon does (canon re-audit 2026-07):
-    pairJogressMatch feeds the matches through getFinalEvolution -- highest
-    fulfilled score, ties broken by smallest deviation, then at random.  (The
-    old pick used the raw Priority column only.)"""
-    targets = fuse_targets(pet, partner_attr)
-    if not targets:
-        return None
+def _final_pick(pet, targets):
+    """getFinalEvolution's pick (canon re-audit 2026-07): highest fulfilled
+    score, ties broken by smallest deviation, then at random."""
     best = max(evolution.fulfilled(pet, o["num"]) for o in targets)
     top = [o for o in targets if abs(evolution.fulfilled(pet, o["num"]) - best) < 1e-9]
     if len(top) > 1:
         mind = min(evolution.deviation(pet, o["num"]) for o in top)
         top = [o for o in top if evolution.deviation(pet, o["num"]) == mind]
     return random.choice(top)
+
+
+def resolve(pet, partner_attr):
+    """Choose the fusion form from the partner's attribute alone (the offline
+    panel + the LEGACY online path -- see resolve_online)."""
+    targets = fuse_targets(pet, partner_attr)
+    return _final_pick(pet, targets) if targets else None
+
+
+def pairable_attrs(pet):
+    """The partner attributes that unlock at least one fusion for this pet --
+    canon's 'attributes' half of the jogressMatch wire string."""
+    return sorted({p for o in options(pet) for p in o["partners"]})
+
+
+def resolve_online(pet, payload):
+    """Canon JogressProtocol.jogressFindFusionsAndAttributes (lobby session
+    audit 2026-07-07).  The match runs in canon's two channels:
+      1. SHARED FUSION NAMES -- the intersection of both sides' reachable
+         fusion-name lists; attribute pairing is not consulted.  Symmetric,
+         so both devices fuse (each through its own getFinalEvolution pick,
+         canon's own quirk included: the two picks may differ).
+      2. The ATTRIBUTE fallback -- canon gates it on the SAME growth stage
+         and MUTUAL compatibility (my attr in their pairable list AND their
+         attr in mine).  Both checks are symmetric, so a fusion is
+         both-or-neither: the one-sided fuse (A spends DP + 66% energy and
+         evolves while B reads 'no resonance') cannot happen.
+    A LEGACY peer (pre-v0.2.347) ships neither list; fall back to the old
+    one-sided attr resolve so mixed-version fusions still work."""
+    if "attrs" not in payload and "fusions" not in payload:
+        return resolve(pet, payload.get("attr"))
+    mine = options(pet)
+    named = [o for o in mine if o["name"] in set(payload.get("fusions") or ())]
+    if named:
+        return _final_pick(pet, named)
+    p_stage = payload.get("stage")
+    if not p_stage:                       # older new-client: derive from the dex
+        _, by = data.load_sprites()
+        p_stage = by.get(payload.get("num"), {}).get("stage")
+    if p_stage != pet.stage:              # canon: getOppStage().equals(getGrowthStage())
+        return None
+    p_attr = payload.get("attr") or "None"
+    if (pet.attribute not in (payload.get("attrs") or ())
+            or p_attr not in {p for o in mine for p in o["partners"]}):
+        return None
+    return resolve(pet, p_attr)
 
 
 def fuse(pet, target_num):

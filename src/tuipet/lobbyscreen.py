@@ -298,11 +298,28 @@ class LobbyPanel:
 
     # ---- session orchestration ------------------------------------------
     def _enter_session(self, pid, pname, kind, host):
+        if self.invite_prompt is not None:
+            # a CROSSED invite (both players invited each other): entering the
+            # session must consume the other prompt, or it survives the whole
+            # bout and re-offers a dead invite back in the lobby (session
+            # audit 2026-07-07)
+            inv = self.invite_prompt
+            self.invite_prompt = None
+            self.client.respond(inv.get("from_id"), inv.get("kind"), False, busy=True)
         self.partner = (pid, pname)
         if kind == "jogress":
             card = self._card()
+            opts = jogress.options(self.pet)
             self.client.relay(pid, {"kind": "jogress", "attr": card["attr"],
                                     "num": card["num"], "name": card["name"],
+                                    # canon JogressProtocol.sendPlayerInfo ships the
+                                    # jogressMatch string (reachable fusion NAMES +
+                                    # pairable attributes) and the growth stage --
+                                    # they drive the mutual both-or-neither match
+                                    # (session audit 2026-07-07)
+                                    "stage": self.pet.stage,
+                                    "fusions": [o["name"] for o in opts],
+                                    "attrs": jogress.pairable_attrs(self.pet),
                                     # canon JogressProtocol ships the REAL sick
                                     # state: fusing with a sick partner is a 90%
                                     # catch (jogress audit 2026-07-06)
@@ -351,7 +368,7 @@ class LobbyPanel:
             self.partner_species = payload.get("name")
             self.jpartner_sick = bool(payload.get("sick"))   # contagion at the fuse
             reason = jogress.can_jogress(self.pet)      # honour asleep / too-young, like offline
-            self.jresult = None if reason else jogress.resolve(self.pet, payload.get("attr"))
+            self.jresult = None if reason else jogress.resolve_online(self.pet, payload)
             if self.jresult:
                 self.jphase = "result"
                 self.sfx = "jogress"
@@ -371,12 +388,16 @@ class LobbyPanel:
                 self.jphase = "failed"
         elif kind == "battle" and self.phase == "battle":
             bt = payload.get("t")
-            if bt == "card":
+            # each relay type is only honoured in the phase that expects it
+            # (session audit 2026-07-07): an unguarded 'card' mid-fight
+            # re-ran _battle_begin and RESET both HP bars; a stray 'result'
+            # outside the guest's wait re-applied a stale round
+            if bt == "card" and self.bphase == "card":
                 self._battle_begin(payload.get("card") or {})
-            elif bt == "choice" and self.is_host:
+            elif bt == "choice" and self.is_host and self.bphase in ("choose", "wait"):
                 self.bt_opp_choice = payload.get("attr")
                 self._host_resolve()
-            elif bt == "result" and not self.is_host:
+            elif bt == "result" and not self.is_host and self.bphase == "wait":
                 self._apply_result(payload, as_host=False)
 
     # ---- battle ----------------------------------------------------------
