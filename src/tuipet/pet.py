@@ -2918,19 +2918,38 @@ class Pet:
         return "zzz... mind its sleep!"
 
     def _special_idle(self):
-        """An occasional idle quirk reflecting weather + mood (DVPet
-        weathering()/personalityMood*): huddle in bad weather, a happy hop
-        when content, a grumpy tantrum when unhappy."""
-        if self.weather in _RAIN:
-            self._set_anim("shield", 2.0)
-        elif self.weather in _SNOW:
-            self._set_anim("huddle", 2.0)
-        elif self.mood >= MIN_HAPPY_MOOD:
-            self._set_anim(random.choice(("play", "surprise")), 2.0)
-        elif self.mood <= MIN_UNHAPPY_MOOD:
+        """The special-idle families, canon shape (SpriteAnim's 1/1500 rolls;
+        weathering/personality audit 2026-07-06): the visible TANTRUM while
+        the discipline call stands (canon rolls it at 3x the family odds),
+        weathering (nice-weather JOY for a species that loves this sky, the
+        rain shake, the snow shiver), then the personality mood idles --
+        gated like canon (rested, spirited, under-drilled, well) and keyed
+        on the mood TIER: Happy bounces, Unhappy fumes, Neutral does nothing."""
+        if getattr(self, "away", False):
+            return                                   # no home idles on the road
+        if self.discipline_call:                     # Tantrum: the fit plays out
+            self._set_anim("tantrum", 2.0)
+            return
+        if self.weather in _RAIN or self.weather in _SNOW:
+            rain = self.weather in _RAIN
+            # checkNiceWeather: a DeepSaver/Water pet LOVES rain; an Ice or
+            # cold-adapted one (ideal floor <= freezing) loves snow -- the
+            # happy bounce instead of the misery poses
+            nice = (((self.field == "DeepSaver" or self.element == "Water") and rain)
+                    or ((self.element == "Ice"
+                         or self.ideal_temp[0] <= wx.FREEZING_TEMP) and not rain))
+            self._set_anim("happy" if nice else ("shield" if rain else "huddle"), 2.0)
+            return
+        # the personality idles: canon gates -- energy >= max/3, spirit >= 0,
+        # effort <= limit/2, not unwell (and the TIER, not raw mood)
+        if (self.energy < self.max_energy / 3 or self.enthusiasm < 0
+                or self.strength > 2 or self.sick or self.is_injured()):
+            return
+        m = self.current_mood()
+        if m == "Happy":
+            self._set_anim(random.choice(("play", "happy")), 2.0)
+        elif m in ("Unhappy", "Depressed"):
             self._set_anim(random.choice(("angry", "tantrum")), 2.0)
-        elif random.random() < 0.5:
-            self._set_anim("surprise", 1.6)
 
     def check_refused(self, food=None, attr=None, energy_change=0.0, item=None):
         """PhysicalState.checkRefused: the obedience refusal roll.  Only a
