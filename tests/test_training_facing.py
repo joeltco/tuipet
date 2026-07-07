@@ -147,3 +147,62 @@ def test_data_aim_shows_the_mon():
     pan.frame_i = 2                            # bob pose 1 -- only the MON flips
     b = pan.text().markup                      # (feint/shield don't ride frame_i)
     assert a != b, "the bobbing mon must be visible during the AIM act"
+
+
+def _data_panel():
+    from tuipet.training import TrainingPanel, GAMES
+    from tuipet.pet import Pet
+    p = Pet(num=100, stage="Champion", attribute="Vaccine", obedience=500)
+    p.compliance = True
+    pan = TrainingPanel(p)
+    pan.gi = next(i for i, g in enumerate(GAMES) if g[0] == "data")
+    pan._start_game()
+    return pan
+
+
+def test_hp_char_bobs_like_data():
+    """Consistency polish 2026-07-06: the HP char idles with the SAME bob as the
+    data/vaccine stages -- it was the one drill with a frozen pet."""
+    from tuipet.training import TrainingPanel, GAMES
+    from tuipet.pet import Pet
+    p = Pet(num=100, stage="Champion", attribute="Vaccine", obedience=500)
+    p.compliance = True
+    pan = TrainingPanel(p)
+    pan.gi = next(i for i, g in enumerate(GAMES) if g[0] == "hp")
+    pan._start_game()
+    pan.frame_i = 0
+    a = pan.text().markup
+    pan.frame_i = 2                            # only the char rides frame_i here
+    assert pan.text().markup != a, "the HP char must idle-bob like the other drills"
+
+
+def test_data_mon_bobs_through_lock():
+    """The LOCK window is a live decision window (like the HP reel) -- the mon
+    keeps bobbing until the shot actually fires."""
+    pan = _data_panel()
+    pan.locked, pan.tgt_up = True, True
+    pan.frame_i = 0
+    a = pan.text().markup
+    pan.frame_i = 2
+    assert pan.text().markup != a, "the mon must bob through the lock window"
+    pan.fired, pan.fly_t = True, 0             # braced for the shot: still
+    pan.frame_i = 0
+    b = pan.text().markup
+    pan.frame_i = 2
+    assert pan.text().markup == b, "braced = still (the one deliberate freeze)"
+
+
+def test_data_block_flashes_success_pose():
+    """A BLOCK wears the same success tell as the HP drill's right pick (pose 6)
+    -- it used to stand plain IDLE, so a win looked like nothing happened."""
+    pan = _data_panel()
+    pan.locked = pan.fired = True
+    pan.fly_t, pan.strobe_t, pan.flinch_t = 0, 0, 4
+    pan.frame_i = 0
+    pan.blocked = True
+    win = pan.text().markup
+    pan.blocked = False
+    loss = pan.text().markup
+    assert win != loss                          # ATTACK vs COLLAPSE
+    pan.flinch_t = 0                            # the braced IDLE frame
+    assert pan.text().markup != win, "the block tell must differ from plain IDLE"

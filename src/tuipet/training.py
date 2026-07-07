@@ -609,13 +609,19 @@ class TrainingPanel:
                 sh_h = len(shield) if shield else 6
                 sw = len(shield[0]) if shield else 5
                 ch = len(cannon) if cannon else 9
-                if self.flinch_t > 0:                        # DVPet aftermathGreen: block -> the pet stands
-                    pose = IDLE if self.blocked else COLLAPSE  # normal; a clean hit -> the hurt pose (+10)
+                # One reaction language across the drills (consistency polish,
+                # Joel 2026-07-06 "similar and consistent like the hp drill"):
+                # a BLOCK flashes the same success pose as the HP drill's right
+                # pick (6); canon aftermathGreen stood the pet plain, but the
+                # family's layout language outranks canon here (the standing rule)
+                if self.flinch_t > 0:
+                    pose = ATTACK if self.blocked else COLLAPSE  # success tell / the hurt pose
                 elif self.fired:                             # DVPet attackGreen: the pet braces for the shot
                     pose = IDLE
-                else:                                        # DVPet drawDataPre bobs the pet (sprite 4<->1)
-                    bob = 1 if (not self.locked and (self.frame_i // 2) % 2) else 0
-                    pose = self._pose_now(bob)
+                else:                                        # the mon bobs through AIM *and* the LOCK window
+                    #                                          (both are live decision windows, like the HP
+                    #                                          reel) -- it goes still only for the shot
+                    pose = self._pose_now(1 if (self.frame_i // 2) % 2 else 0)
                 # crop to the real body so the mon can be placed precisely
                 # (centred, hugged by the shields) instead of floating in padding
                 pf = _crop(self._frame(rec, pose))
@@ -687,7 +693,9 @@ class TrainingPanel:
             placements = [(dummy, 1, True)]                           # MIRRORED (canon
             #                                       drawHPTraining: drawNumMirror(bag, true) --
             #                                       the dummy faces the char like a foe)
-            pf = _crop(self._frame(rec, self._pose_now(0)))           # char pose 0; 6/9 reactions
+            pf = _crop(self._frame(rec, self._pose_now(              # the char idles with the same bob
+                1 if (self.frame_i // 2) % 2 else 0)))               # as the data/vaccine stages (one
+            #                                             language per family); 6/9 reactions
             pw_ = max(len(r) for r in pf)
             ic = E.get(_HP_ICON_KEYS[self.hp_target], [None])[0]
             pk = E.get(_HP_ICON_KEYS[self.hp_pick], [None])[0]
