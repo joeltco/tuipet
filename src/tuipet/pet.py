@@ -155,6 +155,16 @@ ITEM_INTEREST_HIGH_TIMER = 80       # ItemInterestHighTimer (disposition -1)
 PERSONALITY_MOOD_MATCH = 10         # ConsumablePersonalityMatchMoodChange
 PERSONALITY_MOOD_UNMATCH = -10      # ConsumablePersonalityUnmatchMoodChange
 EGG_MOOD = 100                      # EggMood: a new egg starts warm (Evolution.egg)
+# Evolution.java per-stage ARRIVAL setters (egg/hatch audit 2026-07-06; the
+# shipped ranges are all min==max -> deterministic)
+FRESH_MOOD = -10                    # FreshMood: born grumpy (it's a newborn)
+FRESH_OBEDIENCE = 75                # FreshObedienceMin/Max: born TRUSTING
+START_NUTRITION = 6                 # StartProtein/StartMineral/StartVitamin
+IN_TRAINING_OBEDIENCE = 50          # InTrainingObedienceMin/Max: toddler rebellion cap
+IN_TRAINING_SLEEP_LAPSE = 360       # InTrainingSleepLapse: wakes with real bedtime pressure
+ROOKIE_OBED_GOOD = 50               # RookieGoodObedience (Happy daily majority)
+ROOKIE_OBED_DEFAULT = 25            # RookieDefaultObedience (Neutral majority)
+ROOKIE_OBED_BAD = 0                 # RookieBadObedience (anything else, ties included)
 # the missed-day / birthday system (setTimeToAge): each game day of AGE the pet
 # has a birthday judged by the day's MAJOR mood and its missed-day tally
 MOOD_RECORD_MIN = 5                 # MoodRecordMin: sample the mood tier every 5 game-min
@@ -2411,6 +2421,40 @@ class Pet:
     def evolve_to(self, num):
         was_young = self.stage in ("Egg", "Fresh", "InTraining", "Rookie")
         _req = self._become(num)
+        # Evolution.java's per-stage ARRIVAL setters (egg/hatch audit
+        # 2026-07-06 -- none of these were ported; the missing fresh()
+        # obedience 75 was the deepest root of the misbehaving-babies era):
+        if self.stage == "Fresh":
+            # fresh(): born TRUSTING (obedience 75) but grumpy (-10 mood),
+            # hungry, full of energy, with a starter nutrition base 6/6/6
+            lo, hi = self.ideal_temp
+            self.temp = (lo + hi) // 2
+            self._set_mood(FRESH_MOOD)
+            self._set_obedience(FRESH_OBEDIENCE)
+            self.strength = 0
+            self.hunger = 0
+            self.energy = self.max_energy
+            self.nutr_protein = self.nutr_mineral = self.nutr_vitamin = START_NUTRITION
+        elif self.stage == "InTraining":
+            # inTraining(): toddler rebellion -- obedience above 50 KNOCKS
+            # BACK to 50; it wakes with the lights on and real bedtime
+            # pressure (sleepLapse 360)
+            if self.obedience > IN_TRAINING_OBEDIENCE:
+                self._set_obedience(IN_TRAINING_OBEDIENCE)
+            self.asleep, self.nap = False, False
+            self.lights = True
+            self.sleep_lapse = IN_TRAINING_SLEEP_LAPSE
+        elif self.stage == "Rookie":
+            # rookie(): the childhood report card SETS obedience -- a Happy
+            # daily-mood majority earns 50, Neutral 25, anything else 0
+            # (a TIE is Mood.None -> the switch default -> bad, canon exact)
+            counts = self.daily_mood
+            best = max(counts.values()) if counts else 0
+            tops = [k for k, v in counts.items() if v == best and best > 0]
+            major = tops[0] if len(tops) == 1 else None
+            self._set_obedience(ROOKIE_OBED_GOOD if major == "Happy"
+                                else ROOKIE_OBED_DEFAULT if major == "Neutral"
+                                else ROOKIE_OBED_BAD)
         if was_young and self.stage == "Champion":
             # randOnChampion (taste/rank audit 2026-07-06): the childhood-care
             # tally becomes the adult temperament
