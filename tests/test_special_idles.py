@@ -130,3 +130,21 @@ def test_the_collapse_wears_the_dying_emote():
     p._set_anim("idle", 0.0)
     p.anim = "idle"
     assert len(data.load_effects()["dying"]) == 2
+
+
+def test_the_condition_column_keeps_canon_order_and_shows_all():
+    """checkStates (condition-column audit 2026-07-06): every active condition
+    shows AT ONCE, in canon's top-down slot order (sick/med/inj/bandage/
+    vitamin/fatigue at x~120) -- ours compacts upward on the 24px LCD but the
+    ORDER is canon's; each icon blinks its 2-frame pair."""
+    from tuipet import app as app_mod, data
+    E = data.load_effects()
+    order = ("st_sick", "st_medicine", "st_injury", "st_bandage",
+             "st_vitamin", "st_fatigue")
+    assert all(len(E.get(k, [])) == 2 for k in order if E.get(k))
+    p = _pet(sick=True, sick_length=5.0, fatigue_length=5.0, inj_length=5.0)
+    pts = app_mod._effect_overlay(p, 0, 40, 24, tick=0)
+    # three conditions active: the column paints strictly more than one icon's
+    # worth of pixels at the right edge (x >= 29)
+    col = [pt for pt in pts if pt[0] >= 29]
+    assert len({y for _, y in col}) > 7      # taller than a single 7px icon

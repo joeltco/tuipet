@@ -322,6 +322,10 @@ def _effect_overlay(pet, frame_i, cols, px_h, tick=0, pet_right=None):
             zz_bot = 4 + zh
     # --- condition column: fixed right edge, every active condition stacked + blinking ---
     # DVPet stateNumTic blink: 7 ticks awake / 10 asleep, faster (7) when unwell.
+    # Canon gives each condition a FIXED slot (x~120: sick 55 / med 64 / inj 73 /
+    # bandage 83 / vitamin 93 / fatigue 103 -- the same top-down ORDER as the
+    # tuple below); ours COMPACTS the active ones upward because six 7px icons
+    # cannot hold fixed slots on a 24px LCD (condition-column audit 2026-07-06).
     unwell = pet.sick or pet.is_injured() or pet.is_fatigued()
     sf = (tick // (7 if unwell else (10 if asleep else 7))) % 2
     col_x = grid.X1 - COND_W                               # condition column hugs the grid's right edge (x29)
