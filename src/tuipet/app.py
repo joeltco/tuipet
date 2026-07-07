@@ -1407,7 +1407,12 @@ class TuiPetApp(App):
         if self._flash_t > 0:
             return                             # one ✉ at a time: let the current flash hold
         nm, tx = sync.inbox.pop(0)
-        self.flash(f"✉ [b]{nm}[/]: {tx}")
+        # a PM's sender name AND body are REMOTE strings -- escape their '[' so
+        # a message like '[/]' can't unbalance this markup and crash the render
+        # (Rich-brackets hard rule, remote-triggered; chat-input audit 2026-07-07).
+        # The lobby chat pane is already safe (Text.append renders literally);
+        # this flash is the one markup-parsed sink for remote text.
+        self.flash(f"✉ [b]{_hud_esc(nm)}[/]: {_hud_esc(tx)}")
         self.beep("menu", bell=False)
 
     def _start_sync(self):

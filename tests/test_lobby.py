@@ -532,3 +532,37 @@ def test_jogress_partner_leaving_at_result_fuses_nobody(monkeypatch):
     pan._key_jogress("enter")                    # I said yes; they vanish instead
     pan._on_relay({"from_id": 9, "payload": {"kind": "jogress", "abort": True}})
     assert not fused and pan.phase == "lobby"
+
+
+def test_malicious_pm_cannot_crash_the_flash():
+    """Chat-input audit 2026-07-07: a PM's sender name and body are REMOTE
+    strings.  The home ✉ alert renders as Rich MARKUP, so an unbalanced
+    bracket ('[/]', '[red]') used to drop text or raise MarkupError.  They
+    must now render literally."""
+    from types import SimpleNamespace
+    from rich.text import Text
+    from tuipet.app import TuiPetApp
+
+    flashed = []
+    evil_name, evil_text = "[/]evil]", "pwn [red]you[/] [[["
+    sync = SimpleNamespace(inbox=[(evil_name, evil_text)])
+    stub = SimpleNamespace(_sync=sync, mode=None, _flash_t=0,
+                           flash=lambda s: flashed.append(s),
+                           beep=lambda *a, **k: None)
+    TuiPetApp._drain_pms(stub)
+    assert flashed, "the PM never flashed"
+    rendered = Text.from_markup(flashed[0])                 # must not raise
+    assert evil_name in rendered.plain                      # the name survives, literal
+    assert "pwn" in rendered.plain and "you" in rendered.plain
+    assert "[red]" in rendered.plain                        # their fake tag is INERT text
+
+
+def test_chat_input_buffer_is_capped():
+    """The local input buffer was unbounded -- a long paste grew it without
+    limit (the server clips the SENT text, not the buffer)."""
+    from tuipet import lobbyscreen
+    s = LobbyState()
+    pan = _panel(s)
+    for _ in range(lobbyscreen.CHAT_MAX + 200):
+        pan._edit("x")
+    assert len(pan.buf) == lobbyscreen.CHAT_MAX

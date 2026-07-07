@@ -30,6 +30,7 @@ from .theme import INK, INK_B, DIM, SEL
 CHATW = 25
 ROSTW = 12
 BODY = 8
+CHAT_MAX = 400          # server MAX_CHAT: the local input buffer stops here too
 ATTACK_KEYS = {"1": "Vaccine", "2": "Data", "3": "Virus"}
 
 
@@ -681,6 +682,10 @@ class LobbyPanel:
             self.buf += " "
         elif len(k) == 1 and k.isprintable():
             self.buf += k
+        # cap at the server's MAX_CHAT (chat-input audit 2026-07-07): the buffer
+        # was unbounded -- a long paste grew it without limit (the server clips
+        # the SENT text at 400, but the local buffer never stopped growing)
+        self.buf = self.buf[:CHAT_MAX]
         return None
 
     # ---- render ----------------------------------------------------------
