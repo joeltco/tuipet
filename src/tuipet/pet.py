@@ -154,6 +154,7 @@ ITEM_INTEREST_LOW_TIMER = 40        # ItemInterestLowTimer (disposition +1)
 ITEM_INTEREST_HIGH_TIMER = 80       # ItemInterestHighTimer (disposition -1)
 PERSONALITY_MOOD_MATCH = 10         # ConsumablePersonalityMatchMoodChange
 PERSONALITY_MOOD_UNMATCH = -10      # ConsumablePersonalityUnmatchMoodChange
+CALL_MOOD_DEC = 1                    # CallMoodDec: a standing care call drains mood per window-min
 EGG_MOOD = 100                      # EggMood: a new egg starts warm (Evolution.egg)
 # Evolution.java per-stage ARRIVAL setters (egg/hatch audit 2026-07-06; the
 # shipped ranges are all min==max -> deterministic)
@@ -1283,6 +1284,7 @@ class Pet:
         # a rock-bottom sleeper), depression's rolls, the filth nag+risk, and
         # poopWaitMoodCheck -- the HELD gauge (only a sleeper holds it) nags
         self._mood_lapse(dt)
+        self._call_mood_drain(dt)                # lightsCall drains a lit sleeper too
         self._check_depressed(dt)
         self._filth_effects(dt)
         if self._poop_t >= self._poop_interval:
@@ -1305,10 +1307,28 @@ class Pet:
             self._do_poop(backlog=True)
             self._set_anim("poop", 2.2)
 
+    def _call_mood_drain(self, dt):
+        """checkCallMinutes (sleep-screens audit 2026-07-06): a STANDING care
+        call drains mood -- the frozen lapse isn't mercy, need is misery.
+        Canon: -1 per game-min while checkCall()||disciplineCall; ours rides
+        the call/mistake WINDOW family (x60), landing canon's -10 by the
+        10-game-min mistake mark.  The canon call set exactly: hunger/strength
+        awake, lights asleep, plus the tantrum."""
+        call = ((self.hunger == 0 or self.strength == 0) if not self.asleep
+                else self.lights)
+        if not (call or self.discipline_call) or self.call_paused():
+            self._call_drain_t = 0.0
+            return
+        self._call_drain_t = getattr(self, "_call_drain_t", 0.0) + dt
+        if self._call_drain_t >= 60.0:           # CallMinutesCheckMin, window scale
+            self._call_drain_t = 0.0
+            self._set_mood(self.mood - CALL_MOOD_DEC)
+
     def _tick_mood_discipline(self, dt):
         """The mood lapse + the discipline windows.  (DVPet has NO passive
         energy decay -- energy only moves via activity and sleep.)"""
         self._mood_lapse(dt)
+        self._call_mood_drain(dt)
         self._check_depressed(dt)
         self._filth_effects(dt)
         # obedienceLapse (obedience audit 2026-07-06): discipline FADES while
@@ -2038,11 +2058,23 @@ class Pet:
     def needs_attention(self):
         """The ONE care-call predicate behind the '!' bubble AND the HUD alarm
         (they had drifted; design call, polish 2026-07): an awake, hatched pet
-        that is starving, sick, filthy, exhausted or misbehaving."""
-        return (not self.dead and self.stage != "Egg" and not self.asleep
-                and not self.call_paused()
-                and (self.hunger == 0 or self.sick or self.poop >= 3
-                     or self.energy <= 0 or self.scold_flag or self.discipline_call))
+        that is starving, effort-empty, sick, filthy, exhausted or misbehaving
+        -- or a SLEEPER with the lights burning (canon lightsCall is the one
+        call that fires ASLEEP; strengthCall was also missing -- the effort
+        gauge emptied silently.  Sleep-screens audit 2026-07-06)."""
+        if self.dead or self.stage == "Egg" or self.call_paused():
+            return False
+        if self.asleep:
+            return bool(self.lights)             # lightsCall: it wants the dark
+        return (self.hunger == 0 or self.strength == 0 or self.sick
+                or self.poop >= 3 or self.energy <= 0
+                or self.scold_flag or self.discipline_call)
+
+    def near_bedtime(self):
+        """sleepNotNap: the pressure sits inside the real-sleep edge -- the
+        yawning special idle's eligibility (and lights-out now means SLEEP)."""
+        return self.sleep_lapse >= self.sleep_limit - (
+            SLEEP_NOT_NAP_MIN - self.restless * SLEEP_NOT_NAP_RESTLESS)
 
     def _guard(self, asleep_blocks=True):
         """The shared action gate: dead / still-an-egg / asleep (a sleeping pet

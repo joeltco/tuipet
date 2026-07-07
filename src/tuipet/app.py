@@ -2072,6 +2072,14 @@ class TuiPetApp(App):
                     and getattr(p, "_poop_t", 0) >= 0.8 * p._poop_interval
                     and random.randrange(40) == 0):
                 sc.start_fx("poopdance")
+            # DVPet Yawning: the same special-idle family rolls a spontaneous
+            # yawn while REAL bedtime nears (sleepNotNap eligibility) -- the
+            # tell that lights-out now means sleep (sleep-screens audit
+            # 2026-07-06; same odds idiom as the poopdance above)
+            elif (not p.dead and p.stage != "Egg" and not p.asleep
+                    and p.anim in ("idle", "walk") and p.near_bedtime()
+                    and random.randrange(40) == 0):
+                p._set_anim("yawn", 1.8)
             sc.advance(self.pet)
             sc.paint(self.pet)
 
@@ -2264,12 +2272,15 @@ class TuiPetApp(App):
     def _need_message(self, p):
         """HUD announcement for the pet's most urgent unmet care need (or '')."""
         name = p.name or "Your pet"
-        if p.sick:          msg = f"{name} is sick!"
-        elif p.hunger == 0: msg = f"{name} is hungry!"
-        elif p.poop >= 3:   msg = f"{name} needs cleaning!"
-        elif p.energy <= 0: msg = f"{name} is exhausted!"
-        elif p.scold_flag:  msg = f"{name} is misbehaving!"
-        else:               return ""
+        if p.asleep and p.lights:               # lightsCall: the one asleep call
+            msg = f"{name} is trying to sleep — lights off! ([b]S[/])"
+        elif p.sick:          msg = f"{name} is sick!"
+        elif p.hunger == 0:   msg = f"{name} is hungry!"
+        elif p.strength == 0: msg = f"{name}'s effort gauge is empty — train it!"
+        elif p.poop >= 3:     msg = f"{name} needs cleaning!"
+        elif p.energy <= 0:   msg = f"{name} is exhausted!"
+        elif p.scold_flag:    msg = f"{name} is misbehaving!"
+        else:                 return ""
         return f"[{theme.NEG}]\u26a0 {msg}[/]"
 
     def _do(self, result):

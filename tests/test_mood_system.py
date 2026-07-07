@@ -201,14 +201,16 @@ def test_feeding_placates_the_call(monkeypatch):
 
 def test_an_ignored_call_sours_and_marks_the_day():
     # obedience >= DisciplineCallObedienceMax: the re-raise roll is exempt,
-    # and the active call FREEZES the mood lapse (checkCall gate), so the
-    # -25 is the only mood movement here
+    # and the active call FREEZES the mood lapse (checkCall gate) but ALSO
+    # DRAINS it (checkCallMinutes -1/window-min; sleep-screens audit
+    # 2026-07-06) -- the single 200s chunk lands one drain beside the -25
+    from tuipet.pet import CALL_MOOD_DEC
     p = _tantrum(obedience=60, mood=100)
     m0, d0 = p.mood, p.mistake_day
     p._tick_mood_discipline(200.0)       # past _minutesToDisciplinePenalty
     assert not p.discipline_call
     assert p.mistake_day == d0 + 1
-    assert p.mood == m0 - DISCIPLINE_CALL_MOOD_PENALTY
+    assert p.mood == m0 - DISCIPLINE_CALL_MOOD_PENALTY - CALL_MOOD_DEC
 
 def test_the_call_lights_the_attention_bubble_and_survives_a_save():
     from tuipet import persistence

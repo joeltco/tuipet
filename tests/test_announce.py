@@ -131,3 +131,47 @@ def test_alarm_beeps_on_onset_then_nags_every_90s():
     assert mid == 1                                # silent inside the window
     assert nagged == 2                             # the 90s nag repeats once
     assert done == 2                               # a met need stops the nagging
+
+
+def test_the_lights_call_is_the_one_asleep_alarm():
+    """Canon lightsCall fires ASLEEP (alive && asleep && lights) -- the one
+    call a sleeper raises; awake calls include the effort gauge (strengthCall,
+    which used to empty silently).  Sleep-screens audit 2026-07-06."""
+    from tuipet.pet import Pet
+    p = Pet(num=100, stage="Champion", attribute="Vaccine", obedience=140)
+    p.world_seconds = 10 * 60.0
+    p.hunger, p.strength = 4, 2
+    p.asleep, p.lights = True, True
+    assert p.needs_attention()                   # a lit sleeper calls
+    p.lights = False
+    assert not p.needs_attention()               # dark: it sleeps in peace
+    p.asleep = False
+    p.strength = 0
+    assert p.needs_attention()                   # strengthCall: effort empty
+    p.strength = 2
+    assert not p.needs_attention()
+
+
+def test_a_standing_call_drains_mood_on_the_window_cadence():
+    """checkCallMinutes (sleep-screens audit 2026-07-06): while a call begs,
+    mood pays CallMoodDec per window-min -- canon's -10 by the 10-game-min
+    mistake mark; a lit sleeper's lightsCall drains asleep too."""
+    from tuipet.pet import Pet, CALL_MOOD_DEC
+    p = Pet(num=100, stage="Champion", attribute="Vaccine", obedience=140)
+    p.world_seconds = 10 * 60.0
+    p.hunger = 0                                 # the hunger call stands
+    m0 = p.mood
+    for _ in range(10):
+        p._call_mood_drain(60.0)                 # ten window-minutes
+    assert p.mood == m0 - 10 * CALL_MOOD_DEC
+    q = Pet(num=100, stage="Champion", attribute="Vaccine", obedience=140)
+    q.world_seconds = 10 * 60.0
+    q.hunger = 4
+    q.asleep, q.lights = True, True              # lightsCall: drains asleep
+    m0 = q.mood
+    q._call_mood_drain(60.0)
+    assert q.mood == m0 - CALL_MOOD_DEC
+    q.lights = False
+    m0 = q.mood
+    q._call_mood_drain(600.0)
+    assert q.mood == m0                          # dark: no call, no drain
