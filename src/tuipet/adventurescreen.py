@@ -207,6 +207,8 @@ class AdventurePanel(menu.SubHost):
         elif k in ("escape", "a"):          # a (the opening key) also closes, like shop/habitat
             if getattr(self, "pet", None) is not None:
                 self.pet.go_home_habitat()  # back from the road: home climate resumes
+                self.pet.away = False       # canon teleportArrive: home again -- the
+                #                             assistant resumes (auto-care audit 2026-07-06)
             return ("done", None)
         return None
 

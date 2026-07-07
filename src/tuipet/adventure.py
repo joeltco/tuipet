@@ -108,6 +108,10 @@ class Adventure:
         # habitat evolution gate all travel with the pet
         if pet.home_habitat < 0:
             pet.home_habitat = pet.habitat        # old-save backfill
+        # canon _isHome (teleportArrive toggles it): the pet is OUT while it
+        # adventures -- the AI assistant neither bills nor visits away from
+        # home (auto-care audit 2026-07-06)
+        pet.away = True
         self._set_zone_habitat()
 
     def _set_zone_habitat(self):

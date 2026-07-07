@@ -125,3 +125,32 @@ def test_assist_panel_toggles_and_shows_the_stage_prices():
     assert p.auto_care and "on duty" in pan.text().plain
     pan.key("enter")
     assert not p.auto_care
+
+
+def test_the_assistant_stays_home_while_the_pet_adventures():
+    """doAutoCare/checkAutoCare gate on _isHome (canon teleportArrive toggles
+    it; auto-care audit 2026-07-06): OUT on the road the assistant neither
+    bills the retainer nor visits -- and it hasn't quit, it resumes at home."""
+    p = _pet(bits=2000, poop=2, poop_sizes=[2, 3], auto_care=True, assistant_num=29)
+    p.away = True
+    b0 = p.bits
+    for _ in range(70):
+        p._tick_auto_care(1.0)                    # past a full retainer window
+    assert p.auto_care and p.bits == b0           # no visit, no billing, still hired
+    assert p.poop == 2                            # the mess waits for YOU out there
+    p.away = False
+    p._tick_auto_care(1.0)
+    assert p.poop == 0 and p.bits < b0            # home again: the visit fires
+
+
+def test_the_adventure_flags_away_and_the_exit_clears_it():
+    """Adventure.__init__ marks the pet OUT; leaving the panel brings it home
+    (the same exit hook that restores the home climate)."""
+    from tuipet.adventure import Adventure
+    from tuipet import adventurescreen
+    p = _pet(bits=100)
+    p.stage_seconds = 1e9                          # past any gate noise
+    pan = adventurescreen.AdventurePanel(p)
+    assert p.away is True
+    pan.key("escape")
+    assert p.away is False and p.habitat == p.home_habitat

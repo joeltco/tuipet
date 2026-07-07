@@ -4082,6 +4082,11 @@ class Pet:
         assistant fx is pure presentation via the assist_event mailbox."""
         if not self.auto_care:
             return
+        if getattr(self, "away", False):
+            # doAutoCare/checkAutoCare both gate on _isHome: while the pet is
+            # OUT (adventuring -- canon's teleport toggles it) the assistant
+            # neither bills the retainer nor visits (auto-care audit 2026-07-06)
+            return
         self._ac_pay = getattr(self, "_ac_pay", 0.0) + dt
         while self._ac_pay >= AUTO_CARE_PAYMENT_MIN:
             self._ac_pay -= AUTO_CARE_PAYMENT_MIN
