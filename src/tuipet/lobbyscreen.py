@@ -138,6 +138,9 @@ class LobbyPanel:
         self.jresult = None
         self.jshow = None             # the offline fusion scene, replayed here
         self.fail_reason = None
+        self.j_confirmed = False           # two-phase commit: my yes is in
+        self.j_partner_confirmed = False   # ...and theirs
+        self.j_peer_two_phase = False      # the peer speaks the confirm protocol
         self.bshow = None             # the round's volley replay (BattlePanel shim)
         # battle session
         self.is_host = False
@@ -292,6 +295,8 @@ class LobbyPanel:
         if self.partner and not any(p["id"] == self.partner[0] for p in s.roster):
             if self.phase == "jogress" and self.jphase == "waiting":
                 self.fail_reason, self.jphase = "Partner left.", "failed"
+            elif self.phase == "jogress" and self.jphase == "result":
+                self._return_to_lobby("Partner left — no fusion.")
             elif self.phase == "battle" and self.bphase not in (None, "over"):
                 self.bt_outcome = "Opponent left."
                 self.bt_payload = ("battle_msg", "Opponent left — battle void.")
@@ -324,7 +329,11 @@ class LobbyPanel:
                                     # canon JogressProtocol ships the REAL sick
                                     # state: fusing with a sick partner is a 90%
                                     # catch (jogress audit 2026-07-06)
-                                    "sick": bool(getattr(self.pet, "sick", False))})
+                                    "sick": bool(getattr(self.pet, "sick", False)),
+                                    # two-phase commit capability (consent audit
+                                    # 2026-07-07): both players confirm at the
+                                    # result screen before either pet fuses
+                                    "confirm2": True})
             self.phase, self.jphase = "jogress", "waiting"
             self.status = f"Fusing with {pname}…"
         elif kind == "battle":
@@ -340,6 +349,7 @@ class LobbyPanel:
         had_partner = self.partner is not None
         self.partner = self.partner_species = self.jresult = None
         self.jphase = self.fail_reason = None
+        self.j_confirmed = self.j_partner_confirmed = self.j_peer_two_phase = False
         self.jpartner_sick = False
         self.jshow = self.bshow = None
         self.battle = self.opp_card = self.bphase = None
@@ -360,12 +370,26 @@ class LobbyPanel:
         if payload.get("abort"):                       # partner cancelled / got busy
             if self.phase == "jogress" and self.jphase == "waiting":
                 self.fail_reason, self.jphase = "Partner left the fusion.", "failed"
+            elif self.phase == "jogress" and self.jphase == "result":
+                self._return_to_lobby("Partner left — no fusion.")   # pre-commit: nobody fuses
             elif self.phase == "battle" and self.bphase not in (None, "over"):
                 self.bt_outcome = "Opponent left."
                 self.bt_payload = ("battle_msg", "Opponent left — battle void.")
                 self.bphase = "over"
             return
-        if kind == "jogress" and self.phase == "jogress" and self.jphase == "waiting":
+        if kind == "jogress" and self.phase == "jogress" and payload.get("t") == "confirm":
+            # two-phase commit: the partner said yes; fuse only when BOTH have
+            self.j_partner_confirmed = True
+            if self.jphase == "result" and self.j_confirmed:
+                self._commit_fusion()
+            return
+        if kind == "jogress" and self.phase == "jogress" and payload.get("t") == "decline":
+            if self.jphase in ("waiting", "result"):
+                self._return_to_lobby("Partner declined — no one fused.")
+            return
+        if (kind == "jogress" and self.phase == "jogress"
+                and self.jphase == "waiting" and payload.get("t") is None):
+            self.j_peer_two_phase = bool(payload.get("confirm2"))
             self.partner_species = payload.get("name")
             self.jpartner_sick = bool(payload.get("sick"))   # contagion at the fuse
             reason = jogress.can_jogress(self.pet)      # honour asleep / too-young, like offline
@@ -542,20 +566,43 @@ class LobbyPanel:
             self._connect(*r[1])
         return None
 
+    def _commit_fusion(self):
+        """BOTH confirms are in (or the peer is legacy): perform the fusion --
+        the same path as offline jogress."""
+        msg = jogress.fuse(self.pet, self.jresult["num"])
+        if getattr(self, "jpartner_sick", False):
+            # canon startJogress: checkSick(90) -- swapping DNA with a
+            # sick partner is a NEAR-CERTAIN catch
+            if self.pet._check_sick(jogress.JOGRESS_SICK_CHANCE):
+                msg += "  ...and it caught something."
+        self.sfx = "jogress"
+        self._return_to_lobby(msg)
+
     def _key_jogress(self, k):
         if self.jphase == "result":
-            if k in ("enter", "space", "escape"):
-                if self.jshow is not None and self.jshow.phase == "fusing":
+            if self.jshow is not None and self.jshow.phase == "fusing":
+                if k in ("enter", "space", "escape"):
                     self.jshow.phase = "fused"          # skip the converge to the reveal
-                    return None
-                msg = jogress.fuse(self.pet, self.jresult["num"])   # same path as offline jogress
-                if getattr(self, "jpartner_sick", False):
-                    # canon startJogress: checkSick(90) -- swapping DNA with a
-                    # sick partner is a NEAR-CERTAIN catch
-                    if self.pet._check_sick(jogress.JOGRESS_SICK_CHANCE):
-                        msg += "  ...and it caught something."
-                self.sfx = "jogress"
-                self._return_to_lobby(msg)
+                return None
+            if not self.j_peer_two_phase:
+                # LEGACY peer (pre-v0.2.350): its client commits on any key with
+                # no decline -- mirror it, or a mixed-version pair goes one-sided
+                if k in ("enter", "space", "escape"):
+                    self._commit_fusion()
+                return None
+            # two-phase commit (consent audit 2026-07-07): the fusion is
+            # PERMANENT -- both players must say yes at the result screen
+            if k in ("enter", "space") and not self.j_confirmed:
+                self.j_confirmed = True
+                self.client.relay(self.partner[0], {"kind": "jogress", "t": "confirm"})
+                if self.j_partner_confirmed:
+                    self._commit_fusion()
+                else:
+                    self.status = "Waiting for the partner…"
+            elif k == "escape":
+                # a real DECLINE: nobody fuses, both sides told
+                self.client.relay(self.partner[0], {"kind": "jogress", "t": "decline"})
+                self._return_to_lobby("Fusion declined — no one fused.")
             return None
         if self.jphase == "failed":
             if k in ("enter", "space", "escape"):
@@ -645,8 +692,12 @@ class LobbyPanel:
         if self.jshow is not None and self.jphase == "result":
             name = (self.jresult or {}).get("name", "?")
             if self.jshow.phase == "fused":
-                # 2+19+2+13 <= 40: even the longest dex name fits statically
-                # (menu-bounds audit 2026-07-07 -- the old wordy hint ran ~50)
+                # every variant <= 40 with the longest dex name (menu-bounds
+                # budget): 2+19+11 / 2+19+19 / 2+19+13
+                if self.j_confirmed and not self.j_partner_confirmed:
+                    return f"→ [b]{name}[/]  [dim]· waiting…[/]"
+                if self.j_peer_two_phase:
+                    return f"→ [b]{name}[/] [dim]· ENTER fuse · ESC[/]"
                 return f"→ [b]{name}[/]  [dim]· ENTER fuse[/]"
             return "DNA... connect!  [dim]· ENTER skip[/]"
         return ""
@@ -674,7 +725,12 @@ class LobbyPanel:
             t.append("\n  ✦ JOGRESS ✦\n\n", style=INK_B)
             t.append(f"  {me} + {other}\n", style=INK)
             t.append(f"   →  {self.jresult['name']}\n\n", style=INK_B)
-            t.append("  [Enter] complete the fusion", style=DIM)
+            if self.j_confirmed and not self.j_partner_confirmed:
+                t.append("  waiting for the partner…", style=DIM)
+            elif self.j_peer_two_phase:
+                t.append("  [Enter] fuse    [Esc] decline", style=DIM)
+            else:
+                t.append("  [Enter] complete the fusion", style=DIM)
         elif self.jphase == "failed":
             t.append("\n  NO RESONANCE\n\n", style=INK_B)
             t.append(f"  {self.fail_reason}\n\n", style=INK)

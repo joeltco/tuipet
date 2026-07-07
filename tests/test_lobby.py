@@ -464,3 +464,71 @@ def test_battle_and_jogress_are_lobby_only():
     assert not hasattr(TuiPetApp, "action_battle")
     assert not hasattr(TuiPetApp, "action_jogress")
     assert "l" in keys and "a" in keys and "u" in keys      # the surviving routes
+
+
+def _jogress_session(monkeypatch, peer_two_phase=True):
+    """A panel sitting at the jogress RESULT screen with a stubbed partner."""
+    from tuipet import jogress
+    relays = []
+    s = LobbyState()
+    pan = _panel(s)
+    pan.client.relay = lambda to, payload: relays.append(payload)
+    fused = []
+    monkeypatch.setattr(jogress, "can_jogress", lambda pet: None)
+    monkeypatch.setattr(jogress, "resolve_online",
+                        lambda pet, payload: {"num": 102, "name": "Devimon"})
+    monkeypatch.setattr(jogress, "fuse", lambda pet, num: fused.append(num) or "Fused!")
+    pan.phase, pan.jphase = "jogress", "waiting"
+    pan.partner = (9, "kai")
+    card = {"kind": "jogress", "attr": "Virus", "num": 56, "name": "Agumon", "sick": False}
+    if peer_two_phase:
+        card["confirm2"] = True
+    pan._on_relay({"from_id": 9, "payload": card})
+    assert pan.jphase == "result"
+    pan.jshow = None                        # skip the scene: straight to the choice
+    return pan, relays, fused
+
+
+def test_jogress_two_phase_needs_both_confirms(monkeypatch):
+    """Consent audit 2026-07-07: the fusion is permanent, so BOTH players say
+    yes at the result screen -- one confirm alone must not fuse."""
+    pan, relays, fused = _jogress_session(monkeypatch)
+    pan._key_jogress("enter")
+    assert {"kind": "jogress", "t": "confirm"} in relays
+    assert not fused and pan.phase == "jogress", "one confirm must not commit"
+    pan._on_relay({"from_id": 9, "payload": {"kind": "jogress", "t": "confirm"}})
+    assert fused == [102] and pan.phase == "lobby"      # both in -> committed
+    # ...and the reverse order works too
+    pan2, _, fused2 = _jogress_session(monkeypatch)
+    pan2._on_relay({"from_id": 9, "payload": {"kind": "jogress", "t": "confirm"}})
+    assert not fused2, "the partner alone must not commit my pet"
+    pan2._key_jogress("enter")
+    assert fused2 == [102]
+
+
+def test_jogress_escape_is_a_real_decline(monkeypatch):
+    """ESC at the result screen declines for BOTH sides -- the old behavior
+    committed on every key including escape."""
+    pan, relays, fused = _jogress_session(monkeypatch)
+    pan._key_jogress("escape")
+    assert {"kind": "jogress", "t": "decline"} in relays
+    assert not fused and pan.phase == "lobby"
+    pan2, _, fused2 = _jogress_session(monkeypatch)
+    pan2._on_relay({"from_id": 9, "payload": {"kind": "jogress", "t": "decline"}})
+    assert not fused2 and pan2.phase == "lobby", "a partner's decline unwinds me too"
+
+
+def test_jogress_legacy_peer_keeps_the_instant_commit(monkeypatch):
+    """A pre-v0.2.350 peer has no decline and commits on any key: mirror it,
+    or a mixed-version pair fuses one-sided again."""
+    pan, relays, fused = _jogress_session(monkeypatch, peer_two_phase=False)
+    pan._key_jogress("escape")
+    assert fused == [102] and pan.phase == "lobby"
+    assert not any(p.get("t") == "decline" for p in relays)
+
+
+def test_jogress_partner_leaving_at_result_fuses_nobody(monkeypatch):
+    pan, relays, fused = _jogress_session(monkeypatch)
+    pan._key_jogress("enter")                    # I said yes; they vanish instead
+    pan._on_relay({"from_id": 9, "payload": {"kind": "jogress", "abort": True}})
+    assert not fused and pan.phase == "lobby"
