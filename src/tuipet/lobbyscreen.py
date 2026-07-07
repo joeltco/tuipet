@@ -209,6 +209,7 @@ class LobbyPanel:
 
     # ---- per-tick refresh (the 0.1s interval clock calls this) -----------
     def anim(self):
+        self._mq = getattr(self, "_mq", 0) + 1   # drives long-field marquees
         # session replays advance first (they render whatever the wire does)
         if self.bshow is not None:
             b = self.bshow
@@ -644,7 +645,9 @@ class LobbyPanel:
         if self.jshow is not None and self.jphase == "result":
             name = (self.jresult or {}).get("name", "?")
             if self.jshow.phase == "fused":
-                return f"→ [b]{name}[/]  [dim]· ENTER complete the fusion[/]"
+                # 2+19+2+13 <= 40: even the longest dex name fits statically
+                # (menu-bounds audit 2026-07-07 -- the old wordy hint ran ~50)
+                return f"→ [b]{name}[/]  [dim]· ENTER fuse[/]"
             return "DNA... connect!  [dim]· ENTER skip[/]"
         return ""
 
@@ -678,7 +681,10 @@ class LobbyPanel:
             t.append("  [Enter] back to lobby", style=DIM)
         else:
             t.append("\n  FUSING…\n\n", style=INK_B)
-            t.append(f"  syncing DNA with {pname}\n\n", style=INK)
+            # a 24-char account name ran this line to 43 > the 40-col LCD
+            # (menu-bounds audit 2026-07-07): the name field marquees instead
+            from .render import marquee
+            t.append(f"  syncing DNA with {marquee(pname, 21, getattr(self, '_mq', 0) // 2)}\n\n", style=INK)
             t.append("  [Esc] cancel", style=DIM)
         return t
 

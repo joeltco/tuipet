@@ -109,6 +109,21 @@ UPPER, LOWER, FULL = "\u2580", "\u2584", "\u2588"   # half/full blocks (bitmap_t
 #                                                      them -- the v0.2.166-175 feed-screen crash)
 
 
+def marquee(s, width, step, gap="   ", hold=8):
+    """Universal FIELD scroll (menu-bounds audit 2026-07-07): text that fits
+    its slot renders unchanged; longer text slides a width-wide window that
+    holds on the head, then loops through a gap.  Panels key `step` off their
+    own anim counter, so the CHROME around the field never moves -- the app's
+    _hud marquee scrolls whole overflow lines as a safety net, but a strip
+    that always overflowed slid its key hints out of view with it."""
+    if len(s) <= width:
+        return s
+    loop = s + gap
+    t = step % (len(loop) + hold)
+    off = 0 if t < hold else t - hold
+    return (loop + loop)[off:off + width]
+
+
 def bitmap_text(rows, on, bg, pad_to=0):
     """1-bit rows -> half-block Rich Text lines (square pixels).  The one
     implementation behind every icon/badge mini-render (audit 2026-07: this

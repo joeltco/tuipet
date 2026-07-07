@@ -114,4 +114,4 @@ def test_lobby_fusion_plays_the_real_scene():
         _fits(pan, "fusion frame")
         pan.anim()
     assert pan.jshow.phase == "fused"
-    assert "ENTER complete" in pan.strip()
+    assert "ENTER fuse" in pan.strip()        # menu-bounds rewording 2026-07-07

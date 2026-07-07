@@ -270,7 +270,7 @@ def test_habitat_picker_is_a_scene_with_a_strip():
     _render(pan)
     assert pan.text().markup != here
     assert p.habitat == home                         # ...but browsing never moves you
-    assert "ENTER buy/move" in pan.strip()
+    assert "ENTER ESC" in pan.strip()         # menu-bounds rewording 2026-07-07
 
 
 def test_title_boot_flashes_dissolves_then_settles():

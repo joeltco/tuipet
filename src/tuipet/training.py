@@ -719,7 +719,10 @@ class TrainingPanel:
             # STATUS only -- the game objects live in the LCD now (the redo,
             # Joel 2026-07-06: the message box is never a gaming area)
             tb = int((max(self.round_t, 0) / max(self.round_len, 1)) * 8)
-            return (f"[b]SPACE[/] when the shapes match  "
+            # 18+2+3+2+8 == 33 <= HUD_W 40 (menu-bounds audit 2026-07-07:
+            # the wordy cue ran the strip to 42 and the whole line marqueed);
+            # same wording as the round flash
+            return (f"[b]SPACE[/] on the match  "
                     f"{self.rep + 1}/{HP_ROUNDS}  {'▓' * tb}{'░' * (8 - tb)}")
         # ONE strip formula for every drill (consistency audit 2026-07-06):
         # action cue + progress + meter.  Game OBJECTS live in the LCD, the

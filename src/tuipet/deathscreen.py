@@ -50,6 +50,7 @@ class DeathPanel:
         self.sfx = "error" if hold else None    # soundConfig dieLoop -> error
 
     def anim(self):
+        self._mq = getattr(self, "_mq", 0) + 1  # drives the strip field marquee
         if self._hold > 0:
             self._hold -= 1
             if self._hold == 10:
@@ -91,21 +92,27 @@ class DeathPanel:
         p = self.pet
         if self._hold > 0:
             return "…"                             # deading(): just the grave, no keys yet
+        # every state is budgeted to HUD_W 40 (menu-bounds audit 2026-07-07):
+        # long fields marquee via render.marquee; the KEY HINTS stand still
+        # (the old one-line epitaph ran to ~68 wide and the whole strip slid,
+        # hints included)
+        from .render import marquee
+        mq = getattr(self, "_mq", 0) // 2
         if self.ask_etch:
             # DigiMemory_Validation: etch the data, or carry the care bonus
-            return (f"{p.name}'s legacy — [b]E[/] etch its data  "
-                    f"[b]B[/] carry the care bonus (+{self.grade_kept})")
+            return (f"[b]E[/] etch {marquee(p.name, 10, mq)}'s data · "
+                    f"[b]B[/] bonus +{self.grade_kept}")
         if self.asking:
             # setNewDigimemory validation: only one Digimemory may exist
-            return (f"One Digimemory only — [b]E[/] etch {p.name}'s data  "
-                    f"[b]K[/] keep {self.old_mem.get('name', '?')}'s")
-        rip = f"R.I.P. [b]{p.name}[/] · gen {p.generation} · lived {_age_str(p.age_seconds)}"
+            return (f"Only one: [b]E[/] {marquee(p.name, 10, mq)} · "
+                    f"[b]K[/] {marquee(self.old_mem.get('name', '?'), 10, mq)}")
+        rip = f"R.I.P. {p.name} · gen {p.generation} · lived {_age_str(p.age_seconds)}"
         if getattr(p, "death_cause", ""):
             rip += f" · of {p.death_cause}"        # what took it (audit 2026-07-05)
         if self.new_mem:
             m = self.new_mem
             rip += f" · etched Va+{m['vaccine']} D+{m['data']} Vi+{m['virus']}"
-        return rip + "  [dim]· N new egg  ESC rest[/]"
+        return f"[b]{marquee(rip, 22, mq)}[/] [dim]· N new egg · ESC[/]"
 
     def text(self):
         p = self.pet

@@ -83,11 +83,11 @@ def test_memorial_conflict_asks_and_resolves():
     persistence.bank_digimemory(old)
     p = _pet(dead=True)
     pan = DeathPanel(p, new_mem=new, old_mem=old, grade_kept=4)
-    assert "etch its data" in pan.strip()                     # prompt 1: the Validation
+    assert "etch" in pan.strip() and "bonus" in pan.strip()   # prompt 1: the Validation
     assert pan.key("n") is None                               # the prompt gates the memorial keys
     pan.key("e")                                              # Yes: etch...
     # box-clip repin 2026-07-04: the memorial prompt rides the strip
-    assert "One Digimemory only" in pan.strip()               # prompt 2: only one survives
+    assert "Only one" in pan.strip()                          # prompt 2: only one survives
     pan.key("e")                                              # ...the new data over the old
     assert persistence.peek_digimemory()["name"] == "Gatomon"
     assert pan.key("n") == ("done", "new")
@@ -140,7 +140,13 @@ def test_every_death_records_its_cause_and_the_memorial_tells_it():
     assert p.dead and p.death_cause == "sickness"
 
     pan = DeathPanel(p)
-    assert "of sickness" in pan.strip()            # the epitaph tells it
+    # the epitaph field MARQUEES (menu-bounds 2026-07-07): the cause scrolls
+    # through the 22-char window -- roll a full loop and catch it
+    seen = ""
+    for _ in range(120):
+        pan.anim()
+        seen += pan.strip()
+    assert "of sickness" in seen                   # the epitaph tells it
 
 
 def test_a_refusal_never_eats_the_chip():

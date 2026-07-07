@@ -68,12 +68,17 @@ class HabitatPanel:
                 else f"Su {su[0]}-{su[1]}°  Wi {wi[0]}-{wi[1]}°")
 
     def strip(self):
+        # budgeted to HUD_W 40 (menu-bounds audit 2026-07-07: the old chrome
+        # ran 44-49 wide, so the WHOLE strip marqueed and the key hints slid
+        # out of view) -- the name field scrolls, the chrome stands still:
+        # 1+10+1+tag(<=7)+1+1+1+count(5)+1+hint(12) == 40
+        from .render import marquee
         h = self.rows[self.cursor]
         a = self._aff(h)
         mark = "♥" if a > 0 else ("✖" if a < 0 else "·")
-        return (f"[b]▸{h['name'][:14]}[/] {self._tag(h)} {mark}"
-                f"  {self.cursor + 1}/{len(self.rows)}"
-                f"  [dim]· ←→ ENTER buy/move ESC[/]")
+        return (f"[b]▸{marquee(h['name'], 10, self.frame_i // 2)}[/] {self._tag(h)} {mark}"
+                f" {self.cursor + 1}/{len(self.rows)}"
+                f" [dim]←→ ENTER ESC[/]")
 
     def text(self):
         """The selected habitat AS A SCENE: the pet stands in the backdrop it

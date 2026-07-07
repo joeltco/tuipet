@@ -277,7 +277,7 @@ class Adventure:
             e = _pick_weighted(here)
             self.last = f"Wild {e['name']} appeared!"
             return ("encounter", e)
-        self.last = f"Travelling... ({self.pct}%)"
+        self.last = f"Travelling… {self.pct}%"   # 16-18 wide: strip budget (2026-07-07)
         return None
 
     def flee(self, enemy, was_boss=False):

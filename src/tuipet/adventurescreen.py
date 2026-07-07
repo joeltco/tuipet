@@ -330,7 +330,7 @@ class AdventurePanel(menu.SubHost):
         elif a.done:
             hint = "ESC out"
         elif self.travelling:
-            hint = "SPACE stop  ESC out"
+            hint = "SPACE stop · ESC"     # travelling note + hint <= 40 (2026-07-07)
         elif getattr(self, "town_prompt", None) is not None:
             hint = "ENTER visit  ESC walk on"
         elif self.discovering:
