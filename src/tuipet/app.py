@@ -508,7 +508,7 @@ class Screen(Static):
 
     # ---- care-action animations (DVPet SpriteAnim eat/clean/cheer) -----------
     def start_fx(self, kind, icon=None, poop=0, old_num=None, pet=None, starving=False, good=True):
-        steps = {"eat": 35, "cheer": 31, "jeer": 31, "clean": 22, "spit": 25, "evolve": 41, "dying": 50, "dna_charge": 44, "play": 48, "heal": 24, "poop": 25, "poopdance": 21, "toilet": 38, "losing": 50,
+        steps = {"eat": 35, "cheer": 31, "jeer": 31, "clean": 22, "spit": 25, "evolve": 41, "dying": 50, "dna_charge": 44, "play": 48, "heal": 24, "poop": 25, "poopdance": 21, "yawn": 22, "toilet": 38, "losing": 50,
                  "gift": GIFT_OUT + GIFT_BACK + GIFT_HOLD, "assist": 28, "inherit": 50}.get(kind, 12)
         self.fx = {"kind": kind, "step": 0, "steps": steps, "icon": icon, "poop": poop,
                    "old_num": old_num, "good": good}
@@ -1125,6 +1125,21 @@ class Screen(Static):
             tw = max(len(r) for r in f)
             c.overlay += _blit(f, max(0, PET_BASE_X + c.xshift - tw - 1),
                                c.px_h - 2 - len(f))
+
+    def _fxk_yawn(self, pet, fx, step, c):
+        # DVPet yawning() (SpriteAnim 15742): idle -> the yawn (+8 at beat 4)
+        # -> a side-sway (x-3/+3 pairs, beats 10..28) -> the stretch tail
+        # (+3/+1 alternating, 33..53).  The special-idle tell that bedtime
+        # nears; the doze-off keeps its simple two-pose yawn anim.
+        if step < 4:
+            c.rows = self._pose_rows_idx(pet, 0)
+        elif step <= 9:
+            c.rows = self._pose_rows_idx(pet, 8)
+        elif step <= 14:
+            c.rows = self._pose_rows_idx(pet, 8)
+            c.xshift += -1 if ((step - 10) // 3) % 2 == 0 else 1
+        else:
+            c.rows = self._pose_rows_idx(pet, 3 if ((step - 15) // 2) % 2 == 0 else 1)
 
     def _fxk_poopdance(self, pet, fx, step, c):
         # DVPet poopDance (a special-idle roll while the gauge is full): a
@@ -2067,19 +2082,18 @@ class TuiPetApp(App):
             # DVPet poopDance: a special-idle roll while the gauge is full --
             # tuipet fires the poop the moment the gauge fills, so the nervous
             # dance rolls while the need APPROACHES (>=80% of the interval)
+            # canon rolls ONCE and picks UNIFORMLY among the eligible tells
+            # (yawning/poopdance audit 2026-07-06; the old elif hard-favoured
+            # the dance whenever both were due)
             if (not p.dead and p.stage != "Egg" and not p.asleep
-                    and p.anim in ("idle", "walk")
-                    and getattr(p, "_poop_t", 0) >= 0.8 * p._poop_interval
-                    and random.randrange(40) == 0):
-                sc.start_fx("poopdance")
-            # DVPet Yawning: the same special-idle family rolls a spontaneous
-            # yawn while REAL bedtime nears (sleepNotNap eligibility) -- the
-            # tell that lights-out now means sleep (sleep-screens audit
-            # 2026-07-06; same odds idiom as the poopdance above)
-            elif (not p.dead and p.stage != "Egg" and not p.asleep
-                    and p.anim in ("idle", "walk") and p.near_bedtime()
-                    and random.randrange(40) == 0):
-                p._set_anim("yawn", 1.8)
+                    and p.anim in ("idle", "walk")):
+                specials = []
+                if getattr(p, "_poop_t", 0) >= 0.8 * p._poop_interval:
+                    specials.append("poopdance")
+                if p.near_bedtime():
+                    specials.append("yawn")      # the full yawning() stretch fx
+                if specials and random.randrange(40) == 0:
+                    sc.start_fx(random.choice(specials))
             sc.advance(self.pet)
             sc.paint(self.pet)
 

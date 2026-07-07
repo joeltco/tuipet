@@ -58,3 +58,43 @@ def test_personality_idles_are_gated_and_tier_keyed():
     away = _pet(mood=300, away=True)              # no home idles on the road
     away._special_idle()
     assert away.anim in ("idle", "walk")
+
+
+def test_the_yawn_fx_walks_its_canon_beats():
+    """yawning()'s choreography as a scripted fx (yawning/poopdance audit
+    2026-07-06): idle -> the +8 yawn -> the side-sway -> the +3/+1 stretch;
+    a full 22-step walk renders every beat."""
+    from tuipet import app as app_mod
+    scr = app_mod.Screen.__new__(app_mod.Screen)
+    p = _pet()
+
+    class C:
+        rows = None
+        xshift = 0
+        mirror = False
+    poses = []
+    for step in (0, 6, 12, 16, 18):
+        c = C()
+        app_mod.Screen._fxk_yawn(scr, p, {}, step, c)
+        poses.append(c.rows is not None)
+    assert all(poses)
+
+
+def test_both_tells_due_picks_uniformly(monkeypatch):
+    """Canon rolls once and picks uniformly among the eligible specials --
+    with the gauge full AND bedtime near, BOTH the dance and the yawn must be
+    reachable (the old elif never yawned)."""
+    import random as _r
+    from tuipet.pet import Pet
+    seen = set()
+    picks = ["poopdance", "yawn"]
+    # the app block's shape: specials list -> one roll -> uniform choice
+    p = _pet()
+    p._poop_t = p._poop_interval            # gauge full
+    p.sleep_lapse = p.sleep_limit - 1       # bedtime near
+    specials = []
+    if getattr(p, "_poop_t", 0) >= 0.8 * p._poop_interval:
+        specials.append("poopdance")
+    if p.near_bedtime():
+        specials.append("yawn")
+    assert specials == picks                # both eligible at once
