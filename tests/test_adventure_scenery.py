@@ -64,6 +64,7 @@ def test_town_lobby_is_a_scene_and_arrival_shows_the_town():
     assert pan.strip() == ""                   # pages carry their own in-LCD chrome
     # adventure: stepping INSIDE the town's span swaps to the town backdrop
     ap = AdventurePanel(_pet())
+    ap._trans = None                           # settled past the teleport
     a = ap.adv
     a.location = 4250                          # town 0 spans 4201-4300 in zone 1-1
     in_town = ap.text().markup
@@ -159,6 +160,7 @@ def test_investigate_plays_the_left_walk_and_seals_the_reveal():
     from tuipet.adventurescreen import INV_REVEAL_T, INV_END_T
     random.seed(1)
     pan = AdventurePanel(_pet())
+    pan._trans = None                             # settled past the teleport
     pan.adv.location = pan.adv.total_steps // 2
     pan.discovering = True
     for seed in range(120):
@@ -211,6 +213,7 @@ def test_habitat_change_cross_fades_not_snaps():
     from tuipet.adventurescreen import FADE_T
     random.seed(7)
     pan = AdventurePanel(_pet())
+    pan._trans = None                             # settled past the teleport
     a = pan.adv
     spans = a.zone.get("bgs", [])
     assert len(spans) >= 2
@@ -253,43 +256,92 @@ def test_encounter_opens_the_fight_directly():
     assert pan._pending == (False, _mon(pan)) and not pan.travelling
 
 
-def test_adventure_arrives_through_the_habitat_fade():
-    """Canon fade() rides the pet OUT of its habitat: the panel opens under
-    full black and the road lifts in over TRANS_T ticks -- a pure overlay,
-    the journey already runs beneath it."""
-    from tuipet.adventurescreen import TRANS_T
+def test_adventure_opens_with_the_teleport_leave_then_arrive():
+    """The REAL habitat transition (Joel 2026-07-07, third strike): canon
+    Teleport_Leave plays over the HOME habitat -- the striped curtain flashes
+    at t3/t15/t21 (disappear=strongHit), swallows the pet at t23, shrinks to
+    a sliver (shrink=attackHit) and departs off the top (attack) -- then the
+    world swaps and Teleport_Arrive drops the sliver back in, expands it, and
+    teleportAppear flickers the pet in on the ROAD.  Travel is held the whole
+    way and begins only at endAnim."""
+    from tuipet.adventurescreen import (TELE_LEAVE_T, TELE_ARRIVE_T,
+                                        TELE_LEAVE_SNDS, TELE_ARRIVE_SNDS)
     pan = AdventurePanel(_pet())
-    assert pan._trans == {"t": 0, "dir": "in"}
-    dark = pan.text().markup
-    for _ in range(TRANS_T // 2):
+    assert pan._trans == {"dir": "in", "phase": "leave", "t": 0}
+    assert not pan.travelling                     # canon holds until endAnim
+    home = pan.text().markup                      # the pet standing at home
+    snds, frames = [], {home}
+    while pan._trans is not None and pan._trans["phase"] == "leave":
         pan.anim()
-    mid = pan.text().markup
+        frames.add(pan.text().markup)
+        if getattr(pan, "sfx", None):
+            snds.append(pan.sfx)
+            pan.sfx = None
+        assert pan.key("f") is None and pan.sub is None   # the anim owns the keys
+    assert snds == [TELE_LEAVE_SNDS[k] for k in sorted(TELE_LEAVE_SNDS)]
+    assert pan._trans == {"dir": "in", "phase": "arrive", "t": 0}
     while pan._trans is not None:
         pan.anim()
-    lit = pan.text().markup
-    assert dark != mid != lit                    # the black actually lifts
+        frames.add(pan.text().markup)
+        if getattr(pan, "sfx", None):
+            snds.append(pan.sfx)
+            pan.sfx = None
+    assert snds[5:] == [TELE_ARRIVE_SNDS[k] for k in sorted(TELE_ARRIVE_SNDS)]
+    assert len(frames) > 10                       # flashes/shrink/flicker all render
+    assert pan.travelling                         # landed: the walk begins
 
 
-def test_going_home_fades_out_then_auto_closes():
-    """ESC starts the homecoming fade: keys are swallowed while it plays, the
-    world darkens, and at full black the panel applies the homecoming (away
-    drops, home climate) and asks the app to close it (auto_close)."""
-    from tuipet.adventurescreen import TRANS_T
+def test_going_home_teleports_out_then_auto_closes():
+    """ESC plays the same teleport the other way: leave on the road, the
+    world swaps home at the phase boundary (away drops, home climate), the
+    arrive flicker plays in the habitat, then the panel asks the app to
+    close it (auto_close) -- canon teleportArrive toggles isHome at frame 0
+    and teleportAppear ends with endAnim."""
+    from tuipet.adventurescreen import TELE_LEAVE_T, TELE_ARRIVE_T
     pan = AdventurePanel(_pet())
     p = pan.pet
     pan._trans = None                            # settled on the road
-    assert pan.key("escape") is None             # no instant close: the fade runs
-    assert pan._trans == {"t": 0, "dir": "out"}
-    assert pan.key("f") is None and pan.sub is None   # the fade owns the keys
-    lit = pan.text().markup
-    for _ in range(TRANS_T - 1):
+    pan.travelling = True
+    assert pan.key("escape") is None             # no instant close: the anim runs
+    assert pan._trans == {"dir": "out", "phase": "leave", "t": 0}
+    assert not pan.travelling
+    assert pan.key("f") is None and pan.sub is None   # the anim owns the keys
+    for _ in range(TELE_LEAVE_T):
+        assert p.away                            # not home until the world swap
         pan.anim()
-        assert p.away                            # not home until full black
-    assert pan.text().markup != lit              # the world darkened
-    pan.anim()                                   # the last step
-    assert pan._trans is None
     assert not p.away                            # teleportArrive: home again
+    assert p.habitat == p.home_habitat
+    assert pan._trans["phase"] == "arrive"
+    for _ in range(TELE_ARRIVE_T):
+        pan.anim()
+    assert pan._trans is None
     assert pan.auto_close == ("done", None)      # the app closes the panel
+
+
+def test_out_of_life_plays_the_retreat_town_fade():
+    """Canon Enum.State.Retreat_Town (SpriteAnim.retreatToTown): running out
+    of adventure life fades the world to black over the dejected pet, the
+    town reset waits under it, and the road resumes when it lifts."""
+    from tuipet.adventurescreen import RETREAT_T
+    pan = AdventurePanel(_pet())
+    pan._trans = None
+    a = pan.adv
+    a.life = 1
+    a.location = a.stride * 3
+    a._lose_life("Lost...", 0)                   # the model side retreats
+    assert a.retreated and a.life == 3           # toClosestTown + the refill
+    assert a.location <= a.stride * 3            # never forward of the fall
+    a.retreated = False                          # the view pops the flag
+    pan._retreat = {"t": 0}                      # ...and plays the fade
+    pan.travelling = False
+    frames = set()
+    while pan._retreat is not None:
+        assert pan.key("f") is None and pan.sub is None
+        pan.anim()
+        frames.add(pan.text().markup)
+        assert pan._retreat is None or pan._retreat["t"] <= RETREAT_T
+    assert len(frames) > 5                       # the black steps down and back up
+    assert pan.travelling                        # regrouped: the road resumes
 
 
 def test_zone_clear_plays_the_pulse_transition():
@@ -297,6 +349,7 @@ def test_zone_clear_plays_the_pulse_transition():
     before the road resumes -- the zone used to advance with no beat at all."""
     from tuipet.adventurescreen import PULSE_T, PULSE_ON, TRAVEL_TICKS
     pan = AdventurePanel(_pet())
+    pan._trans = None                             # settled past the teleport
     a = pan.adv
     a.travel = lambda: ("zone", None)
     pan.travelling = True
@@ -325,6 +378,7 @@ def test_travel_paces_one_stride_per_second():
     from tuipet.adventurescreen import TRAVEL_TICKS
     assert TRAVEL_TICKS == 10
     pan = AdventurePanel(_pet())
+    pan._trans = None                             # settled past the teleport
     pan.travelling = True
     moved = []
     pan.adv.travel = lambda: moved.append(1)
@@ -344,6 +398,7 @@ def _road(travelling=True):
     p.obedience = 1000                            # no refusal noise in the beats
     p.compliance = True
     pan = AdventurePanel(p)
+    pan._trans = None                             # settled past the teleport
     pan.travelling = travelling
     return pan, p
 

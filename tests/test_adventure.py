@@ -137,6 +137,7 @@ def test_map_final_boss_cues_the_victory_parade():
     p = Pet(num=102, name="D", stage="Champion", attribute="Virus", obedience=800)
     p.world_seconds = 12 * 60.0
     panel = AdventurePanel(p)
+    panel._trans = None                             # settled past the teleport
     final = next(e for e in data.load_enemies() if e["parade_msg"])
 
     class _B:
@@ -404,6 +405,7 @@ def _road_panel():
     p.world_seconds = 10 * 60.0
     p.bits = 500
     pan = AdventurePanel(p)
+    pan._trans = None            # settled past the arrival teleport
     pan.travelling = False
     return pan, p
 

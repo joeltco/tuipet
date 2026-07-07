@@ -34,16 +34,35 @@ TRAVEL_TICKS = 10             # ticks per auto-stride (the INTERACTIVE_STEPS com
 #                               each scene HOLDS like canon's set-piece backdrops and towns
 #                               read as interludes (Joel 2026-07-07: "adventure felt
 #                               different in dvpet")
-# the habitat transition (canon SpriteAnim.fade(): a black layer steps to
-# opaque at +5 alpha/frame over the WHOLE display, the world swaps under full
-# black, then it steps back out -- the wipe the transports, the evolution
-# silhouette and freeze/unfreeze all ride).  It plays where canon plays it:
-# the pet LEAVING ITS HABITAT for the adventure world (arrival fades the road
-# in from black) and coming home (the road fades out, then the panel closes).
-# Battles get NO transition -- the fight's own intro is the battle screen
-# (Joel 2026-07-07; the Battle_Flash overlay card shipped in .359 was wrong
-# and is REMOVED).
-TRANS_T = 14                  # ticks to full black (canon 255/5 steps ~ 1.4s)
+# the habitat transition (canon Enum.State.Teleport_Leave/Teleport_Arrive --
+# SpriteAnim.teleportLeave()/teleportArrive(), the state ClockTic fires the
+# moment the pet leaves for (or returns from) the adventure world): the
+# striped CURTAIN (resources/evol.png: 2-on/1-off black stripes over the
+# whole LCD) flashes over the standing pet three times (t3/t15/t21), stays
+# down and swallows it (t23), shrinks to a sliver (t26..) and shoots off the
+# TOP of the screen (depart); the world swaps under the cut (teleportArrive
+# frame 0 toggles isHome + checkBackNoAnim), the sliver drops back in from
+# the top, expands back to full screen, and teleportAppear flickers it three
+# times -- the pet standing in the new world from the third flash.  Beats
+# are canon interval units (targetFPS/10 = 0.1s) mapped 1:1 onto tuipet's
+# 0.1s tick; sounds are the canon device mapping (soundConfig.csv rows
+# 39-44: disappear=strongHit, shrink/expand=attackHit, depart/arrive=attack,
+# appear=strongHit).  Battles get NO transition (their intro is the battle
+# screen); v0.2.361's fade() port was the WRONG canon animation (fade() is
+# the pause/silhouette wipe, not the habitat teleport -- Joel 2026-07-07).
+TELE_LEAVE_T = 50             # flashes 3..22, swallow 23, shrink 26..44, depart up
+TELE_ARRIVE_T = 46            # drop 0..5, expand 5..23, appear flicker 23..46
+TELE_ON = ((3, 9), (15, 18), (21, 22))        # leave: curtain flash spans
+TELE_APPEAR_ON = ((1, 2), (5, 8), (14, 20))   # arrive: flicker spans (t-23)
+TELE_LEAVE_SNDS = {3: "strongHit", 15: "strongHit", 21: "strongHit",
+                   26: "attackHit", 44: "attack"}
+TELE_ARRIVE_SNDS = {1: "attack", 5: "attackHit",
+                    24: "strongHit", 28: "strongHit", 37: "strongHit"}
+# out-of-life retreat (canon Enum.State.Retreat_Town -- SpriteAnim.
+# retreatToTown(): the pet holds the dejected pose 9 while a black layer
+# steps to opaque at +5 alpha/frame, the world resets to the closest town
+# under full black, then it steps back out and adventure life refills)
+RETREAT_T = 34                # ~17 ticks down + 17 up (canon 255/5 x2)
 # the zone-change transition (canon SpriteAnim.zoneChange): four zonePulse
 # beats on the map light at interval*5/15/25/35, resolution at interval*54 --
 # ported as backdrop pulses on the LCD (no map screen on the 32-col arena)
@@ -88,6 +107,15 @@ def _dim(bg, f):
     return out
 
 
+def _curtain_pts(x, y, w, h):
+    """The evol curtain as overlay pixels: the canon stripe pattern (each
+    3-px band = 1 clear + 2 filled, resources/evol.png) over an LCD rect.
+    Rides render_scene's overlay so it covers the PET too, exactly like
+    canon's room-effect layer sitting over the character sprite."""
+    return [(px, py) for py in range(y, y + h)
+            for px in range(x, x + w) if (px - x) % 3]
+
+
 def _blend_bg(old, new, t):
     """Per-pixel RGB lerp between two backdrop buffers (rows of packed 6-hex
     colours) -- the halfblock LCD's honest equivalent of canon's alpha fade."""
@@ -109,7 +137,7 @@ class AdventurePanel(menu.SubHost):
         self.pet = pet
         self.adv = Adventure(pet)
         self.frame_i = 0
-        self.travelling = True
+        self.travelling = False     # the walk starts once the teleport lands
         self.sub = None
         self._pending = None
         self._travel_t = 0
@@ -120,9 +148,11 @@ class AdventurePanel(menu.SubHost):
         self._parade = None         # a running BossParade (map beaten)
         self._pulse = None          # a running zoneChange pulse transition
         self._care = None           # a running road care beat (cheer/jeer/heal)
-        # leaving home: the world arrives THROUGH the fade (canon fade() --
-        # the same wipe the transports ride out of the habitat)
-        self._trans = {"t": 0, "dir": "in"}
+        self._retreat = None        # a running Retreat_Town fade (out of life)
+        # leaving home rides the real canon transition: Teleport_Leave plays
+        # over the HOME habitat, the world swaps, Teleport_Arrive materialises
+        # the pet on the road (Joel 2026-07-07: the fade was the wrong anim)
+        self._trans = {"dir": "in", "phase": "leave", "t": 0}
 
     def anim(self):
         if self.sub_anim():          # SubHost: delegate + sfx bubble
@@ -134,20 +164,38 @@ class AdventurePanel(menu.SubHost):
         if fade is not None:
             fade["t"] += 1                   # the habitat cross-fade clock
         if self._trans is not None:
-            # the habitat fade (canon fade()): arrival lifts the black as a
-            # pure overlay (the road runs beneath it); going home the black
-            # steps in OVER the held screen, then the panel closes itself
+            # the teleport (canon Teleport_Leave -> Teleport_Arrive): the
+            # curtain script owns the screen both ways -- canon's state
+            # machine holds every input until endAnim()
             tr = self._trans
             tr["t"] += 1
-            if tr["t"] >= TRANS_T:
-                self._trans = None
-                if tr["dir"] == "out":          # home again, under full black
+            snds = TELE_LEAVE_SNDS if tr["phase"] == "leave" else TELE_ARRIVE_SNDS
+            snd = snds.get(tr["t"])
+            if snd:
+                self.sfx = snd
+            if tr["phase"] == "leave" and tr["t"] >= TELE_LEAVE_T:
+                # the sliver left the screen: the world swaps under the cut
+                # (canon teleportArrive frame 0: isHome toggles + the
+                # background changes with NO anim)
+                tr["phase"], tr["t"] = "arrive", 0
+                if tr["dir"] == "out":
                     self.pet.go_home_habitat()  # back from the road: home climate
                     self.pet.away = False       # resumes; canon teleportArrive
+            elif tr["phase"] == "arrive" and tr["t"] >= TELE_ARRIVE_T:
+                self._trans = None
+                if tr["dir"] == "out":
                     self.auto_close = ("done", None)
-                    return
-            if tr["dir"] == "out":
-                return
+                else:
+                    self.travelling = not self.adv.done   # landed: the walk begins
+            return
+        if self._retreat is not None:
+            # Retreat_Town: the black fade plays out while the town reset
+            # (already applied by _apply_life_penalty) waits under it
+            self._retreat["t"] += 1
+            if self._retreat["t"] >= RETREAT_T:
+                self._retreat = None
+                self.travelling = not self.adv.done
+            return
         if self._pulse is not None:
             # zoneChange: four zonePulse beats, then the road (or the parade)
             p = self._pulse
@@ -300,6 +348,13 @@ class AdventurePanel(menu.SubHost):
                         paraders = [bb["num"] for z in self.adv.maps[self.adv.mi]["zones"]
                                     for bb in z["bosses"]][:3]      # canon shows three
                     res = self.adv.resolve(r[1].won, was_boss, enemy)
+                    if getattr(self.adv, "retreated", False):
+                        # out of life: the Retreat_Town fade plays over the
+                        # town reset (canon SpriteAnim.retreatToTown)
+                        self.adv.retreated = False
+                        self._retreat = {"t": 0}
+                        self.travelling = False
+                        return None
                     if res:
                         # zone/map/all advanced: the zoneChange pulse plays
                         # first; a parade_msg boss chains the parade after it
@@ -311,8 +366,11 @@ class AdventurePanel(menu.SubHost):
                         return None
                 self.travelling = not self.adv.done
             return None
-        if getattr(self, "_trans", None) is not None and self._trans["dir"] == "out":
-            return None                       # the homecoming fade owns the screen
+        if getattr(self, "_trans", None) is not None:
+            return None                       # the teleport owns the screen (canon
+            #                                   holds every input until endAnim)
+        if getattr(self, "_retreat", None) is not None:
+            return None                       # the Retreat_Town fade plays out
         if getattr(self, "_pulse", None) is not None:
             return None                       # canon zoneChange is not skippable
         if getattr(self, "town_prompt", None) is not None:
@@ -403,9 +461,11 @@ class AdventurePanel(menu.SubHost):
         elif k in ("escape", "a"):          # a (the opening key) also closes, like shop/habitat
             if getattr(self, "adv", None) is None or not hasattr(self, "_trans"):
                 return ("done", None)       # a bare/legacy panel: close outright
-            # going home rides the same fade OUT (canon transport fade);
-            # anim() applies the homecoming under full black, then auto-closes
-            self._trans = {"t": 0, "dir": "out"}
+            # going home plays the SAME teleport the other way: leave on the
+            # road, the world swaps to home, arrive in the habitat -- then
+            # anim() auto-closes the panel (canon teleportArrive/endAnim)
+            self._trans = {"dir": "out", "phase": "leave", "t": 0}
+            self.travelling = False
             return None
         return None
 
@@ -495,6 +555,9 @@ class AdventurePanel(menu.SubHost):
                 ef = em[(t // 6) % len(em)]
                 overlay = strikefx.blit(ef, x + grid.width(rows) + 1, 1)
             return rows, x, True, overlay, None
+        if self._retreat is not None:                 # Retreat_Town: dejected (pose
+            rows = self._rows(9)                      # 9) under the stepping black
+            return rows, self._jx(rows), False, [], None
         if self._refuse_t:                            # Refusing: the mirror head-shake
             rows = self._rows(data.ROLES["refuse"][0])
             shake = ((REFUSE_T - self._refuse_t) // 6) % 2 == 0
@@ -506,17 +569,15 @@ class AdventurePanel(menu.SubHost):
         rows = self._rows(data.ROLES["walk"][(self.frame_i // beat) % 2])
         return rows, self._jx(rows), True, [], None
 
-    def text(self):
-        if self.sub is not None:
-            return self.sub.text()
+    def _road_bg(self):
+        """The journey's SCENERY (restyle 2026-07-04 -- the old flat 7-row
+        strip "looked nothing like the rest of the game"): the zone's
+        canonical per-step backdrop (zones.csv BackgroundsAndRange), so the
+        world CHANGES as the pet walks -- desert into forest into mountains.
+        Home scenery covers spans the data leaves blank.  Crossing into a new
+        habitat CROSS-FADES (canon BackgroundAnim.animateBack: the old
+        backdrop's opacity steps out over the new at -0.05/frame)."""
         a = self.adv
-        pet_rows, x, mirror, overlay, note_over = self._pet_placement()
-        # the journey's SCENERY (restyle 2026-07-04 -- the old flat 7-row strip
-        # "looked nothing like the rest of the game"): the zone's canonical
-        # per-step backdrop (zones.csv BackgroundsAndRange), so the world
-        # CHANGES as the pet walks -- desert into forest into mountains.
-        # Home scenery covers spans the data leaves blank.  Pet over a bg is
-        # ALWAYS the dark silhouette (paint() rule, v0.2.197).
         bg_h = next((hid for (blo, bhi, hid) in a.zone.get("bgs", [])
                      if blo <= a.location <= bhi), None)
         # arriving at a town shows the TOWN's scenery (towns.csv TownBackgroundID)
@@ -525,9 +586,6 @@ class AdventurePanel(menu.SubHost):
             tbg = (data.load_towns().get(tspan[2]) or {}).get("bg_habitat")
             bg_h = tbg if tbg is not None else bg_h
         bgimg = self.pet.background(bg_h) if bg_h is not None else self.pet.background()
-        # crossing into a new habitat CROSS-FADES the scenery (canon
-        # BackgroundAnim.animateBack: the old backdrop's opacity steps out
-        # over the new at -0.05/frame -- the world used to SNAP mid-stride)
         if bg_h != getattr(self, "_bg_id", bg_h):
             self._bg_fade = {"old": getattr(self, "_bg_last", None), "t": 0}
         self._bg_id = bg_h
@@ -537,17 +595,77 @@ class AdventurePanel(menu.SubHost):
         else:
             self._bg_fade = None
         self._bg_last = bgimg
+        return bgimg
+
+    def _teleport_frame(self):
+        """One frame of the canon teleport (SpriteAnim.teleportLeave /
+        teleportArrive / teleportAppear), on the side of the wipe the beat
+        script says the world is showing."""
+        tr = self._trans
+        t, ph = tr["t"], tr["phase"]
+        H = ROWS * 2
+        # which world is under the curtain: leaving-out and arriving-in show
+        # the ROAD; leaving-in and arriving-out show the HOME habitat
+        home_side = (tr["dir"] == "in") == (ph == "leave")
+        if home_side:
+            bgimg = (self.pet.background(self.pet.home_habitat)
+                     if tr["dir"] == "in" else self.pet.background())
+        else:
+            bgimg = self._road_bg()
+        pet_on, cur = False, None
+        if ph == "leave":
+            pet_on = t < 23                       # swallowed at interval*23
+            if any(on <= t < off for on, off in TELE_ON) or t >= 23:
+                cur = (0, 0, COLS, H)             # the full-screen curtain
+            if 26 <= t < 44:                      # shrinking to the sliver
+                k = t - 26
+                w, h = max(4, COLS - 2 * k), max(6, H - k)
+                cur = ((COLS - w) // 2, (H - h) // 2, w, h)
+            elif t >= 44:                         # the sliver departs upward
+                cur = ((COLS - 4) // 2, (H - 6) // 2 - 3 * (t - 44), 4, 6)
+        else:                                     # arrive
+            if t <= 5:                            # the sliver drops back in
+                cur = ((COLS - 4) // 2, -6 + 3 * t, 4, 6)
+            elif t < 23:                          # expands back to full screen
+                k = t - 5
+                w, h = min(COLS, 4 + 2 * k), min(H, 6 + k)
+                cur = ((COLS - w) // 2, (H - h) // 2, w, h)
+            else:                                 # teleportAppear flicker
+                f = t - 23
+                pet_on = f >= 14                  # revealed on the third flash
+                if any(on <= f < off for on, off in TELE_APPEAR_ON):
+                    cur = (0, 0, COLS, H)
+        placements = []
+        if pet_on:
+            rows = self._rows(0)                  # canon drawNumMirror(0, false)
+            if home_side and tr["dir"] == "in":
+                lo, hi = grid.roam_bounds(grid.width(rows))
+                x = (lo + hi) // 2                # standing at home, centre stage
+            else:
+                x = self._jx(rows)                # at the journey spot
+            placements = [(rows, x, False)]
+        overlay = _curtain_pts(*cur) if cur else []
+        return menu.paint(placements, bgimg, rows=ROWS, cols=COLS,
+                          overlay=overlay)
+
+    def text(self):
+        if self.sub is not None:
+            return self.sub.text()
+        if self._trans is not None:
+            return self._teleport_frame()
+        pet_rows, x, mirror, overlay, note_over = self._pet_placement()
+        bgimg = self._road_bg()
         if self._pulse is not None and bgimg and \
                 any(on <= self._pulse["t"] < off for on, off in PULSE_ON):
             bgimg = _brighten(bgimg, 0.6)     # the zonePulse light, on the LCD
         placements = [(pet_rows, x, mirror)]
-        if self._trans is not None:
-            # the habitat fade: arrival lifts the black off the world, going
-            # home lowers it back (canon fade()'s full-display alpha layer)
-            t = self._trans["t"]
-            d = 1 - t / TRANS_T if self._trans["dir"] == "in" else t / TRANS_T
-            if bgimg:
-                bgimg = _dim(bgimg, d)
+        if self._retreat is not None and bgimg:
+            # Retreat_Town: the black layer steps down over the dejected pet,
+            # the town reset waits under full black, then it steps back out
+            t = self._retreat["t"]
+            half = RETREAT_T // 2
+            d = t / half if t < half else (RETREAT_T - t) / half
+            bgimg = _dim(bgimg, min(1.0, d))
             if d > 0.6:                       # near-black: the pet is under it too
                 placements, overlay = [], []
         # the scene IS the whole LCD (box-clip audit 2026-07-04: the old
@@ -569,8 +687,9 @@ class AdventurePanel(menu.SubHost):
         _, _, _, _, note_over = self._pet_placement()
         note = note_over if note_over is not None else (a.last or "")
         if self._trans is not None or self._pulse is not None \
-                or self._care is not None:
-            hint = ""                 # the beat plays out (fade / zoneChange / care fx)
+                or self._care is not None or self._retreat is not None:
+            hint = ""                 # the beat plays out (teleport / zoneChange /
+            #                           care fx / the Retreat_Town fade)
         elif self._parade is not None:
             hint = "SPACE next"
         elif self._scene is not None:

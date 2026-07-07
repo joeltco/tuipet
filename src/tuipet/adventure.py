@@ -402,6 +402,7 @@ class Adventure:
         self.life = MAX_LIFE
         self.boss_pending = False
         self.pet._set_energy(self.pet.max_energy)       # regrouped at a town -> rested
+        self.retreated = True     # the view plays Retreat_Town's fade over this
         self.last = "Out of life — retreated to town to regroup."
 
     def _complete_zone(self):
