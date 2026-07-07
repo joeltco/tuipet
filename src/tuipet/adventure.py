@@ -112,6 +112,10 @@ class Adventure:
         # adventures -- the AI assistant neither bills nor visits away from
         # home (auto-care audit 2026-07-06)
         pet.away = True
+        # the live run's backref (Life Recovery reads/tops adventure life
+        # through it; gated on pet.away so a stale ref after homecoming is
+        # inert -- transient, never serialized)
+        pet._adventure = self
         self._set_zone_habitat()
 
     def _set_zone_habitat(self):

@@ -482,3 +482,29 @@ def test_road_bag_opens_and_transport_is_refused():
     assert "home" in sp.msg
     pan.key("escape")
     assert pan.sub is None                   # back on the road
+
+
+def test_life_recovery_potion_is_road_only_and_gated_at_max():
+    """Life Recovery (item 27, items.csv AdventureLifeInc=1): +1 Digital World
+    life, unusable at MaxAdventureLife (canon PhysicalState.useItem's
+    eligibility gate -- the potion is NOT consumed by a refused use).  tuipet
+    life is per-outing, so it works only on the road (canon's world life
+    persists at home -- documented adaptation)."""
+    from tuipet.adventure import MAX_LIFE
+    from tuipet import data
+    e = data.consumable_by_key("i:27")
+    assert e and e["adv_life"] == 1 and data.item_is_functional(e)
+    pan, p = _road_panel()
+    p.obedience, p.compliance = 1000, True   # no refusal noise
+    p.add_item("i:27")
+    assert pan.adv.life == MAX_LIFE
+    assert "full" in p.use_item("i:27")      # gated at max...
+    assert p.inventory.get("i:27")           # ...and NOT consumed
+    pan.adv.life = 1
+    msg = p.use_item("i:27")
+    assert pan.adv.life == 2 and "life point" in msg.lower()
+    assert not p.inventory.get("i:27")       # spent
+    p.add_item("i:27")
+    p.away = False                           # home again: road-only
+    assert "Digital World" in p.use_item("i:27")
+    assert p.inventory.get("i:27")           # kept for the next outing

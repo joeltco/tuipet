@@ -144,6 +144,20 @@ def test_battle_win_grows_dominant_attribute():
     assert p.virus == v0 + 1 and "+1 Virus" in msg
 
 
+def test_powerless_foe_teaches_nothing():
+    """getExtraStats(0) = ceil(0/1) = 0: beating a 0/0/0 opponent grows NO
+    power (no wild enemy ships that, but a PvP card can -- a fresh hatchling's
+    battle_card is all zeroes)."""
+    from tuipet.pet import Pet
+    p = Pet(num=1, stage="Rookie", attribute="Vaccine", vaccine=5, data_power=5, virus=5)
+    before = (p.vaccine, p.data_power, p.virus)
+    msg = p.record_battle(True, {"stage": "Rookie", "hp": 10, "bits": (1, 1),
+                                 "vaccine": 0, "data_power": 0, "virus": 0, "num": 1})
+    assert (p.vaccine, p.data_power, p.virus) == before
+    assert "Victory!" in msg
+    assert all(a not in msg for a in ("Vaccine", "Data", "Virus"))
+
+
 def test_battle_loss_saps_obedience():
     from tuipet.pet import Pet
     # under ORDERS the unconditional BattleFreeObedienceInc (+1) nets a loss to 0

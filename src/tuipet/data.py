@@ -730,6 +730,9 @@ def _consumable(row, id_field):
         "t_restless": int(num("Restless")),
         "t_disposition": int(num("Disposition")),
         "health": int(num("Health")),   # permanent fullHealthPoints gain (HP Chip)
+        # items.csv AdventureLifeInc (Life Recovery, item 27): +N Digital World
+        # life, gated at MaxAdventureLife (PhysicalState.useItem)
+        "adv_life": int(num("AdventureLifeInc")),
 
         "uses_per": int(num("UsesPerFood") or num("UsesPerItem") or 1),
         # items.csv names these CanIncUses/CanDecUses; foods.csv CanInc/CanDec --
@@ -769,10 +772,10 @@ def _load_consumables():
 
 
 # An item is "functional" in tuipet only if use_item actually applies an effect.
-# Pure action-items whose AnimationType drives an UNIMPLEMENTED system (the
-# *Transport warps, ItemEvol evolution items, Recover lives, Inherit digimemory)
-# carry zero stats and currently do nothing -- they are filtered out of the shop
-# and loot until their system is built. Extend this as each system is implemented.
+# Pure action-items whose AnimationType drives an UNIMPLEMENTED system carry
+# zero stats and currently do nothing -- they are filtered out of the shop
+# and loot until their system is built. Extend this as each system is
+# implemented (transports, ItemEvol, Inherit and Recover lives all are now).
 _FUNC_STATS = ("hunger", "mood", "enthusiasm", "weight", "energy",
                "strength", "obedience", "vaccine", "data", "virus")
 _FUNC_FLAGS = ("cured", "healed", "unfatigue", "undepressed", "vitamin")
@@ -794,6 +797,8 @@ def item_is_functional(e):
     if e.get("action") == "ItemEvol":   # item-triggered evolution (now implemented)
         return True
     if e.get("action") == "Inherit":    # the Digimemory (now implemented)
+        return True
+    if e.get("adv_life"):               # Life Recovery (now implemented)
         return True
     if e.get("action") in TRANSPORT_ACTIONS:   # world-warp items (now implemented)
         return True

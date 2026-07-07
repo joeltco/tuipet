@@ -3485,15 +3485,20 @@ class Pet:
                 elif mine > theirs and ehp > cap:
                     self._set_mood(self.mood + 10)       # UnderpoweredBattleWonMoodInc
                 # incStats: the win GROWS the pet's power in the enemy's dominant
-                # attribute -- classic getExtraStats = min(ceil(opp/1), 1) = +1
+                # attribute -- classic getExtraStats = min(ceil(opp/1), 1) = +1.
+                # The first maximum wins ties (canon's randomChance(0,2) is
+                # nextInt(2)<0 = always false, so the loop never swaps on a
+                # tie -- Vaccine/Data/Virus order, same as max() here), and a
+                # POWERLESS foe teaches nothing (ceil(0/1)=0; no wild enemy
+                # ships 0/0/0, but a PvP card can)
                 counts = {"Vaccine": enemy.get("vaccine", 0), "Data": enemy.get("data_power", 0),
                           "Virus": enemy.get("virus", 0)}
                 dom = max(counts, key=counts.get)
-                inc = 1
+                inc = 1 if counts[dom] > 0 else 0
                 # setPower's BonusAttributePower: a HAPPY pet's +1 in its
                 # favoured attribute lands +2 (canon exact -- the win gain is
                 # always the standard single point here)
-                if self.current_mood() == "Happy" and dom == self._power_bonus_attr():
+                if inc and self.current_mood() == "Happy" and dom == self._power_bonus_attr():
                     inc += BONUS_ATTRIBUTE_POWER
                 if dom == "Vaccine":
                     self.vaccine += inc
@@ -3501,7 +3506,7 @@ class Pet:
                     self.data_power += inc
                 else:
                     self.virus += inc
-                grew = f"  +{inc} {dom}"
+                grew = f"  +{inc} {dom}" if inc else ""
             self._set_enthusiasm(self.enthusiasm - 3)    # BattleWonEnthusiasmDec
             if not style_free:                           # battleEnd: a win UNDER ORDERS is prouder
                 self._set_mood(self.mood + ORDERS_WON_MOOD_INC
@@ -4523,6 +4528,18 @@ class Pet:
         if (_g := self._guard(asleep_blocks=False)) is not None:
             return _g
         is_item = key.startswith("i:")
+        # Life Recovery (item 27, AdventureLifeInc; canon PhysicalState.useItem
+        # gates the item out at MaxAdventureLife): +1 Digital World life.
+        # tuipet adaptation: life is PER-OUTING (canon's world life persists at
+        # home), so the potion works only on the road -- gated BEFORE any
+        # consumption, like canon's eligibility block
+        adv = getattr(self, "_adventure", None) if getattr(self, "away", False) else None
+        if is_item and e.get("adv_life"):
+            from .adventure import MAX_LIFE
+            if adv is None:
+                return "It only works out in the Digital World."
+            if adv.life >= MAX_LIFE:
+                return "Adventure life is already full."
         # canon: an ItemEvol item's fractional energy price feeds the
         # AFFORDABILITY auto-refuse (a pet that can't pay the Digimental's
         # -0.66 x max refuses, exactly like jogress)
@@ -4567,6 +4584,11 @@ class Pet:
                 return "X-Program complete! The X-Antibody is permanent."
             self._set_xantibody("Temporary")
             return "X-Antibody induced! Evolve soon to make it stick."
+        if is_item and e.get("adv_life"):               # Life Recovery (item 27)
+            from .adventure import MAX_LIFE
+            adv.life = min(MAX_LIFE, adv.life + e["adv_life"])
+            self._set_anim("happy", 1.5)
+            return f"A life point returns!  ({adv.life}/{MAX_LIFE})"
         if e.get("action") == "Inherit":                # the Digimemory (item 32)
             # DVPet useItem routes Inherit around the weak-consumable coefficient
             # and diminishing returns: applyItem(item, 1.0) -- full strength always
