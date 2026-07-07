@@ -1500,7 +1500,11 @@ class Pet:
         game-min each pile is a sickness risk (chance x piles vs the bound x the
         species multiplier -- the 12000 real-min bound rides the /60 game scale,
         which lands within a hair of the old hand-rolled rate while gaining the
-        per-pile scaling and the worse-sick path the flat roll lacked)."""
+        per-pile scaling and the worse-sick path the flat roll lacked).
+        Away, canon's countFilth() reads 0 (poopable gates on _isHome): the
+        home mess can't sicken a pet out on the road (sweep 2026-07-06)."""
+        if getattr(self, "away", False):
+            return
         if self.poop <= 0:
             return
         fm = self._phys().get("filth_mood", -1)
@@ -4472,12 +4476,41 @@ class Pet:
         # canon scales obedience too (PhysicalState:3428) -- the old "obedience
         # is UNscaled" note misread the decompile (weight audit 2026-07-06)
         self._set_obedience(self.obedience + _sc(e["obedience"]))
-        self.vaccine = max(0, self.vaccine + _sc(e["vaccine"]))
-        self.data_power = max(0, self.data_power + _sc(e["data"]))
-        self.virus = max(0, self.virus + _sc(e["virus"]))
+        # applyAttributeChange + compensateAttributes (completeness sweep
+        # 2026-07-06): the six +-15 TRADE toys (Board Game, Skateboard,
+        # Dumbbell...) conserve the total -- a power driven below 0 borrows
+        # the deficit 1:1 from the others, rotating through all three (the
+        # old max(0,) clip quietly forgave the unpaid part of the trade)
+        self.vaccine += _sc(e["vaccine"])
+        self.data_power += _sc(e["data"])
+        self.virus += _sc(e["virus"])
+        self._compensate_attrs()
         # canon applyItem: a Disposition item nudges the MOOD RANK (the
         # tracker the Champion re-roll cashes in), scaled like every stat
         self.mood_rank += _sc(int(e.get("t_disposition", 0) or 0))
+
+    def _compensate_attrs(self):
+        """compensateAttributes x3 rotations: each negative power borrows from
+        the next two in canon's order.  (Canon's zero-all escape only fires
+        when all THREE are negative -- with both banks empty its loop would
+        spin forever; unreachable with the shipped symmetric trades, and the
+        port floors the deficit at 0 instead of freezing.)"""
+        def comp(main, weak, normal):
+            while main < 0:
+                if weak > 0:
+                    weak -= 1
+                    main += 1
+                if main < 0 and normal > 0:
+                    normal -= 1
+                    main += 1
+                if weak <= 0 and normal <= 0 and main < 0:
+                    return 0, weak, normal       # the safe floor (see docstring)
+            return main, weak, normal
+        v, d, vi = self.vaccine, self.data_power, self.virus
+        v, d, vi = comp(v, d, vi)
+        d, vi, v = comp(d, vi, v)
+        vi, v, d = comp(vi, v, d)
+        self.vaccine, self.data_power, self.virus = v, d, vi
 
     def use_item(self, key):
         if self.inventory.get(key, 0) <= 0:

@@ -464,6 +464,12 @@ def pet_from_save(data, catch_up=True, strict=False):
 
 
 def _offline(pet, elapsed):
+    """The BOUNDED offline decay -- a deliberate design divergence from canon
+    (completeness sweep 2026-07-06): DVPet's processSkippedSeconds replays
+    EVERY skipped second through the full lapse machinery (auto-care feeding
+    mid-replay, mistakes, death while away).  On tuipet's compressed clock a
+    full replay of 8h away = ~20 pet-days = a guaranteed grave; the capped
+    approximation below is the humane terminal-app adaptation."""
     if getattr(pet, "dead", False):
         # the departed do not decay: the catch-up starved/soiled a corpse and
         # greeted 'Your pet needs care!' over the grave (dead sweep 2026-07-06);
