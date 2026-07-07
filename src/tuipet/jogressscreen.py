@@ -1,8 +1,14 @@
-"""Jogress DNA fusion, rendered in the display box: pick a partner, watch the
-two parents converge and flash, then the fused form is revealed -- DVPet's
-startJogressAnim -> jogressFlash -> fused."""
+"""The lobby's jogress fusion cinematic, rendered in the display box: the two
+parents converge and flash, then the fused form is revealed -- DVPet's
+startJogressAnim -> jogressFlash -> fused.
+
+The offline partner PICKER that used to live here died with the home-screen
+jogress action (v0.2.348: fusion is online-pvp-only, a real roster partner via
+the lobby); the dead pick/no-partner phases were stripped in the follow-up
+polish arc.  The lobby constructs this panel directly at the result phase and
+drives anim()/text(); any key skips the converge to the reveal."""
 from __future__ import annotations
-from . import data, jogress
+from . import data
 from .render import render_scene
 from . import grid
 
@@ -18,17 +24,14 @@ FUSE_STEPS = 16 + POSE_T
 
 
 class JogressPanel:
-    def __init__(self, pet):
+    def __init__(self, pet, old_num, partner_num, fused_num):
         self.pet = pet
-        self.options = jogress.options(pet)
-        self.cursor = 0
         self.frame_i = 0
-        self.fused = None
-        self.result_msg = ""
-        self.phase = "pick"            # pick | fusing | fused
+        self.phase = "fusing"          # fusing | fused
         self.fuse_step = 0
-        self.old_num = None
-        self.partner_num = None
+        self.old_num = old_num
+        self.partner_num = partner_num
+        self.fused_num = fused_num
 
     def anim(self):
         self.frame_i += 1
@@ -38,23 +41,8 @@ class JogressPanel:
                 self.phase = "fused"
 
     def key(self, k):
-        if self.phase == "pick" and self.options and k in ("up", "k"):
-            self.cursor = (self.cursor - 1) % len(self.options)
-        elif self.phase == "pick" and self.options and k in ("down", "j"):
-            self.cursor = (self.cursor + 1) % len(self.options)
-        elif k in ("enter", "space"):
-            if self.phase == "fused":
-                return ("done", self.result_msg)
-            if self.phase == "pick" and self.options:
-                opt = self.options[self.cursor]
-                self.old_num = self.pet.num            # remember the parents before fusing
-                self.partner_num = opt["partner_num"]
-                self.result_msg = jogress.fuse(self.pet, opt["num"])
-                self.fused = opt
-                self.phase = "fusing"
-                self.fuse_step = 0
-        elif k == "escape":
-            return ("done", self.result_msg or None)
+        if self.phase == "fusing" and k in ("enter", "space", "escape"):
+            self.phase = "fused"       # skip the converge to the reveal
         return None
 
     def _palette(self):
@@ -68,47 +56,13 @@ class JogressPanel:
         fr = data.frames_for(num, getattr(self.pet, "egg_type", 0))
         return (fr[idx] if idx < len(fr) else None) or fr[0]
 
-    def strip(self):
-        """The one-line chrome under the LCD (box-clip audit 2026-07-04: the
-        pick list / note / footer stacked in-LCD ran 15-16 lines and the
-        physical 12-row box clipped them ALL -- every earlier probe only ever
-        measured the 7-line no-partner state, so the v0.2.223 refit missed
-        this screen)."""
-        if not self.options:
-            return ""
-        if self.phase == "fusing":
-            return "DNA... connect!"
-        if self.phase == "fused":
-            return f"{self.result_msg}  [dim]· SPACE[/]"
-        o = self.options[self.cursor]
-        return (f"[b]+{o['partner_name'][:10]} = {o['name'][:12]}[/]"
-                f" ({o['attribute'][:2]})  {self.cursor + 1}/{len(self.options)}"
-                f"  [dim]· ↑↓ ENTER fuse ESC[/]")
-
     def text(self):
-        if not self.options:
-            out = menu.bar("JOGRESS", "DNA Fusion")
-            out.append_text(menu.blanks(2))
-            out.append_text(menu.note("No partner resonates now."))
-            out.append("  Champion+ with a matching partner.\n", style=DIM)
-            out.append_text(menu.blanks(1))
-            out.append_text(menu.footer("ESC back"))
-            return out
-
         if self.phase == "fusing":
             return self._render_fusing()
-
         on, bgimg = self._palette()
-        if self.phase == "fused":
-            return render_scene([grid.center(self._sprite(self.fused["num"], "happy"),
-                                             ph=FUSE_ROWS * 2)],
-                                COLS, FUSE_ROWS, on, LCD_BG, bgimg=bgimg)
-        # pick: the parents face off; the option strip reads below the LCD
-        opt = self.options[self.cursor]
-        pet_rows = self._sprite(self.pet.num)
-        par_rows = self._sprite(opt["partner_num"]) if opt["partner_num"] else []
-        return render_scene(grid.faceoff(pet_rows, par_rows, ph=ROWS * 2),
-                            COLS, ROWS, on, LCD_BG, bgimg=bgimg)
+        return render_scene([grid.center(self._sprite(self.fused_num, "happy"),
+                                         ph=FUSE_ROWS * 2)],
+                            COLS, FUSE_ROWS, on, LCD_BG, bgimg=bgimg)
 
     def _render_fusing(self):
         ph = FUSE_ROWS * 2

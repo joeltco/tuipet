@@ -80,10 +80,8 @@ def test_lobby_jogress_lines_fit_with_a_24_char_partner():
         assert max(map(len, lines)) <= LCD_COLS
     pan.jphase, pan.jresult = "result", {"num": 649, "name": LONGEST}
     from tuipet import jogressscreen
-    show = jogressscreen.JogressPanel(pan.pet)
-    show.options = [True]; show.phase = "fused"
-    show.old_num = 649; show.partner_num = 286
-    show.fused = {"num": 649}; show.result_msg = ""
+    show = jogressscreen.JogressPanel(pan.pet, 649, 286, 649)
+    show.phase = "fused"
     pan.jshow = show
     assert _plain(pan.strip()) <= HUD_W                       # the fused strip
 

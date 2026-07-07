@@ -27,17 +27,6 @@ def _real_eggs():
         return None
 
 
-def _shift(rows, dx):
-    """Shift a bitmap horizontally (for the idle wobble)."""
-    w = max(len(r) for r in rows)
-    rows = [r.ljust(w, "0") for r in rows]
-    if dx > 0:
-        return ["0" * dx + r[:-dx] for r in rows]
-    if dx < 0:
-        return [r[-dx:] + "0" * -dx for r in rows]
-    return list(rows)
-
-
 def frames(egg_type=0):
     """Real Digitama egg (spritesEgg0.png, the Egg-stage creature sheet): the 3 real
     DVPet frames -- [0] idle egg, [1] settle/bulge, [2] cracked-open (shell breaks,
@@ -242,11 +231,6 @@ def code_key(buf, k):
 def win_eggs():
     """The tuipet-only mystery eggs and their lifetime-win gates ({idx: wins})."""
     return dict(_WIN_EGGS)
-
-
-def win_gate(idx):
-    """The lifetime-wins requirement for a win-gated egg (None otherwise)."""
-    return _WIN_EGGS.get(idx)
 
 
 def unlock_progress(idx, prog):

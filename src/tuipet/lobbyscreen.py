@@ -398,17 +398,13 @@ class LobbyPanel:
             if self.jresult:
                 self.jphase = "result"
                 self.sfx = "jogress"
-                # the REAL fusion scene (lobby audit 2026-07-04: the offline
-                # jogress converges + flashes while the lobby printed text) --
-                # both parents' actual sprites play the offline panel's beats
-                show = jogressscreen.JogressPanel(self.pet)
-                show.options = [True]           # sentinel: skip the empty page
-                show.phase = "fusing"
-                show.old_num = self.pet.num
-                show.partner_num = payload.get("num") or self.pet.num
-                show.fused = {"num": self.jresult["num"]}
-                show.result_msg = ""
-                self.jshow = show
+                # the REAL fusion scene (lobby audit 2026-07-04: the old
+                # lobby printed text while the fusion deserved its converge +
+                # flash) -- both parents' actual sprites play the panel's beats
+                self.jshow = jogressscreen.JogressPanel(
+                    self.pet, self.pet.num,
+                    payload.get("num") or self.pet.num,
+                    self.jresult["num"])
             else:
                 self.fail_reason = reason or "No resonance with that partner."
                 self.jphase = "failed"
@@ -582,8 +578,7 @@ class LobbyPanel:
     def _key_jogress(self, k):
         if self.jphase == "result":
             if self.jshow is not None and self.jshow.phase == "fusing":
-                if k in ("enter", "space", "escape"):
-                    self.jshow.phase = "fused"          # skip the converge to the reveal
+                self.jshow.key(k)                       # any key skips the converge to the reveal
                 return None
             if not self.j_peer_two_phase:
                 # LEGACY peer (pre-v0.2.350): its client commits on any key with

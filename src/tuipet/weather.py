@@ -49,7 +49,8 @@ PRECIP = RAIN | SNOW
 WEATHER_CHECK_SEC = 600.0   # WeatherCheckMin 10 (environment family)
 TEMP_RATE = 0.05            # temperature lapses this fast toward its target
 IDEAL_TEMP_MOOD_SEC = 29.0  # IdealTempMoodMin 29 (stat family)
-BAD_TEMP_SICK_SEC = 1200.0   # cadence of the environmental (incompatible-habitat) sick check
+# (no bad-temp/incompatible-habitat sick cadence: both checks are data-dead in
+# the classic column -- see pet._temperature_effects)
 
 
 def _calc_weather(weather, warm):

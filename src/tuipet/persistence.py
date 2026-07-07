@@ -33,7 +33,7 @@ def _atomic_write_json(path, data, keep_bak=False):
 
 
 def load_settings(path=None):
-    """App-level prefs that outlive any single pet (e.g. the tamer name).
+    """App-level prefs that outlive any single pet (e.g. the lobby account).
     Falls back to the .bak rotated by save_settings -- settings hold the album,
     lifetime wins, owned eggs and the banked Digimemory; one corrupt write must
     not erase a save file's whole history (audit 2026-07)."""
@@ -307,16 +307,6 @@ def get_progress():
     }
 
 
-def get_tamer():
-    return (load_settings().get("tamer") or "").strip()
-
-
-def set_tamer(name):
-    d = load_settings()
-    d["tamer"] = (name or "").strip()[:24]
-    save_settings(d)
-
-
 def get_account():
     """The cached lobby account: (name, password). (None, "") if unset."""
     a = load_settings().get("account") or {}
@@ -328,7 +318,6 @@ def set_account(name, pw):
     d = load_settings()
     name = (name or "").strip()[:24]
     d["account"] = {"name": name, "pw": pw or ""}
-    d["tamer"] = name
     save_settings(d)
 
 

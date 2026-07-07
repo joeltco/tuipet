@@ -94,7 +94,7 @@ def test_the_simple_panels_all_draw():
                              "right", "right", "right", "down", "enter", "down"])
     _walk(AssistPanel(p), ["enter", "enter"])
     _walk(DNAPanel(p), ["down", "right"])
-    _walk(JogressPanel(p), ["down"])
+    _walk(JogressPanel(p, p.num, p.num, p.num), ["space"])
     _walk(EggSelectPanel(), ["right", "right", "left"])
     _walk(ThemePanel(), ["down", "up", "escape"])
     dead = _pet(dead=True)
@@ -232,25 +232,20 @@ def test_drill_hints_wrap_clean_on_the_status_card():
 
 def test_jogress_states_fit_the_lcd_with_real_options():
     """Box-clip stragglers (audit 2026-07-04): every earlier probe measured
-    jogress EMPTY (fusions are data-rare) -- the real pick/fusing/fused states
-    ran 15-16 lines and clipped.  Scene-only now; the strip carries the pick."""
+    jogress EMPTY (fusions are data-rare) -- the real fusing/fused states ran
+    15-16 lines and clipped.  Scene-only now (the offline picker died with the
+    home jogress, v0.2.348); the LOBBY strip carries the prompts, pinned in
+    test_menu_bounds."""
     from tuipet.jogressscreen import JogressPanel, FUSE_STEPS
     p = _pet()
-    pan = JogressPanel(p)
-    pan.options = [{"num": 4, "name": "Agumon", "attribute": "Vaccine",
-                    "stage": "Champion", "partners": ["Vaccine"],
-                    "partner_num": 7, "partner_name": "Gabumon"}]
-    _render(pan)
-    assert "Gabumon" in pan.strip() and "1/1" in pan.strip()
-    pan.phase, pan.old_num, pan.partner_num = "fusing", 100, 7
+    pan = JogressPanel(p, 100, 7, 4)
     for s in range(FUSE_STEPS):
         pan.fuse_step = pan.frame_i = s
         _render(pan)
-    assert pan.strip() == "DNA... connect!"
     pan.phase = "fused"
-    pan.fused, pan.result_msg = pan.options[0], "Jogress! Fused into Agumon!"
     _render(pan)
-    assert "Fused into" in pan.strip()
+    # the picker surface stays dead (the strip arc): no pick phase, no strip
+    assert not hasattr(pan, "strip") and not hasattr(pan, "options")
 
 
 def test_habitat_picker_is_a_scene_with_a_strip():

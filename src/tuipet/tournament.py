@@ -53,11 +53,6 @@ def trophy_by_id(tid):
     return None
 
 
-def _age_days(pet):
-    from .pet import DAY_LENGTH
-    return pet.age_seconds / DAY_LENGTH
-
-
 def _hour(pet):
     from .pet import DAY_LENGTH
     return int((pet.world_seconds % DAY_LENGTH) / DAY_LENGTH * 24)

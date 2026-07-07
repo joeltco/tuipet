@@ -180,13 +180,9 @@ def test_remaining_panels_survive_a_direct_egg():
             (AdventurePanel(egg()), ("enter", "space", "escape"), 30),
             (TransportPanel(egg(), "i:28"), ("space", "enter"), 20),
             (DNAPanel(egg()), ("space", "space"), 12),
-            (JogressPanel(egg()), ("space",), 40)):
+            (JogressPanel(egg(), -1, -1, -1), ("space",), 40)):
         if isinstance(pan, DNAPanel):
             pan.phase, pan.bet = "mash", 10
-        if isinstance(pan, JogressPanel):
-            pan.phase, pan.old_num, pan.partner_num = "fusing", -1, -1
-            pan.fused = {"num": -1}
-            pan.fuse_step = 0
         for k in ("",) + keys:
             if k:
                 pan.key(k)
@@ -254,7 +250,7 @@ def test_every_panel_survives_a_direct_corpse():
         (TrainingPanel(_dead()), ("down", "enter", "space", "1", "escape"), 12),
         (BattlePanel(_dead()), ("enter", "1", "space", "escape"), 15),
         (DNAPanel(_dead()), ("space", "space"), 12),
-        (JogressPanel(_dead()), ("space",), 40),
+        (JogressPanel(_dead(), -1, -1, -1), ("space",), 40),
         (TournamentPanel(_dead()), ("down", "enter", "escape"), 12),
         (TownPanel(_dead(), 0), ("enter", "down", "enter", "escape"), 12),
         (AdventurePanel(_dead()), ("enter", "space", "escape"), 30),

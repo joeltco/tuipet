@@ -1822,18 +1822,18 @@ class TuiPetApp(App):
             if gk == "hp":
                 dots = "\u25cf" * tp.rounds_won + "\u25cb" * (HP_ROUNDS - tp.rep) + "\u00b7" * (tp.rep - tp.rounds_won)
                 prog, prog2 = f"Round    {min(tp.rep + 1, HP_ROUNDS)} / {HP_ROUNDS}", f"Won      {dots}"
-                target, flav = f"Effort   {eff}", "build your effort"
+                target = f"Effort   {eff}"
             elif gk == "vaccine":
                 tpct = max(0, tp.timer) / VACCINE_WINDOW * 100
                 prog, prog2 = f"Hits     {tp.taps} / {tp.vaccine_target}", f"Time     {bar(tpct, 11, T.MOOD)}"
-                target, flav = f"Vaccine  [{T.POS}]{p.vaccine}[/]", "mash it up!"
+                target = f"Vaccine  [{T.POS}]{p.vaccine}[/]"
             elif gk == "data":
                 atk = ("HIGH" if tp.tgt_up else "LOW") if tp.locked else "feint\u2026"
                 prog, prog2 = f"Attack   {atk}", f"Shield   {'UP' if tp.shield_up else 'DOWN'}"
-                target, flav = f"Data     [{T.ENERGY}]{p.data_power}[/]", "block high or low"
+                target = f"Data     [{T.ENERGY}]{p.data_power}[/]"
             else:
                 prog, prog2 = f"Power    {int(tp.pos)}", f"Need     {VIRUS_BAR_MIN}"
-                target, flav = f"Virus    [{T.MOOD}]{p.virus}[/]", "stop it high"
+                target = f"Virus    [{T.MOOD}]{p.virus}[/]"
             # the card's flavour slot carries the CONTROLS now -- the in-LCD
             # footer that used to is gone (box-clip audit 2026-07-04).  Split on
             # the hints' own triple-space gap so a key stays WITH its action

@@ -94,19 +94,19 @@ def test_town_panel_every_phase():
 
 
 def test_jogress_panel_fuses():
-    from tuipet.jogressscreen import JogressPanel
+    """The panel is the lobby's fusion cinematic now (the offline picker died
+    with the home jogress, v0.2.348): construct at the fuse and walk the whole
+    converge -> flash -> reveal."""
+    from tuipet.jogressscreen import JogressPanel, FUSE_STEPS
     random.seed(11)
     p = _pet()
-    pan = JogressPanel(p)
-    _step(pan); _step(pan, "down"); _step(pan, "up")
-    if pan.options:
-        _step(pan, "enter")
-        guard = 0
-        while pan.phase == "fusing" and guard < 200:
-            guard += 1
-            _step(pan)
-        _step(pan, "enter")                      # fused -> apply / back
-    _step(pan, "escape")
+    pan = JogressPanel(p, p.num, 7, 4)
+    guard = 0
+    while pan.phase == "fusing" and guard < FUSE_STEPS + 5:
+        guard += 1
+        _step(pan)
+    assert pan.phase == "fused"
+    _step(pan, "enter")
 
 
 def test_dna_panel_every_page():
@@ -311,35 +311,28 @@ def test_home_screen_paint_across_states():
 
 
 def test_jogress_panel_full_fuse():
-    """The earlier walk had no options (a default pet unlocks nothing) -- raise
-    one properly so pick -> fusing -> fused all render."""
-    from tuipet.jogressscreen import JogressPanel
-    from tuipet import data, jogress
+    """A GENUINE roster fusion through the scene: a real jogress parent, a
+    real partner sprite and the real fused form render every beat (the picker
+    died with the home jogress, v0.2.348 -- the lobby resolves the match;
+    this drives the cinematic it hands over)."""
+    from tuipet.jogressscreen import JogressPanel, FUSE_STEPS
+    from tuipet import data
     random.seed(4)
     _, by = data.load_sprites()
     reqs, evo = data.load_requirements(), data.load_evolutions()
-    n = next((n for n, r in by.items()
-              if not data.is_placeholder(n)
-              and any(reqs.get(t, {}).get("special") in ("Jogress", "Fusion", "Mode")
-                      for t in evo.get(n, []))), None)
-    if n is None:
+    pair = next(((n, t) for n, r in by.items()
+                 if not data.is_placeholder(n)
+                 for t in evo.get(n, [])
+                 if reqs.get(t, {}).get("special") in ("Jogress", "Fusion", "Mode")), None)
+    if pair is None:
         import pytest
         pytest.skip("no jogress parents in the atlas")
+    n, fused = pair
     p = Pet(num=n, stage=by[n]["stage"], attribute=by[n]["attribute"] or "Vaccine")
     p.world_seconds = 600.0
-    p.vaccine, p.data_power, p.virus = 250, 60, 20
-    p.battles, p.wins = 80, 70
-    p.train_time = "Noon"
-    p.overeat = 5
-    p.levels_fought = [5, 5, 5, 5]
-    p.evol_bonus = 100000
-    p.energy = p.max_energy
-    pan = JogressPanel(p)
-    assert pan.options, "a fully-raised pet unlocks its fusion"
-    _step(pan); _step(pan, "down"); _step(pan, "up")
-    _step(pan, "enter")
+    pan = JogressPanel(p, n, n, fused)
     guard = 0
-    while pan.phase == "fusing" and guard < 300:
+    while pan.phase == "fusing" and guard < FUSE_STEPS + 5:
         guard += 1
         _step(pan)
     assert pan.phase == "fused"

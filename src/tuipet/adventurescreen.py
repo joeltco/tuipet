@@ -11,7 +11,6 @@ from . import strikefx
 from .theme import LCD_ON, LCD_BG, INK, INK_B, DIM, SIL_DAY
 from . import menu
 COLS, ROWS = 40, 12           # the ONE locked LCD arena, like every other screen
-BAR_W = 14
 
 # the investigateLeft playbook (canon SpriteAnim beats in 0.1s ticks): walk out
 # to the LEFT goal, suspense dots at 5/10/15, the reveal at 20, done at 25 --

@@ -59,7 +59,6 @@ VIRUS_SPEEDS = (4.8, 6.0, 8.0)  # per-tick fill = DVPet +4 per VirusGameBarSpeed
 DATA_BOB = 3                  # ticks per feint up/down toggle during the telegraph
 DATA_TELEGRAPH = (21, 17, 15)  # feint window before commit (DVPet frame*8+pad*8 frames, /6 -> ticks)
 DATA_WINDOW = (10, 7, 5)      # reaction window after commit (DataTrainShootFrame{10,7,5}; 6*frame/6 -> ticks)
-DATA_MARGIN = 4               # the data stage's side margin == GRID_X0: cannon anchors on the grid's left edge
 DATA_FLY = 4                  # shot flight ticks (DVPet attackGreen used 3 for its 12px nudge;
                               # our longer 10px lane gets 4 -- ~2.5px/tick)
 #  collision = the battle's exact beats: EXPLODE_FRAMES strobe (hitAnim) + FLINCH_T pose (aftermathGreen)
@@ -91,18 +90,12 @@ BASE_Y = grid.FLOOR               # 22: the floor -- every sprite baselines here
 # beats imported from the battle screen so they march at the same pace.  The orb rides the
 # lower 16px creature band -- the SAME band the drill sprites stand in.
 STRIKE_BAND_TOP = BAND_TOP
-STRIKE_BAND_BOT = BASE_Y
 
 
 # drill sprite helpers -- thin aliases over the shared grid module (single source of truth)
 def _fit_cell(sprite):
     """Cap a sprite to the 16px band height so it fits the grid like the 16x16 creatures."""
     return grid.fit_band(sprite)
-
-
-def _cell(sprite, cell):
-    """(sprite, x_left, mirror) placement in cell 0 (left) or 1 (right) of the 32x16 grid."""
-    return grid.cell(sprite, cell)
 
 
 from .render import blit as _blit    # one blit for app/training/strikefx (refactor 2026-07-05)
@@ -126,26 +119,9 @@ with open(os.path.join(os.path.dirname(__file__), "data", "hp_dummies.json")) as
 
 # HP target symbol: the dummy's belly cutout is illegible at this scale (all three look the
 # same), so the round's target attribute is shown as a CLEAR icon -- the real DVPet attribute
-# symbol (atk_vaccine=circle / atk_data=square / atk_virus=triangle, 7x7) upscaled 2x to 14x14
-# so its shape reads instantly and matches the ● ■ ▲ picker glyphs in the gauge.
+# symbol (atk_vaccine=circle / atk_data=square / atk_virus=triangle, 7x7) stacked in the LCD.
 _HP_ICON_KEYS = ("atk_vaccine", "atk_data", "atk_virus")   # index == hp_target (0/1/2)
 # (HP_SYMS picker glyphs retired with the reel redo 2026-07-06 -- the real icons stack in the LCD)
-
-
-def _upscale2(sprite):
-    """Nearest-neighbour 2x (each pixel -> 2x2): 7x7 real icon -> crisp 14x14."""
-    out = []
-    for row in sprite:
-        doubled = "".join(c * 2 for c in row)
-        out.append(doubled)
-        out.append(doubled)
-    return out
-
-
-def _hp_target_icon(target):
-    """The round's target as a clear 14x14 attribute symbol (real DVPet art, 2x)."""
-    fr = data.load_effects().get(_HP_ICON_KEYS[target], [None])[0]
-    return _upscale2(fr) if fr else fr
 
 
 GAMES = [
@@ -169,7 +145,6 @@ class TrainingPanel:
 
     def _reset(self):
         self.pos = 0.0
-        self.dir = 1
         self.rep = 0
         self.hits = 0
         self.power = 0

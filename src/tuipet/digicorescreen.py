@@ -18,7 +18,6 @@ from .theme import LCD_ON, LCD_BG, INK, INK_B, DIM, SIL_DAY, SIL_NIGHT, VOID  # 
 from . import menu
 
 DIGICORE_BASE_RATE = 14            # DigicoreBaseRate (config.csv col 1)
-CORE_ROWS = 8                      # 16px scene band, like the tournament fight scenes
 SCENE_ROWS = 12                    # the core/teaser pages own the WHOLE arena now --
 #                                    Joel 2026-07-05: the 8-row band crammed a 16px mon
 #                                    against the chrome; scene-only + strip() instead
