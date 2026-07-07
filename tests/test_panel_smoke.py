@@ -160,18 +160,14 @@ def test_scene_screens_fit_the_physical_lcd_in_every_state():
 
     from tuipet.adventurescreen import AdventurePanel
     pan = AdventurePanel(p)
-    for _ in range(60):                         # travel: encounters may raise the flash
-        pan.anim()
-        _render(pan)
-    pan.sub = None; pan._pending = None
-    pan._flash = {"t": 0, "boss": False,        # the Battle_Flash alert card
-                  "enemy": {"num": 29, "name": "Kunemon", "stage": "Rookie",
-                            "attribute": "Virus", "hp": 5, "penalty": 0}}
-    for _ in range(6):
+    while pan._trans is not None:               # the arrival habitat fade
         pan.anim()
         _render(pan)
         pan.strip()
-    pan._flash = None
+    for _ in range(60):                         # travel: encounters may open battle subs
+        pan.anim()
+        _render(pan)
+    pan.sub = None; pan._pending = None
     pan._pulse = {"t": 0}                       # the zoneChange pulse transition
     while pan._pulse is not None:
         pan.anim()
@@ -192,6 +188,13 @@ def test_scene_screens_fit_the_physical_lcd_in_every_state():
         pan.anim()
         _render(pan)
         pan.strip()
+    pan.sub = None; pan._pending = None
+    pan.key("escape")                           # the homecoming fade walks out
+    while pan._trans is not None:
+        pan.anim()
+        _render(pan)
+        pan.strip()
+    assert pan.auto_close == ("done", None)
 
     from tuipet.townscreen import TownPanel
     pan = TownPanel(p, 0)

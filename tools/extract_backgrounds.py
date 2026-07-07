@@ -15,27 +15,9 @@ OUT = os.path.join(ROOT, "src/tuipet/data")
 MODEL = os.path.join(ROOT, "raw_model")
 FW, FH, GAP = 104, 101, 2
 COLS, PXH = 40, 24
-# display-window-sized cards (already the 105x60 _mainDisplay area, no icon
-# bands to strip): the Battle_Flash alert pair (SpriteAnim battleFlash)
-WINDOW_CARDS = ("battleStart", "battleStartFlash")
-
-
-def window_card(fn):
-    p = os.path.join(RES, fn + ".png")
-    if not os.path.exists(p):
-        return None
-    im = Image.open(p).convert("RGB")
-    fr = im.resize((COLS, PXH), Image.BOX)
-    fr = ImageEnhance.Color(fr).enhance(1.85)
-    fr = ImageEnhance.Contrast(fr).enhance(1.3)
-    fr = ImageOps.posterize(fr, 4)
-    px = fr.load()
-    return [["".join("%02x%02x%02x" % px[x, yy] for x in range(COLS)) for yy in range(PXH)]]
 
 
 def frames_for(fn):
-    if fn in WINDOW_CARDS:
-        return window_card(fn)
     p = os.path.join(RES, fn + ".png")
     if not os.path.exists(p):
         return None
@@ -72,9 +54,6 @@ def main():
     # PvP battle -> tourneyBack.png); a full 5-frame time/weather stack like the
     # habitat sheets
     files.add("tourneyBack")
-    # the wild-encounter alert pair (Battle_Flash): full-window cards
-    for fn in WINDOW_CARDS:
-        files.add(fn)
     bgs = {}
     for fn in sorted(files):
         fr = frames_for(fn)

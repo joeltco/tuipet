@@ -2092,6 +2092,12 @@ class TuiPetApp(App):
                 painter = self._status_painter()
                 if painter is not None:
                     painter()
+                ac = getattr(self.mode, "auto_close", None)
+                if ac is not None:
+                    # a panel finished its own exit beat (the adventure
+                    # homecoming fade) and asks to close from anim()
+                    self.mode.auto_close = None
+                    self._close_mode(ac[1])
             return
         sc = self.screen_w
         if sc.fx:

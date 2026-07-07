@@ -34,14 +34,16 @@ TRAVEL_TICKS = 10             # ticks per auto-stride (the INTERACTIVE_STEPS com
 #                               each scene HOLDS like canon's set-piece backdrops and towns
 #                               read as interludes (Joel 2026-07-07: "adventure felt
 #                               different in dvpet")
-# the wild-encounter alert (canon Battle_Flash / WorldMap.battleWait): the pet
-# stops, the BATTLE card flashes with the alarm, and the PLAYER must engage --
-# ignore it for BattleWait(720) controller fires (14/s -> ~51s == 514 ticks)
-# and the foe escapes with the lossPenalty knockback (travel stays stopped,
-# canon lossPenalty zeroes travelSpeed)
-FLASH_WAIT_T = 514
-FLASH_ALT_T = 2               # battleStart <-> battleStartFlash every interval*2
-FLASH_ALARM_EVERY = 20        # the looping _battleFlash alarm, as a 2s pulse
+# the habitat transition (canon SpriteAnim.fade(): a black layer steps to
+# opaque at +5 alpha/frame over the WHOLE display, the world swaps under full
+# black, then it steps back out -- the wipe the transports, the evolution
+# silhouette and freeze/unfreeze all ride).  It plays where canon plays it:
+# the pet LEAVING ITS HABITAT for the adventure world (arrival fades the road
+# in from black) and coming home (the road fades out, then the panel closes).
+# Battles get NO transition -- the fight's own intro is the battle screen
+# (Joel 2026-07-07; the Battle_Flash overlay card shipped in .359 was wrong
+# and is REMOVED).
+TRANS_T = 14                  # ticks to full black (canon 255/5 steps ~ 1.4s)
 # the zone-change transition (canon SpriteAnim.zoneChange): four zonePulse
 # beats on the map light at interval*5/15/25/35, resolution at interval*54 --
 # ported as backdrop pulses on the LCD (no map screen on the 32-col arena)
@@ -67,6 +69,20 @@ def _brighten(bg, f):
             v = int(r[i:i + 6], 16)
             row.append("%02x%02x%02x" % tuple(
                 round(c + (255 - c) * f)
+                for c in ((v >> 16) & 255, (v >> 8) & 255, v & 255)))
+        out.append("".join(row))
+    return out
+
+
+def _dim(bg, f):
+    """Lerp a backdrop toward black -- canon fade()'s alpha layer, honestly."""
+    out = []
+    for r in bg:
+        row = []
+        for i in range(0, len(r) - 5, 6):
+            v = int(r[i:i + 6], 16)
+            row.append("%02x%02x%02x" % tuple(
+                round(c * (1 - f))
                 for c in ((v >> 16) & 255, (v >> 8) & 255, v & 255)))
         out.append("".join(row))
     return out
@@ -102,9 +118,11 @@ class AdventurePanel(menu.SubHost):
         self._refuse_t = 0          # Refusing head-shake ticks left
         self._scene = None          # a running investigateLeft playbook
         self._parade = None         # a running BossParade (map beaten)
-        self._flash = None          # a waiting wild encounter (Battle_Flash)
         self._pulse = None          # a running zoneChange pulse transition
         self._care = None           # a running road care beat (cheer/jeer/heal)
+        # leaving home: the world arrives THROUGH the fade (canon fade() --
+        # the same wipe the transports ride out of the habitat)
+        self._trans = {"t": 0, "dir": "in"}
 
     def anim(self):
         if self.sub_anim():          # SubHost: delegate + sfx bubble
@@ -115,19 +133,21 @@ class AdventurePanel(menu.SubHost):
         fade = getattr(self, "_bg_fade", None)
         if fade is not None:
             fade["t"] += 1                   # the habitat cross-fade clock
-        if self._flash is not None:
-            # Battle_Flash: the alert card flashes with the alarm until the
-            # player engages -- or WorldMap.battleWait runs out and the foe
-            # escapes with the lossPenalty knockback (travel stays stopped)
-            f = self._flash
-            if f["t"] % FLASH_ALARM_EVERY == 0:
-                self.sfx = "alarm"
-            f["t"] += 1
-            if f["t"] >= FLASH_WAIT_T:
-                self._flash = None
-                self.adv.flee(f["enemy"], was_boss=f["boss"])
-                self.adv.last = f"{f['enemy']['name']} left. Knocked back!"
-            return
+        if self._trans is not None:
+            # the habitat fade (canon fade()): arrival lifts the black as a
+            # pure overlay (the road runs beneath it); going home the black
+            # steps in OVER the held screen, then the panel closes itself
+            tr = self._trans
+            tr["t"] += 1
+            if tr["t"] >= TRANS_T:
+                self._trans = None
+                if tr["dir"] == "out":          # home again, under full black
+                    self.pet.go_home_habitat()  # back from the road: home climate
+                    self.pet.away = False       # resumes; canon teleportArrive
+                    self.auto_close = ("done", None)
+                    return
+            if tr["dir"] == "out":
+                return
         if self._pulse is not None:
             # zoneChange: four zonePulse beats, then the road (or the parade)
             p = self._pulse
@@ -172,11 +192,9 @@ class AdventurePanel(menu.SubHost):
             self._travel_t = 0
             ev = self.adv.travel()
             if ev and ev[0] in ("encounter", "boss"):
-                # canon checkWildEncounter: the encounter ALERTS first
-                # (Battle_Flash + isWildEncounter travel hold), the player
-                # presses to fight -- battle no longer opens unannounced
                 self.travelling = False
-                self._flash = {"t": 0, "boss": ev[0] == "boss", "enemy": ev[1]}
+                self._pending = (ev[0] == "boss", ev[1])
+                self.sub = BattlePanel(self.pet, ev[1], wild=True)
             elif ev and ev[0] in ("zone", "map", "all"):
                 # walked past a cleared gate: the zoneChange pulse plays
                 self.travelling = False
@@ -206,9 +224,8 @@ class AdventurePanel(menu.SubHost):
                 self.sfx = "reward"                   # _discoverConsumable
         if s["kind"] == "enemy":
             if s["t"] >= INV_REVEAL_T + 6:            # startle beat, then the ambush
-                # canon onDiscoverEnemy -> checkWildEncounter: the ambush
-                # alerts through the same Battle_Flash as any wild
-                self._flash = {"t": 0, "boss": False, "enemy": s["thing"]}
+                self._pending = (False, s["thing"])
+                self.sub = BattlePanel(self.pet, s["thing"], wild=True)
                 self._scene = None
         elif s["t"] >= INV_END_T:                     # carried home -> back on the road
             self._scene = None
@@ -294,15 +311,8 @@ class AdventurePanel(menu.SubHost):
                         return None
                 self.travelling = not self.adv.done
             return None
-        if getattr(self, "_flash", None) is not None:
-            # Battle_Flash: only engaging works (canon locks the keyboard to
-            # the flashing card); waiting it out is the escape-with-knockback
-            if k in ("space", "enter"):
-                f = self._flash
-                self._flash = None
-                self._pending = (f["boss"], f["enemy"])
-                self.sub = BattlePanel(self.pet, f["enemy"], wild=True)
-            return None
+        if getattr(self, "_trans", None) is not None and self._trans["dir"] == "out":
+            return None                       # the homecoming fade owns the screen
         if getattr(self, "_pulse", None) is not None:
             return None                       # canon zoneChange is not skippable
         if getattr(self, "town_prompt", None) is not None:
@@ -391,11 +401,12 @@ class AdventurePanel(menu.SubHost):
                     return None
             self.travelling = not self.travelling
         elif k in ("escape", "a"):          # a (the opening key) also closes, like shop/habitat
-            if getattr(self, "pet", None) is not None:
-                self.pet.go_home_habitat()  # back from the road: home climate resumes
-                self.pet.away = False       # canon teleportArrive: home again -- the
-                #                             assistant resumes (auto-care audit 2026-07-06)
-            return ("done", None)
+            if getattr(self, "adv", None) is None or not hasattr(self, "_trans"):
+                return ("done", None)       # a bare/legacy panel: close outright
+            # going home rides the same fade OUT (canon transport fade);
+            # anim() applies the homecoming under full black, then auto-closes
+            self._trans = {"t": 0, "dir": "out"}
+            return None
         return None
 
     def _rows(self, idx):
@@ -499,13 +510,6 @@ class AdventurePanel(menu.SubHost):
         if self.sub is not None:
             return self.sub.text()
         a = self.adv
-        if self._flash is not None:
-            # Battle_Flash: the BATTLE alert card fills the window, alternating
-            # with its flash frame (canon battleFlash beats at interval*2); the
-            # pet is hidden (canon _character.setVisible(false))
-            card = "battleStartFlash" if (self._flash["t"] // FLASH_ALT_T) % 2 else "battleStart"
-            frames = data.load_backgrounds().get(card) or [None]
-            return menu.paint([], frames[0], rows=ROWS, cols=COLS)
         pet_rows, x, mirror, overlay, note_over = self._pet_placement()
         # the journey's SCENERY (restyle 2026-07-04 -- the old flat 7-row strip
         # "looked nothing like the rest of the game"): the zone's canonical
@@ -536,11 +540,21 @@ class AdventurePanel(menu.SubHost):
         if self._pulse is not None and bgimg and \
                 any(on <= self._pulse["t"] < off for on, off in PULSE_ON):
             bgimg = _brighten(bgimg, 0.6)     # the zonePulse light, on the LCD
+        placements = [(pet_rows, x, mirror)]
+        if self._trans is not None:
+            # the habitat fade: arrival lifts the black off the world, going
+            # home lowers it back (canon fade()'s full-display alpha layer)
+            t = self._trans["t"]
+            d = 1 - t / TRANS_T if self._trans["dir"] == "in" else t / TRANS_T
+            if bgimg:
+                bgimg = _dim(bgimg, d)
+            if d > 0.6:                       # near-black: the pet is under it too
+                placements, overlay = [], []
         # the scene IS the whole LCD (box-clip audit 2026-07-04: the old
         # bar/progress/note/footer stack ran 16 lines and the physical 12-row
         # box clipped everything below the arena).  The journey's numbers live
         # on the ADVENTURE status card; the note + controls ride the strip.
-        return menu.paint([(pet_rows, x, mirror)], bgimg,
+        return menu.paint(placements, bgimg,
                           rows=ROWS, cols=COLS, overlay=overlay)
 
     def strip(self):
@@ -554,10 +568,9 @@ class AdventurePanel(menu.SubHost):
         a = self.adv
         _, _, _, _, note_over = self._pet_placement()
         note = note_over if note_over is not None else (a.last or "")
-        if self._flash is not None:
-            hint = "SPACE fight"
-        elif self._pulse is not None or self._care is not None:
-            hint = ""                 # the beat plays out (zoneChange / care fx)
+        if self._trans is not None or self._pulse is not None \
+                or self._care is not None:
+            hint = ""                 # the beat plays out (fade / zoneChange / care fx)
         elif self._parade is not None:
             hint = "SPACE next"
         elif self._scene is not None:

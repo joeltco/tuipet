@@ -152,5 +152,8 @@ def test_the_adventure_flags_away_and_the_exit_clears_it():
     p.stage_seconds = 1e9                          # past any gate noise
     pan = adventurescreen.AdventurePanel(p)
     assert p.away is True
-    pan.key("escape")
+    pan.key("escape")                              # starts the homecoming fade
+    while pan._trans is not None:                  # ...which lands home at black
+        pan.anim()
     assert p.away is False and p.habitat == p.home_habitat
+    assert pan.auto_close == ("done", None)

@@ -109,6 +109,7 @@ def test_adventure_strip_hints_survive_long_notes():
     them out of view.  The note field-marquees; the hint renders every frame."""
     from tuipet.adventurescreen import AdventurePanel
     pan = AdventurePanel(_pet(bits=999))
+    pan._trans = None                # settled past the arrival fade
     pan.travelling = False
     long_note = "AncientSphinxmon noticed something off the path!"
     for state, hint in ((("discovering", True), "ENTER look"),

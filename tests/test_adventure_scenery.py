@@ -35,6 +35,7 @@ def test_zone_scenery_parses_and_covers_the_walk():
 
 def test_backdrop_changes_along_the_journey():
     pan = AdventurePanel(_pet())
+    pan._trans = None                             # settled past the arrival fade
     a = pan.adv
     a.location = int(a.total_steps * 0.02)
     early = pan.text().markup              # markup, not plain: the arena is colour
@@ -127,6 +128,7 @@ def test_travel_walk_steps_on_the_walk_beat():
     0.1s tick -- the 10Hz flutter class the battle audit retired."""
     from tuipet.adventurescreen import WALK_BEAT
     pan = AdventurePanel(_pet())
+    pan._trans = None                             # settled past the arrival fade
     pan.travelling = True
     def markup_at(f):
         pan.frame_i = f
@@ -139,6 +141,7 @@ def test_discover_call_is_the_attention_bounce():
     """Canon DiscoverCall = attention(5,7): the pet bounces its cheer poses
     while the investigate prompt waits (it used to keep idling, text-only)."""
     pan = AdventurePanel(_pet())
+    pan._trans = None                             # settled past the arrival fade
     pan.travelling = False
     pan.discovering = True
     pan.frame_i = 1
@@ -178,14 +181,12 @@ def test_investigate_plays_the_left_walk_and_seals_the_reveal():
     assert pan.travelling                         # back on the road
 
 
-def test_investigate_ambush_startles_then_flashes_the_alert():
-    """Canon onDiscoverEnemy -> checkWildEncounter: an ambush ALERTS through
-    the same Battle_Flash as any wild -- it used to open the fight unannounced
-    (adventure feel arc 2026-07-07)."""
+def test_investigate_ambush_startles_then_opens_the_battle():
     from tuipet.adventurescreen import INV_REVEAL_T
     from tuipet.battlescreen import BattlePanel
     random.seed(1)
     pan = AdventurePanel(_pet())
+    pan._trans = None                             # past the arrival fade
     pan.adv.location = pan.adv.total_steps // 2
     for seed in range(120):
         random.seed(seed)
@@ -199,10 +200,8 @@ def test_investigate_ambush_startles_then_flashes_the_alert():
     assert pan._scene["t"] == INV_REVEAL_T - 1
     for _ in range(8):
         pan.anim()
-    assert pan._flash is not None                 # the ambush alerts first
-    assert pan._scene is None and pan.sub is None
-    pan.key("space")                              # engage
-    assert isinstance(pan.sub, BattlePanel)
+    assert isinstance(pan.sub, BattlePanel)       # the ambush fight opened
+    assert pan._scene is None
 
 
 def test_habitat_change_cross_fades_not_snaps():
@@ -237,66 +236,60 @@ def _mon(pan):
             "vaccine": 2, "data_power": 2, "virus": 2}
 
 
-def test_flash_cards_ride_the_background_atlas():
-    """The REAL battleStart/battleStartFlash rips (jar resources) live in the
-    atlas as full-window cards -- never drawn, extracted."""
-    bgs = data.load_backgrounds()
-    for card in ("battleStart", "battleStartFlash"):
-        assert card in bgs and len(bgs[card][0]) == 24    # 40x24 window card
-
-
-def test_encounter_alerts_before_the_fight():
-    """Canon checkWildEncounter: a wild trigger stops travel and FLASHES the
-    alert (Battle_Flash); the fight opens on the player's press -- it used to
-    open unannounced."""
+def test_encounter_opens_the_fight_directly():
+    """Battles get NO transition and NO overlay -- the fight's own intro IS
+    the battle screen (Joel 2026-07-07: the .359 Battle_Flash card is dead;
+    no battleStart cards in the atlas either)."""
     from tuipet.battlescreen import BattlePanel
-    from tuipet.adventurescreen import TRAVEL_TICKS, FLASH_ALT_T
+    from tuipet.adventurescreen import TRAVEL_TICKS
+    assert "battleStart" not in data.load_backgrounds()
     pan = AdventurePanel(_pet())
+    pan._trans = None
     pan.travelling = True
     pan.adv.travel = lambda: ("encounter", _mon(pan))
     for _ in range(TRAVEL_TICKS):
         pan.anim()
-    assert pan._flash is not None and pan.sub is None
-    assert not pan.travelling
-    a = pan.text().markup                        # the card alternates its flash
-    for _ in range(FLASH_ALT_T):
-        pan.anim()
-    assert pan.text().markup != a
-    assert "SPACE fight" in pan.strip()
-    pan.key("f")                                 # care keys are locked out
-    assert pan.sub is None
-    pan.key("enter")                             # engage
-    assert isinstance(pan.sub, BattlePanel) and pan._pending == (False, _mon(pan))
+    assert isinstance(pan.sub, BattlePanel)
+    assert pan._pending == (False, _mon(pan)) and not pan.travelling
 
 
-def test_ignored_flash_escapes_with_the_knockback():
-    """WorldMap.battleWait: BattleWait(720 fires ~= 514 ticks) unanswered ->
-    the foe escapes, lossPenalty knocks the pet back, travel stays stopped
-    (canon lossPenalty zeroes travelSpeed)."""
-    from tuipet.adventurescreen import FLASH_WAIT_T
+def test_adventure_arrives_through_the_habitat_fade():
+    """Canon fade() rides the pet OUT of its habitat: the panel opens under
+    full black and the road lifts in over TRANS_T ticks -- a pure overlay,
+    the journey already runs beneath it."""
+    from tuipet.adventurescreen import TRANS_T
     pan = AdventurePanel(_pet())
-    pan.adv.location = 5000
-    pan._flash = {"t": 0, "boss": False, "enemy": _mon(pan)}
-    pan.travelling = False
-    for _ in range(FLASH_WAIT_T + 1):
+    assert pan._trans == {"t": 0, "dir": "in"}
+    dark = pan.text().markup
+    for _ in range(TRANS_T // 2):
         pan.anim()
-    assert pan._flash is None and pan.sub is None
-    assert pan.adv.location == 4800              # Penalty 200 steps back
-    assert not pan.travelling
-    assert "left" in pan.adv.last
+    mid = pan.text().markup
+    while pan._trans is not None:
+        pan.anim()
+    lit = pan.text().markup
+    assert dark != mid != lit                    # the black actually lifts
 
 
-def test_ignored_boss_flash_rearms_the_gate():
-    """A boss alert waited out knocks back past the gate so the boss re-arms
-    (flee's re-arm clamp) -- the gate can never be skipped by waiting."""
-    from tuipet.adventurescreen import FLASH_WAIT_T
+def test_going_home_fades_out_then_auto_closes():
+    """ESC starts the homecoming fade: keys are swallowed while it plays, the
+    world darkens, and at full black the panel applies the homecoming (away
+    drops, home climate) and asks the app to close it (auto_close)."""
+    from tuipet.adventurescreen import TRANS_T
     pan = AdventurePanel(_pet())
-    boss = dict(_mon(pan), location=6000, penalty=0)
-    pan.adv.location = 6000
-    pan._flash = {"t": 0, "boss": True, "enemy": boss}
-    for _ in range(FLASH_WAIT_T + 1):
+    p = pan.pet
+    pan._trans = None                            # settled on the road
+    assert pan.key("escape") is None             # no instant close: the fade runs
+    assert pan._trans == {"t": 0, "dir": "out"}
+    assert pan.key("f") is None and pan.sub is None   # the fade owns the keys
+    lit = pan.text().markup
+    for _ in range(TRANS_T - 1):
         pan.anim()
-    assert pan.adv.location < 6000               # behind the gate again
+        assert p.away                            # not home until full black
+    assert pan.text().markup != lit              # the world darkened
+    pan.anim()                                   # the last step
+    assert pan._trans is None
+    assert not p.away                            # teleportArrive: home again
+    assert pan.auto_close == ("done", None)      # the app closes the panel
 
 
 def test_zone_clear_plays_the_pulse_transition():
