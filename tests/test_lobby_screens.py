@@ -115,3 +115,89 @@ def test_lobby_fusion_plays_the_real_scene():
         pan.anim()
     assert pan.jshow.phase == "fused"
     assert "ENTER fuse" in pan.strip()        # menu-bounds rewording 2026-07-07
+
+
+def test_invite_defers_while_typing():
+    """Lobby audit 2026-07-07: an invite that pops mid-sentence EATS the next
+    keystroke — typing "yeah" accepted a jogress on the y.  While the input
+    line holds text (or a PM compose is open) the invite waits in the inbox;
+    it prompts the moment the line clears."""
+    pan = _lobby()
+    responses = []
+    pan.client.respond = lambda to, kind, acc, busy=False: responses.append((to, acc, busy))
+    pan.buf = "ye"                                # mid-sentence
+    pan.state.inbox.append({"t": "invite", "from_id": 2, "from_name": "Ryo",
+                            "kind": "battle"})
+    pan.anim()
+    assert pan.invite_prompt is None              # NOT popped
+    assert pan.state.inbox, "the invite must wait, not vanish"
+    assert not responses, "waiting is not declining"
+    assert "finish typing" in pan.status
+    pan.key("y")                                  # the y lands in the SENTENCE
+    assert pan.buf == "yey" and pan.invite_prompt is None
+    pan.buf = ""                                  # line cleared (sent/erased)
+    pan.anim()
+    assert pan.invite_prompt is not None          # now it prompts
+    assert not pan.state.inbox
+    # same hold while a PM compose is open
+    pan.invite_prompt = None
+    pan.pm_to = (2, "Ryo")
+    pan.state.inbox.append({"t": "invite", "from_id": 2, "from_name": "Ryo",
+                            "kind": "battle"})
+    pan.anim()
+    assert pan.invite_prompt is None and pan.state.inbox
+    pan.pm_to = None
+    pan.anim()
+    assert pan.invite_prompt is not None
+
+
+def test_prompt_lines_keep_their_hints_with_long_names():
+    """The key hints are FIXED CHROME (v0.2.349 doctrine): a 24-char name used
+    to push [Y]/[N] / [Esc] clean off the 38-col prompt line.  The name field
+    marquees instead — the hints render on EVERY frame, and the full name
+    appears across the rolled loop."""
+    long = "W" * 24
+    pan = _lobby()
+    pan.state.roster.append({"id": 3, "name": long,
+                             "pet": {"name": "AncientGreymon", "stage": "Mega"}})
+    pan.invite_prompt = {"from_id": 3, "from_name": long, "kind": "jogress"}
+    rolled = ""
+    for i in range(120):
+        pan._mq = i
+        last = pan.text().plain.split("\n")[-1]
+        assert "[Y]/[N]" in last, f"frame {i} lost the hint: {last!r}"
+        assert len(last) <= LCD_COLS
+        rolled += last.split(" invites")[0]
+    assert long in rolled                         # the whole name scrolls past
+    pan.invite_prompt = None
+    pan.action_for = (3, long, True)
+    for i in range(120):
+        pan._mq = i
+        last = pan.text().plain.split("\n")[-1]
+        assert "[Esc]" in last and "[B]attle" in last and "[M]sg" in last
+        assert len(last) <= LCD_COLS
+    pan.action_for = (3, long, False)             # the ghost variant
+    last = pan.text().plain.split("\n")[-1]
+    assert "[M]essage" in last and "[Esc]" in last
+    pan.action_for = None                         # the selection status line
+    pan.sel = 1                                   # sorted: the long-name live row
+    pan.status = "Up/Down pick · Enter chat/act · Esc leave"
+    others = pan._others()
+    target = next(i for i, p in enumerate(others) if p["name"] == long)
+    pan.sel = target
+    for i in range(120):
+        pan._mq = i
+        last = pan.text().plain.split("\n")[-1]
+        assert last.endswith("Enter to act"), last
+        assert len(last) <= LCD_COLS
+
+
+def test_join_leave_log_caps_at_the_shared_chat_cap():
+    """The join/leave diff trims with net.CHAT_CAP — a hardcoded 200 drifted
+    beside it (lobby audit 2026-07-07)."""
+    from tuipet.net import CHAT_CAP
+    pan = _lobby()
+    pan._seen_ids = {1: "JoeltCo"}                # Ryo reads as a fresh join
+    pan.state.chat = [("x", str(i)) for i in range(CHAT_CAP + 100)]
+    pan.anim()
+    assert len(pan.state.chat) == CHAT_CAP

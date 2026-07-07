@@ -25,6 +25,8 @@ from . import jogress
 from . import battle
 from . import battlescreen
 from . import jogressscreen
+from .net import CHAT_CAP
+from .render import marquee
 from .theme import INK, INK_B, DIM, SEL
 
 CHATW = 25
@@ -240,11 +242,18 @@ class LobbyPanel:
                     # (egg-battle audit 2026-07-06)
                     self.client.respond(m.get("from_id"), m.get("kind"), False)
                     self.status = gate
-                elif self.phase == "lobby" and self.invite_prompt is None and self.action_for is None:
+                elif self.phase != "lobby" or self.invite_prompt is not None or self.action_for is not None:
+                    self.client.respond(m.get("from_id"), m.get("kind"), False, busy=True)  # in a session
+                elif self.buf or self.pm_to is not None:
+                    # mid-sentence: the popped prompt would EAT the next
+                    # keystroke -- typing "yeah" ACCEPTED a jogress on the y
+                    # (lobby audit 2026-07-07).  Hold the invite in the inbox
+                    # until the input line clears; the status says it's waiting.
+                    self.status = f"{m.get('from_name', '?')} invites — finish typing"
+                    continue
+                else:
                     self.invite_prompt = m
                     self.sfx = "menu"
-                else:
-                    self.client.respond(m.get("from_id"), m.get("kind"), False, busy=True)  # in a session
                 s.inbox.remove(m)
             elif t == "invite_resp":
                 s.inbox.remove(m)
@@ -290,7 +299,7 @@ class LobbyPanel:
                 for pid, nm in old_ids.items():
                     if pid not in ids and pid != s.me_id:
                         s.chat.append(("", f"{nm} left"))
-                del s.chat[:-200]
+                del s.chat[:-CHAT_CAP]      # the one cap, shared with net.py
             self._seen_ids = ids
         # partner vanished mid-session
         if self.partner and not any(p["id"] == self.partner[0] for p in s.roster):
@@ -739,7 +748,6 @@ class LobbyPanel:
             t.append("\n  FUSING…\n\n", style=INK_B)
             # a 24-char account name ran this line to 43 > the 40-col LCD
             # (menu-bounds audit 2026-07-07): the name field marquees instead
-            from .render import marquee
             t.append(f"  syncing DNA with {marquee(pname, 21, getattr(self, '_mq', 0) // 2)}\n\n", style=INK)
             t.append("  [Esc] cancel", style=DIM)
         return t
@@ -812,17 +820,25 @@ class LobbyPanel:
         fw = CHATW + ROSTW - len(label)
         shown = self.buf if len(self.buf) < fw else self.buf[-(fw - 1):]
         t.append(_fit(shown + "_", fw) + "\n", style=INK)
+        # the prompt lines: the KEY HINTS are fixed chrome and must never clip
+        # off the end -- a 24-char name used to push [Y]/[N] and [Esc] out of
+        # the 38-col line entirely (lobby audit 2026-07-07); the NAME field
+        # marquees instead (the v0.2.349 field-scroll doctrine)
+        w = CHATW + ROSTW + 1
+        mq = self._mq // 2 if hasattr(self, "_mq") else 0
         if self.invite_prompt is not None:
             inv = self.invite_prompt
             blurb = self._pet_of(inv.get("from_id"))
             who = f"{inv['from_name']} ({blurb})" if blurb else inv["from_name"]
-            t.append(_fit(f"{who} invites {inv['kind']}  [Y]/[N]", CHATW + ROSTW + 1), style=INK_B)
+            tail = f" invites {inv['kind']}  [Y]/[N]"
+            t.append(_fit(marquee(who, w - len(tail), mq) + tail, w), style=INK_B)
         elif self.action_for is not None:
             pid, pname, plive = self.action_for
             blurb = self._pet_of(pid)
             who = f"{pname} ({blurb})" if blurb else pname
-            acts = "[B]attle [J]ogress [M]sg [Esc]" if plive else "playing — [M]essage  [Esc]"
-            t.append(_fit(f"{who}:  {acts}", CHATW + ROSTW + 1), style=INK_B)
+            acts = "[B]attle [J]og [M]sg [Esc]" if plive else "playing — [M]essage  [Esc]"
+            t.append(_fit(marquee(who, w - len(acts) - 3, mq) + ":  " + acts, w),
+                     style=INK_B)
         else:
             line = self.status
             if others and line.startswith("Up/Down"):
@@ -830,8 +846,10 @@ class LobbyPanel:
                 if p.get("live", True):
                     blurb = self._pet_of(p["id"])
                     if blurb:
-                        line = f"{p['name']}: {blurb} — Enter to act"
+                        tail = " — Enter to act"
+                        line = marquee(f"{p['name']}: {blurb}", w - len(tail), mq) + tail
                 else:
-                    line = f"{p['name']} is playing — Enter to message"
-            t.append(line[:CHATW + ROSTW + 1], style=DIM)
+                    tail = " — Enter to msg"
+                    line = marquee(f"{p['name']} is playing", w - len(tail), mq) + tail
+            t.append(line[:w], style=DIM)
         return t
