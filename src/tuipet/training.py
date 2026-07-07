@@ -626,10 +626,12 @@ class TrainingPanel:
                 # off the 40px LCD).  The stage shifts left so the WIDEST mon
                 # fits with margins: turret x2..11 · 5px air · gate x17..21 ·
                 # 1px · mon x23..38 · 1px right margin.
-                # Three staged acts, so the transition reads:
-                #   AIM    -- turret + gate only, barrel feinting (no mon)
-                #   LOCK   -- the barrel commits and the MON STEPS IN braced behind its
-                #             shield; the toggle window runs ("block it!")
+                # Three staged acts, the MON on stage for all of them (canon
+                # drawDataPre bobs the pet through the aim; HP-drill consistency,
+                # Joel 2026-07-06 -- the old staging hid the mon until the LOCK):
+                #   AIM    -- barrel feinting, the mon bobbing behind its gate
+                #   LOCK   -- the barrel commits and the mon BRACES; the toggle
+                #             window runs ("block it!")
                 #   SHOOT  -- the turret recoils, the pellet bursts out of the barrel and
                 #             flies the lane into the gate; then hitAnim's strobe.
                 floor = BASE_Y                                     # the shared grid floor (2px above bottom)
@@ -640,8 +642,7 @@ class TrainingPanel:
                 cy = floor - ch                                    # turret grounded
                 recoil = -1 if (self.fired and self.fly_t >= DATA_FLY - 1) else 0
                 overlay.extend(_blit(cannon, cannon_x + recoil, cy))
-                if self.locked:                                    # the mon steps in at the LOCK
-                    overlay.extend(_blit(pf, px, py))
+                overlay.extend(_blit(pf, px, py))                  # on stage every act
                 hi_y = STRIKE_BAND_TOP + 1                         # HIGH lane gate: up near the band top
                 lo_y = floor - sh_h                                # LOW lane gate: grounded on the floor
                 #  ONE solid shield, drawn only in the lane it guards -- the open lane

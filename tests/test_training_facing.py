@@ -127,3 +127,23 @@ def test_hp_pick_round_shows_the_reacting_pet():
     idle = pan.text().markup                   # markup, not plain: the arena is colour
     pan._strike_pose, pan._strike_t = 6, 4     # the right-pick reaction, target unchanged
     assert pan.text().markup != idle           # ...and it shows on the arena
+
+
+def test_data_aim_shows_the_mon():
+    """Polish 2026-07-06 (Joel: 'like the hp drill'): the data drill's AIM act
+    used to stage turret + gate ALONE and pop the mon in at the LOCK -- the mon
+    now stands behind its gate for the whole drill (canon drawDataPre bobs the
+    pet through the aim), so the scene never gains a sprite mid-game."""
+    from tuipet.training import TrainingPanel, GAMES
+    from tuipet.pet import Pet
+    p = Pet(num=100, stage="Champion", attribute="Vaccine", obedience=500)
+    p.compliance = True
+    pan = TrainingPanel(p)
+    pan.gi = next(i for i, g in enumerate(GAMES) if g[0] == "data")
+    pan._start_game()
+    assert not pan.locked                      # still the AIM act
+    pan.frame_i = 0                            # bob pose 0
+    a = pan.text().markup
+    pan.frame_i = 2                            # bob pose 1 -- only the MON flips
+    b = pan.text().markup                      # (feint/shield don't ride frame_i)
+    assert a != b, "the bobbing mon must be visible during the AIM act"
