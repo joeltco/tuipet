@@ -98,3 +98,20 @@ def test_both_tells_due_picks_uniformly(monkeypatch):
     if p.near_bedtime():
         specials.append("yawn")
     assert specials == picks                # both eligible at once
+
+
+def test_the_thunder_startle_is_disposition_keyed():
+    """surprising() (startle audit 2026-07-06): the thunder startle's poses
+    key on disposition -- the sour pet barely flinches (idle<->4), neutral
+    reacts (4<->6), the SUNNY one jumps hardest (9<->10, canon's inversion).
+    The roles carry the canon pose pairs."""
+    from tuipet import data
+    assert data.ROLES["startle_sour"] == [0, 4]
+    assert data.ROLES["startle"] == [4, 6]
+    assert data.ROLES["startle_sunny"] == [9, 10]
+    pick = {-1: "startle_sour", 1: "startle_sunny"}
+    assert pick.get(-1) == "startle_sour"
+    assert pick.get(0, "startle") == "startle"
+    p = _pet(disposition=1)
+    p._set_anim({-1: "startle_sour", 1: "startle_sunny"}.get(p.disposition, "startle"), 1.4)
+    assert p.anim == "startle_sunny"

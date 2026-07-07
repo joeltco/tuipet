@@ -2078,7 +2078,11 @@ class TuiPetApp(App):
                     and getattr(sc, "thunder_i", 0) <= 0 and random.randint(0, 499) == 0):
                 sc.thunder_i = 14
                 if p.anim in ("idle", "walk") and not p.asleep:
-                    p._set_anim("surprise", 1.4)
+                    # surprising() -- disposition-keyed (startle audit
+                    # 2026-07-06): the sour pet barely flinches, the SUNNY
+                    # one jumps out of its skin (canon's inversion)
+                    p._set_anim({-1: "startle_sour", 1: "startle_sunny"}
+                                .get(p.disposition, "startle"), 1.4)
             # DVPet poopDance: a special-idle roll while the gauge is full --
             # tuipet fires the poop the moment the gauge fills, so the nervous
             # dance rolls while the need APPROACHES (>=80% of the interval)

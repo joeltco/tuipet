@@ -41,6 +41,11 @@ ROLES = {
     "yawn":   [0, 8],      # yawning(): idle 0 -> open-mouth 8 (verified)
     "wake":   [2, 3, 1],   # wakeUp(): groggy 2/3 -> settle 1 (verified)
     "surprise": [1, 5],    # AngrySurprise startle beats 1,5
+    # surprising() -- the THUNDER startle, disposition-keyed (audit 2026-07-06):
+    # the sour pet barely flinches, neutral reacts, the SUNNY one jumps hardest
+    "startle_sour": [0, 4],    # disposition -1: idle <-> mild (+4)
+    "startle": [4, 6],         # disposition  0: +4 <-> +6
+    "startle_sunny": [9, 10],  # disposition +1: the dramatic jump (+9 <-> +10)
     "shield": [4],         # weathering(): rain -> frame 4 (verified)
     "huddle": [9],         # weathering(): cold/snow -> frame 9 (verified)
 }
