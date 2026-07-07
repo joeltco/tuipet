@@ -171,7 +171,9 @@ class OptionsPanel(menu.SubHost):
             if not self.sound_get():
                 return "off"
             b = sound.backend()
-            return f"on · {b[:13]}" if b else "on · bell only"
+            # first token only: "termux-media-player" clipped mid-word on the
+            # 18-char value column (Joel's live screen, 2026-07-07)
+            return f"on · {b.split('-')[0][:13]}" if b else "on · bell only"
         if row == "account":
             return persistence.get_account()[0] or "not signed in"
         if row == "update":
@@ -188,7 +190,7 @@ class OptionsPanel(menu.SubHost):
             return f"{len(self.bindings)} bindings"
         if row == "new":
             return f"gen {self.pet.generation + 1} next"
-        return "save + progress + account"
+        return "everything"          # the confirm page spells out what that means
 
     def text(self):
         if self.sub is not None:

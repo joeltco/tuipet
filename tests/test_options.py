@@ -56,10 +56,24 @@ def test_sound_row_names_the_backend(monkeypatch):
     pan, _ = _panel(sound_on=True)
     monkeypatch.setattr(sound, "_PLAYER", ["paplay"])
     assert pan._value("sound") == "on · paplay"
+    # the long player name must not clip mid-word into the 18-char value
+    # column ("on · termux-media-" on Joel's live screen, 2026-07-07)
+    monkeypatch.setattr(sound, "_PLAYER", ["termux-media-player", "play"])
+    assert pan._value("sound") == "on · termux"
     monkeypatch.setattr(sound, "_PLAYER", None)
     assert pan._value("sound") == "on · bell only"
     pan2, _ = _panel(sound_on=False)
     assert pan2._value("sound") == "off"
+
+
+def test_every_row_value_fits_the_column():
+    """No value may exceed the 18-char column — an over-wide one clips with a
+    dangling word ('save + progress +' on the live screen, 2026-07-07)."""
+    persistence.set_account("W" * 24, "pw")        # the widest real account
+    pan, _ = _panel()
+    for row in _ROWS:
+        v = pan._value(row)
+        assert len(v[:18]) == len(v) or row == "account", (row, v)  # account tail-clips by design
 
 
 def test_theme_row_hosts_the_live_picker():
