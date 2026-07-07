@@ -189,12 +189,16 @@ class SubHost:
     sub = None
 
     def sub_anim(self):
-        """Delegate a frame to the child; bubble its sfx up.  True if handled."""
+        """Delegate a frame to the child; bubble its sfx up.  True if handled.
+        A child with no anim() (ShopPanel) is simply held -- the host's own
+        clock pauses either way (adventure road-keys 2026-07-07)."""
         if self.sub is None:
             return False
-        self.sub.anim()
-        self.sfx = getattr(self.sub, "sfx", None)
-        self.sub.sfx = None
+        if hasattr(self.sub, "anim"):
+            self.sub.anim()
+        self.sfx = getattr(self.sub, "sfx", None) or getattr(self, "sfx", None)
+        if getattr(self.sub, "sfx", None):
+            self.sub.sfx = None
         return True
 
     def sub_key(self, k, on_done):

@@ -2041,7 +2041,9 @@ class TuiPetApp(App):
         div = f"[dim]{'─' * 26}[/]"
         lives = "♥" * a.lives + "[dim]·[/]" * (3 - a.lives)
         power = f"[{T.POS}]●{p.vaccine}[/] [{T.ENERGY}]■{p.data_power}[/] [{T.MOOD}]▲{p.virus}[/]"
-        if self.mode.sub is not None:                       # mid-encounter battle
+        # mid-encounter battle ONLY -- a road-side care panel (feed/bag,
+        # road-keys 2026-07-07) keeps the travelling card underneath
+        if self.mode.sub is not None and hasattr(self.mode.sub, "battle"):
             e = self.mode.sub.battle.enemy
             tag = f" [{T.NEG}]BOSS[/]" if e.get("boss") else ""
             lines = [

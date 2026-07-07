@@ -129,6 +129,12 @@ class ShopPanel:
                     if self.pet.asleep:
                         self.msg = "zzz... asleep"
                         return None
+                    if getattr(self.pet, "away", False):
+                        # transports leave from HOME (the structural doctrine,
+                        # transport audit 2026-07-06) -- a mid-adventure ride
+                        # would corrupt the adv_loc mailbox (road-keys 2026-07-07)
+                        self.msg = "Transports leave from home."
+                        return None
                     return ("done", ("transport", e["key"]))
                 if (e.get("action") or "") == "Inherit":
                     mem0 = dict(getattr(self.pet, "digimemory", {}) or {})

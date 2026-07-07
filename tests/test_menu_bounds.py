@@ -100,3 +100,32 @@ def test_travelling_and_hp_drill_strips_fit_at_the_extremes():
     tp.gi = next(i for i, g in enumerate(GAMES) if g[0] == "hp")
     tp._start_game()
     assert _plain(tp.strip()) <= HUD_W
+
+
+def test_adventure_strip_hints_survive_long_notes():
+    """The adventure strip's HINTS are fixed chrome (major audit 2026-07-07):
+    a long species name in the note ("AncientSphinxmon noticed something off
+    the path!") used to push the keys past 40 where the display marquee slid
+    them out of view.  The note field-marquees; the hint renders every frame."""
+    from tuipet.adventurescreen import AdventurePanel
+    pan = AdventurePanel(_pet(bits=999))
+    pan.travelling = False
+    long_note = "AncientSphinxmon noticed something off the path!"
+    for state, hint in ((("discovering", True), "ENTER look"),
+                        (("town_prompt", 3), "ENTER visit"),
+                        (("travelling", True), "SPACE stop")):
+        pan.discovering = False
+        pan.town_prompt = None
+        pan.travelling = False
+        setattr(pan, *state)
+        pan.adv.last = long_note
+        windows = []
+        for i in range(200):
+            pan.frame_i = i
+            s = pan.strip()
+            assert hint in s, (state, s)
+            assert _plain(s) <= HUD_W
+            windows.append(s.split("  [dim]")[0])
+        # the head holds first, and the tail scrolls into view later
+        assert any(w.startswith("AncientSphin") for w in windows), state
+        assert any("the path!" in w for w in windows), state

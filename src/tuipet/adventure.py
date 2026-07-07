@@ -251,23 +251,41 @@ class Adventure:
         self._travel_drain()
         # Bosses stand at their REAL steps (Zone.checkBattle: location[0] == step) --
         # the walk stops AT the first uncleared boss the stride would cross.
-        for b in sorted(self.zone["bosses"], key=self._boss_loc):
-            bloc = self._boss_loc(b)
-            if b["num"] not in self._cleared and prev < bloc <= self.location:
-                self.location = bloc
-                self.boss_pending = True
-                self._boss = b
-                self.last = f"Zone boss: {b['name']}!"
-                return ("boss", b)
+        # Events resolve in POSITION order (major audit 2026-07-07): a town-start
+        # BEFORE the boss in the same stride is reached first, exactly as the
+        # per-step canon walks it -- the old boss-first ordering let the town
+        # event carry the pet PAST an unfought gate (no shipped zone places the
+        # two within one stride today; the guard is for the data's future).
+        boss_hit = next(((self._boss_loc(b), b)
+                         for b in sorted(self.zone["bosses"], key=self._boss_loc)
+                         if b["num"] not in self._cleared
+                         and prev < self._boss_loc(b) <= self.location), None)
+        town_hit = next(((lo, tid)
+                         for lo, hi, tid in sorted(self.zone.get("towns", ()))
+                         if lo not in self._rested and prev < lo <= self.location), None)
+        if boss_hit and town_hit and town_hit[0] < boss_hit[0]:
+            # the town gate comes first: stop AT it (the boss re-arms next stride)
+            self.location = town_hit[0]
+            self._set_zone_habitat()
+            boss_hit = None
+        if boss_hit:
+            bloc, b = boss_hit
+            self.location = bloc
+            self._set_zone_habitat()      # wear the habitat of WHERE WE STOPPED,
+            #                               not the overshot pre-clamp spot
+            self.boss_pending = True
+            self._boss = b
+            self.last = f"Zone boss: {b['name']}!"
+            return ("boss", b)
         # Towns at their REAL step-spans (towns.csv TownRange): entering one rests the
         # pet (adventure life + energy, WorldMap.step), and no encounters roll inside.
-        for lo, hi, tid in self.zone.get("towns", ()):
-            if lo not in self._rested and prev < lo <= self.location:
-                self._rested.add(lo)
-                self.life = MAX_LIFE
-                self.pet._set_energy(self.pet.max_energy)
-                self.last = "Reached a town — rested (life + energy)."
-                return ("town", tid)
+        if town_hit:
+            lo, tid = town_hit
+            self._rested.add(lo)
+            self.life = MAX_LIFE
+            self.pet._set_energy(self.pet.max_energy)
+            self.last = "Reached a town — rested (life + energy)."
+            return ("town", tid)
         if self.location >= self.total_steps:              # gate clear, path clear -> done
             return self._advance_or_finish()
         # Wild encounter (real chance formula); towns suppress it, and each random

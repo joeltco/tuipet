@@ -153,8 +153,17 @@ def test_map_final_boss_cues_the_victory_parade():
     panel.key("enter")
     assert panel._parade is not None and len(panel._parade["nums"]) <= 3
     assert panel.adv.last == "You saved the Digital World!"
-    s = panel.strip()
-    assert "SPACE next" in s and panel.adv.last in s
+    # the note field-marquees under the fixed hint (major audit 2026-07-07):
+    # the hint shows EVERY frame; head then tail scroll through the window
+    windows = []
+    for i in range(160):
+        panel.frame_i = i
+        s = panel.strip()
+        assert "SPACE next" in s
+        windows.append(s.split("  [dim]")[0])
+    assert any(w.startswith("You saved") for w in windows)
+    assert any("World!" in w for w in windows)
+    panel.frame_i = 0
     frames = 0
     while panel._parade is not None:
         panel.anim()
@@ -327,3 +336,139 @@ def test_birdra_needs_a_town_and_finds_the_closest():
     z = maps[mi]["zones"][p.adv_zone]
     assert z.get("towns") and p.adv_loc == z["towns"][0][0]   # landed ON a real town
     assert p.energy == p.max_energy               # ...and rested there
+
+
+# ---- stride events resolve in POSITION order (major audit 2026-07-07) --------
+
+def _stub_adv(town=None, boss_loc=25, bgs=()):
+    """An Adventure over a synthetic one-zone map (instance-local: never mutate
+    the lru-cached zone data -- the .186 test-pollution lesson)."""
+    from tuipet.adventure import Adventure
+    from tuipet.pet import Pet
+    p = Pet(num=100, stage="Champion", attribute="Vaccine", obedience=500)
+    p.world_seconds = 10 * 60.0
+    p.stop_travel_prob = lambda: 0.0                    # no refusal noise
+    adv = Adventure(p)
+    zone = {"total_steps": 400, "randoms": [],          # stride = 400/40 = 10
+            "bosses": [{"num": 500, "name": "Gate", "location": boss_loc}],
+            "towns": [town] if town else [], "bgs": list(bgs),
+            "rand_foods": [], "rand_items": []}
+    adv.maps = [{"zones": [zone]}]
+    adv.mi = adv.zi = 0
+    adv.location = 20
+    return adv, p
+
+
+def test_town_before_boss_in_one_stride_is_reached_first(monkeypatch):
+    """A town-start and an uncleared boss in the SAME stride resolve in
+    position order, like the per-step canon walk -- the old boss-first
+    ordering let the town event carry the pet PAST an unfought gate."""
+    import random as _r
+    from tuipet import adventure as amod
+    monkeypatch.setattr(amod.random, "random", lambda: 0.99)   # no discover/stop
+    adv, p = _stub_adv(town=(22, 24, 0), boss_loc=25)
+    ev = adv.travel()                                   # stride sweeps 20 -> 30
+    assert ev == ("town", 0), ev                        # the town at 22 comes FIRST
+    assert adv.location == 22                           # stopped at the gates
+    assert not adv.boss_pending
+    ev = adv.travel()                                   # walk on -> the boss stands
+    assert ev and ev[0] == "boss"
+    assert adv.location == 25
+
+
+def test_boss_stop_wears_the_habitat_of_the_stop(monkeypatch):
+    """Stopping AT the boss re-derives the zone habitat for the CLAMPED spot --
+    the old order set it for the overshot pre-clamp location."""
+    from tuipet import adventure as amod, data
+    monkeypatch.setattr(amod.random, "random", lambda: 0.99)
+    hids = sorted(data.load_habitats())[:2]
+    adv, p = _stub_adv(boss_loc=25,
+                       bgs=[(0, 25, hids[0]), (26, 400, hids[1])])
+    p.habitat = hids[1]                                 # force a visible shift
+    ev = adv.travel()
+    assert ev and ev[0] == "boss" and adv.location == 25
+    assert p.habitat == hids[0], "the habitat must match step 25, not step 30"
+
+
+# ---- road care keys (Joel 2026-07-07: action keys live during adventure) -----
+
+def _road_panel():
+    from tuipet.adventurescreen import AdventurePanel
+    from tuipet.pet import Pet
+    p = Pet(num=100, stage="Champion", attribute="Vaccine", obedience=500)
+    p.world_seconds = 10 * 60.0
+    p.bits = 500
+    pan = AdventurePanel(p)
+    pan.travelling = False
+    return pan, p
+
+
+def test_road_feed_hosts_the_panel_and_holds_the_journey():
+    """f opens the REAL FeedPanel as a sub; the journey clock holds while it's
+    open; the meal's outcome lands on the strip (no home fx on the road)."""
+    from tuipet.feedscreen import FeedPanel
+    pan, p = _road_panel()
+    p.hunger = 0
+    p.compliance = True                     # no refusal noise
+    pan.travelling = True
+    pan.key("f")
+    assert isinstance(pan.sub, FeedPanel)
+    loc0 = pan.adv.location
+    for _ in range(30):
+        pan.anim()                          # the sub holds the road
+    assert pan.adv.location == loc0, "travel must pause while feeding"
+    r = None
+    for _ in range(40):                     # pick the first food that lands
+        r = pan.key("enter")
+        if pan.sub is None:
+            break
+        pan.key("down")
+    assert pan.sub is None
+    assert pan.adv.last                      # the outcome reads on the strip
+    assert p.hunger > 0                      # it actually ate
+
+
+def test_road_scold_answers_the_travel_refusal_window():
+    """A travel refusal opens a canon scold window (one of the THREE sites) --
+    k was unreachable mid-adventure, so the window could only expire."""
+    pan, p = _road_panel()
+    p.stop_travel_effects()                  # the refusal just fired
+    assert p.scold_flag
+    pan.key("k")
+    assert not p.scold_flag, "the scold must answer the window"
+    assert pan.adv.last                      # its verdict reads on the strip
+
+
+def test_road_direct_keys_heal_praise_lights():
+    pan, p = _road_panel()
+    p.sick = True
+    pan.key("h")
+    assert pan.adv.last                      # heal verdict on the strip
+    pan.key("r")
+    assert pan.adv.last
+    lights0 = p.lights
+    pan.key("s")
+    assert p.lights != lights0               # the toggle landed
+
+
+def test_road_bag_opens_and_transport_is_refused():
+    """i hosts the bag; a transport item is REFUSED on the road (transports
+    leave from home -- the adv_loc mailbox must not be corrupted mid-run)."""
+    from tuipet.shopscreen import ShopPanel
+    pan, p = _road_panel()
+    p.add_item("i:28")                       # a transport ticket
+    pan.key("i")
+    assert isinstance(pan.sub, ShopPanel)
+    sp = pan.sub
+    assert p.away                            # the road flag is up
+    for _ in range(40):                      # find the ticket in the bag
+        rows = sp._rows()
+        if rows and (rows[min(sp.cursor, len(rows) - 1)].get("action") or "") \
+                in __import__("tuipet.data", fromlist=["data"]).TRANSPORT_ACTIONS:
+            break
+        r = sp.key("right") if not rows else sp.key("down")
+    res = pan.key("enter")                   # try to board
+    assert pan.sub is not None, "the ride must NOT leave the bag"
+    assert "home" in sp.msg
+    pan.key("escape")
+    assert pan.sub is None                   # back on the road

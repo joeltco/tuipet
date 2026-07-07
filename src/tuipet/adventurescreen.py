@@ -3,6 +3,8 @@ from __future__ import annotations
 from . import data
 from .adventure import Adventure
 from .battlescreen import BattlePanel
+from .feedscreen import FeedPanel
+from .shopscreen import ShopPanel
 from .townscreen import TownPanel
 from .render import render_scene, downsample
 from . import grid
@@ -125,6 +127,27 @@ class AdventurePanel(menu.SubHost):
                 self.adv.last = "Back on the road."
                 self.travelling = True
             return None
+        if isinstance(self.sub, (FeedPanel, ShopPanel)):
+            # a road-side care panel (road-keys 2026-07-07): the journey holds
+            # while it's open; its outcome lands on the strip, no home fx
+            pmsg = getattr(self.sub, "msg", "")
+            r = self.sub.key(k)
+            if r is not None and r[0] == "done":
+                pmsg = getattr(self.sub, "msg", "") or pmsg
+                self.sub = None
+                res = r[1]
+                if isinstance(res, tuple) and res:
+                    if res[0] in ("fed", "full", "refused"):
+                        self.adv.last = res[2]
+                    elif res[0] == "evolve":
+                        self.adv.last = f"Evolved into {self.pet.name}!"
+                    elif res[0] == "inherit":
+                        self.adv.last = f"{res[1].get('name', 'The memory')}'s power lives on!"
+                    else:                # eat/toilet/play: effect applied in-panel
+                        self.adv.last = pmsg or self.adv.last
+                elif isinstance(res, str) and res:
+                    self.adv.last = res
+            return None
         if self.sub is not None:
             r = self.sub.key(k)
             if r is not None and r[0] == "done":
@@ -191,6 +214,38 @@ class AdventurePanel(menu.SubHost):
                 self.discovering = False
                 self.adv.last = "Walked on by."
                 self.travelling = True
+            return None
+        # the CARE keys work on the road (Joel 2026-07-07: "arent i supposed to
+        # have access to action keys in adventure?" -- canon's device keeps the
+        # full button set live while travel runs).  f/i host their panels (the
+        # journey holds); h/r/k/s act directly.  Notably k answers the scold
+        # window a travel REFUSAL opens -- it was unreachable mid-adventure.
+        if k == "f":
+            reason = self.pet.can_feed()
+            if reason:
+                self.adv.last = reason
+                self.sfx = "refuse"
+            else:
+                self.sub = FeedPanel(self.pet)
+            return None
+        if k == "i":
+            self.sub = ShopPanel(self.pet, start_mode="bag")
+            return None
+        if k == "h":
+            self.adv.last = self.pet.heal()
+            self.sfx = "confirm"
+            return None
+        if k == "r":
+            self.adv.last = self.pet.praise()
+            self.sfx = "confirm"
+            return None
+        if k == "k":
+            self.adv.last = self.pet.scold()
+            self.sfx = "refuse"
+            return None
+        if k == "s":
+            self.adv.last = self.pet.toggle_lights()
+            self.sfx = "confirm"
             return None
         if k == "space" and not self.adv.done:
             if not self.travelling:
@@ -316,7 +371,11 @@ class AdventurePanel(menu.SubHost):
                           rows=ROWS, cols=COLS, overlay=overlay)
 
     def strip(self):
-        """One line under the LCD: the journey note + the controls that apply."""
+        """One line under the LCD: the journey note + the controls that apply.
+        The HINT is fixed chrome and never leaves view; an over-long note
+        marquees in what's left (the v0.2.349 field-scroll doctrine -- a long
+        species name used to push the whole line past 40 and the display
+        marquee slid the keys off-screen, major audit 2026-07-07)."""
         if self.sub is not None:
             return ""
         a = self.adv
@@ -333,7 +392,11 @@ class AdventurePanel(menu.SubHost):
         elif getattr(self, "town_prompt", None) is not None:
             hint = "ENTER visit  ESC walk on"
         elif self.discovering:
-            hint = "ENTER investigate  ESC walk on"
+            hint = "ENTER look  ESC walk on"
         else:
             hint = "SPACE go  ESC out"
-        return f"{note}  [dim]· {hint}[/]" if note else f"[dim]{hint}[/]"
+        if not note:
+            return f"[dim]{hint}[/]"
+        from .render import marquee
+        note = marquee(note, 40 - len(hint) - 4, self.frame_i // 2)
+        return f"{note}  [dim]· {hint}[/]"
