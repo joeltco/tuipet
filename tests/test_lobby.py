@@ -345,3 +345,75 @@ def test_pvp_cards_ship_the_declared_attribute():
     del wild["attribute"]
     b2 = battle_mod.Battle(q, wild)
     assert b2.enemy["attribute"] == "Virus"        # wild: strongest power derives
+
+
+# ---- message handling across back-out/re-enter (audit 2026-07-06) -------------
+
+def test_queued_pms_seed_the_fresh_lobby_pane():
+    """PMs queued while in another sub-screen used to be clear()ed on lobby
+    entry -- assumed shown by the lobby chat, but the fresh client never saw
+    them.  They now seed the pane until the client is CONNECTED (after which
+    the lobby's own copy makes the ghost's a duplicate)."""
+    from types import SimpleNamespace
+    from tuipet.app import TuiPetApp
+
+    state = LobbyState()
+    pan = _panel(state)
+    sync = SimpleNamespace(inbox=[("gato", "hey!"), ("gato", "you there?")])
+    stub = SimpleNamespace(_sync=sync, mode=pan, _flash_t=0)
+    TuiPetApp._drain_pms(stub)                    # not connected -> seed + clear
+    assert ("✉gato", "hey!") in state.chat and ("✉gato", "you there?") in state.chat
+    assert sync.inbox == []
+    state.connected = True                        # live: the lobby gets its own copy
+    sync.inbox.append(("gato", "dupe"))
+    TuiPetApp._drain_pms(stub)
+    assert ("✉gato", "dupe") not in state.chat    # dropped as the duplicate
+    assert sync.inbox == []
+
+
+def test_reenter_evicts_stale_session_and_replays_chat(tmp_path):
+    """The back-out/re-enter path end-to-end (audit 2026-07-06): the newest
+    password-verified launch takes the room from its own lingering session
+    (refusing it locked the account out for the ping-reaper window), and the
+    server replays the rolling chat backlog so re-entry isn't a void."""
+    port = _free_port()
+    proc = _spawn(port, tmp_path)
+
+    class _Booted(LobbyClient):
+        def __init__(self, *a, boot=0.0, **k):
+            super().__init__(*a, **k)
+            self._boot = boot
+        def _login_msg(self):
+            return {"t": "login", "name": self.name, "pw": self.pw,
+                    "pet": self.pet, "boot": self._boot}
+
+    async def scenario():
+        uri = f"ws://127.0.0.1:{port}/"
+        a = _Booted(uri, "joel", "secret", {"name": "Gato"}, boot=100.0)
+        a._backoff0 = 0.2
+        ta = asyncio.create_task(a.run())
+        assert await _wait(lambda: a.state.connected), "A never connected"
+        a.chat("hello room")
+        assert await _wait(lambda: ("joel", "hello room") in a.state.chat), "A's chat never echoed"
+
+        # the same account comes back with a NEWER launch while A lingers
+        b = _Booted(uri, "joel", "secret", {"name": "Gato"}, boot=200.0)
+        b._backoff0 = 0.2
+        tb = asyncio.create_task(b.run())
+        try:
+            assert await _wait(lambda: b.state.connected), "B was locked out by its own stale session"
+            assert await _wait(lambda: ("joel", "hello room") in b.state.chat), \
+                "the chat backlog was not replayed on re-entry"
+            # A's reconnect (older boot) is refused terminally, not ping-ponged
+            assert await _wait(lambda: a._stop or not a.state.connected), "A never displaced"
+        finally:
+            ta.cancel(); tb.cancel()
+
+    try:
+        asyncio.run(scenario())
+    finally:
+        proc.terminate()
+        try:
+            proc.wait(timeout=3)
+        except subprocess.TimeoutExpired:
+            proc.kill()

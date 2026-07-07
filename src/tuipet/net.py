@@ -205,7 +205,12 @@ class LobbyClient(_WsClient):
 
     # ---- lifecycle (the loop itself lives on _WsClient) --------------------
     def _login_msg(self):
-        return {"t": "login", "name": self.name, "pw": self.pw, "pet": self.pet}
+        from .cloudsync import BOOT           # one launch stamp per process: the
+        #                                       server lets the newest launch evict
+        #                                       its own stale room session (message
+        #                                       audit 2026-07-06)
+        return {"t": "login", "name": self.name, "pw": self.pw, "pet": self.pet,
+                "boot": BOOT}
 
     def _on_connect(self):
         self.state.connected = True

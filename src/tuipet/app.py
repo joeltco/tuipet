@@ -1385,6 +1385,19 @@ class TuiPetApp(App):
         if sync is None or not getattr(sync, "inbox", None):
             return
         if isinstance(self.mode, lobbyscreen.LobbyPanel):
+            st = self.mode.state
+            if st is None:
+                return                     # login phase: keep them queued
+            if not st.connected:
+                # PMs that arrived BEFORE this lobby session's client existed
+                # (queued under another sub-screen, or landing in the connect
+                # window) are in no chat history -- the old clear() burned
+                # them unseen (message audit 2026-07-06).  Seed the fresh
+                # pane; once CONNECTED the lobby client receives its own
+                # copy, so then (and only then) the ghost's are duplicates.
+                for nm, tx in sync.inbox:
+                    st.chat.append((f"✉{nm}", tx))
+                del st.chat[:-net.CHAT_CAP]
             sync.inbox.clear()
             return
         if self.mode is not None:

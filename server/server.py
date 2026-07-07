@@ -21,6 +21,7 @@ import itertools
 import json
 import logging
 import os
+from collections import deque
 
 import websockets
 
@@ -155,8 +156,15 @@ def _lease_ok(client, key):
     return cur is not None and cur[1] == getattr(client, "lease", None)
 
 
+# The room's recent history (message audit 2026-07-06): the server kept no
+# chat log, so backing out of the lobby and re-entering greeted a VOID -- a
+# fresh client's pane filled only with what came after.  A live login now
+# replays this rolling window so re-entry rejoins the conversation.
+CHAT_BACKLOG: deque = deque(maxlen=30)
+
+
 class Client:
-    __slots__ = ("id", "ws", "name", "pet", "live", "lease", "logged")
+    __slots__ = ("id", "ws", "name", "pet", "live", "lease", "logged", "boot")
 
     def __init__(self, ws):
         self.id = next(_ids)
@@ -166,6 +174,7 @@ class Client:
         self.live = False
         self.lease = None
         self.logged = False
+        self.boot = 0.0
 
 
 CLIENTS: dict[int, Client] = {}
@@ -178,6 +187,15 @@ def _clean(s, limit):
 async def _send(client, obj):
     try:
         await client.ws.send(json.dumps(obj))
+    except Exception:
+        pass
+
+
+async def _close_quiet(ws):
+    """Close an evicted session's socket without letting a dead peer's close
+    handshake stall the login that displaced it."""
+    try:
+        await ws.close()
     except Exception:
         pass
 
@@ -264,25 +282,44 @@ async def handler(ws):
                     LOG.info("registered account %s", name)
                 # A sync_only connection just pulls/pushes the cloud save; it never
                 # joins the live roster, so it can coexist with a lobby login on the
-                # same account (and won't trip the "already online" guard below).
+                # same account (and won't trip the live-session handling below).
                 sync_only = bool(m.get("sync_only"))
-                if not sync_only and any(
-                        c.live and c.name.lower() == key for c in CLIENTS.values() if c is not client):
-                    await _send(client, {"t": "login_failed", "msg": "That name is already online."})
-                    return
+                try:
+                    boot = float(m.get("boot") or 0)
+                except (TypeError, ValueError):
+                    boot = 0.0
+                if not sync_only:
+                    # The room slot follows the save-lease doctrine (message
+                    # audit 2026-07-06): the password already verified, so an
+                    # "already online" conflict is either OUR OWN stale session
+                    # (a back-out/re-enter racing a slow close, or a half-dead
+                    # socket the ping reaper won't fell for ~40s) or an older
+                    # app launch.  The newest launch WINS the room -- refusing
+                    # it locked the account out of its own lobby.
+                    stale = [c for c in CLIENTS.values()
+                             if c is not client and c.live and c.name.lower() == key]
+                    if any(c.boot > boot for c in stale):
+                        await _send(client, {"t": "login_failed",
+                                             "msg": "Signed in on a newer session."})
+                        return
+                    for c in stale:
+                        CLIENTS.pop(c.id, None)
+                        await _send(c, {"t": "error", "msg": "Signed in from a newer session."})
+                        asyncio.ensure_future(_close_quiet(c.ws))
+                        LOG.info("evicted stale session id=%s name=%s", c.id, c.name)
+                    client.boot = boot
                 client.name = name
                 client.pet = m.get("pet") or {}
                 client.live = not sync_only
                 if sync_only:                     # the newest APP LAUNCH owns the saves
-                    try:
-                        boot = float(m.get("boot") or 0)
-                    except (TypeError, ValueError):
-                        boot = 0.0
                     _take_lease(client, key, boot)
                 logged_in = True
                 client.logged = True
                 await _send(client, {"t": "welcome", "id": client.id, "name": client.name,
                                      "save": SAVES.get(key)})       # cloud save (or null) for cross-device load
+                if not sync_only:
+                    for f in CHAT_BACKLOG:        # rejoin the conversation, not a void
+                        await _send(client, f)
                 await _push_roster()          # sync ghosts show as "playing" (presence 2026-07-05)
                 LOG.info("login id=%s name=%s sync_only=%s (%d online)",
                          client.id, client.name, sync_only, len(CLIENTS))
@@ -309,8 +346,10 @@ async def handler(ws):
             elif t == "chat":
                 text = _clean(m.get("text"), MAX_CHAT)
                 if text and client.live:          # a sync_only ghost isn't in the room
-                    await _broadcast({"t": "chat", "from_id": client.id,
-                                      "from_name": client.name, "text": text})
+                    out = {"t": "chat", "from_id": client.id,
+                           "from_name": client.name, "text": text}
+                    CHAT_BACKLOG.append(out)      # the re-entry replay window
+                    await _broadcast(out)
 
             elif t == "pm":
                 # a private message reaches EVERY connection of the target
