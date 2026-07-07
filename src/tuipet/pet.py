@@ -4310,8 +4310,9 @@ class Pet:
             return
         self.gift_t = 0.0
         if (self.gift or self.asleep or self.stage in ("Egg", "Fresh", "InTraining")
-                or self.current_mood() != "Happy"):
-            return
+                or self.current_mood() != "Happy"
+                or getattr(self, "away", False)):   # checkGiftCall gates on _isHome:
+            return                                  # presents are found AT HOME
         chance = int(OBEDIENCE_REFUSAL_CAP - self.obedience
                      + (MOOD_MAX - self.mood) * GIFT_CHANCE_MOOD_COEFF + GIFT_CHANCE_FACTOR)
         if chance > 0 and random.randrange(chance) == 0:

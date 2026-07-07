@@ -112,3 +112,19 @@ def test_mood_samples_every_five_game_minutes():
     for _ in range(int(MOOD_RECORD_MIN * 60 * 3.5)):
         p.tick(1.0)
     assert sum(p.daily_mood.values()) >= 3     # ~one sample per 5 game-min
+
+
+def test_gifts_are_found_at_home_only(monkeypatch):
+    """checkGiftCall gates on _isHome (play/gift audit 2026-07-06): on the
+    road there are no presents -- and the roll resumes at homecoming."""
+    monkeypatch.setattr(Pet, "_pick_gift", lambda self: "f:8")
+    monkeypatch.setattr(random, "randrange", lambda n: 0)   # the roll always hits
+    p = _pet(mood=300, obedience=90)
+    p.away = True
+    p.gift_t = 10**9
+    p._check_gift_call(1.0)
+    assert p.gift == ""                        # adventuring: no visitor
+    p.away = False
+    p.gift_t = 10**9
+    p._check_gift_call(1.0)
+    assert p.gift == "f:8"                     # home again: the present lands
