@@ -102,3 +102,32 @@ def test_double_dose_costs_one_game_hour():
     msg = p._feed_med()
     assert "poison" in msg
     assert p.lifespan == life0 - 60.0           # 3600 REAL-sec / 60, not 3600 game-sec
+
+
+def test_feed_taste_branches_take_canon_shape():
+    """feed()'s taste branches (feed/food audit 2026-07-06): the glutton shade
+    rides every branch, fullness GATES the pleasant moods, and a full pet fed
+    its DISLIKED meal pays the double dip plus the spirit hit."""
+    from tuipet.pet import (FAV_FOOD_MOOD, FOOD_MOOD, FAV_FOOD_ENTH,
+                            GLUTTON_FEED_MOOD, DISLIKED_FOOD_OBEDIENCE)
+    # hungry + favourite + glutton: +10 +1 shade, spirit +1
+    p = _pet(hunger=1, glutton=1, mood=0, enthusiasm=0)
+    p.favorite_food = "Meat"
+    p._eat_food("Meat")
+    assert p.mood == FAV_FOOD_MOOD + GLUTTON_FEED_MOOD and p.enthusiasm == FAV_FOOD_ENTH
+    # FULL + favourite (non-glutton): nothing pleasant left to feel
+    q = _pet(hunger=4, glutton=0, mood=0, enthusiasm=0)
+    q.favorite_food = "Meat"
+    q._eat_food("Meat")
+    assert q.mood == 0 and q.enthusiasm == 0
+    # FULL + disliked, forced: the double dip + the spirit hit + obedience
+    r = _pet(hunger=4, glutton=0, mood=0, enthusiasm=0, obedience=50)
+    r.disliked_food = "Veg"
+    r._eat_food("Veg", complied=True)
+    assert r.mood <= -2 * FAV_FOOD_MOOD          # two dips (taste decs may add)
+    assert r.enthusiasm <= -FAV_FOOD_ENTH        # -(1) - forced(1) before boundary fx
+    assert r.obedience == 50 + DISLIKED_FOOD_OBEDIENCE
+    # hungry + neutral + picky eater: +2 -1 shade
+    s = _pet(hunger=1, glutton=-1, mood=0)
+    s._eat_food("Fish")
+    assert s.mood == FOOD_MOOD - 1

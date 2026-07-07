@@ -345,6 +345,9 @@ ENTH_DISLIKE_FORCED = -1                # EnthusiasmChangeDislikeForced
 FAV_FOOD_MOOD = 10                      # config FavFoodMoodInc
 FOOD_MOOD = 2                           # config FoodMoodInc (neutral food)
 FAV_FOOD_ENTH = 1                       # config FavFoodEnthusiasmInc
+GLUTTON_FEED_MOOD = 1                   # GluttonFeedMoodChange: a glutton relishes any meal
+NOT_GLUTTON_FEED_MOOD = -1              # NotGluttonFeedMoodChange: a picky eater resents each
+ENTH_BAD_FOOD_FORCED = -1               # EnthusiasmChangeBadFoodForced (disliked + full + forced)
 DISLIKED_FOOD_OBEDIENCE = -1            # config DislikedFoodObedienceChange
 INTOL_FOOD_SICK_CHANCE = 50            # config IntolerantFoodSickChance (per roll, x2 rolls)
 
@@ -2366,17 +2369,33 @@ class Pet:
         cats = [c for c in (category or "").split(";") if c in data.FOOD_CATEGORIES]
         if not cats:
             return "neutral"
+        # feed()'s taste branches, canon shape (feed/food audit 2026-07-06):
+        # a glutton relishes EVERY meal a little (+1 mood on each branch), a
+        # picky eater resents each (-1); fullness GATES the pleasant moods
+        # (a full pet gets nothing from even its favourite) and DOUBLES the
+        # disliked-meal misery (plus the spirit hit, worse when forced)
+        mod = (GLUTTON_FEED_MOOD if self.glutton > 0
+               else NOT_GLUTTON_FEED_MOOD if self.glutton < 0 else 0)
+        cap = OVEREAT_LIMIT if self.glutton > 0 else STOMACH_CAPACITY
         if self.disliked_food and self.disliked_food in cats:
             tier = "disliked"
-            self._set_mood(self.mood - FAV_FOOD_MOOD)
+            if self.hunger >= FULL_HUNGER:       # full AND hating it: the double dip
+                self._set_mood(self.mood - FAV_FOOD_MOOD + mod)
+                self._set_enthusiasm(self.enthusiasm - FAV_FOOD_ENTH
+                                     + (ENTH_BAD_FOOD_FORCED if complied else 0))
+            self._set_mood(self.mood - FAV_FOOD_MOOD + mod)
             self._set_obedience(self.obedience + DISLIKED_FOOD_OBEDIENCE)
         elif self.favorite_food and self.favorite_food in cats:
             tier = "favorite"
-            self._set_mood(self.mood + FAV_FOOD_MOOD)
-            self._set_enthusiasm(self.enthusiasm + FAV_FOOD_ENTH)
+            if self.hunger < FULL_HUNGER or (self.glutton > 0 and self.hunger < OVEREAT_LIMIT):
+                self._set_mood(self.mood + FAV_FOOD_MOOD + mod)
+                self._set_enthusiasm(self.enthusiasm + FAV_FOOD_ENTH)
+            elif self.hunger < cap:
+                self._set_mood(self.mood + FOOD_MOOD + mod)
         else:
             tier = "neutral"
-            self._set_mood(self.mood + FOOD_MOOD)
+            if self.hunger < cap:
+                self._set_mood(self.mood + FOOD_MOOD + mod)
         for c in cats:                                     # incFoodRankAndEaten: per category
             self.food_eaten[c] = self.food_eaten.get(c, 0) + 1
             self._change_rank(c)
@@ -3058,6 +3077,12 @@ class Pet:
             return f"{self.name} refuses to eat!"
         self._calm_discipline_call()                         # a meal placates the tantrum
         fills = int(food.get("hunger", 0)) > 0
+        # (canon checkMaxHoursBeforeSleep -- the bedtime-only food gate -- is
+        # DATA-DEAD: every shipped foods.csv row carries -1; feed/food audit
+        # 2026-07-06.)  The too-full early refuse below is a DOCUMENTED
+        # divergence: canon applyFood eats the meal anyway (overeatPenalty +
+        # capped hunger, food spent); tuipet refuses like the REAL device's
+        # head-shake, with the same penalties -- kept, matches the toy.
         # a hunger-food on a full stomach -> too full (a glutton eats past FULL_HUNGER)
         if fills and self.hunger >= FULL_HUNGER and self.glutton <= 0:
             self._set_weight(self.weight + 1)
