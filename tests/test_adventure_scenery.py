@@ -178,7 +178,10 @@ def test_investigate_plays_the_left_walk_and_seals_the_reveal():
     assert pan.travelling                         # back on the road
 
 
-def test_investigate_ambush_startles_then_opens_the_battle():
+def test_investigate_ambush_startles_then_flashes_the_alert():
+    """Canon onDiscoverEnemy -> checkWildEncounter: an ambush ALERTS through
+    the same Battle_Flash as any wild -- it used to open the fight unannounced
+    (adventure feel arc 2026-07-07)."""
     from tuipet.adventurescreen import INV_REVEAL_T
     from tuipet.battlescreen import BattlePanel
     random.seed(1)
@@ -196,8 +199,10 @@ def test_investigate_ambush_startles_then_opens_the_battle():
     assert pan._scene["t"] == INV_REVEAL_T - 1
     for _ in range(8):
         pan.anim()
-    assert isinstance(pan.sub, BattlePanel)       # the ambush fight opened
-    assert pan._scene is None
+    assert pan._flash is not None                 # the ambush alerts first
+    assert pan._scene is None and pan.sub is None
+    pan.key("space")                              # engage
+    assert isinstance(pan.sub, BattlePanel)
 
 
 def test_habitat_change_cross_fades_not_snaps():
@@ -220,3 +225,118 @@ def test_habitat_change_cross_fades_not_snaps():
         pan.anim()
     assert len(set(frames)) >= FADE_T - 2        # a smooth blend, not a snap
     assert frames[-1] == frames[-2]              # ...that settles on the new world
+
+
+# ---- the adventure feel arc (Joel 2026-07-07: "adventure felt different in
+# dvpet") -- Battle_Flash alert, battleWait escape, zoneChange pulse, pacing ----
+
+def _mon(pan):
+    """A wild card shaped like an enemies.csv row."""
+    return {"num": 29, "name": "Kunemon", "stage": "Rookie",
+            "attribute": "Virus", "hp": 5, "penalty": 200,
+            "vaccine": 2, "data_power": 2, "virus": 2}
+
+
+def test_flash_cards_ride_the_background_atlas():
+    """The REAL battleStart/battleStartFlash rips (jar resources) live in the
+    atlas as full-window cards -- never drawn, extracted."""
+    bgs = data.load_backgrounds()
+    for card in ("battleStart", "battleStartFlash"):
+        assert card in bgs and len(bgs[card][0]) == 24    # 40x24 window card
+
+
+def test_encounter_alerts_before_the_fight():
+    """Canon checkWildEncounter: a wild trigger stops travel and FLASHES the
+    alert (Battle_Flash); the fight opens on the player's press -- it used to
+    open unannounced."""
+    from tuipet.battlescreen import BattlePanel
+    from tuipet.adventurescreen import TRAVEL_TICKS, FLASH_ALT_T
+    pan = AdventurePanel(_pet())
+    pan.travelling = True
+    pan.adv.travel = lambda: ("encounter", _mon(pan))
+    for _ in range(TRAVEL_TICKS):
+        pan.anim()
+    assert pan._flash is not None and pan.sub is None
+    assert not pan.travelling
+    a = pan.text().markup                        # the card alternates its flash
+    for _ in range(FLASH_ALT_T):
+        pan.anim()
+    assert pan.text().markup != a
+    assert "SPACE fight" in pan.strip()
+    pan.key("f")                                 # care keys are locked out
+    assert pan.sub is None
+    pan.key("enter")                             # engage
+    assert isinstance(pan.sub, BattlePanel) and pan._pending == (False, _mon(pan))
+
+
+def test_ignored_flash_escapes_with_the_knockback():
+    """WorldMap.battleWait: BattleWait(720 fires ~= 514 ticks) unanswered ->
+    the foe escapes, lossPenalty knocks the pet back, travel stays stopped
+    (canon lossPenalty zeroes travelSpeed)."""
+    from tuipet.adventurescreen import FLASH_WAIT_T
+    pan = AdventurePanel(_pet())
+    pan.adv.location = 5000
+    pan._flash = {"t": 0, "boss": False, "enemy": _mon(pan)}
+    pan.travelling = False
+    for _ in range(FLASH_WAIT_T + 1):
+        pan.anim()
+    assert pan._flash is None and pan.sub is None
+    assert pan.adv.location == 4800              # Penalty 200 steps back
+    assert not pan.travelling
+    assert "left" in pan.adv.last
+
+
+def test_ignored_boss_flash_rearms_the_gate():
+    """A boss alert waited out knocks back past the gate so the boss re-arms
+    (flee's re-arm clamp) -- the gate can never be skipped by waiting."""
+    from tuipet.adventurescreen import FLASH_WAIT_T
+    pan = AdventurePanel(_pet())
+    boss = dict(_mon(pan), location=6000, penalty=0)
+    pan.adv.location = 6000
+    pan._flash = {"t": 0, "boss": True, "enemy": boss}
+    for _ in range(FLASH_WAIT_T + 1):
+        pan.anim()
+    assert pan.adv.location < 6000               # behind the gate again
+
+
+def test_zone_clear_plays_the_pulse_transition():
+    """Canon SpriteAnim.zoneChange: four zonePulse beats (interval*5/15/25/35)
+    before the road resumes -- the zone used to advance with no beat at all."""
+    from tuipet.adventurescreen import PULSE_T, PULSE_ON, TRAVEL_TICKS
+    pan = AdventurePanel(_pet())
+    a = pan.adv
+    a.travel = lambda: ("zone", None)
+    pan.travelling = True
+    for _ in range(TRAVEL_TICKS):
+        pan.anim()
+    assert pan._pulse is not None and not pan.travelling
+    assert pan.key("space") is None and pan._pulse is not None   # not skippable
+    lit, dark = None, None
+    while pan._pulse is not None:
+        t = pan._pulse["t"]
+        m = pan.text().markup
+        if any(on <= t < off for on, off in PULSE_ON):
+            lit = m
+        elif t < PULSE_ON[0][0]:
+            dark = m
+        pan.anim()
+        assert pan._pulse is None or pan._pulse["t"] <= PULSE_T
+    assert lit and dark and lit != dark          # the light actually pulses
+    assert pan.travelling                        # then the road resumes
+
+
+def test_travel_paces_one_stride_per_second():
+    """The compression's pacing knob (TRAVEL_TICKS): one auto-stride per 1s of
+    0.1s ticks -- at the old 3 ticks the whole zone crossed in ~12s and zone
+    1's twelve scenes strobed ~1/s."""
+    from tuipet.adventurescreen import TRAVEL_TICKS
+    assert TRAVEL_TICKS == 10
+    pan = AdventurePanel(_pet())
+    pan.travelling = True
+    moved = []
+    pan.adv.travel = lambda: moved.append(1)
+    for _ in range(TRAVEL_TICKS - 1):
+        pan.anim()
+    assert not moved                             # not yet
+    pan.anim()
+    assert len(moved) == 1                       # the stride lands on the beat

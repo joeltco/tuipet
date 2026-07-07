@@ -28,6 +28,39 @@ PARADE_T = 26                 # victory parade: ticks for one boss to march acro
 WALK_BEAT = 5                 # idleWalk pose cadence (anim.WALK_BEAT -- NOT every tick)
 FADE_T = 20                   # habitat cross-fade ticks (canon BackgroundAnim.animateBack:
 #                               BackgroundOpacityChange -0.05/frame -> 20 frames old-over-new)
+TRAVEL_TICKS = 10             # ticks per auto-stride (the INTERACTIVE_STEPS compression's
+#                               pacing knob).  Was 3 -- a zone crossed in ~12s and zone 1's
+#                               twelve BackgroundsAndRange scenes strobed ~1/s; at 1s/stride
+#                               each scene HOLDS like canon's set-piece backdrops and towns
+#                               read as interludes (Joel 2026-07-07: "adventure felt
+#                               different in dvpet")
+# the wild-encounter alert (canon Battle_Flash / WorldMap.battleWait): the pet
+# stops, the BATTLE card flashes with the alarm, and the PLAYER must engage --
+# ignore it for BattleWait(720) controller fires (14/s -> ~51s == 514 ticks)
+# and the foe escapes with the lossPenalty knockback (travel stays stopped,
+# canon lossPenalty zeroes travelSpeed)
+FLASH_WAIT_T = 514
+FLASH_ALT_T = 2               # battleStart <-> battleStartFlash every interval*2
+FLASH_ALARM_EVERY = 20        # the looping _battleFlash alarm, as a 2s pulse
+# the zone-change transition (canon SpriteAnim.zoneChange): four zonePulse
+# beats on the map light at interval*5/15/25/35, resolution at interval*54 --
+# ported as backdrop pulses on the LCD (no map screen on the 32-col arena)
+PULSE_T = 54
+PULSE_ON = ((5, 10), (15, 20), (25, 30), (35, 54))
+
+
+def _brighten(bg, f):
+    """Lerp a backdrop toward white -- the LCD's zonePulse flash."""
+    out = []
+    for r in bg:
+        row = []
+        for i in range(0, len(r) - 5, 6):
+            v = int(r[i:i + 6], 16)
+            row.append("%02x%02x%02x" % tuple(
+                round(c + (255 - c) * f)
+                for c in ((v >> 16) & 255, (v >> 8) & 255, v & 255)))
+        out.append("".join(row))
+    return out
 
 
 def _blend_bg(old, new, t):
@@ -60,6 +93,8 @@ class AdventurePanel(menu.SubHost):
         self._refuse_t = 0          # Refusing head-shake ticks left
         self._scene = None          # a running investigateLeft playbook
         self._parade = None         # a running BossParade (map beaten)
+        self._flash = None          # a waiting wild encounter (Battle_Flash)
+        self._pulse = None          # a running zoneChange pulse transition
 
     def anim(self):
         if self.sub_anim():          # SubHost: delegate + sfx bubble
@@ -70,6 +105,33 @@ class AdventurePanel(menu.SubHost):
         fade = getattr(self, "_bg_fade", None)
         if fade is not None:
             fade["t"] += 1                   # the habitat cross-fade clock
+        if self._flash is not None:
+            # Battle_Flash: the alert card flashes with the alarm until the
+            # player engages -- or WorldMap.battleWait runs out and the foe
+            # escapes with the lossPenalty knockback (travel stays stopped)
+            f = self._flash
+            if f["t"] % FLASH_ALARM_EVERY == 0:
+                self.sfx = "alarm"
+            f["t"] += 1
+            if f["t"] >= FLASH_WAIT_T:
+                self._flash = None
+                self.adv.flee(f["enemy"], was_boss=f["boss"])
+                self.adv.last = f"{f['enemy']['name']} left. Knocked back!"
+            return
+        if self._pulse is not None:
+            # zoneChange: four zonePulse beats, then the road (or the parade)
+            p = self._pulse
+            if any(p["t"] == on for on, _off in PULSE_ON):
+                self.sfx = "select"          # the zonePulse chirp
+            p["t"] += 1
+            if p["t"] >= PULSE_T:
+                self._pulse = None
+                if p.get("parade"):
+                    self._parade = {"t": 0, "nums": p["parade"]}
+                    self.sfx = "win"         # bossParade cue
+                else:
+                    self.travelling = not self.adv.done
+            return
         if self._parade is not None:
             self._parade["t"] += 1
             if self._parade["t"] >= PARADE_T * len(self._parade["nums"]):
@@ -80,13 +142,19 @@ class AdventurePanel(menu.SubHost):
             self._scene_tick()
             return
         self._travel_t += 1
-        if self._travel_t >= 3 and self.travelling and not self.adv.done:
+        if self._travel_t >= TRAVEL_TICKS and self.travelling and not self.adv.done:
             self._travel_t = 0
             ev = self.adv.travel()
             if ev and ev[0] in ("encounter", "boss"):
+                # canon checkWildEncounter: the encounter ALERTS first
+                # (Battle_Flash + isWildEncounter travel hold), the player
+                # presses to fight -- battle no longer opens unannounced
                 self.travelling = False
-                self._pending = (ev[0] == "boss", ev[1])
-                self.sub = BattlePanel(self.pet, ev[1], wild=True)
+                self._flash = {"t": 0, "boss": ev[0] == "boss", "enemy": ev[1]}
+            elif ev and ev[0] in ("zone", "map", "all"):
+                # walked past a cleared gate: the zoneChange pulse plays
+                self.travelling = False
+                self._pulse = {"t": 0}
             elif ev and ev[0] == "town":
                 self.sfx = "reward"          # reached the rest-town: life + energy restored
                 self.travelling = False
@@ -112,8 +180,9 @@ class AdventurePanel(menu.SubHost):
                 self.sfx = "reward"                   # _discoverConsumable
         if s["kind"] == "enemy":
             if s["t"] >= INV_REVEAL_T + 6:            # startle beat, then the ambush
-                self._pending = (False, s["thing"])
-                self.sub = BattlePanel(self.pet, s["thing"], wild=True)
+                # canon onDiscoverEnemy -> checkWildEncounter: the ambush
+                # alerts through the same Battle_Flash as any wild
+                self._flash = {"t": 0, "boss": False, "enemy": s["thing"]}
                 self._scene = None
         elif s["t"] >= INV_END_T:                     # carried home -> back on the road
             self._scene = None
@@ -168,15 +237,29 @@ class AdventurePanel(menu.SubHost):
                         # advances past this map
                         paraders = [bb["num"] for z in self.adv.maps[self.adv.mi]["zones"]
                                     for bb in z["bosses"]][:3]      # canon shows three
-                    self.adv.resolve(r[1].won, was_boss, enemy)
-                    if paraders:
-                        self._parade = {"t": 0, "nums": paraders}
-                        self.adv.last = enemy["parade_msg"]         # "You saved the Digital World!"
-                        self.sfx = "win"                            # bossParade cue (the parade
-                        self.travelling = False                     # track is music, unbundled)
+                    res = self.adv.resolve(r[1].won, was_boss, enemy)
+                    if res:
+                        # zone/map/all advanced: the zoneChange pulse plays
+                        # first; a parade_msg boss chains the parade after it
+                        # (canon zoneChange's interval*54 tail)
+                        self._pulse = {"t": 0, "parade": paraders}
+                        if paraders:
+                            self.adv.last = enemy["parade_msg"]     # "You saved the Digital World!"
+                        self.travelling = False
                         return None
                 self.travelling = not self.adv.done
             return None
+        if getattr(self, "_flash", None) is not None:
+            # Battle_Flash: only engaging works (canon locks the keyboard to
+            # the flashing card); waiting it out is the escape-with-knockback
+            if k in ("space", "enter"):
+                f = self._flash
+                self._flash = None
+                self._pending = (f["boss"], f["enemy"])
+                self.sub = BattlePanel(self.pet, f["enemy"], wild=True)
+            return None
+        if getattr(self, "_pulse", None) is not None:
+            return None                       # canon zoneChange is not skippable
         if getattr(self, "town_prompt", None) is not None:
             if k in ("enter", "y"):
                 self.sub = TownPanel(self.pet, self.town_prompt)
@@ -336,6 +419,13 @@ class AdventurePanel(menu.SubHost):
         if self.sub is not None:
             return self.sub.text()
         a = self.adv
+        if self._flash is not None:
+            # Battle_Flash: the BATTLE alert card fills the window, alternating
+            # with its flash frame (canon battleFlash beats at interval*2); the
+            # pet is hidden (canon _character.setVisible(false))
+            card = "battleStartFlash" if (self._flash["t"] // FLASH_ALT_T) % 2 else "battleStart"
+            frames = data.load_backgrounds().get(card) or [None]
+            return menu.paint([], frames[0], rows=ROWS, cols=COLS)
         pet_rows, x, mirror, overlay, note_over = self._pet_placement()
         # the journey's SCENERY (restyle 2026-07-04 -- the old flat 7-row strip
         # "looked nothing like the rest of the game"): the zone's canonical
@@ -363,6 +453,9 @@ class AdventurePanel(menu.SubHost):
         else:
             self._bg_fade = None
         self._bg_last = bgimg
+        if self._pulse is not None and bgimg and \
+                any(on <= self._pulse["t"] < off for on, off in PULSE_ON):
+            bgimg = _brighten(bgimg, 0.6)     # the zonePulse light, on the LCD
         # the scene IS the whole LCD (box-clip audit 2026-07-04: the old
         # bar/progress/note/footer stack ran 16 lines and the physical 12-row
         # box clipped everything below the arena).  The journey's numbers live
@@ -381,7 +474,11 @@ class AdventurePanel(menu.SubHost):
         a = self.adv
         _, _, _, _, note_over = self._pet_placement()
         note = note_over if note_over is not None else (a.last or "")
-        if self._parade is not None:
+        if self._flash is not None:
+            hint = "SPACE fight"
+        elif self._pulse is not None:
+            hint = ""                 # the pulse plays out (canon zoneChange)
+        elif self._parade is not None:
             hint = "SPACE next"
         elif self._scene is not None:
             hint = "SPACE skip"
@@ -398,5 +495,7 @@ class AdventurePanel(menu.SubHost):
         if not note:
             return f"[dim]{hint}[/]"
         from .render import marquee
+        if not hint:                  # a hint-less beat: the note has the line
+            return marquee(note, 40, self.frame_i // 2)
         note = marquee(note, 40 - len(hint) - 4, self.frame_i // 2)
         return f"{note}  [dim]· {hint}[/]"

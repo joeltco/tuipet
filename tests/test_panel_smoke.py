@@ -160,10 +160,23 @@ def test_scene_screens_fit_the_physical_lcd_in_every_state():
 
     from tuipet.adventurescreen import AdventurePanel
     pan = AdventurePanel(p)
-    for _ in range(60):                         # travel: encounters may open battle subs
+    for _ in range(60):                         # travel: encounters may raise the flash
         pan.anim()
         _render(pan)
     pan.sub = None; pan._pending = None
+    pan._flash = {"t": 0, "boss": False,        # the Battle_Flash alert card
+                  "enemy": {"num": 29, "name": "Kunemon", "stage": "Rookie",
+                            "attribute": "Virus", "hp": 5, "penalty": 0}}
+    for _ in range(6):
+        pan.anim()
+        _render(pan)
+        pan.strip()
+    pan._flash = None
+    pan._pulse = {"t": 0}                       # the zoneChange pulse transition
+    while pan._pulse is not None:
+        pan.anim()
+        _render(pan)
+        pan.strip()
     pan.discovering, pan.travelling = True, False
     _render(pan); assert pan.strip()
     pan.key("enter")                            # investigate playbook end-to-end

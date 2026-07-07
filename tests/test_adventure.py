@@ -150,9 +150,14 @@ def test_map_final_boss_cues_the_victory_parade():
             return None
     panel.sub = _Sub()
     panel._pending = (True, final)
+    panel.adv.location = panel.adv.total_steps      # the beaten boss WAS the gate
     panel.key("enter")
-    assert panel._parade is not None and len(panel._parade["nums"]) <= 3
+    # feel arc 2026-07-07: the zoneChange pulse plays first, parade chained
+    assert panel._pulse is not None and panel._pulse["parade"]
     assert panel.adv.last == "You saved the Digital World!"
+    while panel._pulse is not None:
+        panel.anim()
+    assert panel._parade is not None and len(panel._parade["nums"]) <= 3
     # the note field-marquees under the fixed hint (major audit 2026-07-07):
     # the hint shows EVERY frame; head then tail scroll through the window
     windows = []
