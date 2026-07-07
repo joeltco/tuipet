@@ -476,8 +476,16 @@ def _offline(pet, elapsed):
         # even the clocks stay still -- its age is part of the epitaph
         return ""
     pet.world_seconds += elapsed       # keep the day/night clock turning while away
-    pet.age_seconds += elapsed         # the pet ages while you're away
-    if elapsed < 30 or pet.stage == "Egg":
+    pet.age_seconds += elapsed         # the pet ages while you're away (canon: the age
+    #                                    clock timeToAgeMin has NO egg gate -- age runs
+    #                                    from egg creation, so a hatchling carries it)
+    if pet.stage == "Egg":
+        # canon's replay advances incubation too: an egg left alone hatches while
+        # you're away.  Advance the growth clock so the return greets a hatch --
+        # aging WITHOUT incubating was the one incoherent half-state (2026-07-06).
+        pet.stage_seconds += elapsed
+        return ""
+    if elapsed < 30:
         return ""
     mins = elapsed / 60.0
     # DVPet has no passive energy decay; just re-clamp to the (per-pet) range.

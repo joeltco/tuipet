@@ -62,6 +62,17 @@ def test_offline_egg_does_not_decay():
     assert egg.age_seconds == 7200
 
 
+def test_offline_egg_incubates():
+    """Canon processSkippedSeconds replays incubation: an egg left alone while
+    the game is off comes back HATCHING (age accrual without incubation was the
+    incoherent half-state -- 2026-07-06)."""
+    egg = Pet(num=-1, stage="Egg")
+    persistence._offline(egg, 7200)              # 2h away >> EGG_DURATION
+    assert egg.stage_seconds == 7200
+    egg._tick_egg()                              # first tick after load
+    assert egg.hatching, "the return should greet a hatch, not a frozen egg"
+
+
 def test_offline_decay_applies():
     pet = Pet(num=-1, stage="Rookie")
     pet.mood, pet.hunger = 100, 4
@@ -69,6 +80,9 @@ def test_offline_decay_applies():
     assert pet.mood < 100, "mood should decay while away"
     assert pet.hunger < 4, "hunger should drop while away"
     assert "away" in msg
+    # don't-flip: BOUNDED decay means no growth/evolution while away -- only
+    # the EGG's incubation replays (canon hatch); living stages stay frozen
+    assert pet.stage_seconds == 0
 
 
 def test_offline_cap_at_36h():
