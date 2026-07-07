@@ -346,7 +346,10 @@ def _effect_overlay(pet, frame_i, cols, px_h, tick=0, pet_right=None):
     # is awake-only and is clamped to stay left of the condition column.
     if not asleep:
         emo = ("happy" if pet.anim == "happy" else
-               "unhappy" if pet.anim in ("sad", "refuse", "angry", "tantrum") else None)
+               "unhappy" if pet.anim in ("sad", "refuse", "angry", "tantrum") else
+               # badHealthJeer wears the DYING emote pair (emote audit
+               # 2026-07-06): the fatigue collapse shows how bad it is
+               "dying" if pet.anim == "exhausted" else None)
         bubble = []
         if emo and E.get(emo):                            # cheer -> happy, jeer -> unhappy (DVPet)
             bubble.append(E[emo][frame_i % len(E[emo])])

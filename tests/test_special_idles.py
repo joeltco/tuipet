@@ -115,3 +115,18 @@ def test_the_thunder_startle_is_disposition_keyed():
     p = _pet(disposition=1)
     p._set_anim({-1: "startle_sour", 1: "startle_sunny"}.get(p.disposition, "startle"), 1.4)
     assert p.anim == "startle_sunny"
+
+
+def test_the_collapse_wears_the_dying_emote():
+    """badHealthJeer (emote audit 2026-07-06): the fatigue/life-penalty anim
+    blinks the dying/dying2 pair at the pet's edge -- the exhausted collapse
+    now shows how bad it is (the classifier used to show nothing)."""
+    from tuipet import app as app_mod, data
+    p = _pet()
+    p._set_anim("exhausted", 2.0)
+    pts_a = app_mod._effect_overlay(p, 0, 40, 24, tick=0)
+    pts_b = app_mod._effect_overlay(p, 1, 40, 24, tick=0)
+    assert pts_a and pts_b and pts_a != pts_b     # the two dying frames blink
+    p._set_anim("idle", 0.0)
+    p.anim = "idle"
+    assert len(data.load_effects()["dying"]) == 2
