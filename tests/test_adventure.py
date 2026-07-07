@@ -449,8 +449,11 @@ def test_road_direct_keys_heal_praise_lights():
     p.sick = True
     pan.key("h")
     assert pan.adv.last                      # heal verdict on the strip
+    pan._care = None                         # let the care beat finish (feel arc:
+    #                                          keys lock while one plays)
     pan.key("r")
     assert pan.adv.last
+    pan._care = None
     lights0 = p.lights
     pan.key("s")
     assert p.lights != lights0               # the toggle landed

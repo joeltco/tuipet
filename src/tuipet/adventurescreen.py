@@ -47,6 +47,15 @@ FLASH_ALARM_EVERY = 20        # the looping _battleFlash alarm, as a 2s pulse
 # ported as backdrop pulses on the LCD (no map screen on the 32-col arena)
 PULSE_T = 54
 PULSE_ON = ((5, 10), (15, 20), (25, 30), (35, 54))
+# road care beats (feel arc 2026-07-07: the direct keys used to act text-only):
+# the HOME fx dispatch mirrored onto the arena -- cheer (praise: poses 5/7,
+# Bad_Praise 6/4, happy emote on up-beats), jeer (scold: 4/6 leading down,
+# Bad_Scold slump 10/9, unhappy emote riding), heal (hurt pose 9 + the i:80
+# bandage strip at beats 0/8/13/18, chains into cheer like canon bandage())
+CARE_T = 31
+HEAL_T = 24
+CARE_SNDS = {"cheer": {1: "happy"}, "jeer": {6: "angry"},
+             "heal": {8: "click", 13: "click", 18: "confirm"}}
 
 
 def _brighten(bg, f):
@@ -95,6 +104,7 @@ class AdventurePanel(menu.SubHost):
         self._parade = None         # a running BossParade (map beaten)
         self._flash = None          # a waiting wild encounter (Battle_Flash)
         self._pulse = None          # a running zoneChange pulse transition
+        self._care = None           # a running road care beat (cheer/jeer/heal)
 
     def anim(self):
         if self.sub_anim():          # SubHost: delegate + sfx bubble
@@ -131,6 +141,22 @@ class AdventurePanel(menu.SubHost):
                     self.sfx = "win"         # bossParade cue
                 else:
                     self.travelling = not self.adv.done
+            return
+        if self._care is not None:
+            # a road care beat: canon-scripted stings, travel held while it
+            # plays; bandage() chains into cheer(true) exactly like home
+            c = self._care
+            snd = CARE_SNDS[c["kind"]].get(c["t"])
+            if snd:
+                self.sfx = snd
+            c["t"] += 1
+            if c["t"] >= (HEAL_T if c["kind"] == "heal" else CARE_T):
+                if c["kind"] == "heal":
+                    self._care = {"kind": "cheer", "good": True, "t": 0,
+                                  "resume": c["resume"]}
+                else:
+                    self._care = None
+                    self.travelling = c["resume"] and not self.adv.done
             return
         if self._parade is not None:
             self._parade["t"] += 1
@@ -187,6 +213,25 @@ class AdventurePanel(menu.SubHost):
         elif s["t"] >= INV_END_T:                     # carried home -> back on the road
             self._scene = None
             self.travelling = True
+
+    def _road_react(self, fallback):
+        """Route a direct care action's reaction onto the arena (the home fx
+        dispatch, action_praise/scold/heal): the pet's anim picks the beat --
+        cheer (happy/surprise), jeer (angry/sad), heal -- travel holds while it
+        plays; a refusal rides the existing head-shake; anything else keeps
+        the old button blip."""
+        beat = {"happy": ("cheer", True), "surprise": ("cheer", False),
+                "angry": ("jeer", True), "sad": ("jeer", False),
+                "heal": ("heal", True)}.get(self.pet.anim)
+        if beat is not None:
+            self._care = {"kind": beat[0], "good": beat[1], "t": 0,
+                          "resume": self.travelling}
+            self.travelling = False
+        elif self.pet.anim == "refuse":       # squirmed away / spat the med
+            self.sfx = "refuse"
+            self._refuse_t = REFUSE_T
+        else:
+            self.sfx = fallback
 
     def key(self, k):
         if isinstance(self.sub, TownPanel):
@@ -303,6 +348,10 @@ class AdventurePanel(menu.SubHost):
         # full button set live while travel runs).  f/i host their panels (the
         # journey holds); h/r/k/s act directly.  Notably k answers the scold
         # window a travel REFUSAL opens -- it was unreachable mid-adventure.
+        if getattr(self, "_care", None) is not None and k != "escape":
+            # let the current care beat finish before acting again (the home
+            # fx guard, action_praise/scold/heal)
+            return None
         if k == "f":
             reason = self.pet.can_feed()
             if reason:
@@ -316,15 +365,15 @@ class AdventurePanel(menu.SubHost):
             return None
         if k == "h":
             self.adv.last = self.pet.heal()
-            self.sfx = "confirm"
+            self._road_react("confirm")
             return None
         if k == "r":
             self.adv.last = self.pet.praise()
-            self.sfx = "confirm"
+            self._road_react("confirm")
             return None
         if k == "k":
             self.adv.last = self.pet.scold()
-            self.sfx = "refuse"
+            self._road_react("refuse")
             return None
         if k == "s":
             self.adv.last = self.pet.toggle_lights()
@@ -404,6 +453,37 @@ class AdventurePanel(menu.SubHost):
                 oy = grid.TOP + (grid.BAND - len(s["icon"])) // 2
                 overlay = strikefx.blit(s["icon"], x - len(s["icon"][0]) - 1, oy)
             return rows, x, True, overlay, None
+        c = self._care
+        if c is not None:                             # a road care beat (home fx port)
+            t = c["t"]
+            if c["kind"] == "heal":
+                # bandage(): hurt pose held, the item strip applies on the left
+                rows = self._rows(9)
+                x = self._jx(rows)
+                overlay = []
+                item = data.load_icons().get("i:80")
+                if item:
+                    fi = 0 if t < 8 else 1 if t < 13 else 2 if t < 18 else 3
+                    bm = item[min(fi, len(item) - 1)]
+                    if bm:
+                        bw = max(len(r) for r in bm)
+                        overlay = strikefx.blit(bm, max(0, x - bw), 0 if t < 4 else 4)
+                return rows, x, True, overlay, None
+            up = (t // 6) % 2 == 0
+            if c["kind"] == "cheer":                  # 5/7 (Bad_Praise 6/4)
+                pose = (5 if up else 7) if c["good"] else (6 if up else 4)
+                emote = "happy" if up else None       # the bubble pulses on up-beats
+            else:                                     # jeer 4/6 (Bad_Scold slump 10/9)
+                pose = (4 if up else 6) if c["good"] else (10 if up else 9)
+                emote = "unhappy"                     # rides the whole jeer
+            rows = self._rows(pose)
+            x = self._jx(rows)
+            overlay = []
+            em = data.load_effects().get(emote) if emote else None
+            if em:
+                ef = em[(t // 6) % len(em)]
+                overlay = strikefx.blit(ef, x + grid.width(rows) + 1, 1)
+            return rows, x, True, overlay, None
         if self._refuse_t:                            # Refusing: the mirror head-shake
             rows = self._rows(data.ROLES["refuse"][0])
             shake = ((REFUSE_T - self._refuse_t) // 6) % 2 == 0
@@ -476,8 +556,8 @@ class AdventurePanel(menu.SubHost):
         note = note_over if note_over is not None else (a.last or "")
         if self._flash is not None:
             hint = "SPACE fight"
-        elif self._pulse is not None:
-            hint = ""                 # the pulse plays out (canon zoneChange)
+        elif self._pulse is not None or self._care is not None:
+            hint = ""                 # the beat plays out (zoneChange / care fx)
         elif self._parade is not None:
             hint = "SPACE next"
         elif self._scene is not None:

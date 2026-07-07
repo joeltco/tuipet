@@ -177,6 +177,14 @@ def test_scene_screens_fit_the_physical_lcd_in_every_state():
         pan.anim()
         _render(pan)
         pan.strip()
+    for kind, good in (("cheer", True), ("cheer", False),   # the road care beats
+                       ("jeer", True), ("jeer", False), ("heal", True)):
+        pan._care = {"kind": kind, "good": good, "t": 0, "resume": False}
+        while pan._care is not None and pan._care["kind"] == kind:
+            pan.anim()
+            _render(pan)
+            pan.strip()
+        pan._care = None
     pan.discovering, pan.travelling = True, False
     _render(pan); assert pan.strip()
     pan.key("enter")                            # investigate playbook end-to-end

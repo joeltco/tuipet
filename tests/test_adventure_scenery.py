@@ -340,3 +340,94 @@ def test_travel_paces_one_stride_per_second():
     assert not moved                             # not yet
     pan.anim()
     assert len(moved) == 1                       # the stride lands on the beat
+
+
+# ---- road care beats (Joel 2026-07-07: "make sure action animations like
+# praise and scold work ... and adventure mode") ----
+
+def _road(travelling=True):
+    p = _pet()
+    p.world_seconds = 12 * 60.0
+    p.obedience = 1000                            # no refusal noise in the beats
+    p.compliance = True
+    pan = AdventurePanel(p)
+    pan.travelling = travelling
+    return pan, p
+
+
+def test_road_praise_plays_the_cheer_beat_and_resumes_travel():
+    """A landed praise mirrors the home cheer fx on the arena (poses 5/7 with
+    the happy emote on up-beats), holds travel while it plays, then the road
+    resumes -- the key used to act text-only."""
+    from tuipet.adventurescreen import CARE_T
+    pan, p = _road()
+    p.praise_flag = True                          # a well-timed praise
+    pan.key("r")
+    assert p.anim == "happy"
+    assert pan._care == {"kind": "cheer", "good": True, "t": 0, "resume": True}
+    assert not pan.travelling                     # the beat holds the walk
+    up = pan.text().markup                        # up-beat pose + emote
+    for _ in range(6):
+        pan.anim()
+    assert pan.text().markup != up                # the bounce actually bounces
+    assert pan.anim() or True
+    while pan._care is not None:
+        pan.anim()
+        assert pan._care is None or pan._care["t"] <= CARE_T
+    assert pan.travelling                         # back on the road
+
+
+def test_road_bad_scold_slumps_and_care_keys_lock():
+    """Mis-scolding an innocent plays the Bad_Scold slump (10/9); a second
+    care press during the beat is swallowed (the home fx guard)."""
+    pan, p = _road(travelling=False)
+    p.praise_flag = True                          # it did nothing wrong
+    pan.key("k")
+    assert p.anim == "sad"
+    assert pan._care and pan._care["kind"] == "jeer" and not pan._care["good"]
+    assert pan._care["resume"] is False
+    msg = pan.adv.last
+    pan.key("r")                                  # locked while the beat plays
+    assert pan.adv.last == msg and pan._care["kind"] == "jeer"
+    lights0 = p.lights
+    pan.key("s")                                  # every care key locks
+    assert p.lights == lights0
+    while pan._care is not None:
+        pan.anim()
+    assert not pan.travelling                     # resume honours the held walk
+
+
+def test_road_heal_bandages_then_chains_the_cheer():
+    """Canon bandage(): hurt pose + the i:80 strip, then cheer(true) chains --
+    exactly the home heal fx, on the road."""
+    from tuipet.adventurescreen import HEAL_T
+    pan, p = _road(travelling=False)
+    p.injury = True
+    p.inj_length = 4
+    pan.key("h")
+    assert p.anim == "heal"
+    assert pan._care and pan._care["kind"] == "heal"
+    frame = pan.text().markup                     # the bandage beat renders
+    for _ in range(HEAL_T):
+        pan.anim()
+    assert pan._care and pan._care["kind"] == "cheer"   # the chain
+    assert pan.text().markup != frame
+    while pan._care is not None:
+        pan.anim()
+
+
+def test_road_care_beat_sounds_are_canon_scripted():
+    """cheer stings happy@1, jeer angry@6, heal click@8/13 confirm@18 (the
+    home fx snds tables)."""
+    pan, p = _road(travelling=False)
+    p.scold_flag = True                           # a deserved scold
+    pan.key("k")
+    assert pan._care["kind"] == "jeer" and pan._care["good"]
+    heard = {}
+    while pan._care is not None:
+        t = pan._care["t"]
+        pan.sfx = None
+        pan.anim()
+        if pan.sfx:
+            heard[t] = pan.sfx
+    assert heard == {6: "angry"}
