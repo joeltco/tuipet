@@ -266,8 +266,12 @@ def _filth_pts(pet, tick, count=None, sizes=None, push=0, px_h=None):
 COND_W = COND_H = 7                                # state.png cell size (DVPet 7x7 cells)
 PLAY_HOP = 14                                      # DVPet jumping(): 6 up + 6 down + 2 rest per hop
 PLAY_LEAD = 6                                      # the grounded lead-in before hop one (canon 0..5)
-PLAY_HOP_H = 12                                    # apex px: canon rises 36 of 60 (~14 scaled); 12
-#                                                    keeps half the body readable in the 24px arena
+PLAY_HOP_H = 6                                     # apex px: the FULL body stays on the 24px arena
+#                                                    (grounded top row = 24-16-2 = 6, so 6 is the max
+#                                                    before a 16px mon clips the ceiling; the old 12
+#                                                    launched half the body off-screen -- Joel
+#                                                    2026-07-06 "jumping way too high").  1px per rise
+#                                                    beat == canon's one moveUp per beat rhythm.
 # DVPet gifting(): amble off LEFT until half off-screen (firstGoal -20/104), amble
 # back RIGHT to just past centre (secondGoal 39/104 ~ x15/40), gift pops in beside
 # the pet (it rides hidden until arrival in DVPet too), pose 5 hold -> giftEnd.

@@ -283,9 +283,11 @@ def test_stuffed_meal_drops_the_leftovers():
 def test_play_hops_on_canon_beats_and_ends_in_cheer():
     """Play-anim audit 2026-07-05: DVPet jumping() -- a 6-beat grounded
     lead-in, three hops launching at 6/20/34 (rise 6 / fall 6 / rest 2, happy
-    sting at each launch), apex near the arena top, and frame 48 chains into
-    Cheering.  tuipet hopped instantly with no rests, a 6px apex, and no
-    chained cheer."""
+    sting at each launch), and frame 48 chains into Cheering.  tuipet hopped
+    instantly with no rests and no chained cheer.  APEX HISTORY: the 07-05 arc
+    scaled canon's rise to 12px, which launched half a 16px mon off the 24px
+    arena; Joel 2026-07-06 ("jumping way too high") set the apex to the max
+    FULL-BODY height instead -- grounded top row 24-16-2 = 6."""
     from tuipet import app as app_mod
     s = _FakeScreen()
     s.start_fx("play", icon="i:0")
@@ -299,7 +301,9 @@ def test_play_hops_on_canon_beats_and_ends_in_cheer():
             break
     assert launches == [6, 20, 34]
     assert s.fx is not None and s.fx["kind"] == "cheer"   # jumping() -> Cheering
-    assert app_mod.PLAY_HOP_H >= 12                       # a real jump, not a shuffle
+    assert app_mod.PLAY_HOP_H == 24 - 16 - 2              # a real jump that keeps the
+    #                                        whole 16px body on the 24px arena (don't
+    #                                        re-raise for canon: user-set 2026-07-06)
 
 
 def test_bad_praise_and_bad_scold_use_their_own_pose_pairs():
