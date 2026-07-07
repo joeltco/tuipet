@@ -38,7 +38,7 @@ def _lobby():
     s.roster = [{"id": 1, "name": "JoeltCo", "pet": {}},
                 {"id": 2, "name": "Ryo", "pet": {"name": "WarGreymon", "stage": "Mega"}}]
     pan.client, pan.state, pan.phase = _FakeClient(), s, "lobby"
-    pan.status = "Up/Down pick · Enter chat/act · Esc leave"
+    pan.status = "↑↓ pick · Enter chat/act · Esc leave"
     return pan
 
 
@@ -181,7 +181,7 @@ def test_prompt_lines_keep_their_hints_with_long_names():
     assert "[M]essage" in last and "[Esc]" in last
     pan.action_for = None                         # the selection status line
     pan.sel = 1                                   # sorted: the long-name live row
-    pan.status = "Up/Down pick · Enter chat/act · Esc leave"
+    pan.status = "↑↓ pick · Enter chat/act · Esc leave"
     others = pan._others()
     target = next(i for i, p in enumerate(others) if p["name"] == long)
     pan.sel = target
@@ -201,3 +201,16 @@ def test_join_leave_log_caps_at_the_shared_chat_cap():
     pan.state.chat = [("x", str(i)) for i in range(CHAT_CAP + 100)]
     pan.anim()
     assert len(pan.state.chat) == CHAT_CAP
+
+
+def test_default_status_hint_renders_whole():
+    """The connect-time hint itself must fit the 38-col line — the old
+    41-char "Up/Down pick · …" clipped its own "Esc leave" to "Esc le"
+    (Joel's live screen, 2026-07-07)."""
+    pan = _lobby()
+    pan.state.roster = [{"id": 1, "name": "JoeltCo", "pet": {}}]   # alone: raw status shows
+    pan.status = "Connecting…"
+    pan.anim()                                    # the connected transition sets it
+    assert len(pan.status) <= 38
+    last = pan.text().plain.split("\n")[-1]
+    assert last.endswith("Esc leave"), last

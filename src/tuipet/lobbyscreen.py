@@ -277,7 +277,9 @@ class LobbyPanel:
             self.status = f"! {s.error}"
             s.error = None
         elif s.connected and self.status == "Connecting…":
-            self.status = "Up/Down pick · Enter chat/act · Esc leave"
+            # 36 chars: the old "Up/Down pick · …" ran 41 and CLIPPED its own
+            # "Esc leave" hint off the 38-col line (Joel's live screen 2026-07-07)
+            self.status = "↑↓ pick · Enter chat/act · Esc leave"
         # drop -> the client retries on its own; say so instead of stranding a banner
         if getattr(s, "reconnecting", False):
             self._seen_ids = None                  # a refilled roster is not a wave of joins
@@ -841,7 +843,7 @@ class LobbyPanel:
                      style=INK_B)
         else:
             line = self.status
-            if others and line.startswith("Up/Down"):
+            if others and line.startswith("↑↓ pick"):
                 p = others[sel]
                 if p.get("live", True):
                     blurb = self._pet_of(p["id"])
