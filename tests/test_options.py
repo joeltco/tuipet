@@ -40,6 +40,21 @@ def test_row_surface_and_order():
         _fits(pan)
 
 
+def test_note_line_describes_the_selected_row():
+    """The line under the list follows the cursor (Joel's live review
+    2026-07-07: it sat frozen on a flavour line); action feedback overrides
+    it until the next cursor move."""
+    pan, _ = _panel()
+    assert "recolor" in pan.text().plain          # theme selected at open
+    pan.key("down")                               # -> sound
+    assert "chirps" in pan.text().plain
+    pan.key("enter")                              # toggle: feedback takes the line
+    assert "sound:" in pan.text().plain
+    pan.key("down")                               # move -> the new row's desc
+    plain = pan.text().plain
+    assert "switch login" in plain and "sound:" not in plain
+
+
 def test_options_walk_fits_and_toggles_sound():
     pan, state = _panel()
     _fits(pan)

@@ -20,6 +20,17 @@ _ROWS = ("theme", "sound", "account", "update", "keys", "new", "erase")
 _LABEL = {"theme": "Theme", "sound": "Sound", "account": "Account",
           "update": "Update", "keys": "Keys", "new": "New egg",
           "erase": "Erase all data"}
+# the note line under the list describes the SELECTED row and follows the
+# cursor (Joel's live review 2026-07-07: it sat frozen on the flavour line);
+# action feedback (sound toggled, update verdict...) overrides it until the
+# cursor moves again.  Over-wide lines marquee via menu.note(tick).
+_DESC = {"theme": "recolor the whole game — live preview",
+         "sound": "the DVPet chirps — on or off",
+         "account": "switch login — the pet parks in the cloud",
+         "update": "ask PyPI for a newer tuipet",
+         "keys": "every binding on one page",
+         "new": "retire the pet, hatch the heir",
+         "erase": "wipe save, progress and login — for keeps"}
 
 
 class KeysPanel:
@@ -71,7 +82,7 @@ class OptionsPanel(menu.SubHost):
         self._upd = None               # None idle | "…" checking | "" none | "x.y.z"
         self.confirm = False           # typed-YES gate for the erase
         self.buf = ""
-        self.msg = "the dials behind the game"
+        self.msg = ""                  # action feedback; empty -> the row's _DESC
         self.sfx = None
 
     @property
@@ -134,8 +145,10 @@ class OptionsPanel(menu.SubHost):
             return None
         if k in ("up", "k"):
             self.cursor = (self.cursor - 1) % len(_ROWS)
+            self.msg = ""              # feedback yields to the new row's description
         elif k in ("down", "j"):
             self.cursor = (self.cursor + 1) % len(_ROWS)
+            self.msg = ""
         elif k in ("enter", "space"):
             row = _ROWS[self.cursor]
             if row == "theme":
@@ -209,6 +222,7 @@ class OptionsPanel(menu.SubHost):
             out.append_text(menu.row(f"{_LABEL[row]:<16} {self._value(row)[:18]}",
                                      i == self.cursor))
         out.append_text(menu.blanks(7 - len(_ROWS)))
-        out.append_text(menu.note(self.msg, tick=self.frame_i))
+        out.append_text(menu.note(self.msg or _DESC[_ROWS[self.cursor]],
+                                  tick=self.frame_i))
         out.append_text(menu.footer("↑↓ pick  ENTER go  ESC back"))
         return out
