@@ -121,7 +121,11 @@ def _conditions_met(rule, prog):
         return False
     if rule["map"] is not None and rule["map"] not in prog["maps"]:
         return False
-    if rule["history"] and not all(n in prog["album"] for n in rule["history"]):
+    if rule["history"] and not all(data.canonical_num(n) in prog["album"]
+                                   for n in rule["history"]):
+        # name-canonical both sides (album/dex audit 2026-07-06): raising
+        # ChibiKiwimon as its 1432 hatch-twin satisfies a 944 history gate,
+        # exactly like canon's checkNaturalUnlocked name sync
         return False
     if rule["prev_field"] is not None and prog["last_field"] != rule["prev_field"]:
         return False

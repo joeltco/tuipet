@@ -390,6 +390,33 @@ def assist_pool():
 
 
 @lru_cache(maxsize=1)
+def _name_canonical_map():
+    """num -> the CANONICAL (lowest) num among same-name roster rows.  DVPet
+    stores duplicate species rows (the 1410+ egg-hatch block mirrors the
+    chart's canonical rows) and its dex sync is BY NAME: checkNaturalUnlocked
+    propagates `unlocked` across every same-name row, so a form raised under
+    either num reveals both (album/dex audit 2026-07-06).  Empty names stay
+    themselves -- never lump the unnamed rows into one group."""
+    _, by_num = load_sprites()
+    groups = {}
+    for n, rec in by_num.items():
+        nm = (rec.get("name") or "").upper()
+        if nm:
+            groups.setdefault(nm, []).append(n)
+    out = {}
+    for ns in groups.values():
+        c = min(ns)
+        for n in ns:
+            out[n] = c
+    return out
+
+
+def canonical_num(num):
+    """The name-canonical roster num (checkNaturalUnlocked's identity)."""
+    return _name_canonical_map().get(num, num)
+
+
+@lru_cache(maxsize=1)
 def _canonical_habitat_by_name():
     """DVPet stores duplicate species rows: the egg-hatch duplicates carry
     Habitat -1 while the base row carries the real habitat. Map name -> habitat."""

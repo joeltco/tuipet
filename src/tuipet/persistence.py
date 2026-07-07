@@ -51,8 +51,14 @@ def save_settings(d, path=None):
 
 
 def get_album():
-    """Set of distinct Digimon species nums ever raised (the DM20-style zukan)."""
-    return set(load_settings().get("progress", {}).get("album", []))
+    """Set of distinct Digimon species ever raised, NAME-CANONICAL (the
+    DM20-style zukan).  DVPet's dex sync is by name (checkNaturalUnlocked):
+    the 1410+ egg-hatch duplicate rows and their chart twins reveal together
+    -- old saves may hold either num, so entries canonicalize on read
+    (album/dex audit 2026-07-06)."""
+    from . import data
+    return {data.canonical_num(n)
+            for n in load_settings().get("progress", {}).get("album", [])}
 
 
 def get_wins():
@@ -65,15 +71,22 @@ _ALBUM_SEEN = set()          # in-memory mirror: the 10s autosave was re-reading
 
 
 def album_seen(num):
-    """Has ANY generation been this form? (canon Evolution.setUnlocked --
-    the dex reveal state the hidden-evolution mask keys on)."""
+    """Has ANY generation been this form -- under EITHER of its name-twin nums?
+    (canon Evolution.setUnlocked + checkNaturalUnlocked: the dex reveal state
+    the hidden-evolution mask keys on, synced across same-name rows)."""
+    from . import data
+    num = data.canonical_num(num)
     if num in _ALBUM_SEEN:
         return True
-    return num in set(load_settings().get("progress", {}).get("album", []))
+    return num in get_album()
 
 
 def album_add(num):
-    if num is None or num < 0 or num in _ALBUM_SEEN:
+    if num is None or num < 0:
+        return
+    from . import data
+    num = data.canonical_num(num)    # store the name-canonical identity
+    if num in _ALBUM_SEEN:
         return
     _ALBUM_SEEN.add(num)
     d = load_settings()
@@ -277,7 +290,7 @@ def get_progress():
     prog = _prog()
     last = prog.get("last_gen", {}) or {}
     return {
-        "album": set(prog.get("album", [])),
+        "album": get_album(),        # name-canonical (the egg gates match on it)
         "wins": int(prog.get("wins", 0)),
         "mega_kills": int(prog.get("mega_kills", 0)),
         "max_gen": int(prog.get("max_gen", 1)),
