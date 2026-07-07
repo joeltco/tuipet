@@ -28,8 +28,6 @@ from . import feedscreen
 from . import digicorescreen
 from . import eggselectscreen
 from . import persistence
-from . import jogressscreen
-from . import jogress
 from . import net
 from . import lobbyscreen
 from . import tournament
@@ -126,7 +124,7 @@ def keys_markup():
     k = f"b {theme.KEY}"
     return (
         f"[{k}]f[/] feed  [{k}]p[/] play  [{k}]c[/] clean  [{k}]h[/] heal  [{k}]r[/] praise  [{k}]k[/] scold  [{k}]s[/] lights  [{k}]v[/] assist\n"
-        f"[{k}]t[/] train  [{k}]b[/] battle  [{k}]a[/] adventure  [{k}]u[/] cup  [{k}]j[/] jogress  [{k}]l[/] lobby  [{k}]x[/] DNA\n"
+        f"[{k}]t[/] train  [{k}]a[/] adventure  [{k}]u[/] cup  [{k}]l[/] lobby (battle·jogress)  [{k}]x[/] DNA\n"
         f"[{k}]o[/] shop  [{k}]i[/] bag  [{k}]e[/] habitat  [{k}]d[/] data  [{k}]g[/] options  [{k}]q[/] quit"
     )
 
@@ -1309,12 +1307,16 @@ class TuiPetApp(App):
     }
     """
     BINDINGS = [
-        ("f", "feed", "Feed"), ("t", "train", "Train"), ("b", "battle", "Battle"),
+        # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and
+        # jogress should be online pvp only. we have adventure already") --
+        # PvE combat lives in adventure and the cup; fusion needs a real
+        # partner from the roster
+        ("f", "feed", "Feed"), ("t", "train", "Train"),
         ("p", "play", "Play"), ("c", "clean", "Clean"), ("h", "heal", "Heal"),
         ("r", "praise", "Praise"), ("k", "scold", "Scold"),
         ("a", "adventure", "Adventure"), ("o", "shop", "Shop"), ("i", "inventory", "Inventory"), ("e", "habitat", "Habitat"),
         ("d", "digicore", "DigiCore"),
-        ("j", "jogress", "Jogress"), ("u", "tournament", "Cup"), ("x", "dna", "DNA"),
+        ("u", "tournament", "Cup"), ("x", "dna", "DNA"),
         ("l", "lobby", "Lobby"),
         ("s", "sleep", "Lights"), ("v", "assist", "Assistant"), ("g", "options", "Options"), ("q", "quit", "Quit"),
         ("enter", "gift", "Accept gift"),
@@ -2375,25 +2377,9 @@ class TuiPetApp(App):
             self.screen_w.start_fx("spit")
         self.repaint()
 
-    def action_battle(self):
-        reason = self.pet.can_battle()
-        if reason:
-            self._do(reason); return
-        self._open_mode(battlescreen.BattlePanel(self.pet), self._after_battle)
-
-    def _after_battle(self, battle):
-        if battle is not None:
-            # lifetime wins are counted in pet.record_battle (single source: every
-            # battle flow -- adventure/cup/lobby included -- resolves through it).
-            # Canon endBattle -> State.Winning / Losing ON THE HOME SCREEN:
-            # winning() = cheer(true, _win); losing() = the jeer + wash sweep-off.
-            self.flash(battle.reward)
-            if battle.won:
-                self.screen_w.start_fx("cheer")
-                self.screen_w.fx["snds"] = {1: "win"}
-            else:
-                self.screen_w.start_fx("losing", pet=self.pet)
-        self.repaint()
+    # (the home battle + jogress actions were retired 2026-07-07 -- lobby-only
+    # now; adventure/cup/town keep their own embedded BattlePanels and the
+    # lobby keeps JogressPanel as its fusion-scene shim)
 
     def action_praise(self):
         if self.screen_w.fx is not None:        # let the current care animation finish before acting again
@@ -2425,18 +2411,6 @@ class TuiPetApp(App):
     def _after_cup(self, msg):
         if msg:
             self.flash(msg)
-        self.repaint()
-
-    def action_jogress(self):
-        reason = jogress.can_jogress(self.pet)
-        if reason:
-            self._do(reason); return
-        self._open_mode(jogressscreen.JogressPanel(self.pet), self._after_jogress)
-
-    def _after_jogress(self, msg):
-        if msg:
-            self.flash(msg)
-            self.beep("jogress")
         self.repaint()
 
     def action_dna(self):
