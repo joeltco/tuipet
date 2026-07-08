@@ -10,7 +10,6 @@ contagion, no disposition shade on the plain win/loss mood, no loss missed-
 day, and the declined-surrender grudge was missing."""
 import random
 
-import pytest
 
 from tuipet import battle as battle_mod
 from tuipet.pet import (Pet, BATTLE_HIGH_HP_ENERGY, BATTLE_LOW_HP_ENERGY,

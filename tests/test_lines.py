@@ -47,7 +47,7 @@ def test_rule_grammar_rejects_junk():
 def test_ver1_loads_shaped_like_the_spec():
     v1 = lines.load_lines()["ver1"]
     assert v1["root"] == 1411
-    assert len(v1["members"]) == 16
+    assert len(v1["members"]) == 17           # 16 timed forms + the Alter-S jogress door
     # the Koromon split (DM20 canon; the Betamon half was missing until
     # 2026-07-07 -- Joel: "wheres the betamon line on the 1st egg???")
     assert [r["num"] for r in v1["children"][1455]] == [29, 37]

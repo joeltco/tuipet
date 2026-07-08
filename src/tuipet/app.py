@@ -282,7 +282,7 @@ COND_PITCH = COND_H + 1
 # LIFTED -- both badges carry real information now: the medicine indicator is the
 # double-dose poison warning (getMed), and teach flags a discipline window that
 # EXPIRES with teeth since v0.2.182.  Re-hide by adding keys back to this set.
-_HIDDEN_STATUS_ICONS = set()
+_HIDDEN_STATUS_ICONS: set[str] = set()
 # DVPet draws the condition icons as a fixed VERTICAL COLUMN down the right edge of
 # the LCD (setLocX ~120), one fixed row each, every active one shown AT ONCE -- not a
 # single cycling slot.  Vertical order is DVPet's setLocY (top->bottom): sick(55),
@@ -380,6 +380,8 @@ def _effect_overlay(pet, frame_i, cols, px_h, tick=0, pet_right=None):
 
 class Screen(Static):
     """The animated LCD screen."""
+    thunder_i = 0             # frames of storm-flash left (weather sets it mid-tick)
+
     def on_mount(self):
         self.frame_i = 0      # interval counter (10 Hz; 1 tick == 0.1s == one DVPet _interval)
         self.anim_key = None  # last anim state, so cadences restart on a state change

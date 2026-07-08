@@ -66,7 +66,7 @@ def get_wins():
     return int(load_settings().get("progress", {}).get("wins", 0))
 
 
-_ALBUM_SEEN = set()          # in-memory mirror: the 10s autosave was re-reading
+_ALBUM_SEEN: set[int] = set()   # in-memory mirror: the 10s autosave was re-reading
                              # settings.json on every save just to no-op (audit 2026-07)
 
 

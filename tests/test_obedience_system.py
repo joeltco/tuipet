@@ -6,7 +6,6 @@ no checkRefusedOff (an unscolded refusal never expired), and two missing
 forced-meal costs.  The factors/adjusted math was already verbatim."""
 import random
 
-import pytest
 
 from tuipet import data
 from tuipet.pet import (Pet, MAX_OBEDIENCE, OBEDIENCE_LAPSE_MIN, OBEDIENCE_LAPSE_DEC,

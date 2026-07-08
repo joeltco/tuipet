@@ -87,7 +87,6 @@ def test_lobby_jogress_lines_fit_with_a_24_char_partner():
 
 
 def test_travelling_and_hp_drill_strips_fit_at_the_extremes():
-    from tuipet.adventure import Adventure
     from tuipet.adventurescreen import AdventurePanel
     pan = AdventurePanel(_pet(bits=999))
     pan.adv.last = "Travelling… 100%"                         # the widest travelling note

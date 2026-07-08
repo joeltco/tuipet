@@ -15,7 +15,7 @@ import random
 
 
 from tuipet import battle, battlefx
-from tuipet.battle import Battle, calc_attack_power, BASE_ATTACK, MAX_HEALTH
+from tuipet.battle import Battle, calc_attack_power, BASE_ATTACK
 from tuipet.pet import Pet
 
 

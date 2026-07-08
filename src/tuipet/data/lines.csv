@@ -17,6 +17,7 @@ ver1,Ultimate,237,124;95;110,WIN 12/15,22:00,Mamemon
 ver1,Ultimate,192,116,WIN 12/15,23:00,Monzaemon (canon dead end)
 ver1,Mega,297,220,CM 0-2,23:00,BlitzGreymon
 ver1,Mega,300,237,CM 0-2,24:00,BanchoMamemon
+ver1,Mega,399,297,JOGRESS 398,23:00,Omnimon Alter-S (jogress with CresGarurumon; canon Tag Battle capstone)
 verX,Fresh,1426,egg,TIME,20:00,Dodomon
 verX,InTraining,1479,1426,TIME,20:00,Dorimon
 verX,Rookie,41,1479,CM 0-2,21:00,Dorumon
@@ -55,6 +56,7 @@ ver2,Ultimate,213,108;136,WIN 12/15,23:00,MetalMamemon (canon also feeds from Wh
 ver2,Ultimate,199,109,WIN 12/15,23:00,Vademon (canon dead end)
 ver2,Mega,290,195,CM 0-2,24:00,SkullMammothmon
 ver2,Mega,398,213,CM 0-2,23:00,CresGarurumon
+ver2,Mega,399,398,JOGRESS 297,23:00,Omnimon Alter-S (jogress with BlitzGreymon; canon Tag Battle capstone)
 ver3,Fresh,1413,egg,TIME,20:00,Poyomon
 ver3,InTraining,1456,1413,TIME,21:00,Tokomon
 ver3,Rookie,31,1456,CM 0-2,21:00,Patamon
@@ -91,6 +93,7 @@ ver4,Ultimate,196,123;120;135,WIN 12/15,22:00,Piximon (Piccolomon) (canon dead e
 ver4,Ultimate,198,118,WIN 12/15,24:00,Digitamamon
 ver4,Mega,396,210,CM 0-2,24:00,Aegisdramon
 ver4,Mega,395,198,CM 0-2,24:00,Titamon
+ver4,Mega,393,396,JOGRESS 276,24:00,RustTyrannomon (jogress with Machinedramon; canon Tag Battle capstone)
 ver5,Fresh,1415,egg,TIME,20:00,Zurumon
 ver5,InTraining,1457,1415,TIME,21:00,Pagumon
 ver5,Rookie,33,1457,CM 0-2,23:00,Gazimon
@@ -109,6 +112,7 @@ ver5,Ultimate,197,115;114;111,WIN 12/15,24:00,Datamon (Nanomon) (canon dead end)
 ver5,Ultimate,239,112,WIN 12/15,24:00,ExTyrannomon
 ver5,Mega,276,214,CM 0-2,24:00,Machinedramon (Mugendramon)
 ver5,Mega,277,239,CM 0-2,22:00,Puppetmon (Pinochimon)
+ver5,Mega,393,276,JOGRESS 396,24:00,RustTyrannomon (jogress with Aegisdramon; canon Tag Battle capstone)
 sakumon,Fresh,1444,egg,TIME,20:00,Sakumon
 sakumon,InTraining,1499,1444,TIME,21:00,Sakuttomon
 sakumon,Rookie,67,1499,CM 0-2,22:00,Zubamon

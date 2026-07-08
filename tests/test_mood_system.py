@@ -11,10 +11,10 @@ import random
 import pytest
 
 from tuipet import data, evolution
-from tuipet.pet import (Pet, FULL_HUNGER, NAP_WAKE_MOOD_DEC, DISTURB_MOOD_DEC,
+from tuipet.pet import (Pet, FULL_HUNGER, DISTURB_MOOD_DEC,
                         BONUS_ATTRIBUTE_POWER, TRAIN_POWER_PER_HIT,
                         DISCIPLINE_CALL_MOOD_PENALTY, DISCIPLINE_CALL_OBED_DEC,
-                        DISCIPLINE_CALL_SCOLD_OBED_INC, NEGATIVE_ENERGY_MOOD_DEC,
+                        NEGATIVE_ENERGY_MOOD_DEC,
                         NEGATIVE_ENERGY_OBEDIENCE_DEC, FATIGUE_MOOD_DEC)
 
 

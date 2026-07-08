@@ -84,7 +84,6 @@ def test_panel_core_page_and_teaser_flow():
 # ---- mode change (PhysicalState.modeChange / Evolution.canModeChange) --------
 
 def _mode_pet():
-    from tuipet import evolution
     p = Pet(num=100, name="Gatomon", stage="Champion", attribute="Vaccine")
     p.obedience = 500
     p.vaccine = p.data_power = p.virus = 500
@@ -235,7 +234,7 @@ def test_core_page_keeps_native_pixels_and_separates_the_badge():
     16px-tall mon to 14 rows AND the badge overlay drew dead-centre on top of
     it -- the two merged into a broken-looking mass.  Native pixels, pet in
     the LEFT cell, badge in the RIGHT."""
-    from tuipet import data, grid
+    from tuipet import grid
     p = _pet(num=102, stage="Champion")          # Devimon: a full 16px sprite
     panel = DigiCorePanel(p)
     rows, x, _mirror = panel._core_place(panel._pet_rows(102, idx=0), cell=0)

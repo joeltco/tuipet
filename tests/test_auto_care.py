@@ -146,7 +146,6 @@ def test_the_assistant_stays_home_while_the_pet_adventures():
 def test_the_adventure_flags_away_and_the_exit_clears_it():
     """Adventure.__init__ marks the pet OUT; leaving the panel brings it home
     (the same exit hook that restores the home climate)."""
-    from tuipet.adventure import Adventure
     from tuipet import adventurescreen
     p = _pet(bits=100)
     p.stage_seconds = 1e9                          # past any gate noise

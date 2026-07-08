@@ -3,7 +3,6 @@ canonicalization that retires the fuzzy engine for new pets.
 
 These are the safety net for tool-generated data: each invariant holds for all
 47 lines or the curator is broken."""
-import pytest
 
 from tuipet import data, egg, lines
 from tuipet.pet import Pet
@@ -20,6 +19,9 @@ DECLARED_EDGES = {
     (44, 88), (44, 104), (45, 91), (45, 106), (46, 104), (46, 125),
     (90, 220), (97, 195), (98, 191), (101, 195), (102, 220), (104, 210),
     (108, 213), (125, 210), (1455, 37), (1457, 35),
+    # RustTyrannomon jogress doors (DM20 canon capstone; the corpus graph
+    # never carried the edge -- canon scan follow-up 2026-07-08)
+    (396, 393), (276, 393),
 }
 
 
@@ -51,6 +53,8 @@ def test_every_line_has_one_root_and_monotonic_stages():
         roots = [r["num"] for r in line["members"].values() if not r["parents"]]
         assert roots == [line["root"]], lid    # exactly one parentless row: the root
         for num, row in line["members"].items():
+            if row["jogress"] is not None:
+                continue                       # a jogress door joins two Megas
             si = STAGES.index(row["stage"])
             for p in row["parents"]:
                 assert STAGES.index(line["members"][p]["stage"]) == si - 1, \
@@ -156,6 +160,9 @@ def _live_children(line, parent):
     rows = line["children"].get(parent, [])
     out = []
     for i, row in enumerate(rows):
+        if row["jogress"] is not None:
+            out.append(row["num"])             # a door: the lobby fusion opens it
+            continue
         earlier = [r["rule"] for r in rows[:i] if not _has_battle(r["rule"])]
         if any(not alt for rule in earlier for alt in rule):     # earlier TIME row
             continue
@@ -218,3 +225,26 @@ def test_licenses_priced_by_ceiling():
     rules = data.load_egg_unlock()
     for r in rules.values():
         assert r["price"] != 2000, r["name"]   # the flat legacy tier is gone
+
+
+def test_dm20_jogress_capstones_are_declared_doors():
+    """Canon capstones (humulos): Omnimon Alter-S = BlitzGreymon +
+    CresGarurumon; RustTyrannomon = Aegisdramon + Machinedramon.  Each is a
+    partner-exact door on BOTH partners' charts, never a timer evolution."""
+    L = _all_lines()
+    doors = {("ver1", 297): (399, 398), ("ver2", 398): (399, 297),
+             ("ver4", 396): (393, 276), ("ver5", 276): (393, 396)}
+    for (lid, parent), (target, partner) in doors.items():
+        row = next(r for r in L[lid]["children"][parent] if r["num"] == target)
+        assert row["jogress"] == partner, (lid, parent)
+        # the stage timer can never fire a door, whatever the counters say
+        assert lines.select_line(_C(parent, lid, cm=0, tr=40, of=0)) != target
+        # jogress.options offers the door to the line pet, partner-exact,
+        # closed to the attribute fallback
+        from tuipet import jogress
+        pet = _C(parent, lid)
+        pet.attribute = "Virus"
+        pet.stage = "Mega"
+        pet.dead = False
+        o = next(o for o in jogress.options(pet) if o["num"] == target)
+        assert o["partner_num"] == partner and o["partners"] == []

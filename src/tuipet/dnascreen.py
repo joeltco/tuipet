@@ -19,8 +19,7 @@ Home menu (DVPet DNA_Validation): Charge / Generate / Stats / Requirements.
 from __future__ import annotations
 import math
 from . import data, grid, menu, evolution
-from .render import render_scene
-from .theme import LCD_ON, LCD_BG, SIL_DAY
+from .theme import LCD_ON, LCD_BG, SIL_DAY  # noqa: F401  (palette names bound for theme.apply propagation)
 from .pet import MAX_DNA_INVENTORY, dna_field_for_rate
 
 MASH_TICKS = 100            # DVPet: 100 intervals x 0.1s = the 10s mini-game window

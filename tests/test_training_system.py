@@ -6,11 +6,9 @@ monkeypatched to no-ops where a stray catch would muddy an assertion, and the
 fatigue roll is forced (randrange -> 0) or silenced (-> 99) as the test needs.
 """
 import random
-import pytest
 
 from tuipet.pet import (Pet, RANK_TRAIN_FAIL, RANK_TRAIN_FORCED,
-                        RANK_CHANGE_FATIGUE, RANK_FATIGUE_FORCED,
-                        FATIGUE_MIN, FATIGUE_MAX)
+                        RANK_CHANGE_FATIGUE, RANK_FATIGUE_FORCED)
 
 
 def _pet(**kw):

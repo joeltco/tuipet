@@ -16,10 +16,8 @@ import json
 import os
 from . import data
 from .battle import Battle
-from .render import render_scene
-from .theme import LCD_ON, LCD_BG, SIL_DAY, SIL_NIGHT
+from .theme import LCD_ON, LCD_BG, SIL_DAY, SIL_NIGHT  # noqa: F401  (palette names bound for theme.apply propagation)
 from . import menu
-from . import grid
 from . import strikefx
 
 COLS, ROWS = 40, 12

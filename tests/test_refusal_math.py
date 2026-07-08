@@ -30,7 +30,6 @@ Fixed (canon divergences):
 import random
 
 from tuipet.pet import Pet
-from tuipet import data
 
 
 def _pet(**kw):

@@ -24,7 +24,6 @@ from __future__ import annotations
 import json
 import os
 import random
-from rich.text import Text
 from . import data
 from . import grid
 from . import strikefx
@@ -600,7 +599,6 @@ class TrainingPanel:
                 # crop to the real body so the mon can be placed precisely
                 # (centred, hugged by the shields) instead of floating in padding
                 pf = _crop(self._frame(rec, pose))
-                pw = max(len(r) for r in pf)
                 phh = len(pf)
                 # Data layout on MEASURED columns (layout audit 2026-07-06: the
                 # old x27 mon column ran a 16px mon to x42 -- 3 columns clipped

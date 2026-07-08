@@ -1,6 +1,5 @@
 """The checkRefused obedience roll (PhysicalState.checkRefused / refused())."""
 import math
-import pytest
 from tuipet.pet import Pet, REFUSE_CHANCE
 from tuipet import data, jogress
 

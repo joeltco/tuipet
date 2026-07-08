@@ -2,8 +2,7 @@
 fresh()/inTraining()/rookie() SET the newcomer's state on top of digivolve --
 the missing fresh() obedience 75 was the deepest root of the misbehaving-
 babies era (canon babies are born TRUSTING; the 0 was pre-hatch defaultData)."""
-from tuipet.pet import (Pet, FRESH_MOOD, FRESH_OBEDIENCE, START_NUTRITION,
-                        IN_TRAINING_OBEDIENCE, IN_TRAINING_SLEEP_LAPSE,
+from tuipet.pet import (Pet, FRESH_MOOD, FRESH_OBEDIENCE, IN_TRAINING_OBEDIENCE, IN_TRAINING_SLEEP_LAPSE,
                         ROOKIE_OBED_GOOD, ROOKIE_OBED_DEFAULT, ROOKIE_OBED_BAD)
 
 

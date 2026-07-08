@@ -11,7 +11,7 @@ import pytest
 
 from tuipet import app as A
 from tuipet import data, grid
-from tuipet.pet import Pet, POOP_MAX_PILES
+from tuipet.pet import Pet
 
 
 def _live_num():

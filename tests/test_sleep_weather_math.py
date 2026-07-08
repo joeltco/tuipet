@@ -28,7 +28,7 @@ Fixed (canon divergences):
    unported."""
 import random
 
-from tuipet.pet import Pet, CHANGE_NAP_TO_SLEEP
+from tuipet.pet import Pet
 
 
 def _adult(**kw):

@@ -264,8 +264,7 @@ def test_adventure_opens_with_the_teleport_leave_then_arrive():
     world swaps and Teleport_Arrive drops the sliver back in, expands it, and
     teleportAppear flickers the pet in on the ROAD.  Travel is held the whole
     way and begins only at endAnim."""
-    from tuipet.adventurescreen import (TELE_LEAVE_T, TELE_ARRIVE_T,
-                                        TELE_LEAVE_SNDS, TELE_ARRIVE_SNDS)
+    from tuipet.adventurescreen import (TELE_LEAVE_SNDS, TELE_ARRIVE_SNDS)
     pan = AdventurePanel(_pet())
     assert pan._trans == {"dir": "in", "phase": "leave", "t": 0}
     assert not pan.travelling                     # canon holds until endAnim

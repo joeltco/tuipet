@@ -5,7 +5,6 @@ in the selected habitat; the picker line rides the #msg strip; climate and
 ownership details live on the status card."""
 from __future__ import annotations
 from . import data, grid
-from .render import render_scene
 
 from .theme import LCD_ON, LCD_BG, INK, INK_B, DIM, SEL, POS, NEG, SIL_DAY  # noqa: F401  (theme.apply propagation)
 from . import menu

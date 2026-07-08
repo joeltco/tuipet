@@ -55,6 +55,10 @@ def parse_rule(text):
             if kind == "WIN":
                 k, n = arg.split("/", 1)
                 atoms.append(("win", int(k), int(n)))
+            elif kind == "JOGRESS":
+                # a jogress DOOR (LINES_SPEC §6): arg = the exact partner dex.
+                # Never fires on the stage timer -- the lobby fusion opens it.
+                atoms.append(("jogress", int(arg), None))
             elif kind == "AREA":
                 if not arg:
                     raise ValueError(f"AREA atom needs a map: {part!r}")
@@ -80,10 +84,15 @@ def load_lines():
             line = out.setdefault(lid, {"root": None, "members": {}, "children": {}})
             num = int(raw["DexNum"])
             parents = [p.strip() for p in raw["Parents"].split(";") if p.strip()]
+            rule = parse_rule(raw["Rule"])
             row = {"num": num, "stage": raw["Stage"].strip(),
-                   "rule": parse_rule(raw["Rule"]), "rule_text": raw["Rule"].strip(),
+                   "rule": rule, "rule_text": raw["Rule"].strip(),
                    "bedtime": raw["Bedtime"].strip(),
-                   "parents": [int(p) for p in parents if p != "egg"]}
+                   "parents": [int(p) for p in parents if p != "egg"],
+                   # jogress door: the exact partner dex, or None for a
+                   # normal timed-care row (LINES_SPEC §6)
+                   "jogress": next((a for alt in rule for k, a, _ in alt
+                                    if k == "jogress"), None)}
             mem = line["members"].get(num)
             if mem is None:
                 line["members"][num] = row
@@ -174,6 +183,8 @@ def _cleared_maps():
 
 def _atom_met(pet, atom):
     kind, a, b = atom
+    if kind == "jogress":
+        return False       # a door, not a timer rule: only the lobby fusion opens it
     if kind == "win":
         return sum(pet.battle_log[-b:]) >= a
     if kind == "area":
@@ -187,6 +198,19 @@ def check_rule(pet, rule):
     """True if ANY alternative has every atom met (an empty alternative — the
     TIME rule — is always met)."""
     return any(all(_atom_met(pet, atom) for atom in alt) for alt in rule)
+
+
+def jogress_declared(pet):
+    """Line-declared jogress doors from the pet's current form:
+    [(target_num, partner_dex)] — the DM20 capstones (Omnimon Alter-S,
+    RustTyrannomon).  The partner is EXACT; jogress.options feeds these into
+    the lobby's shared-fusion-name channel (LINES_SPEC §6)."""
+    line = load_lines().get(getattr(pet, "line_id", ""))
+    if not line or pet.num not in line["members"]:
+        return []
+    return [(row["num"], row["jogress"])
+            for row in line["children"].get(pet.num, [])
+            if row["jogress"] is not None]
 
 
 def select_line(pet):
@@ -243,6 +267,10 @@ def _atom_row(pet, atom):
     if kind == "win":
         now = sum(pet.battle_log[-b:])
         return _atom_met(pet, atom), f"wins {a} of last {b}  (now {now}/{min(len(pet.battle_log), b)})"
+    if kind == "jogress":
+        _, by_num = data.load_sprites()
+        pname = (by_num.get(a) or {}).get("name", f"#{a}")
+        return None, f"jogress with {pname} (lobby)"     # informational: a door, not a counter
     if kind == "area":
         return _atom_met(pet, atom), f"clear map {a}"
     span = f"{a}+" if b is None else (f"{a}" if a == b else f"{a}-{b}")

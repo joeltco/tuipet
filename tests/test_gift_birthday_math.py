@@ -18,7 +18,7 @@ tuipet's guard yields the same no-gift outcome.  The unhappy time-rank
 decay in checkMoodRecord stays with the unported rank system."""
 import random
 
-from tuipet.pet import Pet, MOOD_RECORD_MIN, DAY_LENGTH
+from tuipet.pet import Pet, MOOD_RECORD_MIN
 
 
 def _pet(**kw):

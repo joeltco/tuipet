@@ -2,7 +2,7 @@
 import json
 import random
 
-from tuipet.pet import Pet, DAY_LENGTH
+from tuipet.pet import Pet
 from tuipet import persistence, data
 from tuipet.adventure import Adventure
 from tuipet.battle import Battle

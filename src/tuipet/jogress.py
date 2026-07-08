@@ -76,6 +76,24 @@ def options(pet):
             "stage": by[t]["stage"], "partners": partners,
             "partner_num": pnum, "partner_name": pname,
         })
+    # LINES_SPEC §6: line-declared jogress doors -- the DM20 capstones
+    # (Omnimon Alter-S, RustTyrannomon).  Partner-EXACT by construction: the
+    # lobby's shared-fusion-name channel fires only when the partner's own
+    # options list the same fusion, and only the declared parent forms list
+    # it.  `partners` stays empty so the attribute fallback can never open
+    # the door with a stand-in; the line row itself is the gate (no
+    # evolution.check -- lines replaced corpus care gates, LINES_SPEC §5).
+    from . import lines as lines_mod
+    if lines_mod.active(pet):
+        for t, pnum in lines_mod.jogress_declared(pet):
+            if t in seen or t not in by:
+                continue
+            seen.add(t)
+            out.append({
+                "num": t, "name": by[t]["name"], "attribute": by[t]["attribute"],
+                "stage": by[t]["stage"], "partners": [],
+                "partner_num": pnum, "partner_name": by[pnum]["name"],
+            })
     return out
 
 

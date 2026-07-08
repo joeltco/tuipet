@@ -16,8 +16,8 @@ from __future__ import annotations
 from . import data, menu
 from . import grid
 from . import strikefx
-from .render import render_scene, downsample
-from .theme import LCD_ON, LCD_BG, SIL_DAY
+from .render import downsample
+from .theme import LCD_ON, LCD_BG, SIL_DAY  # noqa: F401  (palette names bound for theme.apply propagation)
 
 COLS, ROWS = 40, 12
 

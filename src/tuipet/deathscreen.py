@@ -1,8 +1,7 @@
 """Memorial screen shown when the pet passes away."""
 from __future__ import annotations
 from . import data, menu, grid, persistence
-from .render import render_scene
-from .theme import LCD_ON, LCD_BG, DIM, SIL_DAY
+from .theme import LCD_ON, LCD_BG, DIM, SIL_DAY  # noqa: F401  (palette names bound for theme.apply propagation)
 
 COLS, ROWS = 40, 12   # the ONE locked arena: the grave rests in the home scenery
 GRAVE = (data.load_effects().get("grave") or [None])[0]

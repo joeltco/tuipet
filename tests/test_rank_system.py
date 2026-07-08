@@ -12,8 +12,7 @@ tallies re-rolling the temperament at the Champion evolution)."""
 import random
 
 from tuipet import data
-from tuipet.pet import (Pet, RANK_LIMIT, RANK_MIN, RANK_TRAIN_FORCED,
-                        RANK_INJ_BATTLE_LOST, RANK_FOOD_FORCED, RANK_TIME_SICK,
+from tuipet.pet import (Pet, RANK_LIMIT, RANK_INJ_BATTLE_LOST, RANK_TIME_SICK,
                         PCHAMP_RANK, INJ_EXERCISE, INJ_WEAK_EXERCISE)
 
 

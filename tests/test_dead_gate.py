@@ -147,7 +147,8 @@ def test_no_raw_sprite_sheet_indexing_survives():
     training, battle, adventure, transport -- five shipped instances).
     data.frames_for/bob_frame own safe access now; the raw index is BANNED
     outside data.py (egg sweep 2026-07-06)."""
-    import glob, os
+    import glob
+    import os
     root = os.path.join(os.path.dirname(__file__), "..", "src", "tuipet")
     hits = []
     for fn in glob.glob(os.path.join(root, "*.py")):

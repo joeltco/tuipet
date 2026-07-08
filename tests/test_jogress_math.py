@@ -23,7 +23,7 @@ import math
 import random
 
 from tuipet.pet import Pet, dna_field_for_rate, MAX_DNA_INVENTORY
-from tuipet import jogress, data, evolution
+from tuipet import jogress, evolution
 
 
 def _pet(**kw):

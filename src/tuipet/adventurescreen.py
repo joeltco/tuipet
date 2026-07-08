@@ -6,11 +6,11 @@ from .battlescreen import BattlePanel
 from .feedscreen import FeedPanel
 from .shopscreen import ShopPanel
 from .townscreen import TownPanel
-from .render import render_scene, downsample
+from .render import downsample
 from . import grid
 from . import strikefx
 
-from .theme import LCD_ON, LCD_BG, INK, INK_B, DIM, SIL_DAY
+from .theme import LCD_ON, LCD_BG, INK, INK_B, DIM, SIL_DAY  # noqa: F401  (palette names bound for theme.apply propagation)
 from . import menu
 COLS, ROWS = 40, 12           # the ONE locked LCD arena, like every other screen
 

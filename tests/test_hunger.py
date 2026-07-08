@@ -1,7 +1,6 @@
 """Hunger system vs DVPet PhysicalState: awake-gated neglect, starvation weight
 loss, the hunger-mistake penalty, and the glutton decay coefficient."""
-from tuipet.pet import (Pet, CALORIE_LIMIT, HUNGER_MISTAKE_LIFE_DEC,
-                        STARVE_WEIGHT_DEC)
+from tuipet.pet import (Pet, CALORIE_LIMIT, STARVE_WEIGHT_DEC)
 
 
 def _pet(**kw):

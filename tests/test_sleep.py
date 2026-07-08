@@ -1,7 +1,7 @@
 """Sleep system vs DVPet: lightsCall neglect, wake auto-relight, morning moods."""
 import random
 
-from tuipet.pet import Pet, LIGHTS_MISTAKE_SEC, DAY_LENGTH
+from tuipet.pet import Pet, LIGHTS_MISTAKE_SEC
 
 
 def _sleeper(lights, num=1, stage="Rookie"):

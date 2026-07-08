@@ -12,7 +12,6 @@ def test_investigate_finds_a_zone_pool_item_and_opens_praise():
     import random
     from tuipet.adventure import Adventure
     from tuipet.pet import Pet
-    from tuipet import data
     random.seed(2)
     p = Pet(num=100, stage="Champion", attribute="Vaccine", obedience=500)
     adv = Adventure(p)
@@ -132,7 +131,7 @@ def test_map_final_boss_cues_the_victory_parade():
     import random
     from tuipet.pet import Pet
     from tuipet import data
-    from tuipet.adventurescreen import AdventurePanel, PARADE_T
+    from tuipet.adventurescreen import AdventurePanel
     random.seed(7)
     p = Pet(num=102, name="D", stage="Champion", attribute="Virus", obedience=800)
     p.world_seconds = 12 * 60.0
@@ -369,7 +368,6 @@ def test_town_before_boss_in_one_stride_is_reached_first(monkeypatch):
     """A town-start and an uncleared boss in the SAME stride resolve in
     position order, like the per-step canon walk -- the old boss-first
     ordering let the town event carry the pet PAST an unfought gate."""
-    import random as _r
     from tuipet import adventure as amod
     monkeypatch.setattr(amod.random, "random", lambda: 0.99)   # no discover/stop
     adv, p = _stub_adv(town=(22, 24, 0), boss_loc=25)

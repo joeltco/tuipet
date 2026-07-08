@@ -5,7 +5,6 @@ Divergence is the door: a strict-max charged Field at/over the stage
 threshold steers evolution onto the graph's next-stage edge in that Field.
 Unarmed pets must be bit-identical to before (the goldens enforce the rest).
 """
-import pytest
 
 from tuipet import data, evolution, lines
 from tuipet.pet import Pet

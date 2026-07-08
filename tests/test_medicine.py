@@ -1,6 +1,6 @@
 """Heal/medicine vs DVPet feedMed / applyBandage / feedVitamin / applyConsumable."""
 from tuipet.pet import (Pet, SICK_LAPSE_MIN, INJ_LAPSE_MIN, MEDICINE_HOURS,
-                        BANDAGE_HOURS, MAX_SICK_LENGTH, CURED_MOOD_BONUS)
+                        BANDAGE_HOURS)
 from tuipet import data
 
 

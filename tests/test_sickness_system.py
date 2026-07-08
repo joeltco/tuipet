@@ -9,13 +9,9 @@ battle one); the sick rolls ignored the habitat/geriatric BOUND shaping and
 the fatigue target pad; intolerant food rolled fresh x2 instead of
 worse+fresh once each; injuries didn't sap energy; sick pets didn't burn
 nutrition or race the bowels; and incMistake carried no sickness risks."""
-import math
 import random
 
-from tuipet.pet import (Pet, INJ_EXERCISE, INJ_BATTLE, WORSE_INJ_BATTLE,
-                        WORSE_INJ_EXERCISE, SICK_CHANCE_BOUND, SICK_COMPAT_CHANGE,
-                        SICK_GERIATRIC_FACTOR, FATIGUE_MOD, INJURY_ENERGY_DEC,
-                        BATTLE_INJ_LOSS)
+from tuipet.pet import (Pet, INJ_BATTLE, SICK_GERIATRIC_FACTOR, FATIGUE_MOD, INJURY_ENERGY_DEC)
 
 
 def _pet(**kw):

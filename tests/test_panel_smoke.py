@@ -6,7 +6,6 @@ icon path: 357 tests were green while pressing F crashed the app.  This sweep
 instantiates every simple-constructor panel, walks its keys, and renders each
 state.  It is deliberately shallow — its job is 'does it draw', not 'is it
 right'."""
-import pytest
 
 from tuipet.pet import Pet
 from tuipet.render import bitmap_text

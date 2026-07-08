@@ -86,7 +86,6 @@ def test_potty_is_the_fallback_and_buying_adds_uses_per():
     assert e["uses_per"] == 100 and e["max_uses"] == 199
     q.bits = 10000
     slot = {"key": "i:82", "stock": 1, "sale": False}
-    from tuipet import shop
     q.inventory["i:82"] = 150
     q.buy_slot(slot)
     assert q.inventory["i:82"] == 199                      # clamped, not 250

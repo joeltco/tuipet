@@ -14,7 +14,6 @@ window that now expires with teeth (v0.2.182).
 The MANIFEST (both directions, like the sound audit): every extracted icon
 is either referenced by code or allowlisted with its reason below."""
 import glob
-import re
 
 from tuipet import data
 from tuipet.pet import Pet

@@ -84,8 +84,6 @@ def test_both_tells_due_picks_uniformly(monkeypatch):
     """Canon rolls once and picks uniformly among the eligible specials --
     with the gauge full AND bedtime near, BOTH the dance and the yawn must be
     reachable (the old elif never yawned)."""
-    import random as _r
-    from tuipet.pet import Pet
     seen = set()
     picks = ["poopdance", "yawn"]
     # the app block's shape: specials list -> one roll -> uniform choice

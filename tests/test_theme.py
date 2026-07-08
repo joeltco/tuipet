@@ -140,7 +140,7 @@ def test_load_sprites_cache_is_intact():
     STOLE its @lru_cache decorator -- every call re-parsed the gzip atlas and
     the app crawled (the suite 'hang').  Pin cache identity for the hot atlas
     loaders so a displaced decorator can never ship again."""
-    from tuipet import data, egg, lines
+    from tuipet import data
     assert data.load_sprites() is data.load_sprites()
     assert data.load_icons() is data.load_icons()
     assert data.load_effects() is data.load_effects()
@@ -223,7 +223,6 @@ def test_gameboy_render_reserves_the_sprite_ink_for_sprites():
     """End-to-end layering pin: over ANY background art, the darkest green on
     the rendered LCD comes only from sprite/overlay ink -- a sprite-less
     render of dark art must contain no #0f380f at all."""
-    import re as _re
     from tuipet.render import render_scene
     dark = ["000000" * 12] * 8
     try:

@@ -249,7 +249,7 @@ def test_hatch_render_follows_the_canon_beats():
 
 
 def test_stuffed_meal_drops_the_leftovers():
-    """Eating-anim audit 2026-07-05: applyFood at modifier <= 
+    """Eating-anim audit 2026-07-05: applyFood at modifier <=
     DisposeLeftoversMinModifier(0.5) is State.Munching -- two bites, then
     disposeFood: the pet turns away and the half-eaten food falls off-screen.
     tuipet played the full three-bite triad no matter how stuffed the pet."""

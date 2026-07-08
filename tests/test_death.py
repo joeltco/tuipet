@@ -106,7 +106,7 @@ def test_save_from_death_restores_life_and_costs_bonus():
 
 
 def test_death_evolution_fires_when_a_dark_form_accepts():
-    from tuipet import data, evolution
+    from tuipet import data
     # find any form with a Death-special evolution target
     src = next(n for n, targets in data.load_evolutions().items()
                if any(data.load_requirements().get(t, {}).get("special") == "Death"

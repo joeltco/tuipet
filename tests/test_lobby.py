@@ -81,7 +81,6 @@ def test_roster_diff_lands_join_and_leave_notices_in_chat():
 
 
 def test_guest_hp_bar_uses_its_own_trained_card():
-    from tuipet import battle
     s = LobbyState()
     pan = _panel(s)
     pan.pet.full_health = 23                                  # trained past the stage table

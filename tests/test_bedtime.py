@@ -2,7 +2,6 @@
 canon pacing curve, and the sharpened death rules."""
 import random
 
-import pytest
 
 from tuipet import lines
 from tuipet.pet import Pet

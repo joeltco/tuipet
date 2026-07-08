@@ -120,7 +120,8 @@ def test_cleaning_builds_obedience_by_disposition():
     2, sour 0) alongside the mood lift -- tuipet was mood-only.  Cleaning an
     empty room earns nothing (canon gates on isFilth)."""
     from tuipet.pet import CLEAN_OBED_INC, CLEAN_MOOD_INC
-    import csv, os
+    import csv
+    import os
     cfg = {r[0]: r[1] for r in csv.reader(open(os.path.join(
         os.path.dirname(__file__), "..",
         "_extract/game/DVPetTest/jar/Model/config.csv"))) if r}

@@ -2,7 +2,6 @@
 checkEnergyIncFromPerfectConditions / setExercise fatigue."""
 import random
 from tuipet.pet import Pet, DAY_LENGTH
-from tuipet import data
 
 
 def _pet(**kw):

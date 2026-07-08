@@ -8,7 +8,6 @@ are hourly cups and anything past 23 -- the ForceTrophies pins -- is always
 open.  Shops and cups roll fresh per visit (DVPet resets them daily)."""
 from __future__ import annotations
 from . import data, grid, menu, shop, tournament
-from .render import render_scene
 from .tournament import Tournament
 from .battlescreen import BattlePanel
 from .theme import LCD_ON, LCD_BG, INK, INK_B, DIM, SIL_DAY  # noqa: F401  (theme.apply propagation)
