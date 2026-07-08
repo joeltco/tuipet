@@ -237,10 +237,9 @@ class TuiPetApp(App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("Let sleeping mons lie: using a toy, book or item on a "
-                 "sleeping pet now wakes it up grumpy, just like the real "
-                 "device — only the Futon lets it keep dozing. Slip one under "
-                 "a tired pet without disturbing its rest.")
+    WHATS_NEW = ("Tidier cleanups: when your hired helper mucks out after a "
+                 "sleeping pet, the mess now sweeps off to the side with it "
+                 "instead of bunching up under the snoozing mon.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and

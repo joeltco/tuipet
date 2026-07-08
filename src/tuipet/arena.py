@@ -799,8 +799,21 @@ class Screen(Static):
         # descent beat) -- the OPPOSITE of your wash, which shoves them left.
         act = fx.get("act")
         feed = act in ("feed", "strength")
-        if not feed:
-            # the pet gives ground as the helper arrives (DVPet assistantLights
+        cleaning = act == "clean" and fx.get("poop")
+        if cleaning:
+            # canon assistantClean: filthLabel.moveRight(4) sweeps the mess RIGHT
+            # while adjustCharacterForFilth() clamps the pet to the filth's right
+            # edge every beat -- so the pet is shoved right AHEAD of the piles and
+            # both slide off together (SpriteAnim.assistantClean).  The old
+            # give-ground xshift (max 8) ignored the filth entirely, so a full
+            # 4-pile block (16px) sat UNDER a sleeping pet auto-care was cleaning
+            # -- the poop-overlap glitch (audit 2026-07-08).
+            push = -step * 3                                   # filth marches right
+            c.xshift = _filth_right(fx["poop"]) - push - PET_BASE_X   # stay clear of its right edge
+            c.overlay += _filth_pts(pet, self.frame_i, count=fx["poop"],
+                                    sizes=fx.get("sizes"), push=push, px_h=c.px_h)
+        elif not feed:
+            # assistantLights: the pet gives ground as the helper arrives (DVPet
             # moveRight(2) per descent beat) and drifts back as it leaves --
             # 4+16 | 20+16 fills the grid band x[4,36) with both sprites abutted
             if step < 8:
@@ -811,9 +824,6 @@ class Screen(Static):
                 c.xshift = max(0, 8 - (step - 19) * 2)
         if pet.asleep:
             c.rows = self._pose_rows(pet, "sleep", step // 2)
-        if act == "clean" and fx.get("poop"):
-            c.overlay += _filth_pts(pet, self.frame_i, count=fx["poop"],
-                                    sizes=fx.get("sizes"), push=-step * 3, px_h=c.px_h)
         _, by_num = data.load_sprites()
         rec = by_num.get(fx.get("helper", -1))
         fr = rec["frames"] if rec else None

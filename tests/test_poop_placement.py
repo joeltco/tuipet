@@ -151,3 +151,27 @@ def test_poop_costs_weight_not_hunger():
     assert p.weight < 20                     # the canon cost is WEIGHT
     assert p.mood == POOP_MOOD_INC or p.mood > 0   # relief
     assert p.obedience == o0                 # FloorPoopObedienceChange = 0 (shipped)
+
+
+def test_auto_care_clean_never_slides_piles_through_a_sleeping_pet():
+    # Auto-care cleans a SLEEPING pet with 4 poops (pet.py: asleep + poop>0 ->
+    # act="clean"), firing the assistantClean fx.  Canon adjustCharacterForFilth
+    # keeps the pet clamped to the filth's RIGHT edge as the piles sweep right, so
+    # they never cross the sleeping sprite (poop-overlap glitch, audit 2026-07-08).
+    if _live_num() is None:
+        pytest.skip("sprite assets not installed")
+    pet = _pet(4, [3, 3, 2, 1])
+    pet._fall_asleep()
+    s = _screen()
+    s.start_fx("assist", pet=pet, poop=4)
+    s.fx["act"] = "clean"
+    s.fx["sizes"] = [3, 3, 2, 1]
+    s.fx["helper"] = _live_num()
+    for step in range(s.fx["steps"]):
+        rows = s._pose_rows(pet, "sleep", 0)
+        xshift = A._filth_right(4) - (-step * 3) - A.PET_BASE_X   # the canon clamp
+        petpx = _pet_pixels(rows, xshift, False)
+        piles = {(x, y) for x, y in A._filth_pts(pet, 0, count=4,
+                                                 sizes=[3, 3, 2, 1], push=-step * 3)}
+        assert petpx.isdisjoint({(x, y) for x, y in piles}), \
+            f"step {step}: piles swept through the sleeping pet"
