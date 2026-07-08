@@ -420,3 +420,113 @@ def test_the_present_rides_the_whole_return_leg():
         s.advance_fx()
     assert s.fx is not None and s.fx["kind"] == "cheer"   # giftEnd -> Cheering
     assert mid_pixels > 0 and end_pixels > 0
+
+
+# ---- walk-pose + feeding audits (2026-07-08) ---------------------------------
+# Canon (SpriteAnim.java): the idle-family specials (yawning/poopDance/
+# surprising) play IN PLACE with stateAnims still running every tick, so the
+# condition column and filth stay up; idleUnwell resets Y ONLY; and eat() pads
+# BOTH the food (x31+pad) and the char (x55+pad) by the FULL filth width.
+# tuipet regressions pinned here: the tells teleported the pet to the anchor
+# and dropped the status UI; sick/startle re-anchored; a 1-2 pile block (its
+# edge == the anchor) let the food descend onto the slots.
+
+def _paint_harness(roamer_x=22.0):
+    from tuipet.anim import Roamer
+    from tuipet.app import SCREEN_COLS, SPRITE_W
+    s = type("_S", (), {})()
+    for m in ("paint", "_paint_fx", "_pose_rows", "_pose_rows_idx",
+              "_food_frames", "_fx_filth", "_background",
+              "_fxk_yawn", "_fxk_poopdance", "_fxk_eat"):
+        setattr(s, m, getattr(Screen, m).__get__(s))
+    s.fx = None
+    s.frame_i = 0
+    s._idle_expr = None
+    s.roamer = Roamer(roamer_x, SCREEN_COLS, SPRITE_W)
+    s.update = lambda *_: None
+    return s
+
+
+def _pose_pet(**kw):
+    p = Pet.new_egg(egg_type=1)
+    p._hatch_into_fresh()
+    p.num = 29                                    # a Rookie with the full frame set
+    p.anim = "idle"
+    for k, v in kw.items():
+        setattr(p, k, v)
+    return p
+
+
+def _capture_render(monkeypatch):
+    cap = {}
+
+    def fake(rows, cols, nrows, on, bg, **kw):
+        cap.clear()
+        cap.update(kw)
+        return ""
+
+    monkeypatch.setattr("tuipet.app.render_screen", fake)
+    return cap
+
+
+def test_yawn_tell_plays_in_place_with_status_ui(monkeypatch):
+    from tuipet import grid
+    from tuipet.app import COND_W, _filth_right
+    cap = _capture_render(monkeypatch)
+    s = _paint_harness()
+    p = _pose_pet(poop=2, poop_sizes=[2, 2], sick=True)
+    s.fx = {"kind": "yawn", "step": 5, "steps": 22, "icon": None,
+            "poop": 0, "old_num": None, "good": True}
+    s._paint_fx(p)
+    assert cap["xshift"] == s.roamer.xshift       # poses where it stood, not the anchor
+    assert cap["mirror"] == s.roamer.mirror       # facing kept (canon getIsMirror())
+    xs = {x for x, _ in cap["overlay"]}
+    assert any(x >= grid.X1 - COND_W for x in xs), "condition column must stay up"
+    assert any(grid.X0 <= x < _filth_right(2) for x in xs), "filth piles must stay up"
+
+
+def test_poopdance_tell_plays_in_place(monkeypatch):
+    cap = _capture_render(monkeypatch)
+    s = _paint_harness()
+    p = _pose_pet(poop=0)
+    s.fx = {"kind": "poopdance", "step": 4, "steps": 21, "icon": None,
+            "poop": 0, "old_num": None, "good": True}
+    s._paint_fx(p)
+    assert cap["xshift"] == s.roamer.xshift       # wiggle sways around its own spot
+    s.fx["step"] = 6                              # a sway beat (step//2 odd) rides ON the spot
+    s._paint_fx(p)
+    assert cap["xshift"] == s.roamer.xshift - 1
+
+
+def test_sick_shuffle_holds_the_roamers_spot(monkeypatch):
+    from tuipet import anim as anim_mod
+    cap = _capture_render(monkeypatch)
+    s = _paint_harness()
+    p = _pose_pet(poop=0, sick=True)
+    s.paint(p)                                    # canon idleUnwell: Y reset only
+    dx = anim_mod.sick_frame(0)[1]
+    assert cap["xshift"] == s.roamer.xshift + dx
+
+
+def test_startle_holds_the_roamers_spot(monkeypatch):
+    cap = _capture_render(monkeypatch)
+    s = _paint_harness()
+    p = _pose_pet(anim="startle")
+    s.paint(p)                                    # canon surprising(): jumps where it stands
+    assert cap["xshift"] == s.roamer.xshift
+    assert cap["mirror"] == s.roamer.mirror
+
+
+def test_food_descends_beside_the_piles(monkeypatch):
+    from tuipet.app import PET_BASE_X, _filth_right
+    cap = _capture_render(monkeypatch)
+    s = _paint_harness()
+    p = _pose_pet(poop=1, poop_sizes=[2])
+    s.fx = {"kind": "eat", "step": 0, "steps": 35, "icon": "f:0",
+            "poop": 0, "old_num": None, "good": True}
+    s._paint_fx(p)
+    fw = 8                                        # 24px food downsampled to the LCD
+    # canon pad: food+char slide right by the FULL filth width -- the food's
+    # left edge (char left - fw) lands exactly at the filth block's right edge
+    assert cap["xshift"] == (_filth_right(1) - PET_BASE_X) + fw
+    assert PET_BASE_X + cap["xshift"] - fw >= _filth_right(1)

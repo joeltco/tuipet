@@ -450,7 +450,10 @@ class Screen(Static):
         if pet.anim in ("idle", "walk") and pet.sick and pet.num != -1:
             si, dx = anim.sick_frame(self.frame_i)               # DVPet idleUnwell: collapse(10), weary(9) flash
             rows = (_fr[si] if si < len(_fr) else None) or first
-            xshift = dx
+            # canon idleUnwell resets Y ONLY (setSpriteCharDefaultY) and sways
+            # around the pet's current X -- it collapses where it stands, not
+            # at the anchor (walk-pose audit 2026-07-08)
+            xshift = self.roamer.xshift + dx
         elif pet.anim in ("idle", "walk") and pet.num != -1:
             # full-width roam (DVPet idleWalk); pose follows the roamer's step, and a
             # filth pile is a left wall it turns at (filthLabel walk bound).  On some
@@ -461,6 +464,11 @@ class Screen(Static):
             xshift, mirror = self.roamer.xshift, self.roamer.mirror
         else:
             mirror = pet.anim in data.MIRROR_ROLES and (self.frame_i // 6) % 2 == 1
+            if pet.anim.startswith("startle"):
+                # canon surprising() is an IDLE-family special: it jumps where
+                # it stands, facing kept (drawNumMirror(.., getIsMirror())) --
+                # never re-anchored (walk-pose audit 2026-07-08)
+                xshift, mirror = self.roamer.xshift, self.roamer.mirror
         if pet.num == -1 and pet.hatching:
             # DVPet hatch() (SpriteAnim 11556), driven by elapsed hatch time (1 interval==0.1s):
             # the egg rocks (moveRight/Left 3) over intervals 4..15, then CRACKS -- drawNum(1)
@@ -503,7 +511,11 @@ class Screen(Static):
             self.anim_key = pet.anim            # new state -> restart its cadence at beat 0
             self.frame_i = -1
         self.frame_i += 1
-        if pet is not None and pet.anim in ("idle", "walk") and pet.num != -1 and not pet.sick:
+        if (pet is not None and pet.anim in ("idle", "walk") and pet.num != -1
+                and not pet.sick and not self.fx):
+            # not during an fx: the roamer holds position while a pose or care
+            # anim plays (canon anims own LocX; the walk resumes after) -- else
+            # a seeded yawn/poopdance would SLIDE as the roamer kept stepping
             poop_right = _filth_right(pet.poop) if pet.poop else grid.X0
             cond = (pet.is_injured() or pet.is_fatigued() or pet.has_vitamin()
                     or pet.has_medicine() or pet.has_bandage())
@@ -751,9 +763,26 @@ class Screen(Static):
             sway = -1 if (3 <= step < 18 and (step // 3) % 2 == 1) else 0
             c.xshift = filth_clear + sway
             c.rows = self._pose_rows_idx(pet, 5 if new else 4)
+        elif fx["kind"] in ("yawn", "poopdance"):
+            # canon idle(): the tells are IDLE-family specials -- yawning()/
+            # poopDance() move RELATIVE to the pet's LocX with its current
+            # facing; only care anims resetScreen() to the anchor.  Seed the
+            # roamer so the pose plays where the pet stands (walk-pose audit
+            # 2026-07-08: it teleported to centre for every tell).
+            c.xshift = self.roamer.xshift
+            c.mirror = self.roamer.mirror
         painter = getattr(self, "_fxk_" + fx["kind"], None)
         if painter is not None:
             painter(pet, fx, step, c)
+        if fx["kind"] in ("yawn", "poopdance"):
+            # canon idle() keeps running stateAnims (checkStates/checkFilth/
+            # stateNumTic) while a special idle plays: the condition column and
+            # filth piles stay up and blinking through the pose.  Care anims
+            # keep their resetScreen() blackout -- canon hides those labels.
+            # (After the painter, so the emote tracks the sway's final x.)
+            c.overlay += _effect_overlay(pet, self.frame_i // 4, SCREEN_COLS, c.px_h,
+                                         tick=self.frame_i,
+                                         pet_right=PET_BASE_X + c.xshift + SPRITE_W)
         mirror = (c.mirror or fx["kind"] in ("dying", "poop")
                   or (fx["kind"] == "gift" and GIFT_OUT <= step < GIFT_OUT + GIFT_BACK)  # facing right, ambling back
                   or (fx["kind"] == "spit" and (step // 6) % 2 == 0))   # refuse(): head-shake flips
@@ -765,7 +794,18 @@ class Screen(Static):
         # DVPet eat(): 24px food descends in 4 stages (beats 0/2/4/6) toward the
         # mouth, then a chew triad alternates open-mouth(+8)/chew(+7) at beats
         # 10/14/18/22/26/30 while the food is consumed frame-by-frame; ends ~34.
-        if c.xshift == 0:
+        food0 = self._food_frames(fx.get("icon") or "f:0")
+        fw0 = len(food0[0][0]) if (food0 and food0[0] and food0[0][0]) else 8
+        if getattr(pet, "poop", 0):
+            # canon eat(): pad = _filthLabel.getSizeX() -- BOTH the food
+            # (x31+pad) and the char (x55+pad) slide right by the FULL filth
+            # width whenever piles exist, however narrow the block.  The old
+            # clear-shift was 0 for 1-2 piles (their edge == the anchor), so
+            # the food descended ONTO the slots (feeding audit 2026-07-08).
+            # Piles stay visible: checkFilth runs inside eat().
+            n = min(pet.poop, POOP_MAX_PILES)
+            c.xshift = (_filth_right(n) - PET_BASE_X) + fw0
+        elif c.xshift == 0:
             c.xshift = -1                                  # no filth: DVPet char x29 of 104 (~28%)
         ma = fx.get("munch_at")
         if ma is not None and step >= ma:
@@ -789,14 +829,12 @@ class Screen(Static):
             if step >= b:
                 pose_i = chew[b]
         c.rows = self._pose_rows_idx(pet, pose_i)
-        food = self._food_frames(fx.get("icon") or "f:0")
+        food = food0
         if food:
-            fw = len(food[0][0]) if (food[0] and food[0][0]) else 8
-            if c.xshift > 0:                               # filth on screen: DVPet pads BOTH the food and
-                c.xshift += fw                             # the char right of it (foodLabel x31+pad), so the
-            #                                                food descends beside the piles, never onto them
+            fw = fw0
             # DVPet: the food's RIGHT edge meets the pet's LEFT edge (foodLabel x31+24 == char x55),
             # so it descends right into the mouth -- abut it instead of stranding it on the far left.
+            # (The filth pad above already moved BOTH food and char clear of the piles.)
             fx_x = max(0, PET_BASE_X + c.xshift - fw)
             stage = 0 if step < 2 else 1 if step < 4 else 2 if step < 6 else 3
             fy = (0, 4, 9, 13)[stage]                      # DVPet descent y 0/11/22/33 of 60 -> *(24/60)
@@ -1196,7 +1234,10 @@ class Screen(Static):
             c.xshift += -1 if (step // 2) % 2 == 1 else 0
         else:
             c.rows = self._pose_rows_idx(pet, 4)
-            c.mirror = ((step - 12) // 2) % 2 == 1
+            # canon drawNumMirror(4, !getIsMirror()): the flip alternates
+            # RELATIVE to the pet's current facing (seeded from the roamer)
+            if ((step - 12) // 2) % 2 == 1:
+                c.mirror = not c.mirror
 
     def _fxk_dying(self, pet, fx, step, c):
         # DVPet dying() (SpriteAnim 13179): the collapsed pet (pose 10, mirrored)
