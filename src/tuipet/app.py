@@ -516,11 +516,19 @@ class Screen(Static):
             self._idle_expr = None                               # any non-idle state clears the held expression
 
     # ---- care-action animations (DVPet SpriteAnim eat/clean/cheer) -----------
-    def start_fx(self, kind, icon=None, poop=0, old_num=None, pet=None, starving=False, good=True):
+    def start_fx(self, kind, icon=None, poop=0, old_num=None, pet=None, starving=False, good=True, script=None):
         steps = {"eat": 35, "cheer": 31, "jeer": 31, "clean": 22, "spit": 25, "evolve": 41, "dying": 50, "dna_charge": 44, "play": 48, "heal": 24, "poop": 25, "poopdance": 21, "yawn": 22, "toilet": 38, "losing": 50,
                  "gift": GIFT_OUT + GIFT_BACK + GIFT_HOLD, "assist": 28, "inherit": 50}.get(kind, 12)
         self.fx = {"kind": kind, "step": 0, "steps": steps, "icon": icon, "poop": poop,
                    "old_num": old_num, "good": good}
+        if kind == "item":
+            # a scripted item-use (itemfx: the per-AnimationType canon tables)
+            from . import itemfx
+            sc = itemfx.SCRIPTS[script]
+            self.fx["script"] = script
+            self.fx["steps"] = sc["steps"]
+            self.fx["snds"] = dict(sc["snds"])
+            self.fx["end"] = sc["end"]
         if kind == "eat":
             # DVPet eat(): each chew beat is scaled by pow(N, mod) -- a starving pet or
             # a glutton wolfs food down (mod 0.9, ends ~beat 23), a picky eater dawdles
@@ -624,8 +632,13 @@ class Screen(Static):
         had_filth = self.fx.get("poop", 0) > 0
         chain_eat = self.fx.get("chain_eat")
         pet_ref = self.fx.get("pet_ref")
+        item_end = self.fx.get("end")
         self.fx = None
-        if kind == "clean" and had_filth:
+        if kind == "item" and item_end:
+            # canon: playing()/interact/study/... resolve into Cheering;
+            # angrySurprise resolves into Jeering (itemfx script tables)
+            self.start_fx(item_end, good=True)
+        elif kind == "clean" and had_filth:
             # DVPet clean(): the cheer chains ONLY when filth was actually washed
             # (an empty-room wash just ends -- no celebration).
             self.start_fx("cheer")
@@ -940,13 +953,14 @@ class Screen(Static):
         # its own frames (canon jumping(): _itemLabel at the pet's feet, 2->1
         # per hop -- the long-flagged unported piece; play audit 2026-07-05)
         if fx.get("icon"):
-            from .render import downsample
             frames = data.load_icons().get(fx["icon"]) or []
             frames = [f for f in frames if f]
             if frames:
                 # canon _itemLabel: frame 1 while the pet is AIRBORNE (rise
-                # start -> landing), frame 2 while it rests between hops
-                toy = downsample(frames[(0 if air else 1) % len(frames)], 3)
+                # start -> landing), frame 2 while it rests between hops.
+                # RAW frames -- the /3 downsample crushed the toy to 2px
+                # (item-anim audit 2026-07-07)
+                toy = frames[(0 if air else 1) % len(frames)]
                 if toy:
                     # BESIDE the feet (the eat fx's item-side convention):
                     # canon keeps the pet elevated over the toy for the whole
@@ -955,6 +969,25 @@ class Screen(Static):
                     tw, th = max(len(r) for r in toy), len(toy)
                     tx = max(0, PET_BASE_X + c.xshift - tw - 1)
                     c.overlay += _blit(toy, tx, c.px_h - 2 - th)
+
+    def _fxk_item(self, pet, fx, step, c):
+        # a scripted item-use (item-anim audit 2026-07-07): the item's OWN
+        # icon frames animate on the canon stage -- item left/beside/feet,
+        # pet right -- per the itemfx table for its AnimationType
+        from . import itemfx
+        # icons are extracted at native size (~8x5): draw them RAW -- the /3
+        # downsample crushed toys to 2px specks (the "broken animations")
+        frames = [f for f in (data.load_icons().get(fx["icon"]) or []) if f]
+        iw = max((max(len(r) for r in f) for f in frames), default=8)
+        ih = max((len(f) for f in frames), default=8)   # tallest frame owns the floor
+        fr, pose, ix, iy, pdx, pdy = itemfx.state(fx["script"], step, iw, ih, c.px_h)
+        c.rows = self._pose_rows_idx(pet, pose)
+        c.xshift = itemfx.PET_X - PET_BASE_X + pdx
+        c.yshift = -pdy
+        if frames:
+            bm = frames[fr % len(frames)]
+            # bottom-anchor: shorter frames sit ON the floor line, not above it
+            c.overlay += _blit(bm, ix, iy + ih - len(bm))   # _stamp clips
 
     def _fxk_jeer(self, pet, fx, step, c):
         # DVPet jeer(goodScold): the SCOLD reaction -- pose alternates down(+4)/up(+6)
@@ -1308,10 +1341,10 @@ class TuiPetApp(App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("DNA divergence: charge one Field to steer evolution onto "
-                 "the wild road (DNA ▸ Divergence). Lobby chat polished: "
-                 "PgUp scrolls the log, PMs/mentions highlight, your lines "
-                 "dim. Album counter on the DigiCore.")
+    WHATS_NEW = ("Toys come alive! Every item now plays its real device "
+                 "animation — balls bounce, balloons play, dumbbells lift, "
+                 "showers shower. Plus DNA divergence (DNA ▸ Divergence) "
+                 "and lobby chat scrollback (PgUp).")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and
@@ -2579,8 +2612,11 @@ class TuiPetApp(App):
             # a manual visit: poopToilet with the item on the floor
             self.screen_w.start_fx("toilet", icon=msg[1])
         elif isinstance(msg, tuple) and msg and msg[0] == "play":
-            # a bag toy: DVPet jumping() -- the pet hops over its real toy
+            # the Trampoline (Jump): DVPet jumping() -- the pet hops over it
             self.screen_w.start_fx("play", icon=msg[1])
+        elif isinstance(msg, tuple) and msg and msg[0] == "item_use":
+            # every other AnimationType plays its own canon script (itemfx)
+            self.screen_w.start_fx("item", icon=msg[1], script=msg[2])
         elif isinstance(msg, tuple) and msg and msg[0] == "inherit":
             mem = msg[1]
             self.flash(f"[b]{mem.get('name', '?')}[/]'s power lives on!  "

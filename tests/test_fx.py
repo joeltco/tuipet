@@ -154,7 +154,10 @@ def test_bag_toy_plays_the_hop_over_its_real_toy():
     rows = pan._rows()
     pan.cursor = next(i for i, e in enumerate(rows) if e["key"] == "i:3")
     r = pan.key("enter")
-    assert r == ("done", ("play", "i:3"))         # the bag hands off the toy
+    # item-anim audit 2026-07-07: the Ball routes to its OWN canon script
+    # (bouncing()); the hop below is exercised directly -- it now belongs to
+    # the Trampoline (Jump) alone
+    assert r == ("done", ("item_use", "i:3", "Bounce"))
 
     class S(app_mod.Screen):
         def __init__(self):

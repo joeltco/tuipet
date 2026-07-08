@@ -158,9 +158,18 @@ class ShopPanel:
                     return ("done", ("eat", e["key"]))
                 if (data.shop_category(dict(e)) == "toy"
                         and self.pet.anim == "happy"):
-                    # canon jumping(): playing with a toy hops OVER it -- the
-                    # bag hands the app the toy for the play fx (2026-07-05)
-                    return ("done", ("play", e["key"]))
+                    # each AnimationType plays ITS OWN canon script (item-anim
+                    # audit 2026-07-07: every toy used to funnel into
+                    # jumping(), canon's Trampoline hop) -- the itemfx table
+                    # drives the fx; Jump keeps the ported hop; Idling (the
+                    # Futon) plays nothing beyond its care effect, per canon
+                    from . import itemfx
+                    act = (e.get("action") or "").strip()
+                    if act in itemfx.SCRIPTS:
+                        return ("done", ("item_use", e["key"], act))
+                    if act == "Jump":
+                        return ("done", ("play", e["key"]))
+                    return None if act in itemfx.NO_FX else ("done", ("play", e["key"]))
         elif k == "r" and self.mode == "bag" and rows:
             self.msg = self.pet.sell(rows[min(self.cursor, n - 1)])
         elif k in ("escape", "o", "i"):     # o opens the shop, i opens the bag; both also close
