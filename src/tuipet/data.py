@@ -707,6 +707,10 @@ def _consumable(row, id_field):
         "seconds": int(num("Seconds")),     # DVPet setTotalLifespan: lifespan delta (sec)
         "temp": int(num("Temp")),           # DVPet temp change (clamped 0..MaxTemp=100)
         "sleep": flag("Sleep"),             # DVPet item Sleep flag: induce sleep
+        # items.csv Disturb: using this item WAKES a sleeping pet -- canon useItem's
+        # `if (item.disturb()) this.disturb()`.  Every item disturbs but the Futon
+        # (Disturb=FALSE); foods have no column, so flag() defaults them to False.
+        "disturb": flag("Disturb"),
         # DVPet FoodID/ItemID cols: ";"-list of consumables this one yields when used
         # (a "crafter" -- Toy Oven bakes random foods, Chocolate Egg pops random capsules)
         "unlocks_food": _idlist(row.get("FoodID")),

@@ -4550,6 +4550,13 @@ class Pet:
             return f"{e['name']} has no use yet."   # action-item whose system is unbuilt
         if (_g := self._guard(asleep_blocks=False)) is not None:
             return _g
+        # canon PhysicalState.useItem opens with `if (item.disturb()) this.disturb()`:
+        # a Disturb-flagged item WAKES a sleeping pet before it applies -- every item
+        # disturbs EXCEPT the Futon (items.csv Disturb=FALSE, the one sleep aid).  The
+        # item still lands; the grumpy wake (mood/spirit dec, sick risk, postponed sleep)
+        # is a side effect, unlike feed/care which _guard() out entirely.
+        if self.asleep and e.get("disturb"):
+            self._disturbed()
         is_item = key.startswith("i:")
         # Life Recovery (item 27, AdventureLifeInc; canon PhysicalState.useItem
         # gates the item out at MaxAdventureLife): +1 Digital World life.
@@ -4632,7 +4639,8 @@ class Pet:
                 self.effect_t = float(eff["duration"])
                 self._eff_acc = 0.0
                 self._eff_asleep = self.asleep
-                self._set_anim("happy", 1.4)
+                if not self.asleep:                      # a Futon slid under a sleeper
+                    self._set_anim("happy", 1.4)         # leaves it dozing, not grinning
                 return f"{self.name} settles onto the {e['name']}."
         # crafter (DVPet FoodID/ItemID unlock list): yields a random treat from its list --
         # the Toy Oven bakes a random food, the Chocolate Egg pops a random capsule.

@@ -188,11 +188,12 @@ def test_hatch_render_follows_the_canon_beats():
     now.  Pinned through the real paint path on both drive styles (direct
     timer set AND accumulated advance_hatch subtraction)."""
     from tuipet import app as app_mod
+    from tuipet import arena as arena_mod   # Screen resolves render_screen here
     from tuipet import egg as egg_mod
     from tuipet.pet import Pet
 
     cap = {}
-    real = app_mod.render_screen
+    real = arena_mod.render_screen
 
     def spy(rows, cols, r, on, bg, mirror=False, xshift=0, overlay=None, bgimg=None):
         cap["rows"], cap["xshift"] = rows, xshift
@@ -209,8 +210,8 @@ def test_hatch_render_follows_the_canon_beats():
         def update(self, t):
             pass
 
-    old = app_mod.render_screen
-    app_mod.render_screen = spy
+    old = arena_mod.render_screen
+    arena_mod.render_screen = spy
     try:
         frames = egg_mod.record(1)["frames"]
 
@@ -245,7 +246,7 @@ def test_hatch_render_follows_the_canon_beats():
             assert [x for w, x in seq[4:16]] == [3, 6, 3, 0] * 3  # the smooth rock
             assert all(x == 0 for w, x in seq[:4]) and all(x == 0 for w, x in seq[16:])
     finally:
-        app_mod.render_screen = old
+        arena_mod.render_screen = old
 
 
 def test_stuffed_meal_drops_the_leftovers():
@@ -465,7 +466,7 @@ def _capture_render(monkeypatch):
         cap.update(kw)
         return ""
 
-    monkeypatch.setattr("tuipet.app.render_screen", fake)
+    monkeypatch.setattr("tuipet.arena.render_screen", fake)
     return cap
 
 

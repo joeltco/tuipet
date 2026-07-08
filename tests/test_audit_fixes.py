@@ -149,12 +149,13 @@ def test_wolf_down_decided_before_the_meal():
 
 def test_dark_room_stays_dark_through_fx():
     import tuipet.app as app
+    import tuipet.arena as arena          # Screen resolves render_screen here now
     seen = {}
-    real = app.render_screen
+    real = arena.render_screen
     def spy(rows, cols, r, on, bg, **kw):
         seen.update(bg=bg, bgimg=kw.get("bgimg"))
         return real(rows, cols, r, on, bg, **kw)
-    app.render_screen = spy
+    arena.render_screen = spy
     try:
         class S(app.Screen):
             def __init__(self):
@@ -168,7 +169,7 @@ def test_dark_room_stays_dark_through_fx():
         s._paint_fx(p)
         assert seen["bg"] == "#000000" and seen["bgimg"] is None
     finally:
-        app.render_screen = real
+        arena.render_screen = real
 
 
 def test_attention_predicate_is_shared():

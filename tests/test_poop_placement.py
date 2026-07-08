@@ -10,6 +10,7 @@ import random
 import pytest
 
 from tuipet import app as A
+from tuipet import arena as AR          # Screen resolves render_screen here
 from tuipet import data, grid
 from tuipet.pet import Pet
 
@@ -80,7 +81,7 @@ def test_mon_never_walks_over_the_piles(poop, sizes, monkeypatch):
     pet = _pet(poop, sizes)
     piles = _pile_union(pet)
     seen = []
-    real = A.render_screen
+    real = AR.render_screen
 
     def spy(rows, cols, rows_n, on, bg, baseline=True, mirror=False, xshift=0,
             yshift=0, overlay=None, bgimg=None):
@@ -88,7 +89,7 @@ def test_mon_never_walks_over_the_piles(poop, sizes, monkeypatch):
         return real(rows, cols, rows_n, on, bg, baseline=baseline, mirror=mirror,
                     xshift=xshift, yshift=yshift, overlay=overlay, bgimg=bgimg)
 
-    monkeypatch.setattr(A, "render_screen", spy)
+    monkeypatch.setattr(AR, "render_screen", spy)
     s = _screen()
     for _ in range(200):                              # roam the full walkable width
         s.advance(pet)
@@ -114,7 +115,7 @@ def test_eat_fx_keeps_food_and_pet_clear_of_piles(monkeypatch):
     piles = _pile_union(pet)
     edge = A._filth_right(4)
     seen = []
-    real = A.render_screen
+    real = AR.render_screen
 
     def spy(rows, cols, rows_n, on, bg, baseline=True, mirror=False, xshift=0,
             yshift=0, overlay=None, bgimg=None):
@@ -122,7 +123,7 @@ def test_eat_fx_keeps_food_and_pet_clear_of_piles(monkeypatch):
         return real(rows, cols, rows_n, on, bg, baseline=baseline, mirror=mirror,
                     xshift=xshift, yshift=yshift, overlay=overlay, bgimg=bgimg)
 
-    monkeypatch.setattr(A, "render_screen", spy)
+    monkeypatch.setattr(AR, "render_screen", spy)
     s = _screen()
     s.start_fx("eat", "f:0", pet=pet)
     for _ in range(s.fx["steps"] - 1):

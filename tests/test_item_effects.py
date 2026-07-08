@@ -58,3 +58,42 @@ def test_food_fatigue_and_depression_columns_are_read():
     by = {e["name"]: e for e in f.values()}
     assert by["Steak"]["unfatigue"] is True                # foods.csv FatiguedRelieved
     assert by["Cake"]["undepressed"] is True               # foods.csv DepressedRelieved
+
+
+# ---- canon useItem disturb rule (Joel 2026-07-08) ---------------------------
+# PhysicalState.useItem opens with `if (item.disturb()) this.disturb()`: a
+# Disturb-flagged item WAKES a sleeping pet before it applies.  items.csv marks
+# EVERY item Disturb=TRUE except the Futon (the one sleep aid).  The item still
+# lands; the wake is the side effect.
+
+def _futon_key():
+    _, i = data._load_consumables()
+    return next(f"i:{k}" for k, e in i.items() if e["name"] == "Futon")
+
+
+def test_disturb_flag_is_plumbed_from_items_csv():
+    assert data.consumable_by_key(_key("Ball"))["disturb"] is True
+    assert data.consumable_by_key(_futon_key())["disturb"] is False
+
+
+def test_disturb_item_wakes_a_sleeping_pet_then_applies():
+    p = Pet.from_num(29); p.stage = "Rookie"; p.obedience = 500
+    p._fall_asleep()
+    assert p.asleep
+    key = _key("Ball")
+    p.add_item(key)
+    msg = p.use_item(key)
+    assert p.asleep is False                 # canon this.disturb() woke it
+    assert "wants nothing" not in msg        # ...and the toy still landed
+
+
+def test_futon_slides_under_a_sleeper_without_waking_it():
+    p = Pet.from_num(29); p.stage = "Rookie"; p.obedience = 500
+    p._fall_asleep()
+    assert p.asleep
+    key = _futon_key()
+    p.add_item(key)
+    p.use_item(key)
+    assert p.asleep is True                   # Disturb=FALSE: the one item that lets it doze
+    assert p.effect_id >= 0                    # the futon care buff applied
+    assert p.anim != "happy"                   # no grin on a sleeping pet
