@@ -84,7 +84,15 @@ def load_lines():
                    "rule": parse_rule(raw["Rule"]), "rule_text": raw["Rule"].strip(),
                    "bedtime": raw["Bedtime"].strip(),
                    "parents": [int(p) for p in parents if p != "egg"]}
-            line["members"][num] = row
+            mem = line["members"].get(num)
+            if mem is None:
+                line["members"][num] = row
+            else:
+                # a dual-road target (ver1 Devimon: Agumon needs TR 0-15,
+                # Betamon TR 16+ -- DM20 canon) keeps ONE row per parent so
+                # each road judges by its own rule; members unions the
+                # parentage so the curation invariants see every edge
+                mem["parents"] = sorted(set(mem["parents"]) | set(row["parents"]))
             if "egg" in parents:
                 line["root"] = num
             for p in row["parents"]:
@@ -246,7 +254,12 @@ def requirement_report(pet, num):
     evolution.requirement_report: (met, text). With OR alternatives, shows the
     closest one (fewest unmet atoms)."""
     line = load_lines().get(pet.line_id)
-    row = line["members"].get(num) if line else None
+    row = None
+    if line:
+        # a dual-road target has one row per parent -- report the rule for
+        # THIS pet's road (its child row), not whichever row loaded first
+        row = next((r for r in line["children"].get(pet.num, [])
+                    if r["num"] == num), None) or line["members"].get(num)
     if row is None:
         return [(False, "not in this line")]
     best, best_unmet = None, None

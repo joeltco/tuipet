@@ -47,9 +47,16 @@ def test_rule_grammar_rejects_junk():
 def test_ver1_loads_shaped_like_the_spec():
     v1 = lines.load_lines()["ver1"]
     assert v1["root"] == 1411
-    assert len(v1["members"]) == 13
+    assert len(v1["members"]) == 16
+    # the Koromon split (DM20 canon; the Betamon half was missing until
+    # 2026-07-07 -- Joel: "wheres the betamon line on the 1st egg???")
+    assert [r["num"] for r in v1["children"][1455]] == [29, 37]
     # first-match order is the data: Numemon's catch-all must be LAST
     assert [r["num"] for r in v1["children"][29]] == [93, 102, 95, 124, 116]
+    assert [r["num"] for r in v1["children"][37]] == [102, 95, 90, 110, 116]
+    # dual-road targets keep one row per parent; members unions the parentage
+    assert v1["members"][102]["parents"] == [29, 37]
+    assert v1["members"][95]["parents"] == [29, 37]
     assert lines.line_for_hatch(1411) == "ver1"
     assert lines.line_for_hatch(2) == ""          # the duplicate Botamon is NOT a root
 
@@ -72,6 +79,49 @@ def test_agumon_matrix_every_combo_lands_on_exactly_one_row():
             for of in (0, 2, 3, 6):
                 got = lines.select_line(_Counters(29, cm=cm, tr=tr, of=of))
                 assert got == _expected_champion(cm, tr, of), (cm, tr, of, got)
+
+
+def test_koromon_splits_on_care_mistakes():
+    """DM20 Ver.1: Agumon at 0-2 care mistakes, Betamon at 3+ (humulos chart).
+    The clock alone no longer decides the first egg's Rookie."""
+    assert lines.select_line(_Counters(1455, cm=0)) == 29
+    assert lines.select_line(_Counters(1455, cm=2)) == 29
+    assert lines.select_line(_Counters(1455, cm=3)) == 37
+    assert lines.select_line(_Counters(1455, cm=9)) == 37
+
+
+def _expected_betamon_champion(cm, tr, of):
+    if cm <= 2:
+        return 102 if tr >= 16 else 95
+    if 8 <= tr <= 15:
+        return 90 if of <= 2 else 110
+    return 116
+
+
+def test_betamon_matrix_every_combo_lands_on_exactly_one_row():
+    """The Betamon road mirrors canon exactly: Devimon/Meramon flip their
+    training brackets vs Agumon's, Airdramon/Seadramon split the 8-15
+    training band by overfeed, Numemon takes the rest (TR 0-7 | 16+)."""
+    for cm in range(0, 6):
+        for tr in (0, 7, 8, 15, 16, 25):
+            for of in (0, 2, 3, 6):
+                got = lines.select_line(_Counters(37, cm=cm, tr=tr, of=of))
+                assert got == _expected_betamon_champion(cm, tr, of), (cm, tr, of, got)
+
+
+def test_betamon_champions_feed_the_ver1_ultimates():
+    """Canon ultimate roads: Airdramon -> MetalGreymon, Seadramon -> Mamemon."""
+    assert lines.select_line(_Counters(90, log=[1] * 12)) == 220
+    assert lines.select_line(_Counters(110, log=[1] * 12)) == 237
+
+
+def test_requirement_report_shows_this_roads_rule():
+    """Devimon is reachable from BOTH Rookies with different training
+    brackets -- the data book must show the rule for the pet's own road."""
+    agu = "".join(t for _, t in lines.requirement_report(_Counters(29), 102))
+    beta = "".join(t for _, t in lines.requirement_report(_Counters(37), 102))
+    assert "0-15" in agu and "16+" not in agu
+    assert "16+" in beta and "0-15" not in beta
 
 
 def test_perfect_gate_is_the_rolling_window():

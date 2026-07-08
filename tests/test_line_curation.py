@@ -10,8 +10,10 @@ from tuipet.pet import Pet
 
 STAGES = ["Fresh", "InTraining", "Rookie", "Champion", "Ultimate", "Mega"]
 
-# edges ver1 declares beyond the corpus graph (LINES_SPEC §3, by design)
-DECLARED_EDGES = {(29, 102), (29, 95), (102, 220)}
+# edges ver1 declares beyond the corpus graph (LINES_SPEC §3, by design;
+# the Betamon road joined 2026-07-07 -- DM20 canon, humulos chart)
+DECLARED_EDGES = {(29, 102), (29, 95), (102, 220),
+                  (1455, 37), (37, 102), (37, 95), (37, 90), (90, 220)}
 
 
 def _all_lines():
