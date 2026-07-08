@@ -2262,12 +2262,13 @@ class Pet:
         # the cap (setExercise(getExerciseLimit() - 1)) -- DNA can't top you
         # off.  Canon's limit is the species MaxStrength (4..14); tuipet's
         # gauge is the real toy's FOUR HEARTS everywhere (UI/training/decay),
-        # so the limit folds to 4 -- the established design, kept.
+        # so the limit folds to 4 -- the established design, kept.  The cap is
+        # limit-1 (=3), but it is a CEILING, never a penalty: a pet already at
+        # 4 (trained to full) keeps its heart -- on the real device limit-1 of
+        # a wide byte gauge is no real drop; the 4-heart fold turned that into
+        # a whole heart, so clamp up-only (DNA audit 2026-07-08).
         gain = DNA_STRENGTH_CHANGE * amount
-        if self.strength + gain < 4:
-            self.strength = max(0, self.strength + gain)
-        else:
-            self.strength = 3
+        self.strength = max(self.strength, min(self.strength + gain, 3))
         same = field == self.field
         self._set_mood(self.mood + (DNA_SAME_FIELD_MOOD if same else DNA_DIFF_FIELD_MOOD) * amount)
         self._set_enthusiasm(self.enthusiasm
