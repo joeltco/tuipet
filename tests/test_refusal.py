@@ -118,3 +118,53 @@ def test_travel_refusal_halts_the_journey():
     ev = adv.travel()
     assert ev == ("refused", None)
     assert adv.location == 0                        # not a single step taken
+
+
+# ---- refusal recalibration (playability divergence, Joel 2026-07-08) ----------
+# A normally-raised pet obeys care commands; a neglected one still visibly
+# rebels; and a stride-long walk press is not a coin-flip.  See
+# REFUSE_OBEDIENCE_GRACE (pet.py) and the stop_fires note (adventure.py).
+
+def _obey_rate(p, call, n=3000):
+    refused = 0
+    for _ in range(n):
+        p.compliance = False
+        if call(p):
+            refused += 1
+    return 1.0 - refused / n
+
+
+def test_normally_raised_pet_mostly_obeys_care():
+    # obedience 60 (a middling, decently-raised Rookie) obeys the great majority
+    # of feeds and drills — the pre-grace rate here was ~40-55% refusal.
+    p = _pet(obedience=60, mood=0)
+    p._set_energy(p.max_energy)
+    assert _obey_rate(p, lambda q: q.check_refused(food=_meat())) >= 0.80
+    assert _obey_rate(p, lambda q: q.check_refused(attr="Data")) >= 0.80
+
+
+def test_neglected_pet_still_rebels():
+    # the grace lifts the floor, it does not remove the mechanic: an untrained
+    # pet (obedience 0) still refuses a meaningful share of commands.
+    p = _pet(obedience=0, mood=0)
+    p._set_energy(p.max_energy)
+    assert _obey_rate(p, lambda q: q.check_refused(food=_meat())) <= 0.75
+
+
+def test_walk_press_is_not_a_coin_flip_at_reasonable_energy():
+    # a half-energy, middling pet used to refuse ~50% of travel PRESSES because
+    # the stop roll composed over the whole ~2250-fire stride; now it composes
+    # over WALK_STEP_MIN fires, so a press almost always walks.
+    import random
+    from tuipet.adventure import Adventure
+    random.seed(7)
+    p = _pet(compliance=False, obedience=50)
+    adv = Adventure(p)
+    refused = 0
+    for _ in range(300):
+        p._set_energy(p.max_energy // 2)            # hold at half energy
+        adv.location = 0                            # keep re-pressing from the start
+        p.compliance = p.refused = False
+        if adv.travel() == ("refused", None):
+            refused += 1
+    assert refused <= 15                            # << the old ~150/300

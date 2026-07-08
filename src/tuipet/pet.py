@@ -70,6 +70,17 @@ ENTHUSIASM_LAPSE_INC = 2                   # EnthusiasmLapseInc (asleep, -enth -
 # obedience, health and win-rate.  Every number is verbatim from the binary.
 CAN_REFUSE = True
 REFUSE_CHANCE = 100                 # RefuseRate -> Random.nextInt(REFUSE_CHANCE)
+# DELIBERATE DIVERGENCE (refusal recalibration, Joel 2026-07-08): canon compares
+# a roll in [0,100) against obedience on the 0..150 scale, so a pet only reliably
+# obeys once obedience clears ~100 -- and rookies live at 25..75, refusing half to
+# all of every feed/train/battle/care command.  Canon absorbs that because its
+# clock runs for days and each refusal is a brief autonomous blip; tuipet's
+# compressed, keypress-driven loop turns each into a hard "scold it again" stop.
+# A flat grace added to obedience in the refusal gate (NOT the stat itself) lifts a
+# normally-raised pet (obed 50..75) to ~85..100% compliance while a neglected one
+# (obed 0..25) still visibly rebels (refuses ~35..60%).  Applied once in
+# check_refused so every branch (food/attr/item/activity) shares it.
+REFUSE_OBEDIENCE_GRACE = 40.0
 OBEDIENCE_REFUSAL_CAP = 100         # ObedienceRefusalCap (the refusal-ROLL bound only)
 OBEDIENCE_MOOD_MOD = 15.0           # ObedienceMoodModCoefficient
 OBEDIENCE_TIME_MOD = 10.0           # ObedienceTimeModCoefficient
@@ -2976,7 +2987,9 @@ class Pet:
             return False
         r = random.randrange(REFUSE_CHANCE)
         base, mood_factor, obey_all = self._obedience_factors()
-        obed = self._adjusted_obedience()
+        # REFUSE_OBEDIENCE_GRACE: the playability lift (see the constant) -- a
+        # normally-raised pet obeys care commands, a neglected one still rebels
+        obed = self._adjusted_obedience() + REFUSE_OBEDIENCE_GRACE
         refused = False
         if energy_change and self.energy + math.ceil(energy_change * self.max_energy) < 0:
             refused = True                       # can't afford the energy -> auto-refuse

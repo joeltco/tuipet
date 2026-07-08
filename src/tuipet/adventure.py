@@ -246,14 +246,22 @@ class Adventure:
             if e:
                 self.last = f"Ambush! {e['name']}!"
                 return ("encounter", e)
-        # WorldMap.step: checkStopTravel rolls per controller fire (9 per walked
-        # step, like the encounter roll) -- a refusal halts the journey in place
-        # per-fire mechanics compound over the WHOLE stride (stride x WalkStepMin
-        # fires), exactly like the encounter roll -- rolling only 9 fires made
-        # walk-refusals and discovers ~stride-times rarer than canon (audit 2026-07)
+        # Discover/encounter mechanics compound per controller fire over the WHOLE
+        # stride (stride x WalkStepMin), matching canon's per-tick roll count.
         fires = max(1, self.stride) * WALK_STEP_MIN
+        # DELIBERATE DIVERGENCE (refusal recalibration, Joel 2026-07-08): the
+        # stop-travel refusal does NOT compound over the full stride.  Canon rolls
+        # checkStopTravel per controller fire during an AUTONOMOUS walk where each
+        # refusal is a brief self-resuming pause; tuipet collapses a 250-step
+        # stride into ONE keypress and turns each refusal into a hard stop that
+        # needs a re-walk/scold.  Composing over ~2250 fires made a drained pet
+        # refuse 50-99% of every press (energy-driven spiral, since walking
+        # drains energy).  Roll it over WALK_STEP_MIN fires only -- a rested pet
+        # essentially never balks, a truly exhausted one still occasionally digs
+        # in (the pre-audit felt rate Joel remembers).
+        stop_fires = WALK_STEP_MIN
         p_stop = self.pet.stop_travel_prob()
-        if p_stop > 0 and random.random() < 1.0 - (1.0 - p_stop) ** fires:
+        if p_stop > 0 and random.random() < 1.0 - (1.0 - p_stop) ** stop_fires:
             self.pet.stop_travel_effects()
             self.last = f"{self.pet.name} refuses to walk!"
             return ("refused", None)
