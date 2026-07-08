@@ -110,6 +110,98 @@ def test_hand_curated_lines_survived_the_curator():
     L = _all_lines()
     assert [r["num"] for r in L["ver1"]["children"][29]] == [93, 102, 95, 124, 116]
     assert len(L["verX"]["members"]) == 15
+    # sakumon carries the canon Zuba/Hack uppers (humulos; canon scan 2026-07-08)
+    assert [r["num"] for r in L["sakumon"]["children"][161]] == [369]   # Duramon
+    assert [r["num"] for r in L["sakumon"]["children"][160]] == [371]   # SaviorHackmon
+    assert [r["num"] for r in L["sakumon"]["children"][369]] == [370]   # Durandamon
+    assert [r["num"] for r in L["sakumon"]["children"][371]] == [372]   # Jesmon
+    # verE keeps its canon battle gate to Meicrackmon
+    assert L["verE"]["members"][389]["rule_text"] == "WIN 12/15"
+
+
+# ---- first-match semantics invariants (canon scan 2026-07-08) ---------------
+# The 07-07 sweep verified the GRAPH and missed that first-match ORDER had
+# 137 forms shadowed dead (a shared TIME catch-all sorted before the second
+# rookie's rows).  These two invariants close that class for good.
+
+def _care_only(rule):
+    """Strip battle-ish atoms; None if any alternative is battle-gated."""
+    return [[a for a in alt if a[0] not in ("win", "btl", "lv", "ko6", "area")]
+            for alt in rule]
+
+
+def _has_battle(rule):
+    return any(a[0] in ("win", "btl", "lv", "ko6", "area")
+               for alt in rule for a in alt)
+
+
+def _matches_care(rule, cm, tr, of):
+    vals = {"cm": cm, "tr": tr, "of": of}
+    for alt in rule:
+        if all(vals[k] >= a and (b is None or vals[k] <= b) for k, a, b in alt):
+            return True
+    return False
+
+
+_CARE_SPACE = [(cm, tr, of)
+               for cm in (0, 1, 2, 3, 4, 6, 20)
+               for tr in (0, 4, 5, 7, 8, 15, 16, 17, 40)
+               for of in (0, 1, 2, 3, 9)]
+
+
+def _live_children(line, parent):
+    """Child nums actually winnable under first-match order: a row is dead if
+    every care state it could fire on hits an earlier care-only row first
+    (battle atoms are satisfiable, but can't beat an earlier care-only match)."""
+    rows = line["children"].get(parent, [])
+    out = []
+    for i, row in enumerate(rows):
+        earlier = [r["rule"] for r in rows[:i] if not _has_battle(r["rule"])]
+        if any(not alt for rule in earlier for alt in rule):     # earlier TIME row
+            continue
+        if earlier:
+            mine = _care_only(row["rule"])
+            reach = [s for s in _CARE_SPACE if _matches_care(mine, *s)]
+            if reach and all(any(_matches_care(r, *s) for r in earlier)
+                             for s in reach):
+                continue
+        out.append(row["num"])
+    return out
+
+
+def test_first_match_order_reaches_every_member():
+    """Every line member must be winnable through the ordered rule tables —
+    a row that exists but can never fire is curated content no player sees."""
+    for lid, line in _all_lines().items():
+        seen, frontier = {line["root"]}, [line["root"]]
+        while frontier:
+            cur = frontier.pop()
+            for t in _live_children(line, cur):
+                if t not in seen:
+                    seen.add(t)
+                    frontier.append(t)
+        shadowed = set(line["members"]) - seen
+        assert not shadowed, (lid, sorted(shadowed))
+
+
+def test_dead_ends_are_annotated():
+    """A member below its line's ceiling with no evolution rows must say so in
+    its Notes (canon dead ends like Monzaemon, or a graph-forced leaf) — a
+    silent dead end is a stranding bug, not a design choice."""
+    import csv
+    import os
+    notes = {}
+    path = os.path.join(os.path.dirname(lines.__file__), "data", "lines.csv")
+    with open(path, newline="") as fh:
+        for r in csv.DictReader(fh):
+            notes.setdefault((r["LineID"], int(r["DexNum"])), []).append(r["Notes"])
+    for lid, line in _all_lines().items():
+        ceiling = max(STAGES.index(r["stage"]) for r in line["members"].values())
+        for num, row in line["members"].items():
+            if STAGES.index(row["stage"]) >= ceiling or line["children"].get(num):
+                continue
+            note = " ".join(notes.get((lid, num), []))
+            assert "dead end" in note or "punishment leaf" in note, (lid, num, note)
 
 
 def test_canon_hints_landed():

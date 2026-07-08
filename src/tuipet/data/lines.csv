@@ -1,6 +1,6 @@
 LineID,Stage,DexNum,Parents,Rule,Bedtime,Notes
 ver1,Fresh,1411,egg,TIME,20:00,Botamon
-ver1,InTraining,1455,1411,TIME,20:00,Koromon
+ver1,InTraining,1455,1411,TIME,21:00,Koromon
 ver1,Rookie,29,1455,CM 0-2,21:00,Agumon
 ver1,Rookie,37,1455,CM 3+,22:00,Betamon
 ver1,Champion,93,29,"CM 0-2, TR 16+",23:00,Greymon
@@ -14,9 +14,9 @@ ver1,Champion,110,37,"CM 3+, TR 8-15, OF 3+",23:00,Seadramon
 ver1,Champion,116,29;37,CM 3+,21:00,Numemon
 ver1,Ultimate,220,93;102;90,WIN 12/15,23:00,MetalGreymon
 ver1,Ultimate,237,124;95;110,WIN 12/15,22:00,Mamemon
-ver1,Ultimate,192,116,WIN 12/15,22:00,Monzaemon
+ver1,Ultimate,192,116,WIN 12/15,23:00,Monzaemon (canon dead end)
 ver1,Mega,297,220,CM 0-2,23:00,BlitzGreymon
-ver1,Mega,300,237,CM 0-2,22:00,BanchoMamemon
+ver1,Mega,300,237,CM 0-2,24:00,BanchoMamemon
 verX,Fresh,1426,egg,TIME,20:00,Dodomon
 verX,InTraining,1479,1426,TIME,20:00,Dorimon
 verX,Rookie,41,1479,CM 0-2,21:00,Dorumon
@@ -33,252 +33,288 @@ verX,Mega,329,258,KO6 3+,23:00,Dorugoramon beast road
 verX,Mega,746,747,BTL 15+,23:00,DexDorugoramon
 verX,Mega,856,845,CM 0-2,23:00,WarGreymon X
 verE,Fresh,1410,egg,TIME,20:00,YukimiBotamon
-verE,InTraining,1458,1410,TIME,20:00,Nyaromon
+verE,InTraining,1458,1410,TIME,21:00,Nyaromon
 verE,Rookie,47,1458,TIME,21:00,Salamon (Plotmon; canon Meicoo line: no requirements)
 verE,Champion,386,47,TIME,22:00,Meicoomon
-verE,Ultimate,389,386,TIME,23:00,Meicrackmon
-verE,Mega,392,389,CM 0-2,23:00,Rasielmon
+verE,Ultimate,389,386,WIN 12/15,22:00,Meicrackmon (canon: 15 Battles 12-15 Victories)
+verE,Mega,392,389,CM 0-2,24:00,Rasielmon
 ver2,Fresh,1412,egg,TIME,20:00,Punimon
 ver2,InTraining,1459,1412,TIME,21:00,Tsunomon
 ver2,Rookie,34,1459,CM 0-2,21:00,Gabumon
 ver2,Rookie,43,1459,CM 3+,22:00,Elecmon
-ver2,Champion,140,34,"CM 0-2, TR 16+",23:00,Kabuterimon
+ver2,Champion,140,34,"CM 0-2, TR 16+",22:00,Kabuterimon
 ver2,Champion,101,34,"CM 0-2, TR 0-15",22:00,Angemon
-ver2,Champion,136,34,"CM 3+, TR 16+, OF 3+",22:00,Frigimon (Yukidarumon)
+ver2,Champion,136,34,"CM 3+, TR 16+, OF 3+",23:00,Frigimon (Yukidarumon)
 ver2,Champion,108,34,"CM 3+, TR 5-15, OF 3+",23:00,Garurumon
 ver2,Champion,101,43,"CM 0-2, TR 16+",22:00,Angemon (Elecmon road)
 ver2,Champion,97,43,"CM 0-2, TR 0-15",23:00,Birdramon
-ver2,Champion,136,43,"CM 3+, TR 8-15, OF 0-2",22:00,Frigimon (Elecmon road)
+ver2,Champion,136,43,"CM 3+, TR 8-15, OF 0-2",23:00,Frigimon (Elecmon road)
 ver2,Champion,109,34;43,CM 3+,21:00,Vegimon (canon Whamon slot folds in: corpus stages Whamon as Ultimate)
-ver2,Ultimate,195,140;101;97,WIN 12/15,23:00,SkullGreymon
+ver2,Ultimate,195,140;101;97,WIN 12/15,24:00,SkullGreymon
 ver2,Ultimate,213,108;136,WIN 12/15,23:00,MetalMamemon (canon also feeds from Whamon: corpus gap)
-ver2,Ultimate,199,109,WIN 12/15,23:00,Vademon
-ver2,Mega,290,195,CM 0-2,23:00,SkullMammothmon
+ver2,Ultimate,199,109,WIN 12/15,23:00,Vademon (canon dead end)
+ver2,Mega,290,195,CM 0-2,24:00,SkullMammothmon
 ver2,Mega,398,213,CM 0-2,23:00,CresGarurumon
 ver3,Fresh,1413,egg,TIME,20:00,Poyomon
-ver3,InTraining,1456,1413,TIME,20:00,Tokomon
+ver3,InTraining,1456,1413,TIME,21:00,Tokomon
 ver3,Rookie,31,1456,CM 0-2,21:00,Patamon
-ver3,Rookie,45,1456,CM 3+,21:00,Kunemon
+ver3,Rookie,45,1456,CM 3+,22:00,Kunemon
 ver3,Champion,98,31,"CM 0-2, TR 16+",22:00,Unimon
-ver3,Champion,91,31,"CM 0-2, TR 0-15",22:00,Ogremon
-ver3,Champion,121,31,"CM 3+, TR 16+, OF 3+",22:00,Bakemon
-ver3,Champion,87,31,"CM 3+, TR 5-15, OF 3+",22:00,Centarumon
-ver3,Champion,91,45,"CM 0-2, TR 16+",22:00,Ogremon (Kunemon road)
+ver3,Champion,91,31,"CM 0-2, TR 0-15",24:00,Ogremon
+ver3,Champion,121,31,"CM 3+, TR 16+, OF 3+",24:00,Bakemon
+ver3,Champion,87,31,"CM 3+, TR 5-15, OF 3+",23:00,Centarumon
+ver3,Champion,91,45,"CM 0-2, TR 16+",24:00,Ogremon (Kunemon road)
 ver3,Champion,106,45,"CM 0-2, TR 0-15",22:00,Shellmon
-ver3,Champion,121,45,"CM 3+, TR 8-15, OF 0-2",22:00,Bakemon (Kunemon road)
+ver3,Champion,121,45,"CM 3+, TR 8-15, OF 0-2",24:00,Bakemon (Kunemon road)
 ver3,Champion,122,45,"CM 3+, TR 16+, OF 3+",22:00,Drimogemon
-ver3,Champion,117,31;45,CM 3+,22:00,Sukamon
-ver3,Ultimate,191,98;91;106,WIN 12/15,23:00,Andromon
-ver3,Ultimate,238,87;121;122,WIN 12/15,23:00,Giromon
-ver3,Ultimate,194,117,WIN 12/15,23:00,Etemon
-ver3,Mega,296,191,CM 0-2,23:00,HiAndromon
-ver3,Mega,397,194,CM 0-2,23:00,KingEtemon
+ver3,Champion,117,31;45,CM 3+,21:00,Sukamon
+ver3,Ultimate,191,98;91;106,WIN 12/15,24:00,Andromon
+ver3,Ultimate,238,87;121;122,WIN 12/15,24:00,Giromon (canon dead end)
+ver3,Ultimate,194,117,WIN 12/15,24:00,Etemon
+ver3,Mega,296,191,CM 0-2,24:00,HiAndromon
+ver3,Mega,397,194,CM 0-2,24:00,KingEtemon
 ver4,Fresh,1414,egg,TIME,20:00,Yuramon
-ver4,InTraining,1461,1414,TIME,20:00,Tanemon
+ver4,InTraining,1461,1414,TIME,21:00,Tanemon
 ver4,Rookie,46,1461,CM 0-2,21:00,Biyomon
-ver4,Rookie,44,1461,CM 3+,21:00,Palmon
+ver4,Rookie,44,1461,CM 3+,22:00,Palmon
 ver4,Champion,125,46,"CM 0-2, TR 16+",22:00,Monochromon
 ver4,Champion,104,46,"CM 0-2, TR 0-15",22:00,Leomon
-ver4,Champion,120,46,"CM 3+, TR 16+, OF 3+",22:00,Kuwagamon
+ver4,Champion,120,46,"CM 3+, TR 16+, OF 3+",23:00,Kuwagamon
 ver4,Champion,123,46,"CM 3+, TR 5-15, OF 3+",22:00,Kokatorimon
 ver4,Champion,104,44,"CM 0-2, TR 16+",22:00,Leomon (Palmon road)
-ver4,Champion,88,44,"CM 0-2, TR 0-15",22:00,Coelamon
-ver4,Champion,120,44,"CM 3+, TR 8-15, OF 0-2",22:00,Kuwagamon (Palmon road)
-ver4,Champion,135,44,"CM 3+, TR 16+, OF 3+",22:00,Mojyamon
-ver4,Champion,118,46;44,CM 3+,22:00,Nanimon
+ver4,Champion,88,44,"CM 0-2, TR 0-15",24:00,Coelamon
+ver4,Champion,120,44,"CM 3+, TR 8-15, OF 0-2",23:00,Kuwagamon (Palmon road)
+ver4,Champion,135,44,"CM 3+, TR 16+, OF 3+",24:00,Mojyamon
+ver4,Champion,118,46;44,CM 3+,21:00,Nanimon
 ver4,Ultimate,210,125;104;88,WIN 12/15,23:00,Megadramon
-ver4,Ultimate,196,123;120;135,WIN 12/15,23:00,Piximon (Piccolomon)
-ver4,Ultimate,198,118,WIN 12/15,23:00,Digitamamon
-ver4,Mega,396,210,CM 0-2,23:00,Aegisdramon
-ver4,Mega,395,198,CM 0-2,23:00,Titamon
+ver4,Ultimate,196,123;120;135,WIN 12/15,22:00,Piximon (Piccolomon) (canon dead end)
+ver4,Ultimate,198,118,WIN 12/15,24:00,Digitamamon
+ver4,Mega,396,210,CM 0-2,24:00,Aegisdramon
+ver4,Mega,395,198,CM 0-2,24:00,Titamon
 ver5,Fresh,1415,egg,TIME,20:00,Zurumon
-ver5,InTraining,1457,1415,TIME,20:00,Pagumon
-ver5,Rookie,33,1457,CM 0-2,21:00,Gazimon
-ver5,Rookie,35,1457,CM 3+,21:00,Gizamon (canon; Shamamon was never Ver.5)
-ver5,Champion,129,33,"CM 0-2, TR 16+",22:00,DarkTyrannomon
-ver5,Champion,94,33,"CM 0-2, TR 0-15",22:00,Devidramon
-ver5,Champion,114,33,"CM 3+, TR 16+, OF 3+",22:00,Tuskmon
-ver5,Champion,115,33,"CM 3+, TR 5-15, OF 3+",22:00,Cyclomon
-ver5,Champion,94,35,"CM 0-2, TR 16+",22:00,Devidramon (Gizamon road)
-ver5,Champion,148,35,"CM 0-2, TR 0-15",22:00,Flymon
-ver5,Champion,114,35,"CM 3+, TR 8-15, OF 0-2",22:00,Tuskmon (Gizamon road)
-ver5,Champion,111,35,"CM 3+, TR 16+, OF 3+",22:00,Deltamon
+ver5,InTraining,1457,1415,TIME,21:00,Pagumon
+ver5,Rookie,33,1457,CM 0-2,23:00,Gazimon
+ver5,Rookie,35,1457,CM 3+,23:00,Gizamon (canon; Shamamon was never Ver.5)
+ver5,Champion,129,33,"CM 0-2, TR 16+",24:00,DarkTyrannomon
+ver5,Champion,94,33,"CM 0-2, TR 0-15",24:00,Devidramon
+ver5,Champion,114,33,"CM 3+, TR 16+, OF 3+",24:00,Tuskmon
+ver5,Champion,115,33,"CM 3+, TR 5-15, OF 3+",24:00,Cyclomon
+ver5,Champion,94,35,"CM 0-2, TR 16+",24:00,Devidramon (Gizamon road)
+ver5,Champion,148,35,"CM 0-2, TR 0-15",24:00,Flymon
+ver5,Champion,114,35,"CM 3+, TR 8-15, OF 0-2",24:00,Tuskmon (Gizamon road)
+ver5,Champion,111,35,"CM 3+, TR 16+, OF 3+",24:00,Deltamon
 ver5,Champion,112,33;35,CM 3+,21:00,Raremon
-ver5,Ultimate,214,129;94;148,WIN 12/15,23:00,MetalTyrannomon
-ver5,Ultimate,197,115;114;111,WIN 12/15,23:00,Datamon (Nanomon)
-ver5,Ultimate,239,112,WIN 12/15,23:00,ExTyrannomon
-ver5,Mega,276,214,CM 0-2,23:00,Machinedramon (Mugendramon)
-ver5,Mega,277,239,CM 0-2,23:00,Puppetmon (Pinochimon)
+ver5,Ultimate,214,129;94;148,WIN 12/15,24:00,MetalTyrannomon
+ver5,Ultimate,197,115;114;111,WIN 12/15,24:00,Datamon (Nanomon) (canon dead end)
+ver5,Ultimate,239,112,WIN 12/15,24:00,ExTyrannomon
+ver5,Mega,276,214,CM 0-2,24:00,Machinedramon (Mugendramon)
+ver5,Mega,277,239,CM 0-2,22:00,Puppetmon (Pinochimon)
+sakumon,Fresh,1444,egg,TIME,20:00,Sakumon
+sakumon,InTraining,1499,1444,TIME,21:00,Sakuttomon
+sakumon,Rookie,67,1499,CM 0-2,22:00,Zubamon
+sakumon,Rookie,66,1499,CM 3+,22:00,Hackmon
+sakumon,Champion,161,67;66,"CM 0-2, TR 16+",23:00,Zubaeagermon
+sakumon,Champion,160,67;66,"CM 0-2, TR 0-15",23:00,BaoHackmon
+sakumon,Champion,116,67;66,TIME,21:00,Numemon
+sakumon,Ultimate,369,161,WIN 12/15,24:00,Duramon
+sakumon,Ultimate,371,160,WIN 12/15,24:00,SaviorHackmon
+sakumon,Ultimate,1554,116,WIN 12/15,23:00,Chaperomon
+sakumon,Mega,370,369,CM 0-2,24:00,Durandamon
+sakumon,Mega,372,371,CM 0-2,24:00,Jesmon
+sakumon,Mega,1555,1554,CM 0-2,23:00,Cendrillmon
 babumon,Fresh,1416,egg,TIME,20:00,Babumon
-babumon,InTraining,22,1416,TIME,20:00,Yokomon
+babumon,InTraining,22,1416,TIME,21:00,Yokomon
 babumon,Rookie,25,22,CM 0-2,21:00,Goburimon
 babumon,Rookie,32,22,CM 3+,21:00,DemiDevimon
-babumon,Champion,87,25,"CM 0-2, BTL 4+",22:00,Centarumon
-babumon,Champion,91,25,CM 0-2,22:00,Ogremon
-babumon,Champion,116,25;32,TIME,21:00,Numemon
-babumon,Champion,94,32,CM 0-2,22:00,Devidramon
-babumon,Champion,117,32,TIME,22:00,Sukamon
+babumon,Champion,87,25,"CM 0-2, BTL 4+",23:00,Centarumon
+babumon,Champion,91,25,CM 0-2,24:00,Ogremon
+babumon,Champion,116,25,TIME,21:00,Numemon
+babumon,Champion,94,32,"CM 0-2, BTL 4+",24:00,Devidramon
+babumon,Champion,100,32,CM 0-2,22:00,Gatomon
+babumon,Champion,116,32,TIME,21:00,Numemon
 babumon,Ultimate,195,87;91;94,BTL 12+,24:00,SkullGreymon
-babumon,Ultimate,252,116;117,BTL 12+,23:00,BlackKingNumemon
+babumon,Ultimate,252,116,BTL 12+,23:00,BlackKingNumemon
+babumon,Ultimate,475,100,BTL 12+,23:00,Betsumon
 babumon,Mega,290,195,KO6 2+,24:00,SkullMammothmon
 babumon,Mega,344,252,KO6 2+,23:00,PrinceMamemon
+babumon,Mega,580,475,KO6 2+,23:00,Parasimon
 pichimon,Fresh,1417,egg,TIME,20:00,Pichimon
-pichimon,InTraining,24,1417,TIME,20:00,Chapmon
-pichimon,Rookie,37,24,CM 0-2,22:00,Betamon
-pichimon,Rookie,68,24,CM 3+,21:00,Kamemon
-pichimon,Champion,84,37;68,"CM 0-2, TR 16+",22:00,Rukamon
-pichimon,Champion,88,37,"CM 0-2, TR 0-15",22:00,Coelamon
-pichimon,Champion,118,37;68,TIME,22:00,Nanimon
-pichimon,Champion,116,68,TIME,21:00,Numemon
-pichimon,Ultimate,202,84;88,WIN 12/15,23:00,MegaSeadramon
-pichimon,Ultimate,198,118;116,WIN 12/15,23:00,Digitamamon
-pichimon,Mega,288,202;198,CM 0-2,23:00,MarineAngemon
+pichimon,InTraining,24,1417,TIME,21:00,Chapmon
+pichimon,Rookie,68,24,CM 0-2,21:00,Kamemon
+pichimon,Rookie,69,24,CM 3+,21:00,Falcomon
+pichimon,Champion,84,68,"CM 0-2, TR 16+",22:00,Rukamon
+pichimon,Champion,107,68,"CM 0-2, TR 0-15",22:00,Ikkakumon
+pichimon,Champion,117,68,TIME,21:00,Sukamon
+pichimon,Champion,139,69,"CM 0-2, TR 16+",22:00,Igamon
+pichimon,Champion,141,69,"CM 0-2, TR 0-15",22:00,Starmon
+pichimon,Champion,117,69,TIME,21:00,Sukamon
+pichimon,Ultimate,202,84,WIN 12/15,23:00,MegaSeadramon
+pichimon,Ultimate,229,107,WIN 12/15,23:00,Zudomon
+pichimon,Ultimate,778,117,WIN 12/15,23:00,KingSukamon
+pichimon,Ultimate,621,139,WIN 12/15,23:00,Kyukimon
+pichimon,Ultimate,227,141,WIN 12/15,23:00,Triceramon
+pichimon,Mega,288,202;229,CM 0-2,23:00,MarineAngemon
+pichimon,Mega,319,778,CM 0-2,23:00,PlatinumNumemon
+pichimon,Mega,307,621,CM 0-2,23:00,Sakuyamon
+pichimon,Mega,304,227,CM 0-2,23:00,Imperialdramon
 mokumon,Fresh,1418,egg,TIME,20:00,Mokumon
-mokumon,InTraining,23,1418,TIME,20:00,Kapurimon
+mokumon,InTraining,23,1418,TIME,21:00,Kapurimon
 mokumon,Rookie,669,23,CM 0-2,21:00,Ekakimon
 mokumon,Rookie,28,23,CM 3+,21:00,Gotsumon
 mokumon,Champion,456,669,"CM 0-2, TR 16+",22:00,Kogamon
 mokumon,Champion,807,669,"CM 0-2, TR 0-15",22:00,Rockmon
-mokumon,Champion,117,669;28,TIME,22:00,Sukamon
-mokumon,Champion,113,28,"CM 0-2, TR 0-15",22:00,Tortamon
-mokumon,Champion,118,28,TIME,22:00,Nanimon
-mokumon,Ultimate,217,456,WIN 12/15,23:00,SkullMeramon
+mokumon,Champion,117,669,TIME,21:00,Sukamon
+mokumon,Champion,113,28,"CM 0-2, TR 16+",22:00,Tortamon
+mokumon,Champion,134,28,"CM 0-2, TR 0-15",22:00,Tankmon
+mokumon,Champion,117,28,TIME,21:00,Sukamon
+mokumon,Ultimate,217,456;134,WIN 12/15,23:00,SkullMeramon
 mokumon,Ultimate,265,807,WIN 12/15,23:00,SuperStarmon
 mokumon,Ultimate,778,117,WIN 12/15,23:00,KingSukamon
 mokumon,Ultimate,229,113,WIN 12/15,23:00,Zudomon
-mokumon,Ultimate,199,118,WIN 12/15,23:00,Vademon
 mokumon,Mega,310,217,CM 0-2,23:00,Beelzemon
-mokumon,Mega,286,265;199,CM 0-2,23:00,HerculesKabuterimon
+mokumon,Mega,286,265,CM 0-2,23:00,HerculesKabuterimon
 mokumon,Mega,1555,778,CM 0-2,23:00,Cendrillmon
 mokumon,Mega,301,229,CM 0-2,23:00,Vikemon
 nyokimon,Fresh,1419,egg,TIME,20:00,Nyokimon
-nyokimon,InTraining,903,1419,TIME,20:00,Budmon
+nyokimon,InTraining,903,1419,TIME,21:00,Budmon
 nyokimon,Rookie,38,903,CM 0-2,21:00,ToyAgumon
 nyokimon,Rookie,42,903,CM 3+,21:00,Hagurumon
-nyokimon,Champion,89,38;42,"CM 0-2, BTL 4+",22:00,Guardromon
+nyokimon,Champion,89,38,"CM 0-2, BTL 4+",22:00,Guardromon
 nyokimon,Champion,92,38,CM 0-2,22:00,Flarerizamon
-nyokimon,Champion,116,38;42,TIME,21:00,Numemon
-nyokimon,Champion,117,42,TIME,22:00,Sukamon
+nyokimon,Champion,116,38,TIME,21:00,Numemon
+nyokimon,Champion,89,42,"CM 0-2, BTL 4+",22:00,Guardromon
+nyokimon,Champion,133,42,CM 0-2,22:00,Mechanorimon
+nyokimon,Champion,116,42,TIME,21:00,Numemon
 nyokimon,Ultimate,419,89,BTL 12+,23:00,CatchMamemon
 nyokimon,Ultimate,227,92,BTL 12+,23:00,Triceramon
 nyokimon,Ultimate,192,116,BTL 12+,23:00,Monzaemon
-nyokimon,Ultimate,252,117,BTL 12+,23:00,BlackKingNumemon
-nyokimon,Mega,344,419;252,KO6 2+,23:00,PrinceMamemon
+nyokimon,Ultimate,791,133,BTL 12+,23:00,Valvemon
+nyokimon,Mega,344,419,KO6 2+,23:00,PrinceMamemon
 nyokimon,Mega,304,227,KO6 2+,23:00,Imperialdramon
 nyokimon,Mega,305,192,KO6 2+,23:00,Cherubimon
+nyokimon,Mega,594,791,KO6 2+,23:00,Quartzmon
 choromon,Fresh,1420,egg,TIME,20:00,Choromon
-choromon,InTraining,19,1420,TIME,20:00,Motimon
+choromon,InTraining,19,1420,TIME,21:00,Motimon
 choromon,Rookie,48,19,CM 0-2,21:00,Tentomon
 choromon,Rookie,72,19,CM 3+,21:00,Lalamon
-choromon,Champion,112,48,"CM 0-2, BTL 4+",22:00,Raremon
-choromon,Champion,131,48;72,CM 0-2,22:00,Woodmon
-choromon,Champion,118,48;72,TIME,22:00,Nanimon
-choromon,Champion,116,72,TIME,21:00,Numemon
+choromon,Champion,112,48,"CM 0-2, BTL 4+",21:00,Raremon
+choromon,Champion,131,48,CM 0-2,22:00,Woodmon
+choromon,Champion,118,48,TIME,21:00,Nanimon
+choromon,Champion,131,72,"CM 0-2, BTL 4+",22:00,Woodmon
+choromon,Champion,665,72,CM 0-2,22:00,Shortmon
+choromon,Champion,118,72,TIME,21:00,Nanimon
 choromon,Ultimate,421,112,BTL 12+,23:00,SkullSatamon
 choromon,Ultimate,228,131,BTL 12+,23:00,Okuwamon
 choromon,Ultimate,1222,118,BTL 12+,23:00,Vademon X
-choromon,Ultimate,1554,116,BTL 12+,23:00,Chaperomon
+choromon,Ultimate,795,665,BTL 12+,23:00,Weddinmon
 choromon,Mega,328,421;228,KO6 2+,23:00,Diaboromon
 choromon,Mega,373,1222,KO6 2+,23:00,Ebemon
-choromon,Mega,1031,1554,KO6 2+,23:00,NoblePumpmon
+choromon,Mega,285,795,KO6 2+,23:00,Rosemon
 kuramon,Fresh,1421,egg,TIME,20:00,Kuramon
-kuramon,InTraining,401,1421,TIME,20:00,Arkadimon II
+kuramon,InTraining,401,1421,TIME,21:00,Arkadimon II
 kuramon,Rookie,80,401,CM 0-2,21:00,Psychemon
 kuramon,Rookie,36,401,CM 3+,21:00,Tsukaimon
 kuramon,Champion,363,80,"CM 0-2, TR 16+",22:00,NiseDrimogemon
 kuramon,Champion,152,80,"CM 0-2, TR 0-15",22:00,Ankylomon
-kuramon,Champion,117,80;36,TIME,22:00,Sukamon
-kuramon,Champion,90,36,"CM 0-2, TR 0-15",23:00,Airdramon
-kuramon,Champion,118,36,TIME,22:00,Nanimon
+kuramon,Champion,117,80,TIME,21:00,Sukamon
+kuramon,Champion,90,36,"CM 0-2, TR 16+",23:00,Airdramon
+kuramon,Champion,99,36,"CM 0-2, TR 0-15",22:00,Wizarmon
+kuramon,Champion,117,36,TIME,21:00,Sukamon
 kuramon,Ultimate,261,363;152,WIN 12/15,23:00,Meteormon
 kuramon,Ultimate,778,117,WIN 12/15,23:00,KingSukamon
 kuramon,Ultimate,642,90,WIN 12/15,23:00,Sinduramon
-kuramon,Ultimate,198,118,WIN 12/15,23:00,Digitamamon
-kuramon,Mega,597,261;198,CM 0-2,23:00,Lampmon
+kuramon,Ultimate,260,99,WIN 12/15,23:00,Lucemon FM
+kuramon,Mega,597,261,CM 0-2,23:00,Lampmon
 kuramon,Mega,319,778,CM 0-2,23:00,PlatinumNumemon
 kuramon,Mega,292,642,CM 0-2,23:00,Phoenixmon
+kuramon,Mega,302,260,CM 0-2,23:00,Seraphimon
 chibickmon,Fresh,1422,egg,TIME,20:00,Chibickmon
-chibickmon,InTraining,679,1422,TIME,20:00,Kozenimon
+chibickmon,InTraining,679,1422,TIME,21:00,Kozenimon
 chibickmon,Rookie,682,679,CM 0-2,21:00,Dondokomon
-chibickmon,Rookie,66,679,CM 3+,21:00,Hackmon
+chibickmon,Rookie,66,679,CM 3+,22:00,Hackmon
 chibickmon,Champion,837,682,"CM 0-2, TR 16+",22:00,Damemon
 chibickmon,Champion,159,682,"CM 0-2, TR 0-15",22:00,ShellNumemon
-chibickmon,Champion,116,682;66,TIME,21:00,Numemon
-chibickmon,Champion,125,66,"CM 0-2, TR 0-15",22:00,Monochromon
-chibickmon,Champion,117,66,TIME,22:00,Sukamon
+chibickmon,Champion,116,682,TIME,21:00,Numemon
+chibickmon,Champion,125,66,"CM 0-2, TR 16+",22:00,Monochromon
+chibickmon,Champion,153,66,"CM 0-2, TR 0-15",22:00,XVeemon
+chibickmon,Champion,116,66,TIME,21:00,Numemon
 chibickmon,Ultimate,852,837,WIN 12/15,23:00,ChoHakkaimon
 chibickmon,Ultimate,482,159,WIN 12/15,23:00,Shawjinmon
 chibickmon,Ultimate,192,116,WIN 12/15,23:00,Monzaemon
 chibickmon,Ultimate,365,125,WIN 12/15,23:00,Vermilimon
-chibickmon,Ultimate,199,117,WIN 12/15,23:00,Vademon
+chibickmon,Ultimate,625,153,WIN 12/15,23:00,Brachimon
 chibickmon,Mega,335,852;482,CM 0-2,23:00,Craniumon
 chibickmon,Mega,307,192,CM 0-2,23:00,Sakuyamon
 chibickmon,Mega,285,365,CM 0-2,23:00,Rosemon
-chibickmon,Mega,650,199,CM 0-2,23:00,Parallelmon
+chibickmon,Mega,309,625,CM 0-2,23:00,MegaGargomon
 tsubumon,Fresh,1423,egg,TIME,20:00,Tsubumon
-tsubumon,InTraining,17,1423,TIME,20:00,Gigimon
+tsubumon,InTraining,17,1423,TIME,21:00,Gigimon
 tsubumon,Rookie,30,17,CM 0-2,21:00,Candlemon
 tsubumon,Rookie,40,17,CM 3+,21:00,Guilmon
 tsubumon,Champion,665,30,"CM 0-2, BTL 4+",22:00,Shortmon
 tsubumon,Champion,96,30,CM 0-2,22:00,ShimaUnimon
-tsubumon,Champion,118,30;40,TIME,22:00,Nanimon
-tsubumon,Champion,85,40,CM 0-2,22:00,Growmon
-tsubumon,Champion,116,40,TIME,21:00,Numemon
+tsubumon,Champion,118,30,TIME,21:00,Nanimon
+tsubumon,Champion,85,40,"CM 0-2, BTL 4+",22:00,Growmon
+tsubumon,Champion,144,40,CM 0-2,22:00,Veedramon
+tsubumon,Champion,118,40,TIME,21:00,Nanimon
 tsubumon,Ultimate,795,665,BTL 12+,23:00,Weddinmon
-tsubumon,Ultimate,195,96;85,BTL 12+,24:00,SkullGreymon
+tsubumon,Ultimate,195,96;85;144,BTL 12+,24:00,SkullGreymon
 tsubumon,Ultimate,1222,118,BTL 12+,23:00,Vademon X
-tsubumon,Ultimate,1554,116,BTL 12+,23:00,Chaperomon
 tsubumon,Mega,711,795,KO6 2+,23:00,QueenChessmon
 tsubumon,Mega,345,195,KO6 2+,23:00,Chaosdramon
 tsubumon,Mega,602,1222,KO6 2+,23:00,Babamon
-tsubumon,Mega,1555,1554,KO6 2+,23:00,Cendrillmon
 pururumon,Fresh,1424,egg,TIME,20:00,Pururumon
-pururumon,InTraining,979,1424,TIME,20:00,TorikaraBallmon
+pururumon,InTraining,979,1424,TIME,21:00,TorikaraBallmon
 pururumon,Rookie,790,979,CM 0-2,21:00,Chuchumon
 pururumon,Rookie,73,979,CM 3+,21:00,Chuumon
-pururumon,Champion,165,790;73,TR 16+,22:00,PlatinumSukamon
+pururumon,Champion,165,790,TR 16+,22:00,PlatinumSukamon
 pururumon,Champion,189,790,TR 5-15,22:00,Youkomon
-pururumon,Champion,117,790;73,TIME,22:00,Sukamon
-pururumon,Champion,118,73,TIME,22:00,Nanimon
-pururumon,Ultimate,625,165,WIN 12/15,23:00,Brachimon
+pururumon,Champion,117,790,TIME,21:00,Sukamon
+pururumon,Champion,165,73,TR 16+,22:00,PlatinumSukamon
+pururumon,Champion,166,73,TR 5-15,22:00,Geremon
+pururumon,Champion,117,73,TIME,21:00,Sukamon
+pururumon,Ultimate,625,165;166,WIN 12/15,23:00,Brachimon
 pururumon,Ultimate,247,189,WIN 12/15,23:00,Taomon
 pururumon,Ultimate,252,117,WIN 12/15,23:00,BlackKingNumemon
-pururumon,Ultimate,198,118,WIN 12/15,23:00,Digitamamon
-pururumon,Mega,309,625;198,"CM 0-2, TR 10+",23:00,MegaGargomon
+pururumon,Mega,309,625,"CM 0-2, TR 10+",23:00,MegaGargomon
 pururumon,Mega,303,247,"CM 0-2, TR 10+",23:00,Ophanimon
 pururumon,Mega,1355,252,"CM 0-2, TR 10+",23:00,Cthyllamon
 jyarimon,Fresh,1425,egg,TIME,20:00,Jyarimon
-jyarimon,InTraining,21,1425,TIME,20:00,DemiMeramon
+jyarimon,InTraining,21,1425,TIME,21:00,DemiMeramon
 jyarimon,Rookie,27,21,CM 0-2,21:00,Bakumon
 jyarimon,Rookie,59,21,CM 3+,21:00,Impmon
-jyarimon,Champion,99,27;59,"CM 0-2, TR 16+",22:00,Wizarmon
+jyarimon,Champion,99,27,"CM 0-2, TR 16+",22:00,Wizarmon
 jyarimon,Champion,143,27,"CM 0-2, TR 0-15",22:00,Apemon
-jyarimon,Champion,116,27;59,TIME,21:00,Numemon
-jyarimon,Champion,117,59,TIME,22:00,Sukamon
+jyarimon,Champion,116,27,TIME,21:00,Numemon
+jyarimon,Champion,99,59,"CM 0-2, TR 16+",22:00,Wizarmon
+jyarimon,Champion,119,59,"CM 0-2, TR 0-15",22:00,Vilemon
+jyarimon,Champion,116,59,TIME,21:00,Numemon
 jyarimon,Ultimate,260,99,WIN 12/15,23:00,Lucemon FM
 jyarimon,Ultimate,753,143,WIN 12/15,23:00,Gokuwmon
 jyarimon,Ultimate,192,116,WIN 12/15,23:00,Monzaemon
-jyarimon,Ultimate,778,117,WIN 12/15,23:00,KingSukamon
-jyarimon,Mega,302,260,CM 0-2,23:00,Seraphimon
+jyarimon,Ultimate,205,119,WIN 12/15,23:00,MarineDevimon
+jyarimon,Mega,302,260;205,CM 0-2,23:00,Seraphimon
 jyarimon,Mega,350,753;192,CM 0-2,23:00,BanchoLeomon
-jyarimon,Mega,397,778,CM 0-2,23:00,KingEtemon
 puttimon,Fresh,1427,egg,TIME,20:00,Puttimon
-puttimon,InTraining,900,1427,TIME,20:00,Moonmon
+puttimon,InTraining,900,1427,TIME,21:00,Moonmon
 puttimon,Rookie,61,900,CM 0-2,21:00,Lopmon
-puttimon,Rookie,385,900,CM 3+,21:00,Lunamon
+puttimon,Rookie,385,900,CM 3+,24:00,Lunamon
 puttimon,Champion,144,61,"CM 0-2, BTL 4+",22:00,Veedramon
 puttimon,Champion,154,61,CM 0-2,22:00,Gargomon
-puttimon,Champion,118,61;385,TIME,22:00,Nanimon
-puttimon,Champion,136,385,CM 0-2,23:00,Frigimon
-puttimon,Champion,116,385,TIME,21:00,Numemon
-puttimon,Ultimate,214,144,BTL 12+,23:00,MetalTyrannomon
+puttimon,Champion,118,61,TIME,21:00,Nanimon
+puttimon,Champion,136,385,"CM 0-2, BTL 4+",23:00,Frigimon
+puttimon,Champion,150,385,CM 0-2,23:00,Coredramon
+puttimon,Champion,118,385,TIME,21:00,Nanimon
+puttimon,Ultimate,214,144,BTL 12+,24:00,MetalTyrannomon
 puttimon,Ultimate,243,154,BTL 12+,23:00,Andiramon
-puttimon,Ultimate,199,118;136;116,BTL 12+,23:00,Vademon
+puttimon,Ultimate,199,118;136,BTL 12+,23:00,Vademon
+puttimon,Ultimate,272,150,BTL 12+,23:00,WarGrowmon
 puttimon,Mega,311,214,KO6 2+,23:00,UlforceVeedramon
 puttimon,Mega,341,243,KO6 2+,23:00,Lilithmon
 puttimon,Mega,650,199,KO6 2+,23:00,Parallelmon
+puttimon,Mega,299,272,KO6 2+,23:00,WarGreymon
 kiimon,Fresh,1428,egg,TIME,20:00,Kiimon
-kiimon,InTraining,1481,1428,TIME,20:00,Yaamon
+kiimon,InTraining,1481,1428,TIME,21:00,Yaamon
 kiimon,Rookie,870,1481,CM 0-2,21:00,Gomamon X
 kiimon,Rookie,871,1481,CM 3+,21:00,Herissmon
 kiimon,Champion,107,870,"CM 0-2, BTL 4+",22:00,Ikkakumon
@@ -286,7 +322,7 @@ kiimon,Champion,593,870,CM 0-2,22:00,Chakmon
 kiimon,Champion,997,870,TIME,22:00,Numemon X
 kiimon,Champion,110,871,"CM 0-2, BTL 4+",23:00,Seadramon
 kiimon,Champion,411,871,CM 0-2,22:00,Sangloupmon
-kiimon,Champion,117,871,TIME,22:00,Sukamon
+kiimon,Champion,117,871,TIME,21:00,Sukamon
 kiimon,Ultimate,249,107,BTL 12+,23:00,Rapidmon
 kiimon,Ultimate,205,593,BTL 12+,23:00,MarineDevimon
 kiimon,Ultimate,905,997,BTL 12+,23:00,Stefilmon
@@ -299,94 +335,92 @@ kiimon,Mega,366,905,KO6 2+,23:00,GigaSeadramon
 kiimon,Mega,430,425,KO6 2+,23:00,GranDracmon
 kiimon,Mega,1355,252,KO6 2+,23:00,Cthyllamon
 dokimon,Fresh,1429,egg,TIME,20:00,Dokimon
-dokimon,InTraining,890,1429,TIME,20:00,Wanyamon
+dokimon,InTraining,890,1429,TIME,21:00,Wanyamon
 dokimon,Rookie,71,890,CM 0-2,21:00,Gaomon
 dokimon,Rookie,450,890,CM 3+,21:00,Bearmon
-dokimon,Champion,104,71;450,"CM 0-2, TR 16+",22:00,Leomon
+dokimon,Champion,104,71,"CM 0-2, TR 16+",22:00,Leomon
 dokimon,Champion,145,71,"CM 0-2, TR 0-15",22:00,Togemon
-dokimon,Champion,118,71;450,TIME,22:00,Nanimon
-dokimon,Champion,116,450,TIME,21:00,Numemon
-dokimon,Ultimate,263,104,WIN 12/15,23:00,GrapLeomon
+dokimon,Champion,118,71,TIME,21:00,Nanimon
+dokimon,Champion,104,450,"CM 0-2, TR 16+",22:00,Leomon
+dokimon,Champion,130,450,"CM 0-2, TR 0-15",22:00,Kiwimon
+dokimon,Champion,118,450,TIME,21:00,Nanimon
+dokimon,Ultimate,263,104;130,WIN 12/15,23:00,GrapLeomon
 dokimon,Ultimate,218,145,WIN 12/15,23:00,Lilymon
 dokimon,Ultimate,1222,118,WIN 12/15,23:00,Vademon X
-dokimon,Ultimate,1554,116,WIN 12/15,23:00,Chaperomon
 dokimon,Mega,333,263,CM 0-2,23:00,Dynasmon
 dokimon,Mega,374,218,CM 0-2,23:00,Lotusmon
 dokimon,Mega,1316,1222,CM 0-2,23:00,Ebemon X
-dokimon,Mega,1031,1554,CM 0-2,23:00,NoblePumpmon
 chibomon,Fresh,1430,egg,TIME,20:00,Chibomon
-chibomon,InTraining,1483,1430,TIME,20:00,DemiVeemon
+chibomon,InTraining,1483,1430,TIME,21:00,DemiVeemon
 chibomon,Rookie,39,1483,CM 0-2,21:00,Penguinmon
 chibomon,Rookie,52,1483,CM 3+,21:00,Syakomon
 chibomon,Champion,812,39,TR 16+,22:00,Akatorimon
-chibomon,Champion,105,39;52,TR 5-15,22:00,Octomon
-chibomon,Champion,117,39;52,TIME,22:00,Sukamon
-chibomon,Champion,118,52,TIME,22:00,Nanimon
+chibomon,Champion,105,39,TR 5-15,22:00,Octomon
+chibomon,Champion,117,39,TIME,21:00,Sukamon
+chibomon,Champion,105,52,TR 16+,22:00,Octomon
+chibomon,Champion,128,52,TR 5-15,22:00,Gesomon
+chibomon,Champion,117,52,TIME,21:00,Sukamon
 chibomon,Ultimate,642,812,WIN 12/15,23:00,Sinduramon
 chibomon,Ultimate,235,105,WIN 12/15,23:00,Blossomon
 chibomon,Ultimate,778,117,WIN 12/15,23:00,KingSukamon
-chibomon,Ultimate,198,118,WIN 12/15,23:00,Digitamamon
+chibomon,Ultimate,880,128,WIN 12/15,23:00,MarinChimairamon
 chibomon,Mega,428,642,"CM 0-2, TR 10+",23:00,Valdurmon
 chibomon,Mega,463,235,"CM 0-2, TR 10+",23:00,Ceresmon
 chibomon,Mega,319,778,"CM 0-2, TR 10+",23:00,PlatinumNumemon
-chibomon,Mega,671,198,"CM 0-2, TR 10+",23:00,Bacchusmon
+chibomon,Mega,1565,880,"CM 0-2, TR 10+",23:00,Skadimon
 datirimon,Fresh,1431,egg,TIME,20:00,Datirimon
-datirimon,InTraining,941,1431,TIME,20:00,Flickmon
+datirimon,InTraining,941,1431,TIME,21:00,Flickmon
 datirimon,Rookie,983,941,CM 0-2,21:00,Gatchmon
 datirimon,Rookie,1294,941,CM 3+,21:00,Calcumon
 datirimon,Champion,1113,983,TR 8+,22:00,Mercuremon
-datirimon,Champion,116,983;1294,TIME,21:00,Numemon
-datirimon,Champion,117,1294,TR 5-15,22:00,Sukamon
-datirimon,Champion,118,1294,TIME,22:00,Nanimon
+datirimon,Champion,116,983,TIME,21:00,Numemon
+datirimon,Champion,116,1294,TIME,21:00,Numemon
 datirimon,Ultimate,1133,1113,WIN 12/15,23:00,Sephirothmon
 datirimon,Ultimate,192,116,WIN 12/15,23:00,Monzaemon
-datirimon,Ultimate,199,117;118,WIN 12/15,23:00,Vademon
 datirimon,Mega,1103,1133,"CM 0-2, TR 10+",23:00,Seraphimon FM
 datirimon,Mega,378,192,"CM 0-2, TR 10+",23:00,Minervamon
-datirimon,Mega,286,199,"CM 0-2, TR 10+",23:00,HerculesKabuterimon
 chibikiwimon,Fresh,1432,egg,TIME,20:00,ChibiKiwimon
-chibikiwimon,InTraining,892,1432,TIME,20:00,Poromon
+chibikiwimon,InTraining,892,1432,TIME,21:00,Poromon
 chibikiwimon,Rookie,63,892,CM 0-2,21:00,Hawkmon
 chibikiwimon,Rookie,69,892,CM 3+,21:00,Falcomon
 chibikiwimon,Champion,119,63,"CM 0-2, BTL 4+",22:00,Vilemon
 chibikiwimon,Champion,130,63,CM 0-2,22:00,Kiwimon
-chibikiwimon,Champion,116,63;69,TIME,21:00,Numemon
-chibikiwimon,Champion,139,69,CM 0-2,22:00,Igamon
-chibikiwimon,Champion,117,69,TIME,22:00,Sukamon
+chibikiwimon,Champion,116,63,TIME,21:00,Numemon
+chibikiwimon,Champion,139,69,"CM 0-2, BTL 4+",22:00,Igamon
+chibikiwimon,Champion,151,69,CM 0-2,22:00,Aquilamon
+chibikiwimon,Champion,116,69,TIME,21:00,Numemon
 chibikiwimon,Ultimate,667,119,BTL 12+,23:00,Mephistomon
 chibikiwimon,Ultimate,209,130,BTL 12+,23:00,Cherrymon
 chibikiwimon,Ultimate,1554,116,BTL 12+,23:00,Chaperomon
 chibikiwimon,Ultimate,621,139,BTL 12+,23:00,Kyukimon
-chibikiwimon,Ultimate,252,117,BTL 12+,23:00,BlackKingNumemon
+chibikiwimon,Ultimate,760,151,BTL 12+,23:00,Karatenmon
 chibikiwimon,Mega,338,667,KO6 2+,23:00,Belphemon SM
-chibikiwimon,Mega,351,209;621,KO6 2+,23:00,Kuzuhamon
+chibikiwimon,Mega,351,209;621;760,KO6 2+,23:00,Kuzuhamon
 chibikiwimon,Mega,1555,1554,KO6 2+,23:00,Cendrillmon
-chibikiwimon,Mega,344,252,KO6 2+,23:00,PrinceMamemon
 ketomon,Fresh,1433,egg,TIME,20:00,Ketomon
-ketomon,InTraining,945,1433,TIME,20:00,Kyokyomon
+ketomon,InTraining,945,1433,TIME,21:00,Kyokyomon
 ketomon,Rookie,406,945,CM 0-2,21:00,Ryudamon
 ketomon,Rookie,835,945,CM 3+,21:00,Guilmon X
 ketomon,Champion,153,406,"CM 0-2, TR 16+",22:00,XVeemon
-ketomon,Champion,158,406,"CM 0-2, TR 0-15",22:00,Coredramon
-ketomon,Champion,997,406;835,TIME,22:00,Numemon X
-ketomon,Champion,833,835,"CM 0-2, TR 0-15",22:00,Tyrannomon X
-ketomon,Champion,118,835,TIME,22:00,Nanimon
+ketomon,Champion,158,406,"CM 0-2, TR 0-15",23:00,Coredramon
+ketomon,Champion,997,406,TIME,22:00,Numemon X
+ketomon,Champion,833,835,"CM 0-2, TR 16+",22:00,Tyrannomon X
+ketomon,Champion,834,835,"CM 0-2, TR 0-15",22:00,Growmon X
+ketomon,Champion,997,835,TIME,22:00,Numemon X
 ketomon,Ultimate,220,153,WIN 12/15,23:00,MetalGreymon
 ketomon,Ultimate,272,158,WIN 12/15,23:00,WarGrowmon
 ketomon,Ultimate,923,997,WIN 12/15,23:00,JagerLoweemon
-ketomon,Ultimate,853,833,WIN 12/15,23:00,MetalTyrannomon X
-ketomon,Ultimate,1222,118,WIN 12/15,23:00,Vademon X
+ketomon,Ultimate,853,833;834,WIN 12/15,23:00,MetalTyrannomon X
 ketomon,Mega,347,220,CM 0-2,23:00,VictoryGreymon
 ketomon,Mega,352,272,CM 0-2,23:00,ChaosGallantmon
 ketomon,Mega,634,923,CM 0-2,23:00,Bagramon
-ketomon,Mega,393,853,CM 0-2,23:00,RustTyrannomon
-ketomon,Mega,373,1222,CM 0-2,23:00,Ebemon
+ketomon,Mega,393,853,CM 0-2,24:00,RustTyrannomon
 leafmon,Fresh,1434,egg,TIME,20:00,Leafmon
-leafmon,InTraining,959,1434,TIME,20:00,Puroromon
+leafmon,InTraining,959,1434,TIME,21:00,Puroromon
 leafmon,Rookie,358,959,CM 0-2,21:00,Dokunemon
 leafmon,Rookie,404,959,CM 3+,21:00,Fanbeemon
 leafmon,Champion,127,358,"CM 0-2, TR 16+",22:00,Dokugumon
-leafmon,Champion,148,358,"CM 0-2, TR 0-15",22:00,Flymon
+leafmon,Champion,148,358,"CM 0-2, TR 0-15",24:00,Flymon
 leafmon,Champion,116,358,TIME,21:00,Numemon
 leafmon,Champion,156,404,"CM 0-2, TR 16+",22:00,Stingmon
 leafmon,Champion,184,404,"CM 0-2, TR 0-15",22:00,Waspmon
@@ -400,220 +434,228 @@ leafmon,Mega,376,266,CM 0-2,23:00,TigerVespamon
 leafmon,Mega,1348,192,CM 0-2,23:00,ShinMonzaemon
 leafmon,Mega,615,1223,CM 0-2,23:00,MetalPiranimon
 pafumon,Fresh,1435,egg,TIME,20:00,Pafumon
-pafumon,InTraining,963,1435,TIME,20:00,Pusurimon
+pafumon,InTraining,963,1435,TIME,21:00,Pusurimon
 pafumon,Rookie,937,963,CM 0-2,21:00,Pulsemon
 pafumon,Rookie,472,963,CM 3+,21:00,Labramon
 pafumon,Champion,520,937,"CM 0-2, BTL 4+",22:00,Raidramon
 pafumon,Champion,713,937,CM 0-2,22:00,Dorulumon
-pafumon,Champion,117,937;472,TIME,22:00,Sukamon
-pafumon,Champion,155,472,CM 0-2,22:00,Kyubimon
-pafumon,Champion,118,472,TIME,22:00,Nanimon
+pafumon,Champion,117,937,TIME,21:00,Sukamon
+pafumon,Champion,155,472,"CM 0-2, BTL 4+",22:00,Kyubimon
+pafumon,Champion,157,472,CM 0-2,22:00,Wendigomon
+pafumon,Champion,117,472,TIME,21:00,Sukamon
 pafumon,Ultimate,477,520,BTL 12+,23:00,Beastmon
 pafumon,Ultimate,269,713,BTL 12+,23:00,Panjyamon
 pafumon,Ultimate,778,117,BTL 12+,23:00,KingSukamon
 pafumon,Ultimate,273,155,BTL 12+,23:00,Doumon
-pafumon,Ultimate,198,118,BTL 12+,23:00,Digitamamon
-pafumon,Mega,377,477;273,KO6 2+,23:00,Dianamon
+pafumon,Ultimate,267,157,BTL 12+,23:00,MasterTyrannomon
+pafumon,Mega,377,477;273,KO6 2+,24:00,Dianamon
 pafumon,Mega,622,269,KO6 2+,23:00,Regulumon
-pafumon,Mega,397,778,KO6 2+,23:00,KingEtemon
-pafumon,Mega,618,198,KO6 2+,23:00,Zanbamon
+pafumon,Mega,397,778,KO6 2+,24:00,KingEtemon
+pafumon,Mega,380,267,KO6 2+,23:00,Gaiomon
 paomon,Fresh,1436,egg,TIME,20:00,Paomon
-paomon,InTraining,1491,1436,TIME,20:00,Xiaomon
+paomon,InTraining,1491,1436,TIME,21:00,Xiaomon
 paomon,Rookie,27,1491,CM 0-2,21:00,Bakumon
 paomon,Rookie,59,1491,CM 3+,21:00,Impmon
 paomon,Champion,172,27,"CM 0-2, BTL 4+",22:00,Reppamon
 paomon,Champion,186,27,CM 0-2,22:00,Gururumon
-paomon,Champion,116,27;59,TIME,21:00,Numemon
-paomon,Champion,101,59,CM 0-2,22:00,Angemon
-paomon,Champion,117,59,TIME,22:00,Sukamon
+paomon,Champion,116,27,TIME,21:00,Numemon
+paomon,Champion,101,59,"CM 0-2, BTL 4+",22:00,Angemon
+paomon,Champion,178,59,CM 0-2,22:00,Gokimon
+paomon,Champion,116,59,TIME,21:00,Numemon
 paomon,Ultimate,257,172,BTL 12+,23:00,Chirinmon
 paomon,Ultimate,268,186,BTL 12+,23:00,BlueMeramon
-paomon,Ultimate,199,116;117,BTL 12+,23:00,Vademon
+paomon,Ultimate,199,116,BTL 12+,23:00,Vademon
 paomon,Ultimate,247,101,BTL 12+,23:00,Taomon
+paomon,Ultimate,271,178,BTL 12+,23:00,MegaKabuterimon
 paomon,Mega,465,257,KO6 2+,23:00,JumboGamemon
 paomon,Mega,332,268,KO6 2+,23:00,Gankoomon
-paomon,Mega,296,199,KO6 2+,23:00,HiAndromon
+paomon,Mega,296,199,KO6 2+,24:00,HiAndromon
 paomon,Mega,379,247,KO6 2+,23:00,Valkyrimon
+paomon,Mega,343,271,KO6 2+,23:00,GranKuwagamon
 petitmon,Fresh,1437,egg,TIME,20:00,Petitmon
-petitmon,InTraining,1492,1437,TIME,20:00,Babydmon
-petitmon,Rookie,57,1492,CM 0-2,21:00,Dracomon
+petitmon,InTraining,1492,1437,TIME,21:00,Babydmon
+petitmon,Rookie,57,1492,CM 0-2,23:00,Dracomon
 petitmon,Rookie,49,1492,CM 3+,21:00,Otamamon
-petitmon,Champion,150,57,"CM 0-2, TR 16+",22:00,Coredramon
+petitmon,Champion,150,57,"CM 0-2, TR 16+",23:00,Coredramon
 petitmon,Champion,169,57,"CM 0-2, TR 0-15",22:00,GeoGreymon
-petitmon,Champion,118,57;49,TIME,22:00,Nanimon
-petitmon,Champion,106,49,"CM 0-2, TR 0-15",22:00,Shellmon
-petitmon,Champion,116,49,TIME,21:00,Numemon
-petitmon,Ultimate,202,150;106,WIN 12/15,23:00,MegaSeadramon
+petitmon,Champion,118,57,TIME,21:00,Nanimon
+petitmon,Champion,142,49,"CM 0-2, TR 16+",22:00,Gekomon
+petitmon,Champion,495,49,"CM 0-2, TR 0-15",22:00,Manbomon
+petitmon,Champion,118,49,TIME,21:00,Nanimon
+petitmon,Ultimate,202,150;142,WIN 12/15,23:00,MegaSeadramon
 petitmon,Ultimate,643,169,WIN 12/15,23:00,Majiramon
-petitmon,Ultimate,1222,118,WIN 12/15,23:00,Vademon X
-petitmon,Ultimate,1554,116,WIN 12/15,23:00,Chaperomon
+petitmon,Ultimate,198,118,WIN 12/15,24:00,Digitamamon
+petitmon,Ultimate,1150,495,WIN 12/15,23:00,Thetismon
 petitmon,Mega,432,202,CM 0-2,23:00,Neptunemon
 petitmon,Mega,292,643,CM 0-2,23:00,Phoenixmon
-petitmon,Mega,602,1222,CM 0-2,23:00,Babamon
-petitmon,Mega,1031,1554,CM 0-2,23:00,NoblePumpmon
+petitmon,Mega,671,198,CM 0-2,23:00,Bacchusmon
+petitmon,Mega,1356,1150,CM 0-2,23:00,Amphimon
 popomon,Fresh,1438,egg,TIME,20:00,Popomon
-popomon,InTraining,1493,1438,TIME,20:00,Frimon
+popomon,InTraining,1493,1438,TIME,21:00,Frimon
 popomon,Rookie,454,1493,CM 0-2,21:00,KoKabuterimon
 popomon,Rookie,471,1493,CM 3+,21:00,Liollmon
 popomon,Champion,140,454,"CM 0-2, BTL 4+",22:00,Kabuterimon
-popomon,Champion,146,454;471,CM 0-2,22:00,Deputymon
-popomon,Champion,117,454;471,TIME,22:00,Sukamon
-popomon,Champion,118,471,TIME,22:00,Nanimon
+popomon,Champion,146,454,CM 0-2,22:00,Deputymon
+popomon,Champion,117,454,TIME,21:00,Sukamon
+popomon,Champion,146,471,"CM 0-2, BTL 4+",22:00,Deputymon
+popomon,Champion,446,471,CM 0-2,22:00,Sealsdramon
+popomon,Champion,117,471,TIME,21:00,Sukamon
 popomon,Ultimate,225,140,BTL 12+,23:00,MegaKabuterimon
 popomon,Ultimate,990,146,BTL 12+,23:00,Mametyramon
 popomon,Ultimate,252,117,BTL 12+,23:00,BlackKingNumemon
-popomon,Ultimate,198,118,BTL 12+,23:00,Digitamamon
+popomon,Ultimate,447,446,BTL 12+,23:00,Tankdramon
 popomon,Mega,1561,225,KO6 2+,23:00,QueenBeemon
 popomon,Mega,437,990,KO6 2+,23:00,Ouryumon
 popomon,Mega,1355,252,KO6 2+,23:00,Cthyllamon
-popomon,Mega,867,198,KO6 2+,23:00,Minervamon X
+popomon,Mega,860,447,KO6 2+,23:00,MetalGarurumon X
 pupumon,Fresh,1439,egg,TIME,20:00,Pupumon
-pupumon,InTraining,949,1439,TIME,20:00,Minomon
+pupumon,InTraining,949,1439,TIME,21:00,Minomon
 pupumon,Rookie,65,949,CM 0-2,21:00,Wormmon
 pupumon,Rookie,762,949,CM 3+,21:00,Kodokugumon
 pupumon,Champion,162,65,"CM 0-2, BTL 4+",22:00,Yanmamon
 pupumon,Champion,413,65,CM 0-2,22:00,Hudiemon
-pupumon,Champion,116,65;762,TIME,21:00,Numemon
-pupumon,Champion,178,762,CM 0-2,22:00,Gokimon
-pupumon,Champion,117,762,TIME,22:00,Sukamon
+pupumon,Champion,116,65,TIME,21:00,Numemon
+pupumon,Champion,178,762,"CM 0-2, BTL 4+",22:00,Gokimon
+pupumon,Champion,517,762,CM 0-2,22:00,Honeybeemon (dead end: no onward corpus edge)
+pupumon,Champion,116,762,TIME,21:00,Numemon
 pupumon,Ultimate,218,162;413,BTL 12+,23:00,Lilymon
 pupumon,Ultimate,192,116,BTL 12+,23:00,Monzaemon
 pupumon,Ultimate,271,178,BTL 12+,23:00,MegaKabuterimon
-pupumon,Ultimate,778,117,BTL 12+,23:00,KingSukamon
 pupumon,Mega,598,218,KO6 2+,23:00,BanchoLilymon
 pupumon,Mega,288,192,KO6 2+,23:00,MarineAngemon
 pupumon,Mega,290,271,KO6 2+,24:00,SkullMammothmon
-pupumon,Mega,319,778,KO6 2+,23:00,PlatinumNumemon
 bommon,Fresh,1440,egg,TIME,20:00,Bommon
-bommon,InTraining,969,1440,TIME,20:00,Sakuttomon
+bommon,InTraining,969,1440,TIME,21:00,Sakuttomon
 bommon,Rookie,62,969,CM 0-2,21:00,Veemon
-bommon,Rookie,67,969,CM 3+,21:00,Zubamon
+bommon,Rookie,67,969,CM 3+,22:00,Zubamon
 bommon,Champion,190,62,"CM 0-2, TR 16+",22:00,DarkRizamon
 bommon,Champion,514,62,"CM 0-2, TR 0-15",22:00,Depthmon
-bommon,Champion,118,62;67,TIME,22:00,Nanimon
-bommon,Champion,160,67,"CM 0-2, TR 0-15",22:00,BaoHackmon
-bommon,Champion,116,67,TIME,21:00,Numemon
+bommon,Champion,118,62,TIME,21:00,Nanimon
+bommon,Champion,160,67,"CM 0-2, TR 16+",23:00,BaoHackmon (dead end: no onward corpus edge)
+bommon,Champion,167,67,"CM 0-2, TR 0-15",22:00,GoldNumemon
+bommon,Champion,118,67,TIME,21:00,Nanimon
 bommon,Ultimate,1567,190,WIN 12/15,23:00,Loudmon
 bommon,Ultimate,662,514,WIN 12/15,23:00,Splashmon
-bommon,Ultimate,199,118;116,WIN 12/15,23:00,Vademon
+bommon,Ultimate,199,118;167,WIN 12/15,23:00,Vademon
 bommon,Mega,660,1567,CM 0-2,23:00,Dorbickmon
 bommon,Mega,432,662,CM 0-2,23:00,Neptunemon
 bommon,Mega,650,199,CM 0-2,23:00,Parallelmon
 pusumon,Fresh,1441,egg,TIME,20:00,Pusumon
-pusumon,InTraining,936,1441,TIME,20:00,Bibimon
+pusumon,InTraining,936,1441,TIME,21:00,Bibimon
 pusumon,Rookie,937,936,CM 0-2,21:00,Pulsemon
-pusumon,Rookie,41,936,CM 3+,21:00,Dorumon
+pusumon,Rookie,41,936,CM 3+,22:00,Dorumon
 pusumon,Champion,904,937,"CM 0-2, BTL 4+",22:00,Filmon
 pusumon,Champion,995,937,CM 0-2,22:00,Bulkmon
-pusumon,Champion,117,937;41,TIME,22:00,Sukamon
-pusumon,Champion,157,41,CM 0-2,22:00,Wendigomon
-pusumon,Champion,997,41,TIME,22:00,Numemon X
-pusumon,Ultimate,1232,904;997,BTL 12+,23:00,MegaSeadramon X
+pusumon,Champion,117,937,TIME,21:00,Sukamon
+pusumon,Champion,157,41,"CM 0-2, BTL 4+",22:00,Wendigomon
+pusumon,Champion,171,41,CM 0-2,22:00,Gaogamon
+pusumon,Champion,117,41,TIME,21:00,Sukamon
+pusumon,Ultimate,1232,904,BTL 12+,23:00,MegaSeadramon X
 pusumon,Ultimate,1006,995,BTL 12+,23:00,Boutmon
 pusumon,Ultimate,252,117,BTL 12+,23:00,BlackKingNumemon
 pusumon,Ultimate,267,157,BTL 12+,23:00,MasterTyrannomon
+pusumon,Ultimate,648,171,BTL 12+,23:00,Kumbhiramon
 pusumon,Mega,1251,1232,KO6 2+,23:00,SkullMammothmon X
 pusumon,Mega,1014,1006,KO6 2+,23:00,Kazuchimon
 pusumon,Mega,344,252,KO6 2+,23:00,PrinceMamemon
 pusumon,Mega,380,267,KO6 2+,23:00,Gaiomon
+pusumon,Mega,310,648,KO6 2+,23:00,Beelzemon
 puwamon,Fresh,1442,egg,TIME,20:00,Puwamon
-puwamon,InTraining,951,1442,TIME,20:00,Kyaromon
+puwamon,InTraining,951,1442,TIME,21:00,Kyaromon
 puwamon,Rookie,70,951,CM 0-2,21:00,Kudamon
 puwamon,Rookie,1543,951,CM 3+,21:00,Shoemon
 puwamon,Champion,141,70,TR 16+,22:00,Starmon
 puwamon,Champion,167,70,TR 5-15,22:00,GoldNumemon
-puwamon,Champion,118,70;1543,TIME,22:00,Nanimon
-puwamon,Champion,164,1543,TR 5-15,22:00,Dogmon
-puwamon,Champion,116,1543,TIME,21:00,Numemon
+puwamon,Champion,118,70,TIME,21:00,Nanimon
+puwamon,Champion,164,1543,TR 16+,22:00,Dogmon
+puwamon,Champion,838,1543,TR 5-15,22:00,Tobucatmon
+puwamon,Champion,118,1543,TIME,21:00,Nanimon
 puwamon,Ultimate,641,141,WIN 12/15,23:00,Makuramon
-puwamon,Ultimate,199,167;118;116,WIN 12/15,23:00,Vademon
+puwamon,Ultimate,199,167;118,WIN 12/15,23:00,Vademon
 puwamon,Ultimate,475,164,WIN 12/15,23:00,Betsumon
+puwamon,Ultimate,426,838,WIN 12/15,23:00,Hisyaryumon
 puwamon,Mega,635,641,"CM 0-2, TR 10+",23:00,Marsmon
 puwamon,Mega,286,199,"CM 0-2, TR 10+",23:00,HerculesKabuterimon
 puwamon,Mega,580,475,"CM 0-2, TR 10+",23:00,Parasimon
+puwamon,Mega,466,426,"CM 0-2, TR 10+",23:00,MedievalGallantmon
 relemon,Fresh,1443,egg,TIME,20:00,Relemon
-relemon,InTraining,971,1443,TIME,20:00,Gummymon
+relemon,InTraining,971,1443,TIME,21:00,Gummymon
 relemon,Rookie,60,971,CM 0-2,21:00,Terriermon
 relemon,Rookie,64,971,CM 3+,21:00,Renamon
 relemon,Champion,163,60,TR 16+,22:00,Turuiemon
 relemon,Champion,176,60,TR 5-15,22:00,Gorimon
-relemon,Champion,117,60;64,TIME,22:00,Sukamon
-relemon,Champion,415,64,TR 5-15,22:00,Ginryumon
-relemon,Champion,118,64,TIME,22:00,Nanimon
+relemon,Champion,117,60,TIME,21:00,Sukamon
+relemon,Champion,415,64,TR 16+,22:00,Ginryumon
+relemon,Champion,516,64,TR 5-15,22:00,Gargoylemon
+relemon,Champion,117,64,TIME,21:00,Sukamon
 relemon,Ultimate,231,163,WIN 12/15,23:00,Knightmon
 relemon,Ultimate,791,176,WIN 12/15,23:00,Valvemon
 relemon,Ultimate,778,117,WIN 12/15,23:00,KingSukamon
 relemon,Ultimate,420,415,WIN 12/15,23:00,Grademon
-relemon,Ultimate,1222,118,WIN 12/15,23:00,Vademon X
+relemon,Ultimate,847,516,WIN 12/15,23:00,SkullBaluchimon
 relemon,Mega,334,231;420,"CM 0-2, TR 10+",23:00,Duftmon
 relemon,Mega,594,791,"CM 0-2, TR 10+",23:00,Quartzmon
-relemon,Mega,397,778;1222,"CM 0-2, TR 10+",23:00,KingEtemon
-sakumon,Fresh,1444,egg,TIME,20:00,Sakumon
-sakumon,InTraining,1499,1444,TIME,20:00,Sakuttomon
-sakumon,Rookie,67,1499,CM 0-2,21:00,Zubamon
-sakumon,Rookie,66,1499,CM 3+,21:00,Hackmon
-sakumon,Champion,161,67;66,"CM 0-2, TR 16+",22:00,Zubaeagermon
-sakumon,Champion,160,67;66,"CM 0-2, TR 0-15",22:00,BaoHackmon
-sakumon,Champion,116,67;66,TIME,21:00,Numemon
-sakumon,Ultimate,418,161,WIN 12/15,23:00,Garummon
-sakumon,Ultimate,1554,116,WIN 12/15,23:00,Chaperomon
-sakumon,Mega,398,418,CM 0-2,23:00,CresGarurumon
-sakumon,Mega,1555,1554,CM 0-2,23:00,Cendrillmon
+relemon,Mega,397,778,"CM 0-2, TR 10+",24:00,KingEtemon
+relemon,Mega,618,847,"CM 0-2, TR 10+",23:00,Zanbamon
 zerimon,Fresh,1445,egg,TIME,20:00,Zerimon
-zerimon,InTraining,20,1445,TIME,20:00,Bukamon
-zerimon,Rookie,35,20,CM 0-2,21:00,Gizamon
+zerimon,InTraining,20,1445,TIME,21:00,Bukamon
+zerimon,Rookie,35,20,CM 0-2,23:00,Gizamon
 zerimon,Rookie,50,20,CM 3+,21:00,Gomamon
-zerimon,Champion,111,35,TR 16+,22:00,Deltamon
-zerimon,Champion,137,35;50,TR 5-15,22:00,Ebidramon
-zerimon,Champion,117,35;50,TIME,22:00,Sukamon
-zerimon,Champion,118,50,TIME,22:00,Nanimon
+zerimon,Champion,111,35,TR 16+,24:00,Deltamon
+zerimon,Champion,137,35,TR 5-15,22:00,Ebidramon
+zerimon,Champion,117,35,TIME,21:00,Sukamon
+zerimon,Champion,137,50,TR 16+,22:00,Ebidramon
+zerimon,Champion,542,50,TR 5-15,22:00,Tylomon
+zerimon,Champion,117,50,TIME,21:00,Sukamon
 zerimon,Ultimate,1519,111,WIN 12/15,23:00,Cargodramon
 zerimon,Ultimate,880,137,WIN 12/15,23:00,MarinChimairamon
 zerimon,Ultimate,252,117,WIN 12/15,23:00,BlackKingNumemon
-zerimon,Ultimate,198,118,WIN 12/15,23:00,Digitamamon
+zerimon,Ultimate,235,542,WIN 12/15,23:00,Blossomon
 zerimon,Mega,860,1519,"CM 0-2, TR 10+",23:00,MetalGarurumon X
 zerimon,Mega,1565,880,"CM 0-2, TR 10+",23:00,Skadimon
 zerimon,Mega,1355,252,"CM 0-2, TR 10+",23:00,Cthyllamon
-zerimon,Mega,1022,198,"CM 0-2, TR 10+",23:00,Lilithmon X
+zerimon,Mega,342,235,"CM 0-2, TR 10+",23:00,Barbamon
 cocomon,Fresh,1446,egg,TIME,20:00,Cocomon
-cocomon,InTraining,1501,1446,TIME,20:00,Chocomon
+cocomon,InTraining,1501,1446,TIME,21:00,Chocomon
 cocomon,Rookie,487,1501,CM 0-2,21:00,Phascomon
 cocomon,Rookie,1065,1501,CM 3+,21:00,Lopmon X
 cocomon,Champion,490,487,"CM 0-2, TR 16+",22:00,Porcupamon
 cocomon,Champion,493,487,"CM 0-2, TR 0-15",22:00,Troopmon
-cocomon,Champion,116,487;1065,TIME,21:00,Numemon
-cocomon,Champion,1027,1065,"CM 0-2, TR 0-15",22:00,Gatomon X
-cocomon,Champion,997,1065,TIME,22:00,Numemon X
+cocomon,Champion,116,487,TIME,21:00,Numemon
+cocomon,Champion,1027,1065,"CM 0-2, TR 16+",22:00,Gatomon X
+cocomon,Champion,1028,1065,"CM 0-2, TR 0-15",22:00,Wizarmon X
+cocomon,Champion,116,1065,TIME,21:00,Numemon
 cocomon,Ultimate,499,490,WIN 12/15,23:00,Astamon
 cocomon,Ultimate,447,493,WIN 12/15,23:00,Tankdramon
 cocomon,Ultimate,192,116,WIN 12/15,23:00,Monzaemon
 cocomon,Ultimate,854,1027,WIN 12/15,23:00,Lilymon X
-cocomon,Ultimate,1229,997,WIN 12/15,23:00,LadyDevimon X
+cocomon,Ultimate,988,1028,WIN 12/15,23:00,Mamemon X
 cocomon,Mega,435,499,CM 0-2,23:00,Megidramon
 cocomon,Mega,302,447,CM 0-2,23:00,Seraphimon
 cocomon,Mega,301,192,CM 0-2,23:00,Vikemon
 cocomon,Mega,857,854,CM 0-2,23:00,Sakuyamon X
-cocomon,Mega,861,1229,CM 0-2,23:00,BeelStarmon X
+cocomon,Mega,631,988,CM 0-2,23:00,Metallicdramon
 fufumon,Fresh,1447,egg,TIME,20:00,Fufumon
-fufumon,InTraining,929,1447,TIME,20:00,Dorimon
+fufumon,InTraining,929,1447,TIME,21:00,Dorimon
 fufumon,Rookie,58,929,CM 0-2,21:00,Armadimon
 fufumon,Rookie,405,929,CM 3+,21:00,Monodramon
 fufumon,Champion,134,58,"CM 0-2, TR 16+",22:00,Tankmon
 fufumon,Champion,410,58,"CM 0-2, TR 0-15",22:00,Golemon
-fufumon,Champion,117,58;405,TIME,22:00,Sukamon
-fufumon,Champion,412,405,"CM 0-2, TR 0-15",22:00,Strikedramon
-fufumon,Champion,118,405,TIME,22:00,Nanimon
+fufumon,Champion,117,58,TIME,21:00,Sukamon
+fufumon,Champion,412,405,"CM 0-2, TR 16+",22:00,Strikedramon
+fufumon,Champion,414,405,"CM 0-2, TR 0-15",22:00,Raptordramon
+fufumon,Champion,117,405,TIME,21:00,Sukamon
 fufumon,Ultimate,609,134,WIN 12/15,23:00,Tinmon
 fufumon,Ultimate,424,410,WIN 12/15,23:00,Volcamon
 fufumon,Ultimate,778,117,WIN 12/15,23:00,KingSukamon
-fufumon,Ultimate,390,412,WIN 12/15,23:00,Flaremon
-fufumon,Ultimate,1222,118,WIN 12/15,23:00,Vademon X
-fufumon,Mega,296,609,CM 0-2,23:00,HiAndromon
+fufumon,Ultimate,390,412,WIN 12/15,22:00,Flaremon
+fufumon,Ultimate,479,414,WIN 12/15,23:00,MetalPhantomon
+fufumon,Mega,296,609,CM 0-2,24:00,HiAndromon
 fufumon,Mega,394,424;390,CM 0-2,23:00,Apollomon
 fufumon,Mega,319,778,CM 0-2,23:00,PlatinumNumemon
-fufumon,Mega,1316,1222,CM 0-2,23:00,Ebemon X
+fufumon,Mega,614,479,CM 0-2,23:00,Reapermon
 cotsucomon,Fresh,1448,egg,TIME,20:00,Cotsucomon
-cotsucomon,InTraining,961,1448,TIME,20:00,Missimon
+cotsucomon,InTraining,961,1448,TIME,21:00,Missimon
 cotsucomon,Rookie,403,961,CM 0-2,21:00,Dracmon
 cotsucomon,Rookie,444,961,CM 3+,21:00,Commandramon
 cotsucomon,Champion,142,403,"CM 0-2, TR 16+",22:00,Gekomon
@@ -635,58 +677,65 @@ cotsucomon,Mega,751,744,CM 0-2,23:00,Ragnamon
 cotsucomon,Mega,1104,448,CM 0-2,23:00,Plutomon
 cotsucomon,Mega,1031,1554,CM 0-2,23:00,NoblePumpmon
 algomoni,Fresh,1449,egg,TIME,20:00,Algomon I
-algomoni,InTraining,383,1449,TIME,20:00,Tsumemon
+algomoni,InTraining,383,1449,TIME,21:00,Tsumemon
 algomoni,Rookie,792,383,CM 0-2,21:00,Vemmon
 algomoni,Rookie,74,383,CM 3+,21:00,Keramon
-algomoni,Champion,174,792;74,"CM 0-2, BTL 4+",22:00,Chrysalimon
-algomoni,Champion,407,792;74,CM 0-2,22:00,Arkadimon IV
-algomoni,Champion,117,792;74,TIME,22:00,Sukamon
+algomoni,Champion,174,792,"CM 0-2, BTL 4+",22:00,Chrysalimon
+algomoni,Champion,407,792,CM 0-2,22:00,Arkadimon IV
+algomoni,Champion,117,792,TIME,21:00,Sukamon
+algomoni,Champion,174,74,"CM 0-2, BTL 4+",22:00,Chrysalimon
+algomoni,Champion,407,74,CM 0-2,22:00,Arkadimon IV
+algomoni,Champion,117,74,TIME,21:00,Sukamon
 algomoni,Ultimate,416,174;407,BTL 12+,23:00,Arkadimon V
 algomoni,Ultimate,199,117,BTL 12+,23:00,Vademon
 algomoni,Mega,865,416,KO6 2+,23:00,Diaboromon X
 algomoni,Mega,373,199,KO6 2+,23:00,Ebemon
 bombmon,Fresh,1450,egg,TIME,20:00,Bombmon
-bombmon,InTraining,678,1450,TIME,20:00,Pickmon
+bombmon,InTraining,678,1450,TIME,21:00,Pickmon
 bombmon,Rookie,81,678,CM 0-2,21:00,Solarmon
 bombmon,Rookie,684,678,CM 3+,21:00,Sparrowmon
 bombmon,Champion,166,81,"CM 0-2, BTL 4+",22:00,Geremon
 bombmon,Champion,147,81,CM 0-2,22:00,Clockmon
-bombmon,Champion,118,81;684,TIME,22:00,Nanimon
-bombmon,Champion,103,684,CM 0-2,22:00,Saberdramon
-bombmon,Champion,116,684,TIME,21:00,Numemon
+bombmon,Champion,118,81,TIME,21:00,Nanimon
+bombmon,Champion,103,684,"CM 0-2, BTL 4+",22:00,Saberdramon
+bombmon,Champion,179,684,CM 0-2,22:00,Fugamon
+bombmon,Champion,118,684,TIME,21:00,Nanimon
 bombmon,Ultimate,265,166,BTL 12+,23:00,SuperStarmon
-bombmon,Ultimate,197,147,BTL 12+,23:00,Datamon
-bombmon,Ultimate,198,118;116,BTL 12+,23:00,Digitamamon
+bombmon,Ultimate,197,147,BTL 12+,24:00,Datamon
+bombmon,Ultimate,198,118,BTL 12+,24:00,Digitamamon
 bombmon,Ultimate,760,103,BTL 12+,23:00,Karatenmon
+bombmon,Ultimate,270,179,BTL 12+,23:00,WereGarurumon
 bombmon,Mega,579,265,KO6 2+,23:00,Blastmon
-bombmon,Mega,353,197,KO6 2+,23:00,MetalGarurumon
+bombmon,Mega,353,197;270,KO6 2+,23:00,MetalGarurumon
 bombmon,Mega,1289,198,KO6 2+,23:00,Devitamamon
 bombmon,Mega,342,760,KO6 2+,23:00,Barbamon
 carimon,Fresh,1050,egg,TIME,20:00,Carimon
-carimon,InTraining,1506,1050,TIME,20:00,Terumon
+carimon,InTraining,1506,1050,TIME,21:00,Terumon
 carimon,Rookie,1052,1506,CM 0-2,21:00,Calumon X
 carimon,Rookie,73,1506,CM 3+,21:00,Chuumon
 carimon,Champion,1053,1052,TR 16+,22:00,Luluwamon
 carimon,Champion,1056,1052,TR 5-15,22:00,Enochmon
-carimon,Champion,117,1052;73,TIME,22:00,Sukamon
-carimon,Champion,168,73,TR 5-15,22:00,BomberNanimon
-carimon,Champion,118,73,TIME,22:00,Nanimon
+carimon,Champion,117,1052,TIME,21:00,Sukamon
+carimon,Champion,168,73,TR 16+,22:00,BomberNanimon
+carimon,Champion,529,73,TR 5-15,22:00,Puchiemon
+carimon,Champion,117,73,TIME,21:00,Sukamon
 carimon,Ultimate,1054,1053,WIN 12/15,23:00,Shebamon
 carimon,Ultimate,1057,1056,WIN 12/15,23:00,Mosemon
 carimon,Ultimate,252,117,WIN 12/15,23:00,BlackKingNumemon
-carimon,Ultimate,238,168,WIN 12/15,23:00,Giromon
-carimon,Ultimate,1222,118,WIN 12/15,23:00,Vademon X
+carimon,Ultimate,238,168,WIN 12/15,24:00,Giromon
+carimon,Ultimate,218,529,WIN 12/15,23:00,Lilymon
 carimon,Mega,1055,1054,"CM 0-2, TR 10+",23:00,Kibegaimon
 carimon,Mega,1058,1057,"CM 0-2, TR 10+",23:00,Rapturemon
 carimon,Mega,344,252;238,"CM 0-2, TR 10+",23:00,PrinceMamemon
-carimon,Mega,602,1222,"CM 0-2, TR 10+",23:00,Babamon
+carimon,Mega,1017,218,"CM 0-2, TR 10+",23:00,Shivamon
 sunamon,Fresh,1451,egg,TIME,20:00,Sunamon
-sunamon,InTraining,1507,1451,TIME,20:00,Goromon
+sunamon,InTraining,1507,1451,TIME,21:00,Goromon
 sunamon,Rookie,887,1507,CM 0-2,21:00,Sunarizamon
 sunamon,Rookie,909,1507,CM 3+,21:00,Gotsumon X
-sunamon,Champion,888,887,TR 16+,22:00,Baboongamon
-sunamon,Champion,1110,887;909,TR 5-15,22:00,Grottomon
+sunamon,Champion,888,887,TR 16+,22:00,Baboongamon (dead end: no onward corpus edge)
+sunamon,Champion,1110,887,TR 5-15,22:00,Grottomon
 sunamon,Champion,116,887,TIME,21:00,Numemon
+sunamon,Champion,1110,909,TR 16+,22:00,Grottomon
 sunamon,Champion,175,909,TR 5-15,22:00,Icemon
 sunamon,Champion,997,909,TIME,22:00,Numemon X
 sunamon,Ultimate,1130,1110,WIN 12/15,23:00,Gigasmon
@@ -698,73 +747,78 @@ sunamon,Mega,305,192,"CM 0-2, TR 10+",23:00,Cherubimon
 sunamon,Mega,659,229,"CM 0-2, TR 10+",23:00,Olegmon
 sunamon,Mega,913,1317,"CM 0-2, TR 10+",23:00,Dinorexmon
 curimon,Fresh,1452,egg,TIME,20:00,Curimon
-curimon,InTraining,1508,1452,TIME,20:00,Gurimon
+curimon,InTraining,1508,1452,TIME,21:00,Gurimon
 curimon,Rookie,356,1508,CM 0-2,21:00,Muchomon
 curimon,Rookie,473,1508,CM 3+,21:00,Shoutmon
 curimon,Champion,180,356,"CM 0-2, TR 16+",22:00,Hyougamon
 curimon,Champion,524,356,"CM 0-2, TR 0-15",22:00,Archelomon
-curimon,Champion,117,356;473,TIME,22:00,Sukamon
-curimon,Champion,808,473,"CM 0-2, TR 0-15",22:00,KingShoutmon
-curimon,Champion,118,473,TIME,22:00,Nanimon
+curimon,Champion,117,356,TIME,21:00,Sukamon
+curimon,Champion,808,473,"CM 0-2, TR 16+",22:00,KingShoutmon
+curimon,Champion,1091,473,"CM 0-2, TR 0-15",22:00,Mimicmon
+curimon,Champion,117,473,TIME,21:00,Sukamon
 curimon,Ultimate,627,180,WIN 12/15,23:00,CrysPaledramon
 curimon,Ultimate,229,524,WIN 12/15,23:00,Zudomon
 curimon,Ultimate,778,117,WIN 12/15,23:00,KingSukamon
 curimon,Ultimate,417,808,WIN 12/15,23:00,Vritramon
-curimon,Ultimate,198,118,WIN 12/15,23:00,Digitamamon
+curimon,Ultimate,797,1091,WIN 12/15,23:00,Zephyrmon
 curimon,Mega,914,627,CM 0-2,23:00,Hexeblaumon
 curimon,Mega,992,229,CM 0-2,23:00,ChaosSeadramon
-curimon,Mega,397,778,CM 0-2,23:00,KingEtemon
+curimon,Mega,397,778,CM 0-2,24:00,KingEtemon
 curimon,Mega,727,417,CM 0-2,23:00,Ardhamon
-curimon,Mega,597,198,CM 0-2,23:00,Lampmon
+curimon,Mega,758,797,CM 0-2,23:00,JetSilphymon
 pyonmon,Fresh,1453,egg,TIME,20:00,Pyonmon
-pyonmon,InTraining,1509,1453,TIME,20:00,Bosamon
+pyonmon,InTraining,1509,1453,TIME,21:00,Bosamon
 pyonmon,Rookie,653,1509,CM 0-2,21:00,Strabimon
 pyonmon,Rookie,1141,1509,CM 3+,21:00,Angoramon
 pyonmon,Champion,133,653,TR 16+,22:00,Mechanorimon
 pyonmon,Champion,408,653,TR 5-15,22:00,Lobomon
-pyonmon,Champion,116,653;1141,TIME,21:00,Numemon
-pyonmon,Champion,170,1141,TR 5-15,22:00,Sunflowmon
-pyonmon,Champion,117,1141,TIME,22:00,Sukamon
+pyonmon,Champion,116,653,TIME,21:00,Numemon
+pyonmon,Champion,170,1141,TR 16+,22:00,Sunflowmon
+pyonmon,Champion,894,1141,TR 5-15,22:00,Parasaurmon
+pyonmon,Champion,116,1141,TIME,21:00,Numemon
 pyonmon,Ultimate,237,133;170,WIN 12/15,22:00,Mamemon
 pyonmon,Ultimate,231,408,WIN 12/15,23:00,Knightmon
 pyonmon,Ultimate,1554,116,WIN 12/15,23:00,Chaperomon
-pyonmon,Ultimate,199,117,WIN 12/15,23:00,Vademon
+pyonmon,Ultimate,1045,894,WIN 12/15,23:00,Ajatarmon
 pyonmon,Mega,577,237,"CM 0-2, TR 10+",23:00,TonosamaMamemon
 pyonmon,Mega,336,231,"CM 0-2, TR 10+",23:00,Crusadermon
 pyonmon,Mega,1555,1554,"CM 0-2, TR 10+",23:00,Cendrillmon
-pyonmon,Mega,650,199,"CM 0-2, TR 10+",23:00,Parallelmon
+pyonmon,Mega,619,1045,"CM 0-2, TR 10+",23:00,Spinomon
 puyomon,Fresh,1454,egg,TIME,20:00,Puyomon
-puyomon,InTraining,1510,1454,TIME,20:00,Puyoyomon
+puyomon,InTraining,1510,1454,TIME,21:00,Puyoyomon
 puyomon,Rookie,51,1510,CM 0-2,21:00,Ganimon
 puyomon,Rookie,355,1510,CM 3+,21:00,ModokiBetamon
-puyomon,Champion,128,51;355,"CM 0-2, BTL 4+",22:00,Gesomon
+puyomon,Champion,128,51,"CM 0-2, BTL 4+",22:00,Gesomon
 puyomon,Champion,460,51,CM 0-2,22:00,Gwappamon
-puyomon,Champion,118,51;355,TIME,22:00,Nanimon
-puyomon,Champion,116,355,TIME,21:00,Numemon
+puyomon,Champion,118,51,TIME,21:00,Nanimon
+puyomon,Champion,128,355,"CM 0-2, BTL 4+",22:00,Gesomon
+puyomon,Champion,359,355,CM 0-2,22:00,MoriShellmon
+puyomon,Champion,118,355,TIME,21:00,Nanimon
 puyomon,Ultimate,205,128,BTL 12+,23:00,MarineDevimon
 puyomon,Ultimate,1040,460,BTL 12+,23:00,Crowmon
 puyomon,Ultimate,1222,118,BTL 12+,23:00,Vademon X
-puyomon,Ultimate,192,116,BTL 12+,23:00,Monzaemon
+puyomon,Ultimate,365,359,BTL 12+,23:00,Vermilimon
 puyomon,Mega,340,205,KO6 2+,23:00,Leviamon
 puyomon,Mega,619,1040,KO6 2+,23:00,Spinomon
 puyomon,Mega,1316,1222,KO6 2+,23:00,Ebemon X
-puyomon,Mega,307,192,KO6 2+,23:00,Sakuyamon
+puyomon,Mega,299,365,KO6 2+,23:00,WarGreymon
 fusamon,Fresh,1521,egg,TIME,20:00,Fusamon
-fusamon,InTraining,1522,1521,TIME,20:00,Bowmon
+fusamon,InTraining,1522,1521,TIME,21:00,Bowmon
 fusamon,Rookie,54,1522,CM 0-2,21:00,Mushmon
 fusamon,Rookie,1074,1522,CM 3+,21:00,Gammamon
 fusamon,Champion,658,54,"CM 0-2, BTL 4+",22:00,Yakiimon
 fusamon,Champion,132,54,CM 0-2,22:00,RedVegimon
-fusamon,Champion,117,54;1074,TIME,22:00,Sukamon
-fusamon,Champion,179,1074,CM 0-2,22:00,Fugamon
-fusamon,Champion,118,1074,TIME,22:00,Nanimon
+fusamon,Champion,117,54,TIME,21:00,Sukamon
+fusamon,Champion,179,1074,"CM 0-2, BTL 4+",22:00,Fugamon
+fusamon,Champion,409,1074,CM 0-2,22:00,Agunimon
+fusamon,Champion,117,1074,TIME,21:00,Sukamon
 fusamon,Ultimate,235,658,BTL 12+,23:00,Blossomon
 fusamon,Ultimate,1228,132,BTL 12+,23:00,WarGrowmon
 fusamon,Ultimate,252,117,BTL 12+,23:00,BlackKingNumemon
 fusamon,Ultimate,270,179,BTL 12+,23:00,WereGarurumon
-fusamon,Ultimate,198,118,BTL 12+,23:00,Digitamamon
+fusamon,Ultimate,217,409,BTL 12+,23:00,SkullMeramon
 fusamon,Mega,590,235,KO6 2+,23:00,Crossmon
 fusamon,Mega,466,1228,KO6 2+,23:00,MedievalGallantmon
 fusamon,Mega,1355,252,KO6 2+,23:00,Cthyllamon
 fusamon,Mega,346,270,KO6 2+,23:00,ZeedGarurumon
-fusamon,Mega,671,198,KO6 2+,23:00,Bacchusmon
+fusamon,Mega,318,217,KO6 2+,23:00,Jijimon

@@ -219,13 +219,16 @@ def test_device_megas_match_canon():
 
 
 def test_verE_is_the_canon_straight_chain():
-    """DM20's Meicoo bonus line has NO requirements until the Mega:
-    YukimiBotamon -> Nyaromon -> Salamon -> Meicoomon -> Meicrackmon ->
-    Rasielmon (CM 0-2)."""
+    """DM20's Meicoo bonus line: YukimiBotamon -> Nyaromon -> Salamon ->
+    Meicoomon (no requirements), then the canon battle gate to Meicrackmon
+    ("15 Battles, 12-15 Victories" -- humulos; the 07-07 sweep missed it,
+    canon scan 2026-07-08 restored it), then Rasielmon (CM 0-2)."""
     vE = lines.load_lines()["verE"]
     assert len(vE["members"]) == 6
-    for parent, child in ((1410, 1458), (1458, 47), (47, 386), (386, 389)):
+    for parent, child in ((1410, 1458), (1458, 47), (47, 386)):
         assert lines.select_line(_Counters(parent, "verE", cm=9)) == child
+    assert lines.select_line(_Counters(386, "verE", cm=9)) is None      # no wins yet
+    assert lines.select_line(_Counters(386, "verE", cm=9, log=[1] * 12 + [0] * 3)) == 389
     assert lines.select_line(_Counters(389, "verE", cm=0)) == 392
     assert lines.select_line(_Counters(389, "verE", cm=3)) is None
 

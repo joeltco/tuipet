@@ -19,9 +19,12 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 from tuipet import data  # noqa: E402
 
 LINES_CSV = os.path.join(os.path.dirname(__file__), "..", "src", "tuipet", "data", "lines.csv")
-HAND_CURATED = ("ver1", "verX")
+# the device-canon ports + canon bonus line are maintained by hand against the
+# humulos DM20 charts (canon scan 2026-07-08); the curator never rewrites them
+HAND_CURATED = ("ver1", "ver2", "ver3", "ver4", "ver5", "verE", "verX", "sakumon")
 STAGE_ORDER = ["Fresh", "InTraining", "Rookie", "Champion", "Ultimate", "Mega"]
-BEDTIME = {"Fresh": "20:00", "InTraining": "20:00", "Rookie": "21:00",
+# Baby II sleeps at 21:00 on every DM20 chart; Baby I is canon-NA (house 20:00)
+BEDTIME = {"Fresh": "20:00", "InTraining": "21:00", "Rookie": "21:00",
            "Champion": "22:00", "Ultimate": "23:00", "Mega": "23:00"}
 
 # canon egg names -> line ids (DM20 versions); everything else gets a name slug
@@ -66,19 +69,37 @@ HINTS = {
              "Mega": ["Machinedramon", "Mugendramon", "Puppetmon", "Pinochimon"]},
 }
 
-# per-form sleep times (humulos DM20 list, fetched 2026-07-04); 0:00 AM -> 24:00
-# per the ver1 convention.  Applied by NAME; unlisted forms keep stage defaults.
+# per-form sleep times (humulos DM20 list, full re-fetch 2026-07-08; covers
+# every Ver.1-5 + bonus-line form); 0:00 AM -> 24:00 per the ver1 convention.
+# Applied by NAME; unlisted forms keep stage defaults.
 SLEEP = {}
 for _names, _t in (
     (("Koromon", "Agumon", "Numemon", "Tsunomon", "Tunomon", "Gabumon",
-      "Vegimon", "Vegiemon"), "21:00"),
-    (("Betamon", "Meramon", "Mamemon", "Elecmon", "Kabuterimon", "Angemon"), "22:00"),
+      "Vegimon", "Vegiemon", "Tokomon", "Patamon", "Sukamon", "Scumon",
+      "Tanemon", "Biyomon", "Piyomon", "Nanimon", "Pagumon", "Raremon",
+      "Nyaromon", "Salamon", "Plotmon", "Sakuttomon", "Babydmon", "Pukamon",
+      "Coronamon", "Dorimon"), "21:00"),
+    (("Betamon", "Meramon", "Mamemon", "Elecmon", "Kabuterimon", "Angemon",
+      "Kunemon", "Unimon", "Shellmon", "Drimogemon", "Palmon", "Monochromon",
+      "Leomon", "Kokatorimon", "Cockatrimon", "Piximon", "Piccolomon",
+      "Puppetmon", "Pinochimon", "Meicoomon", "Meicrackmon", "Zubamon",
+      "Hackmon", "Firamon", "Flaremon", "Dorumon"), "22:00"),
     (("Greymon", "Tyrannomon", "Tyranomon", "Airdramon", "Seadramon",
       "MetalGreymon", "Monzaemon", "BlitzGreymon", "Garurumon", "Yukidarumon",
       "Frigimon", "Birdramon", "Whamon", "MetalMamemon", "Vademon",
-      "CresGarurumon"), "23:00"),
+      "CresGarurumon", "Centarumon", "Centalmon", "Kuwagamon", "Megadramon",
+      "Gazimon", "Gizamon", "Zubaeagermon", "BaoHackmon", "Dracomon",
+      "Coredramon", "Wingdramon", "Examon", "Apollomon", "Dorugamon",
+      "DoruGreymon", "Alphamon", "Omegamon"), "23:00"),
     (("Devimon", "BanchoMamemon", "SkullGreymon", "SkullMammothmon",
-      "SkullMammon"), "24:00"),
+      "SkullMammon", "Ogremon", "Orgemon", "Bakemon", "Andromon", "Etemon",
+      "Giromon", "HiAndromon", "KingEtemon", "Coelamon", "Mojyamon",
+      "Digitamamon", "Titamon", "Aegisdramon", "DarkTyrannomon", "Devidramon",
+      "Flymon", "Cyclomon", "Tuskmon", "Deltamon", "MetalTyrannomon",
+      "Datamon", "Nanomon", "ExTyrannomon", "Machinedramon", "Mugendramon",
+      "Rasielmon", "Duramon", "Durandamon", "SaviorHackmon", "Jesmon",
+      "Slayerdramon", "Breakdramon", "Groundramon", "Lunamon", "Lekismon",
+      "Crescemon", "Dianamon", "RustTyrannomon"), "24:00"),
 ):
     for _n in _names:
         SLEEP[_n] = _t
@@ -95,17 +116,33 @@ def load_corpus():
     return by_num, evo, reqs
 
 
-def curate(by_num, evo, reqs, root, line_id, usage):
-    """One line: list of row dicts. Deterministic; consults/updates `usage`."""
-    hints = HINTS.get(line_id, {})
+def curate(by_num, evo, reqs, root, line_id, usage, auto_hints=None):
+    """One line: list of row dicts. Deterministic; consults/updates `usage`.
+
+    auto_hints carries the line's PREVIOUS roster (from the CSV being
+    rewritten) so a re-run repairs structure without rerolling shipped
+    content; explicit HINTS win per stage."""
+    hints = {**(auto_hints or {}), **HINTS.get(line_id, {})}
     members = {}          # num -> row
     rows = []
 
     def add(num, stage, parents, rule):
-        if num in members:                      # shared child: merge the parents
-            for p in parents:
-                if p not in members[num]["parents"]:
-                    members[num]["parents"].append(p)
+        if num in members:                      # shared child
+            new_parents = [p for p in parents if p not in members[num]["parents"]
+                           and all(p not in r["parents"] for r in rows if r["num"] == num)]
+            if not new_parents:
+                return
+            if stage in ("Ultimate", "Mega") and rule == members[num]["rule"]:
+                # single-child funnel rows: same gate, no ordering hazard
+                members[num]["parents"].extend(new_parents)
+                return
+            # multi-child stages get ONE ROW PER PARENT so first-match order
+            # stays correct per road (the ver1 dual-road idiom).  Merging into
+            # the first row parked the shared catch-all BEFORE the second
+            # rookie's own rows and shadowed them all dead (canon scan
+            # 2026-07-08: 137 unreachable forms).
+            rows.append({"num": num, "stage": stage,
+                         "parents": new_parents, "rule": rule})
             return
         row = {"num": num, "stage": stage, "parents": list(parents), "rule": rule}
         members[num] = row
@@ -151,6 +188,14 @@ def curate(by_num, evo, reqs, root, line_id, usage):
         f = [t for t in pool if reqs.get(t, {}).get("special") == "Failed"]
         return f[0] if f else (pool[0] if pool else None)
 
+    def is_failed(t):
+        return reqs.get(t, {}).get("special") == "Failed"
+
+    def has_onward(t, next_stage):
+        """The corpus graph continues from t: a form we could pick next stage."""
+        return any(by_num.get(k, {}).get("stage") == next_stage
+                   and not data.is_placeholder(k) for k in evo.get(t, []))
+
     add(root, "Fresh", ["egg"], "TIME")
     baby2 = candidates(root, "InTraining")[:1]
     for t in baby2:
@@ -172,13 +217,18 @@ def curate(by_num, evo, reqs, root, line_id, usage):
               ["TR 16+", "TR 5-15", "TIME"],                    # a training line
               ["CM 0-2, BTL 4+", "CM 0-2", "TIME"])[flav]       # a battler line
         T2 = (["CM 0-2", "TIME"], ["TR 8+", "TIME"], ["BTL 4+", "TIME"])[flav]
-        if len(pool) >= 3:
-            picks = pool[:2] + [failed_last(pool[2:])]
+        # Failed forms take only the catch-all slot (a punishment mon in a
+        # good-care slot reads as reward); good slots prefer champions the
+        # graph can continue from, so a well-raised pet is never the one
+        # that strands (sunamon's Baboongamon, canon scan 2026-07-08)
+        good = [t for t in pool if not is_failed(t)]
+        good.sort(key=lambda t: 0 if has_onward(t, "Ultimate") else 1)  # stable
+        if len(pool) >= 3 and len(good) >= 2:
+            picks = good[:2] + [failed_last([t for t in pool if t not in good[:2]])]
             rules = T3
-        elif len(pool) == 2:
-            picks, rules = [pool[0], failed_last(pool)], T2
-            if picks[0] == picks[1]:
-                picks, rules = pool[:2], T2
+        elif len(good) >= 1 and len(pool) >= 2:
+            catch = failed_last([t for t in pool if t != good[0]])
+            picks, rules = [good[0], catch], T2
         else:
             picks, rules = pool[:1], ["TIME"]
         for t, rl in zip(picks, rules):
@@ -189,14 +239,25 @@ def curate(by_num, evo, reqs, root, line_id, usage):
     mega_gate = ("CM 0-2", "CM 0-2, TR 10+", "KO6 2+")[flav]    # trainers drill, battlers hunt
     ults = []
     for ch in dict.fromkeys(champs):
-        pick = candidates(ch, "Ultimate")[:1]
-        for t in pick:
+        pool = candidates(ch, "Ultimate")
+        pool.sort(key=lambda t: 0 if has_onward(t, "Mega") else 1)  # stable
+        for t in pool[:1]:
             add(t, "Ultimate", [ch], ult_gate)
             ults.append(t)
     for ul in dict.fromkeys(ults):
         pick = candidates(ul, "Mega")[:1]
         for t in pick:
             add(t, "Mega", [ul], mega_gate)
+    # a member below the line's ceiling with no onward row is a dead end the
+    # graph forced on us -- annotate so the invariant tests see it was chosen,
+    # not missed (device lines mark their canon dead ends the same way)
+    kids = set()
+    for r in rows:
+        kids.update(r["parents"])
+    ceiling = max(STAGE_ORDER.index(r["stage"]) for r in rows)
+    for r in rows:
+        if STAGE_ORDER.index(r["stage"]) < ceiling and r["num"] not in kids:
+            r["note"] = "dead end: no onward corpus edge"
     return rows
 
 
@@ -213,6 +274,18 @@ def main(write=False):
         nm = by_num[int(r[2])]["name"]
         usage[nm] = usage.get(nm, 0) + 1
 
+    # previous rosters become per-line auto-hints: a re-run repairs rule
+    # structure (per-parent rows, Failed slotting) without rerolling the
+    # shipped content of 40 lines
+    prev_hints = {}
+    for r in kept[1:]:
+        if not r or r[0] in HAND_CURATED:
+            continue
+        names = prev_hints.setdefault(r[0], {}).setdefault(r[1], [])
+        nm = by_num[int(r[2])]["name"]
+        if nm not in names:
+            names.append(nm)
+
     out_rows, stats = [], []
     for idx in range(egg_mod.count()):
         targets = egg_mod.hatch_targets(idx)
@@ -223,15 +296,17 @@ def main(write=False):
         line_id = LINE_IDS.get(name, _slug(name))
         if line_id in HAND_CURATED:
             continue
-        rows = curate(by_num, evo, reqs, root, line_id, usage)
+        rows = curate(by_num, evo, reqs, root, line_id, usage,
+                      auto_hints=prev_hints.get(line_id))
         ceiling = max(rows, key=lambda r: STAGE_ORDER.index(r["stage"]))["stage"]
         stats.append((line_id, len(rows), ceiling))
         for r in rows:
             nm = by_num[r["num"]]["name"]
             bed = SLEEP.get(nm, BEDTIME[r["stage"]])   # canon per-form, else stage default
+            note = nm + (f" ({r['note']})" if r.get("note") else "")
             out_rows.append([line_id, r["stage"], str(r["num"]),
                              ";".join(str(p) for p in r["parents"]),
-                             r["rule"], bed, nm])
+                             r["rule"], bed, note])
 
     for lid, n, ceil in stats:
         print(f"{lid:16s} {n:3d} forms   ceiling {ceil}")
