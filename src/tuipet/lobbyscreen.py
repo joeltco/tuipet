@@ -130,6 +130,7 @@ class LobbyPanel:
         self._last_name = name or ""
         self.buf = ""
         self.sel = 0
+        self.scroll = 0                # chat scrollback: lines back from live
         self.action_for = None
         self.pm_to = None              # (id, name): the input line is a PM compose
         self.invite_prompt = None
@@ -656,16 +657,28 @@ class LobbyPanel:
                 self.action_for = None
             return None
         if k == "escape":
+            if self.scroll:                    # scrolled log: snap to live first
+                self.scroll = 0
+                return None
             if self.pm_to is not None:
                 self.pm_to, self.buf = None, ""
                 self.status = "PM cancelled."
                 return None
             return ("done", None)
+        if k == "pageup":
+            # chat scrollback (polish 2026-07-07): CHAT_CAP lines of history
+            # existed but only the last 8 ever showed
+            self.scroll += BODY - 1            # _text_lobby clamps to the log
+            return None
+        if k == "pagedown":
+            self.scroll = max(0, self.scroll - (BODY - 1))
+            return None
         if k == "up":
             self.sel = max(0, self.sel - 1); return None
         if k == "down":
             self.sel = min(max(0, len(self._others()) - 1), self.sel + 1); return None
         if k == "enter":
+            self.scroll = 0                    # speaking snaps the view live
             if self.pm_to is not None:
                 if self.buf.strip():
                     self.client.pm(self.pm_to[0], self.buf.strip())
@@ -783,6 +796,29 @@ class LobbyPanel:
             t.append("  attack: [1]Vaccine [2]Data [3]Virus", style=INK_B)
         return t
 
+    def _chat_rows(self):
+        """The wrapped history as (line, style) rows, oldest first -- one
+        style per MESSAGE (chat polish 2026-07-07): your own lines dim (you
+        know what you said), PMs and lines that mention your name bright,
+        join/leave notices dim; wrap continuations hang a 1-col indent so a
+        long message reads as ONE message, not three."""
+        s = self.state
+        me = (s.me_name or "") if s else ""
+        rows = []
+        for nm, tx in (s.chat if s else []):
+            if not nm:                                     # join/leave notice
+                sty, parts = DIM, _wrap(f"· {tx}", CHATW - 1)
+            else:
+                pm = str(nm).startswith("✉")
+                mine = bool(me) and (nm == me or str(nm).startswith("✉→"))
+                mention = bool(me) and me.lower() in str(tx).lower()
+                # mine first: my own echo (chat or ✉→ PM) always reads dim
+                sty = DIM if mine else (INK_B if (pm or mention) else INK)
+                parts = _wrap(f"{nm}: {tx}", CHATW - 1)
+            rows.append((parts[0], sty))
+            rows.extend((" " + ln, sty) for ln in parts[1:])
+        return rows
+
     def _text_lobby(self):
         s = self.state
         others = self._others()
@@ -791,16 +827,19 @@ class LobbyPanel:
         t = Text()
         t.append(_fit(f"you: {me}", CHATW), style=INK_B)     # confirm your identity
         t.append("│", style=DIM)
-        t.append(f"{online} on".rjust(ROSTW)[:ROSTW] + "\n", style=INK_B)
-        lines = []
-        for nm, tx in (s.chat if s else []):
-            lines.extend(_wrap(f"{nm}: {tx}" if nm else f"· {tx}", CHATW))
-        lines = lines[-BODY:]
-        lines = [""] * (BODY - len(lines)) + lines
+        rows = self._chat_rows()
+        self.scroll = max(0, min(self.scroll, max(0, len(rows) - BODY)))
+        right = (f"▲{self.scroll} back" if self.scroll else f"{online} on")
+        t.append(right.rjust(ROSTW)[:ROSTW] + "\n", style=INK_B)
+        end = len(rows) - self.scroll
+        view = rows[max(0, end - BODY):end]
+        view = [("", INK)] * (BODY - len(view)) + view
+        if not rows:                                       # the empty room
+            view[BODY // 2] = ("— say hi, the room hears you —"[:CHATW], DIM)
         sel = min(self.sel, len(others) - 1) if others else 0
         rlo = max(0, min(sel - BODY // 2, len(others) - BODY)) if len(others) > BODY else 0
         for i in range(BODY):
-            t.append(_fit(lines[i], CHATW), style=INK)
+            t.append(_fit(view[i][0], CHATW), style=view[i][1])
             t.append("│", style=DIM)
             ridx = rlo + i
             if ridx < len(others):
@@ -821,7 +860,8 @@ class LobbyPanel:
         t.append(label, style=INK_B)
         fw = CHATW + ROSTW - len(label)
         shown = self.buf if len(self.buf) < fw else self.buf[-(fw - 1):]
-        t.append(_fit(shown + "_", fw) + "\n", style=INK)
+        caret = "_" if (getattr(self, "_mq", 0) // 5) % 2 == 0 else " "
+        t.append(_fit(shown + caret, fw) + "\n", style=INK)
         # the prompt lines: the KEY HINTS are fixed chrome and must never clip
         # off the end -- a 24-char name used to push [Y]/[N] and [Esc] out of
         # the 38-col line entirely (lobby audit 2026-07-07); the NAME field
@@ -841,6 +881,9 @@ class LobbyPanel:
             acts = "[B]attle [J]og [M]sg [Esc]" if plive else "playing — [M]essage  [Esc]"
             t.append(_fit(marquee(who, w - len(acts) - 3, mq) + ":  " + acts, w),
                      style=INK_B)
+        elif self.scroll:
+            # scrolled into the log: the line teaches its own way back
+            t.append("▲ older — PgUp/PgDn · Esc back to live"[:w], style=DIM)
         else:
             line = self.status
             if others and line.startswith("↑↓ pick"):

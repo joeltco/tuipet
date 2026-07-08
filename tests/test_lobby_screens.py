@@ -66,6 +66,55 @@ def test_every_text_phase_fits_the_lcd():
     _fits(pan, "battle over")
 
 
+def test_chat_styles_tell_the_speakers_apart():
+    """Chat polish 2026-07-07: my lines dim, PMs and mentions bright,
+    notices dim, plain chat ink; a wrapped message hangs an indent."""
+    from tuipet.theme import INK, INK_B, DIM
+    pan = _lobby()
+    pan.state.chat = [("JoeltCo", "hello all"),          # mine
+                      ("Ryo", "yo JoeltCo nice pet"),    # mentions me
+                      ("Ryo", "regular line"),           # plain
+                      ("✉Ryo", "psst"),                  # PM in
+                      ("✉→Ryo", "back at you"),          # PM out (mine)
+                      ("", "mp joined")]                 # notice
+    rows = pan._chat_rows()
+    assert [r[1] for r in rows] == [DIM, INK_B, INK, INK_B, DIM, DIM]
+    pan.state.chat = [("Ryo", "a very long message that has to wrap onto more lines here")]
+    rows = pan._chat_rows()
+    assert len(rows) > 1 and rows[1][0].startswith(" ")
+    assert rows[0][1] == rows[1][1]                      # one message, one style
+
+
+def test_chat_scrollback_pages_the_log():
+    pan = _lobby()
+    pan.state.chat = [("Ryo", f"msg{i}") for i in range(30)]
+    assert "msg29" in pan.text().plain and "msg5" not in pan.text().plain
+    pan.key("pageup")
+    txt = pan.text().plain
+    assert "▲" in txt and "msg29" not in txt             # older view + marker
+    assert "back to live" in txt                         # the way home shows
+    assert pan.key("escape") is None and pan.scroll == 0  # snap, NOT close
+    assert "msg29" in pan.text().plain
+    pan.key("pageup")
+    pan.buf = "hi"
+    pan.key("enter")                                     # speaking snaps live
+    assert pan.scroll == 0
+    _fits(pan, "lobby scrolled")
+
+
+def test_chat_empty_state_and_caret_blink():
+    pan = _lobby()
+    pan.state.chat = []
+    pan._mq = 0
+    txt = pan.text().plain
+    assert "say hi" in txt
+    inp = [l for l in txt.split("\n") if l.startswith("say:")][0]
+    assert "_" in inp
+    pan._mq = 5                                          # the caret's off-beat
+    inp = [l for l in pan.text().plain.split("\n") if l.startswith("say:")][0]
+    assert "_" not in inp
+
+
 def test_pvp_round_replays_the_real_volley():
     pan = _lobby()
     pan.partner = (2, "Ryo")
