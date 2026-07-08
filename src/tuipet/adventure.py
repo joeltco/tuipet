@@ -100,6 +100,7 @@ class Adventure:
         self.last = "Adventure begins!"
         self.loot = None
         self._energy_dec = 0
+        self._phase_seen = pet.day_phase   # road narration: notice night/dawn
         self._rested = set()         # town spans already rested at this pass
         self._cleared = set()        # zone bosses beaten this pass (by enemy num)
         # the CURRENT habitat follows the road (habitat audit 2026-07-06:
@@ -147,6 +148,23 @@ class Adventure:
     @property
     def lives(self):                 # the view reads `lives`
         return self.life
+
+    def ribbon(self, width=17):
+        """The zone at a glance -- REAL geography only (legibility arc
+        2026-07-07: the engine walked towns.csv spans and enemies.csv boss
+        steps while the player saw a bare percentage).  A fixed-width track:
+        'T' at each town gate, 'B' at each still-standing boss (a cleared one
+        leaves the road), '◆' the pet.  The pet wins a shared cell -- where
+        YOU are outranks what stands there (the strip already names it)."""
+        cells = ["·"] * width
+        scale = lambda step: min(width - 1, max(0, int(step / self.total_steps * width)))
+        for lo, _hi, _t in self.zone.get("towns", ()):
+            cells[scale(lo)] = "T"
+        for b in self.zone["bosses"]:
+            if b["num"] not in self._cleared:
+                cells[scale(self._boss_loc(b))] = "B"
+        cells[scale(self.location)] = "◆"
+        return "".join(cells)
 
     def _full_hp(self):
         return getattr(self.pet, "full_health", 0) or MAX_HEALTH.get(self.pet.stage, MAX_HEALTH_DEFAULT)
@@ -248,6 +266,7 @@ class Adventure:
             self.last = f"{self.pet.name} noticed something off the path!"
             return ("discover", None)
         prev = self.location
+        prev_hab = self.pet.habitat               # for the terrain narration below
         self.location = min(self.total_steps, self.location + self.stride)
         self._set_zone_habitat()                  # the terrain (and its sky) shifts underfoot
         # the post-battle immunity wears off with the walking
@@ -299,7 +318,23 @@ class Adventure:
             e = _pick_weighted(here)
             self.last = f"Wild {e['name']} appeared!"
             return ("encounter", e)
-        self.last = f"Travelling… {self.pct}%"   # 16-18 wide: strip budget (2026-07-07)
+        # A quiet stride narrates REAL state only (legibility arc 2026-07-07 --
+        # never invented flavor): the terrain band the walk just crossed into
+        # (zones.csv BackgroundsAndRange, the same shift the backdrop fades
+        # through), a day-phase turn (night runs the real 1.5x encounter rate),
+        # or the battle-immunity calm (no random rolls while it holds).
+        if self.pet.habitat != prev_hab:
+            name = data.load_habitats().get(self.pet.habitat, {}).get("name")
+            self.last = f"Now crossing: {name}." if name \
+                else f"Travelling… {self.pct}%"
+        elif self.pet.day_phase != self._phase_seen:
+            self._phase_seen = self.pet.day_phase
+            self.last = ("Night falls — the wilds stir." if self._phase_seen == "night"
+                         else "Dawn breaks over the road.")
+        elif getattr(self, "_immunity_steps", 0.0) > 0:
+            self.last = f"Calm road… {self.pct}%"    # setBattleImmunity holds
+        else:
+            self.last = f"Travelling… {self.pct}%"   # 16-18 wide: strip budget (2026-07-07)
         return None
 
     def flee(self, enemy, was_boss=False):

@@ -396,6 +396,60 @@ def test_boss_stop_wears_the_habitat_of_the_stop(monkeypatch):
     assert p.habitat == hids[0], "the habitat must match step 25, not step 30"
 
 
+# ---- road legibility (arc 2026-07-07: surface REAL state, invent nothing) ----
+
+def test_zone_ribbon_maps_real_geography(monkeypatch):
+    """adventure.ribbon: the journey card's one-line zone map -- towns.csv
+    gates, uncleared boss steps and the pet's live step scaled onto a fixed
+    track.  A cleared boss leaves the road; the pet wins a shared cell."""
+    from tuipet import adventure as amod
+    monkeypatch.setattr(amod.random, "random", lambda: 0.99)
+    adv, p = _stub_adv(town=(100, 120, 0), boss_loc=300)   # total 400, at 20
+    r = adv.ribbon()
+    assert len(r) == 17
+    assert r[0] == "◆"                        # the pet at step 20
+    assert r[int(100 / 400 * 17)] == "T"      # the town gate at its real span
+    assert r[int(300 / 400 * 17)] == "B"      # the boss at its real step
+    assert set(r) == {"◆", "T", "B", "·"}
+    adv._cleared.add(500)                     # the boss falls -> off the road
+    assert "B" not in adv.ribbon()
+    adv.location = 300                        # standing where it stood
+    assert adv.ribbon()[int(300 / 400 * 17)] == "◆"
+    # an unplaced gate boss guards the far end (last cell)
+    adv2, _ = _stub_adv(boss_loc=None)
+    assert adv2.ribbon()[-1] == "B"
+
+
+def test_quiet_strides_narrate_real_state(monkeypatch):
+    """A no-event stride reports what actually changed underfoot: the terrain
+    band it crossed into, a day-phase turn (the real 1.5x night rate), or the
+    battle-immunity calm.  Nothing invented -- every line is live state."""
+    from tuipet import adventure as amod, data
+    monkeypatch.setattr(amod.random, "random", lambda: 0.99)   # quiet road
+    hids = sorted(data.load_habitats())[:2]
+    # the terrain shift: the stride 20->30 crosses into the second band
+    adv, p = _stub_adv(boss_loc=None, bgs=[(0, 25, hids[0]), (26, 400, hids[1])])
+    p.habitat = hids[0]
+    assert adv.travel() is None
+    assert adv.last == f"Now crossing: {data.load_habitats()[hids[1]]['name']}."
+    # the day-phase turn (whichever side of the clock the pet is on)
+    adv, p = _stub_adv(boss_loc=None)
+    ph = p.day_phase
+    adv._phase_seen = "day" if ph == "night" else "night"
+    assert adv.travel() is None
+    assert adv.last == ("Night falls — the wilds stir." if ph == "night"
+                        else "Dawn breaks over the road.")
+    assert adv._phase_seen == ph                    # noticed once, not every stride
+    # the immunity calm, then the plain mile
+    adv, p = _stub_adv(boss_loc=None)
+    adv._immunity_steps = 500.0
+    assert adv.travel() is None
+    assert adv.last.startswith("Calm road…")
+    adv._immunity_steps = 0.0
+    assert adv.travel() is None
+    assert adv.last.startswith("Travelling…")
+
+
 # ---- road care keys (Joel 2026-07-07: action keys live during adventure) -----
 
 def _road_panel():

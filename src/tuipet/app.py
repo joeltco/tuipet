@@ -2060,12 +2060,19 @@ class TuiPetApp(App):
                 "[dim]the path — fight![/]",
             ]
         else:                                               # travelling
+            # the zone ribbon (legibility arc 2026-07-07): REAL geography on
+            # the journey card -- towns.csv gates, uncleared enemies.csv
+            # bosses, the pet's live step (adventure.ribbon)
+            road = "".join(f"[b]{c}[/]" if c == "◆"
+                           else f"[{T.COIN}]T[/]" if c == "T"
+                           else f"[{T.NEG}]B[/]" if c == "B"
+                           else "[dim]·[/]" for c in a.ribbon())
             lines = [
                 f"[b]{p.name[:14]}[/] [dim]· away[/]",
                 div,
-                f"Map      {a.mi + 1}-{a.zi + 1}",
+                f"Map      {a.mi + 1}-{a.zi + 1} [dim]· {a.pct}%[/]",
                 f"Lives    {lives}",
-                f"Progress {a.pct}%",
+                f"Road     {road}",
                 f"Bag      {sum(p.inventory.values())}   [{T.COIN}]{p.bits}b[/]",
                 div,
                 f"Hunger   {hearts(p.hunger)}",
