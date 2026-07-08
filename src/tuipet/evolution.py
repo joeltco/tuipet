@@ -353,6 +353,96 @@ def select(pet):
     return random.choice(top)
 
 
+# ---- DNA divergence: the wild road ("ultimate v-pet" arc, 2026-07-07) -------
+# The lines are the raising spine (529 forms); the corpus graph reaches 1,454.
+# Divergence is the door between them: a pet whose CHARGED DNA has a
+# strict-max Field at/over its stage's threshold steers evolution off the
+# chart -- the graph's NEXT-STAGE children of the current form in that Field
+# become the candidates, judged by this engine's own gates (check ->
+# fulfilled -> deviation).  The charge is consumed by evolve_to's reset_dna
+# like any evolution; the caller re-anchors via lines.adopt_line (a chart
+# that claims the target keeps the pet on lines; otherwise it rides this
+# corpus engine from then on -- a road it PAID for).
+#
+# Thresholds are the balance knob: spirit runs -10..10 and charging costs
+# 3/6 enthusiasm per unit (same/other Field), so each figure below is really
+# N charge SESSIONS with recovery between, not one action -- plus the wager
+# bits that banked the DNA and the per-unit sickness risk.
+DIVERGE_NEED = {"Fresh": 2, "InTraining": 4, "Rookie": 8,
+                "Champion": 12, "Ultimate": 16}
+_STAGE_ORDER = ["Fresh", "InTraining", "Rookie", "Champion", "Ultimate", "Mega"]
+
+
+def divergence_target(pet):
+    """The armed steer's destination, or None while unarmed (no strict-max
+    Field, an under-threshold charge, or no graph edge in that Field)."""
+    field = pet.highest_dna()
+    if not field or field == "None":       # the None bin is wasted DNA, not a road
+        return None
+    need = DIVERGE_NEED.get(pet.stage)
+    if need is None or pet.dna_applied.get(field, 0) < need:
+        return None
+    try:
+        nxt = _STAGE_ORDER[_STAGE_ORDER.index(pet.stage) + 1]
+    except (ValueError, IndexError):
+        return None
+    _, by_num = data.load_sprites()
+    reqs = data.load_requirements()
+    out = []
+    for t in data.load_evolutions().get(pet.num, []):
+        rec = by_num.get(t)
+        if rec is None or t == pet.num or data.is_placeholder(t):
+            continue
+        if rec["stage"] != nxt or rec["field"] != field:
+            continue
+        req = reqs.get(t, {})
+        if req.get("special", "None") != "None" or req.get("evol_item", -1) != -1:
+            continue        # jogress/fusion/mode/item roads keep their own doors
+        if req.get("xantibody", "None") == "Induced" \
+                and getattr(pet, "x_antibody", "None") == "None":
+            continue        # Induced X-forms stay X-egg territory (LINES_SPEC §4)
+        out.append(t)
+    if not out:
+        return None
+    # the paid steer always fires: gates pick among qualifiers, else the
+    # best-fulfilled edge (select()'s never-stuck fallback idiom)
+    valid = [t for t in out if check(pet, t)]
+    pool = valid or out
+    best = max(fulfilled(pet, t) for t in pool)
+    top = [t for t in pool if abs(fulfilled(pet, t) - best) < 1e-9]
+    if len(top) > 1:
+        mind = min(deviation(pet, t) for t in top)
+        top = [t for t in top if deviation(pet, t) == mind]
+    return random.choice(top)
+
+
+def divergence_roads(pet):
+    """{field: [target nums]} of every next-stage graph edge from the current
+    form, by Field -- the DNA screen's map of where each charge can lead
+    (legibility arc: the door must be visible to be a choice)."""
+    try:
+        nxt = _STAGE_ORDER[_STAGE_ORDER.index(pet.stage) + 1]
+    except (ValueError, IndexError):
+        return {}
+    _, by_num = data.load_sprites()
+    reqs = data.load_requirements()
+    roads = {}
+    for t in data.load_evolutions().get(pet.num, []):
+        rec = by_num.get(t)
+        if rec is None or t == pet.num or data.is_placeholder(t):
+            continue
+        if rec["stage"] != nxt or rec["field"] == "None":
+            continue
+        req = reqs.get(t, {})
+        if req.get("special", "None") != "None" or req.get("evol_item", -1) != -1:
+            continue
+        if req.get("xantibody", "None") == "Induced" \
+                and getattr(pet, "x_antibody", "None") == "None":
+            continue
+        roads.setdefault(rec["field"], []).append(t)
+    return roads
+
+
 def is_mode_form(num):
     """This form IS a Mode (SpecialEvolution=Mode) -- mode change reverts it."""
     return data.load_requirements().get(num, {}).get("special") == "Mode"

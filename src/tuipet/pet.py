@@ -2133,6 +2133,16 @@ class Pet:
             return          # an animation owns the screen; evolve on a quiet tick
         if self.stage_seconds < self.STAGE_DURATION.get(self.stage, 9e9):
             return
+        # the armed DNA steer beats any chart (divergence: the wild road,
+        # 2026-07-07) -- charging a Field to its stage threshold IS the
+        # player's choice, and it opens the corpus graph's next-stage edge
+        # in that Field; unarmed pets are untouched (highest_dna '' short-
+        # circuits, so goldens and existing saves behave identically)
+        target = evolution.divergence_target(self)
+        if target is not None:
+            self.evolve_to(target)
+            lines_mod.adopt_line(self)    # re-anchor to any chart that claims
+            return                        # the landing, else ride the corpus engine
         if lines_mod.active(self):
             # line pets evolve by their line's first-match bracket table ONLY.
             # No match = stay and keep re-checking: counters can still earn a

@@ -201,12 +201,22 @@ def _trophy_rows(pet):
     except Exception:
         career = 0
     rows.append(("Career", f"{career} cup(s), all generations"))
+    # the collection long game ("ultimate v-pet" arc 2026-07-07): every raised
+    # form lands in the cross-generation album; divergence/jogress/eggs are
+    # the roads to the rest of the corpus
+    try:
+        seen = len(_p.get_progress().get("album", ()) or ())
+    except Exception:
+        seen = 0
+    _, by = data.load_sprites()
+    total = sum(1 for n in by if not data.is_placeholder(n))
+    rows.append(("Album", f"{seen}/{total} discovered"))
     won = sorted((getattr(pet, "trophies_won", None) or {}).items())
-    for tid, season in won[:6]:                     # keep the page at 9 rows max
-        tr = _t.trophy_by_id(tid)
+    for tid, season in won[:5]:                     # keep the page at 9 rows max
+        tr = _t.trophy_by_id(tid)                   # (was 6: the Album row joined)
         rows.append((_t.trophy_label(tr)[:12] if tr else f"cup {tid}", season))
-    if len(won) > 6:
-        rows.append(("…", f"+{len(won) - 6} more"))
+    if len(won) > 5:
+        rows.append(("…", f"+{len(won) - 5} more"))
     return rows
 
 

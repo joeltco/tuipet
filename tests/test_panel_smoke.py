@@ -94,6 +94,10 @@ def test_the_simple_panels_all_draw():
                              "right", "right", "right", "down", "enter", "down"])
     _walk(AssistPanel(p), ["enter", "enter"])
     _walk(DNAPanel(p), ["down", "right"])
+    # the Divergence roads page (hard rule: every phase gets a text() walk)
+    dna = DNAPanel(p)
+    dna.phase = "roads"
+    _walk(dna, ["down", "down", "up", "escape"])
     _walk(JogressPanel(p, p.num, p.num, p.num), ["space"])
     _walk(EggSelectPanel(), ["right", "right", "left"])
     _walk(ThemePanel(), ["down", "up", "escape"])

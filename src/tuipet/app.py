@@ -1306,6 +1306,12 @@ class TuiPetApp(App):
         border: round #7a7e78; padding: 0 1; width: 75; height: 5; margin-top: 1; color: #7d8186;
     }
     """
+    # the release-news line (title-screen msg box, first launch per build) --
+    # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
+    WHATS_NEW = ("DNA can now steer evolution! Charge one Field to its "
+                 "threshold and the next evolution takes the wild road — "
+                 "see DNA ▸ Divergence. Album progress on the DigiCore.")
+
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and
         # jogress should be online pvp only. we have adventure already") --
@@ -1366,6 +1372,9 @@ class TuiPetApp(App):
         self.stats_w.border_title = "STATUS"
         self.keys_w.border_title = "ACTIONS"
         self.screen_w.border_subtitle = "● on"
+        wn = self._whats_new()
+        if wn:                       # first launch on a new build: the news
+            self._welcome = f"{wn}  ·  {self._welcome}"   # rides the msg box
         self._hud(self._welcome)
         theme.apply(theme.load_choice())
         self._restyle()
@@ -1376,6 +1385,22 @@ class TuiPetApp(App):
         self.set_interval(10.0, self.autosave)
         self.run_worker(self._check_update(), name="update", exclusive=False)
         self._start_sync()
+
+    def _whats_new(self):
+        """One 'WHAT'S NEW' line in the msg box, on the FIRST launch of a new
+        build only (Joel 2026-07-07: release news belongs on the title
+        screen).  The seen stamp lives in settings so it survives pets and
+        rides the .bak rotation like every app-level pref."""
+        from . import update
+        cur = update.current_version()
+        if not cur:
+            return None
+        s = persistence.load_settings()
+        if s.get("seen_version") == cur:
+            return None
+        s["seen_version"] = cur
+        persistence.save_settings(s)
+        return f"WHAT'S NEW in v{cur}: {self.WHATS_NEW}"
 
     def _drain_pms(self):
         """Private messages land on the always-on sync connection; surface

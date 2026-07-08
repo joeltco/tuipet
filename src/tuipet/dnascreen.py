@@ -11,6 +11,10 @@ Home menu (DVPet DNA_Validation): Charge / Generate / Stats / Requirements.
   * Stats    (DNA_Stats): each Field's charged share -- the evolution gate %.
   * Requirements: per evolution target, the Field-DNA % each form needs and whether
              your charged distribution satisfies it (DVPet's evolution-tree DNA page).
+  * Divergence (tuipet, "ultimate v-pet" arc 2026-07-07): the wild-road map --
+             where each Field's charge can steer the NEXT evolution off the
+             chart (evolution.divergence_roads), the stage threshold, and the
+             armed state.  The door must be visible to be a choice.
 """
 from __future__ import annotations
 import math
@@ -26,7 +30,8 @@ _METER_W = 12               # the strip meter: was 22 -> the whole line ran 62 c
 #                             the training-audit rule; DNA audit 2026-07-05)
 
 _HOME = (("charge", "Charge"), ("generate", "Generate"),
-         ("stats", "Stats"), ("reqs", "Requirements"))
+         ("stats", "Stats"), ("reqs", "Requirements"),
+         ("roads", "Divergence"))
 
 
 class DNAPanel:
@@ -47,6 +52,19 @@ class DNAPanel:
         self.last = "Generate DNA, then charge it."
         self.sfx = None
         self._targets = self._dna_targets()
+        self._roads = evolution.divergence_roads(pet)   # field -> wild-road targets
+        self.road_i = 0
+
+    def _armed(self):
+        """The strict-max charged Field at/over the stage threshold WITH a
+        road -- the next evolution will diverge (mirrors divergence_target's
+        gate without picking the destination)."""
+        f = self.pet.highest_dna()
+        need = evolution.DIVERGE_NEED.get(self.pet.stage)
+        if (f and f != "None" and need is not None
+                and self.pet.dna_applied.get(f, 0) >= need and f in self._roads):
+            return f
+        return ""
 
     # ---- data ------------------------------------------------------------
     def _dna_targets(self):
@@ -150,6 +168,16 @@ class DNAPanel:
             self.phase = "home"
         return None
 
+    def _key_roads(self, k):
+        n = max(1, len(self._roads))
+        if k in ("up", "k"):
+            self.road_i = (self.road_i - 1) % n
+        elif k in ("down", "j"):
+            self.road_i = (self.road_i + 1) % n
+        elif k in ("escape", "enter"):
+            self.phase = "home"
+        return None
+
     def _key_bet(self, k):
         p = self.pet
         if k in ("left", "h"):
@@ -196,6 +224,10 @@ class DNAPanel:
             return "%d charged" % p.dna_total()
         if key == "reqs":
             return "%d form(s)" % len(self._targets)
+        if key == "roads":
+            f = self._armed()
+            return ("ARMED: %s" % data.pretty_field(f)[:10]) if f \
+                else "%d road(s)" % sum(len(v) for v in self._roads.values())
         return ""
 
     def _text_home(self):
@@ -216,7 +248,8 @@ class DNAPanel:
             chg = p.dna_applied.get(f, 0)
             pct = p.dna_percent(f)
             tag = "*" if f == p.field else " "           # * = your own Field (cheaper)
-            label = "%s%-15s%3db %3dc %3d%%" % (tag, data.pretty_field(f)[:15], own, chg, pct)
+            road = "▸" if f in self._roads else " "      # ▸ = a wild road exists (Divergence page)
+            label = "%s%-14s%s%3db %3dc %3d%%" % (tag, data.pretty_field(f)[:14], road, own, chg, pct)
             out.append_text(menu.row(label, i == self.cursor))
         out.append_text(menu.footer("↑↓fld ←→amt ENTER chg  ESC back"))
         return out
@@ -254,6 +287,39 @@ class DNAPanel:
             out.append_text(menu.row("%s %-14s %s%3d%%  now %3d%%"
                                      % (mark, data.pretty_field(f)[:14], sym, int(val), cur), False))
         out.append_text(menu.footer("↑↓ form %d/%d   ESC back" % (self.req_i + 1, len(self._targets))))
+        return out
+
+    def _text_roads(self):
+        p = self.pet
+        need = evolution.DIVERGE_NEED.get(p.stage)
+        out = menu.bar("DNA · DIVERGENCE",
+                       "need %dc" % need if need is not None else "top stage")
+        if not self._roads or need is None:
+            out.append_text(menu.blanks(1))
+            out.append_text(menu.note("No wild roads from this form."))
+            out.append_text(menu.blanks(1))
+            out.append_text(menu.row("Charge a Field to its threshold", False))
+            out.append_text(menu.row("to steer the next evolution.", False))
+            out.append_text(menu.footer("ESC back"))
+            return out
+        _, by = data.load_sprites()
+        armed = self._armed()
+        flds = sorted(self._roads)
+        self.road_i %= len(flds)
+        for i, f in enumerate(flds):
+            names = "/".join(by.get(t, {}).get("name", "?") for t in self._roads[f][:2])
+            if len(self._roads[f]) > 2:
+                names += "…"
+            chg = p.dna_applied.get(f, 0)
+            mark = "▶" if f == armed else " "
+            label = "%s%-13s %2d/%-2d %s" % (mark, data.pretty_field(f)[:13],
+                                             chg, need, names[:15])
+            out.append_text(menu.row(label, i == self.road_i))
+        out.append_text(menu.note("Armed: next evolution takes the road."
+                                  if armed else
+                                  "Charge %d in ONE Field to arm." % need,
+                                  tick=self.frame_i))
+        out.append_text(menu.footer("↑↓ field   ESC back"))
         return out
 
     def _text_bet(self):

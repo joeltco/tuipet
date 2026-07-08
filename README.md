@@ -95,7 +95,11 @@ effort and the drilled attribute power.
 
 **DNA** (`x`) is the per-Field collectible layer: charge banked Field-DNA
 into the pet to bend evolution toward gated forms, generate more, and read
-any form's requirements. **Jogress** (two-player DNA fusion) happens in the
+any form's requirements. Charging one Field to its stage threshold **arms a
+divergence**: the next evolution leaves the egg's chart for the evolution
+graph's road in that Field — the door that makes the *entire* 1,500+ roster
+raisable. The DNA screen's Divergence page maps where each Field can take
+you; the DigiCore counts your album toward the full collection. **Jogress** (two-player DNA fusion) happens in the
 lobby with a real partner — the partner's attribute picks the fusion via the
 game's `attributeJogress` matrix.
 
