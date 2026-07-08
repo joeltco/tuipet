@@ -237,9 +237,9 @@ class TuiPetApp(App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("Tidier cleanups: when your hired helper mucks out after a "
-                 "sleeping pet, the mess now sweeps off to the side with it "
-                 "instead of bunching up under the snoozing mon.")
+    WHATS_NEW = ("Three eggs fixed: the Pupumon, Bommon and Sunamon lines no "
+                 "longer strand a well-raised pet at Champion — their best-care "
+                 "roads now climb all the way to Mega like every other line.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and

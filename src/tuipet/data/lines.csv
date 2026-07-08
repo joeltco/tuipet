@@ -520,14 +520,16 @@ pupumon,Champion,162,65,"CM 0-2, BTL 4+",22:00,Yanmamon
 pupumon,Champion,413,65,CM 0-2,22:00,Hudiemon
 pupumon,Champion,116,65,TIME,21:00,Numemon
 pupumon,Champion,178,762,"CM 0-2, BTL 4+",22:00,Gokimon
-pupumon,Champion,517,762,CM 0-2,22:00,Honeybeemon (dead end: no onward corpus edge)
+pupumon,Champion,517,762,CM 0-2,22:00,Honeybeemon
 pupumon,Champion,116,762,TIME,21:00,Numemon
 pupumon,Ultimate,218,162;413,BTL 12+,23:00,Lilymon
 pupumon,Ultimate,192,116,BTL 12+,23:00,Monzaemon
 pupumon,Ultimate,271,178,BTL 12+,23:00,MegaKabuterimon
+pupumon,Ultimate,474,517,BTL 12+,23:00,Arukenimon
 pupumon,Mega,598,218,KO6 2+,23:00,BanchoLilymon
 pupumon,Mega,288,192,KO6 2+,23:00,MarineAngemon
 pupumon,Mega,290,271,KO6 2+,24:00,SkullMammothmon
+pupumon,Mega,284,474,KO6 2+,23:00,Demon
 bommon,Fresh,1440,egg,TIME,20:00,Bommon
 bommon,InTraining,969,1440,TIME,21:00,Sakuttomon
 bommon,Rookie,62,969,CM 0-2,21:00,Veemon
@@ -535,15 +537,17 @@ bommon,Rookie,67,969,CM 3+,22:00,Zubamon
 bommon,Champion,190,62,"CM 0-2, TR 16+",22:00,DarkRizamon
 bommon,Champion,514,62,"CM 0-2, TR 0-15",22:00,Depthmon
 bommon,Champion,118,62,TIME,21:00,Nanimon
-bommon,Champion,160,67,"CM 0-2, TR 16+",23:00,BaoHackmon (dead end: no onward corpus edge)
+bommon,Champion,160,67,"CM 0-2, TR 16+",23:00,BaoHackmon
 bommon,Champion,167,67,"CM 0-2, TR 0-15",22:00,GoldNumemon
 bommon,Champion,118,67,TIME,21:00,Nanimon
 bommon,Ultimate,1567,190,WIN 12/15,23:00,Loudmon
 bommon,Ultimate,662,514,WIN 12/15,23:00,Splashmon
 bommon,Ultimate,199,118;167,WIN 12/15,23:00,Vademon
+bommon,Ultimate,371,160,WIN 12/15,23:00,SaviorHackmon
 bommon,Mega,660,1567,CM 0-2,23:00,Dorbickmon
 bommon,Mega,432,662,CM 0-2,23:00,Neptunemon
 bommon,Mega,650,199,CM 0-2,23:00,Parallelmon
+bommon,Mega,372,371,CM 0-2,23:00,Jesmon
 pusumon,Fresh,1441,egg,TIME,20:00,Pusumon
 pusumon,InTraining,936,1441,TIME,21:00,Bibimon
 pusumon,Rookie,937,936,CM 0-2,21:00,Pulsemon
@@ -736,7 +740,7 @@ sunamon,Fresh,1451,egg,TIME,20:00,Sunamon
 sunamon,InTraining,1507,1451,TIME,21:00,Goromon
 sunamon,Rookie,887,1507,CM 0-2,21:00,Sunarizamon
 sunamon,Rookie,909,1507,CM 3+,21:00,Gotsumon X
-sunamon,Champion,888,887,TR 16+,22:00,Baboongamon (dead end: no onward corpus edge)
+sunamon,Champion,888,887,TR 16+,22:00,Baboongamon
 sunamon,Champion,1110,887,TR 5-15,22:00,Grottomon
 sunamon,Champion,116,887,TIME,21:00,Numemon
 sunamon,Champion,1110,909,TR 16+,22:00,Grottomon
@@ -746,10 +750,12 @@ sunamon,Ultimate,1130,1110,WIN 12/15,23:00,Gigasmon
 sunamon,Ultimate,192,116,WIN 12/15,23:00,Monzaemon
 sunamon,Ultimate,229,175,WIN 12/15,23:00,Zudomon
 sunamon,Ultimate,1317,997,WIN 12/15,23:00,Mephistomon X
+sunamon,Ultimate,613,888,WIN 12/15,23:00,Jewelbeemon
 sunamon,Mega,433,1130,"CM 0-2, TR 10+",23:00,PileVolcamon
 sunamon,Mega,305,192,"CM 0-2, TR 10+",23:00,Cherubimon
 sunamon,Mega,659,229,"CM 0-2, TR 10+",23:00,Olegmon
 sunamon,Mega,913,1317,"CM 0-2, TR 10+",23:00,Dinorexmon
+sunamon,Mega,343,613,"CM 0-2, TR 10+",23:00,GranKuwagamon
 curimon,Fresh,1452,egg,TIME,20:00,Curimon
 curimon,InTraining,1508,1452,TIME,21:00,Gurimon
 curimon,Rookie,356,1508,CM 0-2,21:00,Muchomon

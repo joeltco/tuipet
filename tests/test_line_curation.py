@@ -211,6 +211,22 @@ def test_dead_ends_are_annotated():
             assert "dead end" in note or "punishment leaf" in note, (lid, num, note)
 
 
+def test_no_onward_edge_claims_are_truthful():
+    """A dead end may be annotated 'no onward corpus edge' ONLY when the corpus
+    really has none -- otherwise the branch was stranded on a false note while a
+    Mega road sat one edge away (pupumon/bommon/sunamon strandings, audit
+    2026-07-08: Honeybeemon->Arukenimon->Demon etc. all existed in the corpus)."""
+    import csv
+    import os
+    evo = data.load_evolutions()
+    path = os.path.join(os.path.dirname(lines.__file__), "data", "lines.csv")
+    with open(path, newline="") as fh:
+        for r in csv.DictReader(fh):
+            if "no onward corpus edge" in r["Notes"]:
+                assert not evo.get(int(r["DexNum"])), \
+                    (r["LineID"], r["DexNum"], "corpus HAS an edge -- not stranded")
+
+
 def test_canon_hints_landed():
     _, by_num = data.load_sprites()
     def names(lid):
