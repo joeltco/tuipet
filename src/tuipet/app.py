@@ -1308,9 +1308,10 @@ class TuiPetApp(App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("DNA can now steer evolution! Charge one Field to its "
-                 "threshold and the next evolution takes the wild road — "
-                 "see DNA ▸ Divergence. Album progress on the DigiCore.")
+    WHATS_NEW = ("DNA divergence: charge one Field to steer evolution onto "
+                 "the wild road (DNA ▸ Divergence). Lobby chat polished: "
+                 "PgUp scrolls the log, PMs/mentions highlight, your lines "
+                 "dim. Album counter on the DigiCore.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and
