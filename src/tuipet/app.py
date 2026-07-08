@@ -1384,10 +1384,10 @@ class TuiPetApp(App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("Toys come alive! Every item now plays its real device "
-                 "animation — balls bounce, balloons play, dumbbells lift, "
-                 "showers shower. Plus DNA divergence (DNA ▸ Divergence) "
-                 "and lobby chat scrollback (PgUp).")
+    WHATS_NEW = ("Chat & names now take punctuation — apostrophes, !, ?, "
+                 "and symbols all type now. Plus status poses (yawn, sick) "
+                 "play right where your pet stands with its icons kept, and "
+                 "food drops beside the poop instead of onto it.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and

@@ -56,6 +56,33 @@ echo "tuipet release:  $CUR  ->  $NEXT   (tag $TAG)"
 if [ "$PUBLISH" = 1 ]; then echo "  → will publish to PyPI from this machine"
 else                        echo "  → git only; GitHub Actions publishes the tag"; fi
 
+# --- gate on the "WHAT'S NEW" line ------------------------------------------
+# The title-screen news (app.py WHATS_NEW) is hand-maintained and shipped stale
+# on 0.2.374/0.2.375 — nothing forced an update.  Refuse to release unless the
+# working tree's WHATS_NEW differs from the last release tag's.  (No prior tag
+# = first release, nothing to compare, so it passes.)
+LASTTAG=$(git describe --tags --abbrev=0 --match 'v*' 2>/dev/null || true)
+if [ -n "$LASTTAG" ]; then
+  python3 - "$LASTTAG" <<'PY' || exit 1
+import ast, subprocess, sys
+def whats_new(src):
+    for node in ast.walk(ast.parse(src)):
+        if isinstance(node, ast.Assign) and any(
+                isinstance(t, ast.Name) and t.id == "WHATS_NEW" for t in node.targets):
+            return ast.literal_eval(node.value)
+    return None
+path = "src/tuipet/app.py"
+old = whats_new(subprocess.check_output(["git", "show", f"{sys.argv[1]}:{path}"], text=True))
+new = whats_new(open(path).read())
+if new is None:
+    sys.exit("✗ WHATS_NEW not found in app.py")
+if old == new:
+    sys.exit(f"✗ WHATS_NEW is unchanged since {sys.argv[1]} — update the title-screen "
+             f"news in app.py before releasing (or it ships stale like 0.2.374/375 did).")
+print("✓ WHATS_NEW updated since", sys.argv[1])
+PY
+fi
+
 # --- gate on tests ----------------------------------------------------------
 echo "==> tests"
 python3 -m pytest -q
