@@ -5,8 +5,9 @@ from tuipet.app import TuiPetApp
 
 
 class _Event:
-    def __init__(self, key):
+    def __init__(self, key, character=None):
         self.key = key
+        self.character = character
     def stop(self): pass
     def prevent_default(self): pass
 
@@ -77,6 +78,36 @@ def test_eggselect_captures_text_only_while_entering_a_code():
     assert p.captures_text is False           # browsing eggs -> q quits
     p.entering = True
     assert p.captures_text is True            # typing a secret code -> q is text
+
+
+# --- punctuation in text screens ----------------------------------------------
+# Textual names punctuation keys ("." -> "full_stop", "!" -> "exclamation_mark"),
+# so a text panel's `len(k) == 1 and k.isprintable()` test dropped every symbol.
+# on_key forwards event.character (the actual glyph) for text-capturing panels.
+
+def test_punctuation_reaches_a_text_screen_as_the_character():
+    s = _Screen(captures_text=True)
+    a = _app(s)
+    for name, glyph in (("full_stop", "."), ("comma", ","),
+                        ("exclamation_mark", "!"), ("question_mark", "?"),
+                        ("apostrophe", "'")):
+        a.on_key(_Event(name, glyph))
+    assert s.seen == [".", ",", "!", "?", "'"]   # glyphs, not the key NAMES
+
+
+def test_nav_keys_still_arrive_by_name_in_a_text_screen():
+    s = _Screen(captures_text=True)
+    a = _app(s)
+    for name in ("enter", "backspace", "up", "escape"):
+        a.on_key(_Event(name, None))             # control keys carry no character
+    assert s.seen == ["enter", "backspace", "up", "escape"]
+
+
+def test_non_text_screen_ignores_character_translation():
+    s = _Screen(captures_text=False, result=("done", "x"))
+    a = _app(s)
+    a.on_key(_Event("full_stop", "."))           # a hotkey screen keeps the NAME
+    assert s.seen == ["full_stop"]
 
 
 # --- toggle-close consistency: a screen's opening key also closes it -----------

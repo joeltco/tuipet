@@ -1658,7 +1658,19 @@ class TuiPetApp(App):
         if self.mode is not None:
             event.stop()
             event.prevent_default()      # a panel owns the keyboard: don't fire global BINDINGS
-            result = self.mode.key(event.key)
+            # Textual names punctuation keys ("." -> "full_stop", "!" ->
+            # "exclamation_mark"), so a panel's `len(k) == 1 and k.isprintable()`
+            # text test silently dropped every non-alphanumeric.  For a
+            # text-capturing panel, forward the actual typed character instead of
+            # the key NAME (nav keys carry no printable character, so they still
+            # arrive by name; space stays "space" via its explicit handling).
+            k = event.key
+            ch = getattr(event, "character", None)
+            if (getattr(self.mode, "captures_text", False)
+                    and ch is not None and len(ch) == 1
+                    and ch.isprintable() and not ch.isspace()):
+                k = ch
+            result = self.mode.key(k)
             snd = getattr(self.mode, "sfx", None)
             if snd:
                 self.beep(snd, bell=False)
