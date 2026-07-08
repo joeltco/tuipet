@@ -4,13 +4,25 @@ A terminal virtual pet — Digimon V-Pet style — rendered with halfblock Unico
 sprites and animated in the terminal. Built on data mined from the free
 [DVPet](https://theundersigned.itch.io/dvpet) fan game.
 
+**Status: complete (v0.2.364, 2026-07-07).** The full DVPet behaviour diff is
+closed — every mechanic, animation, and data file in the source game is ported
+and verified against the decompiled original (`DVPET_SOURCE.md`). The project
+is in maintenance: canon corrections land as they're noticed in play.
+
 ## What's inside
 
-- **1511 creatures**, 11 animation frames each, extracted from the game's sprite
-  atlases as 1-bit bitmaps (`src/tuipet/data/sprites.json.gz`, ~330 KB).
-- Real **evolution graph** and **food** tables parsed from the game CSVs.
-- A `rich`/`textual` UI: an LCD screen with an animated pet, stat bars, and care
-  actions (feed, train, play, clean, heal, sleep), plus time-based evolution.
+- **1,525 creatures**, 11 animation frames each, extracted from the game's
+  sprite atlases as 1-bit bitmaps (`src/tuipet/data/sprites.json.gz`).
+- The **complete DVPet game**, ported system by system from the decompiled
+  source: care, training, evolution (care-quality gates + DNA + jogress),
+  adventures across 5 world maps, hourly tournaments, town economies,
+  habitats with live climate/weather, an in-game AI care assistant, and the
+  device's own screen transitions and animation timelines.
+- **Online play** tuipet adds on top: accounts with cloud saves that follow
+  you across devices, and a live lobby with chat, PvP battles, and two-player
+  jogress fusion.
+- A `rich`/`textual` UI: a fixed LCD arena with the animated pet, a live
+  status card, and a one-line control strip — every screen lives in the box.
 
 ## Install
 
@@ -44,13 +56,116 @@ pip install -e .
 tuipet           # or: PYTHONPATH=src python -m tuipet.app
 ```
 
-Start from an **egg** — one of 11 real DVPet egg designs (from armorEggs.png) — it wobbles, cracks, and hatches into a random Fresh baby.
+Start from an **egg** — real DVPet egg designs; it wobbles, cracks, and hatches.
 
-Keys: **f** feed · **t** train (minigame) · **p** play · **c** clean · **h** heal ·
-**s** sleep · **n** new egg · **q** quit.
+## Keys
 
-**Training** is a timing minigame: strike **SPACE** when the marker hits the green
-target zone. Three reps raise effort and the pet's attribute power (Vaccine/Data/Virus).
+| key | screen | key | screen |
+|-----|--------|-----|--------|
+| **f** | feed | **u** | tournament cup |
+| **t** | train | **x** | DNA |
+| **p** | play | **d** | DigiCore |
+| **c** | clean | **e** | habitat |
+| **h** | heal | **l** | online lobby |
+| **r** | praise | **v** | AI assistant |
+| **k** | scold | **g** | options |
+| **a** | adventure | **s** | lights |
+| **o** | shop · **i** | bag | **q** | quit |
+
+Battles and jogress live where they belong: **PvE combat happens in
+adventures and cups; PvP battles and fusion happen in the lobby** — there is
+no free-standing battle key.
+
+## Care & evolution
+
+Evolution is a faithful port of DVPet's `Evolution.checkEvolReq`: each form's
+`digimon.csv` row gates on care **mistakes**, **overfeed**, **sleep
+disturbances**, **sickness**, **injuries**, **weight** class, **mood**,
+**attribute power** (Vaccine/Data/Virus), and **battles/wins**, with the
+game's exact fulfilled-requirement scoring and deviation tiebreak. Per-stage
+counters reset on evolution; power and battle records carry for life.
+Good care with focused training walks the classic lines; neglect finds
+Numemon. Battle-gated Champions and above need real fights — adventures and
+cups feed the same record.
+
+**Training** (`t`) is the device's four drills — HP, Vaccine, Data, Virus —
+each fought against an on-screen opponent (the punching bag or the pop-up
+target) flowing into the canonical strike → impact → aftermath, raising
+effort and the drilled attribute power.
+
+**DNA** (`x`) is the per-Field collectible layer: charge banked Field-DNA
+into the pet to bend evolution toward gated forms, generate more, and read
+any form's requirements. **Jogress** (two-player DNA fusion) happens in the
+lobby with a real partner — the partner's attribute picks the fusion via the
+game's `attributeJogress` matrix.
+
+**DigiCore** (`d`) is the canon EvolutionState page: the field-flavoured core,
+the countdown to the next growth, and the blacked-out silhouette teaser of
+what's coming — plus tuipet's own data-book pages.
+
+## Adventure
+
+Press **a** to teleport into the Digital World — the striped curtain wipe is
+the device's own `Teleport_Leave/Arrive` animation. **5 maps, 26 zones, 26
+towns, 27 zone bosses, 462 enemy placements**, all at their real steps from
+`zones.csv`/`towns.csv`/`enemies.csv`. The terrain shifts underfoot as you
+walk (the zone's real background bands, cross-faded), wild encounters roll at
+the game's real compound odds (night runs 1.5×), towns rest you and open
+their **local shops and cups**, investigations gamble a zone-pool find
+against an ambush, and each boss gates the road. Losses cost adventure life;
+out of life, the pet retreats to the nearest town. Wins pay bits, roll the
+enemy's real **loot table** (drops unlock shop listings for good), and grow
+your power in the *enemy's* dominant attribute. The status card carries a
+live **zone ribbon** — towns, the boss, and your pet on one track. Clear a
+map to unlock the next region; transport items warp you around the world.
+
+## Tournaments
+
+Press **u** for the cup page: a **24-slot hourly schedule** rolled daily from
+the season's 325 cups — only the current hour's cup takes entries, age tiers
+and prelim chains gate the brackets, and an alarm can call you for a slot.
+Each cup is the 8-entrant single-elimination bracket (Quarterfinal →
+Semifinal → Final) with real rolled entrants; the other pairs auto-resolve
+between your rounds. Titles pay the canonical purse, count trophies, and gate
+tournament egg unlocks. Towns host their own cups on the road.
+
+## Online
+
+Press **l** for the lobby (accounts are free — pick a name and password).
+Live **chat** with backlog, presence, private messages, **PvP battles**
+(host-authoritative, with the full round-replay animation), and two-player
+**jogress fusion**. Your save syncs to the cloud on the same account and
+follows you across devices — last-write-wins with session leases, so a phone
+left running can't clobber your desktop. Offline play is untouched; the
+network is fail-soft everywhere.
+
+## Habitats & weather
+
+Press **e** to browse and buy homes — 16 habitats, previewed live as scenes.
+Each has its own climate (seasonal temperature bands, precipitation, day/night
+skies) that feeds mood, compatibility, and habitat-gated evolutions. On the
+road, the pet's habitat follows the terrain it walks.
+
+## Shop, bag & economy
+
+**o** buys (home stock from the game's shop tables; towns override prices and
+inventory with their own economies), **i** uses what you own. Foods, medicine,
+discipline books, attribute chips, transport items, and the adventure **Life
+Recovery** potion all carry their real DVPet effects. Loot drops unlock their
+shop listings permanently.
+
+## AI assistant & options
+
+**v** hires the device's auto-care AI (per-stage retainer and per-care fees —
+it minds the pet, at a price, and never works while the pet is away
+adventuring). **g** opens options: account switching, sound backend, update
+check, key reference, theme, and the new-game/erase controls.
+
+## Saving
+
+Automatic — local save every 10 seconds and on quit, with backup generation
+and offline catch-up decay (bounded; never evolves or dies while closed).
+With an account, the same save syncs to the cloud in the background.
 
 ## Asset pipeline
 
@@ -88,110 +203,6 @@ the game's own `View/SpriteAnim.class` (cfr-decompiled). Animations in
 | 10  | exhausted (very tired)        | deep-fatigue idle                |
 
 `refuse` is drawn as a left/right mirror flip on alternating frames (head-shake).
-
-## Evolution (care-quality based)
-
-Evolution is a faithful port of DVPet's `Model/Evolution.checkEvolReq` + selection.
-Each form's row in `digimon.csv` defines gates (comparison `Key` + `Value`):
-care **mistakes**, **overfeed**, **sleep disturbances**, **sickness**, **injuries**,
-**weight** class (Over/Healthy/Under, ±50% of base), **mood**, **attribute power**
-(Vaccine/Data/Virus), **battles/wins**, plus a probability roll.
-
-When a stage's minimum time elapses, the engine gathers the current form's
-evolution targets, keeps those whose every gate passes, then picks the one with
-the highest **fulfilledReq** score (priority + per-gate rates), breaking ties by
-the smallest **deviation** (closest stat match) — exactly as the game does.
-
-Per-stage counters (mistakes, overfeed, disturbances, sickness, injuries) **reset
-on evolution**; **attribute power, battles and wins carry over** for life — matching
-DVPet's `resetEvolVar`.
-
-Verified against the game data and online guides:
-
-| Care during Koromon (In-Training) | Evolves to |
-|-----------------------------------|------------|
-| good care + Vaccine training      | Agumon     |
-| good care + Data training         | Gabumon    |
-| good care + Virus training        | Goburimon  |
-| neglect (many care mistakes)      | Chuumon    |
-
-Note: most Champion+ forms in DVPet's data are **battle-gated** (e.g. Greymon needs
-10+ battles), so without the battle system a well-raised pet reaches the classic
-"default" Champions (Numemon / Bakemon / Sukamon) — authentic V-Pet behaviour.
-Battles are the next system to unlock the full tree.
-
-## Battles
-
-Press **b** to battle a stage-appropriate enemy (from `enemies.csv`, 462 foes).
-Combat uses the canonical Digimon **attribute triangle — Vaccine > Virus > Data >
-Vaccine**. Each round you pick an attack type (**1** Vaccine / **2** Data / **3**
-Virus); effective power is your trained power in that attribute, boosted when it
-beats the foe's shown type and dampened when it loses to it. Higher effective
-power lands a hit; first to 0 HP loses. **ESC** flees.
-
-Both **training** and **strategy** matter — vs a typical foe a well-trained pet
-that counters the enemy's type wins ~85%, naive play far less. Wins grant bits and
-mood; **battles/wins are tracked and feed evolution**: most Champion+ forms
-(Greymon, etc.) require battle experience plus multi-attribute training, so battling
-unlocks the rest of the evolution tree that care alone cannot reach.
-
-## Sprite extraction
-
-All DVPet sprite sheets are RGBA with transparent backgrounds. The extractor masks on "opaque AND not the cyan LCD colour", recovering every creature (~1525), the eggs, and the food/item icons (from the food/item sheets' alpha channel). A few genuinely-unfinished cells are detected and shown as a generic blob.
-
-## Adventure
-
-Press **a** to travel the Digital World — 5 maps, 26 zones parsed from
-`zones.csv` + `enemies.csv` (faithful to DVPet's `WorldMap`). Your pet walks a
-zone's progress bar; **wild encounters** launch battles, a **town** midway
-restores adventure life, and a **zone boss** gates the way to the next zone.
-Clear every zone in a map to unlock the next region. Bosses are the canonical
-villains (Devimon, Etemon, the Dark Masters…). Travel tires the pet (energy +
-weight, like exercise), wins grant bits, and every fight counts toward the
-battle/win requirements that drive evolution. Progress persists on the pet.
-
-Keys in adventure: **SPACE** go/stop · **ESC** leave.
-
-## Shop
-
-Press **o** to open the shop and spend the bits you earn from battles and
-adventures. Inventory comes from `shopConsumable.csv` (21 foods/items resolved
-from `foods.csv` + `items.csv`), each with its real DVPet effects: food (hunger,
-weight, mood), medicine that **cures** sickness, items that **heal** injuries,
-discipline books (obedience), and **attribute chips** that add Vaccine/Data/Virus
-power. Browse with **↑↓**, **ENTER** to buy, **TAB** to switch to your **bag** and
-use what you own, **ESC** to leave. Items you buy persist in the pet's inventory.
-
-## Saving
-
-Your pet persists automatically — there's nothing to do. tuipet writes to
-`~/.local/share/tuipet/save.json` every 10 seconds and on quit, and loads it on
-startup, so your Digimon (stats, evolution, bits, inventory, adventure progress)
-survives between runs. While the game is closed the pet ages gently: reopening
-applies a bounded "while you were away" decay to hunger/energy/mood (capped at
-12h, and never evolves or dies offline), with a "Welcome back!" greeting. Press
-**n** to abandon the current pet and start a fresh egg (this overwrites the save).
-
-## Jogress (DNA fusion)
-
-Press **j** at Champion or above to fuse your pet with a partner and DNA-evolve
-into a special Ultimate. The partner's attribute decides the result via DVPet's
-`attributeJogress` matrix (e.g. a Data pet + Virus partner → Virus fusion), and
-the fusion targets come from the pet's evolution graph (`SpecialEvolution=Jogress`,
-112 of them). Jogress bypasses the normal care requirements — the partner supplies
-the "DNA" — so it's a deliberate fusion you trigger. Pick a partner with **↑↓**,
-**ENTER** to fuse, **ESC** to cancel. Normal (non-special) evolution is unchanged;
-jogress/fusion forms no longer appear in ordinary evolution.
-
-## Tournaments
-
-Press **u** at Champion or above to enter a **single-elimination cup** — three
-matches (Quarterfinal → Semifinal → Final, the final a boss-tier opponent),
-faithful to DVPet's 8-entrant bracket. Each match reuses the battle engine, so
-cup fights count toward your battle/win record too. Win all three to be crowned
-**Champion**: a trophy (tracked and shown in your stats) plus bits scaled by stage
-(Rookie 60 → Mega 400). Lose a match and you're eliminated. **SPACE** to fight,
-**ESC** to leave.
 
 ## Setup (game data not included)
 
