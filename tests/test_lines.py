@@ -115,6 +115,121 @@ def test_betamon_champions_feed_the_ver1_ultimates():
     assert lines.select_line(_Counters(110, log=[1] * 12)) == 237
 
 
+# ---- ver2-ver5 canon rewrite (DM20 charts, humulos; egg sweep 2026-07-07) ----
+# Every device line shares two bracket shapes.  First rookie (Agumon-shape):
+# A(0-2,16+) B(0-2,0-15) C(3+,16+,OF3+) D(3+,5-15,OF3+) E(catch-all).
+# Second rookie: A'(0-2,16+) B'(0-2,0-15) C'(3+,8-15,OF0-2) D'(3+,16+,OF3+)
+# E'(catch-all).  (ver1's Betamon is the one canon exception: its D' is
+# Seadramon at 8-15/OF3+ -- pinned in its own matrix above.)
+_FIRST_ROOKIES = {  # parent: (split_parent, A, B, C, D, E)
+    29: (1455, 93, 102, 95, 124, 116),     # ver1 Agumon
+    34: (1459, 140, 101, 136, 108, 109),   # ver2 Gabumon
+    31: (1456, 98, 91, 121, 87, 117),      # ver3 Patamon
+    46: (1461, 125, 104, 120, 123, 118),   # ver4 Biyomon
+    33: (1457, 129, 94, 114, 115, 112),    # ver5 Gazimon
+}
+_SECOND_ROOKIES = {  # parent: (split_parent, A', B', C', D', E')
+    43: (1459, 101, 97, 136, None, 109),   # ver2 Elecmon (Whamon slot = corpus gap)
+    45: (1456, 91, 106, 121, 122, 117),    # ver3 Kunemon
+    44: (1461, 104, 88, 120, 135, 118),    # ver4 Palmon
+    35: (1457, 94, 148, 114, 111, 112),    # ver5 Gizamon
+}
+
+
+def _lid(parent):
+    return {29: "ver1", 34: "ver2", 31: "ver3", 46: "ver4", 33: "ver5",
+            43: "ver2", 45: "ver3", 44: "ver4", 35: "ver5"}[parent]
+
+
+def test_every_device_rookie_split_is_care_mistakes():
+    for first, (split, *_r) in _FIRST_ROOKIES.items():
+        lid = _lid(first)
+        assert lines.select_line(_Counters(split, lid, cm=0)) == first, lid
+    for second, (split, *_r) in _SECOND_ROOKIES.items():
+        lid = _lid(second)
+        assert lines.select_line(_Counters(split, lid, cm=3)) == second, lid
+
+
+def test_first_rookie_matrix_all_device_lines():
+    for parent, (_s, A, B, C, D, E) in _FIRST_ROOKIES.items():
+        lid = _lid(parent)
+        for cm in range(0, 6):
+            for tr in (0, 4, 5, 15, 16, 25):
+                for of in (0, 2, 3, 6):
+                    if cm <= 2:
+                        want = A if tr >= 16 else B
+                    elif tr >= 16 and of >= 3:
+                        want = C
+                    elif 5 <= tr <= 15 and of >= 3:
+                        want = D
+                    else:
+                        want = E
+                    got = lines.select_line(_Counters(parent, lid, cm=cm, tr=tr, of=of))
+                    assert got == want, (lid, parent, cm, tr, of, got, want)
+
+
+def test_second_rookie_matrix_all_device_lines():
+    for parent, (_s, A, B, C, D, E) in _SECOND_ROOKIES.items():
+        lid = _lid(parent)
+        for cm in range(0, 6):
+            for tr in (0, 7, 8, 15, 16, 25):
+                for of in (0, 2, 3, 6):
+                    if cm <= 2:
+                        want = A if tr >= 16 else B
+                    elif 8 <= tr <= 15 and of <= 2:
+                        want = C
+                    elif tr >= 16 and of >= 3:
+                        want = D if D is not None else E
+                    else:
+                        want = E
+                    got = lines.select_line(_Counters(parent, lid, cm=cm, tr=tr, of=of))
+                    assert got == want, (lid, parent, cm, tr, of, got, want)
+
+
+def test_device_ultimate_feeds_match_canon():
+    """WIN 12/15 funnels: each champion reaches its canon Perfect."""
+    feeds = {  # champion: (line, ultimate)
+        140: ("ver2", 195), 101: ("ver2", 195), 97: ("ver2", 195),
+        108: ("ver2", 213), 136: ("ver2", 213), 109: ("ver2", 199),
+        98: ("ver3", 191), 91: ("ver3", 191), 106: ("ver3", 191),
+        87: ("ver3", 238), 121: ("ver3", 238), 122: ("ver3", 238),
+        117: ("ver3", 194),
+        125: ("ver4", 210), 104: ("ver4", 210), 88: ("ver4", 210),
+        123: ("ver4", 196), 120: ("ver4", 196), 135: ("ver4", 196),
+        118: ("ver4", 198),
+        129: ("ver5", 214), 94: ("ver5", 214), 148: ("ver5", 214),
+        115: ("ver5", 197), 114: ("ver5", 197), 111: ("ver5", 197),
+        112: ("ver5", 239),
+    }
+    for champ, (lid, ult) in feeds.items():
+        assert lines.select_line(_Counters(champ, lid, log=[1] * 12)) == ult, (lid, champ)
+        assert lines.select_line(_Counters(champ, lid, log=[0] * 15)) is None, (lid, champ)
+
+
+def test_device_megas_match_canon():
+    megas = {  # ultimate: (line, mega)
+        195: ("ver2", 290), 213: ("ver2", 398),
+        191: ("ver3", 296), 194: ("ver3", 397),
+        210: ("ver4", 396), 198: ("ver4", 395),
+        214: ("ver5", 276), 239: ("ver5", 277),
+    }
+    for ult, (lid, mega) in megas.items():
+        assert lines.select_line(_Counters(ult, lid, cm=0)) == mega, (lid, ult)
+        assert lines.select_line(_Counters(ult, lid, cm=3)) is None, (lid, ult)
+
+
+def test_verE_is_the_canon_straight_chain():
+    """DM20's Meicoo bonus line has NO requirements until the Mega:
+    YukimiBotamon -> Nyaromon -> Salamon -> Meicoomon -> Meicrackmon ->
+    Rasielmon (CM 0-2)."""
+    vE = lines.load_lines()["verE"]
+    assert len(vE["members"]) == 6
+    for parent, child in ((1410, 1458), (1458, 47), (47, 386), (386, 389)):
+        assert lines.select_line(_Counters(parent, "verE", cm=9)) == child
+    assert lines.select_line(_Counters(389, "verE", cm=0)) == 392
+    assert lines.select_line(_Counters(389, "verE", cm=3)) is None
+
+
 def test_requirement_report_shows_this_roads_rule():
     """Devimon is reachable from BOTH Rookies with different training
     brackets -- the data book must show the rule for the pet's own road."""

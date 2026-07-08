@@ -34,69 +34,81 @@ verX,Mega,746,747,BTL 15+,23:00,DexDorugoramon
 verX,Mega,856,845,CM 0-2,23:00,WarGreymon X
 verE,Fresh,1410,egg,TIME,20:00,YukimiBotamon
 verE,InTraining,1458,1410,TIME,20:00,Nyaromon
-verE,Rookie,47,1458,CM 0-2,21:00,Salamon
-verE,Rookie,692,1458,CM 3+,21:00,Calumon
-verE,Champion,386,47;692,"CM 0-2, TR 16+",22:00,Meicoomon
-verE,Champion,100,47;692,"CM 0-2, TR 0-15",22:00,Gatomon
-verE,Champion,117,47;692,TIME,22:00,Sukamon
-verE,Ultimate,389,386;100,WIN 12/15,23:00,Meicrackmon
-verE,Ultimate,252,117,WIN 12/15,23:00,BlackKingNumemon
+verE,Rookie,47,1458,TIME,21:00,Salamon (Plotmon; canon Meicoo line: no requirements)
+verE,Champion,386,47,TIME,22:00,Meicoomon
+verE,Ultimate,389,386,TIME,23:00,Meicrackmon
 verE,Mega,392,389,CM 0-2,23:00,Rasielmon
-verE,Mega,319,252,CM 0-2,23:00,PlatinumNumemon
 ver2,Fresh,1412,egg,TIME,20:00,Punimon
 ver2,InTraining,1459,1412,TIME,21:00,Tsunomon
 ver2,Rookie,34,1459,CM 0-2,21:00,Gabumon
 ver2,Rookie,43,1459,CM 3+,22:00,Elecmon
-ver2,Champion,108,34,"CM 0-2, TR 16+",23:00,Garurumon
-ver2,Champion,109,34,"CM 0-2, TR 0-15",21:00,Vegimon
-ver2,Champion,118,34;43,TIME,22:00,Nanimon
-ver2,Champion,97,43,"CM 0-2, TR 16+",23:00,Birdramon
-ver2,Champion,117,43,TIME,22:00,Sukamon
-ver2,Ultimate,262,108,WIN 12/15,23:00,Pandamon
-ver2,Ultimate,199,109;118;97;117,WIN 12/15,23:00,Vademon
-ver2,Mega,318,262,CM 0-2,23:00,Jijimon
-ver2,Mega,602,199,CM 0-2,23:00,Babamon
+ver2,Champion,140,34,"CM 0-2, TR 16+",23:00,Kabuterimon
+ver2,Champion,101,34,"CM 0-2, TR 0-15",22:00,Angemon
+ver2,Champion,136,34,"CM 3+, TR 16+, OF 3+",22:00,Frigimon (Yukidarumon)
+ver2,Champion,108,34,"CM 3+, TR 5-15, OF 3+",23:00,Garurumon
+ver2,Champion,101,43,"CM 0-2, TR 16+",22:00,Angemon (Elecmon road)
+ver2,Champion,97,43,"CM 0-2, TR 0-15",23:00,Birdramon
+ver2,Champion,136,43,"CM 3+, TR 8-15, OF 0-2",22:00,Frigimon (Elecmon road)
+ver2,Champion,109,34;43,CM 3+,21:00,Vegimon (canon Whamon slot folds in: corpus stages Whamon as Ultimate)
+ver2,Ultimate,195,140;101;97,WIN 12/15,23:00,SkullGreymon
+ver2,Ultimate,213,108;136,WIN 12/15,23:00,MetalMamemon (canon also feeds from Whamon: corpus gap)
+ver2,Ultimate,199,109,WIN 12/15,23:00,Vademon
+ver2,Mega,290,195,CM 0-2,23:00,SkullMammothmon
+ver2,Mega,398,213,CM 0-2,23:00,CresGarurumon
 ver3,Fresh,1413,egg,TIME,20:00,Poyomon
 ver3,InTraining,1456,1413,TIME,20:00,Tokomon
 ver3,Rookie,31,1456,CM 0-2,21:00,Patamon
 ver3,Rookie,45,1456,CM 3+,21:00,Kunemon
 ver3,Champion,98,31,"CM 0-2, TR 16+",22:00,Unimon
-ver3,Champion,121,31;45,"CM 0-2, TR 0-15",22:00,Bakemon
-ver3,Champion,117,31;45,TIME,22:00,Sukamon
-ver3,Champion,122,45,"CM 0-2, TR 0-15",22:00,Drimogemon
-ver3,Ultimate,238,98;121;122,WIN 12/15,23:00,Giromon
-ver3,Ultimate,778,117,WIN 12/15,23:00,KingSukamon
-ver3,Mega,296,238,CM 0-2,23:00,HiAndromon
-ver3,Mega,397,778,CM 0-2,23:00,KingEtemon
+ver3,Champion,91,31,"CM 0-2, TR 0-15",22:00,Ogremon
+ver3,Champion,121,31,"CM 3+, TR 16+, OF 3+",22:00,Bakemon
+ver3,Champion,87,31,"CM 3+, TR 5-15, OF 3+",22:00,Centarumon
+ver3,Champion,91,45,"CM 0-2, TR 16+",22:00,Ogremon (Kunemon road)
+ver3,Champion,106,45,"CM 0-2, TR 0-15",22:00,Shellmon
+ver3,Champion,121,45,"CM 3+, TR 8-15, OF 0-2",22:00,Bakemon (Kunemon road)
+ver3,Champion,122,45,"CM 3+, TR 16+, OF 3+",22:00,Drimogemon
+ver3,Champion,117,31;45,CM 3+,22:00,Sukamon
+ver3,Ultimate,191,98;91;106,WIN 12/15,23:00,Andromon
+ver3,Ultimate,238,87;121;122,WIN 12/15,23:00,Giromon
+ver3,Ultimate,194,117,WIN 12/15,23:00,Etemon
+ver3,Mega,296,191,CM 0-2,23:00,HiAndromon
+ver3,Mega,397,194,CM 0-2,23:00,KingEtemon
 ver4,Fresh,1414,egg,TIME,20:00,Yuramon
 ver4,InTraining,1461,1414,TIME,20:00,Tanemon
 ver4,Rookie,46,1461,CM 0-2,21:00,Biyomon
 ver4,Rookie,44,1461,CM 3+,21:00,Palmon
-ver4,Champion,123,46,"CM 0-2, TR 16+",22:00,Kokatorimon
-ver4,Champion,120,46;44,"CM 0-2, TR 0-15",22:00,Kuwagamon
-ver4,Champion,118,46;44,TIME,22:00,Nanimon
-ver4,Champion,135,44,"CM 0-2, TR 0-15",22:00,Mojyamon
-ver4,Ultimate,198,123;118;135,WIN 12/15,23:00,Digitamamon
-ver4,Ultimate,209,120,WIN 12/15,23:00,Cherrymon
+ver4,Champion,125,46,"CM 0-2, TR 16+",22:00,Monochromon
+ver4,Champion,104,46,"CM 0-2, TR 0-15",22:00,Leomon
+ver4,Champion,120,46,"CM 3+, TR 16+, OF 3+",22:00,Kuwagamon
+ver4,Champion,123,46,"CM 3+, TR 5-15, OF 3+",22:00,Kokatorimon
+ver4,Champion,104,44,"CM 0-2, TR 16+",22:00,Leomon (Palmon road)
+ver4,Champion,88,44,"CM 0-2, TR 0-15",22:00,Coelamon
+ver4,Champion,120,44,"CM 3+, TR 8-15, OF 0-2",22:00,Kuwagamon (Palmon road)
+ver4,Champion,135,44,"CM 3+, TR 16+, OF 3+",22:00,Mojyamon
+ver4,Champion,118,46;44,CM 3+,22:00,Nanimon
+ver4,Ultimate,210,125;104;88,WIN 12/15,23:00,Megadramon
+ver4,Ultimate,196,123;120;135,WIN 12/15,23:00,Piximon (Piccolomon)
+ver4,Ultimate,198,118,WIN 12/15,23:00,Digitamamon
+ver4,Mega,396,210,CM 0-2,23:00,Aegisdramon
 ver4,Mega,395,198,CM 0-2,23:00,Titamon
-ver4,Mega,343,209,CM 0-2,23:00,GranKuwagamon
 ver5,Fresh,1415,egg,TIME,20:00,Zurumon
 ver5,InTraining,1457,1415,TIME,20:00,Pagumon
 ver5,Rookie,33,1457,CM 0-2,21:00,Gazimon
-ver5,Rookie,78,1457,CM 3+,21:00,Shamamon
+ver5,Rookie,35,1457,CM 3+,21:00,Gizamon (canon; Shamamon was never Ver.5)
 ver5,Champion,129,33,"CM 0-2, TR 16+",22:00,DarkTyrannomon
-ver5,Champion,114,33,"CM 0-2, TR 0-15",22:00,Tuskmon
-ver5,Champion,116,33;78,TIME,21:00,Numemon
-ver5,Champion,115,78,"CM 0-2, TR 16+",22:00,Cyclomon
-ver5,Champion,118,78,TIME,22:00,Nanimon
-ver5,Ultimate,214,129;114,WIN 12/15,23:00,MetalTyrannomon
-ver5,Ultimate,1554,116,WIN 12/15,23:00,Chaperomon
-ver5,Ultimate,197,115,WIN 12/15,23:00,Datamon
-ver5,Ultimate,1222,118,WIN 12/15,23:00,Vademon X
-ver5,Mega,299,214,CM 0-2,23:00,WarGreymon
-ver5,Mega,1031,1554,CM 0-2,23:00,NoblePumpmon
-ver5,Mega,342,197,CM 0-2,23:00,Barbamon
-ver5,Mega,1316,1222,CM 0-2,23:00,Ebemon X
+ver5,Champion,94,33,"CM 0-2, TR 0-15",22:00,Devidramon
+ver5,Champion,114,33,"CM 3+, TR 16+, OF 3+",22:00,Tuskmon
+ver5,Champion,115,33,"CM 3+, TR 5-15, OF 3+",22:00,Cyclomon
+ver5,Champion,94,35,"CM 0-2, TR 16+",22:00,Devidramon (Gizamon road)
+ver5,Champion,148,35,"CM 0-2, TR 0-15",22:00,Flymon
+ver5,Champion,114,35,"CM 3+, TR 8-15, OF 0-2",22:00,Tuskmon (Gizamon road)
+ver5,Champion,111,35,"CM 3+, TR 16+, OF 3+",22:00,Deltamon
+ver5,Champion,112,33;35,CM 3+,21:00,Raremon
+ver5,Ultimate,214,129;94;148,WIN 12/15,23:00,MetalTyrannomon
+ver5,Ultimate,197,115;114;111,WIN 12/15,23:00,Datamon (Nanomon)
+ver5,Ultimate,239,112,WIN 12/15,23:00,ExTyrannomon
+ver5,Mega,276,214,CM 0-2,23:00,Machinedramon (Mugendramon)
+ver5,Mega,277,239,CM 0-2,23:00,Puppetmon (Pinochimon)
 babumon,Fresh,1416,egg,TIME,20:00,Babumon
 babumon,InTraining,22,1416,TIME,20:00,Yokomon
 babumon,Rookie,25,22,CM 0-2,21:00,Goburimon
