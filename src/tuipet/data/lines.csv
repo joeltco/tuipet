@@ -478,22 +478,13 @@ paomon,Mega,379,247,KO6 2+,23:00,Valkyrimon
 paomon,Mega,343,271,KO6 2+,23:00,GranKuwagamon
 petitmon,Fresh,1437,egg,TIME,20:00,Petitmon
 petitmon,InTraining,1492,1437,TIME,21:00,Babydmon
-petitmon,Rookie,57,1492,CM 0-2,23:00,Dracomon
-petitmon,Rookie,49,1492,CM 3+,21:00,Otamamon
-petitmon,Champion,150,57,"CM 0-2, TR 16+",23:00,Coredramon
-petitmon,Champion,169,57,"CM 0-2, TR 0-15",22:00,GeoGreymon
-petitmon,Champion,118,57,TIME,21:00,Nanimon
-petitmon,Champion,142,49,"CM 0-2, TR 16+",22:00,Gekomon
-petitmon,Champion,495,49,"CM 0-2, TR 0-15",22:00,Manbomon
-petitmon,Champion,118,49,TIME,21:00,Nanimon
-petitmon,Ultimate,202,150;142,WIN 12/15,23:00,MegaSeadramon
-petitmon,Ultimate,643,169,WIN 12/15,23:00,Majiramon
-petitmon,Ultimate,198,118,WIN 12/15,24:00,Digitamamon
-petitmon,Ultimate,1150,495,WIN 12/15,23:00,Thetismon
-petitmon,Mega,432,202,CM 0-2,23:00,Neptunemon
-petitmon,Mega,292,643,CM 0-2,23:00,Phoenixmon
-petitmon,Mega,671,198,CM 0-2,23:00,Bacchusmon
-petitmon,Mega,1356,1150,CM 0-2,23:00,Amphimon
+petitmon,Rookie,57,1492,TIME,23:00,Dracomon
+petitmon,Champion,150,57,"CM 0-2, TR 16+",23:00,Coredramon (Blue)
+petitmon,Champion,158,57,TIME,23:00,Coredramon (Green)
+petitmon,Ultimate,242,150,WIN 12/15,24:00,Wingdramon
+petitmon,Ultimate,250,158,WIN 12/15,24:00,Groundramon
+petitmon,Mega,315,242,CM 0-2,24:00,Slayerdramon
+petitmon,Mega,316,250,CM 0-2,24:00,Breakdramon
 popomon,Fresh,1438,egg,TIME,20:00,Popomon
 popomon,InTraining,1493,1438,TIME,21:00,Frimon
 popomon,Rookie,454,1493,CM 0-2,21:00,KoKabuterimon

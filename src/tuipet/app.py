@@ -237,9 +237,9 @@ class TuiPetApp(App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("Lobby fix: if a fusion falls through on your partner's side "
-                 "(their pet dozed off or ran low on DP), you're now told right "
-                 "away instead of being left waiting at the fusion screen.")
+    WHATS_NEW = ("The Dragon line is here: the Petitmon egg now raises Dracomon "
+                 "all the way up to Slayerdramon and Breakdramon. And the egg "
+                 "shop is cheaper -- license eggs now cost 1500 bits, down from 2500.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and

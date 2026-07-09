@@ -1,15 +1,15 @@
 Egg (Each condition must be fulfilled to unlock egg: if price > 0 then fulfilling each condition will make it available in the shop and buying it will unlock the egg permanently: if price = 0 and each condition is fulfilled then this will unlock the egg permanently: temporary conditions unlock the egg for as long as the condition(s) is/are fulfilled),Unlocked,Price,MapComplete,StageReached,HasXAntibody(Temp),TournamentBeat,ZoneEnemyBeat (Map:Zone:EnemyLocation),CurrentGenerationReached,PreviousGenerationField(Temp),PreviousGenerationAttribute(Temp),PreviousGenerationElement(Temp),DigimonInHistory(List with : ),FoodUsed,ItemUsed,HabitatOwned,Password,Obedience,PreviousGenerationObedience(Temp),Mood,PreviousGenerationMood(Temp),LockedDescription,CanUnlockPermanently,LifetimeWins,AlbumCount,MegaKills
 Botamon,TRUE,0,-1,None,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Basic Digitama,TRUE,-1,-1,-1
-YukimiBotamon,FALSE,2500,-1,None,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Purchase license,TRUE,-1,-1,-1
+YukimiBotamon,FALSE,1500,-1,None,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Purchase license,TRUE,-1,-1,-1
 Punimon,TRUE,0,-1,None,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Basic Digitama,TRUE,-1,-1,-1
 Poyomon,TRUE,0,-1,None,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Basic Digitama,TRUE,-1,-1,-1
 Yuramon,TRUE,0,-1,None,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Basic Digitama,TRUE,-1,-1,-1
 Zurumon,TRUE,0,-1,None,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Basic Digitama,TRUE,-1,-1,-1
-Babumon,FALSE,2500,-1,None,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Purchase license,TRUE,-1,-1,-1
-Pichimon,FALSE,2500,-1,None,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Purchase license,TRUE,-1,-1,-1
-Mokumon,FALSE,2500,-1,None,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Purchase license,TRUE,-1,-1,-1
-Nyokimon,FALSE,2500,-1,None,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Purchase license,TRUE,-1,-1,-1
-Choromon,FALSE,2500,-1,None,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Purchase license,TRUE,-1,-1,-1
+Babumon,FALSE,1500,-1,None,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Purchase license,TRUE,-1,-1,-1
+Pichimon,FALSE,1500,-1,None,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Purchase license,TRUE,-1,-1,-1
+Mokumon,FALSE,1500,-1,None,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Purchase license,TRUE,-1,-1,-1
+Nyokimon,FALSE,1500,-1,None,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Purchase license,TRUE,-1,-1,-1
+Choromon,FALSE,1500,-1,None,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Purchase license,TRUE,-1,-1,-1
 Kuramon,FALSE,0,-1,None,FALSE,-1,-1,-1,None,None,Dark,-1,-1,-1,-1,-1,-1,-1,-1,-1,Direct descendant of a dark Digimon,FALSE,-1,-1,-1
 Chibickmon,FALSE,2500,-1,None,FALSE,-1,-1,6,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,6th generation,TRUE,-1,-1,-1
 Tsubumon,FALSE,2500,1,None,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Saved the Digital World,TRUE,-1,-1,-1
@@ -41,8 +41,8 @@ Cotsucomon,FALSE,2500,-1,Ultimate,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-
 Algomon I,FALSE,2500,-1,None,FALSE,-1,-1,2,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,2nd generation,TRUE,-1,-1,-1
 Bombmon,FALSE,2500,-1,None,FALSE,-1,-1,6,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,6th generation,TRUE,-1,-1,-1
 Carimon,FALSE,0,-1,None,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,Accentier,-1,-1,-1,-1,Redeemed with a secret password,TRUE,-1,-1,-1
-Sunamon,FALSE,2500,-1,None,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Purchase license,TRUE,-1,-1,-1
-Curimon,FALSE,2500,-1,None,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Purchase license,TRUE,-1,-1,-1
-Pyonmon,FALSE,2500,-1,None,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Purchase license,TRUE,-1,-1,-1
-Puyomon,FALSE,2500,-1,None,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Purchase license,TRUE,-1,-1,-1
-Fusamon,FALSE,2500,-1,None,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Purchase license,TRUE,-1,-1,-1
+Sunamon,FALSE,1500,-1,None,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Purchase license,TRUE,-1,-1,-1
+Curimon,FALSE,1500,-1,None,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Purchase license,TRUE,-1,-1,-1
+Pyonmon,FALSE,1500,-1,None,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Purchase license,TRUE,-1,-1,-1
+Puyomon,FALSE,1500,-1,None,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Purchase license,TRUE,-1,-1,-1
+Fusamon,FALSE,1500,-1,None,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Purchase license,TRUE,-1,-1,-1
