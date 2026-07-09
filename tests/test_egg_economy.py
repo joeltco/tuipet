@@ -24,7 +24,7 @@ def _rule(name):
 
 def test_sakumon_is_the_battle_egg():
     r = _rule("Sakumon")
-    assert (r["wins"], r["price"], r["can_perm"]) == (50, 1000, True)
+    assert (r["wins"], r["price"], r["can_perm"]) == (50, 0, True)   # EARN tier: free
     assert r["stage"] is None                       # the old Ultimate gate is gone
     assert not egg._conditions_met(r, _prog(wins=49))
     assert egg._conditions_met(r, _prog(wins=50))
@@ -32,7 +32,7 @@ def test_sakumon_is_the_battle_egg():
 
 def test_petitmon_is_the_collector_egg():
     r = _rule("Petitmon")
-    assert (r["album_n"], r["price"], r["can_perm"]) == (5, 1000, True)
+    assert (r["album_n"], r["price"], r["can_perm"]) == (5, 0, True)   # EARN tier: free
     assert r["prev_field"] is None                  # no longer a temp lineage egg
     assert not egg._conditions_met(r, _prog(album={1, 2, 3, 4}))
     assert egg._conditions_met(r, _prog(album={1, 2, 3, 4, 5}))
@@ -40,17 +40,18 @@ def test_petitmon_is_the_collector_egg():
 
 def test_dodomon_is_the_x_egg():
     r = _rule("Dodomon")
-    assert (r["mega"], r["price"], r["can_perm"]) == (5, 2500, True)
+    assert (r["mega"], r["price"], r["can_perm"]) == (5, 0, True)   # EARN tier: free
     assert not r["xanti"]                           # the antibody gate is retired
     assert not egg._conditions_met(r, _prog(mega_kills=4))
     assert egg._conditions_met(r, _prog(mega_kills=5))
 
 
-def test_met_achievement_is_buyable_then_owned():
+def test_met_achievement_is_earned_free():
+    """Two-tier economy (Joel 2026-07-09): a signature-achievement egg is EARNED free
+    -- meeting the condition unlocks it outright (price 0), no extra bits."""
     r = _rule("Sakumon")
-    st, price = egg.egg_state(r["idx"], _prog(wins=50), set())
-    assert (st, price) == ("buyable", 1000)         # earn the right, then save up
-    assert egg.egg_state(r["idx"], _prog(wins=50), {r["idx"]})[0] == "owned"
+    assert r["price"] == 0
+    assert egg.egg_state(r["idx"], _prog(wins=50), set())[0] == "owned"   # earned -> yours
     assert egg.egg_state(r["idx"], _prog(wins=0), set())[0] == "locked"
 
 
@@ -60,8 +61,6 @@ def test_unlock_progress_counts_the_countable():
     assert egg.unlock_progress(_rule("Sakumon")["idx"], _prog(wins=37)) == "lifetime wins 37/50"
     assert egg.unlock_progress(_rule("Petitmon")["idx"], _prog(album={1, 2, 3})) == "Digimon raised 3/5"
     assert egg.unlock_progress(_rule("Dodomon")["idx"], _prog(mega_kills=1)) == "Mega-class felled 1/5"
-    gen_idx = _rule("Jyarimon")["idx"]              # a generation egg keeps its gate
-    assert egg.unlock_progress(gen_idx, _prog(max_gen=2)) == "generation 2/3"
     mystery = sorted(egg.win_eggs())[0]             # the "???" eggs count too
     assert egg.unlock_progress(mystery, _prog(wins=12)) == "lifetime wins 12/50"
 
@@ -173,8 +172,11 @@ def test_buyable_egg_lives_in_the_shop_not_the_select():
     from tuipet.townscreen import TownPanel
     from tuipet.shopscreen import ShopPanel
     from tuipet.pet import Pet
-    idx = _rule("Sakumon")["idx"]
-    persistence.wins_add(50)                        # sandboxed progress
+    _GATE = ("gen","map","stage","xanti","tourney","prev_field","prev_attr",
+             "prev_elem","history","password","wins","album_n","mega")
+    idx = next(r["idx"] for r in data.load_egg_unlock().values()
+               if not r["start"] and r["price"] > 0
+               and all(r.get(k) in (None, False) for k in _GATE))   # an explore-buy egg
     pan = EggSelectPanel()
     assert pan.states[idx][0] == "buyable"
     assert idx not in pan.carousel                  # hidden from the select

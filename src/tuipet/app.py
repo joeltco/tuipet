@@ -237,9 +237,10 @@ class TuiPetApp(App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("Egg shops spread across the world: each town now stocks eggs "
-                 "matching its habitat -- dragon eggs near fiery lands, sea eggs "
-                 "by the coast. Explore to find them; starters stay on the home counter.")
+    WHATS_NEW = ("Two ways to get eggs now: EARN the special ones by playing -- "
+                 "raise 5+ Digimon for the dragon egg, win 50 battles for the Jesmon "
+                 "egg, carry the X-Antibody, crack a password -- and they unlock FREE. "
+                 "The rest you discover and buy in the themed town shops.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and

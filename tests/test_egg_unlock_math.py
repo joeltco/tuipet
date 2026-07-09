@@ -38,21 +38,25 @@ def test_the_csv_is_unwired_in_dvpet_but_wired_here():
     rules = data.load_egg_unlock()
     assert len(rules) >= 30                        # the contract runs in tuipet
     live = sum(1 for r in rules.values()
-               if any((r["gen"], r["map"] is not None, r["stage"], r["xanti"],
-                       r["tourney"] is not None, r["history"], r["password"])))
-    assert live >= 25
+               if any((r["map"] is not None, r["stage"], r["xanti"],
+                       r["tourney"] is not None, r["history"], r["password"],
+                       r["wins"], r["album_n"], r["mega"])))
+    assert live >= 15                              # the EARN tier (signature achievements)
 
 
-def test_generation_gates_and_the_shop_contract():
+def test_explore_buy_eggs_are_always_in_the_shop():
+    """Two-tier economy: an explore-buy egg has no achievement gate -- always in the
+    town shops (buyable), and buying makes it permanent."""
+    GATE = ("gen", "map", "stage", "xanti", "tourney", "prev_field", "prev_attr",
+            "prev_elem", "history", "password", "wins", "album_n", "mega")
     idx = next(i for i, r in data.load_egg_unlock().items()
-               if r["gen"] and r["price"] > 0)
+               if not r["start"] and r["price"] > 0
+               and all(r.get(k) in (None, False) for k in GATE))
     r = data.load_egg_unlock()[idx]
-    st, price = egg.egg_state(idx, _prog(max_gen=r["gen"] - 1), set())
-    assert st == "locked"                          # under the generation: locked
-    st, price = egg.egg_state(idx, _prog(max_gen=r["gen"]), set())
-    assert st == "buyable" and price == r["price"]     # met + priced -> the SHOP
-    st, _ = egg.egg_state(idx, _prog(max_gen=r["gen"]), {idx})
-    assert st == "owned"                           # bought -> permanent
+    st, price = egg.egg_state(idx, _prog(), set())
+    assert st == "buyable" and price == r["price"]     # no gate -> always buyable
+    st, _ = egg.egg_state(idx, _prog(), {idx})
+    assert st == "owned"                               # bought -> permanent
 
 
 def test_history_gate_reads_the_album():
