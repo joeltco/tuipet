@@ -215,13 +215,43 @@ def test_ping_pulls_a_ghost_into_the_lobby():
     assert sent == [("PING", 2)] and pan.action_for is None
 
 
-def test_pm_lands_in_the_lobby_chat_feed():
+def test_pms_land_in_per_peer_dm_threads():
+    """PMs open a private thread per peer (not the public feed): an incoming PM lands in
+    dms[peer] and marks unread; your own sent echo (pm_ok) lands in the same thread."""
     c = LobbyClient("ws://x/", "joel")
     c._handle('{"t": "welcome", "id": 1, "name": "joel"}')
     c._handle('{"t": "pm", "from_id": 2, "from_name": "mika", "text": "hey"}')
     c._handle('{"t": "pm_ok", "to_name": "mika", "text": "sup"}')
-    assert ("✉mika", "hey") in c.state.chat
-    assert ("✉→mika", "sup") in c.state.chat
+    assert c.state.dms["mika"] == [("mika", "hey"), ("joel", "sup")]
+    assert "mika" in c.state.unread
+    assert not any(str(nm).startswith("✉") for nm, _ in c.state.chat)   # off the public room
+
+
+def test_dm_thread_view_and_block():
+    """[V]iew opens the private thread (clears unread) and typing sends a PM; [X] blocks a
+    peer so their chat/PMs drop and the mute persists."""
+    s = LobbyState()
+    s.connected = True
+    s.me_id, s.me_name = 1, "joel"
+    s.roster = [{"id": 1, "name": "joel", "pet": {}, "live": True},
+                {"id": 2, "name": "mika", "pet": {}, "live": True}]
+    s.dms["mika"] = [("mika", "hey")]
+    s.unread.add("mika")
+    pan = _panel(s)
+    sent = []
+    pan.client.pm = lambda to, tx: sent.append((to, tx))
+    pan.key("enter")                        # open mika's action menu
+    pan.key("v")                            # open the DM thread
+    assert pan.phase == "dm" and pan.dm_peer == (2, "mika")
+    assert "mika" not in s.unread           # opening clears unread
+    for ch in "hi":
+        pan.key(ch)
+    pan.key("enter")
+    assert sent == [(2, "hi")]              # typed line sent as a PM
+    pan.key("escape")
+    assert pan.phase == "lobby"
+    pan.key("enter"); pan.key("x")          # block mika
+    assert "mika" in s.blocked
 
 
 def test_egg_sessions_are_gated_both_directions():

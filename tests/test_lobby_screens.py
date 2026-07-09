@@ -219,15 +219,22 @@ def test_prompt_lines_keep_their_hints_with_long_names():
         rolled += last.split(" invites")[0]
     assert long in rolled                         # the whole name scrolls past
     pan.invite_prompt = None
-    pan.action_for = (3, long, True)
-    for i in range(120):
+    pan.action_for = (3, long, True)              # long name -> the WHOLE line marquees
+    rolled = ""
+    for i in range(240):
         pan._mq = i
         last = pan.text().plain.split("\n")[-1]
-        assert "[Esc]" in last and "[B]attle" in last and "[M]sg" in last
-        assert len(last) <= LCD_COLS
+        assert len(last) <= LCD_COLS              # never overruns the box
+        rolled += last
+    assert "[B]attle" in rolled and "[V]iew" in rolled and "[Esc]" in rolled  # hints roll past
     pan.action_for = (3, long, False)             # the ghost variant
-    last = pan.text().plain.split("\n")[-1]
-    assert "[P]ing" in last and "[M]sg" in last and "[Esc]" in last
+    rolled = ""
+    for i in range(240):
+        pan._mq = i
+        last = pan.text().plain.split("\n")[-1]
+        assert len(last) <= LCD_COLS
+        rolled += last
+    assert "[P]ing" in rolled and "[V]iew" in rolled and "[Esc]" in rolled
     pan.action_for = None                         # the selection status line
     pan.sel = 1                                   # sorted: the long-name live row
     pan.status = "↑↓ pick · Enter chat/act · Esc leave"

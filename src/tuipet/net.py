@@ -88,6 +88,9 @@ class LobbyState:
         self.inbox: list[dict] = []            # invite / invite_resp / relay — drained by caller
         self.login_failed: str | None = None   # server rejected the login (bad password / name taken)
         self.reconnecting = False              # dropped -> the client is retrying with backoff
+        self.dms: dict = {}                    # peer_name -> [(from_name, text)] private threads
+        self.unread: set = set()               # peer names with unread DMs
+        self.blocked: set = set()              # muted peers (loaded from settings on connect)
 
     def others(self):
         """Roster minus me — the people you can battle/jogress."""
@@ -255,14 +258,20 @@ class LobbyClient(_WsClient):
         elif t == "roster":
             s.roster = m.get("players") or []
         elif t == "chat":
-            s.chat.append((m.get("from_name", "?"), m.get("text", "")))
-            del s.chat[:-CHAT_CAP]
+            nm = m.get("from_name", "?")
+            if nm not in s.blocked:
+                s.chat.append((nm, m.get("text", "")))
+                del s.chat[:-CHAT_CAP]
         elif t == "pm":
-            s.chat.append((f"✉{m.get('from_name', '?')}", m.get("text", "")))
-            del s.chat[:-CHAT_CAP]
+            nm = m.get("from_name", "?")
+            if nm not in s.blocked:
+                s.dms.setdefault(nm, []).append((nm, m.get("text", "")))
+                del s.dms[nm][:-CHAT_CAP]
+                s.unread.add(nm)
         elif t == "pm_ok":
-            s.chat.append((f"✉→{m.get('to_name', '?')}", m.get("text", "")))
-            del s.chat[:-CHAT_CAP]
+            to = m.get("to_name", "?")
+            s.dms.setdefault(to, []).append((s.me_name or "you", m.get("text", "")))
+            del s.dms[to][:-CHAT_CAP]
         elif t in ("invite", "invite_resp", "relay"):
             s.inbox.append(m)
         elif t == "login_failed":

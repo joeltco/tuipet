@@ -134,6 +134,7 @@ class LobbyPanel:
         self.action_for = None
         self.pm_to = None              # (id, name): the input line is a PM compose
         self.invite_prompt = None
+        self.dm_peer = None            # (id, name): the open DM thread
         self.sfx = None
         # jogress session
         self.partner = None
@@ -170,6 +171,8 @@ class LobbyPanel:
         self._last_name = name
         self.client = self.on_connect(name, pw, self._card())
         self.state = self.client.state
+        from . import persistence
+        self.state.blocked = persistence.get_blocked()
         self.phase = "lobby"
         self.status = "Connecting…"
 
@@ -235,6 +238,10 @@ class LobbyPanel:
         for m in list(s.inbox):
             t = m.get("t")
             if t == "invite":
+                if m.get("from_name") in s.blocked:
+                    self.client.respond(m.get("from_id"), m.get("kind"), False)
+                    s.inbox.remove(m)
+                    continue
                 gate = self._session_gate(m.get("kind"))
                 if gate:
                     # the pet can't honour this session (an egg, asleep...):
@@ -571,6 +578,8 @@ class LobbyPanel:
             return self._key_jogress(k)
         if self.phase == "battle":
             return self._key_battle(k)
+        if self.phase == "dm":
+            return self._key_dm(k)
         return self._key_lobby(k)
 
     def _key_login(self, k):
@@ -628,6 +637,48 @@ class LobbyPanel:
             self._return_to_lobby("Fusion cancelled.")
         return None
 
+    def _key_dm(self, k):
+        """Private thread with one peer: type + Enter sends, Esc back to the lobby."""
+        if k == "escape":
+            self.phase, self.buf = "lobby", ""
+            return None
+        if k == "enter":
+            if self.buf.strip() and self.dm_peer and self.client:
+                self.client.pm(self.dm_peer[0], self.buf.strip())
+            self.buf = ""
+            return None
+        return self._edit(k)
+
+    def _text_dm(self):
+        s = self.state
+        peer = self.dm_peer[1] if self.dm_peer else "?"
+        me = (s.me_name or "you") if s else "you"
+        w = CHATW + ROSTW + 1
+        t = Text()
+        t.append(_fit(f"✉ {peer}", w) + "\n", style=INK_B)
+        rows = []
+        for frm, tx in (s.dms.get(peer, []) if s else []):
+            mine = frm == me
+            who = "you" if mine else frm
+            parts = _wrap(f"{who}: {tx}", w - 1)
+            rows.append((parts[0], DIM if mine else INK_B))
+            rows.extend((" " + ln, DIM if mine else INK_B) for ln in parts[1:])
+        body = BODY + 1
+        view = rows[-body:]
+        view = [("", INK)] * (body - len(view)) + view
+        if not rows:
+            view[body // 2] = ("— no messages yet — say hi —"[:w], DIM)
+        for ln, sty in view:
+            t.append(_fit(ln, w) + "\n", style=sty)
+        label = f"→{peer[:8]}: "
+        fw = w - len(label)
+        shown = self.buf if len(self.buf) < fw else self.buf[-(fw - 1):]
+        caret = "_" if (getattr(self, "_mq", 0) // 5) % 2 == 0 else " "
+        t.append(label, style=INK_B)
+        t.append(_fit(shown + caret, fw) + "\n", style=INK)
+        t.append(_fit("Enter send · Esc back to lobby", w), style=DIM)
+        return t
+
     def _key_lobby(self, k):
         if self.invite_prompt is not None:
             inv = self.invite_prompt
@@ -656,6 +707,19 @@ class LobbyPanel:
             elif k in ("p", "P") and not plive:
                 self.client.ping(pid)
                 self.status = f"Pinged {pname} \u2014 asked them to hop in the lobby!"
+                self.action_for = None
+            elif k in ("v", "V"):
+                self.phase, self.dm_peer, self.buf = "dm", (pid, pname), ""
+                self.state.unread.discard(pname)
+                self.action_for = None
+            elif k in ("x", "X"):
+                from . import persistence
+                b = self.state.blocked
+                if pname in b:
+                    b.discard(pname); self.status = f"Unblocked {pname}."
+                else:
+                    b.add(pname); self.status = f"Blocked {pname}."
+                persistence.set_blocked(b)
                 self.action_for = None
             elif k in ("m", "M"):
                 # compose a private message: the input line retargets
@@ -743,6 +807,8 @@ class LobbyPanel:
             return self._text_jogress()
         if self.phase == "battle":
             return self._text_battle()
+        if self.phase == "dm":
+            return self._text_dm()
         return self._text_lobby()
 
     def _text_login(self):
@@ -856,8 +922,12 @@ class LobbyPanel:
                 pl = others[ridx]
                 cur = ridx == sel
                 ghost = not pl.get("live", True)     # playing, not in the room
-                t.append(_fit((">" if cur else " ") + ("·" if ghost else "") + pl["name"], ROSTW),
-                         style=SEL if cur else (DIM if ghost else INK))
+                nm = pl["name"]
+                unread = bool(s) and nm in s.unread
+                blk = bool(s) and nm in s.blocked
+                mark = "✉" if unread else ("✕" if blk else ("·" if ghost else ""))
+                sty = SEL if cur else (INK_B if unread else (DIM if (ghost or blk) else INK))
+                t.append(_fit((">" if cur else " ") + mark + nm, ROSTW), style=sty)
             elif i == 0 and not others:
                 t.append(_fit(" nobody yet", ROSTW), style=DIM)
             else:
@@ -888,9 +958,15 @@ class LobbyPanel:
             pid, pname, plive = self.action_for
             blurb = self._pet_of(pid)
             who = f"{pname} ({blurb})" if blurb else pname
-            acts = "[B]attle [J]og [M]sg [Esc]" if plive else "not in lobby — [P]ing  [M]sg  [Esc]"
-            t.append(_fit(marquee(who, w - len(acts) - 3, mq) + ":  " + acts, w),
-                     style=INK_B)
+            if self.state and pname in self.state.blocked:
+                acts = "[X]unblock  [Esc]"
+            elif plive:
+                acts = "[B]attle [J]og [V]iew [X]block [Esc]"
+            else:
+                acts = "not in lobby — [P]ing [V]iew [X]block [Esc]"
+            full = f"{who}:  {acts}"
+            # whole line scrolls when it overflows (Joel 2026-07-09), else static
+            t.append(marquee(full, w, mq) if len(full) > w else _fit(full, w), style=INK_B)
         elif self.scroll:
             # scrolled into the log: the line teaches its own way back
             t.append("▲ older — PgUp/PgDn · Esc back to live"[:w], style=DIM)

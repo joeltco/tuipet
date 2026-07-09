@@ -118,6 +118,17 @@ def mega_kills_add(n=1):
     return _note_add("mega_kills", n)
 
 
+def get_blocked():
+    """Muted lobby peers (names)."""
+    return set(load_settings().get("blocked", []))
+
+
+def set_blocked(names):
+    d = load_settings()
+    d["blocked"] = sorted(names)
+    save_settings(d)
+
+
 # --- cross-generation egg-unlock progress (DVPet eggUnlock.csv signals) -----------
 # These outlive any single pet and feed egg.evaluate(): permanent milestones (album,
 # wins, max generation/stage, maps cleared, tournament trophies, X-Antibody ever) plus
