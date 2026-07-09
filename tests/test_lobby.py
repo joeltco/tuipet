@@ -533,6 +533,28 @@ def test_jogress_partner_leaving_at_result_fuses_nobody(monkeypatch):
     assert not fused and pan.phase == "lobby"
 
 
+def test_jogress_resolution_failure_notifies_the_partner(monkeypatch):
+    """Jogress audit 2026-07-08: if my side can't resolve the fusion (a pet
+    that dozed off or lost DP after inviting), I must relay an abort so the
+    partner isn't left hanging at its result screen waiting for a confirm I'll
+    never send.  Before the fix the failed side returned silently."""
+    from tuipet import jogress
+    relays = []
+    s = LobbyState()
+    pan = _panel(s)
+    pan.client.relay = lambda to, payload: relays.append((to, payload))
+    monkeypatch.setattr(jogress, "can_jogress", lambda pet: None)
+    monkeypatch.setattr(jogress, "resolve_online", lambda pet, payload: None)  # no resonance
+    pan.phase, pan.jphase = "jogress", "waiting"
+    pan.partner = (9, "kai")
+    card = {"kind": "jogress", "attr": "Virus", "num": 56, "name": "Agumon",
+            "sick": False, "confirm2": True}
+    pan._on_relay({"from_id": 9, "payload": card})
+    assert pan.jphase == "failed"
+    assert (9, {"kind": "jogress", "abort": True}) in relays, \
+        "the failing side must tell the partner so it can't hang"
+
+
 def test_malicious_pm_cannot_crash_the_flash():
     """Chat-input audit 2026-07-07: a PM's sender name and body are REMOTE
     strings.  The home ✉ alert renders as Rich MARKUP, so an unbalanced

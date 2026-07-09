@@ -237,9 +237,9 @@ class TuiPetApp(App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("DNA fix: charging DNA into a fully-trained pet no longer "
-                 "knocks an Effort heart off it — the charge tops out just shy "
-                 "of full instead of dragging a maxed gauge back down.")
+    WHATS_NEW = ("Lobby fix: if a fusion falls through on your partner's side "
+                 "(their pet dozed off or ran low on DP), you're now told right "
+                 "away instead of being left waiting at the fusion screen.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and

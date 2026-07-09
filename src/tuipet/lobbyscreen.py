@@ -420,6 +420,12 @@ class LobbyPanel:
             else:
                 self.fail_reason = reason or "No resonance with that partner."
                 self.jphase = "failed"
+                # tell the partner so it can't hang at its result screen waiting
+                # for a confirm we'll never send (resolve_online is symmetric, so
+                # this only bites on a mid-handshake state change -- a pet that
+                # dozed off or lost DP after inviting; jogress audit 2026-07-08)
+                if self.partner:
+                    self.client.relay(self.partner[0], {"kind": "jogress", "abort": True})
         elif kind == "battle" and self.phase == "battle":
             bt = payload.get("t")
             # each relay type is only honoured in the phase that expects it

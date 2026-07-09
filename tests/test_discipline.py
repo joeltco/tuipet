@@ -250,7 +250,14 @@ def test_jogress_and_cup_pokes_disturb_the_sleeper_too():
     jogress/cup answered a flat 'zzz' -- now every player poke runs the same
     disturb mechanic.  (The lobby's REMOTE invites stay pure: _session_gate
     short-circuits asleep before these gates.)"""
+    import random
     from tuipet import jogress, tournament
+    # _wake() runs the morning-mood roll on EVERY rise (canon: even a grumbled
+    # wake takes its chances), and a GOOD_MORNING roll adds +100 -- enough to
+    # swamp the -10 disturb dec and flip net mood positive.  Seed so the roll
+    # is deterministic; the disturb mechanic (wake + count + grumble + dec) is
+    # what this test pins, not the orthogonal morning swing.
+    random.seed(0)
     for gate in (jogress.can_jogress, tournament.can_enter):
         p = Pet(num=4, name="Rex", stage="Rookie", attribute="Vaccine")
         p.world_seconds = 2 * 60.0
