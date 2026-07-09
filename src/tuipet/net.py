@@ -286,3 +286,19 @@ class LobbyClient(_WsClient):
                 self._stop = True
         elif t == "error":
             s.error = m.get("msg")
+
+
+async def submit_bug(uri, text, meta=None, name="", timeout=8.0):
+    """One-shot bug submit: connect, send a bug envelope (NO login needed),
+    await the server ack, close.  True only on a server-confirmed store."""
+    payload = {"t": "bug", "text": text, "name": name}
+    if meta:
+        payload.update(meta)
+    try:
+        async with websockets.connect(uri, max_size=64 * 1024, open_timeout=timeout) as ws:
+            await ws.send(json.dumps(payload))
+            raw = await asyncio.wait_for(ws.recv(), timeout=timeout)
+            m, t = parse_msg(raw)
+            return bool(t == "bug_ok" and m and m.get("ok"))
+    except Exception:
+        return False

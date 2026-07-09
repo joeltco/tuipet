@@ -31,6 +31,7 @@ from . import net
 from . import lobbyscreen
 from . import tournament
 from . import tournamentscreen
+from . import bugscreen
 from . import titlescreen
 from . import optionsscreen
 from . import deathscreen
@@ -79,7 +80,7 @@ def keys_markup():
     return (
         f"[{k}]f[/] feed  [{k}]p[/] play  [{k}]c[/] clean  [{k}]h[/] heal  [{k}]r[/] praise  [{k}]k[/] scold  [{k}]s[/] lights  [{k}]v[/] assist\n"
         f"[{k}]t[/] train  [{k}]a[/] adventure  [{k}]u[/] cup  [{k}]l[/] lobby (battle·jogress)  [{k}]x[/] DNA\n"
-        f"[{k}]o[/] shop  [{k}]i[/] bag  [{k}]e[/] habitat  [{k}]d[/] data  [{k}]g[/] options  [{k}]q[/] quit"
+        f"[{k}]o[/] shop  [{k}]i[/] bag  [{k}]e[/] habitat  [{k}]d[/] data  [{k}]g[/] options  [{k}]b[/] bug  [{k}]q[/] quit"
     )
 
 
@@ -237,10 +238,10 @@ class TuiPetApp(App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("No more waiting on a cup you can't enter: the home tournament now "
-                 "shows the next hour you can actually win a cup (\"next winnable "
-                 "14:00 Deep Saver Cup\"), skipping the ones your pet is locked "
-                 "out of by field, attribute or tier.")
+    WHATS_NEW = ("Hit a bug? Press B to report it right from the app -- type what "
+                 "went wrong and it goes straight to the dev (works even outside the "
+                 "lobby, and saves to retry if you are offline). Your version and pet "
+                 "ride along so it can be fixed fast.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and
@@ -254,7 +255,8 @@ class TuiPetApp(App):
         ("d", "digicore", "DigiCore"),
         ("u", "tournament", "Cup"), ("x", "dna", "DNA"),
         ("l", "lobby", "Lobby"),
-        ("s", "sleep", "Lights"), ("v", "assist", "Assistant"), ("g", "options", "Options"), ("q", "quit", "Quit"),
+        ("s", "sleep", "Lights"), ("v", "assist", "Assistant"), ("g", "options", "Options"),
+        ("b", "bug", "Bug"), ("q", "quit", "Quit"),
         ("enter", "gift", "Accept gift"),
     ]
 
@@ -314,6 +316,7 @@ class TuiPetApp(App):
         self.set_interval(1.0, self.on_tick)
         self.set_interval(10.0, self.autosave)
         self.run_worker(self._check_update(), name="update", exclusive=False)
+        self.run_worker(self._flush_bugs(), name="bugflush", exclusive=False)
         self._start_sync()
 
     def _whats_new(self):
@@ -576,6 +579,53 @@ class TuiPetApp(App):
             self.repaint()
 
     # ---- multiplayer lobby ----------------------------------------------
+    def action_bug(self):
+        self._open_mode(bugscreen.BugReportPanel(self.pet), self._after_bug)
+
+    def _after_bug(self, result=None):
+        if isinstance(result, tuple) and result and result[0] == "bug":
+            name = persistence.get_account()[0] or ""
+            self.run_worker(self._send_bug(result[1], self._bug_meta(), name),
+                            name="bug", exclusive=False)
+            self._hud("Sending your report\u2026")
+        self.repaint()
+
+    async def _send_bug(self, text, meta, name):
+        ok = await net.submit_bug(_lobby_uri(), text, meta, name=name)
+        if ok:
+            self._hud("Bug report sent \u2014 thank you!")
+        else:
+            persistence.add_pending_bug(dict(meta, text=text, name=name))
+            self._hud("Offline \u2014 saved; it will send next time you are online.")
+
+    async def _flush_bugs(self):
+        """Best-effort resend of any bugs stashed while offline."""
+        pending = persistence.take_pending_bugs()
+        left = []
+        for rec in pending:
+            if left:                       # already hit an outage: keep the rest
+                left.append(rec); continue
+            text, name = rec.get("text", ""), rec.get("name", "")
+            meta = {kk: vv for kk, vv in rec.items() if kk not in ("text", "name")}
+            if not (text and await net.submit_bug(_lobby_uri(), text, meta, name=name)):
+                left.append(rec)
+        for rec in left:
+            persistence.add_pending_bug(rec)
+
+    def _bug_meta(self):
+        import platform as _pf
+        try:
+            from importlib.metadata import version as _v
+            ver = _v("tuipet")
+        except Exception:
+            ver = ""
+        p = self.pet
+        return {"version": ver,
+                "platform": "%s py%s" % (_pf.system(), _pf.python_version()),
+                "pet": {"num": getattr(p, "num", 0), "name": getattr(p, "name", ""),
+                        "stage": getattr(p, "stage", ""),
+                        "gen": getattr(p, "generation", 0)}}
+
     def action_lobby(self):
         if self.mode is not None:
             return

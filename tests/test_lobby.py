@@ -507,9 +507,13 @@ def test_battle_and_jogress_are_lobby_only():
     The home screen must expose neither key."""
     from tuipet.app import TuiPetApp
     keys = {b[0] for b in TuiPetApp.BINDINGS}
-    assert "b" not in keys and "j" not in keys
+    amap = {b[0]: b[1] for b in TuiPetApp.BINDINGS}
+    # no battle/jogress ACTION on the home screen (the real invariant); the old
+    # battle key "b" is now the bug reporter, and "j" (jogress) stays retired
     assert not hasattr(TuiPetApp, "action_battle")
     assert not hasattr(TuiPetApp, "action_jogress")
+    assert "j" not in keys
+    assert amap.get("b") == "bug"                                # never battle
     assert "l" in keys and "a" in keys and "u" in keys      # the surviving routes
 
 

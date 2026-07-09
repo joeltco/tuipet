@@ -318,6 +318,29 @@ def get_progress():
     }
 
 
+def add_pending_bug(rec):
+    """Stash a bug that could not be sent (offline) to retry next launch."""
+    import os as _os, json as _json
+    try:
+        _os.makedirs(SAVE_DIR, exist_ok=True)
+        with open(_os.path.join(SAVE_DIR, "pending_bugs.jsonl"), "a", encoding="utf-8") as f:
+            f.write(_json.dumps(rec) + "\n")
+    except OSError:
+        pass
+
+
+def take_pending_bugs():
+    """Return and clear the stashed bugs (a best-effort flush)."""
+    import os as _os, json as _json
+    p = _os.path.join(SAVE_DIR, "pending_bugs.jsonl")
+    try:
+        recs = [_json.loads(l) for l in open(p, encoding="utf-8") if l.strip()]
+        _os.remove(p)
+        return recs
+    except (OSError, ValueError):
+        return []
+
+
 def get_account():
     """The cached lobby account: (name, password). (None, "") if unset."""
     a = load_settings().get("account") or {}

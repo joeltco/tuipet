@@ -21,6 +21,7 @@ import itertools
 import json
 import logging
 import os
+import time
 from collections import deque
 
 import websockets
@@ -34,6 +35,10 @@ ACCOUNTS_PATH = os.environ.get(
 SAVES_PATH = os.environ.get(
     "TUIPET_SAVES",
     os.path.join(os.path.dirname(os.path.abspath(__file__)), "saves.json"))
+BUGS_PATH = os.environ.get(
+    "TUIPET_BUGS",
+    os.path.join(os.path.dirname(os.path.abspath(__file__)), "bugs.jsonl"))
+MAX_BUG_TEXT = 2000
 
 MAX_CLIENTS = 200
 MAX_NAME = 24
@@ -237,6 +242,31 @@ async def _push_roster():
     await _broadcast(_roster())
 
 
+async def _handle_bug(client, m):
+    """Append an anonymous bug report to bugs.jsonl and ack it (no login
+    required -- a player hits a bug before they ever open the lobby)."""
+    text = (str(m.get("text") or "")).strip()[:MAX_BUG_TEXT]
+    if not text:
+        await _send(client, {"t": "bug_ok", "ok": False})
+        return
+    rec = {
+        "ts": time.strftime("%Y-%m-%d %H:%M:%SZ", time.gmtime()),
+        "from": (str(m.get("name") or "").strip() or "anon")[:MAX_NAME],
+        "version": str(m.get("version") or "")[:24],
+        "platform": str(m.get("platform") or "")[:60],
+        "pet": m.get("pet") if isinstance(m.get("pet"), dict) else {},
+        "text": text,
+    }
+    ok = True
+    try:
+        with open(BUGS_PATH, "a", encoding="utf-8") as f:
+            f.write(json.dumps(rec) + "\n")
+    except OSError:
+        ok = False
+    LOG.info("bug from %s (%d chars) ok=%s", rec["from"], len(text), ok)
+    await _send(client, {"t": "bug_ok", "ok": ok})
+
+
 async def handler(ws):
     if len(CLIENTS) >= MAX_CLIENTS:
         await ws.send(json.dumps({"t": "error", "msg": "Lobby is full."}))
@@ -323,6 +353,9 @@ async def handler(ws):
                 await _push_roster()          # sync ghosts show as "playing" (presence 2026-07-05)
                 LOG.info("login id=%s name=%s sync_only=%s (%d online)",
                          client.id, client.name, sync_only, len(CLIENTS))
+
+            elif t == "bug":
+                await _handle_bug(client, m)
 
             elif not logged_in:
                 await _send(client, {"t": "error", "msg": "Log in first."})
