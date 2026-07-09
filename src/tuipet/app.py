@@ -32,6 +32,7 @@ from . import lobbyscreen
 from . import tournament
 from . import tournamentscreen
 from . import bugscreen
+from . import helpscreen
 from . import titlescreen
 from . import optionsscreen
 from . import deathscreen
@@ -80,7 +81,7 @@ def keys_markup():
     return (
         f"[{k}]f[/] feed  [{k}]p[/] play  [{k}]c[/] clean  [{k}]h[/] heal  [{k}]r[/] praise  [{k}]k[/] scold  [{k}]s[/] lights  [{k}]v[/] assist\n"
         f"[{k}]t[/] train  [{k}]a[/] adventure  [{k}]u[/] cup  [{k}]l[/] lobby (battle·jogress)  [{k}]x[/] DNA\n"
-        f"[{k}]o[/] shop  [{k}]i[/] bag  [{k}]e[/] habitat  [{k}]d[/] data  [{k}]g[/] options  [{k}]b[/] bug  [{k}]q[/] quit"
+        f"[{k}]o[/] shop  [{k}]i[/] bag  [{k}]e[/] habitat  [{k}]d[/] data  [{k}]g[/] options  [{k}]b[/] bug  [{k}]?[/] help  [{k}]q[/] quit"
     )
 
 
@@ -238,10 +239,9 @@ class TuiPetApp(App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("Hit a bug? Press B to report it right from the app -- type what "
-                 "went wrong and it goes straight to the dev (works even outside the "
-                 "lobby, and saves to retry if you are offline). Your version and pet "
-                 "ride along so it can be fixed fast.")
+    WHATS_NEW = ("New here? Press ? for a Help screen -- every control and a quick "
+                 "how-to (care, adventure, cups, lobby, and how your pet grows), so "
+                 "none of the keys are a mystery.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and
@@ -256,7 +256,7 @@ class TuiPetApp(App):
         ("u", "tournament", "Cup"), ("x", "dna", "DNA"),
         ("l", "lobby", "Lobby"),
         ("s", "sleep", "Lights"), ("v", "assist", "Assistant"), ("g", "options", "Options"),
-        ("b", "bug", "Bug"), ("q", "quit", "Quit"),
+        ("b", "bug", "Bug"), ("question_mark", "help", "Help"), ("q", "quit", "Quit"),
         ("enter", "gift", "Accept gift"),
     ]
 
@@ -579,6 +579,9 @@ class TuiPetApp(App):
             self.repaint()
 
     # ---- multiplayer lobby ----------------------------------------------
+    def action_help(self):
+        self._open_mode(helpscreen.HelpPanel(self.pet), lambda _=None: self.repaint())
+
     def action_bug(self):
         self._open_mode(bugscreen.BugReportPanel(self.pet), self._after_bug)
 
