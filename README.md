@@ -28,6 +28,8 @@ is in maintenance: canon corrections land as they're noticed in play.
 
 ## Install
 
+**Requires Python 3.10+.**
+
 **One command:**
 
 ```sh
@@ -49,6 +51,12 @@ actually hear the LCD beeps you also need the **termux-api** package
 package alone isn't enough. Over SSH, sound stays silent on purpose. The
 `curl -fsSL https://raw.githubusercontent.com/joeltco/tuipet/main/install.sh | bash`
 script does all of that in one shot.
+
+**On iPhone (iSH):** iSH's Alpine usually ships a Python older than 3.10, so
+`pip install tuipet` fails with *"No matching distribution found"*. Check your
+version with `python3 --version`; if it's below 3.10, try `apk add python3` for a
+newer build. If iSH can't provide 3.10+, use **Termux on Android** instead — it's
+the smoother mobile experience.
 
 ## Run from source
 
