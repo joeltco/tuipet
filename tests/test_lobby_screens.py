@@ -227,7 +227,7 @@ def test_prompt_lines_keep_their_hints_with_long_names():
         assert len(last) <= LCD_COLS
     pan.action_for = (3, long, False)             # the ghost variant
     last = pan.text().plain.split("\n")[-1]
-    assert "[M]essage" in last and "[Esc]" in last
+    assert "[P]ing" in last and "[M]sg" in last and "[Esc]" in last
     pan.action_for = None                         # the selection status line
     pan.sel = 1                                   # sorted: the long-name live row
     pan.status = "↑↓ pick · Enter chat/act · Esc leave"

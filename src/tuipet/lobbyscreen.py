@@ -653,6 +653,10 @@ class LobbyPanel:
                     self.status, self.action_for = err, None
                     return None
                 self.client.invite(pid, "jogress"); self.status = f"Jogress invite → {pname}"; self.action_for = None
+            elif k in ("p", "P") and not plive:
+                self.client.ping(pid)
+                self.status = f"Pinged {pname} \u2014 asked them to hop in the lobby!"
+                self.action_for = None
             elif k in ("m", "M"):
                 # compose a private message: the input line retargets
                 self.pm_to = (pid, pname)
@@ -884,7 +888,7 @@ class LobbyPanel:
             pid, pname, plive = self.action_for
             blurb = self._pet_of(pid)
             who = f"{pname} ({blurb})" if blurb else pname
-            acts = "[B]attle [J]og [M]sg [Esc]" if plive else "playing — [M]essage  [Esc]"
+            acts = "[B]attle [J]og [M]sg [Esc]" if plive else "not in lobby — [P]ing  [M]sg  [Esc]"
             t.append(_fit(marquee(who, w - len(acts) - 3, mq) + ":  " + acts, w),
                      style=INK_B)
         elif self.scroll:

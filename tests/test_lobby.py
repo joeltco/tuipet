@@ -186,7 +186,7 @@ def test_playing_ghosts_are_message_only_targets():
     assert "·mika" in pan.text().plain                      # ghost marker in the sidebar
     pan.key("enter")                                        # open mika's action menu
     assert pan.action_for == (2, "mika", False)
-    assert "playing" in pan.text().plain                    # message-only menu
+    assert "not in lobby" in pan.text().plain               # message/ping menu
     pan.key("b")                                            # invites are dead on a ghost
     assert pan.action_for is not None and not sent
     pan.key("m")                                            # compose opens
@@ -195,6 +195,24 @@ def test_playing_ghosts_are_message_only_targets():
         pan.key(ch)
     pan.key("enter")
     assert sent == [(2, "yo")] and pan.pm_to is None        # sent + compose closed
+
+
+def test_ping_pulls_a_ghost_into_the_lobby():
+    """A ghost can't be battle/jogress-invited, but [P]ing nudges them (via the PM
+    channel that reaches their home-screen alert) to come to the lobby."""
+    s = LobbyState()
+    s.connected = True
+    s.me_id, s.me_name = 1, "joel"
+    s.roster = [{"id": 1, "name": "joel", "pet": {}, "live": True},
+                {"id": 2, "name": "mika", "pet": {}, "live": False}]
+    pan = _panel(s)
+    sent = []
+    pan.client.ping = lambda to: sent.append(("PING", to))
+    pan.key("enter")                                        # open mika's (ghost) menu
+    assert pan.action_for == (2, "mika", False)
+    assert "[P]ing" in pan.text().plain                     # ghost menu offers the ping
+    pan.key("p")
+    assert sent == [("PING", 2)] and pan.action_for is None
 
 
 def test_pm_lands_in_the_lobby_chat_feed():

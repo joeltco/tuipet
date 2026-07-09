@@ -237,10 +237,9 @@ class TuiPetApp(App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("Two ways to get eggs now: EARN the special ones by playing -- "
-                 "raise 5+ Digimon for the dragon egg, win 50 battles for the Jesmon "
-                 "egg, carry the X-Antibody, crack a password -- and they unlock FREE. "
-                 "The rest you discover and buy in the themed town shops.")
+    WHATS_NEW = ("Can't find anyone to battle? Players with the app open but not in "
+                 "the lobby now show as ghosts you can [P]ing -- one key nudges them "
+                 "to hop into the lobby so you can actually battle or jogress.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and

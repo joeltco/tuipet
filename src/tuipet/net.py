@@ -194,6 +194,11 @@ class LobbyClient(_WsClient):
     def pm(self, to, text):
         self._send({"t": "pm", "to": to, "text": text})
 
+    def ping(self, to):
+        """Nudge a ghost (app open, not in the lobby) to come battle -- rides the PM
+        channel, which lands on their home-screen alert."""
+        self.pm(to, "\u2694\ufe0f wants to battle -- come to the Lobby!")
+
     def respond(self, to, kind, accept, busy=False):
         msg = {"t": "invite_resp", "to": to, "kind": kind, "accept": bool(accept)}
         if busy:
