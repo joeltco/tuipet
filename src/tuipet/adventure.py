@@ -459,7 +459,9 @@ class Adventure:
         self._cleared.clear()
         if self.zi + 1 < len(zones):
             self.zi += 1
-            self.last = "Zone cleared! Onward."
+            from . import world
+            nm = world.zone_name(self.maps[self.mi]["map"], zones[self.zi]["zone"])
+            self.last = f"Zone cleared! On to {nm}."
             self._save()
             return "zone"
         from . import persistence
@@ -467,7 +469,8 @@ class Adventure:
             persistence.map_complete_add(self.mi)        # this map is cleared
             self.mi += 1
             self.zi = 0
-            self.last = "MAP COMPLETE! New region unlocked!"
+            from . import world
+            self.last = f"REGION CLEARED! {world.region_name(self.maps[self.mi]['map'])} unlocked!"
             self._save()
             return "map"
         persistence.map_complete_add(self.mi)

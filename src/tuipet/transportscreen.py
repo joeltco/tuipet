@@ -18,6 +18,7 @@ from . import grid
 from . import strikefx
 from .render import downsample
 from .theme import LCD_ON, LCD_BG, SIL_DAY  # noqa: F401  (palette names bound for theme.apply propagation)
+from . import world
 
 COLS, ROWS = 40, 12
 
@@ -72,11 +73,11 @@ class TransportPanel:
             # skip the progression; audit 2026-07-05 -- ALL 5 were listed)
             from . import persistence
             beaten = persistence.get_progress().get("maps", set())
-            return [(f"Continent {i + 1}   ({len(m['zones'])} zones)", i, 0)
+            return [(f"{world.region_name(m['map'])}  ({len(m['zones'])}z)", i, 0)
                     for i, m in enumerate(self.maps)
                     if i == 0 or (i - 1) in beaten or i <= self.pet.adv_map]
         if self.kind == "zone":
-            return [(f"Zone {zi + 1}", mi, zi)
+            return [(world.zone_name(self.maps[mi]["map"], self.maps[mi]["zones"][zi]["zone"]), mi, zi)
                     for zi in range(len(self.maps[mi]["zones"]))]
         if self.kind == "town":
             # Birdra rides only where a town EXISTS (canon isTownClose gates

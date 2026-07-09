@@ -157,6 +157,21 @@ def roll_town_shop(pet, town, is_food):
     avail = [e for e in pool if not e["must_stock"]
              and random.randrange(100) < e["stock_chance"][si]]
     slots, seen = [], set()
+    # the town's biome SPECIALTY leads the shelf (world.biome_specialty_keys):
+    # local goods it always carries -- biome-fitting GENERAL consumables, shown
+    # regardless of the daily roll so each biome's town reads distinct
+    from . import world
+    full = {e["key"]: e for e in data.home_shop_pool()}
+    for key in world.biome_specialty_keys(town["id"], is_food):
+        if len(slots) >= mx or key in seen:
+            continue
+        e = full.get(key)
+        if not e or e.get("price", 0) <= 0 or not data.item_is_functional(e):
+            continue
+        seen.add(key)
+        slot = _mk_slot(pet, e, True)
+        slot["price"] = e["price"]
+        slots.append(slot)
     for group in (must, avail):
         random.shuffle(group)
         for e in group:

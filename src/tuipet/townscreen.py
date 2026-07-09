@@ -7,7 +7,7 @@ and the town TOURNAMENT (Town.getTrophies): tournament_limit slots where 0-23
 are hourly cups and anything past 23 -- the ForceTrophies pins -- is always
 open.  Shops and cups roll fresh per visit (DVPet resets them daily)."""
 from __future__ import annotations
-from . import data, grid, menu, shop, tournament
+from . import data, grid, menu, shop, tournament, world
 from .tournament import Tournament
 from .battlescreen import BattlePanel
 from .theme import LCD_ON, LCD_BG, INK, INK_B, DIM, SIL_DAY  # noqa: F401  (theme.apply propagation)
@@ -38,8 +38,9 @@ class TownPanel(menu.SubHost):
         self.cursor = 0
         self.sub = None            # a cup match (BattlePanel)
         self.tourney = None
+        self.town_id = town_id
         self.frame_i = 0
-        self.msg = "Welcome to town."
+        self.msg = world.town_greeting(town_id)
 
     # ---- plumbing ----
     def anim(self):
@@ -97,7 +98,7 @@ class TownPanel(menu.SubHost):
             if self.phase == "menu":
                 return ("done", None)
             self.phase, self.cursor = "menu", 0
-            self.msg = "Welcome to town."
+            self.msg = world.town_greeting(self.town_id)
         return None
 
     def _activate(self, rows):
@@ -116,7 +117,8 @@ class TownPanel(menu.SubHost):
                 return None
             self.phase, self.cursor = key, 0
             self.msg = {"food": "The town's larder.", "items": "The town's wares.",
-                        "eggs": "The town's eggs.", "sell": "What will you part with?",
+                        "eggs": world.town_known_for(self.town_id),
+                        "sell": "What will you part with?",
                         "cups": "The town's cups."}[key]
             return None
         if self.phase in ("food", "items") and rows:
@@ -252,7 +254,7 @@ class TownPanel(menu.SubHost):
             # strip reads below in the #msg box.
             fr = data.bob_frame(p.num, self.frame_i)
             return self._scene([grid.center(grid.prep(fr, ph=24))])
-        out = menu.header(f"TOWN {self.town['id']}", f"{p.bits}b")
+        out = menu.header(world.town_name(self.town_id).upper(), f"{p.bits}b")
         # the selected item's icon+info block -- the SAME icon view as the home
         # shop (the town shelves rendered nameplates only; refactor 2026-07-05)
         if self.phase in ("food", "items", "sell", "eggs"):

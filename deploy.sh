@@ -96,7 +96,9 @@ assert s != s2, "version line not found in pyproject.toml"
 open(p, "w").write(s2)
 PY
 
-if [ "$CONFIRM" = 1 ]; then
+# only prompt on a real terminal -- a headless run (ssh/CI) is implicitly
+# confirmed, never a hang-then-abort under set -e (deploy audit 2026-07-09)
+if [ "$CONFIRM" = 1 ] && [ -t 0 ]; then
   read -r -p "Commit, tag, push$([ "$PUBLISH" = 1 ] && echo ' and publish')? [y/N] " ans
   case "$ans" in y|Y) ;; *) git checkout -- pyproject.toml; echo "aborted (reverted bump)"; exit 1 ;; esac
 fi

@@ -237,9 +237,10 @@ class TuiPetApp(App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("Lobby DMs got real: [V]iew a player for a private thread with just "
-                 "your convo (a ✉ badge flags unread ones), and [X] blocks anyone "
-                 "whose vibe is off -- their chat, DMs and invites go quiet.")
+    WHATS_NEW = ("The adventure world has a name now: cross real regions like the "
+                 "Coastlands and the Ironlands, and rest in 26 named towns -- "
+                 "Dunehaven, Coral Deep, Frostmere -- each with its own biome "
+                 "greeting and local goods fronting the shelf.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and
@@ -1033,10 +1034,13 @@ class TuiPetApp(App):
                            else f"[{T.COIN}]T[/]" if c == "T"
                            else f"[{T.NEG}]B[/]" if c == "B"
                            else "[dim]·[/]" for c in a.ribbon())
+            from . import world
+            _mn = a.maps[a.mi]["map"]
             lines = [
                 f"[b]{p.name[:14]}[/] [dim]· away[/]",
                 div,
-                f"Map      {a.mi + 1}-{a.zi + 1} [dim]· {a.pct}%[/]",
+                f"[b]{world.region_name(_mn)[:24]}[/]",
+                f"{world.zone_name(_mn, a.zone['zone'])[:20]} [dim]{a.pct}%[/]",
                 f"Lives    {lives}",
                 f"Road     {road}",
                 f"Bag      {sum(p.inventory.values())}   [{T.COIN}]{p.bits}b[/]",
@@ -1045,7 +1049,6 @@ class TuiPetApp(App):
                 f"Energy   {bar(p.energy_pct(), 11, T.ENERGY)}",
                 f"Power    {power}",
                 div,
-                "[dim]out exploring —[/]",
                 "[dim]survive the zone[/]",
             ]
         self.stats_w.update("\n".join(lines))
