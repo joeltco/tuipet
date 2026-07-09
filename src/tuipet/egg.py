@@ -302,3 +302,78 @@ if __name__ == "__main__":
         for r in f:
             print(r.replace("0", " ").replace("1", "#"))
         print()
+
+
+# --- themed TOWN egg shops: spread the buyable roster across the world by habitat ---
+@lru_cache(maxsize=1)
+def _town_egg_map():
+    """egg_idx -> frozenset(town_ids) whose home-habitat field/element matches the egg's
+    evolution line. Built from lines.csv (the egg's line forms) + zones/towns/habitats."""
+    from . import data
+    import csv as _csv
+    from collections import Counter, defaultdict
+    _, by_num = data.load_sprites()
+    line_forms, fresh_line = defaultdict(list), {}
+    for r in _csv.reader(open(os.path.join(_DATA, "lines.csv"))):
+        if not r or r[0] == "LineID":
+            continue
+        line_forms[r[0]].append(int(r[2]))
+        if r[1] == "Fresh":
+            fresh_line[int(r[2])] = r[0]
+    def dom(vals):
+        c = Counter(v for v in vals if v and v not in ("None", "Empty"))
+        return c.most_common(1)[0][0] if c else None
+    egg_theme = {}
+    for i in range(count()):
+        t = hatch_targets(i)
+        if len(t) != 1:
+            continue
+        lid = fresh_line.get(t[0])
+        if not lid:
+            continue
+        forms = line_forms.get(lid, [])
+        egg_theme[i] = (dom(by_num.get(n, {}).get("field") for n in forms),
+                        dom(by_num.get(n, {}).get("element") for n in forms))
+    hab = {h["ID"]: h for h in _csv.DictReader(open(os.path.join(_DATA, "habitats.csv")))}
+    def split(v):
+        return set(x for x in (v or "").split(";") if x and x != "Empty")
+    town_range = {}
+    for r in _csv.DictReader(open(os.path.join(_DATA, "towns.csv"))):
+        tr = (r.get("TownRange") or "").split("t")
+        if len(tr) == 2 and tr[0].isdigit():
+            town_range[int(r["TownID"])] = (int(tr[0]), int(tr[1]))
+    town_theme = {}
+    for r in _csv.DictReader(open(os.path.join(_DATA, "zones.csv"))):
+        tid = (r.get("TownID;") or r.get("TownID") or "").strip()
+        if not tid.isdigit():
+            continue
+        tid = int(tid)
+        segs = []
+        for seg in (r.get("BackgroundsAndRange") or "").split(";"):
+            rng, _, hid = seg.partition(":")
+            a, _, b = rng.partition("t")
+            if a.isdigit() and b.isdigit():
+                segs.append((int(a), int(b), hid.strip()))
+        tr = town_range.get(tid)
+        home = None
+        if tr and segs:
+            for a, b, hid in segs:
+                if a <= tr[0] <= b:
+                    home = hid
+                    break
+            if home is None:
+                home = max(segs, key=lambda s: s[1] - s[0])[2]
+        h = hab.get(home, {})
+        town_theme[tid] = (split(h.get("CompatibleField")), split(h.get("CompatibleElement")))
+    m = defaultdict(set)
+    for i, (fld, ele) in egg_theme.items():
+        for tid, (flds, eles) in town_theme.items():
+            if (fld and fld in flds) or (ele and ele in eles):
+                m[i].add(tid)
+    return {i: frozenset(t) for i, t in m.items()}
+
+
+def eggs_for_town(town_id, prog, owned):
+    """(idx, price) buyable eggs whose theme matches this town -- the themed town shop."""
+    tm = _town_egg_map()
+    return [(i, p) for i, p in buyable_eggs(prog, owned) if town_id in tm.get(i, frozenset())]

@@ -57,8 +57,9 @@ class ShopPanel:
         cat = self._tabs()[self.tab]
         if self.mode == "shop":
             if cat == "egg":
-                prog, owned = persistence.get_progress(), persistence.get_eggs_owned()
-                return [egg_mod.shop_egg_entry(i, pr) for i, pr in egg_mod.buyable_eggs(prog, owned)]
+                # buyable eggs now live in the themed TOWN shops; the home counter is
+                # for hatching your owned/starter eggs + password redemption
+                return []
             if self._shelves_closed():
                 return []                  # shutters down: nothing to browse or buy
             # the day's rolled roster (open_shop handles the daily reset + restock)

@@ -237,9 +237,9 @@ class TuiPetApp(App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("More real evolution lines: the Pichimon egg now raises the "
-                 "Sun & Moon line up to Apollomon and Dianamon, joining the "
-                 "Dracomon road to Slayerdramon and Breakdramon.")
+    WHATS_NEW = ("Egg shops spread across the world: each town now stocks eggs "
+                 "matching its habitat -- dragon eggs near fiery lands, sea eggs "
+                 "by the coast. Explore to find them; starters stay on the home counter.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and

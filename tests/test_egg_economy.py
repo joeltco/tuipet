@@ -164,11 +164,13 @@ def test_status_card_index_survives_the_full_carousel():
 
 
 def test_buyable_egg_lives_in_the_shop_not_the_select():
-    """Joel 2026-07-04: shop eggs stay OUT of the egg select until bought.
-    End to end: earn Sakumon's license right -> the select hides it, the shop
-    egg tab sells it; buy it -> it joins the select as hatchable."""
-    from tuipet import persistence
+    """Joel 2026-07-04/09: shop eggs stay OUT of the egg select until bought, and the
+    buyable roster now lives in the themed TOWN shops (home counter = starters/password).
+    Earn Sakumon's license -> the select hides it, a matching town shop sells it; buy
+    it -> it joins the select as hatchable."""
+    from tuipet import persistence, egg as egg_mod
     from tuipet.eggselectscreen import EggSelectPanel
+    from tuipet.townscreen import TownPanel
     from tuipet.shopscreen import ShopPanel
     from tuipet.pet import Pet
     idx = _rule("Sakumon")["idx"]
@@ -176,16 +178,24 @@ def test_buyable_egg_lives_in_the_shop_not_the_select():
     pan = EggSelectPanel()
     assert pan.states[idx][0] == "buyable"
     assert idx not in pan.carousel                  # hidden from the select
+    # the HOME egg counter no longer sells buyable eggs (they moved to towns)
+    hp = Pet(num=100, stage="Champion", attribute="Vaccine", obedience=500)
+    hp.world_seconds = 12 * 60.0
+    sp = ShopPanel(hp)
+    while sp._tabs()[sp.tab] != "egg":
+        sp.key("right")
+    assert all(e.get("egg_idx") != idx for e in sp._rows())   # not at home
+    # ...but a theme-matching TOWN shop stocks it
     p = Pet(num=100, stage="Champion", attribute="Vaccine", obedience=500)
-    p.world_seconds = 12 * 60.0
     p.bits = 5000
-    shop_pan = ShopPanel(p)
-    while shop_pan._tabs()[shop_pan.tab] != "egg":
-        shop_pan.key("right")
-    rows = shop_pan._rows()
-    assert any(e.get("egg_idx") == idx for e in rows)   # ...but for sale here
+    prog, owned = persistence.get_progress(), persistence.get_eggs_owned()
+    town = next(t for t in range(26)
+                if any(i == idx for i, _ in egg_mod.eggs_for_town(t, prog, owned)))
+    tp = TownPanel(p, town)
+    rows = tp.egg_slots
+    assert any(e.get("egg_idx") == idx for e in rows)          # for sale here
     entry = next(e for e in rows if e.get("egg_idx") == idx)
-    assert "Unlocked" in shop_pan._buy_egg(entry)
+    assert "Unlocked" in tp._buy_egg(entry)[0]
     pan2 = EggSelectPanel()
     assert idx in pan2.carousel                     # owned now -> hatchable
     assert pan2.states[idx][0] == "owned"
