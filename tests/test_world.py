@@ -76,3 +76,34 @@ def test_town_shop_leads_with_its_biome_specialty():
     want = set(world.biome_specialty_keys(20, True))
     leads = {slot["key"] for slot in shop.roll_town_shop(p, town, True)[:len(want)]}
     assert want & leads, f"desert specialty {want} not fronted (got {leads})"
+
+
+# --- biome-biased town tournaments (Joel 2026-07-09) ---
+from tuipet import tournament as _T
+
+
+def test_town_hosts_its_biome_field_championship():
+    """Each town's always-open signature slot (index > 23) hosts the cup for its
+    biome's field -- Coral Deep -> Deep Saver Cup, Steelport -> Metal Empire Cup."""
+    p = _pet()
+    for tid, field in ((3, "DeepSaver"), (2, "MetalEmpire"), (0, "NightmareSoldier"),
+                       (23, "DeepSaver"), (20, "NatureSpirit")):
+        assert world.town_field(tid) == field
+        sched = _T.town_schedule(p, data.load_towns()[tid])
+        openslots = [sched[i] for i in range(len(sched)) if i > 23]
+        cup = _T.biome_cup_id(p.season, field)
+        assert cup >= 0 and cup in openslots, f"town {tid} missing its {field} cup"
+
+
+def test_town_bout_entrants_skew_to_the_biome_field():
+    """A town cup with no field rule of its own draws NPCs skewed toward the
+    biome field, so the fight feels like the place (soft, not exclusive)."""
+    import random
+    p = _pet()
+    _, by = data.load_sprites()
+    cup = _T.trophy_by_id(0)                       # an open, unrestricted Spring cup
+    def deep(fb):
+        random.seed(42)
+        return sum(1 for _ in range(40) for e in _T.Tournament(p, cup, field_bias=fb).entrants
+                   if by.get(e["num"], {}).get("field") == "DeepSaver")
+    assert deep("DeepSaver") > 3 * deep(""), "biome entrant bias not taking effect"

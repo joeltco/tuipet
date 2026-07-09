@@ -221,6 +221,12 @@ def town_known_for(tid: int) -> str:
     return f"{h.get('name', 'Town')} town — {field}-field goods & eggs"
 
 
+def town_field(tid: int) -> str:
+    """The town biome's signature CompatibleField (e.g. 'DeepSaver') -- the
+    field whose championship the town hosts and whose mons pack its cups."""
+    return _habitats().get(_town_biome().get(tid), {}).get("field", "")
+
+
 def biome_specialty_keys(tid: int, is_food: bool):
     """The town's signature local stock as consumable keys ('f:39' / 'i:8') —
     biome-fitting GENERAL goods it always carries.  Deduped, order preserved."""

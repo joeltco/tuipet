@@ -156,7 +156,7 @@ class TownPanel(menu.SubHost):
                 self.msg = err
                 self.sfx = "error"
                 return None
-            self.tourney = Tournament(p, tr)
+            self.tourney = Tournament(p, tr, field_bias=world.town_field(self.town_id))
             self.msg = self.tourney.last
             return None
         return None
@@ -287,8 +287,9 @@ class TownPanel(menu.SubHost):
                 return "%-18s %6db" % (r["name"][:18], r["price"])
             tr = tournament.trophy_by_id(r) if r >= 0 else None      # cups
             nm = tournament.trophy_label(tr)[:20] if tr else "\u2014"
-            mark = ("\u00bb OPEN" if tournament.town_slot_open(p, i) and tr else
-                    ("%02dh" % i if i <= 23 else ""))
+            mark = ("★ OPEN" if i > 23 and tr and tr.get("field_req") else
+                    ("\u00bb OPEN" if tournament.town_slot_open(p, i) and tr else
+                     ("%02dh" % i if i <= 23 else "")))
             return "%-22s %s" % (nm, mark)
 
         self.cursor = menu.list_window(out, rows, self.cursor, vis, fmt)

@@ -237,10 +237,10 @@ class TuiPetApp(App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("The adventure world has a name now: cross real regions like the "
-                 "Coastlands and the Ironlands, and rest in 26 named towns -- "
-                 "Dunehaven, Coral Deep, Frostmere -- each with its own biome "
-                 "greeting and local goods fronting the shelf.")
+    WHATS_NEW = ("Every town now hosts its own championship: its biome's field cup "
+                 "sits always-open on the cups board (Coral Deep runs the Deep Saver "
+                 "Cup, Gloamgate the Nightmare Soldier Cup), and the rivals you face "
+                 "in a town's ring skew toward its local kind.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and
