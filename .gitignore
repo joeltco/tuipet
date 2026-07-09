@@ -29,3 +29,5 @@ DNA_SCOPE.md
 SHOP_ITEMS.md
 POOP_POSTMORTEM.md
 .venv-dev/        # check.sh dev-tools venv
+
+DVPET_SOURCE.md   # decompiled-source audit doc — never commit (copyrighted)

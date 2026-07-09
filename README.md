@@ -1,22 +1,22 @@
 # tuipet
 
 A terminal virtual pet — Digimon V-Pet style — rendered with halfblock Unicode
-sprites and animated in the terminal. Built on data mined from the free
-[DVPet](https://theundersigned.itch.io/dvpet) fan game.
+sprites and animated in the terminal. It builds on the work of the Digimon V-Pet
+fan community — see [Credits & acknowledgments](#credits--acknowledgments).
 
 ![tuipet demo — hatch, feed, play, and adventure with your pet in the terminal](demo.gif)
 
-**Status: complete (v0.2.364, 2026-07-07).** The full DVPet behaviour diff is
-closed — every mechanic, animation, and data file in the source game is ported
-and verified against the decompiled original (`DVPET_SOURCE.md`). The project
-is in maintenance: canon corrections land as they're noticed in play.
+**Status: live and actively developed.** The core V-Pet behaviour — every
+mechanic, animation, and evolution line — is ported and verified against the
+source games, with device data cross-referenced against community references.
+Regular updates ship as the game grows.
 
 ## What's inside
 
 - **1,525 creatures**, 11 animation frames each, extracted from the game's
   sprite atlases as 1-bit bitmaps (`src/tuipet/data/sprites.json.gz`).
-- The **complete DVPet game**, ported system by system from the decompiled
-  source: care, training, evolution (care-quality gates + DNA + jogress),
+- A **complete Digimon V-Pet**, ported system by system from the source games:
+  care, training, evolution (care-quality gates + DNA + jogress),
   adventures across 5 world maps, hourly tournaments, town economies,
   habitats with live climate/weather, an in-game AI care assistant, and the
   device's own screen transitions and animation timelines.
@@ -218,22 +218,27 @@ the game's own `View/SpriteAnim.class` (cfr-decompiled). Animations in
 
 `refuse` is drawn as a left/right mirror flip on alternating frames (head-shake).
 
-## Setup (game data not included)
+## Credits & acknowledgments
 
-tuipet's code is here, but the **game data is not distributed** — the sprites and
-CSVs are derived from [DVPet](https://theundersigned.itch.io/dvpet) (a Digimon fan
-game, © Bandai for the franchise) and belong to their creators. To play, regenerate
-them from your own free copy of DVPet:
+tuipet stands on the shoulders of the **Digimon V-Pet fan community** — a whole
+ecosystem of hobbyists who reverse-engineered, documented, and preserved these
+devices. It draws on the work of many of them, including:
 
-```sh
-# 1. download DVPet from itch.io and locate DVPet.jar inside the extracted zip
-# 2. regenerate assets:
-tools/setup_assets.sh /path/to/DVPet.jar
-# 3. install + run:
-python -m venv .venv && . .venv/bin/activate
-pip install -e .
-tuipet
-```
+- **[DVPet](https://theundersigned.itch.io/dvpet)** by *theundersigned* — the
+  terminal port started here.
+- **[humulos.com/digimon](https://humulos.com/digimon)** — device evolution,
+  egg, and roster documentation used to build and verify the lines.
+- **MultiVPet** and **Digimon Unlimited** — community sprite/stat extractions
+  cross-referenced during development.
+- the wider V-Pet preservation scene whose archives made any of this possible.
 
-`setup_assets.sh` unpacks the jar, copies the needed CSVs, and runs the sprite
-extractor (`tools/extract_sprites.py`) to build `src/tuipet/data/sprites.json.gz`.
+Sincere thanks to every one of these creators and archivists — none of this
+would exist without your work.
+
+The **Digimon** franchise and all creature names, designs, and sprites are
+© **Bandai**. tuipet is a **non-commercial fan project**, not affiliated with or
+endorsed by Bandai or any project listed above.
+
+**Are you one of these creators?** If you'd like different credit, a link added,
+or your work removed, open an issue (or reach me) and I'll take care of it right
+away — no hard feelings.
