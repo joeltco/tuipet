@@ -4,6 +4,8 @@ A terminal virtual pet — Digimon V-Pet style — rendered with halfblock Unico
 sprites and animated in the terminal. Built on data mined from the free
 [DVPet](https://theundersigned.itch.io/dvpet) fan game.
 
+![tuipet demo — hatch, feed, play, and adventure with your pet in the terminal](demo.gif)
+
 **Status: complete (v0.2.364, 2026-07-07).** The full DVPet behaviour diff is
 closed — every mechanic, animation, and data file in the source game is ported
 and verified against the decompiled original (`DVPET_SOURCE.md`). The project
