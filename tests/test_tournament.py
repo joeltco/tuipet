@@ -385,3 +385,17 @@ def test_the_cup_renders_in_the_arena(monkeypatch):
     pan.tree_view = False
     pan.text()
     assert seen and seen[-1] == "tourneyBack"
+
+
+def test_next_winnable_points_at_an_enterable_cup():
+    """The home-cup hint (Joel 2026-07-09) returns the next hour today whose cup
+    the pet can actually enter -- eligibility passes and the hour is not behind us."""
+    import tuipet.tournament as T
+    p = Pet(num=100, stage="Champion", attribute="Vaccine", obedience=500, bits=999)
+    p.world_seconds = 10 * 60.0
+    nw = T.next_winnable(p)
+    if nw is not None:
+        hour, tr = nw
+        assert hour >= T._hour(p)                 # never points into the past
+        assert T.eligibility(p, tr) is None       # genuinely enterable
+        assert T.trophy_by_id(T.schedule(p)[hour]) == tr

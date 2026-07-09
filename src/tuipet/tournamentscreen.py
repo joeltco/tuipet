@@ -165,6 +165,15 @@ class TournamentPanel(menu.SubHost):
                 mark = " \u2713 ready" if now >= need else ""
                 out.append("  evolution: %d/%d wins (last %d)%s\n" % (now, need, window, mark),
                            style=INK_B if now >= need else DIM)
+            nw = tournament.next_winnable(self.pet)
+            if nw and nw[0] == hour:
+                out.append("  \u2713 %s is open NOW\n" % tournament.trophy_label(nw[1])[:24],
+                           style=INK_B)
+            elif nw:
+                out.append("  next winnable %02d:00 %s\n"
+                           % (nw[0], tournament.trophy_label(nw[1])[:16]), style=DIM)
+            else:
+                out.append("  no cup left you can enter today\n", style=DIM)
             out.append_text(menu.note(self.msg, tick=self.frame_i))
             out.append_text(menu.footer("↑↓ browse ENTER enter A alarm ESC out"))
             return out

@@ -237,10 +237,10 @@ class TuiPetApp(App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("Every town now hosts its own championship: its biome's field cup "
-                 "sits always-open on the cups board (Coral Deep runs the Deep Saver "
-                 "Cup, Gloamgate the Nightmare Soldier Cup), and the rivals you face "
-                 "in a town's ring skew toward its local kind.")
+    WHATS_NEW = ("No more waiting on a cup you can't enter: the home tournament now "
+                 "shows the next hour you can actually win a cup (\"next winnable "
+                 "14:00 Deep Saver Cup\"), skipping the ones your pet is locked "
+                 "out of by field, attribute or tier.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and

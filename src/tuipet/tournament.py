@@ -192,6 +192,21 @@ def eligibility(pet, t):
     return None
 
 
+def next_winnable(pet):
+    """The next hour TODAY whose cup this pet can actually enter (eligibility
+    passes) -- scanning from the current hour forward through the schedule.
+    Returns (hour, trophy) or None when nothing enterable is left today."""
+    sched = schedule(pet)
+    for i in range(_hour(pet), len(sched)):
+        tid = sched[i]
+        if tid < 0:
+            continue
+        tr = trophy_by_id(tid)
+        if tr and eligibility(pet, tr) is None:
+            return (i, tr)
+    return None
+
+
 def can_enter(pet):
     if getattr(pet, "dead", False):
         return "It rests now — press N for a new egg."   # dead sweep 2026-07-06
