@@ -40,6 +40,10 @@ class BugReportPanel(menu.SubHost):
             return
         self.frame_i += 1
 
+    def strip(self):
+        return "[dim]to the dev —[/] " + \
+            menu.hints(("ENTER", "send"), ("ESC", "cancel"))
+
     def key(self, k):
         if k == "escape":
             return ("done", None)

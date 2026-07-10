@@ -352,15 +352,26 @@ class DNAPanel:
         return menu.paint([grid.center(grid.prep(fr, 24), ph=24)], p.background())
 
     def strip(self):
-        """The live mash meter under the LCD; other phases keep in-LCD menus.
-        Kept <= 40 visible cols so it NEVER marquees (a live meter holds still)."""
-        if self.phase != "mash":
-            return ""
-        rate = self._rate()
-        left = max(0.0, (MASH_TICKS - self.mash_f) / 10.0)
-        fld = data.pretty_field(dna_field_for_rate(rate))[:9]
-        return ("%s r%-2d→[b]%-9s[/] %4.1fs SPACE!"
-                % (self._meter(rate), rate, fld, left))
+        """The live mash meter under the LCD during the mini-game; every other
+        phase pops its key hints (hint overhaul 2026-07-10).  Kept <= 40 visible
+        cols so it NEVER marquees (a live meter holds still)."""
+        if self.phase == "mash":
+            rate = self._rate()
+            left = max(0.0, (MASH_TICKS - self.mash_f) / 10.0)
+            fld = data.pretty_field(dna_field_for_rate(rate))[:9]
+            return ("%s r%-2d→[b]%-9s[/] %4.1fs SPACE!"
+                    % (self._meter(rate), rate, fld, left))
+        if self.phase == "charge":
+            return menu.hints(("↑↓", "field"), ("←→", "amount"),
+                              ("ENTER", "charge"))
+        if self.phase == "bet":
+            return menu.hints(("←→", "wager"), ("ENTER", "mash!"),
+                              ("ESC", "back"))
+        if self.phase == "result":
+            return menu.hints(("any key", "bank it"))
+        if self.phase in ("stats", "reqs", "roads"):
+            return menu.hints(("↑↓", "browse"), ("ESC", "back"))
+        return menu.hints(("↑↓", "pick"), ("ENTER", "open"), ("ESC", "out"))
 
     def _text_result(self):
         field, wager, rate = self.won

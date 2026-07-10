@@ -43,6 +43,9 @@ class KeysPanel:
         self.rows = [f"{k:<6} {label}" for k, _action, label in bindings]
         self.top = 0
 
+    def strip(self):
+        return menu.hints(("↑↓", "scroll"), ("ESC", "back"))
+
     def key(self, k):
         last = max(0, len(self.rows) - self.VISIBLE)
         if k in ("up", "k"):
@@ -97,6 +100,14 @@ class OptionsPanel(menu.SubHost):
         if self.sub is not None and getattr(self.sub, "sfx", None):
             self.sfx = self.sub.sfx
             self.sub.sfx = None
+
+    def strip(self):
+        """The message-box hint line (hint overhaul 2026-07-10)."""
+        if self.sub is not None:
+            return ""                  # the hosted panel owns the box (strip walker)
+        if self.confirm:
+            return menu.hints(("ENTER", "erase it all"), ("ESC", "keep"))
+        return menu.hints(("↑↓", "pick"), ("ENTER", "go"), ("ESC", "back"))
 
     # ---- the update check (threaded: latest_if_newer blocks up to 4s) ----
     def _check_updates(self):

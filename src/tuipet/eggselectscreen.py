@@ -92,6 +92,13 @@ class EggSelectPanel:
     def _flash(self, text):
         self.msg, self.msg_t = text, 22
 
+    def strip(self):
+        """The message-box hint line (hint overhaul 2026-07-10)."""
+        if self.entering:
+            return menu.hints(("ENTER", "redeem"), ("ESC", "cancel"))
+        return menu.hints(("←→", "browse"), ("ENTER", "pick"),
+                          ("C", "secret code"))
+
     @property
     def captures_text(self):
         return self.entering           # only swallow q-as-text while typing a secret code

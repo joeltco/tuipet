@@ -71,6 +71,14 @@ def footer(hint):
     return Text(hint[:W], style=DIM)
 
 
+def hints(*pairs):
+    """The MESSAGE-BOX hint line (hint overhaul, Joel 2026-07-10): keys bright,
+    labels dim, dot-separated -- '[b]KEY[/][dim] label[/] [dim]·[/] ...'.  One
+    convention for every screen's strip(); keep the PLAIN text <= 40 cols so
+    the line holds still (live hints never marquee)."""
+    return " [dim]·[/] ".join(f"[b]{k}[/][dim] {lbl}[/]" for k, lbl in pairs)
+
+
 def blanks(n):
     return Text("\n" * max(0, n), style=INK)
 

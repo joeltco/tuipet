@@ -25,6 +25,7 @@ from . import jogress
 from . import battle
 from . import battlescreen
 from . import jogressscreen
+from . import menu
 from .net import CHAT_CAP
 from .render import marquee
 from .theme import INK, INK_B, DIM, SEL
@@ -818,8 +819,9 @@ class LobbyPanel:
 
     # ---- render ----------------------------------------------------------
     def strip(self):
-        """One line under the LCD while a session SCENE plays (the text phases
-        carry their own prompts in-LCD)."""
+        """The message box under the LCD = the lobby's CONTEXT layer (hint
+        overhaul 2026-07-10): session scenes keep their prompts, every other
+        phase pops the hints for exactly what the keys do right now."""
         if self.bshow is not None:
             return "[dim]SPACE skip[/]"
         if self.jshow is not None and self.jphase == "result":
@@ -833,7 +835,33 @@ class LobbyPanel:
                     return f"→ [b]{name}[/] [dim]· ENTER fuse · ESC[/]"
                 return f"→ [b]{name}[/]  [dim]· ENTER fuse[/]"
             return "DNA... connect!  [dim]· ENTER skip[/]"
-        return ""
+        if self.phase in ("jogress", "battle"):
+            return ""                      # session text phases prompt in-LCD
+        if self.phase == "login":
+            return menu.hints(("TAB", "field"), ("ENTER", "go"), ("ESC", "back"))
+        if self.phase == "dm":
+            return menu.hints(("ENTER", "send"), ("ESC", "back")) + \
+                "  [dim]— thread is saved[/]"
+        if self.invite_prompt is not None:
+            return menu.hints(("Y", "accept"), ("N", "decline"))
+        if self.action_for is not None:
+            _, _, plive = self.action_for
+            if plive:
+                return menu.hints(("B", "battle"), ("J", "jogress"),
+                                  ("V", "DMs"), ("X", "block"))
+            return menu.hints(("P", "ping"), ("V", "DMs"), ("X", "block"))
+        if self.pm_to is not None:
+            return menu.hints(("ENTER", "send ✉"), ("ESC", "cancel"))
+        # the open room: a fresh ✉ pops its own nudge ahead of the key chrome
+        unread = sorted(self.state.unread) if self.state else []
+        if unread and not self.rost_hidden:
+            who = unread[0][:12] + ("…" if len(unread) > 1 else "")
+            return f"[b]✉ {who}[/][dim] unread — V on their name[/]"
+        if self.rost_hidden:
+            return menu.hints(("←", "players"), ("↑↓", "scroll"),
+                              ("ESC", "live/leave"))
+        return menu.hints(("→", "fold"), ("↑↓", "pick"),
+                          ("ENTER", "act"), ("PgUp", "log"))
 
     def text(self):
         if self.phase == "login":

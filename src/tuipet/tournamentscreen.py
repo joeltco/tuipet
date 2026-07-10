@@ -34,6 +34,16 @@ class TournamentPanel(menu.SubHost):
             return
         self.frame_i += 1
 
+    def strip(self):
+        """The message-box hint line (hint overhaul 2026-07-10)."""
+        if self.sub is not None:
+            return ""                          # the bout's own panel owns the box
+        if self.phase == "select":
+            return menu.hints(("↑↓", "browse"), ("ENTER", "enter cup"),
+                              ("A", "alarm"))
+        return menu.hints(("SPACE", "fight on"), ("B", "bracket"),
+                          ("ESC", "leave"))
+
     def key(self, k):
         if self.sub is not None:
             r = self.sub.key(k)

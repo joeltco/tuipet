@@ -54,6 +54,12 @@ class FeedPanel:
     def anim(self):
         self.frame_i += 1
 
+    def strip(self):
+        """The message-box hint line (hint overhaul 2026-07-10)."""
+        if not self.options:
+            return menu.hints(("ESC", "out")) + "  [dim]— the bag has no food[/]"
+        return menu.hints(("↑↓", "pick"), ("ENTER", "feed"), ("ESC", "out"))
+
     def key(self, k):
         n = len(self.options)
         if not n:

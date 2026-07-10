@@ -28,6 +28,10 @@ class ThemePanel:
         if self.on_change:
             self.on_change()
 
+    def strip(self):
+        return menu.hints(("↑↓", "preview"), ("ENTER", "keep"),
+                          ("ESC", "revert"))
+
     def key(self, k):
         if k in ("up", "k"):
             self.cursor = (self.cursor - 1) % len(self.names)

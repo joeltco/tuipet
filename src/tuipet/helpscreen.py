@@ -52,6 +52,9 @@ class HelpPanel:
     def anim(self):
         self.frame_i += 1
 
+    def strip(self):
+        return menu.hints(("↑↓", "scroll"), ("ESC", "out"))
+
     def _max_top(self):
         return max(0, len(HELP) - VIS)
 

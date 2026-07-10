@@ -239,10 +239,10 @@ class TuiPetApp(App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("Lobby comfort pass: press → to fold the player box away and give "
-                 "the chat the whole screen (↑↓ then scroll the log; ← brings the "
-                 "box back) -- and your private message threads now SURVIVE leaving: "
-                 "close a PM or the lobby and the whole conversation is still there.")
+    WHATS_NEW = ("Every screen talks now: the message box under the LCD pops live "
+                 "key hints for exactly where you are -- attack keys mid-battle, "
+                 "charge hints in DNA, fold/scroll hints in the lobby, and a ✉ "
+                 "nudge the moment someone DMs you. No key is a mystery anymore.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and

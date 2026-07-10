@@ -33,6 +33,13 @@ class ShopPanel:
         else:
             self.msg = "Welcome! Spend your bits."
 
+    def strip(self):
+        """The message-box hint line (hint overhaul 2026-07-10)."""
+        if self.mode == "shop":
+            return menu.hints(("←→", "cat"), ("ENTER", "buy"), ("TAB", "bag"))
+        return menu.hints(("←→", "cat"), ("ENTER", "use"),
+                          ("R", "sell"), ("TAB", "shop"))
+
     # ---- data ----
     def _tabs(self):
         return SHOP_TABS if self.mode == "shop" else BAG_TABS

@@ -16,6 +16,11 @@ class AssistPanel:
         self.pet = pet
         self.msg = "A helper minds the pet, for a fee."
 
+    def strip(self):
+        on = getattr(self.pet, "auto_care", False)
+        return menu.hints(("ENTER", "dismiss helper" if on else "hire helper"),
+                          ("ESC", "out"))
+
     def key(self, k):
         if k in ("enter", "space"):
             self.msg = self.pet.set_auto_care(not self.pet.auto_care)

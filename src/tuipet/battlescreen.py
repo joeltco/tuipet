@@ -269,6 +269,19 @@ class BattlePanel:
         else:
             self.phase = "menu"
 
+    def strip(self):
+        """The message-box hint line (hint overhaul 2026-07-10)."""
+        if self.phase == "menu":
+            return menu.hints(("1-3", "attack"), ("F", "style"),
+                              ("4", "surrender"))
+        if self.phase == "surrender_ask":
+            return menu.hints(("ENTER", "flee"), ("ESC", "fight on"))
+        if self.phase == "intro":
+            return menu.hints(("SPACE", "skip"))
+        if self.phase == "result":
+            return menu.hints(("SPACE", "done"))
+        return ""                              # the round animation plays clean
+
     def key(self, k):
         if self.phase == "intro":
             if k in ("space", "enter", "escape"):
