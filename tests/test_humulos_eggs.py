@@ -113,6 +113,26 @@ def test_progression_tiers_read_the_right_signals():
                          _prog(last_mood=199), set())[0] == "locked"
 
 
+def test_single_frame_digitama_rock_in_place():
+    """Humulos device eggs carry ONE real dot frame -- the carousel animates
+    their POSITION (no invented pixels); two-frame DVPet eggs keep the pixel
+    pulse and hold still."""
+    from tuipet.eggselectscreen import EggSelectPanel
+    p = EggSelectPanel()
+    names = {i: egg.hatch_name(i) for i in p.carousel}
+    field = next(pos for pos, i in enumerate(p.carousel)
+                 if names[i] == "Nature Spirits Egg")
+    classic = next(pos for pos, i in enumerate(p.carousel)
+                   if names[i] == "Botamon")
+    for target, moves in ((field, True), (classic, False)):
+        p.pos = p.scroll = target
+        offs = set()
+        for t in range(20):
+            p.frame_i = t
+            offs.add(p._wobble(target, True))
+        assert (offs != {0}) == moves, (names[p.carousel[target]], offs)
+
+
 def test_every_egg_renders_a_shop_icon():
     """Every egg -- classic and humulos -- must draw a non-blank icon cell in
     the shop/bag/town views (item_icon rides the real egg frames)."""

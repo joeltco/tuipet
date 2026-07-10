@@ -160,6 +160,21 @@ class EggSelectPanel:
             return fr[(self.frame_i // 5) % 2] or fr[0]
         return fr[0]
 
+    def _wobble(self, pos, center):
+        """Single-frame digitama (the humulos device eggs carry ONE real dot
+        frame) rock in PLACE instead of pulsing: position animation, the same
+        no-drawn-art transform as the hatch shake. Two-frame DVPet eggs keep
+        their pixel pulse and sit still."""
+        if not (center and self.scroll == self.pos):
+            return 0
+        idx = self._egg(pos)
+        if self.states.get(idx, ("owned", 0))[0] in ("locked", "buyable"):
+            return 0                                   # sealed eggs hold still
+        fr = egg_mod.record(idx)["frames"]
+        if len(fr) > 1 and fr[1] != fr[0]:
+            return 0
+        return (0, 1, 0, -1)[(self.frame_i // 5) % 4]
+
     def _note(self, idx):
         state, price = self.states.get(idx, ("owned", 0))
         name = egg_mod.hatch_name(idx)
@@ -176,6 +191,7 @@ class EggSelectPanel:
         for d in range(-WINDOW, WINDOW + 1):
             v = base + d
             x = CENTER + int(round((v - self.scroll) * SPACING))
+            x += self._wobble(v, d == 0)
             placements.append((self._frame(v, d == 0), x, False))
         scene = render_scene(placements, COLS, ROWS, LCD_ON, LCD_BG)
         out = menu.header("CHOOSE YOUR EGG", f"{self.i + 1}/{self.n}")
