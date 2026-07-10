@@ -564,3 +564,33 @@ def test_food_descends_uncut_inside_the_window(monkeypatch):
         assert len(pts) == ink, (step, len(pts), ink)      # nothing clipped away
         assert all(grid.X0 <= x < grid.X1 and grid.TOP <= y < grid.FLOOR
                    for x, y in pts), step
+def test_emote_riders_pop_whole_inside_the_window(monkeypatch):
+    """Joel 2026-07-12: 'why is the sun icon getting cut off' -- the cheer/
+    jeer/dying emote bubbles were still blitted at the pre-law bezel spot
+    (y=1), so the window clip beheaded them.  They now ride the pet's right
+    edge at head height (grid.TOP): every up-beat shows the emote's FULL
+    ink, entirely inside the 32x16 window."""
+    from tuipet import data, grid
+    cap = _capture_render(monkeypatch)
+    E = data.load_effects()
+    for kind, ekey in (("cheer", "happy"), ("jeer", "unhappy"),
+                       ("dying", "dying")):
+        s = _paint_harness()
+        for m in ("_fxk_cheer", "_fxk_jeer", "_fxk_dying"):
+            setattr(s, m, getattr(Screen, m).__get__(s))
+        p = _pose_pet()
+        ink = min(sum(r.count("1") for r in f) for f in E[ekey])
+        s.fx = {"kind": kind, "step": 0, "steps": 31, "icon": None,
+                "poop": 0, "old_num": None, "good": True}
+        seen = False
+        for step in range(14):
+            s.fx["step"] = step
+            s._paint_fx(p)
+            pts = cap["overlay"]
+            if not pts:
+                continue                       # a down-beat: no bubble drawn
+            seen = True
+            assert len(pts) >= ink, (kind, step, len(pts), ink)
+            assert all(grid.X0 <= x < grid.X1 and grid.TOP <= y < grid.FLOOR
+                       for x, y in pts), (kind, step)
+        assert seen, kind

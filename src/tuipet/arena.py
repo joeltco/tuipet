@@ -893,7 +893,9 @@ class Screen(Static):
                 hf = hap[(step // 6) % len(hap)]
                 # DVPet cheer(): the pet stays CENTRED and the emote rides its right
                 # edge (adjustEmotionLabel) -- not pinned to the far corner.
-                c.overlay += _blit(hf, PET_BASE_X + c.xshift + SPRITE_W, 1)
+                # Head height (grid.TOP), IN the window: y=1 was the pre-law
+                # bezel spot and the clip beheaded the sun (2026-07-12).
+                c.overlay += _blit(hf, PET_BASE_X + c.xshift + SPRITE_W, grid.TOP)
 
     def _fxk_gift(self, pet, fx, step, c):
         # DVPet gifting(): walk-toggle poses (spriteNum/spriteNum+1) per beat;
@@ -992,8 +994,9 @@ class Screen(Static):
         un = data.load_effects().get("unhappy")
         if un:
             uf = un[(step // 6) % len(un)]
-            # DVPet jeer(): centred pet, emote at its right edge (not the corner).
-            c.overlay += _blit(uf, PET_BASE_X + c.xshift + SPRITE_W, 1)
+            # DVPet jeer(): centred pet, emote at its right edge (not the corner),
+            # head height in the window (y=1 predated the law's clip).
+            c.overlay += _blit(uf, PET_BASE_X + c.xshift + SPRITE_W, grid.TOP)
 
     def _fxk_spit(self, pet, fx, step, c):
         # DVPet refuse(): pose 4 (9 while Depressed) held the whole beat while the
@@ -1127,7 +1130,8 @@ class Screen(Static):
                 c.rows = self._pose_rows_idx(pet, 10 if down else 9)
             dye = E.get("dying")
             if dye and (step // 6) % 2 == 0:
-                c.overlay += _blit(dye[0], PET_BASE_X + c.xshift + SPRITE_W + 1, 1)
+                c.overlay += _blit(dye[0], PET_BASE_X + c.xshift + SPRITE_W + 1,
+                                   grid.TOP)
         else:
             t = step - 30
             wash = E.get("wash", [None])[0]
@@ -1198,6 +1202,6 @@ class Screen(Static):
         dye = data.load_effects().get("dying")
         if dye:
             df = dye[(step // 10) % len(dye)]
-            c.overlay += _blit(df, PET_BASE_X + SPRITE_W + c.xshift, 1)
+            c.overlay += _blit(df, PET_BASE_X + SPRITE_W + c.xshift, grid.TOP)
 
 

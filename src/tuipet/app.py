@@ -250,8 +250,9 @@ class TuiPetApp(App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("Hotfix: the egg carousel renders whole again (a bad clip "
-                 "was cutting the eggs).")
+    WHATS_NEW = ("The mood bubbles (sun, rain drip, dying) pop whole at head "
+                 "height again -- they were getting cut at the top of the play "
+                 "window.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and
