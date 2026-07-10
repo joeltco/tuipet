@@ -26,6 +26,7 @@ from . import battle
 from . import battlescreen
 from . import jogressscreen
 from . import menu
+from . import persistence
 from .net import CHAT_CAP
 from .render import marquee
 from .theme import INK, INK_B, DIM, SEL
@@ -514,6 +515,8 @@ class LobbyPanel:
         if res.get("over"):
             self.bphase = "over"
             self.sfx = "attack"
+            if self.partner:            # a finished connection bout counts for
+                persistence.record_connection(self.partner[1])   # the DM20 connection eggs
             won = my_alive and not opp_alive
             if not my_alive:                       # own HP gone (incl. double-KO) = loss (battleEnd)
                 self.bt_outcome = "YOU LOSE…"
@@ -603,6 +606,8 @@ class LobbyPanel:
     def _commit_fusion(self):
         """BOTH confirms are in (or the peer is legacy): perform the fusion --
         the same path as offline jogress."""
+        if self.partner:                # swapping DNA is the strongest connection
+            persistence.record_connection(self.partner[1])
         msg = jogress.fuse(self.pet, self.jresult["num"])
         if getattr(self, "jpartner_sick", False):
             # canon startJogress: checkSick(90) -- swapping DNA with a

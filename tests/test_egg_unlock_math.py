@@ -94,7 +94,10 @@ def test_temp_only_eggs_never_go_permanent():
 
 
 def test_dormant_columns_are_empty_in_the_corpus():
+    # obedience/mood woke up 2026-07-10: the Lalamon/Meicoomon lineage eggs
+    # gate on the previous generation's devotion/affection. Nothing else may.
     for r in data.load_egg_unlock().values():
-        assert r["obedience"] is None and r["mood"] is None
+        if r["name"] not in ("Lalamon Egg", "Meicoomon Egg"):
+            assert r["obedience"] is None and r["mood"] is None
         assert r["food"] is None and r["item"] is None and r["habitat"] is None
         assert r["zone"] is None

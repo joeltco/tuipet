@@ -31,3 +31,4 @@ POOP_POSTMORTEM.md
 .venv-dev/        # check.sh dev-tools venv
 
 DVPET_SOURCE.md   # decompiled-source audit doc — never commit (copyrighted)
+server/lobby_feed.jsonl*

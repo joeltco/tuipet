@@ -59,3 +59,16 @@ def futon_item():
         if e.get("effect_id", -1) >= 0:
             return f"i:{cid}", e
     return None, None
+
+
+@pytest.fixture(autouse=True)
+def _sandbox_lobby_feed(tmp_path, monkeypatch):
+    """The lobby server module logs public events to FEED_PATH on login/chat/
+    disconnect -- any test driving server flows must write a scratch feed, or
+    pytest runs append real-looking events to the repo copy (leak found
+    2026-07-10: test_bugreport/test_save_integrity grew server/lobby_feed.jsonl
+    on every run)."""
+    import sys as _sys
+    srv = _sys.modules.get("server")
+    if srv is not None and hasattr(srv, "FEED_PATH"):
+        monkeypatch.setattr(srv, "FEED_PATH", str(tmp_path / "lobby_feed.jsonl"))

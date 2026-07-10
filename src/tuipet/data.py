@@ -1252,6 +1252,10 @@ def load_egg_unlock():
             "wins": _int(r[23]) if (len(r) > 23 and _int(r[23]) is not None and _int(r[23]) >= 0) else None,
             "album_n": _int(r[24]) if (len(r) > 24 and _int(r[24]) is not None and _int(r[24]) >= 0) else None,
             "mega": _int(r[25]) if (len(r) > 25 and _int(r[25]) is not None and _int(r[25]) >= 0) else None,
+            # online connections (DM20 connection-battle unlocks: Corona/Luna/
+            # Meicoo/DORU) -- distinct tamers linked via a completed lobby
+            # bout or jogress; persistence.record_connection() feeds it
+            "connections": _int(r[26]) if (len(r) > 26 and _int(r[26]) is not None and _int(r[26]) >= 0) else None,
         }
     return rules
 

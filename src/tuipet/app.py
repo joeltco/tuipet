@@ -239,10 +239,10 @@ class TuiPetApp(App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("Every screen talks now: the message box under the LCD pops live "
-                 "key hints for exactly where you are -- attack keys mid-battle, "
-                 "charge hints in DNA, fold/scroll hints in the lobby, and a ✉ "
-                 "nudge the moment someone DMs you. No key is a mystery anymore.")
+    WHATS_NEW = ("35 NEW EGGS -- the real device digitama, dot-for-dot: DM Version "
+                 "1-6, Corona & Luna, the six Pendulum field eggs, the DMX eggs and "
+                 "more. Version 6 hatches Bubbmon, a whole new line to raise. Some "
+                 "eggs only unlock by battling or fusing with other tamers online!")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and

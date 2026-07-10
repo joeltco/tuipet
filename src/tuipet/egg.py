@@ -100,6 +100,10 @@ def _conditions_met(rule, prog):
         return False
     if rule.get("mega") is not None and prog.get("mega_kills", 0) < rule["mega"]:
         return False
+    # DM20 connection-battle unlocks (Corona/Luna/Meicoo/DORU): distinct
+    # tamers linked via a completed lobby bout or jogress
+    if rule.get("connections") is not None and prog.get("connections", 0) < rule["connections"]:
+        return False
     if rule["stage"] is not None:
         want = data.STAGE_ORDER.index(rule["stage"]) if rule["stage"] in data.STAGE_ORDER else 99
         if prog["max_stage"] < want:
@@ -323,15 +327,29 @@ def _egg_themes():
     def dom(vals):
         c = Counter(v for v in vals if v and v not in ("None", "Empty"))
         return c.most_common(1)[0][0] if c else None
+    # the Pendulum field eggs ARE their field -- theme by name, not by the
+    # dominant stat of whatever line their baby roots (a Deep Savers egg
+    # belongs to ocean towns even if its line wanders)
+    named_field = {"Nature Spirits Egg": "NatureSpirit",
+                   "Deep Savers Egg": "DeepSaver",
+                   "Nightmare Soldiers Egg": "NightmareSoldier",
+                   "Metal Empire Egg": "MetalEmpire",
+                   "Wind Guardians Egg": "WindGuardian",
+                   "Virus Busters Egg": "VirusBuster",
+                   "Nightmare Soldiers Ver.20th Egg": "NightmareSoldier",
+                   "Virus Busters Ver. 20th Egg": "VirusBuster"}
     out = {}
     for i in range(count()):
+        if hatch_name(i) in named_field:
+            out[i] = (named_field[hatch_name(i)], None)
+            continue
         t = hatch_targets(i)
-        if len(t) != 1:
+        # multi-target eggs (the Terriermon/Lopmon twins digitama) theme on
+        # the UNION of their lines, so they still find a home shelf
+        lids = sorted({l for l in (fresh_line.get(x) for x in t) if l})
+        if not lids:
             continue
-        lid = fresh_line.get(t[0])
-        if not lid:
-            continue
-        forms = line_forms.get(lid, [])
+        forms = [n for lid in lids for n in line_forms.get(lid, [])]
         out[i] = (dom(by_num.get(n, {}).get("field") for n in forms),
                   dom(by_num.get(n, {}).get("element") for n in forms))
     return out
@@ -358,3 +376,32 @@ def eggs_for_town(town_id, prog, owned):
     """(idx, price) buyable eggs whose theme matches this town -- the themed town shop."""
     tm = _town_egg_map()
     return [(i, p) for i, p in buyable_eggs(prog, owned) if town_id in tm.get(i, frozenset())]
+
+
+def locked_town_eggs(town_id, prog, owned, cap=6):
+    """(idx, hint) for LOCKED eggs themed to this town whose unlock the player
+    can chase -- the shop's goal board. Password/unmodelled gates stay hidden
+    (a hint you can't act on is noise)."""
+    from . import data
+    tm = _town_egg_map()
+    rules = data.load_egg_unlock()
+    out = []
+    for i, (state, _) in sorted(egg_states(prog, owned).items()):
+        if state != "locked" or town_id not in tm.get(i, frozenset()):
+            continue
+        rule = rules.get(i)
+        if not rule or not rule["desc"] or rule["password"] is not None:
+            continue
+        if rule["food"] is not None or rule["item"] is not None \
+                or rule["habitat"] is not None or rule["zone"] is not None:
+            continue
+        out.append((i, rule["desc"]))
+        if len(out) >= cap:
+            break
+    return out
+
+
+def locked_shop_entry(idx, hint):
+    """A shelf row for a locked egg: shows as ??? with its unlock hint."""
+    return {"key": "eggl:%d" % idx, "name": "???", "price": 0,
+            "egg_idx": idx, "locked": True, "hint": hint}

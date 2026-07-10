@@ -1,48 +1,83 @@
-Egg (Each condition must be fulfilled to unlock egg: if price > 0 then fulfilling each condition will make it available in the shop and buying it will unlock the egg permanently: if price = 0 and each condition is fulfilled then this will unlock the egg permanently: temporary conditions unlock the egg for as long as the condition(s) is/are fulfilled),Unlocked,Price,MapComplete,StageReached,HasXAntibody(Temp),TournamentBeat,ZoneEnemyBeat (Map:Zone:EnemyLocation),CurrentGenerationReached,PreviousGenerationField(Temp),PreviousGenerationAttribute(Temp),PreviousGenerationElement(Temp),DigimonInHistory(List with : ),FoodUsed,ItemUsed,HabitatOwned,Password,Obedience,PreviousGenerationObedience(Temp),Mood,PreviousGenerationMood(Temp),LockedDescription,CanUnlockPermanently,LifetimeWins,AlbumCount,MegaKills
-Botamon,TRUE,0,-1,None,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Basic Digitama,TRUE,-1,-1,-1
-YukimiBotamon,FALSE,2500,-1,None,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Purchase license,TRUE,-1,-1,-1
-Punimon,TRUE,0,-1,None,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Basic Digitama,TRUE,-1,-1,-1
-Poyomon,TRUE,0,-1,None,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Basic Digitama,TRUE,-1,-1,-1
-Yuramon,TRUE,0,-1,None,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Basic Digitama,TRUE,-1,-1,-1
-Zurumon,TRUE,0,-1,None,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Basic Digitama,TRUE,-1,-1,-1
-Babumon,FALSE,2500,-1,None,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Purchase license,TRUE,-1,-1,-1
-Pichimon,FALSE,2500,-1,None,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Purchase license,TRUE,-1,-1,-1
-Mokumon,FALSE,2500,-1,None,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Purchase license,TRUE,-1,-1,-1
-Nyokimon,FALSE,2500,-1,None,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Purchase license,TRUE,-1,-1,-1
-Choromon,FALSE,2500,-1,None,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Purchase license,TRUE,-1,-1,-1
-Kuramon,FALSE,0,-1,None,FALSE,-1,-1,-1,None,None,Dark,-1,-1,-1,-1,-1,-1,-1,-1,-1,Direct descendant of a dark Digimon,FALSE,-1,-1,-1
-Chibickmon,FALSE,2500,-1,None,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Purchase license,TRUE,-1,-1,-1
-Tsubumon,FALSE,0,1,None,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Saved the Digital World,TRUE,-1,-1,-1
-Pururumon,FALSE,0,1,None,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Saved the Digital World,TRUE,-1,-1,-1
-Jyarimon,FALSE,2500,-1,None,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Purchase license,TRUE,-1,-1,-1
-Dodomon,FALSE,0,-1,None,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Fell 5 Mega-class foes,TRUE,-1,-1,5
-Puttimon,FALSE,0,-1,None,FALSE,-1,-1,-1,None,Vaccine,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Direct descendant of a Vaccine Digimon,FALSE,-1,-1,-1
-Kiimon,FALSE,2500,-1,None,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Purchase license,TRUE,-1,-1,-1
-Dokimon,FALSE,0,-1,None,FALSE,146,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Win a Mega tournament in Summer,TRUE,-1,-1,-1
-Chibomon,FALSE,0,1,None,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Saved the Digital World,TRUE,-1,-1,-1
-Datirimon,FALSE,2500,-1,None,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Purchase license,TRUE,-1,-1,-1
-Fufumon,FALSE,0,-1,None,TRUE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Carries the X-Antibody,FALSE,-1,-1,-1
-ChibiKiwimon,FALSE,0,-1,None,FALSE,-1,-1,-1,None,None,None,944,-1,-1,-1,-1,-1,-1,-1,-1,Descendant of a kiwi,TRUE,-1,-1,-1
-Ketomon,FALSE,2500,-1,None,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Purchase license,TRUE,-1,-1,-1
-Leafmon,FALSE,0,1,None,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Saved the Digital World,TRUE,-1,-1,-1
-Pafumon,FALSE,2500,-1,None,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Purchase license,TRUE,-1,-1,-1
-Paomon,FALSE,0,-1,None,FALSE,37,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Win a series of tournaments in Spring,TRUE,-1,-1,-1
-Petitmon,FALSE,0,-1,None,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Raise 5 different Digimon,TRUE,-1,5,-1
-Popomon,FALSE,2500,-1,None,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Purchase license,TRUE,-1,-1,-1
-Pupumon,FALSE,0,-1,None,TRUE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Carries the X-Antibody,FALSE,-1,-1,-1
-Bommon,FALSE,2500,-1,None,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Purchase license,TRUE,-1,-1,-1
-Pusumon,FALSE,0,-1,None,FALSE,176,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Win a Rookie tournament in autumn,TRUE,-1,-1,-1
-Puwamon,FALSE,2500,-1,None,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Purchase license,TRUE,-1,-1,-1
-Relemon,FALSE,2500,-1,None,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Purchase license,TRUE,-1,-1,-1
-Sakumon,FALSE,0,-1,None,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Prove yourself: 50 lifetime wins,TRUE,50,-1,-1
-Zerimon,FALSE,2500,-1,None,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Purchase license,TRUE,-1,-1,-1
-Cocomon,FALSE,2500,-1,None,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Purchase license,TRUE,-1,-1,-1
-Cotsucomon,FALSE,0,-1,Ultimate,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Reach the Ultimate stage,TRUE,-1,-1,-1
-Algomon I,FALSE,2500,-1,None,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Purchase license,TRUE,-1,-1,-1
-Bombmon,FALSE,2500,-1,None,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Purchase license,TRUE,-1,-1,-1
-Carimon,FALSE,0,-1,None,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,Accentier,-1,-1,-1,-1,Redeemed with a secret password,TRUE,-1,-1,-1
-Sunamon,FALSE,2500,-1,None,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Purchase license,TRUE,-1,-1,-1
-Curimon,FALSE,2500,-1,None,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Purchase license,TRUE,-1,-1,-1
-Pyonmon,FALSE,2500,-1,None,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Purchase license,TRUE,-1,-1,-1
-Puyomon,FALSE,2500,-1,None,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Purchase license,TRUE,-1,-1,-1
-Fusamon,FALSE,2500,-1,None,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Purchase license,TRUE,-1,-1,-1
+Egg (Each condition must be fulfilled to unlock egg: if price > 0 then fulfilling each condition will make it available in the shop and buying it will unlock the egg permanently: if price = 0 and each condition is fulfilled then this will unlock the egg permanently: temporary conditions unlock the egg for as long as the condition(s) is/are fulfilled),Unlocked,Price,MapComplete,StageReached,HasXAntibody(Temp),TournamentBeat,ZoneEnemyBeat (Map:Zone:EnemyLocation),CurrentGenerationReached,PreviousGenerationField(Temp),PreviousGenerationAttribute(Temp),PreviousGenerationElement(Temp),DigimonInHistory(List with : ),FoodUsed,ItemUsed,HabitatOwned,Password,Obedience,PreviousGenerationObedience(Temp),Mood,PreviousGenerationMood(Temp),LockedDescription,CanUnlockPermanently,LifetimeWins,AlbumCount,MegaKills,Connections
+Botamon,TRUE,0,-1,None,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Basic Digitama,TRUE,-1,-1,-1,-1
+YukimiBotamon,FALSE,2500,-1,None,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Purchase license,TRUE,-1,-1,-1,-1
+Punimon,TRUE,0,-1,None,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Basic Digitama,TRUE,-1,-1,-1,-1
+Poyomon,TRUE,0,-1,None,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Basic Digitama,TRUE,-1,-1,-1,-1
+Yuramon,TRUE,0,-1,None,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Basic Digitama,TRUE,-1,-1,-1,-1
+Zurumon,TRUE,0,-1,None,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Basic Digitama,TRUE,-1,-1,-1,-1
+Babumon,FALSE,2500,-1,None,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Purchase license,TRUE,-1,-1,-1,-1
+Pichimon,FALSE,2500,-1,None,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Purchase license,TRUE,-1,-1,-1,-1
+Mokumon,FALSE,2500,-1,None,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Purchase license,TRUE,-1,-1,-1,-1
+Nyokimon,FALSE,2500,-1,None,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Purchase license,TRUE,-1,-1,-1,-1
+Choromon,FALSE,2500,-1,None,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Purchase license,TRUE,-1,-1,-1,-1
+Kuramon,FALSE,0,-1,None,FALSE,-1,-1,-1,None,None,Dark,-1,-1,-1,-1,-1,-1,-1,-1,-1,Direct descendant of a dark Digimon,FALSE,-1,-1,-1,-1
+Chibickmon,FALSE,2500,-1,None,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Purchase license,TRUE,-1,-1,-1,-1
+Tsubumon,FALSE,0,1,None,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Saved the Digital World,TRUE,-1,-1,-1,-1
+Pururumon,FALSE,0,1,None,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Saved the Digital World,TRUE,-1,-1,-1,-1
+Jyarimon,FALSE,2500,-1,None,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Purchase license,TRUE,-1,-1,-1,-1
+Dodomon,FALSE,0,-1,None,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Fell 5 Mega-class foes,TRUE,-1,-1,5,-1
+Puttimon,FALSE,0,-1,None,FALSE,-1,-1,-1,None,Vaccine,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Direct descendant of a Vaccine Digimon,FALSE,-1,-1,-1,-1
+Kiimon,FALSE,2500,-1,None,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Purchase license,TRUE,-1,-1,-1,-1
+Dokimon,FALSE,0,-1,None,FALSE,146,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Win a Mega tournament in Summer,TRUE,-1,-1,-1,-1
+Chibomon,FALSE,0,1,None,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Saved the Digital World,TRUE,-1,-1,-1,-1
+Datirimon,FALSE,2500,-1,None,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Purchase license,TRUE,-1,-1,-1,-1
+Fufumon,FALSE,0,-1,None,TRUE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Carries the X-Antibody,FALSE,-1,-1,-1,-1
+ChibiKiwimon,FALSE,0,-1,None,FALSE,-1,-1,-1,None,None,None,944,-1,-1,-1,-1,-1,-1,-1,-1,Descendant of a kiwi,TRUE,-1,-1,-1,-1
+Ketomon,FALSE,2500,-1,None,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Purchase license,TRUE,-1,-1,-1,-1
+Leafmon,FALSE,0,1,None,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Saved the Digital World,TRUE,-1,-1,-1,-1
+Pafumon,FALSE,2500,-1,None,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Purchase license,TRUE,-1,-1,-1,-1
+Paomon,FALSE,0,-1,None,FALSE,37,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Win a series of tournaments in Spring,TRUE,-1,-1,-1,-1
+Petitmon,FALSE,0,-1,None,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Raise 5 different Digimon,TRUE,-1,5,-1,-1
+Popomon,FALSE,2500,-1,None,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Purchase license,TRUE,-1,-1,-1,-1
+Pupumon,FALSE,0,-1,None,TRUE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Carries the X-Antibody,FALSE,-1,-1,-1,-1
+Bommon,FALSE,2500,-1,None,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Purchase license,TRUE,-1,-1,-1,-1
+Pusumon,FALSE,0,-1,None,FALSE,176,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Win a Rookie tournament in autumn,TRUE,-1,-1,-1,-1
+Puwamon,FALSE,2500,-1,None,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Purchase license,TRUE,-1,-1,-1,-1
+Relemon,FALSE,2500,-1,None,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Purchase license,TRUE,-1,-1,-1,-1
+Sakumon,FALSE,0,-1,None,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Prove yourself: 50 lifetime wins,TRUE,50,-1,-1,-1
+Zerimon,FALSE,2500,-1,None,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Purchase license,TRUE,-1,-1,-1,-1
+Cocomon,FALSE,2500,-1,None,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Purchase license,TRUE,-1,-1,-1,-1
+Cotsucomon,FALSE,0,-1,Ultimate,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Reach the Ultimate stage,TRUE,-1,-1,-1,-1
+Algomon I,FALSE,2500,-1,None,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Purchase license,TRUE,-1,-1,-1,-1
+Bombmon,FALSE,2500,-1,None,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Purchase license,TRUE,-1,-1,-1,-1
+Carimon,FALSE,0,-1,None,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,Accentier,-1,-1,-1,-1,Redeemed with a secret password,TRUE,-1,-1,-1,-1
+Sunamon,FALSE,2500,-1,None,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Purchase license,TRUE,-1,-1,-1,-1
+Curimon,FALSE,2500,-1,None,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Purchase license,TRUE,-1,-1,-1,-1
+Pyonmon,FALSE,2500,-1,None,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Purchase license,TRUE,-1,-1,-1,-1
+Puyomon,FALSE,2500,-1,None,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Purchase license,TRUE,-1,-1,-1,-1
+Fusamon,FALSE,2500,-1,None,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Purchase license,TRUE,-1,-1,-1,-1
+Breakdra Egg,FALSE,0,-1,None,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Raise 26 different Digimon,TRUE,-1,26,-1,-1
+Corona Egg,FALSE,0,-1,None,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Link with 3 tamers online,TRUE,-1,-1,-1,3
+DORU Egg,FALSE,0,-1,None,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Link with 5 tamers online,TRUE,-1,-1,-1,5
+Deep Savers Egg,TRUE,0,-1,None,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Pendulum field Digitama,TRUE,-1,-1,-1,-1
+Digitama X,FALSE,0,-1,None,TRUE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Carry the X-Antibody,TRUE,-1,-1,-1,-1
+Digitama X2,FALSE,0,-1,None,TRUE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,X-Antibody + 30 wins,TRUE,30,-1,-1,-1
+Digitama X3,FALSE,0,-1,None,TRUE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,X-Antibody + 60 wins,TRUE,60,-1,-1,-1
+Vorvomon Egg,FALSE,0,-1,None,FALSE,-1,-1,-1,None,None,Fire,-1,-1,-1,-1,-1,-1,-1,-1,-1,Direct descendant of fire,FALSE,-1,-1,-1,-1
+Draco Egg,FALSE,0,-1,None,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Raise 12 different Digimon,TRUE,-1,12,-1,-1
+Hack Egg,FALSE,0,-1,None,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Win 50 battles,TRUE,50,-1,-1,-1
+Kera Digitama,FALSE,0,-1,None,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Fell 10 Mega-class foes,TRUE,-1,-1,10,-1
+Lalamon Egg,FALSE,0,-1,None,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,120,-1,-1,A devoted lineage: obedience 120+,FALSE,-1,-1,-1,-1
+Lop Egg,FALSE,0,-1,None,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Befriend 2 tamers online,TRUE,-1,-1,-1,2
+Ludo Egg,FALSE,1500,-1,Ultimate,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,"Reach Ultimate, then buy a license",TRUE,-1,-1,-1,-1
+Luna Egg,FALSE,0,-1,None,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Link with 3 tamers online,TRUE,-1,-1,-1,3
+Meicoo Egg,FALSE,0,-1,None,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Link with 5 tamers online,TRUE,-1,-1,-1,5
+Meicoomon Egg,FALSE,0,-1,None,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,200,A beloved lineage: mood 200+,FALSE,-1,-1,-1,-1
+Metal Empire Egg,TRUE,0,-1,None,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Pendulum field Digitama,TRUE,-1,-1,-1,-1
+Nature Spirits Egg,TRUE,0,-1,None,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Pendulum field Digitama,TRUE,-1,-1,-1,-1
+Nightmare Soldiers Egg,TRUE,0,-1,None,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Pendulum field Digitama,TRUE,-1,-1,-1,-1
+Nightmare Soldiers Ver.20th Egg,FALSE,2500,-1,None,FALSE,-1,-1,5,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,A 5th-generation lineage may buy this,TRUE,-1,-1,-1,-1
+Ryuda Egg,FALSE,0,-1,None,FALSE,-1,-1,-1,DragonsRoar,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Direct descendant of a dragon,FALSE,-1,-1,-1,-1
+Slayerdra Egg,FALSE,0,-1,None,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Raise 6 different Digimon,TRUE,-1,6,-1,-1
+Terrier Egg,FALSE,0,-1,None,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Befriend 2 tamers online,TRUE,-1,-1,-1,2
+V Egg,FALSE,0,-1,None,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,V is for victory: win 25 battles,TRUE,25,-1,-1,-1
+Version 1 Egg,FALSE,750,-1,None,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Buy at the egg shop,TRUE,-1,-1,-1,-1
+Version 2 Egg,FALSE,750,-1,None,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Buy at the egg shop,TRUE,-1,-1,-1,-1
+Version 3 Egg,FALSE,750,-1,None,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Buy at the egg shop,TRUE,-1,-1,-1,-1
+Version 4 Egg,FALSE,750,-1,None,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Buy at the egg shop,TRUE,-1,-1,-1,-1
+Version 5 Egg,FALSE,750,-1,None,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Buy at the egg shop,TRUE,-1,-1,-1,-1
+Version 6 Egg,FALSE,3000,-1,Mega,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,"Raise a Mega, then buy the lost version",TRUE,-1,-1,-1,-1
+Virus Busters Egg,TRUE,0,-1,None,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Pendulum field Digitama,TRUE,-1,-1,-1,-1
+Virus Busters Ver. 20th Egg,FALSE,2500,-1,None,FALSE,-1,-1,5,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,A 5th-generation lineage may buy this,TRUE,-1,-1,-1,-1
+Wind Guardians Egg,TRUE,0,-1,None,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Pendulum field Digitama,TRUE,-1,-1,-1,-1
+Zuba Egg,FALSE,0,-1,None,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Win 100 battles,TRUE,100,-1,-1,-1

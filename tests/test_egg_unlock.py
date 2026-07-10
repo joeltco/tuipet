@@ -24,6 +24,7 @@ def _prog_for(rule):
         "maps": set(range(0, 200)), "tourneys": set(range(0, 200)),
         "last_field": "None", "last_attr": "None", "last_elem": "None",
         "last_mood": 99999, "last_obed": 99999, "last_xanti": True,
+        "connections": 99999,
     }
     if rule:
         if rule["prev_field"] is not None:

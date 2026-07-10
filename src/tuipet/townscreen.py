@@ -33,6 +33,10 @@ class TownPanel(menu.SubHost):
         _prog, _owned = _pst.get_progress(), _pst.get_eggs_owned()
         self.egg_slots = [_egg.shop_egg_entry(i, pr)
                           for i, pr in _egg.eggs_for_town(town_id, _prog, _owned)]
+        # the goal board: locked eggs this town would sell, with their unlock
+        # hints -- shown dim after the buyable stock (egg design 2026-07-10)
+        self.egg_slots += [_egg.locked_shop_entry(i, hint)
+                           for i, hint in _egg.locked_town_eggs(town_id, _prog, _owned)]
         self.cups = tournament.town_schedule(pet, self.town)
         self.phase = "menu"
         self.cursor = 0
@@ -165,6 +169,8 @@ class TownPanel(menu.SubHost):
         """Buy a themed town egg: spend bits, unlock it permanently (it appears in the
         egg select). Mirrors the home counter's buy."""
         from . import persistence
+        if e.get("locked"):
+            return ("Locked — %s." % e["hint"].rstrip("."), "error")
         idx, price = e["egg_idx"], e["price"]
         if idx in persistence.get_eggs_owned():
             return ("Already unlocked.", "error")
@@ -263,9 +269,14 @@ class TownPanel(menu.SubHost):
             if sel is None:
                 out.append_text(menu.blanks(menu.IC_ROWS))
             elif self.phase == "eggs":
-                menu.icon_info(out, menu.item_icon(sel),
-                               [sel["name"][:tw], "%db" % sel["price"],
-                                "permanent egg", "hatch it next egg"])
+                if sel.get("locked"):
+                    menu.icon_info(out, menu.item_icon(sel),
+                                   ["???", "locked", sel["hint"][:tw],
+                                    (sel["hint"][tw:] or "")[:tw]])
+                else:
+                    menu.icon_info(out, menu.item_icon(sel),
+                                   [sel["name"][:tw], "%db" % sel["price"],
+                                    "permanent egg", "hatch it next egg"])
             elif self.phase == "sell":
                 e = self._sell_entry(sel)
                 menu.icon_info(out, menu.item_icon(e), shop.sell_info(p, e, tw))
@@ -284,6 +295,8 @@ class TownPanel(menu.SubHost):
                 return "%-18s x%-2d  %4db" % (e["name"][:18], p.inventory.get(r, 0),
                                               shop.resell_price(e))
             if self.phase == "eggs":
+                if r.get("locked"):
+                    return "%-18s %7s" % ("???", "locked")
                 return "%-18s %6db" % (r["name"][:18], r["price"])
             tr = tournament.trophy_by_id(r) if r >= 0 else None      # cups
             nm = tournament.trophy_label(tr)[:20] if tr else "\u2014"

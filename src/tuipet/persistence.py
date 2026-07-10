@@ -113,6 +113,14 @@ def wins_add(n=1):
     return _note_add("wins", n)
 
 
+def record_connection(peer_name):
+    """A completed online link (versus bout or jogress) with another tamer --
+    the DM20 connection-battle signal behind the Corona/Luna/Meicoo/DORU
+    eggs.  Distinct tamers count once, like the device's friend list."""
+    if peer_name:
+        _note_set("connections", str(peer_name)[:24])
+
+
 def mega_kills_add(n=1):
     """Lifetime Mega/Ultimate-class foes felled (gates the X egg; LINES_SPEC §7)."""
     return _note_add("mega_kills", n)
@@ -334,6 +342,7 @@ def get_progress():
         "last_mood": int(last.get("mood", 0)),
         "last_obed": int(last.get("obedience", 0)),
         "last_xanti": bool(last.get("xanti", False)),
+        "connections": len(prog.get("connections", [])),
     }
 
 
