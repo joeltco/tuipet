@@ -273,17 +273,22 @@ def _effect_overlay(pet, frame_i, cols, px_h, tick=0):
     # disturbed sleeper's startle beat) skips a beat; a dark room keeps its
     # Zzz over the black field.
     in_sleep_scene = asleep and (pet.anim == "sleep" or not pet.lights)
+    z_bot = 0
     if (in_sleep_scene and pet.poop < 3 and E.get(zkey)
             and zkey not in _HIDDEN_STATUS_ICONS):
         z = grid._crop(E[zkey][(tick // 10) % len(E[zkey])])
         pts += _blit(z, grid.X1 - len(z[0]), grid.TOP)
-    # sick skull: a grounded scene object at the band's right edge, blinking
-    # its 2-frame pair on the stateNumTic beat (7 ticks awake / 10 asleep)
+        z_bot = grid.TOP + len(z)
+    # sick skull: HIGH at the band's top-right, floating at head height the
+    # way the device marks status (Joel 2026-07-12 -- the grounded floor
+    # placement was tuipet's own miss), blinking its 2-frame pair on the
+    # stateNumTic beat (7 ticks awake / 10 asleep).  A sick SLEEPER's skull
+    # tucks in under the Zzz -- the corner belongs to the sleep mark.
     if _sick_mark_up(pet) and E.get("st_sick") and "st_sick" not in _HIDDEN_STATUS_ICONS:
         sf = (tick // (10 if asleep else 7)) % 2
-        sk = grid._crop(E["st_sick"][sf])       # crop: the cell pads its INK, and the
-        pts += _blit(sk, grid.X1 - len(sk[0]),  # ink is what must stand on the floor
-                     grid.FLOOR - len(sk))      # grounded: bottom ink at y21
+        sk = grid._crop(E["st_sick"][sf])       # crop: the cell pads its INK
+        pts += _blit(sk, grid.X1 - len(sk[0]),
+                     (z_bot + 1) if z_bot else grid.TOP)
     return pts
 
 

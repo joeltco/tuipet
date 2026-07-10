@@ -140,4 +140,5 @@ def test_the_sick_skull_is_the_one_condition_actor():
     p = _pet(sick=True, sick_length=5.0, fatigue_length=5.0, inj_length=5.0)
     pts = app_mod._effect_overlay(p, 0, 40, 24, tick=0)
     assert pts and all(x >= grid.X1 - 7 for x, _ in pts)
-    assert max(y for _, y in pts) == 21      # grounded on the locked floor
+    assert min(y for _, y in pts) == grid.TOP    # HIGH at head height (Joel
+    assert max(y for _, y in pts) < grid.TOP + 8  # 2026-07-12), inside the window

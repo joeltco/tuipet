@@ -250,10 +250,9 @@ class TuiPetApp(App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("Fixes for the window law: meals descend fully on-screen "
-                 "again (no more clipped food), the punch drill's Hit!! banner "
-                 "is back, and the training strike burst is centred in the "
-                 "matrix where it belongs.")
+    WHATS_NEW = ("The sick mark now floats up at head height beside your mon, "
+                 "the way the real device draws it -- and a sick sleeper keeps "
+                 "its Zzz on top with the skull tucked underneath.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and

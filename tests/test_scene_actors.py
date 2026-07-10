@@ -124,9 +124,15 @@ def test_sick_skull_stands_in_the_scene(monkeypatch):
     p = _pet(weather="Clear", sick=True, sick_length=99.0)
     pts = arena._effect_overlay(p, 0, 40, 24, tick=0)
     assert pts and all(grid.X1 - arena.COND_W <= x < grid.X1 for x, _ in pts)
-    assert max(y for _, y in pts) == grid.FLOOR - 1        # grounded at y21
-    assert min(y for _, y in pts) >= grid.FLOOR - arena.COND_W
+    assert min(y for _, y in pts) == grid.TOP              # HIGH: head height,
+    assert max(y for _, y in pts) < grid.TOP + 8           # the device way
     assert pts != arena._effect_overlay(p, 0, 40, 24, tick=7)   # stateNumTic blink
+    # a sick SLEEPER: the Zzz owns the corner, the skull tucks in under it
+    q = _pet(weather="Clear", sick=True, sick_length=99.0,
+             asleep=True, anim="sleep")
+    zzq = arena._effect_overlay(q, 0, 40, 24, tick=0)
+    ys = sorted({y for _, y in zzq})
+    assert ys[0] == grid.TOP and ys[-1] > grid.TOP + 6     # stacked, both up high
     s = _screen()
     s.roamer.x = 20.0                                      # fell ill at the far wall
     s.paint(p)
