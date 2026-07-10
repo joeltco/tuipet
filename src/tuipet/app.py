@@ -239,10 +239,9 @@ class TuiPetApp(App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("Town shelves ring true now: Mossford's egg shop matches its mossy "
-                 "woods (a crossed wire had it selling factory eggs) and local "
-                 "specialties charge the town's OWN price -- Dunehaven's famous ice "
-                 "cream is 75 bits, half what the stall was overcharging.")
+    WHATS_NEW = ("The dev can speak now: watch for 📢 server announcements -- they "
+                 "land in the lobby chat and flash on your home screen, so news "
+                 "like events, fixes and downtime reaches you in the moment.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and
@@ -357,7 +356,7 @@ class TuiPetApp(App):
                 # pane; once CONNECTED the lobby client receives its own
                 # copy, so then (and only then) the ghost's are duplicates.
                 for nm, tx in sync.inbox:
-                    st.chat.append((f"✉{nm}", tx))
+                    st.chat.append((nm if nm == "📢" else f"✉{nm}", tx))
                 del st.chat[:-net.CHAT_CAP]
             sync.inbox.clear()
             return
@@ -371,7 +370,10 @@ class TuiPetApp(App):
         # (Rich-brackets hard rule, remote-triggered; chat-input audit 2026-07-07).
         # The lobby chat pane is already safe (Text.append renders literally);
         # this flash is the one markup-parsed sink for remote text.
-        self.flash(f"✉ [b]{_hud_esc(nm)}[/]: {_hud_esc(tx)}")
+        if nm == "📢":                       # a server announcement, not a peer's ✉
+            self.flash(f"📢 [b]{_hud_esc(tx)}[/]")
+        else:
+            self.flash(f"✉ [b]{_hud_esc(nm)}[/]: {_hud_esc(tx)}")
         self.beep("menu", bell=False)
 
     def _start_sync(self):

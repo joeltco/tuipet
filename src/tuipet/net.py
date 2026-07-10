@@ -163,6 +163,11 @@ class SyncClient(_WsClient):
             # this into the message box (presence 2026-07-05)
             self.inbox.append((m.get("from_name", "?"), m.get("text", "")))
             del self.inbox[:-20]
+        elif t == "announce":
+            # a server announcement reaches the home screen the same way a PM
+            # does -- the 📢 name marks it as the dev's line
+            self.inbox.append(("📢", m.get("text", "")))
+            del self.inbox[:-20]
         elif t == "login_failed":
             self._stop = True                  # wrong password -> stop retrying
 
@@ -262,6 +267,11 @@ class LobbyClient(_WsClient):
             if nm not in s.blocked:
                 s.chat.append((nm, m.get("text", "")))
                 del s.chat[:-CHAT_CAP]
+        elif t == "announce":
+            # a server announcement rides the public feed under the 📢 speaker
+            # (unblockable -- it's the dev's line, not a peer's)
+            s.chat.append(("📢", m.get("text", "")))
+            del s.chat[:-CHAT_CAP]
         elif t == "pm":
             nm = m.get("from_name", "?")
             if nm not in s.blocked:

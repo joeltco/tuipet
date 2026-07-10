@@ -42,6 +42,28 @@ MAX_BUG_TEXT = 2000
 MAX_BUGS_PER_CONN = 5           # a real player files one or two, not a firehose
 MAX_BUG_FILE = 5 * 1024 * 1024  # stop appending past 5MB -- the disk-fill backstop
 
+# ---- admin channel (key-authed): live feed + announcements ------------------
+# The key lives ONLY on the box (admin.key beside server.py, or TUIPET_ADMIN_KEY);
+# no key file -> the whole admin channel is disabled.  PUBLIC room events (chat,
+# joins/leaves, announcements) append to the feed for offline reading -- PMs are
+# private and never logged.
+FEED_PATH = os.environ.get(
+    "TUIPET_FEED",
+    os.path.join(os.path.dirname(os.path.abspath(__file__)), "lobby_feed.jsonl"))
+ADMIN_KEY_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "admin.key")
+MAX_ANNOUNCE = 300
+MAX_FEED = 2 * 1024 * 1024      # rotate past 2MB: feed -> feed.1 (one generation kept)
+
+
+def _admin_key():
+    k = os.environ.get("TUIPET_ADMIN_KEY", "")
+    if k:
+        return k.strip()
+    try:
+        return open(ADMIN_KEY_PATH).read().strip()
+    except OSError:
+        return ""
+
 MAX_CLIENTS = 200
 MAX_NAME = 24
 MAX_PW = 128
@@ -280,6 +302,51 @@ async def _handle_bug(client, m):
     await _send(client, {"t": "bug_ok", "ok": ok})
 
 
+def _feed(kind, **kw):
+    """Append one PUBLIC room event to the live feed (best-effort)."""
+    rec = {"ts": time.strftime("%Y-%m-%d %H:%M:%SZ", time.gmtime()), "kind": kind}
+    rec.update(kw)
+    try:
+        if os.path.exists(FEED_PATH) and os.path.getsize(FEED_PATH) > MAX_FEED:
+            os.replace(FEED_PATH, FEED_PATH + ".1")
+        with open(FEED_PATH, "a", encoding="utf-8") as f:
+            f.write(json.dumps(rec) + "\n")
+    except OSError:
+        pass
+
+
+async def _handle_admin(client, m):
+    """Key-authed admin ops (no login): `who` reads the room, `announce`
+    broadcasts a server line to every connection (lobby + home-screen ghosts)."""
+    key = _admin_key()
+    if not key or not hmac.compare_digest(str(m.get("key") or ""), key):
+        LOG.info("admin REFUSED conn=%s cmd=%r", client.id, m.get("cmd"))
+        await _send(client, {"t": "error", "msg": "Nope."})
+        return
+    cmd = m.get("cmd")
+    if cmd == "who":
+        roster = [{"name": c.name, "live": c.live,
+                   "pet": (c.pet or {}).get("name", ""),
+                   "stage": (c.pet or {}).get("stage", "")}
+                  for c in CLIENTS.values() if c.logged]
+        await _send(client, {"t": "admin_ok", "cmd": "who",
+                             "online": len(roster), "roster": roster})
+    elif cmd == "announce":
+        text = _clean(m.get("text"), MAX_ANNOUNCE)
+        if not text:
+            await _send(client, {"t": "admin_ok", "cmd": "announce", "sent": 0})
+            return
+        out = {"t": "announce", "text": text}
+        CHAT_BACKLOG.append(out)              # late joiners see it on entry
+        await _broadcast(out)
+        _feed("announce", text=text)
+        LOG.info("announce (%d chars) to %d conns", len(text), len(CLIENTS))
+        await _send(client, {"t": "admin_ok", "cmd": "announce",
+                             "sent": sum(1 for c in CLIENTS.values() if c.logged)})
+    else:
+        await _send(client, {"t": "error", "msg": "Unknown admin cmd."})
+
+
 async def handler(ws):
     if len(CLIENTS) >= MAX_CLIENTS:
         await ws.send(json.dumps({"t": "error", "msg": "Lobby is full."}))
@@ -366,9 +433,13 @@ async def handler(ws):
                 await _push_roster()          # sync ghosts show as "playing" (presence 2026-07-05)
                 LOG.info("login id=%s name=%s sync_only=%s (%d online)",
                          client.id, client.name, sync_only, len(CLIENTS))
+                _feed("join", name=client.name, ghost=sync_only)
 
             elif t == "bug":
                 await _handle_bug(client, m)
+
+            elif t == "admin":
+                await _handle_admin(client, m)
 
             elif not logged_in:
                 await _send(client, {"t": "error", "msg": "Log in first."})
@@ -396,6 +467,7 @@ async def handler(ws):
                            "from_name": client.name, "text": text}
                     CHAT_BACKLOG.append(out)      # the re-entry replay window
                     await _broadcast(out)
+                    _feed("chat", name=client.name, text=text)
 
             elif t == "pm":
                 # a private message reaches EVERY connection of the target
@@ -437,6 +509,7 @@ async def handler(ws):
         CLIENTS.pop(client.id, None)
         if logged_in:
             await _push_roster()
+            _feed("leave", name=client.name, ghost=not client.live)
         LOG.info("gone  id=%s (%d online)", client.id, len(CLIENTS))
 
 
