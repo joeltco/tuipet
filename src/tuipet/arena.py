@@ -734,6 +734,11 @@ class Screen(Static):
             c.xshift = (_filth_right(n) - PET_BASE_X) + fw0
         elif c.xshift == 0:
             c.xshift = -1                                  # no filth: DVPet char x29 of 104 (~28%)
+        # the food is BORN inside the window (Joel 2026-07-12: the descent's
+        # left columns were getting cut at the matrix edge): slide the whole
+        # canon-abutted pair (food right edge == char left edge) right until
+        # the food's left edge sits at the window's -- x4 -- never past it
+        c.xshift = max(c.xshift, (grid.X0 + fw0) - PET_BASE_X)
         ma = fx.get("munch_at")
         if ma is not None and step >= ma:
             # disposeFood: the pet turns away (pose 1, flipping at beat 5) and
@@ -748,7 +753,7 @@ class Screen(Static):
                     fw = len(fr[0])
                     fy = 13 + max(0, d - 10)
                     if fy < grid.FLOOR:                    # crumbs stop AT the floor (no bottom exit)
-                        c.overlay += _blit(fr, max(0, PET_BASE_X + c.xshift - fw), fy)
+                        c.overlay += _blit(fr, max(grid.X0, PET_BASE_X + c.xshift - fw), fy)
             return
         chew = fx.get("chew") or {10: 8, 14: 7, 18: 8, 22: 7, 26: 8, 30: 7}
         pose_i = 0
@@ -762,7 +767,7 @@ class Screen(Static):
             # DVPet: the food's RIGHT edge meets the pet's LEFT edge (foodLabel x31+24 == char x55),
             # so it descends right into the mouth -- abut it instead of stranding it on the far left.
             # (The filth pad above already moved BOTH food and char clear of the piles.)
-            fx_x = max(0, PET_BASE_X + c.xshift - fw)
+            fx_x = max(grid.X0, PET_BASE_X + c.xshift - fw)
             stage = 0 if step < 2 else 1 if step < 4 else 2 if step < 6 else 3
             fy = (grid.TOP, 8, 11, 13)[stage]              # DVPet descent, mapped INTO the window: the
             #                                                  food drops from the band top to the mouth
@@ -911,7 +916,7 @@ class Screen(Static):
                 gh = len(g0)
                 gx = base + c.xshift - gw - 1
                 if gx > -gw:
-                    c.overlay += _blit(g0, gx, (c.px_h - gh) // 2)
+                    c.overlay += _blit(g0, gx, grid.TOP + max(0, (grid.BAND - gh) // 2))
 
     def _fxk_play(self, pet, fx, step, c):
         # DVPet jumping() (SpriteAnim 17308): the pet bounces with joy -- hops UP on

@@ -34,9 +34,6 @@ ALLOWED_SILENT = {
     "st_bandage": "badge -> the +bnd HUD deco",
     "st_vitamin": "badge -> the +vit HUD deco",
     "st_fatigue": "badge -> the +tired HUD deco",
-    "train_hit": "the punch drill's Hit!! pop: 17px of art with no lawful berth"
-                 " in the window beside a 16px bag and mon (LAW 2026-07-11);"
-                 " the bag rock + lunge + flash carry the hit",
     "depressed": "the Data_Status mood icon; the digicore CONDITION page shows text",
     "flash": "attackHitFlash crop; battle_overlays.json hit_explosion is the source in use",
     "frozen": "DVPet's game-PAUSED indicator, not a cold state (documented in paint)",

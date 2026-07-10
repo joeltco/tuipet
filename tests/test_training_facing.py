@@ -212,3 +212,36 @@ def test_data_block_flashes_success_pose():
     assert win != loss                          # ATTACK vs COLLAPSE
     pan.flinch_t = 0                            # the braced IDLE frame
     assert pan.text().markup != win, "the block tell must differ from plain IDLE"
+
+
+def test_punch_hit_banner_pops_inside_the_window(monkeypatch):
+    """The Hit!! banner is BACK (Joel 2026-07-12: dropping it read as a broken
+    render): on the strike beat it pops over the scene, centred in the window
+    near its top -- its banner-only columns (the bag/mon gap) light up."""
+    from tuipet import training, grid
+    from tuipet.training import TrainingPanel, GAMES
+    from tuipet.pet import Pet
+    seen = {}
+    real = training.render_scene
+
+    def spy(placements, *a, **kw):
+        seen["overlay"] = list(kw.get("overlay") or [])
+        return real(placements, *a, **kw)
+
+    monkeypatch.setattr(training, "render_scene", spy)
+    p = Pet(num=100, stage="Champion", attribute="Vaccine", obedience=500)
+    p.compliance = True
+    pan = TrainingPanel(p)
+    pan.gi = next(i for i, g in enumerate(GAMES) if g[0] == "vaccine")
+    pan._start_game()
+    pan._strike_t = 0
+    pan.text()
+    gap = [pt for pt in seen["overlay"] if 11 <= pt[0] <= 17 and 7 <= pt[1] <= 12]
+    assert not gap                                   # idle: the gap is empty
+    pan._strike_t = 3
+    pan._strike_pose = 6
+    pan.text()
+    gap = [pt for pt in seen["overlay"] if 11 <= pt[0] <= 17 and 7 <= pt[1] <= 12]
+    assert gap, "the Hit!! banner must pop on the strike beat"
+    assert all(grid.X0 <= x < grid.X1 and grid.TOP <= y < grid.FLOOR
+               for x, y in seen["overlay"] if True)

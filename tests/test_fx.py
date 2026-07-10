@@ -542,3 +542,25 @@ def test_food_descends_beside_the_piles(monkeypatch):
     # left edge (char left - fw) lands exactly at the filth block's right edge
     assert cap["xshift"] == (_filth_right(1) - PET_BASE_X) + fw
     assert PET_BASE_X + cap["xshift"] - fw >= _filth_right(1)
+
+
+def test_food_descends_uncut_inside_the_window(monkeypatch):
+    """Joel 2026-07-12: the descent's left columns were getting cut at the
+    matrix edge (the no-poop scene born at x3).  The whole canon-abutted pair
+    now slides right instead: every descent beat shows the food's FULL ink,
+    entirely inside the 32x16 window."""
+    from tuipet import grid
+    cap = _capture_render(monkeypatch)
+    s = _paint_harness()
+    p = _pose_pet(poop=0)
+    food = s._food_frames("f:0")
+    ink = sum(r.count("1") for r in food[0])
+    s.fx = {"kind": "eat", "step": 0, "steps": 35, "icon": "f:0",
+            "poop": 0, "old_num": None, "good": True}
+    for step in (0, 2, 4, 6):
+        s.fx["step"] = step
+        s._paint_fx(p)
+        pts = cap["overlay"]
+        assert len(pts) == ink, (step, len(pts), ink)      # nothing clipped away
+        assert all(grid.X0 <= x < grid.X1 and grid.TOP <= y < grid.FLOOR
+                   for x, y in pts), step

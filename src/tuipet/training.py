@@ -535,9 +535,16 @@ class TrainingPanel:
             pw_ = max(len(r) for r in pf)
             px = GRID_X0 + GRID_W - pw_ - (2 if punching else 0)   # LUNGE 2px into the punch
             overlay.extend(_blit(pf, px, BASE_Y - len(pf)))   # grounded; faces left natively
-            # (the old Hit!! label is GONE: 17px of art has no lawful berth in
-            # the window beside a 16px bag and a 16px mon -- the bag's rock,
-            # the lunge, the flash and the beep already carry the hit)
+            if punching:
+                # the Hit!! banner (canon hitLabel) POPS OVER the scene for the
+                # strike beat -- a momentary label, the same class as the
+                # battle strobe, centred in the window near its top (Joel
+                # 2026-07-12: dropping it read as a broken render)
+                hit = E.get("train_hit", [None])[0]
+                if hit:
+                    hw = max(len(r) for r in hit)
+                    overlay.extend(_blit(hit, GRID_X0 + (GRID_W - hw) // 2,
+                                         BAND_TOP + 1))
         elif gk == "virus":                                 # DVPet drawVirusPre: pet AND bag HIDDEN
             # The real DVPet trainBar sprite is a 32-wide TRACK box (cols 0..31) + a separate
             # goal compartment (cols 32..37) == 38 wide.  Crop to the 32-wide track box so it
@@ -571,7 +578,8 @@ class TrainingPanel:
                 # resetScreen() then a CENTRED fullscreen flash strobing attackHit<->attackHitFlash.
                 # Same render as the battle's hit (centred _EXPLODE), NOT a burst on the busy scene.
                 ex = _EXPLODE[(self.strobe_t // EXPLODE_HOLD) % len(_EXPLODE)]
-                overlay += _blit(ex, max(0, (COLS - len(ex[0])) // 2), max(0, (ph - len(ex)) // 2))
+                overlay += _blit(ex, GRID_X0 + max(0, (GRID_W - len(ex[0])) // 2),
+                                 BAND_TOP + max(0, (BASE_Y - BAND_TOP - len(ex)) // 2))
             else:
                 aim_up = self.tgt_up if self.locked else self.feint_up
                 cannon = E.get("train_green_up" if aim_up else "train_green", [None])[0]  # barrel aim only
