@@ -94,9 +94,12 @@ def test_teach_bubble_is_back_with_canon_gates():
 def test_condition_column_shows_all_active_at_once():
     p = _pet(sick=True, sick_length=999.0, med_lapse=30.0)
     p.inj_length = 999.0
-    n_all = len(_pts(p))
-    q = _pet(sick=True, sick_length=999.0)
-    assert n_all > len(_pts(q))                  # a fixed column, not a cycling slot
+    # three conditions -> three SIMULTANEOUS rail slots (0/8/16), not a cycler
+    # (icon-rail sweep 2026-07-10: raw px counts stopped meaning "more icons"
+    # once the inky '!' bubble started yielding its slot to real conditions)
+    ys = {y for x, y in _pts(p) if x >= 28}
+    assert ys & set(range(0, 8)) and ys & set(range(8, 16)) \
+        and ys & set(range(16, 24))
 
 
 def test_nap_wears_its_own_zzz_glyph():

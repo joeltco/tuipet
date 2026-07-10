@@ -432,7 +432,11 @@ def test_the_present_rides_the_whole_return_leg():
 # and dropped the status UI; sick/startle re-anchored; a 1-2 pile block (its
 # edge == the anchor) let the food descend onto the slots.
 
-def _paint_harness(roamer_x=22.0):
+def _paint_harness(roamer_x=8.0):
+    # x8 sits INSIDE every legal corridor (left of the rail's wall at x12,
+    # off the x12 anchor) -- the old 22.0 parked the pet past the grid's own
+    # right wall (X1 - sprite = 20), a spot the real roamer can't reach and
+    # one the icon-rail sweep's universal clamp now corrects (2026-07-10)
     from tuipet.anim import Roamer
     from tuipet.app import SCREEN_COLS, SPRITE_W
     s = type("_S", (), {})()
@@ -479,7 +483,13 @@ def test_yawn_tell_plays_in_place_with_status_ui(monkeypatch):
     s.fx = {"kind": "yawn", "step": 5, "steps": 22, "icon": None,
             "poop": 0, "old_num": None, "good": True}
     s._paint_fx(p)
-    assert cap["xshift"] == s.roamer.xshift       # poses where it stood, not the anchor
+    # the pose plays at the roamer's spot CLAMPED into the free corridor
+    # (icon-rail sweep 2026-07-10): 2 piles are a left wall at x12 and the
+    # live rail (sick) a right wall at x12 -- the corridor is that one spot
+    from tuipet.app import PET_BASE_X, RAIL_W, SPRITE_W
+    lo = _filth_right(2) - PET_BASE_X
+    hi = (grid.X1 - RAIL_W - SPRITE_W) - PET_BASE_X
+    assert cap["xshift"] == min(max(s.roamer.xshift, lo), max(hi, lo))
     assert cap["mirror"] == s.roamer.mirror       # facing kept (canon getIsMirror())
     xs = {x for x, _ in cap["overlay"]}
     assert any(x >= grid.X1 - COND_W for x in xs), "condition column must stay up"

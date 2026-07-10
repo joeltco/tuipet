@@ -206,79 +206,51 @@ PLAY_HOP_H = 6                                     # apex px: the FULL body stay
 GIFT_OUT = 40                                      # beats*2 ticks: centre x12 -> x-8 (20px)
 GIFT_BACK = 46                                     # x-8 -> x15 (23px)
 GIFT_HOLD = 18                                     # the % (interval*45) settle before giftEnd
-COND_PITCH = COND_H + 1
 # Icon-audit 2026-07: the 2026-06-26 "for now" hide of st_medicine + st_teach is
 # LIFTED -- both badges carry real information now: the medicine indicator is the
 # double-dose poison warning (getMed), and teach flags a discipline window that
 # EXPIRES with teeth since v0.2.182.  Re-hide by adding keys back to this set.
 _HIDDEN_STATUS_ICONS: set[str] = set()
-# DVPet draws the condition icons as a fixed VERTICAL COLUMN down the right edge of
-# the LCD (setLocX ~120), one fixed row each, every active one shown AT ONCE -- not a
-# single cycling slot.  Vertical order is DVPet's setLocY (top->bottom): sick(55),
-# medicine(64), injury(73), bandage(83), vitamin(93), fatigue(103).  teach is NOT in
-# the column -- DVPet gives it setDynamicComponentLocation, so it tracks the creature.
+# THE STATUS RAIL (icon-rail redesign 2026-07-10, Joel's call: "we are no longer
+# DVPet, make it our own thing").  DVPet split its icons between a fixed condition
+# column and creature-TRACKING labels (emote/teach rode the pet via
+# adjustEmotionLabel / setDynamicComponentLocation) -- tracking is gone.  tuipet
+# gives every icon one home: a fixed RAIL_W-wide rail hugging the grid's right
+# edge, stacked top-down Zzz -> conditions (canon order) -> one reaction slot
+# (emote / care-call '!' / teach take turns).  While the rail holds anything the
+# pet's corridor stops LEFT of it (advance + the paint clamp share
+# _rail_reserved), so icon and creature ink can never mix.  When 3-4 filth piles
+# leave no 16px corridor the rail YIELDS: the pet is pinned beside the piles,
+# only sky-strip-height icons (the 6px Zzz) stay up top, and the HUD status
+# line carries the conditions instead -- poop tiles always win floor space.
+RAIL_W = 8                                         # widest rail sprite (zzz / the 8x8 emotes)
 
 
-def _effect_overlay(pet, frame_i, cols, px_h, tick=0, pet_right=None):
-    """Status sprites overlaid on the LCD, laid out like the DM20 hardware: poop
-    bottom-left, the sleep Zzz top-right, a fixed condition column down the right
-    edge (all active conditions at once), and a creature-tracking emote/'!'/teach
-    bubble -- each in its own zone so nothing overlaps."""
+def _rail_items(pet, frame_i, tick):
+    """The rail's active icons, top-down, as (frame, is_reaction) pairs:
+    Zzz (asleep; nap wears its own glyph -- getLightsSprites napLights), then
+    the conditions in canon checkStates order blinking their 2-frame pairs
+    (stateNumTic: 7 ticks awake / 10 asleep), then ONE reaction slot.  The
+    reaction flag marks the transient bubble: real conditions hold fixed
+    slots FIRST; the bubble only takes a slot that is genuinely free."""
     E = data.load_effects()
-    pts = []
-    if pet.dead:
-        return pts
-    if pet.poop:                                          # sized piles in the DVPet slot grid
-        pts += _filth_pts(pet, tick, px_h=px_h)
-    if pet.num == -1:
-        return pts
+    items = []
     asleep = bool(getattr(pet, "asleep", False))
-    # --- sleep Zzz (DVPet idleSleep, frame swap on the 10-tick sleep beat) ---
-    # lights ON: the Zzz is the EMOTION label -- it rides the pet's right edge
-    # (o = _emotionLabel; adjustEmotionLabel = char right edge + 3).
-    # lights OFF: the Zzz is punched out of sleepLightsOff.png at (77..100, 12..29)
-    # of 104x60 -> upper-right, a step below the border on our 40x24 grid.
-    zz_bot = 0
-    # a NAP wears its own glyph (getLightsSprites: napLights vs sleepLights);
-    # canon's deepening flash has no tuipet state -- naps never convert here
     zkey = "zzz_nap" if (getattr(pet, "nap", False) and E.get("zzz_nap")) else "zzz"
     if asleep and E.get(zkey):
-        z = E[zkey][(tick // 10) % len(E[zkey])]
-        zw, zh = len(z[0]), len(z)
-        if pet.lights:
-            pr = pet_right if pet_right is not None else (cols - 16) // 2 + 16
-            pts += _blit(z, max(grid.X0, min(pr + 1, grid.X1 - zw)), 1)
-        else:
-            pts += _blit(z, grid.X1 - zw, 4)
-            zz_bot = 4 + zh
-    # --- condition column: fixed right edge, every active condition stacked + blinking ---
-    # DVPet stateNumTic blink: 7 ticks awake / 10 asleep, faster (7) when unwell.
-    # Canon gives each condition a FIXED slot (x~120: sick 55 / med 64 / inj 73 /
-    # bandage 83 / vitamin 93 / fatigue 103 -- the same top-down ORDER as the
-    # tuple below); ours COMPACTS the active ones upward because six 7px icons
-    # cannot hold fixed slots on a 24px LCD (condition-column audit 2026-07-06).
+        items.append((E[zkey][(tick // 10) % len(E[zkey])], False))
     unwell = pet.sick or pet.is_injured() or pet.is_fatigued()
     sf = (tick // (7 if unwell else (10 if asleep else 7))) % 2
-    col_x = grid.X1 - COND_W                               # condition column hugs the grid's right edge (x29)
-    col_y0 = (zz_bot + 1) if zz_bot else 0                 # below the lights-off Zzz when it holds the corner
     column = (("st_sick", pet.sick), ("st_medicine", pet.has_medicine()),
               ("st_injury", pet.is_injured()), ("st_bandage", pet.has_bandage()),
               ("st_vitamin", pet.has_vitamin()), ("st_fatigue", pet.is_fatigued()))
-    k = 0
-    col_active = False
     for key, active in column:
-        if not active or not E.get(key) or key in _HIDDEN_STATUS_ICONS:
-            continue
-        col_active = True
-        y = col_y0 + k * COND_PITCH
-        if y + COND_H > px_h:                             # out of vertical room (rare: 3+ at once)
-            break
-        pts += _blit(E[key][sf], col_x, y)
-        k += 1
-    # --- creature-tracking bubble: emote / care-call '!' / teach (awake only) ---
-    # DVPet's emotionLabel + teachState both ride the creature (adjustEmotionLabel /
-    # setDynamicComponentLocation); reactions don't fire while it sleeps, so this slot
-    # is awake-only and is clamped to stay left of the condition column.
+        if active and E.get(key) and key not in _HIDDEN_STATUS_ICONS:
+            items.append((E[key][sf], False))
+    # the reaction slot (awake only -- reactions don't fire in sleep): emote from
+    # the anim state, else the care-call '!' (shared predicate with the HUD
+    # alarm), plus teach's discipline bulb (lights-on, canon gate); when several
+    # want the slot they take turns.
     if not asleep:
         emo = ("happy" if pet.anim == "happy" else
                "unhappy" if pet.anim in ("sad", "refuse", "angry", "tantrum") else
@@ -286,24 +258,77 @@ def _effect_overlay(pet, frame_i, cols, px_h, tick=0, pet_right=None):
                # 2026-07-06): the fatigue collapse shows how bad it is
                "dying" if pet.anim == "exhausted" else None)
         bubble = []
-        if emo and E.get(emo):                            # cheer -> happy, jeer -> unhappy (DVPet)
+        if emo and E.get(emo):                            # cheer -> happy, jeer -> unhappy
             bubble.append(E[emo][frame_i % len(E[emo])])
         elif (pet.anim in ("idle", "walk") and E.get("attention")
               and pet.needs_attention()):
-            # design call (polish 2026-07): the '!' bubble and the HUD alarm now
-            # share ONE predicate -- a sick or misbehaving pet flags on-LCD too
-            bubble.append(E["attention"][0])             # care-call '!'
+            bubble.append(E["attention"][0])              # care-call '!'
         teach = ((getattr(pet, "praise_flag", False) or getattr(pet, "scold_flag", False))
                  and pet.lights)
         if teach and E.get("st_teach") and "st_teach" not in _HIDDEN_STATUS_ICONS:
             bubble.append(E["st_teach"][sf])
         if bubble:
-            bm = bubble[(tick // 5) % len(bubble)]        # if both present, take turns (rare)
-            w = len(bm[0])
-            pr = pet_right if pet_right is not None else grid.X1 - 1
-            right_limit = (col_x - 1 - w) if col_active else (grid.X1 - w)
-            x = max(grid.X0, min(pr + 1, right_limit))
-            pts += _blit(bm, x, 1)
+            items.append((bubble[(tick // 5) % len(bubble)], True))
+    return items
+
+
+def _rail_crowded(pet):
+    """3-4 filth piles leave no 16px corridor left of the rail: the rail must
+    yield the floor (only sky-strip icons show) while the pet is visible."""
+    return bool(pet.poop) and _filth_right(pet.poop) > grid.X1 - RAIL_W - SPRITE_W
+
+
+def _rail_reserved(pet):
+    """True when the rail is holding icons and the pet must keep clear of it.
+    advance() (the roamer's right wall) and paint()'s clamp both key off this,
+    so the corridor rule is one predicate, not two drifting copies."""
+    if pet.dead or pet.num == -1 or not pet.lights:       # hidden/grave: no corridor
+        return False
+    if _rail_crowded(pet):                                # crowded: the rail yields instead
+        return False
+    return bool(_rail_items(pet, 0, 0))
+
+
+def _effect_overlay(pet, frame_i, cols, px_h, tick=0):
+    """Status sprites overlaid on the LCD, tuipet's own layout: the filth block
+    bottom-left (settled), and every icon in the fixed right-edge status rail,
+    right-aligned and stacked from the top with a 1px gap.  If more icons are
+    active than the 24px rail holds, the surplus takes turns in the last slot
+    (the old column silently DROPPED them).  Nothing follows the creature."""
+    E = data.load_effects()
+    pts = []
+    if pet.dead:
+        return pts
+    if pet.poop:                                          # sized piles in the slot grid
+        pts += _filth_pts(pet, tick, px_h=px_h)
+    if pet.num == -1:
+        return pts
+    items = _rail_items(pet, frame_i, tick)
+    if pet.lights and _rail_crowded(pet):
+        # the pet stands pinned beside the piles, under the rail zone -- only
+        # icons short enough for the sky strip (above the band top) may show
+        items = [it for it in items if len(it[0]) <= grid.TOP]
+    core = [fr for fr, reaction in items if not reaction]
+    bub = [fr for fr, reaction in items if reaction]
+    if not core and not bub:
+        return pts
+    n, y = 0, 0                                           # how many CORE fit at full height
+    for fr in core:
+        if y + len(fr) > px_h:
+            break
+        n, y = n + 1, y + len(fr) + 1
+    if n < len(core):                                     # 4+ conditions: the last slot
+        fixed, over = core[:max(0, n - 1)], core[n - 1:]  # cycles the surplus (the old
+    else:                                                 # column silently DROPPED them);
+        fixed, over = core, bub                           # else a free slot hosts the bubble
+    y = 0
+    for fr in fixed:
+        pts += _blit(fr, grid.X1 - len(fr[0]), y)
+        y += len(fr) + 1
+    if over:
+        fr = over[(tick // 10) % len(over)]
+        if y + len(fr) <= px_h:                           # a bubble with no room left waits
+            pts += _blit(fr, grid.X1 - len(fr[0]), y)     # (transient; conditions outrank it)
     return pts
 
 
@@ -416,17 +441,17 @@ class Screen(Static):
         # NOTE: DVPet's frozen.png (the ice encasement) is its GAME-PAUSED indicator
         # (setFrozenIcon only fires when !isPlaying), not a cold-weather state -- so cold
         # shows the huddle pose above, not a full ice block over the pet.
-        if pet.poop:                       # keep the pet clear of the filth row in EVERY state
-            poop_edge = _filth_right(pet.poop)            # x just past the rightmost pile slot (sleep/sick
-            #                                               bypass the roamer bound and would
-            base = PET_BASE_X
-            lo = poop_edge - base                         # min shift to clear the piles (REAL edge, not padded)
-            cap = (grid.X1 - SPRITE_W) - base             # stay inside the grid's right edge
-            xshift = min(max(xshift, lo), max(cap, 0))    # clear poop on the left; emote follows the pet
-        # DVPet adjustEmotionLabel: emote/'!' track the pet's final x, so rebuild the overlay now
+        # exclusive floor zones, enforced in EVERY state (icon-rail sweep
+        # 2026-07-10): the filth block is a hard left wall and a live status
+        # rail a hard right one -- sleep/sick/startle bypass the roamer's
+        # bounds, so the clamp here is what actually guarantees no overlap.
+        base = PET_BASE_X
+        lo = (_filth_right(pet.poop) if pet.poop else grid.X0) - base
+        cap = ((grid.X1 - RAIL_W if _rail_reserved(pet) else grid.X1)
+               - SPRITE_W) - base
+        xshift = min(max(xshift, lo), max(cap, lo))       # poop wins over the rail (rail yields when crowded)
         overlay = (_weather_overlay(pet.weather, wf, SCREEN_COLS, SCREEN_ROWS * 2)
-                   + _effect_overlay(pet, wf, SCREEN_COLS, SCREEN_ROWS * 2, tick=self.frame_i,
-                                     pet_right=PET_BASE_X + xshift + SPRITE_W))
+                   + _effect_overlay(pet, wf, SCREEN_COLS, SCREEN_ROWS * 2, tick=self.frame_i))
         if not pet.lights:                 # lights off: DVPet's lightsOff is a fully-opaque black
             rows, xshift, mirror = [], 0, False   # cover -> the pet is hidden; only black (+ Zzz) shows
         self.update(render_screen(rows, SCREEN_COLS, SCREEN_ROWS, on, bg,
@@ -446,10 +471,12 @@ class Screen(Static):
             # anim plays (canon anims own LocX; the walk resumes after) -- else
             # a seeded yawn/poopdance would SLIDE as the roamer kept stepping
             poop_right = _filth_right(pet.poop) if pet.poop else grid.X0
-            cond = (pet.is_injured() or pet.is_fatigued() or pet.has_vitamin()
-                    or pet.has_medicine() or pet.has_bandage())
-            # keep the pet inside the grid: left of the condition column when it's up, else the grid's right edge
-            right_bound = (grid.X1 - COND_W - SPRITE_W) if cond else (grid.X1 - SPRITE_W)
+            # keep the pet inside the grid: left of the status rail while it
+            # holds icons (the SAME predicate paint()'s clamp uses -- the old
+            # `cond` tuple here forgot sick/zzz/emote and let the pet drift
+            # under the column), else the grid's right edge
+            right_bound = ((grid.X1 - RAIL_W - SPRITE_W) if _rail_reserved(pet)
+                           else (grid.X1 - SPRITE_W))
             prev_pose = self.roamer.pose
             self.roamer.step(left_bound=poop_right, right_bound=right_bound)
             if self.roamer.pose != prev_pose:                    # a fresh step landed (DVPet stepFrame):
@@ -705,13 +732,18 @@ class Screen(Static):
             painter(pet, fx, step, c)
         if fx["kind"] in ("yawn", "poopdance"):
             # canon idle() keeps running stateAnims (checkStates/checkFilth/
-            # stateNumTic) while a special idle plays: the condition column and
+            # stateNumTic) while a special idle plays: the status rail and
             # filth piles stay up and blinking through the pose.  Care anims
             # keep their resetScreen() blackout -- canon hides those labels.
-            # (After the painter, so the emote tracks the sway's final x.)
+            # The pose sways around the roamer's spot, so it gets the same
+            # zone clamp as paint() (a condition arising MID-yawn would
+            # otherwise put the rail over the pet for the pose's last beats).
+            lo = (_filth_right(pet.poop) if pet.poop else grid.X0) - PET_BASE_X
+            cap = ((grid.X1 - RAIL_W if _rail_reserved(pet) else grid.X1)
+                   - SPRITE_W) - PET_BASE_X
+            c.xshift = min(max(c.xshift, lo), max(cap, lo))
             c.overlay += _effect_overlay(pet, self.frame_i // 4, SCREEN_COLS, c.px_h,
-                                         tick=self.frame_i,
-                                         pet_right=PET_BASE_X + c.xshift + SPRITE_W)
+                                         tick=self.frame_i)
         mirror = (c.mirror or fx["kind"] in ("dying", "poop")
                   or (fx["kind"] == "gift" and GIFT_OUT <= step < GIFT_OUT + GIFT_BACK)  # facing right, ambling back
                   or (fx["kind"] == "spit" and (step // 6) % 2 == 0))   # refuse(): head-shake flips

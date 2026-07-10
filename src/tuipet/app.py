@@ -49,9 +49,9 @@ from .arena import (  # noqa: F401  (full re-export: preserve tuipet.app.* for c
     Screen, SCREEN_COLS, SCREEN_ROWS, SPRITE_W, PET_BASE_X, _FxCtx,
     hearts, bar, _FX, GRAVESTONE, POOP_W, POOP_PAD, WEATHER_GLYPH,
     _sky_icon, _RAIN, _SNOW, _PRECIP_N, _scale_hex, _weather_overlay,
-    _evol_strobe, _filth_right, _filth_pts, COND_W, COND_H, COND_PITCH,
+    _evol_strobe, _filth_right, _filth_pts, COND_W, COND_H, RAIL_W,
     PLAY_HOP, PLAY_LEAD, PLAY_HOP_H, GIFT_OUT, GIFT_BACK, GIFT_HOLD,
-    _HIDDEN_STATUS_ICONS, _effect_overlay,
+    _HIDDEN_STATUS_ICONS, _effect_overlay, _rail_reserved, _rail_items,
 )
 
 import re as _re
@@ -151,6 +151,12 @@ class Stats(Static):
         if pet.is_overheating() and word != "overheating": deco.append(f"[{T.NEG}]+hot[/]")
         if pet.poop: deco.append(f"[{T.COIN}]~poop x{pet.poop}[/]")
         if getattr(pet, "effect_id", -1) >= 0: deco.append(f"[{T.POS}]\u2726{pet.effect_name()}[/]")
+        # the badge conditions, lowest priority (dropped first on overflow):
+        # with 3-4 piles the LCD rail yields its floor space, so the HUD is
+        # what still carries these (icon-rail sweep 2026-07-10)
+        if pet.has_medicine(): deco.append(f"[{T.NEG}]+med[/]")
+        if pet.has_bandage(): deco.append("[dim]+bnd[/dim]")
+        if pet.has_vitamin(): deco.append(f"[{T.POS}]+vit[/]")
         age = _age_compact(pet.age_seconds)
         sky, skycol = _sky_icon(pet)
         aff = pet._affinity()
@@ -239,10 +245,10 @@ class TuiPetApp(App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("Evolution trees rebuilt from the real devices: every device egg "
-                 "now raises its true line -- Deep Savers is ocean Digimon again, "
-                 "Corona and Luna split for real, dragon eggs fuse into Examon, "
-                 "and Pendulum attribute jogress is live in the lobby.")
+    WHATS_NEW = ("New status rail: every icon (Zzz, conditions, emotes, the "
+                 "care-call '!') now lives in its own fixed rail on the right "
+                 "edge -- nothing rides the pet, sprites never overlap, and "
+                 "your mon keeps clear of the icons and the mess it made.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and
