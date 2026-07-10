@@ -53,12 +53,12 @@ def save_settings(d, path=None):
     _atomic_write_json(path or SETTINGS_PATH, d, keep_bak=True)
 
 
-# --- v0.2.402 egg-bank migration (frames-or-cut pass, 2026-07-10) ------------
-# v0.2.400/.401 shipped an 84-egg bank; .402 cut the six frameless digitama +
-# Bubbmon/ver6 and reordered the new-egg block into device order.  Saved egg
-# INDICES from those two builds must translate by name.  Classic 0-48 kept
-# their positions, so only >=49 moves.
-EGG_ORDER_V = 2
+# --- egg-bank index migration (frames-or-cut pass + NSp restore, 2026-07-10) -
+# .400/.401 shipped an 84-egg bank; .402 cut six frameless digitama and
+# reordered; .403 restored Nature Spirits + Bubbmon (DU frames found).  Saved
+# egg INDICES translate by NAME through whichever bank they were written
+# against.  Classic 0-48 never moves.
+EGG_ORDER_V = 3
 _V401_EGG_NAMES = [                     # bank order as shipped in .400/.401
     "Breakdra Egg", "Corona Egg", "DORU Egg", "Deep Savers Egg",
     "Digitama X", "Digitama X2", "Digitama X3", "Vorvomon Egg", "Draco Egg",
@@ -70,55 +70,61 @@ _V401_EGG_NAMES = [                     # bank order as shipped in .400/.401
     "Version 3 Egg", "Version 4 Egg", "Version 5 Egg", "Version 6 Egg",
     "Virus Busters Egg", "Virus Busters Ver. 20th Egg",
     "Wind Guardians Egg", "Zuba Egg"]   # indices 49..83
-# a CUT egg mid-incubation falls back to the classic egg of the same baby;
-# the two Bubbmon digitama (Nature Spirits / Version 6) default to the
-# Botamon egg -- their baby no longer exists
-_V401_CUT_FALLBACK = {"Digitama X": 17, "Digitama X2": 18,
-                      "Vorvomon Egg": 8, "Nightmare Soldiers Ver.20th Egg": 10,
-                      "Nature Spirits Egg": 1, "Version 6 Egg": 1}
+_V402_EGG_NAMES = [                     # bank order as shipped in .402
+    "Version 1 Egg", "Version 2 Egg", "Version 3 Egg", "Version 4 Egg",
+    "Version 5 Egg", "Deep Savers Egg", "Nightmare Soldiers Egg",
+    "Wind Guardians Egg", "Metal Empire Egg", "Virus Busters Egg",
+    "Corona Egg", "Luna Egg", "Zuba Egg", "Hack Egg", "Meicoo Egg",
+    "DORU Egg", "Slayerdra Egg", "Breakdra Egg", "Ryuda Egg", "Draco Egg",
+    "Lalamon Egg", "Ludo Egg", "Meicoomon Egg", "Terrier Egg", "Lop Egg",
+    "V Egg", "Virus Busters Ver. 20th Egg", "Digitama X3",
+    "Kera Digitama"]                    # indices 49..77
+# a STILL-CUT egg mid-incubation falls back to the classic egg of the same
+# baby (Version 6's Bubbmon digitama -> the restored Nature Spirits Egg)
+_CUT_FALLBACK = {"Digitama X": 17, "Digitama X2": 18, "Vorvomon Egg": 8,
+                 "Nightmare Soldiers Ver.20th Egg": 10, "Version 6 Egg": 54}
 
 
-def _migrate_egg_index(old):
-    """Translate a .400/.401 egg index into the .402 bank (None = drop)."""
+def _migrate_egg_index(old, table=_V401_EGG_NAMES):
+    """Translate an old-bank egg index into the current bank (None = drop)."""
     if not isinstance(old, int) or old < 49:
         return old                                    # classic block: unchanged
-    if old - 49 >= len(_V401_EGG_NAMES):
+    if old - 49 >= len(table):
         return None
-    name = _V401_EGG_NAMES[old - 49]
+    name = table[old - 49]
     from . import egg as egg_mod
     for i in range(egg_mod.count()):
         if egg_mod.hatch_name(i) == name:
             return i
-    return _V401_CUT_FALLBACK.get(name)
+    return _CUT_FALLBACK.get(name)
+
+
+def _table_for(save_v):
+    return _V402_EGG_NAMES if save_v == 2 else _V401_EGG_NAMES
 
 
 def _migrate_v401_save(data):
-    """In-place pet-save migration: egg indices, plus live ver6 pets (Bubbmon
-    #1574 grows past its cut form into Motimon #19, the line's real next
-    stage, keeping age and stats)."""
-    if data.get("egg_order_v") == EGG_ORDER_V:
+    """In-place pet-save migration across bank versions (egg indices only --
+    live ver6/Bubbmon pets are valid again since the .403 restore)."""
+    v = data.get("egg_order_v")
+    if v == EGG_ORDER_V:
         return
     if isinstance(data.get("egg_type"), int):
-        new = _migrate_egg_index(data["egg_type"])
+        new = _migrate_egg_index(data["egg_type"], _table_for(v))
         data["egg_type"] = new if new is not None else 1
-    if data.get("num") == 1574:
-        data["num"] = 19
-        if data.get("line_id") == "ver6":
-            data["line_id"] = "choromon"              # Motimon's surviving line
-    elif data.get("line_id") == "ver6":
-        data["line_id"] = "choromon"
     data["egg_order_v"] = EGG_ORDER_V
 
 
 def _migrate_v401_settings(d):
-    """One-time owned-egg index translation for .400/.401 settings files."""
+    """One-time owned-egg index translation for older settings files."""
     if not d or d.get("egg_order_v") == EGG_ORDER_V:
         return False
     prog = d.get("progress") or {}
     owned = prog.get("eggs_owned")
     if owned:
+        table = _table_for(d.get("egg_order_v"))
         prog["eggs_owned"] = sorted({n for n in
-                                     (_migrate_egg_index(i) for i in owned)
+                                     (_migrate_egg_index(i, table) for i in owned)
                                      if n is not None})
     d["egg_order_v"] = EGG_ORDER_V
     return True

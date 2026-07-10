@@ -19,9 +19,9 @@ def _by_name():
     return {egg.hatch_name(i): i for i in range(egg.count())}
 
 
-def test_bank_is_78_and_every_egg_is_gated():
+def test_bank_is_79_and_every_egg_is_gated():
     n = egg.count()
-    assert n == 78
+    assert n == 79
     rules = data.load_egg_unlock()
     for i in range(n):
         assert i in rules or i in egg._WIN_EGGS, i
@@ -30,12 +30,14 @@ def test_bank_is_78_and_every_egg_is_gated():
 def test_frameless_content_is_gone():
     names = {egg.hatch_name(i) for i in range(egg.count())}
     assert not (names & {"Version 6 Egg", "Nightmare Soldiers Ver.20th Egg",
-                         "Digitama X", "Digitama X2", "Vorvomon Egg",
-                         "Nature Spirits Egg"})
+                         "Digitama X", "Digitama X2", "Vorvomon Egg"})
+    # Bubbmon RETURNED with a real DU state strip (.403) -- Nature Spirits
+    # lives again and the mystery egg knows him
     _, by = data.load_sprites()
-    assert 1574 not in by                       # Bubbmon cut
-    assert "ver6" not in lines.load_lines()
-    assert 1574 not in set(egg.hatch_targets(47))
+    assert len(by[1574]["frames"]) == 11
+    assert len({"".join(f) for f in by[1574]["frames"]}) >= 5
+    assert lines.load_lines()["ver6"]["root"] == 1574
+    assert 1574 in set(egg.hatch_targets(47))
 
 
 def test_every_egg_animates_with_real_frames():
@@ -52,29 +54,30 @@ def test_every_egg_animates_with_real_frames():
 
 def test_new_eggs_hatch_line_roots_in_device_order():
     roots = {l["root"] for l in lines.load_lines().values()}
-    for i in range(49, 78):
+    for i in range(49, 79):
         for t in egg.hatch_targets(i):
             assert t in roots, (i, t)
-    order = [egg.hatch_name(i) for i in range(49, 78)]
+    order = [egg.hatch_name(i) for i in range(49, 79)]
     assert order[:5] == ["Version 1 Egg", "Version 2 Egg", "Version 3 Egg",
                          "Version 4 Egg", "Version 5 Egg"]
-    assert order[5:10] == ["Deep Savers Egg", "Nightmare Soldiers Egg",
-                           "Wind Guardians Egg", "Metal Empire Egg",
-                           "Virus Busters Egg"]      # Pendulum device order
+    assert order[5:11] == ["Nature Spirits Egg", "Deep Savers Egg",
+                           "Nightmare Soldiers Egg", "Wind Guardians Egg",
+                           "Metal Empire Egg", "Virus Busters Egg"]  # Pen 1-5+Zero
     assert order[-2:] == ["Digitama X3", "Kera Digitama"]
-    # distinct art except the design-true shares: the Terrier/Lop/X3 trio
-    # (Cocomon digitama) and Draco/Slayerdra (Petitmon digitama)
-    seen = {"".join(egg.frames(i)[0]) for i in range(49, 78)}
-    assert len(seen) == 26
+    # distinct art among the 30 new eggs except the design-true shares:
+    # Terrier/Lop/X3 (Cocomon digitama) and Draco/Slayerdra (Petitmon);
+    # Nature Spirits shares with CLASSIC Babumon, outside this set
+    seen = {"".join(egg.frames(i)[0]) for i in range(49, 79)}
+    assert len(seen) == 27
 
 
 def test_fresh_save_starters_are_classic_five_plus_fields():
     st = egg.egg_states(_prog(), owned=set())
     owned = {egg.hatch_name(i) for i, (s, _) in st.items() if s == "owned"}
     assert owned == {"Botamon", "Punimon", "Poyomon", "Yuramon", "Zurumon",
-                     "Deep Savers Egg", "Nightmare Soldiers Egg",
-                     "Wind Guardians Egg", "Metal Empire Egg",
-                     "Virus Busters Egg"}
+                     "Nature Spirits Egg", "Deep Savers Egg",
+                     "Nightmare Soldiers Egg", "Wind Guardians Egg",
+                     "Metal Empire Egg", "Virus Busters Egg"}
 
 
 def test_connection_gate_locks_then_opens():
@@ -116,18 +119,22 @@ def test_record_connection_counts_distinct_tamers():
     assert persistence.get_progress()["connections"] == 2
 
 
-def test_v401_save_migration():
-    """Indices from the shipped 84-egg builds translate by name; cut eggs fall
-    back; live ver6 pets grow past Bubbmon into Motimon."""
+def test_save_migration_across_bank_versions():
+    """Indices from .400/.401 (84-egg) and .402 (78-egg) banks translate by
+    name; still-cut eggs fall back; live Bubbmon pets stay Bubbmon."""
     by = _by_name()
     assert persistence._migrate_egg_index(1) == 1              # classic: fixed
     assert persistence._migrate_egg_index(50) == by["Corona Egg"]
     assert persistence._migrate_egg_index(83) == by["Zuba Egg"]
+    assert persistence._migrate_egg_index(67) == by["Nature Spirits Egg"]
     assert persistence._migrate_egg_index(56) == 8             # Vorvomon -> Mokumon egg
-    assert persistence._migrate_egg_index(79) == 1             # Version 6 -> Botamon egg
+    assert persistence._migrate_egg_index(79) == by["Nature Spirits Egg"]  # V6 fallback
+    # a .402 save: its Deep Savers index (54) shifts past the restored NSp
+    assert persistence._migrate_egg_index(54, persistence._V402_EGG_NAMES) \
+        == by["Deep Savers Egg"] == 55
     save = {"num": 1574, "line_id": "ver6", "egg_type": 74, "stage": "Fresh"}
     persistence._migrate_v401_save(save)
-    assert save["num"] == 19 and save["line_id"] == "choromon"
+    assert save["num"] == 1574 and save["line_id"] == "ver6"   # Bubbmon lives
     assert save["egg_type"] == by["Version 1 Egg"]
     # already-migrated saves must NOT re-translate
     again = dict(save)

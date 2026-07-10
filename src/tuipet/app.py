@@ -239,10 +239,10 @@ class TuiPetApp(App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("Egg quality pass: every digitama in the game now plays its real "
-                 "device animation -- settle, bobble, crack. The egg select lines "
-                 "up in device order (Ver.1-5, then the Pendulum fields), and town "
-                 "shops tease locked eggs with how to earn them. All killer, no filler.")
+    WHATS_NEW = ("Nature Spirits is BACK -- Bubbmon returned with his full sprite "
+                 "set, so the Pendulum 1 egg leads the field eggs again. And the "
+                 "DIGICORE evolves page now shows what is next at EVERY age (eggs "
+                 "tease their hatchling) instead of saying \"too young\".")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and

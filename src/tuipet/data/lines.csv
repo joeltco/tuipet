@@ -815,3 +815,20 @@ fusamon,Mega,466,1228,KO6 2+,23:00,MedievalGallantmon
 fusamon,Mega,1355,252,KO6 2+,23:00,Cthyllamon
 fusamon,Mega,346,270,KO6 2+,23:00,ZeedGarurumon
 fusamon,Mega,318,217,KO6 2+,23:00,Jijimon
+ver6,Fresh,1574,egg,TIME,20:00,Bubbmon
+ver6,InTraining,19,1574,TIME,21:00,Motimon
+ver6,Rookie,48,19,CM 0-3,21:00,Tentomon
+ver6,Rookie,49,19,CM 4+,21:00,Otamamon
+ver6,Champion,140,48,"CM 0-3, TR 48+",22:00,Kabuterimon
+ver6,Champion,141,48,"CM 4+, TR 5-31, OF 3+",22:00,Starmon
+ver6,Champion,113,48,"CM 0-3, TR 0-47",22:00,Tortamon
+ver6,Champion,120,48,"CM 4+, TR 32+, OF 3+",23:00,Kuwagamon
+ver6,Champion,142,48,"CM 4+, TR 0-4 | CM 4+, OF 0-2",22:00,Gekomon (SD roads folded)
+ver6,Champion,113,49,"CM 0-3, TR 48+",22:00,Tortamon (Otamamon road)
+ver6,Champion,120,49,"CM 4+, TR 8-31, OF 0-5",23:00,Kuwagamon (Otamamon road)
+ver6,Champion,125,49,"CM 0-3, TR 0-47",22:00,Monochromon
+ver6,Champion,159,49,"CM 4+, TR 32+, OF 6+",22:00,ShellNumemon (KaratsukiNumemon)
+ver6,Champion,142,49,CM 4+,22:00,"Gekomon (Otamamon road; catch-all, SD folded)"
+ver6,Ultimate,225,140;113;125,WIN 12/15,23:00,MegaKabuterimon (AtlurKabuterimon; canon dead end)
+ver6,Ultimate,200,142,WIN 12/15,23:00,ShogunGekomon (TonosamaGekomon; canon dead end)
+ver6,Ultimate,251,141;120;159,WIN 12/15,23:00,Tekkamon (canon dead end)

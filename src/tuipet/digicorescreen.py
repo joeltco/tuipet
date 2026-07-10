@@ -159,9 +159,23 @@ def _mins(s):
 def _evo_rows(pet):
     """The evolution line for the data book: (num, name, ready, unmet) per
     candidate, closest-first.  unmet counts the failing checklist gates
-    (evolution.requirement_report) -- the page shows it as distance-to-go."""
-    if pet.num == -1 or pet.stage in ("Egg", "Fresh"):
-        return "(too young)"
+    (evolution.requirement_report) -- the page shows it as distance-to-go.
+
+    Canon shows the chart at EVERY stage -- DVPet's drawEvolutionMenu never
+    gates on age, and setupDigicore counts hatching as the egg's own
+    evolution (the "(too young)" stonewall was a pre-line-engine tuipet
+    invention; Joel caught it 2026-07-10)."""
+    if pet.num == -1:
+        # an egg's next form is its hatchling; the multi-target mystery
+        # digitama keeps its surprise (name masked, like hidden_evo)
+        from . import egg as egg_mod
+        _, by = data.load_sprites()
+        targets = egg_mod.hatch_targets(getattr(pet, "egg_type", 0))
+        if not targets:
+            return "(final form)"
+        if len(targets) > 1:
+            return [(targets[0], "???", False, 0)]
+        return [(t, by.get(t, {}).get("name", "?"), False, 0) for t in targets]
     if lines.active(pet):
         # line pets: the line's own chart rows, in first-match order (the order
         # IS the information -- earlier rows win ties), with live unmet counts
@@ -495,7 +509,7 @@ class DigiCorePanel:
     def _evolves_scene(self, rows, dots):
         from rich.text import Text
         out = menu.header("DIGICORE  EVOLVES", dots)
-        if isinstance(rows, str):                      # "(too young)" / "(final form)"
+        if isinstance(rows, str):                      # "(final form)"
             out.append(f" {rows}\n", style=DIM)
             out.append_text(menu.blanks(8))
             out.append_text(menu.footer("←→ page    ESC close"))

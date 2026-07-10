@@ -188,13 +188,16 @@ def test_evolves_page_selects_and_opens_the_checklist():
 
 
 def test_evolves_page_edges():
+    # canon: the chart never gates on age -- an egg teases its hatchling
+    # (setupDigicore counts Egg->Fresh as an evolution; fixed 2026-07-10,
+    # the old "(too young)" stonewall was a tuipet invention)
     egg = Pet(num=-1, stage="Egg", attribute="None")
     egg.world_seconds = 600.0
     pan = DigiCorePanel(egg)
     while pan.pages[pan.i][0] != "EVOLVES":
         pan.key("right")
-    assert "(too young)" in pan.text().plain
-    assert pan.key("enter") is None                  # nothing to open
+    assert "(too young)" not in pan.text().plain
+    assert "YukimiBotamon" in pan.text().plain       # egg_type 0 hatchling
 
 
 def test_teaser_zooms_in_then_holds_a_still_silhouette():
@@ -410,3 +413,24 @@ def test_hidden_evolutions_mask_until_first_reached():
         rows = digicorescreen._evo_rows(p)
         named = {n: nm for n, nm, *_ in rows}
         assert named[hidden_t] == by[hidden_t]["name"]   # revealed for good
+
+
+def test_evolves_page_shows_next_form_at_every_age():
+    """Canon shows the chart at EVERY stage (DVPet drawEvolutionMenu never
+    gates on age; setupDigicore counts hatching as the egg\x27s evolution).
+    The "(too young)" stonewall was a tuipet invention -- Joel 2026-07-10."""
+    from tuipet.digicorescreen import _evo_rows
+    from tuipet import lines as _lines
+    egg_pet = Pet(num=-1, stage="Egg", attribute="None", egg_type=1)
+    rows = _evo_rows(egg_pet)
+    assert isinstance(rows, list) and rows, rows          # the hatchling shows
+    assert rows[0][0] in data.load_sprites()[1]
+    # the multi-target mystery digitama keeps its surprise
+    egg_pet.egg_type = 47
+    rows = _evo_rows(egg_pet)
+    assert isinstance(rows, list) and rows[0][1] == "???"
+    # a Fresh line pet sees its next form, not a stonewall
+    fresh = Pet(num=1411, name="Botamon", stage="Fresh", attribute="None")
+    fresh.line_id = "ver1"
+    rows = _evo_rows(fresh)
+    assert isinstance(rows, list) and rows, rows
