@@ -178,7 +178,7 @@ class EggSelectPanel:
             v = base + d
             x = CENTER + int(round((v - self.scroll) * SPACING))
             placements.append((self._frame(v, d == 0), x, False))
-        scene = render_scene(placements, COLS, ROWS, LCD_ON, LCD_BG, clip=grid.WINDOW)
+        scene = render_scene(placements, COLS, ROWS, LCD_ON, LCD_BG)
         out = menu.header("CHOOSE YOUR EGG", f"{self.i + 1}/{self.n}")
         out.append_text(scene)
         out.append("\n")                              # scene has no trailing newline

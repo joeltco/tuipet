@@ -229,3 +229,25 @@ def test_the_window_law(monkeypatch):
     buf = render.fill_buf(["11", "11"], 40, 24, xshift=16, clip=grid.WINDOW)
     lit = {(x, y) for y, row in enumerate(buf) for x, v in enumerate(row) if v}
     assert lit and all(x < grid.X1 for x, _ in lit)  # cut at the matrix edge
+
+
+def test_egg_carousel_is_never_window_clipped(monkeypatch):
+    """Joel 2026-07-12: the carousel got mangled by a blind clip.  Its canvas
+    is a 40x16 STRIP (ROWS=8), not the full LCD -- the 32x16 window rect
+    beheads every egg there.  The reel renders UNCLIPPED, exactly as built."""
+    from tuipet import eggselectscreen as es
+    from tuipet.pet import Pet
+    seen = {}
+    real = es.render_scene
+
+    def spy(placements, cols, rows, on, bg, **kw):
+        seen["clip"] = kw.get("clip")
+        seen["rows"] = rows
+        return real(placements, cols, rows, on, bg, **kw)
+
+    monkeypatch.setattr(es, "render_scene", spy)
+    p = Pet.new_egg(egg_type=1)
+    pan = es.EggSelectPanel(p)
+    pan.text()
+    assert seen["rows"] == 8                     # a strip, NOT the full LCD
+    assert seen["clip"] is None, "never window-clip the egg reel"

@@ -250,9 +250,8 @@ class TuiPetApp(App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("The sick mark now floats up at head height beside your mon, "
-                 "the way the real device draws it -- and a sick sleeper keeps "
-                 "its Zzz on top with the skull tucked underneath.")
+    WHATS_NEW = ("Hotfix: the egg carousel renders whole again (a bad clip "
+                 "was cutting the eggs).")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and
