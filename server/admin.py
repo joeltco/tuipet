@@ -34,7 +34,13 @@ async def _rpc(payload, timeout=8.0):
     import websockets
     async with websockets.connect(URI, open_timeout=timeout) as ws:
         await ws.send(json.dumps(dict(payload, t="admin", key=_key())))
-        return json.loads(await asyncio.wait_for(ws.recv(), timeout=timeout))
+        deadline = asyncio.get_event_loop().time() + timeout
+        while True:                       # the admin conn is a client too: skip the
+            left = deadline - asyncio.get_event_loop().time()   # broadcast echo of
+            raw = await asyncio.wait_for(ws.recv(), timeout=max(0.1, left))  # our own announce
+            r = json.loads(raw)
+            if r.get("t") in ("admin_ok", "error"):
+                return r
 
 
 def _fmt(rec):
