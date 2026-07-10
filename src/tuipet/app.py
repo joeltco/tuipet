@@ -250,9 +250,8 @@ class TuiPetApp(App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("The mood bubbles (sun, rain drip, dying) pop whole at head "
-                 "height again -- they were getting cut at the top of the play "
-                 "window.")
+    WHATS_NEW = ("Training's Hit!! banner is crisp again -- the sprite was "
+                 "decoded at the wrong scale (3x of a 4x asset) since day one.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and

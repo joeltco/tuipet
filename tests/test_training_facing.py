@@ -245,3 +245,12 @@ def test_punch_hit_banner_pops_inside_the_window(monkeypatch):
     assert gap, "the Hit!! banner must pop on the strike beat"
     assert all(grid.X0 <= x < grid.X1 and grid.TOP <= y < grid.FLOOR
                for x, y in seen["overlay"] if True)
+def test_hit_banner_is_the_native_4x_decode():
+    """trainHit.png is the ONE training asset authored at 4x -- the blanket
+    3x extraction mushed it to 17x6 (Joel 2026-07-12: 'out of resolution').
+    The vendored sprite is the exact 13x5 native decode; a blanket
+    re-extraction at F=3 would regress it."""
+    from tuipet import data
+    hit = data.load_effects()["train_hit"][0]
+    assert (max(len(r) for r in hit), len(hit)) == (13, 5)
+    assert sum(r.count("1") for r in hit) == 30
