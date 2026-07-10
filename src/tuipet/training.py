@@ -524,27 +524,30 @@ class TrainingPanel:
             # right edge (Devimon spanned x26..41 on the 40px LCD) and the
             # HIT!! label sat at y0 flush on the top border
             punching = self._strike_t > 0
-            bag = _fit_cell(E.get("punching_bag", [None])[0] or [])
-            bag_x = GRID_X0 + 1 - (1 if punching else 0)      # rocks toward (never OUT of) the window
-            if bag:
-                placements.append((bag, bag_x, False))
-            # the pet throws the punches from the window's right edge (LAW
-            # 2026-07-11: every canon sprite lives inside the 32x16)
-            pose = self._pose_now(1 if (self.frame_i // 2) % 2 else 0)  # idle bob between taps
-            pf = _crop(self._frame(rec, pose))
-            pw_ = max(len(r) for r in pf)
-            px = GRID_X0 + GRID_W - pw_ - (2 if punching else 0)   # LUNGE 2px into the punch
-            overlay.extend(_blit(pf, px, BASE_Y - len(pf)))   # grounded; faces left natively
-            if punching:
-                # the Hit!! banner (canon hitLabel) POPS OVER the scene for the
-                # strike beat -- a momentary label, the same class as the
-                # battle strobe, centred in the window near its top (Joel
-                # 2026-07-12: dropping it read as a broken render)
-                hit = E.get("train_hit", [None])[0]
-                if hit:
-                    hw = max(len(r) for r in hit)
-                    overlay.extend(_blit(hit, GRID_X0 + (GRID_W - hw) // 2,
-                                         BAND_TOP + 1))
+            hit = E.get("train_hit", [None])[0]
+            if punching and hit:
+                # the Hit!! banner is a FULL-WINDOW 32x16 banner, staged
+                # exactly like the battle start banner (Joel 2026-07-12):
+                # the scene YIELDS -- bag and pet step offstage for the
+                # strike beat and the banner owns the window.  The native
+                # 13x5 hitLabel decode at a 2x integer upscale (mechanical,
+                # dot-crisp) centred in the band.
+                big = ["".join(c * 2 for c in row) for row in hit
+                       for _ in range(2)]
+                bw, bh = max(len(r) for r in big), len(big)
+                overlay = _blit(big, GRID_X0 + (GRID_W - bw) // 2,
+                                BAND_TOP + (BASE_Y - BAND_TOP - bh) // 2)
+            else:
+                bag = _fit_cell(E.get("punching_bag", [None])[0] or [])
+                if bag:
+                    placements.append((bag, GRID_X0 + 1, False))
+                # the pet throws the punches from the window's right edge (LAW
+                # 2026-07-11: every canon sprite lives inside the 32x16)
+                pose = self._pose_now(1 if (self.frame_i // 2) % 2 else 0)  # idle bob between taps
+                pf = _crop(self._frame(rec, pose))
+                pw_ = max(len(r) for r in pf)
+                px = GRID_X0 + GRID_W - pw_
+                overlay.extend(_blit(pf, px, BASE_Y - len(pf)))   # grounded; faces left natively
         elif gk == "virus":                                 # DVPet drawVirusPre: pet AND bag HIDDEN
             # The real DVPet trainBar sprite is a 32-wide TRACK box (cols 0..31) + a separate
             # goal compartment (cols 32..37) == 38 wide.  Crop to the 32-wide track box so it
@@ -782,7 +785,8 @@ class TrainingPanel:
         overlay, placements, note = [], [], ""
         if m == "hit":                                          # fullscreen impact strobe, nothing else
             ex = _EXPLODE[fr["f"]]
-            ox, oy = max(0, (COLS - len(ex[0])) // 2), max(0, (ph - len(ex)) // 2)
+            ox = GRID_X0 + max(0, (GRID_W - len(ex[0])) // 2)   # the 32x16 flash fills
+            oy = BAND_TOP + max(0, (BASE_Y - BAND_TOP - len(ex)) // 2)   # the window exactly
             overlay = _blit(ex, ox, oy)
             note = "HIT!"
         elif m in ("windup", "fire_out", "miss"):               # the PET is on screen (right, faces left)

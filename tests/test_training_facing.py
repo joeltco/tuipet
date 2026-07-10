@@ -214,10 +214,11 @@ def test_data_block_flashes_success_pose():
     assert pan.text().markup != win, "the block tell must differ from plain IDLE"
 
 
-def test_punch_hit_banner_pops_inside_the_window(monkeypatch):
-    """The Hit!! banner is BACK (Joel 2026-07-12: dropping it read as a broken
-    render): on the strike beat it pops over the scene, centred in the window
-    near its top -- its banner-only columns (the bag/mon gap) light up."""
+def test_punch_hit_banner_takes_over_the_window(monkeypatch):
+    """Joel 2026-07-12: the Hit!! banner is a FULL-WINDOW 32x16 banner,
+    staged like the battle start banner -- on the strike beat the scene
+    YIELDS (no bag, no pet) and the 2x-upscaled banner owns the window;
+    between taps the bag/pet scene is back and the banner is gone."""
     from tuipet import training, grid
     from tuipet.training import TrainingPanel, GAMES
     from tuipet.pet import Pet
@@ -225,6 +226,7 @@ def test_punch_hit_banner_pops_inside_the_window(monkeypatch):
     real = training.render_scene
 
     def spy(placements, *a, **kw):
+        seen["placements"] = list(placements)
         seen["overlay"] = list(kw.get("overlay") or [])
         return real(placements, *a, **kw)
 
@@ -236,15 +238,19 @@ def test_punch_hit_banner_pops_inside_the_window(monkeypatch):
     pan._start_game()
     pan._strike_t = 0
     pan.text()
-    gap = [pt for pt in seen["overlay"] if 11 <= pt[0] <= 17 and 7 <= pt[1] <= 12]
-    assert not gap                                   # idle: the gap is empty
+    assert seen["placements"], "between taps: the bag is on stage"
+    idle_ov = set(seen["overlay"])
     pan._strike_t = 3
     pan._strike_pose = 6
     pan.text()
-    gap = [pt for pt in seen["overlay"] if 11 <= pt[0] <= 17 and 7 <= pt[1] <= 12]
-    assert gap, "the Hit!! banner must pop on the strike beat"
+    assert not seen["placements"], "strike beat: the scene yields"
+    ov = seen["overlay"]
+    assert ov and set(ov) != idle_ov
     assert all(grid.X0 <= x < grid.X1 and grid.TOP <= y < grid.FLOOR
-               for x, y in seen["overlay"] if True)
+               for x, y in ov)
+    w = max(x for x, _ in ov) - min(x for x, _ in ov) + 1
+    h = max(y for _, y in ov) - min(y for _, y in ov) + 1
+    assert (w, h) == (26, 10), (w, h)          # the 2x banner fills the band
 def test_hit_banner_is_the_native_4x_decode():
     """trainHit.png is the ONE training asset authored at 4x -- the blanket
     3x extraction mushed it to 17x6 (Joel 2026-07-12: 'out of resolution').
@@ -254,3 +260,49 @@ def test_hit_banner_is_the_native_4x_decode():
     hit = data.load_effects()["train_hit"][0]
     assert (max(len(r) for r in hit), len(hit)) == (13, 5)
     assert sum(r.count("1") for r in hit) == 30
+def test_hit_explosion_is_the_sourced_32x16_full_window_flash(monkeypatch):
+    """Joel 2026-07-12: the orb-impact explosion is a 32x16 banner-class
+    flash, like the battle start banner.  It was: commit 852e663 sourced
+    hit_explosion from DMU at 32x16 -- the invented-art revert (3d7a6af)
+    put back WRONG 30x18/22x12 frames for this one key, undersized AND
+    clipped (18 > the 16px band).  Pin the sourced frames and that both
+    collision paths strobe them alone, filling the window exactly."""
+    from tuipet import training, grid
+    from tuipet.training import TrainingPanel, GAMES, EXPLODE_FRAMES, _EXPLODE
+    from tuipet.pet import Pet
+    assert [(max(len(r) for r in f), len(f)) for f in _EXPLODE] \
+        == [(32, 16), (32, 16)]
+    seen = {}
+    real = training.render_scene
+
+    def spy(placements, *a, **kw):
+        seen["placements"] = list(placements)
+        seen["overlay"] = list(kw.get("overlay") or [])
+        return real(placements, *a, **kw)
+
+    monkeypatch.setattr(training, "render_scene", spy)
+    p = Pet(num=100, stage="Champion", attribute="Vaccine", obedience=500)
+    p.compliance = True
+
+    def full_window():
+        xs = [x for x, _ in seen["overlay"]]
+        ys = [y for _, y in seen["overlay"]]
+        return (min(xs), max(xs), min(ys), max(ys)) \
+            == (grid.X0, grid.X1 - 1, grid.TOP, grid.FLOOR - 1)
+
+    pan = TrainingPanel(p)                       # data drill collision
+    pan.gi = next(i for i, g in enumerate(GAMES) if g[0] == "data")
+    pan._start_game()
+    pan.strobe_t = EXPLODE_FRAMES
+    pan.text()
+    assert full_window()
+    pan2 = TrainingPanel(p)                      # strike volley 'hit' beat
+    pan2.gi = next(i for i, g in enumerate(GAMES) if g[0] == "hp")
+    pan2._start_game()
+    pan2.success = True
+    pan2._build_strike()
+    pan2.phase = "strike"
+    pan2.si = next(i for i, fr in enumerate(pan2.strike_tl)
+                   if fr.get("m") == "hit")
+    pan2.text()
+    assert not seen["placements"] and full_window()
