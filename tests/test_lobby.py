@@ -639,3 +639,91 @@ def test_chat_input_buffer_is_capped():
     for _ in range(lobbyscreen.CHAT_MAX + 200):
         pan._edit("x")
     assert len(pan.buf) == lobbyscreen.CHAT_MAX
+
+
+# ---- the folding player box + persistent DM threads (Joel 2026-07-10) -------
+
+def _room(n=3):
+    s = LobbyState()
+    s.connected = True
+    s.me_id, s.me_name = 1, "joel"
+    s.roster = [{"id": 1, "name": "joel", "pet": {}, "live": True}]
+    for i in range(2, n + 2):
+        s.roster.append({"id": i, "name": f"p{i}", "pet": {}, "live": True})
+    return s
+
+
+def test_right_folds_the_player_box_and_chat_widens():
+    s = _room()
+    s.chat.append(("p2", "x" * 30))              # wraps in the 25-col pane
+    pan = _panel(s)
+    assert "│" in pan.text().plain               # the divider = the box is up
+    assert "x" * 30 not in pan.text().plain      # long line wrapped
+    pan.key("right")                             # fold
+    txt = pan.text().plain
+    assert "│" not in txt                        # box (and divider) gone
+    assert "x" * 30 in txt                       # chat re-wraps at full width
+    assert ">p2" not in txt                      # no roster cursor row
+    pan.key("left")                              # bring it back
+    txt = pan.text().plain
+    assert "│" in txt and ">p2" in txt
+
+
+def test_folded_arrows_scroll_the_chat():
+    s = _room()
+    for i in range(20):
+        s.chat.append(("p2", f"line {i}"))
+    pan = _panel(s)
+    pan.key("down")
+    assert pan.sel == 1 and pan.scroll == 0      # box up: arrows pick players
+    pan.key("right")                             # fold
+    pan.key("up"); pan.key("up")
+    assert pan.scroll == 2                       # folded: arrows scroll the log
+    assert "▲2 back" in pan.text().plain
+    assert "line 19" not in pan.text().plain     # the live tail scrolled away
+    pan.key("down")
+    assert pan.scroll == 1
+    assert pan.sel == 1                          # the roster pick held its place
+    pan.key("escape")
+    assert pan.scroll == 0                       # Esc still snaps back to live
+    pan.key("enter")
+    assert pan.action_for is None                # no acting on an unseen pick
+    pan.key("left")                              # box back up
+    pan.key("down")
+    assert pan.sel == 2                          # arrows drive the roster again
+
+
+def test_folded_lines_never_overflow_the_box():
+    s = _room()
+    s.chat.append(("p2", "y" * 120))
+    pan = _panel(s)
+    pan.key("right")
+    w = lobbyscreen.CHATW + lobbyscreen.ROSTW + 1
+    for ln in pan.text().plain.split("\n"):
+        assert len(ln) <= w, repr(ln)
+
+
+def test_dm_threads_survive_leaving_the_pm_and_the_lobby():
+    """Joel 2026-07-10: messages STAY after leaving a PM -- the thread and its
+    unread badges persist on Esc (thread + lobby) and reload on reconnect."""
+    from tuipet import persistence
+    s = _room(1)
+    s.roster[1]["name"] = "mika"
+    s.dms["mika"] = [("mika", "hey"), ("joel", "yo")]
+    s.unread.add("mika")
+    pan = _panel(s)
+    pan.key("enter"); pan.key("v")               # open the thread (reads it)
+    pan.key("escape")                            # leave the PM -> saved
+    dms, unread = persistence.get_dms()
+    assert dms["mika"] == [("mika", "hey"), ("joel", "yo")]
+    assert "mika" not in unread                  # read badge stuck
+    s.dms["mika"].append(("mika", "one more"))
+    s.unread.add("mika")
+    pan.key("escape")                            # leave the LOBBY -> saved too
+    dms, unread = persistence.get_dms()
+    assert dms["mika"][-1] == ("mika", "one more") and "mika" in unread
+    # a fresh session's connect path reloads the conversation
+    s2 = _room(1)
+    pan2 = _panel(s2)
+    assert s2.dms["mika"][-1] == ("mika", "one more")
+    assert "mika" in s2.unread

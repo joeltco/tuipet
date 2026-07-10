@@ -239,9 +239,10 @@ class TuiPetApp(App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("The dev can speak now: watch for 📢 server announcements -- they "
-                 "land in the lobby chat and flash on your home screen, so news "
-                 "like events, fixes and downtime reaches you in the moment.")
+    WHATS_NEW = ("Lobby comfort pass: press → to fold the player box away and give "
+                 "the chat the whole screen (↑↓ then scroll the log; ← brings the "
+                 "box back) -- and your private message threads now SURVIVE leaving: "
+                 "close a PM or the lobby and the whole conversation is still there.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and

@@ -129,6 +129,25 @@ def set_blocked(names):
     save_settings(d)
 
 
+DM_KEEP = 50           # persisted tail per DM thread (the live cap is net.CHAT_CAP)
+
+
+def get_dms():
+    """Persisted lobby DM threads -> ({peer: [(from, text), ...]}, unread set).
+    Conversations survive leaving the thread/lobby (Joel 2026-07-10)."""
+    d = load_settings()
+    dms = {p: [tuple(m[:2]) for m in v if isinstance(m, (list, tuple)) and len(m) >= 2]
+           for p, v in (d.get("dms") or {}).items()}
+    return dms, set(d.get("dm_unread") or [])
+
+
+def save_dms(dms, unread):
+    d = load_settings()
+    d["dms"] = {p: [list(m) for m in v[-DM_KEEP:]] for p, v in dms.items() if v}
+    d["dm_unread"] = sorted(n for n in unread if n in d["dms"])
+    save_settings(d)
+
+
 # --- cross-generation egg-unlock progress (DVPet eggUnlock.csv signals) -----------
 # These outlive any single pet and feed egg.evaluate(): permanent milestones (album,
 # wins, max generation/stage, maps cleared, tournament trophies, X-Antibody ever) plus

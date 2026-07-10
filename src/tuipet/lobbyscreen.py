@@ -131,6 +131,8 @@ class LobbyPanel:
         self.buf = ""
         self.sel = 0
         self.scroll = 0                # chat scrollback: lines back from live
+        self.rost_hidden = False       # → folds the player box (chat takes the
+        #                                full width, ↑↓ scroll the log); ← restores
         self.action_for = None
         self.pm_to = None              # (id, name): the input line is a PM compose
         self.invite_prompt = None
@@ -173,6 +175,13 @@ class LobbyPanel:
         self.state = self.client.state
         from . import persistence
         self.state.blocked = persistence.get_blocked()
+        # DM threads + unread badges reload from the last session -- leaving a
+        # PM (or the lobby) never loses the conversation (Joel 2026-07-10).
+        # Seed-only merge: anything already live in this state wins.
+        saved_dms, saved_unread = persistence.get_dms()
+        for peer, thread in saved_dms.items():
+            self.state.dms.setdefault(peer, thread)
+        self.state.unread |= saved_unread
         self.phase = "lobby"
         self.status = "Connecting…"
 
@@ -637,10 +646,17 @@ class LobbyPanel:
             self._return_to_lobby("Fusion cancelled.")
         return None
 
+    def _save_dms(self):
+        """Persist the DM threads + unread badges (leaving must not lose them)."""
+        if self.state is not None:
+            from . import persistence
+            persistence.save_dms(self.state.dms, self.state.unread)
+
     def _key_dm(self, k):
         """Private thread with one peer: type + Enter sends, Esc back to the lobby."""
         if k == "escape":
             self.phase, self.buf = "lobby", ""
+            self._save_dms()                   # the conversation stays
             return None
         if k == "enter":
             if self.buf.strip() and self.dm_peer and self.client:
@@ -711,6 +727,7 @@ class LobbyPanel:
             elif k in ("v", "V"):
                 self.phase, self.dm_peer, self.buf = "dm", (pid, pname), ""
                 self.state.unread.discard(pname)
+                self._save_dms()               # the read badge sticks
                 self.action_for = None
             elif k in ("x", "X"):
                 from . import persistence
@@ -738,6 +755,7 @@ class LobbyPanel:
                 self.pm_to, self.buf = None, ""
                 self.status = "PM cancelled."
                 return None
+            self._save_dms()                   # leaving the lobby keeps the threads
             return ("done", None)
         if k == "pageup":
             # chat scrollback (polish 2026-07-07): CHAT_CAP lines of history
@@ -747,10 +765,27 @@ class LobbyPanel:
         if k == "pagedown":
             self.scroll = max(0, self.scroll - (BODY - 1))
             return None
+        if k == "right" and not self.rost_hidden:
+            # fold the player box: the chat gets the full width (Joel 2026-07-10)
+            self.rost_hidden = True
+            self.status = "↑↓ scroll · ← player box · Esc leave"
+            return None
+        if k == "left" and self.rost_hidden:
+            self.rost_hidden = False
+            self.status = "↑↓ pick · Enter chat/act · Esc leave"
+            return None
         if k == "up":
-            self.sel = max(0, self.sel - 1); return None
+            if self.rost_hidden:
+                self.scroll += 1               # older; _text_lobby clamps to the log
+            else:
+                self.sel = max(0, self.sel - 1)
+            return None
         if k == "down":
-            self.sel = min(max(0, len(self._others()) - 1), self.sel + 1); return None
+            if self.rost_hidden:
+                self.scroll = max(0, self.scroll - 1)
+            else:
+                self.sel = min(max(0, len(self._others()) - 1), self.sel + 1)
+            return None
         if k == "enter":
             self.scroll = 0                    # speaking snaps the view live
             if self.pm_to is not None:
@@ -762,7 +797,7 @@ class LobbyPanel:
                 self.client.chat(self.buf.strip()); self.buf = ""
             else:
                 others = self._others()
-                if others:
+                if others and not self.rost_hidden:   # no acting on an unseen pick
                     p = others[min(self.sel, len(others) - 1)]
                     self.action_for = (p["id"], p["name"], p.get("live", True))
             return None
@@ -872,6 +907,10 @@ class LobbyPanel:
             t.append("  attack: [1]Vaccine [2]Data [3]Virus", style=INK_B)
         return t
 
+    def _chat_w(self):
+        """The chat column's width: the folded player box cedes its columns."""
+        return CHATW + ROSTW + 1 if self.rost_hidden else CHATW
+
     def _chat_rows(self):
         """The wrapped history as (line, style) rows, oldest first -- one
         style per MESSAGE (chat polish 2026-07-07): your own lines dim (you
@@ -880,17 +919,18 @@ class LobbyPanel:
         long message reads as ONE message, not three."""
         s = self.state
         me = (s.me_name or "") if s else ""
+        cw = self._chat_w()
         rows = []
         for nm, tx in (s.chat if s else []):
             if not nm:                                     # join/leave notice
-                sty, parts = DIM, _wrap(f"· {tx}", CHATW - 1)
+                sty, parts = DIM, _wrap(f"· {tx}", cw - 1)
             else:
                 pm = str(nm).startswith("✉")
                 mine = bool(me) and (nm == me or str(nm).startswith("✉→"))
                 mention = bool(me) and me.lower() in str(tx).lower()
                 # mine first: my own echo (chat or ✉→ PM) always reads dim
                 sty = DIM if mine else (INK_B if (pm or mention) else INK)
-                parts = _wrap(f"{nm}: {tx}", CHATW - 1)
+                parts = _wrap(f"{nm}: {tx}", cw - 1)
             rows.append((parts[0], sty))
             rows.extend((" " + ln, sty) for ln in parts[1:])
         return rows
@@ -901,21 +941,28 @@ class LobbyPanel:
         online = len(s.roster) if s else 0
         me = (s.me_name if s and s.me_name else None) or "connecting…"
         t = Text()
-        t.append(_fit(f"you: {me}", CHATW), style=INK_B)     # confirm your identity
-        t.append("│", style=DIM)
+        cw = self._chat_w()
         rows = self._chat_rows()
         self.scroll = max(0, min(self.scroll, max(0, len(rows) - BODY)))
         right = (f"▲{self.scroll} back" if self.scroll else f"{online} on")
+        # header: identity + the live/scroll marker (folded: no divider column)
+        t.append(_fit(f"you: {me}", cw - ROSTW if self.rost_hidden else CHATW),
+                 style=INK_B)                                # confirm your identity
+        if not self.rost_hidden:
+            t.append("│", style=DIM)
         t.append(right.rjust(ROSTW)[:ROSTW] + "\n", style=INK_B)
         end = len(rows) - self.scroll
         view = rows[max(0, end - BODY):end]
         view = [("", INK)] * (BODY - len(view)) + view
         if not rows:                                       # the empty room
-            view[BODY // 2] = ("— say hi, the room hears you —"[:CHATW], DIM)
+            view[BODY // 2] = ("— say hi, the room hears you —"[:cw], DIM)
         sel = min(self.sel, len(others) - 1) if others else 0
         rlo = max(0, min(sel - BODY // 2, len(others) - BODY)) if len(others) > BODY else 0
         for i in range(BODY):
-            t.append(_fit(view[i][0], CHATW), style=view[i][1])
+            t.append(_fit(view[i][0], cw), style=view[i][1])
+            if self.rost_hidden:                 # the box is folded: chat owns the row
+                t.append("\n")
+                continue
             t.append("│", style=DIM)
             ridx = rlo + i
             if ridx < len(others):
@@ -972,7 +1019,10 @@ class LobbyPanel:
             t.append("▲ older — PgUp/PgDn · Esc back to live"[:w], style=DIM)
         else:
             line = self.status
-            if others and line.startswith("↑↓ pick"):
+            if self.rost_hidden and line.startswith("↑↓ pick"):
+                # the box is folded: ↑↓ drive the log now, not the roster pick
+                line = "↑↓ scroll · ← player box · Esc leave"
+            elif others and line.startswith("↑↓ pick"):
                 p = others[sel]
                 if p.get("live", True):
                     blurb = self._pet_of(p["id"])
