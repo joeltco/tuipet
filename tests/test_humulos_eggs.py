@@ -19,25 +19,73 @@ def _by_name():
     return {egg.hatch_name(i): i for i in range(egg.count())}
 
 
-def test_bank_is_79_and_every_egg_is_gated():
+def test_bank_is_68_and_every_egg_is_gated():
     n = egg.count()
-    assert n == 79
+    assert n == 68
     rules = data.load_egg_unlock()
     for i in range(n):
         assert i in rules or i in egg._WIN_EGGS, i
+    # the two ??? mystery eggs sit at the end of the classic block
+    assert [i for i in range(n) if egg.hatch_name(i) == "???"] \
+        == sorted(egg._WIN_EGGS) == [41, 42]
 
 
-def test_frameless_content_is_gone():
+def test_frameless_and_dominated_content_is_gone():
     names = {egg.hatch_name(i) for i in range(egg.count())}
+    # frameless (no official animation exists anywhere)
     assert not (names & {"Version 6 Egg", "Nightmare Soldiers Ver.20th Egg",
                          "Digitama X", "Digitama X2", "Vorvomon Egg"})
+    # dominated duplicates (same art + same baby on a strictly easier path)
+    assert not (names & {"Version 1 Egg", "Version 2 Egg", "Version 3 Egg",
+                         "Version 4 Egg", "Version 5 Egg", "Ludo Egg",
+                         "YukimiBotamon", "Pichimon", "Mokumon", "Nyokimon",
+                         "Choromon"})
     # Bubbmon RETURNED with a real DU state strip (.403) -- Nature Spirits
-    # lives again and the mystery egg knows him
+    # lives again and the any-root mystery egg knows him
     _, by = data.load_sprites()
     assert len(by[1574]["frames"]) == 11
     assert len({"".join(f) for f in by[1574]["frames"]}) >= 5
     assert lines.load_lines()["ver6"]["root"] == 1574
-    assert 1574 in set(egg.hatch_targets(47))
+    assert 1574 in set(egg.hatch_targets(max(egg._WIN_EGGS)))
+
+
+def test_no_egg_is_strictly_dominated():
+    """The audit invariant: no two eggs share art AND baby where one is a
+    free starter / free same-gate while the other merely charges bits."""
+    rules = data.load_egg_unlock()
+    byroot = {}
+    for i in range(egg.count()):
+        if i in egg._WIN_EGGS:
+            continue
+        byroot.setdefault(tuple(egg.hatch_targets(i)), []).append(i)
+    for idxs in byroot.values():
+        for a in idxs:
+            for b in idxs:
+                if a == b:
+                    continue
+                fa = "".join("".join(f) for f in egg.frames(a))
+                fb = "".join("".join(f) for f in egg.frames(b))
+                if fa != fb:
+                    continue
+                ra, rb = rules[a], rules[b]
+                achieve = ("wins", "album_n", "mega", "connections",
+                           "gen", "map", "tourney")
+                plain_buy = rb["price"] and not any(rb[k] for k in achieve) \
+                    and not rb["xanti"] and not rb["stage"]
+                assert not (ra["start"] and plain_buy), \
+                    (egg.hatch_name(a), egg.hatch_name(b))
+                assert not (ra["stage"] and ra["stage"] == rb["stage"]
+                            and not ra["price"] and rb["price"]), \
+                    (egg.hatch_name(a), egg.hatch_name(b))
+
+
+def test_win_ladder_is_staggered():
+    """Each new win-gated egg gets its own moment: 25/40/50/60/75/100
+    (50 belongs to classic Sakumon + the first ??? egg; 100 to the second)."""
+    rules = data.load_egg_unlock()
+    wins = sorted((r["wins"], r["name"]) for r in rules.values() if r.get("wins"))
+    assert wins == [(25, "V Egg"), (40, "Hack Egg"), (50, "Sakumon"),
+                    (60, "Digitama X3"), (75, "Zuba Egg")]
 
 
 def test_every_egg_animates_with_real_frames():
@@ -54,21 +102,14 @@ def test_every_egg_animates_with_real_frames():
 
 def test_new_eggs_hatch_line_roots_in_device_order():
     roots = {l["root"] for l in lines.load_lines().values()}
-    for i in range(49, 79):
+    for i in range(44, 68):
         for t in egg.hatch_targets(i):
             assert t in roots, (i, t)
-    order = [egg.hatch_name(i) for i in range(49, 79)]
-    assert order[:5] == ["Version 1 Egg", "Version 2 Egg", "Version 3 Egg",
-                         "Version 4 Egg", "Version 5 Egg"]
-    assert order[5:11] == ["Nature Spirits Egg", "Deep Savers Egg",
-                           "Nightmare Soldiers Egg", "Wind Guardians Egg",
-                           "Metal Empire Egg", "Virus Busters Egg"]  # Pen 1-5+Zero
+    order = [egg.hatch_name(i) for i in range(44, 68)]
+    assert order[:6] == ["Nature Spirits Egg", "Deep Savers Egg",
+                         "Nightmare Soldiers Egg", "Wind Guardians Egg",
+                         "Metal Empire Egg", "Virus Busters Egg"]  # Pen 1-5+Zero
     assert order[-2:] == ["Digitama X3", "Kera Digitama"]
-    # distinct art among the 30 new eggs except the design-true shares:
-    # Terrier/Lop/X3 (Cocomon digitama) and Draco/Slayerdra (Petitmon);
-    # Nature Spirits shares with CLASSIC Babumon, outside this set
-    seen = {"".join(egg.frames(i)[0]) for i in range(49, 79)}
-    assert len(seen) == 27
 
 
 def test_fresh_save_starters_are_classic_five_plus_fields():
@@ -89,7 +130,6 @@ def test_connection_gate_locks_then_opens():
 
 def test_progression_tiers_read_the_right_signals():
     by = _by_name()
-    assert egg.egg_state(by["Version 1 Egg"], _prog(), set()) == ("buyable", 750)
     assert egg.egg_state(by["Virus Busters Ver. 20th Egg"], _prog(), set())[0] == "locked"
     assert egg.egg_state(by["Virus Busters Ver. 20th Egg"],
                          _prog(max_gen=5), set()) == ("buyable", 2500)
@@ -98,7 +138,8 @@ def test_progression_tiers_read_the_right_signals():
     assert egg.egg_state(by["Digitama X3"], _prog(xanti_ever=True), set())[0] == "locked"
     assert egg.egg_state(by["Digitama X3"],
                          _prog(xanti_ever=True, wins=60), set()) == ("owned", 0)
-    assert egg.egg_state(by["Ludo Egg"], _prog(max_stage=4), set()) == ("buyable", 1500)
+    assert egg.egg_state(by["Hack Egg"], _prog(wins=40), set()) == ("owned", 0)
+    assert egg.egg_state(by["Zuba Egg"], _prog(wins=75), set()) == ("owned", 0)
     # lineage eggs are TEMPORARY, following the previous generation
     assert egg.egg_state(by["Ryuda Egg"],
                          _prog(last_field="DragonsRoar"), set()) == ("temp", 0)
@@ -120,26 +161,49 @@ def test_record_connection_counts_distinct_tamers():
 
 
 def test_save_migration_across_bank_versions():
-    """Indices from .400/.401 (84-egg) and .402 (78-egg) banks translate by
-    name; still-cut eggs fall back; live Bubbmon pets stay Bubbmon."""
+    """Indices from every shipped bank (.400/.401 84-egg, .402 78, .403 79)
+    translate by (name, occurrence); still-cut eggs fall back ONLY for
+    incubation; live Bubbmon pets stay Bubbmon."""
     by = _by_name()
-    assert persistence._migrate_egg_index(1) == 1              # classic: fixed
+    assert persistence._migrate_egg_index(1) == by["Botamon"]
+    assert persistence._migrate_egg_index(34) == by["Sakumon"]  # classic shifts -5
     assert persistence._migrate_egg_index(50) == by["Corona Egg"]
     assert persistence._migrate_egg_index(83) == by["Zuba Egg"]
     assert persistence._migrate_egg_index(67) == by["Nature Spirits Egg"]
-    assert persistence._migrate_egg_index(56) == 8             # Vorvomon -> Mokumon egg
-    assert persistence._migrate_egg_index(79) == by["Nature Spirits Egg"]  # V6 fallback
-    # a .402 save: its Deep Savers index (54) shifts past the restored NSp
-    assert persistence._migrate_egg_index(54, persistence._V402_EGG_NAMES) \
-        == by["Deep Savers Egg"] == 55
-    save = {"num": 1574, "line_id": "ver6", "egg_type": 74, "stage": "Fresh"}
+    # the twin ??? eggs translate by occurrence, not name collision
+    assert persistence._migrate_egg_index(46) == 41
+    assert persistence._migrate_egg_index(47) == 42
+    # incubation fallbacks: cut eggs -> the surviving egg of the same baby
+    assert persistence._migrate_egg_index(56) == by["Nightmare Soldiers Egg"]  # Vorvomon
+    assert persistence._migrate_egg_index(79) == by["Nature Spirits Egg"]      # Version 6
+    assert persistence._migrate_egg_index(7) == by["Deep Savers Egg"]          # Pichimon lic.
+    # a .403 save (v3): Ludo at 71 falls back to Cotsucomon's egg
+    assert persistence._migrate_egg_index(71, persistence._V403_FULL) \
+        == by["Cotsucomon"]
+    save = {"num": 1574, "line_id": "ver6", "egg_type": 74, "stage": "Fresh",
+            "egg_order_v": None}
     persistence._migrate_v401_save(save)
     assert save["num"] == 1574 and save["line_id"] == "ver6"   # Bubbmon lives
-    assert save["egg_type"] == by["Version 1 Egg"]
-    # already-migrated saves must NOT re-translate
+    assert save["egg_type"] == by["Botamon"]                   # Version 1 fallback
     again = dict(save)
-    persistence._migrate_v401_save(again)
+    persistence._migrate_v401_save(again)                      # no re-translation
     assert again["egg_type"] == save["egg_type"]
+
+
+def test_owned_eggs_never_gain_cut_or_temp_eggs():
+    """The .403 Puttimon-as-starter bug: owning a cut egg must NOT become
+    owning a different egg -- ownership drops cut eggs (no fallback), and the
+    sanity pass strips temp eggs however they snuck in."""
+    by = _by_name()
+    d = {"egg_order_v": None,
+         "progress": {"eggs_owned": [1, 53, 54]}}   # Botamon + X + X2 on .401
+    assert persistence._migrate_v401_settings(d)
+    assert d["progress"]["eggs_owned"] == [by["Botamon"]]   # cut eggs DROP
+    d3 = {"egg_order_v": 3,
+          "progress": {"eggs_owned": [17, 11, 6]}}  # v3 leak: Puttimon/Kuramon temp
+    assert persistence._migrate_v401_settings(d3)
+    assert d3["progress"]["eggs_owned"] == [by["Babumon"]]  # license kept, temps purged
+    assert d3["egg_order_v"] == persistence.EGG_ORDER_V
 
 
 def test_every_egg_renders_a_shop_icon():

@@ -266,7 +266,7 @@ def test_time_rows_pass_with_zero_counters():
 # ---- Pet wiring ----------------------------------------------------------------
 
 def _line_pet():
-    p = Pet.new_egg(egg_type=1)          # the Botamon egg
+    p = Pet.new_egg(egg_type=0)          # the Botamon egg
     p._hatch_into_fresh()
     return p
 

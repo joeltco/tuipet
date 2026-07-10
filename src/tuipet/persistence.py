@@ -50,16 +50,30 @@ def load_settings(path=None):
 
 
 def save_settings(d, path=None):
+    # every write stamps the CURRENT egg-bank version -- without it, a
+    # settings file created THIS session would look like a pre-migration
+    # (.400/.401) file on the next load and get wrongly re-translated
+    d["egg_order_v"] = EGG_ORDER_V
     _atomic_write_json(path or SETTINGS_PATH, d, keep_bak=True)
 
 
-# --- egg-bank index migration (frames-or-cut pass + NSp restore, 2026-07-10) -
-# .400/.401 shipped an 84-egg bank; .402 cut six frameless digitama and
-# reordered; .403 restored Nature Spirits + Bubbmon (DU frames found).  Saved
-# egg INDICES translate by NAME through whichever bank they were written
-# against.  Classic 0-48 never moves.
-EGG_ORDER_V = 3
-_V401_EGG_NAMES = [                     # bank order as shipped in .400/.401
+# --- egg-bank index migration (2026-07-10 egg saga) ---------------------------
+# .400/.401 shipped an 84-egg bank; .402 cut/reordered to 78; .403 restored
+# Nature Spirits (79); .404's dominance audit cut 11 duplicate eggs -- FIVE of
+# them classics, so the classic block moves too.  Saved egg INDICES translate
+# by (name, occurrence) through the FULL bank order of whichever build wrote
+# them (occurrence handles the twin "???" mystery eggs).
+EGG_ORDER_V = 4
+_CLASSIC49 = [
+    "YukimiBotamon", "Botamon", "Punimon", "Poyomon", "Yuramon", "Zurumon",
+    "Babumon", "Pichimon", "Mokumon", "Nyokimon", "Choromon", "Kuramon",
+    "Chibickmon", "Tsubumon", "Pururumon", "Jyarimon", "Dodomon", "Puttimon",
+    "Kiimon", "Dokimon", "Chibomon", "Datirimon", "ChibiKiwimon", "Ketomon",
+    "Leafmon", "Pafumon", "Paomon", "Petitmon", "Popomon", "Pupumon",
+    "Bommon", "Pusumon", "Puwamon", "Relemon", "Sakumon", "Zerimon",
+    "Cocomon", "Fufumon", "Cotsucomon", "Algomon I", "Bombmon", "Carimon",
+    "Sunamon", "Curimon", "Pyonmon", "Puyomon", "???", "???", "Fusamon"]
+_V401_FULL = _CLASSIC49 + [
     "Breakdra Egg", "Corona Egg", "DORU Egg", "Deep Savers Egg",
     "Digitama X", "Digitama X2", "Digitama X3", "Vorvomon Egg", "Draco Egg",
     "Hack Egg", "Kera Digitama", "Lalamon Egg", "Lop Egg", "Ludo Egg",
@@ -69,63 +83,119 @@ _V401_EGG_NAMES = [                     # bank order as shipped in .400/.401
     "Terrier Egg", "V Egg", "Version 1 Egg", "Version 2 Egg",
     "Version 3 Egg", "Version 4 Egg", "Version 5 Egg", "Version 6 Egg",
     "Virus Busters Egg", "Virus Busters Ver. 20th Egg",
-    "Wind Guardians Egg", "Zuba Egg"]   # indices 49..83
-_V402_EGG_NAMES = [                     # bank order as shipped in .402
+    "Wind Guardians Egg", "Zuba Egg"]
+_V402_FULL = _CLASSIC49 + [
     "Version 1 Egg", "Version 2 Egg", "Version 3 Egg", "Version 4 Egg",
     "Version 5 Egg", "Deep Savers Egg", "Nightmare Soldiers Egg",
     "Wind Guardians Egg", "Metal Empire Egg", "Virus Busters Egg",
     "Corona Egg", "Luna Egg", "Zuba Egg", "Hack Egg", "Meicoo Egg",
     "DORU Egg", "Slayerdra Egg", "Breakdra Egg", "Ryuda Egg", "Draco Egg",
     "Lalamon Egg", "Ludo Egg", "Meicoomon Egg", "Terrier Egg", "Lop Egg",
-    "V Egg", "Virus Busters Ver. 20th Egg", "Digitama X3",
-    "Kera Digitama"]                    # indices 49..77
-# a STILL-CUT egg mid-incubation falls back to the classic egg of the same
-# baby (Version 6's Bubbmon digitama -> the restored Nature Spirits Egg)
-_CUT_FALLBACK = {"Digitama X": 17, "Digitama X2": 18, "Vorvomon Egg": 8,
-                 "Nightmare Soldiers Ver.20th Egg": 10, "Version 6 Egg": 54}
+    "V Egg", "Virus Busters Ver. 20th Egg", "Digitama X3", "Kera Digitama"]
+_V403_FULL = _CLASSIC49 + [
+    "Version 1 Egg", "Version 2 Egg", "Version 3 Egg", "Version 4 Egg",
+    "Version 5 Egg", "Nature Spirits Egg", "Deep Savers Egg",
+    "Nightmare Soldiers Egg", "Wind Guardians Egg", "Metal Empire Egg",
+    "Virus Busters Egg", "Corona Egg", "Luna Egg", "Zuba Egg", "Hack Egg",
+    "Meicoo Egg", "DORU Egg", "Slayerdra Egg", "Breakdra Egg", "Ryuda Egg",
+    "Draco Egg", "Lalamon Egg", "Ludo Egg", "Meicoomon Egg", "Terrier Egg",
+    "Lop Egg", "V Egg", "Virus Busters Ver. 20th Egg", "Digitama X3",
+    "Kera Digitama"]
+# a CUT egg MID-INCUBATION falls back to the surviving egg of the same baby
+# (name -> name; resolved against the live bank).  Fallbacks are for egg_type
+# ONLY -- never for eggs_owned, or a cut egg would "translate" into permanent
+# ownership of an unearned egg (the .403 Puttimon-as-starter bug).
+_CUT_FALLBACK = {
+    "Digitama X": "Puttimon", "Digitama X2": "Kiimon",
+    "Vorvomon Egg": "Nightmare Soldiers Egg",
+    "Nightmare Soldiers Ver.20th Egg": "Metal Empire Egg",
+    "Version 6 Egg": "Nature Spirits Egg", "Ludo Egg": "Cotsucomon",
+    "Version 1 Egg": "Botamon", "Version 2 Egg": "Punimon",
+    "Version 3 Egg": "Poyomon", "Version 4 Egg": "Yuramon",
+    "Version 5 Egg": "Zurumon", "YukimiBotamon": "Virus Busters Egg",
+    "Pichimon": "Deep Savers Egg", "Mokumon": "Nightmare Soldiers Egg",
+    "Nyokimon": "Wind Guardians Egg", "Choromon": "Metal Empire Egg"}
 
 
-def _migrate_egg_index(old, table=_V401_EGG_NAMES):
-    """Translate an old-bank egg index into the current bank (None = drop)."""
-    if not isinstance(old, int) or old < 49:
-        return old                                    # classic block: unchanged
-    if old - 49 >= len(table):
-        return None
-    name = table[old - 49]
+def _current_names():
     from . import egg as egg_mod
-    for i in range(egg_mod.count()):
-        if egg_mod.hatch_name(i) == name:
-            return i
-    return _CUT_FALLBACK.get(name)
+    return [egg_mod.hatch_name(i) for i in range(egg_mod.count())]
+
+
+def _find_occurrence(names, name, occ):
+    seen = 0
+    for i, n in enumerate(names):
+        if n == name:
+            seen += 1
+            if seen == occ:
+                return i
+    return None
+
+
+def _migrate_egg_index(old, table=_V401_FULL, fallback=True):
+    """Translate an old-bank egg index into the current bank (None = drop)."""
+    if not isinstance(old, int) or not (0 <= old < len(table)):
+        return None
+    name = table[old]
+    occ = table[:old + 1].count(name)
+    cur = _current_names()
+    hit = _find_occurrence(cur, name, occ)
+    if hit is not None:
+        return hit
+    if fallback:
+        fb = _CUT_FALLBACK.get(name)
+        if fb is not None:
+            return _find_occurrence(cur, fb, 1)
+    return None
 
 
 def _table_for(save_v):
-    return _V402_EGG_NAMES if save_v == 2 else _V401_EGG_NAMES
+    """The FULL bank order a given save version's indices were written
+    against; None = indices are already current."""
+    return {2: _V402_FULL, 3: _V403_FULL}.get(save_v, _V401_FULL)
+
+
+def _sane_owned(owned):
+    """Drop impossible eggs_owned entries: out-of-range, and TEMP lineage
+    eggs (can_perm FALSE) which are never ownable however they snuck in."""
+    from . import data, egg as egg_mod
+    rules = data.load_egg_unlock()
+    out = set()
+    for i in owned:
+        if not isinstance(i, int) or not (0 <= i < egg_mod.count()):
+            continue
+        r = rules.get(i)
+        if r is not None and not r["can_perm"]:
+            continue
+        out.add(i)
+    return sorted(out)
 
 
 def _migrate_v401_save(data):
-    """In-place pet-save migration across bank versions (egg indices only --
-    live ver6/Bubbmon pets are valid again since the .403 restore)."""
+    """In-place pet-save migration across bank versions (egg indices only)."""
     v = data.get("egg_order_v")
     if v == EGG_ORDER_V:
         return
-    if isinstance(data.get("egg_type"), int):
-        new = _migrate_egg_index(data["egg_type"], _table_for(v))
+    table = _table_for(v)
+    if table is not None and isinstance(data.get("egg_type"), int):
+        new = _migrate_egg_index(data["egg_type"], table)
         data["egg_type"] = new if new is not None else 1
     data["egg_order_v"] = EGG_ORDER_V
 
 
 def _migrate_v401_settings(d):
-    """One-time owned-egg index translation for older settings files."""
+    """One-time owned-egg index translation + sanity pass for older settings
+    files (v4 also REPAIRS v3's fallback leak: temp eggs granted as owned)."""
     if not d or d.get("egg_order_v") == EGG_ORDER_V:
         return False
     prog = d.get("progress") or {}
     owned = prog.get("eggs_owned")
     if owned:
         table = _table_for(d.get("egg_order_v"))
-        prog["eggs_owned"] = sorted({n for n in
-                                     (_migrate_egg_index(i, table) for i in owned)
-                                     if n is not None})
+        if table is not None:
+            owned = [n for n in (_migrate_egg_index(i, table, fallback=False)
+                                 for i in owned) if n is not None]
+        prog["eggs_owned"] = _sane_owned(owned)
     d["egg_order_v"] = EGG_ORDER_V
     return True
 

@@ -86,7 +86,7 @@ def record(egg_type=0):
 # or temp for this generation); condition met + price > 0 -> BUYABLE in the egg shop
 # (shopscreen Eggs tab) and bought eggs are owned permanently. The egg SELECT shows
 # only hatchable (owned/temp) eggs. persistence.get_progress() supplies the state.
-_WIN_EGGS = {46: 50, 47: 100}      # tuipet-only "???" eggs (not in eggUnlock.csv) -> lifetime wins
+_WIN_EGGS = {41: 50, 42: 100}      # tuipet-only "???" eggs (not in eggUnlock.csv) -> lifetime wins
 
 
 def _conditions_met(rule, prog):

@@ -38,7 +38,8 @@ def test_the_chibikiwimon_gate_accepts_either_twin():
     """Egg 22's unlock history demands num 944 -- raising ChibiKiwimon from
     its own egg (which hatches 1432) must satisfy it, like canon's name sync
     (the exact stranding this audit found)."""
-    rule = data.load_egg_unlock()[22]
+    rule = next(r for r in data.load_egg_unlock().values()
+                if r["name"] == "ChibiKiwimon")
     assert rule["history"] == [944]
     prog = {"album": {944}, "wins": 10**9, "mega_kills": 10**9, "max_gen": 99,
             "max_stage": 99, "xanti_ever": True, "maps": set(range(99)),

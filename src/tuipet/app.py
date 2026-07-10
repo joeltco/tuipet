@@ -239,10 +239,10 @@ class TuiPetApp(App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("Nature Spirits is BACK -- Bubbmon returned with his full sprite "
-                 "set, so the Pendulum 1 egg leads the field eggs again. And the "
-                 "DIGICORE evolves page now shows what is next at EVERY age (eggs "
-                 "tease their hatchling) instead of saying \"too young\".")
+    WHATS_NEW = ("Egg shop audit: duplicate eggs that sold you what you already own "
+                 "are gone -- every egg in the shop now earns its shelf. Win-trophy "
+                 "eggs spread out (25/40/50/60/75/100 wins each unlock something), "
+                 "and a save repair fixes lineage eggs wrongly shown as owned.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and

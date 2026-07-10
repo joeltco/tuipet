@@ -197,7 +197,7 @@ def test_evolves_page_edges():
     while pan.pages[pan.i][0] != "EVOLVES":
         pan.key("right")
     assert "(too young)" not in pan.text().plain
-    assert "YukimiBotamon" in pan.text().plain       # egg_type 0 hatchling
+    assert "Botamon" in pan.text().plain             # egg_type 0 hatchling
 
 
 def test_teaser_zooms_in_then_holds_a_still_silhouette():
@@ -426,7 +426,8 @@ def test_evolves_page_shows_next_form_at_every_age():
     assert isinstance(rows, list) and rows, rows          # the hatchling shows
     assert rows[0][0] in data.load_sprites()[1]
     # the multi-target mystery digitama keeps its surprise
-    egg_pet.egg_type = 47
+    from tuipet import egg as _egg
+    egg_pet.egg_type = max(_egg._WIN_EGGS)      # the any-root mystery egg
     rows = _evo_rows(egg_pet)
     assert isinstance(rows, list) and rows[0][1] == "???"
     # a Fresh line pet sees its next form, not a stonewall

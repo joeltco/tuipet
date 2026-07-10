@@ -1,4 +1,4 @@
-"""The win-gated mystery eggs (46/47) — tuipet-only, gated on lifetime wins.
+"""The win-gated mystery eggs (41/42) — tuipet-only, gated on lifetime wins.
 Lifetime wins are counted in pet.record_battle (single source: home key,
 adventure encounters, tournaments, town cups and lobby all resolve there)."""
 from tuipet.pet import Pet
@@ -29,7 +29,7 @@ def test_crossing_a_gate_sets_the_announcement():
     p = _pet()
     for _ in range(49):
         persistence.wins_add(1)
-    p.record_battle(True, dict(_ENEMY))              # win 50: egg 46's gate
+    p.record_battle(True, dict(_ENEMY))              # win 50: egg 41's gate
     assert "mysterious egg" in getattr(p, "egg_unlock_note", "")
     p.egg_unlock_note = ""
     p.record_battle(True, dict(_ENEMY))              # win 51: no gate, no note
@@ -40,28 +40,28 @@ def test_nearest_goals_ride_the_carousel_and_refuse_enter():
     # hardened 2026-07-04: visibility is EARNED -- only the GOALS_SHOWN closest
     # countable goals ride the tail (all 44 sealed eggs read as no unlock system)
     from tuipet.eggselectscreen import EggSelectPanel
-    persistence.wins_add(30)                             # 30/50: egg 46 leads the goals
+    persistence.wins_add(30)                             # 30/50: egg 41 leads the goals
     pan = EggSelectPanel()
     goals = [i for i in pan.carousel if pan.states[i][0] == "locked"]
     assert 0 < len(goals) <= pan.GOALS_SHOWN
-    assert 46 in goals                                   # 60% there: a visible goal
-    assert 46 not in pan.unlocked                        # ...but not hatchable
-    pan.i = pan.carousel.index(46)
+    assert 41 in goals                                   # 60% there: a visible goal
+    assert 41 not in pan.unlocked                        # ...but not hatchable
+    pan.i = pan.carousel.index(41)
     assert pan.key("enter") is None                      # sealed: no hatch
     assert "lifetime wins 30/50" in pan.msg
-    assert "30/50" in pan._note(46)
+    assert "30/50" in pan._note(41)
 
 
 def test_fifty_wins_unlocks_egg_46_and_not_47():
     persistence.wins_add(50)
     prog = persistence.get_progress()
-    assert egg.egg_state(46, prog, set())[0] == "owned"
-    assert egg.egg_state(47, prog, set())[0] == "locked"
+    assert egg.egg_state(41, prog, set())[0] == "owned"
+    assert egg.egg_state(42, prog, set())[0] == "locked"
     from tuipet.eggselectscreen import EggSelectPanel
     pan = EggSelectPanel()
-    pan.i = pan.carousel.index(46)
-    assert pan.key("enter") == ("done", 46)              # hatchable now
-    assert "50/100" in pan._note(47)                     # the next goal shows progress
+    pan.i = pan.carousel.index(41)
+    assert pan.key("enter") == ("done", 41)              # hatchable now
+    assert "50/100" in pan._note(42)                     # the next goal shows progress
 
 
 def test_locked_hint_falls_back_to_the_win_gate():

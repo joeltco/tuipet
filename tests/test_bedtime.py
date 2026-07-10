@@ -9,7 +9,7 @@ from tuipet.pet import Pet
 
 def _line_pet(to_agumon=True):
     random.seed(11)
-    p = Pet.new_egg(egg_type=1)
+    p = Pet.new_egg(egg_type=0)  # Botamon egg
     p._hatch_into_fresh()
     if to_agumon:
         for _ in range(2):
@@ -184,7 +184,7 @@ def test_late_stage_five_mistakes_is_fatal_only_past_the_window():
 
 
 def test_new_game_dawns_at_eight():
-    p = Pet.new_egg(egg_type=1)
+    p = Pet.new_egg(egg_type=0)  # Botamon egg
     assert p.world_seconds % 1440 == 8 * 60   # never hatch a baby into its bedtime
 
 
