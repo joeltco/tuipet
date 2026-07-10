@@ -13,7 +13,7 @@ Regular updates ship as the game grows.
 
 ## What's inside
 
-- **1,525 creatures**, 11 animation frames each, extracted from the game's
+- **1,548 creatures**, 11 animation frames each, extracted from the game's
   sprite atlases as 1-bit bitmaps (`src/tuipet/data/sprites.json.gz`).
 - A **complete Digimon V-Pet**, ported system by system from the source games:
   care, training, evolution (care-quality gates + DNA + jogress),
