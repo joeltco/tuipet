@@ -18,10 +18,11 @@ def blit(bm, ox, oy):
             for x, c in enumerate(row) if c == "1"]
 
 
-def _stamp(buf, pts, cols, px_h):
-    """Overlay pixels -> the buffer, clipped to the LCD."""
+def _stamp(buf, pts, cols, px_h, clip=None):
+    """Overlay pixels -> the buffer, clipped to the LCD (and to `clip`)."""
+    cx0, cx1, cy0, cy1 = clip if clip else (0, cols, 0, px_h)
     for ox_, oy_ in pts:
-        if 0 <= oy_ < px_h and 0 <= ox_ < cols:
+        if cy0 <= oy_ < cy1 and cx0 <= ox_ < cx1 and 0 <= oy_ < px_h and 0 <= ox_ < cols:
             buf[oy_][ox_] = 1
 
 
@@ -51,15 +52,32 @@ def _paint_cells(buf, cols, rows, on, bg, bgimg):
 
 
 # A few palettes. "on" = creature ink, "off" = LCD background (None = transparent).
-def render_screen(frame_rows, cols, rows, on="#2b2e31", bg="#c6c9cc", baseline=True, mirror=False, xshift=0, yshift=0, overlay=None, bgimg=None):
+def render_screen(frame_rows, cols, rows, on="#2b2e31", bg="#c6c9cc", baseline=True, mirror=False, xshift=0, yshift=0, overlay=None, bgimg=None, clip=None, overlay_free=None):
     """Compose a sprite centred on a fixed cols x rows (character) LCD screen.
 
     Returns a rich Text. The screen is rows*2 pixels tall; the sprite is blitted
     centred horizontally and sitting on the floor (baseline) so it doesn't bob
     off the ground between frames of different heights.
     """
-    px_h = rows * 2
+    buf = fill_buf(frame_rows, cols, rows * 2, baseline=baseline, mirror=mirror,
+                   xshift=xshift, yshift=yshift, overlay=overlay, clip=clip,
+                   overlay_free=overlay_free)
+    return _paint_cells(buf, cols, rows, on, bg, bgimg)
+
+
+def fill_buf(frame_rows, cols, px_h, baseline=True, mirror=False, xshift=0,
+             yshift=0, overlay=None, clip=None, overlay_free=None):
+    """The shared pixel-buffer builder behind render_screen.  `clip` is an
+    (x0, x1, y0, y1) half-open window over sprite ink AND `overlay`: the main
+    pet scene passes the locked 32x16 play window -- a real dot matrix
+    physically ENDS at its edge, so off-window ink is simply not displayed
+    (which is also HOW things exit: walking off the left or right edge, the
+    lawful occasions -- Joel 2026-07-11).  `overlay_free` is stamped WITHOUT
+    the window: weather, which may rain over the whole LCD (Joel: "rain and
+    snow can cover the whole lcd").  Exposed so tests can assert the window
+    invariant on this buffer, the renderer's ground truth."""
     buf = [[0] * cols for _ in range(px_h)]
+    cx0, cx1, cy0, cy1 = clip if clip else (0, cols, 0, px_h)
     if frame_rows and mirror:
         frame_rows = [r[::-1] for r in frame_rows]
     if frame_rows:
@@ -71,14 +89,17 @@ def render_screen(frame_rows, cols, rows, on="#2b2e31", bg="#c6c9cc", baseline=T
             for x, ch in enumerate(line):
                 if ch == "1":
                     py, pxx = oy + y, ox + x
-                    if 0 <= py < px_h and 0 <= pxx < cols:
+                    if cy0 <= py < cy1 and cx0 <= pxx < cx1 \
+                            and 0 <= py < px_h and 0 <= pxx < cols:
                         buf[py][pxx] = 1
-    if overlay:                              # weather: rain/snow/cloud pixels
-        _stamp(buf, overlay, cols, px_h)
-    return _paint_cells(buf, cols, rows, on, bg, bgimg)
+    if overlay:                              # scene actors / fx props (window-clipped)
+        _stamp(buf, overlay, cols, px_h, clip=clip)
+    if overlay_free:                         # weather: the whole LCD is its sky
+        _stamp(buf, overlay_free, cols, px_h)
+    return buf
 
 
-def render_scene(placements, cols, rows, on="#2b2e31", bg="#c6c9cc", overlay=None, bgimg=None):
+def render_scene(placements, cols, rows, on="#2b2e31", bg="#c6c9cc", overlay=None, bgimg=None, clip=None):
     """Compose several sprites onto one LCD screen.
 
     placements: list of (frame_rows, x_left, mirror). Each sprite sits on the
@@ -86,6 +107,7 @@ def render_scene(placements, cols, rows, on="#2b2e31", bg="#c6c9cc", overlay=Non
     """
     px_h = rows * 2
     buf = [[0] * cols for _ in range(px_h)]
+    cx0, cx1, cy0, cy1 = clip if clip else (0, cols, 0, px_h)
     for frame_rows, x_left, mirror in placements:
         if not frame_rows:
             continue
@@ -96,10 +118,11 @@ def render_scene(placements, cols, rows, on="#2b2e31", bg="#c6c9cc", overlay=Non
             for x, ch in enumerate(line):
                 if ch == "1":
                     py, px = oy + y, x_left + x
-                    if 0 <= py < px_h and 0 <= px < cols:
+                    if cy0 <= py < cy1 and cx0 <= px < cx1 \
+                            and 0 <= py < px_h and 0 <= px < cols:
                         buf[py][px] = 1
     if overlay:                              # projectiles / impact bursts
-        _stamp(buf, overlay, cols, px_h)
+        _stamp(buf, overlay, cols, px_h, clip=clip)
     return _paint_cells(buf, cols, rows, on, bg, bgimg)
 
 

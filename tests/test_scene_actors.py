@@ -49,9 +49,10 @@ def _paint_capture(monkeypatch):
     cap = {}
 
     def spy(rows, cols, nrows, on, bg, mirror=False, xshift=0, yshift=0,
-            overlay=None, bgimg=None):
+            overlay=None, bgimg=None, clip=None, overlay_free=None):
         cap.update(rows=rows, mirror=mirror, xshift=xshift,
-                   overlay=list(overlay or []))
+                   overlay=list(overlay or []), clip=clip,
+                   free=list(overlay_free or []))
         return ""
 
     monkeypatch.setattr("tuipet.arena.render_screen", spy)
@@ -146,12 +147,14 @@ def test_poop_outranks_the_skull():
     assert arena._sick_mark_up(q)                          # 2 piles: room for both
 
 
-def test_zzz_floats_in_the_sky_corner():
-    """The sleep Zzz lives above the 32x16 world (sky strip, top-right) --
+def test_zzz_hangs_inside_the_window():
+    """The sleep Zzz is a scene actor INSIDE the 32x16 (LAW: nothing above
+    the band) -- band top-right, clear of the centre-clamped sleeper --
     lights on, lights off, and with its own nap glyph."""
     night = _pet(weather="Clear", asleep=True, anim="sleep")
     zz = arena._effect_overlay(night, 0, 40, 24, tick=0)
-    assert zz and all(x >= grid.X1 - 8 and y <= grid.TOP for x, y in zz)
+    assert zz and all(x >= grid.X1 - 8 and grid.TOP <= y < grid.TOP + 8
+                      for x, y in zz)
     nap = _pet(weather="Clear", asleep=True, nap=True, anim="sleep")
     assert arena._effect_overlay(nap, 0, 40, 24, tick=0) != zz
     dark = _pet(weather="Clear", asleep=True, lights=False)
@@ -160,12 +163,11 @@ def test_zzz_floats_in_the_sky_corner():
     assert arena._effect_overlay(awake, 0, 40, 24, tick=0) == []
 
 
-def test_nap_dip_is_safe_by_placement_math(monkeypatch):
-    """The nap glyph is 7px -- its last row dips onto the band's top row at
-    x28+ (some species sleep SITTING UP at full height, so the dip is real).
-    Safe by construction: a sleeper beside <=2 piles is clamped to centre,
-    never under the dip; with 3-4 piles the nap wears the all-sky night
-    glyph instead."""
+def test_sleepers_center_and_the_zzz_yields_to_poop(monkeypatch):
+    """A sleeper with <=2 piles is clamped to CENTRE (x12..27), so the Zzz's
+    corner columns (x28+) are its own -- any species, any pose height.  With
+    3-4 piles the sleeper is pushed under the corner, so the Zzz yields to
+    the HUD entirely: poop always wins floor space."""
     cap = _paint_capture(monkeypatch)
     cozy = _pet(weather="Clear", asleep=True, nap=True, anim="sleep",
                 poop=2, poop_sizes=[2, 3])
@@ -175,9 +177,8 @@ def test_nap_dip_is_safe_by_placement_math(monkeypatch):
     assert cap["xshift"] == 0                  # pinned to centre: x12..27
     crowded = _pet(weather="Clear", asleep=True, nap=True, anim="sleep",
                    poop=4, poop_sizes=[3, 3, 2, 1])
-    zz = [pt for pt in arena._effect_overlay(crowded, 0, 40, 24, tick=0)
-          if pt[0] >= grid.X1 - 8 and pt[1] <= grid.TOP]
-    assert zz and all(y < grid.TOP for _, y in zz)   # all-sky: no band-row ink
+    assert not [pt for pt in arena._effect_overlay(crowded, 0, 40, 24, tick=0)
+                if pt[0] >= grid.X1 - 8]       # no Zzz: the piles own the floor
 
 
 def test_alarm_keeps_the_union_while_the_scene_split_stands():
@@ -197,3 +198,28 @@ def test_hud_carries_every_badge():
     for badge in ("+med", "+bnd", "+vit", "+praise!", "+scold!",
                   "+tired", "+hurt", "+sick"):
         assert badge in src, badge
+
+
+def test_the_window_law(monkeypatch):
+    """LAW (2026-07-11): the main scene renders under the 32x16 window clip;
+    actor overlays arrive pre-clipped; weather alone rides the free channel
+    over the whole LCD; ink pushed past an edge is cut at the matrix edge
+    (the lawful LEFT/RIGHT exit)."""
+    from tuipet import render
+    cap = _paint_capture(monkeypatch)
+    p = _pet(weather="Raining", sick=True, sick_length=99.0,
+             poop=2, poop_sizes=[2, 3])
+    s = _screen()
+    for i in range(8):
+        s.advance(p)
+        s.paint(p)
+    assert cap["clip"] == grid.WINDOW
+    assert cap["overlay"] and all(
+        grid.X0 <= x < grid.X1 and grid.TOP <= y < grid.FLOOR
+        for x, y in cap["overlay"])                 # actors: window-clipped
+    assert cap["free"], "rain must ride the free channel"
+    assert any(y < grid.TOP or x < grid.X0 or x >= grid.X1
+               for x, y in cap["free"])             # ...and cover the whole LCD
+    buf = render.fill_buf(["11", "11"], 40, 24, xshift=16, clip=grid.WINDOW)
+    lit = {(x, y) for y, row in enumerate(buf) for x, v in enumerate(row) if v}
+    assert lit and all(x < grid.X1 for x, _ in lit)  # cut at the matrix edge

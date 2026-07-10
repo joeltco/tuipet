@@ -7,6 +7,7 @@ arc-3 goal board rode ALL ~44 sealed eggs, which read as the unlock system
 being gone; the rest are a footer count.)
 ←→ glide, ENTER hatches the centred egg, ESC backs out."""
 from __future__ import annotations
+from . import grid
 from . import egg as egg_mod
 from . import menu
 from . import persistence
@@ -177,7 +178,7 @@ class EggSelectPanel:
             v = base + d
             x = CENTER + int(round((v - self.scroll) * SPACING))
             placements.append((self._frame(v, d == 0), x, False))
-        scene = render_scene(placements, COLS, ROWS, LCD_ON, LCD_BG)
+        scene = render_scene(placements, COLS, ROWS, LCD_ON, LCD_BG, clip=grid.WINDOW)
         out = menu.header("CHOOSE YOUR EGG", f"{self.i + 1}/{self.n}")
         out.append_text(scene)
         out.append("\n")                              # scene has no trailing newline

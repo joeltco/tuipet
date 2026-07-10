@@ -27,6 +27,10 @@ CELL = 16                 # one creature cell (two cells side by side == the 32 
 TOP = PXH - 18            # 6: top of the 16px band
 FLOOR = PXH - 2           # 22: the floor -- baseline, 2px above the bottom border
 BAND = FLOOR - TOP        # 16
+WINDOW = (X0, X1, TOP, FLOOR)   # the LOCKED 32x16 play window as a clip rect
+#                                 (LAW 2026-07-11: every canon sprite renders
+#                                 inside it; exits are LEFT/RIGHT only, on
+#                                 occasion; weather alone covers the whole LCD)
 
 
 def _crop(sprite):

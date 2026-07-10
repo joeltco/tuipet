@@ -11,7 +11,8 @@ the lifespan.  Pressing the core plays the silhouette teaser
 The data-book pages after it are tuipet's own readout (kept adaptation).
 """
 from __future__ import annotations
-from . import data, evolution, grid, lines  # noqa: F401  (pet methods drive the data)
+from . import data
+from . import grid, evolution, lines  # noqa: F401  (pet methods drive the data)
 from .render import render_scene
 
 from .theme import LCD_ON, LCD_BG, INK, INK_B, DIM, SIL_DAY, SIL_NIGHT, VOID  # noqa: F401  (theme.apply propagation)
@@ -444,7 +445,7 @@ class DigiCorePanel:
         if t < MON_T:                                     # beat one: the mon itself
             rows = self._pet_rows(p.num)
             placements = [self._core_place(rows)] if rows else []
-            return render_scene(placements, 40, SCENE_ROWS, on, LCD_BG, bgimg=bgimg)
+            return render_scene(placements, 40, SCENE_ROWS, on, LCD_BG, bgimg=bgimg, clip=grid.WINDOW)
         if t < MON_T + EXPAND_T:                          # beat two: the core turns
             badge = data.load_effects().get(core_badge_key(p) or "core_xnone", [None])[0]
             overlay = []
@@ -462,11 +463,11 @@ class DigiCorePanel:
         if nxt is None:
             rows = self._pet_rows(p.num, idx=0)
             placements = [self._core_place(rows)] if rows else []
-            return render_scene(placements, 40, SCENE_ROWS, on, LCD_BG, bgimg=bgimg)
+            return render_scene(placements, 40, SCENE_ROWS, on, LCD_BG, bgimg=bgimg, clip=grid.WINDOW)
         sil = ghost(silhouette(self._pet_rows(nxt, idx=0) or []),
                     phase=(self.frame_i // 5) % 2)
         placements = [self._core_place(sil)] if sil else []
-        return render_scene(placements, 40, SCENE_ROWS, on, LCD_BG, bgimg=bgimg)
+        return render_scene(placements, 40, SCENE_ROWS, on, LCD_BG, bgimg=bgimg, clip=grid.WINDOW)
 
     def strip(self):
         """Narration only -- the gaze speaks through the message box; every
@@ -533,7 +534,7 @@ class DigiCorePanel:
         if self.teaser:
             return self._teaser_scene()
         if self._back_t:                              # evolSilhouetteBack: dark blink
-            return render_scene([], 40, SCENE_ROWS, SIL_NIGHT, VOID)
+            return render_scene([], 40, SCENE_ROWS, SIL_NIGHT, VOID, clip=grid.WINDOW)
         if self.detail is not None:
             return self._detail_scene()
         if self.i == 0:

@@ -301,9 +301,9 @@ def test_the_core_gaze_looms_over_the_core_background():
     cap = []
     real = dc.render_scene
 
-    def spy(placements, cols, rows, on, bg, overlay=None, bgimg=None):
+    def spy(placements, cols, rows, on, bg, overlay=None, bgimg=None, **kw):
         cap.append(bgimg)
-        return real(placements, cols, rows, on, bg, overlay=overlay, bgimg=bgimg)
+        return real(placements, cols, rows, on, bg, overlay=overlay, bgimg=bgimg, **kw)
 
     dc.render_scene = spy
     try:

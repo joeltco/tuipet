@@ -250,10 +250,10 @@ class TuiPetApp(App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("The LCD is a stage again, the way Bandai built it: your mon "
-                 "gets its whole 32x16 world back -- a skull stands beside it "
-                 "when it's sick, Zzz floats overhead when it sleeps, and every "
-                 "status badge moved to the panel where it belongs.")
+    WHATS_NEW = ("The 32x16 window law: every sprite now lives inside the true "
+                 "dot matrix like the real device -- nothing hangs over it, "
+                 "things leave only off the sides, rain still soaks the whole "
+                 "LCD, and the training drills were restaged to fit.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and

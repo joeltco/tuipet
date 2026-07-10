@@ -223,6 +223,17 @@ _HIDDEN_STATUS_ICONS: set[str] = set()             # add keys here to hide a sce
 # in-scene emotes (cheer/jeer/dying) -- those are full-screen animations,
 # exactly how the hardware spends its pixels.
 SICK_ZONE = COND_W + 1                             # skull slot + 1px gap off the grid's right edge
+_WINDOW = grid.WINDOW                              # the locked 32x16 play window (LAW 2026-07-11:
+#                                                     every canon sprite fits inside; things leave
+#                                                     the screen only off the LEFT or RIGHT edge,
+#                                                     on occasion -- never the top or bottom.
+#                                                     Weather alone rains over the whole LCD.)
+
+
+def _clip_win(pts):
+    """Canon overlay ink stays inside the 32x16 window (the matrix edge)."""
+    x0, x1, y0, y1 = _WINDOW
+    return [(x, y) for x, y in pts if x0 <= x < x1 and y0 <= y < y1]
 
 
 def _sick_mark_up(pet):
@@ -253,19 +264,19 @@ def _effect_overlay(pet, frame_i, cols, px_h, tick=0):
     # It shows lights-off too: the dark room keeps its Zzz (DVPet
     # sleepLightsOff), our one mark on a black field.
     zkey = "zzz_nap" if (getattr(pet, "nap", False) and E.get("zzz_nap")) else "zzz"
-    if zkey == "zzz_nap" and pet.poop >= 3:
-        # the nap glyph is 7px -- its last row dips onto the band's top row at
-        # x28+.  A sleeper beside <=2 piles is clamped to CENTRE (x12..27,
-        # never under the dip); 3-4 piles push it right, so the nap wears the
-        # all-sky night glyph instead (the HUD still says it's a nap)
-        zkey = "zzz"
-    # the Zzz belongs to the SLEEP SCENE, so it rides the sleep pose; an
-    # asleep pet still wearing another anim (a disturbed sleeper's startle
-    # beat) simply skips a beat, and a dark room always keeps its Zzz
+    # the Zzz belongs to the SLEEP SCENE, INSIDE the window (LAW: nothing
+    # above the band).  It hangs at the band's top-right; a sleeper with <=2
+    # piles is clamped to CENTRE (x12..27), so the corner columns are its own.
+    # 3-4 piles push the sleeper right under the corner -- the Zzz yields to
+    # the HUD (whose status word already says asleep), poop always wins.
+    # It rides the sleep pose: an asleep pet still wearing another anim (a
+    # disturbed sleeper's startle beat) skips a beat; a dark room keeps its
+    # Zzz over the black field.
     in_sleep_scene = asleep and (pet.anim == "sleep" or not pet.lights)
-    if in_sleep_scene and E.get(zkey) and zkey not in _HIDDEN_STATUS_ICONS:
+    if (in_sleep_scene and pet.poop < 3 and E.get(zkey)
+            and zkey not in _HIDDEN_STATUS_ICONS):
         z = grid._crop(E[zkey][(tick // 10) % len(E[zkey])])
-        pts += _blit(z, grid.X1 - len(z[0]), 0)
+        pts += _blit(z, grid.X1 - len(z[0]), grid.TOP)
     # sick skull: a grounded scene object at the band's right edge, blinking
     # its 2-frame pair on the stateNumTic beat (7 ticks awake / 10 asleep)
     if _sick_mark_up(pet) and E.get("st_sick") and "st_sick" not in _HIDDEN_STATUS_ICONS:
@@ -318,9 +329,11 @@ class Screen(Static):
                     on, bg = FLASH[1], FLASH[2]
         wf = self.frame_i // 4                  # weather/effect overlays keep their ~0.4s cadence
         if pet.dead:                           # a grave marker (the live path builds its own overlay below)
-            overlay = (_weather_overlay(pet.weather, wf, SCREEN_COLS, SCREEN_ROWS * 2)
-                       + _effect_overlay(pet, wf, SCREEN_COLS, SCREEN_ROWS * 2, tick=self.frame_i))
-            self.update(render_screen(GRAVESTONE, SCREEN_COLS, SCREEN_ROWS, on, bg, overlay=overlay, bgimg=bgimg))
+            self.update(render_screen(
+                GRAVESTONE, SCREEN_COLS, SCREEN_ROWS, on, bg, bgimg=bgimg,
+                overlay=_clip_win(_effect_overlay(pet, wf, SCREEN_COLS, SCREEN_ROWS * 2, tick=self.frame_i)),
+                overlay_free=_weather_overlay(pet.weather, wf, SCREEN_COLS, SCREEN_ROWS * 2),
+                clip=_WINDOW))
             return
         if pet.num == -1:                      # egg
             rec = egg_mod.record(pet.egg_type)
@@ -394,12 +407,13 @@ class Screen(Static):
         cap = ((grid.X1 - SICK_ZONE if _sick_mark_up(pet) else grid.X1)
                - SPRITE_W) - base
         xshift = min(max(xshift, lo), max(cap, lo))       # poop wins over the skull (it yields when crowded)
-        overlay = (_weather_overlay(pet.weather, wf, SCREEN_COLS, SCREEN_ROWS * 2)
-                   + _effect_overlay(pet, wf, SCREEN_COLS, SCREEN_ROWS * 2, tick=self.frame_i))
+        overlay = _clip_win(_effect_overlay(pet, wf, SCREEN_COLS, SCREEN_ROWS * 2, tick=self.frame_i))
+        weather = _weather_overlay(pet.weather, wf, SCREEN_COLS, SCREEN_ROWS * 2)
         if not pet.lights:                 # lights off: DVPet's lightsOff is a fully-opaque black
             rows, xshift, mirror = [], 0, False   # cover -> the pet is hidden; only black (+ Zzz) shows
         self.update(render_screen(rows, SCREEN_COLS, SCREEN_ROWS, on, bg,
-                                  mirror=mirror, xshift=xshift, overlay=overlay, bgimg=bgimg))
+                                  mirror=mirror, xshift=xshift, overlay=overlay,
+                                  overlay_free=weather, bgimg=bgimg, clip=_WINDOW))
 
     def _background(self, pet):
         return pet.background()
@@ -691,9 +705,17 @@ class Screen(Static):
         mirror = (c.mirror or fx["kind"] in ("dying", "poop")
                   or (fx["kind"] == "gift" and GIFT_OUT <= step < GIFT_OUT + GIFT_BACK)  # facing right, ambling back
                   or (fx["kind"] == "spit" and (step // 6) % 2 == 0))   # refuse(): head-shake flips
+        if c.yshift and c.rows:
+            # a hop may lift the sprite only as far as ITS clearance under the
+            # band top -- nothing exits the window upward (LAW: off-screen is
+            # left/right only).  A full-16px mon has no headroom, exactly like
+            # the real 16px matrix: its excitement is the pose, not the air.
+            ink = grid._crop(c.rows)
+            c.yshift = max(0, min(c.yshift, grid.BAND - len(ink)))
         self.update(render_screen(c.rows, SCREEN_COLS, SCREEN_ROWS, on, c.bg,
-                                  xshift=c.xshift, yshift=c.yshift, overlay=c.overlay,
-                                  bgimg=c.bgimg, mirror=mirror))
+                                  xshift=c.xshift, yshift=c.yshift,
+                                  overlay=_clip_win(c.overlay),
+                                  bgimg=c.bgimg, mirror=mirror, clip=_WINDOW))
 
     def _fxk_eat(self, pet, fx, step, c):
         # DVPet eat(): 24px food descends in 4 stages (beats 0/2/4/6) toward the
@@ -725,7 +747,7 @@ class Screen(Static):
                 if fr:
                     fw = len(fr[0])
                     fy = 13 + max(0, d - 10)
-                    if fy < c.px_h:
+                    if fy < grid.FLOOR:                    # crumbs stop AT the floor (no bottom exit)
                         c.overlay += _blit(fr, max(0, PET_BASE_X + c.xshift - fw), fy)
             return
         chew = fx.get("chew") or {10: 8, 14: 7, 18: 8, 22: 7, 26: 8, 30: 7}
@@ -742,7 +764,10 @@ class Screen(Static):
             # (The filth pad above already moved BOTH food and char clear of the piles.)
             fx_x = max(0, PET_BASE_X + c.xshift - fw)
             stage = 0 if step < 2 else 1 if step < 4 else 2 if step < 6 else 3
-            fy = (0, 4, 9, 13)[stage]                      # DVPet descent y 0/11/22/33 of 60 -> *(24/60)
+            fy = (grid.TOP, 8, 11, 13)[stage]              # DVPet descent, mapped INTO the window: the
+            #                                                  food drops from the band top to the mouth
+            #                                                  (it used to enter from over the matrix --
+            #                                                  LAW 2026-07-11: nothing crosses the top edge)
             fb = fx.get("food_beats") or (14, 22, 30)
             fi = 0 if step < fb[0] else 1 if step < fb[1] else 2 if step < fb[2] else 3
             c.overlay += _blit(food[min(fi, len(food) - 1)], fx_x, fy)
@@ -764,7 +789,8 @@ class Screen(Static):
             c.overlay += _filth_pts(pet, self.frame_i, count=fx["poop"],
                                     sizes=fx.get("sizes"), push=push, px_h=c.px_h)
         if wash:
-            c.overlay += _blit(wash, wx, max(0, (c.px_h - len(wash)) // 2))
+            wash = grid.fit_band(wash)                     # the 21px shower fits the 16px band
+            c.overlay += _blit(wash, wx, grid.TOP + (grid.BAND - len(wash)) // 2)
 
     def _fxk_assist(self, pet, fx, step, c):
         # DVPet assistantClean/assistantFeed/assistantLights: the hired helper

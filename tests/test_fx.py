@@ -195,10 +195,11 @@ def test_hatch_render_follows_the_canon_beats():
     cap = {}
     real = arena_mod.render_screen
 
-    def spy(rows, cols, r, on, bg, mirror=False, xshift=0, overlay=None, bgimg=None):
+    def spy(rows, cols, r, on, bg, mirror=False, xshift=0, overlay=None,
+            bgimg=None, **kw):
         cap["rows"], cap["xshift"] = rows, xshift
         return real(rows, cols, r, on, bg, mirror=mirror, xshift=xshift,
-                    overlay=overlay, bgimg=bgimg)
+                    overlay=overlay, bgimg=bgimg, **kw)
 
     class S(app_mod.Screen):
         def __init__(self):

@@ -487,7 +487,7 @@ class TrainingPanel:
         placements = (grid.faceoff(tgt, pf, left_mirror=self._target_mirror())
                       if tgt else [grid.center(pf)])   # target + pet face each other (props keep sheet facing)
         # scene-only: the result + controls ride the strip (box-clip audit 2026-07-04)
-        return render_scene(placements, COLS, ARENA_ROWS, on, LCD_BG, bgimg=bgimg)
+        return render_scene(placements, COLS, ARENA_ROWS, on, LCD_BG, bgimg=bgimg, clip=grid.WINDOW)
 
     def _scene_palette(self):
         # the habitat background IS part of DVPet's layout -- show it during the strike (and
@@ -525,23 +525,19 @@ class TrainingPanel:
             # HIT!! label sat at y0 flush on the top border
             punching = self._strike_t > 0
             bag = _fit_cell(E.get("punching_bag", [None])[0] or [])
-            bw = max(len(r) for r in bag) if bag else 6
-            bag_x = 2 - (1 if punching else 0)                # rocks toward (never onto) the edge
+            bag_x = GRID_X0 + 1 - (1 if punching else 0)      # rocks toward (never OUT of) the window
             if bag:
                 placements.append((bag, bag_x, False))
-            # the pet throws the punches from the right edge, width-clamped
+            # the pet throws the punches from the window's right edge (LAW
+            # 2026-07-11: every canon sprite lives inside the 32x16)
             pose = self._pose_now(1 if (self.frame_i // 2) % 2 else 0)  # idle bob between taps
             pf = _crop(self._frame(rec, pose))
             pw_ = max(len(r) for r in pf)
-            px = COLS - 1 - pw_ - (2 if punching else 0)      # LUNGE 2px into the punch
+            px = GRID_X0 + GRID_W - pw_ - (2 if punching else 0)   # LUNGE 2px into the punch
             overlay.extend(_blit(pf, px, BASE_Y - len(pf)))   # grounded; faces left natively
-            if punching:
-                hit = E.get("train_hit", [None])[0]
-                if hit:
-                    hw = max(len(r) for r in hit)
-                    bag_top = BASE_Y - (len(bag) if bag else CELL)
-                    overlay.extend(_blit(hit, max(1, bag_x + (bw - hw) // 2),
-                                         max(1, bag_top - len(hit) - 1)))
+            # (the old Hit!! label is GONE: 17px of art has no lawful berth in
+            # the window beside a 16px bag and a 16px mon -- the bag's rock,
+            # the lunge, the flash and the beep already carry the hit)
         elif gk == "virus":                                 # DVPet drawVirusPre: pet AND bag HIDDEN
             # The real DVPet trainBar sprite is a 32-wide TRACK box (cols 0..31) + a separate
             # goal compartment (cols 32..37) == 38 wide.  Crop to the 32-wide track box so it
@@ -600,11 +596,13 @@ class TrainingPanel:
                 # (centred, hugged by the shields) instead of floating in padding
                 pf = _crop(self._frame(rec, pose))
                 phh = len(pf)
-                # Data layout on MEASURED columns (layout audit 2026-07-06: the
-                # old x27 mon column ran a 16px mon to x42 -- 3 columns clipped
-                # off the 40px LCD).  The stage shifts left so the WIDEST mon
-                # fits with margins: turret x2..11 · 5px air · gate x17..21 ·
-                # 1px · mon x23..38 · 1px right margin.
+                px = GRID_X0 + GRID_W - max(len(r) for r in pf)    # the mon flush on the window's right
+                #                                                    edge: even a 16px mon fits (gate ends
+                #                                                    x19, the widest mon starts x20)
+                # Data layout INSIDE the 32x16 window (LAW 2026-07-11; the
+                # 07-06 measured stage still leaked into the bezel on both
+                # sides): turret x4..13 · air x14 · gate x15..19 · the mon
+                # flush right, x20..35 at its widest.
                 # Three staged acts, the MON on stage for all of them (canon
                 # drawDataPre bobs the pet through the aim; HP-drill consistency,
                 # Joel 2026-07-06 -- the old staging hid the mon until the LOCK):
@@ -614,9 +612,10 @@ class TrainingPanel:
                 #   SHOOT  -- the turret recoils, the pellet bursts out of the barrel and
                 #             flies the lane into the gate; then hitAnim's strobe.
                 floor = BASE_Y                                     # the shared grid floor (2px above bottom)
-                cannon_x = 2                                       # recoil (-1) never reaches the border
-                sx = 17                                            # the gate: 5px clear of the turret
-                px = sx + sw + 1                                   # the mon braces 1px behind its gate
+                cannon_x = GRID_X0                                 # turret on the window's left edge; the
+                #                                                    recoil beat kicks 1px past it -- a
+                #                                                    momentary LEFT-edge exit, the lawful kind
+                sx = 15                                            # the gate, mid-stage
                 py = floor - phh
                 cy = floor - ch                                    # turret grounded
                 recoil = -1 if (self.fired and self.fly_t >= DATA_FLY - 1) else 0
@@ -657,30 +656,32 @@ class TrainingPanel:
             taunting = self._strike_t > 0 and self._strike_pose == 9
             key = ("vaccine", "data", "virus")[self.hp_target] + ("_taunt" if taunting else "")
             dummy = _HP_DUMMIES[key]
-            # spacing polish (Joel 2026-07-06: "mashed together... touching the
-            # top border"): placed BY MEASUREMENT -- the 13px dummy hugs the
-            # left edge (1px margin), the 7px icon pair rides the true centre
-            # with a 2px top margin, the char hugs the right edge with a
-            # guaranteed 1px gap off the icon column (the old GRID anchors ran
-            # the dummy INTO the icons)
-            placements = [(dummy, 1, True)]                           # MIRRORED (canon
+            # TIME-MULTIPLEXED, the hardware way (LAW 2026-07-11): dummy(13)
+            # + icons(7) + mon(16) never fit a 32px window at once -- the old
+            # measured layout leaked into the bezel on BOTH edges and hung the
+            # target icon over the matrix.  So the stage takes turns, like a
+            # real V-Pet: the REEL act shows the dummy with the target/pick
+            # pair beside it; every SPACE cuts to the REACTION act -- dummy +
+            # the mon's 6/9 pose sharing the floor.
+            dummy = _fit_cell(dummy)                                  # the 17px bag art fits the band
+            placements = [(dummy, GRID_X0, True)]                     # MIRRORED (canon
             #                                       drawHPTraining: drawNumMirror(bag, true) --
             #                                       the dummy faces the char like a foe)
-            pf = _crop(self._frame(rec, self._pose_now(              # the char idles with the same bob
-                1 if (self.frame_i // 2) % 2 else 0)))               # as the data/vaccine stages (one
-            #                                             language per family); 6/9 reactions
-            pw_ = max(len(r) for r in pf)
-            ic = E.get(_HP_ICON_KEYS[self.hp_target], [None])[0]
-            pk = E.get(_HP_ICON_KEYS[self.hp_pick], [None])[0]
-            iw = max(len(r) for r in ic) if ic else 7
-            ix = (COLS - iw) // 2
-            overlay.extend(_blit(pf, max(ix + iw + 1, COLS - 1 - pw_), BASE_Y - len(pf)))
-            if ic:
-                overlay.extend(_blit(ic, ix, 2))                      # the target, off the border
-            if pk:
-                overlay.extend(_blit(pk, ix, 2 + len(ic or pk) + 2))  # the reel, a clean 2px under
+            if self._strike_t > 0:                                    # REACTION act
+                pf = _crop(self._frame(rec, self._pose_now(
+                    1 if (self.frame_i // 2) % 2 else 0)))            # 6/9 reactions
+                overlay.extend(_blit(pf, GRID_X0 + GRID_W - max(len(r) for r in pf),
+                                     BASE_Y - len(pf)))
+            else:                                                     # REEL act
+                ic = E.get(_HP_ICON_KEYS[self.hp_target], [None])[0]
+                pk = E.get(_HP_ICON_KEYS[self.hp_pick], [None])[0]
+                iy = BAND_TOP + 4                                     # band-centred: (16-7)//2 off the top
+                if ic:
+                    overlay.extend(_blit(ic, GRID_X0 + 15, iy))       # the target...
+                if pk:
+                    overlay.extend(_blit(pk, GRID_X0 + 24, iy))       # ...and the spinning pick
         # scene-only: the gauge + hint ride the strip (box-clip audit 2026-07-04)
-        return render_scene(placements, COLS, ARENA_ROWS, on, LCD_BG, overlay=overlay, bgimg=bgimg)
+        return render_scene(placements, COLS, ARENA_ROWS, on, LCD_BG, overlay=overlay, bgimg=bgimg, clip=grid.WINDOW)
 
     def _gauge(self):
         """The drill's live gauge as one MARKUP line: it rides the #msg strip
@@ -800,7 +801,7 @@ class TrainingPanel:
                 overlay = self._strike_orb("in", mouth, fr)
             note = "Incoming!" if m == "fire_in" else self.result
         self._strike_note = note                        # surfaces on the strip
-        return render_scene(placements, COLS, ARENA_ROWS, on, LCD_BG, overlay=overlay, bgimg=bgimg)
+        return render_scene(placements, COLS, ARENA_ROWS, on, LCD_BG, overlay=overlay, bgimg=bgimg, clip=grid.WINDOW)
 
     def _render_menu(self):
         """DVPet drawTrainingSelect diamond, as a CLEAN text layout (crisp glyphs, not

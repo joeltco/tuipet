@@ -160,9 +160,11 @@ def _data_panel():
     return pan
 
 
-def test_hp_char_bobs_like_data():
-    """Consistency polish 2026-07-06: the HP char idles with the SAME bob as the
-    data/vaccine stages -- it was the one drill with a frozen pet."""
+def test_hp_stage_takes_turns_and_the_mon_reacts():
+    """The HP drill is time-multiplexed now (window LAW 2026-07-11): the REEL
+    act shows dummy + target/pick with the mon offstage; every SPACE cuts to
+    the REACTION act, where the mon plays its 6/9 pose beside the dummy.
+    (The old always-on-stage idle bob died with the bezel-leaking layout.)"""
     from tuipet.training import TrainingPanel, GAMES
     from tuipet.pet import Pet
     p = Pet(num=100, stage="Champion", attribute="Vaccine", obedience=500)
@@ -170,10 +172,14 @@ def test_hp_char_bobs_like_data():
     pan = TrainingPanel(p)
     pan.gi = next(i for i, g in enumerate(GAMES) if g[0] == "hp")
     pan._start_game()
-    pan.frame_i = 0
-    a = pan.text().markup
-    pan.frame_i = 2                            # only the char rides frame_i here
-    assert pan.text().markup != a, "the HP char must idle-bob like the other drills"
+    pan._strike_t = 0                          # the reel act: mon offstage, icons up
+    reel = pan.text().markup
+    pan._strike_t = 4                          # the reaction act: the mon on stage
+    pan._strike_pose = 6
+    right = pan.text().markup
+    assert right != reel, "reel and reaction are different stages"
+    pan._strike_pose = 9
+    assert pan.text().markup != right, "the 6/9 reaction poses must differ"
 
 
 def test_data_mon_bobs_through_lock():
