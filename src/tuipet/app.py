@@ -245,10 +245,9 @@ class TuiPetApp(App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("New status rail: every icon (Zzz, conditions, emotes, the "
-                 "care-call '!') now lives in its own fixed rail on the right "
-                 "edge -- nothing rides the pet, sprites never overlap, and "
-                 "your mon keeps clear of the icons and the mess it made.")
+    WHATS_NEW = ("Fixed: a screen's key hints no longer stick to the message "
+                 "box after you leave it (exiting the lobby left its hints "
+                 "up until the next care call).")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and
@@ -583,6 +582,13 @@ class TuiPetApp(App):
         cb = self._mode_close
         self.mode = None
         self._mode_close = None
+        # a screen's strip must never outlive it (Joel 2026-07-10: the lobby's
+        # hints stuck to the main view -- with no care need pending, on_tick's
+        # message cascade never rewrites an already-filled box).  Clear BEFORE
+        # the callback so a farewell flash or a chained _open_mode still paints
+        # onto a clean box.
+        if getattr(self, "msg_w", None) is not None:
+            self._hud("")
         if cb:
             cb(result)
         else:
