@@ -1,0 +1,199 @@
+"""BANDAI GRAMMAR (2026-07-11): the 32x16 matrix is a STAGE, not a dashboard.
+
+Locked geometry (Joel, long-standing): 40x24 LCD, 32x16 play area grounded
+2px above the bottom border -- untouchable.  The LCD carries SCENE ACTORS
+only: the pet (full play area), the filth block, the sleep Zzz in the sky
+corner, and the sick skull standing beside the pet like the real device
+draws it.  Every BADGE (medicine/bandage/vitamin/fatigue/injury, teach,
+the care-call '!', idle emotes) lives on the status side: the HUD deco,
+the msg-box alarm, the digicore pages.  Care-fx scenes keep their own
+in-scene emotes -- those are full-screen animations, the hardware way.
+
+Hard invariant, swept at the pixel level: sprites never draw on another."""
+import random
+
+import tuipet.app as app
+from tuipet import arena, data, grid
+from tuipet.pet import Pet
+
+
+def _pet(**kw):
+    p = Pet(num=100, stage="Champion", attribute="Vaccine", obedience=500)
+    p.world_seconds = 10 * 60.0
+    for k, v in kw.items():
+        setattr(p, k, v)
+    return p
+
+
+def _screen():
+    s = app.Screen()
+    s.on_mount()
+    s.update = lambda t: None
+    return s
+
+
+def _sprite_px(rows, xshift, mirror, cols=40, px_h=24):
+    """Reproduce render_screen's placement (centred, baselined, no yshift)."""
+    if not rows:
+        return set()
+    src = [r[::-1] for r in rows] if mirror else rows
+    sw = max(len(r) for r in src)
+    ox = (cols - sw) // 2 + xshift
+    oy = max(0, px_h - len(src) - 2)
+    return {(ox + x, oy + y) for y, line in enumerate(src)
+            for x, ch in enumerate(line) if ch == "1"
+            and 0 <= oy + y < px_h and 0 <= ox + x < cols}
+
+
+def _paint_capture(monkeypatch):
+    cap = {}
+
+    def spy(rows, cols, nrows, on, bg, mirror=False, xshift=0, yshift=0,
+            overlay=None, bgimg=None):
+        cap.update(rows=rows, mirror=mirror, xshift=xshift,
+                   overlay=list(overlay or []))
+        return ""
+
+    monkeypatch.setattr("tuipet.arena.render_screen", spy)
+    return cap
+
+
+SCENARIOS = [
+    {},
+    {"sick": True, "sick_length": 99.0},
+    {"asleep": True, "anim": "sleep"},
+    {"asleep": True, "nap": True, "anim": "sleep"},
+    {"asleep": True, "anim": "sleep", "lights": False},
+    {"asleep": True, "anim": "sleep", "sick": True, "sick_length": 99.0},
+    {"sick": True, "sick_length": 99.0, "lights": False},
+    # the franken transition: asleep flag up while another anim still plays
+    # (a disturbed sleeper) -- the Zzz waits for the sleep pose, so the
+    # walking pet and the glyph can never meet
+    {"asleep": True, "nap": True},
+]
+LOADS = [(0, []), (1, [2]), (2, [2, 3]), (3, [2, 3, 1]), (4, [3, 3, 2, 1])]
+
+
+def test_no_sprite_ever_draws_on_another(monkeypatch):
+    """THE sweep: every actor state x filth load x 30 ticks -- the pet's ink
+    and the overlay's ink (piles + skull + Zzz) are disjoint pixel sets."""
+    cap = _paint_capture(monkeypatch)
+    for kw in SCENARIOS:
+        for n, sizes in LOADS:
+            random.seed(7)
+            p = _pet(weather="Clear", poop=n, poop_sizes=list(sizes), **kw)
+            s = _screen()
+            for i in range(30):
+                s.advance(p)
+                s.paint(p)
+                pet_px = _sprite_px(cap["rows"], cap["xshift"], cap["mirror"])
+                hit = pet_px & set(cap["overlay"])
+                assert not hit, (kw, n, i, sorted(hit)[:6])
+
+
+def test_badges_never_touch_the_lcd():
+    """Medicine, bandage, vitamin, fatigue, injury, teach, the care-call and
+    the idle emotes are BADGES -- zero pixels on the play field."""
+    for kw in ({"med_lapse": 30.0}, {"bandage_lapse": 30.0},
+               {"vitamin_lapse": 30.0}, {"fatigue_length": 99.0},
+               {"inj_length": 99.0}, {"praise_flag": True},
+               {"scold_flag": True}, {"discipline_call": True},
+               {"hunger": 0}, {"anim": "happy"}, {"anim": "sad"},
+               {"anim": "exhausted"}):
+        p = _pet(weather="Clear", **kw)
+        assert arena._effect_overlay(p, 0, 40, 24, tick=0) == [], kw
+
+
+def test_healthy_pet_owns_the_full_play_area(monkeypatch):
+    """Nothing on a healthy pet's LCD may shrink its locked 32x16 world: the
+    roamer's wall is the grid's own right edge and paint never clamps it."""
+    cap = _paint_capture(monkeypatch)
+    p = _pet(weather="Clear")
+    s = _screen()
+    s.roamer.x = float(grid.X1 - arena.SPRITE_W)   # standing at the far wall
+    s.paint(p)
+    assert cap["xshift"] == (grid.X1 - arena.SPRITE_W) - arena.PET_BASE_X
+    assert not arena._sick_mark_up(p)
+
+
+def test_sick_skull_stands_in_the_scene(monkeypatch):
+    """The skull is a grounded scene object beside the pet -- right edge,
+    feet on the floor, blinking its 2-frame pair -- and a walk wall."""
+    cap = _paint_capture(monkeypatch)
+    p = _pet(weather="Clear", sick=True, sick_length=99.0)
+    pts = arena._effect_overlay(p, 0, 40, 24, tick=0)
+    assert pts and all(grid.X1 - arena.COND_W <= x < grid.X1 for x, _ in pts)
+    assert max(y for _, y in pts) == grid.FLOOR - 1        # grounded at y21
+    assert min(y for _, y in pts) >= grid.FLOOR - arena.COND_W
+    assert pts != arena._effect_overlay(p, 0, 40, 24, tick=7)   # stateNumTic blink
+    s = _screen()
+    s.roamer.x = 20.0                                      # fell ill at the far wall
+    s.paint(p)
+    assert cap["xshift"] <= (grid.X1 - arena.SICK_ZONE - arena.SPRITE_W) - arena.PET_BASE_X
+
+
+def test_poop_outranks_the_skull():
+    """3-4 piles leave no 16px corridor beside the skull's slot: poop wins,
+    the skull yields to the HUD (which always carries +sick)."""
+    p = _pet(weather="Clear", poop=3, poop_sizes=[2, 3, 1],
+             sick=True, sick_length=99.0)
+    assert not arena._sick_mark_up(p)
+    filth_only = _pet(weather="Clear", poop=3, poop_sizes=[2, 3, 1])
+    assert arena._effect_overlay(p, 0, 40, 24, tick=0) \
+        == arena._effect_overlay(filth_only, 0, 40, 24, tick=0)
+    q = _pet(weather="Clear", poop=2, poop_sizes=[2, 3],
+             sick=True, sick_length=99.0)
+    assert arena._sick_mark_up(q)                          # 2 piles: room for both
+
+
+def test_zzz_floats_in_the_sky_corner():
+    """The sleep Zzz lives above the 32x16 world (sky strip, top-right) --
+    lights on, lights off, and with its own nap glyph."""
+    night = _pet(weather="Clear", asleep=True, anim="sleep")
+    zz = arena._effect_overlay(night, 0, 40, 24, tick=0)
+    assert zz and all(x >= grid.X1 - 8 and y <= grid.TOP for x, y in zz)
+    nap = _pet(weather="Clear", asleep=True, nap=True, anim="sleep")
+    assert arena._effect_overlay(nap, 0, 40, 24, tick=0) != zz
+    dark = _pet(weather="Clear", asleep=True, lights=False)
+    assert arena._effect_overlay(dark, 0, 40, 24, tick=0)  # the dark room keeps its Zzz
+    awake = _pet(weather="Clear")
+    assert arena._effect_overlay(awake, 0, 40, 24, tick=0) == []
+
+
+def test_nap_dip_is_safe_by_placement_math(monkeypatch):
+    """The nap glyph is 7px -- its last row dips onto the band's top row at
+    x28+ (some species sleep SITTING UP at full height, so the dip is real).
+    Safe by construction: a sleeper beside <=2 piles is clamped to centre,
+    never under the dip; with 3-4 piles the nap wears the all-sky night
+    glyph instead."""
+    cap = _paint_capture(monkeypatch)
+    cozy = _pet(weather="Clear", asleep=True, nap=True, anim="sleep",
+                poop=2, poop_sizes=[2, 3])
+    s = _screen()
+    s.roamer.x = 20.0                          # napped off at the far wall
+    s.paint(cozy)
+    assert cap["xshift"] == 0                  # pinned to centre: x12..27
+    crowded = _pet(weather="Clear", asleep=True, nap=True, anim="sleep",
+                   poop=4, poop_sizes=[3, 3, 2, 1])
+    zz = [pt for pt in arena._effect_overlay(crowded, 0, 40, 24, tick=0)
+          if pt[0] >= grid.X1 - 8 and pt[1] <= grid.TOP]
+    assert zz and all(y < grid.TOP for _, y in zz)   # all-sky: no band-row ink
+
+
+def test_alarm_keeps_the_union_while_the_scene_split_stands():
+    """needs_attention (HUD alarm, mood-lapse gate) still counts discipline;
+    needs_care (the physical half) does not -- the split from 2026-07-11
+    survives with the badges off-LCD."""
+    scold = _pet(scold_flag=True)
+    assert scold.needs_attention() and not scold.needs_care()
+    hungry = _pet(hunger=0)
+    assert hungry.needs_attention() and hungry.needs_care()
+
+
+def test_hud_carries_every_badge():
+    """The badges' one home: the STATUS deco line."""
+    import inspect
+    src = inspect.getsource(app.Stats.paint)
+    for badge in ("+med", "+bnd", "+vit", "+praise!", "+scold!",
+                  "+tired", "+hurt", "+sick"):
+        assert badge in src, badge

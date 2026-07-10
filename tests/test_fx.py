@@ -484,15 +484,15 @@ def test_yawn_tell_plays_in_place_with_status_ui(monkeypatch):
             "poop": 0, "old_num": None, "good": True}
     s._paint_fx(p)
     # the pose plays at the roamer's spot CLAMPED into the free corridor
-    # (icon-rail sweep 2026-07-10): 2 piles are a left wall at x12 and the
-    # live rail (sick) a right wall at x12 -- the corridor is that one spot
-    from tuipet.app import PET_BASE_X, RAIL_W, SPRITE_W
+    # (Bandai-grammar sweep 2026-07-11): 2 piles are a left wall at x12 and
+    # the sick SKULL a right wall at x12 -- the corridor is that one spot
+    from tuipet.app import PET_BASE_X, SICK_ZONE, SPRITE_W
     lo = _filth_right(2) - PET_BASE_X
-    hi = (grid.X1 - RAIL_W - SPRITE_W) - PET_BASE_X
+    hi = (grid.X1 - SICK_ZONE - SPRITE_W) - PET_BASE_X
     assert cap["xshift"] == min(max(s.roamer.xshift, lo), max(hi, lo))
     assert cap["mirror"] == s.roamer.mirror       # facing kept (canon getIsMirror())
     xs = {x for x, _ in cap["overlay"]}
-    assert any(x >= grid.X1 - COND_W for x in xs), "condition column must stay up"
+    assert any(x >= grid.X1 - COND_W for x in xs), "the sick skull must stay up"
     assert any(grid.X0 <= x < _filth_right(2) for x in xs), "filth piles must stay up"
 
 

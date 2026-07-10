@@ -2070,20 +2070,31 @@ class Pet:
         self._set_anim("happy", 2.0)                  # the rescue ends in a cheer
         return old if targets else None
 
-    def needs_attention(self):
-        """The ONE care-call predicate behind the '!' bubble AND the HUD alarm
-        (they had drifted; design call, polish 2026-07): an awake, hatched pet
-        that is starving, effort-empty, sick, filthy, exhausted or misbehaving
-        -- or a SLEEPER with the lights burning (canon lightsCall is the one
-        call that fires ASLEEP; strengthCall was also missing -- the effort
-        gauge emptied silently.  Sleep-screens audit 2026-07-06)."""
+    def needs_care(self):
+        """The PHYSICAL half of the care call -- what the '!' rail icon shows:
+        an awake, hatched pet that is starving, effort-empty, sick, filthy or
+        exhausted, or a SLEEPER with the lights burning (canon lightsCall, the
+        one call that fires asleep).  The discipline family (praise/scold/
+        tantrum) is NOT here -- it wears the teach bulb instead, so the two
+        icons carry separate meanings (Joel 2026-07-11: '!' and the bulb
+        always showed as a pair, never separate)."""
         if self.dead or self.stage == "Egg" or self.call_paused():
             return False
         if self.asleep:
             return bool(self.lights)             # lightsCall: it wants the dark
         return (self.hunger == 0 or self.strength == 0 or self.sick
-                or self.poop >= 3 or self.energy <= 0
-                or self.scold_flag or self.discipline_call)
+                or self.poop >= 3 or self.energy <= 0)
+
+    def needs_attention(self):
+        """The FULL alarm predicate (HUD beep/nag + mood-lapse gate): physical
+        needs OR an open discipline moment.  Split 2026-07-11: the '!' icon
+        draws on needs_care() only; this union keeps the alarm and the
+        mood-recovery block exactly as before (sleep-screens audit
+        2026-07-06 semantics unchanged)."""
+        return self.needs_care() or (not self.asleep and not self.dead
+                                     and self.stage != "Egg"
+                                     and not self.call_paused()
+                                     and (self.scold_flag or self.discipline_call))
 
     def near_bedtime(self):
         """sleepNotNap: the pressure sits inside the real-sleep edge -- the

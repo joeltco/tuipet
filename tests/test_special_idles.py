@@ -115,34 +115,29 @@ def test_the_thunder_startle_is_disposition_keyed():
     assert p.anim == "startle_sunny"
 
 
-def test_the_collapse_wears_the_dying_emote():
-    """badHealthJeer (emote audit 2026-07-06): the fatigue/life-penalty anim
-    blinks the dying/dying2 pair at the pet's edge -- the exhausted collapse
-    now shows how bad it is (the classifier used to show nothing)."""
+def test_the_collapse_emote_is_fx_only_now():
+    """Bandai grammar 2026-07-11: idle-state anims carry no floating emote --
+    the collapse POSE is the signal; the dying/losing FX scenes still own the
+    dying/dying2 pair as part of their full-screen animation."""
     from tuipet import app as app_mod, data
+    import inspect, tuipet.arena as arena_mod
     p = _pet()
     p._set_anim("exhausted", 2.0)
-    pts_a = app_mod._effect_overlay(p, 0, 40, 24, tick=0)
-    pts_b = app_mod._effect_overlay(p, 1, 40, 24, tick=0)
-    assert pts_a and pts_b and pts_a != pts_b     # the two dying frames blink
+    assert app_mod._effect_overlay(p, 0, 40, 24, tick=0) == []
     p._set_anim("idle", 0.0)
     p.anim = "idle"
     assert len(data.load_effects()["dying"]) == 2
+    assert 'get("dying")' in inspect.getsource(arena_mod)   # the fx scenes keep it
 
 
-def test_the_condition_column_keeps_canon_order_and_shows_all():
-    """checkStates (condition-column audit 2026-07-06): every active condition
-    shows AT ONCE, in canon's top-down slot order (sick/med/inj/bandage/
-    vitamin/fatigue at x~120) -- ours compacts upward on the 24px LCD but the
-    ORDER is canon's; each icon blinks its 2-frame pair."""
-    from tuipet import app as app_mod, data
+def test_the_sick_skull_is_the_one_condition_actor():
+    """Bandai grammar 2026-07-11: the condition dashboard left the LCD; only
+    the skull stands in the scene, grounded at the band's right edge,
+    blinking its 2-frame pair.  Extra conditions add nothing on-LCD."""
+    from tuipet import app as app_mod, data, grid
     E = data.load_effects()
-    order = ("st_sick", "st_medicine", "st_injury", "st_bandage",
-             "st_vitamin", "st_fatigue")
-    assert all(len(E.get(k, [])) == 2 for k in order if E.get(k))
+    assert len(E["st_sick"]) == 2
     p = _pet(sick=True, sick_length=5.0, fatigue_length=5.0, inj_length=5.0)
     pts = app_mod._effect_overlay(p, 0, 40, 24, tick=0)
-    # three conditions active: the column paints strictly more than one icon's
-    # worth of pixels at the right edge (x >= 29)
-    col = [pt for pt in pts if pt[0] >= 29]
-    assert len({y for _, y in col}) > 7      # taller than a single 7px icon
+    assert pts and all(x >= grid.X1 - 7 for x, _ in pts)
+    assert max(y for _, y in pts) == 21      # grounded on the locked floor

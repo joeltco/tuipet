@@ -49,9 +49,9 @@ from .arena import (  # noqa: F401  (full re-export: preserve tuipet.app.* for c
     Screen, SCREEN_COLS, SCREEN_ROWS, SPRITE_W, PET_BASE_X, _FxCtx,
     hearts, bar, _FX, GRAVESTONE, POOP_W, POOP_PAD, WEATHER_GLYPH,
     _sky_icon, _RAIN, _SNOW, _PRECIP_N, _scale_hex, _weather_overlay,
-    _evol_strobe, _filth_right, _filth_pts, COND_W, COND_H, RAIL_W,
+    _evol_strobe, _filth_right, _filth_pts, COND_W, COND_H, SICK_ZONE,
     PLAY_HOP, PLAY_LEAD, PLAY_HOP_H, GIFT_OUT, GIFT_BACK, GIFT_HOLD,
-    _HIDDEN_STATUS_ICONS, _effect_overlay, _rail_reserved, _rail_items,
+    _HIDDEN_STATUS_ICONS, _effect_overlay, _sick_mark_up,
 )
 
 import re as _re
@@ -149,11 +149,16 @@ class Stats(Static):
         if pet.is_injured() and word != "injured": deco.append(f"[{T.NEG}]+hurt[/]")
         if pet.is_freezing() and word != "freezing": deco.append("[blue]+cold[/]")
         if pet.is_overheating() and word != "overheating": deco.append(f"[{T.NEG}]+hot[/]")
+        # the discipline window is a BADGE, not a scene actor (Bandai grammar
+        # 2026-07-11: the teach bulb came off the LCD) -- this line is where a
+        # praise/scold moment shows now, next to the alarm's msg-box half
+        if getattr(pet, "praise_flag", False): deco.append(f"[{T.POS}]+praise![/]")
+        if getattr(pet, "scold_flag", False) or getattr(pet, "discipline_call", False):
+            deco.append(f"[{T.NEG}]+scold![/]")
         if pet.poop: deco.append(f"[{T.COIN}]~poop x{pet.poop}[/]")
         if getattr(pet, "effect_id", -1) >= 0: deco.append(f"[{T.POS}]\u2726{pet.effect_name()}[/]")
         # the badge conditions, lowest priority (dropped first on overflow):
-        # with 3-4 piles the LCD rail yields its floor space, so the HUD is
-        # what still carries these (icon-rail sweep 2026-07-10)
+        # off-LCD since the Bandai-grammar sweep -- the HUD is their one home
         if pet.has_medicine(): deco.append(f"[{T.NEG}]+med[/]")
         if pet.has_bandage(): deco.append("[dim]+bnd[/dim]")
         if pet.has_vitamin(): deco.append(f"[{T.POS}]+vit[/]")
@@ -245,9 +250,10 @@ class TuiPetApp(App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("Fixed: a screen's key hints no longer stick to the message "
-                 "box after you leave it (exiting the lobby left its hints "
-                 "up until the next care call).")
+    WHATS_NEW = ("The LCD is a stage again, the way Bandai built it: your mon "
+                 "gets its whole 32x16 world back -- a skull stands beside it "
+                 "when it's sick, Zzz floats overhead when it sleeps, and every "
+                 "status badge moved to the panel where it belongs.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and
@@ -1445,6 +1451,7 @@ class TuiPetApp(App):
         elif p.poop >= 3:     msg = f"{name} needs cleaning!"
         elif p.energy <= 0:   msg = f"{name} is exhausted!"
         elif p.scold_flag:    msg = f"{name} is misbehaving!"
+        elif p.discipline_call: msg = f"{name} is throwing a tantrum — scold it!"
         else:                 return ""
         return f"[{theme.NEG}]\u26a0 {msg}[/]"
 

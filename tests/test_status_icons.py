@@ -1,4 +1,4 @@
-"""Status-icon audit (2026-07): functions, placements, and the full manifest.
+"""Status-icon manifest + the Bandai-grammar placement rules (2026-07-11).
 
 Verified vs SpriteAnim: the condition COLUMN order matches canon's setLocY
 exactly (sick 55 / medicine 64 / injury 73 / bandage 83 / vitamin 93 /
@@ -24,7 +24,16 @@ import tuipet.app as app
 ALLOWED_SILENT = {
     "sun": "time-of-day icon; tuipet's status line uses a text glyph instead",
     "moon": "as sun",
-    "call": "DVPet's blinking call light; the attention '!' bubble covers it",
+    "call": "DVPet's blinking call light; the msg-box alarm is tuipet's call chrome",
+    # Bandai grammar 2026-07-11: the matrix is a stage, not a dashboard --
+    # badges live on the status side (HUD deco / digicore / msg-box alarm)
+    "attention": "the care-call is chrome: the msg-box alarm + beep carry it",
+    "st_teach": "discipline window -> the +praise!/+scold! HUD badges",
+    "st_medicine": "badge -> the +med HUD deco",
+    "st_injury": "badge -> the +hurt HUD deco",
+    "st_bandage": "badge -> the +bnd HUD deco",
+    "st_vitamin": "badge -> the +vit HUD deco",
+    "st_fatigue": "badge -> the +tired HUD deco",
     "depressed": "the Data_Status mood icon; the digicore CONDITION page shows text",
     "flash": "attackHitFlash crop; battle_overlays.json hit_explosion is the source in use",
     "frozen": "DVPet's game-PAUSED indicator, not a cold state (documented in paint)",
@@ -77,29 +86,25 @@ def _pet(**kw):
     return p
 
 
-def test_medicine_badge_is_back_and_warns():
-    calm = _pet()
-    dosed = _pet(med_lapse=30.0)
-    assert len(_pts(dosed)) > len(_pts(calm))    # the double-dose warning shows
+def test_badges_are_hud_only():
+    """Bandai grammar: medicine/teach/etc are BADGES -- zero LCD pixels; the
+    HUD deco carries them (+med / +praise! / +scold!)."""
+    assert _pts(_pet(med_lapse=30.0)) == []
+    assert _pts(_pet(praise_flag=True)) == []
+    import inspect
+    src = inspect.getsource(app.Stats.paint)
+    assert "+med" in src and "+praise!" in src and "+scold!" in src
 
 
-def test_teach_bubble_is_back_with_canon_gates():
-    good = _pet(praise_flag=True)
-    assert len(_pts(good)) > len(_pts(_pet()))   # discipline awaited: the bulb shows
-    dark = _pet(praise_flag=True, lights=False)
-    lit = _pet(praise_flag=True)
-    assert len(_pts(dark)) < len(_pts(lit))      # canon: lights-off hides teach
-
-
-def test_condition_column_shows_all_active_at_once():
+def test_only_the_skull_joins_the_scene():
+    """Of the six conditions only sickness is a scene actor (the real device
+    stands a skull beside the pet); the others add nothing to the LCD."""
     p = _pet(sick=True, sick_length=999.0, med_lapse=30.0)
     p.inj_length = 999.0
-    # three conditions -> three SIMULTANEOUS rail slots (0/8/16), not a cycler
-    # (icon-rail sweep 2026-07-10: raw px counts stopped meaning "more icons"
-    # once the inky '!' bubble started yielding its slot to real conditions)
-    ys = {y for x, y in _pts(p) if x >= 28}
-    assert ys & set(range(0, 8)) and ys & set(range(8, 16)) \
-        and ys & set(range(16, 24))
+    q = _pet(sick=True, sick_length=999.0)
+    assert _pts(p) == _pts(q)                    # med/injury change nothing on-LCD
+    assert _pts(q)                               # ...but the skull is up
+    assert all(x >= 28 for x, _ in _pts(q))
 
 
 def test_nap_wears_its_own_zzz_glyph():
@@ -110,12 +115,12 @@ def test_nap_wears_its_own_zzz_glyph():
     E = data.load_effects()
     assert len(E.get("zzz_nap", [])) == 2 and len(E["zzz"]) == 2
     assert E["zzz_nap"] != E["zzz"]                  # genuinely different art
-    night = _pet(asleep=True, nap=False)
-    nap = _pet(asleep=True, nap=True)
+    night = _pet(asleep=True, nap=False, anim="sleep")
+    nap = _pet(asleep=True, nap=True, anim="sleep")
     pn = {(x, y) for x, y in _pts(night)}
     pp = {(x, y) for x, y in _pts(nap)}
     assert pn != pp                                  # the glyphs render differently
     # and the dark-room corner Zzz swaps too
-    dark_night = _pet(asleep=True, nap=False, lights=False)
-    dark_nap = _pet(asleep=True, nap=True, lights=False)
+    dark_night = _pet(asleep=True, nap=False, lights=False, anim="sleep")
+    dark_nap = _pet(asleep=True, nap=True, lights=False, anim="sleep")
     assert {(x, y) for x, y in _pts(dark_night)} != {(x, y) for x, y in _pts(dark_nap)}

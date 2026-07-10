@@ -206,95 +206,38 @@ PLAY_HOP_H = 6                                     # apex px: the FULL body stay
 GIFT_OUT = 40                                      # beats*2 ticks: centre x12 -> x-8 (20px)
 GIFT_BACK = 46                                     # x-8 -> x15 (23px)
 GIFT_HOLD = 18                                     # the % (interval*45) settle before giftEnd
-# Icon-audit 2026-07: the 2026-06-26 "for now" hide of st_medicine + st_teach is
-# LIFTED -- both badges carry real information now: the medicine indicator is the
-# double-dose poison warning (getMed), and teach flags a discipline window that
-# EXPIRES with teeth since v0.2.182.  Re-hide by adding keys back to this set.
-_HIDDEN_STATUS_ICONS: set[str] = set()
-# THE STATUS RAIL (icon-rail redesign 2026-07-10, Joel's call: "we are no longer
-# DVPet, make it our own thing").  DVPet split its icons between a fixed condition
-# column and creature-TRACKING labels (emote/teach rode the pet via
-# adjustEmotionLabel / setDynamicComponentLocation) -- tracking is gone.  tuipet
-# gives every icon one home: a fixed RAIL_W-wide rail hugging the grid's right
-# edge, stacked top-down Zzz -> conditions (canon order) -> one reaction slot
-# (emote / care-call '!' / teach take turns).  While the rail holds anything the
-# pet's corridor stops LEFT of it (advance + the paint clamp share
-# _rail_reserved), so icon and creature ink can never mix.  When 3-4 filth piles
-# leave no 16px corridor the rail YIELDS: the pet is pinned beside the piles,
-# only sky-strip-height icons (the 6px Zzz) stay up top, and the HUD status
-# line carries the conditions instead -- poop tiles always win floor space.
-RAIL_W = 8                                         # widest rail sprite (zzz / the 8x8 emotes)
+_HIDDEN_STATUS_ICONS: set[str] = set()             # add keys here to hide a scene mark
+# BANDAI GRAMMAR (2026-07-11, Joel: "how did Bandai fit it all in a 32x16
+# screen?" -- they didn't; the matrix is a STAGE, not a dashboard).  The LCD
+# carries SCENE ACTORS only, and the pet keeps its full locked 32x16 play area:
+#   - the filth block (bottom-left, a walk wall -- settled)
+#   - the sleep Zzz, floating in the sky corner above the world
+#   - the sick SKULL, standing beside the pet like the real device draws it --
+#     a grounded scene object with its own walk wall ("icons can limit walking
+#     space"); with 3-4 piles there is no 16px corridor left, so poop wins and
+#     the skull yields to the HUD (which always says +sick anyway)
+# Everything that is a BADGE, not an actor -- medicine/bandage/vitamin/fatigue/
+# injury, the teach bulb, the care-call '!', the idle-state emotes -- lives on
+# the status side of the game (STATUS panel deco, digicore pages, the msg-box
+# alarm: tuipet's silkscreen chrome).  The care-fx scenes keep their own
+# in-scene emotes (cheer/jeer/dying) -- those are full-screen animations,
+# exactly how the hardware spends its pixels.
+SICK_ZONE = COND_W + 1                             # skull slot + 1px gap off the grid's right edge
 
 
-def _rail_items(pet, frame_i, tick):
-    """The rail's active icons, top-down, as (frame, is_reaction) pairs:
-    Zzz (asleep; nap wears its own glyph -- getLightsSprites napLights), then
-    the conditions in canon checkStates order blinking their 2-frame pairs
-    (stateNumTic: 7 ticks awake / 10 asleep), then ONE reaction slot.  The
-    reaction flag marks the transient bubble: real conditions hold fixed
-    slots FIRST; the bubble only takes a slot that is genuinely free."""
-    E = data.load_effects()
-    items = []
-    asleep = bool(getattr(pet, "asleep", False))
-    zkey = "zzz_nap" if (getattr(pet, "nap", False) and E.get("zzz_nap")) else "zzz"
-    if asleep and E.get(zkey):
-        items.append((E[zkey][(tick // 10) % len(E[zkey])], False))
-    unwell = pet.sick or pet.is_injured() or pet.is_fatigued()
-    sf = (tick // (7 if unwell else (10 if asleep else 7))) % 2
-    column = (("st_sick", pet.sick), ("st_medicine", pet.has_medicine()),
-              ("st_injury", pet.is_injured()), ("st_bandage", pet.has_bandage()),
-              ("st_vitamin", pet.has_vitamin()), ("st_fatigue", pet.is_fatigued()))
-    for key, active in column:
-        if active and E.get(key) and key not in _HIDDEN_STATUS_ICONS:
-            items.append((E[key][sf], False))
-    # the reaction slot (awake only -- reactions don't fire in sleep): emote from
-    # the anim state, else the care-call '!' (shared predicate with the HUD
-    # alarm), plus teach's discipline bulb (lights-on, canon gate); when several
-    # want the slot they take turns.
-    if not asleep:
-        emo = ("happy" if pet.anim == "happy" else
-               "unhappy" if pet.anim in ("sad", "refuse", "angry", "tantrum") else
-               # badHealthJeer wears the DYING emote pair (emote audit
-               # 2026-07-06): the fatigue collapse shows how bad it is
-               "dying" if pet.anim == "exhausted" else None)
-        bubble = []
-        if emo and E.get(emo):                            # cheer -> happy, jeer -> unhappy
-            bubble.append(E[emo][frame_i % len(E[emo])])
-        elif (pet.anim in ("idle", "walk") and E.get("attention")
-              and pet.needs_attention()):
-            bubble.append(E["attention"][0])              # care-call '!'
-        teach = ((getattr(pet, "praise_flag", False) or getattr(pet, "scold_flag", False))
-                 and pet.lights)
-        if teach and E.get("st_teach") and "st_teach" not in _HIDDEN_STATUS_ICONS:
-            bubble.append(E["st_teach"][sf])
-        if bubble:
-            items.append((bubble[(tick // 5) % len(bubble)], True))
-    return items
-
-
-def _rail_crowded(pet):
-    """3-4 filth piles leave no 16px corridor left of the rail: the rail must
-    yield the floor (only sky-strip icons show) while the pet is visible."""
-    return bool(pet.poop) and _filth_right(pet.poop) > grid.X1 - RAIL_W - SPRITE_W
-
-
-def _rail_reserved(pet):
-    """True when the rail is holding icons and the pet must keep clear of it.
-    advance() (the roamer's right wall) and paint()'s clamp both key off this,
-    so the corridor rule is one predicate, not two drifting copies."""
-    if pet.dead or pet.num == -1 or not pet.lights:       # hidden/grave: no corridor
+def _sick_mark_up(pet):
+    """The skull stands in the scene: sick, visible (lights on), and only when
+    the piles leave the pet a 16px corridor beside it (poop always wins).
+    advance()'s roamer wall and paint()'s clamp both key off this ONE
+    predicate, so the skull and the pet can never share floor."""
+    if not pet.sick or pet.dead or pet.num == -1 or not pet.lights:
         return False
-    if _rail_crowded(pet):                                # crowded: the rail yields instead
-        return False
-    return bool(_rail_items(pet, 0, 0))
+    return _filth_right(pet.poop) <= grid.X1 - SICK_ZONE - SPRITE_W
 
 
 def _effect_overlay(pet, frame_i, cols, px_h, tick=0):
-    """Status sprites overlaid on the LCD, tuipet's own layout: the filth block
-    bottom-left (settled), and every icon in the fixed right-edge status rail,
-    right-aligned and stacked from the top with a 1px gap.  If more icons are
-    active than the 24px rail holds, the surplus takes turns in the last slot
-    (the old column silently DROPPED them).  Nothing follows the creature."""
+    """The scene's overlay actors: filth piles, the sleep Zzz, the sick skull.
+    Nothing else -- badges belong to the HUD, not the play field."""
     E = data.load_effects()
     pts = []
     if pet.dead:
@@ -303,32 +246,33 @@ def _effect_overlay(pet, frame_i, cols, px_h, tick=0):
         pts += _filth_pts(pet, tick, px_h=px_h)
     if pet.num == -1:
         return pts
-    items = _rail_items(pet, frame_i, tick)
-    if pet.lights and _rail_crowded(pet):
-        # the pet stands pinned beside the piles, under the rail zone -- only
-        # icons short enough for the sky strip (above the band top) may show
-        items = [it for it in items if len(it[0]) <= grid.TOP]
-    core = [fr for fr, reaction in items if not reaction]
-    bub = [fr for fr, reaction in items if reaction]
-    if not core and not bub:
-        return pts
-    n, y = 0, 0                                           # how many CORE fit at full height
-    for fr in core:
-        if y + len(fr) > px_h:
-            break
-        n, y = n + 1, y + len(fr) + 1
-    if n < len(core):                                     # 4+ conditions: the last slot
-        fixed, over = core[:max(0, n - 1)], core[n - 1:]  # cycles the surplus (the old
-    else:                                                 # column silently DROPPED them);
-        fixed, over = core, bub                           # else a free slot hosts the bubble
-    y = 0
-    for fr in fixed:
-        pts += _blit(fr, grid.X1 - len(fr[0]), y)
-        y += len(fr) + 1
-    if over:
-        fr = over[(tick // 10) % len(over)]
-        if y + len(fr) <= px_h:                           # a bubble with no room left waits
-            pts += _blit(fr, grid.X1 - len(fr[0]), y)     # (transient; conditions outrank it)
+    asleep = bool(getattr(pet, "asleep", False))
+    # sleep Zzz: floats in the sky corner, above the 32x16 world (the 6px
+    # glyph fills the sky strip exactly; a nap's own glyph is 7px and dips
+    # onto the band's top row -- sleeping poses lie low, sweep-verified).
+    # It shows lights-off too: the dark room keeps its Zzz (DVPet
+    # sleepLightsOff), our one mark on a black field.
+    zkey = "zzz_nap" if (getattr(pet, "nap", False) and E.get("zzz_nap")) else "zzz"
+    if zkey == "zzz_nap" and pet.poop >= 3:
+        # the nap glyph is 7px -- its last row dips onto the band's top row at
+        # x28+.  A sleeper beside <=2 piles is clamped to CENTRE (x12..27,
+        # never under the dip); 3-4 piles push it right, so the nap wears the
+        # all-sky night glyph instead (the HUD still says it's a nap)
+        zkey = "zzz"
+    # the Zzz belongs to the SLEEP SCENE, so it rides the sleep pose; an
+    # asleep pet still wearing another anim (a disturbed sleeper's startle
+    # beat) simply skips a beat, and a dark room always keeps its Zzz
+    in_sleep_scene = asleep and (pet.anim == "sleep" or not pet.lights)
+    if in_sleep_scene and E.get(zkey) and zkey not in _HIDDEN_STATUS_ICONS:
+        z = grid._crop(E[zkey][(tick // 10) % len(E[zkey])])
+        pts += _blit(z, grid.X1 - len(z[0]), 0)
+    # sick skull: a grounded scene object at the band's right edge, blinking
+    # its 2-frame pair on the stateNumTic beat (7 ticks awake / 10 asleep)
+    if _sick_mark_up(pet) and E.get("st_sick") and "st_sick" not in _HIDDEN_STATUS_ICONS:
+        sf = (tick // (10 if asleep else 7)) % 2
+        sk = grid._crop(E["st_sick"][sf])       # crop: the cell pads its INK, and the
+        pts += _blit(sk, grid.X1 - len(sk[0]),  # ink is what must stand on the floor
+                     grid.FLOOR - len(sk))      # grounded: bottom ink at y21
     return pts
 
 
@@ -441,15 +385,15 @@ class Screen(Static):
         # NOTE: DVPet's frozen.png (the ice encasement) is its GAME-PAUSED indicator
         # (setFrozenIcon only fires when !isPlaying), not a cold-weather state -- so cold
         # shows the huddle pose above, not a full ice block over the pet.
-        # exclusive floor zones, enforced in EVERY state (icon-rail sweep
-        # 2026-07-10): the filth block is a hard left wall and a live status
-        # rail a hard right one -- sleep/sick/startle bypass the roamer's
-        # bounds, so the clamp here is what actually guarantees no overlap.
+        # exclusive floor zones, enforced in EVERY state (Bandai-grammar sweep
+        # 2026-07-11): the filth block is a hard left wall and the sick skull
+        # a hard right one -- sleep/sick/startle bypass the roamer's bounds,
+        # so the clamp here is what actually guarantees no overlap.
         base = PET_BASE_X
         lo = (_filth_right(pet.poop) if pet.poop else grid.X0) - base
-        cap = ((grid.X1 - RAIL_W if _rail_reserved(pet) else grid.X1)
+        cap = ((grid.X1 - SICK_ZONE if _sick_mark_up(pet) else grid.X1)
                - SPRITE_W) - base
-        xshift = min(max(xshift, lo), max(cap, lo))       # poop wins over the rail (rail yields when crowded)
+        xshift = min(max(xshift, lo), max(cap, lo))       # poop wins over the skull (it yields when crowded)
         overlay = (_weather_overlay(pet.weather, wf, SCREEN_COLS, SCREEN_ROWS * 2)
                    + _effect_overlay(pet, wf, SCREEN_COLS, SCREEN_ROWS * 2, tick=self.frame_i))
         if not pet.lights:                 # lights off: DVPet's lightsOff is a fully-opaque black
@@ -471,11 +415,11 @@ class Screen(Static):
             # anim plays (canon anims own LocX; the walk resumes after) -- else
             # a seeded yawn/poopdance would SLIDE as the roamer kept stepping
             poop_right = _filth_right(pet.poop) if pet.poop else grid.X0
-            # keep the pet inside the grid: left of the status rail while it
-            # holds icons (the SAME predicate paint()'s clamp uses -- the old
-            # `cond` tuple here forgot sick/zzz/emote and let the pet drift
-            # under the column), else the grid's right edge
-            right_bound = ((grid.X1 - RAIL_W - SPRITE_W) if _rail_reserved(pet)
+            # keep the pet inside the grid: left of the sick skull while it
+            # stands in the scene (the SAME predicate paint()'s clamp uses),
+            # else the full locked 32x16 is the pet's -- nothing else on the
+            # LCD may shrink its world (Bandai grammar 2026-07-11)
+            right_bound = ((grid.X1 - SICK_ZONE - SPRITE_W) if _sick_mark_up(pet)
                            else (grid.X1 - SPRITE_W))
             prev_pose = self.roamer.pose
             self.roamer.step(left_bound=poop_right, right_bound=right_bound)
@@ -732,14 +676,14 @@ class Screen(Static):
             painter(pet, fx, step, c)
         if fx["kind"] in ("yawn", "poopdance"):
             # canon idle() keeps running stateAnims (checkStates/checkFilth/
-            # stateNumTic) while a special idle plays: the status rail and
-            # filth piles stay up and blinking through the pose.  Care anims
+            # stateNumTic) while a special idle plays: the scene actors (piles,
+            # skull, Zzz) stay up and blinking through the pose.  Care anims
             # keep their resetScreen() blackout -- canon hides those labels.
             # The pose sways around the roamer's spot, so it gets the same
-            # zone clamp as paint() (a condition arising MID-yawn would
-            # otherwise put the rail over the pet for the pose's last beats).
+            # zone clamp as paint() (sickness striking MID-yawn would
+            # otherwise stand the skull on the pet for the pose's last beats).
             lo = (_filth_right(pet.poop) if pet.poop else grid.X0) - PET_BASE_X
-            cap = ((grid.X1 - RAIL_W if _rail_reserved(pet) else grid.X1)
+            cap = ((grid.X1 - SICK_ZONE if _sick_mark_up(pet) else grid.X1)
                    - SPRITE_W) - PET_BASE_X
             c.xshift = min(max(c.xshift, lo), max(cap, lo))
             c.overlay += _effect_overlay(pet, self.frame_i // 4, SCREEN_COLS, c.px_h,
