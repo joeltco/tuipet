@@ -40,14 +40,88 @@ def load_settings(path=None):
     path = path or SETTINGS_PATH
     for candidate in (path, path + ".bak"):
         try:
-            return json.load(open(candidate))
+            d = json.load(open(candidate))
         except (OSError, ValueError):
             continue
+        if _migrate_v401_settings(d):        # .400/.401 egg indices -> .402 bank
+            save_settings(d, path)
+        return d
     return {}
 
 
 def save_settings(d, path=None):
     _atomic_write_json(path or SETTINGS_PATH, d, keep_bak=True)
+
+
+# --- v0.2.402 egg-bank migration (frames-or-cut pass, 2026-07-10) ------------
+# v0.2.400/.401 shipped an 84-egg bank; .402 cut the six frameless digitama +
+# Bubbmon/ver6 and reordered the new-egg block into device order.  Saved egg
+# INDICES from those two builds must translate by name.  Classic 0-48 kept
+# their positions, so only >=49 moves.
+EGG_ORDER_V = 2
+_V401_EGG_NAMES = [                     # bank order as shipped in .400/.401
+    "Breakdra Egg", "Corona Egg", "DORU Egg", "Deep Savers Egg",
+    "Digitama X", "Digitama X2", "Digitama X3", "Vorvomon Egg", "Draco Egg",
+    "Hack Egg", "Kera Digitama", "Lalamon Egg", "Lop Egg", "Ludo Egg",
+    "Luna Egg", "Meicoo Egg", "Meicoomon Egg", "Metal Empire Egg",
+    "Nature Spirits Egg", "Nightmare Soldiers Egg",
+    "Nightmare Soldiers Ver.20th Egg", "Ryuda Egg", "Slayerdra Egg",
+    "Terrier Egg", "V Egg", "Version 1 Egg", "Version 2 Egg",
+    "Version 3 Egg", "Version 4 Egg", "Version 5 Egg", "Version 6 Egg",
+    "Virus Busters Egg", "Virus Busters Ver. 20th Egg",
+    "Wind Guardians Egg", "Zuba Egg"]   # indices 49..83
+# a CUT egg mid-incubation falls back to the classic egg of the same baby;
+# the two Bubbmon digitama (Nature Spirits / Version 6) default to the
+# Botamon egg -- their baby no longer exists
+_V401_CUT_FALLBACK = {"Digitama X": 17, "Digitama X2": 18,
+                      "Vorvomon Egg": 8, "Nightmare Soldiers Ver.20th Egg": 10,
+                      "Nature Spirits Egg": 1, "Version 6 Egg": 1}
+
+
+def _migrate_egg_index(old):
+    """Translate a .400/.401 egg index into the .402 bank (None = drop)."""
+    if not isinstance(old, int) or old < 49:
+        return old                                    # classic block: unchanged
+    if old - 49 >= len(_V401_EGG_NAMES):
+        return None
+    name = _V401_EGG_NAMES[old - 49]
+    from . import egg as egg_mod
+    for i in range(egg_mod.count()):
+        if egg_mod.hatch_name(i) == name:
+            return i
+    return _V401_CUT_FALLBACK.get(name)
+
+
+def _migrate_v401_save(data):
+    """In-place pet-save migration: egg indices, plus live ver6 pets (Bubbmon
+    #1574 grows past its cut form into Motimon #19, the line's real next
+    stage, keeping age and stats)."""
+    if data.get("egg_order_v") == EGG_ORDER_V:
+        return
+    if isinstance(data.get("egg_type"), int):
+        new = _migrate_egg_index(data["egg_type"])
+        data["egg_type"] = new if new is not None else 1
+    if data.get("num") == 1574:
+        data["num"] = 19
+        if data.get("line_id") == "ver6":
+            data["line_id"] = "choromon"              # Motimon's surviving line
+    elif data.get("line_id") == "ver6":
+        data["line_id"] = "choromon"
+    data["egg_order_v"] = EGG_ORDER_V
+
+
+def _migrate_v401_settings(d):
+    """One-time owned-egg index translation for .400/.401 settings files."""
+    if not d or d.get("egg_order_v") == EGG_ORDER_V:
+        return False
+    prog = d.get("progress") or {}
+    owned = prog.get("eggs_owned")
+    if owned:
+        prog["eggs_owned"] = sorted({n for n in
+                                     (_migrate_egg_index(i) for i in owned)
+                                     if n is not None})
+    d["egg_order_v"] = EGG_ORDER_V
+    return True
 
 
 def get_album():
@@ -405,6 +479,7 @@ def to_save_dict(pet):
     for offline catch-up AND last-write-wins cloud merge."""
     data = asdict(pet)
     data["_saved_at"] = time.time()
+    data["egg_order_v"] = EGG_ORDER_V   # marks post-.402 egg indices (migration guard)
     return data
 
 
@@ -444,6 +519,7 @@ def pet_from_save(data, catch_up=True, strict=False):
     if not isinstance(data, dict):
         return None, ""
     data = dict(data)                            # don't mutate the caller's dict
+    _migrate_v401_save(data)                     # egg-bank reorder + ver6 cut
     saved_at = data.pop("_saved_at", None)
     # JSON stringifies int dict keys: habitat_record / trophies_won come back
     # str-keyed, silently breaking habitat-gated evolutions and cup prelim

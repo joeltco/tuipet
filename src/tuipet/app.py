@@ -239,10 +239,10 @@ class TuiPetApp(App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("The new digitama came alive: 18 now play their real device "
-                 "settle-and-crack animation, and the one-of-a-kind designs rock "
-                 "in place -- every pixel official, always. Hatch something from "
-                 "the 35 new eggs and go show it off in the lobby!")
+    WHATS_NEW = ("Egg quality pass: every digitama in the game now plays its real "
+                 "device animation -- settle, bobble, crack. The egg select lines "
+                 "up in device order (Ver.1-5, then the Pendulum fields), and town "
+                 "shops tease locked eggs with how to earn them. All killer, no filler.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and

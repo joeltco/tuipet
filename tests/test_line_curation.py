@@ -22,11 +22,6 @@ DECLARED_EDGES = {
     # RustTyrannomon jogress doors (DM20 canon capstone; the corpus graph
     # never carried the edge -- canon scan follow-up 2026-07-08)
     (396, 393), (276, 393),
-    # ver6 (DM Ver.6, humulos chart 2026-07-10): the original-device line the
-    # corpus graph never carried -- Motimon->Otamamon, the Tentomon/Otamamon
-    # adult roads, and the Perfect capstones
-    (19, 49), (48, 141), (48, 113), (48, 142), (49, 120), (49, 125),
-    (113, 225), (125, 225), (141, 251), (120, 251), (159, 251),
 }
 
 
@@ -93,12 +88,7 @@ def test_growth_stages_always_have_a_road():
 
 
 def test_every_line_reaches_mega():
-    # ver6: the original DM Ver.6 device tops out at Perfect (Ultimate here) --
-    # no canon Mega exists for the line (ver1-5 got theirs from DM20)
     for lid, line in _all_lines().items():
-        if lid == "ver6":
-            assert any(r["stage"] == "Ultimate" for r in line["members"].values()), lid
-            continue
         assert any(r["stage"] == "Mega" for r in line["members"].values()), lid
 
 

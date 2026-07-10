@@ -330,13 +330,11 @@ def _egg_themes():
     # the Pendulum field eggs ARE their field -- theme by name, not by the
     # dominant stat of whatever line their baby roots (a Deep Savers egg
     # belongs to ocean towns even if its line wanders)
-    named_field = {"Nature Spirits Egg": "NatureSpirit",
-                   "Deep Savers Egg": "DeepSaver",
+    named_field = {"Deep Savers Egg": "DeepSaver",
                    "Nightmare Soldiers Egg": "NightmareSoldier",
                    "Metal Empire Egg": "MetalEmpire",
                    "Wind Guardians Egg": "WindGuardian",
                    "Virus Busters Egg": "VirusBuster",
-                   "Nightmare Soldiers Ver.20th Egg": "NightmareSoldier",
                    "Virus Busters Ver. 20th Egg": "VirusBuster"}
     out = {}
     for i in range(count()):
