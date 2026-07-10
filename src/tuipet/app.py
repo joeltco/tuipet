@@ -239,9 +239,10 @@ class TuiPetApp(App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("New here? Press ? for a Help screen -- every control and a quick "
-                 "how-to (care, adventure, cups, lobby, and how your pet grows), so "
-                 "none of the keys are a mystery.")
+    WHATS_NEW = ("Town shelves ring true now: Mossford's egg shop matches its mossy "
+                 "woods (a crossed wire had it selling factory eggs) and local "
+                 "specialties charge the town's OWN price -- Dunehaven's famous ice "
+                 "cream is 75 bits, half what the stall was overcharging.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and

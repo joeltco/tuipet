@@ -39,6 +39,8 @@ BUGS_PATH = os.environ.get(
     "TUIPET_BUGS",
     os.path.join(os.path.dirname(os.path.abspath(__file__)), "bugs.jsonl"))
 MAX_BUG_TEXT = 2000
+MAX_BUGS_PER_CONN = 5           # a real player files one or two, not a firehose
+MAX_BUG_FILE = 5 * 1024 * 1024  # stop appending past 5MB -- the disk-fill backstop
 
 MAX_CLIENTS = 200
 MAX_NAME = 24
@@ -169,7 +171,8 @@ CHAT_BACKLOG: deque = deque(maxlen=30)
 
 
 class Client:
-    __slots__ = ("id", "ws", "name", "pet", "live", "lease", "logged", "boot")
+    __slots__ = ("id", "ws", "name", "pet", "live", "lease", "logged", "boot",
+                 "bugs_sent")
 
     def __init__(self, ws):
         self.id = next(_ids)
@@ -180,6 +183,7 @@ class Client:
         self.lease = None
         self.logged = False
         self.boot = 0.0
+        self.bugs_sent = 0
 
 
 CLIENTS: dict[int, Client] = {}
@@ -244,23 +248,32 @@ async def _push_roster():
 
 async def _handle_bug(client, m):
     """Append an anonymous bug report to bugs.jsonl and ack it (no login
-    required -- a player hits a bug before they ever open the lobby)."""
+    required -- a player hits a bug before they ever open the lobby).
+    Abuse-capped (audit 2026-07-10): a few reports per connection, only the
+    known pet fields stored, and the file stops growing past a hard size."""
+    client.bugs_sent += 1
     text = (str(m.get("text") or "")).strip()[:MAX_BUG_TEXT]
-    if not text:
+    if not text or client.bugs_sent > MAX_BUGS_PER_CONN:
         await _send(client, {"t": "bug_ok", "ok": False})
         return
+    pet = m.get("pet") if isinstance(m.get("pet"), dict) else {}
+    pet = {k: (pet[k] if isinstance(pet[k], int) else str(pet[k])[:24])
+           for k in ("num", "name", "stage", "gen") if k in pet}
     rec = {
         "ts": time.strftime("%Y-%m-%d %H:%M:%SZ", time.gmtime()),
         "from": (str(m.get("name") or "").strip() or "anon")[:MAX_NAME],
         "version": str(m.get("version") or "")[:24],
         "platform": str(m.get("platform") or "")[:60],
-        "pet": m.get("pet") if isinstance(m.get("pet"), dict) else {},
+        "pet": pet,
         "text": text,
     }
     ok = True
     try:
-        with open(BUGS_PATH, "a", encoding="utf-8") as f:
-            f.write(json.dumps(rec) + "\n")
+        if os.path.exists(BUGS_PATH) and os.path.getsize(BUGS_PATH) > MAX_BUG_FILE:
+            ok = False                       # the disk-fill backstop
+        else:
+            with open(BUGS_PATH, "a", encoding="utf-8") as f:
+                f.write(json.dumps(rec) + "\n")
     except OSError:
         ok = False
     LOG.info("bug from %s (%d chars) ok=%s", rec["from"], len(text), ok)

@@ -306,9 +306,9 @@ if __name__ == "__main__":
 
 # --- themed TOWN egg shops: spread the buyable roster across the world by habitat ---
 @lru_cache(maxsize=1)
-def _town_egg_map():
-    """egg_idx -> frozenset(town_ids) whose home-habitat field/element matches the egg's
-    evolution line. Built from lines.csv (the egg's line forms) + zones/towns/habitats."""
+def _egg_themes():
+    """egg_idx -> (dominant field, dominant element) of the egg's evolution
+    line, from lines.csv x the sprite records."""
     from . import data
     import csv as _csv
     from collections import Counter, defaultdict
@@ -323,7 +323,7 @@ def _town_egg_map():
     def dom(vals):
         c = Counter(v for v in vals if v and v not in ("None", "Empty"))
         return c.most_common(1)[0][0] if c else None
-    egg_theme = {}
+    out = {}
     for i in range(count()):
         t = hatch_targets(i)
         if len(t) != 1:
@@ -332,41 +332,22 @@ def _town_egg_map():
         if not lid:
             continue
         forms = line_forms.get(lid, [])
-        egg_theme[i] = (dom(by_num.get(n, {}).get("field") for n in forms),
-                        dom(by_num.get(n, {}).get("element") for n in forms))
-    hab = {h["ID"]: h for h in _csv.DictReader(open(os.path.join(_DATA, "habitats.csv")))}
-    def split(v):
-        return set(x for x in (v or "").split(";") if x and x != "Empty")
-    town_range = {}
-    for r in _csv.DictReader(open(os.path.join(_DATA, "towns.csv"))):
-        tr = (r.get("TownRange") or "").split("t")
-        if len(tr) == 2 and tr[0].isdigit():
-            town_range[int(r["TownID"])] = (int(tr[0]), int(tr[1]))
-    town_theme = {}
-    for r in _csv.DictReader(open(os.path.join(_DATA, "zones.csv"))):
-        tid = (r.get("TownID;") or r.get("TownID") or "").strip()
-        if not tid.isdigit():
-            continue
-        tid = int(tid)
-        segs = []
-        for seg in (r.get("BackgroundsAndRange") or "").split(";"):
-            rng, _, hid = seg.partition(":")
-            a, _, b = rng.partition("t")
-            if a.isdigit() and b.isdigit():
-                segs.append((int(a), int(b), hid.strip()))
-        tr = town_range.get(tid)
-        home = None
-        if tr and segs:
-            for a, b, hid in segs:
-                if a <= tr[0] <= b:
-                    home = hid
-                    break
-            if home is None:
-                home = max(segs, key=lambda s: s[1] - s[0])[2]
-        h = hab.get(home, {})
-        town_theme[tid] = (split(h.get("CompatibleField")), split(h.get("CompatibleElement")))
+        out[i] = (dom(by_num.get(n, {}).get("field") for n in forms),
+                  dom(by_num.get(n, {}).get("element") for n in forms))
+    return out
+
+
+@lru_cache(maxsize=1)
+def _town_egg_map():
+    """egg_idx -> frozenset(town_ids) whose home-habitat field/element matches the egg's
+    evolution line.  The town side comes from world.town_compat -- the SAME
+    _town_biome derivation as the greeting/cup/specialties, so the egg shelf
+    never contradicts what the town says it is (split-brain fix 2026-07-10)."""
+    from . import data, world
+    from collections import defaultdict
+    town_theme = {tid: world.town_compat(tid) for tid in data.load_towns()}
     m = defaultdict(set)
-    for i, (fld, ele) in egg_theme.items():
+    for i, (fld, ele) in _egg_themes().items():
         for tid, (flds, eles) in town_theme.items():
             if (fld and fld in flds) or (ele and ele in eles):
                 m[i].add(tid)

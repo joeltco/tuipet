@@ -35,3 +35,19 @@ def test_home_counter_sells_no_buyable_eggs():
     while sp._tabs()[sp.tab] != "egg":
         sp.key("right")
     assert sp._rows() == []       # buyable eggs live in the town shops now
+
+
+def test_egg_shelf_matches_the_towns_own_identity():
+    """Split-brain regression (audit 2026-07-10): the egg shelf must use the SAME
+    town->habitat derivation as the greeting/cup (world.town_compat) -- egg.py
+    once anchored on the START of the town range while world.py used the midpoint,
+    so Mossford greeted as a forest town while stocking City/metal eggs."""
+    from tuipet import data, world
+    themes = egg_mod._egg_themes()
+    for tid in data.load_towns():
+        flds, eles = world.town_compat(tid)
+        for i, town_ids in egg_mod._town_egg_map().items():
+            fld, ele = themes[i]
+            matches = (fld and fld in flds) or (ele and ele in eles)
+            assert (tid in town_ids) == bool(matches), \
+                "town %d egg %d: shelf disagrees with the town's own biome" % (tid, i)

@@ -158,19 +158,19 @@ def roll_town_shop(pet, town, is_food):
              and random.randrange(100) < e["stock_chance"][si]]
     slots, seen = [], set()
     # the town's biome SPECIALTY leads the shelf (world.biome_specialty_keys):
-    # local goods it always carries -- biome-fitting GENERAL consumables, shown
-    # regardless of the daily roll so each biome's town reads distinct
+    # local goods it fronts ahead of the daily roll so each biome's town reads
+    # distinct -- drawn from the SAME gated pool as the roll, so the town's own
+    # prices, the shop-unlock progression and the seasonal/hourly windows all
+    # still apply (the raw home-pool shortcut bypassed them; audit 2026-07-10)
     from . import world
-    full = {e["key"]: e for e in data.home_shop_pool()}
+    pool_by_key = {e["key"]: e for e in pool}
     for key in world.biome_specialty_keys(town["id"], is_food):
-        if len(slots) >= mx or key in seen:
-            continue
-        e = full.get(key)
-        if not e or e.get("price", 0) <= 0 or not data.item_is_functional(e):
+        e = pool_by_key.get(key)
+        if not e or len(slots) >= mx or key in seen:
             continue
         seen.add(key)
         slot = _mk_slot(pet, e, True)
-        slot["price"] = e["price"]
+        slot["price"] = e["price"]          # the town's own price rides the slot
         slots.append(slot)
     for group in (must, avail):
         random.shuffle(group)

@@ -72,10 +72,15 @@ def _habitats():
             hid = int(r["ID"])
         except (KeyError, ValueError):
             continue
+        def _split(v):
+            return frozenset(x.strip() for x in (v or "").split(";")
+                             if x.strip() and x.strip() != "Empty")
         out[hid] = {
             "name": (r.get("Name") or "?").strip(),
             "field": (r.get("CompatibleField") or "").split(";")[0].strip(),
             "elem": (r.get("CompatibleElement") or "").split(";")[0].strip(),
+            "fields": _split(r.get("CompatibleField")),
+            "elems": _split(r.get("CompatibleElement")),
         }
     return out
 
@@ -225,6 +230,14 @@ def town_field(tid: int) -> str:
     """The town biome's signature CompatibleField (e.g. 'DeepSaver') -- the
     field whose championship the town hosts and whose mons pack its cups."""
     return _habitats().get(_town_biome().get(tid), {}).get("field", "")
+
+
+def town_compat(tid: int):
+    """The town biome's FULL (CompatibleField, CompatibleElement) sets -- for
+    matching themed stock (eggs) to the town.  Same _town_biome derivation as
+    every other themed system, so the shelf never contradicts the greeting."""
+    h = _habitats().get(_town_biome().get(tid), {})
+    return h.get("fields", frozenset()), h.get("elems", frozenset())
 
 
 def biome_specialty_keys(tid: int, is_food: bool):

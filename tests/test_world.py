@@ -68,14 +68,35 @@ def test_specialty_keys_are_real_general_consumables():
 
 
 def test_town_shop_leads_with_its_biome_specialty():
-    """The desert town (Dunehaven) always fronts its shelf with cooling food
-    (Ice Cream f:39), no matter the random daily roll."""
+    """The desert town (Dunehaven) fronts its shelf with its biome's local
+    goods, no matter the random daily roll (the in-season ones; its famous
+    ice cream is a summer special -- see the economy test below)."""
     random.seed(1)
     p = _pet()
     town = data.load_towns()[20]
     want = set(world.biome_specialty_keys(20, True))
     leads = {slot["key"] for slot in shop.roll_town_shop(p, town, True)[:len(want)]}
     assert want & leads, f"desert specialty {want} not fronted (got {leads})"
+
+
+def test_specialty_slot_rides_the_towns_own_economy():
+    """Audit regression (2026-07-10): the fronted specialty comes from the same
+    gated pool as the daily roll, so the TOWN's own econ applies -- Dunehaven's
+    shopConsumables stock Ice Cream (f:39) in SUMMER ONLY at 75b; the raw
+    home-pool shortcut sold it year-round at the 150b home price."""
+    from tuipet.pet import DAY_LENGTH
+    random.seed(1)
+    town = data.load_towns()[20]
+    p = _pet(world_seconds=DAY_LENGTH * 1 + 10 * 60.0)      # day 1 = Summer, 10:00
+    assert p.season == "Summer"
+    slots = {s["key"]: s for s in shop.roll_town_shop(p, town, True)}
+    assert "f:39" in slots, "Dunehaven's summer ice cream missing"
+    assert slots["f:39"]["price"] == 75          # the town's price, not home's 150
+    assert shop.purchase_price(slots["f:39"]) == (slots["f:39"]["sale"] or 75)
+    p = _pet(world_seconds=DAY_LENGTH * 3 + 10 * 60.0)      # Winter: the stall is empty
+    assert p.season == "Winter"
+    slots = {s["key"] for s in shop.roll_town_shop(p, town, True)}
+    assert "f:39" not in slots
 
 
 # --- biome-biased town tournaments (Joel 2026-07-09) ---
