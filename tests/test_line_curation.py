@@ -26,6 +26,143 @@ DECLARED_EDGES = {
     # graph never carried -- Motimon->Otamamon, the adult roads, capstones
     (19, 49), (48, 141), (48, 113), (48, 142), (49, 120), (49, 125),
     (113, 225), (125, 225), (141, 251), (120, 251), (159, 251),
+    # device-chart rebuild 2026-07-10 (humulos pen20/dm20/dmx): the 22
+    # rebuilt egg lines carry their real device edges; the corpus graph
+    # never had most of them
+    (12, 40),   # device-chart rebuild
+    (15, 29),   # device-chart rebuild
+    (19, 49),   # device-chart rebuild
+    (20, 384),   # device-chart rebuild
+    (27, 95),   # device-chart rebuild
+    (27, 108),   # device-chart rebuild
+    (28, 142),   # device-chart rebuild
+    (29, 101),   # device-chart rebuild
+    (29, 104),   # device-chart rebuild
+    (29, 108),   # device-chart rebuild
+    (30, 143),   # device-chart rebuild
+    (32, 99),   # device-chart rebuild
+    (34, 100),   # device-chart rebuild
+    (34, 139),   # device-chart rebuild
+    (38, 93),   # device-chart rebuild
+    (40, 495),   # device-chart rebuild
+    (41, 457),   # device-chart rebuild
+    (41, 1070),   # device-chart rebuild
+    (42, 93),   # device-chart rebuild
+    (44, 97),   # device-chart rebuild
+    (46, 131),   # device-chart rebuild
+    (46, 144),   # device-chart rebuild
+    (46, 145),   # device-chart rebuild
+    (47, 93),   # device-chart rebuild
+    (47, 101),   # device-chart rebuild
+    (47, 139),   # device-chart rebuild
+    (48, 100),   # device-chart rebuild
+    (48, 142),   # device-chart rebuild
+    (49, 100),   # device-chart rebuild
+    (49, 120),   # device-chart rebuild
+    (49, 141),   # device-chart rebuild
+    (51, 105),   # device-chart rebuild
+    (53, 144),   # device-chart rebuild
+    (54, 97),   # device-chart rebuild
+    (54, 144),   # device-chart rebuild
+    (86, 266),   # device-chart rebuild
+    (89, 212),   # device-chart rebuild
+    (93, 221),   # device-chart rebuild
+    (93, 232),   # device-chart rebuild
+    (94, 242),   # device-chart rebuild
+    (94, 250),   # device-chart rebuild
+    (95, 216),   # device-chart rebuild
+    (95, 222),   # device-chart rebuild
+    (100, 196),   # device-chart rebuild
+    (100, 213),   # device-chart rebuild
+    (100, 224),   # device-chart rebuild
+    (100, 226),   # device-chart rebuild
+    (101, 213),   # device-chart rebuild
+    (101, 224),   # device-chart rebuild
+    (102, 230),   # device-chart rebuild
+    (104, 213),   # device-chart rebuild
+    (104, 220),   # device-chart rebuild
+    (108, 213),   # device-chart rebuild
+    (108, 224),   # device-chart rebuild
+    (113, 225),   # device-chart rebuild
+    (121, 215),   # device-chart rebuild
+    (125, 196),   # device-chart rebuild
+    (125, 200),   # device-chart rebuild
+    (125, 224),   # device-chart rebuild
+    (127, 203),   # device-chart rebuild
+    (133, 212),   # device-chart rebuild
+    (134, 191),   # device-chart rebuild
+    (134, 212),   # device-chart rebuild
+    (141, 224),   # device-chart rebuild
+    (144, 236),   # device-chart rebuild
+    (145, 234),   # device-chart rebuild
+    (147, 212),   # device-chart rebuild
+    (150, 210),   # device-chart rebuild
+    (172, 254),   # device-chart rebuild
+    (217, 290),   # device-chart rebuild
+    (226, 282),   # device-chart rebuild
+    (230, 1238),   # device-chart rebuild
+    (233, 292),   # device-chart rebuild
+    (254, 334),   # device-chart rebuild
+    (258, 1290),   # device-chart rebuild
+    (266, 1020),   # device-chart rebuild
+    (266, 1034),   # device-chart rebuild
+    (376, 859),   # device-chart rebuild
+    (376, 866),   # device-chart rebuild
+    (406, 1028),   # device-chart rebuild
+    (415, 988),   # device-chart rebuild
+    (420, 1031),   # device-chart rebuild
+    (437, 863),   # device-chart rebuild
+    (457, 230),   # device-chart rebuild
+    (457, 258),   # device-chart rebuild
+    (457, 420),   # device-chart rebuild
+    (457, 627),   # device-chart rebuild
+    (457, 988),   # device-chart rebuild
+    (627, 330),   # device-chart rebuild
+    (627, 437),   # device-chart rebuild
+    (627, 1290),   # device-chart rebuild
+    (631, 855),   # device-chart rebuild
+    (631, 859),   # device-chart rebuild
+    (631, 1313),   # device-chart rebuild
+    (631, 1314),   # device-chart rebuild
+    (855, 330),   # device-chart rebuild
+    (855, 867),   # device-chart rebuild
+    (859, 330),   # device-chart rebuild
+    (859, 868),   # device-chart rebuild
+    (863, 330),   # device-chart rebuild
+    (914, 859),   # device-chart rebuild
+    (914, 863),   # device-chart rebuild
+    (914, 1236),   # device-chart rebuild
+    (914, 1237),   # device-chart rebuild
+    (914, 1314),   # device-chart rebuild
+    (1019, 1238),   # device-chart rebuild
+    (1020, 855),   # device-chart rebuild
+    (1020, 859),   # device-chart rebuild
+    (1020, 863),   # device-chart rebuild
+    (1020, 868),   # device-chart rebuild
+    (1027, 420),   # device-chart rebuild
+    (1031, 864),   # device-chart rebuild
+    (1031, 866),   # device-chart rebuild
+    (1031, 868),   # device-chart rebuild
+    (1031, 1236),   # device-chart rebuild
+    (1034, 859),   # device-chart rebuild
+    (1034, 1314),   # device-chart rebuild
+    (1036, 1238),   # device-chart rebuild
+    (1036, 1291),   # device-chart rebuild
+    (1061, 94),   # device-chart rebuild
+    (1061, 150),   # device-chart rebuild
+    (1069, 266),   # device-chart rebuild
+    (1071, 1230),   # device-chart rebuild
+    (1096, 863),   # device-chart rebuild
+    (1238, 855),   # device-chart rebuild
+    (1247, 855),   # device-chart rebuild
+    (1247, 1236),   # device-chart rebuild
+    (1290, 1314),   # device-chart rebuild
+    (1291, 868),   # device-chart rebuild
+    (1291, 1313),   # device-chart rebuild
+    (1316, 1095),   # device-chart rebuild
+    (1316, 1237),   # device-chart rebuild
+    (1359, 868),   # device-chart rebuild
+    (1359, 1237),   # device-chart rebuild
 }
 
 
@@ -51,6 +188,9 @@ def test_every_edge_is_real_or_declared():
                     (lid, p, num)
 
 
+DMX_STAGE_QUIRKS = {"x3a", "x3b", "kera"}   # real-device stage jumps
+
+
 def test_every_line_has_one_root_and_monotonic_stages():
     for lid, line in _all_lines().items():
         assert line["root"] is not None, lid
@@ -61,7 +201,15 @@ def test_every_line_has_one_root_and_monotonic_stages():
                 continue                       # a jogress door joins two Megas
             si = STAGES.index(row["stage"])
             for p in row["parents"]:
-                assert STAGES.index(line["members"][p]["stage"]) == si - 1, \
+                pi = STAGES.index(line["members"][p]["stage"])
+                if lid in DMX_STAGE_QUIRKS:
+                    # DMX canon: Stage VI -> VI+ care chains (both land on
+                    # Mega here) and the Keramon-line skip (Child -> Ultimate,
+                    # "Wait 24 hours") are how the real device evolves
+                    assert pi < si or (pi == si == STAGES.index("Mega")), \
+                        (lid, p, num)
+                    continue
+                assert pi == si - 1, \
                     (lid, p, num)              # parents are exactly one stage down
 
 
@@ -139,12 +287,13 @@ def test_hand_curated_lines_survived_the_curator():
 
 def _care_only(rule):
     """Strip battle-ish atoms; None if any alternative is battle-gated."""
-    return [[a for a in alt if a[0] not in ("win", "btl", "lv", "ko6", "area")]
+    return [[a for a in alt if a[0] not in ("win", "btl", "lv", "ko6", "area",
+                                            "jogress")]
             for alt in rule]
 
 
 def _has_battle(rule):
-    return any(a[0] in ("win", "btl", "lv", "ko6", "area")
+    return any(a[0] in ("win", "btl", "lv", "ko6", "area", "jogress")
                for alt in rule for a in alt)
 
 

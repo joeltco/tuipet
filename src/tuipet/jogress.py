@@ -85,14 +85,27 @@ def options(pet):
     # evolution.check -- lines replaced corpus care gates, LINES_SPEC §5).
     from . import lines as lines_mod
     if lines_mod.active(pet):
-        for t, pnum in lines_mod.jogress_declared(pet):
+        for t, pspec in lines_mod.jogress_declared(pet):
             if t in seen or t not in by:
                 continue
             seen.add(t)
+            if isinstance(pspec, tuple):
+                # Pendulum attribute door (pen20 manual): any same-stage
+                # partner with a listed attribute resonates.  partners feeds
+                # the attribute channel, whose mutual same-stage checks in
+                # resolve_online gate the fusion both-or-neither.
+                pnum, pname = _partner_for(pet, pspec)
+                out.append({
+                    "num": t, "name": by[t]["name"],
+                    "attribute": by[t]["attribute"], "stage": by[t]["stage"],
+                    "partners": list(pspec),
+                    "partner_num": pnum, "partner_name": pname,
+                })
+                continue
             out.append({
                 "num": t, "name": by[t]["name"], "attribute": by[t]["attribute"],
                 "stage": by[t]["stage"], "partners": [],
-                "partner_num": pnum, "partner_name": by[pnum]["name"],
+                "partner_num": pspec, "partner_name": by[pspec]["name"],
             })
     return out
 

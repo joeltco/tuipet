@@ -56,9 +56,18 @@ def parse_rule(text):
                 k, n = arg.split("/", 1)
                 atoms.append(("win", int(k), int(n)))
             elif kind == "JOGRESS":
-                # a jogress DOOR (LINES_SPEC §6): arg = the exact partner dex.
+                # a jogress DOOR (LINES_SPEC §6): arg = the exact partner dex,
+                # or a Pendulum attribute spec ("Data/Virus") -- any same-stage
+                # partner with a listed attribute resonates (pen20 manual).
                 # Never fires on the stage timer -- the lobby fusion opens it.
-                atoms.append(("jogress", int(arg), None))
+                if arg.isdigit():
+                    atoms.append(("jogress", int(arg), None))
+                else:
+                    attrs = tuple(a.strip() for a in arg.split("/") if a.strip())
+                    if not attrs or any(a not in ("Vaccine", "Data", "Virus",
+                                                  "None") for a in attrs):
+                        raise ValueError(f"bad JOGRESS partner: {part!r}")
+                    atoms.append(("jogress", attrs, None))
             elif kind == "AREA":
                 if not arg:
                     raise ValueError(f"AREA atom needs a map: {part!r}")
@@ -268,6 +277,9 @@ def _atom_row(pet, atom):
         now = sum(pet.battle_log[-b:])
         return _atom_met(pet, atom), f"wins {a} of last {b}  (now {now}/{min(len(pet.battle_log), b)})"
     if kind == "jogress":
+        if isinstance(a, tuple):                         # Pendulum attribute door
+            spec = "/".join("Free" if x == "None" else x for x in a)
+            return None, f"jogress with a {spec} partner"
         _, by_num = data.load_sprites()
         pname = (by_num.get(a) or {}).get("name", f"#{a}")
         return None, f"jogress with {pname} (lobby)"     # informational: a door, not a counter

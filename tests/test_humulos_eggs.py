@@ -45,8 +45,11 @@ def test_frameless_and_dominated_content_is_gone():
     _, by = data.load_sprites()
     assert len(by[1574]["frames"]) == 11
     assert len({"".join(f) for f in by[1574]["frames"]}) >= 5
-    assert lines.load_lines()["ver6"]["root"] == 1574
-    assert 1574 in set(egg.hatch_targets(max(egg._WIN_EGGS)))
+    assert lines.load_lines()["ver6"]["root"] == 1574   # dormant, for old pets
+    # the NSp egg now hatches its pen20 Bubbmon root; the any-root
+    # mystery egg follows the eggs (device-chart rebuild 2026-07-10)
+    nsp = lines.load_lines()["nsp"]["root"]
+    assert nsp in set(egg.hatch_targets(max(egg._WIN_EGGS)))
 
 
 def test_no_egg_is_strictly_dominated():

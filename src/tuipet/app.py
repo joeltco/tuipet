@@ -239,10 +239,10 @@ class TuiPetApp(App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("Egg shop audit: duplicate eggs that sold you what you already own "
-                 "are gone -- every egg in the shop now earns its shelf. Win-trophy "
-                 "eggs spread out (25/40/50/60/75/100 wins each unlock something), "
-                 "and a save repair fixes lineage eggs wrongly shown as owned.")
+    WHATS_NEW = ("Evolution trees rebuilt from the real devices: every device egg "
+                 "now raises its true line -- Deep Savers is ocean Digimon again, "
+                 "Corona and Luna split for real, dragon eggs fuse into Examon, "
+                 "and Pendulum attribute jogress is live in the lobby.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and

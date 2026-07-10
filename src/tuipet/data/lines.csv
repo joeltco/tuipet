@@ -832,3 +832,568 @@ ver6,Champion,142,49,CM 4+,22:00,"Gekomon (Otamamon road; catch-all, SD folded)"
 ver6,Ultimate,225,140;113;125,WIN 12/15,23:00,MegaKabuterimon (AtlurKabuterimon; canon dead end)
 ver6,Ultimate,200,142,WIN 12/15,23:00,ShogunGekomon (TonosamaGekomon; canon dead end)
 ver6,Ultimate,251,141;120;159,WIN 12/15,23:00,Tekkamon (canon dead end)
+nsp,Fresh,1601,egg,TIME,20:00,Bubbmon (pen20 digitama_nsp)
+nsp,InTraining,19,1601,TIME,21:00,Motimon
+nsp,Rookie,48,19,CM 0,21:00,Tentomon
+nsp,Rookie,28,19,CM 1-2,21:00,Gotsumon
+nsp,Rookie,49,19,CM 3+,21:00,Otamamon
+nsp,Champion,140,48,"CM 0-1, TR 16+",22:00,Kabuterimon
+nsp,Champion,100,48,"CM 0-1, TR 0-15",22:00,Gatomon
+nsp,Champion,120,48,"CM 2+, TR 16+",22:00,Kuwagamon
+nsp,Champion,142,48,"CM 2+, TR 0-15",22:00,Gekomon
+nsp,Champion,125,28,"CM 0-1, TR 16+",22:00,Monochromon
+nsp,Champion,141,28,"CM 2+, TR 8+",22:00,Starmon
+nsp,Champion,113,28,"CM 0-1, TR 0-15",22:00,Tortamon
+nsp,Champion,142,28;49,"CM 2+, TR 0-7",22:00,Gekomon
+nsp,Champion,120,49,"CM 2+, TR 8+",22:00,Kuwagamon
+nsp,Champion,100,49,"CM 0-1, TR 16+",22:00,Gatomon
+nsp,Champion,141,49,"CM 0-1, TR 0-15",22:00,Starmon
+nsp,Ultimate,225,113;140,"CM 0, WIN 12/15",23:00,MegaKabuterimon
+nsp,Ultimate,226,100;113;140,JOGRESS Vaccine/Data,23:00,Jagamon
+nsp,Ultimate,196,100;113;140,JOGRESS Virus,23:00,Piximon
+nsp,Ultimate,224,100,"CM 0, WIN 12/15 | CM 0-1, WIN 12/15",23:00,Angewomon
+nsp,Ultimate,223,100,JOGRESS Vaccine,23:00,MagnaAngemon
+nsp,Ultimate,213,100,JOGRESS Data/Virus,23:00,MetalMamemon
+nsp,Ultimate,228,120,"CM 0-2, WIN 12/15",23:00,Okuwamon
+nsp,Ultimate,200,120,JOGRESS Data/Virus,23:00,ShogunGekomon
+nsp,Ultimate,196,120;142,JOGRESS Vaccine/None,23:00,Piximon
+nsp,Ultimate,200,142,"CM 0-2, WIN 12/15 | JOGRESS Data/Virus",23:00,ShogunGekomon
+nsp,Ultimate,227,125;141,"CM 0-2, WIN 12/15",23:00,Triceramon
+nsp,Ultimate,196,125;141,JOGRESS Data,23:00,Piximon
+nsp,Ultimate,224,125;141,JOGRESS Vaccine,23:00,Angewomon
+nsp,Ultimate,200,125;141,JOGRESS Virus,23:00,ShogunGekomon
+nsp,Mega,286,225;228,"CM 0, WIN 12/15",00:00,HerculesKabuterimon
+nsp,Mega,282,226,JOGRESS Vaccine,00:00,Magnadramon
+nsp,Mega,287,196;227,JOGRESS Data,00:00,SaberLeomon
+nsp,Mega,282,224,"CM 0, WIN 12/15",00:00,Magnadramon
+nsp,Mega,303,224,"CM 0-1, WIN 12/15",00:00,Ophanimon
+nsp,Mega,381,224,JOGRESS 215,00:00,Mastemon
+nsp,Mega,302,223,"CM 0-1, WIN 12/15",00:00,Seraphimon
+nsp,Mega,279,213,JOGRESS Data,00:00,MetalGarurumon
+nsp,Mega,281,200;228,JOGRESS Virus,00:00,MetalEtemon
+nsp,Mega,294,279,JOGRESS 280,00:00,Omnimon
+dsv,Fresh,1602,egg,TIME,20:00,Pichimon (pen20 digitama_dsa)
+dsv,InTraining,20,1602,TIME,21:00,Bukamon
+dsv,Rookie,50,20,CM 0,21:00,Gomamon
+dsv,Rookie,51,20,CM 1-2,21:00,Ganimon
+dsv,Rookie,52,20,CM 3+,21:00,Syakomon
+dsv,Champion,107,50,"CM 0-1, TR 16+",22:00,Ikkakumon
+dsv,Champion,84,50,"CM 0-1, TR 0-15",22:00,Rukamon
+dsv,Champion,88,50,"CM 2+, TR 16+",22:00,Coelamon
+dsv,Champion,128,50,"CM 2+, TR 0-15",22:00,Gesomon
+dsv,Champion,110,51,"CM 0-1, TR 0-15",22:00,Seadramon
+dsv,Champion,137,51,"CM 2+, TR 8+",22:00,Ebidramon
+dsv,Champion,84,51,"CM 0-1, TR 16+",22:00,Rukamon
+dsv,Champion,105,51,"CM 2+, TR 0-7",22:00,Octomon
+dsv,Champion,105,52,"CM 1+, TR 8+",22:00,Octomon
+dsv,Champion,128,52,"CM 1+, TR 0-7",22:00,Gesomon
+dsv,Champion,107,52,"CM 0, TR 16+",22:00,Ikkakumon
+dsv,Champion,110,52,"CM 0, TR 0-15",22:00,Seadramon
+dsv,Ultimate,229,84;107,"CM 0-2, WIN 12/15",23:00,Zudomon
+dsv,Ultimate,193,84;107,JOGRESS Vaccine/Data,23:00,Whamon
+dsv,Ultimate,204,107,JOGRESS Virus,23:00,Scorpiomon
+dsv,Ultimate,207,84,JOGRESS Virus,23:00,Divermon
+dsv,Ultimate,202,88;110;137,"CM 0-3, WIN 12/15",23:00,MegaSeadramon
+dsv,Ultimate,204,88,JOGRESS Data,23:00,Scorpiomon
+dsv,Ultimate,193,88;110;137,JOGRESS Vaccine,23:00,Whamon
+dsv,Ultimate,206,88;110;137,JOGRESS Virus,23:00,Dagomon
+dsv,Ultimate,205,105;128,"CM 0-4, WIN 12/15",23:00,MarineDevimon
+dsv,Ultimate,206,105;128,JOGRESS Data/Virus,23:00,Dagomon
+dsv,Ultimate,207,128,JOGRESS Vaccine/None,23:00,Divermon
+dsv,Ultimate,207,110;137,JOGRESS Data,23:00,Divermon
+dsv,Ultimate,204,105,JOGRESS Vaccine/None,23:00,Scorpiomon
+dsv,Mega,288,202;229,"CM 0, WIN 12/15",00:00,MarineAngemon
+dsv,Mega,283,193,JOGRESS Vaccine,00:00,Plesiomon
+dsv,Mega,275,202;204,JOGRESS Data,00:00,MetalSeadramon
+dsv,Mega,283,207,JOGRESS Data,00:00,Plesiomon
+dsv,Mega,289,205;206,JOGRESS Virus,00:00,Pukumon
+nso,Fresh,1603,egg,TIME,20:00,Mokumon (pen20 digitama_nso)
+nso,InTraining,21,1603,TIME,21:00,DemiMeramon
+nso,Rookie,27,21,CM 0,21:00,Bakumon
+nso,Rookie,30,21,CM 1-2,21:00,Candlemon
+nso,Rookie,32,21,CM 3+,21:00,DemiDevimon
+nso,Champion,143,27;30,"CM 0-1, TR 8+",22:00,Apemon
+nso,Champion,108,27,"CM 2+, TR 0-15",22:00,Garurumon
+nso,Champion,95,27;30,"CM 0-1, TR 0-7",22:00,Meramon
+nso,Champion,99,27;32,"CM 2+, TR 16+",22:00,Wizarmon
+nso,Champion,99,30,"CM 2+, TR 0-3",22:00,Wizarmon
+nso,Champion,102,30,"CM 2+, TR 4+",22:00,Devimon
+nso,Champion,102,32,"CM 0-1, TR 8+",22:00,Devimon
+nso,Champion,121,32,"CM 0-1, TR 0-7",22:00,Bakemon
+nso,Champion,127,32,"CM 2+, TR 0-15",22:00,Dokugumon
+nso,Ultimate,201,108;143,"CM 0-2, WIN 12/15",23:00,Mammothmon
+nso,Ultimate,222,143,JOGRESS Vaccine/Data,23:00,WereGarurumon
+nso,Ultimate,230,108;143,JOGRESS Virus,23:00,Pumpmon
+nso,Ultimate,222,108,"CM 0-2, WIN 12/15 | JOGRESS Vaccine/Data",23:00,WereGarurumon
+nso,Ultimate,224,108,JOGRESS Vaccine,23:00,Angewomon
+nso,Ultimate,213,108,JOGRESS Data/Virus,23:00,MetalMamemon
+nso,Ultimate,217,95;99,"CM 0-4, WIN 12/15",23:00,SkullMeramon
+nso,Ultimate,230,95;99,JOGRESS Data,23:00,Pumpmon
+nso,Ultimate,222,95;99,JOGRESS Vaccine,23:00,WereGarurumon
+nso,Ultimate,216,95;99,JOGRESS Virus,23:00,Phantomon
+nso,Ultimate,203,102,"CM 0-1, WIN 12/15",23:00,Myotismon
+nso,Ultimate,215,102,JOGRESS Data/Virus,23:00,LadyDevimon
+nso,Ultimate,230,102;121;127,JOGRESS Vaccine/None,23:00,Pumpmon
+nso,Ultimate,216,121,JOGRESS Data/Virus,23:00,Phantomon
+nso,Ultimate,215,121;127,"CM 0-1, WIN 12/15",23:00,LadyDevimon
+nso,Ultimate,203,127,JOGRESS Data/Virus,23:00,Myotismon
+nso,Mega,290,201;217;222,"CM 0, WIN 12/15",00:00,SkullMammothmon
+nso,Mega,279,222,"CM 0-1, WIN 12/15",00:00,MetalGarurumon
+nso,Mega,291,217;230,JOGRESS Data,00:00,Boltmon
+nso,Mega,282,224,"CM 0, WIN 12/15",00:00,Magnadramon
+nso,Mega,303,224,"CM 0-1, WIN 12/15",00:00,Ophanimon
+nso,Mega,381,224,JOGRESS 215,00:00,Mastemon
+nso,Mega,279,213,JOGRESS Data,00:00,MetalGarurumon
+nso,Mega,278,203;216,JOGRESS Virus,00:00,Piedmon
+nso,Mega,511,203,JOGRESS 278,00:00,Boltboutamon
+nso,Mega,284,215,JOGRESS Virus,00:00,Demon
+nso,Mega,381,215,JOGRESS 224,00:00,Mastemon
+nso,Mega,294,279,JOGRESS 280,00:00,Omnimon
+nso,Mega,511,278,JOGRESS 203,00:00,Boltboutamon
+wgu,Fresh,1604,egg,TIME,20:00,Nyokimon (pen20 digitama_wgu)
+wgu,InTraining,22,1604,TIME,21:00,Yokomon
+wgu,Rookie,46,22,CM 0,21:00,Biyomon
+wgu,Rookie,53,22,CM 1,21:00,Floramon
+wgu,Rookie,44,22,CM 2,21:00,Palmon
+wgu,Rookie,54,22,CM 3+,21:00,Mushmon
+wgu,Champion,97,46,"CM 0-1, TR 0-11",22:00,Birdramon
+wgu,Champion,144,46;53,"CM 0-1, TR 12+",22:00,Veedramon
+wgu,Champion,145,46;53,"CM 2+, TR 16+",22:00,Togemon
+wgu,Champion,131,46,"CM 2+, TR 0-15",22:00,Woodmon
+wgu,Champion,130,44;53,"CM 0-1, TR 0-11",22:00,Kiwimon
+wgu,Champion,132,44;53,"CM 2+, TR 0-15",22:00,RedVegimon
+wgu,Champion,145,44,"CM 0-1, TR 12+",22:00,Togemon
+wgu,Champion,97,44,"CM 2+, TR 16+",22:00,Birdramon
+wgu,Champion,131,54,"CM 2+, TR 8+",22:00,Woodmon
+wgu,Champion,132,54,"CM 2+, TR 0-7",22:00,RedVegimon
+wgu,Champion,144,54,"CM 0-1, TR 16+",22:00,Veedramon
+wgu,Champion,97,54,"CM 0-1, TR 0-15",22:00,Birdramon
+wgu,Ultimate,234,97,"CM 0-2, WIN 12/15",23:00,Garudamon
+wgu,Ultimate,233,97,JOGRESS Vaccine/Data,23:00,AeroVeedramon
+wgu,Ultimate,236,97;144,JOGRESS Virus,23:00,Deramon
+wgu,Ultimate,233,144,"CM 0-2, WIN 12/15",23:00,AeroVeedramon
+wgu,Ultimate,234,144,JOGRESS Vaccine/Data,23:00,Garudamon
+wgu,Ultimate,218,145,"CM 0-2, WIN 12/15",23:00,Lilymon
+wgu,Ultimate,236,130;145,JOGRESS Data,23:00,Deramon
+wgu,Ultimate,234,130;145,JOGRESS Vaccine,23:00,Garudamon
+wgu,Ultimate,209,131;132,"CM 0-3, WIN 12/15",23:00,Cherrymon
+wgu,Ultimate,236,131;132,JOGRESS Vaccine/None,23:00,Deramon
+wgu,Ultimate,235,130,"CM 0-2, WIN 12/15",23:00,Blossomon
+wgu,Mega,292,234,"CM 0-2, WIN 12/15",00:00,Phoenixmon
+wgu,Mega,311,233,"CM 0, WIN 12/15 | CM 0-2, WIN 12/15",00:00,UlforceVeedramon
+wgu,Mega,292,233,"CM 1-2, WIN 12/15",00:00,Phoenixmon
+wgu,Mega,293,235;236,JOGRESS Data,00:00,Griffomon
+wgu,Mega,292,236,"CM 0-1, WIN 12/15",00:00,Phoenixmon
+wgu,Mega,285,218,"CM 0-1, WIN 12/15",00:00,Rosemon
+wgu,Mega,277,209,JOGRESS Virus,00:00,Puppetmon
+wgu,Mega,508,285,JOGRESS 374,00:00,Rafflesimon
+mem,Fresh,1605,egg,TIME,20:00,Choromon (pen20 digitama_mem)
+mem,InTraining,23,1605,TIME,21:00,Kapurimon
+mem,Rookie,38,23,CM 0,21:00,ToyAgumon
+mem,Rookie,55,23,CM 1,21:00,Kokuwamon
+mem,Rookie,42,23,CM 2+,21:00,Hagurumon
+mem,Champion,93,38;42,"CM 0-1, TR 16+",22:00,Greymon
+mem,Champion,146,38,"CM 0-1, TR 0-15",22:00,Deputymon
+mem,Champion,147,38,"CM 2+, TR 0-11",22:00,Clockmon
+mem,Champion,138,38,"CM 2+, TR 12+",22:00,Thunderballmon
+mem,Champion,147,55,"CM 2+, TR 12+",22:00,Clockmon
+mem,Champion,138,55,"CM 0-1, TR 0-15",22:00,Thunderballmon
+mem,Champion,146,55,"CM 0-1, TR 16+",22:00,Deputymon
+mem,Champion,89,55,"CM 2+, TR 0-11",22:00,Guardromon
+mem,Champion,89,42,"CM 2+, TR 12+",22:00,Guardromon
+mem,Champion,133,42,"CM 2+, TR 0-11",22:00,Mechanorimon
+mem,Champion,134,42,"CM 0-1, TR 0-15",22:00,Tankmon
+mem,Ultimate,220,93;146,"CM 0-1, WIN 12/15",23:00,MetalGreymon
+mem,Ultimate,219,93,JOGRESS Vaccine/Data,23:00,Cyberdramon
+mem,Ultimate,232,93;146,JOGRESS Virus,23:00,BigMamemon
+mem,Ultimate,221,93,JOGRESS Vaccine/Data,23:00,Asuramon
+mem,Ultimate,213,93,JOGRESS Virus,23:00,MetalMamemon
+mem,Ultimate,191,146,JOGRESS Vaccine/Data,23:00,Andromon
+mem,Ultimate,231,134;138;147,"CM 0-3, WIN 12/15",23:00,Knightmon
+mem,Ultimate,232,134;138;147,JOGRESS Data,23:00,BigMamemon
+mem,Ultimate,191,134;147,JOGRESS Vaccine,23:00,Andromon
+mem,Ultimate,212,134;138;147,JOGRESS Virus,23:00,WaruMonzaemon
+mem,Ultimate,219,138,JOGRESS Vaccine,23:00,Cyberdramon
+mem,Ultimate,210,89;133,"CM 0-3, WIN 12/15",23:00,Megadramon
+mem,Ultimate,212,89;133,JOGRESS Data/Virus,23:00,WaruMonzaemon
+mem,Ultimate,232,89;133,JOGRESS Vaccine/None,23:00,BigMamemon
+mem,Mega,280,220;221;231,"CM 0-1, WIN 12/15",00:00,WarGreymon
+mem,Mega,280,219,JOGRESS Vaccine,00:00,WarGreymon
+mem,Mega,279,213;231;232,JOGRESS Data,00:00,MetalGarurumon
+mem,Mega,276,191,JOGRESS Vaccine,00:00,Machinedramon
+mem,Mega,274,212,JOGRESS Virus,00:00,VenomMyotismon
+mem,Mega,276,210,JOGRESS Virus,00:00,Machinedramon
+mem,Mega,349,210,JOGRESS Virus,00:00,Darkdramon
+mem,Mega,294,280,JOGRESS 279,00:00,Omnimon
+mem,Mega,294,279,JOGRESS 280,00:00,Omnimon
+mem,Mega,348,349,JOGRESS 350,00:00,Chaosmon
+vbu,Fresh,1606,egg,TIME,20:00,YukimiBotamon (pen20 digitama_vbu)
+vbu,InTraining,15,1606,TIME,21:00,Nyaromon
+vbu,Rookie,29,15,CM 0,21:00,Agumon
+vbu,Rookie,34,15,CM 1,21:00,Gabumon
+vbu,Rookie,47,15,CM 2+,21:00,Salamon
+vbu,Champion,93,29,"CM 0-1, TR 16+",22:00,Greymon
+vbu,Champion,104,29,"CM 2+, TR 0-7",22:00,Leomon
+vbu,Champion,108,29,"CM 2+, TR 8+",22:00,Garurumon
+vbu,Champion,101,29;47,"CM 0-1, TR 0-15",22:00,Angemon
+vbu,Champion,108,34,"CM 0-1, TR 0-15",22:00,Garurumon
+vbu,Champion,139,34,"CM 2+, TR 8+",22:00,Igamon
+vbu,Champion,104,34,"CM 0-1, TR 16+",22:00,Leomon
+vbu,Champion,100,34,"CM 2+, TR 0-7",22:00,Gatomon
+vbu,Champion,100,47,"CM 0-1, TR 16+",22:00,Gatomon
+vbu,Champion,93,47,"CM 2+, TR 8+",22:00,Greymon
+vbu,Champion,139,47,"CM 2+, TR 0-7",22:00,Igamon
+vbu,Ultimate,220,93;104,"CM 0-1, WIN 12/15",23:00,MetalGreymon
+vbu,Ultimate,219,93,JOGRESS Vaccine/Data,23:00,Cyberdramon
+vbu,Ultimate,232,93,JOGRESS Virus,23:00,BigMamemon
+vbu,Ultimate,221,93;104,JOGRESS Vaccine/Data,23:00,Asuramon
+vbu,Ultimate,213,93;104,JOGRESS Virus,23:00,MetalMamemon
+vbu,Ultimate,222,108,"CM 0-2, WIN 12/15 | JOGRESS Vaccine/Data",23:00,WereGarurumon
+vbu,Ultimate,201,108,"CM 0-2, WIN 12/15",23:00,Mammothmon
+vbu,Ultimate,230,108,JOGRESS Virus,23:00,Pumpmon
+vbu,Ultimate,224,101;108,JOGRESS Vaccine,23:00,Angewomon
+vbu,Ultimate,213,100;101;108,JOGRESS Data/Virus,23:00,MetalMamemon
+vbu,Ultimate,223,101,"CM 0-1, WIN 12/15",23:00,MagnaAngemon
+vbu,Ultimate,222,139,"CM 0-2, WIN 12/15",23:00,WereGarurumon
+vbu,Ultimate,213,139,JOGRESS Data,23:00,MetalMamemon
+vbu,Ultimate,221,139,JOGRESS Vaccine/Virus,23:00,Asuramon
+vbu,Ultimate,224,100,"CM 0, WIN 12/15 | CM 0-1, WIN 12/15",23:00,Angewomon
+vbu,Ultimate,226,100,JOGRESS Vaccine/Data,23:00,Jagamon
+vbu,Ultimate,196,100,JOGRESS Virus,23:00,Piximon
+vbu,Ultimate,223,100,JOGRESS Vaccine,23:00,MagnaAngemon
+vbu,Mega,280,220;221,"CM 0-1, WIN 12/15",00:00,WarGreymon
+vbu,Mega,280,219,JOGRESS Vaccine,00:00,WarGreymon
+vbu,Mega,279,213;232,JOGRESS Data,00:00,MetalGarurumon
+vbu,Mega,290,201;222,"CM 0, WIN 12/15",00:00,SkullMammothmon
+vbu,Mega,279,222,"CM 0-1, WIN 12/15",00:00,MetalGarurumon
+vbu,Mega,291,230,JOGRESS Data,00:00,Boltmon
+vbu,Mega,282,224,"CM 0, WIN 12/15",00:00,Magnadramon
+vbu,Mega,303,224,"CM 0-1, WIN 12/15",00:00,Ophanimon
+vbu,Mega,381,224,JOGRESS 215,00:00,Mastemon
+vbu,Mega,302,223,"CM 0-1, WIN 12/15",00:00,Seraphimon
+vbu,Mega,282,226,JOGRESS Vaccine,00:00,Magnadramon
+vbu,Mega,287,196,JOGRESS Data,00:00,SaberLeomon
+vbu,Mega,294,280,JOGRESS 279,00:00,Omnimon
+vbu,Mega,294,279,JOGRESS 280,00:00,Omnimon
+corona,Fresh,1607,egg,TIME,20:00,Pichimon (dm20 digitama_corona)
+corona,InTraining,20,1607,TIME,21:00,Bukamon
+corona,Rookie,384,20,TIME,22:00,Coronamon
+corona,Champion,387,384,TIME,23:00,Firamon
+corona,Ultimate,390,387,WIN 12/15,23:00,Flaremon
+corona,Mega,394,390,CM 0-2,24:00,Apollomon
+corona,Mega,400,394,JOGRESS 377,24:00,GraceNovamon; Tag Battle gate -> jogress door (capstone convention)
+luna,Fresh,1608,egg,TIME,20:00,Pichimon (dm20 digitama_luna)
+luna,InTraining,20,1608,TIME,21:00,Bukamon
+luna,Rookie,385,20,TIME,22:00,Lunamon
+luna,Champion,388,385,TIME,23:00,Lekismon
+luna,Ultimate,391,388,WIN 12/15,23:00,Crescemon
+luna,Mega,377,391,CM 0-2,24:00,Dianamon
+luna,Mega,400,377,JOGRESS 394,24:00,GraceNovamon; Tag Battle gate -> jogress door (capstone convention)
+zuba,Fresh,1609,egg,TIME,20:00,Sakumon (dm20 digitama_zuba)
+zuba,InTraining,969,1609,TIME,21:00,Sakuttomon
+zuba,Rookie,67,969,TIME,22:00,Zubamon
+zuba,Champion,161,67,TIME,23:00,Zubaeagermon
+zuba,Ultimate,369,161,WIN 12/15,23:00,Duramon
+zuba,Mega,370,369,CM 0-2,24:00,Durandamon
+hack,Fresh,1610,egg,TIME,20:00,Sakumon (dm20 digitama_hack)
+hack,InTraining,969,1610,TIME,21:00,Sakuttomon
+hack,Rookie,66,969,TIME,22:00,Hackmon
+hack,Champion,160,66,TIME,23:00,BaoHackmon
+hack,Ultimate,371,160,WIN 12/15,23:00,SaviorHackmon
+hack,Mega,372,371,CM 0-2,24:00,Jesmon
+doru20,Fresh,1611,egg,TIME,20:00,Dodomon (dm20 digitama_doru)
+doru20,InTraining,929,1611,TIME,21:00,Dorimon
+doru20,Rookie,41,929,TIME,22:00,Dorumon
+doru20,Champion,86,41,TIME,23:00,Dorugamon
+doru20,Ultimate,258,86,WIN 12/15,23:00,DoruGreymon
+doru20,Mega,330,258,CM 0-2,24:00,Alphamon
+slayerdra,Fresh,1612,egg,TIME,20:00,Petitmon (dm20 digitama_slayerdra)
+slayerdra,InTraining,955,1612,TIME,21:00,Babydmon
+slayerdra,Rookie,57,955,TIME,22:00,Dracomon
+slayerdra,Champion,150,57,TIME,23:00,Coredramon
+slayerdra,Ultimate,242,150,WIN 12/15,23:00,Wingdramon
+slayerdra,Mega,315,242,CM 0-2,24:00,Slayerdramon
+slayerdra,Mega,317,315,JOGRESS 316,24:00,Examon; Tag Battle gate -> jogress door (capstone convention)
+breakdra,Fresh,1613,egg,TIME,20:00,Petitmon (dm20 digitama_breakdra)
+breakdra,InTraining,955,1613,TIME,21:00,Babydmon
+breakdra,Rookie,57,955,TIME,22:00,Dracomon
+breakdra,Champion,150,57,TIME,23:00,Coredramon
+breakdra,Ultimate,250,150,WIN 12/15,23:00,Groundramon
+breakdra,Mega,316,250,CM 0-2,24:00,Breakdramon
+breakdra,Mega,317,316,JOGRESS 315,24:00,Examon; Tag Battle gate -> jogress door (capstone convention)
+ryuda,Fresh,1614,egg,TIME,20:00,Fufumon (pen20 digitama_ryuda)
+ryuda,InTraining,945,1614,TIME,21:00,Kyokyomon
+ryuda,Rookie,406,945,TIME,21:00,Ryudamon
+ryuda,Champion,415,406,TIME,22:00,Ginryumon
+ryuda,Ultimate,426,415,"CM 0-2, WIN 12/15",23:00,Hisyaryumon
+ryuda,Mega,437,426,"CM 0-2, WIN 12/15",00:00,Ouryumon
+draco,Fresh,1615,egg,TIME,20:00,Petitmon (pen20 digitama_draco)
+draco,InTraining,955,1615,TIME,21:00,Babydmon
+draco,Rookie,57,955,CM 0-1,21:00,Dracomon
+draco,Rookie,1061,955,CM 2+,21:00,AgumonHakase
+draco,Champion,150,57,"CM 0-1, TR 16+",22:00,Coredramon
+draco,Champion,150,57,"CM 0-1, TR 0-15 | CM 2+",22:00,Coredramon
+draco,Champion,94,1061,"CM 0-1, TR 0-15 | CM 2+",22:00,Devidramon
+draco,Champion,150,1061,"CM 0-1, TR 16+",22:00,Coredramon
+draco,Ultimate,242,150,"CM 0-2, WIN 12/15 | JOGRESS Vaccine/None",23:00,Wingdramon
+draco,Ultimate,250,150,"JOGRESS Vaccine | CM 0-2, WIN 12/15",23:00,Groundramon
+draco,Ultimate,210,150,JOGRESS Data/Virus,23:00,Megadramon
+draco,Ultimate,210,94,"CM 0-1, WIN 12/15",23:00,Megadramon
+draco,Ultimate,242,94,JOGRESS Vaccine/None,23:00,Wingdramon
+draco,Ultimate,250,94,JOGRESS Data/Virus,23:00,Groundramon
+draco,Mega,315,242,"CM 0-2, WIN 12/15",00:00,Slayerdramon
+draco,Mega,316,250,"CM 0-2, WIN 12/15",00:00,Breakdramon
+draco,Mega,276,210,JOGRESS Virus,00:00,Machinedramon
+draco,Mega,349,210,JOGRESS Virus,00:00,Darkdramon
+draco,Mega,317,315,JOGRESS 316,00:00,Examon
+draco,Mega,317,316,JOGRESS 315,00:00,Examon
+draco,Mega,348,349,JOGRESS 350,00:00,Chaosmon
+terrier,Fresh,1616,egg,TIME,20:00,Zerimon (pen20 digitama_twins)
+terrier,InTraining,971,1616,TIME,21:00,Gummymon
+terrier,Rookie,60,971,TIME,21:00,Terriermon
+terrier,Champion,154,60,TIME,22:00,Gargomon
+terrier,Ultimate,249,154,"CM 0-2, WIN 12/15",23:00,Rapidmon
+terrier,Mega,309,249,"CM 0-2, WIN 12/15",00:00,MegaGargomon
+lop,Fresh,1617,egg,TIME,20:00,Cocomon (pen20 digitama_twins)
+lop,InTraining,973,1617,TIME,21:00,Chocomon
+lop,Rookie,61,973,TIME,21:00,Lopmon
+lop,Champion,163,61,TIME,22:00,Turuiemon
+lop,Ultimate,243,163,"CM 0-2, WIN 12/15",23:00,Andiramon
+lop,Mega,305,243,"CM 0-2, WIN 12/15",00:00,Cherubimon
+vegg,Fresh,1618,egg,TIME,20:00,Chibomon (pen20 digitama_v)
+vegg,InTraining,939,1618,TIME,21:00,DemiVeemon
+vegg,Rookie,62,939,TIME,21:00,Veemon
+vegg,Champion,144,62,CM 2+,22:00,Veedramon
+vegg,Ultimate,233,144,"CM 0-2, WIN 12/15",23:00,AeroVeedramon
+vegg,Ultimate,234,144,JOGRESS Vaccine/Data,23:00,Garudamon
+vegg,Ultimate,236,144,JOGRESS Virus,23:00,Deramon
+vegg,Mega,311,233,"CM 0, WIN 12/15 | CM 0-2, WIN 12/15",00:00,UlforceVeedramon
+vegg,Mega,292,233,"CM 1-2, WIN 12/15",00:00,Phoenixmon
+vegg,Mega,292,234,"CM 0-2, WIN 12/15",00:00,Phoenixmon
+vegg,Mega,293,236,JOGRESS Data,00:00,Griffomon
+vegg,Mega,292,236,"CM 0-1, WIN 12/15",00:00,Phoenixmon
+vegg,Champion,144,62,TIME,22:00,Veedramon; catch-all road (device roads lost to roster prune fold here)
+vb20,Fresh,1619,egg,TIME,20:00,Botamon (pen20 digitama_vbu20)
+vb20,InTraining,12,1619,TIME,21:00,Koromon
+vb20,Rookie,40,12,CM 0-1,21:00,Guilmon
+vb20,Rookie,1063,12,CM 2+,21:00,BushiAgumon
+vb20,Champion,85,40,"CM 0-1, TR 16+",22:00,Growmon
+vb20,Champion,494,40,"CM 0-1, TR 0-15",22:00,Arresterdramon
+vb20,Champion,495,40;1063,CM 2+,22:00,Manbomon
+vb20,Champion,172,1063,"CM 0-1, TR 0-15",22:00,Reppamon
+vb20,Champion,494,1063,"CM 0-1, TR 16+",22:00,Arresterdramon
+vb20,Ultimate,254,85,JOGRESS Vaccine/None,23:00,RizeGreymon
+vb20,Ultimate,254,494;495,"CM 0-2, WIN 12/15",23:00,RizeGreymon
+vb20,Ultimate,254,172,JOGRESS Vaccine/Data,23:00,RizeGreymon
+vb20,Mega,298,254,"CM 0, WIN 12/15",00:00,Gallantmon
+vb20,Mega,334,254,"CM 1-3, WIN 12/15",00:00,Duftmon
+x3a,Fresh,1620,egg,TIME,20:00,Zerimon (dmx digitama_x3)
+x3a,InTraining,971,1620,TIME,21:00,Gummymon
+x3a,Rookie,41,971,"CM 0, TR 16+ | CM 1, TR 16+",21:00,Dorumon; folded device-area term: 'Area 45 not cleared'
+x3a,Rookie,1064,971,"CM 0, TR 0-15 | CM 1, TR 0-15",21:00,Terriermon X; folded device-area term: 'Area 45 not cleared'
+x3a,Champion,86,41,"CM 0-1, TR 4+",22:00,Dorugamon
+x3a,Champion,1101,41,"CM 0-1, TR 0-3",22:00,Pteranomon X; folded device-area term: 'Area 11 not cleared'
+x3a,Champion,1070,41,"CM 2+, TR 12+",22:00,Meramon X; folded device-area term: 'Area 9 cleared'
+x3a,Champion,457,41,"CM 2+, TR 0-11 | CM 2+, TR 12+",22:00,Omekamon; folded device-area term: 'Area 9 not cleared'
+x3a,Champion,1071,1064,"CM 0-2, TR 12+",22:00,Seasarmon X; folded device-area term: 'Area 11 cleared'
+x3a,Champion,86,1064,"CM 0-2, TR 0-11 | CM 0-2, TR 12+",22:00,Dorugamon; folded device-area term: 'Area 11 not cleared'
+x3a,Champion,1070,1064,"CM 3+, TR 8+",22:00,Meramon X; folded device-area term: 'Area 9 cleared'
+x3a,Champion,1069,1064,"CM 3+, TR 0-7 | CM 3+, TR 8+",22:00,Togemon X; folded device-area term: 'Area 9 not cleared'
+x3a,Ultimate,258,86,"CM 0-2, LV 4-6",23:00,DoruGreymon
+x3a,Ultimate,266,86,"CM 0-2, LV 1-3",23:00,CannonBeemon
+x3a,Ultimate,988,86,"CM 3+, LV 1-6",23:00,Mamemon X
+x3a,Ultimate,1230,1101,"CM 0-1, LV 3-6",23:00,Garudamon X; folded device-area term: 'Area 16 cleared'
+x3a,Ultimate,266,1101,"CM 0-1, LV 1-2",23:00,CannonBeemon
+x3a,Ultimate,988,1101,"CM 2+, LV 1-6",23:00,Mamemon X
+x3a,Ultimate,1037,1071,"CM 0-2, LV 5-6 | CM 3+, LV 6, KO6 1+",23:00,OmniShoutmon X; folded device-area term: 'Area 22 cleared'
+x3a,Ultimate,258,1071,"CM 0-2, LV 1-4",23:00,DoruGreymon
+x3a,Ultimate,1230,1071,"CM 3+, LV 6, KO6 0",23:00,Garudamon X; folded device-area term: 'Area 16 cleared'
+x3a,Ultimate,420,1071,"CM 3+, LV 1-5",23:00,Grademon
+x3a,Ultimate,1225,1070,"CM 0-2, LV 4-6",23:00,Cyberdramon X; folded device-area term: 'Area 21 cleared'
+x3a,Ultimate,420,1070,"CM 0-2, LV 1-3 | CM 0-2, LV 4-6",23:00,Grademon; folded device-area term: 'Area 21 not cleared'
+x3a,Ultimate,1037,1070,"CM 3+, LV 6, KO6 1+",23:00,OmniShoutmon X
+x3a,Ultimate,988,1070,"CM 3+, LV 1-6, KO6 0",23:00,Mamemon X
+x3a,Ultimate,1037,457,"CM 0-1, LV 5-6",23:00,OmniShoutmon X; folded device-area term: 'Area 22 cleared'
+x3a,Ultimate,1225,457;1069,"CM 2+, LV 6, KO6 1+",23:00,Cyberdramon X
+x3a,Ultimate,258,457,"CM 0-1, LV 1-4 | CM 0-1, LV 5-6",23:00,DoruGreymon; folded device-area term: 'Area 45 not cleared'; folded device-area term: 'Area 22 not cleared'
+x3a,Ultimate,1019,457,"CM 0-1, LV 5-6",23:00,Monzaemon X; folded device-area term: 'Area 20 cleared'
+x3a,Ultimate,1226,457,"CM 2+, LV 6, KO6 1+",23:00,RizeGreymon X
+x3a,Ultimate,420,457,"CM 0, LV 6",23:00,Grademon; folded device-area term: 'Area 20 not cleared'
+x3a,Ultimate,627,457,"CM 0-1, LV 1-4",23:00,CrysPaledramon; folded device-area term: 'Area 45 cleared'
+x3a,Ultimate,1036,457,"CM 2+, LV 6, KO6 0",23:00,Jazarichmon; folded device-area term: 'Area 45 cleared'
+x3a,Ultimate,230,457,"CM 2+, LV 1-5",23:00,Pumpmon; folded device-area term: 'Area 45 cleared'
+x3a,Ultimate,988,457,"CM 2+, LV 6, KO6 0 | CM 2+, LV 1-5",23:00,Mamemon X; folded device-area term: 'Area 45 not cleared'; folded device-area term: 'Area 45 not cleared'
+x3a,Ultimate,266,1069,"CM 0-1, LV 5-6",23:00,CannonBeemon
+x3a,Ultimate,258,1069,"CM 0-1, LV 1-4",23:00,DoruGreymon
+x3a,Ultimate,988,1069,"CM 2+, LV 1-6, KO6 0",23:00,Mamemon X
+x3a,Mega,330,258,"CM 0-2, LV 7-8",00:00,Alphamon
+x3a,Mega,1290,258,"CM 3, LV 8",00:00,Magnadramon X
+x3a,Mega,1020,258,"CM 3, LV 5-7",00:00,Dinotigermon
+x3a,Mega,376,266,"CM 0-2, LV 7-8",00:00,TigerVespamon
+x3a,Mega,1020,266,"CM 0-2, LV 1-6",00:00,Dinotigermon
+x3a,Mega,1034,266,"CM 3, LV 8, KO6 5+",00:00,Rapidmon X; folded device-area term: 'Area 32 cleared'
+x3a,Mega,1290,266,"CM 3, LV 8, KO6 0-4",00:00,Magnadramon X
+x3a,Mega,1316,266;1230,"CM 3, LV 5-7",00:00,Ebemon X
+x3a,Mega,1359,988,"CM 0-1, LV 6-8",00:00,Justimon X; folded device-area term: 'Area 29 cleared'
+x3a,Mega,914,988,"CM 2-3, LV 8, KO6 5+",00:00,Hexeblaumon; folded device-area term: 'Area 45 cleared'
+x3a,Mega,631,988,"CM 0-1, LV 6-8",00:00,Metallicdramon; folded device-area term: 'Area 45 cleared'
+x3a,Mega,1096,988,"CM 2-3, LV 8, KO6 5+",00:00,Goldramon X; folded device-area term: 'Area 31 cleared'
+x3a,Mega,1290,988,"CM 0-1, LV 1-5 | CM 0-1, LV 8",00:00,Magnadramon X; folded device-area term: 'Area 29 (Yellow) / 45 (Blue) not cleared'
+x3a,Mega,1020,988,"CM 2-3, LV 8, KO6 0-4",00:00,Dinotigermon
+x3a,Mega,1316,420;988,"CM 2-3, LV 5-7",00:00,Ebemon X
+x3a,Mega,1291,1230,"CM 0-2, LV 7-8 | CM 3, LV 8, KO6 3+",00:00,Phoenixmon X; folded device-area term: 'Area 27 cleared'; folded device-area term: 'Area 27 cleared'
+x3a,Mega,1290,1230,"CM 0-2, LV 5-6",00:00,Magnadramon X
+x3a,Mega,376,1230,"CM 0-2, LV 1-4",00:00,TigerVespamon
+x3a,Mega,1034,1037,"CM 0-2, LV 8",00:00,Rapidmon X; folded device-area term: 'Area 32 cleared'
+x3a,Mega,330,1037,"CM 0-2, LV 6-7",00:00,Alphamon
+x3a,Mega,1020,1019;1037,"CM 0-2, LV 1-5",00:00,Dinotigermon
+x3a,Mega,376,1037;1225,"CM 3, LV 8, KO6 3+",00:00,TigerVespamon
+x3a,Mega,1316,1037,"CM 3, LV 1-7 | CM 3, LV 8",00:00,Ebemon X
+x3a,Mega,330,420,"CM 0-1, LV 6-8",00:00,Alphamon
+x3a,Mega,1359,420,"CM 0-1, LV 4-5",00:00,Justimon X; folded device-area term: 'Area 29 Cleared'
+x3a,Mega,1096,420,"CM 0-1, LV 6-8",00:00,Goldramon X; folded device-area term: 'Area 31 cleared'
+x3a,Mega,437,420,"CM 0-1, LV 4-5",00:00,Ouryumon
+x3a,Mega,1031,420,"CM 2-3, LV 8, KO6 5+",00:00,NoblePumpmon; folded device-area term: 'Area 45 cleared'
+x3a,Mega,1359,1225,"CM 0-2, LV 7-8",00:00,Justimon X; folded device-area term: 'Area 29 cleared'
+x3a,Mega,1291,1225,"CM 0-2, LV 5-6",00:00,Phoenixmon X; folded device-area term: 'Area 27 cleared'
+x3a,Mega,1290,1225;1226,"CM 0-2, LV 1-4",00:00,Magnadramon X
+x3a,Mega,1316,1225;1226,"CM 3, LV 1-4",00:00,Ebemon X
+x3a,Mega,1238,1019,"CM 0-2, LV 8",00:00,Cherubimon X; folded device-area term: 'Area 30 cleared'
+x3a,Mega,1290,1019,"CM 0-2, LV 6-7",00:00,Magnadramon X
+x3a,Mega,1316,1019,"CM 3, LV 1-7 | CM 3, LV 8, KO6 0-2",00:00,Ebemon X
+x3a,Mega,1096,1226,"CM 0-2, LV 7-8",00:00,Goldramon X; folded device-area term: 'Area 31 cleared'
+x3a,Mega,437,1226,"CM 0-2, LV 5-6",00:00,Ouryumon
+x3a,Mega,1359,627,"CM 0-2, LV 4-6",00:00,Justimon X
+x3a,Mega,330,627,"CM 3, LV 8, KO6 3+",00:00,Alphamon
+x3a,Mega,1096,627,"CM 0-2, LV 4-6",00:00,Goldramon X
+x3a,Mega,437,627,"CM 3, LV 8, KO6 3+",00:00,Ouryumon
+x3a,Mega,914,627,"CM 0-2, LV 7-8",00:00,Hexeblaumon
+x3a,Mega,1290,627,"CM 0-1, LV 1-3 | CM 3, LV 5-7 | CM 3, LV 8, KO6 0-2",00:00,Magnadramon X
+x3a,Mega,1034,230;1036,"CM 0-2, LV 4-6",00:00,Rapidmon X
+x3a,Mega,376,1036,"CM 0-2, LV 1-3",00:00,TigerVespamon
+x3a,Mega,1291,1036,"CM 3, LV 8, KO6 3+",00:00,Phoenixmon X
+x3a,Mega,1247,1036,"CM 0-2, LV 4-6",00:00,Ophanimon X
+x3a,Mega,1238,1036,"CM 3, LV 8, KO6 3+",00:00,Cherubimon X
+x3a,Mega,631,1036,"CM 0-2, LV 7-8",00:00,Metallicdramon
+x3a,Mega,1316,1036,"CM 3, LV 5-7 | CM 3, LV 8, KO6 0-2",00:00,Ebemon X
+x3a,Mega,1238,230,"CM 0-2, LV 4-6",00:00,Cherubimon X
+x3a,Mega,1031,230,"CM 0-2, LV 7-8 | CM 3, LV 8, KO6 3+",00:00,NoblePumpmon
+x3a,Mega,1020,230,"CM 0-2, LV 1-3 | CM 3, LV 5-7 | CM 3, LV 8, KO6 0-2",00:00,Dinotigermon
+x3a,Mega,1314,1290,"CM 0-2, LV 10",00:00,Magnamon X; folded device-area term: 'Area 36 cleared'
+x3a,Mega,868,1020,"CM 0-2, LV 8-10",00:00,Crusadermon X
+x3a,Mega,859,1020;1034,"CM 0-2, LV 5-7",00:00,Craniumon X
+x3a,Mega,863,1020,"CM 0-2, LV 8-10",00:00,Jesmon X
+x3a,Mega,855,1020;1238;1247,"CM 0-2, LV 5-7",00:00,Sleipmon X
+x3a,Mega,866,376,"CM 0-2, LV 9-10",00:00,Gallantmon X; UNPARSED req term dropped: 'Special Random Encounter cleared'
+x3a,Mega,859,376,"CM 0-2, LV 9-10",00:00,Craniumon X; UNPARSED req term dropped: 'Special Random Encounter not cleared'
+x3a,Mega,1314,1034,"CM 0-2, LV 8-10",00:00,Magnamon X; folded device-area term: 'Area 36 cleared'
+x3a,Mega,1237,1316,"CM 0-2, LV 10",00:00,Gankoomon X; folded device-area term: 'Area 40 cleared'
+x3a,Mega,1095,1316,"CM 0-2, LV 10",00:00,Examon X; folded device-area term: 'Area 39 cleared'
+x3a,Mega,1237,1359,"CM 0-2, LV 8-10",00:00,Gankoomon X; folded device-area term: 'Area 40 cleared'
+x3a,Mega,868,1291;1359,"CM 0-2, LV 5-7",00:00,Crusadermon X
+x3a,Mega,1237,914,"CM 0-2, LV 8-10",00:00,Gankoomon X
+x3a,Mega,1314,914,"CM 0-2, LV 5-7",00:00,Magnamon X
+x3a,Mega,859,631;914,"CM 0-2, LV 1-4",00:00,Craniumon X
+x3a,Mega,1236,914,"CM 0-2, LV 5-7",00:00,Duftmon X
+x3a,Mega,863,914,"CM 0-2, LV 1-4",00:00,Jesmon X
+x3a,Mega,1314,631,"CM 0-2, LV 8-10",00:00,Magnamon X
+x3a,Mega,1313,631,"CM 0-2, LV 5-7",00:00,Dynasmon X
+x3a,Mega,1095,631,"CM 0-2, LV 8-10",00:00,Examon X
+x3a,Mega,855,631,"CM 0-2, LV 1-4",00:00,Sleipmon X
+x3a,Mega,1095,1096,"CM 0-2, LV 8-10",00:00,Examon X; folded device-area term: 'Area 39 cleared'
+x3a,Mega,863,1096,"CM 0-2, LV 5-7",00:00,Jesmon X
+x3a,Mega,1313,1291,"CM 0-2, LV 8-10",00:00,Dynasmon X; folded device-area term: 'Area 34 cleared'
+x3a,Mega,863,437,"CM 0-2, LV 5-7 | CM 0-2, LV 8-10",00:00,Jesmon X; UNPARSED req term dropped: 'Area SP not cleared'
+x3a,Mega,866,1031,"CM 0-2, LV 8-10",00:00,Gallantmon X; UNPARSED req term dropped: 'Special Random Encounter cleared'
+x3a,Mega,868,1031,"CM 0-2, LV 1-7 | CM 0-2, LV 8-10",00:00,Crusadermon X; UNPARSED req term dropped: 'Special Random Encounter not cleared'
+x3a,Mega,864,1031,"CM 0-2, LV 8-10",00:00,Omnimon X; UNPARSED req term dropped: 'Special Random Encounter cleared'
+x3a,Mega,1236,1031,"CM 0-2, LV 1-7 | CM 0-2, LV 8-10",00:00,Duftmon X; UNPARSED req term dropped: 'Special Random Encounter not cleared'
+x3a,Mega,1236,1247,"CM 0-2, LV 8-10",00:00,Duftmon X; folded device-area term: 'Area 35 cleared'
+x3a,Mega,868,859,"CM 0-2, LV 8-10",00:00,Crusadermon X; UNPARSED req term dropped: 'Special Random Encounter cleared'
+x3a,Mega,330,855;859,"CM 0-2, LV 5-7 | CM 0-2, LV 8-10",00:00,Alphamon; UNPARSED req term dropped: 'Special Random Encounter not cleared'
+x3a,Mega,330,863,"CM 0-2, LV 10",00:00,Alphamon
+x3a,Mega,867,855,"CM 0-2, LV 8-10",00:00,Minervamon X; UNPARSED req term dropped: 'Special Random Encounter cleared'
+x3a,Mega,1239,1237,JOGRESS 863,00:00,Jesmon GX; Connection Battle gate -> jogress door
+x3a,Rookie,41,971,TIME,21:00,Dorumon; catch-all road (device roads lost to roster prune fold here)
+x3b,Fresh,1621,egg,TIME,20:00,Cocomon (dmx digitama_x3)
+x3b,InTraining,973,1621,TIME,21:00,Chocomon
+x3b,Rookie,406,973,"CM 0, TR 16+ | CM 1, TR 16+",21:00,Ryudamon; folded device-area term: 'Area 45 not cleared'
+x3b,Rookie,1065,973,"CM 0, TR 0-15 | CM 1, TR 0-15",21:00,Lopmon X; folded device-area term: 'Area 45 not cleared'
+x3b,Champion,415,406,"CM 0-1, TR 12+",22:00,Ginryumon
+x3b,Champion,1028,406,"CM 2+, TR 12+",22:00,Wizarmon X; folded device-area term: 'Area 12 cleared'
+x3b,Champion,1027,1065,"CM 0-2, TR 0-15",22:00,Gatomon X
+x3b,Champion,1028,1065,"CM 3+, TR 16+",22:00,Wizarmon X; folded device-area term: 'Area 12 cleared'
+x3b,Champion,415,1065,"CM 3+, TR 0-15",22:00,Ginryumon
+x3b,Ultimate,988,1027,"CM 2+, LV 1-6",23:00,Mamemon X
+x3b,Ultimate,988,1028,"CM 3+, LV 1-6, KO6 0",23:00,Mamemon X
+x3b,Ultimate,1226,1028,"CM 0-2, LV 4-6",23:00,RizeGreymon X; folded device-area term: 'Area 18 cleared'
+x3b,Ultimate,1019,1028,"CM 3+, LV 6, KO6 1+",23:00,Monzaemon X
+x3b,Ultimate,426,415,"CM 0-2, LV 4-6",23:00,Hisyaryumon
+x3b,Ultimate,420,415,"CM 0-2, LV 1-3",23:00,Grademon
+x3b,Ultimate,988,415,"CM 3+, LV 1-4",23:00,Mamemon X
+x3b,Ultimate,1224,1027,"CM 0-1, LV 3-6",23:00,Angewomon X; folded device-area term: 'Area 23 cleared'
+x3b,Ultimate,420,1027,"CM 0-1, LV 1-2",23:00,Grademon
+x3b,Mega,1316,1224,"CM 3, LV 5-7",00:00,Ebemon X
+x3b,Mega,1359,988,"CM 0-1, LV 6-8",00:00,Justimon X; folded device-area term: 'Area 29 cleared'
+x3b,Mega,914,988,"CM 2-3, LV 8, KO6 5+",00:00,Hexeblaumon; folded device-area term: 'Area 45 cleared'
+x3b,Mega,631,988,"CM 0-1, LV 6-8",00:00,Metallicdramon; folded device-area term: 'Area 45 cleared'
+x3b,Mega,1096,988,"CM 2-3, LV 8, KO6 5+",00:00,Goldramon X; folded device-area term: 'Area 31 cleared'
+x3b,Mega,1290,988,"CM 0-1, LV 1-5 | CM 0-1, LV 8",00:00,Magnadramon X; folded device-area term: 'Area 29 (Yellow) / 45 (Blue) not cleared'
+x3b,Mega,1020,988,"CM 2-3, LV 8, KO6 0-4",00:00,Dinotigermon
+x3b,Mega,1316,420;988,"CM 2-3, LV 5-7",00:00,Ebemon X
+x3b,Mega,1020,1019,"CM 0-2, LV 1-5",00:00,Dinotigermon
+x3b,Mega,330,420,"CM 0-1, LV 6-8",00:00,Alphamon
+x3b,Mega,1359,420,"CM 0-1, LV 4-5",00:00,Justimon X; folded device-area term: 'Area 29 Cleared'
+x3b,Mega,1096,420,"CM 0-1, LV 6-8",00:00,Goldramon X; folded device-area term: 'Area 31 cleared'
+x3b,Mega,437,420,"CM 0-1, LV 4-5",00:00,Ouryumon
+x3b,Mega,1031,420,"CM 2-3, LV 8, KO6 5+",00:00,NoblePumpmon; folded device-area term: 'Area 45 cleared'
+x3b,Mega,1290,1226,"CM 0-2, LV 1-4",00:00,Magnadramon X
+x3b,Mega,1316,1226,"CM 3, LV 1-4",00:00,Ebemon X
+x3b,Mega,1238,1019,"CM 0-2, LV 8",00:00,Cherubimon X; folded device-area term: 'Area 30 cleared'
+x3b,Mega,1290,1019,"CM 0-2, LV 6-7",00:00,Magnadramon X
+x3b,Mega,1316,1019,"CM 3, LV 1-7 | CM 3, LV 8, KO6 0-2",00:00,Ebemon X
+x3b,Mega,1096,1226,"CM 0-2, LV 7-8",00:00,Goldramon X; folded device-area term: 'Area 31 cleared'
+x3b,Mega,437,1226,"CM 0-2, LV 5-6",00:00,Ouryumon
+x3b,Mega,437,426,"CM 0-2, LV 7-8",00:00,Ouryumon
+x3b,Mega,1290,426,"CM 3, LV 5-7",00:00,Magnadramon X
+x3b,Mega,1247,1224,"CM 0-2, LV 7-8",00:00,Ophanimon X; folded device-area term: 'Area 28 cleared'
+x3b,Mega,1020,1224,"CM 0-2, LV 1-4 | CM 3, LV 8, KO6 0-2",00:00,Dinotigermon
+x3b,Mega,1290,1224,"CM 0-2, LV 5-6 | CM 3, LV 8, KO6 3+",00:00,Magnadramon X
+x3b,Mega,1314,1290,"CM 0-2, LV 10",00:00,Magnamon X; folded device-area term: 'Area 36 cleared'
+x3b,Mega,868,1020,"CM 0-2, LV 8-10",00:00,Crusadermon X
+x3b,Mega,859,1020,"CM 0-2, LV 5-7",00:00,Craniumon X
+x3b,Mega,863,1020,"CM 0-2, LV 8-10",00:00,Jesmon X
+x3b,Mega,855,1020;1238;1247,"CM 0-2, LV 5-7",00:00,Sleipmon X
+x3b,Mega,1237,1316,"CM 0-2, LV 10",00:00,Gankoomon X; folded device-area term: 'Area 40 cleared'
+x3b,Mega,1095,1316,"CM 0-2, LV 10",00:00,Examon X; folded device-area term: 'Area 39 cleared'
+x3b,Mega,1237,1359,"CM 0-2, LV 8-10",00:00,Gankoomon X; folded device-area term: 'Area 40 cleared'
+x3b,Mega,868,1359,"CM 0-2, LV 5-7",00:00,Crusadermon X
+x3b,Mega,1237,914,"CM 0-2, LV 8-10",00:00,Gankoomon X
+x3b,Mega,1314,914,"CM 0-2, LV 5-7",00:00,Magnamon X
+x3b,Mega,859,631;914,"CM 0-2, LV 1-4",00:00,Craniumon X
+x3b,Mega,1236,914,"CM 0-2, LV 5-7",00:00,Duftmon X
+x3b,Mega,863,914,"CM 0-2, LV 1-4",00:00,Jesmon X
+x3b,Mega,1314,631,"CM 0-2, LV 8-10",00:00,Magnamon X
+x3b,Mega,1313,631,"CM 0-2, LV 5-7",00:00,Dynasmon X
+x3b,Mega,1095,631,"CM 0-2, LV 8-10",00:00,Examon X
+x3b,Mega,855,631,"CM 0-2, LV 1-4",00:00,Sleipmon X
+x3b,Mega,1095,1096,"CM 0-2, LV 8-10",00:00,Examon X; folded device-area term: 'Area 39 cleared'
+x3b,Mega,863,1096,"CM 0-2, LV 5-7",00:00,Jesmon X
+x3b,Mega,863,437,"CM 0-2, LV 5-7 | CM 0-2, LV 8-10",00:00,Jesmon X; UNPARSED req term dropped: 'Area SP not cleared'
+x3b,Mega,866,1031,"CM 0-2, LV 8-10",00:00,Gallantmon X; UNPARSED req term dropped: 'Special Random Encounter cleared'
+x3b,Mega,868,1031,"CM 0-2, LV 1-7 | CM 0-2, LV 8-10",00:00,Crusadermon X; UNPARSED req term dropped: 'Special Random Encounter not cleared'
+x3b,Mega,864,1031,"CM 0-2, LV 8-10",00:00,Omnimon X; UNPARSED req term dropped: 'Special Random Encounter cleared'
+x3b,Mega,1236,1031,"CM 0-2, LV 1-7 | CM 0-2, LV 8-10",00:00,Duftmon X; UNPARSED req term dropped: 'Special Random Encounter not cleared'
+x3b,Mega,1236,1247,"CM 0-2, LV 8-10",00:00,Duftmon X; folded device-area term: 'Area 35 cleared'
+x3b,Mega,868,859,"CM 0-2, LV 8-10",00:00,Crusadermon X; UNPARSED req term dropped: 'Special Random Encounter cleared'
+x3b,Mega,330,855;859,"CM 0-2, LV 5-7 | CM 0-2, LV 8-10",00:00,Alphamon; UNPARSED req term dropped: 'Special Random Encounter not cleared'
+x3b,Mega,330,863,"CM 0-2, LV 10",00:00,Alphamon
+x3b,Mega,867,855,"CM 0-2, LV 8-10",00:00,Minervamon X; UNPARSED req term dropped: 'Special Random Encounter cleared'
+x3b,Mega,1239,1237,JOGRESS 863,00:00,Jesmon GX; Connection Battle gate -> jogress door
+x3b,Rookie,406,973,TIME,21:00,Ryudamon; catch-all road (device roads lost to roster prune fold here)
+x3b,Champion,415,406,TIME,22:00,Ginryumon; catch-all road (device roads lost to roster prune fold here)
+x3b,Champion,1027,1065,TIME,22:00,Gatomon X; catch-all road (device roads lost to roster prune fold here)
+kera,Fresh,1622,egg,TIME,20:00,Kuramon (dmx digitama_kera)
+kera,InTraining,383,1622,TIME,00:00,Tsumemon
+kera,Rookie,1029,383,TIME,00:00,Keramon X
+kera,Mega,865,1029,TIME,00:00,Diaboromon X
