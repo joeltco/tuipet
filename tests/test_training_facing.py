@@ -215,8 +215,8 @@ def test_data_fire_out_wears_the_attack_pose(monkeypatch):
 def test_punch_hit_banner_takes_over_the_window(monkeypatch):
     """Joel 2026-07-12: the Hit!! banner is a FULL-WINDOW 32x16 banner,
     staged like the battle start banner -- on the strike beat the scene
-    YIELDS (no bag, no pet) and the 2x-upscaled banner owns the window;
-    between taps the bag/pet scene is back and the banner is gone."""
+    YIELDS and the 2x-upscaled banner owns the window; between taps the
+    mash scene (the canon fill meter since polish A) is back."""
     from tuipet import training, grid
     from tuipet.training import TrainingPanel, GAMES
     from tuipet.pet import Pet
@@ -236,7 +236,7 @@ def test_punch_hit_banner_takes_over_the_window(monkeypatch):
     pan._start_game()
     pan._strike_t = 0
     pan.text()
-    assert seen["placements"], "between taps: the bag is on stage"
+    assert seen["overlay"], "between taps: the meter is on stage"
     idle_ov = set(seen["overlay"])
     pan._strike_t = 3
     pan._strike_pose = 6
@@ -377,3 +377,87 @@ def test_training_menu_is_a_visible_list():
     assert plain and len(plain) <= 40          # the hint line holds the HUD
     pan.key("3")                               # digits jump straight in
     assert pan.phase == "play" and pan.gkey == "data"
+def _spy_scene(monkeypatch, seen):
+    from tuipet import training
+    real = training.render_scene
+
+    def spy(placements, *a, **kw):
+        seen["placements"] = list(placements)
+        seen["overlay"] = list(kw.get("overlay") or [])
+        return real(placements, *a, **kw)
+
+    monkeypatch.setattr(training, "render_scene", spy)
+
+
+def test_vaccine_mash_fills_the_canon_meter(monkeypatch):
+    """Polish A (Joel 2026-07-13): DM20 manual -- "mash A as much as possible
+    to fill its meter."  The mash act stages the real trainBar centred in the
+    window, its fill growing with the taps; the Hit!! banner still owns every
+    punch beat."""
+    from tuipet.training import TrainingPanel, GAMES
+    from tuipet.pet import Pet
+    seen = {}
+    _spy_scene(monkeypatch, seen)
+    p = Pet(num=100, stage="Champion", attribute="Vaccine", obedience=500)
+    p.compliance = True
+    pan = TrainingPanel(p)
+    pan.gi = next(i for i, g in enumerate(GAMES) if g[0] == "vaccine")
+    pan._start_game()
+    pan.text()
+    empty = len(seen["overlay"])
+    assert empty and not seen["placements"], "the meter holds the mash stage"
+    pan.taps = pan.vaccine_target                # threshold met -> the bar is full
+    pan.text()
+    assert len(seen["overlay"]) > empty, "the fill must grow with the taps"
+    pan._strike_pose, pan._strike_t = 6, 4       # a punch beat -> the banner owns it
+    banner = pan.text().markup
+    pan._strike_t = 0
+    assert banner != pan.text().markup
+
+
+def test_data_partner_taunts_a_block(monkeypatch):
+    """Polish B (Joel 2026-07-13): a BLOCK earns the partner its sourced taunt
+    lean (the HP dummy's wrong-pick grammar), in the tableau and on the fail
+    aftermath."""
+    from tuipet import training
+    from tuipet.training import TrainingPanel, GAMES
+    from tuipet.pet import Pet
+    p = Pet(num=100, stage="Champion", attribute="Vaccine", obedience=500)
+    p.compliance = True
+    pan = TrainingPanel(p)
+    pan.gi = next(i for i, g in enumerate(GAMES) if g[0] == "data")
+    pan._start_game()
+    pan.key("up" if pan.tt_shield[0] else "down")          # fire INTO the shield
+    pan.tt_i = next(i for i, fr in enumerate(pan.tt_tl) if fr["m"] == "block")
+    tableau = pan.text().markup
+    pan.tt_i = next(i for i, fr in enumerate(pan.tt_tl) if fr["m"] == "fire_in")
+    assert tableau != pan.text().markup, "the blocked tableau wears the taunt"
+    assert pan._target_sprite(False) == training._HP_DUMMIES["data_taunt"]
+    assert pan._target_sprite(True) == training._HP_DUMMIES["data"]
+
+
+def test_virus_zone_strobes_when_the_fill_is_in(monkeypatch):
+    """Polish C (Joel 2026-07-13): while the fill sits in the zone the whole
+    zone region strobes -- a stop-NOW signal readable at bar speed (the 1px
+    tick alone isn't)."""
+    from tuipet.training import TrainingPanel, GAMES, VIRUS_BAR_MIN
+    from tuipet.pet import Pet
+    seen = {}
+    _spy_scene(monkeypatch, seen)
+    p = Pet(num=100, stage="Champion", attribute="Vaccine", obedience=500)
+    p.compliance = True
+    pan = TrainingPanel(p)
+    pan.gi = next(i for i, g in enumerate(GAMES) if g[0] == "virus")
+    pan._start_game()
+    pan.pos = VIRUS_BAR_MIN - 10                 # under the zone: no strobe either tick
+    pan.frame_i = 1
+    pan.text()
+    below = len(seen["overlay"])
+    pan.pos = VIRUS_BAR_MIN + 2                  # in the zone: alternate ticks flash
+    pan.frame_i = 2
+    pan.text()
+    off_beat = len(seen["overlay"])
+    pan.frame_i = 3
+    pan.text()
+    on_beat = len(seen["overlay"])
+    assert on_beat > off_beat > below, "the zone must strobe only in the zone"

@@ -529,7 +529,7 @@ class TrainingPanel:
 
     def _render_play(self, rec):
         """The DVPet drills, rebuilt to match the real game with the real sprites:
-          Vaccine: MASH the bag (bag LEFT, 'Hit!' label flashes, pet HIDDEN).
+          Vaccine: MASH to fill the METER (DM20 canon); Hit!! banner per tap.
           Virus:   the power bar FILLS L->R; stop it in the zone (bar centred, pet HIDDEN).
           Data:    the REAL DM20 versus training -- fire HIGH/LOW past the sparring
                    partner's shield, 3 of 5 rounds (the fan turret is gone).
@@ -543,42 +543,44 @@ class TrainingPanel:
         placements = []
 
         if gk == "vaccine":                                 # DVPet drawVaccinePre: MASH to charge power.
-            # Rebuilt to the department's staging standard (polish 2026-07-04) --
-            # the old scene was a STATIC bag alone in a field: nothing on the
-            # arena moved per tap and the Hit! label floated in the sky.  Now it
-            # stages like the data drill's fixed columns: bag LEFT, PET RIGHT,
-            # and every tap SHOWS the punch -- the pet lunges in its strike pose
-            # (the _flash(6) each tap already sets), the bag rocks away 1px, and
-            # the Hit! label (DVPet hitLabel) pops over the BAG it belongs to.
-            # spacing polish (layout audit 2026-07-06, the hp lesson applied):
-            # placed BY MEASUREMENT -- the GRID anchors ran a 16px mon OFF the
-            # right edge (Devimon spanned x26..41 on the 40px LCD) and the
-            # HIT!! label sat at y0 flush on the top border
+            # THE CANON METER (polish A, Joel 2026-07-13): the DM20 manual --
+            # "mash A as much as possible to fill its meter."  The real
+            # trainBar track (the virus drill's own box) fills with your taps
+            # toward the threshold, centred in the window; every tap still
+            # takes over the window as the Hit!! banner, and bag + mon star
+            # in the volley finale.  (The 07-04 bag-left/mon-right idle scene
+            # stepped offstage for it: 16-tall actors can't stand under a
+            # meter without the chrome covering their heads, and DVPet's
+            # drawVaccinePre hid the pet here anyway.)
             punching = self._strike_t > 0
             hit = E.get("train_hit", [None])[0]
             if punching and hit:
                 # the Hit!! banner is a FULL-WINDOW 32x16 banner, staged
                 # exactly like the battle start banner (Joel 2026-07-12):
-                # the scene YIELDS -- bag and pet step offstage for the
-                # strike beat and the banner owns the window.  The native
-                # 13x5 hitLabel decode at a 2x integer upscale (mechanical,
-                # dot-crisp) centred in the band.
+                # the scene YIELDS for the strike beat and the banner owns
+                # the window.  The native 13x5 hitLabel decode at a 2x
+                # integer upscale (mechanical, dot-crisp) centred in the band.
                 big = ["".join(c * 2 for c in row) for row in hit
                        for _ in range(2)]
                 bw, bh = max(len(r) for r in big), len(big)
                 overlay = _blit(big, GRID_X0 + (GRID_W - bw) // 2,
                                 BAND_TOP + (BASE_Y - BAND_TOP - bh) // 2)
             else:
-                bag = _fit_cell(E.get("punching_bag", [None])[0] or [])
-                if bag:
-                    placements.append((bag, GRID_X0 + 1, False))
-                # the pet throws the punches from the window's right edge (LAW
-                # 2026-07-11: every canon sprite lives inside the 32x16)
-                pose = self._pose_now(1 if (self.frame_i // 2) % 2 else 0)  # idle bob between taps
-                pf = _crop(self._frame(rec, pose))
-                pw_ = max(len(r) for r in pf)
-                px = GRID_X0 + GRID_W - pw_
-                overlay.extend(_blit(pf, px, BASE_Y - len(pf)))   # grounded; faces left natively
+                frame = E.get("train_bar_empty", [None])[0]
+                fill = E.get("train_bar", [None])[0]
+                fh = len(frame) if frame else 5
+                fy = BAND_TOP + (BASE_Y - BAND_TOP - fh) // 2   # centred (virus keeps
+                track_w = GRID_W - 2                            #  the band top -- distinct)
+                if frame:
+                    frame = [row[:GRID_W] for row in frame]     # the 32-wide track box
+                    overlay.extend(_blit(frame, GRID_X0, fy))
+                if fill:
+                    w = max(0, min(max(len(r) for r in fill), track_w,
+                                   round(track_w * min(self.taps, self.vaccine_target)
+                                         / max(self.vaccine_target, 1))))
+                    if w:
+                        overlay.extend(_blit([row[:w] for row in fill],
+                                             GRID_X0 + 1, fy + 1))
         elif gk == "virus":                                 # DVPet drawVirusPre: pet AND bag HIDDEN
             # The real DVPet trainBar sprite is a 32-wide TRACK box (cols 0..31) + a separate
             # goal compartment (cols 32..37) == 38 wide.  Crop to the 32-wide track box so it
@@ -604,6 +606,13 @@ class TrainingPanel:
             # target line: a 1px tick at the zone threshold (VIRUS_BAR_MIN) so you can see where to stop
             zx = fx + 1 + min(track_w - 1, int(track_w * VIRUS_BAR_MIN / VIRUS_MAX))
             overlay += [(zx, fy + y) for y in range(fh)]
+            # the zone STROBES while the fill is inside it (polish C, Joel
+            # 2026-07-13): a stop-NOW signal you can read at bar speed -- the
+            # 1px tick alone can't be.  Solid flash on alternate ticks, drawn
+            # chrome like the tick itself.
+            if int(self.pos) >= VIRUS_BAR_MIN and self.frame_i % 2:
+                overlay += [(x, fy + y) for x in range(zx, fx + 1 + track_w)
+                            for y in range(fh)]
         elif gk == "data":
             # The REAL DM20's VERSUS TRAINING (canon rebuild 2026-07-13 -- DVPet's
             # turret duel here was fan invention; manual: "you choose to fire a
@@ -643,7 +652,9 @@ class TrainingPanel:
                     ox = int((mouth - ow) + ((GRID_X0 - ow) - (mouth - ow)) * fr["prog"])
                     overlay = _pop(overlay, _blit(orb, ox, lane_y))
             else:                                            # fire_in / block: the partner's view
-                dummy = _fit_cell(_HP_DUMMIES["data"])
+                # a BLOCK earns the partner its taunt (the same sourced lean the
+                # HP dummy wears on a wrong pick -- polish B, Joel 2026-07-13)
+                dummy = _fit_cell(_HP_DUMMIES["data_taunt" if m == "block" else "data"])
                 dm = [r[::-1] for r in dummy]                # creature stand-in faces the mon (canon mirror)
                 overlay.extend(_blit(dm, GRID_X0, BASE_Y - len(dm)))
                 dw = max(len(r) for r in dummy)
@@ -767,8 +778,8 @@ class TrainingPanel:
         (DVPet aftermathDefault).  Fit to the 16px band so the strike animation sits
         in the same grid as the drill sprites."""
         E = data.load_effects()
-        if self._is_data:                                       # the versus partner, intact either way
-            return _HP_DUMMIES["data"]
+        if self._is_data:                                       # the versus partner: it TAUNTS a
+            return _HP_DUMMIES["data" if broken else "data_taunt"]   # failed session (polish B)
         if self.gkey == "hp":                                   # HP fires at the training dummy (full height)
             return _HP_DUMMIES[("vaccine", "data", "virus")[self.hp_target]]
         return _fit_cell(E.get("punching_bag_broken" if broken else "punching_bag", [None])[0])
