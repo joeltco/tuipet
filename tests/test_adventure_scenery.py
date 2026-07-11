@@ -480,3 +480,33 @@ def test_road_care_beat_sounds_are_canon_scripted():
         if pan.sfx:
             heard[t] = pan.sfx
     assert heard == {6: "angry"}
+
+
+def test_teleport_curtain_obeys_the_window_law(monkeypatch):
+    """Joel's call 2026-07-13: the teleport wipe comes under the law.  The
+    curtain rects were full-LCD and the sliver exited UPWARD -- now every
+    curtain pixel lives in the 32x16 window across BOTH phases, and the
+    sliver zips off RIGHT / in from the LEFT (its off-edge travel cut at the
+    window like every lawful exit)."""
+    from tuipet import menu, grid
+    from tuipet.adventurescreen import TELE_LEAVE_T, TELE_ARRIVE_T
+    captured = []
+    real_paint = menu.paint
+
+    def spy(placements, bgimg, **kw):
+        captured.append(kw.get("overlay") or [])
+        return real_paint(placements, bgimg, **kw)
+
+    monkeypatch.setattr(menu, "paint", spy)
+    pan = AdventurePanel(_pet())
+    saw_curtain = 0
+    for phase, span in (("leave", TELE_LEAVE_T), ("arrive", TELE_ARRIVE_T)):
+        for t in range(span):
+            pan._trans = {"dir": "out", "phase": phase, "t": t}
+            pan._teleport_frame()
+            pts = captured[-1]
+            if pts:
+                saw_curtain += 1
+                assert all(grid.X0 <= x < grid.X1 and grid.TOP <= y < grid.FLOOR
+                           for x, y in pts), f"{phase} t={t}: curtain ink off-window"
+    assert saw_curtain > 30, "the wipe must actually stage its curtain beats"

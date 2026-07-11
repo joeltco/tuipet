@@ -39,18 +39,19 @@ TRAVEL_TICKS = 10             # ticks per auto-stride (the INTERACTIVE_STEPS com
 # moment the pet leaves for (or returns from) the adventure world): the
 # striped CURTAIN (resources/evol.png: 2-on/1-off black stripes over the
 # whole LCD) flashes over the standing pet three times (t3/t15/t21), stays
-# down and swallows it (t23), shrinks to a sliver (t26..) and shoots off the
-# TOP of the screen (depart); the world swaps under the cut (teleportArrive
-# frame 0 toggles isHome + checkBackNoAnim), the sliver drops back in from
-# the top, expands back to full screen, and teleportAppear flickers it three
-# times -- the pet standing in the new world from the third flash.  Beats
+# down and swallows it (t23), shrinks to a sliver (t26..) and departs
+# (canon shoots it off the TOP; tuipet zips it off the RIGHT -- window law,
+# exits are left/right); the world swaps under the cut (teleportArrive
+# frame 0 toggles isHome + checkBackNoAnim), the sliver zips back in from
+# the LEFT, expands back to the full window, and teleportAppear flickers it
+# three times -- the pet standing in the new world from the third flash.  Beats
 # are canon interval units (targetFPS/10 = 0.1s) mapped 1:1 onto tuipet's
 # 0.1s tick; sounds are the canon device mapping (soundConfig.csv rows
 # 39-44: disappear=strongHit, shrink/expand=attackHit, depart/arrive=attack,
 # appear=strongHit).  Battles get NO transition (their intro is the battle
 # screen); v0.2.361's fade() port was the WRONG canon animation (fade() is
 # the pause/silhouette wipe, not the habitat teleport -- Joel 2026-07-07).
-TELE_LEAVE_T = 50             # flashes 3..22, swallow 23, shrink 26..44, depart up
+TELE_LEAVE_T = 50             # flashes 3..22, swallow 23, shrink 26..44, depart right
 TELE_ARRIVE_T = 46            # drop 0..5, expand 5..23, appear flicker 23..46
 TELE_ON = ((3, 9), (15, 18), (21, 22))        # leave: curtain flash spans
 TELE_APPEAR_ON = ((1, 2), (5, 8), (14, 20))   # arrive: flicker spans (t-23)
@@ -111,9 +112,14 @@ def _curtain_pts(x, y, w, h):
     """The evol curtain as overlay pixels: the canon stripe pattern (each
     3-px band = 1 clear + 2 filled, resources/evol.png) over an LCD rect.
     Rides render_scene's overlay so it covers the PET too, exactly like
-    canon's room-effect layer sitting over the character sprite."""
+    canon's room-effect layer sitting over the character sprite.  Window-law
+    (audit 2026-07-13, Joel's call): the curtain is a canon SPRITE layer, not
+    weather, so its ink is cut at the window -- the sliver's off-edge travel
+    reads as the lawful left/right exit."""
     return [(px, py) for py in range(y, y + h)
-            for px in range(x, x + w) if (px - x) % 3]
+            for px in range(x, x + w)
+            if (px - x) % 3
+            and grid.X0 <= px < grid.X1 and grid.TOP <= py < grid.FLOOR]
 
 
 def _blend_bg(old, new, t):
@@ -619,29 +625,35 @@ class AdventurePanel(menu.SubHost):
                      if tr["dir"] == "in" else self.pet.background())
         else:
             bgimg = self._road_bg()
+        # the wipe is staged on the 32x16 WINDOW (audit 2026-07-13: the old
+        # full-LCD rects + the sliver's upward exit predated the law; the
+        # sliver now zips off RIGHT on leave and back in from the LEFT on
+        # arrive -- one continuous world direction, like the battle orb)
+        wx0, wy0, ww, wh = grid.X0, grid.TOP, grid.W, grid.BAND
+        cx, cy = wx0 + (ww - 4) // 2, wy0 + (wh - 6) // 2
         pet_on, cur = False, None
         if ph == "leave":
             pet_on = t < 23                       # swallowed at interval*23
             if any(on <= t < off for on, off in TELE_ON) or t >= 23:
-                cur = (0, 0, COLS, H)             # the full-screen curtain
+                cur = (wx0, wy0, ww, wh)          # the full-window curtain
             if 26 <= t < 44:                      # shrinking to the sliver
                 k = t - 26
-                w, h = max(4, COLS - 2 * k), max(6, H - k)
-                cur = ((COLS - w) // 2, (H - h) // 2, w, h)
-            elif t >= 44:                         # the sliver departs upward
-                cur = ((COLS - 4) // 2, (H - 6) // 2 - 3 * (t - 44), 4, 6)
+                w, h = max(4, ww - 2 * k), max(6, wh - k)
+                cur = (wx0 + (ww - w) // 2, wy0 + (wh - h) // 2, w, h)
+            elif t >= 44:                         # the sliver departs RIGHT
+                cur = (cx + 4 * (t - 44), cy, 4, 6)
         else:                                     # arrive
-            if t <= 5:                            # the sliver drops back in
-                cur = ((COLS - 4) // 2, -6 + 3 * t, 4, 6)
-            elif t < 23:                          # expands back to full screen
+            if t <= 5:                            # the sliver zips in from the LEFT
+                cur = (wx0 - 4 + round((cx - wx0 + 4) * t / 5), cy, 4, 6)
+            elif t < 23:                          # expands back to the full window
                 k = t - 5
-                w, h = min(COLS, 4 + 2 * k), min(H, 6 + k)
-                cur = ((COLS - w) // 2, (H - h) // 2, w, h)
+                w, h = min(ww, 4 + 2 * k), min(wh, 6 + k)
+                cur = (wx0 + (ww - w) // 2, wy0 + (wh - h) // 2, w, h)
             else:                                 # teleportAppear flicker
                 f = t - 23
                 pet_on = f >= 14                  # revealed on the third flash
                 if any(on <= f < off for on, off in TELE_APPEAR_ON):
-                    cur = (0, 0, COLS, H)
+                    cur = (wx0, wy0, ww, wh)
         placements = []
         if pet_on:
             rows = self._rows(0)                  # canon drawNumMirror(0, false)
