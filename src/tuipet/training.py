@@ -61,7 +61,8 @@ VIRUS_SPEEDS = (4.8, 6.0, 8.0)  # per-tick fill = DVPet +4 per VirusGameBarSpeed
 # The partner's shield follows the manual's REPEATING PATTERN -- "pressing the buttons
 # according to the chart below will let you win tag training every time" -- the six
 # winning-button rows ported VERBATIM (5 rounds each, sessions cycle 1..6 and repeat,
-# indexed by the pet's stage_trainings so the cheat chart works like the hardware).
+# indexed by the pet's data_trainings -- versus sessions ONLY, so the cheat chart
+# works like the hardware even when other drills are played in between).
 # The manual never says which of A/B fires high; tuipet reads A=HIGH (adaptation, the
 # one unspecified bit) -- the shield therefore stands OPPOSITE each winning shot.
 DATA_ROUNDS = 5               # rounds per session (manual: "3 out of the 5 rounds")
@@ -83,7 +84,6 @@ HP_ROUND_LEN = (60, 50, 40)   # ticks/round by rank (Easy/Normal/Hard).  DVPet s
 COLS = 40
 ARENA_ROWS = 12               # the app's ONE locked LCD area (== app SCREEN_ROWS / battle ROWS).
                               # DVPet's native LCD is 105x60px; tuipet shows it at 40x24 everywhere.
-PXH = ARENA_ROWS * 2          # 24px tall
 
 # The ONE creature grid every drill sits on -- shared with every other screen via grid.py
 # (two 16x16 cells side by side == 32x16, centred in the 40-wide LCD, floor 2px above bottom).
@@ -96,7 +96,6 @@ BASE_Y = grid.FLOOR               # 22: the floor -- every sprite baselines here
 # strike sequence: a battle-style volley (windup -> fire_out -> fire_in -> hit -> break),
 # beats imported from the battle screen so they march at the same pace.  The orb rides the
 # lower 16px creature band -- the SAME band the drill sprites stand in.
-STRIKE_BAND_TOP = BAND_TOP
 
 
 # drill sprite helpers -- thin aliases over the shared grid module (single source of truth)
@@ -234,10 +233,11 @@ class TrainingPanel:
             self.flash = "MASH the bag!"
         elif gk == "data":
             # the partner's shield lanes for THIS session: the manual's repeating
-            # chart row, cycled by lifetime drills this stage (the printed cheat
-            # sequences work on tuipet exactly as on the hardware).  The row lists
-            # WINNING shots (A=HIGH); the shield stands in the opposite lane.
-            row = DATA_WIN_CHART[self.pet.stage_trainings % len(DATA_WIN_CHART)]
+            # chart row, cycled by VERSUS sessions ALONE (the printed cheat
+            # sequences work on tuipet exactly as on the hardware -- an HP or
+            # vaccine drill in between must not shift the pattern).  The row
+            # lists WINNING shots (A=HIGH); the shield stands opposite.
+            row = DATA_WIN_CHART[self.pet.data_trainings % len(DATA_WIN_CHART)]
             self.tt_shield = tuple(c == "B" for c in row)   # win LOW -> shield was HIGH
             self.flash = f"round 1/{DATA_ROUNDS} — UP high · DOWN low"
         else:
@@ -538,7 +538,6 @@ class TrainingPanel:
         gk = self.gkey
         E = data.load_effects()
         on, bgimg = self._scene_palette()
-        ph = ARENA_ROWS * 2
         overlay = []
         placements = []
 
@@ -735,7 +734,9 @@ class TrainingPanel:
             # plain "↑↓ pick · 1-4 jump · ENTER start" = 32 cols (ESC is universal)
             return menu.hints(("↑↓", "pick"), ("1-4", "jump"), ("ENTER", "start"))
         if self.phase == "done":
-            return f"{self.result or ''}  [dim]· SPACE finish[/]"
+            # worst result ("Perfect! Effort up! HP +1!" = 26) + chrome must
+            # hold <= 40 plain cols or the payoff strip marquees (hint law)
+            return f"{self.result or ''}  [dim]· SPACE[/]"
         if self.phase == "strike":
             return getattr(self, "_strike_note", "") or "..."
         return self._gauge()
@@ -787,7 +788,6 @@ class TrainingPanel:
         fr = self.strike_tl[min(self.si, len(self.strike_tl) - 1)]
         m = fr["m"]
         on, bgimg = self._scene_palette()
-        ph = ARENA_ROWS * 2
         overlay, placements, note = [], [], ""
         if m == "hit":                                          # fullscreen impact strobe, nothing else
             ex = _EXPLODE[fr["f"]]

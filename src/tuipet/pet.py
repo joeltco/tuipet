@@ -814,6 +814,9 @@ class Pet:
     # ---- evolution lines (LINES_SPEC.md): the legible bracket engine ----
     line_id: str = ""               # hatched-from line; "" = corpus fuzzy engine
     stage_trainings: int = 0        # drills attempted this stage (every attempt counts; Pen20)
+    data_trainings: int = 0         # lifetime VERSUS (data) sessions -- the DM20 manual's
+    #                                 cheat chart cycles on THESE alone (a vaccine mash must
+    #                                 not shift the printed pattern; audit 2026-07-13)
     stage_battles: int = 0          # battles fought this stage
     battle_log: list = _dcf(default_factory=list)   # last-15 results 1/0 (persists across evolution; Pen20)
     mega_kills: int = 0             # lifetime Ultimate/Mega-class foes beaten (DMX KO6 gate)
@@ -1917,6 +1920,25 @@ class Pet:
         rst = self._restless()
         return trio[0 if rst == 0 else (1 if rst == 1 else 2)]
 
+    # digimon.csv Time{Preference,Aversion} words -> tuipet day phases (the
+    # species seeds; ~97% of the dex carries them.  No "dusk" seed exists)
+    _TIME_WORD = {"Morning": "dawn", "Noon": "day", "Night": "night"}
+
+    def seed_time_pref(self):
+        """Bias the time ledger by the SPECIES seeds (+2 preference / -2
+        aversion), the exact rule the taste-seed comment documents -- the
+        columns were parsed-or-dropped but never consumed, so a nocturnal
+        species hatched with no clock personality at all (audit 2026-07-13).
+        A bias on the CURRENT values, not an overwrite: an evolved pet keeps
+        its emergent opinions, nudged by the new form's nature."""
+        r = self._phys()
+        fav = self._TIME_WORD.get(r.get("time_pref", "None"))
+        bad = self._TIME_WORD.get(r.get("time_aversion", "None"))
+        if fav:
+            self.time_pref[fav] = _clamp(self.time_pref.get(fav, 0) + 2, -90, 90)
+        if bad and bad != fav:
+            self.time_pref[bad] = _clamp(self.time_pref.get(bad, 0) - 2, -90, 90)
+
     def favorite_time(self):
         return max(self.time_pref, key=self.time_pref.get) if any(self.time_pref.values()) else None
 
@@ -2509,6 +2531,7 @@ class Pet:
     def evolve_to(self, num):
         was_young = self.stage in ("Egg", "Fresh", "InTraining", "Rookie")
         _req = self._become(num)
+        self.seed_time_pref()          # the new form's clock nature biases the ledger
         # Evolution.java's per-stage ARRIVAL setters (egg/hatch audit
         # 2026-07-06 -- none of these were ported; the missing fresh()
         # obedience 75 was the deepest root of the misbehaving-babies era):
@@ -3300,6 +3323,8 @@ class Pet:
         self._calm_discipline_call()                      # exercise() placates the tantrum
         self.exercise_today += 1                          # DVPet _exercise (incExerciseTime)
         self.stage_trainings += 1                         # LINES_SPEC TR gate: every attempt counts (Pen20)
+        if game == "data":
+            self.data_trainings += 1                      # the versus chart row is spent (manual cycle)
         complied = self.check_compliant()                 # onExerciseFinish: checkCompliant
         strength0 = self.strength
         success = hits >= 2
@@ -3430,7 +3455,9 @@ class Pet:
         rank = "Perfect!" if hits == 3 else ("Good!" if hits == 2 else ("Meh." if hits == 1 else "Whiff."))
         if game == "hp":
             hp_note = self._check_perfect_wins() if success else ""
-            return f"{rank} {'Effort up!' if hits >= 2 else 'no gain'}{hp_note}"
+            # setExercise(+1) lands win or lose (canon) -- "no gain" contradicted
+            # the Effort gauge visibly ticking up on a whiff (audit 2026-07-13)
+            return f"{rank} {'Effort up!' if hits >= 2 else 'Effort up, but sloppy.'}{hp_note}"
         return f"{rank} +{gain} {attr}"
 
     def can_battle(self):
@@ -4728,7 +4755,10 @@ class Pet:
             self.inj_length = 0.0
             self.bandage_lapse = BANDAGE_HOURS           # recovery item -> getBandage indicator
         if e.get("seconds"):
-            self.lifespan += e["seconds"]                # DVPet setTotalLifespan: +/- lifespan
+            # DVPet setTotalLifespan, real-sec -> game /60: the SAME conversion
+            # feed() applies -- the raw add made a bag-used Gold Pill 60x
+            # stronger than an eaten one (audit 2026-07-13)
+            self.lifespan = max(0.0, self.lifespan + e["seconds"] / 60.0)
         if e.get("temp"):
             new_temp = self.temp + e["temp"]             # DVPet applies only if it stays in range
             if 0 <= new_temp <= wx.MAX_TEMP:             # config MaxTemp=100, floor 0
@@ -4739,6 +4769,11 @@ class Pet:
         if is_food:
             self._eat_food(e.get("category", ""))           # bag food -> same taste system
             self._apply_nutrition(e)
+            if e.get("strength", 0) > 0:                    # Pen20 protein DP, like feed()
+                self.dp = min(DP_MAX, self.dp + 1)
+            if e.get("sleep_lapse"):                        # bedtime nudge (Caffeine Pill's
+                self.sleep_lapse = max(0.0, self.sleep_lapse + e["sleep_lapse"])
+                                                            # signature effect; was feed-only)
         if not e.get("sleep"):                           # a sleep item leaves the pet dozing,
             self._set_anim("eat" if is_food else "happy", 1.4)   # not in the happy/eat pose
         return f"Used {e['name']}."

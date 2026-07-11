@@ -138,11 +138,14 @@ def test_data_chart_is_the_manual_verbatim():
     """The manual's repeating cheat chart, ported exactly: "pressing the
     buttons according to the chart below will let you win tag training every
     time" -- rows ABABB/BBAAB/BAABB/ABBAA/BABAB/ABABA, A=HIGH (tuipet's one
-    documented adaptation), sessions cycling by stage_trainings."""
+    documented adaptation), sessions cycling by data_trainings (VERSUS sessions
+    alone -- other drills between sessions must not shift the printed pattern,
+    audit 2026-07-13)."""
     assert T.DATA_WIN_CHART == ("ABABB", "BBAAB", "BAABB", "ABBAA", "BABAB", "ABABA")
     for session in range(8):                           # ...and it REPEATS past row 6
         panel = _panel("data")
-        panel.pet.stage_trainings = session
+        panel.pet.data_trainings = session
+        panel.pet.stage_trainings = session * 7 + 3    # noise: other drills played too
         panel.key("enter")
         row = T.DATA_WIN_CHART[session % 6]
         for c in row:                                  # play the printed winning buttons

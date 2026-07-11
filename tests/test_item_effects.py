@@ -26,9 +26,25 @@ def _use(name, **pet_kw):
 
 
 def test_seconds_changes_lifespan():
+    """Seconds converts real-sec -> game /60, the SAME rate feed() applies:
+    the raw add made a bag-used Gold Pill 60x an eaten one (audit 2026-07-13)."""
     base = Pet.from_num(29).lifespan
-    assert _use("Gold Pill").lifespan == base + 43200      # +12h
-    assert _use("Vitamin").lifespan == base - 3600         # -1h
+    assert _use("Gold Pill").lifespan == base + 43200 / 60   # +12h real = +720
+    assert _use("Vitamin").lifespan == base - 3600 / 60      # -1h real = -60
+
+
+def test_bag_food_still_nudges_bedtime_and_dp():
+    """The bag door dropped SleepLapse and the protein DP entirely (audit
+    2026-07-13): a Caffeine Pill used from its natural medicine tab changed
+    nothing about bedtime, and a strength food banked no DP toward jogress."""
+    p = _use("Caffeine Pill", sleep_lapse=100.0)
+    assert p.sleep_lapse < 100.0, "the pill must nudge bedtime from the bag"
+    f, _ = data._load_consumables()
+    protein = next(f"f:{k}" for k, e in f.items() if e.get("strength", 0) > 0)
+    q = Pet.from_num(29); q.stage = "Rookie"
+    q.obedience = 500; q.dp = 0
+    q.add_item(protein); q.use_item(protein)
+    assert q.dp == 1, "a strength food banks Pen20 DP from the bag like feed"
 
 
 def test_temp_shifts_temperature_within_range():

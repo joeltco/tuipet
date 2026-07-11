@@ -50,3 +50,27 @@ def test_check_sale_formula_is_canon():
     p = _pet()
     slot = shop._mk_slot(p, e, check_sale=True)
     assert slot["sale"] == 100 - 100 // 4         # price - price/saleFactor = 75
+
+
+def test_biome_specialty_seats_are_all_sellable():
+    """Every BIOME specialty id must be a PRICED, functional consumable --
+    specialties draw from the gated town pool, so a price-0 home staple
+    (Meat/Fish/Fruit/Veg/Med/Cookie) silently never stocked and 9 of 14
+    biomes lost their authored signature goods (audit 2026-07-13)."""
+    import csv
+    import os
+    from tuipet import world
+    root = os.path.join(os.path.dirname(world.__file__), "data")
+    foods = {int(r["FoodIdentificationNum"]): r
+             for r in csv.DictReader(open(os.path.join(root, "foods.csv")))}
+    items = {int(r["ItemIdentificationNum"]): r
+             for r in csv.DictReader(open(os.path.join(root, "items.csv")))}
+    for biome, spec in world.BIOME.items():
+        for fid in spec["foods"]:
+            assert fid in foods, f"{biome}: food {fid} does not exist"
+            assert int(foods[fid]["DefaultPrice"] or 0) > 0, \
+                f"{biome}: food {fid} ({foods[fid]['Name']}) is a price-0 staple -- it can never stock"
+        for iid in spec["items"]:
+            assert iid in items, f"{biome}: item {iid} does not exist"
+            assert int(items[iid]["DefaultPrice"] or 0) > 0, \
+                f"{biome}: item {iid} ({items[iid]['Name']}) is price-0 -- it can never stock"

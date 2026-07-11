@@ -1,12 +1,13 @@
 """Training-minigame gains (Workstream A) — the last correctness piece in A.
 
 apply_training(hits, power, attribute, game):
-  - game="hp": a success (hits>=2) builds Effort (strength) +1 and obedience +1;
-    a fail (hits<2) costs mood and obedience, no strength.
+  - every drill: Effort (strength) +1 WIN OR LOSE (canon setExercise), +1
+    exercise, -1 energy; weight is untouched (canon ExerciseWeightDec=0).
+  - a success (hits>=2) additionally grants the praise window; a fail costs
+    mood/obedience (the old "success builds obedience +1" was invented).
   - game in {vaccine,data,virus}: a success adds hits*TRAIN_POWER_PER_HIT to that
     attribute's lifelong power count; a fail adds nothing. Training a non-favored
     attribute costs extra mood/spirit.
-  - every drill: +1 exercise, -2 weight, -1 energy.
 
 TRAIN_POWER_PER_HIT=2 is a deliberate tuipet adaptation (DVPet adds a flat +1/drill,
 but its stages last real-DAYS; under tuipet's ~60x-compressed stage a flat +1 can

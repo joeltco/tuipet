@@ -128,55 +128,59 @@ def town_biome_name(tid: int) -> str:
 # Keyed by habitat NAME; stock lists are GENERAL consumables (foods.csv/items.csv
 # ids), deliberately NOT evolution/spirit items, so a themed shelf never warps
 # the evolution economy.  {field}/{element} words come from the habitat row.
+# NB every id must be a PRICED shop good -- specialties draw from the gated
+# town pool (shop.roll_town_shop), so a price-0 home staple (Meat/Fish/Fruit/
+# Veg/Med/Cookie) silently never stocks; those seats were re-cast with priced
+# same-flavor goods (audit 2026-07-13).
 # ---------------------------------------------------------------------------
 BIOME = {
     "Evil Castle": {
         "greet": "Lantern-light gutters over {name}'s grim stalls.",
-        "foods": [30, 4, 19], "items": [80, 2],
+        "foods": [30, 15, 19], "items": [80, 2],
     },
     "Canyon": {
         "greet": "Heat shimmers off the red rock around {name}.",
-        "foods": [37, 8, 0], "items": [7, 3],
+        "foods": [37, 8, 28], "items": [7, 3],
     },
     "Volcano": {
         "greet": "Ash drifts through the forge-town of {name}.",
-        "foods": [37, 8, 0], "items": [7],
+        "foods": [37, 8, 28], "items": [7],
     },
     "City": {
         "greet": "Neon and gear-hum fill the streets of {name}.",
-        "foods": [6, 7, 54], "items": [8, 9, 10, 11],
+        "foods": [6, 7, 24], "items": [8, 9, 10, 11],
     },
     "Underwater": {
         "greet": "{name} glimmers in the light filtering down through the water.",
-        "foods": [1, 14, 53], "items": [3],
+        "foods": [14, 53], "items": [3],
     },
     "Ocean": {
         "greet": "Salt wind and gulls sweep the docks of {name}.",
-        "foods": [1, 14, 53], "items": [3],
+        "foods": [14, 53], "items": [3],
     },
     "Lake": {
         "greet": "Still water mirrors the sky beside {name}.",
-        "foods": [1, 14, 47], "items": [3],
+        "foods": [14, 53, 47], "items": [3],
     },
     "Forest": {
         "greet": "Dappled light falls through the leaves over {name}.",
-        "foods": [45, 13, 2], "items": [4],
+        "foods": [45, 13, 50], "items": [4],
     },
     "Plains": {
         "greet": "Open sky stretches wide above {name}.",
-        "foods": [3, 29, 46], "items": [3],
+        "foods": [36, 29, 46], "items": [3],
     },
     "Field": {
         "greet": "Wildflowers ring the little market of {name}.",
-        "foods": [3, 50, 42], "items": [3],
+        "foods": [35, 50, 42], "items": [3],
     },
     "Sky": {
         "greet": "Wind and cloud stream past high {name}.",
-        "foods": [9, 2, 31], "items": [12, 6],
+        "foods": [9, 42, 31], "items": [12, 6],
     },
     "Cliffside": {
         "greet": "Sea-spray and wind buffet the bluffs of {name}.",
-        "foods": [1, 9, 2], "items": [6],
+        "foods": [53, 9, 42], "items": [6],
     },
     "Desert": {
         "greet": "The sun beats down hard on {name}'s market.",
