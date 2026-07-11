@@ -74,3 +74,21 @@ def test_biome_specialty_seats_are_all_sellable():
             assert iid in items, f"{biome}: item {iid} does not exist"
             assert int(items[iid]["DefaultPrice"] or 0) > 0, \
                 f"{biome}: item {iid} ({items[iid]['Name']}) is price-0 -- it can never stock"
+
+
+def test_every_shop_row_points_at_a_real_consumable():
+    """shopConsumable row 18 shipped (in DVPet itself!) pointing at food 124,
+    which does not exist -- 11 towns silently lost a MustStock 375b shelf slot
+    for the game's whole life.  Joel's call 2026-07-13: repointed at Steak (8,
+    a town deal off its 500b default; no other row sells it).  Pin the whole
+    file so a data refresh can never regress a shelf to nothing again."""
+    import csv
+    import os
+    from tuipet import world
+    root = os.path.join(os.path.dirname(world.__file__), "data")
+    foods = {int(r["FoodIdentificationNum"]) for r in csv.DictReader(open(os.path.join(root, "foods.csv")))}
+    items = {int(r["ItemIdentificationNum"]) for r in csv.DictReader(open(os.path.join(root, "items.csv")))}
+    for r in csv.DictReader(open(os.path.join(root, "shopConsumable.csv"))):
+        pool = foods if (r["IsFood"] or "").strip().lower() == "true" else items
+        assert int(r["ConsumableID"]) in pool, \
+            f"SCID {r['ShopConsumableID']} points at missing consumable {r['ConsumableID']}"
