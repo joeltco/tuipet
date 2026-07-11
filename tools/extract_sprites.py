@@ -2,8 +2,8 @@
 """Extract DVPet 1-bit creature sprites from the game atlases.
 
 Layout (verified): creature stages live in sprites{Stage}{Set}.png, each 672x672,
-an 11x11 grid. Each Digimon = one row (NewSpriteNum // 11), its 11 animation/expression
-frames = columns 0..10. Background is cyan (153,217,234); creature is black.
+an 11x11 grid. Each Digimon = one column (NewSpriteNum // 11), its 11 animation/expression
+frames = rows 0..10 down the column. Background is cyan (153,217,234); creature is black.
 We threshold dark pixels -> 1-bit bitmaps, crop to the union bbox of a Digimon's
 non-empty frames (stable alignment), and emit a compact JSON dataset.
 """

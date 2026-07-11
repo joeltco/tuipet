@@ -6,16 +6,16 @@ fan community — see [Credits & acknowledgments](#credits--acknowledgments).
 
 ![tuipet demo — hatch, feed, play, and adventure with your pet in the terminal](demo.gif)
 
-**Status: live and actively developed.** The core V-Pet behaviour — every
-mechanic, animation, and evolution line — is ported and verified against the
-source games, with device data cross-referenced against community references.
-Regular updates ship as the game grows.
+**Status: live and actively developed.** tuipet is its own game: the core
+V-Pet behaviour — every mechanic, animation, and evolution line — is built
+on and verified against the real devices, with data cross-referenced against
+community references. Regular updates ship as the game grows.
 
 ## What's inside
 
 - **1,548 creatures**, 11 animation frames each, extracted from the game's
   sprite atlases as 1-bit bitmaps (`src/tuipet/data/sprites.json.gz`).
-- A **complete Digimon V-Pet**, ported system by system from the source games:
+- A **complete Digimon V-Pet**, every system faithful to the real devices:
   care, training, evolution (care-quality gates + DNA + jogress),
   adventures across 5 world maps, hourly tournaments, town economies,
   habitats with live climate/weather, an in-game AI care assistant, and the
@@ -66,7 +66,7 @@ pip install -e .
 tuipet           # or: PYTHONPATH=src python -m tuipet.app
 ```
 
-Start from an **egg** — real DVPet egg designs; it wobbles, cracks, and hatches.
+Start from an **egg** — real dot-matrix egg designs; it wobbles, cracks, and hatches.
 
 ## Keys
 
@@ -80,7 +80,9 @@ Start from an **egg** — real DVPet egg designs; it wobbles, cracks, and hatche
 | **r** | praise | **v** | AI assistant |
 | **k** | scold | **g** | options |
 | **a** | adventure | **s** | lights |
-| **o** | shop · **i** | bag | **q** | quit |
+| **o** | shop | **i** | bag |
+| **b** | bug report | **?** | help |
+| **q** | quit | | |
 
 Battles and jogress live where they belong: **PvE combat happens in
 adventures and cups; PvP battles and fusion happen in the lobby** — there is
@@ -88,7 +90,7 @@ no free-standing battle key.
 
 ## Care & evolution
 
-Evolution is a faithful port of DVPet's `Evolution.checkEvolReq`: each form's
+Evolution uses the real V-Pet gating model: each form's
 `digimon.csv` row gates on care **mistakes**, **overfeed**, **sleep
 disturbances**, **sickness**, **injuries**, **weight** class, **mood**,
 **attribute power** (Vaccine/Data/Virus), and **battles/wins**, with the
@@ -99,9 +101,10 @@ Numemon. Battle-gated Champions and above need real fights — adventures and
 cups feed the same record.
 
 **Training** (`t`) is the device's four drills — HP, Vaccine, Data, Virus —
-each fought against an on-screen opponent (the punching bag or the pop-up
-target) flowing into the canonical strike → impact → aftermath, raising
-effort and the drilled attribute power.
+each fought against an on-screen opponent: the punching bag, or for Data
+your sparring partner in the real DM20 **versus training** (fire high or
+low past their shield, 3 rounds of 5) — flowing into the canonical
+strike → impact → aftermath, raising effort and the drilled attribute power.
 
 **DNA** (`x`) is the per-Field collectible layer: charge banked Field-DNA
 into the pet to bend evolution toward gated forms, generate more, and read
@@ -165,8 +168,8 @@ road, the pet's habitat follows the terrain it walks.
 **o** buys (home stock from the game's shop tables; towns override prices and
 inventory with their own economies), **i** uses what you own. Foods, medicine,
 discipline books, attribute chips, transport items, and the adventure **Life
-Recovery** potion all carry their real DVPet effects. Loot drops unlock their
-shop listings permanently.
+Recovery** potion all carry their real in-game effects. Loot drops unlock
+their shop listings permanently.
 
 ## AI assistant & options
 
@@ -193,7 +196,7 @@ python tools/allframes.py Agumon    # see all 11 frames
 
 The atlases are 672×672, an 11×11 grid: each **column** is one creature, each of
 the 11 **rows** is an animation frame. Creatures are authored at 3× scale on a
-cyan LCD background; the extractor box-downsamples 3× (recovering native ~20px
+cyan LCD background; the extractor box-downsamples 3× (recovering native 16px
 sprites and dropping the dev-build column labels) and thresholds to 1-bit.
 
 ## Sprite frame convention
@@ -224,8 +227,9 @@ tuipet stands on the shoulders of the **Digimon V-Pet fan community** — a whol
 ecosystem of hobbyists who reverse-engineered, documented, and preserved these
 devices. It draws on the work of many of them, including:
 
-- **[DVPet](https://theundersigned.itch.io/dvpet)** by *theundersigned* — the
-  terminal port started here.
+- **[DVPet](https://theundersigned.itch.io/dvpet)** by *theundersigned* —
+  tuipet began as a study of this fan game, and its sprite bank and early
+  data came from it.
 - **[humulos.com/digimon](https://humulos.com/digimon)** — device evolution,
   egg, and roster documentation used to build and verify the lines.
 - **MultiVPet** and **Digimon Unlimited** — community sprite/stat extractions
