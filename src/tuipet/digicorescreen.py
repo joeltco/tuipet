@@ -473,7 +473,8 @@ class DigiCorePanel:
         """Narration only -- the gaze speaks through the message box; every
         other digicore state leaves it alone."""
         if not self.teaser:
-            return ""
+            return menu.hints(("SPACE", "gaze"), ("\u2190\u2192", "page"),
+                              ("ESC", "close"))
         t = self.teaser_t
         if t < MON_T:
             return "the core stirs..."

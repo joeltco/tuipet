@@ -264,8 +264,9 @@ def test_badges_are_real_symbols_not_specks():
 def test_every_digicore_page_speaks_the_menu_language():
     """Joel 2026-07-05 round 2: one layout for the whole data book -- the CORE
     landing page is a header/rows/footer MENU page like every other, the page
-    dots live in EVERY header (core included), and the panel has NO strip:
-    the message box is a message box."""
+    dots live in EVERY header (core included).  2026-07-11 (visual sweep):
+    Joel brought digicore into the v0.2.399 hint convention -- the idle strip
+    speaks the hint language; the gaze teaser still owns the box."""
     import random
     from tuipet.pet import Pet
     from tuipet.digicorescreen import DigiCorePanel
@@ -273,7 +274,8 @@ def test_every_digicore_page_speaks_the_menu_language():
     p = Pet(num=102, name="Devimon", stage="Champion", attribute="Virus", obedience=500)
     p.world_seconds = 12 * 60.0
     pan = DigiCorePanel(p)
-    assert pan.strip() == ""            # the message box stays a message box
+    strip = pan.strip()                 # idle strip = hints (Joel 2026-07-11)
+    assert "SPACE" in strip and "ESC" in strip
     first = pan.text().plain
     assert "DIGICORE  CORE" in first and chr(0x25CF) in first    # title + dots
     assert "SPACE gaze" in first                                 # in-page footer

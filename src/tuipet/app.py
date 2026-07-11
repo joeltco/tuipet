@@ -250,10 +250,10 @@ class TuiPetApp(App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("Device-accurate attacks: the classic V-Pet lineup now fires "
-                 "its REAL hardware attacks -- 81 species with their own "
-                 "body-sized projectiles ripped straight from the devices, 27 "
-                 "of them animated, in battle and training alike.")
+    WHATS_NEW = ("Visual polish sweep: every screen eyeballed in a full render "
+                 "audit -- no more clipped status text, real arrow scroll "
+                 "markers, and the login and DigiCore now speak the hint "
+                 "language.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and
