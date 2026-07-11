@@ -250,10 +250,10 @@ class TuiPetApp(App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("The training menu is back and visible: a proper list of "
-                 "all four drills with a cursor (v0.2.419's scene-preview "
-                 "picker looked like no menu at all).  Arrows pick, 1-4 "
-                 "jump, ENTER starts.")
+    WHATS_NEW = ("Training polish: the Vaccine mash fills a real on-screen "
+                 "meter (DM20 canon), the Data partner taunts you when it "
+                 "blocks your shot, and the Virus zone flashes when it's "
+                 "time to STOP.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and
