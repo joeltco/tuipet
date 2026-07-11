@@ -250,11 +250,10 @@ class TuiPetApp(App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("The lobby is no longer a pause room: time keeps flowing "
-                 "while you chat or read DMs, and your pet's care alarm "
-                 "rings through -- with an on-screen nag on the hint strip. "
-                 "PvP battles and jogress still freeze time, so sessions "
-                 "stay safe.")
+    WHATS_NEW = ("Trust your shots: every attack orb in the game was audited "
+                 "against the real device data -- all 1,597 Digimon verified "
+                 "to fire their correct special or power-tier projectile, and "
+                 "the guarantee is now locked in by the test suite.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and
