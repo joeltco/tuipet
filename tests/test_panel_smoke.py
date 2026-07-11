@@ -359,8 +359,8 @@ def test_every_drill_completes_through_its_strike_within_budget():
         "virus": lambda pan: pan.key("space") if getattr(pan, "pos", 0) > 80 else None,
         "hp": lambda pan: (setattr(pan, "hp_pick", pan.hp_target), pan.key("enter")),
     }
-    moves = {"vaccine": ["up", "enter"], "data": ["left", "enter"],
-             "virus": ["right", "enter"], "hp": ["down", "enter"]}
+    moves = {"vaccine": ["2"], "data": ["3"],       # digits jump-start a drill
+             "virus": ["4"], "hp": ["1"]}              # (the menu browses with arrows)
     for game, mv in moves.items():
         random.seed(5)
         p = _pet()

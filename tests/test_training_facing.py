@@ -20,8 +20,8 @@ def _panel(sel):
     p.energy = p.max_energy
     p.check_refused = lambda **kw: False
     tp = training.TrainingPanel(p)
-    tp.key(sel)
-    tp.key("enter")
+    tp.gi = {"down": 0, "up": 1, "left": 2, "right": 3}[sel]   # hp/vaccine/data/virus
+    tp.key("enter")                        # (the old diamond arrows died with the menu)
     return tp
 
 
@@ -344,3 +344,31 @@ def test_data_stage_never_covers_the_mon(monkeypatch):
     assert not seen["placements"], "the mon is offstage while the shield shows"
     shield_zone = [pt for pt in seen["overlay"] if pt[0] <= grid.X0 + 15]
     assert shield_zone, "partner + shield hold the left"
+def test_training_menu_is_a_scene_picker():
+    """Canon menu polish 2026-07-13 (Joel: the menu was "setup to be like
+    dvpet"): the ●■▲♥ diamond was DVPet's mouse layout.  Now it's tuipet's
+    one picker grammar -- the LCD previews the hovered drill's stage (each
+    drill renders a DIFFERENT scene), arrows browse the ring both ways,
+    digits jump straight in, and the strip line holds exactly the HUD."""
+    import re
+    from tuipet.training import TrainingPanel, GAMES
+    from tuipet.pet import Pet
+    p = Pet(num=100, stage="Champion", attribute="Vaccine", obedience=500)
+    p.compliance = True
+    pan = TrainingPanel(p)
+    assert pan.phase == "menu"
+    scenes = []
+    for gi in range(len(GAMES)):
+        pan.gi = gi
+        scenes.append(pan.text().markup)
+        plain = re.sub(r"\[[^\]]*\]", "", pan.strip())
+        assert len(plain) <= 40, f"menu strip {len(plain)} cols: {plain!r}"
+    assert len(set(scenes)) == len(GAMES), "every drill previews its own stage"
+    pan.gi = 0
+    pan.key("right")
+    assert pan.gi == 1                          # the ring browses forward...
+    pan.key("left")
+    pan.key("left")
+    assert pan.gi == len(GAMES) - 1             # ...and wraps backward
+    pan.key("3")                                # digits jump straight into a drill
+    assert pan.phase == "play" and pan.gkey == "data"

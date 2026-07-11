@@ -109,7 +109,7 @@ def test_refused_drill_closes_the_menu_like_canon():
     p.world_seconds = 600.0
     p.energy = p.max_energy
     tp = training.TrainingPanel(p)
-    tp.key("right")                                  # select the Virus drill
+    tp.key("right")                                  # browse to an attribute drill (Vaccine)
     p.check_refused = lambda **kw: True              # force the roll
     r = tp.key("enter")
     assert r is not None and r[0] == "done" and "refuses" in r[1]
@@ -124,7 +124,8 @@ def test_compliant_start_still_enters_play():
     p.energy = p.max_energy
     p.check_refused = lambda **kw: False
     tp = training.TrainingPanel(p)
-    tp.key("right")
+    for _ in range(3):                               # browse the ring to Virus
+        tp.key("right")
     assert tp.key("enter") is None                   # no close envelope on success
     assert tp.phase == "play" and tp.gkey == "virus"
     tp2 = training.TrainingPanel(p)

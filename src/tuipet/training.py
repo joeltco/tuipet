@@ -375,16 +375,14 @@ class TrainingPanel:
                 self.si = len(self.strike_tl) - 1
             return None
         if self.phase == "menu":
-            # DVPet drawTrainingSelect diamond: ● Vaccine top, ■ Data left,
-            # ▲ Virus right, HP bottom -- each arrow selects the drill in that direction.
-            if k in ("up", "k"):
-                self.gi = 1            # ● Vaccine (top)
-            elif k in ("left", "h"):
-                self.gi = 2            # ■ Data (left)
-            elif k in ("right", "l"):
-                self.gi = 3            # ▲ Virus (right)
-            elif k in ("down", "j"):
-                self.gi = 0            # HP (bottom)
+            # tuipet's ONE picker grammar (the habitat/egg convention): arrows
+            # browse the ring, digits jump, ENTER starts.  (The old up/left/
+            # right/down diamond was DVPet's drawTrainingSelect mouse layout --
+            # canon menu polish 2026-07-13.)
+            if k in ("left", "h", "up", "k"):
+                self.gi = (self.gi - 1) % len(GAMES)
+            elif k in ("right", "l", "down", "j"):
+                self.gi = (self.gi + 1) % len(GAMES)
             elif k in ("1", "2", "3", "4"):
                 self.gi = int(k) - 1
                 return self._start_game()          # a refusal closes the menu (canon)
@@ -732,9 +730,16 @@ class TrainingPanel:
         return cue                           # the bar itself shows in the scene
 
     def strip(self):
-        """The one-line chrome under the LCD (menu phase keeps its in-LCD list)."""
+        """The one-line chrome under the LCD."""
         if self.phase == "menu":
-            return ""
+            # the picker line (habitat template, budgeted to HUD_W 40 exactly:
+            # 1+8+1 + 17 + 1 + 12): name field fixed, the desc marquees, the
+            # key chrome stands still
+            from .render import marquee
+            g = GAMES[self.gi]
+            return (f"[b]▸{g[1]:<8}[/] "
+                    f"[dim]{marquee(g[3], 17, self.frame_i // 2)}[/] "
+                    f"[dim]←→ ENTER ESC[/]")
         if self.phase == "done":
             return f"{self.result or ''}  [dim]· SPACE finish[/]"
         if self.phase == "strike":
@@ -823,35 +828,45 @@ class TrainingPanel:
         return render_scene(placements, COLS, ARENA_ROWS, on, LCD_BG, overlay=overlay, bgimg=bgimg, clip=grid.WINDOW)
 
     def _render_menu(self):
-        """DVPet drawTrainingSelect diamond, as a CLEAN text layout (crisp glyphs, not
-        chunky pixel shapes): ● Vaccine top, ■ Data left, ▲ Virus right, ♥ HP bottom."""
-        W = 34
-        out = menu.header("TRAINING", "choose a drill")
-        out.append_text(menu.blanks(1))
-
-        def cell(gi, text):
-            sel = gi == self.gi
-            out.append(("▸" + text + "◂") if sel else (" " + text + " "),
-                       style=(f"{ACCENT} on {LCD_BG}") if sel else INK_B)
-
-        def centre(gi, text):
-            pad = (W - (len(text) + 2)) // 2
-            out.append(" " * pad, style=INK)
-            cell(gi, text)
-            out.append("\n")
-
-        centre(1, "● Vaccine")                          # top
-        out.append_text(menu.blanks(1))
-        left, right = "■ Data", "▲ Virus"               # left + right row
-        out.append("  ", style=INK)
-        cell(2, left)
-        out.append(" " * (W - 4 - (len(left) + 2) - (len(right) + 2)), style=INK)
-        cell(3, right)
-        out.append("\n")
-        out.append_text(menu.blanks(1))
-        centre(0, "♥ HP")                               # bottom
-        out.append_text(menu.blanks(1))
-        out.append_text(menu.note(GAMES[self.gi][3]))
-        out.append_text(menu.footer("↑●  ←■  →▲  ↓♥    ENTER start"))
-        return out
+        """The drill picker, the HARDWARE way (canon menu polish 2026-07-13,
+        Joel: the old menu was "setup to be like dvpet" -- the ●■▲♥ diamond
+        was DVPet's drawTrainingSelect mouse layout, nothing a real V-Pet
+        ever showed).  tuipet's own picker grammar instead (the habitat/egg
+        convention): the LCD PREVIEWS the hovered drill's real stage -- its
+        opponent facing your bobbing mon -- and the picker line rides the
+        strip.  ←→ browse, ENTER starts, 1-4 jump."""
+        E = data.load_effects()
+        on, bgimg = self._scene_palette()
+        fr = data.bob_frame(self.pet.num, self.frame_i,
+                            egg_type=getattr(self.pet, "egg_type", 0)) or [""]
+        gk = self.gkey
+        overlay, placements = [], []
+        if gk == "hp":                                   # the REEL act's own look (dummy +
+            dummy = _fit_cell(_HP_DUMMIES["vaccine"])    # icon pair) -- a faceoff preview
+            placements = [(dummy, GRID_X0, True)]        # read identical to Data's
+            ic = E.get(_HP_ICON_KEYS[0], [None])[0]
+            iy = BAND_TOP + 4
+            if ic:
+                overlay.extend(_blit(ic, GRID_X0 + 15, iy))
+                overlay.extend(_blit(ic, GRID_X0 + 24, iy))
+        elif gk == "data":                               # the sparring partner (its pick act)
+            placements = grid.faceoff(_HP_DUMMIES["data"], fr)
+        elif gk == "vaccine":                            # the bag (prop facing), mon ready
+            bag = _fit_cell(E.get("punching_bag", [None])[0] or [])
+            if bag:
+                placements.append((bag, GRID_X0 + 1, False))
+            pf = _crop(fr)
+            if pf != [""]:
+                placements.append((pf, GRID_X0 + GRID_W - max(len(r) for r in pf), False))
+        else:                                            # virus: the track + zone tick, flat
+            frame = E.get("train_bar_empty", [None])[0]  # (the drill hides the mon; so does
+            if frame:                                    #  its preview)
+                frame = [row[:GRID_W] for row in frame]
+                overlay.extend(_blit(frame, GRID_X0, BAND_TOP))
+                track_w = GRID_W - 2
+                zx = GRID_X0 + 1 + min(track_w - 1,
+                                       int(track_w * VIRUS_BAR_MIN / VIRUS_MAX))
+                overlay += [(zx, BAND_TOP + y) for y in range(len(frame))]
+        return render_scene(placements, COLS, ARENA_ROWS, on, LCD_BG,
+                            overlay=overlay, bgimg=bgimg, clip=grid.WINDOW)
 
