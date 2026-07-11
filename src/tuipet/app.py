@@ -250,10 +250,10 @@ class TuiPetApp(App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("Trust your shots: every attack orb in the game was audited "
-                 "against the real device data -- all 1,597 Digimon verified "
-                 "to fire their correct special or power-tier projectile, and "
-                 "the guarantee is now locked in by the test suite.")
+    WHATS_NEW = ("Device-accurate attacks: the classic V-Pet lineup now fires "
+                 "its REAL hardware attacks -- 81 species with their own "
+                 "body-sized projectiles ripped straight from the devices, 27 "
+                 "of them animated, in battle and training alike.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and
