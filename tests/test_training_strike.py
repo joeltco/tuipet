@@ -110,153 +110,79 @@ def test_hp_timeout_counts_as_wrong():
     assert panel.rounds_won == 0 and not panel.success
 
 
-def test_data_drill_is_a_shield_block_match():
-    """DVPet controller checkSuccess(Data): success = shieldTop == isUp.  Raise the
-    shield to the side the attack commits to -> block (success); mismatch -> hit."""
-    def _settle(p):
-        """EVAL (DVPet onPreFinish), then the cosmetic finale: the shot fires (attackGreen),
-        the impact flash plays (hitAnim), then the result reveals (aftermathGreen)."""
-        p._data_resolve()
-        while p.phase != "done":                       # drive fire -> impact -> reveal to completion
-            p.anim()
-    # matching shield blocks -> success
-    panel = _panel("data")
-    panel._start_game()
-    panel.locked = True
-    panel.tgt_up = True
-    panel.shield_up = True                             # shield up vs HIGH attack -> match
-    _settle(panel)
-    assert panel.blocked and panel.success
-    # mismatched shield -> the attack gets through
-    panel = _panel("data")
-    panel._start_game()
-    panel.locked = True
-    panel.tgt_up = True
-    panel.shield_up = False                            # shield down vs HIGH attack -> mismatch
-    _settle(panel)
-    assert not panel.blocked and not panel.success
+def test_data_drill_is_the_dm20_versus_training():
+    """The REAL DM20 tag training (humulos manual): "you choose to fire a high
+    shot or a low shot.  If your shot gets past your partner's shield, you
+    succeed.  You need to succeed 3 out of the 5 rounds."  Fire opposite the
+    chart's shield -> past; into it -> blocked; 3 of 5 passes the session.
+    (Replaces the fan-made turret duel -- Joel 2026-07-13: "i dont think this
+    system is canon at all", and it wasn't.)"""
+    def play(win_rounds):
+        panel = _panel("data")
+        panel._start_game()
+        for r in range(T.DATA_ROUNDS):
+            shield_up = panel.tt_shield[r]
+            want_past = r in win_rounds
+            panel.key("down" if shield_up == want_past else "up")
+            assert panel.fired
+            for _ in range(len(panel.tt_tl) + 1):      # the round volley plays out
+                panel.anim()
+        return panel
+    panel = play({0, 1, 2})                            # 3 of 5 -> success
+    assert panel.phase == "done" and panel.tt_past == 3 and panel.success
+    panel = play({0, 4})                               # 2 of 5 -> fail
+    assert panel.phase == "done" and panel.tt_past == 2 and not panel.success
 
 
-def test_data_shield_is_a_single_toggle():
-    """DVPet onShield: ONE button flips shieldActiveTop top<->bot (it starts UP via onPreTrain)."""
-    panel = _panel("data")
-    panel._start_game()
-    assert panel.shield_up is True                     # shield starts UP (shieldActiveTop = true)
-    panel.key("space")                                 # one button press toggles
-    assert panel.shield_up is False
-    panel.key("space")
-    assert panel.shield_up is True
-    panel.fired = True                                 # once the shot commits, the shield is locked
-    panel.key("space")
-    assert panel.shield_up is True                     # no longer toggleable
+def test_data_chart_is_the_manual_verbatim():
+    """The manual's repeating cheat chart, ported exactly: "pressing the
+    buttons according to the chart below will let you win tag training every
+    time" -- rows ABABB/BBAAB/BAABB/ABBAA/BABAB/ABABA, A=HIGH (tuipet's one
+    documented adaptation), sessions cycling by stage_trainings."""
+    assert T.DATA_WIN_CHART == ("ABABB", "BBAAB", "BAABB", "ABBAA", "BABAB", "ABABA")
+    for session in range(8):                           # ...and it REPEATS past row 6
+        panel = _panel("data")
+        panel.pet.stage_trainings = session
+        panel.key("enter")
+        row = T.DATA_WIN_CHART[session % 6]
+        for c in row:                                  # play the printed winning buttons
+            panel.key("up" if c == "A" else "down")
+            assert not panel.blocked, f"session {session}: the cheat chart must win"
+            for _ in range(len(panel.tt_tl) + 1):
+                panel.anim()
+        assert panel.tt_past == T.DATA_ROUNDS and panel.success
 
 
-def test_data_attack_commits_after_the_telegraph():
+def test_data_round_volley_beats():
+    """Each round is a mini battle volley: fire_out -> fire_in -> hit strobe
+    (past) or blocked tableau; the pick act waits on the player (turn-based)."""
     panel = _panel("data")
     panel._start_game()
-    assert not panel.locked
-    for _ in range(panel.data_telegraph + 1):          # rank-based feint window (DATA_TELEGRAPH[rank])
+    for _ in range(20):
+        panel.anim()                                   # the pick act never advances itself
+    assert not panel.fired and panel.tt_round == 0
+    shield_up = panel.tt_shield[0]
+    panel.key("down" if shield_up else "up")           # fire PAST
+    ms = []
+    while panel.fired:
+        ms.append(panel.tt_tl[panel.tt_i]["m"])
         panel.anim()
-    assert panel.locked                                # the attack revealed high/low
-
-
-def test_vaccine_drill_counts_mashes():
-    panel = _panel("vaccine")
-    panel._start_game()
-    for _ in range(5):
-        panel.key("space")
-    assert panel.taps == 5
-
-
-def test_hp_reel_auto_scrolls_and_space_stops_it():
-    """The HP drill REDO (Joel 2026-07-06): the selector lives IN THE LCD,
-    stacked under the target, and AUTO-SCROLLS -- SPACE stops it on the
-    match.  The message box is a status strip again (no game glyphs)."""
-    import random
-    random.seed(7)
-    panel = _panel("hp")
-    panel.key("enter")                             # start the drill from the menu
-    assert panel.phase == "play"
-    assert panel.hp_pick != panel.hp_target        # never starts on a free win
-    pick0 = panel.hp_pick
-    for _ in range(panel.hp_scroll):
+    assert "fire_out" in ms and "fire_in" in ms and "hit" in ms and "block" not in ms
+    assert panel.tt_round == 1 and panel.tt_past == 1
+    panel.key("up" if panel.tt_shield[1] else "down")  # fire INTO the shield
+    ms = []
+    while panel.fired:
+        ms.append(panel.tt_tl[panel.tt_i]["m"])
         panel.anim()
-    assert panel.hp_pick == (pick0 + 1) % 3        # the reel turned on its own
-    # both icons render in the LCD, stacked (target sky-centre, reel beneath)
-    txt = panel.text()
-    assert txt.plain.count("\n") + 1 >= 12
-    # the strip is STATUS only: no pick glyphs, no shape markers
-    g = panel._gauge()
-    assert "SPACE" in g and "▸" not in g and "●" not in g and "■" not in g
-    # ride the reel onto the target and stop it
-    guard = 0
-    while panel.hp_pick != panel.hp_target and guard < 40:
-        panel.anim(); guard += 1
-    assert panel.hp_pick == panel.hp_target
-    won0 = panel.rounds_won
-    panel.key("space")
-    assert panel.rounds_won == won0 + 1            # a timed stop scores
+    assert "block" in ms and "hit" not in ms
+    assert panel.tt_past == 1
 
-
-def test_hp_reel_geometry_never_mashes():
-    """Spacing polish (Joel 2026-07-06: "mashed together... touching the top
-    border"): the target keeps a 2px top margin, the reel a 2px gap under it,
-    and the icon column never overlaps the dummy (left) or the char (right)
-    -- checked with a worst-case 16px-wide mon."""
-    import random
-    from tuipet import data as _d
-    random.seed(7)
-    p = Pet(num=102, stage="Champion", vaccine=5, data_power=5, virus=5)  # Devimon: widest
-    p.obedience = 500
-    panel = T.TrainingPanel(p)
-    panel.gi = 0
-    panel.key("enter")
-    E = _d.load_effects()
-    ic = E[T._HP_ICON_KEYS[panel.hp_target]][0]
-    iw = max(len(r) for r in ic)
-    ix = (T.COLS - iw) // 2
-    dummy = T._HP_DUMMIES["vaccine"]
-    dw = max(len(r) for r in dummy)
-    assert 1 + dw <= ix, "the dummy runs into the icon column"
-    pf = T._crop(panel._frame(_d.load_sprites()[1][102], 0))
-    pw = max(len(r) for r in pf)
-    char_x = max(ix + iw + 1, T.COLS - 1 - pw)
-    assert char_x >= ix + iw + 1, "the char overlaps the icon column"
-    assert char_x + pw <= T.COLS, "the char runs off the LCD"
-    panel.text()                                     # and it all renders
-
-
-def test_vaccine_geometry_never_mashes():
-    """Vaccine layout audit (Joel 2026-07-06): the GRID anchors ran a 16px
-    mon OFF the right edge (Devimon spanned x26..41 on the 40px LCD) and the
-    HIT!! label sat at y0 flush on the top border.  Measured layout: bag off
-    the left edge (>=1px even mid-rock), label y>=1, the widest mon inside
-    the LCD at rest AND mid-lunge."""
-    from tuipet import data as _d
-    p = Pet(num=102, stage="Champion", vaccine=5, data_power=5, virus=5)
-    p.obedience = 500
-    panel = T.TrainingPanel(p)
-    panel.gi = 1
-    panel.key("enter")
-    E = _d.load_effects()
-    bag = T._fit_cell(E["punching_bag"][0])
-    bh = len(bag)
-    hit = E["train_hit"][0]
-    assert max(1, (T.BASE_Y - bh) - len(hit) - 1) >= 1     # label off the top border
-    pf = T._crop(panel._frame(_d.load_sprites()[1][102], 0))
-    pw = max(len(r) for r in pf)
-    assert T.COLS - 1 - pw >= 0                            # rest: on the LCD
-    assert T.COLS - 1 - pw - 2 + pw <= T.COLS - 1          # lunge: still on the LCD
-    panel.key("space")                                      # punch frame renders
-    rows = panel.text().plain.split("\n")
-    assert all(len(r) <= T.COLS for r in rows)
 
 
 def test_data_geometry_never_mashes():
-    """Data layout audit (Joel 2026-07-06): the old fixed x27 mon column ran
-    a 16px mon to x42 -- 3 columns clipped.  Measured stage (turret x2, gate
-    x17, mon x23): the widest mon fits with a 1px right margin, and every
-    act (aim/lock/shoot/strobe/aftermath) renders inside the LCD."""
+    """Canon rebuild 2026-07-13: every act of the versus training (pick faceoff /
+    fire_out / fire_in+shield / hit strobe / aftermath) renders inside the LCD,
+    driven through a full real session."""
     import random
     random.seed(3)
     p = Pet(num=102, stage="Champion", vaccine=5, data_power=5, virus=5)
@@ -264,18 +190,16 @@ def test_data_geometry_never_mashes():
     panel = T.TrainingPanel(p)
     panel.gi = 2
     panel.key("enter")
-    assert 23 + 16 <= T.COLS, "the stage cannot fit the widest mon"
-    for _ in range(40):
-        panel.anim()
-        if panel.locked:
-            break
-    assert panel.locked
-    panel.key("space")
-    for _ in range(60):
-        panel.anim()
-        assert all(len(r) <= T.COLS for r in panel.text().plain.split("\n"))
+    assert panel.phase == "play"
+    for _ in range(3000):
         if panel.phase == "done":
             break
+        if panel.phase == "play" and not panel.fired:
+            panel.key("up")                            # fire high every round
+        panel.anim()
+        assert all(len(r) <= T.COLS for r in panel.text().plain.split("\n"))
+    assert panel.phase == "done"
+
 
 
 def test_virus_geometry_and_the_strike_clamp():

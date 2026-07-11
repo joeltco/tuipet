@@ -27,7 +27,8 @@ def _panel(sel):
 
 def test_target_mirror_matches_canon_per_drill():
     assert _panel("down")._target_mirror() is True        # hp dummy: drawNumMirror(.., true)
-    for sel in ("up", "right", "left"):                   # vaccine / virus / data props:
+    assert _panel("left")._target_mirror() is True        # data sparring partner: creature stand-in
+    for sel in ("up", "right"):                           # vaccine / virus props:
         assert _panel(sel)._target_mirror() is False      # setAltIcon never flips
 
 
@@ -55,7 +56,7 @@ def test_hp_pick_round_shows_the_dummy_mirrored(monkeypatch):
 
 def test_done_scene_props_face_the_pet(monkeypatch):
     real = grid.faceoff
-    for sel, want in (("left", False), ("down", True), ("up", False)):
+    for sel, want in (("left", True), ("down", True), ("up", False)):
         tp = _panel(sel)
         tp._finish(3, 60, {"left": "Data", "down": None, "up": "Vaccine"}[sel]
                    or ("Vaccine", "Data", "Virus")[tp.hp_target],
@@ -129,11 +130,10 @@ def test_hp_pick_round_shows_the_reacting_pet():
     assert pan.text().markup != idle           # ...and it shows on the arena
 
 
-def test_data_aim_shows_the_mon():
-    """Polish 2026-07-06 (Joel: 'like the hp drill'): the data drill's AIM act
-    used to stage turret + gate ALONE and pop the mon in at the LOCK -- the mon
-    now stands behind its gate for the whole drill (canon drawDataPre bobs the
-    pet through the aim), so the scene never gains a sprite mid-game."""
+def test_data_pick_act_is_the_faceoff():
+    """Canon versus training: the PICK act stages the sparring partner (the
+    square-marked dummy, mirrored to face the mon) and the bobbing mon as a
+    faceoff -- both on stage, waiting on UP/DOWN."""
     from tuipet.training import TrainingPanel, GAMES
     from tuipet.pet import Pet
     p = Pet(num=100, stage="Champion", attribute="Vaccine", obedience=500)
@@ -141,12 +141,13 @@ def test_data_aim_shows_the_mon():
     pan = TrainingPanel(p)
     pan.gi = next(i for i, g in enumerate(GAMES) if g[0] == "data")
     pan._start_game()
-    assert not pan.locked                      # still the AIM act
-    pan.frame_i = 0                            # bob pose 0
+    assert not pan.fired                       # the pick act
+    pan.frame_i = 0
     a = pan.text().markup
-    pan.frame_i = 2                            # bob pose 1 -- only the MON flips
-    b = pan.text().markup                      # (feint/shield don't ride frame_i)
-    assert a != b, "the bobbing mon must be visible during the AIM act"
+    pan.frame_i = 2                            # bob pose 1 -- the mon is alive on stage
+    b = pan.text().markup
+    assert a != b, "the bobbing mon must be visible during the PICK act"
+
 
 
 def _data_panel():
@@ -182,36 +183,33 @@ def test_hp_stage_takes_turns_and_the_mon_reacts():
     assert pan.text().markup != right, "the 6/9 reaction poses must differ"
 
 
-def test_data_mon_bobs_through_lock():
-    """The LOCK window is a live decision window (like the HP reel) -- the mon
-    keeps bobbing until the shot actually fires."""
+def test_data_round_tells_ride_the_next_pick():
+    """One reaction language across the drills: a shot that gets PAST wears the
+    hit tell (pose 6) into the next pick act; a blocked one wears the miss tell
+    (pose 9) -- same as the HP drill's right/wrong picks."""
     pan = _data_panel()
-    pan.locked, pan.tgt_up = True, True
-    pan.frame_i = 0
-    a = pan.text().markup
-    pan.frame_i = 2
-    assert pan.text().markup != a, "the mon must bob through the lock window"
-    pan.fired, pan.fly_t = True, 0             # braced for the shot: still
-    pan.frame_i = 0
-    b = pan.text().markup
-    pan.frame_i = 2
-    assert pan.text().markup == b, "braced = still (the one deliberate freeze)"
+    pan.key("down" if pan.tt_shield[0] else "up")      # past
+    while pan.fired:
+        pan.anim()
+    assert (pan._strike_pose, pan._strike_t > 0) == (6, True)
+    pan2 = _data_panel()
+    pan2.key("up" if pan2.tt_shield[0] else "down")    # blocked
+    while pan2.fired:
+        pan2.anim()
+    assert (pan2._strike_pose, pan2._strike_t > 0) == (9, True)
 
 
-def test_data_block_flashes_success_pose():
-    """A BLOCK wears the same success tell as the HP drill's right pick (pose 6)
-    -- it used to stand plain IDLE, so a win looked like nothing happened."""
+
+def test_data_fire_out_wears_the_attack_pose(monkeypatch):
+    """The mon's own view of its shot: the fire_out beat stages the mon alone
+    in the battle's ATTACK pose, its real orb leaving along the picked lane."""
+    from tuipet import training
     pan = _data_panel()
-    pan.locked = pan.fired = True
-    pan.fly_t, pan.strobe_t, pan.flinch_t = 0, 0, 4
-    pan.frame_i = 0
-    pan.blocked = True
-    win = pan.text().markup
-    pan.blocked = False
-    loss = pan.text().markup
-    assert win != loss                          # ATTACK vs COLLAPSE
-    pan.flinch_t = 0                            # the braced IDLE frame
-    assert pan.text().markup != win, "the block tell must differ from plain IDLE"
+    idle = pan.text().markup
+    pan.key("up")
+    assert pan.tt_tl[pan.tt_i]["m"] == "fire_out"
+    assert pan.text().markup != idle           # a different stage entirely
+
 
 
 def test_punch_hit_banner_takes_over_the_window(monkeypatch):
@@ -290,10 +288,11 @@ def test_hit_explosion_is_the_sourced_32x16_full_window_flash(monkeypatch):
         return (min(xs), max(xs), min(ys), max(ys)) \
             == (grid.X0, grid.X1 - 1, grid.TOP, grid.FLOOR - 1)
 
-    pan = TrainingPanel(p)                       # data drill collision
+    pan = TrainingPanel(p)                       # data drill: a shot gets PAST
     pan.gi = next(i for i, g in enumerate(GAMES) if g[0] == "data")
     pan._start_game()
-    pan.strobe_t = EXPLODE_FRAMES
+    pan.key("down" if pan.tt_shield[0] else "up")
+    pan.tt_i = next(i for i, fr in enumerate(pan.tt_tl) if fr["m"] == "hit")
     pan.text()
     assert full_window()
     pan2 = TrainingPanel(p)                      # strike volley 'hit' beat
@@ -306,22 +305,22 @@ def test_hit_explosion_is_the_sourced_32x16_full_window_flash(monkeypatch):
                    if fr.get("m") == "hit")
     pan2.text()
     assert not seen["placements"] and full_window()
-def test_data_stage_breathes(monkeypatch):
-    """De-cram 2026-07-11 (Joel: 'all seems too crammed'): the old mid-stage
-    gate at x15 packed turret+gate+mon edge-to-edge -- 31 of 32 columns solid,
-    one fused blob -- and the pellet materialized mid-air at the gate's row.
-    Pin the new stage: OPEN AIR between the turret and the shield, the shield
-    worn on the mon's front edge and layered via _pop (its 1px halo keeps it
-    a distinct object), and the shot leaving the MUZZLE's height before
-    climbing/dipping into the committed lane."""
-    from tuipet import training
-    from tuipet.training import TrainingPanel, GAMES, DATA_FLY, IDLE
-    from tuipet import data as _d
+
+def test_data_stage_never_covers_the_mon(monkeypatch):
+    """Canon rebuild 2026-07-13 (Joel: "mons face is gettimg cut off by
+    shield"): the versus staging can NEVER cover the mon -- the shield lives
+    on the PARTNER's side, and the mon's acts (pick faceoff, fire_out) put
+    nothing in front of it.  Pin: in every mon-bearing act, no overlay ink
+    within the mon's cell half (x20..35) except the mon/orb the act stages,
+    and the shield only ever appears in the partner's view."""
+    from tuipet import training, grid
+    from tuipet.training import TrainingPanel, GAMES
     from tuipet.pet import Pet
     seen = {}
     real = training.render_scene
 
     def spy(placements, *a, **kw):
+        seen["placements"] = list(placements)
         seen["overlay"] = list(kw.get("overlay") or [])
         return real(placements, *a, **kw)
 
@@ -331,30 +330,17 @@ def test_data_stage_breathes(monkeypatch):
     pan = TrainingPanel(p)
     pan.gi = next(i for i, g in enumerate(GAMES) if g[0] == "data")
     pan._start_game()
-    pan.locked = pan.tgt_up = pan.shield_up = True
-    rec = _d.load_sprites()[1][100]
-    pw = max(max(len(r) for r in training._crop(pan._frame(rec, q)))
-             for q in (0, 1, IDLE))
-    front = training.GRID_X0 + training.GRID_W - pw
-    sx = front - 5 + 2                          # the worn shield's left edge
-    pan.text()
-    ink = set(seen["overlay"])
-    lane = set(range(14, sx))                   # barrel tip x13 | shield
-    assert lane and not [pt for pt in ink if pt[0] in lane], \
-        "the middle of the stage must be OPEN AIR"
-    shield = {pt for pt in ink if sx <= pt[0] <= sx + 4 and 7 <= pt[1] <= 12}
-    halo = {(x + dx, y + dy) for x, y in shield
-            for dx in (-1, 0, 1) for dy in (-1, 0, 1)} - shield
-    assert shield and not halo & ink, \
-        "the shield's 1px halo must keep it a distinct object"
-    pan.fired = True
-    pan.fly_t = DATA_FLY                        # spawn beat: prog 0
-    pan.text()
-    spawn = {pt for pt in set(seen["overlay"]) if pt[0] in lane}
-    assert spawn and all(13 <= y <= 16 for _, y in spawn), \
-        "the shot must be born at the muzzle's height"
-    pan.fly_t = 1                               # arrival beat: prog 1
-    pan.text()
-    arrive = {pt for pt in set(seen["overlay"]) if pt[0] in lane}
-    assert arrive and all(8 <= y <= 11 for _, y in arrive), \
-        "the shot must arrive centred on the HIGH gate"
+    pan.text()                                  # PICK: pure faceoff, no overlay props at all
+    assert seen["placements"] and not seen["overlay"], \
+        "the pick act is a clean faceoff -- nothing overlays the mon"
+    pan.key("up")                               # fire HIGH
+    pan.text()                                  # FIRE_OUT: the mon + its own orb, nothing else
+    assert seen["placements"], "the mon holds the stage on fire_out"
+    orb_ink = seen["overlay"]
+    assert orb_ink and all(y <= grid.TOP + 8 for _, y in orb_ink), \
+        "only the orb rides the fire_out overlay, in the picked (HIGH) lane"
+    pan.tt_i = next(i for i, fr in enumerate(pan.tt_tl) if fr["m"] == "fire_in")
+    pan.text()                                  # FIRE_IN: partner's view -- the mon is OFFSTAGE
+    assert not seen["placements"], "the mon is offstage while the shield shows"
+    shield_zone = [pt for pt in seen["overlay"] if pt[0] <= grid.X0 + 15]
+    assert shield_zone, "partner + shield hold the left"

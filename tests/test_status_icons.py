@@ -41,6 +41,8 @@ ALLOWED_SILENT = {
     "train_button": "the mouse mash button; tuipet is keyboard-driven",
     "train_cannon": "duplicate alias of train_green in the generated json",
     "train_cannon_up": "duplicate alias of train_green_up",
+    "train_green": "DVPet's fan turret, retired by the canon DM20 versus training (2026-07-13)",
+    "train_green_up": "DVPet's fan turret (up-aim frame), retired with train_green",
 }
 
 

@@ -3,7 +3,7 @@
 Attack_Contact -> Attack_Aftermath).
 
 Every drill is fought against an on-screen OPPONENT that is present the whole time
--- the punching bag (HP / Vaccine / Virus) or the green pop-up target (Data) -- and
+-- the punching bag (HP / Vaccine / Virus) or the sparring partner (Data) -- and
 the skill phase flows straight into the strike -> impact -> aftermath, exactly like
 the hardware (no abstract gauge with the opponent conjured up only at the end):
 
@@ -12,9 +12,11 @@ the hardware (no abstract gauge with the opponent conjured up only at the end):
           (drawHPTraining, first to 2 wins); builds Effort.
   Vaccine — pet HIDDEN, bag on screen: mash the hit button (drawVaccinePre);
           builds Vaccine power.  Pet appears for the strike.
-  Data  — pet LEFT, green target RIGHT (drawDataPre): the attack feints, then
-          COMMITS high or low; raise your shield to the matching side to BLOCK it
-          (controller checkSuccess: success = shieldTop == isUp).  Fires RIGHT.
+  Data  — the REAL DM20's versus training (canon rebuild 2026-07-13; DVPet's
+          turret duel here was pure fan invention -- Joel: "i dont think this
+          system is canon at all", and it isn't).  Manual: "you choose to fire
+          a high shot or a low shot.  If your shot gets past your partner's
+          shield, you succeed.  You need to succeed 3 out of the 5 rounds."
   Virus — pet HIDDEN, bag on screen: stop the sweeping power bar high
           (drawVirusPre); builds Virus power.
 
@@ -35,7 +37,7 @@ from . import menu
 # to the TARGET as the orb arrives -> fullscreen explosion -> break).  Reuse the battle's
 # pose ids + beat timings + column-bounds helper so the two stay in lockstep.
 from .battlescreen import (IDLE, TURN, ATTACK, CHARGE, COLLAPSE,  # noqa: F401
-                           EXPLODE_FRAMES, EXPLODE_HOLD, FLINCH_T)
+                           EXPLODE_FRAMES, EXPLODE_HOLD, FLINCH_T, FIRE_T)
 
 # the full-screen spiky hit burst (attackHit/attackHitFlash), shared with the battle
 # screen -- strobes outline<->filled to flash the LCD on impact (DVPet hitAnim).
@@ -53,14 +55,20 @@ VACCINE_WINDOW = 41           # drawVaccinePre = _interval*41 = 246 frames @60fp
 VIRUS_BAR_MIN = 86            # VirusGameBarMin
 VIRUS_MAX = 94               # DVPet maxBar (bar pixel width) -> the zone 86..94 is the top ~8%
 VIRUS_SPEEDS = (4.8, 6.0, 8.0)  # per-tick fill = DVPet +4 per VirusGameBarSpeed{5,4,3} frames (48/60/80 px/s / 10Hz)
-# Data is a SHIELD BLOCK (checkSuccess: success = shieldTop == isUp): the green target feints,
-# then COMMITS its attack high or low; raise your shield to the matching side before the window closes.
-DATA_BOB = 3                  # ticks per feint up/down toggle during the telegraph
-DATA_TELEGRAPH = (21, 17, 15)  # feint window before commit (DVPet frame*8+pad*8 frames, /6 -> ticks)
-DATA_WINDOW = (10, 7, 5)      # reaction window after commit (DataTrainShootFrame{10,7,5}; 6*frame/6 -> ticks)
-DATA_FLY = 4                  # shot flight ticks (DVPet attackGreen used 3 for its 12px nudge;
-                              # our longer 10px lane gets 4 -- ~2.5px/tick)
-#  collision = the battle's exact beats: EXPLODE_FRAMES strobe (hitAnim) + FLINCH_T pose (aftermathGreen)
+# Data is the REAL DM20's VERSUS training (humulos.com/digimon/dm20/manual): "you choose
+# to fire a high shot or a low shot.  If your shot gets past your partner's shield, you
+# succeed.  You need to succeed 3 out of the 5 rounds for training to be successful."
+# The partner's shield follows the manual's REPEATING PATTERN -- "pressing the buttons
+# according to the chart below will let you win tag training every time" -- the six
+# winning-button rows ported VERBATIM (5 rounds each, sessions cycle 1..6 and repeat,
+# indexed by the pet's stage_trainings so the cheat chart works like the hardware).
+# The manual never says which of A/B fires high; tuipet reads A=HIGH (adaptation, the
+# one unspecified bit) -- the shield therefore stands OPPOSITE each winning shot.
+DATA_ROUNDS = 5               # rounds per session (manual: "3 out of the 5 rounds")
+DATA_PASS = 3                 # shots that must get past for a successful training
+DATA_WIN_CHART = ("ABABB", "BBAAB", "BAABB", "ABBAA", "BABAB", "ABABA")   # manual, verbatim
+DATA_BLOCK_HOLD = 4           # beats the blocked tableau holds before the next round
+#  collision = the battle's exact beats: EXPLODE_FRAMES strobe (hitAnim) on a shot that gets past
 HP_ROUNDS = 3                 # DVPet _hpTrainingRounds
 HP_ROUNDS_WON = 2             # DVPet _hpTrainingRoundsWon (first to 2 wins the drill)
 HP_TRAIN_DIFFICULTY = 11      # DVPet _hpTrainDifficultyChange: rank = fullHealthPoints // 11
@@ -137,7 +145,7 @@ _HP_ICON_KEYS = ("atk_vaccine", "atk_data", "atk_virus")   # index == hp_target 
 GAMES = [
     ("hp",      "HP Drill", "Effort",  "stop the reel on the match — best of 3"),
     ("vaccine", "Vaccine",  "Vaccine", "mash the bag — fast!"),
-    ("data",    "Data",     "Data",    "block the attack — high or low"),
+    ("data",    "Data",     "Data",    "fire past the shield — 3 of 5"),
     ("virus",   "Virus",    "Virus",   f"stop the bar over {VIRUS_BAR_MIN}"),
 ]
 
@@ -162,25 +170,22 @@ class TrainingPanel:
         self.timer = VACCINE_WINDOW
         self.vaccine_target = VACCINE_HITS[1]   # rank-based, set per drill start (below)
         self.virus_speed = VIRUS_SPEEDS[1]      # rank-based bar fill speed
-        self.data_telegraph = DATA_TELEGRAPH[1]  # rank-based feint window
-        self.data_window = DATA_WINDOW[1]       # rank-based reaction window
         self.round_len = HP_ROUND_LEN[1]
         self.round_t = self.round_len
         self.rounds_won = 0
         self.hp_target = 0           # hidden attribute the bag "is" (0/1/2)
         self.hp_pick = 0             # the player's cursor over the 3 guess buttons
-        # data shield-block state
-        self.data_t = 0
-        self.feint_up = False        # green's current feint position during the telegraph
-        self.locked = False          # has the attack committed (revealed high/low)?
-        self.tgt_up = False          # the committed attack direction (only once locked)
-        self.shield_up = True        # the player's shield: up (True) or down (False)
-        self.blocked = False
-        self.fired = False           # DVPet onPreFinish: success is LOCKED; the shot now fires (cosmetic)
-        self.fly_t = 0               # DVPet attackGreen countdown: the committed shot flies to the target
-        self.strobe_t = 0            # DVPet hitAnim: the centred fullscreen collision flash strobes
-        self.flinch_t = 0            # DVPet aftermathGreen: the pet's pose is held after the impact
-        self._impact_args = None     # the staged _finish() call, fired when the flinch ends
+        # data versus-training state (real DM20 tag training)
+        self.tt_round = 0            # current round, 0..DATA_ROUNDS-1
+        self.tt_past = 0             # shots that got past the shield so far
+        self.tt_log = []             # per-round outcomes (True = past), for the strip pips
+        self.tt_shield = ()          # the partner's 5-lane chart row (True = shield HIGH)
+        self.tt_shield_up = False    # this round's revealed shield lane (set on fire)
+        self.shot_up = False         # the lane the player fired
+        self.blocked = False         # this round's outcome
+        self.fired = False           # a shot is playing out (the round's volley timeline runs)
+        self.tt_tl = []              # the round's beat timeline (fire_out/fire_in/hit|block)
+        self.tt_i = 0                # index into tt_tl
         self._strike_pose = None     # transient hit(6)/miss(9) pose during a drill
         self._strike_t = 0
         self.strike_tl = []          # the post-drill strike timeline (battle-style volley)
@@ -228,9 +233,13 @@ class TrainingPanel:
             self.vaccine_target = self._vaccine_threshold()
             self.flash = "MASH the bag!"
         elif gk == "data":
-            r = self._attr_rank(self.pet.data_power)
-            self.data_telegraph, self.data_window = DATA_TELEGRAPH[r], DATA_WINDOW[r]
-            self.flash = "watch the feint — block high or low!"
+            # the partner's shield lanes for THIS session: the manual's repeating
+            # chart row, cycled by lifetime drills this stage (the printed cheat
+            # sequences work on tuipet exactly as on the hardware).  The row lists
+            # WINNING shots (A=HIGH); the shield stands in the opposite lane.
+            row = DATA_WIN_CHART[self.pet.stage_trainings % len(DATA_WIN_CHART)]
+            self.tt_shield = tuple(c == "B" for c in row)   # win LOW -> shield was HIGH
+            self.flash = f"round 1/{DATA_ROUNDS} — UP high · DOWN low"
         else:
             self.virus_speed = VIRUS_SPEEDS[self._attr_rank(self.pet.virus)]
             self.flash = "stop the bar high!"
@@ -278,8 +287,8 @@ class TrainingPanel:
         self._strong = hits >= 3
         self.result = self.pet.apply_training(hits, power, attribute, game=game)
         if game == "data":
-            # DATA is purely DEFENSIVE (DVPet attackGreen -> the CANNON shoots the pet, you
-            # just block -- the shot + impact already played out in the drill).  Reveal directly.
+            # DATA already played its five volleys IN the drill (every round is a
+            # full fire -> reveal -> impact beat) -- a sixth would be noise.  Reveal.
             self.phase = "done"
             self.flash = self.result + "   (SPACE)"
         else:
@@ -341,35 +350,19 @@ class TrainingPanel:
                         1 if self.taps >= thr * 0.5 else 0)  # a clear overshoot = strong, near-miss = partial
                 self._finish(hits, int(self.taps), "Vaccine", "vaccine")
         elif gk == "data":
-            if self.fired:                                  # success is locked (DVPet onPreFinish); the
-                if self.fly_t > 0:                          # finale is cosmetic.  Same beats as the battle
-                    self.fly_t -= 1                          # collision.  DVPet attackGreen: the shot flies...
-                    if self.fly_t == 0:
-                        self.sfx = "attackHit"               # ...DVPet hitAnim: it LANDS -> the flash strobes
-                        self.strobe_t = EXPLODE_FRAMES
-                    return
-                if self.strobe_t > 0:                        # DVPet hitAnim: the fullscreen flash strobes,
-                    self.strobe_t -= 1                       # then aftermathGreen holds the pet's pose
-                    if self.strobe_t == 0:
-                        self.flinch_t = FLINCH_T
-                    return
-                if self.flinch_t > 0:
-                    self.flinch_t -= 1
-                    if self.flinch_t == 0:
-                        self._finish(*self._impact_args)
-                    return
-                return
-            self.data_t += 1
-            if not self.locked:                             # telegraph: the cannon's barrel feints up/down
-                if self.data_t % DATA_BOB == 0:
-                    self.feint_up = not self.feint_up
-                if self.data_t >= self.data_telegraph:      # ...then it COMMITS high or low: the barrel
-                    self.locked = True                       # locks and the orb appears at the muzzle to
-                    self.tgt_up = random.choice((True, False))  # charge (you can still toggle the shield)
-                    self.data_t = 0
-                    self.flash = "block it — toggle the shield!"
-            elif self.data_t >= self.data_window:           # charge window closes -> EVAL (DVPet onPreFinish)
-                self._data_resolve()
+            if not self.fired:                              # the PICK act waits on the player --
+                return                                      # turn-based, like the HP reel's stop
+            if self.tt_i < len(self.tt_tl) - 1:             # the round's volley marches, beat by beat
+                self.tt_i += 1
+                m = self.tt_tl[self.tt_i]["m"]
+                if m != self._last_sm:                      # one-shot sting at each beat edge
+                    if m == "hit":
+                        self.sfx = "attackHit"               # DVPet hitAnim: it got PAST
+                    elif m == "block":
+                        self.sfx = "cancel"                  # dead on the shield
+                self._last_sm = m
+            else:
+                self._data_next_round()
         else:  # virus -- DVPet drawVirusPre: the bar FILLS then snaps back to 0 and loops;
             self.pos += self.virus_speed                     # hit captures the level at that instant
             if self.pos >= VIRUS_MAX:
@@ -411,28 +404,57 @@ class TrainingPanel:
         if gk == "hp":                       # the reel spins itself: SPACE stops it on the match
             if k in ("space", "enter"):
                 self._hp_resolve(self.hp_pick == self.hp_target)
-        elif gk == "data":                   # DVPet onShield: ONE button toggles the shield top<->bot.
-            if not self.fired and k in ("space", "enter", "up", "down", "k", "j"):
-                self.shield_up = not self.shield_up   # toggleable until the shot commits (onPreFinish)
+        elif gk == "data":                   # DM20 versus training: A/B = fire high or low
+            if not self.fired and k in ("up", "k"):
+                self._data_fire(True)
+            elif not self.fired and k in ("down", "j"):
+                self._data_fire(False)
         elif k == "space":                   # vaccine mash / virus stop
             self._strike()
         return None
 
-    def _data_resolve(self):
-        """The shot commits (DVPet checkSuccess: success = shieldActiveTop == isUp).  A block
-        (shield matches the attack side) succeeds, else it gets through.  The shot then fires
-        and lands -- attackGreen (fly) -> hitAnim (strobe) -> aftermathGreen (flinch) -- and
-        the staged _finish (_impact_args) reveals the result once the flinch ends."""
-        self.blocked = self.shield_up == self.tgt_up
+    def _data_fire(self, up):
+        """The player's shot commits (DM20 manual: past = the partner's shield stood
+        in the OTHER lane).  The round plays out in the battle's alternating-view
+        volley grammar: fire_out (the mon looses its real orb) -> fire_in (cut to
+        the partner -- the shield lane REVEALS, the orb arrives) -> the fullscreen
+        hit strobe (past) or the blocked tableau."""
+        self.shot_up = up
+        self.tt_shield_up = self.tt_shield[self.tt_round]
+        self.blocked = (up == self.tt_shield_up)
+        ft = max(3, FIRE_T // 2)                 # the battle's flight halved: five rounds
+        #                                          per session need a brisker volley
+        tl = [{"m": "fire_out", "prog": (s + 1) / ft} for s in range(ft)]
+        tl += [{"m": "fire_in", "prog": (s + 1) / ft} for s in range(ft)]
         if self.blocked:
-            self.flash = "BLOCKED!"
-            self._impact_args = (3, 60, "Data", "data")
+            tl += [{"m": "block"}] * DATA_BLOCK_HOLD
         else:
-            self.flash = "hit you!"
-            self._impact_args = (0, 0, "Data", "data")
-        self.fired = True                                   # success LOCKED -> the shot fires (cosmetic)
-        self.fly_t = DATA_FLY
-        self.sfx = "attack"                                 # DVPet attackGreen turretShoot (cannon fires)
+            tl += [{"m": "hit", "f": (s // EXPLODE_HOLD) % 2} for s in range(EXPLODE_FRAMES)]
+        self.tt_tl, self.tt_i = tl, 0
+        self.fired = True
+        self._last_sm = "fire_out"
+        self.sfx = "attack"
+        self.flash = "HIGH!" if up else "LOW!"
+
+    def _data_next_round(self):
+        """Score the round, then the next pick -- or the session verdict (manual:
+        "You need to succeed 3 out of the 5 rounds")."""
+        past = not self.blocked
+        self.tt_log.append(past)
+        if past:
+            self.tt_past += 1
+        # the family's hit/miss tell rides the next act (pose only -- the round's
+        # own sting already played at the hit/block beat, no double beep)
+        self._strike_pose, self._strike_t = (6 if past else 9), 4
+        self.tt_round += 1
+        self.fired = False
+        self._last_sm = None
+        if self.tt_round >= DATA_ROUNDS:
+            p = self.tt_past                 # canon pass = 3 of 5; graded around that line
+            hits = 3 if p >= DATA_ROUNDS else 2 if p >= DATA_PASS else 1 if p >= 1 else 0
+            self._finish(hits, p * 20, "Data", "data")
+        else:
+            self.flash = f"round {self.tt_round + 1}/{DATA_ROUNDS} — UP high · DOWN low"
 
     def _flash(self, pose):
         """Briefly show a strike (6) or recoil (9) pose, like DVPet AttackSuccess/Fail."""
@@ -511,8 +533,8 @@ class TrainingPanel:
         """The DVPet drills, rebuilt to match the real game with the real sprites:
           Vaccine: MASH the bag (bag LEFT, 'Hit!' label flashes, pet HIDDEN).
           Virus:   the power bar FILLS L->R; stop it in the zone (bar centred, pet HIDDEN).
-          Data:    a FIXED cannon (left) fires a shot HIGH/LOW at the pet; raise the matching
-                   shield (two slots in front of the pet RIGHT) to block it.  Defensive.
+          Data:    the REAL DM20 versus training -- fire HIGH/LOW past the sparring
+                   partner's shield, 3 of 5 rounds (the fan turret is gone).
           HP:      read the target the training dummy wants, pick the matching attribute (dummy LEFT,
                    pet RIGHT face-off; the picker glyphs live in the gauge) -- on a flat LCD."""
         gk = self.gkey
@@ -585,100 +607,57 @@ class TrainingPanel:
             zx = fx + 1 + min(track_w - 1, int(track_w * VIRUS_BAR_MIN / VIRUS_MAX))
             overlay += [(zx, fy + y) for y in range(fh)]
         elif gk == "data":
-            # Built like the VIRUS drill: the whole stage is CENTRED in the LCD (band-centred,
-            # NOT jammed on the floor) over the same habitat bg.  Cannon LEFT, pet RIGHT, the
-            # shield standing in front of the pet (high OR low), the shot flying between them.
-            if self.strobe_t > 0:                            # COLLISION: clone DVPet hitAnim exactly --
-                # resetScreen() then a CENTRED fullscreen flash strobing attackHit<->attackHitFlash.
-                # Same render as the battle's hit (centred _EXPLODE), NOT a burst on the busy scene.
-                ex = _EXPLODE[(self.strobe_t // EXPLODE_HOLD) % len(_EXPLODE)]
+            # The REAL DM20's VERSUS TRAINING (canon rebuild 2026-07-13 -- DVPet's
+            # turret duel here was fan invention; manual: "you choose to fire a
+            # high shot or a low shot.  If your shot gets past your partner's
+            # shield, you succeed").  Each round plays in the battle's
+            # alternating-view volley grammar -- ONE combatant on screen at a
+            # time, the same look every other drill's strike already wears:
+            #   PICK -- faceoff: the sparring partner (the square-marked Data
+            #           dummy) LEFT, the mon RIGHT, both idle; UP/DOWN commits
+            #   OUT  -- cut to the mon: it looses its REAL orb along the lane
+            #   IN   -- cut to the partner: the shield SNAPS to the chart's
+            #           lane (the reveal) as the orb arrives -- pressed dead on
+            #           the shield (blocked) or through into the partner (past)
+            #   HIT  -- past: the battle's fullscreen strobe owns the window
+            fr = self.tt_tl[min(self.tt_i, len(self.tt_tl) - 1)] if self.fired else None
+            m = fr["m"] if fr else "pick"
+            orb = data.attack_orb(self.pet.num, "Data", self.pet.data_power)
+            oh = len(orb) if orb else 8
+            ow = max(len(r) for r in orb) if orb else 8
+            lane_y = BAND_TOP if self.shot_up else BASE_Y - oh   # HIGH rides the band top, LOW the floor
+            shield = E.get("train_shield", [None])[0]
+            sh_h = len(shield) if shield else 6
+            sw = len(shield[0]) if shield else 5
+            if m == "hit":                                   # PAST: DVPet hitAnim, the window is the flash
+                ex = _EXPLODE[fr["f"]]
                 overlay += _blit(ex, GRID_X0 + max(0, (GRID_W - len(ex[0])) // 2),
                                  BAND_TOP + max(0, (BASE_Y - BAND_TOP - len(ex)) // 2))
-            else:
-                aim_up = self.tgt_up if self.locked else self.feint_up
-                cannon = E.get("train_green_up" if aim_up else "train_green", [None])[0]  # barrel aim only
-                shield = E.get("train_shield", [None])[0]
-                sh_h = len(shield) if shield else 6
-                sw = len(shield[0]) if shield else 5
-                ch = len(cannon) if cannon else 9
-                # One reaction language across the drills (consistency polish,
-                # Joel 2026-07-06 "similar and consistent like the hp drill"):
-                # a BLOCK flashes the same success pose as the HP drill's right
-                # pick (6); canon aftermathGreen stood the pet plain, but the
-                # family's layout language outranks canon here (the standing rule)
-                if self.flinch_t > 0:
-                    pose = ATTACK if self.blocked else COLLAPSE  # success tell / the hurt pose
-                elif self.fired:                             # DVPet attackGreen: the pet braces for the shot
-                    pose = IDLE
-                else:                                        # the mon bobs through AIM *and* the LOCK window
-                    #                                          (both are live decision windows, like the HP
-                    #                                          reel) -- it goes still only for the shot
-                    pose = self._pose_now(1 if (self.frame_i // 2) % 2 else 0)
-                # crop to the real body so the mon can be placed precisely
-                # (centred, hugged by the shields) instead of floating in padding
-                pf = _crop(self._frame(rec, pose))
-                phh = len(pf)
-                px = GRID_X0 + GRID_W - max(len(r) for r in pf)    # the mon flush on the window's right edge
-                # Data layout INSIDE the 32x16 window (de-cram 2026-07-11,
-                # Joel: "all seems too crammed" -- the mid-stage gate at x15
-                # packed turret+gate+mon edge-to-edge, 31 of 32 columns solid,
-                # one fused blob on the 1-bit LCD): turret x4..13 · OPEN AIR ·
-                # the shield WORN in front of the mon it guards, riding its
-                # leading edge, layered via _pop so it reads as a held object.
-                # Three staged acts, the MON on stage for all of them (canon
-                # drawDataPre bobs the pet through the aim; HP-drill consistency,
-                # Joel 2026-07-06 -- the old staging hid the mon until the LOCK):
-                #   AIM    -- barrel feinting, the mon bobbing behind its gate
-                #   LOCK   -- the barrel commits and the mon BRACES; the toggle
-                #             window runs ("block it!")
-                #   SHOOT  -- the turret recoils, the pellet bursts out of the
-                #             muzzle and flies the open lane into the shield;
-                #             then hitAnim's strobe.
-                floor = BASE_Y                                     # the shared grid floor (2px above bottom)
-                cannon_x = GRID_X0                                 # turret on the window's left edge; the
-                #                                                    recoil beat kicks 1px past it -- a
-                #                                                    momentary LEFT-edge exit, the lawful kind
-                #  the shield anchors to the mon's WIDEST drill pose (bob 0/1
-                #  + the braced IDLE), not this frame's crop -- half the
-                #  roster's bob poses breathe 1px wider, and a held shield
-                #  must not twitch with the bob
-                front = GRID_X0 + GRID_W - max(
-                    max((len(r) for r in _crop(self._frame(rec, q))), default=0)
-                    for q in (0, 1, IDLE))
-                sx = front - sw + 2                                # the shield rides the mon's front edge
-                py = floor - phh
-                cy = floor - ch                                    # turret grounded
-                recoil = -1 if (self.fired and self.fly_t >= DATA_FLY - 1) else 0
-                overlay.extend(_blit(cannon, cannon_x + recoil, cy))
-                overlay.extend(_blit(pf, px, py))                  # on stage every act
-                hi_y = STRIKE_BAND_TOP + 1                         # HIGH lane gate: up near the band top
-                lo_y = floor - sh_h                                # LOW lane gate: grounded on the floor
-                #  ONE solid shield, drawn only in the lane it guards -- the open lane
-                #  is empty.  (DVPet's transparent shieldTransp ghost was a mouse
-                #  click-target; on a 1-bit LCD with a keyboard toggle it's just
-                #  noise -- the old 1-in-4 dither read as scattered dots.)
-                on_y = hi_y if self.shield_up else lo_y
-                if shield:
+            elif m == "pick":                                # the faceoff: partner vs mon, like the done screen
+                dummy = _fit_cell(_HP_DUMMIES["data"])
+                pf = self._frame(rec, self._pose_now(1 if (self.frame_i // 2) % 2 else 0))
+                placements = grid.faceoff(dummy, pf)         # partner mirrored to face the mon
+            elif m == "fire_out":                            # the mon's view: it looses the shot
+                pose = ATTACK
+                xshift = -2 if fr["prog"] < 0.35 else 0      # the battle's release lunge
+                placements, mouth = strikefx.place_combatant(True, self._frame(rec, pose), xshift)
+                if orb:                                      # from the mouth, off the near edge, in-lane
+                    ox = int((mouth - ow) + ((GRID_X0 - ow) - (mouth - ow)) * fr["prog"])
+                    overlay = _pop(overlay, _blit(orb, ox, lane_y))
+            else:                                            # fire_in / block: the partner's view
+                dummy = _fit_cell(_HP_DUMMIES["data"])
+                dm = [r[::-1] for r in dummy]                # creature stand-in faces the mon (canon mirror)
+                overlay.extend(_blit(dm, GRID_X0, BASE_Y - len(dm)))
+                dw = max(len(r) for r in dummy)
+                sx = GRID_X0 + dw - sw + 2                   # the shield WORN on the partner's front edge,
+                on_y = BAND_TOP + 1 if self.tt_shield_up else BASE_Y - sh_h   # snapped to the chart's lane
+                if shield:                                   # _pop: it reads as a held object, not a growth
                     overlay = _pop(overlay, _blit(shield, sx, on_y))
-                if self.fired and self.fly_t > 0:                  # the shoot animation (DVPet attackGreen):
-                    # the PELLET (the Data orb, /2 through the standard
-                    # downsample pipeline) bursts out of the MUZZLE at the
-                    # mouth's own height and flies a real trajectory across
-                    # the open lane -- climbing to the high gate or dipping to
-                    # the low one -- to press the shield.  (It used to
-                    # materialize mid-air at the gate's row, 5px from the
-                    # barrel that supposedly fired it.)
-                    from .render import downsample
-                    orb = downsample(data.load_orbs()["generic"]["Data"][0], 2)
-                    ow, oh = max(len(r) for r in orb), len(orb)
-                    lane_top = hi_y if self.tgt_up else lo_y       # the lane follows the ATTACK (tgt_up)
-                    lane_y = lane_top + sh_h // 2 - oh // 2         # ...ending centred on that gate's row
-                    mx = cannon_x + 7                              # bursting out of the muzzle (tip x13)...
-                    my = cy + 2 - oh // 2                          # ...at the mouth's height...
-                    end_x = sx - ow + 1                            # ...to pressing the shield
-                    prog = (DATA_FLY - self.fly_t) / (DATA_FLY - 1)
-                    overlay = _pop(overlay, _blit(orb, int(mx + (end_x - mx) * prog),
-                                                  int(my + (lane_y - my) * prog)))
+                if orb:
+                    stop_x = (sx + sw - 1) if self.blocked else (GRID_X0 + 2)   # dead on the shield / through
+                    prog = 1.0 if m == "block" else fr["prog"]
+                    ox = int(grid.X1 + (stop_x - grid.X1) * prog)   # arrives from the far (right) edge
+                    overlay = _pop(overlay, _blit(orb, ox, lane_y))
         else:                                               # hp: pick the shape the dummy wants
             # The marked training dummy (battle bag) LEFT, full height, grounded,
             # and -- canon drawHPTraining (restaged 2026-07-04, the vaccine
@@ -743,9 +722,11 @@ class TrainingPanel:
             return (f"{cue}  {self.taps}/{self.vaccine_target}  "
                     f"{'▓' * filled}{'░' * (8 - filled)}")
         if gk == "data":
-            cue = (("[b]CANNON HIGH![/]" if self.tgt_up else "[b]CANNON LOW![/]")
-                   + " — block!") if self.locked else "[b]SPACE[/] flips the shield"
-            return cue                       # the shield itself shows in the scene
+            # round pips: ▓ past / ░ blocked / · to play (3 of 5 passes) -- the
+            # pips ARE the score; raw numbers and game glyphs stay off the strip
+            pips = "".join("▓" if p else "░" for p in self.tt_log).ljust(DATA_ROUNDS, "·")
+            cue = "[b]...[/]" if self.fired else "[b]UP[/] high · [b]DOWN[/] low"
+            return f"{cue}  {pips}"
         cue = ("[b]IN THE ZONE — SPACE![/]" if int(self.pos) >= VIRUS_BAR_MIN
                else "[b]SPACE[/] stops it in the zone")
         return cue                           # the bar itself shows in the scene
@@ -764,7 +745,7 @@ class TrainingPanel:
         # keep every hint <= menu.W (38 cols) or footer() clips it mid-word
         return {"hp": "SPACE stops the reel   ESC out",
                 "vaccine": "SPACE punch the bag!   ESC out",
-                "data": "SPACE flip the shield   ESC out",
+                "data": "UP/DOWN fires past   ESC out",
                 "virus": "watch the marker   SPACE stops it"}[self.gkey]
 
     def _attr_pow(self):
@@ -773,20 +754,21 @@ class TrainingPanel:
                 "Virus": self.pet.virus}.get(self.strike_attr, 0)
 
     def _target_mirror(self):
-        """Canon facing for the drill's target.  The HP dummy is a CREATURE stand-in:
-        DVPet drawHPTraining places it left with drawNumMirror(.., true) -- mirrored
-        (drawNum keeps _isMirror, so the taunt flips with it).  The punching bag and
-        the cannon are PROPS drawn via setAltIcon -- never flipped (the cannon's
-        barrel faces right off the sheet, toward the pet)."""
-        return self.gkey == "hp"
+        """Canon facing for the drill's target.  The HP dummy and the Data drill's
+        sparring partner are CREATURE stand-ins: DVPet drawHPTraining places its
+        dummy left with drawNumMirror(.., true) -- mirrored (drawNum keeps
+        _isMirror, so the taunt flips with it).  The punching bag is a PROP drawn
+        via setAltIcon -- never flipped."""
+        return self.gkey in ("hp", "data")
 
     def _target_sprite(self, broken):
-        """The thing being struck: the green target (Data drill) or the punching bag, which
-        shows its BROKEN frame on a successful break (DVPet aftermathDefault).  Fit to the
-        16px band so the strike animation sits in the same grid as the drill sprites."""
+        """The thing being struck: the sparring partner (Data), the marked dummy (HP),
+        or the punching bag, which shows its BROKEN frame on a successful break
+        (DVPet aftermathDefault).  Fit to the 16px band so the strike animation sits
+        in the same grid as the drill sprites."""
         E = data.load_effects()
-        if self._is_data:
-            return _fit_cell(E.get("train_green", [None])[0])   # no broken variant for the target
+        if self._is_data:                                       # the versus partner, intact either way
+            return _HP_DUMMIES["data"]
         if self.gkey == "hp":                                   # HP fires at the training dummy (full height)
             return _HP_DUMMIES[("vaccine", "data", "virus")[self.hp_target]]
         return _fit_cell(E.get("punching_bag_broken" if broken else "punching_bag", [None])[0])

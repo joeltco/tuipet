@@ -354,9 +354,8 @@ def test_every_drill_completes_through_its_strike_within_budget():
 
     plays = {
         "vaccine": lambda pan: pan.key("space"),
-        "data": lambda pan: (pan.key("space")
-                             if getattr(pan, "locked", False) and not pan.fired
-                             and pan.shield_up != pan.tgt_up else None),
+        "data": lambda pan: (pan.key("down" if pan.tt_shield[pan.tt_round] else "up")
+                             if not pan.fired else None),
         "virus": lambda pan: pan.key("space") if getattr(pan, "pos", 0) > 80 else None,
         "hp": lambda pan: (setattr(pan, "hp_pick", pan.hp_target), pan.key("enter")),
     }
