@@ -1,4 +1,4 @@
-"""DVPet TUI — a terminal virtual pet rendered with halfblock sprites."""
+"""tuipet — a terminal Digimon V-Pet rendered with halfblock sprites."""
 from __future__ import annotations
 # Force 24-bit color BEFORE importing Textual: SSH sessions usually do not carry
 # COLORTERM, so Textual would auto-downgrade to xterm-256 and the muted background
