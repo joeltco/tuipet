@@ -250,10 +250,10 @@ class TuiPetApp(App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("Training polish: the Vaccine mash fills a real on-screen "
-                 "meter (DM20 canon), the Data partner taunts you when it "
-                 "blocks your shot, and the Virus zone flashes when it's "
-                 "time to STOP.")
+    WHATS_NEW = ("Vaccine mash fix: the Hit!! banner no longer covers the "
+                 "meter -- the fill stays pinned at the top and the banner "
+                 "flashes below it, so you can watch the meter WHILE you "
+                 "mash.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and

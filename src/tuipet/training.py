@@ -552,35 +552,37 @@ class TrainingPanel:
             # stepped offstage for it: 16-tall actors can't stand under a
             # meter without the chrome covering their heads, and DVPet's
             # drawVaccinePre hid the pet here anyway.)
+            # the meter is PERSISTENT chrome at the band top; the Hit!! banner
+            # flashes UNDER it (Joel 2026-07-13: "you had the hit banner cover
+            # the meter?" -- a rapid mash refreshed _strike_t every tap, so the
+            # old full-window takeover hid the fill exactly while you watch it).
+            # Meter 5 rows + 2x banner 10 rows = 15 of the band's 16: they
+            # SHARE the window, nothing yields, nothing covers anything.
             punching = self._strike_t > 0
             hit = E.get("train_hit", [None])[0]
+            frame = E.get("train_bar_empty", [None])[0]
+            fill = E.get("train_bar", [None])[0]
+            fh = len(frame) if frame else 5
+            track_w = GRID_W - 2
+            if frame:
+                frame = [row[:GRID_W] for row in frame]     # the 32-wide track box
+                overlay.extend(_blit(frame, GRID_X0, BAND_TOP))
+            if fill:
+                w = max(0, min(max(len(r) for r in fill), track_w,
+                               round(track_w * min(self.taps, self.vaccine_target)
+                                     / max(self.vaccine_target, 1))))
+                if w:
+                    overlay.extend(_blit([row[:w] for row in fill],
+                                         GRID_X0 + 1, BAND_TOP + 1))
             if punching and hit:
-                # the Hit!! banner is a FULL-WINDOW 32x16 banner, staged
-                # exactly like the battle start banner (Joel 2026-07-12):
-                # the scene YIELDS for the strike beat and the banner owns
-                # the window.  The native 13x5 hitLabel decode at a 2x
-                # integer upscale (mechanical, dot-crisp) centred in the band.
+                # the native 13x5 hitLabel decode at a 2x integer upscale
+                # (mechanical, dot-crisp), centred in the band BELOW the meter
                 big = ["".join(c * 2 for c in row) for row in hit
                        for _ in range(2)]
                 bw, bh = max(len(r) for r in big), len(big)
-                overlay = _blit(big, GRID_X0 + (GRID_W - bw) // 2,
-                                BAND_TOP + (BASE_Y - BAND_TOP - bh) // 2)
-            else:
-                frame = E.get("train_bar_empty", [None])[0]
-                fill = E.get("train_bar", [None])[0]
-                fh = len(frame) if frame else 5
-                fy = BAND_TOP + (BASE_Y - BAND_TOP - fh) // 2   # centred (virus keeps
-                track_w = GRID_W - 2                            #  the band top -- distinct)
-                if frame:
-                    frame = [row[:GRID_W] for row in frame]     # the 32-wide track box
-                    overlay.extend(_blit(frame, GRID_X0, fy))
-                if fill:
-                    w = max(0, min(max(len(r) for r in fill), track_w,
-                                   round(track_w * min(self.taps, self.vaccine_target)
-                                         / max(self.vaccine_target, 1))))
-                    if w:
-                        overlay.extend(_blit([row[:w] for row in fill],
-                                             GRID_X0 + 1, fy + 1))
+                overlay.extend(_blit(big, GRID_X0 + (GRID_W - bw) // 2,
+                                     BAND_TOP + fh
+                                     + (BASE_Y - BAND_TOP - fh - bh) // 2))
         elif gk == "virus":                                 # DVPet drawVirusPre: pet AND bag HIDDEN
             # The real DVPet trainBar sprite is a 32-wide TRACK box (cols 0..31) + a separate
             # goal compartment (cols 32..37) == 38 wide.  Crop to the 32-wide track box so it

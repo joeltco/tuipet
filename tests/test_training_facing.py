@@ -212,11 +212,12 @@ def test_data_fire_out_wears_the_attack_pose(monkeypatch):
 
 
 
-def test_punch_hit_banner_takes_over_the_window(monkeypatch):
-    """Joel 2026-07-12: the Hit!! banner is a FULL-WINDOW 32x16 banner,
-    staged like the battle start banner -- on the strike beat the scene
-    YIELDS and the 2x-upscaled banner owns the window; between taps the
-    mash scene (the canon fill meter since polish A) is back."""
+def test_punch_hit_banner_shares_the_window_with_the_meter(monkeypatch):
+    """Joel 2026-07-13: "you had the hit banner cover the meter?" -- the old
+    full-window takeover hid the fill during any rapid mash (_strike_t was
+    refreshed every tap).  Now the meter is persistent chrome at the band top
+    (rows y6..10) and the 2x Hit!! banner flashes in the rows BELOW it --
+    both visible on every punch beat, no overlap."""
     from tuipet import training, grid
     from tuipet.training import TrainingPanel, GAMES
     from tuipet.pet import Pet
@@ -234,21 +235,27 @@ def test_punch_hit_banner_takes_over_the_window(monkeypatch):
     pan = TrainingPanel(p)
     pan.gi = next(i for i, g in enumerate(GAMES) if g[0] == "vaccine")
     pan._start_game()
+    pan.taps = 5
     pan._strike_t = 0
     pan.text()
-    assert seen["overlay"], "between taps: the meter is on stage"
-    idle_ov = set(seen["overlay"])
+    idle = set(seen["overlay"])
+    meter = {pt for pt in idle if pt[1] <= grid.TOP + 4}
+    assert meter == idle, "between taps: the meter alone, in its top rows"
     pan._strike_t = 3
     pan._strike_pose = 6
     pan.text()
-    assert not seen["placements"], "strike beat: the scene yields"
-    ov = seen["overlay"]
-    assert ov and set(ov) != idle_ov
-    assert all(grid.X0 <= x < grid.X1 and grid.TOP <= y < grid.FLOOR
-               for x, y in ov)
-    w = max(x for x, _ in ov) - min(x for x, _ in ov) + 1
-    h = max(y for _, y in ov) - min(y for _, y in ov) + 1
-    assert (w, h) == (26, 10), (w, h)          # the 2x banner fills the band
+    punch = set(seen["overlay"])
+    assert meter <= punch, "the meter never leaves during a punch"
+    banner = punch - idle
+    assert banner, "the banner flashes on the punch beat"
+    assert all(y > grid.TOP + 4 for _, y in banner), \
+        "the banner lives strictly BELOW the meter"
+    bw = max(x for x, _ in banner) - min(x for x, _ in banner) + 1
+    bh = max(y for _, y in banner) - min(y for _, y in banner) + 1
+    assert (bw, bh) == (26, 10)                # the 2x hitLabel, uncovered
+
+
+
 def test_hit_banner_is_the_native_4x_decode():
     """trainHit.png is the ONE training asset authored at 4x -- the blanket
     3x extraction mushed it to 17x6 (Joel 2026-07-12: 'out of resolution').
