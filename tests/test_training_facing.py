@@ -115,20 +115,6 @@ def test_vaccine_scene_shows_the_punch():
     assert pan._strike_t > 0 and pan._strike_pose == 6
 
 
-def test_hp_pick_round_shows_the_reacting_pet():
-    """Restage 2026-07-04: canon drawHPTraining has the char on-screen reacting
-    to every guess -- the reaction pose must be VISIBLE, not a hidden state."""
-    from tuipet.training import TrainingPanel, GAMES
-    from tuipet.pet import Pet
-    p = Pet(num=100, stage="Champion", attribute="Vaccine", obedience=500)
-    p.compliance = True
-    pan = TrainingPanel(p)
-    pan.gi = next(i for i, g in enumerate(GAMES) if g[0] == "hp")
-    pan._start_game()
-    idle = pan.text().markup                   # markup, not plain: the arena is colour
-    pan._strike_pose, pan._strike_t = 6, 4     # the right-pick reaction, target unchanged
-    assert pan.text().markup != idle           # ...and it shows on the arena
-
 
 def test_data_pick_act_is_the_faceoff():
     """Canon versus training: the PICK act stages the sparring partner (the
@@ -161,11 +147,12 @@ def _data_panel():
     return pan
 
 
-def test_hp_stage_takes_turns_and_the_mon_reacts():
-    """The HP drill is time-multiplexed now (window LAW 2026-07-11): the REEL
-    act shows dummy + target/pick with the mon offstage; every SPACE cuts to
-    the REACTION act, where the mon plays its 6/9 pose beside the dummy.
-    (The old always-on-stage idle bob died with the bezel-leaking layout.)"""
+def test_hp_reel_runs_unbroken():
+    """Joel 2026-07-13: "we dont need to see a flash of the mon in between
+    turns" -- the old REACTION act cut to the mon's 6/9 pose for 4 ticks
+    after every pick.  The reel now runs unbroken: a RIGHT pick changes
+    nothing on stage (strip + sting carry it), a WRONG pick shows the
+    dummy's taunt lean -- the mon never pops in mid-drill."""
     from tuipet.training import TrainingPanel, GAMES
     from tuipet.pet import Pet
     p = Pet(num=100, stage="Champion", attribute="Vaccine", obedience=500)
@@ -173,14 +160,14 @@ def test_hp_stage_takes_turns_and_the_mon_reacts():
     pan = TrainingPanel(p)
     pan.gi = next(i for i, g in enumerate(GAMES) if g[0] == "hp")
     pan._start_game()
-    pan._strike_t = 0                          # the reel act: mon offstage, icons up
+    pan._strike_t = 0                          # the reel
     reel = pan.text().markup
-    pan._strike_t = 4                          # the reaction act: the mon on stage
+    pan._strike_t = 4                          # right-pick beat: stage unchanged
     pan._strike_pose = 6
-    right = pan.text().markup
-    assert right != reel, "reel and reaction are different stages"
-    pan._strike_pose = 9
-    assert pan.text().markup != right, "the 6/9 reaction poses must differ"
+    assert pan.text().markup == reel, "a right pick must not swap the stage"
+    pan._strike_pose = 9                       # wrong-pick beat: the dummy taunts
+    assert pan.text().markup != reel, "a wrong pick shows the taunt lean"
+
 
 
 def test_data_round_tells_ride_the_next_pick():

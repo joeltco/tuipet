@@ -671,41 +671,27 @@ class TrainingPanel:
                     overlay = _pop(overlay, _blit(orb, ox, lane_y))
         else:                                               # hp: pick the shape the dummy wants
             # The marked training dummy (battle bag) LEFT, full height, grounded,
-            # and -- canon drawHPTraining (restaged 2026-07-04, the vaccine
-            # lesson) -- the CHAR on the RIGHT, REACTING to every guess: pose 6
-            # flash on a right pick, 9 on a wrong one (the old layout hid the
-            # pet, so the reaction poses fired invisibly).  The round's TARGET
-            # is the real 7x7 attribute symbol in the free sky lane between
-            # them; the pick lives in the gauge (▸●◂), scrolled with ←→.
-            # a wrong pick makes the dummy TAUNT for the flash beat (SpriteAnim
-            # draws getBattleBagSprite(attr)+1 -- the sheet's bottom-row lean)
+            # MIRRORED (canon drawHPTraining: drawNumMirror(bag, true) -- the
+            # dummy faces the picker like a foe).  The round's TARGET is the
+            # real 7x7 attribute symbol beside the spinning pick.
+            # The reel runs UNBROKEN (Joel 2026-07-13: "we dont need to see a
+            # flash of the mon in between turns" -- the old REACTION act cut
+            # to the mon's 6/9 pose for 4 ticks after every pick, a jarring
+            # stage swap up to 3x per drill).  Feedback now: the dummy TAUNTS
+            # a wrong pick (SpriteAnim getBattleBagSprite(attr)+1, the sheet's
+            # bottom-row lean), the strip flash + sting carry a right one, and
+            # the mon still stars in the volley finale.
             taunting = self._strike_t > 0 and self._strike_pose == 9
             key = ("vaccine", "data", "virus")[self.hp_target] + ("_taunt" if taunting else "")
-            dummy = _HP_DUMMIES[key]
-            # TIME-MULTIPLEXED, the hardware way (LAW 2026-07-11): dummy(13)
-            # + icons(7) + mon(16) never fit a 32px window at once -- the old
-            # measured layout leaked into the bezel on BOTH edges and hung the
-            # target icon over the matrix.  So the stage takes turns, like a
-            # real V-Pet: the REEL act shows the dummy with the target/pick
-            # pair beside it; every SPACE cuts to the REACTION act -- dummy +
-            # the mon's 6/9 pose sharing the floor.
-            dummy = _fit_cell(dummy)                                  # the 17px bag art fits the band
-            placements = [(dummy, GRID_X0, True)]                     # MIRRORED (canon
-            #                                       drawHPTraining: drawNumMirror(bag, true) --
-            #                                       the dummy faces the char like a foe)
-            if self._strike_t > 0:                                    # REACTION act
-                pf = _crop(self._frame(rec, self._pose_now(
-                    1 if (self.frame_i // 2) % 2 else 0)))            # 6/9 reactions
-                overlay.extend(_blit(pf, GRID_X0 + GRID_W - max(len(r) for r in pf),
-                                     BASE_Y - len(pf)))
-            else:                                                     # REEL act
-                ic = E.get(_HP_ICON_KEYS[self.hp_target], [None])[0]
-                pk = E.get(_HP_ICON_KEYS[self.hp_pick], [None])[0]
-                iy = BAND_TOP + 4                                     # band-centred: (16-7)//2 off the top
-                if ic:
-                    overlay.extend(_blit(ic, GRID_X0 + 15, iy))       # the target...
-                if pk:
-                    overlay.extend(_blit(pk, GRID_X0 + 24, iy))       # ...and the spinning pick
+            dummy = _fit_cell(_HP_DUMMIES[key])                       # the 17px bag art fits the band
+            placements = [(dummy, GRID_X0, True)]
+            ic = E.get(_HP_ICON_KEYS[self.hp_target], [None])[0]
+            pk = E.get(_HP_ICON_KEYS[self.hp_pick], [None])[0]
+            iy = BAND_TOP + 4                                         # band-centred: (16-7)//2 off the top
+            if ic:
+                overlay.extend(_blit(ic, GRID_X0 + 15, iy))           # the target...
+            if pk:
+                overlay.extend(_blit(pk, GRID_X0 + 24, iy))           # ...and the spinning pick
         # scene-only: the gauge + hint ride the strip (box-clip audit 2026-07-04)
         return render_scene(placements, COLS, ARENA_ROWS, on, LCD_BG, overlay=overlay, bgimg=bgimg, clip=grid.WINDOW)
 
