@@ -847,6 +847,33 @@ class LobbyPanel:
         return None
 
     # ---- render ----------------------------------------------------------
+    def _care_cue(self):
+        """The care alarm's on-screen half while the lobby TICKS (2026-07-13:
+        the lobby is no longer a pause room -- app.on_tick runs the life-sim
+        through chat, so the strip must carry the nag or the pet starves
+        silently behind the chat window).  Compact by design: name(10) +
+        the loudest need, <= 38 plain cols with the ESC hint."""
+        from . import theme
+        p = self.pet
+        if not p.needs_attention():
+            return ""
+        if p.asleep and p.lights:
+            w = "lights!"
+        elif p.sick:
+            w = "sick!"
+        elif p.hunger == 0:
+            w = "hungry!"
+        elif p.strength == 0:
+            w = "effort empty!"
+        elif p.poop >= 3:
+            w = "messy!"
+        elif p.energy <= 0:
+            w = "exhausted!"
+        else:
+            w = "misbehaving!"
+        return (f"[{theme.NEG}]⚠ {(p.name or '?')[:10]} {w}[/] [dim]·[/] "
+                + menu.hints(("ESC", "home")))
+
     def strip(self):
         """The message box under the LCD = the lobby's CONTEXT layer (hint
         overhaul 2026-07-10): session scenes keep their prompts, every other
@@ -869,6 +896,9 @@ class LobbyPanel:
         if self.phase == "login":
             return menu.hints(("TAB", "field"), ("ENTER", "go"), ("ESC", "back"))
         if self.phase == "dm":
+            cue = self._care_cue()      # the DM thread live-ticks too
+            if cue:
+                return cue
             return menu.hints(("ENTER", "send"), ("ESC", "back")) + \
                 "  [dim]— thread is saved[/]"
         if self.invite_prompt is not None:
@@ -881,6 +911,12 @@ class LobbyPanel:
             return menu.hints(("P", "ping"), ("V", "DMs"), ("X", "block"))
         if self.pm_to is not None:
             return menu.hints(("ENTER", "send ✉"), ("ESC", "cancel"))
+        # the pet's alarm outranks everything social -- it only fires in the
+        # phases the app live-ticks (lobby/dm), which are exactly the phases
+        # that reach here past the session/login/prompt returns above
+        cue = self._care_cue()
+        if cue:
+            return cue
         # the open room: a fresh ✉ pops its own nudge ahead of the key chrome
         unread = sorted(self.state.unread) if self.state else []
         if unread and not self.rost_hidden:

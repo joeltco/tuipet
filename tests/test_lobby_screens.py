@@ -311,3 +311,92 @@ def test_unknown_invite_kinds_are_declined_not_entered():
     assert pan.invite_prompt is None, "an unknown kind must never prompt"
     assert pan.partner is None
     assert declined and declined[-1][:2] == (9, "trade") and declined[-1][2] is False
+
+
+def _tick_app(pan):
+    """A TuiPetApp shell that can run on_tick with `pan` as the open mode."""
+    from tuipet.app import TuiPetApp
+    app = TuiPetApp.__new__(TuiPetApp)
+    app.pet = pan.pet
+    app.mode = pan
+    app._mode_close = None
+    app._needs = False
+    app._nag_t = 0.0
+    app.beeps = []
+    app.beep = lambda name=None, bell=True: app.beeps.append(name)
+    app.flash = lambda *a, **k: None
+    return app
+
+
+def test_lobby_chat_ticks_the_life_sim_but_sessions_freeze():
+    """Joel 2026-07-13: "make the lobby tick, alarm and all" -- chat is not a
+    pause button.  on_tick runs the sim through the lobby/dm phases (with
+    evolution HELD for the main view), keeps the canon freeze during
+    battle/jogress sessions and login, and rings the care alarm on onset."""
+    pan = _lobby()
+    app = _tick_app(pan)
+    t0 = pan.pet.age_seconds
+    app.on_tick()
+    assert pan.pet.age_seconds == t0 + 1.0, "the lobby must tick the sim"
+    assert pan.pet.fx_hold, "evolution waits for the main view"
+
+    pan.phase = "dm"
+    app.on_tick()
+    assert pan.pet.age_seconds == t0 + 2.0, "the DM thread ticks too"
+
+    for frozen in ("battle", "jogress", "login"):
+        pan.phase = frozen
+        app.on_tick()
+        assert pan.pet.age_seconds == t0 + 2.0, f"{frozen} keeps the canon freeze"
+
+    pan.phase = "lobby"                          # the alarm rings on onset
+    pan.pet.hunger = 0
+    pan.pet.stage = "Rookie"
+    app.on_tick()
+    assert "alarm" in app.beeps
+
+
+def test_death_in_the_lobby_returns_home_for_the_memorial(monkeypatch):
+    """Death can't wait for ESC: the tick that kills the pet closes the lobby
+    (tearing down the connection via the normal close path) and starts the
+    dying fx on the home screen."""
+    from tuipet.pet import Pet
+    pan = _lobby()
+    app = _tick_app(pan)
+    closed = []
+    app._mode_close = closed.append
+
+    class _Scr:
+        fx = None
+        def start_fx(self, *a, **k): self.fx = a
+    app.screen_w = _Scr()
+
+    def die(self, dt):
+        self.dead = True
+    monkeypatch.setattr(Pet, "tick", die)
+    app.on_tick()
+    assert app.mode is None, "the lobby closes so the memorial owns the screen"
+    assert closed == [None], "the normal close callback tears down the client"
+    assert app.screen_w.fx and app.screen_w.fx[0] == "dying"
+    assert "death" in app.beeps
+
+
+def test_lobby_strip_carries_the_care_alarm():
+    """The alarm's on-screen half rides the strip in the ticking phases --
+    without it the pet starves silently behind the chat window.  It outranks
+    the unread nudge, stays inside the 40-col budget, and clears with the need."""
+    import re
+    pan = _lobby()
+    pan.pet.stage = "Rookie"
+    pan.pet.hunger = 0
+    pan.state.unread.add("Ryo")                  # the alarm outranks the mail
+    cue = pan.strip()
+    assert "⚠" in cue and "hungry" in cue
+    assert len(re.sub(r"\[/?[^\[\]]*\]", "", cue)) <= 40
+    pan.phase = "dm"
+    assert "⚠" in pan.strip(), "the DM thread shows the cue too"
+    pan.phase = "lobby"
+    pan.pet.hunger = 4
+    pan.pet.scold_flag = False
+    pan.pet.discipline_call = False
+    assert "⚠" not in pan.strip(), "the cue clears with the need"

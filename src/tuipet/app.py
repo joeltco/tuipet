@@ -1265,7 +1265,47 @@ class TuiPetApp(App):
 
     def on_tick(self):
         if self.mode is not None:
-            return  # a sub-screen is open -> pause the life-sim (resumes in the main view)
+            # a sub-screen is open -> pause the life-sim (the canon menu
+            # freeze) -- EXCEPT the lobby's chat contexts (Joel 2026-07-13:
+            # "make the lobby tick, alarm and all" -- chat is not a pause
+            # button).  Sessions (battle/jogress) and login keep the freeze:
+            # a pet must not starve or die mid-PvP volley.
+            m = self.mode
+            if not (isinstance(m, lobbyscreen.LobbyPanel)
+                    and m.phase in ("lobby", "dm")):
+                return
+            was_dead = self.pet.dead
+            poop0 = self.pet.poop
+            self.pet.fx_hold = True     # evolution waits for the main view --
+            #                             its strobe belongs to the home screen
+            self.pet.tick(1.0)
+            p = self.pet
+            if p.dead and not was_dead:
+                # death can't wait for ESC: leave the room, play the memorial
+                self._close_mode(None)
+                self.beep("death")
+                self.flash("")
+                self.screen_w.start_fx("dying")
+                self._dying_fx = True
+                self._revive_hits = 0
+                return
+            if p.poop > poop0:          # the pile still lands audibly off-screen
+                sz = (p.poop_sizes[-1] if getattr(p, "poop_sizes", None) else 2)
+                self.beep("smallPoop" if sz == 1 else ("largePoop" if sz > 2 else "poop"),
+                          bell=False)
+            # the care alarm, canon nag cadence (onset ring + every ~90s);
+            # its on-screen half rides the lobby strip (LobbyPanel._care_cue)
+            needs = p.needs_attention()
+            if needs and not self._needs:
+                self.beep("alarm")
+                self._nag_t = 0.0
+            elif needs:
+                self._nag_t = getattr(self, "_nag_t", 0.0) + 1.0
+                if self._nag_t >= 90:
+                    self._nag_t = 0.0
+                    self.beep("alarm")
+            self._needs = needs
+            return
         prev = (self.pet.num, self.pet.stage)
         was_dead = self.pet.dead
         poop0 = self.pet.poop
