@@ -305,12 +305,38 @@ def load_orbs():
         return json.load(fh)
 
 
-def attack_orb(num, attribute, power):
-    """DVPet checkAttackSprite: the Digimon's per-species special orb (attackSpritesSpecial.png,
-    digimon.csv col 55) if set for this attribute, else the generic per-attribute orb at the
-    power tier floor(power/25) from attackSprites.png."""
+@lru_cache(maxsize=1)
+def load_device_attacks():
+    """deviceAttacks.csv: species -> its real-hardware attack in orbs.json.gz
+    'device' (ripped from MultiVPet's data.win, the classic V-Pet lineup).
+    Keyed by normalized name so every roster row of the species matches."""
+    path = os.path.join(_RAW, "deviceAttacks.csv")
+    out = {}
+    if os.path.exists(path):
+        for r in csv.DictReader(open(path)):
+            nm = "".join(c for c in (r.get("Name") or "").lower() if c.isalnum())
+            if nm and r.get("AttackKey"):
+                out[nm] = r["AttackKey"]
+    return out
+
+
+def attack_orb(num, attribute, power, frame_i=0):
+    """The attack projectile.  Device-accurate first (Joel 2026-07-14): a species
+    in deviceAttacks.csv fires ITS OWN real-hardware attack for EVERY attribute,
+    exactly like the original V-Pet -- frame_i animates the 2-frame attacks at
+    the caller's 10Hz clock.  Everyone else keeps DVPet checkAttackSprite: the
+    per-species special orb (attackSpritesSpecial.png, digimon.csv col 55) if set
+    for this attribute, else the generic per-attribute orb at the power tier
+    floor(power/25) from attackSprites.png."""
     orbs = load_orbs()
-    idx = (load_requirements().get(num, {}).get("attack_index") or {}).get(attribute, -1)
+    req = load_requirements().get(num) or {}
+    nm = "".join(c for c in (req.get("name") or "").lower() if c.isalnum())
+    key = load_device_attacks().get(nm)
+    if key:
+        frames = orbs.get("device", {}).get(key)
+        if frames:
+            return frames[frame_i % len(frames)]
+    idx = (req.get("attack_index") or {}).get(attribute, -1)
     if idx is not None and idx >= 0:
         sp = orbs["special"].get(str(idx))
         if sp:
@@ -369,6 +395,7 @@ def load_requirements():
             "dna": {f: _gate(r, f + "Key", f + "Value") for f in DNA_FIELDS},
             "evol_item": _int_or(r.get("EvolItemID"), -1),   # item that triggers this form
             "attack_index": _attack_index(r.get("SpecialAttacksVaccineDataVirus")),
+            "name": (r.get("Name") or "").strip(),
             "food_pref": (r.get("FoodPreference") or "None").strip() or "None",
             # the taste-ledger SEEDS (Taste.setPreference/setAversion): the
             # preference biases the drift +2, the AVERSION -2 -- and the

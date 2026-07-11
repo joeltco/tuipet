@@ -393,9 +393,11 @@ class BattlePanel:
         fires right; the orb keeps a constant world direction across the screen switch)."""
         atk = fr["atk"]
         if atk == "pet":
-            orb = data.attack_orb(self.pet.num, self.pet_attr, self._pow("pet", self.pet_attr))
+            orb = data.attack_orb(self.pet.num, self.pet_attr, self._pow("pet", self.pet_attr),
+                                  frame_i=self.frame_i)
         else:
-            orb = data.attack_orb(self.battle.enemy["num"], self.foe_attr, self._pow("foe", self.foe_attr))
+            orb = data.attack_orb(self.battle.enemy["num"], self.foe_attr, self._pow("foe", self.foe_attr),
+                                  frame_i=self.frame_i)
         return strikefx.orb_flight(orb, atk == "pet", fr["m"], fr["prog"], mouth, fr.get("double"))
 
     def _render_scene_frame(self, fr):

@@ -44,6 +44,12 @@ def to_rows(m):
 gen = load("attackSprites.png")          # 84x678 -> 3 cols x 25 rows
 spc = load("attackSpritesSpecial.png")   # 273x273 -> 10 x 10
 orbs = {"generic": {"Vaccine": [], "Data": [], "Virus": []}, "special": {}}
+# the "device" bank (MultiVPet real-hardware attacks, deviceAttacks.csv) is
+# authored separately -- MERGE it through a rebuild, never drop it
+_prev = os.path.join(OUT, "orbs.json.gz")
+if os.path.exists(_prev):
+    with gzip.open(_prev, "rt") as fh:
+        orbs["device"] = json.load(fh).get("device", {})
 
 for attr, base in (("Vaccine", 0), ("Data", 25), ("Virus", 50)):
     for tier in range(25):

@@ -630,7 +630,7 @@ class TrainingPanel:
             #   HIT  -- past: the battle's fullscreen strobe owns the window
             fr = self.tt_tl[min(self.tt_i, len(self.tt_tl) - 1)] if self.fired else None
             m = fr["m"] if fr else "pick"
-            orb = data.attack_orb(self.pet.num, "Data", self.pet.data_power)
+            orb = data.attack_orb(self.pet.num, "Data", self.pet.data_power, frame_i=self.frame_i)
             oh = len(orb) if orb else 8
             ow = max(len(r) for r in orb) if orb else 8
             lane_y = BAND_TOP if self.shot_up else BASE_Y - oh   # HIGH rides the band top, LOW the floor
@@ -775,7 +775,7 @@ class TrainingPanel:
 
     def _strike_orb(self, leg, mouth, fr):
         """The pet's REAL orb, flown by the shared strikefx (the pet always fires left)."""
-        orb = data.attack_orb(self.pet.num, self.strike_attr, self._attr_pow())
+        orb = data.attack_orb(self.pet.num, self.strike_attr, self._attr_pow(), frame_i=self.frame_i)
         m = "fire_out" if leg == "out" else "fire_in"
         return strikefx.orb_flight(orb, True, m, fr["prog"], mouth, fr.get("double"))
 
