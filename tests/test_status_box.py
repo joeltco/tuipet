@@ -81,6 +81,23 @@ def test_every_mode_painter_fits_the_card():
     app._status_training(); _fits(fake, "train menu")
     app.mode.key("enter")
     app._status_training(); _fits(fake, "train drill")
+    # EVERY drill's play card, not just the default -- v0.2.417 shipped a
+    # card that still read the retired turret fields and CRASHED the moment
+    # the data drill opened (Joel's phone report 2026-07-13): the harness
+    # had only ever painted the HP card
+    p.obedience = 900
+    for gi, gk in ((1, "vaccine"), (2, "data"), (3, "virus")):
+        app.mode = training.TrainingPanel(p)
+        app.mode.gi = gi
+        app.mode.key("enter")
+        assert app.mode.phase == "play", f"{gk}: refused, card unprobed"
+        app._status_training(); _fits(fake, f"train {gk}")
+        if gk == "data":                                # the versus card counts
+            assert "Round" in fake.txt and "Past" in fake.txt
+    app.mode.gi = 2                                     # data, mid-volley
+    app.mode._reset(); app.mode._start_game()
+    app.mode.key("up")
+    app._status_training(); _fits(fake, "train data volley")
     app.mode = battlescreen.BattlePanel(p)
     app._status_battle(); _fits(fake, "battle")
     from tuipet import habitatscreen

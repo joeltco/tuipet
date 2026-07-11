@@ -250,10 +250,9 @@ class TuiPetApp(App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("The Data drill is now the REAL DM20 versus training: YOU "
-                 "fire high or low past the sparring partner's shield, 3 of 5 "
-                 "rounds to pass -- the fan-made turret is gone, and the "
-                 "manual's secret pattern chart works here too.")
+    WHATS_NEW = ("Hotfix: opening the new Data versus training crashed the "
+                 "app (the status card still read the old turret fields). "
+                 "The card now counts rounds and passes like the HP drill's.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and
@@ -903,7 +902,8 @@ class TuiPetApp(App):
         self.stats_w.update("\n".join(lines))
 
     def _status_training(self):
-        from .training import GAMES, VACCINE_WINDOW, HP_ROUNDS, VIRUS_BAR_MIN
+        from .training import (GAMES, VACCINE_WINDOW, HP_ROUNDS, VIRUS_BAR_MIN,
+                               DATA_ROUNDS, DATA_PASS)
         p, tp, T = self.pet, self.mode, theme
         self.stats_w.border_subtitle = f"gen {p.generation}"
         div = f"[dim]{'-' * 26}[/]".replace("-", "\u2500")
@@ -933,8 +933,11 @@ class TuiPetApp(App):
                 prog, prog2 = f"Hits     {tp.taps} / {tp.vaccine_target}", f"Time     {bar(tpct, 11, T.MOOD)}"
                 target = f"Vaccine  [{T.POS}]{p.vaccine}[/]"
             elif gk == "data":
-                atk = ("HIGH" if tp.tgt_up else "LOW") if tp.locked else "feint\u2026"
-                prog, prog2 = f"Attack   {atk}", f"Shield   {'UP' if tp.shield_up else 'DOWN'}"
+                # the versus card counts like the HP card: round + passes
+                # (canon rebuild 2026-07-13 -- the old card read the retired
+                # turret fields and CRASHED the live drill, Joel's phone report)
+                prog = f"Round    {min(tp.tt_round + 1, DATA_ROUNDS)} / {DATA_ROUNDS}"
+                prog2 = f"Past     {tp.tt_past} / {DATA_PASS}"
                 target = f"Data     [{T.ENERGY}]{p.data_power}[/]"
             else:
                 prog, prog2 = f"Power    {int(tp.pos)}", f"Need     {VIRUS_BAR_MIN}"
