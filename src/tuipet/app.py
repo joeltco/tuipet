@@ -250,9 +250,10 @@ class TuiPetApp(App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("Hotfix: opening the new Data versus training crashed the "
-                 "app (the status card still read the old turret fields). "
-                 "The card now counts rounds and passes like the HP drill's.")
+    WHATS_NEW = ("The training menu is a real picker now: browse the drills "
+                 "with the arrows and the LCD previews each one's actual "
+                 "stage -- the old text diamond is gone.  1-4 still jump "
+                 "straight in.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and
