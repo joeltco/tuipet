@@ -154,12 +154,28 @@ def test_no_user_facing_name_leaks_html_tags():
 def test_status_card_index_survives_the_full_carousel():
     """2026-07-04 Termux crash: the app's egg status card indexed m.unlocked
     by the carousel cursor -- past the hatchable eggs = IndexError.  Walk the
-    cursor across the WHOLE carousel and resolve the card's index each stop."""
+    cursor across the WHOLE carousel and paint the REAL app card each stop
+    (the old test re-implemented the fixed expression instead of executing
+    app.py, so it could never catch the crash it documents; test audit
+    2026-07-13 -- now it drives _status_eggselect itself)."""
+    from tuipet.app import TuiPetApp, Stats
+
+    class _FakeStats(Stats):
+        def __init__(self): self.txt = ""
+        def update(self, t): self.txt = str(t)
+        @property
+        def border_subtitle(self): return ""
+        @border_subtitle.setter
+        def border_subtitle(self, v): pass
+
     pan = _panel()
+    app = TuiPetApp.__new__(TuiPetApp)
+    app.mode = pan
+    fake = app.stats_w = _FakeStats()
     for i in range(pan.n):
         pan.i = i
-        idx = pan.carousel[pan.i] if pan.carousel else 0
-        assert pan.states.get(idx, ("owned", 0))[0] in ("owned", "temp", "buyable", "locked")
+        app._status_eggselect()                      # the real painter, every stop
+        assert "New Egg" in fake.txt and f"{i + 1} of {pan.n}" in fake.txt
 
 
 def test_buyable_egg_lives_in_the_shop_not_the_select():

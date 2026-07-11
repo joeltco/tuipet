@@ -81,9 +81,11 @@ def test_apply_propagates_to_a_screen_module():
 
 
 def test_apply_unknown_theme_falls_back():
-    name = theme.apply("does-not-exist")
-    assert name in theme.THEMES                # falls back, never crashes
-    theme.apply("grey")
+    try:
+        name = theme.apply("does-not-exist")
+        assert name in theme.THEMES            # falls back, never crashes
+    finally:
+        theme.apply("grey")                    # restore even on failure
 
 
 # ---- palette completeness (the 2026-07 theme expansion) ----------------------

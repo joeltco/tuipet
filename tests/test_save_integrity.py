@@ -62,11 +62,12 @@ def test_egg_saves_are_exempt():
 def test_server_refuses_foreign_saves(tmp_path, monkeypatch):
     """The lobby server itself must not carry old-format saves -- the cloud was
     the ghost's delivery vehicle in the 'Child' incident."""
+    import os
     import sys
-    sys.path.insert(0, "server")
-    import importlib
+    # no reload: re-executing server.py resets FEED_PATH/BUGS_PATH to the real
+    # repo files, silently undoing conftest's sandbox (the 2026-07-10 leak)
+    sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "server"))
     import server as srv
-    importlib.reload(srv)
     assert not srv._valid_save({"stage": "Child", "name": "", "_saved_at": 1})
     assert not srv._valid_save({"stage": "Rookie", "name": "", "_saved_at": 1})
     assert not srv._valid_save("junk")
@@ -79,11 +80,11 @@ def test_session_lease_stops_the_two_device_fork():
     left running kept autosave-pushing its own FORK with newer wall clocks, so
     every fresh desktop session lost its play to the background device.  Only
     the LATEST login's connection may push saves."""
+    import os
     import sys
-    sys.path.insert(0, "server")
-    import importlib
+    sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "server"))
     import server as srv
-    importlib.reload(srv)
+    srv.LEASES.pop("joeltco", None)      # fresh lease slate (reload used to do this)
 
     class _C:                                     # a connection, duck-typed
         lease = None

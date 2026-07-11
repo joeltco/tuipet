@@ -50,13 +50,16 @@ def _render(panel):
 
 
 def _walk(panel, keys, renders=6):
-    """Drive a panel: render, press keys (ignoring exits), re-render each time."""
+    """Drive a panel: render, press keys, re-render each time.  Stops at a
+    ("done", ...) payload like the app does -- the old `except TypeError:
+    break` treated ANY TypeError inside a key handler as "panel closed",
+    silently ending the walk on exactly the crash class this file exists
+    to catch (test audit 2026-07-13)."""
     _render(panel)
     for k in keys:
-        try:
-            panel.key(k)
-        except TypeError:
-            break                                   # panel closed (returned done payload used by app)
+        r = panel.key(k)
+        if isinstance(r, tuple) and r and r[0] == "done":
+            break                                   # the app closes the mode here
         if hasattr(panel, "anim"):
             panel.anim()
         _render(panel)

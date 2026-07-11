@@ -68,7 +68,17 @@ def _sandbox_lobby_feed(tmp_path, monkeypatch):
     pytest runs append real-looking events to the repo copy (leak found
     2026-07-10: test_bugreport/test_save_integrity grew server/lobby_feed.jsonl
     on every run)."""
+    import os as _os
     import sys as _sys
-    srv = _sys.modules.get("server")
+    # import (not just look up) the module: the first test in a session that
+    # imports server INSIDE its body used to run before this fixture had
+    # anything to patch -- order-dependent sandboxing (test audit 2026-07-13)
+    _sys.path.insert(0, _os.path.join(_os.path.dirname(__file__), "..", "server"))
+    try:
+        import server as srv
+    except Exception:
+        srv = None
     if srv is not None and hasattr(srv, "FEED_PATH"):
         monkeypatch.setattr(srv, "FEED_PATH", str(tmp_path / "lobby_feed.jsonl"))
+    if srv is not None and hasattr(srv, "BUGS_PATH"):
+        monkeypatch.setattr(srv, "BUGS_PATH", str(tmp_path / "bugs.jsonl"))

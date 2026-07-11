@@ -111,3 +111,48 @@ def test_every_mode_painter_fits_the_card():
     tr = next((t for t in (tmod.trophy_by_id(i) for i in range(40)) if t), None)
     app.mode.tourney = tmod.Tournament(p, tr)
     app._status_tournament(); _fits(fake, "cup live")
+
+
+def test_the_untested_consumer_cards_paint_and_fit():
+    """Every OTHER app.py status-card branch a live session can reach -- the
+    v0.2.417 crash shipped because the harness only painted each painter in
+    ONE state (test audit 2026-07-13): the eat card, the battle result card,
+    the town cup-bout card, the adventure mid-encounter card, the training
+    done card and the HP card mid-drill were all attribute-drift blind."""
+    random.seed(7)
+    from tuipet.app import TuiPetApp
+    from tuipet import adventurescreen, townscreen, training, battlescreen
+    app = TuiPetApp.__new__(TuiPetApp)
+    app.pet = _pet()
+    fake = app.stats_w = _FakeStats()
+    p = app.pet
+
+    app._status_eat(); _fits(fake, "eat")                # painted every eat fx
+
+    app.mode = battlescreen.BattlePanel(p)               # the result card
+    app.mode.done_anim, app.mode.won = True, True
+    app.mode.battle.reward = "Won 100b and a Digimental of Courage"
+    app._status_battle(); _fits(fake, "battle result")
+    assert "VICTORY" in fake.txt
+
+    town = townscreen.TownPanel(p, 0)                    # the cup-bout card
+    town.sub = battlescreen.BattlePanel(p)
+    app._status_town(town); _fits(fake, "town bout")
+    assert "vs" in fake.txt
+
+    app.mode = adventurescreen.AdventurePanel(p)         # mid-encounter card
+    app.mode.sub = battlescreen.BattlePanel(p)
+    app._status_adventure(); _fits(fake, "adventure battle")
+
+    app.mode = training.TrainingPanel(p)                 # the done card
+    app.mode.phase, app.mode.success = "done", True
+    app.mode.result = "Perfect! Effort up! HP +1!"
+    app._status_training(); _fits(fake, "train done")
+    assert "drill complete" in fake.txt
+
+    p.obedience = 900
+    app.mode = training.TrainingPanel(p)                 # HP card mid-drill
+    app.mode.key("enter")
+    assert app.mode.phase == "play"
+    app.mode.rep, app.mode.rounds_won = 2, 1             # the dots arithmetic
+    app._status_training(); _fits(fake, "train hp mid")

@@ -81,8 +81,7 @@ def test_a_sick_opponent_is_contagious(monkeypatch):
     r = _pet()
     monkeypatch.setattr(random, "randrange", lambda n: 0)
     r.record_battle(True, dict(_ENEMY), free_style=True)
-    assert not r.sick or r.is_injured() or True       # placeholder: healthy foes don't infect
-    assert not r.sick
+    assert not r.sick                                 # healthy foes don't infect
 
 def test_pvp_cards_ship_the_real_sick_state():
     p = _pet(sick=True, sick_length=100.0)

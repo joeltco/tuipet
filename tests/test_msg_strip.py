@@ -70,3 +70,32 @@ def test_closing_a_mode_clears_its_hint_strip():
     assert open_hint, "the habitat screen should have put its strip up"
     assert after == "", "a closed screen's hints must not linger in the box"
     assert open_hint not in (rendered or " ")
+
+
+def test_mode_strip_walks_to_the_deepest_sub_panel():
+    """_mode_strip routing (test audit 2026-07-13): the DEEPEST .sub owns the
+    #msg box -- a battle inside a town inside an adventure must deliver the
+    BATTLE panel's strip, not the host's.  This walk had no direct pin: a
+    regression showing the host's hints mid-fight would have passed the suite."""
+    from tuipet.app import TuiPetApp
+    from tuipet import adventurescreen, townscreen, battlescreen
+    from tuipet.pet import Pet
+
+    p = Pet(num=100, stage="Champion", attribute="Vaccine", obedience=500)
+    app = TuiPetApp.__new__(TuiPetApp)
+    app.pet = p
+    delivered = []
+    app._hud = delivered.append                     # capture what the box gets
+
+    adv = adventurescreen.AdventurePanel(p)
+    town = townscreen.TownPanel(p, 0)
+    bout = battlescreen.BattlePanel(p)
+    adv.sub, town.sub = town, bout
+    app.mode = adv
+    app._mode_strip()
+    assert delivered and delivered[-1] == bout.strip(), \
+        "the deepest panel (the battle) owns the strip"
+
+    town.sub = None                                 # the fight ends: the town takes over
+    app._mode_strip()
+    assert delivered[-1] == town.strip()

@@ -826,21 +826,7 @@ class TuiPetApp(App):
                                          "[dim]a creature awaits[/]", "",
                                          "[dim]press ENTER[/]", "[dim]to begin[/]"])
         elif isinstance(self.mode, eggselectscreen.EggSelectPanel):
-            m = self.mode
-            # carousel = hatchable + nearest LOCKED goals (m.unlocked is only
-            # the first stretch -- indexing it by m.i crashed past the hatchable
-            # eggs; 2026-07-04 Termux report).  Buyable eggs never ride it
-            # (Joel 2026-07-04) -- masked like sealed if one ever leaks.
-            idx = m.carousel[m.i] if m.carousel else 0
-            state = m.states.get(idx, ("owned", 0))[0]
-            badge = {"temp": "[dim]this gen only[/]", "locked": "[dim]sealed[/]",
-                     "buyable": "[dim]sealed[/]"}.get(state, "[dim]ready[/]")
-            shown = "???" if state in ("locked", "buyable") else egg_mod.hatch_name(idx)
-            self._status_card("New Egg", [f"[dim]{m.i + 1} of {m.n}[/]",
-                                          f"[dim]{m.locked} still locked[/]", "",
-                                          "Destined to hatch", f"  [b]{shown}[/]",
-                                          f"  {badge}", "",
-                                          "[dim]←→ browse  ENTER pick[/]"])
+            self._status_eggselect()
         elif (painter := self._status_painter()) is not None:
             painter()
         else:
@@ -860,6 +846,23 @@ class TuiPetApp(App):
             if isinstance(self.mode, cls):
                 return painter
         return None
+
+    def _status_eggselect(self):
+        m = self.mode
+        # carousel = hatchable + nearest LOCKED goals (m.unlocked is only
+        # the first stretch -- indexing it by m.i crashed past the hatchable
+        # eggs; 2026-07-04 Termux report).  Buyable eggs never ride it
+        # (Joel 2026-07-04) -- masked like sealed if one ever leaks.
+        idx = m.carousel[m.i] if m.carousel else 0
+        state = m.states.get(idx, ("owned", 0))[0]
+        badge = {"temp": "[dim]this gen only[/]", "locked": "[dim]sealed[/]",
+                 "buyable": "[dim]sealed[/]"}.get(state, "[dim]ready[/]")
+        shown = "???" if state in ("locked", "buyable") else egg_mod.hatch_name(idx)
+        self._status_card("New Egg", [f"[dim]{m.i + 1} of {m.n}[/]",
+                                      f"[dim]{m.locked} still locked[/]", "",
+                                      "Destined to hatch", f"  [b]{shown}[/]",
+                                      f"  {badge}", "",
+                                      "[dim]←→ browse  ENTER pick[/]"])
 
     def _status_card(self, title, lines):
         self.stats_w.border_subtitle = ""
