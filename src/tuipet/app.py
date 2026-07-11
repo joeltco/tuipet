@@ -250,10 +250,12 @@ class TuiPetApp(App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("HP drill polish: the reel no longer cuts away to your mon "
-                 "between picks -- the stage holds steady, wrong picks earn "
-                 "the dummy's taunt, and your mon saves itself for the "
-                 "final volley.")
+    WHATS_NEW = ("The big audit patch: battle banners, orbs and the teleport "
+                 "wipe stay inside the play window; bag items now match "
+                 "feeding (no more 60x Gold Pill); the versus cheat chart "
+                 "holds its printed pattern; town shelves stock their local "
+                 "goods again; and old or cross-version saves can't crash "
+                 "the game.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and
