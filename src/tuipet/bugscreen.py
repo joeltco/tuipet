@@ -32,7 +32,7 @@ class BugReportPanel(menu.SubHost):
         self.buf = ""
         self.frame_i = 0
         self.captures_text = True         # typing wins over the global q-quit
-        self.msg = "What went wrong? It goes straight to the dev."
+        self.msg = "What went wrong? It goes to the dev."
         self.sub = None
 
     def anim(self):

@@ -80,6 +80,9 @@ class AccountPanel:
         self.sfx = None
         self.captures_text = True       # typing a name/password — never treat q as quit
 
+    def strip(self):
+        return menu.hints(("TAB", "switch"), ("ENTER", "go"), ("ESC", "back"))
+
     def key(self, k):
         if k == "escape":
             return ("done", None)
@@ -117,7 +120,7 @@ class AccountPanel:
         t.append("  password: ", style=DIM)
         t.append(pw + "\n\n", style=INK_B if self.field == "pw" else INK)
         t.append(f"  {self.note[:38]}\n", style=DIM)
-        t.append("  [Tab] switch  [Enter] go  [Esc] back", style=DIM)
+        t.append("  TAB switch   ENTER go   ESC back", style=DIM)
         return t
 
 

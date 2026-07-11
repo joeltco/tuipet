@@ -1028,6 +1028,9 @@ class TuiPetApp(App):
         screen = {"home": "menu", "charge": "charge", "stats": "stats",
                   "reqs": "requirements", "bet": "generate", "mash": "generate",
                   "result": "generate"}.get(m.phase, "menu")
+        import textwrap
+        last_rows = [f"[dim]{s}[/]" for s in textwrap.wrap(m.last or "", 24)[:2]]
+        last_rows += [""] * (2 - len(last_rows))
         lines = [
             f"[b]{p.name[:14]}[/] [dim]· DNA · {screen}[/]", div,
             f"Bits     [{T.COIN}]{p.bits}[/]",
@@ -1037,8 +1040,7 @@ class TuiPetApp(App):
             f"Unlocks  [b]{unlocked}[/]/{len(dna_t)} form(s)",
             div,
             f"[dim]{cost}[/]",
-            f"[dim]{(m.last or '')[:24]}[/]",
-            "",
+            *last_rows,
             "[dim]own Field * charges cheap[/]",
             "[dim]ESC steps back out[/]",
         ]
@@ -1052,10 +1054,16 @@ class TuiPetApp(App):
         div = f"[dim]{'─' * 26}[/]"
         h = m.rows[m.cursor]
         msg = m.msg or ""
+        cl = m.climate(h)
+        if "  Wi " in cl:                     # split the ranges: no ° clips
+            su, wi = cl.split("  Wi ")
+            climate_rows = [f"Summer   {su[3:]}", f"Winter   {wi}"]
+        else:
+            climate_rows = [f"Climate  {cl[:17]}"]
         lines = [f"[b]{h['name'][:20]}[/]", div,
                  f"Status   {m._tag(h)}",
                  f"Fit      {m._aff_word(h)}",
-                 f"Climate  {m.climate(h)[:17]}",
+                 *climate_rows,
                  f"Bits     [{T.COIN}]{p.bits}b[/]", div,
                  msg[:26], msg[26:52], "",
                  "[dim]try the view before[/]", "[dim]you pay for it[/]"]

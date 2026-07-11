@@ -74,7 +74,7 @@ class HelpPanel:
         for text, kind in HELP[self.top:self.top + VIS]:
             style = INK_B if kind == 2 else (INK if kind == 1 else DIM)
             out.append((text or " ") + "\n", style=style)
-        more_up = "^" if self.top > 0 else " "
-        more_dn = "v" if self.top < self._max_top() else " "
+        more_up = "\u25b2" if self.top > 0 else " "
+        more_dn = "\u25bc" if self.top < self._max_top() else " "
         out.append_text(menu.footer("%s%s  ↑↓ scroll   ESC out" % (more_up, more_dn)))
         return out
