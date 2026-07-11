@@ -250,10 +250,10 @@ class TuiPetApp(App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("The training menu is a real picker now: browse the drills "
-                 "with the arrows and the LCD previews each one's actual "
-                 "stage -- the old text diamond is gone.  1-4 still jump "
-                 "straight in.")
+    WHATS_NEW = ("The training menu is back and visible: a proper list of "
+                 "all four drills with a cursor (v0.2.419's scene-preview "
+                 "picker looked like no menu at all).  Arrows pick, 1-4 "
+                 "jump, ENTER starts.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and

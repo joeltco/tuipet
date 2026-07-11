@@ -344,31 +344,36 @@ def test_data_stage_never_covers_the_mon(monkeypatch):
     assert not seen["placements"], "the mon is offstage while the shield shows"
     shield_zone = [pt for pt in seen["overlay"] if pt[0] <= grid.X0 + 15]
     assert shield_zone, "partner + shield hold the left"
-def test_training_menu_is_a_scene_picker():
-    """Canon menu polish 2026-07-13 (Joel: the menu was "setup to be like
-    dvpet"): the ●■▲♥ diamond was DVPet's mouse layout.  Now it's tuipet's
-    one picker grammar -- the LCD previews the hovered drill's stage (each
-    drill renders a DIFFERENT scene), arrows browse the ring both ways,
-    digits jump straight in, and the strip line holds exactly the HUD."""
-    import re
+
+def test_training_menu_is_a_visible_list():
+    """Menu polish take 2 (2026-07-13): DVPet's mouse diamond died first; the
+    scene-only preview that replaced it proved invisible AS a menu (Joel:
+    "whered the training menu go?!?!???").  Pin the fix: a REAL list -- the
+    title and all four drills visible at once, a cursor that moves with the
+    arrows and wraps, digits jumping straight into a drill, and the strip
+    carrying the hint line."""
+    import re as _re
     from tuipet.training import TrainingPanel, GAMES
     from tuipet.pet import Pet
     p = Pet(num=100, stage="Champion", attribute="Vaccine", obedience=500)
     p.compliance = True
     pan = TrainingPanel(p)
     assert pan.phase == "menu"
-    scenes = []
-    for gi in range(len(GAMES)):
-        pan.gi = gi
-        scenes.append(pan.text().markup)
-        plain = re.sub(r"\[[^\]]*\]", "", pan.strip())
-        assert len(plain) <= 40, f"menu strip {len(plain)} cols: {plain!r}"
-    assert len(set(scenes)) == len(GAMES), "every drill previews its own stage"
-    pan.gi = 0
-    pan.key("right")
-    assert pan.gi == 1                          # the ring browses forward...
-    pan.key("left")
-    pan.key("left")
-    assert pan.gi == len(GAMES) - 1             # ...and wraps backward
-    pan.key("3")                                # digits jump straight into a drill
+    txt = pan.text().plain
+    assert "TRAINING" in txt
+    for _, name, _a, _d in GAMES:
+        assert name in txt, f"{name} missing from the menu list"
+    assert txt.count("\u25b8") == 1            # exactly one cursor...
+    line0 = next(l for l in txt.split("\n") if "\u25b8" in l)
+    assert GAMES[0][1] in line0                # ...on the hovered drill
+    pan.key("down")
+    line1 = next(l for l in pan.text().plain.split("\n") if "\u25b8" in l)
+    assert GAMES[1][1] in line1                # the cursor moves
+    pan.key("up")
+    pan.key("up")
+    line3 = next(l for l in pan.text().plain.split("\n") if "\u25b8" in l)
+    assert GAMES[3][1] in line3                # ...and wraps
+    plain = _re.sub(r"\[[^\]]*\]", "", pan.strip())
+    assert plain and len(plain) <= 40          # the hint line holds the HUD
+    pan.key("3")                               # digits jump straight in
     assert pan.phase == "play" and pan.gkey == "data"
