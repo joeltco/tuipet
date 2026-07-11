@@ -250,12 +250,11 @@ class TuiPetApp(App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("The big audit patch: battle banners, orbs and the teleport "
-                 "wipe stay inside the play window; bag items now match "
-                 "feeding (no more 60x Gold Pill); the versus cheat chart "
-                 "holds its printed pattern; town shelves stock their local "
-                 "goods again; and old or cross-version saves can't crash "
-                 "the game.")
+    WHATS_NEW = ("The lobby is no longer a pause room: time keeps flowing "
+                 "while you chat or read DMs, and your pet's care alarm "
+                 "rings through -- with an on-screen nag on the hint strip. "
+                 "PvP battles and jogress still freeze time, so sessions "
+                 "stay safe.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and
