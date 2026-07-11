@@ -98,6 +98,22 @@ def frames_for(num, egg_type=0):
     return rec["frames"] if rec else [""]
 
 
+def record_for(num):
+    """The roster record for a num -- NEVER a KeyError.  A save can carry a
+    num this build's dex doesn't know (a data refresh, a downgrade after an
+    evolution on a newer roster, a lobby peer on a newer build): persistence
+    loads it on purpose (test_robustness pins that), so every sprite fetch
+    must survive it.  Unknown nums wear the placeholder record -- the raw
+    `load_sprites()[1][num]` index was a CRASH LOOP: the .bak holds the same
+    num, so every relaunch died on the first paint (audit 2026-07-13)."""
+    rec = load_sprites()[1].get(num)
+    if rec is None:
+        from . import placeholder
+        rec = {"frames": placeholder.FRAMES, "w": placeholder.W,
+               "h": placeholder.H, "_placeholder": True}
+    return rec
+
+
 def bob_frame(num, frame_i, role="idle", beat=5, egg_type=0):
     """The idle-bob frame fetch: the role's pose keyed at frame_i // beat
     (beat 5 = the ~2Hz WALK_BEAT bob every scene screen uses; dna's urgency
@@ -106,16 +122,17 @@ def bob_frame(num, frame_i, role="idle", beat=5, egg_type=0):
     (refactor 2026-07-05).  num -1 = the EGG, whose sheet lives in egg data,
     not the roster -- the habitat browser CRASHED on an egg (egg-stage audit
     2026-07-05); pass the pet's egg_type for the right shell art.  Falls back
-    to the first non-empty frame; None when the mon has no sheet."""
+    to the first non-empty frame.  A positive num NEVER returns None: an
+    unknown num (cross-version save or lobby peer) wears the placeholder --
+    returning None here fed place_combatant/grid.prep a None mid-battle and
+    mid-jogress (audit 2026-07-13)."""
     if num == -1:
         from . import egg as egg_mod
         fr = egg_mod.frames(egg_type)
         if not fr:
             return None
         return fr[(frame_i // beat) % 2] or fr[0]
-    rec = load_sprites()[1].get(num)
-    if not rec:
-        return None
+    rec = record_for(num)
     roles = ROLES.get(role, ROLES["idle"])
     fr = rec["frames"]
     idx = roles[(frame_i // beat) % len(roles)]
@@ -359,6 +376,10 @@ def load_requirements():
             # drifts; only favorite/disliked do)
             "attr_pref": (r.get("AttributePreference") or "None").strip() or "None",
             "attr_aversion": (r.get("AttributeAversion") or "None").strip() or "None",
+            # the TIME seeds stand in until the emergent time_pref ledger forms
+            # an opinion (Pet.favorite_time/disliked_time) -- ~97% of the dex
+            # carries real values (Morning/Noon/Night; audit 2026-07-13)
+            "time_pref": (r.get("TimePreference") or "None").strip() or "None",
             "time_aversion": (r.get("TimeAversion") or "None").strip() or "None",
             # HiddenEvolution (digicore audit 2026-07-06): 130 forms are
             # CONCEALED in canon's evolution tree until first reached
@@ -707,6 +728,10 @@ def _consumable(row, id_field):
         "seconds": int(num("Seconds")),     # DVPet setTotalLifespan: lifespan delta (sec)
         "temp": int(num("Temp")),           # DVPet temp change (clamped 0..MaxTemp=100)
         "sleep": flag("Sleep"),             # DVPet item Sleep flag: induce sleep
+        # foods.csv SleepLapse: the bedtime nudge (Caffeine Pill) -- parsed by
+        # load_foods for feed() but DROPPED here, so the bag door lost the
+        # pill's signature effect (items.csv has no column -> 0; audit 2026-07-13)
+        "sleep_lapse": int(num("SleepLapse")),
         # items.csv Disturb: using this item WAKES a sleeping pet -- canon useItem's
         # `if (item.disturb()) this.disturb()`.  Every item disturbs but the Futon
         # (Disturb=FALSE); foods have no column, so flag() defaults them to False.

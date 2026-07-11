@@ -249,6 +249,14 @@ class LobbyPanel:
         for m in list(s.inbox):
             t = m.get("t")
             if t == "invite":
+                if m.get("kind") not in ("jogress", "battle"):
+                    # the relay forwards kind verbatim: an unknown kind used
+                    # to reach _enter_session, set a dangling partner and
+                    # enter NO branch -- desync, not a session (audit
+                    # 2026-07-13); auto-decline like the blocked path
+                    self.client.respond(m.get("from_id"), m.get("kind"), False)
+                    s.inbox.remove(m)
+                    continue
                 if m.get("from_name") in s.blocked:
                     self.client.respond(m.get("from_id"), m.get("kind"), False)
                     s.inbox.remove(m)
@@ -460,6 +468,17 @@ class LobbyPanel:
 
     # ---- battle ----------------------------------------------------------
     def _battle_begin(self, opp_card):
+        # the relay ships the card VERBATIM from the peer, so its shape is
+        # peer-controlled: a card missing the stat keys KeyError'd inside
+        # Battle on the next anim tick (audit 2026-07-13).  Sanitize with
+        # defaults instead of rejecting -- an honest peer on a drifted
+        # schema still gets its bout, a hostile one gets a 0-stat foe
+        def _n(v, d=0):
+            return v if isinstance(v, (int, float)) and not isinstance(v, bool) else d
+        opp_card = dict(opp_card)
+        for k in ("vaccine", "data_power", "virus"):
+            opp_card[k] = _n(opp_card.get(k))
+        opp_card["hp"] = _n(opp_card.get("hp"), 10)
         self.opp_card = opp_card
         if self.is_host:
             self.battle = battle.Battle(self.pet, enemy=dict(opp_card))
@@ -488,24 +507,29 @@ class LobbyPanel:
         self._apply_result(res, as_host=True)
 
     def _apply_result(self, res, as_host):
+        # every key defaulted like host_first already is: the guest applies a
+        # RELAYED result, so a hostile or schema-drifted peer must not crash
+        # the client mid-battle (audit 2026-07-13)
         if as_host:
-            dealt, taken = res["host_dealt"], res["guest_dealt"]
+            dealt, taken = res.get("host_dealt", 0), res.get("guest_dealt", 0)
             my_attr, opp_attr = res.get("hattr"), res.get("gattr")
-            my_alive, opp_alive = res["host_alive"], res["guest_alive"]
+            my_alive = bool(res.get("host_alive", True))
+            opp_alive = bool(res.get("guest_alive", True))
             mine_first = bool(res.get("host_first", True))
         else:
-            dealt, taken = res["guest_dealt"], res["host_dealt"]
+            dealt, taken = res.get("guest_dealt", 0), res.get("host_dealt", 0)
             my_attr, opp_attr = res.get("gattr"), res.get("hattr")
-            my_alive, opp_alive = res["guest_alive"], res["host_alive"]
+            my_alive = bool(res.get("guest_alive", True))
+            opp_alive = bool(res.get("host_alive", True))
             mine_first = not res.get("host_first", True)
         # the round REPLAYS as the real alternating-view volley (lobby audit
         # 2026-07-04: PvP was a text log while PvE animates) -- built from the
         # hp BEFORE this round, then the choose/over screen takes over
         self._stage_volley(dealt, taken, my_attr, opp_attr, mine_first)
         if as_host:
-            self.my_hp, self.opp_hp = res["hhp"], res["ghp"]
+            self.my_hp, self.opp_hp = res.get("hhp", self.my_hp), res.get("ghp", self.opp_hp)
         else:
-            self.my_hp, self.opp_hp = res["ghp"], res["hhp"]
+            self.my_hp, self.opp_hp = res.get("ghp", self.my_hp), res.get("hhp", self.opp_hp)
         mine = data.move_name(self.pet.num, my_attr) or my_attr or "?"
         theirs = data.move_name((self.opp_card or {}).get("num", -1), opp_attr) or opp_attr or "?"
         self.bt_log = f"{mine} → {dealt} dmg\n  {theirs} ← {taken} dmg"

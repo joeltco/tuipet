@@ -270,3 +270,44 @@ def test_default_status_hint_renders_whole():
     assert len(pan.status) <= 38
     last = pan.text().plain.split("\n")[-1]
     assert last.endswith("Esc leave"), last
+
+
+def test_malformed_relay_payloads_never_crash_the_battle():
+    """The relay ships session payloads VERBATIM from the peer, so their shape
+    is peer-controlled (audit 2026-07-13): a card missing the stat keys used
+    to KeyError inside Battle, and a schema-drifted result crashed the guest
+    mid-battle.  A malformed card is SANITIZED with defaults (an honest peer
+    on a drifted schema still gets its bout, a hostile one a 0-stat foe); a
+    sparse result applies with defaults."""
+    pan = _lobby()
+    pan.partner = (2, "Ryo")
+    pan.phase, pan.bphase, pan.is_host = "battle", "card", True
+    pan._battle_begin({"num": 5, "hp": "lol"})    # hostile: stats missing/junk
+    assert pan.bphase == "choose", "a sanitized card still gets its bout"
+    assert pan.opp_card["vaccine"] == 0 and pan.opp_card["hp"] == 10
+    assert pan.battle is not None                 # Battle built without KeyError
+
+    pan = _lobby()                                # sparse result: no crash
+    pan.partner = (2, "Ryo")
+    pan.phase, pan.bphase, pan.is_host = "battle", "choose", False
+    pan.opp_card = {"name": "WarGreymon", "stage": "Mega", "num": 964, "hp": 25,
+                    "vaccine": 50, "data_power": 40, "virus": 30}
+    pan.my_hp = pan.my_max = 15
+    pan.opp_hp = pan.opp_max = 25
+    pan._apply_result({"kind": "battle", "t": "result"}, as_host=False)
+    assert pan.my_hp == 15 and pan.opp_hp == 25   # defaults hold the bars
+
+
+def test_unknown_invite_kinds_are_declined_not_entered():
+    """An invite whose kind is neither jogress nor battle used to reach
+    _enter_session, set a dangling partner and enter NO branch -- half-trusted
+    relays from that peer for the rest of the session (audit 2026-07-13)."""
+    pan = _lobby()
+    declined = []
+    pan.client.respond = lambda pid, kind, ok, **kw: declined.append((pid, kind, ok))
+    pan.state.inbox.append(
+        {"t": "invite", "kind": "trade", "from_id": 9, "from_name": "Mallory"})
+    pan.anim()                                    # the tick drains the inbox
+    assert pan.invite_prompt is None, "an unknown kind must never prompt"
+    assert pan.partner is None
+    assert declined and declined[-1][:2] == (9, "trade") and declined[-1][2] is False

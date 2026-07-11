@@ -51,3 +51,17 @@ def test_the_chibikiwimon_gate_accepts_either_twin():
     assert _conditions_met(rule, dict(prog, album={data.canonical_num(1432)}))
     assert _conditions_met(rule, dict(prog, album={944}))
     assert not _conditions_met(rule, dict(prog, album={1}))
+
+
+def test_erase_all_forgets_the_album_mirror():
+    """'Erase all data' wipes the files but the in-process _ALBUM_SEEN mirror
+    survived it: a species raised BEFORE the erase silently never re-recorded
+    in the fresh album (album_add early-returns on the cached num; audit
+    2026-07-13)."""
+    persistence._ALBUM_SEEN.clear()
+    persistence.album_add(29)
+    assert 29 in persistence._ALBUM_SEEN
+    persistence.erase_all()
+    assert 29 not in persistence._ALBUM_SEEN, "the mirror dies with the files"
+    persistence.album_add(29)                     # a fresh run re-records it
+    assert persistence.album_seen(29)

@@ -97,6 +97,23 @@ def test_load_unknown_num():
     assert pet is not None and pet.num == 999999
 
 
+def test_unknown_num_survives_the_first_paint():
+    """Loading an unknown num is only half the contract: the FIRST LCD paint
+    raw-indexed the sprite dict and crashed -- a loop, since the .bak holds
+    the same num (audit 2026-07-13).  Every sprite fetch wears the
+    placeholder instead."""
+    from tuipet import data
+    rec = data.record_for(999999)
+    assert rec["frames"] and rec.get("_placeholder"), "unknown nums wear the placeholder"
+    fr = data.bob_frame(999999, 0)
+    assert fr is not None, "bob_frame must never hand a scene a None for a positive num"
+    from tuipet.arena import Screen
+    ghost = Pet(num=999999, name="Ghost", stage="Rookie")
+    scr = Screen.__new__(Screen)
+    rows = scr._pose_rows(ghost, "idle", 0)       # raw-indexed before the fix
+    assert rows is not None
+
+
 def test_future_timestamp_no_time_travel():
     """A save dated in the future must not produce negative offline time."""
     p = Pet(num=-1, name="Fwd", stage="Rookie")

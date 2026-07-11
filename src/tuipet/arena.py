@@ -344,8 +344,8 @@ class Screen(Static):
             rec = egg_mod.record(pet.egg_type)
             roles = egg_mod.ROLES
         else:
-            _, by_num = data.load_sprites()
-            rec = by_num[pet.num]
+            rec = data.record_for(pet.num)   # never KeyError: a cross-version
+            #                                  save wears the placeholder
             roles = data.ROLES
         _fr = rec["frames"]
         first = next((f for f in rec["frames"] if f), rec["frames"][0])
@@ -594,8 +594,8 @@ class Screen(Static):
             rec = egg_mod.record(pet.egg_type)
             roles = egg_mod.ROLES
         else:
-            _, by_num = data.load_sprites()
-            rec = by_num[pet.num]
+            rec = data.record_for(pet.num)   # never KeyError: a cross-version
+            #                                  save wears the placeholder
             roles = data.ROLES
         frames = roles.get(role, [0])
         first = next((f for f in rec["frames"] if f), rec["frames"][0])
@@ -606,8 +606,8 @@ class Screen(Static):
         if pet.num == -1:
             rec = egg_mod.record(pet.egg_type)
         else:
-            _, by_num = data.load_sprites()
-            rec = by_num[pet.num]
+            rec = data.record_for(pet.num)   # never KeyError: a cross-version
+            #                                  save wears the placeholder
         fr = rec["frames"]
         first = next((f for f in fr if f), fr[0])
         return (fr[i] if i < len(fr) and fr[i] else None) or first

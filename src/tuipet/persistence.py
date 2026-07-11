@@ -547,6 +547,10 @@ def erase_all():
             removed.append(fn)
         except OSError:
             pass
+    # the album's in-process mirror must die with the files, or every species
+    # raised BEFORE the erase silently never re-records in the fresh album
+    # (album_add early-returns on the cached num; audit 2026-07-13)
+    _ALBUM_SEEN.clear()
     return removed
 
 
