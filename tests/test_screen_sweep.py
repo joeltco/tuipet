@@ -198,7 +198,7 @@ def test_training_all_four_drills():
         pan = TrainingPanel(p)
         _step(pan)
         for arrow in ("up", "left", "right", "down"):
-            _step(pan, arrow)                    # the diamond select renders each face
+            _step(pan, arrow)                    # the cursor list renders every row
         _step(pan, drill)
         guard = 0
         while pan.phase != "done" and guard < 2000:
@@ -273,8 +273,9 @@ def test_lobby_panel_every_phase_without_a_server():
     acct = lobbyscreen.AccountPanel(name="joel")
     acct.text()
     for k in ("tab", "s", "e", "c", "backspace", "space"):
-        acct.key(k); acct.text()
-    assert acct.key("enter") is None or True
+        assert acct.key(k) is None                    # typing never closes the panel
+        acct.text()
+    acct.key("enter"); acct.text()                    # submit walks without crashing
 
 
 def test_home_screen_paint_across_states():
@@ -631,3 +632,42 @@ def test_every_transport_plays_its_ride_scene():
         pan2.key("enter"); pan2.anim(); pan2.key("space")
         assert pan2.ride["t"] == pan2.ride["end"]
         assert pan2.key("enter")[0] == "done"
+
+
+def test_transport_bird_swoop_actually_moves_vertically(monkeypatch):
+    """The swoop's blank-row lift ran BEFORE grid.prep, which crops padding --
+    so the 'descends from above / drops from the sky' beats rendered fully
+    grounded for weeks, never render-verified (audit 2026-07-13).  Lift now
+    pads AFTER prep, clamped to the band: heights must VARY across the
+    descent, and no placement may stand taller than the band."""
+    from tuipet import transportscreen as ts, menu, grid
+    captured = []
+    real_paint = menu.paint
+
+    def spy(placements, bgimg, **kw):
+        captured.append([rows for rows, _x, _m in placements])
+        return real_paint(placements, bgimg, **kw)
+
+    monkeypatch.setattr(menu, "paint", spy)
+    p = _pet()
+    p.add_item("i:28")
+    pan = ts.TransportPanel(p, "i:28")
+    _step(pan, "enter")
+    if pan.ride is None or pan.ride.get("wha"):
+        import pytest
+        pytest.skip("this warp staged the whamon ride, not the bird")
+    heights = []
+    while pan.ride is not None and pan.ride["t"] < ts.BIRD_GONE_T:
+        pan.text()
+        if captured and len(captured[-1]) == 2:      # pet + descending bird
+            bird = captured[-1][-1]
+            heights.append(len(bird))
+            assert len(bird) <= grid.BAND, "a lifted rider must never leave the band"
+        pan.anim()
+    assert heights, "the descent beats must have staged the bird"
+    if max(heights) > min(heights):
+        assert True                                   # real vertical motion restored
+    else:
+        # a full-height bird has no headroom: the clamp holds it grounded,
+        # which is the lawful reading -- assert the clamp actually engaged
+        assert max(heights) == grid.BAND

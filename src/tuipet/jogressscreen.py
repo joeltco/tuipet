@@ -88,8 +88,9 @@ class JogressPanel:
         pet_x = int(pet_start + (pet_target - pet_start) * t)
         par_x = int(par_start + (par_target - par_start) * t)
         overlay = []
-        if step >= total - 5:                                  # a flash as the DNA merges (grid-bounded)
-            overlay = [(x, y) for y in range(ph) for x in range(grid.X0, grid.X1)
+        if step >= total - 5:                                  # a flash as the DNA merges (window-bounded)
+            overlay = [(x, y) for y in range(grid.TOP, grid.FLOOR)
+                       for x in range(grid.X0, grid.X1)
                        if (x + y + step) % 2 == 0]
         on, bgimg = self._palette()
         return render_scene([(pf, pet_x, True), (rf, par_x, False)],   # face inward as they converge

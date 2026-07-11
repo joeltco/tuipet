@@ -61,7 +61,9 @@ def test_town_lobby_is_a_scene_and_arrival_shows_the_town():
     assert "Food" in pan.strip() and "Leave" in pan.strip()
     pan.key("enter")                           # into the food shop: menu grammar returns
     assert len(pan.text().plain.split("\n")) <= 12
-    assert pan.strip() == ""                   # pages carry their own in-LCD chrome
+    # the pages carry in-LCD menus AND pop the hint line (convention v0.2.399;
+    # the silent box was the audit 2026-07-13 gap -- the home shop hinted here)
+    assert "pick" in pan.strip() and "buy" in pan.strip()
     # adventure: stepping INSIDE the town's span swaps to the town backdrop
     ap = AdventurePanel(_pet())
     ap._trans = None                           # settled past the teleport
@@ -417,7 +419,7 @@ def test_road_praise_plays_the_cheer_beat_and_resumes_travel():
     for _ in range(6):
         pan.anim()
     assert pan.text().markup != up                # the bounce actually bounces
-    assert pan.anim() or True
+    assert pan._care is not None                  # the beat is still playing
     while pan._care is not None:
         pan.anim()
         assert pan._care is None or pan._care["t"] <= CARE_T

@@ -538,7 +538,10 @@ class AdventurePanel(menu.SubHost):
                     bm = item[min(fi, len(item) - 1)]
                     if bm:
                         bw = max(len(r) for r in bm)
-                        overlay = strikefx.blit(bm, max(0, x - bw), 0 if t < 4 else 4)
+                        # window-law: the item descends from the BAND top, not
+                        # the bezel sky (y0/4 pre-dated the law; audit 2026-07-13)
+                        overlay = strikefx.blit(bm, max(grid.X0, x - bw),
+                                                grid.TOP if t < 4 else grid.TOP + 4)
                 return rows, x, True, overlay, None
             up = (t // 6) % 2 == 0
             if c["kind"] == "cheer":                  # 5/7 (Bad_Praise 6/4)
@@ -553,7 +556,11 @@ class AdventurePanel(menu.SubHost):
             em = data.load_effects().get(emote) if emote else None
             if em:
                 ef = em[(t // 6) % len(em)]
-                overlay = strikefx.blit(ef, x + grid.width(rows) + 1, 1)
+                # window-law: emote riders pop at HEAD HEIGHT inside the band
+                # (the v0.2.413 arena precedent), clamped off the right wall
+                ew = max((len(r) for r in ef), default=0)
+                ex = min(x + grid.width(rows) + 1, grid.X1 - ew)
+                overlay = strikefx.blit(ef, max(grid.X0, ex), grid.TOP)
             return rows, x, True, overlay, None
         if self._retreat is not None:                 # Retreat_Town: dejected (pose
             rows = self._rows(9)                      # 9) under the stepping black

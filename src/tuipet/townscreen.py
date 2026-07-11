@@ -224,12 +224,23 @@ class TownPanel(menu.SubHost):
         if self.sub is not None:
             return ""
         if self.tourney is not None:
+            # the bout card: round name + a marquee'd FIELD for the foe -- the
+            # old free-length line always overflowed 40 cols, so the app's
+            # safety-net marquee slid the key hints out of view (hint law:
+            # live hints never move; ESC-forfeit rides the universal ESC)
+            from .render import marquee
             t = self.tourney
             opp = t.current_opponent()
-            return (f"{t.round_name} {t.round + 1}/3 vs [b]{opp['name'][:14]}[/]"
-                    f" — SPACE fight  ESC forfeit")
+            name = marquee(opp["name"], 10, self.frame_i // 2)
+            return (f"{t.round_name} vs [b]{name}[/] [dim]·[/] "
+                    + menu.hints(("SPACE", "fight")))
         if self.phase != "menu":
-            return ""                        # the deeper pages carry in-LCD menus
+            # the deeper pages carry in-LCD menus, but the message box still
+            # pops the hint line (convention v0.2.399 -- the HOME shop's
+            # identical icon view hints; the town shelves went silent)
+            verb = {"food": "buy", "items": "buy", "eggs": "buy",
+                    "sell": "sell", "cups": "enter"}.get(self.phase, "go")
+            return menu.hints(("↑↓", "pick"), ("ENTER", verb))
         parts = []
         for i, (key, label) in enumerate(_MENU):
             shut = (key in ("food", "items")

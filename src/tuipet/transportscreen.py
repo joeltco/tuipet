@@ -208,8 +208,17 @@ class TransportPanel:
         bf = self._frames(CARRIER[self.kind])
 
         def lifted(rows, pad):
+            # lift = blank rows BELOW a prepped sprite (raises it off the
+            # floor), clamped to the band headroom (window-law: nothing exits
+            # upward; a full-height rider gets no lift -- the pose carries it).
+            # NB: must run AFTER grid.prep -- prep crops blank padding, which
+            # silently deleted all vertical motion here for weeks (audit
+            # 2026-07-13, never render-verified before).
+            pad = max(0, min(pad, grid.BAND - len(rows)))
+            if not (rows and pad):
+                return rows
             w = max(len(r) for r in rows)
-            return rows + ["0" * w] * pad if pad > 0 else rows
+            return list(rows) + ["0" * w] * pad
         if t < BIRD_LIFT_T:                            # waiting on the right
             pose = 1 if t < BIRD_STING_T else (5 if t < BIRD_TICKET_T else 0)
             pet_rows = grid.prep((pf[pose] if pose < len(pf) else None) or pf[0])
@@ -220,12 +229,12 @@ class TransportPanel:
             if t >= BIRD_TICKET_T:                     # the bird descends alongside
                 wing = bf[(t // 3) % 2] or bf[0]
                 prog = min(1.0, (t - BIRD_TICKET_T) / (BIRD_DOWN_T - BIRD_TICKET_T))
-                rows = grid.prep(lifted(wing, round(14 * (1 - prog))))
+                rows = lifted(grid.prep(wing), round(14 * (1 - prog)))
                 place.append((rows, pet_x - grid.width(grid.prep(wing)), False))
         elif t < BIRD_GONE_T:                          # scooped: flies off up-left alone
             wing = bf[(t // 3) % 2] or bf[0]
             prog = (t - BIRD_LIFT_T) / (BIRD_GONE_T - 1 - BIRD_LIFT_T)
-            rows = grid.prep(lifted(wing, round(14 * prog)))
+            rows = lifted(grid.prep(wing), round(14 * prog))
             w = grid.width(rows)
             x0 = grid.X1 - 16 - w
             place.append((rows, round(x0 + (-w - x0) * prog), False))
@@ -233,7 +242,7 @@ class TransportPanel:
             pass
         elif t < BIRD_LAND_T:                          # dropped off from the sky
             prog = (t - BIRD_FALL_T) / (BIRD_LAND_T - 1 - BIRD_FALL_T)
-            rows = grid.prep(lifted(pf[9] or pf[0], round(14 * (1 - prog))))
+            rows = lifted(grid.prep(pf[9] or pf[0]), round(14 * (1 - prog)))
             place.append((rows, grid.X0 + 8, False))
         else:                                          # the 9/10 touchdown bounce, then up
             pose = (10, 9)[(t // 2) % 2] if t < self.ride["end"] else 0
@@ -287,7 +296,9 @@ class TransportPanel:
 
     def strip(self):
         if self.ride is None:
-            return ""
+            # the hint convention (v0.2.399): the picker pops its keys in the
+            # message box too, mirroring the in-LCD footer
+            return menu.hints(("↑↓", "pick"), ("ENTER", "warp"))
         if self.ride["t"] >= self.ride["end"]:
             return f"{self.ride['msg']}  [dim]· ENTER done[/]"
         return "[dim]SPACE skip[/]"

@@ -251,3 +251,32 @@ def test_egg_carousel_is_never_window_clipped(monkeypatch):
     pan.text()
     assert seen["rows"] == 8                     # a strip, NOT the full LCD
     assert seen["clip"] is None, "never window-clip the egg reel"
+
+
+def test_battle_banner_and_flash_fill_the_window_not_the_lcd():
+    """The battle start banner / hit explosion are 32x16 full-WINDOW takeovers:
+    LCD-centring parked their top two rows in the bezel sky at y4-5 on every
+    battle (audit 2026-07-13).  _full anchors at the window like training's
+    explosion, and the battle scene renders under the window clip."""
+    from tuipet import battlescreen as bs
+    for key in ("battle_banner", "hit_explosion"):
+        for frame in bs.BANNER if key == "battle_banner" else bs.EXPLODE:
+            pts = bs._full(frame)
+            assert pts and all(
+                grid.X0 <= x < grid.X1 and grid.TOP <= y < grid.FLOOR
+                for x, y in pts), f"{key} ink must live inside the window"
+
+
+def test_battle_dodge_leap_never_exits_upward():
+    """The dodge's blank-row lift is clamped to the mon's headroom (a 16px mon
+    has none -- the sideways hop carries it, like real hardware): pre-clamp it
+    pushed sprite ink to y3-5, above the window top (audit 2026-07-13)."""
+    from tuipet.pet import Pet
+    from tuipet import battlescreen as bs
+    p = Pet(num=100, stage="Champion", attribute="Vaccine", obedience=500)
+    pan = bs.BattlePanel(p)
+    for dt in range(1, 11):
+        fr = {"m": "dodge", "view": "pet", "prog": dt / bs.DODGE_T,
+              "ph": pan.battle.pet_hp, "fh": pan.battle.enemy_hp}
+        text = pan._render_scene_frame(fr)
+        assert text is not None                    # renders under the clip

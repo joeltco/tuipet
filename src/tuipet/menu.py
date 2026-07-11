@@ -92,14 +92,16 @@ def scene_ink(bgimg):
     return SIL_DAY if bgimg else LCD_ON
 
 
-def paint(placements, bgimg, rows=12, cols=40, overlay=None):
+def paint(placements, bgimg, rows=12, cols=40, overlay=None, clip=None):
     """render_scene under the paint() rule -- the whole-LCD scene call the
     scene screens share (screens that reuse one ink across several render
-    calls take scene_ink directly)."""
+    calls take scene_ink directly).  `clip` forwards the window-law rect --
+    pass grid.WINDOW ONLY from callers whose canvas is a verified full-LCD
+    12-row scene; screens that stage their own cinematics leave it None."""
     from .render import render_scene
     from .theme import LCD_BG
     return render_scene(placements, cols, rows, scene_ink(bgimg), LCD_BG,
-                        overlay=overlay, bgimg=bgimg)
+                        overlay=overlay, bgimg=bgimg, clip=clip)
 
 
 IC_W, IC_ROWS = 10, 4   # the selected-item icon cell every icon view shares

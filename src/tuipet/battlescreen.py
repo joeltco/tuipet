@@ -17,6 +17,7 @@ import os
 from . import data
 from .battle import Battle
 from .theme import LCD_ON, LCD_BG, SIL_DAY, SIL_NIGHT  # noqa: F401  (palette names bound for theme.apply propagation)
+from . import grid
 from . import menu
 from . import strikefx
 
@@ -127,8 +128,12 @@ def _squash_rows(rows, keep):
 
 
 def _full(frame):
-    ox = max(0, (COLS - (len(frame[0]) if frame and frame[0] else 0)) // 2)   # centre on the frame's own width
-    oy = max(0, (PXH - len(frame)) // 2)
+    # window-law: the 32x16 banner/flash fills the PLAY WINDOW exactly (like
+    # training's explosion), not the whole LCD -- LCD-centring put its top two
+    # rows in the bezel sky at y4-5 (audit 2026-07-13)
+    w = len(frame[0]) if frame and frame[0] else 0
+    ox = grid.X0 + max(0, (grid.W - w) // 2)
+    oy = grid.TOP + max(0, (grid.BAND - len(frame)) // 2)
     return [(ox + x, oy + y) for y, row in enumerate(frame)
             for x, c in enumerate(row) if c == "1"]
 
@@ -361,9 +366,12 @@ class BattlePanel:
     def _scene(self, placements, overlay):
         # the habitat background is part of the scene -- the crisp sprites + orbs read fine
         # over it now (the clunk was the sprites/explosion, since fixed), so keep it visible.
+        # clip: battle is a verified full-LCD 12-row canvas, so the window law
+        # applies -- without it the orb visibly parked in the 4px margins on
+        # every fire beat (audit 2026-07-13)
         return menu.paint(placements,
                           self.pet.background(file="tourneyBack" if self.arena else None),
-                          rows=ROWS, cols=COLS, overlay=overlay)
+                          rows=ROWS, cols=COLS, overlay=overlay, clip=grid.WINDOW)
 
     def _place_one(self, view, rows, xshift=0):
         """Place the ONE monster currently on screen. Player stands RIGHT (faces left), enemy
@@ -449,6 +457,12 @@ class BattlePanel:
                 out, lift = ((2, 2), (3, 3), (3, 3), (3, 3), (3, 3), (3, 3),
                              (3, 3), (3, 3), (2, 1), (1, 0))[dt - 1]
                 xshift = back * out
+                # window-law: clamp the leap to the INK's headroom -- frames
+                # carry transparent top padding, so the real art usually has
+                # sky to hop into; pre-clamp the padded frame pushed ink to
+                # y3-5, above the window top (audit 2026-07-13)
+                top_pad = next((i for i, r in enumerate(rows) if "1" in r), 0)
+                lift = max(0, min(lift, top_pad + max(0, grid.BAND - len(rows))))
                 if lift:                                     # blank rows below raise it off the floor
                     rows = rows + ["0" * max(len(r) for r in rows)] * lift
             place, mouth = self._place_one(view, rows, xshift)
