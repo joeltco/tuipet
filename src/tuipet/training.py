@@ -100,6 +100,17 @@ def _fit_cell(sprite):
 from .render import blit as _blit    # one blit for app/training/strikefx (refactor 2026-07-05)
 
 
+def _pop(overlay, ink):
+    """Layer `ink` on TOP of the staged overlay: punch a 1px clearance halo
+    out of everything already under it, then add the ink.  On a 1-bit LCD
+    adjacency IS fusion -- the halo is how a foreground actor (a held shield,
+    a flying pellet) reads as its own object over a busy stage.  Occlusion,
+    not art: no sprite's pixels change, the back actor is just behind."""
+    guard = {(x + dx, y + dy) for x, y in ink
+             for dx in (-1, 0, 1) for dy in (-1, 0, 1)}
+    return [pt for pt in overlay if pt not in guard] + list(ink)
+
+
 def _crop(pf):
     """Crop a creature frame to its real body (the sheets are mostly padding) so
     the drills can place it on exact columns.  Shared by vaccine/data/hp."""
@@ -607,26 +618,34 @@ class TrainingPanel:
                 # (centred, hugged by the shields) instead of floating in padding
                 pf = _crop(self._frame(rec, pose))
                 phh = len(pf)
-                px = GRID_X0 + GRID_W - max(len(r) for r in pf)    # the mon flush on the window's right
-                #                                                    edge: even a 16px mon fits (gate ends
-                #                                                    x19, the widest mon starts x20)
-                # Data layout INSIDE the 32x16 window (LAW 2026-07-11; the
-                # 07-06 measured stage still leaked into the bezel on both
-                # sides): turret x4..13 · air x14 · gate x15..19 · the mon
-                # flush right, x20..35 at its widest.
+                px = GRID_X0 + GRID_W - max(len(r) for r in pf)    # the mon flush on the window's right edge
+                # Data layout INSIDE the 32x16 window (de-cram 2026-07-11,
+                # Joel: "all seems too crammed" -- the mid-stage gate at x15
+                # packed turret+gate+mon edge-to-edge, 31 of 32 columns solid,
+                # one fused blob on the 1-bit LCD): turret x4..13 · OPEN AIR ·
+                # the shield WORN in front of the mon it guards, riding its
+                # leading edge, layered via _pop so it reads as a held object.
                 # Three staged acts, the MON on stage for all of them (canon
                 # drawDataPre bobs the pet through the aim; HP-drill consistency,
                 # Joel 2026-07-06 -- the old staging hid the mon until the LOCK):
                 #   AIM    -- barrel feinting, the mon bobbing behind its gate
                 #   LOCK   -- the barrel commits and the mon BRACES; the toggle
                 #             window runs ("block it!")
-                #   SHOOT  -- the turret recoils, the pellet bursts out of the barrel and
-                #             flies the lane into the gate; then hitAnim's strobe.
+                #   SHOOT  -- the turret recoils, the pellet bursts out of the
+                #             muzzle and flies the open lane into the shield;
+                #             then hitAnim's strobe.
                 floor = BASE_Y                                     # the shared grid floor (2px above bottom)
                 cannon_x = GRID_X0                                 # turret on the window's left edge; the
                 #                                                    recoil beat kicks 1px past it -- a
                 #                                                    momentary LEFT-edge exit, the lawful kind
-                sx = 15                                            # the gate, mid-stage
+                #  the shield anchors to the mon's WIDEST drill pose (bob 0/1
+                #  + the braced IDLE), not this frame's crop -- half the
+                #  roster's bob poses breathe 1px wider, and a held shield
+                #  must not twitch with the bob
+                front = GRID_X0 + GRID_W - max(
+                    max((len(r) for r in _crop(self._frame(rec, q))), default=0)
+                    for q in (0, 1, IDLE))
+                sx = front - sw + 2                                # the shield rides the mon's front edge
                 py = floor - phh
                 cy = floor - ch                                    # turret grounded
                 recoil = -1 if (self.fired and self.fly_t >= DATA_FLY - 1) else 0
@@ -640,20 +659,26 @@ class TrainingPanel:
                 #  noise -- the old 1-in-4 dither read as scattered dots.)
                 on_y = hi_y if self.shield_up else lo_y
                 if shield:
-                    overlay.extend(_blit(shield, sx, on_y))
+                    overlay = _pop(overlay, _blit(shield, sx, on_y))
                 if self.fired and self.fly_t > 0:                  # the shoot animation (DVPet attackGreen):
-                    # the PELLET (the Data orb, /2 through the standard downsample pipeline --
-                    # the full 8px orb is wider than the old gap) bursts out of the barrel
-                    # and flies the committed lane into the gate: 10px over DATA_FLY ticks.
+                    # the PELLET (the Data orb, /2 through the standard
+                    # downsample pipeline) bursts out of the MUZZLE at the
+                    # mouth's own height and flies a real trajectory across
+                    # the open lane -- climbing to the high gate or dipping to
+                    # the low one -- to press the shield.  (It used to
+                    # materialize mid-air at the gate's row, 5px from the
+                    # barrel that supposedly fired it.)
                     from .render import downsample
                     orb = downsample(data.load_orbs()["generic"]["Data"][0], 2)
                     ow, oh = max(len(r) for r in orb), len(orb)
                     lane_top = hi_y if self.tgt_up else lo_y       # the lane follows the ATTACK (tgt_up)
-                    lane_y = lane_top + sh_h // 2 - oh // 2         # pellet centred on that gate's row
-                    mx = cannon_x + 4                              # in the barrel's mouth...
-                    end_x = sx - ow + 2                            # ...to pressing the gate by 2px
+                    lane_y = lane_top + sh_h // 2 - oh // 2         # ...ending centred on that gate's row
+                    mx = cannon_x + 7                              # bursting out of the muzzle (tip x13)...
+                    my = cy + 2 - oh // 2                          # ...at the mouth's height...
+                    end_x = sx - ow + 1                            # ...to pressing the shield
                     prog = (DATA_FLY - self.fly_t) / (DATA_FLY - 1)
-                    overlay += _blit(orb, int(mx + (end_x - mx) * prog), lane_y)
+                    overlay = _pop(overlay, _blit(orb, int(mx + (end_x - mx) * prog),
+                                                  int(my + (lane_y - my) * prog)))
         else:                                               # hp: pick the shape the dummy wants
             # The marked training dummy (battle bag) LEFT, full height, grounded,
             # and -- canon drawHPTraining (restaged 2026-07-04, the vaccine

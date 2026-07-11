@@ -306,3 +306,55 @@ def test_hit_explosion_is_the_sourced_32x16_full_window_flash(monkeypatch):
                    if fr.get("m") == "hit")
     pan2.text()
     assert not seen["placements"] and full_window()
+def test_data_stage_breathes(monkeypatch):
+    """De-cram 2026-07-11 (Joel: 'all seems too crammed'): the old mid-stage
+    gate at x15 packed turret+gate+mon edge-to-edge -- 31 of 32 columns solid,
+    one fused blob -- and the pellet materialized mid-air at the gate's row.
+    Pin the new stage: OPEN AIR between the turret and the shield, the shield
+    worn on the mon's front edge and layered via _pop (its 1px halo keeps it
+    a distinct object), and the shot leaving the MUZZLE's height before
+    climbing/dipping into the committed lane."""
+    from tuipet import training
+    from tuipet.training import TrainingPanel, GAMES, DATA_FLY, IDLE
+    from tuipet import data as _d
+    from tuipet.pet import Pet
+    seen = {}
+    real = training.render_scene
+
+    def spy(placements, *a, **kw):
+        seen["overlay"] = list(kw.get("overlay") or [])
+        return real(placements, *a, **kw)
+
+    monkeypatch.setattr(training, "render_scene", spy)
+    p = Pet(num=100, stage="Champion", attribute="Vaccine", obedience=500)
+    p.compliance = True
+    pan = TrainingPanel(p)
+    pan.gi = next(i for i, g in enumerate(GAMES) if g[0] == "data")
+    pan._start_game()
+    pan.locked = pan.tgt_up = pan.shield_up = True
+    rec = _d.load_sprites()[1][100]
+    pw = max(max(len(r) for r in training._crop(pan._frame(rec, q)))
+             for q in (0, 1, IDLE))
+    front = training.GRID_X0 + training.GRID_W - pw
+    sx = front - 5 + 2                          # the worn shield's left edge
+    pan.text()
+    ink = set(seen["overlay"])
+    lane = set(range(14, sx))                   # barrel tip x13 | shield
+    assert lane and not [pt for pt in ink if pt[0] in lane], \
+        "the middle of the stage must be OPEN AIR"
+    shield = {pt for pt in ink if sx <= pt[0] <= sx + 4 and 7 <= pt[1] <= 12}
+    halo = {(x + dx, y + dy) for x, y in shield
+            for dx in (-1, 0, 1) for dy in (-1, 0, 1)} - shield
+    assert shield and not halo & ink, \
+        "the shield's 1px halo must keep it a distinct object"
+    pan.fired = True
+    pan.fly_t = DATA_FLY                        # spawn beat: prog 0
+    pan.text()
+    spawn = {pt for pt in set(seen["overlay"]) if pt[0] in lane}
+    assert spawn and all(13 <= y <= 16 for _, y in spawn), \
+        "the shot must be born at the muzzle's height"
+    pan.fly_t = 1                               # arrival beat: prog 1
+    pan.text()
+    arrive = {pt for pt in set(seen["overlay"]) if pt[0] in lane}
+    assert arrive and all(8 <= y <= 11 for _, y in arrive), \
+        "the shot must arrive centred on the HIGH gate"
