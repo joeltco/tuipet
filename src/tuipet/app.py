@@ -250,10 +250,10 @@ class TuiPetApp(App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("The Data drill got room to breathe: the shield is now held "
-                 "right in front of your mon, the middle of the stage is open "
-                 "air, and the cannon's shot visibly leaves the muzzle and "
-                 "arcs into the shield.")
+    WHATS_NEW = ("The Data drill is now the REAL DM20 versus training: YOU "
+                 "fire high or low past the sparring partner's shield, 3 of 5 "
+                 "rounds to pass -- the fan-made turret is gone, and the "
+                 "manual's secret pattern chart works here too.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and
