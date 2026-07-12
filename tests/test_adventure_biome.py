@@ -103,12 +103,12 @@ def test_weather_rolls_on_the_road():
     the pet's weather from the current zone habitat (Joel 2026-07-12)."""
     p, adv = _adv()
     assert hasattr(adv, "_wx_hab")               # the roll has run at least once
-    # forcing a non-sky zone clears any precip
-    adv._current_hab_id = lambda: 8              # Underwater (Coral Deep)
+    # a habitat with NO weather frame (Hard Disk, id 0, weather_chance 0) stays clear
+    adv._current_hab_id = lambda: 0
     p.weather = "HeavyRain"
-    adv._wx_hab = "force"                        # trigger a re-roll on the biome change
+    adv._wx_hab = "force"
     adv._roll_weather()
-    assert p.weather == "Clear", "weather fell underwater"
+    assert p.weather == "Clear", "a weatherless habitat brewed weather"
 
 
 def test_open_sky_zone_can_get_weather():
@@ -123,3 +123,33 @@ def test_open_sky_zone_can_get_weather():
         adv._roll_weather()
         seen.add(p.weather)
     assert seen - {"Clear"}, "an open-sky zone never produced any weather"
+
+
+
+def test_weather_enabled_iff_habitat_has_a_weather_frame():
+    """Joel's rule (2026-07-12): a habitat has weather IFF it has a weather
+    frame.  weather_chance (>0) must agree with the artwork (a 5th bg frame)
+    for every habitat -- no drift, no hand-maintained exclusion list."""
+    from tuipet import data
+    habs = data.load_habitats()
+    bgs = data.load_backgrounds()
+    for hid, h in habs.items():
+        has_frame = len(bgs.get(h.get("bg", "")) or []) > 4
+        has_weather = h["weather_chance"] > 0
+        assert has_frame == has_weather, (
+            f"{h['name']}: weather frame={has_frame} but weather={has_weather}")
+
+
+def test_underwater_gets_weather_now():
+    """Underwater has a (distinct) weather frame, so per the rule it brews
+    weather like anywhere else -- it is NOT special-cased off."""
+    import random
+    from tuipet import data, weather as wx
+    uw = data.load_habitats()[8]
+    random.seed(5)
+    seen = set()
+    w = "Clear"
+    for _ in range(400):
+        w = wx.next_weather(w, "Summer", 80, uw)
+        seen.add(w)
+    assert seen - {"Clear"}, "underwater never produced weather despite its frame"
