@@ -250,10 +250,10 @@ class TuiPetApp(App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("Visual polish sweep: every screen eyeballed in a full render "
-                 "audit -- no more clipped status text, real arrow scroll "
-                 "markers, and the login and DigiCore now speak the hint "
-                 "language.")
+    WHATS_NEW = ("Attack orbs fixed: mons were firing their attack POSE "
+                 "instead of their projectile. 75 classic species now shoot "
+                 "their real device attack sprite -- flames, bolts, bombs -- "
+                 "in battle, training, and adventure.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and

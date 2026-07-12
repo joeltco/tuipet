@@ -74,7 +74,8 @@ def test_the_column_order_is_vaccine_data_virus():
 def test_device_species_fire_their_own_attack_for_every_attribute():
     """Device-accurate attacks (Joel 2026-07-14): a real-hardware species fires
     ITS attack no matter the attribute or power -- like the original V-Pet.
-    Agumon (29) is covered (MultiVPet spr_agumon_attack_vpet)."""
+    Agumon (29) is covered (DU weapon rip; the 2026-07 orb fix -- the old
+    MultiVPet spr_*_attack_vpet frames were attack POSES, not projectiles)."""
     dev = data.load_orbs()["device"]
     ag = dev["agumon"][0]
     assert data.attack_orb(29, "Vaccine", 0) == ag
@@ -82,21 +83,16 @@ def test_device_species_fire_their_own_attack_for_every_attribute():
     assert data.attack_orb(29, "Virus", 300) == ag
 
 
-def test_animated_device_attacks_cycle_on_frame_i_with_stable_size():
+def test_device_attacks_are_static_and_frame_i_safe():
+    """The device projectiles are single static frames (the hardware's attack
+    sprite doesn't animate in flight); frame_i must be safe to pass anyway.
+    The old '27 animated' pin covered MultiVPet POSE anims -- retired with
+    the orb fix."""
     dev = data.load_orbs()["device"]
-    animated = {k: v for k, v in dev.items() if len(v) > 1}
-    assert len(animated) == 27, len(animated)
-    for k, frames in animated.items():
-        sizes = {(len(f[0]), len(f)) for f in frames}
-        assert len(sizes) == 1, f"{k}: frames must share the union bbox {sizes}"
-    b = dev["botamon"]
-    import csv as _csv
-    num = next(int(r["DigimonNum"]) for r in _csv.DictReader(
-        open(os.path.join(os.path.dirname(data.__file__), "data", "digimon.csv")))
-        if r["Name"].strip() == "Botamon")
-    assert data.attack_orb(num, "Vaccine", 0, frame_i=0) == b[0]
-    assert data.attack_orb(num, "Vaccine", 0, frame_i=1) == b[1]
-    assert data.attack_orb(num, "Vaccine", 0, frame_i=2) == b[0]
+    assert all(len(v) == 1 for v in dev.values())
+    ag = dev["agumon"][0]
+    assert data.attack_orb(29, "Vaccine", 0, frame_i=0) == ag
+    assert data.attack_orb(29, "Vaccine", 0, frame_i=7) == ag
 
 
 def test_the_device_bank_is_complete_and_in_band():
@@ -105,12 +101,12 @@ def test_the_device_bank_is_complete_and_in_band():
     the bank against an extractor clobber (the effects.json.gz lesson)."""
     import csv as _csv
     dev = data.load_orbs()["device"]
-    assert len(dev) == 81, len(dev)
+    assert len(dev) == 75, len(dev)      # 6 species have no DU weapon: DVPet fallback
     ddir = os.path.join(os.path.dirname(data.__file__), "data")
     roster = {"".join(c for c in r["Name"].lower() if c.isalnum())
               for r in _csv.DictReader(open(os.path.join(ddir, "digimon.csv")))}
     rows = list(_csv.DictReader(open(os.path.join(ddir, "deviceAttacks.csv"))))
-    assert len(rows) == 81
+    assert len(rows) == 75
     for r in rows:
         nm = "".join(c for c in r["Name"].lower() if c.isalnum())
         assert nm in roster, f"{r['Name']} not in roster"
