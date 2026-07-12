@@ -256,10 +256,10 @@ class TuiPetApp(App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("Attack orbs fixed: mons were firing their attack POSE "
-                 "instead of their projectile. 75 classic species now shoot "
-                 "their real device attack sprite -- flames, bolts, bombs -- "
-                 "in battle, training, and adventure.")
+    WHATS_NEW = ("Adventures feel alive: standing on the road now behaves like "
+                 "your home biome -- poop, weather and care icons all show -- "
+                 "and the weather changes as you travel between regions. Shops "
+                 "stay in the towns you visit.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and
