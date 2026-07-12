@@ -1,19 +1,18 @@
-"""Shop — DVPet's HOME shop: separate Food and Item pages showing the day's
-ROLLED roster (8 food / 12 item slots with real stock counts and sale prices),
-plus tuipet's egg page.  The bag keeps its category tabs (Food / Medicine /
-Toys / Chips / Special).  Renders in the LCD box."""
+"""The shop screen: separate Food and Item pages showing the day's rolled
+roster (8 food / 12 item slots with real stock counts and sale prices), plus
+the egg page.  The bag keeps its category tabs (Food / Medicine / Toys / Chips
+/ Special).  Renders in the LCD box."""
 from __future__ import annotations
 from . import data
 from . import shop
 from . import egg as egg_mod
 from . import persistence
-from .render import downsample
 
 from .theme import LCD_ON, LCD_BG, INK, INK_B, DIM, SEL  # noqa: F401  (palette names bound for theme.apply propagation)
 from . import menu
 W = 38
 IC_W, IC_ROWS = menu.IC_W, menu.IC_ROWS    # the shared selected-item icon cell
-SHOP_TABS = ["food", "item", "egg"]        # DVPet Food_Shop / Item_Shop (+ tuipet eggs)
+SHOP_TABS = ["food", "item", "egg"]        # the food, item and egg pages
 BAG_CATEGORIES = ["food", "medicine", "toy", "chip"]
 BAG_TABS = BAG_CATEGORIES + ["special"]
 TAB_LABEL = {"food": "Food", "item": "Items", "egg": "Eggs", "medicine": "Medicine",
@@ -57,9 +56,9 @@ class ShopPanel:
         return out
 
     def _shelves_closed(self):
-        """drawShop/isShopOpen: the HOME food/item shelves keep canon trading
-        hours (6:00-23:00, config FoodShopTime/ItemShopTime).  The egg page is
-        tuipet's own license counter and the bag is yours -- neither closes."""
+        """The home food/item shelves keep trading hours (6:00-23:00); outside
+        them the shutters are down.  The egg page is your licence counter and
+        the bag is yours -- neither ever closes."""
         return (self.mode == "shop" and self._tabs()[self.tab] in ("food", "item")
                 and not shop.home_shop_open(self.pet))
 
@@ -87,7 +86,7 @@ class ShopPanel:
         rows = self._rows()
         n = len(rows)
         if getattr(self, "pw_mode", False):
-            # DVPet's password redemption: type the code, ENTER redeems
+            # password redemption: type the code, ENTER redeems
             self.pw_text, act = egg_mod.code_key(self.pw_text, k)
             if act == "submit":
                 idx = egg_mod.redeem_password(self.pw_text)
@@ -159,7 +158,7 @@ class ShopPanel:
                     self.sfx = "mischief"      # soundConfig unlockConsumable -> mischief.wav
                 if self.pet.num != num0:
                     # an ItemEvol (Digimental) carries its key: the app plays
-                    # canon itemEvolve's parade before the strobe
+                    # the item-evolve parade plays before the strobe
                     ik = e["key"] if (e.get("action") or "") == "ItemEvol" else None
                     return ("done", ("evolve", num0, ik))
                 if self.pet.anim == "toilet":
@@ -169,11 +168,9 @@ class ShopPanel:
                     return ("done", ("eat", e["key"]))
                 if (data.shop_category(dict(e)) == "toy"
                         and self.pet.anim == "happy"):
-                    # each AnimationType plays ITS OWN canon script (item-anim
-                    # audit 2026-07-07: every toy used to funnel into
-                    # jumping(), canon's Trampoline hop) -- the itemfx table
-                    # drives the fx; Jump keeps the ported hop; Idling (the
-                    # Futon) plays nothing beyond its care effect, per canon
+                    # each toy plays ITS OWN script from the itemfx table:
+                    # Jump keeps the trampoline hop; Idling (the Futon) plays
+                    # nothing beyond its care effect; the rest run their own fx
                     from . import itemfx
                     act = (e.get("action") or "").strip()
                     if act in itemfx.SCRIPTS:
@@ -225,14 +222,16 @@ class ShopPanel:
                 info = shop.sell_info(self.pet, sel, tw)
             menu.icon_info(out, menu.item_icon(sel), info)
         elif self._shelves_closed():
-            # the canon closed sign (drawShop's roomEffect "shopClosed") hangs
-            # in the icon slot; the hours ride the info column beside it
-            from .render import bitmap_text
-            sign = (data.load_effects().get("shopClosed") or [None])[0]
-            lines = [t.plain.ljust(IC_W) for t in bitmap_text(downsample(sign, 2), LCD_ON, LCD_BG)] \
-                if sign else []
-            lines = (lines + [" " * IC_W] * IC_ROWS)[:IC_ROWS]
-            menu.icon_info(out, lines, ["CLOSED", "hours 6:00-23:00", "", "come back at dawn"])
+            # a clean shuttered plate drawn in the icon cell -- the old sprite
+            # smeared into noise at 10x4, so tuipet draws its own sign
+            o0, c0 = shop.HOME_HOURS
+            plate = ["\u256d" + "\u2500" * (IC_W - 2) + "\u256e",
+                     "\u2502 CLOSED \u2502",
+                     "\u2502 \u2500\u2500\u2500\u2500\u2500\u2500 \u2502",
+                     "\u2570" + "\u2500" * (IC_W - 2) + "\u256f"]
+            menu.icon_info(out, plate,
+                           ["Shop's closed", "for the night", "",
+                            "Open %d:00\u2013%d:00" % (o0, c0)])
         else:
             # nothing selected == the tab is empty; the list below already prints the
             # context-aware empty label, so the icon panel stays quiet (one message, not two)

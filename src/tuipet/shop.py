@@ -1,14 +1,13 @@
-"""Shop -- DVPet's HOME shop (PhysicalState.randomizeShop / restockShop).
+"""The home shop: a rolled storefront, not a fixed catalogue.
 
-The storefront is a rolled ROSTER, not a catalog: each game day the shop clears
-(dailyChange) and lazily re-rolls on open -- must-stock items first, then a
-random fill of consumables that pass their seasonal stock chance, up to 8 food /
-12 item slots.  Every slot gets a real stock count (DefaultMinStock..MaxStock)
-and a seasonal sale roll (salePrice = price - price/saleFactor).  Sold-out slots
-sit empty until a banked restock credit (1% per 5 game-min, max 4) is spent on
-the next shop visit: each empty slot then either re-fills or swaps for a NEW
-item (RestockNewItemChance 50%).  All economy numbers come from each
-consumable's own Default* columns (foods/items.csv) -- nothing is invented.
+Each game day the shelves clear and lazily re-roll when you open them -- the
+must-stock staples first, then a random fill of consumables that pass their
+seasonal stock chance, up to 8 food / 12 item slots.  Every slot carries a real
+stock count and a seasonal sale roll (sale price = price - price/saleFactor).
+Sold-out slots stay empty until a banked restock credit (1% per 5 game-minutes,
+capped at 4) is spent on your next visit: each empty slot then re-fills or swaps
+for a fresh item (50% of the time).  Every economy number is read from the
+consumable's own columns in foods/items.csv -- nothing is invented.
 """
 from __future__ import annotations
 import random
@@ -17,9 +16,8 @@ from .weather import SEASONS
 
 FOOD_MAX = 8                  # MaxFoodShopInventory
 ITEM_MAX = 12                 # MaxItemShopInventory
-HOME_HOURS = (6, 23)          # config.csv FoodShopTime/ItemShopTime rows 752/753:
-#                               "6t23" all four seasons -- the HOME shop keeps
-#                               canon trading hours (drawShop gates on isShopOpen)
+HOME_HOURS = (6, 23)          # the home shelves trade 6:00-23:00 every season;
+#                               the storefront is shuttered outside those hours
 RESTOCK_MIN = 5               # RestockMin: game-min between credit rolls (1 game-min == 1s)
 RESTOCK_CHANCE = 1            # RestockShopChance %
 RESTOCK_NEW_ITEM = 50         # RestockNewItemChance %
@@ -40,9 +38,8 @@ def entry(key):
 
 
 def _unlocked(e, found):
-    """getShopUnlocked: the csv flag, OR earned -- a consumable found in the
-    wild joins the shelves for good (canon unlockItem/unlockFood; shop/economy
-    audit 2026-07-06)."""
+    """Whether a consumable can appear on the shelves: its csv flag, OR earned
+    -- a consumable found in the wild joins the shop for good."""
     return e.get("shop_unlocked") or e["key"] in found
 
 
@@ -113,10 +110,9 @@ def town_shop_hours(pet, town, is_food):
 
 
 def town_shop_open(pet, town, is_food):
-    """Utility.isOpen on the town's per-season shop hours (towns.csv
-    Food/ItemShopOpen): open <= hour <= close, literally -- a '24t17' span can
-    never match a real hour, which is canon for CLOSED THIS SEASON (the
-    winter-market towns 6/13/18 trade only in winter)."""
+    """Is the town shop open this season: open <= hour <= close, literally --
+    a span like 24-17 can never match a real hour, which is how a shop reads as
+    CLOSED THIS SEASON (the winter-market towns 6/13/18 trade only in winter)."""
     span = town_shop_hours(pet, town, is_food)
     if not span:
         return True
@@ -241,12 +237,25 @@ def purchase_price(slot):
 
 
 def effect_line(e):
-    """One terse readout of a consumable's applyFood/applyItem effects."""
+    """One terse readout of a consumable's food/item effects, sized to fit the
+    info column beside the icon.  Two tidying rules keep the busiest items
+    legible: a stat that rounds to zero is dropped (an item that shaves 0.8
+    energy a use never advertises a meaningless "en+0"), and a uniform
+    Vaccine/Data/Virus nudge collapses to one "attr" token so the packed foods
+    (Steak, Tuna) still read their whole line."""
     parts = []
-    for k, lbl in (("hunger", "food"), ("mood", "mood"), ("weight", "wt"), ("energy", "en"),
-                   ("strength", "eff"), ("vaccine", "Va"), ("data", "Da"), ("virus", "Vi")):
-        if e.get(k):
-            parts.append("%s%+d" % (lbl, e[k]))
+    va, da, vi = e.get("vaccine", 0), e.get("data", 0), e.get("virus", 0)
+    uniform_attr = bool(va) and va == da == vi
+    stats = [("hunger", "food"), ("mood", "mood"), ("weight", "wt"),
+             ("energy", "en"), ("strength", "eff")]
+    if not uniform_attr:
+        stats += [("vaccine", "Va"), ("data", "Da"), ("virus", "Vi")]
+    for k, lbl in stats:
+        v = int(e.get(k) or 0)
+        if v:
+            parts.append("%s%+d" % (lbl, v))
+    if uniform_attr:
+        parts.append("attr%+d" % int(va))
     if e.get("cured"):
         parts.append("cure")
     if e.get("healed"):
@@ -288,15 +297,13 @@ def buy(pet, slot):
 
 
 def resell_price(e):
-    """getResellPrice: price / DefaultResellFactor; factor 0 = unsellable.
-    (Canon re-audit 2026-07: canon has NO floor -- the old max(1, ...) was
-    not canon; no shipped consumable hits the sell-for-0 edge anyway.)
+    """Resale value: price / resell_factor; a factor of 0 means unsellable
+    (no floor -- no shipped consumable hits the sell-for-0 edge anyway).
 
-    tuipet's bag counts USES (canon quantity IS uses), so a multi-use item
-    resells PER USE: the canon item value / UsesPerItem.  Paying the whole-
-    item price per unit let a fresh egg milk its 100-flush starter Toilet
-    for 100b a FLUSH -- a 10,000b printer (egg-shop audit 2026-07-05); a
-    full toilet still fetches exactly the canon 100b."""
+    The bag counts USES, so a multi-use item resells PER USE: its item value
+    divided by uses-per-item.  Charging the whole-item price per unit would let
+    a fresh egg milk its 100-flush starter Toilet for 100b a FLUSH -- a
+    10,000b printer; a full toilet still fetches exactly its 100b."""
     econ = e if "resell_factor" in e else (entry(e.get("key", "")) or {})
     factor = econ.get("resell_factor", 0)
     if not factor:

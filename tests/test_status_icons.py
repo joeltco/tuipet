@@ -25,6 +25,7 @@ ALLOWED_SILENT = {
     "sun": "time-of-day icon; tuipet's status line uses a text glyph instead",
     "moon": "as sun",
     "call": "DVPet's blinking call light; the msg-box alarm is tuipet's call chrome",
+    "shopClosed": "old closed-shop sprite; the shop draws its own CLOSED plate now",
     # Bandai grammar 2026-07-11: the matrix is a stage, not a dashboard --
     # badges live on the status side (HUD deco / digicore / msg-box alarm)
     "attention": "the care-call is chrome: the msg-box alarm + beep carry it",

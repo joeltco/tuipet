@@ -142,9 +142,9 @@ def test_claim_gift_bags_it_and_cheers():
 
 # ---- home shop hours (audit 2026-07-04): config FoodShopTime/ItemShopTime ----
 
-def test_home_shop_keeps_canon_trading_hours():
-    """drawShop/isShopOpen: the HOME shelves trade 6:00-23:00 (config rows
-    752/753, '6t23' every season) -- they were open around the clock."""
+def test_home_shop_keeps_its_trading_hours():
+    """The home shelves trade 6:00-23:00 every season; outside those hours the
+    shutters come down and there is nothing to browse or buy."""
     from tuipet import shop
     from tuipet.shopscreen import ShopPanel
     p = _pet()
@@ -165,8 +165,34 @@ def test_home_shop_keeps_canon_trading_hours():
     assert shop.home_shop_open(p) and pan2._rows()
 
 
-def test_shop_closed_sign_is_in_the_effects_atlas():
-    """The canon shopClosed.png rip must survive re-extraction (EXTRACT-not-draw)."""
-    from tuipet import data
-    sign = data.load_effects().get("shopClosed")
-    assert sign and sign[0] and any("1" in r for r in sign[0])
+def test_shop_draws_its_own_closed_plate():
+    """When the shelves are shut, the icon cell shows tuipet's drawn CLOSED
+    plate and the info column carries the trading hours (the old sprite blurred
+    into noise at this size, so the shop draws its own sign now)."""
+    from tuipet.shopscreen import ShopPanel
+    p = _pet()
+    p.world_seconds = 3 * 60.0                      # 3am, shutters down
+    body = ShopPanel(p).text().plain
+    assert "CLOSED" in body
+    assert "Open 6:00" in body
+
+
+def test_effect_line_fits_the_info_column():
+    """Every consumable's effect readout fits the info column beside the icon
+    and never prints a rounds-to-zero stat like 'en+0'."""
+    from tuipet import shop, data
+    tw = 38 - 10 - 2                               # W - IC_W - 2
+    for e in data.home_shop_pool():
+        el = shop.effect_line(e)
+        assert len(el) <= tw, (e["name"], el)
+        assert "+0" not in el and "-0" not in el, (e["name"], el)
+
+
+def test_uniform_attribute_boost_collapses_to_one_token():
+    """A uniform Vaccine/Data/Virus nudge reads as one 'attr' token so the
+    busiest foods stay on a single line; a mixed nudge stays spelled out."""
+    from tuipet import shop
+    uni = shop.effect_line({"hunger": 2, "mood": 20, "vaccine": 1, "data": 1, "virus": 1})
+    assert "attr+1" in uni and "Va+1" not in uni
+    mix = shop.effect_line({"mood": 50, "vaccine": -15, "virus": 15})
+    assert "Va-15" in mix and "Vi+15" in mix and "attr" not in mix
