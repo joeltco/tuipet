@@ -396,6 +396,20 @@ def test_pvp_cards_ship_the_declared_attribute():
 
 # ---- message handling across back-out/re-enter (audit 2026-07-06) -------------
 
+def test_quit_from_lobby_persists_received_dms():
+    """Quitting straight from the lobby flushes DMs received this session --
+    incoming PMs are in-memory until a read/leave saves them (the 'A' gap)."""
+    from types import SimpleNamespace
+    from tuipet.app import TuiPetApp
+    pan = _panel(LobbyState())
+    called = []
+    pan._save_dms = lambda: called.append(True)
+    TuiPetApp._flush_dms_on_quit(SimpleNamespace(mode=pan))
+    assert called == [True]                       # in the lobby -> persisted
+    TuiPetApp._flush_dms_on_quit(SimpleNamespace(mode=None))
+    assert called == [True]                       # elsewhere -> nothing to flush
+
+
 def test_queued_pms_seed_the_fresh_lobby_pane():
     """PMs queued while in another sub-screen used to be clear()ed on lobby
     entry -- assumed shown by the lobby chat, but the fresh client never saw

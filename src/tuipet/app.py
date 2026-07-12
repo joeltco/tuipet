@@ -256,10 +256,9 @@ class TuiPetApp(App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("Private messages now reach players who have stepped away: "
-                 "a PM sent while they're offline is held and delivered the "
-                 "next time they open the lobby, and your own copy is always "
-                 "kept.")
+    WHATS_NEW = ("Private messages you receive in the lobby are now saved "
+                 "even if you quit straight out of it — no more losing a "
+                 "PM that arrived right before you closed the game.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and
@@ -486,7 +485,19 @@ class TuiPetApp(App):
 
     def on_unmount(self):
         persistence.save(self.pet)
+        self._flush_dms_on_quit()       # a lobby quit must not drop PMs from this session
         self._flush_cloud_on_quit()     # capture the final state cloud-side on any exit
+
+    def _flush_dms_on_quit(self):
+        """Quitting straight from the lobby must persist DMs received this
+        session: incoming PMs live only in memory until a read/leave saves
+        them, so a hard quit (Ctrl-C, terminal close) would otherwise drop
+        them (the 'A' gap, 2026-07-12)."""
+        if isinstance(self.mode, lobbyscreen.LobbyPanel):
+            try:
+                self.mode._save_dms()
+            except Exception:
+                pass
 
     def _flush_cloud_on_quit(self):
         """Best-effort blocking push so the final state is captured cloud-side."""
