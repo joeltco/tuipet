@@ -256,9 +256,10 @@ class TuiPetApp(App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("Help menu polish: the how-to now covers Train (it was "
-                 "missing), lists Quit, and the scroll footer shows how much "
-                 "more there is to read instead of repeating the controls.")
+    WHATS_NEW = ("Private messages now reach players who have stepped away: "
+                 "a PM sent while they're offline is held and delivered the "
+                 "next time they open the lobby, and your own copy is always "
+                 "kept.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and

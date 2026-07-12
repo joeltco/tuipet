@@ -693,7 +693,7 @@ class LobbyPanel:
             return None
         if k == "enter":
             if self.buf.strip() and self.dm_peer and self.client:
-                self.client.pm(self.dm_peer[0], self.buf.strip())
+                self.client.pm(self.dm_peer[0], self.buf.strip(), self.dm_peer[1])
             self.buf = ""
             return None
         return self._edit(k)
@@ -823,7 +823,7 @@ class LobbyPanel:
             self.scroll = 0                    # speaking snaps the view live
             if self.pm_to is not None:
                 if self.buf.strip():
-                    self.client.pm(self.pm_to[0], self.buf.strip())
+                    self.client.pm(self.pm_to[0], self.buf.strip(), self.pm_to[1])
                     self.status = f"✉ sent to {self.pm_to[1]}"
                 self.pm_to, self.buf = None, ""
             elif self.buf.strip():

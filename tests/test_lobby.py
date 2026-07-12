@@ -181,7 +181,7 @@ def test_playing_ghosts_are_message_only_targets():
                 {"id": 2, "name": "mika", "pet": {}, "live": False}]
     pan = _panel(s)
     sent = []
-    pan.client.pm = lambda to, tx: sent.append((to, tx))
+    pan.client.pm = lambda to, tx, nm=None: sent.append((to, tx, nm))
     pan.client.invite = lambda *a: sent.append(("INVITE", a))
     assert "·mika" in pan.text().plain                      # ghost marker in the sidebar
     pan.key("enter")                                        # open mika's action menu
@@ -194,7 +194,7 @@ def test_playing_ghosts_are_message_only_targets():
     for ch in "yo":
         pan.key(ch)
     pan.key("enter")
-    assert sent == [(2, "yo")] and pan.pm_to is None        # sent + compose closed
+    assert sent == [(2, "yo", "mika")] and pan.pm_to is None        # sent + compose closed
 
 
 def test_ping_pulls_a_ghost_into_the_lobby():
@@ -239,7 +239,7 @@ def test_dm_thread_view_and_block():
     s.unread.add("mika")
     pan = _panel(s)
     sent = []
-    pan.client.pm = lambda to, tx: sent.append((to, tx))
+    pan.client.pm = lambda to, tx, nm=None: sent.append((to, tx, nm))
     pan.key("enter")                        # open mika's action menu
     pan.key("v")                            # open the DM thread
     assert pan.phase == "dm" and pan.dm_peer == (2, "mika")
@@ -247,7 +247,7 @@ def test_dm_thread_view_and_block():
     for ch in "hi":
         pan.key(ch)
     pan.key("enter")
-    assert sent == [(2, "hi")]              # typed line sent as a PM
+    assert sent == [(2, "hi", "mika")]       # typed line sent as a PM (name for offline queue)
     pan.key("escape")
     assert pan.phase == "lobby"
     pan.key("enter"); pan.key("x")          # block mika

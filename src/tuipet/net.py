@@ -199,8 +199,11 @@ class LobbyClient(_WsClient):
     def invite(self, to, kind):
         self._send({"t": "invite", "to": to, "kind": kind})
 
-    def pm(self, to, text):
-        self._send({"t": "pm", "to": to, "text": text})
+    def pm(self, to, text, to_name=None):
+        msg = {"t": "pm", "to": to, "text": text}
+        if to_name:
+            msg["to_name"] = to_name       # lets the server queue when the id is stale/offline
+        self._send(msg)
 
     def ping(self, to):
         """Nudge a ghost (app open, not in the lobby) to come battle -- rides the PM
