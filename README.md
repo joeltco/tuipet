@@ -82,7 +82,7 @@ Start from an **egg** — real dot-matrix egg designs; it wobbles, cracks, and h
 | **a** | adventure | **s** | lights |
 | **o** | shop | **i** | bag |
 | **b** | bug report | **?** | help |
-| **q** | quit | | |
+| **n** | digitama guide | **q** | quit |
 
 Battles and jogress live where they belong: **PvE combat happens in
 adventures and cups; PvP battles and fusion happen in the lobby** — there is

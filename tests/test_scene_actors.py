@@ -13,7 +13,7 @@ Hard invariant, swept at the pixel level: sprites never draw on another."""
 import random
 
 import tuipet.app as app
-from tuipet import arena, data, grid
+from tuipet import arena, grid
 from tuipet.pet import Pet
 
 

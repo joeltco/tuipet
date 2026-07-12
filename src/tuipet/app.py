@@ -21,6 +21,7 @@ from . import dnascreen
 from . import transportscreen
 from . import adventurescreen
 from . import shopscreen
+from . import eggguidescreen
 from . import habitatscreen
 from . import assistscreen
 from . import feedscreen
@@ -256,11 +257,11 @@ class TuiPetApp(App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("Polish + hardening pass: a full or read-only disk no longer "
-                 "crashes the game when it autosaves, the lobby shrugs off "
-                 "malformed messages instead of freezing, and several menus read "
-                 "cleaner — Options now shows ? and Enter properly, and the battle "
-                 "surrender and travel hints match their screens.")
+    WHATS_NEW = ("The DIGITAMA GUIDE is here — press n on the home screen to "
+                 "browse every egg in the game: what you own, what is waiting in "
+                 "a shop, and exactly what earns each locked one, with live "
+                 "progress counters. The carousel still shows only your "
+                 "hatchable eggs; the guide is the map to the rest.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and
@@ -272,6 +273,7 @@ class TuiPetApp(App):
         ("r", "praise", "Praise"), ("k", "scold", "Scold"),
         ("a", "adventure", "Adventure"), ("o", "shop", "Shop"), ("i", "inventory", "Inventory"), ("e", "habitat", "Habitat"),
         ("d", "digicore", "DigiCore"),
+        ("n", "eggguide", "Egg Guide"),
         ("u", "tournament", "Cup"), ("x", "dna", "DNA"),
         ("l", "lobby", "Lobby"),
         ("s", "sleep", "Lights"), ("v", "assist", "Assistant"), ("g", "options", "Options"),
@@ -1643,6 +1645,10 @@ class TuiPetApp(App):
 
     def action_assist(self):
         self._open_mode(assistscreen.AssistPanel(self.pet), lambda _=None: self.repaint())
+
+    def action_eggguide(self):
+        # the digitama unlock book -- read-only, safe at any stage
+        self._open_mode(eggguidescreen.EggGuidePanel(self.pet), lambda _=None: self.repaint())
 
     def action_digicore(self):
         self._open_mode(digicorescreen.DigiCorePanel(self.pet), self._after_digicore)

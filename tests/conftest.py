@@ -20,6 +20,10 @@ def isolate_save(tmp_path, monkeypatch):
     monkeypatch.setattr(persistence, "SAVE_DIR", str(tmp_path))
     monkeypatch.setattr(persistence, "SAVE_PATH", str(tmp_path / "save.json"))
     monkeypatch.setattr(persistence, "SETTINGS_PATH", str(tmp_path / "settings.json"))
+    # module-level write-dedupe caches must not leak between sandboxes: a
+    # num already in _ALBUM_SEEN makes album_add() a no-op on the FRESH save
+    # (test_egg_guide caught it shadowing test_egg_economy, 2026-07-12)
+    monkeypatch.setattr(persistence, "_ALBUM_SEEN", set())
     yield
 
 

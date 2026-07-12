@@ -29,6 +29,8 @@ HELP = [
     ("Each egg has its own line to a Mega.", 0),
     ("t train - drills build battle power", 1),
     ("x DNA   d digicore", 1),
+    ("n egg guide - every digitama + what", 1),
+    ("  earns it, with live progress", 0),
     ("", 0),
     ("MANAGE", 2),
     ("o shop   i bag   e habitat", 1),

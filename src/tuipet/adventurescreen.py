@@ -669,7 +669,6 @@ class AdventurePanel(menu.SubHost):
         Home scenery covers spans the data leaves blank.  Crossing into a new
         habitat CROSS-FADES (canon BackgroundAnim.animateBack: the old
         backdrop's opacity steps out over the new at -0.05/frame)."""
-        a = self.adv
         bg_h = self._current_hab_id()
         bgimg = self.pet.background(bg_h) if bg_h is not None else self.pet.background()
         if bg_h != getattr(self, "_bg_id", bg_h):
@@ -689,7 +688,6 @@ class AdventurePanel(menu.SubHost):
         script says the world is showing."""
         tr = self._trans
         t, ph = tr["t"], tr["phase"]
-        H = ROWS * 2
         # which world is under the curtain: leaving-out and arriving-in show
         # the ROAD; leaving-in and arriving-out show the HOME habitat
         home_side = (tr["dir"] == "in") == (ph == "leave")

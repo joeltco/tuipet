@@ -190,7 +190,6 @@ def test_data_round_tells_ride_the_next_pick():
 def test_data_fire_out_wears_the_attack_pose(monkeypatch):
     """The mon's own view of its shot: the fire_out beat stages the mon alone
     in the battle's ATTACK pose, its real orb leaving along the picked lane."""
-    from tuipet import training
     pan = _data_panel()
     idle = pan.text().markup
     pan.key("up")
@@ -260,7 +259,7 @@ def test_hit_explosion_is_the_sourced_32x16_full_window_flash(monkeypatch):
     clipped (18 > the 16px band).  Pin the sourced frames and that both
     collision paths strobe them alone, filling the window exactly."""
     from tuipet import training, grid
-    from tuipet.training import TrainingPanel, GAMES, EXPLODE_FRAMES, _EXPLODE
+    from tuipet.training import TrainingPanel, GAMES, _EXPLODE
     from tuipet.pet import Pet
     assert [(max(len(r) for r in f), len(f)) for f in _EXPLODE] \
         == [(32, 16), (32, 16)]

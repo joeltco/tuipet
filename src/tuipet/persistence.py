@@ -506,7 +506,8 @@ def get_progress():
 
 def add_pending_bug(rec):
     """Stash a bug that could not be sent (offline) to retry next launch."""
-    import os as _os, json as _json
+    import os as _os
+    import json as _json
     try:
         _os.makedirs(SAVE_DIR, exist_ok=True)
         with open(_os.path.join(SAVE_DIR, "pending_bugs.jsonl"), "a", encoding="utf-8") as f:
@@ -517,7 +518,8 @@ def add_pending_bug(rec):
 
 def take_pending_bugs():
     """Return and clear the stashed bugs (a best-effort flush)."""
-    import os as _os, json as _json
+    import os as _os
+    import json as _json
     p = _os.path.join(SAVE_DIR, "pending_bugs.jsonl")
     try:
         recs = [_json.loads(l) for l in open(p, encoding="utf-8") if l.strip()]

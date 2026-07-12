@@ -422,7 +422,6 @@ def test_evolves_page_shows_next_form_at_every_age():
     gates on age; setupDigicore counts hatching as the egg\x27s evolution).
     The "(too young)" stonewall was a tuipet invention -- Joel 2026-07-10."""
     from tuipet.digicorescreen import _evo_rows
-    from tuipet import lines as _lines
     egg_pet = Pet(num=-1, stage="Egg", attribute="None", egg_type=1)
     rows = _evo_rows(egg_pet)
     assert isinstance(rows, list) and rows, rows          # the hatchling shows
