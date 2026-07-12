@@ -40,7 +40,12 @@ class KeysPanel:
     VISIBLE = 8
 
     def __init__(self, bindings):
-        self.rows = [f"{k:<6} {label}" for k, _action, label in bindings]
+        # Textual binds a couple of keys by identifier, not glyph -- show the
+        # glyph so the page reads "?  Help" / "Enter  Accept gift" instead of
+        # leaking "question_mark" (which also overran the 6-col key column).
+        keyname = {"question_mark": "?", "enter": "Enter"}
+        self.rows = [f"{keyname.get(k, k):<6} {label}"
+                     for k, _action, label in bindings]
         self.top = 0
 
     def strip(self):

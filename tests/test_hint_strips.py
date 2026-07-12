@@ -81,7 +81,7 @@ def test_battle_strip_follows_the_fight():
     bp.phase = "menu"
     assert "attack" in _ok(bp.strip(), "battle:menu")
     bp.phase = "surrender_ask"
-    assert "flee" in _ok(bp.strip(), "battle:surrender")
+    assert "allow" in _ok(bp.strip(), "battle:surrender")
     bp.phase = "anim"
     assert bp.strip() == ""                    # the round plays clean
     bp.phase = "result"

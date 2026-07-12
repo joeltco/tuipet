@@ -280,7 +280,7 @@ class BattlePanel:
             return menu.hints(("1-3", "attack"), ("F", "style"),
                               ("4", "surrender"))
         if self.phase == "surrender_ask":
-            return menu.hints(("ENTER", "flee"), ("ESC", "fight on"))
+            return menu.hints(("ENTER", "allow"), ("ESC", "fight on"))
         if self.phase == "intro":
             return menu.hints(("SPACE", "skip"))
         if self.phase == "result":

@@ -23,13 +23,21 @@ def _atomic_write_json(path, data, keep_bak=False):
     """Atomic JSON write (tmp + os.replace); keep_bak rotates one generation
     back first.  This dance lived in three hand-rolled copies (settings, save,
     cloud-pull; refactor 2026-07-05)."""
-    os.makedirs(os.path.dirname(path), exist_ok=True)
-    tmp = path + ".tmp"
-    with open(tmp, "w") as fh:
-        json.dump(data, fh)
-    if keep_bak and os.path.exists(path):
-        os.replace(path, path + ".bak")   # keep one generation back
-    os.replace(tmp, path)
+    try:
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        tmp = path + ".tmp"
+        with open(tmp, "w") as fh:
+            json.dump(data, fh)
+        if keep_bak and os.path.exists(path):
+            os.replace(path, path + ".bak")   # keep one generation back
+        os.replace(tmp, path)
+    except OSError:
+        # best-effort, mirroring the read side (load/load_settings both swallow
+        # OSError): a full / read-only / quota'd disk must never crash the 10s
+        # autosave timer or on_unmount teardown (hardening 2026-07-12).  A
+        # non-serializable payload still raises TypeError -- that is a bug, not
+        # a disk problem, and must surface.
+        return
 
 
 def load_settings(path=None):

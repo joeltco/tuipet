@@ -256,9 +256,11 @@ class TuiPetApp(App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("Private messages you receive in the lobby are now saved "
-                 "even if you quit straight out of it — no more losing a "
-                 "PM that arrived right before you closed the game.")
+    WHATS_NEW = ("Polish + hardening pass: a full or read-only disk no longer "
+                 "crashes the game when it autosaves, the lobby shrugs off "
+                 "malformed messages instead of freezing, and several menus read "
+                 "cleaner — Options now shows ? and Enter properly, and the battle "
+                 "surrender and travel hints match their screens.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and

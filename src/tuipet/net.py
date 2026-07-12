@@ -254,6 +254,14 @@ class LobbyClient(_WsClient):
             try:
                 await self._ws.send(json.dumps(obj))
             except Exception:
+                # don't lose the frame we already dequeued: requeue it so
+                # run()'s reconnect spawns a fresh sender that delivers it.  A
+                # bare `return` silently dropped that obj -- a move/invite frame
+                # could vanish and hang a handshake (hardening 2026-07-12).
+                try:
+                    self._q.put_nowait(obj)
+                except Exception:
+                    pass
                 return
 
     def _handle(self, raw):

@@ -298,7 +298,7 @@ class TransportPanel:
         if self.ride is None:
             # the hint convention (v0.2.399): the picker pops its keys in the
             # message box too, mirroring the in-LCD footer
-            return menu.hints(("↑↓", "pick"), ("ENTER", "warp"))
+            return menu.hints(("↑↓", "pick"), ("ENTER", "warp"), ("ESC", "cancel"))
         if self.ride["t"] >= self.ride["end"]:
             return f"{self.ride['msg']}  [dim]· ENTER done[/]"
         return "[dim]SPACE skip[/]"
