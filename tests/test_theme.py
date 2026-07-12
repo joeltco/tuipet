@@ -282,3 +282,64 @@ def test_background_file_override_picks_the_arena_sheet():
     idx = {"dawn": 0, "day": 1, "dusk": 2, "night": 3}[p.day_phase]
     assert arena == theme.weather_tint(sheets["tourneyBack"][idx], "Clear")
     assert arena != home
+
+
+# ---- background quantizer redo (Joel 2026-07-12: "some backgrounds look
+# like shit" -- hue-blind luminance banding) + the paper ramp ------------------
+
+_PAPER = ("#8a8274", "#d5cdbb", "#efe9dc")
+
+
+def test_paper_declares_the_ink_wash_ramp():
+    """Joel 2026-07-12: "apply this to the paper theme -- white instead of
+    green".  Same law as gameboy: the sprite ink stays off the ramp, so the
+    mon is always the darkest thing on the page."""
+    pp = theme.THEMES["paper"]
+    assert pp["bg_ramp"] == _PAPER
+    assert pp["on"] not in pp["bg_ramp"]
+
+
+def test_quant_splits_equal_luminance_hues():
+    """The old banding merged hue-distinct, equal-brightness features (the
+    desert dunes vs its sky; digicoreDa dark core vs blue bricks).  A frame
+    of two equal-luma colour fields must still render as TWO shades."""
+    blue, orange = "3c64c8", "c86414"          # ~equal BT.601 luma, far in RGB
+    frame = [blue * 10 + orange * 10] * 8
+    try:
+        theme.apply("gameboy")
+        out = theme.themed_bg(frame)
+        left = {out[y][:6] for y in range(8)}
+        right = {out[y][-6:] for y in range(8)}
+        assert left != right, "equal-luma hues merged into one shade"
+    finally:
+        theme.apply("grey")
+
+
+def test_quant_keeps_a_near_flat_frame_flat():
+    """The old contrast stretch amplified faint texture noise into random
+    blotches; the rank spread later manufactured a dark ring out of
+    digicoreVb faint glow.  A near-flat frame must render as ONE shade."""
+    a, b = "efefef", "e7e7e7"                  # imperceptible texture
+    frame = [(a + b) * 10, (b + a) * 10] * 6
+    try:
+        theme.apply("gameboy")
+        out = theme.themed_bg(frame)
+        cols = {out[y][x:x + 6] for y in range(12) for x in range(0, 120, 6)}
+        assert len(cols) == 1, f"flat frame blotched into {cols}"
+    finally:
+        theme.apply("grey")
+
+
+def test_quant_dominant_field_accents_stay_adjacent():
+    """A flat field with an accent (egg10Back door-on-wall) keeps the accent
+    VISIBLE but at neighbour contrast -- never the far end of the ramp."""
+    field, accent = "e8e8e8", "909090"         # bright wall, mid-grey feature
+    rows = [field * 20] * 9 + [field * 6 + accent * 8 + field * 6] * 3
+    try:
+        theme.apply("gameboy")
+        out = theme.themed_bg(rows)
+        cols = {out[y][x:x + 6] for y in range(12) for x in range(0, 120, 6)}
+        assert len(cols) == 2, "the accent vanished (or blotched)"
+        assert _DMG[0][1:] not in cols, "accent jumped to the far dark shade"
+    finally:
+        theme.apply("grey")

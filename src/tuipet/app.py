@@ -257,11 +257,11 @@ class TuiPetApp(App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("The DIGITAMA GUIDE (now on the ACTIONS bar) — press n to "
-                 "browse every egg in the game: what you own, what is waiting in "
-                 "a shop, and exactly what earns each locked one, with live "
-                 "progress counters. The carousel still shows only your "
-                 "hatchable eggs; the guide is the map to the rest.")
+    WHATS_NEW = ("Theme glow-up: gameboy and paper backgrounds are drawn by a "
+                 "new colour-aware engine — scenes keep their shapes (the "
+                 "desert dunes, the town skyline, the digicore) instead of "
+                 "washing out flat, and the paper theme now renders scenery "
+                 "as clean ink-wash whites. Pick a theme under g options.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and

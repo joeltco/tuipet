@@ -78,6 +78,10 @@ THEMES = {
         "heart": "#a04a2a", "energy": "#3a6a8a", "mood": "#7a5a92", "life": "#567a68", "coin": "#967a2a",
         "weather": {"rain": ("#3a4450", 0.25), "snow": ("#f4f0e6", 0.30), "cloud": ("#6a655c", 0.16)},
         "void": "#000000", "flash": ("#ffffff", "#2a2620", "#faf6ec"),
+        # paper layering (Joel 2026-07-12: "apply this to the paper theme --
+        # white instead of green"): backgrounds get the light ink-wash trio,
+        # the near-black ink stays sprite-only, same law as gameboy
+        "bg_ramp": ("#8a8274", "#d5cdbb", "#efe9dc"),
         "phases": {"dawn": ("#332e26", "#f4eee0"), "day": ("#2a2620", "#efe9dc"),
                    "dusk": ("#463a2c", "#e6dcc8"), "night": ("#9a948a", "#262218")},
     },
@@ -154,11 +158,13 @@ _BG_QUANT: dict = {}         # (theme, frame) -> quantized frame memo
 
 def themed_bg(frame):
     """Background art under the active theme: full colour normally; a theme
-    that declares `bg_ramp` (gameboy: the light DMG shades) gets the frame
-    posterized onto the ramp as CLEAN SHAPES -- contrast-stretched bands with
-    a majority-vote smoothing pass, so scenery reads like hand-tiled GB art.
-    (The redo history, all Joel 2026-07-05: flat absolute bands = mud; Bayer
-    dither = static at 40x24 -- "it looks like garbage".)  Frame-level and
+    that declares `bg_ramp` (gameboy: the light DMG shades; paper: the ink-
+    wash whites) gets the frame clustered onto the ramp as CLEAN SHAPES --
+    per-frame colour clustering with a majority-vote smoothing pass, so
+    scenery reads like hand-tiled GB art.  (The redo history, all Joel:
+    flat absolute bands = mud; Bayer dither = static at 40x24 -- "it looks
+    like garbage" [2026-07-05]; luminance banding = hue-blind flattening --
+    "some backgrounds look like shit" [2026-07-12].)  Frame-level and
     memoized; render._paint_cells is the one caller, so weather tints,
     cross-fades and lightning blends all inherit the palette."""
     ramp = THEMES[_current].get("bg_ramp")
@@ -175,26 +181,149 @@ def themed_bg(frame):
 
 
 def _quant_frame(frame, ramp):
-    """Contrast-stretch (2nd..98th percentile, near-uniform guard) ->
-    posterize to the ramp -> 3x3 MAJORITY VOTE on the shade indices.  The
-    vote is what makes it look authored: it erases the salt-and-pepper that
-    photographic art sheds at 40x24 while keeping edges chunky and solid."""
+    """Deterministic per-frame COLOUR clustering onto the ramp (redo
+    2026-07-12).  The old luminance banding was hue-blind: features that
+    differ in colour but not brightness merged into one flat shade (the
+    desert\'s dunes vs its sky, digicoreDa\'s dark core vs its blue bricks),
+    and its contrast stretch amplified near-flat texture noise into random
+    blotches.  Now: k-means (k = ramp size) in RGB, seeded at luminance
+    percentiles so runs are stable, finds the frame\'s actual colour
+    structure; clusters whose centres nearly coincide MERGE (a flat frame
+    renders flat, not blotchy); groups rank dark-to-light onto the ramp --
+    a luminance near-tie goes to the group sitting higher on screen, so
+    skies read light (the GB idiom) -- and the 3x3 majority vote on the
+    shade indices keeps the chunky authored look."""
     n = len(ramp)
-    lums = [[(299 * int(row[x:x + 2], 16) + 587 * int(row[x + 2:x + 4], 16)
-              + 114 * int(row[x + 4:x + 6], 16)) / 255000.0
-             for x in range(0, len(row), 6)] for row in frame]
-    flat = sorted(v for r in lums for v in r)
-    lo = flat[int(0.02 * (len(flat) - 1))]
-    hi = flat[int(0.98 * (len(flat) - 1))]
-    span = hi - lo
-    if span < 0.08:                           # near-uniform frame: absolute mapping
-        lo, span = 0.0, 1.0
-    idx = [[min(n - 1, int(max(0.0, min(1.0, (v - lo) / span)) * n)) for v in row]
-           for row in lums]
-    h, w = len(idx), len(idx[0])
-    strip = [c[1:] for c in ramp]             # bare 6-hex cells for row concat
+    h = len(frame)
+    w = len(frame[0]) // 6
+    pts = []
+    for row in frame:
+        for x in range(0, w * 6, 6):
+            pts.append((int(row[x:x + 2], 16), int(row[x + 2:x + 4], 16),
+                        int(row[x + 4:x + 6], 16)))
+
+    def lum(c):
+        return (299 * c[0] + 587 * c[1] + 114 * c[2]) / 255000.0
+
+    # deterministic k-means, farthest-point seeded: hue-diverse starts even
+    # when luminance is narrow (percentile-of-luminance seeds collapsed the
+    # savanna/underwater scenes to one flat shade -- same-brightness hues
+    # need seats too)
+    def d2(a, b):
+        return (a[0] - b[0]) ** 2 + (a[1] - b[1]) ** 2 + (a[2] - b[2]) ** 2
+
+    fit = pts[::4] if len(pts) >= 4 * n else pts   # centres fit on a sample --
+    mean = (sum(p[0] for p in fit) / len(fit),     # cross-fades quantize a fresh
+            sum(p[1] for p in fit) / len(fit),     # transient frame every tick
+            sum(p[2] for p in fit) / len(fit))
+    seeds = [max(fit, key=lambda p: d2(p, mean))]
+    while len(seeds) < n:
+        seeds.append(max(fit, key=lambda p: min(d2(p, q) for q in seeds)))
+    centers = [tuple(float(v) for v in q) for q in seeds]
+    for _ in range(10):
+        sums = [[0.0, 0.0, 0.0, 0] for _ in range(n)]
+        for p in fit:
+            j = min(range(n), key=lambda k: d2(p, centers[k]))
+            s_ = sums[j]
+            s_[0] += p[0]; s_[1] += p[1]; s_[2] += p[2]; s_[3] += 1
+        moved = 0.0
+        for j, (r, g, b, cnt) in enumerate(sums):
+            if not cnt:
+                continue                     # empty seat: parked, excluded below
+            c = (r / cnt, g / cnt, b / cnt)
+            moved += sum(abs(c[i] - centers[j][i]) for i in range(3))
+            centers[j] = c
+        if moved < 1.0:
+            break
+    assign = [min(range(n), key=lambda k: d2(p, centers[k])) for p in pts]
+    counts = [0] * n
+    for j in assign:
+        counts[j] += 1
+    # a farthest-point seed can be a lone outlier pixel: a cluster under 1%
+    # of the frame is noise, not a shape -- fold it into its nearest neighbour
+    floor = max(4, len(pts) // 100)
+    live = [j for j in range(n) if counts[j]]
+    for j in range(n):
+        if counts[j] and counts[j] < floor and len(live) > 1:
+            near = min((k for k in live if k != j),
+                       key=lambda k: d2(centers[j], centers[k]))
+            for i, a in enumerate(assign):
+                if a == j:
+                    assign[i] = near
+            counts[near] += counts[j]
+            counts[j] = 0
+            live.remove(j)
+
+    # merge near-coincident clusters: ~10/channel is texture noise, not shape
+    MERGE = 30.0
+    root = list(range(n))
+
+    def find(a):
+        while root[a] != a:
+            a = root[a]
+        return a
+
+    for a in range(n):
+        for b in range(a + 1, n):
+            if not counts[a] or not counts[b]:
+                continue
+            d = sum((centers[a][i] - centers[b][i]) ** 2 for i in range(3)) ** 0.5
+            if d < MERGE:
+                root[find(b)] = find(a)
+
+    rowsum = [0] * n
+    for i, j in enumerate(assign):
+        rowsum[j] += i // w
+    groups = {}
+    for j in range(n):
+        if counts[j]:
+            groups.setdefault(find(j), []).append(j)
+    ginfo = []                               # [members, luma, mean row, size]
+    for members in groups.values():
+        cnt = sum(counts[j] for j in members)
+        gl = sum(lum(centers[j]) * counts[j] for j in members) / cnt
+        ry = sum(rowsum[j] for j in members) / cnt
+        ginfo.append([members, gl, ry, cnt])
+    ginfo.sort(key=lambda g: g[1])
+    for i in range(len(ginfo) - 1):          # sky idiom: on a luma near-tie the
+        a, b = ginfo[i], ginfo[i + 1]        # group sitting HIGHER on screen
+        if b[1] - a[1] < 0.05 and a[2] < b[2]:   # takes the lighter shade
+            ginfo[i], ginfo[i + 1] = b, a
+
+    m = len(ginfo)
+    if max(g[3] for g in ginfo) > 0.60 * len(pts):
+        # a flat field with accents (one colour owns the frame): every group
+        # sits at its ABSOLUTE lightness and groups may share a shade -- a
+        # near-flat frame renders flat.  Rank-spreading here manufactured
+        # contrast that is not in the art (digicoreVb, a faint white-on-white
+        # glow, grew a dark ring).  Accent groups take the ADJACENT shade in
+        # their true direction -- features stay visible (egg10Back, a door on
+        # a wall), at neighbour contrast, never across the whole ramp
+        fi = max(range(m), key=lambda i: ginfo[i][3])
+        base = min(n - 1, round(ginfo[fi][1] * (n - 1)))
+        slots = [max(0, min(n - 1, base + (1 if g[1] > ginfo[fi][1] else -1)))
+                 for g in ginfo]
+        slots[fi] = base
+    elif m >= n:                             # balanced scenery: full-span rank
+        slots = list(range(n))
+    else:                                    # fewer shapes than shades: place by
+        slots = [min(n - 1, round(g[1] * (n - 1))) for g in ginfo]   # absolute luma,
+        for i in range(1, m):                                        # keep distinct
+            slots[i] = max(slots[i], slots[i - 1] + 1)
+        over = slots[-1] - (n - 1)
+        if over > 0:
+            slots = [max(0, s_ - over) for s_ in slots]
+            for i in range(1, m):
+                slots[i] = max(slots[i], slots[i - 1] + 1)
+    slot_of = {}
+    for (members, _, _, _), sl in zip(ginfo, slots):
+        for j in members:
+            slot_of[j] = sl
+
+    idx = [[slot_of[assign[y * w + x]] for x in range(w)] for y in range(h)]
+    strip = [c[1:] for c in ramp]            # bare 6-hex cells for row concat
     out = []
-    for y in range(h):
+    for y in range(h):                       # 3x3 majority vote: chunky, authored
         cells = []
         for x in range(w):
             votes = [0] * n
