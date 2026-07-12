@@ -256,10 +256,9 @@ class TuiPetApp(App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("Eggs are earned now: you start with the five classic babies "
-                 "and unlock the rest by reaching stages, clearing region "
-                 "bosses and building your album. Common eggs stock the home "
-                 "shop; the rarest are exclusive to their biome's town.")
+    WHATS_NEW = ("Help menu polish: the how-to now covers Train (it was "
+                 "missing), lists Quit, and the scroll footer shows how much "
+                 "more there is to read instead of repeating the controls.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and

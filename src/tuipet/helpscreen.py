@@ -25,13 +25,14 @@ HELP = [
     ("", 0),
     ("GROW", 2),
     ("Eggs hatch, then evolve by HOW you", 0),
-    ("raise them - care, battles, DNA.", 0),
+    ("raise them - care, train, battles.", 0),
     ("Each egg has its own line to a Mega.", 0),
-    ("x DNA jogress   d data / digicore", 1),
+    ("t train - drills build battle power", 1),
+    ("x DNA jogress   d digicore", 1),
     ("", 0),
     ("MANAGE", 2),
     ("o shop   i bag   e habitat", 1),
-    ("g options   b report a bug", 1),
+    ("g options   b report a bug   q quit", 1),
     ("", 0),
     ("TIPS", 2),
     ("Feed when hungry, clean the poop,", 0),
@@ -67,6 +68,18 @@ class HelpPanel:
             return ("done", None)
         return None
 
+    def _more_cue(self):
+        """A scroll affordance for the footer -- it says THERE IS more (the
+        message strip already says HOW to move), so the two never echo."""
+        up, dn = self.top > 0, self.top < self._max_top()
+        if up and dn:
+            return "▲▼ more"
+        if dn:
+            return "▼ more below"
+        if up:
+            return "▲ more above"
+        return ""
+
     def text(self):
         self.top = max(0, min(self.top, self._max_top()))
         pos = "%d-%d/%d" % (self.top + 1, min(self.top + VIS, len(HELP)), len(HELP))
@@ -74,7 +87,5 @@ class HelpPanel:
         for text, kind in HELP[self.top:self.top + VIS]:
             style = INK_B if kind == 2 else (INK if kind == 1 else DIM)
             out.append((text or " ") + "\n", style=style)
-        more_up = "\u25b2" if self.top > 0 else " "
-        more_dn = "\u25bc" if self.top < self._max_top() else " "
-        out.append_text(menu.footer("%s%s  ↑↓ scroll   ESC out" % (more_up, more_dn)))
+        out.append_text(menu.footer(self._more_cue()))
         return out
