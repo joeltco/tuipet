@@ -81,7 +81,7 @@ def keys_markup():
     k = f"b {theme.KEY}"
     return (
         f"[{k}]f[/] feed  [{k}]p[/] play  [{k}]c[/] clean  [{k}]h[/] heal  [{k}]r[/] praise  [{k}]k[/] scold  [{k}]s[/] lights  [{k}]v[/] assist\n"
-        f"[{k}]t[/] train  [{k}]a[/] adventure  [{k}]u[/] cup  [{k}]l[/] lobby (battle·jogress)  [{k}]x[/] DNA\n"
+        f"[{k}]t[/] train  [{k}]a[/] adventure  [{k}]u[/] cup  [{k}]l[/] lobby (battle·jogress)  [{k}]x[/] DNA  [{k}]n[/] eggs\n"
         f"[{k}]o[/] shop  [{k}]i[/] bag  [{k}]e[/] habitat  [{k}]d[/] data  [{k}]g[/] options  [{k}]b[/] bug  [{k}]?[/] help  [{k}]q[/] quit"
     )
 
@@ -257,7 +257,7 @@ class TuiPetApp(App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("The DIGITAMA GUIDE is here — press n on the home screen to "
+    WHATS_NEW = ("The DIGITAMA GUIDE (now on the ACTIONS bar) — press n to "
                  "browse every egg in the game: what you own, what is waiting in "
                  "a shop, and exactly what earns each locked one, with live "
                  "progress counters. The carousel still shows only your "

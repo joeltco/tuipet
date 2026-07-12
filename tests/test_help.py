@@ -15,6 +15,18 @@ def test_help_is_bound_to_question_mark_and_listed():
     assert "help" in keys_markup()                 # discoverable in the ACTIONS bar
 
 
+def test_every_binding_is_on_the_actions_bar():
+    """The ACTIONS bar is hand-maintained markup, separate from BINDINGS --
+    the n egg-guide key shipped in 0.2.437 bound + in help but MISSING from
+    the bar (Joel caught it).  Every home-screen binding must show its key."""
+    bar = keys_markup()
+    for key, action, _label in TuiPetApp.BINDINGS:
+        if key == "enter":                         # the gift accept: no bar slot
+            continue
+        shown = "?" if key == "question_mark" else key
+        assert f"]{shown}[/]" in bar, f"{action} ({shown}) missing from the ACTIONS bar"
+
+
 def test_help_scrolls_and_clamps_and_exits():
     pan = HelpPanel(_pet())
     assert pan.top == 0
