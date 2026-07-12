@@ -96,35 +96,15 @@ def _panel(prog=None):
     return pan
 
 
-def test_carousel_is_hatchable_plus_nearest_goals():
-    # hardened 2026-07-04, tightened again same day (Joel: "i dont want to see
-    # the shop eggs unless theyre already available"): hatchable + goals ONLY
+def test_carousel_shows_only_hatchable_eggs():
+    # Joel 2026-07-12: "only the available eggs" -- no silhouettes, no goals,
+    # no buyable teasers; the carousel is exactly what you can hatch right now.
     pan = _panel()
-    assert pan.n <= len(pan.unlocked) + pan.GOALS_SHOWN
-    assert pan.n < egg.count()                      # the 49-egg wall is gone
-    hatchable = set(pan.unlocked)
-    assert all(i in hatchable for i in pan.carousel[:len(hatchable)])
-    for i in pan.carousel[len(pan.unlocked):]:      # the tail is goals, all countable
-        st = pan.states[i][0]
-        assert st == "locked"                       # NEVER a buyable shop egg
-        assert egg.unlock_ratio(i, pan.prog) is not None
-    assert not any(pan.states[i][0] == "buyable" for i in pan.carousel)
-
-
-def test_locked_eggs_are_silhouettes_with_progress():
-    pan = _panel()
-    goals = [i for i in pan.carousel if pan.states[i][0] == "locked"]
-    assert goals                                    # the nearest goals ride the tail
-    idx = goals[0]
-    pos = pan.carousel.index(idx)
-    fr = pan._frame(pos, center=False)
-    raw = egg.record(idx)["frames"][0]
-    assert fr != raw                                # blacked out, same shape
-    assert "/" in pan._note(idx)               # a live progress counter
-    # ENTER on a sealed egg reports, never hatches
-    pan.i, pan.pos, pan.scroll = pos, float(pos), float(pos)
-    assert pan.key("enter") is None
-    assert "Sealed" in pan.msg
+    hatch = set(egg.hatchable_eggs(pan.prog, set()))
+    assert set(pan.carousel) == hatch
+    assert pan.n == len(hatch) >= 5                  # the 5 starters at least
+    assert all(pan.states[i][0] in ("owned", "temp") for i in pan.carousel)
+    assert not any(pan.states[i][0] in ("locked", "buyable") for i in pan.carousel)
 
 
 def test_panel_smoke_walks_and_draws():
@@ -178,45 +158,31 @@ def test_status_card_index_survives_the_full_carousel():
         assert "New Egg" in fake.txt and f"{i + 1} of {pan.n}" in fake.txt
 
 
-def test_buyable_egg_lives_in_the_shop_not_the_select():
-    """Joel 2026-07-04/09: shop eggs stay OUT of the egg select until bought, and the
-    buyable roster now lives in the themed TOWN shops (home counter = starters/password).
-    Earn Sakumon's license -> the select hides it, a matching town shop sells it; buy
-    it -> it joins the select as hatchable."""
+def test_a_gated_egg_is_hidden_until_earned_then_bought():
+    """Earned-access: a gated egg stays OUT of the carousel until its milestone
+    is met, then appears in the HOME shop (it's a common egg); buying it makes
+    it hatchable and it joins the carousel."""
     from tuipet import persistence, egg as egg_mod
     from tuipet.eggselectscreen import EggSelectPanel
-    from tuipet.townscreen import TownPanel
     from tuipet.shopscreen import ShopPanel
     from tuipet.pet import Pet
-    _GATE = ("gen","map","stage","xanti","tourney","prev_field","prev_attr",
-             "prev_elem","history","password","wins","album_n","mega")
-    idx = next(r["idx"] for r in data.load_egg_unlock().values()
-               if not r["start"] and r["price"] > 0
-               and all(r.get(k) in (None, False) for k in _GATE))   # an explore-buy egg
-    pan = EggSelectPanel()
-    assert pan.states[idx][0] == "buyable"
-    assert idx not in pan.carousel                  # hidden from the select
-    # the HOME egg counter no longer sells buyable eggs (they moved to towns)
-    hp = Pet(num=100, stage="Champion", attribute="Vaccine", obedience=500)
-    hp.world_seconds = 12 * 60.0
+    idx = _rule("Pafumon")["idx"]                    # a HOME egg gated on album 3
+    assert egg_mod.egg_state(idx, _prog(), set())[0] == "locked"
+    assert idx not in EggSelectPanel().carousel      # locked -> hidden
+    for n in (1, 2, 3):
+        persistence.album_add(n)
+    prog = persistence.get_progress()
+    assert egg_mod.egg_state(idx, prog, set()) == ("buyable", 1300)
+    assert idx not in EggSelectPanel().carousel      # buyable -> still not on the carousel
+    hp = Pet(num=100, stage="Champion", attribute="Vaccine"); hp.world_seconds = 12 * 60.0
+    hp.bits = 5000
     sp = ShopPanel(hp)
     while sp._tabs()[sp.tab] != "egg":
         sp.key("right")
-    assert all(e.get("egg_idx") != idx for e in sp._rows())   # not at home
-    # ...but a theme-matching TOWN shop stocks it
-    p = Pet(num=100, stage="Champion", attribute="Vaccine", obedience=500)
-    p.bits = 5000
-    prog, owned = persistence.get_progress(), persistence.get_eggs_owned()
-    town = next(t for t in range(26)
-                if any(i == idx for i, _ in egg_mod.eggs_for_town(t, prog, owned)))
-    tp = TownPanel(p, town)
-    rows = tp.egg_slots
-    assert any(e.get("egg_idx") == idx for e in rows)          # for sale here
-    entry = next(e for e in rows if e.get("egg_idx") == idx)
-    assert "Unlocked" in tp._buy_egg(entry)[0]
-    pan2 = EggSelectPanel()
-    assert idx in pan2.carousel                     # owned now -> hatchable
-    assert pan2.states[idx][0] == "owned"
+    entry = next(e for e in sp._rows() if e.get("egg_idx") == idx)   # sold at home
+    assert "Unlocked" in sp._buy_egg(entry)
+    assert idx in persistence.get_eggs_owned()
+    assert idx in EggSelectPanel().carousel          # owned -> hatchable
 
 
 def test_fresh_profile_carousel_never_empty():
@@ -226,7 +192,7 @@ def test_fresh_profile_carousel_never_empty():
     empty even on a wiped profile."""
     from tuipet.eggselectscreen import EggSelectPanel
     pan = EggSelectPanel()                        # sandboxed = a fresh profile
-    assert len(pan.unlocked) >= 5                 # the starter floor
-    assert pan.n >= len(pan.unlocked) > 0
+    assert pan.n >= 5                             # the starter floor
+    assert len(pan.carousel) == pan.n > 0
     pan.key("right")                              # nav + render on the floor
     assert pan.text() is not None

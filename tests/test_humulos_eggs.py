@@ -115,13 +115,12 @@ def test_new_eggs_hatch_line_roots_in_device_order():
     assert order[-2:] == ["Digitama X3", "Kera Digitama"]
 
 
-def test_fresh_save_starters_are_classic_five_plus_fields():
+def test_fresh_save_starters_are_the_classic_five():
+    # egg-ladder redesign 2026-07-12: the 6 Pendulum field eggs are earned now,
+    # so a brand-new save opens with ONLY the five classic babies.
     st = egg.egg_states(_prog(), owned=set())
     owned = {egg.hatch_name(i) for i, (s, _) in st.items() if s == "owned"}
-    assert owned == {"Botamon", "Punimon", "Poyomon", "Yuramon", "Zurumon",
-                     "Nature Spirits Egg", "Deep Savers Egg",
-                     "Nightmare Soldiers Egg", "Wind Guardians Egg",
-                     "Metal Empire Egg", "Virus Busters Egg"}
+    assert owned == {"Botamon", "Punimon", "Poyomon", "Yuramon", "Zurumon"}
 
 
 def test_connection_gate_locks_then_opens():
@@ -227,13 +226,17 @@ def test_locked_hints_reach_town_shelves():
         assert hint and len(hint) <= 45
 
 
-def test_twins_egg_has_a_town_shelf():
+def test_every_buyable_egg_has_a_storefront():
+    """Every priced egg is sold somewhere: common eggs at the home shop, rares
+    in a biome-matched town; the two shelves are disjoint and cover them all."""
     prog = _prog(album=set(range(0, 4000)), wins=99999, mega_kills=99999,
                  max_gen=99, max_stage=5, xanti_ever=True,
                  maps=set(range(200)), tourneys=set(range(200)),
                  last_mood=99999, last_obed=99999, last_xanti=True,
                  connections=99999)
     buyable = {i for i, _ in egg.buyable_eggs(prog, set())}
-    covered = set().union(*(set(i for i, _ in egg.eggs_for_town(t, prog, set()))
-                            for t in range(26)))
-    assert buyable <= covered
+    home = {i for i, _ in egg.home_eggs(prog, set())}
+    town = set().union(*(set(i for i, _ in egg.eggs_for_town(t, prog, set()))
+                         for t in range(26)))
+    assert home and town and home.isdisjoint(town)
+    assert buyable == home | town

@@ -256,9 +256,10 @@ class TuiPetApp(App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("Shop polish: the closed-shop sign is clean and readable "
-                 "again, item effects fit their panel without clipping, and "
-                 "the storefront reads as tuipet's own.")
+    WHATS_NEW = ("Eggs are earned now: you start with the five classic babies "
+                 "and unlock the rest by reaching stages, clearing region "
+                 "bosses and building your album. Common eggs stock the home "
+                 "shop; the rarest are exclusive to their biome's town.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and
@@ -854,10 +855,9 @@ class TuiPetApp(App):
 
     def _status_eggselect(self):
         m = self.mode
-        # carousel = hatchable + nearest LOCKED goals (m.unlocked is only
-        # the first stretch -- indexing it by m.i crashed past the hatchable
-        # eggs; 2026-07-04 Termux report).  Buyable eggs never ride it
-        # (Joel 2026-07-04) -- masked like sealed if one ever leaks.
+        # carousel = hatchable eggs ONLY (Joel 2026-07-12: no silhouettes,
+        # no goals); the badge/shown branches below stay defensive in case a
+        # locked/buyable egg ever leaks onto it.
         idx = m.carousel[m.i] if m.carousel else 0
         state = m.states.get(idx, ("owned", 0))[0]
         badge = {"temp": "[dim]this gen only[/]", "locked": "[dim]sealed[/]",

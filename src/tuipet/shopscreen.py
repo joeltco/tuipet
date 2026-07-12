@@ -66,9 +66,14 @@ class ShopPanel:
         cat = self._tabs()[self.tab]
         if self.mode == "shop":
             if cat == "egg":
-                # buyable eggs now live in the themed TOWN shops; the home counter is
-                # for hatching your owned/starter eggs + password redemption
-                return []
+                # the home shop's COMMON eggs (rares are town-exclusive); locked
+                # home eggs trail as a dim goal board under the buyable stock
+                prog, owned = persistence.get_progress(), persistence.get_eggs_owned()
+                rows2 = [egg_mod.shop_egg_entry(i, pr)
+                         for i, pr in egg_mod.home_eggs(prog, owned)]
+                rows2 += [egg_mod.locked_shop_entry(i, hint)
+                          for i, hint in egg_mod.locked_home_eggs(prog, owned)]
+                return rows2
             if self._shelves_closed():
                 return []                  # shutters down: nothing to browse or buy
             # the day's rolled roster (open_shop handles the daily reset + restock)
@@ -85,27 +90,6 @@ class ShopPanel:
         tabs = self._tabs()
         rows = self._rows()
         n = len(rows)
-        if getattr(self, "pw_mode", False):
-            # password redemption: type the code, ENTER redeems
-            self.pw_text, act = egg_mod.code_key(self.pw_text, k)
-            if act == "submit":
-                idx = egg_mod.redeem_password(self.pw_text)
-                self.msg = ("Password accepted — %s egg unlocked!" % egg_mod.hatch_name(idx)
-                            if idx is not None else "Nothing answers that password.")
-                self.sfx = "reward" if idx is not None else "error"
-                self.pw_mode, self.pw_text = False, ""
-                self.captures_text = False
-            elif act == "cancel":
-                self.pw_mode, self.pw_text = False, ""
-                self.captures_text = False
-                self.msg = "Never mind."
-            self.msg = ("Password: %s_" % self.pw_text) if self.pw_mode else self.msg
-            return None
-        if k == "p" and self.mode == "shop" and self._tabs()[self.tab] == "egg":
-            self.pw_mode, self.pw_text = True, ""
-            self.captures_text = True       # the app's global q-quit yields to typing
-            self.msg = "Password: _"
-            return None
         if k in ("left", "h"):
             self.tab = (self.tab - 1) % len(tabs); self.cursor = 0
         elif k in ("right", "l"):
@@ -187,6 +171,8 @@ class ShopPanel:
     def _buy_egg(self, e):
         """Buy a buyable egg: spend bits, unlock it permanently (it then appears in
         the egg select). Eggs are not inventory items."""
+        if e.get("locked"):
+            return "Locked — %s." % e["hint"].rstrip(".")
         idx, price = e["egg_idx"], e["price"]
         if idx in persistence.get_eggs_owned():
             return "Already unlocked."
@@ -214,8 +200,12 @@ class ShopPanel:
         tw = W - IC_W - 2
         if sel:
             if sel.get("egg_idx") is not None:
-                info = [sel["name"][:tw], "%db" % sel["price"], "permanent egg",
-                        "hatch it next egg"]
+                if sel.get("locked"):
+                    info = ["???", "locked", sel["hint"][:tw],
+                            (sel["hint"][tw:] or "")[:tw]]
+                else:
+                    info = [sel["name"][:tw], "%db" % sel["price"], "permanent egg",
+                            "hatch it next egg"]
             elif self.mode == "shop":
                 info = shop.slot_info(self.pet, sel, tw)
             else:
@@ -241,21 +231,23 @@ class ShopPanel:
         if self._shelves_closed():
             empty = "(the shutters are down)"
         elif self._tabs()[self.tab] == "egg":
-            empty = "(no eggs to buy \u2014 P for a password)"
+            empty = "(no eggs in stock \u2014 earn licenses out in the world)"
         else:
             empty = "(shelves empty \u2014 try tomorrow)" if self.mode == "shop" else "(none owned)"
 
         def fmt(e, i):
             if self.mode == "shop":
+                if e.get("egg_idx") is not None:
+                    if e.get("locked"):
+                        return "%-18s %7s" % ("???", "locked")
+                    return "%-18s %6db" % (e["name"][:18], e["price"])
                 return shop.slot_label(e)
             return "x%-2d %-26s" % (self.pet.inventory.get(e["key"], 0), e["name"][:26])
 
         self.cursor = menu.list_window(out, rows, self.cursor, 3, fmt, empty=empty)
         out.append_text(menu.note(self.msg))
         if self.mode == "shop":
-            foot = "←→ tab ↑↓ ENTER buy P password TAB bag" if tabs[self.tab] == "egg" \
-                else "←→ category ↑↓ pick ENTER buy TAB bag"
-            out.append_text(menu.footer(foot))
+            out.append_text(menu.footer("←→ category ↑↓ pick ENTER buy TAB bag"))
         else:
             out.append_text(menu.footer("←→ category ENTER use R sell TAB shop"))
         return out

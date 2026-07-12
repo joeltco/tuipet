@@ -44,19 +44,13 @@ def test_the_csv_is_unwired_in_dvpet_but_wired_here():
     assert live >= 15                              # the EARN tier (signature achievements)
 
 
-def test_explore_buy_eggs_are_always_in_the_shop():
-    """Two-tier economy: an explore-buy egg has no achievement gate -- always in the
-    town shops (buyable), and buying makes it permanent."""
-    GATE = ("gen", "map", "stage", "xanti", "tourney", "prev_field", "prev_attr",
-            "prev_elem", "history", "password", "wins", "album_n", "mega")
-    idx = next(i for i, r in data.load_egg_unlock().items()
-               if not r["start"] and r["price"] > 0
-               and all(r.get(k) in (None, False) for k in GATE))
-    r = data.load_egg_unlock()[idx]
-    st, price = egg.egg_state(idx, _prog(), set())
-    assert st == "buyable" and price == r["price"]     # no gate -> always buyable
-    st, _ = egg.egg_state(idx, _prog(), {idx})
-    assert st == "owned"                               # bought -> permanent
+def test_every_buyable_egg_is_gated():
+    """Earned-access economy (2026-07-12): no egg is buyable at day one -- every
+    priced egg carries a progression gate, so a fresh account can buy none."""
+    rules = data.load_egg_unlock()
+    priced = [i for i, r in rules.items() if not r["start"] and r["price"] > 0]
+    assert priced
+    assert all(egg.egg_state(i, _prog(), set())[0] == "locked" for i in priced)
 
 
 def test_history_gate_reads_the_album():

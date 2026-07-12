@@ -130,9 +130,8 @@ def _conditions_met(rule, prog):
         return False
     if rule["mood"] is not None and prog["last_mood"] < rule["mood"]:
         return False
-    # gates tuipet does not model -> egg stays locked (e.g. password, food/item used)
-    if rule["password"] is not None:
-        return False
+    # gates tuipet does not model -> egg stays locked (food/item/habitat used, or
+    # the fine-grained per-zone boss slot -- region-boss clears use rule["map"])
     if rule["food"] is not None or rule["item"] is not None or rule["habitat"] is not None:
         return False
     if rule["zone"] is not None:
@@ -201,35 +200,6 @@ def shop_egg_entry(idx, price):
     """A shop-row dict for a buyable egg (compatible with shopscreen rendering)."""
     return {"key": "egg:%d" % idx, "name": hatch_name(idx), "price": int(price),
             "egg_idx": idx}
-
-
-def redeem_password(text):
-    """DVPet's password redemption (eggUnlock Password column): a matching
-    code unlocks its egg PERMANENTLY.  Returns the egg index or None."""
-    from . import data, persistence
-    code = (text or "").strip().lower()
-    if not code:
-        return None
-    for i, rule in data.load_egg_unlock().items():
-        if rule.get("password") and rule["password"].strip().lower() == code:
-            persistence.egg_own(i)
-            return i
-    return None
-
-
-def code_key(buf, k):
-    """One keystroke of secret-code entry -> (buf, action) with action in
-    ('submit', 'cancel', None).  The shop's P password and the egg select's
-    C code ran two copies of this editor (refactor 2026-07-05)."""
-    if k == "escape":
-        return "", "cancel"
-    if k == "enter":
-        return buf, "submit"
-    if k == "backspace":
-        return buf[:-1], None
-    if len(k) == 1 and k.isprintable():
-        return (buf + k)[:24], None
-    return buf, None
 
 
 def win_eggs():
@@ -371,32 +341,59 @@ def _town_egg_map():
     return {i: frozenset(t) for i, t in m.items()}
 
 
+def _store_of(idx):
+    """Which storefront sells this egg: "home" / "town" / "" (earned-free)."""
+    from . import data
+    return (data.load_egg_unlock().get(idx) or {}).get("store", "")
+
+
+def _chaseable(rule):
+    """A locked egg whose gate the player can actually work toward -- a real
+    description, and nothing gated on a signal tuipet doesn't model."""
+    return bool(rule and rule["desc"]
+                and rule["food"] is None and rule["item"] is None
+                and rule["habitat"] is None and rule["zone"] is None)
+
+
+def home_eggs(prog, owned):
+    """(idx, price) buyable eggs sold at the HOME shop -- the common storefront."""
+    return [(i, p) for i, p in buyable_eggs(prog, owned) if _store_of(i) == "home"]
+
+
 def eggs_for_town(town_id, prog, owned):
-    """(idx, price) buyable eggs whose theme matches this town -- the themed town shop."""
+    """(idx, price) TOWN-exclusive rares whose biome theme matches this town."""
     tm = _town_egg_map()
-    return [(i, p) for i, p in buyable_eggs(prog, owned) if town_id in tm.get(i, frozenset())]
+    return [(i, p) for i, p in buyable_eggs(prog, owned)
+            if _store_of(i) == "town" and town_id in tm.get(i, frozenset())]
+
+
+def locked_home_eggs(prog, owned, cap=6):
+    """(idx, hint) for LOCKED home-shop eggs the player can chase -- the home
+    egg tab's goal board."""
+    from . import data
+    rules = data.load_egg_unlock()
+    out = []
+    for i, (state, _) in sorted(egg_states(prog, owned).items()):
+        if state == "locked" and _store_of(i) == "home" and _chaseable(rules.get(i)):
+            out.append((i, rules[i]["desc"]))
+            if len(out) >= cap:
+                break
+    return out
 
 
 def locked_town_eggs(town_id, prog, owned, cap=6):
-    """(idx, hint) for LOCKED eggs themed to this town whose unlock the player
-    can chase -- the shop's goal board. Password/unmodelled gates stay hidden
-    (a hint you can't act on is noise)."""
+    """(idx, hint) for LOCKED town-exclusive eggs themed to this town -- the
+    town shop's goal board (a hint you can't act on stays hidden)."""
     from . import data
     tm = _town_egg_map()
     rules = data.load_egg_unlock()
     out = []
     for i, (state, _) in sorted(egg_states(prog, owned).items()):
-        if state != "locked" or town_id not in tm.get(i, frozenset()):
-            continue
-        rule = rules.get(i)
-        if not rule or not rule["desc"] or rule["password"] is not None:
-            continue
-        if rule["food"] is not None or rule["item"] is not None \
-                or rule["habitat"] is not None or rule["zone"] is not None:
-            continue
-        out.append((i, rule["desc"]))
-        if len(out) >= cap:
-            break
+        if (state == "locked" and _store_of(i) == "town"
+                and town_id in tm.get(i, frozenset()) and _chaseable(rules.get(i))):
+            out.append((i, rules[i]["desc"]))
+            if len(out) >= cap:
+                break
     return out
 
 

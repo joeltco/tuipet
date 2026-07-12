@@ -62,17 +62,6 @@ def test_something_is_locked_initially():
     assert any(s == "locked" for s, _ in states.values())
 
 
-def test_password_egg_resolves():
-    # 'Accentier' -> Carimon (case-insensitive); blanks/garbage resolve to None.
-    idx = egg.redeem_password("accentier")
-    assert isinstance(idx, int)
-    assert egg.redeem_password("ACCENTIER") == idx
-    assert egg.redeem_password("") is None
-    assert egg.redeem_password("definitely-not-a-code") is None
-    # the password egg stays locked through ordinary play (only the code frees it)
-    state, _ = egg.egg_state(idx, _prog_for(data.load_egg_unlock().get(idx)), owned=set())
-    assert state == "locked"
-
 def test_signal_gated_eggs_are_reachable():
     """Every egg gated only on signals tuipet tracks must reach a non-locked state
     given some progress. Eggs gated on unmodelled systems (food/item/habitat/zone/
@@ -134,14 +123,13 @@ def test_no_egg_gated_on_an_unmodeled_system():
 
 
 def test_hatchable_and_buyable_partition_the_unlocked():
-    """hatchable (owned+temp) and buyable are disjoint and together = non-locked."""
-    prog = {"album": set(), "wins": 0, "max_gen": 1, "max_stage": 0, "xanti_ever": False,
-            "maps": set(), "tourneys": set(), "last_field": "None", "last_attr": "None",
-            "last_elem": "None", "last_mood": 0, "last_obed": 0, "last_xanti": False}
+    """hatchable (owned+temp) and buyable are disjoint and together = non-locked.
+    A progressed account has both; a fresh one has only the free starters."""
+    prog = dict(EMPTY, max_stage=3, maps={0, 1}, album=set(range(1, 10)))
     hatch = set(egg.hatchable_eggs(prog, set()))
     buy = {i for i, _ in egg.buyable_eggs(prog, set())}
     sel = set(egg.selectable_eggs(prog, set()))
-    assert hatch and buy, "fresh account should have both free starters and buyable eggs"
+    assert hatch and buy, "a progressed account has free eggs AND buyable ones"
     assert hatch.isdisjoint(buy)
     assert hatch | buy == sel
 
@@ -158,19 +146,22 @@ def test_egg_shop_buy_unlocks_for_hatching():
     if num is None:
         pytest.skip("sprite assets not installed")
     pet = Pet.from_num(num)
-    pet.bits = 2500
+    pet.bits = 5000
 
+    persistence._note_max("max_stage", 3)                    # reach the milestones
+    for n in range(1, 10):
+        persistence.album_add(n)
     prog = persistence.get_progress()
     owned = persistence.get_eggs_owned()
     buyable = egg.buyable_eggs(prog, owned)
-    assert buyable, "a fresh account has buyable eggs"
+    assert buyable, "a progressed account has buyable eggs"
     idx, price = buyable[0]
     assert idx not in egg.hatchable_eggs(prog, owned)         # not hatchable yet
 
     panel = ShopPanel(pet)
     msg = panel._buy_egg(egg.shop_egg_entry(idx, price))
     assert "Unlocked" in msg
-    assert pet.bits == 2500 - price                          # bits spent
+    assert pet.bits == 5000 - price                          # bits spent
 
     prog2 = persistence.get_progress()
     owned2 = persistence.get_eggs_owned()
@@ -188,32 +179,15 @@ def test_egg_shop_buy_unlocks_for_hatching():
 
 # ---- password redemption + egg mood (Evolution.egg) --------------------------
 
-def test_password_unlocks_carimon_permanently():
-    from tuipet import egg, persistence, data
-    assert egg.redeem_password("wrong-code") is None
-    idx = egg.redeem_password("  ACCENTIER ")        # case/space-insensitive
-    assert idx is not None
-    assert data.load_egg_unlock()[idx]["password"].lower() == "accentier"
-    assert idx in persistence.get_eggs_owned()       # owned for good
-
-
 def test_new_egg_starts_warm():
     from tuipet.pet import Pet, EGG_MOOD
     p = Pet.new_egg(generation=1, egg_type=0)
     assert p.mood == EGG_MOOD == 100                 # Evolution.egg: setMood(EggMood)
 
 
-def test_code_key_is_the_one_secret_code_editor():
-    """Refactor 2026-07-05: the shop's P password and the egg select's C code
-    ran two copies of the keystroke editor; egg.code_key is the single seam."""
-    from tuipet import egg as egg_mod
-    buf, act = egg_mod.code_key("", "a")
-    assert (buf, act) == ("a", None)
-    buf, act = egg_mod.code_key("ab", "backspace")
-    assert (buf, act) == ("a", None)
-    assert egg_mod.code_key("abc", "enter") == ("abc", "submit")
-    assert egg_mod.code_key("abc", "escape") == ("", "cancel")
-    buf, _ = egg_mod.code_key("x" * 24, "y")
-    assert len(buf) == 24                        # capped, like both old editors
-    buf, _ = egg_mod.code_key("a", "space")      # named keys never append
-    assert buf == "a"
+def test_carimon_is_earned_by_conquering_the_world():
+    """The old password egg is now a free achievement: clear all 5 regions."""
+    idx = next(r["idx"] for r in data.load_egg_unlock().values() if r["name"] == "Carimon")
+    assert data.load_egg_unlock()[idx]["password"] is None      # no code any more
+    assert egg.egg_state(idx, dict(EMPTY, maps={0, 1, 2}), set())[0] == "locked"
+    assert egg.egg_state(idx, dict(EMPTY, maps={0, 1, 2, 3, 4}), set()) == ("owned", 0)

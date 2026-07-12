@@ -1308,6 +1308,10 @@ def load_egg_unlock():
             # Meicoo/DORU) -- distinct tamers linked via a completed lobby
             # bout or jogress; persistence.record_connection() feeds it
             "connections": _int(r[26]) if (len(r) > 26 and _int(r[26]) is not None and _int(r[26]) >= 0) else None,
+            # tuipet storefront (egg-ladder redesign 2026-07-12): where a
+            # buyable egg is sold -- "home" (common shop) / "town" (biome-
+            # exclusive rare) / "" (earned-free, never in a shop)
+            "store": (r[27].strip().lower() if len(r) > 27 else ""),
         }
     return rules
 

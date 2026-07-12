@@ -71,15 +71,6 @@ def test_title_q_quits_other_keys_start():
     assert t.key("a") == ("done", None)
 
 
-def test_eggselect_captures_text_only_while_entering_a_code():
-    from tuipet import eggselectscreen
-    p = eggselectscreen.EggSelectPanel.__new__(eggselectscreen.EggSelectPanel)
-    p.entering = False
-    assert p.captures_text is False           # browsing eggs -> q quits
-    p.entering = True
-    assert p.captures_text is True            # typing a secret code -> q is text
-
-
 # --- punctuation in text screens ----------------------------------------------
 # Textual names punctuation keys ("." -> "full_stop", "!" -> "exclamation_mark"),
 # so a text panel's `len(k) == 1 and k.isprintable()` test dropped every symbol.

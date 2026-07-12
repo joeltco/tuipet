@@ -40,9 +40,7 @@ def test_every_screen_strip_fits_and_speaks():
     for mode in ("shop", "bag"):
         assert "ENTER" in _ok(ShopPanel(p, mode).strip(), f"shop:{mode}")
     egg = EggSelectPanel()
-    assert "secret code" in _ok(egg.strip(), "eggselect")
-    egg.entering = True
-    assert "redeem" in _ok(egg.strip(), "eggselect:code")
+    assert "pick" in _ok(egg.strip(), "eggselect")
     tp = TournamentPanel(p)
     assert "enter cup" in _ok(tp.strip(), "cup:select")
     tp.phase = "bracket"

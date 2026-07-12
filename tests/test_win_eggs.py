@@ -36,32 +36,26 @@ def test_crossing_a_gate_sets_the_announcement():
     assert getattr(p, "egg_unlock_note", "") == ""
 
 
-def test_nearest_goals_ride_the_carousel_and_refuse_enter():
-    # hardened 2026-07-04: visibility is EARNED -- only the GOALS_SHOWN closest
-    # countable goals ride the tail (all 44 sealed eggs read as no unlock system)
+def test_locked_win_eggs_stay_off_the_carousel():
+    # visibility is EARNED: a locked mystery egg is not shown at all now
     from tuipet.eggselectscreen import EggSelectPanel
-    persistence.wins_add(30)                             # 30/50: egg 41 leads the goals
+    persistence.wins_add(30)                             # 30/50: egg 41 not yet won
     pan = EggSelectPanel()
-    goals = [i for i in pan.carousel if pan.states[i][0] == "locked"]
-    assert 0 < len(goals) <= pan.GOALS_SHOWN
-    assert 41 in goals                                   # 60% there: a visible goal
-    assert 41 not in pan.unlocked                        # ...but not hatchable
-    pan.i = pan.carousel.index(41)
-    assert pan.key("enter") is None                      # sealed: no hatch
-    assert "lifetime wins 30/50" in pan.msg
-    assert "30/50" in pan._note(41)
+    assert 41 not in pan.carousel                        # locked -> hidden entirely
+    assert all(pan.states[i][0] in ("owned", "temp") for i in pan.carousel)
 
 
-def test_fifty_wins_unlocks_egg_46_and_not_47():
+def test_fifty_wins_unlocks_egg_41_and_not_42():
     persistence.wins_add(50)
     prog = persistence.get_progress()
     assert egg.egg_state(41, prog, set())[0] == "owned"
     assert egg.egg_state(42, prog, set())[0] == "locked"
     from tuipet.eggselectscreen import EggSelectPanel
     pan = EggSelectPanel()
+    assert 41 in pan.carousel                            # owned -> on the carousel
+    assert 42 not in pan.carousel                        # still locked -> hidden
     pan.i = pan.carousel.index(41)
     assert pan.key("enter") == ("done", 41)              # hatchable now
-    assert "50/100" in pan._note(42)                     # the next goal shows progress
 
 
 def test_locked_hint_falls_back_to_the_win_gate():

@@ -1,17 +1,13 @@
 """Choose-your-egg: a smooth horizontal carousel of full-size egg sprites.
-Hatchable eggs lead and the tail carries at most GOALS_SHOWN sealed
-silhouettes — the countable goals you are CLOSEST to.  Buyable shop eggs are
-NOT shown (Joel 2026-07-04): the shop's egg tab is their storefront; buying a
-license turns one owned and it joins the carousel.  (Hardened 2026-07-04: the
-arc-3 goal board rode ALL ~44 sealed eggs, which read as the unlock system
-being gone; the rest are a footer count.)
+Only eggs you can actually hatch appear here -- no sealed silhouettes, no goal
+teasers (Joel 2026-07-12: "only the available eggs").  Eggs are earned through
+play and licensed at the home / town shops; a licensed egg turns owned and
+joins the carousel.
 ←→ glide, ENTER hatches the centred egg, ESC backs out."""
 from __future__ import annotations
-from . import grid
 from . import egg as egg_mod
 from . import menu
 from . import persistence
-from .digicorescreen import silhouette
 from .render import render_scene
 from .theme import LCD_ON, LCD_BG
 
@@ -34,49 +30,18 @@ class EggSelectPanel:
             owned.add(i)
         self.prog = prog
         self.states = egg_mod.egg_states(prog, owned)
-        self.unlocked = egg_mod.hatchable_eggs(prog, owned)    # owned + temp -- only eggs you can hatch
+        self.carousel = egg_mod.hatchable_eggs(prog, owned)   # owned + temp -- the ONLY eggs shown
         self.total = egg_mod.count()
         self.hint = egg_mod.locked_hint(prog, owned)
         self.locked = sum(1 for s, _ in self.states.values() if s == "locked")
-        self.wins = prog["wins"]
-        self.carousel = self._build_carousel()
         self.n = len(self.carousel)
         self.i = 0               # cursor opens on the first egg (position 1/N)
         self.pos = 0.0           # continuous carousel target
         self.scroll = 0.0        # eased current position, chases self.pos
         self.frame_i = 0
-        self.msg = ""            # transient footer note (e.g. "Licensed!")
+        self.msg = ""            # transient footer note
         self.msg_t = 0
         self.sfx = None
-        self.entering = False    # secret-code (DVPet password) entry mode
-        self.buf = ""
-
-    def _refresh(self):
-        """Recompute unlock state after a permanent change (purchase / password)."""
-        prog = persistence.get_progress()
-        owned = persistence.get_eggs_owned()
-        self.prog = prog
-        self.states = egg_mod.egg_states(prog, owned)
-        self.unlocked = egg_mod.hatchable_eggs(prog, owned)
-        self.hint = egg_mod.locked_hint(prog, owned)
-        self.locked = sum(1 for st, _ in self.states.values() if st == "locked")
-        self.wins = prog["wins"]
-        self.carousel = self._build_carousel()
-        self.n = len(self.carousel)
-        self.i = max(0, min(self.i, self.n - 1))
-
-    GOALS_SHOWN = 3            # sealed eggs on the carousel: only the nearest goals
-
-    def _build_carousel(self):
-        # HATCHABLE eggs + the nearest countable goals ONLY.  Buyable shop eggs
-        # are NOT shown here (Joel 2026-07-04: "i dont want to see the shop
-        # eggs unless theyre already available") -- their storefront is the
-        # shop's egg tab; a purchased license turns them owned and they appear.
-        locked = [i for i, (st, _) in sorted(self.states.items()) if st == "locked"]
-        goals = sorted((i for i in locked
-                        if egg_mod.unlock_ratio(i, self.prog) is not None),
-                       key=lambda i: -egg_mod.unlock_ratio(i, self.prog))[:self.GOALS_SHOWN]
-        return self.unlocked + goals
 
     def anim(self):
         self.frame_i += 1
@@ -95,21 +60,9 @@ class EggSelectPanel:
 
     def strip(self):
         """The message-box hint line (hint overhaul 2026-07-10)."""
-        if self.entering:
-            return menu.hints(("ENTER", "redeem"), ("ESC", "cancel"))
-        return menu.hints(("←→", "browse"), ("ENTER", "pick"),
-                          ("C", "secret code"))
-
-    @property
-    def captures_text(self):
-        return self.entering           # only swallow q-as-text while typing a secret code
+        return menu.hints(("←→", "browse"), ("ENTER", "pick"), ("ESC", "back"))
 
     def key(self, k):
-        if self.entering:
-            return self._key_code(k)
-        if k in ("c", "C"):                            # enter a secret code
-            self.entering, self.buf = True, ""
-            return None
         if k in ("right", "l", "down", "j"):
             self.pos += 1
             self.i = int(self.pos) % self.n if self.n else 0
@@ -117,36 +70,11 @@ class EggSelectPanel:
             self.pos -= 1
             self.i = int(self.pos) % self.n if self.n else 0
         elif k in ("enter", "space"):
-            idx = self.carousel[self.i]
-            state, price = self.states.get(idx, ("owned", 0))
-            if state in ("locked", "buyable"):         # buyable never rides the
-                self.sfx = "error"                     # carousel; guard anyway
-                prog_txt = egg_mod.unlock_progress(idx, self.prog)
-                self._flash(f"Sealed — {prog_txt}" if prog_txt else "Sealed.")
+            if not self.n:
                 return None
-            return ("done", idx)                       # hatch the centred egg
+            return ("done", self.carousel[self.i])     # hatch the centred egg
         elif k == "escape":
             return ("done", None)                      # back out without choosing
-        return None
-
-    def _key_code(self, k):
-        self.buf, act = egg_mod.code_key(self.buf, k)
-        if act == "cancel":
-            self.entering = False
-        elif act == "submit":
-            idx = egg_mod.redeem_password(self.buf)   # one matcher for both entries; it persists
-            self.entering = False
-            if idx is not None:
-                self._refresh()
-                if idx in self.unlocked:
-                    self.i = self.unlocked.index(idx)
-                    self.pos = self.scroll = float(self.i)
-                self.sfx = "select"
-                self._flash("Unlocked %s!" % egg_mod.hatch_name(idx))
-            else:
-                self.sfx = "error"
-                self._flash("No such code.")
-            self.buf = ""
         return None
 
     def _egg(self, pos):
@@ -155,23 +83,24 @@ class EggSelectPanel:
     def _frame(self, pos, center):
         idx = self._egg(pos)
         fr = egg_mod.record(idx)["frames"]
-        if self.states.get(idx, ("owned", 0))[0] in ("locked", "buyable"):
-            return silhouette(fr[0])                   # a sealed egg keeps its shape only
         if center and self.scroll == self.pos:         # settled: idle wobble on the chosen egg
             return fr[(self.frame_i // 5) % 2] or fr[0]
         return fr[0]
 
     def _note(self, idx):
-        state, price = self.states.get(idx, ("owned", 0))
+        state, _ = self.states.get(idx, ("owned", 0))
         name = egg_mod.hatch_name(idx)
-        if state in ("locked", "buyable"):
-            prog_txt = egg_mod.unlock_progress(idx, self.prog)
-            return f"sealed — {prog_txt}" if prog_txt else "sealed"
         if state == "temp":
             return "hatches: %s  (this gen only)" % name
         return "hatches: %s" % name
 
     def text(self):
+        if not self.n:                                 # defensive: starters keep this non-empty
+            out = menu.header("CHOOSE YOUR EGG", "0/0")
+            out.append_text(menu.blanks(ROWS // 2))
+            out.append_text(menu.note("no eggs ready — earn them out in the world"))
+            out.append_text(menu.footer("ESC back"))
+            return out
         placements = []
         base = round(self.scroll)
         for d in range(-WINDOW, WINDOW + 1):
@@ -183,14 +112,10 @@ class EggSelectPanel:
         out.append_text(scene)
         out.append("\n")                              # scene has no trailing newline
         out.append_text(menu.note(self._note(self._egg(self.i)), tick=self.frame_i))
-        if self.entering:
-            out.append_text(menu.footer(f"code: {self.buf}_   ENTER ok  ESC cancel"))
-        elif self.msg:
+        if self.msg:
             out.append_text(menu.footer(self.msg))
-        elif self.locked > 0 and self.hint and (self.frame_i // 30) % 3 == 1:
-            out.append_text(menu.footer(f"{self.locked} locked · {self.hint}"))
-        elif self.locked > 0 and (self.frame_i // 30) % 3 == 2:
-            out.append_text(menu.footer("C: enter a secret code"))
+        elif self.locked > 0 and self.hint and (self.frame_i // 40) % 2 == 1:
+            out.append_text(menu.footer(f"{self.locked} more out there · {self.hint}"))
         else:
             out.append_text(menu.footer("←→ browse   ENTER pick   ESC back"))
         return out
