@@ -9,6 +9,8 @@ from .townscreen import TownPanel
 from .render import downsample
 from . import grid
 from . import strikefx
+from . import arena
+from . import anim
 
 from .theme import LCD_ON, LCD_BG, INK, INK_B, DIM, SIL_DAY  # noqa: F401  (palette names bound for theme.apply propagation)
 from . import menu
@@ -435,7 +437,8 @@ class AdventurePanel(menu.SubHost):
                 self.sub = FeedPanel(self.pet)
             return None
         if k == "i":
-            self.sub = ShopPanel(self.pet, start_mode="bag")
+            # bag only on the road -- buying needs a town shop (Joel 2026-07-12)
+            self.sub = ShopPanel(self.pet, start_mode="bag", bag_only=True)
             return None
         if k == "h":
             self.adv.last = self.pet.heal()
@@ -582,6 +585,50 @@ class AdventurePanel(menu.SubHost):
         rows = self._rows(data.ROLES["walk"][(self.frame_i // beat) % 2])
         return rows, self._jx(rows), True, [], None
 
+    def _quiet_standing(self):
+        """The pet is simply standing on the road: no walk, no encounter, no
+        scripted beat.  This is the state that should read as the home biome."""
+        return (not self.travelling and self.sub is None
+                and self._trans is None and self._scene is None
+                and self._care is None and self._parade is None
+                and self._retreat is None and self._pulse is None
+                and not self._refuse_t and not self.discovering
+                and not self.adv.done
+                and getattr(self, "town_prompt", None) is None)
+
+    def _biome_frame(self):
+        """Render the standing pet exactly like the home scene: state-driven
+        pose, the poop/Zzz/sick-skull actors, and the weather -- the whole
+        thing clipped to the play window and laid over the zone backdrop."""
+        p = self.pet
+        wf = self.frame_i // 4                      # arena's ~0.4s overlay cadence
+        px_h = ROWS * 2
+        xshift = 0
+        if p.sick and p.num != -1:                  # idleUnwell: collapse + sway
+            si, dx = anim.sick_frame(self.frame_i)
+            rows = self._rows(si)
+            xshift = dx
+        elif getattr(p, "asleep", False) and (p.anim == "sleep" or not p.lights):
+            pose = data.ROLES["sleep"][(self.frame_i // anim.SLEEP_BEAT) % 2]
+            rows = self._rows(pose)
+        else:                                       # idleWalk toggle (calm beat)
+            rows = self._rows(data.ROLES["walk"][(self.frame_i // 8) % 2])
+        x = self._jx(rows) + xshift
+        # the home floor law: the filth block is a hard left wall, the sick
+        # skull a hard right one -- the pet can never share their columns
+        lo = arena._filth_right(p.poop) if p.poop else grid.X0
+        hi = ((grid.X1 - arena.SICK_ZONE if arena._sick_mark_up(p) else grid.X1)
+              - grid.width(rows))
+        x = min(max(x, lo), max(hi, lo))
+        bgimg = self._road_bg()
+        if not p.lights:                            # lights out: dark room + Zzz
+            bgimg, rows = None, []
+        overlay = arena._clip_win(
+            arena._effect_overlay(p, wf, COLS, px_h, tick=self.frame_i))
+        weather = arena._weather_overlay(p.weather, wf, COLS, px_h)
+        return menu.paint([(rows, x, False)], bgimg, rows=ROWS, cols=COLS,
+                          overlay=overlay, overlay_free=weather, clip=grid.WINDOW)
+
     def _road_bg(self):
         """The journey's SCENERY (restyle 2026-07-04 -- the old flat 7-row
         strip "looked nothing like the rest of the game"): the zone's
@@ -672,6 +719,8 @@ class AdventurePanel(menu.SubHost):
             return self.sub.text()
         if self._trans is not None:
             return self._teleport_frame()
+        if self._quiet_standing():
+            return self._biome_frame()             # standing = the home biome
         pet_rows, x, mirror, overlay, note_over = self._pet_placement()
         bgimg = self._road_bg()
         if self._pulse is not None and bgimg and \

@@ -99,7 +99,7 @@ def fill_buf(frame_rows, cols, px_h, baseline=True, mirror=False, xshift=0,
     return buf
 
 
-def render_scene(placements, cols, rows, on="#2b2e31", bg="#c6c9cc", overlay=None, bgimg=None, clip=None):
+def render_scene(placements, cols, rows, on="#2b2e31", bg="#c6c9cc", overlay=None, bgimg=None, clip=None, overlay_free=None):
     """Compose several sprites onto one LCD screen.
 
     placements: list of (frame_rows, x_left, mirror). Each sprite sits on the
@@ -123,6 +123,8 @@ def render_scene(placements, cols, rows, on="#2b2e31", bg="#c6c9cc", overlay=Non
                         buf[py][px] = 1
     if overlay:                              # projectiles / impact bursts
         _stamp(buf, overlay, cols, px_h, clip=clip)
+    if overlay_free:                         # weather: the whole LCD is its sky
+        _stamp(buf, overlay_free, cols, px_h)
     return _paint_cells(buf, cols, rows, on, bg, bgimg)
 
 

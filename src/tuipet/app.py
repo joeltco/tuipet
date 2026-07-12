@@ -117,6 +117,31 @@ def _age_compact(seconds):
     return f"{s // 60}m{s % 60:02d}s"
 
 
+def _care_deco(pet, word=None):
+    """The care badges shown beside the status word -- one list, shared by the
+    home Stats panel and the adventure card (Joel 2026-07-12: adventure shows
+    the same icons).  Order is priority: the lowest ones drop first on overflow."""
+    T = theme
+    if word is None:
+        word = pet.status_word()
+    deco = []
+    if pet.asleep and word != "asleep": deco.append("[blue]Zzz[/]")
+    if pet.sick and word != "sick": deco.append(f"[{T.NEG}]+sick[/]")
+    if pet.is_fatigued() and word != "fatigued": deco.append(f"[{T.NEG}]+tired[/]")
+    if pet.is_injured() and word != "injured": deco.append(f"[{T.NEG}]+hurt[/]")
+    if pet.is_freezing() and word != "freezing": deco.append("[blue]+cold[/]")
+    if pet.is_overheating() and word != "overheating": deco.append(f"[{T.NEG}]+hot[/]")
+    if getattr(pet, "praise_flag", False): deco.append(f"[{T.POS}]+praise![/]")
+    if getattr(pet, "scold_flag", False) or getattr(pet, "discipline_call", False):
+        deco.append(f"[{T.NEG}]+scold![/]")
+    if pet.poop: deco.append(f"[{T.COIN}]~poop x{pet.poop}[/]")
+    if getattr(pet, "effect_id", -1) >= 0: deco.append(f"[{T.POS}]\u2726{pet.effect_name()}[/]")
+    if pet.has_medicine(): deco.append(f"[{T.NEG}]+med[/]")
+    if pet.has_bandage(): deco.append("[dim]+bnd[/dim]")
+    if pet.has_vitamin(): deco.append(f"[{T.POS}]+vit[/]")
+    return deco
+
+
 def _status_line(status, deco, width=26):
     """Assemble the status word + deco glyphs, bounded to `width` visible cols
     so the Stats box never wraps past its 16-row height. Drops the lowest-priority
@@ -142,26 +167,7 @@ class Stats(Static):
         T = theme
         div = f"[dim]{'─' * 26}[/]"
         word = pet.status_word()
-        deco = []
-        if pet.asleep and word != "asleep": deco.append("[blue]Zzz[/]")
-        if pet.sick and word != "sick": deco.append(f"[{T.NEG}]+sick[/]")
-        if pet.is_fatigued() and word != "fatigued": deco.append(f"[{T.NEG}]+tired[/]")
-        if pet.is_injured() and word != "injured": deco.append(f"[{T.NEG}]+hurt[/]")
-        if pet.is_freezing() and word != "freezing": deco.append("[blue]+cold[/]")
-        if pet.is_overheating() and word != "overheating": deco.append(f"[{T.NEG}]+hot[/]")
-        # the discipline window is a BADGE, not a scene actor (Bandai grammar
-        # 2026-07-11: the teach bulb came off the LCD) -- this line is where a
-        # praise/scold moment shows now, next to the alarm's msg-box half
-        if getattr(pet, "praise_flag", False): deco.append(f"[{T.POS}]+praise![/]")
-        if getattr(pet, "scold_flag", False) or getattr(pet, "discipline_call", False):
-            deco.append(f"[{T.NEG}]+scold![/]")
-        if pet.poop: deco.append(f"[{T.COIN}]~poop x{pet.poop}[/]")
-        if getattr(pet, "effect_id", -1) >= 0: deco.append(f"[{T.POS}]\u2726{pet.effect_name()}[/]")
-        # the badge conditions, lowest priority (dropped first on overflow):
-        # off-LCD since the Bandai-grammar sweep -- the HUD is their one home
-        if pet.has_medicine(): deco.append(f"[{T.NEG}]+med[/]")
-        if pet.has_bandage(): deco.append("[dim]+bnd[/dim]")
-        if pet.has_vitamin(): deco.append(f"[{T.POS}]+vit[/]")
+        deco = _care_deco(pet, word)
         age = _age_compact(pet.age_seconds)
         sky, skycol = _sky_icon(pet)
         aff = pet._affinity()
@@ -1126,6 +1132,8 @@ class TuiPetApp(App):
                            else "[dim]·[/]" for c in a.ribbon())
             from . import world
             _mn = a.maps[a.mi]["map"]
+            from .arena import _sky_icon
+            sky, skycol = _sky_icon(p)
             lines = [
                 f"[b]{p.name[:14]}[/] [dim]· away[/]",
                 div,
@@ -1138,8 +1146,9 @@ class TuiPetApp(App):
                 f"Hunger   {hearts(p.hunger)}",
                 f"Energy   {bar(p.energy_pct(), 11, T.ENERGY)}",
                 f"Power    {power}",
+                f"[{skycol}]{sky}[/] [dim]{p.weather} {int(p.temp)}\u00b0[/]",
                 div,
-                "[dim]survive the zone[/]",
+                _status_line(p.status_word(), _care_deco(p)),
             ]
         self.stats_w.update("\n".join(lines))
 

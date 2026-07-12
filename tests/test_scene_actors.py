@@ -200,7 +200,7 @@ def test_alarm_keeps_the_union_while_the_scene_split_stands():
 def test_hud_carries_every_badge():
     """The badges' one home: the STATUS deco line."""
     import inspect
-    src = inspect.getsource(app.Stats.paint)
+    src = inspect.getsource(app._care_deco)
     for badge in ("+med", "+bnd", "+vit", "+praise!", "+scold!",
                   "+tired", "+hurt", "+sick"):
         assert badge in src, badge

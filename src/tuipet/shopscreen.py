@@ -21,9 +21,10 @@ TAB_LABEL = {"food": "Food", "item": "Items", "egg": "Eggs", "medicine": "Medici
 
 
 class ShopPanel:
-    def __init__(self, pet, start_mode="shop"):
+    def __init__(self, pet, start_mode="shop", bag_only=False):
         self.pet = pet
         self.mode = start_mode
+        self.bag_only = bag_only        # road bag: use/sell only, no TAB to the shop
         self.tab = 0
         self.cursor = 0
         if start_mode == "bag":
@@ -37,6 +38,8 @@ class ShopPanel:
         """The message-box hint line (hint overhaul 2026-07-10)."""
         if self.mode == "shop":
             return menu.hints(("←→", "cat"), ("ENTER", "buy"), ("TAB", "bag"))
+        if self.bag_only:               # the road bag can't reach the shop
+            return menu.hints(("←→", "cat"), ("ENTER", "use"), ("R", "sell"))
         return menu.hints(("←→", "cat"), ("ENTER", "use"),
                           ("R", "sell"), ("TAB", "shop"))
 
@@ -112,7 +115,7 @@ class ShopPanel:
             if n: self.cursor = (self.cursor - 1) % n
         elif k in ("down", "j"):
             if n: self.cursor = (self.cursor + 1) % n
-        elif k == "tab":
+        elif k == "tab" and not self.bag_only:
             self.mode = "bag" if self.mode == "shop" else "shop"
             self.tab = 0; self.cursor = 0
             self.msg = "Your bag." if self.mode == "bag" else "Spend your bits."

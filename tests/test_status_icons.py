@@ -94,7 +94,7 @@ def test_badges_are_hud_only():
     assert _pts(_pet(med_lapse=30.0)) == []
     assert _pts(_pet(praise_flag=True)) == []
     import inspect
-    src = inspect.getsource(app.Stats.paint)
+    src = inspect.getsource(app._care_deco)
     assert "+med" in src and "+praise!" in src and "+scold!" in src
 
 
