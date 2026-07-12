@@ -11,6 +11,7 @@ from . import grid
 from . import strikefx
 from . import arena
 from . import anim
+from . import weather as wx
 
 from .theme import LCD_ON, LCD_BG, INK, INK_B, DIM, SIL_DAY  # noqa: F401  (palette names bound for theme.apply propagation)
 from . import menu
@@ -166,6 +167,7 @@ class AdventurePanel(menu.SubHost):
         if self.sub_anim():          # SubHost: delegate + sfx bubble
             return
         self.frame_i += 1
+        self._roll_weather()                     # weather happens on the road
         if self._refuse_t:
             self._refuse_t -= 1
         fade = getattr(self, "_bg_fade", None)
@@ -629,6 +631,36 @@ class AdventurePanel(menu.SubHost):
         return menu.paint([(rows, x, False)], bgimg, rows=ROWS, cols=COLS,
                           overlay=overlay, overlay_free=weather, clip=grid.WINDOW)
 
+    def _current_hab_id(self):
+        """The habitat id of the scenery under the pet right now -- the zone's
+        per-step backdrop, or the town's backdrop when standing in one.  None
+        means fall back to the home habitat."""
+        a = self.adv
+        bg_h = next((hid for (blo, bhi, hid) in a.zone.get("bgs", [])
+                     if blo <= a.location <= bhi), None)
+        tspan = next((t for t in a.zone.get("towns", [])
+                      if t[0] <= a.location <= t[1]), None)
+        if tspan is not None:
+            tbg = (data.load_towns().get(tspan[2]) or {}).get("bg_habitat")
+            if tbg is not None:
+                bg_h = tbg
+        return bg_h
+
+    def _roll_weather(self):
+        """Weather keeps happening while travelling (Joel 2026-07-12), off the
+        CURRENT zone habitat -- so it shifts as the pet crosses biomes and an
+        underwater leg stays clear (weather.next_weather gates no-sky habitats).
+        Re-rolls on every biome crossing, plus the canon slow cadence."""
+        hid = self._current_hab_id()
+        hab = (data.load_habitats().get(hid) if hid is not None else None) \
+            or self.pet.habitat_obj()
+        self._wx_t = getattr(self, "_wx_t", 0.0) + 0.1
+        if hid != getattr(self, "_wx_hab", "unset") or self._wx_t >= wx.WEATHER_CHECK_SEC:
+            self._wx_t = 0.0
+            self._wx_hab = hid
+            self.pet.weather = wx.next_weather(self.pet.weather, self.pet.season,
+                                               self.pet.day_temp, hab)
+
     def _road_bg(self):
         """The journey's SCENERY (restyle 2026-07-04 -- the old flat 7-row
         strip "looked nothing like the rest of the game"): the zone's
@@ -638,13 +670,7 @@ class AdventurePanel(menu.SubHost):
         habitat CROSS-FADES (canon BackgroundAnim.animateBack: the old
         backdrop's opacity steps out over the new at -0.05/frame)."""
         a = self.adv
-        bg_h = next((hid for (blo, bhi, hid) in a.zone.get("bgs", [])
-                     if blo <= a.location <= bhi), None)
-        # arriving at a town shows the TOWN's scenery (towns.csv TownBackgroundID)
-        tspan = next((t for t in a.zone.get("towns", []) if t[0] <= a.location <= t[1]), None)
-        if tspan is not None:
-            tbg = (data.load_towns().get(tspan[2]) or {}).get("bg_habitat")
-            bg_h = tbg if tbg is not None else bg_h
+        bg_h = self._current_hab_id()
         bgimg = self.pet.background(bg_h) if bg_h is not None else self.pet.background()
         if bg_h != getattr(self, "_bg_id", bg_h):
             self._bg_fade = {"old": getattr(self, "_bg_last", None), "t": 0}

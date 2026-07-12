@@ -34,6 +34,12 @@ MORNING_TEMP_FACTOR = 3
 # functions take a `hab` dict so weather varies by where the pet lives.
 SEASONS = ["Spring", "Summer", "Fall", "Winter"]
 RAIN = {"Raining", "Drizzling", "HeavyRain"}
+
+# Habitats with no open sky above the pet: precipitation can't fall, so weather
+# is always Clear there -- home OR adventure zone (Joel 2026-07-12: "underwater
+# dont get weather. its underwater lol").  Hard Disk (0) is already a
+# climate-controlled home (weather_chance 0); this covers the submerged one.
+NO_SKY_HABITATS = {8}          # Underwater
 SNOW = {"Snowing", "LightSnow", "HeavySnow"}
 PRECIP = RAIN | SNOW
 
@@ -66,8 +72,8 @@ def next_weather(weather, season, day_temp, hab):
     """checkWeather: DVPet's weather transition state machine, per habitat."""
     chance = hab["weather_chance"]
     change = hab["weather_change"] or 100
-    if chance <= 0:
-        return "Clear"
+    if chance <= 0 or hab.get("id") in NO_SKY_HABITATS:
+        return "Clear"                       # climate-controlled or no open sky
     season_mod = hab["precip_mod"][season]
     cloud_mod = hab["cloud_mod"] if weather == "Cloudy" else 0
     warm = day_temp > FREEZING_TEMP

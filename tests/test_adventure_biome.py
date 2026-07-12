@@ -96,3 +96,30 @@ def test_town_has_a_shop_but_no_training():
     body = tp.strip().lower()
     assert "food" in body or "items" in body or "shop" in body  # a shop is here
     assert "train" not in body                                  # but no training
+
+
+def test_weather_rolls_on_the_road():
+    """Weather happens during adventures: the roll runs each frame and seeds
+    the pet's weather from the current zone habitat (Joel 2026-07-12)."""
+    p, adv = _adv()
+    assert hasattr(adv, "_wx_hab")               # the roll has run at least once
+    # forcing a non-sky zone clears any precip
+    adv._current_hab_id = lambda: 8              # Underwater (Coral Deep)
+    p.weather = "HeavyRain"
+    adv._wx_hab = "force"                        # trigger a re-roll on the biome change
+    adv._roll_weather()
+    assert p.weather == "Clear", "weather fell underwater"
+
+
+def test_open_sky_zone_can_get_weather():
+    """A normal outdoor zone is allowed to brew weather on the road."""
+    import random
+    p, adv = _adv()
+    adv._current_hab_id = lambda: 15             # Desert (high weather chance)
+    random.seed(3)
+    seen = set()
+    for _ in range(400):
+        adv._wx_hab = "force"                    # force a roll each step
+        adv._roll_weather()
+        seen.add(p.weather)
+    assert seen - {"Clear"}, "an open-sky zone never produced any weather"
