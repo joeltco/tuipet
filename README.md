@@ -171,6 +171,11 @@ discipline books, attribute chips, transport items, and the adventure **Life
 Recovery** potion all carry their real in-game effects. Loot drops unlock
 their shop listings permanently.
 
+New **egg licenses** are earned, not handed out: you begin with the five classic
+babies and unlock the rest by reaching stages, clearing region bosses, and growing
+your album — common eggs stock the home shop, the rarest are exclusive to their
+biome's town.
+
 ## AI assistant & options
 
 **v** hires the device's auto-care AI (per-stage retainer and per-care fees —
