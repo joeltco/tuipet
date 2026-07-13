@@ -548,15 +548,19 @@ def get_progress():
 
 
 def add_pending_bug(rec):
-    """Stash a bug that could not be sent (offline) to retry next launch."""
+    """Stash a bug that could not be sent (offline) to retry next launch.
+    True when it is safely on disk -- the caller PROMISES the player it will
+    send later, so a failed stash must not be reported as a save (swallowed-
+    failure sweep 2026-07-13)."""
     import os as _os
     import json as _json
     try:
         _os.makedirs(SAVE_DIR, exist_ok=True)
         with open(_os.path.join(SAVE_DIR, "pending_bugs.jsonl"), "a", encoding="utf-8") as f:
             f.write(_json.dumps(rec) + "\n")
+        return True
     except OSError:
-        pass
+        return False
 
 
 def take_pending_bugs():

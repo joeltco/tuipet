@@ -265,11 +265,11 @@ class TuiPetApp(App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("Termux sound fix: if you installed the termux-api package "
-                 "but not the Termux:API app, tuipet thought sound was "
-                 "working and went completely silent — no beeps, no bell. It "
-                 "now detects the dead bridge and falls back to the terminal "
-                 "bell, and Options tells you the truth.")
+    WHATS_NEW = ("No more silent failures: if the cloud refuses your saves "
+                 "(because tuipet is open in a newer session) you are now "
+                 "TOLD, instead of quietly losing cross-device progress. Same "
+                 "for a bug report that cannot be sent or saved — tuipet no "
+                 "longer promises what it cannot deliver.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and
@@ -482,8 +482,23 @@ class TuiPetApp(App):
     def autosave(self):
         persistence.save(self.pet)
         self._warn_if_unsaveable()
+        self._warn_if_cloud_dropped()
         self._note_progress()
         self._push_cloud()              # mirror the autosave up to the cloud
+
+    def _warn_if_cloud_dropped(self):
+        """The server is REFUSING our cloud saves (a newer session of this
+        account owns them).  The local save is fine, but cross-device sync is
+        dead -- and we used to never mention it (swallowed-failure sweep
+        2026-07-13)."""
+        sync = getattr(self, "_sync", None)
+        if sync is None or not getattr(sync, "cloud_dropped", False):
+            return
+        if getattr(self, "_cloud_warned", False):
+            return
+        self._cloud_warned = True
+        self.flash(f"[{theme.NEG}]⚠ Cloud sync off — tuipet is open in a newer "
+                   f"session. This device saves locally only.[/]")
 
     def _warn_if_unsaveable(self):
         """A save dir the OS refuses used to fail SILENTLY -- the pet simply
@@ -660,9 +675,12 @@ class TuiPetApp(App):
         ok = await net.submit_bug(_lobby_uri(), text, meta, name=name)
         if ok:
             self._hud("Bug report sent \u2014 thank you!")
-        else:
-            persistence.add_pending_bug(dict(meta, text=text, name=name))
+        elif persistence.add_pending_bug(dict(meta, text=text, name=name)):
             self._hud("Offline \u2014 saved; it will send next time you are online.")
+        else:
+            # the stash failed too (a read-only save dir): do not promise a
+            # send we cannot make (swallowed-failure sweep 2026-07-13)
+            self._hud(f"[{theme.NEG}]Couldn't send or save that report \u2014 sorry.[/]")
 
     async def _flush_bugs(self):
         """Best-effort resend of any bugs stashed while offline."""

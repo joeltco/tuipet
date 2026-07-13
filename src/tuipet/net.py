@@ -110,6 +110,14 @@ class SyncClient(_WsClient):
     _backoff_cap = 60.0
 
     def __init__(self, uri, name, pw="", on_pull=None):
+        # The server ACKs every save with {"t":"saved","ok":...} and answers
+        # ok=False when it DROPPED it (a stale lease: a newer session of this
+        # account owns the saves).  We never read that ack -- _handle had no
+        # "saved" branch -- so a device whose lease was taken went on believing
+        # its pet was syncing while the server binned every push.  Cross-device
+        # progress vanished, silently.  (Swallowed-failure sweep 2026-07-13:
+        # the same shape as the iOS silent save and the dead Termux bridge.)
+        self.cloud_dropped = False
         self.uri = uri
         self.name = name
         self.pw = pw
@@ -158,6 +166,9 @@ class SyncClient(_WsClient):
         if t == "welcome":
             if self.on_pull is not None:
                 self.on_pull(m.get("save"))    # server's stored save (or None)
+        elif t == "saved":
+            # the verdict on our last push: ok=False means the server BINNED it
+            self.cloud_dropped = not m.get("ok")
         elif t == "pm":
             # the sync ghost is the HOME-SCREEN alert channel: the app drains
             # this into the message box (presence 2026-07-05)
