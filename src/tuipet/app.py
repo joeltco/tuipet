@@ -258,11 +258,11 @@ class TuiPetApp(App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("Adventure feel, pass four: reaching a zone boss now STOPS "
-                 "the march at its gate — the boss looms, you square up, and "
-                 "SPACE engages when you're ready. A boss is a showdown you "
-                 "walk into, not another surprise. Wild encounters still "
-                 "strike on the spot.")
+    WHATS_NEW = ("Adventure feel, pass five: coming home victorious now "
+                 "means something — the zone-cleared line lands over your "
+                 "house as the teleport drops you off. The whole journey is "
+                 "also locked end-to-end by test now: out, march, town, "
+                 "showdown, home.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and
@@ -1726,7 +1726,11 @@ class TuiPetApp(App):
         self.pet.check_compliant()                  # ... ; checkCompliant
         if refused:
             self._do(f"{self.pet.name} refuses to go!"); return
-        self._open_mode(adventurescreen.AdventurePanel(self.pet), lambda _=None: self.repaint())
+        def _back(msg=None):
+            if msg:
+                self.flash(msg)          # the victory line lands over the house
+            self.repaint()
+        self._open_mode(adventurescreen.AdventurePanel(self.pet), _back)
 
     def action_gift(self):
         if self.mode is not None or self.screen_w.fx is not None or not self.pet.gift:

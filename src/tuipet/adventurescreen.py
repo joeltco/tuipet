@@ -176,7 +176,7 @@ class AdventurePanel(menu.SubHost):
             elif tr["phase"] == "arrive" and tr["t"] >= TELE_ARRIVE_T:
                 self._trans = None
                 if tr["dir"] == "out":
-                    self.auto_close = ("done", None)
+                    self.auto_close = ("done", getattr(self, "_home_msg", None))
                 else:
                     self.travelling = not self.adv.done   # landed: the walk begins
             return
@@ -302,6 +302,10 @@ class AdventurePanel(menu.SubHost):
         for the next zone."""
         if msg:
             self.adv.last = msg
+        # the completion line rides home (pass 5): the homecoming auto-close
+        # hands it to the app, which flashes it over the house -- a plain ESC
+        # exit never sets it, so nothing stale ever flashes
+        self._home_msg = self.adv.last
         self.travelling = False
         self._trans = {"dir": "out", "phase": "leave", "t": 0}
 

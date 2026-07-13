@@ -200,7 +200,8 @@ def test_scene_screens_fit_the_physical_lcd_in_every_state():
         pan.anim()
         _render(pan)
         pan.strip()
-    assert pan.auto_close == ("done", None)
+    # pass 5: the homecoming may carry a completion line as payload
+    assert pan.auto_close[0] == "done"
 
     from tuipet.townscreen import TownPanel
     pan = TownPanel(p, 0)

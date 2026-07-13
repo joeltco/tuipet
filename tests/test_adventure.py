@@ -568,3 +568,30 @@ def test_life_recovery_potion_is_road_only_and_gated_at_max():
     p.away = False                           # home again: road-only
     assert "Digital World" in p.use_item("i:27")
     assert p.inventory.get("i:27")           # kept for the next outing
+
+
+def test_multi_boss_zone_stands_both_gates(monkeypatch):
+    """Pass 5: zone 1-7 stands Piedmon mid-zone and Apocalymon at the gate --
+    both must be fought, in order, and only the SECOND ends the zone."""
+    from tuipet import adventure as amod
+    from tuipet.adventure import Adventure
+    from tuipet.pet import Pet
+    monkeypatch.setattr(amod.random, "random", lambda: 0.99)
+    p = Pet(num=100, stage="Champion", attribute="Vaccine", obedience=500)
+    p.world_seconds = 10 * 60.0
+    p.stop_travel_prob = lambda: 0.0
+    p.adv_map, p.adv_zone = 0, 6                   # map 1, zone 7
+    adv = Adventure(p)
+    assert len(adv.zone["bosses"]) == 2
+    fought = []
+    for _ in range(200):
+        ev = adv.travel()
+        if ev and ev[0] == "boss":
+            fought.append(ev[1]["name"])
+            res = adv.resolve(True, True, ev[1])
+            if res:
+                assert res == "map", "the second gate ends the MAP"
+                break
+        elif ev and ev[0] == "town":
+            continue
+    assert fought == ["Piedmon", "Apocalymon"]

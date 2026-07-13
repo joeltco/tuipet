@@ -820,3 +820,67 @@ def test_nap_hint_says_the_journey_waits():
     pan.pet.asleep = True
     pan.pet.anim = "sleep"
     assert "Zzz" in pan.strip() and "SPACE stop" not in pan.strip()
+
+
+# ---- adventure audit pass 5: the whole journey, end to end --------------------
+
+def test_full_expedition_end_to_end(monkeypatch):
+    """Pass 5 integration: teleport out -> march -> town gates -> walk on ->
+    gate stop -> SPACE -> win -> pulse -> homeward teleport -> auto-close
+    with the victory line -- one real zone, through the PANEL, start to
+    home.  Pins the entire rebuilt flow in one run."""
+    from tuipet import adventure as amod
+    from tuipet.battlescreen import BattlePanel
+    monkeypatch.setattr(amod.random, "random", lambda: 0.99)   # a quiet road
+    p = _pet()
+    home = p.habitat
+    pan = AdventurePanel(p)
+    p.stop_travel_prob = lambda: 0.0
+    seen = set()
+    for _ in range(6000):
+        pan.anim()
+        if pan._trans is not None and not seen:
+            seen.add("teleport")
+        if pan.town_prompt is not None:
+            seen.add("town")
+            pan.key("escape")                     # walk on past the gates
+        if pan.adv.boss_pending and pan.sub is None:
+            seen.add("gate stop")
+            assert "SPACE fight" in pan.strip()
+            pan.key("space")
+        if isinstance(pan.sub, BattlePanel):
+            seen.add("battle")
+
+            class _B:                              # the gate falls
+                won = True
+
+            class _Sub:
+                def key(self, k):
+                    return ("done", _B())
+
+                def text(self):
+                    return None
+            pan.sub = _Sub()
+            pan.key("enter")
+        if pan._pulse is not None:
+            seen.add("pulse")
+        if getattr(pan, "auto_close", None) is not None:
+            break
+    else:
+        raise AssertionError(f"the run never came home; saw {seen}")
+    assert {"teleport", "town", "gate stop", "battle", "pulse"} <= seen
+    kind, msg = pan.auto_close
+    assert kind == "done" and msg and "cleared" in msg.lower()
+    assert p.habitat == home and p.away is False, "homecoming restores home"
+    assert p.adv_zone == 1, "the next adventure sets out for zone 2"
+
+
+def test_plain_esc_exit_carries_no_victory_line():
+    pan = AdventurePanel(_pet())
+    pan._trans = None
+    pan.key("escape")                              # homeward, nothing won
+    for _ in range(200):
+        pan.anim()
+        if getattr(pan, "auto_close", None) is not None:
+            break
+    assert pan.auto_close == ("done", None)
