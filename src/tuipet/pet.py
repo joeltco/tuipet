@@ -1962,6 +1962,13 @@ class Pet:
                 self._weather_t = 0.0
                 self.weather = wx.next_weather(self.weather, self.season, self.day_temp, hab)
             target = wx.adjusted_day_temp(self.day_temp, self.weather, self.day_phase, hab)
+        # DVPet checkEveryTemp gates the WHOLE temperature lapse -- the drift
+        # toward the day's target AND checkTemp's sick fever/chill swings --
+        # behind !pauseTemp() (futon audit 2026-07-13).  The Futon "maintains
+        # temperature": it PINS temp where it is (items.csv Temp=0 -- it never
+        # warms a cold pet) while weather keeps rolling overhead.
+        if self.pause_temp():
+            return
         if self.temp < target:
             self.temp = min(target, self.temp + wx.TEMP_RATE * dt)
         elif self.temp > target:
@@ -2045,11 +2052,20 @@ class Pet:
         eff = data.load_care_effects().get(self.effect_id)
         return bool(eff and eff["pause_call"])
 
+    def pause_temp(self):
+        """PhysicalState.pauseTemp: an active care effect with PauseTemp (the
+        Futon) pins the temperature in place."""
+        if self.effect_id < 0:
+            return False
+        eff = data.load_care_effects().get(self.effect_id)
+        return bool(eff and eff["pause_temp"])
+
     def _temperature_effects(self, dt):
-        if self.effect_id >= 0:
-            eff = data.load_care_effects().get(self.effect_id)
-            if eff and eff["pause_temp"]:
-                return                                       # Futon: temperature paused
+        # canon checkIdealTempMoodChange has NO pauseTemp gate (futon audit
+        # 2026-07-13; the old early-return here had the pause on the wrong
+        # mechanism): the Futon pins the TEMPERATURE (_update_weather), but the
+        # pet keeps feeling whatever it was tucked in at -- comfy locks in the
+        # comfort bonus, cold keeps costing mood until the futon expires.
         lo, hi = self.ideal_temp
         aff = self._affinity()                # compatible home helps, incompatible hurts
         too_hot = self.temp >= hi + wx.UPPER_IDEAL

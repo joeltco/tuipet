@@ -7,6 +7,7 @@ life-sim, plus one integration check through `use_item`.
 import pytest
 
 from tuipet import data
+from tuipet import weather as wx
 from tuipet.pet import Pet
 from conftest import futon_item
 
@@ -84,6 +85,59 @@ def test_use_item_applies_effect(live_pet):
     assert pet.effect_t > 0
     assert pet.inventory.get(key, 0) == 0, "item should be consumed"
     assert pet.name in msg or "settle" in msg.lower()
+
+
+# --- PauseTemp: the futon pins the temperature (DVPet checkEveryTemp) -------
+def _futon_pet():
+    """A pet in the climate-controlled home (Hard Disk, weather_chance=0) so
+    _update_weather's target is the deterministic ideal-band midpoint."""
+    eid, eff = _an_effect()
+    if not eff["pause_temp"]:
+        pytest.skip("this effect does not pause temperature")
+    pet = Pet(num=-1, stage="Rookie", obedience=500)
+    pet.habitat = pet.home_habitat = 0
+    assert pet.habitat_obj()["weather_chance"] <= 0
+    return pet, eid, eff
+
+
+def test_futon_pins_the_temperature():
+    """Canon checkEveryTemp skips the WHOLE temp lapse under pauseTemp: a pet
+    tucked in cold STAYS at that temperature -- it neither warms toward the
+    day's target nor drifts colder (the pre-fix bug: a comfy pet could turn
+    freezing UNDER its futon because only the mood check was paused)."""
+    pet, eid, eff = _futon_pet()
+    pet.temp = 10.0                          # well below freezing (32)
+    pet.effect_id, pet.effect_t = eid, float(eff["duration"])
+    pet._update_weather(60)
+    assert pet.temp == 10.0, "an active futon must pin the temperature"
+    assert pet.is_freezing(), "the futon maintains temperature; it is not a heater"
+    pet.effect_id, pet.effect_t = -1, 0.0    # expiry: the lapse resumes
+    pet._update_weather(60)
+    assert pet.temp > 10.0, "temperature drift must resume once the effect ends"
+
+
+def test_futon_pauses_the_sick_temperature_swings():
+    """checkTemp's fever/chill lurches live INSIDE the paused lapse."""
+    pet, eid, eff = _futon_pet()
+    pet.temp = 50.0
+    pet.sick = True
+    pet.effect_id, pet.effect_t = eid, float(eff["duration"])
+    for _ in range(300):                     # plenty of 1%-chance rolls
+        pet._update_weather(1)
+    assert pet.temp == 50.0, "sick fever/chill swings pause under the futon too"
+
+
+def test_temp_mood_consequences_are_not_paused_by_the_futon():
+    """Canon checkIdealTempMoodChange has NO pauseTemp gate: the pet keeps
+    feeling the temperature it was tucked in at (a comfy pet locks in the
+    comfort bonus; the old code wrongly skipped this under the futon)."""
+    pet, eid, eff = _futon_pet()
+    pet.temp = sum(pet.ideal_temp) / 2       # mid ideal band
+    pet.mood = 0
+    pet.effect_id, pet.effect_t = eid, float(eff["duration"])
+    pet._comfort_t = 0.0
+    pet._temperature_effects(wx.IDEAL_TEMP_MOOD_SEC)
+    assert pet.mood > 0, "the ideal-temp mood check must keep running under the futon"
 
 
 # --- bandage / medicine indicators (DVPet getBandage / getMed) --------------
