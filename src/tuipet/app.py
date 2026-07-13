@@ -257,11 +257,11 @@ class TuiPetApp(App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("Theme glow-up: gameboy and paper backgrounds are drawn by a "
-                 "new colour-aware engine — scenes keep their shapes (the "
-                 "desert dunes, the town skyline, the digicore) instead of "
-                 "washing out flat, and the paper theme now renders scenery "
-                 "as clean ink-wash whites. Pick a theme under g options.")
+    WHATS_NEW = ("Futon fix: the futon now truly maintains temperature — "
+                 "while your pet is tucked in, its temperature is pinned in "
+                 "place, so it can no longer catch cold under the covers "
+                 "(and a sick pet's fevers and chills hold off too). It "
+                 "still isn't a heater: warm a cold pet up before bed.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and
