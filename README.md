@@ -48,7 +48,10 @@ Every sprite, sound, and CSV is bundled in the package — nothing else to downl
 **On Termux (Android):** first `pkg install python`, then `pip install tuipet`. To
 actually hear the LCD beeps you also need the **termux-api** package
 (`pkg install termux-api`) *and* the **Termux:API** app from F-Droid/Play — the
-package alone isn't enough. Over SSH, sound stays silent on purpose. The
+package alone isn't enough: it installs a *bridge* that only works when the app
+is there. Missing the app, tuipet detects that and falls back to the terminal
+bell (Options → sound then reads *bell only*), so a silent install tells you
+what's wrong instead of just being quiet. Over SSH, sound stays silent on purpose. The
 `curl -fsSL https://raw.githubusercontent.com/joeltco/tuipet/main/install.sh | bash`
 script does all of that in one shot.
 

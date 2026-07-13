@@ -265,11 +265,11 @@ class TuiPetApp(App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("Sound, honestly: on iPhone/iPad the system blocks audio "
-                 "players outright, so tuipet no longer pretends otherwise — "
-                 "Options reads \'bell (iOS)\' and milestones ring the "
-                 "terminal bell. Anywhere else, a player that cannot actually "
-                 "run now retires instead of silently swallowing every beep.")
+    WHATS_NEW = ("Termux sound fix: if you installed the termux-api package "
+                 "but not the Termux:API app, tuipet thought sound was "
+                 "working and went completely silent — no beeps, no bell. It "
+                 "now detects the dead bridge and falls back to the terminal "
+                 "bell, and Options tells you the truth.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and

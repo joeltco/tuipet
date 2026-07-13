@@ -51,11 +51,45 @@ def backend():
     return _PLAYER[0] if _PLAYER else ""
 
 
+_bridge_checked = False
+
+
+def _termux_bridge_live():
+    """Is the Termux:API *app* actually installed behind the bridge?
+
+    `pkg install termux-api` gives you the termux-media-player BINARY, but it
+    is only a bridge: without the Termux:API app (F-Droid/Play) it runs, spawns
+    cleanly, and does NOTHING.  Popen therefore SUCCEEDS, play() reported True,
+    app.beep() returned early -- and the bell never rang.  The game went
+    totally silent while Options read "on . termux": no error, no exception,
+    nothing to debug.  (The 'Termux no-player mystery'; Joel spotted the cause
+    2026-07-13.)  So ask the bridge once, and believe only a DEFINITE refusal:
+    a non-zero exit retires the player, a timeout does not (a slow phone must
+    not lose its sound).
+    """
+    try:
+        r = subprocess.run(["termux-media-player", "info"],   # nosec B603 B607 - fixed argv, no shell, no user input
+                           stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                           stdin=subprocess.DEVNULL, timeout=4)
+        return r.returncode == 0
+    except subprocess.TimeoutExpired:
+        return True                     # slow, not absent: keep the player
+    except Exception:
+        return False
+
+
 def play(name):
     """Play data/sounds/<name>.wav non-blocking; True if a player was dispatched."""
-    global _PLAYER
+    global _PLAYER, _bridge_checked
     if not _PLAYER:
         return False
+    if not _bridge_checked and _PLAYER[0] == "termux-media-player":
+        # probed LAZILY (never at import): startup must not pay for it, and a
+        # player that turns out to be a dead bridge retires like any other
+        _bridge_checked = True
+        if not _termux_bridge_live():
+            _PLAYER = None
+            return False
     f = os.path.join(_DIR, name + ".wav")
     if not os.path.exists(f):
         return False
