@@ -227,14 +227,19 @@ class AdventurePanel(menu.SubHost):
         if self._scene is not None:
             self._scene_tick()
             return
-        if self.travelling and self.sub is None:
+        if self.travelling and self.sub is None and not self.pet.asleep:
             # THE MARCH (audit pass 1, Joel 2026-07-13: "mon should walk
             # across the screen"): the journey walk actually CROSSES the
             # window -- off the right edge, back in from the left, the
             # lawful exits -- instead of stepping in place at an anchor.
-            self._wx = getattr(self, "_wx", float(grid.X0)) + MARCH_PX
+            # Pass 3: a SICK pet trudges at half pace; a sleeping one stops
+            # (roadside nap -- no strides, no encounters, until it wakes).
+            self._wx = (getattr(self, "_wx", float(grid.X0))
+                        + MARCH_PX * (0.5 if self.pet.sick else 1.0))
             if self._wx >= grid.X1:              # fully out the right side
                 self._wx = float(grid.X0 - SPRITE_W_MARCH)   # slide back in
+        if self.pet.asleep:
+            return                               # napping: the journey waits
         self._travel_t += 1
         if self._travel_t >= TRAVEL_TICKS and self.travelling and not self.adv.done:
             self._travel_t = 0
@@ -634,8 +639,19 @@ class AdventurePanel(menu.SubHost):
             # while the boss stands its gate on the right (text() places it)
             rows = self._rows(data.ROLES["walk"][(self.frame_i // 8) % 2])
             return rows, grid.X0, True, [], None
+        if self.pet.sick and self.pet.num != -1:
+            # the sick TRUDGE (audit pass 3): a pet that set out ill drags
+            # itself along -- the idleUnwell collapse/weary flash, half the
+            # march pace (anim() halves MARCH_PX) -- never the healthy stride
+            si, dx = anim.sick_frame(self.frame_i)
+            rows = self._rows(si)
+            return (rows, self._jx(rows, clamp=not self.travelling) + dx,
+                    True, [], None)
         beat = WALK_BEAT if self.travelling else 8    # stepping / a calmer stand
-        rows = self._rows(data.ROLES["walk"][(self.frame_i // beat) % 2])
+        wi = data.ROLES["walk"][(self.frame_i // beat) % 2]
+        if getattr(self.pet, "is_geriatric", False) and self.pet.num != -1:
+            wi += 9                              # the aged shuffle (home stepFrame +9)
+        rows = self._rows(wi)
         # travelling: the RAW march x (partial edge exits are the journey);
         # standing: clamped, so the wait never idles half-off the screen
         return rows, self._jx(rows, clamp=not self.travelling), True, [], None
@@ -643,7 +659,7 @@ class AdventurePanel(menu.SubHost):
     def _quiet_standing(self):
         """The pet is simply standing on the road: no walk, no encounter, no
         scripted beat.  This is the state that should read as the home biome."""
-        return (not self.travelling and self.sub is None
+        return ((not self.travelling or self.pet.asleep) and self.sub is None
                 and self._trans is None and self._scene is None
                 and self._care is None and self._parade is None
                 and self._retreat is None and self._pulse is None

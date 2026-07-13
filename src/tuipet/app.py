@@ -258,11 +258,11 @@ class TuiPetApp(App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("Adventure feel, pass two: an ! mark pulses while your mon "
-                 "digs at something off the path and when it spots a "
-                 "discovery, and the victory parade now marches on a bright "
-                 "stage so every boss reads crisp. Keep the reports coming "
-                 "— B files a bug from anywhere.")
+    WHATS_NEW = ("Adventure feel, pass three: a sick mon now TRUDGES the "
+                 "road at half pace with its collapse poses, an elder drags "
+                 "the aged shuffle, and a sleeping traveller naps roadside "
+                 "under its Zzz — the journey (and its encounters) wait "
+                 "until it wakes.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and

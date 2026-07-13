@@ -724,3 +724,62 @@ def test_parade_marches_on_a_brightened_stage(monkeypatch):
     pan._parade = {"t": 13, "nums": [220]}
     pan.text()
     assert calls.get("f"), "the parade frame must brighten the stage"
+
+
+# ---- adventure audit pass 3 (set-out-unwell states) ---------------------------
+
+def test_sick_pet_trudges_at_half_pace():
+    """Pass 3: a pet that set out ill drags the idleUnwell poses and marches
+    at HALF pace -- never the healthy stride."""
+    from tuipet import anim
+    pan = AdventurePanel(_pet())
+    pan._trans = None
+    pan.travelling = True
+    pan.adv.travel = lambda: None
+    pan.pet.sick = True
+    x0 = pan._wx = 10.0
+    for _ in range(10):
+        pan.anim()
+    sick_dx = pan._wx - x0
+    rows, _x, _m, _o, _n = pan._pet_placement()
+    si, _dx = anim.sick_frame(pan.frame_i)
+    assert rows == pan._rows(si), "the trudge wears the idleUnwell pose"
+    pan.pet.sick = False
+    x0 = pan._wx = 10.0
+    for _ in range(10):
+        pan.anim()
+    assert abs(sick_dx * 2 - (pan._wx - x0)) < 1e-6, "sick marches at half pace"
+
+
+def test_sleeping_traveller_naps_roadside():
+    """Pass 3: asleep on the road = the journey WAITS -- no march, no
+    strides/encounters, the quiet Zzz scene -- until it wakes."""
+    pan = AdventurePanel(_pet())
+    pan._trans = None
+    pan.travelling = True
+    hits = []
+    pan.adv.travel = lambda: hits.append(1)
+    pan.pet.asleep = True
+    pan.pet.anim = "sleep"
+    x0 = pan._wx = 10.0
+    for _ in range(40):
+        pan.anim()
+    assert pan._wx == x0, "a sleeping pet does not march"
+    assert not hits, "no strides roll while it naps"
+    assert pan._quiet_standing(), "the nap renders as the quiet biome scene"
+    pan.pet.asleep = False
+    for _ in range(5):
+        pan.anim()
+    assert pan._wx > x0, "the march resumes on wake"
+
+
+def test_geriatric_pet_marches_the_aged_shuffle():
+    from tuipet import data
+    pan = AdventurePanel(_pet())
+    pan._trans = None
+    pan.travelling = True
+    pan.pet.age_seconds = pan.pet.lifespan - 100     # geriatric by age
+    assert pan.pet.is_geriatric
+    rows, _x, _m, _o, _n = pan._pet_placement()
+    beat_wi = data.ROLES["walk"][(pan.frame_i // 5) % 2] + 9
+    assert rows == pan._rows(beat_wi), "the elder drags the +9 shuffle frames"
