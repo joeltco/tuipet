@@ -863,6 +863,8 @@ class Pet:
     tourney_schedule: list = _dcf(default_factory=list)   # 24 hourly trophy ids (dailyChange re-roll)
     tourney_day: int = -1                                  # game day of the schedule
     fought_today: list = _dcf(default_factory=list)        # trophy ids fought today (SameDayRetry exempt)
+    fought_hours: list = _dcf(default_factory=list)       # game hours whose cup has been RUN today
+    #                                                       (Joel 2026-07-13: one entry per cup-hour)
     tourney_alarm: int = -1         # _tourneyAlarm: trophy id to be called for (-1 = unset)
     tourney_alert: bool = False     # TournamentAlert: the call is ringing (this hour only)
     full_health: int = STARTING_HEALTH_POINTS   # _fullHealthPoints: TRAINED battle HP

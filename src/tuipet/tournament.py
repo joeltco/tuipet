@@ -126,6 +126,7 @@ def schedule(pet):
         pet.tourney_day = day
         pet.tourney_schedule = _rand_trophy_ids(pet)
         pet.fought_today = []
+        pet.fought_hours = []                      # a new day, every cup-hour fresh
         pet.tourney_alarm = -1                     # dailyChange: _tourneyAlarm = -1
         pet.tourney_alert = False
     return pet.tourney_schedule
@@ -171,7 +172,19 @@ def open_now(pet):
 
 def eligibility(pet, t):
     """Tournament.isEligible, minus the fully-recovered gate (no persistent
-    battle HP in tuipet).  Returns a refusal reason or None."""
+    battle HP in tuipet).  Returns a refusal reason or None.
+
+    THE CUP-HOUR GATE (Joel 2026-07-13, economy audit): every trophy in the
+    shipped data carries SameDayRetry=TRUE, so canon's foughtTrophiesToday
+    lock never fires -- the open cup could be re-entered without limit,
+    re-rolling its bracket for the full purse each time (~1,500b a minute,
+    an order of magnitude past an adventure).  tuipet's rule: **the cup RUNS
+    once per hour**.  Entering spends that hour's slot; the next hour brings
+    a fresh cup.  Canon's own per-trophy lock is kept underneath for any
+    future SameDayRetry=FALSE data.
+    """
+    if _hour(pet) in (getattr(pet, "fought_hours", None) or []):
+        return "That cup has run — the next one starts on the hour."
     if t["id"] in (pet.fought_today or []) and not t["same_day_retry"]:
         return "Already fought that cup today."
     if t["age_limit"] and _pet_tier_rank(pet) > _TIER_RANK.get(t["age_limit"], 3):
@@ -197,13 +210,34 @@ def next_winnable(pet):
     passes) -- scanning from the current hour forward through the schedule.
     Returns (hour, trophy) or None when nothing enterable is left today."""
     sched = schedule(pet)
+    run = getattr(pet, "fought_hours", None) or []
     for i in range(_hour(pet), len(sched)):
         tid = sched[i]
-        if tid < 0:
+        if tid < 0 or i in run:                    # that hour's cup has already run
             continue
         tr = trophy_by_id(tid)
-        if tr and eligibility(pet, tr) is None:
+        # the hour gate only speaks for THIS hour; a FUTURE slot is judged on
+        # the rest of the rules (we have not reached it yet)
+        if tr and _eligibility_rest(pet, tr) is None:
             return (i, tr)
+    return None
+
+
+def _eligibility_rest(pet, t):
+    """Eligibility WITHOUT the cup-hour gate -- for judging a FUTURE slot."""
+    if t["id"] in (pet.fought_today or []) and not t["same_day_retry"]:
+        return "Already fought that cup today."
+    if t["age_limit"] and _pet_tier_rank(pet) > _TIER_RANK.get(t["age_limit"], 3):
+        return "Too old for the %s bracket." % t["age_limit"]
+    if t["field_req"] and t["field_req"] != getattr(pet, "field", ""):
+        return "%s only." % data.pretty_field(t["field_req"])
+    if t["attr_req"] and t["attr_req"] != getattr(pet, "attribute", ""):
+        return "%s only." % t["attr_req"]
+    if t.get("prelim"):
+        won = getattr(pet, "trophies_won", {}) or {}
+        if t["prelim"] not in won:
+            q = trophy_by_id(t["prelim"])
+            return "Win the %s first." % (trophy_label(q) if q else "qualifier")
     return None
 
 
@@ -335,6 +369,15 @@ class Tournament:
         self.results = []
         self.tree = [list(self.bracket)]     # round-by-round history for the bracket page
         self.last = "%s — 8 enter, one leaves with the trophy." % self.name
+        # spend this hour's slot AT ENTRY, not at the finish: a bracket
+        # abandoned (ESC forfeits; a force-quit does not even reach _finish)
+        # must not hand back a free re-roll of the field
+        hrs = getattr(pet, "fought_hours", None)
+        if hrs is None:
+            pet.fought_hours = hrs = []
+        h = _hour(pet)
+        if h not in hrs:
+            hrs.append(h)
 
     @property
     def round_name(self):

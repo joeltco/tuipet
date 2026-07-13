@@ -321,10 +321,15 @@ def test_mid_bracket_contracts():
     assert pan.tourney.over and r1[0] == "done"
     last = pan.tourney.last
     assert pan.key("escape") == ("done", last)  # no double record
-    pan2 = TournamentPanel(p)                   # canon: the hour is the throttle
+    # THE CUP-HOUR GATE (Joel 2026-07-13, economy audit -- supersedes the old
+    # "the hour is the throttle" reading): every shipped trophy is
+    # SameDayRetry=TRUE, so re-entry was UNLIMITED -- forfeit, re-roll the
+    # bracket, bank the purse again.  The cup now RUNS once per hour.
+    pan2 = TournamentPanel(p)
     pan2.cursor = tournament._hour(p)
     pan2.key("enter")
-    assert pan2.tourney is not None
+    assert pan2.tourney is None, "a spent cup-hour must not re-run"
+    assert "has run" in pan2.msg
 
     random.seed(11)
     p3 = champ()
@@ -399,3 +404,52 @@ def test_next_winnable_points_at_an_enterable_cup():
         assert hour >= T._hour(p)                 # never points into the past
         assert T.eligibility(p, tr) is None       # genuinely enterable
         assert T.trophy_by_id(T.schedule(p)[hour]) == tr
+
+
+# ---- the cup-hour gate (Joel 2026-07-13, economy audit) ----------------------
+
+def test_a_cup_runs_once_per_hour():
+    """Every shipped trophy carries SameDayRetry=TRUE, so canon's per-trophy
+    daily lock never fires -- the open cup could be re-entered without limit,
+    re-rolling its bracket for the full purse each time (~1,500b/minute, an
+    order of magnitude past an adventure).  tuipet's rule: the cup RUNS once
+    per hour.  Entering spends the slot; the next hour brings a fresh cup;
+    the day roll clears the ledger."""
+    import random
+    from tuipet.pet import Pet
+    from tuipet import tournament as tm
+    random.seed(3)
+    p = Pet(num=964, stage="Mega", attribute="Vaccine", obedience=900)
+    p.world_seconds = 600.0
+    p.age_seconds = 13 * 1440.0
+    tr = tm.open_now(p) or tm.trophy_by_id(0)
+    assert tm.eligibility(p, tr) is None
+    tm.Tournament(p, tr)                       # entering spends this hour
+    assert tm._hour(p) in p.fought_hours
+    assert "has run" in (tm.eligibility(p, tr) or ""), "the cup must not re-run"
+
+    # ...and an ABANDONED bracket does not hand back a free re-roll
+    p.world_seconds += 60.0                    # the next game hour
+    assert tm._hour(p) not in p.fought_hours
+    tr2 = tm.open_now(p) or tm.trophy_by_id(1)
+    t2 = tm.Tournament(p, tr2)
+    t2.record(False)                           # walked out / eliminated
+    assert "has run" in (tm.eligibility(p, tr2) or "")
+
+    p.world_seconds += 1440.0                  # a new day: every hour fresh again
+    tm.schedule(p)
+    assert p.fought_hours == []
+
+
+def test_next_winnable_skips_hours_already_run():
+    import random
+    from tuipet.pet import Pet
+    from tuipet import tournament as tm
+    random.seed(5)
+    p = Pet(num=100, stage="Champion", attribute="Vaccine", obedience=800)
+    p.world_seconds = 600.0
+    tm.schedule(p)
+    p.fought_hours = [tm._hour(p)]             # this hour has run
+    nxt = tm.next_winnable(p)
+    if nxt:                                    # a later cup, never this hour
+        assert nxt[0] != tm._hour(p)
