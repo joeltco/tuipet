@@ -88,6 +88,8 @@ class OptionsPanel(menu.SubHost):
         self._done = None              # a sub verdict that must close options
         self.frame_i = 0
         self._upd = None               # None idle | "…" checking | "" none | "x.y.z"
+        self._installing = False       # a pip run is in flight
+        self._updated = False          # installed: the NEW code needs a restart
         self.confirm = False           # typed-YES gate for the erase
         self.buf = ""
         self.msg = ""                  # action feedback; empty -> the row's _DESC
@@ -126,6 +128,27 @@ class OptionsPanel(menu.SubHost):
             self._upd = latest or ""
             self.msg = (f"tuipet {latest} is out — pip install -U tuipet"
                         if latest else "no newer release found.")
+        threading.Thread(target=run, daemon=True).start()
+
+    def _install_update(self):
+        """Install the newer release, off the UI thread (pip takes seconds).
+
+        The running process keeps executing the OLD code -- Python imported it
+        at launch -- so a success always ends in "restart tuipet".  We never
+        pretend the swap happened live.
+        """
+        if self._installing:
+            return
+        self._installing = True
+        self.msg = "updating… (this takes a moment)"
+
+        def run():
+            ok, msg = update_check.run_upgrade()
+            self.msg = msg
+            self._installing = False
+            if ok:
+                self._upd = ""                # nothing left to offer
+                self._updated = True
         threading.Thread(target=run, daemon=True).start()
 
     def _sub_done(self, r):
@@ -180,7 +203,13 @@ class OptionsPanel(menu.SubHost):
                 self.sub = AccountPanel(
                     note="Switch: the pet parks with this login.")
             elif row == "update":
-                self._check_updates()
+                # first ENTER checks; with a newer release known, the second
+                # ENTER actually INSTALLS it (Joel 2026-07-13: "make the update
+                # option actually update the game")
+                if self._upd and self._upd != "…":
+                    self._install_update()
+                else:
+                    self._check_updates()
             elif row == "keys":
                 self._sub_row = row
                 self.sub = KeysPanel(self.bindings)
@@ -212,10 +241,14 @@ class OptionsPanel(menu.SubHost):
         if row == "account":
             return persistence.get_account()[0] or "not signed in"
         if row == "update":
+            if self._installing:
+                return "updating…"
+            if self._updated:
+                return "restart to apply"
             if self._upd == "…":
                 return "checking…"
             if self._upd:
-                return f"{self._upd} out!"
+                return f"{self._upd} · ENTER installs"
             if self._upd == "":
                 return "up to date"
             if self.update_hint is not None and self.update_hint():

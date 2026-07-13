@@ -140,8 +140,16 @@ def test_update_row_checks_pypi(monkeypatch):
     pan, _ = _panel()
     _to(pan, "update")
     assert pan.key("enter") is None
-    assert pan._value("update") == "9.9.9 out!"
+    # the row now OFFERS the install (Joel 2026-07-13: the update option
+    # actually updates); a second ENTER runs it
+    assert pan._value("update") == "9.9.9 · ENTER installs"
     assert "pip install -U tuipet" in pan.msg
+    _fits(pan)
+    monkeypatch.setattr(optionsscreen.update_check, "run_upgrade",
+                        lambda: (True, "Updated — restart tuipet to play the new version."))
+    pan.key("enter")                                  # ...and it installs
+    assert pan._value("update") == "restart to apply"
+    assert "restart" in pan.msg.lower()
     _fits(pan)
     monkeypatch.setattr(optionsscreen.update_check, "latest_if_newer",
                         lambda: None)

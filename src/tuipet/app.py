@@ -265,11 +265,11 @@ class TuiPetApp(App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("No more silent failures: if the cloud refuses your saves "
-                 "(because tuipet is open in a newer session) you are now "
-                 "TOLD, instead of quietly losing cross-device progress. Same "
-                 "for a bug report that cannot be sent or saved — tuipet no "
-                 "longer promises what it cannot deliver.")
+    WHATS_NEW = ("The update option now actually updates: g options → "
+                 "Update, ENTER to check, ENTER again to install it right "
+                 "there. Then restart to play the new version. On iOS (which "
+                 "cannot run pip for you) it hands you the command instead of "
+                 "pretending.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and
