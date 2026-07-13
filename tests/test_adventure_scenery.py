@@ -884,3 +884,74 @@ def test_plain_esc_exit_carries_no_victory_line():
         if getattr(pan, "auto_close", None) is not None:
             break
     assert pan.auto_close == ("done", None)
+
+
+# ---- pass 6: the road live-ticks the sim (Joel 2026-07-13) --------------------
+
+def _tick_app(pan):
+    from tuipet.app import TuiPetApp
+    app = TuiPetApp.__new__(TuiPetApp)
+    app.pet = pan.pet
+    app.mode = pan
+    app._mode_close = None
+    app._needs = False
+    app._nag_t = 0.0
+    app.beeps = []
+    app.beep = lambda name=None, bell=True: app.beeps.append(name)
+    app.flash = lambda *a, **k: None
+    return app
+
+
+def test_the_open_road_ticks_the_sim_but_subs_and_teleports_freeze():
+    pan = AdventurePanel(_pet())
+    app = _tick_app(pan)
+    t0 = pan.pet.age_seconds
+    app.on_tick()                                 # teleport still playing
+    assert pan.pet.age_seconds == t0, "the arrival teleport keeps the freeze"
+    pan._trans = None
+    app.on_tick()
+    assert pan.pet.age_seconds == t0 + 1.0, "the open road ticks the sim"
+    assert pan.pet.fx_hold, "evolution waits for the main view"
+
+    class _Sub:                                   # any road-side sub freezes
+        def key(self, k):
+            return None
+
+        def text(self):
+            return None
+    pan.sub = _Sub()
+    app.on_tick()
+    assert pan.pet.age_seconds == t0 + 1.0, "a road-side sub keeps the freeze"
+    pan.sub = None
+    pan.pet.hunger = 0
+    pan.pet.stage = "Rookie"
+    app.on_tick()                                 # the care alarm rings on onset
+    assert "alarm" in app.beeps
+
+
+def test_death_on_the_road_comes_home_for_the_memorial(monkeypatch):
+    from tuipet.pet import Pet
+    pan = AdventurePanel(_pet())
+    pan._trans = None
+    app = _tick_app(pan)
+    home = pan.pet.home_habitat
+    pan.pet.habitat = pan.adv.biome
+    closed = []
+    app._mode_close = closed.append
+
+    class _Scr:
+        fx = None
+
+        def start_fx(self, *a, **k):
+            self.fx = a
+    app.screen_w = _Scr()
+
+    def die(self, dt):
+        self.dead = True
+    monkeypatch.setattr(Pet, "tick", die)
+    app.on_tick()
+    assert app.mode is None, "the road closes so the memorial owns the screen"
+    assert closed == [None]
+    assert app.screen_w.fx and app.screen_w.fx[0] == "dying"
+    assert pan.pet.habitat == home and pan.pet.away is False, \
+        "the road ends here: it comes home"

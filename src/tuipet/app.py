@@ -258,11 +258,11 @@ class TuiPetApp(App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("Adventure feel, pass five: coming home victorious now "
-                 "means something — the zone-cleared line lands over your "
-                 "house as the teleport drops you off. The whole journey is "
-                 "also locked end-to-end by test now: out, march, town, "
-                 "showdown, home.")
+    WHATS_NEW = ("The road is REAL now: adventures live-tick the life-sim, "
+                 "so your mon gets hungry, sleepy and weathered out there — "
+                 "pack food, watch the alarm, and use the road keys (f, h, "
+                 "i) when it calls. Battles, towns and menus still pause "
+                 "time, and a mon lost on the road is carried home.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and
@@ -1304,12 +1304,19 @@ class TuiPetApp(App):
         if self.mode is not None:
             # a sub-screen is open -> pause the life-sim (the canon menu
             # freeze) -- EXCEPT the lobby's chat contexts (Joel 2026-07-13:
-            # "make the lobby tick, alarm and all" -- chat is not a pause
-            # button).  Sessions (battle/jogress) and login keep the freeze:
-            # a pet must not starve or die mid-PvP volley.
+            # "make the lobby tick, alarm and all") and the OPEN ROAD (Joel
+            # 2026-07-13 again: "make adventures live-tick the sim" -- a long
+            # expedition carries real hunger/sleep/sickness risk).  Sessions
+            # (battle/jogress), login, teleports and every road-side sub
+            # (town, feed, bag) keep the freeze: a pet must not starve or die
+            # mid-volley or mid-menu.
             m = self.mode
-            if not (isinstance(m, lobbyscreen.LobbyPanel)
-                    and m.phase in ("lobby", "dm")):
+            live = ((isinstance(m, lobbyscreen.LobbyPanel)
+                     and m.phase in ("lobby", "dm"))
+                    or (isinstance(m, adventurescreen.AdventurePanel)
+                        and m.sub is None
+                        and getattr(m, "_trans", None) is None))
+            if not live:
                 return
             was_dead = self.pet.dead
             poop0 = self.pet.poop
@@ -1319,6 +1326,9 @@ class TuiPetApp(App):
             p = self.pet
             if p.dead and not was_dead:
                 # death can't wait for ESC: leave the room, play the memorial
+                if getattr(p, "away", False):
+                    p.go_home_habitat()       # the road ends here: bring it home
+                    p.away = False
                 self._close_mode(None)
                 self.beep("death")
                 self.flash("")

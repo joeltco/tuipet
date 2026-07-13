@@ -11,7 +11,6 @@ from . import strikefx
 from .render import downsample
 from . import arena
 from . import anim
-from . import weather as wx
 
 from .theme import LCD_ON, LCD_BG, INK, INK_B, DIM, SIL_DAY  # noqa: F401  (palette names bound for theme.apply propagation)
 from . import menu
@@ -152,7 +151,9 @@ class AdventurePanel(menu.SubHost):
         if self.sub_anim():          # SubHost: delegate + sfx bubble
             return
         self.frame_i += 1
-        self._roll_weather()                     # weather happens on the road
+        # weather: the live-ticking sim owns it now (pet._update_weather runs
+        # on the road with pet.habitat = the worn biome; the old panel-side
+        # _roll_weather double-rolled once adventures ticked, 2026-07-13)
         if self._refuse_t:
             self._refuse_t -= 1
         if self._trans is not None:
@@ -724,21 +725,6 @@ class AdventurePanel(menu.SubHost):
         """The expedition's ONE biome (own-game law, Joel 2026-07-13: one biome
         per adventure, start to boss).  Weather tests monkeypatch this."""
         return self.adv.biome
-
-    def _roll_weather(self):
-        """Weather keeps happening while travelling (Joel 2026-07-12), off the
-        run's ONE biome (a fresh sky only when a new expedition starts --
-        weather.next_weather still gates no-sky habitats)."""
-        hid = self._current_hab_id()
-        hab = (data.load_habitats().get(hid) if hid is not None else None) \
-            or self.pet.habitat_obj()
-        self._wx_t = getattr(self, "_wx_t", 0.0) + 0.1
-        if hid != getattr(self, "_wx_hab", "unset") or self._wx_t >= wx.WEATHER_CHECK_SEC:
-            self._wx_t = 0.0
-            self._wx_hab = hid
-            self.pet.weather = wx.next_weather(self.pet.weather, self.pet.season,
-                                               self.pet.day_temp, hab,
-                                               feel_temp=self.pet.temp)
 
     def _road_bg(self):
         """The expedition's ONE backdrop, held start to boss (own-game law,

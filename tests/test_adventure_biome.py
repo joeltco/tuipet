@@ -99,30 +99,31 @@ def test_town_has_a_shop_but_no_training():
 
 
 def test_weather_rolls_on_the_road():
-    """Weather happens during adventures: the roll runs each frame and seeds
-    the pet's weather from the current zone habitat (Joel 2026-07-12)."""
+    """Weather happens during adventures via the LIVE-TICKING sim (Joel
+    2026-07-13: "make adventures live-tick the sim" -- the old panel-side
+    roller double-rolled and is gone): pet._update_weather runs on the road
+    with pet.habitat = the worn biome.  A weatherless habitat stays clear."""
     p, adv = _adv()
-    assert hasattr(adv, "_wx_hab")               # the roll has run at least once
-    # a habitat with NO weather frame (Hard Disk, id 0, weather_chance 0) stays clear
-    adv._current_hab_id = lambda: 0
+    assert not hasattr(adv, "_roll_weather"), "the panel roller is gone"
+    p.habitat = 0                                # Hard Disk: weather_chance 0
     p.weather = "HeavyRain"
-    adv._wx_hab = "force"
-    adv._roll_weather()
+    p._update_weather(60)
     assert p.weather == "Clear", "a weatherless habitat brewed weather"
 
 
 def test_open_sky_zone_can_get_weather():
-    """A normal outdoor zone is allowed to brew weather on the road."""
+    """A normal outdoor biome is allowed to brew weather on the road."""
     import random
     p, adv = _adv()
-    adv._current_hab_id = lambda: 15             # Desert (high weather chance)
+    p.habitat = 15                               # Desert (high weather chance)
+    p._weather_day = -1
     random.seed(3)
     seen = set()
     for _ in range(400):
-        adv._wx_hab = "force"                    # force a roll each step
-        adv._roll_weather()
+        p._weather_t = 10 ** 9                   # force the cadence each call
+        p._update_weather(1)
         seen.add(p.weather)
-    assert seen - {"Clear"}, "an open-sky zone never produced any weather"
+    assert seen - {"Clear"}, "an open-sky biome never produced any weather"
 
 
 
