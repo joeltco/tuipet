@@ -258,11 +258,11 @@ class TuiPetApp(App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("Cups run once an hour: entering a tournament now spends "
-                 "that hour's cup, so bits are earned instead of farmed by "
-                 "re-rolling the same bracket. A fresh cup opens every hour "
-                 "and the whole card resets daily — adventures are worth "
-                 "the road again.")
+    WHATS_NEW = ("The weather is REAL: temperature was drifting 20x too "
+                 "slowly to ever catch its season — summer read like winter. "
+                 "It now tracks the clock properly, so summer bakes, nights "
+                 "chill, and storms actually bite. Watch your pet's comfort "
+                 "band.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and

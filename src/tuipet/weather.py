@@ -47,7 +47,15 @@ PRECIP = RAIN | SNOW
 # comfort 62x weaker than canon's design; a comfortable compatible home now
 # SUSTAINS happiness against the Happy decay, an unfit one drains it).
 WEATHER_CHECK_SEC = 600.0   # WeatherCheckMin 10 (environment family)
-TEMP_RATE = 0.05            # temperature lapses this fast toward its target
+# TempLapseMin=1 (config.csv, all three columns): canon moves the temperature
+# by ONE unit per GAME MINUTE toward its target.  tuipet's clock maps a game
+# day onto DAY_LENGTH=1440s, i.e. one game minute == one real second, so the
+# canon-faithful rate is 1.0/sec.  We shipped 0.05 -- TWENTY TIMES too slow:
+# a season lasts one game day (24 real min) but a winter->summer climb
+# (0->70) took ~23 min, so the reading NEVER caught up to the season.  Joel
+# saw it as "18 degrees in the summer time?" (bug report 2026-07-13); the
+# same lag muted every night chill and every storm.
+TEMP_RATE = 1.0             # units/sec == DVPet's 1 per game minute (TempLapseMin)
 IDEAL_TEMP_MOOD_SEC = 29.0  # IdealTempMoodMin 29 (stat family)
 # (no bad-temp/incompatible-habitat sick cadence: both checks are data-dead in
 # the classic column -- see pet._temperature_effects)

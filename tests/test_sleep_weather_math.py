@@ -142,3 +142,31 @@ def test_precip_type_follows_the_visible_temperature():
         random.seed(seed)
         w = wx.next_weather("Snowing", "Winter", 20, hab, feel_temp=46)
         assert w not in ("LightSnow", "Snowing", "HeavySnow"), w
+
+
+def test_the_temperature_actually_tracks_its_season():
+    """Bug report 2026-07-13 ("18 degrees in the summer time?"): TEMP_RATE was
+    0.05/sec while a season lasts ONE game day (1440s) -- a winter->summer
+    climb took ~23 real minutes, so the reading never caught up and every
+    night chill and storm was muted too.  Canon's TempLapseMin=1 moves the
+    temperature ONE unit per GAME MINUTE, and tuipet's clock maps a game
+    minute onto one real second -> 1.0/sec."""
+    import random
+    from tuipet import weather as wx
+    from tuipet.pet import Pet, DAY_LENGTH
+    assert wx.TEMP_RATE == 1.0, "canon TempLapseMin=1 under tuipet's clock"
+    random.seed(9)
+    p = Pet(num=100, stage="Champion", attribute="Vaccine", obedience=500)
+    p.habitat = p.home_habitat = 2                  # Plains
+    p.world_seconds = DAY_LENGTH                    # day 1 = Summer
+    p._weather_day = -1
+    p.temp = 12.0                                   # arriving cold from spring
+    for _ in range(180):                            # three game hours
+        p._update_weather(1.0)
+        p.world_seconds += 1.0
+    assert p.season == "Summer"
+    lo, _hi = wx.habitat_temps(p.habitat_obj(), "Summer") if hasattr(wx, "habitat_temps") \
+        else p.habitat_obj()["temps"]["Summer"]
+    assert p.temp > 40, f"summer must read hot, got {p.temp}"
+    # ...and it can still fall at night rather than pinning at the roll
+    assert p.temp <= 100
