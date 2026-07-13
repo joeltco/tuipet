@@ -258,11 +258,11 @@ class TuiPetApp(App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("The weather is REAL: temperature was drifting 20x too "
-                 "slowly to ever catch its season — summer read like winter. "
-                 "It now tracks the clock properly, so summer bakes, nights "
-                 "chill, and storms actually bite. Watch your pet's comfort "
-                 "band.")
+    WHATS_NEW = ("Weather actually happens now: the sky was only rolling "
+                 "2x a day instead of 144x, so it almost never left Clear — "
+                 "rain, snow and storms were effectively dead. Skies now "
+                 "turn properly, and with last build's temperature fix your "
+                 "habitat's climate finally matters.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and

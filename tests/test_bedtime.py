@@ -104,11 +104,25 @@ def test_daytime_lights_off_is_a_nap_not_the_night():
     assert not p.asleep                   # the doze-off WAIT: no instant nap
     _run(p, 45)                           # calcToSleepNapLapse passes in the dark
     assert p.asleep and p.nap
-    _run(p, 300)                          # held for 5 game-hours: still just a nap
-    assert p.nap                          # never converts to the night outside the window
-    p.toggle_lights()
-    p.tick(1.0)
-    assert not p.asleep                   # lights wake a nap
+    # held for 5 game-hours: the doze NEVER converts to the night outside the
+    # window.  (Weather-audit repin 2026-07-13: the old `assert p.nap` after
+    # 300 ticks conflated "still dozing" with "did not become night sleep" --
+    # a nap legitimately RUNS OUT on its awakeLimit, and the exact tick is
+    # RNG-dependent, so the assertion was really a coin flip.  Pin the rule
+    # itself: while it sleeps out here, it sleeps as a NAP.)
+    for _ in range(300):
+        p.tick(1.0)
+        assert not (p.asleep and not p.nap), "a day doze must never become night sleep"
+    # the lights-wake half gets its OWN noon pet: running the first one further
+    # would carry it past midnight into a legitimate NIGHT sleep (and out of
+    # this test's subject).
+    q = _line_pet()
+    q.toggle_lights()
+    _run(q, 46)
+    assert q.asleep and q.nap
+    q.toggle_lights()                     # lights on -> the doze breaks
+    q.tick(1.0)
+    assert not q.asleep
 
 
 def test_disturbed_line_pet_resleeps_by_the_clock():

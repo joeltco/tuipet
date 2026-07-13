@@ -46,7 +46,16 @@ PRECIP = RAIN | SNOW
 # 2026-07-06: the old 1800s ran it on the environment scale, making climate
 # comfort 62x weaker than canon's design; a comfortable compatible home now
 # SUSTAINS happiness against the Happy decay, an unfit one drains it).
-WEATHER_CHECK_SEC = 600.0   # WeatherCheckMin 10 (environment family)
+# WeatherCheckMin=10 (config.csv): canon rolls the weather every 10 GAME
+# MINUTES.  tuipet's clock maps one game minute onto one real second (a game
+# day = DAY_LENGTH 1440s = 1440 game min), so that is 10 REAL SECONDS.  We
+# shipped 600.0 -- "10 minutes" converted with REAL minutes, 60x too rare:
+# the roll fired 2.4x a game day instead of 144x, and the observed result was
+# ZERO weather changes across a full day.  The whole weather system (precip
+# art, the huddle/shield poses, the storm tints, the temp factors) was
+# effectively dead.  Same unit bug as TEMP_RATE (weather audit 2026-07-13);
+# IDEAL_TEMP_MOOD_SEC=29 was always right, which is what exposed the pattern.
+WEATHER_CHECK_SEC = 10.0    # == canon's 10 game minutes
 # TempLapseMin=1 (config.csv, all three columns): canon moves the temperature
 # by ONE unit per GAME MINUTE toward its target.  tuipet's clock maps a game
 # day onto DAY_LENGTH=1440s, i.e. one game minute == one real second, so the
