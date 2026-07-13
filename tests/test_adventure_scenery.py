@@ -543,7 +543,7 @@ def test_teleport_curtain_obeys_the_window_law(monkeypatch):
     assert saw_curtain > 30, "the wipe must actually stage its curtain beats"
 
 
-def test_found_item_icon_is_native_size_and_in_band():
+def test_found_item_icon_is_hand_size_and_in_band():
     """Bug report 2026-07-13 ("town transport item sprite is glitched when
     finding it in adventure mode"): the reveal used downsample(raw[0], 3),
     crushing an 8x8 icon to a 3px speck.  The find now shows its FIRST
@@ -557,8 +557,9 @@ def test_found_item_icon_is_native_size_and_in_band():
     pan.adv.investigate = lambda: ("item", item)
     pan.key("enter")
     icon = pan._scene["icon"]
-    assert icon and len(icon) >= 8 and max(len(r) for r in icon) >= 8, \
-        "the find icon must be native size, not a downsampled speck"
+    h, w = len(icon), max(len(r) for r in icon)
+    assert 4 <= h <= 8 and 4 <= w <= 8, \
+        "the find reads HAND-SIZE (~8px): no 3px specks, no pet-sized props"
     pan._scene["t"] = INV_REVEAL_T                 # the reveal beat
     rows, x, mirror, overlay, note = pan._pet_placement()
     assert overlay, "the reveal holds the find up beside the pet"

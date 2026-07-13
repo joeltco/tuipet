@@ -51,7 +51,18 @@ def test_expeditions_span_a_diverse_biome_set():
         for zi in range(len(m["zones"])):
             adv, _p = _adv_at(mi, zi)
             seen.add(adv.biome)
-    assert len(seen) >= 11, sorted(seen)
+    assert len(seen) >= 12, sorted(seen)
+
+
+def test_zone_biomes_match_their_names():
+    """Joel 2026-07-13: the Coastlands opener wore Evil Castle purple.  The
+    biome is AUTHORED from the zone name (ZONE_BIOME) -- pin the identities."""
+    habs = data.load_habitats()
+    for (mi, zi), want in {(0, 0): "Cliffside", (0, 3): "Underwater",
+                           (1, 2): "Lake", (2, 2): "Sky",
+                           (4, 1): "Desert", (4, 4): "Tundra"}.items():
+        adv, _p = _adv_at(mi, zi)
+        assert habs[adv.biome]["name"] == want, (mi, zi, habs[adv.biome]["name"])
 
 
 def test_thin_zones_borrow_earlier_roamers():

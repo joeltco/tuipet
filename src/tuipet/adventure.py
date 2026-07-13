@@ -75,6 +75,41 @@ BATTLE_IMMUNITY_STEPS = 90.0 * 14 / WALK_STEP_MIN
 
 # The one TUI compression: interactive travel actions to cross a zone.
 INTERACTIVE_STEPS = 40
+# THE EXPEDITION BIOME, per zone -- authored to match each zone's NAME
+# (Joel 2026-07-13: "coastlands looking like a castle purple cloud area" --
+# span coverage picked Evil Castle for Cliffside Approach; the zone's name IS
+# its identity, so the look is authored, not derived).  Habitat ids per
+# habitats.csv: 1 Sky, 2 Plains, 3 Canyon, 4 Forest, 5 Tundra, 7 Lake,
+# 8 Underwater, 9 Evil Castle, 10 Field, 11 City, 12 Cliffside, 15 Desert.
+ZONE_BIOME = {
+    (1, 1): 12,   # Cliffside Approach -- the coastal cliffs
+    (1, 2): 3,    # Sunken Gorge      -- a gorge is a canyon
+    (1, 3): 11,   # Harbor City
+    (1, 4): 8,    # The Tide Deep     -- underwater
+    (1, 5): 4,    # Seabound Forest
+    (1, 6): 11,   # Dock Ward
+    (1, 7): 9,    # The Drowned Keep  -- the castle finale
+    (2, 1): 2,    # Rust Plains
+    (2, 2): 2,    # Coldiron Flats    -- cold iron, still flats
+    (2, 3): 7,    # Foundry Lake
+    (2, 4): 4,    # Gearwood
+    (2, 5): 11,   # Voltage Row
+    (2, 6): 12,   # Scrap Bluffs      -- bluffs are cliffs
+    (2, 7): 9,    # The Iron Spire
+    (3, 1): 2,    # Windmere Plains
+    (3, 2): 3,    # Redrock Gorge
+    (3, 3): 1,    # Skyfall Pass      -- the Sky ascent
+    (4, 1): 3,    # Ashen Canyon
+    (4, 2): 9,    # The Black Keep
+    (5, 1): 10,   # Verdant Field
+    (5, 2): 15,   # Sunscorch Dunes   -- desert
+    (5, 3): 7,    # Mirrormere        -- a mere is a lake
+    (5, 4): 4,    # Tanglewood
+    (5, 5): 5,    # Frostreach        -- tundra
+    (5, 6): 4,    # Gloomwood         -- a dark wood is still a wood
+    (5, 7): 9,    # Nightmare's End
+}
+
 # Diversity floor (Joel 2026-07-13, "a diverse enemy/item/shop/boss system"):
 # a zone whose wild roster is thinner than this borrows the map's EARLIER
 # wilds -- they roam forward into it (zone 5-3's three Lake natives walk with
@@ -136,13 +171,17 @@ class Adventure:
 
     def _zone_biome(self):
         """One biome per adventure (own-game law): the expedition wears the
-        zone's DOMINANT terrain -- the habitat covering the most steps -- for
-        the whole run, start to boss.  It is what the zone IS (Foundry Lake is
-        a Lake run, Sunken Gorge a Canyon, Harbor City a City, map 3's finale
-        a Sky ascent), and across the world it names 11 distinct biomes.
-        Fallback: the gate span's terrain, then the home habitat."""
-        spans = sorted(self.zone.get("bgs", ()))
+        AUTHORED biome of its zone -- ZONE_BIOME, written from each zone's
+        name, so Cliffside Approach looks like cliffs and Skyfall Pass like
+        the sky (12 distinct biomes across the world).  Unnamed/synthetic
+        zones fall back to the dominant span terrain, then the gate span,
+        then the home habitat."""
         habs = data.load_habitats()
+        authored = ZONE_BIOME.get((self.maps[self.mi].get("map"),
+                                   self.zone.get("zone")))
+        if authored in habs:
+            return authored
+        spans = sorted(self.zone.get("bgs", ()))
         cover = {}
         for lo, hi, hid in spans:
             if hid in habs:

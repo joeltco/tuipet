@@ -257,13 +257,11 @@ class TuiPetApp(App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("Adventure overhaul: every expedition keeps ONE biome from "
-                 "the first step to the boss, the pet holds a proper stage "
-                 "spot, weather follows you on the road, and no beat can be "
-                 "skipped any more. Also: no more white poses in a dark "
-                 "room, the futon truly keeps you cozy (no freezing status "
-                 "under the covers), and toys like the balloon play fully "
-                 "on-screen.")
+    WHATS_NEW = ("Expedition identity: every adventure now wears the habitat "
+                 "its name promises — Cliffside Approach is sea cliffs, "
+                 "Skyfall Pass is the open sky, Sunscorch Dunes is desert — "
+                 "12 habitats across the world, one per adventure. Found "
+                 "items also show at proper hand size beside your mon.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and

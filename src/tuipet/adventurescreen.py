@@ -8,6 +8,7 @@ from .shopscreen import ShopPanel
 from .townscreen import TownPanel
 from . import grid
 from . import strikefx
+from .render import downsample
 from . import arena
 from . import anim
 from . import weather as wx
@@ -384,12 +385,16 @@ class AdventurePanel(menu.SubHost):
                 kind, thing = self.adv.investigate()
                 icon = None
                 if kind == "item":
-                    # the find's REAL icon at NATIVE size (bug report
-                    # 2026-07-13, "town transport item sprite is glitched":
-                    # the /3 downsample crushed an 8x8 icon to a 3px speck --
-                    # the same lesson the item-fx stage learned on 07-07)
+                    # the find at HAND size, ~8px beside the 16px mon (Joel
+                    # 2026-07-13 x2: the /3 downsample crushed an 8x8 icon to
+                    # a 3px speck, then raw drew a 16x16 one AS BIG AS THE
+                    # PET -- scale by ceil(dim/8) so every icon reads held)
                     raw = [f for f in (data.load_icons().get(thing["key"]) or []) if f]
                     icon = raw[0] if raw else None
+                    if icon:
+                        dim = max(len(icon), max(len(r) for r in icon))
+                        if dim > 8:
+                            icon = downsample(icon, -(-dim // 8))
                 # the result message stays sealed until the reveal beat
                 self._scene = {"t": 0, "kind": kind or "none", "thing": thing,
                                "msg": self.adv.last, "icon": icon}
