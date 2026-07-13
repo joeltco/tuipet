@@ -29,8 +29,6 @@ PARADE_T = 26                 # victory parade: ticks for one boss to march acro
 #                               (canon BossParade shows the map's bosses after the
 #                               final ZoneChange; one at a time -- one-mon LCD rule)
 WALK_BEAT = 5                 # idleWalk pose cadence (anim.WALK_BEAT -- NOT every tick)
-FADE_T = 20                   # habitat cross-fade ticks (canon BackgroundAnim.animateBack:
-#                               BackgroundOpacityChange -0.05/frame -> 20 frames old-over-new)
 TRAVEL_TICKS = 10             # ticks per auto-stride (the INTERACTIVE_STEPS compression's
 #                               pacing knob).  Was 3 -- a zone crossed in ~12s and zone 1's
 #                               twelve BackgroundsAndRange scenes strobed ~1/s; at 1s/stride
@@ -125,22 +123,6 @@ def _curtain_pts(x, y, w, h):
             and grid.X0 <= px < grid.X1 and grid.TOP <= py < grid.FLOOR]
 
 
-def _blend_bg(old, new, t):
-    """Per-pixel RGB lerp between two backdrop buffers (rows of packed 6-hex
-    colours) -- the halfblock LCD's honest equivalent of canon's alpha fade."""
-    out = []
-    for ro, rn in zip(old, new):
-        row = []
-        for i in range(0, min(len(ro), len(rn)) - 5, 6):
-            o, n = int(ro[i:i + 6], 16), int(rn[i:i + 6], 16)
-            r = round(((o >> 16) & 255) * (1 - t) + ((n >> 16) & 255) * t)
-            g = round(((o >> 8) & 255) * (1 - t) + ((n >> 8) & 255) * t)
-            b = round((o & 255) * (1 - t) + (n & 255) * t)
-            row.append("%02x%02x%02x" % (r, g, b))
-        out.append("".join(row))
-    return out
-
-
 class AdventurePanel(menu.SubHost):
     def __init__(self, pet):
         self.pet = pet
@@ -170,9 +152,6 @@ class AdventurePanel(menu.SubHost):
         self._roll_weather()                     # weather happens on the road
         if self._refuse_t:
             self._refuse_t -= 1
-        fade = getattr(self, "_bg_fade", None)
-        if fade is not None:
-            fade["t"] += 1                   # the habitat cross-fade clock
         if self._trans is not None:
             # the teleport (canon Teleport_Leave -> Teleport_Arrive): the
             # curtain script owns the screen both ways -- canon's state
@@ -393,16 +372,12 @@ class AdventurePanel(menu.SubHost):
                 self.travelling = True
             return None
         if getattr(self, "_parade", None) is not None:
-            if k in ("space", "enter", "escape"):     # skip to the next marcher / the end
-                self._parade["t"] = ((self._parade["t"] // PARADE_T) + 1) * PARADE_T
-                if self._parade["t"] >= PARADE_T * len(self._parade["nums"]):
-                    self._parade = None
-                    self.travelling = not self.adv.done
-            return None
+            return None                   # the parade marches at its own pace
         if getattr(self, "_scene", None) is not None:
-            if k in ("space", "enter", "escape") and self._scene["t"] < INV_REVEAL_T:
-                self._scene["t"] = INV_REVEAL_T - 1   # skip the suspense to the reveal
-            return None
+            return None                   # the investigate beats play out
+        #                                   (no skips: own-game law 2026-07-13,
+        #                                   "most animations are skippable...
+        #                                   extremely sloppy" -- they are not)
         if getattr(self, "discovering", False):
             # Investigate_Validation: ENTER looks, ESC walks on
             if k in ("enter", "y"):
@@ -485,9 +460,13 @@ class AdventurePanel(menu.SubHost):
         return grid.prep((fr[idx] if idx < len(fr) else None) or fr[0], ph=ROWS * 2)
 
     def _jx(self, rows):
-        """The journey spot: progress along the walkable grid."""
+        """The pet's STAGE SPOT: a fixed left-of-centre anchor (the home
+        arena's roamer idiom) -- journey progress lives on the ribbon, not in
+        the pet's x.  (Joel 2026-07-13: placements were "all wrong" -- the old
+        progress-tied x crammed every beat, emote and item strip against the
+        right wall late in a zone.)"""
         lo, hi = grid.roam_bounds(grid.width(rows))
-        return lo + int((hi - lo) * (self.adv.pct / 100))
+        return lo + round((hi - lo) * 0.28)
 
     def _pet_placement(self):
         """(rows, x, mirror, overlay, note_override) for this frame -- the journey
@@ -632,25 +611,14 @@ class AdventurePanel(menu.SubHost):
                           overlay=overlay, overlay_free=weather, clip=grid.WINDOW)
 
     def _current_hab_id(self):
-        """The habitat id of the scenery under the pet right now -- the zone's
-        per-step backdrop, or the town's backdrop when standing in one.  None
-        means fall back to the home habitat."""
-        a = self.adv
-        bg_h = next((hid for (blo, bhi, hid) in a.zone.get("bgs", [])
-                     if blo <= a.location <= bhi), None)
-        tspan = next((t for t in a.zone.get("towns", [])
-                      if t[0] <= a.location <= t[1]), None)
-        if tspan is not None:
-            tbg = (data.load_towns().get(tspan[2]) or {}).get("bg_habitat")
-            if tbg is not None:
-                bg_h = tbg
-        return bg_h
+        """The expedition's ONE biome (own-game law, Joel 2026-07-13: one biome
+        per adventure, start to boss).  Weather tests monkeypatch this."""
+        return self.adv.biome
 
     def _roll_weather(self):
         """Weather keeps happening while travelling (Joel 2026-07-12), off the
-        CURRENT zone habitat -- so it shifts as the pet crosses biomes and an
-        underwater leg stays clear (weather.next_weather gates no-sky habitats).
-        Re-rolls on every biome crossing, plus the canon slow cadence."""
+        run's ONE biome (a fresh sky only when a new expedition starts --
+        weather.next_weather still gates no-sky habitats)."""
         hid = self._current_hab_id()
         hab = (data.load_habitats().get(hid) if hid is not None else None) \
             or self.pet.habitat_obj()
@@ -662,25 +630,11 @@ class AdventurePanel(menu.SubHost):
                                                self.pet.day_temp, hab)
 
     def _road_bg(self):
-        """The journey's SCENERY (restyle 2026-07-04 -- the old flat 7-row
-        strip "looked nothing like the rest of the game"): the zone's
-        canonical per-step backdrop (zones.csv BackgroundsAndRange), so the
-        world CHANGES as the pet walks -- desert into forest into mountains.
-        Home scenery covers spans the data leaves blank.  Crossing into a new
-        habitat CROSS-FADES (canon BackgroundAnim.animateBack: the old
-        backdrop's opacity steps out over the new at -0.05/frame)."""
+        """The expedition's ONE backdrop, held start to boss (own-game law,
+        Joel 2026-07-13 -- the per-step span-hopping and its cross-fade
+        machinery are gone; the destination terrain IS the adventure)."""
         bg_h = self._current_hab_id()
-        bgimg = self.pet.background(bg_h) if bg_h is not None else self.pet.background()
-        if bg_h != getattr(self, "_bg_id", bg_h):
-            self._bg_fade = {"old": getattr(self, "_bg_last", None), "t": 0}
-        self._bg_id = bg_h
-        fade = getattr(self, "_bg_fade", None)
-        if fade and fade["old"] and bgimg and fade["t"] < FADE_T:
-            bgimg = _blend_bg(fade["old"], bgimg, fade["t"] / FADE_T)
-        else:
-            self._bg_fade = None
-        self._bg_last = bgimg
-        return bgimg
+        return self.pet.background(bg_h) if bg_h is not None else self.pet.background()
 
     def _teleport_frame(self):
         """One frame of the canon teleport (SpriteAnim.teleportLeave /
@@ -751,6 +705,10 @@ class AdventurePanel(menu.SubHost):
                 any(on <= self._pulse["t"] < off for on, off in PULSE_ON):
             bgimg = _brighten(bgimg, 0.6)     # the zonePulse light, on the LCD
         placements = [(pet_rows, x, mirror)]
+        # weather rides EVERY road frame (placement audit 2026-07-13: it used
+        # to render only while standing and vanish the moment the walk resumed)
+        weather = arena._weather_overlay(self.pet.weather, self.frame_i // 4,
+                                         COLS, ROWS * 2)
         if self._retreat is not None and bgimg:
             # Retreat_Town: the black layer steps down over the dejected pet,
             # the town reset waits under full black, then it steps back out
@@ -758,14 +716,15 @@ class AdventurePanel(menu.SubHost):
             half = RETREAT_T // 2
             d = t / half if t < half else (RETREAT_T - t) / half
             bgimg = _dim(bgimg, min(1.0, d))
-            if d > 0.6:                       # near-black: the pet is under it too
-                placements, overlay = [], []
+            if d > 0.6:                       # near-black: everything is under it
+                placements, overlay, weather = [], [], []
         # the scene IS the whole LCD (box-clip audit 2026-07-04: the old
         # bar/progress/note/footer stack ran 16 lines and the physical 12-row
         # box clipped everything below the arena).  The journey's numbers live
         # on the ADVENTURE status card; the note + controls ride the strip.
         return menu.paint(placements, bgimg,
-                          rows=ROWS, cols=COLS, overlay=overlay)
+                          rows=ROWS, cols=COLS, overlay=overlay,
+                          overlay_free=weather)
 
     def strip(self):
         """One line under the LCD: the journey note + the controls that apply.
@@ -782,10 +741,8 @@ class AdventurePanel(menu.SubHost):
                 or self._care is not None or self._retreat is not None:
             hint = ""                 # the beat plays out (teleport / zoneChange /
             #                           care fx / the Retreat_Town fade)
-        elif self._parade is not None:
-            hint = "SPACE next"
-        elif self._scene is not None:
-            hint = "SPACE skip"
+        elif self._parade is not None or self._scene is not None:
+            hint = ""                 # the beat plays out
         elif a.done:
             hint = "ESC out"
         elif self.travelling:

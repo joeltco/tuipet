@@ -33,15 +33,18 @@ def test_zone_scenery_parses_and_covers_the_walk():
         assert hid in data.load_habitats(), hid   # every span names a real habitat
 
 
-def test_backdrop_changes_along_the_journey():
+def test_backdrop_holds_one_biome_all_journey():
+    """One biome per adventure (Joel 2026-07-13): the scenery at 2% is the
+    scenery at 55% -- the world no longer swaps underfoot."""
     pan = AdventurePanel(_pet())
-    pan._trans = None                             # settled past the arrival fade
+    pan._trans = None                             # settled past the teleport
+    pan.travelling = False
     a = pan.adv
     a.location = int(a.total_steps * 0.02)
     early = pan.text().markup              # markup, not plain: the arena is colour
     a.location = int(a.total_steps * 0.55)
     late = pan.text().markup
-    assert early != late                   # the world moved with the pet
+    assert early == late                   # one biome, start to boss
 
 
 def test_towns_carry_their_canonical_backdrop():
@@ -64,19 +67,17 @@ def test_town_lobby_is_a_scene_and_arrival_shows_the_town():
     # the pages carry in-LCD menus AND pop the hint line (convention v0.2.399;
     # the silent box was the audit 2026-07-13 gap -- the home shop hinted here)
     assert "pick" in pan.strip() and "buy" in pan.strip()
-    # adventure: stepping INSIDE the town's span swaps to the town backdrop
+    # adventure: the ROAD keeps the expedition's one biome even across a
+    # town's span (2026-07-13) -- town scenery lives inside the TownPanel
     ap = AdventurePanel(_pet())
     ap._trans = None                           # settled past the teleport
+    ap.travelling = False
     a = ap.adv
     a.location = 4250                          # town 0 spans 4201-4300 in zone 1-1
     in_town = ap.text().markup
-    a.location = 4350                          # same zone-bg span, just past the gates
-    from tuipet.adventurescreen import FADE_T
-    for _ in range(FADE_T + 1):                # let the cross-fade settle (v0.2.233)
-        ap.text()
-        ap.anim()
+    a.location = 4350                          # just past the gates
     outside = ap.text().markup
-    assert in_town != outside
+    assert in_town == outside
 
 
 def test_tournament_scenes_use_the_standard_arena():
@@ -200,35 +201,65 @@ def test_investigate_ambush_startles_then_opens_the_battle():
             break
         pan._scene = None
     assert pan._scene and pan._scene["kind"] == "enemy"
-    pan.key("space")                              # skip straight to the reveal
-    assert pan._scene["t"] == INV_REVEAL_T - 1
-    for _ in range(8):
+    pan.key("space")                              # keys do NOT skip the beats
+    assert pan._scene["t"] == 0                   # (own-game law 2026-07-13)
+    for _ in range(INV_REVEAL_T + 12):            # the suspense plays out
         pan.anim()
+        if pan._scene is None:
+            break
     assert isinstance(pan.sub, BattlePanel)       # the ambush fight opened
     assert pan._scene is None
 
 
-def test_habitat_change_cross_fades_not_snaps():
-    """Canon BackgroundAnim.animateBack (2026-07-04): crossing into a new
-    backdrop span fades old-over-new at -0.05 opacity/frame (20 ticks); the
-    scenery used to SNAP mid-stride."""
-    from tuipet.adventurescreen import FADE_T
+def test_no_backdrop_swaps_or_fades_mid_run():
+    """The span-hopping and its cross-fade machinery are GONE (own-game law
+    2026-07-13): one biome start to boss, nothing to fade."""
+    import tuipet.adventurescreen as ascr
+    assert not hasattr(ascr, "FADE_T")
+    assert not hasattr(ascr, "_blend_bg")
     random.seed(7)
     pan = AdventurePanel(_pet())
     pan._trans = None                             # settled past the teleport
+    pan.travelling = False
     a = pan.adv
     spans = a.zone.get("bgs", [])
     assert len(spans) >= 2
-    pan.travelling = False
     a.location = spans[0][0]
-    pan.text()                                   # settle on the first backdrop
-    a.location = spans[1][0] + 1                 # stride across the boundary
-    frames = []
-    for _ in range(FADE_T + 3):
-        frames.append(pan.text().markup)
-        pan.anim()
-    assert len(set(frames)) >= FADE_T - 2        # a smooth blend, not a snap
-    assert frames[-1] == frames[-2]              # ...that settles on the new world
+    first = pan.text().markup
+    a.location = spans[1][0] + 1                  # across the old span boundary
+    assert pan.text().markup == first             # same world, same frame
+
+
+def test_stage_anchor_is_progress_free():
+    """Placements (Joel 2026-07-13, "placements are all wrong"): the pet's x
+    is a fixed stage anchor -- journey progress lives on the ribbon, never in
+    the pet's feet, so late-zone beats stop cramming the right wall."""
+    pan = AdventurePanel(_pet())
+    pan._trans = None
+    rows = pan._rows(0)
+    pan.adv.location = 0
+    x0 = pan._jx(rows)
+    pan.adv.location = pan.adv.total_steps - 1
+    assert pan._jx(rows) == x0
+
+
+def test_weather_rides_the_travelling_frame(monkeypatch):
+    """Weather renders on EVERY road frame (2026-07-13) -- it used to vanish
+    the moment the walk resumed."""
+    from tuipet import arena
+    calls = {}
+    real = arena._weather_overlay
+
+    def spy(w, wf, cols, px_h):
+        calls["hit"] = True
+        return real(w, wf, cols, px_h)
+
+    monkeypatch.setattr(arena, "_weather_overlay", spy)
+    pan = AdventurePanel(_pet())
+    pan._trans = None
+    pan.travelling = True
+    pan.text()
+    assert calls.get("hit"), "the travelling frame dropped the weather overlay"
 
 
 # ---- the adventure feel arc (Joel 2026-07-07: "adventure felt different in

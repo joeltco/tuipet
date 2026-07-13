@@ -164,8 +164,8 @@ def test_map_final_boss_cues_the_victory_parade():
     for i in range(160):
         panel.frame_i = i
         s = panel.strip()
-        assert "SPACE next" in s
-        windows.append(s.split("  [dim]")[0])
+        assert "SPACE" not in s          # the parade is not skippable (2026-07-13)
+        windows.append(s)
     assert any(w.startswith("You saved") for w in windows)
     assert any("World!" in w for w in windows)
     panel.frame_i = 0
@@ -177,11 +177,11 @@ def test_map_final_boss_cues_the_victory_parade():
         frames += 1
         assert frames < 500
     assert panel.travelling                                  # back on the road
-    # skips hop marcher-by-marcher and never wedge the panel
+    # keys do NOT advance the parade (own-game law 2026-07-13: beats play out)
     panel._parade = {"t": 0, "nums": [102, 194, 274]}
     for _ in range(3):
         panel.key("space")
-    assert panel._parade is None
+    assert panel._parade is not None and panel._parade["t"] == 0
 
 
 def test_mid_journey_contracts():
@@ -264,19 +264,18 @@ def test_the_current_habitat_follows_the_road_and_comes_home():
     home resumes when the adventure closes (and on any save load)."""
     from tuipet.adventure import Adventure
     from tuipet.pet import Pet
-    from tuipet import data, persistence
+    from tuipet import persistence
     p = Pet(num=102, name="D", stage="Champion", attribute="Virus")
     p.world_seconds = 10 * 60.0
     home = p.habitat
     adv = Adventure(p)
     assert p.home_habitat == home                  # old-save backfill on entry
-    bgs = adv.zone.get("bgs", ())
-    if bgs:
-        assert any(lo <= adv.location <= hi and p.habitat == hid
-                   for lo, hi, hid in bgs if hid in data.load_habitats()) or p.habitat == home
-        adv.location = bgs[-1][0]                  # stand on the LAST terrain span
-        adv._set_zone_habitat()
-        assert p.habitat == bgs[-1][2]
+    assert p.habitat == adv.biome                  # the expedition biome, worn at entry
+    # ONE biome start to boss (Joel 2026-07-13): standing anywhere in the
+    # zone never re-dresses the pet -- there is no per-step habitat any more
+    for loc in (0, adv.total_steps // 3, adv.total_steps - 1):
+        adv.location = loc
+        assert p.habitat == adv.biome
     p.go_home_habitat()
     assert p.habitat == home                       # the exit hook restores the home
     # ...and a save written mid-road loads back at home
@@ -380,18 +379,21 @@ def test_town_before_boss_in_one_stride_is_reached_first(monkeypatch):
     assert adv.location == 25
 
 
-def test_boss_stop_wears_the_habitat_of_the_stop(monkeypatch):
-    """Stopping AT the boss re-derives the zone habitat for the CLAMPED spot --
-    the old order set it for the overshot pre-clamp location."""
+def test_boss_stop_keeps_the_expedition_biome(monkeypatch):
+    """One biome per run (Joel 2026-07-13): stopping AT the boss never
+    re-dresses the habitat -- the run wears its biome start to boss."""
     from tuipet import adventure as amod, data
     monkeypatch.setattr(amod.random, "random", lambda: 0.99)
     hids = sorted(data.load_habitats())[:2]
     adv, p = _stub_adv(boss_loc=25,
                        bgs=[(0, 25, hids[0]), (26, 400, hids[1])])
-    p.habitat = hids[1]                                 # force a visible shift
+    adv.biome = adv._zone_biome()                       # the stub zone's terrain
+    adv._wear_biome()
+    assert adv.biome == hids[1]                         # the DOMINANT span (26-400)
+    worn = p.habitat
     ev = adv.travel()
     assert ev and ev[0] == "boss" and adv.location == 25
-    assert p.habitat == hids[0], "the habitat must match step 25, not step 30"
+    assert p.habitat == worn, "the boss stop must not re-dress the biome"
 
 
 # ---- road legibility (arc 2026-07-07: surface REAL state, invent nothing) ----
@@ -425,11 +427,13 @@ def test_quiet_strides_narrate_real_state(monkeypatch):
     from tuipet import adventure as amod, data
     monkeypatch.setattr(amod.random, "random", lambda: 0.99)   # quiet road
     hids = sorted(data.load_habitats())[:2]
-    # the terrain shift: the stride 20->30 crosses into the second band
+    # one biome per run (2026-07-13): a crossed span band narrates NOTHING and
+    # re-dresses nothing -- there is no terrain shift to report any more
     adv, p = _stub_adv(boss_loc=None, bgs=[(0, 25, hids[0]), (26, 400, hids[1])])
-    p.habitat = hids[0]
+    worn = p.habitat
     assert adv.travel() is None
-    assert adv.last == f"Now crossing: {data.load_habitats()[hids[1]]['name']}."
+    assert p.habitat == worn
+    assert adv.last.startswith(("Travelling…", "Night falls", "Dawn breaks"))
     # the day-phase turn (whichever side of the clock the pet is on)
     adv, p = _stub_adv(boss_loc=None)
     ph = p.day_phase

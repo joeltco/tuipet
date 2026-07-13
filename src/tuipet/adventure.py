@@ -1,4 +1,12 @@
-"""Adventure mode -- a faithful port of DVPet's WorldMap/Zone step-based travel.
+"""Adventure mode -- tuipet's OWN expedition game over the real zone data.
+
+⛔ OWN-GAME LAW (Joel 2026-07-13): DVPet is NOT canon for adventures.  One
+biome per adventure, start to boss -- the run wears the terrain its gate boss
+stands in and never swaps scenery mid-run.  The step/encounter/drain MECHANICS
+below still run on the real device constants (they are data, and they play
+well); the FLOW -- scenery, placements, pacing, beats -- is tuipet's own.
+
+(The original port notes, kept for the mechanics' provenance:)
 
 DVPet adventure is a slow real-time grind: while travelling the pet steps through a
 zone of `TotalSteps` (e.g. 10000), the world rolls a wild-encounter EVERY game-tick
@@ -67,6 +75,11 @@ BATTLE_IMMUNITY_STEPS = 90.0 * 14 / WALK_STEP_MIN
 
 # The one TUI compression: interactive travel actions to cross a zone.
 INTERACTIVE_STEPS = 40
+# Diversity floor (Joel 2026-07-13, "a diverse enemy/item/shop/boss system"):
+# a zone whose wild roster is thinner than this borrows the map's EARLIER
+# wilds -- they roam forward into it (zone 5-3's three Lake natives walk with
+# the Field and Desert wilds from the road already travelled).
+MIN_WILDS = 6
 
 
 def _real(enemies):
@@ -117,16 +130,35 @@ class Adventure:
         # through it; gated on pet.away so a stale ref after homecoming is
         # inert -- transient, never serialized)
         pet._adventure = self
-        self._set_zone_habitat()
+        self.biome = self._zone_biome()
+        self._wear_biome()
+        self._pad_wilds()
 
-    def _set_zone_habitat(self):
-        """setCurrentHabitat(zone.getCurrentLocationBackground())."""
-        for lo, hi, hid in self.zone.get("bgs", ()):
-            if lo <= self.location <= hi:
-                if hid != self.pet.habitat and hid in data.load_habitats():
-                    self.pet.habitat = hid
-                    self.pet._weather_day = -1    # a fresh sky on the new terrain
-                return
+    def _zone_biome(self):
+        """One biome per adventure (own-game law): the expedition wears the
+        zone's DOMINANT terrain -- the habitat covering the most steps -- for
+        the whole run, start to boss.  It is what the zone IS (Foundry Lake is
+        a Lake run, Sunken Gorge a Canyon, Harbor City a City, map 3's finale
+        a Sky ascent), and across the world it names 11 distinct biomes.
+        Fallback: the gate span's terrain, then the home habitat."""
+        spans = sorted(self.zone.get("bgs", ()))
+        habs = data.load_habitats()
+        cover = {}
+        for lo, hi, hid in spans:
+            if hid in habs:
+                cover[hid] = cover.get(hid, 0) + (hi - lo)
+        if cover:
+            return max(cover, key=lambda h: (cover[h], -h))
+        gate = next((hid for _lo, _hi, hid in reversed(spans) if hid in habs), None)
+        return self.pet.home_habitat if gate is None else gate
+
+    def _wear_biome(self):
+        """The pet wears the run's biome for the WHOLE run -- scene, climate,
+        compatibility odds and the current-habitat evolution gate all belong
+        to the destination terrain, never swapped mid-run."""
+        if self.biome != self.pet.habitat and self.biome in data.load_habitats():
+            self.pet.habitat = self.biome
+            self.pet._weather_day = -1            # a fresh sky for the expedition
 
     # --- zone helpers ---
     @property
@@ -221,6 +253,22 @@ class Adventure:
     def _in_town(self, loc):
         return any(lo <= loc <= hi for lo, hi, _t in self.zone.get("towns", ()))
 
+    def _pad_wilds(self):
+        """The MIN_WILDS diversity floor: pad a thin zone's roster with the
+        map's earlier roamers (full-zone wanderers, never placed ambushers)."""
+        natives = {e["num"] for e in self.zone["randoms"]
+                   if not data.is_placeholder(e["num"])}
+        extras = []
+        if len(natives) < MIN_WILDS:
+            for z in self.maps[self.mi]["zones"][:self.zi]:
+                for e in z["randoms"]:
+                    if e["num"] not in natives and not data.is_placeholder(e["num"]):
+                        natives.add(e["num"])
+                        extras.append(dict(e, location=0))
+                if len(natives) >= MIN_WILDS:
+                    break
+        self._extra_wilds = extras
+
     def _wilds(self, prev=None):
         """Eligible randoms (canon re-audit 2026-07): Enemy.location is a POINT
         territory ([loc,loc] -- checkBattle's location[0] <= cur <= location[1]),
@@ -228,7 +276,8 @@ class Adventure:
         AMBUSHER at its exact step.  Strides cross steps, so a point counts when
         the last stride's span swept it."""
         lo = self.location - self.stride if prev is None else prev
-        return [e for e in self.zone["randoms"]
+        return [e for e in (list(self.zone["randoms"])
+                            + list(getattr(self, "_extra_wilds", ())))
                 if e.get("location", 0) == 0
                 or lo < e.get("location", 0) <= self.location]
 
@@ -274,9 +323,7 @@ class Adventure:
             self.last = f"{self.pet.name} noticed something off the path!"
             return ("discover", None)
         prev = self.location
-        prev_hab = self.pet.habitat               # for the terrain narration below
         self.location = min(self.total_steps, self.location + self.stride)
-        self._set_zone_habitat()                  # the terrain (and its sky) shifts underfoot
         # the post-battle immunity wears off with the walking
         self._immunity_steps = max(0.0, getattr(self, "_immunity_steps", 0.0) - self.stride)
         self._travel_drain()
@@ -297,13 +344,10 @@ class Adventure:
         if boss_hit and town_hit and town_hit[0] < boss_hit[0]:
             # the town gate comes first: stop AT it (the boss re-arms next stride)
             self.location = town_hit[0]
-            self._set_zone_habitat()
             boss_hit = None
         if boss_hit:
             bloc, b = boss_hit
             self.location = bloc
-            self._set_zone_habitat()      # wear the habitat of WHERE WE STOPPED,
-            #                               not the overshot pre-clamp spot
             self.boss_pending = True
             self._boss = b
             self.last = f"Zone boss: {b['name']}!"
@@ -327,15 +371,10 @@ class Adventure:
             self.last = f"Wild {e['name']} appeared!"
             return ("encounter", e)
         # A quiet stride narrates REAL state only (legibility arc 2026-07-07 --
-        # never invented flavor): the terrain band the walk just crossed into
-        # (zones.csv BackgroundsAndRange, the same shift the backdrop fades
-        # through), a day-phase turn (night runs the real 1.5x encounter rate),
-        # or the battle-immunity calm (no random rolls while it holds).
-        if self.pet.habitat != prev_hab:
-            name = data.load_habitats().get(self.pet.habitat, {}).get("name")
-            self.last = f"Now crossing: {name}." if name \
-                else f"Travelling… {self.pct}%"
-        elif self.pet.day_phase != self._phase_seen:
+        # never invented flavor): a day-phase turn (night runs the real 1.5x
+        # encounter rate), or the battle-immunity calm (no random rolls while
+        # it holds).  One biome per run: there is no terrain to narrate.
+        if self.pet.day_phase != self._phase_seen:
             self._phase_seen = self.pet.day_phase
             self.last = ("Night falls — the wilds stir." if self._phase_seen == "night"
                          else "Dawn breaks over the road.")
@@ -459,6 +498,9 @@ class Adventure:
         self._cleared.clear()
         if self.zi + 1 < len(zones):
             self.zi += 1
+            self.biome = self._zone_biome()
+            self._wear_biome()                    # the next expedition's terrain
+            self._pad_wilds()
             from . import world
             nm = world.zone_name(self.maps[self.mi]["map"], zones[self.zi]["zone"])
             self.last = f"Zone cleared! On to {nm}."
@@ -469,6 +511,9 @@ class Adventure:
             persistence.map_complete_add(self.mi)        # this map is cleared
             self.mi += 1
             self.zi = 0
+            self.biome = self._zone_biome()
+            self._wear_biome()
+            self._pad_wilds()
             from . import world
             self.last = f"REGION CLEARED! {world.region_name(self.maps[self.mi]['map'])} unlocked!"
             self._save()
