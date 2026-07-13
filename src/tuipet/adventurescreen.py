@@ -244,10 +244,20 @@ class AdventurePanel(menu.SubHost):
         if self._travel_t >= TRAVEL_TICKS and self.travelling and not self.adv.done:
             self._travel_t = 0
             ev = self.adv.travel()
-            if ev and ev[0] in ("encounter", "boss"):
+            if ev and ev[0] == "encounter":
+                # wild fights open DIRECTLY -- the fight's own intro is the
+                # battle screen (Joel 2026-07-07, Battle_Flash stays dead)
                 self.travelling = False
-                self._pending = (ev[0] == "boss", ev[1])
+                self._pending = (False, ev[1])
                 self.sub = BattlePanel(self.pet, ev[1], wild=True)
+            elif ev and ev[0] == "boss":
+                # the GATE STOP (audit pass 4): the pass-1 faceoff never
+                # actually showed -- the battle opened the same frame.  Now
+                # the march halts at the gate, the boss looms, and SPACE
+                # engages; a boss is a choice you square up to, not another
+                # random encounter.
+                self.travelling = False
+                self.sfx = "alarm"
             elif ev and ev[0] in ("zone", "map", "all"):
                 # walked past a cleared gate: the zoneChange pulse plays
                 self.travelling = False
@@ -467,6 +477,12 @@ class AdventurePanel(menu.SubHost):
         if k == "s":
             self.adv.last = self.pet.toggle_lights()
             self.sfx = "confirm"
+            return None
+        if k == "space" and self.adv.boss_pending and self.sub is None \
+                and getattr(self.adv, "_boss", None):
+            b = self.adv._boss
+            self._pending = (True, b)
+            self.sub = BattlePanel(self.pet, b, wild=True)
             return None
         if k == "space" and not self.adv.done:
             if not self.travelling:
@@ -861,6 +877,10 @@ class AdventurePanel(menu.SubHost):
             hint = ""                 # the beat plays out
         elif a.done:
             hint = "ESC out"
+        elif a.boss_pending:
+            hint = "SPACE fight  ESC out"
+        elif self.travelling and self.pet.asleep:
+            hint = "Zzz · ESC"            # the roadside nap: the journey waits
         elif self.travelling:
             hint = "SPACE stop · ESC"     # travelling note + hint <= 40 (2026-07-07)
         elif getattr(self, "town_prompt", None) is not None:

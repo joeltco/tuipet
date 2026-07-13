@@ -783,3 +783,40 @@ def test_geriatric_pet_marches_the_aged_shuffle():
     rows, _x, _m, _o, _n = pan._pet_placement()
     beat_wi = data.ROLES["walk"][(pan.frame_i // 5) % 2] + 9
     assert rows == pan._rows(beat_wi), "the elder drags the +9 shuffle frames"
+
+
+# ---- adventure audit pass 4 (the gate stop) -----------------------------------
+
+def test_boss_gate_stops_for_the_faceoff_and_space_engages():
+    """Pass 4: a boss event HALTS the march at the gate (the pass-1 faceoff
+    finally shows -- the battle used to open the same frame) and SPACE
+    engages.  Wild encounters still open directly (Joel 2026-07-07)."""
+    from tuipet.battlescreen import BattlePanel
+    from tuipet.adventurescreen import TRAVEL_TICKS
+    pan = AdventurePanel(_pet())
+    pan._trans = None
+    pan.travelling = True
+    boss = next(b for z in pan.adv.maps[0]["zones"] for b in z["bosses"])
+
+    def hit():
+        pan.adv.boss_pending = True
+        pan.adv._boss = boss
+        return ("boss", boss)
+    pan.adv.travel = hit
+    for _ in range(TRAVEL_TICKS):
+        pan.anim()
+    assert pan.sub is None, "the gate stop must NOT open the battle"
+    assert not pan.travelling and pan.adv.boss_pending
+    assert "SPACE fight" in pan.strip()
+    pan.key("space")
+    assert isinstance(pan.sub, BattlePanel), "SPACE engages the boss"
+    assert pan._pending == (True, boss)
+
+
+def test_nap_hint_says_the_journey_waits():
+    pan = AdventurePanel(_pet())
+    pan._trans = None
+    pan.travelling = True
+    pan.pet.asleep = True
+    pan.pet.anim = "sleep"
+    assert "Zzz" in pan.strip() and "SPACE stop" not in pan.strip()
