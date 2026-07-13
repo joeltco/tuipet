@@ -176,8 +176,12 @@ def test_map_final_boss_cues_the_victory_parade():
         assert len(lines) <= 12 and all(len(ln) <= 40 for ln in lines)
         frames += 1
         assert frames < 500
-    assert panel.travelling                                  # back on the road
+    # the map is BEATEN: the victory lap heads home (Joel 2026-07-13,
+    # "beating a boss should be the end. teleport back home.")
+    assert not panel.travelling
+    assert panel._trans is not None and panel._trans["dir"] == "out"
     # keys do NOT advance the parade (own-game law 2026-07-13: beats play out)
+    panel._trans = None
     panel._parade = {"t": 0, "nums": [102, 194, 274]}
     for _ in range(3):
         panel.key("space")

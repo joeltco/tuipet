@@ -400,7 +400,10 @@ def test_zone_clear_plays_the_pulse_transition():
         pan.anim()
         assert pan._pulse is None or pan._pulse["t"] <= PULSE_T
     assert lit and dark and lit != dark          # the light actually pulses
-    assert pan.travelling                        # then the road resumes
+    # zone cleared = adventure COMPLETE: the teleport heads home, the panel
+    # closes at the house (Joel 2026-07-13); the next run starts the next zone
+    assert not pan.travelling
+    assert pan._trans is not None and pan._trans["dir"] == "out"
 
 
 def test_travel_paces_one_stride_per_second():

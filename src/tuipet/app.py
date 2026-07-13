@@ -257,11 +257,11 @@ class TuiPetApp(App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("Honest skies: rain vs snow now follows the temperature on "
-                 "your display — no more flurries at 46 degrees, and an "
-                 "ongoing snow turns to rain the moment it warms past "
-                 "freezing. Found treasures also ride in front of your mon "
-                 "on the walk home instead of clipping into it.")
+    WHATS_NEW = ("Adventures now END: beat the zone boss and your mon takes "
+                 "a victory teleport home — one expedition, one boss, done. "
+                 "The next adventure sets out for the next zone. Boss fights "
+                 "are also labeled BOSS on the battle card instead of "
+                 "reading like a random encounter.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and
@@ -1122,7 +1122,16 @@ class TuiPetApp(App):
         # road-keys 2026-07-07) keeps the travelling card underneath
         if self.mode.sub is not None and hasattr(self.mode.sub, "battle"):
             e = self.mode.sub.battle.enemy
-            tag = f" [{T.NEG}]BOSS[/]" if e.get("boss") else ""
+            # boss-ness from the panel's own pending flag (bug report
+            # 2026-07-13: the gate fight read as a random encounter -- the
+            # enemy record never carries a "boss" key)
+            was_boss = bool(getattr(self.mode, "_pending", None)
+                            and self.mode._pending[0])
+            tag = f" [{T.NEG}]BOSS[/]" if was_boss else ""
+            foot = (["[dim]the zone boss guards[/]",
+                     "[dim]the gate — end it![/]"] if was_boss else
+                    ["[dim]a wild foe blocks[/]",
+                     "[dim]the path — fight![/]"])
             lines = [
                 f"[b]{p.name[:14]}[/] [dim]· battle[/]",
                 div,
@@ -1133,9 +1142,7 @@ class TuiPetApp(App):
                 f"Energy   {bar(p.energy_pct(), 11, T.ENERGY)}",
                 f"Power    {power}",
                 div,
-                "[dim]a wild foe blocks[/]",
-                "[dim]the path — fight![/]",
-            ]
+            ] + foot
         else:                                               # travelling
             # the zone ribbon (legibility arc 2026-07-07): REAL geography on
             # the journey card -- towns.csv gates, uncleared enemies.csv

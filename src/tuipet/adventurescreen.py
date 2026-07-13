@@ -197,7 +197,7 @@ class AdventurePanel(menu.SubHost):
                     self._parade = {"t": 0, "nums": p["parade"]}
                     self.sfx = "win"         # bossParade cue
                 else:
-                    self.travelling = not self.adv.done
+                    self._go_home()          # zone cleared = adventure DONE
             return
         if self._care is not None:
             # a road care beat: canon-scripted stings, travel held while it
@@ -219,7 +219,7 @@ class AdventurePanel(menu.SubHost):
             self._parade["t"] += 1
             if self._parade["t"] >= PARADE_T * len(self._parade["nums"]):
                 self._parade = None
-                self.travelling = not self.adv.done
+                self._go_home()              # the map is beaten: victory lap home
             return
         if self._scene is not None:
             self._scene_tick()
@@ -267,6 +267,17 @@ class AdventurePanel(menu.SubHost):
         elif s["t"] >= INV_END_T:                     # carried home -> back on the road
             self._scene = None
             self.travelling = True
+
+    def _go_home(self, msg=None):
+        """The expedition ENDS here (Joel 2026-07-13: "beating a boss should
+        be the end. teleport back home. one adventure done."): the homeward
+        teleport plays and the panel auto-closes at the house.  The zone/map
+        advance is already saved on the pet, so the NEXT adventure sets out
+        for the next zone."""
+        if msg:
+            self.adv.last = msg
+        self.travelling = False
+        self._trans = {"dir": "out", "phase": "leave", "t": 0}
 
     def _road_react(self, fallback):
         """Route a direct care action's reaction onto the arena (the home fx
