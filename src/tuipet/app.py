@@ -61,6 +61,25 @@ import re as _re
 _NAV_KEYS = frozenset({"up", "down", "left", "right", "j", "k", "h", "l", "tab"})
 
 HUD_W = 40              # message-box content width (CSS #msg: 44 - 2 border - 2 padding)
+
+
+def host_platform():
+    """The platform name for bug reports.  iOS reports itself as 'Darwin',
+    exactly like a Mac -- so our iPhone/iPad players (a-Shell, the official
+    iOS target) were INVISIBLE in the bug feed and we could not tell their
+    reports from desktop ones (iOS support 2026-07-13)."""
+    import platform as _pf
+    sysname = _pf.system()
+    if sysname == "Darwin":
+        mach = _pf.machine() or ""
+        if mach.startswith(("iPhone", "iPad", "iPod")) or _os.environ.get("SHORTCUTS"):
+            return "iOS"
+        # a-Shell's home is redirected into the app container; a Mac's is not
+        if "/Containers/" in _os.path.expanduser("~") or "/Application/" in _os.path.expanduser("~"):
+            return "iOS"
+    if _os.environ.get("PREFIX", "").endswith("com.termux/files/usr"):
+        return "Termux"
+    return sysname
 HUD_GAP = "      "      # blank run between marquee wraps so the looped text reads cleanly
 HUD_STEP = 2            # advance the marquee every N frames (10 Hz clock -> ~0.2 s/char)
 HUD_HOLD = 8            # marquee steps to hold on the message head before scrolling (~1.6 s)
@@ -258,11 +277,11 @@ class TuiPetApp(App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("Weather actually happens now: the sky was only rolling "
-                 "2x a day instead of 144x, so it almost never left Clear — "
-                 "rain, snow and storms were effectively dead. Skies now "
-                 "turn properly, and with last build's temperature fix your "
-                 "habitat's climate finally matters.")
+    WHATS_NEW = ("iPhone and iPad are officially supported now, via a-Shell "
+                 "— and a real bug came with it: on iOS the home folder is "
+                 "read-only, so saves were failing SILENTLY and pets never "
+                 "persisted. tuipet now saves to a writable folder on every "
+                 "platform, and says so loudly if it ever cannot save.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and
@@ -474,8 +493,20 @@ class TuiPetApp(App):
 
     def autosave(self):
         persistence.save(self.pet)
+        self._warn_if_unsaveable()
         self._note_progress()
         self._push_cloud()              # mirror the autosave up to the cloud
+
+    def _warn_if_unsaveable(self):
+        """A save dir the OS refuses used to fail SILENTLY -- the pet simply
+        never persisted and the player found out by losing it (iOS's read-only
+        home, support pass 2026-07-13).  Say it once, loudly, with the fix."""
+        if not persistence.save_failed or getattr(self, "_save_warned", False):
+            return
+        self._save_warned = True
+        self.beep("alarm")
+        self.flash(f"[{theme.NEG}]⚠ CAN'T SAVE — your pet will not persist! "
+                   f"Set TUIPET_SAVE_DIR to a writable folder.[/]")
 
     def _note_progress(self):
         """Record cross-generation egg-unlock milestones from the live pet."""
@@ -668,7 +699,7 @@ class TuiPetApp(App):
             ver = ""
         p = self.pet
         return {"version": ver,
-                "platform": "%s py%s" % (_pf.system(), _pf.python_version()),
+                "platform": "%s py%s" % (host_platform(), _pf.python_version()),
                 "pet": {"num": getattr(p, "num", 0), "name": getattr(p, "name", ""),
                         "stage": getattr(p, "stage", ""),
                         "gen": getattr(p, "generation", 0)}}

@@ -52,11 +52,34 @@ package alone isn't enough. Over SSH, sound stays silent on purpose. The
 `curl -fsSL https://raw.githubusercontent.com/joeltco/tuipet/main/install.sh | bash`
 script does all of that in one shot.
 
-**On iPhone (iSH):** iSH's Alpine usually ships a Python older than 3.10, so
-`pip install tuipet` fails with *"No matching distribution found"*. Check your
-version with `python3 --version`; if it's below 3.10, try `apk add python3` for a
-newer build. If iSH can't provide 3.10+, use **Termux on Android** instead — it's
-the smoother mobile experience.
+**On iPhone / iPad — use [a-Shell](https://holzschu.github.io/a-Shell_iOS/)
+(the supported iOS way):** a-Shell is a free, open-source terminal on the App
+Store that ships Python 3.11 — everything tuipet needs.
+
+```sh
+pip install tuipet
+python3 -m tuipet
+```
+
+Use `python3 -m tuipet` rather than the bare `tuipet` command: a-Shell installs
+console scripts somewhere `PATH` doesn't always look, and the module launch
+always works. Tap the **⌨ key row** above the keyboard for `Esc` and the arrow
+keys. Turn your phone to landscape (or drop the font size in a-Shell's settings)
+if the panels wrap.
+
+Two iOS notes, both handled for you:
+
+* **Saves.** iOS forbids writing to `~`, so tuipet keeps your pet in
+  `~/Documents/tuipet/` there instead of the usual `~/.local/share/tuipet/`. That
+  folder is visible in the Files app, so your pet is backup-able and AirDrop-able.
+  Set `TUIPET_SAVE_DIR` to put it anywhere you like.
+* **Sound.** iOS sandboxes audio players, so tuipet falls back to the terminal
+  bell (Options → sound shows *bell only*). Everything else — the lobby, battles,
+  jogress, adventures — works exactly as it does everywhere else.
+
+**On iSH:** iSH's Alpine usually ships a Python older than 3.10, so
+`pip install tuipet` fails with *"No matching distribution found"*. Prefer
+**a-Shell** above — it's the smoother iOS experience.
 
 ## Run from source
 
