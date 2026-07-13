@@ -202,7 +202,13 @@ class OptionsPanel(menu.SubHost):
             b = sound.backend()
             # first token only: "termux-media-player" clipped mid-word on the
             # 18-char value column (Joel's live screen, 2026-07-07)
-            return f"on · {b.split('-')[0][:13]}" if b else "on · bell only"
+            if b:
+                return f"on · {b.split('-')[0][:13]}"
+            # iOS sandboxes audio players outright -- name the reason so a
+            # silent iPhone reads as EXPECTED, not broken (sound audit
+            # 2026-07-13); everywhere else "bell only" already self-explains.
+            from . import hostinfo
+            return "on · bell (iOS)" if hostinfo.is_ios() else "on · bell only"
         if row == "account":
             return persistence.get_account()[0] or "not signed in"
         if row == "update":
