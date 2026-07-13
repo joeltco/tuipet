@@ -132,6 +132,7 @@ def _care_deco(pet, word=None):
     if pet.is_injured() and word != "injured": deco.append(f"[{T.NEG}]+hurt[/]")
     if pet.is_freezing() and word != "freezing": deco.append("[blue]+cold[/]")
     if pet.is_overheating() and word != "overheating": deco.append(f"[{T.NEG}]+hot[/]")
+    if pet.is_frail(): deco.append(f"[{T.NEG}]+frail![/]")
     if getattr(pet, "praise_flag", False): deco.append(f"[{T.POS}]+praise![/]")
     if getattr(pet, "scold_flag", False) or getattr(pet, "discipline_call", False):
         deco.append(f"[{T.NEG}]+scold![/]")
@@ -257,11 +258,11 @@ class TuiPetApp(App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("Adventures now END: beat the zone boss and your mon takes "
-                 "a victory teleport home — one expedition, one boss, done. "
-                 "The next adventure sets out for the next zone. Boss fights "
-                 "are also labeled BOSS on the battle card instead of "
-                 "reading like a random encounter.")
+    WHATS_NEW = ("Frailty warning: an Ultimate or Mega carrying 3+ care "
+                 "mistakes now shows a +frail! badge and calls out how many "
+                 "slips it can survive — elder death no longer strikes from "
+                 "nowhere. Check Care x anytime on the digicore (d) "
+                 "CONDITION page.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and
@@ -1535,6 +1536,11 @@ class TuiPetApp(App):
         elif p.strength == 0: msg = f"{name}'s effort gauge is empty — train it!"
         elif p.poop >= 3:     msg = f"{name} needs cleaning!"
         elif p.energy <= 0:   msg = f"{name} is exhausted!"
+        elif p.is_frail():
+            left = max(0, 5 - p.care_mistakes)
+            msg = (f"{name} is getting frail — "
+                   + (f"{left} more slip{'s' if left != 1 else ''} could be fatal!"
+                      if left else "handle with perfect care!"))
         elif p.scold_flag:    msg = f"{name} is misbehaving!"
         elif p.discipline_call: msg = f"{name} is throwing a tantrum — scold it!"
         else:                 return ""

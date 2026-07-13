@@ -175,3 +175,36 @@ def test_a_standing_call_drains_mood_on_the_window_cadence():
     m0 = q.mood
     q._call_mood_drain(600.0)
     assert q.mood == m0                          # dark: no call, no drain
+
+
+def test_frailty_warning_announces_before_the_elder_death():
+    """Joel 2026-07-13 (MetalGreymon died of frailty with 8 unseen mistakes):
+    an Ultimate/Mega at 3+ care mistakes warns in the message box, counting
+    the slips left before the 5-mistake elder death."""
+    from tuipet.pet import Pet
+    import tuipet.app as appmod
+    app = appmod.TuiPetApp.__new__(appmod.TuiPetApp)
+    p = Pet(num=220, stage="Ultimate", obedience=500)
+    p.world_seconds = 10 * 60.0
+    p.care_mistakes = 2
+    assert not p.is_frail()
+    assert "frail" not in appmod.TuiPetApp._need_message(app, p)
+    p.care_mistakes = 3
+    assert p.is_frail()
+    msg = appmod.TuiPetApp._need_message(app, p)
+    assert "frail" in msg and "2 more slips" in msg
+    p.care_mistakes = 4
+    assert "1 more slip" in appmod.TuiPetApp._need_message(app, p)
+    p.stage = "Champion"                      # only elders are frail
+    assert not p.is_frail()
+
+
+def test_frail_badge_rides_the_hud_deco():
+    from tuipet.pet import Pet
+    from tuipet.app import _care_deco
+    p = Pet(num=220, stage="Ultimate", obedience=500)
+    p.world_seconds = 10 * 60.0
+    p.care_mistakes = 3
+    assert any("frail" in d for d in _care_deco(p))
+    p.care_mistakes = 0
+    assert not any("frail" in d for d in _care_deco(p))

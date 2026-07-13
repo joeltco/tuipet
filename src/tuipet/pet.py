@@ -3810,6 +3810,13 @@ class Pet:
         """PhysicalState.isInj: currently nursing an injury (the count persists for evolution)."""
         return self.inj_length > 0
 
+    def is_frail(self):
+        """The frailty WARNING (Joel 2026-07-13, after MetalGreymon died with
+        8 unseen mistakes): an Ultimate/Mega carrying 3+ care mistakes is
+        closing on the 5-slip elder death (_check_death_caps) -- surface it
+        BEFORE it lands.  Warning only; the death rule is unchanged."""
+        return self.stage in ("Ultimate", "Mega") and self.care_mistakes >= 3
+
     def is_freezing(self):
         """Too cold: temperature at or below the freezing threshold.  A pet
         tucked under the futon is INSULATED (Joel 2026-07-13, "status still
