@@ -1960,7 +1960,9 @@ class Pet:
             self._weather_t = getattr(self, "_weather_t", 0.0) + dt
             if self._weather_t >= wx.WEATHER_CHECK_SEC:
                 self._weather_t = 0.0
-                self.weather = wx.next_weather(self.weather, self.season, self.day_temp, hab)
+                self.weather = wx.next_weather(self.weather, self.season,
+                                               self.day_temp, hab,
+                                               feel_temp=self.temp)
             target = wx.adjusted_day_temp(self.day_temp, self.weather, self.day_phase, hab)
         # DVPet checkEveryTemp gates the WHOLE temperature lapse -- the drift
         # toward the day's target AND checkTemp's sick fever/chill swings --

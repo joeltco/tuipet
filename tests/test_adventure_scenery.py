@@ -569,3 +569,29 @@ def test_found_item_icon_is_hand_size_and_in_band():
     assert min(ys) >= grid.TOP and max(ys) < grid.FLOOR
     frame = pan.text().plain.split("\n")
     assert len(frame) <= 12 and all(len(ln) <= 40 for ln in frame)
+
+
+def test_carried_find_never_clips_the_mon():
+    """Bug report 2026-07-13 ("found items are clipping into mon during
+    animation"): across the whole walk-home leg the find's pixels and the
+    mon's pixels must be disjoint, and the find stays inside the window."""
+    from tuipet import data, grid
+    from tuipet.adventurescreen import INV_HOLD_T, INV_END_T
+    pan = AdventurePanel(_pet())
+    pan._trans = None
+    item = data.consumable_by_key("i:29")          # Town Transport, 8x8
+    pan.discovering = True
+    pan.adv.investigate = lambda: ("item", item)
+    pan.key("enter")
+    for t in range(INV_HOLD_T, INV_END_T):
+        pan._scene["t"] = t
+        rows, x, mirror, overlay, _note = pan._pet_placement()
+        if not overlay:
+            continue
+        ink = grid._crop(rows)
+        w = grid.width(rows)
+        oy = 24 - len(rows) - 2 if len(rows) <= 20 else 0
+        pet_cols = set(range(x, x + w))
+        icon_cols = {px for px, _py in overlay}
+        assert not (pet_cols & icon_cols), f"find clips the mon at beat {t}"
+        assert min(icon_cols) >= grid.X0 and max(icon_cols) < grid.X1

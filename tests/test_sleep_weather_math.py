@@ -119,3 +119,26 @@ def test_healthy_temperature_never_lurches():
         p.tick(1.0)
         assert abs(p.temp - last) < 25
         last = p.temp
+
+
+def test_precip_type_follows_the_visible_temperature():
+    """Bug report 2026-07-13 ("light snow at 46?"): the rain-vs-snow pick
+    follows the temperature the player SEES (feel_temp), not the day roll --
+    a 46-degree display never snows, a 20-degree one never rains."""
+    import random
+    from tuipet import weather as wx, data
+    hab = next(h for h in data.load_habitats().values()
+               if h["weather_chance"] > 0)
+    warm_seen, cold_seen = set(), set()
+    for seed in range(300):
+        random.seed(seed)
+        warm_seen.add(wx.next_weather("Clear", "Winter", 20, hab, feel_temp=46))
+        random.seed(seed)
+        cold_seen.add(wx.next_weather("Clear", "Summer", 80, hab, feel_temp=20))
+    assert not {"LightSnow", "Snowing", "HeavySnow"} & warm_seen, warm_seen
+    assert not {"Drizzling", "Raining", "HeavyRain"} & cold_seen, cold_seen
+    # an ongoing snow FLIPS to rain the roll after the display warms past 32
+    for seed in range(300):
+        random.seed(seed)
+        w = wx.next_weather("Snowing", "Winter", 20, hab, feel_temp=46)
+        assert w not in ("LightSnow", "Snowing", "HeavySnow"), w

@@ -62,15 +62,22 @@ def _calc_weather(weather, warm):
     return "Drizzling" if warm else "LightSnow"
 
 
-def next_weather(weather, season, day_temp, hab):
-    """checkWeather: DVPet's weather transition state machine, per habitat."""
+def next_weather(weather, season, day_temp, hab, feel_temp=None):
+    """checkWeather: DVPet's weather transition state machine, per habitat.
+
+    `feel_temp` is the temperature the PLAYER SEES (the pet's current
+    reading, which drifts slowly and can sit pinned under a futon) -- the
+    rain-vs-snow pick follows it, so the sky never snows over a 46-degree
+    display (bug report 2026-07-13, "light snow at 46?").  Each roll
+    re-picks the variant, so precip flips rain<->snow exactly when the
+    visible temperature crosses freezing."""
     chance = hab["weather_chance"]
     change = hab["weather_change"] or 100
     if chance <= 0:
         return "Clear"                       # no weather frame -> no weather
     season_mod = hab["precip_mod"][season]
     cloud_mod = hab["cloud_mod"] if weather == "Cloudy" else 0
-    warm = day_temp > FREEZING_TEMP
+    warm = (day_temp if feel_temp is None else feel_temp) > FREEZING_TEMP
     if weather in ("Clear", "Cloudy"):
         prob = random.randint(0, chance - 1) + season_mod + cloud_mod
         if prob > chance - 1:

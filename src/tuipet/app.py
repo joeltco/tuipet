@@ -257,11 +257,11 @@ class TuiPetApp(App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("Expedition identity: every adventure now wears the habitat "
-                 "its name promises — Cliffside Approach is sea cliffs, "
-                 "Skyfall Pass is the open sky, Sunscorch Dunes is desert — "
-                 "12 habitats across the world, one per adventure. Found "
-                 "items also show at proper hand size beside your mon.")
+    WHATS_NEW = ("Honest skies: rain vs snow now follows the temperature on "
+                 "your display — no more flurries at 46 degrees, and an "
+                 "ongoing snow turns to rain the moment it warms past "
+                 "freezing. Found treasures also ride in front of your mon "
+                 "on the walk home instead of clipping into it.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and

@@ -520,10 +520,15 @@ class AdventurePanel(menu.SubHost):
             p = min(1.0, (t - INV_HOLD_T) / (INV_END_T - INV_HOLD_T))
             x = round(grid.X0 + (x0 - grid.X0) * p)
             overlay = []
-            if s["kind"] == "item" and s["icon"]:     # the find rides along (meatButton)
+            if s["kind"] == "item" and s["icon"]:
+                # the find rides in FRONT of the walking mon (bug report
+                # 2026-07-13, "found items are clipping into mon": near the
+                # left wall the old behind-the-back spot clamped ONTO the
+                # sprite -- in front always has room on the walk home)
                 iw = max(len(r) for r in s["icon"])
                 oy = grid.TOP + max(0, (grid.BAND - len(s["icon"])) // 2)
-                overlay = strikefx.blit(s["icon"], max(grid.X0, x - iw - 1), oy)
+                ox = min(x + grid.width(rows) + 1, grid.X1 - iw)
+                overlay = strikefx.blit(s["icon"], ox, oy)
             return rows, x, True, overlay, None
         c = self._care
         if c is not None:                             # a road care beat (home fx port)
@@ -638,7 +643,8 @@ class AdventurePanel(menu.SubHost):
             self._wx_t = 0.0
             self._wx_hab = hid
             self.pet.weather = wx.next_weather(self.pet.weather, self.pet.season,
-                                               self.pet.day_temp, hab)
+                                               self.pet.day_temp, hab,
+                                               feel_temp=self.pet.temp)
 
     def _road_bg(self):
         """The expedition's ONE backdrop, held start to boss (own-game law,
