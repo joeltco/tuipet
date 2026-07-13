@@ -528,7 +528,17 @@ class AdventurePanel(menu.SubHost):
                 return rows, x, False, [], ""         # faces left (native)
             if t < INV_REVEAL_T:                      # suspense: . .. ...
                 rows = self._rows(data.ROLES["walk"][0])
-                return rows, grid.X0, False, [], "." * min(3, 1 + (t - INV_WALK_T) // 6)
+                # the attention "!" pulses while it digs (audit pass 2: the
+                # suspense played on a bare mon; the strip dots were the
+                # only tell) -- beside the head, in-band
+                overlay = []
+                att = data.load_effects().get("attention")
+                if att and (t // 4) % 2:
+                    ef = att[(t // 8) % len(att)]
+                    overlay = strikefx.blit(ef, grid.X0 + grid.width(rows) + 1,
+                                            grid.TOP)
+                return (rows, grid.X0, False, overlay,
+                        "." * min(3, 1 + (t - INV_WALK_T) // 6))
             if t < INV_HOLD_T or s["kind"] == "enemy":   # the reveal
                 pose = {"item": 5, "enemy": 6}.get(s["kind"], 9)   # cheer / startle / dejected
                 rows = self._rows(pose)
@@ -606,7 +616,18 @@ class AdventurePanel(menu.SubHost):
             return rows, self._jx(rows), shake, [], None
         if self.discovering:                          # DiscoverCall: attention bounce 5<->7
             rows = self._rows(data.ROLES["happy"][(self.frame_i // 6) % 2])
-            return rows, self._jx(rows), True, [], None
+            x = self._jx(rows)
+            # the notice "!" rides the bounce (audit pass 2) -- free side
+            overlay = []
+            att = data.load_effects().get("attention")
+            if att:
+                ef = att[(self.frame_i // 6) % len(att)]
+                ew = max((len(r) for r in ef), default=0)
+                ex = x + grid.width(rows) + 1
+                if ex + ew > grid.X1:
+                    ex = max(grid.X0, x - ew - 1)
+                overlay = strikefx.blit(ef, ex, grid.TOP)
+            return rows, x, True, overlay, None
         if self.adv.boss_pending and not self.adv.done:
             # the GATE FACEOFF (audit pass 1, 2026-07-13: a fled/paused gate
             # showed the mon alone on empty road): square up at the left
@@ -755,6 +776,12 @@ class AdventurePanel(menu.SubHost):
             return self._biome_frame()             # standing = the home biome
         pet_rows, x, mirror, overlay, note_over = self._pet_placement()
         bgimg = self._road_bg()
+        if self._parade is not None and bgimg:
+            # the victory parade BRIGHTENS the world behind the marchers
+            # (audit pass 2: a busy backdrop swallowed the boss sprites; a
+            # dim stage made dark ink WORSE) -- the washed pale stage makes
+            # the dark sprites pop, same lerp as the zonePulse light
+            bgimg = _brighten(bgimg, 0.45)
         if self.town_prompt is not None:
             # ARRIVAL at the gates (audit pass 1, 2026-07-13: the visit
             # prompt showed empty road): the town's own backdrop stands in

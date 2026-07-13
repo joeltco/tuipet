@@ -672,3 +672,55 @@ def test_gate_faceoff_stages_the_boss():
     assert x == grid.X0 and mirror, "the mon squares up at the left, facing in"
     frame = pan.text().plain.split("\n")
     assert len(frame) <= 12 and all(len(ln) <= 40 for ln in frame)
+
+
+# ---- adventure audit pass 2 --------------------------------------------------
+
+def test_suspense_and_discover_wear_the_attention_mark():
+    """Audit pass 2: the investigate dig and the discover prompt pulse the
+    atlas "attention" (!) beside the mon -- in-band, never on the sprite."""
+    from tuipet import data, grid
+    from tuipet.adventurescreen import INV_WALK_T
+    item = data.consumable_by_key("i:29")
+    pan = AdventurePanel(_pet())
+    pan._trans = None
+    pan._wx = 22.0
+    pan.discovering = True
+    pan.adv.investigate = lambda: ("item", item)
+    pan.key("enter")
+    on = False
+    for t in range(INV_WALK_T + 1, INV_WALK_T + 12):
+        pan._scene["t"] = t
+        rows, x, _m, overlay, _n = pan._pet_placement()
+        if overlay:
+            on = True
+            cols = {px for px, _py in overlay}
+            assert min(cols) >= grid.X0 and max(cols) < grid.X1
+            assert not (cols & set(range(x, x + grid.width(rows))))
+    assert on, "the ! must pulse during the dig"
+    pan._scene = None
+    pan.discovering = True
+    pan.frame_i = 6
+    rows, x, _m, overlay, _n = pan._pet_placement()
+    assert overlay, "the discover prompt wears the ! too"
+    cols = {px for px, _py in overlay}
+    assert not (cols & set(range(x, x + grid.width(rows))))
+
+
+def test_parade_marches_on_a_brightened_stage(monkeypatch):
+    """Audit pass 2: the parade brightens the backdrop so the dark marcher
+    sprites pop (a dim stage made dark ink WORSE -- verified by render)."""
+    import tuipet.adventurescreen as ascr
+    calls = {}
+    real = ascr._brighten
+
+    def spy(bg, f):
+        calls["f"] = f
+        return real(bg, f)
+
+    monkeypatch.setattr(ascr, "_brighten", spy)
+    pan = AdventurePanel(_pet())
+    pan._trans = None
+    pan._parade = {"t": 13, "nums": [220]}
+    pan.text()
+    assert calls.get("f"), "the parade frame must brighten the stage"

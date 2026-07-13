@@ -28,7 +28,6 @@ ALLOWED_SILENT = {
     "shopClosed": "old closed-shop sprite; the shop draws its own CLOSED plate now",
     # Bandai grammar 2026-07-11: the matrix is a stage, not a dashboard --
     # badges live on the status side (HUD deco / digicore / msg-box alarm)
-    "attention": "the care-call is chrome: the msg-box alarm + beep carry it",
     "st_teach": "discipline window -> the +praise!/+scold! HUD badges",
     "st_medicine": "badge -> the +med HUD deco",
     "st_injury": "badge -> the +hurt HUD deco",
