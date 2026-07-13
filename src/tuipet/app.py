@@ -258,11 +258,10 @@ class TuiPetApp(App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("The road is REAL now: adventures live-tick the life-sim, "
-                 "so your mon gets hungry, sleepy and weathered out there — "
-                 "pack food, watch the alarm, and use the road keys (f, h, "
-                 "i) when it calls. Battles, towns and menus still pause "
-                 "time, and a mon lost on the road is carried home.")
+    WHATS_NEW = ("Fair fights: lobby battles now clamp an opponent's card to "
+                 "what the game can actually produce, so nobody can turn up "
+                 "with an unkillable mon. Jogress and the relay were audited "
+                 "clean. Your bouts are honest.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and

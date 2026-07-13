@@ -124,6 +124,15 @@ class AccountPanel:
         return t
 
 
+# PvP wire bounds (multiplayer audit 2026-07-13): the relay is peer-to-peer,
+# so an opponent card is UNTRUSTED input.  HP ceiling = the oldest trained cap
+# (pet.HEALTH_CAP_LADDER tops out at 30); power ceiling sits above the
+# strongest enemy in the shipped data (virus 650) with headroom for a fully
+# trained Mega.  A peer claiming more is clamped, not kicked.
+MAX_PVP_HP = 30
+MAX_PVP_POWER = 999
+
+
 class LobbyPanel:
     def __init__(self, pet, on_connect, name=None, pw=""):
         self.pet = pet
@@ -471,17 +480,25 @@ class LobbyPanel:
 
     # ---- battle ----------------------------------------------------------
     def _battle_begin(self, opp_card):
-        # the relay ships the card VERBATIM from the peer, so its shape is
-        # peer-controlled: a card missing the stat keys KeyError'd inside
-        # Battle on the next anim tick (audit 2026-07-13).  Sanitize with
-        # defaults instead of rejecting -- an honest peer on a drifted
-        # schema still gets its bout, a hostile one gets a 0-stat foe
-        def _n(v, d=0):
-            return v if isinstance(v, (int, float)) and not isinstance(v, bool) else d
+        # the relay ships the card VERBATIM from the peer, so its shape AND
+        # its numbers are peer-controlled.  Two gaps, both closed here:
+        #  * shape (audit 2026-07-13): a card missing the stat keys KeyError'd
+        #    inside Battle on the next anim tick;
+        #  * RANGE (multiplayer audit 2026-07-13): nothing bounded the values,
+        #    so a hacked client could ship hp=999999 and field an UNKILLABLE
+        #    mon (verified: the bout simply never ends).  The wire is not
+        #    trusted -- every number is clamped to what the game can actually
+        #    produce (HP to the trained-cap ceiling, powers past the strongest
+        #    enemy in the data).  Clamp, don't reject: an honest peer on a
+        #    drifted schema still gets its bout.
+        def _n(v, d=0, lo=0, hi=0):
+            if not isinstance(v, (int, float)) or isinstance(v, bool):
+                v = d
+            return max(lo, min(int(v), hi))
         opp_card = dict(opp_card)
         for k in ("vaccine", "data_power", "virus"):
-            opp_card[k] = _n(opp_card.get(k))
-        opp_card["hp"] = _n(opp_card.get("hp"), 10)
+            opp_card[k] = _n(opp_card.get(k), 0, 0, MAX_PVP_POWER)
+        opp_card["hp"] = _n(opp_card.get("hp"), 10, 2, MAX_PVP_HP)
         self.opp_card = opp_card
         if self.is_host:
             self.battle = battle.Battle(self.pet, enemy=dict(opp_card))

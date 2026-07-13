@@ -400,3 +400,30 @@ def test_lobby_strip_carries_the_care_alarm():
     pan.pet.scold_flag = False
     pan.pet.discipline_call = False
     assert "⚠" not in pan.strip(), "the cue clears with the need"
+
+
+def test_a_hostile_peer_card_is_clamped_to_legal_ranges():
+    """Multiplayer audit 2026-07-13: the relay is peer-to-peer, so the
+    opponent card is UNTRUSTED input.  Nothing bounded it -- a hacked client
+    could ship hp=999999 and field an unkillable mon (the bout never ended).
+    Every number is now clamped to what the game can actually produce."""
+    from tuipet.lobbyscreen import MAX_PVP_HP, MAX_PVP_POWER
+    pan = _lobby()
+    pan.partner = (2, "Cheater")
+    pan.is_host = True
+    pan.phase, pan.bphase = "battle", "card"
+    pan._battle_begin({"num": 964, "name": "Cheater", "stage": "Mega",
+                       "vaccine": 999999, "data_power": 10 ** 9,
+                       "virus": -50, "hp": 999999, "attribute": "Virus"})
+    c = pan.opp_card
+    assert c["hp"] == MAX_PVP_HP, c["hp"]
+    assert c["vaccine"] == MAX_PVP_POWER and c["data_power"] == MAX_PVP_POWER
+    assert c["virus"] == 0, "a negative power floors at 0"
+    assert pan.opp_max <= MAX_PVP_HP, "the HP bar honours the clamp"
+    # the bout is now winnable: the host can actually kill it
+    assert pan.battle.enemy_max <= MAX_PVP_HP
+
+    # a garbage/schema-drifted card still gets an honest bout (clamp, not kick)
+    pan.bphase = "card"
+    pan._battle_begin({"name": "Odd", "stage": "Rookie"})
+    assert pan.opp_card["hp"] >= 2 and pan.opp_card["vaccine"] == 0
