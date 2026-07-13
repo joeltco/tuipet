@@ -598,3 +598,77 @@ def test_carried_find_never_clips_the_mon():
         icon_cols = {px for px, _py in overlay}
         assert not (pet_cols & icon_cols), f"find clips the mon at beat {t}"
         assert min(icon_cols) >= grid.X0 and max(icon_cols) < grid.X1
+
+
+# ---- adventure audit pass 1 (Joel 2026-07-13: "mon should walk across the
+# screen... make it all look and feel better") --------------------------------
+
+def test_the_march_crosses_the_window_and_wraps():
+    """Travelling, the mon MARCHES across the window -- x advances every
+    tick, exits the right edge, and slides back in from the left."""
+    from tuipet import grid
+    pan = AdventurePanel(_pet())
+    pan._trans = None
+    pan.travelling = True
+    pan.adv.travel = lambda: None                 # a quiet road
+    xs = []
+    for _ in range(200):
+        pan.anim()
+        xs.append(pan._wx)
+    assert max(xs) > grid.X1 - 4, "the march must reach the right edge"
+    assert min(xs) < grid.X0, "re-entry slides in from beyond the left edge"
+    assert any(b < a for a, b in zip(xs, xs[1:])), "the wrap must happen"
+    pan.travelling = False
+    still = pan._wx
+    for _ in range(10):
+        pan.anim()
+    assert pan._wx == still, "standing still does not march"
+
+
+def test_care_emote_never_overlaps_the_mon():
+    """Audit pass 1: the cheer/jeer emote flips to the free side instead of
+    clamping INTO the sprite."""
+    from tuipet import grid
+    pan = AdventurePanel(_pet())
+    pan._trans = None
+    for wx in (4.0, 15.0, 30.0):
+        pan._wx = wx
+        for kind in ("cheer", "jeer"):
+            pan._care = {"kind": kind, "good": True, "t": 1, "resume": False}
+            rows, x, _m, overlay, _n = pan._pet_placement()
+            if not overlay:
+                continue
+            mon = set(range(x, x + grid.width(rows)))
+            emo = {px for px, _py in overlay}
+            assert not (mon & emo), (kind, wx)
+            assert min(emo) >= grid.X0 and max(emo) < grid.X1, (kind, wx)
+    pan._care = None
+
+
+def test_town_prompt_shows_the_town_and_the_road_returns():
+    pan = AdventurePanel(_pet())
+    pan._trans = None
+    pan.travelling = False
+    road = pan.text().markup
+    pan.town_prompt = 0
+    gates = pan.text().markup
+    assert gates != road, "arrival at the gates must show the town"
+    pan.town_prompt = None
+    assert pan.text().markup == road, "walking on returns the one-biome road"
+
+
+def test_gate_faceoff_stages_the_boss():
+    """A pending gate is a FACEOFF: the mon squares up at the left wall while
+    the boss looms at the right edge -- two distinct, disjoint sprites."""
+    from tuipet import grid
+    pan = AdventurePanel(_pet())
+    pan._trans = None
+    pan.travelling = False
+    pan.adv.boss_pending = True
+    pan.adv._boss = next(b for z in pan.adv.maps[pan.adv.mi]["zones"]
+                         for b in z["bosses"])
+    assert not pan._quiet_standing(), "a pending gate is a scene, not idling"
+    rows, x, mirror, _o, _n = pan._pet_placement()
+    assert x == grid.X0 and mirror, "the mon squares up at the left, facing in"
+    frame = pan.text().plain.split("\n")
+    assert len(frame) <= 12 and all(len(ln) <= 40 for ln in frame)

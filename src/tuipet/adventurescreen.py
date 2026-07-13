@@ -29,6 +29,9 @@ PARADE_T = 26                 # victory parade: ticks for one boss to march acro
 #                               (canon BossParade shows the map's bosses after the
 #                               final ZoneChange; one at a time -- one-mon LCD rule)
 WALK_BEAT = 5                 # idleWalk pose cadence (anim.WALK_BEAT -- NOT every tick)
+MARCH_PX = 0.5                # the march: px per 0.1s tick across the window
+#                               (a full crossing ~ 9-10s, ~one per stride)
+SPRITE_W_MARCH = 16           # re-entry offset: slide in from fully hidden
 TRAVEL_TICKS = 10             # ticks per auto-stride (the INTERACTIVE_STEPS compression's
 #                               pacing knob).  Was 3 -- a zone crossed in ~12s and zone 1's
 #                               twelve BackgroundsAndRange scenes strobed ~1/s; at 1s/stride
@@ -224,6 +227,14 @@ class AdventurePanel(menu.SubHost):
         if self._scene is not None:
             self._scene_tick()
             return
+        if self.travelling and self.sub is None:
+            # THE MARCH (audit pass 1, Joel 2026-07-13: "mon should walk
+            # across the screen"): the journey walk actually CROSSES the
+            # window -- off the right edge, back in from the left, the
+            # lawful exits -- instead of stepping in place at an anchor.
+            self._wx = getattr(self, "_wx", float(grid.X0)) + MARCH_PX
+            if self._wx >= grid.X1:              # fully out the right side
+                self._wx = float(grid.X0 - SPRITE_W_MARCH)   # slide back in
         self._travel_t += 1
         if self._travel_t >= TRAVEL_TICKS and self.travelling and not self.adv.done:
             self._travel_t = 0
@@ -478,14 +489,17 @@ class AdventurePanel(menu.SubHost):
         fr = data.frames_for(self.pet.num, getattr(self.pet, "egg_type", 0))
         return grid.prep((fr[idx] if idx < len(fr) else None) or fr[0], ph=ROWS * 2)
 
-    def _jx(self, rows):
-        """The pet's STAGE SPOT: a fixed left-of-centre anchor (the home
-        arena's roamer idiom) -- journey progress lives on the ribbon, not in
-        the pet's x.  (Joel 2026-07-13: placements were "all wrong" -- the old
-        progress-tied x crammed every beat, emote and item strip against the
-        right wall late in a zone.)"""
-        lo, hi = grid.roam_bounds(grid.width(rows))
-        return lo + round((hi - lo) * 0.28)
+    def _jx(self, rows, clamp=True):
+        """Where the mon stands RIGHT NOW: the march position (it walks
+        clear across the window while travelling -- audit pass 1, Joel
+        2026-07-13).  Beats, reveals and stand-stills play at this spot;
+        `clamp` pulls it fully inside the walkable band so a beat never
+        plays half-off an edge.  Journey progress lives on the ribbon."""
+        x = int(getattr(self, "_wx", grid.X0))
+        if clamp:
+            lo, hi = grid.roam_bounds(grid.width(rows))
+            x = min(max(x, lo), hi)
+        return x
 
     def _pet_placement(self):
         """(rows, x, mirror, overlay, note_override) for this frame -- the journey
@@ -573,11 +587,15 @@ class AdventurePanel(menu.SubHost):
             em = data.load_effects().get(emote) if emote else None
             if em:
                 ef = em[(t // 6) % len(em)]
-                # window-law: emote riders pop at HEAD HEIGHT inside the band
-                # (the v0.2.413 arena precedent), clamped off the right wall
+                # window-law: emote riders pop at HEAD HEIGHT inside the band.
+                # SIDE-FLIP (audit pass 1, 2026-07-13): the old right-wall
+                # clamp shoved the emote INTO the sprite when the right side
+                # lacked room -- now it swaps to the free side instead
                 ew = max((len(r) for r in ef), default=0)
-                ex = min(x + grid.width(rows) + 1, grid.X1 - ew)
-                overlay = strikefx.blit(ef, max(grid.X0, ex), grid.TOP)
+                ex = x + grid.width(rows) + 1
+                if ex + ew > grid.X1:                 # no room on the right
+                    ex = max(grid.X0, x - ew - 1)
+                overlay = strikefx.blit(ef, ex, grid.TOP)
             return rows, x, True, overlay, None
         if self._retreat is not None:                 # Retreat_Town: dejected (pose
             rows = self._rows(9)                      # 9) under the stepping black
@@ -589,9 +607,17 @@ class AdventurePanel(menu.SubHost):
         if self.discovering:                          # DiscoverCall: attention bounce 5<->7
             rows = self._rows(data.ROLES["happy"][(self.frame_i // 6) % 2])
             return rows, self._jx(rows), True, [], None
+        if self.adv.boss_pending and not self.adv.done:
+            # the GATE FACEOFF (audit pass 1, 2026-07-13: a fled/paused gate
+            # showed the mon alone on empty road): square up at the left
+            # while the boss stands its gate on the right (text() places it)
+            rows = self._rows(data.ROLES["walk"][(self.frame_i // 8) % 2])
+            return rows, grid.X0, True, [], None
         beat = WALK_BEAT if self.travelling else 8    # stepping / a calmer stand
         rows = self._rows(data.ROLES["walk"][(self.frame_i // beat) % 2])
-        return rows, self._jx(rows), True, [], None
+        # travelling: the RAW march x (partial edge exits are the journey);
+        # standing: clamped, so the wait never idles half-off the screen
+        return rows, self._jx(rows, clamp=not self.travelling), True, [], None
 
     def _quiet_standing(self):
         """The pet is simply standing on the road: no walk, no encounter, no
@@ -601,7 +627,7 @@ class AdventurePanel(menu.SubHost):
                 and self._care is None and self._parade is None
                 and self._retreat is None and self._pulse is None
                 and not self._refuse_t and not self.discovering
-                and not self.adv.done
+                and not self.adv.done and not self.adv.boss_pending
                 and getattr(self, "town_prompt", None) is None)
 
     def _biome_frame(self):
@@ -729,10 +755,29 @@ class AdventurePanel(menu.SubHost):
             return self._biome_frame()             # standing = the home biome
         pet_rows, x, mirror, overlay, note_over = self._pet_placement()
         bgimg = self._road_bg()
+        if self.town_prompt is not None:
+            # ARRIVAL at the gates (audit pass 1, 2026-07-13: the visit
+            # prompt showed empty road): the town's own backdrop stands in
+            # while you decide -- a discrete stop, not scenery drift; the
+            # one-biome road returns the moment you walk on
+            t_bg = (data.load_towns().get(self.town_prompt) or {}).get("bg_habitat")
+            if t_bg is not None:
+                bgimg = self.pet.background(t_bg) or bgimg
         if self._pulse is not None and bgimg and \
                 any(on <= self._pulse["t"] < off for on, off in PULSE_ON):
             bgimg = _brighten(bgimg, 0.6)     # the zonePulse light, on the LCD
         placements = [(pet_rows, x, mirror)]
+        if (self.adv.boss_pending and not self.travelling and not self.adv.done
+                and getattr(self.adv, "_boss", None)):
+            bfr = data.frames_for(self.adv._boss["num"])
+            bf = next((f for f in bfr if f), None)
+            if bf:
+                # the boss LOOMS half-emerged past the gate's right edge --
+                # flush placement read as one blob (two 16px sprites cannot
+                # share the 32px window with a gap)
+                brows = grid.prep(bf, ph=ROWS * 2)
+                placements.append((brows,
+                                   grid.X1 - grid.width(brows) * 3 // 4, False))
         # weather rides EVERY road frame (placement audit 2026-07-13: it used
         # to render only while standing and vanish the moment the walk resumed)
         weather = arena._weather_overlay(self.pet.weather, self.frame_i // 4,

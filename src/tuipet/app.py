@@ -258,11 +258,11 @@ class TuiPetApp(App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("Frailty warning: an Ultimate or Mega carrying 3+ care "
-                 "mistakes now shows a +frail! badge and calls out how many "
-                 "slips it can survive — elder death no longer strikes from "
-                 "nowhere. Check Care x anytime on the digicore (d) "
-                 "CONDITION page.")
+    WHATS_NEW = ("Adventure feel, pass one: your mon now MARCHES clear "
+                 "across the screen as it travels, town gates show the town "
+                 "when you arrive, a waiting zone boss looms at its gate in "
+                 "a real faceoff, and care emotes stopped sitting on your "
+                 "mon's head. More polish passes coming.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and
