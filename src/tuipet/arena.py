@@ -645,14 +645,19 @@ class Screen(Static):
             #                the pet is never white (the old SIL_NIGHT branch washed
             #                every night-time care fx white)
         step = fx["step"]
-        # an Assistant_Lights visit is the one anim that CAUSES the darkness: the
-        # room stays lit until the helper reaches the switch (DVPet toggles at the
-        # anim's final beat), then the dark-room rule below takes over
-        lit_visit = fx["kind"] == "assist" and fx.get("act") == "lights" and step < 18
-        if not pet.lights and fx["kind"] != "evolve" and not lit_visit:
-            # design call (polish 2026-07): the dark room stays dark through a
-            # care fx -- lights-off is room STATE (DVPet's lightsOff roomEffect),
-            # not a backdrop an anim may replace; evolve owns its own darkness
+        # an Assistant_Lights visit is the one anim that CAUSES the darkness --
+        # and DVPet toggles the room at the anim's FINAL beat, so the whole
+        # visit (switch AND the helper's exit) plays lit; the old cut at beat
+        # 18 left the exit playing white in the dark (bug report 2026-07-13)
+        lit_visit = fx["kind"] == "assist" and fx.get("act") == "lights"
+        dark = not pet.lights and fx["kind"] != "evolve" and not lit_visit
+        if dark:
+            # the dark room stays dark through a care fx -- and DVPet's care
+            # anims KEEP the fully-opaque lightsOff cover up (SpriteAnim sets
+            # lightsOff inside the anims), so a dark-room fx shows NOTHING:
+            # no pet, no props, no white poses (bug report 2026-07-13, "mon in
+            # white poses during lights out sequence"); the sprite blank-out
+            # happens just before update() once the kind painter has run
             bgimg, bg, on = None, VOID, SIL_NIGHT
         c = _FxCtx()
         c.px_h = SCREEN_ROWS * 2
@@ -707,6 +712,8 @@ class Screen(Static):
             c.xshift = min(max(c.xshift, lo), max(cap, lo))
             c.overlay += _effect_overlay(pet, self.frame_i // 4, SCREEN_COLS, c.px_h,
                                          tick=self.frame_i)
+        if dark:                     # the opaque cover: black over everything
+            c.rows, c.overlay, c.xshift, c.yshift = [], [], 0, 0
         mirror = (c.mirror or fx["kind"] in ("dying", "poop")
                   or (fx["kind"] == "gift" and GIFT_OUT <= step < GIFT_OUT + GIFT_BACK)  # facing right, ambling back
                   or (fx["kind"] == "spit" and (step // 6) % 2 == 0))   # refuse(): head-shake flips
