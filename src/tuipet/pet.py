@@ -2061,11 +2061,13 @@ class Pet:
         return bool(eff and eff["pause_temp"])
 
     def _temperature_effects(self, dt):
-        # canon checkIdealTempMoodChange has NO pauseTemp gate (futon audit
-        # 2026-07-13; the old early-return here had the pause on the wrong
-        # mechanism): the Futon pins the TEMPERATURE (_update_weather), but the
-        # pet keeps feeling whatever it was tucked in at -- comfy locks in the
-        # comfort bonus, cold keeps costing mood until the futon expires.
+        # Futon = fully insulated (Joel's call 2026-07-13, supersedes the
+        # canon-gating audit of the same day): a tucked-in pet feels COMFY --
+        # no bad-temperature mood drain, no freezing/overheating status --
+        # while _update_weather keeps the temperature itself pinned.  The
+        # futon's own mood/energy rates (careEffect.csv) are the comfort.
+        if self.pause_temp():
+            return
         lo, hi = self.ideal_temp
         aff = self._affinity()                # compatible home helps, incompatible hurts
         too_hot = self.temp >= hi + wx.UPPER_IDEAL
@@ -3807,12 +3809,17 @@ class Pet:
         return self.inj_length > 0
 
     def is_freezing(self):
-        """Too cold: temperature at or below the freezing threshold."""
-        return self.temp <= wx.FREEZING_TEMP
+        """Too cold: temperature at or below the freezing threshold.  A pet
+        tucked under the futon is INSULATED (Joel 2026-07-13, "status still
+        says freezing when in futon"): while a pause-temp care effect holds,
+        it reads comfortable -- no freezing status, badge or shiver."""
+        return self.temp <= wx.FREEZING_TEMP and not self.pause_temp()
 
     def is_overheating(self):
-        """Too hot: temperature above the ideal band's upper bound."""
-        return self.temp >= self.ideal_temp[1] + wx.UPPER_IDEAL
+        """Too hot: temperature above the ideal band's upper bound (same
+        futon insulation rule as is_freezing -- it maintains temperature)."""
+        return (self.temp >= self.ideal_temp[1] + wx.UPPER_IDEAL
+                and not self.pause_temp())
 
     def _sicken(self):
         """PhysicalState.sicken: fall ill for MinSickLength..MaxSickLength recovery lapses;

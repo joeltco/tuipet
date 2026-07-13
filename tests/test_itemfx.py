@@ -59,7 +59,7 @@ def test_bounce_ball_drops_hits_and_exits_left():
 
 
 def test_lift_toggles_the_dumbbell_and_the_strain_pose():
-    floor = 24 - 8 - 1
+    floor = 24 - 8 - 2                  # grounded 2px above the border (window law)
     up = itemfx.state("Lift", 6, 8, 8, 24)
     assert up[3] == floor - 6 and up[1] == 8
     dn = itemfx.state("Lift", 12, 8, 8, 24)
@@ -119,3 +119,21 @@ def test_item_fx_plays_the_script_and_chains():
     for _ in range(s2.fx["steps"]):
         s2.advance_fx()
     assert s2.fx is not None and s2.fx["kind"] == "jeer"
+
+
+def test_the_stage_lives_inside_the_window():
+    """Bug report 2026-07-13 ("balloon sprite is broken and off screen"): the
+    ITEM_X/PET_X/floor spots predated the window law -- toys hung past the
+    left wall and sank below the grounded floor.  At the opening beat every
+    grounded layout must place the WHOLE icon inside x[4,36) / above the
+    floor line, for small (8x8) and tall (16x16, the balloon) icons alike."""
+    from tuipet import grid
+    for action, sc in itemfx.SCRIPTS.items():
+        if sc["layout"] == "drop":              # enters from above by design
+            continue
+        for iw, ih in ((8, 8), (7, 16), (16, 16)):
+            _f, _p, ix, iy, _dx, _dy = itemfx.state(action, 0, iw, ih, 24)
+            assert ix >= grid.X0, (action, iw, ih, ix)
+            assert ix + iw <= grid.X1, (action, iw, ih, ix)
+            assert iy + ih <= grid.FLOOR, (action, iw, ih, iy)
+    assert itemfx.PET_X + itemfx.SPRITE_W <= grid.X1

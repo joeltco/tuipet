@@ -110,8 +110,9 @@ def test_futon_pins_the_temperature():
     pet.effect_id, pet.effect_t = eid, float(eff["duration"])
     pet._update_weather(60)
     assert pet.temp == 10.0, "an active futon must pin the temperature"
-    assert pet.is_freezing(), "the futon maintains temperature; it is not a heater"
+    assert not pet.is_freezing(), "tucked in = insulated (Joel 2026-07-13)"
     pet.effect_id, pet.effect_t = -1, 0.0    # expiry: the lapse resumes
+    assert pet.is_freezing(), "the cold is still there when the futon ends"
     pet._update_weather(60)
     assert pet.temp > 10.0, "temperature drift must resume once the effect ends"
 
@@ -127,17 +128,21 @@ def test_futon_pauses_the_sick_temperature_swings():
     assert pet.temp == 50.0, "sick fever/chill swings pause under the futon too"
 
 
-def test_temp_mood_consequences_are_not_paused_by_the_futon():
-    """Canon checkIdealTempMoodChange has NO pauseTemp gate: the pet keeps
-    feeling the temperature it was tucked in at (a comfy pet locks in the
-    comfort bonus; the old code wrongly skipped this under the futon)."""
+def test_futon_insulates_the_pet_completely():
+    """Joel's call (2026-07-13, "status still says freezing when in futon"):
+    a tucked-in pet reads COMFORTABLE -- no freezing/overheating status and
+    no bad-temperature mood drain; the futon's own rates are the comfort."""
     pet, eid, eff = _futon_pet()
-    pet.temp = sum(pet.ideal_temp) / 2       # mid ideal band
-    pet.mood = 0
+    pet.temp = 5.0                           # bitterly cold under the covers
+    pet.mood = 50
     pet.effect_id, pet.effect_t = eid, float(eff["duration"])
+    assert not pet.is_freezing(), "the futon insulates: no freezing status"
+    assert pet.status_word() != "freezing"
     pet._comfort_t = 0.0
     pet._temperature_effects(wx.IDEAL_TEMP_MOOD_SEC)
-    assert pet.mood > 0, "the ideal-temp mood check must keep running under the futon"
+    assert pet.mood == 50, "no temperature mood drain while tucked in"
+    pet.effect_id, pet.effect_t = -1, 0.0    # the futon expires -> cold again
+    assert pet.is_freezing()
 
 
 # --- bandage / medicine indicators (DVPet getBandage / getMed) --------------

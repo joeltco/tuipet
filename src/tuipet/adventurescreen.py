@@ -6,7 +6,6 @@ from .battlescreen import BattlePanel
 from .feedscreen import FeedPanel
 from .shopscreen import ShopPanel
 from .townscreen import TownPanel
-from .render import downsample
 from . import grid
 from . import strikefx
 from . import arena
@@ -384,9 +383,13 @@ class AdventurePanel(menu.SubHost):
                 self.discovering = False
                 kind, thing = self.adv.investigate()
                 icon = None
-                if kind == "item":                    # the find's REAL icon (meatButton)
-                    raw = data.load_icons().get(thing["key"])
-                    icon = downsample(raw[0], 3) if raw else None
+                if kind == "item":
+                    # the find's REAL icon at NATIVE size (bug report
+                    # 2026-07-13, "town transport item sprite is glitched":
+                    # the /3 downsample crushed an 8x8 icon to a 3px speck --
+                    # the same lesson the item-fx stage learned on 07-07)
+                    raw = [f for f in (data.load_icons().get(thing["key"]) or []) if f]
+                    icon = raw[0] if raw else None
                 # the result message stays sealed until the reveal beat
                 self._scene = {"t": 0, "kind": kind or "none", "thing": thing,
                                "msg": self.adv.last, "icon": icon}
@@ -501,8 +504,10 @@ class AdventurePanel(menu.SubHost):
                 rows = self._rows(pose)
                 overlay = []
                 if s["kind"] == "item" and s["icon"]:              # the find, held up beside it
-                    oy = grid.TOP + (grid.BAND - len(s["icon"])) // 2
-                    overlay = strikefx.blit(s["icon"], grid.X0 + grid.width(rows) + 2, oy)
+                    iw = max(len(r) for r in s["icon"])
+                    oy = grid.TOP + max(0, (grid.BAND - len(s["icon"])) // 2)
+                    ox = min(grid.X0 + grid.width(rows) + 2, grid.X1 - iw)
+                    overlay = strikefx.blit(s["icon"], ox, oy)
                 return rows, grid.X0, False, overlay, None
             # ReturnItem: carry it back to the journey spot (faces right again)
             rows = self._rows(data.ROLES["walk"][(t // 3) % 2])
@@ -511,8 +516,9 @@ class AdventurePanel(menu.SubHost):
             x = round(grid.X0 + (x0 - grid.X0) * p)
             overlay = []
             if s["kind"] == "item" and s["icon"]:     # the find rides along (meatButton)
-                oy = grid.TOP + (grid.BAND - len(s["icon"])) // 2
-                overlay = strikefx.blit(s["icon"], x - len(s["icon"][0]) - 1, oy)
+                iw = max(len(r) for r in s["icon"])
+                oy = grid.TOP + max(0, (grid.BAND - len(s["icon"])) // 2)
+                overlay = strikefx.blit(s["icon"], max(grid.X0, x - iw - 1), oy)
             return rows, x, True, overlay, None
         c = self._care
         if c is not None:                             # a road care beat (home fx port)

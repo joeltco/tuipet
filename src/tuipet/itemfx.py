@@ -19,9 +19,15 @@ are 1-based over 8 -> ours cycle the 4 extracted frames ((n-1) % 4).
 """
 from __future__ import annotations
 
+from . import grid
+
 COLS, SPRITE_W = 40, 16
-PET_X = COLS - SPRITE_W - 1          # canon setLocX(81/105) -> the right side
-ITEM_X = 1                           # canon setLoc(3, floor)
+# The stage lives INSIDE the 32x16 window (bug report 2026-07-13, "balloon
+# sprite is broken and off screen": these spots predated the window law --
+# ITEM_X=1 hung the toy past the left wall so its first columns clipped, and
+# PET_X=23 pushed the pet's right edge past x=36).
+PET_X = grid.X1 - SPRITE_W           # the right wall, flush inside the window
+ITEM_X = grid.X0                     # the left wall (canon setLoc(3, floor))
 
 # canon frame n (1-based, up to 8) -> our extracted-strip index
 def _fr(n):
@@ -140,16 +146,18 @@ def state(action, step, iw, ih, px_h):
     """Replay a script to `step`: (item_frame, pet_pose, item_x, item_y,
     pet_dx, pet_dy).  Geometry: item icon iw x ih on a COLS x px_h arena."""
     sc = SCRIPTS[action]
-    floor = px_h - ih - 1
+    floor = px_h - ih - 2            # grounded 2px above the border, like the pet
     lay = sc["layout"]
     if lay == "floor":
         ix, iy = ITEM_X, floor
     elif lay == "feet":
         ix, iy = PET_X + (SPRITE_W - iw) // 2, floor
     elif lay == "beside":
-        ix, iy = max(0, PET_X - iw - 1), max(0, px_h - ih - 3)
+        # clamped at the window wall: a 16-wide icon beside the pet sits
+        # flush (item 4..20, pet 20..36), never past the law's left edge
+        ix, iy = max(grid.X0, PET_X - iw - 1), max(0, px_h - ih - 3)
     elif lay == "near":                      # the board, just left of the pet
-        ix, iy = max(0, PET_X - iw - 2), floor
+        ix, iy = max(grid.X0, PET_X - iw - 2), floor   # never past the wall
     else:                                    # "drop": above the arena
         ix, iy = 13, -ih
     frame, pose, pdx, pdy, cyc = 0, 1, 0, 0, 0

@@ -257,11 +257,13 @@ class TuiPetApp(App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("Futon fix: the futon now truly maintains temperature — "
-                 "while your pet is tucked in, its temperature is pinned in "
-                 "place, so it can no longer catch cold under the covers "
-                 "(and a sick pet's fevers and chills hold off too). It "
-                 "still isn't a heater: warm a cold pet up before bed.")
+    WHATS_NEW = ("Adventure overhaul: every expedition keeps ONE biome from "
+                 "the first step to the boss, the pet holds a proper stage "
+                 "spot, weather follows you on the road, and no beat can be "
+                 "skipped any more. Also: no more white poses in a dark "
+                 "room, the futon truly keeps you cozy (no freezing status "
+                 "under the covers), and toys like the balloon play fully "
+                 "on-screen.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and

@@ -541,3 +541,30 @@ def test_teleport_curtain_obeys_the_window_law(monkeypatch):
                 assert all(grid.X0 <= x < grid.X1 and grid.TOP <= y < grid.FLOOR
                            for x, y in pts), f"{phase} t={t}: curtain ink off-window"
     assert saw_curtain > 30, "the wipe must actually stage its curtain beats"
+
+
+def test_found_item_icon_is_native_size_and_in_band():
+    """Bug report 2026-07-13 ("town transport item sprite is glitched when
+    finding it in adventure mode"): the reveal used downsample(raw[0], 3),
+    crushing an 8x8 icon to a 3px speck.  The find now shows its FIRST
+    NON-EMPTY frame at native size, clamped inside the window."""
+    from tuipet import data, grid
+    from tuipet.adventurescreen import INV_REVEAL_T
+    pan = AdventurePanel(_pet())
+    pan._trans = None
+    pan.discovering = True
+    item = data.consumable_by_key("i:29")          # Town Transport
+    pan.adv.investigate = lambda: ("item", item)
+    pan.key("enter")
+    icon = pan._scene["icon"]
+    assert icon and len(icon) >= 8 and max(len(r) for r in icon) >= 8, \
+        "the find icon must be native size, not a downsampled speck"
+    pan._scene["t"] = INV_REVEAL_T                 # the reveal beat
+    rows, x, mirror, overlay, note = pan._pet_placement()
+    assert overlay, "the reveal holds the find up beside the pet"
+    xs = [px for px, _py in overlay]
+    ys = [py for _px, py in overlay]
+    assert min(xs) >= grid.X0 and max(xs) < grid.X1
+    assert min(ys) >= grid.TOP and max(ys) < grid.FLOOR
+    frame = pan.text().plain.split("\n")
+    assert len(frame) <= 12 and all(len(ln) <= 40 for ln in frame)
