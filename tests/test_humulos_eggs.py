@@ -83,12 +83,15 @@ def test_no_egg_is_strictly_dominated():
 
 
 def test_win_ladder_is_staggered():
-    """Each new win-gated egg gets its own moment: 25/40/50/60/75/100
-    (50 belongs to classic Sakumon + the first ??? egg; 100 to the second)."""
+    """Each win-gated egg gets its own moment: 25/30/40/50/60/75/100
+    (50 belongs to classic Sakumon + the first ??? egg; 100 to the second).
+    30 is Slayerdra's battle route -- the dragon trio's gates were
+    differentiated 2026-07-14 so the three same-line eggs stop dominating each
+    other (Slayerdra=wins, Breakdra=Mega kills, Draco=album)."""
     rules = data.load_egg_unlock()
     wins = sorted((r["wins"], r["name"]) for r in rules.values() if r.get("wins"))
-    assert wins == [(25, "V Egg"), (40, "Hack Egg"), (50, "Sakumon"),
-                    (60, "Digitama X3"), (75, "Zuba Egg")]
+    assert wins == [(25, "V Egg"), (30, "Slayerdra Egg"), (40, "Hack Egg"),
+                    (50, "Sakumon"), (60, "Digitama X3"), (75, "Zuba Egg")]
 
 
 def test_every_egg_animates_with_real_frames():

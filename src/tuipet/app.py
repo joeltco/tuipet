@@ -265,11 +265,11 @@ class TuiPetApp(App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("Egg lines fixed: 21 of the newer digitama were letting "
-                 "their babies evolve into forms their own device chart "
-                 "forbids. Each egg now walks its real line — a Draco egg "
-                 "goes Petitmon, Babydmon, Dracomon, Coredramon, and a DORU "
-                 "egg raises a true DORUmon.")
+    WHATS_NEW = ("The dragon eggs are worth chasing now: Slayerdra, Breakdra "
+                 "and Draco gave the same dragon but cost 6, 26 and 12 "
+                 "species — so two were pointless. Each is now earned a "
+                 "different way: 30 wins, 3 Mega kills, or 6 species raised. "
+                 "Pick your route (n).")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and
