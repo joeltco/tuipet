@@ -195,11 +195,19 @@ def test_effect_readout_fits_the_info_column():
             assert "+0" not in el and "-0" not in el, (e["name"], el)
 
 
-def test_uniform_attribute_boost_collapses_to_one_token():
-    """A uniform Vaccine/Data/Virus nudge reads as one 'attr' token so the
-    busiest foods stay on a single line; a mixed nudge stays spelled out."""
+def test_attribute_nudges_collapse_by_shape():
+    """Three shapes, three readouts:
+      uniform  (+1/+1/+1)  -> one 'attr' token, so the busiest foods stay short
+      trade    (-15/+15)   -> one ARROW: it is a conversion, not two coincidences
+      lopsided (-15/+5)    -> spelled out; it is neither, and must not pretend
+    """
     from tuipet import shop
     uni = shop.effect_line({"hunger": 2, "mood": 20, "vaccine": 1, "data": 1, "virus": 1})
     assert "attr+1" in uni and "Va+1" not in uni
-    mix = shop.effect_line({"mood": 50, "vaccine": -15, "virus": 15})
-    assert "Va-15" in mix and "Vi+15" in mix and "attr" not in mix
+
+    trade = shop.effect_line({"mood": 50, "vaccine": -15, "virus": 15})
+    assert "Va\u2192Vi15" in trade and "attr" not in trade
+
+    lopsided = shop.effect_line({"mood": 50, "vaccine": -15, "virus": 5})
+    assert "Va-15" in lopsided and "Vi+5" in lopsided
+    assert "\u2192" not in lopsided, "a non-zero-sum nudge is not a trade"

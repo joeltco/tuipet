@@ -12,12 +12,17 @@ computed effect line was HIDING real consequences:
     illness (cure_lapse -2).  So "basic medicine to treat illness" displayed as,
     simply, "mood-10".
 
-⛔ We deliberately do NOT render the authored `Description` column.  A dozen of
-them advertise attribute conversion ("Board Game: Vaccine to Data") — a mechanic
-tuipet does not implement.  Showing that text would have the shop make a promise
-the game does not keep, which is the exact bug class the silent-failure law
-exists to kill.  The effect line is GENERATED from the fields pet.py actually
-reads, so it structurally cannot lie.
+⛔ CORRECTION (2026-07-14).  I first claimed attribute conversion was NOT
+implemented, having grepped for `FavAttribute` (which is empty on every row) and
+found nothing.  That was wrong.  The conversion is encoded as the Va/Da/Vi
+DELTAS -- Board Game is Vaccine -15 / Data +15 -- and pet.py applies it through
+applyAttributeChange + _compensate_attrs(), which CONSERVES the total.  So
+"Vaccine to Data" is real, and the descriptions do not lie.
+
+We still GENERATE the effect line rather than quote the description, but for the
+honest reason: a generated line carries the exact numbers and can never drift
+from the data behind it.  The trade now renders as the trade it is (Va→Da15)
+instead of two loose nudges that happened to cancel.
 """
 import pytest
 
@@ -92,15 +97,53 @@ def test_med_advertises_that_it_treats_illness():
     assert "sick-2" in shop.effect_tokens(med), "Med hides its whole purpose"
 
 
-# ---------------------------------------------------------------- never lie
+# ---------------------------------------------------------------- the trade
 
-def test_we_never_render_the_authored_description():
-    """~12 descriptions promise attribute conversion, which tuipet does not
-    implement. The effect line must be GENERATED, never quoted."""
+TRADES = ["Board Game", "Skateboard", "Dumbbell",
+          "Computer Game", "Music Player", "Television"]
+
+
+@pytest.mark.parametrize("name", TRADES)
+def test_the_attribute_trade_is_symmetric_and_zero_sum(name):
+    """The six trade toys move points BETWEEN the power counters. Nothing is
+    created: exactly one donor, one recipient, equal magnitude."""
+    e = _by_name(name)
+    vals = [int(e.get(k) or 0) for k in ("vaccine", "data", "virus")]
+    assert sum(vals) == 0, (name, vals)
+    assert len([v for v in vals if v > 0]) == 1
+    assert len([v for v in vals if v < 0]) == 1
+
+
+def test_the_trade_actually_converts_and_conserves_the_total():
+    """The mechanic is REAL — this is the test I should have written before
+    claiming it wasn't implemented."""
     board = _by_name("Board Game")
-    assert "Vaccine to Data" in board["desc"]           # the data really says it
+    p = Pet(num=100, stage="Champion", attribute="Vaccine",
+            vaccine=30, data_power=5, virus=5, obedience=500)
+    p.inventory[board["key"]] = 1
+    before = p.vaccine + p.data_power + p.virus
+
+    p.use_item(board["key"])
+
+    assert p.vaccine == 15 and p.data_power == 20, (p.vaccine, p.data_power)
+    assert p.vaccine + p.data_power + p.virus == before, "the trade must conserve the total"
+
+
+def test_a_trade_reads_as_a_trade_not_two_coincidences():
+    """'Va-15 Da+15' is accurate but reads like two unrelated nudges."""
+    assert "Va\u2192Da15" in shop.effect_tokens(_by_name("Board Game"))
+    # ...and a one-way boost must NOT be dressed up as a trade
+    chip = shop.effect_tokens(_by_name("Vaccine Chip"))
+    assert "Va+15" in chip and not any("\u2192" in t for t in chip)
+
+
+def test_the_effect_line_is_generated_not_quoted():
+    """Generated = the exact numbers, and it can never drift from the data.
+    (The description is TRUE — it is just prose, and prose goes stale.)"""
+    board = _by_name("Board Game")
+    assert "Vaccine to Data" in board["desc"]
     line = " ".join(shop.effect_tokens(board))
-    assert "Vaccine to" not in line, "the shop is promising a mechanic we don't have"
+    assert board["desc"] not in line
 
 
 # ---------------------------------------------------------------- all 3 surfaces

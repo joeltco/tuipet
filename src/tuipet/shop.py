@@ -257,23 +257,50 @@ def life_token(e):
     return None
 
 
+ATTR_LBL = (("vaccine", "Va"), ("data", "Da"), ("virus", "Vi"))
+
+
+def trade_token(e):
+    """The ATTRIBUTE TRADE, rendered as the conversion it actually is.
+
+    The six trade toys (Board Game, Skateboard, Dumbbell, Computer Game, Music
+    Player, Television) carry a symmetric zero-sum pair -- Board Game is
+    Vaccine -15 / Data +15 -- and pet.py APPLIES it, conserving the total through
+    applyAttributeChange + _compensate_attrs().  So "Vaccine to Data" is real.
+
+    It was already shown, but only as two unrelated stats ("Va-15 Da+15"), which
+    reads like two coincidental nudges rather than one TRADE.  Rendering the
+    arrow makes the mechanic legible -- and it is generated from the deltas, so
+    it still cannot drift from what the code does.
+    """
+    vals = {k: int(e.get(k) or 0) for k, _ in ATTR_LBL}
+    pos = [k for k, v in vals.items() if v > 0]
+    neg = [k for k, v in vals.items() if v < 0]
+    if len(pos) == 1 and len(neg) == 1 and sum(vals.values()) == 0:
+        lbl = dict(ATTR_LBL)
+        return "%s\u2192%s%d" % (lbl[neg[0]], lbl[pos[0]], vals[pos[0]])
+    return None
+
+
 def effect_tokens(e, dp=False):
     """EVERY effect the game actually applies, most consequential first.
 
-    Truth from data: this is generated from the same fields pet.py reads, so it
-    cannot promise something the code does not do.  (The authored `Description`
-    column is NOT used -- a dozen of them advertise attribute conversion, e.g.
-    Board Game's "Vaccine to Data", which tuipet does not implement.  Showing
-    that text would make the shop lie.)
+    Truth from data: generated from the same fields pet.py reads, so it cannot
+    promise something the code does not do.  The authored `Description` column is
+    not quoted -- not because it lies (it does not; "Vaccine to Data" is a real,
+    implemented trade), but because a generated line carries the EXACT numbers
+    and can never drift from the data behind it.
 
-    Two tidying rules survive from the old one-liner: a stat that rounds to zero
-    is dropped, and a uniform Vaccine/Data/Virus nudge collapses to one "attr".
+    Tidying rules: a stat that rounds to zero is dropped, a uniform Vaccine/Data/
+    Virus nudge collapses to one "attr", and a symmetric zero-sum pair collapses
+    to one TRADE arrow (Va->Da15).
     """
     t = []
     life = life_token(e)
     if life:
         t.append(life)                      # first: it is the costly one
     va, da, vi = e.get("vaccine", 0) or 0, e.get("data", 0) or 0, e.get("virus", 0) or 0
+    trade = trade_token(e)
     uniform_attr = bool(va) and va == da == vi
     for k, lbl in (("hunger", "food"), ("mood", "mood"), ("energy", "en"),
                    ("strength", "eff"), ("health", "maxHP"), ("weight", "wt")):
@@ -282,10 +309,12 @@ def effect_tokens(e, dp=False):
             t.append("%s%+d" % (lbl, v))
             if dp and k == "strength" and v > 0:
                 t.append("DP+1")            # a strength food banks a jogress point
-    if uniform_attr:
+    if trade:
+        t.append(trade)                     # one TRADE, not two loose nudges
+    elif uniform_attr:
         t.append("attr%+d" % int(va))
     else:
-        for k, lbl in (("vaccine", "Va"), ("data", "Da"), ("virus", "Vi")):
+        for k, lbl in ATTR_LBL:
             v = int(e.get(k) or 0)
             if v:
                 t.append("%s%+d" % (lbl, v))
