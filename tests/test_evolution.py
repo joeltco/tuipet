@@ -40,9 +40,16 @@ def _graph():
             if not real(t) or sidx(t) <= sidx(n):
                 continue
             r = req.get(t, {})
+            # the ENGINE gates "Induced" only (evolution.py: "canon gates
+            # Induced only" -- Natural just means the species carries the
+            # X-antibody in lore, e.g. the whole DORUmon line, and is reached
+            # by ordinary care).  This helper also excluded Natural, so it
+            # modelled paths the game does not actually block; it only passed
+            # because the device roots were polluted with non-X children
+            # (root audit 2026-07-14).
             if r.get("special", "None") in ("None", "Failed") \
                     and r.get("evol_item", -1) == -1 \
-                    and r.get("xantibody", "None") not in ("Induced", "Natural"):
+                    and r.get("xantibody", "None") != "Induced":
                 out.append(t)
         return out
 

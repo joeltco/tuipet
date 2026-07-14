@@ -265,11 +265,11 @@ class TuiPetApp(App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("The album can be finished now: its target counted 329 "
-                 "duplicate dex rows (one species sits on several device "
-                 "pages), so it read 1218/1547 and could never reach 100%. "
-                 "Both halves now count real species — check it on the "
-                 "digicore (d).")
+    WHATS_NEW = ("Egg lines fixed: 21 of the newer digitama were letting "
+                 "their babies evolve into forms their own device chart "
+                 "forbids. Each egg now walks its real line — a Draco egg "
+                 "goes Petitmon, Babydmon, Dracomon, Coredramon, and a DORU "
+                 "egg raises a true DORUmon.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and
