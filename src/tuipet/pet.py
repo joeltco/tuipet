@@ -395,7 +395,12 @@ POOP_INC_WEIGHT_FACTOR = 40            # PoopIncWeightFactor -> size 3 at/above
 POOP_INC_WEIGHT_FACTOR_SMALL = 15      # PoopIncWeightFactorSmall -> size 1 at/below
 POOP_WAIT_MOOD = -1                     # PoopWaitMoodChange (the HELD gauge nags)
 LARGE_POOP_WAIT_MOOD = -2               # LargePoopWaitMoodChange (a desperate gauge nags more)
-FILTH_MOOD_DEC_MIN = 300.0              # FilthMoodDecMin 5 game-min: species filth_mood x piles
+# ⛔ CLOCK-UNIT LAW: canon cadences are in GAME MINUTES and tuipet's clock maps
+# one game minute onto ONE REAL SECOND (DAY_LENGTH 1440s = 1440 game min).  A
+# `*Min=N` constant therefore ports to N REAL SECONDS -- never N x 60.  The six
+# constants below were all converted with REAL minutes (cadence audit
+# 2026-07-14; the same error already cost us TEMP_RATE and WEATHER_CHECK_SEC).
+FILTH_MOOD_DEC_MIN = 5.0                # FilthMoodDecMin 5 game-min (was 300.0 = 5 game HOURS)
 FILTH_SICK_BOUND = 200                  # FilthSickChanceBound 12000 real-min -> /60 game scale
 FILTH_SICK_CHANCE = 1                   # FilthSickChance (x piles, per game-min)
 FILTH_WORSE_CHANCE = 20                 # FilthWorseSickChance (x piles, already sick)
@@ -1149,7 +1154,7 @@ class Pet:
         # startPoop it forces fires naturally when the gauge crosses)
         if self.sick and not self.asleep:
             self._sick_pen_t = getattr(self, "_sick_pen_t", 0.0) + dt
-            if self._sick_pen_t >= 60.0:                  # SickLapseMin
+            if self._sick_pen_t >= SICK_LAPSE_MIN:        # SickLapseMin 29 (the literal said 60)
                 self._sick_pen_t = 0.0
                 for f in ("nutr_protein", "nutr_mineral", "nutr_vitamin"):
                     setattr(self, f, max(0, getattr(self, f) + SICK_NUTRITION_CHANGE))
@@ -1305,7 +1310,7 @@ class Pet:
         self._filth_effects(dt)
         if self._poop_t >= self._poop_interval:
             self._poop_wait_t = getattr(self, "_poop_wait_t", 0.0) + dt
-            if self._poop_wait_t >= 60.0:                # PoopWaitMin, game-min lapse
+            if self._poop_wait_t >= 1.0:                 # PoopWaitMin 1 game-min (was 60.0)
                 self._poop_wait_t = 0.0
                 self._set_mood(self.mood + (LARGE_POOP_WAIT_MOOD
                                             if self._poop_t >= self._poop_interval * 1.5
@@ -1336,7 +1341,7 @@ class Pet:
             self._call_drain_t = 0.0
             return
         self._call_drain_t = getattr(self, "_call_drain_t", 0.0) + dt
-        if self._call_drain_t >= 60.0:           # CallMinutesCheckMin, window scale
+        if self._call_drain_t >= 1.0:            # CallMinutesCheckMin 1 game-min (was 60.0)
             self._call_drain_t = 0.0
             self._set_mood(self.mood - CALL_MOOD_DEC)
 
@@ -1531,7 +1536,14 @@ class Pet:
                 self._set_mood(self.mood + fm * self.poop)
         bound = int(FILTH_SICK_BOUND * self._phys().get("poop_sick_mult", 1.0))
         self._filth_sick_t = getattr(self, "_filth_sick_t", 0.0) + dt
-        if self._filth_sick_t >= 60.0:                    # FilthSickMin, on the game-min lapse
+        # ⚖️ NOT a clock-unit slip: this pairs with FILTH_SICK_BOUND, which is
+        # canon's 12000 already divided by 60 ("12000 real-min -> /60 game
+        # scale").  Rolling 60x less often against a 60x smaller bound is the
+        # SAME expected rate, just coarser -- a deliberate, equivalent rescale.
+        # Speeding the cadence without restoring the bound to 12000 would make
+        # filth sickness 60x MORE likely (it did: the malady-death pin caught
+        # it mid-audit 2026-07-14).  Leave the pair alone.
+        if self._filth_sick_t >= 60.0:                    # FilthSickMin, bound-matched
             self._filth_sick_t = 0.0
             if self.sick:
                 if random.randrange(max(1, bound)) < FILTH_WORSE_CHANCE * self.poop:
@@ -1548,7 +1560,16 @@ class Pet:
         # hungerCall: a single mistake per unanswered call, mirroring strengthCall
         if self.hunger == 0 and not self.asleep:
             self._hunger_call_t = getattr(self, "_hunger_call_t", 0.0) + dt
-            if self._hunger_call_t >= 600.0:                 # MinutesToMistake 10
+            # ⚖️ DELIBERATE, *not* a clock-unit slip (cadence audit 2026-07-14).
+            # Canon gives you 10 GAME-min to answer the call -- and on the real
+            # device, which runs in REAL time, that IS ten real minutes.  Under
+            # tuipet's 60x compression the literal port would be TEN REAL
+            # SECONDS to notice the alarm and feed, or take a PERMANENT care
+            # mistake (20 = death; 5 kills an elder).  Unplayable in a terminal
+            # you leave in the background.  So the CONTINUOUS pressures (mood
+            # drain, filth, sickness rolls) run at the canon game-min cadence,
+            # while the DISCRETE PUNISHMENTS keep a fair human response window.
+            if self._hunger_call_t >= 600.0:                 # 10 real min to answer
                 self._hunger_call_t = -3600.0                # AfterMistakeMinutesPostponed
                 self._inc_mistake()
                 self.mistake_day += 1  # + HungerDecAtZero MissedDayChange
@@ -1607,7 +1628,8 @@ class Pet:
         # (strengthMistakePenalty), postponed after one like the other calls
         if self.strength == 0 and not self.asleep:
             self._str_call_t = getattr(self, "_str_call_t", 0.0) + dt
-            if self._str_call_t >= 600.0:                    # MinutesToMistakeStrength 10
+            if self._str_call_t >= 600.0:                    # 10 real min to answer
+                #   (the same deliberate response-window rule as the hunger call)
                 self._str_call_t = -3600.0                   # AfterMistakeMinutesPostponed
                 self._inc_mistake()
                 self._set_obedience(self.obedience - 5)      # MistakeStrengthObedienceDec
