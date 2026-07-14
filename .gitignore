@@ -38,12 +38,22 @@ corpus/
 
 # decompilation-derived analysis notes -- keep local, not in the public repo
 ANIMATION_AUDIT.md
+ANIMATION_SPEC.md
 DNA_SCOPE.md
 SHOP_ITEMS.md
 POOP_POSTMORTEM.md
+LINES_SPEC.md
+TUIPET_AUDIT.md
 # decompiled-source audit doc — never commit (copyrighted)
 DVPET_SOURCE.md
 # clone-era code-comparison doc — keep local
 TRAINING_COMPARISON.md
 
 server/lobby_feed.jsonl*
+
+# dev throwaways / tool caches
+patch_effects.py
+.coverage
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
