@@ -322,7 +322,7 @@ def test_mid_bracket_contracts():
     r1 = pan.key("escape")                     # forfeit from the opening tree
     assert pan.tourney.over and r1[0] == "done"
     last = pan.tourney.last
-    assert pan.key("escape") == ("done", last)  # no double record
+    assert pan.key("escape") == ("done", (last, False))  # no double record
     # THE CUP-HOUR GATE (Joel 2026-07-13, economy audit -- supersedes the old
     # "the hour is the throttle" reading): every shipped trophy is
     # SameDayRetry=TRUE, so re-entry was UNLIMITED -- forfeit, re-roll the

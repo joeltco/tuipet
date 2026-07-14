@@ -272,11 +272,11 @@ class TuiPetApp(App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("One voice everywhere: key hints read ENTER/ESC in every "
-                 "screen, the battle give-up prompt agrees with itself, "
-                 "effort is called effort wherever it appears, the bag is "
-                 "always the bag, and a sweep of typos and mixed punctuation "
-                 "is gone.")
+    WHATS_NEW = ("Feelings, like the real devices: evolution opens with the "
+                 "old form's silhouette pulsing before the flash, a cup "
+                 "champion celebrates back at the house and an eliminated "
+                 "pet sulks home, and a beaten fighter staggers instead of "
+                 "freezing.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and
@@ -1765,8 +1765,16 @@ class TuiPetApp(App):
         self._open_mode(tournamentscreen.TournamentPanel(self.pet), self._after_cup)
 
     def _after_cup(self, msg):
+        verdict = None
+        if isinstance(msg, tuple):           # (last, champion) from a played bracket
+            msg, verdict = msg
         if msg:
             self.flash(msg)
+        # the post-cup emotional beat rides the HOUSE screen (anim hardening
+        # 2026-07-14: every reference celebrates a win / sulks a loss back
+        # home for a few seconds; tuipet's losing() fx sat built but unwired)
+        if verdict is not None and self.screen_w.fx is None and not self.pet.dead:
+            self.screen_w.start_fx("cheer" if verdict else "losing")
         self.repaint()
 
     def action_dna(self):

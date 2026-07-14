@@ -107,7 +107,9 @@ class TournamentPanel(menu.SubHost):
         elif k in ("escape", "u"):          # u (the opening key) also closes
             if not t.over:
                 t.record(False)             # walking out forfeits: the elimination is real
-            return ("done", t.last)
+            # carry the VERDICT home: the winner's cheer / loser's sulk plays
+            # on the house screen, like the devices (anim hardening 2026-07-14)
+            return ("done", (t.last, t.champion))
         return None
 
     def _render_tree(self):

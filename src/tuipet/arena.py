@@ -537,12 +537,15 @@ class Screen(Static):
             # An ITEM evolution (Digimental) prepends canon itemEvolve's first
             # act: the pet parades with the item cycling its own anim frames
             # (itemEvolveLoop -> jogress.wav), THEN the strobe fires.
-            off = 14 if icon else 0
+            # Pre-ritual (anim hardening 2026-07-14): every reference fronts
+            # the strobe with a first act -- the old form HOLDS, then its
+            # SILHOUETTE blinks -- so the change reads as a ritual, not a cut.
+            # An ITEM evolution keeps canon itemEvolve's parade as that act.
+            off = 14 if icon else 12
             self.fx["off"] = off
             self.fx["steps"] = 41 + off
-            self.fx["snds"] = {5: "evolve"}
-            if off:                       # the parade shifts the strobe's beats
-                self.fx["snds"] = {k + off: v for k, v in self.fx["snds"].items()}
+            self.fx["snds"] = {5 + off: "evolve"}
+            if icon:                      # the parade opens on the jogress sting
                 self.fx["snds"][1] = "jogress"
         elif kind == "inherit":
             # DVPet inheriting(): chip-shrink t11 / parent-grow t17 / parent-shrink
@@ -1021,7 +1024,7 @@ class Screen(Static):
         # chained cheer(true) afterwards is DVPet evolFinish.
         old = fx.get("old_num")
         off = fx.get("off", 0)
-        if step < off:                                     # itemEvolve's first act: the
+        if step < off and fx.get("icon"):                  # itemEvolve's first act: the
             pose = 1 if (step // 4) % 2 == 0 else 4        # pet parades (canon poses
             rec = data.load_sprites()[1].get(old) if old not in (None, -1) else None
             if rec:                                        # animValue+1 <-> +4)...
@@ -1033,6 +1036,22 @@ class Screen(Static):
             if ic:
                 f = ic[(step // 2) % len(ic)]
                 c.overlay += _blit(f, 2, c.px_h - len(f) - 4)
+            return
+        if step < off:                                     # natural evolve's first act
+            # (anim hardening 2026-07-14): the old form HOLDS (beats 0-5),
+            # then its flood-filled SILHOUETTE blinks 0.2s on / 0.2s off
+            # (beats 6-11) -- the "something is happening to me" tell every
+            # reference fronts the strobe with.
+            rec = data.load_sprites()[1].get(old) if old not in (None, -1) else None
+            fr0 = rec["frames"][0] if rec and rec["frames"] and rec["frames"][0] else None
+            if fr0:
+                if step < 6:
+                    c.rows = fr0
+                elif (step // 2) % 2 == 1:
+                    from .digicorescreen import silhouette
+                    c.rows = silhouette(fr0)
+                else:
+                    c.rows = fr0
             return
         step -= off                                        # the strobe below runs on canon beats
         if step < 21 and old not in (None, -1):            # old form until the covered swap

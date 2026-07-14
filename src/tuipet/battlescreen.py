@@ -29,7 +29,7 @@ BANNER = _OV["battle_banner"]
 EXPLODE = _OV["hit_explosion"]
 
 # poses (tuipet DVPet 11-frame layout)
-IDLE, TURN, ATTACK, CHEER_A, CHEER_B, COLLAPSE = 0, 1, 6, 5, 7, 10
+IDLE, TURN, ATTACK, CHEER_A, CHEER_B, COLLAPSE, WEARY = 0, 1, 6, 5, 7, 10, 9
 CHARGE = 4                                      # DVPet shoot frame 4: pre-attack/charge pose
 # the 16px creature band on the 24px LCD (y6..y22); orbs must stay INSIDE it
 
@@ -426,7 +426,11 @@ class BattlePanel:
             view = fr.get("view", "pet")
             dt = round(fr.get("prog", 0) * DODGE_T) if m == "dodge" else 0   # dodge beat 1..DODGE_T
             if m == "result":
-                pose = (CHEER_A, CHEER_B)[(self.frame_i // 3) % 2] if self.won else COLLAPSE
+                # defeat ALTERNATES collapse/weary like the win alternates its
+                # cheer -- every reference flips the loser's injured pair; a
+                # held pose read as a freeze (anim hardening 2026-07-14)
+                pose = ((CHEER_A, CHEER_B) if self.won
+                        else (COLLAPSE, WEARY))[(self.frame_i // 3) % 2]
             elif m == "windup":
                 # DVPet battlePlayerShootAnim sequences poses 1->0->4 (ready->idle->charge)
                 # through the wind-up, then snaps to 6 (attack) only at the moment of firing.
