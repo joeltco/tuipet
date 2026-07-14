@@ -11,6 +11,27 @@ _HERE = os.path.dirname(__file__)
 _DATA = os.path.join(_HERE, "data")
 _RAW = _DATA  # bundled CSVs (digimon/evolutions/foods) live alongside sprites
 
+
+class AssetsError(RuntimeError):
+    """A REQUIRED bundled atlas is missing or damaged.  Carries a player-facing
+    message: an interrupted install used to surface as a raw gzip traceback on
+    the first render (professionalism sweep 2026-07-14).  Optional atlases
+    (effects/icons/backgrounds) keep degrading gracefully instead."""
+
+
+def _load_bundled(name):
+    """gunzip+parse a required atlas, or raise AssetsError in plain words."""
+    try:
+        with gzip.open(os.path.join(_DATA, name), "rt") as fh:
+            return json.load(fh)
+    except (OSError, EOFError, ValueError) as e:
+        raise AssetsError(
+            f"tuipet's game data is missing or damaged ({name}).\n"
+            f"Reinstall it:   pip install --force-reinstall tuipet\n"
+            f"(running from a source checkout? build the assets first: "
+            f"tools/setup_assets.sh)"
+        ) from e
+
 # Frame roles VERIFIED against DVPet View/SpriteAnim drawNum() args (each per-Digimon
 # strip is 11 frames, index 0-10; sheet order preserved by extract_sprites col 0..10):
 #   0 idle/neutral base      6 attack / cheer-up (HP_Training_AttackSuccess, attackDefault)
@@ -143,8 +164,7 @@ def bob_frame(num, frame_i, role="idle", beat=5, egg_type=0):
 @lru_cache(maxsize=1)
 def load_sprites():
     from . import placeholder
-    with gzip.open(os.path.join(_DATA, "sprites.json.gz"), "rt") as fh:
-        data = json.load(fh)
+    data = _load_bundled("sprites.json.gz")
     for rec in data:
         frames = rec["frames"]
         first = next((f for f in frames if f), None)
@@ -301,8 +321,7 @@ def _attack_index(s):
 
 @lru_cache(maxsize=1)
 def load_orbs():
-    with gzip.open(os.path.join(_DATA, "orbs.json.gz")) as fh:
-        return json.load(fh)
+    return _load_bundled("orbs.json.gz")
 
 
 @lru_cache(maxsize=1)

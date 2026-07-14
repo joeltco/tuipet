@@ -272,12 +272,11 @@ class TuiPetApp(App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("Honors shine in the lobby now: titled tamers wear a star "
-                 "right in the roster, your own title sits on the you-line, "
-                 "and long names scroll through the sidebar instead of "
-                 "clipping. (New this week: cup stakes, stage-priced "
-                 "assistant, 9999 DNA wagers, and the HONORS board itself -- "
-                 "titles up to 250k in the shop.)")
+    WHATS_NEW = ("tuipet got tougher: a damaged save is rescued and named "
+                 "instead of silently replaced, a crash saves your pet and "
+                 "files its own report, a second running copy is caught "
+                 "before it eats your save, and cloud sync has an on/off "
+                 "switch in options.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and
@@ -307,6 +306,8 @@ class TuiPetApp(App):
                 pet, self._welcome = loaded, (msg or "Welcome back!")
             else:
                 self._new_game = True
+                if msg:          # a QUARANTINED corrupt save -- never play it
+                    self._welcome = msg     # off as a first launch (sweep 07-14)
         self.pet = pet or Pet.new_egg()
         self.mode = None            # active in-display panel (no pop-up screens)
         self._dying_fx = False      # playing the death animation before the memorial
@@ -418,6 +419,8 @@ class TuiPetApp(App):
         (idempotent). The startup pull already ran in main(); this handles pushes."""
         if self._sync is not None:
             return
+        if not persistence.sync_enabled():
+            return                       # opted out (TUIPET_NO_SYNC or the options toggle)
         name, pw = persistence.get_account()
         if not name:
             return                       # no account yet (first launch) — started after account setup
@@ -426,7 +429,7 @@ class TuiPetApp(App):
 
     def _push_cloud(self):
         """Queue the current pet's save for upload (no-op until the account/sync exists)."""
-        if self._sync is not None and self.pet is not None:
+        if self._sync is not None and self.pet is not None and persistence.sync_enabled():
             self._sync.push_save(persistence.to_save_dict(self.pet))
 
     async def _check_update(self):
@@ -515,6 +518,7 @@ class TuiPetApp(App):
 
     def autosave(self):
         persistence.save(self.pet)
+        self._start_sync()              # idempotent: picks up a re-enabled cloud toggle
         self._warn_if_unsaveable()
         self._warn_if_cloud_dropped()
         self._note_progress()
@@ -772,6 +776,34 @@ class TuiPetApp(App):
     def action_quit(self):
         persistence.save(self.pet)
         self.exit()
+
+    def _handle_exception(self, error: Exception) -> None:
+        # Last-chance honesty (sweep 2026-07-14): save the pet, keep the
+        # traceback, queue a bug report -- THEN let Textual show its crash
+        # screen.  A raw panic used to be the whole story, with the last ~10s
+        # of play lost and the reporter never offered.
+        try:
+            persistence.save(self.pet)
+        except Exception:
+            pass
+        log = None
+        try:
+            log = persistence.write_crash_log(error)
+        except Exception:
+            pass
+        try:
+            import traceback
+            tail = "".join(traceback.format_exception(
+                type(error), error, error.__traceback__))[-1500:]
+            persistence.add_pending_bug(dict(
+                self._bug_meta(), name=persistence.get_account()[0],
+                text=f"[auto] crash: {error!r}\n{tail}"))
+        except Exception:
+            pass
+        self._crash_note = ("tuipet crashed — your pet was saved."
+                            + (f"  Details: {log}" if log else "")
+                            + "  A report goes out next launch.")
+        super()._handle_exception(error)
 
     def beep(self, name=None, bell=True):
         if not self.sound:
@@ -1878,16 +1910,61 @@ def _lobby_uri():
     return os.environ.get("TUIPET_LOBBY_URL", "wss://ff3mmo.com/tuipet/")  # live lobby (TLS); override for local dev
 
 
+MIN_COLS, MIN_ROWS = 77, 24     # the fixed layout: #left 44 + #stats 30 + chrome
+
+
+def _preflight():
+    """Fail loud and in plain words BEFORE the UI takes the terminal over
+    (sweep 2026-07-14): damaged assets exit with the fix; a cramped window or
+    a non-UTF-8 locale get a readable warning, then the game runs anyway --
+    a clipped game beats a locked-out player."""
+    try:
+        data.load_sprites()
+        data.load_orbs()
+    except data.AssetsError as e:
+        print(e)
+        raise SystemExit(1)
+    import shutil
+    import sys
+    import time as _t
+    warn = []
+    cols, rows = shutil.get_terminal_size()
+    if cols < MIN_COLS or rows < MIN_ROWS:
+        warn.append(f"⚠ tuipet lays out for {MIN_COLS}×{MIN_ROWS}; this terminal is "
+                    f"{cols}×{rows} — expect clipping.\n  (Enlarge the window, shrink "
+                    f"the font, or rotate the phone.)")
+    enc = (getattr(sys.stdout, "encoding", "") or "").lower()
+    if enc and "utf" not in enc:
+        warn.append(f"⚠ tuipet draws with Unicode but this terminal reports '{enc}'.\n"
+                    f"  If the art looks wrong:  export LANG=C.UTF-8")
+    if warn:
+        print("\n".join(warn))
+        _t.sleep(2.5)
+
+
 def main():
+    _preflight()
+    other = persistence.acquire_instance_lock()
+    if other and not _os.environ.get("TUIPET_FORCE"):
+        print(f"tuipet is already running (pid {other}) — two copies would fight "
+              f"over one save.\nClose the other one first, or set TUIPET_FORCE=1 "
+              f"to override.")
+        raise SystemExit(1)
     # Cross-device: pull a newer cloud save down BEFORE the app loads the pet, so
     # the normal load path picks it up (no mid-session swapping). Fail-soft.
-    if not _os.environ.get("TUIPET_NO_SYNC"):
+    if persistence.sync_enabled():
         try:
             name, pw = persistence.get_account()
             cloudsync.sync_down_at_startup(_lobby_uri(), name, pw)
         except Exception:
             pass
-    TuiPetApp().run()
+    app = TuiPetApp()
+    try:
+        app.run()
+    finally:
+        persistence.release_instance_lock()
+    if getattr(app, "_crash_note", None):
+        print(app._crash_note)          # after Textual restores the terminal
 
 
 if __name__ == "__main__":

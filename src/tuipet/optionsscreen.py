@@ -16,10 +16,10 @@ from . import menu, persistence, sound, theme
 from . import update as update_check
 from .themescreen import ThemePanel
 
-_ROWS = ("theme", "sound", "account", "update", "keys", "new", "erase")
+_ROWS = ("theme", "sound", "account", "cloud", "update", "keys", "new", "erase")
 _LABEL = {"theme": "Theme", "sound": "Sound", "account": "Account",
-          "update": "Update", "keys": "Keys", "new": "New egg",
-          "erase": "Erase all data"}
+          "cloud": "Cloud sync", "update": "Update", "keys": "Keys",
+          "new": "New egg", "erase": "Erase all data"}
 # the note line under the list describes the SELECTED row and follows the
 # cursor (Joel's live review 2026-07-07: it sat frozen on the flavour line);
 # action feedback (sound toggled, update verdict...) overrides it until the
@@ -27,6 +27,7 @@ _LABEL = {"theme": "Theme", "sound": "Sound", "account": "Account",
 _DESC = {"theme": "recolor the whole game — live preview",
          "sound": "the DVPet chirps — on or off",
          "account": "switch login — the pet parks in the cloud",
+         "cloud": "cloud saves + offline mail — on or off",
          "update": "auto-installs new releases at launch · ENTER checks now",
          "keys": "every binding on one page",
          "new": "retire the pet, hatch the heir",
@@ -209,6 +210,11 @@ class OptionsPanel(menu.SubHost):
                 self._sub_row = row
                 self.sub = AccountPanel(
                     note="Switch: the pet parks with this login.")
+            elif row == "cloud":
+                on = persistence.set_cloud_sync(not persistence.get_cloud_sync())
+                self.msg = ("cloud sync on — saves follow your account"
+                            if on else "cloud sync off — this device saves locally only")
+                self.sfx = "confirm"
             elif row == "update":
                 # first ENTER checks; with a newer release known, the second
                 # ENTER actually INSTALLS it (Joel 2026-07-13: "make the update
@@ -248,6 +254,11 @@ class OptionsPanel(menu.SubHost):
             return "on · bell (iOS)" if hostinfo.is_ios() else "on · bell only"
         if row == "account":
             return persistence.get_account()[0] or "not signed in"
+        if row == "cloud":
+            import os as _o
+            if _o.environ.get("TUIPET_NO_SYNC"):
+                return "off (TUIPET_NO_SYNC)"   # the env override outranks the toggle
+            return "on" if persistence.get_cloud_sync() else "off"
         if row == "update":
             if self._installing:
                 return "updating…"

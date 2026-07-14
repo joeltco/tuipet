@@ -77,10 +77,14 @@ def test_dead_pet_actions_safe():
 # ---- save/load resilience --------------------------------------------------
 
 def test_load_corrupt_json():
+    """A corrupt save with no usable backup announces itself (professionalism
+    sweep 2026-07-14) -- it used to return (None, '') and play off as a first
+    launch, silently hatching a new egg over a lost pet."""
     persistence.save(Pet(num=-1, stage="Rookie"))
     with open(persistence.SAVE_PATH, "w") as fh:
         fh.write("{ not json")
-    assert persistence.load() == (None, "")
+    pet, msg = persistence.load()
+    assert pet is None and "couldn't be read" in msg
 
 
 def test_load_partial_save():

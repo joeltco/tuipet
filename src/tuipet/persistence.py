@@ -106,6 +106,84 @@ def get_auto_update():
     return bool(load_settings().get("auto_update", True))
 
 
+def get_cloud_sync():
+    """The player-facing cloud-save switch (settings only; see sync_enabled)."""
+    return bool(load_settings().get("cloud_sync", True))
+
+
+def set_cloud_sync(on):
+    d = load_settings()
+    d["cloud_sync"] = bool(on)
+    save_settings(d)
+    return bool(on)
+
+
+def sync_enabled():
+    """Should any cloud traffic run?  False when TUIPET_NO_SYNC is set (dev
+    override) or the options toggle is off.  Every sync entry point checks
+    THIS -- TUIPET_NO_SYNC used to gate only the startup pull while pushes
+    ran anyway (sweep 2026-07-14)."""
+    if os.environ.get("TUIPET_NO_SYNC"):
+        return False
+    return get_cloud_sync()
+
+
+_LOCK_NAME = "running.pid"
+
+
+def acquire_instance_lock():
+    """Claim the save dir for this process.  Returns the OTHER live pid when a
+    second copy already runs (two instances autosave over one file,
+    last-write-wins -- sweep 2026-07-14), else records our pid and returns
+    None.  Doubt resolves to 'not locked': wrongly blocking a player is worse
+    than the old free-for-all."""
+    p = os.path.join(SAVE_DIR, _LOCK_NAME)
+    try:
+        other = int(open(p).read().strip())
+    except (OSError, ValueError):
+        other = None
+    if other and other != os.getpid():
+        try:
+            os.kill(other, 0)
+            return other             # alive: the save is claimed
+        except PermissionError:
+            return other             # alive, just not ours to signal
+        except OSError:
+            pass                     # stale lock from a dead run
+    try:
+        os.makedirs(SAVE_DIR, exist_ok=True)
+        with open(p, "w") as f:
+            f.write(str(os.getpid()))
+    except OSError:
+        pass                         # unwritable dir: nothing to fight over either
+    return None
+
+
+def release_instance_lock():
+    """Drop the pid file, but only if it is ours (best-effort)."""
+    p = os.path.join(SAVE_DIR, _LOCK_NAME)
+    try:
+        if int(open(p).read().strip()) == os.getpid():
+            os.remove(p)
+    except (OSError, ValueError):
+        pass
+
+
+def write_crash_log(exc):
+    """Write the full traceback to crash.log in the save dir (one file, newest
+    crash wins).  Returns the path, or None when the disk refused."""
+    import traceback
+    try:
+        os.makedirs(SAVE_DIR, exist_ok=True)
+        p = os.path.join(SAVE_DIR, "crash.log")
+        with open(p, "w", encoding="utf-8") as f:
+            f.write("tuipet crash — %s\n" % time.strftime("%Y-%m-%d %H:%M:%S"))
+            traceback.print_exception(type(exc), exc, exc.__traceback__, file=f)
+        return p
+    except OSError:
+        return None
+
+
 def set_auto_update(on):
     d = load_settings()
     d["auto_update"] = bool(on)
@@ -665,8 +743,10 @@ def save(pet, path=None):
 
 
 def write_save_dict(data, path=None):
-    """Atomically write a raw save dict (e.g. one pulled from the cloud) to disk."""
-    _atomic_write_json(path or SAVE_PATH, data)
+    """Atomically write a raw save dict (e.g. one pulled from the cloud) to disk.
+    keep_bak: a cloud pull is the ONE writer that replaces the save with bytes
+    this device never played -- it must not also burn the local backup."""
+    _atomic_write_json(path or SAVE_PATH, data, keep_bak=True)
 
 
 def local_saved_at(path=None):
@@ -812,24 +892,51 @@ def _offline(pet, elapsed):
     return f"Welcome back! ({int(mins / 60)}h away) Your pet needs care!"
 
 
+def quarantine_save(path):
+    """Copy an unreadable save aside (save.corrupt.<ts>.json) before a new game
+    rotates over it, so the pet stays recoverable by hand.  Returns the
+    quarantine path, or None when the disk refused."""
+    import shutil
+    try:
+        dst = os.path.join(os.path.dirname(path) or ".",
+                           "save.corrupt.%s.json" % time.strftime("%Y%m%d-%H%M%S"))
+        shutil.copyfile(path, dst)
+        return dst
+    except OSError:
+        return None
+
+
 def load(path=None, catch_up=True):
-    """Return (pet, message) or (None, '') if no valid save exists.  A corrupt
+    """Return (pet, message); pet is None if no valid save exists.  A corrupt
     main save falls back to the .bak rotated by save() -- at most one autosave
-    (~10s) behind, instead of a silent new egg."""
+    (~10s) behind, instead of a silent new egg.  When BOTH generations are
+    unreadable, the damaged file is quarantined and the message SAYS SO -- a
+    corrupt save must never be indistinguishable from a first launch
+    (professionalism sweep 2026-07-14)."""
     path = path or SAVE_PATH
+    broken = None                    # first candidate that existed but wouldn't load
     for candidate in (path, path + ".bak"):
         if not os.path.exists(candidate):
             continue
         try:
             data = json.load(open(candidate))
         except (ValueError, OSError):
+            broken = broken or candidate
             continue
         pet, msg = pet_from_save(data, catch_up=catch_up)
-        if pet is not None:
-            if candidate != path:
-                msg = (msg + "  " if msg else "") + "(recovered from the backup save)"
-            return pet, msg
-    return None, ""
+        if pet is None:
+            broken = broken or candidate
+            continue
+        if candidate != path:
+            msg = (msg + "  " if msg else "") + "(recovered from the backup save)"
+        return pet, msg
+    if broken is None:
+        return None, ""              # a true first launch: nothing on disk
+    kept = quarantine_save(broken)
+    if kept:
+        return None, ("Your old save couldn't be read — the damaged file was kept as "
+                      f"{os.path.basename(kept)}. Starting fresh.")
+    return None, "Your old save couldn't be read. Starting fresh."
 
 
 def delete(path=None):
