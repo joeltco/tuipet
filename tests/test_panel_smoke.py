@@ -325,8 +325,9 @@ def test_title_boot_flashes_dissolves_then_settles():
 
 def test_assist_card_prices_match_canon_and_toggle_names_a_helper():
     """Assist audit 2026-07-05: drawAutoCareValidation mirror — per-stage visit
-    prices (config AutoCareStage*Price col 1) + the 100b/hour retainer from
-    Rookie up; toggling ON rolls a REAL helper from the CanAssist pool."""
+    prices (config AutoCareStage*Price col 1) + the stage-scaled retainer
+    (half the visit ladder, bit-sink design 2026-07-14); toggling ON rolls a
+    REAL helper from the CanAssist pool."""
     import random
     from tuipet.assistscreen import AssistPanel
     from tuipet.pet import AUTO_CARE_VISIT_PRICE, AUTO_CARE_HOUR_PRICE
@@ -339,7 +340,7 @@ def test_assist_card_prices_match_canon_and_toggle_names_a_helper():
     pan = AssistPanel(p)
     _render(pan)
     assert "400b/care" in pan.text().plain        # Champion rates on the card
-    assert "100b/hour" in pan.text().plain
+    assert "200b/hour" in pan.text().plain
     pan.key("enter")                              # hire
     _render(pan)
     assert p.auto_care and p.assistant_num >= 0

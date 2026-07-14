@@ -114,6 +114,13 @@ def _save_sound(on):
 
 
 
+def _gen_subtitle(pet):
+    """'gen N', wearing the bought honor when one is worn (the honors board,
+    prestige sink 2026-07-14)."""
+    t = data.title_name(persistence.get_title_worn())
+    return f"gen {pet.generation} · {t}" if t else f"gen {pet.generation}"
+
+
 def _age_compact(seconds):
     """d/h then h/m then m/s -- raw total minutes read as noise on an older
     pet ('4325m40s', status-box audit 2026-07-04)."""
@@ -185,7 +192,7 @@ class Stats(Static):
         xm = f" [b {T.ACCENT}]X[/]" if pet.x_antibody != "None" else ""
         lifepct = max(0, int((pet.lifespan - pet.age_seconds) / max(1, pet.lifespan) * 100))
         lifecol = T.NEG if pet.is_geriatric else T.LIFE
-        self.border_subtitle = f"gen {pet.generation}"
+        self.border_subtitle = _gen_subtitle(pet)
         lines = [
             f"[b]{pet.name[:22]}[/]{xm}",
             f"[dim]{pet.stage}{(' · ' + pet.attribute) if pet.attribute else ''}[/]",
@@ -208,7 +215,7 @@ class Stats(Static):
 
     def _paint_egg(self, pet):
         mins, secs = divmod(int(pet.age_seconds), 60)
-        self.border_subtitle = f"gen {pet.generation}"
+        self.border_subtitle = _gen_subtitle(pet)
         div = f"[dim]{'─' * 26}[/]"
         lines = [
             "[b]Digitama[/] [dim]· egg[/]",
@@ -226,7 +233,7 @@ class Stats(Static):
         self.update("\n".join(lines))
 
     def _paint_grave(self, pet):
-        self.border_subtitle = f"gen {pet.generation}"
+        self.border_subtitle = _gen_subtitle(pet)
         div = f"[dim]{'─' * 26}[/]"
         lines = [
             f"[b]{pet.name[:16]}[/] [dim]· rest[/]",
@@ -265,11 +272,12 @@ class TuiPetApp(App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("The attribute trade now reads as a trade. Board Game, "
-                 "Skateboard, Dumbbell, Computer Game, Music Player and "
-                 "Television MOVE power between Vaccine/Data/Virus -- they "
-                 "always did, but the shop showed it as two unrelated numbers. "
-                 "It now says Va->Da15, plainly.")
+    WHATS_NEW = ("Bits are worth spending! Cups now take a STAKE (a quarter "
+                 "of the purse -- champion nets +75%, a quarterfinal exit eats "
+                 "it), the assistant's retainer scales with your stage, DNA "
+                 "wagers go to 9999 (big ones never spoil and splash the "
+                 "neighbor Fields), and the shop has an HONORS board: tamer "
+                 "titles up to 250k that ride your card in the lobby.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and
@@ -955,7 +963,7 @@ class TuiPetApp(App):
 
     def _status_tournament(self):
         p, t, T = self.pet, self.mode.tourney, theme
-        self.stats_w.border_subtitle = f"gen {p.generation}"
+        self.stats_w.border_subtitle = _gen_subtitle(p)
         if t is None:                      # cup-select phase (no bout yet)
             self._status_card("Cup", [f"[dim]{p.season} season[/]", "", "Pick a cup", "to enter."])
             return
@@ -993,7 +1001,7 @@ class TuiPetApp(App):
         from .training import (GAMES, VACCINE_WINDOW, HP_ROUNDS, VIRUS_BAR_MIN,
                                DATA_ROUNDS, DATA_PASS)
         p, tp, T = self.pet, self.mode, theme
-        self.stats_w.border_subtitle = f"gen {p.generation}"
+        self.stats_w.border_subtitle = _gen_subtitle(p)
         div = f"[dim]{'-' * 26}[/]".replace("-", "\u2500")
         eff = hearts(p.strength)
         energy = bar(p.energy_pct(), 11, T.ENERGY)
@@ -1049,7 +1057,7 @@ class TuiPetApp(App):
     def _status_battle(self):
         p, m, T = self.pet, self.mode, theme
         b = m.battle
-        self.stats_w.border_subtitle = f"gen {p.generation}"
+        self.stats_w.border_subtitle = _gen_subtitle(p)
         div = f"[dim]{'─' * 26}[/]"
         php = getattr(m, "hud_php", b.pet_hp)
         fhp = getattr(m, "hud_fhp", b.enemy_hp)
@@ -1076,7 +1084,7 @@ class TuiPetApp(App):
         vitamin macros, shown live while the eat animation plays."""
         from .pet import CALORIE_LIMIT, MAX_MACRO, GOOD_NUTRITION_MIN
         p, T = self.pet, theme
-        self.stats_w.border_subtitle = f"gen {p.generation}"
+        self.stats_w.border_subtitle = _gen_subtitle(p)
         div = "[dim]" + chr(0x2500) * 26 + "[/]"   # no backslash inside an f-string (SyntaxError on py3.10/3.11)
         def mbar(v, col):
             return bar(min(100, v * 100 // MAX_MACRO), 11, col)
@@ -1098,7 +1106,7 @@ class TuiPetApp(App):
 
     def _status_dna(self):
         p, m, T = self.pet, self.mode, theme
-        self.stats_w.border_subtitle = f"gen {p.generation}"
+        self.stats_w.border_subtitle = _gen_subtitle(p)
         div = f"[dim]{'─' * 26}[/]"
         f = m.field
         same = f == p.field
@@ -1134,7 +1142,7 @@ class TuiPetApp(App):
         """The browsed habitat's dossier: the LCD shows the SCENE, this card
         carries the words (habitat audit 2026-07-04)."""
         p, m, T = self.pet, self.mode, theme
-        self.stats_w.border_subtitle = f"gen {p.generation}"
+        self.stats_w.border_subtitle = _gen_subtitle(p)
         div = f"[dim]{'─' * 26}[/]"
         h = m.rows[m.cursor]
         msg = m.msg or ""
@@ -1157,7 +1165,7 @@ class TuiPetApp(App):
         """The town's numbers + message: the lobby is a bare arena now, so the
         card carries what the in-LCD header/note used to (box-clip audit)."""
         p, T = self.pet, theme
-        self.stats_w.border_subtitle = f"gen {p.generation}"
+        self.stats_w.border_subtitle = _gen_subtitle(p)
         div = f"[dim]{'─' * 26}[/]"
         if m.sub is not None:                              # a cup bout in town
             e = m.sub.battle.enemy
@@ -1178,7 +1186,7 @@ class TuiPetApp(App):
         from . import townscreen
         if isinstance(self.mode.sub, townscreen.TownPanel):
             return self._status_town(self.mode.sub)        # visiting: the town card
-        self.stats_w.border_subtitle = f"gen {p.generation}"
+        self.stats_w.border_subtitle = _gen_subtitle(p)
         div = f"[dim]{'─' * 26}[/]"
         lives = "♥" * a.lives + "[dim]·[/]" * (3 - a.lives)
         power = f"[{T.POS}]●{p.vaccine}[/] [{T.ENERGY}]■{p.data_power}[/] [{T.MOOD}]▲{p.virus}[/]"

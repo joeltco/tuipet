@@ -175,6 +175,11 @@ class TournamentPanel(menu.SubHost):
                 mark = " \u2713 ready" if now >= need else ""
                 out.append("  evolution: %d/%d wins (last %d)%s\n" % (now, need, window, mark),
                            style=INK_B if now >= need else DIM)
+            tr_open = tournament.open_now(self.pet)
+            if tr_open:
+                fee = tournament.entry_fee(self.pet, tr_open)
+                out.append("  stake %db \u00b7 purse ~%db\n" % (fee, fee * tournament.ENTRY_FEE_DIV),
+                           style=DIM)
             nw = tournament.next_winnable(self.pet)
             if nw and nw[0] == hour:
                 out.append("  \u2713 %s is open NOW\n" % tournament.trophy_label(nw[1])[:24],

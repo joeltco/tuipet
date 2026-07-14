@@ -389,6 +389,29 @@ def egg_own(idx):
         _note_set("eggs_owned", idx)
 
 
+def get_titles_owned():
+    """Honor titles bought (profile-level, survives generations)."""
+    return set(_prog().get("titles_owned", []))
+
+
+def title_own(tid):
+    _note_set("titles_owned", int(tid))
+
+
+def get_title_worn():
+    """The WORN honor title id (-1 = none)."""
+    try:
+        return int(_prog().get("title_worn", -1))
+    except (TypeError, ValueError):
+        return -1
+
+
+def set_title_worn(tid):
+    d = load_settings()
+    d.setdefault("progress", {})["title_worn"] = int(tid)
+    save_settings(d)
+
+
 def _note_max(key, value):
     d = load_settings()
     prog = d.setdefault("progress", {})
@@ -733,6 +756,12 @@ def pet_from_save(data, catch_up=True, strict=False):
             pet.line_id = lid
             pet.stage_seconds = 0.0
             msg = "(save repaired — the pet's records were from another version)"
+        elif not getattr(pet, "line_id", ""):
+            # pre-line save: a consistent pet with no line_id would ride the
+            # corpus engine forever; re-anchor by membership (truly off-chart
+            # forms keep '' as before)
+            from . import lines as _lines
+            _lines.adopt_line(pet)
     if catch_up and saved_at:
         elapsed = min(max(0.0, time.time() - saved_at), MAX_OFFLINE)
         off = _offline(pet, elapsed)

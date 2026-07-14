@@ -221,9 +221,16 @@ class LobbyPanel:
     def _card(self):
         _, by = data.load_sprites()
         info = by.get(self.pet.num, {})
-        return {"name": getattr(self.pet, "name", None) or info.get("name") or "Egg",
+        card = {"name": getattr(self.pet, "name", None) or info.get("name") or "Egg",
                 "stage": self.pet.stage, "num": self.pet.num,
                 "attr": getattr(self.pet, "attribute", "") or info.get("attribute") or "None"}
+        # the worn honor rides the presence card (prestige sink 2026-07-14) --
+        # the server stores and rebroadcasts the card verbatim, and clients
+        # that predate titles simply ignore the extra field
+        worn = data.title_name(persistence.get_title_worn())
+        if worn:
+            card["title"] = worn
+        return card
 
     def _session_gate(self, kind):
         """PURE session eligibility for a REMOTE invite.  can_battle is a
@@ -250,12 +257,15 @@ class LobbyPanel:
                                              str(p.get("name", "")).lower()))
 
     def _pet_of(self, pid):
-        """'Agumon · Champion' for a roster id ('' when unknown)."""
+        """'Agumon · Champion' for a roster id ('' when unknown); a worn honor
+        title trails as '· ★Bit Baron' (the marquee absorbs the length)."""
         for pl in (self.state.roster if self.state else []):
             if pl["id"] == pid:
                 pet = pl.get("pet") or {}
                 nm, st = pet.get("name"), pet.get("stage")
-                return f"{nm} · {st}" if nm and st else (nm or "")
+                t = str(pet.get("title") or "")[:24]
+                tail = f" · ★{t}" if t else ""
+                return f"{nm} · {st}{tail}" if nm and st else (nm or "")
         return ""
 
     # ---- per-tick refresh (the 0.1s interval clock calls this) -----------

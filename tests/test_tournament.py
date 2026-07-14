@@ -33,6 +33,8 @@ def _patch(monkeypatch, trophies):
 def _pet(stage="Rookie", season_day=0, **kw):
     p = Pet(num=-1, stage=stage, world_seconds=season_day * DAY_LENGTH, **kw)
     p.age_seconds = 1 * DAY_LENGTH             # a 1-day-old: inside every age tier
+    if "bits" not in kw:
+        p.bits = 10_000                        # cover any stake (the stake has its own tests)
     return p
 
 
@@ -306,7 +308,7 @@ def test_mid_bracket_contracts():
     def champ():
         rec = data.load_sprites()[1][100]
         p = Pet(num=100, name=rec["name"], stage="Champion",
-                attribute="Vaccine", obedience=500)
+                attribute="Vaccine", obedience=500, bits=10_000)
         p.world_seconds = 10 * 3600.0
         p.energy = p.max_energy
         return p
@@ -419,7 +421,7 @@ def test_a_cup_runs_once_per_hour():
     from tuipet.pet import Pet
     from tuipet import tournament as tm
     random.seed(3)
-    p = Pet(num=964, stage="Mega", attribute="Vaccine", obedience=900)
+    p = Pet(num=964, stage="Mega", attribute="Vaccine", obedience=900, bits=10_000)
     p.world_seconds = 600.0
     p.age_seconds = 13 * 1440.0
     tr = tm.open_now(p) or tm.trophy_by_id(0)
@@ -453,3 +455,54 @@ def test_next_winnable_skips_hours_already_run():
     nxt = tm.next_winnable(p)
     if nxt:                                    # a later cup, never this hour
         assert nxt[0] != tm._hour(p)
+
+
+# ---- the stake (bit-sink design 2026-07-14) ----------------------------------
+
+def test_the_stake_is_a_quarter_of_the_expected_purse():
+    p = _pet("Rookie")
+    assert tournament.entry_fee(p, _trophy(bit_mod=1.0)) == 7 * TOURNEY_BITS["Rookie"] // 4
+    # an age-limited cup stakes ITS tier, whoever enters
+    assert tournament.entry_fee(p, _trophy(age_limit="Mega", bit_mod=1.0)) \
+        == 7 * TOURNEY_BITS["Mega"] // 4
+    # a Mega in an open cup stakes the open-field MaxBits rate it also wins by
+    mega = _pet("Mega")
+    assert tournament.entry_fee(mega, _trophy(bit_mod=1.0)) == 7 * TOURNEY_MAX_BITS // 4
+    # the BitModifier scales the stake exactly like the purse it fronts
+    assert tournament.entry_fee(p, _trophy(bit_mod=1.6)) == int(7 * 125 * 1.6) // 4
+
+
+def test_entry_spends_the_stake_and_a_quarterfinal_exit_eats_it():
+    random.seed(4)
+    p = _pet("Rookie", bits=1000)
+    fee = tournament.entry_fee(p, _trophy(bit_mod=1.0))
+    tm = Tournament(p, _trophy(bit_mod=1.0))
+    assert tm.stake == fee and p.bits == 1000 - fee     # paid AT ENTRY
+    tm.record(False)                                    # out in the quarterfinal
+    assert p.bits == 1000 - fee                         # nothing comes back
+
+
+def test_the_champion_banks_the_purse_on_top_of_the_stake():
+    random.seed(4)
+    p = _pet("Rookie", bits=1000)
+    tm = Tournament(p, _trophy(bit_mod=1.0))
+    for _ in range(3):
+        tm.record(True)
+    assert tm.champion
+    assert p.bits == 1000 - tm.stake + 875              # net +75% of the purse
+
+
+def test_eligibility_blocks_an_unaffordable_stake():
+    p = _pet("Rookie", bits=0)
+    err = tournament.eligibility(p, _trophy(bit_mod=1.0))
+    assert err and "stake" in err.lower()
+    # a covered stake clears the gate
+    p.bits = 10_000
+    assert tournament.eligibility(p, _trophy(bit_mod=1.0)) is None
+
+
+def test_a_broke_direct_entry_stakes_nothing_rather_than_owing():
+    random.seed(4)
+    p = _pet("Rookie", bits=0)
+    tm = Tournament(p, _trophy(bit_mod=1.0))            # bypasses eligibility (tests do)
+    assert tm.stake == 0 and p.bits == 0

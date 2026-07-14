@@ -20,6 +20,10 @@ def test_config_values_are_the_classic_column():
     assert AUTO_CARE_VISIT_PRICE["Mega"] == 1600
     assert AUTO_CARE_HOUR_PRICE["Fresh"] == 0                # stages I-II bill no retainer
     assert AUTO_CARE_HOUR_PRICE["Rookie"] == 100
+    # the retainer ladder is HALF the visit ladder at every adult stage
+    # (bit-sink design 2026-07-14: a flat 100 was pocket change past Rookie)
+    for stage in ("Rookie", "Champion", "Ultimate", "Mega"):
+        assert AUTO_CARE_HOUR_PRICE[stage] == AUTO_CARE_VISIT_PRICE[stage] // 2
 
 
 def test_hiring_rolls_an_assistant_from_the_can_assist_pool():
@@ -88,13 +92,13 @@ def test_unaffordable_visit_puts_the_assistant_off_duty():
 
 
 def test_hourly_retainer_bills_and_quits_when_broke():
-    p = _pet(bits=150, auto_care=True, assistant_num=29)     # Champion retainer = 100/hour
+    p = _pet(bits=300, auto_care=True, assistant_num=29)     # Champion retainer = 200/hour
     for _ in range(AUTO_CARE_PAYMENT_MIN):
         p.tick(1.0)
-    assert p.bits == 50 and p.auto_care
+    assert p.bits == 100 and p.auto_care
     for _ in range(AUTO_CARE_PAYMENT_MIN):
         p.tick(1.0)
-    assert p.auto_care is False and p.bits == 50             # can't cover hour two
+    assert p.auto_care is False and p.bits == 100            # can't cover hour two
 
 
 def test_visits_are_spaced_like_the_assistant_anim_guard():
@@ -120,7 +124,7 @@ def test_assist_panel_toggles_and_shows_the_stage_prices():
     p = _pet(bits=1000)
     pan = AssistPanel(p)
     t = pan.text().plain
-    assert "AI ASSISTANT" in t and "400b/care" in t and "100b/hour" in t and "OFF" in t
+    assert "AI ASSISTANT" in t and "400b/care" in t and "200b/hour" in t and "OFF" in t
     pan.key("enter")
     assert p.auto_care and "on duty" in pan.text().plain
     pan.key("enter")

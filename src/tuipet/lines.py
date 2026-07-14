@@ -130,18 +130,23 @@ def canonical_root(dex):
     """(root_dex, line_id) a hatching `dex` should become.  A dex that IS a
     root maps to itself; a duplicate twin (the corpus keeps 2-3 dexes per Baby
     name; the mystery-egg pools hatch the sub-1410 twins) maps to the root
-    sharing its NAME.  (None, '') when no line claims the name -- with every
-    egg curated (arc 5) that means legacy data only."""
+    sharing its NAME.  16 Baby names root SEVERAL lines (four Petitmon roots:
+    the classic petitmon line plus the slayerdra/breakdra/draco device charts),
+    so a name-hatched twin always becomes the CLASSIC line -- the lowest root
+    dex (141x < 16xx by construction) -- never csv-order luck; the device
+    lines are entered only through their own eggs.  (None, '') when no line
+    claims the name -- with every egg curated (arc 5) that means legacy data
+    only."""
     lid = line_for_hatch(dex)
     if lid:
         return dex, lid
     _, by_num = data.load_sprites()
     rec = by_num.get(dex)
     if rec:
-        for lid, line in load_lines().items():
-            root = by_num.get(line["root"])
-            if root and root["name"] == rec["name"]:
-                return line["root"], lid
+        owners = [(line["root"], lid) for lid, line in load_lines().items()
+                  if (by_num.get(line["root"]) or {}).get("name") == rec["name"]]
+        if owners:
+            return min(owners)
     return None, ""
 
 
@@ -235,18 +240,29 @@ def select_line(pet):
     return None
 
 
-def adopt_line(pet):
+def adopt_line(pet, prev=None):
     """Re-anchor the pet to a line whose chart contains its CURRENT form -- a
     jogress/mode fusion keeps the pet in the line system whenever ANY line
-    claims the target (its own line preferred).  '' = truly off-chart: the
-    legacy corpus engine takes over, as before."""
+    claims the target (its own line preferred).  Shared nodes sit in several
+    charts (Babydmon 955 is in slayerdra, breakdra AND draco), so among
+    foreign claimants a line containing the road actually travelled -- `prev`,
+    the dex worn BEFORE the special evolution, AND the current form -- is the
+    pet's true chart; remaining ties break on the lowest root so the binding
+    is data-stable, never csv-order luck.  '' = truly off-chart: the legacy
+    corpus engine takes over, as before."""
     cur = load_lines().get(getattr(pet, "line_id", ""))
     if cur and pet.num in cur["members"]:
         return pet.line_id
-    for lid, line in load_lines().items():
-        if pet.num in line["members"]:
-            pet.line_id = lid
-            return lid
+    owners = [(lid, line) for lid, line in load_lines().items()
+              if pet.num in line["members"]]
+    if prev is not None:
+        travelled = [o for o in owners if prev in o[1]["members"]]
+        if travelled:
+            owners = travelled
+    if owners:
+        lid = min(owners, key=lambda o: o[1]["root"])[0]
+        pet.line_id = lid
+        return lid
     pet.line_id = ""
     return ""
 

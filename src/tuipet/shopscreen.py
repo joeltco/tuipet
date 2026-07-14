@@ -12,11 +12,11 @@ from .theme import LCD_ON, LCD_BG, INK, INK_B, DIM, SEL  # noqa: F401  (palette 
 from . import menu
 W = 38
 IC_W, IC_ROWS = menu.IC_W, menu.IC_ROWS    # the shared selected-item icon cell
-SHOP_TABS = ["food", "item", "egg"]        # the food, item and egg pages
+SHOP_TABS = ["food", "item", "egg", "honor"]   # food, item, egg + the honors board
 BAG_CATEGORIES = ["food", "medicine", "toy", "chip"]
 BAG_TABS = BAG_CATEGORIES + ["special"]
-TAB_LABEL = {"food": "Food", "item": "Items", "egg": "Eggs", "medicine": "Medicine",
-             "toy": "Toys", "chip": "Chips", "special": "Special"}
+TAB_LABEL = {"food": "Food", "item": "Items", "egg": "Eggs", "honor": "Honors",
+             "medicine": "Medicine", "toy": "Toys", "chip": "Chips", "special": "Special"}
 
 
 class ShopPanel:
@@ -65,6 +65,15 @@ class ShopPanel:
     def _rows(self):
         cat = self._tabs()[self.tab]
         if self.mode == "shop":
+            if cat == "honor":
+                # the HONORS board (prestige sink, 2026-07-14): cosmetic tamer
+                # titles, profile-level like egg licences; ENTER buys, then
+                # toggles wearing
+                owned = persistence.get_titles_owned()
+                worn = persistence.get_title_worn()
+                return [dict(t, title_id=t["id"], owned=t["id"] in owned,
+                             worn=t["id"] == worn)
+                        for t in data.load_titles()]
             if cat == "egg":
                 # the home shop's COMMON eggs (rares are town-exclusive); locked
                 # home eggs trail as a dim goal board under the buyable stock
@@ -105,7 +114,11 @@ class ShopPanel:
         elif k in ("enter", "space") and rows:
             e = rows[min(self.cursor, n - 1)]
             if self.mode == "shop":
-                if e.get("egg_idx") is not None:
+                if e.get("title_id") is not None:
+                    bits0 = self.pet.bits
+                    self.msg = self._buy_title(e)
+                    self.sfx = "reward" if self.pet.bits < bits0 else "confirm"
+                elif e.get("egg_idx") is not None:
                     bits0 = self.pet.bits
                     self.msg = self._buy_egg(e)
                     self.sfx = "reward" if self.pet.bits < bits0 else "error"
@@ -168,6 +181,23 @@ class ShopPanel:
             return ("done", self.msg)
         return None
 
+    def _buy_title(self, e):
+        """Buy an honor once (profile-level, like an egg licence), then ENTER
+        toggles wearing it.  Purely cosmetic: the worn title rides the STATUS
+        panel border and the lobby presence card (prestige sink 2026-07-14)."""
+        tid, price = e["title_id"], e["price"]
+        if tid in persistence.get_titles_owned():
+            if persistence.get_title_worn() == tid:
+                persistence.set_title_worn(-1)
+                return "Put the %s title away." % e["name"]
+            persistence.set_title_worn(tid)
+            return "Wearing: %s." % e["name"]
+        if not self.pet.spend_bits(price):
+            return "Not enough bits."
+        persistence.title_own(tid)
+        persistence.set_title_worn(tid)
+        return "Earned the honor: %s!" % e["name"]
+
     def _buy_egg(self, e):
         """Buy a buyable egg: spend bits, unlock it permanently (it then appears in
         the egg select). Eggs are not inventory items."""
@@ -199,7 +229,18 @@ class ShopPanel:
         sel = rows[self.cursor] if rows else None
         tw = W - IC_W - 2
         if sel:
-            if sel.get("egg_idx") is not None:
+            icon = menu.item_icon(sel)
+            if sel.get("title_id") is not None:
+                # the honors crest (a drawn plate, like the CLOSED sign -- a
+                # title has no item sprite and hand-drawing art is banned)
+                icon = ["╭" + "─" * (IC_W - 2) + "╮",
+                        "│ HONORS │",
+                        "│ ✦✦✦✦✦✦ │",
+                        "╰" + "─" * (IC_W - 2) + "╯"]
+                state = ("worn now" if sel.get("worn")
+                         else "owned" if sel.get("owned") else "%db" % sel["price"])
+                info = [sel["name"][:tw], state, "a tamer honor", "rides your card"]
+            elif sel.get("egg_idx") is not None:
                 if sel.get("locked"):
                     info = ["???", "locked", sel["hint"][:tw],
                             (sel["hint"][tw:] or "")[:tw]]
@@ -210,7 +251,7 @@ class ShopPanel:
                 info = shop.slot_info(self.pet, sel, tw)
             else:
                 info = shop.sell_info(self.pet, sel, tw)
-            menu.icon_info(out, menu.item_icon(sel), info)
+            menu.icon_info(out, icon, info)
         elif self._shelves_closed():
             # a clean shuttered plate drawn in the icon cell -- the old sprite
             # smeared into noise at 10x4, so tuipet draws its own sign
@@ -237,6 +278,12 @@ class ShopPanel:
 
         def fmt(e, i):
             if self.mode == "shop":
+                if e.get("title_id") is not None:
+                    if e.get("worn"):
+                        return "%-18s %7s" % (("★ " + e["name"])[:18], "worn")
+                    if e.get("owned"):
+                        return "%-18s %7s" % (e["name"][:18], "owned")
+                    return "%-18s %6db" % (e["name"][:18], e["price"])
                 if e.get("egg_idx") is not None:
                     if e.get("locked"):
                         return "%-18s %7s" % ("???", "locked")

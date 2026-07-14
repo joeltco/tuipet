@@ -92,6 +92,25 @@ def _pet_tier_rank(pet):
     return _TIER_RANK.get(t, 3)          # None (Mega) ranks past everything
 
 
+ENTRY_FEE_DIV = 4                        # the stake = expected purse / 4
+
+
+def entry_fee(pet, t):
+    """THE STAKE (bit-sink design 2026-07-14): a quarter of the bracket's
+    EXPECTED purse (7 entrants x the tier's stage bits x BitModifier), put
+    down at entry.  The champion nets +75% of the purse, a final loss +25%,
+    a semi loss ~+8%, and a quarterfinal exit eats the stake whole -- cups
+    were the game's dominant faucet with zero risk.  An open cup stakes the
+    pet's own tier: a Mega pays the open-field MaxBits rate it also wins by."""
+    if t["age_limit"]:
+        base = TOURNEY_BITS.get(t["age_limit"], 0)
+    elif pet_tier(pet) is None:
+        base = TOURNEY_MAX_BITS
+    else:
+        base = TOURNEY_BITS.get(pet_tier(pet), TOURNEY_BITS["Rookie"])
+    return int(7 * base * t["bit_mod"]) // ENTRY_FEE_DIV
+
+
 def _rand_trophy_ids(pet):
     """Tournament.randTrophyIDs: bucket the season's cups by age tier, then fill
     the 24 hourly slots rotating open/Rookie/open/Champion/open/Ultimate/open/
@@ -202,6 +221,9 @@ def eligibility(pet, t):
         if t["prelim"] not in won:
             q = trophy_by_id(t["prelim"])
             return "Win the %s first." % (trophy_label(q) if q else "qualifier")
+    fee = entry_fee(pet, t)
+    if pet.bits < fee:
+        return "The stake is %db — you can't cover it." % fee
     return None
 
 
@@ -343,6 +365,13 @@ class Tournament:
         self.over = False
         self.champion = False
         self.reward_bits = 0
+        # the stake is paid AT ENTRY like the hour slot: a forfeit or an
+        # abandoned bracket does not hand it back.  eligibility() vets
+        # affordability first; a direct construction that cannot pay (tests,
+        # rogue callers) stakes nothing rather than silently owing.
+        self.stake = entry_fee(pet, trophy)
+        if not pet.spend_bits(self.stake):
+            self.stake = 0
         pool = _eligible_forms(pet, trophy)
         open_mega = not trophy["age_limit"] and not trophy["enemy_stage"] \
             and pet_tier(pet) is None

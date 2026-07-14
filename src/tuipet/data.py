@@ -1317,6 +1317,30 @@ def load_egg_unlock():
 
 
 @lru_cache(maxsize=1)
+def load_titles():
+    """titles.csv: the HONORS ladder -- purely cosmetic tamer titles, priced
+    as the late-game prestige sink (bit-sink design 2026-07-14).  A title is
+    profile-level (it survives generations) and rides the STATUS panel plus
+    the lobby presence card."""
+    out = []
+    for r in csv.DictReader(open(os.path.join(_DATA, "titles.csv"))):
+        try:
+            out.append({"id": int(r["TitleID"]), "name": (r["Name"] or "").strip(),
+                        "price": int(r["Price"])})
+        except (KeyError, ValueError):
+            continue
+    return out
+
+
+def title_name(tid):
+    """The honor's display name ('' for -1/unknown -- nothing worn)."""
+    for t in load_titles():
+        if t["id"] == tid:
+            return t["name"]
+    return ""
+
+
+@lru_cache(maxsize=1)
 def load_habitats():
     path = os.path.join(_DATA, "habitats.csv")
     out = {}

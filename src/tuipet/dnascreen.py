@@ -20,7 +20,8 @@ from __future__ import annotations
 import math
 from . import data, grid, menu, evolution
 from .theme import LCD_ON, LCD_BG, SIL_DAY  # noqa: F401  (palette names bound for theme.apply propagation)
-from .pet import MAX_DNA_INVENTORY, dna_field_for_rate
+from .pet import (MAX_DNA_INVENTORY, MAX_DNA_WAGER, DNA_STABILIZER_BET,
+                  DNA_RESONANT_BET, dna_field_for_rate)
 
 MASH_TICKS = 100            # DVPet: 100 intervals x 0.1s = the 10s mini-game window
 MASH_KEYS = ("space",)      # the single "button" you mash
@@ -182,7 +183,11 @@ class DNAPanel:
         if k in ("left", "h"):
             self.bet = max(1, self.bet - 1)
         elif k in ("right", "l"):
-            self.bet = min(MAX_DNA_INVENTORY, self.bet + 1)
+            self.bet = min(MAX_DNA_WAGER, self.bet + 1)
+        elif k in ("up", "k"):
+            self.bet = min(MAX_DNA_WAGER, self.bet + 100)
+        elif k in ("down", "j"):
+            self.bet = max(1, self.bet - 100)
         elif k in ("enter", "space"):
             if p.dna_bet(self.bet):
                 self.phase, self.hits, self.mash_f = "mash", 0, 0
@@ -326,11 +331,23 @@ class DNAPanel:
         out = menu.bar("DNA · GENERATE", "%db" % p.bits)
         out.append_text(menu.note("Wager bits, then mash for DNA."))
         out.append_text(menu.blanks(1))
-        out.append_text(menu.row("wager:  %3d b" % self.bet, True))
+        out.append_text(menu.row("wager: %4d b" % self.bet, True))
+        # the lab tiers (high-stakes wagers, 2026-07-14): the premium past the
+        # 99-DNA bank buys lab work, spent up front like the wager itself
+        if self.bet >= DNA_RESONANT_BET:
+            tier = "RESONANT: +%d to both neighbors" % (self.bet // 5)
+        elif self.bet >= DNA_STABILIZER_BET:
+            tier = "STABILIZED: a spoiled mash still banks"
+        else:
+            tier = ""
+        out.append_text(menu.row(tier[:38], False))
         out.append_text(menu.blanks(1))
         out.append_text(menu.row("faster mash → rarer field", False))
-        out.append_text(menu.row("too slow / too fast → None", False))
-        out.append_text(menu.footer("←→ wager  ENTER mash!  ESC back"))
+        if self.bet >= DNA_STABILIZER_BET:
+            out.append_text(menu.row("stabilized — it never rolls None", False))
+        else:
+            out.append_text(menu.row("too slow / too fast → None", False))
+        out.append_text(menu.footer("←→ ±1  ↑↓ ±100  ENTER mash!  ESC back"))
         return out
 
     def _text_mash(self):
@@ -377,13 +394,16 @@ class DNAPanel:
         field, wager, rate = self.won
         show = (self.blink // 2) % 2 == 0            # DVPet unlockingDNA: the Field blinks in
         name = data.pretty_field(field)
+        gained = min(wager, MAX_DNA_INVENTORY)      # the premium bought lab work, not volume
         out = menu.bar("DNA · GENERATE", "rate %d" % rate)
         out.append_text(menu.blanks(1))
-        out.append_text(menu.note(("✓ Got %d %s DNA" % (wager, name)) if show else "✓"))
+        out.append_text(menu.note(("✓ Got %d %s DNA" % (gained, name)) if show else "✓"))
         out.append_text(menu.blanks(1))
         out.append_text(menu.row("rate %d → %s" % (rate, name if show else ""), True))
         if field == "None":
             out.append_text(menu.row("None = the dud field (banked)", False))
+        elif wager >= DNA_RESONANT_BET:
+            out.append_text(menu.row("resonance: +%d to both neighbors" % (wager // 5), False))
         else:
             out.append_text(menu.row("banked — open Charge to use it", False))
         out.append_text(menu.footer("any key  →  DNA menu"))

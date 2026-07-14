@@ -316,6 +316,18 @@ DNA_RATE_BANDS = (
     (64, "NightmareSoldier"), (72, "VirusBuster"), (80, "DarkArea"),
 )
 
+# HIGH-STAKES WAGERS (bit-sink design 2026-07-14).  The classic 1..99 wager
+# banks bits into DNA 1:1; everything past the 99-DNA bank cap buys LAB WORK,
+# not volume -- and is spent, never refunded:
+#   >= 500  STABILIZED: an over/under-mashed sample never spoils -- the rate
+#           clamps into the nearest real band instead of rolling None.
+#   >= 2500 RESONANT: the two Fields adjacent to the landed band each bank
+#           wager//5 DNA as splash (capped, no refund) -- one big roll tops
+#           three banks for tamers who value their time over their bits.
+MAX_DNA_WAGER = 9999
+DNA_STABILIZER_BET = 500
+DNA_RESONANT_BET = 2500
+
 
 def dna_field_for_rate(rate):
     """DVPet getDNARate: the Field a mini-game rate yields (None if over/under-mashed)."""
@@ -571,7 +583,11 @@ MINUTES_TO_DISCIPLINE_PENALTY = 180.0    # _minutesToDisciplinePenalty 3 game-mi
 AUTO_CARE_VISIT_PRICE = {"Egg": 50, "Fresh": 50, "InTraining": 100, "Rookie": 200,
                          "Champion": 400, "Ultimate": 800, "Mega": 1600}   # AutoCareStage*Price
 AUTO_CARE_HOUR_PRICE = {"Egg": 0, "Fresh": 0, "InTraining": 0, "Rookie": 100,
-                        "Champion": 100, "Ultimate": 100, "Mega": 100}     # AutoCareStage*HourPrice
+                        "Champion": 200, "Ultimate": 400, "Mega": 800}
+# AutoCareStage*HourPrice shipped a flat 100 for every adult stage; the
+# retainer now scales with the stage like the visit fee does (half the visit
+# ladder) -- a Mega's hired help is a real running cost, not pocket change
+# (bit-sink design, Joel 2026-07-14)
 AUTO_CARE_HUNGER_FOOD = 44               # AutoCareHungerFoodID (the AI Food Pill)
 AUTO_CARE_STRENGTH_FOOD = 43             # AutoCareStrengthFoodID (the AI Supplement)
 AUTO_CARE_MOOD = -10                     # _autoCareMoodChange
@@ -2127,6 +2143,8 @@ class Pet:
         targets = evolution.death_targets(self)
         if targets:
             self.evolve_to(targets[0])               # evol(dying=true): the dark rebirth
+            # the dark rebirth is a special evolution like jogress: re-anchor
+            lines_mod.adopt_line(self, prev=old)
         else:
             # no Death form takes it: it lives on -- the continuous death checks
             # need the fatal counters off the trigger line (a mechanical floor;
@@ -2228,8 +2246,9 @@ class Pet:
         # circuits, so goldens and existing saves behave identically)
         target = evolution.divergence_target(self)
         if target is not None:
+            prev = self.num
             self.evolve_to(target)
-            lines_mod.adopt_line(self)    # re-anchor to any chart that claims
+            lines_mod.adopt_line(self, prev=prev)   # re-anchor to any chart that claims
             return                        # the landing, else ride the corpus engine
         if lines_mod.active(self):
             # line pets evolve by their line's first-match bracket table ONLY.
@@ -2314,13 +2333,32 @@ class Pet:
     def dna_minigame_award(self, amount, rate):
         """DVPet onDNAGenerate: the mash `rate` picks the Field; bank `amount` DNA of it
         (the wager was already spent in dna_bet). Overflow past the 99 cap refunds as
-        bits, exactly like the device. Returns the Field won ("None" = wasted)."""
+        bits, exactly like the device. Returns the Field won ("None" = wasted).
+
+        High-stakes wagers (2026-07-14): only min(amount, 99) is bankable volume --
+        the premium above the cap is LAB WORK and never refunds. A STABILIZED
+        wager (>=500) clamps a spoiled rate into the nearest real band; a
+        RESONANT one (>=2500) splashes amount//5 DNA into the two adjacent
+        Fields (capped, no refund)."""
         field = dna_field_for_rate(rate)
-        total = self.dna_owned.get(field, 0) + amount
+        if field == "None" and amount >= DNA_STABILIZER_BET:
+            rate = min(max(rate, DNA_RATE_BANDS[0][0] + 1), DNA_RATE_BANDS[-1][0])
+            field = dna_field_for_rate(rate)
+        gained = min(amount, MAX_DNA_INVENTORY)
+        total = self.dna_owned.get(field, 0) + gained
         if total > MAX_DNA_INVENTORY:
             self.bits += total - MAX_DNA_INVENTORY          # refund the overflow as bits
             total = MAX_DNA_INVENTORY
         self.dna_owned[field] = total
+        if amount >= DNA_RESONANT_BET and field != "None":
+            splash = amount // 5
+            fields = [f for _, f in DNA_RATE_BANDS if f != "None"]
+            i = fields.index(field)
+            for j in (i - 1, i + 1):
+                if 0 <= j < len(fields):
+                    nb = fields[j]
+                    self.dna_owned[nb] = min(self.dna_owned.get(nb, 0) + splash,
+                                             MAX_DNA_INVENTORY)
         return field
 
     def apply_dna(self, field, amount):
@@ -4782,7 +4820,11 @@ class Pet:
                 self.inventory[key] = self.inventory.get(key, 0) + 1   # refund: not usable now
                 self._set_anim("refuse", 1.0)
                 return f"{self.name} can't use that yet."
+            prev = self.num
             self.evolve_to(target)
+            # a Digimental jump is a special evolution like jogress: re-anchor
+            # so the pet doesn't ride the corpus engine wearing a stale line_id
+            lines_mod.adopt_line(self, prev=prev)
             # canon digivolve-then-applyItem(item, 1.0): the Digimental's
             # -0.66 x max energy price bills the NEW form's ceiling
             self._apply_item_stats(e, 1.0)
