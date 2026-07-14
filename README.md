@@ -206,8 +206,22 @@ biome's town.
 
 **v** hires the device's auto-care AI (per-stage retainer and per-care fees —
 it minds the pet, at a price, and never works while the pet is away
-adventuring). **g** opens options: account switching, sound backend, update
-check, key reference, theme, and the new-game/erase controls.
+adventuring). **g** opens options: account switching, sound backend, updates,
+key reference, theme, and the new-game/erase controls.
+
+## Updating
+
+tuipet **updates itself**. On launch it checks PyPI in the background, installs
+any newer release, and tells you to restart to play it — the running process
+keeps the version it started with, so the new one comes up next time.
+
+Prefer to do it yourself? Press **a** on the options → Update row to switch
+auto-update off; you'll still be told when a release is out. You can also press
+ENTER there to check now, and ENTER again to install on the spot.
+
+Where tuipet can't run pip for you — **iOS** sandboxes subprocesses, and a
+source checkout has no release to install over — it hands you the command
+instead of pretending it updated.
 
 ## Saving
 
