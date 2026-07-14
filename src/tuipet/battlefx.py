@@ -159,14 +159,15 @@ def _check_effect(effect, conds, st, b):
 
 
 def _check_first(b):
-    """Battle.checkFirst: weighted (attack-sum * health-fraction); tie = coin flip."""
+    """Battle.checkFirst: weighted (attack-sum * health-fraction); tie = coin
+    flip -- drawn from the ENGINE's rng so seeded PvP peers flip identically."""
     ps = sum(b._pet_counts.values()) * (b.pet_hp / b.pet_max if b.pet_max else 1.0)
     es = sum(b._enemy_counts.values()) * (b.enemy_hp / b.enemy_max if b.enemy_max else 1.0)
     if ps > es:
         return True
     if ps < es:
         return False
-    return random.random() < 0.5
+    return getattr(b, "rng", random).random() < 0.5
 
 
 def resolve(b, player_attr, enemy_attr, pdmg, edmg):

@@ -116,9 +116,14 @@ def battle_card(pet):
     * canon exchanges a JAR SHA-256 checksum + difficulty; tuipet's lobby
       relies on server accounts instead (no anti-tamper handshake).
     Canon's round exchange is PEER-SYMMETRIC (each device simulates with the
-    exchanged choices -- desyncable through RNG); tuipet's host-authoritative
-    relay resolves once and mirrors absolute results, an intentional
-    improvement."""
+    exchanged choices -- desyncable through RNG).  tuipet proto 2 (2026-07-14)
+    RETURNS to canon's symmetric exchange with the desync solved: both clients
+    run the identical card-vs-card engine on a shared seed (commit-reveal
+    nonces, lobbyscreen), so neither side trusts the other's arithmetic -- and
+    the monthly ladder's both-reports-must-agree check becomes real.  A peer
+    whose card has no "proto" gets the old host-authoritative relay verbatim
+    (no mid-upgrade corruption).  "free"/"field" ship so the peer's simulation
+    of THIS side is exact (style +1 bonus, chip field conditions)."""
     _, by = data.load_sprites()
     return {"num": pet.num,
             "name": getattr(pet, "name", None) or by.get(pet.num, {}).get("name") or "?",
@@ -133,13 +138,68 @@ def battle_card(pet):
             # 2026-07-06) -- it keys the battle-injury attr souring; wild
             # enemies still derive theirs from the strongest power
             "attribute": getattr(pet, "attribute", "") or "None",
+            # proto 2 (seeded symmetric PvP): the style bonus is BAKED into the
+            # card so the peer's engine applies the same +1 this side's does,
+            # and field rides along for the chip layer's Field conditions
+            # (pet.field is save-persisted, so data-by-num could drift from it)
+            "free": bool(getattr(pet, "free_style", False)),
+            "field": getattr(pet, "field", "") or "",
+            "proto": 2,
             "bits": (1, 5)}
 
 
+def own_pick(mine, opp, fallback="Vaccine"):
+    """The pet's own brute pick (Free style / a refused order): best
+    calcAttackPower delta among usable attributes, tie-broken by greatest raw
+    count.  Module-level so the seeded PvP path can resolve a FINAL attribute
+    at pick time (each side's refusal/Free roll is its own local business --
+    only the final choice crosses the wire)."""
+    nonzero = [a for a in ATTRS if mine[a] > 0]
+    if not nonzero:
+        return fallback
+    best = max(calc_attack_power(a, mine, opp) for a in nonzero)
+    top = [a for a in nonzero if calc_attack_power(a, mine, opp) == best]
+    return max(top, key=lambda a: mine[a])
+
+
+class CardPet:
+    """A pet-shaped stand-in built from a (clamped) battle card, so BOTH peers
+    can run the identical card-vs-card engine in seeded PvP.  Satisfies exactly
+    what Battle/battlefx touch on `b.pet`; record_battle is a no-op -- each
+    side records its REAL pet from its own perspective when the bout ends."""
+    def __init__(self, card):
+        self.num = card.get("num", -1)
+        self.name = card.get("name") or "?"
+        self.stage = card.get("stage", "Rookie")
+        self.vaccine = card.get("vaccine", 0)
+        self.data_power = card.get("data_power", 0)
+        self.virus = card.get("virus", 0)
+        self.full_health = max(2, card.get("hp", 10))
+        self.field = card.get("field", "") or ""
+        self.attribute = card.get("attribute", "") or "None"
+        self.free_style = bool(card.get("free"))
+        self.sick = bool(card.get("sick"))
+        self.wins = 0          # AI tier is moot: seeded PvP forces both attrs
+
+    def record_battle(self, *a, **k):
+        return ""
+
+    def refuse_attack(self, *a, **k):      # never consulted (final_attrs) --
+        return False                       # belt & braces for a stray call
+
+
 class Battle:
-    def __init__(self, pet, enemy=None, source="battle"):
+    def __init__(self, pet, enemy=None, source="battle", rng=None, final_attrs=False):
         self.pet = pet
         self.enemy = dict(enemy or pick_enemy(pet))
+        # rng: every in-round roll (AI pick, initiative coin flip) draws from
+        # here.  PvE keeps the module RNG; seeded PvP hands both peers the
+        # same random.Random(shared seed) so their bouts are bit-identical.
+        self.rng = rng or random
+        # final_attrs: seeded PvP resolves Free style / refused orders at PICK
+        # time on each side's own pet -- play_round must then take both
+        # attributes as FINAL (the peer cannot re-roll this side's refusal).
+        self.final_attrs = final_attrs
         # which arena this bout belongs to ("battle" = any single-player fight:
         # home, adventure, tournament; "pvp" = an untrusted lobby opponent).
         # record_battle uses it to keep the KO6/Mega counter un-farmable.
@@ -150,8 +210,13 @@ class Battle:
         _fb = 1 if self.free_style else 0                     # Free: +1 all powers (canon)
         self._pet_counts = {"Vaccine": pet.vaccine + _fb, "Data": pet.data_power + _fb,
                             "Virus": pet.virus + _fb}
-        self._enemy_counts = {"Vaccine": self.enemy["vaccine"],
-                              "Data": self.enemy["data_power"], "Virus": self.enemy["virus"]}
+        # a proto-2 card bakes the peer's Free-style bonus in as "free" (the
+        # host-authoritative era silently dropped the guest's +1; legacy cards
+        # have no key -> 0, so old bouts are unchanged)
+        _efb = 1 if self.enemy.get("free") else 0
+        self._enemy_counts = {"Vaccine": self.enemy["vaccine"] + _efb,
+                              "Data": self.enemy["data_power"] + _efb,
+                              "Virus": self.enemy["virus"] + _efb}
         # Enemy.getOppAttribute: a PvP card ships the DECLARED attribute; a
         # wild enemy's battle "type" derives from its strongest power (and a
         # None/Free declared attribute falls back the same way for the AI)
@@ -192,7 +257,7 @@ class Battle:
         if not nonzero:                                  # no usable attribute -> own type
             return self.enemy["attribute"]
         if self.ai == "Random":                          # randomAI
-            return random.choice(nonzero)
+            return self.rng.choice(nonzero)
         # brute / strategic: best calcAttackPower delta, avoiding the zero-attack,
         # tie-broken by greatest raw count (checkAttackTotalAndZero)
         cand = [a for a in nonzero if a != self._enemy_zero_attack] or nonzero
@@ -203,14 +268,8 @@ class Battle:
     def _own_choice(self):
         """The pet's OWN pick (Free style / a refused order): the same brute
         chooser the enemy uses, run on the pet's side."""
-        pc, ec = self._pet_counts, self._enemy_counts
-        nonzero = [a for a in ATTRS if pc[a] > 0]
-        if not nonzero:
-            return self.pet.attribute if self.pet.attribute in ATTRS else "Vaccine"
-        cand = nonzero
-        best = max(calc_attack_power(a, pc, ec) for a in cand)
-        top = [a for a in cand if calc_attack_power(a, pc, ec) == best]
-        return max(top, key=lambda a: pc[a])
+        fb = self.pet.attribute if self.pet.attribute in ATTRS else "Vaccine"
+        return own_pick(self._pet_counts, self._enemy_counts, fallback=fb)
 
     def play_round(self, player_attr):
         if self.over:
@@ -220,7 +279,9 @@ class Battle:
         # Orders = your call, but refuseAttack may override it mid-fight (the
         # pet swaps in its OWN pick and the scold window opens)
         self.refused_order = False
-        if self.free_style:
+        if self.final_attrs:
+            pass          # seeded PvP: both attrs arrived FINAL (pick-time rolls)
+        elif self.free_style:
             player_attr = self._own_choice()
         elif player_attr in ATTRS and self.pet.refuse_attack(self.pet_hp, self.enemy_hp):
             self.refused_order = True

@@ -272,10 +272,11 @@ class TuiPetApp(App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("WEEKEND BONUS: battles and tournaments pay x1.5 bits every "
-                 "Saturday and Sunday (your local clock). Victory lines show "
-                 "the (wknd x1.5) tag when it's live. Purses, elimination "
-                 "consolations, wild wins - all of it. See you Saturday.")
+    WHATS_NEW = ("FAIR-PLAY PvP: online battles now run the classic "
+                 "peer-to-peer protocol -- both devices simulate the same "
+                 "bout on a shared seed, so nobody has to trust the other "
+                 "side's math. Pets can now refuse orders online, and "
+                 "Free-style pets finally get their +1. Update to fight.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and
