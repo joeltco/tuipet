@@ -32,8 +32,8 @@ def test_fresh_profile_marks():
 
 
 def test_buyable_egg_tags_its_price():
-    idx = _rule("Pafumon")["idx"]                # HOME egg gated on album 3
-    for n in (1, 2, 3):
+    idx = _rule("Pafumon")["idx"]                # HOME egg gated on album 10
+    for n in range(1, 11):
         persistence.album_add(n)
     pan = EggGuidePanel()
     assert pan.states[idx] == ("buyable", 1300)

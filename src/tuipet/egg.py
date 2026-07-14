@@ -221,7 +221,9 @@ def unlock_progress(idx, prog):
     if rule.get("wins") is not None:
         return f"lifetime wins {min(prog['wins'], rule['wins'])}/{rule['wins']}"
     if rule.get("album_n") is not None:
-        return f"Digimon raised {min(len(prog['album']), rule['album_n'])}/{rule['album_n']}"
+        # SPECIES, not pets: the album records one entry per STAGE a pet passes,
+        # so a single lifetime lodges six of them (egg audit 2026-07-14)
+        return f"species recorded {min(len(prog['album']), rule['album_n'])}/{rule['album_n']}"
     if rule.get("mega") is not None:
         return f"Mega-class felled {min(prog.get('mega_kills', 0), rule['mega'])}/{rule['mega']}"
     if rule["gen"] is not None:

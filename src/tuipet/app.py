@@ -265,10 +265,11 @@ class TuiPetApp(App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("Neglect has teeth again: filth, a held-in poop and an "
-                 "ignored care call were draining mood 60x too slowly, so "
-                 "leaving your pet in a mess was nearly free. Clean up after "
-                 "it. Attentive owners will not notice a thing.")
+    WHATS_NEW = ("A Mega is a MEGA now: 'Mega-class felled' was quietly "
+                 "counting Ultimates too, so the Mega-class eggs and every "
+                 "KO6 evolution came far too cheap -- and a PvP Mega no longer "
+                 "counts at all. The album eggs now span generations instead "
+                 "of all dropping on your very first pet.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and

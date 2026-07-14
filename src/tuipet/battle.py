@@ -137,9 +137,13 @@ def battle_card(pet):
 
 
 class Battle:
-    def __init__(self, pet, enemy=None):
+    def __init__(self, pet, enemy=None, source="battle"):
         self.pet = pet
         self.enemy = dict(enemy or pick_enemy(pet))
+        # which arena this bout belongs to ("battle" = any single-player fight:
+        # home, adventure, tournament; "pvp" = an untrusted lobby opponent).
+        # record_battle uses it to keep the KO6/Mega counter un-farmable.
+        self.source = source
         # the style is BAKED per battle: toggling mid-fight used to desync the
         # +1 power bonus from the end rewards (exploitable; audit 2026-07)
         self.free_style = bool(getattr(pet, "free_style", False))
@@ -266,7 +270,8 @@ class Battle:
         # end cost (canon health > fullHealth/2 [int division] = the high band)
         low = self.pet_hp <= self.pet_max // 2
         self.reward = self.pet.record_battle(self.won, self.enemy,
-                                             free_style=self.free_style, low_health=low)
+                                             free_style=self.free_style, low_health=low,
+                                             source=self.source)
 
     def surrender(self):
         """Battle.surrender: the pet bows out -- the bout ends as neither win nor loss.

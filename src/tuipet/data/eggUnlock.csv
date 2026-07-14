@@ -20,12 +20,12 @@ Fufumon,FALSE,0,-1,None,TRUE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,
 ChibiKiwimon,FALSE,0,-1,None,FALSE,-1,-1,-1,None,None,None,944,-1,-1,-1,-1,-1,-1,-1,-1,Descendant of a kiwi,TRUE,-1,-1,-1,-1,
 Ketomon,FALSE,1100,-1,Champion,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Reach the Champion stage,TRUE,-1,-1,-1,-1,home
 Leafmon,FALSE,0,1,None,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Saved the Digital World,TRUE,-1,-1,-1,-1,
-Pafumon,FALSE,1300,-1,None,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Raise 3 different Digimon,TRUE,-1,3,-1,-1,home
+Pafumon,FALSE,1300,-1,None,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Record 10 species in the album,TRUE,-1,10,-1,-1,home
 Paomon,FALSE,0,-1,None,FALSE,37,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Win a series of tournaments in Spring,TRUE,-1,-1,-1,-1,
-Petitmon,FALSE,0,-1,None,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Raise 5 different Digimon,TRUE,-1,5,-1,-1,
-Popomon,FALSE,1300,-1,None,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Raise 3 different Digimon,TRUE,-1,3,-1,-1,home
+Petitmon,FALSE,0,-1,None,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Record 15 species in the album,TRUE,-1,15,-1,-1,
+Popomon,FALSE,1300,-1,None,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Record 10 species in the album,TRUE,-1,10,-1,-1,home
 Pupumon,FALSE,0,-1,None,TRUE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Carries the X-Antibody,FALSE,-1,-1,-1,-1,
-Bommon,FALSE,1300,-1,None,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Raise 3 different Digimon,TRUE,-1,3,-1,-1,home
+Bommon,FALSE,1300,-1,None,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Record 10 species in the album,TRUE,-1,10,-1,-1,home
 Pusumon,FALSE,0,-1,None,FALSE,176,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Win a Rookie tournament in autumn,TRUE,-1,-1,-1,-1,
 Puwamon,FALSE,1500,0,None,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Clear Region 1,TRUE,-1,-1,-1,-1,home
 Relemon,FALSE,1500,0,None,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Clear Region 1,TRUE,-1,-1,-1,-1,home
@@ -37,16 +37,16 @@ Algomon I,FALSE,1700,1,None,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-
 Bombmon,FALSE,1700,1,None,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Clear Region 2,TRUE,-1,-1,-1,-1,home
 Carimon,FALSE,0,4,None,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Master of the Digital World,TRUE,-1,-1,-1,-1,
 Sunamon,FALSE,1700,1,None,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Clear Region 2,TRUE,-1,-1,-1,-1,home
-Curimon,FALSE,1900,-1,None,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Raise 8 different Digimon,TRUE,-1,8,-1,-1,home
-Pyonmon,FALSE,1900,-1,None,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Raise 8 different Digimon,TRUE,-1,8,-1,-1,home
-Puyomon,FALSE,1900,-1,None,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Raise 8 different Digimon,TRUE,-1,8,-1,-1,home
-Fusamon,FALSE,1900,-1,None,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Raise 8 different Digimon,TRUE,-1,8,-1,-1,home
+Curimon,FALSE,1900,-1,None,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Record 24 species in the album,TRUE,-1,24,-1,-1,home
+Pyonmon,FALSE,1900,-1,None,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Record 24 species in the album,TRUE,-1,24,-1,-1,home
+Puyomon,FALSE,1900,-1,None,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Record 24 species in the album,TRUE,-1,24,-1,-1,home
+Fusamon,FALSE,1900,-1,None,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Record 24 species in the album,TRUE,-1,24,-1,-1,home
 Breakdra Egg,FALSE,0,-1,None,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Fell 3 Mega-class foes,TRUE,,,3,-1,
 Corona Egg,FALSE,0,-1,None,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Link with 3 tamers online,TRUE,-1,-1,-1,3,
 DORU Egg,FALSE,0,-1,None,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Link with 5 tamers online,TRUE,-1,-1,-1,5,
 Deep Savers Egg,FALSE,2500,1,None,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Clear Region 2 · ocean towns,TRUE,-1,-1,-1,-1,town
 Digitama X3,FALSE,0,-1,None,TRUE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,X-Antibody + 60 wins,TRUE,60,-1,-1,-1,
-Draco Egg,FALSE,0,-1,None,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Raise 6 different Digimon,TRUE,,6,,-1,
+Draco Egg,FALSE,0,-1,None,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Record 18 species in the album,TRUE,,18,,-1,
 Hack Egg,FALSE,0,-1,None,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Win 40 battles,TRUE,40,-1,-1,-1,
 Kera Digitama,FALSE,0,-1,None,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Fell 10 Mega-class foes,TRUE,-1,-1,10,-1,
 Lalamon Egg,FALSE,0,-1,None,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,120,-1,-1,A devoted lineage: obedience 120+,FALSE,-1,-1,-1,-1,

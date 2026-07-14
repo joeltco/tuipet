@@ -501,7 +501,10 @@ class LobbyPanel:
         opp_card["hp"] = _n(opp_card.get("hp"), 10, 2, MAX_PVP_HP)
         self.opp_card = opp_card
         if self.is_host:
-            self.battle = battle.Battle(self.pet, enemy=dict(opp_card))
+            # source="pvp": the host resolves through the real engine, so without
+            # this the KO6/Mega-class counter would still take an untrusted peer
+            # card's "stage" at face value (egg/KO6 audit 2026-07-14)
+            self.battle = battle.Battle(self.pet, enemy=dict(opp_card), source="pvp")
             self.my_max = self.my_hp = self.battle.pet_max
             self.opp_max = self.opp_hp = self.battle.enemy_max
         else:
@@ -604,7 +607,8 @@ class LobbyPanel:
         if self.bphase == "over":
             if k in ("enter", "space", "escape"):
                 if self.bt_payload and self.bt_payload[0] == "battle_record":
-                    self.pet.record_battle(self.bt_payload[1], self.bt_payload[2])  # guest records its own result
+                    self.pet.record_battle(self.bt_payload[1], self.bt_payload[2],
+                                           source="pvp")   # guest records its own result
                 self._return_to_lobby(self.bt_outcome)   # host already recorded via the engine
             return None
         if self.bphase == "choose":

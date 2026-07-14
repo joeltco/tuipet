@@ -32,10 +32,12 @@ def test_sakumon_is_the_battle_egg():
 
 def test_petitmon_is_the_collector_egg():
     r = _rule("Petitmon")
-    assert (r["album_n"], r["price"], r["can_perm"]) == (5, 0, True)   # EARN tier: free
+    # 15 species ~ 2.5 lifetimes: the album records one entry per STAGE, so a gate
+    # of 5 used to land halfway through the player's FIRST pet (egg audit 2026-07-14)
+    assert (r["album_n"], r["price"], r["can_perm"]) == (15, 0, True)   # EARN tier: free
     assert r["prev_field"] is None                  # no longer a temp lineage egg
-    assert not egg._conditions_met(r, _prog(album={1, 2, 3, 4}))
-    assert egg._conditions_met(r, _prog(album={1, 2, 3, 4, 5}))
+    assert not egg._conditions_met(r, _prog(album=set(range(1, 15))))    # 14
+    assert egg._conditions_met(r, _prog(album=set(range(1, 16))))        # 15
 
 
 def test_dodomon_is_the_x_egg():
@@ -59,7 +61,7 @@ def test_met_achievement_is_earned_free():
 
 def test_unlock_progress_counts_the_countable():
     assert egg.unlock_progress(_rule("Sakumon")["idx"], _prog(wins=37)) == "lifetime wins 37/50"
-    assert egg.unlock_progress(_rule("Petitmon")["idx"], _prog(album={1, 2, 3})) == "Digimon raised 3/5"
+    assert egg.unlock_progress(_rule("Petitmon")["idx"], _prog(album={1, 2, 3})) == "species recorded 3/15"
     assert egg.unlock_progress(_rule("Dodomon")["idx"], _prog(mega_kills=1)) == "Mega-class felled 1/5"
     mystery = sorted(egg.win_eggs())[0]             # the "???" eggs count too
     assert egg.unlock_progress(mystery, _prog(wins=12)) == "lifetime wins 12/50"
@@ -166,10 +168,10 @@ def test_a_gated_egg_is_hidden_until_earned_then_bought():
     from tuipet.eggselectscreen import EggSelectPanel
     from tuipet.shopscreen import ShopPanel
     from tuipet.pet import Pet
-    idx = _rule("Pafumon")["idx"]                    # a HOME egg gated on album 3
+    idx = _rule("Pafumon")["idx"]                    # a HOME egg gated on album 10
     assert egg_mod.egg_state(idx, _prog(), set())[0] == "locked"
     assert idx not in EggSelectPanel().carousel      # locked -> hidden
-    for n in (1, 2, 3):
+    for n in range(1, 11):
         persistence.album_add(n)
     prog = persistence.get_progress()
     assert egg_mod.egg_state(idx, prog, set()) == ("buyable", 1300)

@@ -61,6 +61,6 @@ def test_the_dragon_trio_has_three_distinct_routes():
     by = {r["name"]: r for r in rules.values()}
     assert by["Slayerdra Egg"]["wins"] == 30        # the warrior's route
     assert by["Breakdra Egg"]["mega"] == 3          # the giant-slayer's route
-    assert by["Draco Egg"]["album_n"] == 6          # the collector's route
+    assert by["Draco Egg"]["album_n"] == 18         # the collector's route (3 lifetimes)
     for name in ("Slayerdra Egg", "Breakdra Egg", "Draco Egg"):
         assert by[name]["desc"].strip(), "every route needs its own description"

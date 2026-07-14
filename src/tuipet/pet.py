@@ -3521,7 +3521,8 @@ class Pet:
             return f"{self.name} refuses to fight!"
         return None
 
-    def record_battle(self, won, enemy=None, free_style=None, low_health=False):
+    def record_battle(self, won, enemy=None, free_style=None, low_health=False,
+                      source="battle"):
         """Resolve a finished battle (canon battleEnd; battle-math audit
         2026-07-06): compliance is SPENT here, the end cost is banded by the
         finishing HP (limping at/below half = double energy + calories), a
@@ -3567,8 +3568,22 @@ class Pet:
                 self.egg_unlock_note = "A mysterious egg appeared in the nursery!"
             if enemy:
                 self.levels_fought.append(_enemy_level(enemy))
-                if enemy.get("stage") in ("Ultimate", "Mega"):
-                    self.mega_kills += 1                 # LINES_SPEC KO6 gate (DMX Stage-VI kills)
+                # ⛔ JP/EN STAGE-NAME GOTCHA.  DMX's KO6 gate reads "Defeat N
+                # Stage VI Digimon" and humulos' own dmx.json spells the ladder
+                # out: "Stage V (Perfect)" == EN **Ultimate**, "Stage VI
+                # (Ultimate)" == EN **Mega** (WarGreymon, MetalGarurumon are
+                # Stage VI).  We counted ("Ultimate", "Mega") -- folding all of
+                # Stage V in -- so the counter swept 44% of the roster instead
+                # of 17%, and quietly loosened EVERY KO6 evolution gate as well
+                # as the Mega-class eggs.  Stage VI is Mega, full stop.
+                #
+                # PvP is excluded: the opponent's stage arrives on an UNTRUSTED
+                # peer card (same class of input we already clamp hp/power on),
+                # so two colluding tamers could otherwise trade wins with Mega
+                # pets and farm KO6.  Canon agrees -- the requirement is scoped
+                # "in Quest Mode".  (egg/KO6 audit 2026-07-14)
+                if enemy.get("stage") == "Mega" and source != "pvp":
+                    self.mega_kills += 1                 # LINES_SPEC KO6 gate (DMX Stage-VI = Mega)
                     _persist.mega_kills_add(1)           # ...and the lifetime X-egg progress
             self._open_praise()                          # a win is praiseworthy (setPraise)
             # BattleWonMoodInc + BattleDispositionMoodFactor x disposition:
