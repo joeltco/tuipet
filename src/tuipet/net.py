@@ -92,6 +92,7 @@ class LobbyState:
         self.dms: dict = {}                    # peer_name -> [(from_name, text)] private threads
         self.unread: set = set()               # peer names with unread DMs
         self.blocked: set = set()              # muted peers (loaded from settings on connect)
+        self.room: str | None = None           # current password room (None = main lobby)
 
     def others(self):
         """Roster minus me — the people you can battle/jogress."""
@@ -232,6 +233,11 @@ class LobbyClient(_WsClient):
     def relay(self, to, payload):
         self._send({"t": "relay", "to": to, "payload": payload})
 
+    def room(self, code):
+        """Join the password room for `code` (everyone typing the same phrase
+        meets there); empty code returns to the main lobby."""
+        self._send({"t": "room", "code": code})
+
     def ladder_report(self, won, opp):
         """File this side of a PvP outcome; the server pairs both stories."""
         self._send({"t": "ladder_report", "won": bool(won), "opp": opp})
@@ -298,6 +304,10 @@ class LobbyClient(_WsClient):
             self.ladder = m               # the rankings page renders from this
         elif t == "roster":
             s.roster = m.get("players") or []
+        elif t == "room_ok":
+            s.room = m.get("room") or None
+            s.chat.append(("", f"— room: {s.room} —" if s.room else "— main lobby —"))
+            del s.chat[:-CHAT_CAP]
         elif t == "chat":
             nm = m.get("from_name", "?")
             if nm not in s.blocked:

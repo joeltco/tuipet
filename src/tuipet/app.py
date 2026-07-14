@@ -272,11 +272,10 @@ class TuiPetApp(App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("FAIR-PLAY PvP: online battles now run the classic "
-                 "peer-to-peer protocol -- both devices simulate the same "
-                 "bout on a shared seed, so nobody has to trust the other "
-                 "side's math. Pets can now refuse orders online, and "
-                 "Free-style pets finally get their +1. Update to fight.")
+    WHATS_NEW = ("PASSWORD ROOMS: type /room <phrase> in lobby chat and "
+                 "anyone who types the same phrase joins your private "
+                 "room -- own chat, own roster, battles and fusion among "
+                 "friends only. /leave returns to the main floor.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and

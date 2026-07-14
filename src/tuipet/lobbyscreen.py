@@ -411,6 +411,14 @@ class LobbyPanel:
                 self.status = "Reconnected."
         # join/leave notices in the chat log (client-side roster diff)
         if s.connected:
+            room = getattr(s, "room", None)
+            if room != getattr(self, "_seen_room", None):
+                # a room switch swaps the whole scope: not a wave of joins/leaves
+                self._seen_room = room
+                self._seen_ids = None
+                if self.phase == "lobby":
+                    self.status = (f"room: {room} · /leave exits" if room
+                                   else "Back in the main lobby.")
             ids = {pl["id"]: pl["name"] for pl in s.roster}
             old_ids = getattr(self, "_seen_ids", None)
             if old_ids is not None:
@@ -989,6 +997,25 @@ class LobbyPanel:
         t.append(_fit("ENTER send · ESC back to lobby", w), style=DIM)
         return t
 
+    def _slash(self, txt):
+        """Chat slash commands (password rooms 2026-07-14): `/room <phrase>`
+        joins the private room for that phrase — everyone typing the same
+        phrase meets there (the phrase IS the password, DSprite-style 🔒);
+        `/leave` returns to the main lobby.  Anything else prints the help."""
+        cmd, _, arg = txt.partition(" ")
+        cmd, arg = cmd.lower(), arg.strip()
+        if cmd == "/room" and arg:
+            self.client.room(arg)
+            self.status = "Joining the room…"
+        elif cmd == "/room":
+            room = getattr(self.state, "room", None) if self.state else None
+            self.status = f"room: {room} · /leave exits" if room else "main lobby · /room <phrase>"
+        elif cmd in ("/leave", "/lobby"):
+            self.client.room("")
+            self.status = "Back to the main lobby…"
+        else:
+            self.status = "Commands: /room <phrase> · /leave"
+
     def _key_lobby(self, k):
         if self.invite_prompt is not None:
             inv = self.invite_prompt
@@ -1103,7 +1130,12 @@ class LobbyPanel:
                     self.status = f"✉ sent to {self.pm_to[1]}"
                 self.pm_to, self.buf = None, ""
             elif self.buf.strip():
-                self.client.chat(self.buf.strip()); self.buf = ""
+                txt = self.buf.strip()
+                self.buf = ""
+                if txt.startswith("/"):
+                    self._slash(txt)
+                else:
+                    self.client.chat(txt)
             else:
                 others = self._others()
                 if others and not self.rost_hidden:   # no acting on an unseen pick
@@ -1326,7 +1358,10 @@ class LobbyPanel:
         cw = self._chat_w()
         rows = self._chat_rows()
         self.scroll = max(0, min(self.scroll, max(0, len(rows) - BODY)))
-        right = (f"▲{self.scroll} back" if self.scroll else f"{online} on")
+        # ASCII only in this column (the CELL-WIDTH LAW: rjust counts chars)
+        in_room = bool(s and getattr(s, "room", None))
+        right = (f"▲{self.scroll} back" if self.scroll
+                 else (f"{online} in room" if in_room else f"{online} on"))
         # header: identity + the live/scroll marker (folded: no divider column)
         # -- your OWN worn honor shows here (read locally, so it's right even
         # before the roster syncs); a long title marquees, the chrome holds

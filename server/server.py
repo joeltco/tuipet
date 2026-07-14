@@ -117,6 +117,55 @@ SAVES = _load_saves()
 _saves_lock = asyncio.Lock()
 
 
+# ---- offline PM queue (store-and-forward, 2026-07-12) ------------------------
+# A PM to an account with no LIVE lobby session is held here and delivered on
+# that account's next lobby login, so messaging a player who has stepped away is
+# not lost.  Persisted so a server restart keeps the backlog.
+PENDING_PATH = os.environ.get(
+    "TUIPET_PENDING",
+    os.path.join(os.path.dirname(os.path.abspath(__file__)), "pending_pms.json"))
+MAX_PENDING_PER_ACCT = 50          # newest kept; a flooded queue sheds its oldest
+
+
+def _load_pending():
+    try:
+        return json.load(open(PENDING_PATH))
+    except (OSError, ValueError):
+        return {}
+
+
+PENDING = _load_pending()
+_pending_lock = asyncio.Lock()
+
+
+async def _save_pending():
+    async with _pending_lock:
+        tmp = PENDING_PATH + ".tmp"
+        with open(tmp, "w") as f:
+            json.dump(PENDING, f)
+        os.replace(tmp, PENDING_PATH)
+
+
+async def _queue_pm(key, from_name, text):
+    q = PENDING.setdefault(key, [])
+    q.append({"from_name": from_name, "text": text,
+              "ts": time.strftime("%Y-%m-%d %H:%M:%SZ", time.gmtime())})
+    del q[:-MAX_PENDING_PER_ACCT]
+    await _save_pending()
+
+
+async def _flush_pending(client, key):
+    q = PENDING.pop(key, None)
+    if not q:
+        return
+    for rec in q:
+        await _send(client, {"t": "pm", "from_id": 0,
+                             "from_name": rec.get("from_name", "?"),
+                             "text": rec.get("text", "")})
+    await _save_pending()
+    LOG.info("flushed %d queued pm(s) to %s", len(q), client.name)
+
+
 _STAGES = {"Egg", "Fresh", "InTraining", "Rookie", "Champion", "Ultimate", "Mega"}
 
 
@@ -194,7 +243,7 @@ CHAT_BACKLOG: deque = deque(maxlen=30)
 
 class Client:
     __slots__ = ("id", "ws", "name", "pet", "live", "lease", "logged", "boot",
-                 "bugs_sent")
+                 "bugs_sent", "room")
 
     def __init__(self, ws):
         self.id = next(_ids)
@@ -206,6 +255,7 @@ class Client:
         self.logged = False
         self.boot = 0.0
         self.bugs_sent = 0
+        self.room = None       # None = the main lobby; else a room code (str)
 
 
 CLIENTS: dict[int, Client] = {}
@@ -354,14 +404,43 @@ async def _broadcast(obj, exclude=None):
         ), return_exceptions=True)
 
 
-def _roster():
-    """Everyone ONLINE, not just the lobby room (presence 2026-07-05): lobby
-    logins are `live` (chat/invitable); a player whose app merely holds its
-    sync connection appears as a playing ghost (live false, PM-able).  One
-    entry per account -- the live connection wins the slot."""
+# ---- password rooms (2026-07-14) ---------------------------------------------
+# A room is just a shared secret phrase: everyone who types the same phrase
+# lands in the same private scope (chat + roster; battles/jogress follow the
+# roster naturally).  No room registry, no membership state, no cleanup -- the
+# room "exists" exactly while clients carry its code.  PMs and 📢 announcements
+# stay global; invites/relays are id-addressed and unaffected.
+MAX_ROOM = 32
+
+
+def _room_code(raw):
+    """Normalize a room phrase: trimmed, inner whitespace collapsed, lowercased
+    (so 'Sea  Food' and 'sea food' meet).  Empty -> None (the main lobby)."""
+    code = " ".join(str(raw or "").split()).lower()[:MAX_ROOM]
+    return code or None
+
+
+async def _broadcast_room(room, obj, exclude=None):
+    """Broadcast to one scope: a room's members, or (room=None) the main lobby
+    (which keeps including sync ghosts, exactly like the old global cast --
+    their client ignores chat, and their PM channel is separate)."""
+    targets = [c for c in CLIENTS.values()
+               if c.id != exclude and c.room == room]
+    if targets:
+        msg = json.dumps(obj)
+        await asyncio.gather(*(c.ws.send(msg) for c in targets),
+                             return_exceptions=True)
+
+
+def _roster(room=None):
+    """Everyone ONLINE in the given scope (presence 2026-07-05): lobby logins
+    are `live` (chat/invitable); a player whose app merely holds its sync
+    connection appears as a playing ghost (live false, PM-able).  One entry
+    per account -- the live connection wins the slot.  Ghosts never join a
+    room, so they show only in the main lobby (rooms 2026-07-14)."""
     by_key = {}
     for c in CLIENTS.values():
-        if not c.logged:
+        if not c.logged or c.room != room:
             continue
         key = c.name.lower()
         cur = by_key.get(key)
@@ -380,7 +459,9 @@ def _account_conns(name):
 
 
 async def _push_roster():
-    await _broadcast(_roster())
+    """Each connection gets ITS scope's roster (per-room since 2026-07-14)."""
+    for room in {c.room for c in CLIENTS.values()}:
+        await _broadcast_room(room, _roster(room))
 
 
 async def _handle_bug(client, m):
@@ -545,6 +626,7 @@ async def handler(ws):
                 if not sync_only:
                     for f in CHAT_BACKLOG:        # rejoin the conversation, not a void
                         await _send(client, f)
+                    await _flush_pending(client, key)   # deliver PMs held while they were away
                 await _push_roster()          # sync ghosts show as "playing" (presence 2026-07-05)
                 LOG.info("login id=%s name=%s sync_only=%s (%d online)",
                          client.id, client.name, sync_only, len(CLIENTS))
@@ -589,26 +671,63 @@ async def handler(ws):
                 if text and client.live:          # a sync_only ghost isn't in the room
                     out = {"t": "chat", "from_id": client.id,
                            "from_name": client.name, "text": text}
-                    CHAT_BACKLOG.append(out)      # the re-entry replay window
-                    await _broadcast(out)
-                    _feed("chat", name=client.name, text=text)
+                    if client.room is None:
+                        CHAT_BACKLOG.append(out)  # the re-entry replay window (main only)
+                    await _broadcast_room(client.room, out)
+                    # room chats still land in the admin feed (abuse handling >
+                    # absolute privacy on a hobby relay), marked with their room
+                    _feed("chat", name=client.name, text=text, room=client.room)
+
+            elif t == "room":
+                # join-or-create by shared phrase; empty code -> the main lobby.
+                # No password check beyond the phrase ITSELF: the phrase is the
+                # password (DSprite's private 🔒 rooms, tuipet-shaped).
+                if not client.live:
+                    continue
+                code = _room_code(m.get("code"))
+                if code != client.room:
+                    client.room = code
+                    # room_ok FIRST: the client resets its roster-diff baseline
+                    # on it, so the scoped roster that follows must not race it
+                    # (else the whole old scope prints as a wave of "left"s)
+                    await _send(client, {"t": "room_ok", "room": code})
+                    if code is None:              # rejoining main replays the window
+                        for f in CHAT_BACKLOG:
+                            await _send(client, f)
+                    await _push_roster()
+                    _feed("room", name=client.name, room=code or "(main)")
+                else:
+                    await _send(client, {"t": "room_ok", "room": code})
 
             elif t == "pm":
-                # a private message reaches EVERY connection of the target
-                # account -- their lobby login and the sync ghost their app
-                # holds at the home screen (the alert channel; 2026-07-05)
+                # A private message reaches every live connection of the target
+                # account -- their lobby login and the sync ghost at the home
+                # screen (the alert channel; 2026-07-05).  If NO live lobby
+                # session is there to persist it, the PM is queued and delivered
+                # on their next lobby login (store-and-forward, 2026-07-12), so
+                # messaging someone who stepped away is not lost.  The sender is
+                # always acked, so their own copy of the thread saves either way.
                 text = _clean(m.get("text"), MAX_CHAT)
-                target = CLIENTS.get(m.get("to"))
                 if not text:
                     continue
-                if target is None or not target.logged:
-                    await _send(client, {"t": "error", "msg": "That player just left."})
+                target = CLIENTS.get(m.get("to"))
+                if target is not None and target.logged:
+                    name = target.name
+                else:                              # stale/gone id -> address by name
+                    name = _clean(m.get("to_name"), MAX_NAME)
+                key = name.lower() if name else ""
+                if not key or key not in ACCOUNTS:
+                    await _send(client, {"t": "error", "msg": "No such player."})
                     continue
                 out = {"t": "pm", "from_id": client.id,
                        "from_name": client.name, "text": text}
-                for c in _account_conns(target.name):
+                conns = _account_conns(name)
+                for c in conns:
                     await _send(c, out)
-                await _send(client, {"t": "pm_ok", "to_name": target.name, "text": text})
+                if not any(c.live for c in conns):     # no lobby session to persist it now
+                    await _queue_pm(key, client.name, text)
+                await _send(client, {"t": "pm_ok",
+                                     "to_name": ACCOUNTS[key]["name"], "text": text})
 
             elif t in ("invite", "invite_resp", "relay"):
                 if not client.live:               # sessions are for roster members only
