@@ -233,12 +233,41 @@ def _trophy_rows(pet):
     # mons??").
     total = len({data.canonical_num(n) for n in by if not data.is_placeholder(n)})
     rows.append(("Album", f"{seen}/{total} discovered"))
+    # map conquest was tracked but shown NOWHERE (sweep 2026-07-14): it gated
+    # continents silently while Album and cups got a shelf
+    try:
+        cleared = len(_p.get_progress().get("maps", ()) or ())
+    except Exception:
+        cleared = 0
+    rows.append(("Maps", f"{cleared}/{len(data.load_maps())} regions cleared"))
     won = sorted((getattr(pet, "trophies_won", None) or {}).items())
-    for tid, season in won[:5]:                     # keep the page at 9 rows max
-        tr = _t.trophy_by_id(tid)                   # (was 6: the Album row joined)
+    for tid, season in won[:4]:                     # keep the page at 9 rows max
+        tr = _t.trophy_by_id(tid)                   # (was 5: the Maps row joined)
         rows.append((_t.trophy_label(tr)[:12] if tr else f"cup {tid}", season))
-    if len(won) > 5:
-        rows.append(("…", f"+{len(won) - 5} more"))
+    if len(won) > 4:
+        rows.append(("…", f"+{len(won) - 4} more"))
+    return rows
+
+
+def _legacy_rows():
+    """The LEGACY page: every retired generation's headstone, newest first --
+    they were banked by snapshot_prev_gen and never shown (sweep 2026-07-14).
+    Value budget is 30 cols (40 - the 9-char label gutter)."""
+    from tuipet import persistence as _p
+    try:
+        elders = list(_p.load_settings().get("progress", {}).get("legacy", []))
+    except Exception:
+        elders = []
+    if not elders:
+        return [("—", "no elders yet — this pet"), ("", "is writing generation one")]
+    rows = []
+    for r in reversed(elders[-8:]):                 # 8 headstones + the more row = 9
+        days = int(float(r.get("age", 0)) // 1440)  # 1 game day = 1440 real seconds
+        fate = "†" if r.get("dead") else ""         # fell vs retired to the next egg
+        val = f"{str(r.get('name', '?'))[:12]} {r.get('stage', '?')} {days}d{fate}"
+        rows.append((f"gen {r.get('gen', '?')}", val[:30]))
+    if len(elders) > 8:
+        rows.append(("…", f"+{len(elders) - 8} more remembered"))
     return rows
 
 
@@ -299,6 +328,7 @@ def build_pages(pet):
         ]),
         ("PERSON", person),
         ("TROPHIES", _trophy_rows(pet)),
+        ("LEGACY", _legacy_rows()),
         ("EVOLVES", _evo_rows(pet)),
     ]
 

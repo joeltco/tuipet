@@ -460,7 +460,8 @@ class Adventure:
         self.pet.add_item(found["key"])
         _persist.shop_unlock_add(found["key"])   # a wild find unlocks its shop listing
         self.pet._open_praise()                  # it brought you something: praise it!
-        self.last = f"{self.pet.name} dug up {found['name']}!"   # no article: "a Oats" read wrong
+        rare = " — a RARE find!" if found.get("price", 0) >= 1000 else "!"
+        self.last = f"{self.pet.name} dug up {found['name']}{rare}"   # no article: "a Oats" read wrong
         return ("item", found)
 
     def _advance_or_finish(self):
@@ -490,21 +491,26 @@ class Adventure:
                 self.life = MAX_LIFE                       # a zone-boss win refills adventure life
                 if self.location >= self.total_steps:      # the gate boss falls -> zone done
                     res = self._complete_zone()
-                    if self.loot:
-                        self.last += f"  Loot: {self.loot['name']}!"
+                    self.last += self._loot_note()
                     return res
                 self.last = f"{enemy['name']} falls! The path is open."
-                if self.loot:
-                    self.last += f"  Loot: {self.loot['name']}!"
+                self.last += self._loot_note()
                 return None
             self._lose_life(f"Lost to {enemy['name']}...", enemy.get("penalty", 0))
         elif not won:
             self._lose_life(f"Lost to {enemy['name']}...", enemy.get("penalty", 0))
         else:
             self.last = f"Beat {enemy['name']}!"
-            if self.loot:
-                self.last += f"  Loot: {self.loot['name']}!"
+            self.last += self._loot_note()
         return None
+
+    def _loot_note(self):
+        """The drop's line on the strip -- an expensive drop says RARE instead
+        of blending in with every Oats (price tier; sweep 2026-07-14)."""
+        if not self.loot:
+            return ""
+        word = "RARE loot" if self.loot.get("price", 0) >= 1000 else "Loot"
+        return f"  {word}: {self.loot['name']}!"
 
     def _lose_life(self, msg, penalty=0):
         """A lost adventure battle costs one adventure life; with life remaining the

@@ -24,6 +24,7 @@ INV_REVEAL_T = 30             # dots done -> the reveal pose fires
 INV_HOLD_T = 42               # reveal held (item shown / startle / dejection)
 INV_END_T = 54                # walk-back (ReturnItem) complete
 REFUSE_T = 24                 # Refusing: the 24-tick mirror head-shake (fx convention)
+RARE_PRICE = 1000             # a find/drop at this price tier gets the fanfare beat
 PARADE_T = 26                 # victory parade: ticks for one boss to march across
 #                               (canon BossParade shows the map's bosses after the
 #                               final ZoneChange; one at a time -- one-mon LCD rule)
@@ -263,6 +264,10 @@ class AdventurePanel(menu.SubHost):
                 # walked past a cleared gate: the zoneChange pulse plays
                 self.travelling = False
                 self._pulse = {"t": 0}
+                if ev[0] in ("map", "all"):
+                    # a REGION (or the whole world) fell -- that's a fanfare
+                    # moment, not a silent strip line (sweep 2026-07-14)
+                    self.sfx = "champion"
             elif ev and ev[0] == "town":
                 self.sfx = "reward"          # reached the rest-town: life + energy restored
                 self.travelling = False
@@ -285,7 +290,10 @@ class AdventurePanel(menu.SubHost):
         if s["t"] == INV_REVEAL_T:
             self.adv.last = s["msg"]                  # the reveal says what it was
             if s["kind"] == "item":
-                self.sfx = "reward"                   # _discoverConsumable
+                # an expensive find earns a fanfare beat over the stock chirp
+                # (rarity = the item's own price tier; sweep 2026-07-14)
+                rare = (s.get("thing") or {}).get("price", 0) >= RARE_PRICE
+                self.sfx = "champion" if rare else "reward"   # _discoverConsumable
         if s["kind"] == "enemy":
             if s["t"] >= INV_REVEAL_T + 6:            # startle beat, then the ambush
                 self._pending = (False, s["thing"])

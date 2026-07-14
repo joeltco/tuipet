@@ -391,6 +391,19 @@ def album_add(num):
     save_settings(d)
 
 
+def album_has(num):
+    """Is this species (name-canonical) already in the cross-pet album?  Lets
+    the evolve/hatch moment announce a genuine FIRST -- album_add() itself is
+    buried in save() and records silently (sweep 2026-07-14)."""
+    if num is None or num < 0:
+        return True                  # sentinels are never announceable firsts
+    from . import data
+    num = data.canonical_num(num)
+    if num in _ALBUM_SEEN:
+        return True
+    return num in set(load_settings().get("progress", {}).get("album", []))
+
+
 def _note_add(key, n):
     """Bump a lifetime progress counter (the generic behind wins/mega_kills --
     the load-modify-save dance was copied per counter; refactor 2026-07-05)."""
@@ -561,6 +574,19 @@ def snapshot_prev_gen(pet):
         "trophies": int(getattr(pet, "trophies", 0)),
         "trophies_won": dict(getattr(pet, "trophies_won", {}) or {}),
     }
+    # the LEGACY roll (sweep 2026-07-14): every retired generation used to
+    # vanish -- only this gate snapshot survived, and it was never SHOWN.
+    # Bank a small headstone per life for the DigiCore LEGACY page.
+    legacy = prog.setdefault("legacy", [])
+    legacy.append({
+        "gen": int(getattr(pet, "generation", 1)),
+        "name": getattr(pet, "name", "") or "?",
+        "stage": getattr(pet, "stage", "?"),
+        "age": float(getattr(pet, "age_seconds", 0.0)),
+        "cups": int(getattr(pet, "trophies", 0)),
+        "dead": bool(getattr(pet, "dead", False)),
+    })
+    del legacy[:-30]                 # the book keeps the 30 most recent elders
     save_settings(d)
 
 
@@ -876,20 +902,37 @@ def _offline(pet, elapsed):
     mins = elapsed / 60.0
     # DVPet has no passive energy decay; just re-clamp to the (per-pet) range.
     pet.energy = _clamp(pet.energy, -pet.max_energy, pet.max_energy)
-    pet.mood = _clamp(pet.mood - min(50, mins * 2), -300, 300)
+    mood_drop = min(50, mins * 2)
+    pet.mood = _clamp(pet.mood - mood_drop, -300, 300)
     drop = min(pet.hunger, int(mins // 5))
     pet.hunger -= drop
-    if mins > 10 and pet.hunger == 0:
+    starved = mins > 10 and pet.hunger == 0
+    if starved:
         pet.care_mistakes += 1
     new_poop = min(4, pet.poop + int(mins // 8))
+    poops = new_poop - pet.poop
     while len(pet.poop_sizes) < new_poop:            # keep poop == len(poop_sizes)
         pet.poop_sizes.append(pet._poop_size() if hasattr(pet, "_poop_size") else 2)
     pet.poop = new_poop
     if mins < 1:
         return ""
-    if mins < 60:
-        return f"Welcome back! ({int(mins)}m away) Your pet missed you."
-    return f"Welcome back! ({int(mins / 60)}h away) Your pet needs care!"
+    # ITEMIZE the return (sweep 2026-07-14): this routine knows exactly what
+    # happened while you were gone, and used to throw it away for one generic
+    # line -- the player just found a changed pet.  Say only what WAS applied.
+    away = f"{int(mins)}m" if mins < 60 else f"{int(mins / 60)}h"
+    parts = []
+    if starved:
+        parts.append("went hungry (+1 care mistake)")
+    elif drop:
+        parts.append("got hungrier")
+    if poops:
+        parts.append(f"{poops} poop{'s' if poops > 1 else ''} piled up")
+    if mood_drop >= 20:
+        parts.append("mood slipped")
+    name = getattr(pet, "name", "") or "your pet"
+    if not parts:
+        return f"Welcome back! ({away} away) {name} missed you."
+    return f"Welcome back! ({away} away) While you were gone: " + ", ".join(parts) + "."
 
 
 def quarantine_save(path):

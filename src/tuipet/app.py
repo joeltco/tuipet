@@ -272,10 +272,11 @@ class TuiPetApp(App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("Smoother first steps: no login wall before you've met your "
-                 "pet (the lobby asks when you go online), the egg picker "
-                 "opens the egg guide with N, retiring a living pet asks "
-                 "first, and help finally explains the weather.")
+    WHATS_NEW = ("The game remembers out loud now: coming back tells you what "
+                 "happened while you were gone, first-ever stages and species "
+                 "get a ★, past generations rest on the DigiCore LEGACY page, "
+                 "map conquest shows in TROPHIES, rare finds say RARE, and "
+                 "quitting says goodbye properly.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and
@@ -1480,7 +1481,9 @@ class TuiPetApp(App):
         elif (p.num, p.stage) != prev:
             if prev[1] == "Egg":
                 self.beep("hatch")
-                self.flash(f"[b]{p.name}[/] hatched!")
+                star = ("  [b]★ a NEW species for the album![/]"
+                        if not persistence.album_has(p.num) else "")
+                self.flash(f"[b]{p.name}[/] hatched!{star}")
                 # hatch has NO evolve dither -- the egg already shook; the Fresh just appears
             else:
                 # _evolve sounds INSIDE the strobe (fx snds beat 5), like DVPet evolveAnim.
@@ -1534,7 +1537,9 @@ class TuiPetApp(App):
         note = getattr(p, "egg_unlock_note", "")
         if note:
             self.flash(note)
-            self.beep("reward", bell=False)
+            # a whole new raisable species earned: the champion fanfare, not
+            # the same chirp as picking up an Oats (sweep 2026-07-14)
+            self.beep("champion", bell=False)
             p.egg_unlock_note = ""
         # birthday (setTimeToAge age-up): announce the day's verdict
         if p.birthday_note:
@@ -1642,7 +1647,21 @@ class TuiPetApp(App):
         intraining????'), because the species name never appeared."""
         _, by = data.load_sprites()
         old = by.get(old_num, {}).get("name") or "It"
-        return f"[b]{old}[/] evolved into [b]{self.pet.name}[/] ({self.pet.stage})!"
+        msg = f"[b]{old}[/] evolved into [b]{self.pet.name}[/] ({self.pet.stage})!"
+        # genuine FIRSTS get named (sweep 2026-07-14): a first-ever Mega and a
+        # first-ever species read no bigger than a baby's first bump before.
+        # Both checks race nothing: the progress stamps trail on autosave and
+        # album_add fires inside save(), so at THIS tick both still say "new".
+        extra = []
+        if self.pet.stage in data.STAGE_ORDER:
+            if data.STAGE_ORDER.index(self.pet.stage) > \
+                    persistence.get_progress().get("max_stage", 0):
+                extra.append(f"your first {self.pet.stage} ever")
+        if not persistence.album_has(self.pet.num):
+            extra.append("a NEW species for the album")
+        if extra:
+            msg += f"  [b]★ {' · '.join(extra)}![/]"
+        return msg
 
     def _need_message(self, p):
         """HUD announcement for the pet's most urgent unmet care need (or '')."""
@@ -1970,6 +1989,12 @@ def main():
         persistence.release_instance_lock()
     if getattr(app, "_crash_note", None):
         print(app._crash_note)          # after Textual restores the terminal
+    elif persistence.save_failed:
+        # never print "Saved" over a disk that refused (silent-failure law)
+        print("⚠ tuipet couldn't save — set TUIPET_SAVE_DIR to a writable folder.")
+    elif getattr(app, "pet", None) is not None:
+        nm = getattr(app.pet, "name", "") or "your pet"
+        print(f"Saved ✓ — {nm} will be waiting.")
 
 
 if __name__ == "__main__":
