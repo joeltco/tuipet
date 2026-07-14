@@ -85,8 +85,12 @@ def round_timeline(ph0, fh0, pdmg, edmg, player_first, effect=None):
                 fh = max(0, fh - dmg)
             else:
                 ph = max(0, ph - dmg)
+            # device-exact (GML 2026-07-14): the hit STING is skipped on the
+            # final winning blow -- the KO presentation carries the audio
+            final = dfn == "foe" and fh == 0
             for s in range(EXPLODE_FRAMES):
-                tl.append({"m": "hit", "f": (s // EXPLODE_HOLD) % 2, "def": dfn, "double": dbl, "ph": ph, "fh": fh})
+                tl.append({"m": "hit", "f": (s // EXPLODE_HOLD) % 2, "def": dfn,
+                           "double": dbl, "final": final, "ph": ph, "fh": fh})
             tl += [{"m": "flinch", "view": dfn, "def": dfn, "ph": ph, "fh": fh}] * FLINCH_T
         else:                                            # DODGE: defender weaves, orb whiffs past
             for s in range(DODGE_T):
@@ -233,8 +237,10 @@ class BattlePanel:
             elif st == "squash" and prev.get("keep") != entry.get("keep"):
                 self.sfx = "attackHit"
         elif m != self._last_m:
-            # DVPet: a doubleAttack launches AND lands with the strong stings
-            s = strikefx.beat_sfx(m, entry.get("double"))
+            # DVPet: a doubleAttack launches AND lands with the strong stings.
+            # The final WINNING blow lands silent (device-exact, GML 2026-07-14)
+            s = (None if m == "hit" and entry.get("final")
+                 else strikefx.beat_sfx(m, entry.get("double")))
             if s:
                 self.sfx = s
             elif m == "reveal":                  # setupBattle: _startBattle at the reveal

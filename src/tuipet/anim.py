@@ -14,8 +14,11 @@ Ground truth: _audit_src/View/SpriteAnim.java
 from __future__ import annotations
 import random
 
-STEP_PX = 3        # idleWalk / stepFrame moveRight|Left(3)
-TURN_CHANCE = 0.06 # stepFrame flips travelRight now and then so the pet wanders, not marches
+STEP_PX = 2        # device-exact: 2px per beat over the 16px travel range
+#                    (GML decompile 2026-07-14, obj_char_vpet Alarm_2; was 3)
+TURN_CHANCE = 0.30 # device: irandom(100)>70 -- ~30% of beats flip direction
+WALL_PAUSE = 4     # device limit_reach: 4 beats (2.0s) STOPPED at a wall on the
+#                    turn pose pair before departing the other way
 WALK_BEAT = 5      # idleWalk advances at _frame 0 and _frame 5 -> a step every 5 intervals
 SLEEP_BEAT = 10    # idleSleep: pose 2 at 0, pose 3 at 10, back at 20 (period 20)
 SICK_PERIOD = 50   # idleUnwell: collapse held, tiny shuffle 30..45, weary flash at 50
@@ -81,31 +84,45 @@ class Roamer:
         self.sw = sprite_w
         self.face = face          # +1 moving/looking right, -1 left
         self.pose = 0             # index into the two walk frames [0, 1]
+        self.pause = 0            # wall-pause beats left (device limit_reach)
+        self.stepped = False      # True on the interval a movement beat landed
         self._t = 0
+        self._wall = 1            # departure direction once the pause ends
 
     def step(self, left_bound=0, right_bound=None):
-        """Advance one interval.  Movement happens on the WALK_BEAT cadence: the pet
-        paces STEP_PX at a time, turning around at the screen edges (and at a filth
-        pile on the left) and occasionally reversing mid-room -- the way DVPet's
-        stepFrame flips travelRight, so it wanders the full width instead of
-        marching one direction forever."""
+        """Advance one interval.  Movement happens on the WALK_BEAT cadence,
+        device-exact per the 2026-07-14 GML decompile (obj_char_vpet Alarm_2):
+        each beat picks a walk frame at RANDOM (50/50, not a strict toggle),
+        flips direction on ~30% of beats, and steps STEP_PX.  Hitting a wall
+        (screen edge, filth pile, status column) STOPS the pet for WALL_PAUSE
+        beats -- it stands on the turn pose pair -- then it departs the other
+        way.  (DVPet's idleWalk wrapped; the walls are tuipet's adaptation.)"""
+        self.stepped = False
         self._t += 1
         if self._t < WALK_BEAT:
             return
         self._t = 0
-        self.pose ^= 1
+        self.stepped = True
+        if self.pause:                               # stopped at the wall, turning
+            self.pause -= 1
+            self.pose ^= 1                           # the turn pair alternates
+            if self.pause == 0:                      # departure beat: face away and go
+                self.face = self._wall
+                self.x += self.face * STEP_PX
+            return
+        self.pose = random.getrandbits(1)            # device: 50/50 frame pick
+        if random.random() < TURN_CHANCE:            # device flips BEFORE moving
+            self.face = -self.face
         self.x += self.face * STEP_PX
         right_edge = self.cols - self.sw
         if right_bound is not None:                  # a right-edge status column is a wall too
             right_edge = min(right_edge, right_bound)
-        if self.x >= right_edge:                     # hit the right wall -> turn back
+        if self.x >= right_edge:                     # hit the right wall -> stop and turn
             self.x = float(right_edge)
-            self.face = -1
-        elif self.x <= left_bound:                   # hit the left wall (or filth pile) -> turn back
+            self.pause, self._wall = WALL_PAUSE, -1
+        elif self.x <= left_bound:                   # left wall / filth pile -> stop and turn
             self.x = float(left_bound)
-            self.face = 1
-        elif random.random() < TURN_CHANCE:          # otherwise wander: an occasional about-face
-            self.face = -self.face
+            self.pause, self._wall = WALL_PAUSE, 1
 
     @property
     def xshift(self):

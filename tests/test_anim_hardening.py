@@ -87,3 +87,51 @@ def test_cup_verdict_plays_the_home_beat():
     assert out["loss"] == "losing"                 # the sulk finally has a caller
     assert out["win"] == "cheer"
     assert out["none"] is None
+
+
+# ---- device-exact idle/hatch/battle beats (GML decompile 2026-07-14) -----------
+
+def test_roamer_pauses_at_the_wall_on_the_turn_pose():
+    from tuipet import anim
+    assert anim.STEP_PX == 2 and anim.TURN_CHANCE == 0.30 and anim.WALL_PAUSE == 4
+    r = anim.Roamer(0, 32, 16, face=1)
+    import random
+    random.seed(0)
+    for _ in range(2000):                      # walk until a wall is hit
+        r.step()
+        if r.pause:
+            break
+    assert r.pause == anim.WALL_PAUSE
+    x0, f0 = r.x, r.face
+    for beat in range(3):                      # 3 beats: stopped, alternating turn
+        for _ in range(anim.WALK_BEAT):
+            r.step()
+        assert r.x == x0 and r.face == f0      # no movement, no flip yet
+    for _ in range(anim.WALK_BEAT):            # the departure beat
+        r.step()
+    assert r.pause == 0 and r.face == -f0      # faces away from the wall...
+    assert r.x == x0 - anim.STEP_PX * f0       # ...and has already stepped off
+
+
+def test_hatch_wobble_accelerates():
+    """Sways at 4/6/8 (0.2s beat) then EVERY interval 10..15 (0.1s) --
+    the device egg quickens as the hatch nears (alarm 30 -> 10)."""
+    beats = [4, 6, 8] + list(range(10, 16))
+    def moves(n):
+        return sum(1 for k in beats if k <= min(n, 15))
+    assert moves(5) == moves(4)                # slow phase: 5 is a rest interval
+    assert moves(6) == moves(4) + 1
+    for n in range(10, 16):                    # fast phase: every interval moves
+        assert moves(n) == moves(n - 1) + 1
+
+
+def test_final_winning_blow_lands_silent():
+    from tuipet.battlescreen import round_timeline
+    tl = round_timeline(5, 1, pdmg=1, edmg=1, player_first=True)
+    kill = [e for e in tl if e["m"] == "hit" and e["def"] == "foe"]
+    assert kill and all(e["final"] for e in kill)      # the KO hit is marked
+    tl2 = round_timeline(5, 5, pdmg=1, edmg=1, player_first=True)
+    assert not any(e.get("final") for e in tl2 if e["m"] == "hit")
+    tl3 = round_timeline(1, 5, pdmg=0, edmg=1, player_first=False)
+    pk = [e for e in tl3 if e["m"] == "hit" and e["def"] == "pet"]
+    assert pk and not any(e["final"] for e in pk)      # a LOSS still stings

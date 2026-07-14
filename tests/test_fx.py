@@ -244,7 +244,10 @@ def test_hatch_render_follows_the_canon_beats():
             assert [w for w, x in seq[:16]] == [0] * 16          # whole egg
             assert [w for w, x in seq[16:19]] == [1] * 3         # the crack
             assert all(w == 2 for w, x in seq[19:])              # the baby peeks
-            assert [x for w, x in seq[4:16]] == [3, 6, 3, 0] * 3  # the smooth rock
+            # the ACCELERATING rock (device-exact, GML 2026-07-14): sways on
+            # 4/6/8 (0.2s beat), then every interval 10..15 -- the egg
+            # quickens as the hatch nears (was a constant [3,6,3,0]*3 walk)
+            assert [x for w, x in seq[4:16]] == [3, 3, 6, 6, 3, 3, 0, 3, 6, 3, 0, 3]
             assert all(x == 0 for w, x in seq[:4]) and all(x == 0 for w, x in seq[16:])
     finally:
         arena_mod.render_screen = old

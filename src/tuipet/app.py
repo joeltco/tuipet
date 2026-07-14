@@ -272,11 +272,11 @@ class TuiPetApp(App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("Feelings, like the real devices: evolution opens with the "
-                 "old form's silhouette pulsing before the flash, a cup "
-                 "champion celebrates back at the house and an eliminated "
-                 "pet sulks home, and a beaten fighter staggers instead of "
-                 "freezing.")
+    WHATS_NEW = ("Device-exact idle, from a real V-pet's decompiled timings: "
+                 "your pet now wanders, stops at the walls for a moment to "
+                 "turn around, and picks its steps unpredictably; the egg "
+                 "wobbles faster and faster as hatching nears; and the final "
+                 "winning blow in battle lands in dramatic silence.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and
@@ -1371,9 +1371,10 @@ class TuiPetApp(App):
             if self.pet.hatching:
                 ht0 = getattr(self.pet, "_hatch_t", 3.0)
                 done = self.pet.advance_hatch(0.1)
-                # DVPet hatch(): _hatch sounds at t0.6 of the rock (interval 6), not at
-                # the reveal -- fire as the timer crosses that beat (3.0s total - 0.6).
-                if ht0 > 2.4 >= getattr(self.pet, "_hatch_t", 0.0):
+                # the hatch chirp marks the WOBBLE ACCELERATING (device-exact,
+                # GML 2026-07-14: the chirp lands as the egg's alarm quickens),
+                # i.e. interval 10 of the 3.0s rock -- was DVPet's t0.6 beat
+                if ht0 > 2.0 >= getattr(self.pet, "_hatch_t", 0.0):
                     self.beep("hatch")
                 if done:
                     p = self.pet

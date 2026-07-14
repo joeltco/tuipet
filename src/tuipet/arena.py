@@ -374,8 +374,14 @@ class Screen(Static):
             # full-width roam (DVPet idleWalk); pose follows the roamer's step, and a
             # filth pile is a left wall it turns at (filthLabel walk bound).  On some
             # steps DVPet's stepFrame shows a mood pose instead of the walk toggle.
-            expr = self._idle_expr if pet.anim == "idle" else None
-            idx = expr if expr is not None else frames[self.roamer.pose % len(frames)]
+            if self.roamer.pause:
+                # device wall-pause (GML 2026-07-14): stopped at the wall on the
+                # TURN pose pair -- turn(1)/idle(0) alternating -- before it
+                # departs; a mood pose never overrides the turn
+                idx = (1, 0)[self.roamer.pause % 2]
+            else:
+                expr = self._idle_expr if pet.anim == "idle" else None
+                idx = expr if expr is not None else frames[self.roamer.pose % len(frames)]
             rows = (_fr[idx] if idx < len(_fr) else None) or first
             xshift, mirror = self.roamer.xshift, self.roamer.mirror
         else:
@@ -393,10 +399,14 @@ class Screen(Static):
             # truncated beat makes the rock STUTTER (0,+6,+3,0,0,...) and the
             # crack land late (hatch-anim audit 2026-07-05)
             n = int(round((3.0 - getattr(pet, "_hatch_t", 3.0)) / 0.1))
-            pos = 0
-            for k in range(4, min(n, 15) + 1):             # +3,+3 then -3,-3, repeating
-                pos += 3 if ((k - 4) // 2) % 2 == 0 else -3
-            xshift = pos
+            # the wobble ACCELERATES as the hatch nears (device-exact, GML
+            # 2026-07-14: egg alarm 30 -> 10 for the final stretch): sways on
+            # intervals 4/6/8 (0.2s beat), then EVERY interval 10..15
+            beats = [4, 6, 8] + list(range(10, 16))
+            moves = sum(1 for k in beats if k <= min(n, 15))
+            # 0->3->6->3 rock cycle; the CRACK recentres (the accelerated cycle
+            # ends mid-sway, unlike the old symmetric +-3 walk)
+            xshift = 0 if n >= 16 else (0, 3, 6, 3)[moves % 4]
             fi = 0 if n < 16 else (1 if n < 19 else 2)      # egg -> crack -> baby emerging
             rows = (_fr[fi] if fi < len(_fr) and _fr[fi] else first)
             mirror = False
@@ -440,9 +450,11 @@ class Screen(Static):
             # LCD may shrink its world (Bandai grammar 2026-07-11)
             right_bound = ((grid.X1 - SICK_ZONE - SPRITE_W) if _sick_mark_up(pet)
                            else (grid.X1 - SPRITE_W))
-            prev_pose = self.roamer.pose
             self.roamer.step(left_bound=poop_right, right_bound=right_bound)
-            if self.roamer.pose != prev_pose:                    # a fresh step landed (DVPet stepFrame):
+            if self.roamer.stepped and not self.roamer.pause:    # a fresh step landed (DVPet stepFrame):
+                # keyed on the BEAT, not a pose change -- the device-exact
+                # random frame pick repeats a pose ~half the time, which would
+                # have silently halved the mood-pose rate (GML port 2026-07-14)
                 self._idle_expr = (anim.mood_pose(pet)           # sometimes show a mood pose instead of
                                    if random.random() < anim.IDLE_EXPR_CHANCE else None)  # the plain walk toggle
         else:
