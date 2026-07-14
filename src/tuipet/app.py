@@ -265,11 +265,10 @@ class TuiPetApp(App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("The dragon eggs are worth chasing now: Slayerdra, Breakdra "
-                 "and Draco gave the same dragon but cost 6, 26 and 12 "
-                 "species — so two were pointless. Each is now earned a "
-                 "different way: 30 wins, 3 Mega kills, or 6 species raised. "
-                 "Pick your route (n).")
+    WHATS_NEW = ("tuipet updates itself now: on launch it quietly installs "
+                 "any newer release and tells you to restart to play it — no "
+                 "more pip commands. Turn it off with a on the options Update "
+                 "row if you would rather do it yourself.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and
@@ -422,12 +421,38 @@ class TuiPetApp(App):
             self._sync.push_save(persistence.to_save_dict(self.pet))
 
     async def _check_update(self):
-        """Background: ask PyPI once per launch if a newer tuipet exists, then let
-        the idle HUD nudge the player (see on_tick).  Fail-soft, never blocks."""
+        """Background, once per launch: ask PyPI for a newer tuipet and INSTALL
+        it (Joel 2026-07-14: "make it so the game automatically checks and
+        updates itself... then they have to restart for it to be the new one").
+
+        Never blocks the game: this runs off the UI thread and the player keeps
+        playing the version they launched.  Python already imported that code,
+        so a fresh install can only take effect on the NEXT launch -- the nudge
+        says exactly that, and never claims a live swap.
+
+        Honest about what it cannot do (the silent-failure law): where we cannot
+        run pip for the player -- iOS sandboxes subprocesses, a source checkout
+        has no release to install over -- we fall back to telling them the
+        command.  A failed install says so and hands the command over too; it
+        never pretends the update happened.
+        """
         import asyncio
         latest = await asyncio.to_thread(update_check.latest_if_newer)
-        if latest:
-            self._update_msg = f"⬆ tuipet {latest} out — pip install -U tuipet"
+        if not latest:
+            return
+        if not persistence.get_auto_update():          # the player opted out
+            self._update_msg = f"⬆ tuipet {latest} out — {update_check.manual_command()}"
+            return
+        if update_check.upgrade_argv() is None:        # iOS / source: cannot self-install
+            self._update_msg = f"⬆ tuipet {latest} out — {update_check.manual_command()}"
+            return
+        self._update_msg = f"⬆ installing tuipet {latest}…"
+        ok, _msg = await asyncio.to_thread(update_check.run_upgrade)
+        if ok:
+            self._updated_to = latest
+            self._update_msg = f"✔ tuipet {latest} installed — restart to play it"
+        else:
+            self._update_msg = f"⬆ tuipet {latest} out — {update_check.manual_command()}"
 
     def _after_title(self, _=None):
         if not persistence.get_account()[0]:     # first launch: create your lobby account

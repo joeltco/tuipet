@@ -16,6 +16,13 @@ from . import hostinfo
 
 PYPI_JSON = "https://pypi.org/pypi/tuipet/json"
 
+# the one place we actually shell out.  Indirected so the test suite can block
+# it outright (conftest.never_run_pip): a test that forgot to mock the updater
+# REALLY RAN pip once and upgraded tuipet inside .venv-dev mid-suite.  Patching
+# `update.subprocess.run` would hit the shared module and break every other
+# subprocess user (sound, the lobby harness), so the hook lives here.
+_RUN = subprocess.run
+
 
 def current_version():
     """Installed tuipet version, or None when running from source (no metadata)."""
@@ -118,9 +125,9 @@ def run_upgrade(timeout=180.0):
     if argv is None:
         return False, "Update by hand: " + manual_command()
     try:
-        r = subprocess.run(argv, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,  # nosec B603 - fixed argv, no shell
-                           stdin=subprocess.DEVNULL, timeout=timeout,
-                           env=dict(os.environ, PIP_DISABLE_PIP_VERSION_CHECK="1"))
+        r = _RUN(argv, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,  # nosec B603 - fixed argv, no shell
+                 stdin=subprocess.DEVNULL, timeout=timeout,
+                 env=dict(os.environ, PIP_DISABLE_PIP_VERSION_CHECK="1"))
     except subprocess.TimeoutExpired:
         return False, "Update timed out. Try: " + manual_command()
     except Exception:

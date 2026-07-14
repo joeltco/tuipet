@@ -86,3 +86,21 @@ def _sandbox_lobby_feed(tmp_path, monkeypatch):
         monkeypatch.setattr(srv, "FEED_PATH", str(tmp_path / "lobby_feed.jsonl"))
     if srv is not None and hasattr(srv, "BUGS_PATH"):
         monkeypatch.setattr(srv, "BUGS_PATH", str(tmp_path / "bugs.jsonl"))
+
+@pytest.fixture(autouse=True)
+def never_run_pip(monkeypatch):
+    """No test may install anything.  The launch auto-updater (2026-07-14) calls
+    update.run_upgrade(), and a test that forgot to mock it REALLY RAN pip --
+    it upgraded tuipet inside .venv-dev mid-suite.  Same doctrine as
+    isolate_save: the suite can never touch the real thing.  A test that wants
+    the success path monkeypatches run_upgrade itself; this only stops the real
+    one.
+    """
+    from tuipet import update
+
+    def _refuse(*_a, **_k):
+        raise AssertionError(
+            "a test tried to shell out to pip -- patch update._RUN "
+            "(or mock run_upgrade/upgrade_argv) instead")
+
+    monkeypatch.setattr(update, "_RUN", _refuse)

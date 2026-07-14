@@ -27,7 +27,7 @@ _LABEL = {"theme": "Theme", "sound": "Sound", "account": "Account",
 _DESC = {"theme": "recolor the whole game — live preview",
          "sound": "the DVPet chirps — on or off",
          "account": "switch login — the pet parks in the cloud",
-         "update": "ask PyPI for a newer tuipet",
+         "update": "auto-installs new releases at launch · ENTER checks now",
          "keys": "every binding on one page",
          "new": "retire the pet, hatch the heir",
          "erase": "wipe save, progress and login — for keeps"}
@@ -188,6 +188,13 @@ class OptionsPanel(menu.SubHost):
         elif k in ("down", "j"):
             self.cursor = (self.cursor + 1) % len(_ROWS)
             self.msg = ""
+        elif k == "a" and _ROWS[self.cursor] == "update":
+            # opt out of the launch auto-install (Joel 2026-07-14: it is ON by
+            # default, but nobody should be forced to have pip run for them)
+            on = persistence.set_auto_update(not persistence.get_auto_update())
+            self.msg = ("auto-update on — new releases install at launch"
+                        if on else "auto-update off — you'll be told, not updated")
+            self.sfx = "confirm"
         elif k in ("enter", "space"):
             row = _ROWS[self.cursor]
             if row == "theme":
@@ -205,7 +212,8 @@ class OptionsPanel(menu.SubHost):
             elif row == "update":
                 # first ENTER checks; with a newer release known, the second
                 # ENTER actually INSTALLS it (Joel 2026-07-13: "make the update
-                # option actually update the game")
+                # option actually update the game").  The game also installs
+                # new releases for itself at launch -- `a` opts out of that.
                 if self._upd and self._upd != "…":
                     self._install_update()
                 else:
@@ -243,8 +251,10 @@ class OptionsPanel(menu.SubHost):
         if row == "update":
             if self._installing:
                 return "updating…"
-            if self._updated:
+            if self._updated or getattr(self.pet, "_updated_to", None):
                 return "restart to apply"
+            if not persistence.get_auto_update():
+                return "auto: off"
             if self._upd == "…":
                 return "checking…"
             if self._upd:

@@ -100,6 +100,19 @@ def load_settings(path=None):
     return {}
 
 
+def get_auto_update():
+    """Should the game install a newer release for itself at launch?  On by
+    default (Joel 2026-07-14) -- a player can turn it off in g options."""
+    return bool(load_settings().get("auto_update", True))
+
+
+def set_auto_update(on):
+    d = load_settings()
+    d["auto_update"] = bool(on)
+    save_settings(d)
+    return bool(on)
+
+
 def save_settings(d, path=None):
     # every write stamps the CURRENT egg-bank version -- without it, a
     # settings file created THIS session would look like a pre-migration

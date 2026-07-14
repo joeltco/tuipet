@@ -55,7 +55,7 @@ def test_a_failed_pip_never_reports_success(monkeypatch):
         returncode = 1
         stdout = b"ERROR: could not install"
 
-    monkeypatch.setattr(update.subprocess, "run", lambda *a, **k: _R())
+    monkeypatch.setattr(update, "_RUN", lambda *a, **k: _R())
     if update.upgrade_argv() is None:
         pytest.skip("no installed tuipet in this environment")
     ok, msg = update.run_upgrade()
@@ -67,7 +67,7 @@ def test_a_timeout_never_reports_success(monkeypatch):
     def _boom(*a, **k):
         raise subprocess.TimeoutExpired("pip", 1)
 
-    monkeypatch.setattr(update.subprocess, "run", _boom)
+    monkeypatch.setattr(update, "_RUN", _boom)
     if update.upgrade_argv() is None:
         pytest.skip("no installed tuipet in this environment")
     ok, msg = update.run_upgrade()
@@ -81,7 +81,7 @@ def test_success_always_asks_for_a_restart(monkeypatch):
         returncode = 0
         stdout = b""
 
-    monkeypatch.setattr(update.subprocess, "run", lambda *a, **k: _R())
+    monkeypatch.setattr(update, "_RUN", lambda *a, **k: _R())
     if update.upgrade_argv() is None:
         pytest.skip("no installed tuipet in this environment")
     ok, msg = update.run_upgrade()

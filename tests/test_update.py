@@ -59,11 +59,17 @@ def test_worker_sets_hud_message_when_newer(monkeypatch):
     from tuipet.app import TuiPetApp
     from tuipet import app as app_mod
     monkeypatch.setattr(app_mod.update_check, "latest_if_newer", lambda: "0.9.9")
+    # the launch check now INSTALLS the newer release (Joel 2026-07-14) rather
+    # than telling you to type pip -- mock the installer (conftest blocks the
+    # real one outright: this test used to REALLY run pip and upgraded tuipet
+    # inside .venv-dev mid-suite)
+    monkeypatch.setattr(app_mod.update_check, "upgrade_argv", lambda: ["pip"])
+    monkeypatch.setattr(app_mod.update_check, "run_upgrade", lambda: (True, "Updated"))
     s = TuiPetApp.__new__(TuiPetApp)             # bypass Textual mount
     s._update_msg = None
     asyncio.run(s._check_update())
     assert s._update_msg and "0.9.9" in s._update_msg
-    assert "pip install -U tuipet" in s._update_msg
+    assert "restart" in s._update_msg             # Python imported the old code
 
 
 def test_worker_stays_silent_when_current(monkeypatch):
