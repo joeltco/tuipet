@@ -496,9 +496,9 @@ class Adventure:
                 self.last = f"{enemy['name']} falls! The path is open."
                 self.last += self._loot_note()
                 return None
-            self._lose_life(f"Lost to {enemy['name']}...", enemy.get("penalty", 0))
+            self._lose_life(f"Lost to {enemy['name']}…", enemy.get("penalty", 0))
         elif not won:
-            self._lose_life(f"Lost to {enemy['name']}...", enemy.get("penalty", 0))
+            self._lose_life(f"Lost to {enemy['name']}…", enemy.get("penalty", 0))
         else:
             self.last = f"Beat {enemy['name']}!"
             self.last += self._loot_note()

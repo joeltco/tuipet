@@ -136,7 +136,7 @@ class ShopPanel:
                         self.msg = "Too young to travel."
                         return None
                     if self.pet.asleep:
-                        self.msg = "zzz... asleep"
+                        self.msg = "zzz… asleep"
                         return None
                     if getattr(self.pet, "away", False):
                         # transports leave from HOME (the structural doctrine,
@@ -277,7 +277,7 @@ class ShopPanel:
         if self._shelves_closed():
             empty = "(the shutters are down)"
         elif self._tabs()[self.tab] == "egg":
-            empty = "(no eggs in stock \u2014 earn licenses out in the world)"
+            empty = "(no eggs in stock \u2014 earn licences out in the world)"
         else:
             empty = "(shelves empty \u2014 try tomorrow)" if self.mode == "shop" else "(none owned)"
 

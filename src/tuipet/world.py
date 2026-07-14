@@ -227,7 +227,7 @@ def town_known_for(tid: int) -> str:
     hid = _town_biome().get(tid)
     h = _habitats().get(hid, {})
     field = _FIELD_WORD.get(h.get("field", ""), (h.get("elem") or "wild").lower())
-    return f"{h.get('name', 'Town')} town — {field}-field goods & eggs"
+    return f"{h.get('name', 'Town')} town — {field}-field goods and eggs"
 
 
 def town_field(tid: int) -> str:

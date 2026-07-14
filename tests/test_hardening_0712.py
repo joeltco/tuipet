@@ -118,7 +118,7 @@ def test_options_keys_page_shows_glyphs_not_ids():
     ]).rows
     assert "question_mark" not in "\n".join(rows)
     assert rows[0].startswith("?")
-    assert rows[1].startswith("Enter")
+    assert rows[1].startswith("ENTER")
     assert rows[2].startswith("f")
 
 

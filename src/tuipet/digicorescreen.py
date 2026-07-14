@@ -342,7 +342,7 @@ class DigiCorePanel:
         self.teaser_t = 0         # ticks into the digicoreExpand zoom
         self._back_t = 0          # evolSilhouetteBack dark-blink ticks left
         self.frame_i = 0
-        self.note = "the core stirs..."
+        self.note = "the core stirs…"
         self.evo_sel = 0          # EVOLVES page: the highlighted candidate
         self.detail = None        # (num, name): the open requirement checklist
         self.det_off = 0          # ...and its scroll offset
@@ -460,8 +460,8 @@ class DigiCorePanel:
             out.append(f"{val}\n", style=INK_B)
         out.append_text(menu.blanks(9 - len(rows) - 3))
         out.append(" gaze into the core to glimpse\n", style=DIM)
-        out.append(" what stirs within...\n", style=DIM)
-        out.append_text(menu.note(self.note if self.note != "the core stirs..." else "",
+        out.append(" what stirs within…\n", style=DIM)
+        out.append_text(menu.note(self.note if self.note != "the core stirs…" else "",
                                   tick=self.frame_i))
         out.append_text(menu.footer("SPACE gaze  ←→ page  ESC close"))
         return out
@@ -514,12 +514,12 @@ class DigiCorePanel:
                               ("ESC", "close"))
         t = self.teaser_t
         if t < MON_T:
-            return "the core stirs..."
+            return "the core stirs…"
         if t < MON_T + EXPAND_T:
-            return "the core opens..."
+            return "the core opens…"
         return ("Nothing stirs — this is its final form."
                 if next_evolution(self.pet) is None
-                else "A shape looms in the core...")
+                else "A shape looms in the core…")
 
     def _detail_scene(self):
         """One candidate's requirement checklist (evolution.requirement_report):

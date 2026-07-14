@@ -44,7 +44,7 @@ class KeysPanel:
         # Textual binds a couple of keys by identifier, not glyph -- show the
         # glyph so the page reads "?  Help" / "Enter  Accept gift" instead of
         # leaking "question_mark" (which also overran the 6-col key column).
-        keyname = {"question_mark": "?", "enter": "Enter"}
+        keyname = {"question_mark": "?", "enter": "ENTER"}
         self.rows = [f"{keyname.get(k, k):<6} {label}"
                      for k, _action, label in bindings]
         self.top = 0
@@ -247,7 +247,7 @@ class OptionsPanel(menu.SubHost):
                 self.msg = f"retire {self.pet.name} (gen {self.pet.generation}) for a new egg?"
             elif row == "erase":
                 self.confirm, self.buf = True, ""
-                self.msg = "erase EVERYTHING? type YES + Enter"
+                self.msg = "erase EVERYTHING? type YES + ENTER"
         elif k in ("escape", "g"):     # g opened it; g also closes (nav-quit rule)
             return ("done", None)
         return None

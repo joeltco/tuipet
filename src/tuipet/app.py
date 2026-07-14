@@ -89,7 +89,7 @@ def keys_markup():
     return (
         f"[{k}]f[/] feed  [{k}]p[/] play  [{k}]c[/] clean  [{k}]h[/] heal  [{k}]r[/] praise  [{k}]k[/] scold  [{k}]s[/] lights  [{k}]v[/] assist\n"
         f"[{k}]t[/] train  [{k}]a[/] adventure  [{k}]u[/] cup  [{k}]l[/] lobby (battle·jogress)  [{k}]x[/] DNA  [{k}]n[/] eggs\n"
-        f"[{k}]o[/] shop  [{k}]i[/] bag  [{k}]e[/] habitat  [{k}]d[/] data  [{k}]g[/] options  [{k}]b[/] bug  [{k}]?[/] help  [{k}]q[/] quit"
+        f"[{k}]o[/] shop  [{k}]i[/] bag  [{k}]e[/] habitat  [{k}]d[/] digicore  [{k}]g[/] options  [{k}]b[/] bug  [{k}]?[/] help  [{k}]q[/] quit"
     )
 
 
@@ -272,11 +272,11 @@ class TuiPetApp(App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("The game remembers out loud now: coming back tells you what "
-                 "happened while you were gone, first-ever stages and species "
-                 "get a ★, past generations rest on the DigiCore LEGACY page, "
-                 "map conquest shows in TROPHIES, rare finds say RARE, and "
-                 "quitting says goodbye properly.")
+    WHATS_NEW = ("One voice everywhere: key hints read ENTER/ESC in every "
+                 "screen, the battle give-up prompt agrees with itself, "
+                 "effort is called effort wherever it appears, the bag is "
+                 "always the bag, and a sweep of typos and mixed punctuation "
+                 "is gone.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and
@@ -286,7 +286,7 @@ class TuiPetApp(App):
         ("f", "feed", "Feed"), ("t", "train", "Train"),
         ("p", "play", "Play"), ("c", "clean", "Clean"), ("h", "heal", "Heal"),
         ("r", "praise", "Praise"), ("k", "scold", "Scold"),
-        ("a", "adventure", "Adventure"), ("o", "shop", "Shop"), ("i", "inventory", "Inventory"), ("e", "habitat", "Habitat"),
+        ("a", "adventure", "Adventure"), ("o", "shop", "Shop"), ("i", "inventory", "Bag"), ("e", "habitat", "Habitat"),
         ("d", "digicore", "DigiCore"),
         ("n", "eggguide", "Egg Guide"),
         ("u", "tournament", "Cup"), ("x", "dna", "DNA"),

@@ -3024,7 +3024,7 @@ class Pet:
         sleep is POSTPONED: it drops back off in DisturbPostpone game-minutes,
         still owing the missed rest."""
         if not self.asleep:
-            return "zzz..."
+            return "zzz…"
         nap, postponed = self.nap, False
         if not nap:
             self.disturb += 1
@@ -3057,7 +3057,7 @@ class Pet:
         if not postponed:
             return "It grumbles awake."
         self._set_anim("angry", 1.8)                # Sad_Jeering: woken too soon
-        return "zzz... mind its sleep!"
+        return "zzz… mind its sleep!"
 
     def _special_idle(self):
         """The special-idle families, canon shape (SpriteAnim's 1/1500 rolls;
@@ -3690,7 +3690,7 @@ class Pet:
             # it BEGGED to quit, you refused, it lost: obedience is SET to 10
             self._set_obedience(SURR_DECLINED_LOST_OBED)
         self._set_anim("sad", 2.0)
-        return "Defeat..."
+        return "Defeat…"
 
     # ---- battle morale: obedience & surrender (PhysicalState) ----------------
     def _adjusted_obedience(self):
@@ -4283,7 +4283,7 @@ class Pet:
         self.med_lapse = MEDICINE_HOURS                      # the indicator runs as it wears off
         self._set_anim("heal", 1.5)
         return ("The medicine worked!" if not self.sick
-                else f"{self.name} keeps the medicine down... it helps.")
+                else f"{self.name} keeps the medicine down… it helps.")
 
     def _apply_bandage(self):
         """PhysicalState.applyBandage: the Bandage item (i:80, HealLapse -2);
@@ -4487,7 +4487,7 @@ class Pet:
         self._set_mood(self.mood + SPOIL_MOOD_INC)
         self._set_obedience(self.obedience - SPOIL_OBEDIENCE_DEC)
         self._set_anim("play", 1.5)
-        return "Played together -- happy, but a bit spoiled."
+        return "Played together — happy, but a bit spoiled."
 
     # ---- shop / items --------------------------------------------------------
     def buy_slot(self, slot):
@@ -4547,7 +4547,7 @@ class Pet:
                 self.evol_bonus -= 1
             self.add_item(f"f:{BAD_BIRTHDAY_FOOD}")
             self._set_anim("sad", 2.0)                       # Birthday_Bad
-            self.birthday_note = "A rough day... just a Candy."
+            self.birthday_note = "A rough day… just a Candy."
         else:
             self.add_item(f"f:{NORMAL_BIRTHDAY_FOOD}")
             self._set_anim("happy", 1.5)                     # Birthday_Normal
@@ -4751,7 +4751,7 @@ class Pet:
                     if random.randrange(X_SURVIVAL_BOUND) >= X_SURVIVAL_TARGET:
                         self.saved_from_death = X_SAVE_BLOCK
                         self._die("the X-Program")
-                        return "The X-Program was too much for it..."
+                        return "The X-Program was too much for it…"
                     # it SURVIVED: xEvolve charges its price in LIFE --
                     # 86400/nextInt(7) real-sec (/60 scale; a 0 draw is free),
                     # canon calcXAntibodyLifeDec verbatim

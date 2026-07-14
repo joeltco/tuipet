@@ -130,7 +130,7 @@ def _fake_lobby():
          "pet": {"name": "Agumon", "stage": "Rookie", "title": "Data Dynast"}},
     ]
     pan.client, pan.state, pan.phase = _C(), s, "lobby"
-    pan.status = "↑↓ pick · Enter chat/act · Esc leave"
+    pan.status = "↑↓ pick · ENTER chat/act · ESC leave"
     return pan
 
 

@@ -83,11 +83,11 @@ class FeedPanel:
     def text(self):
         p = self.pet
         from .pet import DP_MAX
-        out = menu.header("FEED", f"hunger {p.hunger}/4  str {p.strength}/4  "
+        out = menu.header("FEED", f"hunger {p.hunger}/4  effort {p.strength}/4  "
                                   f"DP {getattr(p, 'dp', 0)}/{DP_MAX}")
         if not self.options:
             out.append_text(menu.blanks(2))
-            out.append_text(menu.note("The pantry is empty."))
+            out.append_text(menu.note("The bag has no food."))
             out.append("  Buy food at the shop ([o]).\n", style=DIM)
             out.append_text(menu.blanks(3))
             out.append_text(menu.footer("ESC out"))

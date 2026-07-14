@@ -242,7 +242,7 @@ class LobbyPanel:
         if getattr(p, "dead", False):
             return "It rests now — press N for a new egg."
         if p.asleep:
-            return "zzz... asleep"
+            return "zzz… asleep"
         if kind == "jogress":
             return jogress.can_jogress(p)      # pure: stage / DP checks
         if p.stage in ("Egg", "Fresh"):
@@ -346,7 +346,7 @@ class LobbyPanel:
         elif s.connected and self.status == "Connecting…":
             # 36 chars: the old "Up/Down pick · …" ran 41 and CLIPPED its own
             # "Esc leave" hint off the 38-col line (Joel's live screen 2026-07-07)
-            self.status = "↑↓ pick · Enter chat/act · Esc leave"
+            self.status = "↑↓ pick · ENTER chat/act · ESC leave"
         # drop -> the client retries on its own; say so instead of stranding a banner
         if getattr(s, "reconnecting", False):
             self._seen_ids = None                  # a refilled roster is not a wave of joins
@@ -689,7 +689,7 @@ class LobbyPanel:
             # canon startJogress: checkSick(90) -- swapping DNA with a
             # sick partner is a NEAR-CERTAIN catch
             if self.pet._check_sick(jogress.JOGRESS_SICK_CHANCE):
-                msg += "  ...and it caught something."
+                msg += "  …and it caught something."
         self.sfx = "jogress"
         self._return_to_lobby(msg)
 
@@ -774,7 +774,7 @@ class LobbyPanel:
         caret = "_" if (getattr(self, "_mq", 0) // 5) % 2 == 0 else " "
         t.append(label, style=INK_B)
         t.append(_fit(shown + caret, fw) + "\n", style=INK)
-        t.append(_fit("Enter send · Esc back to lobby", w), style=DIM)
+        t.append(_fit("ENTER send · ESC back to lobby", w), style=DIM)
         return t
 
     def _key_lobby(self, k):
@@ -832,7 +832,7 @@ class LobbyPanel:
                 # compose a private message: the input line retargets
                 self.pm_to = (pid, pname)
                 self.buf = ""
-                self.status = f"PM → {pname} — Enter send, Esc cancel"
+                self.status = f"PM → {pname} — ENTER send, ESC cancel"
                 self.action_for = None
             elif k == "escape":
                 self.action_for = None
@@ -858,11 +858,11 @@ class LobbyPanel:
         if k == "right" and not self.rost_hidden:
             # fold the player box: the chat gets the full width (Joel 2026-07-10)
             self.rost_hidden = True
-            self.status = "↑↓ scroll · ← player box · Esc leave"
+            self.status = "↑↓ scroll · ← player box · ESC leave"
             return None
         if k == "left" and self.rost_hidden:
             self.rost_hidden = False
-            self.status = "↑↓ pick · Enter chat/act · Esc leave"
+            self.status = "↑↓ pick · ENTER chat/act · ESC leave"
             return None
         if k == "up":
             if self.rost_hidden:
@@ -950,7 +950,7 @@ class LobbyPanel:
                 if self.j_peer_two_phase:
                     return f"→ [b]{name}[/] [dim]· ENTER fuse · ESC[/]"
                 return f"→ [b]{name}[/]  [dim]· ENTER fuse[/]"
-            return "DNA... connect!  [dim]· ENTER skip[/]"
+            return "DNA… connect!  [dim]· ENTER skip[/]"
         if self.phase in ("jogress", "battle"):
             return ""                      # session text phases prompt in-LCD
         if self.phase == "login":
@@ -960,7 +960,7 @@ class LobbyPanel:
             if cue:
                 return cue
             return menu.hints(("ENTER", "send"), ("ESC", "back")) + \
-                "  [dim]— thread is saved[/]"
+                "  [dim]— thread saved[/]"
         if self.invite_prompt is not None:
             return menu.hints(("Y", "accept"), ("N", "decline"))
         if self.action_for is not None:
@@ -1183,17 +1183,17 @@ class LobbyPanel:
             blurb = self._pet_of(pid)
             who = f"{pname} ({blurb})" if blurb else pname
             if self.state and pname in self.state.blocked:
-                acts = "[X]unblock  [Esc]"
+                acts = "[X]unblock  [ESC]"
             elif plive:
-                acts = "[B]attle [J]og [V]iew [X]block [Esc]"
+                acts = "[B]attle [J]og [V] DMs [X]block [ESC]"
             else:
-                acts = "not in lobby — [P]ing [V]iew [X]block [Esc]"
+                acts = "not in lobby — [P]ing [V] DMs [X]block [ESC]"
             full = f"{who}:  {acts}"
             # whole line scrolls when it overflows (Joel 2026-07-09), else static
             t.append(marquee(full, w, mq) if len(full) > w else _fit(full, w), style=INK_B)
         elif self.scroll:
             # scrolled into the log: the line teaches its own way back
-            t.append("▲ older — PgUp/PgDn · Esc back to live"[:w], style=DIM)
+            t.append("▲ older — PgUp/PgDn · ESC back to live"[:w], style=DIM)
         else:
             line = self.status
             if self.rost_hidden and line.startswith("↑↓ pick"):

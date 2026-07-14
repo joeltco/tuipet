@@ -51,7 +51,7 @@ def test_greeting_names_the_town_and_known_for_is_populated():
     for t in data.load_towns():
         g = world.town_greeting(t)
         assert world.town_name(t) in g and g.endswith((".", "!"))
-        assert world.town_known_for(t).endswith("goods & eggs")
+        assert world.town_known_for(t).endswith("goods and eggs")
 
 
 def test_specialty_keys_are_real_general_consumables():

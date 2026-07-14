@@ -50,7 +50,7 @@ class BugReportPanel(menu.SubHost):
         if k == "enter":
             text = self.buf.strip()
             if not text:
-                self.msg = "Type the bug first — or Esc to cancel."
+                self.msg = "Type the bug first — or ESC to cancel."
                 self.sfx = "error"
                 return None
             return ("done", ("bug", text))

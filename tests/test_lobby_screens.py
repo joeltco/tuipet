@@ -38,7 +38,7 @@ def _lobby():
     s.roster = [{"id": 1, "name": "JoeltCo", "pet": {}},
                 {"id": 2, "name": "Ryo", "pet": {"name": "WarGreymon", "stage": "Mega"}}]
     pan.client, pan.state, pan.phase = _FakeClient(), s, "lobby"
-    pan.status = "↑↓ pick · Enter chat/act · Esc leave"
+    pan.status = "↑↓ pick · ENTER chat/act · ESC leave"
     return pan
 
 
@@ -226,7 +226,7 @@ def test_prompt_lines_keep_their_hints_with_long_names():
         last = pan.text().plain.split("\n")[-1]
         assert len(last) <= LCD_COLS              # never overruns the box
         rolled += last
-    assert "[B]attle" in rolled and "[V]iew" in rolled and "[Esc]" in rolled  # hints roll past
+    assert "[B]attle" in rolled and "[V] DMs" in rolled and "[ESC]" in rolled  # hints roll past
     pan.action_for = (3, long, False)             # the ghost variant
     rolled = ""
     for i in range(240):
@@ -234,10 +234,10 @@ def test_prompt_lines_keep_their_hints_with_long_names():
         last = pan.text().plain.split("\n")[-1]
         assert len(last) <= LCD_COLS
         rolled += last
-    assert "[P]ing" in rolled and "[V]iew" in rolled and "[Esc]" in rolled
+    assert "[P]ing" in rolled and "[V] DMs" in rolled and "[ESC]" in rolled
     pan.action_for = None                         # the selection status line
     pan.sel = 1                                   # sorted: the long-name live row
-    pan.status = "↑↓ pick · Enter chat/act · Esc leave"
+    pan.status = "↑↓ pick · ENTER chat/act · ESC leave"
     others = pan._others()
     target = next(i for i, p in enumerate(others) if p["name"] == long)
     pan.sel = target
@@ -269,7 +269,7 @@ def test_default_status_hint_renders_whole():
     pan.anim()                                    # the connected transition sets it
     assert len(pan.status) <= 38
     last = pan.text().plain.split("\n")[-1]
-    assert last.endswith("Esc leave"), last
+    assert last.endswith("ESC leave"), last
 
 
 def test_malformed_relay_payloads_never_crash_the_battle():

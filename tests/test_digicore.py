@@ -322,8 +322,8 @@ def test_the_core_gaze_looms_over_the_core_background():
     finally:
         dc.render_scene = real
     assert cap and all(b is not None for b in cap)   # every gaze frame carries it
-    assert msgs == ["the core stirs...", "the core opens...",
-                    "A shape looms in the core..."]  # the message box narrates
+    assert msgs == ["the core stirs…", "the core opens…",
+                    "A shape looms in the core…"]  # the message box narrates
 
 
 def test_evolves_page_windows_instead_of_overflowing():

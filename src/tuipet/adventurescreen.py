@@ -448,7 +448,7 @@ class AdventurePanel(menu.SubHost):
                 # the result message stays sealed until the reveal beat
                 self._scene = {"t": 0, "kind": kind or "none", "thing": thing,
                                "msg": self.adv.last, "icon": icon}
-                self.adv.last = f"{self.pet.name} goes to look..."
+                self.adv.last = f"{self.pet.name} goes to look…"
             elif k in ("escape", "n", "space"):
                 self.discovering = False
                 self.adv.last = "Walked on by."

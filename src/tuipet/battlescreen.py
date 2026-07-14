@@ -189,7 +189,7 @@ class BattlePanel:
                 self.battle.surrender()          # the bout ends: neither win nor loss
                 return ("done", None)
             self.sfx = "refuse"
-            self.note = "Tried to escape... but failed!"
+            self.note = "Tried to escape… but failed!"
             self._resolve_and_build(self.battle._own_choice())
             return None
         if self.pet.check_refused():
@@ -503,9 +503,9 @@ class BattlePanel:
         out.append_text(menu.note(ignored) if ignored else menu.blanks(1))
         powr = {"Vaccine": self.pet.vaccine, "Data": self.pet.data_power, "Virus": self.pet.virus}
         for i, (label, attr) in enumerate(OPTS):
-            tagr = f"pow {powr[attr]}" if attr else "bow out"
+            tagr = f"pow {powr[attr]}" if attr else ""
             out.append_text(menu.row(f"{label:<10} {tagr}", i == self.sel))
-        out.append_text(menu.footer("↑↓ pick   ENTER attack   ESC flee"))
+        out.append_text(menu.footer("↑↓ pick   ENTER attack   ESC surrender"))
         self.hud_php, self.hud_fhp, self.hud_note = b.pet_hp, b.enemy_hp, "Choose your attack"
         return out
 
@@ -513,12 +513,12 @@ class BattlePanel:
         if self.phase == "menu":
             return self._render_menu()
         if self.phase == "surrender_ask":
-            out = menu.header("BATTLE", "it falters...")
+            out = menu.header("BATTLE", "it falters…")
             out.append_text(menu.blanks(1))
             out.append_text(menu.row(f"{self.pet.name} wants to give up!"))
             out.append_text(menu.blanks(3))
             out.append_text(menu.note("allow the retreat, or send it back in?"))
-            out.append_text(menu.footer("Y allow   N fight on"))
+            out.append_text(menu.footer("ENTER allow   ESC fight on"))
             return out
         if self.phase == "result":
             return self._render_scene_frame({"m": "result", "view": "pet"})
