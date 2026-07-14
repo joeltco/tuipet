@@ -265,11 +265,11 @@ class TuiPetApp(App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("The update option now actually updates: g options → "
-                 "Update, ENTER to check, ENTER again to install it right "
-                 "there. Then restart to play the new version. On iOS (which "
-                 "cannot run pip for you) it hands you the command instead of "
-                 "pretending.")
+    WHATS_NEW = ("The album can be finished now: its target counted 329 "
+                 "duplicate dex rows (one species sits on several device "
+                 "pages), so it read 1218/1547 and could never reach 100%. "
+                 "Both halves now count real species — check it on the "
+                 "digicore (d).")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and
