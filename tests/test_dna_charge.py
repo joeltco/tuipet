@@ -43,7 +43,6 @@ def test_bulk_charge_still_ceils_at_three():
 # ---- high-stakes wagers (bit-sink design 2026-07-14) --------------------------
 
 def test_classic_wager_is_untouched():
-    from tuipet.pet import MAX_DNA_INVENTORY
     p = _pet()
     p.bits = 0
     assert p.dna_minigame_award(10, 48) == "DragonsRoar"     # rate 48 band

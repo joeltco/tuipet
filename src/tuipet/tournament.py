@@ -445,6 +445,8 @@ class Tournament:
         return total
 
     def _finish(self, bits):
+        from .pet import weekend_bonus
+        bits = int(bits * weekend_bonus())   # x1.5 purse on real weekends
         self.over = True
         self.reward_bits = bits
         if bits:
@@ -463,7 +465,7 @@ class Tournament:
             bits = (0, self._calc_bits() // 3, self._calc_bits() // 2)[min(self.round, 2)]
             self._finish(bits)
             self.champion = False
-            tail = (" +%db" % bits) if bits else ""
+            tail = (" +%db" % self.reward_bits) if self.reward_bits else ""
             self.last = "Eliminated in the %s.%s" % (self.round_name, tail)
             return self.last
         self.round += 1

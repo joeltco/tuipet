@@ -16,6 +16,29 @@ def _clamp(v, lo, hi):
     return max(lo, min(hi, v))
 
 
+WEEKEND_BIT_MULT = 1.5   # weekend COMBAT income bonus (DSprite study 2026-07-14)
+
+
+def _weekend_mult(now=None):
+    """The real Sat/Sun check (the player's local clock); `now` is an epoch
+    override for tests."""
+    import time as _time
+    t = _time.localtime(_time.time() if now is None else now)
+    return WEEKEND_BIT_MULT if t.tm_wday >= 5 else 1.0
+
+
+def weekend_bonus(now=None):
+    """x1.5 bit multiplier on real-world Sat/Sun.
+
+    Applies to COMBAT/COMPETITION income only — battle-win bits and tournament
+    purses — never to shop resells or refunds (those are sinks, scaling them
+    would just cheapen items on weekends).  Kept as a thin wrapper around
+    _weekend_mult so the test suite can pin it to a weekday (conftest) without
+    losing the real logic.
+    """
+    return _weekend_mult(now)
+
+
 def _enemy_level(enemy):
     """DVPet getLevel: (vaccine+data+virus + (health-5)*10) / 100, min 1."""
     v = enemy.get("vaccine", 0)
@@ -3692,10 +3715,12 @@ class Pet:
             # x5-compressed PerfectWinsLimit applies to every event type)
             grew += self._check_perfect_wins(force=False)
             lo, hi = (enemy or {}).get("bits", (1, 5))
-            gained = random.randint(lo, hi)
+            mult = weekend_bonus()
+            gained = int(random.randint(lo, hi) * mult)
             self.bits += gained
             self._set_anim("happy", 2.0)
-            return f"Victory! +{gained} bits{grew}"
+            wknd = " (wknd x1.5)" if mult > 1 else ""
+            return f"Victory! +{gained} bits{wknd}{grew}"
         self._set_mood(self.mood - 20 + BATTLE_DISPO_MOOD_FACTOR * self.disposition)   # BattleLostMoodDec
         self._set_enthusiasm(self.enthusiasm - 6)    # BattleLostEnthusiasmDec
         self._set_obedience(self.obedience - 1)      # BattlesObedienceDec (a loss saps trust)

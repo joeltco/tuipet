@@ -272,10 +272,10 @@ class TuiPetApp(App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("THE MONTHLY LADDER is live: every online win is a rung, the "
-                 "race resets each month, and last season's podium pays out "
-                 "in bits when you next check in. Press TAB in the lobby for "
-                 "the rankings. One win = one rung — go climb.")
+    WHATS_NEW = ("WEEKEND BONUS: battles and tournaments pay x1.5 bits every "
+                 "Saturday and Sunday (your local clock). Victory lines show "
+                 "the (wknd x1.5) tag when it's live. Purses, elimination "
+                 "consolations, wild wins - all of it. See you Saturday.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and

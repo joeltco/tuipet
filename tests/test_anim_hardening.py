@@ -170,7 +170,8 @@ def test_condition_widens_the_drill_windows():
 # ---- the monthly ladder (2026-07-14) ---------------------------------------------
 
 def _srv():
-    import sys as _s, os as _o
+    import sys as _s
+    import os as _o
     _s.path.insert(0, _o.path.join(_o.path.dirname(__file__), "..", "server"))
     import server
     return server
@@ -211,7 +212,6 @@ def test_ladder_pair_cap_lids_collusion():
 
 def test_ladder_view_and_past_season_award():
     srv = _srv()
-    import calendar, time as _t
     srv.LADDER["seasons"]["2026-06"] = {"joel": 9, "wyld": 7, "third": 5, "fourth": 1}
     srv.LADDER["seasons"][srv._season_key()] = {"joel": 2, "wyld": 3}
     v = srv._ladder_view("joel")
@@ -265,3 +265,52 @@ def test_ladder_page_renders():
     assert "▸ 2. joel" in plain.replace("  ", " ") or "joel" in plain
     assert "resets in 17 days" in plain
     assert all(len(line) <= 40 for line in plain.splitlines())
+
+
+# ---------------------------------------------------------------------------
+# Weekend bit bonus (DSprite study steal #4, 2026-07-14): x1.5 COMBAT income
+# on real Sat/Sun — battle wins + tournament purses ONLY (never shop resells).
+# ---------------------------------------------------------------------------
+
+def test_weekend_mult_true_weekday_logic():
+    import time
+    from tuipet.pet import _weekend_mult
+    # build epochs from LOCAL structs so the pin holds in any timezone
+    sat = time.mktime((2026, 7, 11, 12, 0, 0, 0, 0, -1))
+    sun = time.mktime((2026, 7, 12, 12, 0, 0, 0, 0, -1))
+    tue = time.mktime((2026, 7, 14, 12, 0, 0, 0, 0, -1))
+    assert _weekend_mult(sat) == 1.5
+    assert _weekend_mult(sun) == 1.5
+    assert _weekend_mult(tue) == 1.0
+
+
+def test_weekend_battle_win_scales_bits_and_tags_message(monkeypatch):
+    import random as _r
+    from tuipet import pet as pet_mod
+    monkeypatch.setattr(pet_mod, "weekend_bonus", lambda now=None: 1.5)
+    monkeypatch.setattr(_r, "randint", lambda lo, hi: 4)
+    p = Pet(num=100, stage="Champion", bits=100)
+    msg = p.record_battle(True, {"bits": (4, 4)}, free_style=True)
+    assert p.bits == 106                       # int(4 * 1.5) = 6
+    assert "+6 bits (wknd x1.5)" in msg
+
+
+def test_weekday_battle_win_untagged(monkeypatch):
+    import random as _r
+    monkeypatch.setattr(_r, "randint", lambda lo, hi: 4)
+    p = Pet(num=100, stage="Champion", bits=100)
+    msg = p.record_battle(True, {"bits": (4, 4)}, free_style=True)
+    assert p.bits == 104 and "wknd" not in msg
+
+
+def test_weekend_tournament_purse_scales(monkeypatch):
+    from tuipet import pet as pet_mod
+    from tuipet.tournament import Tournament
+    monkeypatch.setattr(pet_mod, "weekend_bonus", lambda now=None: 1.5)
+    p = Pet(num=100, stage="Champion", bits=0)
+    tm = Tournament.__new__(Tournament)
+    tm.pet = p
+    tm.over = False
+    tm.trophy = {"same_day_retry": True, "id": "_wknd_test"}
+    tm._finish(1000)
+    assert tm.reward_bits == 1500 and p.bits == 1500

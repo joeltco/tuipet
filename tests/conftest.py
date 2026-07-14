@@ -27,6 +27,16 @@ def isolate_save(tmp_path, monkeypatch):
     yield
 
 
+@pytest.fixture(autouse=True)
+def weekday_bits(monkeypatch):
+    """Pin weekend_bonus to a weekday (x1.0) so every bit-amount pin in the
+    suite is deterministic no matter which real day it runs on. The weekend
+    tests exercise _weekend_mult directly / re-patch weekend_bonus to 1.5."""
+    from tuipet import pet as pet_mod
+    monkeypatch.setattr(pet_mod, "weekend_bonus", lambda now=None: 1.0)
+    yield
+
+
 def _by_num():
     from tuipet import data
     _, by_num = data.load_sprites()
