@@ -1,12 +1,18 @@
 # tuipet
 
+[![CI](https://github.com/joeltco/tuipet/actions/workflows/ci.yml/badge.svg)](https://github.com/joeltco/tuipet/actions/workflows/ci.yml)
+[![PyPI](https://img.shields.io/pypi/v/tuipet)](https://pypi.org/project/tuipet/)
+[![Python](https://img.shields.io/pypi/pyversions/tuipet)](https://pypi.org/project/tuipet/)
+[![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
+
 A terminal virtual pet — Digimon V-Pet style — rendered with halfblock Unicode
 sprites and animated in the terminal. It builds on the work of the Digimon V-Pet
 fan community — see [Credits & acknowledgments](#credits--acknowledgments).
 
 ![tuipet demo — hatch, feed, play, and adventure with your pet in the terminal](demo.gif)
 
-**Status: live and actively developed.** tuipet is its own game: the core
+**Status: live and actively developed** — see the
+[changelog](CHANGELOG.md) for what each release brought. tuipet is its own game: the core
 V-Pet behaviour — every mechanic, animation, and evolution line — is built
 on and verified against the real devices, with data cross-referenced against
 community references. Regular updates ship as the game grows.

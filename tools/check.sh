@@ -3,7 +3,7 @@
 #   ruff (lint) + mypy (types) + bandit (security) + pytest.
 # Tools + deps live in a gitignored .venv-dev (created on first run).
 set -uo pipefail
-cd "$(dirname "$(readlink -f "$0")")"
+cd "$(dirname "$(readlink -f "$0")")/.."
 
 VENV=.venv-dev
 if [ ! -x "$VENV/bin/ruff" ]; then

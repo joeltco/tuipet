@@ -14,7 +14,7 @@
 # local, gitignored .release-venv.  tests + build use the system python.
 set -euo pipefail
 
-cd "$(dirname "$(readlink -f "$0")")"
+cd "$(dirname "$(readlink -f "$0")")/.."
 
 BUMP=""
 CONFIRM=1

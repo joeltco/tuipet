@@ -1,7 +1,7 @@
 name: release
 
 # Validates that a version tag builds cleanly. Publishing to PyPI is done by
-# deploy.sh (local, token in ~/.pypirc), so this workflow does NOT publish —
+# tools/deploy.sh (local, token in ~/.pypirc), so this workflow does NOT publish —
 # it's a green "the tag builds + metadata is valid" gate.
 #
 # To switch to token-free CI publishing later: set up PyPI Trusted Publishing
