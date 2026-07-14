@@ -2808,6 +2808,22 @@ class Pet:
         """Mood as 0..100 for the status bar."""
         return (self.mood - MOOD_MIN) * 100 // (MOOD_MAX - MOOD_MIN)
 
+    def condition(self):
+        """CONDITION 0..3: how well-kept the pet is RIGHT NOW.  Care pays into
+        SKILL, not just survival (2026-07-14): the training drills read this
+        tier and widen their timing zones/windows for a well-kept pet -- a
+        starved, exhausted, miserable one trains with a trembling paw.  The
+        mean of four care gauges, floored to a tier; a sick or injured pet
+        never scores above 1 (its body isn't up to precision)."""
+        score = (self.hunger / 4.0
+                 + self.strength / 4.0
+                 + max(0.0, self.energy) / float(max(1, self.max_energy))
+                 + (self.mood + 300.0) / 600.0) / 4.0
+        tier = max(0, min(3, int(score * 4)))
+        if self.sick or self.is_injured():
+            tier = min(tier, 1)
+        return tier
+
     def current_mood(self):
         """PhysicalState _currentMood: Depressed is a sticky STATE (checkDepressed's
         entry/exit rolls -- canon re-audit 2026-07; a mood threshold only biases the

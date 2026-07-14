@@ -272,11 +272,11 @@ class TuiPetApp(App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("Device-exact idle, from a real V-pet's decompiled timings: "
-                 "your pet now wanders, stops at the walls for a moment to "
-                 "turn around, and picks its steps unpredictably; the egg "
-                 "wobbles faster and faster as hatching nears; and the final "
-                 "winning blow in battle lands in dramatic silence.")
+    WHATS_NEW = ("Care steadies the paw: a well-kept pet now trains sharper — "
+                 "the Virus stop-zone grows, the mash window stretches, the "
+                 "reel runs longer. The training menu shows your CONDITION "
+                 "(fed, rested, happy = ●●●); a sick or hurt pet always "
+                 "trembles. Keep it well and it aims true.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and

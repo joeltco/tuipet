@@ -80,6 +80,13 @@ HP_SCROLL = (8, 6, 4)         # ticks between reel steps by rank -- the drill RE
 HP_ROUND_LEN = (60, 50, 40)   # ticks/round by rank (Easy/Normal/Hard).  DVPet shrinks this with HP,
                               # but at tuipet's 10Hz that left only ~1s/round on a grown pet (you
                               # couldn't move + lock after round 1) -- floored generous: 6/5/4s.
+# CONDITION widens the skill window (2026-07-14): pet.condition() 0..3 -- a
+# well-kept pet aims steadier.  Per tier: the Virus stop-zone grows downward,
+# the Vaccine mash window stretches, the HP reel round runs longer.  The Data
+# drill is untouched -- its versus chart is the printed manual's, verbatim.
+COND_ZONE_PX = 2              # Virus: zone_min = VIRUS_BAR_MIN - tier*2 (9..15px of 94)
+COND_MASH_TICKS = 3           # Vaccine: window + tier*3 ticks (up to +0.9s)
+COND_REEL_TICKS = 5           # HP: round_len + tier*5 ticks (up to +1.5s)
 
 COLS = 40
 ARENA_ROWS = 12               # the app's ONE locked LCD area (== app SCREEN_ROWS / battle ROWS).
@@ -145,7 +152,7 @@ GAMES = [
     ("hp",      "HP Drill", "Effort",  "stop the reel on the match"),
     ("vaccine", "Vaccine",  "Vaccine", "mash the bag — fast!"),
     ("data",    "Data",     "Data",    "beat the shield — 3 of 5"),
-    ("virus",   "Virus",    "Virus",   f"stop the bar over {VIRUS_BAR_MIN}"),
+    ("virus",   "Virus",    "Virus",   "stop the bar in the zone"),
 ]
 
 
@@ -166,10 +173,13 @@ class TrainingPanel:
         self.hits = 0
         self.power = 0
         self.taps = 0
-        self.timer = VACCINE_WINDOW
+        # CONDITION (2026-07-14): sampled once per drill -- care steadies the paw
+        self.cond = self.pet.condition()
+        self.timer = VACCINE_WINDOW + COND_MASH_TICKS * self.cond
+        self.virus_zone = VIRUS_BAR_MIN - COND_ZONE_PX * self.cond
         self.vaccine_target = VACCINE_HITS[1]   # rank-based, set per drill start (below)
         self.virus_speed = VIRUS_SPEEDS[1]      # rank-based bar fill speed
-        self.round_len = HP_ROUND_LEN[1]
+        self.round_len = HP_ROUND_LEN[1] + COND_REEL_TICKS * self.cond
         self.round_t = self.round_len
         self.rounds_won = 0
         self.hp_target = 0           # hidden attribute the bag "is" (0/1/2)
@@ -260,7 +270,7 @@ class TrainingPanel:
         rank = min((getattr(self.pet, "full_health", 0) or 10) // HP_TRAIN_DIFFICULTY, 2)
         self.hp_scroll = HP_SCROLL[rank]
         self.hp_scroll_t = self.hp_scroll
-        self.round_len = self._hp_round_len()
+        self.round_len = self._hp_round_len() + COND_REEL_TICKS * self.cond
         self.round_t = self.round_len
         self.flash = f"round {self.rep + 1}/{HP_ROUNDS} — SPACE on the match"
 
@@ -472,7 +482,7 @@ class TrainingPanel:
             self._flash(6)
         elif gk == "virus":
             v = int(self.pos)
-            if v >= VIRUS_BAR_MIN:
+            if v >= self.virus_zone:               # condition widens the zone
                 self._finish(3, v, "Virus", "virus")
             elif v >= 60:
                 self._finish(2, v, "Virus", "virus")
@@ -604,14 +614,15 @@ class TrainingPanel:
                 w = max(0, min(fw_fill, track_w, round(track_w * min(self.pos, VIRUS_MAX) / VIRUS_MAX)))
                 if w:
                     overlay.extend(_blit([row[:w] for row in fill], fx + 1, fy + 1))
-            # target line: a 1px tick at the zone threshold (VIRUS_BAR_MIN) so you can see where to stop
-            zx = fx + 1 + min(track_w - 1, int(track_w * VIRUS_BAR_MIN / VIRUS_MAX))
+            # target line: a 1px tick at the zone threshold (condition-widened)
+            # so you can see where to stop -- good care visibly LOWERS the bar
+            zx = fx + 1 + min(track_w - 1, int(track_w * self.virus_zone / VIRUS_MAX))
             overlay += [(zx, fy + y) for y in range(fh)]
             # the zone STROBES while the fill is inside it (polish C, Joel
             # 2026-07-13): a stop-NOW signal you can read at bar speed -- the
             # 1px tick alone can't be.  Solid flash on alternate ticks, drawn
             # chrome like the tick itself.
-            if int(self.pos) >= VIRUS_BAR_MIN and self.frame_i % 2:
+            if int(self.pos) >= self.virus_zone and self.frame_i % 2:
                 overlay += [(x, fy + y) for x in range(zx, fx + 1 + track_w)
                             for y in range(fh)]
         elif gk == "data":
@@ -836,6 +847,8 @@ class TrainingPanel:
                        style=(f"{ACCENT} on {LCD_BG}") if sel else INK_B)
             out.append(f" {desc}\n", style=INK_B if sel else DIM)
         out.append_text(menu.blanks(1))
-        out.append_text(menu.note(f"builds {GAMES[self.gi][2]}"))
+        c = self.pet.condition()
+        out.append_text(menu.note(f"builds {GAMES[self.gi][2]}  ·  "
+                                  f"condition {'●' * c}{'○' * (3 - c)}"))
         return out
 

@@ -135,3 +135,33 @@ def test_final_winning_blow_lands_silent():
     tl3 = round_timeline(1, 5, pdmg=0, edmg=1, player_first=False)
     pk = [e for e in tl3 if e["m"] == "hit" and e["def"] == "pet"]
     assert pk and not any(e["final"] for e in pk)      # a LOSS still stings
+
+
+# ---- care widens the skill window (condition, 2026-07-14) -----------------------
+
+def test_condition_tiers():
+    p = Pet(num=100, stage="Champion", hunger=4, strength=4, mood=300)
+    p.energy = p.max_energy
+    assert p.condition() == 3                      # a perfectly kept pet
+    p.sick = True
+    assert p.condition() == 1                      # a sick body caps precision
+    q = Pet(num=100, stage="Champion", hunger=0, strength=0, mood=-300)
+    q.energy = 0
+    assert q.condition() == 0                      # trembling paw
+
+
+def test_condition_widens_the_drill_windows():
+    from tuipet import training
+    top = Pet(num=100, stage="Champion", hunger=4, strength=4, mood=300)
+    top.energy = top.max_energy
+    pan = training.TrainingPanel(top)
+    assert pan.cond == 3
+    assert pan.virus_zone == training.VIRUS_BAR_MIN - 3 * training.COND_ZONE_PX
+    assert pan.timer == training.VACCINE_WINDOW + 3 * training.COND_MASH_TICKS
+    low = Pet(num=100, stage="Champion", hunger=0, strength=0, mood=-300)
+    low.energy = 0
+    pan2 = training.TrainingPanel(low)
+    assert pan2.cond == 0
+    assert pan2.virus_zone == training.VIRUS_BAR_MIN        # baseline unchanged
+    assert pan2.timer == training.VACCINE_WINDOW
+    assert "condition" in pan2.text().plain        # the menu SHOWS the tier
