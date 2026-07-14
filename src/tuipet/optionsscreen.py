@@ -92,6 +92,7 @@ class OptionsPanel(menu.SubHost):
         self._installing = False       # a pip run is in flight
         self._updated = False          # installed: the NEW code needs a restart
         self.confirm = False           # typed-YES gate for the erase
+        self.confirm_new = False       # one-ENTER gate before retiring a LIVING pet
         self.buf = ""
         self.msg = ""                  # action feedback; empty -> the row's _DESC
         self.sfx = None
@@ -115,6 +116,8 @@ class OptionsPanel(menu.SubHost):
             return ""                  # the hosted panel owns the box (strip walker)
         if self.confirm:
             return menu.hints(("ENTER", "erase it all"), ("ESC", "keep"))
+        if self.confirm_new:
+            return menu.hints(("ENTER", "retire"), ("ESC", "keep"))
         return menu.hints(("↑↓", "pick"), ("ENTER", "go"), ("ESC", "back"))
 
     # ---- the update check (threaded: latest_if_newer blocks up to 4s) ----
@@ -167,6 +170,13 @@ class OptionsPanel(menu.SubHost):
             if self._done is not None:
                 r, self._done = self._done, None
                 return ("done", r)
+            return None
+        if self.confirm_new:
+            if k == "enter":
+                return ("done", ("new",))
+            if k == "escape":
+                self.confirm_new = False
+                self.msg = f"kept {self.pet.name}."
             return None
         if self.confirm:
             if k == "escape":
@@ -228,7 +238,13 @@ class OptionsPanel(menu.SubHost):
                 self._sub_row = row
                 self.sub = KeysPanel(self.bindings)
             elif row == "new":
-                return ("done", ("new",))
+                # a LIVING pet gets a confirm: "New egg" replaced it instantly
+                # while Erase demanded a typed YES (sweep 2026-07-14).  A dead
+                # pet or an unhatched egg hands off without ceremony.
+                if getattr(self.pet, "dead", False) or self.pet.stage == "Egg":
+                    return ("done", ("new",))
+                self.confirm_new = True
+                self.msg = f"retire {self.pet.name} (gen {self.pet.generation}) for a new egg?"
             elif row == "erase":
                 self.confirm, self.buf = True, ""
                 self.msg = "erase EVERYTHING? type YES + Enter"

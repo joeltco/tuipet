@@ -59,8 +59,10 @@ class EggSelectPanel:
         self.msg, self.msg_t = text, 22
 
     def strip(self):
-        """The message-box hint line (hint overhaul 2026-07-10)."""
-        return menu.hints(("←→", "browse"), ("ENTER", "pick"), ("ESC", "back"))
+        """The message-box hint line (hint overhaul 2026-07-10).  N advertises
+        the egg guide -- the pick is permanent for the generation, and the
+        carousel alone gives no basis to choose (sweep 2026-07-14)."""
+        return menu.hints(("←→", "browse"), ("ENTER", "pick"), ("N", "guide"))
 
     def key(self, k):
         if k in ("right", "l", "down", "j"):
@@ -73,6 +75,8 @@ class EggSelectPanel:
             if not self.n:
                 return None
             return ("done", self.carousel[self.i])     # hatch the centred egg
+        elif k == "n":
+            return ("done", "guide")                   # consult the egg guide first
         elif k == "escape":
             return ("done", None)                      # back out without choosing
         return None

@@ -272,11 +272,10 @@ class TuiPetApp(App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("tuipet got tougher: a damaged save is rescued and named "
-                 "instead of silently replaced, a crash saves your pet and "
-                 "files its own report, a second running copy is caught "
-                 "before it eats your save, and cloud sync has an on/off "
-                 "switch in options.")
+    WHATS_NEW = ("Smoother first steps: no login wall before you've met your "
+                 "pet (the lobby asks when you go online), the egg picker "
+                 "opens the egg guide with N, retiring a living pet asks "
+                 "first, and help finally explains the weather.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and
@@ -371,6 +370,11 @@ class TuiPetApp(App):
             return None
         s["seen_version"] = cur
         persistence.save_settings(s)
+        if self._new_game:
+            # a first-EVER install also has no seen_version, but release news
+            # names systems a brand-new player hasn't met (honors, DNA
+            # wagers...) -- stamp it seen and say nothing (sweep 2026-07-14)
+            return None
         return f"WHAT'S NEW in v{cur}: {self.WHATS_NEW}"
 
     def _drain_pms(self):
@@ -467,15 +471,10 @@ class TuiPetApp(App):
             self._update_msg = f"⬆ tuipet {latest} out — {update_check.manual_command()}"
 
     def _after_title(self, _=None):
-        if not persistence.get_account()[0]:     # first launch: create your lobby account
-            self._open_mode(lobbyscreen.AccountPanel(), self._after_account)
-            return
-        self._post_title()
-
-    def _after_account(self, result):
-        if result:
-            persistence.set_account(*result)
-        self._start_sync()              # account now exists -> begin cloud-save sync
+        # The account wall used to stand HERE: name + password demanded on
+        # first launch, before the player had seen a single pet (sweep
+        # 2026-07-14).  The account only matters online -- the lobby asks for
+        # one when it's first opened, and sync starts on the next autosave.
         self._post_title()
 
     def _post_title(self):
@@ -510,10 +509,16 @@ class TuiPetApp(App):
         if egg_type is None:                       # backed out -> return to the title
             self._open_mode(titlescreen.TitlePanel(), self._after_title)
             return
+        if egg_type == "guide":                    # N: consult the egg guide, then
+            self._open_mode(eggguidescreen.EggGuidePanel(self.pet),   # come back
+                            lambda _=None: self._open_mode(
+                                eggselectscreen.EggSelectPanel(self.pet),
+                                self._after_egg_pick))
+            return
         self._new_game = False                     # the fresh start is settled
         self.pet = Pet.new_egg(egg_type=egg_type)
         self._grant_digimemory(self.pet)
-        self.flash("Take good care of your egg!")
+        self.flash("Take good care of your egg!  (? = help)")
         self.repaint()
 
     def autosave(self):

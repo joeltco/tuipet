@@ -191,8 +191,11 @@ def test_keys_page_lists_every_binding_and_scrolls():
 
 
 def test_new_egg_row_hands_off():
+    """A LIVING pet costs one confirm (sweep 2026-07-14: instant retirement
+    sat next to a typed-YES erase); the confirmed ENTER hands off."""
     pan, _ = _panel()
     _to(pan, "new")
+    assert pan.key("enter") is None and pan.confirm_new
     assert pan.key("enter") == ("done", ("new",))
 
 
@@ -227,15 +230,17 @@ def test_erase_all_wipes_the_local_state():
 
 
 def test_erase_flows_into_the_egg_carousel_not_an_auto_egg():
-    """Erase -> title -> (re)login -> the EGG-SELECT CAROUSEL.  The erase
-    branch parked a placeholder Pet.new_egg() and reopened the title, but
-    _new_game was only ever set at construction -- the post-title flow went
-    straight home and the player woke up with an egg they never picked
-    (Joel 2026-07-05: "automatically selected an egg for me??")."""
+    """Erase -> title -> the EGG-SELECT CAROUSEL.  The erase branch parked a
+    placeholder Pet.new_egg() and reopened the title, but _new_game was only
+    ever set at construction -- the post-title flow went straight home and
+    the player woke up with an egg they never picked (Joel 2026-07-05:
+    "automatically selected an egg for me??").  The account wall that used
+    to stand between title and carousel is GONE (sweep 2026-07-14): the
+    lobby asks for a login when it's first opened, not before gameplay."""
     import asyncio
     from tuipet.app import TuiPetApp
     from tuipet.pet import Pet
-    from tuipet import eggselectscreen, lobbyscreen, titlescreen
+    from tuipet import eggselectscreen, titlescreen
 
     async def go():
         p = Pet(num=4, name="Rex", stage="Rookie", attribute="Vaccine")
@@ -250,20 +255,11 @@ def test_erase_flows_into_the_egg_carousel_not_an_auto_egg():
             seen["title"] = isinstance(app.mode, titlescreen.TitlePanel)
             await pilot.press("enter")                  # past the title
             await pilot.pause()
-            seen["account"] = isinstance(app.mode, lobbyscreen.AccountPanel)
-            for ch in "joel":                           # re-create the account
-                await pilot.press(ch)
-            await pilot.press("enter")
-            for ch in "pw":
-                await pilot.press(ch)
-            await pilot.press("enter")
-            await pilot.pause()
             seen["carousel"] = isinstance(app.mode, eggselectscreen.EggSelectPanel)
         return seen
 
     seen = asyncio.run(go())
     assert seen["title"], "erase must return to the title"
-    assert seen["account"], "the erased account must be re-created"
     assert seen["carousel"], "a fresh start must open the egg carousel, never auto-pick"
 
 
