@@ -1326,7 +1326,8 @@ def load_titles():
     for r in csv.DictReader(open(os.path.join(_DATA, "titles.csv"))):
         try:
             out.append({"id": int(r["TitleID"]), "name": (r["Name"] or "").strip(),
-                        "price": int(r["Price"])})
+                        "price": int(r["Price"]),
+                        "desc": (r.get("Description") or "").strip()})
         except (KeyError, ValueError):
             continue
     return out

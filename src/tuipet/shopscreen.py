@@ -3,6 +3,8 @@ roster (8 food / 12 item slots with real stock counts and sale prices), plus
 the egg page.  The bag keeps its category tabs (Food / Medicine / Toys / Chips
 / Special).  Renders in the LCD box."""
 from __future__ import annotations
+import textwrap
+
 from . import data
 from . import shop
 from . import egg as egg_mod
@@ -239,7 +241,10 @@ class ShopPanel:
                         "╰" + "─" * (IC_W - 2) + "╯"]
                 state = ("worn now" if sel.get("worn")
                          else "owned" if sel.get("owned") else "%db" % sel["price"])
-                info = [sel["name"][:tw], state, "a tamer honor", "rides your card"]
+                # each honor carries its own inscription (titles.csv Description)
+                # -- wrapped to the two info rows, like the item effect lines
+                desc = textwrap.wrap(sel.get("desc") or "a tamer honor", tw)[:2]
+                info = [sel["name"][:tw], state] + desc + [""] * (2 - len(desc))
             elif sel.get("egg_idx") is not None:
                 if sel.get("locked"):
                     info = ["???", "locked", sel["hint"][:tw],

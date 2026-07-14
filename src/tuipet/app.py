@@ -277,7 +277,8 @@ class TuiPetApp(App):
                  "it), the assistant's retainer scales with your stage, DNA "
                  "wagers go to 9999 (big ones never spoil and splash the "
                  "neighbor Fields), and the shop has an HONORS board: tamer "
-                 "titles up to 250k that ride your card in the lobby.")
+                 "titles up to 250k, each with its own inscription, that ride "
+                 "your card in the lobby.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and

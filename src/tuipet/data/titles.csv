@@ -1,6 +1,6 @@
-TitleID,Name,Price
-0,Bit Collector,10000
-1,Bit Baron,25000
-2,Data Dynast,50000
-3,Digital Monarch,100000
-4,Legend of the Net,250000
+TitleID,Name,Price,Description
+0,Bit Collector,10000,a first fortune spent in style
+1,Bit Baron,25000,the shopkeeper knows your name
+2,Data Dynast,50000,wealth measured in terabytes
+3,Digital Monarch,100000,the net bows to your bankroll
+4,Legend of the Net,250000,they tell stories about your bits

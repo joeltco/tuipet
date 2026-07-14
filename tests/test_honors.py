@@ -26,6 +26,10 @@ def test_the_ladder_loads_ascending_and_unique():
     assert prices == sorted(prices) and prices[0] >= 10_000
     assert data.title_name(ids[0]) == names[0]
     assert data.title_name(-1) == ""
+    # every honor carries its OWN inscription (item-info law v0.2.468: the
+    # info panel never shows a generic line when the data can speak)
+    descs = [t["desc"] for t in titles]
+    assert all(descs) and len(set(descs)) == len(descs)
 
 
 def test_buying_spends_bits_and_wears_the_honor():
@@ -94,6 +98,7 @@ def test_the_honors_tab_renders():
     _, pan = _panel()
     t = pan.text().plain
     assert "Honors" in t and "Bit Collector" in t and "10000b" in t
+    assert data.load_titles()[0]["desc"].split()[0] in t   # the inscription shows
     pan.key("enter")
     t = pan.text().plain
     assert "worn" in t
