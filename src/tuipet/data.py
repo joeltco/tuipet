@@ -773,6 +773,11 @@ def _consumable(row, id_field):
         "undepressed": flag("Removes Depressed") or flag("DepressedRelieved"),
         "seconds": int(num("Seconds")),     # DVPet setTotalLifespan: lifespan delta (sec)
         "temp": int(num("Temp")),           # DVPet temp change (clamped 0..MaxTemp=100)
+        # ChangeToPrefTemp (canon: snap temp to the ideal midpoint; only the
+        # Futon carries it) is DELIBERATELY unported -- Joel 2026-07-14:
+        # "futons aren't supposed to be the go-to if the mon is cold".  The
+        # futon pauses temperature, full stop; warming is the thermostat's
+        # job (habitatscreen) or a warm consumable's (Temp>0).
         "sleep": flag("Sleep"),             # DVPet item Sleep flag: induce sleep
         # foods.csv SleepLapse: the bedtime nudge (Caffeine Pill) -- parsed by
         # load_foods for feed() but DROPPED here, so the bag door lost the

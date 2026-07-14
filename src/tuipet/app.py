@@ -132,6 +132,14 @@ def _age_compact(seconds):
     return f"{s // 60}m{s % 60:02d}s"
 
 
+def _temp_str(pet):
+    """The HUD temperature — an armed thermostat shows where it's headed
+    (48°→62°), so the heat you set from the Habitat screen reads back."""
+    if getattr(pet, "heat_on", None) and pet.heat_on():
+        return f"{int(pet.temp)}→{int(pet.temp_goal)}°"
+    return f"{int(pet.temp)}°"
+
+
 def _care_deco(pet, word=None):
     """The care badges shown beside the status word -- one list, shared by the
     home Stats panel and the adventure card (Joel 2026-07-12: adventure shows
@@ -207,7 +215,7 @@ class Stats(Static):
             f"HP {pet.full_health}/{pet.max_health()}  Wt {pet.weight}g  [{T.COIN}]{pet.bits}b[/]",
             f"Battle  {pet.wins}W/{pet.battles}   [{T.COIN}]\u2605{pet.trophies}[/]",
             f"@{pet.habitat_obj()['name'][:14]} {amark} [dim]{pet.season}[/]",
-            f"[{skycol}]{sky}[/] [dim]{pet.weather} {int(pet.temp)}\u00b0[/] [dim]{age}[/]",
+            f"[{skycol}]{sky}[/] [dim]{pet.weather} {_temp_str(pet)}[/] [dim]{age}[/]",
             f"Life    {bar(lifepct, 12, lifecol)}",
             _status_line(word, deco),
         ]
@@ -272,10 +280,10 @@ class TuiPetApp(App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("PASSWORD ROOMS: type /room <phrase> in lobby chat and "
-                 "anyone who types the same phrase joins your private "
-                 "room -- own chat, own roster, battles and fusion among "
-                 "friends only. /leave returns to the main floor.")
+    WHATS_NEW = ("THE THERMOSTAT: your room has heat now. Habitat (e), "
+                 "+/- drives the temperature to your setting, then the "
+                 "weather takes back over. Cold mon? Warm the room or "
+                 "serve hot food - the futon only KEEPS a temperature.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and
@@ -1276,7 +1284,7 @@ class TuiPetApp(App):
                 f"Hunger   {hearts(p.hunger)}",
                 f"Energy   {bar(p.energy_pct(), 11, T.ENERGY)}",
                 f"Power    {power}",
-                f"[{skycol}]{sky}[/] [dim]{p.weather} {int(p.temp)}\u00b0[/]",
+                f"[{skycol}]{sky}[/] [dim]{p.weather} {_temp_str(p)}[/]",
                 div,
                 _status_line(p.status_word(), _care_deco(p)),
             ]

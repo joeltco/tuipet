@@ -927,6 +927,7 @@ class Pet:
     world_seconds: float = 0.0
     temp: float = 50.0
     day_temp: float = 50.0
+    temp_goal: float = 101.0        # thermostat target; > MaxTemp(100) = unset (canon _tempGoal)
     weather: str = "Clear"
     field: str = ""
     element: str = ""
@@ -2034,7 +2035,19 @@ class Pet:
         # warms a cold pet) while weather keeps rolling overhead.
         if self.pause_temp():
             return
-        if self.temp < target:
+        # canon checkTemp: an armed THERMOSTAT (setTempGoal, the draggable
+        # temperature readout in DVPet) overrides the weather drift; the goal
+        # CLEARS on arrival and the weather takes back over -- heating the
+        # room is an act of care, not set-and-forget (rebuild 2026-07-14:
+        # this is the canonical answer to a cold pet, not the futon)
+        if self.temp_goal <= wx.MAX_TEMP:
+            if self.temp < self.temp_goal:
+                self.temp = min(self.temp_goal, self.temp + wx.TEMP_RATE * dt)
+            elif self.temp > self.temp_goal:
+                self.temp = max(self.temp_goal, self.temp - wx.TEMP_RATE * dt)
+            else:
+                self.temp_goal = wx.MAX_TEMP + 1.0   # reached -> weather resumes
+        elif self.temp < target:
             self.temp = min(target, self.temp + wx.TEMP_RATE * dt)
         elif self.temp > target:
             self.temp = max(target, self.temp - wx.TEMP_RATE * dt)
@@ -2117,6 +2130,22 @@ class Pet:
         eff = data.load_care_effects().get(self.effect_id)
         return bool(eff and eff["pause_call"])
 
+    def set_temp_goal(self, t):
+        """PhysicalState.setTempGoal: arm the room thermostat.  Out-of-range
+        values are IGNORED (canon guards, not clamps); the drift toward the
+        goal runs at the same 1°/game-min lapse as weather (checkTemp)."""
+        if 0 <= t <= wx.MAX_TEMP:
+            self.temp_goal = float(t)
+
+    def clear_temp_goal(self):
+        """Thermostat off (canon: releasing the drag at the current temp, or
+        the goal clearing itself on arrival) -- weather drift resumes."""
+        self.temp_goal = wx.MAX_TEMP + 1.0
+
+    def heat_on(self):
+        """An armed thermostat (the HUD shows 48→62°)."""
+        return self.temp_goal <= wx.MAX_TEMP
+
     def pause_temp(self):
         """PhysicalState.pauseTemp: an active care effect with PauseTemp (the
         Futon) pins the temperature in place."""
@@ -2126,13 +2155,13 @@ class Pet:
         return bool(eff and eff["pause_temp"])
 
     def _temperature_effects(self, dt):
-        # Futon = fully insulated (Joel's call 2026-07-13, supersedes the
-        # canon-gating audit of the same day): a tucked-in pet feels COMFY --
-        # no bad-temperature mood drain, no freezing/overheating status --
-        # while _update_weather keeps the temperature itself pinned.  The
-        # futon's own mood/energy rates (careEffect.csv) are the comfort.
-        if self.pause_temp():
-            return
+        # canon checkIdealTempMoodChange is NOT gated by pauseTemp: the futon
+        # pins the temperature DRIFT (checkEveryTemp), it does not insulate.
+        # A pet tucked in cold stays unhappily cold until the room is warmed
+        # -- thermostat, hot food, a Bath (system rebuild 2026-07-14, Joel:
+        # "futons aren't supposed to be the go-to if the mon is cold";
+        # supersedes the 07-13 "fully insulated" call, which had made the
+        # futon the de-facto cold cure).
         lo, hi = self.ideal_temp
         aff = self._affinity()                # compatible home helps, incompatible hurts
         too_hot = self.temp >= hi + wx.UPPER_IDEAL
@@ -3936,17 +3965,17 @@ class Pet:
         return self.stage in ("Ultimate", "Mega") and self.care_mistakes >= 3
 
     def is_freezing(self):
-        """Too cold: temperature at or below the freezing threshold.  A pet
-        tucked under the futon is INSULATED (Joel 2026-07-13, "status still
-        says freezing when in futon"): while a pause-temp care effect holds,
-        it reads comfortable -- no freezing status, badge or shiver."""
-        return self.temp <= wx.FREEZING_TEMP and not self.pause_temp()
+        """Too cold: temperature at or below the freezing threshold.  The
+        badge tells the TRUTH -- a pet under the futon in a cold room is
+        still cold, because the futon only PINS temperature (rebuild
+        2026-07-14, supersedes the 07-13 insulation call).  The fix is
+        WARMTH: the habitat thermostat, hot food, a Bath."""
+        return self.temp <= wx.FREEZING_TEMP
 
     def is_overheating(self):
         """Too hot: temperature above the ideal band's upper bound (same
-        futon insulation rule as is_freezing -- it maintains temperature)."""
-        return (self.temp >= self.ideal_temp[1] + wx.UPPER_IDEAL
-                and not self.pause_temp())
+        truth-telling rule as is_freezing)."""
+        return self.temp >= self.ideal_temp[1] + wx.UPPER_IDEAL
 
     def _sicken(self):
         """PhysicalState.sicken: fall ill for MinSickLength..MaxSickLength recovery lapses;

@@ -110,7 +110,7 @@ def test_futon_pins_the_temperature():
     pet.effect_id, pet.effect_t = eid, float(eff["duration"])
     pet._update_weather(60)
     assert pet.temp == 10.0, "an active futon must pin the temperature"
-    assert not pet.is_freezing(), "tucked in = insulated (Joel 2026-07-13)"
+    assert pet.is_freezing(), "the badge tells the truth: pinned cold IS cold (2026-07-14)"
     pet.effect_id, pet.effect_t = -1, 0.0    # expiry: the lapse resumes
     assert pet.is_freezing(), "the cold is still there when the futon ends"
     pet._update_weather(60)
@@ -128,21 +128,20 @@ def test_futon_pauses_the_sick_temperature_swings():
     assert pet.temp == 50.0, "sick fever/chill swings pause under the futon too"
 
 
-def test_futon_insulates_the_pet_completely():
-    """Joel's call (2026-07-13, "status still says freezing when in futon"):
-    a tucked-in pet reads COMFORTABLE -- no freezing/overheating status and
-    no bad-temperature mood drain; the futon's own rates are the comfort."""
+def test_futon_does_not_insulate():
+    """System rebuild (Joel 2026-07-14, "futons aren't supposed to be the
+    go-to if the mon is cold"; supersedes the 07-13 insulation call): canon
+    checkIdealTempMoodChange is NOT gated by pauseTemp.  A pet tucked in cold
+    keeps its freezing status AND its too-cold mood drain -- the futon only
+    pins the temperature.  The fix is warmth: the thermostat, hot food."""
     pet, eid, eff = _futon_pet()
     pet.temp = 5.0                           # bitterly cold under the covers
     pet.mood = 50
     pet.effect_id, pet.effect_t = eid, float(eff["duration"])
-    assert not pet.is_freezing(), "the futon insulates: no freezing status"
-    assert pet.status_word() != "freezing"
+    assert pet.is_freezing(), "the futon does not hide the cold"
     pet._comfort_t = 0.0
     pet._temperature_effects(wx.IDEAL_TEMP_MOOD_SEC)
-    assert pet.mood == 50, "no temperature mood drain while tucked in"
-    pet.effect_id, pet.effect_t = -1, 0.0    # the futon expires -> cold again
-    assert pet.is_freezing()
+    assert pet.mood < 50, "too-cold mood drain runs even under the futon"
 
 
 # --- bandage / medicine indicators (DVPet getBandage / getMed) --------------
