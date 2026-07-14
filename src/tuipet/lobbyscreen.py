@@ -18,6 +18,7 @@ the WebSocket worker's lifecycle. Colours come from the live theme.
 """
 from __future__ import annotations
 
+from rich.cells import cell_len, chop_cells, set_cell_size
 from rich.text import Text
 
 from . import data
@@ -27,7 +28,7 @@ from . import battlescreen
 from . import jogressscreen
 from . import menu
 from . import persistence
-from .net import CHAT_CAP
+from .net import ANNOUNCE, CHAT_CAP
 from .render import marquee
 from .theme import INK, INK_B, DIM, SEL
 
@@ -38,28 +39,45 @@ CHAT_MAX = 400          # server MAX_CHAT: the local input buffer stops here too
 ATTACK_KEYS = {"1": "Vaccine", "2": "Data", "3": "Virus"}
 
 
+# ⛔ THE CELL-WIDTH LAW (chat polish 2026-07-14).  The lobby is the ONE place a
+# player types arbitrary text, and an emoji or a CJK glyph occupies TWO terminal
+# cells while counting as ONE character.  `s[:w].ljust(w)` and `len(s)` measure
+# CHARACTERS, so a line like "🔥🔥 emoji 日本語" overflowed its 25-column budget and
+# shoved the roster divider `│` right off its column -- the layout visibly tore.
+# Every width decision in this file goes through cell_len/set_cell_size/chop_cells.
 def _fit(s, w):
-    s = str(s)
-    return s[:w].ljust(w)
+    """Pad or truncate to exactly `w` DISPLAY CELLS (never characters)."""
+    return set_cell_size(str(s), w)
 
 
 def _wrap(s, w):
-    """Word-wrap `s` into lines of width <= w, hard-splitting any over-long word."""
+    """Word-wrap `s` into lines of <= w CELLS, hard-splitting any over-long word.
+    A wide glyph is never split down the middle -- chop_cells keeps it whole."""
     out, line = [], ""
     for word in str(s).split(" "):
-        while len(word) > w:
+        while cell_len(word) > w:
             if line:
                 out.append(line); line = ""
-            out.append(word[:w]); word = word[w:]
+            chunks = chop_cells(word, w)
+            out.append(chunks[0])
+            word = "".join(chunks[1:])
         if not line:
             line = word
-        elif len(line) + 1 + len(word) <= w:
+        elif cell_len(line) + 1 + cell_len(word) <= w:
             line += " " + word
         else:
             out.append(line); line = word
     if line:
         out.append(line)
     return out or [""]
+
+
+def _tail_cells(s, w):
+    """The LAST `w` cells of `s` -- the input line scrolls as you type, and a
+    character-based slice let a typed emoji run past the frame."""
+    while cell_len(s) > w:
+        s = s[1:]
+    return s
 
 
 def _hpbar(hp, mx, w=10):
@@ -789,7 +807,15 @@ class LobbyPanel:
                 if pname in b:
                     b.discard(pname); self.status = f"Unblocked {pname}."
                 else:
-                    b.add(pname); self.status = f"Blocked {pname}."
+                    b.add(pname)
+                    # net.py filters them out from here on, but everything they
+                    # ALREADY said stayed on screen -- so "Blocked X." was only
+                    # half true and the spam you muted was still sitting there.
+                    # A mute means MUTE: sweep their lines out of the log too.
+                    st = self.state
+                    st.chat[:] = [(nm, tx) for nm, tx in st.chat if nm != pname]
+                    st.unread.discard(pname)
+                    self.status = f"Blocked {pname}."
                 persistence.set_blocked(b)
                 self.action_for = None
             elif k in ("m", "M"):
@@ -1041,6 +1067,12 @@ class LobbyPanel:
         for nm, tx in (s.chat if s else []):
             if not nm:                                     # join/leave notice
                 sty, parts = DIM, _wrap(f"· {tx}", cw - 1)
+            elif str(nm) == ANNOUNCE:
+                # the dev's line -- a new release, a heads-up -- used to render in
+                # plain INK as "📢: text", i.e. indistinguishable from chatter and
+                # reading like a PLAYER NAMED 📢 was talking.  It is the loudest
+                # thing in the room: bright, and no name-colon (chat polish 07-14)
+                sty, parts = INK_B, _wrap(f"{ANNOUNCE} {tx}", cw - 1)
             else:
                 pm = str(nm).startswith("✉")
                 mine = bool(me) and (nm == me or str(nm).startswith("✉→"))
@@ -1072,7 +1104,10 @@ class LobbyPanel:
         view = rows[max(0, end - BODY):end]
         view = [("", INK)] * (BODY - len(view)) + view
         if not rows:                                       # the empty room
-            view[BODY // 2] = ("— say hi, the room hears you —"[:cw], DIM)
+            hint = "— say hi, the room hears you —"
+            if cell_len(hint) > cw:                        # folded col fits it; narrow one doesn't
+                hint = "— say hi —"
+            view[BODY // 2] = (hint.center(cw), DIM)
         sel = min(self.sel, len(others) - 1) if others else 0
         rlo = max(0, min(sel - BODY // 2, len(others) - BODY)) if len(others) > BODY else 0
         for i in range(BODY):
@@ -1102,8 +1137,8 @@ class LobbyPanel:
         else:
             label = "say: "
         t.append(label, style=INK_B)
-        fw = CHATW + ROSTW - len(label)
-        shown = self.buf if len(self.buf) < fw else self.buf[-(fw - 1):]
+        fw = CHATW + ROSTW - cell_len(label)
+        shown = self.buf if cell_len(self.buf) < fw else _tail_cells(self.buf, fw - 1)
         caret = "_" if (getattr(self, "_mq", 0) // 5) % 2 == 0 else " "
         t.append(_fit(shown + caret, fw) + "\n", style=INK)
         # the prompt lines: the KEY HINTS are fixed chrome and must never clip

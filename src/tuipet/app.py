@@ -265,11 +265,11 @@ class TuiPetApp(App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("A Mega is a MEGA now: 'Mega-class felled' was quietly "
-                 "counting Ultimates too, so the Mega-class eggs and every "
-                 "KO6 evolution came far too cheap -- and a PvP Mega no longer "
-                 "counts at all. The album eggs now span generations instead "
-                 "of all dropping on your very first pet.")
+    WHATS_NEW = ("Lobby chat polish: emoji and Japanese text used to tear the "
+                 "roster divider off its column -- chat now measures TERMINAL "
+                 "CELLS, not characters. Dev announcements ring out bright "
+                 "instead of hiding in the chatter, and blocking someone finally "
+                 "sweeps away what they already said.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and

@@ -14,6 +14,7 @@ import json
 import websockets
 
 CHAT_CAP = 200
+ANNOUNCE = "📢"          # the dev's speaker: never a peer, never blockable
 
 
 def parse_msg(raw):
@@ -292,7 +293,7 @@ class LobbyClient(_WsClient):
         elif t == "announce":
             # a server announcement rides the public feed under the 📢 speaker
             # (unblockable -- it's the dev's line, not a peer's)
-            s.chat.append(("📢", m.get("text", "")))
+            s.chat.append((ANNOUNCE, m.get("text", "")))
             del s.chat[:-CHAT_CAP]
         elif t == "pm":
             nm = m.get("from_name", "?")
