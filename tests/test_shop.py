@@ -177,15 +177,22 @@ def test_shop_draws_its_own_closed_plate():
     assert "Open 6:00" in body
 
 
-def test_effect_line_fits_the_info_column():
+def test_effect_readout_fits_the_info_column():
     """Every consumable's effect readout fits the info column beside the icon
-    and never prints a rounds-to-zero stat like 'en+0'."""
+    and never prints a rounds-to-zero stat like 'en+0'.
+
+    It now spans TWO rows, not one: the single 26-col row silently truncated the
+    busiest items, which is how a -6h lifespan cost never reached the player
+    (item-info audit 2026-07-14).  Price/stock/owned share a row to pay for it.
+    """
     from tuipet import shop, data
     tw = 38 - 10 - 2                               # W - IC_W - 2
     for e in data.home_shop_pool():
-        el = shop.effect_line(e)
-        assert len(el) <= tw, (e["name"], el)
-        assert "+0" not in el and "-0" not in el, (e["name"], el)
+        lines = [ln for ln in shop.effect_lines(e, tw, 2) if ln]
+        assert len(lines) <= 2, (e["name"], lines)
+        for el in lines:
+            assert len(el) <= tw, (e["name"], el)
+            assert "+0" not in el and "-0" not in el, (e["name"], el)
 
 
 def test_uniform_attribute_boost_collapses_to_one_token():

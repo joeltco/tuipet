@@ -1,0 +1,39 @@
+Item info: stop hiding what a consumable actually does
+
+Joel asked whether items have descriptions in the shop and inventory. They did
+not -- and worse, the computed effect line was hiding real consequences.
+
+LIFESPAN. Consumables carry `Seconds`, applied as `lifespan += seconds/60` real
+seconds (pet.py:3289). One real second is one game minute, so it lands as
+seconds/3600 GAME HOURS. Miracle Drink costs -6h of your pet's life, Vitamin -1h,
+and the Gold Pill BUYS +12h -- which is the entire reason to own one. None of it
+appeared in the shop, the bag, or the feed page. You could buy an item that
+shortened your pet's life and never be told.
+
+THE LAPSE ITEMS. Med's `Cured` flag is FALSE; it works by SHORTENING the illness
+(cure_lapse -2, applied at pet.py:4813). So "basic medicine to treat illness"
+displayed as, simply, "mood-10" -- the item's whole purpose was invisible. Same
+for heal_lapse (injuries), fatigue_lapse_change, and adv_life (Life Recovery).
+
+The effect readout now spans TWO rows instead of one; price/stock/owned share a
+row to pay for it. That matters: the single 26-col row TRUNCATED anything longer,
+which is precisely how the lifespan cost stayed invisible. effect_lines() never
+drops a token, and a test pins that all 143 consumables fit.
+
+The feed page had its own, thinner effect line (hunger/strength/energy/mood only)
+-- and Vitamin is fed from that page. It now shares the shop's token builder, so
+the shelf, the bag and the feed page cannot disagree about what a food does.
+
+DELIBERATELY NOT SHOWING THE AUTHORED DESCRIPTION. The Description column exists
+and is populated (84/84 items, 59/59 foods), but ~12 of them advertise attribute
+conversion -- "Board Game: Vaccine to Data" -- and tuipet does not implement it
+(FavAttribute is never read). Rendering that text would have the shop promise a
+mechanic the game does not have, which is the exact bug class the silent-failure
+law exists to kill. The effect line is GENERATED from the fields pet.py actually
+reads, so it structurally cannot lie.
+
+1,250 tests green; tests/test_item_info.py pins the lifespan tokens, Med's cure
+lapse, that no surface can truncate, that all three surfaces agree, and that we
+never quote a description promising attribute conversion.
+
+Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>

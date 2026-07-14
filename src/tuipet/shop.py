@@ -236,31 +236,115 @@ def purchase_price(slot):
     return e["price"] if e else 0
 
 
-def effect_line(e):
-    """One terse readout of a consumable's food/item effects, sized to fit the
-    info column beside the icon.  Two tidying rules keep the busiest items
-    legible: a stat that rounds to zero is dropped (an item that shaves 0.8
-    energy a use never advertises a meaningless "en+0"), and a uniform
-    Vaccine/Data/Virus nudge collapses to one "attr" token so the packed foods
-    (Steak, Tuna) still read their whole line."""
-    parts = []
-    va, da, vi = e.get("vaccine", 0), e.get("data", 0), e.get("virus", 0)
+def life_token(e):
+    """The LIFESPAN delta, in GAME HOURS -- the effect the shop used to hide.
+
+    ⛔ Consumables carry `Seconds` in CANON seconds, and pet.py applies it as
+    `lifespan += seconds / 60` REAL seconds.  One real second is one game
+    minute (the clock-unit law), so `seconds` lands as seconds/60 GAME MINUTES
+    == seconds/3600 GAME HOURS.  That is the number to show a player.
+
+    This mattered: Miracle Drink costs -6h of your pet's life, Vitamin -1h, and
+    the Gold Pill BUYS you +12h -- which is the entire reason to own one.  None
+    of it appeared anywhere in the shop, the bag or the feed page (item-info
+    audit 2026-07-14).  The toys carry a trivial +60s (+1 game-minute); that is
+    rounded away like any other stat that rounds to zero.
+    """
+    secs = int(e.get("seconds") or 0)
+    hours = secs / 3600.0
+    if abs(round(hours)) >= 1:
+        return "LIFE%+dh" % round(hours)
+    return None
+
+
+def effect_tokens(e, dp=False):
+    """EVERY effect the game actually applies, most consequential first.
+
+    Truth from data: this is generated from the same fields pet.py reads, so it
+    cannot promise something the code does not do.  (The authored `Description`
+    column is NOT used -- a dozen of them advertise attribute conversion, e.g.
+    Board Game's "Vaccine to Data", which tuipet does not implement.  Showing
+    that text would make the shop lie.)
+
+    Two tidying rules survive from the old one-liner: a stat that rounds to zero
+    is dropped, and a uniform Vaccine/Data/Virus nudge collapses to one "attr".
+    """
+    t = []
+    life = life_token(e)
+    if life:
+        t.append(life)                      # first: it is the costly one
+    va, da, vi = e.get("vaccine", 0) or 0, e.get("data", 0) or 0, e.get("virus", 0) or 0
     uniform_attr = bool(va) and va == da == vi
-    stats = [("hunger", "food"), ("mood", "mood"), ("weight", "wt"),
-             ("energy", "en"), ("strength", "eff")]
-    if not uniform_attr:
-        stats += [("vaccine", "Va"), ("data", "Da"), ("virus", "Vi")]
-    for k, lbl in stats:
+    for k, lbl in (("hunger", "food"), ("mood", "mood"), ("energy", "en"),
+                   ("strength", "eff"), ("health", "maxHP"), ("weight", "wt")):
         v = int(e.get(k) or 0)
         if v:
-            parts.append("%s%+d" % (lbl, v))
+            t.append("%s%+d" % (lbl, v))
+            if dp and k == "strength" and v > 0:
+                t.append("DP+1")            # a strength food banks a jogress point
     if uniform_attr:
-        parts.append("attr%+d" % int(va))
+        t.append("attr%+d" % int(va))
+    else:
+        for k, lbl in (("vaccine", "Va"), ("data", "Da"), ("virus", "Vi")):
+            v = int(e.get(k) or 0)
+            if v:
+                t.append("%s%+d" % (lbl, v))
+    for k, lbl in (("obedience", "obd"), ("enthusiasm", "sp"), ("temp", "temp"),
+                   ("sleep_lapse", "bed")):
+        v = int(e.get(k) or 0)
+        if v:
+            t.append("%s%+d" % (lbl, v))
     if e.get("cured"):
-        parts.append("cure")
+        t.append("cure")
     if e.get("healed"):
-        parts.append("heal")
-    return " ".join(parts) or "-"
+        t.append("heal")
+    # The LAPSE items work by SHORTENING an affliction rather than clearing it
+    # outright (pet.py applies these to sick_length / inj_length / fatigue_length).
+    # Med is the case that exposed it: its Cured flag is FALSE and its whole
+    # function is cure_lapse -2 -- so the shelf described "basic medicine to treat
+    # illness" as, simply, "mood-10".
+    for k, lbl in (("cure_lapse", "sick"), ("heal_lapse", "inj"),
+                   ("fatigue_lapse_change", "tired")):
+        v = int(e.get(k) or 0)
+        if v:
+            t.append("%s%+d" % (lbl, v))
+    if e.get("adv_life"):
+        t.append("advLife%+d" % int(e["adv_life"]))   # Life Recovery, out on the road
+    if e.get("unfatigue"):
+        t.append("-tired")
+    if e.get("undepressed"):
+        t.append("-sad")
+    if e.get("sleep"):
+        t.append("zzz")
+    return t
+
+
+def effect_lines(e, w, rows, dp=False):
+    """The effects wrapped into `rows` lines of `w` cols.
+
+    NEVER silently drops a token: a consumable whose truth does not fit is a bug,
+    and tests/test_item_info.py pins that every food and item fits.  Truncating
+    here is how the lifespan cost stayed invisible in the first place.
+    """
+    lines, cur = [], ""
+    for tok in effect_tokens(e, dp=dp):
+        if not cur:
+            cur = tok
+        elif len(cur) + 1 + len(tok) <= w:
+            cur += " " + tok
+        else:
+            lines.append(cur)
+            cur = tok
+    if cur:
+        lines.append(cur)
+    if not lines:
+        lines = ["-"]
+    return lines + [""] * (rows - len(lines))
+
+
+def effect_line(e):
+    """The one-line join (still used where a single terse row is all there is)."""
+    return " ".join(effect_tokens(e)) or "-"
 
 
 def slot_label(e):
@@ -273,19 +357,28 @@ def slot_label(e):
 
 
 def slot_info(pet, e, tw):
-    """The selected shop slot's info column (rides beside the icon cell)."""
+    """The selected shop slot's info column (rides beside the icon cell).
+
+    Price/stock/owned share ONE row so the effects get TWO -- the old single
+    effect row was 26 cols and silently truncated anything longer, which is how
+    a -6h lifespan cost never reached the player (item-info audit 2026-07-14).
+    """
     owned = pet.inventory.get(e["key"], 0)
     price = ("SALE %db" % e["sale"]) if e.get("sale") else "%db" % e.get("price", 0)
-    stock = "SOLD OUT" if e.get("stock", 0) <= 0 else "stock x%d" % e["stock"]
-    return [e["name"][:tw], price, "%s  own %d" % (stock, owned), effect_line(e)[:tw]]
+    stock = "SOLD OUT" if e.get("stock", 0) <= 0 else "x%d" % e["stock"]
+    return [e["name"][:tw],
+            "%s  %s  own %d" % (price, stock, owned),
+            *effect_lines(e, tw, 2)]
 
 
 def sell_info(pet, e, tw):
     """The selected sellable's info column: what you hold and what it fetches."""
     owned = pet.inventory.get(e["key"], 0)
     val = resell_price(e)
-    return [e["name"][:tw], "x%d" % owned,
-            ("sell %db" % val) if val else "can't resell", effect_line(e)[:tw]]
+    val_s = ("sell %db" % val) if val else "can't resell"
+    return [e["name"][:tw],
+            "x%d  %s" % (owned, val_s),
+            *effect_lines(e, tw, 2)]
 
 
 def buy(pet, slot):

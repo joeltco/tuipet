@@ -265,11 +265,11 @@ class TuiPetApp(App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("Lobby chat polish: emoji and Japanese text used to tear the "
-                 "roster divider off its column -- chat now measures TERMINAL "
-                 "CELLS, not characters. Dev announcements ring out bright "
-                 "instead of hiding in the chatter, and blocking someone finally "
-                 "sweeps away what they already said.")
+    WHATS_NEW = ("The shop stops hiding things. Items now show what they "
+                 "ACTUALLY do: Miracle Drink costs 6 hours of your pet's LIFE, "
+                 "Vitamin costs 1, and the Gold Pill buys you 12 -- none of "
+                 "which was ever shown. Med finally admits it treats illness. "
+                 "Same truth on the shelf, in the bag and on the feed page.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and

@@ -81,7 +81,9 @@ def test_town_shop_pages_share_the_home_shop_icon_view():
     txt = panel.text().plain
     e = panel._slot_entry(panel.food_slots[0])
     assert e["name"][:menu.W - menu.IC_W - 2] in txt        # the info column
-    assert "stock x" in txt or "SOLD OUT" in txt            # slot_info's stock line
+    # slot_info's price/stock/own row (stock joined the price line so the effects
+    # could have TWO rows -- item-info audit 2026-07-14)
+    assert "own " in txt and ("x%d" % e.get("stock", 0) in txt or "SOLD OUT" in txt)
     assert shop.slot_label(e) in txt                        # the shared row format
     assert len(txt.split("\n")) <= 12                       # inside the LCD
     # the sell counter pays the TOWN econ in its info block too

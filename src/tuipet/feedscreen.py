@@ -11,7 +11,7 @@ Picking a food calls Pet.feed(food) -- the full applyFood effect set -- and the
 app plays the eat animation with that food's real icon.
 """
 from __future__ import annotations
-from . import data, menu
+from . import data, menu, shop
 from .theme import INK, INK_B, DIM, ACCENT, POS  # noqa: F401  (theme.apply propagation)
 
 
@@ -29,19 +29,14 @@ def feedable(pet):
 
 
 def _effect_line(food):
-    """One terse readout of what a food does."""
-    bits = []
-    if int(food.get("hunger", 0)) > 0:
-        bits.append(f"hunger +{int(food['hunger'])}")
-    if int(food.get("strength", 0)) > 0:
-        # a strength food also banks +1 DP toward a jogress (Pen20 meter) --
-        # unlabelled, protein's whole point was invisible (audit 2026-07-04)
-        bits.append(f"strength +{int(food['strength'])} DP+1")
-    if int(food.get("energy", 0)):
-        bits.append(f"energy {int(food['energy']):+d}")
-    if int(food.get("mood", 0)):
-        bits.append(f"mood {int(food['mood']):+d}")
-    return "  ".join(bits) or "a snack"
+    """One terse readout of what a food does -- now the WHOLE truth.
+
+    It used to list hunger/strength/energy/mood and nothing else, so feeding a
+    Vitamin (-1h of your pet's LIFE) read as a harmless "energy +1".  The token
+    set is shared with the shop (shop.effect_tokens) so the feed page, the shelf
+    and the bag can never disagree about what a food does.
+    """
+    return " ".join(shop.effect_tokens(food, dp=True)) or "a snack"
 
 
 class FeedPanel:
@@ -100,8 +95,9 @@ class FeedPanel:
         sel = self.options[self.cursor]
         qty = food_qty(p, sel)
         tw = menu.W - menu.IC_W - 2
-        info = [sel["name"][:tw], _effect_line(sel)[:tw],
-                "x∞" if not sel.get("can_dec") else f"x{qty}", ""]
+        info = [sel["name"][:tw],
+                "x∞" if not sel.get("can_dec") else f"x{qty}",
+                *shop.effect_lines(sel, tw, 2, dp=True)]
         menu.icon_info(out, menu.item_icon(sel), info)
 
         def fmt(f, i):
