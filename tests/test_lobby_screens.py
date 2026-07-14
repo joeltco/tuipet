@@ -38,7 +38,7 @@ def _lobby():
     s.roster = [{"id": 1, "name": "JoeltCo", "pet": {}},
                 {"id": 2, "name": "Ryo", "pet": {"name": "WarGreymon", "stage": "Mega"}}]
     pan.client, pan.state, pan.phase = _FakeClient(), s, "lobby"
-    pan.status = "↑↓ pick · ENTER chat/act · ESC leave"
+    pan.status = "↑↓ pick · ENTER chat · TAB ranks · ESC"
     return pan
 
 
@@ -237,7 +237,7 @@ def test_prompt_lines_keep_their_hints_with_long_names():
     assert "[P]ing" in rolled and "[V] DMs" in rolled and "[ESC]" in rolled
     pan.action_for = None                         # the selection status line
     pan.sel = 1                                   # sorted: the long-name live row
-    pan.status = "↑↓ pick · ENTER chat/act · ESC leave"
+    pan.status = "↑↓ pick · ENTER chat · TAB ranks · ESC"
     others = pan._others()
     target = next(i for i, p in enumerate(others) if p["name"] == long)
     pan.sel = target
@@ -269,7 +269,7 @@ def test_default_status_hint_renders_whole():
     pan.anim()                                    # the connected transition sets it
     assert len(pan.status) <= 38
     last = pan.text().plain.split("\n")[-1]
-    assert last.endswith("ESC leave"), last
+    assert last.endswith("TAB ranks · ESC"), last
 
 
 def test_malformed_relay_payloads_never_crash_the_battle():

@@ -165,3 +165,103 @@ def test_condition_widens_the_drill_windows():
     assert pan2.virus_zone == training.VIRUS_BAR_MIN        # baseline unchanged
     assert pan2.timer == training.VACCINE_WINDOW
     assert "condition" in pan2.text().plain        # the menu SHOWS the tier
+
+
+# ---- the monthly ladder (2026-07-14) ---------------------------------------------
+
+def _srv():
+    import sys as _s, os as _o
+    _s.path.insert(0, _o.path.join(_o.path.dirname(__file__), "..", "server"))
+    import server
+    return server
+
+
+def test_ladder_credits_only_agreeing_pairs():
+    srv = _srv()
+    now = 1000.0
+    srv._ladder_report("alice", True, "bob", now)          # one half: nothing yet
+    assert srv.LADDER["seasons"] == {}
+    srv._ladder_report("bob", False, "alice", now + 5)     # the agreeing half
+    season = srv._season_key(now)
+    assert srv.LADDER["seasons"][season] == {"alice": 1}
+    srv._ladder_report("alice", True, "bob", now + 300)    # stale: window passed
+    srv._ladder_report("bob", False, "alice", now + 300 + srv.LADDER_CONFIRM_S + 1)
+    assert srv.LADDER["seasons"][season] == {"alice": 1}
+
+
+def test_ladder_draw_and_forgery_credit_nothing():
+    srv = _srv()
+    srv._ladder_report("alice", False, "bob", 1000.0)      # draw: two loss stories
+    srv._ladder_report("bob", False, "alice", 1001.0)
+    assert srv.LADDER["seasons"] == {}
+    for i in range(5):
+        srv._ladder_report("cheat", True, "victim", 2000.0 + i)   # lone reports
+    assert srv.LADDER["seasons"] == {}
+
+
+def test_ladder_pair_cap_lids_collusion():
+    srv = _srv()
+    for i in range(6):
+        t = 1000.0 + i * 10
+        srv._ladder_report("alice", True, "bob", t)
+        srv._ladder_report("bob", False, "alice", t)
+    season = srv._season_key(1000.0)
+    assert srv.LADDER["seasons"][season]["alice"] == srv.LADDER_PAIR_CAP
+
+
+def test_ladder_view_and_past_season_award():
+    srv = _srv()
+    import calendar, time as _t
+    srv.LADDER["seasons"]["2026-06"] = {"joel": 9, "wyld": 7, "third": 5, "fourth": 1}
+    srv.LADDER["seasons"][srv._season_key()] = {"joel": 2, "wyld": 3}
+    v = srv._ladder_view("joel")
+    assert v["top"][0] == ["wyld", 3] or v["top"][0] == ("wyld", 3)
+    assert v["you"] == [2, 2]
+    assert v["award"] == {"season": "2026-06", "rank": 1, "wins": 9, "bits": 25000}
+    srv._ladder_claim("joel", "2026-06")
+    assert srv._ladder_view("joel")["award"] is None       # claimed = gone
+    v4 = srv._ladder_view("fourth")
+    assert v4["award"] is None                             # rank 4: no podium
+    assert 0 <= v["days_left"] <= 30
+
+
+def test_ladder_award_grants_bits_exactly_once():
+    from tuipet.lobbyscreen import LobbyPanel
+
+    class _C:
+        name = "joel"
+        ladder = {"t": "ladder", "season": "2026-07", "days_left": 5,
+                  "top": [["joel", 4]], "you": [1, 4],
+                  "award": {"season": "2026-06", "rank": 2, "wins": 7, "bits": 10000}}
+        claims = []
+        def ladder_claim(self, season): self.claims.append(season)
+
+    pet = Pet(num=100, stage="Champion", bits=100)
+    pet.world_seconds = 10 * 60.0
+    pan = LobbyPanel.__new__(LobbyPanel)
+    pan.client, pan.pet = _C(), pet
+    pan.bshow = pan.jshow = None
+    pan.state = None
+    pan.sfx = pan.status = None
+    pan.anim()
+    assert pet.bits == 10100 and _C.claims == ["2026-06"]
+    assert "rank 2" in pan.status
+    pan.anim()                                             # the ledger stops a re-grant
+    assert pet.bits == 10100 and _C.claims == ["2026-06"]
+
+
+def test_ladder_page_renders():
+    from tuipet.lobbyscreen import LobbyPanel
+
+    class _C:
+        name = "joel"
+        ladder = {"t": "ladder", "season": "2026-07", "days_left": 17,
+                  "top": [["wyld", 9], ["joel", 4]], "you": [2, 4], "award": None}
+
+    pan = LobbyPanel.__new__(LobbyPanel)
+    pan.client = _C()
+    plain = pan._text_ladder().plain
+    assert "season 2026-07" in plain and "wyld" in plain
+    assert "▸ 2. joel" in plain.replace("  ", " ") or "joel" in plain
+    assert "resets in 17 days" in plain
+    assert all(len(line) <= 40 for line in plain.splitlines())

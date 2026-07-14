@@ -283,6 +283,18 @@ class LobbyPanel:
                 self.bshow = None               # volley done -> choose/over shows
         if self.jshow is not None and self.jphase == "result":
             self.jshow.anim()                   # converge -> flash -> fused bounce
+        lad = getattr(self.client, "ladder", None) if self.client else None
+        if lad and lad.get("award"):
+            a = lad["award"]
+            if not persistence.ladder_award_claimed(a.get("season", "")):
+                persistence.note_ladder_award(a["season"])
+                self.pet.bits = min(self.pet.bits + int(a.get("bits") or 0), 99999999)
+                claim = getattr(self.client, "ladder_claim", None)
+                if claim:
+                    claim(a["season"])
+                self.sfx = "champion"
+                self.status = (f"season {a['season']}: rank {a['rank']} — "
+                               f"+{a['bits']}b claimed!")
         s = self.state
         if not s:
             return
@@ -346,7 +358,7 @@ class LobbyPanel:
         elif s.connected and self.status == "Connecting…":
             # 36 chars: the old "Up/Down pick · …" ran 41 and CLIPPED its own
             # "Esc leave" hint off the 38-col line (Joel's live screen 2026-07-07)
-            self.status = "↑↓ pick · ENTER chat/act · ESC leave"
+            self.status = "↑↓ pick · ENTER chat · TAB ranks · ESC"
         # drop -> the client retries on its own; say so instead of stranding a banner
         if getattr(s, "reconnecting", False):
             self._seen_ids = None                  # a refilled roster is not a wave of joins
@@ -593,6 +605,12 @@ class LobbyPanel:
             if self.partner:            # a finished connection bout counts for
                 persistence.record_connection(self.partner[1])   # the DM20 connection eggs
             won = my_alive and not opp_alive
+            opp_nm = (self.opp_card or {}).get("name") or (self.partner or (0, ""))[1]
+            report = getattr(self.client, "ladder_report", None)
+            if report and opp_nm:
+                # the monthly ladder: both sides file; the server credits only
+                # when the two stories agree (2026-07-14)
+                report(won, opp_nm)
             if not my_alive:                       # own HP gone (incl. double-KO) = loss (battleEnd)
                 self.bt_outcome = "YOU LOSE…"
             elif not opp_alive:
@@ -669,7 +687,45 @@ class LobbyPanel:
             return self._key_battle(k)
         if self.phase == "dm":
             return self._key_dm(k)
+        if self.phase == "ladder":
+            return self._key_ladder(k)
         return self._key_lobby(k)
+
+    def _key_ladder(self, k):
+        if k in ("escape", "tab", "q", "g"):
+            self.phase = "lobby"
+        return None
+
+    def _text_ladder(self):
+        """The monthly rankings: online PvP wins, top ten, your rank, and the
+        days left in the season.  Data is the server's ladder message; a page
+        opened before the reply shows a fetching line and fills in live."""
+        t = Text()
+        lad = getattr(self.client, "ladder", None) if self.client else None
+        if not lad:
+            t.append("  LADDER\n\n", style=INK_B)
+            t.append("  fetching the rankings…\n", style=DIM)
+            return t
+        t.append(f"  LADDER  season {lad.get('season', '?')}\n", style=INK_B)
+        t.append("  one win = one rung · online only\n\n", style=DIM)
+        top = list(lad.get("top") or [])[:8]
+        you_rank, you_wins = (lad.get("you") or [0, 0])[:2]
+        if not top:
+            t.append("  no wins recorded yet — the rungs\n", style=INK)
+            t.append("  are empty.  Go start the race!\n", style=INK)
+        for i, (who, wins) in enumerate(top, start=1):
+            mine = who == getattr(self.client, "name", None)
+            t.append(f"  {'▸' if mine else ' '}{i:>2}. {str(who)[:16]:<16} {int(wins):>3}W\n",
+                     style=INK_B if mine else INK)
+        t.append("\n")
+        if you_rank:
+            t.append(f"  you: rank {you_rank} · {you_wins} win{'s' if you_wins != 1 else ''}\n",
+                     style=INK_B)
+        else:
+            t.append("  you: unranked — win online to climb\n", style=DIM)
+        d = int(lad.get("days_left") or 0)
+        t.append(f"  season resets in {d} day{'s' if d != 1 else ''}\n", style=DIM)
+        return t
 
     def _key_login(self, k):
         r = self.entry.key(k)
@@ -837,6 +893,13 @@ class LobbyPanel:
             elif k == "escape":
                 self.action_for = None
             return None
+        if k == "tab":
+            # the MONTHLY LADDER (2026-07-14): online wins, fresh race each
+            # month.  TAB because every letter belongs to the chat input.
+            if self.client:
+                self.client.ladder_get()       # refresh; the page renders live
+            self.phase = "ladder"
+            return None
         if k == "escape":
             if self.scroll:                    # scrolled log: snap to live first
                 self.scroll = 0
@@ -862,7 +925,7 @@ class LobbyPanel:
             return None
         if k == "left" and self.rost_hidden:
             self.rost_hidden = False
-            self.status = "↑↓ pick · ENTER chat/act · ESC leave"
+            self.status = "↑↓ pick · ENTER chat · TAB ranks · ESC"
             return None
         if k == "up":
             if self.rost_hidden:
@@ -955,6 +1018,8 @@ class LobbyPanel:
             return ""                      # session text phases prompt in-LCD
         if self.phase == "login":
             return menu.hints(("TAB", "field"), ("ENTER", "go"), ("ESC", "back"))
+        if self.phase == "ladder":
+            return menu.hints(("TAB", "lobby"), ("ESC", "back"))
         if self.phase == "dm":
             cue = self._care_cue()      # the DM thread live-ticks too
             if cue:
@@ -997,6 +1062,8 @@ class LobbyPanel:
             return self._text_battle()
         if self.phase == "dm":
             return self._text_dm()
+        if self.phase == "ladder":
+            return self._text_ladder()
         return self._text_lobby()
 
     def _text_login(self):

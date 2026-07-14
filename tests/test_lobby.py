@@ -49,7 +49,7 @@ def _panel(state):
     p.world_seconds = 600.0
     pan = lobbyscreen.LobbyPanel(p, lambda name, pw, card: _StubClient(state),
                                  name="joel", pw="x")
-    pan.status = "↑↓ pick · ENTER chat/act · ESC leave"
+    pan.status = "↑↓ pick · ENTER chat · TAB ranks · ESC"
     return pan
 
 

@@ -196,6 +196,7 @@ class LobbyClient(_WsClient):
         self._stop = False                    # rejected login (or teardown) -> no retry
         self._had_welcome = False             # a past successful login makes drops RECONNECTS
         self._backoff0 = 2.0                  # first-retry delay (tests shrink it)
+        self.ladder = None                    # last ladder message (rankings page)
 
     # ---- outgoing (called from the UI thread/loop) -----------------------
     def _send(self, obj):
@@ -230,6 +231,16 @@ class LobbyClient(_WsClient):
 
     def relay(self, to, payload):
         self._send({"t": "relay", "to": to, "payload": payload})
+
+    def ladder_report(self, won, opp):
+        """File this side of a PvP outcome; the server pairs both stories."""
+        self._send({"t": "ladder_report", "won": bool(won), "opp": opp})
+
+    def ladder_get(self):
+        self._send({"t": "ladder_get"})
+
+    def ladder_claim(self, season):
+        self._send({"t": "ladder_claim", "season": season})
 
     # ---- lifecycle (the loop itself lives on _WsClient) --------------------
     def _login_msg(self):
@@ -283,6 +294,8 @@ class LobbyClient(_WsClient):
             self._had_welcome = True
             s.me_id = m.get("id")
             s.me_name = m.get("name")
+        elif t == "ladder":
+            self.ladder = m               # the rankings page renders from this
         elif t == "roster":
             s.roster = m.get("players") or []
         elif t == "chat":

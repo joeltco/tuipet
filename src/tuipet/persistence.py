@@ -391,6 +391,21 @@ def album_add(num):
     save_settings(d)
 
 
+def ladder_award_claimed(season):
+    """Has this device already granted the season's ladder award?  The server
+    keeps its own claim ledger; this local one stops a double-grant when the
+    claim message races a re-query (monthly ladder, 2026-07-14)."""
+    return season in load_settings().get("progress", {}).get("ladder_claimed", [])
+
+
+def note_ladder_award(season):
+    d = load_settings()
+    lst = d.setdefault("progress", {}).setdefault("ladder_claimed", [])
+    if season not in lst:
+        lst.append(season)
+        save_settings(d)
+
+
 def album_has(num):
     """Is this species (name-canonical) already in the cross-pet album?  Lets
     the evolve/hatch moment announce a genuine FIRST -- album_add() itself is
