@@ -1105,8 +1105,14 @@ class LobbyPanel:
         self.scroll = max(0, min(self.scroll, max(0, len(rows) - BODY)))
         right = (f"▲{self.scroll} back" if self.scroll else f"{online} on")
         # header: identity + the live/scroll marker (folded: no divider column)
-        t.append(_fit(f"you: {me}", cw - ROSTW if self.rost_hidden else CHATW),
-                 style=INK_B)                                # confirm your identity
+        # -- your OWN worn honor shows here (read locally, so it's right even
+        # before the roster syncs); a long title marquees, the chrome holds
+        worn = data.title_name(persistence.get_title_worn())
+        me_line = f"you: {me}" + (f" · ★{worn}" if worn else "")
+        mw = cw - ROSTW if self.rost_hidden else CHATW
+        mq = getattr(self, "_mq", 0) // 2
+        t.append(_fit(marquee(me_line, mw, mq), mw) if cell_len(me_line) > mw
+                 else _fit(me_line, mw), style=INK_B)        # confirm your identity
         if not self.rost_hidden:
             t.append("│", style=DIM)
         t.append(right.rjust(ROSTW)[:ROSTW] + "\n", style=INK_B)
@@ -1136,7 +1142,16 @@ class LobbyPanel:
                 blk = bool(s) and nm in s.blocked
                 mark = "✉" if unread else ("✕" if blk else ("·" if ghost else ""))
                 sty = SEL if cur else (INK_B if unread else (DIM if (ghost or blk) else INK))
-                t.append(_fit((">" if cur else " ") + mark + nm, ROSTW), style=sty)
+                # a worn honor stars the roster entry -- the room sees who's
+                # titled at a glance; an entry too long for the column
+                # MARQUEES (field-scroll doctrine) so the star is never lost.
+                # marquee is char-based; the _fit wrapper keeps wide glyphs
+                # (emoji names) inside the column per the cell-width law
+                star = " ★" if (pl.get("pet") or {}).get("title") else ""
+                pre, label = (">" if cur else " "), mark + nm + star
+                if cell_len(pre + label) > ROSTW:
+                    label = marquee(label, ROSTW - 1, getattr(self, "_mq", 0) // 2)
+                t.append(_fit(pre + label, ROSTW), style=sty)
             elif i == 0 and not others:
                 t.append(_fit(" nobody yet", ROSTW), style=DIM)
             else:

@@ -272,13 +272,12 @@ class TuiPetApp(App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("Bits are worth spending! Cups now take a STAKE (a quarter "
-                 "of the purse -- champion nets +75%, a quarterfinal exit eats "
-                 "it), the assistant's retainer scales with your stage, DNA "
-                 "wagers go to 9999 (big ones never spoil and splash the "
-                 "neighbor Fields), and the shop has an HONORS board: tamer "
-                 "titles up to 250k, each with its own inscription, that ride "
-                 "your card in the lobby.")
+    WHATS_NEW = ("Honors shine in the lobby now: titled tamers wear a star "
+                 "right in the roster, your own title sits on the you-line, "
+                 "and long names scroll through the sidebar instead of "
+                 "clipping. (New this week: cup stakes, stage-priced "
+                 "assistant, 9999 DNA wagers, and the HONORS board itself -- "
+                 "titles up to 250k in the shop.)")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and

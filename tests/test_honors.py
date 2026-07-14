@@ -102,3 +102,61 @@ def test_the_honors_tab_renders():
     pan.key("enter")
     t = pan.text().plain
     assert "worn" in t
+
+
+# ---- the honor in the ROOM (roster star + own you-line, 2026-07-14) -----------
+
+def _fake_lobby():
+    from tuipet.lobbyscreen import LobbyPanel
+    from tuipet.net import LobbyState
+
+    class _C:
+        def chat(self, t): pass
+        def invite(self, *a): pass
+        def respond(self, *a, **k): pass
+        def relay(self, *a): pass
+        def update_pet(self, c): pass
+
+    p = Pet(num=100, stage="Champion")
+    pan = LobbyPanel(p, on_connect=lambda n, pw, c: None)
+    s = LobbyState()
+    s.connected = True
+    s.me_id, s.me_name = 1, "JoeltCo"
+    s.roster = [
+        {"id": 1, "name": "JoeltCo", "live": True, "pet": {}},
+        {"id": 2, "name": "Roxi", "live": True,
+         "pet": {"name": "WarGreymon", "stage": "Mega", "title": "Bit Baron"}},
+        {"id": 3, "name": "Averylongtamername", "live": True,
+         "pet": {"name": "Agumon", "stage": "Rookie", "title": "Data Dynast"}},
+    ]
+    pan.client, pan.state, pan.phase = _C(), s, "lobby"
+    pan.status = "↑↓ pick · Enter chat/act · Esc leave"
+    return pan
+
+
+def test_the_roster_stars_titled_players():
+    t = _fake_lobby().text().plain
+    assert "Roxi ★" in t                     # titled peer wears the star
+    assert "JoeltCo ★" not in t              # untitled stays plain
+
+
+def test_your_own_worn_honor_shows_on_the_you_line():
+    pan = _fake_lobby()
+    assert "you: JoeltCo" in pan.text().plain and "★" not in \
+        pan.text().plain.split("\n")[0]      # nothing worn: plain you-line
+    first = data.load_titles()[0]
+    persistence.title_own(first["id"])
+    persistence.set_title_worn(first["id"])
+    head = pan.text().plain.split("\n")[0]
+    assert "you: JoeltCo · ★" in head        # marquee head shows the honor
+
+
+def test_long_roster_entries_scroll_the_star_into_view():
+    pan = _fake_lobby()
+    pan._mq = 0
+    t0 = pan.text().plain
+    assert "Averylongt" in t0                # the head of the long entry
+    assert "mername ★" not in t0             # ...whose star is off-column
+    pan._mq = 38                             # step 19 -> the window has slid
+    t1 = pan.text().plain
+    assert "mername ★" in t1, "the marquee must carry the star into view"
