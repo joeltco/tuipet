@@ -521,21 +521,39 @@ def _build_night_clouds(frames):
         raw.append(y)
     hor = [sorted(raw[max(0, x - 2):x + 3])[len(raw[max(0, x - 2):x + 3]) // 2]
            for x in range(W)]      # median-of-5: no single-column streaks
-    cl = sorted(_luma(_cell(prec, x, y)) for y in range(6) for x in range(W))
-    t1, t2 = cl[len(cl) // 3], cl[2 * len(cl) // 3]
 
     def tone(k, g):                # night-sky hue stepped up, pulled to gray
         return tuple(min(255.0, nsky[i] * k + (_NC_GRAY[i] - nsky[i] * k) * g)
                      for i in range(3))
 
-    tones = [tone(1.0, 0.22), tone(1.4, 0.38), tone(1.85, 0.5)]
+    # The first cut snapped the cloud texture into three flat tones and the
+    # blobs came out hard-edged ("they look sharo and edgy" -- Joel
+    # 2026-07-15).  The sheets themselves are soft anti-aliased art, so the
+    # clouds now match: the overcast frame's brightness field gets one 3x3
+    # box-blur pass (rounds the masses, kills single-pixel jaggies), then
+    # maps CONTINUOUSLY onto the dark->light ramp between the same two
+    # endpoint tones.
+    lum = [[_luma(_cell(prec, x, y)) for x in range(W)] for y in range(H)]
+    blur = [[0.0] * W for _ in range(H)]
+    for y in range(H):
+        for x in range(W):
+            s = n = 0
+            for dy in (-1, 0, 1):
+                for dx in (-1, 0, 1):
+                    if 0 <= x + dx < W and 0 <= y + dy < H:
+                        s += lum[y + dy][x + dx]
+                        n += 1
+            blur[y][x] = s / n
+    vals = sorted(blur[y][x] for y in range(6) for x in range(W))
+    lo, hi = vals[int(len(vals) * 0.05)], vals[int(len(vals) * 0.95)]
+    A, B = tone(1.0, 0.22), tone(1.85, 0.5)
     out = []
     for y in range(H):
         cells = []
         for x in range(W):
             if y < hor[x]:
-                lp = _luma(_cell(prec, x, y))
-                c = tones[0 if lp <= t1 else (1 if lp <= t2 else 2)]
+                t = max(0.0, min(1.0, (blur[y][x] - lo) / max(1.0, hi - lo)))
+                c = tuple(A[i] + (B[i] - A[i]) * t for i in range(3))
                 cells.append("%02x%02x%02x" % tuple(int(v) for v in c))
             else:
                 cells.append(night[y][x * 6:(x + 1) * 6])
