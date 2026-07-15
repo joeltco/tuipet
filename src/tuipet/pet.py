@@ -820,4 +820,11 @@ class Pet:
         return self.age_days >= 15
 
     def can_feed(self):
-        return self._guard()
+        """'' when a meal may start, else the reason (the HUD flashes it)."""
+        if self.dead:
+            return "It rests now."
+        if self.stage == "Egg" or self.num < 0:
+            return "The egg eats nothing yet."
+        if self.asleep:
+            return "zzz… asleep"
+        return ""

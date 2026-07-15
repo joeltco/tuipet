@@ -35,7 +35,8 @@ def test_help_scrolls_and_clamps_and_exits():
     assert pan.top == 3
     for _ in range(200):                           # clamp at the bottom
         pan.key("down")
-    assert pan.top == max(0, len(HELP) - VIS)
+    from tuipet.helpscreen import _full_help
+    assert pan.top == max(0, len(_full_help()) - VIS)
     for _ in range(200):                           # clamp at the top
         pan.key("up")
     assert pan.top == 0

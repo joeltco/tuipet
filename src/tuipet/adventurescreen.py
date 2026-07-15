@@ -37,7 +37,7 @@ TRAVEL_TICKS = 10             # ticks per auto-stride (the INTERACTIVE_STEPS com
 #                               twelve BackgroundsAndRange scenes strobed ~1/s; at 1s/stride
 #                               each scene HOLDS like canon's set-piece backdrops and towns
 #                               read as interludes (Joel 2026-07-07: "adventure felt
-#                               different in the classic V-pet")
+#                               different in dvpet")
 # the habitat transition (canon Enum.State.Teleport_Leave/Teleport_Arrive --
 # SpriteAnim.teleportLeave()/teleportArrive(), the state ClockTic fires the
 # moment the pet leaves for (or returns from) the adventure world): the
@@ -460,8 +460,9 @@ class AdventurePanel(menu.SubHost):
             # fx guard, action_praise/scold/heal)
             return None
         if k == "f":
-            if not self.pet.can_feed():
-                self.adv.last = "Not now."
+            reason = self.pet.can_feed()
+            if reason:
+                self.adv.last = reason
                 self.sfx = "refuse"
             else:
                 self.sub = FeedPanel(self.pet)

@@ -41,9 +41,24 @@ HELP = [
     ("e opens the scene gallery.", 1),
     ("", 0),
     ("CREDITS", 2),
-    ("z lists the sprite artists whose", 1),
-    ("  work fills this game.", 0),
+    ("Art ripped from multiple fan games", 0),
+    ("and the V-pet sprite community.", 0),
+    ("The artists, with thanks:", 0),
 ]
+
+
+def _full_help():
+    """HELP + the sprite-artist credits appended (attribution ships with
+    the game; it lives here now instead of its own screen)."""
+    rows = list(HELP)
+    try:
+        from . import creditscreen
+        for text, kind in creditscreen._rows()[3:]:
+            if text:
+                rows.append((text[:38], 0))
+    except Exception:
+        rows.append(("(credits unavailable)", 0))
+    return rows
 
 
 class HelpPanel:
@@ -60,7 +75,10 @@ class HelpPanel:
         return menu.hints(("↑↓", "scroll"), ("ESC", "out"))
 
     def _max_top(self):
-        return max(0, len(HELP) - VIS)
+        rows = getattr(self, "_rows", None)
+        if rows is None:
+            rows = self._rows = _full_help()
+        return max(0, len(rows) - VIS)
 
     def key(self, k):
         if k in ("up", "k"):
@@ -84,10 +102,13 @@ class HelpPanel:
         return ""
 
     def text(self):
+        rows = getattr(self, "_rows", None)
+        if rows is None:
+            rows = self._rows = _full_help()
         self.top = max(0, min(self.top, self._max_top()))
-        pos = "%d-%d/%d" % (self.top + 1, min(self.top + VIS, len(HELP)), len(HELP))
+        pos = "%d-%d/%d" % (self.top + 1, min(self.top + VIS, len(rows)), len(rows))
         out = menu.header("HELP", pos)
-        for text, kind in HELP[self.top:self.top + VIS]:
+        for text, kind in rows[self.top:self.top + VIS]:
             style = INK_B if kind == 2 else (INK if kind == 1 else DIM)
             out.append((text or " ") + "\n", style=style)
         out.append_text(menu.footer(self._more_cue()))

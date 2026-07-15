@@ -92,11 +92,9 @@ class EggSelectPanel:
         return fr[0]
 
     def _note(self, idx):
-        state, _ = self.states.get(idx, ("owned", 0))
-        name = egg_mod.hatch_name(idx)
-        if state == "temp":
-            return "hatches: %s  (this gen only)" % name
-        return "hatches: %s" % name
+        # the EGG's own name leads (baby names repeat across shells)
+        return "%s · hatches %s" % (egg_mod.egg_name(idx),
+                                    egg_mod.hatch_name(idx))
 
     def text(self):
         if not self.n:                                 # defensive: starters keep this non-empty
@@ -111,7 +109,14 @@ class EggSelectPanel:
             v = base + d
             x = CENTER + int(round((v - self.scroll) * SPACING))
             placements.append((self._frame(v, d == 0), x, False))
-        scene = render_scene(placements, COLS, ROWS, LCD_ON, LCD_BG)
+        # each egg previews on ITS scene (the shell's hue picks the bucket);
+        # the carousel sits on the scene's GROUND band
+        from . import data as _data
+        sheet = _data.load_backgrounds().get(
+            egg_mod.scene_for(self._egg(self.i)))
+        bgimg = sheet[0][-ROWS * 2:] if sheet else None
+        scene = render_scene(placements, COLS, ROWS, LCD_ON, LCD_BG,
+                             bgimg=bgimg)
         out = menu.header("CHOOSE YOUR EGG", f"{self.i + 1}/{self.n}")
         out.append_text(scene)
         out.append("\n")                              # scene has no trailing newline

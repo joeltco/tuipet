@@ -49,8 +49,48 @@ ROLES = {"idle": [0, 1], "egg_idle": [0, 1], "hatch": [0, 1, 2]}  # egg -> crack
 
 
 def egg_name(egg_type=0):
+    """The egg's OWN display name: 'Agu2006_Digitama' -> 'Agu 2006 Egg'."""
     eggs = _eggs()
-    return eggs[egg_type % len(eggs)][1]["name"] if eggs else "?"
+    if not eggs:
+        return "?"
+    raw = eggs[egg_type % len(eggs)][1]["name"]
+    base = raw.replace("_Digitama", "").replace("Digitama", "")
+    import re
+    base = re.sub(r"(?<=[a-z])(?=[A-Z0-9])", " ", base).strip() or "Mystery"
+    return f"{base} Egg"
+
+
+# scene buckets by the shell's dominant hue -- a COSMETIC assignment rule
+# (tuipet's own; the source has no egg scenery), deterministic per egg
+_HUE_SCENES = ((0.00, "volcano"), (0.09, "desert"), (0.16, "greenhills"),
+               (0.30, "forestgate"), (0.45, "tealhollow"), (0.55, "underwater"),
+               (0.66, "frozenpeak"), (0.76, "moonmeadow"), (0.88, "blossom"),
+               (1.01, "volcano"))
+
+
+@lru_cache(maxsize=None)
+def scene_for(egg_type=0):
+    """The scene this egg previews on: the shell's dominant PIXEL hue picks
+    the bucket (weighted by the actual sprite, not the palette order);
+    near-grey shells rest on the default hills."""
+    import colorsys
+    shell = frames(egg_type)[0]
+    weights = {}
+    for row in shell:
+        for c in row:
+            if isinstance(c, str) and c.startswith("#") and len(c) >= 7:
+                weights[c] = weights.get(c, 0) + 1
+    score = {}
+    for c, n in weights.items():
+        r, g, b = (int(c[i:i + 2], 16) / 255 for i in (1, 3, 5))
+        h, l, sat = colorsys.rgb_to_hls(r, g, b)
+        if sat < 0.25 or not 0.12 < l < 0.9:
+            continue                     # outline/greys/white shine don't vote
+        key = next(sc for edge, sc in _HUE_SCENES if h < edge)
+        score[key] = score.get(key, 0) + n
+    if not score:
+        return "greenhills"
+    return max(score, key=score.get)
 
 
 def hatch_target(egg_type=0):

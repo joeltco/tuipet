@@ -24,7 +24,6 @@ from . import backgroundscreen
 from . import backgrounds as bgs_mod
 from . import feedscreen
 from . import eggselectscreen
-from . import creditscreen
 from . import persistence
 from . import net
 from . import lobbyscreen
@@ -84,7 +83,7 @@ def keys_markup():
     return (
         f"[{k}]f[/] feed  [{k}]c[/] clean  [{k}]h[/] pill  [{k}]s[/] lights  [{k}]t[/] train\n"
         f"[{k}]a[/] adventure  [{k}]l[/] lobby (battle·jogress)  [{k}]n[/] new egg  [{k}]o[/] shop  [{k}]i[/] bag\n"
-        f"[{k}]e[/] scenes  [{k}]z[/] credits  [{k}]g[/] options  [{k}]b[/] bug  [{k}]?[/] help  [{k}]q[/] quit"
+        f"[{k}]e[/] scenes  [{k}]g[/] options  [{k}]b[/] bug  [{k}]?[/] help  [{k}]q[/] quit"
     )
 
 
@@ -247,10 +246,10 @@ class TuiPetApp(App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("THE RAID BOSS RISES: one shared boss for the whole "
-                 "server, standing for a week - press TAB twice in the "
-                 "lobby, spend your 3 daily attempts, and split the "
-                 "contributor rewards when the community fells it.")
+    WHATS_NEW = ("SCENE GALLERY DEDUPED: Seafloor and Sunset Shore were "
+                 "tints of the same sea vista as Underwater - the gallery "
+                 "keeps one Underwater; a save that had a tint picked keeps "
+                 "its sea view.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07) -- PvE combat
@@ -262,7 +261,6 @@ class TuiPetApp(App):
         ("n", "new", "New egg"),
         ("l", "lobby", "Lobby"),
         ("s", "sleep", "Lights"), ("g", "options", "Options"),
-        ("z", "credits", "Credits"),
         ("b", "bug", "Bug"), ("question_mark", "help", "Help"), ("q", "quit", "Quit"),
     ]
 
@@ -320,7 +318,7 @@ class TuiPetApp(App):
         self._restyle()
         self.repaint()
         self._open_mode(titlescreen.TitlePanel(), self._after_title)   # the panel's strip() carries PRESS ENTER
-        self.set_interval(0.1, self.on_frame)    # single the classic V-pet interval clock: 1 tick == 0.1s (main view AND sub-screens)
+        self.set_interval(0.1, self.on_frame)    # single DVPet interval clock: 1 tick == 0.1s (main view AND sub-screens)
         self.set_interval(1.0, self.on_tick)
         self.set_interval(10.0, self.autosave)
         self.run_worker(self._check_update(), name="update", exclusive=False)
@@ -1101,7 +1099,7 @@ class TuiPetApp(App):
             ]
         self.stats_w.update("\n".join(lines))
 
-    def on_frame(self):                        # single the classic V-pet interval clock (10 Hz, 0.1s): main view AND sub-screens
+    def on_frame(self):                        # single DVPet interval clock (10 Hz, 0.1s): main view AND sub-screens
         menu.TICK += 1                         # the shared note marquee clock: no screen clips a message
         self._hud_marquee()                    # scroll any over-long HUD message (independent of the LCD)
         self._drain_pms()                      # ✉ alerts ride the message box (presence 2026-07-05)
@@ -1135,11 +1133,11 @@ class TuiPetApp(App):
                        or sc.fx.get("snds", {}).get(sc.fx["step"]))
                 if snd:
                     self.beep(snd, bell=False)
-                if sc.fx["kind"] == "eat":     # live the classic V-pet feeding readout (calorie + P/M/V)
+                if sc.fx["kind"] == "eat":     # live DVPet feeding readout (calorie + P/M/V)
                     self._status_eat()
                 elif (sc.fx["kind"] == "play" and sc.fx["step"] >= PLAY_LEAD
                         and (sc.fx["step"] - PLAY_LEAD) % PLAY_HOP == 0):
-                    self.beep("happy", bell=False)   # the classic V-pet jumping(): a chirp at each hop's launch
+                    self.beep("happy", bell=False)   # DVPet jumping(): a chirp at each hop's launch
             elif getattr(self, "_pending_evolve", None) is not None and self.screen_w.fx is None:
                 old_num, self._pending_evolve = self._pending_evolve, None
                 self.screen_w.start_fx("evolve", old_num=old_num)
@@ -1225,7 +1223,7 @@ class TuiPetApp(App):
         self.pet.tick(1.0)
         p = self.pet
         if p.dead and not was_dead:
-            self.beep("death")            # death.wav, like the classic V-pet's dying() sound
+            self.beep("death")            # death.wav, like DVPet's dying() sound
             self.flash("")
             self.screen_w.start_fx("dying")   # exhausted pose beat, then the memorial
             self._dying_fx = True
@@ -1238,7 +1236,7 @@ class TuiPetApp(App):
                 self.flash(f"[b]{p.name}[/] hatched!{star}")
                 # hatch has NO evolve dither -- the egg already shook; the Fresh just appears
             else:
-                # _evolve sounds INSIDE the strobe (fx snds beat 5), like the classic V-pet evolveAnim.
+                # _evolve sounds INSIDE the strobe (fx snds beat 5), like DVPet evolveAnim.
                 # design call (polish 2026-07): an evolution landing mid-fx WAITS for
                 # the current animation instead of truncating it (death still overrides)
                 self.flash(self._evolve_msg(prev[0]))
@@ -1247,13 +1245,13 @@ class TuiPetApp(App):
                 else:
                     self._pending_evolve = prev[0]
         elif p.poop > poop0:
-            # the classic V-pet playPoopSound keys the byte poop() RETURNS -- the SIZE of the
+            # DVPet playPoopSound keys the byte poop() RETURNS -- the SIZE of the
             # new pile (f==1 small, f>2 large, else normal) -- not the pile count
             # (poop-anim audit 2026-07-05: a small fourth pile barked largePoop)
             sz = (p.poop_sizes[-1] if getattr(p, "poop_sizes", None) else 2)
             poop_snd = "smallPoop" if sz == 1 else ("largePoop" if sz > 2 else "poop")
             if self.screen_w.fx is None:
-                # the classic V-pet poop(): squat/sway then the pile lands at t18 with its sound
+                # DVPet poop(): squat/sway then the pile lands at t18 with its sound
                 self.screen_w.start_fx("poop", poop=poop0)
                 self.screen_w.fx["snds"] = {18: poop_snd}
             else:
@@ -1474,10 +1472,6 @@ class TuiPetApp(App):
         self.beep("confirm", bell=False)
         on = self.pet.toggle_lights()
         self._do("Lights on." if on else "Lights out. Sweet dreams.")
-
-    def action_credits(self):
-        self._open_mode(creditscreen.CreditsPanel(self.pet),
-                        lambda _=None: self.repaint())
 
     def action_new(self):
         gen = self.pet.generation + 1

@@ -10,18 +10,17 @@ def test_happy_role_is_the_praise_pair_not_the_scold_pair():
 
 
 def test_sick_shuffle_is_net_zero():
-    """idleUnwell sways moveLeft1@30, moveRight1@35/40, moveLeft1@45 -> the offset
-    is held -1 over [30,35), 0 over [35,40), +1 over [40,45), 0 elsewhere; net zero."""
-    assert anim.sick_frame(0) == (10, 0)
-    assert anim.sick_frame(30)[1] == -1
-    assert anim.sick_frame(34)[1] == -1
-    assert anim.sick_frame(35)[1] == 0          # the second move cancels the first
-    assert anim.sick_frame(40)[1] == 1
-    assert anim.sick_frame(44)[1] == 1
-    assert anim.sick_frame(45)[1] == 0          # back to centre
-    assert anim.sick_frame(49)[0] == 9          # weary flash before the reset
-    # over a full period the shuffle returns to where it started
-    assert sum(anim.sick_frame(f)[1] for f in range(anim.SICK_PERIOD)) == 0
+    """The sick idle alternates the injured pair and sways 1px net-zero."""
+    from tuipet.anim import sick_frame, SICK_PERIOD
+    seen_idx = set()
+    net = 0
+    for f in range(SICK_PERIOD):
+        idx, dx = sick_frame(f)
+        seen_idx.add(idx)
+        net += dx
+    assert seen_idx == {10, 11}
+    assert sum(dx for _, dx in (sick_frame(f) for f in range(SICK_PERIOD))) == 0
+
 
 
 class _StubPet:

@@ -19,9 +19,7 @@ from .theme import LCD_ON, LCD_BG, INK, INK_B, DIM, SEL, POS, NEG  # noqa: F401 
 
 COLS, ROWS = 40, 12
 BAR_MAX = 24
-IDLE, ATTACK, CHEER_A, CHEER_B, WEARY = 0, 6, 5, 7, 9
-FIRE_T = 12
-IMPACT_T = 9
+IDLE, TURN, ATTACK, CHEER_A, CHEER_B, WEARY = 0, 1, 6, 5, 7, 9
 VERDICT_T = 14
 
 ENERGY_NEED = 2
@@ -63,10 +61,15 @@ class TrainingPanel:
                 self.bar = max(0, min(BAR_MAX, self.bar))
         elif self.phase == "shoot":
             self.i += 1
-            if self.i == FIRE_T and self.grade != "miss":
-                self.sfx = "strongAttack" if self.grade == "mega" else "attackHit"
-            if self.i >= FIRE_T + IMPACT_T + VERDICT_T:
-                self.phase = "done"
+            fr = self.timeline[min(self.i, len(self.timeline) - 1)]
+            m = fr.get("m")
+            if m != self._last_m:
+                self.sfx = strikefx.beat_sfx(m, fr.get("double"))
+                self._last_m = m
+            if self.i >= len(self.timeline) - 1:
+                self._verdict += 1
+                if self._verdict >= VERDICT_T:
+                    self.phase = "done"
 
     def _lock(self):
         if self.pet.battles >= 999 or self.mega_lo <= self.bar <= self.mega_hi:
@@ -83,6 +86,11 @@ class TrainingPanel:
                        "normal": "A solid hit.",
                        "miss": "Whiffed it..."}[g]
         self.sfx = "confirm" if self.success else "refuse"
+        # the strike is the battle's own volley: windup -> fire -> the
+        # TARGET breaks (hit) or stands (miss)
+        self.timeline = strikefx.build_volley(self.success, g == "mega")
+        self._last_m = None
+        self._verdict = 0
         self.phase = "shoot"
         self.i = 0
 
@@ -134,24 +142,41 @@ class TrainingPanel:
         return out
 
     def _shoot_text(self):
-        """Pet on the right fires left."""
-        if self.i < FIRE_T:
+        """The pet fires LEFT at a standing target -- the same volley rails
+        as battle (windup, orb flight, explosion / whiff)."""
+        from .battlescreen import EXPLODE, _full
+        fr = self.timeline[min(self.i, len(self.timeline) - 1)]
+        m = fr.get("m")
+        if m == "windup":
+            pose = (TURN, TURN, IDLE, IDLE, ATTACK, ATTACK)[min(fr.get("wu", 0), 5)]
+        elif m in ("fire_out", "fire_in"):
             pose = ATTACK
-            prog = (self.i + 1) / FIRE_T
-            place, mouth = strikefx.place_combatant(True, self._rows(pose))
+        elif m in ("hit", "break"):
+            pose = CHEER_A if (self.frame_i // 3) % 2 else CHEER_B
+        elif m == "miss":
+            pose = WEARY
+        else:
+            pose = IDLE
+        place, mouth = strikefx.place_combatant(True, self._rows(pose))
+        overlay = []
+        target = data.load_battle_fx().get("wall")
+        trows = None
+        if isinstance(target, dict):
+            w, h = int(target.get("width", 8)), int(target.get("height", 8))
+            px = target.get("sprite") or []
+            if len(px) >= w * h:
+                trows = ["".join("1" if px[y * w + x] else "0"
+                                 for x in range(w)) for y in range(h)]
+        if trows and m != "break":                    # the target stands...
+            overlay += strikefx.blit(trows, grid.X0,
+                                     grid.FLOOR - len(trows))
+        if m == "hit":                                # ...and blows on a hit
+            overlay += _full(EXPLODE[fr.get("f", 0)])
+        if m in ("fire_out", "fire_in"):
             orb = data.attack_orb(self.pet.num, self.pet.attribute, 0,
                                   frame_i=self.frame_i)
-            overlay = [] if self.grade == "miss" else strikefx.orb_flight(
-                orb, True, "fire_out", prog, mouth, self.grade == "mega")
-        elif self.i < FIRE_T + IMPACT_T:
-            pose = ATTACK if self.grade != "miss" else WEARY
-            place, _ = strikefx.place_combatant(True, self._rows(pose))
-            overlay = []
-        else:
-            pose = ((CHEER_A, CHEER_B) if self.success
-                    else (WEARY, IDLE))[(self.frame_i // 3) % 2]
-            place, _ = strikefx.place_combatant(True, self._rows(pose))
-            overlay = []
+            overlay += strikefx.orb_flight(orb, True, m, fr.get("prog", 0),
+                                           mouth, fr.get("double"))
         return menu.paint(place, self.pet.background(), rows=ROWS, cols=COLS,
                           overlay=overlay, clip=grid.WINDOW)
 
