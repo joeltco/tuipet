@@ -112,20 +112,26 @@ def _peak(path):
     return max(abs(s) for s in a)
 
 
-def test_scaled_wav_is_half_as_loud():
-    """volume 50 halves every sample — the cache holds a genuinely quieter
-    file, not a renamed copy (no player flag does this for us)."""
+def test_default_100_percent_is_the_baked_in_chop():
+    """The TOP of the slider is already the halved wav — the piercing raw
+    files are never what plays, and the default leaves the whole scale free
+    to go DOWN ("should of started at 100%", Joel 2026-07-15)."""
     src = os.path.join(sound._DIR, "confirm.wav")
-    sound.set_volume(50)
+    assert sound.DEFAULT_VOLUME == 100
+    sound.set_volume(100)
     out = sound._scaled(src, "confirm")
     assert out != src and os.path.exists(out)
     assert _peak(out) == _peak(src) // 2
 
 
-def test_full_volume_plays_the_original():
+def test_the_slider_is_perceptual_not_linear():
+    """v1 mapped 50% to 0.5x amplitude — a mere -6dB, "still blairing".  The
+    squared curve makes 50% a genuine 1/8 amplitude (~-18dB)."""
     src = os.path.join(sound._DIR, "confirm.wav")
-    sound.set_volume(100)
-    assert sound._scaled(src, "confirm") is src
+    sound.set_volume(50)
+    assert _peak(sound._scaled(src, "confirm")) == _peak(src) // 8
+    sound.set_volume(10)                        # the floor is a whisper
+    assert _peak(sound._scaled(src, "confirm")) <= _peak(src) // 190
 
 
 def test_scaled_cache_is_reused_per_level(monkeypatch):

@@ -281,9 +281,9 @@ class TuiPetApp(App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("TURN IT DOWN: Options grew a real SOUND page - on/off plus "
-                 "a volume bar, and the chirps now ship at half strength. "
-                 "Every step chirps at the new level, so set it by ear.")
+    WHATS_NEW = ("VOLUME THAT BITES: the slider now starts at 100 and each "
+                 "step down cuts real decibels - 50 is a genuine quarter of "
+                 "the old racket, 10 is a whisper. Set it by ear.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and

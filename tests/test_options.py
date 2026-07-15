@@ -104,11 +104,11 @@ def test_sound_page_volume_slider(monkeypatch):
     pan = SoundPanel(lambda: state["on"],
                      lambda: state.__setitem__("on", not state["on"]))
     pan.key("down")                       # -> Volume
-    assert pan.key("right") is None
-    assert sound.volume() == 60           # DEFAULT_VOLUME 50 + 10
+    assert pan.key("left") is None
+    assert sound.volume() == 90           # DEFAULT_VOLUME 100 - 10
     assert pan.sfx == "confirm"           # the audible step
-    assert "60%" in pan.text().plain
-    for _ in range(9):
+    assert "90%" in pan.text().plain
+    for _ in range(12):
         pan.key("left")
     assert sound.volume() == 10           # floor: the switch is the mute
     for _ in range(12):

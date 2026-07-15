@@ -23,12 +23,23 @@ _DIR = os.path.join(os.path.dirname(__file__), "data", "sounds")
 # 2026-07-15: "chop that sound volume in half").  None of the allowlisted
 # players share a volume flag (termux-media-player and aplay have none at
 # all), so volume is applied to the SAMPLES: each level keeps a lazily-built
-# cache of pre-attenuated copies that any player can just play.  The range is
-# 10..100 in steps of 10 -- there is no 0, the sound switch is the mute.
+# cache of pre-attenuated copies that any player can just play.
+#
+# The slider is PERCEPTUAL, not raw amplitude (v1 mapped 50% to 0.5x, a mere
+# -6dB -- "still blairing", Joel 2026-07-15): the baseline chop is baked into
+# the TOP of the scale, so 100% is the default and already plays at half
+# amplitude, and each step down squares away real decibels (50% = 1/8
+# amplitude, ~-18dB; 10% = a whisper).  Range 10..100 in steps of 10 -- there
+# is no 0, the sound switch is the mute.
 _STATE_DIR = os.path.expanduser("~/.local/share/tuipet")
 _VOL_CONF = os.path.join(_STATE_DIR, "volume.txt")
 _CACHE = os.path.join(_STATE_DIR, "sndcache")
-DEFAULT_VOLUME = 50
+DEFAULT_VOLUME = 100
+
+
+def _amp(v):
+    """Slider percent -> amplitude factor: 0.5 * (v/100)^2."""
+    return 0.5 * (v / 100.0) ** 2
 
 
 def _load_volume():
@@ -60,10 +71,11 @@ def _scaled(f, name):
     one cache dir per level, atomic rename so a half-written wav is never
     served).  Any failure falls back to the ORIGINAL file: a full-strength
     chirp beats silence, and a state dir that can't hold a 40KB wav is
-    already failing loudly everywhere else (saves, theme)."""
-    if _volume >= 100:
-        return f
-    dst = os.path.join(_CACHE, f"v{_volume}", name + ".wav")
+    already failing loudly everywhere else (saves, theme).  Even 100% is a
+    scaled copy -- the piercing raw wavs are never played.  The q-prefix
+    versions the CURVE: the retired v-dirs held v1's linear scaling and must
+    not be served under the new mapping."""
+    dst = os.path.join(_CACHE, f"q{_volume}", name + ".wav")
     if os.path.exists(dst):
         return dst
     try:
@@ -76,7 +88,7 @@ def _scaled(f, name):
         a.frombytes(frames)
         if sys.byteorder == "big":
             a.byteswap()
-        k = _volume / 100.0        # attenuation only (k < 1): can never clip
+        k = _amp(_volume)          # attenuation only (k <= 0.5): can never clip
         for i in range(len(a)):
             a[i] = int(a[i] * k)
         if sys.byteorder == "big":
