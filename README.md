@@ -8,8 +8,8 @@
 A terminal virtual pet — Digimon V-Pet style — rendered with halfblock Unicode
 sprites and animated in the terminal, in **full colour**. Its rules and art are
 ripped from multiple fan games and the V-pet community's sprite archives — see
-[Credits & acknowledgments](#credits--acknowledgments), and press **z** in-game
-for the artist credits.
+[Credits & acknowledgments](#credits--acknowledgments) — the artists are
+named at the end of the in-game help screen (**?**).
 
 ![tuipet demo — hatch, feed, train, and adventure with your pet in the terminal](demo.gif)
 
@@ -113,10 +113,10 @@ Start from an **egg** — real dot-matrix egg designs; it wobbles, cracks, and h
 | **f** | feed (meat / pill) | **l** | online lobby |
 | **t** | train | **n** | new egg |
 | **c** | clean | **e** | scenes |
-| **h** | pill | **z** | credits |
+| **h** | pill | **?** | help |
 | **a** | adventure | **g** | options |
 | **o** | shop | **b** | bug report |
-| **i** | bag | **?** | help |
+| **i** | bag | | |
 | **s** | lights | **q** | quit |
 
 Battles and jogress live where they belong: **PvE combat happens in
@@ -200,7 +200,7 @@ devices. Its game data and art are ripped from multiple fan games and the
 community sprite archives around them.
 
 - The **sprite artists** whose pixels fill this game are credited BY NAME
-  in-game: press **z** for the CREDITS screen. Thank them.
+  in-game, at the end of the help screen (**?**). Thank them.
 - **[humulos.com/digimon](https://humulos.com/digimon)** — device evolution,
   egg, and roster documentation used during development.
 - the wider V-Pet preservation scene whose archives made any of this possible.

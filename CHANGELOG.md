@@ -3,6 +3,154 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.4.3 — 2026-07-15
+
+POLISH PASS: feeding and evolution crashes fixed, every species fires its OWN attack shape, the idle walk and sick poses are right, training strikes a real target, the hatch plays its full crack-and-burst, and each egg previews on its own scene under its own name. The artist credits moved from the Z key to the end of the Help screen.
+
+## 0.4.2 — 2026-07-15
+
+The polish-pass fixes (see 0.4.3) first landed here — the release shipped with a stale title-screen banner, corrected in 0.4.3.
+
+## 0.4.1 — 2026-07-15
+
+THE RAID BOSS RISES: one shared boss for the whole server, standing for a week - press TAB twice in the lobby, spend your 3 daily attempts, and split the contributor rewards when the community fells it.
+
+## 0.4.0 — 2026-07-15
+
+A WHOLE NEW WORLD: tuipet is reborn in FULL COLOUR - 991 creatures, 57 eggs, real-time care (it lives while the terminal is closed!), growth-chart evolution, the timing-bar battle, a monthly ladder, and artist credits on Z. Your bits and scenes came along; a fresh egg waits.
+
+## 0.3.5 — 2026-07-15
+
+SCENE GALLERY DEDUPED: Seafloor and Sunset Shore were tints of the same sea vista as Underwater - the gallery keeps one Underwater; a save that had a tint picked keeps its sea view.
+
+## 0.3.4 — 2026-07-15
+
+BATTLES FIGHT WHERE THEY STAND: a wild encounter on the road now battles in front of the biome you are crossing - dunes in the dunes, city in the city - instead of your home scene.
+
+## 0.3.3 — 2026-07-15
+
+THE DEVICE SET RETURNS: Desert, Lakeside, Mountains and Cove rejoin Green Hills in the gallery - the real Digital Monster COLOR backgrounds, verified by the artbook logo sitting next to them on the sheet. 19 scenes, all free.
+
+## 0.3.2 — 2026-07-15
+
+GREEN HILLS IS BACK: it never should have left the gallery - it returns as a pick AND as the default home scene. Every scene stays free.
+
+## 0.3.1 — 2026-07-15
+
+SCENES REFINED: the gallery is now 14 hand-picked Digimon backdrops and every one is FREE - no price walls. (The kaiju-flavored tiles left the picker but still dress the adventure roads.)
+
+## 0.3.0 — 2026-07-15
+
+THE GREAT SIMPLIFICATION: weather, temperature, habitats and day/night are gone - your mon now stands in a SCENE you pick (e). 30 backdrops of real Digimon location art: basics free, fancy ones cost bits. Bought habitats are refunded.
+
+## 0.2.503 — 2026-07-15
+
+THE LAVA BREATHES: Volcano's flow now pulses - embers dim to deep red and flare toward white in slow ripples, under every sky from clear noon to a clouded night.
+
+## 0.2.502 — 2026-07-15
+
+THE STARS TWINKLE: on a clear night every habitat's starfield shimmers - each star dips and flares on its own slow beat while the moon holds steady.
+
+## 0.2.501 — 2026-07-15
+
+WEATHER FALLS BEHIND: rain and snow now pass behind your mon and the scene props instead of speckling over them - the dot matrix always draws on top of the sky.
+
+## 0.2.500 — 2026-07-15
+
+COLORED RAIN AND SNOW: drops fall blue and flakes fall white in every theme's own palette - and neither shows in a lights-off room anymore; the dark stays dark.
+
+## 0.2.499 — 2026-07-15
+
+OVERCAST DAWNS AND DUSKS: cloudy mornings go slate, cloudy sunsets wear an ember deck with the glow peeking under it - every dark-sky hour now has real clouds, Volcano included.
+
+## 0.2.498 — 2026-07-15
+
+SOFTER NIGHT CLOUDS: the overcast-night sky is repainted as soft rounded masses instead of hard-edged blobs - same dark palette, drawn like the rest of the scenery.
+
+## 0.2.497 — 2026-07-15
+
+GENTLER CLOUDS: a cloudy sky now dims the screen half as much - overcast is a mood, not a blackout. Cloudy nights keep their new dark-cloud skies.
+
+## 0.2.496 — 2026-07-15
+
+CLOUDY NIGHTS ARE NIGHTS: every habitat now has a real overcast night sky - soft dark clouds over its night ground, moon tucked away. No more noon skies at midnight.
+
+## 0.2.495 — 2026-07-15
+
+CLOUDY NIGHTS ARE NIGHTS: every habitat now has a real overcast night sky - dark clouds over its own night ground, moon tucked away. No more noon skies at midnight.
+
+## 0.2.494 — 2026-07-15
+
+VOLUME THAT BITES: the slider now starts at 100 and each step down cuts real decibels - 50 is a genuine quarter of the old racket, 10 is a whisper. Set it by ear.
+
+## 0.2.493 — 2026-07-15
+
+TURN IT DOWN: Options grew a real SOUND page - on/off plus a volume bar, and the chirps now ship at half strength. Every step chirps at the new level, so set it by ear.
+
+## 0.2.492 — 2026-07-15
+
+NIGHT IS NIGHT AGAIN: rain no longer flips the midnight sky to noon - storms wear the dark like they should, and the scenery dissolves between weathers instead of jumping.
+
+## 0.2.491 — 2026-07-14
+
+NOTHING LEFT UNSAID: any message too wide for its box now scrolls instead of getting cut off - every screen, every note. Your pet's excuses arrive in full.
+
+## 0.2.490 — 2026-07-14
+
+UNDER THE WEATHER, NOT UNDER SIEGE: a sick pet still gets the runs (clean up!), but 1-2 hurried poops per illness now - not nine. Babies are still poop machines though. That part is real. Keep the room clean.
+
+## 0.2.489 — 2026-07-14
+
+GENTLER SETBACKS: an injury that gets worse now drags one recovery lapse longer (it used to pile on a whole new spell). But your pet remembers - a bad turn sours the hour it happened AND whatever caused it.
+
+## 0.2.488 — 2026-07-14
+
+TOUGH LOVE, BY THE BOOK: praise is earned now - a defiant win no longer fishes for it (obedient deeds do). And a pet knocked out of the Cup leaves sad and praise-able - console your loser, it fought for you.
+
+## 0.2.487 — 2026-07-14
+
+REAL STOMACHS: every species has its own (some are bottomless), and it shrinks in old age. And somewhere out there, one mon evolves from the right SNACK - the first food-triggered evolution. Bon appetit.
+
+## 0.2.486 — 2026-07-14
+
+SLEEP, BY THE BOOK: the futon is a bedtime tuck-in now - lay it on a sleeper (or right at nod-off) and the cozier rest makes the night SHORTER. One futon per night; no re-tucking. Sweet dreams.
+
+## 0.2.485 — 2026-07-14
+
+TRUE SEASONS: the year is now a real 52-day cycle - 13 days each of Spring, Summer, Fall, Winter. Moving house eases the sky instead of hauling your blizzard along, and the futon tucks the room comfy (canon).
+
+## 0.2.484 — 2026-07-14
+
+THE THERMOSTAT: your room has heat now. Habitat (e), +/- drives the temperature to your setting, then the weather takes back over. Cold mon? Warm the room or serve hot food - the futon only KEEPS a temperature.
+
+## 0.2.483 — 2026-07-14
+
+PASSWORD ROOMS: type /room <phrase> in lobby chat and anyone who types the same phrase joins your private room -- own chat, own roster, battles and fusion among friends only. /leave returns to the main floor.
+
+## 0.2.482 — 2026-07-14
+
+FAIR-PLAY PvP: online battles now run the classic peer-to-peer protocol -- both devices simulate the same bout on a shared seed, so nobody has to trust the other side's math. Pets can now refuse orders online, and Free-style pets finally get their +1. Update to fight.
+
+## 0.2.481 — 2026-07-14
+
+WEEKEND BONUS: battles and tournaments pay x1.5 bits every Saturday and Sunday (your local clock). Victory lines show the (wknd x1.5) tag when it's live. Purses, elimination consolations, wild wins - all of it. See you Saturday.
+
+## 0.2.480 — 2026-07-14
+
+THE MONTHLY LADDER is live: every online win is a rung, the race resets each month, and last season's podium pays out in bits when you next check in. Press TAB in the lobby for the rankings. One win = one rung — go climb.
+
+## 0.2.479 — 2026-07-14
+
+Care steadies the paw: a well-kept pet now trains sharper — the Virus stop-zone grows, the mash window stretches, the reel runs longer. The training menu shows your CONDITION (fed, rested, happy = ●●●); a sick or hurt pet always trembles. Keep it well and it aims true.
+
+## 0.2.478 — 2026-07-14
+
+Device-exact idle, from a real V-pet's decompiled timings: your pet now wanders, stops at the walls for a moment to turn around, and picks its steps unpredictably; the egg wobbles faster and faster as hatching nears; and the final winning blow in battle lands in dramatic silence.
+
+## 0.2.477 — 2026-07-14
+
+Feelings, like the real devices: evolution opens with the old form's silhouette pulsing before the flash, a cup champion celebrates back at the house and an eliminated pet sulks home, and a beaten fighter staggers instead of freezing.
+
 ## 0.2.476 — 2026-07-14
 
 One voice everywhere: key hints read ENTER/ESC in every screen, the battle give-up prompt agrees with itself, effort is called effort wherever it appears, the bag is always the bag, and a sweep of typos and mixed punctuation is gone.
