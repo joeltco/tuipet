@@ -32,6 +32,12 @@ class ThemePanel:
         return menu.hints(("↑↓", "preview"), ("ENTER", "keep"),
                           ("ESC", "revert"))
 
+    def anim(self):
+        # a frame heartbeat so the app repaints at 10 Hz and an
+        # over-wide menu.note can actually SCROLL (marquee sweep
+        # 2026-07-15) -- this panel had no animation of its own
+        pass
+
     def key(self, k):
         if k in ("up", "k"):
             self.cursor = (self.cursor - 1) % len(self.names)

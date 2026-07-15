@@ -21,6 +21,12 @@ class AssistPanel:
         return menu.hints(("ENTER", "dismiss helper" if on else "hire helper"),
                           ("ESC", "out"))
 
+    def anim(self):
+        # a frame heartbeat so the app repaints at 10 Hz and an
+        # over-wide menu.note can actually SCROLL (marquee sweep
+        # 2026-07-15) -- this panel had no animation of its own
+        pass
+
     def key(self, k):
         if k in ("enter", "space"):
             self.msg = self.pet.set_auto_care(not self.pet.auto_care)

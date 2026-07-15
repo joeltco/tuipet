@@ -14,6 +14,7 @@ from textual.containers import Horizontal, Vertical
 from textual.widgets import Static
 
 from . import data
+from . import menu
 from . import egg as egg_mod
 from . import training
 from . import battlescreen
@@ -280,10 +281,9 @@ class TuiPetApp(App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("UNDER THE WEATHER, NOT UNDER SIEGE: a sick pet still "
-                 "gets the runs (clean up!), but 1-2 hurried poops per "
-                 "illness now - not nine. Babies are still poop machines "
-                 "though. That part is real. Keep the room clean.")
+    WHATS_NEW = ("NOTHING LEFT UNSAID: any message too wide for its box "
+                 "now scrolls instead of getting cut off - every screen, "
+                 "every note. Your pet's excuses arrive in full.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and
@@ -1291,6 +1291,7 @@ class TuiPetApp(App):
         self.stats_w.update("\n".join(lines))
 
     def on_frame(self):                        # single DVPet interval clock (10 Hz, 0.1s): main view AND sub-screens
+        menu.TICK += 1                         # the shared note marquee clock: no screen clips a message
         self._hud_marquee()                    # scroll any over-long HUD message (independent of the LCD)
         self._drain_pms()                      # ✉ alerts ride the message box (presence 2026-07-05)
         if self.mode is not None:

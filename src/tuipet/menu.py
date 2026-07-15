@@ -49,16 +49,22 @@ NOTE_HOLD = 16   # marquee ticks held on the head each pass (~1.6s at the 10Hz c
 NOTE_STEP = 2    # advance one character every N ticks (~5 chars/s, the HUD cadence)
 NOTE_GAP = "      "
 
+# the shared marquee clock: app.on_frame advances it at 10 Hz, so EVERY note
+# scrolls when over-wide -- no screen can silently clip a message again (Joel
+# 2026-07-15: "Too early to lay out the Futon" lost its tail in the bag).
+# Panels may still pass their own frame counter; same cadence either way.
+TICK = 0
+
 
 def note(msg, tick=None):
     """A status line (bold).  A message wider than the LCD used to CLIP silently
-    (the battle menu's 'It IGNORED you!' vanished off the end -- audit 2026-07-04).
-    Animated panels pass their frame counter as `tick` and long messages marquee
-    with the HUD's proven cadence; without a tick they clip on an ellipsis."""
+    (the battle menu's 'It IGNORED you!' vanished off the end -- audit 2026-07-04;
+    then the bag's futon gate lost its tail -- 2026-07-15).  Long messages ALWAYS
+    marquee now: panels pass their frame counter or inherit the module TICK."""
     if len(msg) <= W:
         return Text(msg + "\n", style=INK_B)
     if tick is None:
-        return Text(msg[:W - 1] + "…\n", style=INK_B)
+        tick = TICK
     loop = msg + NOTE_GAP
     cycle = len(loop) + NOTE_HOLD                 # hold on the head again each wrap
     pos = (tick // NOTE_STEP) % cycle

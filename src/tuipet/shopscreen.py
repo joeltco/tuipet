@@ -97,6 +97,12 @@ class ShopPanel:
         return self._owned_by_cat(cat)
 
     # ---- input ----
+    def anim(self):
+        # a frame heartbeat so the app repaints at 10 Hz and an
+        # over-wide menu.note can actually SCROLL (marquee sweep
+        # 2026-07-15) -- this panel had no animation of its own
+        pass
+
     def key(self, k):
         tabs = self._tabs()
         rows = self._rows()

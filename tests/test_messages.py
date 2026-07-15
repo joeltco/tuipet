@@ -9,10 +9,22 @@ def test_short_note_renders_verbatim():
     assert menu.note("Fed!").plain == "Fed!\n"
 
 
-def test_long_note_without_a_tick_clips_on_an_ellipsis():
-    msg = "x" * (W + 20)
-    out = menu.note(msg).plain
-    assert out == "x" * (W - 1) + "…\n"           # visibly clipped, never silent
+def test_long_note_without_a_tick_rides_the_shared_clock():
+    """Clipping is retired (Joel 2026-07-15: the bag cut off the futon gate
+    message): a tickless note inherits menu.TICK, which app.on_frame advances
+    at 10 Hz -- every over-wide message scrolls."""
+    msg = "x" * (W + 20) + "END"
+    old_tick = menu.TICK
+    try:
+        menu.TICK = 0
+        assert menu.note(msg).plain == "x" * W + "\n"       # head first, no ellipsis
+        windows = set()
+        for t in range((NOTE_HOLD + len(msg) + W) * NOTE_STEP):
+            menu.TICK = t
+            windows.add(menu.note(msg).plain)
+        assert any("END" in w for w in windows)              # the tail comes around
+    finally:
+        menu.TICK = old_tick
 
 
 def test_long_note_with_a_tick_marquees_the_tail_into_view():

@@ -40,6 +40,9 @@ class KeysPanel:
 
     VISIBLE = 8
 
+    def anim(self):
+        pass          # frame heartbeat: over-wide notes marquee (sweep 2026-07-15)
+
     def __init__(self, bindings):
         # Textual binds a couple of keys by identifier, not glyph -- show the
         # glyph so the page reads "?  Help" / "Enter  Accept gift" instead of
