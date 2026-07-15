@@ -447,9 +447,10 @@ def _paint_harness(roamer_x=8.0):
     from tuipet.app import SCREEN_COLS, SPRITE_W
     s = type("_S", (), {})()
     for m in ("paint", "_paint_fx", "_pose_rows", "_pose_rows_idx",
-              "_food_frames", "_fx_filth", "_background",
+              "_food_frames", "_fx_filth", "_background", "_crossfade",
               "_fxk_yawn", "_fxk_poopdance", "_fxk_eat"):
         setattr(s, m, getattr(Screen, m).__get__(s))
+    s.BG_FADE = Screen.BG_FADE
     s.fx = None
     s.frame_i = 0
     s._idle_expr = None

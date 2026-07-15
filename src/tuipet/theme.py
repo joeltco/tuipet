@@ -396,14 +396,55 @@ def blend_frame(frame, hexcol, a):
     return out
 
 
-def weather_tint(frame, weather):
+def blend_frames(fa, fb, a):
+    """Cell-wise lerp between two equal-shaped frames (rows of 6-hex-char
+    cells) -- the interpolant for the background cross-fade."""
+    if a <= 0:
+        return fa
+    if a >= 1:
+        return fb
+    out = []
+    for ra, rb in zip(fa, fb):
+        cells = []
+        for i in range(0, len(ra), 6):
+            r1, g1, b1 = int(ra[i:i + 2], 16), int(ra[i + 2:i + 4], 16), int(ra[i + 4:i + 6], 16)
+            r2, g2, b2 = int(rb[i:i + 2], 16), int(rb[i + 2:i + 4], 16), int(rb[i + 4:i + 6], 16)
+            cells.append("%02x%02x%02x" % (int(r1 + (r2 - r1) * a), int(g1 + (g2 - g1) * a), int(b1 + (b2 - b1) * a)))
+        out.append("".join(cells))
+    return out
+
+
+# Canon BackgroundAnim.getBackgroundTint's PHASE component: the precip frame is
+# ALSO tinted by the time of day -- changeColor(red, 0, blue, alpha) with
+# Morning blue=80, the sunset hour red=60, and Night alpha 40->80 (an extra 40
+# of black).  We dropped this when the per-theme weather tints came in, so the
+# shared precip frame (index 4, drawn day-bright in every sheet) rendered at
+# full daylight at night: every Drizzling<->Cloudy roll (10s cadence, ~21
+# frame swaps a game day on Plains) hard-flipped the night scene to a day one
+# and back -- "backgrounds keep going back and forth between night and day"
+# (background audit 2026-07-15).  The theme weather tint stays as the base
+# gloom (canon's flat alpha-40, themed); these compose ON TOP, precip only --
+# canon gives Cloudy no phase mod (it shows the normal time-of-day frame).
+_PHASE_TINT = {"dawn": ("#000050", 40 / 255),    # Morning: blue=80 at alpha 40
+               "dusk": ("#3c0000", 40 / 255),    # isSunset: red=60 at alpha 40
+               "night": ("#000000", 40 / 255)}   # Night: alpha 40 -> 80
+
+
+def weather_tint(frame, weather, phase="day"):
     """Blend a habitat background frame toward the active theme's weather tint
-    (rain/snow/cloud). `frame` is a list of rows of 6-hex-char cells; returns a
-    new tinted frame (or the original when the weather is clear)."""
-    spec = WEATHER.get(_wcat(weather)) if frame else None
+    (rain/snow/cloud), then canon's time-of-day precip tint on top. `frame` is
+    a list of rows of 6-hex-char cells; returns a new tinted frame (or the
+    original when the weather is clear)."""
+    cat = _wcat(weather) if frame else None
+    spec = WEATHER.get(cat) if cat else None
     if not spec:
         return frame
-    return blend_frame(frame, *spec)
+    frame = blend_frame(frame, *spec)
+    if cat in ("rain", "snow"):
+        pspec = _PHASE_TINT.get(phase)
+        if pspec:
+            frame = blend_frame(frame, *pspec)
+    return frame
 
 
 # --- persistence of the chosen theme ---

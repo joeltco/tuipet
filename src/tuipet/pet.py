@@ -1920,13 +1920,20 @@ class Pet:
         # (Winter reads the FALL triple -- a DVPet quirk kept as canon); the
         # last Noon hour is the sunset (isSunset) -> tuipet's dusk.
         hour = (self.world_seconds % DAY_LENGTH) / DAY_LENGTH * 24
+        times = self.habitat_obj().get("times", {})
         season = "Fall" if self.season == "Winter" else self.season
-        tri = self.habitat_obj().get("times", {}).get(season, (6, 14, 19))
+        tri = times.get(season, (6, 14, 19))
         m, n, night = tri
+        # isSunset reads the REAL season's triple: in Winter the sunset hour
+        # is winterTime[2]-1 even though the bands ride the Fall triple -- a
+        # Plains winter dusk falls at 16:00 inside the 11-19 Noon band, and
+        # 17-18 show the DAY frame again (canon's inconsistency, kept
+        # verbatim; background audit 2026-07-15).
+        sunset = times.get(self.season, tri)[2] - 1
         if m <= hour < n:
             return "dawn"
         if n <= hour < night:
-            return "dusk" if hour >= night - 1 else "day"
+            return "dusk" if int(hour) == sunset else "day"
         return "night"
 
     @property
@@ -1959,11 +1966,12 @@ class Pet:
             frames = data.load_backgrounds().get(h.get("bg", ""))
         if not frames:
             return None
+        ph = self.day_phase
         if self.weather in _PRECIP and len(frames) > 4:
             idx = 4
         else:
-            idx = {"dawn": 0, "day": 1, "dusk": 2, "night": 3}.get(self.day_phase, 1)
-        return theme.weather_tint(frames[min(idx, len(frames) - 1)], self.weather)
+            idx = {"dawn": 0, "day": 1, "dusk": 2, "night": 3}.get(ph, 1)
+        return theme.weather_tint(frames[min(idx, len(frames) - 1)], self.weather, ph)
 
     def _affinity(self):
         """Net Field/Element fit with the current home: +compatible, -incompatible."""

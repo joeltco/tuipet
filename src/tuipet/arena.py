@@ -295,6 +295,9 @@ def _effect_overlay(pet, frame_i, cols, px_h, tick=0):
 class Screen(Static):
     """The animated LCD screen."""
     thunder_i = 0             # frames of storm-flash left (weather sets it mid-tick)
+    BG_FADE = 15              # canon animateBack: viewConfig BackgroundOpacityChange
+    #                           -0.05/tick = a ~20-tick dissolve; 15 of our 10Hz
+    #                           ticks = 1.5s (background audit 2026-07-15)
 
     def on_mount(self):
         self.frame_i = 0      # interval counter (10 Hz; 1 tick == 0.1s == one DVPet _interval)
@@ -431,7 +434,32 @@ class Screen(Static):
                                   overlay_free=weather, bgimg=bgimg, clip=_WINDOW))
 
     def _background(self, pet):
-        return pet.background()
+        return self._crossfade(pet.background())
+
+    def _crossfade(self, target):
+        """Canon BackgroundAnim.animateBack: a background change never snaps --
+        the old frame dissolves into the new one.  The weather rolls every 10s
+        and each precip start/stop swaps the whole frame (~21x a game day on
+        Plains); without the dissolve every swap was a hard day/night cut
+        (background audit 2026-07-15).  A None or shape change still cuts:
+        lights-off and habitat jumps are canon's checkBackNoAnim force path."""
+        prev = getattr(self, "_bg_tgt", None)
+        if target is None or not prev or not target \
+                or len(prev) != len(target) or len(prev[0]) != len(target[0]):
+            self._bg_tgt = self._bg_out = target
+            self._bg_fade = 0
+            return target
+        if target != prev:
+            self._bg_from = self._bg_out    # retarget from what's showing NOW,
+            self._bg_tgt = target           # so a mid-fade flap never jumps
+            self._bg_fade = self.BG_FADE
+        if getattr(self, "_bg_fade", 0) > 0:
+            self._bg_fade -= 1
+            self._bg_out = theme.blend_frames(
+                self._bg_from, target, 1 - self._bg_fade / self.BG_FADE)
+        else:
+            self._bg_out = target
+        return self._bg_out
 
     def advance(self, pet=None):
         if pet is not None and pet.anim != self.anim_key:
