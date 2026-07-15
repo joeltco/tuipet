@@ -280,10 +280,10 @@ class TuiPetApp(App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("TOUGH LOVE, BY THE BOOK: praise is earned now - a "
-                 "defiant win no longer fishes for it (obedient deeds "
-                 "do). And a pet knocked out of the Cup leaves sad and "
-                 "praise-able - console your loser, it fought for you.")
+    WHATS_NEW = ("GENTLER SETBACKS: an injury that gets worse now drags "
+                 "one recovery lapse longer (it used to pile on a whole "
+                 "new spell). But your pet remembers - a bad turn sours "
+                 "the hour it happened AND whatever caused it.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and

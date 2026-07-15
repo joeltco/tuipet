@@ -379,6 +379,8 @@ RANK_FOOD_FORCED = 1                    # RankChangeFoodForced (any forced meal 
 RANK_INTOL_FORCED = 5                   # RankChangeIntolerantForced
 RANK_SICK_FORCED = 5                    # RankChangeSickForced (a forced meal that sickened)
 RANK_TIME_SICK = 5                      # RankChangeSick/Injury: misery sours the HOUR too
+RANK_WORSE_INJ_ATTR = 5                 # RankChangeInjury: a worsening sours the attr that did it
+RANK_WORSE_INJ_FORCED = 5               # RankChangeInjuryForced (it was pushed into it)
 NONE_TRAIN_MOOD_RANK = -1               # NoneTrainingAttributeMoodRankChange (the HP drill)
 # the personality TRACKER (randPersonalityTraits seeds / personalityTracker /
 # randOnChampion): childhood care -- energy kept high, weight kept healthy,
@@ -4098,6 +4100,11 @@ class Pet:
         self._set_mood(self.mood + WORSE_MALADY_MOOD_DEC)
         self._set_enthusiasm(self.enthusiasm + SICK_ENTH_CHANGE)  # WorseSickEnthusiasmChange == -1
         self.sick_length += SICK_LAPSE_MIN                        # setSickLength(_sickLength + 1) = +1 lapse
+        # canon checkWorseSick also sours the HOUR it worsened in (timeRanks
+        # dec RankChangeSick) -- the fresh _sicken already did; the worsening
+        # was missing it (training audit 2026-07-15)
+        ph = self.day_phase
+        self.time_pref[ph] = _clamp(self.time_pref.get(ph, 0) - RANK_TIME_SICK, -90, 90)
         self._start_poop()
 
     def _injure(self):
@@ -4146,15 +4153,25 @@ class Pet:
             self._set_anim("refuse", 1.5)                    # Bad_Health_Jeering
         self.vitamin_lapse = VITAMIN_HOURS
 
-    def _worsen_injury(self):
-        """PhysicalState.worsenedInjury: the injury gets worse -- extended, with mood/
-        obedience/energy/spirit costs and the WorseInjuryLifeDec burn."""
+    def _worsen_injury(self, attr=None, complied=False):
+        """PhysicalState.worsenedInjury: the injury gets worse -- ONE recovery
+        lapse longer (canon setInjLength(_injLength + 1); training audit
+        2026-07-15 -- the old line added a whole fresh random spell), with
+        mood/obedience/energy/spirit costs, the WorseInjuryLifeDec burn, the
+        HOUR soured, and the attribute that did it soured (the drilled attr /
+        the opponent's; canon worsenedInjury / changeBattleRanks.  The None-
+        keyed moodRank nudges stay unported -- the sign-odd family)."""
         self._burn_life(WORSE_MALADY_LIFE_DEC)   # WorseInjuryLifeDec (canon re-audit)
         self._set_obedience(self.obedience + WORSE_MALADY_OBED_DEC)
         self._set_mood(self.mood + WORSE_MALADY_MOOD_DEC)
         self._set_enthusiasm(self.enthusiasm + WORSE_INJ_ENTH_CHANGE)
-        self.inj_length += random.randint(MIN_INJ_LENGTH, MAX_INJ_LENGTH) * INJ_LAPSE_MIN
+        self.inj_length += INJ_LAPSE_MIN         # +1 lapse, exactly
         self._set_energy(self.energy - WORSE_INJ_ENERGY_DEC)
+        ph = self.day_phase                      # timeRanks dec RankChangeInjury
+        self.time_pref[ph] = _clamp(self.time_pref.get(ph, 0) - RANK_TIME_SICK, -90, 90)
+        if attr in self._ATTR3:
+            self._dec_attr_rank(attr, RANK_WORSE_INJ_ATTR
+                                + (RANK_WORSE_INJ_FORCED if complied else 0))
 
     def _compat_inj_change(self):
         """getCompatibilityInjChange: the home shifts injury odds +-1 per axis
@@ -4184,7 +4201,7 @@ class Pet:
         fatigue / exhaustion / an incompatible home).  Drilling the species'
         ATTRIBUTE AVERSION rides the harsher WEAK tables."""
         weak = attr is not None and attr == self._phys().get("attr_aversion", "None")
-        self._check_worse_injury("exercise", complied=complied, weak=weak)
+        self._check_worse_injury("exercise", complied=complied, weak=weak, attr=attr)
         if self.is_injured():
             return
         inj = ((INJ_GERIATRIC if self.is_geriatric else 0)
@@ -4201,7 +4218,7 @@ class Pet:
         (a loss pads +50/1000, being a baby or an elder +10, fatigue +100).
         The old loss-only 30% flat roll is gone.  A fresh battle injury also
         SOURS the opponent's attribute (changeBattleRanks: won -1 / lost -5)."""
-        self._check_worse_injury("battle", won=won, complied=complied)
+        self._check_worse_injury("battle", won=won, complied=complied, attr=opp_attr)
         if self.is_injured():
             return
         inj = ((BATTLE_INJ_BAD_AGE if (self.is_geriatric
@@ -4217,7 +4234,7 @@ class Pet:
                 self._set_obedience(self.obedience
                                     + (OBED_INJ_BATTLE_WON if won else OBED_INJ_BATTLE_LOST))
 
-    def _check_worse_injury(self, kind, won=True, complied=False, weak=False):
+    def _check_worse_injury(self, kind, won=True, complied=False, weak=False, attr=None):
         """calcWorse{Exercise,Battle}Inj: pushing an already-injured pet can
         worsen the injury.  kind: "exercise" / "battle" / "travel" -- canon's
         checkWorseTravelInj rides the BATTLE table with won=True (the old port
@@ -4238,7 +4255,7 @@ class Pet:
                    + (0 if won else WORSE_BATTLE_INJ_LOSS))
         inj += self._neg_energy_mod(WORSE_INJ_NEG_ENERGY_COEF) + self._compat_inj_change()
         if self._inj_matrix_roll(table, WORSE_INJ_CHANCE, inj):
-            self._worsen_injury()
+            self._worsen_injury(attr=attr, complied=complied)
             if complied:
                 self._set_obedience(self.obedience
                                     + (OBED_INJ_FORCED if kind == "exercise"
