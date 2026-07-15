@@ -103,14 +103,6 @@ def test_a_grudging_meal_sours_its_categories():
     tier = p._eat_food("Meat", complied=True)
     assert p.food_ranks["Meat"] < p._rank_stage_inc() + 4   # warm - RANK_FOOD_FORCED
 
-def test_falling_ill_sours_the_hour():
-    p = _pet()
-    ph = p.day_phase
-    t0 = p.time_pref.get(ph, 0)
-    p._sicken()
-    assert p.time_pref[ph] == max(-90, t0 - RANK_TIME_SICK)
-
-
 # --- the personality tracker ---------------------------------------------------------
 
 def test_the_trait_roll_seeds_the_tracker():

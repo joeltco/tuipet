@@ -12,7 +12,13 @@ consumable's own columns in foods/items.csv -- nothing is invented.
 from __future__ import annotations
 import random
 from . import data
-from .weather import SEASONS
+
+# The shop's own rotation calendar (13 game-days a season, 52 a year) --
+# inherited from the retired weather system's SEASONS, kept because the
+# merchant's stock/sale rhythm is a SHOP mechanic, not a sky one (the Great
+# Simplification 2026-07-15).
+SEASONS = ("Spring", "Summer", "Fall", "Winter")
+SEASON_DAYS = 13
 
 FOOD_MAX = 8                  # MaxFoodShopInventory
 ITEM_MAX = 12                 # MaxItemShopInventory
@@ -25,7 +31,14 @@ RESTOCK_MAX = 4               # RestockMax banked credits
 
 
 def _season_i(pet):
-    return SEASONS.index(pet.season)
+    from .pet import DAY_LENGTH
+    return int(pet.world_seconds // DAY_LENGTH // SEASON_DAYS) % 4
+
+
+def season_name(pet):
+    """The rotation calendar's season word -- shared by the cup schedule
+    (tournament.py), which rides the same 13-day rhythm."""
+    return SEASONS[_season_i(pet)]
 
 
 def _hour(pet):
@@ -106,7 +119,7 @@ def home_shop_open(pet):
 def town_shop_hours(pet, town, is_food):
     """This season's (open, close) span for the town shop, or None when the
     data carries none (always open)."""
-    return (town.get("food_hours" if is_food else "item_hours") or {}).get(pet.season)
+    return (town.get("food_hours" if is_food else "item_hours") or {}).get(season_name(pet))
 
 
 def town_shop_open(pet, town, is_food):

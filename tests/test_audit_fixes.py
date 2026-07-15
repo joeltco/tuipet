@@ -18,12 +18,9 @@ def _pet(**kw):
 
 def test_int_dict_keys_survive_the_save_round_trip():
     p = _pet()
-    p.habitat_record = {2: 500, 0: 100}
     p.trophies_won = {7: "Spring"}
     d = json.loads(json.dumps(persistence.to_save_dict(p)))
     p2, _ = persistence.pet_from_save(d, catch_up=False)
-    assert list(p2.habitat_record) == [2, 0]
-    assert p2.major_habitat() == 2                    # int again: evolution gates work
     assert p2.trophies_won.get(7) == "Spring"         # prelim chains survive restarts
 
 
@@ -193,19 +190,3 @@ def test_nap_mood_farm_is_closed():
     assert p.mood - m0 <= 10 + 6        # ONE +10 bonus (a few wake nudges aside), not +60
 
 
-def test_precipitation_lands_on_the_terrain_band():
-    """Weather audit 2026-07-05 (Joel: stop rain/snow at random spots a bit
-    past halfway 'so it looks like its landing on the actual ground'): each
-    particle owns a ground line in rows 13..20 of 24; rain soaks in on
-    landing, snow RESTS a few frames, then both recycle from the sky."""
-    from tuipet.app import _weather_overlay
-    for w in ("Raining", "HeavyRain", "Snowing", "HeavySnow"):
-        deepest = 0
-        for f in range(200):
-            for _x, y in _weather_overlay(w, f, 40, 24):
-                deepest = max(deepest, y)
-        assert deepest <= 20, w                    # never through the floor
-        assert deepest >= 18, w                    # ...but the band is used
-    prev = set(_weather_overlay("Snowing", 50, 40, 24))
-    cur = set(_weather_overlay("Snowing", 51, 40, 24))
-    assert {p for p in prev & cur if p[1] >= 13}   # flakes sit on the ground

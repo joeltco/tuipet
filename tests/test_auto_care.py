@@ -160,5 +160,5 @@ def test_the_adventure_flags_away_and_the_exit_clears_it():
     pan.key("escape")                              # starts the homecoming teleport
     while pan._trans is not None:                  # ...which swaps home mid-anim
         pan.anim()
-    assert p.away is False and p.habitat == p.home_habitat
+    assert p.away is False
     assert pan.auto_close == ("done", None)

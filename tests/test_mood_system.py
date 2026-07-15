@@ -112,7 +112,6 @@ def test_a_disturbed_wake_still_rolls_the_morning():
 
 def test_energy_drop_into_the_red_scales_and_fatigues(monkeypatch):
     p = _pet(energy=2, obedience=30, mood=0, enthusiasm=0)
-    monkeypatch.setattr(type(p), "_energy_bonus_save", lambda self, v: v)
     p._set_energy(-3)
     assert p.energy == -3
     assert p.obedience == 30 - (NEGATIVE_ENERGY_OBEDIENCE_DEC + 3)
@@ -122,14 +121,12 @@ def test_energy_drop_into_the_red_scales_and_fatigues(monkeypatch):
 
 def test_an_injured_pet_is_not_fatigued_by_the_red(monkeypatch):
     p = _pet(energy=1, inj_length=5.0)
-    monkeypatch.setattr(type(p), "_energy_bonus_save", lambda self, v: v)
     p._set_energy(-2)
     assert not p.is_fatigued()
 
 def test_fatigue_writes_energy_raw_no_recursion(monkeypatch):
     p = _pet()
     p.energy = -p.max_energy + 1         # already in the red
-    monkeypatch.setattr(type(p), "_energy_bonus_save", lambda self, v: v)
     p._set_energy(-p.max_energy - 5)     # would recurse if _fatigue used _set_energy
     assert p.energy == -p.max_energy
 

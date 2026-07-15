@@ -43,15 +43,6 @@ def _open(key):
     return asyncio.run(go())
 
 
-def test_habitat_card_splits_climate_instead_of_clipping():
-    """The dossier clipped 'Su 60-100°  Wi 0-40°' at [:17] — 'Wi 0-' with the
-    range gone. Now Summer/Winter ride their own rows, each ending in °."""
-    card = _open("e")
-    assert "Summer" in card and "Winter" in card
-    for ln in card.split("\n"):
-        if ln.startswith(("Summer", "Winter")):
-            assert ln.rstrip().endswith("°"), f"clipped range: {ln!r}"
-
 
 def test_dna_card_wraps_guidance_instead_of_clipping():
     """'Generate DNA, then charge it.' clipped at [:24] to '...then charg'.

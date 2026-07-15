@@ -15,6 +15,7 @@ from __future__ import annotations
 import json
 import os
 from . import data
+from . import backgrounds as _bgs
 from .battle import Battle
 from .theme import LCD_ON, LCD_BG, SIL_DAY, SIL_NIGHT  # noqa: F401  (palette names bound for theme.apply propagation)
 from . import grid
@@ -376,7 +377,7 @@ class BattlePanel:
         # applies -- without it the orb visibly parked in the 4px margins on
         # every fire beat (audit 2026-07-13)
         return menu.paint(placements,
-                          self.pet.background(file="tourneyBack" if self.arena else None),
+                          self.pet.background(file=_bgs.ARENA if self.arena else None),
                           rows=ROWS, cols=COLS, overlay=overlay, clip=grid.WINDOW)
 
     def _place_one(self, view, rows, xshift=0):

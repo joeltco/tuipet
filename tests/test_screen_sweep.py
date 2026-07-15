@@ -406,20 +406,6 @@ def test_eggselect_code_entry():
     pan.text()
 
 
-def test_weather_engine_walks_every_transition():
-    from tuipet import weather as wx
-    from tuipet import data
-    random.seed(0)
-    habs = list(data.load_habitats().values())
-    seen = set()
-    for season in ("Spring", "Summer", "Fall", "Winter"):
-        w = "Clear"
-        for i in range(400):
-            w = wx.next_weather(w, season, day_temp=40 + (i % 60), hab=habs[i % len(habs)])
-            seen.add(w)
-            wx.adjusted_day_temp(70, w, ("dawn", "day", "dusk", "night")[i % 4], habs[i % len(habs)])
-    assert {"Clear", "Cloudy"} <= seen           # the engine actually moved
-
 
 def test_battlefx_across_varied_foes():
     """battlefx's effect branches key off each foe's attack conditions -- fight a
@@ -506,21 +492,6 @@ def test_app_pilot_walks_every_binding():
 
     asyncio.run(scenario())
 
-
-def test_thunder_flash_renders_and_startles():
-    """DVPet Weather.checkThunder: HeavyRain lightning lifts the gloom on 2-frame
-    beats; a dark room stays dark; the countdown burns itself out."""
-    import tuipet.app as app
-    s = app.Screen(); s.on_mount(); s.update = lambda t: None
-    p = _pet(weather="HeavyRain")
-    for lights in (True, False):
-        p.lights = lights
-        s.thunder_i = 14
-        for _ in range(20):
-            s.frame_i += 1
-            s.paint(p)
-        if lights:
-            assert s.thunder_i == 0          # the countdown burns out while lit
 
 
 def _ride_out(pan):

@@ -261,32 +261,6 @@ def test_a_wild_win_buys_encounter_immunity():
     assert getattr(adv2, "_immunity_steps", 0.0) == 0.0   # bosses grant nothing
 
 
-def test_the_current_habitat_follows_the_road_and_comes_home():
-    """Habitat audit 2026-07-06: canon's currentHabitat is set from the zone
-    BACKGROUND while traveling (WorldMap.step -> setCurrentHabitat) -- climate,
-    compatibility odds and the current-habitat evolution gate all travel; the
-    home resumes when the adventure closes (and on any save load)."""
-    from tuipet.adventure import Adventure
-    from tuipet.pet import Pet
-    from tuipet import persistence
-    p = Pet(num=102, name="D", stage="Champion", attribute="Virus")
-    p.world_seconds = 10 * 60.0
-    home = p.habitat
-    adv = Adventure(p)
-    assert p.home_habitat == home                  # old-save backfill on entry
-    assert p.habitat == adv.biome                  # the expedition biome, worn at entry
-    # ONE biome start to boss (Joel 2026-07-13): standing anywhere in the
-    # zone never re-dresses the pet -- there is no per-step habitat any more
-    for loc in (0, adv.total_steps // 3, adv.total_steps - 1):
-        adv.location = loc
-        assert p.habitat == adv.biome
-    p.go_home_habitat()
-    assert p.habitat == home                       # the exit hook restores the home
-    # ...and a save written mid-road loads back at home
-    p.habitat = 99 if home != 99 else 98
-    q, _ = persistence.pet_from_save(persistence.to_save_dict(p), catch_up=False)
-    assert q.habitat == home
-
 
 def test_garuda_chases_the_next_boss_ahead():
     """Transport audit 2026-07-06: getNextBoss is the closest boss AHEAD,
@@ -392,12 +366,9 @@ def test_boss_stop_keeps_the_expedition_biome(monkeypatch):
     adv, p = _stub_adv(boss_loc=25,
                        bgs=[(0, 25, hids[0]), (26, 400, hids[1])])
     adv.biome = adv._zone_biome()                       # the stub zone's terrain
-    adv._wear_biome()
     assert adv.biome == hids[1]                         # the DOMINANT span (26-400)
-    worn = p.habitat
     ev = adv.travel()
     assert ev and ev[0] == "boss" and adv.location == 25
-    assert p.habitat == worn, "the boss stop must not re-dress the biome"
 
 
 # ---- road legibility (arc 2026-07-07: surface REAL state, invent nothing) ----
@@ -434,18 +405,8 @@ def test_quiet_strides_narrate_real_state(monkeypatch):
     # one biome per run (2026-07-13): a crossed span band narrates NOTHING and
     # re-dresses nothing -- there is no terrain shift to report any more
     adv, p = _stub_adv(boss_loc=None, bgs=[(0, 25, hids[0]), (26, 400, hids[1])])
-    worn = p.habitat
     assert adv.travel() is None
-    assert p.habitat == worn
-    assert adv.last.startswith(("Travelling…", "Night falls", "Dawn breaks"))
-    # the day-phase turn (whichever side of the clock the pet is on)
-    adv, p = _stub_adv(boss_loc=None)
-    ph = p.day_phase
-    adv._phase_seen = "day" if ph == "night" else "night"
-    assert adv.travel() is None
-    assert adv.last == ("Night falls — the wilds stir." if ph == "night"
-                        else "Dawn breaks over the road.")
-    assert adv._phase_seen == ph                    # noticed once, not every stride
+    assert adv.last.startswith("Travelling…")
     # the immunity calm, then the plain mile
     adv, p = _stub_adv(boss_loc=None)
     adv._immunity_steps = 500.0

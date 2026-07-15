@@ -3,7 +3,6 @@ temperature (Temp, clamped 0..MaxTemp), forced sleep (Sleep flag), and the
 fatigue/depression relief flags (whose CSV column name differs food vs item)."""
 from tuipet import data
 from tuipet.pet import Pet
-from tuipet import weather as wx
 
 
 def _key(name):
@@ -46,12 +45,6 @@ def test_bag_food_still_nudges_bedtime_and_dp():
     q.add_item(protein); q.use_item(protein)
     assert q.dp == 1, "a strength food banks Pen20 DP from the bag like feed"
 
-
-def test_temp_shifts_temperature_within_range():
-    assert _use("Ice Cream", temp=50).temp == 40           # -10
-    assert _use("Chicken Soup", temp=50).temp == 60        # +10
-    # DVPet guard: an out-of-range result is rejected, not clamped
-    assert _use("Chicken Soup", temp=wx.MAX_TEMP).temp == wx.MAX_TEMP
 
 
 def test_sleep_flag_puts_pet_to_sleep_and_item_is_functional():

@@ -158,7 +158,8 @@ class TournamentPanel(menu.SubHost):
         if self.phase == "select":
             self.sched = tournament.schedule(self.pet)   # live: a day rollover re-rolls
             hour = tournament._hour(self.pet)
-            out = menu.header("CUP", "%s %02d:00" % (self.pet.season, hour))
+            from . import shop as _shop
+            out = menu.header("CUP", "%s %02d:00" % (_shop.season_name(self.pet), hour))
 
             def fmt(tid, i):
                 tr = tournament.trophy_by_id(tid) if tid >= 0 else None
@@ -200,7 +201,8 @@ class TournamentPanel(menu.SubHost):
             return self._render_tree()
         # BackgroundAnim checkBack: while the tournament is active every scene
         # plays in the ARENA (tourneyBack.png), not the home habitat
-        bgimg = self.pet.background(file="tourneyBack")
+        from . import backgrounds as _bgs
+        bgimg = self.pet.background(file=_bgs.ARENA)
         on = menu.scene_ink(bgimg)
         if t.over:
             out = menu.bar(t.name, "RESULT")

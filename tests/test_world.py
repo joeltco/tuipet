@@ -3,6 +3,7 @@ regions/zones/towns get real names + biome identity, all DERIVED from the
 terrain the game renders, never invented)."""
 import random
 from tuipet.pet import Pet
+from tuipet import shop
 from tuipet import data, shop, world
 
 
@@ -88,13 +89,13 @@ def test_specialty_slot_rides_the_towns_own_economy():
     random.seed(1)
     town = data.load_towns()[20]
     p = _pet(world_seconds=DAY_LENGTH * 13 + 10 * 60.0)     # day 13 = first Summer day (13-day seasons), 10:00
-    assert p.season == "Summer"
+    assert shop.season_name(p) == "Summer"
     slots = {s["key"]: s for s in shop.roll_town_shop(p, town, True)}
     assert "f:39" in slots, "Dunehaven's summer ice cream missing"
     assert slots["f:39"]["price"] == 75          # the town's price, not home's 150
     assert shop.purchase_price(slots["f:39"]) == (slots["f:39"]["sale"] or 75)
     p = _pet(world_seconds=DAY_LENGTH * 39 + 10 * 60.0)     # day 39 = Winter: the stall is empty
-    assert p.season == "Winter"
+    assert shop.season_name(p) == "Winter"
     slots = {s["key"] for s in shop.roll_town_shop(p, town, True)}
     assert "f:39" not in slots
 
@@ -112,7 +113,7 @@ def test_town_hosts_its_biome_field_championship():
         assert world.town_field(tid) == field
         sched = _T.town_schedule(p, data.load_towns()[tid])
         openslots = [sched[i] for i in range(len(sched)) if i > 23]
-        cup = _T.biome_cup_id(p.season, field)
+        cup = _T.biome_cup_id(shop.season_name(p), field)
         assert cup >= 0 and cup in openslots, f"town {tid} missing its {field} cup"
 
 

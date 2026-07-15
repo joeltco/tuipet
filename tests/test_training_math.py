@@ -59,14 +59,12 @@ def test_weight_sheds_only_in_calorie_deficit():
 
 def test_neutral_attribute_costs_two_spirit_not_three():
     p = _pet(enthusiasm=0)                       # Vaccine pet drills Data at a neutral hour
-    p.time_pref = {k: 0 for k in p.time_pref}    # no time fav/dislike in play
     p.apply_training(2, 100, attribute="Data", game="data")
     assert p.enthusiasm == -2                    # ExerciseNotFavAttributeEnthusiasmDec
 
 
 def test_sour_pet_pays_spirit_on_the_hp_drill():
     p = _pet(enthusiasm=0, disposition=-1)
-    p.time_pref = {k: 0 for k in p.time_pref}
     p.apply_training(2, 100, game="hp")
     assert p.enthusiasm == -1                    # exercise() None-branch
 
@@ -133,23 +131,3 @@ def test_compliant_start_still_enters_play():
     assert tp2.phase == "play" and tp2.gkey == "virus"
 
 
-def test_species_time_seeds_bias_the_ledger_on_evolve():
-    """digimon.csv Time{Preference,Aversion} were parsed (or dropped) but never
-    consumed -- a nocturnal species hatched with no clock personality at all
-    (audit 2026-07-13).  evolve_to biases the ledger +2/-2, the exact rule the
-    taste-seed comment documents; emergent opinions are nudged, not replaced."""
-    from tuipet import data as _d
-    p = Pet(num=-1, stage="Egg")
-    seeded = next(n for n, r in _d.load_requirements().items()
-                  if r.get("time_pref") in ("Morning", "Noon", "Night")
-                  and r.get("time_aversion") in ("Morning", "Noon", "Night")
-                  and r["time_pref"] != r["time_aversion"])
-    p.evolve_to(seeded)
-    r = _d.load_requirements()[seeded]
-    fav = Pet._TIME_WORD[r["time_pref"]]
-    bad = Pet._TIME_WORD[r["time_aversion"]]
-    assert p.time_pref[fav] > 0 and p.time_pref[bad] < 0
-    assert p.favorite_time() == fav and p.disliked_time() == bad
-    p.time_pref[bad] = 60                      # a strong emergent opinion...
-    p.evolve_to(seeded)
-    assert p.time_pref[bad] == 58, "...is nudged by the seed, never replaced"

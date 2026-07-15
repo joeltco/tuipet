@@ -148,15 +148,8 @@ class Adventure:
         self.last = "Adventure begins!"
         self.loot = None
         self._energy_dec = 0
-        self._phase_seen = pet.day_phase   # road narration: notice night/dawn
         self._rested = set()         # town spans already rested at this pass
         self._cleared = set()        # zone bosses beaten this pass (by enemy num)
-        # the CURRENT habitat follows the road (habitat audit 2026-07-06:
-        # canon WorldMap.step -> setCurrentHabitat(zone background)) --
-        # climate, compatibility odds, the comfort mood and the current-
-        # habitat evolution gate all travel with the pet
-        if pet.home_habitat < 0:
-            pet.home_habitat = pet.habitat        # old-save backfill
         # canon _isHome (teleportArrive toggles it): the pet is OUT while it
         # adventures -- the AI assistant neither bills nor visits away from
         # home (auto-care audit 2026-07-06)
@@ -166,7 +159,6 @@ class Adventure:
         # inert -- transient, never serialized)
         pet._adventure = self
         self.biome = self._zone_biome()
-        self._wear_biome()
         self._pad_wilds()
 
     def _zone_biome(self):
@@ -189,15 +181,7 @@ class Adventure:
         if cover:
             return max(cover, key=lambda h: (cover[h], -h))
         gate = next((hid for _lo, _hi, hid in reversed(spans) if hid in habs), None)
-        return self.pet.home_habitat if gate is None else gate
-
-    def _wear_biome(self):
-        """The pet wears the run's biome for the WHOLE run -- scene, climate,
-        compatibility odds and the current-habitat evolution gate all belong
-        to the destination terrain, never swapped mid-run."""
-        if self.biome != self.pet.habitat and self.biome in data.load_habitats():
-            self.pet.habitat = self.biome
-            self.pet._weather_day = -1            # a fresh sky for the expedition
+        return 2 if gate is None else gate        # Plains when the zone is silent
 
     # --- zone helpers ---
     @property
@@ -250,7 +234,7 @@ class Adventure:
         fires.  A fresh WILD win suppresses the roll (getBattleImmunity)."""
         if getattr(self, "_immunity_steps", 0.0) > 0:
             return False
-        denom = _CHANCE_NIGHT if self.pet.day_phase == "night" else _CHANCE_DAY
+        denom = _CHANCE_DAY
         p_none = (1.0 - 1.0 / denom) ** (self.stride * WALK_STEP_MIN)
         return random.random() < (1.0 - p_none)
 
@@ -276,9 +260,6 @@ class Adventure:
             self.pet._check_worse_sick(1)
             self.pet._check_worse_injury("travel")             # checkWorseTravelInj
             #   (canon rides the BATTLE table with won=True, not the exercise one)
-            if self.pet.disliked_time() == self.pet.day_phase:
-                self.pet._set_mood(self.pet.mood - 10)         # DislikedTimeTravelMoodChange
-                self.pet._set_enthusiasm(self.pet.enthusiasm - 1)  # ...EnthusiasmChange
 
     def _calorie_dec(self, n):
         """PhysicalState.setCaloriesAndChangeWeight: spend the calorie buffer; when it
@@ -356,7 +337,6 @@ class Adventure:
         # Zone.checkInvestigate: a happier, better-raised pet spots more
         # (obedience+mood SHRINK the seed); night makes finds rarer
         seed = max(1, int(INVESTIGATE_CHANCE + INVESTIGATE_WALK
-                          + (INVESTIGATE_NIGHT if self.pet.day_phase == "night" else 0)
                           - (self.pet.obedience + self.pet.mood)))
         if random.random() < 1.0 - (1.0 - 1.0 / seed) ** fires:
             self.last = f"{self.pet.name} noticed something off the path!"
@@ -410,14 +390,9 @@ class Adventure:
             self.last = f"Wild {e['name']} appeared!"
             return ("encounter", e)
         # A quiet stride narrates REAL state only (legibility arc 2026-07-07 --
-        # never invented flavor): a day-phase turn (night runs the real 1.5x
-        # encounter rate), or the battle-immunity calm (no random rolls while
-        # it holds).  One biome per run: there is no terrain to narrate.
-        if self.pet.day_phase != self._phase_seen:
-            self._phase_seen = self.pet.day_phase
-            self.last = ("Night falls — the wilds stir." if self._phase_seen == "night"
-                         else "Dawn breaks over the road.")
-        elif getattr(self, "_immunity_steps", 0.0) > 0:
+        # never invented flavor): the battle-immunity calm (no random rolls
+        # while it holds).  One biome per run: no terrain to narrate.
+        if getattr(self, "_immunity_steps", 0.0) > 0:
             self.last = f"Calm road… {self.pct}%"    # setBattleImmunity holds
         else:
             self.last = f"Travelling… {self.pct}%"   # 16-18 wide: strip budget (2026-07-07)
@@ -544,7 +519,6 @@ class Adventure:
         if self.zi + 1 < len(zones):
             self.zi += 1
             self.biome = self._zone_biome()
-            self._wear_biome()                    # the next expedition's terrain
             self._pad_wilds()
             from . import world
             nm = world.zone_name(self.maps[self.mi]["map"], zones[self.zi]["zone"])
@@ -557,7 +531,6 @@ class Adventure:
             self.mi += 1
             self.zi = 0
             self.biome = self._zone_biome()
-            self._wear_biome()
             self._pad_wilds()
             from . import world
             self.last = f"REGION CLEARED! {world.region_name(self.maps[self.mi]['map'])} unlocked!"

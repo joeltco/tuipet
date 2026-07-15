@@ -208,13 +208,11 @@ def test_hud_carries_every_badge():
 
 def test_the_window_law(monkeypatch):
     """LAW (2026-07-11): the main scene renders under the 32x16 window clip;
-    actor overlays arrive pre-clipped; weather alone rides the free channel
-    over the whole LCD; ink pushed past an edge is cut at the matrix edge
-    (the lawful LEFT/RIGHT exit)."""
+    actor overlays arrive pre-clipped; ink pushed past an edge is cut at the
+    matrix edge (the lawful LEFT/RIGHT exit)."""
     from tuipet import render
     cap = _paint_capture(monkeypatch)
-    p = _pet(weather="Raining", sick=True, sick_length=99.0,
-             poop=2, poop_sizes=[2, 3])
+    p = _pet(sick=True, sick_length=99.0, poop=2, poop_sizes=[2, 3])
     s = _screen()
     for i in range(8):
         s.advance(p)
@@ -223,9 +221,6 @@ def test_the_window_law(monkeypatch):
     assert cap["overlay"] and all(
         grid.X0 <= x < grid.X1 and grid.TOP <= y < grid.FLOOR
         for x, y in cap["overlay"])                 # actors: window-clipped
-    assert cap["free"], "rain must ride the free channel"
-    assert any(y < grid.TOP or x < grid.X0 or x >= grid.X1
-               for x, y in cap["free"])             # ...and cover the whole LCD
     buf = render.fill_buf(["11", "11"], 40, 24, xshift=16, clip=grid.WINDOW)
     lit = {(x, y) for y, row in enumerate(buf) for x, v in enumerate(row) if v}
     assert lit and all(x < grid.X1 for x, _ in lit)  # cut at the matrix edge

@@ -36,8 +36,8 @@ def test_marquee_holds_then_scrolls_and_loops():
 
 
 def test_habitat_strip_fits_at_every_step():
-    from tuipet.habitatscreen import HabitatPanel
-    pan = HabitatPanel(_pet(bits=99999))
+    from tuipet.backgroundscreen import BackgroundPanel
+    pan = BackgroundPanel(_pet(bits=99999))
     for _ in range(80):                                       # roll full marquee loops
         pan.anim()
         assert _plain(pan.strip()) <= HUD_W

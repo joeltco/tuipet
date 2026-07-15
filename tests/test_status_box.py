@@ -100,10 +100,10 @@ def test_every_mode_painter_fits_the_card():
     app._status_training(); _fits(fake, "train data volley")
     app.mode = battlescreen.BattlePanel(p)
     app._status_battle(); _fits(fake, "battle")
-    from tuipet import habitatscreen
-    app.mode = habitatscreen.HabitatPanel(p)
+    from tuipet import backgroundscreen
+    app.mode = backgroundscreen.BackgroundPanel(p)
     app.mode.msg = "x" * 50                       # a long action message wraps
-    app._status_habitat(); _fits(fake, "habitat")
+    app._status_background(); _fits(fake, "background")
     app.mode = dnascreen.DNAPanel(p)
     app._status_dna(); _fits(fake, "dna")
     app.mode = tournamentscreen.TournamentPanel(p)

@@ -56,16 +56,6 @@ def test_standing_scene_draws_poop_and_sick_actors():
     assert adv.text().plain == adv._biome_frame().plain
 
 
-def test_weather_overlay_reaches_the_standing_scene():
-    p, adv = _adv(weather="HeavyRain")
-    p.anim = "idle"
-    for _ in range(4):
-        adv.anim()
-    wx = arena._weather_overlay("HeavyRain", adv.frame_i // 4, 40, grid.PXH)
-    assert wx, "rain built no precip points"
-    # the frame renders without error and includes precip ink
-    assert adv.text().plain
-
 
 def test_road_bag_cannot_tab_into_the_shop():
     """Shops are town-only on an adventure: the road bag ('i') never reaches
@@ -98,59 +88,6 @@ def test_town_has_a_shop_but_no_training():
     assert "train" not in body                                  # but no training
 
 
-def test_weather_rolls_on_the_road():
-    """Weather happens during adventures via the LIVE-TICKING sim (Joel
-    2026-07-13: "make adventures live-tick the sim" -- the old panel-side
-    roller double-rolled and is gone): pet._update_weather runs on the road
-    with pet.habitat = the worn biome.  A weatherless habitat stays clear."""
-    p, adv = _adv()
-    assert not hasattr(adv, "_roll_weather"), "the panel roller is gone"
-    p.habitat = 0                                # Hard Disk: weather_chance 0
-    p.weather = "HeavyRain"
-    p._update_weather(60)
-    assert p.weather == "Clear", "a weatherless habitat brewed weather"
-
-
-def test_open_sky_zone_can_get_weather():
-    """A normal outdoor biome is allowed to brew weather on the road."""
-    import random
-    p, adv = _adv()
-    p.habitat = 15                               # Desert (high weather chance)
-    p._weather_day = -1
-    random.seed(3)
-    seen = set()
-    for _ in range(400):
-        p._weather_t = 10 ** 9                   # force the cadence each call
-        p._update_weather(1)
-        seen.add(p.weather)
-    assert seen - {"Clear"}, "an open-sky biome never produced any weather"
 
 
 
-def test_weather_enabled_iff_habitat_has_a_weather_frame():
-    """Joel's rule (2026-07-12): a habitat has weather IFF it has a weather
-    frame.  weather_chance (>0) must agree with the artwork (a 5th bg frame)
-    for every habitat -- no drift, no hand-maintained exclusion list."""
-    from tuipet import data
-    habs = data.load_habitats()
-    bgs = data.load_backgrounds()
-    for hid, h in habs.items():
-        has_frame = len(bgs.get(h.get("bg", "")) or []) > 4
-        has_weather = h["weather_chance"] > 0
-        assert has_frame == has_weather, (
-            f"{h['name']}: weather frame={has_frame} but weather={has_weather}")
-
-
-def test_underwater_gets_weather_now():
-    """Underwater has a (distinct) weather frame, so per the rule it brews
-    weather like anywhere else -- it is NOT special-cased off."""
-    import random
-    from tuipet import data, weather as wx
-    uw = data.load_habitats()[8]
-    random.seed(5)
-    seen = set()
-    w = "Clear"
-    for _ in range(400):
-        w = wx.next_weather(w, "Summer", 80, uw)
-        seen.add(w)
-    assert seen - {"Clear"}, "underwater never produced weather despite its frame"

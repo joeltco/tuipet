@@ -610,8 +610,8 @@ def prev_gen_estate():
     the trophy room -- canon resetToEgg preserves them all)."""
     d = load_settings()
     last = (d.get("progress") or {}).get("last_gen") or {}
-    # JSON stringifies int dict keys (the habitat_record/trophies_won load
-    # trap): coerce them back so prelim-chain lookups keep matching
+    # JSON stringifies int dict keys (the trophies_won load trap): coerce
+    # them back so prelim-chain lookups keep matching
     tw = {int(k) if str(k).lstrip("-").isdigit() else k: v
           for k, v in (last.get("trophies_won") or {}).items()}
     return {"bits": int(last.get("bits", 0)),
@@ -815,10 +815,9 @@ def pet_from_save(data, catch_up=True, strict=False):
     data = dict(data)                            # don't mutate the caller's dict
     _migrate_v401_save(data)                     # egg-bank reorder + ver6 cut
     saved_at = data.pop("_saved_at", None)
-    # JSON stringifies int dict keys: habitat_record / trophies_won come back
-    # str-keyed, silently breaking habitat-gated evolutions and cup prelim
-    # chains (audit 2026-07).  Coerce them back on every load.
-    for k in ("habitat_record", "trophies_won"):
+    # JSON stringifies int dict keys: trophies_won comes back str-keyed,
+    # silently breaking cup prelim chains (audit 2026-07).  Coerce on load.
+    for k in ("trophies_won",):
         v = data.get(k)
         if isinstance(v, dict):
             data[k] = {int(kk) if str(kk).lstrip("-").isdigit() else kk: vv
@@ -851,12 +850,18 @@ def pet_from_save(data, catch_up=True, strict=False):
                         ("inventory", dict), ("poop_sizes", list)):
         if not isinstance(getattr(pet, fname), want):
             return None, ""
-    # a save written mid-adventure carries the ROAD's habitat; the pet comes
-    # home while you're away (habitat audit 2026-07-06 -- adventures are
-    # per-session, so the current habitat always loads as the home)
-    if getattr(pet, "home_habitat", -1) >= 0 and pet.habitat != pet.home_habitat:
-        pet.habitat = pet.home_habitat
     msg = ""
+    # the Great Simplification (2026-07-15): a pre-rebuild save carries the
+    # retired habitat economy -- refund every PURCHASED home at full price
+    # (the starter pair 0/2 came free) and start on the default scene
+    if "bg_owned" not in data and isinstance(data.get("habitats"), list):
+        from . import data as _data
+        habs = _data.load_habitats()
+        refund = sum((habs.get(h) or {}).get("price", 0)
+                     for h in data["habitats"] if h not in (0, 2))
+        if refund:
+            pet.bits = int(getattr(pet, "bits", 0)) + refund
+            msg = f"(habitats retired — {refund} bits refunded)"
     if pet.num >= 0 and pet.stage != "Egg":
         from . import data as _data
         _, by_num = _data.load_sprites()

@@ -23,7 +23,8 @@ from . import transportscreen
 from . import adventurescreen
 from . import shopscreen
 from . import eggguidescreen
-from . import habitatscreen
+from . import backgroundscreen
+from . import backgrounds as bgs_mod
 from . import assistscreen
 from . import feedscreen
 from . import digicorescreen
@@ -49,8 +50,7 @@ from . import theme
 # reach through `tuipet.app.*` back into this namespace (modularization 2026-07-08).
 from .arena import (  # noqa: F401  (full re-export: preserve tuipet.app.* for callers/tests)
     Screen, SCREEN_COLS, SCREEN_ROWS, SPRITE_W, PET_BASE_X, _FxCtx,
-    hearts, bar, _FX, GRAVESTONE, POOP_W, POOP_PAD, WEATHER_GLYPH,
-    _sky_icon, _RAIN, _SNOW, _PRECIP_N, _scale_hex, _weather_overlay,
+    hearts, bar, _FX, GRAVESTONE, POOP_W, POOP_PAD,
     _evol_strobe, _filth_right, _filth_pts, COND_W, COND_H, SICK_ZONE,
     PLAY_HOP, PLAY_LEAD, PLAY_HOP_H, GIFT_OUT, GIFT_BACK, GIFT_HOLD,
     _HIDDEN_STATUS_ICONS, _effect_overlay, _sick_mark_up,
@@ -90,7 +90,7 @@ def keys_markup():
     return (
         f"[{k}]f[/] feed  [{k}]p[/] play  [{k}]c[/] clean  [{k}]h[/] heal  [{k}]r[/] praise  [{k}]k[/] scold  [{k}]s[/] lights  [{k}]v[/] assist\n"
         f"[{k}]t[/] train  [{k}]a[/] adventure  [{k}]u[/] cup  [{k}]l[/] lobby (battle·jogress)  [{k}]x[/] DNA  [{k}]n[/] eggs\n"
-        f"[{k}]o[/] shop  [{k}]i[/] bag  [{k}]e[/] habitat  [{k}]d[/] digicore  [{k}]g[/] options  [{k}]b[/] bug  [{k}]?[/] help  [{k}]q[/] quit"
+        f"[{k}]o[/] shop  [{k}]i[/] bag  [{k}]e[/] scenes  [{k}]d[/] digicore  [{k}]g[/] options  [{k}]b[/] bug  [{k}]?[/] help  [{k}]q[/] quit"
     )
 
 
@@ -133,14 +133,6 @@ def _age_compact(seconds):
     return f"{s // 60}m{s % 60:02d}s"
 
 
-def _temp_str(pet):
-    """The HUD temperature — an armed thermostat shows where it's headed
-    (48°→62°), so the heat you set from the Habitat screen reads back."""
-    if getattr(pet, "heat_on", None) and pet.heat_on():
-        return f"{int(pet.temp)}→{int(pet.temp_goal)}°"
-    return f"{int(pet.temp)}°"
-
-
 def _care_deco(pet, word=None):
     """The care badges shown beside the status word -- one list, shared by the
     home Stats panel and the adventure card (Joel 2026-07-12: adventure shows
@@ -153,8 +145,6 @@ def _care_deco(pet, word=None):
     if pet.sick and word != "sick": deco.append(f"[{T.NEG}]+sick[/]")
     if pet.is_fatigued() and word != "fatigued": deco.append(f"[{T.NEG}]+tired[/]")
     if pet.is_injured() and word != "injured": deco.append(f"[{T.NEG}]+hurt[/]")
-    if pet.is_freezing() and word != "freezing": deco.append("[blue]+cold[/]")
-    if pet.is_overheating() and word != "overheating": deco.append(f"[{T.NEG}]+hot[/]")
     if pet.is_frail(): deco.append(f"[{T.NEG}]+frail![/]")
     if getattr(pet, "praise_flag", False): deco.append(f"[{T.POS}]+praise![/]")
     if getattr(pet, "scold_flag", False) or getattr(pet, "discipline_call", False):
@@ -194,10 +184,6 @@ class Stats(Static):
         word = pet.status_word()
         deco = _care_deco(pet, word)
         age = _age_compact(pet.age_seconds)
-        sky, skycol = _sky_icon(pet)
-        aff = pet._affinity()
-        amark = (f"[{T.POS}]" + chr(0x2665) + "[/]" if aff > 0
-                 else (f"[{T.NEG}]" + chr(0x2716) + "[/]" if aff < 0 else "[dim]·[/dim]"))
         xm = f" [b {T.ACCENT}]X[/]" if pet.x_antibody != "None" else ""
         lifepct = max(0, int((pet.lifespan - pet.age_seconds) / max(1, pet.lifespan) * 100))
         lifecol = T.NEG if pet.is_geriatric else T.LIFE
@@ -215,8 +201,7 @@ class Stats(Static):
             f" [{T.ACCENT}]◆{getattr(pet, 'dp', 0)}[/]",
             f"HP {pet.full_health}/{pet.max_health()}  Wt {pet.weight}g  [{T.COIN}]{pet.bits}b[/]",
             f"Battle  {pet.wins}W/{pet.battles}   [{T.COIN}]\u2605{pet.trophies}[/]",
-            f"@{pet.habitat_obj()['name'][:14]} {amark} [dim]{pet.season}[/]",
-            f"[{skycol}]{sky}[/] [dim]{pet.weather} {_temp_str(pet)}[/] [dim]{age}[/]",
+            f"@{bgs_mod.name(pet.bg_current)[:18]} [dim]{age}[/]",
             f"Life    {bar(lifepct, 12, lifecol)}",
             _status_line(word, deco),
         ]
@@ -281,9 +266,10 @@ class TuiPetApp(App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("THE LAVA BREATHES: Volcano's flow now pulses - embers dim "
-                 "to deep red and flare toward white in slow ripples, under "
-                 "every sky from clear noon to a clouded night.")
+    WHATS_NEW = ("THE GREAT SIMPLIFICATION: weather, temperature, habitats "
+                 "and day/night are gone - your mon now stands in a SCENE you "
+                 "pick (e). 30 backdrops of real Digimon location art: basics "
+                 "free, fancy ones cost bits. Bought habitats are refunded.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and
@@ -293,7 +279,7 @@ class TuiPetApp(App):
         ("f", "feed", "Feed"), ("t", "train", "Train"),
         ("p", "play", "Play"), ("c", "clean", "Clean"), ("h", "heal", "Heal"),
         ("r", "praise", "Praise"), ("k", "scold", "Scold"),
-        ("a", "adventure", "Adventure"), ("o", "shop", "Shop"), ("i", "inventory", "Bag"), ("e", "habitat", "Habitat"),
+        ("a", "adventure", "Adventure"), ("o", "shop", "Shop"), ("i", "inventory", "Bag"), ("e", "habitat", "Scenes"),
         ("d", "digicore", "DigiCore"),
         ("n", "eggguide", "Egg Guide"),
         ("u", "tournament", "Cup"), ("x", "dna", "DNA"),
@@ -978,7 +964,7 @@ class TuiPetApp(App):
                  (tournamentscreen.TournamentPanel, self._status_tournament),
                  (training.TrainingPanel, self._status_training),
                  (battlescreen.BattlePanel, self._status_battle),
-                 (habitatscreen.HabitatPanel, self._status_habitat),
+                 (backgroundscreen.BackgroundPanel, self._status_background),
                  (dnascreen.DNAPanel, self._status_dna))
         for cls, painter in table:
             if isinstance(self.mode, cls):
@@ -1010,7 +996,7 @@ class TuiPetApp(App):
         p, t, T = self.pet, self.mode.tourney, theme
         self.stats_w.border_subtitle = _gen_subtitle(p)
         if t is None:                      # cup-select phase (no bout yet)
-            self._status_card("Cup", [f"[dim]{p.season} season[/]", "", "Pick a cup", "to enter."])
+            self._status_card("Cup", ["", "", "Pick a cup", "to enter."])
             return
         div = f"[dim]{'─' * 26}[/]"
         if t.over and t.champion:
@@ -1183,24 +1169,18 @@ class TuiPetApp(App):
         ]
         self.stats_w.update("\n".join(lines))
 
-    def _status_habitat(self):
-        """The browsed habitat's dossier: the LCD shows the SCENE, this card
-        carries the words (habitat audit 2026-07-04)."""
+    def _status_background(self):
+        """The browsed scene's dossier: the LCD shows the SCENE, this card
+        carries the words (picker rebuild 2026-07-15)."""
         p, m, T = self.pet, self.mode, theme
         self.stats_w.border_subtitle = _gen_subtitle(p)
         div = f"[dim]{'─' * 26}[/]"
-        h = m.rows[m.cursor]
+        key = m.rows[m.cursor]
         msg = m.msg or ""
-        cl = m.climate(h)
-        if "  Wi " in cl:                     # split the ranges: no ° clips
-            su, wi = cl.split("  Wi ")
-            climate_rows = [f"Summer   {su[3:]}", f"Winter   {wi}"]
-        else:
-            climate_rows = [f"Climate  {cl[:17]}"]
-        lines = [f"[b]{h['name'][:20]}[/]", div,
-                 f"Status   {m._tag(h)}",
-                 f"Fit      {m._aff_word(h)}",
-                 *climate_rows,
+        pr = bgs_mod.price(key)
+        lines = [f"[b]{bgs_mod.name(key)[:20]}[/]", div,
+                 f"Status   {m._tag(key)}",
+                 f"Price    {'free' if pr == 0 else f'{pr}b'}",
                  f"Bits     [{T.COIN}]{p.bits}b[/]", div,
                  msg[:26], msg[26:52], "",
                  "[dim]try the view before[/]", "[dim]you pay for it[/]"]
@@ -1220,7 +1200,7 @@ class TuiPetApp(App):
                      f"[dim]{(m.sub.hud_note or '')[:24]}[/]"]
         else:
             msg = m.msg or ""
-            lines = [f"[b]TOWN {m.town['id']}[/] [dim]· {p.season}[/]", div,
+            lines = [f"[b]TOWN {m.town['id']}[/]", div,
                      f"Bits     [{T.COIN}]{p.bits}b[/]",
                      f"Bag      {sum(p.inventory.values())}",
                      div, msg[:26], msg[26:52]]
@@ -1270,8 +1250,6 @@ class TuiPetApp(App):
                            else "[dim]·[/]" for c in a.ribbon())
             from . import world
             _mn = a.maps[a.mi]["map"]
-            from .arena import _sky_icon
-            sky, skycol = _sky_icon(p)
             lines = [
                 f"[b]{p.name[:14]}[/] [dim]· away[/]",
                 div,
@@ -1284,7 +1262,6 @@ class TuiPetApp(App):
                 f"Hunger   {hearts(p.hunger)}",
                 f"Energy   {bar(p.energy_pct(), 11, T.ENERGY)}",
                 f"Power    {power}",
-                f"[{skycol}]{sky}[/] [dim]{p.weather} {_temp_str(p)}[/]",
                 div,
                 _status_line(p.status_word(), _care_deco(p)),
             ]
@@ -1387,19 +1364,7 @@ class TuiPetApp(App):
                 if done:
                     p = self.pet
                     self.flash(f"[b]{p.name}[/] hatched!")
-            # DVPet Weather.precipitate: HeavyRain rolls thunder (nextInt(500)==0
-            # per frame); the FLASH + the startled idle keep playing, but the
-            # crack SFX is retired (Joel 2026-07-04: weather stays visual-only)
             p = self.pet
-            if (p.weather == "HeavyRain" and not p.dead and p.stage != "Egg"
-                    and getattr(sc, "thunder_i", 0) <= 0 and random.randint(0, 499) == 0):
-                sc.thunder_i = 14
-                if p.anim in ("idle", "walk") and not p.asleep:
-                    # surprising() -- disposition-keyed (startle audit
-                    # 2026-07-06): the sour pet barely flinches, the SUNNY
-                    # one jumps out of its skin (canon's inversion)
-                    p._set_anim({-1: "startle_sour", 1: "startle_sunny"}
-                                .get(p.disposition, "startle"), 1.4)
             # DVPet poopDance: a special-idle roll while the gauge is full --
             # tuipet fires the poop the moment the gauge fills, so the nervous
             # dance rolls while the need APPROACHES (>=80% of the interval)
@@ -1445,7 +1410,6 @@ class TuiPetApp(App):
             if p.dead and not was_dead:
                 # death can't wait for ESC: leave the room, play the memorial
                 if getattr(p, "away", False):
-                    p.go_home_habitat()       # the road ends here: bring it home
                     p.away = False
                 self._close_mode(None)
                 self.beep("death")
@@ -1808,7 +1772,7 @@ class TuiPetApp(App):
         self._open_mode(shopscreen.ShopPanel(self.pet, start_mode="bag"), self._after_shop)
 
     def action_habitat(self):
-        self._open_mode(habitatscreen.HabitatPanel(self.pet), self._after_habitat)
+        self._open_mode(backgroundscreen.BackgroundPanel(self.pet), self._after_habitat)
 
     def action_assist(self):
         self._open_mode(assistscreen.AssistPanel(self.pet), lambda _=None: self.repaint())

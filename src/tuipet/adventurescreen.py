@@ -173,7 +173,6 @@ class AdventurePanel(menu.SubHost):
                 # background changes with NO anim)
                 tr["phase"], tr["t"] = "arrive", 0
                 if tr["dir"] == "out":
-                    self.pet.go_home_habitat()  # back from the road: home climate
                     self.pet.away = False       # resumes; canon teleportArrive
             elif tr["phase"] == "arrive" and tr["t"] >= TELE_ARRIVE_T:
                 self._trans = None
@@ -725,12 +724,8 @@ class AdventurePanel(menu.SubHost):
             bgimg, rows = None, []
         overlay = arena._clip_win(
             arena._effect_overlay(p, wf, COLS, px_h, tick=self.frame_i))
-        # the dark room hides the rain too (Joel 2026-07-15) -- same rule as paint()
-        weather = (arena._weather_overlay(p.weather, wf, COLS, px_h)
-                   if p.lights else [])
         return menu.paint([(rows, x, False)], bgimg, rows=ROWS, cols=COLS,
-                          overlay=overlay, overlay_free=weather, clip=grid.WINDOW,
-                          free_ink=arena._precip_ink(p.weather))
+                          overlay=overlay, clip=grid.WINDOW)
 
     def _current_hab_id(self):
         """The expedition's ONE biome (own-game law, Joel 2026-07-13: one biome
@@ -739,10 +734,11 @@ class AdventurePanel(menu.SubHost):
 
     def _road_bg(self):
         """The expedition's ONE backdrop, held start to boss (own-game law,
-        Joel 2026-07-13 -- the per-step span-hopping and its cross-fade
-        machinery are gone; the destination terrain IS the adventure)."""
+        Joel 2026-07-13): the zone biome's catalog scene."""
+        from . import backgrounds as bgs
         bg_h = self._current_hab_id()
-        return self.pet.background(bg_h) if bg_h is not None else self.pet.background()
+        return (self.pet.background(file=bgs.biome_frame_key(bg_h))
+                if bg_h is not None else self.pet.background())
 
     def _teleport_frame(self):
         """One frame of the canon teleport (SpriteAnim.teleportLeave /
@@ -754,8 +750,7 @@ class AdventurePanel(menu.SubHost):
         # the ROAD; leaving-in and arriving-out show the HOME habitat
         home_side = (tr["dir"] == "in") == (ph == "leave")
         if home_side:
-            bgimg = (self.pet.background(self.pet.home_habitat)
-                     if tr["dir"] == "in" else self.pet.background())
+            bgimg = self.pet.background()
         else:
             bgimg = self._road_bg()
         # the wipe is staged on the 32x16 WINDOW (audit 2026-07-13: the old
@@ -820,9 +815,8 @@ class AdventurePanel(menu.SubHost):
             # prompt showed empty road): the town's own backdrop stands in
             # while you decide -- a discrete stop, not scenery drift; the
             # one-biome road returns the moment you walk on
-            t_bg = (data.load_towns().get(self.town_prompt) or {}).get("bg_habitat")
-            if t_bg is not None:
-                bgimg = self.pet.background(t_bg) or bgimg
+            from . import backgrounds as bgs
+            bgimg = self.pet.background(file=bgs.TOWN) or bgimg
         if self._pulse is not None and bgimg and \
                 any(on <= self._pulse["t"] < off for on, off in PULSE_ON):
             bgimg = _brighten(bgimg, 0.6)     # the zonePulse light, on the LCD
@@ -838,10 +832,6 @@ class AdventurePanel(menu.SubHost):
                 brows = grid.prep(bf, ph=ROWS * 2)
                 placements.append((brows,
                                    grid.X1 - grid.width(brows) * 3 // 4, False))
-        # weather rides EVERY road frame (placement audit 2026-07-13: it used
-        # to render only while standing and vanish the moment the walk resumed)
-        weather = arena._weather_overlay(self.pet.weather, self.frame_i // 4,
-                                         COLS, ROWS * 2)
         if self._retreat is not None and bgimg:
             # Retreat_Town: the black layer steps down over the dejected pet,
             # the town reset waits under full black, then it steps back out
@@ -850,15 +840,13 @@ class AdventurePanel(menu.SubHost):
             d = t / half if t < half else (RETREAT_T - t) / half
             bgimg = _dim(bgimg, min(1.0, d))
             if d > 0.6:                       # near-black: everything is under it
-                placements, overlay, weather = [], [], []
+                placements, overlay = [], []
         # the scene IS the whole LCD (box-clip audit 2026-07-04: the old
         # bar/progress/note/footer stack ran 16 lines and the physical 12-row
         # box clipped everything below the arena).  The journey's numbers live
         # on the ADVENTURE status card; the note + controls ride the strip.
         return menu.paint(placements, bgimg,
-                          rows=ROWS, cols=COLS, overlay=overlay,
-                          overlay_free=weather,
-                          free_ink=arena._precip_ink(self.pet.weather))
+                          rows=ROWS, cols=COLS, overlay=overlay)
 
     def strip(self):
         """One line under the LCD: the journey note + the controls that apply.

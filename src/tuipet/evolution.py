@@ -15,10 +15,8 @@ X_ANTIBODY_RATE = 3  # Config.XAntibodyRate — bonus when an X-form's req is me
 DNA_FULFILLED_RATE = 2
 
 
-def _major_hab(pet):
-    """DVPet getMajorHabitat: evolution gates on the habitat lived in MOST, not the current one."""
-    mh = getattr(pet, "major_habitat", None)
-    return mh() if callable(mh) else getattr(pet, "habitat", -1)  # Config.DNAFulfilledRate — priority weight per met DNA field gate
+# (getMajorHabitat + the habitat/temperature gates retired with those systems
+# -- the Great Simplification 2026-07-15: their req columns now auto-pass)
 WIN_RATE_PROB_COEF = 0.4  # Config._winRateEvolProbabilityIncCoefficient
 
 # Config *Rate constants used to weight how well each met gate counts.
@@ -147,7 +145,7 @@ def check(pet, num, item=-1, food=-1, connecting=False):
         _attr(req["data"][0], dat, total), _attr(req["data"][1], dat, total),
         _attr(req["vaccine"][0], vac, total), _attr(req["vaccine"][1], vac, total),
         _attr(req["virus"][0], vir, total), _attr(req["virus"][1], vir, total),
-        req["time"] == "None" or req["time"] == getattr(pet, "train_time", ""),
+        True,   # training-time gate retired (day/night removed 2026-07-15)
         req["weight"] == "None" or req["weight"] == weight_category(pet.weight, pet._base_weight()),
         _cmp(*req["disturb"], pet.disturb),
         _cmp(*req["overeat"], pet.overeat),
@@ -170,16 +168,6 @@ def check(pet, num, item=-1, food=-1, connecting=False):
     if lf_min:
         cnt = sum(1 for lv in getattr(pet, "levels_fought", ()) if lv >= lf_min)
         gates.append(_cmp(*req["level_fought"], cnt))
-    # temperature + habitat conditions share the same DNA-forgivable pool
-    tr = req.get("temp_req")
-    if tr is not None:
-        gates.append(tr[0] <= getattr(pet, "temp", 50) <= tr[1])
-    hr = req.get("habitat_req", -1)
-    if hr != -1:
-        # checkHabitatReq with EnableTimerBasedRequirements=false compares the
-        # CURRENT habitat, not the lived-in-most one (evolution audit
-        # 2026-07-06 -- the same timer-off misread the mood gate had)
-        gates.append(getattr(pet, "habitat", -1) == hr)
     failed = sum(1 for g in gates if not g)
     if failed > (1 if _dna_ok(pet, req) else 0):     # getDNA(): one forgiveness, then spent
         return False
@@ -240,30 +228,11 @@ def fulfilled(pet, num):
     # the old "Natural" arm over-scored 180 corpus forms)
     if req.get("xantibody", "None") == "Induced" and getattr(pet, "x_antibody", "None") != "None":
         score += X_ANTIBODY_RATE
-    tr = req.get("temp_req")
-    if tr is not None and tr[0] <= getattr(pet, "temp", 50) <= tr[1]:
-        score += 1
-    if req.get("habitat_req", -1) != -1 and getattr(pet, "habitat", -1) == req["habitat_req"]:
-        score += 1   # checkHabitatReq: the CURRENT habitat (timer-off)
     for f, g in (req.get("dna") or {}).items():     # getDNAReq: priority per met Field gate
         if g[0] != "None" and _cmp(g[0], g[1], pet.dna_percent(f)):
             score += DNA_FULFILLED_RATE
     if _dna_ok(pet, req):                            # getDNAReq: full-match dnaFulfilledRate bonus
         score += DNA_FULFILLED_RATE
-    # element/field affinity of the TARGET form vs the pet's MAJOR habitat
-    # (compatible +1, incompatible -1) -- canon getFulfilledReq keys this
-    # shade on getMajorHabitat even though the habitat GATE uses the current
-    # one (evolution audit 2026-07-06: ours had the two swapped)
-    h = data.load_habitats().get(_major_hab(pet))
-    if h:
-        if req.get("element", "None") in h["compat_elements"]:
-            score += 1   # Config._compatibleElementPriorityChange
-        if req.get("field", "None") in h["compat_fields"]:
-            score += 1   # Config._compatibleFieldPriorityChange
-        if req.get("field", "None") in h["incompat_fields"]:
-            score -= 1   # Config._incompatibleFieldPriorityChange
-        if req.get("element", "None") in h["incompat_elements"]:
-            score -= 1   # Config._incompatibleElementPriorityChange
     return score
 
 
@@ -581,8 +550,6 @@ def requirement_report(pet, num):
     cmp_row("obedience", req["obedience"], pet.obedience)
     cmp_row("care slips", req["mistakes"], pet.care_mistakes)
     cmp_row("generation", req.get("incarnations", ("None", 0)), getattr(pet, "generation", 1))
-    if req["time"] != "None":
-        rows.append((req["time"] == getattr(pet, "train_time", ""), f"trains at {req['time']}"))
     if req["weight"] != "None":
         rows.append((req["weight"] == weight_category(pet.weight, pet._base_weight()),
                      f"weight: {req['weight']}"))
@@ -595,14 +562,6 @@ def requirement_report(pet, num):
     if lf_min and req["level_fought"][0] != "None":
         cnt = sum(1 for lv in getattr(pet, "levels_fought", ()) if lv >= lf_min)
         cmp_row(f"foes \u2265lv{lf_min}", req["level_fought"], cnt)
-    tr = req.get("temp_req")
-    if tr is not None:
-        rows.append((tr[0] <= getattr(pet, "temp", 50) <= tr[1],
-                     f"temp {tr[0]}-{tr[1]}\u00b0  (now {int(getattr(pet, 'temp', 50))}\u00b0)"))
-    hr = req.get("habitat_req", -1)
-    if hr != -1:
-        hname = (data.load_habitats().get(hr) or {}).get("name", f"#{hr}")
-        rows.append((getattr(pet, "habitat", -1) == hr, f"living in {hname}"))
     dna = req.get("dna") or {}
     dna_gated = [(f, g) for f, g in dna.items() if g[0] != "None"]
     for f, (cond, val) in dna_gated:

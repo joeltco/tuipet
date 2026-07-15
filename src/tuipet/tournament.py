@@ -24,6 +24,7 @@ The real thing is a SCHEDULED 8-entrant bracket, not an always-open menu:
 from __future__ import annotations
 import random
 from . import data
+from . import shop
 
 # config.csv (classic column)
 TOURNEY_BITS = {"Rookie": 125, "Champion": 150, "Ultimate": 175, "Mega": 200}
@@ -116,7 +117,7 @@ def _rand_trophy_ids(pet):
     the 24 hourly slots rotating open/Rookie/open/Champion/open/Ultimate/open/
     Mega; the fill STOPS at the first empty bucket (canon quirk).  Every cup in
     the classic data has Time=None, so the time-of-day match never gates."""
-    season = pet.season
+    season = shop.season_name(pet)
     buckets = {"free": [], "Rookie": [], "Champion": [], "Ultimate": [], "Mega": []}
     for t in data.load_tournies():
         if t["season"] != season:
@@ -167,7 +168,7 @@ def town_schedule(pet, town):
     # > 23, never closed) hosts its biome field's championship, on top of the
     # rotating hourly bracket -- a themed cup the biome's own kind can always enter
     from . import world
-    cup = biome_cup_id(pet.season, world.town_field(town.get("id", -1)))
+    cup = biome_cup_id(shop.season_name(pet), world.town_field(town.get("id", -1)))
     if cup >= 0:
         for i in range(len(sched) - 1, HOME_LIMIT - 1, -1):   # always-open slots
             if sched[i] == -1:
@@ -481,7 +482,7 @@ class Tournament:
             won_map = getattr(self.pet, "trophies_won", None)
             if won_map is None:
                 self.pet.trophies_won = won_map = {}
-            won_map[self.trophy["id"]] = self.pet.season   # seasonBeat; season kept for the trophy room
+            won_map[self.trophy["id"]] = shop.season_name(self.pet)   # seasonBeat; season kept for the trophy room
             from . import persistence
             persistence.tourney_add(self.trophy["id"])     # gates the tournament egg unlocks
             extras = []

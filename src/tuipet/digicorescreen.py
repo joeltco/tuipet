@@ -272,14 +272,11 @@ def _legacy_rows():
 
 
 def build_pages(pet):
-    h = pet.habitat_obj()
-    aff = pet._affinity()
-    fit = "thrives" if aff > 0 else ("suffers" if aff < 0 else "neutral")
+    from . import backgrounds as bgs
     rem = pet.lifespan - pet.age_seconds
     appetite = ["picky", "normal", "greedy"][pet._glutton() + 1]
     temperament = ["mellow", "steady", "restless"][pet._restless() + 1]
     disp = ["sour", "even", "sunny"][pet._disposition() + 1]
-    fav, dis = pet.favorite_time(), pet.disliked_time()
     status = [
         ("Name", pet.name),
         # an egg has no dex number yet -- "#-1" leaked the internal sentinel
@@ -300,7 +297,6 @@ def build_pages(pet):
     person = [
         ("Type", pet.personality()), ("Spirit", disp),
         ("Appetite", appetite), ("Pace", temperament),
-        ("Likes", fav or "-"), ("Dislikes", dis or "-"),
     ]
     core = data.load_digicore_icons().get(pet.num)
     if core:
@@ -320,11 +316,10 @@ def build_pages(pet):
             ("Poop", str(pet.poop)),
             ("Care x", str(pet.care_mistakes)), ("Disturb", str(pet.disturb)),
         ]),
-        ("HABITAT", [
-            ("Home", h["name"]), ("Fit", f"{fit} ({aff:+d})"),
-            ("Season", pet.season), ("Weather", pet.weather),
-            ("Temp", f"{int(pet.temp)}°"),
-            ("Ideal", f"{pet.ideal_temp[0]}-{pet.ideal_temp[1]}°"),
+        ("SCENE", [
+            ("Backdrop", bgs.name(pet.bg_current)),
+            ("Owned", str(len(bgs.FREE) + len(pet.bg_owned))),
+            ("Catalog", str(len(bgs.CATALOG))),
         ]),
         ("PERSON", person),
         ("TROPHIES", _trophy_rows(pet)),

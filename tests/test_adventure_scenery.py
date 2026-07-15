@@ -243,25 +243,6 @@ def test_stage_anchor_is_progress_free():
     assert pan._jx(rows) == x0
 
 
-def test_weather_rides_the_travelling_frame(monkeypatch):
-    """Weather renders on EVERY road frame (2026-07-13) -- it used to vanish
-    the moment the walk resumed."""
-    from tuipet import arena
-    calls = {}
-    real = arena._weather_overlay
-
-    def spy(w, wf, cols, px_h):
-        calls["hit"] = True
-        return real(w, wf, cols, px_h)
-
-    monkeypatch.setattr(arena, "_weather_overlay", spy)
-    pan = AdventurePanel(_pet())
-    pan._trans = None
-    pan.travelling = True
-    pan.text()
-    assert calls.get("hit"), "the travelling frame dropped the weather overlay"
-
-
 # ---- the adventure feel arc (Joel 2026-07-07: "adventure felt different in
 # dvpet") -- Battle_Flash alert, battleWait escape, zoneChange pulse, pacing ----
 
@@ -342,7 +323,6 @@ def test_going_home_teleports_out_then_auto_closes():
         assert p.away                            # not home until the world swap
         pan.anim()
     assert not p.away                            # teleportArrive: home again
-    assert p.habitat == p.home_habitat
     assert pan._trans["phase"] == "arrive"
     for _ in range(TELE_ARRIVE_T):
         pan.anim()
@@ -833,7 +813,6 @@ def test_full_expedition_end_to_end(monkeypatch):
     from tuipet.battlescreen import BattlePanel
     monkeypatch.setattr(amod.random, "random", lambda: 0.99)   # a quiet road
     p = _pet()
-    home = p.habitat
     pan = AdventurePanel(p)
     p.stop_travel_prob = lambda: 0.0
     seen = set()
@@ -871,7 +850,7 @@ def test_full_expedition_end_to_end(monkeypatch):
     assert {"teleport", "town", "gate stop", "battle", "pulse"} <= seen
     kind, msg = pan.auto_close
     assert kind == "done" and msg and "cleared" in msg.lower()
-    assert p.habitat == home and p.away is False, "homecoming restores home"
+    assert p.away is False, "homecoming clears the away flag"
     assert p.adv_zone == 1, "the next adventure sets out for zone 2"
 
 
@@ -934,8 +913,6 @@ def test_death_on_the_road_comes_home_for_the_memorial(monkeypatch):
     pan = AdventurePanel(_pet())
     pan._trans = None
     app = _tick_app(pan)
-    home = pan.pet.home_habitat
-    pan.pet.habitat = pan.adv.biome
     closed = []
     app._mode_close = closed.append
 
@@ -953,5 +930,4 @@ def test_death_on_the_road_comes_home_for_the_memorial(monkeypatch):
     assert app.mode is None, "the road closes so the memorial owns the screen"
     assert closed == [None]
     assert app.screen_w.fx and app.screen_w.fx[0] == "dying"
-    assert pan.pet.habitat == home and pan.pet.away is False, \
-        "the road ends here: it comes home"
+    assert pan.pet.away is False, "death on the road still comes home"

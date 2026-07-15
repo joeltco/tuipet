@@ -186,7 +186,8 @@ class TownPanel(menu.SubHost):
         span = shop.town_shop_hours(self.pet, self.town, is_food)
         if span and span[0] <= 23:
             return f"The {name} is shut. (opens {span[0]}:00)"
-        return f"The {name} is shut for {self.pet.season.lower()}."
+        from . import shop as _shop
+        return f"The {name} is shut for {_shop.season_name(self.pet).lower()}."
 
     def _town_econ(self, e):
         """The town's shopConsumable override econ for a consumable (else {}) --
@@ -214,8 +215,8 @@ class TownPanel(menu.SubHost):
         """A bare 12-row arena over the town's canonical backdrop -- the WHOLE
         LCD (box-clip audit 2026-07-04: any in-LCD chrome overflowed the
         physical 12-row box; notes and errands ride the #msg strip instead)."""
-        bg_h = self.town.get("bg_habitat")
-        bgimg = self.pet.background(bg_h) if bg_h is not None else self.pet.background()
+        from . import backgrounds as bgs
+        bgimg = self.pet.background(file=bgs.TOWN) or self.pet.background()
         return menu.paint(placements, bgimg)
 
     def strip(self):

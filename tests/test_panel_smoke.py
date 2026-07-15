@@ -81,7 +81,7 @@ def test_shop_panel_renders_shop_and_bag():
 
 
 def test_the_simple_panels_all_draw():
-    from tuipet.habitatscreen import HabitatPanel
+    from tuipet.backgroundscreen import BackgroundPanel
     from tuipet.digicorescreen import DigiCorePanel
     from tuipet.assistscreen import AssistPanel
     from tuipet.dnascreen import DNAPanel
@@ -91,7 +91,7 @@ def test_the_simple_panels_all_draw():
     from tuipet.deathscreen import DeathPanel
     from tuipet.feedscreen import FeedPanel
     p = _pet()
-    _walk(HabitatPanel(p), ["down", "down", "up"])
+    _walk(BackgroundPanel(p), ["down", "down", "up"])
     _walk(DigiCorePanel(p), ["space", "space", "right", "right", "right",
                              "right", "right", "right", "down", "enter", "down"])
     _walk(AssistPanel(p), ["enter", "enter"])
@@ -287,18 +287,18 @@ def test_habitat_picker_is_a_scene_with_a_strip():
     text list -- you bought a backdrop sight unseen.  The LCD now shows the
     pet standing in the browsed habitat (render-only preview); the picker
     line rides the strip; details live on the status card."""
-    from tuipet.habitatscreen import HabitatPanel
+    from tuipet.backgroundscreen import BackgroundPanel
     p = _pet()
-    pan = HabitatPanel(p)
+    pan = BackgroundPanel(p)
     _render(pan)
     assert len(pan.text().plain.split("\n")) == 12   # the scene fills the LCD
     here = pan.text().markup
-    assert "here" in pan.strip()                     # standing at home
-    home = p.habitat
+    assert "here" in pan.strip()                     # standing on the picked scene
+    picked = p.bg_current
     pan.key("right")                                 # browse: the VIEW changes...
     _render(pan)
     assert pan.text().markup != here
-    assert p.habitat == home                         # ...but browsing never moves you
+    assert p.bg_current == picked                    # ...but browsing never re-hangs it
     assert "ENTER ESC" in pan.strip()         # menu-bounds rewording 2026-07-07
 
 

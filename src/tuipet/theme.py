@@ -9,55 +9,38 @@ import os
 import sys
 
 # Each theme: ink/screen/mid + accent, pos/neg (affinity), border (bezel),
-# silhouette ink over habitat art (day/night), per-phase (ink, screen) tint,
-# STATUS readout colours (heart/energy/mood/life/coin), a per-weather
-# scene tint {category: (hex, alpha)} blended over the habitat background,
-# and precip particle ink {rain/snow: hex} -- the falling drops/flakes
-# themselves (ramp themes stay in-palette; the DMG LCD shows no blue rain).
+# silhouette ink over scene art, and the STATUS readout colours
+# (heart/energy/mood/life/coin).  The per-weather tints, precip inks and
+# per-phase palettes retired with their systems (Great Simplification
+# 2026-07-15).
 THEMES = {
     "grey": {
         "on": "#2b2e31", "bg": "#c6c9cc", "mid": "#7d8186",
         "accent": "#b04a3a", "pos": "#3a6ea5", "neg": "#a23b2f", "border": "#7a7e78",
         "sil_day": "#2b2e31", "sil_night": "#e4e7ea",
         "heart": "#c25a4a", "energy": "#4a90c2", "mood": "#a06ac2", "life": "#3f9a86", "coin": "#c2a24a",
-        "weather": {"rain": ("#2e3a4a", 0.30), "snow": ("#d6dee6", 0.26), "cloud": ("#5a5e62", 0.09)},
-        "precip": {"rain": "#3f7ec2", "snow": "#eaf3f8"},
         "void": "#000000", "flash": ("#f2f6fa", "#1a2026", "#e8eef2"),
-        "phases": {"dawn": ("#33363a", "#d2d5d8"), "day": ("#2b2e31", "#c6c9cc"),
-                   "dusk": ("#39352f", "#bdb8b2"), "night": ("#9aa0a6", "#23262a")},
     },
     "mono": {
         "on": "#e8e8e8", "bg": "#0c0c0c", "mid": "#808080",
         "accent": "#d05a3a", "pos": "#7fa8d8", "neg": "#d05a3a", "border": "#333333",
         "sil_day": "#101010", "sil_night": "#f0f0f0",
         "heart": "#d8d8d8", "energy": "#b8b8b8", "mood": "#a8a8a8", "life": "#c8c8c8", "coin": "#e8e8e8",
-        "weather": {"rain": ("#1c1c1c", 0.32), "snow": ("#dcdcdc", 0.26), "cloud": ("#383838", 0.09)},
-        "precip": {"rain": "#7fa8d8", "snow": "#f2f2f2"},
         "void": "#000000", "flash": ("#ffffff", "#0c0c0c", "#e8e8e8"),
-        "phases": {"dawn": ("#f0f0f0", "#141414"), "day": ("#e8e8e8", "#0c0c0c"),
-                   "dusk": ("#e0c0a0", "#0c0a08"), "night": ("#9a9a9a", "#050505")},
     },
     "amber": {
         "on": "#ffb000", "bg": "#1a1206", "mid": "#9a6b18",
         "accent": "#ff6a3a", "pos": "#8fd0ff", "neg": "#ff6a3a", "border": "#3a2a0c",
         "sil_day": "#2a1c06", "sil_night": "#ffd877",
         "heart": "#ff7a3a", "energy": "#ffb000", "mood": "#e0923a", "life": "#ffc24a", "coin": "#ffd877",
-        "weather": {"rain": ("#241a0c", 0.34), "snow": ("#ece0c8", 0.26), "cloud": ("#2e2410", 0.1)},
-        "precip": {"rain": "#6f9ecf", "snow": "#ffe6b8"},
         "void": "#000000", "flash": ("#ffe8b0", "#1a1206", "#ffd890"),
-        "phases": {"dawn": ("#ffc23a", "#160f05"), "day": ("#ffb000", "#1a1206"),
-                   "dusk": ("#ff8a3a", "#1a0f04"), "night": ("#a8741a", "#0d0903")},
     },
     "midnight": {
         "on": "#a9c8ee", "bg": "#101826", "mid": "#5d7491",
         "accent": "#e0884a", "pos": "#7fb0e0", "neg": "#e06a5a", "border": "#2a3850",
         "sil_day": "#16202e", "sil_night": "#cfe0f5",
         "heart": "#e0884a", "energy": "#6fb0e0", "mood": "#9a8fe0", "life": "#5fc7b0", "coin": "#e0c060",
-        "weather": {"rain": ("#0a1626", 0.36), "snow": ("#c4d8f0", 0.26), "cloud": ("#16223a", 0.11)},
-        "precip": {"rain": "#6fa8e0", "snow": "#e4eefb"},
         "void": "#000000", "flash": ("#dce8f8", "#101826", "#c8d8f0"),
-        "phases": {"dawn": ("#b9d2f0", "#15202f"), "day": ("#a9c8ee", "#101826"),
-                   "dusk": ("#d0a070", "#181420"), "night": ("#6d86a8", "#0a0f18")},
     },
     # the classic 4-shade DMG pea-soup LCD (the default stays grey; this is
     # an option).  NB the v0.2.284 putty-shell chrome experiment was REVERTED
@@ -67,53 +50,37 @@ THEMES = {
         "accent": "#7a3a22", "pos": "#2a5a8a", "neg": "#8a3a2a", "border": "#4a5a28",
         "sil_day": "#0f380f", "sil_night": "#d8e8a0",
         "heart": "#8a4a2a", "energy": "#2a6a8a", "mood": "#6a4a8a", "life": "#306230", "coin": "#8a7a1a",
-        "weather": {"rain": ("#1a3020", 0.30), "snow": ("#e0e8c8", 0.26), "cloud": ("#3a4a28", 0.09)},
-        "precip": {"rain": "#306230", "snow": "#d8e8a0"},
         "void": "#0f380f", "flash": ("#e0f0c0", "#0f380f", "#d8e8a0"),
         # GB layering (redo 2026-07-05: 4-shade backgrounds ATE the sprites --
         # "their blending into the background"): backgrounds get the LIGHT
         # three shades only; the darkest DMG green belongs to sprites alone,
         # so the mon is always the darkest thing on the LCD
         "bg_ramp": ("#306230", "#8bac0f", "#9bbc0f"),
-        "phases": {"dawn": ("#1a4418", "#a8c83a"), "day": ("#0f380f", "#9bbc0f"),
-                   "dusk": ("#3a3a10", "#a8a838"), "night": ("#7aa060", "#142810")},
     },
     "paper": {
         "on": "#2a2620", "bg": "#efe9dc", "mid": "#8a8274",
         "accent": "#a04a2a", "pos": "#3a6a8a", "neg": "#a03a2a", "border": "#b8ac97",
         "sil_day": "#2a2620", "sil_night": "#f4efe4",
         "heart": "#a04a2a", "energy": "#3a6a8a", "mood": "#7a5a92", "life": "#567a68", "coin": "#967a2a",
-        "weather": {"rain": ("#3a4450", 0.25), "snow": ("#f4f0e6", 0.30), "cloud": ("#6a655c", 0.08)},
-        "precip": {"rain": "#3a6a8a", "snow": "#f7fafc"},
         "void": "#000000", "flash": ("#ffffff", "#2a2620", "#faf6ec"),
         # paper layering (Joel 2026-07-12: "apply this to the paper theme --
         # white instead of green"): backgrounds get the light ink-wash trio,
         # the near-black ink stays sprite-only, same law as gameboy
         "bg_ramp": ("#8a8274", "#d5cdbb", "#efe9dc"),
-        "phases": {"dawn": ("#332e26", "#f4eee0"), "day": ("#2a2620", "#efe9dc"),
-                   "dusk": ("#463a2c", "#e6dcc8"), "night": ("#9a948a", "#262218")},
     },
     "sakura": {
         "on": "#f0b8c8", "bg": "#241820", "mid": "#8a5a6c",
         "accent": "#ff8a5a", "pos": "#8ac8e8", "neg": "#ff6a6a", "border": "#4a2a3a",
         "sil_day": "#2a1a24", "sil_night": "#ffd0dc",
         "heart": "#ff7a8a", "energy": "#8ac8e8", "mood": "#c89ae8", "life": "#7ad0b0", "coin": "#f0c86a",
-        "weather": {"rain": ("#1a1428", 0.34), "snow": ("#f0dce4", 0.26), "cloud": ("#32222c", 0.1)},
-        "precip": {"rain": "#8ac8e8", "snow": "#ffeef4"},
         "void": "#000000", "flash": ("#ffe8f0", "#241820", "#f8d8e4"),
-        "phases": {"dawn": ("#ffc8d8", "#2a1c26"), "day": ("#f0b8c8", "#241820"),
-                   "dusk": ("#f0a878", "#241410"), "night": ("#9a7484", "#140c12")},
     },
     "ocean": {
         "on": "#7fd8d0", "bg": "#0a1e22", "mid": "#3f7a78",
         "accent": "#f0a05a", "pos": "#8ab8f0", "neg": "#f07a5a", "border": "#1c3a3e",
         "sil_day": "#0f2a2e", "sil_night": "#c8f0e8",
         "heart": "#f07a6a", "energy": "#6ac8e0", "mood": "#9a9ae8", "life": "#5ad0a0", "coin": "#e8c86a",
-        "weather": {"rain": ("#06141e", 0.36), "snow": ("#c0dcd8", 0.26), "cloud": ("#0e2a30", 0.11)},
-        "precip": {"rain": "#8ab8f0", "snow": "#dcf4ee"},
         "void": "#000000", "flash": ("#e0f8f4", "#0a1e22", "#c8ece6"),
-        "phases": {"dawn": ("#9ae0d8", "#0e262a"), "day": ("#7fd8d0", "#0a1e22"),
-                   "dusk": ("#d0a068", "#14201e"), "night": ("#4a8a84", "#05130f")},
     },
 }
 _DEFAULT = "grey"
@@ -121,14 +88,11 @@ _ORDER = list(THEMES)
 _current = _DEFAULT
 
 _NAMES = ("LCD_ON", "LCD_BG", "MID", "INK", "INK_B", "DIM", "SEL", "ACCENT",
-          "POS", "NEG", "BORDER", "SIL_DAY", "SIL_NIGHT", "PHASE_PALETTE",
+          "POS", "NEG", "BORDER", "SIL_DAY", "SIL_NIGHT",
           "HEART", "ENERGY", "MOOD", "LIFE", "COIN", "VOID", "FLASH",
           "BEZEL", "SHELL", "LABEL", "KEY")
 # (the hand-maintained _SCREEN_MODULES registry is gone -- apply() discovers
 # palette-bound modules from sys.modules; hardening 2026-07-05)
-
-_RAIN = {"Drizzling", "Raining", "HeavyRain"}
-_SNOW = {"LightSnow", "Snowing", "HeavySnow"}
 
 # Static declarations of the palette names so linters/type-checkers can see them.
 # apply(_DEFAULT) runs at import (bottom of file) and overwrites these with the live
@@ -137,9 +101,7 @@ LCD_ON = LCD_BG = MID = INK = INK_B = DIM = SEL = ACCENT = POS = NEG = BORDER = 
 SIL_DAY = SIL_NIGHT = HEART = ENERGY = MOOD = LIFE = COIN = VOID = ""
 BEZEL = SHELL = LABEL = KEY = ""
 FLASH: tuple = ("", "", "")
-PHASE_PALETTE: dict = {}
-WEATHER: dict = {}
-PRECIP: dict = {}
+
 
 
 def _derive(t):
@@ -149,10 +111,9 @@ def _derive(t):
         "INK": f"{on} on {bg}", "INK_B": f"bold {on} on {bg}",
         "DIM": f"{mid} on {bg}", "SEL": f"bold {bg} on {on}",
         "ACCENT": t["accent"], "POS": t["pos"], "NEG": t["neg"], "BORDER": t["border"],
-        "SIL_DAY": t["sil_day"], "SIL_NIGHT": t["sil_night"], "PHASE_PALETTE": t["phases"],
+        "SIL_DAY": t["sil_day"], "SIL_NIGHT": t["sil_night"],
         "HEART": t["heart"], "ENERGY": t["energy"], "MOOD": t["mood"],
-        "LIFE": t["life"], "COIN": t["coin"], "WEATHER": t["weather"],
-        "PRECIP": t["precip"],
+        "LIFE": t["life"], "COIN": t["coin"],
         "VOID": t["void"], "FLASH": t["flash"],
         # shell chrome (optional per theme; the plain themes keep border/mid):
         # bezel = the LCD's thick frame, shell = the outer boxes, label = the
@@ -384,19 +345,9 @@ def names():
 
 
 
-def _wcat(weather):
-    if weather in _RAIN:
-        return "rain"
-    if weather in _SNOW:
-        return "snow"
-    if weather == "Cloudy":
-        return "cloud"
-    return None
-
-
 def blend_frame(frame, hexcol, a):
     """Blend a full-colour frame (rows of 6-hex-char cells) toward `hexcol` by
-    alpha `a`.  Shared by the weather tints and the lightning flash."""
+    alpha `a`.  Used by the arena's background cross-fade."""
     tr, tg, tb = int(hexcol[1:3], 16), int(hexcol[3:5], 16), int(hexcol[5:7], 16)
     out = []
     for row in frame:
@@ -424,348 +375,6 @@ def blend_frames(fa, fb, a):
             cells.append("%02x%02x%02x" % (int(r1 + (r2 - r1) * a), int(g1 + (g2 - g1) * a), int(b1 + (b2 - b1) * a)))
         out.append("".join(cells))
     return out
-
-
-# Canon BackgroundAnim.getBackgroundTint's PHASE component: the precip frame is
-# ALSO tinted by the time of day -- changeColor(red, 0, blue, alpha) with
-# Morning blue=80, the sunset hour red=60, and Night alpha 40->80 (an extra 40
-# of black).  We dropped this when the per-theme weather tints came in, so the
-# shared precip frame (index 4, drawn day-bright in every sheet) rendered at
-# full daylight at night: every Drizzling<->Cloudy roll (10s cadence, ~21
-# frame swaps a game day on Plains) hard-flipped the night scene to a day one
-# and back -- "backgrounds keep going back and forth between night and day"
-# (background audit 2026-07-15).  The theme weather tint stays as the base
-# gloom (canon's flat alpha-40, themed); these compose ON TOP, precip only --
-# canon gives Cloudy no phase mod (it shows the normal time-of-day frame).
-_PHASE_TINT = {"dawn": ("#000050", 40 / 255),    # Morning: blue=80 at alpha 40
-               "dusk": ("#3c0000", 40 / 255),    # isSunset: red=60 at alpha 40
-               "night": ("#000000", 40 / 255)}   # Night: alpha 40 -> 80
-
-
-def weather_tint(frame, weather, phase="day"):
-    """Blend a habitat background frame toward the active theme's weather tint
-    (rain/snow/cloud), then canon's time-of-day precip tint on top. `frame` is
-    a list of rows of 6-hex-char cells; returns a new tinted frame (or the
-    original when the weather is clear)."""
-    cat = _wcat(weather) if frame else None
-    spec = WEATHER.get(cat) if cat else None
-    if not spec:
-        return frame
-    frame = blend_frame(frame, *spec)
-    if cat in ("rain", "snow"):
-        pspec = _PHASE_TINT.get(phase)
-        if pspec:
-            frame = blend_frame(frame, *pspec)
-    return frame
-
-
-# --- the cloudy-night frame (background rebuild 2026-07-15) -------------------
-# The sheets ship ONE overcast frame (index 4) and it is drawn day-bright, so
-# every clouded night wore a daytime sky -- "it looks like day cloudy, because
-# thats all we got" (Joel).  Rather than tint around it, each sheet gets a
-# DERIVED cloudy-night frame built from its own pixels, no hand-drawn art:
-#
-#   * ground rows  = the night frame verbatim (hills, town lights, lava);
-#   * the sky band = the overcast frame's cloud texture posterized to three
-#     dark tones mixed from THIS sheet's night-sky colour (so a Plains
-#     overcast stays navy and a Volcano one stays ember-warm);
-#   * the moon and stars are covered -- that is what an overcast night does.
-#
-# The horizon is read off the DAY+DUSK frames (terrain geometry is identical
-# across frames 0-3): a pixel is sky only when both agree it sits in the flat
-# sky field (the dusk vote splits the sea from the sky -- same blue by day,
-# only the sky goes sunset-orange), or when it is bright in both (the white
-# day clouds).  A sheet qualifies only if its night sky carries ISOLATED
-# bright dots -- real stars; a lit window is a bright REGION -- so City and
-# Underwater (no open sky) return None and keep their plain night frame.
-_NIGHT_CLOUDS = {}                 # (sheet key, phase) -> derived frame | None
-_NC_GRAY = (150, 155, 165)         # storm gray the tones lean toward
-# per-phase build params: base frame index, the sky-ref luma slice (night
-# drops the bright 40% -- stars; dawn/dusk drop BOTH tails -- the sun glow),
-# and the ramp endpoints (night sky is dark so clouds step UP toward gray;
-# dawn/dusk skies are bright so the overcast steps DOWN into them)
-_NC_PHASES = {"night": (3, 0.0, 0.6, (1.0, 0.22), (1.85, 0.5)),
-              "dawn": (0, 0.2, 0.8, (0.7, 0.3), (1.05, 0.45)),
-              "dusk": (2, 0.2, 0.8, (0.7, 0.3), (1.05, 0.45))}
-
-
-def _cell(fr, x, y):
-    row = fr[y]
-    return (int(row[x * 6:x * 6 + 2], 16), int(row[x * 6 + 2:x * 6 + 4], 16),
-            int(row[x * 6 + 4:x * 6 + 6], 16))
-
-
-def _luma(c):
-    return 0.299 * c[0] + 0.587 * c[1] + 0.114 * c[2]
-
-
-def _cdist(a, b):
-    return abs(a[0] - b[0]) + abs(a[1] - b[1]) + abs(a[2] - b[2])
-
-
-def _find_stars(frames):
-    """The night frame's starfield: isolated bright dots on the flat night
-    sky (top 40% -- the star band).  A real star is a DOT with a darker field
-    around it; a lit window is a bright REGION and never qualifies.  Returns
-    (star (x, y) list, flat night-sky colour) or None when fewer than 3 dots
-    (City's wall, Underwater).  Shared by the overcast gate and the twinkle."""
-    night = frames[3]
-    W, H = len(night[0]) // 6, len(night)
-    pix = sorted((_cell(night, x, y) for y in range(3) for x in range(W)),
-                 key=_luma)
-    dim = pix[:max(1, int(len(pix) * 0.6))]    # the flat sky, stars excluded
-    nsky = tuple(sum(c[i] for c in dim) / len(dim) for i in range(3))
-
-    def isdot(x, y):               # a star: bright dot on a darker field
-        c = _cell(night, x, y)
-        if _luma(c) <= _luma(nsky) + 55:
-            return False
-        return sum(1 for dx in (-1, 0, 1) for dy in (-1, 0, 1) if (dx or dy)
-                   and 0 <= x + dx < W and 0 <= y + dy < H
-                   and _luma(_cell(night, x + dx, y + dy)) < _luma(c) - 40) >= 4
-
-    stars = [(x, y) for y in range(int(H * 0.4)) for x in range(W)
-             if isdot(x, y)]
-    return (stars, nsky) if len(stars) >= 3 else None
-
-
-def _build_night_clouds(frames, phase="night"):
-    day, dusk, night, prec = frames[1], frames[2], frames[3], frames[4]
-    base_i, s_lo, s_hi, ramp_a, ramp_b = _NC_PHASES[phase]
-    base = frames[base_i]
-    W, H = len(day[0]) // 6, len(day)
-    pix = sorted((_cell(night, x, y) for y in range(3) for x in range(W)),
-                 key=_luma)
-    dim = pix[:max(1, int(len(pix) * 0.6))]    # the flat sky, stars excluded
-    nsky = tuple(sum(c[i] for c in dim) / len(dim) for i in range(3))
-
-    if _find_stars(frames) is None:
-        return None                # no starfield -> no open sky to cloud over
-    if phase == "night":
-        psky = nsky                # the ramp anchors on the PHASE's own sky
-    else:
-        bpix = sorted((_cell(base, x, y) for y in range(3) for x in range(W)),
-                      key=_luma)
-        mid = bpix[int(len(bpix) * s_lo):max(1, int(len(bpix) * s_hi))]
-        psky = tuple(sum(c[i] for c in mid) / len(mid) for i in range(3))
-    # one reference per TOP ROW (0-2), not a single mean: gradient skies
-    # (Volcano's red haze) sit too far from a flat average and read as
-    # ground, leaving the deck 0 rows tall (dawn/dusk sweep 2026-07-15)
-    drefs = [tuple(sum(_cell(day, x, r)[i] for x in range(W)) / W
-                   for i in range(3)) for r in range(3)]
-    urefs = [tuple(sum(_cell(dusk, x, r)[i] for x in range(W)) / W
-                   for i in range(3)) for r in range(3)]
-
-    def is_sky(x, y):
-        d, u = _cell(day, x, y), _cell(dusk, x, y)
-        return ((any(_cdist(d, rf) < 150 for rf in drefs)
-                 and any(_cdist(u, rf) < 150 for rf in urefs))
-                or (_luma(d) > _luma(drefs[0]) + 30
-                    and _luma(u) > _luma(urefs[0]) - 15))
-
-    cap = int(H * 0.8)
-    raw = []
-    for x in range(W):
-        y = 0
-        while y < cap and is_sky(x, y):
-            y += 1
-        raw.append(y)
-    hor = [sorted(raw[max(0, x - 2):x + 3])[len(raw[max(0, x - 2):x + 3]) // 2]
-           for x in range(W)]      # median-of-5: no single-column streaks
-    if sorted(hor)[W // 2] < 3:
-        return None                # no usable sky band -> keep the plain frame
-
-    def tone(k, g):                # phase-sky hue re-leveled, pulled to gray
-        return tuple(min(255.0, psky[i] * k + (_NC_GRAY[i] - psky[i] * k) * g)
-                     for i in range(3))
-
-    # The first cut snapped the cloud texture into three flat tones and the
-    # blobs came out hard-edged ("they look sharo and edgy" -- Joel
-    # 2026-07-15).  The sheets themselves are soft anti-aliased art, so the
-    # clouds now match: the overcast frame's brightness field gets one 3x3
-    # box-blur pass (rounds the masses, kills single-pixel jaggies), then
-    # maps CONTINUOUSLY onto the dark->light ramp between the same two
-    # endpoint tones.
-    lum = [[_luma(_cell(prec, x, y)) for x in range(W)] for y in range(H)]
-    blur = [[0.0] * W for _ in range(H)]
-    for y in range(H):
-        for x in range(W):
-            s = n = 0
-            for dy in (-1, 0, 1):
-                for dx in (-1, 0, 1):
-                    if 0 <= x + dx < W and 0 <= y + dy < H:
-                        s += lum[y + dy][x + dx]
-                        n += 1
-            blur[y][x] = s / n
-    vals = sorted(blur[y][x] for y in range(6) for x in range(W))
-    lo, hi = vals[int(len(vals) * 0.05)], vals[int(len(vals) * 0.95)]
-    A, B = tone(*ramp_a), tone(*ramp_b)
-    out = []
-    for y in range(H):
-        cells = []
-        for x in range(W):
-            if y < hor[x]:
-                t = max(0.0, min(1.0, (blur[y][x] - lo) / max(1.0, hi - lo)))
-                c = tuple(A[i] + (B[i] - A[i]) * t for i in range(3))
-                cells.append("%02x%02x%02x" % tuple(int(v) for v in c))
-            else:
-                cells.append(base[y][x * 6:(x + 1) * 6])
-        out.append("".join(cells))
-    return out
-
-
-def night_cloud_frame(key, frames, phase="night"):
-    """The sheet's derived overcast frame for a dark-sky phase (built once
-    per phase, cached), or None when the sheet has no open sky (City's wall,
-    Underwater) or the phase has no variant (day rides canon)."""
-    if phase not in _NC_PHASES:
-        return None
-    if (key, phase) not in _NIGHT_CLOUDS:
-        _NIGHT_CLOUDS[(key, phase)] = (_build_night_clouds(frames, phase)
-                                       if frames and len(frames) > 4 else None)
-    return _NIGHT_CLOUDS[(key, phase)]
-
-
-# --- twinkling stars (background polish 2026-07-15, Joel: "making the stars
-# at night twinkle") ----------------------------------------------------------
-# A CLEAR night's stars shimmer: each detected star dims toward the flat
-# night sky and back on its own offset of a shared 4-beat cycle, so the field
-# glitters instead of blinking in lockstep.  Every pixel is the sheet's own
-# (a star fades INTO its sky -- nothing is drawn); the arena's canon
-# background dissolve turns each beat step into a soft 1.5s fade, which IS
-# the twinkle.  Cloudy/precip nights never get here (the overcast deck covers
-# the stars); starless sheets (City, Underwater) keep the plain night frame.
-_TWINKLE = {}                  # (sheet key, beat) -> derived night frame
-_TW_STARS = {}                 # sheet key -> _twinkle_stars() result | None
-_TW_BEATS = 4
-_TW_STEP = 2.0                 # world-seconds per beat (> the 1.5s dissolve)
-# each star walks this in order (offset by position): dip -> full -> flare ->
-# full.  The lone stars are FAINT (10-40 luma over the sky), so a dim-only
-# curve was invisible; the flare leg extends the sky->star ray past 1
-_TW_CURVE = (0.4, 1.0, 1.7, 1.0)
-
-
-def _twinkle_stars(frames):
-    """Lone single-pixel stars for the twinkle: a strict local max sitting on
-    FLAT sky -- brighter than every neighbour, every neighbour plain sky.
-    The overcast gate's dots (+55, 4-of-8 darker) are the moon's rim and
-    cloud-edge highlights as often as stars; shimmering those made the moon
-    sparkle.  Returns (star list, night-sky colour) or None (< 3 stars)."""
-    found = _find_stars(frames)    # also the open-sky gate (City, Underwater)
-    if not found:
-        return None
-    night = frames[3]
-    W, H = len(night[0]) // 6, len(night)
-    nsky = found[1]
-    nl = _luma(nsky)
-    stars = []
-    for y in range(1, int(H * 0.4)):
-        for x in range(1, W - 1):
-            l = _luma(_cell(night, x, y))
-            if l - nl <= 8:
-                continue
-            ns = [_luma(_cell(night, x + dx, y + dy))
-                  for dx in (-1, 0, 1) for dy in (-1, 0, 1) if dx or dy]
-            if l - max(ns) > 5 and max(ns) < nl + 25:
-                stars.append((x, y))
-    return (stars, nsky) if len(stars) >= 3 else None
-
-
-def _build_twinkle(frames, stars, nsky, beat):
-    night = frames[3]
-    out = list(night)
-    for x, y in stars:
-        f = _TW_CURVE[(beat + x * 7 + y * 11) % _TW_BEATS]
-        if f == 1.0:
-            continue               # this star holds full this beat
-        c = _cell(night, x, y)
-        cell = "%02x%02x%02x" % tuple(
-            int(min(255, max(0, nsky[i] + (c[i] - nsky[i]) * f)))
-            for i in range(3))
-        out[y] = out[y][:x * 6] + cell + out[y][(x + 1) * 6:]
-    return out
-
-
-def star_frame(key, frames, world_seconds):
-    """The clear-night frame with its stars mid-shimmer (built once per beat,
-    cached), or None when the sheet has no starfield -- the caller keeps the
-    classic frames[3] pick."""
-    if key not in _TW_STARS:
-        _TW_STARS[key] = (_twinkle_stars(frames)
-                          if frames and len(frames) > 4 else None)
-    found = _TW_STARS[key]
-    if not found:
-        return None
-    beat = tw_beat(world_seconds)
-    if (key, beat) not in _TWINKLE:
-        _TWINKLE[(key, beat)] = _build_twinkle(frames, found[0], found[1], beat)
-    return _TWINKLE[(key, beat)]
-
-
-def tw_beat(world_seconds):
-    return int(world_seconds / _TW_STEP) % _TW_BEATS
-
-
-# --- the lava ember pulse (background polish 2026-07-15, follow-up to the
-# twinkle) ---------------------------------------------------------------------
-# Lava breathes: the flow's ember pixels dim toward deep red and flare toward
-# yellow-white on a slow ripple.  What counts as lava is decided on the NIGHT
-# frame -- lava is SELF-LUMINOUS, still saturated red-orange in the dark,
-# which is what separates a flow from desert sand and dusk skies (both go
-# dark at night; colour rules alone tagged them all).  The pulse then rides
-# EVERY look of the sheet -- each phase pick, the overcast deck, a twinkle
-# beat -- by re-scaling that frame's own pixels at the ember coordinates.
-_EMBERS = {}                   # sheet key -> [(x, y)] | None
-_EMBER_FR = {}                 # (sheet key, variant tag, beat) -> frame
-_EM_BEATS = 4
-_EM_STEP = 2.6                 # world-sec per beat (off the stars' 2.0 sync)
-_EM_CURVE = (0.8, 1.0, 1.2, 1.0)   # dim -> hold -> flare -> hold
-
-
-def _find_lava(frames):
-    """Ember coordinates: ground-band pixels (bottom 60%) that hold saturated
-    red-orange ON THE NIGHT FRAME.  Fewer than 20 = no flow (a lit window or
-    two must not breathe)."""
-    night = frames[3]
-    W, H = len(night[0]) // 6, len(night)
-    coords = [(x, y) for y in range(int(H * 0.4), H) for x in range(W)
-              for c in (_cell(night, x, y),)
-              if c[0] > 150 and c[0] - c[1] > 60 and c[0] - c[2] > 100]
-    return coords if len(coords) >= 20 else None
-
-
-def _apply_embers(frame, coords, beat):
-    out = list(frame)
-    for x, y in coords:
-        c = _cell(frame, x, y)
-        if c[0] < c[1]:
-            continue               # this look covers the flow here: leave it
-        f = _EM_CURVE[(beat + (x // 3 + y // 3)) % _EM_BEATS]
-        if f == 1.0:
-            continue
-        cell = "%02x%02x%02x" % tuple(
-            int(min(255, c[i] * f)) for i in range(3))
-        out[y] = out[y][:x * 6] + cell + out[y][(x + 1) * 6:]
-    return out
-
-
-def ember_frame(key, frames, frame, tag, world_seconds):
-    """`frame` -- any look of this sheet (a phase pick, the overcast deck, a
-    twinkle beat, named by `tag`) -- with the sheet's lava mid-pulse (built
-    once per look and beat, cached).  Sheets with no flow return it as-is.
-    Scaling clips the flare at white, so hue drifts yellow exactly the way
-    hot lava should."""
-    if key not in _EMBERS:
-        _EMBERS[key] = (_find_lava(frames)
-                        if frames and len(frames) > 4 else None)
-    coords = _EMBERS[key]
-    if not coords:
-        return frame
-    beat = int(world_seconds / _EM_STEP) % _EM_BEATS
-    ck = (key, tag, beat)
-    if ck not in _EMBER_FR:
-        _EMBER_FR[ck] = _apply_embers(frame, coords, beat)
-    return _EMBER_FR[ck]
 
 
 # --- persistence of the chosen theme ---

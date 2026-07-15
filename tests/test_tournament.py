@@ -8,6 +8,7 @@ via world_seconds (day 0 = Spring, day 1 = Summer, ...).
 """
 import random
 
+from tuipet import shop  # noqa: E402
 from tuipet import data, tournament
 from tuipet.tournament import (Tournament, TOURNEY_BITS, TOURNEY_MAX_BITS,
                                TOURNEY_AGES, HOME_LIMIT)
@@ -46,7 +47,7 @@ def test_schedule_is_24_hourly_slots_no_dupes():
     assert len(sched) == HOME_LIMIT == 24
     real = [t for t in sched if t >= 0]
     assert len(real) == len(set(real))          # picks remove from the bucket
-    assert all(tournament.trophy_by_id(t)["season"] == p.season for t in real)
+    assert all(tournament.trophy_by_id(t)["season"] == shop.season_name(p) for t in real)
 
 
 def test_schedule_rerolls_each_game_day():
@@ -113,7 +114,7 @@ def test_prelim_chain(monkeypatch):
     _patch(monkeypatch, [q, _trophy(id=4, prelim=3)])
     p = _pet("Rookie")
     assert "first" in tournament.eligibility(p, _trophy(id=4, prelim=3))
-    p.trophies_won = {3: p.season}              # qualifier beaten
+    p.trophies_won = {3: shop.season_name(p)}              # qualifier beaten
     assert tournament.eligibility(p, _trophy(id=4, prelim=3)) is None
 
 
@@ -209,7 +210,7 @@ def test_champion_feeds_egg_unlock_progress():
     tm = Tournament(p, _trophy(id=7))
     for _ in range(3):
         tm.record(True)
-    assert p.trophies_won.get(7) == p.season
+    assert p.trophies_won.get(7) == shop.season_name(p)
     assert 7 in persistence.get_progress()["tourneys"]
 
 
@@ -384,14 +385,14 @@ def test_the_cup_renders_in_the_arena(monkeypatch):
     seen = []
     orig = Pet.background
     monkeypatch.setattr(Pet, "background",
-                        lambda self, habitat_id=None, file=None:
-                        (seen.append(file), orig(self, habitat_id, file))[1])
+                        lambda self, file=None:
+                        (seen.append(file), orig(self, file))[1])
     pan = tournamentscreen.TournamentPanel(p)
     pan.tourney = Tournament(p, _trophy())
     pan.phase = "bracket"
     pan.tree_view = False
     pan.text()
-    assert seen and seen[-1] == "tourneyBack"
+    assert seen and seen[-1] == "datatunnel"
 
 
 def test_next_winnable_points_at_an_enterable_cup():

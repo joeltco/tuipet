@@ -92,7 +92,7 @@ def test_apply_unknown_theme_falls_back():
 
 _REQUIRED = {"on", "bg", "mid", "accent", "pos", "neg", "border",
              "sil_day", "sil_night", "heart", "energy", "mood", "life", "coin",
-             "weather", "phases", "void", "flash"}
+             "void", "flash"}
 _HEX = re.compile(r"^#[0-9a-fA-F]{6}$")
 
 
@@ -100,7 +100,7 @@ def test_every_theme_carries_the_full_key_set():
     for name, t in theme.THEMES.items():
         missing = _REQUIRED - set(t)
         assert not missing, f"{name} lacks {missing}"
-        for k in _REQUIRED - {"weather", "phases", "flash"}:
+        for k in _REQUIRED - {"flash"}:
             assert _HEX.match(t[k]), f"{name}.{k} = {t[k]!r} is not a hex colour"
         assert len(t["flash"]) == 3 and all(_HEX.match(c) for c in t["flash"]), \
             f"{name}.flash must be (blend, ink, bg) hex triple"
@@ -110,12 +110,6 @@ def test_every_theme_carries_the_full_key_set():
             lums = [(299 * int(c[1:3], 16) + 587 * int(c[3:5], 16)
                      + 114 * int(c[5:7], 16)) // 1000 for c in ramp]
             assert lums == sorted(lums), f"{name}.bg_ramp must run dark -> light"
-        assert set(t["phases"]) == {"dawn", "day", "dusk", "night"}, name
-        for ph, (on, bg) in t["phases"].items():
-            assert _HEX.match(on) and _HEX.match(bg), f"{name}.phases.{ph}"
-        assert set(t["weather"]) == {"rain", "snow", "cloud"}, name
-        for w, (col, a) in t["weather"].items():
-            assert _HEX.match(col) and 0.0 < a < 1.0, f"{name}.weather.{w}"
 
 
 def test_every_theme_derives_and_applies_cleanly():
@@ -259,37 +253,6 @@ def test_action_bar_letters_keep_cyan_on_every_theme():
         theme.apply("grey")
 
 
-def test_the_arena_backdrop_ships_a_full_time_stack():
-    """BackgroundAnim checkBack: tournaments + PvP battles play in front of
-    tourneyBack.png -- a 5-frame sheet (morning/noon/sunset/night/precip)
-    indexed exactly like the habitat sheets (theme/rendering audit 2026-07-06)."""
-    from tuipet import data
-    frames = data.load_backgrounds().get("tourneyBack")
-    assert frames and len(frames) == 5
-    assert all(len(r) == 40 * 6 for fr in frames for r in fr)
-
-
-def test_background_file_override_picks_the_arena_sheet():
-    """Pet.background(file=...) swaps the SHEET while keeping the same
-    time-of-day frame pick -- the arena has its own night, not the home's."""
-    from tuipet import data
-    from tuipet.pet import Pet
-    p = Pet(num=-1, stage="Rookie")
-    p.weather = "Clear"
-    arena = p.background(file="tourneyBack")
-    home = p.background()
-    sheets = data.load_backgrounds()
-    idx = {"dawn": 0, "day": 1, "dusk": 2, "night": 3}[p.day_phase]
-    want = theme.weather_tint(sheets["tourneyBack"][idx], "Clear")
-    if p.day_phase == "night":                    # a clear night twinkles now
-        want = (theme.star_frame("tourneyBack", sheets["tourneyBack"],
-                                 p.world_seconds) or want)
-    assert arena == want
-    assert arena != home
-
-
-# ---- background quantizer redo (Joel 2026-07-12: "some backgrounds look
-# like shit" -- hue-blind luminance banding) + the paper ramp ------------------
 
 _PAPER = ("#8a8274", "#d5cdbb", "#efe9dc")
 

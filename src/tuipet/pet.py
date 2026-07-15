@@ -8,8 +8,7 @@ from . import shop
 from . import egg as egg_mod
 from . import evolution
 from . import lines as lines_mod
-from . import weather as wx
-from . import theme
+from . import backgrounds as bgs_mod
 
 
 def _clamp(v, lo, hi):
@@ -48,14 +47,8 @@ def _enemy_level(enemy):
     return max(1, int((v + d + vir + (h - 5) * 10) / 100))
 
 
-_RAIN = {"Drizzling", "Raining", "HeavyRain"}
-_SNOW = {"LightSnow", "Snowing", "HeavySnow"}
-_PRECIP = _RAIN | _SNOW
-
-
-def _dvpet_time(phase):
-    """Map tuipet's day phase to DVPet's training Time (Morning/Noon/Night)."""
-    return {"dawn": "Morning", "day": "Noon", "dusk": "Noon", "night": "Night"}.get(phase, "Noon")
+# (the weather categories and the day-phase -> DVPet-Time map died with the
+# weather and day/night systems -- the Great Simplification, 2026-07-15)
 
 
 # Lifespan (seconds), scaled from DVPet's real-time model. A pet lives this long
@@ -913,7 +906,6 @@ class Pet:
     _cal_t: float = 0.0             # calorie/hunger lapse accumulator
     _str_t: float = 0.0             # effort-decay accumulator
     _exercise_day: int = -1         # daily exercise counter's day stamp
-    _weather_day: int = -1          # daily temperature roll's day stamp
     free_style: bool = False        # _isFree: Battle Style toggle (Free vs Orders)
     gift: str = ""                  # pending gift-call present (consumable key; "" = none)
     gift_t: float = 0.0             # seconds toward the next GiftChanceMin roll
@@ -939,26 +931,17 @@ class Pet:
     dead: bool = False
     death_cause: str = ""           # what took it (memorial epitaph, audit 2026-07-05)
     world_seconds: float = 0.0
-    temp: float = 50.0
-    day_temp: float = 50.0
-    temp_goal: float = 101.0        # thermostat target; > MaxTemp(100) = unset (canon _tempGoal)
-    weather: str = "Clear"
     field: str = ""
     element: str = ""
-    habitat: int = 2                # the CURRENT habitat (canon _currentHabitat --
-    #                                 it follows the zone background on the road)
-    home_habitat: int = -1          # canon _homeHabitat: the OWNED home the pet
-    #                                 returns to after an adventure (-1 = backfill
-    #                                 from `habitat` on first use; habitat audit
-    #                                 2026-07-06)
-    habitats: list = _dcf(default_factory=lambda: [0, 2])
-    habitat_record: dict = _dcf(default_factory=dict)   # time-in-each-habitat -> getMajorHabitat
-    time_pref: dict = _dcf(default_factory=lambda: {"dawn": 0, "day": 0, "dusk": 0, "night": 0})
+    # the scene behind the mon is a PICKED COSMETIC (the Great Simplification,
+    # 2026-07-15: weather/temperature/habitat/day-night all removed -- Joel:
+    # "its too much").  Every save owns the free catalog tier; fancy ones cost bits.
+    bg_current: str = "greenhills"
+    bg_owned: list = _dcf(default_factory=list)   # PURCHASED keys (free tier implied)
     x_antibody: str = "None"
     effect_id: int = -1            # active care effect (careEffect.csv id; -1 = none)
     effect_t: float = 0.0          # remaining duration of the active care effect
     x_count: float = 0.0
-    train_time: str = ""            # time of day of the last training (gates some evolutions)
     inventory: dict = _dcf(default_factory=dict)
     # transient animation request, consumed by the UI
     anim: str = "idle"
@@ -1012,7 +995,6 @@ class Pet:
         # a fresh game dawns at 8:00 -- world_seconds 0 is MIDNIGHT, inside every
         # bedtime window, and a hatchling born asleep is a rotten first minute
         pet.world_seconds = 8 * 60.0
-        pet._apply_egg_habitat()
         if generation <= 1:
             # canon items.csv StartingUses: the device begins with THREE
             # stocked items (item audit 2026-07-06 -- the old grant was the
@@ -1089,7 +1071,6 @@ class Pet:
         r = by_num[num]
         pet = cls(num=num, name=r["name"], stage=r["stage"], attribute=r["attribute"],
                   field=r.get("field", ""), element=r.get("element", ""))
-        pet._apply_natural_habitat()
         return pet
 
     # ---- per-tick simulation -------------------------------------------------
@@ -1140,7 +1121,6 @@ class Pet:
                 # clear the alarm and raise TournamentAlert (the attention call)
                 self.tourney_alarm = -1
                 self.tourney_alert = True
-        self._update_weather(dt)
 
     def _tick_growth(self, dt):
         """Aging + the ambient systems: X-decay, shop restock, toy interest,
@@ -1189,9 +1169,7 @@ class Pet:
             self._set_anim("hatch", 3.0)
 
     def _tick_recovery(self, dt):
-        """Environment + the recovery lapses (they run asleep or awake)."""
-        self._temperature_effects(dt)
-        self._track_time_pref(dt)
+        """The recovery lapses (they run asleep or awake)."""
         day = int(self.world_seconds // DAY_LENGTH)
         if getattr(self, "_exercise_day", -1) != day:    # DVPet checkExerciseTime: daily reset
             self._exercise_day = day
@@ -1891,7 +1869,6 @@ class Pet:
                 self._die("starvation"); return True
         elif self.hunger > 0:
             self._starve_t = 0.0
-        self.habitat_record[self.habitat] = self.habitat_record.get(self.habitat, 0) + dt
         # (the old continuous per-second "extra" drain was invented -- canon
         # burns lifespan through the EVENT penalties wired below instead)
         return self._check_old_age()
@@ -1913,138 +1890,36 @@ class Pet:
             cap = max(MIN_STOMACH_CAPACITY, cap - int(diff * GERIATRIC_STOMACH_COEF))
         return cap
 
-    @property
-    def day_phase(self):
-        # PhysicalState.checkTime: the day's bands come from the HOME's
-        # per-season daylight triple [morningStart, noonStart, nightStart]
-        # (Winter reads the FALL triple -- a DVPet quirk kept as canon); the
-        # last Noon hour is the sunset (isSunset) -> tuipet's dusk.
-        hour = (self.world_seconds % DAY_LENGTH) / DAY_LENGTH * 24
-        times = self.habitat_obj().get("times", {})
-        season = "Fall" if self.season == "Winter" else self.season
-        tri = times.get(season, (6, 14, 19))
-        m, n, night = tri
-        # isSunset reads the REAL season's triple: in Winter the sunset hour
-        # is winterTime[2]-1 even though the bands ride the Fall triple -- a
-        # Plains winter dusk falls at 16:00 inside the 11-19 Noon band, and
-        # 17-18 show the DAY frame again (canon's inconsistency, kept
-        # verbatim; background audit 2026-07-15).
-        sunset = times.get(self.season, tri)[2] - 1
-        if m <= hour < n:
-            return "dawn"
-        if n <= hour < night:
-            return "dusk" if int(hour) == sunset else "day"
-        return "night"
+    def background(self, file=None):
+        """The picked scene frame (or None).  `file` overrides the pick for
+        special rooms -- the tournament arena, adventure roads, town events.
+        Backgrounds are one-frame cosmetics now (the Great Simplification):
+        no time-of-day, no weather, no habitat."""
+        key = file if file is not None else self.bg_current
+        sheet = data.load_backgrounds().get(key)
+        return sheet[0] if sheet else None
 
-    @property
-    def is_daytime(self):
-        return self.day_phase in ("dawn", "day")
+    def owns_background(self, key):
+        return key in bgs_mod.FREE or key in self.bg_owned
 
-    @property
-    def season(self):
-        return wx.season_for_day(int(self.world_seconds // DAY_LENGTH))
+    def buy_background(self, key):
+        if key not in bgs_mod.CATALOG:
+            return "?"
+        if self.owns_background(key):
+            return f"You already own {bgs_mod.name(key)}."
+        if not self.spend_bits(bgs_mod.price(key)):
+            return "Not enough bits."
+        self.bg_owned = sorted(set(self.bg_owned) | {key})
+        self.bg_current = key                     # buying a new scene hangs it up
+        return f"Bought {bgs_mod.name(key)}!"
 
-    @property
-    def ideal_temp(self):
-        return data.load_requirements().get(self.num, {}).get("ideal_temp", (40, 60))
-
-    def habitat_obj(self):
-        habs = data.load_habitats()
-        return habs.get(self.habitat) or habs.get(0) or next(iter(habs.values()))
-
-    def background(self, habitat_id=None, file=None):
-        """The habitat background frame for the current weather/time (or None).
-        habitat_id overrides the home -- adventure shows the ZONE's scenery;
-        file overrides the sheet entirely (BackgroundAnim checkBack's special
-        rooms: the tournament/PvP arena) while keeping the same time/weather
-        frame pick and tint."""
-        if file is not None:
-            key = file
-        else:
-            h = (data.load_habitats().get(habitat_id) if habitat_id is not None
-                 else self.habitat_obj()) or {}
-            key = h.get("bg", "")
-        frames = data.load_backgrounds().get(key)
-        if not frames:
-            return None
-        ph = self.day_phase
-        # a clouded dark-sky phase (dawn/dusk/night) wears the sheet's derived
-        # overcast frame -- the shipped overcast frame is drawn day-bright and
-        # made every cloudy night look like noon, and a cloudy dawn/dusk
-        # showed a clean sunrise (background rebuild 2026-07-15).  Cloudy
-        # shows it bare; rain/snow lay their theme gloom + the canon phase
-        # cast on it (without the night deepening a snow night washed out
-        # pale-gray).  Sheets with no open sky (City, Underwater) return None
-        # and keep the classic pick.
-        if ph != "day" and len(frames) > 4 and (
-                self.weather == "Cloudy" or self.weather in _PRECIP):
-            nc = theme.night_cloud_frame(key, frames, ph)
-            if nc is not None:
-                nc = theme.ember_frame(key, frames, nc, ("nc", ph),
-                                       self.world_seconds)
-                return nc if self.weather == "Cloudy" else \
-                    theme.weather_tint(nc, self.weather, ph)
-        if self.weather in _PRECIP and len(frames) > 4:
-            idx = 4
-        else:
-            idx = {"dawn": 0, "day": 1, "dusk": 2, "night": 3}.get(ph, 1)
-        if ph == "night" and self.weather == "Clear" and len(frames) > 4:
-            # a CLEAR night shimmers: the stars twinkle on a slow beat (the
-            # arena dissolve softens each step).  Clear carries no tint, so
-            # the derived frame returns bare; starless sheets fall through.
-            tw = theme.star_frame(key, frames, self.world_seconds)
-            if tw is not None:
-                return theme.ember_frame(
-                    key, frames, tw,
-                    ("tw", theme.tw_beat(self.world_seconds)),
-                    self.world_seconds)
-        idx = min(idx, len(frames) - 1)
-        fr = frames[idx]
-        if len(frames) > 4:
-            # the lava breathes under EVERY sky (Volcano's flow is
-            # self-luminous night and day; a no-flow sheet passes through)
-            fr = theme.ember_frame(key, frames, fr, ("f", idx),
-                                   self.world_seconds)
-        return theme.weather_tint(fr, self.weather, ph)
-
-    def _affinity(self):
-        """Net Field/Element fit with the current home: +compatible, -incompatible."""
-        h = self.habitat_obj()
-        f, e = self.field, self.element
-        compat = (f in h["compat_fields"]) + (e in h["compat_elements"])
-        incompat = (f in h["incompat_fields"]) + (e in h["incompat_elements"])
-        return compat - incompat
-
-    def major_habitat(self):
-        """DVPet getMajorHabitat: the habitat lived in the MOST (evolution gates on this,
-        not the current home). Falls back to the current habitat early on / on ties."""
-        rec = self.habitat_record
-        if not rec:
-            return self.habitat
-        return max(rec, key=lambda hid: (rec[hid], hid == self.habitat))
-
-    def _track_time_pref(self, dt):
-        """The pet warms to the times of day it spends happy in, and sours on
-        the rest (DVPet's timeRanks).  One step per GAME-MINUTE: the old
-        per-SECOND drift saturated a phase to -90 within 90s of sadness and
-        poisoned the whole clock -- disliked-hour drains then kept the pet
-        unhappy, souring MORE hours (the misbehaving ratchet; Joel's Devimon
-        hated all four phases at -60..-90, 2026-07-05).  A neutral-mood minute
-        drifts the current phase back toward 0, so a scarred clock heals."""
-        self._time_pref_t = getattr(self, "_time_pref_t", 0.0) + dt
-        if self._time_pref_t < 60.0:
-            return
-        self._time_pref_t -= 60.0
-        ph = self.day_phase
-        cur = self.time_pref.get(ph, 0)
-        if self.mood >= MIN_HAPPY_MOOD:
-            d = 1
-        elif self.mood <= MIN_UNHAPPY_MOOD:
-            d = -1
-        else:
-            d = 1 if cur < 0 else (-1 if cur > 0 else 0)   # neutral: mend toward 0
-        if d:
-            self.time_pref[ph] = _clamp(cur + d, -90, 90)
+    def pick_background(self, key):
+        if key not in bgs_mod.CATALOG:
+            return "?"
+        if not self.owns_background(key):
+            return "You don't own that scene."
+        self.bg_current = key
+        return f"{bgs_mod.name(key)} it is."
 
     def _disposition(self):
         return self.disposition          # DVPet _disposition: fixed personality trait
@@ -2073,124 +1948,11 @@ class Pet:
         rst = self._restless()
         return trio[0 if rst == 0 else (1 if rst == 1 else 2)]
 
-    # digimon.csv Time{Preference,Aversion} words -> tuipet day phases (the
-    # species seeds; ~97% of the dex carries them.  No "dusk" seed exists)
-    _TIME_WORD = {"Morning": "dawn", "Noon": "day", "Night": "night"}
-
-    def seed_time_pref(self):
-        """Bias the time ledger by the SPECIES seeds (+2 preference / -2
-        aversion), the exact rule the taste-seed comment documents -- the
-        columns were parsed-or-dropped but never consumed, so a nocturnal
-        species hatched with no clock personality at all (audit 2026-07-13).
-        A bias on the CURRENT values, not an overwrite: an evolved pet keeps
-        its emergent opinions, nudged by the new form's nature."""
-        r = self._phys()
-        fav = self._TIME_WORD.get(r.get("time_pref", "None"))
-        bad = self._TIME_WORD.get(r.get("time_aversion", "None"))
-        if fav:
-            self.time_pref[fav] = _clamp(self.time_pref.get(fav, 0) + 2, -90, 90)
-        if bad and bad != fav:
-            self.time_pref[bad] = _clamp(self.time_pref.get(bad, 0) - 2, -90, 90)
-
-    def favorite_time(self):
-        return max(self.time_pref, key=self.time_pref.get) if any(self.time_pref.values()) else None
-
-    def disliked_time(self):
-        return min(self.time_pref, key=self.time_pref.get) if any(v < 0 for v in self.time_pref.values()) else None
-
-    def _update_weather(self, dt):
-        hab = self.habitat_obj()
-        lo_i, hi_i = self.ideal_temp
-        if hab["weather_chance"] <= 0:        # climate-controlled home (Hard Disk)
-            self.weather = "Clear"
-            target = self.day_temp = (lo_i + hi_i) / 2
-        else:
-            day = int(self.world_seconds // DAY_LENGTH)
-            if getattr(self, "_weather_day", -1) != day:
-                self._weather_day = day
-                lo, hi = hab["temps"][self.season]
-                self.day_temp = random.randint(min(lo, hi), max(lo, hi))
-            self._weather_t = getattr(self, "_weather_t", 0.0) + dt
-            if self._weather_t >= wx.WEATHER_CHECK_SEC:
-                self._weather_t = 0.0
-                self.weather = wx.next_weather(self.weather, self.season,
-                                               self.day_temp, hab,
-                                               feel_temp=self.temp)
-            target = wx.adjusted_day_temp(self.day_temp, self.weather, self.day_phase, hab)
-        # DVPet checkEveryTemp gates the WHOLE temperature lapse -- the drift
-        # toward the day's target AND checkTemp's sick fever/chill swings --
-        # behind !pauseTemp() (futon audit 2026-07-13).  The Futon "maintains
-        # temperature": it PINS temp where it is (items.csv Temp=0 -- it never
-        # warms a cold pet) while weather keeps rolling overhead.
-        if self.pause_temp():
-            return
-        # canon checkTemp: an armed THERMOSTAT (setTempGoal, the draggable
-        # temperature readout in DVPet) overrides the weather drift; the goal
-        # CLEARS on arrival and the weather takes back over -- heating the
-        # room is an act of care, not set-and-forget (rebuild 2026-07-14:
-        # this is the canonical answer to a cold pet, not the futon)
-        if self.temp_goal <= wx.MAX_TEMP:
-            if self.temp < self.temp_goal:
-                self.temp = min(self.temp_goal, self.temp + wx.TEMP_RATE * dt)
-            elif self.temp > self.temp_goal:
-                self.temp = max(self.temp_goal, self.temp - wx.TEMP_RATE * dt)
-            else:
-                self.temp_goal = wx.MAX_TEMP + 1.0   # reached -> weather resumes
-        elif self.temp < target:
-            self.temp = min(target, self.temp + wx.TEMP_RATE * dt)
-        elif self.temp > target:
-            self.temp = max(target, self.temp - wx.TEMP_RATE * dt)
-        # checkTemp's fever/chills (canon re-audit 2026-07): a SICK pet's
-        # temperature lurches -- 1% chill (-30) / 1% fever (+30) per check
-        if self.sick:
-            i = random.randrange(SICK_TEMP_DEC_CHANCE)
-            if i == 1:
-                self.temp = max(0, self.temp - SICK_TEMP_SWING)
-            elif i == 2:
-                self.temp = min(wx.MAX_TEMP, self.temp + SICK_TEMP_SWING)
-
     def _set_xantibody(self, state):
         """Raise the X-Antibody state (never downgrades except by expiry)."""
         if _XA_ORDER[state] > _XA_ORDER.get(self.x_antibody, 0):
             self.x_antibody = state
         self.x_count = X_COUNT_MAX if self.x_antibody == "Temporary" else 0.0
-
-    def buy_habitat(self, hid):
-        habs = data.load_habitats()
-        h = habs.get(hid)
-        if not h:
-            return "?"
-        if hid in self.habitats:
-            return f"You already own {h['name']}."
-        if not self.spend_bits(h["price"]):
-            return "Not enough bits."
-        self.habitats = sorted(set(self.habitats) | {hid})
-        self.habitat = self.home_habitat = hid   # buying a new home moves you in
-        self._arrive_weather()             # canon transitionWeather, like move_to
-        return f"Bought {h['name']} — moved in!"
-
-    def move_to(self, hid):
-        habs = data.load_habitats()
-        h = habs.get(hid)
-        if not h:
-            return "?"
-        if hid not in self.habitats:
-            return "You don't own that habitat."
-        self.habitat = self.home_habitat = hid
-        self._arrive_weather()            # canon setCurrentHabitat -> transitionWeather
-        return f"Moved to {h['name']}."
-
-    def _arrive_weather(self):
-        """Canon setCurrentHabitat: arriving somewhere new re-rolls the day
-        temperature (setDayTemp) and re-derives the sky from the old one
-        (transitionWeather) -- the previous home's blizzard doesn't ride
-        along verbatim (weather audit 2026-07-15)."""
-        hab = self.habitat_obj()
-        self._weather_day = int(self.world_seconds // DAY_LENGTH)
-        lo, hi = hab["temps"][self.season]
-        self.day_temp = random.randint(min(lo, hi), max(lo, hi))
-        self.weather = wx.transition_weather(self.weather, hab, self.season,
-                                             self.day_temp, feel_temp=self.temp)
 
     def _effect_energy_gain(self):
         """PhysicalState.getEffectEnergyGain: an ACTIVE care effect's energy
@@ -2242,55 +2004,6 @@ class Pet:
             return False
         eff = data.load_care_effects().get(self.effect_id)
         return bool(eff and eff["pause_call"])
-
-    def set_temp_goal(self, t):
-        """PhysicalState.setTempGoal: arm the room thermostat.  Out-of-range
-        values are IGNORED (canon guards, not clamps); the drift toward the
-        goal runs at the same 1°/game-min lapse as weather (checkTemp)."""
-        if 0 <= t <= wx.MAX_TEMP:
-            self.temp_goal = float(t)
-
-    def clear_temp_goal(self):
-        """Thermostat off (canon: releasing the drag at the current temp, or
-        the goal clearing itself on arrival) -- weather drift resumes."""
-        self.temp_goal = wx.MAX_TEMP + 1.0
-
-    def heat_on(self):
-        """An armed thermostat (the HUD shows 48→62°)."""
-        return self.temp_goal <= wx.MAX_TEMP
-
-    def pause_temp(self):
-        """PhysicalState.pauseTemp: an active care effect with PauseTemp (the
-        Futon) pins the temperature in place."""
-        if self.effect_id < 0:
-            return False
-        eff = data.load_care_effects().get(self.effect_id)
-        return bool(eff and eff["pause_temp"])
-
-    def _temperature_effects(self, dt):
-        # canon checkIdealTempMoodChange is NOT gated by pauseTemp: the futon
-        # pins the temperature DRIFT (checkEveryTemp), it does not insulate.
-        # A pet tucked in cold stays unhappily cold until the room is warmed
-        # -- thermostat, hot food, a Bath (system rebuild 2026-07-14, Joel:
-        # "futons aren't supposed to be the go-to if the mon is cold";
-        # supersedes the 07-13 "fully insulated" call, which had made the
-        # futon the de-facto cold cure).
-        lo, hi = self.ideal_temp
-        aff = self._affinity()                # compatible home helps, incompatible hurts
-        too_hot = self.temp >= hi + wx.UPPER_IDEAL
-        too_cold = self.temp <= lo - wx.LOWER_IDEAL
-        self._comfort_t = getattr(self, "_comfort_t", 0.0) + dt
-        if self._comfort_t >= wx.IDEAL_TEMP_MOOD_SEC:
-            self._comfort_t = 0.0
-            if lo <= self.temp <= hi:
-                self._set_mood(self.mood + wx.IDEAL_TEMP_INC + aff)
-            elif too_hot or too_cold:
-                self._set_mood(self.mood - wx.IDEAL_TEMP_DEC + aff)
-        # bad-temperature sickness is DISABLED in classic mode (SickChanceBadTemp=0),
-        # and so is the incompatible-habitat sick check (checkIncompatibleHabitat:
-        # Incompatible{Field,Element}SickChance are BOTH 0 in the classic column) --
-        # an unfit home hurts through longer sick/injury/fatigue spells, the missed
-        # energy saves and the fatigue odds, never through direct illness.
 
     def save_from_death(self):
         """PhysicalState.saveFromDeath: yanked back from the brink -- starving,
@@ -2427,36 +2140,6 @@ class Pet:
         if target is not None:
             self.evolve_to(target)
 
-    def _apply_egg_habitat(self):
-        """Show the destined habitat as soon as the egg is chosen (DVPet)."""
-        for t in egg_mod.hatch_targets(self.egg_type):
-            h = data.natural_habitat(t)
-            if h >= 0:
-                self.habitat = self.home_habitat = h
-                if h not in self.habitats:
-                    self.habitats = sorted(set(self.habitats) | {h})
-                return
-
-    def _apply_natural_habitat(self):
-        """Move HOME to this species' natural habitat (digimon.csv Habitat) so
-        each Digimon shows its own background. -1 = no preference -> keep
-        current.  (tuipet design: evolution grants the natural home free --
-        canon's habitat SHOP is provably dead, so tuipet's buy/move economy
-        plus this grant IS the habitat system's agency.)"""
-        hr = data.natural_habitat(self.num)
-        if hr is not None and hr >= 0:
-            self.habitat = self.home_habitat = hr
-            if hr not in self.habitats:
-                self.habitats = sorted(set(self.habitats) | {hr})
-
-    def go_home_habitat(self):
-        """setCurrentHabitat(home): back from the road -- the CURRENT habitat
-        returns to the owned home (habitat audit 2026-07-06)."""
-        if self.home_habitat >= 0 and self.habitat != self.home_habitat:
-            self.habitat = self.home_habitat
-            self._arrive_weather()                 # canon transitionWeather back home
-
-    # ---- DNA (DVPet DNA.class) -------------------------------------------
     def highest_dna(self):
         """DNA.getHighestDNA: the CHARGED field with the strict maximum -- a tie
         (or nothing charged) yields none (the caller falls back to the field)."""
@@ -2771,7 +2454,6 @@ class Pet:
         self.stage, self.attribute = r["stage"], r["attribute"]
         self.field = r.get("field", self.field)
         self.element = r.get("element", self.element)
-        self._apply_natural_habitat()
         _req = data.load_requirements().get(num, {})
         self.max_energy = _req.get("max_energy", self.max_energy)
         self._sleep_energy_gain = _req.get("sleep_energy_gain", 3)
@@ -2783,15 +2465,12 @@ class Pet:
     def evolve_to(self, num):
         was_young = self.stage in ("Egg", "Fresh", "InTraining", "Rookie")
         _req = self._become(num)
-        self.seed_time_pref()          # the new form's clock nature biases the ledger
         # Evolution.java's per-stage ARRIVAL setters (egg/hatch audit
         # 2026-07-06 -- none of these were ported; the missing fresh()
         # obedience 75 was the deepest root of the misbehaving-babies era):
         if self.stage == "Fresh":
             # fresh(): born TRUSTING (obedience 75) but grumpy (-10 mood),
             # hungry, full of energy, with a starter nutrition base 6/6/6
-            lo, hi = self.ideal_temp
-            self.temp = (lo + hi) // 2
             self._set_mood(FRESH_MOOD)
             self._set_obedience(FRESH_OBEDIENCE)
             self.strength = 0
@@ -3027,46 +2706,9 @@ class Pet:
             self._set_obedience(self.obedience - (NEGATIVE_ENERGY_OBEDIENCE_DEC - raw))
             if not self.is_injured():
                 self._fatigue()                  # canon fatigue(false)
-        if raw < self.energy:
-            raw = self._energy_bonus_save(raw)   # checkEnergyIncFromPerfectConditions
         if raw < -self.max_energy:
             self._burn_life(MIN_ENERGY_LIFE_PENALTY)     # setEnergy's floor penalty
         self.energy = _clamp(raw, -self.max_energy, self.max_energy)
-
-    def _nice_weather(self):
-        """checkNiceWeather: DeepSaver/Water pets love the rain, cold-blooded
-        (freezing ideal) or Ice pets love the snow."""
-        import tuipet.weather as wx_
-        if self.weather in wx_.RAIN:
-            return self.field == "DeepSaver" or self.element == "Water"
-        if self.weather in wx_.SNOW:
-            return self.ideal_temp[0] <= wx.FREEZING_TEMP or self.element == "Ice"
-        return False
-
-    def _energy_bonus_save(self, new):
-        """An energy drop during the pet's FAVOURITE time can bounce back +1
-        when conditions are perfect: good weather / mood / temp / nutrition and
-        a compatible home each shrink the roll range (best case ~1 in 2)."""
-        if self.favorite_time() != self.day_phase:
-            return new
-        h = self.habitat_obj()
-        rng = ENERGY_BONUS_BASE
-        rng += ENERGY_BONUS_COMPAT_F if self.field in h["compat_fields"] else 0
-        rng += ENERGY_BONUS_COMPAT_E if self.element in h["compat_elements"] else 0
-        rng += ENERGY_BONUS_INCOMPAT_F if self.field in h["incompat_fields"] else 0
-        rng += ENERGY_BONUS_INCOMPAT_E if self.element in h["incompat_elements"] else 0
-        if self.weather in ("Clear", "Cloudy") or self._nice_weather():
-            rng += ENERGY_BONUS_WEATHER
-        if self.current_mood() == "Happy":
-            rng += ENERGY_BONUS_MOOD
-        lo, hi = self.ideal_temp
-        if lo <= self.temp <= hi:
-            rng += ENERGY_BONUS_TEMP
-        if self.good_nutrition():
-            rng += ENERGY_BONUS_NUTRITION
-        if rng > 1 and random.randrange(rng) == 1:
-            new += 1
-        return new
 
     def energy_pct(self):
         return max(0, self.energy) * 100 // self.max_energy if self.max_energy else 0
@@ -3260,16 +2902,6 @@ class Pet:
             return                                   # no home idles on the road
         if self.discipline_call:                     # Tantrum: the fit plays out
             self._set_anim("tantrum", 2.0)
-            return
-        if self.weather in _RAIN or self.weather in _SNOW:
-            rain = self.weather in _RAIN
-            # checkNiceWeather: a DeepSaver/Water pet LOVES rain; an Ice or
-            # cold-adapted one (ideal floor <= freezing) loves snow -- the
-            # happy bounce instead of the misery poses
-            nice = (((self.field == "DeepSaver" or self.element == "Water") and rain)
-                    or ((self.element == "Ice"
-                         or self.ideal_temp[0] <= wx.FREEZING_TEMP) and not rain))
-            self._set_anim("happy" if nice else ("shield" if rain else "huddle"), 2.0)
             return
         # the personality idles: canon gates -- energy >= max/3, spirit >= 0,
         # effort <= limit/2, not unwell (and the TIER, not raw mood)
@@ -3518,12 +3150,6 @@ class Pet:
             self.lifespan = max(0.0, self.lifespan + scaled("seconds") / 60.0)
         if food.get("sleep_lapse"):                         # bedtime nudge (Hot Milk)
             self.sleep_lapse = max(0.0, self.sleep_lapse + scaled("sleep_lapse"))
-        if food.get("pref_temp"):                           # changeToPrefTemp: snap to
-            lo_i, hi_i = self.ideal_temp                    # the comfort midpoint
-            self.temp = (lo_i + hi_i) / 2
-        t = food.get("temp", 0)
-        if t and 0 <= self.temp + t <= 100:                 # MaxTemp guard, verbatim
-            self.temp += math.ceil(t * modifier) if t > 0 else t
         self._set_weight(self.weight + math.ceil(food.get("weight", 1) * modifier))   # modifier-scaled, like canon
         # every meal advances the bowel gauge (applyFood: bmGauge += bmLapseInc
         # + ceil(food.BMGauge x modifier)): EVERY meal adds one lapse-worth on
@@ -3609,7 +3235,6 @@ class Pet:
         DVPet. Training a non-favored attribute costs a little mood
         (DVPet NoneTrainingAttributeMoodRankChange).
         """
-        self.train_time = _dvpet_time(self.day_phase)
         self._calm_discipline_call()                      # exercise() placates the tantrum
         self.exercise_today += 1                          # DVPet _exercise (incExerciseTime)
         self.stage_trainings += 1                         # LINES_SPEC TR gate: every attempt counts (Pen20)
@@ -3681,17 +3306,6 @@ class Pet:
                                      + (ENTH_DISLIKE_FORCED if complied else 0))
             else:
                 self._set_enthusiasm(self.enthusiasm - 2)  # ExerciseNotFavAttributeEnthusiasmDec
-        # checkExerciseTime: drilling at the pet's favourite time of day lifts it,
-        # at the disliked time it drags; any other hour still costs a little mood
-        now = self.day_phase
-        if self.favorite_time() == now:
-            self._set_mood(self.mood + FAV_EXERCISE_TIME_MOOD)
-            self._set_enthusiasm(self.enthusiasm + FAV_EXERCISE_TIME_ENTH)
-        elif self.disliked_time() == now:
-            self._set_mood(self.mood - NOTFAV_EXERCISE_TIME_MOOD)
-            self._set_enthusiasm(self.enthusiasm + DISLIKED_TIME_EXERCISE_ENTH)
-        else:
-            self._set_mood(self.mood - NOTFAV_EXERCISE_TIME_MOOD)
         self._set_mood(self.mood + self.enthusiasm)       # exercise(): mood rides the spirit
         # checkWorseSick(ExerciseWorseSickChance): drilling a SICK pet can worsen it --
         # and if it only trained because you spent its compliance, it resents you
@@ -3710,12 +3324,7 @@ class Pet:
         # limit, so the 3->4 push that FILLS the gauge rolls too (training
         # audit 2026-07-06; the old >= 4 missed it).  Win or lose.
         if strength0 >= 3:
-            h = self.habitat_obj()
             chance = GOOD_NUTRITION_FATIGUE_CHANCE if self.good_nutrition() else FATIGUE_CHANCE
-            chance += FATIGUE_COMPAT_CHANGE * ((self.field in h["incompat_fields"])
-                                               + (self.element in h["incompat_elements"])
-                                               - (self.field in h["compat_fields"])
-                                               - (self.element in h["compat_elements"]))
             if random.randrange(100) < chance:
                 # the 3-arg fatigue: the drill that broke it sours + the forced push
                 self._fatigue(complied, attr)
@@ -3928,14 +3537,7 @@ class Pet:
         else:
             mood_factor = (self.mood / OBEDIENCE_MOOD_MOD) * ((1 - base) if self.mood < 0 else base)
         energy_ratio = (self.energy / self.max_energy if self.max_energy else 0.0) * 24.0
-        now = self.day_phase
-        if self.favorite_time() == now:
-            time_factor = OBEDIENCE_TIME_MOD
-        elif self.disliked_time() == now:
-            time_factor = -OBEDIENCE_TIME_MOD
-        else:
-            time_factor = 0.0
-        time_factor *= base
+        time_factor = 0.0
         unwell = self.sick or self.is_injured() or self.is_fatigued()   # isSick||isInj||isFatigued
         unwell_factor = (REFUSE_UNWELL_SICK if unwell else 0.0) * (1 - base)
         # canon re-audit 2026-07: DVPet's `_exercise` here is the EFFORT GAUGE
@@ -4109,17 +3711,10 @@ class Pet:
         return self.stage in ("Ultimate", "Mega") and self.care_mistakes >= 3
 
     def is_freezing(self):
-        """Too cold: temperature at or below the freezing threshold.  The
-        badge tells the TRUTH -- a pet under the futon in a cold room is
-        still cold, because the futon only PINS temperature (rebuild
-        2026-07-14, supersedes the 07-13 insulation call).  The fix is
-        WARMTH: the habitat thermostat, hot food, a Bath."""
-        return self.temp <= wx.FREEZING_TEMP
+        return False        # temperature retired (the Great Simplification)
 
     def is_overheating(self):
-        """Too hot: temperature above the ideal band's upper bound (same
-        truth-telling rule as is_freezing)."""
-        return self.temp >= self.ideal_temp[1] + wx.UPPER_IDEAL
+        return False        # temperature retired (the Great Simplification)
 
     def _sicken(self):
         """PhysicalState.sicken: fall ill for MinSickLength..MaxSickLength recovery lapses;
@@ -4130,13 +3725,8 @@ class Pet:
         self.sick_count += 1
         self._burn_life(SICK_LIFE_DEC)          # sicken(): every illness costs life
         self.sick_length = random.randint(MIN_SICK_LENGTH, MAX_SICK_LENGTH) * SICK_LAPSE_MIN
-        self.sick_length = max(SICK_LAPSE_MIN, self.sick_length - self._affinity() * SICK_LAPSE_MIN)
         self._set_mood(self.mood - SICK_MOOD_DEC)
         self._set_enthusiasm(self.enthusiasm + SICK_ENTH_CHANGE)
-        # canon sours the HOUR it fell ill in (timeRanks -RankChangeSick),
-        # mapped onto the tuned time ledger's +-90 scale
-        ph = self.day_phase
-        self.time_pref[ph] = _clamp(self.time_pref.get(ph, 0) - RANK_TIME_SICK, -90, 90)
 
     def _worsen_sick(self):
         """PhysicalState.checkWorseSick (effect body): an already-sick pet gets worse --
@@ -4148,11 +3738,6 @@ class Pet:
         self._set_mood(self.mood + WORSE_MALADY_MOOD_DEC)
         self._set_enthusiasm(self.enthusiasm + SICK_ENTH_CHANGE)  # WorseSickEnthusiasmChange == -1
         self.sick_length += SICK_LAPSE_MIN                        # setSickLength(_sickLength + 1) = +1 lapse
-        # canon checkWorseSick also sours the HOUR it worsened in (timeRanks
-        # dec RankChangeSick) -- the fresh _sicken already did; the worsening
-        # was missing it (training audit 2026-07-15)
-        ph = self.day_phase
-        self.time_pref[ph] = _clamp(self.time_pref.get(ph, 0) - RANK_TIME_SICK, -90, 90)
         self._start_poop()
 
     def _injure(self):
@@ -4162,7 +3747,6 @@ class Pet:
         self.injuries += 1
         self._burn_life(INJURY_LIFE_DEC)
         rolled = random.randint(MIN_INJ_LENGTH, MAX_INJ_LENGTH) * INJ_LAPSE_MIN
-        rolled = max(INJ_LAPSE_MIN, rolled - self._affinity() * INJ_LAPSE_MIN)   # habitat-compat length mod
         self.inj_length = max(self.inj_length, rolled)
         self._set_mood(self.mood - INJ_MOOD_DEC)
         self._set_enthusiasm(self.enthusiasm + INJ_ENTH_CHANGE)
@@ -4170,8 +3754,6 @@ class Pet:
         # saps a bar -- inj_length is already set, so the red-energy fatigue
         # trigger's !isInj guard holds like canon's
         self._set_energy(self.energy - INJURY_ENERGY_DEC)
-        ph = self.day_phase                                # timeRanks -RankChangeInjury
-        self.time_pref[ph] = _clamp(self.time_pref.get(ph, 0) - RANK_TIME_SICK, -90, 90)
 
     def has_vitamin(self):
         """PhysicalState.hasVitamin: a vitamin is active, guarding against worse injuries."""
@@ -4215,20 +3797,12 @@ class Pet:
         self._set_enthusiasm(self.enthusiasm + WORSE_INJ_ENTH_CHANGE)
         self.inj_length += INJ_LAPSE_MIN         # +1 lapse, exactly
         self._set_energy(self.energy - WORSE_INJ_ENERGY_DEC)
-        ph = self.day_phase                      # timeRanks dec RankChangeInjury
-        self.time_pref[ph] = _clamp(self.time_pref.get(ph, 0) - RANK_TIME_SICK, -90, 90)
         if attr in self._ATTR3:
             self._dec_attr_rank(attr, RANK_WORSE_INJ_ATTR
                                 + (RANK_WORSE_INJ_FORCED if complied else 0))
 
     def _compat_inj_change(self):
-        """getCompatibilityInjChange: the home shifts injury odds +-1 per axis
-        (a compatible field/element = sturdier)."""
-        h = self.habitat_obj()
-        return ((self.field in h["incompat_fields"])
-                + (self.element in h["incompat_elements"])
-                - (self.field in h["compat_fields"])
-                - (self.element in h["compat_elements"]))
+        return 0             # habitat compatibility retired (the Great Simplification)
 
     def _inj_matrix_roll(self, table, bound, inj_chance):
         """The shared weight x vitamin injury matrix (checkExerciseInj /
@@ -4314,12 +3888,7 @@ class Pet:
         home (+-5/axis, compatible = safer) and old age (-25 = frailer)."""
         if self.sick or target <= 0:
             return False
-        h = self.habitat_obj()
         bound = (SICK_CHANCE_BOUND
-                 + SICK_COMPAT_CHANGE * ((self.element in h["compat_elements"])
-                                         + (self.field in h["compat_fields"])
-                                         - (self.field in h["incompat_fields"])
-                                         - (self.element in h["incompat_elements"]))
                  - (SICK_GERIATRIC_FACTOR if self.is_geriatric else 0))
         if random.randrange(max(1, bound)) < target:
             self._sicken()
@@ -4349,17 +3918,13 @@ class Pet:
         audit documented: the same constant DECS the attr ledger but ADDS to
         moodRank, a canon slip that would make failure breed a happier adult.)"""
         already = self.is_fatigued()
-        # timeRanks dec RankChangeFatigue: the collapse sours the hour it
-        # happened in (raw onto the tuned +/-90 scale, like the sicken sours)
-        ph = self.day_phase
-        self.time_pref[ph] = _clamp(self.time_pref.get(ph, 0) - RANK_CHANGE_FATIGUE, -90, 90)
         # checkWorseSick(50) -- and if it only pushed itself because you spent
         # its compliance, it resents you
         if self._check_worse_sick(FATIGUE_WORSE_SICK_CHANCE) and complied:
             self._set_obedience(self.obedience + OBEDIENCE_CHANGE_SICK_FORCED)
         # length: randomBetween(min, max + habitat change) -- compat shrinks the
         # ceiling, incompat raises it (canon change == -affinity)
-        span = random.randint(FATIGUE_MIN, max(FATIGUE_MIN, FATIGUE_MAX - self._affinity()))
+        span = random.randint(FATIGUE_MIN, FATIGUE_MAX)
         self.mistake_day += 1                    # FatigueMissedDay (both branches)
         if already:                              # re-fatigued while down: it ADDS ON
             self.fatigue_length += span
@@ -5028,13 +4593,6 @@ class Pet:
         if e.get("effect_id", -1) >= 0:                 # Futon: lay out a temporary care buff
             eff = data.load_care_effects().get(e["effect_id"])
             if eff:
-                if e.get("pref_temp"):
-                    # changeToPrefTemp precedes startEffect (canon
-                    # applyConsumable): the Futon tucks the room to the
-                    # comfort midpoint, then PauseTemp HOLDS it (restored to
-                    # canon on Joel's call 2026-07-15)
-                    lo_i, hi_i = self.ideal_temp
-                    self.temp = (lo_i + hi_i) / 2
                 self.effect_id = e["effect_id"]
                 self.effect_t = float(eff["duration"])
                 self._eff_acc = 0.0
@@ -5124,17 +4682,6 @@ class Pet:
             # feed() applies -- the raw add made a bag-used Gold Pill 60x
             # stronger than an eaten one (audit 2026-07-13)
             self.lifespan = max(0.0, self.lifespan + e["seconds"] / 60.0)
-        if e.get("pref_temp"):
-            # changeToPrefTemp (canon applyConsumable): the Futon tucks the
-            # room to the pet's comfort midpoint -- then its PauseTemp effect
-            # HOLDS it there.  Restored to canon on Joel's call 2026-07-15
-            # ("if futons snap to comfort temp in canon, then switch it back").
-            lo_i, hi_i = self.ideal_temp
-            self.temp = (lo_i + hi_i) / 2
-        if e.get("temp"):
-            new_temp = self.temp + e["temp"]             # DVPet applies only if it stays in range
-            if 0 <= new_temp <= wx.MAX_TEMP:             # config MaxTemp=100, floor 0
-                self.temp = new_temp
         if e.get("sleep") and not self.asleep:
             self._fall_asleep()                          # DVPet item Sleep flag: a REAL sleep
                                                          # (limits sized, lights latch reset)
@@ -5172,7 +4719,8 @@ class Pet:
             return "starving"
         if self.poop >= 3:
             return "needs cleaning"
-        if self.day_phase == "night" and not self.asleep and self.energy < self.max_energy // 2:
+        if (self._in_sleep_window() and not self.asleep
+                and self.energy < self.max_energy // 2):
             return "sleepy"
         if self.scold_flag:
             return "misbehaving"

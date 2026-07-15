@@ -104,29 +104,4 @@ def test_sick_drill_can_worsen():
     assert worsened
 
 
-def test_fav_time_drill_lifts_mood():
-    p = _pet(calories=CALORIE_LIMIT, enthusiasm=0)
-    p.time_pref = {ph: 0 for ph in p.time_pref}
-    p.time_pref[p.day_phase] = 50                   # NOW is its favourite time
-    m0 = p.mood
-    p.apply_training(3, 100, game="hp")
-    assert p.mood > m0                              # FavExerciseTimeMoodInc wins
 
-
-def test_time_pref_moves_per_game_minute_and_heals():
-    """The misbehaving ratchet (2026-07-05): per-SECOND souring saturated a
-    phase to -90 in 90s and the disliked-hour drains locked the spiral.  One
-    step per game-minute now, and neutral minutes mend the clock toward 0."""
-    from tuipet.pet import MOOD_MIN
-    p = _pet()
-    p.world_seconds = 10 * 60.0
-    ph = p.day_phase
-    p.mood = MOOD_MIN                              # miserable
-    for _ in range(90):
-        p._track_time_pref(1.0)
-    assert p.time_pref[ph] == -1                   # one game-minute = ONE step
-    p.time_pref[ph] = -60                          # a scarred save (Joel's shape)
-    p.mood = 50                                    # merely neutral
-    for _ in range(60 * 30):
-        p._track_time_pref(1.0)
-    assert p.time_pref[ph] == -30                  # the clock heals at neutral

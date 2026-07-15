@@ -82,13 +82,6 @@ def test_dead_pet_and_egg_hand_off_without_ceremony():
 
 # ---- weather is explained ---------------------------------------------------------
 
-def test_help_has_a_weather_section():
-    text = " ".join(t for t, _ in HELP)
-    assert "WEATHER" in text
-    assert "+hot" in text and "+cold" in text      # names the badge the HUD shows
-    assert "climate-controlled" in text            # ...and the fix
-
-
 # ---- the egg guide is reachable from the picker -------------------------------------
 
 def test_egg_picker_offers_the_guide():

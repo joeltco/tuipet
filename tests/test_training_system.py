@@ -93,15 +93,6 @@ def test_refatigue_adds_on_and_compounds(monkeypatch):
     assert p2.obedience == 100                                  # fresh pays no obedience
 
 
-def test_fatigue_sours_the_hour():
-    """timeRanks dec RankChangeFatigue: the collapse sours the time of day it
-    happened in (raw onto the tuned scale, like the sicken sours)."""
-    p = _pet()
-    ph = p.day_phase
-    before = p.time_pref.get(ph, 0)
-    p._fatigue()
-    assert p.time_pref[ph] == before - RANK_CHANGE_FATIGUE
-
 
 def test_hp_drill_spirit_ladder_sentinel_quirks(monkeypatch):
     """exercise()'s None-attribute enthusiasm ladder, sentinel quirks included:
