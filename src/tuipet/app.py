@@ -281,9 +281,9 @@ class TuiPetApp(App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("THE STARS TWINKLE: on a clear night every habitat's "
-                 "starfield shimmers - each star dips and flares on its own "
-                 "slow beat while the moon holds steady.")
+    WHATS_NEW = ("THE LAVA BREATHES: Volcano's flow now pulses - embers dim "
+                 "to deep red and flare toward white in slow ripples, under "
+                 "every sky from clear noon to a clouded night.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and

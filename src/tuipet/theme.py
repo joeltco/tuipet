@@ -696,10 +696,76 @@ def star_frame(key, frames, world_seconds):
     found = _TW_STARS[key]
     if not found:
         return None
-    beat = int(world_seconds / _TW_STEP) % _TW_BEATS
+    beat = tw_beat(world_seconds)
     if (key, beat) not in _TWINKLE:
         _TWINKLE[(key, beat)] = _build_twinkle(frames, found[0], found[1], beat)
     return _TWINKLE[(key, beat)]
+
+
+def tw_beat(world_seconds):
+    return int(world_seconds / _TW_STEP) % _TW_BEATS
+
+
+# --- the lava ember pulse (background polish 2026-07-15, follow-up to the
+# twinkle) ---------------------------------------------------------------------
+# Lava breathes: the flow's ember pixels dim toward deep red and flare toward
+# yellow-white on a slow ripple.  What counts as lava is decided on the NIGHT
+# frame -- lava is SELF-LUMINOUS, still saturated red-orange in the dark,
+# which is what separates a flow from desert sand and dusk skies (both go
+# dark at night; colour rules alone tagged them all).  The pulse then rides
+# EVERY look of the sheet -- each phase pick, the overcast deck, a twinkle
+# beat -- by re-scaling that frame's own pixels at the ember coordinates.
+_EMBERS = {}                   # sheet key -> [(x, y)] | None
+_EMBER_FR = {}                 # (sheet key, variant tag, beat) -> frame
+_EM_BEATS = 4
+_EM_STEP = 2.6                 # world-sec per beat (off the stars' 2.0 sync)
+_EM_CURVE = (0.8, 1.0, 1.2, 1.0)   # dim -> hold -> flare -> hold
+
+
+def _find_lava(frames):
+    """Ember coordinates: ground-band pixels (bottom 60%) that hold saturated
+    red-orange ON THE NIGHT FRAME.  Fewer than 20 = no flow (a lit window or
+    two must not breathe)."""
+    night = frames[3]
+    W, H = len(night[0]) // 6, len(night)
+    coords = [(x, y) for y in range(int(H * 0.4), H) for x in range(W)
+              for c in (_cell(night, x, y),)
+              if c[0] > 150 and c[0] - c[1] > 60 and c[0] - c[2] > 100]
+    return coords if len(coords) >= 20 else None
+
+
+def _apply_embers(frame, coords, beat):
+    out = list(frame)
+    for x, y in coords:
+        c = _cell(frame, x, y)
+        if c[0] < c[1]:
+            continue               # this look covers the flow here: leave it
+        f = _EM_CURVE[(beat + (x // 3 + y // 3)) % _EM_BEATS]
+        if f == 1.0:
+            continue
+        cell = "%02x%02x%02x" % tuple(
+            int(min(255, c[i] * f)) for i in range(3))
+        out[y] = out[y][:x * 6] + cell + out[y][(x + 1) * 6:]
+    return out
+
+
+def ember_frame(key, frames, frame, tag, world_seconds):
+    """`frame` -- any look of this sheet (a phase pick, the overcast deck, a
+    twinkle beat, named by `tag`) -- with the sheet's lava mid-pulse (built
+    once per look and beat, cached).  Sheets with no flow return it as-is.
+    Scaling clips the flare at white, so hue drifts yellow exactly the way
+    hot lava should."""
+    if key not in _EMBERS:
+        _EMBERS[key] = (_find_lava(frames)
+                        if frames and len(frames) > 4 else None)
+    coords = _EMBERS[key]
+    if not coords:
+        return frame
+    beat = int(world_seconds / _EM_STEP) % _EM_BEATS
+    ck = (key, tag, beat)
+    if ck not in _EMBER_FR:
+        _EMBER_FR[ck] = _apply_embers(frame, coords, beat)
+    return _EMBER_FR[ck]
 
 
 # --- persistence of the chosen theme ---

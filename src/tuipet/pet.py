@@ -1980,6 +1980,8 @@ class Pet:
                 self.weather == "Cloudy" or self.weather in _PRECIP):
             nc = theme.night_cloud_frame(key, frames, ph)
             if nc is not None:
+                nc = theme.ember_frame(key, frames, nc, ("nc", ph),
+                                       self.world_seconds)
                 return nc if self.weather == "Cloudy" else \
                     theme.weather_tint(nc, self.weather, ph)
         if self.weather in _PRECIP and len(frames) > 4:
@@ -1992,8 +1994,18 @@ class Pet:
             # the derived frame returns bare; starless sheets fall through.
             tw = theme.star_frame(key, frames, self.world_seconds)
             if tw is not None:
-                return tw
-        return theme.weather_tint(frames[min(idx, len(frames) - 1)], self.weather, ph)
+                return theme.ember_frame(
+                    key, frames, tw,
+                    ("tw", theme.tw_beat(self.world_seconds)),
+                    self.world_seconds)
+        idx = min(idx, len(frames) - 1)
+        fr = frames[idx]
+        if len(frames) > 4:
+            # the lava breathes under EVERY sky (Volcano's flow is
+            # self-luminous night and day; a no-flow sheet passes through)
+            fr = theme.ember_frame(key, frames, fr, ("f", idx),
+                                   self.world_seconds)
+        return theme.weather_tint(fr, self.weather, ph)
 
     def _affinity(self):
         """Net Field/Element fit with the current home: +compatible, -incompatible."""
