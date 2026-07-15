@@ -465,6 +465,11 @@ class Tournament:
             bits = (0, self._calc_bits() // 3, self._calc_bits() // 2)[min(self.round, 2)]
             self._finish(bits)
             self.champion = False
+            # canon tourneyEnd (SpriteAnim): an ELIMINATED pet leaves with the
+            # praise window open (setIsWon(0) -> setPraise(true)) -- it fought
+            # for you and lost; consoling it is the care (discipline audit
+            # 2026-07-15).  The champion path has no such window.
+            self.pet._open_praise()
             tail = (" +%db" % self.reward_bits) if self.reward_bits else ""
             self.last = "Eliminated in the %s.%s" % (self.round_name, tail)
             return self.last

@@ -3781,7 +3781,11 @@ class Pet:
                 if enemy.get("stage") == "Mega" and source != "pvp":
                     self.mega_kills += 1                 # LINES_SPEC KO6 gate (DMX Stage-VI = Mega)
                     _persist.mega_kills_add(1)           # ...and the lifetime X-egg progress
-            self._open_praise()                          # a win is praiseworthy (setPraise)
+            # (discipline audit 2026-07-15: canon has NO direct battle-win
+            # setPraise -- a win opens the praise window only through SPENT
+            # COMPLIANCE (checkCompliant -> setCompliance true->false), which
+            # ran above.  The old unconditional praise here let free-style
+            # and defiant wins farm praise windows canon never grants.)
             # BattleWonMoodInc + BattleDispositionMoodFactor x disposition:
             # the -5 x dispo shade rides EVERY win/loss, not just orders-won
             self._set_mood(self.mood + 10 + BATTLE_DISPO_MOOD_FACTOR * self.disposition)
