@@ -3,6 +3,10 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.4.4 — 2026-07-15
+
+THE AUDIT PASS: refused items are no longer eaten (your Rev.Floppy is safe), every species truly fires its own attack shape, the monthly ladder finally counts wins, disturbing a sleeper now costs a care mistake (the alarm clock wakes free), hatched and revived pets no longer fast-forward days in a blink, and adventure mode retired. Under the hood: lobby crash fixes, PvP/raid anti-forge clamps, a shop that only sells what works (Spr.Carrot now works), per-meter hunger/strength calls, server hardening, and a big dead-code cleanup.
+
 ## 0.4.3 — 2026-07-15
 
 POLISH PASS: feeding and evolution crashes fixed, every species fires its OWN attack shape, the idle walk and sick poses are right, training strikes a real target, the hatch plays its full crack-and-burst, and each egg previews on its own scene under its own name. The artist credits moved from the Z key to the end of the Help screen.

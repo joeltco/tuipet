@@ -423,8 +423,7 @@ def test_crossed_invites_consume_the_pending_prompt():
 
 def test_battle_and_jogress_are_lobby_only():
     """Design decision (Joel 2026-07-07): battles and jogress are ONLINE-ONLY
-    -- PvE combat lives in adventure/cup, fusion needs a real roster partner.
-    The home screen must expose neither key."""
+    -- fusion needs a real roster partner.  The home screen exposes neither key."""
     from tuipet.app import TuiPetApp
     keys = {b[0] for b in TuiPetApp.BINDINGS}
     amap = {b[0]: b[1] for b in TuiPetApp.BINDINGS}
@@ -434,7 +433,7 @@ def test_battle_and_jogress_are_lobby_only():
     assert not hasattr(TuiPetApp, "action_jogress")
     assert "j" not in keys
     assert amap.get("b") == "bug"                                # never battle
-    assert "l" in keys and "a" in keys              # the surviving routes
+    assert "l" in keys                              # the surviving online route
 
 
 def _jogress_session(monkeypatch, peer_two_phase=True):

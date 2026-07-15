@@ -88,6 +88,7 @@ class LobbyState:
         self.chat: list[tuple[str, str]] = []  # [(from_name, text)] — capped
         self.inbox: list[dict] = []            # invite / invite_resp / relay — drained by caller
         self.login_failed: str | None = None   # server rejected the login (bad password / name taken)
+        self.server_proto = 0                  # the relay's LOBBY_PROTO from welcome (0 = pre-handshake)
         self.reconnecting = False              # dropped -> the client is retrying with backoff
         self.dms: dict = {}                    # peer_name -> [(from_name, text)] private threads
         self.unread: set = set()               # peer names with unread DMs
@@ -311,6 +312,10 @@ class LobbyClient(_WsClient):
             self._had_welcome = True
             s.me_id = m.get("id")
             s.me_name = m.get("name")
+            try:
+                s.server_proto = int(m.get("proto") or 0)
+            except (TypeError, ValueError):
+                s.server_proto = 0
         elif t == "ladder":
             self.ladder = m               # the rankings page renders from this
         elif t == "raid":

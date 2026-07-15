@@ -82,12 +82,16 @@ def test_dead_pet_and_egg_hand_off_without_ceremony():
 
 # ---- weather is explained ---------------------------------------------------------
 
-# ---- the egg guide is reachable from the picker -------------------------------------
+# ---- the egg guide key died with eggguidescreen (v0.4.0 clone rebuild) --------------
 
-def test_egg_picker_offers_the_guide():
+def test_egg_picker_has_no_dead_guide_key():
+    """The v0.4.0 rebuild deleted eggguidescreen but left the N key behind:
+    ("done", "guide") flowed into Pet.new_egg(egg_type="guide") and crashed
+    (audit 2026-07-15).  The key and its hint must stay gone until a clone-era
+    guide actually exists to open."""
     pan = EggSelectPanel(Pet.new_egg())
-    assert "guide" in pan.strip()                  # hints() returns markup text
-    assert pan.key("n") == ("done", "guide")
+    assert "guide" not in pan.strip()
+    assert pan.key("n") is None
 
 
 def test_fresh_egg_flash_points_at_help():

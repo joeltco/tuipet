@@ -31,6 +31,12 @@ def _clamp(v, lo, hi):
     return max(lo, min(hi, v))
 
 
+class _Refused(str):
+    """A use_item result that did NOT consume the item.  Reads as a plain
+    message everywhere else -- only use_item's consume check looks at the
+    type (audit 2026-07-15: every refusal string used to burn the item)."""
+
+
 # ---- the per-minute rule constants (offline-replay grain; the live 800ms
 # rates are exactly these /75) ----
 POOP_P = 0.002                 # poop roll per awake minute (cap 2 piles)
@@ -121,6 +127,11 @@ class Pet:
     call_on: bool = False             # a meter call is ringing
     call_minutes: int = 0
     call_ignored: bool = False        # latched: this call already cost its mistake
+    call_latched: list = _dcf(default_factory=list)  # WHICH meters latched: a
+    #                                 hunger latch must not silence a strength
+    #                                 call an hour later (audit 2026-07-15)
+    wake_until: float = 0.0           # disturbed/alarmed awake until (epoch s):
+    #                                 disturb 5-30min, alarm 1-2h (source rule)
     sleep_call_minutes: int = 0       # lights-on-at-bedtime counter
     sleep_mistake_done: bool = False  # once per night
     full_until: float = 0.0           # premium meat satiety (epoch seconds)
@@ -187,6 +198,11 @@ class Pet:
         self.energy = 10                       # newborn energy
         self.hunger = self.strength = 4
         self.weight = self._base_weight()
+        # a newborn's clock starts NOW: an egg saved days ago otherwise
+        # inherits its stale wall_time and the next tick() replays the whole
+        # gap -- Baby I to Perfect in one frame (audit 2026-07-15)
+        self.wall_time = time.time()
+        self._min_acc = 0.0
 
     def _become(self, num):
         rec = data.record_for(num)
@@ -223,6 +239,16 @@ class Pet:
         self.revived += 1
         self.care_mistakes = 0
         self.hunger = self.strength = 1
+        # life resumes NOW: the clock froze at death, and replaying the dead
+        # days made a fresh revival sick+starving and often dead AGAIN on
+        # its first tick (audit 2026-07-15)
+        self.wall_time = time.time()
+        self._min_acc = 0.0
+        self.sick = False
+        self.call_on = False
+        self.call_minutes = 0
+        self.call_latched.clear()
+        self.call_ignored = False
 
     # ================= species record =================
 
@@ -313,7 +339,10 @@ class Pet:
         in_window = _in_window(self._hour(), win)
         if in_window and self.forced_sleep:
             self.forced_sleep = False
-        sleeping = in_window or self.forced_sleep
+        # a disturbed/alarmed pet stays up past its bedtime for the wake
+        # delay, then dozes back off (source rule: disturb 5-30min, alarm 1-2h)
+        sleeping = ((in_window or self.forced_sleep)
+                    and not self.wall_time < self.wake_until)
 
         if sleeping and not self.asleep:
             self.asleep = True
@@ -326,6 +355,7 @@ class Pet:
             self.lights = True
             self.call_on = False
             self.call_ignored = False
+            self.call_latched.clear()
             self.sleep_call_minutes = 0
             self.sleep_mistake_done = False
 
@@ -350,20 +380,26 @@ class Pet:
             self.call_minutes = 0
             return
 
-        # empty-meter call (hunger or strength at zero)
-        starving = self.hunger == 0 or self.strength == 0
-        if starving:
-            if not self.call_ignored:
-                self.call_on = True
-                self.call_minutes += 1
-                if self.call_minutes >= CALL_MINUTES:
-                    self.care_mistakes += 1
-                    self.call_ignored = True   # latched: one mistake per call
-                    self.call_on = False
+        # empty-meter call (hunger or strength at zero) -- latched PER METER:
+        # one shared latch let a strength meter empty an hour after a latched
+        # hunger call and never ring or cost a mistake at all (audit 2026-07-15)
+        zero = [m for m in ("hunger", "strength") if getattr(self, m) == 0]
+        for m in list(self.call_latched):
+            if m not in zero:                  # a refilled meter re-arms its call
+                self.call_latched.remove(m)
+        fresh = [m for m in zero if m not in self.call_latched]
+        if fresh:
+            self.call_on = True
+            self.call_minutes += 1
+            if self.call_minutes >= CALL_MINUTES:
+                self.care_mistakes += 1        # one mistake per ignored ring
+                self.call_latched.extend(fresh)
+                self.call_on = False
+                self.call_minutes = 0
         else:
             self.call_on = False
-            self.call_ignored = False
             self.call_minutes = 0
+        self.call_ignored = bool(self.call_latched)   # the HUD-facing mirror
 
         # bowels
         if self.poop < 2 and random.random() < POOP_P:
@@ -472,9 +508,14 @@ class Pet:
         return num
 
     def item_evolve(self, item_id):
-        """A crest egg: Child -> its Armor form, if this species has one."""
+        """A crest egg: Child -> its Armor form, if this species has one.
+        Life-state guarded (audit 2026-07-15: a crest egg EVOLVED A CORPSE,
+        which then kept replaying its death)."""
+        if self.dead or self.stage == "Egg" or self.num < 0:
+            return None
         for e in data.load_armor_evos().get(self.species_path or "", []):
             if e.get("itemId") == item_id:
+                self.disturb_sleep()           # a crest egg on a sleeper wakes it
                 return self._evolve_to_path(e["result"])
         return None
 
@@ -498,22 +539,26 @@ class Pet:
         return True
 
     def feed_meat(self):
-        """Meat: hunger +1, weight +1.  Refused at a full belly."""
-        if not self._guard():
+        """Meat: hunger +1, weight +1.  Refused at a full belly.  Feeding a
+        sleeper DISTURBS it first (source rule L93; audit 2026-07-15)."""
+        if not self._guard(asleep_blocks=False):
             return None
         if self.hunger >= self.hunger_max:
             return "refuse"
+        self.disturb_sleep()
         self.hunger += 1
         self.weight = _clamp(self.weight + 1, 1, 999)
         return "ate"
 
     def feed_pill(self):
-        """The pill: cures sickness, strength +1, energy +7, weight +5."""
-        if not self._guard():
+        """The pill: cures sickness, strength +1, energy +7, weight +5.
+        Healing a sleeper DISTURBS it first (source rule L93)."""
+        if not self._guard(asleep_blocks=False):
             return None
         if not self.sick and self.strength >= self.strength_max \
                 and self.energy >= self.max_energy:
             return "refuse"
+        self.disturb_sleep()
         self.sick = False
         self.strength = _clamp(self.strength + 1, 0, self.strength_max)
         self.energy = _clamp(self.energy + PILL_ENERGY_GAIN, 0, self.max_energy)
@@ -540,10 +585,19 @@ class Pet:
         return self.lights
 
     def disturb_sleep(self):
-        """Feeding/training/battling a sleeper: a care mistake."""
+        """Feeding/training/item-ing a sleeper: +1 care mistake and it's
+        yanked awake for 5-30 minutes before dozing back off (source rule
+        L93: 'disturbing sleep -> +1 each + 5-30min wake delay').  Wired at
+        every waking action since audit 2026-07-15 -- it had ZERO callers."""
         if not self.asleep:
-            return
+            return False
         self.care_mistakes += 1
+        self.asleep = False
+        self.forced_sleep = False
+        self.wake_until = self.wall_time + random.randint(5, 30) * 60
+        self.lights = True
+        self.call_on = False
+        return True
 
     def train_result(self, success):
         """One training round: energy -2, the counters that feed evolution."""
@@ -594,7 +648,9 @@ class Pet:
 
     def use_item(self, key):
         """Consume one inventory item -> a short result message ('' = the
-        item does nothing here, None = don't have it)."""
+        item does nothing here, None = don't have it).  A _Refused message
+        keeps the item: 'consume on refusal' burned Rev.Floppies on live
+        pets and fruit at a full belly (audit 2026-07-15)."""
         if key not in self.inventory:
             return None
         fx = {
@@ -614,11 +670,24 @@ class Pet:
             "x_antibody": self._x_antibody,
             "training_pack": self._training_pack,
             "revive_floppy": self._revive_item,
+            "super_carrot": self._super_carrot,
         }.get(key)
         if fx is None:
             return ""
+        # life-state guard (audit 2026-07-15): only the Rev.Floppy works on
+        # the dead, and NOTHING works on an egg -- a training_pack used to
+        # pre-clear the Child best-branch gate before the shell even cracked
+        if self.dead and key != "revive_floppy":
+            return _Refused("")
+        if self.stage == "Egg" or self.num < 0:
+            return _Refused("")
+        # item on a sleeper: the alarm wakes mistake-FREE (its whole point),
+        # the sleeping pill is pointless, anything else is a DISTURB --
+        # +1 mistake, 5-30min awake -- and then applies (source rule L93)
+        if self.asleep and key not in ("alarm_clock", "sleeping_pill"):
+            self.disturb_sleep()
         out = fx()
-        if out is not None:
+        if not isinstance(out, _Refused) and out is not None:
             self.take_item(key)
         return out
 
@@ -628,7 +697,7 @@ class Pet:
 
     def _fruit(self, quality):
         if self.hunger >= self.hunger_max and quality >= 0:
-            return "Refused - belly's full."
+            return _Refused("Refused - belly's full.")
         self.hunger = _clamp(self.hunger + 1, 0, self.hunger_max)
         if quality > 0:
             self.strength = _clamp(self.strength + quality - 1, 0,
@@ -659,21 +728,30 @@ class Pet:
 
     def _erase_mistake(self):
         if self.care_mistakes <= 0:
-            return "No mistakes to erase."
+            return _Refused("No mistakes to erase.")
         self.care_mistakes -= 1
         return "One mistake, forgotten."
 
     def _sleep_pill(self):
+        if self.asleep:
+            return _Refused("It's already asleep.")   # source: pill refunded
         self.forced_sleep = True
         self.asleep = True
+        self.wake_until = 0.0
         return "Zzz..."
 
     def _alarm(self):
+        """Wake Up Without Mistake (the source's own label): a 1-2h wake with
+        no disturb penalty.  The old version refilled energy for free (a
+        cheap energy_drink) and re-slept the NEXT MINUTE into a second
+        bedtime mistake (audit 2026-07-15)."""
         if not self.asleep:
-            return "It's already awake."
+            return _Refused("It's already awake.")
         self.asleep = False
         self.forced_sleep = False
-        self.energy = self.max_energy
+        self.wake_until = self.wall_time + random.randint(60, 120) * 60
+        self.lights = True
+        self.call_on = False
         return "Rise and shine!"
 
     def _time_gear(self):
@@ -688,14 +766,14 @@ class Pet:
         # the X path: this species' X variant if the atlas has one
         rec = self.species
         if not rec:
-            return ""
+            return _Refused("")
         want = rec["name"] + "_X"
         for path, num in data.num_by_path().items():
             base = path.rsplit("/", 1)[-1][:-5]
             if base == want:
                 self._evolve_to_path(path)
                 return "The X-Antibody takes hold!"
-        return "Nothing stirs."
+        return _Refused("Nothing stirs.")
 
     def _training_pack(self):
         self.trainings_cur_stage += 5
@@ -704,9 +782,17 @@ class Pet:
 
     def _revive_item(self):
         if not self.dead:
-            return "No one needs reviving."
+            return _Refused("No one needs reviving.")
         self.revive()
         return "It LIVES."
+
+    def _super_carrot(self):
+        """Spr.Carrot: weight -10 (source label 'Reduce Weight by 10') --
+        one of the audit's inert buyables, now wired."""
+        if self.weight <= 1:
+            return _Refused("Nothing left to trim.")
+        self.weight = max(1, self.weight - 10)
+        return "Feather-light!"
 
     # ================= backgrounds (unchanged lane) =================
 
@@ -825,6 +911,6 @@ class Pet:
             return "It rests now."
         if self.stage == "Egg" or self.num < 0:
             return "The egg eats nothing yet."
-        if self.asleep:
-            return "zzz… asleep"
+        # a sleeper does NOT block the meal: feeding it is a DISTURB -- +1
+        # mistake and a grumpy wake (source rule L93; audit 2026-07-15)
         return ""

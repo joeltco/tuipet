@@ -34,25 +34,6 @@ def _step(pan, k=None, ticks=1):
     return r
 
 
-def test_town_panel_every_phase():
-    from tuipet.townscreen import TownPanel
-    from tuipet import data
-    random.seed(3)
-    p = _pet()
-    for town in list(data.load_towns())[:2]:
-        pan = TownPanel(p, town)
-        _step(pan)
-        n = len(getattr(pan, "entries", [])) or 6
-        for i in range(n):                       # visit every menu entry
-            pan.phase = "menu"
-            pan.sub = None
-            pan.cursor = i if hasattr(pan, "cursor") else 0
-            _step(pan, "down")
-            _step(pan, "enter", ticks=2)
-            _step(pan, "down"); _step(pan, "enter", ticks=2)
-            _step(pan, "escape"); _step(pan, "escape")
-
-
 def test_jogress_panel_fuses():
     """The panel is the lobby's fusion cinematic now (the offline picker died
     with the home jogress, v0.2.348): construct at the fuse and walk the whole
@@ -110,20 +91,6 @@ def test_battle_surrender_ask_renders():
                 _step(pan, "space", ticks=2)
         if guard < 2000:
             break
-
-
-def test_adventure_panel_travels_and_renders_events():
-    from tuipet.adventurescreen import AdventurePanel
-    random.seed(4)
-    p = _pet()
-    pan = AdventurePanel(p)
-    for i in range(600):
-        _step(pan)
-        for k in ("enter", "1", "y", "space"):   # answer whatever prompt appeared
-            _step(pan, k)
-        if i % 50 == 0:
-            _step(pan, "i")                      # investigate / info keys
-    pan.text()
 
 
 def test_training_all_four_drills():
@@ -291,61 +258,10 @@ def test_eggselect_code_entry():
 
 
 
-def test_battlefx_across_varied_foes():
-    """battlefx's effect branches key off each foe's attack conditions -- fight a
-    spread of real enemies so the volley animations execute their variants."""
-    from tuipet.battlescreen import BattlePanel
-    from tuipet import battle as battle_mod
-    random.seed(12)
-    p = _pet()
-    enemies = battle_mod.pick_enemy(p) and None  # warm the table
-    from tuipet import data
-    pool = [e for e in data.load_enemies() if e.get("stage") == "Champion"][:10]
-    for e in pool:
-        pan = BattlePanel(_pet(), enemy=dict(e))
-        guard = 0
-        while pan.phase != "result" and guard < 2500:
-            guard += 1
-            if pan.phase == "menu":
-                _step(pan, str(1 + guard % 3))   # vary the attribute thrown
-            else:
-                _step(pan, "space", ticks=2)
-        pan.text()
-
-
-def test_battlefx_every_attack_effect_fires():
-    """One fight per distinct attack effect in the atlas, played AS a species
-    that carries it, throwing the attribute that carries it -- so checkEffect's
-    branches (AttackUp/Counter/Leech/Heal/ForceOpp*/...) actually execute."""
-    from tuipet.battlescreen import BattlePanel
-    from tuipet import data
-    random.seed(8)
-    _, by = data.load_sprites()
-    carriers = {}
-    for n in by:
-        if data.is_placeholder(n):
-            continue
-        for a in ("Vaccine", "Data", "Virus"):
-            i = data.attack_info(n, a)
-            if i["effect"] not in ("None", "") and i["effect"] not in carriers:
-                carriers[i["effect"]] = (n, a)
-    assert len(carriers) >= 10
-    key = {"Vaccine": "1", "Data": "2", "Virus": "3"}
-    for effect, (num, attr) in sorted(carriers.items()):
-        p = Pet(num=num, stage=by[num]["stage"], attribute=by[num]["attribute"] or "Vaccine")
-
-        p.vaccine, p.data_power, p.virus = 40, 40, 40
-        pan = BattlePanel(p, enemy={"num": 29, "name": "Agumon", "stage": by[num]["stage"],
-                                    "vaccine": 6, "data_power": 6, "virus": 6,
-                                    "hp": 10, "bits": (0, 0)})
-        guard = 0
-        while pan.phase != "result" and guard < 2500:
-            guard += 1
-            if pan.phase == "menu":
-                _step(pan, key[attr])            # throw the effect-carrying move
-            else:
-                _step(pan, "space", ticks=2)
-        pan.text()
+# The two battlefx sweeps died with battlefx.py (audit 2026-07-15): both
+# were VACUOUS since the clone rebuild -- one filtered enemies to a stage
+# name ("Champion") the clone atlas doesn't use (0 fights), the other set
+# pet fields (vaccine/data_power/virus) the clone Pet doesn't have.
 
 
 def test_app_pilot_walks_every_binding():

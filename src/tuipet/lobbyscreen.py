@@ -15,6 +15,7 @@ import hashlib
 import random
 
 from rich.cells import cell_len, chop_cells, set_cell_size
+from rich.markup import escape as _esc
 from rich.text import Text
 
 from . import data
@@ -166,6 +167,24 @@ def _clamp_card(card):
     if card.get("hit_type") not in ("mega", "normal", "miss"):
         card["hit_type"] = "miss"
     card["num"] = _n(card.get("num"), 0, 0, 10 ** 6)
+    # stage/attribute come from the SPECIES RECORD of the claimed num, never
+    # the wire: a forged {"stage": "Special"} ranked 14.5 and auto-won every
+    # online bout while the sprite still showed a Child (audit 2026-07-15).
+    # Unknown nums (a newer build's dex) keep a KNOWN claimed stage so the
+    # two engines stay symmetric; garbage stages already ranked as "Child".
+    rec = data.record_for(card["num"])
+    if not rec.get("_placeholder"):
+        card["stage"] = rec.get("stage", "Child")
+        card["attribute"] = rec.get("attribute", "Free")
+    else:
+        if card.get("stage") not in battle._RANK:
+            card["stage"] = "Child"
+        elif card.get("stage") == "Special":
+            # every REAL Special is in the local dex and record-derived
+            # above; an unknown num claiming the 14.5 rank is the forge
+            card["stage"] = "Ultimate-Super Ultimate"
+        if card.get("attribute") not in ("Vaccine", "Virus", "Data", "Free"):
+            card["attribute"] = "Free"
     card["hp"] = 5
     return card
 
@@ -652,9 +671,14 @@ class LobbyPanel:
         self.sfx = "attack"
         if self.partner:                   # a finished bout is a connection
             persistence.record_connection(self.partner[1])
-        opp_nm = (self.opp_card or {}).get("name") or (self.partner or (0, ""))[1]
+        # the ladder needs BOTH stories: the winner's claim only credits when
+        # the LOSER's agreeing report lands too, keyed by ACCOUNT name -- the
+        # old code filed only on won (nobody ever confirmed) and led with the
+        # PET name (which the server doesn't know), so the monthly ladder
+        # never credited a single win (audit 2026-07-15)
+        opp_nm = (self.partner or (0, ""))[1] or (self.opp_card or {}).get("name")
         report = getattr(self.client, "ladder_report", None)
-        if report and opp_nm and won:
+        if report and opp_nm and not draw:
             report(won, opp_nm)
         from .pet import online_reward
         purse = online_reward(won, draw=draw)
@@ -735,6 +759,13 @@ class LobbyPanel:
             self.phase = "lobby"
         return None
 
+    def _stale_relay(self):
+        """True when the relay predates the pages this client renders -- say
+        so instead of a forever-'fetching' page (audit 2026-07-15: a client
+        update outpacing the hand-copied server left silently-dead pages)."""
+        s = self.state
+        return bool(s and s.connected and s.server_proto < 1)
+
     def _text_ladder(self):
         """The monthly rankings: online PvP wins, top ten, your rank, and the
         days left in the season.  Data is the server's ladder message; a page
@@ -743,7 +774,11 @@ class LobbyPanel:
         lad = getattr(self.client, "ladder", None) if self.client else None
         if not lad:
             t.append("  LADDER\n\n", style=INK_B)
-            t.append("  fetching the rankings…\n", style=DIM)
+            if self._stale_relay():
+                t.append("  the lobby server is older than this\n"
+                         "  tuipet — rankings can't load yet\n", style=DIM)
+            else:
+                t.append("  fetching the rankings…\n", style=DIM)
             return t
         t.append(f"  LADDER  season {lad.get('season', '?')}\n", style=INK_B)
         t.append("  one win = one rung · online only\n\n", style=DIM)
@@ -917,7 +952,11 @@ class LobbyPanel:
         rd = getattr(self.client, "raid", None) if self.client else None
         if not rd or not rd.get("boss"):
             t.append("  RAID BOSS\n\n", style=INK_B)
-            t.append("  fetching the raid…\n", style=DIM)
+            if self._stale_relay():
+                t.append("  the lobby server is older than this\n"
+                         "  tuipet — the raid can't load yet\n", style=DIM)
+            else:
+                t.append("  fetching the raid…\n", style=DIM)
             return t
         b = rd["boss"]
         now = rd.get("now", 0)
@@ -1240,7 +1279,7 @@ class LobbyPanel:
             w = "exhausted!"
         else:
             w = "misbehaving!"
-        return (f"[{theme.NEG}]⚠ {(p.name or '?')[:10]} {w}[/] [dim]·[/] "
+        return (f"[{theme.NEG}]⚠ {_esc((p.name or '?')[:10])} {w}[/] [dim]·[/] "
                 + menu.hints(("ESC", "home")))
 
     def strip(self):
@@ -1299,7 +1338,9 @@ class LobbyPanel:
         # the open room: a fresh ✉ pops its own nudge ahead of the key chrome
         unread = sorted(self.state.unread) if self.state else []
         if unread and not self.rost_hidden:
-            who = unread[0][:12] + ("…" if len(unread) > 1 else "")
+            # a PEER-chosen name: escape it or a bracketed name is a MarkupError
+            # that kills the whole client (audit 2026-07-15)
+            who = _esc(unread[0][:12]) + ("…" if len(unread) > 1 else "")
             return f"[b]✉ {who}[/][dim] unread — V on their name[/]"
         if self.rost_hidden:
             return menu.hints(("←", "players"), ("↑↓", "scroll"),

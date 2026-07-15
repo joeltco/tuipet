@@ -74,11 +74,11 @@ def test_closing_a_mode_clears_its_hint_strip():
 
 def test_mode_strip_walks_to_the_deepest_sub_panel():
     """_mode_strip routing (test audit 2026-07-13): the DEEPEST .sub owns the
-    #msg box -- a battle inside a town inside an adventure must deliver the
-    BATTLE panel's strip, not the host's.  This walk had no direct pin: a
-    regression showing the host's hints mid-fight would have passed the suite."""
+    #msg box -- a battle nested under a host panel must deliver the BATTLE
+    panel's strip, not the host's.  This walk had no direct pin: a regression
+    showing the host's hints mid-fight would have passed the suite."""
     from tuipet.app import TuiPetApp
-    from tuipet import adventurescreen, townscreen, battlescreen
+    from tuipet import battlescreen
     from tuipet.pet import Pet
 
     p = Pet(num=100, stage="Adult", attribute="Vaccine")
@@ -87,15 +87,19 @@ def test_mode_strip_walks_to_the_deepest_sub_panel():
     delivered = []
     app._hud = delivered.append                     # capture what the box gets
 
-    adv = adventurescreen.AdventurePanel(p)
-    town = townscreen.TownPanel(p, 0)
+    # a minimal host with a .sub -- the walk descends to the deepest .sub
+    class _Host:
+        def __init__(self, sub):
+            self.sub = sub
+        def strip(self):
+            return "HOST HINTS"
     bout = battlescreen.BattlePanel(p)
-    adv.sub, town.sub = town, bout
-    app.mode = adv
+    host = _Host(bout)
+    app.mode = host
     app._mode_strip()
     assert delivered and delivered[-1] == bout.strip(), \
         "the deepest panel (the battle) owns the strip"
 
-    town.sub = None                                 # the fight ends: the town takes over
+    host.sub = None                                 # the fight ends: the host takes over
     app._mode_strip()
-    assert delivered[-1] == town.strip()
+    assert delivered[-1] == "HOST HINTS"

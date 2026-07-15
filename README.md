@@ -11,7 +11,7 @@ ripped from multiple fan games and the V-pet community's sprite archives — see
 [Credits & acknowledgments](#credits--acknowledgments) — the artists are
 named at the end of the in-game help screen (**?**).
 
-![tuipet demo — hatch, feed, train, and adventure with your pet in the terminal](demo.gif)
+![tuipet demo — hatch, feed, train, and battle with your pet in the terminal](demo.gif)
 
 **Status: live and actively developed** — see the
 [changelog](CHANGELOG.md) for what each release brought.
@@ -31,8 +31,7 @@ named at the end of the in-game help screen (**?**).
   (good condition widens the perfect zone), then watch the volley play out
   — the fight is decided by care, training, stage and the attribute
   triangle.
-- **Adventures** across 5 world maps with bosses, towns and finds — plus a
-  **scene gallery** of picked backdrops for the home screen.
+- A **scene gallery** of picked backdrops for the home screen.
 - **Online play**: accounts with cloud saves, a live lobby with chat, a
   monthly ladder, PvP battles and two-player jogress fusion.
 - A `rich`/`textual` UI: a fixed LCD arena with the animated pet, a live
@@ -90,7 +89,7 @@ Two iOS notes, both handled for you:
   Set `TUIPET_SAVE_DIR` to put it anywhere you like.
 * **Sound.** iOS sandboxes audio players, so tuipet falls back to the terminal
   bell (Options → sound shows *bell only*). Everything else — the lobby, battles,
-  jogress, adventures — works exactly as it does everywhere else.
+  jogress — works exactly as it does everywhere else.
 
 **On iSH:** iSH's Alpine usually ships a Python older than 3.10, so
 `pip install tuipet` fails with *"No matching distribution found"*. Prefer
@@ -114,14 +113,12 @@ Start from an **egg** — real dot-matrix egg designs; it wobbles, cracks, and h
 | **t** | train | **n** | new egg |
 | **c** | clean | **e** | scenes |
 | **h** | pill | **?** | help |
-| **a** | adventure | **g** | options |
-| **o** | shop | **b** | bug report |
-| **i** | bag | | |
+| **o** | shop | **g** | options |
+| **i** | bag | **b** | bug report |
 | **s** | lights | **q** | quit |
 
-Battles and jogress live where they belong: **PvE combat happens in
-adventures; PvP battles and fusion happen in the lobby** — there is no
-free-standing battle key.
+Battles and jogress live where they belong: **in the lobby** — there is
+no free-standing battle key.
 
 ## Care & evolution
 
@@ -145,13 +142,6 @@ zone. The zone's width is your pet's CONDITION — win rate, meters, and age
 all widen it. A clean strike sheds weight; every attempt counts toward the
 evolution gates, and the grade you land is the **strike form your next
 battle fires with** (mega / normal / miss).
-
-## Adventure
-
-Press **a** to teleport into the world — 5 maps, 26 zones, towns, zone
-bosses and roadside finds. Wild battles fight ON the road (the biome you
-are crossing is the backdrop), boss wins pay a bits purse and open the
-gate, and losses cost adventure life. Towns rest you and keep shops.
 
 ## Battle
 

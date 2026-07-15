@@ -66,6 +66,12 @@ def _admin_key():
 
 MAX_CLIENTS = 200
 MAX_NAME = 24
+# the lobby wire version, bumped whenever a page the client renders needs a
+# NEW server message (raid was the lesson: deploy.sh ships only the client to
+# PyPI while server.py is copied by hand, so a client update outpacing the
+# relay produced silently-dead pages -- audit 2026-07-15).  The client pins
+# the version it needs and says so out loud instead.
+LOBBY_PROTO = 1
 MAX_PW = 128
 MAX_CHAT = 400
 MAX_MSG_BYTES = 64 * 1024
@@ -188,21 +194,40 @@ def _valid_save(save):
     return True
 
 
+def _stamp(v, now=None):
+    """A client-supplied _saved_at, defused: non-numeric -> 0 (a str vs int
+    compare was a per-connection crash), and a far-future stamp is clamped
+    to now+1day so one poisoned push can't lock the account's cloud save
+    forever (audit 2026-07-15)."""
+    try:
+        v = float(v)
+    except (TypeError, ValueError):
+        return 0.0
+    return min(v, (time.time() if now is None else now) + 86400.0)
+
+
 async def _store_save(key, save):
     """Last-write-wins by the client-stamped _saved_at: only newer saves land.
     Returns True when the save was stored (the client is told via the ack)."""
     if not _valid_save(save):
         return False
-    incoming = save.get("_saved_at") or 0
-    have = (SAVES.get(key) or {}).get("_saved_at") or 0
+    incoming = save["_saved_at"] = _stamp(save.get("_saved_at"))
+    have = _stamp((SAVES.get(key) or {}).get("_saved_at"))
     if incoming < have:
         return False                              # stale push -> ignore (a newer device won)
     SAVES[key] = save
     async with _saves_lock:
-        tmp = SAVES_PATH + ".tmp"
-        with open(tmp, "w") as f:
-            json.dump(SAVES, f)
-        os.replace(tmp, SAVES_PATH)               # atomic
+        # snapshot on the loop, dump in a thread: the synchronous full-dict
+        # json.dump froze every live chat/battle for the write's duration
+        # once SAVES grew (audit 2026-07-15)
+        snap = dict(SAVES)
+
+        def _write():
+            tmp = SAVES_PATH + ".tmp"
+            with open(tmp, "w") as f:
+                json.dump(snap, f)
+            os.replace(tmp, SAVES_PATH)           # atomic
+        await asyncio.to_thread(_write)
     return True
 
 
@@ -267,6 +292,70 @@ CLIENTS: dict[int, Client] = {}
 
 def _clean(s, limit):
     return str(s).replace("\n", " ").replace("\r", " ").strip()[:limit]
+
+
+def _clean_name(s):
+    """An account name: _clean plus the impersonation strip -- 📢 marks the
+    dev announce channel and square brackets are live Rich markup on old
+    clients (audit 2026-07-15).  Existing accounts keep working (lookups key
+    on the SANITIZED form of what the client sends)."""
+    s = _clean(s, MAX_NAME)
+    return "".join(c for c in s if c not in "📢[]").strip()
+
+
+# ---- login/registration throttle (audit 2026-07-15) --------------------------
+# pbkdf2 at 100k iterations is the POINT on a wrong password, but 200 parallel
+# conns hammering it was a free CPU-DoS, and unlimited registration let anyone
+# grow accounts.json forever.  Cheap in-memory buckets; a restart forgives.
+LOGIN_WINDOW_S = 60.0
+LOGIN_PER_WINDOW = 20             # attempts per source IP per window -- roomy
+#                                   for real sync traffic, fatal to a pbkdf2 flood
+REG_PER_DAY = 5                   # new accounts per source IP per UTC day
+MAX_ACCOUNTS = 10_000             # the disk-fill backstop
+_login_bucket: dict[str, list] = {}     # ip -> [window_start, count]
+_reg_bucket: dict[str, list] = {}       # ip -> [day, count]
+
+
+def _client_ip(ws):
+    try:
+        return str((ws.remote_address or ("?",))[0])
+    except Exception:
+        return "?"
+
+
+def _login_allowed(ip, now=None):
+    now = time.time() if now is None else now
+    b = _login_bucket.get(ip)
+    if b is None or now - b[0] >= LOGIN_WINDOW_S:
+        _login_bucket[ip] = [now, 1]
+        if len(_login_bucket) > 4096:            # old windows never come back
+            _login_bucket.clear()
+            _login_bucket[ip] = [now, 1]
+        return True
+    b[1] += 1
+    return b[1] <= LOGIN_PER_WINDOW
+
+
+def _registration_allowed(ip, now=None):
+    if len(ACCOUNTS) >= MAX_ACCOUNTS:
+        return False
+    day = time.strftime("%Y-%m-%d", time.gmtime(now or time.time()))
+    b = _reg_bucket.get(ip)
+    if b is None or b[0] != day:
+        _reg_bucket[ip] = [day, 1]
+        if len(_reg_bucket) > 4096:
+            _reg_bucket.clear()
+            _reg_bucket[ip] = [day, 1]
+        return True
+    b[1] += 1
+    return b[1] <= REG_PER_DAY
+
+
+def _peer(v):
+    """CLIENTS lookup on a WIRE-supplied id: a non-int (list, dict, str)
+    key raised unhashable-TypeError and killed the connection (audit
+    2026-07-15)."""
+    return CLIENTS.get(v) if isinstance(v, int) else None
 
 
 
@@ -496,7 +585,10 @@ def _raid_rotate(now=None):
 
 def _raid_attempts(name, now=None):
     now = time.time() if now is None else now
-    day = time.strftime("%Y-%m-%d", time.localtime(now))
+    # UTC like the ladder season and the raid window -- the localtime day key
+    # reset attempts at a different boundary than everything else displayed
+    # (audit 2026-07-15)
+    day = time.strftime("%Y-%m-%d", time.gmtime(now))
     rec = RAID["attempts"].get(name)
     if not rec or rec.get("date") != day:
         rec = {"date": day, "left": RAID_ATTEMPTS_PER_DAY}
@@ -562,7 +654,11 @@ def _raid_hit(name, raw, stage, now=None):
     if rec["left"] <= 0:
         return {"t": "raid_hit", "ok": False, "why": "No attempts left today."}
     rec["left"] -= 1
-    raw = max(0, min(int(raw or 0), RAID_MAX_RAW))
+    try:
+        raw = int(raw or 0)                # wire-supplied: "abc" was a crash
+    except (TypeError, ValueError):
+        raw = 0
+    raw = max(0, min(raw, RAID_MAX_RAW))
     dealt = raw * RAID_DMG_MULT * _raid_stage_mult(stage)
     b["hp"] = max(0, b["hp"] - dealt)
     entry = RAID["board"].setdefault(name, {"damage": 0, "ts": now})
@@ -777,7 +873,13 @@ async def handler(ws):
             if t == "login":
                 # A login_failed closes the socket (return): this client always
                 # retries on a fresh connection, so keeping the old one open leaks it.
-                name = _clean(m.get("name"), MAX_NAME)
+                ip = _client_ip(ws)
+                if not _login_allowed(ip):
+                    await asyncio.sleep(0.4)
+                    await _send(client, {"t": "login_failed",
+                                         "msg": "Too many tries — wait a minute."})
+                    return
+                name = _clean_name(m.get("name"))
                 pw = str(m.get("pw") or "")[:MAX_PW]
                 if not name:
                     await _send(client, {"t": "login_failed", "msg": "Name required."})
@@ -797,8 +899,12 @@ async def handler(ws):
                     if not pw:
                         await _send(client, {"t": "login_failed", "msg": "Pick a password to claim this name."})
                         return
+                    if not _registration_allowed(ip):
+                        await _send(client, {"t": "login_failed",
+                                             "msg": "No new accounts right now — try tomorrow."})
+                        return
                     ACCOUNTS[key] = await asyncio.to_thread(_make_account, name, pw)
-                    _save_accounts()
+                    await asyncio.to_thread(_save_accounts)   # 10k accounts must not stall the relay
                     LOG.info("registered account %s", name)
                 # A sync_only connection just pulls/pushes the cloud save; it never
                 # joins the live roster, so it can coexist with a lobby login on the
@@ -836,6 +942,7 @@ async def handler(ws):
                 logged_in = True
                 client.logged = True
                 await _send(client, {"t": "welcome", "id": client.id, "name": client.name,
+                                     "proto": LOBBY_PROTO,          # handshake: the client warns on a stale relay
                                      "save": SAVES.get(key)})       # cloud save (or null) for cross-device load
                 if not sync_only:
                     for f in CHAT_BACKLOG:        # rejoin the conversation, not a void
@@ -882,7 +989,12 @@ async def handler(ws):
             elif t == "raid_get":
                 await _send(client, _raid_view(client.name))
             elif t == "raid_hit":
-                r = _raid_hit(client.name, m.get("damage"), m.get("stage"))
+                # stage comes from the ROSTER card (one claim per session,
+                # visible to the whole lobby), never the per-hit message: a
+                # forged {"stage": "super ultimate"} was a free x20 into the
+                # shared pool (audit 2026-07-15)
+                r = _raid_hit(client.name, m.get("damage"),
+                              (client.pet or {}).get("stage"))
                 await _send(client, r)
                 await _send(client, _raid_view(client.name))
             elif t == "raid_claim":
@@ -933,7 +1045,7 @@ async def handler(ws):
                 text = _clean(m.get("text"), MAX_CHAT)
                 if not text:
                     continue
-                target = CLIENTS.get(m.get("to"))
+                target = _peer(m.get("to"))
                 if target is not None and target.logged:
                     name = target.name
                 else:                              # stale/gone id -> address by name
@@ -955,7 +1067,7 @@ async def handler(ws):
             elif t in ("invite", "invite_resp", "relay"):
                 if not client.live:               # sessions are for roster members only
                     continue
-                target = CLIENTS.get(m.get("to"))
+                target = _peer(m.get("to"))
                 if target is None or not target.live:
                     await _send(client, {"t": "error", "msg": "That player just left."})
                     continue

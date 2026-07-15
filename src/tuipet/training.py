@@ -26,11 +26,11 @@ ENERGY_NEED = 2
 
 
 def can_train(pet):
-    """'' when a drill may start, else the reason."""
+    """'' when a drill may start, else the reason.  A sleeper doesn't block:
+    dragging it to the bar is a DISTURB -- +1 mistake and a grumpy wake
+    (source rule L93; audit 2026-07-15, wired in app.action_train)."""
     if pet.dead or pet.stage == "Egg" or pet.num < 0:
         return "No one to train."
-    if pet.asleep:
-        return "zzz… asleep"
     if pet.energy < ENERGY_NEED:
         return "Too tired to train."
     return ""

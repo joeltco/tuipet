@@ -829,6 +829,10 @@ def pet_from_save(data, catch_up=True, strict=False):
         saved_at = None
         migrated = ("(a NEW WORLD -- your bits and scenes came along; "
                     "a fresh egg waits)")
+    # pre-.404 egg indices ride the save too -- the settings twin was wired,
+    # this one had ZERO callers, so a mid-incubation .40x save hatched the
+    # wrong species after an update (audit 2026-07-15)
+    _migrate_v401_save(data)
     valid = {f.name for f in fields(Pet)}
     kwargs = {k: v for k, v in data.items() if k in valid}
     try:

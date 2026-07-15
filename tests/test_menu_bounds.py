@@ -85,43 +85,11 @@ def test_lobby_jogress_lines_fit_with_a_24_char_partner():
     assert _plain(pan.strip()) <= HUD_W                       # the fused strip
 
 
-def test_travelling_and_drill_strips_fit_at_the_extremes():
-    """The road strip and the drill strip stay within the 40-col budget."""
-    from tuipet.adventurescreen import AdventurePanel
+def test_drill_strip_fits_at_the_extremes():
+    """The drill strip stays within the 40-col budget in both phases."""
     from tuipet.training import TrainingPanel
     p = _pet()
-    pan = AdventurePanel(p)
-    pan._trans = None
-    assert _plain(pan.strip()) <= 40
     tp = TrainingPanel(p)
     assert _plain(tp.strip()) <= 40
     tp.key("space")
     assert _plain(tp.strip()) <= 40
-def test_adventure_strip_hints_survive_long_notes():
-    """The adventure strip's HINTS are fixed chrome (major audit 2026-07-07):
-    a long species name in the note ("AncientSphinxmon noticed something off
-    the path!") used to push the keys past 40 where the display marquee slid
-    them out of view.  The note field-marquees; the hint renders every frame."""
-    from tuipet.adventurescreen import AdventurePanel
-    pan = AdventurePanel(_pet(bits=999))
-    pan._trans = None                # settled past the arrival fade
-    pan.travelling = False
-    long_note = "AncientSphinxmon noticed something off the path!"
-    for state, hint in ((("discovering", True), "ENTER look"),
-                        (("town_prompt", 3), "ENTER visit"),
-                        (("travelling", True), "SPACE stop")):
-        pan.discovering = False
-        pan.town_prompt = None
-        pan.travelling = False
-        setattr(pan, *state)
-        pan.adv.last = long_note
-        windows = []
-        for i in range(200):
-            pan.frame_i = i
-            s = pan.strip()
-            assert hint in s, (state, s)
-            assert _plain(s) <= HUD_W
-            windows.append(s.split("  [dim]")[0])
-        # the head holds first, and the tail scrolls into view later
-        assert any(w.startswith("AncientSphin") for w in windows), state
-        assert any("the path!" in w for w in windows), state

@@ -288,16 +288,6 @@ def battle_card(pet):
             "proto": 3, "hp": HP}
 
 
-def plausible_card(card):
-    """The anti-tamper clamp on an incoming peer card: meters within their
-    declared maxima, counters non-negative, a known species."""
-    try:
-        if not (0 <= card.get("strength", 0) <= card.get("strength_max", 4) <= 9
-                and 0 <= card.get("hunger", 0) <= card.get("hunger_max", 4) <= 9
-                and 0 <= card.get("energy", 0) <= card.get("energy_max", 5) <= 2000
-                and 0 <= card.get("battles", 0) <= 10 ** 6
-                and 0 <= card.get("wins", 0) <= card.get("battles", 0)):
-            return False
-        return card.get("num", -1) in data.load_sprites()[1]
-    except Exception:
-        return False
+# plausible_card is gone (audit 2026-07-15): it was never called, and the
+# real anti-tamper line is lobbyscreen._clamp_card, which now also derives
+# stage/attribute from the claimed num's species record.

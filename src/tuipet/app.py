@@ -9,6 +9,7 @@ import os as _os
 import random
 if not _os.environ.get("COLORTERM"):
     _os.environ["COLORTERM"] = "truecolor"
+from rich.markup import escape as _esc
 from textual.app import App, ComposeResult
 from textual.containers import Horizontal, Vertical
 from textual.widgets import Static
@@ -18,7 +19,6 @@ from . import menu
 from . import egg as egg_mod
 from . import training
 from . import battlescreen
-from . import adventurescreen
 from . import shopscreen
 from . import backgroundscreen
 from . import backgrounds as bgs_mod
@@ -82,7 +82,7 @@ def keys_markup():
     k = f"b {theme.KEY}"
     return (
         f"[{k}]f[/] feed  [{k}]c[/] clean  [{k}]h[/] pill  [{k}]s[/] lights  [{k}]t[/] train\n"
-        f"[{k}]a[/] adventure  [{k}]l[/] lobby (battle·jogress)  [{k}]n[/] new egg  [{k}]o[/] shop  [{k}]i[/] bag\n"
+        f"[{k}]l[/] lobby (battle·jogress)  [{k}]n[/] new egg  [{k}]o[/] shop  [{k}]i[/] bag\n"
         f"[{k}]e[/] scenes  [{k}]g[/] options  [{k}]b[/] bug  [{k}]?[/] help  [{k}]q[/] quit"
     )
 
@@ -246,18 +246,18 @@ class TuiPetApp(App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("POLISH PASS: feeding and evolution crashes fixed, every "
-                 "species fires its OWN attack shape, the idle walk and "
-                 "sick poses are right, training strikes a real target, "
-                 "the hatch plays its full crack-and-burst, and each egg "
-                 "previews on its own scene under its own name.")
+    WHATS_NEW = ("THE AUDIT PASS: refused items are no longer eaten (your "
+                 "Rev.Floppy is safe), every species truly fires its own "
+                 "attack shape, the monthly ladder finally counts wins, "
+                 "disturbing a sleeper now costs a care mistake (the alarm "
+                 "clock wakes free), hatched and revived pets no longer "
+                 "fast-forward days in a blink, and adventure mode retired.")
 
     BINDINGS = [
-        # battle + jogress are LOBBY-ONLY (Joel 2026-07-07) -- PvE combat
-        # lives in adventure
+        # battle + jogress are LOBBY-ONLY (Joel 2026-07-07)
         ("f", "feed", "Feed"), ("t", "train", "Train"),
         ("c", "clean", "Clean"), ("h", "heal", "Pill"),
-        ("a", "adventure", "Adventure"), ("o", "shop", "Shop"),
+        ("o", "shop", "Shop"),
         ("i", "inventory", "Bag"), ("e", "habitat", "Scenes"),
         ("n", "new", "New egg"),
         ("l", "lobby", "Lobby"),
@@ -904,8 +904,7 @@ class TuiPetApp(App):
     def _status_painter(self):
         """The mode's live status-panel painter (one table for repaint AND
         on_frame -- the two hand-rolled dispatches drifted; audit 2026-07)."""
-        table = ((adventurescreen.AdventurePanel, self._status_adventure),
-                 (training.TrainingPanel, self._status_training),
+        table = ((training.TrainingPanel, self._status_training),
                  (battlescreen.BattlePanel, self._status_battle),
                  (backgroundscreen.BackgroundPanel, self._status_background))
         for cls, painter in table:
@@ -1018,88 +1017,6 @@ class TuiPetApp(App):
                  "[dim]try the view before[/]", "[dim]you pay for it[/]"]
         self.stats_w.update("\n".join(lines))
 
-    def _status_town(self, m):
-        """The town's numbers + message: the lobby is a bare arena now, so the
-        card carries what the in-LCD header/note used to (box-clip audit)."""
-        p, T = self.pet, theme
-        self.stats_w.border_subtitle = _gen_subtitle(p)
-        div = f"[dim]{'─' * 26}[/]"
-        if m.sub is not None:                              # a cup bout in town
-            e = m.sub.battle.enemy
-            lines = [f"[b]{p.name[:14]}[/] [dim]· town cup[/]", div,
-                     f"vs [b]{e['name'][:14]}[/]",
-                     f"HP you {m.sub.hud_php}  foe {m.sub.hud_fhp}", div,
-                     f"[dim]{(m.sub.hud_note or '')[:24]}[/]"]
-        else:
-            msg = m.msg or ""
-            lines = [f"[b]TOWN {m.town['id']}[/]", div,
-                     f"Bits     [{T.COIN}]{p.bits}b[/]",
-                     f"Bag      {sum(p.inventory.values())}",
-                     div, msg[:26], msg[26:52]]
-        self.stats_w.update("\n".join(lines))
-
-    def _status_adventure(self):
-        p, a, T = self.pet, self.mode.adv, theme
-        from . import townscreen
-        if isinstance(self.mode.sub, townscreen.TownPanel):
-            return self._status_town(self.mode.sub)        # visiting: the town card
-        self.stats_w.border_subtitle = _gen_subtitle(p)
-        div = f"[dim]{'─' * 26}[/]"
-        lives = "♥" * a.lives + "[dim]·[/]" * (3 - a.lives)
-        power = (f"[b]{getattr(p, 'saved_hit_type', 'normal')}[/] "
-                 f"· tr {min(p.trainings_cur_stage, 999)}")
-        # mid-encounter battle ONLY -- a road-side care panel (feed/bag,
-        # road-keys 2026-07-07) keeps the travelling card underneath
-        if self.mode.sub is not None and hasattr(self.mode.sub, "battle"):
-            e = self.mode.sub.battle.enemy
-            # boss-ness from the panel's own pending flag (bug report
-            # 2026-07-13: the gate fight read as a random encounter -- the
-            # enemy record never carries a "boss" key)
-            was_boss = bool(getattr(self.mode, "_pending", None)
-                            and self.mode._pending[0])
-            tag = f" [{T.NEG}]BOSS[/]" if was_boss else ""
-            foot = (["[dim]the zone boss guards[/]",
-                     "[dim]the gate — end it![/]"] if was_boss else
-                    ["[dim]a wild foe blocks[/]",
-                     "[dim]the path — fight![/]"])
-            lines = [
-                f"[b]{p.name[:14]}[/] [dim]· battle[/]",
-                div,
-                f"vs [b]{e['name'][:14]}[/]{tag}",
-                f"Lives    {lives}",
-                div,
-                f"Effort   {hearts(p.strength)}",
-                f"Energy   {bar(p.energy_pct() * 100, 11, T.ENERGY)}",
-                f"Form    {power}",
-                div,
-            ] + foot
-        else:                                               # travelling
-            # the zone ribbon (legibility arc 2026-07-07): REAL geography on
-            # the journey card -- towns.csv gates, uncleared enemies.csv
-            # bosses, the pet's live step (adventure.ribbon)
-            road = "".join(f"[b]{c}[/]" if c == "◆"
-                           else f"[{T.COIN}]T[/]" if c == "T"
-                           else f"[{T.NEG}]B[/]" if c == "B"
-                           else "[dim]·[/]" for c in a.ribbon())
-            from . import world
-            _mn = a.maps[a.mi]["map"]
-            lines = [
-                f"[b]{p.name[:14]}[/] [dim]· away[/]",
-                div,
-                f"[b]{world.region_name(_mn)[:24]}[/]",
-                f"{world.zone_name(_mn, a.zone['zone'])[:20]} [dim]{a.pct}%[/]",
-                f"Lives    {lives}",
-                f"Road     {road}",
-                f"Bag      {sum(p.inventory.values())}   [{T.COIN}]{p.bits}b[/]",
-                div,
-                f"Hunger   {hearts(p.hunger)}",
-                f"Energy   {bar(p.energy_pct() * 100, 11, T.ENERGY)}",
-                f"Form    {power}",
-                div,
-                _status_line(p.status_word(), _care_deco(p)),
-            ]
-        self.stats_w.update("\n".join(lines))
-
     def on_frame(self):                        # single DVPet interval clock (10 Hz, 0.1s): main view AND sub-screens
         menu.TICK += 1                         # the shared note marquee clock: no screen clips a message
         self._hud_marquee()                    # scroll any over-long HUD message (independent of the LCD)
@@ -1168,18 +1085,12 @@ class TuiPetApp(App):
         if self.mode is not None:
             # a sub-screen is open -> pause the life-sim (the canon menu
             # freeze) -- EXCEPT the lobby's chat contexts (Joel 2026-07-13:
-            # "make the lobby tick, alarm and all") and the OPEN ROAD (Joel
-            # 2026-07-13 again: "make adventures live-tick the sim" -- a long
-            # expedition carries real hunger/sleep/sickness risk).  Sessions
-            # (battle/jogress), login, teleports and every road-side sub
-            # (town, feed, bag) keep the freeze: a pet must not starve or die
-            # mid-volley or mid-menu.
+            # "make the lobby tick, alarm and all").  Sessions (battle/
+            # jogress), login and every menu keep the freeze: a pet must not
+            # starve or die mid-volley or mid-menu.
             m = self.mode
-            live = ((isinstance(m, lobbyscreen.LobbyPanel)
-                     and m.phase in ("lobby", "dm"))
-                    or (isinstance(m, adventurescreen.AdventurePanel)
-                        and m.sub is None
-                        and getattr(m, "_trans", None) is None))
+            live = (isinstance(m, lobbyscreen.LobbyPanel)
+                    and m.phase in ("lobby", "dm"))
             if not live:
                 return
             was_dead = self.pet.dead
@@ -1354,7 +1265,7 @@ class TuiPetApp(App):
 
     def _need_message(self, p):
         """HUD announcement for the pet's most urgent unmet care need (or '')."""
-        name = p.name or "Your pet"
+        name = _esc(p.name) or "Your pet"
         if p.asleep and p.lights:               # the one asleep call
             msg = f"{name} is trying to sleep — lights off! ([b]S[/])"
         elif p.sick:          msg = f"{name} is sick — a pill ([b]H[/]) cures it!"
@@ -1395,6 +1306,9 @@ class TuiPetApp(App):
         reason = training.can_train(self.pet)
         if reason:
             self._do(reason); return
+        if self.pet.asleep:                     # dragging a sleeper to the bar
+            self.pet.disturb_sleep()            # = the canon disturb mistake
+            self.flash("It wakes up grumpy…")
         self._open_mode(training.TrainingPanel(self.pet), self._after_train)
 
     def _after_train(self, msg):
@@ -1429,17 +1343,6 @@ class TuiPetApp(App):
         elif msg:
             self.flash(msg)
         self.repaint()
-
-    def action_adventure(self):
-        if self.pet.stage in ("Egg", "Baby I"):
-            self._do("Too young to adventure."); return
-        if self.pet.asleep:
-            self._do("zzz… asleep"); return
-        def _back(msg=None):
-            if msg:
-                self.flash(msg)          # the victory line lands over the house
-            self.repaint()
-        self._open_mode(adventurescreen.AdventurePanel(self.pet), _back)
 
     def action_clean(self):
         if self.screen_w.fx is not None:

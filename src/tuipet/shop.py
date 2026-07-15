@@ -36,16 +36,27 @@ EFFECTS = {
     "x_antibody": "the X path (if one exists)",
     "training_pack": "training +5",
     "revive_floppy": "raise the dead",
+    "super_carrot": "weight -10",
 }
 # the crest eggs: used from the bag, they trigger an ITEM EVOLUTION
 ARMOR_CATEGORY = "Armor-Spirit"
+
+
+def _usable(key, category):
+    """Only goods Pet.use_item can actually APPLY are sold (the same
+    doctrine as data.item_is_functional): the ripped catalog also carries
+    28 theme_* skins and the 200k storage_drive, whose systems (app themes,
+    the D-Terminal) don't exist in tuipet -- up to 200k bits bought NOTHING
+    (audit 2026-07-15).  Extend EFFECTS as each system is built."""
+    return category == ARMOR_CATEGORY or key in EFFECTS
 
 
 def catalog():
     """Every buyable entry: [{key, name, price, category}], price order."""
     out = []
     for k, v in data.load_vitems().items():
-        if isinstance(v, dict) and v.get("price"):
+        if isinstance(v, dict) and v.get("price") \
+                and _usable(k, v.get("category", "Item")):
             out.append({"key": k, "name": v.get("name", k),
                         "price": int(v["price"]),
                         "category": v.get("category", "Item")})

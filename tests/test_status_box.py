@@ -64,16 +64,12 @@ def test_main_egg_and_grave_cards_fit_and_read_compact_ages():
 def test_every_mode_painter_fits_the_card():
     random.seed(5)
     from tuipet.app import TuiPetApp
-    from tuipet import adventurescreen, townscreen, training, battlescreen
+    from tuipet import training, battlescreen
     app = TuiPetApp.__new__(TuiPetApp)
     app.pet = _pet()
     fake = app.stats_w = _FakeStats()
     p = app.pet
 
-    app.mode = adventurescreen.AdventurePanel(p)
-    app._status_adventure(); _fits(fake, "adventure")
-    app.mode.sub = townscreen.TownPanel(p, 0)
-    app._status_adventure(); _fits(fake, "town")
     app.mode = training.TrainingPanel(p)
     app._status_training(); _fits(fake, "train bar")
     app.mode.key("space")
@@ -94,7 +90,7 @@ def test_the_untested_consumer_cards_paint_and_fit():
     done card and the HP card mid-drill were all attribute-drift blind."""
     random.seed(7)
     from tuipet.app import TuiPetApp
-    from tuipet import adventurescreen, townscreen, training, battlescreen
+    from tuipet import training, battlescreen
     app = TuiPetApp.__new__(TuiPetApp)
     app.pet = _pet()
     fake = app.stats_w = _FakeStats()
@@ -108,15 +104,6 @@ def test_the_untested_consumer_cards_paint_and_fit():
     app.mode.battle.reward = "training +2"
     app._status_battle(); _fits(fake, "battle result")
     assert "VICTORY" in fake.txt
-
-    town = townscreen.TownPanel(p, 0)                    # the town card
-    app._status_town(town); _fits(fake, "town card")
-
-    app.mode = adventurescreen.AdventurePanel(p)         # mid-encounter card
-    sub = battlescreen.BattlePanel(p)
-    sub._start_fight("normal")
-    app.mode.sub = sub
-    app._status_adventure(); _fits(fake, "adventure battle")
 
     app.mode = training.TrainingPanel(p)                 # the done card
     app.mode.phase, app.mode.success = "done", True

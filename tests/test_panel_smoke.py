@@ -99,14 +99,6 @@ def test_the_simple_panels_all_draw():
     _walk(FeedPanel(p), ["down", "up"])
 
 
-def test_town_and_adventure_panels_draw():
-    from tuipet.adventurescreen import AdventurePanel
-    p = _pet()
-
-    pan = AdventurePanel(p)
-    _walk(pan, ["down", "up"])
-
-
 def test_scene_screens_fit_the_physical_lcd_in_every_state():
     """Box-clip audit: every deep scene state stays within the 12-row LCD."""
     import random
