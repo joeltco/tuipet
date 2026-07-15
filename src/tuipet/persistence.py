@@ -855,9 +855,12 @@ def pet_from_save(data, catch_up=True, strict=False):
     # retired habitat economy -- refund every PURCHASED home at full price
     # (the starter pair 0/2 came free) and start on the default scene
     from . import backgrounds as _bgs
-    if getattr(pet, "bg_current", None) not in _bgs.CATALOG:
-        pet.bg_current = _bgs.DEFAULT      # an off-catalog pick (retired scene) resets
-    pet.bg_owned = [k for k in getattr(pet, "bg_owned", []) if k in _bgs.CATALOG]
+    _cur = getattr(pet, "bg_current", None)
+    _cur = _bgs.ALIASES.get(_cur, _cur)    # a retired TINT lands on its keeper
+    pet.bg_current = _cur if _cur in _bgs.CATALOG else _bgs.DEFAULT
+    pet.bg_owned = sorted({_bgs.ALIASES.get(k, k)
+                           for k in getattr(pet, "bg_owned", [])
+                           if _bgs.ALIASES.get(k, k) in _bgs.CATALOG})
     if "bg_owned" not in data and isinstance(data.get("habitats"), list):
         from . import data as _data
         habs = _data.load_habitats()

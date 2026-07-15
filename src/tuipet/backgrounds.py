@@ -39,9 +39,7 @@ CATALOG = {
     "tealhollow":   ("Teal Hollow", 0),
     "moonmeadow":   ("Moonlit Meadow", 0),
     "underwater":   ("Underwater", 0),
-    "seafloor":     ("Seafloor", 0),
     "volcano":      ("Volcano", 0),
-    "sunsetshore":  ("Sunset Shore", 0),
     "baybridge":    ("Bay Bridge", 0),
     "bridgenight":  ("Bridge Night", 0),
     "datatunnel":   ("Data Tunnel", 0),
@@ -55,7 +53,17 @@ _DATA_NAMES = {
     "factory": "Factory", "factorynight": "Factory Night",
     "fileisland": "Lone Island", "islandsea": "Island Sea",
     "islandnight": "Island Night", "jungle": "Jungle",
+    "seafloor": "Seafloor", "sunsetshore": "Sunset Shore",
     "townBack": "Town",
+}
+
+# retired picks that are TINTS of a surviving scene (Joel 2026-07-15:
+# "sunset shore, sea floor and underwater are all the same backgrounds" --
+# the Xross sea triplet).  A save that had one picked lands on the keeper,
+# not the default.
+ALIASES = {
+    "seafloor": "underwater",
+    "sunsetshore": "underwater",
 }
 
 FREE = tuple(k for k, (_, p) in CATALOG.items() if p == 0)

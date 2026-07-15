@@ -158,3 +158,26 @@ def test_wild_battles_fight_on_the_road_scene(monkeypatch):
     pan2 = BattlePanel(p, None, wild=True)
     pan2.text()
     assert seen and seen[-1] is None
+
+
+def test_sea_tints_deduped_to_underwater():
+    """Joel 2026-07-15: "sunset shore, sea floor and underwater are all the
+    same backgrounds... just keep the underwater one."  The two tints are
+    data-only now, and a save that had one picked lands on the KEEPER (its
+    alias), not the default."""
+    assert "underwater" in bgs.CATALOG
+    assert "seafloor" not in bgs.CATALOG
+    assert "sunsetshore" not in bgs.CATALOG
+    # the frames stay shipped (world data), still named
+    sheets = data.load_backgrounds()
+    assert "seafloor" in sheets and "sunsetshore" in sheets
+    assert bgs.name("sunsetshore") == "Sunset Shore"
+    # an old save picked on a retired tint keeps its sea view
+    p = _pet()
+    d = persistence.to_save_dict(p)
+    d["bg_current"] = "sunsetshore"
+    d["bg_owned"] = ["seafloor", "greenhills"]
+    p2, _ = persistence.pet_from_save(d, catch_up=False)
+    assert p2.bg_current == "underwater"
+    assert "underwater" in p2.bg_owned and "greenhills" in p2.bg_owned
+    assert "seafloor" not in p2.bg_owned

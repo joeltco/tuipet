@@ -266,10 +266,10 @@ class TuiPetApp(App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("BATTLES FIGHT WHERE THEY STAND: a wild encounter on the "
-                 "road now battles in front of the biome you are crossing - "
-                 "dunes in the dunes, city in the city - instead of your "
-                 "home scene.")
+    WHATS_NEW = ("SCENE GALLERY DEDUPED: Seafloor and Sunset Shore were "
+                 "tints of the same sea vista as Underwater - the gallery "
+                 "keeps one Underwater; a save that had a tint picked keeps "
+                 "its sea view.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and
