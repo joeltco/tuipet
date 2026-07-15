@@ -281,9 +281,9 @@ class TuiPetApp(App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("NOTHING LEFT UNSAID: any message too wide for its box "
-                 "now scrolls instead of getting cut off - every screen, "
-                 "every note. Your pet's excuses arrive in full.")
+    WHATS_NEW = ("NIGHT IS NIGHT AGAIN: rain no longer flips the midnight "
+                 "sky to noon - storms wear the dark like they should, and "
+                 "the scenery dissolves between weathers instead of jumping.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and
