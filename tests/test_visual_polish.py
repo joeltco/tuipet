@@ -13,10 +13,10 @@ from tuipet.pet import Pet
 
 
 def _pet(**kw):
-    p = Pet(num=100, stage="Champion", attribute="Vaccine", obedience=500)
-    p.world_seconds = 10 * 60.0
+    p = Pet(num=100, stage="Adult", attribute="Vaccine")
+
     p.bits = 9000
-    p.sleep_limit = 9e9
+
     for k, v in kw.items():
         setattr(p, k, v)
     return p
@@ -42,14 +42,6 @@ def _open(key):
             return _card_plain(app)
     return asyncio.run(go())
 
-
-
-def test_dna_card_wraps_guidance_instead_of_clipping():
-    """'Generate DNA, then charge it.' clipped at [:24] to '...then charg'.
-    The guidance now wraps on word boundaries and survives whole."""
-    card = _open("x")
-    assert "charge it." in card
-    assert "charg\n" not in card
 
 
 def test_bug_prompt_fits_the_lcd():

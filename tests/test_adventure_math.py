@@ -28,39 +28,11 @@ from tuipet.adventure import Adventure
 
 
 def _pet(**kw):
-    p = Pet(num=100, stage="Champion", attribute="Vaccine", obedience=500)
-    p.world_seconds = 10 * 60.0
-    p.sleep_limit = 9e9
+    p = Pet(num=100, stage="Adult", attribute="Vaccine")
+
     for k, v in kw.items():
         setattr(p, k, v)
     return p
-
-
-def test_escape_is_a_power_weighted_roll():
-    random.seed(0)
-    weak = _pet(vaccine=0, data_power=0, virus=0, full_health=1)
-    strong = _pet(vaccine=500, data_power=500, virus=500, full_health=25)
-    goliath = {"vaccine": 300, "data_power": 300, "virus": 300, "hp": 25, "boss": True}
-    w = sum(weak.can_escape(dict(goliath)) for _ in range(300))
-    s = sum(strong.can_escape(dict(goliath)) for _ in range(300))
-    assert w < 30 and s > 150                  # the weak barely slip away; the strong walk
-
-
-def test_failed_escape_forces_a_round():
-    from tuipet.battlescreen import BattlePanel
-    random.seed(1)
-    p = _pet(vaccine=0, data_power=0, virus=0, full_health=1)
-    pan = BattlePanel(p, {"num": 29, "name": "X", "stage": "Champion", "vaccine": 400,
-                          "data_power": 400, "virus": 400, "hp": 25, "bits": (0, 0),
-                          "boss": True}, wild=True)
-    for _ in range(40):                        # keep trying; a failure must NOT exit
-        r = pan._player_surrender()
-        if r is None:
-            assert "failed" in pan.note        # the canon message + the forced round
-            break
-        pan = BattlePanel(p, dict(pan.battle.enemy), wild=True)
-    else:
-        raise AssertionError("a 1-power pet never failed to escape a goliath")
 
 
 def test_placed_randoms_are_set_ambushers():
@@ -80,11 +52,3 @@ def test_placed_randoms_are_set_ambushers():
         adv.zone["randoms"] = saved
 
 
-def test_unwell_walking_sours_and_hated_hours_drag():
-    random.seed(2)
-    p = _pet(sick=True, sick_length=9999.0, mood=100)
-    adv = Adventure(p)
-    adv._energy_dec = 10 ** 9                  # force the next drain crossing
-    m0 = p.mood
-    adv._travel_drain()
-    assert p.mood < m0                         # WalkUnwellMoodDec

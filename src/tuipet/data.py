@@ -1,4 +1,5 @@
-"""Load extracted sprites + game data from the DVPet CSVs."""
+"""Load the bundled game data (sprites + rule tables, ripped from multiple
+fan games -- the mon atlas is COLOUR, palette-indexed, 16x16)."""
 from __future__ import annotations
 import csv
 import gzip
@@ -32,7 +33,7 @@ def _load_bundled(name):
             f"tools/setup_assets.sh)"
         ) from e
 
-# Frame roles VERIFIED against DVPet View/SpriteAnim drawNum() args (each per-Digimon
+# Frame roles VERIFIED against the classic V-pet View/SpriteAnim drawNum() args (each per-Digimon
 # strip is 11 frames, index 0-10; sheet order preserved by extract_sprites col 0..10):
 #   0 idle/neutral base      6 attack / cheer-up (HP_Training_AttackSuccess, attackDefault)
 #   1 idle-B / walk-B / toy   7 eat-chew / cheer-down(big) / wake-end
@@ -48,7 +49,7 @@ ROLES = {
     "sleep":  [2, 3],      # idleSleep
     "happy":  [5, 7],      # Cheering: cheer(true) up=5 down=7 -- the canonical praise/win/evolve bounce
     "angry":  [9, 10],     # Jeering: jeer(false) up=9 down=10 (severe/bad-health scold; mild jeer(true) is 6/4)
-    "eat":    [8, 7],      # eat(): open-mouth 8 -> chew 7 (verified DVPet order)
+    "eat":    [8, 7],      # eat(): open-mouth 8 -> chew 7 (verified the classic V-pet order)
     "refuse": [4],         # refuse(): frame 4 (9 if Depressed) shaken by mirror toggle
     "attack": [6, 0],      # attackDefault: strike 6 -> reset 0
     "tantrum": [9, 10],    # tuipet unhappy-idle -> jeer poses
@@ -72,8 +73,9 @@ ROLES = {
 }
 MIRROR_ROLES = {"refuse"}
 
-STAGE_ORDER = ["Fresh", "InTraining", "Rookie", "Champion", "Ultimate", "Mega"]
-# full growth order including the Egg stage, for age/stage-rank gating (shop, tournament)
+STAGE_ORDER = ["Baby I", "Baby II", "Child", "Adult", "Perfect",
+               "Ultimate-Super Ultimate", "Armor-Hybrid", "Special"]
+# full growth order including the Egg stage, for stage-rank gating
 STAGE_RANK = ["Egg"] + STAGE_ORDER
 
 
@@ -116,7 +118,7 @@ def frames_for(num, egg_type=0):
         from . import egg as egg_mod
         return egg_mod.frames(egg_type) or [""]
     rec = load_sprites()[1].get(num)
-    return rec["frames"] if rec else [""]
+    return _decode_strip(rec)["frames"] if rec else [""]
 
 
 def record_for(num):
@@ -132,7 +134,8 @@ def record_for(num):
         from . import placeholder
         rec = {"frames": placeholder.FRAMES, "w": placeholder.W,
                "h": placeholder.H, "_placeholder": True}
-    return rec
+        return rec
+    return _decode_strip(rec)
 
 
 def bob_frame(num, frame_i, role="idle", beat=5, egg_type=0):
@@ -161,27 +164,126 @@ def bob_frame(num, frame_i, role="idle", beat=5, egg_type=0):
     return f or next((x for x in fr if x), None)
 
 
+def _decode_frame(hx, pal):
+    """One packed frame (2 hex chars per pixel, palette-indexed, 16x16) ->
+    COLOUR rows: lists of None (transparent) / "#rrggbb" cells."""
+    rows = []
+    for y in range(16):
+        row = []
+        for x in range(16):
+            o = (y * 16 + x) * 2
+            c = pal[int(hx[o:o + 2], 16)]
+            row.append(c if c not in ("0", 0) else None)
+        rows.append(row)
+    return rows
+
+
+# the 11-slot strip layout every ROLE indexes into, filled from the atlas'
+# named anims (walk/eat/sleep/injured pairs + happy/angry/attack/refuse):
+_STRIP = (("walk", 0), ("walk", 1), ("sleep", 0), ("sleep", 1),
+          ("refuse", 0), ("happy", 0), ("attack", 0), ("eat", 1),
+          ("eat", 0), ("angry", 0), ("injured", 0))
+
+
+def _decode_strip(rec):
+    """Decode a mon record's packed anims into its 11-frame strip, once."""
+    if "frames" in rec:
+        return rec
+    pal, anims = rec["pal"], rec["anims"]
+    cache = {}
+
+    def frame(slot, i):
+        key = (slot, i)
+        if key not in cache:
+            fr = anims.get(slot)
+            if not fr:
+                fr = anims.get("walk") or next(iter(anims.values()))
+            cache[key] = _decode_frame(fr[min(i, len(fr) - 1)], pal)
+        return cache[key]
+
+    rec["frames"] = [frame(s, i) for s, i in _STRIP]
+    return rec
+
+
 @lru_cache(maxsize=1)
 def load_sprites():
-    from . import placeholder
-    data = _load_bundled("sprites.json.gz")
-    for rec in data:
-        frames = rec["frames"]
-        first = next((f for f in frames if f), None)
-        best = max((sum(r.count("1") for r in f) for f in frames if f), default=0)
-        # unfinished cells (solid square, near-blank, or fully empty) -> blob
-        if (first is None or best < 10 or _content_fill(first) > 0.97
-                or rec["name"].strip().upper() in ("EMPTY", "", "NA", "NULL", "NONE")):
-            PLACEHOLDER_NUMS.add(rec["num"])
-            rec["frames"] = placeholder.FRAMES
-            rec["w"], rec["h"] = placeholder.W, placeholder.H
-            rec["_placeholder"] = True
-        else:
-            # fill empty animation frames with the first real frame so no role
-            # (idle/eat/sleep/...) ever renders blank
-            rec["frames"] = [f if f else first for f in frames]
-    by_num = {d["num"]: d for d in data}
+    """The mon atlas: COLOUR sprites + species stats, keyed by num AND by
+    species path.  Nums are the sorted-path index -- stable because the atlas
+    ships with the build.  Frame strips decode lazily (991 species x 11
+    frames is too much work for import time)."""
+    mons = _load_bundled("mons.json.gz")
+    data = []
+    by_num = {}
+    for num, path in enumerate(sorted(mons)):
+        m = mons[path]
+        rec = {"num": num, "path": path, "name": m["name"],
+               "stage": m["stage"], "attribute": m["attribute"],
+               "weight": m["weight"], "hunger_max": m["hunger_max"],
+               "strength_max": m["strength_max"], "energy_max": m["energy_max"],
+               "attack_sprite": m["attack_sprite"],
+               "pal": m["pal"], "anims": m["anims"], "w": 16, "h": 16}
+        data.append(rec)
+        by_num[num] = rec
     return data, by_num
+
+
+@lru_cache(maxsize=1)
+def num_by_path():
+    """species path -> roster num (the tables speak in paths)."""
+    return {rec["path"]: rec["num"] for rec in load_sprites()[0]}
+
+
+def _load_json(name):
+    with open(os.path.join(_DATA, name)) as fh:
+        return json.load(fh)
+
+
+@lru_cache(maxsize=1)
+def load_rules():
+    """The sim rule constants (clock/meters/care/death/sleep/evolution/battle)."""
+    return _load_json("vpet_rules.json")
+
+
+@lru_cache(maxsize=1)
+def load_evo_branches():
+    """species path -> {best/middle/worst: next path} (the growth chart)."""
+    return _load_bundled("evo_branches.json.gz")
+
+
+@lru_cache(maxsize=1)
+def load_hatch():
+    """egg path -> Baby I path."""
+    return _load_json("hatch.json")
+
+
+@lru_cache(maxsize=1)
+def load_armor_evos():
+    """Child path -> [{itemId, result path}] (the crest-egg forms)."""
+    return _load_json("armor_evos.json")
+
+
+@lru_cache(maxsize=1)
+def load_jogress_pairs():
+    """'pathA|pathB' (sorted) -> fusion result path."""
+    return _load_bundled("jogress_pairs.json.gz")
+
+
+@lru_cache(maxsize=1)
+def load_vitems():
+    """The item catalog: id -> {name, price?, category, ...}."""
+    return _load_json("vitems.json")
+
+
+@lru_cache(maxsize=1)
+def load_credits():
+    """Sprite-artist credits: {authors: {artist: [names]}, unmatched: [...]}."""
+    return _load_json("credits.json")
+
+
+@lru_cache(maxsize=1)
+def load_battle_fx():
+    """Battle-effect bitmaps (attack projectiles, hit, ready/start banners)."""
+    return _load_bundled("battle_fx.json.gz")
 
 
 def is_placeholder(num):
@@ -217,7 +319,7 @@ def load_foods():
                 foods.append({
                     "id": fid,
                     "key": f"f:{fid}",
-                    # DVPet's Java UI embeds <br> line breaks in names
+                    # the classic V-pet's Java UI embeds <br> line breaks in names
                     # ("Vaccine<br>Chip G") -- strip like the consumable parser
                     "name": (row["Name"] or "?").replace("<br>", " "),
                     "hunger": int(row["Hunger"] or 0),
@@ -232,7 +334,7 @@ def load_foods():
                     "protein": int(row.get("Proteins") or 0),
                     "vitamin_n": int(row.get("Vitamins") or 0),
                     "mineral": int(row.get("Minerals") or 0),
-                    # inventory model (DVPet Consumable): StartingQuantity seeds what
+                    # inventory model (the classic V-pet Consumable): StartingQuantity seeds what
                     # you own; CanDec=false = never depletes (the staples: Meat/Fish/
                     # Fruit/Vegetable); ShowInInventory=false = not on the feed page
                     # (Med/Vitamin ride the heal flows instead)
@@ -291,7 +393,7 @@ def _int_or(s, default):
         return default
 
 
-# DVPet DNA fields by name ("None" is Enum.Field ordinal 0 = a REAL bankable/chargeable
+# the classic V-pet DNA fields by name ("None" is Enum.Field ordinal 0 = a REAL bankable/chargeable
 # slot; only NA is excluded). Order here is tuipet's menu display order -- inventory and
 # evolution gates are keyed by NAME (digimon.csv {Field}Key/{Field}Value matched by name),
 # so this tuple's order is independent of Enum.Field ordinals.
@@ -346,7 +448,7 @@ def attack_orb(num, attribute, power, frame_i=0):
     """The attack projectile.  Device-accurate first (Joel 2026-07-14): a species
     in deviceAttacks.csv fires ITS OWN real-hardware attack for EVERY attribute,
     exactly like the original V-Pet -- frame_i animates the 2-frame attacks at
-    the caller's 10Hz clock.  Everyone else keeps DVPet checkAttackSprite: the
+    the caller's 10Hz clock.  Everyone else keeps the classic V-pet checkAttackSprite: the
     per-species special orb (attackSpritesSpecial.png, digimon.csv col 55) if set
     for this attribute, else the generic per-attribute orb at the power tier
     floor(power/25) from attackSprites.png."""
@@ -459,7 +561,7 @@ def load_requirements():
             "lifespan_mod": _int_or(r.get("LifespanMod"), 0),        # per-form lifespan delta
             "give_item": _int_or(r.get("GiveItem"), -1),             # consumable granted on evolve
             "incarnations": _gate(r, "IncarnationsKey", "IncarnationsValue"),  # generation-count gate
-            "max_energy": _int_or(r.get("MaxEnergy"), 24),          # DVPet per-Digimon maxEnergy
+            "max_energy": _int_or(r.get("MaxEnergy"), 24),          # the classic V-pet per-Digimon maxEnergy
             "sleep_energy_gain": _int_or(r.get("SleepEnergyGain"), 3),
             "awake_inc": _int_or(r.get("AwakeLapseInc"), 1),   # 1 adult / 16 babies: short naps
             "can_assist": (r.get("CanAssist") or "").strip().upper() == "TRUE",   # AI Assistant pool
@@ -475,7 +577,7 @@ def assist_pool():
 
 @lru_cache(maxsize=1)
 def _name_canonical_map():
-    """num -> the CANONICAL (lowest) num among same-name roster rows.  DVPet
+    """num -> the CANONICAL (lowest) num among same-name roster rows.  the classic V-pet
     stores duplicate species rows (the 1410+ egg-hatch block mirrors the
     chart's canonical rows) and its dex sync is BY NAME: checkNaturalUnlocked
     propagates `unlocked` across every same-name row, so a form raised under
@@ -502,7 +604,7 @@ def canonical_num(num):
 
 @lru_cache(maxsize=1)
 def _canonical_habitat_by_name():
-    """DVPet stores duplicate species rows: the egg-hatch duplicates carry
+    """the classic V-pet stores duplicate species rows: the egg-hatch duplicates carry
     Habitat -1 while the base row carries the real habitat. Map name -> habitat."""
     path = os.path.join(_RAW, "digimon.csv")
     out = {}
@@ -514,7 +616,7 @@ def _canonical_habitat_by_name():
 
 
 def natural_habitat(num):
-    """The habitat a Digimon calls home (-1 = none). Resolves DVPet's duplicate
+    """The habitat a Digimon calls home (-1 = none). Resolves the classic V-pet's duplicate
     rows so egg-hatched forms still find their species' habitat."""
     h = load_requirements().get(num, {}).get("habitat_req", -1)
     if h is not None and h >= 0:
@@ -553,13 +655,13 @@ def _load_attacks():
 
 
 def move_name(num, attribute):
-    """The flavour name of a Digimon's attack for an attribute (DVPet
+    """The flavour name of a Digimon's attack for an attribute (the classic V-pet
     VaccineName/DataName/VirusName columns), e.g. 'Exhaust Flame'."""
     return (_load_attacks().get(num) or {}).get(attribute, {}).get("name", "")
 
 
 def attack_info(num, attribute):
-    """Full DVPet attack for an attribute: {name, effect, conditions[]} parsed from
+    """Full the classic V-pet attack for an attribute: {name, effect, conditions[]} parsed from
     the digimon.csv Name:Effect:Condition(s) cell (AttackEffectProcess input)."""
     return (_load_attacks().get(num) or {}).get(attribute) or {"name": "", "effect": "None", "conditions": []}
 
@@ -737,7 +839,7 @@ def load_maps():
             "rand_items": [int(x) for x in (z.get("RandomItems") or "").split(":") if x.strip().isdigit()],
             "rand_foods": [int(x) for x in (z.get("RandomFood") or "").split(":") if x.strip().isdigit()],
             # BackgroundsAndRange: the journey's SCENERY -- "lo t hi : habitat_id"
-            # spans; the backdrop changes as the pet walks the zone (DVPet canon)
+            # spans; the backdrop changes as the pet walks the zone (the classic V-pet canon)
             "bgs": _zone_bgs(z.get("BackgroundsAndRange") or ""),
         })
     return [{"map": m, "zones": sorted(zmap[m], key=lambda z: z["zone"])}
@@ -762,7 +864,7 @@ def _consumable(row, id_field):
         "price": int(num("DefaultPrice")),
         "hunger": int(num("Hunger")),
         "mood": int(num("Mood")),
-        "enthusiasm": int(num("Enthusiasm")),   # DVPet keeps spirit separate from mood
+        "enthusiasm": int(num("Enthusiasm")),   # the classic V-pet keeps spirit separate from mood
         "weight": int(num("Weight")),
         # a FRACTIONAL energy is a share of maxEnergy (canon applyItem: the
         # X-Program's -0.8, the Digimentals' -0.66) -- the old int() zeroed
@@ -775,22 +877,22 @@ def _consumable(row, id_field):
         "data": int(num("Data")),
         "virus": int(num("Virus")),
         "cured": flag("Cured"),
-        # DVPet Healed clears an injury; Recovered only restores battle HP (no tuipet
+        # the classic V-pet Healed clears an injury; Recovered only restores battle HP (no tuipet
         # analog -- HP is recomputed per battle), so do NOT fold Recovered into healed,
-        # else Steak/Tuna/Honey/Bath/etc. would falsely cure injuries (DVPet applyConsumable).
+        # else Steak/Tuna/Honey/Bath/etc. would falsely cure injuries (the classic V-pet applyConsumable).
         "healed": flag("Healed"),
         # foods.csv uses FatiguedRelieved/DepressedRelieved; items.csv uses Removes *
         "unfatigue": flag("Removes Fatigue") or flag("FatiguedRelieved"),
         "vitamin": int(num("Vitamins")) > 0,   # foods.csv Vitamins>0 (e.g. "Vitamin") guards vs injury worsening
         "undepressed": flag("Removes Depressed") or flag("DepressedRelieved"),
-        "seconds": int(num("Seconds")),     # DVPet setTotalLifespan: lifespan delta (sec)
-        "temp": int(num("Temp")),           # DVPet temp change (clamped 0..MaxTemp=100)
+        "seconds": int(num("Seconds")),     # the classic V-pet setTotalLifespan: lifespan delta (sec)
+        "temp": int(num("Temp")),           # the classic V-pet temp change (clamped 0..MaxTemp=100)
         # changeToPrefTemp: snap temp to the ideal midpoint (the Futon tucks
         # the room comfy, then PauseTemp holds it).  Ported 2026-07-15 on
         # Joel's call ("if futons snap to comfort temp in canon, then switch
         # it back") -- this reversed the one-day-old deliberate omission.
         "pref_temp": flag("ChangeToPrefTemp"),
-        "sleep": flag("Sleep"),             # DVPet item Sleep flag: induce sleep
+        "sleep": flag("Sleep"),             # the classic V-pet item Sleep flag: induce sleep
         # foods.csv SleepLapse: the bedtime nudge (Caffeine Pill) -- parsed by
         # load_foods for feed() but DROPPED here, so the bag door lost the
         # pill's signature effect (items.csv has no column -> 0; audit 2026-07-13)
@@ -805,15 +907,15 @@ def _consumable(row, id_field):
         # sleep clocks -- "Hours" is the column's own misnomer).  Only the
         # Futon carries it (1): it's a tuck-in for a sleeper, not day furniture.
         "max_hours_sleep": int(row.get("MaxHoursBeforeSleep") or -1),
-        # DVPet FoodID/ItemID cols: ";"-list of consumables this one yields when used
+        # the classic V-pet FoodID/ItemID cols: ";"-list of consumables this one yields when used
         # (a "crafter" -- Toy Oven bakes random foods, Chocolate Egg pops random capsules)
         "unlocks_food": _idlist(row.get("FoodID")),
         "unlocks_item": _idlist(row.get("ItemID")),
-        "action": (row.get("AnimationType") or "").strip(),  # DVPet item behaviour driver
+        "action": (row.get("AnimationType") or "").strip(),  # the classic V-pet item behaviour driver
         "dexnum": int(num("DigimonID")),  # direct ItemEvol target form (-1 if none)
         "category": (row.get("Type") or "").strip(),  # foods.csv food category for taste
         "effect_id": int(num("EffectID")) if (row.get("EffectID") or "").strip() not in ("", "-1") else -1,
-        # DVPet Consumable uses-model: a held consumable carries uses up to MaxUses;
+        # the classic V-pet Consumable uses-model: a held consumable carries uses up to MaxUses;
         # using spends UsesPer*; can_inc/can_dec gate buying/using (foods/items.csv).
         "max_uses": int(num("MaxUses") or 1),
         "gift_chance": int(num("GiftChance/100")),   # per-item odds of being the gift-call present
@@ -838,7 +940,7 @@ def _consumable(row, id_field):
         # staples into the gift/discover pools (audit 2026-07)
         "can_inc": (row.get("CanIncUses") or row.get("CanInc") or "TRUE").strip().upper() != "FALSE",
         "can_dec": (row.get("CanDecUses") or row.get("CanDec") or "TRUE").strip().upper() != "FALSE",
-        # DVPet getNormalItems: only items flagged ShowInInventory appear in the bag
+        # the classic V-pet getNormalItems: only items flagged ShowInInventory appear in the bag
         # (transports / key / evolution items are hidden). Foods have no column -> shown.
         "show_in_inventory": (row.get("ShowInInventory") or "TRUE").strip().upper() != "FALSE",
     }
@@ -879,7 +981,7 @@ _FUNC_STATS = ("hunger", "mood", "enthusiasm", "weight", "energy",
 _FUNC_FLAGS = ("cured", "healed", "unfatigue", "undepressed", "vitamin")
 
 
-# DVPet world-warp items (items.csv AnimationType); handled by transportscreen.
+# the classic V-pet world-warp items (items.csv AnimationType); handled by transportscreen.
 TRANSPORT_ACTIONS = {"PhoenixTransport", "BirdraTransport", "GarudaTransport", "WhaTransport"}
 
 
@@ -906,7 +1008,7 @@ def item_is_functional(e):
 # ---------------------------------------------------------------------------
 # Bag taxonomy: shop_category buckets owned consumables into the bag tabs
 # (food / medicine / toy / chip / special).  The SHOP roster itself is the
-# DVPet home-shop roll (shop.py) -- no invented category/stage gating.
+# the classic V-pet home-shop roll (shop.py) -- no invented category/stage gating.
 # ---------------------------------------------------------------------------
 _SPECIAL_ANIMS = {"ItemEvol", "X_Program", "Inherit", "PhoenixTransport",
                   "BirdraTransport", "GarudaTransport", "WhaTransport", "PortToilet"}
@@ -955,7 +1057,7 @@ def _shop_time4(val):
 
 
 def _default_econ(r):
-    """DVPet home-shop economy: each consumable's OWN Default* columns
+    """the classic V-pet home-shop economy: each consumable's OWN Default* columns
     (FoodType/Item build their _homeShop ShopConsumable from these).
     shopConsumable.csv is only the per-TOWN override table -- tuipet has the
     single home shop, so the Default* columns are the whole economy."""
@@ -1059,7 +1161,7 @@ def load_towns():
 
 def _shop_econ_default():
     """Always-stocked, no-sale defaults for specialty items not in shopConsumable.csv."""
-    # NOT must_stock: these specialty extras (X-Antibody etc.) are not in DVPet's
+    # NOT must_stock: these specialty extras (X-Antibody etc.) are not in the classic V-pet's
     # shopConsumable.csv -- keep them buyable but as an occasional rare find, not a
     # permanent shelf fixture, so they do not clutter the faithful storefront.
     return {"min_stock": 1, "max_stock": 1, "stock_chance": [20] * 4,
@@ -1121,7 +1223,7 @@ def consumable_by_key(key):
 
 @lru_cache(maxsize=1)
 def load_loot_tables():
-    """DVPet loot tables: table_id -> ordered list of {key, name, rate}.
+    """the classic V-pet loot tables: table_id -> ordered list of {key, name, rate}.
 
     Built from lootTable.csv (table -> drop-rate IDs) and dropRate.csv
     (drop-rate ID -> consumable + percentage). A single 0..100 draw walks the
@@ -1202,8 +1304,8 @@ def load_icons():
 # ---------------------------------------------------------------------------
 # Habitats (habitats.csv).  Each habitat is a home with a seasonal climate that
 # drives the weather/temperature system, plus Field/Element affinities that help
-# or hurt a pet living there.  Faithful to DVPet's Habitat model; the one tuning
-# is WEATHER_CHANCE_SCALE, dividing DVPet's 1/# precip chance for the compressed
+# or hurt a pet living there.  Faithful to the classic V-pet's Habitat model; the one tuning
+# is WEATHER_CHANCE_SCALE, dividing the classic V-pet's 1/# precip chance for the compressed
 # clock so weather is actually visible.
 # ---------------------------------------------------------------------------
 WEATHER_CHANCE_SCALE = 4
@@ -1211,7 +1313,7 @@ WEATHER_CHANCE_SCALE = 4
 
 @lru_cache(maxsize=1)
 def load_care_effects():
-    """DVPet careEffect.csv -> {id: effect}. Temporary care buffs (the Futon's sleep
+    """the classic V-pet careEffect.csv -> {id: effect}. Temporary care buffs (the Futon's sleep
     boost): a duration plus per-tick rate changes ("amount;every_n_ticks") and pause
     flags. Applied by pet.use_item / pet.tick."""
     def pair(v):
@@ -1249,7 +1351,7 @@ def load_care_effects():
 
 @lru_cache(maxsize=1)
 def load_digicore_config():
-    """DVPet digicoreMenuConfig.csv -> {num: {label, icon, icon_x}}.
+    """the classic V-pet digicoreMenuConfig.csv -> {num: {label, icon, icon_x}}.
     Icon/IconX name the SPECIAL core badge png (setupDigicore info[1]/info[2]);
     a literal "null" HIDES the badge for that Digimon; unlisted Digimon get the
     default X-antibody-state badges."""
@@ -1282,7 +1384,7 @@ def load_digicore_icons():
 
 @lru_cache(maxsize=1)
 def load_egg_unlock():
-    """DVPet eggUnlock.csv -> {egg_index: rule}. Joined to tuipet egg indices by the
+    """the classic V-pet eggUnlock.csv -> {egg_index: rule}. Joined to tuipet egg indices by the
     egg's hatch name. Each rule is the parsed set of conditions that gate the egg;
     egg.evaluate() tests them against persistence.get_progress()."""
     from . import egg as egg_mod

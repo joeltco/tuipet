@@ -31,8 +31,8 @@ def test_ios_read_only_home_falls_back_to_documents(monkeypatch):
         p = _reload()
         assert p.SAVE_DIR == os.path.join(home, 'Documents', 'tuipet')
         from tuipet.pet import Pet
-        pet = Pet(num=100, stage='Champion', attribute='Vaccine', obedience=500)
-        pet.world_seconds = 600.0
+        pet = Pet(num=100, stage='Champion', attribute='Vaccine')
+
         p.save(pet)
         assert os.path.exists(p.SAVE_PATH), 'the pet must actually persist on iOS'
         assert not p.save_failed
@@ -48,8 +48,8 @@ def test_an_unwritable_disk_is_reported_not_swallowed(monkeypatch):
         monkeypatch.setenv('HOME', home)
         p = _reload()
         from tuipet.pet import Pet
-        pet = Pet(num=100, stage='Champion', attribute='Vaccine', obedience=500)
-        pet.world_seconds = 600.0
+        pet = Pet(num=100, stage='Champion', attribute='Vaccine')
+
         p.save(pet)
         assert p.save_failed, 'a silently unsaveable install used to eat the pet'
     finally:

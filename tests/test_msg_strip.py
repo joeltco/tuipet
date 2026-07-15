@@ -81,7 +81,7 @@ def test_mode_strip_walks_to_the_deepest_sub_panel():
     from tuipet import adventurescreen, townscreen, battlescreen
     from tuipet.pet import Pet
 
-    p = Pet(num=100, stage="Champion", attribute="Vaccine", obedience=500)
+    p = Pet(num=100, stage="Adult", attribute="Vaccine")
     app = TuiPetApp.__new__(TuiPetApp)
     app.pet = p
     delivered = []

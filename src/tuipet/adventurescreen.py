@@ -37,7 +37,7 @@ TRAVEL_TICKS = 10             # ticks per auto-stride (the INTERACTIVE_STEPS com
 #                               twelve BackgroundsAndRange scenes strobed ~1/s; at 1s/stride
 #                               each scene HOLDS like canon's set-piece backdrops and towns
 #                               read as interludes (Joel 2026-07-07: "adventure felt
-#                               different in dvpet")
+#                               different in the classic V-pet")
 # the habitat transition (canon Enum.State.Teleport_Leave/Teleport_Arrive --
 # SpriteAnim.teleportLeave()/teleportArrive(), the state ClockTic fires the
 # moment the pet leaves for (or returns from) the adventure world): the
@@ -460,9 +460,8 @@ class AdventurePanel(menu.SubHost):
             # fx guard, action_praise/scold/heal)
             return None
         if k == "f":
-            reason = self.pet.can_feed()
-            if reason:
-                self.adv.last = reason
+            if not self.pet.can_feed():
+                self.adv.last = "Not now."
                 self.sfx = "refuse"
             else:
                 self.sub = FeedPanel(self.pet)
@@ -472,19 +471,14 @@ class AdventurePanel(menu.SubHost):
             self.sub = ShopPanel(self.pet, start_mode="bag", bag_only=True)
             return None
         if k == "h":
-            self.adv.last = self.pet.heal()
-            self._road_react("confirm")
-            return None
-        if k == "r":
-            self.adv.last = self.pet.praise()
-            self._road_react("confirm")
-            return None
-        if k == "k":
-            self.adv.last = self.pet.scold()
-            self._road_react("refuse")
+            out = self.pet.feed_pill()
+            self.adv.last = ("Cured & fueled." if out == "healed"
+                             else "It doesn't need the pill.")
+            self._road_react("confirm" if out == "healed" else "refuse")
             return None
         if k == "s":
-            self.adv.last = self.pet.toggle_lights()
+            on = self.pet.toggle_lights()
+            self.adv.last = "Lights on." if on else "Lights out."
             self.sfx = "confirm"
             return None
         if k == "space" and self.adv.boss_pending and self.sub is None \
@@ -494,15 +488,6 @@ class AdventurePanel(menu.SubHost):
             self.sub = BattlePanel(self.pet, b, wild=True, scene=self._road_scene())
             return None
         if k == "space" and not self.adv.done:
-            if not self.travelling:
-                # re-issuing the walk = DVPet canTravel: checkRefused; checkCompliant
-                refused = self.pet.check_refused()
-                self.pet.check_compliant()
-                if refused:
-                    self.adv.last = f"{self.pet.name} refuses to walk!"
-                    self.sfx = "refuse"
-                    self._refuse_t = REFUSE_T
-                    return None
             self.travelling = not self.travelling
         elif k in ("escape", "a"):          # a (the opening key) also closes, like shop/habitat
             if getattr(self, "adv", None) is None or not hasattr(self, "_trans"):

@@ -11,7 +11,7 @@ from tuipet import net, persistence
 
 
 def _pet():
-    return Pet(num=100, stage="Champion", attribute="Vaccine", bits=99)
+    return Pet(num=100, stage="Adult", attribute="Vaccine", bits=99)
 
 
 def _type(pan, s):

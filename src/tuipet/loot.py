@@ -1,9 +1,9 @@
-"""Loot drops — DVPet loot tables.
+"""Loot drops — the classic V-pet loot tables.
 
 Every enemy carries a LootTableID (enemies.csv). Winning a battle rolls that
 table once: a single 0..100 draw walks the drop-rate slices in order, and the
 slack below 100 is the chance nothing drops. Tables and rates come straight from
-DVPet's lootTable.csv + dropRate.csv (see data.load_loot_tables)."""
+the classic V-pet's lootTable.csv + dropRate.csv (see data.load_loot_tables)."""
 from __future__ import annotations
 import random
 from . import data

@@ -53,7 +53,7 @@ def test_whats_new_still_greets_a_returning_player():
 # ---- retiring a LIVING pet asks first -------------------------------------------
 
 def test_new_egg_over_a_living_pet_needs_a_confirm():
-    pan = _options(Pet(num=100, name="Agumon", stage="Champion"))
+    pan = _options(Pet(num=100, name="Agumon", stage="Adult"))
     _to(pan, "new")
     assert pan.key("enter") is None                # no instant hand-off
     assert pan.confirm_new and "retire Agumon" in pan.msg
@@ -62,7 +62,7 @@ def test_new_egg_over_a_living_pet_needs_a_confirm():
 
 
 def test_new_egg_confirm_esc_keeps_the_pet():
-    pan = _options(Pet(num=100, name="Agumon", stage="Champion"))
+    pan = _options(Pet(num=100, name="Agumon", stage="Adult"))
     _to(pan, "new")
     pan.key("enter")
     assert pan.key("escape") is None
@@ -70,7 +70,7 @@ def test_new_egg_confirm_esc_keeps_the_pet():
 
 
 def test_dead_pet_and_egg_hand_off_without_ceremony():
-    dead = Pet(num=100, name="Agumon", stage="Mega")
+    dead = Pet(num=100, name="Agumon", stage="Ultimate-Super Ultimate")
     dead.dead = True
     pan = _options(dead)
     _to(pan, "new")

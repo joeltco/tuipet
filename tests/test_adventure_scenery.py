@@ -13,9 +13,9 @@ def _pet():
     p = Pet.new_egg(egg_type=1)
     p._hatch_into_fresh()
     for _ in range(2):
-        p.stage_seconds = 9e8
+        p.sttotal_minutes = 9e8
         p._maybe_evolve()
-    p.world_seconds = 12 * 60.0
+
     return p
 
 
@@ -80,38 +80,9 @@ def test_town_lobby_is_a_scene_and_arrival_shows_the_town():
     assert in_town == outside
 
 
-def test_tournament_scenes_use_the_standard_arena():
-    from tuipet.tournamentscreen import FIGHT_ROWS
-    assert FIGHT_ROWS == 12                    # was a squat 8-row band
-
-
-def test_town_cup_interstitial_is_a_scene():
-    from tuipet.townscreen import TownPanel
-    from tuipet import tournament as tmod
-    p = _pet()
-    pan = TownPanel(p, 0)
-    tr = next((t for t in (tmod.trophy_by_id(i) for i in range(40)) if t), None)
-    assert tr is not None
-    pan.tourney = tmod.Tournament(p, tr)
-    assert len(pan.text().plain.split("\n")) == 12   # the faceoff fills the LCD
-    assert "fight" in pan.strip()                     # controls ride the strip
-
-
 def test_jogress_scenes_use_the_standard_arena():
     from tuipet import jogressscreen
     assert (jogressscreen.ROWS, jogressscreen.FUSE_ROWS) == (12, 12)
-
-
-def test_dna_mash_is_a_staged_scene():
-    from tuipet.dnascreen import DNAPanel
-    p = _pet()
-    pan = DNAPanel(p)
-    pan.phase, pan.bet, pan.mash_f, pan.hits = "mash", 10, 20, 14
-    idle = pan.text()
-    assert len(idle.plain.split("\n")) == 12   # the arena fills the LCD
-    assert "SPACE" in pan.strip()               # the meter rides the strip
-    pan.key("space")                           # markup, not plain: sprites are colour
-    assert pan.text().markup != idle.markup    # a press visibly moves the pet
 
 
 def test_memorial_rests_in_the_home_scenery():
@@ -120,7 +91,7 @@ def test_memorial_rests_in_the_home_scenery():
     assert deathscreen.ROWS == 12
     p = _pet()
     p.dead = True
-    pan = DeathPanel(p)
+    pan = DeathPanel(p, hold=0)
     assert len(pan.text().plain.split("\n")) == 12   # the grave fills the LCD
     assert "R.I.P." in pan.strip()                    # the epitaph rides the strip
 
@@ -172,7 +143,7 @@ def test_investigate_plays_the_left_walk_and_seals_the_reveal():
         if pan._scene is not None and pan._scene["kind"] == "item":
             break
         pan._scene, pan.discovering = None, True
-    assert pan._scene and pan._scene["kind"] == "item" and pan._scene["icon"]
+    assert pan._scene and pan._scene["kind"] == "item"
     sealed = pan._scene["msg"]
     assert "dug up" in sealed
     # box-clip repin 2026-07-04: the journey note rides the STRIP now
@@ -182,7 +153,7 @@ def test_investigate_plays_the_left_walk_and_seals_the_reveal():
     while pan._scene is not None:
         pan.anim()
         assert pan._scene is None or pan._scene["t"] <= INV_END_T
-    assert sealed in pan.strip()                  # revealed
+    assert pan.adv.last == sealed                 # revealed (the strip marquees it)
     assert pan.travelling                         # back on the road
 
 
@@ -409,91 +380,12 @@ def test_travel_paces_one_stride_per_second():
 
 def _road(travelling=True):
     p = _pet()
-    p.world_seconds = 12 * 60.0
-    p.obedience = 1000                            # no refusal noise in the beats
+
     p.compliance = True
     pan = AdventurePanel(p)
     pan._trans = None                             # settled past the teleport
     pan.travelling = travelling
     return pan, p
-
-
-def test_road_praise_plays_the_cheer_beat_and_resumes_travel():
-    """A landed praise mirrors the home cheer fx on the arena (poses 5/7 with
-    the happy emote on up-beats), holds travel while it plays, then the road
-    resumes -- the key used to act text-only."""
-    from tuipet.adventurescreen import CARE_T
-    pan, p = _road()
-    p.praise_flag = True                          # a well-timed praise
-    pan.key("r")
-    assert p.anim == "happy"
-    assert pan._care == {"kind": "cheer", "good": True, "t": 0, "resume": True}
-    assert not pan.travelling                     # the beat holds the walk
-    up = pan.text().markup                        # up-beat pose + emote
-    for _ in range(6):
-        pan.anim()
-    assert pan.text().markup != up                # the bounce actually bounces
-    assert pan._care is not None                  # the beat is still playing
-    while pan._care is not None:
-        pan.anim()
-        assert pan._care is None or pan._care["t"] <= CARE_T
-    assert pan.travelling                         # back on the road
-
-
-def test_road_bad_scold_slumps_and_care_keys_lock():
-    """Mis-scolding an innocent plays the Bad_Scold slump (10/9); a second
-    care press during the beat is swallowed (the home fx guard)."""
-    pan, p = _road(travelling=False)
-    p.praise_flag = True                          # it did nothing wrong
-    pan.key("k")
-    assert p.anim == "sad"
-    assert pan._care and pan._care["kind"] == "jeer" and not pan._care["good"]
-    assert pan._care["resume"] is False
-    msg = pan.adv.last
-    pan.key("r")                                  # locked while the beat plays
-    assert pan.adv.last == msg and pan._care["kind"] == "jeer"
-    lights0 = p.lights
-    pan.key("s")                                  # every care key locks
-    assert p.lights == lights0
-    while pan._care is not None:
-        pan.anim()
-    assert not pan.travelling                     # resume honours the held walk
-
-
-def test_road_heal_bandages_then_chains_the_cheer():
-    """Canon bandage(): hurt pose + the i:80 strip, then cheer(true) chains --
-    exactly the home heal fx, on the road."""
-    from tuipet.adventurescreen import HEAL_T
-    pan, p = _road(travelling=False)
-    p.injury = True
-    p.inj_length = 4
-    pan.key("h")
-    assert p.anim == "heal"
-    assert pan._care and pan._care["kind"] == "heal"
-    frame = pan.text().markup                     # the bandage beat renders
-    for _ in range(HEAL_T):
-        pan.anim()
-    assert pan._care and pan._care["kind"] == "cheer"   # the chain
-    assert pan.text().markup != frame
-    while pan._care is not None:
-        pan.anim()
-
-
-def test_road_care_beat_sounds_are_canon_scripted():
-    """cheer stings happy@1, jeer angry@6, heal click@8/13 confirm@18 (the
-    home fx snds tables)."""
-    pan, p = _road(travelling=False)
-    p.scold_flag = True                           # a deserved scold
-    pan.key("k")
-    assert pan._care["kind"] == "jeer" and pan._care["good"]
-    heard = {}
-    while pan._care is not None:
-        t = pan._care["t"]
-        pan.sfx = None
-        pan.anim()
-        if pan.sfx:
-            heard[t] = pan.sfx
-    assert heard == {6: "angry"}
 
 
 def test_teleport_curtain_obeys_the_window_law(monkeypatch):
@@ -731,42 +623,6 @@ def test_sick_pet_trudges_at_half_pace():
     assert abs(sick_dx * 2 - (pan._wx - x0)) < 1e-6, "sick marches at half pace"
 
 
-def test_sleeping_traveller_naps_roadside():
-    """Pass 3: asleep on the road = the journey WAITS -- no march, no
-    strides/encounters, the quiet Zzz scene -- until it wakes."""
-    pan = AdventurePanel(_pet())
-    pan._trans = None
-    pan.travelling = True
-    hits = []
-    pan.adv.travel = lambda: hits.append(1)
-    pan.pet.asleep = True
-    pan.pet.anim = "sleep"
-    x0 = pan._wx = 10.0
-    for _ in range(40):
-        pan.anim()
-    assert pan._wx == x0, "a sleeping pet does not march"
-    assert not hits, "no strides roll while it naps"
-    assert pan._quiet_standing(), "the nap renders as the quiet biome scene"
-    pan.pet.asleep = False
-    for _ in range(5):
-        pan.anim()
-    assert pan._wx > x0, "the march resumes on wake"
-
-
-def test_geriatric_pet_marches_the_aged_shuffle():
-    from tuipet import data
-    pan = AdventurePanel(_pet())
-    pan._trans = None
-    pan.travelling = True
-    pan.pet.age_seconds = pan.pet.lifespan - 100     # geriatric by age
-    assert pan.pet.is_geriatric
-    rows, _x, _m, _o, _n = pan._pet_placement()
-    beat_wi = data.ROLES["walk"][(pan.frame_i // 5) % 2] + 9
-    assert rows == pan._rows(beat_wi), "the elder drags the +9 shuffle frames"
-
-
-# ---- adventure audit pass 4 (the gate stop) -----------------------------------
-
 def test_boss_gate_stops_for_the_faceoff_and_space_engages():
     """Pass 4: a boss event HALTS the march at the gate (the pass-1 faceoff
     finally shows -- the battle used to open the same frame) and SPACE
@@ -792,17 +648,6 @@ def test_boss_gate_stops_for_the_faceoff_and_space_engages():
     assert isinstance(pan.sub, BattlePanel), "SPACE engages the boss"
     assert pan._pending == (True, boss)
 
-
-def test_nap_hint_says_the_journey_waits():
-    pan = AdventurePanel(_pet())
-    pan._trans = None
-    pan.travelling = True
-    pan.pet.asleep = True
-    pan.pet.anim = "sleep"
-    assert "Zzz" in pan.strip() and "SPACE stop" not in pan.strip()
-
-
-# ---- adventure audit pass 5: the whole journey, end to end --------------------
 
 def test_full_expedition_end_to_end(monkeypatch):
     """Pass 5 integration: teleport out -> march -> town gates -> walk on ->
@@ -884,13 +729,13 @@ def _tick_app(pan):
 def test_the_open_road_ticks_the_sim_but_subs_and_teleports_freeze():
     pan = AdventurePanel(_pet())
     app = _tick_app(pan)
-    t0 = pan.pet.age_seconds
+    t0 = pan.pet.total_minutes
     app.on_tick()                                 # teleport still playing
-    assert pan.pet.age_seconds == t0, "the arrival teleport keeps the freeze"
+    assert pan.pet._min_acc == 0.0, "the arrival teleport keeps the freeze"
     pan._trans = None
+    acc0 = pan.pet._min_acc
     app.on_tick()
-    assert pan.pet.age_seconds == t0 + 1.0, "the open road ticks the sim"
-    assert pan.pet.fx_hold, "evolution waits for the main view"
+    assert pan.pet._min_acc == acc0 + 1.0, "the open road ticks the sim"
 
     class _Sub:                                   # any road-side sub freezes
         def key(self, k):
@@ -900,10 +745,11 @@ def test_the_open_road_ticks_the_sim_but_subs_and_teleports_freeze():
             return None
     pan.sub = _Sub()
     app.on_tick()
-    assert pan.pet.age_seconds == t0 + 1.0, "a road-side sub keeps the freeze"
+    assert pan.pet._min_acc == acc0 + 1.0, "a road-side sub keeps the freeze"
     pan.sub = None
     pan.pet.hunger = 0
-    pan.pet.stage = "Rookie"
+    pan.pet.call_on = True
+    pan.pet.stage = "Child"
     app.on_tick()                                 # the care alarm rings on onset
     assert "alarm" in app.beeps
 

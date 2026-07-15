@@ -14,10 +14,10 @@ from tuipet.pet import Pet
 
 
 def _adv(**kw):
-    p = Pet(num=100, stage="Champion", attribute="Vaccine", obedience=500)
-    p.world_seconds = 10 * 60.0
+    p = Pet(num=100, stage="Adult", attribute="Vaccine")
+
     p.bits = 9000
-    p.sleep_limit = 9e9
+
     for k, v in kw.items():
         setattr(p, k, v)
     adv = AdventurePanel(p)

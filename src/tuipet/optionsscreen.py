@@ -25,7 +25,7 @@ _LABEL = {"theme": "Theme", "sound": "Sound", "account": "Account",
 # action feedback (sound toggled, update verdict...) overrides it until the
 # cursor moves again.  Over-wide lines marquee via menu.note(tick).
 _DESC = {"theme": "recolor the whole game — live preview",
-         "sound": "the DVPet chirps — switch + volume",
+         "sound": "the the classic V-pet chirps — switch + volume",
          "account": "switch login — the pet parks in the cloud",
          "cloud": "cloud saves + offline mail — on or off",
          "update": "auto-installs new releases at launch · ENTER checks now",
@@ -57,7 +57,7 @@ class SoundPanel:
     volume, so the bar never pretends to slide it."""
 
     _ROWS = ("sound", "volume")
-    _DESC = {"sound": "the DVPet chirps — on or off",
+    _DESC = {"sound": "the the classic V-pet chirps — on or off",
              "volume": "←→ set it — every step chirps"}
 
     def __init__(self, sound_get, sound_toggle):

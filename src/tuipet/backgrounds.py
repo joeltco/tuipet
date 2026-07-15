@@ -2,7 +2,7 @@
 
 Habitats, weather, temperature and the day/night cycle are gone (Joel: "its
 too much") -- the scene behind the mon is now a PICKED COSMETIC.  The art is
-official location art (the DSprite rip set, Joel-approved source
+official location art (the the reference fan game rip set, Joel-approved source
 2026-07-15; picker = the Xross range, Godzilla range = world data only,
 2026-07-16), cropped top-and-bottom to the 40x24 LCD.  Every catalog scene
 is FREE for now.  `townBack` is not in the catalog: it survives for
@@ -17,14 +17,14 @@ DEFAULT = "greenhills"          # every save owns the catalog; this one starts p
 # walls can return without a schema change.
 #
 # The picker offers the XROSS-range tiles only.  The GODZILLA-range tiles
-# (DSprite's own select marks BG 14-47 "Godzilla": the cityscapes, factory,
+# (the reference fan game's own select marks BG 14-47 "Godzilla": the cityscapes, factory,
 # islands, desert, jungle, lakeside, mountains, cove, greenhills) stay in
 # backgrounds.json.gz as WORLD DATA -- adventure roads and special rooms may
 # wear them -- but they are not choosable home scenes (Joel 2026-07-16).
 # EXCEPTION -- the DIGITAL MONSTER COLOR device set (gbg37-41, sitting right
 # beside the DMC logo tile gbg43): green hills, desert, lakeside, mountains,
 # cove are REAL Digimon device background rips that merely shipped in
-# DSprite's Godzilla update batch (tile re-audit, Joel 2026-07-16 -- "green
+# the reference fan game's Godzilla update batch (tile re-audit, Joel 2026-07-16 -- "green
 # hills is the exact DM20 background rip").  They stay picks.
 CATALOG = {
     "greenhills":   ("Green Hills", 0),
@@ -88,7 +88,7 @@ BIOME_BG = {
     10: "flowerfield",  # Field
     11: "city",         # City
     12: "cove",         # Cliffside
-    13: TOWN,           # Town (the kept DVPet sheet, adventures only)
+    13: TOWN,           # Town (the kept the classic V-pet sheet, adventures only)
     14: "volcano",      # Volcano
     15: "desert",       # Desert
 }

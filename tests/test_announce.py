@@ -13,8 +13,7 @@ from tuipet.app import TuiPetApp
 
 
 def test_need_message_priority_and_text():
-    p = Pet(num=-1, stage="Rookie", name="Pico", hunger=4, energy=10,
-            world_seconds=10 * 60.0)                    # mid-day: awake, calls announce
+    p = Pet(num=-1, stage="Child", name="Pico", hunger=4, energy=10)
     app = TuiPetApp(pet=p)                         # __init__ only; no mount needed
     assert app._need_message(p) == ""             # no need -> nothing to announce
     p.hunger = 0
@@ -23,14 +22,11 @@ def test_need_message_priority_and_text():
     assert "sick" in app._need_message(p)         # sick outranks hunger
     p.sick = False
     p.hunger = 4
-    p.poop = 4
+    p.poop = 2
     assert "cleaning" in app._need_message(p)
     p.poop = 0
-    p.energy = 0
-    assert "exhausted" in app._need_message(p)
-    p.energy = 10
-    p.scold_flag = True
-    assert "misbehaving" in app._need_message(p)
+    p.strength = 0
+    assert "strength" in app._need_message(p)
     # the pet's name appears in the announcement
     p.hunger = 0
     assert "Pico" in app._need_message(p)
@@ -39,14 +35,14 @@ def test_need_message_priority_and_text():
 def _hungry_rookie():
     _, by = data.load_sprites()
     num = next((n for n, r in by.items()
-                if r["stage"] == "Rookie" and not data.is_placeholder(n)), None)
+                if r["stage"] == "Child" and not data.is_placeholder(n)), None)
     if num is None:
         return None
     p = Pet.from_num(num)
     p.name = "Pico"
     p.hunger = 0          # hungry
+    p.call_on = True      # the empty-meter call is ringing
     p.energy = 24         # awake, not exhausted
-    p.world_seconds = 10 * 60.0   # mid-day under the canon daylight bands -> stays awake
     return p
 
 
@@ -56,8 +52,6 @@ def test_hud_announces_yields_and_clears():
         import pytest
         pytest.skip("sprite assets not installed")
     persistence.set_account("Tester", "x")
-    pet._sicken = lambda *a, **k: None   # deterministic: sick is the only need that
-    # outranks hunger, so block random illness and the announced need stays "hungry"
 
     async def go():
         app = TuiPetApp(pet=pet)
@@ -100,7 +94,7 @@ def test_alarm_beeps_on_onset_then_nags_every_90s():
         pytest.skip("sprite assets not installed")
     persistence.set_account("Tester", "x")
     pet._sicken = lambda *a, **k: None
-    pet.obedience = 100                # exempt from discipline tantrums (a second
+
     #                                    need would legitimately ring a fresh onset)
 
     async def go():
@@ -138,73 +132,21 @@ def test_the_lights_call_is_the_one_asleep_alarm():
     call a sleeper raises; awake calls include the effort gauge (strengthCall,
     which used to empty silently).  Sleep-screens audit 2026-07-06."""
     from tuipet.pet import Pet
-    p = Pet(num=100, stage="Champion", attribute="Vaccine", obedience=140)
-    p.world_seconds = 10 * 60.0
+    p = Pet(num=100, stage="Adult", attribute="Vaccine")
+    p._hour = lambda: 23                          # bedtime, deterministic
     p.hunger, p.strength = 4, 2
     p.asleep, p.lights = True, True
     assert p.needs_attention()                   # a lit sleeper calls
     p.lights = False
     assert not p.needs_attention()               # dark: it sleeps in peace
+    # awake at noon with an empty meter: the 20-minute call rings
+    p._hour = lambda: 12
     p.asleep = False
     p.strength = 0
-    assert p.needs_attention()                   # strengthCall: effort empty
+    p._sim_minute()
+    assert p.call_on and p.needs_attention()     # the empty-meter call
     p.strength = 2
+    p._sim_minute()
     assert not p.needs_attention()
 
 
-def test_a_standing_call_drains_mood_on_the_window_cadence():
-    """checkCallMinutes (sleep-screens audit 2026-07-06): while a call begs,
-    mood pays CallMoodDec per window-min -- canon's -10 by the 10-game-min
-    mistake mark; a lit sleeper's lightsCall drains asleep too."""
-    from tuipet.pet import Pet, CALL_MOOD_DEC
-    p = Pet(num=100, stage="Champion", attribute="Vaccine", obedience=140)
-    p.world_seconds = 10 * 60.0
-    p.hunger = 0                                 # the hunger call stands
-    m0 = p.mood
-    for _ in range(10):
-        p._call_mood_drain(60.0)                 # ten window-minutes
-    assert p.mood == m0 - 10 * CALL_MOOD_DEC
-    q = Pet(num=100, stage="Champion", attribute="Vaccine", obedience=140)
-    q.world_seconds = 10 * 60.0
-    q.hunger = 4
-    q.asleep, q.lights = True, True              # lightsCall: drains asleep
-    m0 = q.mood
-    q._call_mood_drain(60.0)
-    assert q.mood == m0 - CALL_MOOD_DEC
-    q.lights = False
-    m0 = q.mood
-    q._call_mood_drain(600.0)
-    assert q.mood == m0                          # dark: no call, no drain
-
-
-def test_frailty_warning_announces_before_the_elder_death():
-    """Joel 2026-07-13 (MetalGreymon died of frailty with 8 unseen mistakes):
-    an Ultimate/Mega at 3+ care mistakes warns in the message box, counting
-    the slips left before the 5-mistake elder death."""
-    from tuipet.pet import Pet
-    import tuipet.app as appmod
-    app = appmod.TuiPetApp.__new__(appmod.TuiPetApp)
-    p = Pet(num=220, stage="Ultimate", obedience=500)
-    p.world_seconds = 10 * 60.0
-    p.care_mistakes = 2
-    assert not p.is_frail()
-    assert "frail" not in appmod.TuiPetApp._need_message(app, p)
-    p.care_mistakes = 3
-    assert p.is_frail()
-    msg = appmod.TuiPetApp._need_message(app, p)
-    assert "frail" in msg and "2 more slips" in msg
-    p.care_mistakes = 4
-    assert "1 more slip" in appmod.TuiPetApp._need_message(app, p)
-    p.stage = "Champion"                      # only elders are frail
-    assert not p.is_frail()
-
-
-def test_frail_badge_rides_the_hud_deco():
-    from tuipet.pet import Pet
-    from tuipet.app import _care_deco
-    p = Pet(num=220, stage="Ultimate", obedience=500)
-    p.world_seconds = 10 * 60.0
-    p.care_mistakes = 3
-    assert any("frail" in d for d in _care_deco(p))
-    p.care_mistakes = 0
-    assert not any("frail" in d for d in _care_deco(p))

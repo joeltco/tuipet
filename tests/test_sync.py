@@ -18,12 +18,12 @@ from tuipet.pet import Pet
 # ---- payload helpers (no network) ------------------------------------------
 
 def test_save_dict_roundtrips_through_pet():
-    pet = Pet(num=-1, stage="Rookie", vaccine=12, data_power=3, virus=4)
+    pet = Pet(num=-1, stage="Child", bits=44, saved_hit_type="mega")
     data = persistence.to_save_dict(pet)
     assert "_saved_at" in data and data["_saved_at"] > 0
     back, _ = persistence.pet_from_save(data, catch_up=False)
     assert back is not None
-    assert (back.stage, back.vaccine, back.data_power, back.virus) == ("Rookie", 12, 3, 4)
+    assert (back.stage, back.bits, back.saved_hit_type) == ("Child", 44, "mega")
 
 
 def test_pet_from_save_rejects_garbage():
@@ -230,7 +230,8 @@ def test_startup_pull_mirrors_cloud_to_local(server, tmp_path, monkeypatch):
     cloudsync.push_save(server, "joel", "secret", blob)
     assert not os.path.exists(persistence.SAVE_PATH)
     assert cloudsync.sync_down_at_startup(server, "joel", "secret") == "pulled"
-    assert json.load(open(persistence.SAVE_PATH))["name"] == "Gatomon"   # dex 100's real name
+    from tuipet import data as _d
+    assert json.load(open(persistence.SAVE_PATH))["name"] == _d.record_for(100)["name"]
     # a second pull is a no-op (local is now as new as the cloud)
     assert cloudsync.sync_down_at_startup(server, "joel", "secret") == ""
 

@@ -1,353 +1,276 @@
-"""Battle engine — a faithful port of DVPet's Model.Battle combat.
+"""Battle — the HP race (the clone rebuild, 2026-07-15).
 
-Every value below is decompiled from raw_model/Battle.class + config.csv; nothing
-here is invented. Where a DVPet subsystem cannot be reproduced from the shipped
-data it is documented as such rather than approximated.
-
-HP (Battle.setupOpponents / getOppMaxHealth):
-  player starts full at the per-stage MaxHealth; enemy at its enemies.csv Health
-  (Enemy.getEnemyHealth). config MaxHealth*: Rookie 10, Champion 15, Ultimate 20,
-  Mega 25, default 10.
-
-Per-round damage (Battle.attack -> finishAttack):
-      dmg = getBaseAttack(stage) + calcAttackPower(attr) + affinityBonus
-  getBaseAttack (config *BaseAttack): Fresh 1, InTraining 2, Rookie/Champion/
-  Ultimate/Mega 5.  calcAttackPower (Battle.calcAttackPower) returns -1/0/+1 by
-  comparing THIS side's count in the chosen attribute against the opponent's
-  count (counts = vaccine/data/virus power).  affinityBonus (Battle.calcBonus =
-  field-vs-field + element-vs-element affinity) is 0: the shipped fieldAffinity
-  and elementAffinity matrices are entirely zero.  _attack is floored at 0.
-
-Enemy AI (tuipet ADAPTATION -- deliberately NOT faithful; kept as a difficulty ramp):
-  tuipet sets the ENEMY's AI tier from the PLAYER's win count:
-    wins <15 Random, <30 Brute, <45 StrategicBrute, <60 StrategicDefense,
-    >=60 StrategicDefense if (enemy power-sum+HP) > (player power-sum+HP) else
-    StrategicBalanced.  (config *AIWins: 0/15/30/45/60.)
-  In DVPet this win-count ladder actually sets the *player's* auto-AI (_playerAI,
-  Battle.java 261-270). The real ENEMY AI is randomizeAI(isBoss) -- a RANDOM tier
-  each battle (non-boss ~1/3 Random / 1/3 Brute / 1/3 Strategic; boss always
-  Strategic). tuipet makes attack-picking interactive (the human chooses), so
-  _playerAI has no role here and the win-count formula is repurposed onto the enemy
-  ON PURPOSE, so foes get tougher as you win. Intentional difficulty ramp, NOT fidelity.
-
-  Attack choice is also SIMPLIFIED (another deliberate adaptation):
-    randomAI -> random among attributes with count>0 (this part is faithful).
-    every non-random tier -> ONE brute-style pick: best calcAttackPower delta,
-      tie-break greatest raw count, avoiding the remembered zero-attack.
-  DVPet's real Brute vs evenStrategy/bruteStrategy/defenseStrategy differ (health-
-  based defending at <=half HP, checkAttackTotalAndZero specific tie-breaks,
-  checkZeroAttackSubstitute, and per-effect weights via checkAttackWeight/
-  checkDefendWeight). tuipet does not replicate those.
-  (AttackEffects ARE populated in the shipped data -- ~62% of attacks -- but wild
-  enemies from enemies.csv carry none, so those weights would not change a wild
-  enemy's pick regardless.)
-
-Win/lose (Battle.checkFinish / battleEnd): the battle ends the instant either
-HP <= 0; the player loses iff its OWN HP <= 0 (a double-KO is therefore a loss).
-
-Companion systems (ported elsewhere, faithful):
-  - AttackEffect/AttackCondition chip layer -> battlefx.py (the per-attribute
-    effect+condition data is pre-baked into digimon.csv and resolved per round).
-  - Player-side surrender/escape (PhysicalState.checkSurrender) -> pet.py
-    (check_surrender / surrender_effect); battlescreen drives the Y/N request and
-    Battle.surrender() ends the bout as neither win nor loss.
+Both sides start at 5 HP.  The whole fight is PRECOMPUTED round by round
+(the screen replays it): each round both sides roll to hit; damage per
+landed hit is the side's PROJECTILE count, which comes from its trained
+hit-type (mega: 90% double / normal: 50% / miss: 20%).  The per-round hit
+chance is care's scoreboard — win rate, stage rank, this-stage training,
+lifetime training, strength/hunger/energy meters, weight closeness and the
+attribute triangle all feed it.  Transcribed EXACTLY from the source rule
+set (ripped from multiple fan games).
 """
 from __future__ import annotations
 import random
+
 from . import data
-from . import battlefx
 
-ATTRS = ("Vaccine", "Data", "Virus")
+HP = 5
+ROUNDS_LOCAL = 20
+ROUNDS_ONLINE = 5
 
-# config.csv *BaseAttack (per growth stage)
-BASE_ATTACK = {"Fresh": 1, "InTraining": 2, "Rookie": 5,
-               "Champion": 5, "Ultimate": 5, "Mega": 5}
-# config.csv MaxHealth* — getOppMaxHealth(stage)
-MAX_HEALTH = {"Rookie": 10, "Champion": 15, "Ultimate": 20, "Mega": 25}  # config MaxHealth* (classic)
-MAX_HEALTH_DEFAULT = 10
-# config.csv *AIWins thresholds (player win count -> enemy AI tier)
-AI_RANDOM, AI_BRUTE, AI_STRAT_BRUTE, AI_STRAT_DEFENSE, AI_STRAT_BALANCED = 0, 15, 30, 45, 60
+# battle stage ranks (NOT the growth ladder: Armor ties Ultimate, Special
+# towers over everything)
+_RANK = {"Digitama": 0, "Baby I": 1, "Baby II": 2, "Child": 3,
+         "Adult": 4, "Perfect": 5, "Ultimate-Super Ultimate": 6,
+         "Armor-Hybrid": 6, "Special": 14.5}
 
 
-def ai_for_wins(wins, enemy_outmatches_player):
-    """tuipet enemy-difficulty ramp (ADAPTED): enemy AI tier from the player's win
-    count. In DVPet this formula sets the *player's* auto-AI; the real enemy AI is
-    randomizeAI(isBoss). Repurposed here on purpose -- see module docstring."""
-    if wins < AI_BRUTE:
-        return "Random"
-    if wins < AI_STRAT_BRUTE:
-        return "Brute"
-    if wins < AI_STRAT_DEFENSE:
-        return "StrategicBrute"
-    if wins < AI_STRAT_BALANCED:
-        return "StrategicDefense"
-    return "StrategicDefense" if enemy_outmatches_player else "StrategicBalanced"
-
-
-def calc_attack_power(attr, my, opp):
-    """Battle.calcAttackPower -> -1 / 0 / +1 (this side's count vs opponent's)."""
-    if my[attr] > opp[attr]:
-        return 1
-    if my[attr] < opp[attr]:
-        return -1
+def _tri(mine, theirs):
+    """The attribute triangle: ±0.05 hit chance."""
+    a, b = (mine or "").lower(), (theirs or "").lower()
+    if (a, b) in (("vaccine", "virus"), ("virus", "data"), ("data", "vaccine")):
+        return 0.05
+    if (a, b) in (("virus", "vaccine"), ("data", "virus"), ("vaccine", "data")):
+        return -0.05
     return 0
 
 
-def pick_enemy(pet, boss=False):
-    pool = [e for e in data.enemies_for_stage(pet.stage) if e["boss"] == boss] \
-        or data.enemies_for_stage(pet.stage)
-    real = [e for e in pool if not data.is_placeholder(e["num"])]
-    return random.choice(real or pool)
+class Side:
+    """One combatant, normalized: a live Pet, a lobby card, or a wild foe."""
+
+    def __init__(self, num, name="", stage="", attribute="",
+                 strength=4, strength_max=4, hunger=4, hunger_max=4,
+                 energy=5, energy_max=5, weight=None, base_weight=10,
+                 trainings_cur=0, trainings_total=0,
+                 battles=0, wins=0, hit_type="normal", boss=False):
+        self.num = num
+        self.name = name or (data.record_for(num)["name"] if num >= 0 else "?")
+        self.stage = stage
+        self.attribute = attribute
+        self.strength, self.strength_max = strength, max(1, strength_max)
+        self.hunger, self.hunger_max = hunger, max(1, hunger_max)
+        self.energy, self.energy_max = energy, max(1, energy_max)
+        self.base_weight = base_weight
+        self.weight = base_weight if weight is None else weight
+        self.trainings_cur = trainings_cur
+        self.trainings_total = trainings_total
+        self.battles, self.wins = battles, wins
+        self.hit_type = "mega" if battles >= 999 else hit_type
+        self.boss = boss
+
+    @classmethod
+    def of_pet(cls, pet):
+        return cls(pet.num, name=pet.name, stage=pet.stage,
+                   attribute=pet.attribute,
+                   strength=pet.strength, strength_max=pet.strength_max,
+                   hunger=pet.hunger, hunger_max=pet.hunger_max,
+                   energy=pet.energy, energy_max=pet.max_energy,
+                   weight=pet.weight, base_weight=pet._base_weight(),
+                   trainings_cur=pet.trainings_cur_stage,
+                   trainings_total=pet.total_trainings,
+                   battles=pet.battles, wins=pet.wins,
+                   hit_type=getattr(pet, "saved_hit_type", "normal"))
+
+    @classmethod
+    def wild(cls, num, boss=False):
+        """A wild foe: its species record at ideal condition, untrained."""
+        rec = data.record_for(num)
+        return cls(num, name=rec.get("name", "?"), stage=rec.get("stage", ""),
+                   attribute=rec.get("attribute", "Free"),
+                   strength_max=rec.get("strength_max", 4),
+                   strength=rec.get("strength_max", 4),
+                   hunger_max=rec.get("hunger_max", 4),
+                   hunger=rec.get("hunger_max", 4),
+                   energy=rec.get("energy_max", 5),
+                   energy_max=rec.get("energy_max", 5),
+                   base_weight=rec.get("weight", 10), boss=boss)
+
+    @classmethod
+    def of_card(cls, card):
+        """A lobby peer's relayed card (clamped upstream)."""
+        return cls(int(card.get("num", 0)), name=card.get("name", "?"),
+                   stage=card.get("stage", "Child"),
+                   attribute=card.get("attribute", "Free"),
+                   strength=card.get("strength", 4),
+                   strength_max=card.get("strength_max", 4),
+                   hunger=card.get("hunger", 4),
+                   hunger_max=card.get("hunger_max", 4),
+                   energy=card.get("energy", 5),
+                   energy_max=card.get("energy_max", 5),
+                   weight=card.get("weight", 10),
+                   base_weight=card.get("base_weight", 10),
+                   trainings_cur=card.get("trainings_cur", 0),
+                   trainings_total=card.get("trainings_total", 0),
+                   battles=card.get("battles", 0), wins=card.get("wins", 0),
+                   hit_type=card.get("hit_type", "normal"))
+
+    def _rank(self):
+        return _RANK.get(self.stage, 3)
+
+    def _condition(self):
+        """The meter terms of the hit formula (each 0..0.1 - 0.05)."""
+        st = (self.strength / self.strength_max) * 0.1 - 0.05
+        hu = (self.hunger / self.hunger_max) * 0.1 - 0.05
+        en = (self.energy / self.energy_max) * 0.1 - 0.05
+        if self.base_weight > 0:
+            w = (1 - min(1, abs(self.weight - self.base_weight) / 15)) * 0.2 - 0.1
+        else:
+            w = 0
+        return st + hu + en + w
+
+    def hit_chance(self, other):
+        wr = self.wins / self.battles if self.battles > 0 else 0.5
+        p = (0.3 + (wr - 0.5) * 0.1
+             + (self._rank() - other._rank()) * 0.1
+             + min(self.trainings_cur / 999 * 0.1, 0.1)
+             + min(self.trainings_total / 9999 * 0.2, 0.2)
+             + self._condition()
+             + _tri(self.attribute, other.attribute))
+        return min(1.0, max(0.0, p))
+
+    def roll_damage(self, rng):
+        t = self.hit_type
+        if t == "mega":
+            return 2 if rng() < 0.9 else 1
+        if t == "miss":
+            return 2 if rng() < 0.2 else 1
+        return 2 if rng() < 0.5 else 1
 
 
-def battle_card(pet):
-    """A pet's battle-relevant snapshot, used as the opponent's Enemy dict in PvP.
-
-    Protocol audit 2026-07 vs DVPet's BattleProtocol.setupPlayer -- three
-    documented deltas, none wire-changed:
-    * canon ships (power + freeBonus) x PvPBonusPowerMultiple(2); tuipet ships
-      RAW powers.  calcAttackPower is ordinal, so doubling BOTH sides changes
-      no outcome -- only the recorded magnitudes -- and canon's own local-side
-      scaling is ambiguous in the decompile.  Changing the wire would corrupt
-      cross-version battles mid-upgrade; kept raw.
-    * canon ships getHealthPoints() (CURRENT hp -- a hurt pet enters PvP hurt);
-      tuipet has no persistent battle HP, so full_health stands in (the same
-      adaptation the tournament eligibility notes).
-    * canon exchanges a JAR SHA-256 checksum + difficulty; tuipet's lobby
-      relies on server accounts instead (no anti-tamper handshake).
-    Canon's round exchange is PEER-SYMMETRIC (each device simulates with the
-    exchanged choices -- desyncable through RNG).  tuipet proto 2 (2026-07-14)
-    RETURNS to canon's symmetric exchange with the desync solved: both clients
-    run the identical card-vs-card engine on a shared seed (commit-reveal
-    nonces, lobbyscreen), so neither side trusts the other's arithmetic -- and
-    the monthly ladder's both-reports-must-agree check becomes real.  A peer
-    whose card has no "proto" gets the old host-authoritative relay verbatim
-    (no mid-upgrade corruption).  "free"/"field" ship so the peer's simulation
-    of THIS side is exact (style +1 bonus, chip field conditions)."""
-    _, by = data.load_sprites()
-    return {"num": pet.num,
-            "name": getattr(pet, "name", None) or by.get(pet.num, {}).get("name") or "?",
-            "stage": pet.stage, "vaccine": pet.vaccine, "data_power": pet.data_power,
-            "virus": pet.virus,
-            "hp": getattr(pet, "full_health", 0) or MAX_HEALTH.get(pet.stage, MAX_HEALTH_DEFAULT),
-            # EnemySickChance contagion: PvP ships the partner's REAL sick
-            # state (canon BattleProtocol.setIsSick) -- beating a sick friend
-            # risks catching it (battle-math audit 2026-07-06)
-            "sick": bool(getattr(pet, "sick", False)),
-            # BattleProtocol ships the DECLARED attribute (lobby audit
-            # 2026-07-06) -- it keys the battle-injury attr souring; wild
-            # enemies still derive theirs from the strongest power
-            "attribute": getattr(pet, "attribute", "") or "None",
-            # proto 2 (seeded symmetric PvP): the style bonus is BAKED into the
-            # card so the peer's engine applies the same +1 this side's does,
-            # and field rides along for the chip layer's Field conditions
-            # (pet.field is save-persisted, so data-by-num could drift from it)
-            "free": bool(getattr(pet, "free_style", False)),
-            "field": getattr(pet, "field", "") or "",
-            "proto": 2,
-            "bits": (1, 5)}
-
-
-def own_pick(mine, opp, fallback="Vaccine"):
-    """The pet's own brute pick (Free style / a refused order): best
-    calcAttackPower delta among usable attributes, tie-broken by greatest raw
-    count.  Module-level so the seeded PvP path can resolve a FINAL attribute
-    at pick time (each side's refusal/Free roll is its own local business --
-    only the final choice crosses the wire)."""
-    nonzero = [a for a in ATTRS if mine[a] > 0]
-    if not nonzero:
-        return fallback
-    best = max(calc_attack_power(a, mine, opp) for a in nonzero)
-    top = [a for a in nonzero if calc_attack_power(a, mine, opp) == best]
-    return max(top, key=lambda a: mine[a])
-
-
-class CardPet:
-    """A pet-shaped stand-in built from a (clamped) battle card, so BOTH peers
-    can run the identical card-vs-card engine in seeded PvP.  Satisfies exactly
-    what Battle/battlefx touch on `b.pet`; record_battle is a no-op -- each
-    side records its REAL pet from its own perspective when the bout ends."""
-    def __init__(self, card):
-        self.num = card.get("num", -1)
-        self.name = card.get("name") or "?"
-        self.stage = card.get("stage", "Rookie")
-        self.vaccine = card.get("vaccine", 0)
-        self.data_power = card.get("data_power", 0)
-        self.virus = card.get("virus", 0)
-        self.full_health = max(2, card.get("hp", 10))
-        self.field = card.get("field", "") or ""
-        self.attribute = card.get("attribute", "") or "None"
-        self.free_style = bool(card.get("free"))
-        self.sick = bool(card.get("sick"))
-        self.wins = 0          # AI tier is moot: seeded PvP forces both attrs
-
-    def record_battle(self, *a, **k):
-        return ""
-
-    def refuse_attack(self, *a, **k):      # never consulted (final_attrs) --
-        return False                       # belt & braces for a stray call
+def generate(me, foe, rounds=ROUNDS_LOCAL, rng=None):
+    """The whole fight: [(my_hit, my_dmg, foe_hit, foe_dmg), ...] plus final
+    HPs.  A simultaneous double-KO flips a fair coin on who whiffs."""
+    rng = rng or random.random
+    my_hp, foe_hp = HP, HP
+    p_me, p_foe = me.hit_chance(foe), foe.hit_chance(me)
+    seq = []
+    for _ in range(rounds):
+        if my_hp <= 0 or foe_hp <= 0:
+            break
+        my_dmg = me.roll_damage(rng)
+        my_hit = rng() < p_me
+        foe_dmg = foe.roll_damage(rng)
+        foe_hit = rng() < p_foe
+        if my_hit and foe_hit:
+            if my_hp - foe_dmg <= 0 and foe_hp - my_dmg <= 0:
+                if rng() < 0.5:
+                    foe_hit = False
+                else:
+                    my_hit = False
+        if my_hit:
+            foe_hp -= my_dmg
+        if foe_hit:
+            my_hp -= foe_dmg
+        seq.append((my_hit, my_dmg, foe_hit, foe_dmg))
+    return seq, max(0, my_hp), max(0, foe_hp)
 
 
 class Battle:
-    def __init__(self, pet, enemy=None, source="battle", rng=None, final_attrs=False):
+    """A playable fight the screen steps through round by round."""
+
+    def __init__(self, pet, enemy=None, source="battle", rng=None,
+                 rounds=ROUNDS_LOCAL):
         self.pet = pet
-        self.enemy = dict(enemy or pick_enemy(pet))
-        # rng: every in-round roll (AI pick, initiative coin flip) draws from
-        # here.  PvE keeps the module RNG; seeded PvP hands both peers the
-        # same random.Random(shared seed) so their bouts are bit-identical.
-        self.rng = rng or random
-        # final_attrs: seeded PvP resolves Free style / refused orders at PICK
-        # time on each side's own pet -- play_round must then take both
-        # attributes as FINAL (the peer cannot re-roll this side's refusal).
-        self.final_attrs = final_attrs
-        # which arena this bout belongs to ("battle" = any single-player fight:
-        # home, adventure, tournament; "pvp" = an untrusted lobby opponent).
-        # record_battle uses it to keep the KO6/Mega counter un-farmable.
-        self.source = source
-        # the style is BAKED per battle: toggling mid-fight used to desync the
-        # +1 power bonus from the end rewards (exploitable; audit 2026-07)
-        self.free_style = bool(getattr(pet, "free_style", False))
-        _fb = 1 if self.free_style else 0                     # Free: +1 all powers (canon)
-        self._pet_counts = {"Vaccine": pet.vaccine + _fb, "Data": pet.data_power + _fb,
-                            "Virus": pet.virus + _fb}
-        # a proto-2 card bakes the peer's Free-style bonus in as "free" (the
-        # host-authoritative era silently dropped the guest's +1; legacy cards
-        # have no key -> 0, so old bouts are unchanged)
-        _efb = 1 if self.enemy.get("free") else 0
-        self._enemy_counts = {"Vaccine": self.enemy["vaccine"] + _efb,
-                              "Data": self.enemy["data_power"] + _efb,
-                              "Virus": self.enemy["virus"] + _efb}
-        # Enemy.getOppAttribute: a PvP card ships the DECLARED attribute; a
-        # wild enemy's battle "type" derives from its strongest power (and a
-        # None/Free declared attribute falls back the same way for the AI)
-        if self.enemy.get("attribute") not in ATTRS:
-            self.enemy["attribute"] = max(ATTRS, key=lambda a: self._enemy_counts[a])
-        # DVPet battle HP = the pet's TRAINED fullHealthPoints (HP drill / HP chips),
-        # not a flat stage table -- the stage caps live in Pet.max_health()'s ladder
-        self.pet_max = self.pet_hp = getattr(pet, "full_health", 0) or MAX_HEALTH.get(pet.stage, MAX_HEALTH_DEFAULT)
-        self.enemy_max = self.enemy_hp = max(2, self.enemy["hp"])
-        psum = sum(self._pet_counts.values()) + self.pet_hp
-        esum = sum(self._enemy_counts.values()) + self.enemy_hp
-        self.ai = ai_for_wins(pet.wins, esum > psum)
+        rng = rng or random.random
+        if enemy is None:
+            enemy = pick_enemy(pet)
+        self.enemy = enemy                     # dict, kept for the HUD
+        self.me = Side.of_pet(pet) if hasattr(pet, "hunger_max") else pet
+        self.foe = enemy["side"] if "side" in enemy else Side.wild(
+            enemy.get("num", 0), boss=bool(enemy.get("boss")))
+        self.seq, self._my_end, self._foe_end = generate(
+            self.me, self.foe, rounds=rounds, rng=rng)
+        self.pet_hp, self.enemy_hp = HP, HP
+        self.pet_max = self.enemy_max = HP
         self.round = 0
         self.over = False
-        self.won = None
-        self.last = ""
-        self.last_player_attr = None
-        self.last_enemy_attr = None
-        self.last_player_damage = 0
-        self.last_enemy_damage = 0
-        self.last_player_first = True
-        self._pet_zero_attack = None       # checkRememberZeroAttack
-        self._enemy_zero_attack = None
-        self.last_effect = None            # the player chip that fired this round (DefenseUp etc.)
-        self.surrendered = False           # set True by surrender() (PhysicalState.checkSurrender)
-        self._forced_enemy_attr = None     # PvP: the partner's real choice overrides the AI
+        self.won = False
+        self.reward = ""
+        self.source = source
 
-    def _damage(self, stage, attr, my, opp):
-        atk = BASE_ATTACK.get(stage, 5) + calc_attack_power(attr, my, opp)  # + affinity (0)
-        return atk if atk > 0 else 0
-
-    def _enemy_choice(self):
-        """enemyAttackChoose, dispatched on the AI type."""
-        if self._forced_enemy_attr is not None:        # PvP: use the partner's move
-            return self._forced_enemy_attr
-        ec, pc = self._enemy_counts, self._pet_counts
-        nonzero = [a for a in ATTRS if ec[a] > 0]
-        if not nonzero:                                  # no usable attribute -> own type
-            return self.enemy["attribute"]
-        if self.ai == "Random":                          # randomAI
-            return self.rng.choice(nonzero)
-        # brute / strategic: best calcAttackPower delta, avoiding the zero-attack,
-        # tie-broken by greatest raw count (checkAttackTotalAndZero)
-        cand = [a for a in nonzero if a != self._enemy_zero_attack] or nonzero
-        best = max(calc_attack_power(a, ec, pc) for a in cand)
-        top = [a for a in cand if calc_attack_power(a, ec, pc) == best]
-        return max(top, key=lambda a: ec[a])
-
-    def _own_choice(self):
-        """The pet's OWN pick (Free style / a refused order): the same brute
-        chooser the enemy uses, run on the pet's side."""
-        fb = self.pet.attribute if self.pet.attribute in ATTRS else "Vaccine"
-        return own_pick(self._pet_counts, self._enemy_counts, fallback=fb)
-
-    def play_round(self, player_attr):
-        if self.over:
-            return self.last
-        self.round += 1
-        # Battle Style (Battle_Style menu): Free = the pet attacks its own way;
-        # Orders = your call, but refuseAttack may override it mid-fight (the
-        # pet swaps in its OWN pick and the scold window opens)
-        self.refused_order = False
-        if self.final_attrs:
-            pass          # seeded PvP: both attrs arrived FINAL (pick-time rolls)
-        elif self.free_style:
-            player_attr = self._own_choice()
-        elif player_attr in ATTRS and self.pet.refuse_attack(self.pet_hp, self.enemy_hp):
-            self.refused_order = True
-            player_attr = self._own_choice()
-        enemy_attr = self._enemy_choice()
-        self.last_player_attr = player_attr
-        pdmg = self._damage(self.pet.stage, player_attr, self._pet_counts, self._enemy_counts)
-        edmg = self._damage(self.enemy["stage"], enemy_attr, self._enemy_counts, self._pet_counts)
-        # attack-effect "chip" layer (AttackEffectProcess): the player's attack effect
-        # fires if its conditions pass, adjusting damage / initiative / health changes.
-        fx = battlefx.resolve(self, player_attr, enemy_attr, pdmg, edmg)
-        self.last_effect = fx.get("effect_fired")
-        pdmg, edmg, enemy_attr = fx["pdmg"], fx["edmg"], fx["enemy_attr"]
-        self.last_enemy_attr = enemy_attr
-        self.last_player_damage, self.last_enemy_damage = pdmg, edmg
-        self.last_player_first = fx["player_first"]    # initiative order (checkFirst) for the View
-        move = data.move_name(self.pet.num, player_attr) or player_attr
-        emove = data.move_name(self.enemy["num"], enemy_attr) or enemy_attr
-        # resolve in initiative order (checkFirst / First / Counter / ForcePlayerSecond);
-        # a KO'd side does not retaliate (checkFinish ends the moment HP hits 0).
-        if fx["player_first"]:
-            self.enemy_hp -= pdmg
-            if self.enemy_hp > 0:
-                self.pet_hp -= edmg
-        else:
-            self.pet_hp -= edmg
-            if self.pet_hp > 0:
-                self.enemy_hp -= pdmg
-        if pdmg <= 0:
-            self._pet_zero_attack = player_attr
-        if edmg <= 0:
-            self._enemy_zero_attack = enemy_attr
-        # processHealthChange: Leech/Absorb/Heal heal; Sacrifice* costs (clamped to max)
-        if fx["phc"]:
-            self.pet_hp = min(self.pet_max, self.pet_hp + fx["phc"])
-        if fx["ehc"]:
-            self.enemy_hp = min(self.enemy_max, self.enemy_hp + fx["ehc"])
-        self.last = f"R{self.round}: {move} →{pdmg}   foe {emove} →{edmg}"
-        if self.pet_hp <= 0 or self.enemy_hp <= 0:
+    def play_round(self, _choice=None):
+        """Advance one precomputed round -> the round record for the stage
+        show: dict(pdmg, edmg, my_hit, foe_hit, ph, fh)."""
+        if self.over or self.round >= len(self.seq):
             self._finish()
-        return self.last
+            return None
+        my_hit, my_dmg, foe_hit, foe_dmg = self.seq[self.round]
+        self.round += 1
+        if my_hit:
+            self.enemy_hp = max(0, self.enemy_hp - my_dmg)
+        if foe_hit:
+            self.pet_hp = max(0, self.pet_hp - foe_dmg)
+        rec = {"pdmg": my_dmg if my_hit else 0,
+               "edmg": foe_dmg if foe_hit else 0,
+               "my_hit": my_hit, "foe_hit": foe_hit,
+               "ph": self.pet_hp, "fh": self.enemy_hp}
+        if self.pet_hp <= 0 or self.enemy_hp <= 0 \
+                or self.round >= len(self.seq):
+            self._finish()
+        return rec
 
     def _finish(self):
+        if self.over:
+            return
         self.over = True
-        self.won = self.pet_hp > 0          # battleEnd: player loses iff _health <= 0
-        # BattleLowHealthCoefficient: limping out at/below half HP doubles the
-        # end cost (canon health > fullHealth/2 [int division] = the high band)
-        low = self.pet_hp <= self.pet_max // 2
-        self.reward = self.pet.record_battle(self.won, self.enemy,
-                                             free_style=self.free_style, low_health=low,
-                                             source=self.source)
+        # winner: the standing side; equal HP reads as a narrow win for the
+        # higher survivor, a draw counts as a loss for progression
+        if self.enemy_hp <= 0 and self.pet_hp > 0:
+            self.won = True
+        elif self.pet_hp <= 0:
+            self.won = False
+        else:
+            self.won = self.pet_hp > self.enemy_hp
+        if hasattr(self.pet, "record_battle"):
+            self.pet.record_battle(self.won, online=self.source == "pvp")
+        if self.won and self.source != "pvp":
+            self.reward = "training +2"
 
     def surrender(self):
-        """Battle.surrender: the pet bows out -- the bout ends as neither win nor loss.
-        Costs SurrenderEnthusiasmDec spirit; a fixed (non-random) foe still counts as a
-        battle fought.  SurrenderEnergyDec/SurrenderWeightDec are 0 in the shipped config."""
-        from .pet import SURR_ENTH_DEC
         self.over = True
         self.won = False
-        self.surrendered = True
-        # the fled fight still lands in the ROLLING WINDOW as a loss (audit
-        # 2026-07-04): without this, surrendering every losing fight kept the
-        # 12-of-15 evolution gate loss-free -- a risk-free filter.  The classic
-        # stats stay canon ("neither win nor loss": wins/battles untouched).
-        self.pet.battle_log = (self.pet.battle_log + [0])[-15:]
-        self.reward = "Surrendered."
-        self.pet._set_enthusiasm(self.pet.enthusiasm - SURR_ENTH_DEC)
-        if self.enemy.get("boss"):          # getIsRandom() == false -> battles += 1
-            self.pet.battles += 1
+        if hasattr(self.pet, "record_battle"):
+            self.pet.record_battle(False, online=self.source == "pvp")
+
+
+def pick_enemy(pet, boss=False):
+    """A wild foe scaled to the pet: same stage bracket, one up for a boss."""
+    ladder = ["Baby II", "Child", "Adult", "Perfect",
+              "Ultimate-Super Ultimate"]
+    st = pet.stage if pet.stage in ladder else "Child"
+    if boss and ladder.index(st) < len(ladder) - 1:
+        st = ladder[ladder.index(st) + 1]
+    pool = [r for r in data.load_sprites()[0] if r["stage"] == st]
+    rec = random.choice(pool)
+    return {"num": rec["num"], "name": rec["name"], "boss": boss,
+            "stage": rec["stage"], "attribute": rec["attribute"]}
+
+
+def battle_card(pet):
+    """The stats card a lobby host/challenger relays (clamped by the peer)."""
+    s = Side.of_pet(pet)
+    return {"num": s.num, "name": s.name, "stage": s.stage,
+            "attribute": s.attribute,
+            "strength": s.strength, "strength_max": s.strength_max,
+            "hunger": s.hunger, "hunger_max": s.hunger_max,
+            "energy": s.energy, "energy_max": s.energy_max,
+            "weight": s.weight, "base_weight": s.base_weight,
+            "trainings_cur": s.trainings_cur,
+            "trainings_total": s.trainings_total,
+            "battles": s.battles, "wins": s.wins, "hit_type": s.hit_type,
+            "proto": 3, "hp": HP}
+
+
+def plausible_card(card):
+    """The anti-tamper clamp on an incoming peer card: meters within their
+    declared maxima, counters non-negative, a known species."""
+    try:
+        if not (0 <= card.get("strength", 0) <= card.get("strength_max", 4) <= 9
+                and 0 <= card.get("hunger", 0) <= card.get("hunger_max", 4) <= 9
+                and 0 <= card.get("energy", 0) <= card.get("energy_max", 5) <= 2000
+                and 0 <= card.get("battles", 0) <= 10 ** 6
+                and 0 <= card.get("wins", 0) <= card.get("battles", 0)):
+            return False
+        return card.get("num", -1) in data.load_sprites()[1]
+    except Exception:
+        return False

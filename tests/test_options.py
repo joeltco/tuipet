@@ -12,7 +12,7 @@ from tuipet.pet import Pet
 
 
 def _panel(sound_on=None, **kw):
-    p = Pet(num=100, stage="Champion", attribute="Vaccine", obedience=500)
+    p = Pet(num=100, stage="Adult", attribute="Vaccine")
     state = {"on": True if sound_on is None else sound_on}
     pan = OptionsPanel(p, lambda: state["on"],
                        lambda: state.__setitem__("on", not state["on"]), **kw)
@@ -217,26 +217,6 @@ def test_update_row_shows_the_boot_hint():
     assert pan2._value("update").startswith("v")
 
 
-def test_keys_page_lists_every_binding_and_scrolls():
-    """The Keys row hosts a scrollable page of the app's REAL binding surface;
-    every window position renders inside the 12x40 LCD."""
-    from tuipet.app import TuiPetApp
-    pan, _ = _panel(bindings=TuiPetApp.BINDINGS)
-    assert pan._value("keys") == f"{len(TuiPetApp.BINDINGS)} bindings"
-    _to(pan, "keys")
-    pan.key("enter")
-    assert isinstance(pan.sub, KeysPanel)
-    plain = pan.text().plain
-    assert "Feed" in plain                # the first binding is on page one
-    _fits(pan)
-    for _ in range(len(TuiPetApp.BINDINGS)):     # scroll to the bottom
-        pan.key("down")
-        _fits(pan)
-    assert "Accept gift" in pan.text().plain     # the last binding scrolled in
-    assert pan.key("escape") is None
-    assert pan.sub is None                # back to the options list
-
-
 def test_new_egg_row_hands_off():
     """A LIVING pet costs one confirm (sweep 2026-07-14: instant retirement
     sat next to a typed-YES erase); the confirmed ENTER hands off."""
@@ -263,7 +243,7 @@ def test_erase_demands_a_typed_yes():
 
 
 def test_erase_all_wipes_the_local_state():
-    p = Pet(num=100, stage="Champion", attribute="Vaccine", obedience=500)
+    p = Pet(num=100, stage="Adult", attribute="Vaccine")
     persistence.save(p)
     persistence.set_account("JoeltCo", "pw")
     persistence.wins_add(3)
@@ -290,8 +270,8 @@ def test_erase_flows_into_the_egg_carousel_not_an_auto_egg():
     from tuipet import eggselectscreen, titlescreen
 
     async def go():
-        p = Pet(num=4, name="Rex", stage="Rookie", attribute="Vaccine")
-        p.world_seconds = 10 * 60.0
+        p = Pet(num=4, name="Rex", stage="Child", attribute="Vaccine")
+
         app = TuiPetApp(pet=p)
         seen = {}
         async with app.run_test(size=(82, 32)) as pilot:
@@ -332,8 +312,8 @@ def test_switch_account_app_flow(monkeypatch):
                         lambda uri, n, pw, save: pushes.append((n, save)) or True)
 
     async def go():
-        p = Pet(num=100, name="Champ", stage="Champion", attribute="Vaccine")
-        p.world_seconds = 10 * 60.0
+        p = Pet(num=100, name="Champ", stage="Adult", attribute="Vaccine")
+
         persistence.set_account("joel", "pw")
         app = TuiPetApp(pet=p)
         seen = {}

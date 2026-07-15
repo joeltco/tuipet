@@ -12,8 +12,8 @@ from tuipet.pet import Pet
 
 
 def _pet(**kw):
-    p = Pet(num=100, stage="Champion", attribute="Vaccine", obedience=500)
-    p.world_seconds = 10 * 60.0
+    p = Pet(num=100, stage="Adult", attribute="Vaccine")
+
     for k, v in kw.items():
         setattr(p, k, v)
     return p

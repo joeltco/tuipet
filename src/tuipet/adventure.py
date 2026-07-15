@@ -1,6 +1,6 @@
 """Adventure mode -- tuipet's OWN expedition game over the real zone data.
 
-⛔ OWN-GAME LAW (Joel 2026-07-13): DVPet is NOT canon for adventures.  One
+⛔ OWN-GAME LAW (Joel 2026-07-13): the classic V-pet is NOT canon for adventures.  One
 biome per adventure, start to boss -- the run wears the terrain its gate boss
 stands in and never swaps scenery mid-run.  The step/encounter/drain MECHANICS
 below still run on the real device constants (they are data, and they play
@@ -8,7 +8,7 @@ well); the FLOW -- scenery, placements, pacing, beats -- is tuipet's own.
 
 (The original port notes, kept for the mechanics' provenance:)
 
-DVPet adventure is a slow real-time grind: while travelling the pet steps through a
+the classic V-pet adventure is a slow real-time grind: while travelling the pet steps through a
 zone of `TotalSteps` (e.g. 10000), the world rolls a wild-encounter EVERY game-tick
 (Zone.checkBattle), travel periodically drains energy/calories past a threshold
 (WorldMap.checkEnergyDec), stepping into a town restores adventure life to full
@@ -18,7 +18,7 @@ A TUI can't run that per-tick over real hours, so the ONE compression here is
 INTERACTIVE_STEPS: a zone is crossed in ~40 player travel actions instead of
 `TotalSteps` ticks. Each travel action advances `stride = TotalSteps/INTERACTIVE_STEPS`
 real steps, and every per-tick mechanic is applied over that stride using the REAL
-DVPet constants/formulas (verified in config.csv + WorldMap/Zone bytecode):
+the classic V-pet constants/formulas (verified in config.csv + WorldMap/Zone bytecode):
   - encounter chance: Zone.checkBattle rolls on EVERY controller step-fire
     (StepSecondCoefficient = 14/s), while the location advances only once per
     WalkStepMin(9) fires -- so each walked step carries NINE rolls, not one.
@@ -43,11 +43,10 @@ the zone's difficulty curve).  Time gates are all 'None' in this dataset.
 from __future__ import annotations
 import random
 from . import data
-from . import loot
-from . import persistence as _persist
-from .battle import MAX_HEALTH, MAX_HEALTH_DEFAULT
 
-# --- DVPet config.csv (column 0), verified ---
+from . import persistence as _persist
+
+# --- the classic V-pet config.csv (column 0), verified ---
 MAX_LIFE = 3                         # MaxAdventureLife
 ENC_C = 7000.0                       # RandomEncounterChance
 NIGHT_COEFF = 2.0                    # RandomEncounterNightCoefficient (-C/coeff)
@@ -128,6 +127,29 @@ def _pick_weighted(enemies):
         return None
     weights = [max(1, e.get("chance", 100)) for e in pool]
     return random.choices(pool, weights=weights, k=1)[0]
+
+
+# stage tier per map index: deeper regions field older wilds
+_TIER = ("Child", "Adult", "Perfect", "Ultimate-Super Ultimate")
+
+
+def _recast(e, mi, zi, boss=False):
+    """The zone rosters predate the atlas -- recast each foe as a REAL atlas
+    species, deterministically (same zone slot -> same face every run):
+    stage by the map's tier, bosses one stage up."""
+    import random as _r
+    from . import data as _d
+    ladder = list(_TIER)
+    st = ladder[min(mi, len(ladder) - 1)]
+    if boss:
+        st = ladder[min(mi + 1, len(ladder) - 1)] if mi + 1 < len(ladder)             else "Ultimate-Super Ultimate"
+    pool = [r for r in _d.load_sprites()[0] if r["stage"] == st]
+    rec = _r.Random(f"{mi}:{zi}:{e.get('num', 0)}:{boss}").choice(pool)
+    out = dict(e)
+    out["num"], out["name"] = rec["num"], rec["name"]
+    out["stage"], out["attribute"] = rec["stage"], rec["attribute"]
+    out["boss"] = boss
+    return out
 
 
 class Adventure:
@@ -221,7 +243,7 @@ class Adventure:
         return "".join(cells)
 
     def _full_hp(self):
-        return getattr(self.pet, "full_health", 0) or MAX_HEALTH.get(self.pet.stage, MAX_HEALTH_DEFAULT)
+        return 5                    # the HP race: everyone fights from 5
 
     def _save(self):
         self.pet.adv_map, self.pet.adv_zone = self.mi, self.zi
@@ -245,29 +267,7 @@ class Adventure:
         if self._energy_dec >= TRAVEL_ENERGY_DEC_MAX_COEFF * self._full_hp():
             self._energy_dec = 0
             self.pet._set_energy(self.pet.energy - TRAVEL_ENERGY_DEC)
-            self._calorie_dec(TRAVEL_CALORIE_DEC)
-            if self.pet.strength < TRAVEL_EXERCISE_LIMIT:
-                self.pet.strength += TRAVEL_EXERCISE_INC
-            # checkSickInj + the disliked-time leg (canon re-audit 2026-07):
-            # walking UNWELL sours (-1) and risks worsening (1%); marching
-            # through the hated hour costs mood -10 and spirit -1
-            if self.pet.sick or self.pet.is_injured() or self.pet.is_fatigued():
-                self.pet._set_mood(self.pet.mood - 1)          # WalkUnwellMoodDec
-            # checkWorseSick(WalkWorseSickChance 1) rides the BOUND machinery
-            # (fatigue pads the target, old age thins the bound) -- and canon
-            # rolls it every walk lapse, well or unwell (it no-ops when healthy)
-            self.pet._check_worse_sick(1)
-            self.pet._check_worse_injury("travel")             # checkWorseTravelInj
-            #   (canon rides the BATTLE table with won=True, not the exercise one)
-
-    def _calorie_dec(self, n):
-        """PhysicalState.setCaloriesAndChangeWeight: spend the calorie buffer; when it
-        bottoms out, drop a unit of weight and refill (mirrors the metabolism lapse)."""
-        from .pet import CALORIE_LIMIT
-        self.pet.calories -= n
-        if self.pet.calories <= -CALORIE_LIMIT:
-            self.pet.weight = max(1, self.pet.weight - 1)
-            self.pet.calories = CALORIE_LIMIT
+            self.pet.weight = max(1, self.pet.weight - 1)   # the road burns
 
     def _in_town(self, loc):
         return any(lo <= loc <= hi for lo, hi, _t in self.zone.get("towns", ()))
@@ -312,31 +312,15 @@ class Adventure:
             self.pet.adv_seek = False
             e = _pick_weighted(self.zone["randoms"]) or _pick_weighted(self.zone["bosses"])
             if e:
+                e = _recast(e, self.mi, self.zi)
                 self.last = f"Ambush! {e['name']}!"
                 return ("encounter", e)
         # Discover/encounter mechanics compound per controller fire over the WHOLE
         # stride (stride x WalkStepMin), matching canon's per-tick roll count.
         fires = max(1, self.stride) * WALK_STEP_MIN
-        # DELIBERATE DIVERGENCE (refusal recalibration, Joel 2026-07-08): the
-        # stop-travel refusal does NOT compound over the full stride.  Canon rolls
-        # checkStopTravel per controller fire during an AUTONOMOUS walk where each
-        # refusal is a brief self-resuming pause; tuipet collapses a 250-step
-        # stride into ONE keypress and turns each refusal into a hard stop that
-        # needs a re-walk/scold.  Composing over ~2250 fires made a drained pet
-        # refuse 50-99% of every press (energy-driven spiral, since walking
-        # drains energy).  Roll it over WALK_STEP_MIN fires only -- a rested pet
-        # essentially never balks, a truly exhausted one still occasionally digs
-        # in (the pre-audit felt rate Joel remembers).
-        stop_fires = WALK_STEP_MIN
-        p_stop = self.pet.stop_travel_prob()
-        if p_stop > 0 and random.random() < 1.0 - (1.0 - p_stop) ** stop_fires:
-            self.pet.stop_travel_effects()
-            self.last = f"{self.pet.name} refuses to walk!"
-            return ("refused", None)
         # Zone.checkInvestigate: a happier, better-raised pet spots more
         # (obedience+mood SHRINK the seed); night makes finds rarer
-        seed = max(1, int(INVESTIGATE_CHANCE + INVESTIGATE_WALK
-                          - (self.pet.obedience + self.pet.mood)))
+        seed = max(1, int(INVESTIGATE_CHANCE + INVESTIGATE_WALK))
         if random.random() < 1.0 - (1.0 - 1.0 / seed) ** fires:
             self.last = f"{self.pet.name} noticed something off the path!"
             return ("discover", None)
@@ -367,6 +351,7 @@ class Adventure:
             bloc, b = boss_hit
             self.location = bloc
             self.boss_pending = True
+            b = _recast(b, self.mi, self.zi, boss=True)
             self._boss = b
             self.last = f"Zone boss: {b['name']}!"
             return ("boss", b)
@@ -385,7 +370,7 @@ class Adventure:
         # only roams its territory (from its Location step onward).
         here = self._wilds(prev)
         if here and not self._in_town(self.location) and self._encounter_roll():
-            e = _pick_weighted(here)
+            e = _recast(_pick_weighted(here), self.mi, self.zi)
             self.last = f"Wild {e['name']} appeared!"
             return ("encounter", e)
         # A quiet stride narrates REAL state only (legibility arc 2026-07-07 --
@@ -398,7 +383,7 @@ class Adventure:
         return None
 
     def flee(self, enemy, was_boss=False):
-        """DVPet canEscape success -> WorldMap.lossPenalty(enemy.Penalty): an
+        """the classic V-pet canEscape success -> WorldMap.lossPenalty(enemy.Penalty): an
         escape is a KNOCKBACK, not a free pass.  This is also what re-arms a
         fled gate boss (prev < bloc <= location can fire again); a penalty-0
         foe still steps back one so a boss can never be skipped by fleeing."""
@@ -409,33 +394,26 @@ class Adventure:
         self.boss_pending = False
 
     def investigate(self):
-        """Zone.checkItem: a uniform draw across the zone's RandomFood +
-        RandomItems pools -- then 1 in InvestigateEnemyChance the find is an
-        AMBUSH instead.  A carried-home find opens the praise window
-        (ReturnItem -> giftEnd -> setPraise)."""
-        pool = ([("f", i) for i in self.zone.get("rand_foods", [])]
-                + [("i", i) for i in self.zone.get("rand_items", [])])
-        found = None
-        if pool:
-            kind, cid = random.choice(pool)
-            e = data.consumable_by_key(f"{kind}:{cid}")
-            if e and e.get("can_inc", True):
-                found = e
+        """A find off the path: usually an item from the catalog's cheap
+        shelves, sometimes an AMBUSH instead."""
+        from . import shop as _shop
+        pool = [e for e in _shop.catalog()
+                if e["category"] in ("Food", "Care") and e["price"] <= 1000]
+        found = random.choice(pool) if pool else None
         if random.randrange(INVESTIGATE_ENEMY_CHANCE) == 0:
             found = None
         if found is None:
             e = _pick_weighted(self._wilds()) or _pick_weighted(self.zone["randoms"]) \
                 or _pick_weighted(self.zone["bosses"])
+            e = _recast(e, self.mi, self.zi) if e else None
             if e:
                 self.last = f"An ambush! {e['name']}!"
                 return ("enemy", e)
             self.last = "Nothing there after all."
             return (None, None)
         self.pet.add_item(found["key"])
-        _persist.shop_unlock_add(found["key"])   # a wild find unlocks its shop listing
-        self.pet._open_praise()                  # it brought you something: praise it!
         rare = " — a RARE find!" if found.get("price", 0) >= 1000 else "!"
-        self.last = f"{self.pet.name} dug up {found['name']}{rare}"   # no article: "a Oats" read wrong
+        self.last = f"{self.pet.name} dug up {found['name']}{rare}"
         return ("item", found)
 
     def _advance_or_finish(self):
@@ -451,13 +429,16 @@ class Adventure:
             # investigations bypass it; adventure audit 2026-07-06)
             self._immunity_steps = BATTLE_IMMUNITY_STEPS
         if won:
-            drop = loot.roll(enemy)
-            if drop:
-                self.pet.add_item(drop["key"])
-                # canon unlockItem/unlockFood: the drop unlocks its home-shop
-                # listing for good (the Digimental progression)
-                _persist.shop_unlock_add(drop["key"])
-                self.loot = drop
+            purse = 100 + 50 * self.mi + (150 if was_boss else 0)
+            self.pet.add_bits(purse)
+            self._purse = purse
+            if not was_boss and random.random() < 0.10:
+                from . import shop as _shop
+                pool = [e for e in _shop.catalog() if e["price"] <= 2000]
+                if pool:
+                    drop = random.choice(pool)
+                    self.pet.add_item(drop["key"])
+                    self.loot = drop
         if was_boss:
             self.boss_pending = False
             if won:
@@ -481,10 +462,10 @@ class Adventure:
     def _loot_note(self):
         """The drop's line on the strip -- an expensive drop says RARE instead
         of blending in with every Oats (price tier; sweep 2026-07-14)."""
-        if not self.loot:
-            return ""
-        word = "RARE loot" if self.loot.get("price", 0) >= 1000 else "Loot"
-        return f"  {word}: {self.loot['name']}!"
+        note = f"  +{getattr(self, '_purse', 0)}b" if getattr(self, "_purse", 0) else ""
+        if self.loot:
+            note += f"  Loot: {self.loot['name']}!"
+        return note
 
     def _lose_life(self, msg, penalty=0):
         """A lost adventure battle costs one adventure life; with life remaining the

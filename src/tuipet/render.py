@@ -1,4 +1,4 @@
-"""Render DVPet 1-bit sprite bitmaps to the terminal.
+"""Render the classic V-pet 1-bit sprite bitmaps to the terminal.
 
 Each character cell stacks two vertical pixels using the upper-half block (U+2580).
 Top pixel -> foreground colour, bottom pixel -> background colour. "Off" pixels are
@@ -43,8 +43,13 @@ def _paint_cells(buf, cols, rows, on, bg, bgimg):
     for cy in range(rows):
         ty, byy = cy * 2, cy * 2 + 1
         for cx in range(cols):
-            tc = on if buf[ty][cx] else ("#" + bgimg[ty][cx * 6:cx * 6 + 6] if bgimg else bg)
-            bc = on if buf[byy][cx] else ("#" + bgimg[byy][cx * 6:cx * 6 + 6] if bgimg else bg)
+            tv, bv = buf[ty][cx], buf[byy][cx]
+            # a buffer cell is 0 (bg), 1 (theme ink) or a "#rrggbb" COLOUR
+            # pixel (the colour-sprite lane, 2026-07-15)
+            tc = (tv if isinstance(tv, str) else on) if tv \
+                else ("#" + bgimg[ty][cx * 6:cx * 6 + 6] if bgimg else bg)
+            bc = (bv if isinstance(bv, str) else on) if bv \
+                else ("#" + bgimg[byy][cx * 6:cx * 6 + 6] if bgimg else bg)
             t.append("▀", style=f"{tc} on {bc}")
         if cy != rows - 1:
             t.append("\n")
@@ -81,17 +86,18 @@ def fill_buf(frame_rows, cols, px_h, baseline=True, mirror=False, xshift=0,
     if frame_rows and mirror:
         frame_rows = [r[::-1] for r in frame_rows]
     if frame_rows:
+        from .grid import lit
         sw = max(len(r) for r in frame_rows)
         sh = len(frame_rows)
         ox = (cols - sw) // 2 + xshift
         oy = max(0, (px_h - sh - 2) if baseline else (px_h - sh) // 2) - yshift   # +yshift lifts the sprite (a hop)
         for y, line in enumerate(frame_rows):
             for x, ch in enumerate(line):
-                if ch == "1":
+                if lit(ch):
                     py, pxx = oy + y, ox + x
                     if cy0 <= py < cy1 and cx0 <= pxx < cx1 \
                             and 0 <= py < px_h and 0 <= pxx < cols:
-                        buf[py][pxx] = 1
+                        buf[py][pxx] = 1 if ch == "1" else ch
     if overlay:                              # scene actors / fx props (window-clipped)
         _stamp(buf, overlay, cols, px_h, clip=clip)
     if overlay_free:                         # unclipped overlay: the whole LCD
@@ -108,6 +114,7 @@ def render_scene(placements, cols, rows, on="#2b2e31", bg="#c6c9cc", overlay=Non
     px_h = rows * 2
     buf = [[0] * cols for _ in range(px_h)]
     cx0, cx1, cy0, cy1 = clip if clip else (0, cols, 0, px_h)
+    from .grid import lit
     for frame_rows, x_left, mirror in placements:
         if not frame_rows:
             continue
@@ -116,11 +123,11 @@ def render_scene(placements, cols, rows, on="#2b2e31", bg="#c6c9cc", overlay=Non
         oy = max(0, px_h - sh - 2)
         for y, line in enumerate(src):
             for x, ch in enumerate(line):
-                if ch == "1":
+                if lit(ch):
                     py, px = oy + y, x_left + x
                     if cy0 <= py < cy1 and cx0 <= px < cx1 \
                             and 0 <= py < px_h and 0 <= px < cols:
-                        buf[py][px] = 1
+                        buf[py][px] = 1 if ch == "1" else ch
     if overlay:                              # projectiles / impact bursts
         _stamp(buf, overlay, cols, px_h, clip=clip)
     if overlay_free:                         # unclipped overlay: the whole LCD

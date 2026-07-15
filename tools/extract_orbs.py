@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
-"""Extract DVPet attack-ORB projectile sprites -> src/tuipet/data/orbs.json.gz.
+"""Extract the classic V-pet attack-ORB projectile sprites -> src/tuipet/data/orbs.json.gz.
 
-DVPet checkAttackSprite (SpriteAnim.java:14809): an attack orb is either
+the classic V-pet checkAttackSprite (SpriteAnim.java:14809): an attack orb is either
   - GENERIC: attackSprites.png, 3 columns (Vaccine/Data/Virus) x 25 power tiers,
     chosen by attribute + floor(power/25); OR
   - SPECIAL (per-Digimon): attackSpritesSpecial.png cell, indexed directly by
     digimon.csv col 55 'vaccineNum:dataNum:virusNum' (94 of 100 cells used).
 Cells are 24x24 with a 3px gutter, sliced column-major. Downsampled /3 to ~8px 1-bit
-(half the body sprite, matching DVPet's 24px-orb vs 48px-body proportion)."""
+(half the body sprite, matching the classic V-pet's 24px-orb vs 48px-body proportion)."""
 import json, gzip, os
 import numpy as np
 from PIL import Image

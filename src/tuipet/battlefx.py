@@ -1,4 +1,4 @@
-"""DVPet attack-effect / attack-condition system — a port of AttackEffectProcess
+"""the classic V-pet attack-effect / attack-condition system — a port of AttackEffectProcess
 (checkEffect / checkCondition / checkSpecialConditions / calcGreater*).
 
 Each Digimon attack in digimon.csv is "Name:Effect:Cond1:Cond2..." (parsed by
@@ -155,7 +155,7 @@ def _check_effect(effect, conds, st, b):
         st["enemy_attr"] = na
         st["edmg"] = b._damage(b.enemy["stage"], na, b._enemy_counts, b._pet_counts)
     # PlayerIs*/EnemyIs* attribute/field overrides (ords 15-40) are read only by the
-    # description/UI layer in DVPet, not by damage calc -> no battle mutation here.
+    # description/UI layer in the classic V-pet, not by damage calc -> no battle mutation here.
 
 
 def _check_first(b):

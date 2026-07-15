@@ -1,53 +1,59 @@
-"""Jogress vs DVPet: connecting only waives the special-type gate -- the fusion
-form's full requirements still apply -- and the fusion drinks 66% of max energy."""
-import random
-
+"""Jogress — the exact-pair table: my species + the partner's species look
+up the sorted pair key; a hit is the fusion, a miss is no resonance."""
 import pytest
 
 from tuipet.pet import Pet
 from tuipet import data, jogress
 
 
-def _jogress_parent():
+def _any_pair():
+    pairs = data.load_jogress_pairs()
+    byp = data.num_by_path()
+    for key, result in pairs.items():
+        a, b = key.split("|", 1)
+        if a in byp and b in byp and result in byp:
+            return a, b, result
+    return None
+
+
+def test_pair_lookup_is_exact_and_symmetric():
+    hit = _any_pair()
+    if hit is None:
+        pytest.skip("no resolvable pairs in the atlas")
+    a, b, result = hit
+    byp = data.num_by_path()
     _, by = data.load_sprites()
-    reqs = data.load_requirements()
-    evo = data.load_evolutions()
-    for n, r in by.items():
-        if data.is_placeholder(n):
-            continue
-        if any(reqs.get(t, {}).get("special") in ("Jogress", "Fusion", "Mode")
-               for t in evo.get(n, [])):
-            return n, by
-    return None, by
+    pa = Pet(num=byp[a], stage=by[byp[a]]["stage"], attribute="Free")
+    pb = Pet(num=byp[b], stage=by[byp[b]]["stage"], attribute="Free")
+    assert jogress.resolve_pair(pa, b) == byp[result]
+    assert jogress.resolve_pair(pb, a) == byp[result]   # both-or-neither
+    # and via the lobby payload path
+    got = jogress.resolve_online(pa, {"num": byp[b]})
+    assert got and got["num"] == byp[result]
 
 
-def test_unearned_pet_gets_no_fusions():
-    random.seed(1)
-    n, by = _jogress_parent()
-    if n is None:
-        pytest.skip("no jogress parents in the atlas")
-    p = Pet(num=n, stage=by[n]["stage"], attribute=by[n]["attribute"] or "Vaccine")
-    assert jogress.options(p) == []      # the fusion form's requirements gate the menu
+def test_wrong_partner_gets_no_fusion():
+    hit = _any_pair()
+    if hit is None:
+        pytest.skip("no resolvable pairs in the atlas")
+    a, _b, _r = hit
+    byp = data.num_by_path()
+    pa = Pet(num=byp[a], stage="Child", attribute="Free")
+    assert jogress.resolve_pair(pa, "database/Child/NoSuchMon.json") is None
 
 
-def test_earned_fusion_opens_and_costs_energy():
-    random.seed(4)
-    n, by = _jogress_parent()
-    if n is None:
-        pytest.skip("no jogress parents in the atlas")
-    p = Pet(num=n, stage=by[n]["stage"], attribute=by[n]["attribute"] or "Vaccine")
-    p.vaccine, p.data_power, p.virus = 250, 60, 20
-    p.battles, p.wins = 80, 70
-    p.train_time = "Noon"
-    p.overeat = 5
-    p.levels_fought = [5, 5, 5, 5]
-    p.evol_bonus = 100000            # push prob >= probBound: skip the (real) dice
-    opts = jogress.options(p)
-    assert opts, "a fully-raised pet unlocks its fusion"
-    e0 = p.energy = p.max_energy
-    # canon: energy += Math.ceil(-0.66 x max) -- ceil rounds the negative product
-    # TOWARD ZERO (max 24 drains 15, not the old round()'s 16)
-    import math
-    cost = -math.ceil(-jogress.JOGRESS_ENERGY_COST * p.max_energy)
-    jogress.fuse(p, opts[0]["num"])
-    assert p.energy == e0 - cost
+def test_fuse_evolves_and_costs():
+    hit = _any_pair()
+    if hit is None:
+        pytest.skip("no resolvable pairs in the atlas")
+    a, b, result = hit
+    byp = data.num_by_path()
+    _, by = data.load_sprites()
+    p = Pet(num=byp[a], stage=by[byp[a]]["stage"], attribute="Free")
+    p.energy = 20
+    p.weight = 30
+    target = jogress.resolve_pair(p, b)
+    msg = jogress.fuse(p, target)
+    assert p.num == byp[result]
+    assert "Jogress" in msg
+    assert p.energy == 15 and p.weight == 26      # battle-scale costs

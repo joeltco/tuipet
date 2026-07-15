@@ -1,6 +1,6 @@
 """The adventure world's identity — region / zone / town names + biome theming.
 
-tuipet is its own game now (2026-07-09): the DVPet engine drove a mechanically
+tuipet is its own game now (2026-07-09): the the classic V-pet engine drove a mechanically
 rich but ANONYMOUS world — the player saw "Map 1-1", "TOWN 5", "Continent 2".
 This layer gives every region, zone and town a real NAME and a biome IDENTITY.
 

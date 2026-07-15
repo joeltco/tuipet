@@ -16,8 +16,7 @@ def _plain(markup):
 
 
 def _pet(**kw):
-    p = Pet(num=649, stage="Mega", attribute="Vaccine", obedience=500)   # 19-char name
-    p.world_seconds = 10 * 60.0
+    p = Pet(num=649, stage="Ultimate-Super Ultimate", attribute="Vaccine")   # 19-char name
     for k, v in kw.items():
         setattr(p, k, v)
     return p
@@ -86,21 +85,18 @@ def test_lobby_jogress_lines_fit_with_a_24_char_partner():
     assert _plain(pan.strip()) <= HUD_W                       # the fused strip
 
 
-def test_travelling_and_hp_drill_strips_fit_at_the_extremes():
+def test_travelling_and_drill_strips_fit_at_the_extremes():
+    """The road strip and the drill strip stay within the 40-col budget."""
     from tuipet.adventurescreen import AdventurePanel
-    pan = AdventurePanel(_pet(bits=999))
-    pan.adv.last = "Travelling… 100%"                         # the widest travelling note
-    pan.travelling = True
-    assert _plain(pan.strip()) <= HUD_W
-    from tuipet.training import TrainingPanel, GAMES
-    p = _pet(compliance=True)
-    p.check_refused = lambda **kw: False
+    from tuipet.training import TrainingPanel
+    p = _pet()
+    pan = AdventurePanel(p)
+    pan._trans = None
+    assert _plain(pan.strip()) <= 40
     tp = TrainingPanel(p)
-    tp.gi = next(i for i, g in enumerate(GAMES) if g[0] == "hp")
-    tp._start_game()
-    assert _plain(tp.strip()) <= HUD_W
-
-
+    assert _plain(tp.strip()) <= 40
+    tp.key("space")
+    assert _plain(tp.strip()) <= 40
 def test_adventure_strip_hints_survive_long_notes():
     """The adventure strip's HINTS are fixed chrome (major audit 2026-07-07):
     a long species name in the note ("AncientSphinxmon noticed something off

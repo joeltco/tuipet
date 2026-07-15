@@ -25,19 +25,16 @@ def test_sick_shuffle_is_net_zero():
 
 
 class _StubPet:
-    def __init__(self, energy=10, fatigued=False, mood=0, enthusiasm=0):
-        self.energy, self._fat, self.mood, self.enthusiasm = energy, fatigued, mood, enthusiasm
-
-    def is_fatigued(self):
-        return self._fat
+    def __init__(self, energy=10, sick=False, hunger=4, strength=4):
+        self.energy, self.sick = energy, sick
+        self.hunger, self.strength = hunger, strength
 
 
 def test_mood_pose_reads_state():
     assert anim.mood_pose(_StubPet(energy=0)) in (10, 9, 2)          # spent -> weary
-    assert anim.mood_pose(_StubPet(fatigued=True)) in (10, 9, 2)     # tired -> weary
-    assert anim.mood_pose(_StubPet(mood=-5)) in (4, 6)               # unhappy -> sour
-    assert anim.mood_pose(_StubPet(mood=5, enthusiasm=0)) == 5       # content & spirited -> bright
-    assert anim.mood_pose(_StubPet(mood=0)) is None                  # neutral -> ordinary walk pose
+    assert anim.mood_pose(_StubPet(sick=True)) in (4, 6)             # unwell -> sour
+    assert anim.mood_pose(_StubPet(hunger=0)) in (4, 6)              # starving -> sour
+    assert anim.mood_pose(_StubPet()) is None                        # fine -> ordinary walk
 
 
 def test_mood_pose_indices_are_valid_sprite_frames():

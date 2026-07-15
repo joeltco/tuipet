@@ -1,11 +1,11 @@
-"""DVPet ambient-animation cadence, isolated as pure helpers so the timing is
+"""the classic V-pet ambient-animation cadence, isolated as pure helpers so the timing is
 testable without Textual.
 
 The whole engine rests on one invariant from the decompiled game: SpriteAnim
 sets ``_interval = targetFPS / 10`` frames, so ``_interval`` is exactly 1/10 of
 a second and every ``_frame == _interval * N`` check fires N tenths of a second
 into a state.  tuipet therefore drives animation on a single 10 Hz tick where
-**one tick == one interval == 0.1 s**, and each state below reproduces DVPet's
+**one tick == one interval == 0.1 s**, and each state below reproduces the classic V-pet's
 beats one-for-one in real time, independent of frame rate.
 
 Ground truth: _audit_src/View/SpriteAnim.java
@@ -34,7 +34,7 @@ def idle_hold(restless):
 
 def sick_frame(frame):
     """idleUnwell: returns (sprite_index, dx_px).  Collapse pose (10) dominates the
-    50-interval cycle; the weary pose (9) only flashes on the reset beat.  DVPet's
+    50-interval cycle; the weary pose (9) only flashes on the reset beat.  the classic V-pet's
     shuffle is moveLeft1@30, moveRight1@35, moveRight1@40, moveLeft1@45 -- which is
     net-zero: the body sits 1px left over [30,35), back to centre [35,40), 1px right
     over [40,45), centre after.  (The pose offset is HELD across each range, not a
@@ -54,25 +54,23 @@ def sick_frame(frame):
 
 
 def mood_pose(pet):
-    """DVPet stepFrame substitutes a `checkMoodFrame` expression pose for the plain
+    """the classic V-pet stepFrame substitutes a `checkMoodFrame` expression pose for the plain
     walk toggle on a fraction of idle steps, so a resting pet *reads* its state:
     weary when tired/spent, sour when unhappy, bright when content.  Returns a
     sprite index, or None to keep the neutral walk toggle.
 
     Mapping condensed from checkMoodFrame's offset table: tired/no-energy -> 9/10/2,
     unhappy -> 4/6, happy & spirited -> 5, otherwise neutral (None)."""
-    if pet.energy <= 0 or pet.is_fatigued():
+    if pet.energy <= 0:
         return random.choice((10, 9, 2))      # weary / collapsed / droop
-    if pet.mood < 0:
+    if pet.sick or pet.hunger == 0 or pet.strength == 0:
         return random.choice((4, 6))          # sour faces
-    if pet.mood > 0 and pet.enthusiasm >= 0:
-        return 5                              # bright/excited
     return None                               # neutral -> ordinary walk pose
 
 
 class Roamer:
     """Full-width pacing, after SpriteAnim.idleWalk: the pet steps STEP_PX every
-    WALK_BEAT intervals, toggling its two walk poses.  DVPet's idleWalk *wraps*
+    WALK_BEAT intervals, toggling its two walk poses.  the classic V-pet's idleWalk *wraps*
     around the screen edges; on tuipet's tiny LCD we instead *turn around* at the
     walls (so the pet never vanishes) and occasionally about-face mid-room
     (TURN_CHANCE) so it wanders rather than marches.  A filth pile on the floor is
@@ -96,7 +94,7 @@ class Roamer:
         flips direction on ~30% of beats, and steps STEP_PX.  Hitting a wall
         (screen edge, filth pile, status column) STOPS the pet for WALL_PAUSE
         beats -- it stands on the turn pose pair -- then it departs the other
-        way.  (DVPet's idleWalk wrapped; the walls are tuipet's adaptation.)"""
+        way.  (the classic V-pet's idleWalk wrapped; the walls are tuipet's adaptation.)"""
         self.stepped = False
         self._t += 1
         if self._t < WALK_BEAT:

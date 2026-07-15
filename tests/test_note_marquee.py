@@ -36,9 +36,9 @@ def test_every_panel_heartbeats_for_the_marquee():
     import importlib
     import inspect
     for mod_name, cls_name in (
-            ("shopscreen", "ShopPanel"), ("assistscreen", None),
+            ("shopscreen", "ShopPanel"),
             ("themescreen", None), ("backgroundscreen", "BackgroundPanel"),
-            ("feedscreen", None), ("dnascreen", None), ("optionsscreen", None)):
+            ("feedscreen", None), ("creditscreen", None), ("optionsscreen", None)):
         mod = importlib.import_module(f"tuipet.{mod_name}")
         panels = [c for n, c in inspect.getmembers(mod, inspect.isclass)
                   if n.endswith("Panel") and c.__module__ == mod.__name__]

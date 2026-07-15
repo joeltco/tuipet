@@ -1,5 +1,5 @@
 """The lobby's jogress fusion cinematic, rendered in the display box: the two
-parents converge and flash, then the fused form is revealed -- DVPet's
+parents converge and flash, then the fused form is revealed -- the classic V-pet's
 startJogressAnim -> jogressFlash -> fused.
 
 The offline partner PICKER that used to live here died with the home-screen

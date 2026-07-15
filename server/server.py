@@ -166,7 +166,11 @@ async def _flush_pending(client, key):
     LOG.info("flushed %d queued pm(s) to %s", len(q), client.name)
 
 
-_STAGES = {"Egg", "Fresh", "InTraining", "Rookie", "Champion", "Ultimate", "Mega"}
+_STAGES = {"Egg", "Baby I", "Baby II", "Child", "Adult", "Perfect",
+           "Ultimate-Super Ultimate", "Armor-Hybrid", "Special",
+           # the pre-rebuild vocabulary: old clients may still push
+           # their world until they update
+           "Fresh", "InTraining", "Rookie", "Champion", "Ultimate", "Mega"}
 
 
 def _valid_save(save):
@@ -681,7 +685,7 @@ async def handler(ws):
             elif t == "room":
                 # join-or-create by shared phrase; empty code -> the main lobby.
                 # No password check beyond the phrase ITSELF: the phrase is the
-                # password (DSprite's private 🔒 rooms, tuipet-shaped).
+                # password (the reference fan game's private 🔒 rooms, tuipet-shaped).
                 if not client.live:
                     continue
                 code = _room_code(m.get("code"))

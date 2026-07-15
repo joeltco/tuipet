@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Render tuipet's SFX as raw 1-bit CHIPTUNE, converted directly from the authentic
-DVPet recordings by a square-wave COMPARATOR -- no pitch detection, no transcription.
+the classic V-pet recordings by a square-wave COMPARATOR -- no pitch detection, no transcription.
 
 Every earlier attempt detected pitch and re-synthesized, and pitch detection kept
 getting notes wrong. This drops transcription entirely: pass the recording through a
@@ -9,7 +9,7 @@ EXACT instantaneous frequency already present, so the melody is mathematically t
 recording's own -- verified within ~1 cent of the source. That's how a 1-bit/piezo
 speaker actually voices a tone.
 
-Pipeline: authentic DVPet recording (raw_resources/sounds/*.wav)
+Pipeline: authentic the classic V-pet recording (raw_resources/sounds/*.wav)
           -> remove DC / slow drift (so the comparator's zero-crossings track the tone,
              not any offset)
           -> amplitude gate from the RMS envelope (silence stays silent instead of
@@ -26,12 +26,12 @@ import numpy as np
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OUT = os.path.join(ROOT, "src", "tuipet", "data", "sounds")
-# resolve each source stem across candidates, in order: the pristine DVPet rips first,
+# resolve each source stem across candidates, in order: the pristine the classic V-pet rips first,
 # then the bundled recordings (the last resort for clone-only cues -- champion/reward/
-# trainhit -- that aren't in the base DVPet sound set).
+# trainhit -- that aren't in the base the classic V-pet sound set).
 _SRC_DIRS = [
     os.path.join(ROOT, "raw_resources", "sounds"),
-    os.path.join(ROOT, "_extract", "game", "DVPetTest", "jar", "resources", "sounds"),
+    os.path.join(ROOT, "_extract", "game", "the classic V-petTest", "jar", "resources", "sounds"),
     OUT,
 ]
 
@@ -49,7 +49,7 @@ ENV_MS = 20.0          # RMS envelope window for the silence gate
 GATE_FRAC, GATE_FLOOR = 0.08, 0.01
 RAMP_MS = 4.0          # gate-edge ramp -> no clicks
 
-# tuipet cue -> authentic DVPet source stem (5 subs have no 1:1 cue; see git history)
+# tuipet cue -> authentic the classic V-pet source stem (5 subs have no 1:1 cue; see git history)
 MAP = {
     "alarm": "alarm", "attack": "attack", "battle": "battle",
     "eat": "eat", "evolve": "evolve", "happy": "happy",
@@ -57,12 +57,12 @@ MAP = {
     "lastBite": "lastBite", "lose": "lose", "poop": "poop", "refuse": "refuse",
     "smallPoop": "smallPoop", "strongAttack": "strongAttack",
     "strongHit": "strongHit", "wash": "wash", "win": "win",
-    "compatible": "compatible",   # DVPet pairing-handshake beep (battle/jogress match)
+    "compatible": "compatible",   # the classic V-pet pairing-handshake beep (battle/jogress match)
     "cancel": "error", "confirm": "click", "menu": "select", "scroll": "select",
     "death": "lose",
     "angry": "angry", "error": "error", "select": "select", "attackHit": "attackHit",
     "champion": "champion", "reward": "reward", "trainhit": "trainhit",
-    # bundled-but-currently-unused DVPet cues -- convert them too so the whole non-weather
+    # bundled-but-currently-unused the classic V-pet cues -- convert them too so the whole non-weather
     # set is consistent chiptune (ready if a feature ever wires them up)
     "click": "click", "mischief": "mischief", "startBattle": "startBattle",
 }
@@ -73,7 +73,7 @@ def load(src):
     w = wave.open(src, "rb")
     fr, sw = w.getframerate(), w.getsampwidth()
     raw = w.readframes(w.getnframes())
-    if sw == 1:                                              # 8-bit unsigned (the DVPet rips)
+    if sw == 1:                                              # 8-bit unsigned (the the classic V-pet rips)
         a = (np.frombuffer(raw, np.uint8).astype(np.float64) - 128) / 128.0
     else:
         a = np.frombuffer(raw, np.int16).astype(np.float64) / 32768.0

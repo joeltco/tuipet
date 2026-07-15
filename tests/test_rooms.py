@@ -75,8 +75,8 @@ class _RoomStub:
 
 
 def _panel():
-    p = Pet(num=100, stage="Champion", attribute="Vaccine", obedience=500)
-    p.world_seconds = 600.0
+    p = Pet(num=100, stage="Adult", attribute="Vaccine")
+
     stub = _RoomStub()
     pan = lobbyscreen.LobbyPanel(p, lambda name, pw, card: stub, name="joel", pw="x")
     return pan, stub

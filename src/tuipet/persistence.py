@@ -344,7 +344,7 @@ def _migrate_v401_settings(d):
 
 def get_album():
     """Set of distinct Digimon species ever raised, NAME-CANONICAL (the
-    DM20-style zukan).  DVPet's dex sync is by name (checkNaturalUnlocked):
+    DM20-style zukan).  the classic V-pet's dex sync is by name (checkNaturalUnlocked):
     the 1410+ egg-hatch duplicate rows and their chart twins reveal together
     -- old saves may hold either num, so entries canonicalize on read
     (album/dex audit 2026-07-06)."""
@@ -476,7 +476,7 @@ def save_dms(dms, unread):
     save_settings(d)
 
 
-# --- cross-generation egg-unlock progress (DVPet eggUnlock.csv signals) -----------
+# --- cross-generation egg-unlock progress (the classic V-pet eggUnlock.csv signals) -----------
 # These outlive any single pet and feed egg.evaluate(): permanent milestones (album,
 # wins, max generation/stage, maps cleared, tournament trophies, X-Antibody ever) plus
 # a snapshot of the pet that just freed the slot, for the "previous generation" gates.
@@ -655,7 +655,7 @@ def shop_unlocks():
 
 
 def bank_digimemory(mem):
-    """Park the departed's inheritance data in the generational channel (DVPet
+    """Park the departed's inheritance data in the generational channel (the classic V-pet
     keeps items across resetToEgg; tuipet's per-save channel is progress, the
     same place the last_gen egg gates live).  One slot, like the device."""
     _note_put("digimemory", dict(mem))
@@ -801,59 +801,54 @@ def local_saved_at(path=None):
 
 def pet_from_save(data, catch_up=True, strict=False):
     """Build (pet, message) from a save dict (disk or cloud). Returns (None, '')
-    on malformed data. Applies the bounded offline decay when catch_up is set.
+    on malformed data.  catch_up replays offline minutes (capped 3 days).
 
-    strict=True (the cloud probe) REJECTS foreign-format saves outright --
-    a save whose name/stage disagree with its dex was written by a different
-    tuipet (the 2026-07-04 incident: an outdated client pushed a rebuild-era
-    save with stage 'Child' and an empty name; the probe let it clobber the
-    local pet).  strict=False (the local load) REPAIRS instead: the pet is
-    re-derived from its dex and re-bound to its line, so a corrupted file
-    becomes a playable pet rather than a silent fresh-egg wipe."""
+    strict=True (the cloud probe) REJECTS foreign-format saves outright;
+    strict=False (the local load) repairs or MIGRATES instead.  A pre-clone
+    save (the old accelerated-clock sim) migrates to a fresh egg carrying
+    its bits, scene picks and generation -- the two worlds share no dex."""
     if not isinstance(data, dict):
         return None, ""
     data = dict(data)                            # don't mutate the caller's dict
-    _migrate_v401_save(data)                     # egg-bank reorder + ver6 cut
     saved_at = data.pop("_saved_at", None)
-    # JSON stringifies int dict keys: trophies_won comes back str-keyed,
-    # silently breaking cup prelim chains (audit 2026-07).  Coerce on load.
-    for k in ("trophies_won",):
-        v = data.get(k)
-        if isinstance(v, dict):
-            data[k] = {int(kk) if str(kk).lstrip("-").isdigit() else kk: vv
-                       for kk, vv in v.items()}
-    # _lights_t serializes float("-inf") as Infinity -- json emits it fine, but
-    # guard against a stringified copy from older tooling
-    if isinstance(data.get("_lights_t"), str):
-        data["_lights_t"] = float("-inf")
+    migrated = ""
+    if "world_seconds" in data or "age_seconds" in data:
+        # the old world: keep the wallet, the gallery and the lineage count
+        if strict:
+            return None, ""
+        keep_bits = int(data.get("bits", 0) or 0)
+        keep_gen = int(data.get("generation", 1) or 1)
+        keep_bg = data.get("bg_current")
+        keep_owned = data.get("bg_owned") or []
+        pet = Pet.new_egg(generation=keep_gen)
+        pet.bits = keep_bits
+        pet.bg_current = keep_bg or pet.bg_current
+        pet.bg_owned = [k for k in keep_owned if isinstance(k, str)]
+        data = to_save_dict(pet)
+        data.pop("_saved_at", None)
+        saved_at = None
+        migrated = ("(a NEW WORLD -- your bits and scenes came along; "
+                    "a fresh egg waits)")
     valid = {f.name for f in fields(Pet)}
     kwargs = {k: v for k, v in data.items() if k in valid}
-    if "full_health" not in data and (data.get("stage") or "Egg") != "Egg":
-        # pre-trained-HP save: grandfather the old flat stage HP so a grown pet
-        # isn't nerfed to a hatchling's 5 (new pets start at StartingHealthPoints)
-        from .battle import MAX_HEALTH, MAX_HEALTH_DEFAULT
-        kwargs["full_health"] = MAX_HEALTH.get(data.get("stage"), MAX_HEALTH_DEFAULT)
     try:
         pet = Pet(**kwargs)
     except TypeError:
         return None, ""
-    # a dataclass constructor validates NOTHING: a save with the right keys but
-    # wrong-typed values (hand-edited file, corrupt cloud payload) builds a pet
-    # that crashes minutes later in tick().  Reject it here instead -- this also
-    # guards sync_down_at_startup's probe (audit 2026-07).
+    # a dataclass constructor validates NOTHING: reject wrong-typed values
+    # (hand-edited file, corrupt cloud payload) here instead of crashing in
+    # tick() minutes later
     for fname, want in (("hunger", (int, float)), ("energy", (int, float)),
-                        ("mood", (int, float)), ("weight", (int, float)),
-                        ("bits", (int, float)), ("poop", (int, float)),
-                        ("world_seconds", (int, float)), ("age_seconds", (int, float)),
-                        ("lifespan", (int, float)), ("sleep_lapse", (int, float)),
+                        ("weight", (int, float)), ("bits", (int, float)),
+                        ("poop", (int, float)), ("wall_time", (int, float)),
+                        ("total_minutes", (int, float)),
+                        ("stage_minutes", (int, float)),
+                        ("care_mistakes", (int, float)),
                         ("stage", str), ("attribute", str),
                         ("inventory", dict), ("poop_sizes", list)):
         if not isinstance(getattr(pet, fname), want):
             return None, ""
-    msg = ""
-    # the Great Simplification (2026-07-15): a pre-rebuild save carries the
-    # retired habitat economy -- refund every PURCHASED home at full price
-    # (the starter pair 0/2 came free) and start on the default scene
+    msg = migrated
     from . import backgrounds as _bgs
     _cur = getattr(pet, "bg_current", None)
     _cur = _bgs.ALIASES.get(_cur, _cur)    # a retired TINT lands on its keeper
@@ -861,105 +856,28 @@ def pet_from_save(data, catch_up=True, strict=False):
     pet.bg_owned = sorted({_bgs.ALIASES.get(k, k)
                            for k in getattr(pet, "bg_owned", [])
                            if _bgs.ALIASES.get(k, k) in _bgs.CATALOG})
-    if "bg_owned" not in data and isinstance(data.get("habitats"), list):
-        from . import data as _data
-        habs = _data.load_habitats()
-        refund = sum((habs.get(h) or {}).get("price", 0)
-                     for h in data["habitats"] if h not in (0, 2))
-        if refund:
-            pet.bits = int(getattr(pet, "bits", 0)) + refund
-            msg = f"(habitats retired — {refund} bits refunded)"
     if pet.num >= 0 and pet.stage != "Egg":
         from . import data as _data
-        _, by_num = _data.load_sprites()
-        rec = by_num.get(pet.num)
+        rec = _data.load_sprites()[1].get(pet.num)
         if rec is None:
-            # a dex this build has never heard of: the cloud must not push it,
-            # but a LOCAL save survives a data refresh untouched (robustness
-            # contract -- test_load_unknown_num)
+            # a dex this build has never heard of: the cloud must not push
+            # it, but a LOCAL save survives a data refresh untouched
             if strict:
                 return None, ""
         elif pet.stage != rec["stage"] or pet.name != rec["name"]:
             if strict:
-                return None, ""              # foreign format: never accept from the cloud
-            # local repair: identity comes from the dex; the line re-binds by name
-            from . import lines as _lines
-            croot, lid = _lines.canonical_root(pet.num)
-            pet._become(croot if croot is not None else pet.num)
-            pet.line_id = lid
-            pet.stage_seconds = 0.0
+                return None, ""              # foreign format: never from the cloud
+            pet._become(pet.num)             # local repair: identity from the dex
+            pet.stage_minutes = 0
             msg = "(save repaired — the pet's records were from another version)"
-        elif not getattr(pet, "line_id", ""):
-            # pre-line save: a consistent pet with no line_id would ride the
-            # corpus engine forever; re-anchor by membership (truly off-chart
-            # forms keep '' as before)
-            from . import lines as _lines
-            _lines.adopt_line(pet)
-    if catch_up and saved_at:
-        elapsed = min(max(0.0, time.time() - saved_at), MAX_OFFLINE)
-        off = _offline(pet, elapsed)
-        msg = (msg + "  " + off).strip() if off else msg
+    if catch_up and not pet.dead and pet.stage != "Egg" and pet.num >= 0:
+        n = pet.catch_up()
+        if n >= 5:
+            away = f"{n}m" if n < 60 else f"{n // 60}h"
+            word = pet.status_word()
+            state = "" if word == "fine" else f" — it looks {word}"
+            msg = (msg + f"  Welcome back! ({away} away){state}.").strip()
     return pet, msg
-
-
-def _offline(pet, elapsed):
-    """The BOUNDED offline decay -- a deliberate design divergence from canon
-    (completeness sweep 2026-07-06): DVPet's processSkippedSeconds replays
-    EVERY skipped second through the full lapse machinery (auto-care feeding
-    mid-replay, mistakes, death while away).  On tuipet's compressed clock a
-    full replay of 8h away = ~20 pet-days = a guaranteed grave; the capped
-    approximation below is the humane terminal-app adaptation."""
-    if getattr(pet, "dead", False):
-        # the departed do not decay: the catch-up starved/soiled a corpse and
-        # greeted 'Your pet needs care!' over the grave (dead sweep 2026-07-06);
-        # even the clocks stay still -- its age is part of the epitaph
-        return ""
-    pet.world_seconds += elapsed       # keep the day/night clock turning while away
-    pet.age_seconds += elapsed         # the pet ages while you're away (canon: the age
-    #                                    clock timeToAgeMin has NO egg gate -- age runs
-    #                                    from egg creation, so a hatchling carries it)
-    if pet.stage == "Egg":
-        # canon's replay advances incubation too: an egg left alone hatches while
-        # you're away.  Advance the growth clock so the return greets a hatch --
-        # aging WITHOUT incubating was the one incoherent half-state (2026-07-06).
-        pet.stage_seconds += elapsed
-        return ""
-    if elapsed < 30:
-        return ""
-    mins = elapsed / 60.0
-    # DVPet has no passive energy decay; just re-clamp to the (per-pet) range.
-    pet.energy = _clamp(pet.energy, -pet.max_energy, pet.max_energy)
-    mood_drop = min(50, mins * 2)
-    pet.mood = _clamp(pet.mood - mood_drop, -300, 300)
-    drop = min(pet.hunger, int(mins // 5))
-    pet.hunger -= drop
-    starved = mins > 10 and pet.hunger == 0
-    if starved:
-        pet.care_mistakes += 1
-    new_poop = min(4, pet.poop + int(mins // 8))
-    poops = new_poop - pet.poop
-    while len(pet.poop_sizes) < new_poop:            # keep poop == len(poop_sizes)
-        pet.poop_sizes.append(pet._poop_size() if hasattr(pet, "_poop_size") else 2)
-    pet.poop = new_poop
-    if mins < 1:
-        return ""
-    # ITEMIZE the return (sweep 2026-07-14): this routine knows exactly what
-    # happened while you were gone, and used to throw it away for one generic
-    # line -- the player just found a changed pet.  Say only what WAS applied.
-    away = f"{int(mins)}m" if mins < 60 else f"{int(mins / 60)}h"
-    parts = []
-    if starved:
-        parts.append("went hungry (+1 care mistake)")
-    elif drop:
-        parts.append("got hungrier")
-    if poops:
-        parts.append(f"{poops} poop{'s' if poops > 1 else ''} piled up")
-    if mood_drop >= 20:
-        parts.append("mood slipped")
-    name = getattr(pet, "name", "") or "your pet"
-    if not parts:
-        return f"Welcome back! ({away} away) {name} missed you."
-    return f"Welcome back! ({away} away) While you were gone: " + ", ".join(parts) + "."
 
 
 def quarantine_save(path):

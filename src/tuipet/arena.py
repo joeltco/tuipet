@@ -46,11 +46,11 @@ def bar(v, width=12, color=None):
 
 
 _FX = data.load_effects()
-GRAVESTONE = _FX.get("grave", [None])[0]      # real DVPet death.png
+GRAVESTONE = _FX.get("grave", [None])[0]      # real the classic V-pet death.png
 
 # The filth block is ONE CREATURE CELL: 8x8 slots in a 2x2 grid, so the max 4
 # piles span exactly 16x16 -- the same footprint as a 16x16 creature, filling
-# the band (y6..22) with no clamp.  (DVPet's raw 30x27+pad slots would scale to
+# the band (y6..22) with no clamp.  (the classic V-pet's raw 30x27+pad slots would scale to
 # a 22x18 block -- wider than a cell, taller than the band, and with 3-4 piles
 # it left no room for the pet to stand clear inside the 32 grid.  Joel's rule:
 # 4 poops == 16x16, and the mon NEVER walks over them.)  The extracted pile
@@ -62,7 +62,7 @@ from .render import blit as _blit    # one blit for app/training/strikefx (refac
 
 
 def _evol_strobe(c):
-    """DVPet's 50% 'evol' dither tiled over the whole LCD in ink -- the evolve
+    """the classic V-pet's 50% 'evol' dither tiled over the whole LCD in ink -- the evolve
     burst and the inherit collide strobe carried two copies (refactor 2026-07-05)."""
     ev = (data.load_effects().get("evol") or [None])[0]
     if not ev:
@@ -73,7 +73,7 @@ def _evol_strobe(c):
 
 
 def _filth_right(count):
-    """Right edge x of the filth block: fixed POOP_W columns like DVPet's 30px slots."""
+    """Right edge x of the filth block: fixed POOP_W columns like the classic V-pet's 30px slots."""
     n = min(count or 0, POOP_MAX_PILES)
     if n <= 0:
         return grid.X0
@@ -81,7 +81,7 @@ def _filth_right(count):
 
 
 def _filth_pts(pet, tick, count=None, sizes=None, push=0, px_h=None):
-    """DVPet drawFilthLevel + animFilth: per-pile SIZED sprites (the real filth.png
+    """the classic V-pet drawFilthLevel + animFilth: per-pile SIZED sprites (the real filth.png
     sizes 1-4, two anim frames each, from pet.poop_sizes) laid in fixed 2-high
     columns stepping right from the grid's left edge; the frame swaps every
     7 ticks awake / 10 asleep."""
@@ -115,8 +115,8 @@ def _filth_pts(pet, tick, count=None, sizes=None, push=0, px_h=None):
     return pts
 
 
-COND_W = COND_H = 7                                # state.png cell size (DVPet 7x7 cells)
-PLAY_HOP = 14                                      # DVPet jumping(): 6 up + 6 down + 2 rest per hop
+COND_W = COND_H = 7                                # state.png cell size (the classic V-pet 7x7 cells)
+PLAY_HOP = 14                                      # the classic V-pet jumping(): 6 up + 6 down + 2 rest per hop
 PLAY_LEAD = 6                                      # the grounded lead-in before hop one (canon 0..5)
 PLAY_HOP_H = 6                                     # apex px: the FULL body stays on the 24px arena
 #                                                    (grounded top row = 24-16-2 = 6, so 6 is the max
@@ -124,9 +124,9 @@ PLAY_HOP_H = 6                                     # apex px: the FULL body stay
 #                                                    launched half the body off-screen -- Joel
 #                                                    2026-07-06 "jumping way too high").  1px per rise
 #                                                    beat == canon's one moveUp per beat rhythm.
-# DVPet gifting(): amble off LEFT until half off-screen (firstGoal -20/104), amble
+# the classic V-pet gifting(): amble off LEFT until half off-screen (firstGoal -20/104), amble
 # back RIGHT to just past centre (secondGoal 39/104 ~ x15/40), gift pops in beside
-# the pet (it rides hidden until arrival in DVPet too), pose 5 hold -> giftEnd.
+# the pet (it rides hidden until arrival in the classic V-pet too), pose 5 hold -> giftEnd.
 # 3 logical px per 2-interval beat scales to ~1px/beat here (same ~4s legs).
 GIFT_OUT = 40                                      # beats*2 ticks: centre x12 -> x-8 (20px)
 GIFT_BACK = 46                                     # x-8 -> x15 (23px)
@@ -186,7 +186,7 @@ def _effect_overlay(pet, frame_i, cols, px_h, tick=0):
     # sleep Zzz: floats in the sky corner, above the 32x16 world (the 6px
     # glyph fills the sky strip exactly; a nap's own glyph is 7px and dips
     # onto the band's top row -- sleeping poses lie low, sweep-verified).
-    # It shows lights-off too: the dark room keeps its Zzz (DVPet
+    # It shows lights-off too: the dark room keeps its Zzz (the classic V-pet
     # sleepLightsOff), our one mark on a black field.
     zkey = "zzz_nap" if (getattr(pet, "nap", False) and E.get("zzz_nap")) else "zzz"
     # the Zzz belongs to the SLEEP SCENE, INSIDE the window (LAW: nothing
@@ -224,11 +224,11 @@ class Screen(Static):
     #                           ticks = 1.5s (background audit 2026-07-15)
 
     def on_mount(self):
-        self.frame_i = 0      # interval counter (10 Hz; 1 tick == 0.1s == one DVPet _interval)
+        self.frame_i = 0      # interval counter (10 Hz; 1 tick == 0.1s == one the classic V-pet _interval)
         self.anim_key = None  # last anim state, so cadences restart on a state change
         self.roamer = anim.Roamer(int(SCREEN_COLS * 0.28), SCREEN_COLS, SPRITE_W)  # left-of-centre anchor
         self.fx = None        # active care-action animation
-        self._idle_expr = None    # DVPet stepFrame mood-pose held for the current idle step (None = walk toggle)
+        self._idle_expr = None    # the classic V-pet stepFrame mood-pose held for the current idle step (None = walk toggle)
 
     def paint(self, pet: Pet):
         if self.fx:
@@ -236,7 +236,7 @@ class Screen(Static):
         on, bg = LCD_ON, LCD_BG
         bgimg = self._background(pet)
         if not pet.lights:                 # lights off (the 's' lights button): dark room (+ Zzz if asleep)
-            bgimg, bg, on = None, VOID, SIL_NIGHT   # DVPet lightsOff.png is pure (0,0,0); VOID keeps it on-palette
+            bgimg, bg, on = None, VOID, SIL_NIGHT   # the classic V-pet lightsOff.png is pure (0,0,0); VOID keeps it on-palette
         elif bgimg:
             on = SIL_DAY   # dark silhouette over scene art -- the pet is never white;
             #                white (SIL_NIGHT) is reserved for the lights-out Zzz below
@@ -262,7 +262,7 @@ class Screen(Static):
         if (pet.anim in ("idle", "walk") and pet.num != -1
                 and getattr(pet, "is_geriatric", False)):
             frames = [f + 9 for f in frames]
-        # per-state cadence: hold each pose for its DVPet interval count rather than
+        # per-state cadence: hold each pose for its the classic V-pet interval count rather than
         # flipping every tick (root-cause #2 -- one tick == one _interval; see anim.py).
         # idle holds 5/6/7, sleep holds its 2/3 poses for 10 each, reactions ~6.
         hold = (anim.idle_hold(pet._restless()) if pet.anim in ("idle", "walk")
@@ -271,16 +271,16 @@ class Screen(Static):
         rows = (_fr[idx] if idx < len(_fr) else None) or first
         xshift, mirror = 0, False
         if pet.anim in ("idle", "walk") and pet.sick and pet.num != -1:
-            si, dx = anim.sick_frame(self.frame_i)               # DVPet idleUnwell: collapse(10), weary(9) flash
+            si, dx = anim.sick_frame(self.frame_i)               # the classic V-pet idleUnwell: collapse(10), weary(9) flash
             rows = (_fr[si] if si < len(_fr) else None) or first
             # canon idleUnwell resets Y ONLY (setSpriteCharDefaultY) and sways
             # around the pet's current X -- it collapses where it stands, not
             # at the anchor (walk-pose audit 2026-07-08)
             xshift = self.roamer.xshift + dx
         elif pet.anim in ("idle", "walk") and pet.num != -1:
-            # full-width roam (DVPet idleWalk); pose follows the roamer's step, and a
+            # full-width roam (the classic V-pet idleWalk); pose follows the roamer's step, and a
             # filth pile is a left wall it turns at (filthLabel walk bound).  On some
-            # steps DVPet's stepFrame shows a mood pose instead of the walk toggle.
+            # steps the classic V-pet's stepFrame shows a mood pose instead of the walk toggle.
             if self.roamer.pause:
                 # device wall-pause (GML 2026-07-14): stopped at the wall on the
                 # TURN pose pair -- turn(1)/idle(0) alternating -- before it
@@ -299,7 +299,7 @@ class Screen(Static):
                 # never re-anchored (walk-pose audit 2026-07-08)
                 xshift, mirror = self.roamer.xshift, self.roamer.mirror
         if pet.num == -1 and pet.hatching:
-            # DVPet hatch() (SpriteAnim 11556), driven by elapsed hatch time (1 interval==0.1s):
+            # the classic V-pet hatch() (SpriteAnim 11556), driven by elapsed hatch time (1 interval==0.1s):
             # the egg rocks (moveRight/Left 3) over intervals 4..15, then CRACKS -- drawNum(1)
             # at interval 16, drawNum(2) at interval 19 -- revealing the baby before the Fresh.
             # round, don't truncate: 0.4/0.1 is 3.999... in binary floats, and a
@@ -317,7 +317,7 @@ class Screen(Static):
             fi = 0 if n < 16 else (1 if n < 19 else 2)      # egg -> crack -> baby emerging
             rows = (_fr[fi] if fi < len(_fr) and _fr[fi] else first)
             mirror = False
-        # NOTE: DVPet's frozen.png (the ice encasement) is its GAME-PAUSED indicator
+        # NOTE: the classic V-pet's frozen.png (the ice encasement) is its GAME-PAUSED indicator
         # (setFrozenIcon only fires when !isPlaying), not a cold-weather state -- so cold
         # shows the huddle pose above, not a full ice block over the pet.
         # exclusive floor zones, enforced in EVERY state (Bandai-grammar sweep
@@ -330,7 +330,7 @@ class Screen(Static):
                - SPRITE_W) - base
         xshift = min(max(xshift, lo), max(cap, lo))       # poop wins over the skull (it yields when crowded)
         overlay = _clip_win(_effect_overlay(pet, wf, SCREEN_COLS, SCREEN_ROWS * 2, tick=self.frame_i))
-        if not pet.lights:                 # lights off: DVPet's lightsOff is a fully-opaque black
+        if not pet.lights:                 # lights off: the classic V-pet's lightsOff is a fully-opaque black
             rows, xshift, mirror = [], 0, False   # cover -> the pet is hidden; only black (+ Zzz) shows
         self.update(render_screen(rows, SCREEN_COLS, SCREEN_ROWS, on, bg,
                                   mirror=mirror, xshift=xshift, overlay=overlay,
@@ -382,7 +382,7 @@ class Screen(Static):
             right_bound = ((grid.X1 - SICK_ZONE - SPRITE_W) if _sick_mark_up(pet)
                            else (grid.X1 - SPRITE_W))
             self.roamer.step(left_bound=poop_right, right_bound=right_bound)
-            if self.roamer.stepped and not self.roamer.pause:    # a fresh step landed (DVPet stepFrame):
+            if self.roamer.stepped and not self.roamer.pause:    # a fresh step landed (the classic V-pet stepFrame):
                 # keyed on the BEAT, not a pose change -- the device-exact
                 # random frame pick repeats a pose ~half the time, which would
                 # have silently halved the mood-pose rate (GML port 2026-07-14)
@@ -391,7 +391,7 @@ class Screen(Static):
         else:
             self._idle_expr = None                               # any non-idle state clears the held expression
 
-    # ---- care-action animations (DVPet SpriteAnim eat/clean/cheer) -----------
+    # ---- care-action animations (the classic V-pet SpriteAnim eat/clean/cheer) -----------
     def start_fx(self, kind, icon=None, poop=0, old_num=None, pet=None, starving=False, good=True, script=None):
         steps = {"eat": 35, "cheer": 31, "jeer": 31, "clean": 22, "spit": 25, "evolve": 41, "dying": 50, "dna_charge": 44, "play": 48, "heal": 24, "poop": 25, "poopdance": 21, "yawn": 22, "toilet": 38, "losing": 50,
                  "gift": GIFT_OUT + GIFT_BACK + GIFT_HOLD, "assist": 28, "inherit": 50}.get(kind, 12)
@@ -406,11 +406,11 @@ class Screen(Static):
             self.fx["snds"] = dict(sc["snds"])
             self.fx["end"] = sc["end"]
         if kind == "eat":
-            # DVPet eat(): each chew beat is scaled by pow(N, mod) -- a starving pet or
+            # the classic V-pet eat(): each chew beat is scaled by pow(N, mod) -- a starving pet or
             # a glutton wolfs food down (mod 0.9, ends ~beat 23), a picky eater dawdles
             # (mod 1.1, ~48); food descent (beats 0/2/4/6) is NOT scaled.  Disliked
             # food -> +9 grimace.  A heavy species (baseWeight>=40) skips a chew cycle
-            # (DVPet's frame jump 18->26): two bites instead of three, ends ~beat 26.
+            # (the classic V-pet's frame jump 18->26): two bites instead of three, ends ~beat 26.
             glut = getattr(pet, "glutton", 0) if pet else 0
             mod = 0.9 if (glut > 0 or starving) else (1.1 if glut < 0 else 1.0)
             # eat(): the grimace bite (+9) fires on DISLIKED food OR an overeating
@@ -441,20 +441,20 @@ class Screen(Static):
                 beats = [int(b ** mod) for b in (10, 14, 18, 22, 26, 30)]
                 self.fx["chew"] = {b: (8 if i % 2 == 0 else bite) for i, b in enumerate(beats)}
                 fb = (beats[1], beats[3], beats[5])
-                # DVPet eat(): _eat on the first two bites, _lastBite on the third.
+                # the classic V-pet eat(): _eat on the first two bites, _lastBite on the third.
                 self.fx["bite_snds"] = {fb[0]: "eat", fb[1]: "eat", fb[2]: "lastBite"}
                 self.fx["steps"] = int(34 ** mod) + 1
             self.fx["food_beats"] = fb
         elif kind == "spit":
-            # DVPet refuse(): _refuse fires on EVERY head-shake flip (t0/6/12/18).
+            # the classic V-pet refuse(): _refuse fires on EVERY head-shake flip (t0/6/12/18).
             # (t0 sounds key as 1 -- the drain runs after the first advance.)
             self.fx["snds"] = {1: "refuse", 6: "refuse", 12: "refuse", 18: "refuse"}
         elif kind == "cheer":
-            # DVPet cheer(): its sound (praise/_happy) plays at the anim's t0 --
+            # the classic V-pet cheer(): its sound (praise/_happy) plays at the anim's t0 --
             # keyed here so chained cheers (wash/evolve/heal tails) sound too.
             self.fx["snds"] = {1: "happy"}
         elif kind == "losing":
-            # DVPet losing(): jeer(disposition, _lose) -- the sound at the
+            # the classic V-pet losing(): jeer(disposition, _lose) -- the sound at the
             # first UP beat, like every jeer
             self.fx["snds"] = {6: "lose"}
         elif kind == "toilet":
@@ -465,17 +465,17 @@ class Screen(Static):
             else:
                 self.fx["snds"] = {18: "poop"}
         elif kind == "jeer":
-            # DVPet jeer(): the sound fires at the first UP beat (t6).  Canon
+            # the classic V-pet jeer(): the sound fires at the first UP beat (t6).  Canon
             # routes Bad_Scold through the _unhappy cue, but soundConfig.csv
             # maps unhappy -> angry.wav -- the same bark either way, so only
             # the POSES distinguish the variants here.
             self.fx["snds"] = {6: "angry"}
         elif kind == "heal":
-            # DVPet bandage(): _useBandage on each application, _lastBandage on the
+            # the classic V-pet bandage(): _useBandage on each application, _lastBandage on the
             # final one (no ripped bandage cues -- click/confirm are the substitutes).
             self.fx["snds"] = {8: "click", 13: "click", 18: "confirm"}
         elif kind == "evolve":
-            # DVPet evolveAnim(): _evolve sounds at the first burst beat (t5);
+            # the classic V-pet evolveAnim(): _evolve sounds at the first burst beat (t5);
             # digivolve() runs the strobe to evolFinish at 41 (was cut at 37).
             # An ITEM evolution (Digimental) prepends canon itemEvolve's first
             # act: the pet parades with the item cycling its own anim frames
@@ -491,7 +491,7 @@ class Screen(Static):
             if icon:                      # the parade opens on the jogress sting
                 self.fx["snds"][1] = "jogress"
         elif kind == "inherit":
-            # DVPet inheriting(): chip-shrink t11 / parent-grow t17 / parent-shrink
+            # the classic V-pet inheriting(): chip-shrink t11 / parent-grow t17 / parent-shrink
             # t37 all key the attackHit cue; the flight home pips inheritMove
             # (=alarm) every 4; the collide lands inheritCollide (=strongHit)
             self.fx["snds"] = {10: "attackHit", 14: "attackHit", 32: "attackHit",
@@ -518,7 +518,7 @@ class Screen(Static):
             # angrySurprise resolves into Jeering (itemfx script tables)
             self.start_fx(item_end, good=True)
         elif kind == "clean" and had_filth:
-            # DVPet clean(): the cheer chains ONLY when filth was actually washed
+            # the classic V-pet clean(): the cheer chains ONLY when filth was actually washed
             # (an empty-room wash just ends -- no celebration).
             self.start_fx("cheer")
         elif kind in ("evolve", "heal", "gift", "play", "toilet", "inherit"):
@@ -567,7 +567,7 @@ class Screen(Static):
         return [downsample(fr, f) for fr in raw]           # 24px source -> ~px tall on the LCD
 
     def _fx_filth(self, pet, tick, count=None):
-        """DVPet checkFilth: the care anims (eat/cheer/jeer/refuse/poop) keep the
+        """the classic V-pet checkFilth: the care anims (eat/cheer/jeer/refuse/poop) keep the
         filth piles on screen and stand the pet clear of them
         (adjustCharacterForFilth).  Returns (overlay_pts, clear_xshift)."""
         n = min((getattr(pet, "poop", 0) or 0) if count is None else count, POOP_MAX_PILES)
@@ -592,13 +592,13 @@ class Screen(Static):
             #                every night-time care fx white)
         step = fx["step"]
         # an Assistant_Lights visit is the one anim that CAUSES the darkness --
-        # and DVPet toggles the room at the anim's FINAL beat, so the whole
+        # and the classic V-pet toggles the room at the anim's FINAL beat, so the whole
         # visit (switch AND the helper's exit) plays lit; the old cut at beat
         # 18 left the exit playing white in the dark (bug report 2026-07-13)
         lit_visit = fx["kind"] == "assist" and fx.get("act") == "lights"
         dark = not pet.lights and fx["kind"] != "evolve" and not lit_visit
         if dark:
-            # the dark room stays dark through a care fx -- and DVPet's care
+            # the dark room stays dark through a care fx -- and the classic V-pet's care
             # anims KEEP the fully-opaque lightsOff cover up (SpriteAnim sets
             # lightsOff inside the anims), so a dark-room fx shows NOTHING:
             # no pet, no props, no white poses (bug report 2026-07-13, "mon in
@@ -618,13 +618,13 @@ class Screen(Static):
         c.yshift = 0
         c.mirror = False
         if fx["kind"] in ("eat", "cheer", "jeer", "spit"):
-            # DVPet checkFilth runs inside these anims: piles stay visible and the
+            # the classic V-pet checkFilth runs inside these anims: piles stay visible and the
             # pet (and its food) stands clear of them.
             filth_pts, filth_clear = self._fx_filth(pet, self.frame_i)
             c.overlay += filth_pts
             c.xshift = filth_clear
         elif fx["kind"] == "poop":
-            # DVPet poop(): squat (+4, MIRRORED) clear of the old piles, net-zero
+            # the classic V-pet poop(): squat (+4, MIRRORED) clear of the old piles, net-zero
             # sway every 3 ticks; the new pile lands at t18 with the size-keyed
             # sound (fx snds) and the relieved pose (+5); ends 24.
             new = fx["step"] >= 18
@@ -678,7 +678,7 @@ class Screen(Static):
                                   bgimg=c.bgimg, mirror=mirror, clip=_WINDOW))
 
     def _fxk_eat(self, pet, fx, step, c):
-        # DVPet eat(): 24px food descends in 4 stages (beats 0/2/4/6) toward the
+        # the classic V-pet eat(): 24px food descends in 4 stages (beats 0/2/4/6) toward the
         # mouth, then a chew triad alternates open-mouth(+8)/chew(+7) at beats
         # 10/14/18/22/26/30 while the food is consumed frame-by-frame; ends ~34.
         food0 = self._food_frames(fx.get("icon") or "f:0")
@@ -693,7 +693,7 @@ class Screen(Static):
             n = min(pet.poop, POOP_MAX_PILES)
             c.xshift = (_filth_right(n) - PET_BASE_X) + fw0
         elif c.xshift == 0:
-            c.xshift = -1                                  # no filth: DVPet char x29 of 104 (~28%)
+            c.xshift = -1                                  # no filth: the classic V-pet char x29 of 104 (~28%)
         # the food is BORN inside the window (Joel 2026-07-12: the descent's
         # left columns were getting cut at the matrix edge): slide the whole
         # canon-abutted pair (food right edge == char left edge) right until
@@ -724,12 +724,12 @@ class Screen(Static):
         food = food0
         if food:
             fw = fw0
-            # DVPet: the food's RIGHT edge meets the pet's LEFT edge (foodLabel x31+24 == char x55),
+            # the classic V-pet: the food's RIGHT edge meets the pet's LEFT edge (foodLabel x31+24 == char x55),
             # so it descends right into the mouth -- abut it instead of stranding it on the far left.
             # (The filth pad above already moved BOTH food and char clear of the piles.)
             fx_x = max(grid.X0, PET_BASE_X + c.xshift - fw)
             stage = 0 if step < 2 else 1 if step < 4 else 2 if step < 6 else 3
-            fy = (grid.TOP, 8, 11, 13)[stage]              # DVPet descent, mapped INTO the window: the
+            fy = (grid.TOP, 8, 11, 13)[stage]              # the classic V-pet descent, mapped INTO the window: the
             #                                                  food drops from the band top to the mouth
             #                                                  (it used to enter from over the matrix --
             #                                                  LAW 2026-07-11: nothing crosses the top edge)
@@ -738,7 +738,7 @@ class Screen(Static):
             c.overlay += _blit(food[min(fi, len(food) - 1)], fx_x, fy)
 
     def _fxk_clean(self, pet, fx, step, c):
-        # DVPet clean(): the wash enters from the right and, once it reaches the pet,
+        # the classic V-pet clean(): the wash enters from the right and, once it reaches the pet,
         # shoves the pet AND the filth left together until they slide off-screen (pet
         # in its clean pose, frame 4); the chained cheer then brings the pet back.
         E = data.load_effects()
@@ -749,7 +749,7 @@ class Screen(Static):
         push = max(0, base + clear + SPRITE_W - wx)        # wash shove, measured from the pet's RIGHT edge
         c.xshift = clear - push                            # pet starts cleared of the filth, then both
         if push > 0:                                       # slide left in lockstep (gap preserved, no mash)
-            c.rows = self._pose_rows_idx(pet, 4)           # DVPet drawNum(4) while being washed
+            c.rows = self._pose_rows_idx(pet, 4)           # the classic V-pet drawNum(4) while being washed
         if fx.get("poop"):                                 # the sized piles slide off with the pet
             c.overlay += _filth_pts(pet, self.frame_i, count=fx["poop"],
                                     sizes=fx.get("sizes"), push=push, px_h=c.px_h)
@@ -758,7 +758,7 @@ class Screen(Static):
             c.overlay += _blit(wash, wx, grid.TOP + (grid.BAND - len(wash)) // 2)
 
     def _fxk_assist(self, pet, fx, step, c):
-        # DVPet assistantClean/assistantFeed/assistantLights: the hired helper
+        # the classic V-pet assistantClean/assistantFeed/assistantLights: the hired helper
         # descends from the top on the LEFT (locX 6, icon flipped to face the
         # pet), does its round, and rises away (moveUp beats 18/19).  Mapped to
         # 28 steps: descend 0-7, act 8-19 (with the wiggle), leave 20+.  During
@@ -780,7 +780,7 @@ class Screen(Static):
             c.overlay += _filth_pts(pet, self.frame_i, count=fx["poop"],
                                     sizes=fx.get("sizes"), push=push, px_h=c.px_h)
         elif not feed:
-            # assistantLights: the pet gives ground as the helper arrives (DVPet
+            # assistantLights: the pet gives ground as the helper arrives (the classic V-pet
             # moveRight(2) per descent beat) and drifts back as it leaves --
             # 4+16 | 20+16 fills the grid band x[4,36) with both sprites abutted
             if step < 8:
@@ -834,7 +834,7 @@ class Screen(Static):
                 c.overlay += _blit(hf, hx, hy)
 
     def _fxk_cheer(self, pet, fx, step, c):
-        # DVPet cheer(): pose alternates up(+5)/down(+7) every 6 intervals with a
+        # the classic V-pet cheer(): pose alternates up(+5)/down(+7) every 6 intervals with a
         # "happy" emote bubble pulsing on the up-beats; ends ~beat 30.  A
         # spoiling Bad_Praise (cheer(false)) bounces on 6/4 instead of 5/7.
         up = (step // 6) % 2 == 0
@@ -846,14 +846,14 @@ class Screen(Static):
             hap = data.load_effects().get("happy")
             if hap:
                 hf = hap[(step // 6) % len(hap)]
-                # DVPet cheer(): the pet stays CENTRED and the emote rides its right
+                # the classic V-pet cheer(): the pet stays CENTRED and the emote rides its right
                 # edge (adjustEmotionLabel) -- not pinned to the far corner.
                 # Head height (grid.TOP), IN the window: y=1 was the pre-law
                 # bezel spot and the clip beheaded the sun (2026-07-12).
                 c.overlay += _blit(hf, PET_BASE_X + c.xshift + SPRITE_W, grid.TOP)
 
     def _fxk_gift(self, pet, fx, step, c):
-        # DVPet gifting(): walk-toggle poses (spriteNum/spriteNum+1) per beat;
+        # the classic V-pet gifting(): walk-toggle poses (spriteNum/spriteNum+1) per beat;
         # facing follows the leg (drawNumMirror false left / true right).  The
         # present is only revealed on arrival, beside the pet (locX gap 4/104
         # ~ 1px), vertically centred -- then pose 5 faces it for the hold.
@@ -881,7 +881,7 @@ class Screen(Static):
                     c.overlay += _blit(g0, gx, grid.TOP + max(0, (grid.BAND - gh) // 2))
 
     def _fxk_play(self, pet, fx, step, c):
-        # DVPet jumping() (SpriteAnim 17308): the pet bounces with joy -- hops UP on
+        # the classic V-pet jumping() (SpriteAnim 17308): the pet bounces with joy -- hops UP on
         # the excited pose (5) and lands on the neutral pose (1), a happy chirp at the
         # top of each hop.  Distinct from cheer (which bounces in place on 5/7 with an
         # emote bubble) -- here the body actually leaves the ground.
@@ -938,7 +938,7 @@ class Screen(Static):
             c.overlay += _blit(bm, ix, iy + ih - len(bm))   # _stamp clips
 
     def _fxk_jeer(self, pet, fx, step, c):
-        # DVPet jeer(goodScold): the SCOLD reaction -- pose alternates down(+4)/up(+6)
+        # the classic V-pet jeer(goodScold): the SCOLD reaction -- pose alternates down(+4)/up(+6)
         # every 6 intervals, leading DOWN, with the "unhappy" emote riding the pet;
         # ends ~beat 30.  (Poses 9/10 belong to badHealthJeer, the dying variant.)
         down = (step // 6) % 2 == 0
@@ -949,24 +949,24 @@ class Screen(Static):
         un = data.load_effects().get("unhappy")
         if un:
             uf = un[(step // 6) % len(un)]
-            # DVPet jeer(): centred pet, emote at its right edge (not the corner),
+            # the classic V-pet jeer(): centred pet, emote at its right edge (not the corner),
             # head height in the window (y=1 predated the law's clip).
             c.overlay += _blit(uf, PET_BASE_X + c.xshift + SPRITE_W, grid.TOP)
 
     def _fxk_spit(self, pet, fx, step, c):
-        # DVPet refuse(): pose 4 (9 while Depressed) held the whole beat while the
+        # the classic V-pet refuse(): pose 4 (9 while Depressed) held the whole beat while the
         # head SHAKES via mirror flips T/F/T/F at 0/6/12/18 (_refuse on each flip,
         # wired in start_fx); ends at 24.  No food drops -- the meal never appears.
         sprite = 9 if pet.current_mood() == "Depressed" else 4
         c.rows = self._pose_rows_idx(pet, sprite)
 
     def _fxk_evolve(self, pet, fx, step, c):
-        # DVPet evolveAnim(): the room plunges DARK (lightsOff, fully opaque -- the
+        # the classic V-pet evolveAnim(): the room plunges DARK (lightsOff, fully opaque -- the
         # pet vanishes) and the bright "evol" burst strobes over it at beats
         # 5/12/19/25/29/34 (each icon holds until the next beat); changeSprite()
         # swaps in the evolved form at beat 21 UNDER darkness, so it emerges on the
         # next burst.  _evolve sounds at the first burst (start_fx snds).  The
-        # chained cheer(true) afterwards is DVPet evolFinish.
+        # chained cheer(true) afterwards is the classic V-pet evolFinish.
         old = fx.get("old_num")
         off = fx.get("off", 0)
         if step < off and fx.get("icon"):                  # itemEvolve's first act: the
@@ -1006,13 +1006,13 @@ class Screen(Static):
         burst = any(a <= step < b for a, b in
                     ((5, 10), (12, 14), (19, 21), (25, 27), (29, 32), (34, 99)))
         if burst:
-            # "evol" burst: the room shows through DVPet's 50% dither mask
+            # "evol" burst: the room shows through the classic V-pet's 50% dither mask
             _evol_strobe(c)
         else:                                              # lightsOff beats: the void, pet hidden
             c.rows, c.bgimg, c.bg = [], None, VOID
 
     def _fxk_inherit(self, pet, fx, step, c):
-        # DVPet inheriting(): the pet stands RIGHT (locX width-3-size); the chip
+        # the classic V-pet inheriting(): the pet stands RIGHT (locX width-3-size); the chip
         # descends on its left (t1-10), shrinks to a point (t11, chipShrink), the
         # DEPARTED ancestor rises from it (t17, parentGrow) and greets on poses
         # 6/1 (t24-33), fades (t37, parentShrink), then the chip reappears and
@@ -1047,7 +1047,7 @@ class Screen(Static):
                 _evol_strobe(c)
 
     def _fxk_dna_charge(self, pet, fx, step, c):
-        # DVPet dnaCharge() (SpriteAnim 12860): the FIELD badge drops in beside the
+        # the classic V-pet dnaCharge() (SpriteAnim 12860): the FIELD badge drops in beside the
         # pet (t1-7), wobbles (9/11/13), inserts (t16), then the full-screen dnaWash
         # wave sweeps DOWN over everything (t21+, ~9px/tick of 120) while the pet
         # strains (pose 9 from the collide at t27); the badge sinks away at the tail
@@ -1060,7 +1060,7 @@ class Screen(Static):
             bw, bh = len(badge[0]), len(badge)
             base = PET_BASE_X + c.xshift
             bx = max(0, base - 2 - bw) + ({9: -1, 10: -1, 11: 1, 12: 1}.get(step, 0))
-            rest = 8                                       # DVPet rest y21 of 60 -> ~8 of 24
+            rest = 8                                       # the classic V-pet rest y21 of 60 -> ~8 of 24
             if step < 8:
                 by = -bh + int((rest + bh) * step / 7)     # moveDown 6/tick descent
             else:
@@ -1072,7 +1072,7 @@ class Screen(Static):
             c.overlay += _blit(wash, max(0, (SCREEN_COLS - len(wash[0])) // 2), wy)
 
     def _fxk_heal(self, pet, fx, step, c):
-        # DVPet bandage(): the item drops in on the pet's LEFT (x31 vs char x55,
+        # the classic V-pet bandage(): the item drops in on the pet's LEFT (x31 vs char x55,
         # like the food) and steps through its 4-frame application strip at beats
         # 0/8/13/18 while the pet holds the HURT pose (+9, being treated); ends 23
         # and chains into cheer(true).
@@ -1087,7 +1087,7 @@ class Screen(Static):
             c.overlay += _blit(bm, ix, iy)
 
     def _fxk_losing(self, pet, fx, step, c):
-        # DVPet losing() (the home-battle defeat): the sore loser jeers for 30
+        # the classic V-pet losing() (the home-battle defeat): the sore loser jeers for 30
         # beats -- disposition-shaded pose pair (sour 4/6, mild slumps 10/9)
         # with the "dying" emote strobing on the jeer cadence -- then the WASH
         # rolls in from the right and sweeps it clean off the screen.
@@ -1116,7 +1116,7 @@ class Screen(Static):
                 c.overlay += _blit(wash, wx, max(0, (c.px_h - len(wash)) // 2))
 
     def _fxk_toilet(self, pet, fx, step, c):
-        # DVPet poopToilet (SelfToilet/portToilet): the pet squats over its
+        # the classic V-pet poopToilet (SelfToilet/portToilet): the pet squats over its
         # toilet -- wiggle beats 3..18 (pose 4), the relieved go at 18 (pose
         # 5), then it steps off (pose 1) for the flush and the chained cheer.
         if step < 18:
@@ -1135,7 +1135,7 @@ class Screen(Static):
                                c.px_h - 2 - len(f))
 
     def _fxk_yawn(self, pet, fx, step, c):
-        # DVPet yawning() (SpriteAnim 15742): idle -> the yawn (+8 at beat 4)
+        # the classic V-pet yawning() (SpriteAnim 15742): idle -> the yawn (+8 at beat 4)
         # -> a side-sway (x-3/+3 pairs, beats 10..28) -> the stretch tail
         # (+3/+1 alternating, 33..53).  The special-idle tell that bedtime
         # nears; the doze-off keeps its simple two-pose yawn anim.
@@ -1150,7 +1150,7 @@ class Screen(Static):
             c.rows = self._pose_rows_idx(pet, 3 if ((step - 15) // 2) % 2 == 0 else 1)
 
     def _fxk_poopdance(self, pet, fx, step, c):
-        # DVPet poopDance (a special-idle roll while the gauge is full): a
+        # the classic V-pet poopDance (a special-idle roll while the gauge is full): a
         # nervous wiggle (+-1 every other beat, 2..10) then pose 4 flipping its
         # mirror every 2 beats (12..18) -- the tell that a poop is coming.
         # tuipet's gauge fires the poop the moment it fills, so the dance rolls
@@ -1166,7 +1166,7 @@ class Screen(Static):
                 c.mirror = not c.mirror
 
     def _fxk_dying(self, pet, fx, step, c):
-        # DVPet dying() (SpriteAnim 13179): the collapsed pet (pose 10, mirrored)
+        # the classic V-pet dying() (SpriteAnim 13179): the collapsed pet (pose 10, mirrored)
         # sways +/-1 as the 'dying' emote (dying/dying2) swaps at its right edge,
         # BOTH on a 10-tick beat (frame % (10*interval)), just before the memorial.
         c.xshift = 1 if (step // 10) % 2 == 0 else -1

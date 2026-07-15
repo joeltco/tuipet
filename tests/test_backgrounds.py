@@ -10,8 +10,7 @@ from tuipet.pet import Pet
 def _pet(**kw):
     # a dex-consistent identity (Goburimon), so save round-trips never take
     # the repair path and clobber the migration message
-    p = Pet(num=25, name="Goburimon", stage="Rookie", attribute="Virus",
-            obedience=500)
+    p = Pet.from_num(25)
     for k, v in kw.items():
         setattr(p, k, v)
     return p
@@ -80,7 +79,6 @@ def test_free_scenes_hang_without_paying():
     assert p.owns_background("volcano")
     assert "it is" in p.pick_background("volcano")
     assert p.bg_current == "volcano" and p.bits == 0
-    assert p.pick_background("city") == "?"          # off-catalog: not a pick
 
 
 def test_the_pick_persists_and_old_picks_normalize():
@@ -98,27 +96,20 @@ def test_the_pick_persists_and_old_picks_normalize():
     assert p3.bg_owned == ["volcano"]
 
 
-def test_old_saves_get_their_habitat_bits_back():
-    """A pre-rebuild save owns habitats -- the retired economy refunds every
-    PURCHASED home at full price (the starter pair 0/2 came free)."""
-    p = _pet(bits=42)
-    d = persistence.to_save_dict(p)
-    d.pop("bg_owned", None)
-    d.pop("bg_current", None)
-    d["habitats"] = [0, 2, 14, 15]                 # bought Volcano + Desert homes
-    d["habitat"] = 14
-    d["weather"] = "HeavyRain"                     # stale fields must not crash
-    d["temp"] = 12.5
+def test_pre_clone_saves_migrate_to_a_new_world_egg():
+    """An old-sim save (the accelerated clock) becomes a fresh egg that
+    KEEPS the wallet, the scene picks and the generation count."""
+    d = {"world_seconds": 500.0, "bits": 4242, "generation": 6,
+         "bg_current": "volcano", "bg_owned": ["volcano"],
+         "num": 25, "stage": "Rookie", "name": "Goburimon",
+         "weather": "HeavyRain", "temp": 12.5, "_saved_at": 1.0}
     p2, msg = persistence.pet_from_save(d, catch_up=False)
-    habs = data.load_habitats()
-    want = habs[14]["price"] + habs[15]["price"]
-    assert p2.bits == 42 + want
-    assert "refunded" in msg
-    assert p2.bg_current == bgs.DEFAULT
-    # an unbought old save migrates silently
-    d["habitats"] = [0, 2]
-    p3, msg3 = persistence.pet_from_save(d, catch_up=False)
-    assert p3.bits == 42 and "refunded" not in (msg3 or "")
+    assert p2 is not None and p2.stage == "Egg"
+    assert p2.bits == 4242 and p2.generation == 6
+    assert p2.bg_current == "volcano"
+    assert "NEW WORLD" in msg
+    # the strict cloud probe refuses to migrate blind
+    assert persistence.pet_from_save(dict(d), catch_up=False, strict=True)[0] is None
 
 
 def test_picker_panel_hangs_scenes():

@@ -1,4 +1,4 @@
-"""Optional sound backend: play DVPet's WAV sound effects when an audio player
+"""Optional sound backend: play the classic V-pet's WAV sound effects when an audio player
 is available, otherwise stay silent so the app can fall back to the terminal
 bell.
 
@@ -19,7 +19,7 @@ from . import hostinfo
 _DIR = os.path.join(os.path.dirname(__file__), "data", "sounds")
 
 # --- volume -------------------------------------------------------------------
-# The DVPet WAVs ship at full scale and are PIERCING on a real speaker (Joel
+# The the classic V-pet WAVs ship at full scale and are PIERCING on a real speaker (Joel
 # 2026-07-15: "chop that sound volume in half").  None of the allowlisted
 # players share a volume flag (termux-media-player and aplay have none at
 # all), so volume is applied to the SAMPLES: each level keeps a lazily-built
