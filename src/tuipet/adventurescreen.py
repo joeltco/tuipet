@@ -725,9 +725,12 @@ class AdventurePanel(menu.SubHost):
             bgimg, rows = None, []
         overlay = arena._clip_win(
             arena._effect_overlay(p, wf, COLS, px_h, tick=self.frame_i))
-        weather = arena._weather_overlay(p.weather, wf, COLS, px_h)
+        # the dark room hides the rain too (Joel 2026-07-15) -- same rule as paint()
+        weather = (arena._weather_overlay(p.weather, wf, COLS, px_h)
+                   if p.lights else [])
         return menu.paint([(rows, x, False)], bgimg, rows=ROWS, cols=COLS,
-                          overlay=overlay, overlay_free=weather, clip=grid.WINDOW)
+                          overlay=overlay, overlay_free=weather, clip=grid.WINDOW,
+                          free_ink=arena._precip_ink(p.weather))
 
     def _current_hab_id(self):
         """The expedition's ONE biome (own-game law, Joel 2026-07-13: one biome
@@ -854,7 +857,8 @@ class AdventurePanel(menu.SubHost):
         # on the ADVENTURE status card; the note + controls ride the strip.
         return menu.paint(placements, bgimg,
                           rows=ROWS, cols=COLS, overlay=overlay,
-                          overlay_free=weather)
+                          overlay_free=weather,
+                          free_ink=arena._precip_ink(self.pet.weather))
 
     def strip(self):
         """One line under the LCD: the journey note + the controls that apply.

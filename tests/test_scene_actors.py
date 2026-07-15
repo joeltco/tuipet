@@ -49,7 +49,7 @@ def _paint_capture(monkeypatch):
     cap = {}
 
     def spy(rows, cols, nrows, on, bg, mirror=False, xshift=0, yshift=0,
-            overlay=None, bgimg=None, clip=None, overlay_free=None):
+            overlay=None, bgimg=None, clip=None, overlay_free=None, free_ink=None):
         cap.update(rows=rows, mirror=mirror, xshift=xshift,
                    overlay=list(overlay or []), clip=clip,
                    free=list(overlay_free or []))

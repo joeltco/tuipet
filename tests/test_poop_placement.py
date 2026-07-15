@@ -84,7 +84,7 @@ def test_mon_never_walks_over_the_piles(poop, sizes, monkeypatch):
     real = AR.render_screen
 
     def spy(rows, cols, rows_n, on, bg, baseline=True, mirror=False, xshift=0,
-            yshift=0, overlay=None, bgimg=None, clip=None, overlay_free=None):
+            yshift=0, overlay=None, bgimg=None, clip=None, overlay_free=None, free_ink=None):
         seen.append(_pet_pixels(rows, xshift, mirror))
         return real(rows, cols, rows_n, on, bg, baseline=baseline, mirror=mirror,
                     xshift=xshift, yshift=yshift, overlay=overlay, bgimg=bgimg)
@@ -118,7 +118,7 @@ def test_eat_fx_keeps_food_and_pet_clear_of_piles(monkeypatch):
     real = AR.render_screen
 
     def spy(rows, cols, rows_n, on, bg, baseline=True, mirror=False, xshift=0,
-            yshift=0, overlay=None, bgimg=None, clip=None, overlay_free=None):
+            yshift=0, overlay=None, bgimg=None, clip=None, overlay_free=None, free_ink=None):
         seen.append((_pet_pixels(rows, xshift, mirror), set(overlay or [])))
         return real(rows, cols, rows_n, on, bg, baseline=baseline, mirror=mirror,
                     xshift=xshift, yshift=yshift, overlay=overlay, bgimg=bgimg)

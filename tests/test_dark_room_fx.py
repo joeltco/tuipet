@@ -30,7 +30,7 @@ def _spy(monkeypatch):
     cap = {}
 
     def spy(rows, cols, nrows, on, bg, mirror=False, xshift=0, yshift=0,
-            overlay=None, bgimg=None, clip=None, overlay_free=None):
+            overlay=None, bgimg=None, clip=None, overlay_free=None, free_ink=None):
         cap.update(rows=rows, on=on, bg=bg, overlay=list(overlay or []),
                    bgimg=bgimg, xshift=xshift)
         return ""

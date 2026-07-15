@@ -10,8 +10,10 @@ import sys
 
 # Each theme: ink/screen/mid + accent, pos/neg (affinity), border (bezel),
 # silhouette ink over habitat art (day/night), per-phase (ink, screen) tint,
-# STATUS readout colours (heart/energy/mood/life/coin), and a per-weather
-# scene tint {category: (hex, alpha)} blended over the habitat background.
+# STATUS readout colours (heart/energy/mood/life/coin), a per-weather
+# scene tint {category: (hex, alpha)} blended over the habitat background,
+# and precip particle ink {rain/snow: hex} -- the falling drops/flakes
+# themselves (ramp themes stay in-palette; the DMG LCD shows no blue rain).
 THEMES = {
     "grey": {
         "on": "#2b2e31", "bg": "#c6c9cc", "mid": "#7d8186",
@@ -19,6 +21,7 @@ THEMES = {
         "sil_day": "#2b2e31", "sil_night": "#e4e7ea",
         "heart": "#c25a4a", "energy": "#4a90c2", "mood": "#a06ac2", "life": "#3f9a86", "coin": "#c2a24a",
         "weather": {"rain": ("#2e3a4a", 0.30), "snow": ("#d6dee6", 0.26), "cloud": ("#5a5e62", 0.09)},
+        "precip": {"rain": "#3f7ec2", "snow": "#eaf3f8"},
         "void": "#000000", "flash": ("#f2f6fa", "#1a2026", "#e8eef2"),
         "phases": {"dawn": ("#33363a", "#d2d5d8"), "day": ("#2b2e31", "#c6c9cc"),
                    "dusk": ("#39352f", "#bdb8b2"), "night": ("#9aa0a6", "#23262a")},
@@ -29,6 +32,7 @@ THEMES = {
         "sil_day": "#101010", "sil_night": "#f0f0f0",
         "heart": "#d8d8d8", "energy": "#b8b8b8", "mood": "#a8a8a8", "life": "#c8c8c8", "coin": "#e8e8e8",
         "weather": {"rain": ("#1c1c1c", 0.32), "snow": ("#dcdcdc", 0.26), "cloud": ("#383838", 0.09)},
+        "precip": {"rain": "#7fa8d8", "snow": "#f2f2f2"},
         "void": "#000000", "flash": ("#ffffff", "#0c0c0c", "#e8e8e8"),
         "phases": {"dawn": ("#f0f0f0", "#141414"), "day": ("#e8e8e8", "#0c0c0c"),
                    "dusk": ("#e0c0a0", "#0c0a08"), "night": ("#9a9a9a", "#050505")},
@@ -39,6 +43,7 @@ THEMES = {
         "sil_day": "#2a1c06", "sil_night": "#ffd877",
         "heart": "#ff7a3a", "energy": "#ffb000", "mood": "#e0923a", "life": "#ffc24a", "coin": "#ffd877",
         "weather": {"rain": ("#241a0c", 0.34), "snow": ("#ece0c8", 0.26), "cloud": ("#2e2410", 0.1)},
+        "precip": {"rain": "#6f9ecf", "snow": "#ffe6b8"},
         "void": "#000000", "flash": ("#ffe8b0", "#1a1206", "#ffd890"),
         "phases": {"dawn": ("#ffc23a", "#160f05"), "day": ("#ffb000", "#1a1206"),
                    "dusk": ("#ff8a3a", "#1a0f04"), "night": ("#a8741a", "#0d0903")},
@@ -49,6 +54,7 @@ THEMES = {
         "sil_day": "#16202e", "sil_night": "#cfe0f5",
         "heart": "#e0884a", "energy": "#6fb0e0", "mood": "#9a8fe0", "life": "#5fc7b0", "coin": "#e0c060",
         "weather": {"rain": ("#0a1626", 0.36), "snow": ("#c4d8f0", 0.26), "cloud": ("#16223a", 0.11)},
+        "precip": {"rain": "#6fa8e0", "snow": "#e4eefb"},
         "void": "#000000", "flash": ("#dce8f8", "#101826", "#c8d8f0"),
         "phases": {"dawn": ("#b9d2f0", "#15202f"), "day": ("#a9c8ee", "#101826"),
                    "dusk": ("#d0a070", "#181420"), "night": ("#6d86a8", "#0a0f18")},
@@ -62,6 +68,7 @@ THEMES = {
         "sil_day": "#0f380f", "sil_night": "#d8e8a0",
         "heart": "#8a4a2a", "energy": "#2a6a8a", "mood": "#6a4a8a", "life": "#306230", "coin": "#8a7a1a",
         "weather": {"rain": ("#1a3020", 0.30), "snow": ("#e0e8c8", 0.26), "cloud": ("#3a4a28", 0.09)},
+        "precip": {"rain": "#306230", "snow": "#d8e8a0"},
         "void": "#0f380f", "flash": ("#e0f0c0", "#0f380f", "#d8e8a0"),
         # GB layering (redo 2026-07-05: 4-shade backgrounds ATE the sprites --
         # "their blending into the background"): backgrounds get the LIGHT
@@ -77,6 +84,7 @@ THEMES = {
         "sil_day": "#2a2620", "sil_night": "#f4efe4",
         "heart": "#a04a2a", "energy": "#3a6a8a", "mood": "#7a5a92", "life": "#567a68", "coin": "#967a2a",
         "weather": {"rain": ("#3a4450", 0.25), "snow": ("#f4f0e6", 0.30), "cloud": ("#6a655c", 0.08)},
+        "precip": {"rain": "#3a6a8a", "snow": "#f7fafc"},
         "void": "#000000", "flash": ("#ffffff", "#2a2620", "#faf6ec"),
         # paper layering (Joel 2026-07-12: "apply this to the paper theme --
         # white instead of green"): backgrounds get the light ink-wash trio,
@@ -91,6 +99,7 @@ THEMES = {
         "sil_day": "#2a1a24", "sil_night": "#ffd0dc",
         "heart": "#ff7a8a", "energy": "#8ac8e8", "mood": "#c89ae8", "life": "#7ad0b0", "coin": "#f0c86a",
         "weather": {"rain": ("#1a1428", 0.34), "snow": ("#f0dce4", 0.26), "cloud": ("#32222c", 0.1)},
+        "precip": {"rain": "#8ac8e8", "snow": "#ffeef4"},
         "void": "#000000", "flash": ("#ffe8f0", "#241820", "#f8d8e4"),
         "phases": {"dawn": ("#ffc8d8", "#2a1c26"), "day": ("#f0b8c8", "#241820"),
                    "dusk": ("#f0a878", "#241410"), "night": ("#9a7484", "#140c12")},
@@ -101,6 +110,7 @@ THEMES = {
         "sil_day": "#0f2a2e", "sil_night": "#c8f0e8",
         "heart": "#f07a6a", "energy": "#6ac8e0", "mood": "#9a9ae8", "life": "#5ad0a0", "coin": "#e8c86a",
         "weather": {"rain": ("#06141e", 0.36), "snow": ("#c0dcd8", 0.26), "cloud": ("#0e2a30", 0.11)},
+        "precip": {"rain": "#8ab8f0", "snow": "#dcf4ee"},
         "void": "#000000", "flash": ("#e0f8f4", "#0a1e22", "#c8ece6"),
         "phases": {"dawn": ("#9ae0d8", "#0e262a"), "day": ("#7fd8d0", "#0a1e22"),
                    "dusk": ("#d0a068", "#14201e"), "night": ("#4a8a84", "#05130f")},
@@ -129,6 +139,7 @@ BEZEL = SHELL = LABEL = KEY = ""
 FLASH: tuple = ("", "", "")
 PHASE_PALETTE: dict = {}
 WEATHER: dict = {}
+PRECIP: dict = {}
 
 
 def _derive(t):
@@ -141,6 +152,7 @@ def _derive(t):
         "SIL_DAY": t["sil_day"], "SIL_NIGHT": t["sil_night"], "PHASE_PALETTE": t["phases"],
         "HEART": t["heart"], "ENERGY": t["energy"], "MOOD": t["mood"],
         "LIFE": t["life"], "COIN": t["coin"], "WEATHER": t["weather"],
+        "PRECIP": t["precip"],
         "VOID": t["void"], "FLASH": t["flash"],
         # shell chrome (optional per theme; the plain themes keep border/mid):
         # bezel = the LCD's thick frame, shell = the outer boxes, label = the

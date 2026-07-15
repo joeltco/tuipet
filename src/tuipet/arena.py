@@ -33,7 +33,7 @@ PET_BASE_X = (SCREEN_COLS - SPRITE_W) // 2      # the fx painter's centred-pet o
 
 class _FxCtx:
     """Mutable per-frame paint context shared by the _fxk_* painters."""
-    __slots__ = ("rows", "overlay", "xshift", "yshift", "bg", "bgimg", "px_h", "mirror")
+    __slots__ = ("rows", "overlay", "free", "xshift", "yshift", "bg", "bgimg", "px_h", "mirror")
 def hearts(n, total=4, color=None):
     color = color or theme.HEART
     return f"[{color}]" + "●" * n + "[/][dim]" + "○" * (total - n) + "[/dim]"
@@ -131,6 +131,16 @@ def _weather_overlay(weather, frame_i, cols, px_h):
                     if yy >= 0:                              # don't wrap a streak across the sky
                         pts.append(((x0 - wind + (d if heavy else 0) // 2) % cols, yy))
     return pts
+
+
+def _precip_ink(weather):
+    """The falling particles' own colour (theme precip: rain blue, snow white
+    -- Joel 2026-07-15 'give them color'); None = no precip, sprite ink rules."""
+    if weather in _SNOW:
+        return theme.PRECIP["snow"]
+    if weather in _RAIN:
+        return theme.PRECIP["rain"]
+    return None
 
 
 from .render import blit as _blit    # one blit for app/training/strikefx (refactor 2026-07-05)
@@ -340,8 +350,9 @@ class Screen(Static):
             self.update(render_screen(
                 GRAVESTONE, SCREEN_COLS, SCREEN_ROWS, on, bg, bgimg=bgimg,
                 overlay=_clip_win(_effect_overlay(pet, wf, SCREEN_COLS, SCREEN_ROWS * 2, tick=self.frame_i)),
-                overlay_free=_weather_overlay(pet.weather, wf, SCREEN_COLS, SCREEN_ROWS * 2),
-                clip=_WINDOW))
+                overlay_free=(_weather_overlay(pet.weather, wf, SCREEN_COLS, SCREEN_ROWS * 2)
+                              if pet.lights else []),
+                free_ink=_precip_ink(pet.weather), clip=_WINDOW))
             return
         if pet.num == -1:                      # egg
             rec = egg_mod.record(pet.egg_type)
@@ -429,9 +440,11 @@ class Screen(Static):
         weather = _weather_overlay(pet.weather, wf, SCREEN_COLS, SCREEN_ROWS * 2)
         if not pet.lights:                 # lights off: DVPet's lightsOff is a fully-opaque black
             rows, xshift, mirror = [], 0, False   # cover -> the pet is hidden; only black (+ Zzz) shows
+            weather = []                   # ...and no rain/snow glitters in the dark (Joel 2026-07-15)
         self.update(render_screen(rows, SCREEN_COLS, SCREEN_ROWS, on, bg,
                                   mirror=mirror, xshift=xshift, overlay=overlay,
-                                  overlay_free=weather, bgimg=bgimg, clip=_WINDOW))
+                                  overlay_free=weather, bgimg=bgimg, clip=_WINDOW,
+                                  free_ink=_precip_ink(pet.weather)))
 
     def _background(self, pet):
         return self._crossfade(pet.background())
@@ -709,7 +722,10 @@ class Screen(Static):
         # `rows` unconditionally otherwise
         pose = {"clean": "idle", "dying": "exhausted"}.get(fx["kind"], "idle")
         c.rows = self._pose_rows(pet, pose, step // 2)
-        c.overlay = _weather_overlay(pet.weather, self.frame_i // 4, SCREEN_COLS, c.px_h)   # paint()'s 0.4s cadence
+        c.overlay = []
+        # weather rides the free plane here too (paint()'s 0.4s cadence): its
+        # own colour, the whole LCD for a sky -- and never in a dark room
+        c.free = _weather_overlay(pet.weather, self.frame_i // 4, SCREEN_COLS, c.px_h)
         c.xshift = 0
         c.yshift = 0
         c.mirror = False
@@ -756,7 +772,7 @@ class Screen(Static):
             c.overlay += _effect_overlay(pet, self.frame_i // 4, SCREEN_COLS, c.px_h,
                                          tick=self.frame_i)
         if dark:                     # the opaque cover: black over everything
-            c.rows, c.overlay, c.xshift, c.yshift = [], [], 0, 0
+            c.rows, c.overlay, c.free, c.xshift, c.yshift = [], [], [], 0, 0
         mirror = (c.mirror or fx["kind"] in ("dying", "poop")
                   or (fx["kind"] == "gift" and GIFT_OUT <= step < GIFT_OUT + GIFT_BACK)  # facing right, ambling back
                   or (fx["kind"] == "spit" and (step // 6) % 2 == 0))   # refuse(): head-shake flips
@@ -770,6 +786,8 @@ class Screen(Static):
         self.update(render_screen(c.rows, SCREEN_COLS, SCREEN_ROWS, on, c.bg,
                                   xshift=c.xshift, yshift=c.yshift,
                                   overlay=_clip_win(c.overlay),
+                                  overlay_free=c.free,
+                                  free_ink=_precip_ink(pet.weather),
                                   bgimg=c.bgimg, mirror=mirror, clip=_WINDOW))
 
     def _fxk_eat(self, pet, fx, step, c):
