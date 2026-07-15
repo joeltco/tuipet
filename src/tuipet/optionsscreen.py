@@ -1,9 +1,9 @@
 """OPTIONS — one home for the app-level switches (Joel 2026-07-04: "put all
 options related shit in there" and give the action bar its keys back).
 
-Rows: Theme (hosts the live-preview ThemePanel as a sub), Sound on/off (the
-value names the detected backend so silent-sound mysteries self-explain),
-Account (hosts the lobby AccountPanel to switch who's signed in — the current
+Rows: Theme (hosts the live-preview ThemePanel as a sub), Sound (hosts the
+SoundPanel sub: the on/off switch + the volume bar; the value still names the
+detected backend so silent-sound mysteries self-explain), Account (hosts the lobby AccountPanel to switch who's signed in — the current
 pet parks with the old account in the cloud), Update (on-demand PyPI check via
 update.py, threaded so the UI never blocks), Keys (a scrollable page of every
 home-screen binding), a New egg hand-off, and Erase all data (typed-YES
@@ -25,13 +25,106 @@ _LABEL = {"theme": "Theme", "sound": "Sound", "account": "Account",
 # action feedback (sound toggled, update verdict...) overrides it until the
 # cursor moves again.  Over-wide lines marquee via menu.note(tick).
 _DESC = {"theme": "recolor the whole game — live preview",
-         "sound": "the DVPet chirps — on or off",
+         "sound": "the DVPet chirps — switch + volume",
          "account": "switch login — the pet parks in the cloud",
          "cloud": "cloud saves + offline mail — on or off",
          "update": "auto-installs new releases at launch · ENTER checks now",
          "keys": "every binding on one page",
          "new": "retire the pet, hatch the heir",
          "erase": "wipe save, progress and login — for keeps"}
+
+
+def _sound_value(on, with_volume=False):
+    """The sound state + WHICH backend carries it, so a silent install
+    self-explains (the Termux no-player mystery).  First token only and capped
+    so nothing clips mid-word in the 18-char value column; the volume rides
+    along on the OPTIONS row when a real player exists (the bell has none)."""
+    if not on:
+        return "off"
+    b = sound.backend()
+    if b:
+        name = b.split("-")[0][:13]
+        return f"on · {name[:6]} · {sound.volume()}%" if with_volume else f"on · {name}"
+    from . import hostinfo
+    return "on · bell (iOS)" if hostinfo.is_ios() else "on · bell only"
+
+
+class SoundPanel:
+    """The sound page: the on/off switch and a volume bar (Joel 2026-07-15:
+    the full-scale chirps were piercing — "chop that sound volume in half").
+    ←→ steps the volume by 10 and chirps at the NEW level so you hear what you
+    picked.  A bell-only host is told the truth — the terminal bell has no
+    volume, so the bar never pretends to slide it."""
+
+    _ROWS = ("sound", "volume")
+    _DESC = {"sound": "the DVPet chirps — on or off",
+             "volume": "←→ set it — every step chirps"}
+
+    def __init__(self, sound_get, sound_toggle):
+        self.sound_get = sound_get
+        self.sound_toggle = sound_toggle
+        self.cursor = 0
+        self.frame_i = 0
+        self.msg = ""                  # action feedback; empty -> the row's _DESC
+        self.sfx = None
+
+    def anim(self):
+        self.frame_i += 1              # heartbeat: over-wide notes marquee
+
+    def strip(self):
+        if self._ROWS[self.cursor] == "volume" and sound.available():
+            return menu.hints(("←→", "volume"), ("ENTER", "hear it"),
+                              ("ESC", "back"))
+        return menu.hints(("↑↓", "pick"), ("ENTER", "toggle"), ("ESC", "back"))
+
+    def key(self, k):
+        row = self._ROWS[self.cursor]
+        if k in ("up", "k"):
+            self.cursor = (self.cursor - 1) % len(self._ROWS)
+            self.msg = ""
+        elif k in ("down", "j"):
+            self.cursor = (self.cursor + 1) % len(self._ROWS)
+            self.msg = ""
+        elif row == "volume" and k in ("left", "right", "h", "l"):
+            if not sound.available():
+                self.msg = "the terminal bell has no volume"
+                return None
+            v = sound.set_volume(sound.volume()
+                                 + (10 if k in ("right", "l") else -10))
+            self.msg = f"volume: {v}%"
+            if self.sound_get():
+                self.sfx = "confirm"   # hear the NEW level right away
+        elif k in ("enter", "space"):
+            if row == "sound":
+                self.sound_toggle()
+                self.msg = f"sound: {_sound_value(self.sound_get())}"
+                self.sfx = "confirm" if self.sound_get() else None
+            elif not sound.available():
+                self.msg = "the terminal bell has no volume"
+            elif not self.sound_get():
+                self.msg = "sound is off — nothing to hear"
+            else:
+                self.msg = f"volume: {sound.volume()}%"
+                self.sfx = "confirm"
+        elif k in ("escape", "g"):
+            return ("done", None)
+        return None
+
+    def text(self):
+        out = menu.header("SOUND", sound.backend() or "bell")
+        vol = sound.volume()
+        if sound.available():
+            vbar = "█" * (vol // 10) + "░" * (10 - vol // 10) + f" {vol}%"
+        else:
+            vbar = "bell — n/a"        # no player: nothing a slider could touch
+        rows = (("Sound", _sound_value(self.sound_get())), ("Volume", vbar))
+        for i, (label, val) in enumerate(rows):
+            out.append_text(menu.row(f"{label:<16} {val[:18]}", i == self.cursor))
+        out.append_text(menu.blanks(5))
+        out.append_text(menu.note(self.msg or self._DESC[self._ROWS[self.cursor]],
+                                  tick=self.frame_i))
+        out.append_text(menu.footer("↑↓ pick  ENTER go  ESC back"))
+        return out
 
 
 class KeysPanel:
@@ -162,6 +255,8 @@ class OptionsPanel(menu.SubHost):
         row, self._sub_row = self._sub_row, None
         if row == "theme":
             self.msg = f"theme: {theme.current()}"
+        elif row == "sound":
+            self.msg = f"sound: {self._value('sound')}"
         elif row == "account":
             if r:
                 self._done = ("account",) + tuple(r)   # app does the heavy lifting
@@ -215,9 +310,8 @@ class OptionsPanel(menu.SubHost):
                 self._sub_row = row
                 self.sub = ThemePanel(on_change=self.on_theme_change)
             elif row == "sound":
-                self.sound_toggle()
-                self.msg = f"sound: {self._value('sound')}"
-                self.sfx = "confirm" if self.sound_get() else None
+                self._sub_row = row
+                self.sub = SoundPanel(self.sound_get, self.sound_toggle)
             elif row == "account":
                 from .lobbyscreen import AccountPanel
                 self._sub_row = row
@@ -259,18 +353,7 @@ class OptionsPanel(menu.SubHost):
         if row == "theme":
             return theme.current()
         if row == "sound":
-            if not self.sound_get():
-                return "off"
-            b = sound.backend()
-            # first token only: "termux-media-player" clipped mid-word on the
-            # 18-char value column (Joel's live screen, 2026-07-07)
-            if b:
-                return f"on · {b.split('-')[0][:13]}"
-            # iOS sandboxes audio players outright -- name the reason so a
-            # silent iPhone reads as EXPECTED, not broken (sound audit
-            # 2026-07-13); everywhere else "bell only" already self-explains.
-            from . import hostinfo
-            return "on · bell (iOS)" if hostinfo.is_ios() else "on · bell only"
+            return _sound_value(self.sound_get(), with_volume=True)
         if row == "account":
             return persistence.get_account()[0] or "not signed in"
         if row == "cloud":

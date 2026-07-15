@@ -98,3 +98,70 @@ def test_every_shipped_wav_is_referenced():
     allowed_silent = {"rain", "wind"}
     dead = sorted(have - _referenced_names() - allowed_silent)
     assert not dead, f"shipped wavs no code path plays: {dead}"
+
+
+# ---- volume (2026-07-15: full-scale chirps were piercing) -----------------------
+
+def _peak(path):
+    import array as _array
+    import wave as _wave
+    with _wave.open(path) as w:
+        frames = w.readframes(w.getnframes())
+    a = _array.array("h")
+    a.frombytes(frames)
+    return max(abs(s) for s in a)
+
+
+def test_scaled_wav_is_half_as_loud():
+    """volume 50 halves every sample — the cache holds a genuinely quieter
+    file, not a renamed copy (no player flag does this for us)."""
+    src = os.path.join(sound._DIR, "confirm.wav")
+    sound.set_volume(50)
+    out = sound._scaled(src, "confirm")
+    assert out != src and os.path.exists(out)
+    assert _peak(out) == _peak(src) // 2
+
+
+def test_full_volume_plays_the_original():
+    src = os.path.join(sound._DIR, "confirm.wav")
+    sound.set_volume(100)
+    assert sound._scaled(src, "confirm") is src
+
+
+def test_scaled_cache_is_reused_per_level(monkeypatch):
+    src = os.path.join(sound._DIR, "confirm.wav")
+    sound.set_volume(30)
+    first = sound._scaled(src, "confirm")
+    stamp = os.path.getmtime(first)
+    assert sound._scaled(src, "confirm") == first
+    assert os.path.getmtime(first) == stamp          # second call: pure lookup
+    sound.set_volume(70)
+    assert sound._scaled(src, "confirm") != first    # each level its own copy
+
+
+def test_play_dispatches_the_scaled_copy(monkeypatch):
+    """play() hands the PLAYER the attenuated file — the whole point."""
+    sent = {}
+    monkeypatch.setattr(sound, "_PLAYER", ["true"])
+    monkeypatch.setattr(sound.subprocess, "Popen",
+                        lambda argv, **kw: sent.setdefault("argv", argv))
+    sound.set_volume(50)
+    assert sound.play("confirm") is True
+    assert sound._CACHE in sent["argv"][-1]
+
+
+def test_scaling_failure_falls_back_to_the_original(monkeypatch):
+    """A cache dir that cannot be written must not silence the game: the
+    original full-strength wav still plays (loud beats mute)."""
+    src = os.path.join(sound._DIR, "confirm.wav")
+    sound.set_volume(50)
+    monkeypatch.setattr(sound.os, "makedirs",
+                        lambda *a, **k: (_ for _ in ()).throw(OSError("ro")))
+    assert sound._scaled(src, "confirm") is src
+
+
+def test_volume_clamps_and_persists():
+    assert sound.set_volume(7) == 10        # floor: the switch is the mute
+    assert sound.set_volume(500) == 100
+    sound.set_volume(40)
+    assert sound._load_volume() == 40       # survives a relaunch

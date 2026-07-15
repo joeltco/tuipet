@@ -7,7 +7,7 @@ local state (the cloud copy stays with the account)."""
 import os
 
 from tuipet import optionsscreen, persistence, sound, theme
-from tuipet.optionsscreen import KeysPanel, OptionsPanel, _ROWS
+from tuipet.optionsscreen import KeysPanel, OptionsPanel, SoundPanel, _ROWS
 from tuipet.pet import Pet
 
 
@@ -49,37 +49,84 @@ def test_note_line_describes_the_selected_row():
     assert "recolor" in pan.text().plain          # theme selected at open
     pan.key("down")                               # -> sound
     assert "chirps" in pan.text().plain
-    pan.key("enter")                              # toggle: feedback takes the line
+    pan.key("enter")                              # opens the sound page...
+    pan.key("escape")                             # ...back: feedback takes the line
     assert "sound:" in pan.text().plain
     pan.key("down")                               # move -> the new row's desc
     plain = pan.text().plain
     assert "switch login" in plain and "sound:" not in plain
 
 
-def test_options_walk_fits_and_toggles_sound():
+def test_sound_row_hosts_the_sound_page():
+    """ENTER on Sound opens the SoundPanel (switch + volume) — the row itself
+    no longer toggles blind (volume work 2026-07-15)."""
     pan, state = _panel()
     _fits(pan)
     pan.key("down")                       # -> Sound
     assert pan.key("enter") is None
-    assert state["on"] is False           # the callback flipped it
+    assert isinstance(pan.sub, SoundPanel)
+    _fits(pan)                            # the hosted page stays in budget
+    pan.key("enter")                      # sound row inside: toggle off
+    assert state["on"] is False
     assert "off" in pan.text().plain
     _fits(pan)
+    pan.key("escape")                     # back to options with the verdict
+    assert pan.sub is None
+    assert "sound: off" in pan.text().plain
 
 
 def test_sound_row_names_the_backend(monkeypatch):
-    """A silent install self-explains: the value says WHICH player was found,
-    or that the terminal bell is all there is (the Termux no-player mystery)."""
+    """A silent install self-explains: the value says WHICH player was found
+    (plus the volume it plays at), or that the terminal bell is all there is
+    (the Termux no-player mystery)."""
     pan, _ = _panel(sound_on=True)
+    monkeypatch.setattr(sound, "_volume", 50)
     monkeypatch.setattr(sound, "_PLAYER", ["paplay"])
-    assert pan._value("sound") == "on · paplay"
+    assert pan._value("sound") == "on · paplay · 50%"
     # the long player name must not clip mid-word into the 18-char value
-    # column ("on · termux-media-" on Joel's live screen, 2026-07-07)
+    # column ("on · termux-media-" on Joel's live screen, 2026-07-07) -- and
+    # with the volume riding along, 100% must still fit whole
     monkeypatch.setattr(sound, "_PLAYER", ["termux-media-player", "play"])
-    assert pan._value("sound") == "on · termux"
+    monkeypatch.setattr(sound, "_volume", 100)
+    assert pan._value("sound") == "on · termux · 100%"
+    assert len(pan._value("sound")) <= 18
     monkeypatch.setattr(sound, "_PLAYER", None)
     assert pan._value("sound") == "on · bell only"
     pan2, _ = _panel(sound_on=False)
     assert pan2._value("sound") == "off"
+
+
+def test_sound_page_volume_slider(monkeypatch):
+    """←→ on the volume row steps by 10 within 10..100, persists, and chirps
+    at the NEW level so the step is heard, not imagined."""
+    monkeypatch.setattr(sound, "_PLAYER", ["true"])
+    state = {"on": True}
+    pan = SoundPanel(lambda: state["on"],
+                     lambda: state.__setitem__("on", not state["on"]))
+    pan.key("down")                       # -> Volume
+    assert pan.key("right") is None
+    assert sound.volume() == 60           # DEFAULT_VOLUME 50 + 10
+    assert pan.sfx == "confirm"           # the audible step
+    assert "60%" in pan.text().plain
+    for _ in range(9):
+        pan.key("left")
+    assert sound.volume() == 10           # floor: the switch is the mute
+    for _ in range(12):
+        pan.key("right")
+    assert sound.volume() == 100          # ceiling
+    assert sound._load_volume() == 100    # persisted (conftest sandboxes it)
+
+
+def test_sound_page_is_honest_on_a_bell_only_host(monkeypatch):
+    """No player -> the bar reads n/a and ←→ says WHY instead of pretending
+    (the bell has no volume; SILENT-FAILURE law: never fake a promise)."""
+    monkeypatch.setattr(sound, "_PLAYER", None)
+    pan = SoundPanel(lambda: True, lambda: None)
+    assert "n/a" in pan.text().plain
+    pan.key("down")
+    pan.key("right")
+    assert sound.volume() == sound.DEFAULT_VOLUME   # untouched
+    assert "no volume" in pan.text().plain
 
 
 def test_every_row_value_fits_the_column():

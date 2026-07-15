@@ -7,13 +7,89 @@ spawn a desktop player (it would play on the server, not at your terminal);
 Termux's termux-media-player always plays on the phone, so it's preferred.
 """
 from __future__ import annotations
+import array
 import os
 import shutil
 import subprocess  # nosec B404 - players run from a fixed allowlist, no shell, no user input
+import sys
+import wave
 
 from . import hostinfo
 
 _DIR = os.path.join(os.path.dirname(__file__), "data", "sounds")
+
+# --- volume -------------------------------------------------------------------
+# The DVPet WAVs ship at full scale and are PIERCING on a real speaker (Joel
+# 2026-07-15: "chop that sound volume in half").  None of the allowlisted
+# players share a volume flag (termux-media-player and aplay have none at
+# all), so volume is applied to the SAMPLES: each level keeps a lazily-built
+# cache of pre-attenuated copies that any player can just play.  The range is
+# 10..100 in steps of 10 -- there is no 0, the sound switch is the mute.
+_STATE_DIR = os.path.expanduser("~/.local/share/tuipet")
+_VOL_CONF = os.path.join(_STATE_DIR, "volume.txt")
+_CACHE = os.path.join(_STATE_DIR, "sndcache")
+DEFAULT_VOLUME = 50
+
+
+def _load_volume():
+    try:
+        return max(10, min(100, int(open(_VOL_CONF).read().strip())))
+    except (OSError, ValueError):
+        return DEFAULT_VOLUME
+
+
+def volume():
+    return _volume
+
+
+def set_volume(v):
+    """Clamp, remember and persist the playback volume (percent)."""
+    global _volume
+    _volume = max(10, min(100, int(v)))
+    try:
+        os.makedirs(_STATE_DIR, exist_ok=True)
+        with open(_VOL_CONF, "w") as fh:
+            fh.write(str(_volume))
+    except OSError:
+        pass                       # the level still holds for this session
+    return _volume
+
+
+def _scaled(f, name):
+    """The pre-attenuated copy of `f` for the current volume (built lazily,
+    one cache dir per level, atomic rename so a half-written wav is never
+    served).  Any failure falls back to the ORIGINAL file: a full-strength
+    chirp beats silence, and a state dir that can't hold a 40KB wav is
+    already failing loudly everywhere else (saves, theme)."""
+    if _volume >= 100:
+        return f
+    dst = os.path.join(_CACHE, f"v{_volume}", name + ".wav")
+    if os.path.exists(dst):
+        return dst
+    try:
+        with wave.open(f) as w:
+            params = w.getparams()
+            frames = w.readframes(params.nframes)
+        if params.sampwidth != 2:
+            return f               # every shipped wav is 16-bit PCM mono
+        a = array.array("h")
+        a.frombytes(frames)
+        if sys.byteorder == "big":
+            a.byteswap()
+        k = _volume / 100.0        # attenuation only (k < 1): can never clip
+        for i in range(len(a)):
+            a[i] = int(a[i] * k)
+        if sys.byteorder == "big":
+            a.byteswap()
+        os.makedirs(os.path.dirname(dst), exist_ok=True)
+        tmp = dst + ".part"
+        with wave.open(tmp, "wb") as w:
+            w.setparams(params)
+            w.writeframes(a.tobytes())
+        os.replace(tmp, dst)
+        return dst
+    except Exception:
+        return f
 
 
 def _find_player():
@@ -38,6 +114,7 @@ def _find_player():
 
 
 _PLAYER = _find_player()
+_volume = _load_volume()
 
 
 def available():
@@ -94,7 +171,7 @@ def play(name):
     if not os.path.exists(f):
         return False
     try:
-        subprocess.Popen(_PLAYER + [f], stdout=subprocess.DEVNULL,   # nosec B603 - fixed player cmd, no shell, path is our own data file
+        subprocess.Popen(_PLAYER + [_scaled(f, name)], stdout=subprocess.DEVNULL,   # nosec B603 - fixed player cmd, no shell, path is our own data file
                          stderr=subprocess.DEVNULL, stdin=subprocess.DEVNULL)
         return True
     except Exception:

@@ -24,6 +24,13 @@ def isolate_save(tmp_path, monkeypatch):
     # num already in _ALBUM_SEEN makes album_add() a no-op on the FRESH save
     # (test_egg_guide caught it shadowing test_egg_economy, 2026-07-12)
     monkeypatch.setattr(persistence, "_ALBUM_SEEN", set())
+    # sound keeps its own state files (volume + the pre-scaled wav cache),
+    # theme-style, outside persistence -- sandbox those too
+    from tuipet import sound
+    monkeypatch.setattr(sound, "_VOL_CONF", str(tmp_path / "volume.txt"))
+    monkeypatch.setattr(sound, "_CACHE", str(tmp_path / "sndcache"))
+    monkeypatch.setattr(sound, "_STATE_DIR", str(tmp_path))
+    monkeypatch.setattr(sound, "_volume", sound.DEFAULT_VOLUME)
     yield
 
 
