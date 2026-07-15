@@ -21,10 +21,17 @@ DEFAULT = "greenhills"          # every save owns the catalog; this one starts p
 # islands, desert, jungle, lakeside, mountains, cove, greenhills) stay in
 # backgrounds.json.gz as WORLD DATA -- adventure roads and special rooms may
 # wear them -- but they are not choosable home scenes (Joel 2026-07-16).
-# EXCEPTION: greenhills stays a pick -- it was the launch default and Joel
-# wants it ("where did the green hills go?!", 2026-07-16).
+# EXCEPTION -- the DIGITAL MONSTER COLOR device set (gbg37-41, sitting right
+# beside the DMC logo tile gbg43): green hills, desert, lakeside, mountains,
+# cove are REAL Digimon device background rips that merely shipped in
+# DSprite's Godzilla update batch (tile re-audit, Joel 2026-07-16 -- "green
+# hills is the exact DM20 background rip").  They stay picks.
 CATALOG = {
     "greenhills":   ("Green Hills", 0),
+    "desert":       ("Desert", 0),
+    "lakeside":     ("Lakeside", 0),
+    "mountains":    ("Mountains", 0),
+    "cove":         ("Cove", 0),
     "forestgate":   ("Forest Gate", 0),
     "flowerfield":  ("Flower Field", 0),
     "blossom":      ("Blossom Field", 0),
@@ -47,8 +54,7 @@ _DATA_NAMES = {
     "boulevard": "Boulevard", "boulevardusk": "Boulevard Dusk",
     "factory": "Factory", "factorynight": "Factory Night",
     "fileisland": "Lone Island", "islandsea": "Island Sea",
-    "islandnight": "Island Night", "desert": "Desert", "jungle": "Jungle",
-    "lakeside": "Lakeside", "mountains": "Mountains", "cove": "Cove",
+    "islandnight": "Island Night", "jungle": "Jungle",
     "townBack": "Town",
 }
 

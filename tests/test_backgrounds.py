@@ -31,13 +31,21 @@ def test_the_whole_catalog_is_free_for_now():
     assert bgs.DEFAULT in bgs.CATALOG
 
 
+def test_the_dmc_device_set_is_pickable():
+    # the Digital Monster COLOR backgrounds (tile re-audit 2026-07-16)
+    for key in ("greenhills", "desert", "lakeside", "mountains", "cove"):
+        assert key in bgs.CATALOG, key
+
+
 def test_godzilla_range_is_data_not_picks():
     """The Godzilla-range tiles stay shipped (roads/special rooms wear them)
     but are not choosable home scenes (Joel 2026-07-16)."""
     sheets = data.load_backgrounds()
-    # (greenhills is the one Godzilla-range EXCEPTION: launch default, kept)
-    for key in ("city", "desert", "jungle", "factory",
-                "fileisland", "boulevard", "mountains", "cove", "lakeside"):
+    # (the Digital Monster COLOR device set -- greenhills/desert/lakeside/
+    # mountains/cove, gbg37-41 -- is the verified EXCEPTION and stays picked)
+    for key in ("city", "cityday", "citysunset", "jungle", "factory",
+                "factorynight", "fileisland", "islandsea", "islandnight",
+                "boulevard", "boulevardusk"):
         assert key not in bgs.CATALOG, key
         assert sheets.get(key), key                # ...but the art still ships
 
