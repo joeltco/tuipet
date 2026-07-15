@@ -503,11 +503,14 @@ def _cdist(a, b):
     return abs(a[0] - b[0]) + abs(a[1] - b[1]) + abs(a[2] - b[2])
 
 
-def _build_night_clouds(frames, phase="night"):
-    day, dusk, night, prec = frames[1], frames[2], frames[3], frames[4]
-    base_i, s_lo, s_hi, ramp_a, ramp_b = _NC_PHASES[phase]
-    base = frames[base_i]
-    W, H = len(day[0]) // 6, len(day)
+def _find_stars(frames):
+    """The night frame's starfield: isolated bright dots on the flat night
+    sky (top 40% -- the star band).  A real star is a DOT with a darker field
+    around it; a lit window is a bright REGION and never qualifies.  Returns
+    (star (x, y) list, flat night-sky colour) or None when fewer than 3 dots
+    (City's wall, Underwater).  Shared by the overcast gate and the twinkle."""
+    night = frames[3]
+    W, H = len(night[0]) // 6, len(night)
     pix = sorted((_cell(night, x, y) for y in range(3) for x in range(W)),
                  key=_luma)
     dim = pix[:max(1, int(len(pix) * 0.6))]    # the flat sky, stars excluded
@@ -521,7 +524,22 @@ def _build_night_clouds(frames, phase="night"):
                    and 0 <= x + dx < W and 0 <= y + dy < H
                    and _luma(_cell(night, x + dx, y + dy)) < _luma(c) - 40) >= 4
 
-    if sum(isdot(x, y) for y in range(int(H * 0.4)) for x in range(W)) < 3:
+    stars = [(x, y) for y in range(int(H * 0.4)) for x in range(W)
+             if isdot(x, y)]
+    return (stars, nsky) if len(stars) >= 3 else None
+
+
+def _build_night_clouds(frames, phase="night"):
+    day, dusk, night, prec = frames[1], frames[2], frames[3], frames[4]
+    base_i, s_lo, s_hi, ramp_a, ramp_b = _NC_PHASES[phase]
+    base = frames[base_i]
+    W, H = len(day[0]) // 6, len(day)
+    pix = sorted((_cell(night, x, y) for y in range(3) for x in range(W)),
+                 key=_luma)
+    dim = pix[:max(1, int(len(pix) * 0.6))]    # the flat sky, stars excluded
+    nsky = tuple(sum(c[i] for c in dim) / len(dim) for i in range(3))
+
+    if _find_stars(frames) is None:
         return None                # no starfield -> no open sky to cloud over
     if phase == "night":
         psky = nsky                # the ramp anchors on the PHASE's own sky
@@ -606,6 +624,82 @@ def night_cloud_frame(key, frames, phase="night"):
         _NIGHT_CLOUDS[(key, phase)] = (_build_night_clouds(frames, phase)
                                        if frames and len(frames) > 4 else None)
     return _NIGHT_CLOUDS[(key, phase)]
+
+
+# --- twinkling stars (background polish 2026-07-15, Joel: "making the stars
+# at night twinkle") ----------------------------------------------------------
+# A CLEAR night's stars shimmer: each detected star dims toward the flat
+# night sky and back on its own offset of a shared 4-beat cycle, so the field
+# glitters instead of blinking in lockstep.  Every pixel is the sheet's own
+# (a star fades INTO its sky -- nothing is drawn); the arena's canon
+# background dissolve turns each beat step into a soft 1.5s fade, which IS
+# the twinkle.  Cloudy/precip nights never get here (the overcast deck covers
+# the stars); starless sheets (City, Underwater) keep the plain night frame.
+_TWINKLE = {}                  # (sheet key, beat) -> derived night frame
+_TW_STARS = {}                 # sheet key -> _twinkle_stars() result | None
+_TW_BEATS = 4
+_TW_STEP = 2.0                 # world-seconds per beat (> the 1.5s dissolve)
+# each star walks this in order (offset by position): dip -> full -> flare ->
+# full.  The lone stars are FAINT (10-40 luma over the sky), so a dim-only
+# curve was invisible; the flare leg extends the sky->star ray past 1
+_TW_CURVE = (0.4, 1.0, 1.7, 1.0)
+
+
+def _twinkle_stars(frames):
+    """Lone single-pixel stars for the twinkle: a strict local max sitting on
+    FLAT sky -- brighter than every neighbour, every neighbour plain sky.
+    The overcast gate's dots (+55, 4-of-8 darker) are the moon's rim and
+    cloud-edge highlights as often as stars; shimmering those made the moon
+    sparkle.  Returns (star list, night-sky colour) or None (< 3 stars)."""
+    found = _find_stars(frames)    # also the open-sky gate (City, Underwater)
+    if not found:
+        return None
+    night = frames[3]
+    W, H = len(night[0]) // 6, len(night)
+    nsky = found[1]
+    nl = _luma(nsky)
+    stars = []
+    for y in range(1, int(H * 0.4)):
+        for x in range(1, W - 1):
+            l = _luma(_cell(night, x, y))
+            if l - nl <= 8:
+                continue
+            ns = [_luma(_cell(night, x + dx, y + dy))
+                  for dx in (-1, 0, 1) for dy in (-1, 0, 1) if dx or dy]
+            if l - max(ns) > 5 and max(ns) < nl + 25:
+                stars.append((x, y))
+    return (stars, nsky) if len(stars) >= 3 else None
+
+
+def _build_twinkle(frames, stars, nsky, beat):
+    night = frames[3]
+    out = list(night)
+    for x, y in stars:
+        f = _TW_CURVE[(beat + x * 7 + y * 11) % _TW_BEATS]
+        if f == 1.0:
+            continue               # this star holds full this beat
+        c = _cell(night, x, y)
+        cell = "%02x%02x%02x" % tuple(
+            int(min(255, max(0, nsky[i] + (c[i] - nsky[i]) * f)))
+            for i in range(3))
+        out[y] = out[y][:x * 6] + cell + out[y][(x + 1) * 6:]
+    return out
+
+
+def star_frame(key, frames, world_seconds):
+    """The clear-night frame with its stars mid-shimmer (built once per beat,
+    cached), or None when the sheet has no starfield -- the caller keeps the
+    classic frames[3] pick."""
+    if key not in _TW_STARS:
+        _TW_STARS[key] = (_twinkle_stars(frames)
+                          if frames and len(frames) > 4 else None)
+    found = _TW_STARS[key]
+    if not found:
+        return None
+    beat = int(world_seconds / _TW_STEP) % _TW_BEATS
+    if (key, beat) not in _TWINKLE:
+        _TWINKLE[(key, beat)] = _build_twinkle(frames, found[0], found[1], beat)
+    return _TWINKLE[(key, beat)]
 
 
 # --- persistence of the chosen theme ---

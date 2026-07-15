@@ -1986,6 +1986,13 @@ class Pet:
             idx = 4
         else:
             idx = {"dawn": 0, "day": 1, "dusk": 2, "night": 3}.get(ph, 1)
+        if ph == "night" and self.weather == "Clear" and len(frames) > 4:
+            # a CLEAR night shimmers: the stars twinkle on a slow beat (the
+            # arena dissolve softens each step).  Clear carries no tint, so
+            # the derived frame returns bare; starless sheets fall through.
+            tw = theme.star_frame(key, frames, self.world_seconds)
+            if tw is not None:
+                return tw
         return theme.weather_tint(frames[min(idx, len(frames) - 1)], self.weather, ph)
 
     def _affinity(self):

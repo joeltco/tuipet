@@ -280,7 +280,11 @@ def test_background_file_override_picks_the_arena_sheet():
     home = p.background()
     sheets = data.load_backgrounds()
     idx = {"dawn": 0, "day": 1, "dusk": 2, "night": 3}[p.day_phase]
-    assert arena == theme.weather_tint(sheets["tourneyBack"][idx], "Clear")
+    want = theme.weather_tint(sheets["tourneyBack"][idx], "Clear")
+    if p.day_phase == "night":                    # a clear night twinkles now
+        want = (theme.star_frame("tourneyBack", sheets["tourneyBack"],
+                                 p.world_seconds) or want)
+    assert arena == want
     assert arena != home
 
 
