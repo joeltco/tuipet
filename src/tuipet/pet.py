@@ -2077,7 +2077,7 @@ class Pet:
             return "Not enough bits."
         self.habitats = sorted(set(self.habitats) | {hid})
         self.habitat = self.home_habitat = hid   # buying a new home moves you in
-        self._weather_day = -1             # fresh climate roll on arrival, like move_to
+        self._arrive_weather()             # canon transitionWeather, like move_to
         return f"Bought {h['name']} — moved in!"
 
     def move_to(self, hid):
@@ -2088,8 +2088,20 @@ class Pet:
         if hid not in self.habitats:
             return "You don't own that habitat."
         self.habitat = self.home_habitat = hid
-        self._weather_day = -1            # force a fresh climate roll on arrival
+        self._arrive_weather()            # canon setCurrentHabitat -> transitionWeather
         return f"Moved to {h['name']}."
+
+    def _arrive_weather(self):
+        """Canon setCurrentHabitat: arriving somewhere new re-rolls the day
+        temperature (setDayTemp) and re-derives the sky from the old one
+        (transitionWeather) -- the previous home's blizzard doesn't ride
+        along verbatim (weather audit 2026-07-15)."""
+        hab = self.habitat_obj()
+        self._weather_day = int(self.world_seconds // DAY_LENGTH)
+        lo, hi = hab["temps"][self.season]
+        self.day_temp = random.randint(min(lo, hi), max(lo, hi))
+        self.weather = wx.transition_weather(self.weather, hab, self.season,
+                                             self.day_temp, feel_temp=self.temp)
 
     def _tick_effect(self, dt):
         """Advance the active care effect (Futon): rate gains; end on sleep change / expiry."""
@@ -2341,7 +2353,7 @@ class Pet:
         returns to the owned home (habitat audit 2026-07-06)."""
         if self.home_habitat >= 0 and self.habitat != self.home_habitat:
             self.habitat = self.home_habitat
-            self._weather_day = -1                 # fresh sky back home
+            self._arrive_weather()                 # canon transitionWeather back home
 
     # ---- DNA (DVPet DNA.class) -------------------------------------------
     def highest_dna(self):
@@ -3395,6 +3407,9 @@ class Pet:
             self.lifespan = max(0.0, self.lifespan + scaled("seconds") / 60.0)
         if food.get("sleep_lapse"):                         # bedtime nudge (Hot Milk)
             self.sleep_lapse = max(0.0, self.sleep_lapse + scaled("sleep_lapse"))
+        if food.get("pref_temp"):                           # changeToPrefTemp: snap to
+            lo_i, hi_i = self.ideal_temp                    # the comfort midpoint
+            self.temp = (lo_i + hi_i) / 2
         t = food.get("temp", 0)
         if t and 0 <= self.temp + t <= 100:                 # MaxTemp guard, verbatim
             self.temp += math.ceil(t * modifier) if t > 0 else t
@@ -4853,6 +4868,13 @@ class Pet:
         if e.get("effect_id", -1) >= 0:                 # Futon: lay out a temporary care buff
             eff = data.load_care_effects().get(e["effect_id"])
             if eff:
+                if e.get("pref_temp"):
+                    # changeToPrefTemp precedes startEffect (canon
+                    # applyConsumable): the Futon tucks the room to the
+                    # comfort midpoint, then PauseTemp HOLDS it (restored to
+                    # canon on Joel's call 2026-07-15)
+                    lo_i, hi_i = self.ideal_temp
+                    self.temp = (lo_i + hi_i) / 2
                 self.effect_id = e["effect_id"]
                 self.effect_t = float(eff["duration"])
                 self._eff_acc = 0.0
@@ -4942,6 +4964,13 @@ class Pet:
             # feed() applies -- the raw add made a bag-used Gold Pill 60x
             # stronger than an eaten one (audit 2026-07-13)
             self.lifespan = max(0.0, self.lifespan + e["seconds"] / 60.0)
+        if e.get("pref_temp"):
+            # changeToPrefTemp (canon applyConsumable): the Futon tucks the
+            # room to the pet's comfort midpoint -- then its PauseTemp effect
+            # HOLDS it there.  Restored to canon on Joel's call 2026-07-15
+            # ("if futons snap to comfort temp in canon, then switch it back").
+            lo_i, hi_i = self.ideal_temp
+            self.temp = (lo_i + hi_i) / 2
         if e.get("temp"):
             new_temp = self.temp + e["temp"]             # DVPet applies only if it stays in range
             if 0 <= new_temp <= wx.MAX_TEMP:             # config MaxTemp=100, floor 0

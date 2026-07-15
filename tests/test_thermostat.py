@@ -103,3 +103,58 @@ def test_hud_shows_the_heading_arrow():
     assert _temp_str(p) == "48°"
     p.set_temp_goal(62)
     assert _temp_str(p) == "48→62°"
+
+
+# ---------------------------------------------------------------------------
+# Weather audit vs the decompile (2026-07-15)
+# ---------------------------------------------------------------------------
+
+def test_seasons_run_thirteen_days_on_a_52_day_year():
+    """config.csv FirstSpring/Summer/Fall/WinterDay = 0/13/26/39 and setDay
+    wraps past MaxFastClockDays 51 — the pre-audit day%4 rotated 13x fast."""
+    from tuipet.weather import season_for_day
+    assert [season_for_day(d) for d in (0, 12, 13, 25, 26, 38, 39, 51)] == \
+        ["Spring", "Spring", "Summer", "Summer", "Fall", "Fall", "Winter", "Winter"]
+    assert season_for_day(52) == "Spring"      # the year wraps
+
+
+def test_arrival_transitions_the_sky_instead_of_carrying_it():
+    """PhysicalState.transitionWeather: a HeavyRain sky arrives at the new
+    home as Raining (eased one step), never verbatim; Clear arrives Clear;
+    a climate-controlled home is always Clear."""
+    from tuipet.weather import transition_weather
+    p = _pet()
+    hab = {"weather_chance": 7, "weather_change": 10,
+           "precip_mod": {"Spring": 0, "Summer": 0, "Fall": 0, "Winter": 0},
+           "cloud_mod": 0}
+    assert transition_weather("HeavyRain", hab, "Spring", 50) == "Raining"
+    assert transition_weather("HeavySnow", hab, "Spring", 20) == "Snowing"
+    assert transition_weather("Raining", hab, "Spring", 50) in ("Drizzling", "HeavyRain")
+    assert transition_weather("LightSnow", hab, "Spring", 20) in ("Snowing", "Cloudy")
+    assert transition_weather("Clear", hab, "Spring", 50) == "Clear"
+    assert transition_weather("HeavyRain", {"weather_chance": 0}, "Spring", 50) == "Clear"
+    # and the pet-level hook: moving house never keeps the old sky heavy
+    p.weather = "HeavyRain"
+    p._arrive_weather()                        # Hard Disk: climate-controlled
+    assert p.weather == "Clear"
+
+
+def test_futon_snaps_to_the_comfort_midpoint():
+    """changeToPrefTemp restored to canon (Joel 2026-07-15): USING the Futon
+    tucks the room to the ideal midpoint, then PauseTemp holds it there."""
+    from tuipet import data
+    _, items = data._load_consumables()
+    key = next((f"i:{k}" for k, e in items.items() if e.get("pref_temp")), None)
+    if key is None:
+        import pytest
+        pytest.skip("no ChangeToPrefTemp item in the data")
+    p = _pet()
+    p.temp = 5.0                               # freezing under a cold snap
+    p.add_item(key)
+    p.use_item(key)
+    lo, hi = p.ideal_temp
+    assert p.temp == (lo + hi) / 2, "the futon tucks the room comfy (canon)"
+    assert not p.is_freezing()
+    if p.effect_id >= 0:                       # ...and PauseTemp holds it
+        p._update_weather(60)
+        assert p.temp == (lo + hi) / 2

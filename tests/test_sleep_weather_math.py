@@ -158,7 +158,7 @@ def test_the_temperature_actually_tracks_its_season():
     random.seed(9)
     p = Pet(num=100, stage="Champion", attribute="Vaccine", obedience=500)
     p.habitat = p.home_habitat = 2                  # Plains
-    p.world_seconds = DAY_LENGTH                    # day 1 = Summer
+    p.world_seconds = 13 * DAY_LENGTH               # day 13 = first Summer day (13-day seasons)
     p._weather_day = -1
     p.temp = 12.0                                   # arriving cold from spring
     for _ in range(180):                            # three game hours

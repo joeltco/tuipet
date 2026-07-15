@@ -80,4 +80,10 @@ def test_buying_a_home_moves_you_in_with_fresh_weather():
     msg = p.buy_habitat(target["id"])
     assert "moved in" in msg.lower() or "Bought" in msg
     assert p.habitat == target["id"] and target["id"] in p.habitats
-    assert p._weather_day == -1                   # setCurrentHabitat's fresh roll
+    # setCurrentHabitat: arrival re-rolls the climate ON THE SPOT now
+    # (transitionWeather port, weather audit 2026-07-15) -- the day stamp is
+    # current (no pending stale roll) and the day temp sits in the new range
+    from tuipet.pet import DAY_LENGTH as _DL
+    assert p._weather_day == int(p.world_seconds // _DL)
+    lo, hi = p.habitat_obj()["temps"][p.season]
+    assert min(lo, hi) <= p.day_temp <= max(lo, hi)

@@ -31,7 +31,7 @@ def test_day_phase_follows_the_habitat_daylight_triple():
 def test_winter_reads_the_fall_triple():
     # checkTime's Winter case reads getFallTime -- a DVPet quirk kept as canon
     p = _pet()
-    p.world_seconds = 3 * DAY_LENGTH + 10 * (DAY_LENGTH / 24)   # day 3 = Winter, 10:00
+    p.world_seconds = 39 * DAY_LENGTH + 10 * (DAY_LENGTH / 24)  # day 39 = first Winter day (13-day seasons), 10:00
     assert p.season == "Winter"
     fall = p.habitat_obj()["times"]["Fall"]
     assert (p.day_phase == "dawn") == (fall[0] <= 10 < fall[1])

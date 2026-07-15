@@ -139,5 +139,39 @@ def adjusted_day_temp(day_temp, weather, phase, hab):
     return max(0, t)
 
 
+def transition_weather(old, hab, season, day_temp, feel_temp=None):
+    """PhysicalState.transitionWeather: arriving at a habitat re-derives the
+    sky FROM the old one instead of carrying it verbatim -- heavy weather
+    eases a step (or worsens, on the coin flip), light precip may break to
+    Cloudy, and a Cloudy sky simply re-rolls the machine.  Ported verbatim
+    (weather audit 2026-07-15); tuipet's single-sky adaptation stands in for
+    canon's per-zone WeatherRecord memory, so this runs on every move."""
+    if hab["weather_chance"] <= 0:
+        return "Clear"                        # climate-controlled: no sky at all
+    step = {
+        "HeavyRain": ("Raining", "Raining"),
+        "Raining": ("Drizzling", "HeavyRain"),
+        "HeavySnow": ("Snowing", "Snowing"),
+        "Snowing": ("LightSnow", "HeavySnow"),
+        "LightSnow": ("Snowing", "Cloudy"),
+        "Drizzling": ("Raining", "Cloudy"),
+    }.get(old)
+    if step is not None:
+        return step[random.randint(0, 1)]
+    if old == "Cloudy":
+        return next_weather("Cloudy", season, day_temp, hab, feel_temp=feel_temp)
+    return "Clear"                            # Clear arrives Clear (canon)
+
+
+# --- the year (canon calendar) -------------------------------------------------
+# config.csv FirstSpringDay 0 / FirstSummerDay 13 / FirstFallDay 26 /
+# FirstWinterDay 39, and setDay wraps past MaxFastClockDays 51: a season lasts
+# THIRTEEN game days and the year is a 52-day cycle.  (The pre-audit
+# season_for_day rotated daily -- 13x fast, an unported stub; weather audit
+# 2026-07-15.)
+SEASON_DAYS = 13
+YEAR_DAYS = 52
+
+
 def season_for_day(day_index):
-    return SEASONS[day_index % len(SEASONS)]
+    return SEASONS[(day_index % YEAR_DAYS) // SEASON_DAYS]
