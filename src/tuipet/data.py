@@ -790,6 +790,12 @@ def _consumable(row, id_field):
         # `if (item.disturb()) this.disturb()`.  Every item disturbs but the Futon
         # (Disturb=FALSE); foods have no column, so flag() defaults them to False.
         "disturb": flag("Disturb"),
+        # checkMaxHoursBeforeSleep (sleep audit 2026-07-15): -1 = usable any
+        # time; else the item only applies asleep or within N game-MINUTES of
+        # nod-off (canon compares the raw column against the minute-based
+        # sleep clocks -- "Hours" is the column's own misnomer).  Only the
+        # Futon carries it (1): it's a tuck-in for a sleeper, not day furniture.
+        "max_hours_sleep": int(row.get("MaxHoursBeforeSleep") or -1),
         # DVPet FoodID/ItemID cols: ";"-list of consumables this one yields when used
         # (a "crafter" -- Toy Oven bakes random foods, Chocolate Egg pops random capsules)
         "unlocks_food": _idlist(row.get("FoodID")),

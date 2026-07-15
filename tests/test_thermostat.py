@@ -150,7 +150,8 @@ def test_futon_snaps_to_the_comfort_midpoint():
         pytest.skip("no ChangeToPrefTemp item in the data")
     p = _pet()
     p.temp = 5.0                               # freezing under a cold snap
-    p.add_item(key)
+    p._fall_asleep()                           # the futon is a SLEEPER's tuck-in
+    p.add_item(key)                            # (checkMaxHoursBeforeSleep gate)
     p.use_item(key)
     lo, hi = p.ideal_temp
     assert p.temp == (lo + hi) / 2, "the futon tucks the room comfy (canon)"
@@ -158,3 +159,79 @@ def test_futon_snaps_to_the_comfort_midpoint():
     if p.effect_id >= 0:                       # ...and PauseTemp holds it
         p._update_weather(60)
         assert p.temp == (lo + hi) / 2
+
+
+# ---------------------------------------------------------------------------
+# Sleep audit vs the decompile (2026-07-15)
+# ---------------------------------------------------------------------------
+
+def _futon_key_and_eid():
+    from tuipet import data
+    _, items = data._load_consumables()
+    k, e = next(((f"i:{k}", e) for k, e in items.items()
+                 if e.get("max_hours_sleep", -1) != -1), (None, None))
+    return k, e
+
+
+def test_futon_makes_the_night_shorter():
+    """Canon sleep(): awakeLimit divides by energyGain + getEffectEnergyGain
+    -- the Futon's 1;60 energy rate joins the divisor, so a tucked-in pet
+    sizes a SHORTER night (deficit/4, not /3)."""
+    from tuipet import data
+    eid = next((i for i, e in data.load_care_effects().items()
+                if e["energy"][0]), None)
+    if eid is None:
+        return
+    p = _pet()
+    p.energy = 0
+    p._fall_asleep()
+    plain = p.awake_limit                      # ceil(deficit/3)*60, clamped
+    p.asleep = False
+    p.effect_id, p.effect_t = eid, 9999.0
+    p._fall_asleep()
+    assert p.awake_limit < plain               # the futon-shortened night
+    import math as m
+    gain = getattr(p, "_sleep_energy_gain", 3)
+    exp = m.ceil(p.max_energy / (gain + 1)) * 60.0
+    assert p.awake_limit == max(360.0, min(900.0, exp))
+
+
+def test_futon_is_bedtime_only():
+    """checkMaxHoursBeforeSleep: an AWAKE pet nowhere near nod-off cannot lay
+    out the futon -- the interaction is blocked BEFORE consumption (canon
+    gates the click), so nothing is spent and no effect starts."""
+    key, e = _futon_key_and_eid()
+    if key is None:
+        return
+    p = _pet()
+    p.sleep_lapse, p.sleep_limit = 0.0, 900.0  # a full day from nod-off
+    p.temp = 5.0
+    p.add_item(key)
+    msg = p.use_item(key)
+    assert "bedtime" in msg.lower()
+    assert p.inventory.get(key) == 1           # not consumed
+    assert p.effect_id < 0 and p.temp == 5.0   # no effect, no comfort snap
+    p.sleep_lapse = p.sleep_limit - 1          # ...one game-minute from nod-off
+    assert p._near_bedtime(e["max_hours_sleep"])
+    msg = p.use_item(key)
+    assert p.effect_id >= 0                    # now it lays out
+
+
+def test_futon_does_not_reapply_while_active():
+    """CareEffect.canApply (CanReapply=FALSE): a second futon on an active one
+    is blocked up front -- nothing spent, the running timer untouched."""
+    key, e = _futon_key_and_eid()
+    if key is None:
+        return
+    p = _pet()
+    p._fall_asleep()
+    p.add_item(key)
+    p.add_item(key)
+    p.use_item(key)
+    assert p.effect_id >= 0
+    t0 = p.effect_t
+    p.effect_t = t0 - 100.0                    # some of the night has passed
+    msg = p.use_item(key)
+    assert "tucked in" in msg
+    assert p.inventory.get(key) == 1           # the second futon is not spent
+    assert p.effect_t == t0 - 100.0            # the timer did not restart

@@ -1704,6 +1704,19 @@ class Pet:
 
     WAKE_MINUTE = 7 * 60          # LINES_SPEC §5: every line form wakes at 7:00
 
+    def _near_bedtime(self, n):
+        """checkMaxHoursBeforeSleep's clock half: asleep aside, is nod-off
+        within `n` game-minutes?  Pressure pets read the sleep clock
+        (sleepLimit - sleepLapse <= n, canon verbatim); line pets read the
+        wall clock to their fixed bedtime."""
+        iw = self._in_sleep_window()
+        if iw is not None:
+            if iw:
+                return True
+            bt = lines_mod.bedtime_minutes(self)
+            return bt is not None and (bt - self.world_seconds % DAY_MINUTES) % DAY_MINUTES <= n
+        return self.sleep_limit - self.sleep_lapse <= n
+
     def _in_sleep_window(self):
         """Line pets sleep by the CLOCK: True/False = inside/outside the form's
         fixed bedtime→7:00 window; None = not a line pet (pressure model)."""
@@ -2102,6 +2115,18 @@ class Pet:
         self.day_temp = random.randint(min(lo, hi), max(lo, hi))
         self.weather = wx.transition_weather(self.weather, hab, self.season,
                                              self.day_temp, feel_temp=self.temp)
+
+    def _effect_energy_gain(self):
+        """PhysicalState.getEffectEnergyGain: an ACTIVE care effect's energy
+        rate joins sleep()'s divisor -- amount * (cadence / 60) with canon's
+        integer division (a sub-hour cadence contributes 0)."""
+        if self.effect_id < 0 or self.effect_t <= 0:
+            return 0
+        eff = data.load_care_effects().get(self.effect_id)
+        if not eff:
+            return 0
+        amt, every = eff["energy"]
+        return amt * (every // 60)
 
     def _tick_effect(self, dt):
         """Advance the active care effect (Futon): rate gains; end on sleep change / expiry."""
@@ -3051,7 +3076,10 @@ class Pet:
         self._calm_discipline_call()                # bedtime placates the tantrum (canon
         #                                             sleep-onset setDisciplineCall(false))
         self._lights_t = 0.0                        # setAsleep resets _callMinutesLights
-        gain = max(1, getattr(self, "_sleep_energy_gain", 3))
+        # canon sleep(): the divisor is energyGain + getEffectEnergyGain() --
+        # an active Futon (EnergyChange 1;60 -> +1) makes the rest MORE
+        # efficient, so the night it sizes is SHORTER (sleep audit 2026-07-15)
+        gain = max(1, getattr(self, "_sleep_energy_gain", 3) + self._effect_energy_gain())
         need = math.ceil(max(0, self.max_energy - self.energy) / gain) * 60.0
         self.awake_limit = _clamp(need, MIN_AWAKE_LIMIT, MAX_AWAKE_LIMIT)
         self.sleep_limit = DAY_MINUTES - self.awake_limit
@@ -4803,6 +4831,22 @@ class Pet:
                 return "It only works out in the Digital World."
             if adv.life >= MAX_LIFE:
                 return "Adventure life is already full."
+        # checkMaxHoursBeforeSleep (sleep audit 2026-07-15): the Futon
+        # (MaxHoursBeforeSleep=1) only applies to a SLEEPER (ForceUseWhenAsleep
+        # -- the slide-under-tuck) or within a game-minute of nod-off.  Canon
+        # gates the interaction BEFORE consumption, so nothing is spent.
+        # Without this, yesterday's canon snap-to-comfort made the futon an
+        # anytime room heater -- exactly the go-to Joel called out.
+        mhs = e.get("max_hours_sleep", -1)
+        if mhs != -1 and not self.asleep and not self._near_bedtime(mhs):
+            return f"Too early to lay out the {e['name']} — it's not bedtime."
+        if e.get("effect_id", -1) >= 0:
+            eff0 = data.load_care_effects().get(e["effect_id"])
+            if (eff0 and not eff0.get("can_reapply")
+                    and self.effect_id == e["effect_id"] and self.effect_t > 0):
+                # CareEffect.canApply: an active no-reapply effect blocks the
+                # interaction up front (careEffectCanApply guards the click)
+                return f"{self.name} is already tucked in."
         # canon: an ItemEvol item's fractional energy price feeds the
         # AFFORDABILITY auto-refuse (a pet that can't pay the Digimental's
         # -0.66 x max refuses, exactly like jogress)

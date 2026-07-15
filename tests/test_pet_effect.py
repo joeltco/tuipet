@@ -79,7 +79,8 @@ def test_use_item_applies_effect(live_pet):
     if not key:
         pytest.skip("no care-effect item (Futon) in this build")
     pet = live_pet
-    pet.inventory[key] = 1
+    pet._fall_asleep()                # bedtime-only (checkMaxHoursBeforeSleep,
+    pet.inventory[key] = 1            # sleep audit 2026-07-15)
     msg = pet.use_item(key)
     assert pet.effect_id == e["effect_id"]
     assert pet.effect_t > 0
