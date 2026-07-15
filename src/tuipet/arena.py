@@ -324,7 +324,7 @@ class Screen(Static):
             elif w in _SNOW:
                 bg = _scale_hex(bg, 0.85)
             elif w == "Cloudy":
-                bg = _scale_hex(bg, 0.9)
+                bg = _scale_hex(bg, 0.95)
         if getattr(self, "thunder_i", 0) > 0 and pet.lights:
             # DVPet Weather.checkThunder: while thunder runs, the storm gloom LIFTS
             # on alternating 2-frame beats (rect.changeColor(0,0,0,0)) -- lightning

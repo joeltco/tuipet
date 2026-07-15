@@ -281,9 +281,9 @@ class TuiPetApp(App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("CLOUDY NIGHTS ARE NIGHTS: every habitat now has a real "
-                 "overcast night sky - soft dark clouds over its night ground, "
-                 "moon tucked away. No more noon skies at midnight.")
+    WHATS_NEW = ("GENTLER CLOUDS: a cloudy sky now dims the screen half as "
+                 "much - overcast is a mood, not a blackout. Cloudy nights "
+                 "keep their new dark-cloud skies.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and
