@@ -1657,6 +1657,10 @@ class Pet:
         # pooping (DVPet poop(): relief mood bump, sheds weight, drops a sized pile)
         self._poop_t = getattr(self, "_poop_t", 0) + dt
         # (a sleeping pet held it above -- only the desperate 2x gauge goes at night)
+        # (canon's PostponePoopMoodChange -1 -- startPoop blocked by the anim
+        # STATE machine -- has no tuipet counterpart BY ARCHITECTURE: the pile
+        # drops the same tick the gauge crosses, so an awake pet can never be
+        # made to hold it; poop/filth audit 2026-07-15)
         if self._poop_t >= self._poop_interval:
             self._poop_t -= self._poop_interval  # gauge -= bmMax (the remainder carries)
             backlog = self._poop_t >= self._poop_interval / 2
