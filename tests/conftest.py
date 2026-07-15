@@ -90,6 +90,11 @@ def _sandbox_lobby_feed(tmp_path, monkeypatch):
         monkeypatch.setattr(srv, "FEED_PATH", str(tmp_path / "lobby_feed.jsonl"))
     if srv is not None and hasattr(srv, "BUGS_PATH"):
         monkeypatch.setattr(srv, "BUGS_PATH", str(tmp_path / "bugs.jsonl"))
+    if srv is not None and hasattr(srv, "RAID_PATH"):
+        monkeypatch.setattr(srv, "RAID_PATH", str(tmp_path / "raid.json"))
+        monkeypatch.setattr(srv, "RAID", {"boss": None, "board": {},
+                                          "history": [], "claimed": {},
+                                          "attempts": {}})
     if srv is not None and hasattr(srv, "LADDER_PATH"):
         monkeypatch.setattr(srv, "LADDER_PATH", str(tmp_path / "ladder.json"))
         monkeypatch.setattr(srv, "LADDER", {"seasons": {}, "claimed": {}})

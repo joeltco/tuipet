@@ -247,12 +247,10 @@ class TuiPetApp(App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("A WHOLE NEW WORLD: tuipet is reborn in FULL COLOUR - "
-                 "991 creatures, 57 eggs, real-time care (it lives while "
-                 "the terminal is closed!), growth-chart evolution, the "
-                 "timing-bar battle, a monthly ladder, and artist credits "
-                 "on Z. Your bits and scenes came along; a fresh egg "
-                 "waits.")
+    WHATS_NEW = ("THE RAID BOSS RISES: one shared boss for the whole "
+                 "server, standing for a week - press TAB twice in the "
+                 "lobby, spend your 3 daily attempts, and split the "
+                 "contributor rewards when the community fells it.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07) -- PvE combat

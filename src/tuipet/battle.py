@@ -17,6 +17,8 @@ from . import data
 HP = 5
 ROUNDS_LOCAL = 20
 ROUNDS_ONLINE = 5
+ROUNDS_RAID = 10
+RAID_PLAYER_HP = 10
 
 # battle stage ranks (NOT the growth ladder: Armor ties Ultimate, Special
 # towers over everything)
@@ -231,6 +233,31 @@ class Battle:
         self.won = False
         if hasattr(self.pet, "record_battle"):
             self.pet.record_battle(False, online=self.source == "pvp")
+
+
+def generate_raid(me, boss, rng=None):
+    """The raid attempt: 10 rounds against an effectively-invincible boss.
+    The player fights from 10 HP; the boss never falls IN the fight -- the
+    raw damage landed here is what the shared pool eats (x5000 x stage-mult,
+    applied server-side).  Returns (rounds, raw_dealt, my_end_hp)."""
+    rng = rng or random.random
+    my_hp = RAID_PLAYER_HP
+    p_me, p_boss = me.hit_chance(boss), boss.hit_chance(me)
+    seq = []
+    dealt = 0
+    for _ in range(ROUNDS_RAID):
+        if my_hp <= 0:
+            break
+        my_dmg = me.roll_damage(rng)
+        my_hit = rng() < p_me
+        boss_dmg = boss.roll_damage(rng)
+        boss_hit = rng() < p_boss
+        if my_hit:
+            dealt += my_dmg
+        if boss_hit:
+            my_hp -= boss_dmg
+        seq.append((my_hit, my_dmg, boss_hit, boss_dmg))
+    return seq, dealt, max(0, my_hp)
 
 
 def pick_enemy(pet, boss=False):

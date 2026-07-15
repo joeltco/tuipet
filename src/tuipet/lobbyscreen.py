@@ -218,6 +218,9 @@ class LobbyPanel:
         self.bt_peer_commit = None    # sha256 hex the peer committed to
         self.bt_peer_nonce = None     # revealed with the peer's first pick
         self.bt_my_card = None        # the exact clamped card I shipped (engine input)
+        # raid session
+        self.raid_fight = None        # live attempt: {seq, i, my_hp, dealt, boss}
+        self.raid_note = ""
         if name and pw:
             self._connect(name, pw)
         else:
@@ -306,7 +309,10 @@ class LobbyPanel:
                     self.sfx = b.sfx
                     b.sfx = None
             else:
-                self.bshow = None               # volley done -> choose/over shows
+                self.bshow = None               # volley done -> the page returns
+                if self.raid_fight is not None:
+                    self._raid_next_volley()    # the raid rolls straight on
+        self._drain_raid_reward()               # a claimed raid purse lands here
         if self.jshow is not None and self.jphase == "result":
             self.jshow.anim()                   # converge -> flash -> fused bounce
         lad = getattr(self.client, "ladder", None) if self.client else None
@@ -715,10 +721,17 @@ class LobbyPanel:
             return self._key_dm(k)
         if self.phase == "ladder":
             return self._key_ladder(k)
+        if self.phase == "raid":
+            return self._key_raid(k)
         return self._key_lobby(k)
 
     def _key_ladder(self, k):
-        if k in ("escape", "tab", "q", "g"):
+        if k == "tab":
+            if self.client:
+                self.client.raid_get()
+            self.phase = "raid"
+            return None
+        if k in ("escape", "q", "g"):
             self.phase = "lobby"
         return None
 
@@ -751,6 +764,194 @@ class LobbyPanel:
             t.append("  you: unranked — win online to climb\n", style=DIM)
         d = int(lad.get("days_left") or 0)
         t.append(f"  season resets in {d} day{'s' if d != 1 else ''}\n", style=DIM)
+        return t
+
+    # ---- raid boss --------------------------------------------------------
+    def _raid_gate(self):
+        """Why this pet cannot attack the boss right now ('' = go)."""
+        p = self.pet
+        if getattr(p, "dead", False):
+            return "It rests now."
+        if p.stage in ("Egg",) or p.num < 0:
+            return "An egg cannot raid."
+        if p.asleep:
+            return "zzz… asleep"
+        if p.sick:
+            return "Too sick to raid — cure it first."
+        return ""
+
+    def _raid_attack(self):
+        rd = getattr(self.client, "raid", None) if self.client else None
+        if not rd or not rd.get("boss"):
+            self.raid_note = "No raid data yet — a moment."
+            if self.client:
+                self.client.raid_get()
+            return
+        why = self._raid_gate()
+        if why:
+            self.raid_note = why
+            self.sfx = "error"
+            return
+        b = rd["boss"]
+        now = rd.get("now", 0)
+        if b.get("start", 0) > now:
+            self.raid_note = "The boss is still incoming."
+            self.sfx = "error"
+            return
+        if b.get("hp", 0) <= 0:
+            self.raid_note = "The boss is already down!"
+            return
+        if rd.get("attempts", 0) <= 0:
+            self.raid_note = "No attempts left today."
+            self.sfx = "error"
+            return
+        boss = battle.Side.wild(int(b.get("num", 0)), boss=True)
+        seq, dealt, my_end = battle.generate_raid(
+            battle.Side.of_pet(self.pet), boss)
+        self.raid_fight = {"seq": seq, "i": 0, "my_hp": 10, "dealt": 0,
+                           "raw": dealt, "boss": dict(b)}
+        self.sfx = "battle"
+        self._raid_next_volley()
+
+    def _raid_next_volley(self):
+        f = self.raid_fight
+        if f is None:
+            return
+        if f["i"] >= len(f["seq"]) or f["my_hp"] <= 0:
+            self._raid_finish()
+            return
+        my_hit, my_dmg, boss_hit, boss_dmg = f["seq"][f["i"]]
+        f["i"] += 1
+        my0 = f["my_hp"]
+        if boss_hit:
+            f["my_hp"] = max(0, f["my_hp"] - boss_dmg)
+        if my_hit:
+            f["dealt"] += my_dmg
+        try:
+            card = {"num": f["boss"].get("num", 0),
+                    "name": f["boss"].get("name", "?"),
+                    "stage": "Ultimate-Super Ultimate", "boss": True}
+            show = battlescreen.BattlePanel(self.pet, enemy=card)
+            show.foe_attr = "Free"
+            show.hud_php, show.hud_fhp = f["my_hp"], 5
+            show.timeline = battlescreen.round_timeline(
+                my0, 5, my_dmg if my_hit else 0, boss_dmg if boss_hit else 0,
+                True)
+            show.i = 0
+            show.phase = "anim"
+            show._last_m = None
+            self.bshow = show
+        except Exception:
+            self.bshow = None
+
+    def _raid_finish(self):
+        f, self.raid_fight = self.raid_fight, None
+        self.bshow = None
+        if f is None:
+            return
+        raw = min(f["dealt"], 20)
+        if self.client:
+            self.client.raid_hit(raw, self.pet.stage)
+        fell = f["my_hp"] <= 0
+        self.raid_note = (f"{'Knocked out! ' if fell else ''}"
+                         f"You landed {raw} raw damage — the pool takes it.")
+        self.sfx = "attack"
+
+    def _raid_claim(self):
+        rd = getattr(self.client, "raid", None) if self.client else None
+        award = rd.get("award") if rd else None
+        if not award:
+            self.raid_note = "Nothing to claim."
+            return
+        if self.client:
+            self.client.raid_reward = None
+            self.client.raid_claim(award["id"])
+        self.raid_note = "Claiming…"
+
+    def _drain_raid_reward(self):
+        """A raid_reward landed from the server: pay the pet (anim tick)."""
+        r = getattr(self.client, "raid_reward", None) if self.client else None
+        if not r:
+            return
+        self.client.raid_reward = None
+        if not r.get("ok"):
+            self.raid_note = "Already claimed."
+            return
+        bits = int(r.get("bits", 0))
+        self.pet.add_bits(bits)
+        items = [i for i in (r.get("items") or []) if isinstance(i, str)]
+        for it in items:
+            self.pet.add_item(it)
+        from . import shop as _shop
+        got = " · ".join((_shop.entry(i) or {"name": i})["name"] for i in items)
+        word = ("defeated" if r.get("defeated") else "escaped")
+        self.raid_note = (f"Raid {word}: +{bits}b"
+                          + (f" + {got}" if got else "") + "!")
+        self.sfx = "reward"
+
+    def _key_raid(self, k):
+        if self.raid_fight is not None or self.bshow is not None:
+            if k in ("space", "enter"):
+                if self.bshow is not None:
+                    self.bshow = None
+                if self.raid_fight is not None:
+                    self._raid_next_volley()
+            return None
+        if k in ("a", "A", "enter"):
+            self._raid_attack()
+            return None
+        if k in ("c", "C"):
+            self._raid_claim()
+            return None
+        if k == "tab":
+            self.phase = "lobby"
+            return None
+        if k in ("escape", "q", "g"):
+            self.phase = "lobby"
+        return None
+
+    def _text_raid(self):
+        if self.bshow is not None:
+            return self.bshow.text()
+        t = Text()
+        rd = getattr(self.client, "raid", None) if self.client else None
+        if not rd or not rd.get("boss"):
+            t.append("  RAID BOSS\n\n", style=INK_B)
+            t.append("  fetching the raid…\n", style=DIM)
+            return t
+        b = rd["boss"]
+        now = rd.get("now", 0)
+        incoming = b.get("start", 0) > now
+        name = "Incoming Boss..." if incoming else str(b.get("name", "?"))
+        t.append(f"  RAID  {name[:22]}\n", style=INK_B)
+        hp, mx = int(b.get("hp", 0)), max(1, int(b.get("max_hp", 1)))
+        if incoming:
+            hrs = int((b["start"] - now) // 3600)
+            t.append(f"  starts in ~{hrs}h\n\n", style=DIM)
+        else:
+            frac = max(0.0, min(1.0, hp / mx))
+            bar = "█" * int(frac * 20) + "·" * (20 - int(frac * 20))
+            t.append(f"  [{bar}]\n", style=INK)
+            t.append(f"  {hp:,} / {mx:,}\n", style=DIM)
+            days = max(0, int((b.get("end", 0) - now) // 86400))
+            t.append(f"  ends in ~{days}d · attempts left today: "
+                     f"{rd.get('attempts', 0)}/3\n\n", style=DIM)
+        top = list(rd.get("top") or [])[:5]
+        t.append("  top contributors\n", style=INK_B)
+        if not top:
+            t.append("  no damage yet — first swing?\n", style=DIM)
+        for i, (who, dmg) in enumerate(top, start=1):
+            mine = who == getattr(self.client, "name", None)
+            t.append(f"  {'▸' if mine else ' '}{i}. {str(who)[:14]:<14}"
+                     f" {int(dmg):>12,}\n", style=INK_B if mine else INK)
+        you = rd.get("you") or [0, 0]
+        if you[0]:
+            t.append(f"  you: rank {you[0]} · {int(you[1]):,} dmg\n", style=INK_B)
+        award = rd.get("award")
+        if award:
+            t.append(f"\n  🎁 unclaimed reward — press C\n", style=INK_B)
+        if self.raid_note:
+            t.append(f"\n  {self.raid_note[:36]}\n", style=DIM)
         return t
 
     def _key_login(self, k):
@@ -857,7 +1058,7 @@ class LobbyPanel:
     def _slash(self, txt):
         """Chat slash commands (password rooms 2026-07-14): `/room <phrase>`
         joins the private room for that phrase — everyone typing the same
-        phrase meets there (the phrase IS the password, the reference fan game-style 🔒);
+        phrase meets there (the phrase IS the password, DSprite-style 🔒);
         `/leave` returns to the main lobby.  Anything else prints the help."""
         cmd, _, arg = txt.partition(" ")
         cmd, arg = cmd.lower(), arg.strip()
@@ -934,8 +1135,8 @@ class LobbyPanel:
                 self.action_for = None
             return None
         if k == "tab":
-            # the MONTHLY LADDER (2026-07-14): online wins, fresh race each
-            # month.  TAB because every letter belongs to the chat input.
+            # TAB pages through the boards (every letter belongs to the chat
+            # input): lobby -> LADDER -> RAID -> lobby.
             if self.client:
                 self.client.ladder_get()       # refresh; the page renders live
             self.phase = "ladder"
@@ -1064,7 +1265,15 @@ class LobbyPanel:
         if self.phase == "login":
             return menu.hints(("TAB", "field"), ("ENTER", "go"), ("ESC", "back"))
         if self.phase == "ladder":
-            return menu.hints(("TAB", "lobby"), ("ESC", "back"))
+            return menu.hints(("TAB", "raid"), ("ESC", "back"))
+        if self.phase == "raid":
+            if self.raid_fight is not None:
+                return menu.hints(("SPACE", "next volley"))
+            hints = [("A", "attack"), ("TAB", "lobby"), ("ESC", "back")]
+            rd = getattr(self.client, "raid", None) if self.client else None
+            if rd and rd.get("award"):
+                hints.insert(1, ("C", "claim"))
+            return menu.hints(*hints)
         if self.phase == "dm":
             cue = self._care_cue()      # the DM thread live-ticks too
             if cue:
@@ -1109,6 +1318,8 @@ class LobbyPanel:
             return self._text_dm()
         if self.phase == "ladder":
             return self._text_ladder()
+        if self.phase == "raid":
+            return self._text_raid()
         return self._text_lobby()
 
     def _text_login(self):

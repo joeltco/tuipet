@@ -384,6 +384,216 @@ def _ladder_claim(name, season):
         _save_ladder()
 
 
+# ---- raid boss (2026-07-15): the weekly community damage race ---------------
+# One shared boss for the whole server: a random top-stage species with
+# energy_max x 5,500,000 HP, standing for 7 days after a 24h "incoming"
+# cooldown.  Every player gets 3 attempts a day; an attempt's RAW battle
+# damage (<= 20) submits as raw x 5000 x stage-mult.  When the boss falls
+# (or escapes at the window's end) the contributor board archives and pays
+# on claim: rank 1/2/3 = 5000/3000/2000 bits + 3/2/1 items, everyone else
+# 500 + 1; an ESCAPED boss pays a flat 100 consolation.  Weekend claims pay
+# x1.5.  All numbers are the source rule set's, verbatim; the ledger is
+# SERVER-authoritative here (the original trusted clients).
+RAID_PATH = os.environ.get(
+    "TUIPET_RAID",
+    os.path.join(os.path.dirname(os.path.abspath(__file__)), "raid.json"))
+RAID_POOL_PATH = os.path.join(
+    os.path.dirname(os.path.abspath(__file__)), "raid_pool.json")
+RAID_HP_PER_ENERGY = 5_500_000
+RAID_COOLDOWN_S = 1440 * 60          # 24h "Incoming Boss..."
+RAID_WINDOW_S = 10080 * 60           # 7 days standing
+RAID_ATTEMPTS_PER_DAY = 3
+RAID_MAX_RAW = 20                    # 10 rounds x 2 damage: the honest ceiling
+RAID_DMG_MULT = 5000
+RAID_STAGE_MULT = (("super ultimate", 20), ("armor-hybrid", 10),
+                   ("ultimate", 10), ("perfect", 5), ("adult", 2))
+RAID_RANK_BITS = {1: 5000, 2: 3000, 3: 2000}
+RAID_RANK_ITEMS = {1: 3, 2: 2, 3: 1}
+RAID_PART_BITS, RAID_PART_ITEMS = 500, 1
+RAID_CONSOLATION = 100
+RAID_ITEM_POOL = ["energy_drink", "best_fruit", "normal_fruit", "worst_fruit",
+                  "deadly_fruit", "training_pack", "x_antibody",
+                  "revive_floppy", "super_carrot", "time_gear",
+                  "anti_evo_chip", "care_mistake_eraser", "poop_clean_pill",
+                  "alarm_clock", "sleeping_pill", "junk_food", "premium_meat"]
+RAID_HISTORY_KEEP = 5
+
+
+def _load_raid():
+    try:
+        with open(RAID_PATH) as f:
+            d = json.load(f)
+        d.setdefault("boss", None)
+        d.setdefault("board", {})
+        d.setdefault("history", [])
+        d.setdefault("claimed", {})
+        d.setdefault("attempts", {})
+        return d
+    except Exception:
+        return {"boss": None, "board": {}, "history": [], "claimed": {},
+                "attempts": {}}
+
+
+RAID = _load_raid()
+
+
+def _save_raid():
+    try:
+        tmp = RAID_PATH + ".tmp"
+        with open(tmp, "w") as f:
+            json.dump(RAID, f)
+        os.replace(tmp, RAID_PATH)
+    except OSError:
+        LOG.warning("raid: disk refused %s", RAID_PATH)
+
+
+def _raid_pool():
+    try:
+        with open(RAID_POOL_PATH) as f:
+            return json.load(f)
+    except Exception:
+        return [{"num": 0, "name": "Unknown Boss", "energy_max": 65}]
+
+
+def _raid_stage_mult(stage):
+    st = str(stage or "").lower()
+    for token, mult in RAID_STAGE_MULT:
+        if token in st:
+            return mult
+    return 1
+
+
+def _raid_stage_next(now):
+    """Pick the next boss: 24h cooldown, then a 7-day window."""
+    import random as _r
+    pick = _r.choice(_raid_pool())
+    hp = int(pick.get("energy_max", 65)) * RAID_HP_PER_ENERGY
+    start = now + RAID_COOLDOWN_S
+    if RAID["boss"] is None and not RAID["history"]:
+        start = now                       # a fresh install opens immediately
+    return {"num": int(pick["num"]), "name": str(pick["name"]),
+            "hp": hp, "max_hp": hp,
+            "start": start, "end": start + RAID_WINDOW_S}
+
+
+def _raid_rotate(now=None):
+    """Archive a finished raid and stage the next boss (idempotent)."""
+    now = time.time() if now is None else now
+    b = RAID["boss"]
+    if b is not None and b["hp"] > 0 and now <= b["end"]:
+        return                            # still standing
+    if b is not None:
+        RAID["history"].append({
+            "id": str(int(b["end"])), "boss_name": b["name"], "num": b["num"],
+            "defeated": b["hp"] <= 0, "ended": now,
+            "board": dict(RAID["board"]),
+        })
+        RAID["history"] = RAID["history"][-RAID_HISTORY_KEEP:]
+        RAID["board"] = {}
+    RAID["boss"] = _raid_stage_next(now)
+    _save_raid()
+
+
+def _raid_attempts(name, now=None):
+    now = time.time() if now is None else now
+    day = time.strftime("%Y-%m-%d", time.localtime(now))
+    rec = RAID["attempts"].get(name)
+    if not rec or rec.get("date") != day:
+        rec = {"date": day, "left": RAID_ATTEMPTS_PER_DAY}
+        RAID["attempts"][name] = rec
+        if len(RAID["attempts"]) > 4096:
+            RAID["attempts"] = {name: rec}
+    return rec
+
+
+def _raid_rank(board, name):
+    """1-based rank by damage (ties by earliest report), 0 if absent."""
+    top = sorted(board.items(), key=lambda kv: (-kv[1]["damage"],
+                                                kv[1].get("ts", 0)))
+    return next((i + 1 for i, (who, _v) in enumerate(top) if who == name), 0)
+
+
+def _raid_award(name):
+    """The newest archived raid this player contributed to and hasn't
+    claimed -> {id, rank, defeated, bits, items} (weekend x1.5 applies at
+    CLAIM time, not here)."""
+    for rec in sorted(RAID["history"], key=lambda r: r["id"], reverse=True):
+        if name in RAID["claimed"].get(rec["id"], []):
+            continue
+        if name not in rec["board"]:
+            continue
+        rank = _raid_rank(rec["board"], name)
+        if rec["defeated"]:
+            bits = RAID_RANK_BITS.get(rank, RAID_PART_BITS)
+            items = RAID_RANK_ITEMS.get(rank, RAID_PART_ITEMS)
+        else:
+            bits, items = RAID_CONSOLATION, 0
+        return {"id": rec["id"], "rank": rank, "defeated": rec["defeated"],
+                "boss": rec["boss_name"], "bits": bits, "items": items}
+    return None
+
+
+def _raid_view(name, now=None):
+    now = time.time() if now is None else now
+    _raid_rotate(now)
+    b = RAID["boss"]
+    top = sorted(RAID["board"].items(),
+                 key=lambda kv: (-kv[1]["damage"], kv[1].get("ts", 0)))
+    you = next(((i + 1, v["damage"]) for i, (who, v) in enumerate(top)
+                if who == name), (0, 0))
+    return {"t": "raid",
+            "boss": dict(b),
+            "now": now,
+            "top": [(who, v["damage"]) for who, v in top[:10]],
+            "you": list(you),
+            "attempts": _raid_attempts(name, now)["left"],
+            "award": _raid_award(name)}
+
+
+def _raid_hit(name, raw, stage, now=None):
+    """One attempt's damage report.  The server owns the attempt count and
+    the ceiling: raw battle damage is bounded by what 10 rounds can deal."""
+    now = time.time() if now is None else now
+    _raid_rotate(now)
+    b = RAID["boss"]
+    if b["start"] > now or b["hp"] <= 0:
+        return {"t": "raid_hit", "ok": False, "why": "The boss is not standing."}
+    rec = _raid_attempts(name, now)
+    if rec["left"] <= 0:
+        return {"t": "raid_hit", "ok": False, "why": "No attempts left today."}
+    rec["left"] -= 1
+    raw = max(0, min(int(raw or 0), RAID_MAX_RAW))
+    dealt = raw * RAID_DMG_MULT * _raid_stage_mult(stage)
+    b["hp"] = max(0, b["hp"] - dealt)
+    entry = RAID["board"].setdefault(name, {"damage": 0, "ts": now})
+    entry["damage"] += dealt
+    entry["ts"] = now
+    if b["hp"] <= 0:
+        _raid_rotate(now)                 # the kill archives immediately
+    _save_raid()
+    return {"t": "raid_hit", "ok": True, "dealt": dealt}
+
+
+def _raid_claim(name, raid_id, now=None):
+    now = time.time() if now is None else now
+    a = _raid_award(name)
+    if not a or a["id"] != str(raid_id):
+        return {"t": "raid_reward", "ok": False}
+    import random as _r
+    bits = a["bits"]
+    wd = time.localtime(now).tm_wday
+    if wd >= 5:
+        bits = int(bits * 1.5)            # weekend claims pay half again
+    items = [_r.choice(RAID_ITEM_POOL) for _ in range(a["items"])]
+    RAID["claimed"].setdefault(a["id"], []).append(name)
+    if len(RAID["claimed"]) > RAID_HISTORY_KEEP * 4:
+        keep = {r["id"] for r in RAID["history"]}
+        RAID["claimed"] = {k: v for k, v in RAID["claimed"].items() if k in keep}
+    _save_raid()
+    return {"t": "raid_reward", "ok": True, "bits": bits, "items": items,
+            "defeated": a["defeated"], "rank": a["rank"], "boss": a["boss"]}
+
+
 async def _send(client, obj):
     try:
         await client.ws.send(json.dumps(obj))
@@ -669,6 +879,15 @@ async def handler(ws):
 
             elif t == "ladder_claim":
                 _ladder_claim(client.name, str(m.get("season") or ""))
+            elif t == "raid_get":
+                await _send(client, _raid_view(client.name))
+            elif t == "raid_hit":
+                r = _raid_hit(client.name, m.get("damage"), m.get("stage"))
+                await _send(client, r)
+                await _send(client, _raid_view(client.name))
+            elif t == "raid_claim":
+                await _send(client, _raid_claim(client.name, m.get("raid")))
+                await _send(client, _raid_view(client.name))
 
             elif t == "chat":
                 text = _clean(m.get("text"), MAX_CHAT)

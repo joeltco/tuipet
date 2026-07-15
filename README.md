@@ -164,7 +164,9 @@ bar — then the volley plays out as the full alternating-view show.
 
 Press **l** for the lobby (accounts are free — pick a name and password).
 Live **chat** with backlog, presence, private messages, a **monthly
-ladder** (one rung per online win, resets monthly), **PvP battles**
+ladder** (one rung per online win, resets monthly), a weekly **RAID BOSS**
+(one shared boss for the whole server — 3 attempts a day, your damage joins
+the pool, contributor ranks pay out when it falls), **PvP battles**
 (seeded-symmetric: both clients run the identical engine on a shared
 nonce — no host advantage, nothing to tamper with), and two-player
 **jogress fusion** (exact species pairs). Online wins pay bits — half

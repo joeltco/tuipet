@@ -198,6 +198,8 @@ class LobbyClient(_WsClient):
         self._had_welcome = False             # a past successful login makes drops RECONNECTS
         self._backoff0 = 2.0                  # first-retry delay (tests shrink it)
         self.ladder = None                    # last ladder message (rankings page)
+        self.raid = None                      # last raid status message
+        self.raid_reward = None               # a claimed reward, once
 
     # ---- outgoing (called from the UI thread/loop) -----------------------
     def _send(self, obj):
@@ -247,6 +249,15 @@ class LobbyClient(_WsClient):
 
     def ladder_claim(self, season):
         self._send({"t": "ladder_claim", "season": season})
+
+    def raid_get(self):
+        self._send({"t": "raid_get"})
+
+    def raid_hit(self, damage, stage):
+        self._send({"t": "raid_hit", "damage": int(damage), "stage": stage})
+
+    def raid_claim(self, raid_id):
+        self._send({"t": "raid_claim", "raid": raid_id})
 
     # ---- lifecycle (the loop itself lives on _WsClient) --------------------
     def _login_msg(self):
@@ -302,6 +313,10 @@ class LobbyClient(_WsClient):
             s.me_name = m.get("name")
         elif t == "ladder":
             self.ladder = m               # the rankings page renders from this
+        elif t == "raid":
+            self.raid = m                 # the raid page renders from this
+        elif t == "raid_reward":
+            self.raid_reward = m          # the claim flow consumes this once
         elif t == "roster":
             s.roster = m.get("players") or []
         elif t == "room_ok":
