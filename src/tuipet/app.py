@@ -246,10 +246,11 @@ class TuiPetApp(App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("SCENE GALLERY DEDUPED: Seafloor and Sunset Shore were "
-                 "tints of the same sea vista as Underwater - the gallery "
-                 "keeps one Underwater; a save that had a tint picked keeps "
-                 "its sea view.")
+    WHATS_NEW = ("POLISH PASS: feeding and evolution crashes fixed, every "
+                 "species fires its OWN attack shape, the idle walk and "
+                 "sick poses are right, training strikes a real target, "
+                 "the hatch plays its full crack-and-burst, and each egg "
+                 "previews on its own scene under its own name.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07) -- PvE combat
