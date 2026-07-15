@@ -115,11 +115,13 @@ def test_feed_taste_branches_take_canon_shape():
     p.favorite_food = "Meat"
     p._eat_food("Meat")
     assert p.mood == FAV_FOOD_MOOD + GLUTTON_FEED_MOOD and p.enthusiasm == FAV_FOOD_ENTH
-    # FULL + favourite (non-glutton): nothing pleasant left to feel
+    # FULL + favourite (non-glutton): the fav joy is gone, but the SPECIES
+    # stomach (canon getStomachCapacity; food audit 2026-07-15) still has
+    # room at 4 hearts, so the small food mood lands (canon's elif branch)
     q = _pet(hunger=4, glutton=0, mood=0, enthusiasm=0)
     q.favorite_food = "Meat"
     q._eat_food("Meat")
-    assert q.mood == 0 and q.enthusiasm == 0
+    assert q.mood == FOOD_MOOD and q.enthusiasm == 0
     # FULL + disliked, forced: the double dip + the spirit hit + obedience
     r = _pet(hunger=4, glutton=0, mood=0, enthusiasm=0, obedience=50)
     r.disliked_food = "Veg"

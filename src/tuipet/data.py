@@ -416,6 +416,15 @@ def load_requirements():
             "level_fought": _gate(r, "LevelFoughtKey", "LevelFoughtValue"),
             "dna": {f: _gate(r, f + "Key", f + "Value") for f in DNA_FIELDS},
             "evol_item": _int_or(r.get("EvolItemID"), -1),   # item that triggers this form
+            # EvolFood: a FOOD-triggered form (food audit 2026-07-15) -- the
+            # corpus has exactly one: Citramon evolves by eating an Orange
+            # (food 42).  Locked out of natural timed care like item forms.
+            "evol_food": _int_or(r.get("EvolFood"), -1),
+            # per-species stomach (canon getStomachCapacity, geriatric-shrunk
+            # at pet.stomach_capacity()): the applyFood diminishing divisor
+            # and feed()'s mood gates read THIS, not a flat 4 (food audit
+            # 2026-07-15; canon egg default 10)
+            "stomach_capacity": _int_or(r.get("StomachCapacity"), 10),
             "attack_index": _attack_index(r.get("SpecialAttacksVaccineDataVirus")),
             "name": (r.get("Name") or "").strip(),
             "food_pref": (r.get("FoodPreference") or "None").strip() or "None",

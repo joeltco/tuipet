@@ -94,7 +94,7 @@ def _dna_ok(pet, req):
     return all(_cmp(cond, val, pet.dna_percent(f)) for f, (cond, val) in dna.items())
 
 
-def check(pet, num, item=-1, connecting=False):
+def check(pet, num, item=-1, food=-1, connecting=False):
     """checkEvolReq, verbatim semantics (canon re-audit 2026-07):
 
     * the DNA replacement is CONSUME-ONCE: canon's getDNA() clears its flag on
@@ -127,6 +127,15 @@ def check(pet, num, item=-1, connecting=False):
             return False     # item-locked form: unreachable by timed care (need the item)
     elif ev_item != item:
         return False         # using an item only validates the forms that require it
+    # the FOOD lock mirrors the item lock exactly (checkSpecialCondition's
+    # evolFoodID arm; food audit 2026-07-15): Citramon (EvolFood 42, the
+    # Orange) is unreachable by timed care and only validates mid-meal
+    ev_food = req.get("evol_food", -1)
+    if food == -1:
+        if ev_food != -1:
+            return False     # food-locked form: it takes the meal
+    elif ev_food != food:
+        return False         # eating a food only validates the forms that require it
     if req.get("xantibody", "None") == "Induced" and getattr(pet, "x_antibody", "None") == "None":
         return False  # Induced X-forms are unreachable without the antibody (canon: Induced ONLY)
     vac, dat, vir = _stats(pet)
@@ -308,6 +317,26 @@ def item_select(pet, item_id):
     return random.choice(top)
 
 
+def food_select(pet, food_id):
+    """Forms reachable by EATING food `food_id` (processFoodEvol): graph
+    targets whose EvolFood == food_id and whose care gates pass -- the meal
+    is an extra gate, not a bypass.  Best by fulfilled, like item_select."""
+    if food_id is None or food_id < 0:
+        return None
+    _, by_num = data.load_sprites()
+    targets = [t for t in data.load_evolutions().get(pet.num, [])
+               if t in by_num and not data.is_placeholder(t)]
+    valid = [t for t in targets if check(pet, t, food=food_id)]
+    if not valid:
+        return None
+    best = max(fulfilled(pet, t) for t in valid)
+    top = [t for t in valid if abs(fulfilled(pet, t) - best) < 1e-9]
+    if len(top) > 1:
+        mind = min(deviation(pet, t) for t in top)
+        top = [t for t in top if deviation(pet, t) == mind]
+    return random.choice(top)
+
+
 def item_direct(pet, dexnum):
     """Direct evolution item (items.csv DigimonID names the form): evolve into `dexnum`
     if it is a reachable graph neighbour of the current form."""
@@ -341,7 +370,8 @@ def select(pet):
             return ff
         stage_up = [t for t in targets if by_num[t]["stage"] != pet.stage
                     and data.load_requirements().get(t, {}).get("special", "None") == "None"
-                    and data.load_requirements().get(t, {}).get("evol_item", -1) == -1]
+                    and data.load_requirements().get(t, {}).get("evol_item", -1) == -1
+                    and data.load_requirements().get(t, {}).get("evol_food", -1) == -1]
         if stage_up:
             return max(stage_up, key=lambda t: fulfilled(pet, t))
         return None

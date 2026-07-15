@@ -461,7 +461,19 @@ POOP_MAX_PILES = 4                      # classic Digimon V-Pet max poops (DVPet
 # tuned to preserve tuipet's ~1800s-per-heart hunger pace (col-1 calorie mods are 0).
 # hunger / stomach (DVPet FullHunger / StomachCapacity / OvereatLimit)
 FULL_HUNGER = 4                         # FullHunger: a satisfied stomach (4 hearts)
-STOMACH_CAPACITY = 4                    # StomachCapacity: the applyFood fullness-modifier divisor
+STOMACH_CAPACITY = 4                    # legacy fallback only -- see stomach_capacity()
+# canon stomach (food audit 2026-07-15): capacity is a PER-SPECIES field
+# (digimon.csv StomachCapacity, 8..40) that SHRINKS in old age --
+# getStomachCapacity subtracts (geriatricAge - lifeRemaining) x 0.00021/real-s
+# (max ~9 at death), floored at MinStomachCapacity.  It divides applyFood's
+# diminishing modifier and gates feed()'s taste moods; the overeat line is
+# 0.75 x capacity (OvereatLimitFactor).  tuipet's refuse-at-full stays the
+# documented adaptation, so only the modifier/mood-gate sides apply here.
+MIN_STOMACH_CAPACITY = 7                # MinStomachCapacity
+OVEREAT_FACTOR = 0.75                   # OvereatLimitFactor (x capacity)
+# canon 0.00021 per REAL second across the 43200s window (max dec ~9.07);
+# tuipet's elderly window is GERIATRIC_REMAIN game-sec -- same endpoint shape
+GERIATRIC_STOMACH_COEF = (43200 * 0.00021) / 21600.0
 DISPOSE_LEFTOVERS_MIN = 0.5             # DisposeLeftoversMinModifier: at/below, Munching drops the rest
 OVEREAT_LIMIT = 5                       # OvereatLimit: a glutton may fill one heart past full
 CALORIE_LIMIT = 4                       # CalorieLimit (buffer half-range)
@@ -1879,6 +1891,16 @@ class Pet:
                 and self.stage in ("Rookie", "Champion", "Ultimate", "Mega")
                 and (self.lifespan - self.age_seconds) < GERIATRIC_REMAIN)
 
+    def stomach_capacity(self):
+        """Canon getStomachCapacity: the SPECIES stomach (digimon.csv), shrunk
+        linearly through old age toward MinStomachCapacity(7) -- an elder
+        fills up on smaller meals (food audit 2026-07-15)."""
+        cap = data.load_requirements().get(self.num, {}).get("stomach_capacity", 10)
+        if self.is_geriatric:
+            diff = max(0.0, GERIATRIC_REMAIN - max(0.0, self.lifespan - self.age_seconds))
+            cap = max(MIN_STOMACH_CAPACITY, cap - int(diff * GERIATRIC_STOMACH_COEF))
+        return cap
+
     @property
     def day_phase(self):
         # PhysicalState.checkTime: the day's bands come from the HOME's
@@ -2638,7 +2660,12 @@ class Pet:
         # disliked-meal misery (plus the spirit hit, worse when forced)
         mod = (GLUTTON_FEED_MOOD if self.glutton > 0
                else NOT_GLUTTON_FEED_MOOD if self.glutton < 0 else 0)
-        cap = OVEREAT_LIMIT if self.glutton > 0 else STOMACH_CAPACITY
+        # the mood gates read the SPECIES stomach (canon getStomachCapacity /
+        # getOvereatLimit = 0.75 x capacity; food audit 2026-07-15): a 4-heart
+        # "full" pet still enjoys a strength-food's mood while its real
+        # stomach (8..40) has room -- the old flat 4/5 gates denied it
+        cap = self.stomach_capacity()
+        overeat_at = int(cap * OVEREAT_FACTOR)
         if self.disliked_food and self.disliked_food in cats:
             tier = "disliked"
             if self.hunger >= FULL_HUNGER:       # full AND hating it: the double dip
@@ -2649,7 +2676,7 @@ class Pet:
             self._set_obedience(self.obedience + DISLIKED_FOOD_OBEDIENCE)
         elif self.favorite_food and self.favorite_food in cats:
             tier = "favorite"
-            if self.hunger < FULL_HUNGER or (self.glutton > 0 and self.hunger < OVEREAT_LIMIT):
+            if self.hunger < FULL_HUNGER or (self.glutton > 0 and self.hunger < overeat_at):
                 self._set_mood(self.mood + FAV_FOOD_MOOD + mod)
                 self._set_enthusiasm(self.enthusiasm + FAV_FOOD_ENTH)
             elif self.hunger < cap:
@@ -3397,9 +3424,11 @@ class Pet:
             self._set_anim("refuse", 1.0)
             return f"{self.name} is too full!"
         # DVPet applyFood modifier: a near-full stomach diminishes a hunger-food's
-        # effects (1 - overfull/stomach); a strength-food (hunger 0) is always full-value.
+        # effects (1 - overfull/stomach); a strength-food (hunger 0) is always
+        # full-value.  The divisor is the SPECIES stomach (geriatric-shrunk),
+        # not a flat 4 (food audit 2026-07-15).
         over = self.hunger - FULL_HUNGER
-        modifier = 1.0 if (over <= 0 or not fills) else max(0.0, 1.0 - over / STOMACH_CAPACITY)
+        modifier = 1.0 if (over <= 0 or not fills) else max(0.0, 1.0 - over / self.stomach_capacity())
         # applyFood: modifier <= DisposeLeftoversMinModifier -> State.Munching --
         # the stuffed pet takes two bites and DROPS the rest (the eat fx reads it)
         self._last_meal_leftover = fills and modifier <= DISPOSE_LEFTOVERS_MIN
@@ -3442,12 +3471,15 @@ class Pet:
         if t and 0 <= self.temp + t <= 100:                 # MaxTemp guard, verbatim
             self.temp += math.ceil(t * modifier) if t > 0 else t
         self._set_weight(self.weight + math.ceil(food.get("weight", 1) * modifier))   # modifier-scaled, like canon
-        # every meal advances the bowel gauge (applyFood: bmGauge += food.BMGauge):
-        # eating more means pooping sooner, proportional to the species bmMax
-        bm = int(food.get("bm", 0))
-        if bm > 0:
-            self._poop_t = getattr(self, "_poop_t", 0) \
-                + self._poop_interval * bm / max(1, self._phys().get("poop_limit", 64))
+        # every meal advances the bowel gauge (applyFood: bmGauge += bmLapseInc
+        # + ceil(food.BMGauge x modifier)): EVERY meal adds one lapse-worth on
+        # top of the food's own scaled gauge (food audit 2026-07-15 -- the old
+        # line skipped the flat lapse-inc and the modifier), proportional to
+        # the species bmMax
+        bm_units = (self._phys().get("poop_lapse", 1)
+                    + (math.ceil(int(food.get("bm", 0)) * modifier) if food.get("bm") else 0))
+        self._poop_t = getattr(self, "_poop_t", 0) \
+            + self._poop_interval * bm_units / max(1, self._phys().get("poop_limit", 64))
         # checkDirtyEating: a meal amid the filth sours it, and each pile is a
         # sickness risk (worse 16%/pile if already sick, else sick 8%/pile)
         if self.poop > 0:
@@ -3464,6 +3496,17 @@ class Pet:
         tier = self._eat_food(food.get("category", ""), complied)   # DVPet taste: fav/disliked/neutral
         self._last_meal_disliked = (tier == "disliked")      # eat(): disliked -> +9 grimace bite
         self._apply_nutrition(food, modifier)                # GoodNutrition macros (scaled)
+        # processFoodEvol (food audit 2026-07-15): a FOOD-triggered evolution
+        # fires with the meal when its gates pass -- the corpus has one:
+        # Nanimon + an Orange (food 42) = Citramon.  Mirrors the Digimental
+        # (ItemEvol) flow, special-anchored like every non-natural jump.
+        target = evolution.food_select(self, int(food.get("id", -1)))
+        if target is not None:
+            prev = self.num
+            self.evolve_to(target)
+            lines_mod.adopt_line(self, prev=prev)
+            self._set_anim("happy", 1.6)
+            return f"Fed {food['name']}… {self.name} evolved!"
         self._set_anim("eat", 1.4)
         tag = {"favorite": "  It loves it!", "disliked": "  It dislikes that."}.get(tier, "")
         return f"Fed {food['name']}.{tag}"

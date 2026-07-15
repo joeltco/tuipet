@@ -280,10 +280,10 @@ class TuiPetApp(App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("SLEEP, BY THE BOOK: the futon is a bedtime tuck-in now "
-                 "- lay it on a sleeper (or right at nod-off) and the "
-                 "cozier rest makes the night SHORTER. One futon per "
-                 "night; no re-tucking. Sweet dreams.")
+    WHATS_NEW = ("REAL STOMACHS: every species has its own (some are "
+                 "bottomless), and it shrinks in old age. And somewhere "
+                 "out there, one mon evolves from the right SNACK - the "
+                 "first food-triggered evolution. Bon appetit.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and

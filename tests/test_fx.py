@@ -266,7 +266,9 @@ def test_stuffed_meal_drops_the_leftovers():
     p = Pet(num=102, name="D", stage="Champion", attribute="Virus",
             obedience=900, glutton=1)
     p.world_seconds = 12 * 60.0
-    p.hunger = 6                                  # over FULL by 2 -> modifier 0.5
+    # over FULL by half the SPECIES stomach -> modifier 0.5 (the divisor is
+    # canon getStomachCapacity now, not a flat 4; food audit 2026-07-15)
+    p.hunger = 4 + p.stomach_capacity() // 2
     p._set_mood(100)
     meat = next(f for f in data.load_foods() if int(f.get("hunger", 0)) > 0)
     p.feed(meat)
