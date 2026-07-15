@@ -51,6 +51,20 @@ def test_weather_rides_its_own_buffer_plane():
     assert buf[1][1] == 1 and buf[2][2] == 2
 
 
+def test_the_dot_matrix_draws_over_the_weather():
+    """A drop landing on the mon or a prop vanishes behind it (Joel
+    2026-07-15: the dot matrix draws OVER the rain and snow)."""
+    # a prop pixel keeps its ink under a drop; empty sky still rains
+    buf = render.fill_buf([], 8, 8, overlay=[(1, 1)],
+                          overlay_free=[(1, 1), (2, 2)])
+    assert buf[1][1] == 1, "a prop pixel lost to a raindrop"
+    assert buf[2][2] == 2
+    # the sprite's own ink wins too
+    clear = render.fill_buf(["1"], 8, 8)
+    sy, sx = next((y, x) for y in range(8) for x in range(8) if clear[y][x])
+    assert render.fill_buf(["1"], 8, 8, overlay_free=[(sx, sy)])[sy][sx] == 1
+
+
 def test_free_ink_colours_the_weather_pixels():
     t = render.render_screen([], 4, 2, on="#111111", bg="#222222",
                              overlay=[(0, 0)], overlay_free=[(1, 0)],

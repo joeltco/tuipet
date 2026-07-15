@@ -281,9 +281,9 @@ class TuiPetApp(App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("COLORED RAIN AND SNOW: drops fall blue and flakes fall "
-                 "white in every theme's own palette - and neither shows in a "
-                 "lights-off room anymore; the dark stays dark.")
+    WHATS_NEW = ("WEATHER FALLS BEHIND: rain and snow now pass behind your "
+                 "mon and the scene props instead of speckling over them - "
+                 "the dot matrix always draws on top of the sky.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and

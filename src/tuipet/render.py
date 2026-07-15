@@ -21,11 +21,13 @@ def blit(bm, ox, oy):
 def _stamp(buf, pts, cols, px_h, clip=None, val=1):
     """Overlay pixels -> the buffer, clipped to the LCD (and to `clip`).
     `val` is the buffer plane: 1 = sprite/prop ink, 2 = weather particles
-    (painted in their own colour by _paint_cells)."""
+    (painted in their own colour by _paint_cells).  A pixel already inked
+    keeps its ink: the dot matrix draws OVER the rain and snow (Joel
+    2026-07-15) -- weather falls BEHIND the mon and the scene actors."""
     cx0, cx1, cy0, cy1 = clip if clip else (0, cols, 0, px_h)
     for ox_, oy_ in pts:
         if cy0 <= oy_ < cy1 and cx0 <= ox_ < cx1 and 0 <= oy_ < px_h and 0 <= ox_ < cols:
-            buf[oy_][ox_] = val
+            buf[oy_][ox_] = buf[oy_][ox_] or val
 
 
 def _paint_cells(buf, cols, rows, on, bg, bgimg, free_ink=None):
