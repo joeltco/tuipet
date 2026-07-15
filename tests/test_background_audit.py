@@ -114,3 +114,77 @@ def test_crossfade_retargets_from_the_visible_frame():
     shown = s._crossfade(b)
     back = s._crossfade(a)                          # flap back mid-fade
     assert _brightness(back) <= _brightness(shown) + 1
+
+
+# ---- the derived cloudy-night frame (background rebuild 2026-07-15) ----------
+# The shipped overcast frame is day-bright, so a clouded night looked like
+# noon ("it looks like day cloudy, because thats all we got" -- Joel).  Each
+# sheet with an open sky gets a cloudy-night frame derived from its OWN
+# pixels: night ground verbatim, the overcast texture posterized into dark
+# night-sky tones, the moon and stars covered.
+
+from tuipet import data
+
+
+def _cells(frame):
+    return [(int(r[i:i + 2], 16), int(r[i + 2:i + 4], 16), int(r[i + 4:i + 6], 16))
+            for r in frame for i in range(0, len(r), 6)]
+
+
+def test_every_open_sky_sheet_builds_and_the_windowless_fall_back():
+    bgs = data.load_backgrounds()
+    built, skipped = [], []
+    for key, frames in bgs.items():
+        if not frames or len(frames) <= 4:
+            continue
+        (built if theme.night_cloud_frame(key, frames) is not None
+         else skipped).append(key)
+    # City is a wall, Underwater has no sky -- everything else qualifies
+    assert sorted(skipped) == ["egg10Back", "egg7Back"], skipped
+    assert len(built) == 14, built
+
+
+def test_cloudy_night_keeps_the_ground_and_covers_the_stars():
+    bgs = data.load_backgrounds()
+    frames = bgs["egg1Back"]
+    nc = theme.night_cloud_frame("egg1Back", frames)
+    night = frames[3]
+    # the ground band is the night frame verbatim (no wash, no gray cast)
+    assert nc[-6:] == night[-6:]
+    # the moon is gone: no near-white cell survives anywhere in the frame
+    assert not [c for c in _cells(nc) if min(c) > 190], "moon/stars uncovered"
+    # and the sky is genuinely dark -- darker than the day frame's sky rows
+    def band(fr):
+        return sum(sum(c) for c in _cells(fr[:6])) / (6 * len(fr[0]) // 6)
+    assert band(nc) < band(frames[1]) * 0.75
+
+
+def test_cloudy_night_is_deterministic_and_cached():
+    bgs = data.load_backgrounds()
+    a = theme.night_cloud_frame("desert", bgs["desert"])
+    assert theme.night_cloud_frame("desert", bgs["desert"]) is a
+
+
+def test_night_cloudy_background_wears_the_derived_frame():
+    p = _pet(habitat=2, weather="Cloudy")         # Plains: an open-sky sheet
+    p.world_seconds = 1 * DAY_LENGTH / 24         # 1:00 -- deep night
+    assert p.day_phase == "night"
+    key = p.habitat_obj()["bg"]
+    frames = data.load_backgrounds()[key]
+    assert p.background() == theme.night_cloud_frame(key, frames)
+
+
+def test_night_precip_rides_the_same_dark_sky():
+    """Drizzling<->Cloudy at night must not flap between skies any more:
+    both stand on the derived frame (rain adds only its theme gloom)."""
+    p = _pet(habitat=2, weather="Drizzling")
+    p.world_seconds = 1 * DAY_LENGTH / 24
+    key = p.habitat_obj()["bg"]
+    frames = data.load_backgrounds()[key]
+    nc = theme.night_cloud_frame(key, frames)
+    assert p.background() == theme.weather_tint(nc, "Drizzling", "night")
+    # ...and a sheet with NO open sky keeps the classic night-frame pick
+    p2 = _pet(habitat=8, weather="Cloudy")        # Underwater
+    p2.world_seconds = 1 * DAY_LENGTH / 24
+    f2 = data.load_backgrounds()[p2.habitat_obj()["bg"]]
+    assert p2.background() == theme.weather_tint(f2[3], "Cloudy", "night")

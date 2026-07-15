@@ -447,6 +447,111 @@ def weather_tint(frame, weather, phase="day"):
     return frame
 
 
+# --- the cloudy-night frame (background rebuild 2026-07-15) -------------------
+# The sheets ship ONE overcast frame (index 4) and it is drawn day-bright, so
+# every clouded night wore a daytime sky -- "it looks like day cloudy, because
+# thats all we got" (Joel).  Rather than tint around it, each sheet gets a
+# DERIVED cloudy-night frame built from its own pixels, no hand-drawn art:
+#
+#   * ground rows  = the night frame verbatim (hills, town lights, lava);
+#   * the sky band = the overcast frame's cloud texture posterized to three
+#     dark tones mixed from THIS sheet's night-sky colour (so a Plains
+#     overcast stays navy and a Volcano one stays ember-warm);
+#   * the moon and stars are covered -- that is what an overcast night does.
+#
+# The horizon is read off the DAY+DUSK frames (terrain geometry is identical
+# across frames 0-3): a pixel is sky only when both agree it sits in the flat
+# sky field (the dusk vote splits the sea from the sky -- same blue by day,
+# only the sky goes sunset-orange), or when it is bright in both (the white
+# day clouds).  A sheet qualifies only if its night sky carries ISOLATED
+# bright dots -- real stars; a lit window is a bright REGION -- so City and
+# Underwater (no open sky) return None and keep their plain night frame.
+_NIGHT_CLOUDS = {}                 # sheet key -> derived frame | None
+_NC_GRAY = (150, 155, 165)         # storm gray the tones lean toward
+
+
+def _cell(fr, x, y):
+    row = fr[y]
+    return (int(row[x * 6:x * 6 + 2], 16), int(row[x * 6 + 2:x * 6 + 4], 16),
+            int(row[x * 6 + 4:x * 6 + 6], 16))
+
+
+def _luma(c):
+    return 0.299 * c[0] + 0.587 * c[1] + 0.114 * c[2]
+
+
+def _cdist(a, b):
+    return abs(a[0] - b[0]) + abs(a[1] - b[1]) + abs(a[2] - b[2])
+
+
+def _build_night_clouds(frames):
+    day, dusk, night, prec = frames[1], frames[2], frames[3], frames[4]
+    W, H = len(day[0]) // 6, len(day)
+    pix = sorted((_cell(night, x, y) for y in range(3) for x in range(W)),
+                 key=_luma)
+    dim = pix[:max(1, int(len(pix) * 0.6))]    # the flat sky, stars excluded
+    nsky = tuple(sum(c[i] for c in dim) / len(dim) for i in range(3))
+
+    def isdot(x, y):               # a star: bright dot on a darker field
+        c = _cell(night, x, y)
+        if _luma(c) <= _luma(nsky) + 55:
+            return False
+        return sum(1 for dx in (-1, 0, 1) for dy in (-1, 0, 1) if (dx or dy)
+                   and 0 <= x + dx < W and 0 <= y + dy < H
+                   and _luma(_cell(night, x + dx, y + dy)) < _luma(c) - 40) >= 4
+
+    if sum(isdot(x, y) for y in range(int(H * 0.4)) for x in range(W)) < 3:
+        return None                # no starfield -> no open sky to cloud over
+    dref = tuple(sum(_cell(day, x, y)[i] for y in range(2) for x in range(W))
+                 / (2 * W) for i in range(3))
+    uref = tuple(sum(_cell(dusk, x, y)[i] for y in range(2) for x in range(W))
+                 / (2 * W) for i in range(3))
+
+    def is_sky(x, y):
+        d, u = _cell(day, x, y), _cell(dusk, x, y)
+        return ((_cdist(d, dref) < 110 and _cdist(u, uref) < 110)
+                or (_luma(d) > _luma(dref) + 30 and _luma(u) > _luma(uref) - 15))
+
+    cap = int(H * 0.8)
+    raw = []
+    for x in range(W):
+        y = 0
+        while y < cap and is_sky(x, y):
+            y += 1
+        raw.append(y)
+    hor = [sorted(raw[max(0, x - 2):x + 3])[len(raw[max(0, x - 2):x + 3]) // 2]
+           for x in range(W)]      # median-of-5: no single-column streaks
+    cl = sorted(_luma(_cell(prec, x, y)) for y in range(6) for x in range(W))
+    t1, t2 = cl[len(cl) // 3], cl[2 * len(cl) // 3]
+
+    def tone(k, g):                # night-sky hue stepped up, pulled to gray
+        return tuple(min(255.0, nsky[i] * k + (_NC_GRAY[i] - nsky[i] * k) * g)
+                     for i in range(3))
+
+    tones = [tone(1.0, 0.22), tone(1.4, 0.38), tone(1.85, 0.5)]
+    out = []
+    for y in range(H):
+        cells = []
+        for x in range(W):
+            if y < hor[x]:
+                lp = _luma(_cell(prec, x, y))
+                c = tones[0 if lp <= t1 else (1 if lp <= t2 else 2)]
+                cells.append("%02x%02x%02x" % tuple(int(v) for v in c))
+            else:
+                cells.append(night[y][x * 6:(x + 1) * 6])
+        out.append("".join(cells))
+    return out
+
+
+def night_cloud_frame(key, frames):
+    """The sheet's derived cloudy-night frame (built once, cached), or None
+    when the sheet has no open sky (City's wall, Underwater)."""
+    if key not in _NIGHT_CLOUDS:
+        _NIGHT_CLOUDS[key] = (_build_night_clouds(frames)
+                              if frames and len(frames) > 4 else None)
+    return _NIGHT_CLOUDS[key]
+
+
 # --- persistence of the chosen theme ---
 _CONF = os.path.expanduser("~/.local/share/tuipet/theme.txt")
 

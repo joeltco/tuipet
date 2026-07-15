@@ -281,9 +281,9 @@ class TuiPetApp(App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("VOLUME THAT BITES: the slider now starts at 100 and each "
-                 "step down cuts real decibels - 50 is a genuine quarter of "
-                 "the old racket, 10 is a whisper. Set it by ear.")
+    WHATS_NEW = ("CLOUDY NIGHTS ARE NIGHTS: every habitat now has a real "
+                 "overcast night sky - dark clouds over its own night ground, "
+                 "moon tucked away. No more noon skies at midnight.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and

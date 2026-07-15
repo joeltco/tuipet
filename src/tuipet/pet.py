@@ -1959,14 +1959,27 @@ class Pet:
         rooms: the tournament/PvP arena) while keeping the same time/weather
         frame pick and tint."""
         if file is not None:
-            frames = data.load_backgrounds().get(file)
+            key = file
         else:
             h = (data.load_habitats().get(habitat_id) if habitat_id is not None
                  else self.habitat_obj()) or {}
-            frames = data.load_backgrounds().get(h.get("bg", ""))
+            key = h.get("bg", "")
+        frames = data.load_backgrounds().get(key)
         if not frames:
             return None
         ph = self.day_phase
+        # a clouded NIGHT wears the sheet's derived cloudy-night frame -- the
+        # shipped overcast frame is drawn day-bright and made every cloudy
+        # night look like noon (background rebuild 2026-07-15).  Cloudy shows
+        # it bare; rain/snow lay their theme gloom + the canon night deepening
+        # on it (without it a snow night washed out pale-gray).  Sheets with
+        # no open sky (City, Underwater) return None and keep the classic pick.
+        if ph == "night" and len(frames) > 4 and (
+                self.weather == "Cloudy" or self.weather in _PRECIP):
+            nc = theme.night_cloud_frame(key, frames)
+            if nc is not None:
+                return nc if self.weather == "Cloudy" else \
+                    theme.weather_tint(nc, self.weather, ph)
         if self.weather in _PRECIP and len(frames) > 4:
             idx = 4
         else:
