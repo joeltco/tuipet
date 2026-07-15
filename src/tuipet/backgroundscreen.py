@@ -58,7 +58,7 @@ class BackgroundPanel:
         # the chrome stands still
         from .render import marquee
         key = self.rows[self.cursor]
-        return (f"[b]▸{marquee(bgs.name(key), 13, self.frame_i // 2)}[/]"
+        return (f"[b]▸{marquee(bgs.name(key), 12, self.frame_i // 2)}[/]"
                 f" {self._tag(key)}"
                 f" {self.cursor + 1}/{len(self.rows)}"
                 f" [dim]←→ ENTER ESC[/]")

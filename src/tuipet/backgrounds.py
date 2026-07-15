@@ -10,7 +10,7 @@ ADVENTURE town events only.
 """
 from . import data
 
-DEFAULT = "forestgate"          # every save owns the catalog; this one starts picked
+DEFAULT = "greenhills"          # every save owns the catalog; this one starts picked
 
 # key -> (display name, price in bits; 0 = free).  ALL FREE for now (Joel
 # 2026-07-16: "get rid of the price walls") -- the price column stays so the
@@ -21,7 +21,10 @@ DEFAULT = "forestgate"          # every save owns the catalog; this one starts p
 # islands, desert, jungle, lakeside, mountains, cove, greenhills) stay in
 # backgrounds.json.gz as WORLD DATA -- adventure roads and special rooms may
 # wear them -- but they are not choosable home scenes (Joel 2026-07-16).
+# EXCEPTION: greenhills stays a pick -- it was the launch default and Joel
+# wants it ("where did the green hills go?!", 2026-07-16).
 CATALOG = {
+    "greenhills":   ("Green Hills", 0),
     "forestgate":   ("Forest Gate", 0),
     "flowerfield":  ("Flower Field", 0),
     "blossom":      ("Blossom Field", 0),
@@ -46,7 +49,7 @@ _DATA_NAMES = {
     "fileisland": "Lone Island", "islandsea": "Island Sea",
     "islandnight": "Island Night", "desert": "Desert", "jungle": "Jungle",
     "lakeside": "Lakeside", "mountains": "Mountains", "cove": "Cove",
-    "greenhills": "Green Hills", "townBack": "Town",
+    "townBack": "Town",
 }
 
 FREE = tuple(k for k, (_, p) in CATALOG.items() if p == 0)

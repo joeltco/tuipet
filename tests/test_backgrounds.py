@@ -35,7 +35,8 @@ def test_godzilla_range_is_data_not_picks():
     """The Godzilla-range tiles stay shipped (roads/special rooms wear them)
     but are not choosable home scenes (Joel 2026-07-16)."""
     sheets = data.load_backgrounds()
-    for key in ("city", "greenhills", "desert", "jungle", "factory",
+    # (greenhills is the one Godzilla-range EXCEPTION: launch default, kept)
+    for key in ("city", "desert", "jungle", "factory",
                 "fileisland", "boulevard", "mountains", "cove", "lakeside"):
         assert key not in bgs.CATALOG, key
         assert sheets.get(key), key                # ...but the art still ships
@@ -80,9 +81,9 @@ def test_the_pick_persists_and_old_picks_normalize():
     d = persistence.to_save_dict(p)
     p2, _ = persistence.pet_from_save(d, catch_up=False)
     assert p2.bg_current == "volcano"
-    # a save whose pick left the catalog (a 0.3.0 greenhills home, or a
-    # retired scene) resets to the default rather than wearing data-art
-    d["bg_current"] = "greenhills"
+    # a save whose pick left the catalog (a retired scene) resets to the
+    # default rather than wearing data-art
+    d["bg_current"] = "city"
     d["bg_owned"] = ["city", "volcano"]
     p3, _ = persistence.pet_from_save(d, catch_up=False)
     assert p3.bg_current == bgs.DEFAULT

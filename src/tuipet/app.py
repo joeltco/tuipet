@@ -266,10 +266,9 @@ class TuiPetApp(App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("SCENES REFINED: the gallery is now 14 hand-picked Digimon "
-                 "backdrops and every one is FREE - no price walls. (The "
-                 "kaiju-flavored tiles left the picker but still dress the "
-                 "adventure roads.)")
+    WHATS_NEW = ("GREEN HILLS IS BACK: it never should have left the gallery "
+                 "- it returns as a pick AND as the default home scene. "
+                 "Every scene stays free.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and
