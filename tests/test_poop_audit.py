@@ -95,3 +95,18 @@ def test_toilet_priority_home_before_portable():
     assert p._toilet_for_poop() == "i:83"
     p.inventory["i:83"] = 0
     assert p._toilet_for_poop() is None         # unstocked: the floor it is
+
+
+def test_sick_diarrhea_is_compressed_not_machine_gun():
+    """SickLapsePenaltyBM rides the x5 count compression (2026-07-15): a full
+    max-length illness hurries roughly one-to-two extra poops out of an awake
+    pet -- not canon-proportional's nine in five real minutes."""
+    from tuipet.pet import (MAX_SICK_LENGTH, SICK_LAPSE_MIN,
+                            SICK_LAPSE_PENALTY_BM)
+    p = _pet()
+    p.sick, p.sick_length = True, float(MAX_SICK_LENGTH * SICK_LAPSE_MIN)
+    per_lapse = p._poop_interval * SICK_LAPSE_PENALTY_BM \
+        / (p._phys().get("poop_limit", 64) * 5)
+    spell_total = per_lapse * MAX_SICK_LENGTH
+    assert 1.0 <= spell_total / p._poop_interval <= 2.0, \
+        "a max illness should hurry ~1-2 poops, not a stream"

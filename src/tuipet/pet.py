@@ -1212,9 +1212,15 @@ class Pet:
                 self._sick_pen_t = 0.0
                 for f in ("nutr_protein", "nutr_mineral", "nutr_vitamin"):
                     setattr(self, f, max(0, getattr(self, f) + SICK_NUTRITION_CHANGE))
+                # the diarrhea rides the x5 count compression (the PerfectWins
+                # precedent): canon's 48/64-per-lapse makes a real-time device
+                # poop every ~37 min sick -- proportional on tuipet's 60x clock
+                # that was a poop every ~30 REAL SECONDS, ~9 a spell (Joel's
+                # "why is my digimon shitting so much", 2026-07-15).  /5 lands
+                # 1-2 hurried poops per illness: the canon FEEL, playable.
                 self._poop_t = (getattr(self, "_poop_t", 0.0)
                                 + self._poop_interval * SICK_LAPSE_PENALTY_BM
-                                / max(1, self._phys().get("poop_limit", 64)))
+                                / max(1, self._phys().get("poop_limit", 64) * 5))
         if self.inj_length > 0:                           # injLapse: the injury heals over time
             self.inj_length = max(0.0, self.inj_length - _rec)
         if self.vitamin_lapse > 0:                        # vitaminLapse: protection wears off

@@ -280,10 +280,10 @@ class TuiPetApp(App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("GENTLER SETBACKS: an injury that gets worse now drags "
-                 "one recovery lapse longer (it used to pile on a whole "
-                 "new spell). But your pet remembers - a bad turn sours "
-                 "the hour it happened AND whatever caused it.")
+    WHATS_NEW = ("UNDER THE WEATHER, NOT UNDER SIEGE: a sick pet still "
+                 "gets the runs (clean up!), but 1-2 hurried poops per "
+                 "illness now - not nine. Babies are still poop machines "
+                 "though. That part is real. Keep the room clean.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and
