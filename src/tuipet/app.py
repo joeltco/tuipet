@@ -266,10 +266,10 @@ class TuiPetApp(App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("THE DEVICE SET RETURNS: Desert, Lakeside, Mountains and "
-                 "Cove rejoin Green Hills in the gallery - the real Digital "
-                 "Monster COLOR backgrounds, verified by the artbook logo "
-                 "sitting next to them on the sheet. 19 scenes, all free.")
+    WHATS_NEW = ("BATTLES FIGHT WHERE THEY STAND: a wild encounter on the "
+                 "road now battles in front of the biome you are crossing - "
+                 "dunes in the dunes, city in the city - instead of your "
+                 "home scene.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and

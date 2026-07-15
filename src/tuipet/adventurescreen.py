@@ -247,7 +247,7 @@ class AdventurePanel(menu.SubHost):
                 # battle screen (Joel 2026-07-07, Battle_Flash stays dead)
                 self.travelling = False
                 self._pending = (False, ev[1])
-                self.sub = BattlePanel(self.pet, ev[1], wild=True)
+                self.sub = BattlePanel(self.pet, ev[1], wild=True, scene=self._road_scene())
             elif ev and ev[0] == "boss":
                 # the GATE STOP (audit pass 4): the pass-1 faceoff never
                 # actually showed -- the battle opened the same frame.  Now
@@ -293,7 +293,7 @@ class AdventurePanel(menu.SubHost):
         if s["kind"] == "enemy":
             if s["t"] >= INV_REVEAL_T + 6:            # startle beat, then the ambush
                 self._pending = (False, s["thing"])
-                self.sub = BattlePanel(self.pet, s["thing"], wild=True)
+                self.sub = BattlePanel(self.pet, s["thing"], wild=True, scene=self._road_scene())
                 self._scene = None
         elif s["t"] >= INV_END_T:                     # carried home -> back on the road
             self._scene = None
@@ -491,7 +491,7 @@ class AdventurePanel(menu.SubHost):
                 and getattr(self.adv, "_boss", None):
             b = self.adv._boss
             self._pending = (True, b)
-            self.sub = BattlePanel(self.pet, b, wild=True)
+            self.sub = BattlePanel(self.pet, b, wild=True, scene=self._road_scene())
             return None
         if k == "space" and not self.adv.done:
             if not self.travelling:
@@ -728,6 +728,13 @@ class AdventurePanel(menu.SubHost):
         """The expedition's ONE biome (own-game law, Joel 2026-07-13: one biome
         per adventure, start to boss).  Weather tests monkeypatch this."""
         return self.adv.biome
+
+    def _road_scene(self):
+        """The road's scene KEY: a wild battle fights where it stands (the
+        biome travelled), not in front of the home pick."""
+        from . import backgrounds as bgs
+        bg_h = self._current_hab_id()
+        return bgs.biome_frame_key(bg_h) if bg_h is not None else None
 
     def _road_bg(self):
         """The expedition's ONE backdrop, held start to boss (own-game law,

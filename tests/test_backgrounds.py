@@ -134,3 +134,27 @@ def test_picker_panel_hangs_scenes():
     assert "Already up" in pan.msg
     done = pan.key("escape")
     assert done and done[0] == "done"
+
+
+def test_wild_battles_fight_on_the_road_scene(monkeypatch):
+    """Post-Simplification regression (audit 2026-07-16): the pet no longer
+    wears the biome, so a road battle must be TOLD where it stands -- a wild
+    fight in the dunes renders the desert, never the home pick."""
+    from tuipet.battlescreen import BattlePanel
+    from tuipet.pet import Pet
+    p = _pet()
+    seen = []
+    orig = Pet.background
+    monkeypatch.setattr(Pet, "background",
+                        lambda self, file=None:
+                        (seen.append(file), orig(self, file))[1])
+    pan = BattlePanel(p, {"name": "Wildmon", "num": 25, "hp": 5,
+                          "vaccine": 10, "data_power": 10, "virus": 10},
+                      wild=True, scene="desert")
+    pan.text()
+    assert seen and seen[-1] == "desert"
+    # a home battle (no scene, no arena flag) still keeps the picked scene
+    seen.clear()
+    pan2 = BattlePanel(p, None, wild=True)
+    pan2.text()
+    assert seen and seen[-1] is None

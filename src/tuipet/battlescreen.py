@@ -148,14 +148,15 @@ def _full(frame):
 
 
 class BattlePanel:
-    def __init__(self, pet, enemy=None, wild=False):
+    def __init__(self, pet, enemy=None, wild=False, scene=None):
         self.pet = pet
         self.wild = wild              # adventure PvE_Wild: Esc rolls canEscape, not surrender
-        # BackgroundAnim checkBack: tournament + PvP battles play in the ARENA
-        # (tourneyBack.png); wild + home battles keep the habitat scenery.  An
-        # opponent supplied non-wild is exactly those two (townscreen/
-        # tournamentscreen pass the bracket foe, the lobby passes the card).
+        # BackgroundAnim checkBack: tournament + PvP battles play in the
+        # ARENA; home battles keep the picked scene; adventure wilds pass
+        # the ROAD's biome scene via `scene` (post-Simplification: the pet
+        # no longer wears the biome, so the road says where the fight is).
         self.arena = enemy is not None and not wild
+        self.scene = scene
         self.battle = Battle(pet, enemy)
         self.frame_i = 0
         self.sel = 0
@@ -377,7 +378,9 @@ class BattlePanel:
         # applies -- without it the orb visibly parked in the 4px margins on
         # every fire beat (audit 2026-07-13)
         return menu.paint(placements,
-                          self.pet.background(file=_bgs.ARENA if self.arena else None),
+                          self.pet.background(
+                              file=self.scene if self.scene is not None
+                              else (_bgs.ARENA if self.arena else None)),
                           rows=ROWS, cols=COLS, overlay=overlay, clip=grid.WINDOW)
 
     def _place_one(self, view, rows, xshift=0):
