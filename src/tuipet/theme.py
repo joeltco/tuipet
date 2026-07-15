@@ -528,7 +528,9 @@ def _build_night_clouds(frames):
         return tuple(min(255.0, nsky[i] * k + (_NC_GRAY[i] - nsky[i] * k) * g)
                      for i in range(3))
 
-    tones = [tone(1.0, 0.22), tone(1.4, 0.38), tone(1.85, 0.5)]
+    # lightened one step from the first cut -- "the dark shading is too much,
+    # tone it down" (Joel 2026-07-15); still darker than any day sky
+    tones = [tone(1.35, 0.3), tone(1.8, 0.45), tone(2.3, 0.58)]
     out = []
     for y in range(H):
         cells = []
