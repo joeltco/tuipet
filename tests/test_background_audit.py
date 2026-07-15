@@ -188,3 +188,28 @@ def test_night_precip_rides_the_same_dark_sky():
     p2.world_seconds = 1 * DAY_LENGTH / 24
     f2 = data.load_backgrounds()[p2.habitat_obj()["bg"]]
     assert p2.background() == theme.weather_tint(f2[3], "Cloudy", "night")
+
+
+def test_cloudy_dawn_and_dusk_wear_their_own_overcast():
+    """A clouded dawn/dusk must not show a clean sunrise/sunset: each dark-sky
+    phase gets its own derived overcast frame -- its OWN ground band, clouds
+    ramped from its OWN sky colour (dawn goes slate, dusk goes ember-dark)."""
+    p = _pet(habitat=2, weather="Cloudy")
+    hr = DAY_LENGTH / 24
+    key = p.habitat_obj()["bg"]
+    frames = data.load_backgrounds()[key]
+    tri = p.habitat_obj()["times"][p.season]
+    p.world_seconds = (tri[0] + 1) * hr           # inside the dawn band
+    assert p.day_phase == "dawn"
+    assert p.background() == theme.night_cloud_frame(key, frames, "dawn")
+    p.world_seconds = (tri[2] - 0.5) * hr         # the sunset hour
+    assert p.day_phase == "dusk"
+    assert p.background() == theme.night_cloud_frame(key, frames, "dusk")
+    # each variant keeps ITS phase's ground rows verbatim
+    assert theme.night_cloud_frame(key, frames, "dawn")[-6:] == frames[0][-6:]
+    assert theme.night_cloud_frame(key, frames, "dusk")[-6:] == frames[2][-6:]
+    # the three variants are genuinely distinct skies
+    assert len({theme.night_cloud_frame(key, frames, ph)[0]
+                for ph in ("dawn", "dusk", "night")}) == 3
+    # day cloudy still rides canon: no variant exists for it
+    assert theme.night_cloud_frame(key, frames, "day") is None

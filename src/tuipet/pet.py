@@ -1968,15 +1968,17 @@ class Pet:
         if not frames:
             return None
         ph = self.day_phase
-        # a clouded NIGHT wears the sheet's derived cloudy-night frame -- the
-        # shipped overcast frame is drawn day-bright and made every cloudy
-        # night look like noon (background rebuild 2026-07-15).  Cloudy shows
-        # it bare; rain/snow lay their theme gloom + the canon night deepening
-        # on it (without it a snow night washed out pale-gray).  Sheets with
-        # no open sky (City, Underwater) return None and keep the classic pick.
-        if ph == "night" and len(frames) > 4 and (
+        # a clouded dark-sky phase (dawn/dusk/night) wears the sheet's derived
+        # overcast frame -- the shipped overcast frame is drawn day-bright and
+        # made every cloudy night look like noon, and a cloudy dawn/dusk
+        # showed a clean sunrise (background rebuild 2026-07-15).  Cloudy
+        # shows it bare; rain/snow lay their theme gloom + the canon phase
+        # cast on it (without the night deepening a snow night washed out
+        # pale-gray).  Sheets with no open sky (City, Underwater) return None
+        # and keep the classic pick.
+        if ph != "day" and len(frames) > 4 and (
                 self.weather == "Cloudy" or self.weather in _PRECIP):
-            nc = theme.night_cloud_frame(key, frames)
+            nc = theme.night_cloud_frame(key, frames, ph)
             if nc is not None:
                 return nc if self.weather == "Cloudy" else \
                     theme.weather_tint(nc, self.weather, ph)

@@ -281,9 +281,9 @@ class TuiPetApp(App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("SOFTER NIGHT CLOUDS: the overcast-night sky is repainted "
-                 "as soft rounded masses instead of hard-edged blobs - same "
-                 "dark palette, drawn like the rest of the scenery.")
+    WHATS_NEW = ("OVERCAST DAWNS AND DUSKS: cloudy mornings go slate, cloudy "
+                 "sunsets wear an ember deck with the glow peeking under it - "
+                 "every dark-sky hour now has real clouds, Volcano included.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and

@@ -466,8 +466,15 @@ def weather_tint(frame, weather, phase="day"):
 # day clouds).  A sheet qualifies only if its night sky carries ISOLATED
 # bright dots -- real stars; a lit window is a bright REGION -- so City and
 # Underwater (no open sky) return None and keep their plain night frame.
-_NIGHT_CLOUDS = {}                 # sheet key -> derived frame | None
+_NIGHT_CLOUDS = {}                 # (sheet key, phase) -> derived frame | None
 _NC_GRAY = (150, 155, 165)         # storm gray the tones lean toward
+# per-phase build params: base frame index, the sky-ref luma slice (night
+# drops the bright 40% -- stars; dawn/dusk drop BOTH tails -- the sun glow),
+# and the ramp endpoints (night sky is dark so clouds step UP toward gray;
+# dawn/dusk skies are bright so the overcast steps DOWN into them)
+_NC_PHASES = {"night": (3, 0.0, 0.6, (1.0, 0.22), (1.85, 0.5)),
+              "dawn": (0, 0.2, 0.8, (0.7, 0.3), (1.05, 0.45)),
+              "dusk": (2, 0.2, 0.8, (0.7, 0.3), (1.05, 0.45))}
 
 
 def _cell(fr, x, y):
@@ -484,8 +491,10 @@ def _cdist(a, b):
     return abs(a[0] - b[0]) + abs(a[1] - b[1]) + abs(a[2] - b[2])
 
 
-def _build_night_clouds(frames):
+def _build_night_clouds(frames, phase="night"):
     day, dusk, night, prec = frames[1], frames[2], frames[3], frames[4]
+    base_i, s_lo, s_hi, ramp_a, ramp_b = _NC_PHASES[phase]
+    base = frames[base_i]
     W, H = len(day[0]) // 6, len(day)
     pix = sorted((_cell(night, x, y) for y in range(3) for x in range(W)),
                  key=_luma)
@@ -502,15 +511,27 @@ def _build_night_clouds(frames):
 
     if sum(isdot(x, y) for y in range(int(H * 0.4)) for x in range(W)) < 3:
         return None                # no starfield -> no open sky to cloud over
-    dref = tuple(sum(_cell(day, x, y)[i] for y in range(2) for x in range(W))
-                 / (2 * W) for i in range(3))
-    uref = tuple(sum(_cell(dusk, x, y)[i] for y in range(2) for x in range(W))
-                 / (2 * W) for i in range(3))
+    if phase == "night":
+        psky = nsky                # the ramp anchors on the PHASE's own sky
+    else:
+        bpix = sorted((_cell(base, x, y) for y in range(3) for x in range(W)),
+                      key=_luma)
+        mid = bpix[int(len(bpix) * s_lo):max(1, int(len(bpix) * s_hi))]
+        psky = tuple(sum(c[i] for c in mid) / len(mid) for i in range(3))
+    # one reference per TOP ROW (0-2), not a single mean: gradient skies
+    # (Volcano's red haze) sit too far from a flat average and read as
+    # ground, leaving the deck 0 rows tall (dawn/dusk sweep 2026-07-15)
+    drefs = [tuple(sum(_cell(day, x, r)[i] for x in range(W)) / W
+                   for i in range(3)) for r in range(3)]
+    urefs = [tuple(sum(_cell(dusk, x, r)[i] for x in range(W)) / W
+                   for i in range(3)) for r in range(3)]
 
     def is_sky(x, y):
         d, u = _cell(day, x, y), _cell(dusk, x, y)
-        return ((_cdist(d, dref) < 110 and _cdist(u, uref) < 110)
-                or (_luma(d) > _luma(dref) + 30 and _luma(u) > _luma(uref) - 15))
+        return ((any(_cdist(d, rf) < 150 for rf in drefs)
+                 and any(_cdist(u, rf) < 150 for rf in urefs))
+                or (_luma(d) > _luma(drefs[0]) + 30
+                    and _luma(u) > _luma(urefs[0]) - 15))
 
     cap = int(H * 0.8)
     raw = []
@@ -521,9 +542,11 @@ def _build_night_clouds(frames):
         raw.append(y)
     hor = [sorted(raw[max(0, x - 2):x + 3])[len(raw[max(0, x - 2):x + 3]) // 2]
            for x in range(W)]      # median-of-5: no single-column streaks
+    if sorted(hor)[W // 2] < 3:
+        return None                # no usable sky band -> keep the plain frame
 
-    def tone(k, g):                # night-sky hue stepped up, pulled to gray
-        return tuple(min(255.0, nsky[i] * k + (_NC_GRAY[i] - nsky[i] * k) * g)
+    def tone(k, g):                # phase-sky hue re-leveled, pulled to gray
+        return tuple(min(255.0, psky[i] * k + (_NC_GRAY[i] - psky[i] * k) * g)
                      for i in range(3))
 
     # The first cut snapped the cloud texture into three flat tones and the
@@ -546,7 +569,7 @@ def _build_night_clouds(frames):
             blur[y][x] = s / n
     vals = sorted(blur[y][x] for y in range(6) for x in range(W))
     lo, hi = vals[int(len(vals) * 0.05)], vals[int(len(vals) * 0.95)]
-    A, B = tone(1.0, 0.22), tone(1.85, 0.5)
+    A, B = tone(*ramp_a), tone(*ramp_b)
     out = []
     for y in range(H):
         cells = []
@@ -556,18 +579,21 @@ def _build_night_clouds(frames):
                 c = tuple(A[i] + (B[i] - A[i]) * t for i in range(3))
                 cells.append("%02x%02x%02x" % tuple(int(v) for v in c))
             else:
-                cells.append(night[y][x * 6:(x + 1) * 6])
+                cells.append(base[y][x * 6:(x + 1) * 6])
         out.append("".join(cells))
     return out
 
 
-def night_cloud_frame(key, frames):
-    """The sheet's derived cloudy-night frame (built once, cached), or None
-    when the sheet has no open sky (City's wall, Underwater)."""
-    if key not in _NIGHT_CLOUDS:
-        _NIGHT_CLOUDS[key] = (_build_night_clouds(frames)
-                              if frames and len(frames) > 4 else None)
-    return _NIGHT_CLOUDS[key]
+def night_cloud_frame(key, frames, phase="night"):
+    """The sheet's derived overcast frame for a dark-sky phase (built once
+    per phase, cached), or None when the sheet has no open sky (City's wall,
+    Underwater) or the phase has no variant (day rides canon)."""
+    if phase not in _NC_PHASES:
+        return None
+    if (key, phase) not in _NIGHT_CLOUDS:
+        _NIGHT_CLOUDS[(key, phase)] = (_build_night_clouds(frames, phase)
+                                       if frames and len(frames) > 4 else None)
+    return _NIGHT_CLOUDS[(key, phase)]
 
 
 # --- persistence of the chosen theme ---
