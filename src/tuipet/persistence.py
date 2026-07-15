@@ -854,6 +854,10 @@ def pet_from_save(data, catch_up=True, strict=False):
     # the Great Simplification (2026-07-15): a pre-rebuild save carries the
     # retired habitat economy -- refund every PURCHASED home at full price
     # (the starter pair 0/2 came free) and start on the default scene
+    from . import backgrounds as _bgs
+    if getattr(pet, "bg_current", None) not in _bgs.CATALOG:
+        pet.bg_current = _bgs.DEFAULT      # an off-catalog pick (retired scene) resets
+    pet.bg_owned = [k for k in getattr(pet, "bg_owned", []) if k in _bgs.CATALOG]
     if "bg_owned" not in data and isinstance(data.get("habitats"), list):
         from . import data as _data
         habs = _data.load_habitats()

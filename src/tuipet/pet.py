@@ -935,8 +935,8 @@ class Pet:
     element: str = ""
     # the scene behind the mon is a PICKED COSMETIC (the Great Simplification,
     # 2026-07-15: weather/temperature/habitat/day-night all removed -- Joel:
-    # "its too much").  Every save owns the free catalog tier; fancy ones cost bits.
-    bg_current: str = "greenhills"
+    # "its too much").  The whole catalog is free for now (2026-07-16).
+    bg_current: str = "forestgate"
     bg_owned: list = _dcf(default_factory=list)   # PURCHASED keys (free tier implied)
     x_antibody: str = "None"
     effect_id: int = -1            # active care effect (careEffect.csv id; -1 = none)

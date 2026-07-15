@@ -25,10 +25,20 @@ def test_every_catalog_scene_ships_a_frame():
         assert len(fr) == 24 and all(len(r) == 240 for r in fr), key
 
 
-def test_the_free_shelf_and_the_priced_tiers():
-    assert len(bgs.FREE) >= 6                       # a real starter shelf
-    assert bgs.DEFAULT in bgs.FREE
-    assert all(0 < bgs.price(k) for k in bgs.CATALOG if k not in bgs.FREE)
+def test_the_whole_catalog_is_free_for_now():
+    # Joel 2026-07-16: price walls removed (the price column stays for later)
+    assert set(bgs.FREE) == set(bgs.CATALOG)
+    assert bgs.DEFAULT in bgs.CATALOG
+
+
+def test_godzilla_range_is_data_not_picks():
+    """The Godzilla-range tiles stay shipped (roads/special rooms wear them)
+    but are not choosable home scenes (Joel 2026-07-16)."""
+    sheets = data.load_backgrounds()
+    for key in ("city", "greenhills", "desert", "jungle", "factory",
+                "fileisland", "boulevard", "mountains", "cove", "lakeside"):
+        assert key not in bgs.CATALOG, key
+        assert sheets.get(key), key                # ...but the art still ships
 
 
 def test_town_survives_for_adventures_only():
@@ -48,35 +58,35 @@ def test_every_zone_biome_wears_a_real_scene():
 def test_background_returns_the_picked_scene():
     p = _pet()
     assert p.background() == data.load_backgrounds()[bgs.DEFAULT][0]
-    p.bg_current = "city"
-    assert p.background() == data.load_backgrounds()["city"][0]
+    p.bg_current = "underwater"
+    assert p.background() == data.load_backgrounds()["underwater"][0]
     assert p.background(file="volcano") == data.load_backgrounds()["volcano"][0]
+    # off-catalog data scenes still render when a road asks by file
+    assert p.background(file="city") == data.load_backgrounds()["city"][0]
     assert p.background(file="nope") is None
 
 
 def test_free_scenes_hang_without_paying():
     p = _pet(bits=0)
-    assert p.owns_background("city")
-    assert "it is" in p.pick_background("city")
-    assert p.bg_current == "city" and p.bits == 0
+    assert p.owns_background("volcano")
+    assert "it is" in p.pick_background("volcano")
+    assert p.bg_current == "volcano" and p.bits == 0
+    assert p.pick_background("city") == "?"          # off-catalog: not a pick
 
 
-def test_fancy_scenes_cost_bits_and_stay_bought():
-    p = _pet(bits=1000)
-    price = bgs.price("volcano")
-    assert price > 0
-    assert "Bought" in p.buy_background("volcano")
-    assert p.bits == 1000 - price
-    assert p.bg_current == "volcano" and "volcano" in p.bg_owned
-    # broke pets window-shop
-    q = _pet(bits=0)
-    assert p.buy_background("volcano") != "Not enough bits."   # owned: re-buy refuses politely
-    assert "Not enough bits" in q.buy_background("volcano")
-    assert q.bg_current == bgs.DEFAULT
-    # ownership persists the pick across saves
+def test_the_pick_persists_and_old_picks_normalize():
+    p = _pet()
+    p.pick_background("volcano")
     d = persistence.to_save_dict(p)
     p2, _ = persistence.pet_from_save(d, catch_up=False)
-    assert p2.bg_current == "volcano" and "volcano" in p2.bg_owned
+    assert p2.bg_current == "volcano"
+    # a save whose pick left the catalog (a 0.3.0 greenhills home, or a
+    # retired scene) resets to the default rather than wearing data-art
+    d["bg_current"] = "greenhills"
+    d["bg_owned"] = ["city", "volcano"]
+    p3, _ = persistence.pet_from_save(d, catch_up=False)
+    assert p3.bg_current == bgs.DEFAULT
+    assert p3.bg_owned == ["volcano"]
 
 
 def test_old_saves_get_their_habitat_bits_back():
@@ -102,16 +112,15 @@ def test_old_saves_get_their_habitat_bits_back():
     assert p3.bits == 42 and "refunded" not in (msg3 or "")
 
 
-def test_picker_panel_buys_and_hangs():
+def test_picker_panel_hangs_scenes():
     from tuipet.backgroundscreen import BackgroundPanel
-    p = _pet(bits=5000)
+    p = _pet()
     pan = BackgroundPanel(p)
     assert "here" in pan.strip()
-    target = pan.rows.index("volcano")
-    pan.cursor = target
+    pan.cursor = pan.rows.index("volcano")
     pan.key("enter")
     assert p.bg_current == "volcano"
-    assert "Bought" in pan.msg
+    assert "it is" in pan.msg
     pan.key("enter")
     assert "Already up" in pan.msg
     done = pan.key("escape")

@@ -2,47 +2,51 @@
 
 Habitats, weather, temperature and the day/night cycle are gone (Joel: "its
 too much") -- the scene behind the mon is now a PICKED COSMETIC.  The art is
-official Digimon location art (the DSprite rip set, Joel-approved source
-2026-07-15), cropped top-and-bottom to the 40x24 LCD.  Basic backgrounds are
-free; the fancy ones cost bits.  `townBack` is not in the catalog: it
-survives for ADVENTURE town events only.
+official location art (the DSprite rip set, Joel-approved source
+2026-07-15; picker = the Xross range, Godzilla range = world data only,
+2026-07-16), cropped top-and-bottom to the 40x24 LCD.  Every catalog scene
+is FREE for now.  `townBack` is not in the catalog: it survives for
+ADVENTURE town events only.
 """
 from . import data
 
-DEFAULT = "greenhills"          # every save owns the free set; this one starts picked
+DEFAULT = "forestgate"          # every save owns the catalog; this one starts picked
 
-# key -> (display name, price in bits; 0 = free)
+# key -> (display name, price in bits; 0 = free).  ALL FREE for now (Joel
+# 2026-07-16: "get rid of the price walls") -- the price column stays so the
+# walls can return without a schema change.
+#
+# The picker offers the XROSS-range tiles only.  The GODZILLA-range tiles
+# (DSprite's own select marks BG 14-47 "Godzilla": the cityscapes, factory,
+# islands, desert, jungle, lakeside, mountains, cove, greenhills) stay in
+# backgrounds.json.gz as WORLD DATA -- adventure roads and special rooms may
+# wear them -- but they are not choosable home scenes (Joel 2026-07-16).
 CATALOG = {
-    "greenhills":   ("Green Hills", 0),
-    "city":         ("City", 0),
-    "desert":       ("Desert", 0),
-    "flowerfield":  ("Flower Field", 0),
-    "lakeside":     ("Lakeside", 0),
     "forestgate":   ("Forest Gate", 0),
-    "jungle":       ("Jungle", 0),
-    "boulevard":    ("Boulevard", 0),
-    "islandsea":    ("Island Sea", 200),
-    "cityday":      ("White City", 200),
-    "mountains":    ("Mountains", 200),
-    "factory":      ("Factory", 200),
-    "blossom":      ("Blossom Field", 300),
-    "cove":         ("Cove", 300),
-    "boulevardusk": ("Boulevard Dusk", 300),
-    "baybridge":    ("Bay Bridge", 300),
-    "fileisland":   ("File Island", 400),
-    "citysunset":   ("City Sunset", 400),
-    "goldenwood":   ("Golden Wood", 400),
-    "seafloor":     ("Seafloor", 400),
-    "factorynight": ("Factory Night", 500),
-    "tealhollow":   ("Teal Hollow", 500),
-    "islandnight":  ("Island Night", 600),
-    "moonmeadow":   ("Moonlit Meadow", 600),
-    "sunsetshore":  ("Sunset Shore", 600),
-    "bridgenight":  ("Bridge Night", 600),
-    "underwater":   ("Underwater", 800),
-    "datatunnel":   ("Data Tunnel", 800),
-    "volcano":      ("Volcano", 800),
-    "frozenpeak":   ("Frozen Peak", 800),
+    "flowerfield":  ("Flower Field", 0),
+    "blossom":      ("Blossom Field", 0),
+    "goldenwood":   ("Golden Wood", 0),
+    "tealhollow":   ("Teal Hollow", 0),
+    "moonmeadow":   ("Moonlit Meadow", 0),
+    "underwater":   ("Underwater", 0),
+    "seafloor":     ("Seafloor", 0),
+    "volcano":      ("Volcano", 0),
+    "sunsetshore":  ("Sunset Shore", 0),
+    "baybridge":    ("Bay Bridge", 0),
+    "bridgenight":  ("Bridge Night", 0),
+    "datatunnel":   ("Data Tunnel", 0),
+    "frozenpeak":   ("Frozen Peak", 0),
+}
+
+# names for the off-catalog data scenes (roads, special rooms, old picks)
+_DATA_NAMES = {
+    "city": "City", "cityday": "White City", "citysunset": "City Sunset",
+    "boulevard": "Boulevard", "boulevardusk": "Boulevard Dusk",
+    "factory": "Factory", "factorynight": "Factory Night",
+    "fileisland": "Lone Island", "islandsea": "Island Sea",
+    "islandnight": "Island Night", "desert": "Desert", "jungle": "Jungle",
+    "lakeside": "Lakeside", "mountains": "Mountains", "cove": "Cove",
+    "greenhills": "Green Hills", "townBack": "Town",
 }
 
 FREE = tuple(k for k, (_, p) in CATALOG.items() if p == 0)
@@ -78,7 +82,9 @@ def biome_frame_key(hid):
 
 
 def name(key):
-    return CATALOG.get(key, (key, 0))[0]
+    if key in CATALOG:
+        return CATALOG[key][0]
+    return _DATA_NAMES.get(key, key)
 
 
 def price(key):
