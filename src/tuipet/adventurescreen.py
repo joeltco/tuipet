@@ -152,9 +152,6 @@ class AdventurePanel(menu.SubHost):
         if self.sub_anim():          # SubHost: delegate + sfx bubble
             return
         self.frame_i += 1
-        # weather: the live-ticking sim owns it now (pet._update_weather runs
-        # on the road with pet.habitat = the worn biome; the old panel-side
-        # _roll_weather double-rolled once adventures ticked, 2026-07-13)
         if self._refuse_t:
             self._refuse_t -= 1
         if self._trans is not None:

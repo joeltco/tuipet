@@ -53,7 +53,7 @@ ENC_C = 7000.0                       # RandomEncounterChance
 NIGHT_COEFF = 2.0                    # RandomEncounterNightCoefficient (-C/coeff)
 WALK_COEFF = 2.0                     # RandomEncounterWalkCoefficient  (+C/coeff)
 _CHANCE_DAY = ENC_C + ENC_C / WALK_COEFF                       # 10500 -> 1/10500 per tick
-_CHANCE_NIGHT = ENC_C - ENC_C / NIGHT_COEFF + ENC_C / WALK_COEFF  # 7000 -> 1/7000 (1.5x day)
+# (the 1.5x night encounter rate retired with the day/night system, v0.3.0)
 TRAVEL_ENERGY_DEC_MAX_COEFF = 80     # TravelEnergyDecMaxCoefficient
 TRAVEL_ENERGY_DEC = 1                # TravelEnergyDec
 TRAVEL_CALORIE_DEC = 1               # TravelCalorieDec
@@ -63,7 +63,6 @@ WALK_STEP_MIN = 9                    # WalkStepMin: controller fires per locatio
 # may spot something off the path -- investigate for a zone-pool find, at the
 # risk that 1 in InvestigateEnemyChance it's an ambush instead
 INVESTIGATE_CHANCE = 30000           # InvestigateChance (roll seed, per controller fire)
-INVESTIGATE_NIGHT = 15000            # InvestigateNightFactor (rarer at night)
 INVESTIGATE_WALK = -5000             # InvestigateWalkFactor (walking spots more)
 INVESTIGATE_ENEMY_CHANCE = 3         # InvestigateEnemyChance: nextInt(3)==0 -> ambush
 TRAVEL_EXERCISE_LIMIT = 4            # TravelExerciseChangeLimit: walking tops effort up to 4
@@ -167,7 +166,7 @@ class Adventure:
         name, so Cliffside Approach looks like cliffs and Skyfall Pass like
         the sky (12 distinct biomes across the world).  Unnamed/synthetic
         zones fall back to the dominant span terrain, then the gate span,
-        then the home habitat."""
+        then Plains."""
         habs = data.load_habitats()
         authored = ZONE_BIOME.get((self.maps[self.mi].get("map"),
                                    self.zone.get("zone")))
