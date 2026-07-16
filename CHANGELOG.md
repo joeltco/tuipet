@@ -3,6 +3,10 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.4.9 — 2026-07-16
+
+THE FEED MENU GOES ON THE LCD: picking meat or pill is now the canon on-screen icon menu — the meat drumstick above the pill capsule, a cursor arrow on the left pointing at your choice — drawn right on the LCD like the original hardware, instead of a text list. The glyphs are the exact bitmaps from the source. (Feeding was the only care action still using a word menu while training and battle drew graphically; now they match.)
+
 ## 0.4.8 — 2026-07-16
 
 A DEEP AUDIT PASS (round 3): corrupt or foreign saves are rejected instead of crash-looping the sim, and a damaged save can no longer let a stale cloud copy destroy your good backup. Crest eggs are buyable again so armor evolutions work; feeding plays its eat animation; sitting in a menu no longer builds up unanswerable care calls; the sleeping pill turns the lights off; a fresh start no longer auto-picks your egg. Online: the raid stage multiplier is server-verified against your species (no more forged x20), a rage-quit mid-battle now credits the winner, private rooms stay private across a reconnect, jogress needs both players' consent, and a raft of type-confusion crashes on the relay are guarded.

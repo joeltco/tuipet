@@ -68,9 +68,16 @@ def _walk(panel, keys, renders=6):
 def test_feed_panel_renders_every_selection():
     from tuipet.feedscreen import FeedPanel, ROWS_MENU
     pan = FeedPanel(_pet())
+    seen = []
     for _ in range(len(ROWS_MENU)):
-        assert pan.text() is not None
+        t = _render(pan)                       # canon on-LCD icon scene, within budget
+        assert any(ch in t.plain for ch in "▀▄█"), "feed menu drew no pixels"
+        # half-block cells are all the same glyph -- the cursor shows as a
+        # COLOUR span, so fingerprint the styled spans, not the plain text
+        seen.append([(s.start, s.end, str(s.style)) for s in t.spans])
         pan.key("down")
+    # the cursor row moves between meat and pill -> the two scenes differ
+    assert seen[0] != seen[1], "feed cursor did not move between meat and pill"
 def test_shop_panel_renders_shop_and_bag():
     from tuipet.shopscreen import ShopPanel
     pan = ShopPanel(_pet())

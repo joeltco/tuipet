@@ -246,11 +246,10 @@ class TuiPetApp(App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("A DEEP AUDIT PASS: corrupt saves can't crash you or wipe "
-                 "your backup, crest eggs are back in the shop (armor "
-                 "evolutions live again), feeding plays its animation, sitting "
-                 "in a menu no longer racks up care mistakes, and the lobby "
-                 "closes a fistful of cheats and privacy leaks.")
+    WHATS_NEW = ("THE FEED MENU GOES ON THE LCD: choosing meat or pill is now "
+                 "the canon icon picker — a little drumstick over a capsule "
+                 "with a cursor arrow, drawn right on the screen like the "
+                 "original, instead of a text list.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07)
@@ -938,6 +937,7 @@ class TuiPetApp(App):
         on_frame -- the two hand-rolled dispatches drifted; audit 2026-07)."""
         table = ((training.TrainingPanel, self._status_training),
                  (battlescreen.BattlePanel, self._status_battle),
+                 (feedscreen.FeedPanel, self._status_feed),
                  (backgroundscreen.BackgroundPanel, self._status_background))
         for cls, painter in table:
             if isinstance(self.mode, cls):
@@ -1013,6 +1013,29 @@ class TuiPetApp(App):
             hint = ("SPACE lock the bar" if getattr(m, "phase", "") == "ready"
                     else "SPACE  skip")
             lines += [f"[dim]{(m.hud_note or '')[:24]}[/]", "", f"[dim]{hint}[/]"]
+        self.stats_w.update("\n".join(lines))
+
+    def _status_feed(self):
+        """Feed-menu readout: the LCD carries the meat/pill icons, this card
+        carries the words (canon splits picture from text, like the picker)."""
+        p, m, T = self.pet, self.mode, theme
+        self.stats_w.border_subtitle = _gen_subtitle(p)
+        div = f"[dim]{'─' * 26}[/]"
+
+        def opt(i, label, effect):
+            mark = "▸" if m.cursor == i else " "
+            style = "b" if m.cursor == i else "dim"
+            return f"[{style}]{mark} {label:<5}[/] [dim]{effect}[/]"
+
+        lines = [
+            f"[b]{p.name[:14]}[/] [dim]· feed[/]", div,
+            f"Hunger   {hearts(p.hunger)}",
+            f"Effort   {hearts(p.strength)}",
+            f"Energy   {bar(p.energy_pct() * 100, 11, T.ENERGY)}",
+            div,
+            opt(0, "Meat", "fills the belly"),
+            opt(1, "Pill", "mends & fuels"),
+        ]
         self.stats_w.update("\n".join(lines))
 
     def _status_eat(self):
