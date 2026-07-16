@@ -791,12 +791,20 @@ def write_save_dict(data, path=None):
 
 
 def local_saved_at(path=None):
-    """The _saved_at of the on-disk save, or 0.0 if there's no readable save."""
+    """The freshest _saved_at across the main save AND its .bak, or 0.0 if
+    neither is readable.  Reading ONLY the main meant a CORRUPT main returned
+    0.0, so a stale cloud save won the startup pull and the write rotated the
+    (still-good) .bak away -- silent save loss (round-3 audit 2026-07-16).
+    load() falls back to the .bak, so the .bak is a real local generation and
+    must count in the cloud-vs-local comparison."""
     path = path or SAVE_PATH
-    try:
-        return float(json.load(open(path)).get("_saved_at") or 0.0)
-    except (ValueError, OSError, TypeError):
-        return 0.0
+    best = 0.0
+    for candidate in (path, path + ".bak"):
+        try:
+            best = max(best, float(json.load(open(candidate)).get("_saved_at") or 0.0))
+        except (ValueError, OSError, TypeError):
+            continue
+    return best
 
 
 def pet_from_save(data, catch_up=True, strict=False):
@@ -848,10 +856,21 @@ def pet_from_save(data, catch_up=True, strict=False):
                         ("total_minutes", (int, float)),
                         ("stage_minutes", (int, float)),
                         ("care_mistakes", (int, float)),
+                        # the v0.4.4 sim fields: a string here sailed past the
+                        # gate and crashed _sim_minute's float-compare / list ops
+                        # on the first tick (round-3 audit 2026-07-16)
+                        ("wake_until", (int, float)),
+                        ("full_until", (int, float)),
+                        ("auto_clean_until", (int, float)),
+                        ("call_latched", list),
                         ("stage", str), ("attribute", str),
                         ("inventory", dict), ("poop_sizes", list)):
         if not isinstance(getattr(pet, fname), want):
             return None, ""
+    # call_latched carries meter NAMES; a list of the wrong element type still
+    # breaks the per-meter latch logic -> keep only known meter tokens
+    pet.call_latched = [m for m in pet.call_latched
+                        if m in ("hunger", "strength")]
     msg = migrated
     from . import backgrounds as _bgs
     _cur = getattr(pet, "bg_current", None)

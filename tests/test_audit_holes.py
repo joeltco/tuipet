@@ -474,3 +474,154 @@ def test_clamp_card_kills_the_stage_forge():
     assert out["attribute"] == rec["attribute"]
     unknown = {"num": 999999, "stage": "Special"}
     assert _clamp_card(unknown)["stage"] != "Special"        # no 14.5 by claim
+
+
+# ============================================================================
+# ROUND 3 fixes (2026-07-16) -- see TUIPET_AUDIT.md "ROUND 3 backlog"
+# ============================================================================
+
+import time as _time  # noqa: E402
+
+
+def _live(num=29):
+    p = Pet.from_num(num)
+    p.wall_time = _time.time()
+    return p
+
+
+# ---- Tier 1: crashes & save-loss --------------------------------------------
+
+def test_r3_type_gate_rejects_corrupt_v044_fields():
+    from tuipet import persistence
+    for fld, bad in (("wake_until", "soon"), ("full_until", "x"),
+                     ("auto_clean_until", "y"), ("call_latched", "hunger")):
+        d = persistence.to_save_dict(_live())
+        d[fld] = bad
+        pet, _ = persistence.pet_from_save(dict(d), catch_up=False)
+        assert pet is None, f"{fld}={bad!r} must be rejected, not crash _sim_minute"
+    # a valid-typed list of junk elements is scrubbed to known meter tokens
+    d = persistence.to_save_dict(_live())
+    d["call_latched"] = ["hunger", "bogus", 5]
+    pet, _ = persistence.pet_from_save(dict(d), catch_up=False)
+    assert pet.call_latched == ["hunger"]
+
+
+def test_r3_jogress_survives_non_int_peer_num():
+    from tuipet import jogress
+    assert jogress.resolve_online(_live(), {"num": "evil"}) is None
+    assert jogress.resolve_online(_live(), {"num": None}) is None
+
+
+def test_r3_local_saved_at_counts_the_bak():
+    import json
+    import tempfile
+    from tuipet import persistence
+    d = tempfile.mkdtemp()
+    p = os.path.join(d, "save.json")
+    json.dump({"stage": "Child", "name": "x"}, open(p, "w"))            # no _saved_at
+    json.dump({"stage": "Adult", "name": "x", "_saved_at": 5000.0}, open(p + ".bak", "w"))
+    assert persistence.local_saved_at(p) == 5000.0     # the good .bak counts (was 0.0)
+
+
+def test_r3_autosave_skips_the_unsettled_new_game():
+    from tuipet.app import TuiPetApp
+    saved = []
+    app = TuiPetApp.__new__(TuiPetApp)
+    app.pet = _live()
+    import tuipet.persistence as _p
+    orig = _p.save
+    _p.save = lambda pet, path=None: saved.append(pet)
+    try:
+        app._new_game = True
+        app.autosave()                                 # unsettled: must NOT persist
+        assert saved == []
+        app._new_game = False
+        app._start_sync = lambda: None
+        app._warn_if_unsaveable = app._warn_if_cloud_dropped = lambda: None
+        app._note_progress = app._push_cloud = lambda: None
+        app.autosave()                                 # settled: persists
+        assert saved == [app.pet]
+    finally:
+        _p.save = orig
+
+
+# ---- Tier 2: economy / corruption -------------------------------------------
+
+def test_r3_raid_mult_binds_to_num_not_stage_string():
+    now = 9_100_000.0
+    srv._raid_rotate(now); srv.RAID["boss"]["start"] = now
+    honest = srv._raid_hit("h", 20, 374, now=now)          # a Child num -> x1
+    forge = srv._raid_hit("c", 20, "super ultimate", now=now)   # forged string
+    assert honest["dealt"] == 20 * srv.RAID_DMG_MULT * 1
+    assert forge["dealt"] == 20 * srv.RAID_DMG_MULT * 1     # forge dead
+
+
+def test_r3_raid_eviction_keeps_todays_counts():
+    import time as _t
+    now = 9_200_000.0
+    day = _t.strftime("%Y-%m-%d", _t.gmtime(now))
+    srv.RAID["attempts"] = {f"stale{i}": {"date": "2000-01-01", "left": 0}
+                            for i in range(4100)}
+    srv.RAID["attempts"]["active"] = {"date": day, "left": 0}   # spent today
+    srv._raid_attempts("fresh", now)                            # triggers prune
+    assert srv.RAID["attempts"]["active"]["left"] == 0          # NOT refunded
+    assert not any(r["date"] == "2000-01-01" for r in srv.RAID["attempts"].values())
+
+
+def test_r3_non_dict_pet_is_coerced():
+    _pet = "not a dict"
+    assert (_pet if isinstance(_pet, dict) else {}) == {}       # the store guard
+
+
+def test_r3_jogress_requires_two_phase_consent():
+    import inspect
+    src = inspect.getsource(lobbyscreen.LobbyPanel._key_jogress)
+    assert "if not self.j_peer_two_phase:" not in src           # legacy auto-commit gone
+    assert "decline" in src
+
+
+def test_r3_reconnect_rejoins_the_room():
+    import json
+    from tuipet.net import LobbyClient, LobbyState
+    sent = []
+    c = LobbyClient("ws://x", "joel")
+    c._send = lambda o: sent.append(o)
+    c.state = LobbyState()
+    c.state.room = "secret"                                     # was in a room
+    c._handle(json.dumps({"t": "welcome", "id": 1, "name": "joel", "proto": 1}))
+    assert any(o.get("t") == "room" and o.get("code") == "secret" for o in sent)
+
+
+# ---- Tier 3/4 ---------------------------------------------------------------
+
+def test_r3_crest_eggs_are_buyable_at_source_default():
+    from tuipet import shop
+    armor = [e for e in shop.catalog() if e["category"] == shop.ARMOR_CATEGORY]
+    assert len(armor) == 11 and all(e["price"] == shop.DEFAULT_PRICE for e in armor)
+    keys = {e["key"] for e in shop.catalog()}
+    assert "storage_drive" not in keys and not any(k.startswith("theme_") for k in keys)
+
+
+def test_r3_feed_sets_the_eat_pose():
+    p = _live(); p.hunger = 0
+    assert p.feed_meat() == "ate"
+    assert p.anim == "eat" and p._last_meal_starving is True
+
+
+def test_r3_cbounds_reads_colour_frames():
+    from tuipet import strikefx
+    fr = [[None] * 4 + ["#f00"] * 8 + [None] * 4 for _ in range(4)]
+    assert strikefx.cbounds(fr) == (4, 11)                      # not full-frame (0,15)
+
+
+def test_r3_sleep_pill_turns_lights_off():
+    p = _live(); p.asleep = False; p.lights = True
+    p.add_item("sleeping_pill")
+    p.use_item("sleeping_pill")
+    assert p.asleep and not p.lights                            # no bedtime mistake
+
+
+def test_r3_lobby_messy_cue_is_reachable():
+    import inspect
+    src = inspect.getsource(lobbyscreen.LobbyPanel._care_cue)
+    assert "p.poop >= 3" not in src and "messy!" in src

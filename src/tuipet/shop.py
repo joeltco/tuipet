@@ -41,6 +41,16 @@ EFFECTS = {
 # the crest eggs: used from the bag, they trigger an ITEM EVOLUTION
 ARMOR_CATEGORY = "Armor-Spirit"
 
+# the source shop prices any entry with no explicit price at a flat default
+# (`e.price || 1e3`); the 11 crest eggs ship priceless, so without this they
+# never reach the shelf and the whole armor-evolution path was unreachable
+# (round-3 audit 2026-07-16).  Faithful to the source default, not invented.
+DEFAULT_PRICE = 1000
+
+
+def _price(v):
+    return int(v.get("price") or DEFAULT_PRICE)
+
 
 def _usable(key, category):
     """Only goods Pet.use_item can actually APPLY are sold (the same
@@ -55,10 +65,9 @@ def catalog():
     """Every buyable entry: [{key, name, price, category}], price order."""
     out = []
     for k, v in data.load_vitems().items():
-        if isinstance(v, dict) and v.get("price") \
-                and _usable(k, v.get("category", "Item")):
+        if isinstance(v, dict) and _usable(k, v.get("category", "Item")):
             out.append({"key": k, "name": v.get("name", k),
-                        "price": int(v["price"]),
+                        "price": _price(v),
                         "category": v.get("category", "Item")})
     out.sort(key=lambda e: (e["category"], e["price"], e["name"]))
     return out
@@ -69,7 +78,7 @@ def entry(key):
     if not isinstance(v, dict):
         return None
     return {"key": key, "name": v.get("name", key),
-            "price": int(v.get("price", 0) or 0),
+            "price": _price(v),
             "category": v.get("category", "Item")}
 
 

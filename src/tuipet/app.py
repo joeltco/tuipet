@@ -246,9 +246,11 @@ class TuiPetApp(App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("THE TITLE GETS ITS MASCOT BACK: a random mon greets every "
-                 "launch, in FULL COLOUR, bobbing over the wordmark -- it "
-                 "had been silently missing since the big rebuild.")
+    WHATS_NEW = ("A DEEP AUDIT PASS: corrupt saves can't crash you or wipe "
+                 "your backup, crest eggs are back in the shop (armor "
+                 "evolutions live again), feeding plays its animation, sitting "
+                 "in a menu no longer racks up care mistakes, and the lobby "
+                 "closes a fistful of cheats and privacy leaks.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07)
@@ -492,6 +494,13 @@ class TuiPetApp(App):
         self.repaint()
 
     def autosave(self):
+        # a fresh start is NOT settled until the carousel pick: self.pet is a
+        # random placeholder egg through title->gate->carousel, and persisting
+        # it made the next launch load a pre-picked egg and skip choose-your-egg
+        # ("it auto-selected an egg for me"; round-3 audit 2026-07-16).  The
+        # pick clears _new_game, and autosave resumes on the chosen egg.
+        if self._new_game:
+            return
         persistence.save(self.pet)
         self._start_sync()              # idempotent: picks up a re-enabled cloud toggle
         self._warn_if_unsaveable()
@@ -812,7 +821,8 @@ class TuiPetApp(App):
             self.pet, lambda: self.sound, self._toggle_sound,
             on_theme_change=self._restyle,
             bindings=self.BINDINGS,
-            update_hint=lambda: getattr(self, "_update_msg", "")),
+            update_hint=lambda: getattr(self, "_update_msg", ""),
+            updated_to=lambda: getattr(self, "_updated_to", None)),
             self._after_options)
 
     def _after_options(self, result):
@@ -1114,6 +1124,16 @@ class TuiPetApp(App):
             live = (isinstance(m, lobbyscreen.LobbyPanel)
                     and m.phase in ("lobby", "dm"))
             if not live:
+                # a TRUE freeze: keep the pet's clock current so the frozen
+                # menu minutes don't build a replay debt.  Pet.tick's drift
+                # guard (>120s lag -> catch_up) otherwise replayed the frozen
+                # time on the next live tick, charging calls the player could
+                # not answer while in the menu (round-3 audit 2026-07-16).
+                # _min_acc is left ALONE -- a partial minute in flight resumes
+                # after the menu; only wall_time is pinned so no debt accrues.
+                import time as _t
+                if self.pet.stage != "Egg" and self.pet.num >= 0 and not self.pet.dead:
+                    self.pet.wall_time = _t.time()
                 return
             was_dead = self.pet.dead
             poop0 = self.pet.poop

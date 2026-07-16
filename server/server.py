@@ -496,6 +496,18 @@ RAID_MAX_RAW = 20                    # 10 rounds x 2 damage: the honest ceiling
 RAID_DMG_MULT = 5000
 RAID_STAGE_MULT = (("super ultimate", 20), ("armor-hybrid", 10),
                    ("ultimate", 10), ("perfect", 5), ("adult", 2))
+# num -> raid multiplier, precomputed from the atlas (tools regen it).  The
+# damage mult binds to the pet's NUM, not the free-text stage string a client
+# can forge: claiming x20 now means claiming a real super-ultimate species,
+# which shows on the forger's own roster sprite -- the same tradeoff the client
+# _clamp_card fix accepted (round-3 audit 2026-07-16).
+RAID_MULT_BY_NUM_PATH = os.path.join(
+    os.path.dirname(os.path.abspath(__file__)), "raid_stage_mult.json")
+try:
+    with open(RAID_MULT_BY_NUM_PATH) as _f:
+        RAID_MULT_BY_NUM = {int(k): int(v) for k, v in json.load(_f).items()}
+except (OSError, ValueError):
+    RAID_MULT_BY_NUM = {}
 RAID_RANK_BITS = {1: 5000, 2: 3000, 3: 2000}
 RAID_RANK_ITEMS = {1: 3, 2: 2, 3: 1}
 RAID_PART_BITS, RAID_PART_ITEMS = 500, 1
@@ -544,7 +556,17 @@ def _raid_pool():
         return [{"num": 0, "name": "Unknown Boss", "energy_max": 65}]
 
 
-def _raid_stage_mult(stage):
+def _raid_mult_for_num(num):
+    """The raid multiplier for a claimed species num.  Non-int / unknown num
+    -> x1 (the map ships only non-trivial entries).  An empty map (data file
+    missing on the box) also yields x1 -- fail CLOSED, never x20."""
+    try:
+        return RAID_MULT_BY_NUM.get(int(num), 1)
+    except (TypeError, ValueError):
+        return 1
+
+
+def _raid_stage_mult(stage):     # legacy string form, kept for _raid_view display
     st = str(stage or "").lower()
     for token, mult in RAID_STAGE_MULT:
         if token in st:
@@ -594,7 +616,11 @@ def _raid_attempts(name, now=None):
         rec = {"date": day, "left": RAID_ATTEMPTS_PER_DAY}
         RAID["attempts"][name] = rec
         if len(RAID["attempts"]) > 4096:
-            RAID["attempts"] = {name: rec}
+            # drop only STALE (previous-day) rows -- `= {name: rec}` wiped every
+            # OTHER player's TODAY count, refunding their used attempts on the
+            # next hit (round-3 audit 2026-07-16)
+            RAID["attempts"] = {n: r for n, r in RAID["attempts"].items()
+                                if r.get("date") == day}
     return rec
 
 
@@ -642,9 +668,11 @@ def _raid_view(name, now=None):
             "award": _raid_award(name)}
 
 
-def _raid_hit(name, raw, stage, now=None):
+def _raid_hit(name, raw, num, now=None):
     """One attempt's damage report.  The server owns the attempt count and
-    the ceiling: raw battle damage is bounded by what 10 rounds can deal."""
+    the ceiling: raw battle damage is bounded by what 10 rounds can deal, and
+    the stage multiplier binds to the claimed species NUM (not a forgeable
+    stage string)."""
     now = time.time() if now is None else now
     _raid_rotate(now)
     b = RAID["boss"]
@@ -659,7 +687,7 @@ def _raid_hit(name, raw, stage, now=None):
     except (TypeError, ValueError):
         raw = 0
     raw = max(0, min(raw, RAID_MAX_RAW))
-    dealt = raw * RAID_DMG_MULT * _raid_stage_mult(stage)
+    dealt = raw * RAID_DMG_MULT * _raid_mult_for_num(num)
     b["hp"] = max(0, b["hp"] - dealt)
     entry = RAID["board"].setdefault(name, {"damage": 0, "ts": now})
     entry["damage"] += dealt
@@ -935,7 +963,8 @@ async def handler(ws):
                         LOG.info("evicted stale session id=%s name=%s", c.id, c.name)
                     client.boot = boot
                 client.name = name
-                client.pet = m.get("pet") or {}
+                _pet = m.get("pet")
+                client.pet = _pet if isinstance(_pet, dict) else {}   # non-dict pet crashed .get() later
                 client.live = not sync_only
                 if sync_only:                     # the newest APP LAUNCH owns the saves
                     _take_lease(client, key, boot)
@@ -963,7 +992,8 @@ async def handler(ws):
                 await _send(client, {"t": "error", "msg": "Log in first."})
 
             elif t == "pet":
-                client.pet = m.get("pet") or {}
+                _pet = m.get("pet")
+                client.pet = _pet if isinstance(_pet, dict) else {}   # non-dict pet crashed .get() later
                 if client.live:
                     await _push_roster()
 
@@ -989,12 +1019,12 @@ async def handler(ws):
             elif t == "raid_get":
                 await _send(client, _raid_view(client.name))
             elif t == "raid_hit":
-                # stage comes from the ROSTER card (one claim per session,
-                # visible to the whole lobby), never the per-hit message: a
-                # forged {"stage": "super ultimate"} was a free x20 into the
-                # shared pool (audit 2026-07-15)
+                # the multiplier binds to the roster card's NUM, resolved to a
+                # real species' stage in RAID_MULT_BY_NUM -- a forged stage
+                # STRING no longer buys x20 (round-3 audit 2026-07-16, closing
+                # the 2026-07-15 fix that still trusted the card's stage text)
                 r = _raid_hit(client.name, m.get("damage"),
-                              (client.pet or {}).get("stage"))
+                              (client.pet or {}).get("num"))
                 await _send(client, r)
                 await _send(client, _raid_view(client.name))
             elif t == "raid_claim":

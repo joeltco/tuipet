@@ -488,13 +488,15 @@ def test_jogress_escape_is_a_real_decline(monkeypatch):
     assert not fused2 and pan2.phase == "lobby", "a partner's decline unwinds me too"
 
 
-def test_jogress_legacy_peer_keeps_the_instant_commit(monkeypatch):
-    """A pre-v0.2.350 peer has no decline and commits on any key: mirror it,
-    or a mixed-version pair fuses one-sided again."""
+def test_jogress_peer_omitting_confirm2_cannot_force_a_fusion(monkeypatch):
+    """Round-3 consent fix (2026-07-16): the old "legacy peer" fallback keyed
+    on the peer-supplied confirm2, so a peer that OMITTED it turned your ESC
+    into a non-consensual COMMIT.  Two-phase consent is required always now:
+    ESC declines (tells the partner), and no fusion happens on a decline."""
     pan, relays, fused = _jogress_session(monkeypatch, peer_two_phase=False)
     pan._key_jogress("escape")
-    assert fused == [102] and pan.phase == "lobby"
-    assert not any(p.get("t") == "decline" for p in relays)
+    assert not fused and pan.phase == "lobby"
+    assert any(p.get("t") == "decline" for p in relays)
 
 
 def test_jogress_partner_leaving_at_result_fuses_nobody(monkeypatch):

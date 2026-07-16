@@ -319,6 +319,11 @@ class LobbyPanel:
     # ---- per-tick refresh (the 0.1s interval clock calls this) -----------
     def anim(self):
         self._mq = getattr(self, "_mq", 0) + 1   # drives long-field marquees
+        # a PM arriving while its thread is OPEN re-added the sender to unread
+        # (net.py can't see which thread is open), leaving a badge that never
+        # cleared -- you're already reading it (round-3 audit 2026-07-16)
+        if self.phase == "dm" and self.dm_peer and self.state:
+            self.state.unread.discard(self.dm_peer[1])
         # session replays advance first (they render whatever the wire does)
         if self.bshow is not None:
             b = self.bshow
@@ -527,8 +532,22 @@ class LobbyPanel:
             elif self.phase == "jogress" and self.jphase == "result":
                 self._return_to_lobby("Partner left — no fusion.")   # pre-commit: nobody fuses
             elif self.phase == "battle" and self.bphase not in (None, "over"):
-                self.bt_outcome = "Opponent left."
-                self.bt_payload = ("battle_msg", "Opponent left — battle void.")
+                # the opponent walked out mid-bout: you WIN it (was "void", so
+                # a rage-quit denied the stayer both the win and the ladder
+                # credit -- round-3 audit 2026-07-16).  Only credit once the
+                # fight was actually underway, mirroring the loser's report.
+                won = self.bphase == "fight"
+                if won:
+                    self.pet.record_battle(True, online=True)
+                    from .pet import online_reward
+                    purse = online_reward(True)
+                    self.pet.add_bits(purse)
+                    self._ladder_file(True)
+                    self.bt_outcome = "★ Opponent fled — you win! ★"
+                    self.bt_reward = f"+{purse}b"
+                else:
+                    self.bt_outcome = "Opponent left."
+                self.bt_payload = ("battle_msg", self.bt_outcome)
                 self.bphase = "over"
             return
         if kind == "jogress" and self.phase == "jogress" and payload.get("t") == "confirm":
@@ -725,12 +744,24 @@ class LobbyPanel:
             self._forfeit()
         return None
 
+    def _ladder_file(self, won):
+        """File this bout's half-report so the monthly ladder can credit the
+        winner once both stories agree (keyed by ACCOUNT name)."""
+        opp_nm = (self.partner or (0, ""))[1] or (self.opp_card or {}).get("name")
+        report = getattr(self.client, "ladder_report", None)
+        if report and opp_nm:
+            report(won, opp_nm)
+
     def _forfeit(self):
-        """Leave a battle in progress -> tell the opponent, then back to the lobby."""
+        """Leave a battle in progress -> tell the opponent, then back to the lobby.
+        A mid-bout walkout is a LOSS that must also file the ladder report, or
+        the quitter voids the winner's credit by rage-quitting (round-3 audit
+        2026-07-16)."""
         if self.partner:
             self.client.relay(self.partner[0], {"kind": "battle", "abort": True})
         if self.bphase == "fight":              # walking out mid-bout is a loss
             self.pet.record_battle(False, online=True)
+            self._ladder_file(False)
         self._return_to_lobby("You forfeited.")
 
     # ---- input -----------------------------------------------------------
@@ -1015,14 +1046,13 @@ class LobbyPanel:
             if self.jshow is not None and self.jshow.phase == "fusing":
                 self.jshow.key(k)                       # any key skips the converge to the reveal
                 return None
-            if not self.j_peer_two_phase:
-                # LEGACY peer (pre-v0.2.350): its client commits on any key with
-                # no decline -- mirror it, or a mixed-version pair goes one-sided
-                if k in ("enter", "space", "escape"):
-                    self._commit_fusion()
-                return None
-            # two-phase commit (consent audit 2026-07-07): the fusion is
-            # PERMANENT -- both players must say yes at the result screen
+            # two-phase commit is ALWAYS required (consent audit 2026-07-07;
+            # hole closed round-3 2026-07-16): the old "legacy peer" fallback
+            # keyed on the peer-supplied `confirm2`, so a peer that simply
+            # OMITTED it turned your ESC-to-decline into a COMMIT -- a forged
+            # non-consensual fusion.  The clone client always sends confirm2,
+            # so there are no real legacy peers; a peer that never confirms
+            # just leaves you at the result screen, free to ESC out.
             if k in ("enter", "space") and not self.j_confirmed:
                 self.j_confirmed = True
                 self.client.relay(self.partner[0], {"kind": "jogress", "t": "confirm"})
@@ -1273,8 +1303,9 @@ class LobbyPanel:
             w = "hungry!"
         elif p.strength == 0:
             w = "effort empty!"
-        elif p.poop >= 3:
-            w = "messy!"
+        elif p.poop > 0:                  # poop caps at 2; the old `>= 3` was
+            w = "messy!"                  # unreachable -> a filthy pet read
+        #                                   "misbehaving!" (round-3 audit 07-16)
         elif p.energy <= 0:
             w = "exhausted!"
         else:

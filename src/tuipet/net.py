@@ -316,6 +316,12 @@ class LobbyClient(_WsClient):
                 s.server_proto = int(m.get("proto") or 0)
             except (TypeError, ValueError):
                 s.server_proto = 0
+            # a reconnect logs in fresh to the MAIN lobby, but the client still
+            # believed it was in its password room -> the user's next chat went
+            # PUBLIC (round-3 audit 2026-07-16).  Re-join the room on every
+            # welcome that finds a room already set (first connect has none).
+            if s.room:
+                self.room(s.room)
         elif t == "ladder":
             self.ladder = m               # the rankings page renders from this
         elif t == "raid":

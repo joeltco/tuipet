@@ -41,20 +41,36 @@ def test_escape_archives_as_not_defeated():
     assert srv.RAID["history"][-1]["boss_name"] == b["name"]
 
 
+# the multiplier binds to the pet NUM now (a species record's real stage),
+# not a forgeable stage STRING (round-3 audit 2026-07-16)
+NUM_ULTSU, NUM_ADULT, NUM_PERFECT, NUM_CHILD = 740, 0, 557, 374
+
+
 def test_attempts_are_three_per_day_and_damage_is_clamped():
     now = 3_000_000.0
     _fresh(now)
     srv.RAID["boss"]["start"] = now               # open the window
     for i in range(3):
-        r = srv._raid_hit("joel", 999, "Ultimate-Super Ultimate", now=now)
+        r = srv._raid_hit("joel", 999, NUM_ULTSU, now=now)
         assert r["ok"]
-        # raw clamps to 20; Ult-SU multiplies x20
+        # raw clamps to 20; the Ult-SU species multiplies x20
         assert r["dealt"] == 20 * srv.RAID_DMG_MULT * 20
-    r = srv._raid_hit("joel", 5, "Adult", now=now)
+    r = srv._raid_hit("joel", 5, NUM_ADULT, now=now)
     assert not r["ok"] and "attempts" in r["why"].lower()
     # a new day refills
-    r = srv._raid_hit("joel", 10, "Adult", now=now + 86_400)
+    r = srv._raid_hit("joel", 10, NUM_ADULT, now=now + 86_400)
     assert r["ok"] and r["dealt"] == 10 * srv.RAID_DMG_MULT * 2
+
+
+def test_raid_multiplier_binds_to_num_not_a_forged_stage_string():
+    now = 3_500_000.0
+    _fresh(now)
+    srv.RAID["boss"]["start"] = now
+    # a Child pet, and the forge: a stage STRING where the num goes
+    child = srv._raid_hit("honest", 20, NUM_CHILD, now=now)
+    forge = srv._raid_hit("cheat", 20, "super ultimate", now=now)
+    assert child["dealt"] == 20 * srv.RAID_DMG_MULT * 1     # honest x1
+    assert forge["dealt"] == 20 * srv.RAID_DMG_MULT * 1     # forge falls to x1
 
 
 def test_stage_mult_follows_the_source_table():
@@ -72,7 +88,7 @@ def test_kill_pays_by_rank_and_escape_pays_consolation():
     b = srv.RAID["boss"]
     b["start"] = now
     b["hp"] = b["max_hp"] = 100                   # a killable test boss
-    srv._raid_hit("first", 20, "Ultimate-Super Ultimate", now=now)   # overkill
+    srv._raid_hit("first", 20, NUM_ULTSU, now=now)   # overkill
     assert srv.RAID["boss"]["name"]               # rotated to the next boss
     rec = srv.RAID["history"][-1]
     assert rec["defeated"] and "first" in rec["board"]
@@ -90,7 +106,7 @@ def test_kill_pays_by_rank_and_escape_pays_consolation():
     # an escape pays the flat consolation
     now2 = wd + 10
     srv.RAID["boss"]["start"] = now2
-    srv._raid_hit("second", 10, "Adult", now=now2)
+    srv._raid_hit("second", 10, NUM_ADULT, now=now2)
     srv.RAID["boss"]["end"] = now2 - 1            # force the escape
     srv._raid_rotate(now2)
     a2 = srv._raid_award("second")
@@ -101,8 +117,8 @@ def test_view_reports_board_and_attempts():
     now = 5_000_000.0
     _fresh(now)
     srv.RAID["boss"]["start"] = now
-    srv._raid_hit("ana", 20, "Perfect", now=now)
-    srv._raid_hit("bob", 5, "Adult", now=now)
+    srv._raid_hit("ana", 20, NUM_PERFECT, now=now)
+    srv._raid_hit("bob", 5, NUM_ADULT, now=now)
     v = srv._raid_view("bob", now=now)
     assert v["top"][0][0] == "ana"
     assert v["you"] == [2, 5 * srv.RAID_DMG_MULT * 2]

@@ -30,9 +30,14 @@ def beat_sfx(m, strong):
 
 
 def cbounds(rows):
-    """Leftmost / rightmost lit column of a sprite (its real content bounds)."""
+    """Leftmost / rightmost lit column of a sprite (its real content bounds).
+    Matches ANY ink via grid.lit -- the old `== "1"` test saw ZERO lit cells
+    in the clone's COLOUR frames (all hex strings), so every combatant fell
+    back to full-frame bounds and orbs launched from the frame corner, not the
+    sprite's mouth (round-3 audit 2026-07-16)."""
     w = max(len(r) for r in rows)
-    cols = [x for x in range(w) if any(x < len(r) and r[x] == "1" for r in rows)]
+    cols = [x for x in range(w)
+            if any(x < len(r) and grid.lit(r[x]) for r in rows)]
     return (min(cols), max(cols)) if cols else (0, w - 1)
 
 

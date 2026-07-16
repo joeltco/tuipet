@@ -53,10 +53,13 @@ def resolve_pair(pet, partner_path):
 def resolve_online(pet, payload):
     """A lobby partner's card carries its species num -> its path -> the
     pair lookup.  Symmetric: both devices compute the same key."""
-    pnum = payload.get("num")
-    if pnum is None:
+    # the num is UNTRUSTED wire data from the fusion partner: a non-int
+    # (num:"evil") crashed the whole client on int() (round-3 audit 2026-07-16)
+    try:
+        pnum = int(payload.get("num"))
+    except (TypeError, ValueError):
         return None
-    rec = data.load_sprites()[1].get(int(pnum))
+    rec = data.load_sprites()[1].get(pnum)
     if rec is None:
         return None
     target = resolve_pair(pet, rec.get("path"))

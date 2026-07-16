@@ -551,6 +551,12 @@ class Pet:
         if self.hunger >= self.hunger_max:
             return "refuse"
         self.disturb_sleep()
+        # the eat pose + wolf-down flag the fx reads: app._after_feed gated the
+        # eat animation on `anim == "eat"` and `_last_meal_starving`, but
+        # NOTHING set either -> the eat fx never played (round-3 audit
+        # 2026-07-16).  Decide starving BEFORE the meal fills the belly.
+        self._last_meal_starving = self.hunger == 0
+        self.anim = "eat"
         self.hunger += 1
         self.weight = _clamp(self.weight + 1, 1, 999)
         return "ate"
@@ -743,6 +749,11 @@ class Pet:
         self.forced_sleep = True
         self.asleep = True
         self.wake_until = 0.0
+        # lights OUT with the pill: a forced DAYTIME nap otherwise left the
+        # lights on and tripped the lights-on-at-bedtime call 20 min later,
+        # earning an undeserved care mistake (round-3 audit 2026-07-16)
+        self.lights = False
+        self.call_on = False
         return "Zzz..."
 
     def _alarm(self):
