@@ -3,6 +3,12 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.4.12 — 2026-07-16
+
+UNDER CONSTRUCTION AGAIN, briefly: the sprite set is being reworked, so the game is PIN-locked at the title while that lands. The **lobby stays open to everyone** — press **L** to go online without the PIN, exactly as before. A correct PIN sticks per device, so it's a one-time ask.
+
+(Internal: the lock is now a single switch — `GATE_ON` at the top of `titlescreen.py`, or the `TUIPET_GATE=0|1` env override — rather than a code change each time it goes up or down.)
+
 ## 0.4.11 — 2026-07-16
 
 SLEEPERS GROW AGAIN — an evolution bug fixed: your mon's stage clock ran all night, but the *evolution check itself* was skipped while it slept, so a mon that earned its next form overnight sat at the old one until morning. It hit babies hardest — a Baby I needs only 10 minutes and sleeps 13 hours, so it could look frozen for a whole night. Evolution now runs while asleep (matching the original, which only pauses hunger/strength decay for a sleeper — never growth).

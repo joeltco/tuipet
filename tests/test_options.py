@@ -280,13 +280,24 @@ def test_erase_flows_into_the_egg_carousel_not_an_auto_egg():
             app._after_options(("erase",))              # the options panel's verdict
             await pilot.pause()
             seen["title"] = isinstance(app.mode, titlescreen.TitlePanel)
-            await pilot.press("enter")                  # past the title -> straight in
+            await pilot.press("enter")                  # past the title
             await pilot.pause()
+            # erase is a FACTORY RESET: settings go with it, so when the
+            # construction switch is ARMED the gate stands again here -- the
+            # PIN walks through it to the fresh start.  Switch-aware so
+            # flipping GATE_ON never breaks this test.
+            if titlescreen.gate_on():
+                seen["gate"] = isinstance(app.mode, titlescreen.GatePanel)
+                for k in tuple(titlescreen.GATE_PIN) + ("enter",):
+                    await pilot.press(k)
+                    await pilot.pause()
             seen["carousel"] = isinstance(app.mode, eggselectscreen.EggSelectPanel)
         return seen
 
     seen = asyncio.run(go())
     assert seen["title"], "erase must return to the title"
+    if "gate" in seen:
+        assert seen["gate"], "an armed switch must re-lock after a factory reset"
     assert seen["carousel"], "a fresh start must open the egg carousel, never auto-pick"
 
 

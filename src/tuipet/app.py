@@ -246,10 +246,10 @@ class TuiPetApp(App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("SLEEPERS GROW AGAIN: a mon that hit its stage time overnight "
-                 "sat at the old form until morning — evolution now runs while "
-                 "it sleeps, like it should. The pill also moved into the feed "
-                 "menu, where it belongs.")
+    WHATS_NEW = ("BACK UNDER CONSTRUCTION for a spell: the sprites are being "
+                 "reworked, so the game is PIN-locked again while it happens. "
+                 "The LOBBY stays open to everyone — press L. Thanks for your "
+                 "patience.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07)
@@ -443,9 +443,34 @@ class TuiPetApp(App):
         # first launch, before the player had seen a single pet (sweep
         # 2026-07-14).  The account only matters online -- the lobby asks for
         # one when it's first opened, and sync starts on the next autosave.
-        # (An UNDER-CONSTRUCTION PIN gate stood here 2026-07-15..0.4.9 while the
-        # rebuild settled; lifted 2026-07-16 -- the game opens straight up.)
+        # The UNDER-CONSTRUCTION gate stands here instead: the game needs the
+        # PIN, the lobby stays open to everyone.  Armed/disarmed by the ONE
+        # switch at the top of titlescreen.py (GATE_ON / TUIPET_GATE) -- it
+        # goes up and down often enough not to be a code change.
+        if titlescreen.gate_on() and not persistence.load_settings().get("construction_ok"):
+            self._open_mode(titlescreen.GatePanel(), self._after_gate)
+            return
         self._post_title()
+
+    def _after_gate(self, result):
+        if result == "play":                    # right PIN: sticks per device
+            s = persistence.load_settings()
+            s["construction_ok"] = True
+            persistence.save_settings(s)
+            self._post_title()
+        elif result == "lobby":                 # the open door past the lock
+            name, pw = persistence.get_account()
+            self._open_mode(lobbyscreen.LobbyPanel(self.pet, self._lobby_connect,
+                            name=name, pw=pw),
+                            self._after_gate_lobby)
+        else:                                   # ESC: back out to the title
+            self._open_mode(titlescreen.TitlePanel(), self._after_title)
+
+    def _after_gate_lobby(self, result=None):
+        # tear the connection down like any lobby exit, then land back on the
+        # GATE -- never the home screen (that would walk around the lock)
+        self._after_lobby(result)
+        self._open_mode(titlescreen.GatePanel(), self._after_gate)
 
     def _post_title(self):
         if self._new_game:

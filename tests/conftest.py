@@ -31,6 +31,12 @@ def isolate_save(tmp_path, monkeypatch):
     monkeypatch.setattr(sound, "_CACHE", str(tmp_path / "sndcache"))
     monkeypatch.setattr(sound, "_STATE_DIR", str(tmp_path))
     monkeypatch.setattr(sound, "_volume", sound.DEFAULT_VOLUME)
+    # the UNDER-CONSTRUCTION gate is pre-unlocked in the sandbox so every
+    # title->game flow test keeps working whichever way the switch is set;
+    # the gate's own tests drive titlescreen.GATE_ON / construction_ok
+    s = persistence.load_settings()
+    s["construction_ok"] = True
+    persistence.save_settings(s)
     yield
 
 

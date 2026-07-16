@@ -367,20 +367,72 @@ def test_title_mascot_pool_and_colour_render():
                for s in styles), "the mascot must render in COLOUR"
 
 
-# ---- the UNDER-CONSTRUCTION gate was LIFTED (Joel 2026-07-16) ----------------
+# ---- the UNDER-CONSTRUCTION gate: ONE switch, both ways ---------------------
 
-def test_title_opens_straight_into_the_game_no_gate():
-    """The PIN gate (0.4.5..0.4.9) is gone: _after_title goes directly to
-    _post_title, and GatePanel no longer exists."""
-    from tuipet import titlescreen
+def _title_calls(monkeypatch, gate_on, unlocked):
+    """Drive _after_title with the switch set both ways; return what it opened."""
+    from tuipet import persistence, titlescreen
     from tuipet.app import TuiPetApp
-    assert not hasattr(titlescreen, "GatePanel")
-    app = TuiPetApp.__new__(TuiPetApp)             # no Textual mount needed
+    monkeypatch.setattr(titlescreen, "GATE_ON", gate_on)
+    monkeypatch.delenv("TUIPET_GATE", raising=False)   # the flag, not the override
+    s = persistence.load_settings()
+    if unlocked:
+        s["construction_ok"] = True
+    else:
+        s.pop("construction_ok", None)
+    persistence.save_settings(s)
+    app = TuiPetApp.__new__(TuiPetApp)                 # no Textual mount needed
     calls = []
     app._post_title = lambda: calls.append("post")
     app._open_mode = lambda panel, cb=None: calls.append(type(panel).__name__)
     app._after_title()
-    assert calls == ["post"]                       # straight to the game, no lock
+    return calls
+
+
+def test_gate_switch_off_opens_the_game_straight_up(monkeypatch):
+    # GATE_ON=False must skip the lock even on a device that never unlocked
+    assert _title_calls(monkeypatch, gate_on=False, unlocked=False) == ["post"]
+
+
+def test_gate_switch_on_locks_until_unlocked(monkeypatch):
+    assert _title_calls(monkeypatch, gate_on=True, unlocked=False) == ["GatePanel"]
+    assert _title_calls(monkeypatch, gate_on=True, unlocked=True) == ["post"]
+
+
+def test_gate_env_override_beats_the_flag(monkeypatch):
+    from tuipet import titlescreen
+    monkeypatch.setattr(titlescreen, "GATE_ON", True)
+    monkeypatch.setenv("TUIPET_GATE", "0")
+    assert titlescreen.gate_on() is False
+    monkeypatch.setattr(titlescreen, "GATE_ON", False)
+    monkeypatch.setenv("TUIPET_GATE", "1")
+    assert titlescreen.gate_on() is True
+
+
+def test_construction_gate_locks_game_keeps_lobby():
+    from tuipet.app import _hud_plain
+    from tuipet import titlescreen
+    pan = titlescreen.GatePanel()
+    assert len(_hud_plain(pan.strip())) <= 40
+    pan.text()                                     # smoke: renders empty
+    for k in ("1", "2", "3", "enter"):             # wrong PIN bounces
+        out = pan.key(k)
+        pan.anim(); pan.text()
+    assert out is None and pan.buf == ""
+    assert pan.key("l") == ("done", "lobby")       # the open door
+    for k in titlescreen.GATE_PIN:
+        pan.key(k)
+    assert pan.key("enter") == ("done", "play")    # the right PIN
+    assert pan.key("escape") == ("done", None)     # and the way back out
+
+
+def test_gate_wiring_stands_between_title_and_game():
+    import inspect
+    from tuipet.app import TuiPetApp
+    src = inspect.getsource(TuiPetApp._after_title)
+    assert "construction_ok" in src and "GatePanel" in src and "gate_on" in src
+    src = inspect.getsource(TuiPetApp._after_gate_lobby)
+    assert "GatePanel" in src                      # lobby exit lands on the GATE
 
 
 # ---- PvP: the card clamp derives stage from the species record --------------
