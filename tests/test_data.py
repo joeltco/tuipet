@@ -66,8 +66,8 @@ def test_stage_rank_helper():
     """The consolidated 7-stage rank (Egg..Mega); unknown stage = fully grown."""
     assert data.STAGE_RANK == ["Egg"] + data.STAGE_ORDER
     assert data.stage_rank("Egg") == 0
-    assert data.stage_rank("Baby I") == 1
-    assert data.stage_rank("Special") == len(data.STAGE_RANK) - 1
+    assert data.stage_rank("Fresh") == 1
+    assert data.stage_rank("Mega") == len(data.STAGE_RANK) - 1
     assert data.stage_rank("Bogus") == len(data.STAGE_RANK)
     # the rank must be monotonic in growth order
     ranks = [data.stage_rank(s) for s in data.STAGE_RANK]

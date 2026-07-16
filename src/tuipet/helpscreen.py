@@ -10,52 +10,52 @@ VIS = 8                                   # lines shown at once in the box
 # (text, kind): 2 = section head (bold), 1 = a control line, 0 = prose (dim)
 HELP = [
     ("CARE", 2),
-    ("f feed - meat fills the belly;", 1),
-    ("  the pill cures sickness and", 0),
-    ("  restores strength and energy", 0),
-    ("c clean poop   s lights", 1),
-    ("Your mon lives in REAL TIME - it", 0),
-    ("sleeps on a clock, gets hungry", 0),
-    ("hourly, and calls when it needs", 0),
-    ("you. Ignore a call for 20 minutes", 0),
-    ("and it counts a care mistake.", 0),
+    ("f feed   p play   c clean poop", 1),
+    ("h heal   r praise   k scold", 1),
+    ("s lights   v assistant", 1),
     ("", 0),
-    ("ONLINE", 2),
+    ("EXPLORE", 2),
+    ("a adventure - travel named regions,", 1),
+    ("  fight wilds, clear zone bosses,", 0),
+    ("  find items, rest in towns", 0),
+    ("u cup - hourly tournaments; win", 1),
+    ("  trophies to unlock new eggs", 0),
     ("l lobby - go online: chat, and", 1),
-    ("  battle / jogress other players;", 0),
-    ("  TAB pages the ladder + RAID BOSS", 0),
+    ("  battle / jogress other players", 0),
     ("", 0),
     ("GROW", 2),
-    ("Eggs hatch and evolve on a clock:", 0),
-    ("good care + training picks the", 0),
-    ("BEST branch, neglect the worst.", 0),
-    ("t train - drills feed evolution", 1),
-    ("  and widen your battle windows", 0),
-    ("Battles also count toward growth.", 0),
+    ("Eggs hatch, then evolve by HOW you", 0),
+    ("raise them - care, train, battles.", 0),
+    ("Each egg has its own line to a Mega.", 0),
+    ("t train - drills build battle power", 1),
+    ("x DNA   d digicore", 1),
+    ("n egg guide - every digitama + what", 1),
+    ("  earns it, with live progress", 0),
     ("", 0),
-    ("SCENES", 2),
-    ("The backdrop is yours to pick:", 0),
-    ("e opens the scene gallery.", 1),
+    ("WEATHER", 2),
+    ("Every habitat has its own climate", 0),
+    ("and weather. Too hot or too cold", 0),
+    ("saps mood - the +hot / +cold badge", 0),
+    ("in STATUS names it. Warm it up:", 0),
+    ("the THERMOSTAT (e habitat, +/-)", 0),
+    ("drives the room to your setting,", 0),
+    ("then weather takes back over. Hot", 0),
+    ("food helps too. Or move house -", 0),
+    ("Hard Disk is climate-controlled.", 0),
+    ("The futon tucks the room to its", 0),
+    ("comfort temp and HOLDS it there.", 0),
     ("", 0),
-    ("CREDITS", 2),
-    ("Art ripped from multiple fan games", 0),
-    ("and the V-pet sprite community.", 0),
-    ("The artists, with thanks:", 0),
+    ("MANAGE", 2),
+    ("o shop   i bag   e habitat", 1),
+    ("g options   b report a bug   q quit", 1),
+    ("", 0),
+    ("TIPS", 2),
+    ("Feed when hungry, clean the poop,", 0),
+    ("and let it sleep at night. Win cups", 0),
+    ("and adventures to unlock more eggs.", 0),
+    ("Town shops sell eggs themed to their", 0),
+    ("biome - explore to find them all.", 0),
 ]
-
-
-def _full_help():
-    """HELP + the sprite-artist credits appended (attribution ships with
-    the game; it lives here now instead of its own screen)."""
-    rows = list(HELP)
-    try:
-        from . import creditscreen
-        for text, kind in creditscreen._rows()[3:]:
-            if text:
-                rows.append((text[:38], 0))
-    except Exception:
-        rows.append(("(credits unavailable)", 0))
-    return rows
 
 
 class HelpPanel:
@@ -72,10 +72,7 @@ class HelpPanel:
         return menu.hints(("↑↓", "scroll"), ("ESC", "out"))
 
     def _max_top(self):
-        rows = getattr(self, "_rows", None)
-        if rows is None:
-            rows = self._rows = _full_help()
-        return max(0, len(rows) - VIS)
+        return max(0, len(HELP) - VIS)
 
     def key(self, k):
         if k in ("up", "k"):
@@ -99,13 +96,10 @@ class HelpPanel:
         return ""
 
     def text(self):
-        rows = getattr(self, "_rows", None)
-        if rows is None:
-            rows = self._rows = _full_help()
         self.top = max(0, min(self.top, self._max_top()))
-        pos = "%d-%d/%d" % (self.top + 1, min(self.top + VIS, len(rows)), len(rows))
+        pos = "%d-%d/%d" % (self.top + 1, min(self.top + VIS, len(HELP)), len(HELP))
         out = menu.header("HELP", pos)
-        for text, kind in rows[self.top:self.top + VIS]:
+        for text, kind in HELP[self.top:self.top + VIS]:
             style = INK_B if kind == 2 else (INK if kind == 1 else DIM)
             out.append((text or " ") + "\n", style=style)
         out.append_text(menu.footer(self._more_cue()))

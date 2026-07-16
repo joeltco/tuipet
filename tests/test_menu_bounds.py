@@ -16,7 +16,8 @@ def _plain(markup):
 
 
 def _pet(**kw):
-    p = Pet(num=649, stage="Ultimate-Super Ultimate", attribute="Vaccine")   # 19-char name
+    p = Pet(num=649, stage="Mega", attribute="Vaccine", obedience=500)   # 19-char name
+    p.world_seconds = 10 * 60.0
     for k, v in kw.items():
         setattr(p, k, v)
     return p
@@ -35,8 +36,8 @@ def test_marquee_holds_then_scrolls_and_loops():
 
 
 def test_habitat_strip_fits_at_every_step():
-    from tuipet.backgroundscreen import BackgroundPanel
-    pan = BackgroundPanel(_pet(bits=99999))
+    from tuipet.habitatscreen import HabitatPanel
+    pan = HabitatPanel(_pet(bits=99999))
     for _ in range(80):                                       # roll full marquee loops
         pan.anim()
         assert _plain(pan.strip()) <= HUD_W
@@ -85,11 +86,46 @@ def test_lobby_jogress_lines_fit_with_a_24_char_partner():
     assert _plain(pan.strip()) <= HUD_W                       # the fused strip
 
 
-def test_drill_strip_fits_at_the_extremes():
-    """The drill strip stays within the 40-col budget in both phases."""
-    from tuipet.training import TrainingPanel
-    p = _pet()
+def test_travelling_and_hp_drill_strips_fit_at_the_extremes():
+    from tuipet.adventurescreen import AdventurePanel
+    pan = AdventurePanel(_pet(bits=999))
+    pan.adv.last = "Travelling… 100%"                         # the widest travelling note
+    pan.travelling = True
+    assert _plain(pan.strip()) <= HUD_W
+    from tuipet.training import TrainingPanel, GAMES
+    p = _pet(compliance=True)
+    p.check_refused = lambda **kw: False
     tp = TrainingPanel(p)
-    assert _plain(tp.strip()) <= 40
-    tp.key("space")
-    assert _plain(tp.strip()) <= 40
+    tp.gi = next(i for i, g in enumerate(GAMES) if g[0] == "hp")
+    tp._start_game()
+    assert _plain(tp.strip()) <= HUD_W
+
+
+def test_adventure_strip_hints_survive_long_notes():
+    """The adventure strip's HINTS are fixed chrome (major audit 2026-07-07):
+    a long species name in the note ("AncientSphinxmon noticed something off
+    the path!") used to push the keys past 40 where the display marquee slid
+    them out of view.  The note field-marquees; the hint renders every frame."""
+    from tuipet.adventurescreen import AdventurePanel
+    pan = AdventurePanel(_pet(bits=999))
+    pan._trans = None                # settled past the arrival fade
+    pan.travelling = False
+    long_note = "AncientSphinxmon noticed something off the path!"
+    for state, hint in ((("discovering", True), "ENTER look"),
+                        (("town_prompt", 3), "ENTER visit"),
+                        (("travelling", True), "SPACE stop")):
+        pan.discovering = False
+        pan.town_prompt = None
+        pan.travelling = False
+        setattr(pan, *state)
+        pan.adv.last = long_note
+        windows = []
+        for i in range(200):
+            pan.frame_i = i
+            s = pan.strip()
+            assert hint in s, (state, s)
+            assert _plain(s) <= HUD_W
+            windows.append(s.split("  [dim]")[0])
+        # the head holds first, and the tail scrolls into view later
+        assert any(w.startswith("AncientSphin") for w in windows), state
+        assert any("the path!" in w for w in windows), state

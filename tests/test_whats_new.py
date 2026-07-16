@@ -8,7 +8,7 @@ from tuipet.app import TuiPetApp
 
 
 def test_whats_new_shows_once_per_build():
-    app = TuiPetApp(pet=Pet(num=-1, stage="Child"))   # __init__ only
+    app = TuiPetApp(pet=Pet(num=-1, stage="Rookie"))   # __init__ only
     first = app._whats_new()
     assert first and "WHAT'S NEW" in first and app.WHATS_NEW in first
     assert persistence.load_settings().get("seen_version")

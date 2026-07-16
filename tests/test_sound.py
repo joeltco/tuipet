@@ -88,6 +88,20 @@ def test_every_referenced_sound_ships_a_wav():
     assert not missing, f"code asks for sounds with no wav behind them: {missing}"
 
 
+def test_every_shipped_wav_is_referenced():
+    """The inverse: an unreferenced wav is a wired-nowhere asset (this audit found
+    startBattle/mischief/thunder*/rain/wind exactly this way).  rain + wind are
+    DVPet's precip LOOPS — a fire-and-forget player can't stop a loop, so they
+    stay shipped-but-silent by design."""
+    have = {os.path.splitext(os.path.basename(p))[0]
+            for p in glob.glob(os.path.join(sound._DIR, "*.wav"))}
+    allowed_silent = {"rain", "wind"}
+    dead = sorted(have - _referenced_names() - allowed_silent)
+    assert not dead, f"shipped wavs no code path plays: {dead}"
+
+
+# ---- volume (2026-07-15: full-scale chirps were piercing) -----------------------
+
 def _peak(path):
     import array as _array
     import wave as _wave

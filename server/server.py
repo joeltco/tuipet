@@ -66,12 +66,6 @@ def _admin_key():
 
 MAX_CLIENTS = 200
 MAX_NAME = 24
-# the lobby wire version, bumped whenever a page the client renders needs a
-# NEW server message (raid was the lesson: deploy.sh ships only the client to
-# PyPI while server.py is copied by hand, so a client update outpacing the
-# relay produced silently-dead pages -- audit 2026-07-15).  The client pins
-# the version it needs and says so out loud instead.
-LOBBY_PROTO = 1
 MAX_PW = 128
 MAX_CHAT = 400
 MAX_MSG_BYTES = 64 * 1024
@@ -172,11 +166,7 @@ async def _flush_pending(client, key):
     LOG.info("flushed %d queued pm(s) to %s", len(q), client.name)
 
 
-_STAGES = {"Egg", "Baby I", "Baby II", "Child", "Adult", "Perfect",
-           "Ultimate-Super Ultimate", "Armor-Hybrid", "Special",
-           # the pre-rebuild vocabulary: old clients may still push
-           # their world until they update
-           "Fresh", "InTraining", "Rookie", "Champion", "Ultimate", "Mega"}
+_STAGES = {"Egg", "Fresh", "InTraining", "Rookie", "Champion", "Ultimate", "Mega"}
 
 
 def _valid_save(save):
@@ -194,40 +184,21 @@ def _valid_save(save):
     return True
 
 
-def _stamp(v, now=None):
-    """A client-supplied _saved_at, defused: non-numeric -> 0 (a str vs int
-    compare was a per-connection crash), and a far-future stamp is clamped
-    to now+1day so one poisoned push can't lock the account's cloud save
-    forever (audit 2026-07-15)."""
-    try:
-        v = float(v)
-    except (TypeError, ValueError):
-        return 0.0
-    return min(v, (time.time() if now is None else now) + 86400.0)
-
-
 async def _store_save(key, save):
     """Last-write-wins by the client-stamped _saved_at: only newer saves land.
     Returns True when the save was stored (the client is told via the ack)."""
     if not _valid_save(save):
         return False
-    incoming = save["_saved_at"] = _stamp(save.get("_saved_at"))
-    have = _stamp((SAVES.get(key) or {}).get("_saved_at"))
+    incoming = save.get("_saved_at") or 0
+    have = (SAVES.get(key) or {}).get("_saved_at") or 0
     if incoming < have:
         return False                              # stale push -> ignore (a newer device won)
     SAVES[key] = save
     async with _saves_lock:
-        # snapshot on the loop, dump in a thread: the synchronous full-dict
-        # json.dump froze every live chat/battle for the write's duration
-        # once SAVES grew (audit 2026-07-15)
-        snap = dict(SAVES)
-
-        def _write():
-            tmp = SAVES_PATH + ".tmp"
-            with open(tmp, "w") as f:
-                json.dump(snap, f)
-            os.replace(tmp, SAVES_PATH)           # atomic
-        await asyncio.to_thread(_write)
+        tmp = SAVES_PATH + ".tmp"
+        with open(tmp, "w") as f:
+            json.dump(SAVES, f)
+        os.replace(tmp, SAVES_PATH)               # atomic
     return True
 
 
@@ -292,70 +263,6 @@ CLIENTS: dict[int, Client] = {}
 
 def _clean(s, limit):
     return str(s).replace("\n", " ").replace("\r", " ").strip()[:limit]
-
-
-def _clean_name(s):
-    """An account name: _clean plus the impersonation strip -- 📢 marks the
-    dev announce channel and square brackets are live Rich markup on old
-    clients (audit 2026-07-15).  Existing accounts keep working (lookups key
-    on the SANITIZED form of what the client sends)."""
-    s = _clean(s, MAX_NAME)
-    return "".join(c for c in s if c not in "📢[]").strip()
-
-
-# ---- login/registration throttle (audit 2026-07-15) --------------------------
-# pbkdf2 at 100k iterations is the POINT on a wrong password, but 200 parallel
-# conns hammering it was a free CPU-DoS, and unlimited registration let anyone
-# grow accounts.json forever.  Cheap in-memory buckets; a restart forgives.
-LOGIN_WINDOW_S = 60.0
-LOGIN_PER_WINDOW = 20             # attempts per source IP per window -- roomy
-#                                   for real sync traffic, fatal to a pbkdf2 flood
-REG_PER_DAY = 5                   # new accounts per source IP per UTC day
-MAX_ACCOUNTS = 10_000             # the disk-fill backstop
-_login_bucket: dict[str, list] = {}     # ip -> [window_start, count]
-_reg_bucket: dict[str, list] = {}       # ip -> [day, count]
-
-
-def _client_ip(ws):
-    try:
-        return str((ws.remote_address or ("?",))[0])
-    except Exception:
-        return "?"
-
-
-def _login_allowed(ip, now=None):
-    now = time.time() if now is None else now
-    b = _login_bucket.get(ip)
-    if b is None or now - b[0] >= LOGIN_WINDOW_S:
-        _login_bucket[ip] = [now, 1]
-        if len(_login_bucket) > 4096:            # old windows never come back
-            _login_bucket.clear()
-            _login_bucket[ip] = [now, 1]
-        return True
-    b[1] += 1
-    return b[1] <= LOGIN_PER_WINDOW
-
-
-def _registration_allowed(ip, now=None):
-    if len(ACCOUNTS) >= MAX_ACCOUNTS:
-        return False
-    day = time.strftime("%Y-%m-%d", time.gmtime(now or time.time()))
-    b = _reg_bucket.get(ip)
-    if b is None or b[0] != day:
-        _reg_bucket[ip] = [day, 1]
-        if len(_reg_bucket) > 4096:
-            _reg_bucket.clear()
-            _reg_bucket[ip] = [day, 1]
-        return True
-    b[1] += 1
-    return b[1] <= REG_PER_DAY
-
-
-def _peer(v):
-    """CLIENTS lookup on a WIRE-supplied id: a non-int (list, dict, str)
-    key raised unhashable-TypeError and killed the connection (audit
-    2026-07-15)."""
-    return CLIENTS.get(v) if isinstance(v, int) else None
 
 
 
@@ -471,251 +378,6 @@ def _ladder_claim(name, season):
     if a and a["season"] == season:
         LADDER["claimed"].setdefault(season, []).append(name)
         _save_ladder()
-
-
-# ---- raid boss (2026-07-15): the weekly community damage race ---------------
-# One shared boss for the whole server: a random top-stage species with
-# energy_max x 5,500,000 HP, standing for 7 days after a 24h "incoming"
-# cooldown.  Every player gets 3 attempts a day; an attempt's RAW battle
-# damage (<= 20) submits as raw x 5000 x stage-mult.  When the boss falls
-# (or escapes at the window's end) the contributor board archives and pays
-# on claim: rank 1/2/3 = 5000/3000/2000 bits + 3/2/1 items, everyone else
-# 500 + 1; an ESCAPED boss pays a flat 100 consolation.  Weekend claims pay
-# x1.5.  All numbers are the source rule set's, verbatim; the ledger is
-# SERVER-authoritative here (the original trusted clients).
-RAID_PATH = os.environ.get(
-    "TUIPET_RAID",
-    os.path.join(os.path.dirname(os.path.abspath(__file__)), "raid.json"))
-RAID_POOL_PATH = os.path.join(
-    os.path.dirname(os.path.abspath(__file__)), "raid_pool.json")
-RAID_HP_PER_ENERGY = 5_500_000
-RAID_COOLDOWN_S = 1440 * 60          # 24h "Incoming Boss..."
-RAID_WINDOW_S = 10080 * 60           # 7 days standing
-RAID_ATTEMPTS_PER_DAY = 3
-RAID_MAX_RAW = 20                    # 10 rounds x 2 damage: the honest ceiling
-RAID_DMG_MULT = 5000
-RAID_STAGE_MULT = (("super ultimate", 20), ("armor-hybrid", 10),
-                   ("ultimate", 10), ("perfect", 5), ("adult", 2))
-# num -> raid multiplier, precomputed from the atlas (tools regen it).  The
-# damage mult binds to the pet's NUM, not the free-text stage string a client
-# can forge: claiming x20 now means claiming a real super-ultimate species,
-# which shows on the forger's own roster sprite -- the same tradeoff the client
-# _clamp_card fix accepted (round-3 audit 2026-07-16).
-RAID_MULT_BY_NUM_PATH = os.path.join(
-    os.path.dirname(os.path.abspath(__file__)), "raid_stage_mult.json")
-try:
-    with open(RAID_MULT_BY_NUM_PATH) as _f:
-        RAID_MULT_BY_NUM = {int(k): int(v) for k, v in json.load(_f).items()}
-except (OSError, ValueError):
-    RAID_MULT_BY_NUM = {}
-RAID_RANK_BITS = {1: 5000, 2: 3000, 3: 2000}
-RAID_RANK_ITEMS = {1: 3, 2: 2, 3: 1}
-RAID_PART_BITS, RAID_PART_ITEMS = 500, 1
-RAID_CONSOLATION = 100
-RAID_ITEM_POOL = ["energy_drink", "best_fruit", "normal_fruit", "worst_fruit",
-                  "deadly_fruit", "training_pack", "x_antibody",
-                  "revive_floppy", "super_carrot", "time_gear",
-                  "anti_evo_chip", "care_mistake_eraser", "poop_clean_pill",
-                  "alarm_clock", "sleeping_pill", "junk_food", "premium_meat"]
-RAID_HISTORY_KEEP = 5
-
-
-def _load_raid():
-    try:
-        with open(RAID_PATH) as f:
-            d = json.load(f)
-        d.setdefault("boss", None)
-        d.setdefault("board", {})
-        d.setdefault("history", [])
-        d.setdefault("claimed", {})
-        d.setdefault("attempts", {})
-        return d
-    except Exception:
-        return {"boss": None, "board": {}, "history": [], "claimed": {},
-                "attempts": {}}
-
-
-RAID = _load_raid()
-
-
-def _save_raid():
-    try:
-        tmp = RAID_PATH + ".tmp"
-        with open(tmp, "w") as f:
-            json.dump(RAID, f)
-        os.replace(tmp, RAID_PATH)
-    except OSError:
-        LOG.warning("raid: disk refused %s", RAID_PATH)
-
-
-def _raid_pool():
-    try:
-        with open(RAID_POOL_PATH) as f:
-            return json.load(f)
-    except Exception:
-        return [{"num": 0, "name": "Unknown Boss", "energy_max": 65}]
-
-
-def _raid_mult_for_num(num):
-    """The raid multiplier for a claimed species num.  Non-int / unknown num
-    -> x1 (the map ships only non-trivial entries).  An empty map (data file
-    missing on the box) also yields x1 -- fail CLOSED, never x20."""
-    try:
-        return RAID_MULT_BY_NUM.get(int(num), 1)
-    except (TypeError, ValueError):
-        return 1
-
-
-def _raid_stage_mult(stage):     # legacy string form, kept for _raid_view display
-    st = str(stage or "").lower()
-    for token, mult in RAID_STAGE_MULT:
-        if token in st:
-            return mult
-    return 1
-
-
-def _raid_stage_next(now):
-    """Pick the next boss: 24h cooldown, then a 7-day window."""
-    import random as _r
-    pick = _r.choice(_raid_pool())
-    hp = int(pick.get("energy_max", 65)) * RAID_HP_PER_ENERGY
-    start = now + RAID_COOLDOWN_S
-    if RAID["boss"] is None and not RAID["history"]:
-        start = now                       # a fresh install opens immediately
-    return {"num": int(pick["num"]), "name": str(pick["name"]),
-            "hp": hp, "max_hp": hp,
-            "start": start, "end": start + RAID_WINDOW_S}
-
-
-def _raid_rotate(now=None):
-    """Archive a finished raid and stage the next boss (idempotent)."""
-    now = time.time() if now is None else now
-    b = RAID["boss"]
-    if b is not None and b["hp"] > 0 and now <= b["end"]:
-        return                            # still standing
-    if b is not None:
-        RAID["history"].append({
-            "id": str(int(b["end"])), "boss_name": b["name"], "num": b["num"],
-            "defeated": b["hp"] <= 0, "ended": now,
-            "board": dict(RAID["board"]),
-        })
-        RAID["history"] = RAID["history"][-RAID_HISTORY_KEEP:]
-        RAID["board"] = {}
-    RAID["boss"] = _raid_stage_next(now)
-    _save_raid()
-
-
-def _raid_attempts(name, now=None):
-    now = time.time() if now is None else now
-    # UTC like the ladder season and the raid window -- the localtime day key
-    # reset attempts at a different boundary than everything else displayed
-    # (audit 2026-07-15)
-    day = time.strftime("%Y-%m-%d", time.gmtime(now))
-    rec = RAID["attempts"].get(name)
-    if not rec or rec.get("date") != day:
-        rec = {"date": day, "left": RAID_ATTEMPTS_PER_DAY}
-        RAID["attempts"][name] = rec
-        if len(RAID["attempts"]) > 4096:
-            # drop only STALE (previous-day) rows -- `= {name: rec}` wiped every
-            # OTHER player's TODAY count, refunding their used attempts on the
-            # next hit (round-3 audit 2026-07-16)
-            RAID["attempts"] = {n: r for n, r in RAID["attempts"].items()
-                                if r.get("date") == day}
-    return rec
-
-
-def _raid_rank(board, name):
-    """1-based rank by damage (ties by earliest report), 0 if absent."""
-    top = sorted(board.items(), key=lambda kv: (-kv[1]["damage"],
-                                                kv[1].get("ts", 0)))
-    return next((i + 1 for i, (who, _v) in enumerate(top) if who == name), 0)
-
-
-def _raid_award(name):
-    """The newest archived raid this player contributed to and hasn't
-    claimed -> {id, rank, defeated, bits, items} (weekend x1.5 applies at
-    CLAIM time, not here)."""
-    for rec in sorted(RAID["history"], key=lambda r: r["id"], reverse=True):
-        if name in RAID["claimed"].get(rec["id"], []):
-            continue
-        if name not in rec["board"]:
-            continue
-        rank = _raid_rank(rec["board"], name)
-        if rec["defeated"]:
-            bits = RAID_RANK_BITS.get(rank, RAID_PART_BITS)
-            items = RAID_RANK_ITEMS.get(rank, RAID_PART_ITEMS)
-        else:
-            bits, items = RAID_CONSOLATION, 0
-        return {"id": rec["id"], "rank": rank, "defeated": rec["defeated"],
-                "boss": rec["boss_name"], "bits": bits, "items": items}
-    return None
-
-
-def _raid_view(name, now=None):
-    now = time.time() if now is None else now
-    _raid_rotate(now)
-    b = RAID["boss"]
-    top = sorted(RAID["board"].items(),
-                 key=lambda kv: (-kv[1]["damage"], kv[1].get("ts", 0)))
-    you = next(((i + 1, v["damage"]) for i, (who, v) in enumerate(top)
-                if who == name), (0, 0))
-    return {"t": "raid",
-            "boss": dict(b),
-            "now": now,
-            "top": [(who, v["damage"]) for who, v in top[:10]],
-            "you": list(you),
-            "attempts": _raid_attempts(name, now)["left"],
-            "award": _raid_award(name)}
-
-
-def _raid_hit(name, raw, num, now=None):
-    """One attempt's damage report.  The server owns the attempt count and
-    the ceiling: raw battle damage is bounded by what 10 rounds can deal, and
-    the stage multiplier binds to the claimed species NUM (not a forgeable
-    stage string)."""
-    now = time.time() if now is None else now
-    _raid_rotate(now)
-    b = RAID["boss"]
-    if b["start"] > now or b["hp"] <= 0:
-        return {"t": "raid_hit", "ok": False, "why": "The boss is not standing."}
-    rec = _raid_attempts(name, now)
-    if rec["left"] <= 0:
-        return {"t": "raid_hit", "ok": False, "why": "No attempts left today."}
-    rec["left"] -= 1
-    try:
-        raw = int(raw or 0)                # wire-supplied: "abc" was a crash
-    except (TypeError, ValueError):
-        raw = 0
-    raw = max(0, min(raw, RAID_MAX_RAW))
-    dealt = raw * RAID_DMG_MULT * _raid_mult_for_num(num)
-    b["hp"] = max(0, b["hp"] - dealt)
-    entry = RAID["board"].setdefault(name, {"damage": 0, "ts": now})
-    entry["damage"] += dealt
-    entry["ts"] = now
-    if b["hp"] <= 0:
-        _raid_rotate(now)                 # the kill archives immediately
-    _save_raid()
-    return {"t": "raid_hit", "ok": True, "dealt": dealt}
-
-
-def _raid_claim(name, raid_id, now=None):
-    now = time.time() if now is None else now
-    a = _raid_award(name)
-    if not a or a["id"] != str(raid_id):
-        return {"t": "raid_reward", "ok": False}
-    import random as _r
-    bits = a["bits"]
-    wd = time.localtime(now).tm_wday
-    if wd >= 5:
-        bits = int(bits * 1.5)            # weekend claims pay half again
-    items = [_r.choice(RAID_ITEM_POOL) for _ in range(a["items"])]
-    RAID["claimed"].setdefault(a["id"], []).append(name)
-    if len(RAID["claimed"]) > RAID_HISTORY_KEEP * 4:
-        keep = {r["id"] for r in RAID["history"]}
-        RAID["claimed"] = {k: v for k, v in RAID["claimed"].items() if k in keep}
-    _save_raid()
-    return {"t": "raid_reward", "ok": True, "bits": bits, "items": items,
-            "defeated": a["defeated"], "rank": a["rank"], "boss": a["boss"]}
 
 
 async def _send(client, obj):
@@ -901,13 +563,7 @@ async def handler(ws):
             if t == "login":
                 # A login_failed closes the socket (return): this client always
                 # retries on a fresh connection, so keeping the old one open leaks it.
-                ip = _client_ip(ws)
-                if not _login_allowed(ip):
-                    await asyncio.sleep(0.4)
-                    await _send(client, {"t": "login_failed",
-                                         "msg": "Too many tries — wait a minute."})
-                    return
-                name = _clean_name(m.get("name"))
+                name = _clean(m.get("name"), MAX_NAME)
                 pw = str(m.get("pw") or "")[:MAX_PW]
                 if not name:
                     await _send(client, {"t": "login_failed", "msg": "Name required."})
@@ -927,12 +583,8 @@ async def handler(ws):
                     if not pw:
                         await _send(client, {"t": "login_failed", "msg": "Pick a password to claim this name."})
                         return
-                    if not _registration_allowed(ip):
-                        await _send(client, {"t": "login_failed",
-                                             "msg": "No new accounts right now — try tomorrow."})
-                        return
                     ACCOUNTS[key] = await asyncio.to_thread(_make_account, name, pw)
-                    await asyncio.to_thread(_save_accounts)   # 10k accounts must not stall the relay
+                    _save_accounts()
                     LOG.info("registered account %s", name)
                 # A sync_only connection just pulls/pushes the cloud save; it never
                 # joins the live roster, so it can coexist with a lobby login on the
@@ -963,15 +615,13 @@ async def handler(ws):
                         LOG.info("evicted stale session id=%s name=%s", c.id, c.name)
                     client.boot = boot
                 client.name = name
-                _pet = m.get("pet")
-                client.pet = _pet if isinstance(_pet, dict) else {}   # non-dict pet crashed .get() later
+                client.pet = m.get("pet") or {}
                 client.live = not sync_only
                 if sync_only:                     # the newest APP LAUNCH owns the saves
                     _take_lease(client, key, boot)
                 logged_in = True
                 client.logged = True
                 await _send(client, {"t": "welcome", "id": client.id, "name": client.name,
-                                     "proto": LOBBY_PROTO,          # handshake: the client warns on a stale relay
                                      "save": SAVES.get(key)})       # cloud save (or null) for cross-device load
                 if not sync_only:
                     for f in CHAT_BACKLOG:        # rejoin the conversation, not a void
@@ -992,8 +642,7 @@ async def handler(ws):
                 await _send(client, {"t": "error", "msg": "Log in first."})
 
             elif t == "pet":
-                _pet = m.get("pet")
-                client.pet = _pet if isinstance(_pet, dict) else {}   # non-dict pet crashed .get() later
+                client.pet = m.get("pet") or {}
                 if client.live:
                     await _push_roster()
 
@@ -1016,20 +665,6 @@ async def handler(ws):
 
             elif t == "ladder_claim":
                 _ladder_claim(client.name, str(m.get("season") or ""))
-            elif t == "raid_get":
-                await _send(client, _raid_view(client.name))
-            elif t == "raid_hit":
-                # the multiplier binds to the roster card's NUM, resolved to a
-                # real species' stage in RAID_MULT_BY_NUM -- a forged stage
-                # STRING no longer buys x20 (round-3 audit 2026-07-16, closing
-                # the 2026-07-15 fix that still trusted the card's stage text)
-                r = _raid_hit(client.name, m.get("damage"),
-                              (client.pet or {}).get("num"))
-                await _send(client, r)
-                await _send(client, _raid_view(client.name))
-            elif t == "raid_claim":
-                await _send(client, _raid_claim(client.name, m.get("raid")))
-                await _send(client, _raid_view(client.name))
 
             elif t == "chat":
                 text = _clean(m.get("text"), MAX_CHAT)
@@ -1046,7 +681,7 @@ async def handler(ws):
             elif t == "room":
                 # join-or-create by shared phrase; empty code -> the main lobby.
                 # No password check beyond the phrase ITSELF: the phrase is the
-                # password (the reference fan game's private 🔒 rooms, tuipet-shaped).
+                # password (DSprite's private 🔒 rooms, tuipet-shaped).
                 if not client.live:
                     continue
                 code = _room_code(m.get("code"))
@@ -1075,7 +710,7 @@ async def handler(ws):
                 text = _clean(m.get("text"), MAX_CHAT)
                 if not text:
                     continue
-                target = _peer(m.get("to"))
+                target = CLIENTS.get(m.get("to"))
                 if target is not None and target.logged:
                     name = target.name
                 else:                              # stale/gone id -> address by name
@@ -1097,7 +732,7 @@ async def handler(ws):
             elif t in ("invite", "invite_resp", "relay"):
                 if not client.live:               # sessions are for roster members only
                     continue
-                target = _peer(m.get("to"))
+                target = CLIENTS.get(m.get("to"))
                 if target is None or not target.live:
                     await _send(client, {"t": "error", "msg": "That player just left."})
                     continue

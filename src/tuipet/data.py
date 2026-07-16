@@ -1,5 +1,4 @@
-"""Load the bundled game data (sprites + rule tables, ripped from multiple
-fan games -- the mon atlas is COLOUR, palette-indexed, 16x16)."""
+"""Load extracted sprites + game data from the DVPet CSVs."""
 from __future__ import annotations
 import csv
 import gzip
@@ -60,7 +59,6 @@ ROLES = {
     "sad":    [9],         # dejected/fail pose (HP_Training_AttackFail)
     "tired":  [9],         # disliked/weary pose
     "exhausted": [10],     # collapse pose (Dying)
-    "sick_idle": [10, 11], # the injured pair, alternating
     "yawn":   [0, 8],      # yawning(): idle 0 -> open-mouth 8 (verified)
     "wake":   [2, 3, 1],   # wakeUp(): groggy 2/3 -> settle 1 (verified)
     "surprise": [1, 5],    # AngrySurprise startle beats 1,5
@@ -74,9 +72,8 @@ ROLES = {
 }
 MIRROR_ROLES = {"refuse"}
 
-STAGE_ORDER = ["Baby I", "Baby II", "Child", "Adult", "Perfect",
-               "Ultimate-Super Ultimate", "Armor-Hybrid", "Special"]
-# full growth order including the Egg stage, for stage-rank gating
+STAGE_ORDER = ["Fresh", "InTraining", "Rookie", "Champion", "Ultimate", "Mega"]
+# full growth order including the Egg stage, for age/stage-rank gating (shop, tournament)
 STAGE_RANK = ["Egg"] + STAGE_ORDER
 
 
@@ -119,7 +116,7 @@ def frames_for(num, egg_type=0):
         from . import egg as egg_mod
         return egg_mod.frames(egg_type) or [""]
     rec = load_sprites()[1].get(num)
-    return _decode_strip(rec)["frames"] if rec else [""]
+    return rec["frames"] if rec else [""]
 
 
 def record_for(num):
@@ -135,8 +132,7 @@ def record_for(num):
         from . import placeholder
         rec = {"frames": placeholder.FRAMES, "w": placeholder.W,
                "h": placeholder.H, "_placeholder": True}
-        return rec
-    return _decode_strip(rec)
+    return rec
 
 
 def bob_frame(num, frame_i, role="idle", beat=5, egg_type=0):
@@ -165,135 +161,27 @@ def bob_frame(num, frame_i, role="idle", beat=5, egg_type=0):
     return f or next((x for x in fr if x), None)
 
 
-def _decode_frame(hx, pal):
-    """One packed frame (2 hex chars per pixel, palette-indexed, 16x16) ->
-    COLOUR rows: lists of None (transparent) / "#rrggbb" cells."""
-    rows = []
-    for y in range(16):
-        row = []
-        for x in range(16):
-            o = (y * 16 + x) * 2
-            c = pal[int(hx[o:o + 2], 16)]
-            row.append(c if c not in ("0", 0) else None)
-        rows.append(row)
-    return rows
-
-
-# the 11-slot strip layout every ROLE indexes into, filled from the atlas'
-# named anims (walk/eat/sleep/injured pairs + happy/angry/attack/refuse):
-_STRIP = (("walk", 0), ("walk", 1), ("sleep", 0), ("sleep", 1),
-          ("refuse", 0), ("happy", 0), ("attack", 0), ("eat", 1),
-          ("eat", 0), ("angry", 0), ("injured", 0), ("injured", 1))
-
-
-def _decode_strip(rec):
-    """Decode a mon record's packed anims into its 11-frame strip, once."""
-    if "frames" in rec:
-        return rec
-    pal, anims = rec["pal"], rec["anims"]
-    cache = {}
-
-    def frame(slot, i):
-        key = (slot, i)
-        if key not in cache:
-            fr = anims.get(slot)
-            if not fr:
-                fr = anims.get("walk") or next(iter(anims.values()))
-            cache[key] = _decode_frame(fr[min(i, len(fr) - 1)], pal)
-        return cache[key]
-
-    rec["frames"] = [frame(s, i) for s, i in _STRIP]
-    return rec
-
-
 @lru_cache(maxsize=1)
 def load_sprites():
-    """The mon atlas: COLOUR sprites + species stats, keyed by num AND by
-    species path.  Nums are the sorted-path index -- stable because the atlas
-    ships with the build.  Frame strips decode lazily (991 species x 11
-    frames is too much work for import time)."""
-    mons = _load_bundled("mons.json.gz")
-    data = []
-    by_num = {}
-    for num, path in enumerate(sorted(mons)):
-        m = mons[path]
-        rec = {"num": num, "path": path, "name": m["name"],
-               "stage": m["stage"], "attribute": m["attribute"],
-               "weight": m["weight"], "hunger_max": m["hunger_max"],
-               "strength_max": m["strength_max"], "energy_max": m["energy_max"],
-               "attack_sprite": m["attack_sprite"],
-               "pal": m["pal"], "anims": m["anims"], "w": 16, "h": 16}
-        data.append(rec)
-        by_num[num] = rec
+    from . import placeholder
+    data = _load_bundled("sprites.json.gz")
+    for rec in data:
+        frames = rec["frames"]
+        first = next((f for f in frames if f), None)
+        best = max((sum(r.count("1") for r in f) for f in frames if f), default=0)
+        # unfinished cells (solid square, near-blank, or fully empty) -> blob
+        if (first is None or best < 10 or _content_fill(first) > 0.97
+                or rec["name"].strip().upper() in ("EMPTY", "", "NA", "NULL", "NONE")):
+            PLACEHOLDER_NUMS.add(rec["num"])
+            rec["frames"] = placeholder.FRAMES
+            rec["w"], rec["h"] = placeholder.W, placeholder.H
+            rec["_placeholder"] = True
+        else:
+            # fill empty animation frames with the first real frame so no role
+            # (idle/eat/sleep/...) ever renders blank
+            rec["frames"] = [f if f else first for f in frames]
+    by_num = {d["num"]: d for d in data}
     return data, by_num
-
-
-@lru_cache(maxsize=1)
-def num_by_path():
-    """species path -> roster num (the tables speak in paths)."""
-    return {rec["path"]: rec["num"] for rec in load_sprites()[0]}
-
-
-def _load_json(name):
-    with open(os.path.join(_DATA, name)) as fh:
-        return json.load(fh)
-
-
-@lru_cache(maxsize=1)
-def load_rules():
-    """The sim rule constants (clock/meters/care/death/sleep/evolution/battle)."""
-    return _load_json("vpet_rules.json")
-
-
-@lru_cache(maxsize=1)
-def load_evo_branches():
-    """species path -> {best/middle/worst: next path} (the growth chart)."""
-    return _load_bundled("evo_branches.json.gz")
-
-
-@lru_cache(maxsize=1)
-def load_hatch():
-    """egg path -> Baby I path."""
-    return _load_json("hatch.json")
-
-
-@lru_cache(maxsize=1)
-def load_armor_evos():
-    """Child path -> [{itemId, result path}] (the crest-egg forms)."""
-    return _load_json("armor_evos.json")
-
-
-@lru_cache(maxsize=1)
-def load_jogress_pairs():
-    """'pathA|pathB' (sorted) -> fusion result path.  4 shipped keys are
-    stored REVERSE-sorted (all ExVeemon pairs) and the sorted lookup never
-    found them -- Dinobeemon, SkullGreymon x2 and AeroVeedramon were
-    unreachable fusions (audit 2026-07-15): normalize every key here so
-    one loader fixes every consumer."""
-    raw = _load_bundled("jogress_pairs.json.gz")
-    out = {}
-    for k, v in raw.items():
-        a, _, b = k.partition("|")
-        out[f"{min(a, b)}|{max(a, b)}" if b else k] = v
-    return out
-
-
-@lru_cache(maxsize=1)
-def load_vitems():
-    """The item catalog: id -> {name, price?, category, ...}."""
-    return _load_json("vitems.json")
-
-
-@lru_cache(maxsize=1)
-def load_credits():
-    """Sprite-artist credits: {authors: {artist: [names]}, unmatched: [...]}."""
-    return _load_json("credits.json")
-
-
-@lru_cache(maxsize=1)
-def load_battle_fx():
-    """Battle-effect bitmaps (attack projectiles, hit, ready/start banners)."""
-    return _load_bundled("battle_fx.json.gz")
 
 
 def is_placeholder(num):
@@ -376,6 +264,7 @@ def load_foods():
     return foods
 
 
+
 def _temp_range(s):
     try:
         a, b = (s or "40t60").split("t")
@@ -454,66 +343,29 @@ def load_device_attacks():
 
 
 def attack_orb(num, attribute, power, frame_i=0):
-    """The attack projectile: every species fires ITS OWN shape -- the
-    atlas' attack_sprite index picks one of the 50 shipped projectile
-    bitmaps.  Falls back to the legacy per-attribute orbs when the shape
-    is missing (cross-version peers)."""
-    rec = load_sprites()[1].get(num)
-    if rec is not None:
-        shape = _attack_shape(rec.get("attack_sprite", 0))
-        if shape:
-            return shape
+    """The attack projectile.  Device-accurate first (Joel 2026-07-14): a species
+    in deviceAttacks.csv fires ITS OWN real-hardware attack for EVERY attribute,
+    exactly like the original V-Pet -- frame_i animates the 2-frame attacks at
+    the caller's 10Hz clock.  Everyone else keeps DVPet checkAttackSprite: the
+    per-species special orb (attackSpritesSpecial.png, digimon.csv col 55) if set
+    for this attribute, else the generic per-attribute orb at the power tier
+    floor(power/25) from attackSprites.png."""
     orbs = load_orbs()
+    req = load_requirements().get(num) or {}
+    nm = "".join(c for c in (req.get("name") or "").lower() if c.isalnum())
+    key = load_device_attacks().get(nm)
+    if key:
+        frames = orbs.get("device", {}).get(key)
+        if frames:
+            return frames[frame_i % len(frames)]
+    idx = (req.get("attack_index") or {}).get(attribute, -1)
+    if idx is not None and idx >= 0:
+        sp = orbs["special"].get(str(idx))
+        if sp:
+            return sp
     tiers = orbs["generic"].get(attribute) or orbs["generic"]["Vaccine"]
     t = max(0, min(int(power) // 25, len(tiers) - 1))
     return tiers[t] or next((x for x in tiers if x), None)
-
-
-@lru_cache(maxsize=256)
-def mon_ink(num):
-    """The mon's dominant saturated sprite colour -- the projectile tint.
-    The source LCD recolours the whole screen per digimon; the clone's
-    full-colour scenes tint the 1-bit attack shapes the same way instead
-    (audit 2026-07-15: volleys stamped in scene ink read as dark blobs).
-    None when the sprite is all outline/grey -- callers fall back to ink."""
-    import colorsys
-    rec = record_for(num)
-    if rec.get("_placeholder"):
-        return None
-    weights = {}
-    for row in (rec.get("frames") or [[]])[0] or []:
-        for c in row:
-            if isinstance(c, str) and c.startswith("#") and len(c) >= 7:
-                weights[c] = weights.get(c, 0) + 1
-    best, score = None, -1
-    for c, n in weights.items():
-        r, g, b = (int(c[i:i + 2], 16) / 255 for i in (1, 3, 5))
-        _h, l, s = colorsys.rgb_to_hls(r, g, b)
-        if s < 0.25 or not 0.15 < l < 0.85:
-            continue                 # outline/greys/white shine don't vote
-        if n > score:
-            best, score = c, n
-    return best
-
-
-@lru_cache(maxsize=64)
-def _attack_shape(n):
-    """Projectile bitmap n (1-50) -> 1-bit rows, or None.  The sheet keys
-    are "Attack_1".."Attack_50" -- the bare str(n) lookup matched NOTHING,
-    so all 991 species fell back to the generic orbs and the v0.4.2
-    per-species volley never fired (audit 2026-07-15)."""
-    try:
-        e = load_battle_fx()["attacks"].get(f"Attack_{int(n)}")
-    except Exception:
-        return None
-    if not e:
-        return None
-    w, h = int(e.get("width", 8)), int(e.get("height", 8))
-    px = e.get("sprite") or []
-    if len(px) < w * h:
-        return None
-    return ["".join("1" if px[y * w + x] else "0" for x in range(w))
-            for y in range(h)]
 
 
 @lru_cache(maxsize=1)
@@ -671,6 +523,225 @@ def natural_habitat(num):
     name = (by_num.get(num, {}).get("name") or "").strip()
     return _canonical_habitat_by_name().get(name, -1)
 
+# ---------------------------------------------------------------------------
+# Battle enemies (parsed from enemies.csv).  Each enemy references a Digimon by
+# number (its sprite + attribute) and carries battle Health and attribute power.
+# ---------------------------------------------------------------------------
+
+
+_ATTACKS = None
+
+
+def _load_attacks():
+    global _ATTACKS
+    if _ATTACKS is None:
+        _ATTACKS = {}
+        cols = {"Vaccine": "VaccineName:Effect", "Data": "DataName:Effect", "Virus": "VirusName:Effect"}
+        for r in csv.DictReader(open(os.path.join(_DATA, "digimon.csv"))):
+            try:
+                n = int(r["DigimonNum"])
+            except (KeyError, ValueError):
+                continue
+            info = {}
+            for a, c in cols.items():
+                parts = [p.strip() for p in (r.get(c, "") or "").split(":")]
+                effect = parts[1] if len(parts) > 1 and parts[1] else "None"
+                info[a] = {"name": parts[0] if parts else "", "effect": effect,
+                           "conditions": [p for p in parts[2:] if p]}
+            _ATTACKS[n] = info
+    return _ATTACKS
+
+
+def move_name(num, attribute):
+    """The flavour name of a Digimon's attack for an attribute (DVPet
+    VaccineName/DataName/VirusName columns), e.g. 'Exhaust Flame'."""
+    return (_load_attacks().get(num) or {}).get(attribute, {}).get("name", "")
+
+
+def attack_info(num, attribute):
+    """Full DVPet attack for an attribute: {name, effect, conditions[]} parsed from
+    the digimon.csv Name:Effect:Condition(s) cell (AttackEffectProcess input)."""
+    return (_load_attacks().get(num) or {}).get(attribute) or {"name": "", "effect": "None", "conditions": []}
+
+
+@lru_cache(maxsize=1)
+def load_enemies():
+    _, by_num = load_sprites()
+    path = os.path.join(_DATA, "enemies.csv")
+    enemies = []
+    for r in csv.DictReader(open(path)):
+        try:
+            dnum = int(r["Name"])
+        except (KeyError, ValueError):
+            continue
+        rec = by_num.get(dnum)
+        if not rec:
+            continue  # enemy has no usable sprite (placeholder) -> skip
+        vac = int(r.get("VaccinePower") or 0)
+        dat = int(r.get("DataPower") or 0)
+        vir = int(r.get("VirusPower") or 0)
+        attr = rec["attribute"]
+        if attr not in ("Vaccine", "Data", "Virus"):
+            attr = max((("Vaccine", vac), ("Data", dat), ("Virus", vir)), key=lambda t: t[1])[0]
+        # the real header is the essay-length "BitsWon (range of random bits -
+        # ...)" -- a bare .get("BitsWon") never matched, so every enemy paid the
+        # 1..5 fallback instead of its real purse (bosses pay 100..2000!):
+        # boss-battle audit 2026-07.  Same trap as "MedicineHours (number...)".
+        raw = next((v for k, v in r.items() if k and k.startswith("BitsWon")), "")
+        bits = (raw or "1t5").split("t")
+        try:
+            blo, bhi = int(bits[0]), int(bits[-1])
+        except ValueError:
+            blo, bhi = 1, 5
+        enemies.append({
+            "num": dnum, "name": rec["name"], "stage": rec["stage"],
+            "hp": max(2, int(r.get("Health") or 5)),
+            "vaccine": vac, "data_power": dat, "virus": vir, "attribute": attr,
+            "boss": (r.get("IsZoneBoss") or "FALSE").strip().upper() == "TRUE",
+            "map": int(r.get("Map") or 1), "zone": int(r.get("Zone") or 1),
+            "bits": (blo, bhi),
+            "location": int(r.get("Location") or 0),
+            "penalty": int(r.get("Penalty") or 0),
+            "chance": int(r.get("AppearanceChance/100") or 100),
+            "loot_table": int(r.get("LootTableID") or -1),
+            # only the last boss carries one ("You saved<br>the Digital<br>World!"):
+            # it cues the canon victory parade after the final ZoneChange
+            "parade_msg": ((r.get("BossParadeMessage") or "").replace("<br>", " ").strip()
+                           if (r.get("BossParadeMessage") or "null") != "null" else ""),
+        })
+    return enemies
+
+
+def enemies_for_stage(stage):
+    """Enemies whose Digimon are at the given stage (fallback: all)."""
+    pool = [e for e in load_enemies() if e["stage"] == stage]
+    return pool or load_enemies()
+
+
+# ---------------------------------------------------------------------------
+# Adventure maps: ordered maps -> ordered zones, each with its random-encounter
+# enemies and zone boss(es), parsed from zones.csv + enemies.csv.
+# ---------------------------------------------------------------------------
+@lru_cache(maxsize=1)
+def load_tournies():
+    """Tournament trophies (tournies.csv): per-season cups with field/attribute/age
+    restrictions, a BitModifier prize, ItemWon/FoodWon prizes, and enemy overrides."""
+    path = os.path.join(_DATA, "tournies.csv")
+    rows = list(csv.DictReader(open(path)))
+    if not rows:
+        return []
+    hdr = list(rows[0].keys())
+    age_col = next((k for k in hdr if k.startswith("AgeLimit")), "AgeLimit")
+    food_col = next((k for k in hdr if k.startswith("FoodWon")), "FoodWonqAmount")
+
+    def na(v):
+        v = (v or "NA").strip()
+        return "" if v in ("NA", "None", "") else v
+
+    out = []
+    for r in rows:
+        try:
+            tid = int(r["Trophy"])
+        except (KeyError, ValueError):
+            continue
+        fid, famt = -1, 0
+        fw = r.get(food_col) or "-1q-1"
+        if "q" in fw:
+            a, b = fw.split("q", 1)
+            try:
+                fid, famt = int(a), int(b)
+            except ValueError:
+                pass
+        try:
+            item = int(r.get("ItemWon") or -1)
+        except ValueError:
+            item = -1
+        try:
+            bm = float(r.get("BitModifier") or 1)
+        except ValueError:
+            bm = 1.0
+        try:
+            prelim = int(r.get("Prelim") or 0)
+        except ValueError:
+            prelim = 0
+        out.append({
+            "prelim": prelim,
+            "id": tid, "sprite": int(r.get("SpriteNum") or 0),
+            "season": na(r.get("Season")) or "Spring",
+            "field_req": na(r.get("FieldRestriction")),
+            "attr_req": na(r.get("AttributeRestriction")),
+            "age_limit": na(r.get(age_col)),
+            "bit_mod": bm, "item": item, "food_id": fid, "food_amt": famt,
+            "reset_season": (r.get("ResetWonOnSeasonChange") or "FALSE").strip().upper() == "TRUE",
+            "same_day_retry": (r.get("SameDayRetry") or "FALSE").strip().upper() == "TRUE",
+            "enemy_stage": na(r.get("OverrideEnemyStage")),
+            "enemy_attr": na(r.get("OverrideEnemyAttribute")),
+            "enemy_elem": na(r.get("OverrideEnemyElement")),
+            "enemy_field": na(r.get("OverrideEnemyField")),
+        })
+    return out
+
+
+def _town_ranges():
+    """towns.csv TownRange ("4201t4300") per TownID -- the REAL step spans."""
+    out = {}
+    for t in csv.DictReader(open(os.path.join(_DATA, "towns.csv"))):
+        try:
+            lo, hi = (t.get("TownRange") or "0t0").split("t")
+            out[int(t["TownID"])] = (int(lo), int(hi))
+        except (KeyError, ValueError):
+            continue
+    return out
+
+
+def _zone_bgs(spec):
+    """'0t600:12;601t1300:6;...' -> [(lo, hi, habitat_id)] step spans."""
+    out = []
+    for part in spec.split(";"):
+        part = part.strip()
+        if not part or ":" not in part or "t" not in part:
+            continue
+        span, _, hid = part.partition(":")
+        lo, _, hi = span.partition("t")
+        try:
+            out.append((int(lo), int(hi), int(hid)))
+        except ValueError:
+            continue
+    return out
+
+
+@lru_cache(maxsize=1)
+def load_maps():
+    from collections import defaultdict
+    enemies = load_enemies()
+    by_mz = defaultdict(lambda: {"randoms": [], "bosses": []})
+    for e in enemies:
+        slot = "bosses" if e["boss"] else "randoms"
+        by_mz[(e["map"], e["zone"])][slot].append(e)
+    towns = _town_ranges()
+    zmap = defaultdict(list)
+    for z in csv.DictReader(open(os.path.join(_DATA, "zones.csv"))):
+        try:
+            m, zn = int(z["MapNum"]), int(z["ZoneNum"])
+        except (KeyError, ValueError):
+            continue
+        ent = by_mz.get((m, zn), {"randoms": [], "bosses": []})
+        tids = [int(x) for x in (z.get("TownID;") or "").split(";") if x.strip().isdigit()]
+        zmap[m].append({
+            "map": m, "zone": zn,
+            "total_steps": int(z.get("TotalSteps") or 10000),
+            "randoms": ent["randoms"], "bosses": ent["bosses"],
+            # the zone's REAL town step-spans (WorldMap towns; rest + no encounters)
+            "towns": sorted((*towns[t], t) for t in tids if t in towns),
+            # the zone's discoverable loot pools (Zone.checkItem draws uniformly)
+            "rand_items": [int(x) for x in (z.get("RandomItems") or "").split(":") if x.strip().isdigit()],
+            "rand_foods": [int(x) for x in (z.get("RandomFood") or "").split(":") if x.strip().isdigit()],
+            # BackgroundsAndRange: the journey's SCENERY -- "lo t hi : habitat_id"
+            # spans; the backdrop changes as the pet walks the zone (DVPet canon)
+            "bgs": _zone_bgs(z.get("BackgroundsAndRange") or ""),
+        })
+    return [{"map": m, "zones": sorted(zmap[m], key=lambda z: z["zone"])}
+            for m in sorted(zmap)]
 
 # ---------------------------------------------------------------------------
 # Shop & consumables (foods.csv / items.csv sold via shopConsumable.csv).
@@ -936,6 +1007,56 @@ def load_shop_overrides():
     return out
 
 
+@lru_cache(maxsize=1)
+def load_towns():
+    """towns.csv: the full town records -- local shop overrides + inventory
+    sizes, sell permissions, and the town tournament (slots 0-23 are hourly
+    cups; slots past 23 -- where ForceTrophies pin -- are ALWAYS open)."""
+    out = {}
+    for r in csv.DictReader(open(os.path.join(_DATA, "towns.csv"))):
+        try:
+            tid = int(r["TownID"])
+        except (KeyError, ValueError):
+            continue
+        def ids(k):
+            return [int(x) for x in (r.get(k) or "").split(":") if x.strip().isdigit()]
+        forced = [int(x) for x in (r.get("ForceTrophies") or "").split(";")
+                  if x.strip().lstrip("-").isdigit() and int(x) >= 0]
+
+        def hours(k):
+            """'6t23;6t23;24t17;6t23' -> per-season (start, end) opening spans,
+            keyed Spring/Summer/Fall/Winter.  Canon Utility.isOpen(h, span) is a
+            plain h >= start and h <= end -- so a '24t17' span (start past any
+            real hour) is CLOSED FOR THE SEASON, not a wraparound."""
+            spans = [(s.split("t") + ["", ""])[:2] for s in (r.get(k) or "").split(";")]
+            seasons = ("Spring", "Summer", "Fall", "Winter")
+            return {seasons[i]: (int(a), int(b))
+                    for i, (a, b) in enumerate(spans[:4])
+                    if a.strip().lstrip("-").isdigit() and b.strip().lstrip("-").isdigit()}
+        out[tid] = {
+            "id": tid,
+            "items_override": ids("OverrideDefaultItemsSettings(ShopConsumableID)"),
+            "foods_override": ids("OverrideDefaultFoodSettings(ShopConsumableID)"),
+            "food_max": int(r.get("FoodShopInventoryMax") or 8),
+            "item_max": int(r.get("ItemShopInventoryMax") or 12),
+            "can_sell_items": (r.get("CanSellItems") or "false").strip().lower() == "true",
+            "can_sell_food": (r.get("CanSellFood") or "false").strip().lower() == "true",
+            "tournament_limit": int(r.get("TournamentLimit (0 to 23 are hours 0 to 23 \u2013 anything higher is always open)") or
+                                    r.get("TournamentLimit") or 0),
+            "forced_trophies": forced,
+            # per-season shop opening hours (FoodShopOpen/ItemShopOpen columns);
+            # winter-market towns (6/13/18) open ONLY in winter by this data
+            "food_hours": hours("FoodShopOpen(SpringSummerFallWinter)"),
+            "item_hours": hours("ItemShopOpen(SpringSummerFallWinter)"),
+            # TownBackgroundID: the town's canonical scenery (a habitat id) --
+            # shown on arrival in adventure and behind the town lobby
+            "bg_habitat": (int(r["TownBackgroundID"])
+                           if (r.get("TownBackgroundID") or "").strip().lstrip("-").isdigit()
+                           and int(r["TownBackgroundID"]) >= 0 else None),
+        }
+    return out
+
+
 def _shop_econ_default():
     """Always-stocked, no-sale defaults for specialty items not in shopConsumable.csv."""
     # NOT must_stock: these specialty extras (X-Antibody etc.) are not in DVPet's
@@ -996,6 +1117,47 @@ def consumable_by_key(key):
         e = dict(base); e["key"] = key
         return e
     return None
+
+
+@lru_cache(maxsize=1)
+def load_loot_tables():
+    """DVPet loot tables: table_id -> ordered list of {key, name, rate}.
+
+    Built from lootTable.csv (table -> drop-rate IDs) and dropRate.csv
+    (drop-rate ID -> consumable + percentage). A single 0..100 draw walks the
+    list; the slack below 100 is the chance nothing drops (see loot.roll)."""
+    foods, items = _load_consumables()
+    rates = {}
+    with open(os.path.join(_DATA, "dropRate.csv")) as fh:
+        rd = csv.reader(fh)
+        next(rd, None)
+        for row in rd:
+            if len(row) < 4 or not row[0].strip():
+                continue
+            try:
+                did, cid, rate = int(row[0]), int(row[1]), int(row[3])
+            except ValueError:
+                continue
+            is_food = row[2].strip().upper() == "TRUE"
+            base = (foods if is_food else items).get(cid)
+            if not base or not item_is_functional(base):   # no inert loot drops
+                continue
+            rates[did] = {"key": ("f:%d" if is_food else "i:%d") % cid,
+                          "name": base["name"], "rate": rate}
+    tables = {}
+    with open(os.path.join(_DATA, "lootTable.csv")) as fh:
+        rd = csv.reader(fh)
+        next(rd, None)
+        for row in rd:
+            if not row or not row[0].strip():
+                continue
+            try:
+                tid = int(row[0])
+            except ValueError:
+                continue
+            tables[tid] = [rates[int(c)] for c in row[1:]
+                           if c.strip().isdigit() and int(c) in rates]
+    return tables
 
 
 @lru_cache(maxsize=1)

@@ -1,7 +1,7 @@
-"""Stand-in sprite for any creature whose art is unfinished -- the classic V-pet's own
+"""Stand-in sprite for any creature whose art is unfinished -- DVPet's own
 `copymon`. In the current data set this never triggers (all 1525 creatures have
 real, extracted art), but if a future build has an unfinished cell we show a real
-the classic V-pet sprite, never a drawn one."""
+DVPet sprite, never a drawn one."""
 from __future__ import annotations
 from . import data
 

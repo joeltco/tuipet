@@ -12,7 +12,7 @@ from tuipet.pet import Pet
 
 
 def _panel(sound_on=None, **kw):
-    p = Pet(num=100, stage="Adult", attribute="Vaccine")
+    p = Pet(num=100, stage="Champion", attribute="Vaccine", obedience=500)
     state = {"on": True if sound_on is None else sound_on}
     pan = OptionsPanel(p, lambda: state["on"],
                        lambda: state.__setitem__("on", not state["on"]), **kw)
@@ -217,6 +217,26 @@ def test_update_row_shows_the_boot_hint():
     assert pan2._value("update").startswith("v")
 
 
+def test_keys_page_lists_every_binding_and_scrolls():
+    """The Keys row hosts a scrollable page of the app's REAL binding surface;
+    every window position renders inside the 12x40 LCD."""
+    from tuipet.app import TuiPetApp
+    pan, _ = _panel(bindings=TuiPetApp.BINDINGS)
+    assert pan._value("keys") == f"{len(TuiPetApp.BINDINGS)} bindings"
+    _to(pan, "keys")
+    pan.key("enter")
+    assert isinstance(pan.sub, KeysPanel)
+    plain = pan.text().plain
+    assert "Feed" in plain                # the first binding is on page one
+    _fits(pan)
+    for _ in range(len(TuiPetApp.BINDINGS)):     # scroll to the bottom
+        pan.key("down")
+        _fits(pan)
+    assert "Accept gift" in pan.text().plain     # the last binding scrolled in
+    assert pan.key("escape") is None
+    assert pan.sub is None                # back to the options list
+
+
 def test_new_egg_row_hands_off():
     """A LIVING pet costs one confirm (sweep 2026-07-14: instant retirement
     sat next to a typed-YES erase); the confirmed ENTER hands off."""
@@ -243,7 +263,7 @@ def test_erase_demands_a_typed_yes():
 
 
 def test_erase_all_wipes_the_local_state():
-    p = Pet(num=100, stage="Adult", attribute="Vaccine")
+    p = Pet(num=100, stage="Champion", attribute="Vaccine", obedience=500)
     persistence.save(p)
     persistence.set_account("JoeltCo", "pw")
     persistence.wins_add(3)
@@ -270,8 +290,8 @@ def test_erase_flows_into_the_egg_carousel_not_an_auto_egg():
     from tuipet import eggselectscreen, titlescreen
 
     async def go():
-        p = Pet(num=4, name="Rex", stage="Child", attribute="Vaccine")
-
+        p = Pet(num=4, name="Rex", stage="Rookie", attribute="Vaccine")
+        p.world_seconds = 10 * 60.0
         app = TuiPetApp(pet=p)
         seen = {}
         async with app.run_test(size=(82, 32)) as pilot:
@@ -282,22 +302,11 @@ def test_erase_flows_into_the_egg_carousel_not_an_auto_egg():
             seen["title"] = isinstance(app.mode, titlescreen.TitlePanel)
             await pilot.press("enter")                  # past the title
             await pilot.pause()
-            # erase is a FACTORY RESET: settings go with it, so when the
-            # construction switch is ARMED the gate stands again here -- the
-            # PIN walks through it to the fresh start.  Switch-aware so
-            # flipping GATE_ON never breaks this test.
-            if titlescreen.gate_on():
-                seen["gate"] = isinstance(app.mode, titlescreen.GatePanel)
-                for k in tuple(titlescreen.GATE_PIN) + ("enter",):
-                    await pilot.press(k)
-                    await pilot.pause()
             seen["carousel"] = isinstance(app.mode, eggselectscreen.EggSelectPanel)
         return seen
 
     seen = asyncio.run(go())
     assert seen["title"], "erase must return to the title"
-    if "gate" in seen:
-        assert seen["gate"], "an armed switch must re-lock after a factory reset"
     assert seen["carousel"], "a fresh start must open the egg carousel, never auto-pick"
 
 
@@ -323,8 +332,8 @@ def test_switch_account_app_flow(monkeypatch):
                         lambda uri, n, pw, save: pushes.append((n, save)) or True)
 
     async def go():
-        p = Pet(num=100, name="Champ", stage="Adult", attribute="Vaccine")
-
+        p = Pet(num=100, name="Champ", stage="Champion", attribute="Vaccine")
+        p.world_seconds = 10 * 60.0
         persistence.set_account("joel", "pw")
         app = TuiPetApp(pet=p)
         seen = {}

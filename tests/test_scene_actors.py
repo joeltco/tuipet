@@ -18,8 +18,8 @@ from tuipet.pet import Pet
 
 
 def _pet(**kw):
-    p = Pet(num=100, stage="Adult", attribute="Vaccine")
-
+    p = Pet(num=100, stage="Champion", attribute="Vaccine", obedience=500)
+    p.world_seconds = 10 * 60.0
     for k, v in kw.items():
         setattr(p, k, v)
     return p
@@ -61,12 +61,12 @@ def _paint_capture(monkeypatch):
 
 SCENARIOS = [
     {},
-    {"sick": True},
+    {"sick": True, "sick_length": 99.0},
     {"asleep": True, "anim": "sleep"},
     {"asleep": True, "nap": True, "anim": "sleep"},
     {"asleep": True, "anim": "sleep", "lights": False},
-    {"asleep": True, "anim": "sleep", "sick": True},
-    {"sick": True, "lights": False},
+    {"asleep": True, "anim": "sleep", "sick": True, "sick_length": 99.0},
+    {"sick": True, "sick_length": 99.0, "lights": False},
     # the franken transition: asleep flag up while another anim still plays
     # (a disturbed sleeper) -- the Zzz waits for the sleep pose, so the
     # walking pet and the glyph can never meet
@@ -82,7 +82,7 @@ def test_no_sprite_ever_draws_on_another(monkeypatch):
     for kw in SCENARIOS:
         for n, sizes in LOADS:
             random.seed(7)
-            p = _pet(poop=n, poop_sizes=list(sizes), **kw)
+            p = _pet(weather="Clear", poop=n, poop_sizes=list(sizes), **kw)
             s = _screen()
             for i in range(30):
                 s.advance(p)
@@ -101,7 +101,7 @@ def test_badges_never_touch_the_lcd():
                {"scold_flag": True}, {"discipline_call": True},
                {"hunger": 0}, {"anim": "happy"}, {"anim": "sad"},
                {"anim": "exhausted"}):
-        p = _pet(**kw)
+        p = _pet(weather="Clear", **kw)
         assert arena._effect_overlay(p, 0, 40, 24, tick=0) == [], kw
 
 
@@ -121,14 +121,14 @@ def test_sick_skull_stands_in_the_scene(monkeypatch):
     """The skull is a grounded scene object beside the pet -- right edge,
     feet on the floor, blinking its 2-frame pair -- and a walk wall."""
     cap = _paint_capture(monkeypatch)
-    p = _pet(sick=True, sick_length=99.0)
+    p = _pet(weather="Clear", sick=True, sick_length=99.0)
     pts = arena._effect_overlay(p, 0, 40, 24, tick=0)
     assert pts and all(grid.X1 - arena.COND_W <= x < grid.X1 for x, _ in pts)
     assert min(y for _, y in pts) == grid.TOP              # HIGH: head height,
     assert max(y for _, y in pts) < grid.TOP + 8           # the device way
     assert pts != arena._effect_overlay(p, 0, 40, 24, tick=7)   # stateNumTic blink
     # a sick SLEEPER: the Zzz owns the corner, the skull tucks in under it
-    q = _pet(sick=True, sick_length=99.0,
+    q = _pet(weather="Clear", sick=True, sick_length=99.0,
              asleep=True, anim="sleep")
     zzq = arena._effect_overlay(q, 0, 40, 24, tick=0)
     ys = sorted({y for _, y in zzq})
@@ -142,10 +142,13 @@ def test_sick_skull_stands_in_the_scene(monkeypatch):
 def test_poop_outranks_the_skull():
     """3-4 piles leave no 16px corridor beside the skull's slot: poop wins,
     the skull yields to the HUD (which always carries +sick)."""
-    p = _pet(poop=2, poop_sizes=[2, 3], sick=True)
-    # the 2-pile cap always leaves the skull its corridor now
-    assert arena._sick_mark_up(p)
-    q = _pet(poop=2, poop_sizes=[2, 3],
+    p = _pet(weather="Clear", poop=3, poop_sizes=[2, 3, 1],
+             sick=True, sick_length=99.0)
+    assert not arena._sick_mark_up(p)
+    filth_only = _pet(weather="Clear", poop=3, poop_sizes=[2, 3, 1])
+    assert arena._effect_overlay(p, 0, 40, 24, tick=0) \
+        == arena._effect_overlay(filth_only, 0, 40, 24, tick=0)
+    q = _pet(weather="Clear", poop=2, poop_sizes=[2, 3],
              sick=True, sick_length=99.0)
     assert arena._sick_mark_up(q)                          # 2 piles: room for both
 
@@ -154,13 +157,13 @@ def test_zzz_hangs_inside_the_window():
     """The sleep Zzz is a scene actor INSIDE the 32x16 (LAW: nothing above
     the band) -- band top-right, clear of the centre-clamped sleeper --
     lights on, lights off, and with its own nap glyph."""
-    night = _pet(asleep=True, anim="sleep")
+    night = _pet(weather="Clear", asleep=True, anim="sleep")
     zz = arena._effect_overlay(night, 0, 40, 24, tick=0)
     assert zz and all(x >= grid.X1 - 8 and grid.TOP <= y < grid.TOP + 8
                       for x, y in zz)
-    nap = _pet(asleep=True, nap=True, anim="sleep")
+    nap = _pet(weather="Clear", asleep=True, nap=True, anim="sleep")
     assert arena._effect_overlay(nap, 0, 40, 24, tick=0) != zz
-    dark = _pet(asleep=True, lights=False)
+    dark = _pet(weather="Clear", asleep=True, lights=False)
     assert arena._effect_overlay(dark, 0, 40, 24, tick=0)  # the dark room keeps its Zzz
     awake = _pet(weather="Clear")
     assert arena._effect_overlay(awake, 0, 40, 24, tick=0) == []
@@ -172,44 +175,46 @@ def test_sleepers_center_and_the_zzz_yields_to_poop(monkeypatch):
     3-4 piles the sleeper is pushed under the corner, so the Zzz yields to
     the HUD entirely: poop always wins floor space."""
     cap = _paint_capture(monkeypatch)
-    cozy = _pet(asleep=True, nap=True, anim="sleep",
+    cozy = _pet(weather="Clear", asleep=True, nap=True, anim="sleep",
                 poop=2, poop_sizes=[2, 3])
     s = _screen()
     s.roamer.x = 20.0                          # napped off at the far wall
     s.paint(cozy)
     assert cap["xshift"] == 0                  # pinned to centre: x12..27
-    crowded = _pet(asleep=True, nap=True, anim="sleep",
+    crowded = _pet(weather="Clear", asleep=True, nap=True, anim="sleep",
                    poop=4, poop_sizes=[3, 3, 2, 1])
     assert not [pt for pt in arena._effect_overlay(crowded, 0, 40, 24, tick=0)
                 if pt[0] >= grid.X1 - 8]       # no Zzz: the piles own the floor
 
 
-def test_alarm_rings_for_calls_and_filth():
-    """needs_attention == needs_care in the clone world: a ringing call,
-    sickness, filth, or a lit sleeper."""
-    calling = _pet(call_on=True)
-    assert calling.needs_attention() and calling.needs_care()
-    dirty = _pet(poop=1, poop_sizes=[2])
-    assert dirty.needs_attention()
-    fine = _pet()
-    assert not fine.needs_attention()
+def test_alarm_keeps_the_union_while_the_scene_split_stands():
+    """needs_attention (HUD alarm, mood-lapse gate) still counts discipline;
+    needs_care (the physical half) does not -- the split from 2026-07-11
+    survives with the badges off-LCD."""
+    scold = _pet(scold_flag=True)
+    assert scold.needs_attention() and not scold.needs_care()
+    hungry = _pet(hunger=0)
+    assert hungry.needs_attention() and hungry.needs_care()
 
 
 def test_hud_carries_every_badge():
     """The badges' one home: the STATUS deco line."""
     import inspect
     src = inspect.getsource(app._care_deco)
-    for badge in ("+sick", "+call!", "~poop", "+evo-lock", "Zzz"):
+    for badge in ("+med", "+bnd", "+vit", "+praise!", "+scold!",
+                  "+tired", "+hurt", "+sick"):
         assert badge in src, badge
 
 
 def test_the_window_law(monkeypatch):
     """LAW (2026-07-11): the main scene renders under the 32x16 window clip;
-    actor overlays arrive pre-clipped; ink pushed past an edge is cut at the
-    matrix edge (the lawful LEFT/RIGHT exit)."""
+    actor overlays arrive pre-clipped; weather alone rides the free channel
+    over the whole LCD; ink pushed past an edge is cut at the matrix edge
+    (the lawful LEFT/RIGHT exit)."""
     from tuipet import render
     cap = _paint_capture(monkeypatch)
-    p = _pet(sick=True, sick_length=99.0, poop=2, poop_sizes=[2, 3])
+    p = _pet(weather="Raining", sick=True, sick_length=99.0,
+             poop=2, poop_sizes=[2, 3])
     s = _screen()
     for i in range(8):
         s.advance(p)
@@ -218,6 +223,9 @@ def test_the_window_law(monkeypatch):
     assert cap["overlay"] and all(
         grid.X0 <= x < grid.X1 and grid.TOP <= y < grid.FLOOR
         for x, y in cap["overlay"])                 # actors: window-clipped
+    assert cap["free"], "rain must ride the free channel"
+    assert any(y < grid.TOP or x < grid.X0 or x >= grid.X1
+               for x, y in cap["free"])             # ...and cover the whole LCD
     buf = render.fill_buf(["11", "11"], 40, 24, xshift=16, clip=grid.WINDOW)
     lit = {(x, y) for y, row in enumerate(buf) for x, v in enumerate(row) if v}
     assert lit and all(x < grid.X1 for x, _ in lit)  # cut at the matrix edge
@@ -252,17 +260,11 @@ def test_battle_banner_and_flash_fill_the_window_not_the_lcd():
     explosion, and the battle scene renders under the window clip."""
     from tuipet import battlescreen as bs
     for key in ("battle_banner", "hit_explosion"):
-        frames = bs.BANNER if key == "battle_banner" else bs.EXPLODE
-        lit = 0
-        for frame in frames:
+        for frame in bs.BANNER if key == "battle_banner" else bs.EXPLODE:
             pts = bs._full(frame)
-            lit += bool(pts)
-            # a blank frame is legal: the hit flash strobes Hit_1 against
-            # BLANK, per the source renderer (training audit 2026-07-15)
-            assert all(
+            assert pts and all(
                 grid.X0 <= x < grid.X1 and grid.TOP <= y < grid.FLOOR
                 for x, y in pts), f"{key} ink must live inside the window"
-        assert lit, f"{key} never draws at all"
 
 
 def test_battle_dodge_leap_never_exits_upward():
@@ -271,9 +273,8 @@ def test_battle_dodge_leap_never_exits_upward():
     pushed sprite ink to y3-5, above the window top (audit 2026-07-13)."""
     from tuipet.pet import Pet
     from tuipet import battlescreen as bs
-    p = Pet(num=100, stage="Adult", attribute="Vaccine")
+    p = Pet(num=100, stage="Champion", attribute="Vaccine", obedience=500)
     pan = bs.BattlePanel(p)
-    pan._start_fight("normal")
     for dt in range(1, 11):
         fr = {"m": "dodge", "view": "pet", "prog": dt / bs.DODGE_T,
               "ph": pan.battle.pet_hp, "fh": pan.battle.enemy_hp}

@@ -45,8 +45,8 @@ class _StubClient:
 
 
 def _panel(state):
-    p = Pet(num=100, stage="Adult", attribute="Vaccine")
-
+    p = Pet(num=100, stage="Champion", attribute="Vaccine", obedience=500)
+    p.world_seconds = 600.0
     pan = lobbyscreen.LobbyPanel(p, lambda name, pw, card: _StubClient(state),
                                  name="joel", pw="x")
     pan.status = "↑↓ pick · ENTER chat · TAB ranks · ESC"
@@ -79,6 +79,31 @@ def test_roster_diff_lands_join_and_leave_notices_in_chat():
     pan.anim()
     assert ("", "kai joined") in s.chat and ("", "kai left") in s.chat
 
+
+def test_guest_hp_bar_uses_its_own_trained_card():
+    s = LobbyState()
+    pan = _panel(s)
+    pan.pet.full_health = 23                                  # trained past the stage table
+    pan.is_host = False
+    pan._battle_begin({"num": 4, "name": "X", "stage": "Champion", "hp": 15})
+    assert pan.my_max == 23                                   # not MAX_HEALTH["Champion"]=15
+
+
+def test_round_log_names_the_moves():
+    s = LobbyState()
+    pan = _panel(s)
+    pan.is_host = True
+    pan.opp_card = {"num": 100, "name": "Gatomon", "stage": "Champion"}
+    pan.bphase = "wait"
+    pan._apply_result({"host_dealt": 3, "guest_dealt": 1, "hattr": "Vaccine", "gattr": "Virus",
+                       "hhp": 10, "ghp": 5, "over": False,
+                       "host_alive": True, "guest_alive": True}, as_host=True)
+    assert "3 dmg" in pan.bt_log and "1 dmg" in pan.bt_log
+    assert pan.sfx in ("strongHit", "attackHit")              # every round sounds
+    assert pan.bphase == "choose"
+
+
+# ---- integration: real server, real drop -------------------------------------
 
 def _free_port():
     s = socket.socket()
@@ -283,16 +308,93 @@ def test_remote_invite_never_disturbs_a_sleeper():
         def pm(self, *a, **k): pass
 
     stub = _Stub(s)
-    pet = Pet(num=4, name="Rex", stage="Child", attribute="Vaccine")
-
+    pet = Pet(num=4, name="Rex", stage="Rookie", attribute="Vaccine")
+    pet.world_seconds = 2 * 60.0
     pet.asleep, pet.lights = True, False
     pan = lobbyscreen.LobbyPanel(pet, lambda n, p, c: stub, name="joel", pw="x")
     s.inbox.append({"t": "invite", "from_id": 2, "from_name": "mika", "kind": "battle"})
     pan.anim()
     assert stub.sent == [("respond", 2, "battle", False)]
-    assert pet.asleep and pet.care_mistakes == 0
+    assert pet.asleep and pet.disturb == 0 and pet.mood == 0
     assert pan.invite_prompt is None
 
+
+def test_jogress_ships_and_catches_the_partners_sickness(monkeypatch):
+    """JogressProtocol ships the REAL sick state; startJogress rolls
+    checkSick(90) -- fusing with a sick partner is a near-certain catch
+    (jogress/DNA audit 2026-07-06)."""
+    import random
+    from tuipet.pet import Pet
+    from tuipet import jogress
+    s = LobbyState()
+    s.connected = True
+    s.me_id, s.me_name = 1, "joel"
+    s.roster = [{"id": 1, "name": "joel", "pet": {}, "live": True},
+                {"id": 2, "name": "mika", "pet": {"name": "Gabumon"}, "live": True}]
+
+    class _Stub:
+        def __init__(self, state): self.state = state; self.sent = []
+        def relay(self, *a, **k): self.sent.append(a)
+        def respond(self, *a, **k): pass
+        def invite(self, *a, **k): pass
+        def update_pet(self, *a, **k): pass
+        def pm(self, *a, **k): pass
+
+    stub = _Stub(s)
+    p = Pet(num=102, name="D", stage="Champion", attribute="Virus",
+            sick=True, sick_length=100.0, dp=100)
+    pan = lobbyscreen.LobbyPanel(p, lambda n, pw, c: stub, name="joel", pw="x")
+    pan.client = stub
+    pan._enter_session(2, "mika", "jogress", host=True)
+    assert stub.sent and stub.sent[-1][1]["sick"] is True   # the wire carries it
+    # ...and the receiving side catches at the fuse
+    q_pan = lobbyscreen.LobbyPanel(Pet(num=102, name="D", stage="Champion",
+                                       attribute="Virus", dp=100),
+                                   lambda n, pw, c: stub, name="joel", pw="x")
+    q_pan.jpartner_sick = True
+    q_pan.jphase = "result"
+    q_pan.jresult = {"num": 102}
+    q_pan.partner = (2, "mika")
+    q_pan.client = stub
+    monkeypatch.setattr(jogress, "fuse", lambda pet, num: "Fused!")
+    monkeypatch.setattr(random, "randrange", lambda n: 0)   # the 90% catch lands
+    q_pan._key_jogress("enter")
+    assert q_pan.pet.sick
+
+
+def test_apply_dna_no_longer_marks_a_false_disturb():
+    """canon applyDNA calls disturb() -- a no-op on an AWAKE pet; the old port
+    incremented the evolution disturb counter on every charge."""
+    from tuipet.pet import Pet
+    p = Pet(num=102, name="D", stage="Champion", attribute="Virus")
+    p.world_seconds = 10 * 60.0
+    p.dna_owned["DragonsRoar"] = 5
+    d0 = p.disturb
+    p.apply_dna("DragonsRoar", 2)
+    assert p.disturb == d0
+    assert p.dna_applied["DragonsRoar"] == 2
+
+
+def test_pvp_cards_ship_the_declared_attribute():
+    """BattleProtocol ships the declared attribute (lobby audit 2026-07-06):
+    the Battle honours it -- a Vaccine pet whose strongest power is Virus
+    still fights AS Vaccine; wild enemies (and Free pets) derive from power."""
+    from tuipet import battle as battle_mod
+    from tuipet.pet import Pet
+    p = Pet(num=102, name="D", stage="Champion", attribute="Vaccine",
+            vaccine=1, data_power=1, virus=50)
+    card = battle_mod.battle_card(p)
+    assert card["attribute"] == "Vaccine"
+    q = Pet(num=102, name="Q", stage="Champion", attribute="Virus")
+    b = battle_mod.Battle(q, dict(card))
+    assert b.enemy["attribute"] == "Vaccine"       # the declared type stands
+    wild = dict(card)
+    del wild["attribute"]
+    b2 = battle_mod.Battle(q, wild)
+    assert b2.enemy["attribute"] == "Virus"        # wild: strongest power derives
+
+
+# ---- message handling across back-out/re-enter (audit 2026-07-06) -------------
 
 def test_quit_from_lobby_persists_received_dms():
     """Quitting straight from the lobby flushes DMs received this session --
@@ -384,27 +486,19 @@ def test_battle_relays_are_phase_gated():
     wait re-applied a stale round."""
     s = LobbyState()
     pan = _panel(s)
-    import hashlib as _h
     pan.phase, pan.partner, pan.is_host = "battle", (9, "kai"), False
     pan.bphase = "card"
-    pan.bt_my_card = lobbyscreen._clamp_card({"num": 4})
-    pan.bt_nonce = 1
-    nonce = 42
-    commit = _h.sha256(str(nonce).encode()).hexdigest()
     pan._on_relay({"from_id": 9, "payload": {"kind": "battle", "t": "card",
-                                             "card": {"num": 4, "name": "X",
-                                                      "stage": "Adult", "proto": 3},
-                                             "commit": commit}})
-    assert pan.bphase == "wait"                     # armed, awaiting the nonce
-    pan._on_relay({"from_id": 9, "payload": {"kind": "battle", "t": "pick",
-                                             "nonce": nonce}})
-    assert pan.bphase in ("fight", "over")          # the seeded engine built
-    hp0 = pan.my_hp
+                                             "card": {"num": 4, "name": "X", "stage": "Champion", "hp": 15}}})
+    assert pan.bphase == "choose"
+    pan.my_hp = 3                                       # mid-fight, hurt
     pan._on_relay({"from_id": 9, "payload": {"kind": "battle", "t": "card",
-                                             "card": {"num": 4, "name": "X",
-                                                      "stage": "Adult", "proto": 3},
-                                             "commit": commit}})
-    assert pan.my_hp == hp0, "a stale card must not reset the fight"
+                                             "card": {"num": 4, "name": "X", "stage": "Champion", "hp": 15}}})
+    assert pan.my_hp == 3, "a stale card must not reset the fight"
+    pan._on_relay({"from_id": 9, "payload": {"kind": "battle", "t": "result", "host_dealt": 9,
+                                             "guest_dealt": 0, "hhp": 1, "ghp": 1, "over": False,
+                                             "host_alive": True, "guest_alive": True}})
+    assert pan.my_hp == 3, "a result outside 'wait' must be ignored"
 
 
 def test_crossed_invites_consume_the_pending_prompt():
@@ -423,7 +517,8 @@ def test_crossed_invites_consume_the_pending_prompt():
 
 def test_battle_and_jogress_are_lobby_only():
     """Design decision (Joel 2026-07-07): battles and jogress are ONLINE-ONLY
-    -- fusion needs a real roster partner.  The home screen exposes neither key."""
+    -- PvE combat lives in adventure/cup, fusion needs a real roster partner.
+    The home screen must expose neither key."""
     from tuipet.app import TuiPetApp
     keys = {b[0] for b in TuiPetApp.BINDINGS}
     amap = {b[0]: b[1] for b in TuiPetApp.BINDINGS}
@@ -433,7 +528,7 @@ def test_battle_and_jogress_are_lobby_only():
     assert not hasattr(TuiPetApp, "action_jogress")
     assert "j" not in keys
     assert amap.get("b") == "bug"                                # never battle
-    assert "l" in keys                              # the surviving online route
+    assert "l" in keys and "a" in keys and "u" in keys      # the surviving routes
 
 
 def _jogress_session(monkeypatch, peer_two_phase=True):
@@ -488,15 +583,13 @@ def test_jogress_escape_is_a_real_decline(monkeypatch):
     assert not fused2 and pan2.phase == "lobby", "a partner's decline unwinds me too"
 
 
-def test_jogress_peer_omitting_confirm2_cannot_force_a_fusion(monkeypatch):
-    """Round-3 consent fix (2026-07-16): the old "legacy peer" fallback keyed
-    on the peer-supplied confirm2, so a peer that OMITTED it turned your ESC
-    into a non-consensual COMMIT.  Two-phase consent is required always now:
-    ESC declines (tells the partner), and no fusion happens on a decline."""
+def test_jogress_legacy_peer_keeps_the_instant_commit(monkeypatch):
+    """A pre-v0.2.350 peer has no decline and commits on any key: mirror it,
+    or a mixed-version pair fuses one-sided again."""
     pan, relays, fused = _jogress_session(monkeypatch, peer_two_phase=False)
     pan._key_jogress("escape")
-    assert not fused and pan.phase == "lobby"
-    assert any(p.get("t") == "decline" for p in relays)
+    assert fused == [102] and pan.phase == "lobby"
+    assert not any(p.get("t") == "decline" for p in relays)
 
 
 def test_jogress_partner_leaving_at_result_fuses_nobody(monkeypatch):

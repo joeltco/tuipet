@@ -46,7 +46,7 @@ def run():
             iid = int(r["ItemIdentificationNum"]); col = int(r["SpriteNum"]) // 9
         except (KeyError, ValueError):
             continue
-        # 4 frames like the foods: the classic V-pet's item ANIMS step down the strip
+        # 4 frames like the foods: DVPet's item ANIMS step down the strip
         # (bandage() drawNumMirror 0..3 = the wrap sequence).  Frame 0 stays
         # the plain icon, so single-frame users are unaffected.
         frames = [_icon(items, col, fr, 1, 16) for fr in range(4)]

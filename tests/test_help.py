@@ -5,7 +5,7 @@ from tuipet.app import TuiPetApp, keys_markup
 
 
 def _pet():
-    return Pet(num=100, stage="Adult", attribute="Vaccine", bits=99)
+    return Pet(num=100, stage="Champion", attribute="Vaccine", bits=99)
 
 
 def test_help_is_bound_to_question_mark_and_listed():
@@ -35,8 +35,7 @@ def test_help_scrolls_and_clamps_and_exits():
     assert pan.top == 3
     for _ in range(200):                           # clamp at the bottom
         pan.key("down")
-    from tuipet.helpscreen import _full_help
-    assert pan.top == max(0, len(_full_help()) - VIS)
+    assert pan.top == max(0, len(HELP) - VIS)
     for _ in range(200):                           # clamp at the top
         pan.key("up")
     assert pan.top == 0
@@ -47,5 +46,5 @@ def test_help_lines_fit_the_box():
     assert all(len(t) <= 38 for t, _ in HELP)      # never overflow the 40-col LCD
     # every control section a new player needs is covered
     body = " ".join(t for t, _ in HELP)
-    for token in ("feed", "lobby", "train", "clean"):
+    for token in ("feed", "adventure", "cup", "lobby", "DNA", "shop", "bug"):
         assert token in body

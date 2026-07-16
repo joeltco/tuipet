@@ -59,11 +59,10 @@ class EggSelectPanel:
         self.msg, self.msg_t = text, 22
 
     def strip(self):
-        """The message-box hint line (hint overhaul 2026-07-10).  The egg
-        guide (N) died with eggguidescreen in the v0.4.0 clone rebuild; the
-        note line's 'hatches X' is the basis to choose now (audit 2026-07-15:
-        the leftover key crashed into Pet.new_egg(egg_type='guide'))."""
-        return menu.hints(("←→", "browse"), ("ENTER", "pick"), ("ESC", "back"))
+        """The message-box hint line (hint overhaul 2026-07-10).  N advertises
+        the egg guide -- the pick is permanent for the generation, and the
+        carousel alone gives no basis to choose (sweep 2026-07-14)."""
+        return menu.hints(("←→", "browse"), ("ENTER", "pick"), ("N", "guide"))
 
     def key(self, k):
         if k in ("right", "l", "down", "j"):
@@ -76,6 +75,8 @@ class EggSelectPanel:
             if not self.n:
                 return None
             return ("done", self.carousel[self.i])     # hatch the centred egg
+        elif k == "n":
+            return ("done", "guide")                   # consult the egg guide first
         elif k == "escape":
             return ("done", None)                      # back out without choosing
         return None
@@ -91,9 +92,11 @@ class EggSelectPanel:
         return fr[0]
 
     def _note(self, idx):
-        # the EGG's own name leads (baby names repeat across shells)
-        return "%s · hatches %s" % (egg_mod.egg_name(idx),
-                                    egg_mod.hatch_name(idx))
+        state, _ = self.states.get(idx, ("owned", 0))
+        name = egg_mod.hatch_name(idx)
+        if state == "temp":
+            return "hatches: %s  (this gen only)" % name
+        return "hatches: %s" % name
 
     def text(self):
         if not self.n:                                 # defensive: starters keep this non-empty
@@ -108,14 +111,7 @@ class EggSelectPanel:
             v = base + d
             x = CENTER + int(round((v - self.scroll) * SPACING))
             placements.append((self._frame(v, d == 0), x, False))
-        # each egg previews on ITS scene (the shell's hue picks the bucket);
-        # the carousel sits on the scene's GROUND band
-        from . import data as _data
-        sheet = _data.load_backgrounds().get(
-            egg_mod.scene_for(self._egg(self.i)))
-        bgimg = sheet[0][-ROWS * 2:] if sheet else None
-        scene = render_scene(placements, COLS, ROWS, LCD_ON, LCD_BG,
-                             bgimg=bgimg)
+        scene = render_scene(placements, COLS, ROWS, LCD_ON, LCD_BG)
         out = menu.header("CHOOSE YOUR EGG", f"{self.i + 1}/{self.n}")
         out.append_text(scene)
         out.append("\n")                              # scene has no trailing newline

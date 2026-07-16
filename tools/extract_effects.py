@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Extract the classic V-pet's auxiliary effect sprites (poop, Zzz, frozen, wash, emotes)
+"""Extract DVPet's auxiliary effect sprites (poop, Zzz, frozen, wash, emotes)
 into a 1-bit halfblock atlas: src/tuipet/data/effects.json.gz.
 
 These are small status/emote overlays drawn on the LCD on top of the creature.
@@ -69,13 +69,13 @@ for name, files in {"happy": ("happy.png", "happy2.png"),
     if fr:
         effects[name] = fr
 
-# Zzz: the classic V-pet sleepLights ("Zz") + sleepLights2 ("Z") -- two clean blinking glyphs
+# Zzz: DVPet sleepLights ("Zz") + sleepLights2 ("Z") -- two clean blinking glyphs
 zframes = [to_rows(crop(native_mask(f))) for f in ("sleepLights.png", "sleepLights2.png")
            if crop(native_mask(f)) is not None]
 if zframes:
     effects["zzz"] = zframes
 
-# a NAP has its own indicator (the classic V-pet getLightsSprites: napLights/napLights2);
+# a NAP has its own indicator (DVPet getLightsSprites: napLights/napLights2);
 # canon's nap-deepening flash (napToSleepPercent) has no tuipet state to key
 # on -- naps never convert here -- so only the static variant is ported
 nframes = [to_rows(crop(native_mask(f))) for f in ("napLights.png", "napLights2.png")
@@ -88,7 +88,7 @@ if nframes:
 # filth.png crop was a crude stand-in.  The merge-on-write below preserves the
 # curated version so a regen never clobbers it.
 
-# copymon: the classic V-pet's real stand-in creature, used as the placeholder sprite
+# copymon: DVPet's real stand-in creature, used as the placeholder sprite
 _cm = split_vertical(native_mask("copymon.png"))
 if _cm:
     _big = crop(max(_cm, key=lambda f: int(f.sum())))
@@ -102,7 +102,7 @@ for name, fn in {"grave": "death.png", "sun": "noon.png", "moon": "night.png"}.i
         effects[name] = [to_rows(c)]
 
 # training opponents: the punching bag (vaccine/virus/hp drills) + its broken form,
-# and the green pop-up target (data drill).  the classic V-pet vaccinePrePrep/dataPrePrep opponents
+# and the green pop-up target (data drill).  DVPet vaccinePrePrep/dataPrePrep opponents
 # -- the thing the pet actually fires its attack at during a drill's strike sequence.
 # All authored at 3x like the creatures (trainGreen 32x28 / trainShield 16x18 are clean
 # 3x3-block art); native_mask's /3 block-mean recovers the true crisp dot-matrix sprite.
@@ -122,7 +122,7 @@ _bbc = crop(_bbon[:_h * F, :_w * F].reshape(_h, F, _w, F).mean(axis=(1, 3)) > 0.
 if _bbc is not None:
     effects["battle_bag"] = [to_rows(_bbc)]
 
-# per-attribute projectiles: the classic V-pet's real attack sprites (proven via SpriteAnim
+# per-attribute projectiles: DVPet's real attack sprites (proven via SpriteAnim
 # initAttackButtons: Vaccine=red.png, Data=green.png, Virus=yellow.png -- distinct
 # black silhouettes: an orb, a block, and a dart. Downsampled /2 to ~7px.
 for _fn, _key in (("red.png", "atk_vaccine"), ("green.png", "atk_data"), ("yellow.png", "atk_virus")):
@@ -211,7 +211,7 @@ for _fn, _key in (("burstCore.png", "core_burst"), ("twelveCore.png", "core_twel
         if _c is not None:
             effects["core_" + _key.split("_", 1)[1]] = [to_rows(_c)]
 
-# filth sizes: filth.png is the classic V-pet's pile sheet -- 30x27 cells (gutter 2), 4 sizes
+# filth sizes: filth.png is DVPet's pile sheet -- 30x27 cells (gutter 2), 4 sizes
 # x 2 anim frames.  SpriteObj sheets index COLUMN-major (proven by battleBags:
 # getBattleBagSprite 0/2/4 = the three top-row bags), so drawFilthLevel's pairs
 # (0,1)/(2,3)/(4,5)/(6,7) = column N's two rows = size N's two anim frames.

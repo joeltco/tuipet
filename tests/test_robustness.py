@@ -31,36 +31,47 @@ def test_empty_account_egg_flow():
 # ---- purchase / inventory bounds -------------------------------------------
 
 def test_buy_with_zero_bits():
-    from tuipet import shop
-    p = Pet(num=-1, stage="Child", bits=0)
-    e = shop.catalog()[0]
-    msg, sfx = shop.buy(p, e)
-    assert "Need" in msg and sfx == "error"
-    assert p.bits == 0 and e["key"] not in p.inventory
+    p = Pet(num=-1, stage="Rookie", bits=0)
+    assert p.buy_slot({"key": "f:8", "stock": 3, "sale": 0}) == "Not enough bits."
+    assert p.bits == 0 and "f:8" not in p.inventory
 
 
 def test_sell_empty_bag():
-    from tuipet import shop
-    p = Pet(num=-1, stage="Child")
-    msg, sfx = shop.sell(p, {"key": "normal_fruit", "name": "Fruit", "price": 100})
-    assert sfx == "error"
+    p = Pet(num=-1, stage="Rookie")
+    assert p.sell({"key": "f:1", "name": "Meat"}) == "None to sell."
 
 
 def test_use_missing_item():
-    assert Pet(num=-1, stage="Child").use_item("i:99999") is None
+    assert Pet(num=-1, stage="Rookie").use_item("i:99999") == "None left."
+
+
+def test_consumable_by_key_bad_input():
+    assert data.consumable_by_key("zzz") is None
+    assert data.consumable_by_key("i:99999") is None
+
+
+def test_habitat_bad_ids():
+    p = Pet(num=-1, stage="Rookie")
+    # a nonexistent habitat -> not-found "?" (buy and move both short-circuit here)
+    assert p.buy_habitat(99999) == "?"
+    assert p.move_to(99999) == "?"
+    # a real but unowned habitat -> the ownership message
+    unowned = next((h for h in data.load_habitats() if h not in p.habitats), None)
+    if unowned is not None:
+        assert p.move_to(unowned) == "You don't own that habitat."
 
 
 # ---- dead-pet interactions are inert and safe ------------------------------
 
 def test_dead_pet_actions_safe():
-    p = Pet(num=-1, stage="Child", dead=True)
-    p.inventory["normal_fruit"] = 1
+    p = Pet(num=-1, stage="Rookie", dead=True)
+    p.inventory["f:1"] = 1
     # none of these may crash, and the pet stays dead with its bag intact
-    assert p.feed_meat() is None
-    assert p.train_result(True) is False
+    assert isinstance(p.use_item("f:1"), str)
+    p.apply_training(2, 100, game="hp")
     p.tick(100)
     assert p.dead is True
-    assert p.inventory.get("normal_fruit") == 1, "a dead pet keeps its bag"
+    assert p.inventory.get("f:1") == 1, "a dead pet must not consume items"
 
 
 # ---- save/load resilience --------------------------------------------------
@@ -69,7 +80,7 @@ def test_load_corrupt_json():
     """A corrupt save with no usable backup announces itself (professionalism
     sweep 2026-07-14) -- it used to return (None, '') and play off as a first
     launch, silently hatching a new egg over a lost pet."""
-    persistence.save(Pet(num=-1, stage="Child"))
+    persistence.save(Pet(num=-1, stage="Rookie"))
     with open(persistence.SAVE_PATH, "w") as fh:
         fh.write("{ not json")
     pet, msg = persistence.load()
@@ -85,7 +96,7 @@ def test_load_partial_save():
 
 def test_load_unknown_num():
     """A save whose species num no longer exists (data refresh) still loads."""
-    persistence.save(Pet(num=999999, name="Ghost", stage="Child"))
+    persistence.save(Pet(num=999999, name="Ghost", stage="Rookie"))
     pet, _ = persistence.load()
     assert pet is not None and pet.num == 999999
 
@@ -101,7 +112,7 @@ def test_unknown_num_survives_the_first_paint():
     fr = data.bob_frame(999999, 0)
     assert fr is not None, "bob_frame must never hand a scene a None for a positive num"
     from tuipet.arena import Screen
-    ghost = Pet(num=999999, name="Ghost", stage="Child")
+    ghost = Pet(num=999999, name="Ghost", stage="Rookie")
     scr = Screen.__new__(Screen)
     rows = scr._pose_rows(ghost, "idle", 0)       # raw-indexed before the fix
     assert rows is not None
@@ -109,7 +120,7 @@ def test_unknown_num_survives_the_first_paint():
 
 def test_future_timestamp_no_time_travel():
     """A save dated in the future must not produce negative offline time."""
-    p = Pet(num=-1, name="Fwd", stage="Child")
+    p = Pet(num=-1, name="Fwd", stage="Rookie")
     persistence.save(p)
     blob = json.load(open(persistence.SAVE_PATH))
     import time
@@ -117,25 +128,22 @@ def test_future_timestamp_no_time_travel():
     json.dump(blob, open(persistence.SAVE_PATH, "w"))
     pet, msg = persistence.load()
     assert pet is not None
-    assert pet.total_minutes >= 0, "future save must clamp offline elapsed to 0"
+    assert pet.world_seconds >= 0, "future save must clamp offline elapsed to 0"
 
 
 # ---- offline catch-up at extremes ------------------------------------------
 
 def test_offline_zero_elapsed():
-    import time as _t
-    p = Pet(num=0, stage="Child", hunger=4, wall_time=_t.time())
-    assert p.catch_up() == 0
-    assert p.hunger == 4                            # nothing decays at 0s
+    p = Pet(num=-1, stage="Rookie", mood=100, hunger=4)
+    assert persistence._offline(p, 0) == ""
+    assert p.mood == 100 and p.hunger == 4         # nothing decays at 0s
 
 
 def test_offline_huge_elapsed_stays_bounded():
-    import time as _t
-    from tuipet.pet import REPLAY_CAP_MIN
-    p = Pet(num=0, stage="Child", hunger=4, wall_time=_t.time() - 10 ** 9)
-    n = p.catch_up()
-    assert n <= REPLAY_CAP_MIN                      # the 3-day horizon holds
-    assert 0 <= p.hunger <= 4
+    p = Pet(num=-1, stage="Rookie", mood=300, hunger=4)
+    persistence._offline(p, 10 ** 9)               # absurd gap
+    assert -300 <= p.mood <= 300                    # mood stays clamped
+    assert 0 <= p.hunger <= 4                        # hunger stays in range
 
 
 # ---- egg helpers tolerate out-of-range indices -----------------------------

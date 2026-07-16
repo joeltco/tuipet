@@ -7,8 +7,8 @@ from tuipet import menu
 
 
 def _pet():
-    p = Pet(num=100, stage="Adult", attribute="Vaccine", bits=500)
-
+    p = Pet(num=100, stage="Champion", attribute="Vaccine", obedience=500, bits=500)
+    p.world_seconds = 12 * 60.0
     return p
 
 
@@ -27,24 +27,36 @@ def test_hints_helper_convention():
 def test_every_screen_strip_fits_and_speaks():
     from tuipet.shopscreen import ShopPanel
     from tuipet.eggselectscreen import EggSelectPanel
+    from tuipet.tournamentscreen import TournamentPanel
     from tuipet.optionsscreen import KeysPanel
     from tuipet.feedscreen import FeedPanel
+    from tuipet.assistscreen import AssistPanel
     from tuipet.themescreen import ThemePanel
     from tuipet.bugscreen import BugReportPanel
     from tuipet.helpscreen import HelpPanel
-    from tuipet.creditscreen import CreditsPanel
+    from tuipet.dnascreen import DNAPanel
 
     p = _pet()
     for mode in ("shop", "bag"):
         assert "ENTER" in _ok(ShopPanel(p, mode).strip(), f"shop:{mode}")
     egg = EggSelectPanel()
     assert "pick" in _ok(egg.strip(), "eggselect")
+    tp = TournamentPanel(p)
+    assert "enter cup" in _ok(tp.strip(), "cup:select")
+    tp.phase = "bracket"
+    assert "bracket" in _ok(tp.strip(), "cup:bracket")
     assert "scroll" in _ok(KeysPanel([("f", "feed", "Feed")]).strip(), "keys")
     _ok(FeedPanel(p).strip(), "feed")
+    assert "helper" in _ok(AssistPanel(p).strip(), "assist")
     assert "preview" in _ok(ThemePanel().strip(), "theme")
     assert "dev" in _ok(BugReportPanel(p).strip(), "bug")
     _ok(HelpPanel(p).strip(), "help")
-    _ok(CreditsPanel(p).strip(), "credits")
+    dna = DNAPanel(p)
+    for ph in ("home", "charge", "stats", "reqs", "roads", "bet"):
+        dna.phase = ph
+        _ok(dna.strip(), f"dna:{ph}")
+    dna.phase = "mash"
+    assert "SPACE" in _ok(dna.strip(), "dna:mash")
 
 
 def test_options_strip_covers_menu_and_confirm():
@@ -61,13 +73,15 @@ def test_battle_strip_follows_the_fight():
     from tuipet import data
     _, by = data.load_sprites()
     foe = next(n for n, r in by.items()
-               if r["stage"] == "Adult" and not data.is_placeholder(n))
+               if r["stage"] == "Champion" and not data.is_placeholder(n))
     bp = BattlePanel(_pet(), enemy={"num": foe, "name": by[foe]["name"],
                                     "stage": "Champion", "vaccine": 30,
                                     "data_power": 30, "virus": 30, "hp": 10})
     assert "skip" in _ok(bp.strip(), "battle:intro")
-    bp.phase = "ready"
-    assert "lock" in _ok(bp.strip(), "battle:ready")
+    bp.phase = "menu"
+    assert "attack" in _ok(bp.strip(), "battle:menu")
+    bp.phase = "surrender_ask"
+    assert "allow" in _ok(bp.strip(), "battle:surrender")
     bp.phase = "anim"
     assert bp.strip() == ""                    # the round plays clean
     bp.phase = "result"

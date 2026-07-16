@@ -1,4 +1,4 @@
-"""Render the classic V-pet 1-bit sprite bitmaps to the terminal.
+"""Render DVPet 1-bit sprite bitmaps to the terminal.
 
 Each character cell stacks two vertical pixels using the upper-half block (U+2580).
 Top pixel -> foreground colour, bottom pixel -> background colour. "Off" pixels are
@@ -7,33 +7,30 @@ left transparent (terminal default) unless an LCD background colour is supplied.
 from __future__ import annotations
 from rich.text import Text
 
-def blit(bm, ox, oy, color=None):
-    """Sprite bitmap -> (x,y[,color]) pixel list for render_scene/_screen's
-    overlay.  `color` tints the lit pixels (the per-mon projectile tint,
-    audit 2026-07-15); default stays the LCD ink.
+def blit(bm, ox, oy):
+    """Sprite bitmap -> (x,y) pixel list for render_scene/_screen's overlay.
     Tolerates None/blank frames: 28 foods ship a blank 'eaten away' last frame
     that extracts as None -- the eat fx crashed on their final bite (2026-07-04).
     Lived in three verbatim copies (app/training/strikefx; refactor 2026-07-05)."""
     if not bm:
         return []
-    if color:
-        return [(ox + x, oy + y, color) for y, row in enumerate(bm)
-                for x, c in enumerate(row) if c == "1"]
     return [(ox + x, oy + y) for y, row in enumerate(bm)
             for x, c in enumerate(row) if c == "1"]
 
 
-def _stamp(buf, pts, cols, px_h, clip=None):
+def _stamp(buf, pts, cols, px_h, clip=None, val=1):
     """Overlay pixels -> the buffer, clipped to the LCD (and to `clip`).
-    A 3-tuple pixel carries its own colour; a bare (x,y) stamps ink."""
+    `val` is the buffer plane: 1 = sprite/prop ink, 2 = weather particles
+    (painted in their own colour by _paint_cells).  A pixel already inked
+    keeps its ink: the dot matrix draws OVER the rain and snow (Joel
+    2026-07-15) -- weather falls BEHIND the mon and the scene actors."""
     cx0, cx1, cy0, cy1 = clip if clip else (0, cols, 0, px_h)
-    for p in pts:
-        ox_, oy_ = p[0], p[1]
+    for ox_, oy_ in pts:
         if cy0 <= oy_ < cy1 and cx0 <= ox_ < cx1 and 0 <= oy_ < px_h and 0 <= ox_ < cols:
-            buf[oy_][ox_] = p[2] if len(p) > 2 else 1
+            buf[oy_][ox_] = buf[oy_][ox_] or val
 
 
-def _paint_cells(buf, cols, rows, on, bg, bgimg):
+def _paint_cells(buf, cols, rows, on, bg, bgimg, free_ink=None):
     """The half-block compositor: a filled pixel buffer -> Rich Text.
     render_screen and render_scene carried two byte-identical copies of this
     loop, which had to be edited in lockstep (refactor 2026-07-05).  Background
@@ -42,21 +39,22 @@ def _paint_cells(buf, cols, rows, on, bg, bgimg):
     so weather tints, cross-fades and lightning all inherit the palette.
     Sprites stay readable by LAYERING, not outlines: a ramp theme's darkest
     ink is reserved for sprites, never handed to background art (the halo
-    experiment this replaced boxed the mon -- redo 2026-07-05)."""
+    experiment this replaced boxed the mon -- redo 2026-07-05).
+    `free_ink` colours the weather plane (buf value 2): rain and snow wear
+    their theme's precip colour instead of the sprite ink."""
     if bgimg:
         from . import theme
         bgimg = theme.themed_bg(bgimg)
+    fi = free_ink or on
     t = Text()
     for cy in range(rows):
         ty, byy = cy * 2, cy * 2 + 1
         for cx in range(cols):
             tv, bv = buf[ty][cx], buf[byy][cx]
-            # a buffer cell is 0 (bg), 1 (theme ink) or a "#rrggbb" COLOUR
-            # pixel (the colour-sprite lane, 2026-07-15)
-            tc = (tv if isinstance(tv, str) else on) if tv \
-                else ("#" + bgimg[ty][cx * 6:cx * 6 + 6] if bgimg else bg)
-            bc = (bv if isinstance(bv, str) else on) if bv \
-                else ("#" + bgimg[byy][cx * 6:cx * 6 + 6] if bgimg else bg)
+            tc = (fi if tv == 2 else on) if tv else \
+                ("#" + bgimg[ty][cx * 6:cx * 6 + 6] if bgimg else bg)
+            bc = (fi if bv == 2 else on) if bv else \
+                ("#" + bgimg[byy][cx * 6:cx * 6 + 6] if bgimg else bg)
             t.append("▀", style=f"{tc} on {bc}")
         if cy != rows - 1:
             t.append("\n")
@@ -64,7 +62,7 @@ def _paint_cells(buf, cols, rows, on, bg, bgimg):
 
 
 # A few palettes. "on" = creature ink, "off" = LCD background (None = transparent).
-def render_screen(frame_rows, cols, rows, on="#2b2e31", bg="#c6c9cc", baseline=True, mirror=False, xshift=0, yshift=0, overlay=None, bgimg=None, clip=None, overlay_free=None):
+def render_screen(frame_rows, cols, rows, on="#2b2e31", bg="#c6c9cc", baseline=True, mirror=False, xshift=0, yshift=0, overlay=None, bgimg=None, clip=None, overlay_free=None, free_ink=None):
     """Compose a sprite centred on a fixed cols x rows (character) LCD screen.
 
     Returns a rich Text. The screen is rows*2 pixels tall; the sprite is blitted
@@ -74,7 +72,7 @@ def render_screen(frame_rows, cols, rows, on="#2b2e31", bg="#c6c9cc", baseline=T
     buf = fill_buf(frame_rows, cols, rows * 2, baseline=baseline, mirror=mirror,
                    xshift=xshift, yshift=yshift, overlay=overlay, clip=clip,
                    overlay_free=overlay_free)
-    return _paint_cells(buf, cols, rows, on, bg, bgimg)
+    return _paint_cells(buf, cols, rows, on, bg, bgimg, free_ink=free_ink)
 
 
 def fill_buf(frame_rows, cols, px_h, baseline=True, mirror=False, xshift=0,
@@ -93,26 +91,25 @@ def fill_buf(frame_rows, cols, px_h, baseline=True, mirror=False, xshift=0,
     if frame_rows and mirror:
         frame_rows = [r[::-1] for r in frame_rows]
     if frame_rows:
-        from .grid import lit
         sw = max(len(r) for r in frame_rows)
         sh = len(frame_rows)
         ox = (cols - sw) // 2 + xshift
         oy = max(0, (px_h - sh - 2) if baseline else (px_h - sh) // 2) - yshift   # +yshift lifts the sprite (a hop)
         for y, line in enumerate(frame_rows):
             for x, ch in enumerate(line):
-                if lit(ch):
+                if ch == "1":
                     py, pxx = oy + y, ox + x
                     if cy0 <= py < cy1 and cx0 <= pxx < cx1 \
                             and 0 <= py < px_h and 0 <= pxx < cols:
-                        buf[py][pxx] = 1 if ch == "1" else ch
+                        buf[py][pxx] = 1
     if overlay:                              # scene actors / fx props (window-clipped)
         _stamp(buf, overlay, cols, px_h, clip=clip)
-    if overlay_free:                         # unclipped overlay: the whole LCD
-        _stamp(buf, overlay_free, cols, px_h)
+    if overlay_free:                         # weather: the whole LCD is its sky
+        _stamp(buf, overlay_free, cols, px_h, val=2)
     return buf
 
 
-def render_scene(placements, cols, rows, on="#2b2e31", bg="#c6c9cc", overlay=None, bgimg=None, clip=None, overlay_free=None):
+def render_scene(placements, cols, rows, on="#2b2e31", bg="#c6c9cc", overlay=None, bgimg=None, clip=None, overlay_free=None, free_ink=None):
     """Compose several sprites onto one LCD screen.
 
     placements: list of (frame_rows, x_left, mirror). Each sprite sits on the
@@ -121,7 +118,6 @@ def render_scene(placements, cols, rows, on="#2b2e31", bg="#c6c9cc", overlay=Non
     px_h = rows * 2
     buf = [[0] * cols for _ in range(px_h)]
     cx0, cx1, cy0, cy1 = clip if clip else (0, cols, 0, px_h)
-    from .grid import lit
     for frame_rows, x_left, mirror in placements:
         if not frame_rows:
             continue
@@ -130,16 +126,16 @@ def render_scene(placements, cols, rows, on="#2b2e31", bg="#c6c9cc", overlay=Non
         oy = max(0, px_h - sh - 2)
         for y, line in enumerate(src):
             for x, ch in enumerate(line):
-                if lit(ch):
+                if ch == "1":
                     py, px = oy + y, x_left + x
                     if cy0 <= py < cy1 and cx0 <= px < cx1 \
                             and 0 <= py < px_h and 0 <= px < cols:
-                        buf[py][px] = 1 if ch == "1" else ch
+                        buf[py][px] = 1
     if overlay:                              # projectiles / impact bursts
         _stamp(buf, overlay, cols, px_h, clip=clip)
-    if overlay_free:                         # unclipped overlay: the whole LCD
-        _stamp(buf, overlay_free, cols, px_h)
-    return _paint_cells(buf, cols, rows, on, bg, bgimg)
+    if overlay_free:                         # weather: the whole LCD is its sky
+        _stamp(buf, overlay_free, cols, px_h, val=2)
+    return _paint_cells(buf, cols, rows, on, bg, bgimg, free_ink=free_ink)
 
 
 UPPER, LOWER, FULL = "\u2580", "\u2584", "\u2588"   # half/full blocks (bitmap_text's pixels;

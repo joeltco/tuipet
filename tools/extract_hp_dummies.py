@@ -1,4 +1,4 @@
-"""HP-drill training dummies from battleBags.png (REAL the classic V-pet art, EXTRACT-not-draw).
+"""HP-drill training dummies from battleBags.png (REAL DVPet art, EXTRACT-not-draw).
 
 The sheet is 3 cols x 2 rows (cell 48x61), SpriteObj COLUMN-major: n = col*2 + row.
 getBattleBagSprite maps Vaccine=0 / Virus=2 / Data=4 (top row, clean) and the

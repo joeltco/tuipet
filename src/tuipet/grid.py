@@ -33,27 +33,14 @@ WINDOW = (X0, X1, TOP, FLOOR)   # the LOCKED 32x16 play window as a clip rect
 #                                 occasion; weather alone covers the whole LCD)
 
 
-def lit(c):
-    """Is a sprite pixel INK?  1-bit rows use "0"/"1" chars; COLOR rows use
-    None (transparent) / "#rrggbb" cells.  One predicate serves both."""
-    return c not in (None, "0")
-
-
-def _pad(sprite, w):
-    """Right-pad rows to width w in each form (str rows vs list rows)."""
-    if sprite and isinstance(sprite[0], str):
-        return [r.ljust(w, "0") for r in sprite]
-    return [list(r) + [None] * (w - len(r)) for r in sprite]
-
-
 def _crop(sprite):
     """Trim a sprite to its lit content (creatures carry transparent padding)."""
     if not sprite:
         return sprite
     w = max(len(r) for r in sprite)
-    rows = _pad(sprite, w)
-    ys = [y for y, r in enumerate(rows) if any(lit(c) for c in r)]
-    xs = [x for x in range(w) if any(lit(r[x]) for r in rows)]
+    rows = [r.ljust(w, "0") for r in sprite]
+    ys = [y for y, r in enumerate(rows) if "1" in r]
+    xs = [x for x in range(w) if any(r[x] == "1" for r in rows)]
     if not ys or not xs:
         return sprite
     return [rows[y][xs[0]:xs[-1] + 1] for y in range(ys[0], ys[-1] + 1)]
@@ -66,19 +53,6 @@ def band_h(ph=PXH):
     return min(CELL, ph - 2)
 
 
-def _box(cells):
-    """Downscale one box of pixels to one pixel, form-preserving: 1-bit boxes
-    vote by ink majority; COLOR boxes keep the most common lit colour when
-    the box is majority-lit (nearest look without inventing new colours)."""
-    n = len(cells)
-    lit_cells = [c for c in cells if lit(c)]
-    if isinstance(cells[0], str) and cells[0] in ("0", "1"):
-        return "1" if len(lit_cells) * 2 >= n else "0"
-    if len(lit_cells) * 2 < n:
-        return None
-    return max(set(lit_cells), key=lit_cells.count)
-
-
 def fit_band(sprite, ph=PXH):
     """Box-downscale a sprite's HEIGHT to <= band_h(ph) so it never overflows the box."""
     if not sprite:
@@ -88,14 +62,13 @@ def fit_band(sprite, ph=PXH):
     if h <= target:
         return sprite
     w = max(len(r) for r in sprite)
-    rows = _pad(sprite, w)
-    is_str = isinstance(rows[0], str)
+    rows = [r.ljust(w, "0") for r in sprite]
     sc = h / target
     out = []
     for y in range(target):
         y0, y1 = int(y * sc), max(int(y * sc) + 1, int((y + 1) * sc))
-        line = [_box([rows[yy][x] for yy in range(y0, y1)]) for x in range(w)]
-        out.append("".join(line) if is_str else line)
+        out.append("".join("1" if sum(rows[yy][x] == "1" for yy in range(y0, y1)) * 2 >= (y1 - y0)
+                           else "0" for x in range(w)))
     return out
 
 
@@ -106,15 +79,13 @@ def fit_w(sprite, target):
     w = max(len(r) for r in sprite)
     if w <= target:
         return sprite
-    rows = _pad(sprite, w)
-    is_str = isinstance(rows[0], str)
+    rows = [r.ljust(w, "0") for r in sprite]
     sc = w / target
     out = []
     for r in rows:
-        line = [_box([r[xx] for xx in range(int(x * sc),
-                                            max(int(x * sc) + 1, int((x + 1) * sc)))])
-                for x in range(target)]
-        out.append("".join(line) if is_str else line)
+        out.append("".join("1" if sum(r[xx] == "1" for xx in range(int(x * sc), max(int(x * sc) + 1, int((x + 1) * sc)))) * 2
+                           >= (max(int(x * sc) + 1, int((x + 1) * sc)) - int(x * sc)) else "0"
+                           for x in range(target)))
     return out
 
 

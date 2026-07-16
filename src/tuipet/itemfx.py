@@ -1,4 +1,4 @@
-"""Item-use animations — the classic V-pet's per-AnimationType scripts (item-anim audit
+"""Item-use animations — DVPet's per-AnimationType scripts (item-anim audit
 2026-07-07: EVERY toy funneled into jumping(), canon's script for the
 Trampoline alone — "balloons and futons have broken in game animations").
 

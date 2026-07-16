@@ -33,13 +33,24 @@ def idle_hold(restless):
 
 
 def sick_frame(frame):
-    """The sick idle: the injured pair alternates where it stands, with the
-    source's gentle 1px sway."""
+    """idleUnwell: returns (sprite_index, dx_px).  Collapse pose (10) dominates the
+    50-interval cycle; the weary pose (9) only flashes on the reset beat.  DVPet's
+    shuffle is moveLeft1@30, moveRight1@35, moveRight1@40, moveLeft1@45 -- which is
+    net-zero: the body sits 1px left over [30,35), back to centre [35,40), 1px right
+    over [40,45), centre after.  (The pose offset is HELD across each range, not a
+    one-frame blip.)"""
     f = frame % SICK_PERIOD
-    idx = 10 if (f // 10) % 2 == 0 else 11
-    dx = -1 if 30 <= f < 35 else (1 if 40 <= f < 45 else 0)
+    if f == 49:
+        idx = 9                            # brief weary flash before the reset
+    else:
+        idx = 10                           # collapsed the rest of the time
+    if 30 <= f < 35:
+        dx = -1
+    elif 40 <= f < 45:
+        dx = 1
+    else:
+        dx = 0
     return idx, dx
-
 
 
 def mood_pose(pet):
@@ -50,10 +61,12 @@ def mood_pose(pet):
 
     Mapping condensed from checkMoodFrame's offset table: tired/no-energy -> 9/10/2,
     unhappy -> 4/6, happy & spirited -> 5, otherwise neutral (None)."""
-    if pet.energy <= 0:
+    if pet.energy <= 0 or pet.is_fatigued():
         return random.choice((10, 9, 2))      # weary / collapsed / droop
-    if pet.sick or pet.hunger == 0 or pet.strength == 0:
+    if pet.mood < 0:
         return random.choice((4, 6))          # sour faces
+    if pet.mood > 0 and pet.enthusiasm >= 0:
+        return 5                              # bright/excited
     return None                               # neutral -> ordinary walk pose
 
 
@@ -97,7 +110,7 @@ class Roamer:
                 self.face = self._wall
                 self.x += self.face * STEP_PX
             return
-        self.pose ^= 1                               # the clean Walk1/Walk2 toggle
+        self.pose = random.getrandbits(1)            # device: 50/50 frame pick
         if random.random() < TURN_CHANCE:            # device flips BEFORE moving
             self.face = -self.face
         self.x += self.face * STEP_PX

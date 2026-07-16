@@ -15,8 +15,8 @@ from tuipet import persistence, cloudsync
 
 
 def _pet(**kw):
-    p = Pet(num=100, name="Gatomon", stage="Adult", attribute="Vaccine")
-
+    p = Pet(num=100, name="Gatomon", stage="Champion", attribute="Vaccine", obedience=500)
+    p.world_seconds = 10 * 60.0
     for k, v in kw.items():
         setattr(p, k, v)
     return p
@@ -78,7 +78,7 @@ def test_pathological_save_stays_far_under_the_wire_cap():
     """server.py silently SKIPS messages over 64KB (MAX_MSG_BYTES) -- an oversized
     save would sync-fail forever with push_save still returning True.  Pin the
     worst realistic save at <32KB (2x headroom)."""
-    p = _pet(stage="Ultimate-Super Ultimate")
+    p = _pet(stage="Mega")
     p.inventory = {f"f:{i}": 99 for i in range(60)} | {f"i:{i}": 99 for i in range(100)}
     p.levels_fought = [5] * 2000                     # a pathological one-stage grind
     p.trophies_won = {i: "Spring" for i in range(40)}

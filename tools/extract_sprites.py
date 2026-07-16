@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Extract the classic V-pet 1-bit creature sprites from the game atlases.
+"""Extract DVPet 1-bit creature sprites from the game atlases.
 
 Layout (verified): creature stages live in sprites{Stage}{Set}.png, each 672x672,
 an 11x11 grid. Each Digimon = one column (NewSpriteNum // 11), its 11 animation/expression
@@ -33,7 +33,7 @@ def get_sheet(stage, s):
             _cache[key] = None
     return _cache[key]
 
-# the classic V-pet's divideIntoColumn geometry: a 48px sprite with a 12px gutter (pitch 60),
+# DVPet's divideIntoColumn geometry: a 48px sprite with a 12px gutter (pitch 60),
 # authored at 3x so native is 16px. The creature's POSITION within its 48px cell
 # is the animation (bob/walk/crouch), so we keep the full native cell and never
 # crop -- that is exactly what the game draws.

@@ -91,8 +91,8 @@ def test_success_always_asks_for_a_restart(monkeypatch):
 def test_the_options_row_offers_the_install_then_asks_for_a_restart():
     from tuipet.optionsscreen import OptionsPanel
     from tuipet.pet import Pet
-    p = Pet(num=100, stage="Adult", attribute="Vaccine")
-
+    p = Pet(num=100, stage="Champion", attribute="Vaccine", obedience=500)
+    p.world_seconds = 600.0
     pan = OptionsPanel(p, sound_get=lambda: True, sound_toggle=lambda: None)
     pan._upd = "9.9.9"                              # a newer release is known
     assert "ENTER installs" in pan._value("update")

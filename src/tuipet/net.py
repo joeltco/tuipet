@@ -88,7 +88,6 @@ class LobbyState:
         self.chat: list[tuple[str, str]] = []  # [(from_name, text)] — capped
         self.inbox: list[dict] = []            # invite / invite_resp / relay — drained by caller
         self.login_failed: str | None = None   # server rejected the login (bad password / name taken)
-        self.server_proto = 0                  # the relay's LOBBY_PROTO from welcome (0 = pre-handshake)
         self.reconnecting = False              # dropped -> the client is retrying with backoff
         self.dms: dict = {}                    # peer_name -> [(from_name, text)] private threads
         self.unread: set = set()               # peer names with unread DMs
@@ -199,8 +198,6 @@ class LobbyClient(_WsClient):
         self._had_welcome = False             # a past successful login makes drops RECONNECTS
         self._backoff0 = 2.0                  # first-retry delay (tests shrink it)
         self.ladder = None                    # last ladder message (rankings page)
-        self.raid = None                      # last raid status message
-        self.raid_reward = None               # a claimed reward, once
 
     # ---- outgoing (called from the UI thread/loop) -----------------------
     def _send(self, obj):
@@ -250,15 +247,6 @@ class LobbyClient(_WsClient):
 
     def ladder_claim(self, season):
         self._send({"t": "ladder_claim", "season": season})
-
-    def raid_get(self):
-        self._send({"t": "raid_get"})
-
-    def raid_hit(self, damage, stage):
-        self._send({"t": "raid_hit", "damage": int(damage), "stage": stage})
-
-    def raid_claim(self, raid_id):
-        self._send({"t": "raid_claim", "raid": raid_id})
 
     # ---- lifecycle (the loop itself lives on _WsClient) --------------------
     def _login_msg(self):
@@ -312,22 +300,8 @@ class LobbyClient(_WsClient):
             self._had_welcome = True
             s.me_id = m.get("id")
             s.me_name = m.get("name")
-            try:
-                s.server_proto = int(m.get("proto") or 0)
-            except (TypeError, ValueError):
-                s.server_proto = 0
-            # a reconnect logs in fresh to the MAIN lobby, but the client still
-            # believed it was in its password room -> the user's next chat went
-            # PUBLIC (round-3 audit 2026-07-16).  Re-join the room on every
-            # welcome that finds a room already set (first connect has none).
-            if s.room:
-                self.room(s.room)
         elif t == "ladder":
             self.ladder = m               # the rankings page renders from this
-        elif t == "raid":
-            self.raid = m                 # the raid page renders from this
-        elif t == "raid_reward":
-            self.raid_reward = m          # the claim flow consumes this once
         elif t == "roster":
             s.roster = m.get("players") or []
         elif t == "room_ok":

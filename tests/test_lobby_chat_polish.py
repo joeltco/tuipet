@@ -25,8 +25,8 @@ class _Stub:
 
 
 def _panel(state, **kw):
-    p = Pet(num=100, stage="Adult", attribute="Vaccine")
-
+    p = Pet(num=100, stage="Champion", attribute="Vaccine", obedience=500)
+    p.world_seconds = 600.0
     pan = lobbyscreen.LobbyPanel(p, lambda n, pw, c: _Stub(state), name="joel", pw="x")
     for k, v in kw.items():
         setattr(pan, k, v)

@@ -21,7 +21,7 @@ from . import anim
 from . import egg as egg_mod
 from . import grid
 from . import theme
-from .theme import LCD_ON, LCD_BG, SIL_DAY, SIL_NIGHT, VOID
+from .theme import LCD_ON, LCD_BG, PHASE_PALETTE, SIL_DAY, SIL_NIGHT, VOID, FLASH
 from .pet import Pet, POOP_MAX_PILES
 from .render import render_screen
 
@@ -58,6 +58,91 @@ GRAVESTONE = _FX.get("grave", [None])[0]      # real DVPet death.png
 POOP_W = 8
 POOP_PAD = 0
 
+WEATHER_GLYPH = {
+    "Clear": "", "Cloudy": chr(0x2601), "Drizzling": chr(0x2602),
+    "Raining": chr(0x2602), "HeavyRain": chr(0x2614),
+    "LightSnow": chr(0x2744), "Snowing": chr(0x2744), "HeavySnow": chr(0x2744),
+}
+def _sky_icon(pet):
+    """One time+weather glyph for the status line: a sun only in clear daytime, a
+    moon in clear night, otherwise the cloud/rain/snow symbol -- never a sun behind
+    rain.  Returns (glyph, colour)."""
+    if pet.weather == "Clear":
+        return (chr(0x2600), theme.COIN) if pet.is_daytime else (chr(0x263E), "blue")
+    g = WEATHER_GLYPH.get(pet.weather) or chr(0x2601)
+    col = "cyan" if pet.weather in _SNOW else ("blue" if pet.weather in _RAIN else "white")
+    return g, col
+
+
+_RAIN = {"Drizzling", "Raining", "HeavyRain"}
+_SNOW = {"LightSnow", "Snowing", "HeavySnow"}
+_PRECIP_N = {"Drizzling": 5, "LightSnow": 6, "Raining": 11, "Snowing": 10,
+             "HeavyRain": 18, "HeavySnow": 16}
+def _scale_hex(hexcol, f):
+    h = hexcol.lstrip("#")
+    r, g, b = (int(h[i:i + 2], 16) for i in (0, 2, 4))
+    cl = lambda v: max(0, min(255, int(v * f)))
+    return "#%02x%02x%02x" % (cl(r), cl(g), cl(b))
+
+
+def _weather_overlay(weather, frame_i, cols, px_h):
+    # no cloud sprites -- the backgrounds carry the cloudy/overcast look; this
+    # overlay only adds falling rain/snow particles.
+    pts = []
+    n = _PRECIP_N.get(weather, 0)
+    if n:
+        snow = weather in _SNOW
+        heavy = weather in ("HeavyRain", "HeavySnow")
+        # polish 2026-07-04: the old field marched in LOCKSTEP -- every particle
+        # advanced the same amount each frame, so the whole sky translated as
+        # one rigid sheet; and rain fell dead-vertical.  Now both kinds fall in
+        # DEPTH PLANES (far particles slower, shorter) and rain leans with the wind.
+        for i in range(n):
+            # scatter each particle to a pseudo-random spot (Knuth multiplicative
+            # hash) instead of a linear comb, so they fill the whole sky.
+            # Each particle owns a GROUND line a little past halfway (rows
+            # 13..20 of 24 -- the terrain band): rain SOAKS IN on landing,
+            # snow RESTS a few frames, then both recycle from the sky (Joel
+            # 2026-07-05: precipitation used to fall through the floor).
+            seed = (i * 2654435761) & 0xFFFFFFFF
+            x0 = seed % cols
+            base = (seed >> 10) % px_h
+            ground = 13 + ((seed >> 20) % 8)                 # this particle's terrain
+            if snow:
+                # three depth planes (half / two-thirds / full speed) and a
+                # smooth six-phase glide on a per-flake phase -- drift, not a tick
+                plane = i % 3
+                fall = ((frame_i + 1) // 2, (frame_i * 2) // 3, frame_i)[plane]
+                sway = (-1, -1, 0, 1, 1, 0)[((frame_i // 3) + i) % 6]
+                pos = (base + fall) % (ground + 5)           # +5: frames RESTING on the ground
+                pts.append(((x0 + sway) % cols, min(pos, ground)))
+            else:
+                # rain leans with the wind: each streak drifts left as it falls
+                # (heavy leans harder) and a third of the drops fall on a FAR
+                # plane -- shorter, slower, behind the storm
+                far = i % 3 == 0
+                length = (2 if far else 3) if heavy else (1 if far else 2)
+                pos = (base + frame_i * length) % (ground + 3 * length)
+                if pos > ground:
+                    continue                                 # soaked into the ground
+                wind = (frame_i * length) // (2 if heavy else 3)
+                for d in range(length):
+                    yy = pos - d
+                    if yy >= 0:                              # don't wrap a streak across the sky
+                        pts.append(((x0 - wind + (d if heavy else 0) // 2) % cols, yy))
+    return pts
+
+
+def _precip_ink(weather):
+    """The falling particles' own colour (theme precip: rain blue, snow white
+    -- Joel 2026-07-15 'give them color'); None = no precip, sprite ink rules."""
+    if weather in _SNOW:
+        return theme.PRECIP["snow"]
+    if weather in _RAIN:
+        return theme.PRECIP["rain"]
+    return None
+
+
 from .render import blit as _blit    # one blit for app/training/strikefx (refactor 2026-07-05)
 
 
@@ -78,15 +163,6 @@ def _filth_right(count):
     if n <= 0:
         return grid.X0
     return grid.X0 + ((n + 1) // 2 - 1) * (POOP_W + POOP_PAD) + POOP_W
-
-
-def _silhouette(rows):
-    """A solid flood of the sprite's lit shape (the evolve strobe's blink) --
-    1-bit rows stay 1-bit; COLOUR rows collapse to theme-ink "1"s."""
-    out = []
-    for r in rows:
-        out.append("".join("1" if grid.lit(ch) else "0" for ch in r))
-    return out
 
 
 def _filth_pts(pet, tick, count=None, sizes=None, push=0, px_h=None):
@@ -228,6 +304,7 @@ def _effect_overlay(pet, frame_i, cols, px_h, tick=0):
 
 class Screen(Static):
     """The animated LCD screen."""
+    thunder_i = 0             # frames of storm-flash left (weather sets it mid-tick)
     BG_FADE = 15              # canon animateBack: viewConfig BackgroundOpacityChange
     #                           -0.05/tick = a ~20-tick dissolve; 15 of our 10Hz
     #                           ticks = 1.5s (background audit 2026-07-15)
@@ -242,19 +319,40 @@ class Screen(Static):
     def paint(self, pet: Pet):
         if self.fx:
             return self._paint_fx(pet)
-        on, bg = LCD_ON, LCD_BG
+        phase = pet.day_phase
+        on, bg = PHASE_PALETTE.get(phase, (LCD_ON, LCD_BG))
         bgimg = self._background(pet)
         if not pet.lights:                 # lights off (the 's' lights button): dark room (+ Zzz if asleep)
             bgimg, bg, on = None, VOID, SIL_NIGHT   # DVPet lightsOff.png is pure (0,0,0); VOID keeps it on-palette
         elif bgimg:
-            on = SIL_DAY   # dark silhouette over scene art -- the pet is never white;
+            on = SIL_DAY   # dark silhouette day OR night -- the pet is never white;
             #                white (SIL_NIGHT) is reserved for the lights-out Zzz below
-        wf = self.frame_i // 4                  # effect overlays keep their ~0.4s cadence
+        else:
+            w = pet.weather
+            if w in _RAIN:
+                bg = _scale_hex(bg, 0.78)
+            elif w in _SNOW:
+                bg = _scale_hex(bg, 0.85)
+            elif w == "Cloudy":
+                bg = _scale_hex(bg, 0.95)
+        if getattr(self, "thunder_i", 0) > 0 and pet.lights:
+            # DVPet Weather.checkThunder: while thunder runs, the storm gloom LIFTS
+            # on alternating 2-frame beats (rect.changeColor(0,0,0,0)) -- lightning
+            # whitens the scene, then the rain tint snaps back.  A dark room stays dark.
+            self.thunder_i -= 1
+            if (self.thunder_i % 4) < 2:
+                if bgimg:
+                    bgimg = theme.blend_frame(bgimg, FLASH[0], 0.55)
+                else:
+                    on, bg = FLASH[1], FLASH[2]
+        wf = self.frame_i // 4                  # weather/effect overlays keep their ~0.4s cadence
         if pet.dead:                           # a grave marker (the live path builds its own overlay below)
             self.update(render_screen(
                 GRAVESTONE, SCREEN_COLS, SCREEN_ROWS, on, bg, bgimg=bgimg,
                 overlay=_clip_win(_effect_overlay(pet, wf, SCREEN_COLS, SCREEN_ROWS * 2, tick=self.frame_i)),
-                clip=_WINDOW))
+                overlay_free=(_weather_overlay(pet.weather, wf, SCREEN_COLS, SCREEN_ROWS * 2)
+                              if pet.lights else []),
+                free_ink=_precip_ink(pet.weather), clip=_WINDOW))
             return
         if pet.num == -1:                      # egg
             rec = egg_mod.record(pet.egg_type)
@@ -266,6 +364,11 @@ class Screen(Static):
         _fr = rec["frames"]
         first = next((f for f in rec["frames"] if f), rec["frames"][0])
         frames = roles.get(pet.anim, [0])
+        # stepFrame: a GERIATRIC pet idles on spriteNum+9 -- the aged shuffle
+        # toggles the dejected/collapse frames (canon re-audit 2026-07)
+        if (pet.anim in ("idle", "walk") and pet.num != -1
+                and getattr(pet, "is_geriatric", False)):
+            frames = [f + 9 for f in frames]
         # per-state cadence: hold each pose for its DVPet interval count rather than
         # flipping every tick (root-cause #2 -- one tick == one _interval; see anim.py).
         # idle holds 5/6/7, sleep holds its 2/3 poses for 10 each, reactions ~6.
@@ -309,9 +412,7 @@ class Screen(Static):
             # round, don't truncate: 0.4/0.1 is 3.999... in binary floats, and a
             # truncated beat makes the rock STUTTER (0,+6,+3,0,0,...) and the
             # crack land late (hatch-anim audit 2026-07-05)
-            # the new clock counts UP: hatching flips at 30s, the app cracks
-            # the shell at 33s -- the 3s show maps onto intervals 0..30
-            n = int(round((getattr(pet, "hatch_t", 30.0) - 30.0) / 0.1))
+            n = int(round((3.0 - getattr(pet, "_hatch_t", 3.0)) / 0.1))
             # the wobble ACCELERATES as the hatch nears (device-exact, GML
             # 2026-07-14: egg alarm 30 -> 10 for the final stretch): sways on
             # intervals 4/6/8 (0.2s beat), then EVERY interval 10..15
@@ -336,11 +437,14 @@ class Screen(Static):
                - SPRITE_W) - base
         xshift = min(max(xshift, lo), max(cap, lo))       # poop wins over the skull (it yields when crowded)
         overlay = _clip_win(_effect_overlay(pet, wf, SCREEN_COLS, SCREEN_ROWS * 2, tick=self.frame_i))
+        weather = _weather_overlay(pet.weather, wf, SCREEN_COLS, SCREEN_ROWS * 2)
         if not pet.lights:                 # lights off: DVPet's lightsOff is a fully-opaque black
             rows, xshift, mirror = [], 0, False   # cover -> the pet is hidden; only black (+ Zzz) shows
+            weather = []                   # ...and no rain/snow glitters in the dark (Joel 2026-07-15)
         self.update(render_screen(rows, SCREEN_COLS, SCREEN_ROWS, on, bg,
                                   mirror=mirror, xshift=xshift, overlay=overlay,
-                                  bgimg=bgimg, clip=_WINDOW))
+                                  overlay_free=weather, bgimg=bgimg, clip=_WINDOW,
+                                  free_ink=_precip_ink(pet.weather)))
 
     def _background(self, pet):
         return self._crossfade(pet.background())
@@ -388,9 +492,14 @@ class Screen(Static):
             right_bound = ((grid.X1 - SICK_ZONE - SPRITE_W) if _sick_mark_up(pet)
                            else (grid.X1 - SPRITE_W))
             self.roamer.step(left_bound=poop_right, right_bound=right_bound)
-            self._idle_expr = None       # the stroll is a clean walk toggle now
+            if self.roamer.stepped and not self.roamer.pause:    # a fresh step landed (DVPet stepFrame):
+                # keyed on the BEAT, not a pose change -- the device-exact
+                # random frame pick repeats a pose ~half the time, which would
+                # have silently halved the mood-pose rate (GML port 2026-07-14)
+                self._idle_expr = (anim.mood_pose(pet)           # sometimes show a mood pose instead of
+                                   if random.random() < anim.IDLE_EXPR_CHANCE else None)  # the plain walk toggle
         else:
-            self._idle_expr = None
+            self._idle_expr = None                               # any non-idle state clears the held expression
 
     # ---- care-action animations (DVPet SpriteAnim eat/clean/cheer) -----------
     def start_fx(self, kind, icon=None, poop=0, old_num=None, pet=None, starving=False, good=True, script=None):
@@ -585,7 +694,7 @@ class Screen(Static):
         then the kind's own painter (_fxk_<kind>) mutates it.  Bodies verbatim
         from the old 210-line chain; behavior pinned by the fx golden."""
         fx = self.fx
-        on, bg = LCD_ON, LCD_BG
+        on, bg = PHASE_PALETTE.get(pet.day_phase, (LCD_ON, LCD_BG))
         bgimg = self._background(pet)
         if bgimg:
             on = SIL_DAY   # dark silhouette day OR night, same rule as paint() --
@@ -614,7 +723,9 @@ class Screen(Static):
         pose = {"clean": "idle", "dying": "exhausted"}.get(fx["kind"], "idle")
         c.rows = self._pose_rows(pet, pose, step // 2)
         c.overlay = []
-        c.free = []
+        # weather rides the free plane here too (paint()'s 0.4s cadence): its
+        # own colour, the whole LCD for a sky -- and never in a dark room
+        c.free = _weather_overlay(pet.weather, self.frame_i // 4, SCREEN_COLS, c.px_h)
         c.xshift = 0
         c.yshift = 0
         c.mirror = False
@@ -676,6 +787,7 @@ class Screen(Static):
                                   xshift=c.xshift, yshift=c.yshift,
                                   overlay=_clip_win(c.overlay),
                                   overlay_free=c.free,
+                                  free_ink=_precip_ink(pet.weather),
                                   bgimg=c.bgimg, mirror=mirror, clip=_WINDOW))
 
     def _fxk_eat(self, pet, fx, step, c):
@@ -792,8 +904,8 @@ class Screen(Static):
                 c.xshift = max(0, 8 - (step - 19) * 2)
         if pet.asleep:
             c.rows = self._pose_rows(pet, "sleep", step // 2)
-        h = fx.get("helper", -1)
-        rec = data.record_for(h) if h not in (None, -1) else None
+        _, by_num = data.load_sprites()
+        rec = by_num.get(fx.get("helper", -1))
         fr = rec["frames"] if rec else None
         hf = (fr[0] if fr and fr[0] else next((f for f in fr if f), None)) if fr else None
         hh = len(hf) if hf else 16
@@ -972,7 +1084,7 @@ class Screen(Static):
         off = fx.get("off", 0)
         if step < off and fx.get("icon"):                  # itemEvolve's first act: the
             pose = 1 if (step // 4) % 2 == 0 else 4        # pet parades (canon poses
-            rec = data.record_for(old) if old not in (None, -1) else None
+            rec = data.load_sprites()[1].get(old) if old not in (None, -1) else None
             if rec:                                        # animValue+1 <-> +4)...
                 fr = rec["frames"]
                 pf = (fr[pose] if pose < len(fr) and fr[pose] else fr[0]) or c.rows
@@ -988,19 +1100,20 @@ class Screen(Static):
             # then its flood-filled SILHOUETTE blinks 0.2s on / 0.2s off
             # (beats 6-11) -- the "something is happening to me" tell every
             # reference fronts the strobe with.
-            rec = data.record_for(old) if old not in (None, -1) else None
+            rec = data.load_sprites()[1].get(old) if old not in (None, -1) else None
             fr0 = rec["frames"][0] if rec and rec["frames"] and rec["frames"][0] else None
             if fr0:
                 if step < 6:
                     c.rows = fr0
                 elif (step // 2) % 2 == 1:
-                    c.rows = _silhouette(fr0)
+                    from .digicorescreen import silhouette
+                    c.rows = silhouette(fr0)
                 else:
                     c.rows = fr0
             return
         step -= off                                        # the strobe below runs on canon beats
         if step < 21 and old not in (None, -1):            # old form until the covered swap
-            rec = data.record_for(old)
+            rec = data.load_sprites()[1].get(old)
             if rec and rec["frames"][0]:
                 c.rows = rec["frames"][0]
         burst = any(a <= step < b for a, b in
@@ -1024,8 +1137,8 @@ class Screen(Static):
         cf = chip[0] if chip and chip[0] else None         # LCD-scale (_food_frames' /3 is for 24px food)
         cw = len(cf[0]) if cf and cf[0] else 8
         cx = 8
-        a = fx.get("ancestor", -1)
-        anc = data.record_for(a) if a not in (None, -1) else None
+        _, by_num = data.load_sprites()
+        anc = by_num.get(fx.get("ancestor", -1))
         if step < 10:                                      # the chip descends
             if cf:
                 c.overlay += _blit(cf, cx, -8 + step * 2)

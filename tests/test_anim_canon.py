@@ -10,30 +10,34 @@ def test_happy_role_is_the_praise_pair_not_the_scold_pair():
 
 
 def test_sick_shuffle_is_net_zero():
-    """The sick idle alternates the injured pair and sways 1px net-zero."""
-    from tuipet.anim import sick_frame, SICK_PERIOD
-    seen_idx = set()
-    net = 0
-    for f in range(SICK_PERIOD):
-        idx, dx = sick_frame(f)
-        seen_idx.add(idx)
-        net += dx
-    assert seen_idx == {10, 11}
-    assert sum(dx for _, dx in (sick_frame(f) for f in range(SICK_PERIOD))) == 0
-
+    """idleUnwell sways moveLeft1@30, moveRight1@35/40, moveLeft1@45 -> the offset
+    is held -1 over [30,35), 0 over [35,40), +1 over [40,45), 0 elsewhere; net zero."""
+    assert anim.sick_frame(0) == (10, 0)
+    assert anim.sick_frame(30)[1] == -1
+    assert anim.sick_frame(34)[1] == -1
+    assert anim.sick_frame(35)[1] == 0          # the second move cancels the first
+    assert anim.sick_frame(40)[1] == 1
+    assert anim.sick_frame(44)[1] == 1
+    assert anim.sick_frame(45)[1] == 0          # back to centre
+    assert anim.sick_frame(49)[0] == 9          # weary flash before the reset
+    # over a full period the shuffle returns to where it started
+    assert sum(anim.sick_frame(f)[1] for f in range(anim.SICK_PERIOD)) == 0
 
 
 class _StubPet:
-    def __init__(self, energy=10, sick=False, hunger=4, strength=4):
-        self.energy, self.sick = energy, sick
-        self.hunger, self.strength = hunger, strength
+    def __init__(self, energy=10, fatigued=False, mood=0, enthusiasm=0):
+        self.energy, self._fat, self.mood, self.enthusiasm = energy, fatigued, mood, enthusiasm
+
+    def is_fatigued(self):
+        return self._fat
 
 
 def test_mood_pose_reads_state():
     assert anim.mood_pose(_StubPet(energy=0)) in (10, 9, 2)          # spent -> weary
-    assert anim.mood_pose(_StubPet(sick=True)) in (4, 6)             # unwell -> sour
-    assert anim.mood_pose(_StubPet(hunger=0)) in (4, 6)              # starving -> sour
-    assert anim.mood_pose(_StubPet()) is None                        # fine -> ordinary walk
+    assert anim.mood_pose(_StubPet(fatigued=True)) in (10, 9, 2)     # tired -> weary
+    assert anim.mood_pose(_StubPet(mood=-5)) in (4, 6)               # unhappy -> sour
+    assert anim.mood_pose(_StubPet(mood=5, enthusiasm=0)) == 5       # content & spirited -> bright
+    assert anim.mood_pose(_StubPet(mood=0)) is None                  # neutral -> ordinary walk pose
 
 
 def test_mood_pose_indices_are_valid_sprite_frames():

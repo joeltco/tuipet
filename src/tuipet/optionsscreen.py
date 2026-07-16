@@ -25,7 +25,7 @@ _LABEL = {"theme": "Theme", "sound": "Sound", "account": "Account",
 # action feedback (sound toggled, update verdict...) overrides it until the
 # cursor moves again.  Over-wide lines marquee via menu.note(tick).
 _DESC = {"theme": "recolor the whole game — live preview",
-         "sound": "the the classic V-pet chirps — switch + volume",
+         "sound": "the DVPet chirps — switch + volume",
          "account": "switch login — the pet parks in the cloud",
          "cloud": "cloud saves + offline mail — on or off",
          "update": "auto-installs new releases at launch · ENTER checks now",
@@ -57,7 +57,7 @@ class SoundPanel:
     volume, so the bar never pretends to slide it."""
 
     _ROWS = ("sound", "volume")
-    _DESC = {"sound": "the the classic V-pet chirps — on or off",
+    _DESC = {"sound": "the DVPet chirps — on or off",
              "volume": "←→ set it — every step chirps"}
 
     def __init__(self, sound_get, sound_toggle):
@@ -172,17 +172,13 @@ class KeysPanel:
 
 class OptionsPanel(menu.SubHost):
     def __init__(self, pet, sound_get, sound_toggle, on_theme_change=None,
-                 bindings=(), update_hint=None, updated_to=None):
+                 bindings=(), update_hint=None):
         self.pet = pet
         self.sound_get = sound_get
         self.sound_toggle = sound_toggle
         self.on_theme_change = on_theme_change
         self.bindings = tuple(bindings)
         self.update_hint = update_hint
-        # a launch auto-install stamps the APP's _updated_to (not the pet's);
-        # reading it off self.pet always saw None, so "restart to apply" never
-        # showed after a background install (round-3 audit 2026-07-16)
-        self.updated_to = updated_to or (lambda: None)
         self.cursor = 0
         self.sub = None                # the hosted Theme/Account/Keys panel
         self._sub_row = None           # which row opened it (routes the done)
@@ -368,7 +364,7 @@ class OptionsPanel(menu.SubHost):
         if row == "update":
             if self._installing:
                 return "updating…"
-            if self._updated or self.updated_to():
+            if self._updated or getattr(self.pet, "_updated_to", None):
                 return "restart to apply"
             if not persistence.get_auto_update():
                 return "auto: off"

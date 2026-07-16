@@ -1,59 +1,42 @@
-"""Feed menu — the canon on-LCD icon picker (clone rebuild 2026-07-16).
+"""Feed menu — DVPet's Food_Inventory page, driven ENTIRELY by foods.csv.
 
-The classic two-item feed: MEAT fills a hunger heart (+1 weight, refused at a
-full belly); the PILL cures sickness, restores a strength heart, +7 energy, +5
-weight.  Both are free and infinite — the richer consumables (fruits, premium
-meat, junk food) live in the BAG ('i') as shop items.
+DVPet's FEED button lists the foods you OWN.  What you own is in the data:
+each food's StartingQuantity seeds it (Meat/Fish/Fruit/Vegetable start at 99),
+CanDec=false means eating never depletes it (those four are the infinite
+staples), and everything else starts at 0 and is bought at the shop, consumed
+per bite (Consumable.decQuantity).  ShowInInventory=false foods (Med, Vitamin)
+belong to the heal flows and never appear here.
 
-The source draws this as a MENU ON THE LCD (decompile `Rn()`): the meat glyph
-`me` sits top-centre, the pill glyph `he` directly below it, and the cursor
-arrow `O` sits at the left margin pointing at the selected row.  A menu press
-flips `feedSelection` 0<->1; the action button feeds the pick.  We match that
-here instead of the old text list — feed's siblings (training, battle) all
-render graphically on the LCD, so it belongs there too.
-
-Glyphs below are the EXACT bitmaps ripped from the decompile (`me`/`he`/`O`),
-not hand-drawn — meat drumstick, pill capsule, right-pointing cursor.
+Picking a food calls Pet.feed(food) -- the full applyFood effect set -- and the
+app plays the eat animation with that food's real icon.
 """
 from __future__ import annotations
-from . import grid, menu, render
+from . import data, menu, shop
 from .theme import INK, INK_B, DIM, ACCENT, POS  # noqa: F401  (theme.apply propagation)
 
-# --- authentic LCD glyphs (decompile: me / he / O) --------------------------
-MEAT = ["00000011",
-        "00011101",
-        "00101110",
-        "01011110",
-        "01111110",
-        "01011100",
-        "10111000",
-        "11000000"]
 
-PILL = ["00001110",
-        "00010011",
-        "00101111",
-        "01011111",
-        "10001110",
-        "10000100",
-        "10001000",
-        "01110000"]
+def food_qty(pet, food):
+    """DVPet Consumable quantity: a CanDec=false food is pinned at its
+    StartingQuantity (never eaten down); a normal food is whatever the bag holds."""
+    if not food.get("can_dec"):
+        return int(food.get("start", 0))
+    return pet.inventory.get(food["key"], 0)
 
-CURSOR = ["1000",
-          "1100",
-          "1110",
-          "1111",
-          "1110",
-          "1100",
-          "1000"]
 
-# layout (decompile Rn coords, LCD-absolute): icons at x15, cursor at the left
-# margin; the two 8px icons stack to fill the 16px band, cursor y0 -> meat,
-# y9 -> pill.
-ICON_X = 15
-CURSOR_X = grid.X0
+def feedable(pet):
+    """The Food_Inventory listing: ShowInInventory foods you own, csv order."""
+    return [f for f in data.load_foods() if f.get("show") and food_qty(pet, f) > 0]
 
-ROWS_MENU = [("meat", "Meat", "hunger +1 · weight +1"),
-             ("pill", "Pill", "cures sick · effort +1 · energy +7")]
+
+def _effect_line(food):
+    """One terse readout of what a food does -- now the WHOLE truth.
+
+    It used to list hunger/strength/energy/mood and nothing else, so feeding a
+    Vitamin (-1h of your pet's LIFE) read as a harmless "energy +1".  The token
+    set is shared with the shop (shop.effect_tokens) so the feed page, the shelf
+    and the bag can never disagree about what a food does.
+    """
+    return " ".join(shop.effect_tokens(food, dp=True)) or "a snack"
 
 
 class FeedPanel:
@@ -61,46 +44,67 @@ class FeedPanel:
         self.pet = pet
         self.cursor = 0
         self.frame_i = 0
+        self.options = feedable(pet)
 
     def anim(self):
         self.frame_i += 1
 
     def strip(self):
+        """The message-box hint line (hint overhaul 2026-07-10)."""
+        if not self.options:
+            return menu.hints(("ESC", "out")) + "  [dim]— the bag has no food[/]"
         return menu.hints(("↑↓", "pick"), ("ENTER", "feed"), ("ESC", "out"))
 
     def key(self, k):
-        if k in ("up", "k", "down", "j"):
-            self.cursor = 1 - self.cursor
-        elif k in ("enter", "space"):
-            kind, label, _ = ROWS_MENU[self.cursor]
-            if kind == "meat":
-                out = self.pet.feed_meat()
-                if out == "ate":
-                    return ("done", ("fed", {"key": "meat", "name": "Meat"},
-                                     "Munch munch."))
-                if out == "refuse":
-                    return ("done", ("full", {"key": "meat", "name": "Meat"},
-                                     f"{self.pet.name} is full."))
+        n = len(self.options)
+        if not n:
+            if k in ("escape", "enter", "space", "f"):
                 return ("done", None)
-            was_sick = self.pet.sick
-            out = self.pet.feed_pill()
-            if out == "healed":
-                # the pill plays the HEAL fx (medicine icon i:80), not the eat
-                # chew -- feed_pill never sets the eat pose (merge 2026-07-16)
-                msg = "Cured!" if was_sick else "A tonic — strength and pep."
-                return ("done", ("healed", {"key": "i:80", "name": "Pill"}, msg))
-            if out == "refuse":
-                return ("done", ("full", {"key": "pill", "name": "Pill"},
-                                 f"{self.pet.name} doesn't need it."))
-            return ("done", None)
+            return None
+        if k in ("up", "k"):
+            self.cursor = (self.cursor - 1) % n
+        elif k in ("down", "j"):
+            self.cursor = (self.cursor + 1) % n
+        elif k in ("enter", "space"):
+            food = self.options[self.cursor]
+            if food_qty(self.pet, food) <= 0:
+                return None
+            msg = self.pet.feed(food)
+            if self.pet.refused:                     # checkRefused blew the meal off entirely
+                return ("done", ("refused", food, msg))
+            fed = self.pet.anim == "eat"
+            if fed and food.get("can_dec"):          # Consumable.decQuantity (staples never dec)
+                self.pet.take_item(food["key"])
+            return ("done", ("fed" if fed else "full", food, msg))
         elif k in ("escape", "f"):
             return ("done", None)
         return None
 
     def text(self):
-        """The LCD scene: meat over pill, cursor on the selected row."""
-        overlay = render.blit(MEAT, ICON_X, grid.TOP + 0)
-        overlay += render.blit(PILL, ICON_X, grid.TOP + 8)
-        overlay += render.blit(CURSOR, CURSOR_X, grid.TOP + (0 if self.cursor == 0 else 9))
-        return menu.paint([], self.pet.background(), rows=grid.ROWS,
-                          cols=grid.COLS, overlay=overlay, clip=grid.WINDOW)
+        p = self.pet
+        from .pet import DP_MAX
+        out = menu.header("FEED", f"hunger {p.hunger}/4  effort {p.strength}/4  "
+                                  f"DP {getattr(p, 'dp', 0)}/{DP_MAX}")
+        if not self.options:
+            out.append_text(menu.blanks(2))
+            out.append_text(menu.note("The bag has no food."))
+            out.append("  Buy food at the shop ([o]).\n", style=DIM)
+            out.append_text(menu.blanks(3))
+            out.append_text(menu.footer("ESC out"))
+            return out
+        sel = self.options[self.cursor]
+        qty = food_qty(p, sel)
+        tw = menu.W - menu.IC_W - 2
+        info = [sel["name"][:tw],
+                "x∞" if not sel.get("can_dec") else f"x{qty}",
+                *shop.effect_lines(sel, tw, 2, dp=True)]
+        menu.icon_info(out, menu.item_icon(sel), info)
+
+        def fmt(f, i):
+            q = food_qty(p, f)
+            tag = "" if not f.get("can_dec") else f"  x{q}"
+            return f"{f['name']}{tag}"
+
+        self.cursor = menu.list_window(out, self.options, self.cursor, 3, fmt)
+        out.append_text(menu.footer("↑↓ pick   ENTER feed   ESC out"))
+        return out

@@ -9,7 +9,6 @@ import os as _os
 import random
 if not _os.environ.get("COLORTERM"):
     _os.environ["COLORTERM"] = "truecolor"
-from rich.markup import escape as _esc
 from textual.app import App, ComposeResult
 from textual.containers import Horizontal, Vertical
 from textual.widgets import Static
@@ -19,14 +18,21 @@ from . import menu
 from . import egg as egg_mod
 from . import training
 from . import battlescreen
+from . import dnascreen
+from . import transportscreen
+from . import adventurescreen
 from . import shopscreen
-from . import backgroundscreen
-from . import backgrounds as bgs_mod
+from . import eggguidescreen
+from . import habitatscreen
+from . import assistscreen
 from . import feedscreen
+from . import digicorescreen
 from . import eggselectscreen
 from . import persistence
 from . import net
 from . import lobbyscreen
+from . import tournament
+from . import tournamentscreen
 from . import bugscreen
 from . import helpscreen
 from . import titlescreen
@@ -43,7 +49,8 @@ from . import theme
 # reach through `tuipet.app.*` back into this namespace (modularization 2026-07-08).
 from .arena import (  # noqa: F401  (full re-export: preserve tuipet.app.* for callers/tests)
     Screen, SCREEN_COLS, SCREEN_ROWS, SPRITE_W, PET_BASE_X, _FxCtx,
-    hearts, bar, _FX, GRAVESTONE, POOP_W, POOP_PAD,
+    hearts, bar, _FX, GRAVESTONE, POOP_W, POOP_PAD, WEATHER_GLYPH,
+    _sky_icon, _RAIN, _SNOW, _PRECIP_N, _scale_hex, _weather_overlay,
     _evol_strobe, _filth_right, _filth_pts, COND_W, COND_H, SICK_ZONE,
     PLAY_HOP, PLAY_LEAD, PLAY_HOP_H, GIFT_OUT, GIFT_BACK, GIFT_HOLD,
     _HIDDEN_STATUS_ICONS, _effect_overlay, _sick_mark_up,
@@ -81,9 +88,9 @@ def keys_markup():
     unreachable by theme.apply (shell polish 2026-07-05)."""
     k = f"b {theme.KEY}"
     return (
-        f"[{k}]f[/] feed (meat·pill)  [{k}]c[/] clean  [{k}]s[/] lights  [{k}]t[/] train\n"
-        f"[{k}]l[/] lobby (battle·jogress)  [{k}]n[/] new egg  [{k}]o[/] shop  [{k}]i[/] bag\n"
-        f"[{k}]e[/] scenes  [{k}]g[/] options  [{k}]b[/] bug  [{k}]?[/] help  [{k}]q[/] quit"
+        f"[{k}]f[/] feed  [{k}]p[/] play  [{k}]c[/] clean  [{k}]h[/] heal  [{k}]r[/] praise  [{k}]k[/] scold  [{k}]s[/] lights  [{k}]v[/] assist\n"
+        f"[{k}]t[/] train  [{k}]a[/] adventure  [{k}]u[/] cup  [{k}]l[/] lobby (battle·jogress)  [{k}]x[/] DNA  [{k}]n[/] eggs\n"
+        f"[{k}]o[/] shop  [{k}]i[/] bag  [{k}]e[/] habitat  [{k}]d[/] digicore  [{k}]g[/] options  [{k}]b[/] bug  [{k}]?[/] help  [{k}]q[/] quit"
     )
 
 
@@ -126,6 +133,14 @@ def _age_compact(seconds):
     return f"{s // 60}m{s % 60:02d}s"
 
 
+def _temp_str(pet):
+    """The HUD temperature — an armed thermostat shows where it's headed
+    (48°→62°), so the heat you set from the Habitat screen reads back."""
+    if getattr(pet, "heat_on", None) and pet.heat_on():
+        return f"{int(pet.temp)}→{int(pet.temp_goal)}°"
+    return f"{int(pet.temp)}°"
+
+
 def _care_deco(pet, word=None):
     """The care badges shown beside the status word -- one list, shared by the
     home Stats panel and the adventure card (Joel 2026-07-12: adventure shows
@@ -136,9 +151,19 @@ def _care_deco(pet, word=None):
     deco = []
     if pet.asleep and word != "asleep": deco.append("[blue]Zzz[/]")
     if pet.sick and word != "sick": deco.append(f"[{T.NEG}]+sick[/]")
-    if pet.call_on: deco.append(f"[{T.NEG}]+call![/]")
+    if pet.is_fatigued() and word != "fatigued": deco.append(f"[{T.NEG}]+tired[/]")
+    if pet.is_injured() and word != "injured": deco.append(f"[{T.NEG}]+hurt[/]")
+    if pet.is_freezing() and word != "freezing": deco.append("[blue]+cold[/]")
+    if pet.is_overheating() and word != "overheating": deco.append(f"[{T.NEG}]+hot[/]")
+    if pet.is_frail(): deco.append(f"[{T.NEG}]+frail![/]")
+    if getattr(pet, "praise_flag", False): deco.append(f"[{T.POS}]+praise![/]")
+    if getattr(pet, "scold_flag", False) or getattr(pet, "discipline_call", False):
+        deco.append(f"[{T.NEG}]+scold![/]")
     if pet.poop: deco.append(f"[{T.COIN}]~poop x{pet.poop}[/]")
-    if pet.evo_blocked: deco.append("[dim]+evo-lock[/]")
+    if getattr(pet, "effect_id", -1) >= 0: deco.append(f"[{T.POS}]\u2726{pet.effect_name()}[/]")
+    if pet.has_medicine(): deco.append(f"[{T.NEG}]+med[/]")
+    if pet.has_bandage(): deco.append("[dim]+bnd[/dim]")
+    if pet.has_vitamin(): deco.append(f"[{T.POS}]+vit[/]")
     return deco
 
 
@@ -168,38 +193,48 @@ class Stats(Static):
         div = f"[dim]{'─' * 26}[/]"
         word = pet.status_word()
         deco = _care_deco(pet, word)
-        cur, need = pet.evolution_progress()
+        age = _age_compact(pet.age_seconds)
+        sky, skycol = _sky_icon(pet)
+        aff = pet._affinity()
+        amark = (f"[{T.POS}]" + chr(0x2665) + "[/]" if aff > 0
+                 else (f"[{T.NEG}]" + chr(0x2716) + "[/]" if aff < 0 else "[dim]·[/dim]"))
+        xm = f" [b {T.ACCENT}]X[/]" if pet.x_antibody != "None" else ""
+        lifepct = max(0, int((pet.lifespan - pet.age_seconds) / max(1, pet.lifespan) * 100))
+        lifecol = T.NEG if pet.is_geriatric else T.LIFE
         self.border_subtitle = _gen_subtitle(pet)
-        rec = pet.species or {}
         lines = [
-            f"[b]{(pet.name or rec.get('name', '?'))[:22]}[/]",
+            f"[b]{pet.name[:22]}[/]{xm}",
             f"[dim]{pet.stage}{(' · ' + pet.attribute) if pet.attribute else ''}[/]",
             div,
             f"Hunger  {hearts(pet.hunger)}",
             f"Effort  {hearts(pet.strength)}",
-            f"Energy  {bar(pet.energy_pct() * 100, 12, T.ENERGY)} {pet.energy}",
-            f"Weight  {pet.weight}g   [{T.COIN}]{pet.bits}b[/]",
+            f"Energy  {bar(pet.energy_pct(), 12, T.ENERGY)}",
+            f"Mood    {bar(pet.mood_pct(), 12, T.MOOD)}",
             div,
-            f"Train   {pet.trainings_cur_stage} [dim]this stage[/]",
-            f"Battle  {pet.wins}W/{pet.battles}",
-            f"Care    {pet.care_mistakes} [dim]mistakes[/]",
-            f"Growth  {bar(cur * 100 // max(1, need), 12, T.LIFE)}",
-            f"@{bgs_mod.name(pet.bg_current)[:16]} [dim]day {pet.age_days}[/]",
+            f"Power   [{T.POS}]●{pet.vaccine}[/] [{T.ENERGY}]■{pet.data_power}[/] [{T.MOOD}]▲{pet.virus}[/]"
+            f" [{T.ACCENT}]◆{getattr(pet, 'dp', 0)}[/]",
+            f"HP {pet.full_health}/{pet.max_health()}  Wt {pet.weight}g  [{T.COIN}]{pet.bits}b[/]",
+            f"Battle  {pet.wins}W/{pet.battles}   [{T.COIN}]\u2605{pet.trophies}[/]",
+            f"@{pet.habitat_obj()['name'][:14]} {amark} [dim]{pet.season}[/]",
+            f"[{skycol}]{sky}[/] [dim]{pet.weather} {_temp_str(pet)}[/] [dim]{age}[/]",
+            f"Life    {bar(lifepct, 12, lifecol)}",
             _status_line(word, deco),
         ]
         self.update("\n".join(lines))
 
     def _paint_egg(self, pet):
+        mins, secs = divmod(int(pet.age_seconds), 60)
         self.border_subtitle = _gen_subtitle(pet)
         div = f"[dim]{'─' * 26}[/]"
         lines = [
-            f"[b]{egg_mod.egg_name(pet.egg_type)[:22]}[/] [dim]· egg[/]",
+            "[b]Digitama[/] [dim]· egg[/]",
             div,
             "[dim]a new life is warming[/]",
             "",
             "Destined to hatch",
             f"  [b]{egg_mod.hatch_name(pet.egg_type)}[/]",
             div,
+            f"Age     {mins}m{secs:02d}s",
             "",
             "[dim]keep it cosy — it[/]",
             "[dim]hatches on its own[/]",
@@ -214,14 +249,14 @@ class Stats(Static):
             div,
             "[dim]a life remembered[/]",
             "",
-            f"Lived    {pet.age_days} day{'s' if pet.age_days != 1 else ''}",
+            f"Lived    {_age_compact(pet.age_seconds)}",
             f"Reached  {pet.stage}",
             f"Cause    {getattr(pet, 'death_cause', '') or 'unknown'}",
             f"Attrib   {pet.attribute}",
             f"Record   {pet.wins}W / {pet.battles}",
             div,
-            "[dim]a revive floppy can[/]",
-            "[dim]bring it back — or[/]",
+            "[dim]gone, but not[/]",
+            "[dim]forgotten.[/]",
             "",
             "[dim]press N for a new egg[/]",
         ]
@@ -246,21 +281,26 @@ class TuiPetApp(App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("BACK UNDER CONSTRUCTION for a spell: the sprites are being "
-                 "reworked, so the game is PIN-locked again while it happens. "
-                 "The LOBBY stays open to everyone — press L. Thanks for your "
-                 "patience.")
+    WHATS_NEW = ("THE CLASSIC RETURNS: tuipet is back to its full original "
+                 "form - every mon and egg, adventure, towns, cups, the "
+                 "digicore and the deep sim, exactly as you remember them.")
 
     BINDINGS = [
-        # battle + jogress are LOBBY-ONLY (Joel 2026-07-07)
+        # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and
+        # jogress should be online pvp only. we have adventure already") --
+        # PvE combat lives in adventure and the cup; fusion needs a real
+        # partner from the roster
         ("f", "feed", "Feed"), ("t", "train", "Train"),
-        ("c", "clean", "Clean"),        # pill lives inside the feed menu (F)
-        ("o", "shop", "Shop"),
-        ("i", "inventory", "Bag"), ("e", "habitat", "Scenes"),
-        ("n", "new", "New egg"),
+        ("p", "play", "Play"), ("c", "clean", "Clean"), ("h", "heal", "Heal"),
+        ("r", "praise", "Praise"), ("k", "scold", "Scold"),
+        ("a", "adventure", "Adventure"), ("o", "shop", "Shop"), ("i", "inventory", "Bag"), ("e", "habitat", "Habitat"),
+        ("d", "digicore", "DigiCore"),
+        ("n", "eggguide", "Egg Guide"),
+        ("u", "tournament", "Cup"), ("x", "dna", "DNA"),
         ("l", "lobby", "Lobby"),
-        ("s", "sleep", "Lights"), ("g", "options", "Options"),
+        ("s", "sleep", "Lights"), ("v", "assist", "Assistant"), ("g", "options", "Options"),
         ("b", "bug", "Bug"), ("question_mark", "help", "Help"), ("q", "quit", "Quit"),
+        ("enter", "gift", "Accept gift"),
     ]
 
     def __init__(self, pet: Pet | None = None):
@@ -443,34 +483,7 @@ class TuiPetApp(App):
         # first launch, before the player had seen a single pet (sweep
         # 2026-07-14).  The account only matters online -- the lobby asks for
         # one when it's first opened, and sync starts on the next autosave.
-        # The UNDER-CONSTRUCTION gate stands here instead: the game needs the
-        # PIN, the lobby stays open to everyone.  Armed/disarmed by the ONE
-        # switch at the top of titlescreen.py (GATE_ON / TUIPET_GATE) -- it
-        # goes up and down often enough not to be a code change.
-        if titlescreen.gate_on() and not persistence.load_settings().get("construction_ok"):
-            self._open_mode(titlescreen.GatePanel(), self._after_gate)
-            return
         self._post_title()
-
-    def _after_gate(self, result):
-        if result == "play":                    # right PIN: sticks per device
-            s = persistence.load_settings()
-            s["construction_ok"] = True
-            persistence.save_settings(s)
-            self._post_title()
-        elif result == "lobby":                 # the open door past the lock
-            name, pw = persistence.get_account()
-            self._open_mode(lobbyscreen.LobbyPanel(self.pet, self._lobby_connect,
-                            name=name, pw=pw),
-                            self._after_gate_lobby)
-        else:                                   # ESC: back out to the title
-            self._open_mode(titlescreen.TitlePanel(), self._after_title)
-
-    def _after_gate_lobby(self, result=None):
-        # tear the connection down like any lobby exit, then land back on the
-        # GATE -- never the home screen (that would walk around the lock)
-        self._after_lobby(result)
-        self._open_mode(titlescreen.GatePanel(), self._after_gate)
 
     def _post_title(self):
         if self._new_game:
@@ -478,6 +491,21 @@ class TuiPetApp(App):
         else:
             self._hud(self._welcome)
             self.repaint()
+
+    def _grant_digimemory(self, pet):
+        """Hand the banked inheritance data to the next generation: the payload
+        rides the pet's save; item 32 appears in its bag (DVPet items persist
+        across resetToEgg -- tuipet's generations carry only this one)."""
+        mem = persistence.take_digimemory()
+        if mem:
+            pet.digimemory = dict(mem)
+            # the inherited ESTATE bag may already carry the elder's unused
+            # husk (the re-banked-payload case) -- never a second chip for
+            # one payload (digimemory audit 2026-07-06)
+            if pet.inventory.get("i:32", 0) <= 0:
+                pet.add_item("i:32")
+        # the departed's care grade seeds this generation's bonus (careBonusOnReset)
+        pet.evol_bonus = persistence.take_bonus_seed()
 
     def _after_death(self, result):
         if result == "new":
@@ -489,19 +517,19 @@ class TuiPetApp(App):
         if egg_type is None:                       # backed out -> return to the title
             self._open_mode(titlescreen.TitlePanel(), self._after_title)
             return
+        if egg_type == "guide":                    # N: consult the egg guide, then
+            self._open_mode(eggguidescreen.EggGuidePanel(self.pet),   # come back
+                            lambda _=None: self._open_mode(
+                                eggselectscreen.EggSelectPanel(self.pet),
+                                self._after_egg_pick))
+            return
         self._new_game = False                     # the fresh start is settled
         self.pet = Pet.new_egg(egg_type=egg_type)
+        self._grant_digimemory(self.pet)
         self.flash("Take good care of your egg!  (? = help)")
         self.repaint()
 
     def autosave(self):
-        # a fresh start is NOT settled until the carousel pick: self.pet is a
-        # random placeholder egg through title->gate->carousel, and persisting
-        # it made the next launch load a pre-picked egg and skip choose-your-egg
-        # ("it auto-selected an egg for me"; round-3 audit 2026-07-16).  The
-        # pick clears _new_game, and autosave resumes on the chosen egg.
-        if self._new_game:
-            return
         persistence.save(self.pet)
         self._start_sync()              # idempotent: picks up a re-enabled cloud toggle
         self._warn_if_unsaveable()
@@ -542,6 +570,8 @@ class TuiPetApp(App):
         persistence.note_generation(p.generation)
         if p.stage in data.STAGE_ORDER:
             persistence.note_stage_index(data.STAGE_ORDER.index(p.stage))
+        if getattr(p, "x_antibody", "None") != "None":
+            persistence.note_xanti()
 
     def on_unmount(self):
         persistence.save(self.pet)
@@ -572,6 +602,14 @@ class TuiPetApp(App):
 
     def on_key(self, event):
         fx = getattr(getattr(self, "screen_w", None), "fx", None)
+        if fx is not None and fx.get("kind") == "dying":
+            # dying(): the pet is a BUTTON -- frantic taps can save it
+            # (numHits > HitsToSave x (savedFromDeath + 1))
+            self._revive_hits = getattr(self, "_revive_hits", 0) + 1
+            self.beep("click", bell=False)
+            event.stop()
+            event.prevent_default()
+            return
         if (self.mode is None and not self.pet.dead
                 and getattr(self.screen_w, "fx", None) is not None
                 and event.key != "q"):
@@ -589,11 +627,11 @@ class TuiPetApp(App):
             # can_*() gates kept slipping (a dead mon could still adventure,
             # Joel 2026-07-05).  Any care key leads back to the memorial;
             # quit and options stay live beside the grave.
-            if event.key not in ("q", "g", "i"):   # the BAG stays reachable:
-                #                                      a revive floppy raises the dead
+            if event.key not in ("q", "g"):
                 event.stop()
                 event.prevent_default()
-                self._open_mode(deathscreen.DeathPanel(self.pet), self._after_death)
+                self._open_mode(deathscreen.DeathPanel(
+                    self.pet, old_mem=persistence.peek_digimemory()), self._after_death)
             return
         if self.mode is not None:
             event.stop()
@@ -822,8 +860,7 @@ class TuiPetApp(App):
             self.pet, lambda: self.sound, self._toggle_sound,
             on_theme_change=self._restyle,
             bindings=self.BINDINGS,
-            update_hint=lambda: getattr(self, "_update_msg", ""),
-            updated_to=lambda: getattr(self, "_updated_to", None)),
+            update_hint=lambda: getattr(self, "_update_msg", "")),
             self._after_options)
 
     def _after_options(self, result):
@@ -931,16 +968,18 @@ class TuiPetApp(App):
         elif (painter := self._status_painter()) is not None:
             painter()
         else:
-            # browse screens keep live vitals on the right
+            # data/digicore browses in the LCD; keep live vitals on the right
             self.stats_w.paint(self.pet)
 
     def _status_painter(self):
         """The mode's live status-panel painter (one table for repaint AND
         on_frame -- the two hand-rolled dispatches drifted; audit 2026-07)."""
-        table = ((training.TrainingPanel, self._status_training),
+        table = ((adventurescreen.AdventurePanel, self._status_adventure),
+                 (tournamentscreen.TournamentPanel, self._status_tournament),
+                 (training.TrainingPanel, self._status_training),
                  (battlescreen.BattlePanel, self._status_battle),
-                 (feedscreen.FeedPanel, self._status_feed),
-                 (backgroundscreen.BackgroundPanel, self._status_background))
+                 (habitatscreen.HabitatPanel, self._status_habitat),
+                 (dnascreen.DNAPanel, self._status_dna))
         for cls, painter in table:
             if isinstance(self.mode, cls):
                 return painter
@@ -967,111 +1006,288 @@ class TuiPetApp(App):
         body = [f"[b]{title}[/]", f"[dim]{'─' * 26}[/]"] + lines
         self.stats_w.update("\n".join(body))
 
+    def _status_tournament(self):
+        p, t, T = self.pet, self.mode.tourney, theme
+        self.stats_w.border_subtitle = _gen_subtitle(p)
+        if t is None:                      # cup-select phase (no bout yet)
+            self._status_card("Cup", [f"[dim]{p.season} season[/]", "", "Pick a cup", "to enter."])
+            return
+        div = f"[dim]{'─' * 26}[/]"
+        if t.over and t.champion:
+            lines = [f"[b]{p.name[:14]}[/] [dim]· cup[/]", div,
+                     f"[b]{t.name[:24]}[/]", "",
+                     f"[{T.POS}]\u2605 CHAMPION \u2605[/]", "",
+                     f"Trophy   [{T.COIN}]\u2605{p.trophies}[/]",
+                     f"Reward   [{T.COIN}]+{t.reward_bits}b[/]", div,
+                     "[dim]you took the cup![/]"]
+        elif t.over:
+            lines = [f"[b]{p.name[:14]}[/] [dim]· cup[/]", div,
+                     f"[b]{t.name[:24]}[/]", "",
+                     f"[{T.NEG}]eliminated[/]",
+                     f"[dim]in the {t.round_name}[/]", "",
+                     f"Trophy   [{T.COIN}]\u2605{p.trophies}[/]", div,
+                     "[dim]train up, try again[/]"]
+        else:
+            lines = [
+                f"[b]{p.name[:14]}[/] [dim]· cup[/]", div,
+                f"[b]{t.name[:24]}[/]",
+                f"Match    {t.round + 1} / 3",
+                f"Trophy   [{T.COIN}]\u2605{p.trophies}[/]",
+                div,
+                f"Effort   {hearts(p.strength)}",
+                f"Energy   {bar(p.energy_pct(), 11, T.ENERGY)}",
+                f"Power    [{T.POS}]●{p.vaccine}[/] [{T.ENERGY}]■{p.data_power}[/] [{T.MOOD}]▲{p.virus}[/]",
+                div,
+                "[dim]fight for the cup[/]",
+            ]
+        self.stats_w.update("\n".join(lines))
+
     def _status_training(self):
+        from .training import (GAMES, VACCINE_WINDOW, HP_ROUNDS, VIRUS_BAR_MIN,
+                               DATA_ROUNDS, DATA_PASS)
         p, tp, T = self.pet, self.mode, theme
         self.stats_w.border_subtitle = _gen_subtitle(p)
-        div = f"[dim]{'─' * 26}[/]"
-        zone = tp.mega_hi - tp.mega_lo + 1
-        if tp.phase == "bar":
-            foot = ["[dim]stop the marker in[/]", "[dim]the zone[/]"]
+        div = f"[dim]{'-' * 26}[/]".replace("-", "\u2500")
+        eff = hearts(p.strength)
+        energy = bar(p.energy_pct(), 11, T.ENERGY)
+        power = f"[{T.POS}]●{p.vaccine}[/] [{T.ENERGY}]■{p.data_power}[/] [{T.MOOD}]▲{p.virus}[/]"
+        label = GAMES[tp.gi][1]
+        gk = tp.gkey
+        if tp.phase == "menu":
+            lines = [f"[b]{p.name[:14]}[/] [dim]\u00b7 train[/]", div,
+                     "[b]choose a drill[/]", "",
+                     f"Effort   {eff}", f"Power    {power}", f"Energy   {energy}",
+                     div, "[dim]pick what to build[/]"]
         elif tp.phase == "done":
-            foot = [(f"[{T.POS}]{tp.result}[/]" if tp.success
-                     else f"[{T.NEG}]{tp.result}[/]"), ""]
+            verdict = f"[{T.POS}]drill complete[/]" if tp.success else f"[{T.NEG}]needs work[/]"
+            lines = [f"[b]{p.name[:14]}[/] [dim]\u00b7 train[/]", div,
+                     f"[b]{label}[/]", "", verdict, "",
+                     f"Effort   {eff}", f"Energy   {energy}", div,
+                     f"[dim]{(tp.result or '')[:24]}[/]"]
         else:
-            foot = ["[dim]...firing[/]", ""]
-        lines = [f"[b]{p.name[:14]}[/] [dim]· train[/]", div,
-                 f"Form     [b]{getattr(p, 'saved_hit_type', 'normal')}[/]",
-                 f"Zone     {zone} wide [dim](care!)[/]",
-                 f"Stage    {p.trainings_cur_stage} drills",
-                 f"Lifetime {p.total_trainings}",
-                 div,
-                 f"Effort   {hearts(p.strength)}",
-                 f"Energy   {bar(p.energy_pct() * 100, 11, T.ENERGY)}",
-                 div] + foot
+            if gk == "hp":
+                dots = "\u25cf" * tp.rounds_won + "\u25cb" * (HP_ROUNDS - tp.rep) + "\u00b7" * (tp.rep - tp.rounds_won)
+                prog, prog2 = f"Round    {min(tp.rep + 1, HP_ROUNDS)} / {HP_ROUNDS}", f"Won      {dots}"
+                target = f"Effort   {eff}"
+            elif gk == "vaccine":
+                tpct = max(0, tp.timer) / VACCINE_WINDOW * 100
+                prog, prog2 = f"Hits     {tp.taps} / {tp.vaccine_target}", f"Time     {bar(tpct, 11, T.MOOD)}"
+                target = f"Vaccine  [{T.POS}]{p.vaccine}[/]"
+            elif gk == "data":
+                # the versus card counts like the HP card: round + passes
+                # (canon rebuild 2026-07-13 -- the old card read the retired
+                # turret fields and CRASHED the live drill, Joel's phone report)
+                prog = f"Round    {min(tp.tt_round + 1, DATA_ROUNDS)} / {DATA_ROUNDS}"
+                prog2 = f"Past     {tp.tt_past} / {DATA_PASS}"
+                target = f"Data     [{T.ENERGY}]{p.data_power}[/]"
+            else:
+                prog, prog2 = f"Power    {int(tp.pos)}", f"Need     {VIRUS_BAR_MIN}"
+                target = f"Virus    [{T.MOOD}]{p.virus}[/]"
+            # the card's flavour slot carries the CONTROLS now -- the in-LCD
+            # footer that used to is gone (box-clip audit 2026-07-04).  Split on
+            # the hints' own triple-space gap so a key stays WITH its action
+            # (a hard [:26] slice cut every hint mid-word -- audit 07-04)
+            parts = [s.strip() for s in tp._hint().split("   ") if s.strip()]
+            if len(parts) >= 2 and all(len(s) <= 26 for s in parts[:2]):
+                h1, h2 = parts[0], "  ".join(parts[1:])[:26]
+            else:
+                import textwrap
+                h1, h2 = (textwrap.wrap(tp._hint(), 26) + ["", ""])[:2]
+            lines = [f"[b]{p.name[:14]}[/] [dim]\u00b7 train[/]", div,
+                     f"[b]{label}[/]", prog, prog2, div,
+                     target, f"Energy   {energy}", div,
+                     f"[dim]{h1}[/]", f"[dim]{h2}[/]"]
         self.stats_w.update("\n".join(lines))
 
     def _status_battle(self):
         p, m, T = self.pet, self.mode, theme
-        e = m.enemy
+        b = m.battle
         self.stats_w.border_subtitle = _gen_subtitle(p)
         div = f"[dim]{'─' * 26}[/]"
-        php = getattr(m, "hud_php", 5)
-        fhp = getattr(m, "hud_fhp", 5)
-        pp = int(100 * php / 5)
-        fp = int(100 * fhp / 5)
-        tag = f" [{T.NEG}]BOSS[/]" if e.get("boss") else ""
+        php = getattr(m, "hud_php", b.pet_hp)
+        fhp = getattr(m, "hud_fhp", b.enemy_hp)
+        pp = int(100 * php / b.pet_max) if b.pet_max else 0
+        fp = int(100 * fhp / b.enemy_max) if b.enemy_max else 0
+        tag = f" [{T.NEG}]BOSS[/]" if b.enemy.get("boss") else ""
         lines = [
             f"[b]{p.name[:14]}[/] [dim]· battle[/]", div,
-            f"vs [b]{e['name'][:14]}[/]{tag}", "",
-            f"You  {bar(pp, 11, T.POS)} {php}/5",
-            f"Foe  {bar(fp, 11, T.NEG)} {fhp}/5",
+            f"vs [b]{b.enemy['name'][:14]}[/]{tag}", "",
+            f"You  {bar(pp, 11, T.POS)} {php}/{b.pet_max}",
+            f"Foe  {bar(fp, 11, T.NEG)} {fhp}/{b.enemy_max}",
             div,
         ]
         if m.done_anim:
             res = f"[{T.POS}]VICTORY![/]" if m.won else f"[{T.NEG}]DEFEAT[/]"
-            reward = getattr(m.battle, "reward", "") if m.battle else ""
-            lines += [res, f"[dim]{(reward or '')[:24]}[/]", "", "[dim]SPACE  continue[/]"]
+            lines += [res, f"[dim]{(b.reward or '')[:24]}[/]", "", "[dim]SPACE  continue[/]"]
         else:
-            hint = ("SPACE lock the bar" if getattr(m, "phase", "") == "ready"
-                    else "SPACE  skip")
+            hint = "↑↓ ENTER pick" if getattr(m, "phase", "") == "menu" else "SPACE  skip"
             lines += [f"[dim]{(m.hud_note or '')[:24]}[/]", "", f"[dim]{hint}[/]"]
         self.stats_w.update("\n".join(lines))
 
-    def _status_feed(self):
-        """Feed-menu readout: the LCD carries the meat/pill icons, this card
-        carries the words (canon splits picture from text, like the picker)."""
-        p, m, T = self.pet, self.mode, theme
-        self.stats_w.border_subtitle = _gen_subtitle(p)
-        div = f"[dim]{'─' * 26}[/]"
-
-        def opt(i, label, effect):
-            mark = "▸" if m.cursor == i else " "
-            style = "b" if m.cursor == i else "dim"
-            return f"[{style}]{mark} {label:<5}[/] [dim]{effect}[/]"
-
-        lines = [
-            f"[b]{p.name[:14]}[/] [dim]· feed[/]", div,
-            f"Hunger   {hearts(p.hunger)}",
-            f"Effort   {hearts(p.strength)}",
-            f"Energy   {bar(p.energy_pct() * 100, 11, T.ENERGY)}",
-            div,
-            opt(0, "Meat", "fills the belly"),
-            opt(1, "Pill", "mends & fuels"),
-        ]
-        self.stats_w.update("\n".join(lines))
-
     def _status_eat(self):
-        """Feeding readout: belly + weight, live while the eat anim plays."""
+        """DVPet feeding readout: the calorie (hunger) buffer plus the protein/mineral/
+        vitamin macros, shown live while the eat animation plays."""
+        from .pet import CALORIE_LIMIT, MAX_MACRO, GOOD_NUTRITION_MIN
         p, T = self.pet, theme
         self.stats_w.border_subtitle = _gen_subtitle(p)
-        div = f"[dim]{'─' * 26}[/]"
+        div = "[dim]" + chr(0x2500) * 26 + "[/]"   # no backslash inside an f-string (SyntaxError on py3.10/3.11)
+        def mbar(v, col):
+            return bar(min(100, v * 100 // MAX_MACRO), 11, col)
+        well = (p.nutr_protein >= GOOD_NUTRITION_MIN and p.nutr_mineral >= GOOD_NUTRITION_MIN
+                and p.nutr_vitamin >= GOOD_NUTRITION_MIN)
         lines = [
-            f"[b]{p.name[:14]}[/] [dim]· feeding[/]", div,
-            f"Hunger   {hearts(p.hunger)}",
-            f"Effort   {hearts(p.strength)}",
-            f"Energy   {bar(p.energy_pct() * 100, 11, T.ENERGY)}",
+            f"[b]{p.name[:14]}[/] [dim]\u00b7 feeding[/]", div,
+            f"Calorie  {hearts(p.hunger)}",
+            f"Fuel     {bar(p.calories * 100 // CALORIE_LIMIT, 12, T.COIN)}",
             div,
-            f"Weight   {p.weight}g",
-            "[dim]meat fills the belly;[/]",
-            "[dim]the pill mends & fuels[/]",
+            f"Protein  {mbar(p.nutr_protein, T.POS)}",
+            f"Mineral  {mbar(p.nutr_mineral, T.ENERGY)}",
+            f"Vitamin  {mbar(p.nutr_vitamin, T.MOOD)}",
+            div,
+            f"Weight {p.weight}g",
+            (f"[{T.POS}]well nourished[/]" if well else "[dim]a varied diet helps[/]"),
         ]
         self.stats_w.update("\n".join(lines))
 
-    def _status_background(self):
-        """The browsed scene's dossier: the LCD shows the SCENE, this card
-        carries the words (picker rebuild 2026-07-15)."""
+    def _status_dna(self):
         p, m, T = self.pet, self.mode, theme
         self.stats_w.border_subtitle = _gen_subtitle(p)
         div = f"[dim]{'─' * 26}[/]"
-        key = m.rows[m.cursor]
+        f = m.field
+        same = f == p.field
+        own, chg = p.dna_owned.get(f, 0), p.dna_applied.get(f, 0)
+        cost = "spirit -3/ea  mood+" if same else "spirit -6/ea  mood-  ill?"
+        from . import data, evolution
+        reqs = data.load_requirements()
+        dna_t = [t for t in data.load_evolutions().get(p.num, [])
+                 if reqs.get(t) and any(g[0] != "None" for g in reqs[t]["dna"].values())]
+        unlocked = sum(1 for t in dna_t if evolution._dna_ok(p, reqs[t]))
+        screen = {"home": "menu", "charge": "charge", "stats": "stats",
+                  "reqs": "requirements", "bet": "generate", "mash": "generate",
+                  "result": "generate"}.get(m.phase, "menu")
+        import textwrap
+        last_rows = [f"[dim]{s}[/]" for s in textwrap.wrap(m.last or "", 24)[:2]]
+        last_rows += [""] * (2 - len(last_rows))
+        lines = [
+            f"[b]{p.name[:14]}[/] [dim]· DNA · {screen}[/]", div,
+            f"Bits     [{T.COIN}]{p.bits}[/]",
+            f"Field    {data.pretty_field(f)}" + ("  [dim](own)[/]" if same else ""),
+            f"Banked   {own}     Charged {chg}",
+            f"Share    {p.dna_percent(f)}%    [dim]x{m.amount}[/]",
+            f"Unlocks  [b]{unlocked}[/]/{len(dna_t)} form(s)",
+            div,
+            f"[dim]{cost}[/]",
+            *last_rows,
+            "[dim]own Field * charges cheap[/]",
+            "[dim]ESC steps back out[/]",
+        ]
+        self.stats_w.update("\n".join(lines))
+
+    def _status_habitat(self):
+        """The browsed habitat's dossier: the LCD shows the SCENE, this card
+        carries the words (habitat audit 2026-07-04)."""
+        p, m, T = self.pet, self.mode, theme
+        self.stats_w.border_subtitle = _gen_subtitle(p)
+        div = f"[dim]{'─' * 26}[/]"
+        h = m.rows[m.cursor]
         msg = m.msg or ""
-        pr = bgs_mod.price(key)
-        lines = [f"[b]{bgs_mod.name(key)[:20]}[/]", div,
-                 f"Status   {m._tag(key)}",
-                 f"Price    {'free' if pr == 0 else f'{pr}b'}",
+        cl = m.climate(h)
+        if "  Wi " in cl:                     # split the ranges: no ° clips
+            su, wi = cl.split("  Wi ")
+            climate_rows = [f"Summer   {su[3:]}", f"Winter   {wi}"]
+        else:
+            climate_rows = [f"Climate  {cl[:17]}"]
+        lines = [f"[b]{h['name'][:20]}[/]", div,
+                 f"Status   {m._tag(h)}",
+                 f"Fit      {m._aff_word(h)}",
+                 *climate_rows,
                  f"Bits     [{T.COIN}]{p.bits}b[/]", div,
                  msg[:26], msg[26:52], "",
                  "[dim]try the view before[/]", "[dim]you pay for it[/]"]
+        self.stats_w.update("\n".join(lines))
+
+    def _status_town(self, m):
+        """The town's numbers + message: the lobby is a bare arena now, so the
+        card carries what the in-LCD header/note used to (box-clip audit)."""
+        p, T = self.pet, theme
+        self.stats_w.border_subtitle = _gen_subtitle(p)
+        div = f"[dim]{'─' * 26}[/]"
+        if m.sub is not None:                              # a cup bout in town
+            e = m.sub.battle.enemy
+            lines = [f"[b]{p.name[:14]}[/] [dim]· town cup[/]", div,
+                     f"vs [b]{e['name'][:14]}[/]",
+                     f"HP you {m.sub.hud_php}  foe {m.sub.hud_fhp}", div,
+                     f"[dim]{(m.sub.hud_note or '')[:24]}[/]"]
+        else:
+            msg = m.msg or ""
+            lines = [f"[b]TOWN {m.town['id']}[/] [dim]· {p.season}[/]", div,
+                     f"Bits     [{T.COIN}]{p.bits}b[/]",
+                     f"Bag      {sum(p.inventory.values())}",
+                     div, msg[:26], msg[26:52]]
+        self.stats_w.update("\n".join(lines))
+
+    def _status_adventure(self):
+        p, a, T = self.pet, self.mode.adv, theme
+        from . import townscreen
+        if isinstance(self.mode.sub, townscreen.TownPanel):
+            return self._status_town(self.mode.sub)        # visiting: the town card
+        self.stats_w.border_subtitle = _gen_subtitle(p)
+        div = f"[dim]{'─' * 26}[/]"
+        lives = "♥" * a.lives + "[dim]·[/]" * (3 - a.lives)
+        power = f"[{T.POS}]●{p.vaccine}[/] [{T.ENERGY}]■{p.data_power}[/] [{T.MOOD}]▲{p.virus}[/]"
+        # mid-encounter battle ONLY -- a road-side care panel (feed/bag,
+        # road-keys 2026-07-07) keeps the travelling card underneath
+        if self.mode.sub is not None and hasattr(self.mode.sub, "battle"):
+            e = self.mode.sub.battle.enemy
+            # boss-ness from the panel's own pending flag (bug report
+            # 2026-07-13: the gate fight read as a random encounter -- the
+            # enemy record never carries a "boss" key)
+            was_boss = bool(getattr(self.mode, "_pending", None)
+                            and self.mode._pending[0])
+            tag = f" [{T.NEG}]BOSS[/]" if was_boss else ""
+            foot = (["[dim]the zone boss guards[/]",
+                     "[dim]the gate — end it![/]"] if was_boss else
+                    ["[dim]a wild foe blocks[/]",
+                     "[dim]the path — fight![/]"])
+            lines = [
+                f"[b]{p.name[:14]}[/] [dim]· battle[/]",
+                div,
+                f"vs [b]{e['name'][:14]}[/]{tag}",
+                f"Lives    {lives}",
+                div,
+                f"Effort   {hearts(p.strength)}",
+                f"Energy   {bar(p.energy_pct(), 11, T.ENERGY)}",
+                f"Power    {power}",
+                div,
+            ] + foot
+        else:                                               # travelling
+            # the zone ribbon (legibility arc 2026-07-07): REAL geography on
+            # the journey card -- towns.csv gates, uncleared enemies.csv
+            # bosses, the pet's live step (adventure.ribbon)
+            road = "".join(f"[b]{c}[/]" if c == "◆"
+                           else f"[{T.COIN}]T[/]" if c == "T"
+                           else f"[{T.NEG}]B[/]" if c == "B"
+                           else "[dim]·[/]" for c in a.ribbon())
+            from . import world
+            _mn = a.maps[a.mi]["map"]
+            from .arena import _sky_icon
+            sky, skycol = _sky_icon(p)
+            lines = [
+                f"[b]{p.name[:14]}[/] [dim]· away[/]",
+                div,
+                f"[b]{world.region_name(_mn)[:24]}[/]",
+                f"{world.zone_name(_mn, a.zone['zone'])[:20]} [dim]{a.pct}%[/]",
+                f"Lives    {lives}",
+                f"Road     {road}",
+                f"Bag      {sum(p.inventory.values())}   [{T.COIN}]{p.bits}b[/]",
+                div,
+                f"Hunger   {hearts(p.hunger)}",
+                f"Energy   {bar(p.energy_pct(), 11, T.ENERGY)}",
+                f"Power    {power}",
+                f"[{skycol}]{sky}[/] [dim]{p.weather} {_temp_str(p)}[/]",
+                div,
+                _status_line(p.status_word(), _care_deco(p)),
+            ]
         self.stats_w.update("\n".join(lines))
 
     def on_frame(self):                        # single DVPet interval clock (10 Hz, 0.1s): main view AND sub-screens
@@ -1116,25 +1332,89 @@ class TuiPetApp(App):
             elif getattr(self, "_pending_evolve", None) is not None and self.screen_w.fx is None:
                 old_num, self._pending_evolve = self._pending_evolve, None
                 self.screen_w.start_fx("evolve", old_num=old_num)
-            elif self._dying_fx:               # dying beat finished -> the memorial
+            elif self._dying_fx:               # dying beat finished: saved, or the memorial
                 self._dying_fx = False
-                persistence.save(self.pet)
-                self._open_mode(deathscreen.DeathPanel(self.pet),
-                                self._after_death)
+                hits = getattr(self, "_revive_hits", 0)
+                self._revive_hits = 0
+                from .pet import HITS_TO_SAVE
+                if hits > HITS_TO_SAVE * (self.pet.saved_from_death + 1):
+                    old_num = self.pet.save_from_death()
+                    if old_num is not None:            # the dark rebirth
+                        self.flash(f"[b]{self.pet.name}![/] It came back... changed.")
+                        self.screen_w.start_fx("evolve", old_num=old_num)
+                    else:
+                        self.flash(f"[b]{self.pet.name}[/] clings to life!")
+                        self.screen_w.start_fx("cheer")
+                    persistence.save(self.pet)
+                else:
+                    # UnlockInheritance (onDie with _bonus > 0): the departed CAN
+                    # etch its Digimemory -- canon's DigiMemory_Validation is a
+                    # real choice (declining keeps the bonus for the heir), so
+                    # the panel asks; the etch is the walk-out default.  A held
+                    # UNUSED payload is device-lifetime (canon item 32 survives
+                    # resetToEgg): back to the bank first (digimemory audit
+                    # 2026-07-06), where the only-one prompt covers it.
+                    if self.pet.digimemory:
+                        persistence.bank_digimemory(dict(self.pet.digimemory))
+                        self.pet.digimemory = {}
+                    b0 = self.pet.evol_bonus
+                    new_mem = self.pet.make_digimemory()
+                    grade_spent = self.pet.final_care_grade()   # the etch path's seed
+                    self.pet.evol_bonus = b0
+                    grade_kept = self.pet.final_care_grade()    # the decline path's seed
+                    self.pet.evol_bonus = 0                     # the life is spent either way
+                    old_mem = persistence.peek_digimemory()
+                    banked_new = False
+                    if new_mem and not old_mem:
+                        persistence.bank_digimemory(new_mem)    # default: etched
+                        banked_new = True
+                    persistence.bank_bonus_seed(grade_spent)    # default seed; B re-banks
+                    persistence.save(self.pet)
+                    self._open_mode(deathscreen.DeathPanel(self.pet, hold=20, new_mem=new_mem,
+                                                           old_mem=old_mem, grade_kept=grade_kept,
+                                                           banked_new=banked_new), self._after_death)
             else:                              # any other fx just finished -> restore the HUD
                 self.repaint()
         else:
-            p = self.pet
-            if p.stage == "Egg":
-                was = p.hatching
-                done = p.advance_hatch(0.1)
-                if done and not was:
+            if self.pet.hatching:
+                ht0 = getattr(self.pet, "_hatch_t", 3.0)
+                done = self.pet.advance_hatch(0.1)
+                # the hatch chirp marks the WOBBLE ACCELERATING (device-exact,
+                # GML 2026-07-14: the chirp lands as the egg's alarm quickens),
+                # i.e. interval 10 of the 3.0s rock -- was DVPet's t0.6 beat
+                if ht0 > 2.0 >= getattr(self.pet, "_hatch_t", 0.0):
                     self.beep("hatch")
-                if done and p.hatch_t >= 33:      # 3s of crack-wobble, then out
-                    p._hatch_into_fresh()
-                    star = ("  [b]★ a NEW species for the album![/]"
-                            if not persistence.album_has(p.num) else "")
-                    self.flash(f"[b]{p.name or data.record_for(p.num)['name']}[/] hatched!{star}")
+                if done:
+                    p = self.pet
+                    self.flash(f"[b]{p.name}[/] hatched!")
+            # DVPet Weather.precipitate: HeavyRain rolls thunder (nextInt(500)==0
+            # per frame); the FLASH + the startled idle keep playing, but the
+            # crack SFX is retired (Joel 2026-07-04: weather stays visual-only)
+            p = self.pet
+            if (p.weather == "HeavyRain" and not p.dead and p.stage != "Egg"
+                    and getattr(sc, "thunder_i", 0) <= 0 and random.randint(0, 499) == 0):
+                sc.thunder_i = 14
+                if p.anim in ("idle", "walk") and not p.asleep:
+                    # surprising() -- disposition-keyed (startle audit
+                    # 2026-07-06): the sour pet barely flinches, the SUNNY
+                    # one jumps out of its skin (canon's inversion)
+                    p._set_anim({-1: "startle_sour", 1: "startle_sunny"}
+                                .get(p.disposition, "startle"), 1.4)
+            # DVPet poopDance: a special-idle roll while the gauge is full --
+            # tuipet fires the poop the moment the gauge fills, so the nervous
+            # dance rolls while the need APPROACHES (>=80% of the interval)
+            # canon rolls ONCE and picks UNIFORMLY among the eligible tells
+            # (yawning/poopdance audit 2026-07-06; the old elif hard-favoured
+            # the dance whenever both were due)
+            if (not p.dead and p.stage != "Egg" and not p.asleep
+                    and p.anim in ("idle", "walk")):
+                specials = []
+                if getattr(p, "_poop_t", 0) >= 0.8 * p._poop_interval:
+                    specials.append("poopdance")
+                if p.near_bedtime():
+                    specials.append("yawn")      # the full yawning() stretch fx
+                if specials and random.randrange(40) == 0:
+                    sc.start_fx(random.choice(specials))
             sc.advance(self.pet)
             sc.paint(self.pet)
 
@@ -1142,31 +1422,30 @@ class TuiPetApp(App):
         if self.mode is not None:
             # a sub-screen is open -> pause the life-sim (the canon menu
             # freeze) -- EXCEPT the lobby's chat contexts (Joel 2026-07-13:
-            # "make the lobby tick, alarm and all").  Sessions (battle/
-            # jogress), login and every menu keep the freeze: a pet must not
-            # starve or die mid-volley or mid-menu.
+            # "make the lobby tick, alarm and all") and the OPEN ROAD (Joel
+            # 2026-07-13 again: "make adventures live-tick the sim" -- a long
+            # expedition carries real hunger/sleep/sickness risk).  Sessions
+            # (battle/jogress), login, teleports and every road-side sub
+            # (town, feed, bag) keep the freeze: a pet must not starve or die
+            # mid-volley or mid-menu.
             m = self.mode
-            live = (isinstance(m, lobbyscreen.LobbyPanel)
-                    and m.phase in ("lobby", "dm"))
+            live = ((isinstance(m, lobbyscreen.LobbyPanel)
+                     and m.phase in ("lobby", "dm"))
+                    or (isinstance(m, adventurescreen.AdventurePanel)
+                        and m.sub is None
+                        and getattr(m, "_trans", None) is None))
             if not live:
-                # a TRUE freeze: keep the pet's clock current so the frozen
-                # menu minutes don't build a replay debt.  Pet.tick's drift
-                # guard (>120s lag -> catch_up) otherwise replayed the frozen
-                # time on the next live tick, charging calls the player could
-                # not answer while in the menu (round-3 audit 2026-07-16).
-                # _min_acc is left ALONE -- a partial minute in flight resumes
-                # after the menu; only wall_time is pinned so no debt accrues.
-                import time as _t
-                if self.pet.stage != "Egg" and self.pet.num >= 0 and not self.pet.dead:
-                    self.pet.wall_time = _t.time()
                 return
             was_dead = self.pet.dead
             poop0 = self.pet.poop
+            self.pet.fx_hold = True     # evolution waits for the main view --
+            #                             its strobe belongs to the home screen
             self.pet.tick(1.0)
             p = self.pet
             if p.dead and not was_dead:
                 # death can't wait for ESC: leave the room, play the memorial
                 if getattr(p, "away", False):
+                    p.go_home_habitat()       # the road ends here: bring it home
                     p.away = False
                 self._close_mode(None)
                 self.beep("death")
@@ -1199,6 +1478,7 @@ class TuiPetApp(App):
         # clean-fx incident 2026-07-04: the pet transformed mid-sweep and the
         # evolve strobe played on the already-evolved form) -- hold the check
         # until the screen is quiet; the counters keep and it fires next tick
+        self.pet.fx_hold = self.screen_w.fx is not None
         self.pet.tick(1.0)
         p = self.pet
         if p.dead and not was_dead:
@@ -1223,6 +1503,13 @@ class TuiPetApp(App):
                     self.screen_w.start_fx("evolve", old_num=prev[0])
                 else:
                     self._pending_evolve = prev[0]
+        elif getattr(p, "_toilet_event", None):
+            tev = p._toilet_event
+            p._toilet_event = None
+            if self.screen_w.fx is None:          # the self-visit plays poopToilet
+                self.screen_w.start_fx("toilet", icon=tev)
+            else:
+                self.beep("poop", bell=False)
         elif p.poop > poop0:
             # DVPet playPoopSound keys the byte poop() RETURNS -- the SIZE of the
             # new pile (f==1 small, f>2 large, else normal) -- not the pile count
@@ -1235,6 +1522,53 @@ class TuiPetApp(App):
                 self.screen_w.fx["snds"] = {18: poop_snd}
             else:
                 self.beep(poop_snd, bell=False)
+        # AI Assistant rounds (checkAutoCare): play the visit, flash the quit notes
+        ev = getattr(p, "assist_event", None)
+        if ev and self.screen_w.fx is None:
+            p.assist_event = None
+            act, piles, sizes = ev
+            self.screen_w.start_fx("assist", pet=p, poop=piles,
+                                   icon="f:44" if act == "feed" else ("f:43" if act == "strength" else None))
+            self.screen_w.fx["act"] = act
+            self.screen_w.fx["sizes"] = sizes
+            self.screen_w.fx["helper"] = p.assistant_num
+            if act in ("feed", "strength"):
+                # assistantFeed: the drop-off round is short; the REAL eat anim
+                # (with its own bite sounds / pace / grimace) chains after
+                self.screen_w.fx["steps"] = 12
+                self.screen_w.fx["chain_eat"] = self.screen_w.fx["icon"]
+                self.screen_w.fx["pet_ref"] = p
+        note = getattr(p, "assist_note", "")
+        if note:
+            self.flash(note)
+            p.assist_note = ""
+        # a lifetime-win gate crossed mid-battle: announce it back home
+        note = getattr(p, "egg_unlock_note", "")
+        if note:
+            self.flash(note)
+            # a whole new raisable species earned: the champion fanfare, not
+            # the same chirp as picking up an Oats (sweep 2026-07-14)
+            self.beep("champion", bell=False)
+            p.egg_unlock_note = ""
+        # birthday (setTimeToAge age-up): announce the day's verdict
+        if p.birthday_note:
+            self.flash(p.birthday_note)
+            self.beep("reward" if "Cupcake" in p.birthday_note or "Cookie" in p.birthday_note else "lose", bell=False)
+            p.birthday_note = ""
+        # tournament alarm (TournamentAlert): the alarmed cup's hour arrived --
+        # onset ring, then the same attention bounce as the gift call
+        if p.tourney_alert and not getattr(self, "_cup_alert_seen", False):
+            self.beep("alarm")
+        self._cup_alert_seen = p.tourney_alert
+        if p.tourney_alert and p.anim == "idle" and self.screen_w.fx is None:
+            p._set_anim("happy", 1.2)
+        # gift call (DVPet GiftCall): onset chime, then the attention bounce
+        # (poses 5/7, like DVPet attention(5,7)) until the present is claimed
+        if p.gift and not getattr(self, "_gift_seen", False):
+            self.beep("reward", bell=False)
+        self._gift_seen = bool(p.gift)
+        if p.gift and p.anim == "idle" and self.screen_w.fx is None:
+            p._set_anim("happy", 1.2)
         # care-need call (classic V-pet nag): alert on onset, then every ~90s
         needs = p.needs_attention()
         if needs and not self._needs:
@@ -1254,6 +1588,14 @@ class TuiPetApp(App):
         elif needs:
             self._hud(self._need_message(p))
             self._showing_need = True
+            self._showing_update = False
+        elif p.tourney_alert:
+            self._hud("ALERT — Tournament open! [b]U[/] to enter")
+            self._showing_need = True           # reuse the clear-on-resolve flag
+            self._showing_update = False
+        elif p.gift:
+            self._hud(f"[b]{p.name}[/] has a present for you! ENTER to accept")
+            self._showing_need = True           # reuse the clear-on-resolve flag
             self._showing_update = False
         elif self._showing_need:
             self._hud("")
@@ -1332,13 +1674,21 @@ class TuiPetApp(App):
 
     def _need_message(self, p):
         """HUD announcement for the pet's most urgent unmet care need (or '')."""
-        name = _esc(p.name) or "Your pet"
-        if p.asleep and p.lights:               # the one asleep call
+        name = p.name or "Your pet"
+        if p.asleep and p.lights:               # lightsCall: the one asleep call
             msg = f"{name} is trying to sleep — lights off! ([b]S[/])"
-        elif p.sick:          msg = f"{name} is sick — feed it a pill ([b]F[/]) to cure it!"
+        elif p.sick:          msg = f"{name} is sick!"
         elif p.hunger == 0:   msg = f"{name} is hungry!"
-        elif p.strength == 0: msg = f"{name}'s strength is empty — pill or fruit!"
-        elif p.poop:          msg = f"{name} needs cleaning!"
+        elif p.strength == 0: msg = f"{name}'s effort gauge is empty — train it!"
+        elif p.poop >= 3:     msg = f"{name} needs cleaning!"
+        elif p.energy <= 0:   msg = f"{name} is exhausted!"
+        elif p.is_frail():
+            left = max(0, 5 - p.care_mistakes)
+            msg = (f"{name} is getting frail — "
+                   + (f"{left} more slip{'s' if left != 1 else ''} could be fatal!"
+                      if left else "handle with perfect care!"))
+        elif p.scold_flag:    msg = f"{name} is misbehaving!"
+        elif p.discipline_call: msg = f"{name} is throwing a tantrum — scold it!"
         else:                 return ""
         return f"[{theme.NEG}]\u26a0 {msg}[/]"
 
@@ -1360,34 +1710,97 @@ class TuiPetApp(App):
         if not result:
             self.repaint(); return
         outcome, food, msg = result
-        icon = food.get("key", "f:0")               # the food's REAL icon rides the fx
+        icon = food.get("key", "f:0")               # the food's REAL icon rides the eat fx
         # eat(): the wolf-down modifier is decided BEFORE the meal (a starving
         # pet that just ate has hunger>0 -- reading it here was always False)
         starving = getattr(self.pet, "_last_meal_starving", False)
         if outcome == "fed" and self.pet.anim == "eat":
             self.screen_w.start_fx("eat", icon, pet=self.pet, starving=starving)   # SFX per-bite in the fx loop
-        elif outcome == "healed":
-            self.screen_w.start_fx("heal", icon="i:80")   # the pill's medicine fx (was the standalone H)
         elif outcome == "full":
             self.screen_w.start_fx("spit", icon)  # _refuse fires on each head-shake (fx snds)
         self._do(msg)
     def action_train(self):
-        reason = training.can_train(self.pet)
+        reason = self.pet.can_train()
         if reason:
             self._do(reason); return
-        if self.pet.asleep:                     # dragging a sleeper to the bar
-            self.pet.disturb_sleep()            # = the canon disturb mistake
-            self.flash("It wakes up grumpy…")
         self._open_mode(training.TrainingPanel(self.pet), self._after_train)
 
     def _after_train(self, msg):
         if msg:
             self.flash(msg)
+        # DVPet onExerciseFinish: success -> setPraise(true) -> the cheer(true) fx;
+        # anything less -> State.Jeering -> jeer(true, _angry).  apply_training left
+        # the verdict in pet.anim (happy/sad; the sim is paused while the drill is
+        # open, so it's still fresh here).
+        if self.pet.anim == "happy":
+            self.screen_w.start_fx("cheer")
+        elif self.pet.anim == "sad":
+            self.screen_w.start_fx("jeer")
+        elif self.pet.anim == "refuse":
+            # canon canExercise: _refused -> State.Refusing -- the head-shake plays
+            # back on the LCD after onPreTrain dumps the menu (spit == refuse(); no icon)
+            self.screen_w.start_fx("spit")
         self.repaint()
 
     # (the home battle + jogress actions were retired 2026-07-07 -- lobby-only
     # now; adventure/cup/town keep their own embedded BattlePanels and the
     # lobby keeps JogressPanel as its fusion-scene shim)
+
+    def action_praise(self):
+        if self.screen_w.fx is not None:        # let the current care animation finish before acting again
+            return
+        msg = self.pet.praise()
+        if self.pet.anim == "happy":                # the praise lands -> DVPet cheer()
+            self.screen_w.start_fx("cheer")         # (its _happy sound is fx-scripted)
+        elif self.pet.anim == "surprise":           # mis-praised a misbehaver ->
+            self.screen_w.start_fx("cheer", good=False)   # Bad_Praise: cheer(false)
+        self._do(msg)
+
+    def action_scold(self):
+        if self.screen_w.fx is not None:        # let the current care animation finish before acting again
+            return
+        msg = self.pet.scold()
+        if self.pet.anim == "angry":                # the scold lands -> DVPet jeer()
+            self.screen_w.start_fx("jeer")          # (its _angry sound is fx-scripted)
+        elif self.pet.anim == "sad":                # scolded an innocent -> Bad_Scold:
+            self.screen_w.start_fx("jeer", good=False)   # the sad slump
+        self._do(msg)
+
+    def action_tournament(self):
+        err = tournament.can_enter(self.pet)   # single source of entry gating (young/asleep/no-cup)
+        if err:
+            self._do(err); return
+        self.pet.tourney_alert = False         # answering the call silences it
+        self._open_mode(tournamentscreen.TournamentPanel(self.pet), self._after_cup)
+
+    def _after_cup(self, msg):
+        verdict = None
+        if isinstance(msg, tuple):           # (last, champion) from a played bracket
+            msg, verdict = msg
+        if msg:
+            self.flash(msg)
+        # the post-cup emotional beat rides the HOUSE screen (anim hardening
+        # 2026-07-14: every reference celebrates a win / sulks a loss back
+        # home for a few seconds; tuipet's losing() fx sat built but unwired)
+        if verdict is not None and self.screen_w.fx is None and not self.pet.dead:
+            self.screen_w.start_fx("cheer" if verdict else "losing")
+        self.repaint()
+
+    def action_dna(self):
+        reason = self.pet.can_charge_dna()
+        if reason:
+            self._do(reason); return
+        self._open_mode(dnascreen.DNAPanel(self.pet), self._after_dna)
+
+    def _after_dna(self, result=None):
+        self.autosave()
+        if isinstance(result, tuple) and result and result[0] == "charged":
+            _, field, amount = result          # DVPet applyDNA -> DNA_Feeding -> main view
+            self.screen_w.start_fx("dna_charge", icon=field, pet=self.pet)
+            self.beep("compatible", bell=False)   # the DNA charge/absorb beep (no dedicated dna rip)
+            self.flash("%s absorbed %d %s DNA" % (self.pet.name, amount, data.pretty_field(field)))
+        else:
+            self.repaint()
 
     def action_shop(self):
         self._open_mode(shopscreen.ShopPanel(self.pet), self._after_shop)
@@ -1395,7 +1808,24 @@ class TuiPetApp(App):
         self._open_mode(shopscreen.ShopPanel(self.pet, start_mode="bag"), self._after_shop)
 
     def action_habitat(self):
-        self._open_mode(backgroundscreen.BackgroundPanel(self.pet), self._after_habitat)
+        self._open_mode(habitatscreen.HabitatPanel(self.pet), self._after_habitat)
+
+    def action_assist(self):
+        self._open_mode(assistscreen.AssistPanel(self.pet), lambda _=None: self.repaint())
+
+    def action_eggguide(self):
+        # the digitama unlock book -- read-only, safe at any stage
+        self._open_mode(eggguidescreen.EggGuidePanel(self.pet), lambda _=None: self.repaint())
+
+    def action_digicore(self):
+        self._open_mode(digicorescreen.DigiCorePanel(self.pet), self._after_digicore)
+
+    def _after_digicore(self, msg):
+        if isinstance(msg, tuple) and msg and msg[0] == "evolve":
+            # modeChange -> State.Evolving: the same strobe as any evolution
+            self.flash(f"[b]{msg[2] if len(msg) > 2 else 'MODE CHANGE!'}[/]")
+            self.screen_w.start_fx("evolve", old_num=msg[1])
+        self.repaint()
 
     def _after_habitat(self, msg):
         if msg:
@@ -1404,35 +1834,105 @@ class TuiPetApp(App):
 
     def _after_shop(self, msg):
         if isinstance(msg, tuple) and msg and msg[0] == "eat":
-            self.screen_w.start_fx("eat", msg[1], pet=self.pet)
+            self.screen_w.start_fx("eat", msg[1], pet=self.pet,
+                                   starving=getattr(self.pet, "_last_meal_starving", False))
         elif isinstance(msg, tuple) and msg and msg[0] == "evolve":
-            # an item evolution (crest egg / X-antibody): the same strobe
+            # _evolve sounds INSIDE the strobe (fx snds beat 5), like DVPet evolveAnim.
+            # msg[2] = an ItemEvol's key: the Digimental's icon frames head the
+            # strobe with canon itemEvolve's parade
+            ik = msg[2] if len(msg) > 2 else None
             self.flash(self._evolve_msg(msg[1]))
-            self.screen_w.start_fx("evolve", old_num=msg[1])
+            self.screen_w.start_fx("evolve", old_num=msg[1], icon=ik)
+        elif isinstance(msg, tuple) and msg and msg[0] == "toilet":
+            # a manual visit: poopToilet with the item on the floor
+            self.screen_w.start_fx("toilet", icon=msg[1])
+        elif isinstance(msg, tuple) and msg and msg[0] == "play":
+            # the Trampoline (Jump): DVPet jumping() -- the pet hops over it
+            self.screen_w.start_fx("play", icon=msg[1])
+        elif isinstance(msg, tuple) and msg and msg[0] == "item_use":
+            # every other AnimationType plays its own canon script (itemfx)
+            self.screen_w.start_fx("item", icon=msg[1], script=msg[2])
+        elif isinstance(msg, tuple) and msg and msg[0] == "inherit":
+            mem = msg[1]
+            self.flash(f"[b]{mem.get('name', '?')}[/]'s power lives on!  "
+                       f"Va+{mem.get('vaccine', 0)} D+{mem.get('data', 0)} Vi+{mem.get('virus', 0)}")
+            self.screen_w.start_fx("inherit", pet=self.pet)
+            self.screen_w.fx["ancestor"] = mem.get("num", -1)
+        elif isinstance(msg, tuple) and msg and msg[0] == "transport":
+            self._open_mode(transportscreen.TransportPanel(self.pet, msg[1]), self._after_transport)
+            return
         elif msg:
             self.flash(msg)
         self.repaint()
 
+    def _after_transport(self, msg):
+        if msg:
+            self.flash(msg)
+        self.autosave()
+        self.repaint()
+
+    def action_adventure(self):
+        if self.pet.stage in ("Egg", "Fresh"):
+            self._do("Too young to adventure."); return
+        if self.pet.asleep:
+            self._do("zzz… asleep"); return
+        refused = self.pet.check_refused()          # canTravel: checkRefused ...
+        self.pet.check_compliant()                  # ... ; checkCompliant
+        if refused:
+            self._do(f"{self.pet.name} refuses to go!"); return
+        def _back(msg=None):
+            if msg:
+                self.flash(msg)          # the victory line lands over the house
+            self.repaint()
+        self._open_mode(adventurescreen.AdventurePanel(self.pet), _back)
+
+    def action_gift(self):
+        if self.mode is not None or self.screen_w.fx is not None or not self.pet.gift:
+            return
+        key = self.pet.gift
+        msg = self.pet.claim_gift()
+        if msg:
+            self.screen_w.start_fx("gift", icon=key)   # gifting() amble, chains to cheer (giftEnd)
+            self._do(msg)
+
+    def action_play(self):
+        if self.screen_w.fx is not None:        # let the current care animation finish before acting again
+            return
+        msg = self.pet.play()
+        if self.pet.anim == "play":
+            self.screen_w.start_fx("play")       # the DVPet jumping() hop; SFX fires per-hop in the fx loop
+        self._do(msg)
     def action_clean(self):
-        if self.screen_w.fx is not None:
+        if self.screen_w.fx is not None:        # let the current care animation finish before acting again
             return
         poop = self.pet.poop
-        sizes0 = list(self.pet.poop_sizes)
-        had = self.pet.clean()
-        if had:
+        sizes0 = list(self.pet.poop_sizes)      # clean() wipes them; the fx still shows the piles
+        msg = self.pet.clean()
+        if self.pet.anim == "wash":
             self.screen_w.start_fx("clean", poop=poop)
             self.screen_w.fx["sizes"] = sizes0
             self.beep("wash", bell=False)
-            self._do("All clean!")
-        else:
-            self._do("Nothing to clean.")
-
-    def action_sleep(self):                          # the "s" key: lights toggle
-        self.beep("confirm", bell=False)
-        on = self.pet.toggle_lights()
-        self._do("Lights on." if on else "Lights out. Sweet dreams.")
-
+        self._do(msg)
+    def action_heal(self):
+        if self.screen_w.fx is not None:        # let the current care animation finish before acting again
+            return
+        msg = self.pet.heal()
+        if self.pet.anim == "heal":
+            # DVPet bandage(): the treatment anim (item strip on the hurt pose),
+            # which chains into cheer(true, _happy) at its beat 23.
+            self.screen_w.start_fx("heal", icon="i:80")
+        self._do(msg)
+    def action_sleep(self):                                     # the "s" key is the LIGHTS toggle
+        self.beep("confirm", bell=False)                        # a button blip on the lights on/off press
+        self._do(self.pet.toggle_lights())
     def action_new(self):
+        if not self.pet.dead:
+            # a LIVE retire skips the death flow entirely: canon resetDigimon
+            # runs careBonusOnReset dead or alive, and a live reset never
+            # offers the etch -- the FULL adjusted bonus carries to the heir
+            # (digimemory audit 2026-07-06; this seed used to be lost)
+            persistence.bank_bonus_seed(self.pet.final_care_grade())
+        persistence.snapshot_prev_gen(self.pet)   # previous-generation egg gates
         gen = self.pet.generation + 1
         self._open_mode(eggselectscreen.EggSelectPanel(self.pet),
                         lambda et: self._hatch_new(et, gen))
@@ -1441,15 +1941,8 @@ class TuiPetApp(App):
         if egg_type is None:                        # cancelled -> keep the current pet
             self._do("Kept your current partner.")
             return
-        keep = self.pet
         self.pet = Pet.new_egg(generation=gen, egg_type=egg_type)
-        # possessions persist across generations -- but NOT bg_current: the
-        # new egg opens on ITS OWN scene (the gallery keeps every owned pick)
-        self.pet.name = ""
-        self.pet.bits = keep.bits
-        self.pet.inventory = dict(keep.inventory)
-        self.pet.bg_owned = list(keep.bg_owned)
-        self.pet.album = list(keep.album)
+        self._grant_digimemory(self.pet)
         persistence.save(self.pet)
         self._do(f"A new egg appeared! (generation {gen})")
 

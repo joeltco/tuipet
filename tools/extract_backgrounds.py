@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""Extract the classic V-pet habitat backgrounds into a colour atlas for the LCD.
+"""Extract DVPet habitat backgrounds into a colour atlas for the LCD.
 
-Each background sheet stacks 5 time/weather frames (the classic V-pet BackgroundAnim
+Each background sheet stacks 5 time/weather frames (DVPet BackgroundAnim
 getBackgroundIndex): 0=morning 1=noon/day 2=sunset 3=night 4=precipitation,
 each 104x101 with a 2px gap. We crop each and downsample to the LCD pixel grid
 (40x28) as RGB, so the pet view can show a colour scene that follows the
@@ -27,7 +27,7 @@ def frames_for(fn):
     out = []
     for i in range(n):
         y = i * (FH + GAP)
-        TOP_BAR, BOT_BAR = 20, 21   # exact the classic V-pet _mainDisplay window (104x60); strips the icon-overlay sky/ground bands
+        TOP_BAR, BOT_BAR = 20, 21   # exact DVPet _mainDisplay window (104x60); strips the icon-overlay sky/ground bands
         y0 = y + TOP_BAR
         y1 = min(y + FH - BOT_BAR, H)
         fr = im.crop((0, y0, FW, y1)).resize((COLS, PXH), Image.BOX)
