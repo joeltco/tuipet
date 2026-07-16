@@ -35,8 +35,12 @@ class TitlePanel:
 
     def __init__(self):
         _, by = data.load_sprites()
+        # the CLONE stage vocabulary (Joel 2026-07-15: "title screen is
+        # missing mons") -- the old dub names matched NOTHING in the new
+        # atlas, so every launch fell back to num 0
         pool = [n for n, r in by.items()
-                if r["stage"] in ("Rookie", "Champion", "Ultimate", "Mega")
+                if r["stage"] in ("Child", "Adult", "Perfect",
+                                  "Ultimate-Super Ultimate")
                 and not data.is_placeholder(n)]
         self.num = random.choice(pool) if pool else next(iter(by))
         self.frame_i = 0
@@ -67,10 +71,13 @@ class TitlePanel:
         top = max(0, (PXH - group_h) // 2)
         ox = (COLS - sw) // 2
         oy = top
+        from .grid import lit
         for y, line in enumerate(mascot):
             for x, ch in enumerate(line):
-                if ch == "1" and 0 <= oy + y < PXH and 0 <= ox + x < COLS:
-                    buf[oy + y][ox + x] = 1
+                # clone frames are COLOUR cells -- the old `ch == "1"` test
+                # lit ZERO pixels and the mascot vanished (audit 2026-07-15)
+                if lit(ch) and 0 <= oy + y < PXH and 0 <= ox + x < COLS:
+                    buf[oy + y][ox + x] = 1 if ch == "1" else ch
         wx = (COLS - ww) // 2
         wy = top + sh + 1
         for y, line in enumerate(WORD):
@@ -87,13 +94,13 @@ class TitlePanel:
                 for x in range(COLS):
                     if (x * 7 + y * 13 + boot * 5) % (BOOT_FADE + 1) < keep:
                         buf[y][x] = 1
+        def _col(v):                   # 1 = ink (wordmark/boot), str = sprite colour
+            return LCD_ON if v == 1 else (v if v else LCD_BG)
         t = Text()
         for cy in range(PXH // 2):
             ty, byy = cy * 2, cy * 2 + 1
             for cx in range(COLS):
-                tc = LCD_ON if buf[ty][cx] else LCD_BG
-                bc = LCD_ON if buf[byy][cx] else LCD_BG
-                t.append("▀", style=f"{tc} on {bc}")
+                t.append("▀", style=f"{_col(buf[ty][cx])} on {_col(buf[byy][cx])}")
             if cy != PXH // 2 - 1:
                 t.append("\n")
         return t

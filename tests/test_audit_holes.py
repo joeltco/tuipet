@@ -346,6 +346,27 @@ def test_pre_402_egg_save_migrates_its_index():
     assert pet.egg_type == 17                  # 5 through the v401 table
 
 
+def test_title_mascot_pool_and_colour_render():
+    """The title mascot vanished with the clone: the pool filtered on DVPet
+    stage names (0 matches -> always num 0) and the painter tested colour
+    cells against '1' (0 pixels lit).  (Joel 2026-07-15: 'title screen is
+    missing mons')."""
+    import random as _r
+    from tuipet import titlescreen, theme
+    nums = set()
+    for seed in range(6):
+        _r.seed(seed)
+        nums.add(titlescreen.TitlePanel().num)
+    assert len(nums) > 1, "the mascot pool must actually vary"
+    _r.seed(1)
+    pan = titlescreen.TitlePanel()
+    pan.frame_i = 30                               # past the boot dissolve
+    styles = {str(sp.style) for sp in pan.text().spans}
+    inkish = {theme.LCD_ON, theme.LCD_BG}
+    assert any(not set(s.replace(" on ", "|").split("|")) <= inkish
+               for s in styles), "the mascot must render in COLOUR"
+
+
 # ---- the UNDER-CONSTRUCTION gate (Joel 2026-07-15) ---------------------------
 
 def test_construction_gate_locks_game_keeps_lobby():

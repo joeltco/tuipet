@@ -246,11 +246,9 @@ class TuiPetApp(App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("THE CANON TIMING BAR: training's meter now lives on the "
-                 "LCD itself, drawn exactly like the original -- the HIT "
-                 "label in its tiny pixel font, the outlined track, tick "
-                 "marks bracketing your care-widened mega window, and the "
-                 "sweeping marker block.")
+    WHATS_NEW = ("THE TITLE GETS ITS MASCOT BACK: a random mon greets every "
+                 "launch, in FULL COLOUR, bobbing over the wordmark -- it "
+                 "had been silently missing since the big rebuild.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07)

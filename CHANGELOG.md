@@ -3,6 +3,10 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.4.7 — 2026-07-16
+
+THE TITLE GETS ITS MASCOT BACK: a random mon greets every launch, in FULL COLOUR, bobbing over the wordmark — it had been silently missing since the big rebuild (the old stage names matched nothing, and the painter only knew 1-bit pixels).
+
 ## 0.4.6 — 2026-07-15
 
 THE CANON TIMING BAR: training's meter now lives on the LCD itself, drawn exactly like the original — the HIT label in its tiny pixel font, the outlined track, tick marks bracketing your care-widened mega window, and the sweeping marker block. (Also: the test suite no longer minds what time of day it runs.)
