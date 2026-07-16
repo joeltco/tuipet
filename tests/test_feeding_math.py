@@ -104,24 +104,3 @@ def test_double_dose_costs_one_game_hour():
     assert p.lifespan == life0 - 60.0           # 3600 REAL-sec / 60, not 3600 game-sec
 
 
-def test_feed_taste_branches_take_canon_shape():
-    """feed()'s taste branches (feed/food audit 2026-07-06).  The mood dips
-    and joys left with the mood system (BASIC VPET 2026-07-16); the SPIRIT
-    and OBEDIENCE halves of the branches survive and are pinned here."""
-    from tuipet.pet import FAV_FOOD_ENTH, DISLIKED_FOOD_OBEDIENCE
-    # hungry + favourite + glutton: spirit +1
-    p = _pet(hunger=1, glutton=1, enthusiasm=0)
-    p.favorite_food = "Meat"
-    p._eat_food("Meat")
-    assert p.enthusiasm == FAV_FOOD_ENTH
-    # FULL + favourite (non-glutton): no spirit move on the neutral branch
-    q = _pet(hunger=4, glutton=0, enthusiasm=0)
-    q.favorite_food = "Meat"
-    q._eat_food("Meat")
-    assert q.enthusiasm == 0
-    # FULL + disliked, forced: the spirit hit + obedience
-    r = _pet(hunger=4, glutton=0, enthusiasm=0, obedience=50)
-    r.disliked_food = "Veg"
-    r._eat_food("Veg", complied=True)
-    assert r.enthusiasm <= -FAV_FOOD_ENTH        # -(1) - forced(1) before boundary fx
-    assert r.obedience == 50 + DISLIKED_FOOD_OBEDIENCE

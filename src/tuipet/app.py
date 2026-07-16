@@ -270,9 +270,9 @@ class TuiPetApp(App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("NO MORE MOODS: the mood meter is gone - no sulking, no "
-                 "depression, no mood swings. Your mon is unhappy only when "
-                 "it's actually unwell, and care is what fixes it.")
+    WHATS_NEW = ("FREE SPIRIT: the spirit meter is gone - no more drill "
+                 "fatigue or dispirited slumps. Training, battles and meals "
+                 "no longer tax an invisible gauge.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and

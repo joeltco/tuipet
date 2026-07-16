@@ -30,7 +30,7 @@ def test_weight_clamps_at_the_body_wall_with_a_sting():
     p._set_weight(base + span + 50)
     assert p.weight == base + span
     # (the body-wall mood sting left with the mood system)
-    assert p.enthusiasm == 0 - WEIGHT_LIMIT_ENTH_PENALTY
+    # (the body-wall spirit sting left with the enthusiasm system)
     q = _pet(enthusiasm=0)
     m0 = q.mood
     q._set_weight(-100)

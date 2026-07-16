@@ -57,20 +57,6 @@ def test_weight_sheds_only_in_calorie_deficit():
     assert q.weight == 19                        # deficit: ActivityWeightChange -1
 
 
-def test_neutral_attribute_costs_two_spirit_not_three():
-    p = _pet(enthusiasm=0)                       # Vaccine pet drills Data at a neutral hour
-    p.time_pref = {k: 0 for k in p.time_pref}    # no time fav/dislike in play
-    p.apply_training(2, 100, attribute="Data", game="data")
-    assert p.enthusiasm == -2                    # ExerciseNotFavAttributeEnthusiasmDec
-
-
-def test_sour_pet_pays_spirit_on_the_hp_drill():
-    p = _pet(enthusiasm=0, disposition=-1)
-    p.time_pref = {k: 0 for k in p.time_pref}
-    p.apply_training(2, 100, game="hp")
-    assert p.enthusiasm == -1                    # exercise() None-branch
-
-
 def test_fatigue_can_fire_on_a_failed_drill_too():
     random.seed(0)
     fired = 0

@@ -41,7 +41,7 @@ def test_clean_visit_charges_and_costs_bond():
     assert p.poop == 0 and p.poop_sizes == []
     assert p.bits == 2000 - 400                              # the Champion visit price
     # (the CleanMoodInc/bond mood assert left with the mood system)
-    assert p.obedience == o0 - 1 and p.enthusiasm == e0 - 1
+    assert p.obedience == o0 - 1   # (the spirit bond cost left with its system)
     act, piles, sizes = p.assist_event                       # the app's fx mailbox
     assert act == "clean" and piles == 2 and sizes == [2, 3]
 

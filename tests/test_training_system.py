@@ -103,24 +103,6 @@ def test_fatigue_sours_the_hour():
     assert p.time_pref[ph] == before - RANK_CHANGE_FATIGUE
 
 
-def test_hp_drill_spirit_ladder_sentinel_quirks(monkeypatch):
-    """exercise()'s None-attribute enthusiasm ladder, sentinel quirks included:
-    un-emerged favourite -1; sour pet -1; emerged fav + un-emerged disliked hits
-    the None DISLIKED sentinel (-3); fully-formed taste pays the neutral -2."""
-    _quiet(monkeypatch)
-    monkeypatch.setattr(random, "randrange", lambda n: n - 1)   # no fatigue
-    def enth_after(**kw):
-        p = _pet(compliance=False, strength=0, enthusiasm=0, **kw)
-        p._set_mood = lambda *a, **k: None                      # isolate the ladder
-        e0 = p.enthusiasm
-        p.apply_training(3, 0, game="hp")
-        return p.enthusiasm - e0
-    assert enth_after() == -1                                   # favourite not emerged
-    assert enth_after(favorite_attr="Data", disposition=-1) == -1
-    assert enth_after(favorite_attr="Data") == -3               # the None-disliked sentinel
-    assert enth_after(favorite_attr="Data", disliked_attr="Virus") == -2
-
-
 def test_disliked_drill_refuses_harder():
     """refused(Attribute): the emergent disliked drags the obey line -20 -- a
     roll that would just pass on a neutral drill fails on the hated one."""

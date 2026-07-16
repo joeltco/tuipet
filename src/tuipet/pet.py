@@ -1273,14 +1273,8 @@ class Pet:
             if self._dp_t >= DP_SLEEP_MIN:
                 self._dp_t -= DP_SLEEP_MIN
                 self.dp += 1
-        # asleep enthusiasmLapse: spirit settles toward 0 while resting
-        self._enth_lapse_t = getattr(self, "_enth_lapse_t", 0.0) + dt
-        if self._enth_lapse_t >= 59:
-            self._enth_lapse_t = 0.0
-            if self.enthusiasm > 0:
-                self._set_enthusiasm(self.enthusiasm - ENTHUSIASM_LAPSE_DEC)
-            elif self.enthusiasm < 0:
-                self._set_enthusiasm(self.enthusiasm + ENTHUSIASM_LAPSE_INC)
+        # (the asleep enthusiasmLapse left with the spirit system;
+        # BASIC VPET 2026-07-16)
         # sleepDecay/setAwakeLapse (canon re-audit 2026-07): the wake clock steps
         # by the species AwakeLapseInc; a LIT room stalls it half the time
         # (LightsOnAwakeLapseUnchangedChance -- lit rest is poor rest); the
@@ -2765,9 +2759,10 @@ class Pet:
                                   "needs cleaning") else "Neutral"
 
     def _set_enthusiasm(self, value):
-        """PhysicalState.setEnthusiasm: clamp to [MinEnthusiasm, MaxEnthusiasm].
-        (The boundary mood penalty left with the mood system.)"""
-        self.enthusiasm = _clamp(int(round(value)), MIN_ENTHUSIASM, MAX_ENTHUSIASM)
+        """A NO-OP: the spirit meter left with the enthusiasm system (BASIC
+        VPET 2026-07-16, converging on the clone sim).  The canon write-sites
+        stay as inert citations and die with their own systems; the meter is
+        pinned at 0."""
 
     def _set_energy(self, value):
         """DVPet setEnergy, canon order (mood re-audit 2026-07-06): a drop INTO

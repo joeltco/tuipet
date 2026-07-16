@@ -318,8 +318,7 @@ def effect_tokens(e, dp=False):
             v = int(e.get(k) or 0)
             if v:
                 t.append("%s%+d" % (lbl, v))
-    for k, lbl in (("obedience", "obd"), ("enthusiasm", "sp"), ("temp", "temp"),
-                   ("sleep_lapse", "bed")):
+    for k, lbl in (("obedience", "obd"), ("sleep_lapse", "bed")):
         v = int(e.get(k) or 0)
         if v:
             t.append("%s%+d" % (lbl, v))

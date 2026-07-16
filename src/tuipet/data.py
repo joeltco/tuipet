@@ -874,9 +874,11 @@ def _load_consumables():
 # zero stats and currently do nothing -- they are filtered out of the shop
 # and loot until their system is built. Extend this as each system is
 # implemented (transports, ItemEvol, Inherit and Recover lives all are now).
-_FUNC_STATS = ("hunger", "mood", "enthusiasm", "weight", "energy",
+# (mood/enthusiasm/undepressed dropped 2026-07-16: those meters left with
+# their systems -- an item whose only effect was them would sell a no-op)
+_FUNC_STATS = ("hunger", "weight", "energy",
                "strength", "obedience", "vaccine", "data", "virus")
-_FUNC_FLAGS = ("cured", "healed", "unfatigue", "undepressed", "vitamin")
+_FUNC_FLAGS = ("cured", "healed", "unfatigue", "vitamin")
 
 
 # DVPet world-warp items (items.csv AnimationType); handled by transportscreen.
@@ -888,7 +890,9 @@ def item_is_functional(e):
         return False
     if any(e.get(k) for k in _FUNC_STATS) or any(e.get(k) for k in _FUNC_FLAGS):
         return True
-    if e.get("seconds") or e.get("temp") or e.get("sleep"):   # lifespan / temp / sleep items
+    # sleep_lapse joined the list when mood left (2026-07-16): the Caffeine
+    # Pill's bedtime nudge is real, and mood no longer vouches for it
+    if e.get("seconds") or e.get("sleep") or e.get("sleep_lapse"):   # lifespan / sleep items
         return True
     if e.get("effect_id", -1) >= 0:     # grants a temporary care effect (Futon)
         return True
