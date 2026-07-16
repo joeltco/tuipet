@@ -112,10 +112,10 @@ Start from an **egg** — real dot-matrix egg designs; it wobbles, cracks, and h
 | **f** | feed (meat / pill) | **l** | online lobby |
 | **t** | train | **n** | new egg |
 | **c** | clean | **e** | scenes |
-| **h** | pill | **?** | help |
 | **o** | shop | **g** | options |
 | **i** | bag | **b** | bug report |
-| **s** | lights | **q** | quit |
+| **s** | lights | **?** | help |
+|  |  | **q** | quit |
 
 Battles and jogress live where they belong: **in the lobby** — there is
 no free-standing battle key.

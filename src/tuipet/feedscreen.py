@@ -82,10 +82,13 @@ class FeedPanel:
                     return ("done", ("full", {"key": "meat", "name": "Meat"},
                                      f"{self.pet.name} is full."))
                 return ("done", None)
+            was_sick = self.pet.sick
             out = self.pet.feed_pill()
             if out == "healed":
-                return ("done", ("fed", {"key": "pill", "name": "Pill"},
-                                 "Gulp. All better."))
+                # the pill plays the HEAL fx (medicine icon i:80), not the eat
+                # chew -- feed_pill never sets the eat pose (merge 2026-07-16)
+                msg = "Cured!" if was_sick else "A tonic — strength and pep."
+                return ("done", ("healed", {"key": "i:80", "name": "Pill"}, msg))
             if out == "refuse":
                 return ("done", ("full", {"key": "pill", "name": "Pill"},
                                  f"{self.pet.name} doesn't need it."))

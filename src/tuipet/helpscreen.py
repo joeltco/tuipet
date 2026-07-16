@@ -10,9 +10,9 @@ VIS = 8                                   # lines shown at once in the box
 # (text, kind): 2 = section head (bold), 1 = a control line, 0 = prose (dim)
 HELP = [
     ("CARE", 2),
-    ("f feed - meat fills the belly", 1),
-    ("h pill - cures sickness, restores", 1),
-    ("  strength and energy", 0),
+    ("f feed - meat fills the belly;", 1),
+    ("  the pill cures sickness and", 0),
+    ("  restores strength and energy", 0),
     ("c clean poop   s lights", 1),
     ("Your mon lives in REAL TIME - it", 0),
     ("sleeps on a clock, gets hungry", 0),

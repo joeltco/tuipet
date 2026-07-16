@@ -81,7 +81,7 @@ def keys_markup():
     unreachable by theme.apply (shell polish 2026-07-05)."""
     k = f"b {theme.KEY}"
     return (
-        f"[{k}]f[/] feed  [{k}]c[/] clean  [{k}]h[/] pill  [{k}]s[/] lights  [{k}]t[/] train\n"
+        f"[{k}]f[/] feed (meat·pill)  [{k}]c[/] clean  [{k}]s[/] lights  [{k}]t[/] train\n"
         f"[{k}]l[/] lobby (battle·jogress)  [{k}]n[/] new egg  [{k}]o[/] shop  [{k}]i[/] bag\n"
         f"[{k}]e[/] scenes  [{k}]g[/] options  [{k}]b[/] bug  [{k}]?[/] help  [{k}]q[/] quit"
     )
@@ -246,14 +246,15 @@ class TuiPetApp(App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("THE DOORS ARE OPEN: the UNDER-CONSTRUCTION lock is gone — "
-                 "tuipet now boots straight into your pet, no PIN. Thanks for "
-                 "your patience while the rebuild settled.")
+    WHATS_NEW = ("SLEEPERS GROW AGAIN: a mon that hit its stage time overnight "
+                 "sat at the old form until morning — evolution now runs while "
+                 "it sleeps, like it should. The pill also moved into the feed "
+                 "menu, where it belongs.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07)
         ("f", "feed", "Feed"), ("t", "train", "Train"),
-        ("c", "clean", "Clean"), ("h", "heal", "Pill"),
+        ("c", "clean", "Clean"),        # pill lives inside the feed menu (F)
         ("o", "shop", "Shop"),
         ("i", "inventory", "Bag"), ("e", "habitat", "Scenes"),
         ("n", "new", "New egg"),
@@ -1309,7 +1310,7 @@ class TuiPetApp(App):
         name = _esc(p.name) or "Your pet"
         if p.asleep and p.lights:               # the one asleep call
             msg = f"{name} is trying to sleep — lights off! ([b]S[/])"
-        elif p.sick:          msg = f"{name} is sick — a pill ([b]H[/]) cures it!"
+        elif p.sick:          msg = f"{name} is sick — feed it a pill ([b]F[/]) to cure it!"
         elif p.hunger == 0:   msg = f"{name} is hungry!"
         elif p.strength == 0: msg = f"{name}'s strength is empty — pill or fruit!"
         elif p.poop:          msg = f"{name} needs cleaning!"
@@ -1334,12 +1335,14 @@ class TuiPetApp(App):
         if not result:
             self.repaint(); return
         outcome, food, msg = result
-        icon = food.get("key", "f:0")               # the food's REAL icon rides the eat fx
+        icon = food.get("key", "f:0")               # the food's REAL icon rides the fx
         # eat(): the wolf-down modifier is decided BEFORE the meal (a starving
         # pet that just ate has hunger>0 -- reading it here was always False)
         starving = getattr(self.pet, "_last_meal_starving", False)
         if outcome == "fed" and self.pet.anim == "eat":
             self.screen_w.start_fx("eat", icon, pet=self.pet, starving=starving)   # SFX per-bite in the fx loop
+        elif outcome == "healed":
+            self.screen_w.start_fx("heal", icon="i:80")   # the pill's medicine fx (was the standalone H)
         elif outcome == "full":
             self.screen_w.start_fx("spit", icon)  # _refuse fires on each head-shake (fx snds)
         self._do(msg)
@@ -1398,20 +1401,6 @@ class TuiPetApp(App):
             self._do("All clean!")
         else:
             self._do("Nothing to clean.")
-
-    def action_heal(self):
-        if self.screen_w.fx is not None:
-            return
-        was_sick = self.pet.sick
-        out = self.pet.feed_pill()
-        if out == "healed":
-            self.screen_w.start_fx("heal", icon="i:80")
-            self._do("Cured!" if was_sick else "A tonic — strength and pep.")
-        elif out == "refuse":
-            self.screen_w.start_fx("spit")
-            self._do(f"{self.pet.name} doesn't need it.")
-        else:
-            self._do("Not now.")
 
     def action_sleep(self):                          # the "s" key: lights toggle
         self.beep("confirm", bell=False)

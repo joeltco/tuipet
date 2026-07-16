@@ -3,6 +3,12 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.4.11 — 2026-07-16
+
+SLEEPERS GROW AGAIN — an evolution bug fixed: your mon's stage clock ran all night, but the *evolution check itself* was skipped while it slept, so a mon that earned its next form overnight sat at the old one until morning. It hit babies hardest — a Baby I needs only 10 minutes and sleeps 13 hours, so it could look frozen for a whole night. Evolution now runs while asleep (matching the original, which only pauses hunger/strength decay for a sleeper — never growth).
+
+Also: the PILL moved into the feed menu where it belongs — one menu, meat or pill, and the separate **h** key is gone (the pill now plays its proper medicine animation from the menu, which it previously skipped). Help and the key table updated to match.
+
 ## 0.4.10 — 2026-07-16
 
 THE DOORS ARE OPEN: the UNDER-CONSTRUCTION PIN lock (it stood on the title from 0.4.5) is removed — tuipet now boots straight into your pet, no PIN required. The lobby was always open; now the game is too.

@@ -576,6 +576,49 @@ def test_r3_feed_sets_the_eat_pose():
     assert p.anim == "eat" and p._last_meal_starving is True
 
 
+def test_a_sleeper_still_evolves():
+    """The sleeping branch's early return skipped _maybe_evolve, so a mon that
+    hit its stage time overnight sat at the old form until morning -- a Baby I
+    needs 10 min and sleeps 13 HOURS (Joel 2026-07-16).  The source gates only
+    the hourly decay on !SLEEPING; its evolution check qr() is unconditional."""
+    for hour in (3, 23):                           # deep in the Baby I 20:00-09:00 window
+        p = _live(282)                             # Botamon, Baby I, needs 10 min
+        p._hour = lambda h=hour: h
+        for _ in range(12):
+            p._sim_minute()
+        assert p.asleep is True, "fixture must be asleep to pin the bug"
+        assert p.stage == "Baby II", f"a sleeper failed to evolve at {hour}:00"
+
+
+def test_sleep_still_blocks_the_hourly_decay():
+    """The evolve fix must NOT let the sleep gate leak: decay stays awake-only."""
+    p = _live(282)
+    p._hour = lambda: 3                            # asleep
+    p.hunger, p.strength = 4, 4
+    p.stage_minutes = 59                           # the next tick lands on the %60 decay
+    p._sim_minute()
+    assert (p.hunger, p.strength) == (4, 4), "a sleeper must not lose meters"
+
+
+def test_pill_lives_in_the_feed_menu_not_a_separate_key():
+    """The standalone H/heal action is gone (merge 2026-07-16): pill is a
+    row in the feed menu, and picking it plays the HEAL fx, not the eat chew."""
+    from tuipet.app import TuiPetApp
+    from tuipet.feedscreen import FeedPanel
+    # no heal binding, no action_heal method
+    assert not hasattr(TuiPetApp, "action_heal")
+    assert not any(a == "heal" for _, a, *_ in TuiPetApp.BINDINGS)
+    # the menu's pill row heals a sick pet and asks for the medicine fx
+    p = _live(); p.sick = True
+    pan = FeedPanel(p)
+    pan.key("down")                                  # meat -> pill
+    done, payload = pan.key("enter")
+    assert done == "done"
+    outcome, food, msg = payload
+    assert outcome == "healed" and food["key"] == "i:80"   # -> start_fx("heal")
+    assert p.sick is False and msg == "Cured!"
+
+
 def test_r3_cbounds_reads_colour_frames():
     from tuipet import strikefx
     fr = [[None] * 4 + ["#f00"] * 8 + [None] * 4 for _ in range(4)]

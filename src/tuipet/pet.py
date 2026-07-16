@@ -383,6 +383,13 @@ class Pet:
                     self.sleep_mistake_done = True
                     self.call_on = False
             self.call_minutes = 0
+            # a SLEEPER STILL GROWS.  The source's per-minute tick (Ur) gates
+            # only the hourly hunger/strength decay on !SLEEPING and then calls
+            # the evolution check qr() unconditionally -- this early return used
+            # to skip it, so a mon that hit its stage time overnight sat at the
+            # old form until morning (Joel 2026-07-16: "hasn't evolved from
+            # Baby I in hours"; Baby I needs 10 min and slept 13 of them).
+            self._maybe_evolve()
             return
 
         # empty-meter call (hunger or strength at zero) -- latched PER METER:
@@ -575,9 +582,6 @@ class Pet:
         self.energy = _clamp(self.energy + PILL_ENERGY_GAIN, 0, self.max_energy)
         self.weight = _clamp(self.weight + PILL_WEIGHT_GAIN, 1, 999)
         return "healed"
-
-    def heal(self):
-        return self.feed_pill()
 
     def clean(self):
         """Flush the filth."""
