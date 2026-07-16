@@ -3,6 +3,10 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.4.10 — 2026-07-16
+
+THE DOORS ARE OPEN: the UNDER-CONSTRUCTION PIN lock (it stood on the title from 0.4.5) is removed — tuipet now boots straight into your pet, no PIN required. The lobby was always open; now the game is too.
+
 ## 0.4.9 — 2026-07-16
 
 THE FEED MENU GOES ON THE LCD: picking meat or pill is now the canon on-screen icon menu — the meat drumstick above the pill capsule, a cursor arrow on the left pointing at your choice — drawn right on the LCD like the original hardware, instead of a text list. The glyphs are the exact bitmaps from the source. (Feeding was the only care action still using a word menu while training and battle drew graphically; now they match.)

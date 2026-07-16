@@ -31,12 +31,6 @@ def isolate_save(tmp_path, monkeypatch):
     monkeypatch.setattr(sound, "_CACHE", str(tmp_path / "sndcache"))
     monkeypatch.setattr(sound, "_STATE_DIR", str(tmp_path))
     monkeypatch.setattr(sound, "_volume", sound.DEFAULT_VOLUME)
-    # the UNDER-CONSTRUCTION gate (2026-07-15) is pre-unlocked in the sandbox
-    # so every title->game flow test keeps working; the gate's own tests
-    # clear construction_ok explicitly to see the lock
-    s = persistence.load_settings()
-    s["construction_ok"] = True
-    persistence.save_settings(s)
     yield
 
 

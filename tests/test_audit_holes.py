@@ -367,52 +367,20 @@ def test_title_mascot_pool_and_colour_render():
                for s in styles), "the mascot must render in COLOUR"
 
 
-# ---- the UNDER-CONSTRUCTION gate (Joel 2026-07-15) ---------------------------
+# ---- the UNDER-CONSTRUCTION gate was LIFTED (Joel 2026-07-16) ----------------
 
-def test_construction_gate_locks_game_keeps_lobby():
-    from tuipet.app import _hud_plain
+def test_title_opens_straight_into_the_game_no_gate():
+    """The PIN gate (0.4.5..0.4.9) is gone: _after_title goes directly to
+    _post_title, and GatePanel no longer exists."""
     from tuipet import titlescreen
-    pan = titlescreen.GatePanel()
-    assert len(_hud_plain(pan.strip())) <= 40
-    pan.text()                                     # smoke: renders empty
-    for k in ("1", "2", "3", "enter"):             # wrong PIN bounces
-        out = pan.key(k)
-        pan.anim(); pan.text()
-    assert out is None and pan.buf == ""
-    assert pan.key("l") == ("done", "lobby")       # the open door
-    for k in "2974":
-        pan.key(k)
-    assert pan.key("enter") == ("done", "play")    # the right PIN
-    assert pan.key("escape") == ("done", None)     # and the way back out
-
-
-def test_gate_wiring_stands_between_title_and_game():
-    import inspect
     from tuipet.app import TuiPetApp
-    src = inspect.getsource(TuiPetApp._after_title)
-    assert "construction_ok" in src and "GatePanel" in src
-    src = inspect.getsource(TuiPetApp._after_gate_lobby)
-    assert "GatePanel" in src                      # lobby exit lands on the GATE
-
-
-def test_locked_title_opens_the_gate_and_unlocked_skips_it():
-    from tuipet import persistence
-    from tuipet.app import TuiPetApp
-    s = persistence.load_settings()
-    s.pop("construction_ok", None)                 # see the lock (sandbox pre-unlocks)
-    persistence.save_settings(s)
+    assert not hasattr(titlescreen, "GatePanel")
     app = TuiPetApp.__new__(TuiPetApp)             # no Textual mount needed
     calls = []
     app._post_title = lambda: calls.append("post")
     app._open_mode = lambda panel, cb=None: calls.append(type(panel).__name__)
     app._after_title()
-    assert calls == ["GatePanel"]                  # locked: the gate, not the game
-    app._after_gate("play")                        # the right PIN unlocks + sticks
-    assert calls[-1] == "post"
-    assert persistence.load_settings().get("construction_ok") is True
-    calls.clear()
-    app._after_title()
-    assert calls == ["post"]                       # unlocked: straight to the game
+    assert calls == ["post"]                       # straight to the game, no lock
 
 
 # ---- PvP: the card clamp derives stage from the species record --------------
