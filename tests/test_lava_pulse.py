@@ -87,13 +87,3 @@ def test_volcano_background_breathes_day_and_night():
         p.world_seconds)
 
 
-def test_the_overcast_deck_flow_still_breathes():
-    hab = _volcano_hab()
-    p = _pet(habitat=hab, weather="Cloudy")
-    p.world_seconds = 1 * DAY_LENGTH / 24
-    assert p.day_phase == "night"
-    frames = data.load_backgrounds()["volcano"]
-    nc = theme.night_cloud_frame("volcano", frames)
-    assert p.background() == theme.ember_frame(
-        "volcano", frames, nc, ("nc", "night"), p.world_seconds)
-    assert p.background() != nc                   # the embers really moved

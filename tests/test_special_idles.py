@@ -23,21 +23,6 @@ def test_the_standing_tantrum_plays_the_fit():
     assert p.anim == "tantrum"
 
 
-def test_weathering_flavors_and_nice_weather_joy():
-    p = _pet(weather="Raining")
-    p._special_idle()
-    assert p.anim == "shield"                     # the rain shake (frame 4)
-    q = _pet(weather="Snowing")
-    q._special_idle()
-    assert q.anim == "huddle"                     # the snow shiver (frame 9)
-    w = _pet(weather="HeavyRain", element="Water")
-    w._special_idle()
-    assert w.anim == "happy"                      # a Water pet LOVES the rain
-    i = _pet(weather="LightSnow", element="Ice")
-    i._special_idle()
-    assert i.anim == "happy"                      # an Ice pet loves the snow
-
-
 def test_personality_idles_are_gated_and_tier_keyed():
     random.seed(1)
     p = _pet(mood=300)                            # Happy tier, all gates pass

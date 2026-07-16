@@ -101,51 +101,6 @@ def _futon_pet():
     return pet, eid, eff
 
 
-def test_futon_pins_the_temperature():
-    """Canon checkEveryTemp skips the WHOLE temp lapse under pauseTemp: a pet
-    tucked in cold STAYS at that temperature -- it neither warms toward the
-    day's target nor drifts colder (the pre-fix bug: a comfy pet could turn
-    freezing UNDER its futon because only the mood check was paused)."""
-    pet, eid, eff = _futon_pet()
-    pet.temp = 10.0                          # well below freezing (32)
-    pet.effect_id, pet.effect_t = eid, float(eff["duration"])
-    pet._update_weather(60)
-    assert pet.temp == 10.0, "an active futon must pin the temperature"
-    assert pet.is_freezing(), "the badge tells the truth: pinned cold IS cold (2026-07-14)"
-    pet.effect_id, pet.effect_t = -1, 0.0    # expiry: the lapse resumes
-    assert pet.is_freezing(), "the cold is still there when the futon ends"
-    pet._update_weather(60)
-    assert pet.temp > 10.0, "temperature drift must resume once the effect ends"
-
-
-def test_futon_pauses_the_sick_temperature_swings():
-    """checkTemp's fever/chill lurches live INSIDE the paused lapse."""
-    pet, eid, eff = _futon_pet()
-    pet.temp = 50.0
-    pet.sick = True
-    pet.effect_id, pet.effect_t = eid, float(eff["duration"])
-    for _ in range(300):                     # plenty of 1%-chance rolls
-        pet._update_weather(1)
-    assert pet.temp == 50.0, "sick fever/chill swings pause under the futon too"
-
-
-def test_futon_does_not_insulate():
-    """System rebuild (Joel 2026-07-14, "futons aren't supposed to be the
-    go-to if the mon is cold"; supersedes the 07-13 insulation call): canon
-    checkIdealTempMoodChange is NOT gated by pauseTemp.  A pet tucked in cold
-    keeps its freezing status AND its too-cold mood drain -- the futon only
-    pins the temperature.  The fix is warmth: the thermostat, hot food."""
-    pet, eid, eff = _futon_pet()
-    pet.temp = 5.0                           # bitterly cold under the covers
-    pet.mood = 50
-    pet.effect_id, pet.effect_t = eid, float(eff["duration"])
-    assert pet.is_freezing(), "the futon does not hide the cold"
-    pet._comfort_t = 0.0
-    pet._temperature_effects(wx.IDEAL_TEMP_MOOD_SEC)
-    assert pet.mood < 50, "too-cold mood drain runs even under the futon"
-
-
-# --- bandage / medicine indicators (DVPet getBandage / getMed) --------------
 def test_heal_lights_medicine_and_bandage_then_they_wear_off():
     """The Medical flows light the medicine/bandage indicators (feedMed/
     applyBandage -> medLapse/bandageLapse), which then wear off.  Treatment is

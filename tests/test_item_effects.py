@@ -47,13 +47,6 @@ def test_bag_food_still_nudges_bedtime_and_dp():
     assert q.dp == 1, "a strength food banks Pen20 DP from the bag like feed"
 
 
-def test_temp_shifts_temperature_within_range():
-    assert _use("Ice Cream", temp=50).temp == 40           # -10
-    assert _use("Chicken Soup", temp=50).temp == 60        # +10
-    # DVPet guard: an out-of-range result is rejected, not clamped
-    assert _use("Chicken Soup", temp=wx.MAX_TEMP).temp == wx.MAX_TEMP
-
-
 def test_sleep_flag_puts_pet_to_sleep_and_item_is_functional():
     f, i = data._load_consumables()
     pill = next(dict(e, key=k) for k in (_key("Sleeping Pill"),)

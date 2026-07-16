@@ -49,8 +49,8 @@ from . import theme
 # reach through `tuipet.app.*` back into this namespace (modularization 2026-07-08).
 from .arena import (  # noqa: F401  (full re-export: preserve tuipet.app.* for callers/tests)
     Screen, SCREEN_COLS, SCREEN_ROWS, SPRITE_W, PET_BASE_X, _FxCtx,
-    hearts, bar, _FX, GRAVESTONE, POOP_W, POOP_PAD, WEATHER_GLYPH,
-    _sky_icon, _RAIN, _SNOW, _PRECIP_N, _scale_hex, _weather_overlay,
+    hearts, bar, _FX, GRAVESTONE, POOP_W, POOP_PAD,
+    _sky_icon,
     _evol_strobe, _filth_right, _filth_pts, COND_W, COND_H, SICK_ZONE,
     PLAY_HOP, PLAY_LEAD, PLAY_HOP_H, GIFT_OUT, GIFT_BACK, GIFT_HOLD,
     _HIDDEN_STATUS_ICONS, _effect_overlay, _sick_mark_up,
@@ -133,14 +133,6 @@ def _age_compact(seconds):
     return f"{s // 60}m{s % 60:02d}s"
 
 
-def _temp_str(pet):
-    """The HUD temperature — an armed thermostat shows where it's headed
-    (48°→62°), so the heat you set from the Habitat screen reads back."""
-    if getattr(pet, "heat_on", None) and pet.heat_on():
-        return f"{int(pet.temp)}→{int(pet.temp_goal)}°"
-    return f"{int(pet.temp)}°"
-
-
 def _care_deco(pet, word=None):
     """The care badges shown beside the status word -- one list, shared by the
     home Stats panel and the adventure card (Joel 2026-07-12: adventure shows
@@ -153,8 +145,6 @@ def _care_deco(pet, word=None):
     if pet.sick and word != "sick": deco.append(f"[{T.NEG}]+sick[/]")
     if pet.is_fatigued() and word != "fatigued": deco.append(f"[{T.NEG}]+tired[/]")
     if pet.is_injured() and word != "injured": deco.append(f"[{T.NEG}]+hurt[/]")
-    if pet.is_freezing() and word != "freezing": deco.append("[blue]+cold[/]")
-    if pet.is_overheating() and word != "overheating": deco.append(f"[{T.NEG}]+hot[/]")
     if pet.is_frail(): deco.append(f"[{T.NEG}]+frail![/]")
     if getattr(pet, "praise_flag", False): deco.append(f"[{T.POS}]+praise![/]")
     if getattr(pet, "scold_flag", False) or getattr(pet, "discipline_call", False):
@@ -216,7 +206,7 @@ class Stats(Static):
             f"HP {pet.full_health}/{pet.max_health()}  Wt {pet.weight}g  [{T.COIN}]{pet.bits}b[/]",
             f"Battle  {pet.wins}W/{pet.battles}   [{T.COIN}]\u2605{pet.trophies}[/]",
             f"@{pet.habitat_obj()['name'][:14]} {amark} [dim]{pet.season}[/]",
-            f"[{skycol}]{sky}[/] [dim]{pet.weather} {_temp_str(pet)}[/] [dim]{age}[/]",
+            f"[{skycol}]{sky}[/] [dim]{pet.day_phase}[/] [dim]{age}[/]",
             f"Life    {bar(lifepct, 12, lifecol)}",
             _status_line(word, deco),
         ]
@@ -281,9 +271,9 @@ class TuiPetApp(App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("THE CLASSIC RETURNS: tuipet is back to its full original "
-                 "form - every mon and egg, adventure, towns, cups, the "
-                 "digicore and the deep sim, exactly as you remember them.")
+    WHATS_NEW = ("CLEAR SKIES FOREVER: the weather and temperature systems "
+                 "are gone - no more storms, thermostats or cold snaps. "
+                 "Your mon minds the clock now, not the sky.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and
@@ -1191,16 +1181,9 @@ class TuiPetApp(App):
         div = f"[dim]{'─' * 26}[/]"
         h = m.rows[m.cursor]
         msg = m.msg or ""
-        cl = m.climate(h)
-        if "  Wi " in cl:                     # split the ranges: no ° clips
-            su, wi = cl.split("  Wi ")
-            climate_rows = [f"Summer   {su[3:]}", f"Winter   {wi}"]
-        else:
-            climate_rows = [f"Climate  {cl[:17]}"]
         lines = [f"[b]{h['name'][:20]}[/]", div,
                  f"Status   {m._tag(h)}",
                  f"Fit      {m._aff_word(h)}",
-                 *climate_rows,
                  f"Bits     [{T.COIN}]{p.bits}b[/]", div,
                  msg[:26], msg[26:52], "",
                  "[dim]try the view before[/]", "[dim]you pay for it[/]"]
@@ -1284,7 +1267,7 @@ class TuiPetApp(App):
                 f"Hunger   {hearts(p.hunger)}",
                 f"Energy   {bar(p.energy_pct(), 11, T.ENERGY)}",
                 f"Power    {power}",
-                f"[{skycol}]{sky}[/] [dim]{p.weather} {_temp_str(p)}[/]",
+                f"[{skycol}]{sky}[/] [dim]{p.day_phase}[/]",
                 div,
                 _status_line(p.status_word(), _care_deco(p)),
             ]
@@ -1387,19 +1370,9 @@ class TuiPetApp(App):
                 if done:
                     p = self.pet
                     self.flash(f"[b]{p.name}[/] hatched!")
-            # DVPet Weather.precipitate: HeavyRain rolls thunder (nextInt(500)==0
-            # per frame); the FLASH + the startled idle keep playing, but the
-            # crack SFX is retired (Joel 2026-07-04: weather stays visual-only)
+            # (the HeavyRain thunder roll -- the FLASH + the disposition-keyed
+            # startle -- left with the weather system; BASIC VPET 2026-07-16)
             p = self.pet
-            if (p.weather == "HeavyRain" and not p.dead and p.stage != "Egg"
-                    and getattr(sc, "thunder_i", 0) <= 0 and random.randint(0, 499) == 0):
-                sc.thunder_i = 14
-                if p.anim in ("idle", "walk") and not p.asleep:
-                    # surprising() -- disposition-keyed (startle audit
-                    # 2026-07-06): the sour pet barely flinches, the SUNNY
-                    # one jumps out of its skin (canon's inversion)
-                    p._set_anim({-1: "startle_sour", 1: "startle_sunny"}
-                                .get(p.disposition, "startle"), 1.4)
             # DVPet poopDance: a special-idle roll while the gauge is full --
             # tuipet fires the poop the moment the gauge fills, so the nervous
             # dance rolls while the need APPROACHES (>=80% of the interval)

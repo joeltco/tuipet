@@ -92,7 +92,7 @@ def test_apply_unknown_theme_falls_back():
 
 _REQUIRED = {"on", "bg", "mid", "accent", "pos", "neg", "border",
              "sil_day", "sil_night", "heart", "energy", "mood", "life", "coin",
-             "weather", "phases", "void", "flash"}
+             "phases", "void", "flash"}
 _HEX = re.compile(r"^#[0-9a-fA-F]{6}$")
 
 
@@ -100,7 +100,7 @@ def test_every_theme_carries_the_full_key_set():
     for name, t in theme.THEMES.items():
         missing = _REQUIRED - set(t)
         assert not missing, f"{name} lacks {missing}"
-        for k in _REQUIRED - {"weather", "phases", "flash"}:
+        for k in _REQUIRED - {"phases", "flash"}:
             assert _HEX.match(t[k]), f"{name}.{k} = {t[k]!r} is not a hex colour"
         assert len(t["flash"]) == 3 and all(_HEX.match(c) for c in t["flash"]), \
             f"{name}.flash must be (blend, ink, bg) hex triple"
@@ -113,9 +113,6 @@ def test_every_theme_carries_the_full_key_set():
         assert set(t["phases"]) == {"dawn", "day", "dusk", "night"}, name
         for ph, (on, bg) in t["phases"].items():
             assert _HEX.match(on) and _HEX.match(bg), f"{name}.phases.{ph}"
-        assert set(t["weather"]) == {"rain", "snow", "cloud"}, name
-        for w, (col, a) in t["weather"].items():
-            assert _HEX.match(col) and 0.0 < a < 1.0, f"{name}.weather.{w}"
 
 
 def test_every_theme_derives_and_applies_cleanly():
@@ -275,12 +272,11 @@ def test_background_file_override_picks_the_arena_sheet():
     from tuipet import data
     from tuipet.pet import Pet
     p = Pet(num=-1, stage="Rookie")
-    p.weather = "Clear"
     arena = p.background(file="tourneyBack")
     home = p.background()
     sheets = data.load_backgrounds()
     idx = {"dawn": 0, "day": 1, "dusk": 2, "night": 3}[p.day_phase]
-    want = theme.weather_tint(sheets["tourneyBack"][idx], "Clear")
+    want = sheets["tourneyBack"][idx]
     if p.day_phase == "night":                    # a clear night twinkles now
         want = (theme.star_frame("tourneyBack", sheets["tourneyBack"],
                                  p.world_seconds) or want)

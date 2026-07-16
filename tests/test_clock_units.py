@@ -16,7 +16,6 @@ documented in pet.py and pinned here so a future audit cannot "correct" them:
 import inspect
 
 from tuipet import pet as P
-from tuipet import weather as wx
 
 
 def test_the_clock_maps_a_game_minute_to_a_real_second():
@@ -25,10 +24,8 @@ def test_the_clock_maps_a_game_minute_to_a_real_second():
 
 def test_canon_cadences_are_ported_as_real_seconds():
     """Each of these is `canon *Min` (game minutes) used against a real-second
-    accumulator, so the value must equal the canon number."""
-    assert wx.TEMP_RATE == 1.0             # TempLapseMin=1  -> 1 unit / game-min
-    assert wx.WEATHER_CHECK_SEC == 10.0    # WeatherCheckMin=10
-    assert wx.IDEAL_TEMP_MOOD_SEC == 29.0  # IdealTempMoodMin=29
+    accumulator, so the value must equal the canon number.  (The weather
+    cadences left with the weather system; BASIC VPET 2026-07-16.)"""
     assert P.FILTH_MOOD_DEC_MIN == 5.0     # FilthMoodDecMin=5   (was 300 = 5 game HOURS)
     assert P.LIGHTS_MISTAKE_SEC == 60.0    # MinutesToMistakeLights=60
     assert P.SICK_LAPSE_MIN == 29          # SickLapseMin=29
@@ -78,4 +75,8 @@ def test_good_care_is_never_punished_by_the_faster_pressure():
         p.tick(1.0)
         p.world_seconds += 1.0
     assert p.care_mistakes == 0, "an attentive owner must take no care mistakes"
-    assert p.mood > 0 and not p.dead
+    # mood holds NEUTRAL, not positive: the ambient ideal-temp comfort tick
+    # (+3/29s) left with the weather system (BASIC VPET 2026-07-16), so an
+    # idle well-kept pet no longer drifts happy for free -- happiness now
+    # comes only from active care (liked meals, play, praise)
+    assert p.mood >= 0 and not p.dead

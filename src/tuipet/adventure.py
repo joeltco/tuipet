@@ -197,7 +197,6 @@ class Adventure:
         to the destination terrain, never swapped mid-run."""
         if self.biome != self.pet.habitat and self.biome in data.load_habitats():
             self.pet.habitat = self.biome
-            self.pet._weather_day = -1            # a fresh sky for the expedition
 
     # --- zone helpers ---
     @property

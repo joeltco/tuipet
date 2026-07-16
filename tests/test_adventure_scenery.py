@@ -243,25 +243,6 @@ def test_stage_anchor_is_progress_free():
     assert pan._jx(rows) == x0
 
 
-def test_weather_rides_the_travelling_frame(monkeypatch):
-    """Weather renders on EVERY road frame (2026-07-13) -- it used to vanish
-    the moment the walk resumed."""
-    from tuipet import arena
-    calls = {}
-    real = arena._weather_overlay
-
-    def spy(w, wf, cols, px_h):
-        calls["hit"] = True
-        return real(w, wf, cols, px_h)
-
-    monkeypatch.setattr(arena, "_weather_overlay", spy)
-    pan = AdventurePanel(_pet())
-    pan._trans = None
-    pan.travelling = True
-    pan.text()
-    assert calls.get("hit"), "the travelling frame dropped the weather overlay"
-
-
 # ---- the adventure feel arc (Joel 2026-07-07: "adventure felt different in
 # dvpet") -- Battle_Flash alert, battleWait escape, zoneChange pulse, pacing ----
 

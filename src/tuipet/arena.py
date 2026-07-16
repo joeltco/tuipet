@@ -58,89 +58,11 @@ GRAVESTONE = _FX.get("grave", [None])[0]      # real DVPet death.png
 POOP_W = 8
 POOP_PAD = 0
 
-WEATHER_GLYPH = {
-    "Clear": "", "Cloudy": chr(0x2601), "Drizzling": chr(0x2602),
-    "Raining": chr(0x2602), "HeavyRain": chr(0x2614),
-    "LightSnow": chr(0x2744), "Snowing": chr(0x2744), "HeavySnow": chr(0x2744),
-}
 def _sky_icon(pet):
-    """One time+weather glyph for the status line: a sun only in clear daytime, a
-    moon in clear night, otherwise the cloud/rain/snow symbol -- never a sun behind
-    rain.  Returns (glyph, colour)."""
-    if pet.weather == "Clear":
-        return (chr(0x2600), theme.COIN) if pet.is_daytime else (chr(0x263E), "blue")
-    g = WEATHER_GLYPH.get(pet.weather) or chr(0x2601)
-    col = "cyan" if pet.weather in _SNOW else ("blue" if pet.weather in _RAIN else "white")
-    return g, col
-
-
-_RAIN = {"Drizzling", "Raining", "HeavyRain"}
-_SNOW = {"LightSnow", "Snowing", "HeavySnow"}
-_PRECIP_N = {"Drizzling": 5, "LightSnow": 6, "Raining": 11, "Snowing": 10,
-             "HeavyRain": 18, "HeavySnow": 16}
-def _scale_hex(hexcol, f):
-    h = hexcol.lstrip("#")
-    r, g, b = (int(h[i:i + 2], 16) for i in (0, 2, 4))
-    cl = lambda v: max(0, min(255, int(v * f)))
-    return "#%02x%02x%02x" % (cl(r), cl(g), cl(b))
-
-
-def _weather_overlay(weather, frame_i, cols, px_h):
-    # no cloud sprites -- the backgrounds carry the cloudy/overcast look; this
-    # overlay only adds falling rain/snow particles.
-    pts = []
-    n = _PRECIP_N.get(weather, 0)
-    if n:
-        snow = weather in _SNOW
-        heavy = weather in ("HeavyRain", "HeavySnow")
-        # polish 2026-07-04: the old field marched in LOCKSTEP -- every particle
-        # advanced the same amount each frame, so the whole sky translated as
-        # one rigid sheet; and rain fell dead-vertical.  Now both kinds fall in
-        # DEPTH PLANES (far particles slower, shorter) and rain leans with the wind.
-        for i in range(n):
-            # scatter each particle to a pseudo-random spot (Knuth multiplicative
-            # hash) instead of a linear comb, so they fill the whole sky.
-            # Each particle owns a GROUND line a little past halfway (rows
-            # 13..20 of 24 -- the terrain band): rain SOAKS IN on landing,
-            # snow RESTS a few frames, then both recycle from the sky (Joel
-            # 2026-07-05: precipitation used to fall through the floor).
-            seed = (i * 2654435761) & 0xFFFFFFFF
-            x0 = seed % cols
-            base = (seed >> 10) % px_h
-            ground = 13 + ((seed >> 20) % 8)                 # this particle's terrain
-            if snow:
-                # three depth planes (half / two-thirds / full speed) and a
-                # smooth six-phase glide on a per-flake phase -- drift, not a tick
-                plane = i % 3
-                fall = ((frame_i + 1) // 2, (frame_i * 2) // 3, frame_i)[plane]
-                sway = (-1, -1, 0, 1, 1, 0)[((frame_i // 3) + i) % 6]
-                pos = (base + fall) % (ground + 5)           # +5: frames RESTING on the ground
-                pts.append(((x0 + sway) % cols, min(pos, ground)))
-            else:
-                # rain leans with the wind: each streak drifts left as it falls
-                # (heavy leans harder) and a third of the drops fall on a FAR
-                # plane -- shorter, slower, behind the storm
-                far = i % 3 == 0
-                length = (2 if far else 3) if heavy else (1 if far else 2)
-                pos = (base + frame_i * length) % (ground + 3 * length)
-                if pos > ground:
-                    continue                                 # soaked into the ground
-                wind = (frame_i * length) // (2 if heavy else 3)
-                for d in range(length):
-                    yy = pos - d
-                    if yy >= 0:                              # don't wrap a streak across the sky
-                        pts.append(((x0 - wind + (d if heavy else 0) // 2) % cols, yy))
-    return pts
-
-
-def _precip_ink(weather):
-    """The falling particles' own colour (theme precip: rain blue, snow white
-    -- Joel 2026-07-15 'give them color'); None = no precip, sprite ink rules."""
-    if weather in _SNOW:
-        return theme.PRECIP["snow"]
-    if weather in _RAIN:
-        return theme.PRECIP["rain"]
-    return None
+    """One time glyph for the status line: a sun by day, a moon by night.
+    (The weather glyphs left with the weather system; BASIC VPET 2026-07-16.)
+    Returns (glyph, colour)."""
+    return (chr(0x2600), theme.COIN) if pet.is_daytime else (chr(0x263E), "blue")
 
 
 from .render import blit as _blit    # one blit for app/training/strikefx (refactor 2026-07-05)
@@ -304,7 +226,6 @@ def _effect_overlay(pet, frame_i, cols, px_h, tick=0):
 
 class Screen(Static):
     """The animated LCD screen."""
-    thunder_i = 0             # frames of storm-flash left (weather sets it mid-tick)
     BG_FADE = 15              # canon animateBack: viewConfig BackgroundOpacityChange
     #                           -0.05/tick = a ~20-tick dissolve; 15 of our 10Hz
     #                           ticks = 1.5s (background audit 2026-07-15)
@@ -327,32 +248,14 @@ class Screen(Static):
         elif bgimg:
             on = SIL_DAY   # dark silhouette day OR night -- the pet is never white;
             #                white (SIL_NIGHT) is reserved for the lights-out Zzz below
-        else:
-            w = pet.weather
-            if w in _RAIN:
-                bg = _scale_hex(bg, 0.78)
-            elif w in _SNOW:
-                bg = _scale_hex(bg, 0.85)
-            elif w == "Cloudy":
-                bg = _scale_hex(bg, 0.95)
-        if getattr(self, "thunder_i", 0) > 0 and pet.lights:
-            # DVPet Weather.checkThunder: while thunder runs, the storm gloom LIFTS
-            # on alternating 2-frame beats (rect.changeColor(0,0,0,0)) -- lightning
-            # whitens the scene, then the rain tint snaps back.  A dark room stays dark.
-            self.thunder_i -= 1
-            if (self.thunder_i % 4) < 2:
-                if bgimg:
-                    bgimg = theme.blend_frame(bgimg, FLASH[0], 0.55)
-                else:
-                    on, bg = FLASH[1], FLASH[2]
-        wf = self.frame_i // 4                  # weather/effect overlays keep their ~0.4s cadence
+        # (the storm gloom, thunder flash and precip overlays left with the
+        # weather system; BASIC VPET 2026-07-16)
+        wf = self.frame_i // 4                  # effect overlays keep their ~0.4s cadence
         if pet.dead:                           # a grave marker (the live path builds its own overlay below)
             self.update(render_screen(
                 GRAVESTONE, SCREEN_COLS, SCREEN_ROWS, on, bg, bgimg=bgimg,
                 overlay=_clip_win(_effect_overlay(pet, wf, SCREEN_COLS, SCREEN_ROWS * 2, tick=self.frame_i)),
-                overlay_free=(_weather_overlay(pet.weather, wf, SCREEN_COLS, SCREEN_ROWS * 2)
-                              if pet.lights else []),
-                free_ink=_precip_ink(pet.weather), clip=_WINDOW))
+                clip=_WINDOW))
             return
         if pet.num == -1:                      # egg
             rec = egg_mod.record(pet.egg_type)
@@ -437,14 +340,11 @@ class Screen(Static):
                - SPRITE_W) - base
         xshift = min(max(xshift, lo), max(cap, lo))       # poop wins over the skull (it yields when crowded)
         overlay = _clip_win(_effect_overlay(pet, wf, SCREEN_COLS, SCREEN_ROWS * 2, tick=self.frame_i))
-        weather = _weather_overlay(pet.weather, wf, SCREEN_COLS, SCREEN_ROWS * 2)
         if not pet.lights:                 # lights off: DVPet's lightsOff is a fully-opaque black
             rows, xshift, mirror = [], 0, False   # cover -> the pet is hidden; only black (+ Zzz) shows
-            weather = []                   # ...and no rain/snow glitters in the dark (Joel 2026-07-15)
         self.update(render_screen(rows, SCREEN_COLS, SCREEN_ROWS, on, bg,
                                   mirror=mirror, xshift=xshift, overlay=overlay,
-                                  overlay_free=weather, bgimg=bgimg, clip=_WINDOW,
-                                  free_ink=_precip_ink(pet.weather)))
+                                  bgimg=bgimg, clip=_WINDOW))
 
     def _background(self, pet):
         return self._crossfade(pet.background())
@@ -723,9 +623,7 @@ class Screen(Static):
         pose = {"clean": "idle", "dying": "exhausted"}.get(fx["kind"], "idle")
         c.rows = self._pose_rows(pet, pose, step // 2)
         c.overlay = []
-        # weather rides the free plane here too (paint()'s 0.4s cadence): its
-        # own colour, the whole LCD for a sky -- and never in a dark room
-        c.free = _weather_overlay(pet.weather, self.frame_i // 4, SCREEN_COLS, c.px_h)
+        c.free = []          # (the weather plane left with the weather system)
         c.xshift = 0
         c.yshift = 0
         c.mirror = False
@@ -786,8 +684,6 @@ class Screen(Static):
         self.update(render_screen(c.rows, SCREEN_COLS, SCREEN_ROWS, on, c.bg,
                                   xshift=c.xshift, yshift=c.yshift,
                                   overlay=_clip_win(c.overlay),
-                                  overlay_free=c.free,
-                                  free_ink=_precip_ink(pet.weather),
                                   bgimg=c.bgimg, mirror=mirror, clip=_WINDOW))
 
     def _fxk_eat(self, pet, fx, step, c):

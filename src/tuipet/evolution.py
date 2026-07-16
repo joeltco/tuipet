@@ -170,10 +170,8 @@ def check(pet, num, item=-1, food=-1, connecting=False):
     if lf_min:
         cnt = sum(1 for lv in getattr(pet, "levels_fought", ()) if lv >= lf_min)
         gates.append(_cmp(*req["level_fought"], cnt))
-    # temperature + habitat conditions share the same DNA-forgivable pool
-    tr = req.get("temp_req")
-    if tr is not None:
-        gates.append(tr[0] <= getattr(pet, "temp", 50) <= tr[1])
+    # (temp_req gates left with the weather system -- BASIC VPET 2026-07-16:
+    # a temperature band nothing can move would permanently wall those forms)
     hr = req.get("habitat_req", -1)
     if hr != -1:
         # checkHabitatReq with EnableTimerBasedRequirements=false compares the
@@ -240,9 +238,6 @@ def fulfilled(pet, num):
     # the old "Natural" arm over-scored 180 corpus forms)
     if req.get("xantibody", "None") == "Induced" and getattr(pet, "x_antibody", "None") != "None":
         score += X_ANTIBODY_RATE
-    tr = req.get("temp_req")
-    if tr is not None and tr[0] <= getattr(pet, "temp", 50) <= tr[1]:
-        score += 1
     if req.get("habitat_req", -1) != -1 and getattr(pet, "habitat", -1) == req["habitat_req"]:
         score += 1   # checkHabitatReq: the CURRENT habitat (timer-off)
     for f, g in (req.get("dna") or {}).items():     # getDNAReq: priority per met Field gate
@@ -595,10 +590,6 @@ def requirement_report(pet, num):
     if lf_min and req["level_fought"][0] != "None":
         cnt = sum(1 for lv in getattr(pet, "levels_fought", ()) if lv >= lf_min)
         cmp_row(f"foes \u2265lv{lf_min}", req["level_fought"], cnt)
-    tr = req.get("temp_req")
-    if tr is not None:
-        rows.append((tr[0] <= getattr(pet, "temp", 50) <= tr[1],
-                     f"temp {tr[0]}-{tr[1]}\u00b0  (now {int(getattr(pet, 'temp', 50))}\u00b0)"))
     hr = req.get("habitat_req", -1)
     if hr != -1:
         hname = (data.load_habitats().get(hr) or {}).get("name", f"#{hr}")

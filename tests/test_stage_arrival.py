@@ -23,8 +23,6 @@ def test_a_hatchling_is_born_trusting_grumpy_and_hungry():
     assert p.hunger == 0 and p.strength == 0       # born hungry, no effort yet
     assert p.energy == p.max_energy                # full of beans
     assert (p.nutr_protein, p.nutr_mineral, p.nutr_vitamin) == (6, 6, 6)
-    lo, hi = p.ideal_temp
-    assert p.temp == (lo + hi) // 2
 
 
 def test_intraining_arrival_is_the_toddler_rebellion():

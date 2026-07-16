@@ -223,9 +223,8 @@ def test_the_window_law(monkeypatch):
     assert cap["overlay"] and all(
         grid.X0 <= x < grid.X1 and grid.TOP <= y < grid.FLOOR
         for x, y in cap["overlay"])                 # actors: window-clipped
-    assert cap["free"], "rain must ride the free channel"
-    assert any(y < grid.TOP or x < grid.X0 or x >= grid.X1
-               for x, y in cap["free"])             # ...and cover the whole LCD
+    # (the weather free-channel half of the law left with the weather system;
+    # BASIC VPET 2026-07-16 -- the render plane itself survives for future fx)
     buf = render.fill_buf(["11", "11"], 40, 24, xshift=16, clip=grid.WINDOW)
     lit = {(x, y) for y, row in enumerate(buf) for x, v in enumerate(row) if v}
     assert lit and all(x < grid.X1 for x, _ in lit)  # cut at the matrix edge

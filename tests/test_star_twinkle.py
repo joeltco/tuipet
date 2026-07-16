@@ -89,23 +89,18 @@ def test_clear_night_background_twinkles():
     assert a != frames[3] or b != frames[3]       # it really is a variant
 
 
-def test_starless_and_clouded_nights_do_not_twinkle():
+def test_starless_nights_do_not_twinkle():
     hr = DAY_LENGTH / 24
-    p = _pet(habitat=8, weather="Clear")          # Underwater: no stars
+    p = _pet(habitat=8)                           # Underwater: no stars
     p.world_seconds = 1 * hr
     f = data.load_backgrounds()[p.habitat_obj()["bg"]]
-    assert p.background() == theme.weather_tint(f[3], "Clear", "night")
-    p2 = _pet(habitat=2, weather="Cloudy")        # clouds cover the stars
-    p2.world_seconds = 1 * hr
-    key = p2.habitat_obj()["bg"]
-    fr = data.load_backgrounds()[key]
-    assert p2.background() == theme.night_cloud_frame(key, fr)
+    assert p.background() == f[3]                 # the plain night frame
 
 
 def test_daytime_never_twinkles():
-    p = _pet(habitat=2, weather="Clear")
+    p = _pet(habitat=2)
     p.world_seconds = 15 * DAY_LENGTH / 24        # inside Plains' day band
     assert p.day_phase == "day"
     key = p.habitat_obj()["bg"]
     frames = data.load_backgrounds()[key]
-    assert p.background() == theme.weather_tint(frames[1], "Clear", "day")
+    assert p.background() == frames[1]

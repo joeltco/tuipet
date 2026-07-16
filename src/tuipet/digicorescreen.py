@@ -322,9 +322,7 @@ def build_pages(pet):
         ]),
         ("HABITAT", [
             ("Home", h["name"]), ("Fit", f"{fit} ({aff:+d})"),
-            ("Season", pet.season), ("Weather", pet.weather),
-            ("Temp", f"{int(pet.temp)}°"),
-            ("Ideal", f"{pet.ideal_temp[0]}-{pet.ideal_temp[1]}°"),
+            ("Season", pet.season),
         ]),
         ("PERSON", person),
         ("TROPHIES", _trophy_rows(pet)),
