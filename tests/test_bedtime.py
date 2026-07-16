@@ -78,13 +78,12 @@ def test_lit_sleep_mistakes_repeat_on_the_canon_cadence():
     (LightsOnMistakeObedienceChange -1) lands once per night."""
     p = _line_pet()
     p.world_seconds = 20 * 60 + 59.0
-    p.obedience = 100                     # room to lose (setObedience floors at 0)
     _run(p, 3)
     assert p.asleep and p.lights
-    cm0, ob0 = p.care_mistakes, p.obedience
+    cm0 = p.care_mistakes
     _run(p, 70)                           # the first lit hour
     assert p.care_mistakes == cm0 + 1
-    assert p.obedience <= ob0 - 1         # the once-per-night ding
+    # (the obedience ding left with the discipline system)
     _run(p, 120)                          # ...and the canon repeat
     assert p.care_mistakes == cm0 + 2
     # a dutiful night: lights off inside the grace -> no mistake
@@ -155,8 +154,8 @@ def test_filth_no_longer_counts_as_a_care_mistake():
     cm0 = p.care_mistakes
     p._filth_t = 1800
     p._tick_body(1.0)
-    assert p.care_mistakes == cm0         # acts up (scold) but no mistake -- Pen20
-    assert p.scold_flag
+    assert p.care_mistakes == cm0         # no mistake -- Pen20 (the scold
+    #                                           act-up left with discipline)
 
 
 def test_hunger_call_is_one_mistake_per_call():

@@ -78,34 +78,6 @@ def test_no_bump_when_falling_or_landing_exactly_at_the_limit():
     assert getattr(p, "_poop_t", 0.0) == t0
 
 
-# --- consumable weight/obedience take the item modifier ------------------------
-
-def test_weak_consumable_scales_weight_and_obedience(monkeypatch):
-    """applyItem scales EVERY stat by the modifier (canon 3502/3428) -- a
-    compliant pet's grudging 0.1-strength item lands ceil(v x 0.1), not raw.
-    Obedience pinned via the real Textbook (+20); weight via a synthetic item
-    (NO shipped item carries weight -- that half is data-dead, code-pinned)."""
-    import math
-    monkeypatch.setattr(Pet, "check_refused", lambda self, **k: False)
-    p = _pet(obedience=50, compliance=True)       # compliant: the weak 0.1 path
-    p.inventory["i:0"] = 1
-    p.use_item("i:0")
-    assert p.obedience == 50 + math.ceil(20 * WEAK_CONSUMABLE_COEF)   # +2, not +20
-    q = _pet(obedience=50, compliance=False)      # willing: full strength
-    q.inventory["i:0"] = 1
-    q.use_item("i:0")
-    assert q.obedience == 70
-    heavy = dict(data.consumable_by_key("i:0"), weight=10, obedience=0, name="Anvil")
-    monkeypatch.setattr(data, "consumable_by_key", lambda k: heavy)
-    r = _pet(compliance=True)
-    r.inventory["i:0"] = 1
-    w0 = r.weight
-    r.use_item("i:0")
-    assert r.weight == w0 + math.ceil(10 * WEAK_CONSUMABLE_COEF)      # +1, not +10
-
-
-# --- the fattening/shedding calorie-weight coupling stays intact ---------------
-
 def test_food_fattens_only_while_calories_are_positive(monkeypatch):
     monkeypatch.setattr(Pet, "check_refused", lambda self, **k: False)
     meat = data.load_foods()[0]

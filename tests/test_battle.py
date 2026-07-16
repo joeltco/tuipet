@@ -158,23 +158,6 @@ def test_powerless_foe_teaches_nothing():
     assert all(a not in msg for a in ("Vaccine", "Data", "Virus"))
 
 
-def test_battle_loss_saps_obedience():
-    from tuipet.pet import Pet
-    # under ORDERS the unconditional BattleFreeObedienceInc (+1) nets a loss to 0
-    # (canon battleEnd); FREE style forgoes it, so the loss bites in full
-    p = Pet(num=1, stage="Rookie", attribute="Vaccine")
-    o0 = p.obedience
-    p.record_battle(False, {"stage": "Rookie", "hp": 10, "num": 1,
-                            "vaccine": 1, "data_power": 1, "virus": 1})
-    assert p.obedience == o0                       # -1 loss + 1 discipline
-    # setObedience floors at 0 (canon), so give the free-style pet room to lose
-    f = Pet(num=1, stage="Rookie", attribute="Vaccine", free_style=True, obedience=10)
-    o0 = f.obedience
-    f.record_battle(False, {"stage": "Rookie", "hp": 10, "num": 1,
-                            "vaccine": 1, "data_power": 1, "virus": 1})
-    assert f.obedience == o0 - 1
-
-
 def test_hollow_win_is_joyless():
     # beating a feeble higher-stage foe costs mood (OverpoweredBattleWonMoodDec)
     import random as _r
@@ -200,33 +183,6 @@ def test_free_style_adds_one_to_all_powers_and_self_picks():
     assert not b.refused_order                 # Free never "refuses" -- no orders given
 
 
-def test_orders_can_be_refused_mid_fight():
-    import random
-    random.seed(0)
-    p = _pet("Rookie")
-    p.vaccine, p.data_power, p.virus = 10, 5, 5
-    p.obedience = -500                         # rock bottom: refusals certain
-    p.full_health = 10
-    b = Battle(p, _enemy(hp=10))
-    b.play_round("Virus")
-    assert b.refused_order                     # refuseAttack overrode the order
-    assert p.scold_flag                        # setScold(true) mid-fight
-
-
-def test_orders_pay_obedience_and_prouder_wins():
-    p = _pet("Rookie")
-    p.obedience = 50
-    p.free_style = False
-    m0 = p.mood
-    p.record_battle(True, _enemy(hp=10))
-    assert p.obedience >= 51                   # BattleFreeObedienceInc (+win rewards)
-    free = _pet("Rookie")
-    free.obedience = 50
-    free.free_style = True
-    free.record_battle(True, _enemy(hp=10))
-    # (the OrdersWonMoodInc assert left with the mood system)
-
-
 # ---- the surrender system (checkSurrender / onSurrender, wired 2026-07) ------
 
 def _bp(obedience=500, mood=0):
@@ -248,43 +204,6 @@ def test_obedient_pet_never_asks_to_quit():
     for _ in range(60):
         panel._on_round_end()
         assert panel.phase == "menu"              # cont score towers over the roll
-
-
-def test_broken_pet_falters_and_the_trainer_decides():
-    import random
-    random.seed(0)
-    p, panel = _bp(obedience=-400, mood=-200)
-    panel.battle.pet_hp = 1                       # bleeding: the low-HP factors bite
-    asked = False
-    for _ in range(80):
-        panel.phase = "anim"
-        panel._on_round_end()
-        if panel.phase == "surrender_ask":
-            asked = True
-            break
-        if panel.phase == "result":               # sv==1: it ran outright -- also valid
-            asked = True
-            break
-    assert asked
-    if panel.phase == "surrender_ask":
-        o0 = p.obedience
-        panel.key("n")                            # send it back in
-        assert panel.phase == "menu"
-        assert p.obedience == o0 + 1              # surrender_reject: obeys a touch more
-
-
-def test_player_surrender_can_be_refused():
-    import random
-    random.seed(0)
-    p, panel = _bp(obedience=-500)                # non-compliant: refusal certain
-    panel.phase = "menu"
-    r = panel._player_surrender()
-    assert r is None                              # it would NOT give up
-    assert p.scold_flag                           # the defiance opens the scold window
-    p2, panel2 = _bp(obedience=500)
-    p2.compliance = True                          # compliant: the surrender proceeds
-    r2 = panel2._player_surrender()
-    assert r2 == ("done", None)
 
 
 # ---- battle animation audit (2026-07-04): reveal / dodge fidelity ------------

@@ -30,8 +30,7 @@ _METER_W = 12               # the strip meter: was 22 -> the whole line ran 62 c
 #                             the training-audit rule; DNA audit 2026-07-05)
 
 _HOME = (("charge", "Charge"), ("generate", "Generate"),
-         ("stats", "Stats"), ("reqs", "Requirements"),
-         ("roads", "Divergence"))
+         ("stats", "Stats"), ("roads", "Divergence"))
 
 
 class DNAPanel:
@@ -41,9 +40,8 @@ class DNAPanel:
         self.cursor = 0              # field cursor (charge / stats)
         self.amount = 1             # charge amount
         self.home_i = 0             # home-menu cursor
-        self.req_i = 0              # requirements-viewer cursor
         self.frame_i = 0
-        self.phase = "home"         # home | charge | stats | reqs | bet | mash | result
+        self.phase = "home"         # home | charge | stats | roads | bet | mash | result
         self.bet = 1
         self.hits = 0
         self.mash_f = 0
@@ -51,7 +49,6 @@ class DNAPanel:
         self.blink = 0              # UnlockDNA reveal blink counter
         self.last = "Generate DNA, then charge it."
         self.sfx = None
-        self._targets = self._dna_targets()
         self._roads = evolution.divergence_roads(pet)   # field -> wild-road targets
         self.road_i = 0
 
@@ -66,20 +63,7 @@ class DNAPanel:
             return f
         return ""
 
-    # ---- data ------------------------------------------------------------
-    def _dna_targets(self):
-        """The pet's evolution targets that declare a Field-DNA gate (getDNAReq)."""
-        reqs = data.load_requirements()
-        _, by = data.load_sprites()
-        out = []
-        for t in data.load_evolutions().get(self.pet.num, []):
-            r = reqs.get(t)
-            if not r:
-                continue
-            gates = {f: g for f, g in r["dna"].items() if g[0] != "None"}
-            if gates:
-                out.append((t, by.get(t, {}).get("name", "#%d" % t), gates, r))
-        return out
+    # (the Requirements viewer left with the DNA slim; BASIC VPET 2026-07-16)
 
     @property
     def field(self):
@@ -158,15 +142,6 @@ class DNAPanel:
             self.phase = "home"
         return None
 
-    def _key_reqs(self, k):
-        n = max(1, len(self._targets))
-        if k in ("up", "k"):
-            self.req_i = (self.req_i - 1) % n
-        elif k in ("down", "j"):
-            self.req_i = (self.req_i + 1) % n
-        elif k in ("escape", "enter"):
-            self.phase = "home"
-        return None
 
     def _key_roads(self, k):
         n = max(1, len(self._roads))
@@ -226,8 +201,6 @@ class DNAPanel:
             return "mash for DNA"
         if key == "stats":
             return "%d charged" % p.dna_total()
-        if key == "reqs":
-            return "%d form(s)" % len(self._targets)
         if key == "roads":
             f = self._armed()
             return ("ARMED: %s" % data.pretty_field(f)[:10]) if f \
@@ -269,29 +242,6 @@ class DNAPanel:
         out.append_text(menu.footer("↑↓ field   ESC back"))
         return out
 
-    def _text_reqs(self):
-        out = menu.bar("DNA · REQUIREMENTS", "%d form(s)" % len(self._targets))
-        if not self._targets:
-            out.append_text(menu.blanks(1))
-            out.append_text(menu.note("No DNA evolutions from here."))
-            out.append_text(menu.blanks(1))
-            out.append_text(menu.row("Charged DNA only matters where a", False))
-            out.append_text(menu.row("form lists a Field-DNA gate.", False))
-            out.append_text(menu.footer("ESC back"))
-            return out
-        t, name, gates, r = self._targets[self.req_i]
-        met = evolution._dna_ok(self.pet, r)
-        out.append_text(menu.row("%-20s%s" % (name[:20], "✓ MET" if met else "… need"), True))
-        out.append_text(menu.blanks(1))
-        for f, (cond, val) in gates.items():
-            cur = self.pet.dna_percent(f)
-            ok = evolution._cmp(cond, val, cur)
-            sym = "≥" if cond == "GreaterThan" else ("≤" if cond == "LessThan" else "=")
-            mark = "✓" if ok else "·"
-            out.append_text(menu.row("%s %-14s %s%3d%%  now %3d%%"
-                                     % (mark, data.pretty_field(f)[:14], sym, int(val), cur), False))
-        out.append_text(menu.footer("↑↓ form %d/%d   ESC back" % (self.req_i + 1, len(self._targets))))
-        return out
 
     def _text_roads(self):
         p = self.pet
@@ -386,7 +336,7 @@ class DNAPanel:
                               ("ESC", "back"))
         if self.phase == "result":
             return menu.hints(("any key", "bank it"))
-        if self.phase in ("stats", "reqs", "roads"):
+        if self.phase in ("stats", "roads"):
             return menu.hints(("↑↓", "browse"), ("ESC", "back"))
         return menu.hints(("↑↓", "pick"), ("ENTER", "open"), ("ESC", "out"))
 

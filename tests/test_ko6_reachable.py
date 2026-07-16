@@ -37,15 +37,21 @@ def _early_megas():
 
 
 def _winrate(stage, power, hp, foes, n=120, seed=7):
+    """FREE style: the pet's own smart pick every round.  (The harness used
+    to throw RANDOM orders at an obedience-0 pet and lean on the refusal
+    roll to substitute the smart pick; the refusal left with the discipline
+    system -- BASIC VPET 2026-07-16 -- and a real player picks well anyway,
+    so Free style is the honest reachability claim.)"""
     random.seed(seed)
     wins = 0
     for i in range(n):
         p = Pet(num=-1, stage=stage, vaccine=power, data_power=power, virus=power)
         p.full_health = hp
+        p.free_style = True
         b = battle.Battle(p, dict(foes[i % len(foes)]))
         guard = 0
         while not b.over and guard < 300:
-            b.play_round(random.choice(["Vaccine", "Data", "Virus"]))
+            b.play_round(None)                    # Free: _own_choice picks
             guard += 1
         wins += 1 if b.won else 0
     return wins / n

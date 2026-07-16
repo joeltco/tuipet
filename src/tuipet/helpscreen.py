@@ -11,7 +11,7 @@ VIS = 8                                   # lines shown at once in the box
 HELP = [
     ("CARE", 2),
     ("f feed   p play   c clean poop", 1),
-    ("h heal   r praise   k scold", 1),
+    ("h heal", 1),
     ("s lights   v assistant", 1),
     ("", 0),
     ("EXPLORE", 2),

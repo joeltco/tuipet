@@ -47,32 +47,6 @@ def test_full_room_upgrades_a_smaller_pile():
     assert p.poop_sizes == [3, 2, 1, 2]
 
 
-def test_obedience_lapse_bills_the_mess():
-    """checkObedienceDec: each lapse dec also charges ObedienceChangeFilthScale
-    x piles while the room is dirty."""
-    p = _pet(obedience=100)
-    p.poop, p.poop_sizes = 2, [2, 2]
-    p._obed_lapse_t = 10e9                      # force the lapse this tick
-    from tuipet.pet import OBEDIENCE_LAPSE_DEC
-    before = p.obedience
-    p.tick(0.5)                                 # one awake tick runs the lapse
-    expected = before - OBEDIENCE_LAPSE_DEC + OBEDIENCE_FILTH_SCALE * 2
-    assert abs(p.obedience - expected) <= 2     # other 0.5s drifts are tiny
-
-
-def test_filth_acting_up_is_a_scold_not_a_mistake():
-    """LINES_SPEC §5 (kept by the audit): no real device counts filth as a
-    care mistake -- past the grace the pet ACTS UP (scold window) and the
-    call is postponed, mistakes untouched."""
-    p = Pet(num=100, stage="Champion", obedience=500)   # _open_scold skips num=-1
-    p.poop, p.poop_sizes = 3, [2, 2, 2]
-    before = p.care_mistakes
-    p._filth_t = 1800.0
-    p.tick(0.5)
-    assert p.scold_flag and p.care_mistakes == before
-    assert p._filth_t < 0                       # postponed, not re-armed
-
-
 def test_toilet_priority_home_before_portable():
     p = _pet()
     p.toilet_trained, p.obedience, p.stage = 1, 500, "Rookie"

@@ -85,15 +85,3 @@ def test_a_healthy_nap_repays_the_earned_pressure():
     assert p.awake_lapse == p.awake_limit - p.sleep_lapse
 
 
-# --- no tantrums on the edge of sleep --------------------------------------------
-
-def test_no_discipline_call_when_about_to_doze(monkeypatch):
-    monkeypatch.setattr(random, "randint", lambda a, b: 0)    # the tantrum roll always hits
-    p = _pet(energy=0, obedience=0)
-    p.lights = False
-    p._to_nap_t = p._calc_to_nap() - 1        # one minute from nodding off
-    p._check_discipline_call()
-    assert not p.discipline_call and not p.scold_flag
-    q = _pet(energy=0, obedience=0)           # lights on, wide awake: it CAN tantrum
-    q._check_discipline_call()
-    assert q.discipline_call

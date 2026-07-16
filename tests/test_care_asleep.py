@@ -31,7 +31,7 @@ def _sleeping(energy=0):
 
 
 def test_care_actions_disturb_instead_of_acting():
-    for action in ("feed", "play", "praise", "scold", "clean", "heal"):
+    for action in ("feed", "play", "clean", "heal"):
         p = _sleeping()
         sick0, poop0, hunger0 = p.sick, p.poop, p.hunger
         msg = getattr(p, action)()
@@ -43,8 +43,8 @@ def test_care_actions_disturb_instead_of_acting():
 
 def test_disturbing_sleep_costs_mood_and_counts():
     p = _sleeping()
-    mood0, disturb0 = p.mood, p.disturb
-    p.praise()                          # a disturbance, not a praise
+    disturb0 = p.disturb
+    p.play()                            # a disturbance, not a game
     assert p.disturb == disturb0 + 1
     # (the DisturbMoodDec assert left with the mood system)
     assert p.sick is True               # heal never fired through the sleep
@@ -53,7 +53,7 @@ def test_disturbing_sleep_costs_mood_and_counts():
 def test_unrested_disturb_postpones_the_sleep():
     p = _sleeping(energy=0)             # barely slept: not fully-awake material
     p.awake_lapse = 0.0
-    p.praise()
+    p.play()
     assert not p.asleep                 # woken grumpy...
     assert p.sleep_lapse > 0            # ...but bedtime is only postpone-minutes away
 

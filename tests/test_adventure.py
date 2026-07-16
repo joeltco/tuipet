@@ -21,7 +21,6 @@ def test_investigate_finds_a_zone_pool_item_and_opens_praise():
         kind, thing = adv.investigate()
         if kind == "item":
             assert thing["key"] in p.inventory       # bagged
-            assert p.praise_flag                     # ReturnItem -> setPraise(true)
             pool = ([f"f:{i}" for i in adv.zone["rand_foods"]]
                     + [f"i:{i}" for i in adv.zone["rand_items"]])
             assert thing["key"] in pool              # from the ZONE's pools
@@ -493,17 +492,6 @@ def test_road_feed_hosts_the_panel_and_holds_the_journey():
     assert pan.sub is None
     assert pan.adv.last                      # the outcome reads on the strip
     assert p.hunger > 0                      # it actually ate
-
-
-def test_road_scold_answers_the_travel_refusal_window():
-    """A travel refusal opens a canon scold window (one of the THREE sites) --
-    k was unreachable mid-adventure, so the window could only expire."""
-    pan, p = _road_panel()
-    p.stop_travel_effects()                  # the refusal just fired
-    assert p.scold_flag
-    pan.key("k")
-    assert not p.scold_flag, "the scold must answer the window"
-    assert pan.adv.last                      # its verdict reads on the strip
 
 
 def test_road_direct_keys_heal_praise_lights():

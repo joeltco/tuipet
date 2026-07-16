@@ -88,7 +88,7 @@ def keys_markup():
     unreachable by theme.apply (shell polish 2026-07-05)."""
     k = f"b {theme.KEY}"
     return (
-        f"[{k}]f[/] feed  [{k}]p[/] play  [{k}]c[/] clean  [{k}]h[/] heal  [{k}]r[/] praise  [{k}]k[/] scold  [{k}]s[/] lights  [{k}]v[/] assist\n"
+        f"[{k}]f[/] feed  [{k}]p[/] play  [{k}]c[/] clean  [{k}]h[/] heal  [{k}]s[/] lights  [{k}]v[/] assist\n"
         f"[{k}]t[/] train  [{k}]a[/] adventure  [{k}]u[/] cup  [{k}]l[/] lobby (battle·jogress)  [{k}]x[/] DNA  [{k}]n[/] eggs\n"
         f"[{k}]o[/] shop  [{k}]i[/] bag  [{k}]e[/] habitat  [{k}]d[/] digicore  [{k}]g[/] options  [{k}]b[/] bug  [{k}]?[/] help  [{k}]q[/] quit"
     )
@@ -146,9 +146,6 @@ def _care_deco(pet, word=None):
     if pet.is_fatigued() and word != "fatigued": deco.append(f"[{T.NEG}]+tired[/]")
     if pet.is_injured() and word != "injured": deco.append(f"[{T.NEG}]+hurt[/]")
     if pet.is_frail(): deco.append(f"[{T.NEG}]+frail![/]")
-    if getattr(pet, "praise_flag", False): deco.append(f"[{T.POS}]+praise![/]")
-    if getattr(pet, "scold_flag", False) or getattr(pet, "discipline_call", False):
-        deco.append(f"[{T.NEG}]+scold![/]")
     if pet.poop: deco.append(f"[{T.COIN}]~poop x{pet.poop}[/]")
     if getattr(pet, "effect_id", -1) >= 0: deco.append(f"[{T.POS}]\u2726{pet.effect_name()}[/]")
     if pet.has_medicine(): deco.append(f"[{T.NEG}]+med[/]")
@@ -270,9 +267,10 @@ class TuiPetApp(App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("FREE SPIRIT: the spirit meter is gone - no more drill "
-                 "fatigue or dispirited slumps. Training, battles and meals "
-                 "no longer tax an invisible gauge.")
+    WHATS_NEW = ("AN OBEDIENT AGE: discipline is gone - no refusals, "
+                 "tantrums, praise or scolding; your mon just listens. DNA "
+                 "slimmed too: charge now costs energy and steers evolution "
+                 "without excusing bad care.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and
@@ -281,7 +279,6 @@ class TuiPetApp(App):
         # partner from the roster
         ("f", "feed", "Feed"), ("t", "train", "Train"),
         ("p", "play", "Play"), ("c", "clean", "Clean"), ("h", "heal", "Heal"),
-        ("r", "praise", "Praise"), ("k", "scold", "Scold"),
         ("a", "adventure", "Adventure"), ("o", "shop", "Shop"), ("i", "inventory", "Bag"), ("e", "habitat", "Habitat"),
         ("d", "digicore", "DigiCore"),
         ("n", "eggguide", "Egg Guide"),
@@ -1659,8 +1656,6 @@ class TuiPetApp(App):
             msg = (f"{name} is getting frail — "
                    + (f"{left} more slip{'s' if left != 1 else ''} could be fatal!"
                       if left else "handle with perfect care!"))
-        elif p.scold_flag:    msg = f"{name} is misbehaving!"
-        elif p.discipline_call: msg = f"{name} is throwing a tantrum — scold it!"
         else:                 return ""
         return f"[{theme.NEG}]\u26a0 {msg}[/]"
 
@@ -1718,25 +1713,8 @@ class TuiPetApp(App):
     # now; adventure/cup/town keep their own embedded BattlePanels and the
     # lobby keeps JogressPanel as its fusion-scene shim)
 
-    def action_praise(self):
-        if self.screen_w.fx is not None:        # let the current care animation finish before acting again
-            return
-        msg = self.pet.praise()
-        if self.pet.anim == "happy":                # the praise lands -> DVPet cheer()
-            self.screen_w.start_fx("cheer")         # (its _happy sound is fx-scripted)
-        elif self.pet.anim == "surprise":           # mis-praised a misbehaver ->
-            self.screen_w.start_fx("cheer", good=False)   # Bad_Praise: cheer(false)
-        self._do(msg)
+    # (praise/scold left with the discipline system; BASIC VPET 2026-07-16)
 
-    def action_scold(self):
-        if self.screen_w.fx is not None:        # let the current care animation finish before acting again
-            return
-        msg = self.pet.scold()
-        if self.pet.anim == "angry":                # the scold lands -> DVPet jeer()
-            self.screen_w.start_fx("jeer")          # (its _angry sound is fx-scripted)
-        elif self.pet.anim == "sad":                # scolded an innocent -> Bad_Scold:
-            self.screen_w.start_fx("jeer", good=False)   # the sad slump
-        self._do(msg)
 
     def action_tournament(self):
         err = tournament.can_enter(self.pet)   # single source of entry gating (young/asleep/no-cup)

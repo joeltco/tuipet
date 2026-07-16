@@ -57,18 +57,16 @@ def _install(monkeypatch, reqs):
     monkeypatch.setattr(evolution.data, "load_requirements", lambda: table)
 
 
-def test_dna_forgives_exactly_one_failed_gate(monkeypatch, pet):
-    # two failing gates (battles>5, wins>90) + a met DNA charge -> canon FAILS
-    two = _req(battles=("GreaterThan", 5), wins=("GreaterThan", 90), dna=DNA_MET)
+def test_dna_no_longer_forgives_failed_gates(monkeypatch, pet):
+    """The gate-forgiveness (canon getDNA()'s consume-once excuse) left with
+    the DNA slim (BASIC VPET 2026-07-16): a failed care gate is a failed
+    gate, charge or no charge -- the charge still bends selection via the
+    fulfilled-score bonus and arms divergence."""
     one = _req(battles=("GreaterThan", 5), dna=DNA_MET)
     zero = _req(dna=DNA_MET)
-    _install(monkeypatch, {1: two, 2: one, 3: zero, pet.num: _req()})
-    assert evolution.check(pet, 1) is False       # getDNA() was spent on gate one
-    assert evolution.check(pet, 2) is True        # exactly one failure: forgiven
-    assert evolution.check(pet, 3) is True
-    # ...and without the DNA charge, even one failure is fatal
-    _install(monkeypatch, {4: _req(battles=("GreaterThan", 5)), pet.num: _req()})
-    assert evolution.check(pet, 4) is False
+    _install(monkeypatch, {2: one, 3: zero, pet.num: _req()})
+    assert evolution.check(pet, 2) is False       # no forgiveness
+    assert evolution.check(pet, 3) is True        # nothing to forgive
 
 
 def test_special_types_follow_the_optional_flags(monkeypatch, pet):

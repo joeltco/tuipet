@@ -28,7 +28,9 @@ ALLOWED_SILENT = {
     "shopClosed": "old closed-shop sprite; the shop draws its own CLOSED plate now",
     # Bandai grammar 2026-07-11: the matrix is a stage, not a dashboard --
     # badges live on the status side (HUD deco / digicore / msg-box alarm)
-    "st_teach": "discipline window -> the +praise!/+scold! HUD badges",
+    "st_teach": "discipline window icon; the system left (BASIC VPET 2026-07-16)",
+    "praise": "discipline sprite; the system left (BASIC VPET 2026-07-16)",
+    "scold": "discipline sprite; the system left (BASIC VPET 2026-07-16)",
     "st_medicine": "badge -> the +med HUD deco",
     "st_injury": "badge -> the +hurt HUD deco",
     "st_bandage": "badge -> the +bnd HUD deco",
@@ -92,10 +94,9 @@ def test_badges_are_hud_only():
     """Bandai grammar: medicine/teach/etc are BADGES -- zero LCD pixels; the
     HUD deco carries them (+med / +praise! / +scold!)."""
     assert _pts(_pet(med_lapse=30.0)) == []
-    assert _pts(_pet(praise_flag=True)) == []
     import inspect
     src = inspect.getsource(app._care_deco)
-    assert "+med" in src and "+praise!" in src and "+scold!" in src
+    assert "+med" in src
 
 
 def test_only_the_skull_joins_the_scene():

@@ -97,15 +97,4 @@ def test_a_loss_marks_the_day_and_counts_the_exercise(monkeypatch):
     assert p.mistake_day == d0 + 1                    # BattleLostMissedDayChange
     assert p.exercise_today == e0 + 1                 # incExerciseTime
 
-def test_the_declined_surrender_grudge(monkeypatch):
-    _quiet(monkeypatch)
-    p = _pet(obedience=100)
-    p.surrender_reject()                              # it begged; you refused
-    p.record_battle(False, dict(_ENEMY), free_style=True)
-    assert p.obedience == SURR_DECLINED_LOST_OBED     # SET to 10, not decremented
-    q = _pet(obedience=100)
-    q.surrender_reject()
-    q.record_battle(True, dict(_ENEMY), free_style=True)   # ...but a WIN drops the grudge
-    assert q.obedience > SURR_DECLINED_LOST_OBED
-    q.record_battle(False, dict(_ENEMY), free_style=True)
-    assert q.obedience > SURR_DECLINED_LOST_OBED      # and it does not leak into the next loss
+

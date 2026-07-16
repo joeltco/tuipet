@@ -50,8 +50,7 @@ class AssistPanel:
             out.append("  OFF\n", style=DIM)
         out.append("\n  Cleans, feeds a starving or\n"
                    "  drained pet, dims the lights.\n"
-                   "  Each visit costs bits AND bond\n"
-                   "  (mood/obedience/spirit).\n", style=DIM)
+                   "  Each visit costs bits.\n", style=DIM)
         out.append_text(menu.note(self.msg))
         out.append_text(menu.footer("ENTER toggle  ESC out"))
         return out

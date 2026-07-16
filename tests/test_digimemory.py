@@ -149,34 +149,6 @@ def test_every_death_records_its_cause_and_the_memorial_tells_it():
     assert "of sickness" in seen                   # the epitaph tells it
 
 
-def test_a_refusal_never_eats_the_chip():
-    """Digimemory re-audit 2026-07-05: use_item returns BEFORE the decrement on
-    a refusal, so a moody heir can't vaporise the one-of-a-kind inheritance --
-    the item AND the payload both survive to try again."""
-    import random
-    p = _pet(obedience=0)
-    p._set_mood(-100)                            # a heap of refusal pressure
-    p.digimemory = {"name": "Elder", "num": 102, "vaccine": 9, "data": 9,
-                    "virus": 9, "seconds": 60.0}
-    p.add_item("i:32")
-    refused = False
-    for seed in range(60):
-        random.seed(seed)
-        if "i:32" not in p.inventory:            # a compliant roll got through:
-            p.add_item("i:32")                   # re-arm and keep hunting
-            p.digimemory = {"name": "Elder", "num": 102, "vaccine": 9, "data": 9,
-                            "virus": 9, "seconds": 60.0}
-        v0 = p.vaccine
-        msg = p.use_item("i:32")
-        if "nothing to do with it" in msg:
-            refused = True
-            assert p.inventory.get("i:32") == 1  # the chip is kept...
-            assert p.digimemory                  # ...and the payload intact
-            assert p.vaccine == v0
-            break
-    assert refused, "no seed produced a refusal to pin against"
-
-
 def test_declining_the_etch_carries_the_bonus():
     """Canon DigiMemory_Validation is a real Yes/No (digimemory audit
     2026-07-06): B declines the etch -- the kept care grade re-banks as the

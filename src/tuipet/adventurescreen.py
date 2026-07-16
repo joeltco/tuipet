@@ -476,14 +476,6 @@ class AdventurePanel(menu.SubHost):
             self.adv.last = self.pet.heal()
             self._road_react("confirm")
             return None
-        if k == "r":
-            self.adv.last = self.pet.praise()
-            self._road_react("confirm")
-            return None
-        if k == "k":
-            self.adv.last = self.pet.scold()
-            self._road_react("refuse")
-            return None
         if k == "s":
             self.adv.last = self.pet.toggle_lights()
             self.sfx = "confirm"

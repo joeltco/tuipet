@@ -41,20 +41,7 @@ def test_hp_success_builds_strength_and_praise():
     p.world_seconds = 600.0
     p.apply_training(2, 100, game="hp")
     assert p.strength == 1
-    # canon re-audit 2026-07: onExerciseFinish grants the PRAISE flag on success
-    # (setPraise) -- the old obedience+1 was invented, not canon
-    assert p.obedience == 0
-    assert p.praise_flag
-
-
-def test_hp_fail_penalises():
-    p = _trainee(strength=2, obedience=2, mood=50)
-    p.apply_training(1, 100, game="hp")        # hits<2 -> fail
-    # canon: exercise() runs BEFORE the success check -- the Effort gauge fills
-    # win or lose (onExerciseFinish); the fail costs land on mood/obedience
-    assert p.strength == 3
-    assert p.obedience == 1, "fail costs obedience"
-    # (the fail mood cost left with the mood system)
+    # (the praise flag + obedience checks left with the discipline system)
 
 
 # ---- attribute drills ------------------------------------------------------

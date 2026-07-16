@@ -17,12 +17,6 @@ def _pet(**kw):
     return p
 
 
-def test_the_standing_tantrum_plays_the_fit():
-    p = _pet(discipline_call=True)
-    p._special_idle()
-    assert p.anim == "tantrum"
-
-
 def test_the_yawn_fx_walks_its_canon_beats():
     """yawning()'s choreography as a scripted fx (yawning/poopdance audit
     2026-07-06): idle -> the +8 yawn -> the side-sway -> the +3/+1 stretch;

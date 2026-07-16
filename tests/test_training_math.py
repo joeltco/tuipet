@@ -41,13 +41,6 @@ def test_effort_fills_win_or_lose():
     assert p.praise_flag is False                # ...but no praise for failing
 
 
-def test_success_grants_praise_not_obedience():
-    p = _pet(obedience=7)
-    p.apply_training(3, 100, game="hp")
-    assert p.obedience == 7                      # the +1 was invented
-    assert p.praise_flag is True                 # onExerciseFinish: setPraise
-
-
 def test_weight_sheds_only_in_calorie_deficit():
     p = _pet(calories=5)
     p.apply_training(2, 100, attribute="Vaccine", game="vaccine")

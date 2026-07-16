@@ -158,7 +158,7 @@ def check(pet, num, item=-1, food=-1, connecting=False):
         # The old mood_category invented a Depressed tier at <= -250, failing
         # the 70 Mood=Unhappy requirement rows for any deeply-sad pet.
         True,   # (mood gates left with the mood system; BASIC VPET 2026-07-16)
-        _cmp(*req["obedience"], pet.obedience),
+        True,   # (obedience gates left with the discipline system)
         _cmp(*req["wins"], _win_rate(pet)),
         _cmp(*req["mistakes"], pet.care_mistakes),
         req.get("major_food", "None") == "None"
@@ -179,7 +179,11 @@ def check(pet, num, item=-1, food=-1, connecting=False):
         # 2026-07-06 -- the same timer-off misread the mood gate had)
         gates.append(getattr(pet, "habitat", -1) == hr)
     failed = sum(1 for g in gates if not g)
-    if failed > (1 if _dna_ok(pet, req) else 0):     # getDNA(): one forgiveness, then spent
+    # (the DNA gate-forgiveness -- canon getDNA()'s consume-once excuse --
+    # left with the DNA slim, BASIC VPET 2026-07-16: the charge still BENDS
+    # selection through the fulfilled-score bonus and arms divergence, but a
+    # failed care gate is a failed gate)
+    if failed > 0:
         return False
     # probability: prob >= probBound -> always; else prob must beat a roll.
     # DVPet boosts prob by the care bonus + winRate*coefficient (checkEvolReq).
@@ -214,8 +218,7 @@ def fulfilled(pet, num):
     if req["weight"] != "None" and req["weight"] == weight_category(pet.weight, pet._base_weight()):
         score += R["weight"]
     for k, actual in (("disturb", pet.disturb), ("overeat", pet.overeat),
-                      ("sick", pet.sick_count), ("injured", pet.injuries),
-                      ("obedience", pet.obedience)):
+                      ("sick", pet.sick_count), ("injured", pet.injuries)):
         if _met(req[k], actual):
             score += R.get(k, R["injury"] if k == "injured" else 1)
     if False:   # (the mood score left with the mood system; BASIC VPET)
@@ -573,7 +576,6 @@ def requirement_report(pet, num):
     cmp_row("overeats", req["overeat"], pet.overeat)
     cmp_row("sickness", req["sick"], pet.sick_count)
     cmp_row("injuries", req["injured"], pet.injuries)
-    cmp_row("obedience", req["obedience"], pet.obedience)
     cmp_row("care slips", req["mistakes"], pet.care_mistakes)
     cmp_row("generation", req.get("incarnations", ("None", 0)), getattr(pet, "generation", 1))
     if req["time"] != "None":
@@ -599,8 +601,6 @@ def requirement_report(pet, num):
         rows.append((_cmp(cond, val, pet.dna_percent(f)),
                      f"DNA {data.pretty_field(f)} {_SYM.get(cond, '?')}{val:g}%"
                      f"  (now {pet.dna_percent(f):g}%)"))
-    if dna_gated and _dna_ok(pet, req):
-        rows.append((None, "DNA charge met: care gates bypassed"))
     prob, bound = req["prob"], req["probBound"]
     if prob < bound:
         boost = getattr(pet, "evol_bonus", 0) + int(_win_rate(pet) * WIN_RATE_PROB_COEF)

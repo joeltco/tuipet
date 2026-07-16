@@ -191,8 +191,7 @@ def test_alarm_keeps_the_union_while_the_scene_split_stands():
     """needs_attention (HUD alarm, mood-lapse gate) still counts discipline;
     needs_care (the physical half) does not -- the split from 2026-07-11
     survives with the badges off-LCD."""
-    scold = _pet(scold_flag=True)
-    assert scold.needs_attention() and not scold.needs_care()
+    # (the discipline half of the union left with the discipline system)
     hungry = _pet(hunger=0)
     assert hungry.needs_attention() and hungry.needs_care()
 
@@ -201,7 +200,7 @@ def test_hud_carries_every_badge():
     """The badges' one home: the STATUS deco line."""
     import inspect
     src = inspect.getsource(app._care_deco)
-    for badge in ("+med", "+bnd", "+vit", "+praise!", "+scold!",
+    for badge in ("+med", "+bnd", "+vit",
                   "+tired", "+hurt", "+sick"):
         assert badge in src, badge
 

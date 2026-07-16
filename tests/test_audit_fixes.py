@@ -73,9 +73,8 @@ def test_battle_style_is_baked_per_battle():
                    "data_power": 5, "virus": 5, "hp": 8, "bits": (0, 0)})
     p.free_style = False                              # mid-fight toggle
     assert b.free_style is True                       # the battle keeps its bake
-    o0 = p.obedience
     p.record_battle(False, None, free_style=b.free_style)
-    assert p.obedience == o0 - 1                      # Free forgoes the orders +1
+    # (the orders obedience pay left with the discipline system)
 
 
 def test_discover_fires_at_stride_compounded_rates():
@@ -177,9 +176,7 @@ def test_attention_predicate_is_shared():
     assert not p.needs_attention()
     p.sick = True
     assert p.needs_attention()          # the '!' bubble now flags sickness too
-    p.sick = False
-    p.scold_flag = True
-    assert p.needs_attention()          # ...and misbehavior
+    # (the misbehavior half left with the discipline system)
 
 
 def test_nap_mood_farm_is_closed():
