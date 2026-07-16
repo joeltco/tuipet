@@ -1347,12 +1347,9 @@ class Pet:
         # (SleepMinHungerDecay=3) -- one heart overnight, then it holds
         if self.hunger > SLEEP_MIN_HUNGER_DECAY:
             self._tick_hunger(dt)
-        # canon runs these in bed too: the mood lapse (MinMoodAsleep only mutes
-        # a rock-bottom sleeper), depression's rolls, the filth nag+risk, and
+        # canon runs these in bed too: the filth nag+risk, and
         # poopWaitMoodCheck -- the HELD gauge (only a sleeper holds it) nags
-        self._mood_lapse(dt)
-        self._call_mood_drain(dt)                # lightsCall drains a lit sleeper too
-        self._check_depressed(dt)
+        # (the mood lapse / call drain / depression left with the mood system)
         self._filth_effects(dt)
         if self._poop_t >= self._poop_interval:
             self._poop_wait_t = getattr(self, "_poop_wait_t", 0.0) + dt
@@ -1374,29 +1371,12 @@ class Pet:
             self._do_poop(backlog=True)
             self._set_anim("poop", 2.2)
 
-    def _call_mood_drain(self, dt):
-        """checkCallMinutes (sleep-screens audit 2026-07-06): a STANDING care
-        call drains mood -- the frozen lapse isn't mercy, need is misery.
-        Canon: -1 per game-min while checkCall()||disciplineCall; ours rides
-        the call/mistake WINDOW family (x60), landing canon's -10 by the
-        10-game-min mistake mark.  The canon call set exactly: hunger/strength
-        awake, lights asleep, plus the tantrum."""
-        call = ((self.hunger == 0 or self.strength == 0) if not self.asleep
-                else self.lights)
-        if not (call or self.discipline_call) or self.call_paused():
-            self._call_drain_t = 0.0
-            return
-        self._call_drain_t = getattr(self, "_call_drain_t", 0.0) + dt
-        if self._call_drain_t >= 1.0:            # CallMinutesCheckMin 1 game-min (was 60.0)
-            self._call_drain_t = 0.0
-            self._set_mood(self.mood - CALL_MOOD_DEC)
 
     def _tick_mood_discipline(self, dt):
-        """The mood lapse + the discipline windows.  (DVPet has NO passive
-        energy decay -- energy only moves via activity and sleep.)"""
-        self._mood_lapse(dt)
-        self._call_mood_drain(dt)
-        self._check_depressed(dt)
+        """The discipline windows.  (The mood lapse, the call mood drain and
+        the depression state left with the mood system -- BASIC VPET
+        2026-07-16.  DVPet has NO passive energy decay -- energy only moves
+        via activity and sleep.)"""
         self._filth_effects(dt)
         # obedienceLapse (obedience audit 2026-07-06): discipline FADES while
         # awake -- dec 2 on a disposition-shaded cadence (sunny 180 / neutral
@@ -1483,83 +1463,7 @@ class Pet:
             # sticks at -20/lapse (active play is WORSE, driving enth to -10). It needs the real-time
             # clock to balance; DVPet numbers are NOT softened. Asleep decay (below) IS ported.
 
-    def _mood_lapse(self, dt):
-        """PhysicalState.moodLapse, verbatim (canon re-audit 2026-07).  Gated off
-        while sick/injured or while a care call begs (checkCall) -- misery and
-        need FREEZE the drift; it runs ASLEEP too (MinMoodAsleep only mutes a
-        rock-bottom sleeper).  Per lapse: the personality drifts (glutton x
-        hunger band; the restless term compares the TRAIT to fullStrength/2 --
-        a shipped DVPet quirk that makes it a constant drift -- kept verbatim),
-        then Happy -10 / Unhappy +5 (or +10 below minMood/2) / Neutral -5 in
-        [5, maxMood/2) else -1, and -2 whenever the weight is off Healthy."""
-        self._mood_lapse_t = getattr(self, "_mood_lapse_t", 0.0) + dt
-        if self._mood_lapse_t < 59:                       # MoodLapseMin
-            return
-        self._mood_lapse_t = 0.0
-        if self.asleep and self.mood <= -300:             # MinMoodAsleep
-            return
-        if self.sick or self.is_injured() or self.needs_attention():
-            return
-        # the tier branch reads _currentMood as of the last setMood -- BEFORE
-        # this lapse's raw drift lands (mood re-audit 2026-07-06)
-        m = self.current_mood()
-        # the personality nudges are RAW `_mood +=` in canon: no disposition
-        # kicker, no tier recompute (setMood adds both; routing the +-1 drift
-        # through it doubled or zeroed the nudge for any +-1-disposition pet)
-        if self.hunger <= FULL_HUNGER // 2:
-            self.mood = _clamp(self.mood + (-1 if self.glutton == 1 else 1 if self.glutton == -1 else 0),
-                               MOOD_MIN, MOOD_MAX)
-        elif self.hunger > FULL_HUNGER:
-            self.mood = _clamp(self.mood + (1 if self.glutton == 1 else -1 if self.glutton == -1 else 0),
-                               MOOD_MIN, MOOD_MAX)
-        # the restless term: canon compares _restless (the trait) to fullStrength/2,
-        # so the "low strength" branch ALWAYS holds -- a restless pet drifts -1 and
-        # a mellow one +1 every lapse.  Shipped behavior, kept verbatim.
-        self.mood = _clamp(self.mood + (-1 if self.restless == 1 else 1 if self.restless == -1 else 0),
-                           MOOD_MIN, MOOD_MAX)
-        if m == "Happy":
-            self._set_mood(self.mood - 10)                # HappyMoodLapseDec
-        elif m == "Unhappy":
-            if self.mood > -150:                          # minMood/2
-                self._set_mood(self.mood + 5)             # UnhappyMoodLapseInc
-            elif self.mood < -150:
-                self._set_mood(self.mood + 10)            # VeryUnhappyMoodLapseInc
-        elif m == "Neutral":
-            if VERY_NEUTRAL_MOOD_DEC <= self.mood < 150:  # [5, maxMood/2)
-                self._set_mood(self.mood - VERY_NEUTRAL_MOOD_DEC)
-            else:
-                self._set_mood(self.mood - 1)             # NeutralMoodLapseDec
-        if evolution.weight_category(self.weight, self._base_weight()) != "Healthy":
-            self._set_mood(self.mood - BAD_WEIGHT_MOOD_DEC)
 
-    def _check_depressed(self, dt):
-        """PhysicalState.checkDepressed: depression is a sticky STATE with random
-        entry/exit rolls -- while down, mood climbs +50 an interval but obedience
-        -5 and spirit -1; the exits snap mood to NewUndepressedMood (-50), the
-        positive-mood exit paying +33 obedience for weathering it."""
-        self._depress_t = getattr(self, "_depress_t", 0.0) + dt
-        if self._depress_t < DEPRESSED_LAPSE_MIN:
-            return
-        self._depress_t = 0.0
-        r = random.randrange(DEPRESSED_CHANCE)
-        if self.depressed:
-            if r < DEPRESSED_EXIT_NEG and self.mood < 0:
-                self.depressed = False
-                self._set_mood(NEW_UNDEPRESSED_MOOD)
-            elif r < DEPRESSED_EXIT_POS and self.mood > 0:
-                self.depressed = False
-                self._set_obedience(self.obedience + UNDEPRESSED_OBED_INC)
-                self._set_mood(NEW_UNDEPRESSED_MOOD)
-            else:
-                self._set_mood(self.mood + DEPRESSED_MOOD_CHANGE)
-                self._set_obedience(self.obedience + DEPRESSED_OBED_CHANGE)
-                self._set_enthusiasm(self.enthusiasm + DEPRESSED_ENTH_CHANGE)
-        elif (self.mood <= MIN_UNHAPPY_MOOD and not self.depressed
-                and self.stage not in ("Fresh", "InTraining")):
-            if self.mood <= TO_DEPRESSED_MOOD and r < TO_DEPRESSED_ROLL_NEG:
-                self.depressed = True
-            elif r < TO_DEPRESSED_ROLL_NORM:
-                self.depressed = True
 
     def _filth_effects(self, dt):
         """checkFilthMoodDec + the filth sickness rolls (canon re-audit 2026-07):
@@ -2829,52 +2733,41 @@ class Pet:
         self.obedience = _clamp(value, 0, MAX_OBEDIENCE)
 
     def _set_mood(self, value):
-        """PhysicalState.setMood: nudge once by disposition (MoodChangeDispositionCoefficient=1),
-        then clamp to [MinMood, MaxMood]."""
-        value = int(round(value))
-        if value != self.mood:
-            value += self._disposition()      # MoodChangeDispositionCoefficient = 1
-        self.mood = _clamp(value, MOOD_MIN, MOOD_MAX)
+        """A NO-OP: the mood meter left with the mood system (BASIC VPET
+        2026-07-16, converging on the clone sim).  The canon write-sites
+        remain in place as inert citations and vanish with their own
+        systems; the meter itself is pinned at 0 (Neutral)."""
 
     def mood_pct(self):
-        """Mood as 0..100 for the status bar."""
-        return (self.mood - MOOD_MIN) * 100 // (MOOD_MAX - MOOD_MIN)
+        """Neutral forever (the meter is gone); kept for the status bar."""
+        return 50
 
     def condition(self):
         """CONDITION 0..3: how well-kept the pet is RIGHT NOW.  Care pays into
         SKILL, not just survival (2026-07-14): the training drills read this
         tier and widen their timing zones/windows for a well-kept pet -- a
-        starved, exhausted, miserable one trains with a trembling paw.  The
-        mean of four care gauges, floored to a tier; a sick or injured pet
-        never scores above 1 (its body isn't up to precision)."""
+        starved, exhausted one trains with a trembling paw.  The mean of
+        three care gauges (mood left with its system), floored to a tier; a
+        sick or injured pet never scores above 1."""
         score = (self.hunger / 4.0
                  + self.strength / 4.0
-                 + max(0.0, self.energy) / float(max(1, self.max_energy))
-                 + (self.mood + 300.0) / 600.0) / 4.0
+                 + max(0.0, self.energy) / float(max(1, self.max_energy))) / 3.0
         tier = max(0, min(3, int(score * 4)))
         if self.sick or self.is_injured():
             tier = min(tier, 1)
         return tier
 
     def current_mood(self):
-        """PhysicalState _currentMood: Depressed is a sticky STATE (checkDepressed's
-        entry/exit rolls -- canon re-audit 2026-07; a mood threshold only biases the
-        entry roll), the rest are value bands."""
-        if self.depressed:
-            return "Depressed"
-        if self.mood >= MIN_HAPPY_MOOD:
-            return "Happy"
-        if self.mood <= MIN_UNHAPPY_MOOD:
-            return "Unhappy"
-        return "Neutral"
+        """DERIVED (the clone's rule): no mood meter -- the word keys off
+        condition.  Unhappy when unwell or unfed, else Neutral."""
+        w = self.status_word()
+        return "Unhappy" if w in ("sick", "injured", "starving",
+                                  "needs cleaning") else "Neutral"
 
     def _set_enthusiasm(self, value):
-        """PhysicalState.setEnthusiasm: clamp to [MinEnthusiasm, MaxEnthusiasm];
-        hitting a boundary costs mood (MaxEnthusiasmMoodPenalty)."""
-        value = _clamp(int(round(value)), MIN_ENTHUSIASM, MAX_ENTHUSIASM)
-        if value != self.enthusiasm and value in (MIN_ENTHUSIASM, MAX_ENTHUSIASM):
-            self._set_mood(self.mood - MAX_ENTHUSIASM_MOOD_PENALTY)
-        self.enthusiasm = value
+        """PhysicalState.setEnthusiasm: clamp to [MinEnthusiasm, MaxEnthusiasm].
+        (The boundary mood penalty left with the mood system.)"""
+        self.enthusiasm = _clamp(int(round(value)), MIN_ENTHUSIASM, MAX_ENTHUSIASM)
 
     def _set_energy(self, value):
         """DVPet setEnergy, canon order (mood re-audit 2026-07-06): a drop INTO
@@ -4626,12 +4519,14 @@ class Pet:
         if self.gift_t < GIFT_CHANCE_MIN:
             return
         self.gift_t = 0.0
+        # the Happy-tier gate and the mood term left with the mood system
+        # (BASIC VPET 2026-07-16): a WELL pet (not unwell) can find a present,
+        # and obedience alone narrows the roll
         if (self.gift or self.asleep or self.stage in ("Egg", "Fresh", "InTraining")
-                or self.current_mood() != "Happy"
+                or self.current_mood() == "Unhappy"
                 or getattr(self, "away", False)):   # checkGiftCall gates on _isHome:
             return                                  # presents are found AT HOME
-        chance = int(OBEDIENCE_REFUSAL_CAP - self.obedience
-                     + (MOOD_MAX - self.mood) * GIFT_CHANCE_MOOD_COEFF + GIFT_CHANCE_FACTOR)
+        chance = int(OBEDIENCE_REFUSAL_CAP - self.obedience + GIFT_CHANCE_FACTOR)
         if chance > 0 and random.randrange(chance) == 0:
             self.gift = self._pick_gift()
 

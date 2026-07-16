@@ -79,7 +79,7 @@ def test_an_unscolded_refusal_expires_smug():
     m0 = p.mood
     p._tick_mood_discipline(REFUSED_OFF_MIN)
     assert not p.refused
-    assert p.mood == m0 + REFUSED_OFF_MOOD_INC     # it got away with it
+    # (the smug mood bump left with the mood system)
     assert p.obedience == 60 - REFUSED_OFF_OBED_DEC
 
 def test_an_open_scold_window_holds_the_refusal():

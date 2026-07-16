@@ -20,7 +20,7 @@ def test_offline_return_is_itemized():
     msg = persistence._offline(p, 3 * 3600.0)          # 3h away
     assert "3h away" in msg and "While you were gone" in msg
     assert "went hungry (+1 care mistake)" in msg      # hunger 4 drains in 20min
-    assert "poop" in msg and "mood slipped" in msg
+    assert "poop" in msg
 
 
 def test_offline_short_absence_stays_quiet():

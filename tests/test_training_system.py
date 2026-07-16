@@ -150,7 +150,7 @@ def test_willing_favourite_with_standing_refusal_spoils():
     p.scold_flag, p.scold_window = True, 0      # an unresolved refusal stands
     m0 = p.mood
     assert not p.check_refused(attr="Vaccine")  # it does its favourite anyway
-    assert p.obedience == 70 and p.mood == m0 + 10 and not p.scold_flag
+    assert p.obedience == 70 and not p.scold_flag
 
 
 def test_battle_wins_feed_perfect_wins(monkeypatch):

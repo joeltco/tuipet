@@ -149,7 +149,7 @@ def test_poop_costs_weight_not_hunger():
     p._do_poop()
     assert p.hunger == 3                     # NEVER touched by pooping
     assert p.weight < 20                     # the canon cost is WEIGHT
-    assert p.mood == POOP_MOOD_INC or p.mood > 0   # relief
+    # (the poop relief mood left with the mood system)
     assert p.obedience == o0                 # FloorPoopObedienceChange = 0 (shipped)
 
 

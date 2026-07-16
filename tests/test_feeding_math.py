@@ -77,7 +77,7 @@ def test_dirty_eating_sours_and_sickens():
     random.seed(0)
     m0 = p.mood
     p.feed(_food("Meat"))
-    assert p.mood < m0                          # DirtyEatingMoodDec outweighs Meat's +5
+    # (the DirtyEatingMoodDec assert left with the mood system)
     random.seed(3)
     hits = 0
     for _ in range(80):
@@ -105,31 +105,23 @@ def test_double_dose_costs_one_game_hour():
 
 
 def test_feed_taste_branches_take_canon_shape():
-    """feed()'s taste branches (feed/food audit 2026-07-06): the glutton shade
-    rides every branch, fullness GATES the pleasant moods, and a full pet fed
-    its DISLIKED meal pays the double dip plus the spirit hit."""
-    from tuipet.pet import (FAV_FOOD_MOOD, FOOD_MOOD, FAV_FOOD_ENTH,
-                            GLUTTON_FEED_MOOD, DISLIKED_FOOD_OBEDIENCE)
-    # hungry + favourite + glutton: +10 +1 shade, spirit +1
-    p = _pet(hunger=1, glutton=1, mood=0, enthusiasm=0)
+    """feed()'s taste branches (feed/food audit 2026-07-06).  The mood dips
+    and joys left with the mood system (BASIC VPET 2026-07-16); the SPIRIT
+    and OBEDIENCE halves of the branches survive and are pinned here."""
+    from tuipet.pet import FAV_FOOD_ENTH, DISLIKED_FOOD_OBEDIENCE
+    # hungry + favourite + glutton: spirit +1
+    p = _pet(hunger=1, glutton=1, enthusiasm=0)
     p.favorite_food = "Meat"
     p._eat_food("Meat")
-    assert p.mood == FAV_FOOD_MOOD + GLUTTON_FEED_MOOD and p.enthusiasm == FAV_FOOD_ENTH
-    # FULL + favourite (non-glutton): the fav joy is gone, but the SPECIES
-    # stomach (canon getStomachCapacity; food audit 2026-07-15) still has
-    # room at 4 hearts, so the small food mood lands (canon's elif branch)
-    q = _pet(hunger=4, glutton=0, mood=0, enthusiasm=0)
+    assert p.enthusiasm == FAV_FOOD_ENTH
+    # FULL + favourite (non-glutton): no spirit move on the neutral branch
+    q = _pet(hunger=4, glutton=0, enthusiasm=0)
     q.favorite_food = "Meat"
     q._eat_food("Meat")
-    assert q.mood == FOOD_MOOD and q.enthusiasm == 0
-    # FULL + disliked, forced: the double dip + the spirit hit + obedience
-    r = _pet(hunger=4, glutton=0, mood=0, enthusiasm=0, obedience=50)
+    assert q.enthusiasm == 0
+    # FULL + disliked, forced: the spirit hit + obedience
+    r = _pet(hunger=4, glutton=0, enthusiasm=0, obedience=50)
     r.disliked_food = "Veg"
     r._eat_food("Veg", complied=True)
-    assert r.mood <= -2 * FAV_FOOD_MOOD          # two dips (taste decs may add)
     assert r.enthusiasm <= -FAV_FOOD_ENTH        # -(1) - forced(1) before boundary fx
     assert r.obedience == 50 + DISLIKED_FOOD_OBEDIENCE
-    # hungry + neutral + picky eater: +2 -1 shade
-    s = _pet(hunger=1, glutton=-1, mood=0)
-    s._eat_food("Fish")
-    assert s.mood == FOOD_MOOD - 1

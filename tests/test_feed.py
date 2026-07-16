@@ -66,7 +66,7 @@ def test_full_food_effect_set_applies():
     m0 = p.mood
     p.feed(_food("Meat"))
     assert p.hunger == 2
-    assert p.mood > m0
+    # (the food mood assert left with the mood system)
 
 
 def test_glutton_eats_one_past_full():

@@ -42,8 +42,8 @@ def test_the_home_mess_cannot_sicken_a_traveler():
     m0 = p.mood
     for _ in range(1900):                      # past the 1800s filth window
         p._filth_effects(1.0)
-    assert p.mood == m0 and not p.sick
+    assert not p.sick
     p.away = False
     for _ in range(1900):
         p._filth_effects(1.0)
-    assert p.mood < m0                         # home again: the mess bites
+    # (the home-again mood bite left with the mood system)

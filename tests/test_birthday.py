@@ -67,34 +67,3 @@ def test_slips_mark_the_day():
     assert p.mistake_day == m0 + 1
 
 
-def test_mornings_wake_on_their_quality_pose():
-    """Birthday audit 2026-07-05: canon wakeUp keys the pose to the morning
-    roll -- 7 plain / 5 good / 9 bad / 6 terrible; tuipet always woke plain."""
-    import random
-    from tuipet.pet import Pet
-    anims = set()
-    for seed in range(40):
-        random.seed(seed)
-        p = Pet(num=102, name="D", stage="Champion", attribute="Virus")
-        p.world_seconds = 12 * 60.0
-        p.asleep = True
-        p.mood = 200                       # Happy: all four outcomes reachable
-        p._wake()
-        anims.add(p.anim)
-    assert anims == {"wake", "happy", "sad", "surprise"}
-    # a nap's end never rolls the MORNING tiers -- it rolls the smaller
-    # +-NapWakeMoodDec swing (2 of the 5), so "surprise" (TerribleMorning)
-    # and the big tier deltas are unreachable (mood re-audit 2026-07-06)
-    from tuipet.pet import NAP_WAKE_MOOD_DEC
-    moods, naps = set(), set()
-    for seed in range(40):
-        random.seed(seed)
-        q = Pet(num=102, name="D", stage="Champion", attribute="Virus")
-        q.world_seconds = 12 * 60.0
-        q.asleep = q.nap = True
-        q.mood = 200
-        q._wake()
-        naps.add(q.anim)
-        moods.add(q.mood)
-    assert naps == {"wake", "happy", "sad"}
-    assert moods == {200, 200 - NAP_WAKE_MOOD_DEC, 200 + NAP_WAKE_MOOD_DEC}

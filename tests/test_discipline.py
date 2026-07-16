@@ -190,26 +190,6 @@ def test_lights_wake_a_nap_unless_the_futon_holds_it():
     assert r.asleep                               # the switch never wakes real sleep
 
 
-# ---- care-mistake audit 2026-07-05 -------------------------------------------
-
-def test_every_mistake_stings_the_mood():
-    """incMistake: a Happy pet is knocked DOWN TO 100 (MistakeHappyMoodChange,
-    absolute on the -300..300 scale); anyone else loses MistakeMoodDec(50).
-    The counters used to tick silently."""
-    from tuipet.pet import Pet, MISTAKE_HAPPY_MOOD, MISTAKE_MOOD_DEC
-    assert (MISTAKE_HAPPY_MOOD, MISTAKE_MOOD_DEC) == (100, 50)
-    p = Pet(num=102, name="D", stage="Champion", attribute="Virus", obedience=500)
-    p.world_seconds = 12 * 60.0
-    p.mood = 280
-    cm0, md0 = p.care_mistakes, p.mistake_day
-    p._inc_mistake()
-    assert p.mood <= 101                      # dropped TO ~100 (disposition nudge +-1)
-    assert (p.care_mistakes, p.mistake_day) == (cm0 + 1, md0 + 1)
-    p.mood = -10
-    p._inc_mistake()
-    assert p.mood <= -59                      # the -50 sting
-
-
 def test_hunger_mistake_obedience_is_glutton_shaded():
     """hungerMistakePenalty: obedience +1 -- canon really REWARDS a plain pet's
     endured hunger -- but a glutton pays -1."""
@@ -266,7 +246,7 @@ def test_jogress_and_cup_pokes_disturb_the_sleeper_too():
         d0, m0 = p.disturb, p.mood
         msg = gate(p)
         assert msg and "grumbles" in msg, msg
-        assert not p.asleep and p.disturb == d0 + 1 and p.mood < m0, gate
+        assert not p.asleep and p.disturb == d0 + 1, gate
 
 
 def test_neglect_never_opens_a_scold_window():

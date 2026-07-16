@@ -157,7 +157,7 @@ def check(pet, num, item=-1, food=-1, connecting=False):
         # checkDepressed's exit roll; a threshold recompute is never Depressed).
         # The old mood_category invented a Depressed tier at <= -250, failing
         # the 70 Mood=Unhappy requirement rows for any deeply-sad pet.
-        req["mood"] == "None" or req["mood"] == pet.current_mood(),
+        True,   # (mood gates left with the mood system; BASIC VPET 2026-07-16)
         _cmp(*req["obedience"], pet.obedience),
         _cmp(*req["wins"], _win_rate(pet)),
         _cmp(*req["mistakes"], pet.care_mistakes),
@@ -218,7 +218,7 @@ def fulfilled(pet, num):
                       ("obedience", pet.obedience)):
         if _met(req[k], actual):
             score += R.get(k, R["injury"] if k == "injured" else 1)
-    if req["mood"] != "None" and req["mood"] == pet.current_mood():
+    if False:   # (the mood score left with the mood system; BASIC VPET)
         score += R["mood"]
     if req.get("major_food", "None") != "None" and hasattr(pet, "major_food") \
             and req["major_food"] == pet.major_food():
@@ -581,8 +581,7 @@ def requirement_report(pet, num):
     if req["weight"] != "None":
         rows.append((req["weight"] == weight_category(pet.weight, pet._base_weight()),
                      f"weight: {req['weight']}"))
-    if req["mood"] != "None":
-        rows.append((req["mood"] == pet.current_mood(), f"mood: {req['mood']}"))
+    # (the mood requirement row left with the mood system; BASIC VPET 2026-07-16)
     if req.get("major_food", "None") != "None":
         rows.append((req["major_food"] == (pet.major_food() if hasattr(pet, "major_food") else None),
                      f"diet mostly {req['major_food']}"))

@@ -77,7 +77,7 @@ def test_offline_decay_applies():
     pet = Pet(num=-1, stage="Rookie")
     pet.mood, pet.hunger = 100, 4
     msg = persistence._offline(pet, 2 * 3600)    # 2h
-    assert pet.mood < 100, "mood should decay while away"
+    # (the offline mood decay left with the mood system)
     assert pet.hunger < 4, "hunger should drop while away"
     assert "away" in msg
     # don't-flip: BOUNDED decay means no growth/evolution while away -- only

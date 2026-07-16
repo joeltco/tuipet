@@ -29,13 +29,13 @@ def test_weight_clamps_at_the_body_wall_with_a_sting():
     m0 = p.mood
     p._set_weight(base + span + 50)
     assert p.weight == base + span
-    assert p.mood == m0 - WEIGHT_LIMIT_MOOD_PENALTY
+    # (the body-wall mood sting left with the mood system)
     assert p.enthusiasm == 0 - WEIGHT_LIMIT_ENTH_PENALTY
     q = _pet(enthusiasm=0)
     m0 = q.mood
     q._set_weight(-100)
     assert q.weight == base - span                # the wall, not the max(1,...) floor
-    assert q.mood == m0 - WEIGHT_LIMIT_MOOD_PENALTY
+    # (the body-wall mood sting left with the mood system)
 
 def test_inside_the_band_no_sting_and_a_floor_of_one():
     p = _pet(enthusiasm=0)

@@ -53,7 +53,7 @@ def test_trained_pet_self_toilets_no_filth_and_spends_a_flush():
     q._tick_body(1.0)
     assert q.poop == 0 and q.inventory["i:82"] == 1        # in the bowl, one flush
     assert getattr(q, "_toilet_event", None) == "i:82"     # the app plays poopToilet
-    assert q.mood > m0                                     # relief + the item's blessing
+    # (the relief mood left with the mood system)
     q._toilet_event = None
     q.inventory.pop("i:82")                                # bowl empty ->
     q._poop_t = q._poop_interval + 0.5

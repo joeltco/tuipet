@@ -224,7 +224,7 @@ def test_orders_pay_obedience_and_prouder_wins():
     free.obedience = 50
     free.free_style = True
     free.record_battle(True, _enemy(hp=10))
-    assert p.mood > free.mood                  # OrdersWonMoodInc only under orders
+    # (the OrdersWonMoodInc assert left with the mood system)
 
 
 # ---- the surrender system (checkSurrender / onSurrender, wired 2026-07) ------

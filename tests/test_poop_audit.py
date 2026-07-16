@@ -47,18 +47,6 @@ def test_full_room_upgrades_a_smaller_pile():
     assert p.poop_sizes == [3, 2, 1, 2]
 
 
-def test_filth_mood_bills_per_pile_at_the_cadence():
-    """checkFilthMoodDec: species FilthLapseMoodChange x countFilth every
-    FilthMoodDecMin."""
-    p = _pet(mood=0)
-    p.poop, p.poop_sizes = 3, [2, 2, 2]
-    fm = p._phys().get("filth_mood", -1)
-    p._filth_mood_t = 0.0
-    p._filth_sick_t = 0.0
-    p._filth_effects(5.0)                       # FILTH_MOOD_DEC_MIN
-    assert p.mood == fm * 3
-
-
 def test_obedience_lapse_bills_the_mess():
     """checkObedienceDec: each lapse dec also charges ObedienceChangeFilthScale
     x piles while the room is dirty."""

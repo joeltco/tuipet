@@ -310,7 +310,7 @@ def build_pages(pet):
         ("POWER", power),
         ("CONDITION", [
             ("Hunger", f"{pet.hunger}/4"), ("Energy", f"{int(pet.energy)}/{pet.max_energy}"),
-            ("Mood", pet.current_mood()), ("Spirit", f"{pet.enthusiasm:+d}"),
+            ("Spirit", f"{pet.enthusiasm:+d}"),
             ("Ailing", (("sick " if pet.sick else "") + (f"{pet.injuries} inj" if pet.injuries else "")).strip() or "no"),
             # the nutrition tracks (audit 2026-07-05): browsable at last -- they
             # only ever flashed by in the eat readout.  ♥ = good nutrition

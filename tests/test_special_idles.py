@@ -23,28 +23,6 @@ def test_the_standing_tantrum_plays_the_fit():
     assert p.anim == "tantrum"
 
 
-def test_personality_idles_are_gated_and_tier_keyed():
-    random.seed(1)
-    p = _pet(mood=300)                            # Happy tier, all gates pass
-    p._special_idle()
-    assert p.anim in ("play", "happy")
-    n = _pet(mood=50)                             # Neutral: canon does NOTHING
-    n._special_idle()
-    assert n.anim in ("idle", "walk")
-    u = _pet(mood=-200)                           # Unhappy: it fumes
-    u._special_idle()
-    assert u.anim in ("angry", "tantrum")
-    tired = _pet(mood=300, energy=1)              # rested gate: energy < max/3
-    tired._special_idle()
-    assert tired.anim in ("idle", "walk")
-    drilled = _pet(mood=300, strength=4)          # effort > limit/2: no fidget
-    drilled._special_idle()
-    assert drilled.anim in ("idle", "walk")
-    away = _pet(mood=300, away=True)              # no home idles on the road
-    away._special_idle()
-    assert away.anim in ("idle", "walk")
-
-
 def test_the_yawn_fx_walks_its_canon_beats():
     """yawning()'s choreography as a scripted fx (yawning/poopdance audit
     2026-07-06): idle -> the +8 yawn -> the side-sway -> the +3/+1 stretch;

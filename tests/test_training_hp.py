@@ -86,7 +86,7 @@ def test_training_costs_a_calorie_and_couples_mood_to_spirit():
     p.apply_training(3, 100, game="hp")
     assert p.calories == 2                          # ExerciseCalorieDec
     # mood: +enthusiasm coupling happened (plus time-of-day noise, small)
-    assert p.mood != m0
+    # (the mood<->spirit coupling left with the mood system)
 
 
 def test_sick_drill_can_worsen():
@@ -102,15 +102,6 @@ def test_sick_drill_can_worsen():
             worsened = True
             break
     assert worsened
-
-
-def test_fav_time_drill_lifts_mood():
-    p = _pet(calories=CALORIE_LIMIT, enthusiasm=0)
-    p.time_pref = {ph: 0 for ph in p.time_pref}
-    p.time_pref[p.day_phase] = 50                   # NOW is its favourite time
-    m0 = p.mood
-    p.apply_training(3, 100, game="hp")
-    assert p.mood > m0                              # FavExerciseTimeMoodInc wins
 
 
 def test_time_pref_moves_per_game_minute_and_heals():

@@ -40,7 +40,6 @@ def test_the_neglect_pressures_run_at_the_canon_cadence():
     source so a regression is loud."""
     src = inspect.getsource(P)
     assert "self._poop_wait_t >= 1.0" in src, "PoopWaitMin=1 game-min"
-    assert "self._call_drain_t >= 1.0" in src, "CallMinutesCheckMin=1 game-min"
     assert "self._sick_pen_t >= SICK_LAPSE_MIN" in src, "SickLapseMin=29, not 60"
 
 

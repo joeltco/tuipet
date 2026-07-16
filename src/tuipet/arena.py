@@ -963,11 +963,11 @@ class Screen(Static):
             c.overlay += _blit(uf, PET_BASE_X + c.xshift + SPRITE_W, grid.TOP)
 
     def _fxk_spit(self, pet, fx, step, c):
-        # DVPet refuse(): pose 4 (9 while Depressed) held the whole beat while the
-        # head SHAKES via mirror flips T/F/T/F at 0/6/12/18 (_refuse on each flip,
-        # wired in start_fx); ends at 24.  No food drops -- the meal never appears.
-        sprite = 9 if pet.current_mood() == "Depressed" else 4
-        c.rows = self._pose_rows_idx(pet, sprite)
+        # DVPet refuse(): pose 4 held the whole beat while the head SHAKES via
+        # mirror flips T/F/T/F at 0/6/12/18 (_refuse on each flip, wired in
+        # start_fx); ends at 24.  No food drops -- the meal never appears.
+        # (the Depressed pose-9 variant left with the mood system)
+        c.rows = self._pose_rows_idx(pet, 4)
 
     def _fxk_evolve(self, pet, fx, step, c):
         # DVPet evolveAnim(): the room plunges DARK (lightsOff, fully opaque -- the

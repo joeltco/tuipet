@@ -199,7 +199,6 @@ class Stats(Static):
             f"Hunger  {hearts(pet.hunger)}",
             f"Effort  {hearts(pet.strength)}",
             f"Energy  {bar(pet.energy_pct(), 12, T.ENERGY)}",
-            f"Mood    {bar(pet.mood_pct(), 12, T.MOOD)}",
             div,
             f"Power   [{T.POS}]●{pet.vaccine}[/] [{T.ENERGY}]■{pet.data_power}[/] [{T.MOOD}]▲{pet.virus}[/]"
             f" [{T.ACCENT}]◆{getattr(pet, 'dp', 0)}[/]",
@@ -271,9 +270,9 @@ class TuiPetApp(App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("CLEAR SKIES FOREVER: the weather and temperature systems "
-                 "are gone - no more storms, thermostats or cold snaps. "
-                 "Your mon minds the clock now, not the sky.")
+    WHATS_NEW = ("NO MORE MOODS: the mood meter is gone - no sulking, no "
+                 "depression, no mood swings. Your mon is unhappy only when "
+                 "it's actually unwell, and care is what fixes it.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and

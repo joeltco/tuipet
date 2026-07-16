@@ -917,8 +917,7 @@ def _offline(pet, elapsed):
     mins = elapsed / 60.0
     # DVPet has no passive energy decay; just re-clamp to the (per-pet) range.
     pet.energy = _clamp(pet.energy, -pet.max_energy, pet.max_energy)
-    mood_drop = min(50, mins * 2)
-    pet.mood = _clamp(pet.mood - mood_drop, -300, 300)
+    # (the offline mood drop left with the mood system; BASIC VPET 2026-07-16)
     drop = min(pet.hunger, int(mins // 5))
     pet.hunger -= drop
     starved = mins > 10 and pet.hunger == 0
@@ -942,8 +941,6 @@ def _offline(pet, elapsed):
         parts.append("got hungrier")
     if poops:
         parts.append(f"{poops} poop{'s' if poops > 1 else ''} piled up")
-    if mood_drop >= 20:
-        parts.append("mood slipped")
     name = getattr(pet, "name", "") or "your pet"
     if not parts:
         return f"Welcome back! ({away} away) {name} missed you."

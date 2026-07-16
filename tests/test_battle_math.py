@@ -89,17 +89,6 @@ def test_pvp_cards_ship_the_real_sick_state():
     assert battle_mod.battle_card(_pet())["sick"] is False
 
 
-# --- the disposition shade + loss bookkeeping ---------------------------------------
-
-def test_the_disposition_factor_shades_a_plain_win(monkeypatch):
-    _quiet(monkeypatch)
-    monkeypatch.setattr(random, "randint", lambda a, b: 1)     # fixed bits purse
-    sour = _pet(disposition=-1, mood=0)
-    sour.record_battle(True, None, free_style=True)            # Free: no orders bonus
-    # +10 - (-5 x -1)... the factor ADDS -5 x disposition = +5 for a sour pet,
-    # then the mood setter's own nudge (+disposition = -1)
-    assert sour.mood == 0 + 10 + 5 - 1
-
 def test_a_loss_marks_the_day_and_counts_the_exercise(monkeypatch):
     _quiet(monkeypatch)
     p = _pet()

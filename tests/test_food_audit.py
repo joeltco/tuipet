@@ -44,27 +44,6 @@ def test_geriatric_stomach_shrinks_to_the_floor():
     assert MIN_STOMACH_CAPACITY <= shrunk <= full - 8   # canon max dec ~9
 
 
-def test_fullness_modifier_divides_by_the_species_stomach():
-    """A glutton one heart over full: modifier = 1 - 1/capacity (10 for the
-    placeholder), not the old flat 1 - 1/4."""
-    p = _pet(glutton=1, mood=0)
-    p.hunger = 5
-    msg = p.feed(food={"name": "T", "hunger": 1, "mood": 40})
-    assert "Fed" in msg
-    assert p.mood == 36                        # ceil(40 x 0.9); flat-4 gave 30
-
-
-def test_full_pet_still_enjoys_a_strength_food():
-    """Canon feed(): the neutral taste mood gates on hunger < capacity (the
-    real stomach), so a 4-heart-full pet fed a protein still gets +foodMood.
-    The old flat gate (hunger < 4) denied it."""
-    from tuipet.pet import FOOD_MOOD
-    p = _pet(mood=0)
-    p.hunger = 4
-    p._eat_food("Fish")
-    assert p.mood == FOOD_MOOD
-
-
 def test_every_meal_bumps_the_bowel_gauge():
     """applyFood: bmGauge += bmLapseInc + ceil(BMGauge x modifier) -- even a
     zero-BM food advances the clock by one lapse-worth."""

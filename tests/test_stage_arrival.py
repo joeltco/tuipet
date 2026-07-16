@@ -19,7 +19,7 @@ def test_a_hatchling_is_born_trusting_grumpy_and_hungry():
     assert p.advance_hatch(0.1)                    # the egg hatches
     assert p.stage == "Fresh"
     assert p.obedience == FRESH_OBEDIENCE == 75    # born trusting
-    assert p.mood == FRESH_MOOD == -10             # ...and grumpy
+    # (the grumpy birth mood left with the mood system)
     assert p.hunger == 0 and p.strength == 0       # born hungry, no effort yet
     assert p.energy == p.max_energy                # full of beans
     assert (p.nutr_protein, p.nutr_mineral, p.nutr_vitamin) == (6, 6, 6)

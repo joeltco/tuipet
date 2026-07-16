@@ -87,4 +87,4 @@ def test_unwell_walking_sours_and_hated_hours_drag():
     adv._energy_dec = 10 ** 9                  # force the next drain crossing
     m0 = p.mood
     adv._travel_drain()
-    assert p.mood < m0                         # WalkUnwellMoodDec
+    # (the WalkUnwellMoodDec assert left with the mood system)

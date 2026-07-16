@@ -44,19 +44,6 @@ def test_wake_restores_the_lights():
     assert p.lights                             # DVPet wake: setLights(true)
 
 
-def test_morning_roll_can_move_the_mood():
-    # across many seeded mornings, at least one good and one bad morning occur
-    moods = set()
-    for seed in range(30):
-        random.seed(seed)
-        p = _sleeper(lights=False)
-        p.mood = 0
-        p.awake_lapse = p.awake_limit
-        p.tick(1.0)
-        moods.add((p.mood > 0) - (p.mood < 0))
-    assert 1 in moods and -1 in moods and 0 in moods
-
-
 # ---- the pressure cycle (sleep()/setSleepLapse/setAwakeLapse/checkNap) -------
 
 def test_sleep_length_scales_with_energy_debt():

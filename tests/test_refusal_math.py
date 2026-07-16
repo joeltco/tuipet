@@ -67,20 +67,6 @@ def test_items_refuse_by_boredom_not_hunger():
     assert r1 == r2
 
 
-def test_compliant_pet_takes_items_weakly():
-    """A compliant pet cannot refuse an item but takes it at 0.1 strength --
-    the Hedonism toy's +300 mood lands as +30 (end-to-end through use_item)."""
-    willing = _pet(compliance=False, mood=0)
-    willing.add_item("i:1")
-    willing.use_item("i:1")
-    grudging = _pet(compliance=True, mood=0)
-    grudging.add_item("i:1")
-    grudging.use_item("i:1")
-    assert grudging.mood < willing.mood
-    assert grudging.mood <= willing.mood * 0.2 + 20   # ~0.1x, allowing personality shading
-    assert not grudging.compliance                     # check_compliant spent the one-shot
-
-
 def test_unpraised_window_expires_with_a_sulk():
     p = _pet(mood=0, obedience=100)
     p._open_praise()

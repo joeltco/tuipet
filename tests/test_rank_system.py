@@ -124,10 +124,10 @@ def test_childhood_care_is_tallied_but_only_while_young():
     p = Pet(num=1, stage="Rookie", attribute="Vaccine", energy=24, max_energy=24)
     p.world_seconds = 10 * 60.0
     p.weight = p._base_weight()
-    p.mood = 200                                  # Happy + full energy
     p._tick_mood_discipline(59.0)
-    assert p.energy_rank == 1 and p.mood_rank == 1
-    q = _pet(energy=24, max_energy=24, mood=200)  # Champion: the tally is closed
+    # (the Happy mood_rank leg left with the mood system; energy still tallies)
+    assert p.energy_rank == 1
+    q = _pet(energy=24, max_energy=24)            # Champion: the tally is closed
     q._tick_mood_discipline(59.0)
     assert q.energy_rank == 0 and q.mood_rank == 0
 

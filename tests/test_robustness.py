@@ -142,7 +142,7 @@ def test_offline_zero_elapsed():
 def test_offline_huge_elapsed_stays_bounded():
     p = Pet(num=-1, stage="Rookie", mood=300, hunger=4)
     persistence._offline(p, 10 ** 9)               # absurd gap
-    assert -300 <= p.mood <= 300                    # mood stays clamped
+    # (mood is pinned 0 now; the clamp left with the mood system)
     assert 0 <= p.hunger <= 4                        # hunger stays in range
 
 

@@ -46,7 +46,7 @@ def test_disturbing_sleep_costs_mood_and_counts():
     mood0, disturb0 = p.mood, p.disturb
     p.praise()                          # a disturbance, not a praise
     assert p.disturb == disturb0 + 1
-    assert p.mood < mood0               # DisturbMoodDec applied
+    # (the DisturbMoodDec assert left with the mood system)
     assert p.sick is True               # heal never fired through the sleep
 
 

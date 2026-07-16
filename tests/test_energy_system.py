@@ -51,7 +51,7 @@ def test_the_x_program_bills_its_full_canon_price(monkeypatch):
     assert p.strength == 0                                     # 4 - 13 floors
     # the -300 mood DELTA (300 -> 0), then the spirit crashing into its -10
     # boundary bills MaxEnthusiasmMoodPenalty on top
-    assert p.mood == -10 and p.enthusiasm == -10
+    assert p.enthusiasm == -10   # (the mood delta left with the mood system)
 
 def test_a_digimental_drains_the_new_forms_ceiling(monkeypatch):
     from tuipet import pet as pet_mod

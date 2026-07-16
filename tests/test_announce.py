@@ -152,31 +152,6 @@ def test_the_lights_call_is_the_one_asleep_alarm():
     assert not p.needs_attention()
 
 
-def test_a_standing_call_drains_mood_on_the_window_cadence():
-    """checkCallMinutes (sleep-screens audit 2026-07-06): while a call begs,
-    mood pays CallMoodDec per window-min -- canon's -10 by the 10-game-min
-    mistake mark; a lit sleeper's lightsCall drains asleep too."""
-    from tuipet.pet import Pet, CALL_MOOD_DEC
-    p = Pet(num=100, stage="Champion", attribute="Vaccine", obedience=140)
-    p.world_seconds = 10 * 60.0
-    p.hunger = 0                                 # the hunger call stands
-    m0 = p.mood
-    for _ in range(10):
-        p._call_mood_drain(60.0)                 # ten window-minutes
-    assert p.mood == m0 - 10 * CALL_MOOD_DEC
-    q = Pet(num=100, stage="Champion", attribute="Vaccine", obedience=140)
-    q.world_seconds = 10 * 60.0
-    q.hunger = 4
-    q.asleep, q.lights = True, True              # lightsCall: drains asleep
-    m0 = q.mood
-    q._call_mood_drain(60.0)
-    assert q.mood == m0 - CALL_MOOD_DEC
-    q.lights = False
-    m0 = q.mood
-    q._call_mood_drain(600.0)
-    assert q.mood == m0                          # dark: no call, no drain
-
-
 def test_frailty_warning_announces_before_the_elder_death():
     """Joel 2026-07-13 (MetalGreymon died of frailty with 8 unseen mistakes):
     an Ultimate/Mega at 3+ care mistakes warns in the message box, counting

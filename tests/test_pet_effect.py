@@ -29,8 +29,8 @@ def test_effect_decrements_and_gains():
 
     pet._tick_effect(60)
     assert pet.effect_t == eff["duration"] - 60, "duration should count down by dt"
-    if eff["mood"][0] > 0:
-        assert pet.mood > 0, "a positive mood rate should raise mood at the 60-tick cadence"
+    # (the effect's mood rate left with the mood system; the countdown above
+    # is the surviving observable)
 
 
 def test_effect_expires():
