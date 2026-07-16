@@ -141,42 +141,68 @@ class TrainingPanel:
         out.append_text(menu.footer("SPACE strike   ESC back"))
         return out
 
+    def _wall_overlay(self, m):
+        """The standing target wall.  Wall_1 stands through the whole volley;
+        only a MEGA break crumbles it to Wall_2 (source TRAINING_SHOOT rule).
+        The old code read width/sprite off the OUTER {"Wall_1","Wall_2"} dict
+        and silently drew NO target at all (audit 2026-07-15)."""
+        which = "Wall_2" if m == "break" and self.grade == "mega" else "Wall_1"
+        e = data.load_battle_fx().get("wall", {}).get(which)
+        if not isinstance(e, dict):
+            return []
+        w, h = int(e.get("width", 8)), int(e.get("height", 8))
+        px = e.get("sprite") or []
+        if len(px) < w * h:
+            return []
+        rows_ = ["".join("1" if px[y * w + x] else "0" for x in range(w))
+                 for y in range(h)]
+        return strikefx.blit(rows_, grid.X0, grid.FLOOR - h)
+
     def _shoot_text(self):
-        """The pet fires LEFT at a standing target -- the same volley rails
-        as battle (windup, orb flight, explosion / whiff)."""
+        """The pet fires LEFT at the target wall on battle's ALTERNATING
+        views -- there is no room for pet + flight + wall in the 32px window,
+        which is exactly why the source cuts to a wall-only view from frame 3
+        (audit 2026-07-15: a single view flew the orb backwards, the wall
+        never drew, and the hit flash strobed OVER the pet):
+        windup/fire_out -> the pet's view, orb exits the window;
+        fire_in        -> the WALL's view, orb crosses and lands on its face;
+        hit            -> the flash owns the whole screen (like battle);
+        break/miss     -> the verdict tableau: pet beside the wall (a MEGA
+                          leaves it crumbled -- source keeps Wall_1 otherwise)."""
         from .battlescreen import EXPLODE, _full
         fr = self.timeline[min(self.i, len(self.timeline) - 1)]
         m = fr.get("m")
+        tint = data.mon_ink(self.pet.num)
+        if m == "hit":
+            return menu.paint([], self.pet.background(), rows=ROWS, cols=COLS,
+                              overlay=_full(EXPLODE[fr.get("f", 0)]),
+                              clip=grid.WINDOW)
+        if m == "fire_in":                       # the wall's view: no pet
+            orb = data.attack_orb(self.pet.num, self.pet.attribute, 0,
+                                  frame_i=self.frame_i)
+            overlay = self._wall_overlay(m)
+            overlay += strikefx.orb_flight(orb, True, m, fr.get("prog", 0),
+                                           grid.X0 + 8, fr.get("double"),
+                                           color=tint)
+            return menu.paint([], self.pet.background(), rows=ROWS, cols=COLS,
+                              overlay=overlay, clip=grid.WINDOW)
         if m == "windup":
             pose = (TURN, TURN, IDLE, IDLE, ATTACK, ATTACK)[min(fr.get("wu", 0), 5)]
-        elif m in ("fire_out", "fire_in"):
+        elif m == "fire_out":
             pose = ATTACK
-        elif m in ("hit", "break"):
+        elif m == "break":
             pose = CHEER_A if (self.frame_i // 3) % 2 else CHEER_B
         elif m == "miss":
             pose = WEARY
         else:
             pose = IDLE
         place, mouth = strikefx.place_combatant(True, self._rows(pose))
-        overlay = []
-        target = data.load_battle_fx().get("wall")
-        trows = None
-        if isinstance(target, dict):
-            w, h = int(target.get("width", 8)), int(target.get("height", 8))
-            px = target.get("sprite") or []
-            if len(px) >= w * h:
-                trows = ["".join("1" if px[y * w + x] else "0"
-                                 for x in range(w)) for y in range(h)]
-        if trows and m != "break":                    # the target stands...
-            overlay += strikefx.blit(trows, grid.X0,
-                                     grid.FLOOR - len(trows))
-        if m == "hit":                                # ...and blows on a hit
-            overlay += _full(EXPLODE[fr.get("f", 0)])
-        if m in ("fire_out", "fire_in"):
+        overlay = [] if m in ("windup", "fire_out") else self._wall_overlay(m)
+        if m == "fire_out":                      # the pet's view: orb exits
             orb = data.attack_orb(self.pet.num, self.pet.attribute, 0,
                                   frame_i=self.frame_i)
             overlay += strikefx.orb_flight(orb, True, m, fr.get("prog", 0),
-                                           mouth, fr.get("double"))
+                                           mouth, fr.get("double"), color=tint)
         return menu.paint(place, self.pet.background(), rows=ROWS, cols=COLS,
                           overlay=overlay, clip=grid.WINDOW)
 

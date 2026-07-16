@@ -7,23 +7,30 @@ left transparent (terminal default) unless an LCD background colour is supplied.
 from __future__ import annotations
 from rich.text import Text
 
-def blit(bm, ox, oy):
-    """Sprite bitmap -> (x,y) pixel list for render_scene/_screen's overlay.
+def blit(bm, ox, oy, color=None):
+    """Sprite bitmap -> (x,y[,color]) pixel list for render_scene/_screen's
+    overlay.  `color` tints the lit pixels (the per-mon projectile tint,
+    audit 2026-07-15); default stays the LCD ink.
     Tolerates None/blank frames: 28 foods ship a blank 'eaten away' last frame
     that extracts as None -- the eat fx crashed on their final bite (2026-07-04).
     Lived in three verbatim copies (app/training/strikefx; refactor 2026-07-05)."""
     if not bm:
         return []
+    if color:
+        return [(ox + x, oy + y, color) for y, row in enumerate(bm)
+                for x, c in enumerate(row) if c == "1"]
     return [(ox + x, oy + y) for y, row in enumerate(bm)
             for x, c in enumerate(row) if c == "1"]
 
 
 def _stamp(buf, pts, cols, px_h, clip=None):
-    """Overlay pixels -> the buffer, clipped to the LCD (and to `clip`)."""
+    """Overlay pixels -> the buffer, clipped to the LCD (and to `clip`).
+    A 3-tuple pixel carries its own colour; a bare (x,y) stamps ink."""
     cx0, cx1, cy0, cy1 = clip if clip else (0, cols, 0, px_h)
-    for ox_, oy_ in pts:
+    for p in pts:
+        ox_, oy_ = p[0], p[1]
         if cy0 <= oy_ < cy1 and cx0 <= ox_ < cx1 and 0 <= oy_ < px_h and 0 <= ox_ < cols:
-            buf[oy_][ox_] = 1
+            buf[oy_][ox_] = p[2] if len(p) > 2 else 1
 
 
 def _paint_cells(buf, cols, rows, on, bg, bgimg):

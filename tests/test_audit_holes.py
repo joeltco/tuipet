@@ -290,6 +290,52 @@ def test_call_latch_is_per_meter():
     assert p.care_mistakes == 2                              # it rang and cost too
 
 
+def test_training_target_wall_renders_and_only_mega_crumbles_it():
+    """The wall never drew (the code read width/sprite off the OUTER
+    {"Wall_1","Wall_2"} dict); a MEGA break shows Wall_2, a normal break
+    keeps Wall_1 standing (source TRAINING_SHOOT rule)."""
+    from tuipet import training
+    pan = training.TrainingPanel(_adult())
+    pan.grade = "mega"
+    standing = pan._wall_overlay("fire_in")
+    assert standing, "the target wall must render"
+    mega_break = pan._wall_overlay("break")
+    pan.grade = "normal"
+    normal_break = pan._wall_overlay("break")
+    assert normal_break == standing                # normal: wall stays intact
+    assert mega_break != standing                  # mega: Wall_2, crumbled
+
+
+def test_hit_flash_is_the_canon_blast_not_the_skull():
+    """EXPLODE strobed the OLD game's skull-and-crossbones KO marker while
+    the clone's real Hit_1 blast sat unused in battle_fx."""
+    from tuipet import battlescreen as bs, data
+    e = data.load_battle_fx()["hit"]["Hit_1"]
+    w = e["width"]
+    rows = ["".join("1" if e["sprite"][y * w + x] else "0" for x in range(w))
+            for y in range(e["height"])]
+    assert bs.EXPLODE[0] == rows                   # the blast
+    assert all(set(r) == {"0"} for r in bs.EXPLODE[1])   # the blink's off beat
+
+
+def test_orbs_fly_tinted_with_the_mons_own_hue():
+    from tuipet import data, strikefx
+    tint = data.mon_ink(29)
+    assert isinstance(tint, str) and tint.startswith("#")
+    pts = strikefx.orb_flight(["11", "11"], True, "fire_out", 0.5, 20,
+                              color=tint)
+    assert pts and all(len(p) == 3 and p[2] == tint for p in pts)
+
+
+def test_new_egg_starts_on_its_assigned_scene():
+    """The carousel previews every egg on its hue-picked scene, but the
+    scene never reached the pet -- fresh eggs opened on default greenhills
+    and generation-N eggs kept the DEAD pet's scene (Joel 2026-07-15)."""
+    from tuipet import egg as egg_mod
+    for i in range(egg_mod.count()):
+        assert Pet.new_egg(egg_type=i).bg_current == egg_mod.scene_for(i)
+
+
 def test_pre_402_egg_save_migrates_its_index():
     """_migrate_v401_save had ZERO callers: a mid-incubation .40x save
     hatched the wrong species after an update."""
@@ -298,6 +344,54 @@ def test_pre_402_egg_save_migrates_its_index():
     save.pop("egg_order_v")                    # a pre-.402 save has no stamp
     pet, _ = persistence.pet_from_save(dict(save), catch_up=False)
     assert pet.egg_type == 17                  # 5 through the v401 table
+
+
+# ---- the UNDER-CONSTRUCTION gate (Joel 2026-07-15) ---------------------------
+
+def test_construction_gate_locks_game_keeps_lobby():
+    from tuipet.app import _hud_plain
+    from tuipet import titlescreen
+    pan = titlescreen.GatePanel()
+    assert len(_hud_plain(pan.strip())) <= 40
+    pan.text()                                     # smoke: renders empty
+    for k in ("1", "2", "3", "enter"):             # wrong PIN bounces
+        out = pan.key(k)
+        pan.anim(); pan.text()
+    assert out is None and pan.buf == ""
+    assert pan.key("l") == ("done", "lobby")       # the open door
+    for k in "2974":
+        pan.key(k)
+    assert pan.key("enter") == ("done", "play")    # the right PIN
+    assert pan.key("escape") == ("done", None)     # and the way back out
+
+
+def test_gate_wiring_stands_between_title_and_game():
+    import inspect
+    from tuipet.app import TuiPetApp
+    src = inspect.getsource(TuiPetApp._after_title)
+    assert "construction_ok" in src and "GatePanel" in src
+    src = inspect.getsource(TuiPetApp._after_gate_lobby)
+    assert "GatePanel" in src                      # lobby exit lands on the GATE
+
+
+def test_locked_title_opens_the_gate_and_unlocked_skips_it():
+    from tuipet import persistence
+    from tuipet.app import TuiPetApp
+    s = persistence.load_settings()
+    s.pop("construction_ok", None)                 # see the lock (sandbox pre-unlocks)
+    persistence.save_settings(s)
+    app = TuiPetApp.__new__(TuiPetApp)             # no Textual mount needed
+    calls = []
+    app._post_title = lambda: calls.append("post")
+    app._open_mode = lambda panel, cb=None: calls.append(type(panel).__name__)
+    app._after_title()
+    assert calls == ["GatePanel"]                  # locked: the gate, not the game
+    app._after_gate("play")                        # the right PIN unlocks + sticks
+    assert calls[-1] == "post"
+    assert persistence.load_settings().get("construction_ok") is True
+    calls.clear()
+    app._after_title()
+    assert calls == ["post"]                       # unlocked: straight to the game
 
 
 # ---- PvP: the card clamp derives stage from the species record --------------

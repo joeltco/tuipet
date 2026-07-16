@@ -170,8 +170,13 @@ class Pet:
         from . import egg as egg_mod
         if egg_type is None:
             egg_type = random.randrange(egg_mod.count())
+        # the egg STARTS on its assigned scene -- the same hue-picked bucket
+        # the carousel previews it on (all bucket scenes are free catalog
+        # picks); scene_for only ever reached the preview before (Joel
+        # 2026-07-15: "eggs arent starting on their assigned backgrounds")
         return cls(num=-1, name="", stage="Egg", attribute="Free",
                    egg_type=egg_type, generation=generation,
+                   bg_current=egg_mod.scene_for(egg_type),
                    wall_time=time.time())
 
     def advance_hatch(self, dt):

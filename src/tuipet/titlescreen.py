@@ -97,3 +97,61 @@ class TitlePanel:
             if cy != PXH // 2 - 1:
                 t.append("\n")
         return t
+
+
+class GatePanel:
+    """The UNDER-CONSTRUCTION lock (Joel 2026-07-15): the game itself needs
+    the PIN while the rebuild settles; the LOBBY stays open to everyone.
+    Digits type the PIN, ENTER submits, L skips straight to the lobby.
+    The right PIN sticks (settings construction_ok) so it's a one-time ask
+    per device."""
+
+    def __init__(self):
+        self.buf = ""
+        self.msg = ""
+        self.frame_i = 0
+
+    def anim(self):
+        self.frame_i += 1
+
+    def strip(self):
+        from . import menu
+        return menu.hints(("0-9", "PIN"), ("ENTER", "go"), ("L", "lobby"))
+
+    def key(self, k):
+        if k == "escape":
+            return ("done", None)               # back out to the title
+        if k == "l":
+            return ("done", "lobby")
+        if k in ("enter", "space"):
+            if self.buf == GATE_PIN:
+                return ("done", "play")
+            self.buf = ""
+            self.msg = "That's not it."
+            return None
+        if k == "backspace":
+            self.buf = self.buf[:-1]
+            self.msg = ""
+        elif len(k) == 1 and k.isdigit() and len(self.buf) < 8:
+            self.buf += k
+            self.msg = ""
+        return None
+
+    def text(self):
+        from . import menu
+        out = menu.header("UNDER CONSTRUCTION", "")
+        out.append_text(menu.blanks(1))
+        out.append_text(menu.note("tuipet is being worked on — the game"))
+        out.append_text(menu.note("is PIN-locked; the lobby stays open"))
+        out.append_text(menu.blanks(1))
+        dots = "●" * len(self.buf) + ("_" if (self.frame_i // 4) % 2 else " ")
+        out.append_text(menu.row(f"  PIN: {dots}"))
+        if self.msg:
+            out.append_text(menu.note(self.msg))
+        else:
+            out.append_text(menu.blanks(1))
+        out.append_text(menu.footer("ENTER go   L lobby   ESC back"))
+        return out
+
+
+GATE_PIN = "2974"

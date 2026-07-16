@@ -282,11 +282,19 @@ def test_erase_flows_into_the_egg_carousel_not_an_auto_egg():
             seen["title"] = isinstance(app.mode, titlescreen.TitlePanel)
             await pilot.press("enter")                  # past the title
             await pilot.pause()
+            # erase is a FACTORY RESET: settings went with it, so the
+            # under-construction gate stands again (Joel 2026-07-15) --
+            # the PIN walks through it to the fresh start
+            seen["gate"] = isinstance(app.mode, titlescreen.GatePanel)
+            for k in ("2", "9", "7", "4", "enter"):
+                await pilot.press(k)
+                await pilot.pause()
             seen["carousel"] = isinstance(app.mode, eggselectscreen.EggSelectPanel)
         return seen
 
     seen = asyncio.run(go())
     assert seen["title"], "erase must return to the title"
+    assert seen["gate"], "a factory reset re-locks the construction gate"
     assert seen["carousel"], "a fresh start must open the egg carousel, never auto-pick"
 
 

@@ -23,7 +23,27 @@ PXH = ROWS * 2                                   # 24 px tall
 with open(os.path.join(os.path.dirname(__file__), "data", "battle_overlays.json")) as _f:
     _OV = json.load(_f)
 BANNER = _OV["battle_banner"]
-EXPLODE = _OV["hit_explosion"]
+
+
+def _hit_explode():
+    """The hit flash: the source's Hit_1 blast blinked against blank (its
+    renderer strobes it at 100ms).  The skull-and-crossbones that strobed
+    here before was the OLD game's KO marker riding along in
+    battle_overlays.json (v0.2-era) while the clone's real blast sat unused
+    in battle_fx["hit"] (Joel 2026-07-15: training audit)."""
+    e = data.load_battle_fx().get("hit", {}).get("Hit_1")
+    if not isinstance(e, dict):
+        return _OV["hit_explosion"]              # cross-version fallback
+    w, h = int(e.get("width", 32)), int(e.get("height", 16))
+    px = e.get("sprite") or []
+    if len(px) < w * h:
+        return _OV["hit_explosion"]
+    rows = ["".join("1" if px[y * w + x] else "0" for x in range(w))
+            for y in range(h)]
+    return [rows, ["0" * w] * h]                 # frame 1 = the blink's OFF beat
+
+
+EXPLODE = _hit_explode()
 
 # poses (tuipet the classic V-pet 11-frame layout)
 IDLE, TURN, ATTACK, CHEER_A, CHEER_B, COLLAPSE, WEARY = 0, 1, 6, 5, 7, 10, 9
@@ -352,16 +372,15 @@ class BattlePanel:
         return strikefx.place_combatant(view != "foe", rows, xshift)
 
     def _orb_overlay(self, fr, mouth):
-        """The attacker's projectile flown by the shared strikefx."""
+        """The attacker's projectile flown by the shared strikefx, tinted
+        with the firing mon's own hue (audit 2026-07-15)."""
         atk = fr["atk"]
-        if atk == "pet":
-            orb = data.attack_orb(self.pet.num, self.pet_attr, 0,
-                                  frame_i=self.frame_i)
-        else:
-            orb = data.attack_orb(self.enemy.get("num", 0), self.foe_attr, 0,
-                                  frame_i=self.frame_i)
+        num = self.pet.num if atk == "pet" else self.enemy.get("num", 0)
+        attr = self.pet_attr if atk == "pet" else self.foe_attr
+        orb = data.attack_orb(num, attr, 0, frame_i=self.frame_i)
         return strikefx.orb_flight(orb, atk == "pet", fr["m"], fr["prog"],
-                                   mouth, fr.get("double"))
+                                   mouth, fr.get("double"),
+                                   color=data.mon_ink(num))
 
     def _render_scene_frame(self, fr):
         b = self.battle

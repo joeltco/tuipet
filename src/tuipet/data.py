@@ -469,6 +469,33 @@ def attack_orb(num, attribute, power, frame_i=0):
     return tiers[t] or next((x for x in tiers if x), None)
 
 
+@lru_cache(maxsize=256)
+def mon_ink(num):
+    """The mon's dominant saturated sprite colour -- the projectile tint.
+    The source LCD recolours the whole screen per digimon; the clone's
+    full-colour scenes tint the 1-bit attack shapes the same way instead
+    (audit 2026-07-15: volleys stamped in scene ink read as dark blobs).
+    None when the sprite is all outline/grey -- callers fall back to ink."""
+    import colorsys
+    rec = record_for(num)
+    if rec.get("_placeholder"):
+        return None
+    weights = {}
+    for row in (rec.get("frames") or [[]])[0] or []:
+        for c in row:
+            if isinstance(c, str) and c.startswith("#") and len(c) >= 7:
+                weights[c] = weights.get(c, 0) + 1
+    best, score = None, -1
+    for c, n in weights.items():
+        r, g, b = (int(c[i:i + 2], 16) / 255 for i in (1, 3, 5))
+        _h, l, s = colorsys.rgb_to_hls(r, g, b)
+        if s < 0.25 or not 0.15 < l < 0.85:
+            continue                 # outline/greys/white shine don't vote
+        if n > score:
+            best, score = c, n
+    return best
+
+
 @lru_cache(maxsize=64)
 def _attack_shape(n):
     """Projectile bitmap n (1-50) -> 1-bit rows, or None.  The sheet keys

@@ -3,6 +3,10 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.4.5 — 2026-07-15
+
+TRAINING, PROPERLY: the target wall actually stands (a MEGA strike crumbles it, a normal hit leaves it standing — and it turns out it had never rendered once), attacks fly in your mon's own colour instead of unreadable ink blobs, the volley cuts between views like battle so nothing draws over the pet, and the hit flash is the real blast (the skull that used to strobe there was the old game's KO marker). Eggs now hatch onto their own assigned scenes. And while the rebuild settles, the game is PIN-locked UNDER CONSTRUCTION — the lobby stays open to everyone.
+
 ## 0.4.4 — 2026-07-15
 
 THE AUDIT PASS: refused items are no longer eaten (your Rev.Floppy is safe), every species truly fires its own attack shape, the monthly ladder finally counts wins, disturbing a sleeper now costs a care mistake (the alarm clock wakes free), hatched and revived pets no longer fast-forward days in a blink, and adventure mode retired. Under the hood: lobby crash fixes, PvP/raid anti-forge clamps, a shop that only sells what works (Spr.Carrot now works), per-meter hunger/strength calls, server hardening, and a big dead-code cleanup.

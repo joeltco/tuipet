@@ -252,11 +252,17 @@ def test_battle_banner_and_flash_fill_the_window_not_the_lcd():
     explosion, and the battle scene renders under the window clip."""
     from tuipet import battlescreen as bs
     for key in ("battle_banner", "hit_explosion"):
-        for frame in bs.BANNER if key == "battle_banner" else bs.EXPLODE:
+        frames = bs.BANNER if key == "battle_banner" else bs.EXPLODE
+        lit = 0
+        for frame in frames:
             pts = bs._full(frame)
-            assert pts and all(
+            lit += bool(pts)
+            # a blank frame is legal: the hit flash strobes Hit_1 against
+            # BLANK, per the source renderer (training audit 2026-07-15)
+            assert all(
                 grid.X0 <= x < grid.X1 and grid.TOP <= y < grid.FLOOR
                 for x, y in pts), f"{key} ink must live inside the window"
+        assert lit, f"{key} never draws at all"
 
 
 def test_battle_dodge_leap_never_exits_upward():

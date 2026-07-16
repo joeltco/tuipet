@@ -61,14 +61,17 @@ def place_combatant(faces_left, rows, xshift=0, mirror=True):
     return [(rows, x, mirror)], x + hi + 1
 
 
-def orb_flight(orb, fires_left, m, prog, mouth, double=False):
+def orb_flight(orb, fires_left, m, prog, mouth, double=False, color=None):
     """The attacker's real orb, flying between the mouth and the grid edge.
     m 'fire_out' -> leaves the mouth, off the near grid edge.
     m 'fire_in'  -> arrives from the far grid edge, stops at the defender's edge (mouth).
     On a dodge the orb is NOT drawn (canon dodge() hides the attack sprite --
     the defender's unhurt hop + the absent explosion ARE the miss; a 16px
     defender in the 16px band can never visibly clear a passing orb).
-    fires_left mirrors battle's `atk == 'pet'` (player fires left, enemy fires right)."""
+    fires_left mirrors battle's `atk == 'pet'` (player fires left, enemy fires right).
+    `color` tints the shape with the firing mon's own hue (the source LCD
+    recolours per digimon; ink-stamped shapes read as dark blobs on the
+    clone's colour scenes -- audit 2026-07-15)."""
     if not orb:
         return []
     w, h = len(orb[0]), len(orb)
@@ -79,8 +82,8 @@ def orb_flight(orb, fires_left, m, prog, mouth, double=False):
     src = orb if fires_left else [r[::-1] for r in orb]
     x = int(x0 + (x1 - x0) * prog)
     if double:                                            # doubleAttack: BOTH orbs, top & bottom of band
-        return blit(src, x, BAND_TOP) + blit(src, x, BAND_BOT - h)
-    return blit(src, x, BAND_TOP + (16 - h) // 2)
+        return blit(src, x, BAND_TOP, color) + blit(src, x, BAND_BOT - h, color)
+    return blit(src, x, BAND_TOP + (16 - h) // 2, color)
 
 
 def build_volley(success, strong):

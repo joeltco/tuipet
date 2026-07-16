@@ -246,12 +246,12 @@ class TuiPetApp(App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("THE AUDIT PASS: refused items are no longer eaten (your "
-                 "Rev.Floppy is safe), every species truly fires its own "
-                 "attack shape, the monthly ladder finally counts wins, "
-                 "disturbing a sleeper now costs a care mistake (the alarm "
-                 "clock wakes free), hatched and revived pets no longer "
-                 "fast-forward days in a blink, and adventure mode retired.")
+    WHATS_NEW = ("TRAINING, PROPERLY: the target wall actually stands (a "
+                 "MEGA strike crumbles it), attacks fly in your mon's own "
+                 "colour, the hit flash is the real blast, eggs hatch onto "
+                 "their own scenes -- and while the rebuild settles, the "
+                 "game is PIN-locked under construction (the lobby stays "
+                 "open to everyone).")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07)
@@ -445,7 +445,32 @@ class TuiPetApp(App):
         # first launch, before the player had seen a single pet (sweep
         # 2026-07-14).  The account only matters online -- the lobby asks for
         # one when it's first opened, and sync starts on the next autosave.
+        # The UNDER-CONSTRUCTION gate (Joel 2026-07-15) stands here instead,
+        # for now: the game needs the PIN, the lobby stays open to everyone.
+        if not persistence.load_settings().get("construction_ok"):
+            self._open_mode(titlescreen.GatePanel(), self._after_gate)
+            return
         self._post_title()
+
+    def _after_gate(self, result):
+        if result == "play":                    # right PIN: sticks per device
+            s = persistence.load_settings()
+            s["construction_ok"] = True
+            persistence.save_settings(s)
+            self._post_title()
+        elif result == "lobby":                 # the open door past the lock
+            name, pw = persistence.get_account()
+            self._open_mode(lobbyscreen.LobbyPanel(self.pet, self._lobby_connect,
+                            name=name, pw=pw),
+                            self._after_gate_lobby)
+        else:                                   # ESC: back out to the title
+            self._open_mode(titlescreen.TitlePanel(), self._after_title)
+
+    def _after_gate_lobby(self, result=None):
+        # tear the connection down like any lobby exit, then land back on the
+        # GATE -- never the home screen (that would walk around the lock)
+        self._after_lobby(result)
+        self._open_mode(titlescreen.GatePanel(), self._after_gate)
 
     def _post_title(self):
         if self._new_game:
@@ -1388,11 +1413,11 @@ class TuiPetApp(App):
             return
         keep = self.pet
         self.pet = Pet.new_egg(generation=gen, egg_type=egg_type)
-        # possessions persist across generations
+        # possessions persist across generations -- but NOT bg_current: the
+        # new egg opens on ITS OWN scene (the gallery keeps every owned pick)
         self.pet.name = ""
         self.pet.bits = keep.bits
         self.pet.inventory = dict(keep.inventory)
-        self.pet.bg_current = keep.bg_current
         self.pet.bg_owned = list(keep.bg_owned)
         self.pet.album = list(keep.album)
         persistence.save(self.pet)
