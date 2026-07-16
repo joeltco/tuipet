@@ -246,12 +246,11 @@ class TuiPetApp(App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("TRAINING, PROPERLY: the target wall actually stands (a "
-                 "MEGA strike crumbles it), attacks fly in your mon's own "
-                 "colour, the hit flash is the real blast, eggs hatch onto "
-                 "their own scenes -- and while the rebuild settles, the "
-                 "game is PIN-locked under construction (the lobby stays "
-                 "open to everyone).")
+    WHATS_NEW = ("THE CANON TIMING BAR: training's meter now lives on the "
+                 "LCD itself, drawn exactly like the original -- the HIT "
+                 "label in its tiny pixel font, the outlined track, tick "
+                 "marks bracketing your care-widened mega window, and the "
+                 "sweeping marker block.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07)

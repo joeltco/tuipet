@@ -3,6 +3,10 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.4.6 — 2026-07-15
+
+THE CANON TIMING BAR: training's meter now lives on the LCD itself, drawn exactly like the original — the HIT label in its tiny pixel font, the outlined track, tick marks bracketing your care-widened mega window, and the sweeping marker block. (Also: the test suite no longer minds what time of day it runs.)
+
 ## 0.4.5 — 2026-07-15
 
 TRAINING, PROPERLY: the target wall actually stands (a MEGA strike crumbles it, a normal hit leaves it standing — and it turns out it had never rendered once), attacks fly in your mon's own colour instead of unreadable ink blobs, the volley cuts between views like battle so nothing draws over the pet, and the hit flash is the real blast (the skull that used to strobe there was the old game's KO marker). Eggs now hatch onto their own assigned scenes. And while the rebuild settles, the game is PIN-locked UNDER CONSTRUCTION — the lobby stays open to everyone.

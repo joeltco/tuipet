@@ -43,6 +43,10 @@ def _hungry_rookie():
     p.hunger = 0          # hungry
     p.call_on = True      # the empty-meter call is ringing
     p.energy = 24         # awake, not exhausted
+    p._hour = lambda: 12  # noon, pinned: run at 21:00+ and the Child's REAL
+    #                       bedtime opened mid-test -- lights-on-asleep is a
+    #                       second legit care need that nags forever (the
+    #                       suite was time-of-day flaky; caught 2026-07-15)
     return p
 
 
@@ -116,8 +120,9 @@ def test_alarm_beeps_on_onset_then_nags_every_90s():
             nagged = rings.count("alarm")
             pet.hunger = 4                          # fed
             for _ in range(120):
-                app.on_tick()
-            done = rings.count("alarm")
+                pet.strength = 4                    # keep the OTHER meter topped:
+                app.on_tick()                       # per-meter calls (audit
+            done = rings.count("alarm")             # 2026-07-15) rightly ring for it
             return onset, mid, nagged, done
 
     onset, mid, nagged, done = asyncio.run(go())
