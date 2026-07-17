@@ -54,159 +54,14 @@ CHAT_MAX = 400          # server MAX_CHAT: the local input buffer stops here too
 # CHARACTERS, so a line like "🔥🔥 emoji 日本語" overflowed its 25-column budget and
 # shoved the roster divider `│` right off its column -- the layout visibly tore.
 # Every width decision in this file goes through cell_len/set_cell_size/chop_cells.
-def _fit(s, w):
-    """Pad or truncate to exactly `w` DISPLAY CELLS (never characters)."""
-    return set_cell_size(str(s), w)
+# the split (modularize 2026-07-17): the login card, the chat surface and
+# the bout engine live in their own modules; the old names stay importable
+from .accountscreen import AccountPanel  # noqa: F401
+from .lobbybout import BoutMixin, _clamp_card  # noqa: F401
+from .lobbychat import ChatMixin, _fit, _wrap, _tail_cells, _hpbar  # noqa: F401
 
 
-def _wrap(s, w):
-    """Word-wrap `s` into lines of <= w CELLS, hard-splitting any over-long word.
-    A wide glyph is never split down the middle -- chop_cells keeps it whole."""
-    out, line = [], ""
-    for word in str(s).split(" "):
-        while cell_len(word) > w:
-            if line:
-                out.append(line); line = ""
-            chunks = chop_cells(word, w)
-            out.append(chunks[0])
-            word = "".join(chunks[1:])
-        if not line:
-            line = word
-        elif cell_len(line) + 1 + cell_len(word) <= w:
-            line += " " + word
-        else:
-            out.append(line); line = word
-    if line:
-        out.append(line)
-    return out or [""]
-
-
-def _tail_cells(s, w):
-    """The LAST `w` cells of `s` -- the input line scrolls as you type, and a
-    character-based slice let a typed emoji run past the frame."""
-    while cell_len(s) > w:
-        s = s[1:]
-    return s
-
-
-def _hpbar(hp, mx, w=10):
-    fill = max(0, min(w, round(hp / mx * w))) if mx else 0
-    return "█" * fill + "─" * (w - fill)
-
-
-class AccountPanel:
-    """Name + password entry. Tab/Up/Down switch fields; Enter on the password
-    confirms when both are filled. Returns ("done", (name, password)), or
-    ("done", None) on Esc. Used at first launch and to recover a failed login."""
-
-    def __init__(self, name="", note="Name + password — the name is yours."):
-        self.name_buf = name
-        self.pw_buf = ""
-        self.field = "pw" if name else "name"
-        self.note = note
-        self.sfx = None
-        self.captures_text = True       # typing a name/password — never treat q as quit
-
-    def strip(self):
-        return menu.hints(("TAB", "switch"), ("ENTER", "go"), ("ESC", "back"))
-
-    def key(self, k):
-        if k == "escape":
-            return ("done", None)
-        if k in ("tab", "up", "down"):
-            self.field = "pw" if self.field == "name" else "name"
-            return None
-        if k == "enter":
-            if self.field == "name":
-                self.field = "pw"
-                return None
-            name = self.name_buf.strip()[:24]
-            if name and self.pw_buf:
-                return ("done", (name, self.pw_buf))
-            return None
-        attr = "name_buf" if self.field == "name" else "pw_buf"
-        cur = getattr(self, attr)
-        if k == "backspace":
-            cur = cur[:-1]
-        elif k == "space":
-            cur = cur + " "
-        elif len(k) == 1 and k.isprintable():
-            cur = cur + k
-        setattr(self, attr, cur[:64])
-        return None
-
-    def text(self):
-        t = Text()
-        t.append("  TUIPET ACCOUNT\n\n", style=INK_B)
-        # tail-window long input so a line never overruns the 40-col LCD
-        # (the box CLIPS overflow live -- lobby audit 2026-07-04)
-        nm = (self.name_buf + ("_" if self.field == "name" else ""))[-26:]
-        pw = ("*" * len(self.pw_buf) + ("_" if self.field == "pw" else ""))[-26:]
-        t.append("  name:     ", style=DIM)
-        t.append(nm + "\n", style=INK_B if self.field == "name" else INK)
-        t.append("  password: ", style=DIM)
-        t.append(pw + "\n\n", style=INK_B if self.field == "pw" else INK)
-        t.append(f"  {self.note[:38]}\n", style=DIM)
-        t.append("  TAB switch   ENTER go   ESC back", style=DIM)
-        return t
-
-
-# PvP wire bounds (multiplayer audit 2026-07-13): the relay is peer-to-peer,
-# so an opponent card is UNTRUSTED input.  HP ceiling = the oldest trained cap
-# (pet.HEALTH_CAP_LADDER tops out at 30); power ceiling sits above the
-# strongest enemy in the shipped data (virus 650) with headroom for a fully
-# trained Mega.  A peer claiming more is clamped, not kicked.
-MAX_PVP_HP = 30
-MAX_PVP_POWER = 999
-
-
-def _clamp_card(card):
-    """Bound an UNTRUSTED battle card to what the game can actually produce.
-    Module-level because seeded PvP feeds BOTH engines identically-clamped
-    cards -- including one's own, clamped exactly as the peer clamps it."""
-    def _n(v, d=0, lo=0, hi=999):
-        if not isinstance(v, (int, float)) or isinstance(v, bool):
-            v = d
-        return max(lo, min(int(v), hi))
-    card = dict(card)
-    card["strength_max"] = _n(card.get("strength_max"), 4, 1, 9)
-    card["strength"] = _n(card.get("strength"), 4, 0, card["strength_max"])
-    card["hunger_max"] = _n(card.get("hunger_max"), 4, 1, 9)
-    card["hunger"] = _n(card.get("hunger"), 4, 0, card["hunger_max"])
-    card["energy_max"] = _n(card.get("energy_max"), 5, 1, 2000)
-    card["energy"] = _n(card.get("energy"), 0, 0, card["energy_max"])
-    card["weight"] = _n(card.get("weight"), 10, 1, 999)
-    card["base_weight"] = _n(card.get("base_weight"), 10, 1, 999)
-    card["trainings_cur"] = _n(card.get("trainings_cur"), 0, 0, 999)
-    card["trainings_total"] = _n(card.get("trainings_total"), 0, 0, 9999)
-    card["battles"] = _n(card.get("battles"), 0, 0, 10 ** 6)
-    card["wins"] = _n(card.get("wins"), 0, 0, card["battles"])
-    if card.get("hit_type") not in ("mega", "normal", "miss"):
-        card["hit_type"] = "miss"
-    card["num"] = _n(card.get("num"), 0, 0, 10 ** 6)
-    # stage/attribute come from the SPECIES RECORD of the claimed num, never
-    # the wire: a forged {"stage": "Special"} ranked 14.5 and auto-won every
-    # online bout while the sprite still showed a Child (audit 2026-07-15).
-    # Unknown nums (a newer build's dex) keep a KNOWN claimed stage so the
-    # two engines stay symmetric; garbage stages already ranked as "Child".
-    rec = data.record_for(card["num"])
-    if not rec.get("_placeholder"):
-        card["stage"] = rec.get("stage", "Child")
-        card["attribute"] = rec.get("attribute", "Free")
-    else:
-        if card.get("stage") not in battle._RANK:
-            card["stage"] = "Child"
-        elif card.get("stage") == "Special":
-            # every REAL Special is in the local dex and record-derived
-            # above; an unknown num claiming the 14.5 rank is the forge
-            card["stage"] = "Ultimate-Super Ultimate"
-        if card.get("attribute") not in ("Vaccine", "Virus", "Data", "Free"):
-            card["attribute"] = "Free"
-    card["hp"] = 5
-    return card
-
-
-class LobbyPanel:
+class LobbyPanel(BoutMixin, ChatMixin):
     def __init__(self, pet, on_connect, name=None, pw=""):
         self.pet = pet
         self.on_connect = on_connect
@@ -260,7 +115,6 @@ class LobbyPanel:
             self.phase = "login"
             self.entry = AccountPanel(name=name or "")
             self.status = "Log in to the lobby."
-
     def _connect(self, name, pw):
         self._last_name = name
         self.client = self.on_connect(name, pw, self._card())
@@ -291,7 +145,6 @@ class LobbyPanel:
         if worn:
             card["title"] = worn
         return card
-
     def _session_gate(self, kind):
         """PURE session eligibility for a REMOTE invite.  can_battle is a
         player-poke: its guard DISTURBS a sleeper (wake + mood hit + disturb
@@ -308,14 +161,12 @@ class LobbyPanel:
         if p.stage in ("Egg", "Fresh"):
             return "Too young to battle."
         return None
-
     def _others(self):
         """Everyone else ONLINE, lobby regulars first, then the playing
         ghosts (presence 2026-07-05: the roster carries the whole server)."""
         others = self.state.others() if self.state else []
         return sorted(others, key=lambda p: (not p.get("live", True),
                                              str(p.get("name", "")).lower()))
-
     def _pet_of(self, pid):
         """'Agumon · Champion' for a roster id ('' when unknown); a worn honor
         title trails as '· ★Bit Baron' (the marquee absorbs the length)."""
@@ -521,7 +372,6 @@ class LobbyPanel:
             self.client.relay(pid, {"kind": "battle", "t": "card",
                                     "card": card, "commit": commit})
             self.status = f"Battle vs {pname}…"
-
     def _return_to_lobby(self, status=""):
         """End the current session and drop back into the chat lobby (not out of it).
         Any pet change (a fusion) is pushed so the roster shows your new form."""
@@ -542,7 +392,6 @@ class LobbyPanel:
         self.status = status or "Back in the lobby."
         if had_partner and self.client:
             self.client.update_pet(self._card())
-
     def _on_relay(self, m):
         if not self.partner or m.get("from_id") != self.partner[0]:
             return
@@ -613,161 +462,6 @@ class LobbyPanel:
                     self._maybe_build()
 
     # ---- battle ----------------------------------------------------------
-    def _battle_begin(self, opp_card, commit=None):
-        """Cards crossed: clamp the untrusted card, verify the proto, and
-        reveal my nonce.  The fight itself is SEEDED SYMMETRIC: both clients
-        run the identical precomputed engine on identically-clamped cards, so
-        no result ever crosses the wire."""
-        opp_card = _clamp_card(opp_card)
-        self.opp_card = opp_card
-        try:
-            proto_ok = int(opp_card.get("proto") or 0) >= 3 and bool(commit)
-        except (TypeError, ValueError):
-            proto_ok = False
-        if not proto_ok:
-            self.bt_outcome = "Battle void — version mismatch."
-            self.bt_payload = ("battle_msg", "Battle void — the other side "
-                              "runs an older tuipet.")
-            self.bphase = "over"
-            if self.partner:
-                self.client.relay(self.partner[0], {"kind": "battle", "abort": True})
-            return
-        self.bt_peer_commit = commit
-        self.my_max = self.my_hp = 5
-        self.opp_max = self.opp_hp = 5
-        self.bphase = "wait"
-        # the nonce reveal is its own message now (no picks in this world)
-        self.client.relay(self.partner[0],
-                          {"kind": "battle", "t": "pick", "nonce": self.bt_nonce})
-        self._maybe_build()
-
-    def _maybe_build(self):
-        """Both nonces in -> verify the commit, seed the shared engine, and
-        precompute the whole 5-round fight (both sides independently)."""
-        if self.battle is not None or self.bt_peer_nonce is None \
-                or self.opp_card is None:
-            return
-        pn = self.bt_peer_nonce
-        if hashlib.sha256(str(pn).encode()).hexdigest() != (self.bt_peer_commit or ""):
-            self.bt_outcome = "Battle void — bad checksum."
-            self.bt_payload = ("battle_msg", "Battle void — bad checksum.")
-            self.bphase = "over"
-            if self.partner:
-                self.client.relay(self.partner[0], {"kind": "battle", "abort": True})
-            return
-        hn, gn = (self.bt_nonce, pn) if self.is_host else (pn, self.bt_nonce)
-        seed = int.from_bytes(hashlib.sha256(f"{hn}:{gn}".encode()).digest()[:8], "big")
-        host_card, guest_card = ((self.bt_my_card, self.opp_card) if self.is_host
-                                 else (self.opp_card, self.bt_my_card))
-        rng = random.Random(seed).random
-        host = battle.Side.of_card(dict(host_card))
-        guest = battle.Side.of_card(dict(guest_card))
-        seq, hhp, ghp = battle.generate(host, guest, rounds=battle.ROUNDS_ONLINE,
-                                        rng=rng)
-        self.battle = {"seq": seq, "host_hp": 5, "guest_hp": 5, "i": 0}
-        self.bphase = "fight"
-        self._play_next_round()
-
-    def _play_next_round(self):
-        """Advance the precomputed fight one round and stage its volley."""
-        b = self.battle
-        if b is None:
-            return
-        if b["i"] >= len(b["seq"]) or b["host_hp"] <= 0 or b["guest_hp"] <= 0:
-            self._battle_over()
-            return
-        h_hit, h_dmg, g_hit, g_dmg = b["seq"][b["i"]]
-        b["i"] += 1
-        if h_hit:
-            b["guest_hp"] = max(0, b["guest_hp"] - h_dmg)
-        if g_hit:
-            b["host_hp"] = max(0, b["host_hp"] - g_dmg)
-        if self.is_host:
-            dealt = h_dmg if h_hit else 0
-            taken = g_dmg if g_hit else 0
-        else:
-            dealt = g_dmg if g_hit else 0
-            taken = h_dmg if h_hit else 0
-        my0, opp0 = self.my_hp, self.opp_hp
-        self.my_hp = b["host_hp"] if self.is_host else b["guest_hp"]
-        self.opp_hp = b["guest_hp"] if self.is_host else b["host_hp"]
-        self._stage_volley(my0, opp0, dealt, taken)
-        self.bt_log = f"you \u2192 {dealt} dmg\n  them \u2192 {taken} dmg"
-
-    def _battle_over(self):
-        b = self.battle
-        my_hp = b["host_hp"] if self.is_host else b["guest_hp"]
-        opp_hp = b["guest_hp"] if self.is_host else b["host_hp"]
-        won = opp_hp <= 0 and my_hp > 0
-        draw = (my_hp > 0 and opp_hp > 0 and my_hp == opp_hp) \
-            or (my_hp <= 0 and opp_hp <= 0)
-        if not won and not draw and my_hp > opp_hp:
-            won = True                     # rounds ran dry: higher HP stands
-        self.bphase = "over"
-        self.sfx = "attack"
-        if self.partner:                   # a finished bout is a connection
-            persistence.record_connection(self.partner[1])
-        # the ladder needs BOTH stories: the winner's claim only credits when
-        # the LOSER's agreeing report lands too, keyed by ACCOUNT name -- the
-        # old code filed only on won (nobody ever confirmed) and led with the
-        # PET name (which the server doesn't know), so the monthly ladder
-        # never credited a single win (audit 2026-07-15)
-        opp_nm = (self.partner or (0, ""))[1] or (self.opp_card or {}).get("name")
-        report = getattr(self.client, "ladder_report", None)
-        if report and opp_nm and not draw:
-            report(won, opp_nm)
-        from .pet import online_reward
-        purse = online_reward(won, draw=draw)
-        self.pet.record_battle(won and not draw, online=True)
-        self.pet.add_bits(purse)
-        self.bt_outcome = ("DRAW" if draw
-                           else "\u2605 YOU WIN! \u2605" if won else "YOU LOSE\u2026")
-        self.bt_reward = f"+{purse}b" + ("  (weekend bonus!)" if purse not in (100, 150, 200) else "")
-        self.bt_payload = ("battle_msg", self.bt_outcome)
-
-    def _stage_volley(self, my0, opp0, dealt, taken):
-        """A presentation-only BattlePanel replays the round: my pet RIGHT,
-        the opponent's LEFT, orbs/hit/dodge from the engine's numbers."""
-        try:
-            card = dict(self.opp_card or {})
-            if not card.get("num"):
-                return
-            show = battlescreen.BattlePanel(self.pet, enemy=card)
-            show.foe_attr = card.get("attribute", "Free")
-            show.timeline = battlescreen.round_timeline(my0, opp0, dealt, taken, True)
-            show.i = 0
-            show.phase = "anim"
-            show._last_m = None
-            self.bshow = show
-        except Exception:
-            self.bshow = None               # presentation must never break the bout
-
-    def _key_battle(self, k):
-        if self.bshow is not None:              # the round is replaying
-            if k in ("space", "enter", "escape"):
-                self.bshow = None               # skip to the between-rounds card
-            return None
-        if self.bphase == "over":
-            if k in ("enter", "space", "escape"):
-                self._return_to_lobby(self.bt_outcome)
-            return None
-        if self.bphase == "fight":
-            if k in ("space", "enter"):
-                self._play_next_round()
-            elif k == "escape":
-                self._forfeit()
-            return None
-        if self.bphase in ("card", "wait") and k == "escape":
-            self._forfeit()
-        return None
-
-    def _forfeit(self):
-        """Leave a battle in progress -> tell the opponent, then back to the lobby."""
-        if self.partner:
-            self.client.relay(self.partner[0], {"kind": "battle", "abort": True})
-        self._return_to_lobby("You forfeited.")
-
-    # ---- input -----------------------------------------------------------
     def key(self, k):
         if self.phase == "login":
             return self._key_login(k)
@@ -780,12 +474,10 @@ class LobbyPanel:
         if self.phase == "ladder":
             return self._key_ladder(k)
         return self._key_lobby(k)
-
     def _key_ladder(self, k):
         if k in ("escape", "tab", "q", "g"):
             self.phase = "lobby"
         return None
-
     def _text_ladder(self):
         """The monthly rankings: online PvP wins, top ten, your rank, and the
         days left in the season.  Data is the server's ladder message; a page
@@ -816,7 +508,6 @@ class LobbyPanel:
         d = int(lad.get("days_left") or 0)
         t.append(f"  season resets in {d} day{'s' if d != 1 else ''}\n", style=DIM)
         return t
-
     def _key_login(self, k):
         r = self.entry.key(k)
         if r is not None and r[0] == "done":
@@ -824,125 +515,6 @@ class LobbyPanel:
                 return ("done", None)            # Esc -> leave the lobby
             self._connect(*r[1])
         return None
-
-    def _commit_fusion(self):
-        """BOTH confirms are in (or the peer is legacy): perform the fusion --
-        the same path as offline jogress.  A COMPANION lends its data and
-        stays itself (canon one-sided doors; jogress audit 2026-07-17)."""
-        if self.partner:                # swapping DNA is the strongest connection
-            persistence.record_connection(self.partner[1])
-        if (self.jresult or {}).get("companion"):
-            self.sfx = "jogress"
-            self._return_to_lobby("It lent its power to the fusion.")
-            return
-        msg = jogress.fuse(self.pet, self.jresult["num"])
-        # (the jogress contagion left with the sickness system (BASIC VPET 2026-07-17))
-        self.sfx = "jogress"
-        self._return_to_lobby(msg)
-
-    def _key_jogress(self, k):
-        if self.jphase == "result":
-            if self.jshow is not None and self.jshow.phase == "fusing":
-                self.jshow.key(k)                       # any key skips the converge to the reveal
-                return None
-            if not self.j_peer_two_phase:
-                # LEGACY peer (pre-v0.2.350): its client commits on any key with
-                # no decline -- mirror it, or a mixed-version pair goes one-sided
-                if k in ("enter", "space", "escape"):
-                    self._commit_fusion()
-                return None
-            # two-phase commit (consent audit 2026-07-07): the fusion is
-            # PERMANENT -- both players must say yes at the result screen
-            if k in ("enter", "space") and not self.j_confirmed:
-                self.j_confirmed = True
-                self.client.relay(self.partner[0], {"kind": "jogress", "t": "confirm"})
-                if self.j_partner_confirmed:
-                    self._commit_fusion()
-                else:
-                    self.status = "Waiting for the partner…"
-            elif k == "escape":
-                # a real DECLINE: nobody fuses, both sides told
-                self.client.relay(self.partner[0], {"kind": "jogress", "t": "decline"})
-                self._return_to_lobby("Fusion declined — no one fused.")
-            return None
-        if self.jphase == "failed":
-            if k in ("enter", "space", "escape"):
-                self._return_to_lobby(self.fail_reason or "No resonance.")
-            return None
-        if k == "escape":                                  # cancel mid-fusion -> free the partner
-            if self.partner:
-                self.client.relay(self.partner[0], {"kind": "jogress", "abort": True})
-            self._return_to_lobby("Fusion cancelled.")
-        return None
-
-    def _save_dms(self):
-        """Persist the DM threads + unread badges (leaving must not lose them)."""
-        if self.state is not None:
-            from . import persistence
-            persistence.save_dms(self.state.dms, self.state.unread)
-
-    def _key_dm(self, k):
-        """Private thread with one peer: type + Enter sends, Esc back to the lobby."""
-        if k == "escape":
-            self.phase, self.buf = "lobby", ""
-            self._save_dms()                   # the conversation stays
-            return None
-        if k == "enter":
-            if self.buf.strip() and self.dm_peer and self.client:
-                self.client.pm(self.dm_peer[0], self.buf.strip(), self.dm_peer[1])
-            self.buf = ""
-            return None
-        return self._edit(k)
-
-    def _text_dm(self):
-        s = self.state
-        peer = self.dm_peer[1] if self.dm_peer else "?"
-        me = (s.me_name or "you") if s else "you"
-        w = CHATW + ROSTW + 1
-        t = Text()
-        t.append(_fit(f"✉ {peer}", w) + "\n", style=INK_B)
-        rows = []
-        for frm, tx in (s.dms.get(peer, []) if s else []):
-            mine = frm == me
-            who = "you" if mine else frm
-            parts = _wrap(f"{who}: {tx}", w - 1)
-            rows.append((parts[0], DIM if mine else INK_B))
-            rows.extend((" " + ln, DIM if mine else INK_B) for ln in parts[1:])
-        body = BODY + 1
-        view = rows[-body:]
-        view = [("", INK)] * (body - len(view)) + view
-        if not rows:
-            view[body // 2] = ("— no messages yet — say hi —"[:w], DIM)
-        for ln, sty in view:
-            t.append(_fit(ln, w) + "\n", style=sty)
-        label = f"→{peer[:8]}: "
-        fw = w - len(label)
-        shown = self.buf if len(self.buf) < fw else self.buf[-(fw - 1):]
-        caret = "_" if (getattr(self, "_mq", 0) // 5) % 2 == 0 else " "
-        t.append(label, style=INK_B)
-        t.append(_fit(shown + caret, fw) + "\n", style=INK)
-        t.append(_fit("ENTER send · ESC back to lobby", w), style=DIM)
-        return t
-
-    def _slash(self, txt):
-        """Chat slash commands (password rooms 2026-07-14): `/room <phrase>`
-        joins the private room for that phrase — everyone typing the same
-        phrase meets there (the phrase IS the password, DSprite-style 🔒);
-        `/leave` returns to the main lobby.  Anything else prints the help."""
-        cmd, _, arg = txt.partition(" ")
-        cmd, arg = cmd.lower(), arg.strip()
-        if cmd == "/room" and arg:
-            self.client.room(arg)
-            self.status = "Joining the room…"
-        elif cmd == "/room":
-            room = getattr(self.state, "room", None) if self.state else None
-            self.status = f"room: {room} · /leave exits" if room else "main lobby · /room <phrase>"
-        elif cmd in ("/leave", "/lobby"):
-            self.client.room("")
-            self.status = "Back to the main lobby…"
-        else:
-            self.status = "Commands: /room <phrase> · /leave"
-
     def _key_lobby(self, k):
         if self.invite_prompt is not None:
             inv = self.invite_prompt
@@ -1070,7 +642,6 @@ class LobbyPanel:
                     self.action_for = (p["id"], p["name"], p.get("live", True))
             return None
         return self._edit(k)
-
     def _edit(self, k):
         if k == "backspace":
             self.buf = self.buf[:-1]
@@ -1111,7 +682,6 @@ class LobbyPanel:
             w = "misbehaving!"
         return (f"[{theme.NEG}]⚠ {(p.name or '?')[:10]} {w}[/] [dim]·[/] "
                 + menu.hints(("ESC", "home")))
-
     def strip(self):
         """The message box under the LCD = the lobby's CONTEXT layer (hint
         overhaul 2026-07-10): session scenes keep their prompts, every other
@@ -1167,7 +737,6 @@ class LobbyPanel:
                               ("ESC", "live/leave"))
         return menu.hints(("→", "fold"), ("↑↓", "pick"),
                           ("ENTER", "act"), ("PgUp", "log"))
-
     def text(self):
         if self.phase == "login":
             return self._text_login()
@@ -1180,219 +749,5 @@ class LobbyPanel:
         if self.phase == "ladder":
             return self._text_ladder()
         return self._text_lobby()
-
     def _text_login(self):
         return self.entry.text()
-
-    def _text_jogress(self):
-        t = Text()
-        pname = self.partner[1] if self.partner else "?"
-        if self.jphase == "result":
-            if self.jshow is not None:          # the real fusion scene plays
-                return self.jshow.text()
-            me = self._card()["name"]
-            other = self.partner_species or pname
-            t.append("\n  ✦ JOGRESS ✦\n\n", style=INK_B)
-            t.append(f"  {me} + {other}\n", style=INK)
-            t.append(f"   →  {self.jresult['name']}\n\n", style=INK_B)
-            if self.j_confirmed and not self.j_partner_confirmed:
-                t.append("  waiting for the partner…", style=DIM)
-            elif self.j_peer_two_phase:
-                t.append("  [Enter] fuse    [Esc] decline", style=DIM)
-            else:
-                t.append("  [Enter] complete the fusion", style=DIM)
-        elif self.jphase == "failed":
-            t.append("\n  NO RESONANCE\n\n", style=INK_B)
-            t.append(f"  {self.fail_reason}\n\n", style=INK)
-            t.append("  [Enter] back to lobby", style=DIM)
-        else:
-            t.append("\n  FUSING…\n\n", style=INK_B)
-            # a 24-char account name ran this line to 43 > the 40-col LCD
-            # (menu-bounds audit 2026-07-07): the name field marquees instead
-            t.append(f"  syncing DNA with {marquee(pname, 21, getattr(self, '_mq', 0) // 2)}\n\n", style=INK)
-            t.append("  [Esc] cancel", style=DIM)
-        return t
-
-    def _text_battle(self):
-        if self.bshow is not None:              # the round's volley replay
-            return self.bshow.text()
-        t = Text()
-        pname = self.partner[1] if self.partner else "?"
-        if self.bphase == "card":
-            t.append("\n  BATTLE\n\n", style=INK_B)
-            t.append(f"  vs {pname}\n\n", style=INK)
-            t.append("  preparing…", style=DIM)
-            return t
-        if self.bphase == "over":
-            t.append("\n  " + self.bt_outcome + "\n\n", style=INK_B)
-            if self.bt_reward:
-                t.append(f"  {self.bt_reward}\n\n", style=INK)
-            t.append("  [Enter] back to lobby", style=DIM)
-            return t
-        me = self._card()["name"]
-        oc = self.opp_card or {}
-        t.append(f"  vs {pname[:10]}'s {str(oc.get('name', '?'))[:12]}"
-                 f" · {str(oc.get('stage', '?'))[:9]}\n\n", style=DIM)
-        t.append(f"  {_fit(me, 10)}{self.my_hp:>3}/{self.my_max:<2} [{_hpbar(self.my_hp, self.my_max)}]\n", style=INK_B)
-        t.append(f"  {_fit(pname, 10)}{self.opp_hp:>3}/{self.opp_max:<2} [{_hpbar(self.opp_hp, self.opp_max)}]\n\n", style=INK)
-        t.append(f"  {self.bt_log}\n\n" if self.bt_log else "\n\n", style=INK)
-        if self.bphase == "wait":
-            t.append("  syncing the arena…", style=DIM)
-        else:
-            t.append("  [SPACE] next volley   [ESC] forfeit", style=INK_B)
-        return t
-
-    def _chat_w(self):
-        """The chat column's width: the folded player box cedes its columns."""
-        return CHATW + ROSTW + 1 if self.rost_hidden else CHATW
-
-    def _chat_rows(self):
-        """The wrapped history as (line, style) rows, oldest first -- one
-        style per MESSAGE (chat polish 2026-07-07): your own lines dim (you
-        know what you said), PMs and lines that mention your name bright,
-        join/leave notices dim; wrap continuations hang a 1-col indent so a
-        long message reads as ONE message, not three."""
-        s = self.state
-        me = (s.me_name or "") if s else ""
-        cw = self._chat_w()
-        rows = []
-        for nm, tx in (s.chat if s else []):
-            if not nm:                                     # join/leave notice
-                sty, parts = DIM, _wrap(f"· {tx}", cw - 1)
-            elif str(nm) == ANNOUNCE:
-                # the dev's line -- a new release, a heads-up -- used to render in
-                # plain INK as "📢: text", i.e. indistinguishable from chatter and
-                # reading like a PLAYER NAMED 📢 was talking.  It is the loudest
-                # thing in the room: bright, and no name-colon (chat polish 07-14)
-                sty, parts = INK_B, _wrap(f"{ANNOUNCE} {tx}", cw - 1)
-            else:
-                pm = str(nm).startswith("✉")
-                mine = bool(me) and (nm == me or str(nm).startswith("✉→"))
-                mention = bool(me) and me.lower() in str(tx).lower()
-                # mine first: my own echo (chat or ✉→ PM) always reads dim
-                sty = DIM if mine else (INK_B if (pm or mention) else INK)
-                parts = _wrap(f"{nm}: {tx}", cw - 1)
-            rows.append((parts[0], sty))
-            rows.extend((" " + ln, sty) for ln in parts[1:])
-        return rows
-
-    def _text_lobby(self):
-        s = self.state
-        others = self._others()
-        online = len(s.roster) if s else 0
-        me = (s.me_name if s and s.me_name else None) or "connecting…"
-        t = Text()
-        cw = self._chat_w()
-        rows = self._chat_rows()
-        self.scroll = max(0, min(self.scroll, max(0, len(rows) - BODY)))
-        # ASCII only in this column (the CELL-WIDTH LAW: rjust counts chars)
-        in_room = bool(s and getattr(s, "room", None))
-        right = (f"▲{self.scroll} back" if self.scroll
-                 else (f"{online} in room" if in_room else f"{online} on"))
-        # header: identity + the live/scroll marker (folded: no divider column)
-        # -- your OWN worn honor shows here (read locally, so it's right even
-        # before the roster syncs); a long title marquees, the chrome holds
-        worn = data.title_name(persistence.get_title_worn())
-        me_line = f"you: {me}" + (f" · ★{worn}" if worn else "")
-        mw = cw - ROSTW if self.rost_hidden else CHATW
-        mq = getattr(self, "_mq", 0) // 2
-        t.append(_fit(marquee(me_line, mw, mq), mw) if cell_len(me_line) > mw
-                 else _fit(me_line, mw), style=INK_B)        # confirm your identity
-        if not self.rost_hidden:
-            t.append("│", style=DIM)
-        t.append(right.rjust(ROSTW)[:ROSTW] + "\n", style=INK_B)
-        end = len(rows) - self.scroll
-        view = rows[max(0, end - BODY):end]
-        view = [("", INK)] * (BODY - len(view)) + view
-        if not rows:                                       # the empty room
-            hint = "— say hi, the room hears you —"
-            if cell_len(hint) > cw:                        # folded col fits it; narrow one doesn't
-                hint = "— say hi —"
-            view[BODY // 2] = (hint.center(cw), DIM)
-        sel = min(self.sel, len(others) - 1) if others else 0
-        rlo = max(0, min(sel - BODY // 2, len(others) - BODY)) if len(others) > BODY else 0
-        for i in range(BODY):
-            t.append(_fit(view[i][0], cw), style=view[i][1])
-            if self.rost_hidden:                 # the box is folded: chat owns the row
-                t.append("\n")
-                continue
-            t.append("│", style=DIM)
-            ridx = rlo + i
-            if ridx < len(others):
-                pl = others[ridx]
-                cur = ridx == sel
-                ghost = not pl.get("live", True)     # playing, not in the room
-                nm = pl["name"]
-                unread = bool(s) and nm in s.unread
-                blk = bool(s) and nm in s.blocked
-                mark = "✉" if unread else ("✕" if blk else ("·" if ghost else ""))
-                sty = SEL if cur else (INK_B if unread else (DIM if (ghost or blk) else INK))
-                # a worn honor stars the roster entry -- the room sees who's
-                # titled at a glance; an entry too long for the column
-                # MARQUEES (field-scroll doctrine) so the star is never lost.
-                # marquee is char-based; the _fit wrapper keeps wide glyphs
-                # (emoji names) inside the column per the cell-width law
-                star = " ★" if (pl.get("pet") or {}).get("title") else ""
-                pre, label = (">" if cur else " "), mark + nm + star
-                if cell_len(pre + label) > ROSTW:
-                    label = marquee(label, ROSTW - 1, getattr(self, "_mq", 0) // 2)
-                t.append(_fit(pre + label, ROSTW), style=sty)
-            elif i == 0 and not others:
-                t.append(_fit(" nobody yet", ROSTW), style=DIM)
-            else:
-                t.append(_fit("", ROSTW), style=INK)
-            t.append("\n")
-        if self.pm_to is not None:                           # the input line is a PM compose
-            label = f"✉{self.pm_to[1][:8]}: "
-        else:
-            label = "say: "
-        t.append(label, style=INK_B)
-        fw = CHATW + ROSTW - cell_len(label)
-        shown = self.buf if cell_len(self.buf) < fw else _tail_cells(self.buf, fw - 1)
-        caret = "_" if (getattr(self, "_mq", 0) // 5) % 2 == 0 else " "
-        t.append(_fit(shown + caret, fw) + "\n", style=INK)
-        # the prompt lines: the KEY HINTS are fixed chrome and must never clip
-        # off the end -- a 24-char name used to push [Y]/[N] and [Esc] out of
-        # the 38-col line entirely (lobby audit 2026-07-07); the NAME field
-        # marquees instead (the v0.2.349 field-scroll doctrine)
-        w = CHATW + ROSTW + 1
-        mq = self._mq // 2 if hasattr(self, "_mq") else 0
-        if self.invite_prompt is not None:
-            inv = self.invite_prompt
-            blurb = self._pet_of(inv.get("from_id"))
-            who = f"{inv.get('from_name', '?')} ({blurb})" if blurb else inv.get("from_name", "?")
-            tail = f" invites {inv['kind']}  [Y]/[N]"
-            t.append(_fit(marquee(who, w - len(tail), mq) + tail, w), style=INK_B)
-        elif self.action_for is not None:
-            pid, pname, plive = self.action_for
-            blurb = self._pet_of(pid)
-            who = f"{pname} ({blurb})" if blurb else pname
-            if self.state and pname in self.state.blocked:
-                acts = "[X]unblock  [ESC]"
-            elif plive:
-                acts = "[B]attle [J]og [V] DMs [X]block [ESC]"
-            else:
-                acts = "not in lobby — [P]ing [V] DMs [X]block [ESC]"
-            full = f"{who}:  {acts}"
-            # whole line scrolls when it overflows (Joel 2026-07-09), else static
-            t.append(marquee(full, w, mq) if len(full) > w else _fit(full, w), style=INK_B)
-        elif self.scroll:
-            # scrolled into the log: the line teaches its own way back
-            t.append("▲ older — PgUp/PgDn · ESC back to live"[:w], style=DIM)
-        else:
-            line = self.status
-            if self.rost_hidden and line.startswith("↑↓ pick"):
-                # the box is folded: ↑↓ drive the log now, not the roster pick
-                line = "↑↓ scroll · ← player box · Esc leave"
-            elif others and line.startswith("↑↓ pick"):
-                p = others[sel]
-                if p.get("live", True):
-                    blurb = self._pet_of(p["id"])
-                    if blurb:
-                        tail = " — Enter to act"
-                        line = marquee(f"{p['name']}: {blurb}", w - len(tail), mq) + tail
-                else:
-                    tail = " — Enter to msg"
-                    line = marquee(f"{p['name']} is playing", w - len(tail), mq) + tail
-            t.append(line[:w], style=DIM)
-        return t

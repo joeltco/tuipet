@@ -444,3 +444,25 @@ def _ride_out(pan):
     return pan.key("enter")
 
 
+
+
+def test_the_lobby_split_holds_its_boundaries():
+    """Modularize 2026-07-17 ("the lobby too"): the room (lobbyscreen), the
+    bout engine (lobbybout), the chat surface (lobbychat) and the login card
+    (accountscreen) are separate modules; the panel is the composition and
+    the old names stay importable.  The transplant lesson is pinned: exactly
+    one LobbyPanel class exists."""
+    import inspect
+    from tuipet import accountscreen, lobbybout, lobbychat, lobbyscreen
+    assert lobbyscreen.AccountPanel is accountscreen.AccountPanel
+    assert lobbyscreen._clamp_card is lobbybout._clamp_card
+    mro = lobbyscreen.LobbyPanel.__mro__
+    assert lobbybout.BoutMixin in mro and lobbychat.ChatMixin in mro
+    room = inspect.getsource(lobbyscreen)
+    assert room.count("class LobbyPanel") == 1
+    for name in ("_battle_begin", "_stage_volley", "_commit_fusion",
+                 "_chat_rows", "_slash", "_text_lobby"):
+        assert f"def {name}" not in room, f"{name} crept back into the room"
+    # the engine methods still resolve on the composed panel
+    for name in ("_battle_begin", "_commit_fusion", "_chat_rows", "_slash"):
+        assert callable(getattr(lobbyscreen.LobbyPanel, name))

@@ -163,11 +163,10 @@ class TuiPetApp(App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("A TIDIER DIGICORE: the data book's pages live in their "
-                 "own module now, and the pages tell no lies - the Nature "
-                 "row wears its true name, the Ailing row dropped a dead "
-                 "injury readout, and POWER carries what the gates really "
-                 "read: your Form, Level, and Mega count.")
+    WHATS_NEW = ("LOBBY UNDER THE HOOD: the multiplayer room, the PvP "
+                 "bout engine, the chat surface and the login card are "
+                 "separate modules now - same lobby, cleaner bones, so "
+                 "online fixes land faster and safer.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and
