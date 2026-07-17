@@ -130,3 +130,45 @@ def test_scenes_and_eggselect_still_covered():
     from tuipet.backgroundscreen import BackgroundPanel
     app = _app()
     assert "Scenes" in _card(app, BackgroundPanel(app.pet))
+
+
+def test_eat_readout_charts_only_live_systems():
+    """The feeding readout was REWRITTEN in the modularize pass (2026-07-17):
+    the old card charted protein/mineral/vitamin bars from the nutrition
+    system removed 2026-07-16 -- frozen numbers.  The live card: hunger,
+    the calorie buffer, weight, effort, satiety."""
+    from tuipet import statusbox
+    app = _app()
+    app.mode = None
+    statusbox.eat(app)
+    txt = app.stats_w.txt
+    assert "feeding" in txt and "Hunger" in txt and "Fuel" in txt
+    for dead in ("Protein", "Mineral", "Vitamin", "nourished"):
+        assert dead not in txt, dead
+
+
+def test_dna_card_bills_energy_not_dead_systems():
+    """The DNA charge bill lies no more: spirit and mood are gone; applyDNA
+    costs ENERGY (1/unit own Field, x2 off)."""
+    from tuipet import statusbox
+    from tuipet.dnascreen import DNAPanel
+    app = _app()
+    app.mode = DNAPanel(app.pet)
+    statusbox.dna(app)
+    txt = app.stats_w.txt
+    assert "energy -" in txt
+    assert "spirit" not in txt and "mood" not in txt
+
+
+def test_every_painter_lives_in_statusbox():
+    """The modularize law (Joel 2026-07-17): app.py holds only thin
+    delegates -- no card body may creep back in."""
+    import inspect, re
+    from tuipet import app as app_mod
+    src = inspect.getsource(app_mod)
+    bodies = re.findall(r"def (_status_\w+)\(self.*?\):(.*?)(?=\n    def )", src, re.S)
+    assert len(bodies) == 4                      # painter/eggselect/eat/card
+    for name, body in bodies:
+        assert "statusbox." in body, f"{name} grew a body outside statusbox"
+        assert "stats_w.update" not in body or name == "_status_card" \
+            or "statusbox" in body

@@ -1,0 +1,587 @@
+"""THE status box — every right-hand card in one module (Joel 2026-07-17:
+"MODULIZE THE STATUS BOX").
+
+One card per surface, registry-dispatched; app.py only delegates.  The rule
+of this file: **a card may only show LIVE data** — when a system leaves the
+game, its rows leave here the same day.  The move itself killed three liars:
+the feeding readout's protein/mineral/vitamin bars (the nutrition system was
+removed 2026-07-16; the macros are frozen at their 6/6/6 starter values
+forever), the DNA card's "spirit/mood" charge bill (both systems are gone —
+the real bill is ENERGY, 1/unit on your own Field, doubled off-Field), and
+the home card's Power/HP rows (moved/retired earlier the same day).
+
+Every painter takes the app (pet, mode, stats_w, sound) and writes the
+26-col card; `card()` is the shared frame.  Fit is pinned by
+tests/test_status_box*.py against CARD 26x16.
+"""
+from __future__ import annotations
+
+from . import backgrounds
+from . import data
+from . import egg as egg_mod
+from . import persistence
+from . import theme
+from .arena import bar, hearts
+
+DIV = "[dim]" + "─" * 26 + "[/]"
+
+
+# ---- shared helpers (moved from app.py; the old _names stay importable) ----
+
+def gen_subtitle(pet):
+    """'gen N', wearing the bought honor when one is worn (the honors board,
+    prestige sink 2026-07-14)."""
+    t = data.title_name(persistence.get_title_worn())
+    return f"gen {pet.generation} · {t}" if t else f"gen {pet.generation}"
+
+
+def age_compact(seconds):
+    """d/h then h/m then m/s -- raw total minutes read as noise on an older
+    pet ('4325m40s', status-box audit 2026-07-04)."""
+    s = int(max(0, seconds))
+    if s >= 86400:
+        return f"{s // 86400}d{(s % 86400) // 3600:02d}h"
+    if s >= 3600:
+        return f"{s // 3600}h{(s % 3600) // 60:02d}m"
+    return f"{s // 60}m{s % 60:02d}s"
+
+
+def care_deco(pet, word=None):
+    """The care badges shown beside the status word -- one list, shared by the
+    home Stats panel and every card that wants them.  Order is priority: the
+    lowest ones drop first on overflow."""
+    T = theme
+    if word is None:
+        word = pet.status_word()
+    deco = []
+    if pet.asleep and word != "asleep": deco.append("[blue]Zzz[/]")
+    if pet.sick and word != "sick": deco.append(f"[{T.NEG}]+sick[/]")
+    # (the +tired/+hurt/+med/+bnd/+vit badges left with the fatigue/injury
+    # and medicine-item systems; BASIC VPET 2026-07-16)
+    if pet.is_frail(): deco.append(f"[{T.NEG}]+frail![/]")
+    if pet.poop: deco.append(f"[{T.COIN}]~poop x{pet.poop}[/]")
+    if getattr(pet, "effect_id", -1) >= 0: deco.append(f"[{T.POS}]✦{pet.effect_name()}[/]")
+    return deco
+
+
+def status_line(status, deco, width=26):
+    """Assemble the status word + deco glyphs, bounded to `width` visible cols
+    so the Stats box never wraps past its 16-row height. Drops the lowest-priority
+    deco that would overflow (rare: only when asleep+sick+poop+effect pile up)."""
+    from rich.text import Text
+    used = len(status) + 3                      # the status word + 3 spaces
+    shown = []
+    for d in deco:
+        vis = len(Text.from_markup(d).plain)
+        add = vis + (2 if shown else 0)         # 2-space separator between glyphs
+        if used + add <= width:
+            shown.append(d)
+            used += add
+    return f"[b]{status}[/]   " + "  ".join(shown)
+
+
+def card(app, title, lines, subtitle=""):
+    """The shared card frame: bold title, divider, body."""
+    app.stats_w.border_subtitle = subtitle
+    body = [f"[b]{title}[/]", DIV] + lines
+    app.stats_w.update("\n".join(body))
+
+
+# ---- the HOME vitals (the Stats widget delegates here) ---------------------
+
+def home_lines(pet):
+    T = theme
+    word = pet.status_word()
+    deco = care_deco(pet, word)
+    age = age_compact(pet.age_seconds)
+    xm = f" [b {T.ACCENT}]X[/]" if pet.x_antibody != "None" else ""
+    lifepct = max(0, int((pet.lifespan - pet.age_seconds) / max(1, pet.lifespan) * 100))
+    lifecol = T.NEG if pet.is_geriatric else T.LIFE
+    return [
+        f"[b]{pet.name[:22]}[/]{xm}",
+        f"[dim]{pet.stage}{(' · ' + pet.attribute) if pet.attribute else ''}[/]",
+        DIV,
+        f"Hunger  {hearts(pet.hunger)}",
+        f"Effort  {hearts(pet.strength)}",
+        f"Energy  {bar(pet.energy_pct(), 12, T.ENERGY)}",
+        DIV,
+        # (the Power ledger lives on the DigiCore DATA page, next to the
+        # corpus gates that read it; the HP fragment was the retired classic
+        # battle's trained-HP -- home-card audit 2026-07-17)
+        f"Weight  {pet.weight}g · [{T.COIN}]{pet.bits}b[/]",
+        # care mistakes decide the evolution road (every line's CM gates)
+        # and 20 is lethal.  Stage-scoped: they reset on evolve.
+        (f"Care    [{T.POS}]spotless[/]" if pet.care_mistakes == 0 else
+         f"Care    [{T.NEG if pet.care_mistakes >= 10 else T.MOOD}]"
+         f"✗{pet.care_mistakes} this stage[/]"),
+        f"DP      [{T.ACCENT}]{'◆' * getattr(pet, 'dp', 0)}[/][dim]{'◇' * (4 - getattr(pet, 'dp', 0))}[/]",
+        f"Battle  {pet.wins}W/{pet.battles}   [{T.COIN}]★{pet.trophies}[/]",
+        f"@{backgrounds.name(pet.bg_pick or backgrounds.scene_for_egg(pet.egg_type))[:16]} [dim]{age}[/]",
+        f"Life    {bar(lifepct, 12, lifecol)}",
+        status_line(word, deco),
+    ]
+
+
+def egg_lines(pet):
+    mins, secs = divmod(int(pet.age_seconds), 60)
+    return [
+        "[b]Digitama[/] [dim]· egg[/]",
+        DIV,
+        "[dim]a new life is warming[/]",
+        "",
+        "Destined to hatch",
+        f"  [b]{egg_mod.hatch_name(pet.egg_type)}[/]",
+        DIV,
+        f"Age     {mins}m{secs:02d}s",
+        "",
+        "[dim]keep it cosy — it[/]",
+        "[dim]hatches on its own[/]",
+    ]
+
+
+def grave_lines(pet):
+    return [
+        f"[b]{pet.name[:16]}[/] [dim]· rest[/]",
+        DIV,
+        "[dim]a life remembered[/]",
+        "",
+        f"Lived    {age_compact(pet.age_seconds)}",
+        f"Reached  {pet.stage}",
+        f"Cause    {getattr(pet, 'death_cause', '') or 'unknown'}",
+        f"Attrib   {pet.attribute}",
+        f"Record   {pet.wins}W / {pet.battles}",
+        DIV,
+        "[dim]gone, but not[/]",
+        "[dim]forgotten.[/]",
+        "",
+        "[dim]press N for a new egg[/]",
+    ]
+
+
+# ---- mode cards ------------------------------------------------------------
+
+def title(app):
+    card(app, "TUIPET", ["[dim]a terminal v-pet[/]", "", "",
+                         "[dim]a creature awaits[/]", "",
+                         "[dim]press ENTER[/]", "[dim]to begin[/]"])
+
+
+def eggselect(app):
+    m = app.mode
+    # carousel = hatchable eggs ONLY (Joel 2026-07-12: no silhouettes,
+    # no goals); the badge/shown branches below stay defensive in case a
+    # locked egg ever leaks onto it.
+    idx = m.carousel[m.i] if m.carousel else 0
+    state = m.states.get(idx, "owned")
+    badge = {"temp": "[dim]this gen only[/]",
+             "locked": "[dim]sealed[/]"}.get(state, "[dim]ready[/]")
+    shown = "???" if state == "locked" else egg_mod.hatch_name(idx)
+    card(app, "New Egg", [f"[dim]{m.i + 1} of {m.n}[/]",
+                          f"[dim]{m.locked} still locked[/]", "",
+                          "Destined to hatch", f"  [b]{shown}[/]",
+                          f"  {badge}", "",
+                          "[dim]←→ browse  ENTER pick[/]"])
+
+
+def scenes(app):
+    """The browsed scene's dossier: the LCD shows the SCENE, this card
+    carries the words (picker restore 2026-07-17)."""
+    m = app.mode
+    row = m.rows[m.cursor]
+    name = m._name(row)
+    state = "picked" if row == app.pet.bg_pick else \
+        ("the default" if not row and not app.pet.bg_pick else "a preview")
+    card(app, "Scenes", [f"[dim]{m.cursor + 1} of {len(m.rows)}[/]", "",
+                         "On the wall", f"  [b]{name[:24]}[/]",
+                         f"  [dim]{state}[/]", "",
+                         (m.msg or "")[:26],
+                         "[dim]↑↓ browse  ENTER hang[/]"])
+
+
+def feed(app):
+    """FEED: the two rows' true effects beside the live gauges."""
+    p, m = app.pet, app.mode
+    row = ("Meat — hunger +1, the staple",
+           "Pill — cures sickness, effort +1,"
+           )[min(getattr(m, "cursor", 0), 1)]
+    tail = ("", "energy +7 · weight +5")[min(getattr(m, "cursor", 0), 1)]
+    card(app, "Feed", [
+        f"Hunger   {hearts(p.hunger)}",
+        f"Effort   {hearts(p.strength)}",
+        f"Weight   {p.weight}g" + ("   [b]sick[/]" if p.sick else ""),
+        "", f"[b]{row}[/]", f"[b]{tail}[/]" if tail else "",
+        "", "[dim]↑↓ pick  ENTER feed[/]"],
+        subtitle=gen_subtitle(p))
+
+
+def eat(app):
+    """The live feeding readout (plays while the eat fx runs).  REWRITTEN
+    2026-07-17: the old card charted protein/mineral/vitamin bars from the
+    REMOVED nutrition system — frozen numbers, a dead readout.  What is
+    live: the hunger hearts filling, the calorie buffer (a full one hastens
+    the poop clock), weight, and the premium-meat satiety window."""
+    from .pet import CALORIE_LIMIT
+    p, T = app.pet, theme
+    full = getattr(p, "full_until", 0.0)
+    sated = full and p.world_seconds < full
+    lines = [
+        f"[b]{p.name[:14]}[/] [dim]· feeding[/]", DIV,
+        f"Hunger   {hearts(p.hunger)}",
+        f"Fuel     {bar(min(100, max(0, p.calories) * 100 // CALORIE_LIMIT), 12, T.COIN)}",
+        DIV,
+        f"Weight   {p.weight}g",
+        f"Effort   {hearts(p.strength)}",
+        (f"[{T.POS}]sated · {age_compact(full - p.world_seconds)} left[/]"
+         if sated else "[dim]a full fuel gauge[/]"),
+        ("" if sated else "[dim]hastens the poop clock[/]"),
+    ]
+    app.stats_w.border_subtitle = gen_subtitle(p)
+    app.stats_w.update("\n".join(lines))
+
+
+def shop(app):
+    """SHOP/BAG: the selected entry's dossier."""
+    from . import shop as shop_mod
+    p, m = app.pet, app.mode
+    rows = m._rows()
+    if not rows:
+        card(app, "Shop" if m.mode == "shop" else "Bag",
+             ["", "[dim]nothing here[/]", "",
+              f"Bits   [b]{p.bits}b[/]"])
+        return
+    e = rows[min(m.cursor, len(rows) - 1)]
+    ttl = "Shop" if m.mode == "shop" else "Bag"
+    if e.get("title_id") is not None:
+        state = ("worn" if e.get("worn")
+                 else "owned" if e.get("owned") else f"{e['price']}b")
+        lines = [f"[b]{e['name'][:24]}[/]", "[dim]a tamer honor[/]",
+                 f"Status  {state}", "",
+                 f"Bits    [b]{p.bits}b[/]", "",
+                 "[dim]ENTER buys, then wears[/]"]
+    else:
+        have = p.inventory.get(e["key"], 0)
+        lines = [f"[b]{e['name'][:24]}[/]",
+                 f"[dim]{shop_mod.effect_line(e)[:26]}[/]", "",
+                 (f"Price   {e['price']}b" if m.mode == "shop"
+                  else f"Sells   {shop_mod.resell_price(e)}b"),
+                 f"Owned   x{have}",
+                 f"Bits    [b]{p.bits}b[/]", "",
+                 ("[dim]ENTER buy[/]" if m.mode == "shop"
+                  else "[dim]ENTER use  R sell[/]")]
+    card(app, ttl, lines, subtitle=gen_subtitle(p))
+
+
+def eggguide(app):
+    """DIGITAMA GUIDE: the browsed egg's dossier."""
+    m = app.mode
+    state = m.states.get(m.i, "locked")
+    name = egg_mod.hatch_name(m.i) if state != "locked" else "???"
+    live = egg_mod.unlock_progress(m.i, m.prog)
+    rule = m.rules.get(m.i)
+    keeps = ("this gen only" if rule is not None and not rule["can_perm"]
+             else "forever")
+    card(app, "Digitama", [
+        f"[dim]{m.i + 1} of {m.n}[/]", "",
+        f"Hatches  [b]{name[:16]}[/]",
+        f"State    {state}",
+        f"Keeps    {keeps}", "",
+        (f"[b]{live[:26]}[/]" if live and state == "locked" else ""),
+        "[dim]ENTER story  ↑↓ browse[/]"])
+
+
+def digicore(app):
+    """DIGICORE: which data page is up, and whose core it is."""
+    p, m = app.pet, app.mode
+    page = m.pages[min(m.i, len(m.pages) - 1)][0]
+    card(app, "DigiCore", [
+        f"[b]{p.name[:16]}[/]",
+        f"[dim]{p.stage} · {p.attribute}[/]", "",
+        f"Page   [b]{page[:18]}[/]",
+        f"[dim]{m.i + 1} of {len(m.pages)}[/]", "",
+        (m.note or "")[:26],
+        "[dim]←→ pages  SPACE core[/]"],
+        subtitle=gen_subtitle(p))
+
+
+def raid(app):
+    """RAID: the boss, the shared pool, your standing."""
+    m = app.mode
+    v = m.view or {}
+    b = m._boss()
+    if not b:
+        card(app, "Raid", ["", "[dim]calling the gate…[/]"])
+        return
+    pool, mx = int(b.get("hp", 0)), max(1, int(b.get("max_hp", 1)))
+    pct = max(0, min(100, pool * 100 // mx))
+    rank, mine = (list(v.get("you") or (0, 0)) + [0, 0])[:2]
+    standing = m._standing()
+    left = max(0, int((b.get("end" if standing else "start", 0)
+                       - v.get("now", 0))))
+    when = "%dd %dh" % (left // 86400, left % 86400 // 3600)
+    card(app, "Raid", [
+        f"[b]{b.get('name', '?')[:18]}[/]",
+        (f"Pool   {pct}%" if standing else "[dim]incoming boss[/]"),
+        (f"[dim]{when} left[/]" if standing else f"[dim]in {when}[/]"),
+        "",
+        f"You    #{rank} · {mine}",
+        f"Tries  {v.get('attempts', 0)} today",
+        ("[b]purse waiting — C[/]" if v.get("award") else ""),
+        "[dim]SPACE raid  C claim[/]"],
+        subtitle=gen_subtitle(app.pet))
+
+
+def lobby(app):
+    """LOBBY: your card and the room."""
+    m = app.mode
+    st = m.state
+    if st is None or getattr(st, "me_id", None) is None:
+        card(app, "Lobby", ["", "[dim]connecting…[/]"])
+        return
+    roster = list(getattr(st, "roster", []) or [])
+    links = persistence.get_progress().get("connections", 0)
+    card(app, "Lobby", [
+        f"[b]{(m._last_name or '?')[:18]}[/]",
+        f"[dim]{app.pet.name[:14]} rides along[/]", "",
+        f"Here   {len(roster)} tamer" + ("s" if len(roster) != 1 else ""),
+        f"Links  {links} lifetime", "",
+        "[dim]type to chat · ENTER[/]",
+        "[dim]↑↓ pick a tamer[/]"])
+
+
+def help_(app):
+    from . import update
+    try:
+        ver = update.current_version()
+    except Exception:
+        ver = "?"
+    snd = "on" if app.sound else "off"
+    card(app, "Help", [
+        f"tuipet [b]v{ver}[/]", "",
+        f"Sound  {snd}",
+        f"Gen    {app.pet.generation}", "",
+        "[dim]the guide scrolls[/]",
+        "[dim]on the display[/]", "",
+        "[dim]↑↓ scroll  ESC out[/]"])
+
+
+def options(app):
+    from . import optionsscreen as _opts
+    m = app.mode
+    row = _opts._ROWS[min(m.cursor, len(_opts._ROWS) - 1)]
+    desc = _opts._DESC.get(row, "")
+    card(app, "Options", [
+        f"[b]{_opts._LABEL.get(row, row.title())}[/]", "",
+        f"[dim]{desc[:26]}[/]",
+        f"[dim]{desc[26:52]}[/]", "",
+        (m.msg or "")[:26], "",
+        "[dim]ENTER toggles[/]"])
+
+
+def bug(app):
+    m = app.mode
+    n = len(getattr(m, "buf", ""))
+    card(app, "Bug Report", [
+        "[dim]straight to the dev[/]", "",
+        f"Typed  {n} chars", "",
+        "[dim]say what you did and[/]",
+        "[dim]what went wrong[/]", "",
+        "[dim]ENTER send  ESC out[/]"])
+
+
+def death(app):
+    p = app.pet
+    days = int(getattr(p, "age_seconds", 0) // 86400)
+    cause = getattr(p, "death_cause", "") or "old age"
+    card(app, "In Memory", [
+        f"[b]{p.name[:18]}[/]",
+        f"[dim]{p.stage} · gen {p.generation}[/]", "",
+        f"Lived  {days} day" + ("s" if days != 1 else ""),
+        f"Of     {cause[:20]}", "",
+        "[dim]its data can live on[/]",
+        "[dim]in the next egg[/]"])
+
+
+def assist(app):
+    from .pet import AUTO_CARE_VISIT_PRICE
+    p = app.pet
+    on = getattr(p, "auto_care", False)
+    fee = AUTO_CARE_VISIT_PRICE.get(p.stage, 200)
+    card(app, "Assistant", [
+        f"Helper  [b]{'hired' if on else 'off'}[/]", "",
+        f"Visit   ~{fee}b",
+        f"Bits    [b]{p.bits}b[/]", "",
+        "[dim]cleans and feeds while[/]",
+        "[dim]you are away[/]", "",
+        "[dim]ENTER hire/dismiss[/]"])
+
+
+def tournament(app):
+    p, t, T = app.pet, app.mode.tourney, theme
+    app.stats_w.border_subtitle = gen_subtitle(p)
+    if t is None:                      # cup-select phase (no bout yet)
+        card(app, "Cup", ["", "Pick a cup", "to enter."],
+             subtitle=gen_subtitle(p))
+        return
+    if t.over and t.champion:
+        lines = [f"[b]{p.name[:14]}[/] [dim]· cup[/]", DIV,
+                 f"[b]{t.name[:24]}[/]", "",
+                 f"[{T.POS}]★ CHAMPION ★[/]", "",
+                 f"Trophy   [{T.COIN}]★{p.trophies}[/]",
+                 f"Reward   [{T.COIN}]+{t.reward_bits}b[/]", DIV,
+                 "[dim]you took the cup![/]"]
+    elif t.over:
+        lines = [f"[b]{p.name[:14]}[/] [dim]· cup[/]", DIV,
+                 f"[b]{t.name[:24]}[/]", "",
+                 f"[{T.NEG}]eliminated[/]",
+                 f"[dim]in the {t.round_name}[/]", "",
+                 f"Trophy   [{T.COIN}]★{p.trophies}[/]", DIV,
+                 "[dim]train up, try again[/]"]
+    else:
+        lines = [
+            f"[b]{p.name[:14]}[/] [dim]· cup[/]", DIV,
+            f"[b]{t.name[:24]}[/]",
+            f"Match    {t.round + 1} / 3",
+            f"Trophy   [{T.COIN}]★{p.trophies}[/]",
+            DIV,
+            f"Effort   {hearts(p.strength)}",
+            f"Energy   {bar(p.energy_pct(), 11, T.ENERGY)}",
+            f"Form     {getattr(p, 'saved_hit_type', 'normal')}",
+            DIV,
+            "[dim]fight for the cup[/]",
+        ]
+    app.stats_w.update("\n".join(lines))
+
+
+def training(app):
+    """The 0.5 drill's card (2026-07-17): one timing bar, so one card --
+    the four-drill readouts left with the classic training system."""
+    p, tp, T = app.pet, app.mode, theme
+    app.stats_w.border_subtitle = gen_subtitle(p)
+    eff = hearts(p.strength)
+    energy = bar(p.energy_pct(), 11, T.ENERGY)
+    window = tp.mega_hi - tp.mega_lo + 1
+    form = getattr(p, "saved_hit_type", "normal")
+    if tp.phase == "bar":
+        lines = [f"[b]{p.name[:14]}[/] [dim]· train[/]", DIV,
+                 "[b]time the strike[/]", "",
+                 f"Window   {window}px",
+                 f"Form     {form}",
+                 f"Effort   {eff}", f"Energy   {energy}",
+                 DIV, "[dim]SPACE locks the bar[/]"]
+    else:
+        lines = [f"[b]{p.name[:14]}[/] [dim]· train[/]", DIV,
+                 "[b]the strike[/]", "",
+                 f"Grade    {tp.grade or ''}",
+                 f"Energy   {energy}", DIV, ""]
+    app.stats_w.update("\n".join(lines))
+
+
+def battle(app):
+    p, m, T = app.pet, app.mode, theme
+    b = m.battle                    # None until the timing bar locks (0.5)
+    app.stats_w.border_subtitle = gen_subtitle(p)
+    enemy = m.enemy or {}
+    tag = f" [{T.NEG}]BOSS[/]" if enemy.get("boss") else ""
+    pet_max = b.pet_max if b else 5
+    foe_max = b.enemy_max if b else 5
+    php = getattr(m, "hud_php", b.pet_hp if b else 5)
+    fhp = getattr(m, "hud_fhp", b.enemy_hp if b else 5)
+    pp = int(100 * php / pet_max) if pet_max else 0
+    fp = int(100 * fhp / foe_max) if foe_max else 0
+    lines = [
+        f"[b]{p.name[:14]}[/] [dim]· battle[/]", DIV,
+        f"vs [b]{enemy.get('name', '?')[:14]}[/]{tag}", "",
+        f"You  {bar(pp, 11, T.POS)} {php}/{pet_max}",
+        f"Foe  {bar(fp, 11, T.NEG)} {fhp}/{foe_max}",
+        DIV,
+    ]
+    if m.done_anim:
+        res = f"[{T.POS}]VICTORY![/]" if m.won else f"[{T.NEG}]DEFEAT[/]"
+        lines += [res, f"[dim]{(b.reward if b else '') or ''}"[:30] + "[/]",
+                  "", "[dim]SPACE  continue[/]"]
+    elif getattr(m, "phase", "") == "ready":
+        lines += [f"[dim]{(m.hud_note or '')[:24]}[/]", "",
+                  "[dim]SPACE  lock the bar[/]"]
+    else:
+        lines += [f"[dim]{(m.hud_note or '')[:24]}[/]", "", "[dim]SPACE  skip[/]"]
+    app.stats_w.update("\n".join(lines))
+
+
+def dna(app):
+    p, m, T = app.pet, app.mode, theme
+    app.stats_w.border_subtitle = gen_subtitle(p)
+    f = m.field
+    same = f == p.field
+    own, chg = p.dna_owned.get(f, 0), p.dna_applied.get(f, 0)
+    # the charge bill, TRUTHFULLY (modularize audit 2026-07-17): the old
+    # line billed "spirit/mood" -- both systems are gone.  applyDNA's real
+    # cost is ENERGY: 1/unit on your own Field, doubled off-Field (and the
+    # off-field sickness risk left with the sickness rebuild).
+    cost = "energy -1/ea (own Field)" if same else "energy -2/ea (off Field)"
+    from . import evolution
+    reqs = data.load_requirements()
+    dna_t = [t for t in data.load_evolutions().get(p.num, [])
+             if reqs.get(t) and any(g[0] != "None" for g in reqs[t]["dna"].values())]
+    unlocked = sum(1 for t in dna_t if evolution._dna_ok(p, reqs[t]))
+    screen = {"home": "menu", "charge": "charge", "stats": "stats",
+              "reqs": "requirements", "bet": "generate", "mash": "generate",
+              "result": "generate"}.get(m.phase, "menu")
+    import textwrap
+    last_rows = [f"[dim]{s}[/]" for s in textwrap.wrap(m.last or "", 24)[:2]]
+    last_rows += [""] * (2 - len(last_rows))
+    lines = [
+        f"[b]{p.name[:14]}[/] [dim]· DNA · {screen}[/]", DIV,
+        f"Bits     [{T.COIN}]{p.bits}[/]",
+        f"Field    {data.pretty_field(f)}" + ("  [dim](own)[/]" if same else ""),
+        f"Banked   {own}     Charged {chg}",
+        f"Share    {p.dna_percent(f)}%    [dim]x{m.amount}[/]",
+        f"Unlocks  [b]{unlocked}[/]/{len(dna_t)} form(s)",
+        DIV,
+        f"[dim]{cost}[/]",
+        *last_rows,
+        "[dim]own Field charges cheap[/]",
+        "[dim]ESC steps back out[/]",
+    ]
+    app.stats_w.update("\n".join(lines))
+
+
+# ---- dispatch ---------------------------------------------------------------
+
+def _registry():
+    """Panel class -> painter.  Built lazily: importing every screen at
+    module import would be a cycle magnet."""
+    from . import (assistscreen, backgroundscreen, battlescreen, bugscreen,
+                   deathscreen, digicorescreen, dnascreen, eggguidescreen,
+                   eggselectscreen, feedscreen, helpscreen, lobbyscreen,
+                   optionsscreen, raidscreen, shopscreen, titlescreen,
+                   tournamentscreen, training as training_mod)
+    return (
+        (titlescreen.TitlePanel, title),
+        (eggselectscreen.EggSelectPanel, eggselect),
+        (tournamentscreen.TournamentPanel, tournament),
+        (training_mod.TrainingPanel, training),
+        (battlescreen.BattlePanel, battle),
+        (dnascreen.DNAPanel, dna),
+        (backgroundscreen.BackgroundPanel, scenes),
+        (feedscreen.FeedPanel, feed),
+        (shopscreen.ShopPanel, shop),
+        (eggguidescreen.EggGuidePanel, eggguide),
+        (digicorescreen.DigiCorePanel, digicore),
+        (raidscreen.RaidPanel, raid),
+        (lobbyscreen.LobbyPanel, lobby),
+        (helpscreen.HelpPanel, help_),
+        (optionsscreen.OptionsPanel, options),
+        (bugscreen.BugReportPanel, bug),
+        (deathscreen.DeathPanel, death),
+        (assistscreen.AssistPanel, assist),
+    )
+
+
+def painter_for(mode):
+    """The painter for a mode instance, or None (home screen -> vitals)."""
+    if mode is None:
+        return None
+    for cls, fn in _registry():
+        if isinstance(mode, cls):
+            return fn
+    return None

@@ -13,6 +13,7 @@ The data-book pages after it are tuipet's own readout (kept adaptation).
 from __future__ import annotations
 from . import data
 from . import backgrounds as _bgs
+from . import egg as _egg
 from . import grid, evolution, lines  # noqa: F401  (pet methods drive the data)
 from .render import render_scene
 
@@ -283,15 +284,23 @@ def build_pages(pet):
         ("Attrib", pet.attribute), ("Field", data.pretty_field(pet.field) or "-"),
         ("Gen", str(pet.generation)),
         ("Age", _mins(pet.age_seconds)), ("Life", f"{_mins(rem)} left"),
+        ("Battles", f"{pet.wins}W / {pet.battles} · {pet.bits}b"),
     ]
+    # the POWER page carries the numbers the evolution gates actually read
+    # (data-page polish 2026-07-17): the attribute ledger (setPower), the
+    # trained battle Form, the DMX battle level, KO6 Mega kills.  The
+    # weight/bits/battles bookkeeping moved beside its kin (weight ->
+    # CONDITION; battles/bits -> STATUS; trophies have their own page).
     power = [
         ("Vaccine", str(pet.vaccine)), ("Data", str(pet.data_power)),
         ("Virus", str(pet.virus)), ("Effort", f"{pet.strength}/4"),
-        ("Weight", f"{pet.weight}g"), ("Battles", f"{pet.wins}W / {pet.battles}"),
-        ("Trophy", str(pet.trophies)), ("Bits", str(pet.bits)),
+        ("Form", getattr(pet, "saved_hit_type", "normal")),
+        ("Level", f"{lines._pet_level(pet)} ({getattr(pet, 'exp', 0)} exp)"),
+        ("Drills", str(getattr(pet, "total_trainings", 0))),
+        ("KO6", f"{pet.mega_kills} Mega felled"),
     ]
     if pet.x_antibody != "None":
-        power.append(("X-Anti", pet.x_antibody))   # keep STATUS at its 9-row max (no overflow)
+        power.append(("X-Anti", pet.x_antibody))   # keep the page at its 9-row max
     # (the Likes/Dislikes clock rows left with the timeRanks system --
     # BASIC VPET 2026-07-17)
     person = [
@@ -306,17 +315,26 @@ def build_pages(pet):
         ("POWER", power),
         ("CONDITION", [
             ("Hunger", f"{pet.hunger}/4"), ("Energy", f"{int(pet.energy)}/{pet.max_energy}"),
+            ("Weight", f"{pet.weight}g"),
             ("Ailing", (("sick " if pet.sick else "") + (f"{pet.injuries} inj" if pet.injuries else "")).strip() or "no"),
-            # the nutrition tracks (audit 2026-07-05): browsable at last -- they
-            # only ever flashed by in the eat readout.  ♥ = good nutrition
-            # (all >= 16: faster recovery, fewer fatigues, slower life burn)
+            # (no nutrition row: the macro system was REMOVED 2026-07-16 --
+            # its fields are frozen starter values; cards only show LIVE data)
             ("Poop", str(pet.poop)),
-            ("Care x", str(pet.care_mistakes)), ("Disturb", str(pet.disturb)),
+            ("Care", f"{pet.care_mistakes} this stage"),
+            ("Disturb", str(pet.disturb)),
         ]),
         ("HOME", [
-            # the scene is wired to the EGG (habitats left; BASIC VPET
-            # 2026-07-16); the Season row left with the calendar (2026-07-17)
-            ("Scene", _bgs.name(_bgs.scene_for_egg(getattr(pet, "egg_type", 0)))),
+            # the household page (data-page polish 2026-07-17): the scene
+            # honors the E pick; the staple fixtures show their stock
+            ("Scene", _bgs.name(getattr(pet, "bg_pick", "")
+                                or _bgs.scene_for_egg(getattr(pet, "egg_type", 0)))),
+            ("Egg", _egg.hatch_name(getattr(pet, "egg_type", 0))),
+            ("Toilet", f"{pet.inventory.get('i:82', 0)} flushes"),
+            ("Potty", f"{pet.inventory.get('i:83', 0)} uses"),
+            ("Futon", f"{pet.inventory.get('i:81', 0)} nights"),
+            ("Trained", "yes — goes alone" if pet.is_toilet_trained()
+             else f"{pet.toilet_trained}/1 toilet uses"),
+            ("Helper", "hired" if getattr(pet, "auto_care", False) else "off"),
         ]),
         ("PERSON", person),
         ("TROPHIES", _trophy_rows(pet)),

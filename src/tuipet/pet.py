@@ -905,7 +905,7 @@ class Pet:
     stage_battles: int = 0          # battles fought this stage
     battle_log: list = _dcf(default_factory=list)   # last-15 results 1/0 (persists across evolution; Pen20)
     mega_kills: int = 0             # lifetime Ultimate/Mega-class foes beaten (DMX KO6 gate)
-    dp: int = 0                     # Pen20 DP meter 0..4: full to jogress; protein +1, 3h sleep refills
+    dp: int = 0                     # Pen20 DP meter 0..4: full to jogress; 3h sleep refills it
     bits: int = 0
     trophies: int = 0
     trophies_won: dict = _dcf(default_factory=dict)   # trophy id -> day-won label (the trophy room)

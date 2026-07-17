@@ -14,6 +14,7 @@ from textual.containers import Horizontal, Vertical
 from textual.widgets import Static
 
 from . import backgrounds
+from . import statusbox
 from . import data
 from . import menu
 from . import egg as egg_mod
@@ -114,138 +115,34 @@ def _save_sound(on):
 
 
 
-def _gen_subtitle(pet):
-    """'gen N', wearing the bought honor when one is worn (the honors board,
-    prestige sink 2026-07-14)."""
-    t = data.title_name(persistence.get_title_worn())
-    return f"gen {pet.generation} · {t}" if t else f"gen {pet.generation}"
-
-
-def _age_compact(seconds):
-    """d/h then h/m then m/s -- raw total minutes read as noise on an older
-    pet ('4325m40s', status-box audit 2026-07-04)."""
-    s = int(max(0, seconds))
-    if s >= 86400:
-        return f"{s // 86400}d{(s % 86400) // 3600:02d}h"
-    if s >= 3600:
-        return f"{s // 3600}h{(s % 3600) // 60:02d}m"
-    return f"{s // 60}m{s % 60:02d}s"
-
-
-def _care_deco(pet, word=None):
-    """The care badges shown beside the status word -- one list, shared by the
-    home Stats panel and the adventure card (Joel 2026-07-12: adventure shows
-    the same icons).  Order is priority: the lowest ones drop first on overflow."""
-    T = theme
-    if word is None:
-        word = pet.status_word()
-    deco = []
-    if pet.asleep and word != "asleep": deco.append("[blue]Zzz[/]")
-    if pet.sick and word != "sick": deco.append(f"[{T.NEG}]+sick[/]")
-    # (the +tired/+hurt/+med/+bnd/+vit badges left with the fatigue/injury
-    # and medicine-item systems; BASIC VPET 2026-07-16)
-    if pet.is_frail(): deco.append(f"[{T.NEG}]+frail![/]")
-    if pet.poop: deco.append(f"[{T.COIN}]~poop x{pet.poop}[/]")
-    if getattr(pet, "effect_id", -1) >= 0: deco.append(f"[{T.POS}]\u2726{pet.effect_name()}[/]")
-    return deco
-
-
-def _status_line(status, deco, width=26):
-    """Assemble the status word + deco glyphs, bounded to `width` visible cols
-    so the Stats box never wraps past its 16-row height. Drops the lowest-priority
-    deco that would overflow (rare: only when asleep+sick+poop+effect pile up)."""
-    from rich.text import Text
-    used = len(status) + 3                      # the status word + 3 spaces
-    shown = []
-    for d in deco:
-        vis = len(Text.from_markup(d).plain)
-        add = vis + (2 if shown else 0)         # 2-space separator between glyphs
-        if used + add <= width:
-            shown.append(d)
-            used += add
-    return f"[b]{status}[/]   " + "  ".join(shown)
+# the status-card helpers live in statusbox (Joel 2026-07-17: "MODULIZE
+# THE STATUS BOX"); the old underscore names stay importable for callers
+# and the test suite
+_gen_subtitle = statusbox.gen_subtitle
+_age_compact = statusbox.age_compact
+_care_deco = statusbox.care_deco
+_status_line = statusbox.status_line
 
 
 class Stats(Static):
+    """The right-hand card widget.  Every card body lives in statusbox --
+    this widget only chooses home/egg/grave and writes the lines."""
+
     def paint(self, pet: Pet):
         if pet.dead:
             return self._paint_grave(pet)
         if pet.num == -1 or pet.stage == "Egg":
             return self._paint_egg(pet)
-        T = theme
-        div = f"[dim]{'─' * 26}[/]"
-        word = pet.status_word()
-        deco = _care_deco(pet, word)
-        age = _age_compact(pet.age_seconds)
-        xm = f" [b {T.ACCENT}]X[/]" if pet.x_antibody != "None" else ""
-        lifepct = max(0, int((pet.lifespan - pet.age_seconds) / max(1, pet.lifespan) * 100))
-        lifecol = T.NEG if pet.is_geriatric else T.LIFE
         self.border_subtitle = _gen_subtitle(pet)
-        lines = [
-            f"[b]{pet.name[:22]}[/]{xm}",
-            f"[dim]{pet.stage}{(' · ' + pet.attribute) if pet.attribute else ''}[/]",
-            div,
-            f"Hunger  {hearts(pet.hunger)}",
-            f"Effort  {hearts(pet.strength)}",
-            f"Energy  {bar(pet.energy_pct(), 12, T.ENERGY)}",
-            div,
-            # (the Power ledger left the home card 2026-07-17 -- it lives on
-            # the DigiCore DATA page, next to the corpus gates that read it;
-            # the HP fragment was the retired classic battle's trained-HP)
-            f"Weight  {pet.weight}g · [{T.COIN}]{pet.bits}b[/]",
-            # care mistakes decide the evolution road (every line's CM gates)
-            # and 20 is lethal -- they were buried on the DigiCore data page
-            # (care polish 2026-07-17).  Stage-scoped: they reset on evolve.
-            (f"Care    [{T.POS}]spotless[/]" if pet.care_mistakes == 0 else
-             f"Care    [{T.NEG if pet.care_mistakes >= 10 else T.MOOD}]"
-             f"✗{pet.care_mistakes} this stage[/]"),
-            f"DP      [{T.ACCENT}]{'◆' * getattr(pet, 'dp', 0)}[/][dim]{'◇' * (4 - getattr(pet, 'dp', 0))}[/]",
-            f"Battle  {pet.wins}W/{pet.battles}   [{T.COIN}]\u2605{pet.trophies}[/]",
-            f"@{backgrounds.name(pet.bg_pick or backgrounds.scene_for_egg(pet.egg_type))[:16]} [dim]{age}[/]",
-            f"Life    {bar(lifepct, 12, lifecol)}",
-            _status_line(word, deco),
-        ]
-        self.update("\n".join(lines))
+        self.update("\n".join(statusbox.home_lines(pet)))
 
     def _paint_egg(self, pet):
-        mins, secs = divmod(int(pet.age_seconds), 60)
         self.border_subtitle = _gen_subtitle(pet)
-        div = f"[dim]{'─' * 26}[/]"
-        lines = [
-            "[b]Digitama[/] [dim]· egg[/]",
-            div,
-            "[dim]a new life is warming[/]",
-            "",
-            "Destined to hatch",
-            f"  [b]{egg_mod.hatch_name(pet.egg_type)}[/]",
-            div,
-            f"Age     {mins}m{secs:02d}s",
-            "",
-            "[dim]keep it cosy — it[/]",
-            "[dim]hatches on its own[/]",
-        ]
-        self.update("\n".join(lines))
+        self.update("\n".join(statusbox.egg_lines(pet)))
 
     def _paint_grave(self, pet):
         self.border_subtitle = _gen_subtitle(pet)
-        div = f"[dim]{'─' * 26}[/]"
-        lines = [
-            f"[b]{pet.name[:16]}[/] [dim]· rest[/]",
-            div,
-            "[dim]a life remembered[/]",
-            "",
-            f"Lived    {_age_compact(pet.age_seconds)}",
-            f"Reached  {pet.stage}",
-            f"Cause    {getattr(pet, 'death_cause', '') or 'unknown'}",
-            f"Attrib   {pet.attribute}",
-            f"Record   {pet.wins}W / {pet.battles}",
-            div,
-            "[dim]gone, but not[/]",
-            "[dim]forgotten.[/]",
-            "",
-            "[dim]press N for a new egg[/]",
-        ]
-        self.update("\n".join(lines))
+        self.update("\n".join(statusbox.grave_lines(pet)))
 
 
 class TuiPetApp(App):
@@ -266,11 +163,11 @@ class TuiPetApp(App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("CARE ON THE CARD: care mistakes now show on the home "
-                 "status - they steer every evolution and 20 is lethal, so "
-                 "they were never something to hide on a data page. "
-                 "Spotless care reads green; double digits read as the "
-                 "warning they are.")
+    WHATS_NEW = ("ONE STATUS BOX TO RULE THEM: every card now lives in "
+                 "one module and may only show LIVE data. The feeding "
+                 "readout lost its dead nutrient bars, the DNA card now "
+                 "bills the true cost (energy), and no screen can quietly "
+                 "drift out of date again.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and
@@ -946,418 +843,29 @@ class TuiPetApp(App):
             self._mode_strip()
         else:
             self.screen_w.paint(self.pet)
-        if isinstance(self.mode, titlescreen.TitlePanel):
-            self._status_card("TUIPET", ["[dim]a terminal v-pet[/]", "", "",
-                                         "[dim]a creature awaits[/]", "",
-                                         "[dim]press ENTER[/]", "[dim]to begin[/]"])
-        elif isinstance(self.mode, eggselectscreen.EggSelectPanel):
-            self._status_eggselect()
-        elif (painter := self._status_painter()) is not None:
+        if (painter := self._status_painter()) is not None:
             painter()
         else:
             # data/digicore browses in the LCD; keep live vitals on the right
             self.stats_w.paint(self.pet)
 
     def _status_painter(self):
-        """The mode's live status-panel painter (one table for repaint AND
-        on_frame -- the two hand-rolled dispatches drifted; audit 2026-07)."""
-        table = ((tournamentscreen.TournamentPanel, self._status_tournament),
-                 (training.TrainingPanel, self._status_training),
-                 (battlescreen.BattlePanel, self._status_battle),
-                 (dnascreen.DNAPanel, self._status_dna),
-                 (backgroundscreen.BackgroundPanel, self._status_scenes),
-                 # the status-box sweep (Joel 2026-07-17: "for every action,
-                 # every scene, every menu... the status box needs to be
-                 # redone"): every mode paints a DELIBERATE card now -- the
-                 # bare-vitals fallback is for the home screen alone
-                 (feedscreen.FeedPanel, self._status_feed),
-                 (shopscreen.ShopPanel, self._status_shop),
-                 (eggguidescreen.EggGuidePanel, self._status_eggguide),
-                 (digicorescreen.DigiCorePanel, self._status_digicore),
-                 (raidscreen.RaidPanel, self._status_raid),
-                 (lobbyscreen.LobbyPanel, self._status_lobby),
-                 (helpscreen.HelpPanel, self._status_help),
-                 (optionsscreen.OptionsPanel, self._status_options),
-                 (bugscreen.BugReportPanel, self._status_bug),
-                 (deathscreen.DeathPanel, self._status_death),
-                 (assistscreen.AssistPanel, self._status_assist))
-        for cls, painter in table:
-            if isinstance(self.mode, cls):
-                return painter
-        return None
+        """The mode's card painter, dispatched from statusbox's registry
+        (one module owns every card -- Joel 2026-07-17: "MODULIZE THE
+        STATUS BOX")."""
+        fn = statusbox.painter_for(self.mode)
+        if fn is None:
+            return None
+        return lambda: fn(self)
 
     def _status_eggselect(self):
-        m = self.mode
-        # carousel = hatchable eggs ONLY (Joel 2026-07-12: no silhouettes,
-        # no goals); the badge/shown branches below stay defensive in case a
-        # locked/buyable egg ever leaks onto it.
-        idx = m.carousel[m.i] if m.carousel else 0
-        state = m.states.get(idx, "owned")
-        badge = {"temp": "[dim]this gen only[/]",
-                 "locked": "[dim]sealed[/]"}.get(state, "[dim]ready[/]")
-        shown = "???" if state == "locked" else egg_mod.hatch_name(idx)
-        self._status_card("New Egg", [f"[dim]{m.i + 1} of {m.n}[/]",
-                                      f"[dim]{m.locked} still locked[/]", "",
-                                      "Destined to hatch", f"  [b]{shown}[/]",
-                                      f"  {badge}", "",
-                                      "[dim]←→ browse  ENTER pick[/]"])
-
-    def _status_scenes(self):
-        """The browsed scene's dossier: the LCD shows the SCENE, this card
-        carries the words (picker restore 2026-07-17)."""
-        m = self.mode
-        row = m.rows[m.cursor]
-        name = m._name(row)
-        state = "picked" if row == self.pet.bg_pick else \
-            ("the default" if not row and not self.pet.bg_pick else "a preview")
-        self._status_card("Scenes", [f"[dim]{m.cursor + 1} of {len(m.rows)}[/]", "",
-                                     "On the wall", f"  [b]{name[:24]}[/]",
-                                     f"  [dim]{state}[/]", "",
-                                     (m.msg or "")[:26],
-                                     "[dim]↑↓ browse  ENTER hang[/]"])
-
-    def _status_feed(self):
-        """FEED: the two rows' true effects beside the live gauges."""
-        p, m, T = self.pet, self.mode, theme
-        row = ("Meat — hunger +1, the staple",
-               "Pill — cures sickness, effort +1,"
-               )[min(getattr(m, "cursor", 0), 1)]
-        tail = ("", "energy +7 · weight +5")[min(getattr(m, "cursor", 0), 1)]
-        self._status_card("Feed", [
-            f"Hunger   {hearts(p.hunger)}",
-            f"Effort   {hearts(p.strength)}",
-            f"Weight   {p.weight}g" + ("   [b]sick[/]" if p.sick else ""),
-            "", f"[b]{row}[/]", f"[b]{tail}[/]" if tail else "",
-            "", "[dim]↑↓ pick  ENTER feed[/]"])
-        self.stats_w.border_subtitle = _gen_subtitle(p)
-
-    def _status_shop(self):
-        """SHOP/BAG: the selected entry's dossier."""
-        from . import shop as shop_mod
-        p, m = self.pet, self.mode
-        rows = m._rows()
-        if not rows:
-            self._status_card("Shop" if m.mode == "shop" else "Bag",
-                              ["", "[dim]nothing here[/]", "",
-                               f"Bits   [b]{p.bits}b[/]"])
-            return
-        e = rows[min(m.cursor, len(rows) - 1)]
-        title = "Shop" if m.mode == "shop" else "Bag"
-        if e.get("title_id") is not None:
-            state = ("worn" if e.get("worn")
-                     else "owned" if e.get("owned") else f"{e['price']}b")
-            lines = [f"[b]{e['name'][:24]}[/]", "[dim]a tamer honor[/]",
-                     f"Status  {state}", "",
-                     f"Bits    [b]{p.bits}b[/]", "",
-                     "[dim]ENTER buys, then wears[/]"]
-        else:
-            have = p.inventory.get(e["key"], 0)
-            lines = [f"[b]{e['name'][:24]}[/]",
-                     f"[dim]{shop_mod.effect_line(e)[:26]}[/]", "",
-                     (f"Price   {e['price']}b" if m.mode == "shop"
-                      else f"Sells   {shop_mod.resell_price(e)}b"),
-                     f"Owned   x{have}",
-                     f"Bits    [b]{p.bits}b[/]", "",
-                     ("[dim]ENTER buy[/]" if m.mode == "shop"
-                      else "[dim]ENTER use  R sell[/]")]
-        self._status_card(title, lines)
-        self.stats_w.border_subtitle = _gen_subtitle(p)
-
-    def _status_eggguide(self):
-        """DIGITAMA GUIDE: the browsed egg's dossier."""
-        m = self.mode
-        state = m.states.get(m.i, "locked")
-        name = egg_mod.hatch_name(m.i) if state != "locked" else "???"
-        live = egg_mod.unlock_progress(m.i, m.prog)
-        rule = m.rules.get(m.i)
-        keeps = ("this gen only" if rule is not None and not rule["can_perm"]
-                 else "forever")
-        self._status_card("Digitama", [
-            f"[dim]{m.i + 1} of {m.n}[/]", "",
-            f"Hatches  [b]{name[:16]}[/]",
-            f"State    {state}",
-            f"Keeps    {keeps}", "",
-            (f"[b]{live[:26]}[/]" if live and state == "locked" else ""),
-            "[dim]ENTER story  ↑↓ browse[/]"])
-
-    def _status_digicore(self):
-        """DIGICORE: which data page is up, and whose core it is."""
-        p, m = self.pet, self.mode
-        page = m.pages[min(m.i, len(m.pages) - 1)][0]
-        self._status_card("DigiCore", [
-            f"[b]{p.name[:16]}[/]",
-            f"[dim]{p.stage} · {p.attribute}[/]", "",
-            f"Page   [b]{page[:18]}[/]",
-            f"[dim]{m.i + 1} of {len(m.pages)}[/]", "",
-            (m.note or "")[:26],
-            "[dim]←→ pages  SPACE core[/]"])
-        self.stats_w.border_subtitle = _gen_subtitle(p)
-
-    def _status_raid(self):
-        """RAID: the boss, the shared pool, your standing."""
-        m = self.mode
-        v = m.view or {}
-        b = m._boss()
-        if not b:
-            self._status_card("Raid", ["", "[dim]calling the gate…[/]"])
-            return
-        pool, mx = int(b.get("hp", 0)), max(1, int(b.get("max_hp", 1)))
-        pct = max(0, min(100, pool * 100 // mx))
-        rank, mine = (list(v.get("you") or (0, 0)) + [0, 0])[:2]
-        standing = m._standing()
-        left = max(0, int((b.get("end" if standing else "start", 0)
-                           - v.get("now", 0))))
-        when = "%dd %dh" % (left // 86400, left % 86400 // 3600)
-        self._status_card("Raid", [
-            f"[b]{b.get('name', '?')[:18]}[/]",
-            (f"Pool   {pct}%" if standing else "[dim]incoming boss[/]"),
-            (f"[dim]{when} left[/]" if standing else f"[dim]in {when}[/]"),
-            "",
-            f"You    #{rank} · {mine}",
-            f"Tries  {v.get('attempts', 0)} today",
-            ("[b]purse waiting — C[/]" if v.get("award") else ""),
-            "[dim]SPACE raid  C claim[/]"])
-        self.stats_w.border_subtitle = _gen_subtitle(self.pet)
-
-    def _status_lobby(self):
-        """LOBBY: your card and the room."""
-        m = self.mode
-        st = m.state
-        if st is None or getattr(st, "me_id", None) is None:
-            self._status_card("Lobby", ["", "[dim]connecting…[/]"])
-            return
-        roster = list(getattr(st, "roster", []) or [])
-        links = persistence.get_progress().get("connections", 0)
-        self._status_card("Lobby", [
-            f"[b]{(m._last_name or '?')[:18]}[/]",
-            f"[dim]{self.pet.name[:14]} rides along[/]", "",
-            f"Here   {len(roster)} tamer" + ("s" if len(roster) != 1 else ""),
-            f"Links  {links} lifetime", "",
-            "[dim]type to chat · ENTER[/]",
-            "[dim]↑↓ pick a tamer[/]"])
-
-    def _status_help(self):
-        from . import update
-        try:
-            ver = update.current_version()
-        except Exception:
-            ver = "?"
-        snd = "on" if self.sound else "off"
-        self._status_card("Help", [
-            f"tuipet [b]v{ver}[/]", "",
-            f"Sound  {snd}",
-            f"Gen    {self.pet.generation}", "",
-            "[dim]the guide scrolls[/]",
-            "[dim]on the display[/]", "",
-            "[dim]↑↓ scroll  ESC out[/]"])
-
-    def _status_options(self):
-        from . import optionsscreen as _opts
-        m = self.mode
-        row = _opts._ROWS[min(m.cursor, len(_opts._ROWS) - 1)]
-        desc = _opts._DESC.get(row, "")
-        self._status_card("Options", [
-            f"[b]{_opts._LABEL.get(row, row.title())}[/]", "",
-            f"[dim]{desc[:26]}[/]",
-            f"[dim]{desc[26:52]}[/]", "",
-            (m.msg or "")[:26], "",
-            "[dim]ENTER toggles[/]"])
-
-    def _status_bug(self):
-        m = self.mode
-        n = len(getattr(m, "buf", ""))
-        self._status_card("Bug Report", [
-            "[dim]straight to the dev[/]", "",
-            f"Typed  {n} chars", "",
-            "[dim]say what you did and[/]",
-            "[dim]what went wrong[/]", "",
-            "[dim]ENTER send  ESC out[/]"])
-
-    def _status_death(self):
-        p = self.pet
-        days = int(getattr(p, "age_seconds", 0) // 86400)
-        cause = getattr(p, "death_cause", "") or "old age"
-        self._status_card("In Memory", [
-            f"[b]{p.name[:18]}[/]",
-            f"[dim]{p.stage} · gen {p.generation}[/]", "",
-            f"Lived  {days} day" + ("s" if days != 1 else ""),
-            f"Of     {cause[:20]}", "",
-            "[dim]its data can live on[/]",
-            "[dim]in the next egg[/]"])
-
-    def _status_assist(self):
-        from .pet import AUTO_CARE_VISIT_PRICE
-        p = self.pet
-        on = getattr(p, "auto_care", False)
-        fee = AUTO_CARE_VISIT_PRICE.get(p.stage, 200)
-        self._status_card("Assistant", [
-            f"Helper  [b]{'hired' if on else 'off'}[/]", "",
-            f"Visit   ~{fee}b",
-            f"Bits    [b]{p.bits}b[/]", "",
-            "[dim]cleans and feeds while[/]",
-            "[dim]you are away[/]", "",
-            "[dim]ENTER hire/dismiss[/]"])
-
-    def _status_card(self, title, lines):
-        self.stats_w.border_subtitle = ""
-        body = [f"[b]{title}[/]", f"[dim]{'─' * 26}[/]"] + lines
-        self.stats_w.update("\n".join(body))
-
-    def _status_tournament(self):
-        p, t, T = self.pet, self.mode.tourney, theme
-        self.stats_w.border_subtitle = _gen_subtitle(p)
-        if t is None:                      # cup-select phase (no bout yet)
-            self._status_card("Cup", ["", "Pick a cup", "to enter."])
-            return
-        div = f"[dim]{'─' * 26}[/]"
-        if t.over and t.champion:
-            lines = [f"[b]{p.name[:14]}[/] [dim]· cup[/]", div,
-                     f"[b]{t.name[:24]}[/]", "",
-                     f"[{T.POS}]\u2605 CHAMPION \u2605[/]", "",
-                     f"Trophy   [{T.COIN}]\u2605{p.trophies}[/]",
-                     f"Reward   [{T.COIN}]+{t.reward_bits}b[/]", div,
-                     "[dim]you took the cup![/]"]
-        elif t.over:
-            lines = [f"[b]{p.name[:14]}[/] [dim]· cup[/]", div,
-                     f"[b]{t.name[:24]}[/]", "",
-                     f"[{T.NEG}]eliminated[/]",
-                     f"[dim]in the {t.round_name}[/]", "",
-                     f"Trophy   [{T.COIN}]\u2605{p.trophies}[/]", div,
-                     "[dim]train up, try again[/]"]
-        else:
-            lines = [
-                f"[b]{p.name[:14]}[/] [dim]· cup[/]", div,
-                f"[b]{t.name[:24]}[/]",
-                f"Match    {t.round + 1} / 3",
-                f"Trophy   [{T.COIN}]\u2605{p.trophies}[/]",
-                div,
-                f"Effort   {hearts(p.strength)}",
-                f"Energy   {bar(p.energy_pct(), 11, T.ENERGY)}",
-                f"Form     {getattr(p, 'saved_hit_type', 'normal')}",
-                div,
-                "[dim]fight for the cup[/]",
-            ]
-        self.stats_w.update("\n".join(lines))
-
-    def _status_training(self):
-        """The 0.5 drill's card (2026-07-17): one timing bar, so one card --
-        the four-drill readouts left with the classic training system."""
-        p, tp, T = self.pet, self.mode, theme
-        self.stats_w.border_subtitle = _gen_subtitle(p)
-        div = f"[dim]{'-' * 26}[/]".replace("-", "\u2500")
-        eff = hearts(p.strength)
-        energy = bar(p.energy_pct(), 11, T.ENERGY)
-        window = tp.mega_hi - tp.mega_lo + 1
-        form = getattr(p, "saved_hit_type", "normal")
-        if tp.phase == "bar":
-            lines = [f"[b]{p.name[:14]}[/] [dim]\u00b7 train[/]", div,
-                     "[b]time the strike[/]", "",
-                     f"Window   {window}px",
-                     f"Form     {form}",
-                     f"Effort   {eff}", f"Energy   {energy}",
-                     div, "[dim]SPACE locks the bar[/]"]
-        else:
-            lines = [f"[b]{p.name[:14]}[/] [dim]\u00b7 train[/]", div,
-                     "[b]the strike[/]", "",
-                     f"Grade    {tp.grade or ''}",
-                     f"Energy   {energy}", div, ""]
-        self.stats_w.update("\n".join(lines))
-
-    def _status_battle(self):
-        p, m, T = self.pet, self.mode, theme
-        b = m.battle                    # None until the timing bar locks (0.5)
-        self.stats_w.border_subtitle = _gen_subtitle(p)
-        div = f"[dim]{'─' * 26}[/]"
-        enemy = m.enemy or {}
-        tag = f" [{T.NEG}]BOSS[/]" if enemy.get("boss") else ""
-        pet_max = b.pet_max if b else 5
-        foe_max = b.enemy_max if b else 5
-        php = getattr(m, "hud_php", b.pet_hp if b else 5)
-        fhp = getattr(m, "hud_fhp", b.enemy_hp if b else 5)
-        pp = int(100 * php / pet_max) if pet_max else 0
-        fp = int(100 * fhp / foe_max) if foe_max else 0
-        lines = [
-            f"[b]{p.name[:14]}[/] [dim]· battle[/]", div,
-            f"vs [b]{enemy.get('name', '?')[:14]}[/]{tag}", "",
-            f"You  {bar(pp, 11, T.POS)} {php}/{pet_max}",
-            f"Foe  {bar(fp, 11, T.NEG)} {fhp}/{foe_max}",
-            div,
-        ]
-        if m.done_anim:
-            res = f"[{T.POS}]VICTORY![/]" if m.won else f"[{T.NEG}]DEFEAT[/]"
-            lines += [res, f"[dim]{(b.reward if b else '') or ''}"[:30] + "[/]",
-                      "", "[dim]SPACE  continue[/]"]
-        elif getattr(m, "phase", "") == "ready":
-            lines += [f"[dim]{(m.hud_note or '')[:24]}[/]", "",
-                      "[dim]SPACE  lock the bar[/]"]
-        else:
-            lines += [f"[dim]{(m.hud_note or '')[:24]}[/]", "", "[dim]SPACE  skip[/]"]
-        self.stats_w.update("\n".join(lines))
+        statusbox.eggselect(self)
 
     def _status_eat(self):
-        """DVPet feeding readout: the calorie (hunger) buffer plus the protein/mineral/
-        vitamin macros, shown live while the eat animation plays."""
-        from .pet import CALORIE_LIMIT, MAX_MACRO, GOOD_NUTRITION_MIN
-        p, T = self.pet, theme
-        self.stats_w.border_subtitle = _gen_subtitle(p)
-        div = "[dim]" + chr(0x2500) * 26 + "[/]"   # no backslash inside an f-string (SyntaxError on py3.10/3.11)
-        def mbar(v, col):
-            return bar(min(100, v * 100 // MAX_MACRO), 11, col)
-        well = (p.nutr_protein >= GOOD_NUTRITION_MIN and p.nutr_mineral >= GOOD_NUTRITION_MIN
-                and p.nutr_vitamin >= GOOD_NUTRITION_MIN)
-        lines = [
-            f"[b]{p.name[:14]}[/] [dim]\u00b7 feeding[/]", div,
-            f"Calorie  {hearts(p.hunger)}",
-            f"Fuel     {bar(p.calories * 100 // CALORIE_LIMIT, 12, T.COIN)}",
-            div,
-            f"Protein  {mbar(p.nutr_protein, T.POS)}",
-            f"Mineral  {mbar(p.nutr_mineral, T.ENERGY)}",
-            f"Vitamin  {mbar(p.nutr_vitamin, T.MOOD)}",
-            div,
-            f"Weight {p.weight}g",
-            (f"[{T.POS}]well nourished[/]" if well else "[dim]a varied diet helps[/]"),
-        ]
-        self.stats_w.update("\n".join(lines))
+        statusbox.eat(self)
 
-    def _status_dna(self):
-        p, m, T = self.pet, self.mode, theme
-        self.stats_w.border_subtitle = _gen_subtitle(p)
-        div = f"[dim]{'─' * 26}[/]"
-        f = m.field
-        same = f == p.field
-        own, chg = p.dna_owned.get(f, 0), p.dna_applied.get(f, 0)
-        cost = "spirit -3/ea  mood+" if same else "spirit -6/ea  mood-  ill?"
-        from . import data, evolution
-        reqs = data.load_requirements()
-        dna_t = [t for t in data.load_evolutions().get(p.num, [])
-                 if reqs.get(t) and any(g[0] != "None" for g in reqs[t]["dna"].values())]
-        unlocked = sum(1 for t in dna_t if evolution._dna_ok(p, reqs[t]))
-        screen = {"home": "menu", "charge": "charge", "stats": "stats",
-                  "reqs": "requirements", "bet": "generate", "mash": "generate",
-                  "result": "generate"}.get(m.phase, "menu")
-        import textwrap
-        last_rows = [f"[dim]{s}[/]" for s in textwrap.wrap(m.last or "", 24)[:2]]
-        last_rows += [""] * (2 - len(last_rows))
-        lines = [
-            f"[b]{p.name[:14]}[/] [dim]· DNA · {screen}[/]", div,
-            f"Bits     [{T.COIN}]{p.bits}[/]",
-            f"Field    {data.pretty_field(f)}" + ("  [dim](own)[/]" if same else ""),
-            f"Banked   {own}     Charged {chg}",
-            f"Share    {p.dna_percent(f)}%    [dim]x{m.amount}[/]",
-            f"Unlocks  [b]{unlocked}[/]/{len(dna_t)} form(s)",
-            div,
-            f"[dim]{cost}[/]",
-            *last_rows,
-            "[dim]own Field * charges cheap[/]",
-            "[dim]ESC steps back out[/]",
-        ]
-        self.stats_w.update("\n".join(lines))
-
-    # (the habitat status card left with the habitat system; BASIC VPET
-    # 2026-07-16 -- the home scene is wired to the egg, nothing to browse)
-
-    # (the adventure/town status cards left with the world layer;
-    # BASIC VPET 2026-07-16 -- the raid panel paints its own card)
+    def _status_card(self, title, lines):
+        statusbox.card(self, title, lines)
 
     def on_frame(self):                        # single DVPet interval clock (10 Hz, 0.1s): main view AND sub-screens
         menu.TICK += 1                         # the shared note marquee clock: no screen clips a message
