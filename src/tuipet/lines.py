@@ -11,7 +11,9 @@ Rule grammar (LINES_SPEC §2) — comma = AND, `|` = OR, first matching row wins
     CM 0-2 | CM 3+      care mistakes bracket        TR 5-15   trainings
     OF 3+               overfeeds                    BTL 15+   battles this stage
     WIN 12/15           >=12 wins in last 15         LV 5-6    battle level (DVPet getLevel)
-    KO6 5+              Mega-class foes beaten       AREA <map> adventure map cleared
+    KO6 5+              Mega-class foes beaten       AREA <n>  n+1 raid bosses felled
+                                                     (was "map n cleared"; the raid
+                                                     re-gate, BASIC VPET 2026-07-16)
     TIME                no requirement — the stage timer alone
 """
 from __future__ import annotations
@@ -187,12 +189,12 @@ def _actual(pet, kind):
             "lv": _pet_level(pet), "ko6": pet.mega_kills}[kind]
 
 
-def _cleared_maps():
+def _felled_raids():
     from . import persistence          # late: persistence imports pet at module top
     try:
-        return set(persistence.get_progress().get("maps") or ())
+        return int(persistence.get_progress().get("raids", 0) or 0)
     except Exception:
-        return set()
+        return 0
 
 
 def _atom_met(pet, atom):
@@ -202,8 +204,12 @@ def _atom_met(pet, atom):
     if kind == "win":
         return sum(pet.battle_log[-b:]) >= a
     if kind == "area":
-        maps = _cleared_maps()
-        return (int(a) in maps) if str(a).lstrip("-").isdigit() else (a in maps)
+        # the raid re-gate (BASIC VPET 2026-07-16): adventure left with the
+        # world layer, so an AREA-N atom means N+1 felled community raid
+        # bosses now -- the same map->milestone conversion the eggUnlock
+        # MapComplete rows took (Alphamon's AREA 3 = 4 broken bosses)
+        n = int(a) if str(a).lstrip("-").isdigit() else 0
+        return _felled_raids() >= n + 1
     v = _actual(pet, kind)
     return v >= a and (b is None or v <= b)
 

@@ -50,11 +50,15 @@ def test_ultimate_gates_win_btl_ko6():
     assert lines.select_line(_C(851, log=[1] * 12, mega=0)) is None  # KO6 unmet
 
 
-def test_alphamon_needs_the_cleared_area():
+def test_alphamon_needs_the_felled_raids():
+    """AREA 3 re-gated (BASIC VPET 2026-07-16): 4 felled raid bosses now."""
     c = _C(258, cm=0, mega=3)
-    assert lines.select_line(c) == 329            # map 3 uncleared: the beast road
-    persistence.map_complete_add(3)
-    assert lines.select_line(c) == 330            # Alphamon: care + kills + the ruins
+    assert lines.select_line(c) == 329            # 3 raids: the beast road still
+    for _ in range(3):
+        persistence.raid_add()
+    assert lines.select_line(c) == 329            # 3 is not enough for the ruins
+    persistence.raid_add()
+    assert lines.select_line(c) == 330            # Alphamon: care + kills + 4 bosses
     assert lines.select_line(_C(845, cm=0)) == 856          # WarGreymon X
     assert lines.select_line(_C(997, cm=0, log=[1] * 15)) is None    # punishment leaf
 

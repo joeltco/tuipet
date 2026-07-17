@@ -265,7 +265,8 @@ class TuiPetApp(App):
     WHATS_NEW = ("RAID BOSSES: adventure and towns are gone - press R to "
                  "face the community boss! 10-round volleys chip a shared "
                  "pool; break it together, claim the purse, and felled "
-                 "bosses now open the old region eggs.")
+                 "bosses now open the old region eggs - and Alphamon's "
+                 "ruins road.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and
