@@ -141,10 +141,11 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("SAFER SAVES UNDER THE HOOD: the atomic save writer and "
-                 "the egg-bank migration each live in their own module "
-                 "now. Your save behaves exactly the same - the machinery "
-                 "guarding it is just easier to keep correct.")
+    WHATS_NEW = ("THE BIG REFACTOR LANDS: the pet itself - the game's "
+                 "3,600-line heart - now composes four clean organs (body "
+                 "clock, care, battle, DNA) over one constant bed. Every "
+                 "number and behavior is identical; a live online bout "
+                 "verified the wire end-to-end. Fixes land faster forever.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and

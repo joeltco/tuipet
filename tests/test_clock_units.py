@@ -38,14 +38,14 @@ def test_the_neglect_pressures_run_at_the_canon_cadence():
     """Filth mood, the held-poop nag and the care-call drain were all x60 too
     slow, so neglect barely hurt.  They are literals in the tick; pin the
     source so a regression is loud."""
-    src = inspect.getsource(P)
+    src = inspect.getsource(__import__('tuipet.petbody', fromlist=['x']))  # the tick's home (tier-5)
     assert "self._poop_wait_t >= 1.0" in src, "PoopWaitMin=1 game-min"
     # (the sick-penalty cadence pin left with the sickness system -- 2026-07-17)
 
 
 def test_the_deliberate_exceptions_stay_deliberate():
     """These two must NOT be 'fixed' into the canon literal."""
-    src = inspect.getsource(P)
+    src = inspect.getsource(__import__('tuipet.petbody', fromlist=['x']))  # the tick's home (tier-5)
     # the care-mistake response window: a literal port = 10 real seconds
     assert "self._hunger_call_t >= 600.0" in src
     assert "self._str_call_t >= 600.0" in src
@@ -77,3 +77,26 @@ def test_good_care_is_never_punished_by_the_faster_pressure():
     # idle well-kept pet no longer drifts happy for free -- happiness now
     # comes only from active care (liked meals, play, praise)
     assert p.mood >= 0 and not p.dead
+
+
+def test_the_pet_split_holds_its_boundaries():
+    """Tier-5 (2026-07-17): pet.py is the identity/evolution core composing
+    four mixins; constants live in petbase and star-import back, so
+    `from tuipet.pet import ANYTHING` never moved."""
+    import inspect
+    from tuipet import pet, petbase, petbattle, petbody, petcare, petdna
+    mro = pet.Pet.__mro__
+    for m in (petcare.CareMixin, petdna.DnaMixin,
+              petbattle.BattleMixin, petbody.BodyMixin):
+        assert m in mro
+    core = inspect.getsource(pet)
+    for name in ("tick", "feed_meat", "record_battle", "apply_dna",
+                 "use_item", "_tick_mortality"):
+        assert f"def {name}(" not in core, f"{name} crept back into the core"
+        assert callable(getattr(pet.Pet, name))
+    # the constant bed: every petbase name resolves from pet
+    # (weekend_bonus is excluded: the test sandbox patches pet.weekend_bonus
+    # to pin a weekday, so identity is deliberately broken under pytest)
+    for const in ("DP_MAX", "EXP_PER_WIN", "_clamp", "_Refused",
+                  "online_reward"):
+        assert getattr(pet, const) is getattr(petbase, const)
