@@ -24,7 +24,7 @@ def _rule(name):
 
 def test_sakumon_is_the_battle_egg():
     r = _rule("Sakumon")
-    assert (r["wins"], r["price"], r["can_perm"]) == (50, 0, True)   # EARN tier: free
+    assert (r["wins"], r["can_perm"]) == (50, True)           # EARN tier
     assert r["stage"] is None                       # the old Ultimate gate is gone
     assert not egg._conditions_met(r, _prog(wins=49))
     assert egg._conditions_met(r, _prog(wins=50))
@@ -34,7 +34,7 @@ def test_petitmon_is_the_collector_egg():
     r = _rule("Petitmon")
     # 15 species ~ 2.5 lifetimes: the album records one entry per STAGE, so a gate
     # of 5 used to land halfway through the player's FIRST pet (egg audit 2026-07-14)
-    assert (r["album_n"], r["price"], r["can_perm"]) == (15, 0, True)   # EARN tier: free
+    assert (r["album_n"], r["can_perm"]) == (15, True)        # EARN tier
     assert r["prev_field"] is None                  # no longer a temp lineage egg
     assert not egg._conditions_met(r, _prog(album=set(range(1, 15))))    # 14
     assert egg._conditions_met(r, _prog(album=set(range(1, 16))))        # 15
@@ -42,19 +42,18 @@ def test_petitmon_is_the_collector_egg():
 
 def test_dodomon_is_the_x_egg():
     r = _rule("Dodomon")
-    assert (r["mega"], r["price"], r["can_perm"]) == (5, 0, True)   # EARN tier: free
+    assert (r["mega"], r["can_perm"]) == (5, True)            # EARN tier
     assert not r["xanti"]                           # the antibody gate is retired
     assert not egg._conditions_met(r, _prog(mega_kills=4))
     assert egg._conditions_met(r, _prog(mega_kills=5))
 
 
 def test_met_achievement_is_earned_free():
-    """Two-tier economy (Joel 2026-07-09): a signature-achievement egg is EARNED free
-    -- meeting the condition unlocks it outright (price 0), no extra bits."""
+    """Meeting the condition unlocks the egg outright -- no bits, ever
+    (the licence economy died 2026-07-17)."""
     r = _rule("Sakumon")
-    assert r["price"] == 0
-    assert egg.egg_state(r["idx"], _prog(wins=50), set())[0] == "owned"   # earned -> yours
-    assert egg.egg_state(r["idx"], _prog(wins=0), set())[0] == "locked"
+    assert egg.egg_state(r["idx"], _prog(wins=50), set()) == "owned"   # earned -> yours
+    assert egg.egg_state(r["idx"], _prog(wins=0), set()) == "locked"
 
 
 # ---- live progress ----------------------------------------------------------------
@@ -63,8 +62,6 @@ def test_unlock_progress_counts_the_countable():
     assert egg.unlock_progress(_rule("Sakumon")["idx"], _prog(wins=37)) == "lifetime wins 37/50"
     assert egg.unlock_progress(_rule("Petitmon")["idx"], _prog(album={1, 2, 3})) == "species recorded 3/15"
     assert egg.unlock_progress(_rule("Dodomon")["idx"], _prog(mega_kills=1)) == "Mega-class felled 1/5"
-    mystery = sorted(egg.win_eggs())[0]             # the "???" eggs count too
-    assert egg.unlock_progress(mystery, _prog(wins=12)) == "lifetime wins 12/50"
 
 
 def test_mega_kill_feeds_the_lifetime_progress():
@@ -78,13 +75,10 @@ def test_mega_kill_feeds_the_lifetime_progress():
     assert persistence.get_progress()["mega_kills"] == 1    # losses never count
 
 
-def test_fallback_pool_is_gone():
+def test_fallback_pool_and_mystery_eggs_are_gone():
     assert not hasattr(egg, "_fallback_pool")
-    # an unlisted, non-mystery egg would be locked, never album-auto-owned
-    states = egg.egg_states(_prog(album=set(range(40))), set())
-    for i, (st, _) in states.items():
-        if i in egg.win_eggs():
-            assert st == "locked"                   # 40 raised but 0 wins: still sealed
+    assert not hasattr(egg, "_WIN_EGGS")            # the "???" eggs left with the cut
+    assert "???" not in {egg.hatch_name(i) for i in range(egg.count())}
 
 
 # ---- the carousel -----------------------------------------------------------------
@@ -105,8 +99,8 @@ def test_carousel_shows_only_hatchable_eggs():
     hatch = set(egg.hatchable_eggs(pan.prog, set()))
     assert set(pan.carousel) == hatch
     assert pan.n == len(hatch) >= 5                  # the 5 starters at least
-    assert all(pan.states[i][0] in ("owned", "temp") for i in pan.carousel)
-    assert not any(pan.states[i][0] in ("locked", "buyable") for i in pan.carousel)
+    assert all(pan.states[i] in ("owned", "temp") for i in pan.carousel)
+    assert not any(pan.states[i] == "locked" for i in pan.carousel)
 
 
 def test_panel_smoke_walks_and_draws():
@@ -160,33 +154,19 @@ def test_status_card_index_survives_the_full_carousel():
         assert "New Egg" in fake.txt and f"{i + 1} of {pan.n}" in fake.txt
 
 
-def test_a_gated_egg_is_hidden_until_earned_then_bought():
-    """Earned-access: a gated egg stays OUT of the carousel until its milestone
-    is met, then appears in the HOME shop (it's a common egg); buying it makes
-    it hatchable and it joins the carousel."""
+def test_a_gated_egg_is_hidden_until_earned_then_appears():
+    """Earned-access after the licence cut: a gated egg stays OUT of the
+    carousel until its milestone is met, then joins it directly -- no shop
+    in between, and the panel persists the win (auto_owned)."""
     from tuipet import persistence, egg as egg_mod
     from tuipet.eggselectscreen import EggSelectPanel
-    from tuipet.shopscreen import ShopPanel
-    from tuipet.pet import Pet
-    idx = _rule("Pafumon")["idx"]                    # a HOME egg gated on album 10
-    assert egg_mod.egg_state(idx, _prog(), set())[0] == "locked"
+    idx = _rule("Sakumon")["idx"]                    # the battle egg: 50 wins
+    assert egg_mod.egg_state(idx, _prog(), set()) == "locked"
     assert idx not in EggSelectPanel().carousel      # locked -> hidden
-    for n in range(1, 11):
-        persistence.album_add(n)
-    prog = persistence.get_progress()
-    assert egg_mod.egg_state(idx, prog, set()) == ("buyable", 1300)
-    assert idx not in EggSelectPanel().carousel      # buyable -> still not on the carousel
-    hp = Pet(num=100, stage="Champion", attribute="Vaccine"); hp.world_seconds = 12 * 60.0
-    hp.bits = 5000
-    sp = ShopPanel(hp)
-    from tuipet import shop as _shop
-    while sp.tabs[sp.tab] != _shop.EGGS_CATEGORY:
-        sp.key("right")
-    entry = next(e for e in sp._rows() if e.get("egg_idx") == idx)   # sold at home
-    msg, sfx = _shop.buy(hp, entry)
-    assert "licensed" in msg
-    assert idx in persistence.get_eggs_owned()
-    assert idx in EggSelectPanel().carousel          # owned -> hatchable
+    persistence.wins_add(50)
+    pan = EggSelectPanel()                           # milestone met on open
+    assert idx in pan.carousel                       # earned -> hatchable, no purchase
+    assert idx in persistence.get_eggs_owned()       # and persisted permanent
 
 
 def test_fresh_profile_carousel_never_empty():

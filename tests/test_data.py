@@ -32,14 +32,16 @@ def test_egg_unlock_load():
     # every rule index is a real egg
     assert all(0 <= k < egg.count() for k in rules)
     # every rule carries the full evaluated condition set egg.py reads
-    needed = {"start", "price", "map", "stage", "xanti", "tourney", "zone", "gen",
+    needed = {"start", "map", "stage", "xanti", "tourney", "zone", "gen",
               "prev_field", "prev_attr", "prev_elem", "history", "food", "item",
               "habitat", "password", "obedience", "mood", "desc", "can_perm"}
     for rule in rules.values():
         assert needed <= set(rule)
-    # at least one starter egg, and at least one egg behind a price (a real bits sink)
+        # the licence economy is dead (2026-07-17): no rule carries a price
+        assert "price" not in rule and "store" not in rule
+    # at least one starter egg, and at least one earned condition gate
     assert any(r["start"] for r in rules.values())
-    assert any(r["price"] > 0 for r in rules.values())
+    assert any(not r["start"] and r["desc"] for r in rules.values())
 
 
 def test_egg_count_sane():

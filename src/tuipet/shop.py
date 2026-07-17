@@ -6,8 +6,9 @@ category column; buying moves it into the bag at face value; the bag can
 sell it back for half.  Effects live in Pet.use_item — the token text here
 mirrors those exact effects so the shelf, the bag and the belly can never
 disagree.  The DVPet rolled-slot/town-hours shop machine is retired; the
-town counters serve the same catalog.  The EGG shelf survives from the
-classic economy: condition-met priced digitama license here.
+town counters serve the same catalog.  The digitama-licence shelf was cut
+2026-07-17 ("i never wanted egg licenses"): eggs unlock by condition only,
+like the real devices -- the shop sells goods, never digitama.
 """
 from __future__ import annotations
 from . import data
@@ -42,9 +43,6 @@ ARMOR_CATEGORY = "Armor-Spirit"
 # never reach the shelf.  Faithful to the source default, not invented.
 DEFAULT_PRICE = 1000
 
-EGGS_CATEGORY = "Eggs"
-
-
 def _price(v):
     return int(v.get("price") or DEFAULT_PRICE)
 
@@ -78,37 +76,14 @@ def entry(key):
 
 
 def categories():
-    return sorted({e["category"] for e in catalog()}) + [EGGS_CATEGORY]
-
-
-def _egg_shelf():
-    """The digitama licenses (the classic egg economy rides the new shop):
-    condition-met priced eggs sell here; locked chaseable eggs show as ???
-    goal rows with their unlock story.  Buying licenses the egg PERMANENTLY
-    (persistence.eggs_owned)."""
-    from . import egg as egg_mod
-    from . import persistence
-    prog = persistence.get_progress()
-    owned = persistence.get_eggs_owned()
-    rows = [dict(egg_mod.shop_egg_entry(i, p), category=EGGS_CATEGORY)
-            for i, p in egg_mod.home_eggs(prog, owned)]
-    rows += [dict(egg_mod.locked_shop_entry(i, hint), category=EGGS_CATEGORY)
-             for i, hint in egg_mod.locked_home_eggs(prog, owned)]
-    return rows
+    return sorted({e["category"] for e in catalog()})
 
 
 def shelf(cat):
-    if cat == EGGS_CATEGORY:
-        return _egg_shelf()
     return [e for e in catalog() if e["category"] == cat]
 
 
 def effect_line(e):
-    if e.get("locked"):
-        return e.get("hint") or "a sealed digitama"
-    if "egg_idx" in e:
-        from . import egg as egg_mod
-        return "a digitama license · hatches %s" % egg_mod.hatch_name(e["egg_idx"])
     if e.get("category") == ARMOR_CATEGORY:
         return "an armor evolution (the right Child)"
     return EFFECTS.get(e["key"], "a curiosity")
@@ -116,17 +91,8 @@ def effect_line(e):
 
 def buy(pet, e):
     """-> (message, sfx)."""
-    if e.get("locked"):
-        return (e.get("hint") or "Not earned yet.", "error")
     if pet.bits < e["price"]:
         return (f"Need {e['price']}b — you have {pet.bits}b.", "error")
-    if "egg_idx" in e:
-        from . import persistence
-        if e["egg_idx"] in persistence.get_eggs_owned():
-            return ("Already licensed.", "error")
-        pet.spend_bits(e["price"])
-        persistence.egg_own(e["egg_idx"])
-        return (f"{e['name']} licensed — it joins the carousel!", "confirm")
     pet.spend_bits(e["price"])
     pet.add_item(e["key"])
     return (f"Bought {e['name']}!", "confirm")

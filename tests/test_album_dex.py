@@ -34,18 +34,21 @@ def test_old_raw_entries_canonicalize_on_read():
     assert persistence.album_seen(1)               # the chart twin answers
 
 
-def test_the_chibikiwimon_gate_accepts_either_twin():
-    """Egg 22's unlock history demands num 944 -- raising ChibiKiwimon from
-    its own egg (which hatches 1432) must satisfy it, like canon's name sync
-    (the exact stranding this audit found)."""
-    rule = next(r for r in data.load_egg_unlock().values()
-                if r["name"] == "ChibiKiwimon")
-    assert rule["history"] == [944]
+def test_the_history_gate_accepts_either_twin():
+    """A history gate demanding num 944 must accept its 1432 hatch-twin, like
+    canon's name sync (the exact stranding the album/dex audit found).  The
+    CSV row that carried it (ChibiKiwimon) left with the fake-egg cut, so the
+    rule is synthesized -- the gate code is what's pinned here."""
+    rule = {"history": [944], "gen": None, "wins": None, "album_n": None,
+            "mega": None, "connections": None, "stage": None, "xanti": False,
+            "tourney": None, "map": None, "prev_field": None, "prev_attr": None,
+            "obedience": None, "mood": None, "food": None, "item": None,
+            "habitat": None, "zone": None}
     prog = {"album": {944}, "wins": 10**9, "mega_kills": 10**9, "max_gen": 99,
             "max_stage": 99, "xanti_ever": True, "maps": set(range(99)),
-            "tourneys": set(range(999)), "last_field": rule.get("prev_field"),
-            "last_xanti": True, "last_attribute": rule.get("prev_attribute"),
-            "last_element": rule.get("prev_element")}
+            "tourneys": set(range(999)), "last_field": None,
+            "last_xanti": True, "last_attribute": None,
+            "last_element": None}
     # the album arrives canonicalized (get_album) -- 1432 stored old-style
     # resolves to 944; simulate both shapes through the gate:
     assert _conditions_met(rule, dict(prog, album={data.canonical_num(1432)}))

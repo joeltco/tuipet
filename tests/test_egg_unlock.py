@@ -43,14 +43,14 @@ def test_start_eggs_owned_from_nothing():
     starts = [i for i, r in rules.items() if r["start"]]
     assert starts, "expected at least one starter egg"
     for i in starts:
-        state, price = egg.egg_state(i, EMPTY, owned=set())
+        state = egg.egg_state(i, EMPTY, owned=set())
         assert state == "owned", f"start egg {i} should be owned, got {state}"
 
 
-def test_selectable_includes_all_starts():
+def test_hatchable_includes_all_starts():
     rules = data.load_egg_unlock()
-    sel = set(egg.selectable_eggs(EMPTY, owned=set()))
-    assert sel, "no eggs selectable from a fresh account"
+    sel = set(egg.hatchable_eggs(EMPTY, owned=set()))
+    assert sel, "no eggs hatchable from a fresh account"
     for i, r in rules.items():
         if r["start"]:
             assert i in sel
@@ -59,7 +59,7 @@ def test_selectable_includes_all_starts():
 def test_something_is_locked_initially():
     """A fresh account must NOT have everything unlocked (else progression is moot)."""
     states = egg.egg_states(EMPTY, owned=set())
-    assert any(s == "locked" for s, _ in states.values())
+    assert any(s == "locked" for s in states.values())
 
 
 def test_signal_gated_eggs_are_reachable():
@@ -73,7 +73,7 @@ def test_signal_gated_eggs_are_reachable():
         if rule and (rule["password"] or rule["food"] or rule["item"]
                      or rule["habitat"] or rule["zone"]):
             continue                       # intentionally gated on an unmodelled system
-        state, _ = egg.egg_state(i, _prog_for(rule), owned=set())
+        state = egg.egg_state(i, _prog_for(rule), owned=set())
         if state == "locked":
             stranded.append(i)
     assert not stranded, f"signal-gated eggs unreachable: {stranded}"
@@ -122,64 +122,21 @@ def test_no_egg_gated_on_an_unmodeled_system():
     assert not stranded, f"eggs gated on unmodeled systems (permanently locked): {stranded}"
 
 
-def test_hatchable_and_buyable_partition_the_unlocked():
-    """hatchable (owned+temp) and buyable are disjoint and together = non-locked.
-    A progressed account has both; a fresh one has only the free starters."""
-    prog = dict(EMPTY, max_stage=3, maps={0, 1}, album=set(range(1, 10)))
-    hatch = set(egg.hatchable_eggs(prog, set()))
-    buy = {i for i, _ in egg.buyable_eggs(prog, set())}
-    sel = set(egg.selectable_eggs(prog, set()))
-    assert hatch and buy, "a progressed account has free eggs AND buyable ones"
-    assert hatch.isdisjoint(buy)
-    assert hatch | buy == sel
-
-
-def test_egg_shop_buy_unlocks_for_hatching():
-    """Buying an egg in the shop spends bits, owns it permanently, and moves it from
-    'buyable' to 'hatchable' (it then shows up in the egg select)."""
-    from tuipet.shopscreen import ShopPanel
-    from tuipet.pet import Pet
+def test_condition_met_unlocks_without_any_purchase():
+    """The licence cut (2026-07-17): meeting a can_perm rule's condition owns
+    the egg outright -- no shop, no bits, no intermediate state."""
     from tuipet import persistence
-    _, by = data.load_sprites()
-    num = next((n for n, r in by.items()
-                if r["stage"] == "Rookie" and not data.is_placeholder(n)), None)
-    if num is None:
-        pytest.skip("sprite assets not installed")
-    pet = Pet.from_num(num)
-    pet.bits = 5000
-
-    persistence._note_max("max_stage", 3)                    # reach the milestones
-    for n in range(1, 10):
-        persistence.album_add(n)
-    prog = persistence.get_progress()
-    owned = persistence.get_eggs_owned()
-    buyable = egg.buyable_eggs(prog, owned)
-    assert buyable, "a progressed account has buyable eggs"
-    idx, price = buyable[0]
-    assert idx not in egg.hatchable_eggs(prog, owned)         # not hatchable yet
-
-    from tuipet import shop as _shop
-    msg, sfx = _shop.buy(pet, egg.shop_egg_entry(idx, price))
-    assert "licensed" in msg
-    assert pet.bits == 5000 - price                          # bits spent
-
-    prog2 = persistence.get_progress()
-    owned2 = persistence.get_eggs_owned()
-    assert idx in owned2                                      # owned permanently
-    assert idx in egg.hatchable_eggs(prog2, owned2)          # now hatchable in egg select
-    assert idx not in {i for i, _ in egg.buyable_eggs(prog2, owned2)}  # gone from the shop
-
-    # can't double-buy, and can't buy without bits
-    msg, sfx = _shop.buy(pet, egg.shop_egg_entry(idx, price))
-    assert sfx == "error" and "Already" in msg
-    nxt = egg.buyable_eggs(prog2, owned2)
-    if nxt:
-        pet.bits = 0
-        msg, sfx = _shop.buy(pet, egg.shop_egg_entry(*nxt[0]))
-        assert "Need" in msg
+    rules = data.load_egg_unlock()
+    idx, r = next((i, r) for i, r in rules.items()
+                  if r["wins"] and r["can_perm"] and not r["start"])
+    assert egg.egg_state(idx, EMPTY, set()) == "locked"
+    prog = dict(EMPTY, wins=r["wins"])
+    assert egg.egg_state(idx, prog, set()) == "owned"         # met -> yours, free
+    assert idx in egg.auto_owned(prog, set())                 # and it persists
+    assert idx in egg.hatchable_eggs(prog, set())             # straight to the carousel
 
 
-# ---- password redemption + egg mood (Evolution.egg) --------------------------
+# ---- egg mood (Evolution.egg) -------------------------------------------------
 
 def test_new_egg_starts_warm():
     from tuipet.pet import Pet, EGG_MOOD
@@ -187,10 +144,8 @@ def test_new_egg_starts_warm():
     assert p.mood == EGG_MOOD == 100                 # Evolution.egg: setMood(EggMood)
 
 
-def test_carimon_is_earned_by_conquering_the_world():
-    """The old password egg is a free achievement: its map-4 row is the raid
-    re-gate's deepest milestone -- 5 felled community bosses (2026-07-16)."""
-    idx = next(r["idx"] for r in data.load_egg_unlock().values() if r["name"] == "Carimon")
-    assert data.load_egg_unlock()[idx]["password"] is None      # no code any more
-    assert egg.egg_state(idx, dict(EMPTY, raids=4), set())[0] == "locked"
-    assert egg.egg_state(idx, dict(EMPTY, raids=5), set()) == ("owned", 0)
+def test_carimon_left_with_the_fake_egg_cut():
+    """The old password egg (Carimon, corpus 1050) had no covered device --
+    cut 2026-07-17 with the rest of the fakes."""
+    assert all(r["name"] != "Carimon" for r in data.load_egg_unlock().values())
+    assert "Carimon" not in {egg.hatch_name(i) for i in range(egg.count())}

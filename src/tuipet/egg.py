@@ -79,14 +79,14 @@ def record(egg_type=0):
             "frames": fr}
 
 
-# --- DVPet eggUnlock.csv-driven egg unlock (real data; see data.load_egg_unlock) ---
-# Each egg gates on the same signals the device tracks (generation, album/history,
-# X-Antibody, reached stage, maps cleared, tournament trophies, previous-generation
-# attribute/element/field). Condition met + price 0 -> auto-unlocked (free to hatch,
-# or temp for this generation); condition met + price > 0 -> BUYABLE in the egg shop
-# (shopscreen Eggs tab) and bought eggs are owned permanently. The egg SELECT shows
+# --- eggUnlock.csv-driven egg unlock (see data.load_egg_unlock) --------------------
+# Each egg gates on the signals the device tracks (generation, album/history,
+# X-Antibody, reached stage, felled raids, tournament trophies, previous-generation
+# attribute/field, wins, links).  Condition met -> unlocked, period: permanent when
+# the row allows (can_perm, via auto_owned), temp for this generation otherwise --
+# exactly how the real devices behave.  The licence/price economy was cut 2026-07-17
+# ("i never wanted egg licenses"): devices never sold eggs.  The egg SELECT shows
 # only hatchable (owned/temp) eggs. persistence.get_progress() supplies the state.
-_WIN_EGGS = {41: 50, 42: 100}      # tuipet-only "???" eggs (not in eggUnlock.csv) -> lifetime wins
 
 
 def _conditions_met(rule, prog):
@@ -143,23 +143,16 @@ def _conditions_met(rule, prog):
 
 
 def egg_state(idx, prog, owned):
-    """('owned'|'buyable'|'temp'|'locked', price) for one egg index."""
+    """'owned' | 'temp' | 'locked' for one egg index."""
     from . import data
     rule = data.load_egg_unlock().get(idx)
-    if rule is None:                    # the "???" mystery eggs: lifetime-win gates
-        if idx in owned:                # (the old album-size fallback pool is gone --
-            return ("owned", 0)         # it was opaque, and every egg now has a rule)
-        need = _WIN_EGGS.get(idx)
-        if need is not None:
-            return ("owned", 0) if prog["wins"] >= need else ("locked", 0)
-        return ("locked", 0)
+    if rule is None:                    # a bank egg with no rule row: owned-only
+        return "owned" if idx in owned else "locked"
     if rule["start"] or idx in owned:
-        return ("owned", 0)
+        return "owned"
     if not _conditions_met(rule, prog):
-        return ("locked", rule["price"])
-    if rule["price"] > 0:
-        return ("buyable", rule["price"])      # condition met but priced -> buy in the egg shop
-    return ("owned", 0) if rule["can_perm"] else ("temp", 0)
+        return "locked"
+    return "owned" if rule["can_perm"] else "temp"
 
 
 def egg_states(prog, owned):
@@ -167,7 +160,8 @@ def egg_states(prog, owned):
 
 
 def auto_owned(prog, owned):
-    """Eggs that just became permanent (price-0 met, can_perm) -> caller persists them."""
+    """Eggs that just became permanent (condition met, can_perm) -> caller
+    persists them (the device behaviour: an earned egg is earned forever)."""
     from . import data
     rules = data.load_egg_unlock()
     out = []
@@ -175,39 +169,24 @@ def auto_owned(prog, owned):
         if i in owned:
             continue
         rule = rules.get(i)
-        if rule and not rule["start"] and rule["price"] == 0 and rule["can_perm"] \
+        if rule and not rule["start"] and rule["can_perm"] \
                 and _conditions_met(rule, prog):
             out.append(i)
     return out
 
 
-def selectable_eggs(prog, owned):
-    """Egg indices the player may pick or license now (owned + temp + buyable)."""
-    st = egg_states(prog, owned)
-    return sorted(i for i, (s, _) in st.items() if s != "locked")
-
-
 def hatchable_eggs(prog, owned):
     """Eggs ready to hatch right now (owned + temp) -- what the egg select shows."""
     st = egg_states(prog, owned)
-    return sorted(i for i, (s, _) in st.items() if s in ("owned", "temp"))
+    return sorted(i for i, s in st.items() if s in ("owned", "temp"))
 
 
-def buyable_eggs(prog, owned):
-    """(idx, price) for eggs whose condition is met but that cost bits -- the egg shop."""
-    st = egg_states(prog, owned)
-    return [(i, p) for i, (s, p) in sorted(st.items()) if s == "buyable"]
-
-
-def shop_egg_entry(idx, price):
-    """A shop-row dict for a buyable egg (compatible with shopscreen rendering)."""
-    return {"key": "egg:%d" % idx, "name": hatch_name(idx), "price": int(price),
-            "egg_idx": idx}
-
-
-def win_eggs():
-    """The tuipet-only mystery eggs and their lifetime-win gates ({idx: wins})."""
-    return dict(_WIN_EGGS)
+def wins_thresholds():
+    """Every lifetime-wins gate in the table ({wins_needed}) -- record_battle
+    flashes the nursery note the moment a total crosses one."""
+    from . import data
+    return {r["wins"] for r in data.load_egg_unlock().values()
+            if r.get("wins") is not None}
 
 
 def unlock_progress(idx, prog):
@@ -217,9 +196,6 @@ def unlock_progress(idx, prog):
     from . import data
     rule = data.load_egg_unlock().get(idx)
     if rule is None:
-        need = _WIN_EGGS.get(idx)
-        if need is not None:
-            return f"lifetime wins {min(prog['wins'], need)}/{need}"
         return ""
     if rule.get("wins") is not None:
         return f"lifetime wins {min(prog['wins'], rule['wins'])}/{rule['wins']}"
@@ -243,8 +219,7 @@ def unlock_ratio(idx, prog):
     from . import data
     rule = data.load_egg_unlock().get(idx)
     if rule is None:
-        need = _WIN_EGGS.get(idx)
-        return min(1.0, prog["wins"] / need) if need else None
+        return None
     if rule.get("wins") is not None:
         return min(1.0, prog["wins"] / max(1, rule["wins"]))
     if rule.get("album_n") is not None:
@@ -259,17 +234,23 @@ def unlock_ratio(idx, prog):
 
 
 def locked_hint(prog, owned):
-    """Shortest 'what unlocks next' hint among locked eggs ('' if none)."""
+    """Shortest 'what unlocks next' hint among locked eggs ('' if none) --
+    prefers the gate the player is CLOSEST to (unlock_ratio), so the tease
+    is always the next achievable egg, not csv order."""
     from . import data
     rules = data.load_egg_unlock()
+    best, best_r = "", -1.0
     for i in range(count()):
-        s, _ = egg_state(i, prog, owned)
-        if s == "locked" and rules.get(i) and rules[i]["desc"]:
-            return rules[i]["desc"]
-    for i, need in sorted(_WIN_EGGS.items(), key=lambda kv: kv[1]):
-        if egg_state(i, prog, owned)[0] == "locked":
-            return f"a mystery egg at {need} lifetime wins ({prog['wins']}/{need})"
-    return ""
+        if egg_state(i, prog, owned) != "locked":
+            continue
+        rule = rules.get(i)
+        if not (rule and rule["desc"]):
+            continue
+        r = unlock_ratio(i, prog)
+        r = -0.5 if r is None else r          # counters outrank yes/no gates
+        if r > best_r:
+            best, best_r = rule["desc"], r
+    return best
 
 
 # back-compat: some callers referenced egg.FRAMES / egg.W / egg.H
@@ -286,50 +267,3 @@ if __name__ == "__main__":
         for r in f:
             print(r.replace("0", " ").replace("1", "#"))
         print()
-
-
-# --- themed TOWN egg shops: spread the buyable roster across the world by habitat ---
-
-
-def _store_of(idx):
-    """Which storefront sells this egg -- "home"/"town" both mean the home
-    shop now (the towns left with the world layer; BASIC VPET 2026-07-16)."""
-    from . import data
-    return (data.load_egg_unlock().get(idx) or {}).get("store", "")
-
-
-def _chaseable(rule):
-    """A locked egg whose gate the player can actually work toward -- a real
-    description, and nothing gated on a signal tuipet doesn't model."""
-    return bool(rule and rule["desc"]
-                and rule["food"] is None and rule["item"] is None
-                and rule["habitat"] is None and rule["zone"] is None)
-
-
-def home_eggs(prog, owned):
-    """(idx, price) buyable eggs sold at the HOME shop -- the common storefront."""
-    return [(i, p) for i, p in buyable_eggs(prog, owned)
-            if _store_of(i) in ("home", "town")]
-
-
-
-def locked_home_eggs(prog, owned, cap=6):
-    """(idx, hint) for LOCKED home-shop eggs the player can chase -- the home
-    egg tab's goal board."""
-    from . import data
-    rules = data.load_egg_unlock()
-    out = []
-    for i, (state, _) in sorted(egg_states(prog, owned).items()):
-        if state == "locked" and _store_of(i) in ("home", "town") \
-                and _chaseable(rules.get(i)):
-            out.append((i, rules[i]["desc"]))
-            if len(out) >= cap:
-                break
-    return out
-
-
-
-def locked_shop_entry(idx, hint):
-    """A shelf row for a locked egg: shows as ??? with its unlock hint."""
-    return {"key": "eggl:%d" % idx, "name": "???", "price": 0,
-            "egg_idx": idx, "locked": True, "hint": hint}

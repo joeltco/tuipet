@@ -274,11 +274,11 @@ def _prog(raids=0):
 def test_map_rows_gate_on_felled_raids_now():
     rules = data.load_egg_unlock()
     row = next(r for r in rules.values() if r.get("map") == 0)
-    deep = next(r for r in rules.values() if r.get("map") == 4)
+    deep = next(r for r in rules.values() if r.get("map") == 3)
     assert not egg._conditions_met(row, _prog(raids=0))
     assert egg._conditions_met(row, _prog(raids=1))
-    assert not egg._conditions_met(deep, _prog(raids=4))
-    assert egg._conditions_met(deep, _prog(raids=5))
+    assert not egg._conditions_met(deep, _prog(raids=3))
+    assert egg._conditions_met(deep, _prog(raids=4))
 
 
 def test_map_rows_tell_the_raid_story():

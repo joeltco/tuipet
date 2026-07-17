@@ -23,7 +23,7 @@ def _root_line(i):
 
 def test_every_new_egg_hatches_its_own_device_line():
     """No two eggs share a root unless their device charts are identical
-    (WG+Lalamon, VB+Meicoomon -- humulos pen20 says so)."""
+    (WG+Lalamon -- humulos pen20 says so)."""
     by = _by_name()
     L = lines.load_lines()
     roots = {}
@@ -41,9 +41,10 @@ def test_every_new_egg_hatches_its_own_device_line():
                       ("Kera Digitama", "kera")]:
         assert egg.hatch_targets(by[name]) == [L[lid]["root"]], (name, lid)
         roots[name] = L[lid]["root"]
-    # the pen20 twins that legitimately share a chart
+    # the pen20 twin that legitimately shares a chart (the Meicoomon egg
+    # skin, VB's other twin, left with the fake-egg cut 2026-07-17)
     assert egg.hatch_targets(by["Lalamon Egg"]) == [L["wgu"]["root"]]
-    assert egg.hatch_targets(by["Meicoomon Egg"]) == [L["vbu"]["root"]]
+    assert "Meicoomon Egg" not in by
     # X3 multi-hatches BOTH dmx ver.3 babies (Zerimon & Cocomon sides)
     assert egg.hatch_targets(by["Digitama X3"]) == \
         sorted([L["x3a"]["root"], L["x3b"]["root"]])

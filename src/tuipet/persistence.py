@@ -202,10 +202,12 @@ def save_settings(d, path=None):
 # --- egg-bank index migration (2026-07-10 egg saga) ---------------------------
 # .400/.401 shipped an 84-egg bank; .402 cut/reordered to 78; .403 restored
 # Nature Spirits (79); .404's dominance audit cut 11 duplicate eggs -- FIVE of
-# them classics, so the classic block moves too.  Saved egg INDICES translate
-# by (name, occurrence) through the FULL bank order of whichever build wrote
-# them (occurrence handles the twin "???" mystery eggs).
-EGG_ORDER_V = 4
+# them classics, so the classic block moves too.  v5 (the humulos provenance
+# audit, 2026-07-17) cut the 22 fake eggs -- the no-covered-device babies and
+# the two invented "???" eggs -- leaving the 46 device-verified eggs.  Saved
+# egg INDICES translate by (name, occurrence) through the FULL bank order of
+# whichever build wrote them (occurrence handles v4's twin "???" eggs).
+EGG_ORDER_V = 5
 _CLASSIC49 = [
     "YukimiBotamon", "Botamon", "Punimon", "Poyomon", "Yuramon", "Zurumon",
     "Babumon", "Pichimon", "Mokumon", "Nyokimon", "Choromon", "Kuramon",
@@ -243,12 +245,36 @@ _V403_FULL = _CLASSIC49 + [
     "Draco Egg", "Lalamon Egg", "Ludo Egg", "Meicoomon Egg", "Terrier Egg",
     "Lop Egg", "V Egg", "Virus Busters Ver. 20th Egg", "Digitama X3",
     "Kera Digitama"]
+_V404_FULL = [
+    "Botamon", "Punimon", "Poyomon", "Yuramon", "Zurumon", "Babumon",
+    "Kuramon", "Chibickmon", "Tsubumon", "Pururumon", "Jyarimon", "Dodomon",
+    "Puttimon", "Kiimon", "Dokimon", "Chibomon", "Datirimon", "ChibiKiwimon",
+    "Ketomon", "Leafmon", "Pafumon", "Paomon", "Petitmon", "Popomon",
+    "Pupumon", "Bommon", "Pusumon", "Puwamon", "Relemon", "Sakumon",
+    "Zerimon", "Cocomon", "Fufumon", "Cotsucomon", "Algomon I", "Bombmon",
+    "Carimon", "Sunamon", "Curimon", "Pyonmon", "Puyomon", "???", "???",
+    "Fusamon", "Nature Spirits Egg", "Deep Savers Egg",
+    "Nightmare Soldiers Egg", "Wind Guardians Egg", "Metal Empire Egg",
+    "Virus Busters Egg", "Corona Egg", "Luna Egg", "Zuba Egg", "Hack Egg",
+    "Meicoo Egg", "DORU Egg", "Slayerdra Egg", "Breakdra Egg", "Ryuda Egg",
+    "Draco Egg", "Lalamon Egg", "Meicoomon Egg", "Terrier Egg", "Lop Egg",
+    "V Egg", "Virus Busters Ver. 20th Egg", "Digitama X3", "Kera Digitama"]
 # a CUT egg MID-INCUBATION falls back to the surviving egg of the same baby
 # (name -> name; resolved against the live bank).  Fallbacks are for egg_type
 # ONLY -- never for eggs_owned, or a cut egg would "translate" into permanent
 # ownership of an unearned egg (the .403 Puttimon-as-starter bug).
 _CUT_FALLBACK = {
     "Digitama X": "Puttimon", "Digitama X2": "Kiimon",
+    # the v5 fake-egg cut (humulos provenance audit 2026-07-17): a fake egg
+    # mid-incubation becomes a device egg of roughly its temperament
+    "Babumon": "Botamon", "Jyarimon": "Botamon", "Datirimon": "Dokimon",
+    "ChibiKiwimon": "Punimon", "Pafumon": "Yuramon", "Paomon": "Yuramon",
+    "Popomon": "Botamon", "Pupumon": "Poyomon", "Bommon": "Punimon",
+    "Pusumon": "Poyomon", "Puwamon": "Punimon", "Relemon": "Yuramon",
+    "Bombmon": "Punimon", "Carimon": "Zurumon", "Sunamon": "Zurumon",
+    "Curimon": "Yuramon", "Pyonmon": "Punimon", "Puyomon": "Poyomon",
+    "Fusamon": "Punimon", "???": "Botamon",
+    "Meicoomon Egg": "Virus Busters Egg",
     "Vorvomon Egg": "Nightmare Soldiers Egg",
     "Nightmare Soldiers Ver.20th Egg": "Metal Empire Egg",
     "Version 6 Egg": "Nature Spirits Egg", "Ludo Egg": "Cotsucomon",
@@ -294,7 +320,7 @@ def _migrate_egg_index(old, table=_V401_FULL, fallback=True):
 def _table_for(save_v):
     """The FULL bank order a given save version's indices were written
     against; None = indices are already current."""
-    return {2: _V402_FULL, 3: _V403_FULL}.get(save_v, _V401_FULL)
+    return {2: _V402_FULL, 3: _V403_FULL, 4: _V404_FULL}.get(save_v, _V401_FULL)
 
 
 def _sane_owned(owned):
@@ -486,7 +512,7 @@ def _prog():
 
 
 def get_eggs_owned():
-    """Egg indices permanently licensed (bought, or a met price-0 permanent unlock)."""
+    """Egg indices permanently earned (a met can_perm unlock, stuck forever)."""
     return set(_prog().get("eggs_owned", []))
 
 

@@ -45,6 +45,9 @@ def test_every_sheet_is_wired_or_allowlisted():
         # as real rips a future egg/system can wear without a data rebuild
         "boulevard", "boulevardusk", "citysunset", "fileisland",
         "islandnight", "jungle", "seafloor", "sunsetshore",
+        # their wearers (Sunamon / the Meicoomon egg skin) left with the
+        # fake-egg cut (2026-07-17); the rips stay for a future wearer
+        "desert", "tealhollow",
     }
     wired = set(backgrounds.EGG_BG.values()) | {"tourneyBack"}
     plates = {k for k in data.load_backgrounds() if k.startswith("digicore")}
@@ -58,7 +61,7 @@ def test_every_sheet_is_wired_or_allowlisted():
 def test_the_pet_wears_its_egg_scene_for_life():
     p = Pet(num=100, stage="Champion", attribute="Vaccine", obedience=500)
     p.world_seconds = 600.0
-    p.egg_type = 62                                  # baybridge (the movie twin)
+    p.egg_type = 40                                  # baybridge (the movie twin)
     fr = p.background()
     assert fr == data.load_backgrounds()["baybridge"][0]
     p.evolve_to(101) if hasattr(p, "evolve_to") else None

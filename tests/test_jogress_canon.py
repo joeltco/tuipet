@@ -16,7 +16,11 @@ from tuipet import data, jogress, lines
 from tuipet.pet import Pet, DP_MAX
 
 # canon one-sided doors: the companion never evolves (wikimon/humulos DMX3)
-ONE_SIDED = {(863, 1)}          # Jesmon X companion -> Jesmon GX (x3a/x3b)
+ONE_SIDED = {(863, 1),          # Jesmon X companion -> Jesmon GX (x3a/x3b)
+             # BanchoLeomon's line (jyarimon) left with the fake-egg cut
+             # (2026-07-17): his side of Chaosmon lives in the corpus only,
+             # answered online through the companion channel
+             (350, 348)}
 
 
 def _pet(num, stage="Mega", line_id=""):
@@ -53,13 +57,15 @@ def test_every_exact_door_is_mutual_or_declared_one_sided():
     assert one_way, "the one-sided family vanished -- update ONE_SIDED"
 
 
-def test_chaosmon_opens_from_both_sides():
-    """FIXED this audit: BanchoLeomon's side (jyarimon) was missing."""
+def test_chaosmon_door_survives_the_fake_egg_cut():
+    """BanchoLeomon's line (jyarimon) was cut 2026-07-17; Darkdramon's side
+    of Chaosmon stays, and the partner resolves as a corpus companion."""
     L = lines.load_lines()
-    assert any(r["num"] == 348 and r["jogress"] == 349
-               for r in L["jyarimon"]["children"].get(350, []))
+    assert "jyarimon" not in L
     assert any(r["num"] == 348 and r["jogress"] == 350
                for r in L["draco"]["children"].get(349, []))
+    assert any(r["num"] == 348 and r["jogress"] == 350
+               for r in L["mem"]["children"].get(349, []))
 
 
 def test_rafflesimon_opens_from_both_sides():

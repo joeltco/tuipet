@@ -329,20 +329,13 @@ def test_tournament_bracket_runs_when_eligible():
     pan.text()
 
 
-def test_shop_egg_tab_and_password_entry():
+def test_shop_walks_clean_without_an_egg_tab():
     from tuipet.shopscreen import ShopPanel
     p = _pet()
     pan = ShopPanel(p)
-    for _ in range(8):                          # cycle to the egg tab
-        from tuipet import shop as _shop
-        if pan.tabs[pan.tab] == _shop.EGGS_CATEGORY:
-            break
-        _step(pan, "tab")
-    from tuipet import shop as _shop
-    if pan.tabs[pan.tab] == _shop.EGGS_CATEGORY:
-        _step(pan, "down"); _step(pan, "enter")  # an egg buy attempt renders
-    # (the shop's password door left with the old screen -- eggselect keeps
-    # its own code entry, covered by test_eggselect_code_entry below)
+    assert "Eggs" not in pan.tabs               # licence shelf cut 2026-07-17
+    for _ in range(len(pan.tabs)):
+        _step(pan, "down"); _step(pan, "right")
     pan.text()
 
 

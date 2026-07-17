@@ -27,34 +27,15 @@ def test_guide_lists_every_egg():
 def test_fresh_profile_marks():
     pan = EggGuidePanel()
     assert pan._tag(0) == "yours"                        # a starter
-    assert pan._tag(_rule("Babumon")["idx"]) == "locked"  # priced but ungated yet
+    assert pan._tag(_rule("Kuramon")["idx"]) == "locked"  # yes/no gate, unmet
     assert pan._tag(_rule("Sakumon")["idx"]) == "0/50"    # countable gate -> live count
-
-
-def test_buyable_egg_tags_its_price():
-    idx = _rule("Pafumon")["idx"]                # HOME egg gated on album 10
-    for n in range(1, 11):
-        persistence.album_add(n)
-    pan = EggGuidePanel()
-    assert pan.states[idx] == ("buyable", 1300)
-    assert pan._tag(idx) == "1300 bits"
 
 
 def test_note_is_the_csv_description_verbatim():
     pan = EggGuidePanel()
-    idx = _rule("Babumon")["idx"]
+    idx = _rule("Chibickmon")["idx"]
     pan.i = idx
-    assert pan._note(idx) == _rule("Babumon")["desc"] == "Reach the Rookie stage"
-
-
-def test_mystery_eggs_stay_masked():
-    pan = EggGuidePanel()
-    for idx, need in egg.win_eggs().items():
-        assert egg.hatch_name(idx) == "???"
-        pan.i = idx
-        rows = dict((l, v) for l, v in pan._detail_rows(idx) if l)
-        assert rows["Unlock"] == "a mystery egg"
-        assert rows["Goal"] == f"lifetime wins 0/{need}"
+    assert pan._note(idx) == _rule("Chibickmon")["desc"] == "Win 10 battles"
 
 
 # ---- one egg's story --------------------------------------------------------------
@@ -69,13 +50,11 @@ def test_detail_locked_countable_shows_goal():
     assert rows["Keeps"] == "forever"
 
 
-def test_detail_priced_egg_names_its_storefront():
+def test_no_detail_row_ever_shows_a_price():
+    """The licence cut (2026-07-17): the guide sells nothing."""
     pan = EggGuidePanel()
-    home, town = _rule("Babumon"), _rule("Nature Spirits Egg")
-    hrows = dict((l, v) for l, v in pan._detail_rows(home["idx"]) if l)
-    trows = dict((l, v) for l, v in pan._detail_rows(town["idx"]) if l)
-    assert hrows["Price"] == "900 bits · the home shop"
-    assert trows["Price"].endswith("its biome's town")
+    for i in range(pan.n):
+        assert "Price" not in dict(pan._detail_rows(i))
 
 
 def test_detail_temp_lineage_egg_says_this_gen():
@@ -95,7 +74,7 @@ def test_wrap_rejoins_verbatim():
 # ---- LCD budget + keys ------------------------------------------------------------
 
 def test_every_page_fits_the_lcd():
-    """38 cols, 12 rows -- list AND all 68 detail pages."""
+    """38 cols, 12 rows -- list AND every detail page."""
     pan = EggGuidePanel()
     pages = [_lines(pan)]
     pan.key("enter")

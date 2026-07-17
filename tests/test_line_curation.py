@@ -399,12 +399,6 @@ def test_canon_hints_landed():
     assert {"Dracomon", "Coredramon"} <= names("petitmon")
 
 
-def test_licenses_priced_by_ceiling():
-    rules = data.load_egg_unlock()
-    for r in rules.values():
-        assert r["price"] != 2000, r["name"]   # the flat legacy tier is gone
-
-
 def test_dm20_jogress_capstones_are_declared_doors():
     """Canon capstones (humulos): Omnimon Alter-S = BlitzGreymon +
     CresGarurumon; RustTyrannomon = Aegisdramon + Machinedramon.  Each is a

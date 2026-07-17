@@ -2859,8 +2859,10 @@ class Pet:
             self.exp += EXP_PER_WIN
         from . import persistence as _persist
         total = _persist.wins_add(1)                     # lifetime wins (egg gates)
-        if total in egg_mod.win_eggs().values():
-            self.egg_unlock_note = "A mysterious egg appeared in the nursery!"
+        if total in egg_mod.wins_thresholds():
+            # a lifetime-wins egg gate just crossed (Zuba 75 / Hack 40 / V 25 /
+            # Sakumon 50 / Chibickmon 10...): flash the nursery note
+            self.egg_unlock_note = "A new egg appeared in the nursery!"
         if enemy:
             self.levels_fought.append(_enemy_level(enemy))
             # KO6: Stage VI is Mega, full stop; PvP excluded (untrusted

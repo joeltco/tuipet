@@ -256,9 +256,11 @@ class TuiPetApp(App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("NO MORE ELEMENTS: the element system is gone - it was "
-                 "app-era data, never real vpet canon. Vaccine, Data and "
-                 "Virus are the only types, like the actual devices.")
+    WHATS_NEW = ("REAL EGGS ONLY: 22 fake eggs (no real device ever had "
+                 "them) are gone, and eggs are never sold any more - every "
+                 "digitama is EARNED by a real condition, like the actual "
+                 "devices. Old saves migrate; a fake egg mid-incubation "
+                 "becomes a classic one.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and
@@ -963,10 +965,10 @@ class TuiPetApp(App):
         # no goals); the badge/shown branches below stay defensive in case a
         # locked/buyable egg ever leaks onto it.
         idx = m.carousel[m.i] if m.carousel else 0
-        state = m.states.get(idx, ("owned", 0))[0]
-        badge = {"temp": "[dim]this gen only[/]", "locked": "[dim]sealed[/]",
-                 "buyable": "[dim]sealed[/]"}.get(state, "[dim]ready[/]")
-        shown = "???" if state in ("locked", "buyable") else egg_mod.hatch_name(idx)
+        state = m.states.get(idx, "owned")
+        badge = {"temp": "[dim]this gen only[/]",
+                 "locked": "[dim]sealed[/]"}.get(state, "[dim]ready[/]")
+        shown = "???" if state == "locked" else egg_mod.hatch_name(idx)
         self._status_card("New Egg", [f"[dim]{m.i + 1} of {m.n}[/]",
                                       f"[dim]{m.locked} still locked[/]", "",
                                       "Destined to hatch", f"  [b]{shown}[/]",

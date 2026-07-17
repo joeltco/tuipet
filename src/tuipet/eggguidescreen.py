@@ -4,9 +4,9 @@ The egg SELECT carousel stays available-only (no silhouettes, no teasers);
 THIS is where the rest of the roster lives: every digitama in the game, the
 state it is in, and — verbatim from eggUnlock.csv's LockedDescription — what
 earns it, with the live 'how close am I' counter (egg.unlock_progress).
-Data only: names, prices, conditions and progress all come from egg.py /
-data.load_egg_unlock(); nothing here is guessed.  The two no-rule "???" eggs
-keep their mystery (win-gate progress, no name).
+Data only: names, conditions and progress all come from egg.py /
+data.load_egg_unlock(); nothing here is guessed.  (Prices left with the
+licence cut 2026-07-17: every egg is earned, none are sold.)
 
 ↑↓ browse the list, ENTER opens one egg's story (←→ pages between eggs
 without leaving it), ESC backs out."""
@@ -18,7 +18,7 @@ from . import persistence
 from .theme import INK, INK_B, DIM  # noqa: F401  (palette names bound for theme.apply propagation)
 
 VIS = 8                                   # list rows shown at once
-_MARK = {"owned": "✓", "temp": "~", "buyable": "$", "locked": "✗"}
+_MARK = {"owned": "✓", "temp": "~", "locked": "✗"}
 _VAL_W = 27                               # detail value column (38 - 10 label - cursor pad)
 
 
@@ -87,13 +87,11 @@ class EggGuidePanel:
 
     # ---- the list ----------------------------------------------------------
     def _tag(self, idx):
-        state, price = self.states[idx]
+        state = self.states[idx]
         if state == "owned":
             return "yours"
         if state == "temp":
             return "this gen"
-        if state == "buyable":
-            return f"{price} bits"
         return _short_progress(egg_mod.unlock_progress(idx, self.prog)) or "locked"
 
     def _note(self, idx):
@@ -104,12 +102,12 @@ class EggGuidePanel:
 
     def _list_scene(self):
         from rich.text import Text
-        have = sum(1 for s, _ in self.states.values() if s in ("owned", "temp"))
+        have = sum(1 for s in self.states.values() if s in ("owned", "temp"))
         out = menu.header("DIGITAMA GUIDE", f"{have}/{self.n}")
 
         def fmt(idx, j):
             cur = j == self.i
-            state, _ = self.states[idx]
+            state = self.states[idx]
             t = Text()
             t.append(("▸" if cur else " ") + _MARK[state] + " ",
                      style=INK_B if cur else (DIM if state == "locked" else INK))
@@ -125,11 +123,10 @@ class EggGuidePanel:
 
     # ---- one egg's story -----------------------------------------------------
     def _detail_rows(self, idx):
-        state, price = self.states[idx]
+        state = self.states[idx]
         rule = self.rules.get(idx)
         rows = [("State", {"owned": "yours — on the carousel",
                            "temp": "hatchable this gen only",
-                           "buyable": "in the shop now",
                            "locked": "locked"}[state])]
         desc = (rule["desc"] if rule else "") or "a mystery egg"
         first = True
@@ -139,10 +136,6 @@ class EggGuidePanel:
         live = egg_mod.unlock_progress(idx, self.prog)
         if state == "locked" and live and live != desc:
             rows.append(("Goal", live))
-        if price > 0:
-            where = {"home": "the home shop",
-                     "town": "its biome's town"}.get(rule["store"], "the shop")
-            rows.append(("Price", f"{price} bits · {where}"))
         rows.append(("Keeps", "this generation only"
                      if rule is not None and not rule["can_perm"] else "forever"))
         return rows

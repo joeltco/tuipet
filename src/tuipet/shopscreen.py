@@ -1,9 +1,10 @@
 """The shop + bag screen (the DSprite item system, cloned from the v0.4.x
 rebuild -- BASIC VPET 2026-07-16).
 
-SHOP: the fixed catalog, tabbed by category; the classic EGG shelf and the
-HONORS board ride the last two tabs (they are economies, not items, and
-survive the item-system swap).  ENTER buys.  BAG: what you own, ENTER uses
+SHOP: the fixed catalog, tabbed by category; the HONORS board rides the
+last tab (an economy, not an item, so it survives the item-system swap;
+the digitama-licence shelf was cut 2026-07-17 -- eggs unlock by condition
+only, never by purchase).  ENTER buys.  BAG: what you own, ENTER uses
 it (Pet.use_item — a crest egg triggers the classic armor evolution), R
 sells it back for half.  TAB flips between the two.
 """
@@ -46,8 +47,8 @@ class ShopPanel:
             cat = self.tabs[self.tab % len(self.tabs)]
             if cat == "Honors":
                 # the HONORS board (prestige sink, 2026-07-14): cosmetic tamer
-                # titles, profile-level like egg licences; ENTER buys, then
-                # toggles wearing
+                # titles, profile-level (they survive generations); ENTER
+                # buys, then toggles wearing
                 owned = persistence.get_titles_owned()
                 worn = persistence.get_title_worn()
                 return [dict(t, title_id=t["id"], owned=t["id"] in owned,
@@ -159,8 +160,6 @@ class ShopPanel:
 
         def fmt(e, i):
             if self.mode == "shop":
-                if e.get("locked"):
-                    return f"{e['name'][:22]:<22} {'sealed':>7}"
                 if e.get("title_id") is not None:
                     tag = "worn" if e.get("worn") else ("owned" if e.get("owned")
                                                         else f"{e['price']}b")

@@ -102,7 +102,7 @@ def test_crest_egg_maps_to_the_classic_digimental():
 def test_shop_panel_walks_every_tab_and_the_bag():
     p = _pet()
     pan = ShopPanel(p)
-    assert "Honors" in pan.tabs and shop.EGGS_CATEGORY in pan.tabs
+    assert "Honors" in pan.tabs and "Eggs" not in pan.tabs
     for _ in range(len(pan.tabs)):
         assert pan.text().plain
         pan.key("right")

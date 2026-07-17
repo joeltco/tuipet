@@ -105,9 +105,10 @@ def test_dna_screen_surfaces_the_roads():
 
 def test_the_roster_stays_reachable():
     """The 'ultimate v-pet' coverage pin: lines + the corpus graph walked from
-    line members must reach >=95% of the real roster (the stragglers are
-    duplicate baby sprites that hatch-canonicalize to line roots).  Guards
-    future data edits from silently stranding the collection long game."""
+    line members must reach >=90% of the real roster.  The fake-egg cut
+    (2026-07-17) deliberately stranded the cut lines' families (~147 species,
+    1400/1547 = 90.5%); the pin guards future data edits from silently
+    stranding MORE."""
     _, by = data.load_sprites()
     real = {n for n in by if not data.is_placeholder(n)}
     evo = data.load_evolutions()
@@ -121,7 +122,7 @@ def test_the_roster_stays_reachable():
             if c not in seen:
                 seen.add(c)
                 frontier.append(c)
-    assert len(seen & real) / len(real) >= 0.95, len(seen & real)
+    assert len(seen & real) / len(real) >= 0.90, len(seen & real)
 
 
 def test_line_pets_without_charge_follow_their_chart():

@@ -22,7 +22,7 @@ def test_empty_account_egg_flow():
     assert prog["last_field"] == "None"         # no prev-gen snapshot -> safe defaults
     states = egg.egg_states(prog, set())
     assert states                               # no crash, full map
-    sel = egg.selectable_eggs(prog, set())
+    sel = egg.hatchable_eggs(prog, set())
     assert sel, "a fresh account must still have its starter eggs selectable"
     assert egg.locked_hint(prog, set()) is not None
     assert egg.auto_owned(prog, set()) is not None

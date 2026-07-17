@@ -1,7 +1,7 @@
-"""The humulos dot-matrix egg pull + the frames-or-cut pass (Joel 2026-07-10):
-29 device digitama with real dot sprites and REAL frame animations (DVPet/DU
-sourced, design-verified), the connection unlock signal, and the .400/.401
-save migration. Frameless eggs and frameless digimon were CUT."""
+"""The humulos dot-matrix egg pull + the frames-or-cut pass (Joel 2026-07-10),
+the connection unlock signal, and the cross-bank save migration.  Frameless
+eggs and frameless digimon were CUT; the provenance audit (2026-07-17) then
+cut the 22 fake eggs, leaving the 46 device-verified digitama."""
 from tuipet import data, egg, lines, persistence
 
 
@@ -19,15 +19,13 @@ def _by_name():
     return {egg.hatch_name(i): i for i in range(egg.count())}
 
 
-def test_bank_is_68_and_every_egg_is_gated():
+def test_bank_is_46_and_every_egg_is_gated():
     n = egg.count()
-    assert n == 68
+    assert n == 46
     rules = data.load_egg_unlock()
     for i in range(n):
-        assert i in rules or i in egg._WIN_EGGS, i
-    # the two ??? mystery eggs sit at the end of the classic block
-    assert [i for i in range(n) if egg.hatch_name(i) == "???"] \
-        == sorted(egg._WIN_EGGS) == [41, 42]
+        assert i in rules, i                       # every egg has a real rule row
+    assert "???" not in {egg.hatch_name(i) for i in range(n)}
 
 
 def test_frameless_and_dominated_content_is_gone():
@@ -46,52 +44,35 @@ def test_frameless_and_dominated_content_is_gone():
     assert len(by[1574]["frames"]) == 11
     assert len({"".join(f) for f in by[1574]["frames"]}) >= 5
     assert lines.load_lines()["ver6"]["root"] == 1574   # dormant, for old pets
-    # the NSp egg now hatches its pen20 Bubbmon root; the any-root
-    # mystery egg follows the eggs (device-chart rebuild 2026-07-10)
-    nsp = lines.load_lines()["nsp"]["root"]
-    assert nsp in set(egg.hatch_targets(max(egg._WIN_EGGS)))
 
 
 def test_no_egg_is_strictly_dominated():
-    """The audit invariant: no two eggs share art AND baby where one is a
-    free starter / free same-gate while the other merely charges bits."""
-    rules = data.load_egg_unlock()
+    """The audit invariant, post-licence: eggs that share a hatch root must
+    at least differ in ART (a same-art same-baby twin would be a pure dupe --
+    the Meicoomon Egg skin was exactly that, and it was cut)."""
     byroot = {}
     for i in range(egg.count()):
-        if i in egg._WIN_EGGS:
-            continue
         byroot.setdefault(tuple(egg.hatch_targets(i)), []).append(i)
     for idxs in byroot.values():
         for a in idxs:
             for b in idxs:
-                if a == b:
+                if a >= b:
                     continue
                 fa = "".join("".join(f) for f in egg.frames(a))
                 fb = "".join("".join(f) for f in egg.frames(b))
-                if fa != fb:
-                    continue
-                ra, rb = rules[a], rules[b]
-                achieve = ("wins", "album_n", "mega", "connections",
-                           "gen", "map", "tourney")
-                plain_buy = rb["price"] and not any(rb[k] for k in achieve) \
-                    and not rb["xanti"] and not rb["stage"]
-                assert not (ra["start"] and plain_buy), \
-                    (egg.hatch_name(a), egg.hatch_name(b))
-                assert not (ra["stage"] and ra["stage"] == rb["stage"]
-                            and not ra["price"] and rb["price"]), \
-                    (egg.hatch_name(a), egg.hatch_name(b))
+                assert fa != fb, (egg.hatch_name(a), egg.hatch_name(b))
 
 
 def test_win_ladder_is_staggered():
-    """Each win-gated egg gets its own moment: 25/30/40/50/60/75/100
-    (50 belongs to classic Sakumon + the first ??? egg; 100 to the second).
+    """Each win-gated egg gets its own moment: 10/25/30/40/50/60/75.
     30 is Slayerdra's battle route -- the dragon trio's gates were
-    differentiated 2026-07-14 so the three same-line eggs stop dominating each
-    other (Slayerdra=wins, Breakdra=Mega kills, Draco=album)."""
+    differentiated 2026-07-14 (Slayerdra=wins, Breakdra=Mega kills,
+    Draco=album); Chibickmon's 10 replaced its licence (2026-07-17)."""
     rules = data.load_egg_unlock()
     wins = sorted((r["wins"], r["name"]) for r in rules.values() if r.get("wins"))
-    assert wins == [(25, "V Egg"), (30, "Slayerdra Egg"), (40, "Hack Egg"),
-                    (50, "Sakumon"), (60, "Digitama X3"), (75, "Zuba Egg")]
+    assert wins == [(10, "Chibickmon"), (25, "V Egg"), (30, "Slayerdra Egg"),
+                    (40, "Hack Egg"), (50, "Sakumon"), (60, "Digitama X3"),
+                    (75, "Zuba Egg")]
 
 
 def test_every_egg_animates_with_real_frames():
@@ -108,10 +89,10 @@ def test_every_egg_animates_with_real_frames():
 
 def test_new_eggs_hatch_line_roots_in_device_order():
     roots = {l["root"] for l in lines.load_lines().values()}
-    for i in range(44, 68):
+    for i in range(23, 46):
         for t in egg.hatch_targets(i):
             assert t in roots, (i, t)
-    order = [egg.hatch_name(i) for i in range(44, 68)]
+    order = [egg.hatch_name(i) for i in range(23, 46)]
     assert order[:6] == ["Nature Spirits Egg", "Deep Savers Egg",
                          "Nightmare Soldiers Egg", "Wind Guardians Egg",
                          "Metal Empire Egg", "Virus Busters Egg"]  # Pen 1-5+Zero
@@ -122,38 +103,38 @@ def test_fresh_save_starters_are_the_classic_five():
     # egg-ladder redesign 2026-07-12: the 6 Pendulum field eggs are earned now,
     # so a brand-new save opens with ONLY the five classic babies.
     st = egg.egg_states(_prog(), owned=set())
-    owned = {egg.hatch_name(i) for i, (s, _) in st.items() if s == "owned"}
+    owned = {egg.hatch_name(i) for i, s in st.items() if s == "owned"}
     assert owned == {"Botamon", "Punimon", "Poyomon", "Yuramon", "Zurumon"}
 
 
 def test_connection_gate_locks_then_opens():
     idx = _by_name()["Corona Egg"]
     assert data.load_egg_unlock()[idx]["connections"] == 3
-    assert egg.egg_state(idx, _prog(), owned=set())[0] == "locked"
-    assert egg.egg_state(idx, _prog(connections=3), owned=set()) == ("owned", 0)
+    assert egg.egg_state(idx, _prog(), owned=set()) == "locked"
+    assert egg.egg_state(idx, _prog(connections=3), owned=set()) == "owned"
 
 
 def test_progression_tiers_read_the_right_signals():
     by = _by_name()
-    assert egg.egg_state(by["Virus Busters Ver. 20th Egg"], _prog(), set())[0] == "locked"
+    # the 20th-anniversary flagship: a 5th-gen lineage ENDED in Virus
+    # Busters (the licence became a field-story gate, 2026-07-17)
+    assert egg.egg_state(by["Virus Busters Ver. 20th Egg"], _prog(), set()) == "locked"
     assert egg.egg_state(by["Virus Busters Ver. 20th Egg"],
-                         _prog(max_gen=5), set()) == ("buyable", 2500)
-    assert egg.egg_state(by["V Egg"], _prog(wins=25), set()) == ("owned", 0)
-    assert egg.egg_state(by["Kera Digitama"], _prog(mega_kills=10), set()) == ("owned", 0)
-    assert egg.egg_state(by["Digitama X3"], _prog(xanti_ever=True), set())[0] == "locked"
+                         _prog(max_gen=5), set()) == "locked"
+    assert egg.egg_state(by["Virus Busters Ver. 20th Egg"],
+                         _prog(max_gen=5, last_field="VirusBuster"), set()) == "owned"
+    assert egg.egg_state(by["V Egg"], _prog(wins=25), set()) == "owned"
+    assert egg.egg_state(by["Kera Digitama"], _prog(mega_kills=10), set()) == "owned"
+    assert egg.egg_state(by["Digitama X3"], _prog(xanti_ever=True), set()) == "locked"
     assert egg.egg_state(by["Digitama X3"],
-                         _prog(xanti_ever=True, wins=60), set()) == ("owned", 0)
-    assert egg.egg_state(by["Hack Egg"], _prog(wins=40), set()) == ("owned", 0)
-    assert egg.egg_state(by["Zuba Egg"], _prog(wins=75), set()) == ("owned", 0)
+                         _prog(xanti_ever=True, wins=60), set()) == "owned"
+    assert egg.egg_state(by["Hack Egg"], _prog(wins=40), set()) == "owned"
+    assert egg.egg_state(by["Zuba Egg"], _prog(wins=75), set()) == "owned"
     # lineage eggs are TEMPORARY, following the previous generation
     assert egg.egg_state(by["Ryuda Egg"],
-                         _prog(last_field="DragonsRoar"), set()) == ("temp", 0)
+                         _prog(last_field="DragonsRoar"), set()) == "temp"
     assert egg.egg_state(by["Lalamon Egg"],
-                         _prog(last_obed=120), set()) == ("temp", 0)
-    assert egg.egg_state(by["Meicoomon Egg"],
-                         _prog(last_mood=200), set()) == ("temp", 0)
-    assert egg.egg_state(by["Meicoomon Egg"],
-                         _prog(last_mood=199), set())[0] == "locked"
+                         _prog(last_obed=120), set()) == "temp"
 
 
 def test_record_connection_counts_distinct_tamers():
@@ -175,9 +156,10 @@ def test_save_migration_across_bank_versions():
     assert persistence._migrate_egg_index(50) == by["Corona Egg"]
     assert persistence._migrate_egg_index(83) == by["Zuba Egg"]
     assert persistence._migrate_egg_index(67) == by["Nature Spirits Egg"]
-    # the twin ??? eggs translate by occurrence, not name collision
-    assert persistence._migrate_egg_index(46) == 41
-    assert persistence._migrate_egg_index(47) == 42
+    # the twin ??? eggs were cut (2026-07-17): both fall back to Botamon
+    # for incubation only
+    assert persistence._migrate_egg_index(46) == by["Botamon"]
+    assert persistence._migrate_egg_index(47) == by["Botamon"]
     # incubation fallbacks: cut eggs -> the surviving egg of the same baby
     assert persistence._migrate_egg_index(56) == by["Nightmare Soldiers Egg"]  # Vorvomon
     assert persistence._migrate_egg_index(79) == by["Nature Spirits Egg"]      # Version 6
@@ -207,30 +189,25 @@ def test_owned_eggs_never_gain_cut_or_temp_eggs():
     d3 = {"egg_order_v": 3,
           "progress": {"eggs_owned": [17, 11, 6]}}  # v3 leak: Puttimon/Kuramon temp
     assert persistence._migrate_v401_settings(d3)
-    assert d3["progress"]["eggs_owned"] == [by["Babumon"]]  # license kept, temps purged
+    # Babumon's licence DROPS with the fake-egg cut (ownership never falls
+    # back), and the temp leaks purge -- a fully cleaned set
+    assert d3["progress"]["eggs_owned"] == []
     assert d3["egg_order_v"] == persistence.EGG_ORDER_V
 
 
-def test_every_egg_renders_a_shop_icon():
+def test_every_egg_renders_an_icon():
     from tuipet import menu
     for i in range(egg.count()):
-        cell = menu.item_icon(egg.shop_egg_entry(i, 100))
+        cell = menu.item_icon({"egg_idx": i})
         assert any(ch.strip() for ln in cell for ch in ln), (i, egg.hatch_name(i))
 
 
-def test_locked_hints_reach_the_home_goal_board():
-    """The goal board (towns left with the world layer): the HOME shelf
-    teases locked eggs with actionable hints."""
-    board = egg.locked_home_eggs(_prog(), set(), cap=99)
-    assert board, "no chaseable locked eggs on the home board"
-    assert all(hint for _, hint in board)
-
-
-def test_every_buyable_egg_has_a_storefront():
-    """Every condition-met priced egg is sellable at the HOME shop now --
-    the town-exclusive rares re-homed when the towns left."""
-    prog = _rich_prog() if "_rich_prog" in dir() else _prog()
-    buyable = {i for i, _ in egg.buyable_eggs(prog, set())}
-    home = {i for i, _ in egg.home_eggs(prog, set())}
-    assert buyable == home
+def test_every_locked_egg_offers_a_chaseable_hint():
+    """Post-licence goal surface: every locked egg's rule carries a real
+    LockedDescription (the guide is the goal board now)."""
+    rules = data.load_egg_unlock()
+    for i in range(egg.count()):
+        if egg.egg_state(i, _prog(), set()) == "locked":
+            assert rules[i]["desc"], (i, egg.hatch_name(i))
+    assert egg.locked_hint(_prog(), set())
 

@@ -39,9 +39,9 @@ HELP = [
     ("", 0),
     ("TIPS", 2),
     ("Feed when hungry, clean the poop,", 0),
-    ("and let it sleep at night. Win cups", 0),
-    ("and fell raid bosses to unlock more", 0),
-    ("eggs - the shop licenses the rest.", 0),
+    ("and let it sleep at night. Win cups,", 0),
+    ("fell raid bosses and link with other", 0),
+    ("tamers - every egg is earned in play.", 0),
 ]
 
 

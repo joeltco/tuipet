@@ -1321,12 +1321,14 @@ def load_egg_unlock():
         hist = None
         if _opt(r[12]):
             hist = [int(x) for x in r[12].split(":") if x.strip().isdigit()]
-        price = _int(r[2]) or 0
+        # (the Price column is dead: the DVPet licence economy was cut
+        # 2026-07-17 -- "i never wanted egg licenses" -- real devices unlock
+        # eggs by CONDITION, they never sell them.  Every surviving priced
+        # row traded its price for a device-story gate.)
         rules[idx] = {
             "idx": idx,
             "name": r[0].strip(),
             "start": r[1].strip() == "TRUE",
-            "price": price if price > 0 else 0,
             "map": _int(r[3]) if (_int(r[3]) is not None and _int(r[3]) >= 0) else None,
             "stage": _opt(r[4]),
             "xanti": r[5].strip() == "TRUE",
@@ -1361,10 +1363,6 @@ def load_egg_unlock():
             # Meicoo/DORU) -- distinct tamers linked via a completed lobby
             # bout or jogress; persistence.record_connection() feeds it
             "connections": _int(r[26]) if (len(r) > 26 and _int(r[26]) is not None and _int(r[26]) >= 0) else None,
-            # tuipet storefront (egg-ladder redesign 2026-07-12): where a
-            # buyable egg is sold -- "home" (common shop) / "town" (biome-
-            # exclusive rare) / "" (earned-free, never in a shop)
-            "store": (r[27].strip().lower() if len(r) > 27 else ""),
         }
         if rules[idx]["map"] is not None:
             # the raid re-gate (BASIC VPET 2026-07-16): adventure left with

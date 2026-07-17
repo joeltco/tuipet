@@ -1,8 +1,8 @@
 """Choose-your-egg: a smooth horizontal carousel of full-size egg sprites.
 Only eggs you can actually hatch appear here -- no sealed silhouettes, no goal
 teasers (Joel 2026-07-12: "only the available eggs").  Eggs are earned through
-play and licensed at the home / town shops; a licensed egg turns owned and
-joins the carousel.
+play, full stop (the licence shop was cut 2026-07-17): meet a rule's condition
+and the egg joins the carousel, permanently when the rule allows.
 ←→ glide, ENTER hatches the centred egg, ESC backs out."""
 from __future__ import annotations
 from . import egg as egg_mod
@@ -33,7 +33,7 @@ class EggSelectPanel:
         self.carousel = egg_mod.hatchable_eggs(prog, owned)   # owned + temp -- the ONLY eggs shown
         self.total = egg_mod.count()
         self.hint = egg_mod.locked_hint(prog, owned)
-        self.locked = sum(1 for s, _ in self.states.values() if s == "locked")
+        self.locked = sum(1 for s in self.states.values() if s == "locked")
         self.n = len(self.carousel)
         self.i = 0               # cursor opens on the first egg (position 1/N)
         self.pos = 0.0           # continuous carousel target
@@ -92,7 +92,7 @@ class EggSelectPanel:
         return fr[0]
 
     def _note(self, idx):
-        state, _ = self.states.get(idx, ("owned", 0))
+        state = self.states.get(idx, "owned")
         name = egg_mod.hatch_name(idx)
         if state == "temp":
             return "hatches: %s  (this gen only)" % name

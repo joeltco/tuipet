@@ -109,25 +109,19 @@ def test_the_simple_panels_all_draw():
     _walk(FeedPanel(p), ["down", "up"])
 
 
-def test_shop_egg_tab_renders_the_egg_icon():
-    """The egg tab's preview slot draws the REAL egg sprite (audit 2026-07-04):
-    exercise that icon path with a buyable egg so it can never ship broken."""
-    from tuipet import persistence
+def test_shop_has_no_egg_tab():
+    """The licence cut (2026-07-17): the shop sells goods only -- walk every
+    tab and prove no digitama shelf survives."""
     from tuipet.shopscreen import ShopPanel
-    persistence.wins_add(50)               # sandboxed: Sakumon's license unlocks
+    from tuipet import shop as _shop
     p = _pet()
     pan = ShopPanel(p)
-    from tuipet import shop as _shop
-    tabs = pan.tabs
-    assert _shop.EGGS_CATEGORY in tabs
-    for _ in range(len(tabs)):             # walk to the egg tab, rendering as we go
-        if tabs[pan.tab] == _shop.EGGS_CATEGORY:
-            break
-        pan.key("right")
+    assert not hasattr(_shop, "EGGS_CATEGORY")
+    assert "Eggs" not in pan.tabs
+    for _ in range(len(pan.tabs)):         # every tab still renders clean
         pan.text()
-    assert tabs[pan.tab] == _shop.EGGS_CATEGORY
-    pan.text()                             # the egg icon path executes
-    pan.key("down")
+        assert not any(e.get("egg_idx") is not None for e in pan._rows())
+        pan.key("right")
     pan.text()
 
 
@@ -158,10 +152,10 @@ def test_the_home_scene_is_wired_to_the_egg():
     in different DSprite backdrops, and the same pet's scene never moves."""
     from tuipet import backgrounds
     a, b = _pet(), _pet()
-    a.egg_type, b.egg_type = 0, 6                    # greenhills vs datatunnel
+    a.egg_type, b.egg_type = 0, 5                    # greenhills vs datatunnel
     sa, sb = a.background(), b.background()
     assert sa and sb and sa != sb
-    assert backgrounds.scene_for_egg(0) != backgrounds.scene_for_egg(6)
+    assert backgrounds.scene_for_egg(0) != backgrounds.scene_for_egg(5)
     assert a.background() == sa                      # the home scene stands still
     assert a.background(file="tourneyBack") != sa    # the arena override still wins
 

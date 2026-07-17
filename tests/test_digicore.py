@@ -425,9 +425,11 @@ def test_evolves_page_shows_next_form_at_every_age():
     rows = _evo_rows(egg_pet)
     assert isinstance(rows, list) and rows, rows          # the hatchling shows
     assert rows[0][0] in data.load_sprites()[1]
-    # the multi-target mystery digitama keeps its surprise
+    # the multi-target digitama (X3 hatches both dmx ver.3 babies) keeps
+    # its surprise ("???" -- the mystery eggs left with the fake-egg cut)
     from tuipet import egg as _egg
-    egg_pet.egg_type = max(_egg._WIN_EGGS)      # the any-root mystery egg
+    egg_pet.egg_type = next(i for i in range(_egg.count())
+                            if len(_egg.hatch_targets(i)) > 1)
     rows = _evo_rows(egg_pet)
     assert isinstance(rows, list) and rows[0][1] == "???"
     # a Fresh line pet sees its next form, not a stonewall
