@@ -196,8 +196,12 @@ def test_update_row_checks_pypi(monkeypatch):
     monkeypatch.setattr(optionsscreen.update_check, "run_upgrade",
                         lambda: (True, "Updated — restart tuipet to play the new version."))
     pan.key("enter")                                  # ...and it installs
+    # ...and OFFERS the relaunch (restart-ask 2026-07-18); declining leaves
+    # the standing "restart to apply" reminder
+    assert pan._value("update") == "restart now? ENTER"
+    pan.key("escape")
     assert pan._value("update") == "restart to apply"
-    assert "restart" in pan.msg.lower()
+    assert "next launch" in pan.msg.lower()   # the polite deferral
     _fits(pan)
     monkeypatch.setattr(optionsscreen.update_check, "latest_if_newer",
                         lambda: None)

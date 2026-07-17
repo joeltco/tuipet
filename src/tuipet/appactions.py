@@ -126,6 +126,13 @@ class ActionsMixin:
 
     def _after_options(self, result):
         self._restyle()                             # a previewed theme may have settled
+        if result and result[0] == "restart":
+            # the update's restart offer: save, leave Textual cleanly, and
+            # main() re-execs the NEW code once the terminal is restored
+            self.autosave()
+            self._restart_after_exit = True
+            self.exit()
+            return
         if result and result[0] == "new":
             self.action_new()
             return

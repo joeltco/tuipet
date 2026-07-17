@@ -188,6 +188,7 @@ class OptionsPanel(menu.SubHost):
         self._installing = False       # a pip run is in flight
         self._updated = False          # installed: the NEW code needs a restart
         self.confirm = False           # typed-YES gate for the erase
+        self.confirm_restart = False   # update installed: offer the relaunch
         self.confirm_new = False       # one-ENTER gate before retiring a LIVING pet
         self.buf = ""
         self.msg = ""                  # action feedback; empty -> the row's _DESC
@@ -212,6 +213,8 @@ class OptionsPanel(menu.SubHost):
             return ""                  # the hosted panel owns the box (strip walker)
         if self.confirm:
             return menu.hints(("ENTER", "erase it all"), ("ESC", "keep"))
+        if self.confirm_restart:
+            return menu.hints(("ENTER", "restart now"), ("ESC", "later"))
         if self.confirm_new:
             return menu.hints(("ENTER", "retire"), ("ESC", "keep"))
         return menu.hints(("↑↓", "pick"), ("ENTER", "go"), ("ESC", "back"))
@@ -249,6 +252,10 @@ class OptionsPanel(menu.SubHost):
             if ok:
                 self._upd = ""                # nothing left to offer
                 self._updated = True
+                # the restart OFFER (Joel 2026-07-18: "make it so the update
+                # option asks to restart after update"): ENTER relaunches
+                self.confirm_restart = True
+                self.msg = "Updated! Restart now?  ENTER restarts · ESC later"
         threading.Thread(target=run, daemon=True).start()
 
     def _sub_done(self, r):
@@ -268,6 +275,13 @@ class OptionsPanel(menu.SubHost):
             if self._done is not None:
                 r, self._done = self._done, None
                 return ("done", r)
+            return None
+        if self.confirm_restart:
+            if k in ("enter", "space"):
+                return ("done", ("restart",))
+            if k == "escape":
+                self.confirm_restart = False
+                self.msg = "later — the update applies on your next launch"
             return None
         if self.confirm_new:
             if k == "enter":
@@ -364,6 +378,8 @@ class OptionsPanel(menu.SubHost):
         if row == "update":
             if self._installing:
                 return "updating…"
+            if self.confirm_restart:
+                return "restart now? ENTER"
             if self._updated or getattr(self.pet, "_updated_to", None):
                 return "restart to apply"
             if not persistence.get_auto_update():

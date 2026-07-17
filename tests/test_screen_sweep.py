@@ -488,3 +488,39 @@ def test_online_payout_survives_the_bout():
     assert pan.bphase == "over" and "WIN" in pan.bt_outcome
     assert p.bits > bits0                       # the purse actually lands
     assert p.battles == 1 and p.wins == 1       # and the record with it
+
+
+def test_the_update_offers_a_restart(monkeypatch):
+    """Joel 2026-07-18: "make it so the update option asks to restart after
+    update."  A successful install raises the offer; ENTER hands app the
+    ("restart",) verdict; ESC defers politely.  The app-side handler saves,
+    flags the re-exec and exits Textual cleanly."""
+    import threading
+    from tuipet import optionsscreen, update as update_check
+    from tuipet.optionsscreen import OptionsPanel
+    from tuipet.pet import Pet
+
+    p = Pet(num=100, stage="Champion", attribute="Vaccine")
+    pan = OptionsPanel(p, lambda: False, lambda: None)
+    assert pan.confirm_restart is False
+    monkeypatch.setattr(update_check, "run_upgrade", lambda: (True, "done"))
+    monkeypatch.setattr(threading, "Thread",
+                        lambda target, daemon: type("T", (), {"start": staticmethod(target)})())
+    pan._installing = False
+    pan._install_update()
+    assert pan.confirm_restart and "Restart now?" in pan.msg
+    assert pan._value("update") == "restart now? ENTER"
+    assert pan.key("enter") == ("done", ("restart",))
+    pan.confirm_restart = True
+    pan.key("escape")
+    assert not pan.confirm_restart and "next launch" in pan.msg
+
+    # the app-side handler: saves, flags, exits
+    from tuipet.app import TuiPetApp
+    app = TuiPetApp.__new__(TuiPetApp)
+    calls = []
+    app.autosave = lambda: calls.append("save")
+    app.exit = lambda *a, **k: calls.append("exit")
+    app._restyle = lambda: None
+    app._after_options(("restart",))
+    assert calls == ["save", "exit"] and app._restart_after_exit is True

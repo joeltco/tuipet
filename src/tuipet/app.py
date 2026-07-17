@@ -141,11 +141,10 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("THE BIG REFACTOR LANDS: the pet itself - the game's "
-                 "3,600-line heart - now composes four clean organs (body "
-                 "clock, care, battle, DNA) over one constant bed. Every "
-                 "number and behavior is identical; a live online bout "
-                 "verified the wire end-to-end. Fixes land faster forever.")
+    WHATS_NEW = ("UPDATE, THEN PLAY: installing an update from g options "
+                 "now asks to restart - hit ENTER and tuipet relaunches "
+                 "straight into the new version, save intact. ESC keeps "
+                 "playing and applies it next launch.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and
@@ -1171,6 +1170,15 @@ def main():
         app.run()
     finally:
         persistence.release_instance_lock()
+    if getattr(app, "_restart_after_exit", False):
+        # the update's restart offer: the terminal is back to normal here,
+        # so exec the NEW install in place.  The console script re-execs
+        # itself; a `python -m tuipet` launch falls back to the interpreter.
+        import sys as _sys
+        argv0 = _sys.argv[0]
+        if argv0 and _os.access(argv0, _os.X_OK) and not argv0.endswith(".py"):
+            _os.execv(argv0, _sys.argv)
+        _os.execv(_sys.executable, [_sys.executable, "-m", "tuipet"])
     if getattr(app, "_crash_note", None):
         print(app._crash_note)          # after Textual restores the terminal
     elif persistence.save_failed:
