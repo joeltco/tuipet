@@ -189,11 +189,13 @@ class Stats(Static):
             f"Effort  {hearts(pet.strength)}",
             f"Energy  {bar(pet.energy_pct(), 12, T.ENERGY)}",
             div,
-            f"Power   [{T.POS}]●{pet.vaccine}[/] [{T.ENERGY}]■{pet.data_power}[/] [{T.MOOD}]▲{pet.virus}[/]"
-            f" [{T.ACCENT}]◆{getattr(pet, 'dp', 0)}[/]",
-            f"HP {pet.full_health}/{pet.max_health()}  Wt {pet.weight}g  [{T.COIN}]{pet.bits}b[/]",
+            # (the Power ledger left the home card 2026-07-17 -- it lives on
+            # the DigiCore DATA page, next to the corpus gates that read it;
+            # the HP fragment was the retired classic battle's trained-HP)
+            f"Weight  {pet.weight}g · [{T.COIN}]{pet.bits}b[/]",
+            f"DP      [{T.ACCENT}]{'◆' * getattr(pet, 'dp', 0)}[/][dim]{'◇' * (4 - getattr(pet, 'dp', 0))}[/]",
             f"Battle  {pet.wins}W/{pet.battles}   [{T.COIN}]\u2605{pet.trophies}[/]",
-            f"@{backgrounds.name(backgrounds.scene_for_egg(pet.egg_type))[:16]} [dim]{age}[/]",
+            f"@{backgrounds.name(pet.bg_pick or backgrounds.scene_for_egg(pet.egg_type))[:16]} [dim]{age}[/]",
             f"Life    {bar(lifepct, 12, lifecol)}",
             _status_line(word, deco),
         ]
@@ -258,11 +260,11 @@ class TuiPetApp(App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("A SMARTER STATUS BOX: every screen now paints its own "
-                 "card - the shop shows the item dossier, the raid shows "
-                 "the boss pool and your rank, the guide shows each egg's "
-                 "goal, the memorial honors the fallen. The Play key is "
-                 "retired (it only spoiled obedience since mood left).")
+    WHATS_NEW = ("A CLEANER HOME CARD: the Power ledger moved to the "
+                 "DigiCore data page where it belongs, the dead HP readout "
+                 "is gone, DP shows as pips, and the scene line follows "
+                 "your E-picked backdrop. Every screen's status card got "
+                 "the same once-over.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and
@@ -1225,7 +1227,7 @@ class TuiPetApp(App):
                 div,
                 f"Effort   {hearts(p.strength)}",
                 f"Energy   {bar(p.energy_pct(), 11, T.ENERGY)}",
-                f"Power    [{T.POS}]●{p.vaccine}[/] [{T.ENERGY}]■{p.data_power}[/] [{T.MOOD}]▲{p.virus}[/]",
+                f"Form     {getattr(p, 'saved_hit_type', 'normal')}",
                 div,
                 "[dim]fight for the cup[/]",
             ]
