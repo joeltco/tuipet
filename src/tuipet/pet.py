@@ -3369,7 +3369,7 @@ class Pet:
         # onto a classic system -- each virtue joins its Digimental's
         # EvolItemID, so the armor evolutions stay reachable (the dub swap is
         # deliberate: reliability->Purity(18), destiny->Fate(25))
-        if key.startswith("egg_of_") or key.startswith("spirit_"):
+        if key.startswith("egg_of_"):
             return self._crest_egg(key)
         fx = {
             "energy_drink": lambda: self._gain_energy(self.max_energy),
@@ -3419,23 +3419,12 @@ class Pet:
                   "egg_of_hope": 21, "egg_of_light": 22,
                   "egg_of_kindness": 23, "egg_of_miracles": 24,
                   "egg_of_destiny": 25}
-    # the ten Legendary Warrior spirits (SPIRIT SHELF 2026-07-18): Human
-    # spirits = corpus items 43-52, Beast = 53-62, in the canon element
-    # order Flame/Light/Ice/Wind/Thunder/Earth/Water/Wood/Steel/Darkness
-    # (wikimon; the corpus rows: 43 Agunimon .. 62 JagerLoweemon).  A Beast
-    # form slides back through the digicore's mode change, like the show.
-    _SPIRIT_IDS = {"spirit_%s_%s" % (el, kind): base + i
-                   for base, kind in ((43, "h"), (53, "b"))
-                   for i, el in enumerate(("flame", "light", "ice", "wind",
-                                           "thunder", "earth", "water",
-                                           "wood", "steel", "darkness"))}
 
     def _crest_egg(self, key):
-        """A crest egg OR a Legendary Warrior spirit -> the classic
-        item-evolution flow (the spirit shelf joined 2026-07-18)."""
+        """A crest egg -> the classic Digimental item-evolution flow."""
         if self.dead or self.stage == "Egg" or self.num < 0:
             return _Refused("")
-        item_id = self._CREST_IDS.get(key, self._SPIRIT_IDS.get(key, -1))
+        item_id = self._CREST_IDS.get(key, -1)
         target = evolution.item_select(self, item_id)
         if target is None:
             self._set_anim("refuse", 1.0)
@@ -3447,8 +3436,7 @@ class Pet:
         lines_mod.adopt_line(self, prev=prev)     # a special jump re-anchors
         self.take_item(key)
         self._set_anim("happy", 1.6)
-        verb = "spirit" if key.startswith("spirit_") else "armor"
-        return f"{self.name} {verb}-evolved!"
+        return f"{self.name} armor-evolved!"
 
     def _gain_energy(self, n):
         self._set_energy(self.energy + n)

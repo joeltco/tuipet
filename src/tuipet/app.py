@@ -256,11 +256,10 @@ class TuiPetApp(App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("THE SPIRIT SHELF: all ten Legendary Warrior spirits - "
-                 "Human and Beast, twenty in all - are on the shop's "
-                 "Armor-Spirit shelf. Spirit-evolve a worthy rookie, earn "
-                 "the Beast in battle, and slide back with a mode change, "
-                 "just like the show.")
+    WHATS_NEW = ("ROLLBACK: the spirit shop shelf from v0.5.22 is removed "
+                 "- it was not part of this game. Any spirits bought are "
+                 "gone from the shop; pets already evolved keep their "
+                 "form. The Fusion and armor fixes all stand.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and
