@@ -1,348 +1,468 @@
 {
- "energy_drink": {
-  "id": "energy_drink",
-  "name": "Energy.D",
-  "price": 200,
-  "category": "Care"
- },
- "best_fruit": {
-  "id": "best_fruit",
-  "name": "SuperFruit",
-  "price": 1000.0,
-  "category": "Fruit"
- },
- "normal_fruit": {
-  "id": "normal_fruit",
-  "name": "DigiFruit",
-  "price": 1000.0,
-  "category": "Fruit"
- },
- "worst_fruit": {
-  "id": "worst_fruit",
-  "name": "MoldyFruit",
-  "price": 1000.0,
-  "category": "Fruit"
- },
- "deadly_fruit": {
-  "id": "deadly_fruit",
-  "name": "DevilFruit",
-  "price": 200,
-  "category": "Fruit"
- },
- "training_pack": {
-  "id": "training_pack",
-  "name": "Train Pack",
-  "price": 300,
-  "category": "Care"
- },
- "x_antibody": {
-  "id": "x_antibody",
-  "name": "X-Antibody",
-  "price": 2000.0,
-  "category": "Evolution"
- },
- "revive_floppy": {
-  "id": "revive_floppy",
-  "name": "Rev.Floppy",
-  "price": 2500,
-  "category": "Medical"
- },
- "super_carrot": {
-  "id": "super_carrot",
-  "name": "Spr.Carrot",
-  "price": 100,
-  "category": "Food"
- },
- "time_gear": {
-  "id": "time_gear",
-  "name": "Time Gear",
-  "price": 500,
-  "category": "Evolution"
- },
- "anti_evo_chip": {
-  "id": "anti_evo_chip",
-  "name": "Anti-Evo",
-  "price": 1000.0,
-  "category": "Evolution"
- },
- "care_mistake_eraser": {
-  "id": "care_mistake_eraser",
-  "name": "Care Eraser",
-  "price": 1500,
-  "category": "Care"
- },
- "poop_clean_pill": {
-  "id": "poop_clean_pill",
-  "name": "Smart Potty",
-  "price": 2000.0,
-  "category": "Care"
- },
- "alarm_clock": {
-  "id": "alarm_clock",
-  "name": "AlarmClock",
-  "price": 300,
-  "category": "Care"
- },
- "sleeping_pill": {
-  "id": "sleeping_pill",
-  "name": "Sleep Pill",
-  "price": 300,
-  "category": "Care"
- },
- "junk_food": {
-  "id": "junk_food",
-  "name": "Junk Food",
-  "price": 50,
-  "category": "Food"
- },
- "premium_meat": {
-  "id": "premium_meat",
-  "name": "Prem.Meat",
-  "price": 2000.0,
-  "category": "Food"
- },
- "theme_digilab": {
-  "id": "theme_digilab",
-  "name": "Digilab Theme",
-  "price": 100000.0,
-  "category": "Themes"
- },
- "theme_digistreet": {
-  "id": "theme_digistreet",
-  "name": "DigiStreet Theme",
-  "price": 100000.0,
-  "category": "Themes"
- },
- "theme_elegant_purple": {
-  "id": "theme_elegant_purple",
-  "name": "Ele. Purple Theme",
-  "price": 100000.0,
-  "category": "Themes"
- },
- "theme_elegant_gold": {
-  "id": "theme_elegant_gold",
-  "name": "Ele. Gold Theme",
-  "price": 100000.0,
-  "category": "Themes"
- },
- "theme_futuristic_1": {
-  "id": "theme_futuristic_1",
-  "name": "Futuristic 1 Theme",
-  "price": 45000.0,
-  "category": "Themes"
- },
- "theme_futuristic_2": {
-  "id": "theme_futuristic_2",
-  "name": "Futuristic 2 Theme",
-  "price": 45000.0,
-  "category": "Themes"
- },
- "theme_vmon": {
-  "id": "theme_vmon",
-  "name": "Veemon Theme",
-  "price": 100000.0,
-  "category": "Themes"
- },
- "theme_bubble9": {
-  "id": "theme_bubble9",
-  "name": "Agumon Theme",
-  "price": 100000.0,
-  "category": "Themes"
- },
- "theme_bubble10": {
-  "id": "theme_bubble10",
-  "name": "Mega Seadramon Theme",
-  "price": 100000.0,
-  "category": "Themes"
- },
- "theme_bubble11": {
-  "id": "theme_bubble11",
-  "name": "Tailmon Theme",
-  "price": 100000.0,
-  "category": "Themes"
- },
- "theme_bubble12": {
-  "id": "theme_bubble12",
-  "name": "Tentomon Theme",
-  "price": 100000.0,
-  "category": "Themes"
- },
- "theme_bubble13": {
-  "id": "theme_bubble13",
-  "name": "Wormon Theme",
-  "price": 100000.0,
-  "category": "Themes"
- },
- "theme_bubble14": {
-  "id": "theme_bubble14",
-  "name": "Alphamon Theme",
-  "price": 100000.0,
-  "category": "Themes"
- },
- "theme_bubble15": {
-  "id": "theme_bubble15",
-  "name": "Angewomon Theme",
-  "price": 100000.0,
-  "category": "Themes"
- },
- "theme_bubble16": {
-  "id": "theme_bubble16",
-  "name": "Dukemon Theme",
-  "price": 100000.0,
-  "category": "Themes"
- },
- "theme_bubble17": {
-  "id": "theme_bubble17",
-  "name": "DigiLab Purple Theme",
-  "price": 100000.0,
-  "category": "Themes"
- },
- "theme_bubble18": {
-  "id": "theme_bubble18",
-  "name": "Digital future Theme",
-  "price": 100000.0,
-  "category": "Themes"
- },
- "theme_bubble19": {
-  "id": "theme_bubble19",
-  "name": "Digital Purple Theme",
-  "price": 100000.0,
-  "category": "Themes"
- },
- "theme_bubble20": {
-  "id": "theme_bubble20",
-  "name": "Hydramon Theme",
-  "price": 100000.0,
-  "category": "Themes"
- },
- "theme_bubble21": {
-  "id": "theme_bubble21",
-  "name": "Kazuchimon Theme",
-  "price": 100000.0,
-  "category": "Themes"
- },
- "theme_bubble22": {
-  "id": "theme_bubble22",
-  "name": "Omegamon Theme",
-  "price": 100000.0,
-  "category": "Themes"
- },
- "theme_bubble23": {
-  "id": "theme_bubble23",
-  "name": "Numemon Theme",
-  "price": 100000.0,
-  "category": "Themes"
- },
- "theme_bubble24": {
-  "id": "theme_bubble24",
-  "name": "Ulforce Veedramon Theme",
-  "price": 100000.0,
-  "category": "Themes"
- },
- "theme_bubble25": {
-  "id": "theme_bubble25",
-  "name": "War Greymon Theme",
-  "price": 100000.0,
-  "category": "Themes"
- },
- "theme_bubble26": {
-  "id": "theme_bubble26",
-  "name": "Arkine Theme",
-  "price": 100000.0,
-  "category": "Themes"
- },
- "theme_bubble27": {
-  "id": "theme_bubble27",
-  "name": "Kirei Theme",
-  "price": 100000.0,
-  "category": "Themes"
- },
- "theme_bubble28": {
-  "id": "theme_bubble28",
-  "name": "Kirei 2 Theme",
-  "price": 100000.0,
-  "category": "Themes"
- },
- "theme_bubble29": {
-  "id": "theme_bubble29",
-  "name": "Raidramon Theme",
-  "price": 100000.0,
-  "category": "Themes"
- },
- "miracle_egg": {
-  "id": "miracle_egg",
-  "name": "Pandora's Egg",
-  "category": "Evolution"
- },
- "miracle_fruit": {
-  "id": "miracle_fruit",
-  "name": "Super Evolutor",
-  "category": "Evolution"
- },
- "vip_ticket": {
-  "id": "vip_ticket",
-  "name": "Special Ticket",
-  "category": "Special"
- },
- "egg_of_courage": {
-  "id": "egg_of_courage",
-  "name": "Courage Egg",
-  "category": "Armor-Spirit"
- },
- "egg_of_friendship": {
-  "id": "egg_of_friendship",
-  "name": "Friendship Egg",
-  "category": "Armor-Spirit"
- },
- "egg_of_hope": {
-  "id": "egg_of_hope",
-  "name": "Hope Egg",
-  "category": "Armor-Spirit"
- },
- "egg_of_knowledge": {
-  "id": "egg_of_knowledge",
-  "name": "Knowledge Egg",
-  "category": "Armor-Spirit"
- },
- "egg_of_light": {
-  "id": "egg_of_light",
-  "name": "Light Egg",
-  "category": "Armor-Spirit"
- },
- "egg_of_love": {
-  "id": "egg_of_love",
-  "name": "Love Egg",
-  "category": "Armor-Spirit"
- },
- "egg_of_miracles": {
-  "id": "egg_of_miracles",
-  "name": "Miracles Egg",
-  "category": "Armor-Spirit"
- },
- "egg_of_reliability": {
-  "id": "egg_of_reliability",
-  "name": "Reliability Egg",
-  "category": "Armor-Spirit"
- },
- "egg_of_sincerity": {
-  "id": "egg_of_sincerity",
-  "name": "Sincerity Egg",
-  "category": "Armor-Spirit"
- },
- "egg_of_destiny": {
-  "id": "egg_of_destiny",
-  "name": "Destiny Egg",
-  "category": "Armor-Spirit"
- },
- "egg_of_kindness": {
-  "id": "egg_of_kindness",
-  "name": "Kindness Egg",
-  "category": "Armor-Spirit"
- },
- "storage_drive": {
-  "id": "storage_drive",
-  "name": "Storage Drive",
-  "price": 200000.0,
-  "category": "Utility"
- }
+"energy_drink": {
+"id": "energy_drink",
+"name": "Energy.D",
+"price": 200,
+"category": "Care"
+},
+"best_fruit": {
+"id": "best_fruit",
+"name": "SuperFruit",
+"price": 1000.0,
+"category": "Fruit"
+},
+"normal_fruit": {
+"id": "normal_fruit",
+"name": "DigiFruit",
+"price": 1000.0,
+"category": "Fruit"
+},
+"worst_fruit": {
+"id": "worst_fruit",
+"name": "MoldyFruit",
+"price": 1000.0,
+"category": "Fruit"
+},
+"deadly_fruit": {
+"id": "deadly_fruit",
+"name": "DevilFruit",
+"price": 200,
+"category": "Fruit"
+},
+"training_pack": {
+"id": "training_pack",
+"name": "Train Pack",
+"price": 300,
+"category": "Care"
+},
+"x_antibody": {
+"id": "x_antibody",
+"name": "X-Antibody",
+"price": 2000.0,
+"category": "Evolution"
+},
+"revive_floppy": {
+"id": "revive_floppy",
+"name": "Rev.Floppy",
+"price": 2500,
+"category": "Medical"
+},
+"super_carrot": {
+"id": "super_carrot",
+"name": "Spr.Carrot",
+"price": 100,
+"category": "Food"
+},
+"time_gear": {
+"id": "time_gear",
+"name": "Time Gear",
+"price": 500,
+"category": "Evolution"
+},
+"anti_evo_chip": {
+"id": "anti_evo_chip",
+"name": "Anti-Evo",
+"price": 1000.0,
+"category": "Evolution"
+},
+"care_mistake_eraser": {
+"id": "care_mistake_eraser",
+"name": "Care Eraser",
+"price": 1500,
+"category": "Care"
+},
+"poop_clean_pill": {
+"id": "poop_clean_pill",
+"name": "Smart Potty",
+"price": 2000.0,
+"category": "Care"
+},
+"alarm_clock": {
+"id": "alarm_clock",
+"name": "AlarmClock",
+"price": 300,
+"category": "Care"
+},
+"sleeping_pill": {
+"id": "sleeping_pill",
+"name": "Sleep Pill",
+"price": 300,
+"category": "Care"
+},
+"junk_food": {
+"id": "junk_food",
+"name": "Junk Food",
+"price": 50,
+"category": "Food"
+},
+"premium_meat": {
+"id": "premium_meat",
+"name": "Prem.Meat",
+"price": 2000.0,
+"category": "Food"
+},
+"theme_digilab": {
+"id": "theme_digilab",
+"name": "Digilab Theme",
+"price": 100000.0,
+"category": "Themes"
+},
+"theme_digistreet": {
+"id": "theme_digistreet",
+"name": "DigiStreet Theme",
+"price": 100000.0,
+"category": "Themes"
+},
+"theme_elegant_purple": {
+"id": "theme_elegant_purple",
+"name": "Ele. Purple Theme",
+"price": 100000.0,
+"category": "Themes"
+},
+"theme_elegant_gold": {
+"id": "theme_elegant_gold",
+"name": "Ele. Gold Theme",
+"price": 100000.0,
+"category": "Themes"
+},
+"theme_futuristic_1": {
+"id": "theme_futuristic_1",
+"name": "Futuristic 1 Theme",
+"price": 45000.0,
+"category": "Themes"
+},
+"theme_futuristic_2": {
+"id": "theme_futuristic_2",
+"name": "Futuristic 2 Theme",
+"price": 45000.0,
+"category": "Themes"
+},
+"theme_vmon": {
+"id": "theme_vmon",
+"name": "Veemon Theme",
+"price": 100000.0,
+"category": "Themes"
+},
+"theme_bubble9": {
+"id": "theme_bubble9",
+"name": "Agumon Theme",
+"price": 100000.0,
+"category": "Themes"
+},
+"theme_bubble10": {
+"id": "theme_bubble10",
+"name": "Mega Seadramon Theme",
+"price": 100000.0,
+"category": "Themes"
+},
+"theme_bubble11": {
+"id": "theme_bubble11",
+"name": "Tailmon Theme",
+"price": 100000.0,
+"category": "Themes"
+},
+"theme_bubble12": {
+"id": "theme_bubble12",
+"name": "Tentomon Theme",
+"price": 100000.0,
+"category": "Themes"
+},
+"theme_bubble13": {
+"id": "theme_bubble13",
+"name": "Wormon Theme",
+"price": 100000.0,
+"category": "Themes"
+},
+"theme_bubble14": {
+"id": "theme_bubble14",
+"name": "Alphamon Theme",
+"price": 100000.0,
+"category": "Themes"
+},
+"theme_bubble15": {
+"id": "theme_bubble15",
+"name": "Angewomon Theme",
+"price": 100000.0,
+"category": "Themes"
+},
+"theme_bubble16": {
+"id": "theme_bubble16",
+"name": "Dukemon Theme",
+"price": 100000.0,
+"category": "Themes"
+},
+"theme_bubble17": {
+"id": "theme_bubble17",
+"name": "DigiLab Purple Theme",
+"price": 100000.0,
+"category": "Themes"
+},
+"theme_bubble18": {
+"id": "theme_bubble18",
+"name": "Digital future Theme",
+"price": 100000.0,
+"category": "Themes"
+},
+"theme_bubble19": {
+"id": "theme_bubble19",
+"name": "Digital Purple Theme",
+"price": 100000.0,
+"category": "Themes"
+},
+"theme_bubble20": {
+"id": "theme_bubble20",
+"name": "Hydramon Theme",
+"price": 100000.0,
+"category": "Themes"
+},
+"theme_bubble21": {
+"id": "theme_bubble21",
+"name": "Kazuchimon Theme",
+"price": 100000.0,
+"category": "Themes"
+},
+"theme_bubble22": {
+"id": "theme_bubble22",
+"name": "Omegamon Theme",
+"price": 100000.0,
+"category": "Themes"
+},
+"theme_bubble23": {
+"id": "theme_bubble23",
+"name": "Numemon Theme",
+"price": 100000.0,
+"category": "Themes"
+},
+"theme_bubble24": {
+"id": "theme_bubble24",
+"name": "Ulforce Veedramon Theme",
+"price": 100000.0,
+"category": "Themes"
+},
+"theme_bubble25": {
+"id": "theme_bubble25",
+"name": "War Greymon Theme",
+"price": 100000.0,
+"category": "Themes"
+},
+"theme_bubble26": {
+"id": "theme_bubble26",
+"name": "Arkine Theme",
+"price": 100000.0,
+"category": "Themes"
+},
+"theme_bubble27": {
+"id": "theme_bubble27",
+"name": "Kirei Theme",
+"price": 100000.0,
+"category": "Themes"
+},
+"theme_bubble28": {
+"id": "theme_bubble28",
+"name": "Kirei 2 Theme",
+"price": 100000.0,
+"category": "Themes"
+},
+"theme_bubble29": {
+"id": "theme_bubble29",
+"name": "Raidramon Theme",
+"price": 100000.0,
+"category": "Themes"
+},
+"miracle_egg": {
+"id": "miracle_egg",
+"name": "Pandora's Egg",
+"category": "Evolution"
+},
+"miracle_fruit": {
+"id": "miracle_fruit",
+"name": "Super Evolutor",
+"category": "Evolution"
+},
+"vip_ticket": {
+"id": "vip_ticket",
+"name": "Special Ticket",
+"category": "Special"
+},
+"egg_of_courage": {
+"id": "egg_of_courage",
+"name": "Courage Egg",
+"category": "Armor-Spirit"
+},
+"egg_of_friendship": {
+"id": "egg_of_friendship",
+"name": "Friendship Egg",
+"category": "Armor-Spirit"
+},
+"egg_of_hope": {
+"id": "egg_of_hope",
+"name": "Hope Egg",
+"category": "Armor-Spirit"
+},
+"egg_of_knowledge": {
+"id": "egg_of_knowledge",
+"name": "Knowledge Egg",
+"category": "Armor-Spirit"
+},
+"egg_of_light": {
+"id": "egg_of_light",
+"name": "Light Egg",
+"category": "Armor-Spirit"
+},
+"egg_of_love": {
+"id": "egg_of_love",
+"name": "Love Egg",
+"category": "Armor-Spirit"
+},
+"egg_of_miracles": {
+"id": "egg_of_miracles",
+"name": "Miracles Egg",
+"category": "Armor-Spirit"
+},
+"egg_of_reliability": {
+"id": "egg_of_reliability",
+"name": "Reliability Egg",
+"category": "Armor-Spirit"
+},
+"egg_of_sincerity": {
+"id": "egg_of_sincerity",
+"name": "Sincerity Egg",
+"category": "Armor-Spirit"
+},
+"egg_of_destiny": {
+"id": "egg_of_destiny",
+"name": "Destiny Egg",
+"category": "Armor-Spirit"
+},
+"egg_of_kindness": {
+"id": "egg_of_kindness",
+"name": "Kindness Egg",
+"category": "Armor-Spirit"
+},
+"storage_drive": {
+"id": "storage_drive",
+"name": "Storage Drive",
+"price": 200000.0,
+"category": "Utility"
+},
+"spirit_flame_h": {
+"id": "spirit_flame_h",
+"name": "H Spirit Flame",
+"price": 1500,
+"category": "Armor-Spirit"
+},
+"spirit_flame_b": {
+"id": "spirit_flame_b",
+"name": "B Spirit Flame",
+"price": 3000,
+"category": "Armor-Spirit"
+},
+"spirit_light_h": {
+"id": "spirit_light_h",
+"name": "H Spirit Light",
+"price": 1500,
+"category": "Armor-Spirit"
+},
+"spirit_light_b": {
+"id": "spirit_light_b",
+"name": "B Spirit Light",
+"price": 3000,
+"category": "Armor-Spirit"
+},
+"spirit_ice_h": {
+"id": "spirit_ice_h",
+"name": "H Spirit Ice",
+"price": 1500,
+"category": "Armor-Spirit"
+},
+"spirit_ice_b": {
+"id": "spirit_ice_b",
+"name": "B Spirit Ice",
+"price": 3000,
+"category": "Armor-Spirit"
+},
+"spirit_wind_h": {
+"id": "spirit_wind_h",
+"name": "H Spirit Wind",
+"price": 1500,
+"category": "Armor-Spirit"
+},
+"spirit_wind_b": {
+"id": "spirit_wind_b",
+"name": "B Spirit Wind",
+"price": 3000,
+"category": "Armor-Spirit"
+},
+"spirit_thunder_h": {
+"id": "spirit_thunder_h",
+"name": "H Spirit Thunder",
+"price": 1500,
+"category": "Armor-Spirit"
+},
+"spirit_thunder_b": {
+"id": "spirit_thunder_b",
+"name": "B Spirit Thunder",
+"price": 3000,
+"category": "Armor-Spirit"
+},
+"spirit_earth_h": {
+"id": "spirit_earth_h",
+"name": "H Spirit Earth",
+"price": 1500,
+"category": "Armor-Spirit"
+},
+"spirit_earth_b": {
+"id": "spirit_earth_b",
+"name": "B Spirit Earth",
+"price": 3000,
+"category": "Armor-Spirit"
+},
+"spirit_water_h": {
+"id": "spirit_water_h",
+"name": "H Spirit Water",
+"price": 1500,
+"category": "Armor-Spirit"
+},
+"spirit_water_b": {
+"id": "spirit_water_b",
+"name": "B Spirit Water",
+"price": 3000,
+"category": "Armor-Spirit"
+},
+"spirit_wood_h": {
+"id": "spirit_wood_h",
+"name": "H Spirit Wood",
+"price": 1500,
+"category": "Armor-Spirit"
+},
+"spirit_wood_b": {
+"id": "spirit_wood_b",
+"name": "B Spirit Wood",
+"price": 3000,
+"category": "Armor-Spirit"
+},
+"spirit_steel_h": {
+"id": "spirit_steel_h",
+"name": "H Spirit Steel",
+"price": 1500,
+"category": "Armor-Spirit"
+},
+"spirit_steel_b": {
+"id": "spirit_steel_b",
+"name": "B Spirit Steel",
+"price": 3000,
+"category": "Armor-Spirit"
+},
+"spirit_darkness_h": {
+"id": "spirit_darkness_h",
+"name": "H Spirit Darkness",
+"price": 1500,
+"category": "Armor-Spirit"
+},
+"spirit_darkness_b": {
+"id": "spirit_darkness_b",
+"name": "B Spirit Darkness",
+"price": 3000,
+"category": "Armor-Spirit"
+}
 }

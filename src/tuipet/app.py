@@ -256,11 +256,11 @@ class TuiPetApp(App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("FUSION UNSEALED: 41 forms - Omnimon's own fusion among "
-                 "them - were locked behind an injury counter that no "
-                 "longer exists. They open now. And named fusions demand "
-                 "two DIFFERENT components: two WarGreymons will never "
-                 "make an Omnimon, online or anywhere.")
+    WHATS_NEW = ("THE SPIRIT SHELF: all ten Legendary Warrior spirits - "
+                 "Human and Beast, twenty in all - are on the shop's "
+                 "Armor-Spirit shelf. Spirit-evolve a worthy rookie, earn "
+                 "the Beast in battle, and slide back with a mode change, "
+                 "just like the show.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and

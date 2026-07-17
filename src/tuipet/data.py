@@ -224,6 +224,13 @@ def load_evolutions():
                 continue
             src = int(cells[0])
             evo[src] = [int(x) for x in cells[1:]]
+    # the one missing Frontier reversion edge (Fusion/Mode audit 2026-07-18,
+    # unsealed by the spirit shelf): every Beast spirit's sheet links back to
+    # its Human form (Vritramon 1125 -> Agunimon...) EXCEPT Bolgmon 1129 ->
+    # Blitzmon 1119 (the Mode row that read "NO BASE") -- graft it.
+    evo.setdefault(1129, [])
+    if 1119 not in evo[1129]:
+        evo[1129].append(1119)
     return evo
 
 

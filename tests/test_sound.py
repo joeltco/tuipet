@@ -76,7 +76,8 @@ def _referenced_names():
         for m in re.finditer(r'(?:bite_)?snds"?\]?\s*=\s*\{([^}]*)\}', s):   # beat-keyed fx maps
             # keys may be computed (bite_snds uses pow-scaled beats): match VALUES
             names.update(re.findall(r'[^,{]+?:\s*"([a-zA-Z][a-zA-Z0-9]*)"', m.group(1)))
-        names.update(re.findall(r'"(thunder\d?)"', s))    # the storm crack picks
+        # (the thunder\d storm-crack rule left with the weather system --
+        # it false-flagged the SPIRIT SHELF's "thunder" element, 2026-07-18)
         names.update(re.findall(r'"((?:small|large)Poop|poop)"', s))   # size-keyed picks
     return names
 
