@@ -954,6 +954,8 @@ class Pet:
     fought_hours: list = _dcf(default_factory=list)       # game hours whose cup has been RUN today
     #                                                       (Joel 2026-07-13: one entry per cup-hour)
     tourney_alarm: int = -1         # _tourneyAlarm: trophy id to be called for (-1 = unset)
+    tourney_real: int = -1          # real-date ordinal of the schedule (cadence 2026-07-17)
+    featured_day: int = -1          # real-date ordinal the featured cup last ran
     tourney_alert: bool = False     # TournamentAlert: the call is ringing (this hour only)
     full_health: int = STARTING_HEALTH_POINTS   # _fullHealthPoints: TRAINED battle HP
     perfect_wins: int = 0           # _perfectWins: HP-drill wins toward the next +1 HP
@@ -1025,6 +1027,9 @@ class Pet:
             pet.inventory = est["inventory"]
             pet.trophies = est["trophies"]
             pet.trophies_won = est["trophies_won"]   # beaten qualifiers persist (seasonBeat)
+            bank = {f: int(v) for f, v in (est.get("dna_owned") or {}).items()}
+            if bank:                                 # the DNA bank rides the estate
+                pet.dna_owned = {f: bank.get(f, 0) for f in data.DNA_FIELDS}
         # a fresh game dawns at 8:00 -- world_seconds 0 is MIDNIGHT, inside every
         # bedtime window, and a hatchling born asleep is a rotten first minute
         pet.world_seconds = 8 * 60.0

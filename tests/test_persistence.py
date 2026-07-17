@@ -141,3 +141,21 @@ def test_snapshot_ignores_egg():
     persistence.snapshot_prev_gen(egg)
     # no last_gen written -> defaults
     assert persistence.get_progress()["last_field"] == "None"
+
+
+def test_dna_bank_rides_the_estate():
+    """DNA polish 2026-07-17: the BANKED DNA (bits + mash paid for it) is
+    device-lifetime like the bag; the CHARGED distribution dies with the pet."""
+    from tuipet import data
+    p = Pet(num=100, stage="Champion", attribute="Vaccine")
+    p.world_seconds = 600.0
+    p.bits = 777
+    p.dna_owned["NatureSpirit"] = 42
+    p.dna_applied["NatureSpirit"] = 9
+    persistence.snapshot_prev_gen(p)
+    heir = Pet.new_egg(generation=2, egg_type=0)
+    assert heir.bits == 777
+    assert heir.dna_owned["NatureSpirit"] == 42          # the bank carries
+    assert all(heir.dna_owned.get(f, 0) == 0
+               for f in data.DNA_FIELDS if f != "NatureSpirit")
+    assert all(v == 0 for v in heir.dna_applied.values())  # biology resets

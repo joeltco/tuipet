@@ -212,6 +212,17 @@ class RaidPanel(menu.SubHost):
         lead = f"{top[0][0][:10]} {_fmt(top[0][1])}" if top else "—"
         out.append(f" attempts {v.get('attempts', 0)}   "
                    f"you #{rank} {_fmt(mine)}   top {lead}\n", style=DIM)
+        # the cadence line (2026-07-17): the WEEKLY window, the day's
+        # attempts, and the real-calendar bonuses the relay already pays
+        from . import tournament as _cad
+        if self._standing():
+            left = max(0, int(b.get("end", 0) - v.get("now", 0)))
+            days, hrs = left // 86400, left % 86400 // 3600
+            fest = _cad.holiday()
+            note = (f" weekly boss · {days}d {hrs}h left"
+                    + (f" · {fest}!" if fest
+                       else " · weekend pays 2x" if _cad.is_weekend() else ""))
+            out.append(note + "\n", style=DIM)
         award = v.get("award")
         if award:
             out.append(f" purse waiting: {award.get('boss', '?')[:12]} — press C\n",

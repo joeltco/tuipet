@@ -25,7 +25,9 @@ class TournamentPanel(menu.SubHost):
         self.tourney = None
         self.sched = tournament.schedule(pet)      # today's 24 hourly cups
         self.cursor = tournament._hour(pet)        # start the list on NOW
-        self.msg = "One cup per hour — only NOW is open."
+        fest = tournament.holiday()
+        self.msg = (f"{fest} — every cup runs today!" if fest
+                    else "One cup per hour — F fights today's featured.")
         self.phase = "select"
         self.tree_view = False       # the bracket page (B toggles; shown between rounds)
 
@@ -39,8 +41,8 @@ class TournamentPanel(menu.SubHost):
         if self.sub is not None:
             return ""                          # the bout's own panel owns the box
         if self.phase == "select":
-            return menu.hints(("↑↓", "browse"), ("ENTER", "enter cup"),
-                              ("A", "alarm"))
+            return menu.hints(("↑↓", "pick"), ("ENTER", "go"),
+                              ("F", "feat."), ("A", "alarm"))
         return menu.hints(("SPACE", "fight on"), ("B", "bracket"),
                           ("ESC", "leave"))
 
@@ -61,22 +63,40 @@ class TournamentPanel(menu.SubHost):
             elif k in ("down", "j"):
                 self.cursor = (self.cursor + 1) % n
             elif k in ("enter", "space"):
-                # checkTourneyClosed: only the current hour's cup takes entries
-                hour = tournament._hour(self.pet)
-                tr = tournament.open_now(self.pet)
-                if self.cursor != hour or tr is None:
-                    self.msg = "That cup is closed — only the %02d:00 one runs now." % hour
+                # checkTourneyClosed: only the current hour's cup takes
+                # entries -- except on a FESTIVAL day, when every un-run
+                # slot is open (cadence layer 2026-07-17)
+                tid = self.sched[self.cursor] if 0 <= self.cursor < n else -1
+                tr = tournament.trophy_by_id(tid) if tid >= 0 else None
+                if tr is None:
+                    self.msg = "No cup in that slot."
                     self.sfx = "error"
                     return None
-                err = tournament.eligibility(self.pet, tr)   # isEligible
+                err = tournament.eligibility_at(self.pet, tr, self.cursor)
                 if err:
                     self.msg = err
                     self.sfx = "error"
                     return None
-                self.tourney = Tournament(self.pet, tr)
+                self.tourney = Tournament(self.pet, tr, slot=self.cursor)
                 self.phase = "bracket"
                 self.tree_view = True          # the event opens on the field of eight
                 self.sfx = "mischief"          # soundConfig tourneyStart -> mischief.wav
+            elif k == "f":
+                # today's FEATURED cup: any hour, once per real day
+                tr = tournament.featured_now(self.pet)
+                if tr is None:
+                    self.msg = "No featured cup today."
+                    self.sfx = "error"
+                    return None
+                err = tournament.eligibility_featured(self.pet, tr)
+                if err:
+                    self.msg = err
+                    self.sfx = "error"
+                    return None
+                self.tourney = Tournament(self.pet, tr, featured=True)
+                self.phase = "bracket"
+                self.tree_view = True
+                self.sfx = "mischief"
             elif k == "a":
                 # onTourneyAlarm: toggle the wake-me call on this slot's cup
                 tid = self.sched[self.cursor] if 0 <= self.cursor < len(self.sched) else -1
@@ -182,6 +202,13 @@ class TournamentPanel(menu.SubHost):
                 fee = tournament.entry_fee(self.pet, tr_open)
                 out.append("  stake %db \u00b7 purse ~%db\n" % (fee, fee * tournament.ENTRY_FEE_DIV),
                            style=DIM)
+            ftr = tournament.featured_now(self.pet)
+            if ftr is not None:
+                done = tournament.featured_done(self.pet)
+                tag = "run today" if done else "F to fight \u00b7 any hour"
+                out.append("  \u2605 %s \u00b7 %s\n"
+                           % (tournament.trophy_label(ftr)[:20], tag),
+                           style=DIM if done else INK_B)
             nw = tournament.next_winnable(self.pet)
             if nw and nw[0] == hour:
                 out.append("  \u2713 %s is open NOW\n" % tournament.trophy_label(nw[1])[:24],

@@ -22,8 +22,71 @@ The real thing is a SCHEDULED 8-entrant bracket, not an always-open menu:
   quarterfinal, a third from the semi, half from the final.
 """
 from __future__ import annotations
+import datetime as _dt
 import random
 from . import data
+
+
+# ---- the real-calendar cadence (Joel 2026-07-17: "seasonal, daily, weekly,
+# holiday, etc, all that crap") ------------------------------------------------
+# The CSV's own Season column comes back to life keyed to the REAL calendar:
+# each real season fields its own ~81-cup pool (the trophies persist forever,
+# so seasonal cups are yearly collect windows).  Weekends already pay x1.5
+# purses (pet.weekend_bonus); the FEATURED cup gives each real day one
+# any-hour headliner, and festival days open the whole board.
+
+def _today():
+    """One date source for the cadence layer (tests monkeypatch here)."""
+    return _dt.date.today()
+
+
+SEASON_OF_MONTH = {3: "Spring", 4: "Spring", 5: "Spring",
+                   6: "Summer", 7: "Summer", 8: "Summer",
+                   9: "Fall", 10: "Fall", 11: "Fall",
+                   12: "Winter", 1: "Winter", 2: "Winter"}
+
+# festival days: the whole day's board is enterable at any hour (each slot
+# still runs once -- no purse farming).  Aug 1 is Odaiba Memorial Day, the
+# fandom's own Digimon anniversary (the 1999-08-01 summer camp).
+HOLIDAYS = {(1, 1): "New Year Festival",
+            (8, 1): "Odaiba Memorial Day",
+            (10, 31): "Halloween Festival",
+            (12, 25): "Christmas Festival"}
+
+
+def real_season(today=None):
+    return SEASON_OF_MONTH[(today or _today()).month]
+
+
+def holiday(today=None):
+    """The festival's name, or None on an ordinary day."""
+    d = today or _today()
+    return HOLIDAYS.get((d.month, d.day))
+
+
+def is_weekend(today=None):
+    return (today or _today()).weekday() >= 5
+
+
+def featured_now(pet, today=None):
+    """The day's FEATURED cup: one per real date, drawn from the season's
+    pool by a date-seeded roll -- on weekends from the TOP tier (the open /
+    Mega cups: the Weekend Championship).  Open at ANY hour, once per real
+    day, on top of the hourly board."""
+    d = today or _today()
+    pool = [t for t in data.load_tournies() if t["season"] == real_season(d)]
+    if is_weekend(d):
+        top = [t for t in pool if not t["age_limit"] or t["age_limit"] == "Mega"]
+        pool = top or pool
+    if not pool:
+        return None
+    rng = random.Random(d.toordinal())
+    return rng.choice(pool)
+
+
+def featured_done(pet, today=None):
+    d = today or _today()
+    return getattr(pet, "featured_day", -1) == d.toordinal()
 
 # config.csv (classic column)
 TOURNEY_BITS = {"Rookie": 125, "Champion": 150, "Ultimate": 175, "Mega": 200}
@@ -103,10 +166,13 @@ def _rand_trophy_ids(pet):
     the 24 hourly slots rotating open/Rookie/open/Champion/open/Ultimate/open/
     Mega; the fill STOPS at the first empty bucket (canon quirk).  Every cup in
     the classic data has Time=None, so the time-of-day match never gates.
-    (The seasons left -- BASIC VPET 2026-07-17: ALL cups share one pool now;
-    the CSV Season word survives only as the cup's flavor name.)"""
+    The day's pool is the REAL season's cups (cadence layer 2026-07-17): the
+    CSV Season column is live again, keyed to the actual calendar."""
+    season = real_season()
     buckets = {"free": [], "Rookie": [], "Champion": [], "Ultimate": [], "Mega": []}
     for t in data.load_tournies():
+        if t["season"] != season:
+            continue
         buckets[t["age_limit"] if t["age_limit"] in buckets else "free"].append(t)
     order = ["free", "Rookie", "free", "Champion", "free", "Ultimate", "free", "Mega"]
     sched = []
@@ -127,8 +193,11 @@ def schedule(pet):
     it and clears foughtTrophiesToday)."""
     from .pet import DAY_LENGTH
     day = int(pet.world_seconds // DAY_LENGTH)
-    if pet.tourney_day != day or len(pet.tourney_schedule) != HOME_LIMIT:
+    real = _today().toordinal()
+    if pet.tourney_day != day or getattr(pet, "tourney_real", -1) != real \
+            or len(pet.tourney_schedule) != HOME_LIMIT:
         pet.tourney_day = day
+        pet.tourney_real = real
         pet.tourney_schedule = _rand_trophy_ids(pet)
         pet.fought_today = []
         pet.fought_hours = []                      # a new day, every cup-hour fresh
@@ -162,6 +231,7 @@ def eligibility(pet, t):
     """
     if _hour(pet) in (getattr(pet, "fought_hours", None) or []):
         return "That cup has run — the next one starts on the hour."
+    # (festival days route through eligibility_at -- any un-run slot enters)
     if t["id"] in (pet.fought_today or []) and not t["same_day_retry"]:
         return "Already fought that cup today."
     if t["age_limit"] and _pet_tier_rank(pet) > _TIER_RANK.get(t["age_limit"], 3):
@@ -179,6 +249,33 @@ def eligibility(pet, t):
         if t["prelim"] not in won:
             q = trophy_by_id(t["prelim"])
             return "Win the %s first." % (trophy_label(q) if q else "qualifier")
+    fee = entry_fee(pet, t)
+    if pet.bits < fee:
+        return "The stake is %db — you can't cover it." % fee
+    return None
+
+
+def eligibility_at(pet, t, slot):
+    """Eligibility for entering the SLOT's cup right now.  Ordinarily only
+    the current hour's slot takes entries; on a FESTIVAL day (holiday())
+    every un-run slot is open -- each still runs exactly once, so the purse
+    can't be farmed."""
+    run = getattr(pet, "fought_hours", None) or []
+    if slot in run:
+        return "That cup has run."
+    if slot != _hour(pet) and not holiday():
+        return "That cup is closed — only the %02d:00 one runs now." % _hour(pet)
+    return _eligibility_rest(pet, t) or _stake_check(pet, t)
+
+
+def eligibility_featured(pet, t):
+    """The featured cup: any hour, once per real day."""
+    if featured_done(pet):
+        return "Today's featured cup has run."
+    return _eligibility_rest(pet, t) or _stake_check(pet, t)
+
+
+def _stake_check(pet, t):
     fee = entry_fee(pet, t)
     if pet.bits < fee:
         return "The stake is %db — you can't cover it." % fee
@@ -287,8 +384,10 @@ def _npc_winner(a, b):
 
 
 class Tournament:
-    def __init__(self, pet, trophy):
+    def __init__(self, pet, trophy, slot=None, featured=False):
         self.pet = pet
+        self.featured = featured
+        self._slot = slot
         self.trophy = trophy
         self.name = trophy_label(trophy)
         self.round = 0
@@ -331,12 +430,16 @@ class Tournament:
         # spend this hour's slot AT ENTRY, not at the finish: a bracket
         # abandoned (ESC forfeits; a force-quit does not even reach _finish)
         # must not hand back a free re-roll of the field
-        hrs = getattr(pet, "fought_hours", None)
-        if hrs is None:
-            pet.fought_hours = hrs = []
-        h = _hour(pet)
-        if h not in hrs:
-            hrs.append(h)
+        if featured:
+            # the featured cup spends its once-per-real-day slot instead
+            pet.featured_day = _today().toordinal()
+        else:
+            hrs = getattr(pet, "fought_hours", None)
+            if hrs is None:
+                pet.fought_hours = hrs = []
+            h = _hour(pet) if slot is None else slot     # festival any-slot entry
+            if h not in hrs:
+                hrs.append(h)
 
     @property
     def round_name(self):

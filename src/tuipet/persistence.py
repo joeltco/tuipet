@@ -623,6 +623,12 @@ def snapshot_prev_gen(pet):
         "inventory": dict(getattr(pet, "inventory", {}) or {}),
         "trophies": int(getattr(pet, "trophies", 0)),
         "trophies_won": dict(getattr(pet, "trophies_won", {}) or {}),
+        # the BANKED DNA is device-lifetime too (DNA polish 2026-07-17):
+        # it is bought with bits + the mash minigame, so wiping it at
+        # rollover made late-life banking worthless.  The CHARGED
+        # distribution (dna_applied) is the pet's own biology and dies
+        # with it, exactly as before.
+        "dna_owned": dict(getattr(pet, "dna_owned", {}) or {}),
     }
     # the LEGACY roll (sweep 2026-07-14): every retired generation used to
     # vanish -- only this gate snapshot survived, and it was never SHOWN.
@@ -652,7 +658,8 @@ def prev_gen_estate():
     return {"bits": int(last.get("bits", 0)),
             "inventory": dict(last.get("inventory") or {}),
             "trophies": int(last.get("trophies", 0)),
-            "trophies_won": tw}
+            "trophies_won": tw,
+            "dna_owned": dict(last.get("dna_owned") or {})}
 
 
 def _note_put(key, value):

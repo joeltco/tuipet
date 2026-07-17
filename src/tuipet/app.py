@@ -257,11 +257,11 @@ class TuiPetApp(App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("HOME COMFORTS: press E to change the scene behind your "
-                 "mon (the egg still picks the default). The Toilet, Port. "
-                 "Potty and Futon are real items now - potty-train during "
-                 "InTraining and a grown pet goes by itself; a Futon tucks "
-                 "a sleeper in. The pill animation is fixed too.")
+    WHATS_NEW = ("THE CALENDAR LIVES: cups now follow the real seasons "
+                 "(each season fields its own pool), every day has a "
+                 "FEATURED cup (F key - weekends draw a championship), and "
+                 "festival days like Odaiba Memorial Day open the whole "
+                 "board. Banked DNA now survives to the next generation.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and

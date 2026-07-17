@@ -42,7 +42,7 @@ def test_every_screen_strip_fits_and_speaks():
     egg = EggSelectPanel()
     assert "pick" in _ok(egg.strip(), "eggselect")
     tp = TournamentPanel(p)
-    assert "enter cup" in _ok(tp.strip(), "cup:select")
+    assert "feat." in _ok(tp.strip(), "cup:select")
     tp.phase = "bracket"
     assert "bracket" in _ok(tp.strip(), "cup:bracket")
     assert "scroll" in _ok(KeysPanel([("f", "feed", "Feed")]).strip(), "keys")
