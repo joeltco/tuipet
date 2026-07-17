@@ -80,7 +80,8 @@ def test_advance_with_no_fx_is_safe():
 def test_care_actions_guard_against_retrigger():
     """Every care action that starts an fx must early-return while one is active."""
     here = os.path.dirname(__import__("tuipet").__file__)
-    src = open(os.path.join(here, "app.py")).read()
+    # the handlers live in appactions since the tier-3 split (2026-07-17)
+    src = open(os.path.join(here, "appactions.py")).read()
     # find each `def action_*` body and check the feed/clean guard
     # (the play action left 2026-07-17 with the mood system)
     GUARDED = ["action_feed", "action_clean"]
@@ -536,3 +537,20 @@ def test_the_fx_engine_split_holds_its_boundaries():
         assert hasattr(arena, old), old                    # re-export law
     # _paint_fx must route render_screen through ARENA (the documented spy)
     assert "_arena.render_screen" in inspect.getsource(arenafx.FxMixin._paint_fx)
+
+
+def test_the_app_split_holds_its_boundaries():
+    """Tier-3 split (2026-07-17): appactions owns every action_*/_after_*
+    handler; appboot owns the launch plumbing; app.py is the shell and
+    re-exports the old names."""
+    import inspect
+    from tuipet import app, appactions, appboot
+    assert appactions.ActionsMixin in app.TuiPetApp.__mro__
+    shell = inspect.getsource(app)
+    for name in ("action_feed", "action_shop", "action_lobby",
+                 "_after_feed", "_after_cup", "_do"):
+        assert f"def {name}" not in shell, f"{name} crept back into the shell"
+        assert callable(getattr(app.TuiPetApp, name))
+    for name in ("host_platform", "_preflight", "_lobby_uri",
+                 "MIN_COLS", "MIN_ROWS"):
+        assert hasattr(app, name) and hasattr(appboot, name)
