@@ -257,11 +257,11 @@ class TuiPetApp(App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("THE CALENDAR LIVES: cups now follow the real seasons "
-                 "(each season fields its own pool), every day has a "
-                 "FEATURED cup (F key - weekends draw a championship), and "
-                 "festival days like Odaiba Memorial Day open the whole "
-                 "board. Banked DNA now survives to the next generation.")
+    WHATS_NEW = ("THE DIGIMENTALS ARE EARNED: the armor shelf starts with "
+                 "Courage and Hope alone. Your first armor evolution opens "
+                 "the crest seven, 25 wins reveal Light and Kindness, two "
+                 "felled raid bosses forge the golden Miracles, and Destiny "
+                 "waits for a 5th-generation tamer - the canon order.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and

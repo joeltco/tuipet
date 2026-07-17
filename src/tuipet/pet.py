@@ -3495,6 +3495,8 @@ class Pet:
         lines_mod.adopt_line(self, prev=prev)     # a special jump re-anchors
         self.take_item(key)
         self._set_anim("happy", 1.6)
+        from . import persistence as _persist
+        _persist.armor_add(1)                 # the crest-wave shop gate counts it
         return f"{self.name} armor-evolved!"
 
     def _gain_energy(self, n):

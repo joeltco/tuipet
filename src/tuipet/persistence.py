@@ -472,6 +472,12 @@ def mega_kills_add(n=1):
     return _note_add("mega_kills", n)
 
 
+def armor_add(n=1):
+    """Lifetime armor (Digimental) evolutions performed -- the crest-wave
+    Digimental shop gate (2026-07-17)."""
+    return _note_add("armor_evos", n)
+
+
 def get_blocked():
     """Muted lobby peers (names)."""
     return set(load_settings().get("blocked", []))
@@ -741,6 +747,7 @@ def get_progress():
         "last_obed": int(last.get("obedience", 0)),
         "last_xanti": bool(last.get("xanti", False)),
         "connections": len(prog.get("connections", [])),
+        "armor_evos": int(prog.get("armor_evos", 0)),
     }
 
 

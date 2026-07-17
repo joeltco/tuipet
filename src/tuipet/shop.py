@@ -38,6 +38,38 @@ EFFECTS = {
 # (Pet._crest_egg -> evolution.item_select via the Digimental ids)
 ARMOR_CATEGORY = "Armor-Spirit"
 
+# the Digimental waves (Joel 2026-07-17: "wire the gates") -- the canon
+# discovery order, on the same earned-access rule as the egg carousel:
+# sealed ones simply don't appear.  Courage & Hope open armor evolution
+# from day one; the crest seven follow the FIRST armor evolution; the 02
+# pair rides lifetime wins; Miracles is golden (raids); Destiny is the
+# movie one (generation 5).  Gate signals are persistence.get_progress().
+DIGIMENTAL_GATES = {
+    "egg_of_courage": None,
+    "egg_of_hope": None,
+    "egg_of_friendship": ("armor_evos", 1),
+    "egg_of_love": ("armor_evos", 1),
+    "egg_of_knowledge": ("armor_evos", 1),
+    "egg_of_sincerity": ("armor_evos", 1),
+    "egg_of_reliability": ("armor_evos", 1),
+    "egg_of_light": ("wins", 25),
+    "egg_of_kindness": ("wins", 25),
+    "egg_of_miracles": ("raids", 2),
+    "egg_of_destiny": ("max_gen", 5),
+}
+
+
+def digimental_open(key, prog=None):
+    """Is this Digimental's wave reached?  (Non-digimental keys are open.)"""
+    gate = DIGIMENTAL_GATES.get(key)
+    if gate is None:
+        return True
+    if prog is None:
+        from . import persistence
+        prog = persistence.get_progress()
+    sig, need = gate
+    return int(prog.get(sig, 0)) >= need
+
 # the DVPet staple props (items.csv 81-83; Joel 2026-07-17: "look at what
 # dsprite has for items. should be like a toilet, and a few other things"):
 # restockable device furniture.  Prices and stock maths are the csv's own --
@@ -73,10 +105,16 @@ def _usable(key, category):
 
 
 def catalog():
-    """Every buyable entry: [{key, name, price, category}], price order."""
+    """Every buyable entry: [{key, name, price, category}], price order.
+    A Digimental whose wave isn't reached is SEALED: it stays off the shelf
+    entirely (the egg-carousel rule), though entry() still resolves it so
+    an already-owned one renders in the bag."""
+    from . import persistence
+    prog = persistence.get_progress()
     out = [dict(e) for e in STAPLES]
     for k, v in data.load_vitems().items():
-        if isinstance(v, dict) and _usable(k, v.get("category", "Item")):
+        if isinstance(v, dict) and _usable(k, v.get("category", "Item")) \
+                and digimental_open(k, prog):
             out.append({"key": k, "name": v.get("name", k),
                         "price": _price(v),
                         "category": v.get("category", "Item")})
