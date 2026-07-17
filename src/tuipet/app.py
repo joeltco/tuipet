@@ -256,11 +256,11 @@ class TuiPetApp(App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("TRUE ARMORS: the Digimental audit found the old dub "
-                 "swap - the Reliability Egg now armors the WATER family "
-                 "(Submarimon!) and Sincerity the ninjas (Shurimon!), the "
-                 "way the show named them. The evolution checklist also "
-                 "stopped listing power walls that no longer exist.")
+    WHATS_NEW = ("FUSION UNSEALED: 41 forms - Omnimon's own fusion among "
+                 "them - were locked behind an injury counter that no "
+                 "longer exists. They open now. And named fusions demand "
+                 "two DIFFERENT components: two WarGreymons will never "
+                 "make an Omnimon, online or anywhere.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and

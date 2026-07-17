@@ -173,6 +173,19 @@ def pairable_attrs(pet):
     return sorted({p for o in options(pet) for p in o["partners"]})
 
 
+def _distinct_component(pet, target, peer_num):
+    """Canon named fusions need TWO DIFFERENT components (Fusion/Mode canon
+    audit 2026-07-18): the peer must itself be a BASE of the target and a
+    different canonical species than mine -- two WarGreymons never make an
+    Omnimon, whatever the name channel says."""
+    if peer_num is None:
+        return False
+    evo = data.load_evolutions()
+    if not any(target in ts for b, ts in evo.items() if b == peer_num):
+        return False
+    return data.canonical_num(peer_num) != data.canonical_num(pet.num)
+
+
 def resolve_online(pet, payload):
     """Canon JogressProtocol.jogressFindFusionsAndAttributes (lobby session
     audit 2026-07-07).  The match runs in canon's two channels:
@@ -198,7 +211,8 @@ def resolve_online(pet, payload):
     p_num = payload.get("num")
     exact = [o for o in mine if not o["partners"] and o["partner_num"] == p_num]
     named = [o for o in mine
-             if o["partners"] and o["name"] in set(payload.get("fusions") or ())]
+             if o["partners"] and o["name"] in set(payload.get("fusions") or ())
+             and _distinct_component(pet, o["num"], p_num)]
     if exact or named:
         return _final_pick(pet, exact + named)
     # the COMPANION role: the peer's exact door names MY num -- I lend the
@@ -217,7 +231,11 @@ def resolve_online(pet, payload):
     if (pet.attribute not in (payload.get("attrs") or ())
             or p_attr not in {p for o in mine for p in o["partners"]}):
         return None
-    return resolve(pet, p_attr)
+    # the attribute fallback gets the same distinct-component law -- the
+    # mirror hole reopened here otherwise (audit 2026-07-18)
+    targets = [o for o in fuse_targets(pet, p_attr)
+               if _distinct_component(pet, o["num"], p_num)]
+    return _final_pick(pet, targets) if targets else None
 
 
 def fuse(pet, target_num):

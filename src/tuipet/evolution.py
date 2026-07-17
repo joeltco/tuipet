@@ -150,8 +150,10 @@ def check(pet, num, item=-1, food=-1, connecting=False):
         _cmp(*req["overeat"], pet.overeat),
         # (the sick_count gates DROPPED with the sickness system (BASIC VPET 2026-07-17) --
         # GreaterThan rows would wall forever on a count nothing can move;
-        # the injured gates already read a pinned 0)
-        _cmp(*req["injured"], pet.injuries),
+        # the injured gates already read a pinned 0 -- and 41 GreaterThan
+        # rows, Omnimon's Fusion among them, were WALLS on a counter nothing
+        # can move.  DROPPED like every other dead-meter family; Fusion/Mode
+        # canon audit 2026-07-18)
         # checkMoodReq: getCurrentMood -- the STICKY tier (Depressed holds until
         # checkDepressed's exit roll; a threshold recompute is never Depressed).
         # The old mood_category invented a Depressed tier at <= -250, failing
@@ -212,10 +214,9 @@ def fulfilled(pet, num):
                 score += R[k if k in R else "data"] * _scale_rate(g[0], g[1], cur_thr)
     if req["weight"] != "None" and req["weight"] == weight_category(pet.weight, pet._base_weight()):
         score += R["weight"]
-    for k, actual in (("disturb", pet.disturb), ("overeat", pet.overeat),
-                      ("injured", pet.injuries)):
+    for k, actual in (("disturb", pet.disturb), ("overeat", pet.overeat)):
         if _met(req[k], actual):
-            score += R.get(k, R["injury"] if k == "injured" else 1)
+            score += R.get(k, 1)
     if False:   # (the mood score left with the mood system; BASIC VPET)
         score += R["mood"]
     if False:   # (the major_food score left with the taste system)
@@ -261,7 +262,6 @@ def deviation(pet, num):
             if g[0] != "None" and _attr(g, actual, total):
                 dev += abs(g[1] - actual)
     for k, actual in (("disturb", pet.disturb), ("overeat", pet.overeat),
-                      ("injured", pet.injuries),
                       ("mistakes", pet.care_mistakes)):
         if _met(req[k], actual):
             dev += abs(req[k][1] - actual)
@@ -539,7 +539,6 @@ def requirement_report(pet, num):
     cmp_row("win rate", req["wins"], _win_rate(pet), pct=True)
     cmp_row("disturbs", req["disturb"], pet.disturb)
     cmp_row("overeats", req["overeat"], pet.overeat)
-    cmp_row("injuries", req["injured"], pet.injuries)
     cmp_row("care slips", req["mistakes"], pet.care_mistakes)
     cmp_row("generation", req.get("incarnations", ("None", 0)), getattr(pet, "generation", 1))
     if req["weight"] != "None":

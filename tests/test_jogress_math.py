@@ -100,7 +100,12 @@ def test_resolve_online_named_intersection_first(monkeypatch):
     attribute pairing or the stage."""
     p = _pet()
     _fake_options(monkeypatch, [{"num": 1, "name": "Omegamon", "partners": ["Data"]}])
-    payload = {"attr": "Virus", "stage": "Rookie", "fusions": ["Omegamon"], "attrs": []}
+    # the distinct-component law (2026-07-18): the peer must be a real base
+    # of the target and a different species -- fake the graph edge too
+    monkeypatch.setattr(jogress.data, "load_evolutions",
+                        lambda: {999: [1], 100: [1]})
+    payload = {"num": 999, "attr": "Virus", "stage": "Rookie",
+               "fusions": ["Omegamon"], "attrs": []}
     assert jogress.resolve_online(p, payload)["name"] == "Omegamon"
 
 
@@ -109,7 +114,10 @@ def test_resolve_online_attr_path_is_mutual_and_same_stage(monkeypatch):
     MUTUAL compatibility -- both-or-neither, no more one-sided fusions."""
     p = _pet()                                    # Champion Vaccine
     _fake_options(monkeypatch, [{"num": 1, "name": "A", "partners": ["Data"]}])
-    base = {"attr": "Data", "stage": "Champion", "fusions": [], "attrs": ["Vaccine"]}
+    monkeypatch.setattr(jogress.data, "load_evolutions",
+                        lambda: {999: [1], 100: [1]})
+    base = {"num": 999, "attr": "Data", "stage": "Champion",
+            "fusions": [], "attrs": ["Vaccine"]}
     assert jogress.resolve_online(p, dict(base))["name"] == "A"
     assert jogress.resolve_online(p, dict(base, stage="Rookie")) is None      # stage gate
     assert jogress.resolve_online(p, dict(base, attrs=["Virus"])) is None     # they can't take me
