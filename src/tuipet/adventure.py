@@ -273,7 +273,7 @@ class Adventure:
             # (fatigue pads the target, old age thins the bound) -- and canon
             # rolls it every walk lapse, well or unwell (it no-ops when healthy)
             self.pet._check_worse_sick(1)
-            self.pet._check_worse_injury("travel")             # checkWorseTravelInj
+            # (the travel worse-injury roll left with the injury system)
             #   (canon rides the BATTLE table with won=True, not the exercise one)
             if self.pet.disliked_time() == self.pet.day_phase:
                 self.pet._set_mood(self.pet.mood - 10)         # DislikedTimeTravelMoodChange

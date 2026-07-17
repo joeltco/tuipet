@@ -63,7 +63,8 @@ def test_slips_mark_the_day():
     p = _pet()
     p._disturbed_dummy = None
     m0 = p.mistake_day
-    p._fatigue()                                                # FatigueMissedDay
+    p.hunger = 4
+    p.feed_meat()                                               # the overeat slip
     assert p.mistake_day == m0 + 1
 
 

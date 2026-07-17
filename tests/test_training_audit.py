@@ -27,25 +27,6 @@ def _pet(**kw):
     return Pet(num=100, stage="Champion", attribute="Vaccine", **kw)
 
 
-def test_worsening_extends_one_lapse_exactly():
-    p = _pet()
-    p.inj_length = 100.0
-    p._worsen_injury()
-    assert p.inj_length == 100.0 + INJ_LAPSE_MIN   # setInjLength(_injLength + 1)
-
-
-def test_worsening_sours_the_hour_and_the_attribute():
-    p = _pet()
-    p.inj_length = 100.0
-    ph = p.day_phase
-    before_hour = p.time_pref.get(ph, 0)
-    p.attr_ranks["Virus"] = 50                     # room below the clamp
-    p._worsen_injury(attr="Virus", complied=True)
-    assert p.time_pref[ph] == before_hour - RANK_TIME_SICK
-    assert p.attr_ranks["Virus"] == 50 - (RANK_WORSE_INJ_ATTR
-                                          + RANK_WORSE_INJ_FORCED)
-
-
 def test_worse_sick_sours_the_hour_too():
     p = _pet()
     p.sick, p.sick_length = True, 100.0

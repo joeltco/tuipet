@@ -50,17 +50,6 @@ def test_weight_sheds_only_in_calorie_deficit():
     assert q.weight == 19                        # deficit: ActivityWeightChange -1
 
 
-def test_fatigue_can_fire_on_a_failed_drill_too():
-    random.seed(0)
-    fired = 0
-    for _ in range(60):
-        p = _pet(strength=4, mood=0)
-        p.nutr_protein = p.nutr_mineral = p.nutr_vitamin = 0
-        p.apply_training(0, 0, game="hp")        # fail; the +1 still pushes the cap
-        fired += p.is_fatigued()
-    assert fired > 10                            # ~60% odds: the roll is win-or-lose
-
-
 def test_purse_truncates_per_entrant():
     p = _pet()
     t = object.__new__(tournament.Tournament)

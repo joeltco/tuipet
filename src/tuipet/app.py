@@ -143,14 +143,11 @@ def _care_deco(pet, word=None):
     deco = []
     if pet.asleep and word != "asleep": deco.append("[blue]Zzz[/]")
     if pet.sick and word != "sick": deco.append(f"[{T.NEG}]+sick[/]")
-    if pet.is_fatigued() and word != "fatigued": deco.append(f"[{T.NEG}]+tired[/]")
-    if pet.is_injured() and word != "injured": deco.append(f"[{T.NEG}]+hurt[/]")
+    # (the +tired/+hurt/+med/+bnd/+vit badges left with the fatigue/injury
+    # and medicine-item systems; BASIC VPET 2026-07-16)
     if pet.is_frail(): deco.append(f"[{T.NEG}]+frail![/]")
     if pet.poop: deco.append(f"[{T.COIN}]~poop x{pet.poop}[/]")
     if getattr(pet, "effect_id", -1) >= 0: deco.append(f"[{T.POS}]\u2726{pet.effect_name()}[/]")
-    if pet.has_medicine(): deco.append(f"[{T.NEG}]+med[/]")
-    if pet.has_bandage(): deco.append("[dim]+bnd[/dim]")
-    if pet.has_vitamin(): deco.append(f"[{T.POS}]+vit[/]")
     return deco
 
 
@@ -267,10 +264,9 @@ class TuiPetApp(App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("A SIMPLER TABLE: feed is MEAT or PILL now, right on the "
-                 "LCD - the pill heals everything. The shop carries a tight "
-                 "new catalog of real items; nutrition charts and food "
-                 "menus are gone.")
+    WHATS_NEW = ("TOUGHER STOCK: fatigue and injuries are gone - no more "
+                 "sprains, worn-out slumps or bandages. Sickness is the one "
+                 "threat now, and the pill is its cure.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and

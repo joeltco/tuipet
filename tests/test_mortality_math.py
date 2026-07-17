@@ -47,25 +47,7 @@ def test_every_malady_burns_life():
     assert p.lifespan == l0 - SICK_LIFE_DEC
     p._worsen_sick()
     assert p.lifespan == l0 - SICK_LIFE_DEC - WORSE_MALADY_LIFE_DEC
-    q = _pet()
-    l0 = q.lifespan
-    q._injure()
-    assert q.lifespan == l0 - INJURY_LIFE_DEC
-
-
-def test_fatigue_burns_more_when_old():
-    young = _pet()
-    l0 = young.lifespan
-    young._fatigue()
-    assert young.lifespan == l0 - FATIGUE_LIFE_DEC
-    old = _pet()
-    old.age_seconds = old.lifespan - 100.0       # geriatric band
-    l1 = old.lifespan
-    old._fatigue()
-    # the geriatric surcharge applies -- but never past the death grace
-    assert old.lifespan == max(old.age_seconds + INSTANT_DEATH_GRACE,
-                               l1 - FATIGUE_LIFE_DEC - GERIATRIC_FATIGUE_LIFE_DEC)
-
+    # (the injury life burn left with the injury system)
 
 def test_hunger_mistakes_compound_by_total_count():
     p = _pet(care_mistakes=0, hunger=0, calories=-4)

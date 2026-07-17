@@ -93,9 +93,7 @@ def test_every_death_records_its_cause_and_the_memorial_tells_it():
     p._tick_mortality(1.0)
     assert p.death_cause == "neglect"
 
-    p = dead_pet(injuries=20)
-    p._tick_mortality(1.0)
-    assert p.death_cause == "its injuries"
+    # (the injuries death cap left with the injury system)
 
     p = dead_pet(stage="Mega", care_mistakes=5)
     p.stage_seconds = p.LATE_STAGE_WINDOW

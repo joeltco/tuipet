@@ -65,17 +65,3 @@ def test_energy_save_fires_under_perfect_conditions():
     assert 20 <= saves <= 90
 
 
-def test_full_effort_gauge_risks_fatigue():
-    random.seed(1)
-    p = _pet(strength=4)
-    fatigued = False
-    for _ in range(30):                             # 60% per capped drill
-        p.energy, p.calories = 24, 4
-        p.fatigue_length = 0.0
-        p.apply_training(3, 100, game="hp")
-        fatigued = fatigued or p.fatigue_length > 0
-    assert fatigued
-    p2 = _pet(strength=0)                           # gauge not capped: no roll
-    random.seed(1)
-    p2.apply_training(3, 100, game="hp")
-    assert p2.fatigue_length == 0.0

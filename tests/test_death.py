@@ -34,12 +34,6 @@ def test_care_mistakes_19_is_survivable():
     assert p.dead is False, "19 care mistakes must not kill (boundary is 20)"
 
 
-def test_injuries_20_is_fatal():
-    p = _healthy(injuries=20)
-    p.tick(0.1)
-    assert p.dead is True
-
-
 def test_injuries_19_is_survivable():
     p = _healthy(injuries=19)
     p.tick(0.1)

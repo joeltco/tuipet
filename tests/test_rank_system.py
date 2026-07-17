@@ -59,13 +59,6 @@ def test_forced_training_sours_the_attribute():
     # +change_rank (1, Data is neither pref nor aversion... computed) then -2 forced
     assert p.attr_ranks["Data"] < p._rank_stage_inc() + 3   # net below the warm-only path
 
-def test_a_battle_injury_sours_the_opponents_attribute(monkeypatch):
-    monkeypatch.setattr(random, "randrange", lambda n: 0)   # the injury roll hits
-    monkeypatch.setattr(Pet, "_compat_inj_change", lambda self: 0)
-    p = _pet()
-    p._check_battle_injury(won=False, opp_attr="Data")
-    assert p.is_injured()
-    assert p.attr_ranks["Data"] == -RANK_INJ_BATTLE_LOST
 
 def test_the_emergent_favorite_feeds_the_power_bonus():
     reqs = data.load_requirements()
@@ -76,24 +69,6 @@ def test_the_emergent_favorite_feeds_the_power_bonus():
     p = Pet(num=num, name=by[num]["name"], stage="Champion", attribute=by[num]["attribute"])
     p.favorite_attr = "Data"                      # an emergent taste outranks the seed
     assert p._power_bonus_attr() == "Data"
-
-
-# --- weak injury tables (the static aversion) ---------------------------------------
-
-def test_drilling_the_aversion_rides_the_weak_tables(monkeypatch):
-    roll = (INJ_EXERCISE["bad_nv"] + INJ_WEAK_EXERCISE["bad_nv"]) // 2   # 15: between tables
-    monkeypatch.setattr(random, "randrange", lambda n: roll)
-    monkeypatch.setattr(Pet, "_compat_inj_change", lambda self: 0)
-    monkeypatch.setattr(Pet, "_phys", lambda self: {"attr_aversion": "Data"})
-    over = lambda p: p._base_weight() + round(p._base_weight() * 0.6)
-    safe = _pet(energy=5)
-    safe.weight = over(safe)
-    safe._check_exercise_injury(attr="Vaccine")   # the normal table: 15 >= 10
-    assert not safe.is_injured()
-    hurt = _pet(energy=5)
-    hurt.weight = over(hurt)
-    hurt._check_exercise_injury(attr="Data")      # the AVERSION: 15 < 20
-    assert hurt.is_injured()
 
 
 def test_falling_ill_sours_the_hour():

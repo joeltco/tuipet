@@ -1201,8 +1201,6 @@ class Pet:
             self._exercise_day = day
             self.exercise_today = 0
         _rec = dt * (GOOD_NUTR_RECOVERY_MULT if self.good_nutrition() else 1.0)  # well-fed heals faster
-        if self.fatigue_length > 0:                       # checkFatigueLapse: rest it off (even asleep)
-            self.fatigue_length = max(0.0, self.fatigue_length - _rec)
         if self.sick_length > 0:                          # sickLapse: illness recovers in time
             self.sick_length = max(0.0, self.sick_length - _rec)
             if self.sick_length == 0:
@@ -1224,22 +1222,16 @@ class Pet:
                 self._poop_t = (getattr(self, "_poop_t", 0.0)
                                 + self._poop_interval * SICK_LAPSE_PENALTY_BM
                                 / max(1, self._phys().get("poop_limit", 64) * 5))
-        if self.inj_length > 0:                           # injLapse: the injury heals over time
-            self.inj_length = max(0.0, self.inj_length - _rec)
-        if self.vitamin_lapse > 0:                        # vitaminLapse: protection wears off
-            self.vitamin_lapse = max(0.0, self.vitamin_lapse - dt)
-        if self.med_lapse > 0:                            # medLapse: medicine wears off (getMed icon)
-            self.med_lapse = max(0.0, self.med_lapse - dt)
-        if self.bandage_lapse > 0:                        # bandageLapse: bandage wears off (getBandage icon)
-            self.bandage_lapse = max(0.0, self.bandage_lapse - dt)
+        # (the injury/fatigue recovery lapses and the vitamin/med/bandage
+        # wear-off timers left with their systems; BASIC VPET 2026-07-16)
         # LINES_SPEC §5 (DM20: "remaining injured for 6 hours causes death"):
         # 6 continuous game-hours sick-or-injured is fatal.  Natural spells heal
         # inside the window (sick <=290, injury <=348 game-min), so only a pet
         # left to WORSEN (filth rolls, battling hurt, double doses) crosses it.
-        if self.sick or self.inj_length > 0:
+        if self.sick:
             self._malady_t = getattr(self, "_malady_t", 0.0) + dt
             if self._malady_t >= 360.0 and not self.dead:
-                self._die("sickness" if self.sick else "its wounds")
+                self._die("sickness")
         else:
             self._malady_t = 0.0
 
@@ -1681,8 +1673,8 @@ class Pet:
         ONE copy for both tick paths -- these gates were duplicated between the
         sleep tick and _tick_mortality and had to be edited in lockstep
         (refactor 2026-07-05).  True when the pet died."""
-        if self.care_mistakes >= 20 or self.injuries >= 20:   # MaxCareMistakes / MaxInjuries
-            self._die("neglect" if self.care_mistakes >= 20 else "its injuries")
+        if self.care_mistakes >= 20:                           # MaxCareMistakes
+            self._die("neglect")
             return True
         # Pen20 (LINES_SPEC §5): at the last stages, 5 slips once the evolution
         # window is open = death -- an elder Perfect/Ultimate demands real care
@@ -2633,8 +2625,7 @@ class Pet:
         if raw < self.energy and raw < 0:
             self._set_mood(self.mood - (NEGATIVE_ENERGY_MOOD_DEC - raw))
             self._set_obedience(self.obedience - (NEGATIVE_ENERGY_OBEDIENCE_DEC - raw))
-            if not self.is_injured():
-                self._fatigue()                  # canon fatigue(false)
+            # (the over-exertion fatigue left with the fatigue system)
         if raw < self.energy:
             raw = self._energy_bonus_save(raw)   # checkEnergyIncFromPerfectConditions
         if raw < -self.max_energy:
@@ -2965,7 +2956,7 @@ class Pet:
         their tally -- the evolution gates still read the record.)"""
         if (_g := self._guard(asleep_blocks=False)) is not None:
             return _g
-        if not self.sick and not self.is_injured() \
+        if not self.sick \
                 and self.strength >= 4 and self.energy >= self.max_energy:
             self._set_anim("refuse", 1.0)
             return f"{self.name} doesn't need it."
@@ -2973,7 +2964,6 @@ class Pet:
             self._disturbed()
         self.sick = False
         self.sick_length = 0.0
-        self.inj_length = 0.0
         self.strength = _clamp(self.strength + 1, 0, 4)
         self._set_energy(self.energy + PILL_ENERGY_GAIN)
         self._set_weight(self.weight + PILL_WEIGHT_GAIN)
@@ -3131,9 +3121,7 @@ class Pet:
                                                + (self.element in h["incompat_elements"])
                                                - (self.field in h["compat_fields"])
                                                - (self.element in h["compat_elements"]))
-            if random.randrange(100) < chance:
-                # the 3-arg fatigue: the drill that broke it sours + the forced push
-                self._fatigue(complied, attr)
+            # (the gauge-filling fatigue roll left with the fatigue system)
         if success:
             self._open_praise()                          # onExerciseFinish: setPraise(true)
             if complied and game != "hp":
@@ -3150,9 +3138,7 @@ class Pet:
                 # see _fatigue's docstring.)
                 self._dec_attr_rank(attr, RANK_TRAIN_FAIL
                                     + (RANK_TRAIN_FORCED if complied else 0))
-        # checkExerciseInj: worsening first, then the fresh matrix roll (the
-        # species aversion rides the WEAK tables)
-        self._check_exercise_injury(complied, attr if attr in self._ATTR3 else None)
+        # (the exercise injury rolls left with the injury system)
         # DVPet HP_Training_AttackSuccess = hit pose (frame 6); AttackFail = dejected pose
         # (frame 9). A failed drill shows the dejected reaction (which surfaces the "unhappy"
         # discourage emote), not an attack pose.
@@ -3209,10 +3195,7 @@ class Pet:
         else:
             self._set_energy(self.energy - BATTLE_HIGH_HP_ENERGY)
             self._set_calories(self.calories - BATTLE_CAL_HIGH)
-        # checkBattleInj: worsening, then a fresh roll WIN OR LOSE (a loss
-        # pads +50/1000); a fresh battle injury sours the opponent's attribute
-        self._check_battle_injury(won, complied=complied,
-                                  opp_attr=(enemy or {}).get("attribute"))
+        # (the battle injury rolls left with the injury system)
         # checkSick: a SICK opponent is contagious at the bout's end (PvP
         # ships the partner's real state), win or lose
         if (enemy or {}).get("sick"):
@@ -3375,12 +3358,12 @@ class Pet:
         """A NO-OP: the spontaneous tantrum left with the discipline system."""
 
     def is_fatigued(self):
-        """PhysicalState.isFatigued: worn out until the fatigue length counts down."""
-        return self.fatigue_length > 0
+        """Always False: the fatigue system left (BASIC VPET 2026-07-16)."""
+        return False
 
     def is_injured(self):
-        """PhysicalState.isInj: currently nursing an injury (the count persists for evolution)."""
-        return self.inj_length > 0
+        """Always False: the injury system left (BASIC VPET 2026-07-16)."""
+        return False
 
     def is_frail(self):
         """The frailty WARNING (Joel 2026-07-13, after MetalGreymon died with
@@ -3432,71 +3415,8 @@ class Pet:
         self.time_pref[ph] = _clamp(self.time_pref.get(ph, 0) - RANK_TIME_SICK, -90, 90)
         self._start_poop()
 
-    def _injure(self):
-        """PhysicalState.injure: take an injury for MinInjLength..MaxInjLength recovery
-        lapses; the cumulative injury count (used by evolution) also ticks up.
-        Every injury burns InjuryLifeDec of life (canon re-audit 2026-07)."""
-        self.injuries += 1
-        self._burn_life(INJURY_LIFE_DEC)
-        rolled = random.randint(MIN_INJ_LENGTH, MAX_INJ_LENGTH) * INJ_LAPSE_MIN
-        rolled = max(INJ_LAPSE_MIN, rolled - self._affinity() * INJ_LAPSE_MIN)   # habitat-compat length mod
-        self.inj_length = max(self.inj_length, rolled)
-        self._set_mood(self.mood - INJ_MOOD_DEC)
-        self._set_enthusiasm(self.enthusiasm + INJ_ENTH_CHANGE)
-        # InjuryEnergyDec (sickness/injury audit 2026-07-06): a fresh injury
-        # saps a bar -- inj_length is already set, so the red-energy fatigue
-        # trigger's !isInj guard holds like canon's
-        self._set_energy(self.energy - INJURY_ENERGY_DEC)
-        ph = self.day_phase                                # timeRanks -RankChangeInjury
-        self.time_pref[ph] = _clamp(self.time_pref.get(ph, 0) - RANK_TIME_SICK, -90, 90)
 
-    def has_vitamin(self):
-        """PhysicalState.hasVitamin: a vitamin is active, guarding against worse injuries."""
-        return self.vitamin_lapse > 0
 
-    def has_medicine(self):
-        """PhysicalState.getMed: medicine is still active (the medicine state icon shows)."""
-        return self.med_lapse > 0
-
-    def has_bandage(self):
-        """PhysicalState.getBandage: a bandage is still on (the bandage state icon shows)."""
-        return self.bandage_lapse > 0
-
-    def feed_vitamin(self):
-        """PhysicalState.feedVitamin: top up injury-worsening protection.  A dose
-        while the last one still runs is a BAD VITAMIN: sick risks, a bowel
-        lurch, mood and lifespan costs, and it comes right up."""
-        if self.vitamin_lapse > 0:
-            self.mistake_day += 1                            # BadVitaminMissedDayChange
-            self._check_worse_sick(VITAMIN_WORSE_SICK_CHANCE)
-            self._advance_bm(BAD_VITAMIN_BM_INC)
-            self._set_mood(self.mood - BAD_VITAMIN_MOOD_DEC)
-            self._burn_life(BAD_VITAMIN_LIFE_DEC)
-            if not self.sick and random.randrange(REFUSE_CHANCE) < VITAMIN_OVERFED_SICK_CHANCE:
-                self._sicken()                               # vitaminOverfedSickChance
-            self._start_poop()
-            self._set_anim("refuse", 1.5)                    # Bad_Health_Jeering
-        self.vitamin_lapse = VITAMIN_HOURS
-
-    def _worsen_injury(self, attr=None, complied=False):
-        """PhysicalState.worsenedInjury: the injury gets worse -- ONE recovery
-        lapse longer (canon setInjLength(_injLength + 1); training audit
-        2026-07-15 -- the old line added a whole fresh random spell), with
-        mood/obedience/energy/spirit costs, the WorseInjuryLifeDec burn, the
-        HOUR soured, and the attribute that did it soured (the drilled attr /
-        the opponent's; canon worsenedInjury / changeBattleRanks.  The None-
-        keyed moodRank nudges stay unported -- the sign-odd family)."""
-        self._burn_life(WORSE_MALADY_LIFE_DEC)   # WorseInjuryLifeDec (canon re-audit)
-        self._set_obedience(self.obedience + WORSE_MALADY_OBED_DEC)
-        self._set_mood(self.mood + WORSE_MALADY_MOOD_DEC)
-        self._set_enthusiasm(self.enthusiasm + WORSE_INJ_ENTH_CHANGE)
-        self.inj_length += INJ_LAPSE_MIN         # +1 lapse, exactly
-        self._set_energy(self.energy - WORSE_INJ_ENERGY_DEC)
-        ph = self.day_phase                      # timeRanks dec RankChangeInjury
-        self.time_pref[ph] = _clamp(self.time_pref.get(ph, 0) - RANK_TIME_SICK, -90, 90)
-        if attr in self._ATTR3:
-            self._dec_attr_rank(attr, RANK_WORSE_INJ_ATTR
-                                + (RANK_WORSE_INJ_FORCED if complied else 0))
 
     def _compat_inj_change(self):
         """getCompatibilityInjChange: the home shifts injury odds +-1 per axis
@@ -3507,84 +3427,7 @@ class Pet:
                 - (self.field in h["compat_fields"])
                 - (self.element in h["compat_elements"]))
 
-    def _inj_matrix_roll(self, table, bound, inj_chance):
-        """The shared weight x vitamin injury matrix (checkExerciseInj /
-        checkBattleInj / calcWorse*Inj all ride it): bad weight is Over OR
-        Under; a vitamin blunts it (sickness/injury audit 2026-07-06)."""
-        healthy = evolution.weight_category(self.weight, self._base_weight()) == "Healthy"
-        key = ("good_" if healthy else "bad_") + ("v" if self.has_vitamin() else "nv")
-        return random.randrange(bound) < table[key] + inj_chance
 
-    def _neg_energy_mod(self, coef):
-        """-(energy x coef) while in the red: exhaustion pads injury odds."""
-        return int(-(self.energy * coef)) if self.energy < 0 else 0
-
-    def _check_exercise_injury(self, complied=False, attr=None):
-        """checkExerciseInj: EVERY drill risks worsening, then a fresh injury --
-        the old 'overweight -> 50%' paraphrase is gone (canon baseline is
-        1/1000 healthy, 10/1000 off-weight, vitamin-blunted, padded by age /
-        fatigue / exhaustion / an incompatible home).  Drilling the species'
-        ATTRIBUTE AVERSION rides the harsher WEAK tables."""
-        weak = attr is not None and attr == self._phys().get("attr_aversion", "None")
-        self._check_worse_injury("exercise", complied=complied, weak=weak, attr=attr)
-        if self.is_injured():
-            return
-        inj = ((INJ_GERIATRIC if self.is_geriatric else 0)
-               + (FATIGUE_MOD * INJ_FATIGUE_COEF if self.is_fatigued() else 0)
-               + self._neg_energy_mod(INJ_NEG_ENERGY_COEF)
-               + self._compat_inj_change())
-        if self._inj_matrix_roll(INJ_WEAK_EXERCISE if weak else INJ_EXERCISE, INJ_CHANCE, inj):
-            self._injure()
-            if complied:
-                self._set_obedience(self.obedience + OBED_INJ_FORCED)
-
-    def _check_battle_injury(self, won, complied=False, opp_attr=None):
-        """checkBattleInj: worsening first, then a fresh roll -- WIN OR LOSE
-        (a loss pads +50/1000, being a baby or an elder +10, fatigue +100).
-        The old loss-only 30% flat roll is gone.  A fresh battle injury also
-        SOURS the opponent's attribute (changeBattleRanks: won -1 / lost -5)."""
-        self._check_worse_injury("battle", won=won, complied=complied, attr=opp_attr)
-        if self.is_injured():
-            return
-        inj = ((BATTLE_INJ_BAD_AGE if (self.is_geriatric
-                                       or self.stage in ("Fresh", "InTraining")) else 0)
-               + (FATIGUE_MOD * BATTLE_INJ_FATIGUE_COEF if self.is_fatigued() else 0)
-               + (0 if won else BATTLE_INJ_LOSS)
-               + self._neg_energy_mod(BATTLE_INJ_NEG_ENERGY_COEF)
-               + self._compat_inj_change())
-        if self._inj_matrix_roll(INJ_BATTLE, BATTLE_INJ_CHANCE, inj):
-            self._injure()
-            self._dec_attr_rank(opp_attr, RANK_INJ_BATTLE_WON if won else RANK_INJ_BATTLE_LOST)
-            if complied:
-                self._set_obedience(self.obedience
-                                    + (OBED_INJ_BATTLE_WON if won else OBED_INJ_BATTLE_LOST))
-
-    def _check_worse_injury(self, kind, won=True, complied=False, weak=False, attr=None):
-        """calcWorse{Exercise,Battle}Inj: pushing an already-injured pet can
-        worsen the injury.  kind: "exercise" / "battle" / "travel" -- canon's
-        checkWorseTravelInj rides the BATTLE table with won=True (the old port
-        used the exercise table for walks).  The additive term (age, fatigue,
-        exhaustion, home) was missing entirely.  weak=True (drilling the
-        species aversion) rides the harsher WorseWeakInjury table."""
-        if not self.is_injured():
-            return
-        if kind == "exercise":
-            table = WORSE_INJ_WEAK if weak else WORSE_INJ_EXERCISE
-            inj = ((WORSE_INJ_GERIATRIC if self.is_geriatric else 0)
-                   + (FATIGUE_MOD if self.is_fatigued() else 0))
-        else:                                        # battle / travel share a table
-            table = WORSE_INJ_BATTLE
-            inj = ((WORSE_BATTLE_INJ_BAD_AGE if (self.is_geriatric
-                                                 or self.stage in ("Fresh", "InTraining")) else 0)
-                   + (FATIGUE_MOD if self.is_fatigued() else 0)
-                   + (0 if won else WORSE_BATTLE_INJ_LOSS))
-        inj += self._neg_energy_mod(WORSE_INJ_NEG_ENERGY_COEF) + self._compat_inj_change()
-        if self._inj_matrix_roll(table, WORSE_INJ_CHANCE, inj):
-            self._worsen_injury(attr=attr, complied=complied)
-            if complied:
-                self._set_obedience(self.obedience
-                                    + (OBED_INJ_FORCED if kind == "exercise"
-                                       else (OBED_INJ_BATTLE_WON if won else OBED_INJ_BATTLE_LOST)))
 
     def _check_sick(self, target):
         """checkSick(target, bound): the bound is SickChance shaped by the
@@ -3614,57 +3457,6 @@ class Pet:
             self._worsen_sick()
             return True
         return False
-
-    def _fatigue(self, complied=False, train_attr=None):
-        """PhysicalState.fatigue(complied), full body (training audit 2026-07-06):
-        the collapse sours the HOUR, can turn a sickness critical, and hits far
-        harder when the pet was ALREADY down (the rest ADDS ON, plus sick/spirit/
-        obedience and the geriatric surcharge).  train_attr = the exercise
-        wrapper's extras: the drill that broke it sours ("Effort" = the HP drill
-        sours all three), and a forced push costs obedience.  (The None-keyed
-        changeMoodRank(+3) nudges stay unported -- the sign-odd class the rank
-        audit documented: the same constant DECS the attr ledger but ADDS to
-        moodRank, a canon slip that would make failure breed a happier adult.)"""
-        already = self.is_fatigued()
-        # timeRanks dec RankChangeFatigue: the collapse sours the hour it
-        # happened in (raw onto the tuned +/-90 scale, like the sicken sours)
-        ph = self.day_phase
-        self.time_pref[ph] = _clamp(self.time_pref.get(ph, 0) - RANK_CHANGE_FATIGUE, -90, 90)
-        # checkWorseSick(50) -- and if it only pushed itself because you spent
-        # its compliance, it resents you
-        if self._check_worse_sick(FATIGUE_WORSE_SICK_CHANCE) and complied:
-            self._set_obedience(self.obedience + OBEDIENCE_CHANGE_SICK_FORCED)
-        # length: randomBetween(min, max + habitat change) -- compat shrinks the
-        # ceiling, incompat raises it (canon change == -affinity)
-        span = random.randint(FATIGUE_MIN, max(FATIGUE_MIN, FATIGUE_MAX - self._affinity()))
-        self.mistake_day += 1                    # FatigueMissedDay (both branches)
-        if already:                              # re-fatigued while down: it ADDS ON
-            self.fatigue_length += span
-            self._check_sick(ALREADY_FATIGUED_SICK_CHANCE)
-            self._set_enthusiasm(self.enthusiasm + ALREADY_FATIGUED_ENTH_CHANGE)
-            self._set_mood(self.mood - ALREADY_FATIGUED_MOOD_DEC)
-            self._set_obedience(self.obedience - ALREADY_FATIGUED_OBED_DEC)
-            if self.is_geriatric:                # an old body pays extra, but only re-fatigued
-                self._burn_life(GERIATRIC_FATIGUE_LIFE_DEC)
-                self.energy = _clamp(self.energy - GERIATRIC_FATIGUE_ENERGY_DEC,
-                                     -self.max_energy, self.max_energy)
-        else:
-            self.fatigue_length = span
-        if train_attr is not None:               # the exercise wrapper (3-arg fatigue)
-            change = RANK_CHANGE_FATIGUE + (RANK_FATIGUE_FORCED if complied else 0)
-            for a in (self._ATTR3 if train_attr not in self._ATTR3 else (train_attr,)):
-                self._dec_attr_rank(a, change)
-            if complied:
-                self._set_obedience(self.obedience + OBEDIENCE_FATIGUE_FORCED)
-        # the unconditional tail.  canon fatigue() writes the energy dec RAW
-        # (_energy -= dec, never setEnergy) -- routing it through _set_energy
-        # would recurse through the fatigue trigger it now carries
-        self.energy = _clamp(self.energy - FATIGUE_ENERGY_DEC, -self.max_energy, self.max_energy)
-        self._burn_life(FATIGUE_LIFE_DEC)        # FatigueLifeDec
-        self._set_enthusiasm(self.enthusiasm + FATIGUE_ENTH_CHANGE)
-        self._set_mood(self.mood - FATIGUE_MOOD_DEC)
-        self._set_anim("exhausted", 2.0)
-
 
 
     def clean(self):
