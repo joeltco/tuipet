@@ -11,7 +11,7 @@ The real thing is a SCHEDULED 8-entrant bracket, not an always-open menu:
   restrictions, and a Prelim chain (its qualifier beaten this season).
   DVPet's fully-recovered gate has no tuipet analog (battle HP is per-fight).
 - The bracket is the player + 7 entrants drawn from the DEX (TournamentAble
-  forms filtered by the cup's stage/field/attribute/element rules; the default
+  forms filtered by the cup's stage/field/attribute rules; the default
   tier follows the pet's AGE via TourneyRandom*Age).  Each entrant rolls real
   stats: stage-banded HP and a power total split main/2 weak/6 rest/3 by its
   attribute.  Pairs are (0,1)(2,3)(4,5)(6,7) with the player at a random slot;
@@ -257,8 +257,8 @@ def _eligible_forms(pet, trophy):
                 continue
         elif trophy["attr_req"] and rec["attribute"] != trophy["attr_req"]:
             continue
-        if trophy["enemy_elem"] and rec.get("element") != trophy["enemy_elem"]:
-            continue
+        # (the enemy_elem filter left with the element system (ELEMENT SYSTEM REMOVED 2026-07-18)
+        # -- zero shipped cups used it)
         if data.is_placeholder(num):
             continue
         out.append(rec)

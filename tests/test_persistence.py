@@ -118,7 +118,7 @@ def test_progress_signals_round_trip():
     assert 9 in prog["tourneys"]
     # full shape the egg evaluator depends on
     for k in ("album", "wins", "max_gen", "max_stage", "xanti_ever", "maps",
-              "tourneys", "last_field", "last_attr", "last_elem", "last_mood",
+              "tourneys", "last_field", "last_attr", "last_mood",
               "last_obed", "last_xanti"):
         assert k in prog
 

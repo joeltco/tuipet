@@ -127,8 +127,8 @@ def _conditions_met(rule, prog):
         return False
     if rule["prev_attr"] is not None and prog["last_attr"] != rule["prev_attr"]:
         return False
-    if rule["prev_elem"] is not None and prog["last_elem"] != rule["prev_elem"]:
-        return False
+    # (the prev_elem gate left with the element system (ELEMENT SYSTEM REMOVED 2026-07-18)
+    # -- one eggUnlock row carried it; its other gates still judge)
     if rule["obedience"] is not None and prog["last_obed"] < rule["obedience"]:
         return False
     if rule["mood"] is not None and prog["last_mood"] < rule["mood"]:

@@ -969,7 +969,6 @@ class Pet:
     # (the weather/temperature block lived here -- temp, day_temp, temp_goal,
     # weather -- removed whole with the weather system; BASIC VPET 2026-07-16)
     field: str = ""
-    element: str = ""
     # (the habitat block lived here -- habitat, home_habitat, habitats,
     # habitat_record -- removed whole with the habitat system; the home scene
     # is wired to egg_type now.  BASIC VPET 2026-07-16)
@@ -987,7 +986,6 @@ class Pet:
             rec = by_num.get(self.num)
             if rec and not self.field:
                 self.field = rec.get("field", "")
-                self.element = rec.get("element", "")
             req = data.load_requirements().get(self.num, {})
             self.max_energy = req.get("max_energy", 24)        # per-Digimon maxEnergy
             self._sleep_energy_gain = req.get("sleep_energy_gain", 3)
@@ -1104,7 +1102,7 @@ class Pet:
         _, by_num = data.load_sprites()
         r = by_num[num]
         pet = cls(num=num, name=r["name"], stage=r["stage"], attribute=r["attribute"],
-                  field=r.get("field", ""), element=r.get("element", ""))
+                  field=r.get("field", ""))
         return pet
 
     # ---- per-tick simulation -------------------------------------------------
@@ -2196,7 +2194,6 @@ class Pet:
         self.num, self.name = num, r["name"]
         self.stage, self.attribute = r["stage"], r["attribute"]
         self.field = r.get("field", self.field)
-        self.element = r.get("element", self.element)
         _req = data.load_requirements().get(num, {})
         self.max_energy = _req.get("max_energy", self.max_energy)
         self._sleep_energy_gain = _req.get("sleep_energy_gain", 3)

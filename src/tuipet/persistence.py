@@ -587,7 +587,6 @@ def snapshot_prev_gen(pet):
     prog["last_gen"] = {
         "field": getattr(pet, "field", "") or "None",
         "attribute": getattr(pet, "attribute", "") or "None",
-        "element": getattr(pet, "element", "") or "None",
         "mood": int(getattr(pet, "mood", 0)),
         "obedience": int(getattr(pet, "obedience", 0)),
         "xanti": getattr(pet, "x_antibody", "None") != "None",
@@ -705,7 +704,6 @@ def get_progress():
         "tourneys": set(prog.get("tourneys", [])),
         "last_field": last.get("field", "None"),
         "last_attr": last.get("attribute", "None"),
-        "last_elem": last.get("element", "None"),
         "last_mood": int(last.get("mood", 0)),
         "last_obed": int(last.get("obedience", 0)),
         "last_xanti": bool(last.get("xanti", False)),

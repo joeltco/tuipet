@@ -281,7 +281,7 @@ def build_pages(pet):
         # (egg-stage audit 2026-07-05)
         ("No.", "—" if pet.num < 0 else f"#{pet.num}"), ("Stage", pet.stage),
         ("Attrib", pet.attribute), ("Field", data.pretty_field(pet.field) or "-"),
-        ("Element", pet.element or "-"), ("Gen", str(pet.generation)),
+        ("Gen", str(pet.generation)),
         ("Age", _mins(pet.age_seconds)), ("Life", f"{_mins(rem)} left"),
     ]
     power = [

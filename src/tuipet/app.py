@@ -256,10 +256,9 @@ class TuiPetApp(App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("ROLLBACK: the spirit shop shelf from v0.5.22 is removed "
-                 "- it was not part of this game. Any spirits bought are "
-                 "gone from the shop; pets already evolved keep their "
-                 "form. The Fusion and armor fixes all stand.")
+    WHATS_NEW = ("NO MORE ELEMENTS: the element system is gone - it was "
+                 "app-era data, never real vpet canon. Vaccine, Data and "
+                 "Virus are the only types, like the actual devices.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and

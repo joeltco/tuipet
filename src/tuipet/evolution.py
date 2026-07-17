@@ -242,9 +242,10 @@ def fulfilled(pet, num):
     if _dna_ok(pet, req):                            # getDNAReq: full-match dnaFulfilledRate bonus
         score += DNA_FULFILLED_RATE
     # (the habitat_req score leg and the major-habitat element/field
-    # affinity shade left with the habitat system -- BASIC VPET 2026-07-16)
-        if req.get("element", "None") in h["incompat_elements"]:
-            score -= 1   # Config._incompatibleElementPriorityChange
+    # affinity shade left with the habitat system -- BASIC VPET 2026-07-16.
+    # A dangling element fragment survived that cut INSIDE the _dna_ok
+    # branch above -- a latent NameError on `h` for any DNA-charged pet --
+    # and left with the element system, 2026-07-18.)
     return score
 
 
