@@ -62,15 +62,17 @@ def test_a_999_battle_veteran_always_strikes_mega():
 
 # ---- train_result (the sim side) ---------------------------------------------------
 
-def test_every_attempt_counts_and_costs():
-    p = _pet()
+def test_every_attempt_counts_costs_and_fills_effort():
+    p = _pet(strength=1)
     e0, t0, x0 = p.energy, p.stage_trainings, p.exercise_today
     p.train_result(False)
     assert p.energy == e0 - TRAIN_ENERGY_COST
     assert p.stage_trainings == t0 + 1            # LINES TR gate: win or lose
     assert p.exercise_today == x0 + 1
+    assert p.strength == 2                        # the Effort meter fills per drill
     assert p.anim == "sad"
     p.train_result(True)
+    assert p.strength == 3                        # ...win or lose (canon setExercise)
     assert p.anim == "happy"
 
 
@@ -102,7 +104,9 @@ def test_the_energy_gate_is_the_one_hard_gate():
 
 # ---- the show ---------------------------------------------------------------------
 
-def test_the_drill_plays_through_bar_strike_done():
+def test_the_drill_plays_through_and_closes_itself():
+    """No done page (Joel 2026-07-17): the aftermath tableau is the verdict,
+    the panel auto-closes, and the happy/mad anim plays on the main LCD."""
     pan = _panel()
     for _ in range(10):
         pan.anim()
@@ -110,14 +114,14 @@ def test_the_drill_plays_through_bar_strike_done():
     assert pan.strip()
     _lock_at(pan, (pan.mega_lo + pan.mega_hi) // 2)
     assert pan.phase == "shoot"
+    assert pan.pet.anim == "happy"                 # the verdict anim, queued
     for _ in range(200):
         pan.anim()
         assert pan.text().plain is not None        # every strike beat renders
-        if pan.phase == "done":
+        if pan.auto_close:
             break
-    assert pan.phase == "done"
-    assert "PERFECT" in pan.text().plain
-    assert pan.key("space") == ("done", pan.result)
+    assert pan.auto_close == ("done", pan.result)
+    assert pan.key("space") is None                # mid-strike keys stay dead
 
 
 def test_wall_one_stands_through_everything_but_a_mega_break():

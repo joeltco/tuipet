@@ -256,9 +256,10 @@ class TuiPetApp(App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("THE WALL IS BACK: the training drill now fires at the "
-                 "0.5 brick wall - it stands through your whiffs and only "
-                 "a PERFECT strike crumbles it, exactly like the rebuild.")
+    WHATS_NEW = ("DRILL POLISH: training fills the Effort meter again "
+                 "(+1 per drill, win or lose), and the strike flows "
+                 "straight back home - no menu page, just your partner "
+                 "cheering or sulking about it.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and
@@ -1031,15 +1032,6 @@ class TuiPetApp(App):
                      f"Form     {form}",
                      f"Effort   {eff}", f"Energy   {energy}",
                      div, "[dim]SPACE locks the bar[/]"]
-        elif tp.phase == "done":
-            verdict = (f"[{T.POS}]{tp.result}[/]" if tp.success
-                       else f"[{T.NEG}]{tp.result}[/]")
-            lines = [f"[b]{p.name[:14]}[/] [dim]\u00b7 train[/]", div,
-                     verdict, "",
-                     f"Form     {tp.grade}",
-                     f"Effort   {eff}", f"Energy   {energy}", div,
-                     "[dim]form fires in battle[/]",
-                     "[dim]once battle goes 0.5[/]"]
         else:
             lines = [f"[b]{p.name[:14]}[/] [dim]\u00b7 train[/]", div,
                      "[b]the strike[/]", "",

@@ -83,6 +83,9 @@ class TrainingPanel:
         self.result = ""
         self.i = 0
         self.sfx = None
+        self.auto_close = None        # set after the strike: no done page --
+        #                               the verdict is the happy/mad anim on
+        #                               the main LCD (Joel 2026-07-17)
 
     # ---- driving ----
     def anim(self):
@@ -102,7 +105,9 @@ class TrainingPanel:
             if self.i >= len(self.timeline) - 1:
                 self._verdict += 1
                 if self._verdict >= VERDICT_T:
-                    self.phase = "done"
+                    # straight home: the aftermath tableau WAS the verdict --
+                    # the app closes us and the happy/mad fx plays on the LCD
+                    self.auto_close = ("done", self.result)
 
     def _lock(self):
         if self.pet.battles >= 999 or self.mega_lo <= self.bar <= self.mega_hi:
@@ -133,18 +138,11 @@ class TrainingPanel:
                 self._lock()
             elif k == "escape":
                 return ("done", None)
-            return None
-        if self.phase == "shoot":
-            return None
-        if k in ("space", "enter", "escape", "t"):
-            return ("done", self.result)
-        return None
+        return None                    # the strike plays through; anim() closes us
 
     def strip(self):
         if self.phase == "bar":
             return menu.hints(("SPACE", "strike"), ("ESC", "back"))
-        if self.phase == "done":
-            return menu.hints(("SPACE", "done"))
         return ""
 
     # ---- rendering ----
@@ -246,12 +244,5 @@ class TrainingPanel:
     def text(self):
         if self.phase == "bar":
             return self._bar_text()
-        if self.phase == "done":
-            out = menu.header("TRAIN", "")
-            out.append_text(menu.blanks(2))
-            out.append_text(menu.row(f"  {self.result}"))
-            out.append_text(menu.note(f"form saved: {self.grade}"))
-            out.append_text(menu.blanks(2))
-            out.append_text(menu.footer("SPACE done"))
-            return out
-        return self._shoot_text()
+        return self._shoot_text()      # (the done page left: the verdict is
+        #                                the anim -- Joel 2026-07-17)

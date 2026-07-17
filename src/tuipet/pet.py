@@ -2778,6 +2778,11 @@ class Pet:
         self._calm_discipline_call()                 # a drill placates the call
         self.exercise_today += 1
         self.stage_trainings += 1                    # LINES_SPEC TR gate: every attempt counts
+        # the Effort meter fills per drill, win or lose (canon setExercise +1;
+        # Joel 2026-07-17 "its not filling the effort meter?" -- the clone left
+        # strength to the pill, but the gauge visibly ticking up per drill is
+        # the shipped feel and the DM20 rule)
+        self.strength = _clamp(self.strength + 1, 0, 4)
         self._set_energy(max(0, self.energy - TRAIN_ENERGY_COST))
         if success and self.weight > self._base_weight():
             # the clone shed toward base, never below -- its weight model
