@@ -134,7 +134,10 @@ def can_jogress(pet):
     pet.check_compliant()                        # canJogress: checkRefused; checkCompliant
     if refused:
         return f"{pet.name} refuses to fuse!"
-    if not options(pet):
+    from . import lines as lines_mod
+    if not options(pet) and not lines_mod.companion_wanted(pet.num):
+        # a pet with no doors of its own may still be somebody's REQUIRED
+        # companion (canon one-sided jogress: Jesmon X for Jesmon GX)
         return "No fusion partner resonates now."
     return None
 
@@ -187,9 +190,23 @@ def resolve_online(pet, payload):
     if "attrs" not in payload and "fusions" not in payload:
         return resolve(pet, payload.get("attr"))
     mine = options(pet)
-    named = [o for o in mine if o["name"] in set(payload.get("fusions") or ())]
-    if named:
-        return _final_pick(pet, named)
+    # exact-partner doors bind to the peer's NUM (jogress canon audit
+    # 2026-07-17): Omnimon wants the OTHER royal knight -- the old
+    # name-intersection let two WarGreymons mirror-fuse -- and the canon
+    # ONE-SIDED doors (Jesmon GX) match here without ever appearing in the
+    # companion's own fusion list.
+    p_num = payload.get("num")
+    exact = [o for o in mine if not o["partners"] and o["partner_num"] == p_num]
+    named = [o for o in mine
+             if o["partners"] and o["name"] in set(payload.get("fusions") or ())]
+    if exact or named:
+        return _final_pick(pet, exact + named)
+    # the COMPANION role: the peer's exact door names MY num -- I lend the
+    # fusion my data and stay myself (canon: "only Jesmon X ... can be used
+    # to evolve Gankoomon X into Jesmon GX")
+    if pet.num in (payload.get("wants") or ()):
+        return {"companion": True, "num": pet.num,
+                "name": "(lends its power)"}
     p_stage = payload.get("stage")
     if not p_stage:                       # older new-client: derive from the dex
         _, by = data.load_sprites()

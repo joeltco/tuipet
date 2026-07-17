@@ -247,6 +247,18 @@ def jogress_declared(pet):
             if row["jogress"] is not None]
 
 
+def companion_wanted(num):
+    """True when some line's exact-partner jogress door names `num` as the
+    REQUIRED companion (canon one-sided doors -- Jesmon GX needs a Jesmon X
+    that never evolves itself; jogress canon audit 2026-07-17)."""
+    for line in load_lines().values():
+        for rows in line["children"].values():
+            for row in rows:
+                if row["jogress"] == num:
+                    return True
+    return False
+
+
 def select_line(pet):
     """First-match evolution: the ordered child rows of the pet's current form,
     first row whose rule passes. None = stay (keep re-checking: counters can

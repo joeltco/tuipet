@@ -489,6 +489,10 @@ class LobbyPanel:
                                     # (session audit 2026-07-07)
                                     "stage": self.pet.stage,
                                     "fusions": [o["name"] for o in opts],
+                                    # exact-door companions I need (canon
+                                    # one-sided jogress, audit 2026-07-17)
+                                    "wants": [o["partner_num"] for o in opts
+                                              if not o["partners"]],
                                     "attrs": jogress.pairable_attrs(self.pet),
                                     # canon JogressProtocol ships the REAL sick
                                     # state: fusing with a sick partner is a 90%
@@ -577,10 +581,13 @@ class LobbyPanel:
                 # the REAL fusion scene (lobby audit 2026-07-04: the old
                 # lobby printed text while the fusion deserved its converge +
                 # flash) -- both parents' actual sprites play the panel's beats
-                self.jshow = jogressscreen.JogressPanel(
-                    self.pet, self.pet.num,
-                    payload.get("num") or self.pet.num,
-                    self.jresult["num"])
+                if self.jresult.get("companion"):
+                    self.jshow = None       # the text page: it lends, not fuses
+                else:
+                    self.jshow = jogressscreen.JogressPanel(
+                        self.pet, self.pet.num,
+                        payload.get("num") or self.pet.num,
+                        self.jresult["num"])
             else:
                 self.fail_reason = reason or "No resonance with that partner."
                 self.jphase = "failed"
@@ -820,9 +827,14 @@ class LobbyPanel:
 
     def _commit_fusion(self):
         """BOTH confirms are in (or the peer is legacy): perform the fusion --
-        the same path as offline jogress."""
+        the same path as offline jogress.  A COMPANION lends its data and
+        stays itself (canon one-sided doors; jogress audit 2026-07-17)."""
         if self.partner:                # swapping DNA is the strongest connection
             persistence.record_connection(self.partner[1])
+        if (self.jresult or {}).get("companion"):
+            self.sfx = "jogress"
+            self._return_to_lobby("It lent its power to the fusion.")
+            return
         msg = jogress.fuse(self.pet, self.jresult["num"])
         # (the jogress contagion left with the sickness system (BASIC VPET 2026-07-17))
         self.sfx = "jogress"

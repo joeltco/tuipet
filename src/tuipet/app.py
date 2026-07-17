@@ -256,11 +256,12 @@ class TuiPetApp(App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("CANON LEVELS: LV evolution gates now run the real DMX "
-                 "rules - battle wins pay experience up the manual's own "
-                 "level table, capped by stage. 73 level-gated forms that "
-                 "had quietly walled are reachable again, and the old "
-                 "power-number walls are gone for good.")
+    WHATS_NEW = ("TRUE FUSIONS: the jogress doors got the canon audit - "
+                 "Chaosmon and Rafflesimon now open from BOTH partners, "
+                 "mirror-matches are gone (Omnimon wants the OTHER royal "
+                 "knight, not your twin), and Jesmon X can finally lend "
+                 "its power to a Gankoomon X without evolving - exactly "
+                 "how the real device does it.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and

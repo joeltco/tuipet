@@ -291,6 +291,7 @@ jyarimon,Ultimate,192,116,WIN 12/15,23:00,Monzaemon
 jyarimon,Ultimate,205,119,WIN 12/15,23:00,MarineDevimon
 jyarimon,Mega,302,260;205,CM 0-2,23:00,Seraphimon
 jyarimon,Mega,350,753;192,CM 0-2,23:00,BanchoLeomon
+jyarimon,Mega,348,350,JOGRESS 349,00:00,Chaosmon
 puttimon,Fresh,1427,egg,TIME,20:00,Puttimon
 puttimon,InTraining,900,1427,TIME,21:00,Moonmon
 puttimon,Rookie,61,900,CM 0-2,21:00,Lopmon
@@ -345,6 +346,7 @@ dokimon,Ultimate,218,145,WIN 12/15,23:00,Lilymon
 dokimon,Ultimate,1222,118,WIN 12/15,23:00,Vademon X
 dokimon,Mega,333,263,CM 0-2,23:00,Dynasmon
 dokimon,Mega,374,218,CM 0-2,23:00,Lotusmon
+dokimon,Mega,508,374,JOGRESS 285,23:00,Rafflesimon
 dokimon,Mega,1316,1222,CM 0-2,23:00,Ebemon X
 chibomon,Fresh,1430,egg,TIME,20:00,Chibomon
 chibomon,InTraining,1483,1430,TIME,21:00,DemiVeemon
