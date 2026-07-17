@@ -78,7 +78,7 @@ def test_the_collapse_emote_is_fx_only_now():
     dying/dying2 pair as part of their full-screen animation."""
     from tuipet import app as app_mod, data
     import inspect
-    import tuipet.arena as arena_mod
+    import tuipet.arenafx as arena_mod   # the fx painters (tier-2 split)
     p = _pet()
     p._set_anim("exhausted", 2.0)
     assert app_mod._effect_overlay(p, 0, 40, 24, tick=0) == []

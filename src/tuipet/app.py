@@ -163,10 +163,10 @@ class TuiPetApp(App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("CLEANER FOUNDATIONS: the game's data layer split into "
-                 "four tidy domains (roster, economy, world, progression) "
-                 "behind one unchanged interface. Nothing plays "
-                 "differently - future fixes just land faster.")
+    WHATS_NEW = ("ENGINE ROOM WORK: the LCD's animation engine (every "
+                 "care-action effect and its beat tables) now lives in "
+                 "its own module. Nothing plays differently - the "
+                 "codebase just keeps getting easier to fix fast.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and

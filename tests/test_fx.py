@@ -517,3 +517,22 @@ def test_emote_riders_pop_whole_inside_the_window(monkeypatch):
             assert all(grid.X0 <= x < grid.X1 and grid.TOP <= y < grid.FLOOR
                        for x, y in pts), (kind, step)
         assert seen, kind
+
+
+def test_the_fx_engine_split_holds_its_boundaries():
+    """Tier-2 split (2026-07-17): arenafx owns the fx engine; arena owns the
+    widget; every old name resolves from arena (and app's re-export), and
+    the render_screen patch point still catches fx frames."""
+    import inspect
+    from tuipet import arena, arenafx
+    assert arenafx.FxMixin in arena.Screen.__mro__
+    room = inspect.getsource(arena)
+    for name in ("start_fx", "advance_fx", "_paint_fx", "_fxk_eat",
+                 "_fxk_heal", "_fxk_evolve"):
+        assert f"def {name}" not in room, f"{name} crept back into arena"
+        assert callable(getattr(arena.Screen, name))       # composed in
+    for old in ("SCREEN_COLS", "PET_BASE_X", "GIFT_OUT", "PLAY_HOP",
+                "_effect_overlay", "_FxCtx", "hearts", "bar"):
+        assert hasattr(arena, old), old                    # re-export law
+    # _paint_fx must route render_screen through ARENA (the documented spy)
+    assert "_arena.render_screen" in inspect.getsource(arenafx.FxMixin._paint_fx)
