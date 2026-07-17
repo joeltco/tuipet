@@ -69,23 +69,21 @@ def test_options_strip_covers_menu_and_confirm():
 
 
 def test_battle_strip_follows_the_fight():
+    """0.5 phases (2026-07-17): intro -> ready (the timing bar) -> anim
+    (clean) -> result."""
     from tuipet.battlescreen import BattlePanel
     from tuipet import data
     _, by = data.load_sprites()
     foe = next(n for n, r in by.items()
                if r["stage"] == "Champion" and not data.is_placeholder(n))
     bp = BattlePanel(_pet(), enemy={"num": foe, "name": by[foe]["name"],
-                                    "stage": "Champion", "vaccine": 30,
-                                    "data_power": 30, "virus": 30, "hp": 10})
+                                    "stage": "Champion"})
     assert "skip" in _ok(bp.strip(), "battle:intro")
-    bp.phase = "menu"
-    assert "attack" in _ok(bp.strip(), "battle:menu")
-    bp.phase = "surrender_ask"
-    assert "allow" in _ok(bp.strip(), "battle:surrender")
+    bp.phase = "ready"
+    assert "lock" in _ok(bp.strip(), "battle:ready")
     bp.phase = "anim"
     assert bp.strip() == ""                    # the round plays clean
     bp.phase = "result"
-    assert "done" in _ok(bp.strip(), "battle:result")
 
 
 def test_lobby_strip_is_fully_contextual():

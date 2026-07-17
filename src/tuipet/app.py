@@ -256,10 +256,11 @@ class TuiPetApp(App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("DRILL POLISH: training fills the Effort meter again "
-                 "(+1 per drill, win or lose), and the strike flows "
-                 "straight back home - no menu page, just your partner "
-                 "cheering or sulking about it.")
+    WHATS_NEW = ("THE HP RACE: battle is pure 0.5 now - time the bar, then "
+                 "watch the fight your care already decided. Win rate, "
+                 "training, meters and the attribute triangle set your hit "
+                 "chance; your trained form sets the damage. Online bouts "
+                 "pay bits; cups and raids run the same race.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and
@@ -1041,27 +1042,33 @@ class TuiPetApp(App):
 
     def _status_battle(self):
         p, m, T = self.pet, self.mode, theme
-        b = m.battle
+        b = m.battle                    # None until the timing bar locks (0.5)
         self.stats_w.border_subtitle = _gen_subtitle(p)
         div = f"[dim]{'─' * 26}[/]"
-        php = getattr(m, "hud_php", b.pet_hp)
-        fhp = getattr(m, "hud_fhp", b.enemy_hp)
-        pp = int(100 * php / b.pet_max) if b.pet_max else 0
-        fp = int(100 * fhp / b.enemy_max) if b.enemy_max else 0
-        tag = f" [{T.NEG}]BOSS[/]" if b.enemy.get("boss") else ""
+        enemy = m.enemy or {}
+        tag = f" [{T.NEG}]BOSS[/]" if enemy.get("boss") else ""
+        pet_max = b.pet_max if b else 5
+        foe_max = b.enemy_max if b else 5
+        php = getattr(m, "hud_php", b.pet_hp if b else 5)
+        fhp = getattr(m, "hud_fhp", b.enemy_hp if b else 5)
+        pp = int(100 * php / pet_max) if pet_max else 0
+        fp = int(100 * fhp / foe_max) if foe_max else 0
         lines = [
             f"[b]{p.name[:14]}[/] [dim]· battle[/]", div,
-            f"vs [b]{b.enemy['name'][:14]}[/]{tag}", "",
-            f"You  {bar(pp, 11, T.POS)} {php}/{b.pet_max}",
-            f"Foe  {bar(fp, 11, T.NEG)} {fhp}/{b.enemy_max}",
+            f"vs [b]{enemy.get('name', '?')[:14]}[/]{tag}", "",
+            f"You  {bar(pp, 11, T.POS)} {php}/{pet_max}",
+            f"Foe  {bar(fp, 11, T.NEG)} {fhp}/{foe_max}",
             div,
         ]
         if m.done_anim:
             res = f"[{T.POS}]VICTORY![/]" if m.won else f"[{T.NEG}]DEFEAT[/]"
-            lines += [res, f"[dim]{(b.reward or '')[:24]}[/]", "", "[dim]SPACE  continue[/]"]
+            lines += [res, f"[dim]{(b.reward if b else '') or ''}"[:30] + "[/]",
+                      "", "[dim]SPACE  continue[/]"]
+        elif getattr(m, "phase", "") == "ready":
+            lines += [f"[dim]{(m.hud_note or '')[:24]}[/]", "",
+                      "[dim]SPACE  lock the bar[/]"]
         else:
-            hint = "↑↓ ENTER pick" if getattr(m, "phase", "") == "menu" else "SPACE  skip"
-            lines += [f"[dim]{(m.hud_note or '')[:24]}[/]", "", f"[dim]{hint}[/]"]
+            lines += [f"[dim]{(m.hud_note or '')[:24]}[/]", "", "[dim]SPACE  skip[/]"]
         self.stats_w.update("\n".join(lines))
 
     def _status_eat(self):

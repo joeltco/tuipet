@@ -41,22 +41,9 @@ def test_hp_growth_clamps_to_the_age_cap():
     assert p.full_health == 10 and note == ""       # counted, clamped (forceInc canon)
 
 
-def test_battle_uses_trained_hp():
-    from tuipet.battle import Battle
-    p = _pet(full_health=7)
-    b = Battle(p, {"num": 4, "name": "X", "stage": "Rookie", "vaccine": 10,
-                   "data_power": 5, "virus": 5, "hp": 8, "bits": (0, 0)})
-    assert b.pet_max == 7
+# (test_battle_uses_trained_hp left with the classic battle -- 0.5 BATTLE 2026-07-17)
 
 
-def test_old_saves_grandfather_stage_hp():
-    p = _pet(stage="Champion")
-    d = persistence.to_save_dict(p)
-    del d["full_health"]                            # a pre-trained-HP save
-    p2, _ = persistence.pet_from_save(d, catch_up=False)
-    assert p2.full_health == 15                     # old flat Champion HP kept
-
-
-# (test_training_costs_a_calorie... left with the classic training system -- 0.5 TRAINING 2026-07-17)
+# (test_old_saves_grandfather_stage_hp left with the classic battle -- 0.5 BATTLE 2026-07-17)
 
 

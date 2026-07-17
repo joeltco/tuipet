@@ -29,10 +29,8 @@ from . import data
 TOURNEY_BITS = {"Rookie": 125, "Champion": 150, "Ultimate": 175, "Mega": 200}
 TOURNEY_MAX_BITS = 225          # per Mega ENTRANT when the pet is past MegaAge (not a cap)
 TOURNEY_AGES = {"Rookie": 3, "Champion": 6, "Ultimate": 9, "Mega": 12}   # TourneyRandom*Age (days)
-POWER_MAX = {"Rookie": 150, "Champion": 200, "Ultimate": 250, "Mega": 300}   # TourneyRandom*Power
-OPEN_MEGA_POWER = (350, 501)    # TourneyRandomMinPower..MaxPower (open-cup Mega field)
-MIN_HEALTH = 5                  # TourneyMinHealth
-MAX_HEALTH = {"Rookie": 10, "Champion": 15, "Ultimate": 20, "Mega": 25, "Ultra": 30}
+# (the TourneyRandom*Power / *Health stat bands left with the classic
+# battle -- 0.5 entrants are plain species cards at ideal condition)
 HOME_LIMIT = 24                 # HomeTournamentLimit: one cup per game hour
 ROUNDS = ["Quarterfinal", "Semifinal", "Final"]
 _TIERS = ("Rookie", "Champion", "Ultimate", "Mega")
@@ -268,41 +266,24 @@ def _eligible_forms(pet, trophy):
 
 
 def _mk_entrant(rec, trophy, open_mega):
-    """One rolled entrant: stage-banded HP + a power total split by attribute
-    (main /2, weak /6, the rest /3 -- Vaccine>red, Data>green, Virus>yellow)."""
-    st = rec["stage"]
-    if open_mega and st == "Mega":
-        hp = random.randrange(MIN_HEALTH * 2) + (MAX_HEALTH["Ultra"] - MIN_HEALTH * 2)
-        lo, hi = OPEN_MEGA_POWER
-    else:
-        hp = random.randrange(MIN_HEALTH) + (MAX_HEALTH.get(st, 10) - MIN_HEALTH)
-        hi = POWER_MAX.get(st, 150)
-        lo = {"Rookie": POWER_MAX["Rookie"] // 3, "Champion": POWER_MAX["Rookie"],
-              "Ultimate": POWER_MAX["Champion"], "Mega": POWER_MAX["Ultimate"]}.get(st, 50)
-    power = random.randint(lo, hi)
-    attr = rec["attribute"]
-    split = {"Vaccine": ("vaccine", "data_power", "virus"),
-             "Data": ("data_power", "virus", "vaccine"),
-             "Virus": ("virus", "vaccine", "data_power")}.get(attr)
-    e = {"num": rec["num"], "name": rec["name"], "stage": st, "attribute": attr,
-         "hp": max(2, hp), "bits": (0, 0),        # the cup pays via calcBits, not loot
-         "vaccine": 0, "data_power": 0, "virus": 0}
-    if split:
-        main, weak, mid = split
-        e[main], e[weak], e[mid] = power // 2, power // 6, power // 3
-    else:
-        e["vaccine"] = e["data_power"] = e["virus"] = power // 3
-    return e
+    """One rolled entrant, 0.5-style (2026-07-17): a plain species card --
+    the HP race treats it as a wild Side at ideal condition, so stage rank
+    and the attribute triangle carry the bracket (the old power-split/HP
+    bands fed an engine that left)."""
+    return {"num": rec["num"], "name": rec["name"], "stage": rec["stage"],
+            "attribute": rec["attribute"], "bits": (0, 0)}
 
 
 
 def _npc_winner(a, b):
-    """DVPet auto-fights NPC matches with the full battle engine; tuipet's
-    engine is pet-centric, so the bracket resolves on the same scalar the data
-    uses for levelFought -- (powers + hp*100), odds proportional."""
-    wa = a["vaccine"] + a["data_power"] + a["virus"] + a["hp"] * 100
-    wb = b["vaccine"] + b["data_power"] + b["virus"] + b["hp"] * 100
-    return a if random.uniform(0, wa + wb) < wa else b
+    """An NPC match runs the REAL 0.5 engine (2026-07-17): two wild Sides,
+    full HP race -- exactly how DVPet auto-fought its brackets."""
+    from . import battle
+    sa, sb = battle.Side.wild(a["num"]), battle.Side.wild(b["num"])
+    _seq, ahp, bhp = battle.generate(sa, sb)
+    if ahp == bhp:
+        return a if random.random() < 0.5 else b
+    return a if ahp > bhp else b
 
 
 class Tournament:

@@ -130,11 +130,6 @@ def test_help_home_line_drops_the_lobby_only_jogress():
     assert not any("jogress" in t and "DNA" in t for t in texts)
 
 
-# --- P3: the surrender strip speaks the same words as its footer/note --------
-def test_battle_surrender_strip_matches_its_footer_wording():
-    from tuipet import battlescreen, battle
-    p = Pet(num=100, stage="Champion", attribute="Vaccine")
-    bp = battlescreen.BattlePanel(p, battle.pick_enemy(p))
-    bp.phase = "surrender_ask"
-    line = bp.strip()
-    assert "allow" in line and "flee" not in line
+# (test_battle_surrender_strip_matches_its_footer_wording left with the classic battle -- 0.5 BATTLE 2026-07-17)
+
+

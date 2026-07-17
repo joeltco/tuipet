@@ -156,8 +156,9 @@ def test_bracket_is_player_plus_seven_dex_entrants():
     for e in tm.entrants:
         assert e["stage"] == "Rookie"           # stage_by_age(1d) = Rookie tier
         assert e["bits"] == (0, 0)              # the cup pays via calcBits
-        total = e["vaccine"] + e["data_power"] + e["virus"]
-        assert 50 <= total <= 150               # TourneyRandomRookiePower band
+        # (the power-band stats left with the classic battle -- 0.5 entrants
+        # are plain species cards at ideal condition, 2026-07-17)
+        assert "num" in e and "attribute" in e
 
 
 def test_purse_is_the_sum_over_the_field():
@@ -353,13 +354,12 @@ def test_mid_bracket_contracts():
     pan3.key("enter")
     pan3.key("space"); pan3.key("space")        # into the round-one bout
     assert pan3.sub is not None
-    for _ in range(30):
+    for _ in range(3):
         pan3.anim()
-    for _ in range(60):                         # flee the bout
-        pan3.anim()
-        if pan3.sub is None:
-            break
-        pan3.key("escape"); pan3.key("enter")
+    pan3.key("escape")                          # skip the intro -> the timing bar
+    assert pan3.sub.phase == "ready"
+    pan3.key("escape")                          # flee before the bell (0.5: once
+    #                                             the bar locks, the race RUNS)
     assert pan3.sub is None and pan3.tourney.over
     assert "Eliminated" in pan3.tourney.last    # the flee IS the elimination
 

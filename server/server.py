@@ -563,9 +563,9 @@ RAID_HP_PER_ENERGY = 5_500_000
 RAID_COOLDOWN_S = 1440 * 60          # 24h "Incoming Boss..."
 RAID_WINDOW_S = 10080 * 60           # 7 days standing
 RAID_ATTEMPTS_PER_DAY = 3
-RAID_MAX_RAW = 60                    # 10 rounds x 6 damage: the honest CLASSIC
-#                                      ceiling (BASE_ATTACK 5 + calcAttackPower
-#                                      +1; the clone's 20 fit its own engine)
+RAID_MAX_RAW = 20                    # 10 rounds x 2 damage: the honest ceiling
+#                                      (back to the clone's own number -- the
+#                                      0.5 HP race landed client-side 2026-07-17)
 RAID_DMG_MULT = 5000
 # num -> raid multiplier, precomputed from the atlas (tools regen it).  The
 # damage mult binds to the pet's NUM, not the free-text stage string a client

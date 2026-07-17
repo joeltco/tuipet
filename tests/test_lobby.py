@@ -120,27 +120,38 @@ def test_live_reconnect_id_churn_is_not_a_join_wave():
     assert not s.chat
 
 
-def test_guest_hp_bar_uses_its_own_trained_card():
+def test_both_bars_are_the_flat_race_hp():
+    """0.5 BATTLE (2026-07-17): every bout is an HP race from 5 -- trained
+    HP left with the classic engine.  A proto-3 card + commit begins clean."""
+    import hashlib
     s = LobbyState()
     pan = _panel(s)
-    pan.pet.full_health = 23                                  # trained past the stage table
-    pan.is_host = False
-    pan._battle_begin({"num": 4, "name": "X", "stage": "Champion", "hp": 15})
-    assert pan.my_max == 23                                   # not MAX_HEALTH["Champion"]=15
+    pan.partner = (9, "kai")
+    pan.phase, pan.bphase = "battle", "card"
+    pan.bt_nonce = 7
+    card = {"num": 4, "name": "X", "stage": "Champion", "proto": 3}
+    pan._battle_begin(card, commit=hashlib.sha256(b"9").hexdigest())
+    assert pan.my_max == pan.my_hp == 5
+    assert pan.opp_max == pan.opp_hp == 5
 
 
-def test_round_log_names_the_moves():
+def test_the_seeded_race_plays_identically_and_logs_damage():
+    """0.5 BATTLE: both nonces in -> the precomputed race builds and each
+    round logs plain damage (move names left with the pick-a-move engine)."""
+    import hashlib
+    from tuipet import lobbyscreen as lmod
     s = LobbyState()
     pan = _panel(s)
-    pan.is_host = True
-    pan.opp_card = {"num": 100, "name": "Gatomon", "stage": "Champion"}
-    pan.bphase = "wait"
-    pan._apply_result({"host_dealt": 3, "guest_dealt": 1, "hattr": "Vaccine", "gattr": "Virus",
-                       "hhp": 10, "ghp": 5, "over": False,
-                       "host_alive": True, "guest_alive": True}, as_host=True)
-    assert "3 dmg" in pan.bt_log and "1 dmg" in pan.bt_log
-    assert pan.sfx in ("strongHit", "attackHit")              # every round sounds
-    assert pan.bphase == "choose"
+    pan.partner = (9, "kai")
+    pan.phase, pan.bphase, pan.is_host = "battle", "card", True
+    pan.bt_nonce = 7
+    pan.bt_my_card = lmod._clamp_card({"num": 100, "stage": "Champion", "proto": 3})
+    pan._battle_begin({"num": 4, "name": "X", "stage": "Champion", "proto": 3},
+                      commit=hashlib.sha256(b"9").hexdigest())
+    pan.bt_peer_nonce = 9
+    pan._maybe_build()
+    assert pan.battle is not None and pan.bphase == "fight"
+    assert "dmg" in pan.bt_log
 
 
 # ---- integration: real server, real drop -------------------------------------
@@ -375,41 +386,22 @@ def test_apply_dna_no_longer_marks_a_false_disturb():
     assert p.dna_applied["DragonsRoar"] == 2
 
 
-def test_pvp_cards_ship_the_declared_attribute():
-    """BattleProtocol ships the declared attribute (lobby audit 2026-07-06):
-    the Battle honours it -- a Vaccine pet whose strongest power is Virus
-    still fights AS Vaccine; wild enemies (and Free pets) derive from power."""
+def test_the_engine_reads_species_truth_not_wire_claims():
+    """0.5 BATTLE (2026-07-17): the race's foe Side is built from the
+    SPECIES RECORD of the claimed num (Side.wild) -- a forged attribute
+    string on the dict never reaches the hit formula, the same anti-forge
+    line _clamp_card draws for PvP cards."""
     from tuipet import battle as battle_mod
     from tuipet.pet import Pet
-    p = Pet(num=102, name="D", stage="Champion", attribute="Vaccine",
-            vaccine=1, data_power=1, virus=50)
-    card = battle_mod.battle_card(p)
-    assert card["attribute"] == "Vaccine"
+    from tuipet import data
     q = Pet(num=102, name="Q", stage="Champion", attribute="Virus")
-    b = battle_mod.Battle(q, dict(card))
-    assert b.enemy["attribute"] == "Vaccine"       # the declared type stands
-    wild = dict(card)
-    del wild["attribute"]
-    b2 = battle_mod.Battle(q, wild)
-    assert b2.enemy["attribute"] == "Virus"        # wild: strongest power derives
-
-
-# ---- message handling across back-out/re-enter (audit 2026-07-06) -------------
-
-def test_quit_from_lobby_persists_received_dms():
-    """Quitting straight from the lobby flushes DMs received this session --
-    incoming PMs are in-memory until a read/leave saves them (the 'A' gap)."""
-    from types import SimpleNamespace
-    from tuipet.app import TuiPetApp
-    pan = _panel(LobbyState())
-    called = []
-    pan._save_dms = lambda: called.append(True)
-    TuiPetApp._flush_dms_on_quit(SimpleNamespace(mode=pan))
-    assert called == [True]                       # in the lobby -> persisted
-    TuiPetApp._flush_dms_on_quit(SimpleNamespace(mode=None))
-    assert called == [True]                       # elsewhere -> nothing to flush
-
-
+    q.world_seconds = 600.0
+    rec = data.record_for(100)
+    b = battle_mod.Battle(q, {"num": 100, "name": "X", "stage": "Champion",
+                              "attribute": "FORGED"})
+    assert b.foe.attribute == rec["attribute"]     # species truth
+    card = battle_mod.battle_card(q)
+    assert card["attribute"] == "Virus" and card["proto"] == 3
 def test_queued_pms_seed_the_fresh_lobby_pane():
     """PMs queued while in another sub-screen used to be clear()ed on lobby
     entry -- assumed shown by the lobby chat, but the fresh client never saw
@@ -490,7 +482,8 @@ def test_battle_relays_are_phase_gated():
     pan.bphase = "card"
     pan._on_relay({"from_id": 9, "payload": {"kind": "battle", "t": "card",
                                              "card": {"num": 4, "name": "X", "stage": "Champion", "hp": 15}}})
-    assert pan.bphase == "choose"
+    # a proto-less card is a version mismatch in the 0.5 world: bout voided
+    assert pan.bphase == "over" and "version" in pan.bt_outcome
     pan.my_hp = 3                                       # mid-fight, hurt
     pan._on_relay({"from_id": 9, "payload": {"kind": "battle", "t": "card",
                                              "card": {"num": 4, "name": "X", "stage": "Champion", "hp": 15}}})

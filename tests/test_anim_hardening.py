@@ -283,23 +283,10 @@ def test_weekend_mult_true_weekday_logic():
     assert _weekend_mult(tue) == 1.0
 
 
-def test_weekend_battle_win_scales_bits_and_tags_message(monkeypatch):
-    import random as _r
-    from tuipet import pet as pet_mod
-    monkeypatch.setattr(pet_mod, "weekend_bonus", lambda now=None: 1.5)
-    monkeypatch.setattr(_r, "randint", lambda lo, hi: 4)
-    p = Pet(num=100, stage="Champion", bits=100)
-    msg = p.record_battle(True, {"bits": (4, 4)}, free_style=True)
-    assert p.bits == 106                       # int(4 * 1.5) = 6
-    assert "+6 bits (wknd x1.5)" in msg
+# (test_weekend_battle_win_scales_bits_and_tags_message left with the classic battle -- 0.5 BATTLE 2026-07-17)
 
 
-def test_weekday_battle_win_untagged(monkeypatch):
-    import random as _r
-    monkeypatch.setattr(_r, "randint", lambda lo, hi: 4)
-    p = Pet(num=100, stage="Champion", bits=100)
-    msg = p.record_battle(True, {"bits": (4, 4)}, free_style=True)
-    assert p.bits == 104 and "wknd" not in msg
+# (test_weekday_battle_win_untagged left with the classic battle -- 0.5 BATTLE 2026-07-17)
 
 
 def test_weekend_tournament_purse_scales(monkeypatch):

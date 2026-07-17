@@ -45,15 +45,7 @@ def test_staples_stay_out_of_gift_and_discover_pools():
         assert key != "f:0"
 
 
-def test_battle_style_is_baked_per_battle():
-    p = _pet()
-    p.free_style = True
-    b = Battle(p, {"num": 4, "name": "X", "stage": "Champion", "vaccine": 5,
-                   "data_power": 5, "virus": 5, "hp": 8, "bits": (0, 0)})
-    p.free_style = False                              # mid-fight toggle
-    assert b.free_style is True                       # the battle keeps its bake
-    p.record_battle(False, None, free_style=b.free_style)
-    # (the orders obedience pay left with the discipline system)
+# (test_battle_style_is_baked_per_battle left with the classic battle -- 0.5 BATTLE 2026-07-17)
 
 
 def test_death_checks_apply_while_asleep():

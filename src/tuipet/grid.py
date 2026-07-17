@@ -53,6 +53,12 @@ def band_h(ph=PXH):
     return min(CELL, ph - 2)
 
 
+def lit(c):
+    """Is a sprite pixel INK?  (Ported with the 0.5 battlescreen 2026-07-17;
+    this tree's rows are 1-bit "0"/"1" chars.)"""
+    return c not in (None, "0")
+
+
 def fit_band(sprite, ph=PXH):
     """Box-downscale a sprite's HEIGHT to <= band_h(ph) so it never overflows the box."""
     if not sprite:

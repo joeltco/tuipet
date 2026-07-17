@@ -3,14 +3,15 @@
 Joel asked for: the BOSS stands on the arena, not in a text menu).
 
 One boss stands per rotation with a SHARED HP pool on the relay (energy_max
-x 5.5M).  Every tamer gets 3 attempts a day: an attempt is a real bout on
-the battle engine capped at the clone's 10-round volley — the boss never
-falls locally; the raw damage landed is reported and the relay multiplies
-it against the pool (x5000 x stage-mult, bound server-side to the card's
-num).  Like the clone's generate_raid, the volley writes NOTHING on the
-pet's record (Battle source="raid").  When the community breaks the pool,
-the contributor board archives and pays on claim — and a felled boss is a
-Mega down: the claim counts KO6 and the raids egg-unlock channel.
+x 5.5M).  Every tamer gets 3 attempts a day: an attempt is the clone's
+generate_raid (0.5 BATTLE 2026-07-17) — a 10-round volley from
+RAID_PLAYER_HP against a boss that never falls locally, replayed through
+the real battlescreen (the sprites Joel demanded).  The raw damage landed
+is reported and the relay multiplies it against the pool (x5000 x
+stage-mult, bound server-side to the card's num).  The volley writes
+NOTHING on the pet's record.  When the community breaks the pool, the
+board archives and pays on claim — and a felled boss is a Mega down: the
+claim counts KO6 and the raids egg-unlock channel.
 """
 from __future__ import annotations
 from . import data, grid, persistence
@@ -21,8 +22,6 @@ from .theme import LCD_ON, LCD_BG, INK, INK_B, DIM, NEG, POS, COIN  # noqa: F401
 from . import menu
 
 COLS, ROWS = 40, 12
-RAID_ROUNDS = 10                # the attempt is a 10-round volley (clone rule)
-RAID_BOSS_HP = 999              # locally unfellable: the POOL is the real HP
 
 
 def _fmt(n):
@@ -67,15 +66,6 @@ class RaidPanel(menu.SubHost):
             and b.get("hp", 0) > 0
 
     def anim(self):
-        if self.sub is not None:
-            # the clone volley: 10 rounds and the gate calls time (the classic
-            # engine otherwise fights to a KO the 999-HP boss can never take)
-            b = self.sub.battle
-            if b.round >= RAID_ROUNDS and not b.over \
-                    and self.sub.phase == "menu":
-                self._report(b)
-                self.sub = None
-                return
         if self.sub_anim():
             return
         self.frame_i += 1
@@ -129,15 +119,10 @@ class RaidPanel(menu.SubHost):
         rec = data.record_for(num)
         return {"num": num, "name": b.get("name", rec.get("name", "?")),
                 "stage": rec.get("stage", "Mega"),
-                "attribute": rec.get("attribute", "Free"),
-                "vaccine": 5, "data_power": 5, "virus": 5,
-                "hp": RAID_BOSS_HP, "boss": True}
+                "attribute": rec.get("attribute", "Free"), "boss": True}
 
     def _report(self, b):
-        dealt = 0
-        if b is not None:
-            dealt = max(0, getattr(b, "enemy_max", RAID_BOSS_HP)
-                        - getattr(b, "enemy_hp", RAID_BOSS_HP))
+        dealt = int(getattr(b, "dealt", 0) or 0) if b is not None else 0
         if dealt > 0 and self.view:
             self.client.raid_hit(dealt, self.pet.stage)
             self._dealt += dealt
@@ -167,10 +152,9 @@ class RaidPanel(menu.SubHost):
                 self.msg = "No attempts left today."
                 self.sfx = "error"
                 return None
-            self.sub = BattlePanel(self.pet, self._boss_enemy())
-            # the clone's generate_raid recorded nothing on the pet: the
-            # attempt is a damage report, not a win/loss on the record
-            self.sub.battle.source = "raid"
+            # the clone raid bout: RaidBout precomputes generate_raid and
+            # the battlescreen replays it (records nothing on the pet)
+            self.sub = BattlePanel(self.pet, self._boss_enemy(), raid=True)
             return None
         if k == "c":
             award = (self.view or {}).get("award")

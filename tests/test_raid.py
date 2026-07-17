@@ -22,7 +22,7 @@ from tuipet import data, egg, persistence
 from tuipet.net import LobbyClient
 from tuipet.pet import Pet
 from tuipet import raidscreen
-from tuipet.raidscreen import RaidPanel, RAID_ROUNDS
+from tuipet.raidscreen import RaidPanel
 
 
 def _srv(tmp_path):
@@ -57,14 +57,14 @@ def test_hit_binds_the_multiplier_to_the_card_num(tmp_path):
     assert r2["ok"] and r2["dealt"] == 10 * srv.RAID_DMG_MULT
 
 
-def test_the_raw_ceiling_is_the_classic_volley(tmp_path):
-    """10 rounds x (BASE_ATTACK 5 + 1) = 60: the honest classic ceiling
-    (the clone's 20 fit its own <=2-per-round engine)."""
+def test_the_raw_ceiling_is_the_clone_volley(tmp_path):
+    """10 rounds x 2 damage = 20: the clone's own ceiling, restored when the
+    0.5 HP race replaced the classic engine (2026-07-17)."""
     srv = _srv(tmp_path)
-    assert srv.RAID_MAX_RAW == 60
+    assert srv.RAID_MAX_RAW == 20
     srv._raid_rotate(now=1000.0)
     r = srv._raid_hit("joel", 9999, None, now=1001.0)
-    assert r["dealt"] == 60 * srv.RAID_DMG_MULT
+    assert r["dealt"] == 20 * srv.RAID_DMG_MULT
 
 
 def test_three_attempts_a_day_then_the_gate_refuses(tmp_path):
@@ -201,30 +201,44 @@ def test_space_needs_a_standing_boss_and_attempts():
     assert pan.sub is None                                  # a fallen boss takes no hits
     pan.client.raid = _view(_mega())
     pan.key("space")
-    assert pan.sub is not None
-    assert pan.sub.battle.source == "raid"                  # the record-less bout
-    assert pan.sub.battle.enemy_max == raidscreen.RAID_BOSS_HP
+    assert pan.sub is not None and pan.sub.raid             # the RaidBout replay
     assert pan.sub.text().plain                             # the bout renders too
 
 
-def test_the_volley_ends_itself_at_ten_rounds_and_reports():
+def test_the_raid_bout_reports_its_dealt_damage():
+    """0.5 BATTLE (2026-07-17): the attempt is the clone's generate_raid --
+    the panel replays it, and closing the result reports `dealt`."""
+    import random
+    random.seed(3)
     pan = _panel()
     pan.client.raid = _view(_mega())
     pan.key("space")
-    b = pan.sub.battle
-    b.round = RAID_ROUNDS
-    b.enemy_hp = b.enemy_max - 37                           # 37 raw landed
-    pan.sub.phase = "menu"
-    pan.anim()
+    pan.sub.key("space")                                    # skip the intro
+    pan.sub.bar = (pan.sub.mega_lo + pan.sub.mega_hi) // 2
+    pan.sub.key("space")                                    # lock: RaidBout builds
+    bout = pan.sub.battle
+    assert type(bout).__name__ == "RaidBout"
+    for _ in range(3000):
+        pan.sub.anim()
+        if pan.sub.phase == "result":
+            break
+    assert pan.sub.phase == "result"
+    pan.key("space")                                        # close -> report
     assert pan.sub is None
-    assert ("hit", 37, "Champion") in pan.client.calls
+    if bout.dealt:
+        assert ("hit", bout.dealt, "Champion") in pan.client.calls
 
 
 def test_a_raid_bout_writes_nothing_on_the_pet():
+    from tuipet import battle as battle_mod
+    import random
+    random.seed(3)
     p = _pet()
-    before = (p.battles, p.wins, p.energy, p.exercise_today)
-    assert p.record_battle(True, {"stage": "Mega"}, source="raid") == ""
-    assert (p.battles, p.wins, p.energy, p.exercise_today) == before
+    before = (p.battles, p.wins, p.exercise_today)
+    bout = battle_mod.RaidBout(p, {"num": _mega(), "stage": "Mega", "boss": True})
+    while not bout.over:
+        bout.play_round()
+    assert (p.battles, p.wins, p.exercise_today) == before
 
 
 def test_claim_pays_bits_items_ko6_and_the_raids_channel():

@@ -184,6 +184,18 @@ def load_sprites():
     return data, by_num
 
 
+@lru_cache(maxsize=1)
+def load_battle_fx():
+    """The 0.5 battle-effect bitmaps (battle_fx.json.gz, ported from the
+    clone 2026-07-17: attacks / hit / ready / start / wall / dead -- the
+    DSprite rips the HP-race show draws from)."""
+    try:
+        with gzip.open(os.path.join(_DATA, "battle_fx.json.gz"), "rt") as fh:
+            return json.load(fh)
+    except (OSError, EOFError, ValueError):
+        return {}
+
+
 def is_placeholder(num):
     load_sprites()
     return num in PLACEHOLDER_NUMS

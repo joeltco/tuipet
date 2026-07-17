@@ -258,11 +258,17 @@ def test_battle_banner_and_flash_fill_the_window_not_the_lcd():
     explosion, and the battle scene renders under the window clip."""
     from tuipet import battlescreen as bs
     for key in ("battle_banner", "hit_explosion"):
-        for frame in bs.BANNER if key == "battle_banner" else bs.EXPLODE:
+        frames = bs.BANNER if key == "battle_banner" else bs.EXPLODE
+        lit_any = False
+        for frame in frames:
             pts = bs._full(frame)
-            assert pts and all(
+            # the 0.5 blast blinks against a BLANK off-beat (2026-07-17):
+            # empty frames are the blink, not a bug
+            lit_any = lit_any or bool(pts)
+            assert all(
                 grid.X0 <= x < grid.X1 and grid.TOP <= y < grid.FLOOR
                 for x, y in pts), f"{key} ink must live inside the window"
+        assert lit_any, f"{key} never lights"
 
 
 def test_battle_dodge_leap_never_exits_upward():
@@ -272,7 +278,10 @@ def test_battle_dodge_leap_never_exits_upward():
     from tuipet.pet import Pet
     from tuipet import battlescreen as bs
     p = Pet(num=100, stage="Champion", attribute="Vaccine", obedience=500)
+    p.world_seconds = 600.0
     pan = bs.BattlePanel(p)
+    pan.bar = (pan.mega_lo + pan.mega_hi) // 2
+    pan._lock_bar()                                # 0.5: the race builds at the bar
     for dt in range(1, 11):
         fr = {"m": "dodge", "view": "pet", "prog": dt / bs.DODGE_T,
               "ph": pan.battle.pet_hp, "fh": pan.battle.enemy_hp}

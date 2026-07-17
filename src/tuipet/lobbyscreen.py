@@ -45,7 +45,7 @@ CHATW = 25
 ROSTW = 12
 BODY = 8
 CHAT_MAX = 400          # server MAX_CHAT: the local input buffer stops here too
-ATTACK_KEYS = {"1": "Vaccine", "2": "Data", "3": "Virus"}
+# (ATTACK_KEYS left with the pick-a-move battle -- 0.5 BATTLE 2026-07-17)
 
 
 # ⛔ THE CELL-WIDTH LAW (chat polish 2026-07-14).  The lobby is the ONE place a
@@ -161,28 +161,49 @@ MAX_PVP_POWER = 999
 
 
 def _clamp_card(card):
-    """Bound an UNTRUSTED battle card to what the game can actually produce
-    (see the MAX_PVP_* note).  Module-level because seeded PvP needs BOTH
-    peers' engines fed identically-clamped cards -- including one's own card,
-    clamped exactly as the peer will clamp it on receipt."""
-    def _n(v, d=0, lo=0, hi=0):
+    """Bound an UNTRUSTED battle card to what the game can actually produce.
+    Module-level because seeded PvP feeds BOTH engines identically-clamped
+    cards -- including one's own, clamped exactly as the peer clamps it."""
+    def _n(v, d=0, lo=0, hi=999):
         if not isinstance(v, (int, float)) or isinstance(v, bool):
             v = d
         return max(lo, min(int(v), hi))
     card = dict(card)
-    for k in ("vaccine", "data_power", "virus"):
-        card[k] = _n(card.get(k), 0, 0, MAX_PVP_POWER)
-    card["hp"] = _n(card.get("hp"), 10, 2, MAX_PVP_HP)
+    card["strength_max"] = _n(card.get("strength_max"), 4, 1, 9)
+    card["strength"] = _n(card.get("strength"), 4, 0, card["strength_max"])
+    card["hunger_max"] = _n(card.get("hunger_max"), 4, 1, 9)
+    card["hunger"] = _n(card.get("hunger"), 4, 0, card["hunger_max"])
+    card["energy_max"] = _n(card.get("energy_max"), 5, 1, 2000)
+    card["energy"] = _n(card.get("energy"), 0, 0, card["energy_max"])
+    card["weight"] = _n(card.get("weight"), 10, 1, 999)
+    card["base_weight"] = _n(card.get("base_weight"), 10, 1, 999)
+    card["trainings_cur"] = _n(card.get("trainings_cur"), 0, 0, 999)
+    card["trainings_total"] = _n(card.get("trainings_total"), 0, 0, 9999)
+    card["battles"] = _n(card.get("battles"), 0, 0, 10 ** 6)
+    card["wins"] = _n(card.get("wins"), 0, 0, card["battles"])
+    if card.get("hit_type") not in ("mega", "normal", "miss"):
+        card["hit_type"] = "miss"
+    card["num"] = _n(card.get("num"), 0, 0, 10 ** 6)
+    # stage/attribute come from the SPECIES RECORD of the claimed num, never
+    # the wire: a forged {"stage": "Special"} ranked 14.5 and auto-won every
+    # online bout while the sprite still showed a Child (audit 2026-07-15).
+    # Unknown nums (a newer build's dex) keep a KNOWN claimed stage so the
+    # two engines stay symmetric; garbage stages already ranked as "Child".
+    rec = data.record_for(card["num"])
+    if not rec.get("_placeholder"):
+        card["stage"] = rec.get("stage", "Child")
+        card["attribute"] = rec.get("attribute", "Free")
+    else:
+        if card.get("stage") not in battle._RANK:
+            card["stage"] = "Child"
+        elif card.get("stage") == "Special":
+            # every REAL Special is in the local dex and record-derived
+            # above; an unknown num claiming the 14.5 rank is the forge
+            card["stage"] = "Ultimate-Super Ultimate"
+        if card.get("attribute") not in ("Vaccine", "Virus", "Data", "Free"):
+            card["attribute"] = "Free"
+    card["hp"] = 5
     return card
-
-
-def _eff_counts(card):
-    """A card's EFFECTIVE attack counts (the engine's view: raw powers plus
-    the baked Free-style +1) -- used for pick-time own-way/refusal picks."""
-    fb = 1 if card.get("free") else 0
-    return {"Vaccine": card.get("vaccine", 0) + fb,
-            "Data": card.get("data_power", 0) + fb,
-            "Virus": card.get("virus", 0) + fb}
 
 
 class LobbyPanel:
@@ -228,8 +249,7 @@ class LobbyPanel:
         self.bt_outcome = ""
         self.bt_reward = None
         self.bt_payload = None        # ("done", X) payload when the bout ends
-        # seeded symmetric PvP (proto 2)
-        self.bt_p2p = False           # both cards spoke proto 2 -> shared-seed bout
+        # seeded symmetric PvP (proto 3: the precomputed 0.5 race)
         self.bt_nonce = None          # my seed nonce (committed in my card msg)
         self.bt_peer_commit = None    # sha256 hex the peer committed to
         self.bt_peer_nonce = None     # revealed with the peer's first pick
@@ -511,7 +531,6 @@ class LobbyPanel:
         self.bt_my_choice = self.bt_opp_choice = None
         self.bt_log = self.bt_outcome = ""
         self.bt_reward = self.bt_payload = None
-        self.bt_p2p = False
         self.bt_nonce = self.bt_peer_commit = self.bt_peer_nonce = None
         self.bt_my_card = None
         self.is_host = False
@@ -579,260 +598,155 @@ class LobbyPanel:
             # outside the guest's wait re-applied a stale round
             if bt == "card" and self.bphase == "card":
                 self._battle_begin(payload.get("card") or {}, payload.get("commit"))
-            elif bt == "pick" and self.bt_p2p and self.bphase in ("choose", "wait"):
-                # proto 2: only the peer's FINAL attribute (and, first round,
-                # its revealed seed nonce) crosses the wire
-                if self.bt_opp_choice is None:
-                    self.bt_opp_choice = payload.get("attr")
-                    if self.bt_peer_nonce is None:
-                        self.bt_peer_nonce = payload.get("nonce")
-                    self._p2p_resolve()
-            # the legacy branches are p2p-fenced: a proto-2 peer that ALSO
-            # speaks "choice"/"result" is hostile (double-apply attempt)
-            elif (bt == "choice" and self.is_host and not self.bt_p2p
-                    and self.bphase in ("choose", "wait")):
-                self.bt_opp_choice = payload.get("attr")
-                self._host_resolve()
-            elif (bt == "result" and not self.is_host and not self.bt_p2p
-                    and self.bphase == "wait"):
-                self._apply_result(payload, as_host=False)
+            elif bt == "pick" and self.bphase in ("card", "wait", "fight"):
+                # proto 3 (0.5 BATTLE 2026-07-17): no picks in this world --
+                # the "pick" message carries only the revealed seed nonce
+                if self.bt_peer_nonce is None:
+                    self.bt_peer_nonce = payload.get("nonce")
+                    self._maybe_build()
 
     # ---- battle ----------------------------------------------------------
     def _battle_begin(self, opp_card, commit=None):
-        # the relay ships the card VERBATIM from the peer, so its shape AND
-        # its numbers are peer-controlled.  Two gaps, both closed here:
-        #  * shape (audit 2026-07-13): a card missing the stat keys KeyError'd
-        #    inside Battle on the next anim tick;
-        #  * RANGE (multiplayer audit 2026-07-13): nothing bounded the values,
-        #    so a hacked client could ship hp=999999 and field an UNKILLABLE
-        #    mon (verified: the bout simply never ends).  The wire is not
-        #    trusted -- every number is clamped to what the game can actually
-        #    produce (HP to the trained-cap ceiling, powers past the strongest
-        #    enemy in the data).  Clamp, don't reject: an honest peer on a
-        #    drifted schema still gets its bout.
+        """Cards crossed: clamp the untrusted card, verify the proto, and
+        reveal my nonce.  The fight itself is SEEDED SYMMETRIC: both clients
+        run the identical precomputed engine on identically-clamped cards, so
+        no result ever crosses the wire."""
         opp_card = _clamp_card(opp_card)
         self.opp_card = opp_card
-        # proto 2 negotiation: a peer that shipped BOTH a proto>=2 card and a
-        # nonce commitment speaks the seeded symmetric protocol; anything else
-        # gets the legacy host-authoritative bout, unchanged
         try:
-            self.bt_p2p = int(opp_card.get("proto") or 0) >= 2 and bool(commit)
+            proto_ok = int(opp_card.get("proto") or 0) >= 3 and bool(commit)
         except (TypeError, ValueError):
-            self.bt_p2p = False
-        self.bt_peer_commit = commit if self.bt_p2p else None
-        if self.bt_p2p:
-            # both engines build LAZILY at the first resolved round (the seed
-            # needs the peer's revealed nonce); bars come straight off the cards
-            self.my_max = self.my_hp = (self.bt_my_card or {}).get("hp", 10)
-            self.opp_max = self.opp_hp = opp_card["hp"]
-        elif self.is_host:
-            # source="pvp": the host resolves through the real engine, so without
-            # this the KO6/Mega-class counter would still take an untrusted peer
-            # card's "stage" at face value (egg/KO6 audit 2026-07-14)
-            self.battle = battle.Battle(self.pet, enemy=dict(opp_card), source="pvp")
-            self.my_max = self.my_hp = self.battle.pet_max
-            self.opp_max = self.opp_hp = self.battle.enemy_max
-        else:
-            # the guest's own trained HP (its battle_card), not the stage table --
-            # the table under-read a trained pet's bar until round one corrected it
-            self.my_max = self.my_hp = battle.battle_card(self.pet)["hp"]
-            self.opp_max = self.opp_hp = max(2, opp_card.get("hp", 10))
-        self.bphase, self.bt_log = "choose", ""
-
-    def _host_resolve(self):
-        if self.battle is None or not (self.bt_my_choice and self.bt_opp_choice):
-            return
-        b = self.battle
-        b._forced_enemy_attr = self.bt_opp_choice
-        b.play_round(self.bt_my_choice)               # auto-records onto the host pet when it ends
-        res = {"kind": "battle", "t": "result",
-               "host_dealt": b.last_player_damage, "guest_dealt": b.last_enemy_damage,
-               "hattr": self.bt_my_choice, "gattr": self.bt_opp_choice,
-               "hhp": max(0, b.pet_hp), "ghp": max(0, b.enemy_hp),
-               "host_first": b.last_player_first,   # additive: drives the volley replay
-               "over": b.over, "host_alive": b.pet_hp > 0, "guest_alive": b.enemy_hp > 0}
-        self.client.relay(self.partner[0], res)
-        self._apply_result(res, as_host=True)
-
-    def _final_pick(self, attr):
-        """Seeded PvP resolves Free style / refused orders at PICK time, on
-        this side's OWN pet with its OWN dice -- only the FINAL attribute
-        crosses the wire (the engine then takes both attrs as final).  This
-        also un-breaks two host-era asymmetries: guests could never refuse an
-        order, and a guest's Free-style pet obeyed the 1/2/3 keys."""
-        mine = _eff_counts(self.bt_my_card or {})
-        theirs = _eff_counts(self.opp_card or {})
-        fb = self.pet.attribute if self.pet.attribute in battle.ATTRS else "Vaccine"
-        if self.pet.free_style:
-            return battle.own_pick(mine, theirs, fallback=fb), None
-        if attr in battle.ATTRS and self.pet.refuse_attack(self.my_hp, self.opp_hp):
-            return battle.own_pick(mine, theirs, fallback=fb), "Refused orders — its own way!"
-        return attr, None
-
-    def _p2p_resolve(self):
-        """Proto 2: both picks are in -> run the shared card-vs-card engine
-        locally.  The peer runs the IDENTICAL engine on the identical seed, so
-        no result crosses the wire -- each side's numbers agree by construction
-        (and a tampered engine shows up as a ladder-report disagreement)."""
-        if not self.bt_p2p or not (self.bt_my_choice and self.bt_opp_choice):
-            return
-        if self.battle is None:
-            # commit-reveal check: the revealed nonce must hash to what the
-            # peer committed alongside its card, before it saw MY nonce --
-            # a client that grinds nonces for coin flips fails this
-            pn = self.bt_peer_nonce
-            if (pn is None or hashlib.sha256(str(pn).encode()).hexdigest()
-                    != (self.bt_peer_commit or "")):
-                self.bt_outcome = "Battle void — bad checksum."
-                self.bt_payload = ("battle_msg", "Battle void — bad checksum.")
-                self.bt_reward = None
-                self.bphase = "over"
-                if self.partner:
-                    self.client.relay(self.partner[0], {"kind": "battle", "abort": True})
-                return
-            hn, gn = (self.bt_nonce, pn) if self.is_host else (pn, self.bt_nonce)
-            seed = int.from_bytes(hashlib.sha256(f"{hn}:{gn}".encode()).digest()[:8], "big")
-            host_card, guest_card = ((self.bt_my_card, self.opp_card) if self.is_host
-                                     else (self.opp_card, self.bt_my_card))
-            # card-vs-card on BOTH machines (the host side is a CardPet even on
-            # the host's own machine): the engines' inputs are byte-identical,
-            # so live pet state can never desync them.  source="pvp" +
-            # final_attrs: pick-time rolls only, KO6 counter stays un-farmable.
-            self.battle = battle.Battle(battle.CardPet(dict(host_card)),
-                                        enemy=dict(guest_card), source="pvp",
-                                        rng=random.Random(seed), final_attrs=True)
-        b = self.battle
-        host_attr, guest_attr = ((self.bt_my_choice, self.bt_opp_choice) if self.is_host
-                                 else (self.bt_opp_choice, self.bt_my_choice))
-        b._forced_enemy_attr = guest_attr
-        b.play_round(host_attr)
-        res = {"kind": "battle", "t": "result",
-               "host_dealt": b.last_player_damage, "guest_dealt": b.last_enemy_damage,
-               "hattr": b.last_player_attr, "gattr": b.last_enemy_attr,
-               "hhp": max(0, b.pet_hp), "ghp": max(0, b.enemy_hp),
-               "host_first": b.last_player_first,
-               "over": b.over, "host_alive": b.pet_hp > 0, "guest_alive": b.enemy_hp > 0}
-        self._apply_result(res, as_host=self.is_host)
-
-    def _apply_result(self, res, as_host):
-        # every key defaulted like host_first already is: the guest applies a
-        # RELAYED result, so a hostile or schema-drifted peer must not crash
-        # the client mid-battle (audit 2026-07-13)
-        if as_host:
-            dealt, taken = res.get("host_dealt", 0), res.get("guest_dealt", 0)
-            my_attr, opp_attr = res.get("hattr"), res.get("gattr")
-            my_alive = bool(res.get("host_alive", True))
-            opp_alive = bool(res.get("guest_alive", True))
-            mine_first = bool(res.get("host_first", True))
-        else:
-            dealt, taken = res.get("guest_dealt", 0), res.get("host_dealt", 0)
-            my_attr, opp_attr = res.get("gattr"), res.get("hattr")
-            my_alive = bool(res.get("guest_alive", True))
-            opp_alive = bool(res.get("host_alive", True))
-            mine_first = not res.get("host_first", True)
-        # the round REPLAYS as the real alternating-view volley (lobby audit
-        # 2026-07-04: PvP was a text log while PvE animates) -- built from the
-        # hp BEFORE this round, then the choose/over screen takes over
-        self._stage_volley(dealt, taken, my_attr, opp_attr, mine_first)
-        if as_host:
-            self.my_hp, self.opp_hp = res.get("hhp", self.my_hp), res.get("ghp", self.opp_hp)
-        else:
-            self.my_hp, self.opp_hp = res.get("ghp", self.my_hp), res.get("hhp", self.opp_hp)
-        mine = data.move_name(self.pet.num, my_attr) or my_attr or "?"
-        theirs = data.move_name((self.opp_card or {}).get("num", -1), opp_attr) or opp_attr or "?"
-        self.bt_log = f"{mine} → {dealt} dmg\n  {theirs} ← {taken} dmg"
-        if not res.get("over"):
-            self.sfx = "strongHit" if dealt >= taken and dealt > 0 else "attackHit"
-        self.bt_my_choice = self.bt_opp_choice = None
-        if res.get("over"):
+            proto_ok = False
+        if not proto_ok:
+            self.bt_outcome = "Battle void — version mismatch."
+            self.bt_payload = ("battle_msg", "Battle void — the other side "
+                              "runs an older tuipet.")
             self.bphase = "over"
-            self.sfx = "attack"
-            if self.partner:            # a finished connection bout counts for
-                persistence.record_connection(self.partner[1])   # the DM20 connection eggs
-            won = my_alive and not opp_alive
-            opp_nm = (self.opp_card or {}).get("name") or (self.partner or (0, ""))[1]
-            report = getattr(self.client, "ladder_report", None)
-            if report and opp_nm:
-                # the monthly ladder: both sides file; the server credits only
-                # when the two stories agree (2026-07-14)
-                report(won, opp_nm)
-            if not my_alive:                       # own HP gone (incl. double-KO) = loss (battleEnd)
-                self.bt_outcome = "YOU LOSE…"
-            elif not opp_alive:
-                self.bt_outcome = "★ YOU WIN! ★"
-            else:
-                self.bt_outcome = "DRAW"
-            if self.bt_p2p:
-                # seeded bout: the engine ran on card shims, so BOTH sides now
-                # record their REAL pet from their own verdict -- host and
-                # guest finally get the same reward line (and the same
-                # low-health end-cost banding the engine's _finish applies)
-                low = self.my_hp <= self.my_max // 2
-                self.bt_reward = self.pet.record_battle(
-                    won, self.opp_card,
-                    free_style=bool((self.bt_my_card or {}).get("free")),
-                    low_health=low, source="pvp")
-                self.bt_payload = ("battle_msg", self.bt_outcome)
-            elif as_host:
-                self.bt_reward = getattr(self.battle, "reward", None)
-                self.bt_payload = ("battle_msg", self.bt_outcome)   # engine already recorded
-            else:
-                self.bt_reward = None
-                self.bt_payload = ("battle_record", won, self.opp_card)
-        else:
-            self.bphase = "choose"
+            if self.partner:
+                self.client.relay(self.partner[0], {"kind": "battle", "abort": True})
+            return
+        self.bt_peer_commit = commit
+        self.my_max = self.my_hp = 5
+        self.opp_max = self.opp_hp = 5
+        self.bphase = "wait"
+        # the nonce reveal is its own message now (no picks in this world)
+        self.client.relay(self.partner[0],
+                          {"kind": "battle", "t": "pick", "nonce": self.bt_nonce})
+        self._maybe_build()
 
-    def _stage_volley(self, dealt, taken, my_attr, opp_attr, mine_first):
-        """A presentation-only BattlePanel replays the round: my pet RIGHT, the
-        opponent's LEFT, orbs/hit/dodge from the relayed numbers."""
+    def _maybe_build(self):
+        """Both nonces in -> verify the commit, seed the shared engine, and
+        precompute the whole 5-round fight (both sides independently)."""
+        if self.battle is not None or self.bt_peer_nonce is None \
+                or self.opp_card is None:
+            return
+        pn = self.bt_peer_nonce
+        if hashlib.sha256(str(pn).encode()).hexdigest() != (self.bt_peer_commit or ""):
+            self.bt_outcome = "Battle void — bad checksum."
+            self.bt_payload = ("battle_msg", "Battle void — bad checksum.")
+            self.bphase = "over"
+            if self.partner:
+                self.client.relay(self.partner[0], {"kind": "battle", "abort": True})
+            return
+        hn, gn = (self.bt_nonce, pn) if self.is_host else (pn, self.bt_nonce)
+        seed = int.from_bytes(hashlib.sha256(f"{hn}:{gn}".encode()).digest()[:8], "big")
+        host_card, guest_card = ((self.bt_my_card, self.opp_card) if self.is_host
+                                 else (self.opp_card, self.bt_my_card))
+        rng = random.Random(seed).random
+        host = battle.Side.of_card(dict(host_card))
+        guest = battle.Side.of_card(dict(guest_card))
+        seq, hhp, ghp = battle.generate(host, guest, rounds=battle.ROUNDS_ONLINE,
+                                        rng=rng)
+        self.battle = {"seq": seq, "host_hp": 5, "guest_hp": 5, "i": 0}
+        self.bphase = "fight"
+        self._play_next_round()
+
+    def _play_next_round(self):
+        """Advance the precomputed fight one round and stage its volley."""
+        b = self.battle
+        if b is None:
+            return
+        if b["i"] >= len(b["seq"]) or b["host_hp"] <= 0 or b["guest_hp"] <= 0:
+            self._battle_over()
+            return
+        h_hit, h_dmg, g_hit, g_dmg = b["seq"][b["i"]]
+        b["i"] += 1
+        if h_hit:
+            b["guest_hp"] = max(0, b["guest_hp"] - h_dmg)
+        if g_hit:
+            b["host_hp"] = max(0, b["host_hp"] - g_dmg)
+        if self.is_host:
+            dealt = h_dmg if h_hit else 0
+            taken = g_dmg if g_hit else 0
+        else:
+            dealt = g_dmg if g_hit else 0
+            taken = h_dmg if h_hit else 0
+        my0, opp0 = self.my_hp, self.opp_hp
+        self.my_hp = b["host_hp"] if self.is_host else b["guest_hp"]
+        self.opp_hp = b["guest_hp"] if self.is_host else b["host_hp"]
+        self._stage_volley(my0, opp0, dealt, taken)
+        self.bt_log = f"you \u2192 {dealt} dmg\n  them \u2192 {taken} dmg"
+
+    def _battle_over(self):
+        b = self.battle
+        my_hp = b["host_hp"] if self.is_host else b["guest_hp"]
+        opp_hp = b["guest_hp"] if self.is_host else b["host_hp"]
+        won = opp_hp <= 0 and my_hp > 0
+        draw = (my_hp > 0 and opp_hp > 0 and my_hp == opp_hp) \
+            or (my_hp <= 0 and opp_hp <= 0)
+        if not won and not draw and my_hp > opp_hp:
+            won = True                     # rounds ran dry: higher HP stands
+        self.bphase = "over"
+        self.sfx = "attack"
+        if self.partner:                   # a finished bout is a connection
+            persistence.record_connection(self.partner[1])
+        # the ladder needs BOTH stories: the winner's claim only credits when
+        # the LOSER's agreeing report lands too, keyed by ACCOUNT name -- the
+        # old code filed only on won (nobody ever confirmed) and led with the
+        # PET name (which the server doesn't know), so the monthly ladder
+        # never credited a single win (audit 2026-07-15)
+        opp_nm = (self.partner or (0, ""))[1] or (self.opp_card or {}).get("name")
+        report = getattr(self.client, "ladder_report", None)
+        if report and opp_nm and not draw:
+            report(won, opp_nm)
+        from .pet import online_reward
+        purse = online_reward(won, draw=draw)
+        self.pet.record_battle(won and not draw, online=True)
+        self.pet.add_bits(purse)
+        self.bt_outcome = ("DRAW" if draw
+                           else "\u2605 YOU WIN! \u2605" if won else "YOU LOSE\u2026")
+        self.bt_reward = f"+{purse}b" + ("  (weekend bonus!)" if purse not in (100, 150, 200) else "")
+        self.bt_payload = ("battle_msg", self.bt_outcome)
+
+    def _stage_volley(self, my0, opp0, dealt, taken):
+        """A presentation-only BattlePanel replays the round: my pet RIGHT,
+        the opponent's LEFT, orbs/hit/dodge from the engine's numbers."""
         try:
             card = dict(self.opp_card or {})
             if not card.get("num"):
                 return
             show = battlescreen.BattlePanel(self.pet, enemy=card)
-            show.pet_attr = my_attr or "Vaccine"
-            show.foe_attr = opp_attr or "Vaccine"
-            show.timeline = battlescreen.round_timeline(
-                self.my_hp, self.opp_hp, dealt, taken, mine_first)
+            show.foe_attr = card.get("attribute", "Free")
+            show.timeline = battlescreen.round_timeline(my0, opp0, dealt, taken, True)
             show.i = 0
             show.phase = "anim"
             show._last_m = None
             self.bshow = show
         except Exception:
-            self.bshow = None                   # presentation must never break the bout
+            self.bshow = None               # presentation must never break the bout
 
     def _key_battle(self, k):
         if self.bshow is not None:              # the round is replaying
             if k in ("space", "enter", "escape"):
-                self.bshow = None               # skip straight to the choose/over screen
+                self.bshow = None               # skip to the between-rounds card
             return None
         if self.bphase == "over":
             if k in ("enter", "space", "escape"):
-                if self.bt_payload and self.bt_payload[0] == "battle_record":
-                    self.pet.record_battle(self.bt_payload[1], self.bt_payload[2],
-                                           source="pvp")   # guest records its own result
-                self._return_to_lobby(self.bt_outcome)   # host already recorded via the engine
+                self._return_to_lobby(self.bt_outcome)
             return None
-        if self.bphase == "choose":
-            if k in ATTACK_KEYS:
-                if self.bt_p2p:
-                    attr, note = self._final_pick(ATTACK_KEYS[k])
-                    self.bt_my_choice = attr
-                    # the nonce reveal rides every pick (idempotent; only the
-                    # first is read) -- no extra handshake message needed
-                    self.client.relay(self.partner[0],
-                                      {"kind": "battle", "t": "pick",
-                                       "attr": attr, "nonce": self.bt_nonce})
-                    if note:
-                        self.bt_log = note
-                    self.bphase = "wait"
-                    self._p2p_resolve()
-                    return None
-                self.bt_my_choice = ATTACK_KEYS[k]
-                self.client.relay(self.partner[0], {"kind": "battle", "t": "choice", "attr": ATTACK_KEYS[k]})
-                self.bphase = "wait"
-                if self.is_host:
-                    self._host_resolve()
+        if self.bphase == "fight":
+            if k in ("space", "enter"):
+                self._play_next_round()
             elif k == "escape":
                 self._forfeit()
             return None
@@ -1311,9 +1225,9 @@ class LobbyPanel:
         t.append(f"  {_fit(pname, 10)}{self.opp_hp:>3}/{self.opp_max:<2} [{_hpbar(self.opp_hp, self.opp_max)}]\n\n", style=INK)
         t.append(f"  {self.bt_log}\n\n" if self.bt_log else "\n\n", style=INK)
         if self.bphase == "wait":
-            t.append("  waiting for opponent…", style=DIM)
+            t.append("  syncing the arena…", style=DIM)
         else:
-            t.append("  attack: [1]Vaccine [2]Data [3]Virus", style=INK_B)
+            t.append("  [SPACE] next volley   [ESC] forfeit", style=INK_B)
         return t
 
     def _chat_w(self):

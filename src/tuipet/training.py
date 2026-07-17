@@ -51,23 +51,9 @@ _FONT_3X5 = {
 }
 
 
-def mega_window(pet):
-    """Care widens the skill ceiling (the clone's rule, on classic gauges):
-    winrate/hunger/effort/energy/age each carry 0.2 of the condition score;
-    the mega zone is [12-c, 12+c] on the 0..24 bar (width 1/3/5/7)."""
-    from .pet import DAY_LENGTH
-    wr = pet.wins / pet.battles if pet.battles > 0 else 0
-    hu = pet.hunger / 4.0
-    st = pet.strength / 4.0
-    en = max(0, pet.energy) / pet.max_energy if pet.max_energy else 0
-    ag = min((pet.age_seconds / DAY_LENGTH) / 5, 1)
-    o = min(1.0, wr * 0.2 + hu * 0.2 + st * 0.2 + ag * 0.2 + en * 0.2)
-    w = 1 + int(o * 3) * 2
-    c = w // 2
-    return 12 - c, 12 + c
-
-
-
+# (mega_window lives in battlescreen -- the drill and the bout share ONE
+# window, exactly like the clone)
+from .battlescreen import mega_window  # noqa: E402
 
 
 class TrainingPanel:

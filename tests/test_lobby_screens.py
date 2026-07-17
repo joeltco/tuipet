@@ -5,6 +5,7 @@ jogress converge/flash/reveal.  All wire-free: state + relays are stubbed."""
 import random
 
 from tuipet.pet import Pet
+from tuipet import lobbyscreen
 from tuipet.lobbyscreen import LobbyPanel, AccountPanel
 from tuipet.net import LobbyState
 
@@ -118,27 +119,20 @@ def test_chat_empty_state_and_caret_blink():
 def test_pvp_round_replays_the_real_volley():
     pan = _lobby()
     pan.partner = (2, "Ryo")
-    pan.phase, pan.bphase, pan.is_host = "battle", "choose", False
-    pan.opp_card = {"name": "WarGreymon", "stage": "Mega", "num": 964, "hp": 25,
-                    "vaccine": 50, "data_power": 40, "virus": 30, "bits": (1, 5)}
-    pan.my_hp = pan.my_max = 15
-    pan.opp_hp = pan.opp_max = 25
-    res = {"kind": "battle", "t": "result", "host_dealt": 6, "guest_dealt": 5,
-           "hattr": "Vaccine", "gattr": "Virus", "hhp": 20, "ghp": 10,
-           "host_first": True, "over": False, "host_alive": True, "guest_alive": True}
-    pan._apply_result(res, as_host=False)
+    pan.phase, pan.bphase, pan.is_host = "battle", "fight", True
+    pan.opp_card = lobbyscreen._clamp_card({"name": "Wargle", "stage": "Adult",
+                                            "num": 400})
+    pan.my_hp = pan.my_max = 5
+    pan.opp_hp = pan.opp_max = 5
+    pan._stage_volley(5, 5, 2, 1)
     assert pan.bshow is not None                  # the volley stages
-    assert pan.strip() == "[dim]SPACE skip[/]"
     markers = {e["m"] for e in pan.bshow.timeline}
     assert {"faceoff", "windup", "fire_out", "fire_in", "hit"} <= markers
-    seen = set()
     for _ in range(len(pan.bshow.timeline) + 5):  # plays through, all in budget
         if pan.bshow is None:
             break
         _fits(pan, "volley frame")
         pan.anim()
-    assert pan.bshow is None                      # ...then the choose screen returns
-    assert pan.my_hp == 10 and pan.opp_hp == 20   # guest mapping applied
     _fits(pan, "post-volley")
 
 
@@ -283,20 +277,18 @@ def test_malformed_relay_payloads_never_crash_the_battle():
     pan = _lobby()
     pan.partner = (2, "Ryo")
     pan.phase, pan.bphase, pan.is_host = "battle", "card", True
-    pan._battle_begin({"num": 5, "hp": "lol"})    # hostile: stats missing/junk
-    assert pan.bphase == "choose", "a sanitized card still gets its bout"
-    assert pan.opp_card["vaccine"] == 0 and pan.opp_card["hp"] == 10
-    assert pan.battle is not None                 # Battle built without KeyError
-
-    pan = _lobby()                                # sparse result: no crash
+    import hashlib as _h
+    pan.bt_my_card = lobbyscreen._clamp_card({"num": 4})
+    pan.bt_nonce = 7
+    commit = _h.sha256(str(11).encode()).hexdigest()
+    pan._battle_begin({"num": 5, "hp": "lol", "proto": 3}, commit=commit)
+    assert pan.bphase == "wait", "a sanitized card still arms the bout"
+    assert pan.opp_card["strength"] == 4 and pan.opp_card["hp"] == 5
+    pan._on_relay = pan._on_relay                 # (unchanged surface)
     pan.partner = (2, "Ryo")
-    pan.phase, pan.bphase, pan.is_host = "battle", "choose", False
-    pan.opp_card = {"name": "WarGreymon", "stage": "Mega", "num": 964, "hp": 25,
-                    "vaccine": 50, "data_power": 40, "virus": 30}
-    pan.my_hp = pan.my_max = 15
-    pan.opp_hp = pan.opp_max = 25
-    pan._apply_result({"kind": "battle", "t": "result"}, as_host=False)
-    assert pan.my_hp == 15 and pan.opp_hp == 25   # defaults hold the bars
+    pan.bt_peer_nonce = 11
+    pan._maybe_build()                            # engine builds without KeyError
+    assert pan.battle is not None
 
 
 def test_unknown_invite_kinds_are_declined_not_entered():
@@ -408,23 +400,13 @@ def test_a_hostile_peer_card_is_clamped_to_legal_ranges():
     opponent card is UNTRUSTED input.  Nothing bounded it -- a hacked client
     could ship hp=999999 and field an unkillable mon (the bout never ended).
     Every number is now clamped to what the game can actually produce."""
-    from tuipet.lobbyscreen import MAX_PVP_HP, MAX_PVP_POWER
-    pan = _lobby()
-    pan.partner = (2, "Cheater")
-    pan.is_host = True
-    pan.phase, pan.bphase = "battle", "card"
-    pan._battle_begin({"num": 964, "name": "Cheater", "stage": "Mega",
-                       "vaccine": 999999, "data_power": 10 ** 9,
-                       "virus": -50, "hp": 999999, "attribute": "Virus"})
-    c = pan.opp_card
-    assert c["hp"] == MAX_PVP_HP, c["hp"]
-    assert c["vaccine"] == MAX_PVP_POWER and c["data_power"] == MAX_PVP_POWER
-    assert c["virus"] == 0, "a negative power floors at 0"
-    assert pan.opp_max <= MAX_PVP_HP, "the HP bar honours the clamp"
-    # the bout is now winnable: the host can actually kill it
-    assert pan.battle.enemy_max <= MAX_PVP_HP
-
-    # a garbage/schema-drifted card still gets an honest bout (clamp, not kick)
-    pan.bphase = "card"
-    pan._battle_begin({"name": "Odd", "stage": "Rookie"})
-    assert pan.opp_card["hp"] >= 2 and pan.opp_card["vaccine"] == 0
+    c = lobbyscreen._clamp_card({"num": 964, "name": "Cheater", "stage": "Adult",
+                                 "strength": 999, "strength_max": 999,
+                                 "energy": 10 ** 9, "energy_max": 10 ** 9,
+                                 "battles": -5, "wins": 10 ** 9,
+                                 "hit_type": "nuclear", "hp": 999999})
+    assert c["hp"] == 5, "everyone fights from 5 in the HP race"
+    assert c["strength"] <= c["strength_max"] <= 9
+    assert c["energy"] <= c["energy_max"] <= 2000
+    assert c["battles"] == 0 and c["wins"] == 0
+    assert c["hit_type"] == "miss", "an unknown hit-type reads as miss"

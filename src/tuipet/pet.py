@@ -47,12 +47,12 @@ def weekend_bonus(now=None):
 
 
 def _enemy_level(enemy):
-    """DVPet getLevel: (vaccine+data+virus + (health-5)*10) / 100, min 1."""
-    v = enemy.get("vaccine", 0)
-    d = enemy.get("data_power", 0)
-    vir = enemy.get("virus", 0)
-    h = enemy.get("hp", 5)
-    return max(1, int((v + d + vir + (h - 5) * 10) / 100))
+    """The foe's battle level.  DVPet's getLevel read power sums off the old
+    enemy cards; 0.5 cards carry none (0.5 BATTLE 2026-07-17), so the STAGE
+    rank is the level now -- the same 1..6 scale the corpus level_fought
+    gates expect (Fresh 1 .. Mega 6)."""
+    from . import data as _data
+    return max(1, _data.stage_rank(enemy.get("stage", "Rookie")))
 
 
 # Lifespan (seconds), scaled from DVPet's real-time model. A pet lives this long
@@ -468,6 +468,8 @@ POOP_MAX_PILES = 4                      # classic Digimon V-Pet max poops (DVPet
 # tuned to preserve tuipet's ~1800s-per-heart hunger pace (col-1 calorie mods are 0).
 # hunger / stomach (DVPet FullHunger / StomachCapacity / OvereatLimit)
 FULL_HUNGER = 4                         # FullHunger: a satisfied stomach (4 hearts)
+BATTLE_ENERGY_COST = 5              # the 0.5 bout's toll (clone BATTLE_ENERGY_COST)
+BATTLE_WEIGHT_COST = 4              # the 0.5 bout sheds real weight (clone)
 TRAIN_ENERGY_COST = 2               # the 0.5 drill's swing (clone TRAIN_ENERGY_COST)
 PILL_ENERGY_GAIN = 7                    # the DSprite pill (feed menu, BASIC VPET 2026-07-16)
 PILL_WEIGHT_GAIN = 5
@@ -801,6 +803,17 @@ DAY_LENGTH = 1440.0           # 24 min per day/night cycle
 
 
 
+
+ONLINE_BITS = {"win": 200, "draw": 150, "loss": 100}
+
+
+def online_reward(won, draw=False, now=None):
+    """The online purse (0.5 BATTLE 2026-07-17): win 200 / draw 150 /
+    loss 100, weekend x1.5 -- PvP pays bits, never training."""
+    base = ONLINE_BITS["draw" if draw else ("win" if won else "loss")]
+    return int(base * weekend_bonus(now))
+
+
 @dataclass
 class Pet:
     num: int
@@ -834,6 +847,7 @@ class Pet:
     # +-RankLimit becomes the emergent favourite/disliked ("" = none yet)
     attr_ranks: dict = _dcf(default_factory=lambda: {"Vaccine": 0, "Data": 0, "Virus": 0})
     saved_hit_type: str = "normal"  # the trained battle form (0.5 drill: mega/normal/miss)
+    total_trainings: int = 0        # lifetime drills (the 0.5 hit formula's experience term)
     favorite_attr: str = ""
     disliked_attr: str = ""
     # the personality tracker (childhood care -> the Champion temperament)
@@ -2778,6 +2792,7 @@ class Pet:
         self._calm_discipline_call()                 # a drill placates the call
         self.exercise_today += 1
         self.stage_trainings += 1                    # LINES_SPEC TR gate: every attempt counts
+        self.total_trainings += 1                    # lifetime (the 0.5 hit formula reads it)
         # the Effort meter fills per drill, win or lose (canon setExercise +1;
         # Joel 2026-07-17 "its not filling the effort meter?" -- the clone left
         # strength to the pill, but the gauge visibly ticking up per drill is
@@ -2809,109 +2824,48 @@ class Pet:
             return f"{self.name} refuses to fight!"
         return None
 
-    def record_battle(self, won, enemy=None, free_style=None, low_health=False,
-                      source="battle"):
-        """Resolve a finished battle (canon battleEnd; battle-math audit
-        2026-07-06): compliance is SPENT here, the end cost is banded by the
-        finishing HP (limping at/below half = double energy + calories), a
-        SICK opponent is contagious, and the disposition factor shades every
-        win/loss mood.  The battle passes its BAKED style so a mid-fight
-        toggle can't split the bonus from the rewards."""
-        if source == "raid":
-            # the clone's generate_raid wrote NOTHING on the pet: a raid
-            # attempt is a damage report to the relay, not a win/loss on the
-            # record -- the felled boss pays at claim instead (KO6 + the
-            # raids egg channel; BASIC VPET 2026-07-16)
-            return ""
-        style_free = self.free_style if free_style is None else free_style
-        complied = self.check_compliant()                # battleEnd: checkCompliant
-        surr_declined = getattr(self, "_surr_declined", False)   # one bout only
-        self._surr_declined = False
-        self.exercise_today += 1                         # incExerciseTime (the +1 effort
-        #                                                  bump is 0 at difficulty 0)
+    def record_battle(self, won, enemy=None, online=False, source="battle",
+                      free_style=None, low_health=False):
+        """One battle, the 0.5 rules (clone record_battle, 2026-07-17):
+        counters + flat costs, +2 trainings for a LOCAL bout.  KEPT from the
+        classic version -- the progression channels the rest of the game
+        feeds on: battle_log (Pen20 WIN gates), stage_battles (BTL gates),
+        lifetime wins + the mystery-egg note, levels_fought, KO6 (a felled
+        Mega, never in PvP -- untrusted cards), and the win's +1 power in
+        the foe's attribute (the corpus checkStatTotal gates feed on it; a
+        0.5 card's attribute string names the dominant power directly).
+        The old free_style/low_health params are accepted-and-ignored for
+        stragglers.  (Mood/compliance/contagion legs left with their
+        systems; the perfect-wins HP ladder left with the classic battle.)"""
+        if source == "pvp":
+            online = True
         self.battles += 1
         self.stage_battles += 1                          # LINES_SPEC BTL gate (per-stage)
         self.battle_log = (self.battle_log + [1 if won else 0])[-15:]   # Pen20 rolling window
-        if not style_free:
-            self._set_obedience(self.obedience + BATTLE_FREE_OBED_INC)   # fighting under orders builds discipline
-        # the end cost is banded by the FINISHING health: above half HP the
-        # fight cost energy -1 / calories -1; limping out costs double
-        if low_health:
-            self._set_energy(self.energy - BATTLE_LOW_HP_ENERGY)
-            self._set_calories(self.calories - BATTLE_CAL_LOW)
-        else:
-            self._set_energy(self.energy - BATTLE_HIGH_HP_ENERGY)
-            self._set_calories(self.calories - BATTLE_CAL_HIGH)
-        # (the battle injury rolls left with the injury system)
-        # (the sick-opponent contagion left with the sickness system (BASIC VPET 2026-07-17);
-        # the wire card still carries a sick flag for older peers -- always
-        # False from this build on)
-        if won:
-            self.wins += 1
-            # lifetime wins (cross-generation, gates the mystery eggs) -- counted
-            # HERE so every flow that resolves a battle counts: home key, adventure
-            # encounters, tournaments, town cups, lobby.  Late import: persistence
-            # imports pet at module top.
-            from . import persistence as _persist
-            total = _persist.wins_add(1)
-            if total in egg_mod.win_eggs().values():     # a gate just crossed
-                self.egg_unlock_note = "A mysterious egg appeared in the nursery!"
-            if enemy:
-                self.levels_fought.append(_enemy_level(enemy))
-                # ⛔ JP/EN STAGE-NAME GOTCHA.  DMX's KO6 gate reads "Defeat N
-                # Stage VI Digimon" and humulos' own dmx.json spells the ladder
-                # out: "Stage V (Perfect)" == EN **Ultimate**, "Stage VI
-                # (Ultimate)" == EN **Mega** (WarGreymon, MetalGarurumon are
-                # Stage VI).  We counted ("Ultimate", "Mega") -- folding all of
-                # Stage V in -- so the counter swept 44% of the roster instead
-                # of 17%, and quietly loosened EVERY KO6 evolution gate as well
-                # as the Mega-class eggs.  Stage VI is Mega, full stop.
-                #
-                # PvP is excluded: the opponent's stage arrives on an UNTRUSTED
-                # peer card (same class of input we already clamp hp/power on),
-                # so two colluding tamers could otherwise trade wins with Mega
-                # pets and farm KO6.  Canon agrees -- the requirement is scoped
-                # "in Quest Mode".  (egg/KO6 audit 2026-07-14)
-                if enemy.get("stage") == "Mega" and source != "pvp":
-                    self.mega_kills += 1                 # LINES_SPEC KO6 gate (DMX Stage-VI = Mega)
-                    _persist.mega_kills_add(1)           # ...and the lifetime X-egg progress
-            # (discipline audit 2026-07-15: canon has NO direct battle-win
-            # setPraise -- a win opens the praise window only through SPENT
-            # COMPLIANCE (checkCompliant -> setCompliance true->false), which
-            # ran above.  The old unconditional praise here let free-style
-            # and defiant wins farm praise windows canon never grants.)
-            # BattleWonMoodInc + BattleDispositionMoodFactor x disposition:
-            # the -5 x dispo shade rides EVERY win/loss, not just orders-won
-            self._set_mood(self.mood + 10 + BATTLE_DISPO_MOOD_FACTOR * self.disposition)
-            # over/underpowered adjustments (battleEnd compareStage + HP gates):
-            # squashing a hollow higher-stage foe is a JOYLESS win (-20); toppling a
-            # tougher lower-stage bruiser is a proud one (+10)
-            grew = ""
-            if enemy:
-                cap = self.full_health or 1     # DVPet's HP gates compare vs fullHealthPoints
-                ehp = enemy.get("hp", cap)
-                mine = data.stage_rank(self.stage)
-                theirs = data.stage_rank(enemy.get("stage", self.stage))
-                # (tuipet pet full-HP == its stage cap, so DVPet's two HP gates collapse)
-                if mine < theirs and ehp < cap:
-                    self._set_mood(self.mood - 20)       # OverpoweredBattleWonMoodDec
-                elif mine > theirs and ehp > cap:
-                    self._set_mood(self.mood + 10)       # UnderpoweredBattleWonMoodInc
-                # incStats: the win GROWS the pet's power in the enemy's dominant
-                # attribute -- classic getExtraStats = min(ceil(opp/1), 1) = +1.
-                # The first maximum wins ties (canon's randomChance(0,2) is
-                # nextInt(2)<0 = always false, so the loop never swaps on a
-                # tie -- Vaccine/Data/Virus order, same as max() here), and a
-                # POWERLESS foe teaches nothing (ceil(0/1)=0; no wild enemy
-                # ships 0/0/0, but a PvP card can)
-                counts = {"Vaccine": enemy.get("vaccine", 0), "Data": enemy.get("data_power", 0),
-                          "Virus": enemy.get("virus", 0)}
-                dom = max(counts, key=counts.get)
-                inc = 1 if counts[dom] > 0 else 0
-                # setPower's BonusAttributePower: a HAPPY pet's +1 in its
-                # favoured attribute lands +2 (canon exact -- the win gain is
-                # always the standard single point here)
-                if inc and self.current_mood() == "Happy" and dom == self._power_bonus_attr():
+        self._set_energy(max(0, self.energy - BATTLE_ENERGY_COST))
+        self._set_weight(max(1, self.weight - BATTLE_WEIGHT_COST))
+        if not online:
+            self.stage_trainings += 2                    # a local bout trains (clone rule)
+        if not won:
+            return ""
+        self.wins += 1
+        from . import persistence as _persist
+        total = _persist.wins_add(1)                     # lifetime wins (egg gates)
+        if total in egg_mod.win_eggs().values():
+            self.egg_unlock_note = "A mysterious egg appeared in the nursery!"
+        if enemy:
+            self.levels_fought.append(_enemy_level(enemy))
+            # KO6: Stage VI is Mega, full stop; PvP excluded (untrusted
+            # cards -- colluding tamers could farm it; egg/KO6 audit 2026-07-14)
+            if enemy.get("stage") == "Mega" and not online:
+                self.mega_kills += 1                     # LINES_SPEC KO6 gate
+                _persist.mega_kills_add(1)               # ...and the X-egg progress
+            # the win grows the pet's power in the foe's attribute (+1; a
+            # HAPPY pet's favoured attribute doubles it, canon setPower)
+            dom = enemy.get("attribute")
+            if dom in self._ATTR3:
+                inc = 1
+                if self.current_mood() == "Happy" and dom == self._power_bonus_attr():
                     inc += BONUS_ATTRIBUTE_POWER
                 if dom == "Vaccine":
                     self.vaccine += inc
@@ -2919,35 +2873,7 @@ class Pet:
                     self.data_power += inc
                 else:
                     self.virus += inc
-                grew = f"  +{inc} {dom}" if inc else ""
-            self._set_enthusiasm(self.enthusiasm - 3)    # BattleWonEnthusiasmDec
-            if not style_free:                           # battleEnd: a win UNDER ORDERS is prouder
-                self._set_mood(self.mood + ORDERS_WON_MOOD_INC
-                               + BATTLE_DISPO_MOOD_FACTOR * -self.disposition)
-            # checkAndIncPerfectWins(false): every battle win counts toward the
-            # next trained-HP point while below the age cap (training audit
-            # 2026-07-06 -- Battle.battleEnd calls it right after incStats; the
-            # x5-compressed PerfectWinsLimit applies to every event type)
-            grew += self._check_perfect_wins(force=False)
-            lo, hi = (enemy or {}).get("bits", (1, 5))
-            mult = weekend_bonus()
-            gained = int(random.randint(lo, hi) * mult)
-            self.bits += gained
-            self._set_anim("happy", 2.0)
-            wknd = " (wknd x1.5)" if mult > 1 else ""
-            return f"Victory! +{gained} bits{wknd}{grew}"
-        self._set_mood(self.mood - 20 + BATTLE_DISPO_MOOD_FACTOR * self.disposition)   # BattleLostMoodDec
-        self._set_enthusiasm(self.enthusiasm - 6)    # BattleLostEnthusiasmDec
-        self._set_obedience(self.obedience - 1)      # BattlesObedienceDec (a loss saps trust)
-        self.mistake_day += BATTLE_LOST_MISSED_DAY   # BattleLostMissedDayChange
-        if surr_declined:
-            # it BEGGED to quit, you refused, it lost: obedience is SET to 10
-            self._set_obedience(SURR_DECLINED_LOST_OBED)
-        self._set_anim("sad", 2.0)
-        return "Defeat…"
-
-    # ---- battle morale: obedience & surrender (PhysicalState) ----------------
-
+        return "training +2" if not online else ""
 
     def can_escape(self, enemy):
         """PhysicalState.canEscape: a power-weighted roll -- prob = nextInt(mine +

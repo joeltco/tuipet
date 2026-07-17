@@ -840,11 +840,9 @@ def pet_from_save(data, catch_up=True, strict=False):
         data["_lights_t"] = float("-inf")
     valid = {f.name for f in fields(Pet)}
     kwargs = {k: v for k, v in data.items() if k in valid}
-    if "full_health" not in data and (data.get("stage") or "Egg") != "Egg":
-        # pre-trained-HP save: grandfather the old flat stage HP so a grown pet
-        # isn't nerfed to a hatchling's 5 (new pets start at StartingHealthPoints)
-        from .battle import MAX_HEALTH, MAX_HEALTH_DEFAULT
-        kwargs["full_health"] = MAX_HEALTH.get(data.get("stage"), MAX_HEALTH_DEFAULT)
+    # (the full_health backfill left with the classic battle -- the 0.5 HP
+    # race fights from a flat 5, so trained HP has no consumer; 0.5 BATTLE
+    # 2026-07-17)
     try:
         pet = Pet(**kwargs)
     except TypeError:
