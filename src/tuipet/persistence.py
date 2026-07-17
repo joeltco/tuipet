@@ -557,6 +557,16 @@ def map_complete_add(map_index):
     _note_set("maps", int(map_index))
 
 
+def raid_add():
+    """One community raid boss this save contributed to FELL (counted at the
+    claim, when the relay confirms defeated=True).  The count re-gates the
+    old MapComplete egg rows (BASIC VPET 2026-07-16)."""
+    d = load_settings()
+    prog = d.setdefault("progress", {})
+    prog["raids"] = int(prog.get("raids", 0)) + 1
+    save_settings(d)
+
+
 def tourney_add(trophy_id):
     _note_set("tourneys", int(trophy_id))
 
@@ -691,6 +701,7 @@ def get_progress():
         "max_stage": int(prog.get("max_stage", 0)),
         "xanti_ever": bool(prog.get("xanti_ever", False)),
         "maps": set(prog.get("maps", [])),
+        "raids": int(prog.get("raids", 0)),
         "tourneys": set(prog.get("tourneys", [])),
         "last_field": last.get("field", "None"),
         "last_attr": last.get("attribute", "None"),

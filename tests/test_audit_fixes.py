@@ -4,7 +4,6 @@ import random
 
 from tuipet.pet import Pet
 from tuipet import persistence, data
-from tuipet.adventure import Adventure
 from tuipet.battle import Battle
 
 
@@ -38,25 +37,6 @@ def test_long_horizon_clocks_persist():
     assert p2._lights_t == float("-inf")
 
 
-def test_fleeing_the_gate_boss_cannot_skip_the_zone():
-    random.seed(0)
-    p = _pet()
-    p.sleep_limit = 9e9
-    adv = Adventure(p)
-    for _ in range(300):
-        ev = adv.travel()
-        if ev and ev[0] == "boss":
-            break
-    boss = adv._boss
-    adv.flee(boss, was_boss=True)                     # canEscape knockback
-    assert adv.location < adv._boss_loc(boss)
-    for _ in range(300):
-        ev = adv.travel()
-        if ev and ev[0] in ("boss", "zone"):
-            break
-    assert ev[0] == "boss"                            # the gate holds
-
-
 def test_staples_stay_out_of_gift_and_discover_pools():
     meat = data.consumable_by_key("f:0")
     assert meat["can_inc"] is False                   # foods.csv CanInc, not CanIncUses
@@ -75,21 +55,6 @@ def test_battle_style_is_baked_per_battle():
     assert b.free_style is True                       # the battle keeps its bake
     p.record_battle(False, None, free_style=b.free_style)
     # (the orders obedience pay left with the discipline system)
-
-
-def test_discover_fires_at_stride_compounded_rates():
-    random.seed(4)
-    p = _pet(mood=24800 - 500)                        # seed ~200 after obedience+mood
-    p.sleep_limit = 9e9
-    adv = Adventure(p)
-    hits = 0
-    for _ in range(30):
-        ev = adv.travel()
-        if ev and ev[0] == "discover":
-            hits += 1
-        if ev and ev[0] in ("encounter", "boss"):
-            adv.boss_pending = False
-    assert hits >= 1                                  # 2250 fires/action, not 9
 
 
 def test_death_checks_apply_while_asleep():

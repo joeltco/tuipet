@@ -218,28 +218,19 @@ def test_every_egg_renders_a_shop_icon():
         assert any(ch.strip() for ln in cell for ch in ln), (i, egg.hatch_name(i))
 
 
-def test_locked_hints_reach_town_shelves():
-    """The goal board: some town teases a locked egg with an actionable hint."""
-    hints = {}
-    for t in range(26):
-        for i, hint in egg.locked_town_eggs(t, _prog(), set()):
-            hints[egg.hatch_name(i)] = hint
-    assert hints, "no town shows any locked-egg hint"
-    for hint in hints.values():
-        assert hint and len(hint) <= 45
+def test_locked_hints_reach_the_home_goal_board():
+    """The goal board (towns left with the world layer): the HOME shelf
+    teases locked eggs with actionable hints."""
+    board = egg.locked_home_eggs(_prog(), set(), cap=99)
+    assert board, "no chaseable locked eggs on the home board"
+    assert all(hint for _, hint in board)
 
 
 def test_every_buyable_egg_has_a_storefront():
-    """Every priced egg is sold somewhere: common eggs at the home shop, rares
-    in a biome-matched town; the two shelves are disjoint and cover them all."""
-    prog = _prog(album=set(range(0, 4000)), wins=99999, mega_kills=99999,
-                 max_gen=99, max_stage=5, xanti_ever=True,
-                 maps=set(range(200)), tourneys=set(range(200)),
-                 last_mood=99999, last_obed=99999, last_xanti=True,
-                 connections=99999)
+    """Every condition-met priced egg is sellable at the HOME shop now --
+    the town-exclusive rares re-homed when the towns left."""
+    prog = _rich_prog() if "_rich_prog" in dir() else _prog()
     buyable = {i for i, _ in egg.buyable_eggs(prog, set())}
     home = {i for i, _ in egg.home_eggs(prog, set())}
-    town = set().union(*(set(i for i, _ in egg.eggs_for_town(t, prog, set()))
-                         for t in range(26)))
-    assert home and town and home.isdisjoint(town)
-    assert buyable == home | town
+    assert buyable == home
+

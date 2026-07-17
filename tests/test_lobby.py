@@ -528,7 +528,7 @@ def test_battle_and_jogress_are_lobby_only():
     assert not hasattr(TuiPetApp, "action_jogress")
     assert "j" not in keys
     assert amap.get("b") == "bug"                                # never battle
-    assert "l" in keys and "a" in keys and "u" in keys      # the surviving routes
+    assert "l" in keys and "r" in keys and "u" in keys      # lobby, raid, cup
 
 
 def _jogress_session(monkeypatch, peer_two_phase=True):

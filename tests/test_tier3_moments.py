@@ -80,24 +80,13 @@ def test_legacy_bank_caps_at_thirty():
     assert len(legacy) == 30 and legacy[0]["gen"] == 11    # oldest rolled off
 
 
-def test_trophy_page_shows_map_conquest():
+def test_trophy_page_shows_raid_conquest():
     rows = _trophy_rows(Pet(num=100, stage="Champion"))
-    assert any("regions cleared" in v for _, v in rows)
+    assert any("raid bosses felled" in v for _, v in rows)
     assert len(rows) <= 9                              # the page's row budget
 
 
 # ---- rare drops break the monotone -------------------------------------------------------
-
-def test_loot_note_names_the_rare_tier():
-    from tuipet.adventure import Adventure
-    adv = Adventure.__new__(Adventure)
-    adv.loot = {"name": "Gold Pill", "price": 2500}
-    assert "RARE loot: Gold Pill!" in adv._loot_note()
-    adv.loot = {"name": "Oats", "price": 40}
-    assert adv._loot_note() == "  Loot: Oats!"
-
-
-# ---- the exit says goodbye ------------------------------------------------------------------
 
 def test_quit_prints_a_saved_acknowledgement():
     import inspect

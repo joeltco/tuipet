@@ -34,19 +34,6 @@ def _step(pan, k=None, ticks=1):
     return r
 
 
-def test_transport_panel_full_flow():
-    from tuipet.transportscreen import TransportPanel
-    p = _pet()
-    p.add_item("i:28")                          # Zone Transport (PhoenixTransport)
-    pan = TransportPanel(p, "i:28")
-    _step(pan); _step(pan, "down"); _step(pan, "up")
-    assert _step(pan, "enter") is None             # the ride plays first
-    r = _ride_out(pan)
-    assert r and r[0] == "done" and "Warped" in r[1]
-    pan2 = TransportPanel(p, "i:28")
-    assert _step(pan2, "escape") == ("done", None)
-
-
 def test_tournament_panel_select_and_a_full_cup():
     from tuipet.tournamentscreen import TournamentPanel
     from tuipet import tournament
@@ -72,25 +59,6 @@ def test_tournament_panel_select_and_a_full_cup():
         else:
             _step(pan, "enter", ticks=2)
     pan.text()
-
-
-def test_town_panel_every_phase():
-    from tuipet.townscreen import TownPanel
-    from tuipet import data
-    random.seed(3)
-    p = _pet()
-    for town in list(data.load_towns())[:2]:
-        pan = TownPanel(p, town)
-        _step(pan)
-        n = len(getattr(pan, "entries", [])) or 6
-        for i in range(n):                       # visit every menu entry
-            pan.phase = "menu"
-            pan.sub = None
-            pan.cursor = i if hasattr(pan, "cursor") else 0
-            _step(pan, "down")
-            _step(pan, "enter", ticks=2)
-            _step(pan, "down"); _step(pan, "enter", ticks=2)
-            _step(pan, "escape"); _step(pan, "escape")
 
 
 def test_jogress_panel_fuses():
@@ -173,20 +141,6 @@ def test_battle_surrender_ask_renders():
                 _step(pan, "space", ticks=2)
         if guard < 2000:
             break
-
-
-def test_adventure_panel_travels_and_renders_events():
-    from tuipet.adventurescreen import AdventurePanel
-    random.seed(4)
-    p = _pet()
-    pan = AdventurePanel(p)
-    for i in range(600):
-        _step(pan)
-        for k in ("enter", "1", "y", "space"):   # answer whatever prompt appeared
-            _step(pan, k)
-        if i % 50 == 0:
-            _step(pan, "i")                      # investigate / info keys
-    pan.text()
 
 
 def test_training_all_four_drills():
@@ -497,144 +451,3 @@ def _ride_out(pan):
     return pan.key("enter")
 
 
-def test_transports_land_at_canon_arrival_points():
-    """Canon PhysicalState.transport (audit 2026-07-04): warps land AT a place
-    -- Phoenix at the zone's first town, Birdra moves you to the town AND
-    rests, Garuda one step shy of the next boss.  Every warp used to dump you
-    at step 0 (and Garuda flagged a random ambush instead of the boss)."""
-    from tuipet import data
-    from tuipet.transportscreen import TransportPanel
-    from tuipet.adventure import Adventure
-
-    zone = data.load_maps()[0]["zones"][0]
-    first_town = zone["towns"][0][0]
-    first_boss = sorted(b.get("location") or zone.get("total_steps", 10000)
-                        for b in zone["bosses"])[0]
-
-    p = _pet()
-    p.add_item("i:28")
-    pan = TransportPanel(p, "i:28")
-    pan.kind = "zone"                              # Phoenix
-    pan.options = pan._options()
-    assert pan.key("enter") is None                # the ride plays first
-    r = _ride_out(pan)
-    assert r and "Warped" in r[1]
-    assert p.adv_loc == first_town
-    adv = Adventure(p)                             # the next journey consumes it
-    assert adv.location == first_town and p.adv_loc == 0
-
-    p.add_item("i:28")
-    p.energy = 1
-    pan = TransportPanel(p, "i:28")
-    pan.kind = "town"                              # Birdra: moved AND rested
-    pan.options = pan._options()
-    pan.key("enter"); _ride_out(pan)
-    assert p.adv_loc == first_town and p.energy == p.max_energy
-
-    p.add_item("i:28")
-    pan = TransportPanel(p, "i:28")
-    pan.kind = "danger"                            # Garuda: one shy of the boss
-    pan.options = pan._options()
-    pan.key("enter"); _ride_out(pan)
-    assert p.adv_loc == first_boss - 1
-    adv = Adventure(p)
-    assert adv.location == first_boss - 1
-    for _ in range(40):                            # refusals/discovers may stall,
-        ev = adv.travel()                          # but the FIRST real stride
-        if ev and ev[0] == "boss":                 # crosses the gate boss
-            break
-    assert ev and ev[0] == "boss"
-    assert adv.location == first_boss
-
-
-def test_continent_warp_lists_only_unlocked_maps():
-    """Canon drawMapSelect honours map unlocks: a Wha ticket day one must not
-    offer Continent 5 (transport re-audit 2026-07-05 -- all maps were listed)."""
-    from tuipet.transportscreen import TransportPanel
-    from tuipet import persistence
-    p = _pet()
-    p.add_item("i:31")                              # Continent Transport (Wha)
-    pan = TransportPanel(p, "i:31")
-    assert len(pan.options) == 1                    # fresh save: Continent 1 only
-    assert pan.options[0][1] == 0
-    persistence.map_complete_add(0)                 # first continent beaten
-    pan = TransportPanel(p, "i:31")
-    assert [o[1] for o in pan.options] == [0, 1]
-    p.adv_map = 3                                   # already standing on map 4:
-    pan = TransportPanel(p, "i:31")                 # never locked out of it
-    assert 3 in [o[1] for o in pan.options]
-
-
-def test_every_transport_plays_its_ride_scene():
-    """Canon animates ALL four transports (SpriteAnim whaTransport + transport()):
-    Whamon 193 surfaces/swims for the continent warp; Birdramon 97 / Garudamon
-    234 / Phoenixmon 292 swoop from above, scoop the pet, and drop it bouncing
-    at the destination.  Every frame stays in the 12x40 arena; the done is
-    deferred to the arrival hold; the ticket is consumed at confirm."""
-    from tuipet.transportscreen import TransportPanel, CARRIER
-    for key, kind in (("i:31", "continent"), ("i:28", "zone"),
-                      ("i:29", "town"), ("i:30", "danger")):
-        p = _pet()
-        p.add_item(key)
-        pan = TransportPanel(p, key)
-        assert pan.kind == kind and CARRIER[kind]
-        assert pan.key("enter") is None and pan.ride is not None
-        assert key not in p.inventory
-        stings = []
-        for _ in range(pan.ride["end"] + 6):
-            pan.anim()
-            if pan.sfx:
-                stings.append(pan.sfx)
-                pan.sfx = None
-            lines = pan.text().plain.split("\n")
-            assert len(lines) <= 12 and all(len(ln) <= 40 for ln in lines)
-        assert stings[0] == "happy" and stings[-1] == "reward"
-        assert stings.count("reward") == 1              # the hold must not re-sting
-        assert "ENTER done" in pan.strip()
-        r = pan.key("enter")
-        assert r[0] == "done" and "Warped" in r[1]
-        # skip: one press jumps to the hold, the next closes
-        p.add_item(key)
-        pan2 = TransportPanel(p, key)
-        pan2.key("enter"); pan2.anim(); pan2.key("space")
-        assert pan2.ride["t"] == pan2.ride["end"]
-        assert pan2.key("enter")[0] == "done"
-
-
-def test_transport_bird_swoop_actually_moves_vertically(monkeypatch):
-    """The swoop's blank-row lift ran BEFORE grid.prep, which crops padding --
-    so the 'descends from above / drops from the sky' beats rendered fully
-    grounded for weeks, never render-verified (audit 2026-07-13).  Lift now
-    pads AFTER prep, clamped to the band: heights must VARY across the
-    descent, and no placement may stand taller than the band."""
-    from tuipet import transportscreen as ts, menu, grid
-    captured = []
-    real_paint = menu.paint
-
-    def spy(placements, bgimg, **kw):
-        captured.append([rows for rows, _x, _m in placements])
-        return real_paint(placements, bgimg, **kw)
-
-    monkeypatch.setattr(menu, "paint", spy)
-    p = _pet()
-    p.add_item("i:28")
-    pan = ts.TransportPanel(p, "i:28")
-    _step(pan, "enter")
-    if pan.ride is None or pan.ride.get("wha"):
-        import pytest
-        pytest.skip("this warp staged the whamon ride, not the bird")
-    heights = []
-    while pan.ride is not None and pan.ride["t"] < ts.BIRD_GONE_T:
-        pan.text()
-        if captured and len(captured[-1]) == 2:      # pet + descending bird
-            bird = captured[-1][-1]
-            heights.append(len(bird))
-            assert len(bird) <= grid.BAND, "a lifted rider must never leave the band"
-        pan.anim()
-    assert heights, "the descent beats must have staged the bird"
-    if max(heights) > min(heights):
-        assert True                                   # real vertical motion restored
-    else:
-        # a full-height bird has no headroom: the clamp holds it grounded,
-        # which is the lawful reading -- assert the clamp actually engaged
-        assert max(heights) == grid.BAND

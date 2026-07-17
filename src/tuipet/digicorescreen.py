@@ -231,13 +231,13 @@ def _trophy_rows(pet):
     # mons??").
     total = len({data.canonical_num(n) for n in by if not data.is_placeholder(n)})
     rows.append(("Album", f"{seen}/{total} discovered"))
-    # map conquest was tracked but shown NOWHERE (sweep 2026-07-14): it gated
-    # continents silently while Album and cups got a shelf
+    # the Maps row became the Raids row (BASIC VPET 2026-07-16): adventure
+    # left, and felled community bosses gate the old MapComplete eggs now
     try:
-        cleared = len(_p.get_progress().get("maps", ()) or ())
+        felled = int(_p.get_progress().get("raids", 0) or 0)
     except Exception:
-        cleared = 0
-    rows.append(("Maps", f"{cleared}/{len(data.load_maps())} regions cleared"))
+        felled = 0
+    rows.append(("Raids", f"{felled} raid bosses felled"))
     won = sorted((getattr(pet, "trophies_won", None) or {}).items())
     for tid, season in won[:4]:                     # keep the page at 9 rows max
         tr = _t.trophy_by_id(tid)                   # (was 5: the Maps row joined)

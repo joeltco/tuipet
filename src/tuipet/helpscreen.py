@@ -15,9 +15,9 @@ HELP = [
     ("s lights   v assistant", 1),
     ("", 0),
     ("EXPLORE", 2),
-    ("a adventure - travel named regions,", 1),
-    ("  fight wilds, clear zone bosses,", 0),
-    ("  find items, rest in towns", 0),
+    ("r raid - the community boss: fight", 1),
+    ("  10-round volleys, break the shared", 0),
+    ("  pool together, claim the purse", 0),
     ("u cup - hourly tournaments; win", 1),
     ("  trophies to unlock new eggs", 0),
     ("l lobby - go online: chat, and", 1),
@@ -39,9 +39,8 @@ HELP = [
     ("TIPS", 2),
     ("Feed when hungry, clean the poop,", 0),
     ("and let it sleep at night. Win cups", 0),
-    ("and adventures to unlock more eggs.", 0),
-    ("Town shops sell eggs themed to their", 0),
-    ("biome - explore to find them all.", 0),
+    ("and fell raid bosses to unlock more", 0),
+    ("eggs - the shop licenses the rest.", 0),
 ]
 
 

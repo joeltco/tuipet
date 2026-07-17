@@ -29,6 +29,7 @@ ALLOWED_SILENT = {
     # Bandai grammar 2026-07-11: the matrix is a stage, not a dashboard --
     # badges live on the status side (HUD deco / digicore / msg-box alarm)
     "st_teach": "discipline window icon; the system left (BASIC VPET 2026-07-16)",
+    "attention": "the road's DiscoverCall bubble; adventure left (2026-07-16)",
     "core_xtemp": "Temporary protoform badge; the state left with the X slim",
     "praise": "discipline sprite; the system left (BASIC VPET 2026-07-16)",
     "scold": "discipline sprite; the system left (BASIC VPET 2026-07-16)",

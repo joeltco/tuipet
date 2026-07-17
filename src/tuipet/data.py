@@ -1368,6 +1368,12 @@ def load_egg_unlock():
             # exclusive rare) / "" (earned-free, never in a shop)
             "store": (r[27].strip().lower() if len(r) > 27 else ""),
         }
+        if rules[idx]["map"] is not None:
+            # the raid re-gate (BASIC VPET 2026-07-16): adventure left with
+            # the world layer, so the CSV's map-clear stories become felled-
+            # raid milestones (a map-N row opens after N+1 broken bosses)
+            rules[idx]["desc"] = f"Fell {rules[idx]['map'] + 1} raid " \
+                + ("boss" if rules[idx]["map"] == 0 else "bosses")
     return rules
 
 

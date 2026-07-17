@@ -46,17 +46,6 @@ def trophy_label(t):
     return "%s Open #%d" % (t["season"], t["id"] + 1)   # display 1-based ("#0" reads like a bug)
 
 
-def biome_cup_id(season, field):
-    """The field-restricted cup for a biome's field this season (a town's
-    signature championship), or -1 when the field has no cup.  Every town
-    biome field has a cup in all four seasons in the classic data."""
-    if not field:
-        return -1
-    for t in data.load_tournies():
-        if t["season"] == season and t.get("field_req") == field:
-            return t["id"]
-    return -1
-
 
 def trophy_by_id(tid):
     for t in data.load_tournies():
@@ -151,34 +140,6 @@ def schedule(pet):
     return pet.tourney_schedule
 
 
-def town_schedule(pet, town):
-    """Town.getTrophies -> randTrophyIDs(season, [tournamentLimit], forced):
-    slots 0-23 are hourly cups; slots PAST 23 (where the forced trophies pin)
-    are ALWAYS open (getTourneyTime returns -1 -> never closed)."""
-    n = max(0, int(town.get("tournament_limit", 0)))
-    sched = _rand_trophy_ids(pet)[:min(n, HOME_LIMIT)]
-    while len(sched) < n:
-        sched.append(-1)
-    forced = [t for t in town.get("forced_trophies", []) if trophy_by_id(t)]
-    for i, tid in enumerate(forced):
-        if n - 1 - i >= 0:
-            sched[n - 1 - i] = tid
-    # biome bias (Joel 2026-07-09): the town's always-open signature slot (index
-    # > 23, never closed) hosts its biome field's championship, on top of the
-    # rotating hourly bracket -- a themed cup the biome's own kind can always enter
-    from . import world
-    cup = biome_cup_id(pet.season, world.town_field(town.get("id", -1)))
-    if cup >= 0:
-        for i in range(len(sched) - 1, HOME_LIMIT - 1, -1):   # always-open slots
-            if sched[i] == -1:
-                sched[i] = cup
-                break
-    return sched
-
-
-def town_slot_open(pet, index):
-    """checkTourneyClosed with getTourneyTime: hourly for 0-23, open past 23."""
-    return index > 23 or index == _hour(pet)
 
 
 def open_now(pet):
@@ -335,16 +296,6 @@ def _mk_entrant(rec, trophy, open_mega):
     return e
 
 
-def _biased_choice(pool, field_bias, trophy):
-    """Draw one entrant, skewed toward the biome field when the CUP itself
-    sets no field (a field cup already dictates its roster).  Soft (~60%)
-    so the bracket still varies, and it never narrows an empty pool."""
-    if field_bias and not trophy["field_req"] and not trophy["enemy_field"]:
-        biome = [r for r in pool if r.get("field") == field_bias]
-        if biome and random.random() < 0.6:
-            return random.choice(biome)
-    return random.choice(pool)
-
 
 def _npc_winner(a, b):
     """DVPet auto-fights NPC matches with the full battle engine; tuipet's
@@ -356,10 +307,9 @@ def _npc_winner(a, b):
 
 
 class Tournament:
-    def __init__(self, pet, trophy, field_bias=""):
+    def __init__(self, pet, trophy):
         self.pet = pet
         self.trophy = trophy
-        self.field_bias = field_bias
         self.name = trophy_label(trophy)
         self.round = 0
         self.over = False
@@ -389,7 +339,7 @@ class Tournament:
             pool = [r for n, r in by_num.items()
                     if r["stage"] not in ("Egg", "Fresh", "InTraining")
                     and not data.is_placeholder(n)]
-        self.entrants = [_mk_entrant(_biased_choice(pool, field_bias, trophy), trophy, open_mega)
+        self.entrants = [_mk_entrant(random.choice(pool), trophy, open_mega)
                          for _ in range(7)]
         # the bracket: entrants + the player at a random slot, pairs (0,1)(2,3)...
         self.bracket = list(self.entrants)

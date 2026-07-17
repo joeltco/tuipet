@@ -46,5 +46,5 @@ def test_help_lines_fit_the_box():
     assert all(len(t) <= 38 for t, _ in HELP)      # never overflow the 40-col LCD
     # every control section a new player needs is covered
     body = " ".join(t for t, _ in HELP)
-    for token in ("feed", "adventure", "cup", "lobby", "DNA", "shop", "bug"):
+    for token in ("feed", "raid", "cup", "lobby", "DNA", "shop", "bug"):
         assert token in body

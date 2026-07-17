@@ -112,7 +112,10 @@ def _conditions_met(rule, prog):
         return False
     if rule["tourney"] is not None and rule["tourney"] not in prog["tourneys"]:
         return False
-    if rule["map"] is not None and rule["map"] not in prog["maps"]:
+    # MapComplete rows re-gated (BASIC VPET 2026-07-16): adventure left with
+    # the world layer, so a row's map index becomes a felled-raid milestone --
+    # a map-N row opens after N+1 broken raid bosses (the CSV ran maps 0..4)
+    if rule["map"] is not None and prog.get("raids", 0) <= rule["map"]:
         return False
     if rule["history"] and not all(data.canonical_num(n) in prog["album"]
                                    for n in rule["history"]):
@@ -226,6 +229,9 @@ def unlock_progress(idx, prog):
         return f"species recorded {min(len(prog['album']), rule['album_n'])}/{rule['album_n']}"
     if rule.get("mega") is not None:
         return f"Mega-class felled {min(prog.get('mega_kills', 0), rule['mega'])}/{rule['mega']}"
+    if rule.get("map") is not None:
+        need = rule["map"] + 1                # the raid re-gate (2026-07-16)
+        return f"raid bosses felled {min(prog.get('raids', 0), need)}/{need}"
     if rule["gen"] is not None:
         return f"generation {min(prog['max_gen'], rule['gen'])}/{rule['gen']}"
     return rule.get("desc", "")
@@ -245,6 +251,8 @@ def unlock_ratio(idx, prog):
         return min(1.0, len(prog["album"]) / max(1, rule["album_n"]))
     if rule.get("mega") is not None:
         return min(1.0, prog.get("mega_kills", 0) / max(1, rule["mega"]))
+    if rule.get("map") is not None:
+        return min(1.0, prog.get("raids", 0) / (rule["map"] + 1))
     if rule["gen"] is not None:
         return min(1.0, prog["max_gen"] / max(1, rule["gen"]))
     return None
@@ -281,70 +289,11 @@ if __name__ == "__main__":
 
 
 # --- themed TOWN egg shops: spread the buyable roster across the world by habitat ---
-@lru_cache(maxsize=1)
-def _egg_themes():
-    """egg_idx -> (dominant field, dominant element) of the egg's evolution
-    line, from lines.csv x the sprite records."""
-    from . import data
-    import csv as _csv
-    from collections import Counter, defaultdict
-    _, by_num = data.load_sprites()
-    line_forms, fresh_line = defaultdict(list), {}
-    for r in _csv.reader(open(os.path.join(_DATA, "lines.csv"))):
-        if not r or r[0] == "LineID":
-            continue
-        line_forms[r[0]].append(int(r[2]))
-        if r[1] == "Fresh":
-            fresh_line[int(r[2])] = r[0]
-    def dom(vals):
-        c = Counter(v for v in vals if v and v not in ("None", "Empty"))
-        return c.most_common(1)[0][0] if c else None
-    # the Pendulum field eggs ARE their field -- theme by name, not by the
-    # dominant stat of whatever line their baby roots (a Deep Savers egg
-    # belongs to ocean towns even if its line wanders)
-    named_field = {"Nature Spirits Egg": "NatureSpirit",
-                   "Deep Savers Egg": "DeepSaver",
-                   "Nightmare Soldiers Egg": "NightmareSoldier",
-                   "Metal Empire Egg": "MetalEmpire",
-                   "Wind Guardians Egg": "WindGuardian",
-                   "Virus Busters Egg": "VirusBuster",
-                   "Virus Busters Ver. 20th Egg": "VirusBuster"}
-    out = {}
-    for i in range(count()):
-        if hatch_name(i) in named_field:
-            out[i] = (named_field[hatch_name(i)], None)
-            continue
-        t = hatch_targets(i)
-        # multi-target eggs (the Terriermon/Lopmon twins digitama) theme on
-        # the UNION of their lines, so they still find a home shelf
-        lids = sorted({l for l in (fresh_line.get(x) for x in t) if l})
-        if not lids:
-            continue
-        forms = [n for lid in lids for n in line_forms.get(lid, [])]
-        out[i] = (dom(by_num.get(n, {}).get("field") for n in forms),
-                  dom(by_num.get(n, {}).get("element") for n in forms))
-    return out
-
-
-@lru_cache(maxsize=1)
-def _town_egg_map():
-    """egg_idx -> frozenset(town_ids) whose home-habitat field/element matches the egg's
-    evolution line.  The town side comes from world.town_compat -- the SAME
-    _town_biome derivation as the greeting/cup/specialties, so the egg shelf
-    never contradicts what the town says it is (split-brain fix 2026-07-10)."""
-    from . import data, world
-    from collections import defaultdict
-    town_theme = {tid: world.town_compat(tid) for tid in data.load_towns()}
-    m = defaultdict(set)
-    for i, (fld, ele) in _egg_themes().items():
-        for tid, (flds, eles) in town_theme.items():
-            if (fld and fld in flds) or (ele and ele in eles):
-                m[i].add(tid)
-    return {i: frozenset(t) for i, t in m.items()}
 
 
 def _store_of(idx):
-    """Which storefront sells this egg: "home" / "town" / "" (earned-free)."""
+    """Which storefront sells this egg -- "home"/"town" both mean the home
+    shop now (the towns left with the world layer; BASIC VPET 2026-07-16)."""
     from . import data
     return (data.load_egg_unlock().get(idx) or {}).get("store", "")
 
@@ -359,14 +308,9 @@ def _chaseable(rule):
 
 def home_eggs(prog, owned):
     """(idx, price) buyable eggs sold at the HOME shop -- the common storefront."""
-    return [(i, p) for i, p in buyable_eggs(prog, owned) if _store_of(i) == "home"]
-
-
-def eggs_for_town(town_id, prog, owned):
-    """(idx, price) TOWN-exclusive rares whose biome theme matches this town."""
-    tm = _town_egg_map()
     return [(i, p) for i, p in buyable_eggs(prog, owned)
-            if _store_of(i) == "town" and town_id in tm.get(i, frozenset())]
+            if _store_of(i) in ("home", "town")]
+
 
 
 def locked_home_eggs(prog, owned, cap=6):
@@ -376,27 +320,13 @@ def locked_home_eggs(prog, owned, cap=6):
     rules = data.load_egg_unlock()
     out = []
     for i, (state, _) in sorted(egg_states(prog, owned).items()):
-        if state == "locked" and _store_of(i) == "home" and _chaseable(rules.get(i)):
+        if state == "locked" and _store_of(i) in ("home", "town") \
+                and _chaseable(rules.get(i)):
             out.append((i, rules[i]["desc"]))
             if len(out) >= cap:
                 break
     return out
 
-
-def locked_town_eggs(town_id, prog, owned, cap=6):
-    """(idx, hint) for LOCKED town-exclusive eggs themed to this town -- the
-    town shop's goal board (a hint you can't act on stays hidden)."""
-    from . import data
-    tm = _town_egg_map()
-    rules = data.load_egg_unlock()
-    out = []
-    for i, (state, _) in sorted(egg_states(prog, owned).items()):
-        if (state == "locked" and _store_of(i) == "town"
-                and town_id in tm.get(i, frozenset()) and _chaseable(rules.get(i))):
-            out.append((i, rules[i]["desc"]))
-            if len(out) >= cap:
-                break
-    return out
 
 
 def locked_shop_entry(idx, hint):

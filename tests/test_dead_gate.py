@@ -141,57 +141,6 @@ def test_battle_panel_survives_a_direct_egg():
         pan.text()                                # crashed before the fix
 
 
-def test_no_raw_sprite_sheet_indexing_survives():
-    """The egg-crash pattern was ALWAYS the same line: a raw
-    `load_sprites()[1][num]` index with no entry for the egg's -1 (habitat,
-    training, battle, adventure, transport -- five shipped instances).
-    data.frames_for/bob_frame own safe access now; the raw index is BANNED
-    outside data.py (egg sweep 2026-07-06)."""
-    import glob
-    import os
-    root = os.path.join(os.path.dirname(__file__), "..", "src", "tuipet")
-    hits = []
-    for fn in glob.glob(os.path.join(root, "*.py")):
-        if fn.endswith("data.py"):
-            continue
-        for n, line in enumerate(open(fn), 1):
-            if "load_sprites()[1][" in line:
-                hits.append(f"{os.path.basename(fn)}:{n}")
-    assert not hits, f"raw sheet indexing (egg-crash pattern): {hits}"
-
-
-def test_remaining_panels_survive_a_direct_egg():
-    """Direct-construct sweep with forced deep phases (the gates normally
-    block these, but gates move): adventure travel, the transport ride, the
-    DNA mash, the jogress fuse scene."""
-    import random
-    from tuipet.pet import Pet
-    from tuipet.dnascreen import DNAPanel
-    from tuipet.jogressscreen import JogressPanel
-    from tuipet.adventurescreen import AdventurePanel
-    from tuipet.transportscreen import TransportPanel
-
-    def egg():
-        e = Pet.new_egg()
-        e.world_seconds = 10 * 60.0
-        return e
-
-    random.seed(3)
-    for pan, keys, ticks in (
-            (AdventurePanel(egg()), ("enter", "space", "escape"), 30),
-            (TransportPanel(egg(), "i:28"), ("space", "enter"), 20),
-            (DNAPanel(egg()), ("space", "space"), 12),
-            (JogressPanel(egg(), -1, -1, -1), ("space",), 40)):
-        if isinstance(pan, DNAPanel):
-            pan.phase, pan.bet = "mash", 10
-        for k in ("",) + keys:
-            if k:
-                pan.key(k)
-            for _ in range(ticks):
-                pan.anim()
-            pan.text()
-
-
 def _dead():
     from tuipet.pet import Pet
     p = Pet(num=4, stage="Rookie", attribute="Vaccine")
@@ -226,49 +175,6 @@ def test_offline_catchup_never_decays_a_corpse():
     assert (pet.hunger, pet.poop, pet.care_mistakes, pet.mood) == (
         d.hunger, d.poop, d.care_mistakes, d.mood), "the departed do not decay"
     assert "needs care" not in msg
-
-
-def test_every_panel_survives_a_direct_corpse():
-    """The egg sweep's direct-construct pattern, dead edition: walk every
-    panel with a dead pet (gates move; panels grow new callers)."""
-    import random
-    from tuipet.feedscreen import FeedPanel
-    from tuipet.shopscreen import ShopPanel
-    from tuipet.training import TrainingPanel
-    from tuipet.battlescreen import BattlePanel
-    from tuipet.dnascreen import DNAPanel
-    from tuipet.jogressscreen import JogressPanel
-    from tuipet.tournamentscreen import TournamentPanel
-    from tuipet.townscreen import TownPanel
-    from tuipet.adventurescreen import AdventurePanel
-    from tuipet.transportscreen import TransportPanel
-    from tuipet.habitatscreen import HabitatPanel
-    from tuipet.digicorescreen import DigiCorePanel
-    random.seed(3)
-    walks = (
-        (FeedPanel(_dead()), ("down", "enter", "escape"), 12),
-        (ShopPanel(_dead()), ("right", "enter", "tab", "enter", "r"), 12),
-        (TrainingPanel(_dead()), ("down", "enter", "space", "1", "escape"), 12),
-        (BattlePanel(_dead()), ("enter", "1", "space", "escape"), 15),
-        (DNAPanel(_dead()), ("space", "space"), 12),
-        (JogressPanel(_dead(), -1, -1, -1), ("space",), 40),
-        (TournamentPanel(_dead()), ("down", "enter", "escape"), 12),
-        (TownPanel(_dead(), 0), ("enter", "down", "enter", "escape"), 12),
-        (AdventurePanel(_dead()), ("enter", "space", "escape"), 30),
-        (TransportPanel(_dead(), "i:28"), ("space", "enter"), 20),
-        (HabitatPanel(_dead()), ("down", "escape"), 12),
-        (DigiCorePanel(_dead()), ("space", "right", "down", "enter", "escape"), 12),
-    )
-    for pan, keys, ticks in walks:
-        if isinstance(pan, DNAPanel):
-            pan.phase, pan.bet = "mash", 10
-        for k in ("",) + keys:
-            if k:
-                pan.key(k)
-            for _ in range(ticks):
-                if hasattr(pan, "anim"):
-                    pan.anim()
-            pan.text()
 
 
 def test_every_panel_survives_a_direct_sleeper():

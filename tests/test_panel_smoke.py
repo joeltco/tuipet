@@ -111,14 +111,6 @@ def test_the_simple_panels_all_draw():
     _walk(FeedPanel(p), ["down", "up"])
 
 
-def test_town_and_adventure_panels_draw():
-    from tuipet.adventurescreen import AdventurePanel
-    p = _pet()
-    p.sleep_limit = 9e9
-    pan = AdventurePanel(p)
-    _walk(pan, ["down", "up"])
-
-
 def test_shop_egg_tab_renders_the_egg_icon():
     """The egg tab's preview slot draws the REAL egg sprite (audit 2026-07-04):
     exercise that icon path with a buyable egg so it can never ship broken."""
@@ -139,101 +131,6 @@ def test_shop_egg_tab_renders_the_egg_icon():
     pan.text()                             # the egg icon path executes
     pan.key("down")
     pan.text()
-
-
-def test_scene_screens_fit_the_physical_lcd_in_every_state():
-    """Box-clip audit 2026-07-04: the visual sweep's scene screens stacked
-    header/note/footer INSIDE the LCD and ran 15-17 lines into the physical
-    12-row box -- the live compositor clipped everything below the arena
-    (the town errand strip, adventure controls, drill gauges, the epitaph)
-    while the PNG raster harness rendered the full Text.  Scene chrome now
-    rides the #msg strip (panel.strip()); this walks the REAL deep states
-    through the _render budget so the box can never be overflowed again."""
-    import random
-    random.seed(3)
-    p = _pet()
-
-    from tuipet.training import TrainingPanel, GAMES
-    for gi in range(len(GAMES)):
-        pan = TrainingPanel(p)
-        pan.gi = gi
-        _render(pan)
-        pan.key("enter")                        # into the drill
-        for _ in range(30):                     # play ticks + a few presses
-            pan.anim()
-            _render(pan)
-            pan.key("space")
-        pan.strip()                             # the gauge renders
-
-    from tuipet.adventurescreen import AdventurePanel
-    pan = AdventurePanel(p)
-    while pan._trans is not None:               # the arrival habitat fade
-        pan.anim()
-        _render(pan)
-        pan.strip()
-    for _ in range(60):                         # travel: encounters may open battle subs
-        pan.anim()
-        _render(pan)
-    pan.sub = None; pan._pending = None
-    pan._pulse = {"t": 0}                       # the zoneChange pulse transition
-    while pan._pulse is not None:
-        pan.anim()
-        _render(pan)
-        pan.strip()
-    for kind, good in (("cheer", True), ("cheer", False),   # the road care beats
-                       ("jeer", True), ("jeer", False), ("heal", True)):
-        pan._care = {"kind": kind, "good": good, "t": 0, "resume": False}
-        while pan._care is not None and pan._care["kind"] == kind:
-            pan.anim()
-            _render(pan)
-            pan.strip()
-        pan._care = None
-    pan.discovering, pan.travelling = True, False
-    _render(pan); assert pan.strip()
-    pan.key("enter")                            # investigate playbook end-to-end
-    for _ in range(60):
-        pan.anim()
-        _render(pan)
-        pan.strip()
-    pan.sub = None; pan._pending = None
-    pan.key("escape")                           # the homecoming fade walks out
-    while pan._trans is not None:
-        pan.anim()
-        _render(pan)
-        pan.strip()
-    # pass 5: the homecoming may carry a completion line as payload
-    assert pan.auto_close[0] == "done"
-
-    from tuipet.townscreen import TownPanel
-    pan = TownPanel(p, 0)
-    _render(pan); assert "Food" in pan.strip()
-    for key in ("food", "items", "sell", "cups"):
-        pan.phase, pan.cursor = key, 0
-        _render(pan)
-    from tuipet import tournament as tmod
-    tr = next((t for t in (tmod.trophy_by_id(i) for i in range(40)) if t), None)
-    pan.phase = "menu"
-    pan.tourney = tmod.Tournament(p, tr)
-    _render(pan); assert "fight" in pan.strip()
-    pan.key("space")                            # the bout opens (battle sub renders)
-    for _ in range(20):
-        pan.anim()
-        _render(pan)
-
-    from tuipet.dnascreen import DNAPanel
-    pan = DNAPanel(p)
-    pan.phase, pan.bet = "mash", 10
-    for _ in range(15):
-        pan.anim()
-        _render(pan)
-        pan.key("space")
-    assert "SPACE" in pan.strip()
-
-    from tuipet.deathscreen import DeathPanel
-    dead = _pet(dead=True)
-    pan = DeathPanel(dead)
-    _render(pan)
-    assert "R.I.P." in pan.strip()
 
 
 def test_drill_hints_wrap_clean_on_the_status_card():

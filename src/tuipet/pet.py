@@ -936,12 +936,8 @@ class Pet:
     tourney_alert: bool = False     # TournamentAlert: the call is ringing (this hour only)
     full_health: int = STARTING_HEALTH_POINTS   # _fullHealthPoints: TRAINED battle HP
     perfect_wins: int = 0           # _perfectWins: HP-drill wins toward the next +1 HP
-    adv_map: int = 0
-    adv_zone: int = 0
-    adv_seek: bool = False    # Disaster Transport: next adventure leg forces an encounter
-    adv_loc: int = 0          # transport ARRIVAL step (canon warps land AT a place: the
-    #                           zone's first town / the next boss, not step 0) -- the next
-    #                           Adventure starts here, then it clears (audit 2026-07-04)
+    # (the adventure fields -- adv_map/adv_zone/adv_seek/adv_loc -- left
+    # with the world layer; BASIC VPET 2026-07-16)
     egg_type: int = 0
     lifespan: float = LIFE_START
     generation: int = 1
@@ -3173,6 +3169,12 @@ class Pet:
         SICK opponent is contagious, and the disposition factor shades every
         win/loss mood.  The battle passes its BAKED style so a mid-fight
         toggle can't split the bonus from the rewards."""
+        if source == "raid":
+            # the clone's generate_raid wrote NOTHING on the pet: a raid
+            # attempt is a damage report to the relay, not a win/loss on the
+            # record -- the felled boss pays at claim instead (KO6 + the
+            # raids egg channel; BASIC VPET 2026-07-16)
+            return ""
         style_free = self.free_style if free_style is None else free_style
         complied = self.check_compliant()                # battleEnd: checkCompliant
         surr_declined = getattr(self, "_surr_declined", False)   # one bout only

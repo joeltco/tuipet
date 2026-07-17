@@ -198,6 +198,8 @@ class LobbyClient(_WsClient):
         self._had_welcome = False             # a past successful login makes drops RECONNECTS
         self._backoff0 = 2.0                  # first-retry delay (tests shrink it)
         self.ladder = None                    # last ladder message (rankings page)
+        self.raid = None                      # last raid status message (the raid page)
+        self.raid_reward = None               # a claimed reward, consumed once
 
     # ---- outgoing (called from the UI thread/loop) -----------------------
     def _send(self, obj):
@@ -205,6 +207,16 @@ class LobbyClient(_WsClient):
 
     def chat(self, text):
         self._send({"t": "chat", "text": text})
+
+    # ---- the raid boss (DSprite raids; BASIC VPET 2026-07-16) -------------
+    def raid_get(self):
+        self._send({"t": "raid_get"})
+
+    def raid_hit(self, damage, stage):
+        self._send({"t": "raid_hit", "damage": int(damage), "stage": stage})
+
+    def raid_claim(self, raid_id):
+        self._send({"t": "raid_claim", "raid": raid_id})
 
     def update_pet(self, pet):
         self.pet = pet
@@ -328,6 +340,13 @@ class LobbyClient(_WsClient):
             to = m.get("to_name", "?")
             s.dms.setdefault(to, []).append((s.me_name or "you", m.get("text", "")))
             del s.dms[to][:-CHAT_CAP]
+        elif t == "raid":
+            self.raid = m                 # the raid page renders from this
+        elif t == "raid_hit":
+            self.raid = None              # stale view: the pool moved; refetch
+            self.last_hit = m
+        elif t == "raid_reward":
+            self.raid_reward = m          # the claim flow consumes this once
         elif t in ("invite", "invite_resp", "relay"):
             s.inbox.append(m)
         elif t == "login_failed":

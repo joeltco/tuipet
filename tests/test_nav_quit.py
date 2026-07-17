@@ -103,15 +103,6 @@ def test_non_text_screen_ignores_character_translation():
 
 # --- toggle-close consistency: a screen's opening key also closes it -----------
 
-def test_adventure_closes_with_its_opening_key():
-    from tuipet import adventurescreen
-    p = adventurescreen.AdventurePanel.__new__(adventurescreen.AdventurePanel)
-    p.sub = None
-    p.adv = type("A", (), {"done": False})()
-    p.travelling = False
-    assert p.key("a") == ("done", None)       # 'a' (opened it) also closes it
-
-
 def test_tournament_closes_with_its_opening_key_in_all_phases():
     from tuipet import tournamentscreen
     p = tournamentscreen.TournamentPanel.__new__(tournamentscreen.TournamentPanel)

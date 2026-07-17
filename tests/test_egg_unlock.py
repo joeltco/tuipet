@@ -8,7 +8,7 @@ from tuipet import data, egg
 
 EMPTY = {
     "album": set(), "wins": 0, "max_gen": 1, "max_stage": 0, "xanti_ever": False,
-    "maps": set(), "tourneys": set(), "last_field": "None", "last_attr": "None",
+    "maps": set(), "raids": 0, "tourneys": set(), "last_field": "None", "last_attr": "None",
     "last_elem": "None", "last_mood": 0, "last_obed": 0, "last_xanti": False,
 }
 
@@ -21,7 +21,7 @@ def _prog_for(rule):
         "album": set(range(0, 4000)),
         "wins": 99999, "mega_kills": 99999, "max_gen": 99, "max_stage": 5,
         "xanti_ever": True,
-        "maps": set(range(0, 200)), "tourneys": set(range(0, 200)),
+        "maps": set(range(0, 200)), "raids": 99999, "tourneys": set(range(0, 200)),
         "last_field": "None", "last_attr": "None", "last_elem": "None",
         "last_mood": 99999, "last_obed": 99999, "last_xanti": True,
         "connections": 99999,
@@ -188,8 +188,9 @@ def test_new_egg_starts_warm():
 
 
 def test_carimon_is_earned_by_conquering_the_world():
-    """The old password egg is now a free achievement: clear all 5 regions."""
+    """The old password egg is a free achievement: its map-4 row is the raid
+    re-gate's deepest milestone -- 5 felled community bosses (2026-07-16)."""
     idx = next(r["idx"] for r in data.load_egg_unlock().values() if r["name"] == "Carimon")
     assert data.load_egg_unlock()[idx]["password"] is None      # no code any more
-    assert egg.egg_state(idx, dict(EMPTY, maps={0, 1, 2}), set())[0] == "locked"
-    assert egg.egg_state(idx, dict(EMPTY, maps={0, 1, 2, 3, 4}), set()) == ("owned", 0)
+    assert egg.egg_state(idx, dict(EMPTY, raids=4), set())[0] == "locked"
+    assert egg.egg_state(idx, dict(EMPTY, raids=5), set()) == ("owned", 0)
