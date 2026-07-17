@@ -59,10 +59,8 @@ def core_badge_key(pet):
         return None
     if pick:
         return pick
-    if x == "Temporary":
-        return "core_xtemp"
     if x != "None":
-        return "core_xreq"                      # Permanent / X-Program
+        return "core_xreq"                      # Permanent (binary since the X slim)
     return "core_xnone"
 
 

@@ -88,7 +88,7 @@ def test_only_induced_x_forms_need_the_antibody(monkeypatch, pet):
     assert pet.x_antibody == "None"
     assert evolution.check(pet, 1) is True        # Natural: care alone reaches it
     assert evolution.check(pet, 2) is False       # Induced: the antibody is the key
-    pet.x_antibody = "Temporary"
+    pet.x_antibody = "Permanent"
     assert evolution.check(pet, 2) is True
 
 

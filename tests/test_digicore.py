@@ -29,10 +29,9 @@ def test_core_number_counts_up_past_growth():
 
 
 def test_badge_follows_x_antibody_state():
+    """BINARY since the X slim (2026-07-16): none or the Permanent badge."""
     p = _pet()
     assert core_badge_key(p) == "core_xnone"
-    p.x_antibody = "Temporary"
-    assert core_badge_key(p) == "core_xtemp"
     p.x_antibody = "Permanent"
     assert core_badge_key(p) == "core_xreq"
 

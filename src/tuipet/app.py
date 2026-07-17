@@ -264,9 +264,9 @@ class TuiPetApp(App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("TOUGHER STOCK: fatigue and injuries are gone - no more "
-                 "sprains, worn-out slumps or bandages. Sickness is the one "
-                 "threat now, and the pill is its cure.")
+    WHATS_NEW = ("ONE TRUE ANTIBODY: the X-Antibody is yours or it isn't - "
+                 "no fading protoforms. The chip (or a natural X evolution) "
+                 "opens all 110 X roads for good.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and

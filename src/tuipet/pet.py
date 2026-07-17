@@ -767,12 +767,14 @@ VITAMIN_OVERFED_SICK_CHANCE = 50         # VitaminOverfedSickChance (RefuseChanc
 MEDICINE_HOURS = 60                      # MedicineHours (game-min the medicine indicator lingers, config.csv)
 BANDAGE_HOURS = 60                       # BandageHours (game-min the bandage indicator lingers, config.csv)
 
-# X-Antibody: a special state that unlocks evolution into the "X" Digimon forms.
-# None -> Temporary (decays) -> Permanent -> XProgram.  Acquired by a rare natural
-# birth roll or the X-Antibody / X-Program items.  (DVPet birth is 1/1000; bumped
-# for tuipet so it is an occasional surprise rather than never seen.)
-X_COUNT_MAX = 3600.0
-_XA_ORDER = {"None": 0, "Temporary": 1, "Permanent": 2, "XProgram": 3}
+# X-Antibody: a special state that unlocks evolution into the "X" Digimon
+# forms.  BINARY since the X slim (BASIC VPET 2026-07-16): None or Permanent
+# -- the Temporary protoform (hour decay) and XProgram lost their granters
+# with the DVPet item catalog.  Acquired by the shop chip or a Natural X
+# evolution.
+# BINARY since the X slim (BASIC VPET 2026-07-16): None or Permanent.  The
+# Temporary protoform (hour-decay) lost its only granter with the DVPet
+# item catalog and left; XProgram likewise.
 
 # Personality: DVPet's 3x3x3 table over (disposition, glutton, restless), each in
 # {-1 low, 0 neutral, +1 high}.  Ported verbatim from PhysicalState.checkPersonality.
@@ -962,7 +964,6 @@ class Pet:
     x_antibody: str = "None"
     effect_id: int = -1            # active care effect (careEffect.csv id; -1 = none)
     effect_t: float = 0.0          # remaining duration of the active care effect
-    x_count: float = 0.0
     train_time: str = ""            # time of day of the last training (gates some evolutions)
     inventory: dict = _dcf(default_factory=dict)
     # transient animation request, consumed by the UI
@@ -1149,10 +1150,7 @@ class Pet:
     def _tick_growth(self, dt):
         """Aging + the ambient systems: X-decay, shop restock, toy interest,
         the gift call, the mood record / birthday, the anim clock."""
-        if self.x_antibody == "Temporary":          # a protoform fades if unused
-            self.x_count -= dt
-            if self.x_count <= 0:
-                self.x_antibody, self.x_count = "None", 0.0
+        # (the Temporary protoform decay left with the X slim)
         self.age_seconds += dt
         self.stage_seconds += dt
         # (the shop restock credits left with the rolled-slot shop; the
@@ -1910,10 +1908,9 @@ class Pet:
     # the weather system; BASIC VPET 2026-07-16)
 
     def _set_xantibody(self, state):
-        """Raise the X-Antibody state (never downgrades except by expiry)."""
-        if _XA_ORDER[state] > _XA_ORDER.get(self.x_antibody, 0):
-            self.x_antibody = state
-        self.x_count = X_COUNT_MAX if self.x_antibody == "Temporary" else 0.0
+        """BINARY (the X slim): any raise lands Permanent; never downgrades."""
+        if state != "None":
+            self.x_antibody = "Permanent"
 
     def buy_habitat(self, hid):
         habs = data.load_habitats()
