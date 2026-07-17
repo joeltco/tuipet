@@ -57,7 +57,9 @@ def test_write_save_dict_rotates_a_bak():
 # ---- damaged atlases fail in plain words ---------------------------------------
 
 def test_missing_atlas_raises_players_words(tmp_path, monkeypatch):
-    monkeypatch.setattr(data, "_DATA", str(tmp_path))
+    # the loaders read their OWN module's _DATA since the tier-1 split
+    from tuipet import data_core
+    monkeypatch.setattr(data_core, "_DATA", str(tmp_path))
     data.load_sprites.cache_clear()
     try:
         with pytest.raises(data.AssetsError) as e:
@@ -70,7 +72,9 @@ def test_missing_atlas_raises_players_words(tmp_path, monkeypatch):
 
 def test_truncated_atlas_raises_players_words(tmp_path, monkeypatch):
     (tmp_path / "orbs.json.gz").write_bytes(b"\x1f\x8b\x08\x00trunc")
-    monkeypatch.setattr(data, "_DATA", str(tmp_path))
+    # atlases route through data_core._load_bundled, which reads CORE's _DATA
+    from tuipet import data_core
+    monkeypatch.setattr(data_core, "_DATA", str(tmp_path))
     data.load_orbs.cache_clear()
     try:
         with pytest.raises(data.AssetsError):

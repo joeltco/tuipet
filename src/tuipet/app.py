@@ -163,10 +163,10 @@ class TuiPetApp(App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("ONLINE BATTLES PAY AGAIN: finishing a lobby PvP bout "
-                 "crashed at the payout ever since v0.5.0 - a live "
-                 "two-player smoke test finally caught it. Win purses, "
-                 "consolation bits and the record all land properly now.")
+    WHATS_NEW = ("CLEANER FOUNDATIONS: the game's data layer split into "
+                 "four tidy domains (roster, economy, world, progression) "
+                 "behind one unchanged interface. Nothing plays "
+                 "differently - future fixes just land faster.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and
