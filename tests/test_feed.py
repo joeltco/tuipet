@@ -30,10 +30,10 @@ def test_meat_refused_at_a_full_belly_counts_the_overeat():
     assert p.hunger == FULL_HUNGER
 
 
-def test_pill_cures_and_tops_up():
-    p = _pet(sick=True, sick_length=50.0, strength=1, energy=0, weight=20)
+def test_pill_is_a_tonic():
+    """(the cure leg left with the sickness system -- BASIC VPET 2026-07-17)"""
+    p = _pet(strength=1, energy=0, weight=20)
     msg = p.feed_pill()
-    assert not p.sick and p.sick_length == 0.0
     assert p.strength == 2 and p.weight == 20 + PILL_WEIGHT_GAIN
     assert p.energy > 0
 

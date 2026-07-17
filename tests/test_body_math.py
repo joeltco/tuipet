@@ -39,11 +39,6 @@ def _pet(**kw):
     return p
 
 
-def test_no_more_starvation_sickness():
-    random.seed(5)
-    for _ in range(50):
-        p = _pet(hunger=0, poop=0)
-        p.tick(1.0)
-        assert not p.sick                      # canon has no hunger==0 sick roll
+# (test_no_more_starvation_sickness left with the sickness system -- BASIC VPET 2026-07-17)
 
 

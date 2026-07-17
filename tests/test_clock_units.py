@@ -40,7 +40,7 @@ def test_the_neglect_pressures_run_at_the_canon_cadence():
     source so a regression is loud."""
     src = inspect.getsource(P)
     assert "self._poop_wait_t >= 1.0" in src, "PoopWaitMin=1 game-min"
-    assert "self._sick_pen_t >= SICK_LAPSE_MIN" in src, "SickLapseMin=29, not 60"
+    # (the sick-penalty cadence pin left with the sickness system -- 2026-07-17)
 
 
 def test_the_deliberate_exceptions_stay_deliberate():
@@ -49,9 +49,7 @@ def test_the_deliberate_exceptions_stay_deliberate():
     # the care-mistake response window: a literal port = 10 real seconds
     assert "self._hunger_call_t >= 600.0" in src
     assert "self._str_call_t >= 600.0" in src
-    # FilthSickMin pairs with an already-/60 bound
-    assert "self._filth_sick_t >= 60.0" in src
-    assert P.FILTH_SICK_BOUND == 200
+    # (the FilthSickMin/bound pair left with the sickness system -- 2026-07-17)
 
 
 def test_good_care_is_never_punished_by_the_faster_pressure():

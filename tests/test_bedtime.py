@@ -167,21 +167,7 @@ def test_hunger_call_is_one_mistake_per_call():
     assert p.care_mistakes == cm0 + 1
 
 
-# ---- death rules -----------------------------------------------------------------
-
-def test_six_game_hours_of_malady_is_fatal():
-    p = _corpus_pet()
-    p.sick, p.sick_length = True, 10 ** 9    # never heals (kept sick by worsening)
-    for _ in range(360):
-        p.tick(1.0)
-        if p.dead:
-            break
-    assert p.dead
-    q = _corpus_pet()
-    q.sick, q.sick_length = True, 100.0      # a natural spell: heals inside the window
-    for _ in range(360):
-        q.tick(1.0)
-    assert not q.dead and not q.sick
+# (test_six_game_hours_of_malady_is_fatal left with the sickness system -- BASIC VPET 2026-07-17)
 
 
 def test_late_stage_five_mistakes_is_fatal_only_past_the_window():

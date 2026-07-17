@@ -67,26 +67,7 @@ def test_the_battle_engine_passes_the_band():
     assert (b.pet_hp <= b.pet_max // 2) is False      # enters the fight fresh
 
 
-# --- contagion ---------------------------------------------------------------------
-
-def test_a_sick_opponent_is_contagious(monkeypatch):
-    monkeypatch.setattr(random, "randrange", lambda n: 0)      # every roll hits
-    p = _pet()
-    p.record_battle(True, dict(_ENEMY, sick=True), free_style=True)
-    assert p.sick                                     # EnemySickChance 50 caught roll 0
-    q = _pet()
-    monkeypatch.setattr(random, "randrange", lambda n: n - 1)
-    q.record_battle(True, dict(_ENEMY, sick=True), free_style=True)
-    assert not q.sick                                 # ...but it IS a roll
-    r = _pet()
-    monkeypatch.setattr(random, "randrange", lambda n: 0)
-    r.record_battle(True, dict(_ENEMY), free_style=True)
-    assert not r.sick                                 # healthy foes don't infect
-
-def test_pvp_cards_ship_the_real_sick_state():
-    p = _pet(sick=True, sick_length=100.0)
-    assert battle_mod.battle_card(p)["sick"] is True
-    assert battle_mod.battle_card(_pet())["sick"] is False
+# (test_a_sick_opponent_is_contagious left with the sickness system -- BASIC VPET 2026-07-17)
 
 
 def test_a_loss_marks_the_day_and_counts_the_exercise(monkeypatch):

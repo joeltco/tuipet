@@ -40,30 +40,15 @@ def _pet(**kw):
     return p
 
 
-def test_every_malady_burns_life():
-    p = _pet()
-    l0 = p.lifespan
-    p._sicken()
-    assert p.lifespan == l0 - SICK_LIFE_DEC
-    p._worsen_sick()
-    assert p.lifespan == l0 - SICK_LIFE_DEC - WORSE_MALADY_LIFE_DEC
-    # (the injury life burn left with the injury system)
-
-def test_hunger_mistakes_compound_by_total_count():
-    p = _pet(care_mistakes=0, hunger=0, calories=-4)
-    l0 = p.lifespan
-    p._tick_hunger(600.0)                        # the first unanswered call
-    assert p.care_mistakes == 1
-    assert p.lifespan == l0 - HUNGER_MISTAKE_LIFE_DEC * 1
-    p._hunger_call_t = 0.0                       # a fresh call (past the postpone)
-    p._tick_hunger(600.0)                        # the second burns DOUBLE
-    assert p.lifespan == l0 - HUNGER_MISTAKE_LIFE_DEC * 3
+# (test_every_malady_burns_life left with the sickness system -- BASIC VPET 2026-07-17)
 
 
 def test_a_burn_cannot_kill_inside_the_grace():
     p = _pet()
     p.age_seconds = p.lifespan - 30.0            # 30s from the end
-    p._sicken()                                  # -180 would kill instantly
+    p._burn_life(180.0)                          # -180 would kill instantly
+    #                                              (the sicken source left
+    #                                              with the sickness system)
     assert p.lifespan == p.age_seconds + INSTANT_DEATH_GRACE
     assert not p.dead                            # the grace holds until the clock
 

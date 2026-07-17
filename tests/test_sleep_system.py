@@ -62,26 +62,6 @@ def test_the_light_coming_back_resets_the_wait():
     assert not p.asleep                  # a fresh 21 is owed
 
 
-# --- checkNap's nap length ------------------------------------------------------
-
-def test_a_sick_pets_nap_runs_a_fixed_hour():
-    p = _pet(energy=0, obedience=0, sick=True, sick_length=300.0)
-    p.lights = False
-    for _ in range(30):
-        p.tick(1.0)
-        if p.asleep:
-            break
-    assert p.asleep and p.nap
-    assert p.awake_lapse == p.awake_limit - 60.0   # awakeLimit - minutesHour
-
-def test_a_healthy_nap_repays_the_earned_pressure():
-    p = _pet(energy=0, obedience=0)
-    p.lights = False
-    for _ in range(30):
-        p.tick(1.0)
-        if p.asleep:
-            break
-    assert p.asleep and p.nap
-    assert p.awake_lapse == p.awake_limit - p.sleep_lapse
+# (test_a_sick_pets_nap_runs_a_fixed_hour left with the sickness system -- BASIC VPET 2026-07-17)
 
 

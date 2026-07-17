@@ -910,11 +910,7 @@ class LobbyPanel:
         if self.partner:                # swapping DNA is the strongest connection
             persistence.record_connection(self.partner[1])
         msg = jogress.fuse(self.pet, self.jresult["num"])
-        if getattr(self, "jpartner_sick", False):
-            # canon startJogress: checkSick(90) -- swapping DNA with a
-            # sick partner is a NEAR-CERTAIN catch
-            if self.pet._check_sick(jogress.JOGRESS_SICK_CHANCE):
-                msg += "  …and it caught something."
+        # (the jogress contagion left with the sickness system (BASIC VPET 2026-07-17))
         self.sfx = "jogress"
         self._return_to_lobby(msg)
 

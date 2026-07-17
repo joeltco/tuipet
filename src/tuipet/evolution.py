@@ -144,7 +144,9 @@ def check(pet, num, item=-1, food=-1, connecting=False):
         req["weight"] == "None" or req["weight"] == weight_category(pet.weight, pet._base_weight()),
         _cmp(*req["disturb"], pet.disturb),
         _cmp(*req["overeat"], pet.overeat),
-        _cmp(*req["sick"], pet.sick_count),
+        # (the sick_count gates DROPPED with the sickness system (BASIC VPET 2026-07-17) --
+        # GreaterThan rows would wall forever on a count nothing can move;
+        # the injured gates already read a pinned 0)
         _cmp(*req["injured"], pet.injuries),
         # checkMoodReq: getCurrentMood -- the STICKY tier (Depressed holds until
         # checkDepressed's exit roll; a threshold recompute is never Depressed).
@@ -207,7 +209,7 @@ def fulfilled(pet, num):
     if req["weight"] != "None" and req["weight"] == weight_category(pet.weight, pet._base_weight()):
         score += R["weight"]
     for k, actual in (("disturb", pet.disturb), ("overeat", pet.overeat),
-                      ("sick", pet.sick_count), ("injured", pet.injuries)):
+                      ("injured", pet.injuries)):
         if _met(req[k], actual):
             score += R.get(k, R["injury"] if k == "injured" else 1)
     if False:   # (the mood score left with the mood system; BASIC VPET)
@@ -255,7 +257,7 @@ def deviation(pet, num):
             if g[0] != "None" and _attr(g, actual, total):
                 dev += abs(g[1] - actual)
     for k, actual in (("disturb", pet.disturb), ("overeat", pet.overeat),
-                      ("sick", pet.sick_count), ("injured", pet.injuries),
+                      ("injured", pet.injuries),
                       ("mistakes", pet.care_mistakes)):
         if _met(req[k], actual):
             dev += abs(req[k][1] - actual)
@@ -549,7 +551,6 @@ def requirement_report(pet, num):
     cmp_row("win rate", req["wins"], _win_rate(pet), pct=True)
     cmp_row("disturbs", req["disturb"], pet.disturb)
     cmp_row("overeats", req["overeat"], pet.overeat)
-    cmp_row("sickness", req["sick"], pet.sick_count)
     cmp_row("injuries", req["injured"], pet.injuries)
     cmp_row("care slips", req["mistakes"], pet.care_mistakes)
     cmp_row("generation", req.get("incarnations", ("None", 0)), getattr(pet, "generation", 1))

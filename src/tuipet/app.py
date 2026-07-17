@@ -256,10 +256,10 @@ class TuiPetApp(App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("QUIET LOBBY: home-screen sync ghosts no longer spam the "
-                 "chat with joined/left every time their connection blinks "
-                 "- the log only speaks of tamers actually entering and "
-                 "leaving the lobby.")
+    WHATS_NEW = ("SIMPLER SICKNESS: the illness machine is now pure DSprite "
+                 "- one skull, caught from filth or flab, cured only by the "
+                 "pill. No spells that worsen, nothing contagious, no six-"
+                 "hour countdown; just don't leave it standing.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and

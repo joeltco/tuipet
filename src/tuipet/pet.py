@@ -438,6 +438,14 @@ FILTH_MOOD_DEC_MIN = 5.0                # FilthMoodDecMin 5 game-min (was 300.0 
 FILTH_SICK_BOUND = 200                  # FilthSickChanceBound 12000 real-min -> /60 game scale
 FILTH_SICK_CHANCE = 1                   # FilthSickChance (x piles, per game-min)
 FILTH_WORSE_CHANCE = 20                 # FilthWorseSickChance (x piles, already sick)
+# ---- the DSprite sickness (rebuilt 2026-07-17, Joel: "dsprite didnt have
+# sickness?" -- it DID, a thin one, so the classic machine's removal keeps
+# the CLONE's rules): one flag, caught per game-minute from filth or
+# overweight, cured ONLY by the pill.  No spell timer, no worsening, no
+# contagion, no counters.  Constants verbatim from the clone (v0.4.12).
+SICK_POOP_P = 0.015            # sickness per minute while filth is present
+SICK_OVERWEIGHT_P = 0.00375    # per overweight step: floor(excess/(base*0.5))
+DEATH_SICK_P = 7.5e-5          # the clone's per-minute death whisper while sick
 BAD_WEIGHT_MOOD_DEC = 2                 # BadWeightMoodLapseDec (per lapse off Healthy)
 VERY_NEUTRAL_MOOD_DEC = 5               # VeryNeutralMoodLapseDec (neutral [5,150) drains faster)
 DEPRESSED_LAPSE_MIN = 59.0              # DepressedLapseMin
@@ -810,7 +818,6 @@ class Pet:
     weight: int = 20
     poop: int = 0                   # pile count == DVPet countFilth()
     poop_sizes: list = _dcf(default_factory=list)   # per-pile size 1..4 (DVPet _filth bytes)
-    sick: bool = False
     asleep: bool = False
     lights: bool = True             # DVPet _lights: room-light toggle, SEPARATE from sleep
     depressed: bool = False         # DVPet _currentMood==Depressed: a sticky STATE entered and
@@ -841,7 +848,6 @@ class Pet:
     virus: int = 0
     # care-quality counters that drive evolution (mirror DVPet's tracked stats)
     overeat: int = 0
-    sick_count: int = 0
     injuries: int = 0
     disturb: int = 0
     obedience: int = 0
@@ -860,10 +866,8 @@ class Pet:
     refused: bool = False           # DVPet _refused: the last command was blown off (one-shot)
     discipline_call: bool = False   # DVPet _disciplineCall: a tantrum begging to be disciplined
     fatigue_length: float = 0.0     # DVPet _fatigueLength (game-min remaining; >0 == fatigued)
-    sick_length: float = 0.0        # DVPet _sickLength (game-min until natural recovery)
     inj_length: float = 0.0         # DVPet _injLength (game-min until the injury heals)
     vitamin_lapse: float = 0.0      # DVPet _vitaminLapse (game-min of injury-worsening protection)
-    med_lapse: float = 0.0          # DVPet _medLapse: medicine indicator after curing sickness (getMed)
     bandage_lapse: float = 0.0      # DVPet _bandageLapse: bandage indicator after mending an injury (getBandage)
     nutr_protein: int = 0           # DVPet _protein (0..MaxProtein), from a meaty diet
     nutr_mineral: int = 0           # DVPet _mineral, from vegetables
@@ -937,6 +941,7 @@ class Pet:
     lifespan: float = LIFE_START
     generation: int = 1
     dead: bool = False
+    sick: bool = False              # the DSprite flag (clone-style, 2026-07-17): pill-cured only
     death_cause: str = ""           # what took it (memorial epitaph, audit 2026-07-05)
     world_seconds: float = 0.0
     # (the weather/temperature block lived here -- temp, day_temp, temp_goal,
@@ -1179,40 +1184,9 @@ class Pet:
         if getattr(self, "_exercise_day", -1) != day:    # DVPet checkExerciseTime: daily reset
             self._exercise_day = day
             self.exercise_today = 0
-        _rec = dt * (GOOD_NUTR_RECOVERY_MULT if self.good_nutrition() else 1.0)  # well-fed heals faster
-        if self.sick_length > 0:                          # sickLapse: illness recovers in time
-            self.sick_length = max(0.0, self.sick_length - _rec)
-            if self.sick_length == 0:
-                self.sick = False
-        # sickLapse -> sickPenalty (awake only): illness burns the macros and
-        # RACES the bowels (SickLapsePenaltyBM 48 gauge-units a lapse; the
-        # startPoop it forces fires naturally when the gauge crosses)
-        if self.sick and not self.asleep:
-            self._sick_pen_t = getattr(self, "_sick_pen_t", 0.0) + dt
-            if self._sick_pen_t >= SICK_LAPSE_MIN:        # SickLapseMin 29 (the literal said 60)
-                self._sick_pen_t = 0.0
-            # (the asleep nutrition drain left with the nutrition system)
-                # the diarrhea rides the x5 count compression (the PerfectWins
-                # precedent): canon's 48/64-per-lapse makes a real-time device
-                # poop every ~37 min sick -- proportional on tuipet's 60x clock
-                # that was a poop every ~30 REAL SECONDS, ~9 a spell (Joel's
-                # "why is my digimon shitting so much", 2026-07-15).  /5 lands
-                # 1-2 hurried poops per illness: the canon FEEL, playable.
-                self._poop_t = (getattr(self, "_poop_t", 0.0)
-                                + self._poop_interval * SICK_LAPSE_PENALTY_BM
-                                / max(1, self._phys().get("poop_limit", 64) * 5))
-        # (the injury/fatigue recovery lapses and the vitamin/med/bandage
-        # wear-off timers left with their systems; BASIC VPET 2026-07-16)
-        # LINES_SPEC §5 (DM20: "remaining injured for 6 hours causes death"):
-        # 6 continuous game-hours sick-or-injured is fatal.  Natural spells heal
-        # inside the window (sick <=290, injury <=348 game-min), so only a pet
-        # left to WORSEN (filth rolls, battling hurt, double doses) crosses it.
-        if self.sick:
-            self._malady_t = getattr(self, "_malady_t", 0.0) + dt
-            if self._malady_t >= 360.0 and not self.dead:
-                self._die("sickness")
-        else:
-            self._malady_t = 0.0
+        # (the sickness recovery lapse, the sick bowel-race penalty and the
+        # 6h malady death left with the sickness system (BASIC VPET 2026-07-17); the injury/
+        # fatigue/vitamin timers left with theirs, 2026-07-16)
 
     def _inc_mistake(self):
         """PhysicalState.incMistake: EVERY care mistake stings the mood first --
@@ -1231,14 +1205,8 @@ class Pet:
         # PROVABLY DEAD in the shipped config (poop/filth audit: the filth
         # array holds 6 piles, MistakeFilthLimit is 7 -- countFilth can never
         # reach it), so it is not ported.
-        if self.poop > 0:
-            pad = (int(abs(math.ceil(self.mood * MISTAKE_FILTH_MOOD_COEF)))
-                   if self.current_mood() in ("Unhappy", "Depressed") else 0)
-            self._check_worse_sick(MISTAKE_LOW_FILTH_WORSE * self.poop + pad)
-            self._check_sick(MISTAKE_LOW_FILTH_SICK * self.poop + pad)
-        if self.is_fatigued():
-            self._check_worse_sick(ANY_MISTAKE_FATIGUED)
-            self._check_sick(ANY_MISTAKE_FATIGUED)
+        # (incMistake's filth/fatigue sickness risks left with the sickness
+        # system (BASIC VPET 2026-07-17))
 
     def _tick_asleep(self, dt):
         """The sleep branch: lights neglect, deep-sleep regen, the awakeLapse
@@ -1399,22 +1367,9 @@ class Pet:
             if self._filth_mood_t >= FILTH_MOOD_DEC_MIN:
                 self._filth_mood_t = 0.0
                 self._set_mood(self.mood + fm * self.poop)
-        bound = int(FILTH_SICK_BOUND * self._phys().get("poop_sick_mult", 1.0))
-        self._filth_sick_t = getattr(self, "_filth_sick_t", 0.0) + dt
-        # ⚖️ NOT a clock-unit slip: this pairs with FILTH_SICK_BOUND, which is
-        # canon's 12000 already divided by 60 ("12000 real-min -> /60 game
-        # scale").  Rolling 60x less often against a 60x smaller bound is the
-        # SAME expected rate, just coarser -- a deliberate, equivalent rescale.
-        # Speeding the cadence without restoring the bound to 12000 would make
-        # filth sickness 60x MORE likely (it did: the malady-death pin caught
-        # it mid-audit 2026-07-14).  Leave the pair alone.
-        if self._filth_sick_t >= 60.0:                    # FilthSickMin, bound-matched
-            self._filth_sick_t = 0.0
-            if self.sick:
-                if random.randrange(max(1, bound)) < FILTH_WORSE_CHANCE * self.poop:
-                    self._worsen_sick()
-            elif random.randrange(max(1, bound)) < FILTH_SICK_CHANCE * self.poop:
-                self._sicken()
+        # (the filth sickness rolls left with the sickness system (BASIC VPET 2026-07-17); the
+        # filth MOOD nag above is inert since the mood removal but stays as
+        # the canon citation it became)
 
     def _tick_hunger(self, dt):
         """hunger: the DVPet calorie buffer drains each lapse; emptying it drops
@@ -1640,9 +1595,7 @@ class Pet:
                     # hour (awakeLimit - minutesHour); healthy naps repay the
                     # accrued pressure.  (Canon's end-of-hour 2-hour variant is
                     # a wall-clock alignment quirk tuipet's clock doesn't have.)
-                    self.awake_lapse = (max(0.0, self.awake_limit - 60.0)
-                                        if (self.sick or self.is_injured())
-                                        else max(0.0, self.awake_limit - self.sleep_lapse))
+                    self.awake_lapse = max(0.0, self.awake_limit - self.sleep_lapse)
                     self._set_anim("yawn", 1.8)
             else:
                 self._to_nap_t = 0.0                        # the light resets the wait
@@ -1693,6 +1646,21 @@ class Pet:
                 self._die("starvation"); return True
         elif self.hunger > 0:
             self._starve_t = 0.0
+        # the DSprite sickness (clone rules, 2026-07-17): caught per game-min
+        # from filth (never on the road -- countFilth reads 0 away) or from
+        # overweight steps; while sick, the clone's per-minute death whisper
+        # stands where the classic 6h malady death used to
+        if not self.sick:
+            p = (SICK_POOP_P if (self.poop > 0
+                                 and not getattr(self, "away", False)) else 0.0)
+            bw = self._base_weight()
+            if bw > 0 and self.weight > bw:
+                p += int((self.weight - bw) // (bw * 0.5)) * SICK_OVERWEIGHT_P
+            if p > 0 and random.random() < p * dt:
+                self.sick = True
+        elif random.random() < DEATH_SICK_P * dt:
+            self._die("sickness")
+            return True
         # (the old continuous per-second "extra" drain was invented -- canon
         # burns lifespan through the EVENT penalties wired below instead)
         return self._check_old_age()
@@ -1847,6 +1815,8 @@ class Pet:
         self.dead = False
         self.saved_from_death += 1
         self.hunger = HUNGER_AFTER_SAVED
+        self.sick = False               # the clone's revival fix: a fresh
+        #                                 revival must not come back sick
         self._starve_t = 0.0                          # the 12h clock restarts
         self.evol_bonus += BONUS_AFTER_SAVED
         self.age_seconds = max(0.0, self.lifespan - REVIVAL_LIFE)   # lapsed = total - revival
@@ -1945,7 +1915,7 @@ class Pet:
     def _maybe_evolve(self):
         if getattr(self, "evo_blocked", False):
             return                    # the anti-evo chip (DSprite item)
-        if self.sick or self.asleep or self.is_geriatric:
+        if self.asleep or self.is_geriatric:
             return
         if getattr(self, "fx_hold", False):
             return          # an animation owns the screen; evolve on a quiet tick
@@ -2076,14 +2046,8 @@ class Pet:
         # the mood/spirit bills left with their systems
         self._set_energy(self.energy
                          - (DNA_SAME_FIELD_ENERGY if same else DNA_DIFF_FIELD_ENERGY) * amount)
-        # DVPet applyDNA calls checkWorseSick(...) THEN checkSick(...): the
-        # helpers are naturally exclusive on sick-state (worse no-ops unless
-        # sick, fresh no-ops when sick), and since the sickness arc they carry
-        # the BOUND machinery (habitat/geriatric on the fresh bound, fatigue
-        # padding the worse target) the old flat roll lacked.
-        chance = (DNA_SAME_FIELD_SICK if same else DNA_DIFF_FIELD_SICK) * amount
-        self._check_worse_sick(chance)
-        self._check_sick(chance)
+        # (applyDNA's per-unit sickness risk left with the sickness system
+        # (BASIC VPET 2026-07-17) -- the ENERGY bill above is the charge's cost now)
         return True
 
     def reset_dna(self):
@@ -2261,9 +2225,8 @@ class Pet:
         # per-stage care record resets; the next stage's care decides the next form
         self.care_mistakes = self.overeat = self.disturb = 0
         self.stage_trainings = self.stage_battles = 0     # battle_log persists (Pen20 rolling window)
-        self.injuries = self.sick_count = 0
-        self.sick = False
-        self.sick_length = self.inj_length = self.fatigue_length = 0.0
+        self.injuries = 0
+        self.inj_length = self.fatigue_length = 0.0
         self.levels_fought = []
         self.reset_dna()                # DNA.resetDNA: charged DNA clears each evolution
         self.food_eaten = {c: 0 for c in data.FOOD_CATEGORIES}   # MajorFood resets per stage
@@ -2415,15 +2378,13 @@ class Pet:
                  + self.strength / 4.0
                  + max(0.0, self.energy) / float(max(1, self.max_energy))) / 3.0
         tier = max(0, min(3, int(score * 4)))
-        if self.sick or self.is_injured():
-            tier = min(tier, 1)
         return tier
 
     def current_mood(self):
         """DERIVED (the clone's rule): no mood meter -- the word keys off
         condition.  Unhappy when unwell or unfed, else Neutral."""
         w = self.status_word()
-        return "Unhappy" if w in ("sick", "injured", "starving",
+        return "Unhappy" if w in ("sick", "starving",
                                   "needs cleaning") else "Neutral"
 
     def _set_enthusiasm(self, value):
@@ -2617,12 +2578,8 @@ class Pet:
                     self._bed_postpone_t = float(postpone)   # a line pet re-sleeps by the clock
                 # (the missed rest is repaid naturally: _fall_asleep re-sizes the
                 # next sleep from the CURRENT energy debt, so nothing is carried)
-            # a rough waking is a health hazard: an already-sick sleeper may
-            # worsen, and from the DisturbLimitCheckSick'th disturb every poke
-            # risks fresh illness (canon checkWorseSick / checkSick)
-            self._check_worse_sick(DISTURB_WORSE_SICK_CHANCE)
-            if self.disturb >= DISTURB_LIMIT_CHECK_SICK:
-                self._check_sick(DISTURB_SICK_CHANCE)
+            # (the rough-waking sickness risks left with the sickness
+            # system (BASIC VPET 2026-07-17))
         # DisturbMoodDec{,Restless,NotRestless}: a restless pet WANTED up
         self._set_mood(self.mood - DISTURB_MOOD_DEC.get(self.restless, 10))
         enth = {1: -1, 0: -2, -1: -3}.get(self.restless, -2)   # DisturbEnthusiasmDec*
@@ -2649,7 +2606,7 @@ class Pet:
         # the personality idles: canon gates -- energy >= max/3, spirit >= 0,
         # effort <= limit/2, not unwell (and the TIER, not raw mood)
         if (self.energy < self.max_energy / 3 or self.enthusiasm < 0
-                or self.strength > 2 or self.sick or self.is_injured()):
+                or self.strength > 2):
             return
         m = self.current_mood()
         if m == "Happy":
@@ -2741,18 +2698,16 @@ class Pet:
         self._poop_t = getattr(self, "_poop_t", 0) \
             + self._poop_interval * self._phys().get("poop_lapse", 1) \
             / max(1, self._phys().get("poop_limit", 64))
-        # checkDirtyEating: a meal amid the filth is a sickness risk per pile
-        if self.poop > 0:
-            self._check_worse_sick(DIRTY_EATING_WORSE_CHANCE * self.poop)
-            self._check_sick(DIRTY_EATING_SICK_CHANCE * self.poop)
+        # (checkDirtyEating's filth-meal sickness risk left with the
+        # sickness system (BASIC VPET 2026-07-17))
         self._set_anim("eat", 1.4)
         return "Fed Meat."
 
     def feed_pill(self):
-        """The pill: cures an active sickness or injury spell, strength +1,
-        energy +7, weight +5.  Refused when there is nothing to top up.
-        Healing a sleeper DISTURBS it first.  (The sick/injury COUNTERS keep
-        their tally -- the evolution gates still read the record.)"""
+        """The pill (clone rules): cures the sickness, strength +1, energy
+        +7, weight +5.  Refused when there is nothing to cure or top up.
+        Healing a sleeper DISTURBS it first.  (The classic spell machine
+        left 2026-07-17; the DSprite flag is pill-cured ONLY.)"""
         if (_g := self._guard(asleep_blocks=False)) is not None:
             return _g
         if not self.sick \
@@ -2762,7 +2717,6 @@ class Pet:
         if self.asleep:
             self._disturbed()
         self.sick = False
-        self.sick_length = 0.0
         self.strength = _clamp(self.strength + 1, 0, 4)
         self._set_energy(self.energy + PILL_ENERGY_GAIN)
         self._set_weight(self.weight + PILL_WEIGHT_GAIN)
@@ -2888,10 +2842,8 @@ class Pet:
         # the day/night system; its mood/spirit legs were already no-ops.
         # BASIC VPET 2026-07-17)
         self._set_mood(self.mood + self.enthusiasm)       # exercise(): mood rides the spirit
-        # checkWorseSick(ExerciseWorseSickChance): drilling a SICK pet can worsen it --
-        # and if it only trained because you spent its compliance, it resents you
-        if self._check_worse_sick(EXERCISE_WORSE_SICK_CHANCE) and complied:
-            self._set_obedience(self.obedience + OBEDIENCE_CHANGE_SICK_FORCED)
+        # (checkWorseSick's drill risk + the sick-forced resentment left
+        # with the sickness system (BASIC VPET 2026-07-17))
         # canon ExerciseWeightDec = 0 (classic): drills do NOT shed flat weight.
         # The body cost is CALORIC (setCaloriesAndChangeWeight): an activity
         # decrement landing while ALREADY in deficit sheds ActivityWeightChange.
@@ -2987,10 +2939,9 @@ class Pet:
             self._set_energy(self.energy - BATTLE_HIGH_HP_ENERGY)
             self._set_calories(self.calories - BATTLE_CAL_HIGH)
         # (the battle injury rolls left with the injury system)
-        # checkSick: a SICK opponent is contagious at the bout's end (PvP
-        # ships the partner's real state), win or lose
-        if (enemy or {}).get("sick"):
-            self._check_sick(ENEMY_SICK_CHANCE)
+        # (the sick-opponent contagion left with the sickness system (BASIC VPET 2026-07-17);
+        # the wire card still carries a sick flag for older peers -- always
+        # False from this build on)
         if won:
             self.wins += 1
             # lifetime wins (cross-generation, gates the mystery eggs) -- counted
@@ -3028,8 +2979,6 @@ class Pet:
             # BattleWonMoodInc + BattleDispositionMoodFactor x disposition:
             # the -5 x dispo shade rides EVERY win/loss, not just orders-won
             self._set_mood(self.mood + 10 + BATTLE_DISPO_MOOD_FACTOR * self.disposition)
-            if self._check_worse_sick(BATTLE_WON_WORSE_SICK) and complied:
-                self._set_obedience(self.obedience + OBEDIENCE_CHANGE_SICK_FORCED)
             # over/underpowered adjustments (battleEnd compareStage + HP gates):
             # squashing a hollow higher-stage foe is a JOYLESS win (-20); toppling a
             # tougher lower-stage bruiser is a proud one (+10)
@@ -3087,8 +3036,6 @@ class Pet:
         self._set_enthusiasm(self.enthusiasm - 6)    # BattleLostEnthusiasmDec
         self._set_obedience(self.obedience - 1)      # BattlesObedienceDec (a loss saps trust)
         self.mistake_day += BATTLE_LOST_MISSED_DAY   # BattleLostMissedDayChange
-        if self._check_worse_sick(BATTLE_LOST_WORSE_SICK) and complied:
-            self._set_obedience(self.obedience + OBEDIENCE_CHANGE_SICK_FORCED)
         if surr_declined:
             # it BEGGED to quit, you refused, it lost: obedience is SET to 10
             self._set_obedience(SURR_DECLINED_LOST_OBED)
@@ -3172,64 +3119,10 @@ class Pet:
         """Always False (same removal as is_freezing)."""
         return False
 
-    def _sicken(self):
-        """PhysicalState.sicken: fall ill for MinSickLength..MaxSickLength recovery lapses;
-        it clears on its own once that runs out (or earlier with medicine)."""
-        if self.sick:
-            return
-        self.sick = True
-        self.sick_count += 1
-        self._burn_life(SICK_LIFE_DEC)          # sicken(): every illness costs life
-        self.sick_length = random.randint(MIN_SICK_LENGTH, MAX_SICK_LENGTH) * SICK_LAPSE_MIN
-        # (the habitat-affinity shading of the spell left with the habitat
-        # system -- BASIC VPET 2026-07-16; the roll keeps its canon range)
-        self._set_mood(self.mood - SICK_MOOD_DEC)
-        self._set_enthusiasm(self.enthusiasm + SICK_ENTH_CHANGE)
-        # (canon's timeRanks hour-souring left with the day/night system --
-        # BASIC VPET 2026-07-17)
-
-    def _worsen_sick(self):
-        """PhysicalState.checkWorseSick (effect body): an already-sick pet gets worse --
-        the illness drags on one lapse longer, with mood/obedience/spirit costs, a
-        fresh mess -- and the WorseSickLifeDec burn (canon re-audit 2026-07: the
-        old omission note is gone; every worsening costs 3 real-hours of life)."""
-        self._burn_life(WORSE_MALADY_LIFE_DEC)
-        self._set_obedience(self.obedience + WORSE_MALADY_OBED_DEC)
-        self._set_mood(self.mood + WORSE_MALADY_MOOD_DEC)
-        self._set_enthusiasm(self.enthusiasm + SICK_ENTH_CHANGE)  # WorseSickEnthusiasmChange == -1
-        self.sick_length += SICK_LAPSE_MIN                        # setSickLength(_sickLength + 1) = +1 lapse
-        self._start_poop()
-
-
-
-
-
-
-    def _check_sick(self, target):
-        """checkSick(target, bound): the bound is SickChance shaped by old
-        age (-25 = frailer); the home's +-5/axis left with habitats."""
-        if self.sick or target <= 0:
-            return False
-        # (the +-5/axis home-compat shaping left with the habitat system --
-        # BASIC VPET 2026-07-16; old age keeps its canon frailty)
-        bound = (SICK_CHANCE_BOUND
-                 - (SICK_GERIATRIC_FACTOR if self.is_geriatric else 0))
-        if random.randrange(max(1, bound)) < target:
-            self._sicken()
-            return True
-        return False
-
-    def _check_worse_sick(self, target):
-        """checkWorseSick(prob): fatigue pads the target (+FatigueMod), old
-        age thins the bound (-25)."""
-        if not self.sick or target <= 0:
-            return False
-        target += FATIGUE_MOD if self.is_fatigued() else 0
-        bound = WORSE_SICK_BOUND - (WORSE_SICK_GERIATRIC if self.is_geriatric else 0)
-        if random.randrange(max(1, bound)) < target:
-            self._worsen_sick()
-            return True
-        return False
+    # (_sicken/_worsen_sick/_check_sick/_check_worse_sick -- the whole
+    # sickness machine -- left with the sickness system, BASIC VPET
+    # 2026-07-17.  The pill is a tonic, filth is a mood/mistake matter,
+    # and nothing is contagious.)
 
 
     def clean(self):
@@ -3416,8 +3309,6 @@ class Pet:
             # sick or injured, the lost doze pushes bedtime a minute closer).
             # canon !isFuton() (lights audit 2026-07-05): an active Futon
             # (effect_id 0, the same check auto-care honours) shields the nap
-            if self.sick or self.is_injured():
-                self.sleep_lapse += 1
             self._wake()                         # a nap wake rolls +-NapWakeMoodDec
             return "Lights on — up from its nap."
         if self.lights and self.asleep and self.nap:

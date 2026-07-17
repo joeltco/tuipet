@@ -47,26 +47,9 @@ def test_calories_rising_while_positive_fatten():
     assert p.weight >= w0 + base_w + 1          # +FoodWeightChange on top of the food's own
 
 
-def test_dirty_eating_sours_and_sickens():
-    p = _pet(hunger=0, poop=3, poop_sizes=[2, 2, 2], mood=100)
-    random.seed(0)
-    m0 = p.mood
-    p.feed(_food("Meat"))
-    # (the DirtyEatingMoodDec assert left with the mood system)
-    random.seed(3)
-    hits = 0
-    for _ in range(80):
-        q = _pet(hunger=0, poop=4, poop_sizes=[2] * 4)
-        q.feed(_food("Meat"))
-        hits += q.sick
-    assert hits > 8                             # 8% x 4 piles = ~32% per meal
+# (test_dirty_eating_sours_and_sickens left with the sickness system -- BASIC VPET 2026-07-17)
 
 
-def test_clean_room_meals_never_roll_sickness():
-    random.seed(1)
-    for _ in range(60):
-        p = _pet(hunger=0, poop=0)
-        p.feed(_food("Meat"))
-        assert not p.sick
+# (test_clean_room_meals_never_roll_sickness left with the sickness system -- BASIC VPET 2026-07-17)
 
 

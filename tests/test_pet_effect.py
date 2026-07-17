@@ -78,10 +78,11 @@ def test_effect_name():
 
 
 def test_medicine_bandage_persist():
-    """The new lapse fields round-trip through asdict (persistence)."""
+    """(med_lapse left with the sickness system, 2026-07-17; bandage_lapse
+    outlived injuries as a plain lapse field -- pin the round trip)"""
     from dataclasses import asdict
     from tuipet.pet import Pet
     pet = Pet.from_num(29)
-    pet.med_lapse, pet.bandage_lapse = 30.0, 12.0
+    pet.bandage_lapse = 12.0
     d = asdict(pet)
-    assert d["med_lapse"] == 30.0 and d["bandage_lapse"] == 12.0
+    assert d["bandage_lapse"] == 12.0

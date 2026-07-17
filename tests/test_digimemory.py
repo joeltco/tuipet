@@ -105,10 +105,7 @@ def test_every_death_records_its_cause_and_the_memorial_tells_it():
     p._tick_mortality(1.0)
     assert p.death_cause == "old age"
 
-    p = dead_pet(sick=True)
-    p._malady_t = 360.0
-    p._tick_recovery(1.0)
-    assert p.dead and p.death_cause == "sickness"
+    # (the sickness death left with the sickness system -- 2026-07-17)
 
     pan = DeathPanel(p)
     # the epitaph field MARQUEES (menu-bounds 2026-07-07): the cause scrolls
@@ -117,7 +114,7 @@ def test_every_death_records_its_cause_and_the_memorial_tells_it():
     for _ in range(120):
         pan.anim()
         seen += pan.strip()
-    assert "of sickness" in seen                   # the epitaph tells it
+    assert "of old age" in seen                   # the epitaph tells it
 
 
 def test_declining_the_etch_carries_the_bonus():

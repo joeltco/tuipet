@@ -359,47 +359,7 @@ def test_remote_invite_never_disturbs_a_sleeper():
     assert pan.invite_prompt is None
 
 
-def test_jogress_ships_and_catches_the_partners_sickness(monkeypatch):
-    """JogressProtocol ships the REAL sick state; startJogress rolls
-    checkSick(90) -- fusing with a sick partner is a near-certain catch
-    (jogress/DNA audit 2026-07-06)."""
-    import random
-    from tuipet.pet import Pet
-    from tuipet import jogress
-    s = LobbyState()
-    s.connected = True
-    s.me_id, s.me_name = 1, "joel"
-    s.roster = [{"id": 1, "name": "joel", "pet": {}, "live": True},
-                {"id": 2, "name": "mika", "pet": {"name": "Gabumon"}, "live": True}]
-
-    class _Stub:
-        def __init__(self, state): self.state = state; self.sent = []
-        def relay(self, *a, **k): self.sent.append(a)
-        def respond(self, *a, **k): pass
-        def invite(self, *a, **k): pass
-        def update_pet(self, *a, **k): pass
-        def pm(self, *a, **k): pass
-
-    stub = _Stub(s)
-    p = Pet(num=102, name="D", stage="Champion", attribute="Virus",
-            sick=True, sick_length=100.0, dp=100)
-    pan = lobbyscreen.LobbyPanel(p, lambda n, pw, c: stub, name="joel", pw="x")
-    pan.client = stub
-    pan._enter_session(2, "mika", "jogress", host=True)
-    assert stub.sent and stub.sent[-1][1]["sick"] is True   # the wire carries it
-    # ...and the receiving side catches at the fuse
-    q_pan = lobbyscreen.LobbyPanel(Pet(num=102, name="D", stage="Champion",
-                                       attribute="Virus", dp=100),
-                                   lambda n, pw, c: stub, name="joel", pw="x")
-    q_pan.jpartner_sick = True
-    q_pan.jphase = "result"
-    q_pan.jresult = {"num": 102}
-    q_pan.partner = (2, "mika")
-    q_pan.client = stub
-    monkeypatch.setattr(jogress, "fuse", lambda pet, num: "Fused!")
-    monkeypatch.setattr(random, "randrange", lambda n: 0)   # the 90% catch lands
-    q_pan._key_jogress("enter")
-    assert q_pan.pet.sick
+# (test_jogress_ships_and_catches_the_partners_sickness left with the sickness system -- BASIC VPET 2026-07-17)
 
 
 def test_apply_dna_no_longer_marks_a_false_disturb():

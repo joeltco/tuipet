@@ -1,7 +1,7 @@
 """Training-system canon pins (PhysicalState.exercise / setExercise / fatigue /
 ClockTic.onExerciseFinish; training audit 2026-07-06).
 
-Fixtures pin the rolls they don't exercise: _check_worse_sick / _check_sick are
+Fixtures pin the rolls they don't exercise: (the sickness rolls left) --
 monkeypatched to no-ops where a stray catch would muddy an assertion, and the
 fatigue roll is forced (randrange -> 0) or silenced (-> 99) as the test needs.
 """
@@ -21,8 +21,8 @@ def _pet(**kw):
 
 
 def _quiet(monkeypatch):
-    monkeypatch.setattr(Pet, "_check_worse_sick", lambda self, t=0: False)
-    monkeypatch.setattr(Pet, "_check_sick", lambda self, t=0: False)
+    """(the _check_sick/_check_worse_sick quieting left with the sickness
+    system -- BASIC VPET 2026-07-17: nothing rolls illness any more)"""
 
 
 def test_battle_wins_feed_perfect_wins(monkeypatch):

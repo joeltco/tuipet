@@ -79,22 +79,6 @@ def test_training_costs_a_calorie_and_couples_mood_to_spirit():
     # (the mood<->spirit coupling left with the mood system)
 
 
-def test_sick_drill_can_worsen():
-    random.seed(0)
-    p = _pet()
-    p._sicken()
-    len0 = p.sick_length
-    worsened = False
-    for _ in range(400):                            # 1% per drill
-        p.calories, p.energy = CALORIE_LIMIT, 24
-        p.apply_training(3, 100, game="vaccine", attribute="Vaccine")
-        if p.sick_length != len0:
-            worsened = True
-            break
-    assert worsened
-
-
-# (the time_pref drift/heal test left with the timeRanks system --
-# BASIC VPET 2026-07-17)
+# (test_sick_drill_can_worsen left with the sickness system -- BASIC VPET 2026-07-17)
 
 

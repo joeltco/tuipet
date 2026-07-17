@@ -34,16 +34,6 @@ def test_attribute_trades_conserve_the_total():
     assert (q.vaccine, q.data_power, q.virus) == (0, 0, 0)
 
 
-def test_the_home_mess_cannot_sicken_a_traveler():
-    """poopable() gates countFilth on _isHome: away, the filth neither sours
-    nor sickens (the piles wait for the homecoming)."""
-    p = _pet(poop=4, poop_sizes=[2, 2, 2, 2])
-    p.away = True
-    m0 = p.mood
-    for _ in range(1900):                      # past the 1800s filth window
-        p._filth_effects(1.0)
-    assert not p.sick
-    p.away = False
-    for _ in range(1900):
-        p._filth_effects(1.0)
-    # (the home-again mood bite left with the mood system)
+# (test_the_home_mess_cannot_sicken_a_traveler left with the sickness system -- BASIC VPET 2026-07-17)
+
+

@@ -54,8 +54,7 @@ def test_each_leg_moves_the_grade():
     g0 = base.final_care_grade()
     # (the happy/sad mood legs left with the mood system -- an UNWELL pet
     # still loses its leg via the derived tier)
-    sick = _pet(age_seconds=base.age_seconds, sick=True)
-    assert sick.final_care_grade() == g0 - 1
+    # (the unwell -1 leg left with the sickness system -- 2026-07-17)
     obedient = _pet(age_seconds=base.age_seconds, obedience=100)
     assert obedient.final_care_grade() == g0 + 1
     slob = _pet(age_seconds=base.age_seconds, care_mistakes=3)
