@@ -29,13 +29,12 @@ def test_unknown_egg_falls_back_to_the_default():
     assert backgrounds.DEFAULT in data.load_backgrounds()
 
 
-def test_home_scenes_are_single_frame_and_the_arena_is_not():
-    """The DSprite look: one frame per home scene; tourneyBack alone keeps
-    the 5-frame day/night sheet (the star/ember helpers key on len > 4)."""
+def test_every_sheet_is_single_frame():
+    """The DSprite look: one frame per scene -- the arena's day/night sheet
+    flattened when the day/night system left (BASIC VPET 2026-07-17)."""
     sheets = data.load_backgrounds()
-    for key in set(backgrounds.EGG_BG.values()):
-        assert len(sheets[key]) == 1, key
-    assert len(sheets["tourneyBack"]) == 5
+    for key, fr in sheets.items():
+        assert len(fr) == 1, key
 
 
 def test_every_sheet_is_wired_or_allowlisted():

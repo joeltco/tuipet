@@ -1,8 +1,7 @@
 """Background audit 2026-07-15 vs BackgroundAnim.java: the animateBack
-dissolve -- plus the BASIC VPET re-pins (2026-07-17): the home scene is the
-egg's single-frame DSprite backdrop (phase-invariant), day_phase rides a
-FIXED daylight triple, and only the arena's 5-frame sheet still tracks the
-clock (the per-habitat triples, weather tints and the winter-sunset quirk
+dissolve -- plus the BASIC VPET re-pins (2026-07-17): every scene is the
+single-frame DSprite backdrop, identical around the clock (the day/night
+system, per-habitat triples, weather tints and the winter-sunset quirk all
 left with their systems)."""
 from tuipet import theme
 from tuipet.pet import Pet, DAY_LENGTH
@@ -29,29 +28,18 @@ def _brightness(frame):
 _WHITE = ["ffffff" * 8] * 4
 
 
-def test_home_scene_is_phase_invariant_but_the_arena_still_tracks_the_clock():
-    # the DSprite home scenes are one look each; tourneyBack keeps its
-    # 5-frame sheet, so the ARENA still darkens at night
+def test_every_scene_is_one_look_around_the_clock():
+    # the day/night system left whole (BASIC VPET 2026-07-17): the home
+    # scene AND the arena render identically at any hour, and the phase
+    # machinery is gone from the pet
     p = _pet(egg_type=0)
     hr = DAY_LENGTH / 24
     p.world_seconds = 15 * hr
     home_day, arena_day = p.background(), p.background(file="tourneyBack")
     p.world_seconds = 1 * hr
-    home_night, arena_night = p.background(), p.background(file="tourneyBack")
-    assert home_day and home_day == home_night      # one look, day or night
-    assert _brightness(arena_night) < _brightness(arena_day)
-
-
-def test_day_phase_rides_the_fixed_triple():
-    # checkTime on the fixed (6, 14, 19) triple: Morning/Noon/Night with the
-    # last Noon hour as the sunset -> dusk, in EVERY season
-    p = _pet()
-    hr = DAY_LENGTH / 24
-    for day0 in (0.0, 39 * DAY_LENGTH):             # Spring and Winter alike
-        for hour, want in ((3, "night"), (7, "dawn"), (15, "day"),
-                           (18.5, "dusk"), (20, "night")):
-            p.world_seconds = day0 + hour * hr
-            assert p.day_phase == want, (day0, hour)
+    assert home_day and home_day == p.background()
+    assert arena_day and arena_day == p.background(file="tourneyBack")
+    assert not hasattr(p, "day_phase") and not hasattr(p, "season")
 
 
 def test_background_swap_dissolves_instead_of_cutting():

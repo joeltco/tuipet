@@ -3,7 +3,7 @@ weather / filth / status-effect overlays.
 
 Lifted out of app.py verbatim (modularization 2026-07-08) — this is the render
 half of the old app module.  app.py imports the public names back
-(Screen, hearts, bar, _sky_icon, _effect_overlay, SCREEN_COLS/ROWS, ...) so
+(Screen, hearts, bar, _effect_overlay, SCREEN_COLS/ROWS, ...) so
 `tuipet.app.Screen` and the existing tests keep resolving.  Nothing here imports
 app, so there is no cycle.
 
@@ -21,7 +21,7 @@ from . import anim
 from . import egg as egg_mod
 from . import grid
 from . import theme
-from .theme import LCD_ON, LCD_BG, PHASE_PALETTE, SIL_DAY, SIL_NIGHT, VOID, FLASH
+from .theme import LCD_ON, LCD_BG, SIL_DAY, SIL_NIGHT, VOID, FLASH
 from .pet import Pet, POOP_MAX_PILES
 from .render import render_screen
 
@@ -57,13 +57,6 @@ GRAVESTONE = _FX.get("grave", [None])[0]      # real DVPet death.png
 # sizes 1-3 (7x7 / 8x7 / 8x8 -- all _poop_size produces) fit the slot natively.
 POOP_W = 8
 POOP_PAD = 0
-
-def _sky_icon(pet):
-    """One time glyph for the status line: a sun by day, a moon by night.
-    (The weather glyphs left with the weather system; BASIC VPET 2026-07-16.)
-    Returns (glyph, colour)."""
-    return (chr(0x2600), theme.COIN) if pet.is_daytime else (chr(0x263E), "blue")
-
 
 from .render import blit as _blit    # one blit for app/training/strikefx (refactor 2026-07-05)
 
@@ -240,8 +233,9 @@ class Screen(Static):
     def paint(self, pet: Pet):
         if self.fx:
             return self._paint_fx(pet)
-        phase = pet.day_phase
-        on, bg = PHASE_PALETTE.get(phase, (LCD_ON, LCD_BG))
+        # (the per-phase LCD tint left with the day/night system -- BASIC
+        # VPET 2026-07-17; one palette, day and night)
+        on, bg = LCD_ON, LCD_BG
         bgimg = self._background(pet)
         if not pet.lights:                 # lights off (the 's' lights button): dark room (+ Zzz if asleep)
             bgimg, bg, on = None, VOID, SIL_NIGHT   # DVPet lightsOff.png is pure (0,0,0); VOID keeps it on-palette
@@ -594,7 +588,7 @@ class Screen(Static):
         then the kind's own painter (_fxk_<kind>) mutates it.  Bodies verbatim
         from the old 210-line chain; behavior pinned by the fx golden."""
         fx = self.fx
-        on, bg = PHASE_PALETTE.get(pet.day_phase, (LCD_ON, LCD_BG))
+        on, bg = LCD_ON, LCD_BG
         bgimg = self._background(pet)
         if bgimg:
             on = SIL_DAY   # dark silhouette day OR night, same rule as paint() --

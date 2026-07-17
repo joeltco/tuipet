@@ -43,7 +43,9 @@ def _screen():
 
 def test_night_care_fx_keep_the_dark_silhouette():
     p = _pet()
-    assert p.day_phase == "night" and p.background() is not None
+    # (the night phase left -- BASIC VPET 2026-07-17: scenes are one look,
+    # so the dark-silhouette law now holds around the clock)
+    assert p.background() is not None
     for kind in ("clean", "cheer", "jeer", "spit", "eat", "heal"):
         s = _screen()
         s.start_fx(kind, poop=2 if kind == "clean" else 0)

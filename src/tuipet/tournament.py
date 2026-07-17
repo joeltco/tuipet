@@ -101,15 +101,14 @@ def entry_fee(pet, t):
 
 
 def _rand_trophy_ids(pet):
-    """Tournament.randTrophyIDs: bucket the season's cups by age tier, then fill
+    """Tournament.randTrophyIDs: bucket the cups by age tier, then fill
     the 24 hourly slots rotating open/Rookie/open/Champion/open/Ultimate/open/
     Mega; the fill STOPS at the first empty bucket (canon quirk).  Every cup in
-    the classic data has Time=None, so the time-of-day match never gates."""
-    season = pet.season
+    the classic data has Time=None, so the time-of-day match never gates.
+    (The seasons left -- BASIC VPET 2026-07-17: ALL cups share one pool now;
+    the CSV Season word survives only as the cup's flavor name.)"""
     buckets = {"free": [], "Rookie": [], "Champion": [], "Ultimate": [], "Mega": []}
     for t in data.load_tournies():
-        if t["season"] != season:
-            continue
         buckets[t["age_limit"] if t["age_limit"] in buckets else "free"].append(t)
     order = ["free", "Rookie", "free", "Champion", "free", "Ultimate", "free", "Mega"]
     sched = []
@@ -431,7 +430,11 @@ class Tournament:
             won_map = getattr(self.pet, "trophies_won", None)
             if won_map is None:
                 self.pet.trophies_won = won_map = {}
-            won_map[self.trophy["id"]] = self.pet.season   # seasonBeat; season kept for the trophy room
+            # seasonBeat; the trophy room shows the DAY it fell (the seasons
+            # left with the calendar -- BASIC VPET 2026-07-17)
+            from .pet import DAY_LENGTH
+            won_map[self.trophy["id"]] = "day %d" % (
+                int(self.pet.world_seconds // DAY_LENGTH) + 1)
             from . import persistence
             persistence.tourney_add(self.trophy["id"])     # gates the tournament egg unlocks
             extras = []

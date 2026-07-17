@@ -13,11 +13,6 @@ from __future__ import annotations
 from . import data
 
 
-def season_name(pet):
-    """The cup calendar's season (the classic world clock owns it)."""
-    return getattr(pet, "season", "Spring")
-
-
 # what each usable item DOES (mirrors Pet.use_item exactly)
 EFFECTS = {
     "energy_drink": "energy to FULL",

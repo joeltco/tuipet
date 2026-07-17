@@ -46,7 +46,9 @@ def test_schedule_is_24_hourly_slots_no_dupes():
     assert len(sched) == HOME_LIMIT == 24
     real = [t for t in sched if t >= 0]
     assert len(real) == len(set(real))          # picks remove from the bucket
-    assert all(tournament.trophy_by_id(t)["season"] == p.season for t in real)
+    # (the same-season pool check left with the calendar -- BASIC VPET
+    # 2026-07-17: all cups share one pool; Season survives as flavor text)
+    assert all(tournament.trophy_by_id(t) for t in real)
 
 
 def test_schedule_rerolls_each_game_day():
@@ -113,7 +115,7 @@ def test_prelim_chain(monkeypatch):
     _patch(monkeypatch, [q, _trophy(id=4, prelim=3)])
     p = _pet("Rookie")
     assert "first" in tournament.eligibility(p, _trophy(id=4, prelim=3))
-    p.trophies_won = {3: p.season}              # qualifier beaten
+    p.trophies_won = {3: "day 1"}               # qualifier beaten
     assert tournament.eligibility(p, _trophy(id=4, prelim=3)) is None
 
 
@@ -209,7 +211,8 @@ def test_champion_feeds_egg_unlock_progress():
     tm = Tournament(p, _trophy(id=7))
     for _ in range(3):
         tm.record(True)
-    assert p.trophies_won.get(7) == p.season
+    # the trophy room shows the DAY it fell (seasons left, 2026-07-17)
+    assert p.trophies_won.get(7) == "day 1"
     assert 7 in persistence.get_progress()["tourneys"]
 
 
@@ -315,8 +318,17 @@ def test_mid_bracket_contracts():
 
     random.seed(11)
     p = champ()
+    # the one pool holds every cup now (2026-07-17): entry only opens at the
+    # CURRENT hour, so move the clock to a slot whose cup will actually take
+    # this champ instead of trusting seed-luck
+    from tuipet.pet import DAY_LENGTH
+    p.world_seconds = DAY_LENGTH / 48                # hour 0, day 0
+    sched = tournament.schedule(p)
+    slot = next(i for i, tid in enumerate(sched) if tid >= 0
+                and tournament.eligibility(p, tournament.trophy_by_id(tid)) is None)
+    p.world_seconds = (slot + 0.5) * DAY_LENGTH / 24
     pan = TournamentPanel(p)
-    pan.cursor = tournament._hour(p)
+    pan.cursor = slot
     pan.key("enter")
     assert pan.tourney is not None
     r1 = pan.key("escape")                     # forfeit from the opening tree
@@ -335,8 +347,9 @@ def test_mid_bracket_contracts():
 
     random.seed(11)
     p3 = champ()
+    p3.world_seconds = (slot + 0.5) * DAY_LENGTH / 24   # the proven-eligible slot
     pan3 = TournamentPanel(p3)
-    pan3.cursor = tournament._hour(p3)
+    pan3.cursor = slot
     pan3.key("enter")
     pan3.key("space"); pan3.key("space")        # into the round-one bout
     assert pan3.sub is not None
@@ -425,8 +438,13 @@ def test_a_cup_runs_once_per_hour():
     p = Pet(num=964, stage="Mega", attribute="Vaccine", obedience=900, bits=10_000)
     p.world_seconds = 600.0
     p.age_seconds = 13 * 1440.0
+    # the one pool holds every cup now (2026-07-17): this hour's cup may be
+    # field-locked, so pick any cup this Mega can enter -- the once-per-hour
+    # ledger is what's under test, not the pick
     tr = tm.open_now(p) or tm.trophy_by_id(0)
-    assert tm.eligibility(p, tr) is None
+    if tm.eligibility(p, tr) is not None:
+        tr = next(t for t in (tm.trophy_by_id(i) for i in range(300))
+                  if t and tm.eligibility(p, t) is None)
     tm.Tournament(p, tr)                       # entering spends this hour
     assert tm._hour(p) in p.fought_hours
     assert "has run" in (tm.eligibility(p, tr) or ""), "the cup must not re-run"
@@ -435,6 +453,9 @@ def test_a_cup_runs_once_per_hour():
     p.world_seconds += 60.0                    # the next game hour
     assert tm._hour(p) not in p.fought_hours
     tr2 = tm.open_now(p) or tm.trophy_by_id(1)
+    if tm.eligibility(p, tr2) is not None:
+        tr2 = next(t for t in (tm.trophy_by_id(i) for i in range(300))
+                   if t and tm.eligibility(p, t) is None)
     t2 = tm.Tournament(p, tr2)
     t2.record(False)                           # walked out / eliminated
     assert "has run" in (tm.eligibility(p, tr2) or "")

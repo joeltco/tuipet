@@ -203,7 +203,7 @@ def _evo_rows(pet):
 
 
 def _trophy_rows(pet):
-    """The trophy room: this life's cups (label + the season they fell) topped
+    """The trophy room: this life's cups (label + the day they fell) topped
     by the career totals -- lifetime cups persist across generations."""
     from tuipet import tournament as _t
     from tuipet import persistence as _p
@@ -275,7 +275,6 @@ def build_pages(pet):
     appetite = ["picky", "normal", "greedy"][pet._glutton() + 1]
     temperament = ["mellow", "steady", "restless"][pet._restless() + 1]
     disp = ["sour", "even", "sunny"][pet._disposition() + 1]
-    fav, dis = pet.favorite_time(), pet.disliked_time()
     status = [
         ("Name", pet.name),
         # an egg has no dex number yet -- "#-1" leaked the internal sentinel
@@ -293,10 +292,11 @@ def build_pages(pet):
     ]
     if pet.x_antibody != "None":
         power.append(("X-Anti", pet.x_antibody))   # keep STATUS at its 9-row max (no overflow)
+    # (the Likes/Dislikes clock rows left with the timeRanks system --
+    # BASIC VPET 2026-07-17)
     person = [
         ("Type", pet.personality()), ("Spirit", disp),
         ("Appetite", appetite), ("Pace", temperament),
-        ("Likes", fav or "-"), ("Dislikes", dis or "-"),
     ]
     core = data.load_digicore_icons().get(pet.num)
     if core:
@@ -315,9 +315,8 @@ def build_pages(pet):
         ]),
         ("HOME", [
             # the scene is wired to the EGG (habitats left; BASIC VPET
-            # 2026-07-16) -- the fit line went with the affinity system
+            # 2026-07-16); the Season row left with the calendar (2026-07-17)
             ("Scene", _bgs.name(_bgs.scene_for_egg(getattr(pet, "egg_type", 0)))),
-            ("Season", pet.season),
         ]),
         ("PERSON", person),
         ("TROPHIES", _trophy_rows(pet)),

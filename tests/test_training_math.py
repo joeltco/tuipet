@@ -101,23 +101,7 @@ def test_compliant_start_still_enters_play():
     assert tp2.phase == "play" and tp2.gkey == "virus"
 
 
-def test_species_time_seeds_bias_the_ledger_on_evolve():
-    """digimon.csv Time{Preference,Aversion} were parsed (or dropped) but never
-    consumed -- a nocturnal species hatched with no clock personality at all
-    (audit 2026-07-13).  evolve_to biases the ledger +2/-2, the exact rule the
-    taste-seed comment documents; emergent opinions are nudged, not replaced."""
-    from tuipet import data as _d
-    p = Pet(num=-1, stage="Egg")
-    seeded = next(n for n, r in _d.load_requirements().items()
-                  if r.get("time_pref") in ("Morning", "Noon", "Night")
-                  and r.get("time_aversion") in ("Morning", "Noon", "Night")
-                  and r["time_pref"] != r["time_aversion"])
-    p.evolve_to(seeded)
-    r = _d.load_requirements()[seeded]
-    fav = Pet._TIME_WORD[r["time_pref"]]
-    bad = Pet._TIME_WORD[r["time_aversion"]]
-    assert p.time_pref[fav] > 0 and p.time_pref[bad] < 0
-    assert p.favorite_time() == fav and p.disliked_time() == bad
-    p.time_pref[bad] = 60                      # a strong emergent opinion...
-    p.evolve_to(seeded)
-    assert p.time_pref[bad] == 58, "...is nudged by the seed, never replaced"
+# (test_species_time_seeds... left with the timeRanks system --
+# BASIC VPET 2026-07-17)
+
+

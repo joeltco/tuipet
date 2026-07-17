@@ -8,7 +8,6 @@ from . import shop
 from . import egg as egg_mod
 from . import evolution
 from . import lines as lines_mod
-from . import weather as wx
 from . import backgrounds
 from . import theme
 
@@ -54,11 +53,6 @@ def _enemy_level(enemy):
     vir = enemy.get("virus", 0)
     h = enemy.get("hp", 5)
     return max(1, int((v + d + vir + (h - 5) * 10) / 100))
-
-
-def _dvpet_time(phase):
-    """Map tuipet's day phase to DVPet's training Time (Morning/Noon/Night)."""
-    return {"dawn": "Morning", "day": "Noon", "dusk": "Noon", "night": "Night"}.get(phase, "Noon")
 
 
 # Lifespan (seconds), scaled from DVPet's real-time model. A pet lives this long
@@ -888,7 +882,7 @@ class Pet:
     dp: int = 0                     # Pen20 DP meter 0..4: full to jogress; protein +1, 3h sleep refills
     bits: int = 0
     trophies: int = 0
-    trophies_won: dict = _dcf(default_factory=dict)   # trophy id -> season won (per-season earned)
+    trophies_won: dict = _dcf(default_factory=dict)   # trophy id -> day-won label (the trophy room)
     # ---- home shop (PhysicalState _homeFoodShop/_homeItemShop/_restock) ----
     shop_food: list = _dcf(default_factory=list)    # rolled food slots {key, stock, sale}
     shop_item: list = _dcf(default_factory=list)    # rolled item slots
@@ -952,11 +946,9 @@ class Pet:
     # (the habitat block lived here -- habitat, home_habitat, habitats,
     # habitat_record -- removed whole with the habitat system; the home scene
     # is wired to egg_type now.  BASIC VPET 2026-07-16)
-    time_pref: dict = _dcf(default_factory=lambda: {"dawn": 0, "day": 0, "dusk": 0, "night": 0})
     x_antibody: str = "None"
     effect_id: int = -1            # active care effect (careEffect.csv id; -1 = none)
     effect_t: float = 0.0          # remaining duration of the active care effect
-    train_time: str = ""            # time of day of the last training (gates some evolutions)
     inventory: dict = _dcf(default_factory=dict)
     # transient animation request, consumed by the UI
     anim: str = "idle"
@@ -1183,7 +1175,6 @@ class Pet:
 
     def _tick_recovery(self, dt):
         """Environment + the recovery lapses (they run asleep or awake)."""
-        self._track_time_pref(dt)
         day = int(self.world_seconds // DAY_LENGTH)
         if getattr(self, "_exercise_day", -1) != day:    # DVPet checkExerciseTime: daily reset
             self._exercise_day = day
@@ -1723,27 +1714,10 @@ class Pet:
             cap = max(MIN_STOMACH_CAPACITY, cap - int(diff * GERIATRIC_STOMACH_COEF))
         return cap
 
-    @property
-    def day_phase(self):
-        # PhysicalState.checkTime on a FIXED daylight triple (6, 14, 19):
-        # the per-home per-season triples (and the winter-sunset quirk that
-        # rode them) left with the habitat system (BASIC VPET 2026-07-16).
-        # Morning 6-14, Noon 14-19 with the last Noon hour as the sunset
-        # (isSunset) -> tuipet's dusk, Night 19-6.
-        hour = (self.world_seconds % DAY_LENGTH) / DAY_LENGTH * 24
-        if 6 <= hour < 14:
-            return "dawn"
-        if 14 <= hour < 19:
-            return "dusk" if int(hour) == 18 else "day"
-        return "night"
+    # (day_phase/is_daytime and the season calendar left with the day/night
+    # + seasons removal -- BASIC VPET 2026-07-17.  The wall clock stays: the
+    # sleep system's bedtimes are clock hours, not phases.)
 
-    @property
-    def is_daytime(self):
-        return self.day_phase in ("dawn", "day")
-
-    @property
-    def season(self):
-        return wx.season_for_day(int(self.world_seconds // DAY_LENGTH))
 
     @property
     def ideal_temp(self):
@@ -1755,60 +1729,15 @@ class Pet:
         per-version backgrounds, worn as the DSprite rebuild's rip set
         (habitats left; BASIC VPET 2026-07-16).  file overrides the sheet
         entirely (BackgroundAnim checkBack's special rooms: the
-        tournament/PvP/raid arena) while keeping the same frame pick."""
+        tournament/PvP/raid arena).  One look per scene: the day-phase frame
+        pick and the star-twinkle/ember night art left with the day/night
+        system (BASIC VPET 2026-07-17)."""
         if file is not None:
             key = file
         else:
             key = backgrounds.scene_for_egg(self.egg_type)
         frames = data.load_backgrounds().get(key)
-        if not frames:
-            return None
-        ph = self.day_phase
-        # the sky is time-of-day only now (BASIC VPET 2026-07-16: the weather
-        # system is gone -- no overcast frames, no precip sheets, no storm
-        # tints).  The clear-night star twinkle and the self-luminous ember
-        # flows stay: they are the CLOCK's art, not the weather's.
-        idx = {"dawn": 0, "day": 1, "dusk": 2, "night": 3}.get(ph, 1)
-        if ph == "night" and len(frames) > 4:
-            # a clear night shimmers: the stars twinkle on a slow beat (the
-            # arena dissolve softens each step); starless sheets fall through.
-            tw = theme.star_frame(key, frames, self.world_seconds)
-            if tw is not None:
-                return theme.ember_frame(
-                    key, frames, tw,
-                    ("tw", theme.tw_beat(self.world_seconds)),
-                    self.world_seconds)
-        idx = min(idx, len(frames) - 1)
-        fr = frames[idx]
-        if len(frames) > 4:
-            # the lava breathes under EVERY sky (Volcano's flow is
-            # self-luminous night and day; a no-flow sheet passes through)
-            fr = theme.ember_frame(key, frames, fr, ("f", idx),
-                                   self.world_seconds)
-        return fr
-
-    def _track_time_pref(self, dt):
-        """The pet warms to the times of day it spends happy in, and sours on
-        the rest (DVPet's timeRanks).  One step per GAME-MINUTE: the old
-        per-SECOND drift saturated a phase to -90 within 90s of sadness and
-        poisoned the whole clock -- disliked-hour drains then kept the pet
-        unhappy, souring MORE hours (the misbehaving ratchet; Joel's Devimon
-        hated all four phases at -60..-90, 2026-07-05).  A neutral-mood minute
-        drifts the current phase back toward 0, so a scarred clock heals."""
-        self._time_pref_t = getattr(self, "_time_pref_t", 0.0) + dt
-        if self._time_pref_t < 60.0:
-            return
-        self._time_pref_t -= 60.0
-        ph = self.day_phase
-        cur = self.time_pref.get(ph, 0)
-        if self.mood >= MIN_HAPPY_MOOD:
-            d = 1
-        elif self.mood <= MIN_UNHAPPY_MOOD:
-            d = -1
-        else:
-            d = 1 if cur < 0 else (-1 if cur > 0 else 0)   # neutral: mend toward 0
-        if d:
-            self.time_pref[ph] = _clamp(cur + d, -90, 90)
+        return frames[0] if frames else None
 
     def _disposition(self):
         return self.disposition          # DVPet _disposition: fixed personality trait
@@ -1837,30 +1766,8 @@ class Pet:
         rst = self._restless()
         return trio[0 if rst == 0 else (1 if rst == 1 else 2)]
 
-    # digimon.csv Time{Preference,Aversion} words -> tuipet day phases (the
-    # species seeds; ~97% of the dex carries them.  No "dusk" seed exists)
-    _TIME_WORD = {"Morning": "dawn", "Noon": "day", "Night": "night"}
-
-    def seed_time_pref(self):
-        """Bias the time ledger by the SPECIES seeds (+2 preference / -2
-        aversion), the exact rule the taste-seed comment documents -- the
-        columns were parsed-or-dropped but never consumed, so a nocturnal
-        species hatched with no clock personality at all (audit 2026-07-13).
-        A bias on the CURRENT values, not an overwrite: an evolved pet keeps
-        its emergent opinions, nudged by the new form's nature."""
-        r = self._phys()
-        fav = self._TIME_WORD.get(r.get("time_pref", "None"))
-        bad = self._TIME_WORD.get(r.get("time_aversion", "None"))
-        if fav:
-            self.time_pref[fav] = _clamp(self.time_pref.get(fav, 0) + 2, -90, 90)
-        if bad and bad != fav:
-            self.time_pref[bad] = _clamp(self.time_pref.get(bad, 0) - 2, -90, 90)
-
-    def favorite_time(self):
-        return max(self.time_pref, key=self.time_pref.get) if any(self.time_pref.values()) else None
-
-    def disliked_time(self):
-        return min(self.time_pref, key=self.time_pref.get) if any(v < 0 for v in self.time_pref.values()) else None
+    # (the timeRanks system -- time_pref/seed_time_pref/favorite_time/
+    # disliked_time -- left with the day/night system.  BASIC VPET 2026-07-17)
 
     # (the weather machine -- _update_weather, the thermostat, the futon's
     # temperature pin, the sick fever/chill swings -- was removed whole with
@@ -2315,7 +2222,6 @@ class Pet:
     def evolve_to(self, num):
         was_young = self.stage in ("Egg", "Fresh", "InTraining", "Rookie")
         _req = self._become(num)
-        self.seed_time_pref()          # the new form's clock nature biases the ledger
         # Evolution.java's per-stage ARRIVAL setters (egg/hatch audit
         # 2026-07-06 -- none of these were ported; the missing fresh()
         # obedience 75 was the deepest root of the misbehaving-babies era):
@@ -2537,31 +2443,15 @@ class Pet:
         if raw < self.energy and raw < 0:
             self._set_mood(self.mood - (NEGATIVE_ENERGY_MOOD_DEC - raw))
             self._set_obedience(self.obedience - (NEGATIVE_ENERGY_OBEDIENCE_DEC - raw))
-            # (the over-exertion fatigue left with the fatigue system)
-        if raw < self.energy:
-            raw = self._energy_bonus_save(raw)   # checkEnergyIncFromPerfectConditions
+            # (the over-exertion fatigue left with the fatigue system; the
+            # perfect-conditions bounce left with the day/night system)
         if raw < -self.max_energy:
             self._burn_life(MIN_ENERGY_LIFE_PENALTY)     # setEnergy's floor penalty
         self.energy = _clamp(raw, -self.max_energy, self.max_energy)
 
-    def _energy_bonus_save(self, new):
-        """An energy drop during the pet's FAVOURITE time can bounce back +1
-        when conditions are perfect: good mood / nutrition and a compatible
-        home each shrink the roll range.  (The weather and ideal-temperature
-        terms left with the weather system -- BASIC VPET 2026-07-16; the
-        remaining terms keep their canon weights.)"""
-        if self.favorite_time() != self.day_phase:
-            return new
-        # (the home-compatibility terms left with the habitat system --
-        # BASIC VPET 2026-07-16; the mood/nutrition legs keep their weights)
-        rng = ENERGY_BONUS_BASE
-        if self.current_mood() == "Happy":
-            rng += ENERGY_BONUS_MOOD
-        if self.good_nutrition():
-            rng += ENERGY_BONUS_NUTRITION
-        if rng > 1 and random.randrange(rng) == 1:
-            new += 1
-        return new
+    # (_energy_bonus_save -- checkEnergyIncFromPerfectConditions -- left
+    # with the day/night system: its trigger WAS the favourite time of day.
+    # BASIC VPET 2026-07-17)
 
     def energy_pct(self):
         return max(0, self.energy) * 100 // self.max_energy if self.max_energy else 0
@@ -2923,7 +2813,6 @@ class Pet:
         DVPet. Training a non-favored attribute costs a little mood
         (DVPet NoneTrainingAttributeMoodRankChange).
         """
-        self.train_time = _dvpet_time(self.day_phase)
         self._calm_discipline_call()                      # exercise() placates the tantrum
         self.exercise_today += 1                          # DVPet _exercise (incExerciseTime)
         self.stage_trainings += 1                         # LINES_SPEC TR gate: every attempt counts (Pen20)
@@ -2995,17 +2884,9 @@ class Pet:
                                      + (ENTH_DISLIKE_FORCED if complied else 0))
             else:
                 self._set_enthusiasm(self.enthusiasm - 2)  # ExerciseNotFavAttributeEnthusiasmDec
-        # checkExerciseTime: drilling at the pet's favourite time of day lifts it,
-        # at the disliked time it drags; any other hour still costs a little mood
-        now = self.day_phase
-        if self.favorite_time() == now:
-            self._set_mood(self.mood + FAV_EXERCISE_TIME_MOOD)
-            self._set_enthusiasm(self.enthusiasm + FAV_EXERCISE_TIME_ENTH)
-        elif self.disliked_time() == now:
-            self._set_mood(self.mood - NOTFAV_EXERCISE_TIME_MOOD)
-            self._set_enthusiasm(self.enthusiasm + DISLIKED_TIME_EXERCISE_ENTH)
-        else:
-            self._set_mood(self.mood - NOTFAV_EXERCISE_TIME_MOOD)
+        # (checkExerciseTime -- the favourite/disliked drill hour -- left with
+        # the day/night system; its mood/spirit legs were already no-ops.
+        # BASIC VPET 2026-07-17)
         self._set_mood(self.mood + self.enthusiasm)       # exercise(): mood rides the spirit
         # checkWorseSick(ExerciseWorseSickChance): drilling a SICK pet can worsen it --
         # and if it only trained because you spent its compliance, it resents you
@@ -3304,10 +3185,8 @@ class Pet:
         # system -- BASIC VPET 2026-07-16; the roll keeps its canon range)
         self._set_mood(self.mood - SICK_MOOD_DEC)
         self._set_enthusiasm(self.enthusiasm + SICK_ENTH_CHANGE)
-        # canon sours the HOUR it fell ill in (timeRanks -RankChangeSick),
-        # mapped onto the tuned time ledger's +-90 scale
-        ph = self.day_phase
-        self.time_pref[ph] = _clamp(self.time_pref.get(ph, 0) - RANK_TIME_SICK, -90, 90)
+        # (canon's timeRanks hour-souring left with the day/night system --
+        # BASIC VPET 2026-07-17)
 
     def _worsen_sick(self):
         """PhysicalState.checkWorseSick (effect body): an already-sick pet gets worse --
@@ -3319,11 +3198,6 @@ class Pet:
         self._set_mood(self.mood + WORSE_MALADY_MOOD_DEC)
         self._set_enthusiasm(self.enthusiasm + SICK_ENTH_CHANGE)  # WorseSickEnthusiasmChange == -1
         self.sick_length += SICK_LAPSE_MIN                        # setSickLength(_sickLength + 1) = +1 lapse
-        # canon checkWorseSick also sours the HOUR it worsened in (timeRanks
-        # dec RankChangeSick) -- the fresh _sicken already did; the worsening
-        # was missing it (training audit 2026-07-15)
-        ph = self.day_phase
-        self.time_pref[ph] = _clamp(self.time_pref.get(ph, 0) - RANK_TIME_SICK, -90, 90)
         self._start_poop()
 
 
@@ -3934,7 +3808,9 @@ class Pet:
             return "starving"
         if self.poop >= 3:
             return "needs cleaning"
-        if self.day_phase == "night" and not self.asleep and self.energy < self.max_energy // 2:
+        # sleepy keys on the pet's own bedtime window now (the night phase
+        # left with the day/night system -- BASIC VPET 2026-07-17)
+        if self._in_sleep_window() and not self.asleep and self.energy < self.max_energy // 2:
             return "sleepy"
         if self.mood <= MIN_UNHAPPY_MOOD:
             return "unhappy"

@@ -20,8 +20,6 @@ THEMES = {
         "sil_day": "#2b2e31", "sil_night": "#e4e7ea",
         "heart": "#c25a4a", "energy": "#4a90c2", "mood": "#a06ac2", "life": "#3f9a86", "coin": "#c2a24a",
         "void": "#000000", "flash": ("#f2f6fa", "#1a2026", "#e8eef2"),
-        "phases": {"dawn": ("#33363a", "#d2d5d8"), "day": ("#2b2e31", "#c6c9cc"),
-                   "dusk": ("#39352f", "#bdb8b2"), "night": ("#9aa0a6", "#23262a")},
     },
     "mono": {
         "on": "#e8e8e8", "bg": "#0c0c0c", "mid": "#808080",
@@ -29,8 +27,6 @@ THEMES = {
         "sil_day": "#101010", "sil_night": "#f0f0f0",
         "heart": "#d8d8d8", "energy": "#b8b8b8", "mood": "#a8a8a8", "life": "#c8c8c8", "coin": "#e8e8e8",
         "void": "#000000", "flash": ("#ffffff", "#0c0c0c", "#e8e8e8"),
-        "phases": {"dawn": ("#f0f0f0", "#141414"), "day": ("#e8e8e8", "#0c0c0c"),
-                   "dusk": ("#e0c0a0", "#0c0a08"), "night": ("#9a9a9a", "#050505")},
     },
     "amber": {
         "on": "#ffb000", "bg": "#1a1206", "mid": "#9a6b18",
@@ -38,8 +34,6 @@ THEMES = {
         "sil_day": "#2a1c06", "sil_night": "#ffd877",
         "heart": "#ff7a3a", "energy": "#ffb000", "mood": "#e0923a", "life": "#ffc24a", "coin": "#ffd877",
         "void": "#000000", "flash": ("#ffe8b0", "#1a1206", "#ffd890"),
-        "phases": {"dawn": ("#ffc23a", "#160f05"), "day": ("#ffb000", "#1a1206"),
-                   "dusk": ("#ff8a3a", "#1a0f04"), "night": ("#a8741a", "#0d0903")},
     },
     "midnight": {
         "on": "#a9c8ee", "bg": "#101826", "mid": "#5d7491",
@@ -47,8 +41,6 @@ THEMES = {
         "sil_day": "#16202e", "sil_night": "#cfe0f5",
         "heart": "#e0884a", "energy": "#6fb0e0", "mood": "#9a8fe0", "life": "#5fc7b0", "coin": "#e0c060",
         "void": "#000000", "flash": ("#dce8f8", "#101826", "#c8d8f0"),
-        "phases": {"dawn": ("#b9d2f0", "#15202f"), "day": ("#a9c8ee", "#101826"),
-                   "dusk": ("#d0a070", "#181420"), "night": ("#6d86a8", "#0a0f18")},
     },
     # the classic 4-shade DMG pea-soup LCD (the default stays grey; this is
     # an option).  NB the v0.2.284 putty-shell chrome experiment was REVERTED
@@ -64,8 +56,6 @@ THEMES = {
         # three shades only; the darkest DMG green belongs to sprites alone,
         # so the mon is always the darkest thing on the LCD
         "bg_ramp": ("#306230", "#8bac0f", "#9bbc0f"),
-        "phases": {"dawn": ("#1a4418", "#a8c83a"), "day": ("#0f380f", "#9bbc0f"),
-                   "dusk": ("#3a3a10", "#a8a838"), "night": ("#7aa060", "#142810")},
     },
     "paper": {
         "on": "#2a2620", "bg": "#efe9dc", "mid": "#8a8274",
@@ -77,8 +67,6 @@ THEMES = {
         # white instead of green"): backgrounds get the light ink-wash trio,
         # the near-black ink stays sprite-only, same law as gameboy
         "bg_ramp": ("#8a8274", "#d5cdbb", "#efe9dc"),
-        "phases": {"dawn": ("#332e26", "#f4eee0"), "day": ("#2a2620", "#efe9dc"),
-                   "dusk": ("#463a2c", "#e6dcc8"), "night": ("#9a948a", "#262218")},
     },
     "sakura": {
         "on": "#f0b8c8", "bg": "#241820", "mid": "#8a5a6c",
@@ -86,8 +74,6 @@ THEMES = {
         "sil_day": "#2a1a24", "sil_night": "#ffd0dc",
         "heart": "#ff7a8a", "energy": "#8ac8e8", "mood": "#c89ae8", "life": "#7ad0b0", "coin": "#f0c86a",
         "void": "#000000", "flash": ("#ffe8f0", "#241820", "#f8d8e4"),
-        "phases": {"dawn": ("#ffc8d8", "#2a1c26"), "day": ("#f0b8c8", "#241820"),
-                   "dusk": ("#f0a878", "#241410"), "night": ("#9a7484", "#140c12")},
     },
     "ocean": {
         "on": "#7fd8d0", "bg": "#0a1e22", "mid": "#3f7a78",
@@ -95,8 +81,6 @@ THEMES = {
         "sil_day": "#0f2a2e", "sil_night": "#c8f0e8",
         "heart": "#f07a6a", "energy": "#6ac8e0", "mood": "#9a9ae8", "life": "#5ad0a0", "coin": "#e8c86a",
         "void": "#000000", "flash": ("#e0f8f4", "#0a1e22", "#c8ece6"),
-        "phases": {"dawn": ("#9ae0d8", "#0e262a"), "day": ("#7fd8d0", "#0a1e22"),
-                   "dusk": ("#d0a068", "#14201e"), "night": ("#4a8a84", "#05130f")},
     },
 }
 _DEFAULT = "grey"
@@ -104,7 +88,7 @@ _ORDER = list(THEMES)
 _current = _DEFAULT
 
 _NAMES = ("LCD_ON", "LCD_BG", "MID", "INK", "INK_B", "DIM", "SEL", "ACCENT",
-          "POS", "NEG", "BORDER", "SIL_DAY", "SIL_NIGHT", "PHASE_PALETTE",
+          "POS", "NEG", "BORDER", "SIL_DAY", "SIL_NIGHT",
           "HEART", "ENERGY", "MOOD", "LIFE", "COIN", "VOID", "FLASH",
           "BEZEL", "SHELL", "LABEL", "KEY")
 # (the hand-maintained _SCREEN_MODULES registry is gone -- apply() discovers
@@ -118,7 +102,6 @@ LCD_ON = LCD_BG = MID = INK = INK_B = DIM = SEL = ACCENT = POS = NEG = BORDER = 
 SIL_DAY = SIL_NIGHT = HEART = ENERGY = MOOD = LIFE = COIN = VOID = ""
 BEZEL = SHELL = LABEL = KEY = ""
 FLASH: tuple = ("", "", "")
-PHASE_PALETTE: dict = {}
 
 
 def _derive(t):
@@ -128,7 +111,7 @@ def _derive(t):
         "INK": f"{on} on {bg}", "INK_B": f"bold {on} on {bg}",
         "DIM": f"{mid} on {bg}", "SEL": f"bold {bg} on {on}",
         "ACCENT": t["accent"], "POS": t["pos"], "NEG": t["neg"], "BORDER": t["border"],
-        "SIL_DAY": t["sil_day"], "SIL_NIGHT": t["sil_night"], "PHASE_PALETTE": t["phases"],
+        "SIL_DAY": t["sil_day"], "SIL_NIGHT": t["sil_night"],
         "HEART": t["heart"], "ENERGY": t["energy"], "MOOD": t["mood"],
         "LIFE": t["life"], "COIN": t["coin"],
         "VOID": t["void"], "FLASH": t["flash"],
@@ -380,183 +363,10 @@ def blend_frames(fa, fb, a):
     return out
 
 
-def _cell(fr, x, y):
-    row = fr[y]
-    return (int(row[x * 6:x * 6 + 2], 16), int(row[x * 6 + 2:x * 6 + 4], 16),
-            int(row[x * 6 + 4:x * 6 + 6], 16))
-
-
-def _luma(c):
-    return 0.299 * c[0] + 0.587 * c[1] + 0.114 * c[2]
-
-
-def _find_stars(frames):
-    """The night frame's starfield: isolated bright dots on the flat night
-    sky (top 40% -- the star band).  A real star is a DOT with a darker field
-    around it; a lit window is a bright REGION and never qualifies.  Returns
-    (star (x, y) list, flat night-sky colour) or None when fewer than 3 dots
-    (City's wall, Underwater)."""
-    night = frames[3]
-    W, H = len(night[0]) // 6, len(night)
-    pix = sorted((_cell(night, x, y) for y in range(3) for x in range(W)),
-                 key=_luma)
-    dim = pix[:max(1, int(len(pix) * 0.6))]    # the flat sky, stars excluded
-    nsky = tuple(sum(c[i] for c in dim) / len(dim) for i in range(3))
-
-    def isdot(x, y):               # a star: bright dot on a darker field
-        c = _cell(night, x, y)
-        if _luma(c) <= _luma(nsky) + 55:
-            return False
-        return sum(1 for dx in (-1, 0, 1) for dy in (-1, 0, 1) if (dx or dy)
-                   and 0 <= x + dx < W and 0 <= y + dy < H
-                   and _luma(_cell(night, x + dx, y + dy)) < _luma(c) - 40) >= 4
-
-    stars = [(x, y) for y in range(int(H * 0.4)) for x in range(W)
-             if isdot(x, y)]
-    return (stars, nsky) if len(stars) >= 3 else None
-
-
-# --- twinkling stars (background polish 2026-07-15, Joel: "making the stars
-# at night twinkle") ----------------------------------------------------------
-# A CLEAR night's stars shimmer: each detected star dims toward the flat
-# night sky and back on its own offset of a shared 4-beat cycle, so the field
-# glitters instead of blinking in lockstep.  Every pixel is the sheet's own
-# (a star fades INTO its sky -- nothing is drawn); the arena's canon
-# background dissolve turns each beat step into a soft 1.5s fade, which IS
-# the twinkle.  Cloudy/precip nights never get here (the overcast deck covers
-# the stars); starless sheets (City, Underwater) keep the plain night frame.
-_TWINKLE = {}                  # (sheet key, beat) -> derived night frame
-_TW_STARS = {}                 # sheet key -> _twinkle_stars() result | None
-_TW_BEATS = 4
-_TW_STEP = 2.0                 # world-seconds per beat (> the 1.5s dissolve)
-# each star walks this in order (offset by position): dip -> full -> flare ->
-# full.  The lone stars are FAINT (10-40 luma over the sky), so a dim-only
-# curve was invisible; the flare leg extends the sky->star ray past 1
-_TW_CURVE = (0.4, 1.0, 1.7, 1.0)
-
-
-def _twinkle_stars(frames):
-    """Lone single-pixel stars for the twinkle: a strict local max sitting on
-    FLAT sky -- brighter than every neighbour, every neighbour plain sky.
-    The overcast gate's dots (+55, 4-of-8 darker) are the moon's rim and
-    cloud-edge highlights as often as stars; shimmering those made the moon
-    sparkle.  Returns (star list, night-sky colour) or None (< 3 stars)."""
-    found = _find_stars(frames)    # also the open-sky gate (City, Underwater)
-    if not found:
-        return None
-    night = frames[3]
-    W, H = len(night[0]) // 6, len(night)
-    nsky = found[1]
-    nl = _luma(nsky)
-    stars = []
-    for y in range(1, int(H * 0.4)):
-        for x in range(1, W - 1):
-            l = _luma(_cell(night, x, y))
-            if l - nl <= 8:
-                continue
-            ns = [_luma(_cell(night, x + dx, y + dy))
-                  for dx in (-1, 0, 1) for dy in (-1, 0, 1) if dx or dy]
-            if l - max(ns) > 5 and max(ns) < nl + 25:
-                stars.append((x, y))
-    return (stars, nsky) if len(stars) >= 3 else None
-
-
-def _build_twinkle(frames, stars, nsky, beat):
-    night = frames[3]
-    out = list(night)
-    for x, y in stars:
-        f = _TW_CURVE[(beat + x * 7 + y * 11) % _TW_BEATS]
-        if f == 1.0:
-            continue               # this star holds full this beat
-        c = _cell(night, x, y)
-        cell = "%02x%02x%02x" % tuple(
-            int(min(255, max(0, nsky[i] + (c[i] - nsky[i]) * f)))
-            for i in range(3))
-        out[y] = out[y][:x * 6] + cell + out[y][(x + 1) * 6:]
-    return out
-
-
-def star_frame(key, frames, world_seconds):
-    """The clear-night frame with its stars mid-shimmer (built once per beat,
-    cached), or None when the sheet has no starfield -- the caller keeps the
-    classic frames[3] pick."""
-    if key not in _TW_STARS:
-        _TW_STARS[key] = (_twinkle_stars(frames)
-                          if frames and len(frames) > 4 else None)
-    found = _TW_STARS[key]
-    if not found:
-        return None
-    beat = tw_beat(world_seconds)
-    if (key, beat) not in _TWINKLE:
-        _TWINKLE[(key, beat)] = _build_twinkle(frames, found[0], found[1], beat)
-    return _TWINKLE[(key, beat)]
-
-
-def tw_beat(world_seconds):
-    return int(world_seconds / _TW_STEP) % _TW_BEATS
-
-
-# --- the lava ember pulse (background polish 2026-07-15, follow-up to the
-# twinkle) ---------------------------------------------------------------------
-# Lava breathes: the flow's ember pixels dim toward deep red and flare toward
-# yellow-white on a slow ripple.  What counts as lava is decided on the NIGHT
-# frame -- lava is SELF-LUMINOUS, still saturated red-orange in the dark,
-# which is what separates a flow from desert sand and dusk skies (both go
-# dark at night; colour rules alone tagged them all).  The pulse then rides
-# EVERY look of the sheet -- each phase pick, the overcast deck, a twinkle
-# beat -- by re-scaling that frame's own pixels at the ember coordinates.
-_EMBERS = {}                   # sheet key -> [(x, y)] | None
-_EMBER_FR = {}                 # (sheet key, variant tag, beat) -> frame
-_EM_BEATS = 4
-_EM_STEP = 2.6                 # world-sec per beat (off the stars' 2.0 sync)
-_EM_CURVE = (0.8, 1.0, 1.2, 1.0)   # dim -> hold -> flare -> hold
-
-
-def _find_lava(frames):
-    """Ember coordinates: ground-band pixels (bottom 60%) that hold saturated
-    red-orange ON THE NIGHT FRAME.  Fewer than 20 = no flow (a lit window or
-    two must not breathe)."""
-    night = frames[3]
-    W, H = len(night[0]) // 6, len(night)
-    coords = [(x, y) for y in range(int(H * 0.4), H) for x in range(W)
-              for c in (_cell(night, x, y),)
-              if c[0] > 150 and c[0] - c[1] > 60 and c[0] - c[2] > 100]
-    return coords if len(coords) >= 20 else None
-
-
-def _apply_embers(frame, coords, beat):
-    out = list(frame)
-    for x, y in coords:
-        c = _cell(frame, x, y)
-        if c[0] < c[1]:
-            continue               # this look covers the flow here: leave it
-        f = _EM_CURVE[(beat + (x // 3 + y // 3)) % _EM_BEATS]
-        if f == 1.0:
-            continue
-        cell = "%02x%02x%02x" % tuple(
-            int(min(255, c[i] * f)) for i in range(3))
-        out[y] = out[y][:x * 6] + cell + out[y][(x + 1) * 6:]
-    return out
-
-
-def ember_frame(key, frames, frame, tag, world_seconds):
-    """`frame` -- any look of this sheet (a phase pick, the overcast deck, a
-    twinkle beat, named by `tag`) -- with the sheet's lava mid-pulse (built
-    once per look and beat, cached).  Sheets with no flow return it as-is.
-    Scaling clips the flare at white, so hue drifts yellow exactly the way
-    hot lava should."""
-    if key not in _EMBERS:
-        _EMBERS[key] = (_find_lava(frames)
-                        if frames and len(frames) > 4 else None)
-    coords = _EMBERS[key]
-    if not coords:
-        return frame
-    beat = int(world_seconds / _EM_STEP) % _EM_BEATS
-    ck = (key, tag, beat)
-    if ck not in _EMBER_FR:
-        _EMBER_FR[ck] = _apply_embers(frame, coords, beat)
-    return _EMBER_FR[ck]
-
+# (the star-twinkle + lava-ember night art -- _cell/_luma/_find_stars/
+# star_frame/tw_beat/_find_lava/ember_frame and their caches -- left with
+# the day/night system: home scenes are one look each and the arena no
+# longer tracks the clock.  BASIC VPET 2026-07-17)
 
 # --- persistence of the chosen theme ---
 _CONF = os.path.expanduser("~/.local/share/tuipet/theme.txt")

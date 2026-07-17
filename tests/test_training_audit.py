@@ -27,11 +27,7 @@ def _pet(**kw):
     return Pet(num=100, stage="Champion", attribute="Vaccine", **kw)
 
 
-def test_worse_sick_sours_the_hour_too():
-    p = _pet()
-    p.sick, p.sick_length = True, 100.0
-    ph = p.day_phase
-    before = p.time_pref.get(ph, 0)
-    p._worsen_sick()
-    assert p.time_pref[ph] == before - RANK_TIME_SICK
-    assert p.sick_length > 100.0                    # still +1 lapse
+# (test_worse_sick_sours_the_hour_too left with the timeRanks system --
+# BASIC VPET 2026-07-17)
+
+

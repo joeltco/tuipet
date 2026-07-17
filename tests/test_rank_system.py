@@ -71,41 +71,7 @@ def test_the_emergent_favorite_feeds_the_power_bonus():
     assert p._power_bonus_attr() == "Data"
 
 
-def test_falling_ill_sours_the_hour():
-    p = _pet()
-    ph = p.day_phase
-    t0 = p.time_pref.get(ph, 0)
-    p._sicken()
-    assert p.time_pref[ph] == max(-90, t0 - RANK_TIME_SICK)
+# (test_falling_ill_sours_the_hour left with the timeRanks system --
+# BASIC VPET 2026-07-17)
 
 
-# --- the personality tracker ---------------------------------------------------------
-
-def test_the_trait_roll_seeds_the_tracker():
-    p = Pet(num=1, stage="Rookie", attribute="Vaccine")
-    p._rand_personality_traits()
-    assert p.mood_rank == p.disposition * PCHAMP_RANK
-    assert p.energy_rank == p.restless * PCHAMP_RANK
-    assert p.weight_rank == p.glutton * PCHAMP_RANK
-
-def test_childhood_care_is_tallied_but_only_while_young():
-    p = Pet(num=1, stage="Rookie", attribute="Vaccine", energy=24, max_energy=24)
-    p.world_seconds = 10 * 60.0
-    p.weight = p._base_weight()
-    p._tick_mood_discipline(59.0)
-    # (the Happy mood_rank leg left with the mood system; energy still tallies)
-    assert p.energy_rank == 1
-    q = _pet(energy=24, max_energy=24)            # Champion: the tally is closed
-    q._tick_mood_discipline(59.0)
-    assert q.energy_rank == 0 and q.mood_rank == 0
-
-def test_the_champion_evolution_cashes_in_the_tally():
-    p = Pet(num=1, stage="Rookie", attribute="Vaccine")
-    p.world_seconds = 10 * 60.0
-    p.mood_rank, p.energy_rank, p.weight_rank = PCHAMP_RANK + 5, -PCHAMP_RANK - 5, 0
-    p.disposition, p.restless, p.glutton = -1, 1, 1        # the pup's rolled traits...
-    p.evolve_to(102)                                        # ...re-roll at Champion
-    assert p.stage == "Champion"
-    assert p.disposition == 1                               # kept happy: turns sunny
-    assert p.restless == -1                                 # kept drained: turns mellow
-    assert p.glutton == 0                                   # middling weight: neutral

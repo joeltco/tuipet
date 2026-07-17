@@ -48,7 +48,6 @@ from . import theme
 from .arena import (  # noqa: F401  (full re-export: preserve tuipet.app.* for callers/tests)
     Screen, SCREEN_COLS, SCREEN_ROWS, SPRITE_W, PET_BASE_X, _FxCtx,
     hearts, bar, _FX, GRAVESTONE, POOP_W, POOP_PAD,
-    _sky_icon,
     _evol_strobe, _filth_right, _filth_pts, COND_W, COND_H, SICK_ZONE,
     PLAY_HOP, PLAY_LEAD, PLAY_HOP_H, GIFT_OUT, GIFT_BACK, GIFT_HOLD,
     _HIDDEN_STATUS_ICONS, _effect_overlay, _sick_mark_up,
@@ -176,7 +175,6 @@ class Stats(Static):
         word = pet.status_word()
         deco = _care_deco(pet, word)
         age = _age_compact(pet.age_seconds)
-        sky, skycol = _sky_icon(pet)
         xm = f" [b {T.ACCENT}]X[/]" if pet.x_antibody != "None" else ""
         lifepct = max(0, int((pet.lifespan - pet.age_seconds) / max(1, pet.lifespan) * 100))
         lifecol = T.NEG if pet.is_geriatric else T.LIFE
@@ -193,8 +191,7 @@ class Stats(Static):
             f" [{T.ACCENT}]◆{getattr(pet, 'dp', 0)}[/]",
             f"HP {pet.full_health}/{pet.max_health()}  Wt {pet.weight}g  [{T.COIN}]{pet.bits}b[/]",
             f"Battle  {pet.wins}W/{pet.battles}   [{T.COIN}]\u2605{pet.trophies}[/]",
-            f"@{backgrounds.name(backgrounds.scene_for_egg(pet.egg_type))[:16]} [dim]{pet.season}[/]",
-            f"[{skycol}]{sky}[/] [dim]{pet.day_phase}[/] [dim]{age}[/]",
+            f"@{backgrounds.name(backgrounds.scene_for_egg(pet.egg_type))[:16]} [dim]{age}[/]",
             f"Life    {bar(lifepct, 12, lifecol)}",
             _status_line(word, deco),
         ]
@@ -259,10 +256,11 @@ class TuiPetApp(App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("HOME IS THE EGG: habitats are gone - every egg now wires "
-                 "its line to its own backdrop from the DSprite scene set. "
-                 "Hatch the Terrier egg and grow up on the Bay Bridge; the "
-                 "sand egg finally gets its desert.")
+    WHATS_NEW = ("ONE ETERNAL AFTERNOON: the day/night cycle and the "
+                 "seasons are gone - scenes hold one look, every cup shares "
+                 "one year-round pool, and trophies now show the DAY they "
+                 "fell. Bedtimes stay: the clock still ticks, it just "
+                 "stopped changing clothes.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and
@@ -986,7 +984,7 @@ class TuiPetApp(App):
         p, t, T = self.pet, self.mode.tourney, theme
         self.stats_w.border_subtitle = _gen_subtitle(p)
         if t is None:                      # cup-select phase (no bout yet)
-            self._status_card("Cup", [f"[dim]{p.season} season[/]", "", "Pick a cup", "to enter."])
+            self._status_card("Cup", ["", "Pick a cup", "to enter."])
             return
         div = f"[dim]{'─' * 26}[/]"
         if t.over and t.champion:

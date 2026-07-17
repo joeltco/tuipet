@@ -1,4 +1,4 @@
-"""Tournament — pick a seasonal cup, then fight its bracket, in the display box."""
+"""Tournament — pick an hourly cup, then fight its bracket, in the display box."""
 from __future__ import annotations
 from . import data
 from . import tournament
@@ -158,7 +158,7 @@ class TournamentPanel(menu.SubHost):
         if self.phase == "select":
             self.sched = tournament.schedule(self.pet)   # live: a day rollover re-rolls
             hour = tournament._hour(self.pet)
-            out = menu.header("CUP", "%s %02d:00" % (self.pet.season, hour))
+            out = menu.header("CUP", "%02d:00" % hour)
 
             def fmt(tid, i):
                 tr = tournament.trophy_by_id(tid) if tid >= 0 else None

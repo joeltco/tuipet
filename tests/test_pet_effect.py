@@ -7,7 +7,6 @@ life-sim, plus one integration check through `use_item`.
 import pytest
 
 from tuipet import data
-from tuipet import weather as wx
 from tuipet.pet import Pet
 from conftest import futon_item
 
@@ -73,16 +72,9 @@ def test_effect_name():
     assert pet.effect_name() == ""
 
 
-def _futon_pet():
-    """A pet in the climate-controlled home (Hard Disk, weather_chance=0) so
-    _update_weather's target is the deterministic ideal-band midpoint."""
-    eid, eff = _an_effect()
-    if not eff["pause_temp"]:
-        pytest.skip("this effect does not pause temperature")
-    pet = Pet(num=-1, stage="Rookie", obedience=500)
-    pet.habitat = pet.home_habitat = 0
-    assert pet.habitat_obj()["weather_chance"] <= 0
-    return pet, eid, eff
+# (_futon_pet and its temperature-pause walks left with the weather system;
+# the habitat fixture it climate-pinned left with habitats -- the stale
+# import surfaced when weather.py was deleted, BASIC VPET 2026-07-17)
 
 
 def test_medicine_bandage_persist():

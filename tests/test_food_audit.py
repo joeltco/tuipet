@@ -56,23 +56,6 @@ def test_every_meal_bumps_the_bowel_gauge():
     assert p._poop_t >= lapse_worth * 0.999
 
 
-# ---- the Orange (food evolution) ------------------------------------------------
-
-def test_citramon_is_food_locked():
-    req = data.load_requirements().get(1513, {})
-    assert req.get("evol_food") == 42          # the Orange
-    p = Pet(num=118, stage="Champion", obedience=500)   # Nanimon
-    assert 1513 in data.load_evolutions().get(118, [])
-    assert not evolution.check(p, 1513), "food-locked: unreachable by timed care"
-    assert evolution.food_select(p, 41) != 1513          # the wrong food won't do
-
-
-def test_food_lock_arm_matches_canon_shape():
-    """checkSpecialCondition's food arm: food=-1 never validates a locked
-    form; the RIGHT food makes the lock pass (care gates still apply)."""
-    p = Pet(num=118, stage="Champion", obedience=500)
-    # the lock arm alone: with the right food the evol_food gate stops
-    # rejecting (whether the full check passes depends on care gates)
-    req = dict(data.load_requirements().get(1513, {}))
-    assert req["evol_food"] == 42
-    assert evolution.check(p, 1513, food=41) is False    # wrong food: locked
+# (the two food-lock tests left: Citramon UNLOCKED in v0.5.5 (test_shop_clone
+# pins the timed-care reachability) -- they only kept passing because the
+# now-dropped TIME gate happened to fail for a fresh pet, exposed 2026-07-17)

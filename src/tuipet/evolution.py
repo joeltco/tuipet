@@ -138,7 +138,9 @@ def check(pet, num, item=-1, food=-1, connecting=False):
         _attr(req["data"][0], dat, total), _attr(req["data"][1], dat, total),
         _attr(req["vaccine"][0], vac, total), _attr(req["vaccine"][1], vac, total),
         _attr(req["virus"][0], vir, total), _attr(req["virus"][1], vir, total),
-        req["time"] == "None" or req["time"] == getattr(pet, "train_time", ""),
+        # (the "trains at Morning/Noon/Night" TIME gate DROPPED with the
+        # day/night system -- BASIC VPET 2026-07-17: an hour nothing can
+        # reach would wall 374 corpus forms, the temp_req/habitat_req call)
         req["weight"] == "None" or req["weight"] == weight_category(pet.weight, pet._base_weight()),
         _cmp(*req["disturb"], pet.disturb),
         _cmp(*req["overeat"], pet.overeat),
@@ -551,8 +553,6 @@ def requirement_report(pet, num):
     cmp_row("injuries", req["injured"], pet.injuries)
     cmp_row("care slips", req["mistakes"], pet.care_mistakes)
     cmp_row("generation", req.get("incarnations", ("None", 0)), getattr(pet, "generation", 1))
-    if req["time"] != "None":
-        rows.append((req["time"] == getattr(pet, "train_time", ""), f"trains at {req['time']}"))
     if req["weight"] != "None":
         rows.append((req["weight"] == weight_category(pet.weight, pet._base_weight()),
                      f"weight: {req['weight']}"))
