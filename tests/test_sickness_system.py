@@ -90,19 +90,6 @@ def test_fatigue_pads_the_worse_sick_target(monkeypatch):
     assert worn.sick_length > l0
 
 
-# --- intolerant food, fresh injuries' side effects, mistakes, the sick lapse -----
-
-def test_intolerant_food_rolls_worse_and_fresh_once_each(monkeypatch):
-    calls = []
-    monkeypatch.setattr(Pet, "_check_worse_sick",
-                        lambda self, t: calls.append(("worse", t)) or False)
-    monkeypatch.setattr(Pet, "_check_sick",
-                        lambda self, t: calls.append(("sick", t)) or False)
-    monkeypatch.setattr(Pet, "_species_food", lambda self: (None, None, ["Meat"]))
-    p = _pet()
-    p._eat_food("Meat")
-    assert calls == [("worse", 50), ("sick", 50)]
-
 def test_a_fresh_injury_saps_a_bar_of_energy():
     p = _pet(energy=5)
     p._injure()
@@ -115,12 +102,4 @@ def test_a_mistake_while_fatigued_whispers_sickness(monkeypatch):
     p._inc_mistake()
     assert p.sick                                     # AnyMistakeWhileFatigued 1/1 caught roll 0
 
-def test_an_awake_sick_pet_burns_macros_and_races_the_bowels():
-    p = _pet(sick=True, sick_length=9000.0, nutr_protein=5, nutr_mineral=5, nutr_vitamin=5)
-    t0 = getattr(p, "_poop_t", 0.0)
-    p._tick_recovery(60.0)
-    assert (p.nutr_protein, p.nutr_mineral, p.nutr_vitamin) == (4, 4, 4)
-    assert getattr(p, "_poop_t", 0.0) > t0            # SickLapsePenaltyBM
-    q = _pet(sick=True, sick_length=9000.0, asleep=True, nutr_protein=5)
-    q._tick_recovery(60.0)
-    assert q.nutr_protein == 5                        # the penalty is awake-only
+

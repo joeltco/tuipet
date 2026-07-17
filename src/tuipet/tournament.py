@@ -486,9 +486,11 @@ class Tournament:
             persistence.tourney_add(self.trophy["id"])     # gates the tournament egg unlocks
             extras = []
             if self.trophy["item"] >= 0:
-                self.pet.add_item("i:%d" % self.trophy["item"]); extras.append("item")
+                # the DVPet prize ids retired with the item system: the cup
+                # pays a catalog treat instead
+                self.pet.add_item("energy_drink"); extras.append("item")
             if self.trophy["food_id"] >= 0 and self.trophy["food_amt"] > 0:
-                self.pet.add_item("f:%d" % self.trophy["food_id"], self.trophy["food_amt"]); extras.append("food")
+                self.pet.add_item("best_fruit", self.trophy["food_amt"]); extras.append("food")
             tail = (" + " + "/".join(extras)) if extras else ""
             self.tree.append(["YOU"])                     # the top of the bracket
             self.last = "CHAMPION! +%db%s + trophy!" % (self.reward_bits, tail)

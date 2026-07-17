@@ -78,16 +78,3 @@ def test_no_bump_when_falling_or_landing_exactly_at_the_limit():
     assert getattr(p, "_poop_t", 0.0) == t0
 
 
-def test_food_fattens_only_while_calories_are_positive(monkeypatch):
-    monkeypatch.setattr(Pet, "check_refused", lambda self, **k: False)
-    meat = data.load_foods()[0]
-    p = _pet(hunger=1)
-    p.calories = 2                                # already positive: the rich meal fattens
-    pw0 = p.weight
-    p.feed(meat)
-    q = _pet(hunger=1)
-    q.calories = -2                               # depleted: the meal only refuels
-    qw0 = q.weight
-    q.feed(meat)
-    # both take the food's own weight; only p crosses the calorie-fatten branch
-    assert (p.weight - pw0) == (q.weight - qw0) + FOOD_WEIGHT_CHANGE

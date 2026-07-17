@@ -97,15 +97,6 @@ def _bag_use(name):
     return pan.key("enter"), e
 
 
-def test_bag_routes_each_animation_type_correctly():
-    r, e = _bag_use("Balloon")                          # Play -> its own script
-    assert r == ("done", ("item_use", e["key"], "Play")), r
-    r, e = _bag_use("Trampoline")                       # Jump -> the ported hop
-    assert r == ("done", ("play", e["key"])), r
-    r, e = _bag_use("Futon")                            # Idling -> effect only
-    assert r is None, r
-
-
 def test_item_fx_plays_the_script_and_chains():
     s = _FakeScreen()
     s.start_fx("item", icon="i:0", script="Play")

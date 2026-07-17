@@ -1,73 +1,50 @@
-"""The shop screen: separate Food and Item pages showing the day's rolled
-roster (8 food / 12 item slots with real stock counts and sale prices), plus
-the egg page.  The bag keeps its category tabs (Food / Medicine / Toys / Chips
-/ Special).  Renders in the LCD box."""
+"""The shop + bag screen (the DSprite item system, cloned from the v0.4.x
+rebuild -- BASIC VPET 2026-07-16).
+
+SHOP: the fixed catalog, tabbed by category; the classic EGG shelf and the
+HONORS board ride the last two tabs (they are economies, not items, and
+survive the item-system swap).  ENTER buys.  BAG: what you own, ENTER uses
+it (Pet.use_item — a crest egg triggers the classic armor evolution), R
+sells it back for half.  TAB flips between the two.
+"""
 from __future__ import annotations
 import textwrap
 
 from . import data
 from . import shop
-from . import egg as egg_mod
 from . import persistence
 
-from .theme import LCD_ON, LCD_BG, INK, INK_B, DIM, SEL  # noqa: F401  (palette names bound for theme.apply propagation)
+from .theme import LCD_ON, LCD_BG, INK, INK_B, DIM, SEL  # noqa: F401  (theme.apply propagation)
 from . import menu
-W = 38
-IC_W, IC_ROWS = menu.IC_W, menu.IC_ROWS    # the shared selected-item icon cell
-SHOP_TABS = ["food", "item", "egg", "honor"]   # food, item, egg + the honors board
-BAG_CATEGORIES = ["food", "medicine", "toy", "chip"]
-BAG_TABS = BAG_CATEGORIES + ["special"]
-TAB_LABEL = {"food": "Food", "item": "Items", "egg": "Eggs", "honor": "Honors",
-             "medicine": "Medicine", "toy": "Toys", "chip": "Chips", "special": "Special"}
 
 
 class ShopPanel:
     def __init__(self, pet, start_mode="shop", bag_only=False):
         self.pet = pet
         self.mode = start_mode
-        self.bag_only = bag_only        # road bag: use/sell only, no TAB to the shop
+        self.bag_only = bag_only        # road bag: use/sell only
+        self.tabs = shop.categories() + ["Honors"]
         self.tab = 0
         self.cursor = 0
-        if start_mode == "bag":
-            self.msg = "Your bag."
-        elif not shop.home_shop_open(pet):
-            self.msg = "Closed for the night — back at 6:00."
-        else:
-            self.msg = "Welcome! Spend your bits."
+        self.frame_i = 0
+        self.sfx = None
+        self.msg = "Your bag." if start_mode == "bag" else "Welcome! Spend your bits."
+
+    def anim(self):
+        self.frame_i += 1
 
     def strip(self):
-        """The message-box hint line (hint overhaul 2026-07-10)."""
         if self.mode == "shop":
-            return menu.hints(("←→", "cat"), ("ENTER", "buy"), ("TAB", "bag"))
-        if self.bag_only:               # the road bag can't reach the shop
-            return menu.hints(("←→", "cat"), ("ENTER", "use"), ("R", "sell"))
-        return menu.hints(("←→", "cat"), ("ENTER", "use"),
-                          ("R", "sell"), ("TAB", "shop"))
+            return menu.hints(("←→", "cat"), ("ENTER", "confirm"), ("TAB", "bag"))
+        if self.bag_only:
+            return menu.hints(("ENTER", "use"), ("R", "sell"), ("ESC", "out"))
+        return menu.hints(("ENTER", "use"), ("R", "sell"), ("TAB", "shop"))
 
     # ---- data ----
-    def _tabs(self):
-        return SHOP_TABS if self.mode == "shop" else BAG_TABS
-
-    def _owned_by_cat(self, cat):
-        out = []
-        for k in self.pet.inventory:
-            e = data.consumable_by_key(k)
-            if e and data.shop_category(dict(e, key=k)) == cat:
-                out.append(dict(e, key=k))
-        out.sort(key=lambda e: e.get("price", 0))
-        return out
-
-    def _shelves_closed(self):
-        """The home food/item shelves keep trading hours (6:00-23:00); outside
-        them the shutters are down.  The egg page is your licence counter and
-        the bag is yours -- neither ever closes."""
-        return (self.mode == "shop" and self._tabs()[self.tab] in ("food", "item")
-                and not shop.home_shop_open(self.pet))
-
     def _rows(self):
-        cat = self._tabs()[self.tab]
         if self.mode == "shop":
-            if cat == "honor":
+            cat = self.tabs[self.tab % len(self.tabs)]
+            if cat == "Honors":
                 # the HONORS board (prestige sink, 2026-07-14): cosmetic tamer
                 # titles, profile-level like egg licences; ENTER buys, then
                 # toggles wearing
@@ -76,123 +53,18 @@ class ShopPanel:
                 return [dict(t, title_id=t["id"], owned=t["id"] in owned,
                              worn=t["id"] == worn)
                         for t in data.load_titles()]
-            if cat == "egg":
-                # the home shop's COMMON eggs (rares are town-exclusive); locked
-                # home eggs trail as a dim goal board under the buyable stock
-                prog, owned = persistence.get_progress(), persistence.get_eggs_owned()
-                rows2 = [egg_mod.shop_egg_entry(i, pr)
-                         for i, pr in egg_mod.home_eggs(prog, owned)]
-                rows2 += [egg_mod.locked_shop_entry(i, hint)
-                          for i, hint in egg_mod.locked_home_eggs(prog, owned)]
-                return rows2
-            if self._shelves_closed():
-                return []                  # shutters down: nothing to browse or buy
-            # the day's rolled roster (open_shop handles the daily reset + restock)
-            out = []
-            for slot in shop.open_shop(self.pet, cat == "food"):
-                e = shop.entry(slot["key"])
-                if e:
-                    out.append(dict(e, stock=slot["stock"], sale=slot["sale"], _slot=slot))
-            return out
-        return self._owned_by_cat(cat)
+            return shop.shelf(cat)
+        out = []
+        for k, n in sorted(self.pet.inventory.items()):
+            e = shop.entry(k)
+            if e:
+                out.append(dict(e, count=n))
+        return out
 
-    # ---- input ----
-    def anim(self):
-        # a frame heartbeat so the app repaints at 10 Hz and an
-        # over-wide menu.note can actually SCROLL (marquee sweep
-        # 2026-07-15) -- this panel had no animation of its own
-        pass
-
-    def key(self, k):
-        tabs = self._tabs()
-        rows = self._rows()
-        n = len(rows)
-        if k in ("left", "h"):
-            self.tab = (self.tab - 1) % len(tabs); self.cursor = 0
-        elif k in ("right", "l"):
-            self.tab = (self.tab + 1) % len(tabs); self.cursor = 0
-        elif k in ("up", "k"):
-            if n: self.cursor = (self.cursor - 1) % n
-        elif k in ("down", "j"):
-            if n: self.cursor = (self.cursor + 1) % n
-        elif k == "tab" and not self.bag_only:
-            self.mode = "bag" if self.mode == "shop" else "shop"
-            self.tab = 0; self.cursor = 0
-            self.msg = "Your bag." if self.mode == "bag" else "Spend your bits."
-        elif k in ("enter", "space") and rows:
-            e = rows[min(self.cursor, n - 1)]
-            if self.mode == "shop":
-                if e.get("title_id") is not None:
-                    bits0 = self.pet.bits
-                    self.msg = self._buy_title(e)
-                    self.sfx = "reward" if self.pet.bits < bits0 else "confirm"
-                elif e.get("egg_idx") is not None:
-                    bits0 = self.pet.bits
-                    self.msg = self._buy_egg(e)
-                    self.sfx = "reward" if self.pet.bits < bits0 else "error"
-                else:
-                    self.msg, self.sfx = shop.buy(self.pet, e["_slot"])
-                    e["stock"] = e["_slot"]["stock"]
-            else:
-                if (e.get("action") or "") in data.TRANSPORT_ACTIONS:
-                    # the bag handed the app a ride BEFORE any pet gate -- an
-                    # EGG could board Zone Transport (egg-shop audit 2026-07-05);
-                    # mirror the adventure gates: travel needs a walker, awake
-                    if self.pet.stage in ("Egg", "Fresh"):
-                        self.msg = "Too young to travel."
-                        return None
-                    if self.pet.asleep:
-                        self.msg = "zzz… asleep"
-                        return None
-                    if getattr(self.pet, "away", False):
-                        # transports leave from HOME (the structural doctrine,
-                        # transport audit 2026-07-06) -- a mid-adventure ride
-                        # would corrupt the adv_loc mailbox (road-keys 2026-07-07)
-                        self.msg = "Transports leave from home."
-                        return None
-                    return ("done", ("transport", e["key"]))
-                if (e.get("action") or "") == "Inherit":
-                    mem0 = dict(getattr(self.pet, "digimemory", {}) or {})
-                    self.msg = self.pet.use_item(e["key"])
-                    if mem0 and not self.pet.digimemory:   # redeemed -> the ceremony
-                        return ("done", ("inherit", mem0))
-                    return None                            # refused / blank: stay in the bag
-                num0 = self.pet.num
-                self.msg = self.pet.use_item(e["key"])
-                if (e.get("unlocks_food") or e.get("unlocks_item")) and "got a" in self.msg:
-                    self.sfx = "mischief"      # soundConfig unlockConsumable -> mischief.wav
-                if self.pet.num != num0:
-                    # an ItemEvol (Digimental) carries its key: the app plays
-                    # the item-evolve parade plays before the strobe
-                    ik = e["key"] if (e.get("action") or "") == "ItemEvol" else None
-                    return ("done", ("evolve", num0, ik))
-                if self.pet.anim == "toilet":
-                    # a manual toilet visit: the app plays poopToilet
-                    return ("done", ("toilet", e["key"]))
-                if e["key"].startswith("f:") and self.pet.anim == "eat":
-                    return ("done", ("eat", e["key"]))
-                if (data.shop_category(dict(e)) == "toy"
-                        and self.pet.anim == "happy"):
-                    # each toy plays ITS OWN script from the itemfx table:
-                    # Jump keeps the trampoline hop; Idling (the Futon) plays
-                    # nothing beyond its care effect; the rest run their own fx
-                    from . import itemfx
-                    act = (e.get("action") or "").strip()
-                    if act in itemfx.SCRIPTS:
-                        return ("done", ("item_use", e["key"], act))
-                    if act == "Jump":
-                        return ("done", ("play", e["key"]))
-                    return None if act in itemfx.NO_FX else ("done", ("play", e["key"]))
-        elif k == "r" and self.mode == "bag" and rows:
-            self.msg = self.pet.sell(rows[min(self.cursor, n - 1)])
-        elif k in ("escape", "o", "i"):     # o opens the shop, i opens the bag; both also close
-            return ("done", self.msg)
-        return None
-
+    # ---- keys ----
     def _buy_title(self, e):
-        """Buy an honor once (profile-level, like an egg licence), then ENTER
-        toggles wearing it.  Purely cosmetic: the worn title rides the STATUS
-        panel border and the lobby presence card (prestige sink 2026-07-14)."""
+        """Buy an honor once, then ENTER toggles wearing it.  Purely cosmetic:
+        the worn title rides the STATUS panel border and the lobby card."""
         tid, price = e["title_id"], e["price"]
         if tid in persistence.get_titles_owned():
             if persistence.get_title_worn() == tid:
@@ -206,106 +78,98 @@ class ShopPanel:
         persistence.set_title_worn(tid)
         return "Earned the honor: %s!" % e["name"]
 
-    def _buy_egg(self, e):
-        """Buy a buyable egg: spend bits, unlock it permanently (it then appears in
-        the egg select). Eggs are not inventory items."""
-        if e.get("locked"):
-            return "Locked — %s." % e["hint"].rstrip(".")
-        idx, price = e["egg_idx"], e["price"]
-        if idx in persistence.get_eggs_owned():
-            return "Already unlocked."
-        if not self.pet.spend_bits(price):
-            return "Not enough bits."
-        persistence.egg_own(idx)
-        return "Unlocked %s! Hatch it next egg." % e["name"]
+    def _use(self, e):
+        p = self.pet
+        old = p.num
+        out = p.use_item(e["key"])
+        if p.num != old:                        # a crest egg fired the armor jump
+            return ("done", ("evolve", old))
+        if out is None:
+            self.msg = "You don't have that."
+            self.sfx = "error"
+        elif out == "":
+            self.msg = f"{e['name']} does nothing here."
+        else:
+            self.msg = out
+            self.sfx = "confirm"
+        return None
 
-    # ---- render ----
-    def text(self):
-        tabs = self._tabs()
+    def key(self, k):
         rows = self._rows()
         n = len(rows)
-        self.cursor = min(self.cursor, max(0, n - 1))
-
-        out = menu.header("SHOP" if self.mode == "shop" else "BAG", "%db" % self.pet.bits)
-        # tab bar
-        bar = ""
-        for i, t in enumerate(tabs):
-            lbl = TAB_LABEL[t]
-            bar += ("[%s]" % lbl) if i == self.tab else (" %s " % lbl)
-        out.append(bar[:W].ljust(W) + "\n", style=INK_B)
-
-        sel = rows[self.cursor] if rows else None
-        tw = W - IC_W - 2
-        if sel:
-            icon = menu.item_icon(sel)
-            if sel.get("title_id") is not None:
-                # the honors crest (a drawn plate, like the CLOSED sign -- a
-                # title has no item sprite and hand-drawing art is banned)
-                icon = ["╭" + "─" * (IC_W - 2) + "╮",
-                        "│ HONORS │",
-                        "│ ✦✦✦✦✦✦ │",
-                        "╰" + "─" * (IC_W - 2) + "╯"]
-                state = ("worn now" if sel.get("worn")
-                         else "owned" if sel.get("owned") else "%db" % sel["price"])
-                # each honor carries its own inscription (titles.csv Description)
-                # -- wrapped to the two info rows, like the item effect lines
-                desc = textwrap.wrap(sel.get("desc") or "a tamer honor", tw)[:2]
-                info = [sel["name"][:tw], state] + desc + [""] * (2 - len(desc))
-            elif sel.get("egg_idx") is not None:
-                if sel.get("locked"):
-                    info = ["???", "locked", sel["hint"][:tw],
-                            (sel["hint"][tw:] or "")[:tw]]
+        if k == "tab" and not self.bag_only:
+            self.mode = "bag" if self.mode == "shop" else "shop"
+            self.cursor = 0
+            self.msg = "Your bag." if self.mode == "bag" else "Welcome back!"
+            return None
+        if k in ("left", "h") and self.mode == "shop":
+            self.tab = (self.tab - 1) % len(self.tabs)
+            self.cursor = 0
+        elif k in ("right", "l") and self.mode == "shop":
+            self.tab = (self.tab + 1) % len(self.tabs)
+            self.cursor = 0
+        elif k in ("up", "k") and n:
+            self.cursor = (self.cursor - 1) % n
+        elif k in ("down", "j") and n:
+            self.cursor = (self.cursor + 1) % n
+        elif k in ("enter", "space") and n:
+            e = rows[self.cursor % n]
+            if self.mode == "shop":
+                if e.get("title_id") is not None:
+                    self.msg = self._buy_title(e)
+                    self.sfx = "confirm"
                 else:
-                    info = [sel["name"][:tw], "%db" % sel["price"], "permanent egg",
-                            "hatch it next egg"]
-            elif self.mode == "shop":
-                info = shop.slot_info(self.pet, sel, tw)
+                    self.msg, self.sfx = shop.buy(self.pet, e)
             else:
-                info = shop.sell_info(self.pet, sel, tw)
-            menu.icon_info(out, icon, info)
-        elif self._shelves_closed():
-            # a clean shuttered plate drawn in the icon cell -- the old sprite
-            # smeared into noise at 10x4, so tuipet draws its own sign
-            o0, c0 = shop.HOME_HOURS
-            plate = ["\u256d" + "\u2500" * (IC_W - 2) + "\u256e",
-                     "\u2502 CLOSED \u2502",
-                     "\u2502 \u2500\u2500\u2500\u2500\u2500\u2500 \u2502",
-                     "\u2570" + "\u2500" * (IC_W - 2) + "\u256f"]
-            menu.icon_info(out, plate,
-                           ["Shop's closed", "for the night", "",
-                            "Open %d:00\u2013%d:00" % (o0, c0)])
-        else:
-            # nothing selected == the tab is empty; the list below already prints the
-            # context-aware empty label, so the icon panel stays quiet (one message, not two)
-            out.append_text(menu.blanks(IC_ROWS))
+                return self._use(e)
+        elif k == "r" and self.mode == "bag" and n:
+            e = rows[self.cursor % n]
+            self.msg, self.sfx = shop.sell(self.pet, e)
+        elif k in ("escape", "o", "i"):
+            return ("done", self.msg if self.sfx else None)
+        return None
 
-        # item list for this tab
-        if self._shelves_closed():
-            empty = "(the shutters are down)"
-        elif self._tabs()[self.tab] == "egg":
-            empty = "(no eggs in stock \u2014 earn licences out in the world)"
+    # ---- render ----
+    def _row_note(self, sel):
+        if sel.get("title_id") is not None:
+            state = ("worn now" if sel.get("worn")
+                     else "owned" if sel.get("owned") else "%db" % sel["price"])
+            desc = textwrap.wrap(sel.get("desc") or "a tamer honor", 30)
+            return f"{state} · {desc[0] if desc else ''}"
+        return shop.effect_line(sel)
+
+    def text(self):
+        p = self.pet
+        rows = self._rows()
+        if self.mode == "shop":
+            cat = self.tabs[self.tab % len(self.tabs)]
+            out = menu.header("SHOP", f"{cat} · {p.bits}b")
         else:
-            empty = "(shelves empty \u2014 try tomorrow)" if self.mode == "shop" else "(none owned)"
+            out = menu.header("BAG", f"{sum(p.inventory.values())} items · {p.bits}b")
+        if not rows:
+            out.append_text(menu.blanks(2))
+            out.append_text(menu.note("Nothing here." if self.mode == "shop"
+                                      else "The bag is empty."))
+            out.append_text(menu.blanks(3))
+            out.append_text(menu.footer("ESC out"))
+            return out
+        self.cursor = min(self.cursor, len(rows) - 1)
+        sel = rows[self.cursor]
+        out.append_text(menu.note(self._row_note(sel)))
 
         def fmt(e, i):
             if self.mode == "shop":
+                if e.get("locked"):
+                    return f"{e['name'][:22]:<22} {'sealed':>7}"
                 if e.get("title_id") is not None:
-                    if e.get("worn"):
-                        return "%-18s %7s" % (("★ " + e["name"])[:18], "worn")
-                    if e.get("owned"):
-                        return "%-18s %7s" % (e["name"][:18], "owned")
-                    return "%-18s %6db" % (e["name"][:18], e["price"])
-                if e.get("egg_idx") is not None:
-                    if e.get("locked"):
-                        return "%-18s %7s" % ("???", "locked")
-                    return "%-18s %6db" % (e["name"][:18], e["price"])
-                return shop.slot_label(e)
-            return "x%-2d %-26s" % (self.pet.inventory.get(e["key"], 0), e["name"][:26])
+                    tag = "worn" if e.get("worn") else ("owned" if e.get("owned")
+                                                        else f"{e['price']}b")
+                    return f"{e['name'][:22]:<22} {tag:>7}"
+                return f"{e['name'][:22]:<22} {e['price']:>6}b"
+            return f"{e['name'][:22]:<22} x{e.get('count', 1)}"
 
-        self.cursor = menu.list_window(out, rows, self.cursor, 3, fmt, empty=empty)
-        out.append_text(menu.note(self.msg))
-        if self.mode == "shop":
-            out.append_text(menu.footer("←→ category ↑↓ pick ENTER buy TAB bag"))
-        else:
-            out.append_text(menu.footer("←→ category ENTER use R sell TAB shop"))
+        self.cursor = menu.list_window(out, rows, self.cursor, 6, fmt)
+        out.append_text(menu.footer("←→ cat  ENTER " +
+                                    ("buy" if self.mode == "shop" else "use") +
+                                    "  TAB flip  ESC out"))
         return out

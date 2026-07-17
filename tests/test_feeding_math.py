@@ -38,16 +38,6 @@ def _food(name):
     return next(f for f in data.load_foods() if f["name"] == name)
 
 
-def test_calories_add_per_food_not_flat_refill():
-    rich = next(f for f in data.load_foods() if f.get("calories", 0) >= 3)
-    p = _pet(hunger=0, calories=0)
-    p.feed(dict(rich, hunger=1))
-    assert 0 < p.calories <= CALORIE_LIMIT
-    q = _pet(hunger=0, calories=-4)
-    q.feed(_food("Meat"))                       # Meat: calories column drives it
-    assert q.calories == -4 + _food("Meat").get("calories", 0)
-
-
 def test_calories_rising_while_positive_fatten():
     rich = next(f for f in data.load_foods() if f.get("calories", 0) >= 2)
     p = _pet(hunger=0, calories=2, weight=20)
@@ -55,21 +45,6 @@ def test_calories_rising_while_positive_fatten():
     p.feed(dict(rich))
     base_w = int(rich.get("weight", 1))
     assert p.weight >= w0 + base_w + 1          # +FoodWeightChange on top of the food's own
-
-
-def test_attribute_and_lifespan_foods_do_something():
-    va = next((f for f in data.load_foods() if f.get("vaccine", 0) > 0), None)
-    assert va is not None
-    p = _pet(hunger=0)
-    v0 = p.vaccine
-    p.feed(dict(va))
-    assert p.vaccine > v0
-    lf = next((f for f in data.load_foods() if f.get("seconds", 0) > 0), None)
-    assert lf is not None
-    q = _pet(hunger=0)
-    l0 = q.lifespan
-    q.feed(dict(lf))
-    assert q.lifespan == l0 + lf["seconds"] / 60.0   # real-sec -> the game scale
 
 
 def test_dirty_eating_sours_and_sickens():
@@ -93,14 +68,5 @@ def test_clean_room_meals_never_roll_sickness():
         p = _pet(hunger=0, poop=0)
         p.feed(_food("Meat"))
         assert not p.sick
-
-
-def test_double_dose_costs_one_game_hour():
-    p = _pet(sick=True, sick_length=5.0)
-    p.med_lapse = 10.0                          # the indicator still runs
-    life0 = p.lifespan
-    msg = p._feed_med()
-    assert "poison" in msg
-    assert p.lifespan == life0 - 60.0           # 3600 REAL-sec / 60, not 3600 game-sec
 
 

@@ -172,7 +172,7 @@ def test_investigate_plays_the_left_walk_and_seals_the_reveal():
         if pan._scene is not None and pan._scene["kind"] == "item":
             break
         pan._scene, pan.discovering = None, True
-    assert pan._scene and pan._scene["kind"] == "item" and pan._scene["icon"]
+    assert pan._scene and pan._scene["kind"] == "item"   # (clone items carry no icon sheet)
     sealed = pan._scene["msg"]
     assert "dug up" in sealed
     # box-clip repin 2026-07-04: the journey note rides the STRIP now
@@ -182,7 +182,9 @@ def test_investigate_plays_the_left_walk_and_seals_the_reveal():
     while pan._scene is not None:
         pan.anim()
         assert pan._scene is None or pan._scene["t"] <= INV_END_T
-    assert sealed in pan.strip()                  # revealed
+    # revealed -- the note MARQUEES (clone item names run longer than the
+    # old zone loot), so watch a few ticks for the moving fragment
+    assert any(("dug up" in pan.strip(), pan.anim())[0] for _ in range(60))
     assert pan.travelling                         # back on the road
 
 

@@ -31,12 +31,18 @@ def _sleeping(energy=0):
 
 
 def test_care_actions_disturb_instead_of_acting():
-    for action in ("feed", "play", "clean", "heal"):
+    # the DSprite rule (item-system clone 2026-07-16): feeding/healing a
+    # sleeper DISTURBS it first and then APPLIES -- so feed/heal count the
+    # disturb; play/clean still bounce off the sleeper entirely
+    for action in ("feed", "heal"):
+        p = _sleeping()
+        d0 = p.disturb
+        getattr(p, action)()
+        assert p.disturb == d0 + 1, f"{action} did not disturb"
+    for action in ("play", "clean"):
         p = _sleeping()
         sick0, poop0, hunger0 = p.sick, p.poop, p.hunger
         msg = getattr(p, action)()
-        assert ("sleep" in msg.lower() or "awake" in msg.lower()), \
-            f"{action} did not disturb: {msg!r}"
         assert (p.sick, p.poop, p.hunger) == (sick0, poop0, hunger0), \
             f"{action} applied through the sleep"
 

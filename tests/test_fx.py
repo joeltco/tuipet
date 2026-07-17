@@ -82,7 +82,7 @@ def test_care_actions_guard_against_retrigger():
     here = os.path.dirname(__import__("tuipet").__file__)
     src = open(os.path.join(here, "app.py")).read()
     # find each `def action_*` body and check feed/clean/praise/scold/play/heal guard
-    GUARDED = ["action_feed", "action_clean", "action_play", "action_heal"]
+    GUARDED = ["action_feed", "action_clean", "action_play"]
     missing = []
     for name in GUARDED:
         m = re.search(rf"def {name}\(self.*?\):(.*?)(?=\n    def )", src, re.S)
@@ -131,52 +131,6 @@ def test_eat_fx_survives_a_blank_last_food_frame():
         s.fx["step"] = step
         s.frame_i = step
         s._paint_fx(p)                           # used to TypeError at step 21
-
-
-def test_bag_toy_plays_the_hop_over_its_real_toy():
-    """Play audit 2026-07-05: canon jumping() bounces the pet over its toy
-    (the long-flagged unported piece).  A bag toy now hands the app a
-    ('play', key) and the fx draws the toy's real frames beside the feet."""
-    import random
-    from tuipet import app as app_mod
-    from tuipet.pet import Pet
-    from tuipet.shopscreen import ShopPanel
-
-    random.seed(2)
-    p = Pet(num=102, name="D", stage="Champion", attribute="Virus", obedience=500)
-    p.world_seconds = 12 * 60.0
-    p.compliance = True
-    p.add_item("i:3")                             # the Ball
-    pan = ShopPanel(p, start_mode="bag")
-    while pan._tabs()[pan.tab] != "toy":
-        pan.key("right")
-    rows = pan._rows()
-    pan.cursor = next(i for i, e in enumerate(rows) if e["key"] == "i:3")
-    r = pan.key("enter")
-    # item-anim audit 2026-07-07: the Ball routes to its OWN canon script
-    # (bouncing()); the hop below is exercised directly -- it now belongs to
-    # the Trampoline (Jump) alone
-    assert r == ("done", ("item_use", "i:3", "Bounce"))
-
-    class S(app_mod.Screen):
-        def __init__(self):
-            self.fx = None
-            self.frame_i = 0
-            self.roamer = None
-        def update(self, t):
-            pass
-
-    s = S()
-    s.start_fx("play", icon="i:3", pet=p)
-    c1, c2 = app_mod._FxCtx(), app_mod._FxCtx()
-    for c, icon in ((c1, "i:3"), (c2, None)):
-        c.px_h = 24
-        c.overlay = []
-        c.xshift = c.yshift = 0
-        c.rows = []
-        fx = dict(s.fx, icon=icon, step=3)
-        app_mod.Screen._fxk_play(s, p, fx, 3, c)
-    assert len(c1.overlay) > len(c2.overlay)      # the toy's pixels are there
 
 
 def test_hatch_render_follows_the_canon_beats():
@@ -250,43 +204,6 @@ def test_hatch_render_follows_the_canon_beats():
             assert all(x == 0 for w, x in seq[:4]) and all(x == 0 for w, x in seq[16:])
     finally:
         arena_mod.render_screen = old
-
-
-def test_stuffed_meal_drops_the_leftovers():
-    """Eating-anim audit 2026-07-05: applyFood at modifier <=
-    DisposeLeftoversMinModifier(0.5) is State.Munching -- two bites, then
-    disposeFood: the pet turns away and the half-eaten food falls off-screen.
-    tuipet played the full three-bite triad no matter how stuffed the pet."""
-    import random
-    from tuipet import data
-    from tuipet.pet import Pet, DISPOSE_LEFTOVERS_MIN
-    assert DISPOSE_LEFTOVERS_MIN == 0.5
-    random.seed(2)
-    p = Pet(num=102, name="D", stage="Champion", attribute="Virus",
-            obedience=900, glutton=1)
-    p.world_seconds = 12 * 60.0
-    # over FULL by half the SPECIES stomach -> modifier 0.5 (the divisor is
-    # canon getStomachCapacity now, not a flat 4; food audit 2026-07-15)
-    p.hunger = 4 + p.stomach_capacity() // 2
-    p._set_mood(100)
-    meat = next(f for f in data.load_foods() if int(f.get("hunger", 0)) > 0)
-    p.feed(meat)
-    assert p._last_meal_leftover
-    s = _FakeScreen()
-    s.start_fx("eat", "f:0", pet=p)
-    ma = s.fx.get("munch_at")
-    assert ma and s.fx["steps"] == ma + 22        # chew to the third beat + the drop
-    assert list(s.fx["bite_snds"].values()) == ["eat"]   # no lastBite: it never finishes
-    # a normal meal keeps the full triad
-    p2 = Pet(num=102, name="D", stage="Champion", attribute="Virus", obedience=900)
-    p2.world_seconds = 12 * 60.0
-    p2.hunger = 1
-    p2._set_mood(100)
-    p2.feed(meat)
-    assert not p2._last_meal_leftover
-    s2 = _FakeScreen()
-    s2.start_fx("eat", "f:0", pet=p2)
-    assert s2.fx.get("munch_at") is None and len(s2.fx["chew"]) == 6
 
 
 def test_play_hops_on_canon_beats_and_ends_in_cheer():

@@ -380,17 +380,15 @@ def test_shop_egg_tab_and_password_entry():
     p = _pet()
     pan = ShopPanel(p)
     for _ in range(8):                          # cycle to the egg tab
-        if pan._tabs()[pan.tab] == "egg":
+        from tuipet import shop as _shop
+        if pan.tabs[pan.tab] == _shop.EGGS_CATEGORY:
             break
         _step(pan, "tab")
-    if pan._tabs()[pan.tab] == "egg":
+    from tuipet import shop as _shop
+    if pan.tabs[pan.tab] == _shop.EGGS_CATEGORY:
         _step(pan, "down"); _step(pan, "enter")  # an egg buy attempt renders
-        _step(pan, "p")                          # password mode
-        for ch in "abc":
-            _step(pan, ch)
-        _step(pan, "backspace")
-        _step(pan, "enter")                      # wrong password renders the rebuff
-        _step(pan, "p"); _step(pan, "escape")
+    # (the shop's password door left with the old screen -- eggselect keeps
+    # its own code entry, covered by test_eggselect_code_entry below)
     pan.text()
 
 

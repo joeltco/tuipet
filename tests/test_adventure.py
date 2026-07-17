@@ -21,9 +21,9 @@ def test_investigate_finds_a_zone_pool_item_and_opens_praise():
         kind, thing = adv.investigate()
         if kind == "item":
             assert thing["key"] in p.inventory       # bagged
-            pool = ([f"f:{i}" for i in adv.zone["rand_foods"]]
-                    + [f"i:{i}" for i in adv.zone["rand_items"]])
-            assert thing["key"] in pool              # from the ZONE's pools
+            from tuipet import shop as _shop
+            # the zone pools gate the ODDS; the find draws from the catalog
+            assert thing["key"] in {e["key"] for e in _shop.catalog()}
             break
     else:
         raise AssertionError("no item in 50 investigates (1/3 ambush odds)")
@@ -507,55 +507,6 @@ def test_road_direct_keys_heal_praise_lights():
     lights0 = p.lights
     pan.key("s")
     assert p.lights != lights0               # the toggle landed
-
-
-def test_road_bag_opens_and_transport_is_refused():
-    """i hosts the bag; a transport item is REFUSED on the road (transports
-    leave from home -- the adv_loc mailbox must not be corrupted mid-run)."""
-    from tuipet.shopscreen import ShopPanel
-    pan, p = _road_panel()
-    p.add_item("i:28")                       # a transport ticket
-    pan.key("i")
-    assert isinstance(pan.sub, ShopPanel)
-    sp = pan.sub
-    assert p.away                            # the road flag is up
-    for _ in range(40):                      # find the ticket in the bag
-        rows = sp._rows()
-        if rows and (rows[min(sp.cursor, len(rows) - 1)].get("action") or "") \
-                in __import__("tuipet.data", fromlist=["data"]).TRANSPORT_ACTIONS:
-            break
-        r = sp.key("right") if not rows else sp.key("down")
-    res = pan.key("enter")                   # try to board
-    assert pan.sub is not None, "the ride must NOT leave the bag"
-    assert "home" in sp.msg
-    pan.key("escape")
-    assert pan.sub is None                   # back on the road
-
-
-def test_life_recovery_potion_is_road_only_and_gated_at_max():
-    """Life Recovery (item 27, items.csv AdventureLifeInc=1): +1 Digital World
-    life, unusable at MaxAdventureLife (canon PhysicalState.useItem's
-    eligibility gate -- the potion is NOT consumed by a refused use).  tuipet
-    life is per-outing, so it works only on the road (canon's world life
-    persists at home -- documented adaptation)."""
-    from tuipet.adventure import MAX_LIFE
-    from tuipet import data
-    e = data.consumable_by_key("i:27")
-    assert e and e["adv_life"] == 1 and data.item_is_functional(e)
-    pan, p = _road_panel()
-    p.obedience, p.compliance = 1000, True   # no refusal noise
-    p.add_item("i:27")
-    assert pan.adv.life == MAX_LIFE
-    assert "full" in p.use_item("i:27")      # gated at max...
-    assert p.inventory.get("i:27")           # ...and NOT consumed
-    pan.adv.life = 1
-    msg = p.use_item("i:27")
-    assert pan.adv.life == 2 and "life point" in msg.lower()
-    assert not p.inventory.get("i:27")       # spent
-    p.add_item("i:27")
-    p.away = False                           # home again: road-only
-    assert "Digital World" in p.use_item("i:27")
-    assert p.inventory.get("i:27")           # kept for the next outing
 
 
 def test_multi_boss_zone_stands_both_gates(monkeypatch):

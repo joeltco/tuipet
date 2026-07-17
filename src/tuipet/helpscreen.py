@@ -10,8 +10,8 @@ VIS = 8                                   # lines shown at once in the box
 # (text, kind): 2 = section head (bold), 1 = a control line, 0 = prose (dim)
 HELP = [
     ("CARE", 2),
-    ("f feed   p play   c clean poop", 1),
-    ("h heal", 1),
+    ("f feed - meat fills, pill heals", 1),
+    ("p play   c clean poop", 1),
     ("s lights   v assistant", 1),
     ("", 0),
     ("EXPLORE", 2),

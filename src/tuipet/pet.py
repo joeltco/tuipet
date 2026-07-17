@@ -12,6 +12,13 @@ from . import weather as wx
 from . import theme
 
 
+class _Refused(str):
+    """A use_item result that did NOT consume the item.  Reads as a plain
+    message everywhere else -- only use_item's consume check looks at the
+    type (clone audit 2026-07-15: every refusal string used to burn the
+    item)."""
+
+
 def _clamp(v, lo, hi):
     return max(lo, min(hi, v))
 
@@ -458,6 +465,8 @@ POOP_MAX_PILES = 4                      # classic Digimon V-Pet max poops (DVPet
 # tuned to preserve tuipet's ~1800s-per-heart hunger pace (col-1 calorie mods are 0).
 # hunger / stomach (DVPet FullHunger / StomachCapacity / OvereatLimit)
 FULL_HUNGER = 4                         # FullHunger: a satisfied stomach (4 hearts)
+PILL_ENERGY_GAIN = 7                    # the DSprite pill (feed menu, BASIC VPET 2026-07-16)
+PILL_WEIGHT_GAIN = 5
 STOMACH_CAPACITY = 4                    # legacy fallback only -- see stomach_capacity()
 # canon stomach (food audit 2026-07-15): capacity is a PER-SPECIES field
 # (digimon.csv StomachCapacity, 8..40) that SHRINKS in old age --
@@ -910,6 +919,10 @@ class Pet:
     _exercise_day: int = -1         # daily exercise counter's day stamp
     free_style: bool = False        # _isFree: Battle Style toggle (Free vs Orders)
     gift: str = ""                  # pending gift-call present (consumable key; "" = none)
+    # the DSprite item timers (BASIC VPET 2026-07-16, cloned from v0.4.x):
+    full_until: float = 0.0         # premium meat satiety (game-seconds, world clock)
+    auto_clean_until: float = 0.0   # smart potty (game-seconds)
+    evo_blocked: bool = False       # anti-evo chip toggle
     gift_t: float = 0.0             # seconds toward the next GiftChanceMin roll
     # ---- home tournament (PhysicalState _trophySchedule/_foughtTrophiesToday) ----
     tourney_schedule: list = _dcf(default_factory=list)   # 24 hourly trophy ids (dailyChange re-roll)
@@ -1142,7 +1155,8 @@ class Pet:
                 self.x_antibody, self.x_count = "None", 0.0
         self.age_seconds += dt
         self.stage_seconds += dt
-        shop.check_restock_tick(self, dt)           # checkRestock: bank shop restock credits
+        # (the shop restock credits left with the rolled-slot shop; the
+        # DSprite catalog is a fixed shelf -- BASIC VPET 2026-07-16)
         # setItemInterestLapse: toy boredom fades -1 per timer -- a sunny pet
         # (disposition +1) re-engages in 40 game-min, a sour one takes 80
         if self.item_interest > 0:
@@ -1200,8 +1214,7 @@ class Pet:
             self._sick_pen_t = getattr(self, "_sick_pen_t", 0.0) + dt
             if self._sick_pen_t >= SICK_LAPSE_MIN:        # SickLapseMin 29 (the literal said 60)
                 self._sick_pen_t = 0.0
-                for f in ("nutr_protein", "nutr_mineral", "nutr_vitamin"):
-                    setattr(self, f, max(0, getattr(self, f) + SICK_NUTRITION_CHANGE))
+            # (the asleep nutrition drain left with the nutrition system)
                 # the diarrhea rides the x5 count compression (the PerfectWins
                 # precedent): canon's 48/64-per-lapse makes a real-time device
                 # poop every ~37 min sick -- proportional on tuipet's 60x clock
@@ -1438,6 +1451,8 @@ class Pet:
         (LINES_SPEC §5, canon on all three devices): hunger empty and unanswered
         for 10 minutes = ONE mistake, then the call is postponed — it no longer
         repeats every calorie cycle while starving."""
+        if self.full_until and self.world_seconds < self.full_until:
+            return                    # premium-meat satiety (DSprite item)
         # hungerCall: a single mistake per unanswered call, mirroring strengthCall
         if self.hunger == 0 and not self.asleep:
             self._hunger_call_t = getattr(self, "_hunger_call_t", 0.0) + dt
@@ -1523,13 +1538,8 @@ class Pet:
                 # opened "misbehaving!" windows for free on a loop
         else:
             self._str_call_t = 0.0
-        # nutrition macros decay each lapse (NutritionLapseChange) -- keep a varied diet up
-        self._nutr_t = getattr(self, "_nutr_t", 0.0) + dt
-        if self._nutr_t >= NUTRITION_LAPSE_SEC:
-            self._nutr_t = 0.0
-            self.nutr_protein = max(0, self.nutr_protein + NUTRITION_LAPSE_CHANGE)
-            self.nutr_mineral = max(0, self.nutr_mineral + NUTRITION_LAPSE_CHANGE)
-            self.nutr_vitamin = max(0, self.nutr_vitamin + NUTRITION_LAPSE_CHANGE)
+        # (the nutrition macro lapse left with the nutrition system;
+        # BASIC VPET 2026-07-16)
         # Filth acting-up (LINES_SPEC §5): NO real device counts filth as a care
         # mistake (Pen20 says so explicitly — mistakes are unanswered call lights
         # only), so the DVPet poopCall mistake is retired.  Filth keeps its teeth
@@ -2097,6 +2107,8 @@ class Pet:
         return data.load_requirements().get(self.num, {}).get("base_weight", 20)
 
     def _maybe_evolve(self):
+        if getattr(self, "evo_blocked", False):
+            return                    # the anti-evo chip (DSprite item)
         if self.sick or self.asleep or self.is_geriatric:
             return
         if getattr(self, "fx_hold", False):
@@ -2289,30 +2301,15 @@ class Pet:
 
     # ---- nutrition (DVPet GoodNutrition: protein/mineral/vitamin macros) --
     def good_nutrition(self):
-        return (self.nutr_protein >= GOOD_NUTRITION_MIN and self.nutr_mineral >= GOOD_NUTRITION_MIN
-                and self.nutr_vitamin >= GOOD_NUTRITION_MIN)
+        """Always False: the nutrition macros left (BASIC VPET 2026-07-16)."""
+        return False
 
-    def _apply_nutrition(self, food, modifier=1.0):
-        """PhysicalState.applyNutrition: a meal adds ceil(macro * modifier) (clamped 0..MaxMacro)."""
-        def m(v):
-            return math.ceil(int(v) * modifier)
-        self.nutr_protein = _clamp(self.nutr_protein + m(food.get("protein", 0)), 0, MAX_MACRO)
-        self.nutr_mineral = _clamp(self.nutr_mineral + m(food.get("mineral", 0)), 0, MAX_MACRO)
-        self.nutr_vitamin = _clamp(self.nutr_vitamin + m(food.get("vitamin_n", 0)), 0, MAX_MACRO)
 
-    # ---- food taste (DVPet Taste<Food>) ----------------------------------
     def _species_food(self):
         r = data.load_requirements().get(self.num, {})
         return (r.get("food_pref", "None"), r.get("food_aversion", "None"),
                 r.get("food_intol", []))
 
-    def major_food(self):
-        """PhysicalState.getMajorFood: the strictly most-eaten category, else None."""
-        best = max(self.food_eaten.values(), default=0)
-        if best <= 0:
-            return None
-        top = [c for c in data.FOOD_CATEGORIES if self.food_eaten.get(c, 0) == best]
-        return top[0] if len(top) == 1 else None
 
     def _change_rank(self, cat):
         """Taste.changeRank: bump the eaten category's rank (+/- species pref bias); eating
@@ -2391,74 +2388,6 @@ class Pet:
             self.attr_ranks[a] = _clamp(self.attr_ranks[a] - change, RANK_MIN, RANK_LIMIT)
         self._promote_attr_ranks()
 
-    def _dec_food_ranks(self, cats, change):
-        """The food ledger's negative path (forced meals, forced sickness)."""
-        for c in cats:
-            if c in self.food_ranks:
-                self.food_ranks[c] = _clamp(self.food_ranks[c] - change, RANK_MIN, RANK_LIMIT)
-                if self.food_ranks[c] <= RANK_MIN:
-                    self.disliked_food = c
-
-    def _eat_food(self, category, complied=False):
-        """DVPet feed taste. A food's Type is a ";"-list of categories (foodType.getType()):
-        the tier comes from whether any category is the CURRENT disliked (first) or favourite,
-        then each category's rank/eaten is bumped (incFoodRankAndEaten) and intolerance rolled."""
-        cats = [c for c in (category or "").split(";") if c in data.FOOD_CATEGORIES]
-        if not cats:
-            return "neutral"
-        # feed()'s taste branches, canon shape (feed/food audit 2026-07-06):
-        # a glutton relishes EVERY meal a little (+1 mood on each branch), a
-        # picky eater resents each (-1); fullness GATES the pleasant moods
-        # (a full pet gets nothing from even its favourite) and DOUBLES the
-        # disliked-meal misery (plus the spirit hit, worse when forced)
-        mod = (GLUTTON_FEED_MOOD if self.glutton > 0
-               else NOT_GLUTTON_FEED_MOOD if self.glutton < 0 else 0)
-        # the mood gates read the SPECIES stomach (canon getStomachCapacity /
-        # getOvereatLimit = 0.75 x capacity; food audit 2026-07-15): a 4-heart
-        # "full" pet still enjoys a strength-food's mood while its real
-        # stomach (8..40) has room -- the old flat 4/5 gates denied it
-        cap = self.stomach_capacity()
-        overeat_at = int(cap * OVEREAT_FACTOR)
-        if self.disliked_food and self.disliked_food in cats:
-            tier = "disliked"
-            if self.hunger >= FULL_HUNGER:       # full AND hating it: the double dip
-                self._set_mood(self.mood - FAV_FOOD_MOOD + mod)
-                self._set_enthusiasm(self.enthusiasm - FAV_FOOD_ENTH
-                                     + (ENTH_BAD_FOOD_FORCED if complied else 0))
-            self._set_mood(self.mood - FAV_FOOD_MOOD + mod)
-            self._set_obedience(self.obedience + DISLIKED_FOOD_OBEDIENCE)
-        elif self.favorite_food and self.favorite_food in cats:
-            tier = "favorite"
-            if self.hunger < FULL_HUNGER or (self.glutton > 0 and self.hunger < overeat_at):
-                self._set_mood(self.mood + FAV_FOOD_MOOD + mod)
-                self._set_enthusiasm(self.enthusiasm + FAV_FOOD_ENTH)
-            elif self.hunger < cap:
-                self._set_mood(self.mood + FOOD_MOOD + mod)
-        else:
-            tier = "neutral"
-            if self.hunger < cap:
-                self._set_mood(self.mood + FOOD_MOOD + mod)
-        for c in cats:                                     # incFoodRankAndEaten: per category
-            self.food_eaten[c] = self.food_eaten.get(c, 0) + 1
-            self._change_rank(c)
-        _, _, intol = self._species_food()
-        if any(c in intol for c in cats):                  # checkIntolerantFoodSick (x2 rolls)
-            # a COMPLIANT pet forced through an intolerant meal resents you --
-            # sick or not (canon ObedienceChangeIntolerantForced; obedience
-            # audit 2026-07-06)
-            if complied:
-                self._set_obedience(self.obedience + OBEDIENCE_CHANGE_INTOL_FORCED)
-            # checkIntolerantFoodSick rolls worse AND fresh once each (the old
-            # x2 fresh loop misread it; sickness/injury audit 2026-07-06)
-            self._check_worse_sick(INTOL_WORSE_SICK_CHANCE)
-            self._check_sick(INTOL_FOOD_SICK_CHANCE)
-        # the FORCED-meal taste decs (taste/rank audit 2026-07-06): a compliant
-        # pet's grudging meal sours the categories -- the disliked worst
-        if complied and cats:
-            self._dec_food_ranks(cats, RANK_BAD_FOOD_FORCED if tier == "disliked"
-                                 else RANK_INTOL_FORCED if any(c in intol for c in cats)
-                                 else RANK_FOOD_FORCED)
-        return tier
 
     def _become(self, num):
         """The species-swap prologue shared by evolution and mode change:
@@ -2494,7 +2423,6 @@ class Pet:
             self.strength = 0
             self.hunger = 0
             self.energy = self.max_energy
-            self.nutr_protein = self.nutr_mineral = self.nutr_vitamin = START_NUTRITION
         elif self.stage == "InTraining":
             # inTraining(): toddler rebellion -- obedience above 50 KNOCKS
             # BACK to 50; it wakes with the lights on and real bedtime
@@ -2789,14 +2717,16 @@ class Pet:
         self._set_weight(self.weight - wdec)
         if backlog:
             self._set_weight(self.weight - math.ceil(wdec / 2))
-        e = data.consumable_by_key(key) or {}
-        self._set_mood(self.mood + int(e.get("mood", 0) or 0))
-        self._set_obedience(self.obedience + int(e.get("obedience", 0) or 0))
+        # (the flush item's mood/obedience perks left with the item system)
         self._toilet_train()
         self._toilet_event = key                  # the app plays poopToilet
         self._set_anim("toilet", 3.8)
 
     def _do_poop(self, backlog=False):
+        if self.auto_clean_until and self.world_seconds < self.auto_clean_until:
+            self.poop = 0             # the smart potty flushes it (DSprite item)
+            self.poop_sizes = []
+            return
         """PhysicalState.poop: relief mood bump, weight shed, and a new sized pile
         added to the filth (capped at the _filth array length).  A big BACKLOG
         (gauge still >= bmMax/2 after the poop) makes the pile one size bigger --
@@ -2993,122 +2923,62 @@ class Pet:
         return None
 
     def feed(self, food=None, assisted=False):
-        """PhysicalState.feed -> applyFood: apply a food's FULL effect set, each
-        scaled by DVPet's fullness modifier.  A hunger-food (Meat) refuses a full
-        stomach; a strength-food (Protein/Vitamin, hunger 0) never fills, so it
-        builds strength/DP even on a full pet -- the classic Meat/Protein split.
-        assisted = DVPet assistantFeed (canRefuse=false): the same path minus
-        the refusal roll -- a pet never turns down the hired help."""
-        if (_g := self._guard()) is not None:
+        """The DSprite feed (BASIC VPET 2026-07-16, cloned from v0.4.x): the
+        F menu picks MEAT or PILL; the whole DVPet food catalog -- taste
+        tiers, nutrition macros, calories, food evolutions -- left with it.
+        Kept as the meat entry so the assistant and old callers still feed."""
+        return self.feed_meat()
+
+    def feed_meat(self):
+        """Meat: hunger +1, weight +1.  Refused at a full belly (the head-
+        shake; +1 overeat +1 weight -- the OF gate's sin, kept from canon's
+        overeatPenalty).  Feeding a sleeper DISTURBS it first."""
+        if (_g := self._guard(asleep_blocks=False)) is not None:
             return _g
-        foods = data.load_foods()
-        food = food or (foods[0] if foods else {"name": "Meat", "hunger": 1, "weight": 4, "mood": 5})
-        self._last_meal_starving = self.hunger == 0          # eat(): wolfed down (decided PRE-meal)
-        refused = False if assisted else self.check_refused(food=food)   # applyFood: checkRefused ...
-        complied = self.check_compliant()                    # ... then the compliance is spent
-        if refused:
-            return f"{self.name} refuses to eat!"
-        self._calm_discipline_call()                         # a meal placates the tantrum
-        fills = int(food.get("hunger", 0)) > 0
-        # (canon checkMaxHoursBeforeSleep -- the bedtime-only food gate -- is
-        # DATA-DEAD: every shipped foods.csv row carries -1; feed/food audit
-        # 2026-07-06.)  The too-full early refuse below is a DOCUMENTED
-        # divergence: canon applyFood eats the meal anyway (overeatPenalty +
-        # capped hunger, food spent); tuipet refuses like the REAL device's
-        # head-shake, with the same penalties -- kept, matches the toy.
-        # a hunger-food on a full stomach -> too full (a glutton eats past FULL_HUNGER)
-        if fills and self.hunger >= FULL_HUNGER and self.glutton <= 0:
+        if self.asleep:
+            self._disturbed()
+        self._last_meal_starving = self.hunger == 0          # eat(): wolfed down
+        if self.hunger >= FULL_HUNGER:
             self._set_weight(self.weight + 1)
             self.overeat += 1
             self.mistake_day += 1                # OverStomachCapcityMissedDayChange
-            self.calories = CALORIE_LIMIT
-            self._poop_t = min(self._poop_interval, getattr(self, "_poop_t", 0) + 900)   # overeat -> sooner poop
-            self._last_meal_disliked = False
+            self._poop_t = min(self._poop_interval, getattr(self, "_poop_t", 0) + 900)
             self._set_anim("refuse", 1.0)
             return f"{self.name} is too full!"
-        # DVPet applyFood modifier: a near-full stomach diminishes a hunger-food's
-        # effects (1 - overfull/stomach); a strength-food (hunger 0) is always
-        # full-value.  The divisor is the SPECIES stomach (geriatric-shrunk),
-        # not a flat 4 (food audit 2026-07-15).
-        over = self.hunger - FULL_HUNGER
-        modifier = 1.0 if (over <= 0 or not fills) else max(0.0, 1.0 - over / self.stomach_capacity())
-        # applyFood: modifier <= DisposeLeftoversMinModifier -> State.Munching --
-        # the stuffed pet takes two bites and DROPS the rest (the eat fx reads it)
-        self._last_meal_leftover = fills and modifier <= DISPOSE_LEFTOVERS_MIN
-
-        def scaled(key):
-            return math.ceil(food.get(key, 0) * modifier) if food.get(key, 0) > 0 else int(round(food.get(key, 0) * modifier))
-
-        cap = OVEREAT_LIMIT if self.glutton > 0 else FULL_HUNGER
-        self.hunger = _clamp(self.hunger + scaled("hunger"), 0, cap)
-        self.strength = _clamp(self.strength + scaled("strength"), 0, 4)   # Protein builds Effort/DP
-        if food.get("strength", 0) > 0:
-            self.dp = min(DP_MAX, self.dp + 1)   # Pen20: 4 protein items refill the DP meter
-        self._set_energy(self.energy + scaled("energy"))
-        self._set_mood(self.mood + scaled("mood")           # foods.csv intrinsic mood (Cake +60, Veg -10)
-                       + int(math.ceil(self._personality_mood(food) * modifier)))
-        self._set_obedience(self.obedience + scaled("obedience"))
-        self._set_enthusiasm(self.enthusiasm + scaled("enthusiasm"))
-        if food.get("health"):                              # HP Chip: permanent trained-HP gain
-            self.full_health = min(self.max_health(),
-                                   self.full_health + math.ceil(food["health"] * modifier))
-        # canon re-audit 2026-07: applyConsumable's remaining food effects --
-        # the old flat calorie refill ignored the per-food Calories column
-        # (setCaloriesAndChangeWeight: a rich meal buffers longer, and calories
-        # rising while ALREADY positive fatten by FoodWeightChange)
-        cal = scaled("calories")
-        if cal > 0 and self.calories > 0:
-            self._set_weight(self.weight + FOOD_WEIGHT_CHANGE)
-        self._set_calories(self.calories + cal)   # a rich-meal OVERFLOW hastens the poop
-        self.vaccine = max(0, self.vaccine + scaled("vaccine"))       # attribute foods
-        self.data_power = max(0, self.data_power + scaled("data"))
-        self.virus = max(0, self.virus + scaled("virus"))
-        if food.get("seconds"):                             # lifespan foods (real-sec -> game /60)
-            self.lifespan = max(0.0, self.lifespan + scaled("seconds") / 60.0)
-        if food.get("sleep_lapse"):                         # bedtime nudge (Hot Milk)
-            self.sleep_lapse = max(0.0, self.sleep_lapse + scaled("sleep_lapse"))
-        # (food temp effects -- changeToPrefTemp, the hot-soup warmth -- left
-        # with the weather system; BASIC VPET 2026-07-16)
-        self._set_weight(self.weight + math.ceil(food.get("weight", 1) * modifier))   # modifier-scaled, like canon
-        # every meal advances the bowel gauge (applyFood: bmGauge += bmLapseInc
-        # + ceil(food.BMGauge x modifier)): EVERY meal adds one lapse-worth on
-        # top of the food's own scaled gauge (food audit 2026-07-15 -- the old
-        # line skipped the flat lapse-inc and the modifier), proportional to
-        # the species bmMax
-        bm_units = (self._phys().get("poop_lapse", 1)
-                    + (math.ceil(int(food.get("bm", 0)) * modifier) if food.get("bm") else 0))
+        self.hunger = _clamp(self.hunger + 1, 0, FULL_HUNGER)
+        self._set_weight(self.weight + 1)
+        # every meal advances the bowel gauge (applyFood: bmGauge += bmLapseInc)
         self._poop_t = getattr(self, "_poop_t", 0) \
-            + self._poop_interval * bm_units / max(1, self._phys().get("poop_limit", 64))
-        # checkDirtyEating: a meal amid the filth sours it, and each pile is a
-        # sickness risk (worse 16%/pile if already sick, else sick 8%/pile)
+            + self._poop_interval * self._phys().get("poop_lapse", 1) \
+            / max(1, self._phys().get("poop_limit", 64))
+        # checkDirtyEating: a meal amid the filth is a sickness risk per pile
         if self.poop > 0:
-            self._set_mood(self.mood - DIRTY_EATING_MOOD_DEC)
-            worse = self._check_worse_sick(DIRTY_EATING_WORSE_CHANCE * self.poop)
-            got_ill = self._check_sick(DIRTY_EATING_SICK_CHANCE * self.poop)
-            # checkDirtyEating: a COMPLIANT pet forced to eat amid the filth
-            # and sickened by it resents you (obedience audit 2026-07-06) --
-            # and the meal's categories sour hard (RankChangeSickForced)
-            if (worse or got_ill) and complied:
-                self._set_obedience(self.obedience + OBEDIENCE_CHANGE_SICK_FORCED)
-                self._dec_food_ranks([c for c in (food.get("category") or "").split(";")
-                                      if c in data.FOOD_CATEGORIES], RANK_SICK_FORCED)
-        tier = self._eat_food(food.get("category", ""), complied)   # DVPet taste: fav/disliked/neutral
-        self._last_meal_disliked = (tier == "disliked")      # eat(): disliked -> +9 grimace bite
-        self._apply_nutrition(food, modifier)                # GoodNutrition macros (scaled)
-        # processFoodEvol (food audit 2026-07-15): a FOOD-triggered evolution
-        # fires with the meal when its gates pass -- the corpus has one:
-        # Nanimon + an Orange (food 42) = Citramon.  Mirrors the Digimental
-        # (ItemEvol) flow, special-anchored like every non-natural jump.
-        target = evolution.food_select(self, int(food.get("id", -1)))
-        if target is not None:
-            prev = self.num
-            self.evolve_to(target)
-            lines_mod.adopt_line(self, prev=prev)
-            self._set_anim("happy", 1.6)
-            return f"Fed {food['name']}… {self.name} evolved!"
+            self._check_worse_sick(DIRTY_EATING_WORSE_CHANCE * self.poop)
+            self._check_sick(DIRTY_EATING_SICK_CHANCE * self.poop)
         self._set_anim("eat", 1.4)
-        tag = {"favorite": "  It loves it!", "disliked": "  It dislikes that."}.get(tier, "")
-        return f"Fed {food['name']}.{tag}"
+        return "Fed Meat."
+
+    def feed_pill(self):
+        """The pill: cures an active sickness or injury spell, strength +1,
+        energy +7, weight +5.  Refused when there is nothing to top up.
+        Healing a sleeper DISTURBS it first.  (The sick/injury COUNTERS keep
+        their tally -- the evolution gates still read the record.)"""
+        if (_g := self._guard(asleep_blocks=False)) is not None:
+            return _g
+        if not self.sick and not self.is_injured() \
+                and self.strength >= 4 and self.energy >= self.max_energy:
+            self._set_anim("refuse", 1.0)
+            return f"{self.name} doesn't need it."
+        if self.asleep:
+            self._disturbed()
+        self.sick = False
+        self.sick_length = 0.0
+        self.inj_length = 0.0
+        self.strength = _clamp(self.strength + 1, 0, 4)
+        self._set_energy(self.energy + PILL_ENERGY_GAIN)
+        self._set_weight(self.weight + PILL_WEIGHT_GAIN)
+        self._set_anim("heal", 1.4)
+        return "Took the pill."
 
     def can_train(self):
         """canExercise (energy audit 2026-07-06): NO hard fatigue/energy gate --
@@ -3814,74 +3684,12 @@ class Pet:
         return f"Cleaned {n} poop."
 
     def heal(self):
-        """The First Aid button (Medical menu): a SICK pet takes the Med staple
-        (feedMed), an injured one gets the Bandage (applyBandage).  Treatment is
-        INCREMENTAL -- each dose shortens the spell by its CureLapse/HealLapse
-        (-2 lapses); the instant cure is the shop's Elixir (Cured=TRUE, 2000b)."""
-        if (_g := self._guard()) is not None:
-            return _g
-        if self.sick:
-            return self._feed_med()
-        if self.is_injured():
-            return self._apply_bandage()
-        return "It's not sick or injured."
+        """The pill (BASIC VPET 2026-07-16): the med/bandage staples left
+        with the DVPet item system -- one staple treats everything, from the
+        F menu (and the road's h key)."""
+        return self.feed_pill()
 
-    def _feed_med(self):
-        """PhysicalState.feedMed: the Med staple (f:4, infinite, CureLapse -2).
-        Dosing AGAIN while the medicine indicator still runs is a BAD MED --
-        poison: lifespan -BadMedLifeDec, the bowels lurch, and it jeers."""
-        med = data.consumable_by_key("f:4") or {"mood": -10, "cure_lapse": -2}
-        refused = self.check_refused(food=med)               # feed(): the Med -20 obey mod
-        complied = self.check_compliant()
-        if refused:
-            return f"{self.name} spits out the medicine!"
-        if self.med_lapse > 0:                               # getMed(): double dose
-            self.mistake_day += 1                            # BadMedMissedDayChange
-            self._burn_life(BAD_MED_LIFE_DEC)
-            self._advance_bm(BAD_MED_BM_INC)
-            # rankChangeSick (+Forced when its compliance was spent): a
-            # double-dosed pet grows to DISLIKE medicine (heal audit 2026-07-05)
-            ding = RANK_CHANGE_SICK + (RANK_CHANGE_SICK_FORCED if complied else 0)
-            self.food_ranks["Med"] = _clamp(self.food_ranks.get("Med", 0) - ding,
-                                            RANK_MIN, RANK_LIMIT)
-            if self.food_ranks["Med"] <= RANK_MIN:
-                self.disliked_food = "Med"
-            self._start_poop()
-            self._set_anim("refuse", 1.5)                    # Bad_Health_Jeering
-            return "A double dose — that was poison!"
-        self._set_mood(self.mood + int(med.get("mood", -10)))          # it tastes awful
-        self.sick_length = max(0.0, self.sick_length
-                               + med.get("cure_lapse", -2) * SICK_LAPSE_MIN)
-        if self.sick_length == 0:
-            self.sick = False                                # the dose finished it off
-        self._set_mood(self.mood + CURED_MOOD_BONUS // MAX_SICK_LENGTH)
-        self._set_obedience(self.obedience + CURED_OBED_BONUS // MAX_SICK_LENGTH)
-        self.med_lapse = MEDICINE_HOURS                      # the indicator runs as it wears off
-        self._set_anim("heal", 1.5)
-        return ("The medicine worked!" if not self.sick
-                else f"{self.name} keeps the medicine down… it helps.")
 
-    def _apply_bandage(self):
-        """PhysicalState.applyBandage: the Bandage item (i:80, HealLapse -2);
-        an already-bandaged pet jeers the second wrap off."""
-        if self.bandage_lapse > 0:                           # getBandage(): one wrap at a time
-            self._set_anim("refuse", 1.0)                    # Jeering
-            return "It's already bandaged up."
-        bandage = data.consumable_by_key("i:80") or {"heal_lapse": -2}
-        refused = self.check_refused(food=bandage)           # useItem's refusal roll
-        self.check_compliant()
-        if refused:
-            return f"{self.name} squirms away from the bandage!"
-        self.inj_length = max(0.0, self.inj_length
-                              + bandage.get("heal_lapse", -2) * INJ_LAPSE_MIN)
-        if self.inj_length == 0:
-            self.injuries = max(0, self.injuries - 1)        # mended
-        self._set_mood(self.mood + CURED_MOOD_BONUS // MAX_INJ_LENGTH)
-        self._set_obedience(self.obedience + CURED_OBED_BONUS // MAX_INJ_LENGTH)
-        self.bandage_lapse = BANDAGE_HOURS
-        self._set_anim("heal", 1.5)
-        return ("All patched up!" if self.inj_length == 0
-                else f"{self.name} is bandaged — it needs rest now.")
 
     def _growth_period(self):
         """The growth curve's total: egg + every stage through the current one
@@ -4018,12 +3826,10 @@ class Pet:
             self.poop, self.poop_sizes = 0, []
             self._set_mood(self.mood + 6)                # CleanMoodInc
             self._filth_t = 0                            # mess handled: the filth call resets
-        elif act in ("feed", "strength"):
-            fid = AUTO_CARE_HUNGER_FOOD if act == "feed" else AUTO_CARE_STRENGTH_FOOD
-            food = data.consumable_by_key(f"f:{fid}")
-            if food is None:
-                return
-            self.feed(food, assisted=True)               # assistantFeed: the full path, no refusal
+        elif act == "feed":
+            self.feed_meat()                             # assistantFeed: the staple
+        elif act == "strength":
+            self.feed_pill()                             # the tonic tops effort/energy
         elif act == "lights":
             self.lights = False                          # Assistant_Lights -> onLights
         # processAutoCarePrice: the visit fee, and the bond cost of hired care
@@ -4067,36 +3873,24 @@ class Pet:
 
     # ---- shop / items --------------------------------------------------------
     def buy_slot(self, slot):
-        """Buy one from a rolled shop slot: pay the sale-aware purchase price,
-        decrement the slot's stock (decStock) and bag it."""
-        entry = data.consumable_by_key(slot["key"])
-        if not entry:
-            return "?"
+        """Buy one from a town counter slot (the DSprite catalog behind every
+        counter now -- BASIC VPET 2026-07-16)."""
         if slot.get("stock", 0) <= 0:
             return "Sold out."
         price = shop.purchase_price(slot)
-        if self.bits < price:                # gate only: the cap must veto first
+        if self.bits < price:
             return "Not enough bits."
-        key = entry["key"]
-        cap = entry.get("max_uses") or 99
-        if self.inventory.get(key, 0) >= cap:
-            return f"Can't carry more {entry['name']} (max {cap})."
         self.spend_bits(price)
         slot["stock"] -= 1
-        # canon incQuantity adds UsesPerItem per purchase (a Toilet refill is
-        # 100 flushes, a Potty 1), clamped at MaxUses (toilet audit 2026-07-05)
-        self.inventory[key] = min(cap, self.inventory.get(key, 0)
-                                  + int(entry.get("uses_per", 1) or 1))
-        return f"Bought {entry['name']}."
+        self.add_item(slot["key"])
+        return f"Bought {slot['name']}."
 
     def sell(self, entry):
-        """Resell one from the bag at price/DefaultResellFactor (unsellable at 0)."""
+        """Resell one from the bag at half price."""
         key = entry["key"]
         if self.inventory.get(key, 0) <= 0:
             return "None to sell."
         val = shop.resell_price(entry)
-        if val <= 0:
-            return f"{entry['name']} can't be resold."
         self.take_item(key)
         self.bits += val
         return f"Sold {entry['name']} for {val}b."
@@ -4153,21 +3947,19 @@ class Pet:
             self.gift = self._pick_gift()
 
     def _pick_gift(self):
-        """PhysicalState.getGift: each CanInc consumable enters the pool at its
-        own GiftChance/100 odds (getCanGift is a per-roll randomChance); the
-        present is a uniform pick from the passers."""
-        pool = [e["key"] for e in data.home_shop_pool()
-                if e.get("can_inc") and e.get("gift_chance", 0) > 0
-                and data.item_is_functional(e)
-                and random.randrange(100) < e["gift_chance"]]
-        return random.choice(pool) if pool else ""
+        """The present pool (BASIC VPET 2026-07-16): a uniform pick from the
+        DSprite catalog's treat tier (fruits and small care goods) -- the
+        DVPet per-item GiftChance table left with the item system."""
+        pool = ("best_fruit", "normal_fruit", "worst_fruit",
+                "energy_drink", "care_mistake_eraser")
+        return random.choice(pool)
 
     def claim_gift(self):
         """ClockTic.giftEnd: the present lands in the bag and the pet cheers."""
         key, self.gift = self.gift, ""
         if not key:
             return ""
-        e = data.consumable_by_key(key) or {}
+        e = shop.entry(key) or {}
         self.add_item(key)
         self._set_anim("happy", 2.0)                # giftEnd -> State.Cheering
         return f"{self.name} gives you {e.get('name', 'a present')}!"
@@ -4267,223 +4059,173 @@ class Pet:
         self.vaccine, self.data_power, self.virus = v, d, vi
 
     def use_item(self, key):
+        """Consume one inventory item -> a short result message ('' = the
+        item does nothing here, None-equivalent = don't have it).  The
+        DSprite item table, cloned from v0.4.x (BASIC VPET 2026-07-16): the
+        DVPet consumable machine -- meds, bandages, vitamins, toys, futons,
+        transports, digimentals, crafters -- left with the item system.  A
+        _Refused message keeps the item ('consume on refusal' burned
+        Rev.Floppies on live pets; clone audit 2026-07-15)."""
         if self.inventory.get(key, 0) <= 0:
             return "None left."
-        e = data.consumable_by_key(key)
-        if not e:
-            return "?"
-        if not data.item_is_functional(e):
-            return f"{e['name']} has no use yet."   # action-item whose system is unbuilt
-        if (_g := self._guard(asleep_blocks=False)) is not None:
-            return _g
-        # canon PhysicalState.useItem opens with `if (item.disturb()) this.disturb()`:
-        # a Disturb-flagged item WAKES a sleeping pet before it applies -- every item
-        # disturbs EXCEPT the Futon (items.csv Disturb=FALSE, the one sleep aid).  The
-        # item still lands; the grumpy wake (mood/spirit dec, sick risk, postponed sleep)
-        # is a side effect, unlike feed/care which _guard() out entirely.
-        if self.asleep and e.get("disturb"):
+        # the crest eggs (Armor-Spirit): the ONE clone item family that maps
+        # onto a classic system -- each virtue joins its Digimental's
+        # EvolItemID, so the armor evolutions stay reachable (the dub swap is
+        # deliberate: reliability->Purity(18), destiny->Fate(25))
+        if key.startswith("egg_of_"):
+            return self._crest_egg(key)
+        fx = {
+            "energy_drink": lambda: self._gain_energy(self.max_energy),
+            "best_fruit": lambda: self._fruit(+2),
+            "normal_fruit": lambda: self._fruit(+1),
+            "worst_fruit": lambda: self._fruit(0),
+            "deadly_fruit": self._deadly,
+            "junk_food": self._junk,
+            "premium_meat": self._premium_meat,
+            "poop_clean_pill": self._smart_potty,
+            "care_mistake_eraser": self._erase_mistake,
+            "sleeping_pill": self._sleep_pill,
+            "alarm_clock": self._alarm,
+            "time_gear": self._time_gear,
+            "anti_evo_chip": self._anti_evo,
+            "x_antibody": self._x_item,
+            "training_pack": self._training_pack,
+            "revive_floppy": self._revive_item,
+            "super_carrot": self._super_carrot,
+        }.get(key)
+        if fx is None:
+            return ""
+        # life-state guard: only the Rev.Floppy works on the dead, and
+        # NOTHING works on an egg
+        if self.dead and key != "revive_floppy":
+            return _Refused("")
+        if self.stage == "Egg" or self.num < 0:
+            return _Refused("")
+        # item on a sleeper: the alarm wakes mistake-FREE (its whole point),
+        # the sleeping pill is pointless, anything else DISTURBS -- then applies
+        if self.asleep and key not in ("alarm_clock", "sleeping_pill"):
             self._disturbed()
-        is_item = key.startswith("i:")
-        # Life Recovery (item 27, AdventureLifeInc; canon PhysicalState.useItem
-        # gates the item out at MaxAdventureLife): +1 Digital World life.
-        # tuipet adaptation: life is PER-OUTING (canon's world life persists at
-        # home), so the potion works only on the road -- gated BEFORE any
-        # consumption, like canon's eligibility block
-        adv = getattr(self, "_adventure", None) if getattr(self, "away", False) else None
-        if is_item and e.get("adv_life"):
-            from .adventure import MAX_LIFE
-            if adv is None:
-                return "It only works out in the Digital World."
-            if adv.life >= MAX_LIFE:
-                return "Adventure life is already full."
-        # checkMaxHoursBeforeSleep (sleep audit 2026-07-15): the Futon
-        # (MaxHoursBeforeSleep=1) only applies to a SLEEPER (ForceUseWhenAsleep
-        # -- the slide-under-tuck) or within a game-minute of nod-off.  Canon
-        # gates the interaction BEFORE consumption, so nothing is spent.
-        # Without this, yesterday's canon snap-to-comfort made the futon an
-        # anytime room heater -- exactly the go-to Joel called out.
-        mhs = e.get("max_hours_sleep", -1)
-        if mhs != -1 and not self.asleep and not self._near_bedtime(mhs):
-            return f"Too early to lay out the {e['name']} — it's not bedtime."
-        if e.get("effect_id", -1) >= 0:
-            eff0 = data.load_care_effects().get(e["effect_id"])
-            if (eff0 and not eff0.get("can_reapply")
-                    and self.effect_id == e["effect_id"] and self.effect_t > 0):
-                # CareEffect.canApply: an active no-reapply effect blocks the
-                # interaction up front (careEffectCanApply guards the click)
-                return f"{self.name} is already tucked in."
-        # canon: an ItemEvol item's fractional energy price feeds the
-        # AFFORDABILITY auto-refuse (a pet that can't pay the Digimental's
-        # -0.66 x max refuses, exactly like jogress)
-        ev = e.get("energy", 0)
-        echange = ev if (e.get("action") == "ItemEvol" and ev != int(ev)) else 0.0
-        refused = (self.check_refused(item=e, energy_change=echange)
-                   if is_item else self.check_refused(food=e))
-        # checkRefused's compliant-else: a COMPLIANT pet cannot refuse an ITEM,
-        # but it cooperates grudgingly -- the item lands at WeakConsumableCoefficient
-        # strength (0.1), except the Digimemory and healing items (Inherit/Recover)
-        weak = (is_item and self.compliance
-                and e.get("action") not in ("Inherit", "Recover")
-                and not (e.get("cured") or e.get("healed") or e.get("cure_lapse") or e.get("heal_lapse")))
-        self.check_compliant()                       # ...; checkCompliant
-        if refused:
-            return f"{self.name} wants nothing to do with it!"
-        self._calm_discipline_call()                 # useItem placates the tantrum
+        out = fx()
+        if not isinstance(out, _Refused) and out is not None:
+            self.take_item(key)
+        return out
+
+    _CREST_IDS = {"egg_of_courage": 15, "egg_of_friendship": 16,
+                  "egg_of_love": 17, "egg_of_reliability": 18,
+                  "egg_of_knowledge": 19, "egg_of_sincerity": 20,
+                  "egg_of_hope": 21, "egg_of_light": 22,
+                  "egg_of_kindness": 23, "egg_of_miracles": 24,
+                  "egg_of_destiny": 25}
+
+    def _crest_egg(self, key):
+        """A crest egg -> the classic Digimental item-evolution flow."""
+        if self.dead or self.stage == "Egg" or self.num < 0:
+            return _Refused("")
+        item_id = self._CREST_IDS.get(key, -1)
+        target = evolution.item_select(self, item_id)
+        if target is None:
+            self._set_anim("refuse", 1.0)
+            return _Refused(f"{self.name} can't use that yet.")
+        if self.asleep:
+            self._disturbed()
+        prev = self.num
+        self.evolve_to(target)
+        lines_mod.adopt_line(self, prev=prev)     # a special jump re-anchors
         self.take_item(key)
-        if e.get("special") == "xantibody":
-            # canon runs applyItem for the X-Program too (PhysicalState:3323/
-            # 3326): the sample is BRUTAL -- hunger -10, strength -13, energy
-            # -0.8 x max, spirit -10, mood -300 -- on top of the life price
-            self._apply_item_stats(e, WEAK_CONSUMABLE_COEF if weak else 1.0)
-            self._set_anim("happy", 1.5)
-            if key == "i:14":
-                if self.x_antibody == "None":
-                    # the SURVIVAL roll (death/rebirth audit 2026-07-06): an
-                    # unmarked pet survives the sample 1 in 1000 -- otherwise
-                    # it dies on the spot and the mash can't bring it back
-                    # (savedFromDeath = 127; the item warns "if it survives")
-                    if random.randrange(X_SURVIVAL_BOUND) >= X_SURVIVAL_TARGET:
-                        self.saved_from_death = X_SAVE_BLOCK
-                        self._die("the X-Program")
-                        return "The X-Program was too much for it…"
-                    # it SURVIVED: xEvolve charges its price in LIFE --
-                    # 86400/nextInt(7) real-sec (/60 scale; a 0 draw is free),
-                    # canon calcXAntibodyLifeDec verbatim
-                    d = random.randrange(X_LIFE_DEC_BOUND)
-                    if d:
-                        self._burn_life(X_LIFE_DEC / d)
-                self._set_xantibody("Permanent")
-                return "X-Program complete! The X-Antibody is permanent."
-            self._set_xantibody("Temporary")
-            return "X-Antibody induced! Evolve soon to make it stick."
-        if is_item and e.get("adv_life"):               # Life Recovery (item 27)
-            from .adventure import MAX_LIFE
-            adv.life = min(MAX_LIFE, adv.life + e["adv_life"])
-            self._set_anim("happy", 1.5)
-            return f"A life point returns!  ({adv.life}/{MAX_LIFE})"
-        if e.get("action") == "Inherit":                # the Digimemory (item 32)
-            # DVPet useItem routes Inherit around the weak-consumable coefficient
-            # and diminishing returns: applyItem(item, 1.0) -- full strength always
-            mem, self.digimemory = (self.digimemory or {}), {}
-            if not mem:
-                return "The Digimemory is blank."
-            self.vaccine = max(0, self.vaccine + int(mem.get("vaccine", 0)))
-            self.data_power = max(0, self.data_power + int(mem.get("data", 0)))
-            self.virus = max(0, self.virus + int(mem.get("virus", 0)))
-            self.lifespan += float(mem.get("seconds", 0.0))
-            self._set_anim("happy", 1.5)
-            return (f"{mem.get('name', '?')}'s power lives on!  "
-                    f"Va+{mem.get('vaccine', 0)} | D+{mem.get('data', 0)} | Vi+{mem.get('virus', 0)}")
-        if e.get("effect_id", -1) >= 0:                 # Futon: lay out a temporary care buff
-            eff = data.load_care_effects().get(e["effect_id"])
-            if eff:
-                self.effect_id = e["effect_id"]
-                self.effect_t = float(eff["duration"])
-                self._eff_acc = 0.0
-                self._eff_asleep = self.asleep
-                if not self.asleep:                      # a Futon slid under a sleeper
-                    self._set_anim("happy", 1.4)         # leaves it dozing, not grinning
-                return f"{self.name} settles onto the {e['name']}."
-        # crafter (DVPet FoodID/ItemID unlock list): yields a random treat from its list --
-        # the Toy Oven bakes a random food, the Chocolate Egg pops a random capsule.
-        targets = [f"f:{n}" for n in e.get("unlocks_food", [])] + \
-                  [f"i:{n}" for n in e.get("unlocks_item", [])]
-        if targets:
-            got = random.choice(targets)
-            self.add_item(got)
-            self._set_anim("happy", 1.4)
-            made = (data.consumable_by_key(got) or {}).get("name", got)
-            return f"{self.name} got a {made}!"
-        if e.get("action") in ("Toilet", "PortToilet"):
-            # canon gates toilet items on a FULL gauge (isMaxBMGauge); tuipet's
-            # urgency window leads the auto-fire.  Using it empties the gauge
-            # into the toilet NOW (no pile); the generic decrement above
-            # already spent the flush.
-            if not self.poop_urgent():
-                self.inventory[key] = self.inventory.get(key, 0) + 1   # refund
-                self._set_anim("refuse", 1.0)
-                return f"{self.name} doesn't need to go."
-            self._poop_t = 0.0
-            self._toilet_visit(key, spend_use=False)
-            return f"{self.name} used the {e['name']} — no mess!"
-        if e.get("action") == "ItemEvol":           # item-triggered evolution (Digimental/etc.)
-            target = evolution.item_select(self, e["id"])
-            if target is None and e.get("dexnum", -1) >= 0:
-                target = evolution.item_direct(self, e["dexnum"])
-            if target is None:
-                self.inventory[key] = self.inventory.get(key, 0) + 1   # refund: not usable now
-                self._set_anim("refuse", 1.0)
-                return f"{self.name} can't use that yet."
-            prev = self.num
-            self.evolve_to(target)
-            # a Digimental jump is a special evolution like jogress: re-anchor
-            # so the pet doesn't ride the corpus engine wearing a stale line_id
-            lines_mod.adopt_line(self, prev=prev)
-            # canon digivolve-then-applyItem(item, 1.0): the Digimental's
-            # -0.66 x max energy price bills the NEW form's ceiling
-            self._apply_item_stats(e, 1.0)
-            self._set_anim("happy", 1.4)
-            return f"{self.name} evolved!"
-        is_food = key.startswith("f:")
-        # applyItemNoObedience: a DiminishingReturns toy scales by 1 - interest/5
-        # (canon quirk: at FULL boredom the scale is skipped and the toy lands at
-        # full strength again); every item use bores the pet a step further
-        mod = WEAK_CONSUMABLE_COEF if weak else 1.0   # applyItem(item, 0.1) when compliant
-        if not is_food:
-            if e.get("diminishing"):
-                m = 1.0 - self.item_interest / MAX_ITEM_INTEREST
-                if 0.0 < m < mod:
-                    mod = m
-            self.item_interest = _clamp(self.item_interest + e.get("interest_change", 0),
-                                        0, MAX_ITEM_INTEREST)
+        self._set_anim("happy", 1.6)
+        return f"{self.name} armor-evolved!"
 
-        self._apply_item_stats(e, mod)               # the canon applyItem stat core
-        if e.get("vitamin"):
-            self.feed_vitamin()                          # guards against injury worsening
-        if e["unfatigue"]:
-            self.fatigue_length = 0.0                    # DVPet Fatigued flag only clears
-            # fatigue-length; energy stays driven by the item's Energy column, not a full refill
-        if e["undepressed"]:
-            self.depressed = False               # the item snaps the STATE, not just the mood
-            self._set_mood(max(self.mood, NEW_UNDEPRESSED_MOOD))  # leave depression
-        if self.sick and e.get("cure_lapse"):
-            self.sick_length = max(0.0, self.sick_length + e["cure_lapse"] * SICK_LAPSE_MIN)
-            self.sick = self.sick_length > 0             # applyConsumable CureLapseChange
-        if self.is_injured() and e.get("heal_lapse"):
-            self.inj_length = max(0.0, self.inj_length + e["heal_lapse"] * INJ_LAPSE_MIN)
-        if self.is_fatigued() and e.get("fatigue_lapse_change"):
-            self.fatigue_length = max(0.0, self.fatigue_length + e["fatigue_lapse_change"] * 60.0)
-        if e["cured"]:
-            self.sick = False
-            self.sick_length = 0.0
-            self.med_lapse = MEDICINE_HOURS              # medicine item -> getMed indicator
-        if e["healed"]:
-            self.injuries = max(0, self.injuries - 1)
-            self.inj_length = 0.0
-            self.bandage_lapse = BANDAGE_HOURS           # recovery item -> getBandage indicator
-        if e.get("seconds"):
-            # DVPet setTotalLifespan, real-sec -> game /60: the SAME conversion
-            # feed() applies -- the raw add made a bag-used Gold Pill 60x
-            # stronger than an eaten one (audit 2026-07-13)
-            self.lifespan = max(0.0, self.lifespan + e["seconds"] / 60.0)
-        # (item temp effects -- pref_temp snaps, heater/cooler nudges -- left
-        # with the weather system; BASIC VPET 2026-07-16)
-        if e.get("sleep") and not self.asleep:
-            self._fall_asleep()                          # DVPet item Sleep flag: a REAL sleep
-                                                         # (limits sized, lights latch reset)
-        if is_food:
-            self._eat_food(e.get("category", ""))           # bag food -> same taste system
-            self._apply_nutrition(e)
-            if e.get("strength", 0) > 0:                    # Pen20 protein DP, like feed()
-                self.dp = min(DP_MAX, self.dp + 1)
-            if e.get("sleep_lapse"):                        # bedtime nudge (Caffeine Pill's
-                self.sleep_lapse = max(0.0, self.sleep_lapse + e["sleep_lapse"])
-                                                            # signature effect; was feed-only)
-        if not e.get("sleep"):                           # a sleep item leaves the pet dozing,
-            self._set_anim("eat" if is_food else "happy", 1.4)   # not in the happy/eat pose
-        return f"Used {e['name']}."
+    def _gain_energy(self, n):
+        self._set_energy(self.energy + n)
+        return "Energy restored!"
 
-    # ---- presentation helpers -----------------------------------------------
+    def _fruit(self, quality):
+        if self.hunger >= FULL_HUNGER and quality >= 0:
+            return _Refused("Refused - belly's full.")
+        self.hunger = _clamp(self.hunger + 1, 0, FULL_HUNGER)
+        if quality > 0:
+            self.strength = _clamp(self.strength + quality - 1, 0, 4)
+        elif quality == 0:
+            self._set_weight(self.weight + 3)
+        return "Munch."
+
+    def _deadly(self):
+        self.dead = True
+        self.death_cause = "a deadly fruit"
+        return "...that fruit was DEADLY."
+
+    def _junk(self):
+        self.hunger = FULL_HUNGER
+        self._set_weight(self.weight + 4)
+        self.care_mistakes += 1
+        return "Delicious. Regrettable."
+
+    def _premium_meat(self):
+        self.hunger = FULL_HUNGER
+        self.full_until = self.world_seconds + 12 * 60.0   # 12 game-hours of satiety
+        return "Satiated for 12 hours."
+
+    def _smart_potty(self):
+        self.clean()
+        self.auto_clean_until = self.world_seconds + 24 * 60.0   # a game day
+        return "Auto-clean for 24 hours."
+
+    def _erase_mistake(self):
+        if self.care_mistakes <= 0:
+            return _Refused("No mistakes to erase.")
+        self.care_mistakes -= 1
+        return "One mistake, forgotten."
+
+    def _sleep_pill(self):
+        if self.asleep:
+            return _Refused("It's already asleep.")
+        self._fall_asleep()
+        self.lights = False
+        return "Zzz..."
+
+    def _alarm(self):
+        """Wake Up Without Mistake: a clean wake, no disturb penalty."""
+        if not self.asleep:
+            return _Refused("It's already awake.")
+        self.asleep = False
+        self.nap = False
+        self.lights = True
+        self.awake_lapse = 0.0
+        return "Rise and shine!"
+
+    def _time_gear(self):
+        self.stage_seconds += 120.0        # +120 game-minutes of growth
+        return "Time lurches forward."
+
+    def _anti_evo(self):
+        self.evo_blocked = not getattr(self, "evo_blocked", False)
+        return "Evolution " + ("BLOCKED." if self.evo_blocked else "unblocked.")
+
+    def _x_item(self):
+        """The X-Antibody chip: raises the X state (the classic X system)."""
+        if self.x_antibody != "None":
+            return _Refused("The antibody already runs in it.")
+        self._set_xantibody("Permanent")
+        from . import persistence as _persist
+        _persist.note_xanti()
+        return "The X-Antibody takes hold!"
+
+    def _training_pack(self):
+        self.stage_trainings += 5
+        return "Training +5."
+
+    def _revive_item(self):
+        if not self.dead:
+            return _Refused("No one needs reviving.")
+        self.save_from_death()
+        return "It LIVES."
+
+    def _super_carrot(self):
+        if self.weight <= 1:
+            return _Refused("Nothing left to trim.")
+        self._set_weight(max(1, self.weight - 10))
+        return "Feather-light!"
+
     def status_word(self):
         if self.dead:
             return "passed away"

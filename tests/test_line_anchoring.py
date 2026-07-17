@@ -111,11 +111,11 @@ def test_digimental_jump_reanchors_the_line(monkeypatch):
     by_num = _by_num()
     p = _grown(1615, by_num)                    # draco's Petitmon root
     p.line_id, p.energy, p.max_energy = "draco", 24, 24
-    p.inventory["i:15"] = 1
+    p.inventory["egg_of_courage"] = 1
     monkeypatch.setattr(Pet, "check_refused", lambda self, **k: False)
     monkeypatch.setattr(pet_mod.evolution, "item_select", lambda pet, iid: 955)
-    msg = p.use_item("i:15")
-    assert "evolved" in msg and p.num == 955
+    msg = p.use_item("egg_of_courage")
+    assert "evolved" in msg.lower() and p.num == 955
     assert p.line_id == "draco", "the road travelled keeps the pet on its chart"
 
 

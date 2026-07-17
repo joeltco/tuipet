@@ -96,13 +96,6 @@ def test_drilling_the_aversion_rides_the_weak_tables(monkeypatch):
     assert hurt.is_injured()
 
 
-# --- food forced decs + the hour sours ----------------------------------------------
-
-def test_a_grudging_meal_sours_its_categories():
-    p = _pet()
-    tier = p._eat_food("Meat", complied=True)
-    assert p.food_ranks["Meat"] < p._rank_stage_inc() + 4   # warm - RANK_FOOD_FORCED
-
 def test_falling_ill_sours_the_hour():
     p = _pet()
     ph = p.day_phase

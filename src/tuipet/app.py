@@ -88,7 +88,7 @@ def keys_markup():
     unreachable by theme.apply (shell polish 2026-07-05)."""
     k = f"b {theme.KEY}"
     return (
-        f"[{k}]f[/] feed  [{k}]p[/] play  [{k}]c[/] clean  [{k}]h[/] heal  [{k}]s[/] lights  [{k}]v[/] assist\n"
+        f"[{k}]f[/] feed (meat·pill)  [{k}]p[/] play  [{k}]c[/] clean  [{k}]s[/] lights  [{k}]v[/] assist\n"
         f"[{k}]t[/] train  [{k}]a[/] adventure  [{k}]u[/] cup  [{k}]l[/] lobby (battle·jogress)  [{k}]x[/] DNA  [{k}]n[/] eggs\n"
         f"[{k}]o[/] shop  [{k}]i[/] bag  [{k}]e[/] habitat  [{k}]d[/] digicore  [{k}]g[/] options  [{k}]b[/] bug  [{k}]?[/] help  [{k}]q[/] quit"
     )
@@ -267,10 +267,10 @@ class TuiPetApp(App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("AN OBEDIENT AGE: discipline is gone - no refusals, "
-                 "tantrums, praise or scolding; your mon just listens. DNA "
-                 "slimmed too: charge now costs energy and steers evolution "
-                 "without excusing bad care.")
+    WHATS_NEW = ("A SIMPLER TABLE: feed is MEAT or PILL now, right on the "
+                 "LCD - the pill heals everything. The shop carries a tight "
+                 "new catalog of real items; nutrition charts and food "
+                 "menus are gone.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and
@@ -278,7 +278,7 @@ class TuiPetApp(App):
         # PvE combat lives in adventure and the cup; fusion needs a real
         # partner from the roster
         ("f", "feed", "Feed"), ("t", "train", "Train"),
-        ("p", "play", "Play"), ("c", "clean", "Clean"), ("h", "heal", "Heal"),
+        ("p", "play", "Play"), ("c", "clean", "Clean"),
         ("a", "adventure", "Adventure"), ("o", "shop", "Shop"), ("i", "inventory", "Bag"), ("e", "habitat", "Habitat"),
         ("d", "digicore", "DigiCore"),
         ("n", "eggguide", "Egg Guide"),
@@ -1683,6 +1683,8 @@ class TuiPetApp(App):
         starving = getattr(self.pet, "_last_meal_starving", False)
         if outcome == "fed" and self.pet.anim == "eat":
             self.screen_w.start_fx("eat", icon, pet=self.pet, starving=starving)   # SFX per-bite in the fx loop
+        elif outcome == "healed":
+            self.screen_w.start_fx("heal", icon)  # the pill rides the heal beat
         elif outcome == "full":
             self.screen_w.start_fx("spit", icon)  # _refuse fires on each head-shake (fx snds)
         self._do(msg)
@@ -1863,15 +1865,9 @@ class TuiPetApp(App):
             self.screen_w.fx["sizes"] = sizes0
             self.beep("wash", bell=False)
         self._do(msg)
-    def action_heal(self):
-        if self.screen_w.fx is not None:        # let the current care animation finish before acting again
-            return
-        msg = self.pet.heal()
-        if self.pet.anim == "heal":
-            # DVPet bandage(): the treatment anim (item strip on the hurt pose),
-            # which chains into cheer(true, _happy) at its beat 23.
-            self.screen_w.start_fx("heal", icon="i:80")
-        self._do(msg)
+    # (the home h heal key retired: the pill rides the F feed menu now --
+    # BASIC VPET 2026-07-16; the road's h key keeps working via pet.heal())
+
     def action_sleep(self):                                     # the "s" key is the LIGHTS toggle
         self.beep("confirm", bell=False)                        # a button blip on the lights on/off press
         self._do(self.pet.toggle_lights())

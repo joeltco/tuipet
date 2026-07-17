@@ -38,33 +38,6 @@ def test_the_bank_holds_exactly_one_memory():
     assert persistence.peek_digimemory() is None              # taken -> gone
 
 
-def test_the_heir_redeems_the_full_payload():
-    p = _pet(stage="Rookie")
-    p.digimemory = {"name": "Elder", "num": 29, "vaccine": 50, "data": 30, "virus": 10, "seconds": 600.0}
-    p.add_item("i:32")
-    v0, d0, vi0, l0 = p.vaccine, p.data_power, p.virus, p.lifespan
-    msg = p.use_item("i:32")
-    assert "Elder" in msg and "Va+50" in msg
-    assert (p.vaccine, p.data_power, p.virus) == (v0 + 50, d0 + 30, vi0 + 10)
-    assert p.lifespan == l0 + 600.0
-    assert not p.digimemory and "i:32" not in p.inventory     # consumed, one use
-
-
-def test_a_blank_chip_does_nothing():
-    p = _pet()
-    p.add_item("i:32")
-    assert p.use_item("i:32") == "The Digimemory is blank."
-    assert "i:32" not in p.inventory
-
-
-def test_the_digimemory_item_is_functional_but_unsellable():
-    e = data.consumable_by_key("i:32")
-    assert e["action"] == "Inherit" and data.item_is_functional(e)
-    p = _pet()
-    p.add_item("i:32")
-    assert "can't be resold" in p.sell(e)                     # price 0: the memory has no market
-
-
 def test_the_held_payload_survives_the_save_round_trip():
     p = _pet()
     p.digimemory = {"name": "Elder", "num": 29, "vaccine": 5, "data": 3, "virus": 1, "seconds": 60.0}

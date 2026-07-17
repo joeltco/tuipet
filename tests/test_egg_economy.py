@@ -179,10 +179,12 @@ def test_a_gated_egg_is_hidden_until_earned_then_bought():
     hp = Pet(num=100, stage="Champion", attribute="Vaccine"); hp.world_seconds = 12 * 60.0
     hp.bits = 5000
     sp = ShopPanel(hp)
-    while sp._tabs()[sp.tab] != "egg":
+    from tuipet import shop as _shop
+    while sp.tabs[sp.tab] != _shop.EGGS_CATEGORY:
         sp.key("right")
     entry = next(e for e in sp._rows() if e.get("egg_idx") == idx)   # sold at home
-    assert "Unlocked" in sp._buy_egg(entry)
+    msg, sfx = _shop.buy(hp, entry)
+    assert "licensed" in msg
     assert idx in persistence.get_eggs_owned()
     assert idx in EggSelectPanel().carousel          # owned -> hatchable
 

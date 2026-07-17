@@ -27,24 +27,6 @@ def test_config_parity():
     assert TOILET_URGENT_FRAC == 0.8
 
 
-def test_manual_use_trains_only_at_intraining_and_needs_the_urge():
-    random.seed(4)
-    p = _pet(stage="InTraining", obedience=200)
-    p.inventory["i:82"] = 3
-    assert "doesn't need to go" in p.use_item("i:82")     # gauge low: refused
-    assert p.inventory["i:82"] == 3                        # ...and refunded
-    p._poop_t = 0.9 * p._poop_interval
-    msg = p.use_item("i:82")
-    assert "no mess" in msg
-    assert p.toilet_trained == 1 and p.inventory["i:82"] == 2
-    assert p._poop_t == 0.0 and p.poop == 0                # emptied into the bowl
-    adult = _pet()                                         # a Champion learns nothing
-    adult.inventory["i:82"] = 1
-    adult._poop_t = 0.9 * adult._poop_interval
-    adult.use_item("i:82")
-    assert adult.toilet_trained == 0
-
-
 def test_trained_pet_self_toilets_no_filth_and_spends_a_flush():
     q = _pet(toilet_trained=1)
     q.inventory["i:82"] = 2
@@ -72,23 +54,6 @@ def test_training_and_obedience_both_gate_the_self_visit():
     disobedient._poop_t = disobedient._poop_interval + 0.5
     disobedient._tick_body(1.0)
     assert disobedient.poop == 1
-
-
-def test_potty_is_the_fallback_and_buying_adds_uses_per():
-    q = _pet(toilet_trained=1)
-    q.inventory["i:83"] = 1                                # only the Port. Potty
-    q._poop_t = q._poop_interval + 0.5
-    q._tick_body(1.0)
-    assert q.poop == 0 and "i:83" not in q.inventory       # its single use spent
-    # a Toilet purchase = 100 flushes (UsesPerItem), clamped at MaxUses
-    from tuipet import data
-    e = data.consumable_by_key("i:82")
-    assert e["uses_per"] == 100 and e["max_uses"] == 199
-    q.bits = 10000
-    slot = {"key": "i:82", "stock": 1, "sale": False}
-    q.inventory["i:82"] = 150
-    q.buy_slot(slot)
-    assert q.inventory["i:82"] == 199                      # clamped, not 250
 
 
 def test_first_generation_starts_with_a_stocked_toilet():

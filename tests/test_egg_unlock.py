@@ -158,9 +158,9 @@ def test_egg_shop_buy_unlocks_for_hatching():
     idx, price = buyable[0]
     assert idx not in egg.hatchable_eggs(prog, owned)         # not hatchable yet
 
-    panel = ShopPanel(pet)
-    msg = panel._buy_egg(egg.shop_egg_entry(idx, price))
-    assert "Unlocked" in msg
+    from tuipet import shop as _shop
+    msg, sfx = _shop.buy(pet, egg.shop_egg_entry(idx, price))
+    assert "licensed" in msg
     assert pet.bits == 5000 - price                          # bits spent
 
     prog2 = persistence.get_progress()
@@ -170,11 +170,13 @@ def test_egg_shop_buy_unlocks_for_hatching():
     assert idx not in {i for i, _ in egg.buyable_eggs(prog2, owned2)}  # gone from the shop
 
     # can't double-buy, and can't buy without bits
-    assert panel._buy_egg(egg.shop_egg_entry(idx, price)) == "Already unlocked."
+    msg, sfx = _shop.buy(pet, egg.shop_egg_entry(idx, price))
+    assert sfx == "error" and "Already" in msg
     nxt = egg.buyable_eggs(prog2, owned2)
     if nxt:
         pet.bits = 0
-        assert "Not enough" in panel._buy_egg(egg.shop_egg_entry(*nxt[0]))
+        msg, sfx = _shop.buy(pet, egg.shop_egg_entry(*nxt[0]))
+        assert "Need" in msg
 
 
 # ---- password redemption + egg mood (Evolution.egg) --------------------------

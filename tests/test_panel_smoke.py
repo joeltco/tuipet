@@ -66,10 +66,10 @@ def _walk(panel, keys, renders=6):
 
 
 def test_feed_panel_renders_every_selection():
-    from tuipet.feedscreen import FeedPanel
+    from tuipet.feedscreen import FeedPanel, ROWS_MENU
     pan = FeedPanel(_pet())
-    assert pan.options                              # the crash needs a selectable food
-    for _ in range(len(pan.options) + 1):           # every icon in the list draws
+    assert len(ROWS_MENU) == 2                      # meat + pill
+    for _ in range(3):                              # both selections draw
         pan.text()
         pan.key("down")
 
@@ -127,14 +127,15 @@ def test_shop_egg_tab_renders_the_egg_icon():
     persistence.wins_add(50)               # sandboxed: Sakumon's license unlocks
     p = _pet()
     pan = ShopPanel(p)
-    tabs = pan._tabs()
-    assert "egg" in tabs
+    from tuipet import shop as _shop
+    tabs = pan.tabs
+    assert _shop.EGGS_CATEGORY in tabs
     for _ in range(len(tabs)):             # walk to the egg tab, rendering as we go
-        if tabs[pan.tab] == "egg":
+        if tabs[pan.tab] == _shop.EGGS_CATEGORY:
             break
         pan.key("right")
         pan.text()
-    assert tabs[pan.tab] == "egg"
+    assert tabs[pan.tab] == _shop.EGGS_CATEGORY
     pan.text()                             # the egg icon path executes
     pan.key("down")
     pan.text()
@@ -233,22 +234,6 @@ def test_scene_screens_fit_the_physical_lcd_in_every_state():
     pan = DeathPanel(dead)
     _render(pan)
     assert "R.I.P." in pan.strip()
-
-
-def test_feed_screen_surfaces_the_dp_meter():
-    """Audit 2026-07-04: a strength food banks +1 DP toward a jogress (Pen20),
-    but nothing on the feed screen said so -- protein's whole point was
-    invisible.  The header carries the meter; strength foods carry the tag."""
-    from tuipet import data
-    from tuipet.feedscreen import FeedPanel, _effect_line
-    p = _pet()
-    p.dp = 2
-    pan = FeedPanel(p)
-    assert "DP 2/4" in pan.text().plain
-    prot = next(f for f in data.load_foods() if f.get("strength", 0) > 0)
-    assert "DP+1" in _effect_line(prot)
-    plain = next(f for f in data.load_foods() if f.get("strength", 0) == 0 and f.get("show"))
-    assert "DP" not in _effect_line(plain)
 
 
 def test_drill_hints_wrap_clean_on_the_status_card():

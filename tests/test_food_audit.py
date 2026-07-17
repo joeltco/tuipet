@@ -67,18 +67,6 @@ def test_citramon_is_food_locked():
     assert evolution.food_select(p, 41) != 1513          # the wrong food won't do
 
 
-def test_feeding_the_orange_fires_the_evolution(monkeypatch):
-    """The wiring: when food_select validates a form mid-meal, feed() evolves
-    on the spot (processFoodEvol) and re-anchors the line like a Digimental."""
-    p = Pet(num=118, stage="Champion", obedience=500)
-    p.hunger = 1                               # room for the meal (non-glutton)
-    orange = next(f for f in data.load_foods() if f["id"] == 42)
-    monkeypatch.setattr(evolution, "food_select",
-                        lambda pet, fid: 1513 if fid == 42 else None)
-    msg = p.feed(food=orange)
-    assert p.num == 1513 and "evolved" in msg
-
-
 def test_food_lock_arm_matches_canon_shape():
     """checkSpecialCondition's food arm: food=-1 never validates a locked
     form; the RIGHT food makes the lock pass (care gates still apply)."""

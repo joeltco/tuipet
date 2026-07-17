@@ -38,7 +38,8 @@ def test_home_counter_sells_the_common_eggs():
     p = Pet(num=100, stage="Champion", attribute="Vaccine")
     p.world_seconds = 12 * 60.0
     sp = ShopPanel(p)
-    while sp._tabs()[sp.tab] != "egg":
+    from tuipet import shop as _shop
+    while sp.tabs[sp.tab] != _shop.EGGS_CATEGORY:
         sp.key("right")
     egg_ids = {e["egg_idx"] for e in sp._rows()
                if e.get("egg_idx") is not None and not e.get("locked")}

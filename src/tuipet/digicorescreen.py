@@ -314,8 +314,6 @@ def build_pages(pet):
             # the nutrition tracks (audit 2026-07-05): browsable at last -- they
             # only ever flashed by in the eat readout.  ♥ = good nutrition
             # (all >= 16: faster recovery, fewer fatigues, slower life burn)
-            ("Nutrit.", f"P{pet.nutr_protein} M{pet.nutr_mineral} V{pet.nutr_vitamin}"
-                        + (" ♥" if pet.good_nutrition() else "")),
             ("Poop", str(pet.poop)),
             ("Care x", str(pet.care_mistakes)), ("Disturb", str(pet.disturb)),
         ]),

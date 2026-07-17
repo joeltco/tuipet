@@ -73,19 +73,6 @@ def _pet():
     return p
 
 
-def test_protein_builds_dp():
-    p = _pet()
-    p.compliance = True                       # no refusal noise
-    food = next(f for f in data.load_foods() if f.get("key") == "f:25")
-    assert p.dp == 0
-    p.feed(food)
-    assert p.dp == 1
-    for _ in range(9):
-        p.strength = 0                        # room to eat again
-        p.feed(food)
-    assert p.dp == DP_MAX                     # capped
-
-
 def test_sleep_refills_dp_in_three_game_hours():
     p = _pet()
     p.asleep, p.anim = True, "sleep"

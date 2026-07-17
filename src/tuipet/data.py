@@ -190,6 +190,15 @@ def is_placeholder(num):
 
 
 @lru_cache(maxsize=1)
+def load_vitems():
+    """The DSprite item catalog (vitems.json, cloned from the v0.4.x rebuild;
+    BASIC VPET 2026-07-16) -- the shop/bag speak THIS now; the DVPet
+    foods/items.csv consumable machine is retired."""
+    with open(os.path.join(_DATA, "vitems.json")) as fh:
+        return json.load(fh)
+
+
+@lru_cache(maxsize=1)
 def load_evolutions():
     """num -> list of target nums it can evolve into."""
     path = os.path.join(_RAW, "evolutions.csv")

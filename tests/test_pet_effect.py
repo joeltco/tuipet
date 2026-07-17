@@ -73,22 +73,6 @@ def test_effect_name():
     assert pet.effect_name() == ""
 
 
-def test_use_item_applies_effect(live_pet):
-    """Using the Futon item lays out the care buff and consumes the item."""
-    key, e = futon_item()
-    if not key:
-        pytest.skip("no care-effect item (Futon) in this build")
-    pet = live_pet
-    pet._fall_asleep()                # bedtime-only (checkMaxHoursBeforeSleep,
-    pet.inventory[key] = 1            # sleep audit 2026-07-15)
-    msg = pet.use_item(key)
-    assert pet.effect_id == e["effect_id"]
-    assert pet.effect_t > 0
-    assert pet.inventory.get(key, 0) == 0, "item should be consumed"
-    assert pet.name in msg or "settle" in msg.lower()
-
-
-# --- PauseTemp: the futon pins the temperature (DVPet checkEveryTemp) -------
 def _futon_pet():
     """A pet in the climate-controlled home (Hard Disk, weather_chance=0) so
     _update_weather's target is the deterministic ideal-band midpoint."""
@@ -99,31 +83,6 @@ def _futon_pet():
     pet.habitat = pet.home_habitat = 0
     assert pet.habitat_obj()["weather_chance"] <= 0
     return pet, eid, eff
-
-
-def test_heal_lights_medicine_and_bandage_then_they_wear_off():
-    """The Medical flows light the medicine/bandage indicators (feedMed/
-    applyBandage -> medLapse/bandageLapse), which then wear off.  Treatment is
-    incremental now, so each press treats ONE ailment (sick outranks injury)."""
-    from tuipet.pet import Pet, MEDICINE_HOURS, BANDAGE_HOURS
-    pet = Pet.from_num(29)
-    pet.stage = "Rookie"
-    pet.obedience = 500                     # out-roll the medicine refusal
-    pet.sick = True
-    pet.sick_length = 5.0                   # under one dose's worth
-    pet.inj_length = 5.0
-    assert not pet.has_medicine() and not pet.has_bandage()
-
-    pet.heal()                              # the med first (Medical: Use Med)
-    assert not pet.sick, "the dose finished the short illness"
-    assert pet.has_medicine() and pet.med_lapse == MEDICINE_HOURS
-    pet.heal()                              # then the bandage on the next press
-    assert not pet.is_injured()
-    assert pet.has_bandage() and pet.bandage_lapse == BANDAGE_HOURS
-
-    for _ in range(int(max(MEDICINE_HOURS, BANDAGE_HOURS))):
-        pet.tick(1.0)                       # DVPet medLapseMin/bandageLapseMin == 1 game-min
-    assert not pet.has_medicine() and not pet.has_bandage(), "indicators wear off"
 
 
 def test_medicine_bandage_persist():

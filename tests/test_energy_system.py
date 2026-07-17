@@ -39,27 +39,6 @@ def test_fractional_energy_is_a_share_of_max():
     # ceil(-0.66 x 24) = -15: the Digimental drinks 66% like a jogress
     assert p.energy == 24 + math.ceil(-0.66 * 24)
 
-def test_the_x_program_bills_its_full_canon_price(monkeypatch):
-    p = _pet(energy=24, max_energy=24, hunger=4, strength=4, enthusiasm=0, mood=300)
-    p.inventory["i:14"] = 1
-    monkeypatch.setattr(Pet, "check_refused", lambda self, **k: False)
-    monkeypatch.setattr(random, "randrange", lambda n: 0)      # the life roll draws free
-    msg = p.use_item("i:14")
-    assert "X-Program complete" in msg and p.x_antibody == "Permanent"
-    assert p.energy == 24 + math.ceil(-0.8 * 24)               # -19
-    assert p.hunger == 0                                       # 4 - 10 floors
-    assert p.strength == 0                                     # 4 - 13 floors
-    # (the mood delta and the spirit crash left with their systems)
-
-def test_a_digimental_drains_the_new_forms_ceiling(monkeypatch):
-    from tuipet import pet as pet_mod
-    p = _pet(energy=24, max_energy=24, compliance=False)
-    p.inventory["i:15"] = 1
-    monkeypatch.setattr(Pet, "check_refused", lambda self, **k: False)
-    monkeypatch.setattr(pet_mod.evolution, "item_select", lambda pet, iid: 102)
-    msg = p.use_item("i:15")
-    assert "evolved" in msg and p.num == 102
-    assert p.energy == min(24, p.max_energy) + math.ceil(-0.66 * p.max_energy)
 
 def test_an_unaffordable_digimental_is_refused():
     p = _pet(energy=5, max_energy=24, obedience=150, compliance=False)

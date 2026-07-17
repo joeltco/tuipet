@@ -438,14 +438,18 @@ class Adventure:
         RandomItems pools -- then 1 in InvestigateEnemyChance the find is an
         AMBUSH instead.  A carried-home find opens the praise window
         (ReturnItem -> giftEnd -> setPraise)."""
-        pool = ([("f", i) for i in self.zone.get("rand_foods", [])]
-                + [("i", i) for i in self.zone.get("rand_items", [])])
+        # the zone's DVPet loot ids retired with the item system (BASIC VPET
+        # 2026-07-16): a find draws from the DSprite catalog's treat tier,
+        # zone pools weighting only the ODDS of finding anything at all
+        from . import shop as _shop
+        pool = (self.zone.get("rand_foods", []) or []) \
+            + (self.zone.get("rand_items", []) or [])
         found = None
         if pool:
-            kind, cid = random.choice(pool)
-            e = data.consumable_by_key(f"{kind}:{cid}")
-            if e and e.get("can_inc", True):
-                found = e
+            treats = [e for e in _shop.catalog() if e["price"] <= 1500
+                      and e["key"] != "deadly_fruit"]
+            if treats:
+                found = random.choice(treats)
         if random.randrange(INVESTIGATE_ENEMY_CHANCE) == 0:
             found = None
         if found is None:
@@ -457,7 +461,6 @@ class Adventure:
             self.last = "Nothing there after all."
             return (None, None)
         self.pet.add_item(found["key"])
-        _persist.shop_unlock_add(found["key"])   # a wild find unlocks its shop listing
         self.pet._open_praise()                  # it brought you something: praise it!
         rare = " — a RARE find!" if found.get("price", 0) >= 1000 else "!"
         self.last = f"{self.pet.name} dug up {found['name']}{rare}"   # no article: "a Oats" read wrong

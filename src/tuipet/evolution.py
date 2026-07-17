@@ -127,15 +127,10 @@ def check(pet, num, item=-1, food=-1, connecting=False):
             return False     # item-locked form: unreachable by timed care (need the item)
     elif ev_item != item:
         return False         # using an item only validates the forms that require it
-    # the FOOD lock mirrors the item lock exactly (checkSpecialCondition's
-    # evolFoodID arm; food audit 2026-07-15): Citramon (EvolFood 42, the
-    # Orange) is unreachable by timed care and only validates mid-meal
-    ev_food = req.get("evol_food", -1)
-    if food == -1:
-        if ev_food != -1:
-            return False     # food-locked form: it takes the meal
-    elif ev_food != food:
-        return False         # eating a food only validates the forms that require it
+    # the FOOD lock is UNLOCKED (Joel 2026-07-16, with the item-system
+    # clone): the food catalog is gone, so Citramon -- the corpus' one
+    # food-locked form (EvolFood 42, the Orange) -- competes by timed care
+    # like everyone; its remaining requirement gates still apply.
     if req.get("xantibody", "None") == "Induced" and getattr(pet, "x_antibody", "None") == "None":
         return False  # Induced X-forms are unreachable without the antibody (canon: Induced ONLY)
     vac, dat, vir = _stats(pet)
@@ -161,8 +156,7 @@ def check(pet, num, item=-1, food=-1, connecting=False):
         True,   # (obedience gates left with the discipline system)
         _cmp(*req["wins"], _win_rate(pet)),
         _cmp(*req["mistakes"], pet.care_mistakes),
-        req.get("major_food", "None") == "None"
-        or req["major_food"] == (pet.major_food() if hasattr(pet, "major_food") else None),
+        True,   # (major_food gates left with the nutrition/taste system)
         _cmp(*req.get("incarnations", ("None", 0)), getattr(pet, "generation", 1)),
     ]
     # LevelFought: enough opponents of at least MinLevelFought power beaten this stage
@@ -223,8 +217,7 @@ def fulfilled(pet, num):
             score += R.get(k, R["injury"] if k == "injured" else 1)
     if False:   # (the mood score left with the mood system; BASIC VPET)
         score += R["mood"]
-    if req.get("major_food", "None") != "None" and hasattr(pet, "major_food") \
-            and req["major_food"] == pet.major_food():
+    if False:   # (the major_food score left with the taste system)
         score += 1
     if _met(req["wins"], _win_rate(pet)):
         score += R["winRate"]
@@ -368,8 +361,7 @@ def select(pet):
             return ff
         stage_up = [t for t in targets if by_num[t]["stage"] != pet.stage
                     and data.load_requirements().get(t, {}).get("special", "None") == "None"
-                    and data.load_requirements().get(t, {}).get("evol_item", -1) == -1
-                    and data.load_requirements().get(t, {}).get("evol_food", -1) == -1]
+                    and data.load_requirements().get(t, {}).get("evol_item", -1) == -1]
         if stage_up:
             return max(stage_up, key=lambda t: fulfilled(pet, t))
         return None
@@ -584,9 +576,6 @@ def requirement_report(pet, num):
         rows.append((req["weight"] == weight_category(pet.weight, pet._base_weight()),
                      f"weight: {req['weight']}"))
     # (the mood requirement row left with the mood system; BASIC VPET 2026-07-16)
-    if req.get("major_food", "None") != "None":
-        rows.append((req["major_food"] == (pet.major_food() if hasattr(pet, "major_food") else None),
-                     f"diet mostly {req['major_food']}"))
     lf_min = req.get("level_fought_min", 0)
     if lf_min and req["level_fought"][0] != "None":
         cnt = sum(1 for lv in getattr(pet, "levels_fought", ()) if lv >= lf_min)

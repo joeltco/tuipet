@@ -359,8 +359,9 @@ def test_champion_wins_the_cup_prizes():
     tm = Tournament(p, _trophy(item=26, food_id=3, food_amt=2))
     tm.record(True); tm.record(True); tm.record(True)
     assert tm.champion
-    assert p.inventory.get("i:26", 0) >= 1
-    assert p.inventory.get("f:3", 0) >= 2
+    # the DVPet prize ids retired with the item system: the cup pays catalog treats
+    assert p.inventory.get("energy_drink", 0) >= 1
+    assert p.inventory.get("best_fruit", 0) >= 2
 
 
 def test_the_purse_truncates_per_entrant():

@@ -67,16 +67,6 @@ def test_old_saves_grandfather_stage_hp():
     assert p2.full_health == 15                     # old flat Champion HP kept
 
 
-def test_hp_chip_food_adds_permanent_hp():
-    from tuipet import data
-    p = _pet(hunger=0, calories=0)
-    chip = next(f for f in data.load_foods() if f["name"] == "HP Chip")
-    assert chip["health"] == 1
-    hp0 = p.full_health
-    p.feed(chip)
-    assert p.full_health == hp0 + 1
-
-
 def test_training_costs_a_calorie_and_couples_mood_to_spirit():
     # enthusiasm 5: the HP drill's own spirit dec (the un-emerged-favourite -1,
     # training audit 2026-07-06) leaves +4, so the mood += enthusiasm coupling

@@ -86,31 +86,6 @@ def test_a_burn_cannot_kill_inside_the_grace():
     assert not p.dead                            # the grace holds until the clock
 
 
-def test_x_program_is_russian_roulette_for_the_unmarked(monkeypatch):
-    """xProgramSurvivalChance 1/1000 (death/rebirth audit 2026-07-06): an
-    UNMARKED pet survives the sample 1 in 1000 -- otherwise it dies on the
-    spot and the revive mash is blocked (savedFromDeath 127).  Any existing
-    antibody state makes it safe."""
-    from tuipet.pet import X_SAVE_BLOCK
-    monkeypatch.setattr(random, "randrange", lambda n: n - 1)   # the survival roll misses
-    p = _pet()
-    p.add_item("i:14")
-    msg = p.use_item("i:14")
-    assert p.dead and "too much" in msg
-    assert p.saved_from_death == X_SAVE_BLOCK    # 128x the mash bar: unrevivable
-    monkeypatch.setattr(random, "randrange", lambda n: 0)       # survived; the life draw is free
-    q = _pet()
-    q.add_item("i:14")
-    q.use_item("i:14")
-    assert not q.dead and q.x_antibody == "Permanent"
-    monkeypatch.setattr(random, "randrange", lambda n: n - 1)
-    m = _pet(x_antibody="Temporary")             # already marked: SAFE, no roulette
-    m.add_item("i:14")
-    l0 = m.lifespan
-    m.use_item("i:14")
-    assert not m.dead and m.x_antibody == "Permanent" and m.lifespan == l0
-
-
 def test_save_from_death_leaves_the_revival_window():
     p = _pet()
     p.dead = True

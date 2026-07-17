@@ -6,13 +6,13 @@ with ENTER, and shown on the STATUS border + the lobby presence card.
 """
 from tuipet import data, persistence
 from tuipet.pet import Pet
-from tuipet.shopscreen import ShopPanel, SHOP_TABS
+from tuipet.shopscreen import ShopPanel
 
 
 def _panel(bits=500_000):
     p = Pet(num=-1, stage="Rookie", bits=bits)
     pan = ShopPanel(p)
-    pan.tab = SHOP_TABS.index("honor")
+    pan.tab = pan.tabs.index("Honors")
     return p, pan
 
 
