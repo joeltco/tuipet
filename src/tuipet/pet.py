@@ -3208,17 +3208,10 @@ class Pet:
             return "Lights on — the futon keeps it dozing."
         return "Lights off." if not self.lights else "Lights on."
 
-    def play(self):
-        if (_g := self._guard()) is not None:
-            return _g
-        # tuipet's Play button maps onto PhysicalState.spoil(): setMood(+SpoilMoodInc)
-        # AND setObedience(-SpoilObedienceDec) -- a real tradeoff (happier now, but the
-        # pet gets cheekier).  The animation is DVPet's jumping()/playing(): the pet
-        # bounces on poses 1<->5 (ROLES["play"]), rendered as the "play" hop fx.
-        self._set_mood(self.mood + SPOIL_MOOD_INC)
-        self._set_obedience(self.obedience - SPOIL_OBEDIENCE_DEC)
-        self._set_anim("play", 1.5)
-        return "Played together — happy, but a bit spoiled."
+    # (the Play action left 2026-07-17: it was spoil() -- mood up, obedience
+    # down -- and the mood system is gone, so all it did was punish obedience
+    # for a hop.  The clone has no play key; the "play" fx/pose stays for the
+    # toy items (itemfx Play/Bounce scripts).)
 
     # ---- shop / items --------------------------------------------------------
     def buy_slot(self, slot):

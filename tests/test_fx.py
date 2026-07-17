@@ -81,8 +81,9 @@ def test_care_actions_guard_against_retrigger():
     """Every care action that starts an fx must early-return while one is active."""
     here = os.path.dirname(__import__("tuipet").__file__)
     src = open(os.path.join(here, "app.py")).read()
-    # find each `def action_*` body and check feed/clean/praise/scold/play/heal guard
-    GUARDED = ["action_feed", "action_clean", "action_play"]
+    # find each `def action_*` body and check the feed/clean guard
+    # (the play action left 2026-07-17 with the mood system)
+    GUARDED = ["action_feed", "action_clean"]
     missing = []
     for name in GUARDED:
         m = re.search(rf"def {name}\(self.*?\):(.*?)(?=\n    def )", src, re.S)

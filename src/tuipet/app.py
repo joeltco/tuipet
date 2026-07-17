@@ -37,6 +37,7 @@ from . import helpscreen
 from . import titlescreen
 from . import optionsscreen
 from . import deathscreen
+from . import raidscreen
 from . import sound
 from . import update as update_check
 from . import cloudsync
@@ -86,7 +87,7 @@ def keys_markup():
     unreachable by theme.apply (shell polish 2026-07-05)."""
     k = f"b {theme.KEY}"
     return (
-        f"[{k}]f[/] feed (meat·pill)  [{k}]p[/] play  [{k}]c[/] clean  [{k}]s[/] lights  [{k}]v[/] assist\n"
+        f"[{k}]f[/] feed (meat·pill)  [{k}]c[/] clean  [{k}]s[/] lights  [{k}]v[/] assist\n"
         f"[{k}]t[/] train  [{k}]r[/] raid  [{k}]u[/] cup  [{k}]l[/] lobby (battle·jogress)  [{k}]x[/] DNA  [{k}]n[/] eggs\n"
         f"[{k}]o[/] shop  [{k}]i[/] bag  [{k}]d[/] digicore  [{k}]e[/] scenes  [{k}]g[/] options  [{k}]b[/] bug  [{k}]?[/] help  [{k}]q[/] quit"
     )
@@ -257,11 +258,11 @@ class TuiPetApp(App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("THE DIGIMENTALS ARE EARNED: the armor shelf starts with "
-                 "Courage and Hope alone. Your first armor evolution opens "
-                 "the crest seven, 25 wins reveal Light and Kindness, two "
-                 "felled raid bosses forge the golden Miracles, and Destiny "
-                 "waits for a 5th-generation tamer - the canon order.")
+    WHATS_NEW = ("A SMARTER STATUS BOX: every screen now paints its own "
+                 "card - the shop shows the item dossier, the raid shows "
+                 "the boss pool and your rank, the guide shows each egg's "
+                 "goal, the memorial honors the fallen. The Play key is "
+                 "retired (it only spoiled obedience since mood left).")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and
@@ -269,7 +270,7 @@ class TuiPetApp(App):
         # PvE combat lives in adventure and the cup; fusion needs a real
         # partner from the roster
         ("f", "feed", "Feed"), ("t", "train", "Train"),
-        ("p", "play", "Play"), ("c", "clean", "Clean"),
+        ("c", "clean", "Clean"),
         ("r", "raid", "Raid"), ("o", "shop", "Shop"), ("i", "inventory", "Bag"),
         ("d", "digicore", "DigiCore"),
         ("n", "eggguide", "Egg Guide"),
@@ -956,7 +957,22 @@ class TuiPetApp(App):
                  (training.TrainingPanel, self._status_training),
                  (battlescreen.BattlePanel, self._status_battle),
                  (dnascreen.DNAPanel, self._status_dna),
-                 (backgroundscreen.BackgroundPanel, self._status_scenes))
+                 (backgroundscreen.BackgroundPanel, self._status_scenes),
+                 # the status-box sweep (Joel 2026-07-17: "for every action,
+                 # every scene, every menu... the status box needs to be
+                 # redone"): every mode paints a DELIBERATE card now -- the
+                 # bare-vitals fallback is for the home screen alone
+                 (feedscreen.FeedPanel, self._status_feed),
+                 (shopscreen.ShopPanel, self._status_shop),
+                 (eggguidescreen.EggGuidePanel, self._status_eggguide),
+                 (digicorescreen.DigiCorePanel, self._status_digicore),
+                 (raidscreen.RaidPanel, self._status_raid),
+                 (lobbyscreen.LobbyPanel, self._status_lobby),
+                 (helpscreen.HelpPanel, self._status_help),
+                 (optionsscreen.OptionsPanel, self._status_options),
+                 (bugscreen.BugReportPanel, self._status_bug),
+                 (deathscreen.DeathPanel, self._status_death),
+                 (assistscreen.AssistPanel, self._status_assist))
         for cls, painter in table:
             if isinstance(self.mode, cls):
                 return painter
@@ -991,6 +1007,188 @@ class TuiPetApp(App):
                                      f"  [dim]{state}[/]", "",
                                      (m.msg or "")[:26],
                                      "[dim]↑↓ browse  ENTER hang[/]"])
+
+    def _status_feed(self):
+        """FEED: the two rows' true effects beside the live gauges."""
+        p, m, T = self.pet, self.mode, theme
+        row = ("Meat — hunger +1, the staple",
+               "Pill — cures sickness, effort +1,"
+               )[min(getattr(m, "cursor", 0), 1)]
+        tail = ("", "energy +7 · weight +5")[min(getattr(m, "cursor", 0), 1)]
+        self._status_card("Feed", [
+            f"Hunger   {hearts(p.hunger)}",
+            f"Effort   {hearts(p.strength)}",
+            f"Weight   {p.weight}g" + ("   [b]sick[/]" if p.sick else ""),
+            "", f"[b]{row}[/]", f"[b]{tail}[/]" if tail else "",
+            "", "[dim]↑↓ pick  ENTER feed[/]"])
+        self.stats_w.border_subtitle = _gen_subtitle(p)
+
+    def _status_shop(self):
+        """SHOP/BAG: the selected entry's dossier."""
+        from . import shop as shop_mod
+        p, m = self.pet, self.mode
+        rows = m._rows()
+        if not rows:
+            self._status_card("Shop" if m.mode == "shop" else "Bag",
+                              ["", "[dim]nothing here[/]", "",
+                               f"Bits   [b]{p.bits}b[/]"])
+            return
+        e = rows[min(m.cursor, len(rows) - 1)]
+        title = "Shop" if m.mode == "shop" else "Bag"
+        if e.get("title_id") is not None:
+            state = ("worn" if e.get("worn")
+                     else "owned" if e.get("owned") else f"{e['price']}b")
+            lines = [f"[b]{e['name'][:24]}[/]", "[dim]a tamer honor[/]",
+                     f"Status  {state}", "",
+                     f"Bits    [b]{p.bits}b[/]", "",
+                     "[dim]ENTER buys, then wears[/]"]
+        else:
+            have = p.inventory.get(e["key"], 0)
+            lines = [f"[b]{e['name'][:24]}[/]",
+                     f"[dim]{shop_mod.effect_line(e)[:26]}[/]", "",
+                     (f"Price   {e['price']}b" if m.mode == "shop"
+                      else f"Sells   {shop_mod.resell_price(e)}b"),
+                     f"Owned   x{have}",
+                     f"Bits    [b]{p.bits}b[/]", "",
+                     ("[dim]ENTER buy[/]" if m.mode == "shop"
+                      else "[dim]ENTER use  R sell[/]")]
+        self._status_card(title, lines)
+        self.stats_w.border_subtitle = _gen_subtitle(p)
+
+    def _status_eggguide(self):
+        """DIGITAMA GUIDE: the browsed egg's dossier."""
+        m = self.mode
+        state = m.states.get(m.i, "locked")
+        name = egg_mod.hatch_name(m.i) if state != "locked" else "???"
+        live = egg_mod.unlock_progress(m.i, m.prog)
+        rule = m.rules.get(m.i)
+        keeps = ("this gen only" if rule is not None and not rule["can_perm"]
+                 else "forever")
+        self._status_card("Digitama", [
+            f"[dim]{m.i + 1} of {m.n}[/]", "",
+            f"Hatches  [b]{name[:16]}[/]",
+            f"State    {state}",
+            f"Keeps    {keeps}", "",
+            (f"[b]{live[:26]}[/]" if live and state == "locked" else ""),
+            "[dim]ENTER story  ↑↓ browse[/]"])
+
+    def _status_digicore(self):
+        """DIGICORE: which data page is up, and whose core it is."""
+        p, m = self.pet, self.mode
+        page = m.pages[min(m.i, len(m.pages) - 1)][0]
+        self._status_card("DigiCore", [
+            f"[b]{p.name[:16]}[/]",
+            f"[dim]{p.stage} · {p.attribute}[/]", "",
+            f"Page   [b]{page[:18]}[/]",
+            f"[dim]{m.i + 1} of {len(m.pages)}[/]", "",
+            (m.note or "")[:26],
+            "[dim]←→ pages  SPACE core[/]"])
+        self.stats_w.border_subtitle = _gen_subtitle(p)
+
+    def _status_raid(self):
+        """RAID: the boss, the shared pool, your standing."""
+        m = self.mode
+        v = m.view or {}
+        b = m._boss()
+        if not b:
+            self._status_card("Raid", ["", "[dim]calling the gate…[/]"])
+            return
+        pool, mx = int(b.get("hp", 0)), max(1, int(b.get("max_hp", 1)))
+        pct = max(0, min(100, pool * 100 // mx))
+        rank, mine = (list(v.get("you") or (0, 0)) + [0, 0])[:2]
+        standing = m._standing()
+        left = max(0, int((b.get("end" if standing else "start", 0)
+                           - v.get("now", 0))))
+        when = "%dd %dh" % (left // 86400, left % 86400 // 3600)
+        self._status_card("Raid", [
+            f"[b]{b.get('name', '?')[:18]}[/]",
+            (f"Pool   {pct}%" if standing else "[dim]incoming boss[/]"),
+            (f"[dim]{when} left[/]" if standing else f"[dim]in {when}[/]"),
+            "",
+            f"You    #{rank} · {mine}",
+            f"Tries  {v.get('attempts', 0)} today",
+            ("[b]purse waiting — C[/]" if v.get("award") else ""),
+            "[dim]SPACE raid  C claim[/]"])
+        self.stats_w.border_subtitle = _gen_subtitle(self.pet)
+
+    def _status_lobby(self):
+        """LOBBY: your card and the room."""
+        m = self.mode
+        st = m.state
+        if st is None or getattr(st, "me_id", None) is None:
+            self._status_card("Lobby", ["", "[dim]connecting…[/]"])
+            return
+        roster = list(getattr(st, "roster", []) or [])
+        links = persistence.get_progress().get("connections", 0)
+        self._status_card("Lobby", [
+            f"[b]{(m._last_name or '?')[:18]}[/]",
+            f"[dim]{self.pet.name[:14]} rides along[/]", "",
+            f"Here   {len(roster)} tamer" + ("s" if len(roster) != 1 else ""),
+            f"Links  {links} lifetime", "",
+            "[dim]type to chat · ENTER[/]",
+            "[dim]↑↓ pick a tamer[/]"])
+
+    def _status_help(self):
+        from . import update
+        try:
+            ver = update.current_version()
+        except Exception:
+            ver = "?"
+        snd = "on" if self.sound else "off"
+        self._status_card("Help", [
+            f"tuipet [b]v{ver}[/]", "",
+            f"Sound  {snd}",
+            f"Gen    {self.pet.generation}", "",
+            "[dim]the guide scrolls[/]",
+            "[dim]on the display[/]", "",
+            "[dim]↑↓ scroll  ESC out[/]"])
+
+    def _status_options(self):
+        from . import optionsscreen as _opts
+        m = self.mode
+        row = _opts._ROWS[min(m.cursor, len(_opts._ROWS) - 1)]
+        desc = _opts._DESC.get(row, "")
+        self._status_card("Options", [
+            f"[b]{_opts._LABEL.get(row, row.title())}[/]", "",
+            f"[dim]{desc[:26]}[/]",
+            f"[dim]{desc[26:52]}[/]", "",
+            (m.msg or "")[:26], "",
+            "[dim]ENTER toggles[/]"])
+
+    def _status_bug(self):
+        m = self.mode
+        n = len(getattr(m, "buf", ""))
+        self._status_card("Bug Report", [
+            "[dim]straight to the dev[/]", "",
+            f"Typed  {n} chars", "",
+            "[dim]say what you did and[/]",
+            "[dim]what went wrong[/]", "",
+            "[dim]ENTER send  ESC out[/]"])
+
+    def _status_death(self):
+        p = self.pet
+        days = int(getattr(p, "age_seconds", 0) // 86400)
+        cause = getattr(p, "death_cause", "") or "old age"
+        self._status_card("In Memory", [
+            f"[b]{p.name[:18]}[/]",
+            f"[dim]{p.stage} · gen {p.generation}[/]", "",
+            f"Lived  {days} day" + ("s" if days != 1 else ""),
+            f"Of     {cause[:20]}", "",
+            "[dim]its data can live on[/]",
+            "[dim]in the next egg[/]"])
+
+    def _status_assist(self):
+        from .pet import AUTO_CARE_VISIT_PRICE
+        p = self.pet
+        on = getattr(p, "auto_care", False)
+        fee = AUTO_CARE_VISIT_PRICE.get(p.stage, 200)
+        self._status_card("Assistant", [
+            f"Helper  [b]{'hired' if on else 'off'}[/]", "",
+            f"Visit   ~{fee}b",
+            f"Bits    [b]{p.bits}b[/]", "",
+            "[dim]cleans and feeds while[/]",
+            "[dim]you are away[/]", "",
+            "[dim]ENTER hire/dismiss[/]"])
 
     def _status_card(self, title, lines):
         self.stats_w.border_subtitle = ""
@@ -1721,13 +1919,6 @@ class TuiPetApp(App):
             self.screen_w.start_fx("gift", icon=key)   # gifting() amble, chains to cheer (giftEnd)
             self._do(msg)
 
-    def action_play(self):
-        if self.screen_w.fx is not None:        # let the current care animation finish before acting again
-            return
-        msg = self.pet.play()
-        if self.pet.anim == "play":
-            self.screen_w.start_fx("play")       # the DVPet jumping() hop; SFX fires per-hop in the fx loop
-        self._do(msg)
     def action_clean(self):
         if self.screen_w.fx is not None:        # let the current care animation finish before acting again
             return

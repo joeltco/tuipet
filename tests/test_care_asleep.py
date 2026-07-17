@@ -32,34 +32,36 @@ def _sleeping(energy=0):
 
 def test_care_actions_disturb_instead_of_acting():
     # the DSprite rule (item-system clone 2026-07-16): feeding/healing a
-    # sleeper DISTURBS it first and then APPLIES -- so feed/heal count the
-    # disturb; play/clean still bounce off the sleeper entirely
+    # sleeper DISTURBS it first and then APPLIES -- clean still bounces off
+    # the sleeper entirely (the play action left 2026-07-17 with the mood
+    # system: it was spoil(), and mood is gone)
     for action in ("feed", "heal"):
         p = _sleeping()
         d0 = p.disturb
         getattr(p, action)()
         assert p.disturb == d0 + 1, f"{action} did not disturb"
-    for action in ("play", "clean"):
-        p = _sleeping()
-        sick0, poop0, hunger0 = p.sick, p.poop, p.hunger
-        msg = getattr(p, action)()
-        assert (p.sick, p.poop, p.hunger) == (sick0, poop0, hunger0), \
-            f"{action} applied through the sleep"
-
-
-def test_disturbing_sleep_costs_mood_and_counts():
     p = _sleeping()
+    sick0, poop0, hunger0 = p.sick, p.poop, p.hunger
+    p.clean()
+    assert (p.sick, p.poop, p.hunger) == (sick0, poop0, hunger0), \
+        "clean applied through the sleep"
+    assert not hasattr(p, "play")               # the action is gone, not dormant
+
+
+def test_disturbing_sleep_counts():
+    p = _sleeping()
+    p.num = 100                         # use_item refuses placeholder pets (num<0)
     disturb0 = p.disturb
-    p.play()                            # a disturbance, not a game
+    p.add_item("training_pack")
+    p.use_item("training_pack")         # a non-exempt item: disturbs, then applies
     assert p.disturb == disturb0 + 1
-    # (the DisturbMoodDec assert left with the mood system)
     assert p.sick is True               # heal never fired through the sleep
 
 
 def test_unrested_disturb_postpones_the_sleep():
     p = _sleeping(energy=0)             # barely slept: not fully-awake material
     p.awake_lapse = 0.0
-    p.play()
+    p._disturbed()                      # any care poke lands here
     assert not p.asleep                 # woken grumpy...
     assert p.sleep_lapse > 0            # ...but bedtime is only postpone-minutes away
 
