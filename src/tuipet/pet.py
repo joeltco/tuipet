@@ -468,6 +468,7 @@ POOP_MAX_PILES = 4                      # classic Digimon V-Pet max poops (DVPet
 # tuned to preserve tuipet's ~1800s-per-heart hunger pace (col-1 calorie mods are 0).
 # hunger / stomach (DVPet FullHunger / StomachCapacity / OvereatLimit)
 FULL_HUNGER = 4                         # FullHunger: a satisfied stomach (4 hearts)
+TRAIN_ENERGY_COST = 2               # the 0.5 drill's swing (clone TRAIN_ENERGY_COST)
 PILL_ENERGY_GAIN = 7                    # the DSprite pill (feed menu, BASIC VPET 2026-07-16)
 PILL_WEIGHT_GAIN = 5
 STOMACH_CAPACITY = 4                    # legacy fallback only -- see stomach_capacity()
@@ -832,6 +833,7 @@ class Pet:
     # pet to an attribute, injuries and forced training sour it; a rank at
     # +-RankLimit becomes the emergent favourite/disliked ("" = none yet)
     attr_ranks: dict = _dcf(default_factory=lambda: {"Vaccine": 0, "Data": 0, "Virus": 0})
+    saved_hit_type: str = "normal"  # the trained battle form (0.5 drill: mega/normal/miss)
     favorite_attr: str = ""
     disliked_attr: str = ""
     # the personality tracker (childhood care -> the Champion temperament)
@@ -2727,10 +2729,12 @@ class Pet:
         """canExercise (energy audit 2026-07-06): NO hard fatigue/energy gate --
         MinEnergyForActivity is -127 on the classic column (vacuous), and
         fatigue/sickness only SHADE the refusal roll (unwellMod) and the injury
-        odds.  The roll itself fires at drill start (training.py), like canon's
-        checkRefused inside canExercise.  The old hard gates were invented."""
+        odds.  The 0.5 drill adds the clone's ONE hard gate: too drained to
+        swing (0.5 TRAINING 2026-07-17)."""
         if (_g := self._guard()) is not None:
             return _g
+        if self.energy < TRAIN_ENERGY_COST:
+            return "Too tired to train."
         return None
 
     def max_health(self):
@@ -2758,135 +2762,30 @@ class Pet:
                 return " HP +1!"                     # State.HealthInc
         return ""
 
-    def apply_training(self, hits, power, attribute=None, game="hp"):
-        """Apply a training-minigame result (hits 0..3, power 0..100).
+    # (apply_training -- the four-drill DVPet versus training, its attribute
+    # power growth, taste-rank ledger and Effort-per-drill -- left with the
+    # classic training system (0.5 TRAINING 2026-07-17).  Powers now grow
+    # ONLY through battle wins (record_battle's canon setPower +1 stays);
+    # Effort fills via the pill; the drill trains FORM.  The attr-rank
+    # ledger below is INERT -- nothing warms it, and _power_bonus_attr
+    # falls through to the species seed.)
 
-        game in {hp, vaccine, data, virus}: the HP drill builds Effort
-        (strength); the attribute drills build that attribute's power, which
-        accumulates for the whole life (NOT reset on evolution), exactly like
-        DVPet. Training a non-favored attribute costs a little mood
-        (DVPet NoneTrainingAttributeMoodRankChange).
-        """
-        self._calm_discipline_call()                      # exercise() placates the tantrum
-        self.exercise_today += 1                          # DVPet _exercise (incExerciseTime)
-        self.stage_trainings += 1                         # LINES_SPEC TR gate: every attempt counts (Pen20)
-        if game == "data":
-            self.data_trainings += 1                      # the versus chart row is spent (manual cycle)
-        complied = self.check_compliant()                 # onExerciseFinish: checkCompliant
-        strength0 = self.strength
-        success = hits >= 2
-        # canon re-audit 2026-07: onExerciseFinish calls exercise() BEFORE checking
-        # success -- the Effort gauge, spirit costs, body costs and the fatigue
-        # roll all land WIN OR LOSE.  (The old success-only +1 and the invented
-        # obedience+1 were not canon; success grants the praise flag + power.)
-        self.strength = _clamp(self.strength + 1, 0, 4)   # setExercise(+1), unconditional
-        # DVPet onExerciseFinish adds +1 per drill, but the real device's stages last
-        # real-DAYS (hundreds of trainings) while tuipet compresses them to ~2h. A flat
-        # +1 can't reach the real-data attribute-power thresholds (digimon.csv median 50)
-        # in a compressed stage, so good forms become unreachable. Scale the gain by drill
-        # QUALITY to compensate for the clock -- same approach as the deferred enthusiasm
-        # lapse. A perfect drill (3 hits) = +6, a solid one (2) = +4.
-        gain = hits * TRAIN_POWER_PER_HIT if success else 0
-        if game == "hp":
-            attr = "Effort"
-            self.mood_rank += NONE_TRAIN_MOOD_RANK   # NoneTrainingAttributeMoodRankChange
-            # exercise()'s None-attribute spirit ladder, SENTINEL QUIRKS included
-            # (training audit 2026-07-06): canon Taste inits favourite AND
-            # disliked to Attribute.None, so the HP drill (None) MATCHES an
-            # un-emerged favourite (the light dec) and, once a favourite exists
-            # but no disliked has formed, matches the None disliked sentinel
-            # (the heavy dec).  Only a fully-formed taste pays the neutral -2.
-            if not self.favorite_attr:
-                self._set_enthusiasm(self.enthusiasm - 1)   # fav branch (None == None)
-            elif self.disposition == -1:
-                # a SOUR pet pays the fav-dec on the HP drill
-                self._set_enthusiasm(self.enthusiasm - 1)
-            elif not self.disliked_attr:
-                self._set_enthusiasm(self.enthusiasm + EXERCISE_DISLIKED_ATTR_ENTH
-                                     + (ENTH_DISLIKE_FORCED if complied else 0))
-            else:
-                self._set_enthusiasm(self.enthusiasm - 2)   # ExerciseNotFavAttributeEnthusiasmDec
-        else:
-            attr = attribute or (self.attribute if self.attribute in ("Vaccine", "Data", "Virus") else "Vaccine")
-            # BonusAttributePower under the compressed scale: canon's standard
-            # +1 training award lands +1 extra (doubled) for a HAPPY pet
-            # drilling its favoured attribute -- ours doubles the scaled
-            # standard award the same way (mood re-audit 2026-07-06)
-            if gain and self.current_mood() == "Happy" and attr == self._power_bonus_attr():
-                gain *= 1 + BONUS_ATTRIBUTE_POWER
-            if attr == "Vaccine":
-                self.vaccine += gain
-            elif attr == "Data":
-                self.data_power += gain
-            elif attr == "Virus":
-                self.virus += gain
-            # the drill drives the ATTRIBUTE taste ledger (taste/rank audit
-            # 2026-07-06): incAttRank warms the trained attribute.  The forced/
-            # fail sours are changeTrainingRank's and live in the success/fail
-            # block below (training audit 2026-07-06).
-            self._change_attr_rank(attr)
-            # exercise()'s enthusiasm branches key on the ledger's EMERGENT
-            # favourite/disliked (the species attribute / seed stands in until
-            # a real taste forms); the emergent disliked drags hard (-3, and a
-            # forced drill of it adds -1)
-            fav = self.favorite_attr or (self.attribute if self.attribute in self._ATTR3
-                                         else self._phys().get("attr_pref", "None"))
-            if attr == fav:
-                self._set_enthusiasm(self.enthusiasm - 1)  # ExerciseFavAttributeEnthusiasmDec
-            elif attr == self.disliked_attr:
-                self._set_enthusiasm(self.enthusiasm + EXERCISE_DISLIKED_ATTR_ENTH
-                                     + (ENTH_DISLIKE_FORCED if complied else 0))
-            else:
-                self._set_enthusiasm(self.enthusiasm - 2)  # ExerciseNotFavAttributeEnthusiasmDec
-        # (checkExerciseTime -- the favourite/disliked drill hour -- left with
-        # the day/night system; its mood/spirit legs were already no-ops.
-        # BASIC VPET 2026-07-17)
-        self._set_mood(self.mood + self.enthusiasm)       # exercise(): mood rides the spirit
-        # (checkWorseSick's drill risk + the sick-forced resentment left
-        # with the sickness system (BASIC VPET 2026-07-17))
-        # canon ExerciseWeightDec = 0 (classic): drills do NOT shed flat weight.
-        # The body cost is CALORIC (setCaloriesAndChangeWeight): an activity
-        # decrement landing while ALREADY in deficit sheds ActivityWeightChange.
-        if self.calories < 0:
-            self._set_weight(self.weight - 1)             # ActivityWeightChange -1
-        self._set_calories(self.calories - EXERCISE_CALORIE_DEC)   # ExerciseCalorieDec
-        self._set_energy(self.energy - 1)               # ExerciseEnergyDec
-        # setExercise: driving the Effort gauge INTO or past its LIMIT risks
-        # fatigue -- good nutrition softens the odds, the home's compatibility
-        # bends them.  Canon rolls whenever newExercise (= old + 1) >= the
-        # limit, so the 3->4 push that FILLS the gauge rolls too (training
-        # audit 2026-07-06; the old >= 4 missed it).  Win or lose.
-        # (the gauge-filling fatigue roll left with the fatigue system; its
-        # orphaned chance computation left with the habitat compat terms --
-        # BASIC VPET 2026-07-16)
-        if success:
-            self._open_praise()                          # onExerciseFinish: setPraise(true)
-            if complied and game != "hp":
-                # changeTrainingRank(attr, RankChangeTrainForced): it succeeded,
-                # but only because you spent its compliance -- the drill sours
-                self._dec_attr_rank(attr, RANK_TRAIN_FORCED)
-        else:                                            # DVPet exercise-fail penalties
-            self._set_mood(self.mood - 10)               # ExerciseFailMoodDec
-            self._set_obedience(self.obedience - 1)      # ExerciseFailObedienceDec
-            if game != "hp":
-                # changeTrainingRank(attr, TrainFail + forced): failure sours the
-                # drilled attribute harder, worse still when it was pushed.  (The
-                # None branch's changeMoodRank(+3/+5) stays unported -- sign-odd,
-                # see _fatigue's docstring.)
-                self._dec_attr_rank(attr, RANK_TRAIN_FAIL
-                                    + (RANK_TRAIN_FORCED if complied else 0))
-        # (the exercise injury rolls left with the injury system)
-        # DVPet HP_Training_AttackSuccess = hit pose (frame 6); AttackFail = dejected pose
-        # (frame 9). A failed drill shows the dejected reaction (which surfaces the "unhappy"
-        # discourage emote), not an attack pose.
-        self._set_anim("happy" if hits >= 2 else "sad", 1.8)
-        rank = "Perfect!" if hits == 3 else ("Good!" if hits == 2 else ("Meh." if hits == 1 else "Whiff."))
-        if game == "hp":
-            hp_note = self._check_perfect_wins() if success else ""
-            # setExercise(+1) lands win or lose (canon) -- "no gain" contradicted
-            # the Effort gauge visibly ticking up on a whiff (audit 2026-07-13)
-            return f"{rank} {'Effort up!' if hits >= 2 else 'Effort up, but sloppy.'}{hp_note}"
-        return f"{rank} +{gain} {attr}"
+    def train_result(self, success):
+        """One clone drill (0.5 rules): energy -2 (floored at 0), the
+        counters that feed the LINES TR gates, and a clean strike sheds a
+        little weight.  The verdict pose mirrors the old drills' cheer/sad
+        tell so the after-train fx keep working."""
+        self._calm_discipline_call()                 # a drill placates the call
+        self.exercise_today += 1
+        self.stage_trainings += 1                    # LINES_SPEC TR gate: every attempt counts
+        self._set_energy(max(0, self.energy - TRAIN_ENERGY_COST))
+        if success and self.weight > self._base_weight():
+            # the clone shed toward base, never below -- its weight model
+            # floored AT base, so a bare max() here would fatten a classic
+            # pet that runs light (caught live 2026-07-17)
+            self._set_weight(self.weight - 1)
+        self._set_anim("happy" if success else "sad", 1.8)
+        return True
 
     def can_battle(self):
         if self.dead:

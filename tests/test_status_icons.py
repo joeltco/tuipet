@@ -22,6 +22,15 @@ import tuipet.app as app
 
 # extracted-but-deliberately-unwired, with reasons:
 ALLOWED_SILENT = {
+    "atk_data": "the classic four-drill training glyph; the system left (0.5 TRAINING 2026-07-17)",
+    "atk_vaccine": "the classic four-drill training glyph; the system left (0.5 TRAINING 2026-07-17)",
+    "atk_virus": "the classic four-drill training glyph; the system left (0.5 TRAINING 2026-07-17)",
+    "punching_bag": "the classic four-drill training glyph; the system left (0.5 TRAINING 2026-07-17)",
+    "punching_bag_broken": "the classic four-drill training glyph; the system left (0.5 TRAINING 2026-07-17)",
+    "train_bar": "the classic four-drill training glyph; the system left (0.5 TRAINING 2026-07-17)",
+    "train_bar_empty": "the classic four-drill training glyph; the system left (0.5 TRAINING 2026-07-17)",
+    "train_hit": "the classic four-drill training glyph; the system left (0.5 TRAINING 2026-07-17)",
+    "train_shield": "the classic four-drill training glyph; the system left (0.5 TRAINING 2026-07-17)",
     "sun": "time-of-day icon; tuipet's status line uses a text glyph instead",
     "moon": "as sun",
     "call": "DVPet's blinking call light; the msg-box alarm is tuipet's call chrome",

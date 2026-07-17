@@ -27,37 +27,7 @@ def _pet(**kw):
     return p
 
 
-# --- the attribute ledger ---------------------------------------------------------
-
-def test_drills_warm_the_attribute_stage_scaled():
-    p = _pet()                                    # Champion: no stage bonus
-    p._change_attr_rank("Data")                   # neither pref nor aversion for 102?
-    base = p.attr_ranks["Data"]
-    q = _pet(stage="Fresh")                       # a pup forms tastes +3 faster
-    q._change_attr_rank("Data")
-    assert q.attr_ranks["Data"] == base + 3
-
-def test_species_preference_biases_the_drift():
-    p = _pet()
-    pref = p._phys().get("attr_pref")             # Devimon: Virus
-    aver = p._phys().get("attr_aversion")
-    p._change_attr_rank(pref)
-    p._change_attr_rank(aver)
-    assert p.attr_ranks[pref] - p.attr_ranks[aver] == 4   # +2 pref vs -2 aversion bias
-
-def test_a_rank_at_the_limit_becomes_the_emergent_favorite():
-    p = _pet()
-    p.attr_ranks["Data"] = RANK_LIMIT - 1
-    p._change_attr_rank("Data")
-    assert p.favorite_attr == "Data"
-    p._dec_attr_rank("Data", RANK_LIMIT * 2)      # ...and souring to the floor flips it
-    assert p.disliked_attr == "Data" and p.favorite_attr == ""
-
-def test_forced_training_sours_the_attribute():
-    p = _pet(strength=0, compliance=True)
-    p.apply_training(0, 0, attribute="Data", game="data")   # a failed FORCED drill
-    # +change_rank (1, Data is neither pref nor aversion... computed) then -2 forced
-    assert p.attr_ranks["Data"] < p._rank_stage_inc() + 3   # net below the warm-only path
+# (test_forced_training_sours_the_attribute left with the classic training system -- 0.5 TRAINING 2026-07-17)
 
 
 def test_the_emergent_favorite_feeds_the_power_bonus():

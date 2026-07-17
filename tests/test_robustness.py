@@ -58,7 +58,7 @@ def test_dead_pet_actions_safe():
     p.inventory["f:1"] = 1
     # none of these may crash, and the pet stays dead with its bag intact
     assert isinstance(p.use_item("f:1"), str)
-    p.apply_training(2, 100, game="hp")
+    p.train_result(True)
     p.tick(100)
     assert p.dead is True
     assert p.inventory.get("f:1") == 1, "a dead pet must not consume items"

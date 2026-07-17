@@ -131,17 +131,7 @@ def test_shop_egg_tab_renders_the_egg_icon():
     pan.text()
 
 
-def test_drill_hints_wrap_clean_on_the_status_card():
-    """Audit 2026-07-04: the card wraps hints at 26 cols -- each hint must
-    split on its triple-space gap with the KEY staying beside its action
-    (the old hard [:26] slice cut every hint mid-word)."""
-    from tuipet.training import TrainingPanel, GAMES
-    p = _pet()
-    for gi in range(len(GAMES)):
-        pan = TrainingPanel(p)
-        pan.gi = gi                              # gkey derives from the pick
-        parts = [w.strip() for w in pan._hint().split("   ") if w.strip()]
-        assert len(parts) >= 2 and all(len(w) <= 26 for w in parts)
+# (test_drill_hints_wrap... left with the classic training system -- 0.5 TRAINING 2026-07-17)
 
 
 def test_jogress_states_fit_the_lcd_with_real_options():
@@ -224,60 +214,9 @@ def test_assist_card_prices_match_canon_and_toggle_names_a_helper():
     assert "dismissed" in pan.msg
 
 
-def test_every_drill_completes_through_its_strike_within_budget():
-    """Training-anim audit 2026-07-05: the 30-tick smoke never reached the
-    strike volley or the score reveal -- drive all four drills to DONE with
-    every frame inside the 12x40 arena (menu -> play -> strike -> done)."""
-    import random
-    from tuipet.training import TrainingPanel
-
-    plays = {
-        "vaccine": lambda pan: pan.key("space"),
-        "data": lambda pan: (pan.key("down" if pan.tt_shield[pan.tt_round] else "up")
-                             if not pan.fired else None),
-        "virus": lambda pan: pan.key("space") if getattr(pan, "pos", 0) > 80 else None,
-        "hp": lambda pan: (setattr(pan, "hp_pick", pan.hp_target), pan.key("enter")),
-    }
-    moves = {"vaccine": ["2"], "data": ["3"],       # digits jump-start a drill
-             "virus": ["4"], "hp": ["1"]}              # (the menu browses with arrows)
-    for game, mv in moves.items():
-        random.seed(5)
-        p = _pet()
-        p.energy = p.max_energy
-        p._set_mood(100)
-        p.obedience = 900
-        pan = TrainingPanel(p)
-        for m in mv:
-            pan.key(m)
-        assert pan.phase == "play", f"{game} never entered play"
-        frames = 0
-        while pan.phase != "done":
-            pan.anim()
-            _render(pan)
-            if pan.phase == "play":
-                plays[game](pan)
-            frames += 1
-            assert frames < 3000, f"{game} wedged in phase {pan.phase}"
-        assert pan.result                      # the score reveal landed
+# (test_every_drill_completes... (test_training_clone covers the one drill) left with the classic training system -- 0.5 TRAINING 2026-07-17)
 
 
-def test_every_drill_strip_follows_the_one_formula():
-    """Consistency audit (Joel 2026-07-06): every drill's strip = action cue
-    (+ progress + meter where the drill has them) -- game objects live in the
-    LCD, numbers on the status card.  data/virus carry NO raw numbers (the
-    old virus gauge trailed the bar position; the old data gauge echoed the
-    card's shield row)."""
-    import re
-    from tuipet.training import TrainingPanel
-    p = _pet()
-    p.obedience = 500
-    for gi, gk in ((0, "hp"), (1, "vaccine"), (2, "data"), (3, "virus")):
-        pan = TrainingPanel(p)
-        pan.gi = gi
-        pan.key("enter")
-        g = pan._gauge()
-        assert "[b]" in g, f"{gk}: no bold action cue"
-        assert "▸" not in g and "●" not in g and "■" not in g and "▲" not in g, \
-            f"{gk}: game glyphs leaked into the strip"
-        if gk in ("data", "virus"):
-            assert not re.search(r"\d", g), f"{gk}: raw numbers belong on the card: {g!r}"
+# (test_every_drill_strip... left with the classic training system -- 0.5 TRAINING 2026-07-17)
+
+

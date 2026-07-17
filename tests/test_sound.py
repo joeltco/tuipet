@@ -97,7 +97,8 @@ def test_every_shipped_wav_is_referenced():
             for p in glob.glob(os.path.join(sound._DIR, "*.wav"))}
     # win.wav lost its player with adventure's boss fanfare (2026-07-16);
     # the raid pool-break will likely re-take it
-    allowed_silent = {"rain", "wind", "win"}
+    # trainhit: the four-drill mash hit; the classic training left (2026-07-17)
+    allowed_silent = {"rain", "wind", "win", "trainhit"}
     dead = sorted(have - _referenced_names() - allowed_silent)
     assert not dead, f"shipped wavs no code path plays: {dead}"
 

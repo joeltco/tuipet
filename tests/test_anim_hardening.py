@@ -149,21 +149,21 @@ def test_condition_tiers():
     assert q.condition() == 0                      # trembling paw
 
 
-def test_condition_widens_the_drill_windows():
+def test_condition_widens_the_mega_window():
+    """Care pays into SKILL, 0.5-style (2026-07-17): the clone's mega_window
+    scores winrate/hunger/effort/energy/age and widens the zone 1 -> 7px."""
     from tuipet import training
-    top = Pet(num=100, stage="Champion", hunger=4, strength=4, mood=300)
+    top = Pet(num=100, stage="Champion", hunger=4, strength=4, obedience=500)
     top.energy = top.max_energy
-    pan = training.TrainingPanel(top)
-    assert pan.cond == 3
-    assert pan.virus_zone == training.VIRUS_BAR_MIN - 3 * training.COND_ZONE_PX
-    assert pan.timer == training.VACCINE_WINDOW + 3 * training.COND_MASH_TICKS
-    low = Pet(num=100, stage="Champion", hunger=0, strength=0, mood=-300)
+    top.wins = top.battles = 10                    # perfect record
+    top.age_seconds = 6 * 1440.0
+    lo, hi = training.mega_window(top)
+    assert hi - lo + 1 == 7                        # the full-care zone
+    low = Pet(num=100, stage="Champion", hunger=0, strength=0, obedience=500)
     low.energy = 0
-    pan2 = training.TrainingPanel(low)
-    assert pan2.cond == 0
-    assert pan2.virus_zone == training.VIRUS_BAR_MIN        # baseline unchanged
-    assert pan2.timer == training.VACCINE_WINDOW
-    assert "condition" in pan2.text().plain        # the menu SHOWS the tier
+    lo2, hi2 = training.mega_window(low)
+    assert hi2 - lo2 + 1 == 1                      # the starved zone
+    assert (lo + hi) / 2 == (lo2 + hi2) / 2 == 12  # centred on the bar
 
 
 # ---- the monthly ladder (2026-07-14) ---------------------------------------------

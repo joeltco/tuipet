@@ -280,8 +280,8 @@ def test_botamon_egg_binds_the_ver1_line():
 
 def test_training_counts_every_attempt_win_or_lose():
     p = _line_pet()
-    p.apply_training(3, 90, game="vaccine")      # success
-    p.apply_training(0, 10, game="vaccine")      # failure still counts (Pen20)
+    p.train_result(True)                         # success
+    p.train_result(False)                        # failure still counts (Pen20)
     assert p.stage_trainings == 2
 
 
@@ -300,7 +300,7 @@ def test_battles_feed_the_stage_count_and_rolling_log():
 
 def test_evolution_resets_stage_counters_but_keeps_the_log():
     p = _line_pet()
-    p.apply_training(3, 90, game="vaccine")
+    p.train_result(True)
     p.record_battle(True)
     p.care_mistakes = 4
     p.evolve_to(1455)

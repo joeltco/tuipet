@@ -256,10 +256,10 @@ class TuiPetApp(App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("SIMPLER SICKNESS: the illness machine is now pure DSprite "
-                 "- one skull, caught from filth or flab, cured only by the "
-                 "pill. No spells that worsen, nothing contagious, no six-"
-                 "hour countdown; just don't leave it standing.")
+    WHATS_NEW = ("TIME THE STRIKE: training is the 0.5 drill now - one "
+                 "sweeping bar, one perfect window that good care widens. "
+                 "A clean hit saves your battle form and sheds weight; "
+                 "powers grow in real battles, not at the gym.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and
@@ -1016,60 +1016,36 @@ class TuiPetApp(App):
         self.stats_w.update("\n".join(lines))
 
     def _status_training(self):
-        from .training import (GAMES, VACCINE_WINDOW, HP_ROUNDS, VIRUS_BAR_MIN,
-                               DATA_ROUNDS, DATA_PASS)
+        """The 0.5 drill's card (2026-07-17): one timing bar, so one card --
+        the four-drill readouts left with the classic training system."""
         p, tp, T = self.pet, self.mode, theme
         self.stats_w.border_subtitle = _gen_subtitle(p)
         div = f"[dim]{'-' * 26}[/]".replace("-", "\u2500")
         eff = hearts(p.strength)
         energy = bar(p.energy_pct(), 11, T.ENERGY)
-        power = f"[{T.POS}]●{p.vaccine}[/] [{T.ENERGY}]■{p.data_power}[/] [{T.MOOD}]▲{p.virus}[/]"
-        label = GAMES[tp.gi][1]
-        gk = tp.gkey
-        if tp.phase == "menu":
+        window = tp.mega_hi - tp.mega_lo + 1
+        form = getattr(p, "saved_hit_type", "normal")
+        if tp.phase == "bar":
             lines = [f"[b]{p.name[:14]}[/] [dim]\u00b7 train[/]", div,
-                     "[b]choose a drill[/]", "",
-                     f"Effort   {eff}", f"Power    {power}", f"Energy   {energy}",
-                     div, "[dim]pick what to build[/]"]
+                     "[b]time the strike[/]", "",
+                     f"Window   {window}px",
+                     f"Form     {form}",
+                     f"Effort   {eff}", f"Energy   {energy}",
+                     div, "[dim]SPACE locks the bar[/]"]
         elif tp.phase == "done":
-            verdict = f"[{T.POS}]drill complete[/]" if tp.success else f"[{T.NEG}]needs work[/]"
+            verdict = (f"[{T.POS}]{tp.result}[/]" if tp.success
+                       else f"[{T.NEG}]{tp.result}[/]")
             lines = [f"[b]{p.name[:14]}[/] [dim]\u00b7 train[/]", div,
-                     f"[b]{label}[/]", "", verdict, "",
+                     verdict, "",
+                     f"Form     {tp.grade}",
                      f"Effort   {eff}", f"Energy   {energy}", div,
-                     f"[dim]{(tp.result or '')[:24]}[/]"]
+                     "[dim]form fires in battle[/]",
+                     "[dim]once battle goes 0.5[/]"]
         else:
-            if gk == "hp":
-                dots = "\u25cf" * tp.rounds_won + "\u25cb" * (HP_ROUNDS - tp.rep) + "\u00b7" * (tp.rep - tp.rounds_won)
-                prog, prog2 = f"Round    {min(tp.rep + 1, HP_ROUNDS)} / {HP_ROUNDS}", f"Won      {dots}"
-                target = f"Effort   {eff}"
-            elif gk == "vaccine":
-                tpct = max(0, tp.timer) / VACCINE_WINDOW * 100
-                prog, prog2 = f"Hits     {tp.taps} / {tp.vaccine_target}", f"Time     {bar(tpct, 11, T.MOOD)}"
-                target = f"Vaccine  [{T.POS}]{p.vaccine}[/]"
-            elif gk == "data":
-                # the versus card counts like the HP card: round + passes
-                # (canon rebuild 2026-07-13 -- the old card read the retired
-                # turret fields and CRASHED the live drill, Joel's phone report)
-                prog = f"Round    {min(tp.tt_round + 1, DATA_ROUNDS)} / {DATA_ROUNDS}"
-                prog2 = f"Past     {tp.tt_past} / {DATA_PASS}"
-                target = f"Data     [{T.ENERGY}]{p.data_power}[/]"
-            else:
-                prog, prog2 = f"Power    {int(tp.pos)}", f"Need     {VIRUS_BAR_MIN}"
-                target = f"Virus    [{T.MOOD}]{p.virus}[/]"
-            # the card's flavour slot carries the CONTROLS now -- the in-LCD
-            # footer that used to is gone (box-clip audit 2026-07-04).  Split on
-            # the hints' own triple-space gap so a key stays WITH its action
-            # (a hard [:26] slice cut every hint mid-word -- audit 07-04)
-            parts = [s.strip() for s in tp._hint().split("   ") if s.strip()]
-            if len(parts) >= 2 and all(len(s) <= 26 for s in parts[:2]):
-                h1, h2 = parts[0], "  ".join(parts[1:])[:26]
-            else:
-                import textwrap
-                h1, h2 = (textwrap.wrap(tp._hint(), 26) + ["", ""])[:2]
             lines = [f"[b]{p.name[:14]}[/] [dim]\u00b7 train[/]", div,
-                     f"[b]{label}[/]", prog, prog2, div,
-                     target, f"Energy   {energy}", div,
-                     f"[dim]{h1}[/]", f"[dim]{h2}[/]"]
+                     "[b]the strike[/]", "",
+                     f"Grade    {tp.grade or ''}",
+                     f"Energy   {energy}", div, ""]
         self.stats_w.update("\n".join(lines))
 
     def _status_battle(self):
