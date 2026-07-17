@@ -114,10 +114,13 @@ def test_becoming_an_x_form_makes_the_state_permanent():
     assert p.x_antibody == "Permanent"            # Evolution.digivolve's grant
 
 
-def test_stat_total_is_never_dna_bypassed(monkeypatch, pet):
-    starving = _req(vaccine=[("GreaterThan", 500), ("None", 0)], dna=DNA_MET)
+def test_stat_gates_left_with_the_dvpet_truth(monkeypatch, pet):
+    """The power walls (checkStatTotal + the six per-attr gates) DROPPED
+    2026-07-17: humulos guides gate on care/battles/wins, never power
+    numbers, and the 0.5 economy (+1/win) put the thresholds out of reach."""
+    starving = _req(vaccine=[("GreaterThan", 500), ("None", 0)])
     _install(monkeypatch, {1: starving, pet.num: _req()})
-    assert evolution.check(pet, 1) is False       # checkStatTotal stands alone
+    assert evolution.check(pet, 1) is True        # no power wall stands
 
 
 def test_prob_roll_matches_canon_shape(monkeypatch, pet):

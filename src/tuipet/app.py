@@ -256,11 +256,11 @@ class TuiPetApp(App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("THE HP RACE: battle is pure 0.5 now - time the bar, then "
-                 "watch the fight your care already decided. Win rate, "
-                 "training, meters and the attribute triangle set your hit "
-                 "chance; your trained form sets the damage. Online bouts "
-                 "pay bits; cups and raids run the same race.")
+    WHATS_NEW = ("CANON LEVELS: LV evolution gates now run the real DMX "
+                 "rules - battle wins pay experience up the manual's own "
+                 "level table, capped by stage. 73 level-gated forms that "
+                 "had quietly walled are reachable again, and the old "
+                 "power-number walls are gone for good.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and

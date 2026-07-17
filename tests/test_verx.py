@@ -8,12 +8,11 @@ from tuipet.pet import Pet, DP_MAX
 
 class _C:
     """Counter stub with just what the rule grammar reads."""
-    def __init__(self, num, cm=0, tr=0, of=0, btl=0, log=(), mega=0,
-                 vac=0, dat=0, vir=0, hp=5):
+    def __init__(self, num, cm=0, tr=0, of=0, btl=0, log=(), mega=0, exp=0):
         self.num, self.line_id = num, "verX"
         self.care_mistakes, self.stage_trainings, self.overeat = cm, tr, of
         self.stage_battles, self.battle_log, self.mega_kills = btl, list(log), mega
-        self.vaccine, self.data_power, self.virus, self.full_health = vac, dat, vir, hp
+        self.exp = exp                       # DMX battle experience (LV fix 2026-07-17)
 
 
 def test_verx_loads_shaped_like_the_spec():
@@ -36,10 +35,10 @@ def test_dorumon_corrupts_without_care_and_training():
 
 
 def test_agumon_x_level_gate():
-    # LV 2 needs (vac+data+vir + (hp-5)*10)/100 >= 2
-    assert lines.select_line(_C(829, cm=0, vac=150, dat=50, vir=0, hp=5)) == 851
-    assert lines.select_line(_C(829, cm=0, vac=50, dat=0, vir=0, hp=5)) == 997
-    assert lines.select_line(_C(829, cm=3, vac=999, hp=20)) == 997   # slips: Numemon X
+    # LV 2 = 50 battle exp (the humulos DMX table; fix 2026-07-17)
+    assert lines.select_line(_C(829, cm=0, exp=50)) == 851
+    assert lines.select_line(_C(829, cm=0, exp=0)) == 997
+    assert lines.select_line(_C(829, cm=3, exp=5000)) == 997   # slips: Numemon X
 
 
 def test_ultimate_gates_win_btl_ko6():

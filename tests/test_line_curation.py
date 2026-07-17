@@ -218,6 +218,10 @@ class _C:
         self.num, self.line_id = num, lid
         self.care_mistakes, self.stage_trainings, self.overeat = cm, tr, of
         self.stage_battles, self.battle_log, self.mega_kills = 0, [], 0
+        self.battles = self.wins = self.disturb = self.exp = 0
+        self.injuries = self.sick_count = self.weight = 0
+        self._base_weight = lambda: 0
+        self.levels_fought = []
         self.vaccine = self.data_power = self.virus = 0
         self.full_health = 5
 

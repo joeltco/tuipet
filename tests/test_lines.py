@@ -14,11 +14,11 @@ from tuipet.pet import Pet
 
 class _Counters:
     def __init__(self, num, line_id="ver1", cm=0, tr=0, of=0, btl=0, log=(),
-                 mega=0, vac=0, dat=0, vir=0, hp=5):
+                 mega=0, exp=0):
         self.num, self.line_id = num, line_id
         self.care_mistakes, self.stage_trainings, self.overeat = cm, tr, of
         self.stage_battles, self.battle_log, self.mega_kills = btl, list(log), mega
-        self.vaccine, self.data_power, self.virus, self.full_health = vac, dat, vir, hp
+        self.exp = exp                       # DMX battle experience (LV fix 2026-07-17)
 
 
 # ---- grammar -----------------------------------------------------------------

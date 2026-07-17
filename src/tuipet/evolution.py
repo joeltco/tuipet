@@ -106,7 +106,9 @@ def check(pet, num, item=-1, food=-1, connecting=False):
     * only an INDUCED X requirement demands the antibody (canon gates Natural
       forms by care alone -- 180 corpus forms were wrongly locked); the
       probability roll applies to X forms like everyone (the old skip was not
-      canon).  checkStatTotal + probability are never DNA-bypassed."""
+      canon).  The probability roll is never DNA-bypassed.  (checkStatTotal
+      and the per-attr stat gates left 2026-07-17 -- DVPet-only power walls
+      the humulos guides never speak.)"""
     req = data.load_requirements().get(num)
     if req is None:
         return False
@@ -131,13 +133,15 @@ def check(pet, num, item=-1, food=-1, connecting=False):
         return False  # Induced X-forms are unreachable without the antibody (canon: Induced ONLY)
     vac, dat, vir = _stats(pet)
     total = vac + dat + vir
-    if not _stat_total_ok(req, total):
-        return False
+    # (checkStatTotal DROPPED with the six per-attr stat gates, 2026-07-17:
+    # the same DVPet-only power wall under the same +1-per-win economy)
     gates = [
         _cmp(*req["battles"], pet.battles),
-        _attr(req["data"][0], dat, total), _attr(req["data"][1], dat, total),
-        _attr(req["vaccine"][0], vac, total), _attr(req["vaccine"][1], vac, total),
-        _attr(req["virus"][0], vir, total), _attr(req["virus"][1], vir, total),
+        # (the six vaccine/data/virus stat gates DROPPED 2026-07-17: they
+        # were DVPet-app truth -- the humulos guides gate on mistakes/
+        # trainings/battles/wins, never power numbers -- and the 0.5 economy
+        # (+1 power per win) put their digimon.csv thresholds out of reach.
+        # The fulfilled-score/deviation legs still read the live stats.)
         # (the "trains at Morning/Noon/Night" TIME gate DROPPED with the
         # day/night system -- BASIC VPET 2026-07-17: an hour nothing can
         # reach would wall 374 corpus forms, the temp_req/habitat_req call)

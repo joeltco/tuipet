@@ -10,7 +10,8 @@ stage's care.
 Rule grammar (LINES_SPEC §2) — comma = AND, `|` = OR, first matching row wins:
     CM 0-2 | CM 3+      care mistakes bracket        TR 5-15   trainings
     OF 3+               overfeeds                    BTL 15+   battles this stage
-    WIN 12/15           >=12 wins in last 15         LV 5-6    battle level (DVPet getLevel)
+    WIN 12/15           >=12 wins in last 15         LV 5-6    DMX level (battle exp,
+                                                     humulos table; fix 2026-07-17)
     KO6 5+              Mega-class foes beaten       AREA <n>  n+1 raid bosses felled
                                                      (was "map n cleared"; the raid
                                                      re-gate, BASIC VPET 2026-07-16)
@@ -177,10 +178,23 @@ def bedtime_minutes(pet):
     return (int(h) % 24) * 60 + int(m)
 
 
+# DMX levels, humulos canon (the manual's table verbatim, 2026-07-17 --
+# the old DVPet getLevel read powers + trained HP, both of which starved
+# when the 0.5 battle/training landed, silently walling every LV gate):
+# cumulative experience thresholds for levels 1..10, and each stage's cap.
+DMX_EXP_LEVELS = (0, 50, 150, 500, 800, 1000, 1500, 2000, 3000, 5000)
+DMX_LEVEL_CAP = {"Fresh": 1, "InTraining": 2, "Rookie": 4,
+                 "Champion": 6, "Ultimate": 8, "Mega": 10}
+
+
 def _pet_level(pet):
-    """The pet's own DVPet getLevel, mirroring pet._enemy_level's formula."""
-    return max(1, int((pet.vaccine + pet.data_power + pet.virus
-                       + (pet.full_health - 5) * 10) / 100))
+    """The DMX level: battle experience vs the canon thresholds, capped by
+    the CURRENT stage (Rookie 4 / Champion 6 / Ultimate 8 / Mega 10) -- a
+    Mega-target row gating LV 8 reads the Ultimate PARENT's cap, and the
+    LV 9-10 rows are the Mega X-roads."""
+    e = getattr(pet, "exp", 0)
+    lvl = sum(1 for t in DMX_EXP_LEVELS if e >= t)
+    return min(lvl, DMX_LEVEL_CAP.get(getattr(pet, "stage", "Mega"), 10))
 
 
 def _actual(pet, kind):

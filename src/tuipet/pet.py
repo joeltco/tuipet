@@ -470,6 +470,10 @@ POOP_MAX_PILES = 4                      # classic Digimon V-Pet max poops (DVPet
 FULL_HUNGER = 4                         # FullHunger: a satisfied stomach (4 hearts)
 BATTLE_ENERGY_COST = 5              # the 0.5 bout's toll (clone BATTLE_ENERGY_COST)
 BATTLE_WEIGHT_COST = 4              # the 0.5 bout sheds real weight (clone)
+EXP_PER_WIN = 100                   # DMX experience per defeated enemy.  The manual's
+#                                     award is unspecified; 100 maps its canon level
+#                                     thresholds onto tuipet's win pacing (LV5=8 wins,
+#                                     LV8=20, LV10=50 -- humulos LV fix 2026-07-17)
 TRAIN_ENERGY_COST = 2               # the 0.5 drill's swing (clone TRAIN_ENERGY_COST)
 PILL_ENERGY_GAIN = 7                    # the DSprite pill (feed menu, BASIC VPET 2026-07-16)
 PILL_WEIGHT_GAIN = 5
@@ -848,6 +852,8 @@ class Pet:
     attr_ranks: dict = _dcf(default_factory=lambda: {"Vaccine": 0, "Data": 0, "Virus": 0})
     saved_hit_type: str = "normal"  # the trained battle form (0.5 drill: mega/normal/miss)
     total_trainings: int = 0        # lifetime drills (the 0.5 hit formula's experience term)
+    exp: int = 0                    # DMX battle experience (humulos canon: defeating an
+    #                                 enemy pays experience; feeds the LV line gates)
     favorite_attr: str = ""
     disliked_attr: str = ""
     # the personality tracker (childhood care -> the Champion temperament)
@@ -2849,6 +2855,11 @@ class Pet:
         if not won:
             return ""
         self.wins += 1
+        if not online:
+            # DMX canon: defeating an enemy pays experience toward LEVEL (the
+            # LV line gates).  PvP excluded like KO6 -- colluding tamers could
+            # farm level-gated evolutions off untrusted cards.
+            self.exp += EXP_PER_WIN
         from . import persistence as _persist
         total = _persist.wins_add(1)                     # lifetime wins (egg gates)
         if total in egg_mod.win_eggs().values():

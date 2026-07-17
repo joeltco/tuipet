@@ -124,6 +124,10 @@ def test_attribute_jogress_doors_parse_and_open():
         num, line_id, stage, attribute = 144, "vegg", "Champion", "Vaccine"
         battle_log, mega_kills, dp = [], 0, 0
         care_mistakes = stage_trainings = overeat = stage_battles = 0
+        battles = wins = disturb = exp = 0
+        injuries = sick_count = weight = 0
+        _base_weight = staticmethod(lambda: 0)
+        levels_fought = []
         vaccine = data_power = virus = 34
         full_health = 5
         name = "t"
