@@ -13,74 +13,26 @@ from dataclasses import asdict, fields
 
 from .pet import Pet, _clamp
 
-def _can_use(d):
-    """True if we could actually WRITE here -- without creating anything yet
-    (an import-time mkdir would litter every dev box and test run)."""
-    if os.path.isdir(d):
-        return os.access(d, os.W_OK)
-    parent = os.path.dirname(d)
-    while parent and not os.path.isdir(parent):
-        parent = os.path.dirname(parent)
-    return bool(parent) and os.access(parent, os.W_OK)
+# the IO plumbing + the egg-bank migration live in their own modules
+# (tier-4 split 2026-07-17); the old names keep resolving from here
+from .eggmigrate import (  # noqa: F401
+    EGG_ORDER_V, _CLASSIC49, _CUT_FALLBACK, _V401_FULL, _V402_FULL,
+    _V403_FULL, _V404_FULL, _current_names, _find_occurrence,
+    _migrate_egg_index, _migrate_v401_save, _migrate_v401_settings,
+    _sane_owned, _table_for)
+from .persistio import (  # noqa: F401
+    MAX_OFFLINE, SAVE_DIR, SAVE_PATH, SETTINGS_PATH, _LOCK_NAME,
+    _atomic_write_json, _can_use, _pick_save_dir, acquire_instance_lock,
+    release_instance_lock, write_crash_log)
+from . import persistio as _persistio
 
 
-def _pick_save_dir():
-    """Where the pet lives.  iOS (a-Shell, our official iPhone/iPad target)
-    CANNOT write to `~` -- only ~/Documents, ~/Library and ~/tmp are writable.
-    tuipet wrote to ~/.local/share/tuipet and _atomic_write_json swallows
-    OSError, so on iOS every save failed SILENTLY: the pet never persisted and
-    the player was never told (iOS support 2026-07-13).  Pick the first
-    location we can actually write, and let TUIPET_SAVE_DIR override."""
-    env = os.environ.get("TUIPET_SAVE_DIR")
-    if env:
-        return os.path.expanduser(env)
-    cands = []
-    xdg = os.environ.get("XDG_DATA_HOME")
-    if xdg:
-        cands.append(os.path.join(os.path.expanduser(xdg), "tuipet"))
-    cands.append(os.path.expanduser("~/.local/share/tuipet"))   # Linux/Termux/macOS
-    cands.append(os.path.expanduser("~/Documents/tuipet"))      # iOS: the writable home
-    for d in cands:
-        if _can_use(d):
-            return d
-    return cands[0]              # nothing writable: saves will fail LOUDLY now
-
-
-SAVE_DIR = _pick_save_dir()
-SAVE_PATH = os.path.join(SAVE_DIR, "save.json")
-MAX_OFFLINE = 36 * 3600  # cap catch-up at 36h of real time
-SETTINGS_PATH = os.path.join(SAVE_DIR, "settings.json")
-
-# set by _atomic_write_json when the disk refuses us -- the app surfaces it once
-# so a silently-unsaveable install (iOS's read-only ~) can never eat a pet
-save_failed = ""
-
-
-def _atomic_write_json(path, data, keep_bak=False):
-    """Atomic JSON write (tmp + os.replace); keep_bak rotates one generation
-    back first.  This dance lived in three hand-rolled copies (settings, save,
-    cloud-pull; refactor 2026-07-05)."""
-    try:
-        os.makedirs(os.path.dirname(path), exist_ok=True)
-        tmp = path + ".tmp"
-        with open(tmp, "w") as fh:
-            json.dump(data, fh)
-        if keep_bak and os.path.exists(path):
-            os.replace(path, path + ".bak")   # keep one generation back
-        os.replace(tmp, path)
-    except OSError as e:
-        # best-effort, mirroring the read side (load/load_settings both swallow
-        # OSError): a full / read-only / quota'd disk must never crash the 10s
-        # autosave timer or on_unmount teardown (hardening 2026-07-12).  A
-        # non-serializable payload still raises TypeError -- that is a bug, not
-        # a disk problem, and must surface.
-        #
-        # ...but it must not be SILENT either (iOS support 2026-07-13): a
-        # read-only save dir meant the pet quietly never persisted and the
-        # player only found out by losing it.  Record it; the app warns.
-        global save_failed
-        save_failed = "%s: %s" % (os.path.dirname(path) or path, e.strerror or e)
-        return
+def __getattr__(name):
+    """`save_failed` is MUTABLE state owned by persistio's writer -- a
+    static re-export would freeze it at import; delegate reads instead."""
+    if name == "save_failed":
+        return _persistio.save_failed
+    raise AttributeError(name)
 
 
 def load_settings(path=None):
@@ -128,62 +80,6 @@ def sync_enabled():
     return get_cloud_sync()
 
 
-_LOCK_NAME = "running.pid"
-
-
-def acquire_instance_lock():
-    """Claim the save dir for this process.  Returns the OTHER live pid when a
-    second copy already runs (two instances autosave over one file,
-    last-write-wins -- sweep 2026-07-14), else records our pid and returns
-    None.  Doubt resolves to 'not locked': wrongly blocking a player is worse
-    than the old free-for-all."""
-    p = os.path.join(SAVE_DIR, _LOCK_NAME)
-    try:
-        other = int(open(p).read().strip())
-    except (OSError, ValueError):
-        other = None
-    if other and other != os.getpid():
-        try:
-            os.kill(other, 0)
-            return other             # alive: the save is claimed
-        except PermissionError:
-            return other             # alive, just not ours to signal
-        except OSError:
-            pass                     # stale lock from a dead run
-    try:
-        os.makedirs(SAVE_DIR, exist_ok=True)
-        with open(p, "w") as f:
-            f.write(str(os.getpid()))
-    except OSError:
-        pass                         # unwritable dir: nothing to fight over either
-    return None
-
-
-def release_instance_lock():
-    """Drop the pid file, but only if it is ours (best-effort)."""
-    p = os.path.join(SAVE_DIR, _LOCK_NAME)
-    try:
-        if int(open(p).read().strip()) == os.getpid():
-            os.remove(p)
-    except (OSError, ValueError):
-        pass
-
-
-def write_crash_log(exc):
-    """Write the full traceback to crash.log in the save dir (one file, newest
-    crash wins).  Returns the path, or None when the disk refused."""
-    import traceback
-    try:
-        os.makedirs(SAVE_DIR, exist_ok=True)
-        p = os.path.join(SAVE_DIR, "crash.log")
-        with open(p, "w", encoding="utf-8") as f:
-            f.write("tuipet crash — %s\n" % time.strftime("%Y-%m-%d %H:%M:%S"))
-            traceback.print_exception(type(exc), exc, exc.__traceback__, file=f)
-        return p
-    except OSError:
-        return None
-
-
 def set_auto_update(on):
     d = load_settings()
     d["auto_update"] = bool(on)
@@ -197,175 +93,6 @@ def save_settings(d, path=None):
     # (.400/.401) file on the next load and get wrongly re-translated
     d["egg_order_v"] = EGG_ORDER_V
     _atomic_write_json(path or SETTINGS_PATH, d, keep_bak=True)
-
-
-# --- egg-bank index migration (2026-07-10 egg saga) ---------------------------
-# .400/.401 shipped an 84-egg bank; .402 cut/reordered to 78; .403 restored
-# Nature Spirits (79); .404's dominance audit cut 11 duplicate eggs -- FIVE of
-# them classics, so the classic block moves too.  v5 (the humulos provenance
-# audit, 2026-07-17) cut the 22 fake eggs -- the no-covered-device babies and
-# the two invented "???" eggs -- leaving the 46 device-verified eggs.  Saved
-# egg INDICES translate by (name, occurrence) through the FULL bank order of
-# whichever build wrote them (occurrence handles v4's twin "???" eggs).
-EGG_ORDER_V = 5
-_CLASSIC49 = [
-    "YukimiBotamon", "Botamon", "Punimon", "Poyomon", "Yuramon", "Zurumon",
-    "Babumon", "Pichimon", "Mokumon", "Nyokimon", "Choromon", "Kuramon",
-    "Chibickmon", "Tsubumon", "Pururumon", "Jyarimon", "Dodomon", "Puttimon",
-    "Kiimon", "Dokimon", "Chibomon", "Datirimon", "ChibiKiwimon", "Ketomon",
-    "Leafmon", "Pafumon", "Paomon", "Petitmon", "Popomon", "Pupumon",
-    "Bommon", "Pusumon", "Puwamon", "Relemon", "Sakumon", "Zerimon",
-    "Cocomon", "Fufumon", "Cotsucomon", "Algomon I", "Bombmon", "Carimon",
-    "Sunamon", "Curimon", "Pyonmon", "Puyomon", "???", "???", "Fusamon"]
-_V401_FULL = _CLASSIC49 + [
-    "Breakdra Egg", "Corona Egg", "DORU Egg", "Deep Savers Egg",
-    "Digitama X", "Digitama X2", "Digitama X3", "Vorvomon Egg", "Draco Egg",
-    "Hack Egg", "Kera Digitama", "Lalamon Egg", "Lop Egg", "Ludo Egg",
-    "Luna Egg", "Meicoo Egg", "Meicoomon Egg", "Metal Empire Egg",
-    "Nature Spirits Egg", "Nightmare Soldiers Egg",
-    "Nightmare Soldiers Ver.20th Egg", "Ryuda Egg", "Slayerdra Egg",
-    "Terrier Egg", "V Egg", "Version 1 Egg", "Version 2 Egg",
-    "Version 3 Egg", "Version 4 Egg", "Version 5 Egg", "Version 6 Egg",
-    "Virus Busters Egg", "Virus Busters Ver. 20th Egg",
-    "Wind Guardians Egg", "Zuba Egg"]
-_V402_FULL = _CLASSIC49 + [
-    "Version 1 Egg", "Version 2 Egg", "Version 3 Egg", "Version 4 Egg",
-    "Version 5 Egg", "Deep Savers Egg", "Nightmare Soldiers Egg",
-    "Wind Guardians Egg", "Metal Empire Egg", "Virus Busters Egg",
-    "Corona Egg", "Luna Egg", "Zuba Egg", "Hack Egg", "Meicoo Egg",
-    "DORU Egg", "Slayerdra Egg", "Breakdra Egg", "Ryuda Egg", "Draco Egg",
-    "Lalamon Egg", "Ludo Egg", "Meicoomon Egg", "Terrier Egg", "Lop Egg",
-    "V Egg", "Virus Busters Ver. 20th Egg", "Digitama X3", "Kera Digitama"]
-_V403_FULL = _CLASSIC49 + [
-    "Version 1 Egg", "Version 2 Egg", "Version 3 Egg", "Version 4 Egg",
-    "Version 5 Egg", "Nature Spirits Egg", "Deep Savers Egg",
-    "Nightmare Soldiers Egg", "Wind Guardians Egg", "Metal Empire Egg",
-    "Virus Busters Egg", "Corona Egg", "Luna Egg", "Zuba Egg", "Hack Egg",
-    "Meicoo Egg", "DORU Egg", "Slayerdra Egg", "Breakdra Egg", "Ryuda Egg",
-    "Draco Egg", "Lalamon Egg", "Ludo Egg", "Meicoomon Egg", "Terrier Egg",
-    "Lop Egg", "V Egg", "Virus Busters Ver. 20th Egg", "Digitama X3",
-    "Kera Digitama"]
-_V404_FULL = [
-    "Botamon", "Punimon", "Poyomon", "Yuramon", "Zurumon", "Babumon",
-    "Kuramon", "Chibickmon", "Tsubumon", "Pururumon", "Jyarimon", "Dodomon",
-    "Puttimon", "Kiimon", "Dokimon", "Chibomon", "Datirimon", "ChibiKiwimon",
-    "Ketomon", "Leafmon", "Pafumon", "Paomon", "Petitmon", "Popomon",
-    "Pupumon", "Bommon", "Pusumon", "Puwamon", "Relemon", "Sakumon",
-    "Zerimon", "Cocomon", "Fufumon", "Cotsucomon", "Algomon I", "Bombmon",
-    "Carimon", "Sunamon", "Curimon", "Pyonmon", "Puyomon", "???", "???",
-    "Fusamon", "Nature Spirits Egg", "Deep Savers Egg",
-    "Nightmare Soldiers Egg", "Wind Guardians Egg", "Metal Empire Egg",
-    "Virus Busters Egg", "Corona Egg", "Luna Egg", "Zuba Egg", "Hack Egg",
-    "Meicoo Egg", "DORU Egg", "Slayerdra Egg", "Breakdra Egg", "Ryuda Egg",
-    "Draco Egg", "Lalamon Egg", "Meicoomon Egg", "Terrier Egg", "Lop Egg",
-    "V Egg", "Virus Busters Ver. 20th Egg", "Digitama X3", "Kera Digitama"]
-# a CUT egg MID-INCUBATION falls back to the surviving egg of the same baby
-# (name -> name; resolved against the live bank).  Fallbacks are for egg_type
-# ONLY -- never for eggs_owned, or a cut egg would "translate" into permanent
-# ownership of an unearned egg (the .403 Puttimon-as-starter bug).
-_CUT_FALLBACK = {
-    "Digitama X": "Puttimon", "Digitama X2": "Kiimon",
-    # the v5 fake-egg cut (humulos provenance audit 2026-07-17): a fake egg
-    # mid-incubation becomes a device egg of roughly its temperament
-    "Babumon": "Botamon", "Jyarimon": "Botamon", "Datirimon": "Dokimon",
-    "ChibiKiwimon": "Punimon", "Pafumon": "Yuramon", "Paomon": "Yuramon",
-    "Popomon": "Botamon", "Pupumon": "Poyomon", "Bommon": "Punimon",
-    "Pusumon": "Poyomon", "Puwamon": "Punimon", "Relemon": "Yuramon",
-    "Bombmon": "Punimon", "Carimon": "Zurumon", "Sunamon": "Zurumon",
-    "Curimon": "Yuramon", "Pyonmon": "Punimon", "Puyomon": "Poyomon",
-    "Fusamon": "Punimon", "???": "Botamon",
-    "Meicoomon Egg": "Virus Busters Egg",
-    "Vorvomon Egg": "Nightmare Soldiers Egg",
-    "Nightmare Soldiers Ver.20th Egg": "Metal Empire Egg",
-    "Version 6 Egg": "Nature Spirits Egg", "Ludo Egg": "Cotsucomon",
-    "Version 1 Egg": "Botamon", "Version 2 Egg": "Punimon",
-    "Version 3 Egg": "Poyomon", "Version 4 Egg": "Yuramon",
-    "Version 5 Egg": "Zurumon", "YukimiBotamon": "Virus Busters Egg",
-    "Pichimon": "Deep Savers Egg", "Mokumon": "Nightmare Soldiers Egg",
-    "Nyokimon": "Wind Guardians Egg", "Choromon": "Metal Empire Egg"}
-
-
-def _current_names():
-    from . import egg as egg_mod
-    return [egg_mod.hatch_name(i) for i in range(egg_mod.count())]
-
-
-def _find_occurrence(names, name, occ):
-    seen = 0
-    for i, n in enumerate(names):
-        if n == name:
-            seen += 1
-            if seen == occ:
-                return i
-    return None
-
-
-def _migrate_egg_index(old, table=_V401_FULL, fallback=True):
-    """Translate an old-bank egg index into the current bank (None = drop)."""
-    if not isinstance(old, int) or not (0 <= old < len(table)):
-        return None
-    name = table[old]
-    occ = table[:old + 1].count(name)
-    cur = _current_names()
-    hit = _find_occurrence(cur, name, occ)
-    if hit is not None:
-        return hit
-    if fallback:
-        fb = _CUT_FALLBACK.get(name)
-        if fb is not None:
-            return _find_occurrence(cur, fb, 1)
-    return None
-
-
-def _table_for(save_v):
-    """The FULL bank order a given save version's indices were written
-    against; None = indices are already current."""
-    return {2: _V402_FULL, 3: _V403_FULL, 4: _V404_FULL}.get(save_v, _V401_FULL)
-
-
-def _sane_owned(owned):
-    """Drop impossible eggs_owned entries: out-of-range, and TEMP lineage
-    eggs (can_perm FALSE) which are never ownable however they snuck in."""
-    from . import data, egg as egg_mod
-    rules = data.load_egg_unlock()
-    out = set()
-    for i in owned:
-        if not isinstance(i, int) or not (0 <= i < egg_mod.count()):
-            continue
-        r = rules.get(i)
-        if r is not None and not r["can_perm"]:
-            continue
-        out.add(i)
-    return sorted(out)
-
-
-def _migrate_v401_save(data):
-    """In-place pet-save migration across bank versions (egg indices only)."""
-    v = data.get("egg_order_v")
-    if v == EGG_ORDER_V:
-        return
-    table = _table_for(v)
-    if table is not None and isinstance(data.get("egg_type"), int):
-        new = _migrate_egg_index(data["egg_type"], table)
-        data["egg_type"] = new if new is not None else 1
-    data["egg_order_v"] = EGG_ORDER_V
-
-
-def _migrate_v401_settings(d):
-    """One-time owned-egg index translation + sanity pass for older settings
-    files (v4 also REPAIRS v3's fallback leak: temp eggs granted as owned)."""
-    if not d or d.get("egg_order_v") == EGG_ORDER_V:
-        return False
-    prog = d.get("progress") or {}
-    owned = prog.get("eggs_owned")
-    if owned:
-        table = _table_for(d.get("egg_order_v"))
-        if table is not None:
-            owned = [n for n in (_migrate_egg_index(i, table, fallback=False)
-                                 for i in owned) if n is not None]
-        prog["eggs_owned"] = _sane_owned(owned)
-    d["egg_order_v"] = EGG_ORDER_V
-    return True
 
 
 def get_album():

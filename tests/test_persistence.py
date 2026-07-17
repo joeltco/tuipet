@@ -159,3 +159,24 @@ def test_dna_bank_rides_the_estate():
     assert all(heir.dna_owned.get(f, 0) == 0
                for f in data.DNA_FIELDS if f != "NatureSpirit")
     assert all(v == 0 for v in heir.dna_applied.values())  # biology resets
+
+
+def test_the_persistence_split_holds_its_boundaries():
+    """Tier-4 split (2026-07-17): persistio owns the IO + the mutable
+    save_failed flag (delegated via __getattr__); eggmigrate owns the bank
+    tables; persistence keeps progress/estate and re-exports the old names."""
+    import inspect
+    from tuipet import eggmigrate, persistio
+    src = inspect.getsource(persistence)
+    for name in ("_atomic_write_json", "_pick_save_dir", "_migrate_egg_index",
+                 "acquire_instance_lock"):
+        assert f"def {name}" not in src, f"{name} crept back"
+        assert hasattr(persistence, name)
+    assert persistence.EGG_ORDER_V == eggmigrate.EGG_ORDER_V == 5
+    # the mutable flag delegates live (a static re-export would freeze it)
+    old = persistio.save_failed
+    try:
+        persistio.save_failed = "disk on fire"
+        assert persistence.save_failed == "disk on fire"
+    finally:
+        persistio.save_failed = old

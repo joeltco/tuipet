@@ -18,6 +18,8 @@ def _reload(**env):
     for k in ('TUIPET_SAVE_DIR', 'XDG_DATA_HOME'):
         os.environ.pop(k, None)
     os.environ.update(env)
+    from tuipet import persistio
+    importlib.reload(persistio)   # SAVE_DIR's owner (tier-4 split)
     importlib.reload(persistence)
     return persistence
 
@@ -38,6 +40,8 @@ def test_ios_read_only_home_falls_back_to_documents(monkeypatch):
         assert not p.save_failed
     finally:
         os.chmod(home, 0o755)
+        from tuipet import persistio
+        importlib.reload(persistio)   # SAVE_DIR's owner (tier-4 split)
         importlib.reload(persistence)
 
 
@@ -54,6 +58,8 @@ def test_an_unwritable_disk_is_reported_not_swallowed(monkeypatch):
         assert p.save_failed, 'a silently unsaveable install used to eat the pet'
     finally:
         os.chmod(home, 0o755)
+        from tuipet import persistio
+        importlib.reload(persistio)   # SAVE_DIR's owner (tier-4 split)
         importlib.reload(persistence)
 
 
@@ -64,6 +70,8 @@ def test_save_dir_override_wins(monkeypatch):
     try:
         assert p.SAVE_DIR == d
     finally:
+        from tuipet import persistio
+        importlib.reload(persistio)   # SAVE_DIR's owner (tier-4 split)
         importlib.reload(persistence)
 
 
@@ -74,6 +82,8 @@ def test_the_normal_linux_home_is_unchanged(monkeypatch):
     try:
         assert p.SAVE_DIR == os.path.join(home, '.local', 'share', 'tuipet')
     finally:
+        from tuipet import persistio
+        importlib.reload(persistio)   # SAVE_DIR's owner (tier-4 split)
         importlib.reload(persistence)
 
 

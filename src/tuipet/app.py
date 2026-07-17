@@ -141,10 +141,10 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("MORE ENGINE ROOM: every key on the actions bar now has "
-                 "its handler in one dedicated module, and launch plumbing "
-                 "sits apart from the running game. Same game, straighter "
-                 "wiring.")
+    WHATS_NEW = ("SAFER SAVES UNDER THE HOOD: the atomic save writer and "
+                 "the egg-bank migration each live in their own module "
+                 "now. Your save behaves exactly the same - the machinery "
+                 "guarding it is just easier to keep correct.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and
