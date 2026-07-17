@@ -437,3 +437,28 @@ def test_evolves_page_shows_next_form_at_every_age():
     fresh.line_id = "ver1"
     rows = _evo_rows(fresh)
     assert isinstance(rows, list) and rows, rows
+
+
+def test_the_data_model_is_modular_and_live():
+    """Modularize 2026-07-17: digicore.py owns every page/row computation;
+    digicorescreen only renders (old names stay as aliases).  The liveness
+    law holds: no dead-system rows (Spirit label, injury fragment, Nutri)."""
+    from tuipet import digicore, digicorescreen
+    assert digicorescreen.build_pages is digicore.build_pages
+    assert digicorescreen._evo_rows is digicore._evo_rows
+    assert digicorescreen.next_evolution is digicore.next_evolution
+    p = Pet(num=100, stage="Champion", attribute="Vaccine")
+    p.world_seconds = 600.0
+    flat = [(t, r[0], r[1]) for t, rows in digicore.build_pages(p)
+            if isinstance(rows, list)
+            for r in rows if isinstance(r, tuple) and len(r) == 2
+            and isinstance(r[0], str)]
+    labels = {lab for _, lab, _ in flat}
+    assert "Nature" in labels and "Spirit" not in labels
+    assert "Nutri" not in labels
+    ailing = next(val for _, lab, val in flat if lab == "Ailing")
+    assert ailing in ("sick", "no")                  # the injury fragment is gone
+    # the household page knows the staples
+    assert {"Toilet", "Futon", "Trained", "Helper"} <= labels
+    # the power page carries the live gate-drivers
+    assert {"Form", "Level", "KO6"} <= labels

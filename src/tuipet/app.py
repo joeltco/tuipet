@@ -163,11 +163,11 @@ class TuiPetApp(App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("ONE STATUS BOX TO RULE THEM: every card now lives in "
-                 "one module and may only show LIVE data. The feeding "
-                 "readout lost its dead nutrient bars, the DNA card now "
-                 "bills the true cost (energy), and no screen can quietly "
-                 "drift out of date again.")
+    WHATS_NEW = ("A TIDIER DIGICORE: the data book's pages live in their "
+                 "own module now, and the pages tell no lies - the Nature "
+                 "row wears its true name, the Ailing row dropped a dead "
+                 "injury readout, and POWER carries what the gates really "
+                 "read: your Form, Level, and Mega count.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and

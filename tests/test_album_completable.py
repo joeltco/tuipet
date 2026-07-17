@@ -16,9 +16,10 @@ def test_the_album_denominator_is_actually_reachable():
     reachable = len({data.canonical_num(n) for n in live})
     assert reachable < raw, "the dex really does carry duplicate rows"
 
-    from tuipet import digicorescreen
+    # the row builders moved to digicore.py (modularize 2026-07-17)
+    from tuipet import digicore
     import inspect
-    src = inspect.getsource(digicorescreen)
+    src = inspect.getsource(digicore)
     assert "canonical_num(n) for n in by" in src, \
         "the Album total must count canonical species, not raw rows"
 
