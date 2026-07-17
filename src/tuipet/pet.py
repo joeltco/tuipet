@@ -960,6 +960,7 @@ class Pet:
     # (the adventure fields -- adv_map/adv_zone/adv_seek/adv_loc -- left
     # with the world layer; BASIC VPET 2026-07-16)
     egg_type: int = 0
+    bg_pick: str = ""               # picked home scene ("" = follow the egg; E picker 2026-07-17)
     lifespan: float = LIFE_START
     generation: int = 1
     dead: bool = False
@@ -1723,9 +1724,18 @@ class Pet:
         if file is not None:
             key = file
         else:
-            key = backgrounds.scene_for_egg(self.egg_type)
+            # the egg decides the default; the E picker may override it
+            # (Joel 2026-07-17: "add the e action back to change backgrounds")
+            key = self.bg_pick or backgrounds.scene_for_egg(self.egg_type)
         frames = data.load_backgrounds().get(key)
         return frames[0] if frames else None
+
+    def pick_background(self, key):
+        """The E picker's commit: '' returns the scene to the egg's own."""
+        self.bg_pick = key
+        if not key:
+            return "Back to the egg's own scene."
+        return f"{backgrounds.name(key)} it is."
 
     def _disposition(self):
         return self.disposition          # DVPet _disposition: fixed personality trait
@@ -2473,6 +2483,44 @@ class Pet:
     def poop_urgent(self):
         """The manual-toilet / poop-dance window: the gauge is nearly full."""
         return self._poop_t >= TOILET_URGENT_FRAC * self._poop_interval
+
+    def _manual_toilet(self, key):
+        """Taking the pet to the Toilet (i:82) / Port. Potty (i:83) by hand --
+        the missing half of toilet training (items audit 2026-07-17: the
+        training path was dead code, so the starting 100 flushes never spent).
+        Works only in the urgency window; during InTraining these visits ARE
+        the training (MinToiletUsesToTrain 1)."""
+        if self.dead or self.stage == "Egg" or self.num < 0:
+            return _Refused("")
+        if self.asleep:
+            self._disturbed()                    # items.csv Disturb TRUE
+        if not self.poop_urgent():
+            self._set_anim("refuse", 1.0)
+            return _Refused(f"{self.name} doesn't need to go.")
+        self._poop_t = 0.0                       # the gauge empties in the bowl
+        self._toilet_visit(key)                  # spends the flush, blesses, trains
+        return "Whew — right in the bowl."
+
+    def _futon(self):
+        """The Futon (i:81): a tuck-in for a SLEEPER -- the one item that
+        never disturbs (items.csv Disturb FALSE is the Futon's column; Joel
+        chose full canon here).  Applies careEffect 0: +1 energy and +1 mood
+        per hour cadence for 960 min, ending when the sleeper stirs."""
+        if self.dead or self.stage == "Egg" or self.num < 0:
+            return _Refused("")
+        if not self.asleep:
+            self._set_anim("refuse", 1.0)
+            return _Refused("Save it for bedtime.")
+        if self.effect_id == 0 and self.effect_t > 0:
+            return _Refused("Already tucked in.")
+        eff = data.load_care_effects().get(0)
+        if not eff:
+            return _Refused("")
+        self.effect_id = 0
+        self.effect_t = float(eff.get("duration", 960)) * 60.0
+        self._eff_asleep = True                  # armed on a sleeper; wake ends it
+        self.take_item("i:81")
+        return "Tucked in — sleep runs deeper."
 
     def _toilet_visit(self, key, backlog=False, spend_use=True):
         """poopToilet: the poop lands IN the toilet -- canon poop(true) keeps
@@ -3370,6 +3418,13 @@ class Pet:
         # deliberate: reliability->Purity(18), destiny->Fate(25))
         if key.startswith("egg_of_"):
             return self._crest_egg(key)
+        # the DVPet staple props (items.csv 81-83; Joel 2026-07-17: "look at
+        # what dsprite has for items... should be like a toilet"): they carry
+        # their own guards -- the generic disturb/consume below never runs
+        if key in ("i:82", "i:83"):
+            return self._manual_toilet(key)
+        if key == "i:81":
+            return self._futon()
         fx = {
             "energy_drink": lambda: self._gain_energy(self.max_energy),
             "best_fruit": lambda: self._fruit(+2),

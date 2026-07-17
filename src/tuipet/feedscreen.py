@@ -80,7 +80,10 @@ class FeedPanel:
             msg = self.pet.feed_pill()
             if self.pet.anim == "heal":
                 out = "Cured!" if was_sick else "A tonic — strength and pep."
-                return ("done", ("healed", {"key": "i:4", "name": "Pill"}, out))
+                # i:80 is the real 4-frame medicine strip the heal fx steps
+                # through (the clone's choice); i:4 was a mixed-size icon that
+                # visibly morphed mid-application (pill-anim fix 2026-07-17)
+                return ("done", ("healed", {"key": "i:80", "name": "Pill"}, out))
             return ("done", ("refused", {"key": "i:4", "name": "Pill"}, msg))
         elif k in ("escape", "f"):
             return ("done", None)

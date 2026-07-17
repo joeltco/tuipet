@@ -99,6 +99,14 @@ EGG_BG = {
 }
 
 
+# the E picker's shelf (restored 2026-07-17: "add the e action back"): every
+# named scene except the arena is a FREE pick, the clone's final ruling
+# ("get rid of the price walls" -- Joel 2026-07-16).  The egg still decides
+# the DEFAULT scene; a pick merely overrides it (pet.bg_pick).
+PICKS = tuple(sorted((k for k in NAMES if k != "tourneyBack"),
+                     key=lambda k: NAMES[k]))
+
+
 def scene_for_egg(egg_type):
     """The scene an egg wires its whole line to (unknown egg -> DEFAULT)."""
     try:

@@ -18,6 +18,7 @@ from . import data
 from . import menu
 from . import egg as egg_mod
 from . import training
+from . import backgroundscreen
 from . import battlescreen
 from . import dnascreen
 from . import shopscreen
@@ -87,7 +88,7 @@ def keys_markup():
     return (
         f"[{k}]f[/] feed (meat·pill)  [{k}]p[/] play  [{k}]c[/] clean  [{k}]s[/] lights  [{k}]v[/] assist\n"
         f"[{k}]t[/] train  [{k}]r[/] raid  [{k}]u[/] cup  [{k}]l[/] lobby (battle·jogress)  [{k}]x[/] DNA  [{k}]n[/] eggs\n"
-        f"[{k}]o[/] shop  [{k}]i[/] bag  [{k}]d[/] digicore  [{k}]g[/] options  [{k}]b[/] bug  [{k}]?[/] help  [{k}]q[/] quit"
+        f"[{k}]o[/] shop  [{k}]i[/] bag  [{k}]d[/] digicore  [{k}]e[/] scenes  [{k}]g[/] options  [{k}]b[/] bug  [{k}]?[/] help  [{k}]q[/] quit"
     )
 
 
@@ -256,11 +257,11 @@ class TuiPetApp(App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("REAL EGGS ONLY: 22 fake eggs (no real device ever had "
-                 "them) are gone, and eggs are never sold any more - every "
-                 "digitama is EARNED by a real condition, like the actual "
-                 "devices. Old saves migrate; a fake egg mid-incubation "
-                 "becomes a classic one.")
+    WHATS_NEW = ("HOME COMFORTS: press E to change the scene behind your "
+                 "mon (the egg still picks the default). The Toilet, Port. "
+                 "Potty and Futon are real items now - potty-train during "
+                 "InTraining and a grown pet goes by itself; a Futon tucks "
+                 "a sleeper in. The pill animation is fixed too.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and
@@ -272,6 +273,7 @@ class TuiPetApp(App):
         ("r", "raid", "Raid"), ("o", "shop", "Shop"), ("i", "inventory", "Bag"),
         ("d", "digicore", "DigiCore"),
         ("n", "eggguide", "Egg Guide"),
+        ("e", "scenes", "Scenes"),
         ("u", "tournament", "Cup"), ("x", "dna", "DNA"),
         ("l", "lobby", "Lobby"),
         ("s", "sleep", "Lights"), ("v", "assist", "Assistant"), ("g", "options", "Options"),
@@ -953,7 +955,8 @@ class TuiPetApp(App):
         table = ((tournamentscreen.TournamentPanel, self._status_tournament),
                  (training.TrainingPanel, self._status_training),
                  (battlescreen.BattlePanel, self._status_battle),
-                 (dnascreen.DNAPanel, self._status_dna))
+                 (dnascreen.DNAPanel, self._status_dna),
+                 (backgroundscreen.BackgroundPanel, self._status_scenes))
         for cls, painter in table:
             if isinstance(self.mode, cls):
                 return painter
@@ -974,6 +977,20 @@ class TuiPetApp(App):
                                       "Destined to hatch", f"  [b]{shown}[/]",
                                       f"  {badge}", "",
                                       "[dim]←→ browse  ENTER pick[/]"])
+
+    def _status_scenes(self):
+        """The browsed scene's dossier: the LCD shows the SCENE, this card
+        carries the words (picker restore 2026-07-17)."""
+        m = self.mode
+        row = m.rows[m.cursor]
+        name = m._name(row)
+        state = "picked" if row == self.pet.bg_pick else \
+            ("the default" if not row and not self.pet.bg_pick else "a preview")
+        self._status_card("Scenes", [f"[dim]{m.cursor + 1} of {len(m.rows)}[/]", "",
+                                     "On the wall", f"  [b]{name[:24]}[/]",
+                                     f"  [dim]{state}[/]", "",
+                                     (m.msg or "")[:26],
+                                     "[dim]↑↓ browse  ENTER hang[/]"])
 
     def _status_card(self, title, lines):
         self.stats_w.border_subtitle = ""
@@ -1616,6 +1633,15 @@ class TuiPetApp(App):
             self.flash("%s absorbed %d %s DNA" % (self.pet.name, amount, data.pretty_field(field)))
         else:
             self.repaint()
+
+    def action_scenes(self):
+        """The E scene picker (restored 2026-07-17): egg default, pick overrides."""
+        self._open_mode(backgroundscreen.BackgroundPanel(self.pet), self._after_scenes)
+
+    def _after_scenes(self, msg):
+        if msg:
+            self.flash(msg)
+        self.repaint()
 
     def action_shop(self):
         self._open_mode(shopscreen.ShopPanel(self.pet), self._after_shop)

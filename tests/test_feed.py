@@ -59,3 +59,23 @@ def test_feed_alias_keeps_old_callers_fed():
     p = _pet(hunger=0)
     p.feed()                       # the assistant path
     assert p.hunger == 1
+
+
+def test_the_pill_rides_the_uniform_medicine_strip():
+    """Pill-anim fix (Joel 2026-07-17: "the eating pill animation is broken"):
+    the feed panel must hand the heal fx i:80 -- the real 4-frame application
+    strip -- never i:4, whose mixed-size frames visibly morphed mid-beat."""
+    from tuipet import data
+    from tuipet.feedscreen import FeedPanel
+    from tuipet.pet import Pet
+    p = Pet(num=100, stage="Champion", attribute="Vaccine", obedience=500)
+    p.world_seconds = 12 * 60.0
+    p.sick = True
+    pan = FeedPanel(p)
+    pan.cursor = 1                                   # the pill row
+    done, (outcome, item, _msg) = pan.key("enter")
+    assert (done, outcome) == ("done", "healed")
+    assert item["key"] == "i:80"
+    strip = data.load_icons()["i:80"]
+    assert len(strip) == 4
+    assert len({(len(f[0]), len(f)) for f in strip}) == 1   # uniform frames
