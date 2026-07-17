@@ -54,6 +54,7 @@ def test_main_egg_and_grave_cards_fit_and_read_compact_ages():
     _fits(fake, "main")
     assert "3d01h" in fake.txt                  # compact age, not 4436m40s
     assert "◆◆◆" in fake.txt                    # the DP meter: pips on its own row
+    assert "Care" in fake.txt                   # the evolution driver, no longer buried
     assert "Power" not in fake.txt              # the ledger lives on the DigiCore now
     assert "HP " not in fake.txt                # the classic trained-HP left with it
     Stats.paint(fake, Pet.new_egg(egg_type=1))

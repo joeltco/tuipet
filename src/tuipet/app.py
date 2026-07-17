@@ -193,6 +193,12 @@ class Stats(Static):
             # the DigiCore DATA page, next to the corpus gates that read it;
             # the HP fragment was the retired classic battle's trained-HP)
             f"Weight  {pet.weight}g · [{T.COIN}]{pet.bits}b[/]",
+            # care mistakes decide the evolution road (every line's CM gates)
+            # and 20 is lethal -- they were buried on the DigiCore data page
+            # (care polish 2026-07-17).  Stage-scoped: they reset on evolve.
+            (f"Care    [{T.POS}]spotless[/]" if pet.care_mistakes == 0 else
+             f"Care    [{T.NEG if pet.care_mistakes >= 10 else T.MOOD}]"
+             f"✗{pet.care_mistakes} this stage[/]"),
             f"DP      [{T.ACCENT}]{'◆' * getattr(pet, 'dp', 0)}[/][dim]{'◇' * (4 - getattr(pet, 'dp', 0))}[/]",
             f"Battle  {pet.wins}W/{pet.battles}   [{T.COIN}]\u2605{pet.trophies}[/]",
             f"@{backgrounds.name(pet.bg_pick or backgrounds.scene_for_egg(pet.egg_type))[:16]} [dim]{age}[/]",
@@ -260,11 +266,11 @@ class TuiPetApp(App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("A CLEANER HOME CARD: the Power ledger moved to the "
-                 "DigiCore data page where it belongs, the dead HP readout "
-                 "is gone, DP shows as pips, and the scene line follows "
-                 "your E-picked backdrop. Every screen's status card got "
-                 "the same once-over.")
+    WHATS_NEW = ("CARE ON THE CARD: care mistakes now show on the home "
+                 "status - they steer every evolution and 20 is lethal, so "
+                 "they were never something to hide on a data page. "
+                 "Spotless care reads green; double digits read as the "
+                 "warning they are.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and
