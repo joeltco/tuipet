@@ -2,8 +2,10 @@
 0.5 system we made").  One bar, SPACE locks it: mega zone = clean strike,
 ±5 shoulder = solid hit, wide = whiff.  The lock saves the battle form
 (`saved_hit_type`), train_result feeds the LINES TR gates (energy -2), and
-the strike plays on battle's own strikefx rails against the REAL DVPet
-dummy.  Attribute powers grow only through battle wins now.
+the strike plays on battle's own strikefx rails against the 0.5 BRICK
+WALL (the clone's battle_fx rips — DSprite is the ultimate truth for
+animations and mechanics).  Attribute powers grow only through battle
+wins now.
 """
 from tuipet import training
 from tuipet.pet import Pet, TRAIN_ENERGY_COST
@@ -118,25 +120,28 @@ def test_the_drill_plays_through_bar_strike_done():
     assert pan.key("space") == ("done", pan.result)
 
 
-def test_the_whiff_keeps_the_dummy_standing_and_taunting():
+def test_wall_one_stands_through_everything_but_a_mega_break():
+    """The clone's wall rule, verbatim: Wall_1 through the whole volley --
+    a whiff, a normal break, the incoming orb -- and ONLY a mega break
+    crumbles it to Wall_2."""
+    import json, os
+    import tuipet.training as tr
+    wall = json.load(open(os.path.join(os.path.dirname(tr.__file__),
+                                       "data", "train_wall.json")))
     pan = _panel()
     _lock_at(pan, 0 if pan.mega_lo - 5 > 0 else 24)
     assert pan.grade == "miss"
-    for _ in range(200):
-        pan.anim()
-        pan.text()
-        if pan.phase == "done":
-            break
-    assert pan._target_place("miss")               # the dummy stands (taunting)
-    assert pan._target_place("break") if pan.grade != "mega" else True
-
-
-def test_a_mega_break_leaves_the_floor_bare():
-    pan = _panel()
-    _lock_at(pan, (pan.mega_lo + pan.mega_hi) // 2)
-    assert pan.grade == "mega"
-    assert pan._target_place("break") == []        # no invented crumble art
-    assert pan._target_place("fire_in")            # ...but it stood to take the shot
+    standing = set(pan._wall_overlay("miss"))
+    assert standing == set(pan._wall_overlay("fire_in"))
+    assert standing == set(pan._wall_overlay("break"))   # a miss never crumbles
+    assert len(standing) == sum(r.count("1") for r in wall["Wall_1"])
+    pan2 = _panel()
+    _lock_at(pan2, (pan2.mega_lo + pan2.mega_hi) // 2)
+    assert pan2.grade == "mega"
+    crumbled = set(pan2._wall_overlay("break"))
+    assert crumbled != standing                          # Wall_2: the crumble rip
+    assert len(crumbled) == sum(r.count("1") for r in wall["Wall_2"])
+    assert set(pan2._wall_overlay("fire_in")) == standing  # it stood to take the shot
 
 
 def test_the_bar_escape_trains_nothing():

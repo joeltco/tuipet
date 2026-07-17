@@ -12,9 +12,11 @@ Attribute POWERS no longer grow here (battle wins still grow them — the
 canon setPower +1 lives in record_battle); the clone trains form, not stats.
 
 The show: the bar, then the pet turns and FIRES — strike/impact/aftermath
-on the same strikefx rails as battle.  The target is the REAL DVPet
-training dummy (hp_dummies.json, attribute-matched); a MEGA strike leaves
-the floor empty where it stood — no invented crumble art.
+on the same strikefx rails as battle, against the 0.5 BRICK WALL (Wall_1/
+Wall_2 from the clone's battle_fx rips — DSprite is the ultimate truth for
+animations and mechanics; the DVPet dummy that briefly stood here was the
+wrong prop, Joel 2026-07-17).  Wall_1 stands through the whole volley;
+only a MEGA break crumbles it to Wall_2.
 """
 from __future__ import annotations
 import json
@@ -33,9 +35,10 @@ VERDICT_T = 14
 
 ENERGY_NEED = 2                 # the clone's "Too tired to train" gate
 
-# the REAL DVPet HP-training dummy (battleBags.png rows; extraction 2026-07)
-with open(os.path.join(os.path.dirname(__file__), "data", "hp_dummies.json")) as _f:
-    _HP_DUMMIES = json.load(_f)
+# the 0.5 target wall (Wall_1 standing / Wall_2 crumbled), ported verbatim
+# from the clone's battle_fx rips (v0.4.12; row-string form)
+with open(os.path.join(os.path.dirname(__file__), "data", "train_wall.json")) as _f:
+    _WALL = json.load(_f)
 
 # the source minigame's 3x5 font, verbatim -- only the glyphs "HIT!" touches
 # (the source table has NO '!': it falls back to the blank space glyph, so
@@ -64,10 +67,7 @@ def mega_window(pet):
     return 12 - c, 12 + c
 
 
-def _dummy_rows(pet, taunt=False):
-    """The attribute-matched dummy (canon setAltIcon never flips a prop)."""
-    key = {"Vaccine": "vaccine", "Virus": "virus"}.get(pet.attribute, "data")
-    return _HP_DUMMIES.get(key + ("_taunt" if taunt else ""), _HP_DUMMIES[key])
+
 
 
 class TrainingPanel:
@@ -191,25 +191,23 @@ class TrainingPanel:
         return menu.paint([], self.pet.background(), rows=ROWS, cols=COLS,
                           overlay=self._bar_overlay(), clip=grid.WINDOW)
 
-    def _target_place(self, m):
-        """The standing dummy: the REAL DVPet prop, left side, sheet facing
-        (canon setAltIcon never flips it).  It TAUNTS a whiff; a MEGA break
-        leaves the floor empty after the flash -- the real crumble frame
-        doesn't exist in the rips, and tuipet never draws its own art."""
-        if m == "break" and self.grade == "mega":
-            return []
-        rows = _dummy_rows(self.pet, taunt=(m == "miss"))
-        place, _mouth = strikefx.place_combatant(False, rows, mirror=False)
-        return place
+    def _wall_overlay(self, m):
+        """The standing target wall (the clone's rule, verbatim): Wall_1
+        stands through the whole volley; only a MEGA break crumbles it to
+        Wall_2."""
+        from . import render
+        which = "Wall_2" if m == "break" and self.grade == "mega" else "Wall_1"
+        rows = _WALL.get(which) or []
+        return render.blit(rows, grid.X0, grid.FLOOR - len(rows))
 
     def _shoot_text(self):
-        """The pet fires LEFT at the dummy on battle's ALTERNATING views --
-        there is no room for pet + flight + target in the 32px window:
+        """The pet fires LEFT at the target wall on battle's ALTERNATING
+        views -- no room for pet + flight + wall in the 32px window:
         windup/fire_out -> the pet's view, orb exits the window;
-        fire_in        -> the TARGET's view, orb crosses and lands;
+        fire_in        -> the WALL's view, orb crosses and lands on its face;
         hit            -> the flash owns the whole screen (like battle);
-        break/miss     -> the verdict tableau: pet beside the dummy (a MEGA
-                          leaves the floor bare; a whiff earns the taunt)."""
+        break/miss     -> the verdict tableau: pet beside the wall (a MEGA
+                          leaves it crumbled -- Wall_1 stands otherwise)."""
         from .battlescreen import EXPLODE, _full
         fr = self.timeline[min(self.i, len(self.timeline) - 1)]
         m = fr.get("m")
@@ -217,13 +215,13 @@ class TrainingPanel:
             return menu.paint([], self.pet.background(), rows=ROWS, cols=COLS,
                               overlay=_full(EXPLODE[fr.get("f", 0)]),
                               clip=grid.WINDOW)
-        if m == "fire_in":                       # the target's view: no pet
+        if m == "fire_in":                       # the wall's view: no pet
             orb = data.attack_orb(self.pet.num, self.pet.attribute, 0,
                                   frame_i=self.frame_i)
-            place = self._target_place(m)
-            overlay = strikefx.orb_flight(orb, True, m, fr.get("prog", 0),
-                                          grid.X0 + 14, fr.get("double"))
-            return menu.paint(place, self.pet.background(), rows=ROWS, cols=COLS,
+            overlay = self._wall_overlay(m)
+            overlay += strikefx.orb_flight(orb, True, m, fr.get("prog", 0),
+                                           grid.X0 + 8, fr.get("double"))
+            return menu.paint([], self.pet.background(), rows=ROWS, cols=COLS,
                               overlay=overlay, clip=grid.WINDOW)
         if m == "windup":
             pose = (TURN, TURN, IDLE, IDLE, ATTACK, ATTACK)[min(fr.get("wu", 0), 5)]
@@ -236,14 +234,12 @@ class TrainingPanel:
         else:
             pose = IDLE
         place, mouth = strikefx.place_combatant(True, self._rows(pose))
-        if m not in ("windup", "fire_out"):
-            place = self._target_place(m) + place
-        overlay = []
+        overlay = [] if m in ("windup", "fire_out") else self._wall_overlay(m)
         if m == "fire_out":                      # the pet's view: orb exits
             orb = data.attack_orb(self.pet.num, self.pet.attribute, 0,
                                   frame_i=self.frame_i)
-            overlay = strikefx.orb_flight(orb, True, m, fr.get("prog", 0),
-                                          mouth, fr.get("double"))
+            overlay += strikefx.orb_flight(orb, True, m, fr.get("prog", 0),
+                                           mouth, fr.get("double"))
         return menu.paint(place, self.pet.background(), rows=ROWS, cols=COLS,
                           overlay=overlay, clip=grid.WINDOW)
 

@@ -256,10 +256,9 @@ class TuiPetApp(App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("TIME THE STRIKE: training is the 0.5 drill now - one "
-                 "sweeping bar, one perfect window that good care widens. "
-                 "A clean hit saves your battle form and sheds weight; "
-                 "powers grow in real battles, not at the gym.")
+    WHATS_NEW = ("THE WALL IS BACK: the training drill now fires at the "
+                 "0.5 brick wall - it stands through your whiffs and only "
+                 "a PERFECT strike crumbles it, exactly like the rebuild.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and
