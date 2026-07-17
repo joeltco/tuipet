@@ -182,7 +182,10 @@ class BoutMixin:
         from .pet import online_reward
         purse = online_reward(won, draw=draw)
         self.pet.record_battle(won and not draw, online=True)
-        self.pet.add_bits(purse)
+        # pet.add_bits died with the classic revert (v0.5.0) -- every online
+        # payout has crashed on BOTH sides since; caught by the live two-bot
+        # smoke 2026-07-17.  The raid claim's idiom is the house style.
+        self.pet.bits += int(purse)
         self.bt_outcome = ("DRAW" if draw
                            else "\u2605 YOU WIN! \u2605" if won else "YOU LOSE\u2026")
         self.bt_reward = f"+{purse}b" + ("  (weekend bonus!)" if purse not in (100, 150, 200) else "")

@@ -466,3 +466,25 @@ def test_the_lobby_split_holds_its_boundaries():
     # the engine methods still resolve on the composed panel
     for name in ("_battle_begin", "_commit_fusion", "_chat_rows", "_slash"):
         assert callable(getattr(lobbyscreen.LobbyPanel, name))
+
+
+def test_online_payout_survives_the_bout():
+    """The live-smoke catch (2026-07-17): pet.add_bits died with the classic
+    revert, so _battle_over crashed BOTH sides of every online bout at the
+    payout since v0.5.0.  Drive the real method on a rigged panel."""
+    from tuipet.lobbyscreen import LobbyPanel
+    from tuipet.pet import Pet
+    p = Pet(num=100, name="Rex", stage="Champion", attribute="Vaccine",
+            obedience=500)
+    p.world_seconds = 12 * 60.0
+    assert not hasattr(p, "add_bits")           # the dead method stays dead
+    pan = LobbyPanel.__new__(LobbyPanel)
+    pan.pet, pan.partner, pan.is_host = p, (7, "peer"), True
+    pan.battle = {"host_hp": 3, "guest_hp": 0}
+    pan.opp_card = {"name": "peer", "num": 104}
+    pan.client = type("C", (), {"ladder_report": None})()
+    bits0 = p.bits
+    pan._battle_over()                          # must not raise
+    assert pan.bphase == "over" and "WIN" in pan.bt_outcome
+    assert p.bits > bits0                       # the purse actually lands
+    assert p.battles == 1 and p.wins == 1       # and the record with it

@@ -163,10 +163,10 @@ class TuiPetApp(App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("LOBBY UNDER THE HOOD: the multiplayer room, the PvP "
-                 "bout engine, the chat surface and the login card are "
-                 "separate modules now - same lobby, cleaner bones, so "
-                 "online fixes land faster and safer.")
+    WHATS_NEW = ("ONLINE BATTLES PAY AGAIN: finishing a lobby PvP bout "
+                 "crashed at the payout ever since v0.5.0 - a live "
+                 "two-player smoke test finally caught it. Win purses, "
+                 "consolation bits and the record all land properly now.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and
