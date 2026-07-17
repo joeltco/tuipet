@@ -253,7 +253,8 @@ def test_join_leave_log_caps_at_the_shared_chat_cap():
     beside it (lobby audit 2026-07-07)."""
     from tuipet.net import CHAT_CAP
     pan = _lobby()
-    pan._seen_ids = {1: "JoeltCo"}                # Ryo reads as a fresh join
+    pan._seen_ids = {"JoeltCo"}                   # a NAME set since the ghost-churn
+    #                                               fix (2026-07-17): Ryo = fresh join
     pan.state.chat = [("x", str(i)) for i in range(CHAT_CAP + 100)]
     pan.anim()
     assert len(pan.state.chat) == CHAT_CAP

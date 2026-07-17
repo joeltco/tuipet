@@ -419,17 +419,22 @@ class LobbyPanel:
                 if self.phase == "lobby":
                     self.status = (f"room: {room} · /leave exits" if room
                                    else "Back in the main lobby.")
-            ids = {pl["id"]: pl["name"] for pl in s.roster}
-            old_ids = getattr(self, "_seen_ids", None)
-            if old_ids is not None:
-                for pid, nm in ids.items():
-                    if pid not in old_ids and pid != s.me_id:
-                        s.chat.append(("", f"{nm} joined"))
-                for pid, nm in old_ids.items():
-                    if pid not in ids and pid != s.me_id:
-                        s.chat.append(("", f"{nm} left"))
+            # announce LIVE lobby presences only, and by NAME: a home-screen
+            # sync ghost's reconnect churn (a fresh connection id on every
+            # drop) spammed the chat with "roxi joined / roxi left" while
+            # roxi was never in the lobby (Joel 2026-07-17).  Ghosts still
+            # sit in the sidebar as "playing" -- silently; and a live
+            # player's quick reconnect keeps its NAME, so no false wave.
+            live = {pl["name"] for pl in s.roster
+                    if pl.get("live", True) and pl["id"] != s.me_id}
+            old = getattr(self, "_seen_ids", None)
+            if old is not None:
+                for nm in sorted(live - old):
+                    s.chat.append(("", f"{nm} joined"))
+                for nm in sorted(old - live):
+                    s.chat.append(("", f"{nm} left"))
                 del s.chat[:-CHAT_CAP]      # the one cap, shared with net.py
-            self._seen_ids = ids
+            self._seen_ids = live
         # partner vanished mid-session
         if self.partner and not any(p["id"] == self.partner[0] for p in s.roster):
             if self.phase == "jogress" and self.jphase == "waiting":

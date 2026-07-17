@@ -80,6 +80,46 @@ def test_roster_diff_lands_join_and_leave_notices_in_chat():
     assert ("", "kai joined") in s.chat and ("", "kai left") in s.chat
 
 
+def test_sync_ghost_churn_never_reaches_the_chat():
+    """The roxi pollution (Joel 2026-07-17): a home-screen sync ghost's
+    reconnect loop gets a fresh connection id every drop, and the id-keyed
+    diff announced each one as a lobby join/leave.  Ghosts (live=False) are
+    sidebar-only; the chat speaks only of LIVE presences."""
+    s = LobbyState()
+    s.connected = True
+    s.me_id = 1
+    me = {"id": 1, "name": "joel", "pet": {}, "live": True}
+    s.roster = [me]
+    pan = _panel(s)
+    pan.anim()
+    for cid in (7, 8, 9):                          # roxi's ghost flaps: new id each drop
+        s.roster = [me, {"id": cid, "name": "roxi", "pet": {}, "live": False}]
+        pan.anim()
+        s.roster = [me]
+        pan.anim()
+    assert not s.chat, f"ghost churn leaked into the chat: {s.chat}"
+    # ...but roxi actually OPENING the lobby (live) announces exactly once
+    s.roster = [me, {"id": 10, "name": "roxi", "pet": {}, "live": True}]
+    pan.anim()
+    assert s.chat == [("", "roxi joined")]
+
+
+def test_live_reconnect_id_churn_is_not_a_join_wave():
+    """A live player's reconnect swaps the connection id but keeps the name:
+    the name-keyed diff stays quiet instead of stacking left+joined pairs."""
+    s = LobbyState()
+    s.connected = True
+    s.me_id = 1
+    me = {"id": 1, "name": "joel", "pet": {}, "live": True}
+    s.roster = [me, {"id": 2, "name": "kai", "pet": {}, "live": True}]
+    pan = _panel(s)
+    pan.anim()
+    s.chat.clear()
+    s.roster = [me, {"id": 3, "name": "kai", "pet": {}, "live": True}]   # same kai, new id
+    pan.anim()
+    assert not s.chat
+
+
 def test_guest_hp_bar_uses_its_own_trained_card():
     s = LobbyState()
     pan = _panel(s)

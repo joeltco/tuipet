@@ -256,11 +256,10 @@ class TuiPetApp(App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("ONE ETERNAL AFTERNOON: the day/night cycle and the "
-                 "seasons are gone - scenes hold one look, every cup shares "
-                 "one year-round pool, and trophies now show the DAY they "
-                 "fell. Bedtimes stay: the clock still ticks, it just "
-                 "stopped changing clothes.")
+    WHATS_NEW = ("QUIET LOBBY: home-screen sync ghosts no longer spam the "
+                 "chat with joined/left every time their connection blinks "
+                 "- the log only speaks of tamers actually entering and "
+                 "leaving the lobby.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and
