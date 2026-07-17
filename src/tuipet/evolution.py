@@ -15,10 +15,6 @@ X_ANTIBODY_RATE = 3  # Config.XAntibodyRate — bonus when an X-form's req is me
 DNA_FULFILLED_RATE = 2
 
 
-def _major_hab(pet):
-    """DVPet getMajorHabitat: evolution gates on the habitat lived in MOST, not the current one."""
-    mh = getattr(pet, "major_habitat", None)
-    return mh() if callable(mh) else getattr(pet, "habitat", -1)  # Config.DNAFulfilledRate — priority weight per met DNA field gate
 WIN_RATE_PROB_COEF = 0.4  # Config._winRateEvolProbabilityIncCoefficient
 
 # Config *Rate constants used to weight how well each met gate counts.
@@ -166,12 +162,9 @@ def check(pet, num, item=-1, food=-1, connecting=False):
         gates.append(_cmp(*req["level_fought"], cnt))
     # (temp_req gates left with the weather system -- BASIC VPET 2026-07-16:
     # a temperature band nothing can move would permanently wall those forms)
-    hr = req.get("habitat_req", -1)
-    if hr != -1:
-        # checkHabitatReq with EnableTimerBasedRequirements=false compares the
-        # CURRENT habitat, not the lived-in-most one (evolution audit
-        # 2026-07-06 -- the same timer-off misread the mood gate had)
-        gates.append(getattr(pet, "habitat", -1) == hr)
+    # (habitat_req gates DROPPED with the habitat system -- BASIC VPET
+    # 2026-07-16: a home nothing can move to would permanently wall those
+    # forms, the same call the temp_req gates got)
     failed = sum(1 for g in gates if not g)
     # (the DNA gate-forgiveness -- canon getDNA()'s consume-once excuse --
     # left with the DNA slim, BASIC VPET 2026-07-16: the charge still BENDS
@@ -234,25 +227,13 @@ def fulfilled(pet, num):
     # the old "Natural" arm over-scored 180 corpus forms)
     if req.get("xantibody", "None") == "Induced" and getattr(pet, "x_antibody", "None") != "None":
         score += X_ANTIBODY_RATE
-    if req.get("habitat_req", -1) != -1 and getattr(pet, "habitat", -1) == req["habitat_req"]:
-        score += 1   # checkHabitatReq: the CURRENT habitat (timer-off)
     for f, g in (req.get("dna") or {}).items():     # getDNAReq: priority per met Field gate
         if g[0] != "None" and _cmp(g[0], g[1], pet.dna_percent(f)):
             score += DNA_FULFILLED_RATE
     if _dna_ok(pet, req):                            # getDNAReq: full-match dnaFulfilledRate bonus
         score += DNA_FULFILLED_RATE
-    # element/field affinity of the TARGET form vs the pet's MAJOR habitat
-    # (compatible +1, incompatible -1) -- canon getFulfilledReq keys this
-    # shade on getMajorHabitat even though the habitat GATE uses the current
-    # one (evolution audit 2026-07-06: ours had the two swapped)
-    h = data.load_habitats().get(_major_hab(pet))
-    if h:
-        if req.get("element", "None") in h["compat_elements"]:
-            score += 1   # Config._compatibleElementPriorityChange
-        if req.get("field", "None") in h["compat_fields"]:
-            score += 1   # Config._compatibleFieldPriorityChange
-        if req.get("field", "None") in h["incompat_fields"]:
-            score -= 1   # Config._incompatibleFieldPriorityChange
+    # (the habitat_req score leg and the major-habitat element/field
+    # affinity shade left with the habitat system -- BASIC VPET 2026-07-16)
         if req.get("element", "None") in h["incompat_elements"]:
             score -= 1   # Config._incompatibleElementPriorityChange
     return score
@@ -580,10 +561,6 @@ def requirement_report(pet, num):
     if lf_min and req["level_fought"][0] != "None":
         cnt = sum(1 for lv in getattr(pet, "levels_fought", ()) if lv >= lf_min)
         cmp_row(f"foes \u2265lv{lf_min}", req["level_fought"], cnt)
-    hr = req.get("habitat_req", -1)
-    if hr != -1:
-        hname = (data.load_habitats().get(hr) or {}).get("name", f"#{hr}")
-        rows.append((getattr(pet, "habitat", -1) == hr, f"living in {hname}"))
     dna = req.get("dna") or {}
     dna_gated = [(f, g) for f, g in dna.items() if g[0] != "None"]
     for f, (cond, val) in dna_gated:

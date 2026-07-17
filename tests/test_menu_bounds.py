@@ -35,15 +35,6 @@ def test_marquee_holds_then_scrolls_and_loops():
         assert len(marquee(s, 6, step)) == 6                  # the window never overflows
 
 
-def test_habitat_strip_fits_at_every_step():
-    from tuipet.habitatscreen import HabitatPanel
-    pan = HabitatPanel(_pet(bits=99999))
-    for _ in range(80):                                       # roll full marquee loops
-        pan.anim()
-        assert _plain(pan.strip()) <= HUD_W
-        pan.key("down")
-
-
 def test_death_strip_states_fit_with_the_longest_name():
     from tuipet.deathscreen import DeathPanel
     dead = _pet()

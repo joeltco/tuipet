@@ -12,6 +12,7 @@ The data-book pages after it are tuipet's own readout (kept adaptation).
 """
 from __future__ import annotations
 from . import data
+from . import backgrounds as _bgs
 from . import grid, evolution, lines  # noqa: F401  (pet methods drive the data)
 from .render import render_scene
 
@@ -270,9 +271,6 @@ def _legacy_rows():
 
 
 def build_pages(pet):
-    h = pet.habitat_obj()
-    aff = pet._affinity()
-    fit = "thrives" if aff > 0 else ("suffers" if aff < 0 else "neutral")
     rem = pet.lifespan - pet.age_seconds
     appetite = ["picky", "normal", "greedy"][pet._glutton() + 1]
     temperament = ["mellow", "steady", "restless"][pet._restless() + 1]
@@ -315,8 +313,10 @@ def build_pages(pet):
             ("Poop", str(pet.poop)),
             ("Care x", str(pet.care_mistakes)), ("Disturb", str(pet.disturb)),
         ]),
-        ("HABITAT", [
-            ("Home", h["name"]), ("Fit", f"{fit} ({aff:+d})"),
+        ("HOME", [
+            # the scene is wired to the EGG (habitats left; BASIC VPET
+            # 2026-07-16) -- the fit line went with the affinity system
+            ("Scene", _bgs.name(_bgs.scene_for_egg(getattr(pet, "egg_type", 0)))),
             ("Season", pet.season),
         ]),
         ("PERSON", person),

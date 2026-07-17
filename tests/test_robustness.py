@@ -51,17 +51,6 @@ def test_consumable_by_key_bad_input():
     assert data.consumable_by_key("i:99999") is None
 
 
-def test_habitat_bad_ids():
-    p = Pet(num=-1, stage="Rookie")
-    # a nonexistent habitat -> not-found "?" (buy and move both short-circuit here)
-    assert p.buy_habitat(99999) == "?"
-    assert p.move_to(99999) == "?"
-    # a real but unowned habitat -> the ownership message
-    unowned = next((h for h in data.load_habitats() if h not in p.habitats), None)
-    if unowned is not None:
-        assert p.move_to(unowned) == "You don't own that habitat."
-
-
 # ---- dead-pet interactions are inert and safe ------------------------------
 
 def test_dead_pet_actions_safe():

@@ -378,15 +378,15 @@ def test_the_purse_truncates_per_entrant():
 
 def test_the_cup_renders_in_the_arena(monkeypatch):
     """The tournament screen's LCD scenes pull the tourneyBack sheet, not the
-    home habitat (BackgroundAnim checkBack; theme/rendering audit 2026-07-06)."""
+    home scene (BackgroundAnim checkBack; theme/rendering audit 2026-07-06)."""
     from tuipet import tournamentscreen
     random.seed(4)
     p = _pet("Rookie")
     seen = []
     orig = Pet.background
     monkeypatch.setattr(Pet, "background",
-                        lambda self, habitat_id=None, file=None:
-                        (seen.append(file), orig(self, habitat_id, file))[1])
+                        lambda self, file=None:
+                        (seen.append(file), orig(self, file))[1])
     pan = tournamentscreen.TournamentPanel(p)
     pan.tourney = Tournament(p, _trophy())
     pan.phase = "bracket"

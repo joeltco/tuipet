@@ -1,6 +1,9 @@
-"""Background audit 2026-07-15 vs BackgroundAnim.java: the precip frame's
-time-of-day tint (getBackgroundTint), the animateBack dissolve, and
-isSunset's winter-triple quirk."""
+"""Background audit 2026-07-15 vs BackgroundAnim.java: the animateBack
+dissolve -- plus the BASIC VPET re-pins (2026-07-17): the home scene is the
+egg's single-frame DSprite backdrop (phase-invariant), day_phase rides a
+FIXED daylight triple, and only the arena's 5-frame sheet still tracks the
+clock (the per-habitat triples, weather tints and the winter-sunset quirk
+left with their systems)."""
 from tuipet import theme
 from tuipet.pet import Pet, DAY_LENGTH
 
@@ -26,33 +29,29 @@ def _brightness(frame):
 _WHITE = ["ffffff" * 8] * 4
 
 
-def test_night_rain_background_is_darker_than_day_rain():
-    # end to end: the same habitat sheet, rain at noon vs rain at midnight
-    p = _pet(habitat=2, weather="Raining")
+def test_home_scene_is_phase_invariant_but_the_arena_still_tracks_the_clock():
+    # the DSprite home scenes are one look each; tourneyBack keeps its
+    # 5-frame sheet, so the ARENA still darkens at night
+    p = _pet(egg_type=0)
     hr = DAY_LENGTH / 24
-    p.world_seconds = 15 * hr                       # inside Plains' 14-19 day band
-    day = p.background()
+    p.world_seconds = 15 * hr
+    home_day, arena_day = p.background(), p.background(file="tourneyBack")
     p.world_seconds = 1 * hr
-    night = p.background()
-    assert day and night
-    assert _brightness(night) < _brightness(day)
+    home_night, arena_night = p.background(), p.background(file="tourneyBack")
+    assert home_day and home_day == home_night      # one look, day or night
+    assert _brightness(arena_night) < _brightness(arena_day)
 
 
-def test_winter_sunset_reads_the_winter_triple():
-    # isSunset's Winter case is getWinterTime()[2]-1 while checkTime's bands
-    # ride the Fall triple -- Plains winter: dusk at 16:00, DAY again 17-18
-    p = _pet(habitat=2)
-    p.world_seconds = 39 * DAY_LENGTH               # day 39 = Winter (13-day seasons)
-    assert p.season == "Winter"
+def test_day_phase_rides_the_fixed_triple():
+    # checkTime on the fixed (6, 14, 19) triple: Morning/Noon/Night with the
+    # last Noon hour as the sunset -> dusk, in EVERY season
+    p = _pet()
     hr = DAY_LENGTH / 24
-    times = p.habitat_obj()["times"]
-    w_sunset = times["Winter"][2] - 1               # 16 on Plains
-    f_sunset = times["Fall"][2] - 1                 # 18 on Plains
-    assert w_sunset != f_sunset                     # the quirk is observable here
-    p.world_seconds = 39 * DAY_LENGTH + (w_sunset + 0.5) * hr
-    assert p.day_phase == "dusk"
-    p.world_seconds = 39 * DAY_LENGTH + (f_sunset + 0.5) * hr
-    assert p.day_phase == "day"
+    for day0 in (0.0, 39 * DAY_LENGTH):             # Spring and Winter alike
+        for hour, want in ((3, "night"), (7, "dawn"), (15, "day"),
+                           (18.5, "dusk"), (20, "night")):
+            p.world_seconds = day0 + hour * hr
+            assert p.day_phase == want, (day0, hour)
 
 
 def test_background_swap_dissolves_instead_of_cutting():

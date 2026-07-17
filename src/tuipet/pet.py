@@ -9,6 +9,7 @@ from . import egg as egg_mod
 from . import evolution
 from . import lines as lines_mod
 from . import weather as wx
+from . import backgrounds
 from . import theme
 
 
@@ -948,14 +949,9 @@ class Pet:
     # weather -- removed whole with the weather system; BASIC VPET 2026-07-16)
     field: str = ""
     element: str = ""
-    habitat: int = 2                # the CURRENT habitat (canon _currentHabitat --
-    #                                 it follows the zone background on the road)
-    home_habitat: int = -1          # canon _homeHabitat: the OWNED home the pet
-    #                                 returns to after an adventure (-1 = backfill
-    #                                 from `habitat` on first use; habitat audit
-    #                                 2026-07-06)
-    habitats: list = _dcf(default_factory=lambda: [0, 2])
-    habitat_record: dict = _dcf(default_factory=dict)   # time-in-each-habitat -> getMajorHabitat
+    # (the habitat block lived here -- habitat, home_habitat, habitats,
+    # habitat_record -- removed whole with the habitat system; the home scene
+    # is wired to egg_type now.  BASIC VPET 2026-07-16)
     time_pref: dict = _dcf(default_factory=lambda: {"dawn": 0, "day": 0, "dusk": 0, "night": 0})
     x_antibody: str = "None"
     effect_id: int = -1            # active care effect (careEffect.csv id; -1 = none)
@@ -1014,7 +1010,6 @@ class Pet:
         # a fresh game dawns at 8:00 -- world_seconds 0 is MIDNIGHT, inside every
         # bedtime window, and a hatchling born asleep is a rotten first minute
         pet.world_seconds = 8 * 60.0
-        pet._apply_egg_habitat()
         if generation <= 1:
             # canon items.csv StartingUses: the device begins with THREE
             # stocked items (item audit 2026-07-06 -- the old grant was the
@@ -1091,7 +1086,6 @@ class Pet:
         r = by_num[num]
         pet = cls(num=num, name=r["name"], stage=r["stage"], attribute=r["attribute"],
                   field=r.get("field", ""), element=r.get("element", ""))
-        pet._apply_natural_habitat()
         return pet
 
     # ---- per-tick simulation -------------------------------------------------
@@ -1708,7 +1702,6 @@ class Pet:
                 self._die("starvation"); return True
         elif self.hunger > 0:
             self._starve_t = 0.0
-        self.habitat_record[self.habitat] = self.habitat_record.get(self.habitat, 0) + dt
         # (the old continuous per-second "extra" drain was invented -- canon
         # burns lifespan through the EVENT penalties wired below instead)
         return self._check_old_age()
@@ -1732,25 +1725,16 @@ class Pet:
 
     @property
     def day_phase(self):
-        # PhysicalState.checkTime: the day's bands come from the HOME's
-        # per-season daylight triple [morningStart, noonStart, nightStart]
-        # (Winter reads the FALL triple -- a DVPet quirk kept as canon); the
-        # last Noon hour is the sunset (isSunset) -> tuipet's dusk.
+        # PhysicalState.checkTime on a FIXED daylight triple (6, 14, 19):
+        # the per-home per-season triples (and the winter-sunset quirk that
+        # rode them) left with the habitat system (BASIC VPET 2026-07-16).
+        # Morning 6-14, Noon 14-19 with the last Noon hour as the sunset
+        # (isSunset) -> tuipet's dusk, Night 19-6.
         hour = (self.world_seconds % DAY_LENGTH) / DAY_LENGTH * 24
-        times = self.habitat_obj().get("times", {})
-        season = "Fall" if self.season == "Winter" else self.season
-        tri = times.get(season, (6, 14, 19))
-        m, n, night = tri
-        # isSunset reads the REAL season's triple: in Winter the sunset hour
-        # is winterTime[2]-1 even though the bands ride the Fall triple -- a
-        # Plains winter dusk falls at 16:00 inside the 11-19 Noon band, and
-        # 17-18 show the DAY frame again (canon's inconsistency, kept
-        # verbatim; background audit 2026-07-15).
-        sunset = times.get(self.season, tri)[2] - 1
-        if m <= hour < n:
+        if 6 <= hour < 14:
             return "dawn"
-        if n <= hour < night:
-            return "dusk" if int(hour) == sunset else "day"
+        if 14 <= hour < 19:
+            return "dusk" if int(hour) == 18 else "day"
         return "night"
 
     @property
@@ -1765,22 +1749,17 @@ class Pet:
     def ideal_temp(self):
         return data.load_requirements().get(self.num, {}).get("ideal_temp", (40, 60))
 
-    def habitat_obj(self):
-        habs = data.load_habitats()
-        return habs.get(self.habitat) or habs.get(0) or next(iter(habs.values()))
-
-    def background(self, habitat_id=None, file=None):
-        """The habitat background frame for the current weather/time (or None).
-        habitat_id overrides the home -- adventure shows the ZONE's scenery;
-        file overrides the sheet entirely (BackgroundAnim checkBack's special
-        rooms: the tournament/PvP arena) while keeping the same time/weather
-        frame pick and tint."""
+    def background(self, file=None):
+        """The home scene frame (or None).  The scene is WIRED TO THE EGG the
+        pet hatched from and stands for its whole life -- the real device's
+        per-version backgrounds, worn as the DSprite rebuild's rip set
+        (habitats left; BASIC VPET 2026-07-16).  file overrides the sheet
+        entirely (BackgroundAnim checkBack's special rooms: the
+        tournament/PvP/raid arena) while keeping the same frame pick."""
         if file is not None:
             key = file
         else:
-            h = (data.load_habitats().get(habitat_id) if habitat_id is not None
-                 else self.habitat_obj()) or {}
-            key = h.get("bg", "")
+            key = backgrounds.scene_for_egg(self.egg_type)
         frames = data.load_backgrounds().get(key)
         if not frames:
             return None
@@ -1807,22 +1786,6 @@ class Pet:
             fr = theme.ember_frame(key, frames, fr, ("f", idx),
                                    self.world_seconds)
         return fr
-
-    def _affinity(self):
-        """Net Field/Element fit with the current home: +compatible, -incompatible."""
-        h = self.habitat_obj()
-        f, e = self.field, self.element
-        compat = (f in h["compat_fields"]) + (e in h["compat_elements"])
-        incompat = (f in h["incompat_fields"]) + (e in h["incompat_elements"])
-        return compat - incompat
-
-    def major_habitat(self):
-        """DVPet getMajorHabitat: the habitat lived in the MOST (evolution gates on this,
-        not the current home). Falls back to the current habitat early on / on ties."""
-        rec = self.habitat_record
-        if not rec:
-            return self.habitat
-        return max(rec, key=lambda hid: (rec[hid], hid == self.habitat))
 
     def _track_time_pref(self, dt):
         """The pet warms to the times of day it spends happy in, and sours on
@@ -1908,28 +1871,9 @@ class Pet:
         if state != "None":
             self.x_antibody = "Permanent"
 
-    def buy_habitat(self, hid):
-        habs = data.load_habitats()
-        h = habs.get(hid)
-        if not h:
-            return "?"
-        if hid in self.habitats:
-            return f"You already own {h['name']}."
-        if not self.spend_bits(h["price"]):
-            return "Not enough bits."
-        self.habitats = sorted(set(self.habitats) | {hid})
-        self.habitat = self.home_habitat = hid   # buying a new home moves you in
-        return f"Bought {h['name']} — moved in!"
-
-    def move_to(self, hid):
-        habs = data.load_habitats()
-        h = habs.get(hid)
-        if not h:
-            return "?"
-        if hid not in self.habitats:
-            return "You don't own that habitat."
-        self.habitat = self.home_habitat = hid
-        return f"Moved to {h['name']}."
+    # (buy_habitat/move_to -- the habitat buy/move economy -- left with the
+    # habitat system: the home scene is wired to the egg now.  BASIC VPET
+    # 2026-07-16)
 
     def _effect_energy_gain(self):
         """PhysicalState.getEffectEnergyGain: an ACTIVE care effect's energy
@@ -1984,8 +1928,8 @@ class Pet:
 
     # (the thermostat -- set_temp_goal/clear_temp_goal/heat_on -- the futon's
     # pause_temp and the ideal-band comfort mood (_temperature_effects) left
-    # with the weather system; the habitat-compat affinity still shades the
-    # sick/injury/fatigue spells, which is where an unfit home hurts now.)
+    # with the weather system; the habitat-compat affinity followed with the
+    # habitat system itself -- BASIC VPET 2026-07-16.)
 
     def save_from_death(self):
         """PhysicalState.saveFromDeath: yanked back from the brink -- starving,
@@ -2123,33 +2067,9 @@ class Pet:
         if target is not None:
             self.evolve_to(target)
 
-    def _apply_egg_habitat(self):
-        """Show the destined habitat as soon as the egg is chosen (DVPet)."""
-        for t in egg_mod.hatch_targets(self.egg_type):
-            h = data.natural_habitat(t)
-            if h >= 0:
-                self.habitat = self.home_habitat = h
-                if h not in self.habitats:
-                    self.habitats = sorted(set(self.habitats) | {h})
-                return
-
-    def _apply_natural_habitat(self):
-        """Move HOME to this species' natural habitat (digimon.csv Habitat) so
-        each Digimon shows its own background. -1 = no preference -> keep
-        current.  (tuipet design: evolution grants the natural home free --
-        canon's habitat SHOP is provably dead, so tuipet's buy/move economy
-        plus this grant IS the habitat system's agency.)"""
-        hr = data.natural_habitat(self.num)
-        if hr is not None and hr >= 0:
-            self.habitat = self.home_habitat = hr
-            if hr not in self.habitats:
-                self.habitats = sorted(set(self.habitats) | {hr})
-
-    def go_home_habitat(self):
-        """setCurrentHabitat(home): back from the road -- the CURRENT habitat
-        returns to the owned home (habitat audit 2026-07-06)."""
-        if self.home_habitat >= 0 and self.habitat != self.home_habitat:
-            self.habitat = self.home_habitat
+    # (_apply_egg_habitat/_apply_natural_habitat/go_home_habitat left with
+    # the habitat system -- the egg wires the scene directly now.  BASIC
+    # VPET 2026-07-16)
 
     # ---- DNA (DVPet DNA.class) -------------------------------------------
     def highest_dna(self):
@@ -2376,7 +2296,7 @@ class Pet:
 
     def _become(self, num):
         """The species-swap prologue shared by evolution and mode change:
-        identity, habitat, energy ceiling, X-antibody lock-in.  Returns the new
+        identity, energy ceiling, X-antibody lock-in.  Returns the new
         form's requirements record."""
         _, by_num = data.load_sprites()
         r = by_num[num]
@@ -2384,7 +2304,6 @@ class Pet:
         self.stage, self.attribute = r["stage"], r["attribute"]
         self.field = r.get("field", self.field)
         self.element = r.get("element", self.element)
-        self._apply_natural_habitat()
         _req = data.load_requirements().get(num, {})
         self.max_energy = _req.get("max_energy", self.max_energy)
         self._sleep_energy_gain = _req.get("sleep_energy_gain", 3)
@@ -2633,12 +2552,9 @@ class Pet:
         remaining terms keep their canon weights.)"""
         if self.favorite_time() != self.day_phase:
             return new
-        h = self.habitat_obj()
+        # (the home-compatibility terms left with the habitat system --
+        # BASIC VPET 2026-07-16; the mood/nutrition legs keep their weights)
         rng = ENERGY_BONUS_BASE
-        rng += ENERGY_BONUS_COMPAT_F if self.field in h["compat_fields"] else 0
-        rng += ENERGY_BONUS_COMPAT_E if self.element in h["compat_elements"] else 0
-        rng += ENERGY_BONUS_INCOMPAT_F if self.field in h["incompat_fields"] else 0
-        rng += ENERGY_BONUS_INCOMPAT_E if self.element in h["incompat_elements"] else 0
         if self.current_mood() == "Happy":
             rng += ENERGY_BONUS_MOOD
         if self.good_nutrition():
@@ -3107,14 +3023,9 @@ class Pet:
         # bends them.  Canon rolls whenever newExercise (= old + 1) >= the
         # limit, so the 3->4 push that FILLS the gauge rolls too (training
         # audit 2026-07-06; the old >= 4 missed it).  Win or lose.
-        if strength0 >= 3:
-            h = self.habitat_obj()
-            chance = GOOD_NUTRITION_FATIGUE_CHANCE if self.good_nutrition() else FATIGUE_CHANCE
-            chance += FATIGUE_COMPAT_CHANGE * ((self.field in h["incompat_fields"])
-                                               + (self.element in h["incompat_elements"])
-                                               - (self.field in h["compat_fields"])
-                                               - (self.element in h["compat_elements"]))
-            # (the gauge-filling fatigue roll left with the fatigue system)
+        # (the gauge-filling fatigue roll left with the fatigue system; its
+        # orphaned chance computation left with the habitat compat terms --
+        # BASIC VPET 2026-07-16)
         if success:
             self._open_praise()                          # onExerciseFinish: setPraise(true)
             if complied and game != "hp":
@@ -3389,7 +3300,8 @@ class Pet:
         self.sick_count += 1
         self._burn_life(SICK_LIFE_DEC)          # sicken(): every illness costs life
         self.sick_length = random.randint(MIN_SICK_LENGTH, MAX_SICK_LENGTH) * SICK_LAPSE_MIN
-        self.sick_length = max(SICK_LAPSE_MIN, self.sick_length - self._affinity() * SICK_LAPSE_MIN)
+        # (the habitat-affinity shading of the spell left with the habitat
+        # system -- BASIC VPET 2026-07-16; the roll keeps its canon range)
         self._set_mood(self.mood - SICK_MOOD_DEC)
         self._set_enthusiasm(self.enthusiasm + SICK_ENTH_CHANGE)
         # canon sours the HOUR it fell ill in (timeRanks -RankChangeSick),
@@ -3417,28 +3329,16 @@ class Pet:
 
 
 
-    def _compat_inj_change(self):
-        """getCompatibilityInjChange: the home shifts injury odds +-1 per axis
-        (a compatible field/element = sturdier)."""
-        h = self.habitat_obj()
-        return ((self.field in h["incompat_fields"])
-                + (self.element in h["incompat_elements"])
-                - (self.field in h["compat_fields"])
-                - (self.element in h["compat_elements"]))
-
 
 
     def _check_sick(self, target):
-        """checkSick(target, bound): the bound is SickChance shaped by the
-        home (+-5/axis, compatible = safer) and old age (-25 = frailer)."""
+        """checkSick(target, bound): the bound is SickChance shaped by old
+        age (-25 = frailer); the home's +-5/axis left with habitats."""
         if self.sick or target <= 0:
             return False
-        h = self.habitat_obj()
+        # (the +-5/axis home-compat shaping left with the habitat system --
+        # BASIC VPET 2026-07-16; old age keeps its canon frailty)
         bound = (SICK_CHANCE_BOUND
-                 + SICK_COMPAT_CHANGE * ((self.element in h["compat_elements"])
-                                         + (self.field in h["compat_fields"])
-                                         - (self.field in h["incompat_fields"])
-                                         - (self.element in h["incompat_elements"]))
                  - (SICK_GERIATRIC_FACTOR if self.is_geriatric else 0))
         if random.randrange(max(1, bound)) < target:
             self._sicken()

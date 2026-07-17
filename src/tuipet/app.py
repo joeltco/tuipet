@@ -13,6 +13,7 @@ from textual.app import App, ComposeResult
 from textual.containers import Horizontal, Vertical
 from textual.widgets import Static
 
+from . import backgrounds
 from . import data
 from . import menu
 from . import egg as egg_mod
@@ -21,7 +22,6 @@ from . import battlescreen
 from . import dnascreen
 from . import shopscreen
 from . import eggguidescreen
-from . import habitatscreen
 from . import assistscreen
 from . import feedscreen
 from . import digicorescreen
@@ -88,7 +88,7 @@ def keys_markup():
     return (
         f"[{k}]f[/] feed (meat·pill)  [{k}]p[/] play  [{k}]c[/] clean  [{k}]s[/] lights  [{k}]v[/] assist\n"
         f"[{k}]t[/] train  [{k}]r[/] raid  [{k}]u[/] cup  [{k}]l[/] lobby (battle·jogress)  [{k}]x[/] DNA  [{k}]n[/] eggs\n"
-        f"[{k}]o[/] shop  [{k}]i[/] bag  [{k}]e[/] habitat  [{k}]d[/] digicore  [{k}]g[/] options  [{k}]b[/] bug  [{k}]?[/] help  [{k}]q[/] quit"
+        f"[{k}]o[/] shop  [{k}]i[/] bag  [{k}]d[/] digicore  [{k}]g[/] options  [{k}]b[/] bug  [{k}]?[/] help  [{k}]q[/] quit"
     )
 
 
@@ -177,9 +177,6 @@ class Stats(Static):
         deco = _care_deco(pet, word)
         age = _age_compact(pet.age_seconds)
         sky, skycol = _sky_icon(pet)
-        aff = pet._affinity()
-        amark = (f"[{T.POS}]" + chr(0x2665) + "[/]" if aff > 0
-                 else (f"[{T.NEG}]" + chr(0x2716) + "[/]" if aff < 0 else "[dim]·[/dim]"))
         xm = f" [b {T.ACCENT}]X[/]" if pet.x_antibody != "None" else ""
         lifepct = max(0, int((pet.lifespan - pet.age_seconds) / max(1, pet.lifespan) * 100))
         lifecol = T.NEG if pet.is_geriatric else T.LIFE
@@ -196,7 +193,7 @@ class Stats(Static):
             f" [{T.ACCENT}]◆{getattr(pet, 'dp', 0)}[/]",
             f"HP {pet.full_health}/{pet.max_health()}  Wt {pet.weight}g  [{T.COIN}]{pet.bits}b[/]",
             f"Battle  {pet.wins}W/{pet.battles}   [{T.COIN}]\u2605{pet.trophies}[/]",
-            f"@{pet.habitat_obj()['name'][:14]} {amark} [dim]{pet.season}[/]",
+            f"@{backgrounds.name(backgrounds.scene_for_egg(pet.egg_type))[:16]} [dim]{pet.season}[/]",
             f"[{skycol}]{sky}[/] [dim]{pet.day_phase}[/] [dim]{age}[/]",
             f"Life    {bar(lifepct, 12, lifecol)}",
             _status_line(word, deco),
@@ -262,11 +259,10 @@ class TuiPetApp(App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("RAID BOSSES: adventure and towns are gone - press R to "
-                 "face the community boss! 10-round volleys chip a shared "
-                 "pool; break it together, claim the purse, and felled "
-                 "bosses now open the old region eggs - and Alphamon's "
-                 "ruins road.")
+    WHATS_NEW = ("HOME IS THE EGG: habitats are gone - every egg now wires "
+                 "its line to its own backdrop from the DSprite scene set. "
+                 "Hatch the Terrier egg and grow up on the Bay Bridge; the "
+                 "sand egg finally gets its desert.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and
@@ -275,7 +271,7 @@ class TuiPetApp(App):
         # partner from the roster
         ("f", "feed", "Feed"), ("t", "train", "Train"),
         ("p", "play", "Play"), ("c", "clean", "Clean"),
-        ("r", "raid", "Raid"), ("o", "shop", "Shop"), ("i", "inventory", "Bag"), ("e", "habitat", "Habitat"),
+        ("r", "raid", "Raid"), ("o", "shop", "Shop"), ("i", "inventory", "Bag"),
         ("d", "digicore", "DigiCore"),
         ("n", "eggguide", "Egg Guide"),
         ("u", "tournament", "Cup"), ("x", "dna", "DNA"),
@@ -959,7 +955,6 @@ class TuiPetApp(App):
         table = ((tournamentscreen.TournamentPanel, self._status_tournament),
                  (training.TrainingPanel, self._status_training),
                  (battlescreen.BattlePanel, self._status_battle),
-                 (habitatscreen.HabitatPanel, self._status_habitat),
                  (dnascreen.DNAPanel, self._status_dna))
         for cls, painter in table:
             if isinstance(self.mode, cls):
@@ -1164,21 +1159,8 @@ class TuiPetApp(App):
         ]
         self.stats_w.update("\n".join(lines))
 
-    def _status_habitat(self):
-        """The browsed habitat's dossier: the LCD shows the SCENE, this card
-        carries the words (habitat audit 2026-07-04)."""
-        p, m, T = self.pet, self.mode, theme
-        self.stats_w.border_subtitle = _gen_subtitle(p)
-        div = f"[dim]{'─' * 26}[/]"
-        h = m.rows[m.cursor]
-        msg = m.msg or ""
-        lines = [f"[b]{h['name'][:20]}[/]", div,
-                 f"Status   {m._tag(h)}",
-                 f"Fit      {m._aff_word(h)}",
-                 f"Bits     [{T.COIN}]{p.bits}b[/]", div,
-                 msg[:26], msg[26:52], "",
-                 "[dim]try the view before[/]", "[dim]you pay for it[/]"]
-        self.stats_w.update("\n".join(lines))
+    # (the habitat status card left with the habitat system; BASIC VPET
+    # 2026-07-16 -- the home scene is wired to the egg, nothing to browse)
 
     # (the adventure/town status cards left with the world layer;
     # BASIC VPET 2026-07-16 -- the raid panel paints its own card)
@@ -1325,8 +1307,7 @@ class TuiPetApp(App):
             if p.dead and not was_dead:
                 # death can't wait for ESC: leave the room, play the memorial
                 if getattr(p, "away", False):
-                    p.go_home_habitat()       # the road ends here: bring it home
-                    p.away = False
+                    p.away = False            # the road ends here
                 self._close_mode(None)
                 self.beep("death")
                 self.flash("")
@@ -1670,9 +1651,6 @@ class TuiPetApp(App):
     def action_inventory(self):
         self._open_mode(shopscreen.ShopPanel(self.pet, start_mode="bag"), self._after_shop)
 
-    def action_habitat(self):
-        self._open_mode(habitatscreen.HabitatPanel(self.pet), self._after_habitat)
-
     def action_assist(self):
         self._open_mode(assistscreen.AssistPanel(self.pet), lambda _=None: self.repaint())
 
@@ -1688,11 +1666,6 @@ class TuiPetApp(App):
             # modeChange -> State.Evolving: the same strobe as any evolution
             self.flash(f"[b]{msg[2] if len(msg) > 2 else 'MODE CHANGE!'}[/]")
             self.screen_w.start_fx("evolve", old_num=msg[1])
-        self.repaint()
-
-    def _after_habitat(self, msg):
-        if msg:
-            self.flash(msg)
         self.repaint()
 
     def _after_shop(self, msg):

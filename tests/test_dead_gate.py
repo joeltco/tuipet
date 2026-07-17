@@ -87,19 +87,20 @@ def test_every_binding_on_an_egg_opens_or_explains():
     dead = {a: r for a, r in results.items() if r[0] is None and r[1] is None}
     assert not dead, f"silent dead keys on an egg: {dead}"
     # the browse screens stay open per canon (enableMainMenu has no stage gate)
-    for browse in ("shop", "inventory", "habitat", "digicore", "assist"):
+    for browse in ("shop", "inventory", "digicore", "assist"):
         assert results[browse][0] is not None, f"{browse} should open for an egg"
 
 
-def test_habitat_browser_renders_the_egg():
-    """The direct crash pin: the preview scene draws the egg's shell art."""
+def test_the_egg_wears_its_own_scene():
+    """The old habitat-browser crash pin, re-aimed: an EGG's background()
+    resolves through egg_type (the scene is wired to the egg; BASIC VPET
+    2026-07-16) and never touches the roster."""
     from tuipet.pet import Pet
-    from tuipet.habitatscreen import HabitatPanel
-    pan = HabitatPanel(Pet.new_egg())
-    for _ in range(3):
-        pan.text()                                # crashed before the fix
-        pan.key("down")
-    assert pan.text().plain.count("\n") == 11     # the 12-row scene renders
+    from tuipet import backgrounds
+    p = Pet.new_egg()
+    fr = p.background()
+    assert fr and len(fr) == 24                   # the scene sheet renders
+    assert backgrounds.scene_for_egg(p.egg_type) in backgrounds.EGG_BG.values()
 
 
 def test_training_panel_survives_a_direct_egg():
@@ -187,7 +188,6 @@ def test_every_panel_survives_a_direct_sleeper():
     from tuipet.shopscreen import ShopPanel
     from tuipet.training import TrainingPanel
     from tuipet.battlescreen import BattlePanel
-    from tuipet.habitatscreen import HabitatPanel
     from tuipet.digicorescreen import DigiCorePanel
 
     def sleeper():
@@ -201,7 +201,6 @@ def test_every_panel_survives_a_direct_sleeper():
                       (ShopPanel(sleeper()), ("right", "enter", "tab", "r")),
                       (TrainingPanel(sleeper()), ("down", "enter", "space", "escape")),
                       (BattlePanel(sleeper()), ("enter", "1", "space", "escape")),
-                      (HabitatPanel(sleeper()), ("down", "escape")),
                       (DigiCorePanel(sleeper()), ("space", "right", "enter", "escape"))):
         for k in ("",) + keys:
             if k:

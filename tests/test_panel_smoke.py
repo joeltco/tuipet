@@ -81,7 +81,6 @@ def test_shop_panel_renders_shop_and_bag():
 
 
 def test_the_simple_panels_all_draw():
-    from tuipet.habitatscreen import HabitatPanel
     from tuipet.digicorescreen import DigiCorePanel
     from tuipet.assistscreen import AssistPanel
     from tuipet.dnascreen import DNAPanel
@@ -91,7 +90,6 @@ def test_the_simple_panels_all_draw():
     from tuipet.deathscreen import DeathPanel
     from tuipet.feedscreen import FeedPanel
     p = _pet()
-    _walk(HabitatPanel(p), ["down", "down", "up"])
     _walk(DigiCorePanel(p), ["space", "space", "right", "right", "right",
                              "right", "right", "right", "down", "enter", "down"])
     _walk(AssistPanel(p), ["enter", "enter"])
@@ -164,24 +162,18 @@ def test_jogress_states_fit_the_lcd_with_real_options():
     assert not hasattr(pan, "strip") and not hasattr(pan, "options")
 
 
-def test_habitat_picker_is_a_scene_with_a_strip():
-    """Habitat audit 2026-07-04: habitats ARE scenery, but the picker was a
-    text list -- you bought a backdrop sight unseen.  The LCD now shows the
-    pet standing in the browsed habitat (render-only preview); the picker
-    line rides the strip; details live on the status card."""
-    from tuipet.habitatscreen import HabitatPanel
-    p = _pet()
-    pan = HabitatPanel(p)
-    _render(pan)
-    assert len(pan.text().plain.split("\n")) == 12   # the scene fills the LCD
-    here = pan.text().markup
-    assert "here" in pan.strip()                     # standing at home
-    home = p.habitat
-    pan.key("right")                                 # browse: the VIEW changes...
-    _render(pan)
-    assert pan.text().markup != here
-    assert p.habitat == home                         # ...but browsing never moves you
-    assert "ENTER ESC" in pan.strip()         # menu-bounds rewording 2026-07-07
+def test_the_home_scene_is_wired_to_the_egg():
+    """Habitats left (BASIC VPET 2026-07-16): the scene behind the mon comes
+    from the EGG the pet hatched from -- two pets from different eggs stand
+    in different DSprite backdrops, and the same pet's scene never moves."""
+    from tuipet import backgrounds
+    a, b = _pet(), _pet()
+    a.egg_type, b.egg_type = 0, 6                    # greenhills vs datatunnel
+    sa, sb = a.background(), b.background()
+    assert sa and sb and sa != sb
+    assert backgrounds.scene_for_egg(0) != backgrounds.scene_for_egg(6)
+    assert a.background() == sa                      # the home scene stands still
+    assert a.background(file="tourneyBack") != sa    # the arena override still wins
 
 
 def test_title_boot_flashes_dissolves_then_settles():

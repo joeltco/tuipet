@@ -509,28 +509,8 @@ def canonical_num(num):
     return _name_canonical_map().get(num, num)
 
 
-@lru_cache(maxsize=1)
-def _canonical_habitat_by_name():
-    """DVPet stores duplicate species rows: the egg-hatch duplicates carry
-    Habitat -1 while the base row carries the real habitat. Map name -> habitat."""
-    path = os.path.join(_RAW, "digimon.csv")
-    out = {}
-    for r in csv.DictReader(open(path)):
-        h = _int_or(r.get("Habitat"), -1)
-        if h >= 0:
-            out.setdefault((r.get("Name") or "").strip(), h)
-    return out
-
-
-def natural_habitat(num):
-    """The habitat a Digimon calls home (-1 = none). Resolves DVPet's duplicate
-    rows so egg-hatched forms still find their species' habitat."""
-    h = load_requirements().get(num, {}).get("habitat_req", -1)
-    if h is not None and h >= 0:
-        return h
-    _, by_num = load_sprites()
-    name = (by_num.get(num, {}).get("name") or "").strip()
-    return _canonical_habitat_by_name().get(name, -1)
+# (natural_habitat/_canonical_habitat_by_name left with the habitat
+# system -- the home scene is wired to the egg now.  BASIC VPET 2026-07-16)
 
 # ---------------------------------------------------------------------------
 # Battle enemies (parsed from enemies.csv).  Each enemy references a Digimon by
@@ -1175,7 +1155,9 @@ def load_loot_tables():
 
 @lru_cache(maxsize=1)
 def load_backgrounds():
-    """Habitat background scenes (per time-of-day/weather frame) keyed by file name."""
+    """Background scene sheets keyed by file name: the DSprite rip set (one
+    frame each) plus the arena's 5-frame tourneyBack (BASIC VPET 2026-07-16;
+    backgrounds.scene_for_egg wires a scene to every egg)."""
     path = os.path.join(_DATA, "backgrounds.json.gz")
     if not os.path.exists(path):
         return {}
@@ -1213,13 +1195,10 @@ def load_icons():
 
 
 # ---------------------------------------------------------------------------
-# Habitats (habitats.csv).  Each habitat is a home with a seasonal climate that
-# drives the weather/temperature system, plus Field/Element affinities that help
-# or hurt a pet living there.  Faithful to DVPet's Habitat model; the one tuning
-# is WEATHER_CHANCE_SCALE, dividing DVPet's 1/# precip chance for the compressed
-# clock so weather is actually visible.
+# (the habitats.csv loader and its climate model left with the habitat
+# system -- BASIC VPET 2026-07-16; backgrounds.scene_for_egg wires the
+# DSprite scenes in backgrounds.json.gz to the eggs instead)
 # ---------------------------------------------------------------------------
-WEATHER_CHANCE_SCALE = 4
 
 
 @lru_cache(maxsize=1)
@@ -1402,57 +1381,3 @@ def title_name(tid):
     return ""
 
 
-@lru_cache(maxsize=1)
-def load_habitats():
-    path = os.path.join(_DATA, "habitats.csv")
-    out = {}
-    for r in csv.DictReader(open(path)):
-        try:
-            hid = int(r["ID"])
-        except (KeyError, ValueError):
-            continue
-
-        def rng(k):
-            try:
-                a, b = (r.get(k) or "0t0").split("t")
-                return (int(a), int(b))
-            except (ValueError, AttributeError):
-                return (0, 0)
-
-        def num(k, default=0):
-            try:
-                return int(r.get(k) or default)
-            except ValueError:
-                return default
-
-        def lst(k):
-            return [x for x in (r.get(k) or "").split(";") if x and x != "Empty"]
-
-        chance = num("Weather Chance (1/#)")
-        out[hid] = {
-            "id": hid,
-            "name": r.get("Name") or f"Habitat {hid}",
-            "bg": (r.get("File Name (png)") or "").strip(),
-            "desc": r.get("Description") or "",
-            "price": num("Price"),
-            "unlocked": (r.get("Unlocked") or "FALSE").strip().upper() == "TRUE",
-            "temps": {"Spring": rng("Spring Temp (#t#)"), "Summer": rng("Summer Temp (#t#)"),
-                      "Fall": rng("Fall Temp (#t#)"), "Winter": rng("Winter Temp (#t#)")},
-            "precip_mod": {"Spring": num("Spring Mod (inc precipitation during season)"),
-                           "Summer": num("Summer Mod (inc precipitation during season)"),
-                           "Fall": num("Fall Mod (inc precipitation during season)"),
-                           "Winter": num("Winter Mod (inc precipitation during season)")},
-            "cloud_mod": num("Cloud Mod (inc precipitation when cloudy)"),
-            "weather_chance": 0 if chance <= 0 else max(1, chance // WEATHER_CHANCE_SCALE),
-            "weather_change": num("Weather Change (make worse or clear up)", 100),
-            "night_tf": num("NightTempFactor", 10),
-            "morning_tf": num("MorningTempFactor", 3),
-            # per-season daylight triple [morningStart, noonStart, nightStart]
-            # (PhysicalState.checkTime bands the day by the HOME's latitude)
-            "times": {season: tuple(int(x) for x in ((r.get(col) or "6;14;19").split(";") + [19, 19])[:3])
-                      for season, col in (("Spring", "SpringTime"), ("Summer", "SummerTime"),
-                                          ("Fall", "FallTime"), ("Winter", "WinterTime"))},
-            "compat_fields": lst("CompatibleField"), "compat_elements": lst("CompatibleElement"),
-            "incompat_fields": lst("IncompatibleField"), "incompat_elements": lst("IncompatibleElement"),
-        }
-    return out

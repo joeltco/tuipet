@@ -16,13 +16,12 @@ def _pet(**kw):
 
 
 def test_int_dict_keys_survive_the_save_round_trip():
+    """(habitat_record left with the habitat system -- trophies_won is the
+    remaining int-keyed dict the JSON round trip must not stringify)"""
     p = _pet()
-    p.habitat_record = {2: 500, 0: 100}
     p.trophies_won = {7: "Spring"}
     d = json.loads(json.dumps(persistence.to_save_dict(p)))
     p2, _ = persistence.pet_from_save(d, catch_up=False)
-    assert list(p2.habitat_record) == [2, 0]
-    assert p2.major_habitat() == 2                    # int again: evolution gates work
     assert p2.trophies_won.get(7) == "Spring"         # prelim chains survive restarts
 
 

@@ -33,7 +33,7 @@ HELP = [
     ("  earns it, with live progress", 0),
     ("", 0),
     ("MANAGE", 2),
-    ("o shop   i bag   e habitat", 1),
+    ("o shop   i bag", 1),
     ("g options   b report a bug   q quit", 1),
     ("", 0),
     ("TIPS", 2),
