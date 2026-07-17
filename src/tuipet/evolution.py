@@ -532,25 +532,9 @@ def requirement_report(pet, num):
 
     vac, dat, vir = _stats(pet)
     total = vac + dat + vir
-    floor = 0
-    for key in ("vaccine", "data", "virus"):
-        cond, val = req[key][0]
-        if cond in ("GreaterThan", "EqualTo"):
-            floor += int(val) + (1 if cond == "GreaterThan" else 0)
-    if floor:
-        rows.append((total >= floor, f"power total \u2265{floor}  (now {total})"))
-    for key, label, actual in (("vaccine", "Va", vac), ("data", "D", dat), ("virus", "Vi", vir)):
-        for gate in req[key]:
-            cond, val = gate
-            if cond == "None":
-                continue
-            if 0.0 < val < 1.0:
-                share = actual / total if total > 0 else 0.0
-                rows.append((_attr(gate, actual, total),
-                             f"{label} share {_SYM.get(cond, '?')}{int(val * 100)}%"
-                             f"  (now {int(share * 100)}%)"))
-            else:
-                cmp_row(label, gate, actual)
+    # (the power-total + per-attr stat ROWS left with their gates, 2026-07-18:
+    # v0.5.18 dropped the DVPet power walls from check() but the report kept
+    # DISPLAYING them -- a checklist lying about what actually gates)
     cmp_row("battles", req["battles"], pet.battles)
     cmp_row("win rate", req["wins"], _win_rate(pet), pct=True)
     cmp_row("disturbs", req["disturb"], pet.disturb)

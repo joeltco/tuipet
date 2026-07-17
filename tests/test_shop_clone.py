@@ -88,8 +88,13 @@ def test_premium_meat_satiety_gates_hunger_decay():
 
 
 def test_crest_egg_maps_to_the_classic_digimental():
+    """The JP/EN dub swap, CORRECTED (armor canon audit 2026-07-18): the EN
+    Reliability egg is JP Sincerity 誠実 = the WATER family (item 20,
+    Submarimon); the EN Sincerity egg is JP Purity 純真 (item 18, Shurimon).
+    v0.5.5 had them backwards."""
     from tuipet.pet import Pet as _P
-    assert _P._CREST_IDS["egg_of_reliability"] == 18     # the dub swap: Purity
+    assert _P._CREST_IDS["egg_of_reliability"] == 20     # water armors
+    assert _P._CREST_IDS["egg_of_sincerity"] == 18       # ninja/plant armors
     assert _P._CREST_IDS["egg_of_destiny"] == 25         # Fate
     assert len(_P._CREST_IDS) == 11
 

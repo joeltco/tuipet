@@ -256,12 +256,11 @@ class TuiPetApp(App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("TRUE FUSIONS: the jogress doors got the canon audit - "
-                 "Chaosmon and Rafflesimon now open from BOTH partners, "
-                 "mirror-matches are gone (Omnimon wants the OTHER royal "
-                 "knight, not your twin), and Jesmon X can finally lend "
-                 "its power to a Gankoomon X without evolving - exactly "
-                 "how the real device does it.")
+    WHATS_NEW = ("TRUE ARMORS: the Digimental audit found the old dub "
+                 "swap - the Reliability Egg now armors the WATER family "
+                 "(Submarimon!) and Sincerity the ninjas (Shurimon!), the "
+                 "way the show named them. The evolution checklist also "
+                 "stopped listing power walls that no longer exist.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and

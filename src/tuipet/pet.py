@@ -3407,9 +3407,15 @@ class Pet:
             self.take_item(key)
         return out
 
+    # ⛔ JP/EN DIGIMENTAL GOTCHA (armor canon audit 2026-07-17, the KO6
+    # stage-name class): JP 誠実 "Sincerity" is the EN dub's RELIABILITY
+    # egg -- the WATER family (item 20: Submarimon/Depthmon/Tylomon...);
+    # JP 純真 "Purity" is the EN dub's SINCERITY egg (item 18: Shurimon/
+    # Ponchomon...).  The v0.5.5 map wired the EN names backwards, so the
+    # Sincerity Egg sold the water armors and Reliability the ninjas.
     _CREST_IDS = {"egg_of_courage": 15, "egg_of_friendship": 16,
-                  "egg_of_love": 17, "egg_of_reliability": 18,
-                  "egg_of_knowledge": 19, "egg_of_sincerity": 20,
+                  "egg_of_love": 17, "egg_of_reliability": 20,
+                  "egg_of_knowledge": 19, "egg_of_sincerity": 18,
                   "egg_of_hope": 21, "egg_of_light": 22,
                   "egg_of_kindness": 23, "egg_of_miracles": 24,
                   "egg_of_destiny": 25}
