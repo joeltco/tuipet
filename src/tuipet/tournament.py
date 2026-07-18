@@ -232,27 +232,10 @@ def eligibility(pet, t):
     if _hour(pet) in (getattr(pet, "fought_hours", None) or []):
         return "That cup has run — the next one starts on the hour."
     # (festival days route through eligibility_at -- any un-run slot enters)
-    if t["id"] in (pet.fought_today or []) and not t["same_day_retry"]:
-        return "Already fought that cup today."
-    if t["age_limit"] and _pet_tier_rank(pet) > _TIER_RANK.get(t["age_limit"], 3):
-        return "Too old for the %s bracket." % t["age_limit"]
-    if t["field_req"] and t["field_req"] != getattr(pet, "field", ""):
-        return "%s only." % data.pretty_field(t["field_req"])
-    if t["attr_req"] and t["attr_req"] != getattr(pet, "attribute", ""):
-        return "%s only." % t["attr_req"]
-    if t.get("prelim"):
-        # seasonBeat: set once on a win and NEVER reset -- every cup in
-        # tournies.csv has ResetWonOnSeasonChange=FALSE, so the qualifier
-        # stays beaten for life.  (A ==season check locked the cross-season
-        # grand chain 14->92->170->248 forever: audit 2026-07.)
-        won = getattr(pet, "trophies_won", {}) or {}
-        if t["prelim"] not in won:
-            q = trophy_by_id(t["prelim"])
-            return "Win the %s first." % (trophy_label(q) if q else "qualifier")
-    fee = entry_fee(pet, t)
-    if pet.bits < fee:
-        return "The stake is %db — you can't cover it." % fee
-    return None
+    # ONE gate: the same rest+stake chain the live paths (eligibility_at /
+    # eligibility_featured) run.  This body was a hand-copy of the same
+    # rules and the two could drift silently (cup review 2026-07-18).
+    return _eligibility_rest(pet, t) or _stake_check(pet, t)
 
 
 def eligibility_at(pet, t, slot):
@@ -405,10 +388,9 @@ class Tournament:
         open_mega = not trophy["age_limit"] and not trophy["enemy_stage"] \
             and pet_tier(pet) is None
         # randomEnemies draws WITH replacement (duplicates are canon)
-        if not pool:                               # no exact match in the dex: relax the
-            relaxed = dict(trophy, enemy_elem="")  # element, then the field/attr walls
-            pool = _eligible_forms(pet, relaxed)
-        if not pool:
+        if not pool:                               # no exact match in the dex: drop the
+            # field/attr walls (the old element-only relaxation became a
+            # no-op when the element system left -- cup review 2026-07-18)
             pool = _eligible_forms(pet, dict(trophy, enemy_elem="", enemy_field="",
                                              enemy_attr="", field_req="", attr_req=""))
         if not pool:
@@ -492,6 +474,14 @@ class Tournament:
 
     def record(self, won):
         if self.over:
+            return self.last
+        if getattr(self.pet, "dead", False):
+            # a pet that fell MID-BRACKET (starved during the modal) must not
+            # be crowned or paid -- entry checks dead, this didn't (cup
+            # review 2026-07-18).  The stake stays spent, like a forfeit.
+            self.over = True
+            self.champion = False
+            self.last = "The bracket ends — your pet has fallen."
             return self.last
         if not won:
             # setIsWon(0): the QF pays nothing, the semi a third, the final half

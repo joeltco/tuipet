@@ -197,10 +197,20 @@ class TournamentPanel(menu.SubHost):
                 mark = " \u2713 ready" if now >= need else ""
                 out.append("  evolution: %d/%d wins (last %d)%s\n" % (now, need, window, mark),
                            style=INK_B if now >= need else DIM)
-            tr_open = tournament.open_now(self.pet)
-            if tr_open:
-                fee = tournament.entry_fee(self.pet, tr_open)
-                out.append("  stake %db \u00b7 purse ~%db\n" % (fee, fee * tournament.ENTRY_FEE_DIV),
+            # the stake/purse line describes the cup you'd ACTUALLY enter:
+            # on a festival that's the slot under the cursor, not the hour's
+            # -- and the shown purse carries the weekend x1.5 the payout
+            # does (cup review 2026-07-18)
+            tr_line = tournament.open_now(self.pet)
+            if tournament.holiday() and 0 <= self.cursor < len(self.sched) \
+                    and self.sched[self.cursor] >= 0:
+                tr_line = tournament.trophy_by_id(self.sched[self.cursor]) or tr_line
+            if tr_line:
+                from .pet import weekend_bonus
+                fee = tournament.entry_fee(self.pet, tr_line)
+                purse = int(fee * tournament.ENTRY_FEE_DIV * weekend_bonus())
+                wk = " \u00b7 wknd x1.5" if weekend_bonus() > 1 else ""
+                out.append("  stake %db \u00b7 purse ~%db%s\n" % (fee, purse, wk),
                            style=DIM)
             ftr = tournament.featured_now(self.pet)
             if ftr is not None:

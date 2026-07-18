@@ -528,3 +528,30 @@ def test_a_broke_direct_entry_stakes_nothing_rather_than_owing():
     p = _pet("Rookie", bits=0)
     tm = Tournament(p, _trophy(bit_mod=1.0))            # bypasses eligibility (tests do)
     assert tm.stake == 0 and p.bits == 0
+
+
+def test_a_dead_pet_is_never_crowned_mid_bracket():
+    """Cup review 2026-07-18: entry checks dead, but a pet that starved
+    DURING the bracket could still be recorded champion and paid.  The
+    record path now ends the bracket -- stake stays spent, no purse, no
+    trophy."""
+    p = _pet()
+    p.bits = 10_000
+    t = tournament.Tournament(p, _trophy())
+    bits0, trophies0 = p.bits, p.trophies
+    p.dead = True
+    out = t.record(True)
+    assert "fallen" in out.lower()
+    assert t.over and not t.champion
+    assert p.bits == bits0 and p.trophies == trophies0
+
+
+def test_eligibility_is_one_gate_not_two():
+    """Cup review 2026-07-18: eligibility() was a hand-copy of the rules the
+    live paths (eligibility_at/eligibility_featured) run -- the copies could
+    drift silently.  It must now delegate to the shared chain."""
+    import inspect
+    src = inspect.getsource(tournament.eligibility)
+    assert "_eligibility_rest" in src and "_stake_check" in src
+    for dup in ('t["age_limit"]', 't["field_req"]', 't["attr_req"]'):
+        assert dup not in src, "a hand-copied rule crept back into eligibility()"
