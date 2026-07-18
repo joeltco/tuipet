@@ -430,3 +430,24 @@ def test_reconnect_grace_matches_the_servers_real_conflict_line():
     assert c._stop is False, "a session-conflict during reconnect keeps retrying"
     c._handle('{"t": "login_failed", "msg": "Wrong password."}')
     assert c._stop is True, "a credentials failure still ejects"
+
+
+def test_the_saves_prune_policy(tmp_path, monkeypatch):
+    """SAVES pruning (2026-07-18): a cloud save untouched for a year drops
+    at startup; pre-stamp saves get grace-stamped (nothing ages out until a
+    real year of silence); fresh saves stand.  Accounts are never pruned."""
+    import time
+    server = _server_mod()
+    monkeypatch.setattr(server, "SAVES_PATH", str(tmp_path / "saves.json"))
+    now = time.time()
+    monkeypatch.setattr(server, "SAVES", {
+        "ancient": {"name": "A", "_srv_at": now - server.SAVE_RETENTION_S - 10},
+        "fresh": {"name": "F", "_srv_at": now - 100},
+        "prestamp": {"name": "P"},
+        "garbage": "not-a-dict",
+    })
+    server._prune_saves(now=now)
+    assert "ancient" not in server.SAVES
+    assert "garbage" not in server.SAVES
+    assert server.SAVES["fresh"]["name"] == "F"
+    assert abs(server.SAVES["prestamp"]["_srv_at"] - now) < 1   # grace-stamped

@@ -114,6 +114,49 @@ def _load_saves():
 
 
 SAVES = _load_saves()
+
+# ---- SAVES pruning policy (2026-07-18, closing the old backlog item) --------
+# A cloud save untouched for a YEAR is dropped: the account itself stays
+# (name + password are identity, and accounts.json is tiny), and the pet
+# still lives on its own device -- only the stale cloud copy goes.  Saves
+# that predate the _srv_at stamp get stamped on first sight, so nothing
+# ages out until a real year of silence has passed.
+SAVE_RETENTION_S = 365 * 86400
+
+
+def _prune_saves(now=None):
+    now = time.time() if now is None else now
+    changed = False
+    for k, sv in list(SAVES.items()):
+        if not isinstance(sv, dict):
+            del SAVES[k]
+            changed = True
+            continue
+        ts = sv.get("_srv_at")
+        if not ts:
+            sv["_srv_at"] = now              # grace-stamp the pre-stamp era
+            changed = True
+            continue
+        try:
+            stale = now - float(ts) > SAVE_RETENTION_S
+        except (TypeError, ValueError):
+            sv["_srv_at"] = now
+            changed = True
+            continue
+        if stale:
+            del SAVES[k]
+            changed = True
+    if changed:
+        try:
+            tmp = SAVES_PATH + ".tmp"
+            with open(tmp, "w") as f:
+                json.dump(SAVES, f)
+            os.replace(tmp, SAVES_PATH)
+        except OSError:
+            LOG.warning("saves prune: disk refused %s", SAVES_PATH)
+
+
+_prune_saves()                               # once per process start
 _saves_lock = asyncio.Lock()
 
 
