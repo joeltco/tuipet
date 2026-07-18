@@ -61,6 +61,28 @@ def test_feed_alias_keeps_old_callers_fed():
     assert p.hunger == 1
 
 
+def test_the_meat_eats_through_its_own_bite_strip():
+    """Meat joins the pill on the source's bite strips (2026-07-18): the
+    panel hands the "meat" key, the fx resolves it to the ripped me/ge/_e
+    shrink; the DVPet f:0 icon stays with the bag consumables."""
+    from tuipet.app import Screen
+    from tuipet.feedscreen import FeedPanel, MEAT_BITES
+    p = _pet(hunger=1)
+    pan = FeedPanel(p)
+    done, (outcome, item, _msg) = pan.key("enter")
+    assert (done, outcome) == ("done", "fed")
+    assert item["key"] == "meat"
+
+    class _S:
+        pass
+    _S._food_frames = Screen._food_frames
+    frames = _S()._food_frames("meat")
+    assert frames is MEAT_BITES
+    assert len(frames) == 4 and frames[-1] is None
+    inks = [sum(r.count("1") for r in f) for f in frames[:3]]
+    assert inks[0] > inks[1] > inks[2] > 0            # a strict shrink
+
+
 def test_the_pill_is_eaten_on_its_own_bite_strip():
     """Pill-anim fix (Joel 2026-07-18: "the pill eating animation is broken...
     dsprite is the animation truth"): the source has NO heal anim -- its pill

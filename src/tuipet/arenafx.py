@@ -385,11 +385,12 @@ class FxMixin:
         return (fr[i] if i < len(fr) and fr[i] else None) or first
 
     def _food_frames(self, key, px=8):
-        if key == "pill":
-            # the pill's ripped he/ve/ye bite strip (decompile EATING state):
-            # already 8px, no atlas entry -- the glyphs live with the feed menu
-            from .feedscreen import PILL_BITES
-            return PILL_BITES
+        if key in ("meat", "pill"):
+            # the feed staples' ripped bite strips (decompile EATING state:
+            # me/ge/_e and he/ve/ye): already 8px, no atlas entry -- the
+            # glyphs live with the feed menu
+            from . import feedscreen
+            return feedscreen.MEAT_BITES if key == "meat" else feedscreen.PILL_BITES
         raw = data.load_icons().get(key)
         if not raw:
             return None

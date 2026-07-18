@@ -35,10 +35,30 @@ PILL = ["00001110",
         "10001000",
         "01110000"]
 
-# The pill is EATEN (decompile EATING state: the same action as meat, the item
-# glyph stepping full -> bitten -> nearly-gone as the mon chews; nothing drawn
-# after the last bite).  `he`/`ve`/`ye` ripped verbatim; the closing None is
-# the eaten-away frame, same shape as the food atlas strips.
+# BOTH rows are EATEN on their own ripped bite strips (decompile EATING
+# state: the item glyph steps full -> bitten -> nearly-gone as the mon chews;
+# nothing drawn after the last bite).  `me`/`ge`/`_e` and `he`/`ve`/`ye`
+# ripped verbatim; the closing None is the eaten-away frame, same shape as
+# the food atlas strips.
+MEAT_BITES = [MEAT,
+              ["00000011",
+               "00000101",
+               "00000110",
+               "00001110",
+               "01111110",
+               "01011100",
+               "10111000",
+               "11000000"],
+              ["00000011",
+               "00000001",
+               "00000010",
+               "00000110",
+               "00011110",
+               "01011100",
+               "10111000",
+               "11000000"],
+              None]
+
 PILL_BITES = [PILL,
               ["00000000",
                "00010000",
@@ -94,11 +114,14 @@ class FeedPanel:
             kind, label, _ = ROWS_MENU[self.cursor]
             if kind == "meat":
                 msg = self.pet.feed_meat()
+                # the staple meat eats through its own ripped me/ge/_e bite
+                # strip, like the pill (decompile EATING state, 2026-07-18);
+                # the DVPet f:0 icon stays with the bag consumables
                 if self.pet.anim == "eat":
-                    return ("done", ("fed", {"key": "f:0", "name": "Meat"}, msg))
+                    return ("done", ("fed", {"key": "meat", "name": "Meat"}, msg))
                 if "full" in msg:
-                    return ("done", ("full", {"key": "f:0", "name": "Meat"}, msg))
-                return ("done", ("refused", {"key": "f:0", "name": "Meat"}, msg))
+                    return ("done", ("full", {"key": "meat", "name": "Meat"}, msg))
+                return ("done", ("refused", {"key": "meat", "name": "Meat"}, msg))
             was_sick = self.pet.sick or self.pet.is_injured()
             msg = self.pet.feed_pill()
             if self.pet.anim == "eat":
