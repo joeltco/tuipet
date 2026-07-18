@@ -141,10 +141,10 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("THE PILL IS EATEN: medicine now plays the real eating "
-                 "animation - your mon chews the pill down bite by bite, "
-                 "the way the source device does it. The old floating "
-                 "half-clipped medicine strip is gone for good.")
+    WHATS_NEW = ("MEAT ON THE REAL STRIP: the staple meat now chews away "
+                 "through the source device's own bite frames, matching "
+                 "the pill fix. Plus a freshly recorded README demo of "
+                 "the current game.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and
