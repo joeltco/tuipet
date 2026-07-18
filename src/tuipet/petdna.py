@@ -88,7 +88,9 @@ class DnaMixin:
         return field
 
     def apply_dna(self, field, amount):
-        """PhysicalState.applyDNA: owned -> charged, at a cost (disturb/strength/mood/spirit/sick)."""
+        """PhysicalState.applyDNA: owned -> charged.  The live bill is ENERGY
+        (1/unit own Field, x2 off) + the strength ceiling below; canon's
+        disturb/mood/spirit/sick costs left with their systems."""
         owned = self.dna_owned.get(field, 0)
         if amount <= 0 or owned < amount:
             self._set_anim("refuse", 1.0)                   # Jeering: not enough DNA

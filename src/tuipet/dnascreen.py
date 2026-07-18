@@ -2,8 +2,9 @@
 
 Home menu (DVPet DNA_Validation): Charge / Generate / Stats / Requirements.
   * Charge   (DNA_Inventory + DNA_Detail): spend banked DNA into the pet, bending
-             evolution toward forms whose Field-DNA gates you meet. Charging off
-             your own Field costs more spirit, sours mood, risks illness. On commit
+             evolution toward forms whose Field-DNA gates you meet.  The bill is
+             ENERGY: 1/unit on your own Field, doubled off-Field (the old
+             spirit/mood/illness costs left with their systems).  On commit
              the pet absorbs it (the DNA_Feeding "dnaWash" fx plays on the display).
   * Generate (DNA_GenerateValidate + DNA_Generate): wager bits, mash SPACE ~10s; a
              faster mash earns a rarer Field (getDNARate bands), too slow/fast -> the

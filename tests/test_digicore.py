@@ -481,3 +481,15 @@ def test_the_meter_and_the_core_page_agree_on_line_pets():
     growth = p.STAGE_DURATION.get(p.stage)
     if growth:                                      # a Mega with growth: countdown
         assert digicore.core_number(p) <= digicore.DIGICORE_BASE_RATE
+
+
+def test_the_none_dna_field_is_load_bearing():
+    """DNA audit 2026-07-18: the 'None' field looked like a dud-bank sink,
+    but 387 corpus requirement gates key on it -- its charge/stats rows are
+    LIVE and must never be 'cleaned up' as dead."""
+    reqs = data.load_requirements()
+    gates = sum(1 for r in reqs.values()
+                for f, g in r.get("dna", {}).items()
+                if f == "None" and g[0] != "None")
+    assert gates > 300
+    assert "None" in data.DNA_FIELDS
