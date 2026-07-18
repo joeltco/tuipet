@@ -328,15 +328,11 @@ def build_pages(pet):
         ]),
         ("HOME", [
             # the household page (data-page polish 2026-07-17): the scene
-            # honors the E pick; the staple fixtures show their stock
+            # honors the E pick.  (The staple-fixture stock rows left with
+            # the props: strict-DSprite items, 2026-07-17.)
             ("Scene", _bgs.name(getattr(pet, "bg_pick", "")
                                 or _bgs.scene_for_egg(getattr(pet, "egg_type", 0)))),
             ("Egg", _egg.hatch_name(getattr(pet, "egg_type", 0))),
-            ("Toilet", f"{pet.inventory.get('i:82', 0)} flushes"),
-            ("Potty", f"{pet.inventory.get('i:83', 0)} uses"),
-            ("Futon", f"{pet.inventory.get('i:81', 0)} nights"),
-            ("Trained", "yes — goes alone" if pet.is_toilet_trained()
-             else f"{pet.toilet_trained}/1 toilet uses"),
             ("Helper", "hired" if getattr(pet, "auto_care", False) else "off"),
         ]),
         ("PERSON", person),

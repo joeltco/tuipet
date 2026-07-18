@@ -136,7 +136,6 @@ class Pet(CareMixin, DnaMixin, BattleMixin, BodyMixin):
     # wiped the bowel gauge and re-armed once-per-night mistakes -- audit 2026-07)
     _starve_t: float = 0.0          # the 12h starvation death clock
     _poop_t: float = 0.0            # the bowel gauge (written as durable state by meals)
-    toilet_trained: int = 0         # _toiletTrained: InTraining-stage toilet uses (1 trains)
     _filth_t: float = 0.0           # filth-mistake grace / post-mistake postpone
     _lights_t: float = 0.0          # lights-on sleep mistake (float(-inf) = once/night latch)
     _cal_t: float = 0.0             # calorie/hunger lapse accumulator
@@ -178,8 +177,6 @@ class Pet(CareMixin, DnaMixin, BattleMixin, BodyMixin):
     # habitat_record -- removed whole with the habitat system; the home scene
     # is wired to egg_type now.  BASIC VPET 2026-07-16)
     x_antibody: str = "None"
-    effect_id: int = -1            # active care effect (careEffect.csv id; -1 = none)
-    effect_t: float = 0.0          # remaining duration of the active care effect
     inventory: dict = _dcf(default_factory=dict)
     # transient animation request, consumed by the UI
     anim: str = "idle"
@@ -235,13 +232,9 @@ class Pet(CareMixin, DnaMixin, BattleMixin, BodyMixin):
         # a fresh game dawns at 8:00 -- world_seconds 0 is MIDNIGHT, inside every
         # bedtime window, and a hatchling born asleep is a rotten first minute
         pet.world_seconds = 8 * 60.0
-        if generation <= 1:
-            # canon items.csv StartingUses: the device begins with THREE
-            # stocked items (item audit 2026-07-06 -- the old grant was the
-            # Toilet alone): Toilet 100 flushes, Bandage 99, Futon 100
-            pet.inventory["i:82"] = 100
-            pet.inventory["i:80"] = 99
-            pet.inventory["i:81"] = 100
+        # (the DVPet StartingUses grant -- Toilet/Bandage/Futon -- left with
+        # the staple props: strict-DSprite items, 2026-07-17.  DSprite's
+        # catalog has no furniture; a fresh device starts with an empty bag.)
         return pet
 
     def _hatch_into_fresh(self):
@@ -423,16 +416,8 @@ class Pet(CareMixin, DnaMixin, BattleMixin, BodyMixin):
     # 2026-07-16)
 
 
-    def effect_name(self):
-        eff = data.load_care_effects().get(self.effect_id) if self.effect_id >= 0 else None
-        return eff["name"] if eff else ""
-
-    def call_paused(self):
-        """True if the active care effect suppresses the care-need call (Futon PauseCall)."""
-        if self.effect_id < 0:
-            return False
-        eff = data.load_care_effects().get(self.effect_id)
-        return bool(eff and eff["pause_call"])
+    # (effect_name/call_paused -- the careEffect runtime, Futon-only -- left
+    # with the staple props: strict-DSprite items, 2026-07-17)
 
     # (the thermostat -- set_temp_goal/clear_temp_goal/heat_on -- the futon's
     # pause_temp and the ideal-band comfort mood (_temperature_effects) left
@@ -476,7 +461,7 @@ class Pet(CareMixin, DnaMixin, BattleMixin, BodyMixin):
         tantrum) is NOT here -- it wears the teach bulb instead, so the two
         icons carry separate meanings (Joel 2026-07-11: '!' and the bulb
         always showed as a pair, never separate)."""
-        if self.dead or self.stage == "Egg" or self.call_paused():
+        if self.dead or self.stage == "Egg":
             return False
         if self.asleep:
             return bool(self.lights)             # lightsCall: it wants the dark

@@ -287,9 +287,6 @@ class ActionsMixin:
             ik = msg[2] if len(msg) > 2 else None
             self.flash(self._evolve_msg(msg[1]))
             self.screen_w.start_fx("evolve", old_num=msg[1], icon=ik)
-        elif isinstance(msg, tuple) and msg and msg[0] == "toilet":
-            # a manual visit: poopToilet with the item on the floor
-            self.screen_w.start_fx("toilet", icon=msg[1])
         elif isinstance(msg, tuple) and msg and msg[0] == "play":
             # the Trampoline (Jump): DVPet jumping() -- the pet hops over it
             self.screen_w.start_fx("play", icon=msg[1])

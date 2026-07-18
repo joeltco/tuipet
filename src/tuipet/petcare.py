@@ -1,6 +1,6 @@
 """The pet's CARE surface (tier-5, 2026-07-17): every player-initiated
-act -- feeding, cleaning, the toilet and futon, items and the shop verbs,
-gifts, discipline and the refusal rolls."""
+act -- feeding, cleaning, items and the shop verbs, gifts, discipline and
+the refusal rolls."""
 from __future__ import annotations
 import math  # noqa: F401
 import random  # noqa: F401
@@ -18,90 +18,10 @@ from .petbase import *  # noqa: F401,F403  (constants resolve HERE, per mixin)
 class CareMixin:
     """State contract: the Pet dataclass fields; composed into Pet."""
 
-    def is_toilet_trained(self):
-        """PhysicalState.isToiletTrained: enough training uses + obedience +
-        a stage that can go alone."""
-        return (self.toilet_trained >= MIN_TOILET_USES_TO_TRAIN
-                and self.obedience >= TOILET_TRAINED_OBED_MIN
-                and self.stage in STAGE_CAN_AUTO_TOILET)
-
-    def _toilet_train(self):
-        """toiletTrain(): visits count toward training only while the stage
-        still learns (InTraining) and the minimum isn't met yet."""
-        if (self.toilet_trained < MIN_TOILET_USES_TO_TRAIN
-                and self.stage in STAGE_CAN_TOILET_TRAIN):
-            self.toilet_trained += 1
-
-    def _toilet_for_poop(self):
-        """doPoop's SelfToilet branch: the home Toilet (i:82) first, then the
-        Port. Potty (i:83) -- each stocked use is one flush."""
-        if not self.is_toilet_trained():
-            return None
-        if self.inventory.get("i:82", 0) > 0:
-            return "i:82"
-        if self.inventory.get("i:83", 0) > 0:
-            return "i:83"
-        return None
-
-    def poop_urgent(self):
-        """The manual-toilet / poop-dance window: the gauge is nearly full."""
-        return self._poop_t >= TOILET_URGENT_FRAC * self._poop_interval
-
-    def _manual_toilet(self, key):
-        """Taking the pet to the Toilet (i:82) / Port. Potty (i:83) by hand --
-        the missing half of toilet training (items audit 2026-07-17: the
-        training path was dead code, so the starting 100 flushes never spent).
-        Works only in the urgency window; during InTraining these visits ARE
-        the training (MinToiletUsesToTrain 1)."""
-        if self.dead or self.stage == "Egg" or self.num < 0:
-            return _Refused("")
-        if self.asleep:
-            self._disturbed()                    # items.csv Disturb TRUE
-        if not self.poop_urgent():
-            self._set_anim("refuse", 1.0)
-            return _Refused(f"{self.name} doesn't need to go.")
-        self._poop_t = 0.0                       # the gauge empties in the bowl
-        self._toilet_visit(key)                  # spends the flush, blesses, trains
-        return "Whew — right in the bowl."
-
-    def _futon(self):
-        """The Futon (i:81): a tuck-in for a SLEEPER -- the one item that
-        never disturbs (items.csv Disturb FALSE is the Futon's column; Joel
-        chose full canon here).  Applies careEffect 0: +1 energy and +1 mood
-        per hour cadence for 960 min, ending when the sleeper stirs."""
-        if self.dead or self.stage == "Egg" or self.num < 0:
-            return _Refused("")
-        if not self.asleep:
-            self._set_anim("refuse", 1.0)
-            return _Refused("Save it for bedtime.")
-        if self.effect_id == 0 and self.effect_t > 0:
-            return _Refused("Already tucked in.")
-        eff = data.load_care_effects().get(0)
-        if not eff:
-            return _Refused("")
-        self.effect_id = 0
-        self.effect_t = float(eff.get("duration", 960)) * 60.0
-        self._eff_asleep = True                  # armed on a sleeper; wake ends it
-        self.take_item("i:81")
-        return "Tucked in — sleep runs deeper."
-
-    def _toilet_visit(self, key, backlog=False, spend_use=True):
-        """poopToilet: the poop lands IN the toilet -- canon poop(true) keeps
-        the relief mood and the weight shed, skips the pile (and the floor-
-        obedience ding, 0 in this column anyway).  Each visit spends one flush
-        and applies the toilet's own mood/obedience blessing (canon useItem
-        runs on every self-visit), then counts toward training."""
-        if spend_use:
-            self.take_item(key)
-        self._set_mood(self.mood + POOP_MOOD_INC)
-        wdec = min(int(self._base_weight() * POOP_WEIGHT_DEC_COEF), POOP_WEIGHT_LIMIT)
-        self._set_weight(self.weight - wdec)
-        if backlog:
-            self._set_weight(self.weight - math.ceil(wdec / 2))
-        # (the flush item's mood/obedience perks left with the item system)
-        self._toilet_train()
-        self._toilet_event = key                  # the app plays poopToilet
-        self._set_anim("toilet", 3.8)
+    # (the DVPet furniture -- toilet training / the self-toilet / the manual
+    # visit / the Futon tuck-in and its careEffect -- left with the staple
+    # props: strict-DSprite items, 2026-07-17.  Poop lands on the floor and
+    # the clean action washes it, full classic.)
 
     def check_refused(self, food=None, attr=None, energy_change=0.0, item=None):
         """The obedience refusal roll left with the discipline system (BASIC
@@ -265,15 +185,13 @@ class CareMixin:
         if (_g := self._guard(asleep_blocks=False)) is not None:
             return _g
         self.lights = not self.lights
-        if self.lights and self.asleep and self.nap and self.effect_id != 0:
+        if self.lights and self.asleep and self.nap:
             # lightSwitch: lights ON rouses a NAPPING pet (deep sleep ignores it;
             # sick or injured, the lost doze pushes bedtime a minute closer).
-            # canon !isFuton() (lights audit 2026-07-05): an active Futon
-            # (effect_id 0, the same check auto-care honours) shields the nap
+            # (canon !isFuton()'s nap shield left with the Futon: strict-DSprite
+            # items, 2026-07-17)
             self._wake()                         # a nap wake rolls +-NapWakeMoodDec
             return "Lights on — up from its nap."
-        if self.lights and self.asleep and self.nap:
-            return "Lights on — the futon keeps it dozing."
         return "Lights off." if not self.lights else "Lights on."
 
     # ---- shop / items --------------------------------------------------------
@@ -417,13 +335,6 @@ class CareMixin:
         # deliberate: reliability->Purity(18), destiny->Fate(25))
         if key.startswith("egg_of_"):
             return self._crest_egg(key)
-        # the DVPet staple props (items.csv 81-83; Joel 2026-07-17: "look at
-        # what dsprite has for items... should be like a toilet"): they carry
-        # their own guards -- the generic disturb/consume below never runs
-        if key in ("i:82", "i:83"):
-            return self._manual_toilet(key)
-        if key == "i:81":
-            return self._futon()
         fx = {
             "energy_drink": lambda: self._gain_energy(self.max_energy),
             "best_fruit": lambda: self._fruit(+2),

@@ -2,20 +2,13 @@
 
 These guard against a data refresh (re-running setup_assets.sh) silently dropping
 a column or changing a format — the kind of break that wouldn't surface until the
-egg screen or Futon misbehaved in play.
+egg screen misbehaved in play.
 """
 from tuipet import data, egg
 
 
-def test_care_effects_load():
-    eff = data.load_care_effects()
-    assert isinstance(eff, dict) and eff, "careEffect.csv produced no effects"
-    for e in eff.values():
-        for k in ("name", "duration", "mood", "energy", "hunger", "strength",
-                  "end_on_sleep", "pause_temp", "pause_call", "can_reapply"):
-            assert k in e
-        # rate fields are (amount, every_n_ticks) pairs
-        assert len(e["mood"]) == 2 and len(e["energy"]) == 2
+# (test_care_effects_load left with the careEffect runtime:
+# strict-DSprite items, 2026-07-17)
 
 
 def test_digicore_icons_load():

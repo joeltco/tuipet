@@ -233,8 +233,8 @@ def item_is_functional(e):
     # Pill's bedtime nudge is real, and mood no longer vouches for it
     if e.get("seconds") or e.get("sleep") or e.get("sleep_lapse"):   # lifespan / sleep items
         return True
-    if e.get("effect_id", -1) >= 0:     # grants a temporary care effect (Futon)
-        return True
+    # (the effect_id clause -- "grants a temporary care effect" -- left with
+    # the careEffect runtime: strict-DSprite items, 2026-07-17)
     if e.get("action") == "ItemEvol":   # item-triggered evolution (now implemented)
         return True
     if e.get("action") == "Inherit":    # the Digimemory (now implemented)

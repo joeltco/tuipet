@@ -15,42 +15,10 @@ from .data_core import (  # noqa: F401  (shared plumbing)
     AssetsError, _load_bundled)
 
 
-@lru_cache(maxsize=1)
-def load_care_effects():
-    """DVPet careEffect.csv -> {id: effect}. Temporary care buffs (the Futon's sleep
-    boost): a duration plus per-tick rate changes ("amount;every_n_ticks") and pause
-    flags. Applied by pet.use_item / pet.tick."""
-    def pair(v):
-        parts = (v or "0;0").split(";")
-        try:
-            return (int(parts[0]), int(parts[1]) if len(parts) > 1 else 0)
-        except ValueError:
-            return (0, 0)
-    def flag(v):
-        return (v or "FALSE").strip().upper() == "TRUE"
-    out = {}
-    path = os.path.join(_DATA, "careEffect.csv")
-    if not os.path.exists(path):
-        return out
-    for r in csv.DictReader(open(path)):
-        try:
-            eid = int(r["EffectID"])
-        except (ValueError, KeyError, TypeError):
-            continue
-        out[eid] = {
-            "name": (r.get("Name") or "").replace("<br>", " ").strip(),
-            "desc": (r.get("Description") or "").replace("<br>", " ").strip(),
-            "duration": int(r.get("MaxDuration") or 0),
-            "end_on_sleep": flag(r.get("EndOnSleepChange")),
-            "pause_temp": flag(r.get("PauseTemp")),
-            "pause_call": flag(r.get("PauseCall")),
-            "mood": pair(r.get("MoodChange")),
-            "energy": pair(r.get("EnergyChange")),
-            "hunger": pair(r.get("HungerChange")),
-            "strength": pair(r.get("StrengthChange")),
-            "can_reapply": flag(r.get("CanReapply")),
-        }
-    return out
+# (load_care_effects -- the careEffect.csv runtime, whose only shipped
+# effect was the Futon's sleep boost -- left with the staple props:
+# strict-DSprite items, 2026-07-17.  The csv stays on disk as dormant
+# corpus data.)
 
 @lru_cache(maxsize=1)
 def load_digicore_config():

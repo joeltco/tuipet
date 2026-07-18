@@ -45,7 +45,6 @@ def test_the_dead_poop_call_mistake_branch_is_gone(monkeypatch):
     monkeypatch.setattr(random, "randrange", lambda n: 0)      # every roll would hit
     p = _pet(poop=0, mood=0)
     p._poop_t = p._poop_interval * 0.95                        # gauge begging
-    assert p.poop_urgent()
     p._inc_mistake()
     assert not p.sick                                          # no filth, no rolls
 

@@ -458,8 +458,10 @@ def test_the_data_model_is_modular_and_live():
     assert "Nutri" not in labels
     ailing = next(val for _, lab, val in flat if lab == "Ailing")
     assert ailing in ("sick", "no")                  # the injury fragment is gone
-    # the household page knows the staples
-    assert {"Toilet", "Futon", "Trained", "Helper"} <= labels
+    # the household page (the staple stock rows left with the props:
+    # strict-DSprite items, 2026-07-17)
+    assert "Helper" in labels
+    assert not {"Toilet", "Potty", "Futon", "Trained"} & labels
     # the power page carries the live gate-drivers
     assert {"Form", "Level", "KO6"} <= labels
 

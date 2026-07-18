@@ -70,23 +70,10 @@ def digimental_open(key, prog=None):
     sig, need = gate
     return int(prog.get(sig, 0)) >= need
 
-# the DVPet staple props (items.csv 81-83; Joel 2026-07-17: "look at what
-# dsprite has for items. should be like a toilet, and a few other things"):
-# restockable device furniture.  Prices and stock maths are the csv's own --
-# a buy adds UsesPerItem uses, capped at MaxUses; fixtures are never resold.
-STAPLES = (
-    {"key": "i:82", "name": "Toilet", "price": 1000, "category": "Care",
-     "uses": 100, "max_uses": 199},
-    {"key": "i:83", "name": "Port. Potty", "price": 100, "category": "Care",
-     "uses": 1, "max_uses": 99},
-    {"key": "i:81", "name": "Futon", "price": 1000, "category": "Care",
-     "uses": 100, "max_uses": 199},
-)
-STAPLE_TEXT = {
-    "i:82": "the home loo · a buy = 100 flushes",
-    "i:83": "one travel flush · works anywhere",
-    "i:81": "tuck-in: a sleeper heals deeper",
-}
+# (the DVPet staple props -- Toilet/Port. Potty/Futon, items.csv 81-83, and
+# their uses/cap stock maths -- left 2026-07-17: strict-DSprite items
+# ("go strict").  DSprite's catalog has no furniture; the shelf is exactly
+# vitems.json.)
 
 # the source shop prices any entry with no explicit price at a flat default
 # (`e.price || 1e3`); the 11 crest eggs ship priceless, so without this they
@@ -111,7 +98,7 @@ def catalog():
     an already-owned one renders in the bag."""
     from . import persistence
     prog = persistence.get_progress()
-    out = [dict(e) for e in STAPLES]
+    out = []
     for k, v in data.load_vitems().items():
         if isinstance(v, dict) and _usable(k, v.get("category", "Item")) \
                 and digimental_open(k, prog):
@@ -123,9 +110,6 @@ def catalog():
 
 
 def entry(key):
-    for e in STAPLES:
-        if e["key"] == key:
-            return dict(e)
     v = data.load_vitems().get(key)
     if not isinstance(v, dict):
         return None
@@ -143,8 +127,6 @@ def shelf(cat):
 
 
 def effect_line(e):
-    if e["key"] in STAPLE_TEXT:
-        return STAPLE_TEXT[e["key"]]
     if e.get("category") == ARMOR_CATEGORY:
         return "an armor evolution (the right Child)"
     return EFFECTS.get(e["key"], "a curiosity")
@@ -154,16 +136,8 @@ def buy(pet, e):
     """-> (message, sfx)."""
     if pet.bits < e["price"]:
         return (f"Need {e['price']}b — you have {pet.bits}b.", "error")
-    uses = e.get("uses", 1)
-    cap = e.get("max_uses")
-    if cap is not None:
-        have = pet.inventory.get(e["key"], 0)
-        if have >= cap:
-            return (f"{e['name']} is fully stocked.", "error")
-        uses = min(uses, cap - have)
     pet.spend_bits(e["price"])
-    for _ in range(uses):
-        pet.add_item(e["key"])
+    pet.add_item(e["key"])
     return (f"Bought {e['name']}!", "confirm")
 
 
@@ -172,8 +146,6 @@ def resell_price(e):
 
 
 def sell(pet, e):
-    if e["key"] in STAPLE_TEXT:
-        return ("The home fixtures stay.", "error")
     if pet.inventory.get(e["key"], 0) <= 0:
         return ("You don't have that.", "error")
     pet.take_item(e["key"])                    # classic take_item returns None

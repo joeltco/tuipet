@@ -135,10 +135,11 @@ SCRIPTS = {
                          (21, 30): {"idy": 1, "idx": -1, "icyc": 1}}},
 }
 
-# AnimationTypes that deliberately have NO item fx: Idling (the Futon lays
-# out its care effect -- canon plays nothing), plus every system with its own
-# door (transports / ItemEvol / Inherit / Recover / toilets / Bandaging ride
-# their existing flows).  Jump keeps the ported jumping() hop.
+# AnimationTypes that deliberately have NO item fx: Idling (canon plays
+# nothing), plus every system with its own door (transports / ItemEvol /
+# Inherit / Recover / Bandaging ride their existing flows).  Jump keeps the
+# ported jumping() hop.  (The Futon/toilet mentions left with the staple
+# props: strict-DSprite items, 2026-07-17.)
 NO_FX = {"Idling"}
 
 

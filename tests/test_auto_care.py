@@ -73,15 +73,8 @@ def test_asleep_the_assistant_cleans_then_dims_the_lights():
     assert p.asleep and p.lights
     p.tick(1.0)
     assert p.assist_event[0] == "lights" and p.lights is False
-    # ... but never under a Futon (DVPet !isFuton()) -- applied at bedtime,
-    # once the pet is already down (the effect ends on any sleep TRANSITION)
-    q = _pet(bits=9000, auto_care=True, assistant_num=29)
-    q.sleep_lapse = q.sleep_limit
-    q.tick(1.0)
-    assert q.asleep
-    q.effect_id, q.effect_t, q._eff_asleep = 0, 900.0, True
-    q.tick(1.0)
-    assert getattr(q, "assist_event", None) is None and q.lights
+    # (the !isFuton() shield walk left with the Futon's careEffect runtime:
+    # strict-DSprite items, 2026-07-17 -- a lit night is always dimmed now)
 
 
 def test_unaffordable_visit_puts_the_assistant_off_duty():

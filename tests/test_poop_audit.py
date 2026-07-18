@@ -47,16 +47,18 @@ def test_full_room_upgrades_a_smaller_pile():
     assert p.poop_sizes == [3, 2, 1, 2]
 
 
-def test_toilet_priority_home_before_portable():
+def test_the_self_toilet_is_gone_the_floor_always_takes_it():
+    """(The toilet chain left with the staple props: strict-DSprite items,
+    2026-07-17.)  Even a bag stuffed with old furniture keys changes nothing:
+    the gauge rollover always drops a pile on the floor."""
     p = _pet()
-    p.toilet_trained, p.obedience, p.stage = 1, 500, "Rookie"
-    p.inventory["i:82"] = 1
-    p.inventory["i:83"] = 1
-    assert p._toilet_for_poop() == "i:82"       # the home Toilet flushes first
-    p.inventory["i:82"] = 0
-    assert p._toilet_for_poop() == "i:83"
-    p.inventory["i:83"] = 0
-    assert p._toilet_for_poop() is None         # unstocked: the floor it is
+    p.obedience, p.stage = 500, "Rookie"
+    p.inventory["i:82"] = 1                     # a stale key, not a fixture
+    assert not hasattr(p, "_toilet_for_poop")
+    before = p.poop
+    p._poop_t = p._poop_interval
+    p._tick_body(0.0)
+    assert p.poop == before + 1                 # the floor it is
 
 
 def test_sick_diarrhea_is_compressed_not_machine_gun():

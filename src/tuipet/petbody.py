@@ -34,7 +34,6 @@ class BodyMixin:
         self._tick_recovery(dt)
         if self.dead:                # the 6h-malady clock can end the life here
             return
-        self._tick_effect(dt)
         self._tick_auto_care(dt)     # the assistant serves awake AND asleep (never an egg)
         if self.asleep:
             self._tick_asleep(dt)
@@ -179,7 +178,7 @@ class BodyMixin:
                 self._set_energy(self.energy + 1)
 
         step = awake_inc * dt
-        if self.lights and not self.call_paused() and random.randrange(100) < LIGHTS_ON_AWAKE_STALL:
+        if self.lights and random.randrange(100) < LIGHTS_ON_AWAKE_STALL:
             step = 0.0
         r = random.randrange(MORE_SLEEP_CHANCE) + self.restless * AWAKE_RESTLESS_COEF
         bonus = False
@@ -355,12 +354,8 @@ class BodyMixin:
             backlog = self._poop_t >= self._poop_interval / 2
             if backlog:                          # big backlog: bigger pile + extra shed,
                 self._poop_t = 0                 # gauge zeroed (DVPet poop())
-            tk = self._toilet_for_poop()         # doPoop: a trained pet goes by itself
-            if tk:
-                self._toilet_visit(tk, backlog=backlog)
-            else:
-                self._do_poop(backlog=backlog)
-                self._set_anim("poop", 2.2)      # squat-and-go (DVPet poop())
+            self._do_poop(backlog=backlog)
+            self._set_anim("poop", 2.2)          # squat-and-go (DVPet poop())
         # effort decays per species (DVPet calcStrengthDecayLapse): keep training or it slips
         self._str_t = getattr(self, "_str_t", 0.0) + dt
         if not self.asleep and self.strength > 0 and self._str_t >= self._strength_interval:
@@ -580,45 +575,9 @@ class BodyMixin:
         # burns lifespan through the EVENT penalties wired below instead)
         return self._check_old_age()
 
-    def _effect_energy_gain(self):
-        """PhysicalState.getEffectEnergyGain: an ACTIVE care effect's energy
-        rate joins sleep()'s divisor -- amount * (cadence / 60) with canon's
-        integer division (a sub-hour cadence contributes 0)."""
-        if self.effect_id < 0 or self.effect_t <= 0:
-            return 0
-        eff = data.load_care_effects().get(self.effect_id)
-        if not eff:
-            return 0
-        amt, every = eff["energy"]
-        return amt * (every // 60)
-
-    def _tick_effect(self, dt):
-        """Advance the active care effect (Futon): rate gains; end on sleep change / expiry."""
-        if self.effect_id < 0:
-            return
-        eff = data.load_care_effects().get(self.effect_id)
-        if not eff:
-            self.effect_id, self.effect_t = -1, 0.0
-            return
-        if eff["end_on_sleep"] and getattr(self, "_eff_asleep", self.asleep) != self.asleep:
-            self.effect_id, self.effect_t = -1, 0.0          # dozing off / waking ends it
-            return
-        self._eff_asleep = self.asleep
-        self.effect_t -= dt
-        if self.effect_t <= 0:
-            self.effect_id, self.effect_t = -1, 0.0
-            return
-        self._eff_acc = getattr(self, "_eff_acc", 0.0) + dt
-        while self._eff_acc >= 60:                            # uniform 60-tick cadence (the one defined effect)
-            self._eff_acc -= 60
-            if eff["mood"][0]:
-                self._set_mood(self.mood + eff["mood"][0])
-            if eff["energy"][0]:
-                self._set_energy(self.energy + eff["energy"][0])
-            if eff["hunger"][0]:
-                self.hunger = _clamp(self.hunger + eff["hunger"][0], 0, 4)
-            if eff["strength"][0]:
-                self.strength = _clamp(self.strength + eff["strength"][0], 0, 4)
+    # (getEffectEnergyGain / the care-effect tick -- careEffect.csv's whole
+    # runtime, whose only shipped effect was the Futon's sleep boost -- left
+    # with the staple props: strict-DSprite items, 2026-07-17)
 
     def _add_filth(self, size):
         """addFilth (poop/filth audit 2026-07-06): below the cap the pile takes
@@ -684,10 +643,7 @@ class BodyMixin:
         self._calm_discipline_call()                # bedtime placates the tantrum (canon
         #                                             sleep-onset setDisciplineCall(false))
         self._lights_t = 0.0                        # setAsleep resets _callMinutesLights
-        # canon sleep(): the divisor is energyGain + getEffectEnergyGain() --
-        # an active Futon (EnergyChange 1;60 -> +1) makes the rest MORE
-        # efficient, so the night it sizes is SHORTER (sleep audit 2026-07-15)
-        gain = max(1, getattr(self, "_sleep_energy_gain", 3) + self._effect_energy_gain())
+        gain = max(1, getattr(self, "_sleep_energy_gain", 3))
         need = math.ceil(max(0, self.max_energy - self.energy) / gain) * 60.0
         self.awake_limit = _clamp(need, MIN_AWAKE_LIMIT, MAX_AWAKE_LIMIT)
         self.sleep_limit = DAY_MINUTES - self.awake_limit
@@ -835,7 +791,7 @@ class BodyMixin:
         else:
             if self.poop > 0:
                 act = "clean"
-            elif self.lights and self.effect_id != 0:   # !isFuton(): the Futon already holds the night
+            elif self.lights:
                 act = "lights"
         if act is None:
             return

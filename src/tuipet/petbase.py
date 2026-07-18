@@ -420,16 +420,9 @@ WEIGHT_LIMIT_OBED_PENALTY = 0           # WeightLimitObediencePenalty (difficult
 WEIGHT_LIMIT_ENTH_PENALTY = 1           # WeightLimitEnthusiasmPenalty
 ABOVE_MAX_CAL_BM = 1                    # AboveMaxCaloriesBMGaugeChange: calorie overflow
 #                                         while rising hastens the poop (setCalories)
-# DVPet toilet training (config col 0): ONE toilet use while InTraining teaches
-# it; from Rookie on (obedience >= 50) the pet takes ITSELF to a stocked toilet
-# at poop time -- no filth, ever (doPoop's SelfToilet branch).
-MIN_TOILET_USES_TO_TRAIN = 1            # MinToiletUsesToTrain
-TOILET_TRAINED_OBED_MIN = 50            # ToiletTrainedObedienceMin
-STAGE_CAN_TOILET_TRAIN = ("InTraining",)                            # StageCanToiletTrain
-STAGE_CAN_AUTO_TOILET = ("Rookie", "Champion", "Ultimate", "Mega")  # StageCanAutoToilet
-TOILET_URGENT_FRAC = 0.8                # tuipet: the manual-use / poop-dance urgency window
-#                                         (canon gates on a FULL gauge; tuipet's gauge fires
-#                                         the poop the moment it fills, so the window leads)
+# (DVPet toilet training -- MinToiletUsesToTrain / the SelfToilet branch and
+# its stage/obedience gates -- left with the staple props: strict-DSprite
+# items, 2026-07-17)
 POOP_INC_WEIGHT_FACTOR = 40            # PoopIncWeightFactor -> size 3 at/above
 POOP_INC_WEIGHT_FACTOR_SMALL = 15      # PoopIncWeightFactorSmall -> size 1 at/below
 POOP_WAIT_MOOD = -1                     # PoopWaitMoodChange (the HELD gauge nags)
@@ -632,8 +625,8 @@ MINUTES_TO_DISCIPLINE_PENALTY = 180.0    # _minutesToDisciplinePenalty 3 game-mi
 # DVPet AI Assistant (config.csv AutoCare*, PhysicalState.setAutoCare / doAutoCare /
 # checkAutoCare / processAutoCarePrice).  A hired helper keeps house while you're
 # away: awake it cleans filth, then feeds a starving pet (food 44), then a drained
-# one (food 43); asleep it cleans, then dims a lit room (unless the Futon already
-# holds the night).  Every visit bills the stage price AND costs bond -- mood -10,
+# one (food 43); asleep it cleans, then dims a lit room.  Every visit bills the
+# stage price AND costs bond -- mood -10,
 # obedience -1, enthusiasm -1: hired care is not YOUR care.  An hourly retainer
 # (or a visit) it cannot cover puts the assistant off duty.
 AUTO_CARE_VISIT_PRICE = {"Egg": 50, "Fresh": 50, "InTraining": 100, "Rookie": 200,

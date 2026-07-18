@@ -18,7 +18,7 @@ def test_facade_is_thin_and_complete():
         data_world: ("load_backgrounds", "load_effects", "load_icons",
                      "load_battle_fx", "load_enemies", "load_tournies",
                      "attack_orb", "load_orbs"),
-        data_meta: ("load_egg_unlock", "load_titles", "load_care_effects",
+        data_meta: ("load_egg_unlock", "load_titles",
                     "load_digicore_config", "title_name"),
     }
     for mod, names in owners.items():

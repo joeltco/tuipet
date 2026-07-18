@@ -1,87 +1,50 @@
-"""The Futon care-effect lifecycle (careEffect.csv): apply, per-cadence rate gains,
-end-on-sleep, expiry, and the care-call suppression flag.
-
-Drives `_tick_effect` directly to isolate the effect engine from the rest of the
-life-sim, plus one integration check through `use_item`.
+"""What remains of the care-effect suite after the strict-DSprite item cut
+(2026-07-17): the Futon careEffect runtime is GONE -- these pins prove the
+cut is total, plus the frozen dead-field save contract.
 """
-import pytest
+from dataclasses import asdict
 
-from tuipet import data
 from tuipet.pet import Pet
-from conftest import futon_item
 
 
-def _an_effect():
-    eff = data.load_care_effects()
-    if not eff:
-        pytest.skip("no care effects loaded")
-    eid = next(iter(eff))
-    return eid, eff[eid]
+def test_the_care_effect_runtime_is_gone():
+    """Strict-DSprite items (2026-07-17): no effect fields, no effect tick,
+    no careEffect loader -- the Futon's whole machine left together."""
+    p = Pet.from_num(29)
+    assert not hasattr(p, "effect_id")
+    assert not hasattr(p, "effect_t")
+    assert not hasattr(p, "_tick_effect")
+    assert not hasattr(p, "_effect_energy_gain")
+    assert not hasattr(p, "call_paused")
+    from tuipet import data
+    assert not hasattr(data, "load_care_effects")
 
 
-def test_effect_decrements_and_gains():
-    eid, eff = _an_effect()
-    pet = Pet(num=-1, stage="Rookie", obedience=500)
-    pet.mood = 0
-    pet.effect_id, pet.effect_t = eid, float(eff["duration"])
-    pet._eff_acc, pet._eff_asleep = 0.0, pet.asleep
-
-    pet._tick_effect(60)
-    assert pet.effect_t == eff["duration"] - 60, "duration should count down by dt"
-    # (the effect's mood rate left with the mood system; the countdown above
-    # is the surviving observable)
+def test_the_staples_never_reach_a_fresh_bag():
+    """DSprite's catalog has no furniture: a fresh device starts with an
+    empty bag, and the shelf carries no DVPet i:*/f:* keys."""
+    p = Pet.new_egg(generation=1, egg_type=0)
+    assert p.inventory == {}
+    from tuipet import shop
+    assert not any(e["key"].startswith(("i:", "f:")) for e in shop.catalog())
 
 
-def test_effect_expires():
-    eid, eff = _an_effect()
-    pet = Pet(num=-1, stage="Rookie", obedience=500)
-    pet.effect_id, pet.effect_t = eid, 5.0
-    pet._eff_acc, pet._eff_asleep = 0.0, pet.asleep
-    pet._tick_effect(10)                     # past the remaining 5s
-    assert pet.effect_id == -1 and pet.effect_t == 0.0
-
-
-def test_call_paused_reflects_data():
-    eid, eff = _an_effect()
-    pet = Pet(num=-1, stage="Rookie", obedience=500)
-    pet.effect_id, pet.effect_t = eid, float(eff["duration"])
-    assert pet.call_paused() == bool(eff["pause_call"])
-    pet.effect_id = -1
-    assert pet.call_paused() is False
-
-
-def test_end_on_sleep_change():
-    eid, eff = _an_effect()
-    if not eff["end_on_sleep"]:
-        pytest.skip("this effect does not end on sleep change")
-    pet = Pet(num=-1, stage="Rookie", obedience=500)
-    pet.asleep = False
-    pet.effect_id, pet.effect_t = eid, float(eff["duration"])
-    pet._eff_acc, pet._eff_asleep = 0.0, False
-    pet.asleep = True                        # dozes off -> effect should end
-    pet._tick_effect(0.1)
-    assert pet.effect_id == -1
-
-
-def test_effect_name():
-    eid, eff = _an_effect()
-    pet = Pet(num=-1, stage="Rookie", obedience=500)
-    pet.effect_id = eid
-    assert pet.effect_name() == eff["name"]
-    pet.effect_id = -1
-    assert pet.effect_name() == ""
-
-
-# (_futon_pet and its temperature-pause walks left with the weather system;
-# the habitat fixture it climate-pinned left with habitats -- the stale
-# import surfaced when weather.py was deleted, BASIC VPET 2026-07-17)
+def test_old_saves_shed_the_staples_on_load():
+    """A stocked bag from a pre-cut save (Toilet 100/Bandage 99/Futon 100)
+    loses exactly the dead furniture keys -- everything else survives."""
+    from tuipet import persistence
+    p = Pet.from_num(29)
+    p.inventory = {"i:80": 99, "i:81": 100, "i:82": 100, "i:83": 3,
+                   "energy_drink": 2}
+    d = asdict(p)
+    loaded, _ = persistence.pet_from_save(d, catch_up=False)
+    assert loaded is not None
+    assert loaded.inventory == {"energy_drink": 2}
 
 
 def test_medicine_bandage_persist():
     """(med_lapse left with the sickness system, 2026-07-17; bandage_lapse
     outlived injuries as a plain lapse field -- pin the round trip)"""
-    from dataclasses import asdict
-    from tuipet.pet import Pet
     pet = Pet.from_num(29)
     pet.bandage_lapse = 12.0
     d = asdict(pet)

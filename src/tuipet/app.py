@@ -141,10 +141,11 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("A TRUER CORE: the DigiCore's countdown meter now agrees "
-                 "with its own Meter row - Megas whose next road is a "
-                 "jogress or X-door showed the life meter while the page "
-                 "said an evolution neared. One truth drives both now.")
+    WHATS_NEW = ("STRICT DSPRITE ITEMS: the DVPet furniture is gone - the "
+                 "Toilet, Port. Potty and Futon left the shop with toilet "
+                 "training and the tuck-in. Poop lands on the floor and the "
+                 "clean action washes it, full classic. Old bags shed the "
+                 "fixtures on load; every item now traces to one catalog.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and
@@ -938,13 +939,6 @@ class TuiPetApp(ActionsMixin, App):
                     self.screen_w.start_fx("evolve", old_num=prev[0])
                 else:
                     self._pending_evolve = prev[0]
-        elif getattr(p, "_toilet_event", None):
-            tev = p._toilet_event
-            p._toilet_event = None
-            if self.screen_w.fx is None:          # the self-visit plays poopToilet
-                self.screen_w.start_fx("toilet", icon=tev)
-            else:
-                self.beep("poop", bell=False)
         elif p.poop > poop0:
             # DVPet playPoopSound keys the byte poop() RETURNS -- the SIZE of the
             # new pile (f==1 small, f>2 large, else normal) -- not the pile count

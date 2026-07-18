@@ -18,15 +18,13 @@ def test_isolation_is_real(tmp_path):
 
 def test_round_trip_preserves_fields():
     pet = Pet(num=-1, name="Testmon", stage="Rookie", bits=99,
-              effect_id=2, effect_t=42.0, care_mistakes=3, generation=4)
+              care_mistakes=3, generation=4)
     persistence.save(pet)
     loaded, _ = persistence.load()
     assert loaded is not None
     assert loaded.name == "Testmon"
     assert loaded.stage == "Rookie"
     assert loaded.bits == 99
-    assert loaded.effect_id == 2
-    assert loaded.effect_t == 42.0
     assert loaded.care_mistakes == 3
     assert loaded.generation == 4
 
@@ -37,10 +35,12 @@ def test_load_missing_file():
 
 
 def test_old_save_migration():
-    """A save written before effect_id/progress existed must load with defaults,
-    not crash (forward-compat for Joel's real save across updates)."""
+    """A save written before newer fields existed must load with defaults,
+    not crash (forward-compat for Joel's real save across updates) -- and a
+    save carrying RETIRED fields (effect_id et al.) must shed them silently."""
     import os
     old = {"num": -1, "name": "Oldmon", "stage": "Champion", "bits": 10,
+           "effect_id": 2, "effect_t": 42.0, "toilet_trained": 1,
            "_saved_at": time.time()}
     os.makedirs(persistence.SAVE_DIR, exist_ok=True)
     with open(persistence.SAVE_PATH, "w") as fh:
@@ -48,8 +48,8 @@ def test_old_save_migration():
     loaded, _ = persistence.load()
     assert loaded is not None
     assert loaded.name == "Oldmon"
-    assert loaded.effect_id == -1      # field absent in the save -> dataclass default
-    assert loaded.effect_t == 0.0
+    assert not hasattr(loaded, "effect_id")   # retired keys drop on load
+    assert loaded.generation == 1             # absent keys take defaults
 
 
 def test_offline_egg_does_not_decay():

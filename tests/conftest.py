@@ -71,15 +71,8 @@ def live_pet():
     return p
 
 
-def futon_item():
-    """Discover the (key, entry) of an item granting a care effect (the Futon), or
-    (None, None). Avoids hardcoding the item id so the test survives a data refresh."""
-    from tuipet import data
-    _, items = data._load_consumables()
-    for cid, e in items.items():
-        if e.get("effect_id", -1) >= 0:
-            return f"i:{cid}", e
-    return None, None
+# (the futon_item discovery helper left with the staple props:
+# strict-DSprite items, 2026-07-17)
 
 
 @pytest.fixture(autouse=True)

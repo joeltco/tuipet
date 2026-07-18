@@ -388,8 +388,11 @@ def prev_gen_estate():
     # them back so prelim-chain lookups keep matching
     tw = {int(k) if str(k).lstrip("-").isdigit() else k: v
           for k, v in (last.get("trophies_won") or {}).items()}
+    inv = dict(last.get("inventory") or {})
+    for dead in ("i:80", "i:81", "i:82", "i:83"):   # the staple props left
+        inv.pop(dead, None)                          # (strict-DSprite 2026-07-17)
     return {"bits": int(last.get("bits", 0)),
-            "inventory": dict(last.get("inventory") or {}),
+            "inventory": inv,
             "trophies": int(last.get("trophies", 0)),
             "trophies_won": tw,
             "dna_owned": dict(last.get("dna_owned") or {})}
@@ -612,6 +615,12 @@ def pet_from_save(data, catch_up=True, strict=False):
     # guard against a stringified copy from older tooling
     if isinstance(data.get("_lights_t"), str):
         data["_lights_t"] = float("-inf")
+    # the staple props (Toilet/Bandage/Futon/Potty) left with the item system
+    # (strict-DSprite items, 2026-07-17): a stocked bag from an older save
+    # would render dead goods -- shed them on every load
+    if isinstance(data.get("inventory"), dict):
+        for dead in ("i:80", "i:81", "i:82", "i:83"):
+            data["inventory"].pop(dead, None)
     valid = {f.name for f in fields(Pet)}
     kwargs = {k: v for k, v in data.items() if k in valid}
     # (the full_health backfill left with the classic battle -- the 0.5 HP

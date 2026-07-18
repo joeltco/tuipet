@@ -60,7 +60,8 @@ def care_deco(pet, word=None):
     # and medicine-item systems; BASIC VPET 2026-07-16)
     if pet.is_frail(): deco.append(f"[{T.NEG}]+frail![/]")
     if pet.poop: deco.append(f"[{T.COIN}]~poop x{pet.poop}[/]")
-    if getattr(pet, "effect_id", -1) >= 0: deco.append(f"[{T.POS}]✦{pet.effect_name()}[/]")
+    # (the ✦care-effect badge left with the Futon's careEffect runtime;
+    # strict-DSprite items 2026-07-17)
     return deco
 
 

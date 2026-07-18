@@ -228,7 +228,7 @@ class FxMixin:
 
     # ---- care-action animations (DVPet SpriteAnim eat/clean/cheer) -----------
     def start_fx(self, kind, icon=None, poop=0, old_num=None, pet=None, starving=False, good=True, script=None):
-        steps = {"eat": 35, "cheer": 31, "jeer": 31, "clean": 22, "spit": 25, "evolve": 41, "dying": 50, "dna_charge": 44, "play": 48, "heal": 24, "poop": 25, "poopdance": 21, "yawn": 22, "toilet": 38, "losing": 50,
+        steps = {"eat": 35, "cheer": 31, "jeer": 31, "clean": 22, "spit": 25, "evolve": 41, "dying": 50, "dna_charge": 44, "play": 48, "heal": 24, "poop": 25, "poopdance": 21, "yawn": 22, "losing": 50,
                  "gift": GIFT_OUT + GIFT_BACK + GIFT_HOLD, "assist": 28, "inherit": 50}.get(kind, 12)
         self.fx = {"kind": kind, "step": 0, "steps": steps, "icon": icon, "poop": poop,
                    "old_num": old_num, "good": good}
@@ -292,13 +292,6 @@ class FxMixin:
             # DVPet losing(): jeer(disposition, _lose) -- the sound at the
             # first UP beat, like every jeer
             self.fx["snds"] = {6: "lose"}
-        elif kind == "toilet":
-            # poopToilet: the go at t18 (size sting), the FLUSH (wash) at t28 --
-            # the Port. Potty (i:83) skips the flush, canon frame-jumps past it
-            if icon == "i:82":
-                self.fx["snds"] = {18: "poop", 28: "wash"}
-            else:
-                self.fx["snds"] = {18: "poop"}
         elif kind == "jeer":
             # DVPet jeer(): the sound fires at the first UP beat (t6).  Canon
             # routes Bad_Scold through the _unhappy cue, but soundConfig.csv
@@ -356,10 +349,11 @@ class FxMixin:
             # DVPet clean(): the cheer chains ONLY when filth was actually washed
             # (an empty-room wash just ends -- no celebration).
             self.start_fx("cheer")
-        elif kind in ("evolve", "heal", "gift", "play", "toilet", "inherit"):
+        elif kind in ("evolve", "heal", "gift", "play", "inherit"):
             # every canon flow that resolves into State.Cheering: evolFinish(true),
-            # bandage() beat 23, giftEnd, jumping() frame 48, poopToilet frame 37,
-            # inheriting()'s strobe tail (six branches collapsed, 2026-07-05)
+            # bandage() beat 23, giftEnd, jumping() frame 48, inheriting()'s
+            # strobe tail (branches collapsed 2026-07-05; poopToilet left with
+            # the staple props, strict-DSprite items 2026-07-17)
             self.start_fx("cheer")
         elif kind == "assist" and chain_eat:
             # assistantFeed runs the STANDARD eat underneath (canon
@@ -952,24 +946,8 @@ class FxMixin:
             if wash:
                 c.overlay += _blit(wash, wx, max(0, (c.px_h - len(wash)) // 2))
 
-    def _fxk_toilet(self, pet, fx, step, c):
-        # DVPet poopToilet (SelfToilet/portToilet): the pet squats over its
-        # toilet -- wiggle beats 3..18 (pose 4), the relieved go at 18 (pose
-        # 5), then it steps off (pose 1) for the flush and the chained cheer.
-        if step < 18:
-            c.rows = self._pose_rows_idx(pet, 4)
-            c.xshift = -1 if (3 <= step and (step // 3) % 2 == 1) else 0
-        elif step < 28:
-            c.rows = self._pose_rows_idx(pet, 5)
-        else:
-            c.rows = self._pose_rows_idx(pet, 1)
-        raw = data.load_icons().get(fx.get("icon") or "i:82")
-        ic = [f for f in (raw or []) if f]
-        if ic:
-            f = ic[0]
-            tw = max(len(r) for r in f)
-            c.overlay += _blit(f, max(0, PET_BASE_X + c.xshift - tw - 1),
-                               c.px_h - 2 - len(f))
+    # (_fxk_toilet -- DVPet poopToilet -- left with the staple props:
+    # strict-DSprite items, 2026-07-17)
 
     def _fxk_yawn(self, pet, fx, step, c):
         # DVPet yawning() (SpriteAnim 15742): idle -> the yawn (+8 at beat 4)

@@ -82,17 +82,18 @@ def test_the_care_bonus_carries_across_generations():
 def test_the_heir_inherits_the_device_bag():
     """Item/inventory audit 2026-07-06: canon's resetToEgg never touches bits,
     the bag, or the beaten-qualifier trophies -- the estate is device-lifetime.
-    A fresh game (generation 1) starts with the full StartingUses kit instead:
-    Toilet 100 + Bandage 99 + Futon 100."""
+    (The generation-1 StartingUses kit left with the staple props:
+    strict-DSprite items, 2026-07-17 -- a fresh device starts empty, and an
+    inherited bag sheds any dead furniture keys.)"""
     from tuipet import persistence
     p = _pet(bits=777, trophies=2)
-    p.inventory = {"i:15": 1, "f:3": 4}
+    p.inventory = {"i:15": 1, "f:3": 4, "i:82": 40}
     p.trophies_won = {9: "Spring"}
     persistence.snapshot_prev_gen(p)
     heir = Pet.new_egg(generation=2)
     assert heir.bits == 777
-    assert heir.inventory == {"i:15": 1, "f:3": 4}      # the bag carries as-is
+    assert heir.inventory == {"i:15": 1, "f:3": 4}      # carries, minus dead keys
     assert heir.trophies == 2 and heir.trophies_won == {9: "Spring"}
     fresh = Pet.new_egg(generation=1)
     assert fresh.bits == 0
-    assert fresh.inventory == {"i:82": 100, "i:80": 99, "i:81": 100}
+    assert fresh.inventory == {}
