@@ -1,6 +1,8 @@
 # tuipet demo — regenerate with:  vhs tools/demo.tape  (from the repo root)
-# Records: hatch -> feed -> play -> quit, then a Rookie heading out on an
-# adventure.  tools/demo_seed.py stages the saves so nothing waits real-time.
+# Records the BASIC VPET loop: hatch -> feed (meat, then the pill -- both ride
+# their ripped bite strips) -> quit, then a Rookie running the training drill,
+# browsing the shop tabs and its DigiCore page.  tools/demo_seed.py stages the
+# saves so nothing waits real-time.
 Output demo.gif
 Set Shell "bash"
 Set Width 1000
@@ -20,8 +22,12 @@ Sleep 12s
 Type "f"
 Sleep 2s
 Enter
-Sleep 7s
-Type "p"
+Sleep 6s
+Type "f"
+Sleep 1s
+Down
+Sleep 1s
+Enter
 Sleep 6s
 Type "q"
 Sleep 2s
@@ -33,7 +39,21 @@ Show
 Sleep 1s
 Enter
 Sleep 3s
-Type "a"
-Sleep 24s
+Type "t"
+Sleep 4s
+Space
+Sleep 12s
+Type "o"
+Sleep 3s
+Right
+Sleep 2s
+Right
+Sleep 2s
+Escape
+Sleep 1s
+Type "d"
+Sleep 4s
+Escape
+Sleep 1s
 Type "q"
 Sleep 3s
