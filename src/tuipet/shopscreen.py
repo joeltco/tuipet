@@ -1,15 +1,21 @@
 """The shop + bag screen (the DSprite item system, cloned from the v0.4.x
-rebuild -- BASIC VPET 2026-07-16).
+rebuild -- BASIC VPET 2026-07-16; polish pass 2026-07-17).
 
-SHOP: the fixed catalog, tabbed by category; the HONORS board rides the
-last tab (an economy, not an item, so it survives the item-system swap;
-the digitama-licence shelf was cut 2026-07-17 -- eggs unlock by condition
-only, never by purchase).  ENTER buys.  BAG: what you own, ENTER uses
-it (Pet.use_item — a crest egg triggers the classic armor evolution), R
-sells it back for half.  TAB flips between the two.
+SHOP: the fixed catalog, tabbed by PLAY order (everyday care first, the
+relics last); the HONORS board rides the last tab (an economy, not an
+item; the digitama-licence shelf was cut 2026-07-17 -- eggs unlock by
+condition only, never by purchase).  ENTER buys.  BAG: what you own,
+ENTER uses it (Pet.use_item — a crest egg triggers the classic armor
+evolution), R sells it back for half.  TAB flips between the two.
+
+Polish law (2026-07-17): the note line is a LIVE dossier -- effect, held
+count, affordability shortfall, and a crest egg names the form that would
+answer it RIGHT NOW (the same evolution.check the item runs).  Buy/sell
+feedback flashes in the footer (it used to be beep-only -- self.msg was
+never rendered anywhere); the sealed Digimental waves tease there on the
+egg-carousel cadence.
 """
 from __future__ import annotations
-import textwrap
 
 from . import data
 from . import shop
@@ -29,10 +35,21 @@ class ShopPanel:
         self.cursor = 0
         self.frame_i = 0
         self.sfx = None
-        self.msg = "Your bag." if start_mode == "bag" else "Welcome! Spend your bits."
+        self.msg = ""                   # transient footer flash (last verdict)
+        self.msg_t = 0
+        self.sealed, self.wave_hint = shop.wave_status()
+        self._answers = {}              # (num, key) -> crest_answer cache
+        self._flash("Your bag." if start_mode == "bag"
+                    else "Welcome! Spend your bits.")
 
     def anim(self):
         self.frame_i += 1
+        if self.msg_t > 0:
+            self.msg_t -= 1
+
+    def _flash(self, text):
+        if text:
+            self.msg, self.msg_t = text, 26
 
     def strip(self):
         if self.mode == "shop":
@@ -56,10 +73,11 @@ class ShopPanel:
                         for t in data.load_titles()]
             return shop.shelf(cat)
         out = []
-        for k, n in sorted(self.pet.inventory.items()):
+        for k, n in self.pet.inventory.items():
             e = shop.entry(k)
             if e:
                 out.append(dict(e, count=n))
+        out.sort(key=lambda e: e["name"])      # by the name you SEE, not the key
         return out
 
     # ---- keys ----
@@ -86,12 +104,12 @@ class ShopPanel:
         if p.num != old:                        # a crest egg fired the armor jump
             return ("done", ("evolve", old))
         if out is None:
-            self.msg = "You don't have that."
+            self._flash("You don't have that.")
             self.sfx = "error"
         elif out == "":
-            self.msg = f"{e['name']} does nothing here."
+            self._flash(f"{e['name']} does nothing here.")
         else:
-            self.msg = out
+            self._flash(out)
             self.sfx = "confirm"
         return None
 
@@ -101,7 +119,7 @@ class ShopPanel:
         if k == "tab" and not self.bag_only:
             self.mode = "bag" if self.mode == "shop" else "shop"
             self.cursor = 0
-            self.msg = "Your bag." if self.mode == "bag" else "Welcome back!"
+            self._flash("Your bag." if self.mode == "bag" else "Welcome back!")
             return None
         if k in ("left", "h") and self.mode == "shop":
             self.tab = (self.tab - 1) % len(self.tabs)
@@ -117,46 +135,87 @@ class ShopPanel:
             e = rows[self.cursor % n]
             if self.mode == "shop":
                 if e.get("title_id") is not None:
-                    self.msg = self._buy_title(e)
+                    self._flash(self._buy_title(e))
                     self.sfx = "confirm"
                 else:
-                    self.msg, self.sfx = shop.buy(self.pet, e)
+                    msg, self.sfx = shop.buy(self.pet, e)
+                    self._flash(msg)
             else:
                 return self._use(e)
         elif k == "r" and self.mode == "bag" and n:
             e = rows[self.cursor % n]
-            self.msg, self.sfx = shop.sell(self.pet, e)
+            msg, self.sfx = shop.sell(self.pet, e)
+            self._flash(msg)
         elif k in ("escape", "o", "i"):
             return ("done", self.msg if self.sfx else None)
         return None
 
     # ---- render ----
+    def _crest_note(self, key):
+        """The crest egg's LIVE answer for this pet (cached per form+key --
+        evolution.check walks the gate table)."""
+        ck = (self.pet.num, key)
+        if ck not in self._answers:
+            self._answers[ck] = shop.crest_answer(self.pet, key)
+        names = self._answers[ck]
+        if not names:
+            return "armor evolution · nothing answers it yet"
+        return "armor evolution · answers now: " + " / ".join(names)
+
     def _row_note(self, sel):
         if sel.get("title_id") is not None:
             state = ("worn now" if sel.get("worn")
                      else "owned" if sel.get("owned") else "%db" % sel["price"])
-            desc = textwrap.wrap(sel.get("desc") or "a tamer honor", 30)
-            return f"{state} · {desc[0] if desc else ''}"
-        return shop.effect_line(sel)
+            return f"{state} · {sel.get('desc') or 'a tamer honor'}"
+        key = sel["key"]
+        if str(key).startswith("egg_of_"):
+            bits = [self._crest_note(key)]
+        else:
+            bits = [shop.effect_line(sel)]
+        if self.mode == "shop":
+            held = self.pet.inventory.get(key, 0)
+            if held:
+                bits.append(f"you hold {held}")
+            short = sel["price"] - self.pet.bits
+            if short > 0:
+                bits.append(f"need {short}b more")
+        else:
+            bits.append(f"sells {shop.resell_price(sel)}b")
+        return " · ".join(bits)
+
+    def _footer(self):
+        """Priority: the verdict flash > the sealed-wave tease (alternating,
+        the egg-carousel cadence) > controls."""
+        if self.msg_t > 0:
+            return self.msg
+        if (self.mode == "shop" and self.sealed
+                and (self.frame_i // 40) % 2 == 1):
+            return self.wave_hint
+        if self.mode == "shop":
+            return "←→ cat  ENTER buy  TAB bag  ESC out"
+        if self.bag_only:
+            return "ENTER use  R sell  ESC out"
+        return "ENTER use  R sell  TAB shop  ESC out"
 
     def text(self):
         p = self.pet
         rows = self._rows()
         if self.mode == "shop":
             cat = self.tabs[self.tab % len(self.tabs)]
-            out = menu.header("SHOP", f"{cat} · {p.bits}b")
+            pos = f"{(self.tab % len(self.tabs)) + 1}/{len(self.tabs)}"
+            out = menu.header("SHOP", f"{cat} {pos} · {p.bits}b")
         else:
             out = menu.header("BAG", f"{sum(p.inventory.values())} items · {p.bits}b")
         if not rows:
             out.append_text(menu.blanks(2))
             out.append_text(menu.note("Nothing here." if self.mode == "shop"
-                                      else "The bag is empty."))
+                                      else "The bag is empty — the shop is a TAB away."))
             out.append_text(menu.blanks(3))
-            out.append_text(menu.footer("ESC out"))
+            out.append_text(menu.footer(self._footer()))
             return out
         self.cursor = min(self.cursor, len(rows) - 1)
         sel = rows[self.cursor]
-        out.append_text(menu.note(self._row_note(sel)))
+        out.append_text(menu.note(self._row_note(sel), tick=self.frame_i))
 
         def fmt(e, i):
             if self.mode == "shop":
@@ -164,11 +223,12 @@ class ShopPanel:
                     tag = "worn" if e.get("worn") else ("owned" if e.get("owned")
                                                         else f"{e['price']}b")
                     return f"{e['name'][:22]:<22} {tag:>7}"
-                return f"{e['name'][:22]:<22} {e['price']:>6}b"
-            return f"{e['name'][:22]:<22} x{e.get('count', 1)}"
+                held = self.pet.inventory.get(e["key"], 0)
+                mark = f"x{held}" if held else ""
+                return f"{e['name'][:19]:<19} {mark:>4} {e['price']:>6}b"
+            return (f"{e['name'][:19]:<19} x{e.get('count', 1):<3}"
+                    f" {shop.resell_price(e):>5}b")
 
         self.cursor = menu.list_window(out, rows, self.cursor, 6, fmt)
-        out.append_text(menu.footer("←→ cat  ENTER " +
-                                    ("buy" if self.mode == "shop" else "use") +
-                                    "  TAB flip  ESC out"))
+        out.append_text(menu.footer(self._footer()))
         return out

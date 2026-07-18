@@ -119,11 +119,69 @@ def entry(key):
 
 
 def categories():
-    return sorted({e["category"] for e in catalog()})
+    have = {e["category"] for e in catalog()}
+    out = [c for c in CATEGORY_ORDER if c in have]
+    return out + sorted(have - set(out))
 
 
 def shelf(cat):
     return [e for e in catalog() if e["category"] == cat]
+
+
+# shelf tabs in PLAY order -- everyday care first, the relics last (shop
+# polish 2026-07-17: the old alphabetical order opened the shop on a
+# two-item Armor-Spirit tab).  Unknown categories append alphabetically.
+CATEGORY_ORDER = ("Care", "Food", "Fruit", "Evolution", "Medical",
+                  ARMOR_CATEGORY)
+
+
+def crest_answer(pet, key):
+    """The forms THIS pet's armor jump would land right now -- the same
+    evolution.check gate the crest egg runs on use (display only, no
+    roll).  [] when nothing answers (not a crest key, egg/dead, gates
+    unmet)."""
+    from . import evolution
+    from .pet import Pet
+    item_id = Pet._CREST_IDS.get(key, -1)
+    if (item_id < 0 or pet is None or getattr(pet, "num", -1) < 0
+            or getattr(pet, "dead", False) or pet.stage == "Egg"):
+        return []
+    _, by_num = data.load_sprites()
+    return sorted({by_num[t]["name"]
+                   for t in data.load_evolutions().get(pet.num, [])
+                   if t in by_num and not data.is_placeholder(t)
+                   and evolution.check(pet, t, item=item_id)})
+
+
+# the sealed-wave tease texts, keyed by gate -- live numbers filled from
+# persistence.get_progress() (the egg carousel's locked-hint pattern).
+# Kept SHORT: they ride the 38-col shop footer, and footers never marquee.
+_WAVE_TEASE = {
+    ("armor_evos", 1): "your 1st armor evo wakes the crest 5",
+    ("wins", 25): "wins {have}/25 wake Light & Kindness",
+    ("raids", 2): "raids {have}/2 wake Miracles",
+    ("max_gen", 5): "generation {have}/5 wakes Destiny",
+}
+
+
+def wave_status(prog=None):
+    """(sealed_count, closest-wave tease) from live DIGIMENTAL_GATES
+    progress -- (0, '') once every relic is on the shelf."""
+    if prog is None:
+        from . import persistence
+        prog = persistence.get_progress()
+    sealed = [g for k, g in DIGIMENTAL_GATES.items()
+              if g is not None and not digimental_open(k, prog)]
+    if not sealed:
+        return 0, ""
+
+    def ratio(g):
+        sig, need = g
+        return min(1.0, int(prog.get(sig, 0)) / need)
+    sig, need = max(set(sealed), key=ratio)
+    have = min(int(prog.get(sig, 0)), need)
+    tease = _WAVE_TEASE.get((sig, need), "more relics stir out there")
+    return len(sealed), tease.format(have=have, need=need)
 
 
 def effect_line(e):

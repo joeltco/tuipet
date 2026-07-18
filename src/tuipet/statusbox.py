@@ -254,6 +254,7 @@ def eat(app):
 def shop(app):
     """SHOP/BAG: the selected entry's dossier."""
     from . import shop as shop_mod
+    T = theme
     p, m = app.pet, app.mode
     rows = m._rows()
     if not rows:
@@ -272,10 +273,22 @@ def shop(app):
                  "[dim]ENTER buys, then wears[/]"]
     else:
         have = p.inventory.get(e["key"], 0)
-        lines = [f"[b]{e['name'][:24]}[/]",
-                 f"[dim]{shop_mod.effect_line(e)[:26]}[/]", "",
-                 (f"Price   {e['price']}b" if m.mode == "shop"
-                  else f"Sells   {shop_mod.resell_price(e)}b"),
+        if str(e["key"]).startswith("egg_of_"):
+            # the crest egg's LIVE answer (the same evolution.check the
+            # item runs; shop polish 2026-07-17)
+            names = shop_mod.crest_answer(p, e["key"])
+            eff = (f"[{T.POS}]answers: {' / '.join(names)[:18]}[/]" if names
+                   else "[dim]nothing answers it yet[/]")
+        else:
+            eff = f"[dim]{shop_mod.effect_line(e)[:26]}[/]"
+        if m.mode == "shop":
+            short = e["price"] - p.bits
+            price = (f"Price   [{T.NEG}]{e['price']}b · short {short}[/]"
+                     if short > 0 else f"Price   {e['price']}b")
+        else:
+            price = f"Sells   {shop_mod.resell_price(e)}b"
+        lines = [f"[b]{e['name'][:24]}[/]", eff, "",
+                 price,
                  f"Owned   x{have}",
                  f"Bits    [b]{p.bits}b[/]", "",
                  ("[dim]ENTER buy[/]" if m.mode == "shop"

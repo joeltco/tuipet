@@ -141,11 +141,11 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("STRICT DSPRITE ITEMS: the DVPet furniture is gone - the "
-                 "Toilet, Port. Potty and Futon left the shop with toilet "
-                 "training and the tuck-in. Poop lands on the floor and the "
-                 "clean action washes it, full classic. Old bags shed the "
-                 "fixtures on load; every item now traces to one catalog.")
+    WHATS_NEW = ("SHOP POLISH: tabs open on Care in play order, the shelf "
+                 "marks what you hold, the note prices any shortfall, buy/"
+                 "sell verdicts flash in the footer (they were silent!), a "
+                 "crest egg names the form that would answer it RIGHT NOW, "
+                 "and sealed Digimental waves tease their unlock.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and

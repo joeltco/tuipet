@@ -120,3 +120,90 @@ def test_citramon_is_reachable_by_timed_care_now():
     assert citra is not None, "the food-locked row vanished from the data"
     src = __import__("inspect").getsource(evolution.check)
     assert "evol_food" not in src.replace("EvolFood", "")  # the gate is gone
+
+
+# ---- the polish pass (2026-07-17: "lets polish the shop. looks lazy") ----
+
+def test_tabs_open_on_care_not_the_alphabet():
+    """PLAY order: everyday care first, the relics last, Honors closing."""
+    pan = ShopPanel(_pet())
+    assert pan.tabs[0] == "Care"
+    assert pan.tabs[-2:] == ["Armor-Spirit", "Honors"]
+
+
+def test_the_shelf_shows_what_you_already_hold():
+    p = _pet()
+    p.inventory["energy_drink"] = 2
+    pan = ShopPanel(p)
+    pan.msg_t = 0
+    plain = pan.text().plain
+    assert "x2" in plain                      # the held marker on the row
+    assert "you hold 2" in plain              # and the dossier note
+
+
+def test_the_note_prices_a_shortfall():
+    p = _pet(bits=100)
+    pan = ShopPanel(p)
+    pan.msg_t = 0
+    pan.cursor = 1                            # AlarmClock 300b
+    note = pan._row_note(pan._rows()[1])
+    assert "need 200b more" in note
+
+
+def test_buy_feedback_actually_renders_now():
+    """self.msg was never drawn anywhere -- the verdict flashes in the
+    footer for a beat (the eggselect _flash pattern)."""
+    p = _pet()
+    pan = ShopPanel(p)
+    pan.key("enter")                          # buy the first Care row
+    assert "Bought" in pan.text().plain
+    pan.msg_t = 0
+    assert "Bought" not in pan.text().plain   # the flash expires
+
+
+def test_the_bag_footer_stopped_advertising_categories():
+    p = _pet()
+    p.inventory["energy_drink"] = 1
+    pan = ShopPanel(p, start_mode="bag")
+    pan.msg_t = 0
+    plain = pan.text().plain
+    assert "cat" not in plain.splitlines()[-1]
+    assert "R sell" in plain
+    assert "sells 100b" in plain              # resale in the dossier note
+
+
+def test_crest_note_is_the_live_gate():
+    """The Armor-Spirit dossier names the form the jump would land NOW --
+    the same evolution.check the crest egg runs on use."""
+    from tuipet import data
+    _, by_num = data.load_sprites()
+    goburimon = next(n for n, r in by_num.items()
+                     if r["name"] == "Goburimon" and r["stage"] == "Rookie")
+    p = Pet.from_num(goburimon)
+    p.strength = 4
+    p.weight = by_num[goburimon].get("weight", p.weight)
+    p.care_mistakes = 0
+    p.wins, p.battles = 20, 30
+    names = shop.crest_answer(p, "egg_of_courage")
+    assert "Flamedramon" in names
+    fresh = Pet.from_num(goburimon)
+    fresh.strength = 0
+    fresh.care_mistakes = 99                  # gates unmet -> honest empty
+    assert isinstance(shop.crest_answer(fresh, "egg_of_courage"), list)
+    assert shop.crest_answer(p, "not_a_crest") == []
+
+
+def test_wave_teases_fit_the_footer():
+    """Footers never marquee: every tease must hold inside the 38-col line."""
+    for gate, text in shop._WAVE_TEASE.items():
+        line = text.format(have=gate[1] - 1, need=gate[1])
+        assert len(line) <= 38, line
+
+
+def test_wave_status_counts_and_teases_live():
+    prog = {"armor_evos": 0, "wins": 0, "raids": 0, "max_gen": 1}
+    sealed, hint = shop.wave_status(prog)
+    assert sealed == 9                        # all but free Courage/Hope
+    assert "generation 1/5" in hint           # closest gate by ratio
+    prog = {"armor_evos": 1, "wins": 25, "raids": 2, "max_gen": 5}
+    assert shop.wave_status(prog) == (0, "")
