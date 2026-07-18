@@ -141,11 +141,10 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("A LIVING EGG CAROUSEL: the backdrop behind the eggs now "
-                 "shows each egg's OWN home scene as you browse - you see "
-                 "the home you're choosing. A species you've never raised "
-                 "wears a NEW badge, and the twin digitama keeps its "
-                 "mystery instead of leaking a name.")
+    WHATS_NEW = ("CRASH FIX: pressing N (the egg guide) on the new-egg "
+                 "carousel after retiring a pet crashed the game. The "
+                 "guide now opens and returns you to your pick, on every "
+                 "path. Sorry about that one.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and
@@ -1141,6 +1140,17 @@ class TuiPetApp(ActionsMixin, App):
     def _hatch_new(self, egg_type, gen):
         if egg_type is None:                        # cancelled -> keep the current pet
             self._do("Kept your current partner.")
+            return
+        if egg_type == "guide":
+            # N on the carousel: consult the guide, then come back to the
+            # pick with the SAME generation in hand.  (This sentinel was
+            # only handled on the fresh-start path -- the retire/death path
+            # crashed on it: Termux crash 2026-07-18, egg_type='guide'.)
+            from . import eggguidescreen, eggselectscreen
+            self._open_mode(eggguidescreen.EggGuidePanel(self.pet),
+                            lambda _=None: self._open_mode(
+                                eggselectscreen.EggSelectPanel(self.pet),
+                                lambda et: self._hatch_new(et, gen)))
             return
         self.pet = Pet.new_egg(generation=gen, egg_type=egg_type)
         self._grant_digimemory(self.pet)

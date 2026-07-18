@@ -204,3 +204,20 @@ def test_carousel_polish_scene_mystery_and_new_badge():
     if multi is not None:
         assert "???" in pan._note(multi)
         assert "two fates" in pan._note(multi)
+
+
+def test_the_guide_sentinel_never_reaches_new_egg():
+    """Termux crash 2026-07-18: N (guide) on the retire/death carousel handed
+    the literal 'guide' to Pet.new_egg as an egg_type.  Both pick paths must
+    route the sentinel to the guide and back, and new_egg must never see it."""
+    from tuipet.app import TuiPetApp
+    opened = []
+    app = TuiPetApp.__new__(TuiPetApp)
+    app.pet = Pet(num=100, stage="Champion", attribute="Vaccine")
+    app.pet.world_seconds = 600.0
+    app._open_mode = lambda panel, cb=None: opened.append(type(panel).__name__)
+    app._do = lambda msg: opened.append(("msg", msg))
+    app._hatch_new("guide", gen=5)
+    assert opened == ["EggGuidePanel"]            # the guide opens, nothing hatches
+    app._hatch_new(None, gen=5)
+    assert opened[-1] == ("msg", "Kept your current partner.")
