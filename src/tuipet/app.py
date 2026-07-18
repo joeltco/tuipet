@@ -141,11 +141,11 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("BASIC AND CLEAN: the shop's Eggs tab now matches every "
-                 "other tab - the small crest glyph the source device "
-                 "itself draws, the standard list, no special scenes. "
-                 "Dossiers still name the form each crest answers RIGHT "
-                 "NOW, and sealed waves still tease their unlock.")
+    WHATS_NEW = ("SHOP ICONS: the goods wear their own device icons now - "
+                 "the burger, the steak, the carrot, the pills, the fruit, "
+                 "the X mark - real atlas art for the same items, matched "
+                 "by name. Items with no honest counterpart keep a quiet "
+                 "cell. Crest eggs keep their glyphs; dossiers stay live.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and

@@ -38,6 +38,29 @@ EFFECTS = {
 # (Pet._crest_egg -> evolution.item_select via the Digimental ids)
 ARMOR_CATEGORY = "Armor-Spirit"
 
+# shop icon roster (2026-07-18, Joel: "what about the other items icons?"):
+# each DSprite item wears the DVPet atlas icon for the SAME item -- exact
+# name matches first (Energy Drink f:17, Sleeping Pill f:34, X-Antibody
+# i:79), then same-concept matches on the pill precedent (the heal fx has
+# borrowed the medicine strip since the pill-anim fix).  Items with no
+# honest counterpart get NO icon -- never substitute wrong art.
+ICON_KEYS = {
+    "energy_drink": "f:17",      # Energy Drink -- exact
+    "sleeping_pill": "f:34",     # Sleeping Pill -- exact
+    "x_antibody": "i:79",        # X-Antibody -- exact
+    "premium_meat": "f:8",       # Steak: the premium meat
+    "junk_food": "f:57",         # Cheese burger: the junk food
+    "super_carrot": "f:3",       # Vegetable
+    "best_fruit": "f:2",         # the fruit family shares the Fruit icon
+    "normal_fruit": "f:2",
+    "worst_fruit": "f:2",
+    "deadly_fruit": "f:2",
+    "poop_clean_pill": "f:4",    # Med: the pill
+    "training_pack": "i:7",      # Dumbbell: training gear
+    # (care_mistake_eraser / alarm_clock / time_gear / anti_evo_chip /
+    #  revive_floppy: no honest counterpart in the atlas -- quiet cell)
+}
+
 # the Digimental waves (Joel 2026-07-17: "wire the gates") -- the canon
 # discovery order, on the same earned-access rule as the egg carousel:
 # sealed ones simply don't appear.  Courage & Hope open armor evolution

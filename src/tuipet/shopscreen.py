@@ -206,6 +206,11 @@ class ShopPanel:
             fr = data.load_icons().get("i:%d" % iid) if iid >= 0 else None
             if fr:
                 return menu.icon_cell(fr[0])
+        ak = shop.ICON_KEYS.get(key)
+        if ak:
+            fr = data.load_icons().get(ak)
+            if fr:
+                return menu.icon_cell(fr[0])
         return menu.item_icon(sel)
 
     def _info(self, sel, tw):

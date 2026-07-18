@@ -239,3 +239,22 @@ def test_the_eggs_tab_renders_like_every_other_tab():
     import os
     assert not os.path.exists(os.path.join(
         os.path.dirname(data.__file__), "data", "armor_eggs.json.gz"))
+
+
+def test_consumables_wear_their_own_dvpet_icons():
+    """2026-07-18 "what about the other items icons?": each DSprite item
+    wears the DVPet atlas icon for the SAME item (exact name matches +
+    pill-precedent concepts); no honest counterpart -> quiet cell, never
+    wrong art."""
+    from tuipet import data
+    ic = data.load_icons()
+    assert shop.ICON_KEYS["energy_drink"] == "f:17"   # exact name matches
+    assert shop.ICON_KEYS["sleeping_pill"] == "f:34"
+    assert shop.ICON_KEYS["x_antibody"] == "i:79"
+    for k, ak in shop.ICON_KEYS.items():
+        assert ic.get(ak), (k, ak)                    # every mapping resolves
+    pan = ShopPanel(_pet())
+    pan.tab = 1                                       # Items tab
+    rows = {e["name"]: pan._icon(e) for e in pan._rows()}
+    assert any(l.strip() for l in rows["Energy.D"])   # iconed
+    assert not any(l.strip() for l in rows["AlarmClock"])  # honestly quiet
