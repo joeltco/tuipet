@@ -9,7 +9,7 @@ A terminal virtual pet — Digimon V-Pet style — rendered with halfblock Unico
 sprites and animated in the terminal. It builds on the work of the Digimon V-Pet
 fan community — see [Credits & acknowledgments](#credits--acknowledgments).
 
-![tuipet demo — hatch, feed, play, and adventure with your pet in the terminal](demo.gif)
+![tuipet demo — hatch, feed, train, and raise your pet in the terminal](demo.gif)
 
 **Status: live and actively developed** — see the
 [changelog](CHANGELOG.md) for what each release brought. tuipet is its own game: the core
@@ -21,11 +21,13 @@ community references. Regular updates ship as the game grows.
 
 - **1,548 creatures**, 11 animation frames each, extracted from the game's
   sprite atlases as 1-bit bitmaps (`src/tuipet/data/sprites.json.gz`).
-- A **complete Digimon V-Pet**, every system faithful to the real devices:
-  care, training, evolution (care-quality gates + DNA + jogress),
-  adventures across 5 world maps, hourly tournaments, town economies,
-  habitats with live climate/weather, an in-game AI care assistant, and the
-  device's own screen transitions and animation timelines.
+- A **basic V-Pet done properly**, every surviving system faithful to the
+  real devices: care (hunger, effort, filth, sleep, lights), training
+  drills, evolution (care-quality gates + DNA divergence + armor
+  Digimentals + jogress), raid bosses, cups on a real-calendar schedule
+  (seasons, weekends, holidays), a shop with the classic four-tab
+  storefront, condition-earned digitama, an in-game AI care assistant, and
+  the device's own screen transitions and animation timelines.
 - **Online play** tuipet adds on top: accounts with cloud saves that follow
   you across devices, and a live lobby with chat, PvP battles, and two-player
   jogress fusion.
@@ -84,7 +86,7 @@ Two iOS notes, both handled for you:
   Set `TUIPET_SAVE_DIR` to put it anywhere you like.
 * **Sound.** iOS sandboxes audio players, so tuipet falls back to the terminal
   bell (Options → sound shows *bell only*). Everything else — the lobby, battles,
-  jogress, adventures — works exactly as it does everywhere else.
+  jogress, raids — works exactly as it does everywhere else.
 
 **On iSH:** iSH's Alpine usually ships a Python older than 3.10, so
 `pip install tuipet` fails with *"No matching distribution found"*. Prefer
@@ -106,37 +108,40 @@ Start from an **egg** — real dot-matrix egg designs; it wobbles, cracks, and h
 |-----|--------|-----|--------|
 | **f** | feed | **u** | tournament cup |
 | **t** | train | **x** | DNA |
-| **p** | play | **d** | DigiCore |
-| **c** | clean | **e** | habitat |
-| **h** | heal | **l** | online lobby |
-| **r** | praise | **v** | AI assistant |
-| **k** | scold | **g** | options |
-| **a** | adventure | **s** | lights |
-| **o** | shop | **i** | bag |
+| **c** | clean | **d** | DigiCore |
+| **r** | raid | **e** | scenes |
+| **o** | shop | **l** | online lobby |
+| **i** | bag | **v** | AI assistant |
+| **s** | lights | **g** | options |
 | **b** | bug report | **?** | help |
 | **n** | digitama guide | **q** | quit |
 
-Battles and jogress live where they belong: **PvE combat happens in
-adventures and cups; PvP battles and fusion happen in the lobby** — there is
-no free-standing battle key.
+Battles and jogress live where they belong: **PvE combat happens in raids
+and cups; PvP battles and fusion happen in the lobby** — there is no
+free-standing battle key.
 
 ## Care & evolution
 
 Evolution uses the real V-Pet gating model: each form's
 `digimon.csv` row gates on care **mistakes**, **overfeed**, **sleep
-disturbances**, **sickness**, **injuries**, **weight** class, **mood**,
-**attribute power** (Vaccine/Data/Virus), and **battles/wins**, with the
-game's exact fulfilled-requirement scoring and deviation tiebreak. Per-stage
-counters reset on evolution; power and battle records carry for life.
-Good care with focused training walks the classic lines; neglect finds
-Numemon. Battle-gated Champions and above need real fights — adventures and
-cups feed the same record.
+disturbances**, **sickness**, **weight** class, **attribute power**
+(Vaccine/Data/Virus), and **battles/wins**, with the game's exact
+fulfilled-requirement scoring and deviation tiebreak. Per-stage counters
+reset on evolution; power and battle records carry for life. Good care with
+focused training walks the classic lines; neglect finds Numemon.
+Battle-gated Champions and above need real fights — raids and cups feed the
+same record.
 
-**Training** (`t`) is the device's four drills — HP, Vaccine, Data, Virus —
-each fought against an on-screen opponent: the punching bag, or for Data
-your sparring partner in the real DM20 **versus training** (fire high or
-low past their shield, 3 rounds of 5) — flowing into the canonical
-strike → impact → aftermath, raising effort and the drilled attribute power.
+**Training** (`t`) is the timing drill: stop the sweep on the beat to land
+the hit — effort and the drilled attribute power grow with clean rounds.
+Battles resolve as the device's HP race.
+
+**Armor evolution**: the shop's Eggs tab sells the 11 crest Digimentals in
+their canonical discovery waves — Courage and Hope from day one, the crest
+five after your first armor evolution, Light and Kindness at 25 wins,
+Miracles behind the raid bosses, Destiny at generation 5. All 73 armor
+forms are crest-exclusive, and the shop dossier names the form your pet
+would become *right now*.
 
 **DNA** (`x`) is the per-Field collectible layer: charge banked Field-DNA
 into the pet to bend evolution toward gated forms, generate more, and read
@@ -152,31 +157,19 @@ game's `attributeJogress` matrix.
 the countdown to the next growth, and the blacked-out silhouette teaser of
 what's coming — plus tuipet's own data-book pages.
 
-## Adventure
+## Raids & cups
 
-Press **a** to teleport into the Digital World — the striped curtain wipe is
-the device's own `Teleport_Leave/Arrive` animation. **5 maps, 26 zones, 26
-towns, 27 zone bosses, 462 enemy placements**, all at their real steps from
-`zones.csv`/`towns.csv`/`enemies.csv`. The terrain shifts underfoot as you
-walk (the zone's real background bands, cross-faded), wild encounters roll at
-the game's real compound odds (night runs 1.5×), towns rest you and open
-their **local shops and cups**, investigations gamble a zone-pool find
-against an ambush, and each boss gates the road. Losses cost adventure life;
-out of life, the pet retreats to the nearest town. Wins pay bits, roll the
-enemy's real **loot table** (drops unlock shop listings for good), and grow
-your power in the *enemy's* dominant attribute. The status card carries a
-live **zone ribbon** — towns, the boss, and your pet on one track. Clear a
-map to unlock the next region; transport items warp you around the world.
+Press **r** for raids: boss fights against the world's heavies — each felled
+boss counts toward egg unlocks and the Miracles Digimental wave.
 
-## Tournaments
-
-Press **u** for the cup page: a **24-slot hourly schedule** rolled daily from
-the season's 325 cups — only the current hour's cup takes entries, age tiers
-and prelim chains gate the brackets, and an alarm can call you for a slot.
+Press **u** for the cup page, which runs on the **real calendar**: seasonal
+cup pools, a featured cup picked by the date (weekends surface the top
+tier), and holiday specials — including Odaiba Memorial Day on August 1.
 Each cup is the 8-entrant single-elimination bracket (Quarterfinal →
 Semifinal → Final) with real rolled entrants; the other pairs auto-resolve
-between your rounds. Titles pay the canonical purse, count trophies, and gate
-tournament egg unlocks. Towns host their own cups on the road.
+between your rounds. Titles pay the canonical purse, count trophies, and
+gate tournament egg unlocks. An alarm can call you when a cup you care
+about opens.
 
 ## Online
 
@@ -188,31 +181,30 @@ follows you across devices — last-write-wins with session leases, so a phone
 left running can't clobber your desktop. Offline play is untouched; the
 network is fail-soft everywhere.
 
-## Habitats & weather
+## Scenes
 
-Press **e** to browse and buy homes — 16 habitats, previewed live as scenes.
-Each has its own climate (seasonal temperature bands, precipitation, day/night
-skies) that feeds mood, compatibility, and habitat-gated evolutions. On the
-road, the pet's habitat follows the terrain it walks.
+Press **e** to change the backdrop — real ripped scenes, and each egg comes
+wired to its own home scene, so the digitama you choose decides the view
+your pet grows up with (until you repaint it).
 
 ## Shop, bag & economy
 
-**o** buys (home stock from the game's shop tables; towns override prices and
-inventory with their own economies), **i** uses what you own. Foods, medicine,
-discipline books, attribute chips, transport items, and the adventure **Life
-Recovery** potion all carry their real in-game effects. Loot drops unlock
-their shop listings permanently.
+**o** opens the classic four-tab storefront — **[Food] Items Eggs Honors**
+— with real device icons on the goods and a live dossier for whatever's
+selected: the effect, what you already hold, how short you are, and (for a
+crest egg) the armor form it would trigger right now. **i** is the bag: use
+with ENTER, sell back for half with R. The Honors board sells cosmetic
+tamer titles for the truly rich.
 
-New **egg licenses** are earned, not handed out: you begin with the five classic
-babies and unlock the rest by reaching stages, clearing region bosses, and growing
-your album — common eggs stock the home shop, the rarest are exclusive to their
-biome's town.
+**Digitama are earned, never sold**: eggs unlock by playing — reaching
+stages, felling raid bosses, winning cups, growing your album — exactly
+like the real devices. The egg carousel shows only what you can hatch, and
+teases the next one you're closest to earning.
 
 ## AI assistant & options
 
 **v** hires the device's auto-care AI (per-stage retainer and per-care fees —
-it minds the pet, at a price, and never works while the pet is away
-adventuring). **g** opens options: account switching, sound backend, updates,
+it minds the pet, at a price). **g** opens options: account switching, sound backend, updates,
 key reference, theme, and the new-game/erase controls.
 
 ## Updating

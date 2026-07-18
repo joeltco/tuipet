@@ -3,6 +3,33 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.3.x–0.5.56 — 2026-07-15 → 2026-07-18 (the fast lane)
+
+Releases in this stretch shipped daily — often hourly — and each carried its
+note on the title screen rather than here. The headlines, newest first:
+
+- **0.5.50–0.5.56 — the shop, finished.** The classic four-tab storefront
+  returned ([Food] Items Eggs Honors), every item wears a real device icon,
+  the dossier shows effects/held/shortfall live, a crest egg names the armor
+  form it would trigger *right now*, buy/sell verdicts flash, and sealed
+  Digimental waves tease their unlock.
+- **0.5.49 — strict-DSprite items.** The borrowed furniture (Toilet, Port.
+  Potty, Futon) left with toilet training and the tuck-in; poop lands on the
+  floor and the clean action washes it, full classic. Old bags shed the
+  fixtures on load.
+- **0.5.28–0.5.48 — the polish wave.** Digimental discovery waves; the
+  status box rebuilt as one honest module (live data only, every screen);
+  real-calendar cups (seasons, weekends, holidays); egg carousel, theme
+  picker and options polish; update-then-restart flow; two live crash fixes;
+  a full internal modularization (nothing over ~1,200 lines) and a live PvP
+  smoke that caught a payout crash.
+- **0.5.0–0.5.27 — BASIC VPET.** The clone experiment (0.3.x–0.4.x) was set
+  aside and the classic game shipped as 0.5.0, then stripped to a lean,
+  faithful core: weather, mood, spirit, nutrition, fatigue/injury, day/night,
+  adventure/towns, habitats and the licence economy all retired; raids, the
+  0.5-style drill and HP-race battle, condition-earned eggs and egg-wired
+  scenes took their place.
+
 ## 0.2.476 — 2026-07-14
 
 One voice everywhere: key hints read ENTER/ESC in every screen, the battle give-up prompt agrees with itself, effort is called effort wherever it appears, the bag is always the bag, and a sweep of typos and mixed punctuation is gone.
