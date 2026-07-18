@@ -219,21 +219,23 @@ def test_wave_status_counts_and_teases_live():
     assert shop.wave_status(prog) == (0, "")
 
 
-def test_the_eggs_tab_shows_the_real_armor_egg_full_size():
-    """Joel 2026-07-17: real egg sprites.  The 11 armorEggs.png rips load in
-    EvolItemID order (index = crest id - 15), and the Eggs tab renders the
-    selected one in its own scene -- the 10x8 icon cell blobbed them."""
+def test_the_eggs_tab_renders_like_every_other_tab():
+    """Joel 2026-07-18: "8x8 item icons, like how the rest of the shop is."
+    The ghost-egg scene is GONE (armorEggs.png = fan art, rejected); the
+    Eggs tab uses the standard layout, and the icon cell shows the crest
+    glyph DVPet itself draws for the Digimental (i:15..25)."""
     from tuipet import data
-    bank = data.load_armor_eggs()
-    assert len(bank) == 11
-    assert all(any("1" in row for row in egg) for egg in bank)
+    assert not hasattr(data, "load_armor_eggs")
     p = _pet()
     pan = ShopPanel(p)
     pan.msg_t = 0
     pan.tab = pan._tabs().index("Eggs")
-    egg = pan._armor_egg("egg_of_courage")
-    assert egg is bank[0]                      # courage = EvolItemID 15
-    assert pan._armor_egg("egg_of_destiny") is bank[10]
+    assert not hasattr(pan, "_eggs_text")
+    assert not hasattr(pan, "_armor_egg")
     plain = pan.text().plain
-    assert "Courage Egg 1/" in plain           # the scene note carries the dossier
-    assert len(plain.splitlines()) <= 12       # the 12-line budget holds
+    assert "Courage Egg" in plain              # the standard list renders
+    glyph = pan._icon(pan._rows()[0])
+    assert any(line.strip() for line in glyph)  # the DVPet crest glyph is up
+    import os
+    assert not os.path.exists(os.path.join(
+        os.path.dirname(data.__file__), "data", "armor_eggs.json.gz"))

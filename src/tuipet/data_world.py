@@ -313,16 +313,6 @@ def load_icons():
     except (OSError, ValueError):
         return {}
 
-@lru_cache(maxsize=1)
-def load_armor_eggs():
-    """The 11 REAL armor-egg (Digimental) sprites ripped from armorEggs.png,
-    in EvolItemID order 15..25 -- index = crest id - 15 (order verified by
-    crest-glyph correlation, shop polish 2026-07-17).  [] if not extracted."""
-    path = os.path.join(_DATA, "armor_eggs.json.gz")
-    if not os.path.exists(path):
-        return []
-    try:
-        with gzip.open(path, "rt") as fh:
-            return json.load(fh)
-    except (OSError, ValueError):
-        return []
+# (load_armor_eggs -- the armorEggs.png ghost eggs -- REMOVED 2026-07-18:
+# fan-authored art, unused even by DVPet, and Joel rejected it.  The shop's
+# crest eggs show DVPet's own Digimental item glyphs, canon display.)
