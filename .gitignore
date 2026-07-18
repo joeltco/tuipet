@@ -58,3 +58,4 @@ patch_effects.py
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
+server/pending_pms.json
