@@ -298,7 +298,21 @@ class TuiPetApp(ActionsMixin, App):
         if not name:
             return                       # no account yet (first launch) — started after account setup
         self._sync = net.SyncClient(_lobby_uri(), name, pw)
-        self.run_worker(self._sync.run(), name="sync", exclusive=False)
+        self._sync_worker = self.run_worker(self._sync.run(), name="sync",
+                                            exclusive=False)
+
+    def _stop_sync(self):
+        """Tear the pusher down for real: the stop flag alone left the old
+        account's connection parked in `async for` until the socket dropped --
+        a live sync ghost in the roster after every account switch (netplay
+        audit 2026-07-18).  Cancel the worker like the lobby's."""
+        if self._sync is not None:
+            self._sync._stop = True
+            self._sync = None
+        w = getattr(self, "_sync_worker", None)
+        if w is not None:
+            w.cancel()
+            self._sync_worker = None
 
     def _push_cloud(self):
         """Queue the current pet's save for upload (no-op until the account/sync exists)."""
@@ -680,9 +694,8 @@ class TuiPetApp(ActionsMixin, App):
             await asyncio.to_thread(                 # last-write-wins guarded upload
                 cloudsync.push_save, _lobby_uri(), old_name, old_pw,
                 persistence.to_save_dict(self.pet))
-        if self._sync is not None:                   # the old pusher must stop first
-            self._sync._stop = True
-            self._sync = None
+        self._stop_sync()                            # the old pusher must stop first
+        #                                              (cancelled, not just flagged)
         persistence.set_account(name, pw)
         if save is not None:
             persistence.write_save_dict(save)

@@ -321,3 +321,25 @@ def test_syncclient_inbox_carries_pms(server):
 
     inbox = asyncio.run(go())
     assert inbox and inbox[0] == ("mika", "hi joel")
+
+
+def test_stop_sync_cancels_the_worker_not_just_flags_it():
+    """Netplay audit 2026-07-18: the account switch set _stop and dropped the
+    reference, but the old connection sat in `async for` until the socket
+    died -- a live sync ghost in the roster after every switch.  _stop_sync
+    must CANCEL the tracked worker like the lobby teardown does."""
+    from types import SimpleNamespace
+    from tuipet.app import TuiPetApp
+
+    class _W:
+        cancelled = False
+        def cancel(self):
+            self.cancelled = True
+
+    sync = SimpleNamespace(_stop=False)
+    w = _W()
+    stub = SimpleNamespace(_sync=sync, _sync_worker=w)
+    TuiPetApp._stop_sync(stub)
+    assert sync._stop is True
+    assert w.cancelled is True
+    assert stub._sync is None and stub._sync_worker is None

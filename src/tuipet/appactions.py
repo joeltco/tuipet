@@ -141,9 +141,7 @@ class ActionsMixin:
                             name="switch", exclusive=False)
             return
         if result and result[0] == "erase":
-            if self._sync is not None:              # the pusher must not re-seed the cloud
-                self._sync._stop = True
-                self._sync = None
+            self._stop_sync()                       # the pusher must not re-seed the cloud
             persistence.erase_all()
             self.pet = Pet.new_egg()                # placeholder until the carousel picks
             # a fresh start IS a new game: without this flag the post-title flow
