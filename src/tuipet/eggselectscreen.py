@@ -5,11 +5,13 @@ play, full stop (the licence shop was cut 2026-07-17): meet a rule's condition
 and the egg joins the carousel, permanently when the rule allows.
 ←→ glide, ENTER hatches the centred egg, ESC backs out."""
 from __future__ import annotations
+from . import backgrounds as _bgs
+from . import data
 from . import egg as egg_mod
 from . import menu
 from . import persistence
 from .render import render_scene
-from .theme import LCD_ON, LCD_BG
+from .theme import LCD_ON, LCD_BG  # noqa: F401  (theme.apply propagation)
 
 COLS, ROWS = 40, 8            # scene area (16px tall == one full egg)
 EGG_W = 16
@@ -92,11 +94,27 @@ class EggSelectPanel:
         return fr[0]
 
     def _note(self, idx):
+        """The hatch line (carousel polish 2026-07-18): a multi-target
+        digitama keeps its mystery instead of wearing the EGG's label, and
+        a species never raised on this profile earns its ★new badge --
+        the collection game, surfaced where the choice happens."""
         state = self.states.get(idx, "owned")
-        name = egg_mod.hatch_name(idx)
-        if state == "temp":
-            return "hatches: %s  (this gen only)" % name
-        return "hatches: %s" % name
+        targets = egg_mod.hatch_targets(idx)
+        if len(targets) > 1:
+            name, new = "???  (two fates stir)", False
+        else:
+            name = egg_mod.hatch_name(idx)
+            album = persistence.get_album()
+            new = bool(targets) and data.canonical_num(targets[0]) not in album
+        tail = "  (this gen only)" if state == "temp" else ""
+        return "hatches: %s%s%s" % (name, "  ★new" if new else "", tail)
+
+    def _scene_bg(self, idx):
+        """The browsed egg's OWN backdrop behind the carousel -- the egg
+        decides the home scene for the pet's whole life, so the choice
+        shows you the home you're choosing (carousel polish 2026-07-18)."""
+        frames = data.load_backgrounds().get(_bgs.scene_for_egg(idx))
+        return frames[0] if frames else None
 
     def text(self):
         if not self.n:                                 # defensive: starters keep this non-empty
@@ -111,7 +129,9 @@ class EggSelectPanel:
             v = base + d
             x = CENTER + int(round((v - self.scroll) * SPACING))
             placements.append((self._frame(v, d == 0), x, False))
-        scene = render_scene(placements, COLS, ROWS, LCD_ON, LCD_BG)
+        bgimg = self._scene_bg(self._egg(self.i))
+        scene = render_scene(placements, COLS, ROWS,
+                             menu.scene_ink(bgimg), LCD_BG, bgimg=bgimg)
         out = menu.header("CHOOSE YOUR EGG", f"{self.i + 1}/{self.n}")
         out.append_text(scene)
         out.append("\n")                              # scene has no trailing newline

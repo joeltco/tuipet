@@ -170,16 +170,27 @@ def eggselect(app):
     m = app.mode
     # carousel = hatchable eggs ONLY (Joel 2026-07-12: no silhouettes,
     # no goals); the badge/shown branches below stay defensive in case a
-    # locked egg ever leaks onto it.
+    # locked egg ever leaks onto it.  Carousel polish 2026-07-18: the card
+    # names the egg's wired HOME scene, keeps a multi-target digitama's
+    # mystery, and badges a never-raised species.
     idx = m.carousel[m.i] if m.carousel else 0
     state = m.states.get(idx, "owned")
-    badge = {"temp": "[dim]this gen only[/]",
-             "locked": "[dim]sealed[/]"}.get(state, "[dim]ready[/]")
-    shown = "???" if state == "locked" else egg_mod.hatch_name(idx)
-    card(app, "New Egg", [f"[dim]{m.i + 1} of {m.n}[/]",
-                          f"[dim]{m.locked} still locked[/]", "",
+    targets = egg_mod.hatch_targets(idx)
+    if state == "locked":
+        shown, badge = "???", "[dim]sealed[/]"
+    elif len(targets) > 1:
+        shown, badge = "???", "[dim]two fates stir[/]"
+    else:
+        shown = egg_mod.hatch_name(idx)
+        fresh = bool(targets) and \
+            data.canonical_num(targets[0]) not in persistence.get_album()
+        badge = ("[b]★ never raised[/]" if fresh
+                 else {"temp": "[dim]this gen only[/]"}.get(state, "[dim]ready[/]"))
+    scene = backgrounds.name(backgrounds.scene_for_egg(idx))
+    card(app, "New Egg", [f"[dim]{m.i + 1} of {m.n} · {m.locked} locked[/]", "",
                           "Destined to hatch", f"  [b]{shown}[/]",
                           f"  {badge}", "",
+                          f"Home   {scene[:18]}", "",
                           "[dim]←→ browse  ENTER pick[/]"])
 
 

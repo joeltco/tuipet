@@ -141,11 +141,11 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("THEME CLEANUP: gameboy and paper no longer repaint the "
-                 "backdrops onto green/white ramps - scenery keeps its "
-                 "real colors on every theme now, with the palette living "
-                 "in the chrome and sprites. The picker also gained "
-                 "per-theme notes and marks your saved choice.")
+    WHATS_NEW = ("A LIVING EGG CAROUSEL: the backdrop behind the eggs now "
+                 "shows each egg's OWN home scene as you browse - you see "
+                 "the home you're choosing. A species you've never raised "
+                 "wears a NEW badge, and the twin digitama keeps its "
+                 "mystery instead of leaking a name.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and

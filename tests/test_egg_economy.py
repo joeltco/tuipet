@@ -180,3 +180,27 @@ def test_fresh_profile_carousel_never_empty():
     assert len(pan.carousel) == pan.n > 0
     pan.key("right")                              # nav + render on the floor
     assert pan.text() is not None
+
+
+def test_carousel_polish_scene_mystery_and_new_badge():
+    """Carousel polish 2026-07-18: the backdrop follows the browsed egg's
+    wired scene, a multi-target digitama keeps its mystery, and an unraised
+    species wears the ★new badge (raised ones don't)."""
+    from tuipet import backgrounds, data as _d
+    pan = _panel()
+    # scene: the browsed egg's own backdrop, not a flat void
+    idx0 = pan.carousel[0]
+    want = _d.load_backgrounds()[backgrounds.scene_for_egg(idx0)][0]
+    assert pan._scene_bg(idx0) == want
+    # ★new on a fresh profile; gone once the species is raised
+    note = pan._note(idx0)
+    assert "★new" in note
+    tgt = egg.hatch_targets(idx0)[0]
+    persistence.album_add(tgt)
+    assert "★new" not in pan._note(idx0)
+    # a multi-target egg never wears the EGG label as a hatchling name
+    multi = next((i for i in range(egg.count())
+                  if len(egg.hatch_targets(i)) > 1), None)
+    if multi is not None:
+        assert "???" in pan._note(multi)
+        assert "two fates" in pan._note(multi)
