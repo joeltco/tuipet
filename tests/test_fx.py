@@ -529,7 +529,7 @@ def test_the_fx_engine_split_holds_its_boundaries():
     assert arenafx.FxMixin in arena.Screen.__mro__
     room = inspect.getsource(arena)
     for name in ("start_fx", "advance_fx", "_paint_fx", "_fxk_eat",
-                 "_fxk_heal", "_fxk_evolve"):
+                 "_fxk_evolve"):
         assert f"def {name}" not in room, f"{name} crept back into arena"
         assert callable(getattr(arena.Screen, name))       # composed in
     for old in ("SCREEN_COLS", "PET_BASE_X", "GIFT_OUT", "PLAY_HOP",

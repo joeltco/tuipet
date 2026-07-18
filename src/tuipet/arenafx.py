@@ -228,7 +228,7 @@ class FxMixin:
 
     # ---- care-action animations (DVPet SpriteAnim eat/clean/cheer) -----------
     def start_fx(self, kind, icon=None, poop=0, old_num=None, pet=None, starving=False, good=True, script=None):
-        steps = {"eat": 35, "cheer": 31, "jeer": 31, "clean": 22, "spit": 25, "evolve": 41, "dying": 50, "dna_charge": 44, "play": 48, "heal": 24, "poop": 25, "poopdance": 21, "yawn": 22, "losing": 50,
+        steps = {"eat": 35, "cheer": 31, "jeer": 31, "clean": 22, "spit": 25, "evolve": 41, "dying": 50, "dna_charge": 44, "play": 48, "poop": 25, "poopdance": 21, "yawn": 22, "losing": 50,
                  "gift": GIFT_OUT + GIFT_BACK + GIFT_HOLD, "assist": 28, "inherit": 50}.get(kind, 12)
         self.fx = {"kind": kind, "step": 0, "steps": steps, "icon": icon, "poop": poop,
                    "old_num": old_num, "good": good}
@@ -249,8 +249,8 @@ class FxMixin:
             glut = getattr(pet, "glutton", 0) if pet else 0
             mod = 0.9 if (glut > 0 or starving) else (1.1 if glut < 0 else 1.0)
             # eat(): the grimace bite (+9) fires on DISLIKED food OR an overeating
-            # stomach (canon also keys the Med sprite; tuipet's Med rides the heal
-            # anim instead) -- canon re-audit 2026-07
+            # stomach -- canon re-audit 2026-07 (the pill rides this same eat
+            # fx on its own bite strip; pill-anim fix 2026-07-18)
             from .pet import OVEREAT_LIMIT as _OVL
             bite = 9 if (pet is not None and (getattr(pet, "_last_meal_disliked", False)
                                               or pet.hunger >= _OVL)) else 7
@@ -298,10 +298,6 @@ class FxMixin:
             # maps unhappy -> angry.wav -- the same bark either way, so only
             # the POSES distinguish the variants here.
             self.fx["snds"] = {6: "angry"}
-        elif kind == "heal":
-            # DVPet bandage(): _useBandage on each application, _lastBandage on the
-            # final one (no ripped bandage cues -- click/confirm are the substitutes).
-            self.fx["snds"] = {8: "click", 13: "click", 18: "confirm"}
         elif kind == "evolve":
             # DVPet evolveAnim(): _evolve sounds at the first burst beat (t5);
             # digivolve() runs the strobe to evolFinish at 41 (was cut at 37).
@@ -349,11 +345,12 @@ class FxMixin:
             # DVPet clean(): the cheer chains ONLY when filth was actually washed
             # (an empty-room wash just ends -- no celebration).
             self.start_fx("cheer")
-        elif kind in ("evolve", "heal", "gift", "play", "inherit"):
+        elif kind in ("evolve", "gift", "play", "inherit"):
             # every canon flow that resolves into State.Cheering: evolFinish(true),
-            # bandage() beat 23, giftEnd, jumping() frame 48, inheriting()'s
-            # strobe tail (branches collapsed 2026-07-05; poopToilet left with
-            # the staple props, strict-DSprite items 2026-07-17)
+            # giftEnd, jumping() frame 48, inheriting()'s strobe tail (branches
+            # collapsed 2026-07-05; poopToilet left with the staple props,
+            # strict-DSprite items 2026-07-17; the heal/bandage fx left with
+            # the pill-anim fix 2026-07-18 -- the pill is eaten, meal-style)
             self.start_fx("cheer")
         elif kind == "assist" and chain_eat:
             # assistantFeed runs the STANDARD eat underneath (canon
@@ -388,6 +385,11 @@ class FxMixin:
         return (fr[i] if i < len(fr) and fr[i] else None) or first
 
     def _food_frames(self, key, px=8):
+        if key == "pill":
+            # the pill's ripped he/ve/ye bite strip (decompile EATING state):
+            # already 8px, no atlas entry -- the glyphs live with the feed menu
+            from .feedscreen import PILL_BITES
+            return PILL_BITES
         raw = data.load_icons().get(key)
         if not raw:
             return None
@@ -902,20 +904,10 @@ class FxMixin:
             wy = -len(wash) + (step - 21) * 4              # 9px/tick of 120 -> ~4px/tick of 48
             c.overlay += _blit(wash, max(0, (SCREEN_COLS - len(wash[0])) // 2), wy)
 
-    def _fxk_heal(self, pet, fx, step, c):
-        # DVPet bandage(): the item drops in on the pet's LEFT (x31 vs char x55,
-        # like the food) and steps through its 4-frame application strip at beats
-        # 0/8/13/18 while the pet holds the HURT pose (+9, being treated); ends 23
-        # and chains into cheer(true).
-        c.rows = self._pose_rows_idx(pet, 9)
-        item = data.load_icons().get(fx.get("icon") or "i:80")
-        if item:
-            fi = 0 if step < 8 else 1 if step < 13 else 2 if step < 18 else 3
-            bm = item[min(fi, len(item) - 1)]
-            bw = len(bm[0])
-            ix = max(0, PET_BASE_X - bw)
-            iy = 0 if step < 4 else 4                      # setLocY 53 -> 64 at beat 4
-            c.overlay += _blit(bm, ix, iy)
+    # (_fxk_heal -- the DVPet bandage() port -- left with the pill-anim fix
+    # 2026-07-18: the source has no heal anim at all; its pill is EATEN, and
+    # the pill was this painter's only rider.  It also drew the medicine strip
+    # at y0-4, above the window top (y6) -- a clipped sliver either way.)
 
     def _fxk_losing(self, pet, fx, step, c):
         # DVPet losing() (the home-battle defeat): the sore loser jeers for 30

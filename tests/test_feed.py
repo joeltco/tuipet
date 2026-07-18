@@ -61,21 +61,40 @@ def test_feed_alias_keeps_old_callers_fed():
     assert p.hunger == 1
 
 
-def test_the_pill_rides_the_uniform_medicine_strip():
-    """Pill-anim fix (Joel 2026-07-17: "the eating pill animation is broken"):
-    the feed panel must hand the heal fx i:80 -- the real 4-frame application
-    strip -- never i:4, whose mixed-size frames visibly morphed mid-beat."""
-    from tuipet import data
-    from tuipet.feedscreen import FeedPanel
+def test_the_pill_is_eaten_on_its_own_bite_strip():
+    """Pill-anim fix (Joel 2026-07-18: "the pill eating animation is broken...
+    dsprite is the animation truth"): the source has NO heal anim -- its pill
+    rides the same EATING action as meat, on the ripped he/ve/ye bite strip.
+    The old route (the DVPet bandage() port) drew the i:80 medicine strip at
+    y0-4, above the window top (y6): a clipped sliver.  Pin the whole road:
+    panel verdict -> eat anim -> the "pill" key -> the strip the fx steps."""
+    from tuipet.app import Screen
+    from tuipet.feedscreen import FeedPanel, PILL_BITES
     from tuipet.pet import Pet
     p = Pet(num=100, stage="Champion", attribute="Vaccine", obedience=500)
     p.world_seconds = 12 * 60.0
     p.sick = True
     pan = FeedPanel(p)
     pan.cursor = 1                                   # the pill row
-    done, (outcome, item, _msg) = pan.key("enter")
+    done, (outcome, item, msg) = pan.key("enter")
     assert (done, outcome) == ("done", "healed")
-    assert item["key"] == "i:80"
-    strip = data.load_icons()["i:80"]
-    assert len(strip) == 4
-    assert len({(len(f[0]), len(f)) for f in strip}) == 1   # uniform frames
+    assert item["key"] == "pill" and "Cured" in msg
+    assert p.anim == "eat"                           # EATING, not the old heal
+    # the fx resolves "pill" to the ripped strip: 3 bites + the eaten-away None
+    class _S:
+        pass
+    _S._food_frames = Screen._food_frames
+    frames = _S()._food_frames("pill")
+    assert frames is PILL_BITES
+    assert len(frames) == 4 and frames[-1] is None
+    assert all(len(f) == 8 and all(len(r) == 8 for r in f) for f in frames[:3])
+    # the strip is a strict shrink: full -> bitten -> nearly gone
+    inks = [sum(r.count("1") for r in f) for f in frames[:3]]
+    assert inks[0] > inks[1] > inks[2] > 0
+    # and the heal fx kind is GONE root and branch
+    assert not hasattr(Screen, "_fxk_heal")
+    _probe = _S()
+    _probe.fx = None
+    _probe.frame_i = 0
+    Screen.start_fx(_probe, "heal")
+    assert _probe.fx["steps"] == 12                  # the unknown-kind default

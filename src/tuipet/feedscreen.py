@@ -35,6 +35,29 @@ PILL = ["00001110",
         "10001000",
         "01110000"]
 
+# The pill is EATEN (decompile EATING state: the same action as meat, the item
+# glyph stepping full -> bitten -> nearly-gone as the mon chews; nothing drawn
+# after the last bite).  `he`/`ve`/`ye` ripped verbatim; the closing None is
+# the eaten-away frame, same shape as the food atlas strips.
+PILL_BITES = [PILL,
+              ["00000000",
+               "00010000",
+               "00101000",
+               "01011000",
+               "10001100",
+               "10000100",
+               "10001000",
+               "01110000"],
+              ["00000000",
+               "00000000",
+               "00100000",
+               "01000000",
+               "10000000",
+               "10000000",
+               "10000000",
+               "01100000"],
+              None]
+
 CURSOR = ["1000",
           "1100",
           "1110",
@@ -78,13 +101,13 @@ class FeedPanel:
                 return ("done", ("refused", {"key": "f:0", "name": "Meat"}, msg))
             was_sick = self.pet.sick or self.pet.is_injured()
             msg = self.pet.feed_pill()
-            if self.pet.anim == "heal":
+            if self.pet.anim == "eat":
                 out = "Cured!" if was_sick else "A tonic — strength and pep."
-                # i:80 is the real 4-frame medicine strip the heal fx steps
-                # through (the clone's choice); i:4 was a mixed-size icon that
-                # visibly morphed mid-application (pill-anim fix 2026-07-17)
-                return ("done", ("healed", {"key": "i:80", "name": "Pill"}, out))
-            return ("done", ("refused", {"key": "i:4", "name": "Pill"}, msg))
+                # the pill is EATEN (decompile EATING state, pill-anim fix
+                # 2026-07-18): it rides the eat fx on its own ripped
+                # he/ve/ye bite strip -- "pill" resolves to PILL_BITES
+                return ("done", ("healed", {"key": "pill", "name": "Pill"}, out))
+            return ("done", ("refused", {"key": "pill", "name": "Pill"}, msg))
         elif k in ("escape", "f"):
             return ("done", None)
         return None

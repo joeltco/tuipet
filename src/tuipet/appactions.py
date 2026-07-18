@@ -180,7 +180,9 @@ class ActionsMixin:
         if outcome == "fed" and self.pet.anim == "eat":
             self.screen_w.start_fx("eat", icon, pet=self.pet, starving=starving)   # SFX per-bite in the fx loop
         elif outcome == "healed":
-            self.screen_w.start_fx("heal", icon)  # the pill rides the heal beat
+            # the pill is EATEN (decompile EATING state): the same eat fx as
+            # meat, on the ripped pill bite strip (pill-anim fix 2026-07-18)
+            self.screen_w.start_fx("eat", icon, pet=self.pet)
         elif outcome == "full":
             self.screen_w.start_fx("spit", icon)  # _refuse fires on each head-shake (fx snds)
         self._do(msg)

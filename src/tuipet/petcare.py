@@ -116,7 +116,9 @@ class CareMixin:
         """The pill (clone rules): cures the sickness, strength +1, energy
         +7, weight +5.  Refused when there is nothing to cure or top up.
         Healing a sleeper DISTURBS it first.  (The classic spell machine
-        left 2026-07-17; the DSprite flag is pill-cured ONLY.)"""
+        left 2026-07-17; the DSprite flag is pill-cured ONLY.)  The pill is
+        EATEN -- the source's EATING action, same as meat (pill-anim fix
+        2026-07-18; the DVPet bandage anim left with it)."""
         if (_g := self._guard(asleep_blocks=False)) is not None:
             return _g
         if not self.sick \
@@ -129,7 +131,8 @@ class CareMixin:
         self.strength = _clamp(self.strength + 1, 0, 4)
         self._set_energy(self.energy + PILL_ENERGY_GAIN)
         self._set_weight(self.weight + PILL_WEIGHT_GAIN)
-        self._set_anim("heal", 1.4)
+        self._last_meal_starving = False     # a tonic is never wolfed down
+        self._set_anim("eat", 1.4)
         return "Took the pill."
 
     # ---- discipline: praise / scold (PhysicalState) --------------------------
