@@ -141,11 +141,10 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("SAVE RESCUE: yesterday's guide-key crash could poison the "
-                 "save file itself, killing the game at launch. Poisoned "
-                 "saves now heal on load (your gen and progress intact - "
-                 "the egg becomes a classic one) and the renderer can "
-                 "never die over a bad egg value again.")
+    WHATS_NEW = ("A TRUER CORE: the DigiCore's countdown meter now agrees "
+                 "with its own Meter row - Megas whose next road is a "
+                 "jogress or X-door showed the life meter while the page "
+                 "said an evolution neared. One truth drives both now.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and

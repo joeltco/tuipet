@@ -84,7 +84,8 @@ def record(egg_type=0):
     fr = frames(egg_type)
     w = max(len(r) for r in fr[0])
     return {"num": -1, "name": "Digitama", "stage": "Egg",
-            "attribute": "None", "field": "None", "element": "None",
+            # (the "element" key left with the element system, 2026-07-18)
+            "attribute": "None", "field": "None",
             "spriteSet": 0, "spriteNum": 0, "w": w, "h": len(fr[0]),
             "frames": fr}
 

@@ -462,3 +462,22 @@ def test_the_data_model_is_modular_and_live():
     assert {"Toilet", "Futon", "Trained", "Helper"} <= labels
     # the power page carries the live gate-drivers
     assert {"Form", "Level", "KO6"} <= labels
+
+
+def test_the_meter_and_the_core_page_agree_on_line_pets():
+    """Digicore audit 2026-07-18: core_number read the CORPUS graph alone,
+    so line parents whose onward roads are line-only (the jogress/X Megas)
+    showed the life meter while the Meter row said an evolution neared.
+    One predicate (has_next) drives both now."""
+    from tuipet import digicore, lines
+    # Aegisdramon (ver4): its onward row (RustTyrannomon) is line-only
+    p = Pet(num=396, name="Aegisdramon", stage="Mega", attribute="Vaccine")
+    p.line_id = "ver4"
+    p.world_seconds = 600.0
+    p.stage_seconds = 10.0
+    assert not data.load_evolutions().get(396)      # the corpus is silent...
+    assert lines.evo_rows(p)                        # ...the line is not
+    assert digicore.has_next(p)
+    growth = p.STAGE_DURATION.get(p.stage)
+    if growth:                                      # a Mega with growth: countdown
+        assert digicore.core_number(p) <= digicore.DIGICORE_BASE_RATE

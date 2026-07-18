@@ -152,9 +152,10 @@ class DigiCorePanel:
         p = self.pet
         n = core_number(p)
         growth = p.STAGE_DURATION.get(p.stage)
-        has_next = (bool(lines.evo_rows(p)) if lines.active(p)
-                    else bool(data.load_evolutions().get(p.num)))
-        pending = growth is not None and p.stage_seconds < growth and has_next
+        # ONE predicate for the whole page (digicore audit 2026-07-18):
+        # the Meter row and core_number must never disagree again
+        pending = (growth is not None and p.stage_seconds < growth
+                   and core.has_next(p))
         x = getattr(p, "x_antibody", "None")
         rows = [
             ("Core", f"{chr(0x25C6)} {n}"),

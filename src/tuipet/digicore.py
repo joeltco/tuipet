@@ -23,13 +23,24 @@ _CORE_BG = {"": "digicoreN", "None": "digicoreN", "DragonsRoar": "digicoreDr",
             "DarkArea": "digicoreDa", "VirusBuster": "digicoreVb"}
 
 
+def has_next(pet):
+    """Is ANY onward evolution waiting?  Line pets read their line chart;
+    corpus/legacy pets read the corpus graph.  (Digicore audit 2026-07-18:
+    core_number checked the corpus alone, so 22 line parents whose onward
+    rows are line-only — the jogress/X-road Megas — showed the LIFE meter
+    while the same page's Meter row said an evolution neared.)"""
+    if lines.active(pet):
+        return bool(lines.evo_rows(pet))
+    return bool(data.load_evolutions().get(pet.num))
+
+
 def core_number(pet):
     """setupDigicore's meter: an evolution countdown while a normal evolution is
     pending, otherwise a lifespan meter counting up.  Floors at 1."""
     base = DIGICORE_BASE_RATE
     growth = pet.STAGE_DURATION.get(pet.stage)
     pending = (growth is not None and pet.stage_seconds < growth
-               and bool(data.load_evolutions().get(pet.num)))
+               and has_next(pet))
     if pending:
         denom = round(growth / base) or 1
         n = int(base - pet.stage_seconds / denom)
