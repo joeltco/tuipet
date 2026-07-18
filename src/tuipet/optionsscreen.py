@@ -28,7 +28,7 @@ _DESC = {"theme": "recolor the whole game — live preview",
          "sound": "the DVPet chirps — switch + volume",
          "account": "switch login — the pet parks in the cloud",
          "cloud": "cloud saves + offline mail — on or off",
-         "update": "auto-installs new releases at launch · ENTER checks now",
+         "update": "ENTER checks + installs · A flips launch auto-install",
          "keys": "every binding on one page",
          "new": "retire the pet, hatch the heir",
          "erase": "wipe save, progress and login — for keeps"}
@@ -198,7 +198,7 @@ class OptionsPanel(menu.SubHost):
     def captures_text(self):
         # typing YES — or a name/password in the hosted AccountPanel — q is a
         # letter here, never quit
-        return self.confirm or bool(
+        return self.confirm or self.confirm_new or self.confirm_restart or bool(
             self.sub is not None and getattr(self.sub, "captures_text", False))
 
     def anim(self):
@@ -229,7 +229,7 @@ class OptionsPanel(menu.SubHost):
         def run():
             latest = update_check.latest_if_newer()
             self._upd = latest or ""
-            self.msg = (f"tuipet {latest} is out — pip install -U tuipet"
+            self.msg = (f"tuipet {latest} is out — ENTER installs it"
                         if latest else "no newer release found.")
         threading.Thread(target=run, daemon=True).start()
 
@@ -327,7 +327,7 @@ class OptionsPanel(menu.SubHost):
                 self._sub_row = row
                 self.sub = SoundPanel(self.sound_get, self.sound_toggle)
             elif row == "account":
-                from .lobbyscreen import AccountPanel
+                from .accountscreen import AccountPanel
                 self._sub_row = row
                 self.sub = AccountPanel(
                     note="Switch: the pet parks with this login.")
@@ -383,7 +383,7 @@ class OptionsPanel(menu.SubHost):
             if self._updated or getattr(self.pet, "_updated_to", None):
                 return "restart to apply"
             if not persistence.get_auto_update():
-                return "auto: off"
+                return f"v{update_check.current_version() or 'dev'} · auto off"
             if self._upd == "…":
                 return "checking…"
             if self._upd:
@@ -403,6 +403,15 @@ class OptionsPanel(menu.SubHost):
         if self.sub is not None:
             return self.sub.text()
         out = menu.header("OPTIONS", persistence.get_account()[0] or "")
+        if self.confirm_restart:
+            out.append_text(menu.blanks(1))
+            out.append_text(menu.note("Update installed."))
+            out.append_text(menu.note("Restart into the new version now?"))
+            out.append_text(menu.blanks(1))
+            out.append_text(menu.note("Your save is already written."))
+            out.append_text(menu.blanks(2))
+            out.append_text(menu.footer("ENTER restart now   ESC later"))
+            return out
         if self.confirm:
             out.append_text(menu.blanks(1))
             out.append_text(menu.note("This erases the pet, progress,"))

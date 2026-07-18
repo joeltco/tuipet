@@ -141,10 +141,11 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("UPDATE, THEN PLAY: installing an update from g options "
-                 "now asks to restart - hit ENTER and tuipet relaunches "
-                 "straight into the new version, save intact. ESC keeps "
-                 "playing and applies it next launch.")
+    WHATS_NEW = ("OPTIONS POLISH: the restart offer got its own page, the "
+                 "update row teaches its keys (ENTER installs, A flips "
+                 "auto), your version shows even with auto-update off, "
+                 "and pressing q inside a confirm prompt no longer quits "
+                 "the whole game.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and

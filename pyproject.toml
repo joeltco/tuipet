@@ -1,6 +1,6 @@
 [project]
 name = "tuipet"
-version = "0.5.41"
+version = "0.5.42"
 description = "A terminal virtual pet (Digimon V-Pet style) rendered with halfblock sprites, built on data from the real devices."
 readme = "README.md"
 requires-python = ">=3.10"

@@ -191,7 +191,7 @@ def test_update_row_checks_pypi(monkeypatch):
     # the row now OFFERS the install (Joel 2026-07-13: the update option
     # actually updates); a second ENTER runs it
     assert pan._value("update") == "9.9.9 · ENTER installs"
-    assert "pip install -U tuipet" in pan.msg
+    assert "ENTER installs" in pan.msg
     _fits(pan)
     monkeypatch.setattr(optionsscreen.update_check, "run_upgrade",
                         lambda: (True, "Updated — restart tuipet to play the new version."))
@@ -377,3 +377,30 @@ def test_switch_account_app_flow(monkeypatch):
     assert seen["loaded"], "the new account's cloud pet must load"
     assert seen["parked"], "the old pet must be pushed to the OLD account"
     assert seen["fresh"], "an empty account starts fresh at the carousel"
+
+
+def test_confirm_prompts_hold_the_keyboard():
+    """Polish 2026-07-18: during ANY confirm (erase / retire / restart), a
+    typed q must never fall through to the app's quit binding."""
+    pan, _ = _panel()
+    for flag in ("confirm", "confirm_new", "confirm_restart"):
+        pan.confirm = pan.confirm_new = pan.confirm_restart = False
+        setattr(pan, flag, True)
+        assert pan.captures_text, flag
+
+
+def test_restart_offer_renders_its_own_page():
+    pan, _ = _panel()
+    pan.confirm_restart = True
+    page = pan.text().plain
+    assert "Restart into the new version" in page
+    assert "ENTER restart now" in page
+
+
+def test_auto_off_still_names_the_version(monkeypatch):
+    from tuipet import optionsscreen, persistence
+    pan, _ = _panel()
+    monkeypatch.setattr(persistence, "get_auto_update", lambda: False)
+    monkeypatch.setattr(optionsscreen.update_check, "current_version",
+                        lambda: "9.9.9")
+    assert pan._value("update") == "v9.9.9 · auto off"
