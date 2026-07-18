@@ -76,11 +76,22 @@ def test_every_attempt_counts_costs_and_fills_effort():
     assert p.anim == "happy"
 
 
-def test_a_clean_strike_sheds_toward_base_never_below():
+def test_every_drill_sheds_two_toward_base_never_below():
+    # canon gates 2026-07-18 (decompile L11701): weight-2 on EVERY drill,
+    # win or lose -- floored at the species BASE, the standing adaptation
+    # (the source's floor of 1 fattened/starved classic pets)
     p = _pet()
     p.weight = p._base_weight() + 3
     p.train_result(True)
-    assert p.weight == p._base_weight() + 2
+    assert p.weight == p._base_weight() + 1
+    r = _pet()
+    r.weight = r._base_weight() + 3
+    r.train_result(False)                         # a whiff sheds too
+    assert r.weight == r._base_weight() + 1
+    s2 = _pet()
+    s2.weight = s2._base_weight() + 1             # the floor holds mid-shed
+    s2.train_result(True)
+    assert s2.weight == s2._base_weight()
     q = _pet()
     q.weight = q._base_weight() - 5               # a light runner
     q.train_result(True)

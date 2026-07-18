@@ -37,9 +37,20 @@ def test_care_actions_disturb_instead_of_acting():
     # system: it was spoil(), and mood is gone)
     for action in ("feed", "heal"):
         p = _sleeping()
+        if action == "feed":
+            # canon gates 2026-07-18: a sick or filth-flanked pet REFUSES
+            # meat outright (and a refusal never wakes it) -- clear both so
+            # the meat actually lands on the sleeper
+            p.sick, p.poop, p.poop_sizes, p.hunger = False, 0, [], 1
+        else:
+            p.poop, p.poop_sizes = 0, []       # the pill refuses beside filth
         d0 = p.disturb
         getattr(p, action)()
         assert p.disturb == d0 + 1, f"{action} did not disturb"
+    p = _sleeping()                            # and a REFUSED feed never wakes
+    d0 = p.disturb                             # (_sleeping is sick + filthy)
+    p.feed()
+    assert p.disturb == d0
     p = _sleeping()
     sick0, poop0, hunger0 = p.sick, p.poop, p.hunger
     p.clean()

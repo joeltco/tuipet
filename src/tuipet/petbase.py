@@ -473,6 +473,8 @@ EXP_PER_WIN = 100                   # DMX experience per defeated enemy.  The ma
 #                                     thresholds onto tuipet's win pacing (LV5=8 wins,
 #                                     LV8=20, LV10=50 -- humulos LV fix 2026-07-17)
 TRAIN_ENERGY_COST = 2               # the 0.5 drill's swing (clone TRAIN_ENERGY_COST)
+BATTLE_MIN_ENERGY = 10              # the source's battle gate (canon gates 2026-07-18,
+#                                     decompile L11746: energy < 10 refuses the fight)
 PILL_ENERGY_GAIN = 7                    # the DSprite pill (feed menu, BASIC VPET 2026-07-16)
 PILL_WEIGHT_GAIN = 5
 STOMACH_CAPACITY = 4                    # legacy fallback only -- see stomach_capacity()

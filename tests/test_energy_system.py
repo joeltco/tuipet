@@ -50,15 +50,17 @@ def test_an_unaffordable_digimental_is_refused():
 
 # --- no hard activity gates (the refusal roll is the gate) -----------------------
 
-def test_a_worn_pet_may_still_fight_but_not_train():
-    """canBattle hard-gates nothing (MinEnergyForActivity -127, the classic
-    column) -- but the 0.5 drill brought the clone's ONE hard gate with it
-    (2026-07-17): too drained to swing."""
+def test_a_worn_pet_refuses_both_the_drill_and_the_fight():
+    """Canon gates 2026-07-18 (decompile L11697/11746): a drained pet
+    refuses the drill (energy under the swing cost) AND the fight (energy
+    under 10) with the head-shake."""
     p = _pet(energy=-3, fatigue_length=30.0, compliance=True)
-    assert p.can_battle() is None
+    assert "drained" in p.can_battle().lower()
     assert "tired" in p.can_train().lower()
     p.energy = 2
     assert p.can_train() is None
+    p.energy = 10
+    assert p.can_battle() is None
 
 def test_the_dead_and_egg_gates_still_hold():
     p = _pet()

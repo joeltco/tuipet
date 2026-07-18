@@ -23,10 +23,13 @@ def test_meat_fills_a_heart_and_weighs():
 
 
 def test_meat_refused_at_a_full_belly_counts_the_overeat():
+    # canon gates 2026-07-18: a PURE refuse -- the counter ticks (the
+    # evolution OF gates read it) but no weight, no mistake, no bowel shove
     p = _pet(hunger=FULL_HUNGER, weight=20)
-    of0 = p.overeat
+    of0, m0 = p.overeat, p.mistake_day
     msg = p.feed_meat()
-    assert "full" in msg and p.overeat == of0 + 1 and p.weight == 21
+    assert "full" in msg and p.overeat == of0 + 1
+    assert p.weight == 20 and p.mistake_day == m0
     assert p.hunger == FULL_HUNGER
 
 
@@ -110,3 +113,24 @@ def test_the_pill_is_eaten_through_the_dvpet_med_strip():
     _probe.frame_i = 0
     Screen.start_fx(_probe, "heal")
     assert _probe.fx["steps"] == 12                  # the unknown-kind default
+
+
+def test_the_source_refusal_gates_hold():
+    """Canon gates 2026-07-18 (decompile L11676/11677/11697/11746): sick or
+    filth-flanked pets refuse meat; filth refuses the pill too; the drill
+    refuses starving/sick/filthy; the fight refuses starving/drained/sick/
+    filthy.  Every refusal wears the head-shake pose."""
+    p = _pet(hunger=1, sick=True)
+    assert "sick" in p.feed_meat().lower() and p.anim == "refuse"
+    p = _pet(hunger=1)
+    p.poop, p.poop_sizes = 2, [1, 2]
+    assert "clean" in p.feed_meat().lower()
+    assert "clean" in p.feed_pill().lower()
+    assert "clean" in p.can_train().lower()
+    assert "clean" in p.can_battle().lower()
+    p = _pet(hunger=0)
+    assert "hungry" in p.can_train().lower()
+    assert "hungry" in p.can_battle().lower()
+    p = _pet(sick=True)
+    assert "sick" in p.can_train().lower()
+    assert "sick" in p.can_battle().lower()

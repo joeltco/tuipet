@@ -86,21 +86,28 @@ class CareMixin:
         return self.feed_meat()
 
     def feed_meat(self):
-        """Meat: hunger +1, weight +1.  Refused at a full belly (the head-
-        shake; +1 overeat +1 weight -- the OF gate's sin, kept from canon's
-        overeatPenalty).  Feeding a sleeper DISTURBS it first."""
+        """Meat: hunger +1, weight +1.  The source's refusal gates (canon
+        gates 2026-07-18, decompile L11676): a sick pet, a pet beside its
+        own filth, or a full belly gets the head-shake and NOTHING else --
+        the DVPet overeatPenalty (weight+1, mistake+1, bowel shove) left
+        with it.  The overeat COUNTER still ticks: the evolution corpus's
+        OF gates read it, and a full-belly attempt IS the overfeed signal.
+        Feeding a sleeper DISTURBS it first (refusals don't wake it)."""
         if (_g := self._guard(asleep_blocks=False)) is not None:
             return _g
+        if self.sick:
+            self._set_anim("refuse", 1.0)
+            return f"{self.name} is too sick to eat — try the pill."
+        if self.poop:
+            self._set_anim("refuse", 1.0)
+            return "Clean up first!"
+        if self.hunger >= FULL_HUNGER:
+            self.overeat += 1                    # the OF-gate signal, penalty-free
+            self._set_anim("refuse", 1.0)
+            return f"{self.name} is too full!"
         if self.asleep:
             self._disturbed()
         self._last_meal_starving = self.hunger == 0          # eat(): wolfed down
-        if self.hunger >= FULL_HUNGER:
-            self._set_weight(self.weight + 1)
-            self.overeat += 1
-            self.mistake_day += 1                # OverStomachCapcityMissedDayChange
-            self._poop_t = min(self._poop_interval, getattr(self, "_poop_t", 0) + 900)
-            self._set_anim("refuse", 1.0)
-            return f"{self.name} is too full!"
         self.hunger = _clamp(self.hunger + 1, 0, FULL_HUNGER)
         self._set_weight(self.weight + 1)
         # every meal advances the bowel gauge (applyFood: bmGauge += bmLapseInc)
@@ -121,6 +128,11 @@ class CareMixin:
         2026-07-18; the DVPet bandage anim left with it)."""
         if (_g := self._guard(asleep_blocks=False)) is not None:
             return _g
+        if self.poop:
+            # the source refuses the pill beside filth too (canon gates
+            # 2026-07-18, decompile L11677)
+            self._set_anim("refuse", 1.0)
+            return "Clean up first!"
         if not self.sick \
                 and self.strength >= 4 and self.energy >= self.max_energy:
             self._set_anim("refuse", 1.0)

@@ -105,14 +105,23 @@ class BattleMixin:
         self._promote_attr_ranks()
 
     def can_train(self):
-        """canExercise (energy audit 2026-07-06): NO hard fatigue/energy gate --
-        MinEnergyForActivity is -127 on the classic column (vacuous), and
-        fatigue/sickness only SHADE the refusal roll (unwellMod) and the injury
-        odds.  The 0.5 drill adds the clone's ONE hard gate: too drained to
-        swing (0.5 TRAINING 2026-07-17)."""
+        """The source's drill gates (canon gates 2026-07-18, decompile
+        L11697): a starving, sick, drained or filth-flanked pet refuses the
+        drill with the head-shake.  (The energy line keeps the clone's own
+        threshold -- too drained to SWING, a standing adaptation.)"""
         if (_g := self._guard()) is not None:
             return _g
+        if self.hunger <= 0:
+            self._set_anim("refuse", 1.0)
+            return "Too hungry to train."
+        if self.sick:
+            self._set_anim("refuse", 1.0)
+            return "Too sick to train."
+        if self.poop:
+            self._set_anim("refuse", 1.0)
+            return "Clean up first!"
         if self.energy < TRAIN_ENERGY_COST:
+            self._set_anim("refuse", 1.0)
             return "Too tired to train."
         return None
 
@@ -156,11 +165,12 @@ class BattleMixin:
         # the shipped feel and the DM20 rule)
         self.strength = _clamp(self.strength + 1, 0, 4)
         self._set_energy(max(0, self.energy - TRAIN_ENERGY_COST))
-        if success and self.weight > self._base_weight():
-            # the clone shed toward base, never below -- its weight model
-            # floored AT base, so a bare max() here would fatten a classic
-            # pet that runs light (caught live 2026-07-17)
-            self._set_weight(self.weight - 1)
+        # the source sheds weight-2 on EVERY drill, win or lose (canon gates
+        # 2026-07-18, decompile L11701) -- floored at the species BASE, not
+        # at 1: the bare clone floor fattened a light classic pet (caught
+        # live 2026-07-17; the adaptation stands)
+        if self.weight > self._base_weight():
+            self._set_weight(max(self._base_weight(), self.weight - 2))
         self._set_anim("happy" if success else "sad", 1.8)
         return True
 
@@ -172,11 +182,21 @@ class BattleMixin:
         if self.asleep:
             return self._disturbed()
         self._calm_discipline_call()                         # canBattle placates the tantrum
-        # canBattle (energy audit 2026-07-06): the refusal roll is the ONLY
-        # gate -- MinEnergyForActivity is -127 on the classic column (vacuous)
-        # and fatigue has no hard gate anywhere in canon; it shades the roll
-        # (unwellMod -10) and the battle-injury odds instead.  A worn pet
-        # fights worse and refuses more, but it CAN fight.
+        # the source's battle gates (canon gates 2026-07-18, decompile
+        # L11746/11813): a starving, drained, sick or filth-flanked pet
+        # refuses the fight with the head-shake
+        if self.hunger <= 0:
+            self._set_anim("refuse", 1.0)
+            return "Too hungry to fight."
+        if self.energy < BATTLE_MIN_ENERGY:
+            self._set_anim("refuse", 1.0)
+            return "Too drained to fight."
+        if self.sick:
+            self._set_anim("refuse", 1.0)
+            return "Too sick to fight."
+        if self.poop:
+            self._set_anim("refuse", 1.0)
+            return "Clean up first!"
         if self.check_refused():                             # canBattle -> checkRefused
             return f"{self.name} refuses to fight!"
         return None

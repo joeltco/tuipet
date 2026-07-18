@@ -60,11 +60,15 @@ def test_birthday_fires_on_the_age_day():
 
 
 def test_slips_mark_the_day():
+    # (canon gates 2026-07-18: the full-belly feed is a PURE refuse -- the
+    # DVPet mistake/weight penalty left; the overeat COUNTER still ticks
+    # for the evolution corpus's OF gates)
     p = _pet()
     p._disturbed_dummy = None
-    m0 = p.mistake_day
+    m0, of0 = p.mistake_day, p.overeat
     p.hunger = 4
     p.feed_meat()                                               # the overeat slip
-    assert p.mistake_day == m0 + 1
+    assert p.overeat == of0 + 1
+    assert p.mistake_day == m0
 
 
