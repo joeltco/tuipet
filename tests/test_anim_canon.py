@@ -25,19 +25,39 @@ def test_sick_shuffle_is_net_zero():
 
 
 class _StubPet:
-    def __init__(self, energy=10, fatigued=False, mood=0, enthusiasm=0):
-        self.energy, self._fat, self.mood, self.enthusiasm = energy, fatigued, mood, enthusiasm
+    """LIVE-signal stub (idle-pose audit 2026-07-18: mood/enthusiasm were
+    frozen meters; the pose reads energy + the derived word + condition)."""
 
-    def is_fatigued(self):
-        return self._fat
+    def __init__(self, energy=10, word="Neutral", cond=1):
+        self.energy, self._word, self._cond = energy, word, cond
+
+    def current_mood(self):
+        return self._word
+
+    def condition(self):
+        return self._cond
 
 
-def test_mood_pose_reads_state():
+def test_mood_pose_reads_live_state():
     assert anim.mood_pose(_StubPet(energy=0)) in (10, 9, 2)          # spent -> weary
-    assert anim.mood_pose(_StubPet(fatigued=True)) in (10, 9, 2)     # tired -> weary
-    assert anim.mood_pose(_StubPet(mood=-5)) in (4, 6)               # unhappy -> sour
-    assert anim.mood_pose(_StubPet(mood=5, enthusiasm=0)) == 5       # content & spirited -> bright
-    assert anim.mood_pose(_StubPet(mood=0)) is None                  # neutral -> ordinary walk pose
+    assert anim.mood_pose(_StubPet(word="Unhappy")) in (4, 6)        # sick/starving -> sour
+    assert anim.mood_pose(_StubPet(cond=3)) == 5                     # well-kept -> bright
+    assert anim.mood_pose(_StubPet()) is None                        # ordinary -> walk pose
+
+
+def test_bright_is_earned_not_frozen():
+    """The frozen-meter bug: mood sat at its hatch value (100) forever, so
+    the bright pose fired for every pet.  Now it demands condition 3 -- a
+    REAL pet fresh out of care neglect must read neutral, not bright."""
+    from tuipet.pet import Pet
+    p = Pet(num=100, stage="Champion", attribute="Vaccine")
+    p.world_seconds = 600.0
+    p.mood = 100                              # the frozen hatch value
+    p.hunger, p.strength, p.energy = 1, 0, 3  # visibly under-kept
+    assert anim.mood_pose(p) is None or anim.mood_pose(p) in (4, 6)
+    p.hunger = p.strength = 4
+    p.energy = p.max_energy
+    assert anim.mood_pose(p) == 5             # NOW it beams
 
 
 def test_mood_pose_indices_are_valid_sprite_frames():

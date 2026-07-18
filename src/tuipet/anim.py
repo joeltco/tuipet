@@ -56,17 +56,20 @@ def sick_frame(frame):
 def mood_pose(pet):
     """DVPet stepFrame substitutes a `checkMoodFrame` expression pose for the plain
     walk toggle on a fraction of idle steps, so a resting pet *reads* its state:
-    weary when tired/spent, sour when unhappy, bright when content.  Returns a
-    sprite index, or None to keep the neutral walk toggle.
+    weary when spent, sour when unwell, bright when genuinely well-kept.
+    Returns a sprite index, or None to keep the neutral walk toggle.
 
-    Mapping condensed from checkMoodFrame's offset table: tired/no-energy -> 9/10/2,
-    unhappy -> 4/6, happy & spirited -> 5, otherwise neutral (None)."""
-    if pet.energy <= 0 or pet.is_fatigued():
+    LIVE signals only (idle-pose audit 2026-07-18: the old mood/enthusiasm
+    reads were FROZEN meters -- mood sat at its hatch value forever, so the
+    bright pose fired constantly and the sour faces were unreachable):
+    weary = the energy gauge; sour = the derived Unhappy word (sick /
+    starving / filthy); bright = condition tier 3, the well-kept pet."""
+    if pet.energy <= 0:
         return random.choice((10, 9, 2))      # weary / collapsed / droop
-    if pet.mood < 0:
+    if pet.current_mood() == "Unhappy":
         return random.choice((4, 6))          # sour faces
-    if pet.mood > 0 and pet.enthusiasm >= 0:
-        return 5                              # bright/excited
+    if pet.condition() >= 3:
+        return 5                              # bright: earned, not frozen-on
     return None                               # neutral -> ordinary walk pose
 
 

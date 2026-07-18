@@ -141,11 +141,11 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("OPTIONS POLISH: the restart offer got its own page, the "
-                 "update row teaches its keys (ENTER installs, A flips "
-                 "auto), your version shows even with auto-update off, "
-                 "and pressing q inside a confirm prompt no longer quits "
-                 "the whole game.")
+    WHATS_NEW = ("HONEST FACES: the idle expression poses now read the "
+                 "pet's real state - it beams only when genuinely "
+                 "well-kept, sulks when sick or starving, and droops when "
+                 "spent. (The old bright face was stuck on: it read a "
+                 "meter frozen since hatching.)")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and
