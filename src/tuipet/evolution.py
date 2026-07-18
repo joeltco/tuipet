@@ -374,10 +374,11 @@ def select(pet):
 # that claims the target keeps the pet on lines; otherwise it rides this
 # corpus engine from then on -- a road it PAID for).
 #
-# Thresholds are the balance knob: spirit runs -10..10 and charging costs
-# 3/6 enthusiasm per unit (same/other Field), so each figure below is really
-# N charge SESSIONS with recovery between, not one action -- plus the wager
-# bits that banked the DNA and the per-unit sickness risk.
+# Thresholds are the balance knob: the charge bill is ENERGY, 1/unit on
+# your own Field and 2/unit off-Field over the -24..24 meter (the old
+# spirit bill left with its system), so each figure below is still N charge
+# SESSIONS with recovery between, not one action -- plus the wager bits
+# that banked the DNA.
 DIVERGE_NEED = {"Fresh": 2, "InTraining": 4, "Rookie": 8,
                 "Champion": 12, "Ultimate": 16}
 _STAGE_ORDER = ["Fresh", "InTraining", "Rookie", "Champion", "Ultimate", "Mega"]

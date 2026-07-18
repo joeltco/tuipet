@@ -1,6 +1,8 @@
-"""DNA screen -- the device's three DNA sub-screens plus a requirements viewer.
+"""DNA screen -- the device's DNA sub-screens.
 
-Home menu (DVPet DNA_Validation): Charge / Generate / Stats / Requirements.
+Home menu (DVPet DNA_Validation): Charge / Generate / Stats / Divergence.
+(The Requirements viewer left with the DNA slim -- gate-forgiveness died
+with it; this docstring lagged until the DNA review 2026-07-18.)
   * Charge   (DNA_Inventory + DNA_Detail): spend banked DNA into the pet, bending
              evolution toward forms whose Field-DNA gates you meet.  The bill is
              ENERGY: 1/unit on your own Field, doubled off-Field (the old
@@ -10,8 +12,6 @@ Home menu (DVPet DNA_Validation): Charge / Generate / Stats / Requirements.
              faster mash earns a rarer Field (getDNARate bands), too slow/fast -> the
              dud None field. The won Field blinks in (the UnlockDNA reveal).
   * Stats    (DNA_Stats): each Field's charged share -- the evolution gate %.
-  * Requirements: per evolution target, the Field-DNA % each form needs and whether
-             your charged distribution satisfies it (DVPet's evolution-tree DNA page).
   * Divergence (tuipet, "ultimate v-pet" arc 2026-07-07): the wild-road map --
              where each Field's charge can steer the NEXT evolution off the
              chart (evolution.divergence_roads), the stage threshold, and the
@@ -84,8 +84,15 @@ class DNAPanel:
             self.mash_f += 1
             if self.mash_f >= MASH_TICKS:
                 rate = self._rate()
+                owned0 = dict(self.pet.dna_owned)
+                bits0 = self.pet.bits
                 field = self.pet.dna_minigame_award(self.bet, rate)
-                self.won = (field, self.bet, rate)
+                # the result page reports what actually LANDED: near the 99
+                # cap the overflow refunds as bits, and "Got 99" while 9
+                # banked was a lie (DNA review 2026-07-18)
+                banked = self.pet.dna_owned.get(field, 0) - owned0.get(field, 0)
+                refund = self.pet.bits - bits0
+                self.won = (field, self.bet, rate, banked, refund)
                 self.phase = "result"
                 self.blink = 0
                 self.sfx = "mischief"    # soundConfig unlockDNA -> mischief.wav (banks even None -- never a jeer)
@@ -342,13 +349,15 @@ class DNAPanel:
         return menu.hints(("↑↓", "pick"), ("ENTER", "open"), ("ESC", "out"))
 
     def _text_result(self):
-        field, wager, rate = self.won
+        field, wager, rate, banked, refund = self.won
         show = (self.blink // 2) % 2 == 0            # DVPet unlockingDNA: the Field blinks in
         name = data.pretty_field(field)
-        gained = min(wager, MAX_DNA_INVENTORY)      # the premium bought lab work, not volume
         out = menu.bar("DNA · GENERATE", "rate %d" % rate)
         out.append_text(menu.blanks(1))
-        out.append_text(menu.note(("✓ Got %d %s DNA" % (gained, name)) if show else "✓"))
+        got = "✓ Got %d %s DNA" % (banked, name)
+        if refund > 0:
+            got += " · %db back" % refund            # the cap overflow, refunded
+        out.append_text(menu.note(got if show else "✓"))
         out.append_text(menu.blanks(1))
         out.append_text(menu.row("rate %d → %s" % (rate, name if show else ""), True))
         if field == "None":

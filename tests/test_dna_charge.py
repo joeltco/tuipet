@@ -112,3 +112,25 @@ def test_bet_screen_pages_and_caps_at_the_wager_limit():
     assert pan.bet == MAX_DNA_WAGER                          # hard cap
     pan.key("down")
     assert pan.bet == MAX_DNA_WAGER - 100
+
+
+def test_the_result_page_reports_what_actually_banked():
+    """DNA review 2026-07-18: near the 99 cap the overflow refunds as bits,
+    and the result page said "Got 99" while 9 landed.  It now reports the
+    true banked delta and the refund."""
+    from tuipet import dnascreen
+    from tuipet.pet import Pet
+    p = Pet(num=100, stage="Champion", attribute="Vaccine", obedience=500)
+    p.world_seconds = 12 * 60.0
+    p.bits = 5000
+    p.dna_owned["DragonsRoar"] = 90                  # 9 slots left
+    pan = dnascreen.DNAPanel(p)
+    pan.phase, pan.bet, pan.mash_f = "mash", 99, 0
+    pan.hits = 48                                    # lands in the DragonsRoar band
+    pan.mash_f = dnascreen.MASH_TICKS                # the clock expires this tick
+    pan.anim()
+    field, wager, rate, banked, refund = pan.won
+    assert field == "DragonsRoar" and wager == 99
+    assert banked == 9 and refund == 90              # truth, not the wager
+    page = pan.text().plain
+    assert "Got 9 Dragons Roar" in page and "90b back" in page
