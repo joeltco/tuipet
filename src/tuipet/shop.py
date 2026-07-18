@@ -41,9 +41,9 @@ ARMOR_CATEGORY = "Armor-Spirit"
 # shop icon roster (2026-07-18, Joel: "what about the other items icons?"):
 # each DSprite item wears the DVPet atlas icon for the SAME item -- exact
 # name matches first (Energy Drink f:17, Sleeping Pill f:34, X-Antibody
-# i:79), then same-concept matches on the pill precedent (the heal fx has
-# borrowed the medicine strip since the pill-anim fix).  Items with no
-# honest counterpart get NO icon -- never substitute wrong art.
+# i:79), then same-concept matches on the pill precedent (Med f:4 standing
+# in for a pill-shaped item).  Items with no honest counterpart get NO
+# icon -- never substitute wrong art.
 ICON_KEYS = {
     "energy_drink": "f:17",      # Energy Drink -- exact
     "sleeping_pill": "f:34",     # Sleeping Pill -- exact
