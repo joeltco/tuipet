@@ -386,18 +386,31 @@ class TuiPetApp(ActionsMixin, App):
         self._push_cloud()              # mirror the autosave up to the cloud
 
     def _warn_if_cloud_dropped(self):
-        """The server is REFUSING our cloud saves (a newer session of this
-        account owns them).  The local save is fine, but cross-device sync is
-        dead -- and we used to never mention it (swallowed-failure sweep
-        2026-07-13)."""
+        """The cloud is refusing (or we're refusing to send) this device's
+        saves.  The local save is fine, but cross-device sync is dead -- and
+        we used to never mention it (swallowed-failure sweep 2026-07-13), or
+        worse, blame "a newer session" for every cause (audit 2026-07-18:
+        format rejections and oversized saves wore the wrong warning)."""
         sync = getattr(self, "_sync", None)
-        if sync is None or not getattr(sync, "cloud_dropped", False):
+        if sync is None:
             return
-        if getattr(self, "_cloud_warned", False):
+        if getattr(sync, "cloud_dropped", False):
+            msg = ("⚠ Cloud sync off — tuipet is open in a newer session. "
+                   "This device saves locally only.")
+        elif getattr(sync, "save_invalid", False):
+            msg = ("⚠ Cloud sync off — the server rejected this save's "
+                   "format. This device saves locally only.")
+        elif getattr(sync, "save_too_big", False):
+            msg = ("⚠ Cloud sync off — this pet's save is too large to "
+                   "sync. This device saves locally only.")
+        elif getattr(sync, "last_error", ""):
+            msg = f"⚠ Cloud sync trouble — {sync.last_error}"
+        else:
             return
-        self._cloud_warned = True
-        self.flash(f"[{theme.NEG}]⚠ Cloud sync off — tuipet is open in a newer "
-                   f"session. This device saves locally only.[/]")
+        if getattr(self, "_cloud_warned", None) == msg:
+            return                       # one flash per distinct cause
+        self._cloud_warned = msg
+        self.flash(f"[{theme.NEG}]{msg}[/]")
 
     def _warn_if_unsaveable(self):
         """A save dir the OS refuses used to fail SILENTLY -- the pet simply

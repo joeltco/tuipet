@@ -148,7 +148,7 @@ def test_older_launch_cannot_steal_the_lease_back(server):
     _login(phone2, "joel", "secret", boot=100.0)
     phone2.send(json.dumps({"t": "save", "save": {
         "name": "FORK", "stage": "Rookie", "_saved_at": 9999.0}}))
-    assert _ack(phone2) == {"t": "saved", "ok": False}      # dropped, and told so
+    assert _ack(phone2) == {"t": "saved", "ok": False, "why": "lease"}   # dropped, and told WHY
     desk.send(json.dumps({"t": "save", "save": {
         "name": "TRUTH", "stage": "Rookie", "_saved_at": 500.0}}))
     assert _ack(desk) == {"t": "saved", "ok": True}
@@ -343,3 +343,90 @@ def test_stop_sync_cancels_the_worker_not_just_flags_it():
     assert sync._stop is True
     assert w.cancelled is True
     assert stub._sync is None and stub._sync_worker is None
+
+
+# ---- the skew/size hardening (netplay audit 2026-07-18) ---------------------
+
+def _server_mod():
+    import os as _os, sys as _sys
+    _sys.path.insert(0, _os.path.join(_os.path.dirname(__file__), "..", "server"))
+    import server
+    return server
+
+
+def test_future_stamps_are_clamped_on_store(tmp_path, monkeypatch):
+    """A fast wall-clock used to poison last-write-wins: one device stamping
+    the future blocked the other device's REAL progress for as long as the
+    skew.  The server now clamps a stored _saved_at to its own clock (+slack)
+    and stamps its own receipt time alongside."""
+    import asyncio, time
+    server = _server_mod()
+    monkeypatch.setattr(server, "SAVES_PATH", str(tmp_path / "saves.json"))
+    monkeypatch.setattr(server, "SAVES", {})
+    save = {"name": "Agumon", "stage": "Rookie", "_saved_at": time.time() + 9e9}
+    assert asyncio.run(server._store_save("joel", dict(save))) is True
+    stored = server.SAVES["joel"]
+    assert stored["_saved_at"] <= time.time() + server.SAVE_STAMP_SLACK + 1
+    assert stored["_srv_at"] <= time.time() + 1
+
+
+def test_lease_seniority_is_server_first_seen_not_device_clocks(monkeypatch):
+    """Lease ownership compared raw device wall-clocks: a lagging clock that
+    launched LATER lost the lease to a fast clock that launched earlier.  Now
+    seniority is the SERVER's first-seen time per launch stamp: latest login
+    wins, a reconnect of an old launch still can't steal."""
+    from types import SimpleNamespace
+    server = _server_mod()
+    monkeypatch.setattr(server, "LEASES", {})
+    monkeypatch.setattr(server, "BOOT_SEEN", {})
+    fast = SimpleNamespace(lease=None)     # clock runs YEARS ahead
+    slow = SimpleNamespace(lease=None)     # clock runs behind -- but launches LATER
+    server._take_lease(fast, "joel", boot=9e12)
+    assert fast.lease is not None
+    server._take_lease(slow, "joel", boot=100.0)
+    assert slow.lease is not None, "the newest LOGIN must win, whatever its clock says"
+    fast2 = SimpleNamespace(lease=None)    # the old launch reconnects (wifi blip)
+    server._take_lease(fast2, "joel", boot=9e12)
+    assert fast2.lease is None, "an old launch must not re-take the lease on reconnect"
+
+
+def test_oversized_saves_are_refused_before_the_wire():
+    """The server silently drops frames over 64KB -- a huge save would 'sync'
+    forever without landing.  The pusher refuses pre-send and raises the flag
+    the app's warn pass reads; the blocking quit-push refuses too."""
+    from tuipet.net import SyncClient, SAVE_WIRE_MAX
+    from tuipet import cloudsync
+    c = SyncClient("ws://x", "joel")
+    big = {"blob": "x" * (SAVE_WIRE_MAX + 1)}
+    c.push_save(big)
+    assert c.save_too_big is True and c._pending is None
+    c.push_save({"name": "Agumon"})
+    assert c.save_too_big is False and c._pending is not None
+    assert cloudsync.push_save("ws://x/", "joel", "pw", big) is False
+
+
+def test_saved_ack_why_maps_to_the_right_warning():
+    """ok=False used to mean 'newer session' whatever the cause; the ack's
+    `why` now separates the lease loss from a format rejection."""
+    from tuipet.net import SyncClient
+    c = SyncClient("ws://x", "joel")
+    c._handle('{"t": "saved", "ok": false, "why": "invalid"}')
+    assert c.save_invalid is True and c.cloud_dropped is False
+    c._handle('{"t": "saved", "ok": false, "why": "lease"}')
+    assert c.cloud_dropped is True
+    c._handle('{"t": "saved", "ok": true}')
+    assert c.cloud_dropped is False and c.save_invalid is False
+    c._handle('{"t": "error", "msg": "Lobby is full."}')
+    assert c.last_error == "Lobby is full."
+
+
+def test_reconnect_grace_matches_the_servers_real_conflict_line():
+    """The grace branch guarded on "already online" -- a string the server
+    never sends (drifted dead branch).  It now matches the real line."""
+    from tuipet.net import LobbyClient
+    c = LobbyClient("ws://x/", "joel")
+    c._had_welcome = True
+    c._handle('{"t": "login_failed", "msg": "Signed in on a newer session."}')
+    assert c._stop is False, "a session-conflict during reconnect keeps retrying"
+    c._handle('{"t": "login_failed", "msg": "Wrong password."}')
+    assert c._stop is True, "a credentials failure still ejects"

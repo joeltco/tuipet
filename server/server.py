@@ -184,15 +184,28 @@ def _valid_save(save):
     return True
 
 
+SAVE_STAMP_SLACK = 120.0   # max seconds a client _saved_at may run AHEAD of us
+
+
 async def _store_save(key, save):
-    """Last-write-wins by the client-stamped _saved_at: only newer saves land.
-    Returns True when the save was stored (the client is told via the ack)."""
+    """Store the lease-holder's save.  Only the lease holder ever reaches
+    here, and pushes arrive causally ordered per connection, so arrival
+    order IS save order -- the old client-stamp compare (`incoming < have`)
+    could only ever reject the legitimate holder, and did exactly that when
+    another device's fast wall-clock had stamped the stored save in the
+    FUTURE (skew audit 2026-07-18: real cross-device progress silently
+    dropped).  The client stamp is kept for the CLIENT-side compares but
+    clamped so a fast clock can't poison them more than SLACK ahead.
+    Returns True when the save was stored."""
     if not _valid_save(save):
         return False
-    incoming = save.get("_saved_at") or 0
-    have = (SAVES.get(key) or {}).get("_saved_at") or 0
-    if incoming < have:
-        return False                              # stale push -> ignore (a newer device won)
+    now = time.time()
+    try:
+        if float(save.get("_saved_at") or 0) > now + SAVE_STAMP_SLACK:
+            save["_saved_at"] = now               # a runaway clock is clamped to ours
+    except (TypeError, ValueError):
+        save["_saved_at"] = now
+    save["_srv_at"] = now                         # our own receipt stamp rides along
     SAVES[key] = save
     async with _saves_lock:
         tmp = SAVES_PATH + ".tmp"
@@ -214,15 +227,30 @@ async def _store_save(key, save):
 # Only sync_only logins take a lease — a live lobby login never pushes saves,
 # and letting it bump the serial staled its own device's autosync mid-session.
 LEASES: dict[str, tuple[float, int]] = {}     # key -> (boot stamp, serial)
+BOOT_SEEN: dict[str, dict[float, float]] = {}  # key -> {boot: OUR first-seen time}
+MAX_SEEN_BOOTS = 8                             # per-account launch memory (pruned)
 
 
 def _take_lease(client, key, boot):
     cur = LEASES.get(key)
+    # Seniority is decided by OUR first-seen time for each launch stamp, not
+    # by comparing the devices' own wall-clocks (skew audit 2026-07-18: a
+    # device with a lagging clock that launched LATER presented a smaller
+    # boot and was wrongly denied the lease).  The boot value itself is just
+    # the launch's identity; a reconnect of the same launch keeps its
+    # original seniority, so a backgrounded phone still can't re-take the
+    # lease on a wifi blip.
+    seen = BOOT_SEEN.setdefault(key, {})
+    if boot and boot not in seen:
+        seen[boot] = time.time()
+        while len(seen) > MAX_SEEN_BOOTS:
+            del seen[min(seen, key=seen.get)]
     # boot 0.0 = a legacy client with no stamp: it keeps last-login-wins (and
     # stores 0.0, so any stamped login can take over) — otherwise un-upgraded
     # devices would be silently locked out of saving until their next update
-    if cur and boot and boot < cur[0]:
-        client.lease = None            # an older app launch may not push saves
+    if cur and boot and cur[0] and cur[0] != boot \
+            and seen.get(boot, 0) < seen.get(cur[0], 0):
+        client.lease = None            # an older app LAUNCH may not push saves
         return
     serial = (cur[1] if cur else 0) + 1
     LEASES[key] = (boot, serial)
@@ -793,6 +821,9 @@ async def handler(ws):
     try:
         async for raw in ws:
             if len(raw) > MAX_MSG_BYTES:
+                # never silent: an oversized save would otherwise "sync"
+                # forever without ever landing (audit 2026-07-18)
+                LOG.info("oversize frame dropped: %dB conn=%s", len(raw), client.id)
                 continue
             try:
                 m = json.loads(raw)
@@ -888,14 +919,22 @@ async def handler(ws):
 
             elif t == "save":
                 key = client.name.lower()
-                ok = False
+                ok, why = False, None
                 if _lease_ok(client, key):
                     ok = await _store_save(key, m.get("save"))
+                    if not ok:
+                        why = "invalid"           # failed _valid_save, not a lease matter
                 else:                             # a newer session took over
+                    why = "lease"
                     LOG.info("stale-lease save dropped: %s conn=%s", client.name, client.id)
                 # the ack makes quit-pushes honest: a dropped push must not
-                # report True back to the quitting client
-                await _send(client, {"t": "saved", "ok": ok})
+                # report True back to the quitting client -- and `why` lets it
+                # warn for the RIGHT reason (the old single flag showed "newer
+                # session" for format rejections too; audit 2026-07-18)
+                ack = {"t": "saved", "ok": ok}
+                if why:
+                    ack["why"] = why
+                await _send(client, ack)
 
             elif t == "ladder_report":
                 _ladder_report(client.name, bool(m.get("won")), str(m.get("opp") or "")[:24])

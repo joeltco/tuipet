@@ -75,6 +75,12 @@ def push_save(uri, name, pw, save, timeout=_TIMEOUT):
     Compares timestamps first: a device that missed its startup pull (offline
     at launch) must not stomp a newer cloud save on quit."""
     try:
+        from .net import SAVE_WIRE_MAX
+        if len(json.dumps(save)) > SAVE_WIRE_MAX:
+            return False       # the server would silently drop the frame (64KB cap)
+    except Exception:
+        return False
+    try:
         cloud = pull_save(uri, name, pw, timeout)
         if cloud and float(cloud.get("_saved_at") or 0) > float(save.get("_saved_at") or 0):
             return False                             # the cloud moved on without us

@@ -15,6 +15,12 @@ import websockets
 
 CHAT_CAP = 200
 ANNOUNCE = "📢"          # the dev's speaker: never a peer, never blockable
+WIRE_READ_MAX = 256 * 1024   # our read cap: a welcome carrying a big stored save
+#                              must not kill the connection (the server's INBOUND
+#                              cap is 64KB; see SAVE_WIRE_MAX)
+SAVE_WIRE_MAX = 56 * 1024    # refuse to push saves near the server's 64KB drop
+#                              line -- a silent skip there looks like syncing
+#                              forever without ever landing (audit 2026-07-18)
 
 
 def parse_msg(raw):
@@ -42,7 +48,7 @@ class _WsClient:
         backoff = self._backoff0
         while not self._stop:
             try:
-                async with websockets.connect(self.uri, max_size=64 * 1024) as ws:
+                async with websockets.connect(self.uri, max_size=WIRE_READ_MAX) as ws:
                     self._ws = ws
                     await ws.send(json.dumps(self._login_msg()))
                     self._on_connect()
@@ -120,6 +126,9 @@ class SyncClient(_WsClient):
         # progress vanished, silently.  (Swallowed-failure sweep 2026-07-13:
         # the same shape as the iOS silent save and the dead Termux bridge.)
         self.cloud_dropped = False
+        self.save_invalid = False             # server rejected the save FORMAT
+        self.save_too_big = False             # our own pre-send size refusal
+        self.last_error = ""                  # last server error frame (e.g. full)
         self.uri = uri
         self.name = name
         self.pw = pw
@@ -132,6 +141,13 @@ class SyncClient(_WsClient):
         self._stop = False                    # set on auth failure -> don't retry
 
     def push_save(self, save):
+        try:
+            if len(json.dumps(save)) > SAVE_WIRE_MAX:
+                self.save_too_big = True      # surfaced once by the app's warn pass
+                return
+        except (TypeError, ValueError):
+            return                            # an unserializable save can't ship anyway
+        self.save_too_big = False
         self._pending = save                  # keep only the newest; server is last-write-wins
         self._wake.set()
 
@@ -169,8 +185,13 @@ class SyncClient(_WsClient):
             if self.on_pull is not None:
                 self.on_pull(m.get("save"))    # server's stored save (or None)
         elif t == "saved":
-            # the verdict on our last push: ok=False means the server BINNED it
-            self.cloud_dropped = not m.get("ok")
+            # the verdict on our last push: ok=False means the server BINNED
+            # it -- and `why` says for WHICH reason (lease vs format; the old
+            # single flag blamed "a newer session" for everything)
+            ok = bool(m.get("ok"))
+            why = m.get("why")
+            self.cloud_dropped = (not ok) and why in (None, "lease")
+            self.save_invalid = (not ok) and why == "invalid"
         elif t == "pm":
             # the sync ghost is the HOME-SCREEN alert channel: the app drains
             # this into the message box (presence 2026-07-05)
@@ -183,6 +204,10 @@ class SyncClient(_WsClient):
             del self.inbox[:-20]
         elif t == "login_failed":
             self._stop = True                  # wrong password -> stop retrying
+        elif t == "error":
+            # e.g. "Lobby is full." -- silently ignoring it meant an unending
+            # blind reconnect loop (audit 2026-07-18); the app warns once
+            self.last_error = m.get("msg") or ""
 
 
 class LobbyClient(_WsClient):
@@ -200,6 +225,7 @@ class LobbyClient(_WsClient):
         self.ladder = None                    # last ladder message (rankings page)
         self.raid = None                      # last raid status message (the raid page)
         self.raid_reward = None               # a claimed reward, consumed once
+        self.last_hit = None                  # the gate's raid_hit ack (authoritative dealt)
 
     # ---- outgoing (called from the UI thread/loop) -----------------------
     def _send(self, obj):
@@ -351,7 +377,10 @@ class LobbyClient(_WsClient):
             s.inbox.append(m)
         elif t == "login_failed":
             msg = m.get("msg") or ""
-            if self._had_welcome and "already online" in msg:
+            if self._had_welcome and "newer session" in msg.lower():
+                # (matches the server's real conflict line "Signed in on a
+                # newer session." -- the previous match string was one the
+                # server never sent, a drifted dead branch; audit 2026-07-18)
                 # reconnect race: the server hasn't reaped our dead session yet --
                 # NOT a credentials problem, so keep retrying instead of ejecting
                 # the player to the login screen

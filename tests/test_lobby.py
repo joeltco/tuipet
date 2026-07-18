@@ -23,14 +23,17 @@ def test_wrong_password_stops_the_client_for_good():
     assert c._stop and c.state.login_failed
 
 
-def test_already_online_after_a_welcome_is_a_transient_retry():
+def test_session_conflict_after_a_welcome_is_a_transient_retry():
+    # the grace branch matches the server's REAL conflict line ("Signed in on
+    # a newer session.") -- the old "already online" string was one the server
+    # never sent, a drifted dead branch (netplay audit 2026-07-18)
     c = LobbyClient("ws://x/", "joel")
     c._handle('{"t": "welcome", "id": 3, "name": "joel"}')
-    c._handle('{"t": "login_failed", "msg": "That name is already online."}')
+    c._handle('{"t": "login_failed", "msg": "Signed in on a newer session."}')
     assert not c._stop and c.state.login_failed is None       # the dead session reaps soon
     # ...but the same message on a FIRST login is a real rejection
     c2 = LobbyClient("ws://x/", "joel")
-    c2._handle('{"t": "login_failed", "msg": "That name is already online."}')
+    c2._handle('{"t": "login_failed", "msg": "Signed in on a newer session."}')
     assert c2._stop and c2.state.login_failed
 
 

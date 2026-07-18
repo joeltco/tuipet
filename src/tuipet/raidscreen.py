@@ -75,6 +75,15 @@ class RaidPanel(menu.SubHost):
         if self.view and self.msg == "Calling the raid gate…":
             self.msg = "The boss stands. SPACE to raid!" if self._standing() \
                 else "The next boss is incoming…"
+        hit = getattr(self.client, "last_hit", None)
+        if hit is not None:
+            # the gate's authoritative credit (raw x5000 x num-mult) -- the
+            # panel used to show only the local raw and discard this ack
+            # (audit 2026-07-18)
+            self.client.last_hit = None
+            dealt = int(hit.get("dealt", 0) or 0)
+            if dealt > 0:
+                self.msg = f"Gate credits {dealt:,} damage!"
         reward = getattr(self.client, "raid_reward", None)
         if reward is not None:
             self.client.raid_reward = None
