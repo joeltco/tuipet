@@ -131,5 +131,11 @@ def test_release_never_drops_someone_elses_lock():
 
 # ---- one sync switch for every entry point ----------------------------------------
 
-# (sync_enabled left with the cloud-sync cut 2026-07-18)
-
+def test_sync_enabled_honors_toggle_and_env(monkeypatch):
+    monkeypatch.delenv("TUIPET_NO_SYNC", raising=False)
+    assert persistence.sync_enabled()          # on by default
+    persistence.set_cloud_sync(False)
+    assert not persistence.sync_enabled()      # the options toggle
+    persistence.set_cloud_sync(True)
+    monkeypatch.setenv("TUIPET_NO_SYNC", "1")
+    assert not persistence.sync_enabled()      # env outranks the toggle

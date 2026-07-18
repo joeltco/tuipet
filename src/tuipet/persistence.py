@@ -58,9 +58,26 @@ def get_auto_update():
     return bool(load_settings().get("auto_update", True))
 
 
-# (get/set_cloud_sync + sync_enabled left with the cloud-sync cut 2026-07-18:
-# the pet lives on THIS device; accounts stay as the lobby identity.  The old
-# settings key "cloud_sync" is simply ignored in existing settings files.)
+def get_cloud_sync():
+    """The player-facing cloud-save switch (settings only; see sync_enabled)."""
+    return bool(load_settings().get("cloud_sync", True))
+
+
+def set_cloud_sync(on):
+    d = load_settings()
+    d["cloud_sync"] = bool(on)
+    save_settings(d)
+    return bool(on)
+
+
+def sync_enabled():
+    """Should any cloud traffic run?  False when TUIPET_NO_SYNC is set (dev
+    override) or the options toggle is off.  Every sync entry point checks
+    THIS -- TUIPET_NO_SYNC used to gate only the startup pull while pushes
+    ran anyway (sweep 2026-07-14)."""
+    if os.environ.get("TUIPET_NO_SYNC"):
+        return False
+    return get_cloud_sync()
 
 
 def set_auto_update(on):

@@ -45,6 +45,7 @@ from . import deathscreen
 from . import raidscreen
 from . import sound
 from . import update as update_check
+from . import cloudsync
 from .pet import Pet
 import os
 
@@ -185,6 +186,7 @@ class TuiPetApp(ActionsMixin, App):
         self._showing_need = False
         self._update_msg = None     # set by the background PyPI check when a newer release exists
         self._showing_update = False
+        self._sync = None           # background cloud-save push client (net.SyncClient), or None
         self._hud_scroll = None     # plain text being marquee-scrolled, or None when it fits
         self._hud_off = 0           # marquee window offset
         self._hud_hold = 0          # steps left to hold on the head before scrolling
@@ -221,6 +223,7 @@ class TuiPetApp(ActionsMixin, App):
         self.set_interval(10.0, self.autosave)
         self.run_worker(self._check_update(), name="update", exclusive=False)
         self.run_worker(self._flush_bugs(), name="bugflush", exclusive=False)
+        self._start_sync()
 
     def _whats_new(self):
         """One 'WHAT'S NEW' line in the msg box, on the FIRST launch of a new
@@ -243,13 +246,64 @@ class TuiPetApp(ActionsMixin, App):
             return None
         return f"WHAT'S NEW in v{cur}: {self.WHATS_NEW}"
 
-    # (_drain_pms + the home-screen ✉ alert left with the cloud-sync cut
-    # 2026-07-18: PMs and announcements are read in the LOBBY -- the server
-    # still holds mail for you and delivers it on lobby login.)
+    def _drain_pms(self):
+        """Private messages land on the always-on sync connection; surface
+        them as ✉ flashes in the home message box.  While the LOBBY is open
+        its chat already shows them (the server delivers to both connections)
+        -- drop the duplicates; in any other sub-screen they stay queued and
+        flash when you're back home (presence 2026-07-05)."""
+        sync = getattr(self, "_sync", None)
+        if sync is None or not getattr(sync, "inbox", None):
+            return
+        if isinstance(self.mode, lobbyscreen.LobbyPanel):
+            st = self.mode.state
+            if st is None:
+                return                     # login phase: keep them queued
+            if not st.connected:
+                # PMs that arrived BEFORE this lobby session's client existed
+                # (queued under another sub-screen, or landing in the connect
+                # window) are in no chat history -- the old clear() burned
+                # them unseen (message audit 2026-07-06).  Seed the fresh
+                # pane; once CONNECTED the lobby client receives its own
+                # copy, so then (and only then) the ghost's are duplicates.
+                for nm, tx in sync.inbox:
+                    st.chat.append((nm if nm == "📢" else f"✉{nm}", tx))
+                del st.chat[:-net.CHAT_CAP]
+            sync.inbox.clear()
+            return
+        if self.mode is not None:
+            return                             # queued: flashes back on the home screen
+        if self._flash_t > 0:
+            return                             # one ✉ at a time: let the current flash hold
+        nm, tx = sync.inbox.pop(0)
+        # a PM's sender name AND body are REMOTE strings -- escape their '[' so
+        # a message like '[/]' can't unbalance this markup and crash the render
+        # (Rich-brackets hard rule, remote-triggered; chat-input audit 2026-07-07).
+        # The lobby chat pane is already safe (Text.append renders literally);
+        # this flash is the one markup-parsed sink for remote text.
+        if nm == "📢":                       # a server announcement, not a peer's ✉
+            self.flash(f"📢 [b]{_hud_esc(tx)}[/]")
+        else:
+            self.flash(f"✉ [b]{_hud_esc(nm)}[/]: {_hud_esc(tx)}")
+        self.beep("menu", bell=False)
 
-    # (_start_sync/_push_cloud/_warn_if_cloud_dropped/_flush_cloud_on_quit
-    # left with the cloud-sync cut 2026-07-18: the pet lives on THIS device,
-    # like a real unit; accounts stay as the lobby identity.)
+    def _start_sync(self):
+        """Spin up the background cloud-save push client once an account exists
+        (idempotent). The startup pull already ran in main(); this handles pushes."""
+        if self._sync is not None:
+            return
+        if not persistence.sync_enabled():
+            return                       # opted out (TUIPET_NO_SYNC or the options toggle)
+        name, pw = persistence.get_account()
+        if not name:
+            return                       # no account yet (first launch) — started after account setup
+        self._sync = net.SyncClient(_lobby_uri(), name, pw)
+        self.run_worker(self._sync.run(), name="sync", exclusive=False)
+
+    def _push_cloud(self):
+        """Queue the current pet's save for upload (no-op until the account/sync exists)."""
+        if self._sync is not None and self.pet is not None and persistence.sync_enabled():
+            self._sync.push_save(persistence.to_save_dict(self.pet))
 
     async def _check_update(self):
         """Background, once per launch: ask PyPI for a newer tuipet and INSTALL
@@ -311,8 +365,25 @@ class TuiPetApp(ActionsMixin, App):
 
     def autosave(self):
         persistence.save(self.pet)
+        self._start_sync()              # idempotent: picks up a re-enabled cloud toggle
         self._warn_if_unsaveable()
+        self._warn_if_cloud_dropped()
         self._note_progress()
+        self._push_cloud()              # mirror the autosave up to the cloud
+
+    def _warn_if_cloud_dropped(self):
+        """The server is REFUSING our cloud saves (a newer session of this
+        account owns them).  The local save is fine, but cross-device sync is
+        dead -- and we used to never mention it (swallowed-failure sweep
+        2026-07-13)."""
+        sync = getattr(self, "_sync", None)
+        if sync is None or not getattr(sync, "cloud_dropped", False):
+            return
+        if getattr(self, "_cloud_warned", False):
+            return
+        self._cloud_warned = True
+        self.flash(f"[{theme.NEG}]⚠ Cloud sync off — tuipet is open in a newer "
+                   f"session. This device saves locally only.[/]")
 
     def _warn_if_unsaveable(self):
         """A save dir the OS refuses used to fail SILENTLY -- the pet simply
@@ -339,6 +410,7 @@ class TuiPetApp(ActionsMixin, App):
     def on_unmount(self):
         persistence.save(self.pet)
         self._flush_dms_on_quit()       # a lobby quit must not drop PMs from this session
+        self._flush_cloud_on_quit()     # capture the final state cloud-side on any exit
 
     def _flush_dms_on_quit(self):
         """Quitting straight from the lobby must persist DMs received this
@@ -350,6 +422,17 @@ class TuiPetApp(ActionsMixin, App):
                 self.mode._save_dms()
             except Exception:
                 pass
+
+    def _flush_cloud_on_quit(self):
+        """Best-effort blocking push so the final state is captured cloud-side."""
+        if self._sync is None:
+            return
+        try:
+            name, pw = persistence.get_account()
+            cloudsync.push_save(_lobby_uri(), name, pw,
+                                persistence.to_save_dict(self.pet), timeout=2.0)
+        except Exception:
+            pass
 
     def on_key(self, event):
         fx = getattr(getattr(self, "screen_w", None), "fx", None)
@@ -561,16 +644,19 @@ class TuiPetApp(ActionsMixin, App):
 
 
     async def _switch_account(self, name, pw):
-        """Sign in as another account (OPTIONS → Account).  Accounts are the
-        LOBBY IDENTITY only (the cloud-save layer left 2026-07-18): the pet on
-        this device stays exactly where it is -- like a real unit changing
-        hands.  A wrong password or an unreachable lobby aborts WITHOUT
-        switching (probe_login distinguishes the two; a typo'd password must
-        not strand the player mid-rename)."""
+        """Sign in as another account (OPTIONS → Account).  The current pet is
+        parked with the OLD account's cloud first (switch back any time), then
+        the new account's cloud save replaces the local one — or the egg
+        carousel opens when it has none.  A wrong password or an unreachable
+        lobby aborts WITHOUT switching (probe distinguishes the two — pull_save
+        can't, and a typo'd password must not strand the player on a fresh
+        start).  Device-lifetime progress (album, lifetime wins, owned eggs)
+        stays local, like canon's device-scoped Shared file."""
         import asyncio
+        old_name, old_pw = persistence.get_account()
         self.flash("Switching account…")
-        verdict = await asyncio.to_thread(
-            net.probe_login, _lobby_uri(), name, pw)
+        verdict, save = await asyncio.to_thread(
+            cloudsync.probe, _lobby_uri(), name, pw)
         if verdict == "badpw":
             self.flash("Wrong password for that name.")
             self.beep("error", bell=False)
@@ -579,10 +665,39 @@ class TuiPetApp(ActionsMixin, App):
             self.flash("Can't reach the lobby — try again online.")
             self.beep("error", bell=False)
             return
+        if save is not None:
+            # validate BEFORE committing to the switch: an unreadable cloud
+            # blob must not cost the player their current login (the same
+            # strict probe sync_down_at_startup runs)
+            pet_probe, _ = persistence.pet_from_save(dict(save),
+                                                     catch_up=False, strict=True)
+            if pet_probe is None:
+                self.flash("That cloud save is unreadable — kept your account.")
+                self.beep("error", bell=False)
+                return
+        persistence.save(self.pet)                   # park the pet with the OLD account
+        if old_name and old_name != name:
+            await asyncio.to_thread(                 # last-write-wins guarded upload
+                cloudsync.push_save, _lobby_uri(), old_name, old_pw,
+                persistence.to_save_dict(self.pet))
+        if self._sync is not None:                   # the old pusher must stop first
+            self._sync._stop = True
+            self._sync = None
         persistence.set_account(name, pw)
-        persistence.save(self.pet)
-        self.flash(f"Signed in as {_hud_esc(name)} — same pet, new lobby name.")
-        self.repaint()
+        if save is not None:
+            persistence.write_save_dict(save)
+            loaded, msg = persistence.load()
+            self.pet = loaded or Pet.new_egg()
+            self._start_sync()
+            self.flash(f"Signed in as {_hud_esc(name)} — {msg or 'welcome back!'}")
+            self.repaint()
+        else:
+            persistence.delete()                     # the old pet must not leak in
+            self.pet = Pet.new_egg()                 # placeholder until the carousel picks
+            self._start_sync()
+            self.flash(f"Signed in as {_hud_esc(name)} — a fresh start.")
+            self._open_mode(eggselectscreen.EggSelectPanel(self.pet),
+                            self._after_egg_pick)
 
     def _center(self, text):
         from rich.text import Text
@@ -627,6 +742,7 @@ class TuiPetApp(ActionsMixin, App):
     def on_frame(self):                        # single DVPet interval clock (10 Hz, 0.1s): main view AND sub-screens
         menu.TICK += 1                         # the shared note marquee clock: no screen clips a message
         self._hud_marquee()                    # scroll any over-long HUD message (independent of the LCD)
+        self._drain_pms()                      # ✉ alerts ride the message box (presence 2026-07-05)
         if self.mode is not None:
             if hasattr(self.mode, "anim"):
                 self.mode.anim()
@@ -1045,6 +1161,14 @@ def main():
               f"over one save.\nClose the other one first, or set TUIPET_FORCE=1 "
               f"to override.")
         raise SystemExit(1)
+    # Cross-device: pull a newer cloud save down BEFORE the app loads the pet, so
+    # the normal load path picks it up (no mid-session swapping). Fail-soft.
+    if persistence.sync_enabled():
+        try:
+            name, pw = persistence.get_account()
+            cloudsync.sync_down_at_startup(_lobby_uri(), name, pw)
+        except Exception:
+            pass
     app = TuiPetApp()
     try:
         app.run()

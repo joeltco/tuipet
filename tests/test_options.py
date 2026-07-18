@@ -1,9 +1,9 @@
 """The OPTIONS menu (2026-07-04): theme/sound/new-egg/erase under one key,
 freeing g/m/n from the action bar.  Beefed up 2026-07-07: Account (switch who's
-signed in — same pet, new lobby name), Update (on-demand PyPI
+signed in — the pet parks with the old login's cloud), Update (on-demand PyPI
 check, threaded), Keys (every binding on a scrollable page), and the sound row
 names its detected backend.  The erase is typed-YES gated and wipes the whole
-local state."""
+local state (the cloud copy stays with the account)."""
 import os
 
 from tuipet import optionsscreen, persistence, sound, theme
@@ -32,8 +32,8 @@ def _to(pan, row):
 def test_row_surface_and_order():
     """The full switchboard, dangerous rows last (a fat-finger past 'new'
     must never land on the erase gate's neighbour)."""
-    assert _ROWS == ("theme", "sound", "account", "update", "keys",
-                     "new", "erase")   # (cloud row left with the sync cut 2026-07-18)
+    assert _ROWS == ("theme", "sound", "account", "cloud", "update", "keys",
+                     "new", "erase")
     pan, _ = _panel()
     _fits(pan)
     for _ in _ROWS:                        # every cursor position renders in budget
@@ -54,7 +54,7 @@ def test_note_line_describes_the_selected_row():
     assert "sound:" in pan.text().plain
     pan.key("down")                               # move -> the new row's desc
     plain = pan.text().plain
-    assert "switch lobby login" in plain and "sound:" not in plain
+    assert "switch login" in plain and "sound:" not in plain
 
 
 def test_sound_row_hosts_the_sound_page():
@@ -315,14 +315,25 @@ def test_erase_flows_into_the_egg_carousel_not_an_auto_egg():
 
 
 def test_switch_account_app_flow(monkeypatch):
-    """The app-side switch (OPTIONS → Account → confirmed form) after the
-    cloud-sync cut 2026-07-18: accounts are the LOBBY IDENTITY only.  A wrong
-    password ABORTS without switching; a good login just renames the lobby
-    account -- the pet on this device stays exactly where it is."""
+    """The app-side switch (OPTIONS → Account → confirmed form): a wrong
+    password ABORTS without switching (probe distinguishes badpw from
+    no-save — a typo must not strand the player on a fresh start); a cloud
+    save loads as the new pet; an empty account opens the egg carousel and
+    the old local save must not leak in."""
     import asyncio
-    from tuipet import net
+    from tuipet import cloudsync, eggselectscreen
     from tuipet.app import TuiPetApp
     from tuipet.pet import Pet
+
+    from tuipet import data
+    rec = data.load_sprites()[1][4]                # strict probe wants the DEX
+    other = Pet(num=4, name=rec["name"],           # name/stage pairing exactly
+                stage=rec["stage"], attribute="Vaccine")
+    other.world_seconds = 10 * 60.0
+    cloud = persistence.to_save_dict(other)
+    pushes = []
+    monkeypatch.setattr(cloudsync, "push_save",
+                        lambda uri, n, pw, save: pushes.append((n, save)) or True)
 
     async def go():
         p = Pet(num=100, name="Champ", stage="Champion", attribute="Vaccine")
@@ -334,35 +345,38 @@ def test_switch_account_app_flow(monkeypatch):
             await pilot.pause()
             app.mode = None
             # 1) wrong password: nothing switches
-            monkeypatch.setattr(net, "probe_login",
-                                lambda uri, n, pw: "badpw")
+            monkeypatch.setattr(cloudsync, "probe",
+                                lambda uri, n, pw: ("badpw", None))
             app._after_options(("account", "ana", "typo"))
             for _ in range(6):
                 await pilot.pause()
             seen["badpw_kept"] = persistence.get_account()[0] == "joel"
-            # 2) offline: nothing switches either
-            monkeypatch.setattr(net, "probe_login",
-                                lambda uri, n, pw: "offline")
+            # 2) the new account has a cloud pet: it loads
+            monkeypatch.setattr(cloudsync, "probe",
+                                lambda uri, n, pw: ("ok", dict(cloud)))
             app._after_options(("account", "ana", "pw2"))
             for _ in range(6):
                 await pilot.pause()
-            seen["offline_kept"] = persistence.get_account()[0] == "joel"
-            # 3) a good login: the account renames, the pet STAYS
-            monkeypatch.setattr(net, "probe_login",
-                                lambda uri, n, pw: "ok")
-            app._after_options(("account", "ana", "pw2"))
+            seen["loaded"] = (persistence.get_account()[0] == "ana"
+                              and app.pet.num == 4)
+            seen["parked"] = any(n == "joel" and s.get("num") == 100
+                                 for n, s in pushes)
+            # 3) a fresh account: the egg carousel, never the old pet
+            monkeypatch.setattr(cloudsync, "probe",
+                                lambda uri, n, pw: ("ok", None))
+            app._after_options(("account", "newbie", "pw3"))
             for _ in range(6):
                 await pilot.pause()
-            seen["switched"] = (persistence.get_account()[0] == "ana"
-                                and app.pet.num == 100
-                                and app.mode is None)
+            seen["fresh"] = (persistence.get_account()[0] == "newbie"
+                             and isinstance(app.mode, eggselectscreen.EggSelectPanel)
+                             and not os.path.exists(persistence.SAVE_PATH))
         return seen
 
     seen = asyncio.run(go())
     assert seen["badpw_kept"], "a bad password must not switch accounts"
-    assert seen["offline_kept"], "an unreachable lobby must not switch accounts"
-    assert seen["switched"], "a good login renames the account and keeps the pet"
-
+    assert seen["loaded"], "the new account's cloud pet must load"
+    assert seen["parked"], "the old pet must be pushed to the OLD account"
+    assert seen["fresh"], "an empty account starts fresh at the carousel"
 
 
 def test_confirm_prompts_hold_the_keyboard():

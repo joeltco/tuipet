@@ -6,7 +6,7 @@ import json
 import os
 import sys
 
-from tuipet.net import LobbyClient
+from tuipet.net import LobbyClient, SyncClient
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "server"))
 import server  # noqa: E402
@@ -116,6 +116,7 @@ def test_announce_lands_in_lobby_chat_unblockable():
     assert ("📢", "Blood Moon at 8") in c.state.chat
 
 
-# (the home-screen sync ghost left with the cloud-sync cut 2026-07-18:
-# announcements + held PMs deliver in the LOBBY)
-
+def test_announce_reaches_the_home_screen_ghost():
+    s = SyncClient("ws://x/", "joel")
+    s._handle('{"t": "announce", "text": "downtime 5 min"}')
+    assert ("📢", "downtime 5 min") in s.inbox

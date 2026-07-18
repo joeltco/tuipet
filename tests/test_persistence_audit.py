@@ -11,7 +11,7 @@ import json
 import os
 
 from tuipet.pet import Pet
-from tuipet import persistence
+from tuipet import persistence, cloudsync
 
 
 def _pet(**kw):
@@ -63,26 +63,15 @@ def test_wrong_typed_save_is_rejected_not_a_time_bomb():
     assert persistence.pet_from_save(d2, catch_up=False)[0] is None
 
 
-def test_the_cloud_sync_cut_is_total():
-    """Cloud-sync cut 2026-07-18: the pet lives on THIS device, like a real
-    unit.  No sync client, no cloud toggles, no startup pull -- and the
-    module is gone.  Accounts stay as the lobby identity (net.probe_login
-    guards the switch)."""
-    import importlib
-    import pytest
-    from tuipet import net, optionsscreen
-    with pytest.raises(ImportError):
-        importlib.import_module("tuipet.cloudsync")
-    assert not hasattr(net, "SyncClient")
-    assert callable(net.probe_login)
-    assert not hasattr(persistence, "sync_enabled")
-    assert not hasattr(persistence, "get_cloud_sync")
-    assert "cloud" not in optionsscreen._ROWS
-    from tuipet.app import TuiPetApp
-    for gone in ("_drain_pms", "_start_sync", "_push_cloud",
-                 "_warn_if_cloud_dropped", "_flush_cloud_on_quit"):
-        assert not hasattr(TuiPetApp, gone), gone
-
+def test_wrong_typed_cloud_save_never_clobbers_local(tmp_path, monkeypatch):
+    persistence.save(_pet(bits=999))                 # a healthy local pet
+    bad = persistence.to_save_dict(_pet())
+    bad["energy"] = {"oops": 1}
+    bad["_saved_at"] = 9e12                          # "newer" than anything local
+    monkeypatch.setattr(cloudsync, "pull_save", lambda *a, **k: bad)
+    assert cloudsync.sync_down_at_startup("ws://x/", "joel", "pw") == "cloud-save-invalid"
+    loaded, _ = persistence.load(catch_up=False)
+    assert loaded is not None and loaded.bits == 999      # local untouched
 
 
 def test_pathological_save_stays_far_under_the_wire_cap():
