@@ -1,8 +1,8 @@
 # TUIPET ITEMS — the catalog contract (BUILT 2026-07-18)
 
-> STATUS: IMPLEMENTED (Joel: "you can make the items whatever you want using
-> the sprites" / "build it").  shop.CATALOG is the single source; this doc
-> is the design record.
+> STATUS: SHIPPED in v0.5.60; taglines (the CATALOG's 6th field, shown in
+> the live dossier) followed in v0.5.61.  shop.CATALOG is the single
+> source; this doc is the design record.
 > Law of the redo: **DSprite is the mechanics grammar, DVPet is the art.**
 > Every item below wears a REAL DVPet atlas strip (verified: all 59 foods and
 > all 84 items carry 4-frame rips — zero quiet cells needed). No effect below

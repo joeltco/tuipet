@@ -3,6 +3,23 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.5.61 — LIVING WORLD (2026-07-18)
+
+* **Adaptive raid bosses.** The shared pool sizes itself to the community:
+  a fresh gate opens fellable by a small crew, every kill raises the next
+  bar, an escape shrinks it back to what the crowd proved it can do — and
+  an escaped boss now pays by your contribution, not a flat consolation.
+* **A winnable weekend cup.** The weekend featured cup draws from your
+  pet's own bracket (a Mega still gets the open field), and a cross-season
+  qualifier wall names the season it's from.
+* **An honest DNA lab.** The charge page says what charging is for, the
+  wager strip prices every band live (including the one that used to buy
+  nothing, silently), and the charge cursor no longer offers the dud Field.
+* **Shop with character.** Every item's dossier carries a tagline, and the
+  README demo shows the real shelf.
+* Housekeeping: year-stale cloud saves prune at the gate, and the relay's
+  two day-clocks agree (UTC).
+
 ## 0.5.57 – 0.5.60 — the honest lane and THE NEW SHOP (2026-07-18)
 
 * **0.5.60 — THE TUIPET ITEM CATALOG.** The shop rebuilt from scratch:

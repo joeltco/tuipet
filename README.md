@@ -159,12 +159,17 @@ what's coming — plus tuipet's own data-book pages.
 
 ## Raids & cups
 
-Press **r** for raids: boss fights against the world's heavies — each felled
-boss counts toward egg unlocks and the Miracles Digimental wave.
+Press **r** for raids: boss fights against the world's heavies, with a
+shared community pool that **sizes itself to the crowd** — a small crew can
+fell its boss, and every kill grows the next one. Each felled boss counts
+toward egg unlocks and the Miracles Digimental wave; even an escaped boss
+pays out by your share of the damage.
 
 Press **u** for the cup page, which runs on the **real calendar**: seasonal
-cup pools, a featured cup picked by the date (weekends surface the top
-tier), and holiday specials — including Odaiba Memorial Day on August 1.
+cup pools, a featured cup picked by the date (the weekend headliner is one
+**your pet's own bracket** can win), and holiday specials — including
+Odaiba Memorial Day on August 1. A grand-final chain that crosses real
+seasons tells you which season's qualifier you're missing.
 Each cup is the 8-entrant single-elimination bracket (Quarterfinal →
 Semifinal → Final) with real rolled entrants; the other pairs auto-resolve
 between your rounds. Titles pay the canonical purse, count trophies, and
