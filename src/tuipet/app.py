@@ -84,12 +84,17 @@ def keys_markup():
     """The action bar, rebuilt per theme: the shortcut letters wear the
     theme's KEY colour (gameboy = the A/B button magenta; the plain themes
     keep the old cyan).  Was a module constant with `b cyan` baked in --
-    unreachable by theme.apply (shell polish 2026-07-05)."""
+    unreachable by theme.apply (shell polish 2026-07-05).
+
+    Reading order mirrors the Help screen's sections — CARE, then
+    EXPLORE, then GROW, then MANAGE — one layout language across the bar,
+    Help and the Options→Keys page (bar tidy 2026-07-18).  GROW's egg
+    guide wraps onto line 3: the line only holds 71 cells."""
     k = f"b {theme.KEY}"
     return (
-        f"[{k}]f[/] feed (meat·pill)  [{k}]c[/] clean  [{k}]s[/] lights  [{k}]v[/] assist\n"
-        f"[{k}]t[/] train  [{k}]r[/] raid  [{k}]u[/] cup  [{k}]l[/] lobby (battle·jogress)  [{k}]x[/] DNA  [{k}]n[/] eggs\n"
-        f"[{k}]o[/] shop  [{k}]i[/] bag  [{k}]d[/] digicore  [{k}]e[/] scenes  [{k}]g[/] options  [{k}]b[/] bug  [{k}]?[/] help  [{k}]q[/] quit"
+        f"[{k}]f[/] feed [dim](meat·pill)[/]  [{k}]c[/] clean  [{k}]s[/] lights  [{k}]v[/] assist\n"
+        f"[{k}]r[/] raid  [{k}]u[/] cup  [{k}]l[/] lobby [dim](battle·jogress)[/]  [{k}]t[/] train  [{k}]x[/] DNA  [{k}]d[/] digicore\n"
+        f"[{k}]n[/] eggs  [{k}]o[/] shop  [{k}]i[/] bag  [{k}]e[/] scenes  [{k}]g[/] options  [{k}]b[/] bug  [{k}]?[/] help  [{k}]q[/] quit"
     )
 
 
@@ -141,26 +146,28 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("LIVING WORLD: raid bosses now size themselves to the "
-                 "community - fellable by a small crew, growing as you win. "
-                 "The weekend cup is one your pet can actually take, escaped "
-                 "bosses pay your share, the shop speaks with character, and "
-                 "the DNA lab prices every wager honestly.")
+    WHATS_NEW = ("A TIDY DEVICE: the action bar now reads in the Help "
+                 "screen's order (care, explore, grow, manage), every key "
+                 "hint speaks one language, and the key that opens a screen "
+                 "closes it - t, n and ? included. A raid press wakes a "
+                 "sleeper like any other poke.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and
         # jogress should be online pvp only") -- PvE combat lives in raids
         # and the cup (adventure left 2026-07-16); fusion needs a real
-        # partner from the roster
-        ("f", "feed", "Feed"), ("t", "train", "Train"),
-        ("c", "clean", "Clean"),
-        ("r", "raid", "Raid"), ("o", "shop", "Shop"), ("i", "inventory", "Bag"),
-        ("d", "digicore", "DigiCore"),
-        ("n", "eggguide", "Egg Guide"),
-        ("e", "scenes", "Scenes"),
-        ("u", "tournament", "Cup"), ("x", "dna", "DNA"),
+        # partner from the roster.
+        # Order = the ACTIONS bar / Help-screen reading order (CARE,
+        # EXPLORE, GROW, MANAGE) so the Options→Keys page tells the same
+        # story (bar tidy 2026-07-18).
+        ("f", "feed", "Feed"), ("c", "clean", "Clean"),
+        ("s", "sleep", "Lights"), ("v", "assist", "Assistant"),
+        ("r", "raid", "Raid"), ("u", "tournament", "Cup"),
         ("l", "lobby", "Lobby"),
-        ("s", "sleep", "Lights"), ("v", "assist", "Assistant"), ("g", "options", "Options"),
+        ("t", "train", "Train"), ("x", "dna", "DNA"),
+        ("d", "digicore", "DigiCore"), ("n", "eggguide", "Egg Guide"),
+        ("o", "shop", "Shop"), ("i", "inventory", "Bag"),
+        ("e", "scenes", "Scenes"), ("g", "options", "Options"),
         ("b", "bug", "Bug"), ("question_mark", "help", "Help"), ("q", "quit", "Quit"),
         ("enter", "gift", "Accept gift"),
     ]

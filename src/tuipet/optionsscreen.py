@@ -219,7 +219,7 @@ class OptionsPanel(menu.SubHost):
             return menu.hints(("ENTER", "restart now"), ("ESC", "later"))
         if self.confirm_new:
             return menu.hints(("ENTER", "retire"), ("ESC", "keep"))
-        return menu.hints(("↑↓", "pick"), ("ENTER", "go"), ("ESC", "back"))
+        return menu.hints(("↑↓", "pick"), ("ENTER", "go"), ("ESC", "out"))
 
     # ---- the update check (threaded: latest_if_newer blocks up to 4s) ----
     def _check_updates(self):
@@ -429,5 +429,5 @@ class OptionsPanel(menu.SubHost):
         out.append_text(menu.blanks(7 - len(_ROWS)))
         out.append_text(menu.note(self.msg or _DESC[_ROWS[self.cursor]],
                                   tick=self.frame_i))
-        out.append_text(menu.footer("↑↓ pick  ENTER go  ESC back"))
+        out.append_text(menu.footer("↑↓ pick  ENTER go  ESC out"))
         return out

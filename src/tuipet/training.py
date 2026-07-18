@@ -122,13 +122,13 @@ class TrainingPanel:
         if self.phase == "bar":
             if k in ("space", "enter"):
                 self._lock()
-            elif k == "escape":
+            elif k in ("escape", "t"):          # t (the opening key) also closes
                 return ("done", None)
         return None                    # the strike plays through; anim() closes us
 
     def strip(self):
         if self.phase == "bar":
-            return menu.hints(("SPACE", "strike"), ("ESC", "back"))
+            return menu.hints(("SPACE", "strike"), ("ESC", "out"))
         return ""
 
     # ---- rendering ----

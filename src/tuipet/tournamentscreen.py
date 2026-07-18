@@ -229,7 +229,7 @@ class TournamentPanel(menu.SubHost):
             else:
                 out.append("  no cup left you can enter today\n", style=DIM)
             out.append_text(menu.note(self.msg, tick=self.frame_i))
-            out.append_text(menu.footer("↑↓ browse ENTER enter A alarm ESC out"))
+            out.append_text(menu.footer("↑↓ browse  ENTER go  A alarm  ESC out"))
             return out
         # bracket
         t = self.tourney

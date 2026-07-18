@@ -40,13 +40,11 @@ class DnaMixin:
         return int(100 * self.dna_applied.get(field, 0) / t) if t else 0
 
     def can_charge_dna(self):
-        if self.dead:
-            return "It rests now — press N for a new egg."
-        if self.stage == "Egg":
+        # the shared _guard gate, keeping the DNA-flavoured egg line
+        # (tidy audit 2026-07-18: dead/asleep were duplicated literals)
+        if not self.dead and self.stage == "Egg":
             return "An egg has no DNA yet."
-        if self.asleep:
-            return self._disturbed()
-        return None
+        return self._guard()
 
     def dna_bet(self, amount):
         """DVPet DNA_GenerateValidate (onEnter): pay the wager up front, before the mash

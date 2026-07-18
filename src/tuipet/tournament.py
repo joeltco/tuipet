@@ -312,9 +312,12 @@ def _eligibility_rest(pet, t):
 
 
 def can_enter(pet):
-    if getattr(pet, "dead", False):
-        return "It rests now — press N for a new egg."   # dead sweep 2026-07-06
-    if pet.stage in ("Egg", "Fresh", "InTraining"):
+    # dead/egg ride the shared _guard -- the dead line was a duplicated
+    # string literal here (tidy audit 2026-07-18); youth still outranks
+    # sleep, so a too-young pet is never woken just to be refused
+    if (g := pet._guard(asleep_blocks=False)) is not None:
+        return g
+    if pet.stage in ("Fresh", "InTraining"):
         return "Too young for the cup."
     if pet.asleep:
         return pet._disturbed()   # a player poke wakes the sleeper, like every care key

@@ -125,6 +125,19 @@ class BattleMixin:
             return "Too tired to train."
         return None
 
+    def can_raid(self):
+        """The raid gate (tidy audit 2026-07-18: appactions hand-rolled its
+        own dead/egg/asleep with third wordings, and a raid press was the
+        one poke that DIDN'T disturb a sleeper).  Youth still outranks
+        sleep -- a too-young pet is never woken just to be refused."""
+        if (g := self._guard(asleep_blocks=False)) is not None:
+            return g
+        if self.stage == "Fresh":
+            return "Too young for a raid."
+        if self.asleep:
+            return self._disturbed()
+        return None
+
     def max_health(self):
         """PhysicalState.getMaxHealth: the trained-HP CAP rises with lapsed life."""
         days = self.age_seconds / DAY_LENGTH

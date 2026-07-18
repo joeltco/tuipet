@@ -173,7 +173,7 @@ class DigiCorePanel:
         out.append(" what stirs within…\n", style=DIM)
         out.append_text(menu.note(self.note if self.note != "the core stirs…" else "",
                                   tick=self.frame_i))
-        out.append_text(menu.footer("SPACE gaze  ←→ page  ESC close"))
+        out.append_text(menu.footer("SPACE gaze  ←→ page  ESC out"))
         return out
 
     def _teaser_scene(self):
@@ -221,7 +221,7 @@ class DigiCorePanel:
         other digicore state leaves it alone."""
         if not self.teaser:
             return menu.hints(("SPACE", "gaze"), ("\u2190\u2192", "page"),
-                              ("ESC", "close"))
+                              ("ESC", "out"))
         t = self.teaser_t
         if t < MON_T:
             return "the core stirs…"
@@ -261,7 +261,7 @@ class DigiCorePanel:
         if isinstance(rows, str):                      # "(final form)"
             out.append(f" {rows}\n", style=DIM)
             out.append_text(menu.blanks(8))
-            out.append_text(menu.footer("←→ page    ESC close"))
+            out.append_text(menu.footer("←→ page    ESC out"))
             return out
 
         def fmt(r, j):
@@ -275,7 +275,7 @@ class DigiCorePanel:
 
         self.evo_sel = menu.list_window(out, rows, self.evo_sel, 8, fmt)
         out.append_text(menu.note("ENTER: what it takes"))
-        out.append_text(menu.footer("↑↓ pick  ENTER req  ←→ page  ESC"))
+        out.append_text(menu.footer("↑↓ pick  ENTER req  ←→ page  ESC out"))
         return out
 
     def text(self):
@@ -296,5 +296,5 @@ class DigiCorePanel:
             out.append(f" {label:<9}", style=DIM)
             out.append(f"{val}\n", style=INK_B)
         out.append_text(menu.blanks(9 - len(rows)))
-        out.append_text(menu.footer("←→ page    ESC close"))
+        out.append_text(menu.footer("←→ page    ESC out"))
         return out

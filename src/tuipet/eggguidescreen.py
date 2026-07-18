@@ -74,6 +74,8 @@ class EggGuidePanel:
                 self.i = (self.i + 1) % self.n
             elif k == "escape":
                 self.detail = False
+            elif k == "n":                     # n (the opening key) closes the book
+                return ("done", None)
             return None
         if k in ("up", "k"):
             self.i = max(0, self.i - 1)
@@ -81,7 +83,7 @@ class EggGuidePanel:
             self.i = min(self.n - 1, self.i + 1)
         elif k in ("enter", "space"):
             self.detail = True
-        elif k == "escape":
+        elif k in ("escape", "n"):             # n (the opening key) also closes
             return ("done", None)
         return None
 

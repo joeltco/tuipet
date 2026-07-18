@@ -3,6 +3,23 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.5.62 — A TIDY DEVICE (2026-07-18)
+
+* **The action bar, organized.** The three lines now read in the Help
+  screen's order — care, then explore, then grow, then manage — with the
+  parenthetical hints dimmed, and the Options→Keys page lists bindings in
+  the same order the bar shows them.
+* **One hint language.** Every screen's key hints agree: "ESC out" leaves
+  to home, "ESC back" goes up a level — DigiCore's "close" dialect, a
+  verbless "ESC", the cup's "ENTER enter" stutter and the bug reporter's
+  odd separators all converted.
+* **The key that opens a screen closes it.** `t` closes training, `n`
+  closes the egg guide, `?` closes help — and `q` in help now quits the
+  app like it does everywhere else.
+* **One gate for every refusal.** The cup, DNA lab and raid all refuse
+  through the same dead/egg/asleep gate — and a raid press now disturbs a
+  sleeper like every other care key (it was the one free poke).
+
 ## 0.5.61 — LIVING WORLD (2026-07-18)
 
 * **Adaptive raid bosses.** The shared pool sizes itself to the community:

@@ -73,7 +73,10 @@ def test_only_the_current_hour_is_open():
 
 def test_too_young_and_asleep_gates(monkeypatch):
     _patch(monkeypatch, [_trophy()])
-    for st in ("Egg", "Fresh", "InTraining"):
+    # an Egg refuses with the shared _guard line (tidy audit 2026-07-18:
+    # the cup's gate single-sources dead/egg instead of hand-rolling them)
+    assert "egg" in tournament.can_enter(Pet(num=-1, stage="Egg")).lower()
+    for st in ("Fresh", "InTraining"):
         assert "young" in tournament.can_enter(Pet(num=-1, stage=st)).lower()
     p = _pet("Rookie")
     p.asleep = True

@@ -309,10 +309,9 @@ class ActionsMixin:
 
     def action_raid(self):
         from . import raidscreen
-        if self.pet.stage in ("Egg", "Fresh"):
-            self._do("Too young for a raid."); return
-        if self.pet.asleep:
-            self._do("zzz… asleep"); return
+        reason = self.pet.can_raid()    # single-source gate, like feed/train/dna/cup
+        if reason:
+            self._do(reason); return
         self._open_mode(raidscreen.RaidPanel(self.pet, self._lobby_connect),
                         self._after_raid)
 
