@@ -59,8 +59,13 @@ ICON_KEYS = {
     "training_pack": "i:7",      # Dumbbell: training gear
     "anti_evo_chip": "f:32",     # Omni Chip: a chip is a chip
     "revive_floppy": "i:32",     # Digimemory: a data disk for a data disk
-    # (care_mistake_eraser / alarm_clock / time_gear: the rips hold no
-    #  eraser, clock or gear ANYWHERE -- quiet cell, never wrong art)
+    # the capsule pod as a DELIBERATE uniform placeholder (Joel 2026-07-18
+    # "use the capsule"): the rips hold no clock, eraser or gear anywhere,
+    # and he chose a full shelf over three bare cells.  NOT a mistake to
+    # "fix" -- his explicit call, the one sanctioned wrong-art exception.
+    "alarm_clock": "i:68",
+    "care_mistake_eraser": "i:68",
+    "time_gear": "i:68",
 }
 
 # the Digimental waves (Joel 2026-07-17: "wire the gates") -- the canon

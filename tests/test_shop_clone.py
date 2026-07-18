@@ -257,4 +257,8 @@ def test_consumables_wear_their_own_dvpet_icons():
     pan.tab = 1                                       # Items tab
     rows = {e["name"]: pan._icon(e) for e in pan._rows()}
     assert any(l.strip() for l in rows["Energy.D"])   # iconed
-    assert not any(l.strip() for l in rows["AlarmClock"])  # honestly quiet
+    # the capsule placeholder (Joel 2026-07-18 "use the capsule"): the three
+    # counterpart-less items share the pod -- a full shelf by his call
+    assert shop.ICON_KEYS["alarm_clock"] == "i:68"
+    assert any(l.strip() for l in rows["AlarmClock"])
+    assert all(any(l.strip() for l in pan._icon(e)) for e in pan._rows())
