@@ -590,6 +590,15 @@ def pet_from_save(data, catch_up=True, strict=False):
         return None, ""
     data = dict(data)                            # don't mutate the caller's dict
     _migrate_v401_save(data)                     # egg-bank reorder + ver6 cut
+    # egg_type must be an INT: the 2026-07-18 'guide' incident wrote the
+    # carousel's sentinel string into a save (the crash handler then saved
+    # the poisoned pet, and every launch died in the egg renderer).  A
+    # non-int heals to egg 0 -- a classic Botamon egg beats a dead app.
+    if not isinstance(data.get("egg_type"), int):
+        try:
+            data["egg_type"] = int(data.get("egg_type"))
+        except (TypeError, ValueError):
+            data["egg_type"] = 0
     saved_at = data.pop("_saved_at", None)
     # JSON stringifies int dict keys: trophies_won comes back str-keyed,
     # silently breaking cup prelim chains (audit 2026-07; habitat_record

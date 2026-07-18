@@ -180,3 +180,22 @@ def test_the_persistence_split_holds_its_boundaries():
         assert persistence.save_failed == "disk on fire"
     finally:
         persistio.save_failed = old
+
+
+def test_a_poisoned_egg_type_heals_at_load():
+    """The 'guide' incident, act two (2026-07-18): the crash handler SAVED
+    the poisoned pet, so every launch died in the egg renderer.  A non-int
+    egg_type must heal to a valid index at load, and the renderer itself
+    must survive whatever reaches it."""
+    from tuipet import egg
+    p = Pet(num=-1, stage="Egg", attribute="None", egg_type=3)
+    p.world_seconds = 100.0
+    d = persistence.to_save_dict(p)
+    d["egg_type"] = "guide"                       # the poisoned save
+    healed, _msg = persistence.pet_from_save(d, catch_up=False)
+    assert healed is not None
+    assert healed.egg_type == 0                   # a Botamon egg, not a crash
+    # belt AND suspenders: the renderer can never die over it again
+    assert egg.frames("guide")
+    assert egg.record("guide")["name"] == "Digitama"
+    assert egg.hatch_name(None) != ""

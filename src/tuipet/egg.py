@@ -36,7 +36,7 @@ def frames(egg_type=0):
     eggs = _real_eggs()
     if not eggs:
         return [["0"]]                               # only before setup_assets.sh
-    fr = eggs[egg_type % len(eggs)]["frames"]        # real frames: idle / settle / crack
+    fr = eggs[_idx(egg_type, len(eggs))]["frames"]   # real frames: idle / settle / crack
     f0 = fr[0]
     f1 = fr[1] if len(fr) > 1 else f0
     f2 = fr[2] if len(fr) > 2 else f1                 # the REAL crack frame (was discarded)
@@ -45,24 +45,34 @@ def frames(egg_type=0):
 ROLES = {"idle": [0, 1], "egg_idle": [0, 1], "hatch": [0, 1, 2]}  # frames: egg -> crack -> baby
 
 
+def _idx(egg_type, n):
+    """A SAFE bank index whatever the caller holds -- the 'guide' incident
+    (2026-07-18) proved a sentinel string can reach the renderer through a
+    poisoned save; the display must never crash over it."""
+    try:
+        return int(egg_type) % n
+    except (TypeError, ValueError):
+        return 0
+
+
 def hatch_target(egg_type=0):
     """A Fresh creature (DigimonNum) this egg hatches into -- chosen at random among
     the egg's targets, so generic "mystery" eggs surprise you (DVPet behaviour)."""
     eggs = _real_eggs()
     if not eggs:
         return None
-    return random.choice(eggs[egg_type % len(eggs)]["hatch"])
+    return random.choice(eggs[_idx(egg_type, len(eggs))]["hatch"])
 
 
 def hatch_targets(egg_type=0):
     """All DigimonNums this egg can hatch into (the hatch preview)."""
     eggs = _real_eggs()
-    return list(eggs[egg_type % len(eggs)]["hatch"]) if eggs else []
+    return list(eggs[_idx(egg_type, len(eggs))]["hatch"]) if eggs else []
 
 
 def hatch_name(egg_type=0):
     eggs = _real_eggs()
-    return eggs[egg_type % len(eggs)]["hatch_name"] if eggs else "?"
+    return eggs[_idx(egg_type, len(eggs))]["hatch_name"] if eggs else "?"
 
 
 def count():
