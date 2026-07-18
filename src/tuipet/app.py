@@ -141,11 +141,11 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("THE HONEST UPDATE: real refusal rules - a sick or messy "
-                 "pet turns down food, training and fights with the classic "
-                 "head-shake. The raid gate now shows live timers and its "
-                 "true payouts, cup purses show what they really pay, and "
-                 "cross-device saves got tougher against clock drift.")
+    WHATS_NEW = ("THE NEW SHOP: a full catalog rebuilt from scratch - "
+                 "real foods that get eaten on screen, toys that actually "
+                 "play (the ball bounces, the TV glows), a poison mushroom "
+                 "you should NOT feed, and every single item wearing real "
+                 "device art. Your old goods traded in one-for-one.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and
