@@ -141,11 +141,11 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("THE NEW SHOP: a full catalog rebuilt from scratch - "
-                 "real foods that get eaten on screen, toys that actually "
-                 "play (the ball bounces, the TV glows), a poison mushroom "
-                 "you should NOT feed, and every single item wearing real "
-                 "device art. Your old goods traded in one-for-one.")
+    WHATS_NEW = ("LIVING WORLD: raid bosses now size themselves to the "
+                 "community - fellable by a small crew, growing as you win. "
+                 "The weekend cup is one your pet can actually take, escaped "
+                 "bosses pay your share, the shop speaks with character, and "
+                 "the DNA lab prices every wager honestly.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and
