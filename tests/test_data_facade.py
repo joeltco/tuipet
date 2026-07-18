@@ -14,7 +14,7 @@ def test_facade_is_thin_and_complete():
         data_core: ("load_sprites", "load_evolutions", "load_requirements",
                     "canonical_num", "stage_rank", "bob_frame", "DNA_FIELDS"),
         data_shop: ("load_foods", "load_vitems", "consumable_by_key",
-                    "home_shop_pool", "load_loot_tables", "item_is_functional"),
+                    "home_shop_pool", "item_is_functional"),
         data_world: ("load_backgrounds", "load_effects", "load_icons",
                      "load_battle_fx", "load_enemies", "load_tournies",
                      "attack_orb", "load_orbs"),

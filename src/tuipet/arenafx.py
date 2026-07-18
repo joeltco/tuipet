@@ -327,7 +327,7 @@ class FxMixin:
     def advance_fx(self):
         if not self.fx:
             return False
-        self.frame_i += 1        # weather/filth keep animating through an fx (audit 2026-07)
+        self.frame_i += 1        # filth keeps animating through an fx (audit 2026-07)
         self.fx["step"] += 1
         if self.fx["step"] < self.fx["steps"]:
             return True
@@ -406,7 +406,7 @@ class FxMixin:
 
     def _paint_fx(self, pet):
         """The care-fx painter, decomposed (audit 2026-07): a shared context is
-        pre-loaded (default pose, weather overlay, the cross-kind FILTH prelude),
+        pre-loaded (default pose, the cross-kind FILTH prelude),
         then the kind's own painter (_fxk_<kind>) mutates it.  Bodies verbatim
         from the old 210-line chain; behavior pinned by the fx golden."""
         fx = self.fx

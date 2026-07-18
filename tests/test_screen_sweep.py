@@ -1,7 +1,7 @@
 """Deep render sweep: every screen path the unit tests never drew.
 
 Coverage audit 2026-07 (after the bitmap_text NameError shipped): transport 17%,
-tournament 21%, lobby 26%, town 29%, battlefx 31%, dna/jogress 42%, adventure/
+tournament 21%, lobby 26%, town 29%, dna/jogress 42% (historical note), adventure/
 battle 46%, training 59% -- their text()/anim() paths simply never ran.  Each
 test here drives a REAL flow (seeded) and renders after every step.  Shallow on
 purpose: the assertion is 'it draws in every phase'."""
@@ -353,9 +353,11 @@ def test_eggselect_code_entry():
     pan.text()
 
 
-def test_battlefx_across_varied_foes():
-    """battlefx's effect branches key off each foe's attack conditions -- fight a
-    spread of real enemies so the volley animations execute their variants."""
+def test_battle_panel_across_varied_foes():
+    """Fight a spread of real enemies so the volley replay renders its
+    variants.  (Renamed 2026-07-18: the old "battlefx" name described the
+    dead AttackEffectProcess port, deleted that day -- these tests always
+    drove the live BattlePanel.)"""
     from tuipet.battlescreen import BattlePanel
     from tuipet import battle as battle_mod
     random.seed(12)
@@ -375,10 +377,12 @@ def test_battlefx_across_varied_foes():
         pan.text()
 
 
-def test_battlefx_every_attack_effect_fires():
-    """One fight per distinct attack effect in the atlas, played AS a species
-    that carries it, throwing the attribute that carries it -- so checkEffect's
-    branches (AttackUp/Counter/Leech/Heal/ForceOpp*/...) actually execute."""
+def test_battle_panel_every_attack_carrier_fights():
+    """One fight per distinct attack-effect carrier in the atlas, played AS
+    a species that carries it -- a broad species/attribute smoke of the
+    volley replay.  (Renamed 2026-07-18: "checkEffect branches" described
+    the dead DVPet effect engine; the 0.5 HP race has no attack effects --
+    this walk exercises sprite/attack variety through the live panel.)"""
     from tuipet.battlescreen import BattlePanel
     from tuipet import data
     random.seed(8)

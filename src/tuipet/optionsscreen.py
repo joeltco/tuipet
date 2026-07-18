@@ -3,9 +3,11 @@ options related shit in there" and give the action bar its keys back).
 
 Rows: Theme (hosts the live-preview ThemePanel as a sub), Sound (hosts the
 SoundPanel sub: the on/off switch + the volume bar; the value still names the
-detected backend so silent-sound mysteries self-explain), Account (hosts the lobby AccountPanel to switch who's signed in — the current
-pet parks with the old account in the cloud), Update (on-demand PyPI check via
-update.py, threaded so the UI never blocks), Keys (a scrollable page of every
+detected backend so silent-sound mysteries self-explain), Account (hosts the
+lobby AccountPanel to switch who's signed in — the current pet parks with the
+old account in the cloud), Cloud sync (the cloud-save + offline-mail toggle;
+TUIPET_NO_SYNC outranks it), Update (on-demand PyPI check via update.py,
+threaded so the UI never blocks), Keys (a scrollable page of every
 home-screen binding), a New egg hand-off, and Erase all data (typed-YES
 confirm; wipes the local save dir -- the cloud copy stays with the account).
 """

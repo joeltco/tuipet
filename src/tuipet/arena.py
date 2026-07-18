@@ -1,5 +1,5 @@
 """The animated LCD arena: the Screen widget plus its fx painters and the
-weather / filth / status-effect overlays.
+filth / status-effect overlays.
 
 Lifted out of app.py verbatim (modularization 2026-07-08) — this is the render
 half of the old app module.  app.py imports the public names back
@@ -55,8 +55,7 @@ from .render import blit as _blit    # one blit for app/training/strikefx (refac
 
 #                                                     every canon sprite fits inside; things leave
 #                                                     the screen only off the LEFT or RIGHT edge,
-#                                                     on occasion -- never the top or bottom.
-#                                                     Weather alone rains over the whole LCD.)
+#                                                     on occasion -- never the top or bottom.)
 
 
 class Screen(FxMixin, Static):
@@ -187,11 +186,10 @@ class Screen(FxMixin, Static):
 
     def _crossfade(self, target):
         """Canon BackgroundAnim.animateBack: a background change never snaps --
-        the old frame dissolves into the new one.  The weather rolls every 10s
-        and each precip start/stop swaps the whole frame (~21x a game day on
-        Plains); without the dissolve every swap was a hard day/night cut
-        (background audit 2026-07-15).  A None or shape change still cuts:
-        lights-off and habitat jumps are canon's checkBackNoAnim force path."""
+        the old frame dissolves into the new one (scene picks, egg homes).
+        A None or shape change still cuts: lights-off is canon's
+        checkBackNoAnim force path.  (The weather/habitat swap triggers this
+        was built for left with their systems -- doc truthed 2026-07-18.)"""
         prev = getattr(self, "_bg_tgt", None)
         if target is None or not prev or not target \
                 or len(prev) != len(target) or len(prev[0]) != len(target[0]):

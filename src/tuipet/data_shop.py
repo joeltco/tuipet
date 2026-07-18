@@ -209,20 +209,18 @@ def _load_consumables():
             continue
     return foods, items
 
-# An item is "functional" in tuipet only if use_item actually applies an effect.
-# Pure action-items whose AnimationType drives an UNIMPLEMENTED system carry
-# zero stats and currently do nothing -- they are filtered out of the shop
-# and loot until their system is built. Extend this as each system is
-# implemented (transports, ItemEvol, Inherit and Recover lives all are now).
+# An item is "functional" in tuipet only if use_item actually applies an
+# effect.  Since the strict-DSprite item cut the live effects are the DSprite
+# name table + the egg_of_* crests; a DVPet ACTION-item (transports, Life
+# Recovery, ItemEvol relics, the Digimemory redeem) has NO handler and must
+# never count as functional -- the old "(now implemented)" claims described
+# systems that left with adventure/towns (liveness audit 2026-07-18).
 # (mood/enthusiasm/undepressed dropped 2026-07-16: those meters left with
 # their systems -- an item whose only effect was them would sell a no-op)
 _FUNC_STATS = ("hunger", "weight", "energy",
                "strength", "obedience", "vaccine", "data", "virus")
 
 _FUNC_FLAGS = ("cured", "healed", "unfatigue", "vitamin")
-
-# DVPet world-warp items (items.csv AnimationType); handled by transportscreen.
-TRANSPORT_ACTIONS = {"PhoenixTransport", "BirdraTransport", "GarudaTransport", "WhaTransport"}
 
 def item_is_functional(e):
     if not e:
@@ -234,15 +232,10 @@ def item_is_functional(e):
     if e.get("seconds") or e.get("sleep") or e.get("sleep_lapse"):   # lifespan / sleep items
         return True
     # (the effect_id clause -- "grants a temporary care effect" -- left with
-    # the careEffect runtime: strict-DSprite items, 2026-07-17)
-    if e.get("action") == "ItemEvol":   # item-triggered evolution (now implemented)
-        return True
-    if e.get("action") == "Inherit":    # the Digimemory (now implemented)
-        return True
-    if e.get("adv_life"):               # Life Recovery (now implemented)
-        return True
-    if e.get("action") in TRANSPORT_ACTIONS:   # world-warp items (now implemented)
-        return True
+    # the careEffect runtime: strict-DSprite items, 2026-07-17; the ItemEvol/
+    # Inherit/Life-Recovery/transport clauses left 2026-07-18 -- their
+    # handlers died with adventure/towns and the DVPet item machine, so they
+    # marked paid DUDS as sellable goods)
     return bool(e.get("special") or e.get("unlocks_food") or e.get("unlocks_item"))
 
 # ---------------------------------------------------------------------------
@@ -312,85 +305,11 @@ def _default_econ(r):
         "shop_unlocked": (r.get("ShopUnlocked") or "FALSE").strip().upper() == "TRUE",
     }
 
-@lru_cache(maxsize=1)
-def load_shop_overrides():
-    """shopConsumable.csv: the per-TOWN override table -- towns.csv references
-    these rows by ShopConsumableID to reprice/restock consumables locally."""
-    out = {}
-    path = os.path.join(_DATA, "shopConsumable.csv")
-    if not os.path.exists(path):
-        return out
-    for r in csv.DictReader(open(path)):
-        try:
-            sid = int(r["ShopConsumableID"])
-        except (KeyError, ValueError):
-            continue
-        def i(k, d):
-            try:
-                return int(r.get(k) or d)
-            except ValueError:
-                return d
-        out[sid] = {
-            "consumable_id": i("ConsumableID", -1),
-            "is_food": (r.get("IsFood") or "false").strip().lower() == "true",
-            "price": i("Price", 0),
-            "min_stock": i("minStock", 1), "max_stock": i("maxStock", 1),
-            "stock_chance": _shop_season4(r.get("stockChance(SpringSummerFallWinter)"), 100),
-            "time_avail": _shop_time4(r.get("DefaultTimeAvailable(HtH;SpringSummerFallWinter)")),
-            "must_stock": (r.get("MustStock") or "false").strip().lower() == "true",
-            "sale_chance": _shop_season4(r.get("SaleChance(SpringSummerFallWinter)"), 0),
-            "sale_factor": i("SaleFactor", 1), "resell_factor": i("ResellFactor", 0),
-        }
-    return out
+# (load_shop_overrides left 2026-07-18: zero callers since the towns/adventure
+# removal -- the CSV stays on disk, dormant.)
 
-@lru_cache(maxsize=1)
-def load_towns():
-    """towns.csv: the full town records -- local shop overrides + inventory
-    sizes, sell permissions, and the town tournament (slots 0-23 are hourly
-    cups; slots past 23 -- where ForceTrophies pin -- are ALWAYS open)."""
-    out = {}
-    for r in csv.DictReader(open(os.path.join(_DATA, "towns.csv"))):
-        try:
-            tid = int(r["TownID"])
-        except (KeyError, ValueError):
-            continue
-        def ids(k):
-            return [int(x) for x in (r.get(k) or "").split(":") if x.strip().isdigit()]
-        forced = [int(x) for x in (r.get("ForceTrophies") or "").split(";")
-                  if x.strip().lstrip("-").isdigit() and int(x) >= 0]
-
-        def hours(k):
-            """'6t23;6t23;24t17;6t23' -> per-season (start, end) opening spans,
-            keyed Spring/Summer/Fall/Winter.  Canon Utility.isOpen(h, span) is a
-            plain h >= start and h <= end -- so a '24t17' span (start past any
-            real hour) is CLOSED FOR THE SEASON, not a wraparound."""
-            spans = [(s.split("t") + ["", ""])[:2] for s in (r.get(k) or "").split(";")]
-            seasons = ("Spring", "Summer", "Fall", "Winter")
-            return {seasons[i]: (int(a), int(b))
-                    for i, (a, b) in enumerate(spans[:4])
-                    if a.strip().lstrip("-").isdigit() and b.strip().lstrip("-").isdigit()}
-        out[tid] = {
-            "id": tid,
-            "items_override": ids("OverrideDefaultItemsSettings(ShopConsumableID)"),
-            "foods_override": ids("OverrideDefaultFoodSettings(ShopConsumableID)"),
-            "food_max": int(r.get("FoodShopInventoryMax") or 8),
-            "item_max": int(r.get("ItemShopInventoryMax") or 12),
-            "can_sell_items": (r.get("CanSellItems") or "false").strip().lower() == "true",
-            "can_sell_food": (r.get("CanSellFood") or "false").strip().lower() == "true",
-            "tournament_limit": int(r.get("TournamentLimit (0 to 23 are hours 0 to 23 \u2013 anything higher is always open)") or
-                                    r.get("TournamentLimit") or 0),
-            "forced_trophies": forced,
-            # per-season shop opening hours (FoodShopOpen/ItemShopOpen columns);
-            # winter-market towns (6/13/18) open ONLY in winter by this data
-            "food_hours": hours("FoodShopOpen(SpringSummerFallWinter)"),
-            "item_hours": hours("ItemShopOpen(SpringSummerFallWinter)"),
-            # TownBackgroundID: the town's canonical scenery (a habitat id) --
-            # shown on arrival in adventure and behind the town lobby
-            "bg_habitat": (int(r["TownBackgroundID"])
-                           if (r.get("TownBackgroundID") or "").strip().lstrip("-").isdigit()
-                           and int(r["TownBackgroundID"]) >= 0 else None),
-        }
-    return out
+# (load_towns left 2026-07-18: zero callers since the towns/adventure
+# removal -- the CSV stays on disk, dormant.)
 
 def _shop_econ_default():
     """Always-stocked, no-sale defaults for specialty items not in shopConsumable.csv."""
@@ -451,42 +370,5 @@ def consumable_by_key(key):
         return e
     return None
 
-@lru_cache(maxsize=1)
-def load_loot_tables():
-    """DVPet loot tables: table_id -> ordered list of {key, name, rate}.
-
-    Built from lootTable.csv (table -> drop-rate IDs) and dropRate.csv
-    (drop-rate ID -> consumable + percentage). A single 0..100 draw walks the
-    list; the slack below 100 is the chance nothing drops (see loot.roll)."""
-    foods, items = _load_consumables()
-    rates = {}
-    with open(os.path.join(_DATA, "dropRate.csv")) as fh:
-        rd = csv.reader(fh)
-        next(rd, None)
-        for row in rd:
-            if len(row) < 4 or not row[0].strip():
-                continue
-            try:
-                did, cid, rate = int(row[0]), int(row[1]), int(row[3])
-            except ValueError:
-                continue
-            is_food = row[2].strip().upper() == "TRUE"
-            base = (foods if is_food else items).get(cid)
-            if not base or not item_is_functional(base):   # no inert loot drops
-                continue
-            rates[did] = {"key": ("f:%d" if is_food else "i:%d") % cid,
-                          "name": base["name"], "rate": rate}
-    tables = {}
-    with open(os.path.join(_DATA, "lootTable.csv")) as fh:
-        rd = csv.reader(fh)
-        next(rd, None)
-        for row in rd:
-            if not row or not row[0].strip():
-                continue
-            try:
-                tid = int(row[0])
-            except ValueError:
-                continue
-            tables[tid] = [rates[int(c)] for c in row[1:]
-                           if c.strip().isdigit() and int(c) in rates]
-    return tables
+# (load_loot_tables left 2026-07-18: zero callers since the towns/adventure
+# removal -- the CSV stays on disk, dormant.)

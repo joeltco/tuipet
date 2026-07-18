@@ -148,8 +148,8 @@ class TuiPetApp(ActionsMixin, App):
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and
-        # jogress should be online pvp only. we have adventure already") --
-        # PvE combat lives in adventure and the cup; fusion needs a real
+        # jogress should be online pvp only") -- PvE combat lives in raids
+        # and the cup (adventure left 2026-07-16); fusion needs a real
         # partner from the roster
         ("f", "feed", "Feed"), ("t", "train", "Train"),
         ("c", "clean", "Clean"),

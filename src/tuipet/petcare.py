@@ -158,10 +158,10 @@ class CareMixin:
         """A NO-OP: the tantrum left with the discipline system."""
 
     def clean(self):
-        """PhysicalState.clean: sweeping real filth lifts mood (CleanMoodInc)
-        AND builds obedience, disposition-shaded (CleanObedienceInc 1 / sunny 2
-        / sour 0) -- diligent housekeeping is one of the honest obedience
-        earners (clean audit 2026-07-05; it was mood-only)."""
+        """PhysicalState.clean: wash the filth off the floor.  (The mood and
+        obedience rewards this once paid are INERT -- both meters left with
+        their systems 2026-07-16; the write-calls below are the standing
+        no-op citations.)"""
         if (_g := self._guard()) is not None:
             return _g
         if not self.poop:

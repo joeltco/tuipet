@@ -124,9 +124,9 @@ free-standing battle key.
 
 Evolution uses the real V-Pet gating model: each form's
 `digimon.csv` row gates on care **mistakes**, **overfeed**, **sleep
-disturbances**, **sickness**, **weight** class, **attribute power**
-(Vaccine/Data/Virus), and **battles/wins**, with the game's exact
-fulfilled-requirement scoring and deviation tiebreak. Per-stage counters
+disturbances**, **weight** class, **battles/wins** and **generation**,
+with the game's exact fulfilled-requirement scoring and deviation
+tiebreak. Per-stage counters
 reset on evolution; power and battle records carry for life. Good care with
 focused training walks the classic lines; neglect finds Numemon.
 Battle-gated Champions and above need real fights — raids and cups feed the
