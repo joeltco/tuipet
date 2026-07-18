@@ -141,11 +141,10 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("FULL SHELF: every item in the shop wears an icon now. "
-                 "Real device art where the same item exists - drink, "
-                 "pills, steak, burger, fruit, chip, cartridge - and the "
-                 "little capsule pod marks the three goods the art bank "
-                 "never drew. No bare cells left.")
+    WHATS_NEW = ("THE PILL IS EATEN: medicine now plays the real eating "
+                 "animation - your mon chews the pill down bite by bite, "
+                 "the way the source device does it. The old floating "
+                 "half-clipped medicine strip is gone for good.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and
