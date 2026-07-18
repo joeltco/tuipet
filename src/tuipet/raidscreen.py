@@ -44,6 +44,7 @@ class RaidPanel(menu.SubHost):
         self.sfx = None
         self.msg = "Calling the raid gate…"
         self._dealt = 0
+        self._credited = 0            # the gate's acked board damage this session
         name, pw = persistence.get_account()
         self.client = client or connect(name, pw, {"num": pet.num,
                                                    "name": pet.name or name})
@@ -72,6 +73,11 @@ class RaidPanel(menu.SubHost):
         if not self._asked and getattr(self.client.state, "me_id", None) is not None:
             self.client.raid_get()
             self._asked = True
+        elif self._asked and self.frame_i % 50 == 0:
+            # keep the countdown/pool/board LIVE while the panel is open --
+            # the one-shot fetch froze every timer until the player acted
+            # (raid review 2026-07-18); one refetch per ~5s is polite
+            self.client.raid_get()
         if self.view and self.msg == "Calling the raid gate…":
             self.msg = "The boss stands. SPACE to raid!" if self._standing() \
                 else "The next boss is incoming…"
@@ -83,7 +89,14 @@ class RaidPanel(menu.SubHost):
             self.client.last_hit = None
             dealt = int(hit.get("dealt", 0) or 0)
             if dealt > 0:
+                self._credited += dealt
                 self.msg = f"Gate credits {dealt:,} damage!"
+                self.sfx = "attackHit"
+            else:
+                # the gate REFUSED the report (boss fell/expired mid-bout) --
+                # the old flow left "reported!" standing (raid review 2026-07-18)
+                self.msg = "The gate refused it — the boss is gone. Refetching…"
+                self.client.raid_get()
         reward = getattr(self.client, "raid_reward", None)
         if reward is not None:
             self.client.raid_reward = None
@@ -135,8 +148,10 @@ class RaidPanel(menu.SubHost):
         if dealt > 0 and self.view:
             self.client.raid_hit(dealt, self.pet.stage)
             self._dealt += dealt
-            self.msg = f"Landed {dealt} — reported to the gate!"
-            self.sfx = "attackHit"
+            # NEUTRAL until the ack lands: "reported!" used to stand even
+            # when the gate rejected it or the socket was down (raid review
+            # 2026-07-18); the ack path speaks the credit or the refusal
+            self.msg = f"Landed {dealt} — reporting to the gate…"
         else:
             self.msg = "Not a scratch. Rest and try again."
 
@@ -174,7 +189,15 @@ class RaidPanel(menu.SubHost):
                 self.msg = "Nothing to claim yet."
             return None
         if k in ("escape", "r"):
-            done = f"Raid: {self._dealt} damage landed." if self._dealt else None
+            # the exit line speaks the GATE's number (board damage), not the
+            # raw accumulator -- three magnitudes described one session
+            # (raid review 2026-07-18)
+            if self._credited:
+                done = f"Raid: the gate credited {self._credited:,} damage."
+            elif self._dealt:
+                done = f"Raid: {self._dealt} raw landed — no gate credit yet."
+            else:
+                done = None
             return ("done", done)
         return None
 
@@ -228,9 +251,12 @@ class RaidPanel(menu.SubHost):
             left = max(0, int(b.get("end", 0) - v.get("now", 0)))
             days, hrs = left // 86400, left % 86400 // 3600
             fest = _cad.holiday()
+            # the relay pays x1.5 on WEEKENDS only -- "2x" and a festival
+            # bonus were promises the server never paid (raid review
+            # 2026-07-18); the festival stays as pure calendar flavor
             note = (f" weekly boss · {days}d {hrs}h left"
-                    + (f" · {fest}!" if fest
-                       else " · weekend pays 2x" if _cad.is_weekend() else ""))
+                    + (f" · {fest}" if fest
+                       else " · weekend pays 1.5x" if _cad.is_weekend() else ""))
             out.append(note + "\n", style=DIM)
         award = v.get("award")
         if award:

@@ -287,3 +287,55 @@ def test_map_rows_tell_the_raid_story():
     assert rules[idx]["desc"] == "Fell 2 raid bosses"
     assert egg.unlock_progress(idx, _prog(raids=1)) == "raid bosses felled 1/2"
     assert egg.unlock_ratio(idx, _prog(raids=1)) == 0.5
+
+
+def test_the_panel_reports_honestly_and_stays_live():
+    """Raid review 2026-07-18: (1) the report line stays NEUTRAL until the
+    gate's ack -- a credit speaks the board number, a refusal says so;
+    (2) the exit summary speaks the GATE's credited total; (3) the panel
+    refetches the view on a cadence instead of freezing its timers; (4) the
+    cadence line promises the x1.5 the relay actually pays, never 2x."""
+    import inspect
+    from types import SimpleNamespace
+    from tuipet.raidscreen import RaidPanel
+
+    calls = []
+    client = SimpleNamespace(state=SimpleNamespace(me_id=1),
+                             raid={"boss": {"num": 1, "name": "B", "hp": 1,
+                                            "start": 0, "end": 9e9},
+                                   "now": 1.0, "board": [], "attempts": 3},
+                             raid_reward=None, last_hit=None,
+                             raid_get=lambda: calls.append("get"),
+                             raid_hit=lambda d, s: calls.append(("hit", d)))
+    pan = RaidPanel.__new__(RaidPanel)
+    pan.pet = SimpleNamespace(stage="Mega", bits=0)
+    pan.sub = None
+    pan.frame_i = 0
+    pan.sfx = None
+    pan.msg = ""
+    pan._dealt = 0
+    pan._credited = 0
+    pan.client = client
+    pan._asked = True
+
+    # neutral report, then the ack credits
+    pan._report(SimpleNamespace(dealt=12))
+    assert "reporting" in pan.msg and "!" not in pan.msg
+    client.last_hit = {"dealt": 1_200_000}
+    pan.anim()
+    assert "credits 1,200,000" in pan.msg and pan._credited == 1_200_000
+    # a refused ack surfaces instead of leaving "reported!" standing
+    client.last_hit = {}
+    pan.anim()
+    assert "refused" in pan.msg
+    # exit speaks the gate's number
+    done, note = pan.key("escape")
+    assert done == "done" and "1,200,000" in note
+    # the cadence poll: 50 frames -> at least one refetch
+    calls.clear()
+    for _ in range(51):
+        pan.anim()
+    assert "get" in calls, "the open panel must keep the view live"
+    # and the promise matches the payout
+    src = inspect.getsource(RaidPanel.text)
+    assert "weekend pays 1.5x" in src and "weekend pays 2x" not in src
