@@ -57,8 +57,10 @@ ICON_KEYS = {
     "deadly_fruit": "f:2",
     "poop_clean_pill": "f:4",    # Med: the pill
     "training_pack": "i:7",      # Dumbbell: training gear
-    # (care_mistake_eraser / alarm_clock / time_gear / anti_evo_chip /
-    #  revive_floppy: no honest counterpart in the atlas -- quiet cell)
+    "anti_evo_chip": "f:32",     # Omni Chip: a chip is a chip
+    "revive_floppy": "i:32",     # Digimemory: a data disk for a data disk
+    # (care_mistake_eraser / alarm_clock / time_gear: the rips hold no
+    #  eraser, clock or gear ANYWHERE -- quiet cell, never wrong art)
 }
 
 # the Digimental waves (Joel 2026-07-17: "wire the gates") -- the canon

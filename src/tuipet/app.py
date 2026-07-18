@@ -141,11 +141,11 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("SHOP ICONS: the goods wear their own device icons now - "
-                 "the burger, the steak, the carrot, the pills, the fruit, "
-                 "the X mark - real atlas art for the same items, matched "
-                 "by name. Items with no honest counterpart keep a quiet "
-                 "cell. Crest eggs keep their glyphs; dossiers stay live.")
+    WHATS_NEW = ("SHOP ICONS, FULLER SHELF: 14 of 17 goods wear real "
+                 "device icons now - the chip joined Anti-Evo and the data "
+                 "cartridge joined Rev.Floppy. Only the alarm clock, care "
+                 "eraser and time gear stay bare: the art bank simply "
+                 "holds no clock, eraser or gear. Never wrong art.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and
