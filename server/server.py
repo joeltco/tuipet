@@ -587,7 +587,16 @@ RAID_PATH = os.environ.get(
     os.path.join(os.path.dirname(os.path.abspath(__file__)), "raid.json"))
 RAID_POOL_PATH = os.path.join(
     os.path.dirname(os.path.abspath(__file__)), "raid_pool.json")
-RAID_HP_PER_ENERGY = 5_500_000
+# ---- ADAPTIVE HP (Joel 2026-07-18: "adaptive HP") -------------------------
+# The flat 440M pool needed ~13 dedicated Mega players to fell inside its
+# week; smaller communities watched every boss escape and the raid-gated
+# eggs were unreachable.  Bosses now size themselves to the crowd that
+# actually shows up: a FELLED boss grows the next one; an ESCAPED boss
+# shrinks the next to ~what the community proved it can deal in a window.
+RAID_HP_FLOOR = 5_000_000            # one solid week for a single mid roster
+RAID_HP_CAP = 440_000_000            # the old flat pool is the ceiling
+RAID_GROW = 1.5                      # felled -> the bar rises
+RAID_FIT = 0.9                       # escaped -> sized to proven output
 RAID_COOLDOWN_S = 1440 * 60          # 24h "Incoming Boss..."
 RAID_WINDOW_S = 10080 * 60           # 7 days standing
 RAID_ATTEMPTS_PER_DAY = 3
@@ -666,11 +675,29 @@ def _raid_mult_for_num(num):
 
 
 
+def _adaptive_hp():
+    """Size the next pool from the last cycle (adaptive HP, 2026-07-18):
+    no history -> the floor; felled -> last max_hp x RAID_GROW; escaped ->
+    RAID_FIT x the damage the community actually dealt.  Always clamped
+    [floor, cap].  Old history rows (pre-adaptive) may lack max_hp -- fall
+    back to the board sum."""
+    if not RAID["history"]:
+        return RAID_HP_FLOOR
+    last = RAID["history"][-1]
+    dealt = sum(int(e.get("damage", 0)) for e in (last.get("board") or {}).values())
+    if last.get("defeated"):
+        base = int(last.get("max_hp") or dealt or RAID_HP_FLOOR) * RAID_GROW
+    else:
+        base = dealt * RAID_FIT
+    return int(max(RAID_HP_FLOOR, min(RAID_HP_CAP, base)))
+
+
 def _raid_stage_next(now):
-    """Pick the next boss: 24h cooldown, then a 7-day window."""
+    """Pick the next boss: 24h cooldown, then a 7-day window.  The species
+    is cosmetic variety; the pool is the community-sized _adaptive_hp()."""
     import random as _r
     pick = _r.choice(_raid_pool())
-    hp = int(pick.get("energy_max", 65)) * RAID_HP_PER_ENERGY
+    hp = _adaptive_hp()
     start = now + RAID_COOLDOWN_S
     if RAID["boss"] is None and not RAID["history"]:
         start = now                       # a fresh install opens immediately
@@ -689,6 +716,7 @@ def _raid_rotate(now=None):
         RAID["history"].append({
             "id": str(int(b["end"])), "boss_name": b["name"], "num": b["num"],
             "defeated": b["hp"] <= 0, "ended": now,
+            "max_hp": b.get("max_hp", 0),      # the adaptive sizer reads this
             "board": dict(RAID["board"]),
         })
         RAID["history"] = RAID["history"][-RAID_HISTORY_KEEP:]
@@ -737,7 +765,15 @@ def _raid_award(name):
             bits = RAID_RANK_BITS.get(rank, RAID_PART_BITS)
             items = RAID_RANK_ITEMS.get(rank, RAID_PART_ITEMS)
         else:
-            bits, items = RAID_CONSOLATION, 0
+            # an ESCAPED boss pays by CONTRIBUTION (adaptive arc 2026-07-18):
+            # the flat 100 told a top contributor their week meant nothing.
+            # Share of the pool -> up to rank-3 defeated money, never more.
+            pool = int(rec.get("max_hp") or 0)
+            mine = int((rec["board"].get(name) or {}).get("damage", 0))
+            share = (mine / pool) if pool > 0 else 0.0
+            bits = max(RAID_CONSOLATION,
+                       min(RAID_RANK_BITS[3], int(RAID_RANK_BITS[3] * share * 5)))
+            items = 0
         return {"id": rec["id"], "rank": rank, "defeated": rec["defeated"],
                 "boss": rec["boss_name"], "bits": bits, "items": items}
     return None
@@ -797,9 +833,11 @@ def _raid_claim(name, raid_id, now=None):
         return {"t": "raid_reward", "ok": False}
     import random as _r
     bits = a["bits"]
-    wd = time.localtime(now).tm_wday
+    wd = time.gmtime(now).tm_wday
     if wd >= 5:
-        bits = int(bits * 1.5)            # weekend claims pay half again
+        # weekend claims pay half again -- UTC like the attempt ledger and
+        # the ladder season: ONE day-clock (two-clocks audit 2026-07-18)
+        bits = int(bits * 1.5)
     items = [_r.choice(RAID_ITEM_POOL) for _ in range(a["items"])]
     RAID["claimed"].setdefault(a["id"], []).append(name)
     if len(RAID["claimed"]) > RAID_HISTORY_KEEP * 4:

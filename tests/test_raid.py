@@ -40,7 +40,9 @@ def test_rotation_stages_a_pool_boss_and_a_fresh_install_opens_now(tmp_path):
     srv._raid_rotate(now=1000.0)
     b = srv.RAID["boss"]
     assert b is not None and b["start"] == 1000.0          # no cooldown on first boot
-    assert b["hp"] == b["max_hp"] == 80 * srv.RAID_HP_PER_ENERGY
+    # adaptive HP (2026-07-18): a fresh install opens at the FLOOR -- a
+    # small community can actually fell its first boss
+    assert b["hp"] == b["max_hp"] == srv.RAID_HP_FLOOR
     pool_nums = {p["num"] for p in srv._raid_pool()}
     assert b["num"] in pool_nums
     assert data.record_for(b["num"]).get("stage") == "Mega"
@@ -99,18 +101,64 @@ def test_kill_archives_and_pays_rank_one_exactly_once(tmp_path):
     assert not srv._raid_claim("kai", rid, now=1003.0)["ok"]
 
 
-def test_an_escaped_boss_pays_flat_consolation(tmp_path):
+def test_an_escaped_boss_pays_by_contribution(tmp_path):
+    """Adaptive arc 2026-07-18: the flat 100 told a top contributor their
+    week meant nothing.  Escape pay scales with your share of the pool,
+    capped below rank-3 defeated money."""
     srv = _srv(tmp_path)
     srv._raid_rotate(now=1000.0)
-    srv._raid_hit("joel", 10, None, now=1001.0)
+    srv._raid_hit("joel", 10, None, now=1001.0)             # a token scratch
     end = srv.RAID["boss"]["end"]
     srv._raid_rotate(now=end + 1)                           # the window lapses
     rec = srv.RAID["history"][-1]
     assert not rec["defeated"]
     r = srv._raid_claim("joel", rec["id"], now=end + 2)
-    assert r["ok"] and not r["defeated"]
-    assert r["bits"] in (srv.RAID_CONSOLATION, int(srv.RAID_CONSOLATION * 1.5))
-    assert r["items"] == []
+    assert r["ok"] and not r["defeated"] and r["items"] == []
+    floor = srv.RAID_CONSOLATION
+    assert floor <= r["bits"] <= int(srv.RAID_RANK_BITS[3] * 1.5)
+    # a 20%+ contributor earns the escape CAP (rank-3 defeated money)
+    srv2 = _srv(tmp_path / "b")
+    srv2.RAID = srv2._load_raid()
+    srv2._raid_rotate(now=1000.0)
+    srv2.RAID["boss"]["max_hp"] = 1000
+    srv2.RAID["board"]["kai"] = {"damage": 400, "ts": 1001.0}
+    end2 = srv2.RAID["boss"]["end"]
+    srv2._raid_rotate(now=end2 + 1)
+    r2 = srv2._raid_claim("kai", srv2.RAID["history"][-1]["id"], now=end2 + 2)
+    assert r2["bits"] in (srv2.RAID_RANK_BITS[3], int(srv2.RAID_RANK_BITS[3] * 1.5))
+
+
+def test_adaptive_hp_tracks_the_community(tmp_path):
+    """Felled -> the next bar rises x1.5; escaped -> the next pool is sized
+    to ~what the community actually dealt; both clamped [floor, cap]."""
+    srv = _srv(tmp_path)
+    srv._raid_rotate(now=1000.0)
+    assert srv.RAID["boss"]["max_hp"] == srv.RAID_HP_FLOOR
+    srv.RAID["boss"]["hp"] = 1                              # fell it
+    srv._raid_hit("joel", 10, None, now=1001.0)
+    grown = srv.RAID["boss"]["max_hp"]
+    assert grown == int(srv.RAID_HP_FLOOR * srv.RAID_GROW)
+    # now let one escape after modest damage: the next fits the output
+    srv.RAID["boss"]["start"] = 1002.0
+    srv.RAID["board"] = {"joel": {"damage": 6_000_000, "ts": 1003.0}}
+    srv._raid_rotate(now=srv.RAID["boss"]["end"] + 1)
+    fitted = srv.RAID["boss"]["max_hp"]
+    assert fitted == max(srv.RAID_HP_FLOOR, int(6_000_000 * srv.RAID_FIT))
+    # the ceiling holds whatever the history says
+    srv.RAID["history"][-1] = {"id": "x", "boss_name": "B", "num": 1,
+                               "defeated": True, "ended": 1.0,
+                               "max_hp": srv.RAID_HP_CAP,
+                               "board": {}}
+    assert srv._adaptive_hp() == srv.RAID_HP_CAP
+
+
+def test_weekend_bonus_runs_on_utc(tmp_path):
+    """One day-clock: attempts reset at UTC midnight and the weekend x1.5
+    keys off UTC too (the localtime split was invisible skew)."""
+    import inspect
+    srv = _srv(tmp_path)
+    src = inspect.getsource(srv._raid_claim)
+    assert "gmtime" in src and "localtime" not in src
 
 
 # ---- net: the three messages land -----------------------------------------------
