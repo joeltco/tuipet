@@ -63,8 +63,8 @@ def test_disturbing_sleep_counts():
     p = _sleeping()
     p.num = 100                         # use_item refuses placeholder pets (num<0)
     disturb0 = p.disturb
-    p.add_item("training_pack")
-    p.use_item("training_pack")         # a non-exempt item: disturbs, then applies
+    p.add_item("dumbbell")
+    p.use_item("dumbbell")              # a non-exempt item: disturbs, then applies
     assert p.disturb == disturb0 + 1
     assert p.sick is True               # heal never fired through the sleep
 

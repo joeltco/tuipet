@@ -1,6 +1,6 @@
-"""The DSprite shop/bag (BASIC VPET 2026-07-16): the fixed vitems catalog,
-the classic EGG shelf and HONORS board riding the last tabs, and the
-17-item Pet.use_item effect table."""
+"""The TUIPET shop/bag (catalog authored 2026-07-18): the 29-item CATALOG
+table -- DSprite's mechanics grammar wearing DVPet art on every cell --
+plus the classic EGG shelf and HONORS board riding the last tabs."""
 import random
 
 from tuipet import shop
@@ -16,14 +16,17 @@ def _pet(**kw):
     return p
 
 
-def test_catalog_is_the_fixed_vitems_shelf():
+def test_catalog_is_the_authored_tuipet_shelf():
     cat = shop.catalog()
     keys = {e["key"] for e in cat}
-    assert {"energy_drink", "premium_meat", "revive_floppy",
-            "egg_of_courage"} <= keys
+    assert {"energy_drink", "steak", "revive_floppy", "ball",
+            "dna_crystal", "egg_of_courage"} <= keys
     assert all(e["price"] > 0 for e in cat)
-    # the theme skins and storage drive never reach the shelf
+    # the theme skins, storage drive and retired vitems never reach the shelf
     assert not any(k.startswith("theme_") for k in keys)
+    assert "best_fruit" not in keys and "premium_meat" not in keys
+    # birthday treats are never SOLD
+    assert {"cupcake", "cookie", "candy"} & keys == set()
 
 
 def test_buy_bags_it_and_sell_returns_half():
@@ -41,28 +44,28 @@ def test_the_item_effects_apply():
     assert "Energy" in p.use_item("energy_drink")
     assert p.energy == p.max_energy and not p.inventory
 
-    q = _pet(hunger=1, strength=0)
-    q.add_item("best_fruit")
-    q.use_item("best_fruit")
-    assert q.hunger == 2 and q.strength == 1
+    q = _pet(hunger=1, energy=0)
+    q.add_item("tuna")
+    q.use_item("tuna")
+    assert q.hunger == 3 and q.energy == 1
 
     r = _pet(care_mistakes=2)
-    r.add_item("care_mistake_eraser")
-    r.use_item("care_mistake_eraser")
-    assert r.care_mistakes == 1
+    r.add_item("textbook")
+    r.use_item("textbook")
+    assert r.care_mistakes == 0                # the Textbook studies ALL away
 
 
 def test_a_refusal_keeps_the_item():
     p = _pet(care_mistakes=0)
-    p.add_item("care_mistake_eraser")
-    out = p.use_item("care_mistake_eraser")
-    assert p.inventory.get("care_mistake_eraser") == 1   # not consumed
+    p.add_item("textbook")
+    out = p.use_item("textbook")
+    assert p.inventory.get("textbook") == 1   # not consumed
 
 
-def test_deadly_fruit_lives_up_to_the_label():
+def test_the_poison_mushroom_lives_up_to_the_label():
     p = _pet()
-    p.add_item("deadly_fruit")
-    p.use_item("deadly_fruit")
+    p.add_item("poison_mushroom")
+    p.use_item("poison_mushroom")
     assert p.dead
 
 
@@ -76,10 +79,10 @@ def test_revive_floppy_only_works_on_the_dead():
     assert not p.dead and not p.inventory
 
 
-def test_premium_meat_satiety_gates_hunger_decay():
+def test_steak_satiety_gates_hunger_decay():
     p = _pet(hunger=2)
-    p.add_item("premium_meat")
-    p.use_item("premium_meat")
+    p.add_item("steak")
+    p.use_item("steak")
     assert p.hunger == FULL_HUNGER
     assert p.full_until > p.world_seconds
     h0 = p.hunger
@@ -146,7 +149,10 @@ def test_the_shelf_shows_what_you_already_hold():
     p.inventory["energy_drink"] = 2
     pan = ShopPanel(p)
     pan.msg_t = 0
-    pan.tab = 1                               # Items: Energy.D leads
+    pan.tab = 1                               # the Items tab
+    rows = pan._rows()
+    pan.cursor = next(i for i, e in enumerate(rows)
+                      if e["key"] == "energy_drink")
     plain = pan.text().plain
     assert "x2" in plain                      # the held marker on the row
     assert "hold x2" in plain                 # and the dossier info row
@@ -155,8 +161,9 @@ def test_the_shelf_shows_what_you_already_hold():
 def test_the_info_prices_a_shortfall():
     p = _pet(bits=100)
     pan = ShopPanel(p)
-    pan.tab = 1                               # Items: AlarmClock 300b at row 1
-    info = pan._info(pan._rows()[1], 26)
+    pan.tab = 1                               # Items: a 300b good sits early
+    row = next(e for e in pan._rows() if e["price"] == 300)
+    info = pan._info(row, 26)
     assert any("short 200b" in line for line in info)
 
 
@@ -241,24 +248,69 @@ def test_the_eggs_tab_renders_like_every_other_tab():
         os.path.dirname(data.__file__), "data", "armor_eggs.json.gz"))
 
 
-def test_consumables_wear_their_own_dvpet_icons():
-    """2026-07-18 "what about the other items icons?": each DSprite item
-    wears the DVPet atlas icon for the SAME item (exact name matches +
-    pill-precedent concepts); no honest counterpart -> quiet cell, never
-    wrong art."""
+def test_every_item_wears_its_own_dvpet_art():
+    """TUIPET catalog 2026-07-18 ("you can make the items whatever you want
+    using the sprites"): EVERY cell is illustrated with a real DVPet strip --
+    the capsule-placeholder era is over."""
     from tuipet import data
     ic = data.load_icons()
     assert shop.ICON_KEYS["energy_drink"] == "f:17"   # exact name matches
     assert shop.ICON_KEYS["sleeping_pill"] == "f:34"
     assert shop.ICON_KEYS["x_antibody"] == "i:79"
+    assert shop.ICON_KEYS["music_player"] == "i:9"    # the alarm's heir
+    assert shop.ICON_KEYS["textbook"] == "i:0"        # the eraser's heir
+    assert shop.ICON_KEYS["grow_capsule"] == "i:78"   # the gear's heir
     for k, ak in shop.ICON_KEYS.items():
         assert ic.get(ak), (k, ak)                    # every mapping resolves
+    assert "i:68" not in shop.ICON_KEYS.values()      # no capsule pods left
     pan = ShopPanel(_pet())
-    pan.tab = 1                                       # Items tab
-    rows = {e["name"]: pan._icon(e) for e in pan._rows()}
-    assert any(l.strip() for l in rows["Energy.D"])   # iconed
-    # the capsule placeholder (Joel 2026-07-18 "use the capsule"): the three
-    # counterpart-less items share the pod -- a full shelf by his call
-    assert shop.ICON_KEYS["alarm_clock"] == "i:68"
-    assert any(l.strip() for l in rows["AlarmClock"])
-    assert all(any(l.strip() for l in pan._icon(e)) for e in pan._rows())
+    for pan.tab in range(len(pan._tabs()) - 1):       # every goods tab
+        assert all(any(l.strip() for l in pan._icon(e)) for e in pan._rows())
+
+
+def test_the_toys_turn_live_dials():
+    """The toy law (Joel 2026-07-18 "so the toys are worthless?"): exercise
+    sheds weight, couch time buys energy at a weight price -- all on live
+    meters, and the show is the panel's business."""
+    p = _pet(weight=30, energy=0)
+    for k in ("ball", "skateboard", "television"):
+        p.add_item(k)
+    p.use_item("ball")
+    assert p.weight == 29
+    p.use_item("skateboard")
+    assert p.weight == 27 and p.energy == -1
+    p.use_item("television")
+    assert p.weight == 28 and p.energy == 2
+    q = _pet()
+    q.poop, q.poop_sizes = 2, [1, 2]
+    q.add_item("bubble_bath")
+    q.use_item("bubble_bath")
+    assert q.poop == 0                          # the stylish clean is real
+
+
+def test_the_dna_crystal_banks_own_field():
+    p = _pet()
+    p.add_item("dna_crystal")
+    field = p.field
+    p.use_item("dna_crystal")
+    assert p.dna_owned.get(field) == 10
+    p.dna_owned[field] = 99                     # full bank refuses, keeps it
+    p.add_item("dna_crystal")
+    out = p.use_item("dna_crystal")
+    assert p.inventory.get("dna_crystal") == 1
+
+
+def test_legacy_bags_migrate_one_to_one():
+    """The shelf turnover loses nobody's goods: every old key maps to its
+    heir at load (shop.LEGACY_KEYS drives the save-heal)."""
+    from tuipet import persistence
+    p = _pet()
+    save = persistence.to_save_dict(p)
+    save["inventory"] = {"best_fruit": 2, "alarm_clock": 1, "time_gear": 3,
+                         "energy_drink": 1}
+    healed, _ = persistence.pet_from_save(save, catch_up=False)
+    assert healed is not None
+    inv = healed.inventory
+    assert inv.get("tuna") == 2 and inv.get("music_player") == 1
+    assert inv.get("grow_capsule") == 3 and inv.get("energy_drink") == 1
+    assert "best_fruit" not in inv and "alarm_clock" not in inv

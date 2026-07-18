@@ -237,8 +237,7 @@ class CareMixin:
         """The present pool (BASIC VPET 2026-07-16): a uniform pick from the
         DSprite catalog's treat tier (fruits and small care goods) -- the
         DVPet per-item GiftChance table left with the item system."""
-        pool = ("best_fruit", "normal_fruit", "worst_fruit",
-                "energy_drink", "care_mistake_eraser")
+        pool = ("fish", "cake", "energy_drink", "ball")
         return random.choice(pool)
 
     def claim_gift(self):
@@ -351,23 +350,45 @@ class CareMixin:
         if key.startswith("egg_of_"):
             return self._crest_egg(key)
         fx = {
+            # ---- FOOD (the TUIPET catalog, 2026-07-18) ----------------------
+            "fish": lambda: self._snack(hunger=1),
+            "vegetable": lambda: self._snack(hunger=1, weight=-1),
+            "tuna": lambda: self._snack(hunger=2, energy=1),
+            "cake": lambda: self._snack(hunger=1, energy=2, weight=2),
+            "cupcake": lambda: self._snack(hunger=1, energy=1),
+            "cookie": lambda: self._snack(hunger=1, energy=1),
+            "candy": lambda: self._snack(hunger=1, energy=1),
+            "cheese_burger": self._junk,
+            "giga_meal": self._giga_meal,
+            "steak": self._premium_meat,
+            "poison_mushroom": self._deadly,
+            # ---- CARE -------------------------------------------------------
             "energy_drink": lambda: self._gain_energy(self.max_energy),
-            "best_fruit": lambda: self._fruit(+2),
-            "normal_fruit": lambda: self._fruit(+1),
-            "worst_fruit": lambda: self._fruit(0),
-            "deadly_fruit": self._deadly,
-            "junk_food": self._junk,
-            "premium_meat": self._premium_meat,
-            "poop_clean_pill": self._smart_potty,
-            "care_mistake_eraser": self._erase_mistake,
+            "slim_drink": self._super_carrot,
+            "vitamin": self._vitamin,
             "sleeping_pill": self._sleep_pill,
-            "alarm_clock": self._alarm,
-            "time_gear": self._time_gear,
+            "caffeine_pill": self._caffeine,
+            "music_player": self._alarm,
+            "textbook": self._erase_mistakes_all,
+            "port_potty": self._smart_potty,
+            # ---- GROWTH -----------------------------------------------------
+            "dumbbell": self._training_pack,
+            "grow_capsule": self._time_gear,
             "anti_evo_chip": self._anti_evo,
             "x_antibody": self._x_item,
-            "training_pack": self._training_pack,
+            "dna_crystal": self._dna_crystal,
             "revive_floppy": self._revive_item,
-            "super_carrot": self._super_carrot,
+            # ---- TOYS (small LIVE dials; the SHOW is fired by the bag panel)
+            "ball": lambda: self._toy(weight=-1, msg="A grand kickabout!"),
+            "skateboard": lambda: self._toy(weight=-2, energy=-1,
+                                            msg="It shreds!"),
+            "xylophone": lambda: self._toy(energy=2, msg="A lovely recital."),
+            "video_game": lambda: self._toy(energy=2, weight=1,
+                                            msg="One more level…"),
+            "television": lambda: self._toy(energy=3, weight=1,
+                                            msg="Glued to the screen."),
+            "bubble_bath": self._bubble_bath,
+            "cold_shower": self._cold_shower,
         }.get(key)
         if fx is None:
             return ""
@@ -379,7 +400,7 @@ class CareMixin:
             return _Refused("")
         # item on a sleeper: the alarm wakes mistake-FREE (its whole point),
         # the sleeping pill is pointless, anything else DISTURBS -- then applies
-        if self.asleep and key not in ("alarm_clock", "sleeping_pill"):
+        if self.asleep and key not in ("music_player", "sleeping_pill"):
             self._disturbed()
         out = fx()
         if not isinstance(out, _Refused) and out is not None:
@@ -410,6 +431,91 @@ class CareMixin:
         self._set_energy(self.energy + n)
         return "Energy restored!"
 
+    def _snack(self, hunger=0, energy=0, weight=0):
+        """The TUIPET food family (2026-07-18): plain live-meter meals.
+        Positive-hunger food is refused at a full belly, like every meal."""
+        if hunger > 0 and self.hunger >= FULL_HUNGER:
+            return _Refused("Refused - belly's full.")
+        if hunger:
+            self.hunger = _clamp(self.hunger + hunger, 0, FULL_HUNGER)
+        if energy:
+            self._set_energy(self.energy + energy)
+        if weight:
+            self._set_weight(max(1, self.weight + weight))
+        return "Munch."
+
+    def _giga_meal(self):
+        if self.hunger >= FULL_HUNGER:
+            return _Refused("Refused - belly's full.")
+        self.hunger = FULL_HUNGER
+        self._set_energy(self.energy + 4)
+        self._set_weight(self.weight + 6)
+        return "A FEAST."
+
+    def _vitamin(self):
+        if self.strength >= 4:
+            return _Refused("Effort is already full.")
+        self.strength = 4
+        return "Effort brims!"
+
+    def _caffeine(self):
+        """Tonight's bedtime pushed later: a quarter of the pressure window
+        off the LIVE sleep clock (the real sleep_lapse nudge)."""
+        if self.asleep:
+            return _Refused("Too late - it's already down.")
+        self.sleep_lapse = max(0.0, self.sleep_lapse - self.sleep_limit * 0.25)
+        return "Wide awake for a while yet."
+
+    def _erase_mistakes_all(self):
+        """The Textbook: study away EVERY care mistake (the source eraser's
+        canon strength -- the one-at-a-time nerf left with the old shelf)."""
+        if self.care_mistakes <= 0:
+            return _Refused("No mistakes to erase.")
+        self.care_mistakes = 0
+        return "Every mistake, studied away."
+
+    def _dna_crystal(self):
+        """+10 banked DNA in the pet's own Field (the live DNA bank; skips
+        one mash session)."""
+        field = getattr(self, "field", "") or ""
+        if field in ("", "None"):
+            return _Refused("No Field to resonate with.")
+        have = self.dna_owned.get(field, 0)
+        if have >= MAX_DNA_INVENTORY:
+            return _Refused("That Field's bank is full.")
+        self.dna_owned[field] = min(MAX_DNA_INVENTORY, have + 10)
+        return f"+{self.dna_owned[field] - have} {field} DNA banked!"
+
+    def _toy(self, weight=0, energy=0, msg="Fun!"):
+        """The toy dial: exercise sheds weight, couch time buys energy at a
+        weight price.  The SHOW (itemfx script) is fired by the bag panel."""
+        if weight:
+            self._set_weight(max(1, self.weight + weight))
+        if energy:
+            self._set_energy(self.energy + energy)
+        return msg
+
+    def _bubble_bath(self):
+        """Washes the filth, with style (a clean wearing toy clothes)."""
+        if not self.poop:
+            return "Squeaky clean already - but what a soak."
+        n, self.poop = self.poop, 0
+        self.poop_sizes = []
+        return f"Scrubbed {n} mess{'es' if n > 1 else ''} away."
+
+    def _cold_shower(self):
+        """The RUDE waker: not on the mistake-free list, so using it on a
+        sleeper disturbs first (the item-sleep law) -- then the pep lands."""
+        woke = ""
+        if self.asleep:
+            self.asleep = False
+            self.nap = False
+            self.lights = True
+            self.awake_lapse = 0.0
+            woke = "AWAKE and "
+        self._set_energy(self.energy + 2)
+        return f"Brrr! {woke}bracing."
+
     def _fruit(self, quality):
         if self.hunger >= FULL_HUNGER and quality >= 0:
             return _Refused("Refused - belly's full.")
@@ -422,8 +528,8 @@ class CareMixin:
 
     def _deadly(self):
         self.dead = True
-        self.death_cause = "a deadly fruit"
-        return "...that fruit was DEADLY."
+        self.death_cause = "a poison mushroom"
+        return "...it was DELICIOUS. And fatal."
 
     def _junk(self):
         self.hunger = FULL_HUNGER
@@ -482,8 +588,10 @@ class CareMixin:
         return "The X-Antibody takes hold!"
 
     def _training_pack(self):
-        self.stage_trainings += 5
-        return "Training +5."
+        """The Dumbbell: +10 stage trainings, capped 999 (the source's canon
+        value -- the +5 was unexplained drift; TUIPET catalog 2026-07-18)."""
+        self.stage_trainings = min(999, self.stage_trainings + 10)
+        return "Training +10."
 
     def _revive_item(self):
         if not self.dead:

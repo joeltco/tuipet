@@ -517,7 +517,7 @@ class Tournament:
                 # pays a catalog treat instead
                 self.pet.add_item("energy_drink"); extras.append("item")
             if self.trophy["food_id"] >= 0 and self.trophy["food_amt"] > 0:
-                self.pet.add_item("best_fruit", self.trophy["food_amt"]); extras.append("food")
+                self.pet.add_item("cake", self.trophy["food_amt"]); extras.append("food")
             tail = (" + " + "/".join(extras)) if extras else ""
             self.tree.append(["YOU"])                     # the top of the bracket
             self.last = "CHAMPION! +%db%s + trophy!" % (self.reward_bits, tail)

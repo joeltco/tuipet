@@ -278,6 +278,8 @@ class ActionsMixin:
 
     def _after_shop(self, msg):
         if isinstance(msg, tuple) and msg and msg[0] == "eat":
+            if len(msg) > 2 and msg[2]:
+                self.flash(msg[2])               # the meal's verdict text
             self.screen_w.start_fx("eat", msg[1], pet=self.pet,
                                    starving=getattr(self.pet, "_last_meal_starving", False))
         elif isinstance(msg, tuple) and msg and msg[0] == "evolve":
@@ -292,6 +294,8 @@ class ActionsMixin:
             self.screen_w.start_fx("play", icon=msg[1])
         elif isinstance(msg, tuple) and msg and msg[0] == "item_use":
             # every other AnimationType plays its own canon script (itemfx)
+            if len(msg) > 3 and msg[3]:
+                self.flash(msg[3])               # the toy's verdict text
             self.screen_w.start_fx("item", icon=msg[1], script=msg[2])
         elif isinstance(msg, tuple) and msg and msg[0] == "inherit":
             mem = msg[1]

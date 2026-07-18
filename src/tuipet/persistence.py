@@ -379,6 +379,21 @@ def snapshot_prev_gen(pet):
     save_settings(d)
 
 
+
+def _heal_bag(inv):
+    """The bag heal, both eras in one pass: shed the dead staple props
+    (strict-DSprite 2026-07-17) and map the retired catalog's keys onto
+    their TUIPET heirs 1:1 (shop.LEGACY_KEYS; catalog turnover 2026-07-18
+    -- nobody loses goods)."""
+    from . import shop
+    for dead in ("i:80", "i:81", "i:82", "i:83"):
+        inv.pop(dead, None)
+    for old, new in shop.LEGACY_KEYS.items():
+        n = inv.pop(old, 0)
+        if n:
+            inv[new] = inv.get(new, 0) + n
+    return inv
+
 def prev_gen_estate():
     """The device-lifetime estate the next generation inherits (bits, the bag,
     the trophy room -- canon resetToEgg preserves them all)."""
@@ -388,9 +403,7 @@ def prev_gen_estate():
     # them back so prelim-chain lookups keep matching
     tw = {int(k) if str(k).lstrip("-").isdigit() else k: v
           for k, v in (last.get("trophies_won") or {}).items()}
-    inv = dict(last.get("inventory") or {})
-    for dead in ("i:80", "i:81", "i:82", "i:83"):   # the staple props left
-        inv.pop(dead, None)                          # (strict-DSprite 2026-07-17)
+    inv = _heal_bag(dict(last.get("inventory") or {}))
     return {"bits": int(last.get("bits", 0)),
             "inventory": inv,
             "trophies": int(last.get("trophies", 0)),
@@ -615,12 +628,10 @@ def pet_from_save(data, catch_up=True, strict=False):
     # guard against a stringified copy from older tooling
     if isinstance(data.get("_lights_t"), str):
         data["_lights_t"] = float("-inf")
-    # the staple props (Toilet/Bandage/Futon/Potty) left with the item system
-    # (strict-DSprite items, 2026-07-17): a stocked bag from an older save
-    # would render dead goods -- shed them on every load
+    # the bag heal: dead staple props shed + retired catalog keys mapped to
+    # their TUIPET heirs (catalog turnover 2026-07-18)
     if isinstance(data.get("inventory"), dict):
-        for dead in ("i:80", "i:81", "i:82", "i:83"):
-            data["inventory"].pop(dead, None)
+        _heal_bag(data["inventory"])
     valid = {f.name for f in fields(Pet)}
     kwargs = {k: v for k, v in data.items() if k in valid}
     # (the full_health backfill left with the classic battle -- the 0.5 HP

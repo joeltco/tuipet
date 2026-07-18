@@ -14,59 +14,82 @@ from __future__ import annotations
 from . import data
 
 
-# what each usable item DOES (mirrors Pet.use_item exactly)
-EFFECTS = {
-    "energy_drink": "energy to FULL",
-    "best_fruit": "hunger +1 · effort +1",
-    "normal_fruit": "hunger +1",
-    "worst_fruit": "hunger +1 · weight +3",
-    "deadly_fruit": "DO NOT FEED",
-    "junk_food": "fills belly · a care mistake",
-    "premium_meat": "12h satiety",
-    "poop_clean_pill": "auto-clean 24h",
-    "care_mistake_eraser": "mistake -1",
-    "sleeping_pill": "sleep now",
-    "alarm_clock": "wake now",
-    "time_gear": "growth +120min",
-    "anti_evo_chip": "toggle evolution lock",
-    "x_antibody": "the X-Antibody takes hold",
-    "training_pack": "training +5",
-    "revive_floppy": "raise the dead",
-    "super_carrot": "weight -10",
+# ============================ THE TUIPET CATALOG ============================
+# Authored 2026-07-18 (Joel: "we can pretty much make anything we want. i
+# need you to make tuipet items" / "you can make the items whatever you
+# want using the sprites").  The law of the set: DSprite is the mechanics
+# GRAMMAR, DVPet is the ART -- every entry wears a real DVPet atlas strip
+# (all 59 foods + 84 items carry 4-frame rips; zero placeholders), and
+# every effect lands on a meter that is LIVE today.  vitems.json stays a
+# pristine rip: it now feeds only the 11 Digimentals; the consumable shelf
+# is THIS table.  price None = never sold (birthday-only treats).
+# key: (name, icon, price, category, effect-text -- mirrors use_item exactly)
+CATALOG = {
+    # ---- FOOD (eaten on the LCD through their own 4-frame strips) ----------
+    "fish":            ("Fish",            "f:1",  50,   "Food", "hunger +1"),
+    "vegetable":       ("Vegetable",       "f:3",  150,  "Food", "hunger +1 · weight -1"),
+    "tuna":            ("Tuna",            "f:14", 400,  "Food", "hunger +2 · energy +1"),
+    "cake":            ("Cake",            "f:6",  300,  "Food", "hunger +1 · energy +2 · weight +2"),
+    "cheese_burger":   ("Cheese burger",   "f:57", 50,   "Food", "fills belly · a care mistake"),
+    "giga_meal":       ("Giga Meal",       "f:28", 800,  "Food", "fills belly · energy +4 · weight +6"),
+    "steak":           ("Steak",           "f:8",  2000, "Food", "fills belly · 12h satiety"),
+    "poison_mushroom": ("Poison Mushroom", "f:13", 200,  "Food", "DO NOT FEED"),
+    "cupcake":         ("Cupcake",         "f:55", None, "Food", "hunger +1 · energy +1"),
+    "cookie":          ("Cookie",          "f:54", None, "Food", "hunger +1 · energy +1"),
+    "candy":           ("Candy",           "f:7",  None, "Food", "hunger +1 · energy +1"),
+    # ---- CARE ---------------------------------------------------------------
+    "energy_drink":    ("Energy Drink",    "f:17", 200,  "Care", "energy to FULL"),
+    "slim_drink":      ("Slim Drink",      "f:23", 100,  "Care", "weight -10"),
+    "vitamin":         ("Vitamin",         "f:5",  500,  "Care", "effort to FULL"),
+    "sleeping_pill":   ("Sleep Pill",      "f:34", 300,  "Care", "sleep now"),
+    "caffeine_pill":   ("Caffeine Pill",   "f:38", 300,  "Care", "bedtime pushed later"),
+    "music_player":    ("Music Player",    "i:9",  300,  "Care", "wake now, no grudge"),
+    "textbook":        ("Textbook",        "i:0",  1500, "Care", "erase ALL care mistakes"),
+    "port_potty":      ("Port. Potty",     "i:83", 2000, "Care", "clean + auto-clean 24h"),
+    # ---- GROWTH -------------------------------------------------------------
+    "dumbbell":        ("Dumbbell",        "i:7",  300,  "Evolution", "training +10"),
+    "grow_capsule":    ("Grow Capsule",    "i:78", 500,  "Evolution", "growth +120min"),
+    "anti_evo_chip":   ("Anti-Evo Chip",   "f:32", 1000, "Evolution", "toggle evolution lock"),
+    "x_antibody":      ("X-Antibody",      "i:79", 2000, "Evolution", "the X-Antibody takes hold"),
+    "dna_crystal":     ("DNA Crystal",     "i:35", 1500, "Evolution", "+10 own-Field DNA banked"),
+    "revive_floppy":   ("Rev. Floppy",     "i:32", 2500, "Medical", "raise the dead"),
+    # ---- TOYS (the shows the engine already ships; small LIVE stat dials:
+    # exercise sheds weight, couch time buys energy at a weight price) --------
+    "ball":            ("Ball",            "i:3",  100,  "Toy", "play! weight -1"),
+    "skateboard":      ("Skateboard",      "i:6",  500,  "Toy", "ride! weight -2 · energy -1"),
+    "xylophone":       ("Xylophone",       "i:63", 800,  "Toy", "a recital · energy +2"),
+    "video_game":      ("Video Game",      "i:65", 600,  "Toy", "couch time · energy +2 · weight +1"),
+    "television":      ("Television",      "i:10", 1000, "Toy", "deep couch · energy +3 · weight +1"),
+    "bubble_bath":     ("Bubble Bath",     "i:26", 400,  "Toy", "washes the filth, with style"),
+    "cold_shower":     ("Cold Shower",     "i:67", 300,  "Toy", "a bracing wake · energy +2"),
 }
+
+# compat views over the one table (shelf text / icons / tests import these)
+EFFECTS = {k: v[4] for k, v in CATALOG.items()}
+ICON_KEYS = {k: v[1] for k, v in CATALOG.items()}
+
+# foods ride the EAT fx on their DVPet strip; toys ride their canon itemfx
+# script (the AnimationType painters shipped since the DVPet era)
+FOOD_KEYS = frozenset(k for k, v in CATALOG.items() if v[3] == "Food")
+TOY_SCRIPTS = {"ball": "Bounce", "skateboard": "Ride",
+               "xylophone": "InteractXylophone", "video_game": "Play",
+               "television": "InteractTelevision", "bubble_bath": "Bathe",
+               "cold_shower": "Shower"}
+
+# old-catalog keys -> their heirs (the save-heal maps bags 1:1 on load;
+# nobody loses goods when the shelf turns over)
+LEGACY_KEYS = {
+    "best_fruit": "tuna", "normal_fruit": "fish", "worst_fruit": "vegetable",
+    "deadly_fruit": "poison_mushroom", "junk_food": "cheese_burger",
+    "premium_meat": "steak", "super_carrot": "slim_drink",
+    "care_mistake_eraser": "textbook", "alarm_clock": "music_player",
+    "time_gear": "grow_capsule", "training_pack": "dumbbell",
+    "poop_clean_pill": "port_potty",
+}
+
 # the crest eggs: used from the bag, they trigger the classic ARMOR evolution
 # (Pet._crest_egg -> evolution.item_select via the Digimental ids)
 ARMOR_CATEGORY = "Armor-Spirit"
-
-# shop icon roster (2026-07-18, Joel: "what about the other items icons?"):
-# each DSprite item wears the DVPet atlas icon for the SAME item -- exact
-# name matches first (Energy Drink f:17, Sleeping Pill f:34, X-Antibody
-# i:79), then same-concept matches on the pill precedent (Med f:4 standing
-# in for a pill-shaped item).  Items with no honest counterpart get NO
-# icon -- never substitute wrong art.
-ICON_KEYS = {
-    "energy_drink": "f:17",      # Energy Drink -- exact
-    "sleeping_pill": "f:34",     # Sleeping Pill -- exact
-    "x_antibody": "i:79",        # X-Antibody -- exact
-    "premium_meat": "f:8",       # Steak: the premium meat
-    "junk_food": "f:57",         # Cheese burger: the junk food
-    "super_carrot": "f:3",       # Vegetable
-    "best_fruit": "f:2",         # the fruit family shares the Fruit icon
-    "normal_fruit": "f:2",
-    "worst_fruit": "f:2",
-    "deadly_fruit": "f:2",
-    "poop_clean_pill": "f:4",    # Med: the pill
-    "training_pack": "i:7",      # Dumbbell: training gear
-    "anti_evo_chip": "f:32",     # Omni Chip: a chip is a chip
-    "revive_floppy": "i:32",     # Digimemory: a data disk for a data disk
-    # the capsule pod as a DELIBERATE uniform placeholder (Joel 2026-07-18
-    # "use the capsule"): the rips hold no clock, eraser or gear anywhere,
-    # and he chose a full shelf over three bare cells.  NOT a mistake to
-    # "fix" -- his explicit call, the one sanctioned wrong-art exception.
-    "alarm_clock": "i:68",
-    "care_mistake_eraser": "i:68",
-    "time_gear": "i:68",
-}
 
 # the Digimental waves (Joel 2026-07-17: "wire the gates") -- the canon
 # discovery order, on the same earned-access rule as the egg carousel:
@@ -115,31 +138,46 @@ def _price(v):
 
 
 def _usable(key, category):
-    """Only goods Pet.use_item can actually APPLY are sold: the ripped
-    catalog also carries 28 theme_* skins and the 200k storage_drive, whose
-    systems don't exist in tuipet."""
-    return category == ARMOR_CATEGORY or key in EFFECTS
+    """Only goods Pet.use_item can actually APPLY are sold.  Since the
+    TUIPET catalog (2026-07-18) the consumables are authored in CATALOG;
+    vitems contributes only the Digimentals (its theme_* skins,
+    storage_drive and retired consumables never reach the shelf)."""
+    return category == ARMOR_CATEGORY or key in CATALOG
 
 
 def catalog():
     """Every buyable entry: [{key, name, price, category}], price order.
-    A Digimental whose wave isn't reached is SEALED: it stays off the shelf
-    entirely (the egg-carousel rule), though entry() still resolves it so
-    an already-owned one renders in the bag."""
+    The consumable shelf is the authored CATALOG (price None = unsold);
+    the 11 Digimentals still come from vitems.json.  A Digimental whose
+    wave isn't reached is SEALED: it stays off the shelf entirely (the
+    egg-carousel rule), though entry() still resolves it so an
+    already-owned one renders in the bag."""
     from . import persistence
     prog = persistence.get_progress()
     out = []
+    for k, (name, _icon, price, cat, _eff) in CATALOG.items():
+        if price is not None:
+            out.append({"key": k, "name": name, "price": price,
+                        "category": cat})
     for k, v in data.load_vitems().items():
-        if isinstance(v, dict) and _usable(k, v.get("category", "Item")) \
+        if isinstance(v, dict) and v.get("category") == ARMOR_CATEGORY \
                 and digimental_open(k, prog):
             out.append({"key": k, "name": v.get("name", k),
                         "price": _price(v),
-                        "category": v.get("category", "Item")})
+                        "category": ARMOR_CATEGORY})
     out.sort(key=lambda e: (e["category"], e["price"], e["name"]))
     return out
 
 
 def entry(key):
+    """Resolve any key: the authored CATALOG first (an unsold treat still
+    renders in the bag at a nominal resale), then vitems (Digimentals)."""
+    c = CATALOG.get(key)
+    if c is not None:
+        name, _icon, price, cat, _eff = c
+        return {"key": key, "name": name,
+                "price": price if price is not None else 100,
+                "category": cat}
     v = data.load_vitems().get(key)
     if not isinstance(v, dict):
         return None
@@ -161,7 +199,7 @@ def shelf(cat):
 # shelf tabs in PLAY order -- everyday care first, the relics last (shop
 # polish 2026-07-17: the old alphabetical order opened the shop on a
 # two-item Armor-Spirit tab).  Unknown categories append alphabetically.
-CATEGORY_ORDER = ("Care", "Food", "Fruit", "Evolution", "Medical",
+CATEGORY_ORDER = ("Care", "Food", "Evolution", "Medical", "Toy",
                   ARMOR_CATEGORY)
 
 

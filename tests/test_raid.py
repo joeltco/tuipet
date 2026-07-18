@@ -92,7 +92,8 @@ def test_kill_archives_and_pays_rank_one_exactly_once(tmp_path):
     assert r["ok"] and r["defeated"] and r["rank"] == 1
     assert r["bits"] in (srv.RAID_RANK_BITS[1], int(srv.RAID_RANK_BITS[1] * 1.5))
     assert len(r["items"]) == srv.RAID_RANK_ITEMS[1]
-    assert all(k in data.load_vitems() for k in r["items"])
+    from tuipet import shop
+    assert all(k in shop.CATALOG for k in r["items"])   # real TUIPET prizes
     assert not srv._raid_claim("joel", rid, now=1003.0)["ok"]   # double-claim refused
     # a bystander who never hit it has nothing to claim
     assert not srv._raid_claim("kai", rid, now=1003.0)["ok"]
@@ -246,12 +247,12 @@ def test_claim_pays_bits_items_ko6_and_the_raids_channel():
     p = pan.pet
     p.bits = 100
     pan.client.raid_reward = {"t": "raid_reward", "ok": True, "bits": 5000,
-                              "items": ["energy_drink", "premium_meat"],
+                              "items": ["energy_drink", "steak"],
                               "defeated": True, "rank": 1, "boss": "BossMon"}
     pan.anim()
     assert p.bits == 5100
     assert p.inventory.get("energy_drink") == 1
-    assert p.inventory.get("premium_meat") == 1
+    assert p.inventory.get("steak") == 1
     assert p.mega_kills == 1                                # the felled boss is KO6
     assert persistence.get_progress()["raids"] == 1
     assert "BossMon" in pan.msg

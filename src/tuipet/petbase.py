@@ -217,9 +217,12 @@ BONUS_EVOLUTION_LIFE = 60.0         # BonusEvolutionLife 3600 -> game-min scale,
 DIGIMEMORY_ATTR_COEF = 0.01         # DigimemoryAttributeCoefficient
 DIGIMEMORY_LIFE_INC = 60.0          # DigimemoryLifeIncCoefficient 3600 real-sec (1h) -> the
 #                                     game-min scale, exactly like BonusEvolutionLife above
-GOOD_BIRTHDAY_FOOD = 55             # Cupcake
-BAD_BIRTHDAY_FOOD = 7               # Candy
-NORMAL_BIRTHDAY_FOOD = 54           # Cookie
+# (the birthday grants speak the TUIPET catalog keys since 2026-07-18 --
+# the raw DVPet food ids landed items the strict bag could neither show
+# nor use, a reward the player never received; item review 2026-07-18)
+GOOD_BIRTHDAY_FOOD = "cupcake"
+BAD_BIRTHDAY_FOOD = "candy"
+NORMAL_BIRTHDAY_FOOD = "cookie"
 WIN_RATE_BONUS_COEF = 0.1           # winRateRookieBonusIncCoefficient (champion: 0.1*winRate - 5)
 # saveFromDeath: frantic taps during the dying beat can pull the pet back
 HITS_TO_SAVE = 30                   # HitsToSave 175 mouse-clicks over DVPet's ~7s jingle,

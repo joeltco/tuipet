@@ -611,11 +611,10 @@ RAID_RANK_BITS = {1: 5000, 2: 3000, 3: 2000}
 RAID_RANK_ITEMS = {1: 3, 2: 2, 3: 1}
 RAID_PART_BITS, RAID_PART_ITEMS = 500, 1
 RAID_CONSOLATION = 100
-RAID_ITEM_POOL = ["energy_drink", "best_fruit", "normal_fruit", "worst_fruit",
-                  "deadly_fruit", "training_pack", "x_antibody",
-                  "revive_floppy", "super_carrot", "time_gear",
-                  "anti_evo_chip", "care_mistake_eraser", "poop_clean_pill",
-                  "alarm_clock", "sleeping_pill", "junk_food", "premium_meat"]
+# the TUIPET catalog tier (2026-07-18): rank purses roll real prizes --
+# no traps, no duds -- from the shelf the client actually sells now
+RAID_ITEM_POOL = ["energy_drink", "vitamin", "textbook", "dna_crystal",
+                  "steak", "cake", "dumbbell", "x_antibody", "ball"]
 RAID_HISTORY_KEEP = 5
 
 

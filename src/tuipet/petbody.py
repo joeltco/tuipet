@@ -833,18 +833,18 @@ class BodyMixin:
         if major == "Happy" and self.mistake_day <= MAX_MISTAKE_DAY_BONUS:
             self.lifespan += BONUS_LIFE_INC
             self.evol_bonus += 1
-            self.add_item(f"f:{GOOD_BIRTHDAY_FOOD}")
+            self.add_item("cupcake")            # a REAL bag treat (TUIPET catalog 2026-07-18)
             self._set_anim("happy", 2.0)                     # Birthday_Good
             self.birthday_note = f"A wonderful day! {self.name} earned a Cupcake!"
         elif major == "Unhappy" and self.mistake_day >= MIN_MISTAKE_DAY_DEC:
             self._burn_life(BONUS_LIFE_DEC)
             if self.evol_bonus > 0:
                 self.evol_bonus -= 1
-            self.add_item(f"f:{BAD_BIRTHDAY_FOOD}")
+            self.add_item("candy")
             self._set_anim("sad", 2.0)                       # Birthday_Bad
             self.birthday_note = "A rough day… just a Candy."
         else:
-            self.add_item(f"f:{NORMAL_BIRTHDAY_FOOD}")
+            self.add_item("cookie")
             self._set_anim("happy", 1.5)                     # Birthday_Normal
             self.birthday_note = f"{self.name} is a day older — have a Cookie."
         self.mistake_day = 0

@@ -374,7 +374,7 @@ def test_champion_wins_the_cup_prizes():
     assert tm.champion
     # the DVPet prize ids retired with the item system: the cup pays catalog treats
     assert p.inventory.get("energy_drink", 0) >= 1
-    assert p.inventory.get("best_fruit", 0) >= 2
+    assert p.inventory.get("cake", 0) >= 2      # the cup pays Cake since the TUIPET catalog
 
 
 def test_the_purse_truncates_per_entrant():

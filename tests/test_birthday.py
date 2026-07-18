@@ -19,7 +19,7 @@ def test_good_birthday_needs_happy_majority_and_zero_slips():
     p._birthday()
     assert p.lifespan == life0 + BONUS_LIFE_INC
     assert p.evol_bonus == bonus0 + 1
-    assert p.inventory.get(f"f:{GOOD_BIRTHDAY_FOOD}") == 1     # a Cupcake
+    assert p.inventory.get(GOOD_BIRTHDAY_FOOD) == 1            # a Cupcake
     assert p.mistake_day == 0 and sum(p.daily_mood.values()) == 0
 
 
@@ -29,7 +29,7 @@ def test_one_slip_spoils_the_good_birthday():
     life0 = p.lifespan
     p._birthday()
     assert p.lifespan == life0                                  # normal day
-    assert p.inventory.get(f"f:{NORMAL_BIRTHDAY_FOOD}") == 1    # a Cookie
+    assert p.inventory.get(NORMAL_BIRTHDAY_FOOD) == 1           # a Cookie
 
 
 def test_bad_birthday_costs_life_and_bonus():
@@ -39,7 +39,7 @@ def test_bad_birthday_costs_life_and_bonus():
     p._birthday()
     assert p.lifespan == life0 - BONUS_LIFE_DEC
     assert p.evol_bonus == 1
-    assert p.inventory.get(f"f:{BAD_BIRTHDAY_FOOD}") == 1       # consolation Candy
+    assert p.inventory.get(BAD_BIRTHDAY_FOOD) == 1              # consolation Candy
 
 
 def test_mood_tie_yields_a_normal_day():
@@ -48,7 +48,7 @@ def test_mood_tie_yields_a_normal_day():
     life0 = p.lifespan
     p._birthday()
     assert p.lifespan == life0                                  # getMajority tie -> None
-    assert p.inventory.get(f"f:{NORMAL_BIRTHDAY_FOOD}") == 1
+    assert p.inventory.get(NORMAL_BIRTHDAY_FOOD) == 1
 
 
 def test_birthday_fires_on_the_age_day():

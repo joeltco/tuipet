@@ -39,7 +39,7 @@ from . import menu
 # the classic tab grammar (v0.5.0): the DSprite categories fold into the
 # four tabs the shop always had.  Honors is shop-only (titles never bag).
 GROUPS = (("Food", ("Food", "Fruit")),
-          ("Items", ("Care", "Evolution", "Medical")),
+          ("Items", ("Care", "Evolution", "Medical", "Toy")),
           ("Eggs", (shop.ARMOR_CATEGORY,)),
           ("Honors", None))
 
@@ -130,17 +130,30 @@ class ShopPanel:
     def _use(self, e):
         p = self.pet
         old = p.num
-        out = p.use_item(e["key"])
+        key = e["key"]
+        out = p.use_item(key)
         if p.num != old:                        # a crest egg fired the armor jump
             return ("done", ("evolve", old))
         if out is None:
             self._flash("You don't have that.")
             self.sfx = "error"
-        elif out == "":
+            return None
+        if out == "":
             self._flash(f"{e['name']} does nothing here.")
-        else:
-            self._flash(out)
-            self.sfx = "confirm"
+            return None
+        from .petbase import _Refused
+        refused = isinstance(out, _Refused)      # kept the item: no show plays
+        if not refused and key in shop.FOOD_KEYS:
+            # the bag CLOSES and the meal plays on the LCD through its own
+            # DVPet strip -- the eat fx the feed menu rides (TUIPET catalog
+            # 2026-07-18; the _after_shop route was waiting for this)
+            return ("done", ("eat", shop.ICON_KEYS.get(key, "f:0"), out))
+        if not refused and key in shop.TOY_SCRIPTS:
+            # the toy's SHOW: its canon itemfx script on the main LCD
+            return ("done", ("item_use", shop.ICON_KEYS[key],
+                             shop.TOY_SCRIPTS[key], out))
+        self._flash(out)
+        self.sfx = "confirm"
         return None
 
     def key(self, k):
