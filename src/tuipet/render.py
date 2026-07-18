@@ -44,7 +44,6 @@ def _paint_cells(buf, cols, rows, on, bg, bgimg, free_ink=None):
     their theme's precip colour instead of the sprite ink."""
     if bgimg:
         from . import theme
-        bgimg = theme.themed_bg(bgimg)
     fi = free_ink or on
     t = Text()
     for cy in range(rows):

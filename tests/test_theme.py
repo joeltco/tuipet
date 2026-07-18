@@ -104,15 +104,6 @@ def test_every_theme_carries_the_full_key_set():
             assert _HEX.match(t[k]), f"{name}.{k} = {t[k]!r} is not a hex colour"
         assert len(t["flash"]) == 3 and all(_HEX.match(c) for c in t["flash"]), \
             f"{name}.flash must be (blend, ink, bg) hex triple"
-        ramp = t.get("bg_ramp")
-        if ramp:                                  # optional: quantized background art
-            assert len(ramp) >= 2 and all(_HEX.match(c) for c in ramp), name
-            lums = [(299 * int(c[1:3], 16) + 587 * int(c[3:5], 16)
-                     + 114 * int(c[5:7], 16)) // 1000 for c in ramp]
-            assert lums == sorted(lums), f"{name}.bg_ramp must run dark -> light"
-        # (the per-phase palette check left with the day/night system --
-        # BASIC VPET 2026-07-17)
-        assert "phases" not in t, f"{name} still carries a phase palette"
 
 
 def test_every_theme_derives_and_applies_cleanly():
@@ -149,73 +140,6 @@ def test_load_sprites_cache_is_intact():
 # gameboy like palettes for lcd backgrounds") ----------------------------------
 
 _DMG = ("#306230", "#8bac0f", "#9bbc0f")   # the BACKGROUND shades (light three)
-
-
-def test_gameboy_declares_the_dmg_ramp():
-    assert theme.THEMES["gameboy"]["bg_ramp"] == _DMG
-    assert theme.THEMES["gameboy"]["void"] == "#0f380f"   # lights-off stays on-palette
-
-
-def test_gameboy_backgrounds_never_wear_the_sprite_ink():
-    """GB layering (redo 2026-07-05: "their blending into the background") --
-    the darkest DMG green is the SPRITE ink; background art must never use
-    it, so the mon is always the darkest thing on the LCD.  This replaced
-    the halo-outline experiment (which boxed the mon)."""
-    gb = theme.THEMES["gameboy"]
-    assert gb["sil_day"] == gb["on"] == "#0f380f"
-    assert gb["sil_day"] not in gb["bg_ramp"]
-
-
-def test_themed_bg_dithers_only_when_the_theme_declares_a_ramp():
-    frame = ["".join("%02x%02x%02x" % (v, v, v) for v in range(0, 240, 30))] * 4
-    try:
-        theme.apply("grey")
-        assert theme.themed_bg(frame) is frame            # full colour passes through
-        theme.apply("gameboy")
-        out = theme.themed_bg(frame)
-        cols = {out[y][x:x + 6] for y in range(4) for x in range(0, len(out[0]), 6)}
-        assert cols <= {c[1:] for c in _DMG}, f"off-palette: {cols}"
-        assert theme.themed_bg(frame) is out              # memoized per frame
-    finally:
-        theme.apply("grey")
-
-
-def test_gameboy_dither_stretches_contrast_across_the_ramp():
-    """Absolute luminance collapsed most art into the top two shades (the
-    banded first cut Joel bounced) -- a NARROW mid-luminance frame must still
-    span the whole ramp after the per-frame stretch, and a smooth gradient
-    must dither through more than two shades."""
-    frame = ["".join("%02x%02x%02x" % (v, v, v) for v in range(100, 160, 4))] * 8
-    try:
-        theme.apply("gameboy")
-        out = theme.themed_bg(frame)
-        cols = {out[y][x:x + 6] for y in range(8) for x in range(0, len(out[0]), 6)}
-        assert _DMG[0][1:] in cols and _DMG[-1][1:] in cols, "stretch missing"
-        assert len(cols) >= 3, "gradient should dither through the mid shades"
-    finally:
-        theme.apply("grey")
-
-
-def test_gameboy_renders_background_art_entirely_on_palette():
-    """Every bgimg pixel crosses render._paint_cells -- under gameboy the LCD
-    must never show a colour off the 4-shade DMG ramp (sprite ink aside)."""
-    import re as _re
-    from tuipet.render import render_scene
-    rowlen = 8
-    frame = ["".join(("%02x%02x%02x" % (17 * i, 9 * i, 23 * i % 256)) for i in range(rowlen))
-             for _ in range(4)]                            # 2 char-rows of varied colour
-    try:
-        theme.apply("gameboy")
-        txt = render_scene([], rowlen, 2, theme.LCD_ON, theme.LCD_BG, bgimg=frame)
-        colours = set(_re.findall(r"#[0-9a-f]{6}", str(txt.markup)))
-        off = colours - set(_DMG) - {theme.LCD_ON}
-        assert not off, f"off-palette colours leaked: {off}"
-        theme.apply("grey")
-        txt = render_scene([], rowlen, 2, theme.LCD_ON, theme.LCD_BG, bgimg=frame)
-        colours = set(_re.findall(r"#[0-9a-f]{6}", str(txt.markup)))
-        assert "#" + frame[0][0:6] in colours              # grey passes raw art through
-    finally:
-        theme.apply("grey")
 
 
 def test_gameboy_render_reserves_the_sprite_ink_for_sprites():
@@ -284,56 +208,14 @@ def test_background_file_override_picks_the_arena_sheet():
 _PAPER = ("#8a8274", "#d5cdbb", "#efe9dc")
 
 
-def test_paper_declares_the_ink_wash_ramp():
-    """Joel 2026-07-12: "apply this to the paper theme -- white instead of
-    green".  Same law as gameboy: the sprite ink stays off the ramp, so the
-    mon is always the darkest thing on the page."""
-    pp = theme.THEMES["paper"]
-    assert pp["bg_ramp"] == _PAPER
-    assert pp["on"] not in pp["bg_ramp"]
-
-
-def test_quant_splits_equal_luminance_hues():
-    """The old banding merged hue-distinct, equal-brightness features (the
-    desert dunes vs its sky; digicoreDa dark core vs blue bricks).  A frame
-    of two equal-luma colour fields must still render as TWO shades."""
-    blue, orange = "3c64c8", "c86414"          # ~equal BT.601 luma, far in RGB
-    frame = [blue * 10 + orange * 10] * 8
-    try:
-        theme.apply("gameboy")
-        out = theme.themed_bg(frame)
-        left = {out[y][:6] for y in range(8)}
-        right = {out[y][-6:] for y in range(8)}
-        assert left != right, "equal-luma hues merged into one shade"
-    finally:
-        theme.apply("grey")
-
-
-def test_quant_keeps_a_near_flat_frame_flat():
-    """The old contrast stretch amplified faint texture noise into random
-    blotches; the rank spread later manufactured a dark ring out of
-    digicoreVb faint glow.  A near-flat frame must render as ONE shade."""
-    a, b = "efefef", "e7e7e7"                  # imperceptible texture
-    frame = [(a + b) * 10, (b + a) * 10] * 6
-    try:
-        theme.apply("gameboy")
-        out = theme.themed_bg(frame)
-        cols = {out[y][x:x + 6] for y in range(12) for x in range(0, 120, 6)}
-        assert len(cols) == 1, f"flat frame blotched into {cols}"
-    finally:
-        theme.apply("grey")
-
-
-def test_quant_dominant_field_accents_stay_adjacent():
-    """A flat field with an accent (egg10Back door-on-wall) keeps the accent
-    VISIBLE but at neighbour contrast -- never the far end of the ramp."""
-    field, accent = "e8e8e8", "909090"         # bright wall, mid-grey feature
-    rows = [field * 20] * 9 + [field * 6 + accent * 8 + field * 6] * 3
-    try:
-        theme.apply("gameboy")
-        out = theme.themed_bg(rows)
-        cols = {out[y][x:x + 6] for y in range(12) for x in range(0, 120, 6)}
-        assert len(cols) == 2, "the accent vanished (or blotched)"
-        assert _DMG[0][1:] not in cols, "accent jumped to the far dark shade"
-    finally:
-        theme.apply("grey")
+def test_the_background_quantizer_is_gone():
+    """Joel 2026-07-18: "get rid of the green and white background pallet
+    switcher in gameboy and paper" -- backdrops render full colour on every
+    theme; the DMG/ink shades survive only in chrome and sprites."""
+    from tuipet import render
+    import inspect
+    assert not hasattr(theme, "themed_bg")
+    assert not hasattr(theme, "_quant_frame")
+    for name in ("gameboy", "paper"):
+        assert "bg_ramp" not in theme.THEMES[name]
+    assert "themed_bg" not in inspect.getsource(render)

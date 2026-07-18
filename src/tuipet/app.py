@@ -141,11 +141,11 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("HONEST FACES: the idle expression poses now read the "
-                 "pet's real state - it beams only when genuinely "
-                 "well-kept, sulks when sick or starving, and droops when "
-                 "spent. (The old bright face was stuck on: it read a "
-                 "meter frozen since hatching.)")
+    WHATS_NEW = ("THEME CLEANUP: gameboy and paper no longer repaint the "
+                 "backdrops onto green/white ramps - scenery keeps its "
+                 "real colors on every theme now, with the palette living "
+                 "in the chrome and sprites. The picker also gained "
+                 "per-theme notes and marks your saved choice.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and

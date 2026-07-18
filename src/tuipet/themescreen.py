@@ -8,6 +8,18 @@ from rich.text import Text
 from . import theme, menu
 from .theme import INK, SEL
 
+# one line of personality per palette (picker polish 2026-07-18)
+_NOTES = {
+    "grey": "the quiet default",
+    "mono": "pure 1-bit terminal",
+    "amber": "vintage phosphor glow",
+    "midnight": "deep blue after-hours",
+    "gameboy": "the 4-shade DMG green",
+    "paper": "dark ink on warm paper",
+    "sakura": "petals on dusk",
+    "ocean": "abyssal teal",
+}
+
 
 class ThemePanel:
     """Lists the themes with a swatch; navigating live-previews the whole UI."""
@@ -56,15 +68,19 @@ class ThemePanel:
         return None
 
     def text(self):
-        out = menu.header("THEMES", theme.current())
+        out = menu.header("THEMES", f"{self.cursor + 1}/{len(self.names)}")
         for i, name in enumerate(self.names):
             t = theme.THEMES[name]
             sel = i == self.cursor
-            out.append(("▸ " if sel else "  ") + f"{name:<10}", style=SEL if sel else INK)
+            mark = "▸ " if sel else "  "
+            worn = " ●" if name == self.original else "  "
+            out.append(mark + f"{name:<10}", style=SEL if sel else INK)
             sw = "".join(f"[{c}]██[/]" for c in
                          (t["on"], t["heart"], t["energy"], t["mood"], t["coin"]))
-            out.append_text(Text.from_markup(sw + "\n"))
+            out.append_text(Text.from_markup(sw))
+            out.append(worn + "\n", style=INK)
         out.append_text(menu.blanks(max(0, 8 - len(self.names))))
-        out.append_text(menu.note("live preview as you move"))
+        out.append_text(menu.note(
+            _NOTES.get(self.names[self.cursor], "live preview as you move")))
         out.append_text(menu.footer("↑↓ preview  ENTER keep  ESC revert"))
         return out
