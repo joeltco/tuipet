@@ -70,13 +70,17 @@ def is_weekend(today=None):
 
 def featured_now(pet, today=None):
     """The day's FEATURED cup: one per real date, drawn from the season's
-    pool by a date-seeded roll -- on weekends from the TOP tier (the open /
-    Mega cups: the Weekend Championship).  Open at ANY hour, once per real
-    day, on top of the hourly board."""
+    pool by a date-seeded roll.  The weekend headliner draws from the PET's
+    own bracket or the open tier (cup ruling 2026-07-18: the old top-tier-
+    only weekend draw handed a Champion pressing F a near-unwinnable Mega
+    bracket -- the marquee event should be winnable by whoever's playing).
+    Open at ANY hour, once per real day, on top of the hourly board."""
     d = today or _today()
     pool = [t for t in data.load_tournies() if t["season"] == real_season(d)]
     if is_weekend(d):
-        top = [t for t in pool if not t["age_limit"] or t["age_limit"] == "Mega"]
+        mine = pet_tier(pet)                # None = a Mega pet: the open field
+        top = [t for t in pool
+               if not t["age_limit"] or (mine and t["age_limit"] == mine)]
         pool = top or pool
     if not pool:
         return None
@@ -297,7 +301,13 @@ def _eligibility_rest(pet, t):
         won = getattr(pet, "trophies_won", {}) or {}
         if t["prelim"] not in won:
             q = trophy_by_id(t["prelim"])
-            return "Win the %s first." % (trophy_label(q) if q else "qualifier")
+            label = trophy_label(q) if q else "qualifier"
+            # the grand chain crosses REAL seasons -- name the missing
+            # link's season so the year-long arc reads as a journey, not a
+            # mystery wall (cup ruling 2026-07-18)
+            if q and q.get("season") and q["season"] != real_season():
+                return "Win the %s first (a %s cup)." % (label, q["season"])
+            return "Win the %s first." % label
     return None
 
 

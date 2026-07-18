@@ -78,10 +78,9 @@ def test_featured_is_deterministic_daily_and_seasonal(on_date):
     assert c["season"] == "Winter"
 
 
-def test_weekend_featured_draws_from_the_top_tier(on_date):
-    on_date(SAT)
-    t = tournament.featured_now(_pet())
-    assert not t["age_limit"] or t["age_limit"] == "Mega"
+# (test_weekend_featured_draws_from_the_top_tier superseded by the cup
+# ruling 2026-07-18: the headliner draws from the PET's bracket now --
+# see test_weekend_featured_is_winnable_by_the_pet)
 
 
 def test_featured_runs_once_per_real_day(on_date):
@@ -122,3 +121,34 @@ def test_ordinary_day_still_locks_to_the_hour(on_date):
     tr = tournament.trophy_by_id(sched[other])
     err = tournament.eligibility_at(p, tr, other)
     assert err and "closed" in err
+
+
+def test_weekend_featured_is_winnable_by_the_pet(monkeypatch):
+    """Cup ruling 2026-07-18: the weekend headliner draws from the PET's own
+    bracket or the open tier -- never a bracket the pet can only lose."""
+    import datetime as dt
+    from tuipet import tournament
+    from tuipet.pet import Pet
+    sat = dt.date(2026, 7, 18)                    # a real Saturday
+    champ = Pet(num=100, stage="Champion", attribute="Vaccine")
+    champ.world_seconds = 600.0
+    t = tournament.featured_now(champ, today=sat)
+    assert t is not None
+    assert not t["age_limit"] or t["age_limit"] == "Champion"
+    mega = Pet(num=200, stage="Mega", attribute="Vaccine")
+    mega.world_seconds = 600.0
+    t2 = tournament.featured_now(mega, today=sat)
+    assert t2 is not None and not t2["age_limit"]  # a Mega gets the open field
+
+
+def test_the_grand_chain_names_the_missing_season(monkeypatch):
+    """Cup ruling 2026-07-18: a prelim wall from ANOTHER real season says so
+    -- the year-long arc reads as a journey, not a mystery wall."""
+    from tuipet import tournament
+    from tuipet.pet import Pet
+    monkeypatch.setattr(tournament, "real_season", lambda today=None: "Winter")
+    p = Pet(num=100, stage="Mega", attribute="Vaccine", bits=99999)
+    p.world_seconds = 600.0
+    grand = tournament.trophy_by_id(248)           # Winter grand: prelim 170 (Fall)
+    msg = tournament._eligibility_rest(p, grand)
+    assert msg and "first" in msg and "Fall cup" in msg
