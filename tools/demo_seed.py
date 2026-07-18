@@ -15,10 +15,8 @@ else:
     p = Pet(num=num, name=by[num]["name"], stage="Rookie", hunger=2)
     p.world_seconds = 9 * 3600.0              # mid-morning light
 p.bits = 800
-for k in ("f:0", "f:1", "f:2"):
-    e = data.consumable_by_key(k)
-    if e:
-        p.add_item(k)
+for k in ("fish", "ball"):        # the TUIPET catalog (2026-07-18)
+    p.add_item(k)
 persistence.set_auto_update(False)   # never let the launch updater run mid-recording
 persistence.save(p)
 print("seeded", kind, p.name, p.stage)

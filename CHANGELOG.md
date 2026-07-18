@@ -3,6 +3,24 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.5.57 – 0.5.60 — the honest lane and THE NEW SHOP (2026-07-18)
+
+* **0.5.60 — THE TUIPET ITEM CATALOG.** The shop rebuilt from scratch:
+  29 authored items + the 11 Digimentals, every cell wearing real device
+  art. Foods are eaten on the LCD through their own strips; toys play
+  their real shows (bounce/ride/recital/TV/bath/shower) and turn live
+  dials; birthday treats are real bag items at last; old goods traded in
+  one-for-one on load.
+* **0.5.59 — the honest update.** The source's refusal gates (a sick or
+  messy pet turns down food, training and fights with the head-shake);
+  raid gate shows live timers and its true payouts; cup purses show what
+  they actually pay and a fallen pet can't be crowned; cloud saves
+  hardened against clock drift, oversized saves, and misleading warnings.
+* **0.5.58 — meat on the real strip** + a freshly recorded README demo.
+* **0.5.57 — the pill is eaten.** The source has no heal animation: the
+  pill rides the same eating action as meat. The old floating, half-
+  clipped medicine strip is gone.
+
 ## 0.3.x–0.5.56 — 2026-07-15 → 2026-07-18 (the fast lane)
 
 Releases in this stretch shipped daily — often hourly — and each carried its

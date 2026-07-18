@@ -190,11 +190,16 @@ your pet grows up with (until you repaint it).
 ## Shop, bag & economy
 
 **o** opens the classic four-tab storefront — **[Food] Items Eggs Honors**
-— with real device icons on the goods and a live dossier for whatever's
-selected: the effect, what you already hold, how short you are, and (for a
-crest egg) the armor form it would trigger right now. **i** is the bag: use
-with ENTER, sell back for half with R. The Honors board sells cosmetic
-tamer titles for the truly rich.
+— stocked with the TUIPET catalog: real foods that get **eaten on the LCD**
+through their own device art (fish, steak, a feast, one mushroom you should
+NOT feed), care goods and growth tools, and **toys that actually play** —
+the ball bounces, the skateboard rides, the TV glows — each nudging a real
+meter (exercise sheds weight, couch time buys energy). Every item wears its
+own device sprite, and the live dossier shows the effect, a word of
+character, what you already hold, and (for a crest egg) the armor form it
+would trigger right now. **i** is the bag: use with ENTER, sell back for
+half with R. Birthdays hand out treats you can actually eat. The Honors
+board sells cosmetic tamer titles for the truly rich.
 
 **Digitama are earned, never sold**: eggs unlock by playing — reaching
 stages, felling raid bosses, winning cups, growing your album — exactly

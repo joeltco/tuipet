@@ -23,50 +23,51 @@ from . import data
 # every effect lands on a meter that is LIVE today.  vitems.json stays a
 # pristine rip: it now feeds only the 11 Digimentals; the consumable shelf
 # is THIS table.  price None = never sold (birthday-only treats).
-# key: (name, icon, price, category, effect-text -- mirrors use_item exactly)
+# key: (name, icon, price, category, effect-text mirroring use_item, tagline)
 CATALOG = {
     # ---- FOOD (eaten on the LCD through their own 4-frame strips) ----------
-    "fish":            ("Fish",            "f:1",  50,   "Food", "hunger +1"),
-    "vegetable":       ("Vegetable",       "f:3",  150,  "Food", "hunger +1 · weight -1"),
-    "tuna":            ("Tuna",            "f:14", 400,  "Food", "hunger +2 · energy +1"),
-    "cake":            ("Cake",            "f:6",  300,  "Food", "hunger +1 · energy +2 · weight +2"),
-    "cheese_burger":   ("Cheese burger",   "f:57", 50,   "Food", "fills belly · a care mistake"),
-    "giga_meal":       ("Giga Meal",       "f:28", 800,  "Food", "fills belly · energy +4 · weight +6"),
-    "steak":           ("Steak",           "f:8",  2000, "Food", "fills belly · 12h satiety"),
-    "poison_mushroom": ("Poison Mushroom", "f:13", 200,  "Food", "DO NOT FEED"),
-    "cupcake":         ("Cupcake",         "f:55", None, "Food", "hunger +1 · energy +1"),
-    "cookie":          ("Cookie",          "f:54", None, "Food", "hunger +1 · energy +1"),
-    "candy":           ("Candy",           "f:7",  None, "Food", "hunger +1 · energy +1"),
+    "fish":            ("Fish",            "f:1",  50,   "Food", "hunger +1", "the everyday catch"),
+    "vegetable":       ("Vegetable",       "f:3",  150,  "Food", "hunger +1 · weight -1", "crunchy diet fare"),
+    "tuna":            ("Tuna",            "f:14", 400,  "Food", "hunger +2 · energy +1", "a hearty catch"),
+    "cake":            ("Cake",            "f:6",  300,  "Food", "hunger +1 · energy +2 · weight +2", "a celebration slice"),
+    "cheese_burger":   ("Cheese burger",   "f:57", 50,   "Food", "fills belly · a care mistake", "greasy, regrettable"),
+    "giga_meal":       ("Giga Meal",       "f:28", 800,  "Food", "fills belly · energy +4 · weight +6", "a feast fit for a Mega"),
+    "steak":           ("Steak",           "f:8",  2000, "Food", "fills belly · 12h satiety", "the premium table"),
+    "poison_mushroom": ("Poison Mushroom", "f:13", 200,  "Food", "DO NOT FEED", "it does look delicious"),
+    "cupcake":         ("Cupcake",         "f:55", None, "Food", "hunger +1 · energy +1", "a birthday's reward"),
+    "cookie":          ("Cookie",          "f:54", None, "Food", "hunger +1 · energy +1", "a birthday's treat"),
+    "candy":           ("Candy",           "f:7",  None, "Food", "hunger +1 · energy +1", "a consolation sweet"),
     # ---- CARE ---------------------------------------------------------------
-    "energy_drink":    ("Energy Drink",    "f:17", 200,  "Care", "energy to FULL"),
-    "slim_drink":      ("Slim Drink",      "f:23", 100,  "Care", "weight -10"),
-    "vitamin":         ("Vitamin",         "f:5",  500,  "Care", "effort to FULL"),
-    "sleeping_pill":   ("Sleep Pill",      "f:34", 300,  "Care", "sleep now"),
-    "caffeine_pill":   ("Caffeine Pill",   "f:38", 300,  "Care", "bedtime pushed later"),
-    "music_player":    ("Music Player",    "i:9",  300,  "Care", "wake now, no grudge"),
-    "textbook":        ("Textbook",        "i:0",  1500, "Care", "erase ALL care mistakes"),
-    "port_potty":      ("Port. Potty",     "i:83", 2000, "Care", "clean + auto-clean 24h"),
+    "energy_drink":    ("Energy Drink",    "f:17", 200,  "Care", "energy to FULL", "instant pep"),
+    "slim_drink":      ("Slim Drink",      "f:23", 100,  "Care", "weight -10", "the crash diet"),
+    "vitamin":         ("Vitamin",         "f:5",  500,  "Care", "effort to FULL", "effort in a capsule"),
+    "sleeping_pill":   ("Sleep Pill",      "f:34", 300,  "Care", "sleep now", "lights out, no argument"),
+    "caffeine_pill":   ("Caffeine Pill",   "f:38", 300,  "Care", "bedtime pushed later", "tonight runs long"),
+    "music_player":    ("Music Player",    "i:9",  300,  "Care", "wake now, no grudge", "a gentle waking song"),
+    "textbook":        ("Textbook",        "i:0",  1500, "Care", "erase ALL care mistakes", "study the slate clean"),
+    "port_potty":      ("Port. Potty",     "i:83", 2000, "Care", "clean + auto-clean 24h", "it cleans itself"),
     # ---- GROWTH -------------------------------------------------------------
-    "dumbbell":        ("Dumbbell",        "i:7",  300,  "Evolution", "training +10"),
-    "grow_capsule":    ("Grow Capsule",    "i:78", 500,  "Evolution", "growth +120min"),
-    "anti_evo_chip":   ("Anti-Evo Chip",   "f:32", 1000, "Evolution", "toggle evolution lock"),
-    "x_antibody":      ("X-Antibody",      "i:79", 2000, "Evolution", "the X-Antibody takes hold"),
-    "dna_crystal":     ("DNA Crystal",     "i:35", 1500, "Evolution", "+10 own-Field DNA banked"),
-    "revive_floppy":   ("Rev. Floppy",     "i:32", 2500, "Medical", "raise the dead"),
+    "dumbbell":        ("Dumbbell",        "i:7",  300,  "Evolution", "training +10", "reps in a box"),
+    "grow_capsule":    ("Grow Capsule",    "i:78", 500,  "Evolution", "growth +120min", "time in a bottle"),
+    "anti_evo_chip":   ("Anti-Evo Chip",   "f:32", 1000, "Evolution", "toggle evolution lock", "holds this form"),
+    "x_antibody":      ("X-Antibody",      "i:79", 2000, "Evolution", "the X-Antibody takes hold", "the X factor"),
+    "dna_crystal":     ("DNA Crystal",     "i:35", 1500, "Evolution", "+10 own-Field DNA banked", "a Field's worth of code"),
+    "revive_floppy":   ("Rev. Floppy",     "i:32", 2500, "Medical", "raise the dead", "one more chance"),
     # ---- TOYS (the shows the engine already ships; small LIVE stat dials:
     # exercise sheds weight, couch time buys energy at a weight price) --------
-    "ball":            ("Ball",            "i:3",  100,  "Toy", "play! weight -1"),
-    "skateboard":      ("Skateboard",      "i:6",  500,  "Toy", "ride! weight -2 · energy -1"),
-    "xylophone":       ("Xylophone",       "i:63", 800,  "Toy", "a recital · energy +2"),
-    "video_game":      ("Video Game",      "i:65", 600,  "Toy", "couch time · energy +2 · weight +1"),
-    "television":      ("Television",      "i:10", 1000, "Toy", "deep couch · energy +3 · weight +1"),
-    "bubble_bath":     ("Bubble Bath",     "i:26", 400,  "Toy", "washes the filth, with style"),
-    "cold_shower":     ("Cold Shower",     "i:67", 300,  "Toy", "a bracing wake · energy +2"),
+    "ball":            ("Ball",            "i:3",  100,  "Toy", "play! weight -1", "a grand kickabout"),
+    "skateboard":      ("Skateboard",      "i:6",  500,  "Toy", "ride! weight -2 · energy -1", "shred the living room"),
+    "xylophone":       ("Xylophone",       "i:63", 800,  "Toy", "a recital · energy +2", "music hath charms"),
+    "video_game":      ("Video Game",      "i:65", 600,  "Toy", "couch time · energy +2 · weight +1", "one more level…"),
+    "television":      ("Television",      "i:10", 1000, "Toy", "deep couch · energy +3 · weight +1", "glued to the screen"),
+    "bubble_bath":     ("Bubble Bath",     "i:26", 400,  "Toy", "washes the filth, with style", "rubber duck included"),
+    "cold_shower":     ("Cold Shower",     "i:67", 300,  "Toy", "a bracing wake · energy +2", "brrr. effective."),
 }
 
 # compat views over the one table (shelf text / icons / tests import these)
 EFFECTS = {k: v[4] for k, v in CATALOG.items()}
 ICON_KEYS = {k: v[1] for k, v in CATALOG.items()}
+FLAVORS = {k: v[5] for k, v in CATALOG.items()}   # the dossier taglines
 
 # foods ride the EAT fx on their DVPet strip; toys ride their canon itemfx
 # script (the AnimationType painters shipped since the DVPet era)
@@ -155,7 +156,7 @@ def catalog():
     from . import persistence
     prog = persistence.get_progress()
     out = []
-    for k, (name, _icon, price, cat, _eff) in CATALOG.items():
+    for k, (name, _icon, price, cat, _eff, _fl) in CATALOG.items():
         if price is not None:
             out.append({"key": k, "name": name, "price": price,
                         "category": cat})
@@ -174,7 +175,7 @@ def entry(key):
     renders in the bag at a nominal resale), then vitems (Digimentals)."""
     c = CATALOG.get(key)
     if c is not None:
-        name, _icon, price, cat, _eff = c
+        name, _icon, price, cat, _eff, _fl = c
         return {"key": key, "name": name,
                 "price": price if price is not None else 100,
                 "category": cat}
@@ -255,7 +256,18 @@ def wave_status(prog=None):
 def effect_line(e):
     if e.get("category") == ARMOR_CATEGORY:
         return "an armor evolution (the right Child)"
-    return EFFECTS.get(e["key"], "a curiosity")
+    k = e["key"]
+    eff = EFFECTS.get(k, "a curiosity")
+    fl = FLAVORS.get(k)
+    # the dossier speaks effect AND character ("polish up the shop
+    # descriptions" 2026-07-18) -- but the info block holds exactly two
+    # 26-col rows, so a long effect keeps the stage to itself
+    if fl:
+        import textwrap
+        joined = f"{eff} — {fl}"
+        if len(textwrap.wrap(joined, 26)) <= 2:
+            return joined
+    return eff
 
 
 def buy(pet, e):
