@@ -61,37 +61,32 @@ def test_feed_alias_keeps_old_callers_fed():
     assert p.hunger == 1
 
 
-def test_the_meat_eats_through_its_own_bite_strip():
-    """Meat joins the pill on the source's bite strips (2026-07-18): the
-    panel hands the "meat" key, the fx resolves it to the ripped me/ge/_e
-    shrink; the DVPet f:0 icon stays with the bag consumables."""
-    from tuipet.app import Screen
-    from tuipet.feedscreen import FeedPanel, MEAT_BITES
+def test_the_meat_eats_through_the_dvpet_meat_strip():
+    """Meat is EATEN (the source's action) through the DVPet f:0 Meat strip
+    (art truth, Joel 2026-07-18: "all sprites must come from dvpet")."""
+    from tuipet import data
     p = _pet(hunger=1)
     pan = FeedPanel(p)
     done, (outcome, item, _msg) = pan.key("enter")
     assert (done, outcome) == ("done", "fed")
-    assert item["key"] == "meat"
-
-    class _S:
-        pass
-    _S._food_frames = Screen._food_frames
-    frames = _S()._food_frames("meat")
-    assert frames is MEAT_BITES
-    assert len(frames) == 4 and frames[-1] is None
-    inks = [sum(r.count("1") for r in f) for f in frames[:3]]
-    assert inks[0] > inks[1] > inks[2] > 0            # a strict shrink
+    assert item["key"] == "f:0"
+    strip = data.load_icons()["f:0"]
+    assert len(strip) == 4
+    assert len({(len(f[0]), len(f)) for f in strip if f}) == 1   # uniform frames
 
 
-def test_the_pill_is_eaten_on_its_own_bite_strip():
-    """Pill-anim fix (Joel 2026-07-18: "the pill eating animation is broken...
-    dsprite is the animation truth"): the source has NO heal anim -- its pill
-    rides the same EATING action as meat, on the ripped he/ve/ye bite strip.
-    The old route (the DVPet bandage() port) drew the i:80 medicine strip at
+
+def test_the_pill_is_eaten_through_the_dvpet_med_strip():
+    """Pill-anim fix arc (Joel 2026-07-18): the source has NO heal anim --
+    its pill rides the same EATING action as meat (animation truth), and the
+    frames are the DVPet f:4 Med strip (art truth: "all sprites must come
+    from dvpet. the dsprite ones suck").  The old bandage route drew i:80 at
     y0-4, above the window top (y6): a clipped sliver.  Pin the whole road:
-    panel verdict -> eat anim -> the "pill" key -> the strip the fx steps."""
+    panel verdict -> eat anim -> the f:4 key -> a real uniform strip -> the
+    heal fx kind stays gone."""
+    from tuipet import data
     from tuipet.app import Screen
-    from tuipet.feedscreen import FeedPanel, PILL_BITES
+    from tuipet.feedscreen import FeedPanel
     from tuipet.pet import Pet
     p = Pet(num=100, stage="Champion", attribute="Vaccine", obedience=500)
     p.world_seconds = 12 * 60.0
@@ -100,21 +95,16 @@ def test_the_pill_is_eaten_on_its_own_bite_strip():
     pan.cursor = 1                                   # the pill row
     done, (outcome, item, msg) = pan.key("enter")
     assert (done, outcome) == ("done", "healed")
-    assert item["key"] == "pill" and "Cured" in msg
+    assert item["key"] == "f:4" and "Cured" in msg
     assert p.anim == "eat"                           # EATING, not the old heal
-    # the fx resolves "pill" to the ripped strip: 3 bites + the eaten-away None
+    strip = data.load_icons()["f:4"]
+    assert len(strip) == 4
+    assert len({(len(f[0]), len(f)) for f in strip if f}) == 1   # uniform frames
+    # and the heal fx kind is STILL gone root and branch
+    assert not hasattr(Screen, "_fxk_heal")
+
     class _S:
         pass
-    _S._food_frames = Screen._food_frames
-    frames = _S()._food_frames("pill")
-    assert frames is PILL_BITES
-    assert len(frames) == 4 and frames[-1] is None
-    assert all(len(f) == 8 and all(len(r) == 8 for r in f) for f in frames[:3])
-    # the strip is a strict shrink: full -> bitten -> nearly gone
-    inks = [sum(r.count("1") for r in f) for f in frames[:3]]
-    assert inks[0] > inks[1] > inks[2] > 0
-    # and the heal fx kind is GONE root and branch
-    assert not hasattr(Screen, "_fxk_heal")
     _probe = _S()
     _probe.fx = None
     _probe.frame_i = 0

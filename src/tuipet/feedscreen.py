@@ -35,48 +35,12 @@ PILL = ["00001110",
         "10001000",
         "01110000"]
 
-# BOTH rows are EATEN on their own ripped bite strips (decompile EATING
-# state: the item glyph steps full -> bitten -> nearly-gone as the mon chews;
-# nothing drawn after the last bite).  `me`/`ge`/`_e` and `he`/`ve`/`ye`
-# ripped verbatim; the closing None is the eaten-away frame, same shape as
-# the food atlas strips.
-MEAT_BITES = [MEAT,
-              ["00000011",
-               "00000101",
-               "00000110",
-               "00001110",
-               "01111110",
-               "01011100",
-               "10111000",
-               "11000000"],
-              ["00000011",
-               "00000001",
-               "00000010",
-               "00000110",
-               "00011110",
-               "01011100",
-               "10111000",
-               "11000000"],
-              None]
-
-PILL_BITES = [PILL,
-              ["00000000",
-               "00010000",
-               "00101000",
-               "01011000",
-               "10001100",
-               "10000100",
-               "10001000",
-               "01110000"],
-              ["00000000",
-               "00000000",
-               "00100000",
-               "01000000",
-               "10000000",
-               "10000000",
-               "10000000",
-               "01100000"],
-              None]
+# BOTH rows are EATEN (the source's EATING action is the ANIMATION truth:
+# the item shrinks bite by bite as the mon chews) -- but the eating FRAMES
+# are DVPet atlas rips, the ART truth (Joel 2026-07-18: "all sprites must
+# come from dvpet. the dsprite ones suck"): meat eats through f:0 Meat and
+# the pill through f:4 Med, both real uniform 4-frame strips.  The 8px
+# glyphs above are only the MENU icons.
 
 CURSOR = ["1000",
           "1100",
@@ -114,23 +78,22 @@ class FeedPanel:
             kind, label, _ = ROWS_MENU[self.cursor]
             if kind == "meat":
                 msg = self.pet.feed_meat()
-                # the staple meat eats through its own ripped me/ge/_e bite
-                # strip, like the pill (decompile EATING state, 2026-07-18);
-                # the DVPet f:0 icon stays with the bag consumables
+                # the staple meat eats through the DVPet f:0 Meat strip
+                # (art truth; the eat ACTION itself is the source's)
                 if self.pet.anim == "eat":
-                    return ("done", ("fed", {"key": "meat", "name": "Meat"}, msg))
+                    return ("done", ("fed", {"key": "f:0", "name": "Meat"}, msg))
                 if "full" in msg:
-                    return ("done", ("full", {"key": "meat", "name": "Meat"}, msg))
-                return ("done", ("refused", {"key": "meat", "name": "Meat"}, msg))
+                    return ("done", ("full", {"key": "f:0", "name": "Meat"}, msg))
+                return ("done", ("refused", {"key": "f:0", "name": "Meat"}, msg))
             was_sick = self.pet.sick or self.pet.is_injured()
             msg = self.pet.feed_pill()
             if self.pet.anim == "eat":
                 out = "Cured!" if was_sick else "A tonic — strength and pep."
-                # the pill is EATEN (decompile EATING state, pill-anim fix
-                # 2026-07-18): it rides the eat fx on its own ripped
-                # he/ve/ye bite strip -- "pill" resolves to PILL_BITES
-                return ("done", ("healed", {"key": "pill", "name": "Pill"}, out))
-            return ("done", ("refused", {"key": "pill", "name": "Pill"}, msg))
+                # the pill is EATEN (the source's EATING action, pill-anim
+                # fix 2026-07-18) through the DVPet f:4 Med strip (art truth
+                # 2026-07-18: all sprites from the DVPet atlas)
+                return ("done", ("healed", {"key": "f:4", "name": "Pill"}, out))
+            return ("done", ("refused", {"key": "f:4", "name": "Pill"}, msg))
         elif k in ("escape", "f"):
             return ("done", None)
         return None
