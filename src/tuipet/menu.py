@@ -56,6 +56,18 @@ NOTE_GAP = "      "
 TICK = 0
 
 
+def _scrolled(msg, tick):
+    """The marquee window over an over-wide line (note()'s cadence: hold on
+    the head, then one character per NOTE_STEP ticks, wrap through NOTE_GAP)."""
+    if tick is None:
+        tick = TICK
+    loop = msg + NOTE_GAP
+    cycle = len(loop) + NOTE_HOLD                 # hold on the head again each wrap
+    pos = (tick // NOTE_STEP) % cycle
+    off = max(0, pos - NOTE_HOLD)
+    return (loop + loop)[off:off + W]
+
+
 def note(msg, tick=None):
     """A status line (bold).  A message wider than the LCD used to CLIP silently
     (the battle menu's 'It IGNORED you!' vanished off the end -- audit 2026-07-04;
@@ -63,18 +75,22 @@ def note(msg, tick=None):
     marquee now: panels pass their frame counter or inherit the module TICK."""
     if len(msg) <= W:
         return Text(msg + "\n", style=INK_B)
-    if tick is None:
-        tick = TICK
-    loop = msg + NOTE_GAP
-    cycle = len(loop) + NOTE_HOLD                 # hold on the head again each wrap
-    pos = (tick // NOTE_STEP) % cycle
-    off = max(0, pos - NOTE_HOLD)
-    return Text((loop + loop)[off:off + W] + "\n", style=INK_B)
+    return Text(_scrolled(msg, tick) + "\n", style=INK_B)
 
 
 def footer(hint):
     """Control hints (dim), no trailing newline."""
     return Text(hint[:W], style=DIM)
+
+
+def footer_note(msg, tick=None):
+    """A MESSAGE riding the footer slot (dim, no trailing newline).  Control
+    footers still never marquee (the shop-tease pin) -- this variant is for
+    data-driven lines that cannot be pre-fit: the egg-unlock teaser was
+    silently clipping 32 of 46 hints mid-word (tidy sweep 2026-07-18)."""
+    if len(msg) <= W:
+        return Text(msg, style=DIM)
+    return Text(_scrolled(msg, tick), style=DIM)
 
 
 def hints(*pairs):

@@ -59,6 +59,55 @@ def test_every_screen_strip_fits_and_speaks():
     assert "SPACE" in _ok(dna.strip(), "dna:mash")
 
 
+def test_the_remaining_screens_strips_fit_too():
+    """The 8 panels the sweep above missed (tidy sweep 2026-07-18) — every
+    strip in the app now holds the 40-col never-marquee budget."""
+    from tuipet.training import TrainingPanel
+    from tuipet.digicorescreen import DigiCorePanel
+    from tuipet.eggguidescreen import EggGuidePanel
+    from tuipet.backgroundscreen import BackgroundPanel
+    from tuipet.raidscreen import RaidPanel
+    from tuipet.deathscreen import DeathPanel
+    from tuipet.titlescreen import TitlePanel
+    from tuipet.accountscreen import AccountPanel
+
+    p = _pet()
+    assert "strike" in _ok(TrainingPanel(p).strip(), "training")
+    assert "gaze" in _ok(DigiCorePanel(p).strip(), "digicore")
+    guide = EggGuidePanel(p)
+    assert "browse" in _ok(guide.strip(), "eggguide:list")
+    guide.detail = True
+    assert "back" in _ok(guide.strip(), "eggguide:detail")
+    _ok(BackgroundPanel(p).strip(), "scenes")
+    raid = RaidPanel(p, lambda name, pw, card: object())
+    assert "raid" in _ok(raid.strip(), "raid")
+    assert "egg" in _ok(DeathPanel(p).strip(), "death")
+    title = TitlePanel()
+    title.frame_i = 999                       # past the power-on hush
+    assert "ENTER" in _ok(title.strip(), "title")
+    assert "switch" in _ok(AccountPanel().strip(), "account")
+
+
+def test_the_egg_tease_marquees_instead_of_clipping():
+    """menu.footer clips at 38 cols; the unlock tease is DATA (eggUnlock
+    descs run to 45 cols) so it rides footer_note and scrolls through whole
+    within one TEASE_BEAT leg (tidy sweep 2026-07-18: 32/46 hints used to
+    clip mid-word, losing the actual instruction)."""
+    from tuipet import data
+    from tuipet.eggselectscreen import EggSelectPanel, TEASE_BEAT
+
+    descs = [r["desc"] for r in data.load_egg_unlock().values() if r.get("desc")]
+    worst = max(descs, key=len)
+    tail = worst.split()[-1]
+    pan = EggSelectPanel()
+    pan.hint, pan.locked, pan.msg = worst, 22, ""
+    frames = []
+    for f in range(TEASE_BEAT, 2 * TEASE_BEAT):        # one tease leg
+        pan.frame_i = f
+        frames.append(pan.text().plain.rstrip("\n").split("\n")[-1])
+    assert any(tail in line for line in frames), f"tease tail {tail!r} never shown"
+
+
 def test_options_strip_covers_menu_and_confirm():
     from tuipet.optionsscreen import OptionsPanel
     p = _pet()

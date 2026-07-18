@@ -146,11 +146,10 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("A TIDY DEVICE: the action bar now reads in the Help "
-                 "screen's order (care, explore, grow, manage), every key "
-                 "hint speaks one language, and the key that opens a screen "
-                 "closes it - t, n and ? included. A raid press wakes a "
-                 "sleeper like any other poke.")
+    WHATS_NEW = ("NO MORE CUT-OFF HINTS: the egg carousel's unlock tease "
+                 "used to clip mid-word right where it told you what to do "
+                 "- it now scrolls through whole, every hint readable end "
+                 "to end.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and

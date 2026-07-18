@@ -18,6 +18,10 @@ EGG_W = 16
 CENTER = (COLS - EGG_W) // 2  # x_left that centres a 16px egg
 SPACING = 24                  # px between adjacent eggs (neighbours peek ~4px)
 WINDOW = 2                    # eggs drawn each side of centre
+TEASE_BEAT = 120              # ticks per footer alternation leg (~12s): long
+                              # enough for a FULL marquee pass of the widest
+                              # eggUnlock desc (the old 40-tick beat clipped
+                              # 32/46 hints mid-word -- tidy sweep 2026-07-18)
 EASE = 0.34                   # glide fraction closed per 0.1s tick
 SNAP = 0.03                   # below this, settle exactly
 
@@ -138,8 +142,13 @@ class EggSelectPanel:
         out.append_text(menu.note(self._note(self._egg(self.i)), tick=self.frame_i))
         if self.msg:
             out.append_text(menu.footer(self.msg))
-        elif self.locked > 0 and self.hint and (self.frame_i // 40) % 2 == 1:
-            out.append_text(menu.footer(f"{self.locked} more out there · {self.hint}"))
+        elif (self.locked > 0 and self.hint
+                and self.frame_i % (2 * TEASE_BEAT) >= TEASE_BEAT):
+            # the tease marquees head-first each appearance (tick resets per
+            # leg) -- an over-wide hint scrolls through whole, never clips
+            out.append_text(menu.footer_note(
+                f"{self.locked} more out there · {self.hint}",
+                tick=self.frame_i % TEASE_BEAT))
         else:
             out.append_text(menu.footer("←→ browse   ENTER pick   ESC back"))
         return out

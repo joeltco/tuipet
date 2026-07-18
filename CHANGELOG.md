@@ -3,6 +3,15 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.5.63 — NO MORE CUT-OFF HINTS (2026-07-18)
+
+* **The egg carousel's unlock tease reads whole.** 32 of the 46 unlock
+  hints overflowed the footer and were silently cut mid-word — right
+  where they told you what earns the egg. The tease now marquees through
+  head to tail on a longer beat (control hints still hold still).
+* Every screen's message-strip hint line is now pinned to the 40-col
+  never-marquee budget — the last 8 unpinned screens joined the sweep.
+
 ## 0.5.62 — A TIDY DEVICE (2026-07-18)
 
 * **The action bar, organized.** The three lines now read in the Help
