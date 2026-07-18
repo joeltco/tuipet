@@ -12,34 +12,8 @@ import tempfile
 from tuipet import persistence
 
 
-def test_a_rejected_cloud_save_is_heard_not_ignored():
-    """The server ACKs every push with {"t":"saved","ok":...} and answers
-    ok=False when it DROPPED it (a stale lease -- a newer session owns the
-    saves).  The client had no "saved" branch, so a device whose lease was
-    taken went on believing it was syncing while the server binned every
-    push: cross-device progress vanished, silently."""
-    from tuipet.net import SyncClient
-    c = SyncClient("ws://x", "joel")
-    assert c.cloud_dropped is False
-    c._handle('{"t": "saved", "ok": true}')
-    assert c.cloud_dropped is False, "an accepted save is not a drop"
-    c._handle('{"t": "saved", "ok": false}')
-    assert c.cloud_dropped is True, "a REFUSED save must be heard"
 
-
-def test_the_app_warns_once_when_the_cloud_refuses_us(monkeypatch):
-    import tuipet.app as appmod
-    app = appmod.TuiPetApp.__new__(appmod.TuiPetApp)
-    flashes = []
-    app.flash = lambda t: flashes.append(t)
-
-    class _Sync:
-        cloud_dropped = True
-    app._sync = _Sync()
-    appmod.TuiPetApp._warn_if_cloud_dropped(app)
-    appmod.TuiPetApp._warn_if_cloud_dropped(app)      # ...only once
-    assert len(flashes) == 1
-    assert "Cloud sync off" in flashes[0]
+# (the two cloud-drop tests left with the cloud-sync cut 2026-07-18)
 
 
 def test_a_bug_report_never_promises_a_send_it_cannot_make(monkeypatch):

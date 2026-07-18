@@ -10,11 +10,17 @@ from __future__ import annotations
 
 import asyncio
 import json
+import time
 
 import websockets
 
 CHAT_CAP = 200
 ANNOUNCE = "📢"          # the dev's speaker: never a peer, never blockable
+
+# The app-launch stamp: every login carries it, and the server lets the newest
+# launch evict its own stale session (newest-wins; lived with the cloud-save
+# helpers until the sync cut 2026-07-18 -- the lobby always needed it).
+BOOT = time.time()
 
 
 def parse_msg(raw):
@@ -99,90 +105,33 @@ class LobbyState:
         return [p for p in self.roster if p["id"] != self.me_id]
 
 
-class SyncClient(_WsClient):
-    """Background cloud-save sync over the same lobby server.
+# (SyncClient -- the background cloud-save pusher / home-screen mail ghost --
+# left with the cloud-sync cut 2026-07-18: the pet lives on THIS device, like a
+# real unit.  Held PMs still deliver on lobby login; accounts stay as the
+# lobby identity.)
 
-    Logs in with `sync_only` so it never joins the live roster (it can coexist with
-    a lobby login on the same account). On connect it receives the account's stored
-    save and hands it to `on_pull` once; thereafter `push_save` ships the latest
-    local save up (only the newest pending push is kept). Reconnects with backoff;
-    a bad password stops the loop. Fully fail-soft — offline just means no sync.
-    """
 
-    _backoff_cap = 60.0
-
-    def __init__(self, uri, name, pw="", on_pull=None):
-        # The server ACKs every save with {"t":"saved","ok":...} and answers
-        # ok=False when it DROPPED it (a stale lease: a newer session of this
-        # account owns the saves).  We never read that ack -- _handle had no
-        # "saved" branch -- so a device whose lease was taken went on believing
-        # its pet was syncing while the server binned every push.  Cross-device
-        # progress vanished, silently.  (Swallowed-failure sweep 2026-07-13:
-        # the same shape as the iOS silent save and the dead Termux bridge.)
-        self.cloud_dropped = False
-        self.uri = uri
-        self.name = name
-        self.pw = pw
-        self.on_pull = on_pull
-        self.connected = False
-        self.inbox: list = []                 # (from_name, text) PMs -> the home-screen alert
-        self._pending = None                  # latest save dict awaiting upload
-        self._ws = None
-        self._wake: asyncio.Event = asyncio.Event()
-        self._stop = False                    # set on auth failure -> don't retry
-
-    def push_save(self, save):
-        self._pending = save                  # keep only the newest; server is last-write-wins
-        self._wake.set()
-
-    def _login_msg(self):
-        from .cloudsync import BOOT           # one launch stamp per process
-        return {"t": "login", "name": self.name, "pw": self.pw,
-                "sync_only": True, "boot": BOOT}
-
-    def _on_connect(self):
-        self.connected = True
-        if self._pending is not None:
-            self._wake.set()                  # flush anything queued while we were down
-
-    def _on_disconnect(self):
-        self.connected = False
-
-    async def _send_loop(self):
-        while True:
-            await self._wake.wait()
-            self._wake.clear()
-            save = self._pending
-            if save is not None and self._ws is not None:
-                try:
-                    await self._ws.send(json.dumps({"t": "save", "save": save}))
-                except Exception:
-                    # a failed send must NOT kill the loop (it used to `return`,
-                    # silently ending autosave uploads for the process lifetime);
-                    # keep the save pending -- the reconnect loop re-wakes us
-                    self._wake.set()
-                    await asyncio.sleep(1.0)
-
-    def _handle(self, raw):
-        m, t = parse_msg(raw)
-        if t == "welcome":
-            if self.on_pull is not None:
-                self.on_pull(m.get("save"))    # server's stored save (or None)
-        elif t == "saved":
-            # the verdict on our last push: ok=False means the server BINNED it
-            self.cloud_dropped = not m.get("ok")
-        elif t == "pm":
-            # the sync ghost is the HOME-SCREEN alert channel: the app drains
-            # this into the message box (presence 2026-07-05)
-            self.inbox.append((m.get("from_name", "?"), m.get("text", "")))
-            del self.inbox[:-20]
-        elif t == "announce":
-            # a server announcement reaches the home screen the same way a PM
-            # does -- the 📢 name marks it as the dev's line
-            self.inbox.append(("📢", m.get("text", "")))
-            del self.inbox[:-20]
-        elif t == "login_failed":
-            self._stop = True                  # wrong password -> stop retrying
+def probe_login(uri, name, pw, timeout=3.0):
+    """Blocking login check for the account switcher: "ok" on a welcome (an
+    unknown name is CREATED by the server, like the first-launch flow),
+    "badpw" when the server rejects the login -- switching onto a typo'd
+    password must not strand the player -- "offline" when the lobby can't
+    be reached.  Never raises.  (sync_only keeps the probe off the roster;
+    the wire flag outlives the sync system it was named for.)"""
+    try:
+        from websockets.sync.client import connect
+        with connect(uri, open_timeout=timeout, close_timeout=1) as ws:
+            ws.send(json.dumps({"t": "login", "name": name, "pw": pw,
+                                "sync_only": True, "boot": BOOT}))
+            for _ in range(5):                   # welcome is the first/early frame
+                m, t = parse_msg(ws.recv(timeout=timeout))
+                if t == "welcome":
+                    return "ok"
+                if t == "login_failed":
+                    return "badpw"
+    except Exception:
+        return "offline"
+    return "offline"
 
 
 class LobbyClient(_WsClient):
@@ -262,10 +211,8 @@ class LobbyClient(_WsClient):
 
     # ---- lifecycle (the loop itself lives on _WsClient) --------------------
     def _login_msg(self):
-        from .cloudsync import BOOT           # one launch stamp per process: the
-        #                                       server lets the newest launch evict
-        #                                       its own stale room session (message
-        #                                       audit 2026-07-06)
+        # the module-level BOOT stamp: the server lets the newest launch
+        # evict its own stale room session (message audit 2026-07-06)
         return {"t": "login", "name": self.name, "pw": self.pw, "pet": self.pet,
                 "boot": BOOT}
 

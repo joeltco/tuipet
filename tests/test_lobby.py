@@ -402,27 +402,6 @@ def test_the_engine_reads_species_truth_not_wire_claims():
     assert b.foe.attribute == rec["attribute"]     # species truth
     card = battle_mod.battle_card(q)
     assert card["attribute"] == "Virus" and card["proto"] == 3
-def test_queued_pms_seed_the_fresh_lobby_pane():
-    """PMs queued while in another sub-screen used to be clear()ed on lobby
-    entry -- assumed shown by the lobby chat, but the fresh client never saw
-    them.  They now seed the pane until the client is CONNECTED (after which
-    the lobby's own copy makes the ghost's a duplicate)."""
-    from types import SimpleNamespace
-    from tuipet.app import TuiPetApp
-
-    state = LobbyState()
-    pan = _panel(state)
-    sync = SimpleNamespace(inbox=[("gato", "hey!"), ("gato", "you there?")])
-    stub = SimpleNamespace(_sync=sync, mode=pan, _flash_t=0)
-    TuiPetApp._drain_pms(stub)                    # not connected -> seed + clear
-    assert ("✉gato", "hey!") in state.chat and ("✉gato", "you there?") in state.chat
-    assert sync.inbox == []
-    state.connected = True                        # live: the lobby gets its own copy
-    sync.inbox.append(("gato", "dupe"))
-    TuiPetApp._drain_pms(stub)
-    assert ("✉gato", "dupe") not in state.chat    # dropped as the duplicate
-    assert sync.inbox == []
-
 
 def test_reenter_evicts_stale_session_and_replays_chat(tmp_path):
     """The back-out/re-enter path end-to-end (audit 2026-07-06): the newest
@@ -614,27 +593,8 @@ def test_jogress_resolution_failure_notifies_the_partner(monkeypatch):
         "the failing side must tell the partner so it can't hang"
 
 
-def test_malicious_pm_cannot_crash_the_flash():
-    """Chat-input audit 2026-07-07: a PM's sender name and body are REMOTE
-    strings.  The home ✉ alert renders as Rich MARKUP, so an unbalanced
-    bracket ('[/]', '[red]') used to drop text or raise MarkupError.  They
-    must now render literally."""
-    from types import SimpleNamespace
-    from rich.text import Text
-    from tuipet.app import TuiPetApp
-
-    flashed = []
-    evil_name, evil_text = "[/]evil]", "pwn [red]you[/] [[["
-    sync = SimpleNamespace(inbox=[(evil_name, evil_text)])
-    stub = SimpleNamespace(_sync=sync, mode=None, _flash_t=0,
-                           flash=lambda s: flashed.append(s),
-                           beep=lambda *a, **k: None)
-    TuiPetApp._drain_pms(stub)
-    assert flashed, "the PM never flashed"
-    rendered = Text.from_markup(flashed[0])                 # must not raise
-    assert evil_name in rendered.plain                      # the name survives, literal
-    assert "pwn" in rendered.plain and "you" in rendered.plain
-    assert "[red]" in rendered.plain                        # their fake tag is INERT text
+# (the home-screen PM flash + its markup-safety test left with the
+# cloud-sync cut 2026-07-18; the lobby chat pane renders literally)
 
 
 def test_chat_input_buffer_is_capped():

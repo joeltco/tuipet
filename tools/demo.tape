@@ -12,7 +12,7 @@ Set Padding 12
 Set TypingSpeed 60ms
 
 Hide
-Type "cd ~/projects/tuipet && rm -rf /tmp/tuipet-demo && TUIPET_SAVE_DIR=/tmp/tuipet-demo .venv-dev/bin/python tools/demo_seed.py egg && clear && TUIPET_SAVE_DIR=/tmp/tuipet-demo TUIPET_NO_SYNC=1 .venv-dev/bin/python -m tuipet"
+Type "cd ~/projects/tuipet && rm -rf /tmp/tuipet-demo && TUIPET_SAVE_DIR=/tmp/tuipet-demo .venv-dev/bin/python tools/demo_seed.py egg && clear && TUIPET_SAVE_DIR=/tmp/tuipet-demo .venv-dev/bin/python -m tuipet"
 Enter
 Sleep 5s
 Show
@@ -32,7 +32,7 @@ Sleep 6s
 Type "q"
 Sleep 2s
 Hide
-Type "TUIPET_SAVE_DIR=/tmp/tuipet-demo .venv-dev/bin/python tools/demo_seed.py rookie && clear && TUIPET_SAVE_DIR=/tmp/tuipet-demo TUIPET_NO_SYNC=1 .venv-dev/bin/python -m tuipet"
+Type "TUIPET_SAVE_DIR=/tmp/tuipet-demo .venv-dev/bin/python tools/demo_seed.py rookie && clear && TUIPET_SAVE_DIR=/tmp/tuipet-demo .venv-dev/bin/python -m tuipet"
 Enter
 Sleep 5s
 Show
