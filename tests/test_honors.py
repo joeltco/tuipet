@@ -12,7 +12,7 @@ from tuipet.shopscreen import ShopPanel
 def _panel(bits=500_000):
     p = Pet(num=-1, stage="Rookie", bits=bits)
     pan = ShopPanel(p)
-    pan.tab = pan.tabs.index("Honors")
+    pan.tab = pan._tabs().index("Honors")
     return p, pan
 
 

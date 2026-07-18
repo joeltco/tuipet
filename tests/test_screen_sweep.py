@@ -329,12 +329,14 @@ def test_tournament_bracket_runs_when_eligible():
     pan.text()
 
 
-def test_shop_walks_clean_without_an_egg_tab():
+def test_shop_walks_clean_without_a_digitama_shelf():
     from tuipet.shopscreen import ShopPanel
     p = _pet()
     pan = ShopPanel(p)
-    assert "Eggs" not in pan.tabs               # licence shelf cut 2026-07-17
-    for _ in range(len(pan.tabs)):
+    for _ in range(len(pan._tabs())):
+        # the classic Eggs TAB is back (v0.5.0 bar, polish 2026-07-17) but
+        # it is the DIGIMENTAL shelf -- no bank digitama ever (licence cut)
+        assert not any(e.get("egg_idx") is not None for e in pan._rows())
         _step(pan, "down"); _step(pan, "right")
     pan.text()
 

@@ -102,11 +102,12 @@ def test_crest_egg_maps_to_the_classic_digimental():
 def test_shop_panel_walks_every_tab_and_the_bag():
     p = _pet()
     pan = ShopPanel(p)
-    assert "Honors" in pan.tabs and "Eggs" not in pan.tabs
-    for _ in range(len(pan.tabs)):
+    assert pan._tabs() == ["Food", "Items", "Eggs", "Honors"]
+    for _ in range(len(pan._tabs())):
         assert pan.text().plain
         pan.key("right")
-    pan.key("tab")                       # the bag
+    pan.key("tab")                       # the bag: goods tabs, no Honors
+    assert pan._tabs() == ["Food", "Items", "Eggs"]
     assert pan.text().plain
 
 
@@ -124,11 +125,20 @@ def test_citramon_is_reachable_by_timed_care_now():
 
 # ---- the polish pass (2026-07-17: "lets polish the shop. looks lazy") ----
 
-def test_tabs_open_on_care_not_the_alphabet():
-    """PLAY order: everyday care first, the relics last, Honors closing."""
+def test_the_classic_tab_bar_is_back():
+    """v0.5.0 grammar restored (Joel 2026-07-17 "where are the tabs you had
+    like before?"): a visible bar, active tab bracketed, classic four."""
     pan = ShopPanel(_pet())
-    assert pan.tabs[0] == "Care"
-    assert pan.tabs[-2:] == ["Armor-Spirit", "Honors"]
+    pan.msg_t = 0
+    plain = pan.text().plain
+    assert "[Food] Items  Eggs  Honors" in plain
+    pan.key("right")
+    assert " Food [Items] Eggs  Honors" in pan.text().plain
+    # the Eggs tab is the DIGIMENTAL shelf -- goods, never digitama
+    pan.key("right")
+    rows = pan._rows()
+    assert rows and all(str(e["key"]).startswith("egg_of_") for e in rows)
+    assert not any(e.get("egg_idx") is not None for e in rows)
 
 
 def test_the_shelf_shows_what_you_already_hold():
@@ -136,18 +146,18 @@ def test_the_shelf_shows_what_you_already_hold():
     p.inventory["energy_drink"] = 2
     pan = ShopPanel(p)
     pan.msg_t = 0
+    pan.tab = 1                               # Items: Energy.D leads
     plain = pan.text().plain
     assert "x2" in plain                      # the held marker on the row
-    assert "you hold 2" in plain              # and the dossier note
+    assert "hold x2" in plain                 # and the dossier info row
 
 
-def test_the_note_prices_a_shortfall():
+def test_the_info_prices_a_shortfall():
     p = _pet(bits=100)
     pan = ShopPanel(p)
-    pan.msg_t = 0
-    pan.cursor = 1                            # AlarmClock 300b
-    note = pan._row_note(pan._rows()[1])
-    assert "need 200b more" in note
+    pan.tab = 1                               # Items: AlarmClock 300b at row 1
+    info = pan._info(pan._rows()[1], 26)
+    assert any("short 200b" in line for line in info)
 
 
 def test_buy_feedback_actually_renders_now():
@@ -155,21 +165,21 @@ def test_buy_feedback_actually_renders_now():
     footer for a beat (the eggselect _flash pattern)."""
     p = _pet()
     pan = ShopPanel(p)
-    pan.key("enter")                          # buy the first Care row
+    pan.key("enter")                          # buy the first Food row
     assert "Bought" in pan.text().plain
     pan.msg_t = 0
     assert "Bought" not in pan.text().plain   # the flash expires
 
 
-def test_the_bag_footer_stopped_advertising_categories():
+def test_the_bag_dossier_shows_resale():
     p = _pet()
     p.inventory["energy_drink"] = 1
     pan = ShopPanel(p, start_mode="bag")
     pan.msg_t = 0
+    pan.tab = 1                               # Items tab holds the drink
     plain = pan.text().plain
-    assert "cat" not in plain.splitlines()[-1]
-    assert "R sell" in plain
-    assert "sells 100b" in plain              # resale in the dossier note
+    assert "R sell" in plain.splitlines()[-1]
+    assert "sells 100b" in plain              # resale in the dossier info
 
 
 def test_crest_note_is_the_live_gate():

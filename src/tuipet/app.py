@@ -141,11 +141,11 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("SHOP POLISH: tabs open on Care in play order, the shelf "
-                 "marks what you hold, the note prices any shortfall, buy/"
-                 "sell verdicts flash in the footer (they were silent!), a "
-                 "crest egg names the form that would answer it RIGHT NOW, "
-                 "and sealed Digimental waves tease their unlock.")
+    WHATS_NEW = ("THE CLASSIC SHOP RETURNS: the visible tab bar is back - "
+                 "[Food] Items Eggs Honors - with the icon dossier beside "
+                 "the list. Crest eggs wear their real Digimental icons and "
+                 "name the form that answers RIGHT NOW; the shelf marks "
+                 "what you hold; verdicts flash; sealed waves tease.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and

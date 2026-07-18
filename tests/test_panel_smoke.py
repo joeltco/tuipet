@@ -109,16 +109,16 @@ def test_the_simple_panels_all_draw():
     _walk(FeedPanel(p), ["down", "up"])
 
 
-def test_shop_has_no_egg_tab():
-    """The licence cut (2026-07-17): the shop sells goods only -- walk every
-    tab and prove no digitama shelf survives."""
+def test_shop_has_no_digitama_shelf():
+    """The licence cut (2026-07-17): the shop sells goods only.  The classic
+    Eggs TAB returned with the v0.5.0 bar (polish 2026-07-17), but it is the
+    DIGIMENTAL shelf -- walk every tab and prove no bank digitama survives."""
     from tuipet.shopscreen import ShopPanel
     from tuipet import shop as _shop
     p = _pet()
     pan = ShopPanel(p)
     assert not hasattr(_shop, "EGGS_CATEGORY")
-    assert "Eggs" not in pan.tabs
-    for _ in range(len(pan.tabs)):         # every tab still renders clean
+    for _ in range(len(pan._tabs())):      # every tab still renders clean
         pan.text()
         assert not any(e.get("egg_idx") is not None for e in pan._rows())
         pan.key("right")
