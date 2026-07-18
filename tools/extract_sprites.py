@@ -150,6 +150,46 @@ def extract_eggs():
     print(f"extracted {len(eggs)} real eggs with hatch targets -> {path}")
 
 
+def extract_armor_eggs():
+    """The 11 REAL armor-egg (Digimental) sprites from armorEggs.png -- a
+    200x20 strip, native resolution, cyan-keyed, 11 sprites in EvolItemID
+    order 15..25 (courage..fate).  Order verified by crest-glyph correlation
+    against the labeled Items-sheet icons i:15..i:25 (2026-07-17: courage
+    0.89 / love 0.76 / purity 0.92 / reliability 0.81 / fate 1.00 all on the
+    same-order diagonal).  Index k = EvolItemID (15+k).  No game class reads
+    this sheet (checked the whole jar) -- it's a shipped-but-unused rip, and
+    tuipet's shop Eggs tab now puts it to work."""
+    p = os.path.join(RES, "armorEggs.png")
+    if not os.path.exists(p):
+        return
+    im = np.array(Image.open(p).convert("RGBA"))
+    rgb = im[:, :, :3].astype(int)
+    a = im[:, :, 3]
+    nc = (np.abs(rgb[:, :, 0] - _CYAN[0]) + np.abs(rgb[:, :, 1] - _CYAN[1])
+          + np.abs(rgb[:, :, 2] - _CYAN[2])) > 60
+    mask = (a > 128) & nc
+    cols = mask.any(axis=0)
+    runs, inrun = [], False
+    for x, v in enumerate(cols):
+        if v and not inrun:
+            start, inrun = x, True
+        elif not v and inrun:
+            runs.append((start, x))
+            inrun = False
+    if inrun:
+        runs.append((start, len(cols)))
+    eggs = []
+    for x0, x1 in runs:
+        cell = mask[:, x0:x1]
+        ys = np.where(cell.any(axis=1))[0]
+        cell = cell[ys.min():ys.max() + 1]
+        eggs.append(["".join("1" if v else "0" for v in row) for row in cell])
+    path = os.path.join(OUT, "armor_eggs.json.gz")
+    with gzip.open(path, "wt") as fh:
+        json.dump(eggs, fh)
+    print(f"extracted {len(eggs)} armor eggs (EvolItemID 15..25) -> {path}")
+
+
 def main():
     os.makedirs(OUT, exist_ok=True)
     rows = list(csv.DictReader(open(os.path.join(MODEL, "digimon.csv"))))
@@ -183,6 +223,7 @@ def main():
     print(f"extracted {len(out)} digimon, {nonemptyframes} non-empty frames, skipped {skipped}")
     print(f"wrote {path} ({sz/1024:.0f} KB)")
     extract_eggs()
+    extract_armor_eggs()
     import extract_icons as _ic
     _ic.run()
     # sample frame-occupancy: how many digimon have each frame index non-empty

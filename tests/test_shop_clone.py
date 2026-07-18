@@ -217,3 +217,23 @@ def test_wave_status_counts_and_teases_live():
     assert "generation 1/5" in hint           # closest gate by ratio
     prog = {"armor_evos": 1, "wins": 25, "raids": 2, "max_gen": 5}
     assert shop.wave_status(prog) == (0, "")
+
+
+def test_the_eggs_tab_shows_the_real_armor_egg_full_size():
+    """Joel 2026-07-17: real egg sprites.  The 11 armorEggs.png rips load in
+    EvolItemID order (index = crest id - 15), and the Eggs tab renders the
+    selected one in its own scene -- the 10x8 icon cell blobbed them."""
+    from tuipet import data
+    bank = data.load_armor_eggs()
+    assert len(bank) == 11
+    assert all(any("1" in row for row in egg) for egg in bank)
+    p = _pet()
+    pan = ShopPanel(p)
+    pan.msg_t = 0
+    pan.tab = pan._tabs().index("Eggs")
+    egg = pan._armor_egg("egg_of_courage")
+    assert egg is bank[0]                      # courage = EvolItemID 15
+    assert pan._armor_egg("egg_of_destiny") is bank[10]
+    plain = pan.text().plain
+    assert "Courage Egg 1/" in plain           # the scene note carries the dossier
+    assert len(plain.splitlines()) <= 12       # the 12-line budget holds

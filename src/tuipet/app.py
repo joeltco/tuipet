@@ -141,11 +141,11 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("THE CLASSIC SHOP RETURNS: the visible tab bar is back - "
-                 "[Food] Items Eggs Honors - with the icon dossier beside "
-                 "the list. Crest eggs wear their real Digimental icons and "
-                 "name the form that answers RIGHT NOW; the shelf marks "
-                 "what you hold; verdicts flash; sealed waves tease.")
+    WHATS_NEW = ("REAL ARMOR EGGS: the shop's Eggs tab now shows the true "
+                 "ripped armor-egg sprites FULL-SIZE, crest and all - "
+                 "browse them like the hatchery carousel. The classic "
+                 "[Food] Items Eggs Honors bar stands; dossiers name the "
+                 "form each crest answers RIGHT NOW.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and

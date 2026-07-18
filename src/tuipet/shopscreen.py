@@ -188,18 +188,23 @@ class ShopPanel:
         return self._answers[ck]
 
     def _icon(self, sel):
-        """The icon cell: honors wear the plate; a crest egg shows its REAL
-        ripped DVPet Digimental icon (the _CREST_IDS identity the item flow
-        uses); DSprite consumables have no rips -> the cell stays quiet."""
+        """The icon cell: honors wear the plate; DSprite consumables have no
+        rips -> the cell stays quiet.  (The Eggs tab never comes here: it
+        renders the REAL armor-egg sprite full-size in its own scene --
+        shrinking the 15x17 linework into the 10x8 cell reduced all eleven
+        eggs to one identical blob, tried both thresholds 2026-07-17.)"""
         if sel.get("title_id") is not None:
             return _HONOR_PLATE
-        key = str(sel.get("key", ""))
-        if key.startswith("egg_of_"):
-            iid = self.pet._CREST_IDS.get(key, -1)
-            fr = data.load_icons().get("i:%d" % iid) if iid >= 0 else None
-            if fr:
-                return menu.icon_cell(fr[0])
         return menu.item_icon(sel)
+
+    def _armor_egg(self, key):
+        """The crest egg's REAL ripped sprite (armorEggs.png, indexed by the
+        _CREST_IDS identity the item flow uses), or None."""
+        iid = self.pet._CREST_IDS.get(str(key), -1)
+        bank = data.load_armor_eggs()
+        if 0 <= iid - 15 < len(bank):
+            return bank[iid - 15]
+        return None
 
     def _info(self, sel, tw):
         """The four info rows beside the icon -- the LIVE dossier."""
@@ -242,20 +247,64 @@ class ShopPanel:
             return "ENTER use  R sell  ESC out"
         return "ENTER use  R sell  TAB shop  ESC out"
 
+    def _bar_text(self, tabs):
+        bar = ""
+        for i, t in enumerate(tabs):
+            bar += ("[%s]" % t) if i == (self.tab % len(tabs)) else (" %s " % t)
+        return bar[:menu.W].ljust(menu.W) + "\n"
+
+    def _eggs_text(self, rows):
+        """The Eggs tab: the REAL armor-egg sprite FULL-SIZE in an egg-select
+        style scene (Joel 2026-07-17: real egg sprites -- the 10x8 icon cell
+        blobbed them, so they show whole instead).  ↑↓ browses, the marquee
+        note carries the dossier."""
+        p = self.pet
+        from . import grid
+        from .render import render_scene
+        title = "SHOP" if self.mode == "shop" else "BAG"
+        right = (f"{p.bits}b" if self.mode == "shop"
+                 else f"{sum(p.inventory.values())} items · {p.bits}b")
+        out = menu.bar(title, right)          # 1-line header: the scene needs the row
+        out.append(self._bar_text(self._tabs()), style=INK_B)
+        cols, rows_n = 40, 8
+        if not rows:
+            out.append_text(menu.blanks(rows_n // 2))
+            out.append_text(menu.note("no relics here — earn them out there"
+                                      if self.mode == "shop" else "(none owned)"))
+            out.append_text(menu.blanks(rows_n - rows_n // 2))
+            out.append_text(menu.footer(self._footer()))
+            return out
+        sel = rows[self.cursor]
+        egg = self._armor_egg(sel["key"])
+        placements = []
+        if egg:
+            egg = grid.fit_band(egg, rows_n * 2)
+            w = max(len(r) for r in egg)
+            placements.append((egg, (cols - w) // 2, False))
+        scene = render_scene(placements, cols, rows_n,
+                             menu.scene_ink(None), LCD_BG)
+        out.append_text(scene)
+        out.append("\n")
+        pos = f"{self.cursor + 1}/{len(rows)}"
+        info = self._info(sel, 99)
+        note = " · ".join([f"{sel['name']} {pos}"] + [x for x in info[1:] if x])
+        out.append_text(menu.note(note, tick=self.frame_i))
+        out.append_text(menu.footer(self._footer()))
+        return out
+
     def text(self):
         p = self.pet
         tabs = self._tabs()
         rows = self._rows()
         self.cursor = min(self.cursor, max(0, len(rows) - 1))
+        if tabs[self.tab % len(tabs)] == "Eggs":
+            return self._eggs_text(rows)
         if self.mode == "shop":
             out = menu.header("SHOP", f"{p.bits}b")
         else:
             out = menu.header("BAG", f"{sum(p.inventory.values())} items · {p.bits}b")
         # the classic tab bar: active bracketed, the rest breathing
-        bar = ""
-        for i, t in enumerate(tabs):
-            bar += ("[%s]" % t) if i == (self.tab % len(tabs)) else (" %s " % t)
-        out.append(bar[:menu.W].ljust(menu.W) + "\n", style=INK_B)
+        out.append(self._bar_text(tabs), style=INK_B)
 
         tw = menu.W - menu.IC_W - 2
         if rows:
