@@ -40,3 +40,34 @@ def test_dna_panel_smoke_walk():
     pan.key("enter")                        # open whichever page is under the cursor
     assert pan.text().plain
     pan.key("escape")
+
+
+def test_the_charge_page_honors_the_dna_rulings():
+    """DNA rulings 2026-07-18: (1) the charge cursor never offers the None
+    Field (energy waste + percent dilution + a divergence block -- the UI
+    stops selling self-harm; the FIELD itself stays gate-load-bearing);
+    (2) the page says what charge is FOR (the wild road, not the climb);
+    (3) the bet strip prices every band honestly."""
+    from tuipet import dnascreen
+    from tuipet.pet import Pet
+    p = Pet(num=100, stage="Champion", attribute="Vaccine", bits=5000)
+    p.world_seconds = 600.0
+    pan = dnascreen.DNAPanel(p)
+    assert "None" not in pan.charge_fields
+    pan.phase = "charge"
+    page = pan.text().plain
+    assert "None" not in page
+    assert "Divergence road" in page
+    # walking the cursor can never land on None
+    for _ in range(len(pan.charge_fields) + 2):
+        pan.key("down")
+        f = pan.charge_fields[pan.cursor % len(pan.charge_fields)]
+        assert f != "None"
+    # the bet strip: the dead band names itself
+    pan.phase = "bet"
+    pan.bet = 250
+    assert "NOTHING till 500" in pan.text().plain
+    pan.bet = 99
+    assert "banks 99" in pan.text().plain
+    pan.bet = 2500
+    assert "RESONANT" in pan.text().plain

@@ -38,6 +38,12 @@ class DNAPanel:
     def __init__(self, pet):
         self.pet = pet
         self.fields = list(data.DNA_FIELDS)
+        # the CHARGE cursor never offers "None" (DNA ruling 2026-07-18): it
+        # wasted energy, diluted every real Field's percent, and a None
+        # strict-max BLOCKED divergence -- the UI stops selling self-harm.
+        # (The None FIELD itself stays load-bearing: 387 corpus gates key
+        # on it; stats still shows its share honestly.)
+        self.charge_fields = [f for f in data.DNA_FIELDS if f != "None"]
         self.cursor = 0              # field cursor (charge / stats)
         self.amount = 1             # charge amount
         self.home_i = 0             # home-menu cursor
@@ -120,11 +126,12 @@ class DNAPanel:
         return None
 
     def _key_charge(self, k):
-        p, f = self.pet, self.field
+        p = self.pet
+        f = self.charge_fields[self.cursor % len(self.charge_fields)]
         if k in ("up", "k"):
-            self.cursor = (self.cursor - 1) % len(self.fields)
+            self.cursor = (self.cursor - 1) % len(self.charge_fields)
         elif k in ("down", "j"):
-            self.cursor = (self.cursor + 1) % len(self.fields)
+            self.cursor = (self.cursor + 1) % len(self.charge_fields)
         elif k in ("left", "h"):
             self.amount = max(1, self.amount - 1)
         elif k in ("right", "l"):
@@ -228,14 +235,18 @@ class DNAPanel:
     def _text_charge(self):
         p = self.pet
         out = menu.bar("DNA · CHARGE", "%db  x%d" % (p.bits, self.amount))
-        for i, f in enumerate(self.fields):
+        # the honest line (DNA ruling 2026-07-18): charge is the WILD-ROAD
+        # tool -- the ordinary line climb never reads it
+        out.append_text(menu.note("arms the Divergence road — the line climb ignores it"))
+        cur = self.cursor % len(self.charge_fields)
+        for i, f in enumerate(self.charge_fields):
             own = p.dna_owned.get(f, 0)
             chg = p.dna_applied.get(f, 0)
             pct = p.dna_percent(f)
             tag = "*" if f == p.field else " "           # * = your own Field (cheaper)
             road = "▸" if f in self._roads else " "      # ▸ = a wild road exists (Divergence page)
             label = "%s%-14s%s%3db %3dc %3d%%" % (tag, data.pretty_field(f)[:14], road, own, chg, pct)
-            out.append_text(menu.row(label, i == self.cursor))
+            out.append_text(menu.row(label, i == cur))
         out.append_text(menu.footer("↑↓fld ←→amt ENTER chg  ESC back"))
         return out
 
@@ -290,14 +301,17 @@ class DNAPanel:
         out.append_text(menu.note("Wager bits, then mash for DNA."))
         out.append_text(menu.blanks(1))
         out.append_text(menu.row("wager: %4d b" % self.bet, True))
-        # the lab tiers (high-stakes wagers, 2026-07-14): the premium past the
-        # 99-DNA bank buys lab work, spent up front like the wager itself
+        # the LIVE tier readout (DNA ruling 2026-07-18): every amount says
+        # what it actually buys -- the 100-499 band used to pay extra for
+        # nothing, silently
         if self.bet >= DNA_RESONANT_BET:
-            tier = "RESONANT: +%d to both neighbors" % (self.bet // 5)
+            tier = "RESONANT: banks 99 +%d splash" % (self.bet // 5)
         elif self.bet >= DNA_STABILIZER_BET:
-            tier = "STABILIZED: a spoiled mash still banks"
+            tier = "STABILIZED: banks 99, never None"
+        elif self.bet > MAX_DNA_INVENTORY:
+            tier = "extra past 99 buys NOTHING till 500"
         else:
-            tier = ""
+            tier = "banks %d" % self.bet
         out.append_text(menu.row(tier[:38], False))
         out.append_text(menu.blanks(1))
         out.append_text(menu.row("faster mash → rarer field", False))
