@@ -3,6 +3,16 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.5.85 — SCENES, PROPERLY NAMED (2026-07-19)
+
+* **Recoloured backdrops share a family name.** The scene picker carried
+  three undersea floors where only some said so ("Cove" was the sandy
+  shallows), and the valley-of-trees composition in green, gold and teal
+  under three unrelated names. Now: Sandy/Blue/Deep Seafloor (ranked by
+  measured brightness), Green/Golden/Teal Hollow, and the movie bridge
+  twins are Bay Bridge and Bay Bridge Night. Display names only — your
+  saved scene picks are untouched.
+
 ## 0.5.84 — UPDATES THAT SPEAK UP (2026-07-19)
 
 * **The update result always finds you.** Installing takes seconds; if

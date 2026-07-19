@@ -18,22 +18,29 @@ flavor overrides are marked inline.
 DEFAULT = "greenhills"          # the DM20 background rip; also the fallback
 
 # key -> display name (the clone catalog + the off-catalog data scenes)
+# DISPLAY names only -- the KEYS are wired (EGG_BG, pet.bg_pick in saves)
+# and never change.  THE FAMILY LAW (scene-name audit, Joel 2026-07-19:
+# "sloppy scene names... 3 sea floor scenes, one named different; golden
+# wood has a green alternative named different"): recolours of one
+# composition share a family word -- the V-valley trio are Hollows
+# (green/golden/teal), the undersea trio are Seafloors (sandy/blue/deep,
+# by measured brightness), the movie bridge twins are both Bay Bridge.
 NAMES = {
     "greenhills":   "Green Hills",
     "desert":       "Desert",
     "lakeside":     "Lakeside",
     "mountains":    "Mountains",
-    "cove":         "Cove",
-    "forestgate":   "Forest Gate",
+    "cove":         "Sandy Seafloor",
+    "forestgate":   "Green Hollow",
     "flowerfield":  "Flower Field",
     "blossom":      "Blossom Field",
-    "goldenwood":   "Golden Wood",
+    "goldenwood":   "Golden Hollow",
     "tealhollow":   "Teal Hollow",
     "moonmeadow":   "Moonlit Meadow",
-    "underwater":   "Underwater",
+    "underwater":   "Blue Seafloor",
     "volcano":      "Volcano",
     "baybridge":    "Bay Bridge",
-    "bridgenight":  "Bridge Night",
+    "bridgenight":  "Bay Bridge Night",
     "datatunnel":   "Data Tunnel",
     "frozenpeak":   "Frozen Peak",
     "city": "City", "cityday": "White City", "citysunset": "City Sunset",
@@ -41,7 +48,7 @@ NAMES = {
     "factory": "Factory", "factorynight": "Factory Night",
     "fileisland": "Lone Island", "islandsea": "Island Sea",
     "islandnight": "Island Night", "jungle": "Jungle",
-    "seafloor": "Seafloor", "sunsetshore": "Sunset Shore",
+    "seafloor": "Deep Seafloor", "sunsetshore": "Sunset Shore",
     "tourneyBack": "Arena",
 }
 

@@ -66,3 +66,19 @@ def test_the_pet_wears_its_egg_scene_for_life():
     assert fr == data.load_backgrounds()["baybridge"][0]
     p.evolve_to(101) if hasattr(p, "evolve_to") else None
     assert p.background() == fr                      # evolution never moves the home
+
+
+def test_scene_display_names_follow_the_family_law():
+    """Recolours of one composition share a family word (scene-name audit
+    2026-07-19): the V-valley trio are Hollows, the undersea trio are
+    Seafloors, the movie bridge twins are both Bay Bridge.  Display names
+    stay unique; keys never change (saves carry them)."""
+    from tuipet import backgrounds as bgs
+    for k in ("forestgate", "goldenwood", "tealhollow"):
+        assert "Hollow" in bgs.NAMES[k], k
+    for k in ("cove", "underwater", "seafloor"):
+        assert "Seafloor" in bgs.NAMES[k], k
+    for k in ("baybridge", "bridgenight"):
+        assert bgs.NAMES[k].startswith("Bay Bridge"), k
+    names = list(bgs.NAMES.values())
+    assert len(names) == len(set(names))        # no two scenes share a name
