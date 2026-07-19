@@ -47,3 +47,22 @@ def test_hp_growth_clamps_to_the_age_cap():
 # (test_old_saves_grandfather_stage_hp left with the classic battle -- 0.5 BATTLE 2026-07-17)
 
 
+
+
+def test_the_drill_carries_no_dead_remnants_and_the_999_canon_stands():
+    """Drill audit 2026-07-19: the bar's font lives ONLY in strikefx since
+    v0.5.67 (training's copy fed nothing), the energy gate lives only in
+    petbattle -- and the battles>=999 auto-mega is v0.4.12 verbatim, kept."""
+    import inspect
+    from tuipet import training, strikefx
+    src = inspect.getsource(training)
+    assert not hasattr(training, "_FONT_3X5") and hasattr(strikefx, "_FONT_3X5")
+    assert not hasattr(training, "ENERGY_NEED")
+    assert "999" in src                          # the canon veteran rule stays
+    from tuipet.pet import Pet
+    p = Pet(num=100, stage="Champion", attribute="Vaccine", battles=999)
+    p.world_seconds, p.hunger, p.energy, p.strength = 600.0, 3, 20, 2
+    pan = training.TrainingPanel(p)
+    pan.bar = 0                                  # far outside the window
+    pan._lock()
+    assert pan.grade == "mega"                   # the maxed veteran never whiffs

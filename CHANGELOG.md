@@ -3,6 +3,17 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.5.88 — THE DRILL'S TRUE WORTH (2026-07-19)
+
+* **The drill's documentation caught up to its power.** The training
+  module still claimed the saved hit-form "stands ready" for a future
+  battle system — but the battle reads it today: every fight fires with
+  the form your last drill locked. The docs now say so. The mysterious
+  999-battles auto-perfect turned out to be device canon (a maxed
+  veteran never whiffs), verified against the clone source and cited so
+  it's never "fixed." Two dead remnants from the timing bar's move to
+  shared code were swept. No gameplay changes.
+
 ## 0.5.87 — ROOM TO CHOOSE (2026-07-19)
 
 * **The egg carousel breathes.** At rest, neighbouring eggs rendered as

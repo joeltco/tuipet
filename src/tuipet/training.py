@@ -4,9 +4,12 @@ DVPet versus-training left with it).
 
 A marker sweeps 0..24 and SPACE locks it.  The care-widened mega zone is a
 clean strike; the ±5 shoulder is a normal hit; wide is a whiff.  Locking
-also SAVES the hit-type on the pet (`saved_hit_type` — the clone's battle
-fired with today's form; the classic battle doesn't read it yet, so it
-stands ready for a 0.5 battle conversion).  Every attempt counts a training
+also SAVES the hit-type on the pet (`saved_hit_type`) — and the battle
+READS it (battle.py builds every fight with it, and the bout's own bar
+re-locks it): your last locked form is the form your next fight fires
+with.  This doc used to say "the classic battle doesn't read it yet" —
+stale since the 0.5 battle landed (drill audit 2026-07-19).  Every
+attempt counts a training
 toward the LINES TR gates (energy -2); a clean strike sheds a little weight.
 Attribute POWERS no longer grow here (battle wins still grow them — the
 canon setPower +1 lives in record_battle); the clone trains form, not stats.
@@ -33,22 +36,14 @@ BAR_MAX = 24
 IDLE, TURN, ATTACK, CHEER_A, CHEER_B, WEARY = 0, 1, 6, 5, 7, 9
 VERDICT_T = 14
 
-ENERGY_NEED = 2                 # the clone's "Too tired to train" gate
-
 # the 0.5 target wall (Wall_1 standing / Wall_2 crumbled), ported verbatim
 # from the clone's battle_fx rips (v0.4.12; row-string form)
 with open(os.path.join(os.path.dirname(__file__), "data", "train_wall.json")) as _f:
     _WALL = json.load(_f)
 
-# the source minigame's 3x5 font, verbatim -- only the glyphs "HIT!" touches
-# (the source table has NO '!': it falls back to the blank space glyph, so
-# the label reads HIT on real hardware too)
-_FONT_3X5 = {
-    "H": [1, 0, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1, 1, 0, 1],
-    "I": [1, 1, 1, 0, 1, 0, 0, 1, 0, 0, 1, 0, 1, 1, 1],
-    "T": [1, 1, 1, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0],
-    " ": [0] * 15,
-}
+# (the local _FONT_3X5 and ENERGY_NEED left 2026-07-19, drill audit: the
+# font moved to strikefx.timing_bar with the bar in v0.5.67 and this copy
+# fed nothing; the energy gate lives in petbattle.TRAIN_ENERGY_COST.)
 
 
 # (mega_window lives in battlescreen -- the drill and the bout share ONE
@@ -96,6 +91,9 @@ class TrainingPanel:
                     self.auto_close = ("done", self.result)
 
     def _lock(self):
+        # battles >= 999: VERBATIM v0.4.12 (DSprite truth, drill audit
+        # 2026-07-19) -- a maxed battle counter never whiffs.  Not a cheat
+        # shim; do not "fix" it.
         if self.pet.battles >= 999 or self.mega_lo <= self.bar <= self.mega_hi:
             g = "mega"
         elif self.mega_lo - 5 <= self.bar <= self.mega_hi + 5:

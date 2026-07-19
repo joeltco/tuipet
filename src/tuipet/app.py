@@ -150,11 +150,11 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("ROOM TO CHOOSE: the egg carousel breathes now - no "
-                 "more egg slivers mashed against the borders at rest "
-                 "(neighbours still glide through as you browse), and "
-                 "one clean hint line instead of two saying the same "
-                 "thing.")
+    WHATS_NEW = ("THE DRILL'S TRUE WORTH: training's own documentation "
+                 "undersold it - the form you lock in the drill is the "
+                 "form your next battle actually fires with, and now the "
+                 "code says so. Veterans at 999 battles never whiff: "
+                 "that's device canon, now cited.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and
