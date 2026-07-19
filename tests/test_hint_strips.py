@@ -88,7 +88,8 @@ def test_the_remaining_screens_strips_fit_too():
     title = TitlePanel()
     title.frame_i = 999                       # past the power-on hush
     assert "ENTER" in _ok(title.strip(), "title")
-    assert "switch" in _ok(AccountPanel().strip(), "account")
+    assert "field" in _ok(AccountPanel().strip(), "account")   # the grammar
+    #                                    sweep's verb, both surfaces (round 35)
 
 
 def test_the_egg_tease_rides_the_strip_whole():

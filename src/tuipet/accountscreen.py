@@ -1,22 +1,29 @@
-"""The name+password login card (split out of the lobby; modularize 2026-07-17)."""
+"""The name+password login card (split out of the lobby; modularize 2026-07-17).
+(Round 35: the split's stranded boilerplate -- dead imports and the unused
+MAX_PVP_* clamp constants (_clamp_card in lobbybout owns the real bounds) --
+was cut; the cell-width law finally reached the name field.)"""
 from __future__ import annotations
 
-import hashlib
-import random
+from rich.cells import cell_len
+from rich.text import Text
 
-from rich.cells import cell_len, chop_cells, set_cell_size  # noqa: F401
-from rich.text import Text  # noqa: F401
-
-from . import data  # noqa: F401
-from . import jogress  # noqa: F401
-from . import battle  # noqa: F401
-from . import battlescreen  # noqa: F401
-from . import jogressscreen  # noqa: F401
-from . import menu  # noqa: F401
-from . import persistence  # noqa: F401
-from .net import ANNOUNCE, CHAT_CAP  # noqa: F401
-from .render import marquee  # noqa: F401
+from . import menu
 from .theme import INK, INK_B, DIM, SEL  # noqa: F401  (theme.apply propagation)
+
+_NAME_MAX = 24                  # the server's MAX_NAME: what you SEE is what
+#                                 logs in (round 35: the buffer held 64 and
+#                                 the confirm silently trimmed)
+_PW_MAX = 64
+_FIELD_W = 26                   # input cells shown (38 - the 12-col label)
+
+
+def _tail(s, w):
+    """The LAST w CELLS of s -- an emoji/CJK glyph is two cells, and the old
+    character slice let a wide name overrun the 40-col box (the CELL-WIDTH
+    LAW, finally applied here -- round 35)."""
+    while cell_len(s) > w:
+        s = s[1:]
+    return s
 
 
 class AccountPanel:
@@ -25,7 +32,7 @@ class AccountPanel:
     ("done", None) on Esc. Used at first launch and to recover a failed login."""
 
     def __init__(self, name="", note="Name + password — the name is yours."):
-        self.name_buf = name
+        self.name_buf = name[:_NAME_MAX]
         self.pw_buf = ""
         self.field = "pw" if name else "name"
         self.note = note
@@ -33,7 +40,9 @@ class AccountPanel:
         self.captures_text = True       # typing a name/password — never treat q as quit
 
     def strip(self):
-        return menu.hints(("TAB", "switch"), ("ENTER", "go"), ("ESC", "back"))
+        # "field", the grammar sweep's verb -- the lobby's login strip and
+        # this one said different words for the same key (round 35)
+        return menu.hints(("TAB", "field"), ("ENTER", "go"), ("ESC", "back"))
 
     def key(self, k):
         if k == "escape":
@@ -45,9 +54,12 @@ class AccountPanel:
             if self.field == "name":
                 self.field = "pw"
                 return None
-            name = self.name_buf.strip()[:24]
+            name = self.name_buf.strip()
             if name and self.pw_buf:
                 return ("done", (name, self.pw_buf))
+            # a missing field used to fail SILENTLY (round 35)
+            self.note = "Name and password both, please."
+            self.sfx = "error"
             return None
         attr = "name_buf" if self.field == "name" else "pw_buf"
         cur = getattr(self, attr)
@@ -57,29 +69,21 @@ class AccountPanel:
             cur = cur + " "
         elif len(k) == 1 and k.isprintable():
             cur = cur + k
-        setattr(self, attr, cur[:64])
+        setattr(self, attr, cur[:_NAME_MAX if attr == "name_buf" else _PW_MAX])
         return None
 
     def text(self):
         t = Text()
         t.append("  TUIPET ACCOUNT\n\n", style=INK_B)
-        # tail-window long input so a line never overruns the 40-col LCD
-        # (the box CLIPS overflow live -- lobby audit 2026-07-04)
-        nm = (self.name_buf + ("_" if self.field == "name" else ""))[-26:]
-        pw = ("*" * len(self.pw_buf) + ("_" if self.field == "pw" else ""))[-26:]
+        # tail-window long input BY CELLS so a line never overruns the 40-col
+        # LCD (the box CLIPS overflow live -- lobby audit 2026-07-04; the
+        # password renders as 1-cell stars, so its char slice is safe)
+        nm = _tail(self.name_buf + ("_" if self.field == "name" else ""), _FIELD_W)
+        pw = ("*" * len(self.pw_buf) + ("_" if self.field == "pw" else ""))[-_FIELD_W:]
         t.append("  name:     ", style=DIM)
         t.append(nm + "\n", style=INK_B if self.field == "name" else INK)
         t.append("  password: ", style=DIM)
         t.append(pw + "\n\n", style=INK_B if self.field == "pw" else INK)
-        t.append(f"  {self.note[:38]}\n", style=DIM)
-        t.append("  TAB switch   ENTER go   ESC back", style=DIM)
+        # keys ride the strip (round 35: the in-LCD hint line doubled it)
+        t.append(f"  {self.note[:38]}", style=DIM)
         return t
-
-
-# PvP wire bounds (multiplayer audit 2026-07-13): the relay is peer-to-peer,
-# so an opponent card is UNTRUSTED input.  HP ceiling = the oldest trained cap
-# (pet.HEALTH_CAP_LADDER tops out at 30); power ceiling sits above the
-# strongest enemy in the shipped data (virus 650) with headroom for a fully
-# trained Mega.  A peer claiming more is clamped, not kicked.
-MAX_PVP_HP = 30
-MAX_PVP_POWER = 999

@@ -150,10 +150,10 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("GUIDE MANNERS: the digitama book shows nine eggs per "
-                 "page and a roomier story, the status card names every "
-                 "egg like the book always did (no more ??? beside an "
-                 "open list), and its hints follow the page you are on.")
+    WHATS_NEW = ("LOGIN MANNERS: emoji names can no longer tear the "
+                 "login box, the name field stops at the 24 characters "
+                 "that actually log in, and pressing go with a missing "
+                 "field finally says so instead of doing nothing.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and

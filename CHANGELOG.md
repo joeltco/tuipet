@@ -3,6 +3,25 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.5.97 — LOGIN MANNERS (2026-07-19)
+
+* **The cell-width law reaches the login.** The name field tail-
+  windowed by characters, so an emoji or CJK name (two terminal cells
+  per glyph) could run the input line past the box and tear the
+  layout. It windows by cells now, like the chat always has.
+* **What you see is what logs in.** The name buffer accepted 64
+  characters but the confirm silently trimmed to the server's 24. The
+  field stops at 24 live; the password keeps its 64.
+* **A half-filled confirm speaks up.** ENTER with a missing name or
+  password used to do nothing at all — it now says "Name and password
+  both, please." with the error tone.
+* **One hint surface, one vocabulary.** The in-LCD key line doubled
+  the strip and called TAB "switch" while the lobby called it "field"
+  — the line is gone and both strips say "field". Under the hood the
+  split's stranded leftovers went too: dead imports and the unused
+  MAX_PVP_* constants (the real card bounds live in the battle
+  engine's clamp).
+
 ## 0.5.96 — GUIDE MANNERS (2026-07-19)
 
 * **A roomier book.** Both of the guide's in-LCD key footers doubled

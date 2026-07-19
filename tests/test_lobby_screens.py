@@ -412,3 +412,48 @@ def test_a_hostile_peer_card_is_clamped_to_legal_ranges():
     assert c["energy"] <= c["energy_max"] <= 2000
     assert c["battles"] == 0 and c["wins"] == 0
     assert c["hit_type"] == "miss", "an unknown hit-type reads as miss"
+
+
+# ---- round 35 pins (account panel tidy, 2026-07-19) -------------------------
+
+def test_the_name_field_obeys_the_cell_width_law():
+    """An emoji is TWO cells: the old character slice let a wide name run
+    the input line past the 40-col box.  Tail-window by cells now."""
+    from rich.cells import cell_len
+    pan = AccountPanel()
+    for ch in "🔥" * 12:                            # 12 chars, 24 cells
+        pan.key(ch)
+    body = pan.text().plain
+    for line in body.split("\n"):
+        assert cell_len(line) <= 40, f"{cell_len(line)} cells: {line!r}"
+
+
+def test_the_name_caps_live_at_the_servers_24():
+    """What you SEE is what logs in -- the buffer used to hold 64 and the
+    confirm silently trimmed to MAX_NAME."""
+    pan = AccountPanel()
+    for ch in "x" * 40:
+        pan.key(ch)
+    assert len(pan.name_buf) == 24
+    pan.key("tab")
+    for ch in "p" * 80:                             # the password keeps 64
+        pan.key(ch)
+    assert len(pan.pw_buf) == 64
+
+
+def test_a_half_filled_confirm_speaks_up():
+    """ENTER with a missing field used to do NOTHING at all."""
+    pan = AccountPanel(name="joel")                 # field starts on pw, empty
+    assert pan.key("enter") is None
+    assert "both" in pan.note and pan.sfx == "error"
+    for ch in "pw":
+        pan.key(ch)
+    assert pan.key("enter") == ("done", ("joel", "pw"))
+
+
+def test_the_dead_pvp_bounds_are_gone():
+    """MAX_PVP_HP/MAX_PVP_POWER described a clamp design that no longer
+    exists -- _clamp_card in lobbybout owns the real per-field bounds."""
+    from tuipet import accountscreen
+    assert not hasattr(accountscreen, "MAX_PVP_HP")
+    assert not hasattr(accountscreen, "MAX_PVP_POWER")

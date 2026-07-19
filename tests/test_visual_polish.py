@@ -79,7 +79,8 @@ def test_account_panel_speaks_the_hint_language():
     assert "TAB" in strip and "ENTER" in strip and "ESC" in strip
     assert len(strip) <= 40
     body = pan.text().plain
-    assert "TAB switch" in body and "[Tab]" not in body
+    assert "TAB" not in body and "[Tab]" not in body   # keys ride the STRIP
+    #                                                    only (round 35)
 
 
 def test_theme_picker_footer_matches_its_strip():
