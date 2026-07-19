@@ -150,10 +150,10 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("TRUE COLOURS: the theme system passed its naming audit "
-                 "- every palette colour now says what it paints - and "
-                 "your theme choice finally saves on iOS and survives "
-                 "Erase All properly on every platform.")
+    WHATS_NEW = ("NO SILENT GOODBYES: if a damaged save ever has to be "
+                 "set aside, the warning now actually reaches you - it "
+                 "rides the message box after you pick your new egg, "
+                 "naming the kept file so the old pet stays recoverable.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and
@@ -187,6 +187,14 @@ class TuiPetApp(ActionsMixin, App):
                 self._new_game = True
                 if msg:          # a QUARANTINED corrupt save -- never play it
                     self._welcome = msg     # off as a first launch (sweep 07-14)
+                    # ...and never SWALLOW the notice either: the new-game
+                    # path skips the welcome hud (title -> carousel, strips
+                    # own the box every frame), so the message rode nothing
+                    # and the loss looked exactly like a first launch -- the
+                    # thing the 07-14 sweep existed to prevent (title audit
+                    # 2026-07-19).  It joins the first surviving surface:
+                    # the post-pick flash in _after_egg_pick.
+                    self._boot_notice = msg
         self.pet = pet or Pet.new_egg()
         self.mode = None            # active in-display panel (no pop-up screens)
         self._dying_fx = False      # playing the death animation before the memorial

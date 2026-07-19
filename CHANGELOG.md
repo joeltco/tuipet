@@ -3,6 +3,18 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.5.79 — NO SILENT GOODBYES (2026-07-19)
+
+* **The quarantine warning reaches you.** When a damaged save has to be
+  set aside, the game composes a notice naming the kept file — but the
+  new-game flow (title → egg carousel) never showed it: the loss looked
+  exactly like a first launch, the very thing the notice exists to
+  prevent. It now rides the message box right after you pick your new
+  egg, so you know the old pet was kept recoverable on disk.
+* The rest of the title screen passed its audit — the power-on
+  sequence, the mascot draw, the once-per-build news line and the
+  welcome-back messages all verified.
+
 ## 0.5.78 — TRUE COLOURS (2026-07-19)
 
 * **The theme choice saves everywhere.** theme.txt was the one file

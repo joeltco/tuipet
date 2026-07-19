@@ -73,3 +73,35 @@ def test_a_stashable_bug_reports_success():
         assert os.path.exists(os.path.join(d, "pending_bugs.jsonl"))
     finally:
         persistence.SAVE_DIR = old
+
+
+def test_quarantine_notice_survives_the_new_game_flow(tmp_path, monkeypatch):
+    """A quarantined save's warning must actually REACH the player (title
+    audit 2026-07-19): the new-game path skips the welcome hud (title ->
+    carousel, strips own the box every frame), so the notice used to be
+    composed and then swallowed -- the pet loss looked exactly like a
+    first launch, the very thing the 07-14 sweep exists to prevent.  It
+    rides the post-pick flash now."""
+    import asyncio
+    from tuipet import persistence
+    monkeypatch.setattr(persistence, "SAVE_DIR", str(tmp_path))
+    monkeypatch.setattr(persistence, "SAVE_PATH", str(tmp_path / "save.json"))
+    monkeypatch.setattr(persistence, "SETTINGS_PATH", str(tmp_path / "settings.json"))
+    (tmp_path / "save.json").write_text("{corrupt!!")
+    (tmp_path / "save.json.bak").write_text("also corrupt")
+    from tuipet.app import TuiPetApp
+
+    async def go():
+        app = TuiPetApp()
+        assert app._new_game and "kept as" in app._boot_notice
+        async with app.run_test(size=(82, 32)) as pilot:
+            await pilot.pause(0.3)
+            await pilot.press("enter")            # dismiss the title
+            await pilot.pause(0.3)
+            await pilot.press("enter")            # pick the first egg
+            await pilot.pause(0.3)
+            hud = str(app.msg_w.render())
+            return hud
+
+    hud = asyncio.run(go())
+    assert "couldn" in hud or "kept as" in hud, hud

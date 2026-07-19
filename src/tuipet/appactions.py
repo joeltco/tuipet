@@ -64,7 +64,10 @@ class ActionsMixin:
         self._new_game = False                     # the fresh start is settled
         self.pet = Pet.new_egg(egg_type=egg_type)
         self._grant_digimemory(self.pet)
-        self.flash("Take good care of your egg!  (? = help)")
+        note = getattr(self, "_boot_notice", "")   # a quarantined save's warning
+        self._boot_notice = ""                     # rides THIS flash (title audit
+        self.flash((note + "  ·  " if note else "")  # 2026-07-19) -- it marquees
+                   + "Take good care of your egg!  (? = help)")
         self.repaint()
 
     # ---- multiplayer lobby ----------------------------------------------
