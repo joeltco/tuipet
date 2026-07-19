@@ -3,6 +3,19 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.5.76 — STRAIGHT TALK ON DP (2026-07-19)
+
+* **The DP hint tells the truth.** The jogress refusal claimed "protein
+  or a night's sleep" refills the meter — but protein feeds left with the
+  old nutrition system, and players were feeding steaks for DP that never
+  came. Sleep is the one refill (three game-hours fills it), and the hint
+  says exactly that now.
+* **The fusion engine passed its full audit** — the two-block attribute
+  matrix, the both-or-neither online match, the exact-partner and
+  one-sided companion doors, canon's energy bill, and the two-phase
+  consent all verified. (Canon's sick-partner fusion risk remains
+  deliberately unwired, now documented as such.)
+
 ## 0.5.75 — ONE TRUE WEEKEND (2026-07-19)
 
 * **The raid page's weekend note follows the relay's clock.** It borrowed

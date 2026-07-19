@@ -51,3 +51,22 @@ def test_earned_fusion_opens_and_costs_energy():
     cost = -math.ceil(-jogress.JOGRESS_ENERGY_COST * p.max_energy)
     jogress.fuse(p, opts[0]["num"])
     assert p.energy == e0 - cost
+
+
+def test_dp_refusal_names_only_the_refill_that_exists():
+    """The DP hint sent players feeding steaks for DP that never came --
+    sleep is the ONE refill since nutrition left (jogress audit 2026-07-19).
+    The sick-partner catch stays a deliberately dormant canon record."""
+    import inspect
+    from tuipet import jogress
+    from tuipet.pet import Pet, DP_MAX
+    p = Pet(num=100, stage="Champion", attribute="Vaccine")
+    p.world_seconds = 600.0
+    p.dp = DP_MAX - 1
+    msg = jogress.can_jogress(p)
+    assert msg and "sleep" in msg and "protein" not in msg
+    # the one DP grant in the codebase is the sleep tick
+    from tuipet import petbody, petcare, shop
+    assert "dp += 1" in inspect.getsource(petbody)
+    for mod in (petcare, shop):
+        assert "dp +=" not in inspect.getsource(mod)

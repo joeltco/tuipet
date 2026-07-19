@@ -11,7 +11,11 @@ from . import evolution
 JOGRESS_ENERGY_COST = 0.66     # JogressEnergyChange -0.66: a fusion drinks 66% of max energy
 JOGRESS_SICK_CHANCE = 90       # startJogress checkSick(90): fusing with a SICK partner is a
 #                                near-certain catch (a hardcoded canon literal, not config;
-#                                jogress audit 2026-07-06)
+#                                jogress audit 2026-07-06).  ⚠ DELIBERATELY DORMANT (Joel
+#                                2026-07-19, jogress audit): NEVER consumed in any version --
+#                                the canon record stays, the risk stays unwired.  Wiring it
+#                                would need the partner's sick flag on the jogress payload
+#                                (a relay protocol addition) -- Joel names that, or nobody.
 
 # attributeJogress.csv as (result, digimon, partner) attribute triples. BOTH matrix blocks
 # are included (DVPet Affinity.readAttributeInfo reads all rows), so None/Free-attribute
@@ -123,11 +127,14 @@ def can_jogress(pet):
         # REMOTE path never reaches here -- _session_gate short-circuits
         # asleep before this gate, so strangers still can't wake the pet.
         return pet._disturbed()
-    # Pen20 (LINES_SPEC §6): a jogress takes FULL DP -- earned with protein
-    # feeds (+1 each) or a night's sleep (3 game-hours refills the meter)
+    # Pen20 (LINES_SPEC §6): a jogress takes FULL DP.  SLEEP is the one
+    # refill (+1 per 45 game-min; 3 game-hours = the full meter) -- the
+    # protein-feed grant this comment used to cite left with the nutrition
+    # system (BASIC VPET 2026-07-16), and the old message sent players
+    # feeding steaks for DP that never came (jogress audit 2026-07-19)
     from .pet import DP_MAX
     if getattr(pet, "dp", 0) < DP_MAX:
-        return f"DP {getattr(pet, 'dp', 0)}/{DP_MAX} — protein or a night's sleep."
+        return f"DP {getattr(pet, 'dp', 0)}/{DP_MAX} — a night's sleep refills it."
     # canJogress -> checkRefused(energyChange=-0.66): a non-compliant pet may balk,
     # and one that can't afford the fusion's energy auto-refuses
     refused = pet.check_refused(energy_change=-JOGRESS_ENERGY_COST)
