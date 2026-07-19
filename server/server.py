@@ -198,15 +198,31 @@ async def _queue_pm(key, from_name, text):
 
 
 async def _flush_pending(client, key):
-    q = PENDING.pop(key, None)
+    """Deliver-then-delete (server audit 2026-07-18): the old pop-then-send
+    ran the sends through _send's swallow-everything, so a socket dying
+    mid-flush persisted an EMPTIED queue -- store-and-forward lost mail
+    exactly when connections were worst.  Now each PM leaves the queue only
+    after its send really completed; a dead socket keeps the rest queued."""
+    q = PENDING.get(key)
     if not q:
         return
-    for rec in q:
-        await _send(client, {"t": "pm", "from_id": 0,
-                             "from_name": rec.get("from_name", "?"),
-                             "text": rec.get("text", "")})
+    sent = 0
+    for rec in list(q):
+        try:
+            await client.ws.send(json.dumps(
+                {"t": "pm", "from_id": 0,
+                 "from_name": rec.get("from_name", "?"),
+                 "text": rec.get("text", "")}))
+        except Exception:
+            break                          # died mid-flush: the rest waits
+        sent += 1
+    if not sent:
+        return
+    del q[:sent]
+    if not q:
+        PENDING.pop(key, None)
     await _save_pending()
-    LOG.info("flushed %d queued pm(s) to %s", len(q), client.name)
+    LOG.info("flushed %d queued pm(s) to %s", sent, client.name)
 
 
 _STAGES = {"Egg", "Fresh", "InTraining", "Rookie", "Champion", "Ultimate", "Mega"}
@@ -391,8 +407,12 @@ def _ladder_credit(winner, loser, now=None):
     if _ladder_pair_hour.get(pair, 0) >= LADDER_PAIR_CAP:
         return False
     _ladder_pair_hour[pair] = _ladder_pair_hour.get(pair, 0) + 1
-    if len(_ladder_pair_hour) > 2048:            # old hours never come back
-        _ladder_pair_hour.clear()
+    if len(_ladder_pair_hour) > 2048:
+        # shed STALE hours only -- .clear() also wiped the CURRENT hour's
+        # counts, re-opening the pair cap mid-hour (server audit 2026-07-18)
+        hour = time.strftime("%Y-%m-%dT%H", time.gmtime(now))
+        for k in [k for k in _ladder_pair_hour if k[2] != hour]:
+            del _ladder_pair_hour[k]
     season = LADDER["seasons"].setdefault(_season_key(now), {})
     season[winner] = season.get(winner, 0) + 1
     _save_ladder()
@@ -445,10 +465,17 @@ def _ladder_view(name, now=None):
 
 
 def _ladder_claim(name, season):
+    """Mark the award claimed and RETURN the server-confirmed reward, the
+    raid_claim pattern (server audit 2026-07-18: the old fire-and-forget
+    left the client self-paying off the view, so a lost claim or a second
+    device could re-collect)."""
     a = _ladder_award(name)
-    if a and a["season"] == season:
-        LADDER["claimed"].setdefault(season, []).append(name)
-        _save_ladder()
+    if not a or a["season"] != season:
+        return {"t": "ladder_reward", "ok": False}
+    LADDER["claimed"].setdefault(season, []).append(name)
+    _save_ladder()
+    return {"t": "ladder_reward", "ok": True, "season": a["season"],
+            "rank": a["rank"], "wins": a["wins"], "bits": a["bits"]}
 
 
 async def _send(client, obj):
@@ -1023,7 +1050,9 @@ async def handler(ws):
                 await _send(client, _ladder_view(client.name))
 
             elif t == "ladder_claim":
-                _ladder_claim(client.name, str(m.get("season") or ""))
+                # ack + refreshed view, like raid_claim (the award row clears)
+                await _send(client, _ladder_claim(client.name, str(m.get("season") or "")))
+                await _send(client, _ladder_view(client.name))
 
             elif t == "raid_get":
                 await _send(client, _raid_view(client.name))

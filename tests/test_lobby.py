@@ -786,3 +786,34 @@ def test_login_strip_says_out_not_back():
     pan = lobbyscreen.LobbyPanel(p, lambda name, pw, card: None)
     assert pan.phase == "login"
     assert "out" in pan.strip() and "back" not in pan.strip()
+
+
+def test_pm_flush_keeps_undelivered_mail(tmp_path, monkeypatch):
+    """Deliver-then-delete (server audit 2026-07-18): a socket dying
+    mid-flush keeps the unsent PMs queued instead of persisting the loss."""
+    import asyncio
+    import sys as _s
+    _s.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "server"))
+    import server as srv
+    monkeypatch.setattr(srv, "PENDING_PATH", str(tmp_path / "pending.json"))
+    srv.PENDING.clear()
+    srv.PENDING["kai"] = [{"from_name": "joel", "text": f"m{i}", "ts": ""}
+                         for i in range(5)]
+
+    class _WS:
+        def __init__(self, fail_after):
+            self.sent, self.fail_after = 0, fail_after
+        async def send(self, raw):
+            if self.sent >= self.fail_after:
+                raise RuntimeError("socket died")
+            self.sent += 1
+
+    class _Cl:
+        name = "kai"
+        def __init__(self, ws):
+            self.ws = ws
+
+    asyncio.run(srv._flush_pending(_Cl(_WS(2)), "kai"))     # dies after 2 sends
+    assert [r["text"] for r in srv.PENDING["kai"]] == ["m2", "m3", "m4"]
+    asyncio.run(srv._flush_pending(_Cl(_WS(99)), "kai"))    # healthy retry drains
+    assert "kai" not in srv.PENDING

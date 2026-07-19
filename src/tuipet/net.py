@@ -225,6 +225,7 @@ class LobbyClient(_WsClient):
         self.ladder = None                    # last ladder message (rankings page)
         self.raid = None                      # last raid status message (the raid page)
         self.raid_reward = None               # a claimed reward, consumed once
+        self.ladder_reward = None             # the season award ack, consumed once
         self.last_hit = None                  # the gate's raid_hit ack (authoritative dealt)
 
     # ---- outgoing (called from the UI thread/loop) -----------------------
@@ -373,6 +374,8 @@ class LobbyClient(_WsClient):
             self.last_hit = m
         elif t == "raid_reward":
             self.raid_reward = m          # the claim flow consumes this once
+        elif t == "ladder_reward":
+            self.ladder_reward = m        # the season-award flow consumes this once
         elif t in ("invite", "invite_resp", "relay"):
             s.inbox.append(m)
         elif t == "login_failed":

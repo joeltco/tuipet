@@ -3,6 +3,17 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.5.66 — A STURDIER RELAY (2026-07-18)
+
+* **Offline messages survive bad connections.** The relay now deletes a
+  queued message only after it truly delivered — a connection dying
+  mid-login keeps the rest of your mail queued for next time.
+* **Ladder payouts are server-confirmed.** The season award now follows
+  the raid-reward contract: the server acks the claim and the bits land
+  on the ack — a lost message or a second device can't double-collect.
+* Relay housekeeping: the anti-farm pair cap can no longer reset
+  mid-hour, and the server box shed a month of loose backups.
+
 ## 0.5.65 — LOBBY POLISH (2026-07-18)
 
 * **DM threads scroll.** "Thread saved" was true, but everything above

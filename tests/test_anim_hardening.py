@@ -224,6 +224,34 @@ def test_ladder_view_and_past_season_award():
     assert 0 <= v["days_left"] <= 30
 
 
+def test_ladder_claim_acks_like_raid_claim():
+    """The server confirms the payout (audit 2026-07-18): a valid claim
+    returns the reward, a duplicate or wrong season returns ok=False."""
+    srv = _srv()
+    srv.LADDER["seasons"]["2026-06"] = {"joel": 9, "wyld": 7, "third": 5}
+    r = srv._ladder_claim("joel", "2026-06")
+    assert r == {"t": "ladder_reward", "ok": True, "season": "2026-06",
+                 "rank": 1, "wins": 9, "bits": 25000}
+    assert srv._ladder_claim("joel", "2026-06")["ok"] is False   # already claimed
+    assert srv._ladder_claim("wyld", "1999-01")["ok"] is False   # wrong season
+
+
+def test_pair_cap_survives_the_overflow_shed():
+    """The 2048-entry shed drops STALE hours only — .clear() used to wipe
+    the current hour's counts too, re-opening the farm cap mid-hour."""
+    import time as _t
+    srv = _srv()
+    now = _t.time()
+    hour = _t.strftime("%Y-%m-%dT%H", _t.gmtime(now))
+    srv._ladder_pair_hour[("alice", "bob", hour)] = srv.LADDER_PAIR_CAP
+    for i in range(2050):                        # stale rows force the shed
+        srv._ladder_pair_hour[(f"x{i}", "y", "2020-01-01T00")] = 1
+    assert srv._ladder_credit("carol", "dan", now) is True   # triggers the shed
+    assert ("alice", "bob", hour) in srv._ladder_pair_hour   # current hour kept
+    assert len(srv._ladder_pair_hour) < 100                  # stale rows gone
+    assert srv._ladder_credit("alice", "bob", now) is False  # cap still lidded
+
+
 def test_ladder_award_grants_bits_exactly_once():
     from tuipet.lobbyscreen import LobbyPanel
 
@@ -243,9 +271,17 @@ def test_ladder_award_grants_bits_exactly_once():
     pan.state = None
     pan.sfx = pan.status = None
     pan.anim()
-    assert pet.bits == 10100 and _C.claims == ["2026-06"]
+    # the claim went out but the payout WAITS for the server's ack
+    # (server audit 2026-07-18: raid_claim pattern)
+    assert pet.bits == 100 and _C.claims == ["2026-06"]
+    pan.client.ladder_reward = {"t": "ladder_reward", "ok": True,
+                                "season": "2026-06", "rank": 2, "wins": 7,
+                                "bits": 10000}
+    pan.anim()                                             # the ack pays
+    assert pet.bits == 10100
     assert "rank 2" in pan.status
-    pan.anim()                                             # the ledger stops a re-grant
+    assert pan.client.ladder_reward is None                # consumed once
+    pan.anim()                                             # no re-grant, no re-claim
     assert pet.bits == 10100 and _C.claims == ["2026-06"]
 
 

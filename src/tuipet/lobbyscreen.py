@@ -199,14 +199,21 @@ class LobbyPanel(BoutMixin, ChatMixin):
         if lad and lad.get("award"):
             a = lad["award"]
             if not persistence.ladder_award_claimed(a.get("season", "")):
+                # ask the server; the payout waits for its ladder_reward ack
+                # (server audit 2026-07-18: self-paying off the view let a
+                # lost claim / second device re-collect -- raid_claim pattern)
                 persistence.note_ladder_award(a["season"])
-                self.pet.bits = min(self.pet.bits + int(a.get("bits") or 0), 99999999)
                 claim = getattr(self.client, "ladder_claim", None)
                 if claim:
                     claim(a["season"])
+        rew = getattr(self.client, "ladder_reward", None) if self.client else None
+        if rew is not None:
+            self.client.ladder_reward = None           # consumed once
+            if rew.get("ok"):
+                self.pet.bits = min(self.pet.bits + int(rew.get("bits") or 0), 99999999)
                 self.sfx = "champion"
-                self.status = (f"season {a['season']}: rank {a['rank']} — "
-                               f"+{a['bits']}b claimed!")
+                self.status = (f"season {rew.get('season')}: rank {rew.get('rank')} — "
+                               f"+{rew.get('bits')}b claimed!")
         s = self.state
         if not s:
             return
