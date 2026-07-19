@@ -63,3 +63,17 @@ def test_help_lines_fit_the_box():
     body = " ".join(t for t, _ in HELP)
     for token in ("feed", "raid", "cup", "lobby", "DNA", "shop", "bug"):
         assert token in body
+
+
+def test_help_teaches_the_gift_and_the_key_grammar():
+    """Coverage gaps closed (help audit 2026-07-19): the ENTER gift-accept
+    had no bar slot AND no help line — a player watching the gift-call
+    pose had no documented answer; and the 0.5.64 grammar (SPACE=ENTER,
+    page keys) reached the README but not the in-game help.  Every help
+    line also holds the 38-col budget."""
+    joined = "\n".join(t for t, _k in HELP)
+    assert "ENTER accepts a found gift" in joined
+    assert "SPACE works wherever ENTER" in joined
+    assert "PgUp/PgDn" in joined
+    for text, _kind in HELP:
+        assert len(text) <= 38, text

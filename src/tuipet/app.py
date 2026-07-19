@@ -150,11 +150,10 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("THE SHAPE SWEEP: every defect pattern found across 21 "
-                 "audit rounds was hunted codebase-wide. Two more fell - "
-                 "account-switch results can no longer be missed, and "
-                 "your volume setting finally saves on iOS and honors "
-                 "Erase All.")
+    WHATS_NEW = ("HELP THAT HELPS: the in-game help now teaches the two "
+                 "things it never did - ENTER accepts a found gift, and "
+                 "SPACE works wherever ENTER does with PgUp/PgDn leaping "
+                 "long lists. Everything else it says checked out true.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and

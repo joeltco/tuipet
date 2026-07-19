@@ -3,6 +3,18 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.5.83 — HELP THAT HELPS (2026-07-19)
+
+* **Help teaches the gift and the grammar.** The ENTER gift-accept had
+  no action-bar slot and no help line — a player watching their pet's
+  gift-call pose had no documented way to learn the answer. And the
+  app-wide key grammar (SPACE works wherever ENTER does; PgUp/PgDn leap
+  long lists) had reached the README but never the in-game help, where
+  terminal-only players actually look. One line each, both in now.
+* **Everything else the help says checked out true** — every control
+  line and claim verified against the shipped game after 21 releases of
+  change, with zero rot found.
+
 ## 0.5.82 — THE SHAPE SWEEP (2026-07-19)
 
 * **Account-switch results always reach you.** "Signed in as…", "Wrong
