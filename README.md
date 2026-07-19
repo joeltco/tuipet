@@ -104,17 +104,23 @@ Start from an **egg** — real dot-matrix egg designs; it wobbles, cracks, and h
 
 ## Keys
 
+The action bar reads in the in-game Help screen's order — care, then
+explore, then grow, then manage:
+
 | key | screen | key | screen |
 |-----|--------|-----|--------|
-| **f** | feed | **u** | tournament cup |
-| **t** | train | **x** | DNA |
-| **c** | clean | **d** | DigiCore |
+| **f** | feed | **d** | DigiCore |
+| **c** | clean | **n** | digitama guide |
+| **s** | lights | **o** | shop |
+| **v** | AI assistant | **i** | bag |
 | **r** | raid | **e** | scenes |
-| **o** | shop | **l** | online lobby |
-| **i** | bag | **v** | AI assistant |
-| **s** | lights | **g** | options |
-| **b** | bug report | **?** | help |
-| **n** | digitama guide | **q** | quit |
+| **u** | tournament cup | **g** | options |
+| **l** | online lobby | **b** | bug report |
+| **t** | train | **?** | help |
+| **x** | DNA | **q** | quit |
+
+SPACE works wherever ENTER does, and PageUp/PageDown leap through every
+long list.
 
 Battles and jogress live where they belong: **PvE combat happens in raids
 and cups; PvP battles and fusion happen in the lobby** — there is no
@@ -179,12 +185,17 @@ about opens.
 ## Online
 
 Press **l** for the lobby (accounts are free — pick a name and password).
-Live **chat** with backlog, presence, private messages, **PvP battles**
-(host-authoritative, with the full round-replay animation), and two-player
-**jogress fusion**. Your save syncs to the cloud on the same account and
-follows you across devices — last-write-wins with session leases, so a phone
-left running can't clobber your desktop. Offline play is untouched; the
-network is fail-soft everywhere.
+Live **chat** with backlog, presence, private messages (threads keep their
+full scrollable history), **PvP battles** (host-authoritative, with the
+full round-replay animation), and two-player **jogress fusion**. TAB opens
+the **monthly ladder** — online wins race a fresh season each month, and
+past-season podium finishers claim a bits award, confirmed by the server.
+**Password rooms** give you a private scope: everyone who types the same
+phrase lands in the same room, chat and roster included. Your save syncs
+to the cloud on the same account and follows you across devices —
+last-write-wins with session leases, so a phone left running can't clobber
+your desktop. Offline play is untouched; the network is fail-soft
+everywhere.
 
 ## Scenes
 
