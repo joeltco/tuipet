@@ -239,8 +239,10 @@ class LobbyClient(_WsClient):
     def raid_get(self):
         self._send({"t": "raid_get"})
 
-    def raid_hit(self, damage, stage):
-        self._send({"t": "raid_hit", "damage": int(damage), "stage": stage})
+    def raid_hit(self, damage):
+        # (the old `stage` field was DEAD wire weight: the gate binds the
+        # multiplier to the roster card's num -- raid round 2026-07-19)
+        self._send({"t": "raid_hit", "damage": int(damage)})
 
     def raid_claim(self, raid_id):
         self._send({"t": "raid_claim", "raid": raid_id})

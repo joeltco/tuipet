@@ -3,6 +3,23 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.5.91 — RAID GATE MANNERS (2026-07-19)
+
+* **The gate explains itself.** A refused damage report now shows the
+  gate's own reason (the boss fell, or your attempts ran out) instead
+  of always guessing "the boss is gone."
+* **Walking away isn't a whiff.** Backing out at the timing bar — no
+  volley rolled, no attempt spent — says so, instead of the old "Not a
+  scratch" miss line.
+* **Honest board, honest bonus.** Before your first report the stats
+  line shows "you —" rather than a fake rank #0, and the weekend note
+  now names its exact truth: weekend *claims* pay 1.5x (UTC, the
+  server's clock).
+* **Under the hood.** The damage report no longer carries a stage
+  field the gate deliberately ignores (the multiplier binds to your
+  card's species), and the raid loading page keeps its keys on the
+  message strip like every other state of the screen.
+
 ## 0.5.90 — THE REPORTS, PART TWO (2026-07-19)
 
 * **The medicine is a pill now.** You asked "where's the pill? that's a

@@ -189,8 +189,8 @@ class _StubClient:
     def raid_get(self):
         self.calls.append(("get",))
 
-    def raid_hit(self, damage, stage):
-        self.calls.append(("hit", damage, stage))
+    def raid_hit(self, damage):
+        self.calls.append(("hit", damage))
 
     def raid_claim(self, raid_id):
         self.calls.append(("claim", raid_id))
@@ -286,7 +286,7 @@ def test_the_raid_bout_reports_its_dealt_damage():
     pan.key("space")                                        # close -> report
     assert pan.sub is None
     if bout.dealt:
-        assert ("hit", bout.dealt, "Champion") in pan.client.calls
+        assert ("hit", bout.dealt) in pan.client.calls
 
 
 def test_a_raid_bout_writes_nothing_on_the_pet():
@@ -366,7 +366,7 @@ def test_the_panel_reports_honestly_and_stays_live():
                                    "now": 1.0, "board": [], "attempts": 3},
                              raid_reward=None, last_hit=None,
                              raid_get=lambda: calls.append("get"),
-                             raid_hit=lambda d, s: calls.append(("hit", d)))
+                             raid_hit=lambda d: calls.append(("hit", d)))
     pan = RaidPanel.__new__(RaidPanel)
     pan.pet = SimpleNamespace(stage="Mega", bits=0)
     pan.sub = None
@@ -399,7 +399,7 @@ def test_the_panel_reports_honestly_and_stays_live():
     # and the promise matches the payout (the cadence line moved into
     # _context_line with the 12-row layout, raid-menu fix 2026-07-19)
     src = inspect.getsource(RaidPanel._context_line)
-    assert "weekend pays 1.5x" in src and "weekend pays 2x" not in src
+    assert "weekend claims pay 1.5x" in src and "weekend pays 2x" not in src
 
 
 def test_claim_key_takes_both_cases():
@@ -469,4 +469,81 @@ def test_weekend_note_follows_the_servers_clock(monkeypatch):
         pan.client.raid = v
         pan.msg = ""
         line = pan._context_line(v, v["boss"])
-        assert ("weekend pays 1.5x" in line) is expect, (now, line)
+        assert ("weekend claims pay 1.5x" in line) is expect, (now, line)
+
+
+# ---- round 29 pins (raid screen tidy, 2026-07-19) --------------------------
+
+def test_the_refusal_speaks_the_gates_why():
+    """The ack carries `why` (fallen boss OR spent attempts) -- the old
+    hardcoded "boss is gone" guessed wrong on stale-view attempt races."""
+    pan = _panel()
+    pan.client.raid = _view(_mega())
+    pan.client.last_hit = {"t": "raid_hit", "ok": False,
+                           "why": "No attempts left today."}
+    pan.anim()
+    assert pan.msg == "No attempts left today."
+    # and no client-side refetch: the gate re-sends the view with the ack
+    assert ("get",) not in pan.client.calls[1:]
+
+
+def test_the_walk_away_is_not_a_whiff():
+    """ESC before the bell rolls no volley and spends nothing -- the old
+    "Not a scratch" called it a miss."""
+    pan = _panel()
+    pan.client.raid = _view(_mega())
+    pan.key("space")                                    # into the bout
+    r = pan.sub.key("space")                            # skip the intro
+    assert pan.sub.phase == "ready"
+    pan.key("escape")                                   # walk away at the bar
+    assert pan.sub is None
+    assert "scratch" not in pan.msg
+    assert "attempt keeps" in pan.msg
+    assert not any(c[0] == "hit" for c in pan.client.calls)
+
+
+def test_unranked_shows_a_dash_not_rank_zero():
+    pan = _panel()
+    v = _view(_mega())
+    v["you"] = [0, 0]                                   # not on the board yet
+    pan.client.raid = v
+    assert "you —" in pan.text().plain
+    assert "#0" not in pan.text().plain
+    v["you"] = [2, 150000]                              # ranked: the number
+    pan.client.raid = None
+    pan.client.raid = v
+    assert "you #2" in pan.text().plain
+
+
+def test_the_loading_page_keeps_its_keys_on_the_strip():
+    """One layout language per screen family: the loaded page carries keys
+    on the strip only, and now the loading page does too."""
+    pan = _panel()
+    assert "ESC" not in pan.text().plain                # no in-LCD footer
+    assert "ESC" in pan.strip()                         # the strip has them
+
+
+def test_the_weekend_note_names_the_claim():
+    import time as _t
+    pan = _panel()
+    v = _view(_mega())
+    # aim `now` at a UTC Saturday so the server-clock note fires
+    now = 100.0
+    while _t.gmtime(now).tm_wday < 5:
+        now += 86400
+    v["now"] = now
+    v["boss"]["end"] = now + 200000
+    pan.client.raid = v
+    pan.msg = ""                                        # let the cadence line show
+    line = pan._context_line(v, v["boss"])
+    assert "weekend claims pay 1.5x" in line
+
+
+def test_raid_hit_wire_carries_no_stage():
+    """The gate binds the multiplier to the roster card's num; the stage
+    string was dead wire weight."""
+    c = LobbyClient("ws://x/", "joel")
+    sent = []
+    c._send = lambda m: sent.append(m)
+    c.raid_hit(40)
+    assert sent == [{"t": "raid_hit", "damage": 40}]

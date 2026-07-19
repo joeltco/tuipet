@@ -93,10 +93,14 @@ class RaidPanel(menu.SubHost):
                 self.msg = f"Gate credits {dealt:,} damage!"
                 self.sfx = "attackHit"
             else:
-                # the gate REFUSED the report (boss fell/expired mid-bout) --
-                # the old flow left "reported!" standing (raid review 2026-07-18)
-                self.msg = "The gate refused it — the boss is gone. Refetching…"
-                self.client.raid_get()
+                # the gate REFUSED the report -- speak ITS reason (the ack
+                # carries `why`: a fallen boss OR spent attempts; the old
+                # hardcoded "boss is gone" guessed wrong on stale-view
+                # attempt races, raid round 2026-07-19).  No refetch here:
+                # the gate re-sends the view with every hit ack now, like
+                # the claim flow.
+                self.msg = hit.get("why") or "The gate refused the report."
+                self.sfx = "error"
         reward = getattr(self.client, "raid_reward", None)
         if reward is not None:
             self.client.raid_reward = None
@@ -144,9 +148,15 @@ class RaidPanel(menu.SubHost):
                 "attribute": rec.get("attribute", "Free"), "boss": True}
 
     def _report(self, b):
-        dealt = int(getattr(b, "dealt", 0) or 0) if b is not None else 0
+        if b is None:
+            # ESC before the bell: no volley rolled, no report, no attempt
+            # spent -- the old "Not a scratch" called the walk-away a whiff
+            # (raid round 2026-07-19)
+            self.msg = "You back off. The attempt keeps."
+            return
+        dealt = int(getattr(b, "dealt", 0) or 0)
         if dealt > 0 and self.view:
-            self.client.raid_hit(dealt, self.pet.stage)
+            self.client.raid_hit(dealt)
             self._dealt += dealt
             # NEUTRAL until the ack lands: "reported!" used to stand even
             # when the gate rejected it or the socket was down (raid review
@@ -230,7 +240,7 @@ class RaidPanel(menu.SubHost):
             srv_wknd = _time.gmtime(v.get("now", _time.time())).tm_wday >= 5
             alt = (f"weekly boss · {days}d {hrs}h left"
                    + (f" · {fest}" if fest
-                      else " · weekend pays 1.5x" if srv_wknd else ""))
+                      else " · weekend claims pay 1.5x" if srv_wknd else ""))
         if self.msg and (not alt or (self.frame_i // 40) % 2 == 0):
             return self.msg
         return alt or self.msg
@@ -242,10 +252,11 @@ class RaidPanel(menu.SubHost):
         b = self._boss()
         if not v or not b:
             out = menu.header("RAID", "…")
-            out.append_text(menu.blanks(4))
+            out.append_text(menu.blanks(5))
             out.append_text(menu.note(self.msg, tick=self.frame_i))
-            out.append_text(menu.blanks(4))
-            out.append_text(menu.footer("ESC out"))
+            # keys ride the STRIP here like every other state of this
+            # screen -- the in-LCD footer was the family's one stray
+            # (raid round 2026-07-19)
             return out
         num = int(b.get("num", -1))
         # the BOSS looms on the arena, breathing on the walk beat -- the whole
@@ -279,8 +290,9 @@ class RaidPanel(menu.SubHost):
         rank, mine = (list(v.get("you") or (0, 0)) + [0, 0])[:2]
         top = v.get("top") or []
         lead = f"{top[0][0][:10]} {_fmt(top[0][1])}" if top else "—"
+        you = f"you #{rank} {_fmt(mine)}" if rank else "you —"
         out.append(f" attempts {v.get('attempts', 0)}   "
-                   f"you #{rank} {_fmt(mine)}   top {lead}\n", style=DIM)
+                   f"{you}   top {lead}\n", style=DIM)
         # ONE context line closes the 12-row budget (the old stacked
         # cadence + award + note + footer ran the page to 15 rows and the
         # LCD box clipped the tail): priority msg > waiting purse > the
