@@ -150,11 +150,10 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("HELPER MANNERS: the AI assistant card names its whole "
-                 "contract up front - the helper quits if the bits run "
-                 "dry - hiring or dismissing flashes its verdict back "
-                 "home, and the keys live on the message strip like "
-                 "everywhere else.")
+    WHATS_NEW = ("FUSION MANNERS: any key really does skip the jogress "
+                 "converge now, and a one-sided door's lender is asked to "
+                 "LEND, not to fuse - your mon stays itself and the "
+                 "prompt says so.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and

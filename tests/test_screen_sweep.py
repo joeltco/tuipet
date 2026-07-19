@@ -530,3 +530,46 @@ def test_the_update_offers_a_restart(monkeypatch):
     app._restyle = lambda: None
     app._after_options(("restart",))
     assert calls == ["save", "exit"] and app._restart_after_exit is True
+
+
+# ---- round 33 pins (jogress screen tidy, 2026-07-19) ------------------------
+
+def test_any_key_skips_the_converge():
+    """The stated contract ("any key skips") is the real one now -- only
+    ENTER/SPACE/ESC used to land."""
+    from tuipet.jogressscreen import JogressPanel
+    from tuipet.pet import Pet
+    p = Pet(num=100, stage="Champion", attribute="Vaccine")
+    p.world_seconds = 600.0
+    pan = JogressPanel(p, p.num, p.num, p.num)
+    assert pan.phase == "fusing"
+    pan.key("a")                                   # any key
+    assert pan.phase == "fused"
+
+
+def test_the_companion_prompt_says_lend_not_fuse():
+    """A one-sided door's lender stays itself (canon Jesmon X) -- the
+    prompt verb must not promise a fusion."""
+    from tuipet.net import LobbyState
+    from tuipet import lobbyscreen
+    from tuipet.pet import Pet
+
+    class _Stub:
+        def __init__(self, state): self.state = state
+        def respond(self, *a, **k): pass
+        def relay(self, *a, **k): pass
+        def update_pet(self, *a, **k): pass
+
+    s = LobbyState()
+    p = Pet(num=100, stage="Champion", attribute="Vaccine")
+    p.world_seconds = 600.0
+    pan = lobbyscreen.LobbyPanel(p, lambda n, pw, c: _Stub(s), name="joel", pw="x")
+    pan.phase, pan.jphase = "jogress", "result"
+    pan.partner = (2, "mika")
+    pan.j_peer_two_phase = True
+    pan.jresult = {"companion": True, "num": p.num, "name": "(lends its power)"}
+    pan.jshow = None                               # companions skip the scene
+    plain = pan.text().plain
+    assert "[Enter] lend" in plain and "fuse" not in plain
+    pan.jresult = {"num": p.num, "name": "Omegamon"}    # a REAL fusion still fuses
+    assert "[Enter] fuse" in pan.text().plain

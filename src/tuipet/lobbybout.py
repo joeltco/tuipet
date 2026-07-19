@@ -290,12 +290,16 @@ class BoutMixin:
             t.append("\n  ✦ JOGRESS ✦\n\n", style=INK_B)
             t.append(f"  {me} + {other}\n", style=INK)
             t.append(f"   →  {self.jresult['name']}\n\n", style=INK_B)
+            verb = ("lend" if (self.jresult or {}).get("companion")
+                    else "fuse")       # a companion LENDS and stays itself --
+            #                            "fuse" promised a change that never
+            #                            comes (round 33)
             if self.j_confirmed and not self.j_partner_confirmed:
                 t.append("  waiting for the partner…", style=DIM)
             elif self.j_peer_two_phase:
-                t.append("  [Enter] fuse    [Esc] decline", style=DIM)
+                t.append(f"  [Enter] {verb}    [Esc] decline", style=DIM)
             else:
-                t.append("  [Enter] complete the fusion", style=DIM)
+                t.append(f"  [Enter] complete the {verb}", style=DIM)
         elif self.jphase == "failed":
             t.append("\n  NO RESONANCE\n\n", style=INK_B)
             t.append(f"  {self.fail_reason}\n\n", style=INK)

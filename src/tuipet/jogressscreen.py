@@ -17,8 +17,8 @@ from . import menu
 # every phase rides the ONE locked arena over the habitat scenery (audit
 # 2026-07-04 -- the pick strip was a squat 7-row band, the cinematics 9, all
 # on a flat pale LCD while the rest of the game stages its creatures)
-COLS, ROWS = 40, 12
-FUSE_ROWS = 12
+COLS = 40
+FUSE_ROWS = 12     # (the shadowed ROWS twin left -- round 33)
 POSE_T = 6                     # canon pre-fusion beat: both parents flip 1<->5 together
 FUSE_STEPS = 16 + POSE_T
 
@@ -41,8 +41,11 @@ class JogressPanel:
                 self.phase = "fused"
 
     def key(self, k):
-        if self.phase == "fusing" and k in ("enter", "space", "escape"):
-            self.phase = "fused"       # skip the converge to the reveal
+        if self.phase == "fusing" and k:
+            # ANY key skips the converge to the reveal -- the contract both
+            # this docstring and the lobby's forwarder always stated, now
+            # kept (round 33: only ENTER/SPACE/ESC used to land)
+            self.phase = "fused"
         return None
 
     def _palette(self):

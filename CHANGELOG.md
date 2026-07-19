@@ -3,6 +3,16 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.5.95 — FUSION MANNERS (2026-07-19)
+
+* **Any key skips the converge.** The fusion cinematic always claimed
+  any key would skip to the reveal; only ENTER/SPACE/ESC actually did.
+  The stated contract is the real one now.
+* **A lend is called a lend.** When you're the one-sided door's
+  companion (canon: only Jesmon X makes Jesmon GX), your mon lends its
+  data and stays itself — the confirm prompt now reads "[Enter] lend"
+  instead of promising a fusion that never comes.
+
 ## 0.5.94 — HELPER MANNERS (2026-07-19)
 
 * **The contract, in full.** The assistant card now names its quit
