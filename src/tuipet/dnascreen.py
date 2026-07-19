@@ -20,7 +20,7 @@ with it; this docstring lagged until the DNA review 2026-07-18.)
 from __future__ import annotations
 import math
 from . import data, grid, menu, evolution
-from .theme import LCD_ON, LCD_BG, SIL_DAY  # noqa: F401  (palette names bound for theme.apply propagation)
+from .theme import LCD_ON, LCD_BG, SIL_SCENE  # noqa: F401  (palette names bound for theme.apply propagation)
 from .pet import (MAX_DNA_INVENTORY, MAX_DNA_WAGER, DNA_STABILIZER_BET,
                   DNA_RESONANT_BET, dna_field_for_rate)
 

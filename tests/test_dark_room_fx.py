@@ -72,5 +72,5 @@ def test_assist_lights_visit_plays_lit_end_to_end(monkeypatch):
     for step in (2, 10, 19, 24, 27):
         s.fx["step"] = step
         s.paint(p)
-        assert cap["on"] != arena.SIL_NIGHT and cap["bg"] != arena.VOID, \
+        assert cap["on"] != arena.SIL_LIGHTSOFF and cap["bg"] != arena.VOID, \
             f"assist-lights step {step} must play in the lit room"

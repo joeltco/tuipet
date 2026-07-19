@@ -16,7 +16,7 @@ from . import digicore as core
 from . import grid, evolution, lines  # noqa: F401  (the gaze + checklists read them)
 from .render import render_scene
 
-from .theme import LCD_ON, LCD_BG, INK, INK_B, DIM, SIL_DAY, SIL_NIGHT, VOID  # noqa: F401  (theme.apply propagation)
+from .theme import LCD_ON, LCD_BG, INK, INK_B, DIM, SIL_SCENE, SIL_LIGHTSOFF, VOID  # noqa: F401  (theme.apply propagation)
 from . import menu
 
 SCENE_ROWS = 12                    # the core/teaser pages own the WHOLE arena now --
@@ -287,7 +287,7 @@ class DigiCorePanel:
         if self.teaser:
             return self._teaser_scene()
         if self._back_t:                              # evolSilhouetteBack: dark blink
-            return render_scene([], 40, SCENE_ROWS, SIL_NIGHT, VOID, clip=grid.WINDOW)
+            return render_scene([], 40, SCENE_ROWS, SIL_LIGHTSOFF, VOID, clip=grid.WINDOW)
         if self.detail is not None:
             return self._detail_scene()
         if self.i == 0:

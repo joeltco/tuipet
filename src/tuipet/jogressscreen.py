@@ -12,7 +12,7 @@ from . import data
 from .render import render_scene
 from . import grid
 
-from .theme import LCD_ON, LCD_BG, INK, INK_B, DIM, SEL, SIL_DAY  # noqa: F401  (palette names bound for theme.apply propagation)
+from .theme import LCD_ON, LCD_BG, INK, INK_B, DIM, SEL, SIL_SCENE  # noqa: F401  (palette names bound for theme.apply propagation)
 from . import menu
 # every phase rides the ONE locked arena over the habitat scenery (audit
 # 2026-07-04 -- the pick strip was a squat 7-row band, the cinematics 9, all

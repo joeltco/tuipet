@@ -76,7 +76,7 @@ class ThemePanel:
             worn = " ●" if name == self.original else "  "
             out.append(mark + f"{name:<10}", style=SEL if sel else INK)
             sw = "".join(f"[{c}]██[/]" for c in
-                         (t["on"], t["heart"], t["energy"], t["mood"], t["coin"]))
+                         (t["on"], t["heart"], t["energy"], t["care"], t["coin"]))
             out.append_text(Text.from_markup(sw))
             out.append(worn + "\n", style=INK)
         out.append_text(menu.blanks(max(0, 8 - len(self.names))))

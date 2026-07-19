@@ -91,7 +91,7 @@ def test_apply_unknown_theme_falls_back():
 # ---- palette completeness (the 2026-07 theme expansion) ----------------------
 
 _REQUIRED = {"on", "bg", "mid", "accent", "pos", "neg", "border",
-             "sil_day", "sil_night", "heart", "energy", "mood", "life", "coin",
+             "sil_scene", "sil_lightsoff", "heart", "energy", "care", "life", "coin",
              "void", "flash"}
 _HEX = re.compile(r"^#[0-9a-fA-F]{6}$")
 
@@ -150,10 +150,10 @@ def test_gameboy_render_reserves_the_sprite_ink_for_sprites():
     dark = ["000000" * 12] * 8
     try:
         theme.apply("gameboy")
-        t = render_scene([], 12, 4, theme.SIL_DAY, theme.LCD_BG, bgimg=dark)
+        t = render_scene([], 12, 4, theme.SIL_SCENE, theme.LCD_BG, bgimg=dark)
         assert "#0f380f" not in str(t.markup), "background art wore the sprite ink"
         t = render_scene([(["111", "111"], 5, False)], 12, 4,
-                         theme.SIL_DAY, theme.LCD_BG, bgimg=dark)
+                         theme.SIL_SCENE, theme.LCD_BG, bgimg=dark)
         assert "#0f380f" in str(t.markup)             # the sprite itself still inks
     finally:
         theme.apply("grey")
@@ -219,3 +219,28 @@ def test_the_background_quantizer_is_gone():
     for name in ("gameboy", "paper"):
         assert "bg_ramp" not in theme.THEMES[name]
     assert "themed_bg" not in inspect.getsource(render)
+
+
+def test_theme_choice_rides_the_save_dir(tmp_path, monkeypatch):
+    """theme.txt resolves through persistence.SAVE_DIR at call time (naming
+    audit 2026-07-19): the old hardcoded ~/.local path ignored the sandbox
+    and the iOS dir pick, and erase_all swept a file that wasn't it."""
+    from tuipet import persistence, theme
+    monkeypatch.setattr(persistence, "SAVE_DIR", str(tmp_path))
+    theme.save_choice("amber")
+    assert (tmp_path / "theme.txt").read_text() == "amber"
+    assert theme.load_choice() == "amber"
+    removed = persistence.erase_all()
+    assert "theme.txt" in removed          # the erase sweeps the REAL file now
+
+
+def test_every_theme_carries_the_renamed_schema():
+    """The naming audit's renames hold across all themes: care (was mood --
+    it tints the care row), sil_scene / sil_lightsoff (was day/night --
+    the arena clock is gone)."""
+    from tuipet import theme
+    for name, t in theme.THEMES.items():
+        for key in ("care", "sil_scene", "sil_lightsoff",
+                    "heart", "energy", "life", "coin"):
+            assert key in t, (name, key)
+        assert "mood" not in t and "sil_day" not in t, name

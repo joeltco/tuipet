@@ -84,9 +84,11 @@ def _hud_esc(t):
 
 def keys_markup():
     """The action bar, rebuilt per theme: the shortcut letters wear the
-    theme's KEY colour (gameboy = the A/B button magenta; the plain themes
-    keep the old cyan).  Was a module constant with `b cyan` baked in --
-    unreachable by theme.apply (shell polish 2026-07-05).
+    theme's KEY colour -- cyan on EVERY theme today (the per-theme key
+    colours died with the putty-shell revert, Joel 2026-07-05 "this looks
+    bad"; the magenta this docstring used to promise was archaeology --
+    naming audit 2026-07-19).  Was a module constant with `b cyan` baked
+    in, unreachable by theme.apply (shell polish 2026-07-05).
 
     Reading order mirrors the Help screen's sections — CARE, then
     EXPLORE, then GROW, then MANAGE — one layout language across the bar,
@@ -148,11 +150,10 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("THE LABEL WINS: the Steak's 12-hour satiety, the "
-                 "Port. Potty's 24-hour auto-clean and the Grow Capsule's "
-                 "120 minutes were delivering a sixtieth of what they "
-                 "said. The items now do exactly what their labels "
-                 "promise - real hours, real minutes.")
+    WHATS_NEW = ("TRUE COLOURS: the theme system passed its naming audit "
+                 "- every palette colour now says what it paints - and "
+                 "your theme choice finally saves on iOS and survives "
+                 "Erase All properly on every platform.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and

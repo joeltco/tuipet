@@ -1,9 +1,9 @@
 """Night-palette regression (2026-07): the pet is NEVER white over a habitat
-background.  paint()'s audited rule (visual audit v0.2.118) used SIL_DAY day
-OR night, but five pre-audit sites kept a `SIL_NIGHT if night` override --
+background.  paint()'s audited rule (visual audit v0.2.118) used SIL_SCENE day
+OR night, but five pre-audit sites kept a `SIL_LIGHTSOFF if night` override --
 every night-time care fx (clean, the post-training cheer/jeer) and the
 training/battle/tournament/digicore scenes washed the sprite white.
-SIL_NIGHT is reserved for the lights-off dark room (pure-black bg)."""
+SIL_LIGHTSOFF is reserved for the lights-off dark room (pure-black bg)."""
 from rich.console import Console
 
 from tuipet.pet import Pet
@@ -29,8 +29,8 @@ def _ink_colors(text):
 
 
 def _no_white(text, label):
-    assert theme.SIL_NIGHT.lower() not in {c.lower() for c in _ink_colors(text)}, \
-        f"{label}: SIL_NIGHT ink leaked into a lit night scene"
+    assert theme.SIL_LIGHTSOFF.lower() not in {c.lower() for c in _ink_colors(text)}, \
+        f"{label}: SIL_LIGHTSOFF ink leaked into a lit night scene"
 
 
 def _screen():
@@ -77,4 +77,4 @@ def test_lights_off_still_owns_the_white():
     p.asleep = True                                      # the Zzz is the dark room's one glyph
     s = _screen()
     s.paint(p)                                           # dark room: white IS the ink
-    assert theme.SIL_NIGHT.lower() in {c.lower() for c in _ink_colors(s.last)}
+    assert theme.SIL_LIGHTSOFF.lower() in {c.lower() for c in _ink_colors(s.last)}

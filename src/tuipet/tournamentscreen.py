@@ -7,7 +7,7 @@ from .battlescreen import BattlePanel
 from .render import render_scene
 from . import grid
 
-from .theme import LCD_ON, LCD_BG, INK, INK_B, DIM, SIL_DAY, SIL_NIGHT  # noqa: F401  (palette names bound for theme.apply propagation)
+from .theme import LCD_ON, LCD_BG, INK, INK_B, DIM, SIL_SCENE, SIL_LIGHTSOFF  # noqa: F401  (palette names bound for theme.apply propagation)
 from . import menu
 COLS, ROWS = 40, 7
 # the bracket/result scenes only carry ONE info line + note + footer below the bar,

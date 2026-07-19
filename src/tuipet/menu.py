@@ -107,11 +107,11 @@ def blanks(n):
 
 def scene_ink(bgimg):
     """The paint() rule: sprites over a background image render as dark
-    silhouettes (SIL_DAY), plain LCD ink otherwise -- NEVER white over a bg.
+    silhouettes (SIL_SCENE), plain LCD ink otherwise -- NEVER white over a bg.
     This one-line invariant lived in 13 hand-rolled copies across the scene
     screens (refactor 2026-07-05)."""
-    from .theme import SIL_DAY, LCD_ON           # read late: theme.apply retints
-    return SIL_DAY if bgimg else LCD_ON
+    from .theme import SIL_SCENE, LCD_ON           # read late: theme.apply retints
+    return SIL_SCENE if bgimg else LCD_ON
 
 
 def paint(placements, bgimg, rows=12, cols=40, overlay=None, clip=None, overlay_free=None, free_ink=None):

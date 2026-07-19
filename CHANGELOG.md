@@ -3,6 +3,19 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.5.78 — TRUE COLOURS (2026-07-19)
+
+* **The theme choice saves everywhere.** theme.txt was the one file
+  ignoring the save-directory rules — on iOS your theme silently never
+  persisted, and Erase All could miss it. It now lives beside the save
+  like every other pref. (XDG users may see a one-time reset to grey.)
+* **Every palette colour says what it paints.** The "mood" colour (a
+  meter gone since the BASIC strip) is now "care" — it tints the
+  care-mistakes row; the "day/night" silhouettes (the arena clock is
+  long gone) are now the scene silhouette and the lights-off silhouette;
+  and the docs no longer promise a gameboy key colour that was cut, or
+  claim "no green" above the pea-soup DMG palette.
+
 ## 0.5.77 — THE LABEL WINS (2026-07-19)
 
 * **Timed items deliver the hours on the label.** The Steak promised

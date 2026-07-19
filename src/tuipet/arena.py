@@ -21,7 +21,7 @@ from . import anim
 from . import egg as egg_mod
 from . import grid
 from . import theme
-from .theme import LCD_ON, LCD_BG, SIL_DAY, SIL_NIGHT, VOID, FLASH
+from .theme import LCD_ON, LCD_BG, SIL_SCENE, SIL_LIGHTSOFF, VOID, FLASH
 from .pet import Pet, POOP_MAX_PILES
 from .render import render_screen
 
@@ -79,10 +79,10 @@ class Screen(FxMixin, Static):
         on, bg = LCD_ON, LCD_BG
         bgimg = self._background(pet)
         if not pet.lights:                 # lights off (the 's' lights button): dark room (+ Zzz if asleep)
-            bgimg, bg, on = None, VOID, SIL_NIGHT   # DVPet lightsOff.png is pure (0,0,0); VOID keeps it on-palette
+            bgimg, bg, on = None, VOID, SIL_LIGHTSOFF   # DVPet lightsOff.png is pure (0,0,0); VOID keeps it on-palette
         elif bgimg:
-            on = SIL_DAY   # dark silhouette day OR night -- the pet is never white;
-            #                white (SIL_NIGHT) is reserved for the lights-out Zzz below
+            on = SIL_SCENE   # dark silhouette day OR night -- the pet is never white;
+            #                white (SIL_LIGHTSOFF) is reserved for the lights-out Zzz below
         # (the storm gloom, thunder flash and precip overlays left with the
         # weather system; BASIC VPET 2026-07-16)
         wf = self.frame_i // 4                  # effect overlays keep their ~0.4s cadence

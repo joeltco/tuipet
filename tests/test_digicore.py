@@ -357,7 +357,7 @@ def test_egg_gaze_shows_the_egg_and_teases_the_hatchling():
     pan.key("space")
     pan.teaser_t = 0                                   # beat one: the egg itself
     assert pan._pet_rows(-1), "the egg sprite must render (not an empty core)"
-    assert theme.SIL_DAY in str(pan.text().markup), "no sprite ink on the LCD"
+    assert theme.SIL_SCENE in str(pan.text().markup), "no sprite ink on the LCD"
     pan.teaser_t = 20                                  # beat three: the tease
     assert "A shape looms" in pan.strip(), pan.strip()
 

@@ -14,7 +14,7 @@ import json
 import os
 from . import data
 from .battle import Battle
-from .theme import LCD_ON, LCD_BG, SIL_DAY, SIL_NIGHT  # noqa: F401  (palette names bound for theme.apply propagation)
+from .theme import LCD_ON, LCD_BG, SIL_SCENE, SIL_LIGHTSOFF  # noqa: F401  (palette names bound for theme.apply propagation)
 from . import grid
 from . import menu
 from . import strikefx

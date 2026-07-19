@@ -21,7 +21,7 @@ from . import grid
 from . import theme  # noqa: F401  (theme.apply propagation)
 from .pet import POOP_MAX_PILES
 from .render import blit as _blit
-from .theme import LCD_BG, LCD_ON, SIL_DAY, SIL_NIGHT, VOID, FLASH  # noqa: F401
+from .theme import LCD_BG, LCD_ON, SIL_SCENE, SIL_LIGHTSOFF, VOID, FLASH  # noqa: F401
 
 
 SCREEN_COLS, SCREEN_ROWS = 40, 12
@@ -418,8 +418,8 @@ class FxMixin:
         on, bg = LCD_ON, LCD_BG
         bgimg = self._background(pet)
         if bgimg:
-            on = SIL_DAY   # dark silhouette day OR night, same rule as paint() --
-            #                the pet is never white (the old SIL_NIGHT branch washed
+            on = SIL_SCENE   # dark silhouette day OR night, same rule as paint() --
+            #                the pet is never white (the old SIL_LIGHTSOFF branch washed
             #                every night-time care fx white)
         step = fx["step"]
         # an Assistant_Lights visit is the one anim that CAUSES the darkness --
@@ -435,7 +435,7 @@ class FxMixin:
             # no pet, no props, no white poses (bug report 2026-07-13, "mon in
             # white poses during lights out sequence"); the sprite blank-out
             # happens just before update() once the kind painter has run
-            bgimg, bg, on = None, VOID, SIL_NIGHT
+            bgimg, bg, on = None, VOID, SIL_LIGHTSOFF
         c = _FxCtx()
         c.px_h = SCREEN_ROWS * 2
         c.bg, c.bgimg = bg, bgimg

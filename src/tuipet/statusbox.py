@@ -113,7 +113,7 @@ def home_lines(pet):
         # care mistakes decide the evolution road (every line's CM gates)
         # and 20 is lethal.  Stage-scoped: they reset on evolve.
         (f"Care    [{T.POS}]spotless[/]" if pet.care_mistakes == 0 else
-         f"Care    [{T.NEG if pet.care_mistakes >= 10 else T.MOOD}]"
+         f"Care    [{T.NEG if pet.care_mistakes >= 10 else T.CARE}]"
          f"✗{pet.care_mistakes} this stage[/]"),
         f"DP      [{T.ACCENT}]{'◆' * getattr(pet, 'dp', 0)}[/][dim]{'◇' * (4 - getattr(pet, 'dp', 0))}[/]",
         f"Battle  {pet.wins}W/{pet.battles}   [{T.COIN}]★{pet.trophies}[/]",
