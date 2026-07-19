@@ -66,6 +66,10 @@ class HelpPanel:
             self.top = max(0, self.top - 1)
         elif k in ("down", "j"):
             self.top = min(self._max_top(), self.top + 1)
+        elif k == "pageup":                  # page jumps, lobby-chat style
+            self.top = max(0, self.top - (VIS - 1))
+        elif k == "pagedown":
+            self.top = min(self._max_top(), self.top + (VIS - 1))
         elif k in ("escape", "question_mark"):
             # ? (the opening key) also closes; q now falls through to the
             # global save-and-quit like every other screen -- help was the

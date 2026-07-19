@@ -221,6 +221,20 @@ def test_update_row_shows_the_boot_hint():
     assert pan2._value("update").startswith("v")
 
 
+def test_keys_page_page_jumps(monkeypatch):
+    """PageUp/PageDown page the keys list, lobby-chat style (grammar sweep
+    2026-07-18)."""
+    from tuipet.app import TuiPetApp
+    pan, _ = _panel(bindings=TuiPetApp.BINDINGS)
+    _to(pan, "keys")
+    pan.key("enter")
+    sub = pan.sub
+    pan.key("pagedown")
+    assert sub.top == sub.VISIBLE - 1
+    pan.key("pageup")
+    assert sub.top == 0
+
+
 def test_keys_page_lists_every_binding_and_scrolls():
     """The Keys row hosts a scrollable page of the app's REAL binding surface;
     every window position renders inside the 12x40 LCD."""
@@ -248,6 +262,12 @@ def test_new_egg_row_hands_off():
     _to(pan, "new")
     assert pan.key("enter") is None and pan.confirm_new
     assert pan.key("enter") == ("done", ("new",))
+    # SPACE = ENTER on the confirm, like the restart confirm beside it
+    # (grammar sweep 2026-07-18); the typed-YES erase stays enter-only
+    pan2, _ = _panel()
+    _to(pan2, "new")
+    pan2.key("enter")
+    assert pan2.key("space") == ("done", ("new",))
 
 
 def test_erase_demands_a_typed_yes():

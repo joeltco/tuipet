@@ -27,6 +27,21 @@ def test_every_binding_is_on_the_actions_bar():
         assert f"]{shown}[/]" in bar, f"{action} ({shown}) missing from the ACTIONS bar"
 
 
+def test_help_page_jumps_and_clamps():
+    """PageUp/PageDown page the scrollers, lobby-chat style (grammar sweep
+    2026-07-18): VIS-1 rows a jump, clamped both ends."""
+    pan = HelpPanel(_pet())
+    pan.key("pagedown")
+    assert pan.top == VIS - 1
+    pan.key("pageup")
+    assert pan.top == 0
+    for _ in range(200):
+        pan.key("pagedown")
+    assert pan.top == max(0, len(HELP) - VIS)      # clamped at the bottom
+    pan.key("pageup")
+    assert pan.top == max(0, len(HELP) - VIS) - (VIS - 1)
+
+
 def test_help_scrolls_and_clamps_and_exits():
     pan = HelpPanel(_pet())
     assert pan.top == 0

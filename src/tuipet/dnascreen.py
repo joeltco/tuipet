@@ -153,7 +153,7 @@ class DNAPanel:
             self.cursor = (self.cursor - 1) % len(self.fields)
         elif k in ("down", "j"):
             self.cursor = (self.cursor + 1) % len(self.fields)
-        elif k in ("escape", "enter"):
+        elif k in ("escape", "enter", "space"):    # SPACE = ENTER, app grammar
             self.phase = "home"
         return None
 
@@ -164,7 +164,7 @@ class DNAPanel:
             self.road_i = (self.road_i - 1) % n
         elif k in ("down", "j"):
             self.road_i = (self.road_i + 1) % n
-        elif k in ("escape", "enter"):
+        elif k in ("escape", "enter", "space"):    # SPACE = ENTER, app grammar
             self.phase = "home"
         return None
 

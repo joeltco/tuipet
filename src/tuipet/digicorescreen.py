@@ -25,6 +25,7 @@ SCENE_ROWS = 12                    # the core/teaser pages own the WHOLE arena n
 EXPAND_T = 8                       # digicoreExpand: the badge zooms in (canon beats 6-14)
 MON_T = 10                         # the gaze opens ON the current mon before the core turns
 BACK_T = 6                         # evolSilhouetteBack: the dark blink on the way out
+DET_VIS = 8                        # requirement-checklist rows shown at once
 
 # the data model lives in digicore.py (modularized 2026-07-17); the old
 # names stay importable for callers and the test suite
@@ -92,6 +93,10 @@ class DigiCorePanel:
                 self.det_off = max(0, self.det_off - 1)
             elif k in ("down", "j"):
                 self.det_off += 1                      # text() clamps to the list
+            elif k == "pageup":                        # page jumps, lobby-chat style
+                self.det_off = max(0, self.det_off - (DET_VIS - 1))
+            elif k == "pagedown":
+                self.det_off += DET_VIS - 1            # text() clamps to the list
             elif k in ("escape", "enter", "space", "d"):
                 self.detail = None
                 self.det_off = 0
@@ -238,7 +243,7 @@ class DigiCorePanel:
         num, name = self.detail
         report = (lines.requirement_report(self.pet, num) if lines.active(self.pet)
                   else evolution.requirement_report(self.pet, num))
-        vis = 8
+        vis = DET_VIS
         out = menu.header(f"DIGICORE  {name[:16].upper()}", "req")
 
         def fmt(r, i):

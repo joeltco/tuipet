@@ -71,3 +71,13 @@ def test_the_charge_page_honors_the_dna_rulings():
     assert "banks 99" in pan.text().plain
     pan.bet = 2500
     assert "RESONANT" in pan.text().plain
+
+
+def test_stats_and_roads_close_on_space_too():
+    """SPACE = ENTER, the app grammar (sweep 2026-07-18): the stats and
+    roads pages close on any of ESC/ENTER/SPACE."""
+    for phase in ("stats", "roads"):
+        pan = DNAPanel(_pet())
+        pan.phase = phase
+        pan.key("space")
+        assert pan.phase == "home"

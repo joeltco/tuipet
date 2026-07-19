@@ -63,7 +63,9 @@ from .arena import (  # noqa: F401  (full re-export: preserve tuipet.app.* for c
 import re as _re
 # navigation keys: pressing one in a sub-screen plays the scroll blip (unless the
 # screen sets its own sfx) — every list cursor-move beeps, V-Pet style
-_NAV_KEYS = frozenset({"up", "down", "left", "right", "j", "k", "h", "l", "tab"})
+# (page jumps joined the scrollers 2026-07-18; they blip like any cursor move)
+_NAV_KEYS = frozenset({"up", "down", "left", "right", "j", "k", "h", "l", "tab",
+                       "pageup", "pagedown"})
 
 HUD_W = 40              # message-box content width (CSS #msg: 44 - 2 border - 2 padding)
 
@@ -146,10 +148,10 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("NO MORE CUT-OFF HINTS: the egg carousel's unlock tease "
-                 "used to clip mid-word right where it told you what to do "
-                 "- it now scrolls through whole, every hint readable end "
-                 "to end.")
+    WHATS_NEW = ("ONE KEY GRAMMAR: SPACE works wherever ENTER does (the "
+                 "DNA pages and the retire confirm joined in), and "
+                 "PageUp/PageDown now leap through every long list - help, "
+                 "keys, the egg guide and the evolution checklist.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and

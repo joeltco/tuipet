@@ -495,3 +495,17 @@ def test_the_none_dna_field_is_load_bearing():
                 if f == "None" and g[0] != "None")
     assert gates > 300
     assert "None" in data.DNA_FIELDS
+
+
+def test_requirement_checklist_page_jumps():
+    """PageUp/PageDown page the requirement scroll, lobby-chat style
+    (grammar sweep 2026-07-18); pageup clamps at the head."""
+    from tuipet.digicorescreen import DET_VIS
+    pan = DigiCorePanel(_pet())
+    pan.detail = (100, "X")
+    pan.key("pagedown")
+    assert pan.det_off == DET_VIS - 1
+    pan.key("pageup")
+    assert pan.det_off == 0
+    pan.key("pageup")
+    assert pan.det_off == 0                      # clamped at the head

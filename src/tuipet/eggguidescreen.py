@@ -81,6 +81,10 @@ class EggGuidePanel:
             self.i = max(0, self.i - 1)
         elif k in ("down", "j"):
             self.i = min(self.n - 1, self.i + 1)
+        elif k == "pageup":                  # page jumps, lobby-chat style
+            self.i = max(0, self.i - (VIS - 1))
+        elif k == "pagedown":
+            self.i = min(self.n - 1, self.i + (VIS - 1))
         elif k in ("enter", "space"):
             self.detail = True
         elif k in ("escape", "n"):             # n (the opening key) also closes

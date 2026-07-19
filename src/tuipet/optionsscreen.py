@@ -156,6 +156,10 @@ class KeysPanel:
             self.top = max(0, self.top - 1)
         elif k in ("down", "j"):
             self.top = min(last, self.top + 1)
+        elif k == "pageup":                  # page jumps, lobby-chat style
+            self.top = max(0, self.top - (self.VISIBLE - 1))
+        elif k == "pagedown":
+            self.top = min(last, self.top + (self.VISIBLE - 1))
         elif k in ("escape", "enter", "space", "g"):
             return ("done", None)
         return None
@@ -286,8 +290,8 @@ class OptionsPanel(menu.SubHost):
                 self.msg = "later — the update applies on your next launch"
             return None
         if self.confirm_new:
-            if k == "enter":
-                return ("done", ("new",))
+            if k in ("enter", "space"):    # SPACE = ENTER like the restart
+                return ("done", ("new",))  # confirm right above (parity 07-18)
             if k == "escape":
                 self.confirm_new = False
                 self.msg = f"kept {self.pet.name}."

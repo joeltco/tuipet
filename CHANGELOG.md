@@ -3,6 +3,16 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.5.64 — ONE KEY GRAMMAR (2026-07-18)
+
+* **SPACE works wherever ENTER does.** The DNA stats/roads pages and the
+  retire-for-a-new-egg confirm were the last holdouts. (The typed-YES
+  erase stays ENTER-only on purpose, and DigiCore's SPACE keeps its own
+  job — paging.)
+* **PageUp/PageDown leap through every long list** — help, the keys
+  page, the 46-egg guide and the evolution requirement checklist page
+  lobby-chat style, with the standard scroll blip.
+
 ## 0.5.63 — NO MORE CUT-OFF HINTS (2026-07-18)
 
 * **The egg carousel's unlock tease reads whole.** 32 of the 46 unlock

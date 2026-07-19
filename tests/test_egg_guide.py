@@ -24,6 +24,20 @@ def test_guide_lists_every_egg():
     assert pan.n > len(egg.hatchable_eggs(pan.prog, set()))
 
 
+def test_guide_page_jumps_and_clamps():
+    """PageUp/PageDown page the 46-row list, lobby-chat style (grammar
+    sweep 2026-07-18)."""
+    from tuipet.eggguidescreen import VIS
+    pan = EggGuidePanel()
+    pan.key("pagedown")
+    assert pan.i == VIS - 1
+    pan.key("pageup")
+    assert pan.i == 0
+    for _ in range(50):
+        pan.key("pagedown")
+    assert pan.i == pan.n - 1                    # clamped at the last egg
+
+
 def test_fresh_profile_marks():
     pan = EggGuidePanel()
     assert pan._tag(0) == "yours"                        # a starter
