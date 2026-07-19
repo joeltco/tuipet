@@ -15,6 +15,8 @@ class AssistPanel:
     def __init__(self, pet):
         self.pet = pet
         self.msg = "A helper minds the pet, for a fee."
+        self._fresh = False       # a toggle happened THIS visit: its verdict
+        #                           rides home on ESC (round 32)
 
     def strip(self):
         on = getattr(self.pet, "auto_care", False)
@@ -30,8 +32,11 @@ class AssistPanel:
     def key(self, k):
         if k in ("enter", "space"):
             self.msg = self.pet.set_auto_care(not self.pet.auto_care)
+            self._fresh = True
         elif k in ("escape", "v"):
-            return ("done", self.msg)
+            # only a verdict EARNED this visit rides home -- the standing
+            # blurb is not news (round 32; the app flashes what it gets)
+            return ("done", self.msg if self._fresh else None)
         return None
 
     def text(self):
@@ -48,9 +53,14 @@ class AssistPanel:
             out.append(f"  ON — {name} is on duty\n", style=INK_B)
         else:
             out.append("  OFF\n", style=DIM)
+        # the whole contract, quit clause included (round 32: the helper
+        # walks off duty the moment it can't cover the retainer or the
+        # next visit -- the card must say so up front, not just the
+        # after-the-fact quit note)
         out.append("\n  Cleans, feeds a starving or\n"
                    "  drained pet, dims the lights.\n"
-                   "  Each visit costs bits.\n", style=DIM)
+                   "  Each visit costs bits — the\n"
+                   "  helper quits if they run dry.\n", style=DIM)
         out.append_text(menu.note(self.msg))
-        out.append_text(menu.footer("ENTER toggle  ESC out"))
+        # keys ride the strip (round 32: the footer doubled them)
         return out

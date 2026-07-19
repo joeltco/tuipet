@@ -264,7 +264,12 @@ class ActionsMixin:
         self._open_mode(shopscreen.ShopPanel(self.pet, start_mode="bag"), self._after_shop)
 
     def action_assist(self):
-        self._open_mode(assistscreen.AssistPanel(self.pet), lambda _=None: self.repaint())
+        self._open_mode(assistscreen.AssistPanel(self.pet), self._after_assist)
+
+    def _after_assist(self, msg=None):
+        if msg:
+            self.flash(msg)       # the hire/dismiss verdict rides home
+        self.repaint()
 
     def action_eggguide(self):
         # the digitama unlock book -- read-only, safe at any stage

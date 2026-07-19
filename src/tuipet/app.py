@@ -150,11 +150,11 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("SHOP MANNERS: the shelf shows five rows now (the key "
-                 "footer moved to the message strip with the buy verdicts "
-                 "and the wave tease), refusals and empty pockets sound "
-                 "like a no instead of a happy chirp, and leaving "
-                 "mid-verdict carries it home.")
+    WHATS_NEW = ("HELPER MANNERS: the AI assistant card names its whole "
+                 "contract up front - the helper quits if the bits run "
+                 "dry - hiring or dismissing flashes its verdict back "
+                 "home, and the keys live on the message strip like "
+                 "everywhere else.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and

@@ -147,3 +147,40 @@ def test_the_assistant_feeds_a_sick_pet_and_never_bills_a_headshake():
     from tuipet.pet import AUTO_CARE_VISIT_PRICE
     assert b0 - p.bits == AUTO_CARE_VISIT_PRICE[p.stage]   # one honest fee
     assert p.auto_care                       # still on duty
+
+
+# ---- round 32 pins (assist screen tidy, 2026-07-19) -------------------------
+
+def test_assist_keys_ride_the_strip_only():
+    """The in-LCD 'ENTER toggle' footer doubled the strip's keys -- gone,
+    like raid/DM/shop before it (one hint surface per family)."""
+    from tuipet.assistscreen import AssistPanel
+    p = _pet(bits=1000)
+    pan = AssistPanel(p)
+    t = pan.text().plain
+    assert "ENTER" not in t                        # no key footer in the LCD
+    assert "hire helper" in pan.strip()
+    assert len(t.rstrip("\n").split("\n")) <= 12
+
+
+def test_the_contract_names_its_quit_clause():
+    """Full disclosure (the feed-card precedent): the helper walks off duty
+    when the bits run dry -- the card says so BEFORE you hire, not only
+    via the after-the-fact quit note."""
+    from tuipet.assistscreen import AssistPanel
+    t = AssistPanel(_pet(bits=1000)).text().plain
+    assert "quits if they run dry" in t
+
+
+def test_only_an_earned_verdict_rides_home():
+    """ESC used to return the standing blurb every time (and the app
+    discarded it -- dead on both ends).  A toggle's verdict now rides
+    home; a look-and-leave returns None."""
+    from tuipet.assistscreen import AssistPanel
+    p = _pet(bits=1000)
+    pan = AssistPanel(p)
+    assert pan.key("escape") == ("done", None)     # looked, left: no noise
+    pan2 = AssistPanel(p)
+    pan2.key("enter")                              # hired
+    done, msg = pan2.key("escape")
+    assert done == "done" and "on duty" in msg

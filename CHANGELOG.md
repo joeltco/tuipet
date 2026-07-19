@@ -3,6 +3,20 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.5.94 — HELPER MANNERS (2026-07-19)
+
+* **The contract, in full.** The assistant card now names its quit
+  clause up front — the helper walks off duty the moment it can't
+  cover the retainer or the next visit. You used to learn that only
+  from the after-the-fact quit note.
+* **The verdict rides home.** Hire or dismiss the helper and leave —
+  "… is on duty." / "The assistant was dismissed." flashes on the home
+  screen. (The old exit payload was discarded by the app, and would
+  have been the standing blurb anyway.) Just looking and leaving stays
+  silent.
+* **One hint surface.** The in-LCD "ENTER toggle" footer duplicated
+  the strip's keys; gone, like raid, DM and shop before it.
+
 ## 0.5.93 — SHOP MANNERS (2026-07-19)
 
 * **A taller shelf.** The in-LCD key footer duplicated the message
