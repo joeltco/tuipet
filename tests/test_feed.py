@@ -13,7 +13,7 @@ def _pet(**kw):
 
 
 def test_the_menu_is_meat_or_pill():
-    assert [k for k, _, _ in ROWS_MENU] == ["meat", "pill"]
+    assert [k for k, _ in ROWS_MENU] == ["meat", "pill"]
 
 
 def test_meat_fills_a_heart_and_weighs():
@@ -134,3 +134,30 @@ def test_the_source_refusal_gates_hold():
     p = _pet(sick=True)
     assert "sick" in p.can_train().lower()
     assert "sick" in p.can_battle().lower()
+
+
+def test_the_feed_card_discloses_weight_on_both_rows():
+    """Full disclosure both rows (feed audit 2026-07-19): the meat row used
+    to hide its weight +1 while the pill admitted its +5."""
+    from tuipet.feedscreen import FeedPanel
+    from tuipet import statusbox
+
+    class _App:
+        pass
+
+    lines = {}
+    app = _App()
+    app.pet = _pet()
+    app.mode = FeedPanel(app.pet)
+
+    class _W:
+        border_subtitle = ""
+        def update(self, text):
+            lines["txt"] = text
+    app.stats_w = _W()
+    app.mode.cursor = 0
+    statusbox.feed(app)
+    assert "weight +1" in lines["txt"]
+    app.mode.cursor = 1
+    statusbox.feed(app)
+    assert "weight +5" in lines["txt"]

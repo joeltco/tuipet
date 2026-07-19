@@ -2,7 +2,7 @@
 from the v0.4.x rebuild).
 
 The classic two-item feed: MEAT fills a hunger heart (+1 weight, refused at a
-full belly); the PILL cures an active sickness/injury spell, restores a
+full belly); the PILL cures an active sickness spell, restores a
 strength heart, +7 energy, +5 weight.  Both are free and infinite — the
 richer consumables (fruits, premium meat, junk food) live in the BAG as
 shop items.  The whole DVPet food catalog left with the item system.
@@ -55,8 +55,9 @@ CURSOR = ["1000",
 ICON_X = 15
 CURSOR_X = grid.X0
 
-ROWS_MENU = [("meat", "Meat", "hunger +1 · weight +1"),
-             ("pill", "Pill", "cures · effort +1 · energy +7")]
+# (the third, description field was dead data -- displayed nowhere; the
+# status card carries the real disclosure.  Trimmed, feed audit 2026-07-19.)
+ROWS_MENU = [("meat", "Meat"), ("pill", "Pill")]
 
 
 class FeedPanel:
@@ -75,7 +76,7 @@ class FeedPanel:
         if k in ("up", "k", "down", "j"):
             self.cursor = 1 - self.cursor
         elif k in ("enter", "space"):
-            kind, label, _ = ROWS_MENU[self.cursor]
+            kind, label = ROWS_MENU[self.cursor]
             if kind == "meat":
                 msg = self.pet.feed_meat()
                 # the staple meat eats through the DVPet f:0 Meat strip
@@ -85,7 +86,9 @@ class FeedPanel:
                 if "full" in msg:
                     return ("done", ("full", {"key": "f:0", "name": "Meat"}, msg))
                 return ("done", ("refused", {"key": "f:0", "name": "Meat"}, msg))
-            was_sick = self.pet.sick or self.pet.is_injured()
+            was_sick = self.pet.sick   # (the is_injured() leg was the dead
+            #                              injury system's hard-False stub;
+            #                              feed audit 2026-07-19)
             msg = self.pet.feed_pill()
             if self.pet.anim == "eat":
                 out = "Cured!" if was_sick else "A tonic — strength and pep."

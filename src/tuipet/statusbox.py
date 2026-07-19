@@ -213,10 +213,12 @@ def scenes(app):
 def feed(app):
     """FEED: the two rows' true effects beside the live gauges."""
     p, m = app.pet, app.mode
-    row = ("Meat — hunger +1, the staple",
+    # both rows disclose in FULL, weight included -- the meat row used to
+    # hide its +1 while the pill admitted its +5 (feed audit 2026-07-19)
+    row = ("Meat — hunger +1 · weight +1,",
            "Pill — cures sickness, effort +1,"
            )[min(getattr(m, "cursor", 0), 1)]
-    tail = ("", "energy +7 · weight +5")[min(getattr(m, "cursor", 0), 1)]
+    tail = ("the staple", "energy +7 · weight +5")[min(getattr(m, "cursor", 0), 1)]
     card(app, "Feed", [
         f"Hunger   {hearts(p.hunger)}",
         f"Effort   {hearts(p.strength)}",

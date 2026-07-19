@@ -3,6 +3,18 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.5.80 — FULL DISCLOSURE AT DINNER (2026-07-19)
+
+* **The feed card tells the whole truth on both rows.** The Pill row
+  always disclosed everything down to its weight +5, but the Meat row
+  hid its weight +1 behind "the staple." Both rows now read in full —
+  weight is a meter you manage, and the menu shouldn't hide an effect
+  its sibling admits.
+* The rest of the feed screen passed its audit: the exact decompile
+  menu glyphs, the robust outcome contract, and the eat/refuse flows
+  all verified. A last ghost of the removed injury system was swept
+  from the pill's cure check (behavior unchanged).
+
 ## 0.5.79 — NO SILENT GOODBYES (2026-07-19)
 
 * **The quarantine warning reaches you.** When a damaged save has to be

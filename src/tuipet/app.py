@@ -150,10 +150,10 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("NO SILENT GOODBYES: if a damaged save ever has to be "
-                 "set aside, the warning now actually reaches you - it "
-                 "rides the message box after you pick your new egg, "
-                 "naming the kept file so the old pet stays recoverable.")
+    WHATS_NEW = ("FULL DISCLOSURE AT DINNER: the feed card now admits "
+                 "the meat's weight gain like the pill always admitted "
+                 "its own - both rows tell the whole truth. The feed "
+                 "screen passed its audit, decompile glyphs and all.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and
