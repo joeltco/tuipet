@@ -291,43 +291,8 @@ def sell(pet, e):
     return (f"Sold {e['name']} for {resell_price(e)}b.", "confirm")
 
 
-# ---- town storefronts: the same catalog behind every counter ----
-
-def home_shop_open(pet):
-    return True
-
-
-def town_shop_open(pet, town, is_food):
-    return True
-
-
-def town_shop_hours(pet, town, is_food):
-    return (0, 24)
-
-
-def roll_town_shop(pet, town, is_food):
-    """A town counter: fruit/food items on the food shelf, gear on the other."""
-    want = ("Food", "Fruit", "Care") if is_food else None
-    out = []
-    for e in catalog():
-        if want is None and e["category"] not in ("Food", "Fruit", "Care"):
-            out.append(dict(e, stock=9, sale=0))
-        elif want is not None and e["category"] in want:
-            out.append(dict(e, stock=9, sale=0))
-    return out
-
-
-def slot_label(e):
-    return f"{e['name']}  {e['price']}b"
-
-
-def slot_info(pet, e, tw):
-    return [e["name"][:tw], f"{e['price']}b", effect_line(e)[:tw]]
-
-
-def sell_info(pet, e, tw):
-    return [e["name"][:tw], f"sells {resell_price(e)}b", effect_line(e)[:tw]]
-
-
-def purchase_price(e):
-    return e["price"]
+# (the town storefront chain -- home_shop_open / town_shop_open /
+# town_shop_hours / roll_town_shop / slot_label / slot_info / sell_info /
+# purchase_price + Pet.buy_slot -- CUT 2026-07-19, Joel: "cut the town
+# chain".  Towns and their counters died with adventure in v0.5.8; these
+# served screens that no longer exist, and nothing live called them.)

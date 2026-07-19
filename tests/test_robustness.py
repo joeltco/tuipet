@@ -31,10 +31,26 @@ def test_empty_account_egg_flow():
 # ---- purchase / inventory bounds -------------------------------------------
 
 def test_buy_with_zero_bits():
+    # shop.buy is the ONE purchase path (the town-counter buy_slot was cut
+    # with the town chain, 2026-07-19) -- a broke pet is refused in words
+    from tuipet import shop
     p = Pet(num=-1, stage="Rookie", bits=0)
-    assert p.buy_slot({"key": "energy_drink", "name": "EnergyDrink", "price": 500,
-                       "stock": 3, "sale": 0}) == "Not enough bits."
-    assert p.bits == 0 and "f:8" not in p.inventory
+    msg, sfx = shop.buy(p, {"key": "energy_drink", "name": "EnergyDrink",
+                            "price": 500})
+    assert "500b" in msg and sfx == "error"
+    assert p.bits == 0 and not p.inventory
+
+
+def test_the_town_chain_is_cut():
+    """Cut-is-total (Joel 2026-07-19): the town storefront chain died with
+    the towns; nothing may creep back."""
+    from tuipet import shop
+    from tuipet.pet import Pet as _P
+    for name in ("home_shop_open", "town_shop_open", "town_shop_hours",
+                 "roll_town_shop", "slot_label", "slot_info", "sell_info",
+                 "purchase_price"):
+        assert not hasattr(shop, name), name
+    assert not hasattr(_P, "buy_slot")
 
 
 def test_sell_empty_bag():

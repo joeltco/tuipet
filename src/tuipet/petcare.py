@@ -210,19 +210,8 @@ class CareMixin:
         return "Lights off." if not self.lights else "Lights on."
 
     # ---- shop / items --------------------------------------------------------
-    def buy_slot(self, slot):
-        """Buy one from a town counter slot (the DSprite catalog behind every
-        counter now -- BASIC VPET 2026-07-16)."""
-        if slot.get("stock", 0) <= 0:
-            return "Sold out."
-        price = shop.purchase_price(slot)
-        if self.bits < price:
-            return "Not enough bits."
-        self.spend_bits(price)
-        slot["stock"] -= 1
-        self.add_item(slot["key"])
-        return f"Bought {slot['name']}."
-
+    # (buy_slot -- the town-counter purchase -- cut with the town chain
+    # 2026-07-19; shop.buy is the ONE live purchase path)
     def sell(self, entry):
         """Resell one from the bag at half price."""
         key = entry["key"]

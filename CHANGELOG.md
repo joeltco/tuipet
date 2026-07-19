@@ -3,6 +3,17 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.5.71 — A CLEAN SHOPFLOOR (2026-07-19)
+
+* **The shop passed a full economy audit.** All 32 catalog items swept
+  end to end — buying deducts exactly and refuses the broke in words,
+  using consumes or explains, selling returns exactly half; the
+  Digimental waves gate honestly and the legacy bag-heal map has no
+  orphans. No player-facing changes — everything already worked.
+* Housekeeping: the town-counter code (dead since the towns left in
+  v0.5.8) is cut, with a pin so it stays gone. `shop.buy` is the one
+  purchase path.
+
 ## 0.5.70 — COMPANY AT THE GRAVE (2026-07-19)
 
 * **The lobby opens beside a departed pet.** The social room is not a

@@ -148,10 +148,10 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("COMPANY AT THE GRAVE: the lobby now opens beside a "
-                 "departed pet - chat, DMs, rooms and the ladder all work "
-                 "while you mourn. Battles and jogress stay sealed: nobody "
-                 "fights the departed.")
+    WHATS_NEW = ("A CLEAN SHOPFLOOR: the shop passed a full economy audit "
+                 "- every item's buy, use and sell-back verified end to "
+                 "end, the relic waves confirmed honest - and the last "
+                 "ghost of the old town counters swept out of the code.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and
