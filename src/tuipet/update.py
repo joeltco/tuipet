@@ -114,13 +114,33 @@ def manual_command():
     return "pip install -U tuipet"
 
 
+_UPGRADING = False    # module-level: a fresh OptionsPanel must SEE a pip run
+#                       already in flight (options audit 2026-07-19 -- the
+#                       per-panel flag let a close/reopen race a second pip)
+
+
+def upgrade_in_flight():
+    return _UPGRADING
+
+
 def run_upgrade(timeout=180.0):
     """Install the newest tuipet into the environment we are running in.
 
     Returns (ok, message).  Never raises.  The running process keeps executing
     the OLD code -- Python has already imported it -- so a successful upgrade
-    always ends with 'restart tuipet', never a silent half-swap.
-    """
+    always ends with 'restart tuipet', never a silent half-swap.  Concurrent
+    calls are refused via the module latch."""
+    global _UPGRADING
+    if _UPGRADING:
+        return (False, "an update is already installing…")
+    _UPGRADING = True
+    try:
+        return _run_upgrade_inner(timeout)
+    finally:
+        _UPGRADING = False
+
+
+def _run_upgrade_inner(timeout=180.0):
     argv = upgrade_argv()
     if argv is None:
         return False, "Update by hand: " + manual_command()

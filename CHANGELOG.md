@@ -3,6 +3,19 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.5.84 — UPDATES THAT SPEAK UP (2026-07-19)
+
+* **The update result always finds you.** Installing takes seconds; if
+  you closed the options screen meanwhile, the "Updated! Restart now?"
+  offer died with the panel and you learned nothing. The completion now
+  also rides the app-wide verdict channel — it flashes wherever you are
+  next home. And a close-and-reopen can no longer race a second install
+  against the first: the in-flight latch lives above the panel now.
+* **The rest of the options screen passed its audit** — every row
+  description verified true (including "for keeps," which earlier
+  rounds made honest), the sound page's bell-only truthfulness, and the
+  confirm grammar all hold.
+
 ## 0.5.83 — HELP THAT HELPS (2026-07-19)
 
 * **Help teaches the gift and the grammar.** The ENTER gift-accept had

@@ -124,7 +124,8 @@ class ActionsMixin:
             self.pet, lambda: self.sound, self._toggle_sound,
             on_theme_change=self._restyle,
             bindings=self.BINDINGS,
-            update_hint=lambda: getattr(self, "_update_msg", "")),
+            update_hint=lambda: getattr(self, "_update_msg", ""),
+            verdict=self._verdict),
             self._after_options)
 
     def _after_options(self, result):

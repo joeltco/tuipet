@@ -439,3 +439,39 @@ def test_auto_off_still_names_the_version(monkeypatch):
     monkeypatch.setattr(optionsscreen.update_check, "current_version",
                         lambda: "9.9.9")
     assert pan._value("update") == "v9.9.9 · auto off"
+
+
+def test_install_completion_rides_the_verdict_channel(monkeypatch):
+    """Swallow class #4 (options audit 2026-07-19): pip takes seconds; if
+    the player closes options mid-install, the panel's restart offer dies
+    with it.  The completion ALSO routes through the app's verdict channel
+    -- parked under any mode, flashed back home."""
+    import threading
+    from tuipet import update as update_check
+    verdicts = []
+    done = threading.Event()
+
+    def fake_upgrade(timeout=180.0):
+        return (True, "installed 9.9.9")
+
+    monkeypatch.setattr(update_check, "run_upgrade", fake_upgrade)
+    pan, _ = _panel()
+    pan.verdict = lambda m: (verdicts.append(m), done.set())
+    pan._install_update()
+    assert done.wait(5.0), "the install thread never completed"
+    assert pan.confirm_restart and pan._updated
+    assert verdicts and "restart" in verdicts[0]
+
+
+def test_concurrent_upgrades_are_refused():
+    """The in-flight latch lives at MODULE level (options audit 2026-07-19):
+    the per-panel flag let a close/reopen race a second pip run."""
+    from tuipet import update as update_check
+    update_check._UPGRADING = True
+    try:
+        ok, msg = update_check.run_upgrade()
+        assert ok is False and "already installing" in msg
+        assert update_check.upgrade_in_flight()
+    finally:
+        update_check._UPGRADING = False
+    assert not update_check.upgrade_in_flight()

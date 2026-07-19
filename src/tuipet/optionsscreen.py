@@ -178,13 +178,15 @@ class KeysPanel:
 
 class OptionsPanel(menu.SubHost):
     def __init__(self, pet, sound_get, sound_toggle, on_theme_change=None,
-                 bindings=(), update_hint=None):
+                 bindings=(), update_hint=None, verdict=None):
         self.pet = pet
         self.sound_get = sound_get
         self.sound_toggle = sound_toggle
         self.on_theme_change = on_theme_change
         self.bindings = tuple(bindings)
         self.update_hint = update_hint
+        self.verdict = verdict or (lambda m: None)   # the app's async-verdict
+        #                                              channel (rounds 19/21/22)
         self.cursor = 0
         self.sub = None                # the hosted Theme/Account/Keys panel
         self._sub_row = None           # which row opened it (routes the done)
@@ -262,6 +264,14 @@ class OptionsPanel(menu.SubHost):
                 # option asks to restart after update"): ENTER relaunches
                 self.confirm_restart = True
                 self.msg = "Updated! Restart now?  ENTER restarts · ESC later"
+            # the completion ALSO rides the app's verdict channel (options
+            # audit 2026-07-19, swallow class #4): pip takes seconds -- if
+            # the player closed options meanwhile, the offer above lands on
+            # a dead panel and they learn nothing.  The parked verdict
+            # flashes wherever they are next home; a redundant note beside
+            # the live offer is honest, a swallowed one is not.
+            self.verdict("tuipet updated — restart to play the new version."
+                         if ok else f"update: {msg}")
         threading.Thread(target=run, daemon=True).start()
 
     def _sub_done(self, r):
