@@ -17,7 +17,8 @@ from . import menu
 from . import persistence
 from .theme import INK, INK_B, DIM  # noqa: F401  (palette names bound for theme.apply propagation)
 
-VIS = 8                                   # list rows shown at once
+VIS = 9                                   # list rows shown at once (the old
+#                                           in-LCD footer's row -- round 34)
 _MARK = {"owned": "✓", "temp": "~", "locked": "✗"}
 _VAL_W = 27                               # detail value column (38 - 10 label - cursor pad)
 
@@ -124,7 +125,8 @@ class EggGuidePanel:
 
         self.i = menu.list_window(out, list(range(self.n)), self.i, VIS, fmt)
         out.append_text(menu.note(self._note(self.i), tick=self.frame_i))
-        out.append_text(menu.footer("↑↓ pick  ENTER story  ESC out"))
+        out.right_crop(1)     # keys ride the strip (round 34: the footer
+        #                       doubled them and disagreed on the verb)
         return out
 
     # ---- one egg's story -----------------------------------------------------
@@ -150,11 +152,11 @@ class EggGuidePanel:
         name = egg_mod.hatch_name(self.i)
         out = menu.header(f"DIGITAMA  {name[:20].upper()}", f"{self.i + 1}/{self.n}")
         rows = self._detail_rows(self.i)
-        for label, val in rows[:9]:
+        for label, val in rows[:10]:
             out.append(f" {label:<9}", style=DIM)
             out.append(val[:_VAL_W + 1] + "\n", style=INK_B)
-        out.append_text(menu.blanks(9 - len(rows)))
-        out.append_text(menu.footer("←→ next egg    ESC back"))
+        out.append_text(menu.blanks(10 - len(rows)))
+        out.right_crop(1)     # keys ride the strip (round 34)
         return out
 
     def text(self):

@@ -302,18 +302,24 @@ def eggguide(app):
     """DIGITAMA GUIDE: the browsed egg's dossier."""
     m = app.mode
     state = m.states.get(m.i, "locked")
-    name = egg_mod.hatch_name(m.i) if state != "locked" else "???"
+    # the name shows for EVERY egg -- the guide's own list and detail
+    # header always revealed it; the card's "???" mask was the one
+    # surface disagreeing (round 34: the book's purpose is showing
+    # what's out there)
+    name = egg_mod.hatch_name(m.i)
     live = egg_mod.unlock_progress(m.i, m.prog)
     rule = m.rules.get(m.i)
     keeps = ("this gen only" if rule is not None and not rule["can_perm"]
              else "forever")
+    hints = ("←→ next egg  ESC back" if m.detail
+             else "ENTER story  ↑↓ browse")     # phase-true (round 34)
     card(app, "Digitama", [
         f"[dim]{m.i + 1} of {m.n}[/]", "",
         f"Hatches  [b]{name[:16]}[/]",
         f"State    {state}",
         f"Keeps    {keeps}", "",
         (f"[b]{live[:26]}[/]" if live and state == "locked" else ""),
-        "[dim]ENTER story  ↑↓ browse[/]"])
+        f"[dim]{hints}[/]"])
 
 
 def digicore(app):

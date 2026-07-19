@@ -3,6 +3,20 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.5.96 — GUIDE MANNERS (2026-07-19)
+
+* **A roomier book.** Both of the guide's in-LCD key footers doubled
+  the message strip (and the list one disagreed on the verb); they're
+  gone. The list shows nine eggs per page now, and the detail page has
+  a tenth row for long unlock stories.
+* **One naming policy.** The status card masked a locked egg's hatch
+  name as "???" while the guide's own list and detail header printed
+  it openly. The card reveals like the rest — the book's purpose is
+  showing what's out there and what earns it.
+* **Phase-true card hints.** Inside an egg's story the card now says
+  "←→ next egg  ESC back" instead of offering to open the story
+  you're already reading.
+
 ## 0.5.95 — FUSION MANNERS (2026-07-19)
 
 * **Any key skips the converge.** The fusion cinematic always claimed

@@ -150,10 +150,10 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("FUSION MANNERS: any key really does skip the jogress "
-                 "converge now, and a one-sided door's lender is asked to "
-                 "LEND, not to fuse - your mon stays itself and the "
-                 "prompt says so.")
+    WHATS_NEW = ("GUIDE MANNERS: the digitama book shows nine eggs per "
+                 "page and a roomier story, the status card names every "
+                 "egg like the book always did (no more ??? beside an "
+                 "open list), and its hints follow the page you are on.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and

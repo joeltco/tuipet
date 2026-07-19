@@ -149,3 +149,51 @@ def test_n_opens_the_guide_in_the_real_app():
     opened, after = asyncio.run(go())
     assert opened == "EggGuidePanel"
     assert after is None
+
+
+# ---- round 34 pins (egg guide tidy, 2026-07-19) -----------------------------
+
+def test_guide_keys_ride_the_strip_only_and_pages_hold_12():
+    """Both in-LCD footers doubled the strip (and the list one disagreed on
+    the verb) -- cut; the list shows 9 eggs, the detail gets a tenth row."""
+    pan = EggGuidePanel()
+    for detail in (False, True):
+        pan.detail = detail
+        plain = pan.text().plain
+        assert "ESC" not in plain                  # no key footer in the LCD
+        assert len(plain.split("\n")) <= 12
+        assert "ESC" in pan.strip()                # the strip carries them
+    pan.detail = False
+    assert sum(1 for ln in pan.text().plain.split("\n")
+               if ln.lstrip().startswith(("▸", "✓", "~", "✗"))) >= 9
+
+
+def test_the_card_reveals_and_speaks_the_phase():
+    """The card masked locked names as ??? while the guide's own list and
+    detail header revealed them -- one policy now.  And its hints follow
+    the phase: inside the story, the keys are the story's."""
+    from tuipet import statusbox
+    locked = next((i for i, s in EggGuidePanel().states.items()
+                   if s == "locked"), None)
+    if locked is None:
+        return                                     # a maxed profile: nothing locked
+    import tuipet.egg as egg_mod
+
+    class _App:                                    # the card protocol shim
+        def __init__(self, m): self.mode, self.lines = m, []
+    pan = EggGuidePanel()
+    pan.i = locked
+    seen = {}
+    def _card(app, title, rows): seen["rows"] = rows
+    real = statusbox.card
+    statusbox.card = _card
+    try:
+        statusbox.eggguide(_App(pan))
+        assert egg_mod.hatch_name(locked)[:16] in "".join(seen["rows"])
+        assert "???" not in "".join(seen["rows"])
+        assert any("ENTER story" in r for r in seen["rows"])
+        pan.detail = True
+        statusbox.eggguide(_App(pan))
+        assert any("next egg" in r for r in seen["rows"])
+    finally:
+        statusbox.card = real
