@@ -150,11 +150,11 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("RAID GATE MANNERS: the gate now tells you WHY a report "
-                 "was refused, backing out of the timing bar is no longer "
-                 "called a whiff (no attempt spent), the board shows a "
-                 "dash until your first hit, and the weekend note names "
-                 "its truth - claims pay 1.5x.")
+    WHATS_NEW = ("LOBBY MANNERS: the ladder page fits its own rank lines, "
+                 "a season prize can never be lost to a dropped claim, "
+                 "reading a DM counts as reading it, the M quick-PM key "
+                 "is finally advertised, and blocked names offer only "
+                 "the way back.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and

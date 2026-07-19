@@ -121,7 +121,9 @@ class ChatMixin:
             parts = _wrap(f"{who}: {tx}", w - 1)
             rows.append((parts[0], DIM if mine else INK_B))
             rows.extend((" " + ln, DIM if mine else INK_B) for ln in parts[1:])
-        body = BODY + 1
+        body = BODY + 2      # the old in-LCD key footer's row, given to the
+        #                      history (round 30: the strip already carries
+        #                      ENTER send / ESC back -- one hint surface)
         # clamp the scrollback to the log, like _text_lobby does for the room
         self.dm_scroll = max(0, min(self.dm_scroll, max(0, len(rows) - body)))
         self._dm_overflow = len(rows) > body         # strip(): advertise PgUp
@@ -137,8 +139,7 @@ class ChatMixin:
         shown = self.buf if len(self.buf) < fw else self.buf[-(fw - 1):]
         caret = "_" if (getattr(self, "_mq", 0) // 5) % 2 == 0 else " "
         t.append(label, style=INK_B)
-        t.append(_fit(shown + caret, fw) + "\n", style=INK)
-        t.append(_fit("ENTER send · ESC back to lobby", w), style=DIM)
+        t.append(_fit(shown + caret, fw), style=INK)
         return t
     def _slash(self, txt):
         """Chat slash commands (password rooms 2026-07-14): `/room <phrase>`
@@ -284,9 +285,9 @@ class ChatMixin:
             if self.state and pname in self.state.blocked:
                 acts = "[X]unblock  [ESC]"
             elif plive:
-                acts = "[B]attle [J]og [V] DMs [X]block [ESC]"
+                acts = "[B]attle [J]og [V] DM [M] PM [X]block [ESC]"
             else:
-                acts = "not in lobby — [P]ing [V] DMs [X]block [ESC]"
+                acts = "not in lobby — [P]ing [V] DM [M] PM [X]block [ESC]"
             full = f"{who}:  {acts}"
             # whole line scrolls when it overflows (Joel 2026-07-09), else static
             t.append(marquee(full, w, mq) if len(full) > w else _fit(full, w), style=INK_B)

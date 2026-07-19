@@ -154,7 +154,8 @@ class LobbyPanel(BoutMixin, ChatMixin):
         side effects; the SEND side keeps the poke (the player pressed it)."""
         p = self.pet
         if getattr(p, "dead", False):
-            return "It rests now — press N for a new egg."
+            return "It rests now."     # the home screens teach N (the lobby's
+            #                              N just types into chat -- round 30)
         if p.asleep:
             return "zzz… asleep"
         if kind == "jogress":
@@ -198,18 +199,28 @@ class LobbyPanel(BoutMixin, ChatMixin):
         lad = getattr(self.client, "ladder", None) if self.client else None
         if lad and lad.get("award"):
             a = lad["award"]
-            if not persistence.ladder_award_claimed(a.get("season", "")):
+            season = str(a.get("season") or "")
+            sent = getattr(self, "_ladder_claims_sent", None) or set()
+            if (season and season not in sent
+                    and not persistence.ladder_award_claimed(season)):
                 # ask the server; the payout waits for its ladder_reward ack
                 # (server audit 2026-07-18: self-paying off the view let a
-                # lost claim / second device re-collect -- raid_claim pattern)
-                persistence.note_ladder_award(a["season"])
+                # lost claim / second device re-collect -- raid_claim pattern).
+                # The spam guard is SESSION-LOCAL: the old persistent note
+                # here was a take-then-send -- a claim lost to a dropped
+                # socket left the award orphaned forever, blocked by our own
+                # note while the server still owed it (round 30).  The
+                # durable note waits for the ack below.
                 claim = getattr(self.client, "ladder_claim", None)
                 if claim:
-                    claim(a["season"])
+                    sent.add(season)
+                    self._ladder_claims_sent = sent
+                    claim(season)
         rew = getattr(self.client, "ladder_reward", None) if self.client else None
         if rew is not None:
             self.client.ladder_reward = None           # consumed once
             if rew.get("ok"):
+                persistence.note_ladder_award(str(rew.get("season") or ""))
                 self.pet.bits = min(self.pet.bits + int(rew.get("bits") or 0), 99999999)
                 self.sfx = "champion"
                 self.status = (f"season {rew.get('season')}: rank {rew.get('rank')} — "
@@ -217,6 +228,11 @@ class LobbyPanel(BoutMixin, ChatMixin):
         s = self.state
         if not s:
             return
+        if self.phase == "dm" and self.dm_peer:
+            # the thread is OPEN on screen: an arriving PM is read the moment
+            # it lands -- net.py badges every PM blind, and the badge used to
+            # survive the very conversation you watched arrive (round 30)
+            s.unread.discard(self.dm_peer[1])
         for m in list(s.inbox):
             t = m.get("t")
             if t == "invite":
@@ -499,7 +515,10 @@ class LobbyPanel(BoutMixin, ChatMixin):
             t.append("  fetching the rankings…\n", style=DIM)
             return t
         t.append(f"  LADDER  season {lad.get('season', '?')}\n", style=INK_B)
-        t.append("  one win = one rung · online only\n\n", style=DIM)
+        # no blank separator rows: header + tagline + top-8 + you + season is
+        # EXACTLY the 12-row LCD -- the old blanks pushed "you: rank" and
+        # "season resets" (the page's whole point) off the box (round 30)
+        t.append("  one win = one rung · online only\n", style=DIM)
         top = list(lad.get("top") or [])[:8]
         you_rank, you_wins = (lad.get("you") or [0, 0])[:2]
         if not top:
@@ -509,7 +528,6 @@ class LobbyPanel(BoutMixin, ChatMixin):
             mine = who == getattr(self.client, "name", None)
             t.append(f"  {'▸' if mine else ' '}{i:>2}. {str(who)[:16]:<16} {int(wins):>3}W\n",
                      style=INK_B if mine else INK)
-        t.append("\n")
         if you_rank:
             t.append(f"  you: rank {you_rank} · {you_wins} win{'s' if you_wins != 1 else ''}\n",
                      style=INK_B)
@@ -732,11 +750,18 @@ class LobbyPanel(BoutMixin, ChatMixin):
         if self.invite_prompt is not None:
             return menu.hints(("Y", "accept"), ("N", "decline"))
         if self.action_for is not None:
-            _, _, plive = self.action_for
+            _, pname, plive = self.action_for
+            if self.state and pname in self.state.blocked:
+                # mirror the in-LCD line: a blocked name offers the way back
+                # out, nothing else (round 30: the two surfaces disagreed)
+                return menu.hints(("X", "unblock"), ("ESC", "back"))
             if plive:
-                return menu.hints(("B", "battle"), ("J", "jogress"),
-                                  ("V", "DMs"), ("X", "block"))
-            return menu.hints(("P", "ping"), ("V", "DMs"), ("X", "block"))
+                # exactly 40 plain cols -- M was a working key advertised
+                # NOWHERE (round 30)
+                return menu.hints(("B", "battle"), ("J", "jog"), ("V", "DM"),
+                                  ("M", "PM"), ("X", "block"))
+            return menu.hints(("P", "ping"), ("V", "DM"), ("M", "PM"),
+                              ("X", "block"))
         if self.pm_to is not None:
             return menu.hints(("ENTER", "send ✉"), ("ESC", "cancel"))
         # the pet's alarm outranks everything social -- it only fires in the

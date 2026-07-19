@@ -817,3 +817,100 @@ def test_pm_flush_keeps_undelivered_mail(tmp_path, monkeypatch):
     assert [r["text"] for r in srv.PENDING["kai"]] == ["m2", "m3", "m4"]
     asyncio.run(srv._flush_pending(_Cl(_WS(99)), "kai"))    # healthy retry drains
     assert "kai" not in srv.PENDING
+
+
+# ---- round 30 pins (lobby screen tidy, 2026-07-19) --------------------------
+
+def test_ladder_page_holds_12_rows_with_a_full_board():
+    """A full top-8 board ran the page to 14 rows and the LCD clipped the
+    "you: rank" and "season resets" lines -- the page's whole point."""
+    s = LobbyState()
+    pan = _panel(s)
+    pan.client.ladder = {"season": "2026-07",
+                         "top": [[f"tamer{i}", 20 - i] for i in range(8)],
+                         "you": [5, 12], "days_left": 13}
+    pan.phase = "ladder"
+    plain = pan.text().plain
+    rows = plain.rstrip("\n").split("\n")
+    assert len(rows) <= 12
+    assert any("you: rank 5" in r for r in rows)
+    assert any("season resets in 13 days" in r for r in rows)
+
+
+def test_ladder_claim_notes_only_on_the_ack():
+    """Take-then-send closed: the persistent claimed-note waits for the
+    ladder_reward ack -- a claim lost to a dropped socket must leave the
+    award claimable next session (the server still owes it)."""
+    from tuipet import persistence
+    s = LobbyState()
+    pan = _panel(s)
+    sent = []
+    pan.client.ladder = {"award": {"season": "2026-07"}}
+    pan.client.ladder_claim = lambda season: sent.append(season)
+    pan.client.ladder_reward = None
+    pan.anim()
+    assert sent == ["2026-07"]                     # the ask went out...
+    assert not persistence.ladder_award_claimed("2026-07")   # ...unnoted: retry-safe
+    pan.anim()
+    assert sent == ["2026-07"]                     # session guard: asked once
+    pan.client.ladder_reward = {"ok": True, "season": "2026-07",
+                                "rank": 1, "bits": 500}
+    bits0 = pan.pet.bits
+    pan.anim()
+    assert pan.pet.bits == bits0 + 500             # the ack pays...
+    assert persistence.ladder_award_claimed("2026-07")       # ...and NOW it notes
+
+
+def test_reading_the_open_dm_thread_clears_its_badge():
+    """net.py badges every incoming PM blind -- watching the message arrive
+    in the open thread must count as reading it."""
+    s = LobbyState()
+    s.connected = True
+    s.me_id, s.me_name = 1, "joel"
+    pan = _panel(s)
+    pan.phase, pan.dm_peer = "dm", (2, "mika")
+    s.unread.add("mika")                           # the PM just landed
+    pan.anim()
+    assert "mika" not in s.unread
+
+
+def test_the_dead_gate_does_not_teach_the_n_key():
+    """The lobby has no N-for-egg -- N types into chat.  The home screens
+    teach that key; the gate message stops pretending otherwise."""
+    s = LobbyState()
+    pan = _panel(s)
+    pan.pet.dead = True
+    msg = pan._session_gate("battle")
+    assert "rests" in msg and "N" not in msg
+
+
+def test_the_action_strip_mirrors_the_blocked_state_and_names_m():
+    from tuipet.app import _hud_plain
+    s = LobbyState()
+    s.connected = True
+    pan = _panel(s)
+    pan.action_for = (2, "mika", True)
+    live = pan.strip()
+    assert "M" in live and "PM" in live            # the hidden key, surfaced
+    assert len(_hud_plain(live)) <= 40
+    s.blocked.add("mika")
+    blocked = pan.strip()
+    assert "unblock" in blocked and "battle" not in blocked
+    pan.action_for = (3, "ghost", False)
+    ghost = pan.strip()
+    assert "ping" in ghost and "PM" in ghost
+    assert len(_hud_plain(ghost)) <= 40
+
+
+def test_the_dm_page_keeps_keys_on_the_strip_only():
+    """The in-LCD 'ENTER send · ESC back' footer duplicated the strip; its
+    row belongs to the thread history now (one hint surface per family)."""
+    s = LobbyState()
+    s.me_name = "joel"
+    pan = _panel(s)
+    pan.phase, pan.dm_peer = "dm", (2, "mika")
+    plain = pan.text().plain
+    assert "ENTER send" not in plain               # keys live on the strip...
+    assert "ENTER" in pan.strip()                  # ...which still has them
+    rows = plain.rstrip("\n").split("\n")
+    assert len(rows) <= 12

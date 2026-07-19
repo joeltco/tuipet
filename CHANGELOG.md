@@ -3,6 +3,29 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.5.92 — LOBBY MANNERS (2026-07-19)
+
+* **The ladder page fits.** With a full top-8 board, "you: rank …" and
+  "season resets in …" — the lines you opened the page for — ran off
+  the bottom of the LCD. Two decorative blanks are gone; the page is
+  exactly 12 rows.
+* **A season prize can't be orphaned.** The claim used to mark itself
+  "collected" locally *before* asking the server — a dropped socket at
+  that moment left the prize owed forever but never claimable. The
+  durable note now waits for the server's payout ack; a lost claim
+  simply retries next session.
+* **Reading a DM counts.** A message arriving while its thread was
+  open on your screen still badged the conversation unread. Watching
+  it arrive now clears the badge.
+* **The action menu tells the whole truth.** The M key (quick-PM
+  without leaving the room) was working but advertised nowhere — both
+  hint surfaces name it now. A blocked player's strip offers only
+  "X unblock · ESC back", matching the in-LCD line. And a dead pet's
+  invite auto-decline no longer teaches "press N" — a key the lobby
+  doesn't have.
+* **One hint surface in the DM thread.** The in-LCD footer duplicated
+  the strip's keys; its row now shows one more line of history.
+
 ## 0.5.91 — RAID GATE MANNERS (2026-07-19)
 
 * **The gate explains itself.** A refused damage report now shows the
