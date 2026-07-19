@@ -3,6 +3,19 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.5.81 — NO REPORT LEFT BEHIND (2026-07-19)
+
+* **Offline bug reports survive everything.** The boot-time retry used
+  to clear the stash before sending — quitting mid-retry lost every
+  unsent report. It now reads without deleting and rewrites only the
+  survivors: a crash leaves the originals, and a bounded duplicate send
+  beats a lost report. Damaged stash lines are dropped instead of
+  cycling forever.
+* **The send verdict always reaches you.** "Sent — thank you", "Offline
+  — saved", or the honest failure used to be swallowed if you opened
+  another screen during the up-to-8-second send. The verdict now parks
+  and flashes the moment you're back on the home screen.
+
 ## 0.5.80 — FULL DISCLOSURE AT DINNER (2026-07-19)
 
 * **The feed card tells the whole truth on both rows.** The Pill row

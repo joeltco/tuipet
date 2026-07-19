@@ -49,13 +49,20 @@ def test_submit_bug_returns_false_when_server_unreachable():
 
 
 def test_pending_bug_stash_roundtrip(tmp_path, monkeypatch):
+    """peek reads WITHOUT deleting; write rewrites the survivors (bug audit
+    2026-07-19: the old take-then-send lost every unsent report to a quit
+    mid-flush -- the round-5 PM lesson)."""
     monkeypatch.setattr(persistence, "SAVE_DIR", str(tmp_path))
-    assert persistence.take_pending_bugs() == []          # nothing yet
+    assert persistence.peek_pending_bugs() == []          # nothing yet
     persistence.add_pending_bug({"text": "a", "name": "x"})
     persistence.add_pending_bug({"text": "b", "name": "y"})
-    got = persistence.take_pending_bugs()
+    got = persistence.peek_pending_bugs()
     assert [r["text"] for r in got] == ["a", "b"]
-    assert persistence.take_pending_bugs() == []          # cleared after taking
+    assert [r["text"] for r in persistence.peek_pending_bugs()] == ["a", "b"]   # STILL there
+    assert persistence.write_pending_bugs(got[1:]) is True
+    assert [r["text"] for r in persistence.peek_pending_bugs()] == ["b"]        # survivors only
+    assert persistence.write_pending_bugs([]) is True
+    assert persistence.peek_pending_bugs() == []                                # [] removes
 
 
 def test_server_handle_bug_stores_and_acks(tmp_path, monkeypatch):
@@ -119,3 +126,56 @@ def test_server_bug_endpoint_is_abuse_capped(tmp_path, monkeypatch):
     asyncio.run(server._handle_bug(c2, {"t": "bug", "text": "one more"}))
     assert sent[-1] == {"t": "bug_ok", "ok": False}
     assert len(open(bugs).readlines()) == server.MAX_BUGS_PER_CONN   # nothing appended
+
+
+def test_flush_survives_an_outage_and_drops_damaged_lines(tmp_path, monkeypatch):
+    """The boot flush keeps unsent reports ON DISK through an outage (read-
+    then-rewrite), sends in order, stops at the first failure, and drops
+    empty-text damage instead of re-stashing it forever."""
+    import asyncio
+    from tuipet.app import TuiPetApp
+    from tuipet import net
+    monkeypatch.setattr(persistence, "SAVE_DIR", str(tmp_path))
+    persistence.add_pending_bug({"text": "", "name": "damaged"})
+    persistence.add_pending_bug({"text": "first", "name": "x"})
+    persistence.add_pending_bug({"text": "second", "name": "y"})
+
+    calls = []
+
+    async def down(uri, text, meta=None, name=""):
+        calls.append(text)
+        return False
+
+    monkeypatch.setattr(net, "submit_bug", down)
+    app = TuiPetApp.__new__(TuiPetApp)             # the flush needs no UI
+    asyncio.run(TuiPetApp._flush_bugs(app))
+    assert calls == ["first"]                      # stopped at the outage
+    left = [r["text"] for r in persistence.peek_pending_bugs()]
+    assert left == ["first", "second"]             # kept, in order; damage gone
+
+    async def up(uri, text, meta=None, name=""):
+        return True
+
+    monkeypatch.setattr(net, "submit_bug", up)
+    asyncio.run(TuiPetApp._flush_bugs(app))
+    assert persistence.peek_pending_bugs() == []   # all delivered, stash gone
+
+
+def test_send_verdict_parks_under_a_mode_and_flashes_home():
+    """The async send outcome must REACH the player (round-19 swallow class):
+    home -> flash now; inside a screen -> parked, the drain flashes it on
+    the next home frame."""
+    from tuipet.app import TuiPetApp
+    flashes = []
+    app = TuiPetApp.__new__(TuiPetApp)
+    app.flash = lambda m: flashes.append(m)
+    app.mode = object()                            # a screen is open
+    TuiPetApp._bug_verdict(app, "sent!")
+    assert flashes == [] and app._bug_note == "sent!"
+    TuiPetApp._drain_bug_note(app)                 # still in the mode: holds
+    assert flashes == []
+    app.mode = None
+    TuiPetApp._drain_bug_note(app)                 # back home: it lands
+    assert flashes == ["sent!"] and app._bug_note == ""
+    TuiPetApp._bug_verdict(app, "again")           # home: immediate
+    assert flashes == ["sent!", "again"]

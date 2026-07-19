@@ -150,10 +150,10 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("FULL DISCLOSURE AT DINNER: the feed card now admits "
-                 "the meat's weight gain like the pill always admitted "
-                 "its own - both rows tell the whole truth. The feed "
-                 "screen passed its audit, decompile glyphs and all.")
+    WHATS_NEW = ("NO REPORT LEFT BEHIND: bug reports stashed while "
+                 "offline can no longer be lost to a quit mid-retry, and "
+                 "the send verdict always reaches you now - even if you "
+                 "wander into another screen while it is on its way.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and
@@ -591,30 +591,56 @@ class TuiPetApp(ActionsMixin, App):
             self.repaint()
 
 
+    def _bug_verdict(self, msg):
+        """Deliver the send outcome so it actually REACHES the player (bug
+        audit 2026-07-19): the offline path takes the full 8s timeout --
+        long enough to have opened another screen, whose strip overwrites
+        the hud every frame (the round-19 swallow).  Home -> flash now;
+        in a mode -> park it, the ✉-drain pattern shows it back home."""
+        if self.mode is None:
+            self.flash(msg)
+        else:
+            self._bug_note = msg
+
+    def _drain_bug_note(self):
+        note = getattr(self, "_bug_note", "")
+        if note and self.mode is None:
+            self._bug_note = ""
+            self.flash(note)
+
     async def _send_bug(self, text, meta, name):
         ok = await net.submit_bug(_lobby_uri(), text, meta, name=name)
         if ok:
-            self._hud("Bug report sent \u2014 thank you!")
+            self._bug_verdict("Bug report sent \u2014 thank you!")
         elif persistence.add_pending_bug(dict(meta, text=text, name=name)):
-            self._hud("Offline \u2014 saved; it will send next time you are online.")
+            self._bug_verdict("Offline \u2014 saved; it will send next time you are online.")
         else:
             # the stash failed too (a read-only save dir): do not promise a
             # send we cannot make (swallowed-failure sweep 2026-07-13)
-            self._hud(f"[{theme.NEG}]Couldn't send or save that report \u2014 sorry.[/]")
+            self._bug_verdict(f"[{theme.NEG}]Couldn't send or save that report \u2014 sorry.[/]")
 
     async def _flush_bugs(self):
-        """Best-effort resend of any bugs stashed while offline."""
-        pending = persistence.take_pending_bugs()
-        left = []
+        """Best-effort resend of stashed bugs.  READ-then-rewrite (bug audit
+        2026-07-19): the old take-then-send deleted the stash up front, so
+        a quit mid-flush lost every unsent report (the round-5 PM lesson).
+        A crash now leaves the original file -- a bounded duplicate send
+        beats a lost report (the server's per-connection cap absorbs it)."""
+        pending = persistence.peek_pending_bugs()
+        if not pending:
+            return
+        left, outage = [], False
         for rec in pending:
-            if left:                       # already hit an outage: keep the rest
-                left.append(rec); continue
             text, name = rec.get("text", ""), rec.get("name", "")
-            meta = {kk: vv for kk, vv in rec.items() if kk not in ("text", "name")}
-            if not (text and await net.submit_bug(_lobby_uri(), text, meta, name=name)):
+            if not text:
+                continue          # a damaged line: drop it, never re-stash forever
+            if outage:            # already hit an outage: keep the rest, in order
                 left.append(rec)
-        for rec in left:
-            persistence.add_pending_bug(rec)
+                continue
+            meta = {kk: vv for kk, vv in rec.items() if kk not in ("text", "name")}
+            if not await net.submit_bug(_lobby_uri(), text, meta, name=name):
+                left.append(rec)
+                outage = True
+        persistence.write_pending_bugs(left)
 
     def _bug_meta(self):
         import platform as _pf
@@ -791,6 +817,7 @@ class TuiPetApp(ActionsMixin, App):
         menu.TICK += 1                         # the shared note marquee clock: no screen clips a message
         self._hud_marquee()                    # scroll any over-long HUD message (independent of the LCD)
         self._drain_pms()                      # ✉ alerts ride the message box (presence 2026-07-05)
+        self._drain_bug_note()                 # a parked send-verdict flashes back home (bug audit 2026-07-19)
         if self.mode is not None:
             if hasattr(self.mode, "anim"):
                 self.mode.anim()

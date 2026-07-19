@@ -510,17 +510,39 @@ def add_pending_bug(rec):
         return False
 
 
-def take_pending_bugs():
-    """Return and clear the stashed bugs (a best-effort flush)."""
+def peek_pending_bugs():
+    """Read the stashed bugs WITHOUT deleting them (bug audit 2026-07-19:
+    the old take-then-send cleared the stash up front, so quitting mid-
+    flush lost every unsent report -- the round-5 PM-flush lesson).  The
+    flush rewrites the survivors when it is done."""
     import os as _os
     import json as _json
     p = _os.path.join(SAVE_DIR, "pending_bugs.jsonl")
     try:
-        recs = [_json.loads(l) for l in open(p, encoding="utf-8") if l.strip()]
-        _os.remove(p)
-        return recs
+        return [_json.loads(l) for l in open(p, encoding="utf-8") if l.strip()]
     except (OSError, ValueError):
         return []
+
+
+def write_pending_bugs(recs):
+    """Atomically rewrite the stash to exactly `recs` ([] removes the file).
+    True when it landed on disk."""
+    import os as _os
+    import json as _json
+    p = _os.path.join(SAVE_DIR, "pending_bugs.jsonl")
+    try:
+        if not recs:
+            if _os.path.exists(p):
+                _os.remove(p)
+            return True
+        tmp = p + ".tmp"
+        with open(tmp, "w", encoding="utf-8") as f:
+            for r in recs:
+                f.write(_json.dumps(r) + "\n")
+        _os.replace(tmp, p)
+        return True
+    except OSError:
+        return False
 
 
 def get_account():
