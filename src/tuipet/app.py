@@ -150,11 +150,11 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("LOBBY MANNERS: the ladder page fits its own rank lines, "
-                 "a season prize can never be lost to a dropped claim, "
-                 "reading a DM counts as reading it, the M quick-PM key "
-                 "is finally advertised, and blocked names offer only "
-                 "the way back.")
+    WHATS_NEW = ("SHOP MANNERS: the shelf shows five rows now (the key "
+                 "footer moved to the message strip with the buy verdicts "
+                 "and the wave tease), refusals and empty pockets sound "
+                 "like a no instead of a happy chirp, and leaving "
+                 "mid-verdict carries it home.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and

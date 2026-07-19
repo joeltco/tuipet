@@ -77,11 +77,24 @@ class ShopPanel:
             self.msg, self.msg_t = text, 26
 
     def strip(self):
+        """Verdict flash > the sealed-wave tease > mode-true hints -- the
+        egg-carousel grammar (round 31: the old in-LCD footer doubled the
+        keys the strip carried and squeezed the shelf; its row feeds the
+        list now).  The #msg hud marquees any over-wide tease."""
+        if self.msg_t > 0:
+            return self.msg
+        if (self.mode == "shop" and self.sealed
+                and (self.frame_i // 40) % 2 == 1):
+            return self.wave_hint
         if self.mode == "shop":
-            return menu.hints(("←→", "tab"), ("ENTER", "confirm"), ("TAB", "bag"))
+            tabs = self._tabs()
+            act = "wear" if tabs[self.tab % len(tabs)] == "Honors" else "buy"
+            return menu.hints(("←→", "tab"), ("ENTER", act),
+                              ("TAB", "bag"), ("ESC", "out"))
         if self.bag_only:
             return menu.hints(("ENTER", "use"), ("R", "sell"), ("ESC", "out"))
-        return menu.hints(("ENTER", "use"), ("R", "sell"), ("TAB", "shop"))
+        return menu.hints(("ENTER", "use"), ("R", "sell"),
+                          ("TAB", "shop"), ("ESC", "out"))
 
     # ---- data ----
     def _tabs(self):
@@ -113,19 +126,21 @@ class ShopPanel:
     # ---- keys ----
     def _buy_title(self, e):
         """Buy an honor once, then ENTER toggles wearing it.  Purely cosmetic:
-        the worn title rides the STATUS panel border and the lobby card."""
+        the worn title rides the STATUS panel border and the lobby card.
+        Returns (msg, sfx) like shop.buy -- the old flat confirm played the
+        happy chirp on "Not enough bits." too (round 31)."""
         tid, price = e["title_id"], e["price"]
         if tid in persistence.get_titles_owned():
             if persistence.get_title_worn() == tid:
                 persistence.set_title_worn(-1)
-                return "Put the %s title away." % e["name"]
+                return "Put the %s title away." % e["name"], "confirm"
             persistence.set_title_worn(tid)
-            return "Wearing: %s." % e["name"]
+            return "Wearing: %s." % e["name"], "confirm"
         if not self.pet.spend_bits(price):
-            return "Not enough bits."
+            return "Not enough bits.", "error"
         persistence.title_own(tid)
         persistence.set_title_worn(tid)
-        return "Earned the honor: %s!" % e["name"]
+        return "Earned the honor: %s!" % e["name"], "confirm"
 
     def _use(self, e):
         p = self.pet
@@ -153,7 +168,7 @@ class ShopPanel:
             return ("done", ("item_use", shop.ICON_KEYS[key],
                              shop.TOY_SCRIPTS[key], out))
         self._flash(out)
-        self.sfx = "confirm"
+        self.sfx = "error" if refused else "confirm"   # a kept item is a NO
         return None
 
     def key(self, k):
@@ -179,8 +194,8 @@ class ShopPanel:
             e = rows[self.cursor % n]
             if self.mode == "shop":
                 if e.get("title_id") is not None:
-                    self._flash(self._buy_title(e))
-                    self.sfx = "confirm"
+                    msg, self.sfx = self._buy_title(e)
+                    self._flash(msg)
                 else:
                     msg, self.sfx = shop.buy(self.pet, e)
                     self._flash(msg)
@@ -191,7 +206,10 @@ class ShopPanel:
             msg, self.sfx = shop.sell(self.pet, e)
             self._flash(msg)
         elif k in ("escape", "o", "i"):
-            return ("done", self.msg if self.sfx else None)
+            # carry a still-live verdict home (round 31: keying on self.sfx
+            # was dead -- the app consumes sfx every frame, so buy-then-
+            # leave never showed its verdict)
+            return ("done", self.msg if self.msg_t > 0 else None)
         return None
 
     # ---- render ----
@@ -253,20 +271,6 @@ class ShopPanel:
         eff = textwrap.wrap(shop.effect_line(sel), tw)[:2]
         return [sel["name"][:tw], price[:tw]] + eff + [""] * (2 - len(eff))
 
-    def _footer(self):
-        """Priority: the verdict flash > the sealed-wave tease (alternating,
-        the egg-carousel cadence) > controls."""
-        if self.msg_t > 0:
-            return self.msg
-        if (self.mode == "shop" and self.sealed
-                and (self.frame_i // 40) % 2 == 1):
-            return self.wave_hint
-        if self.mode == "shop":
-            return "←→ tab  ENTER buy  TAB bag  ESC out"
-        if self.bag_only:
-            return "ENTER use  R sell  ESC out"
-        return "ENTER use  R sell  TAB shop  ESC out"
-
     def _bar_text(self, tabs):
         bar = ""
         for i, t in enumerate(tabs):
@@ -308,7 +312,11 @@ class ShopPanel:
             return "%-18s x%-3d %5db" % (e["name"][:18], e.get("count", 1),
                                          shop.resell_price(e))
 
-        self.cursor = menu.list_window(out, rows, self.cursor, 4, fmt,
+        # 5 shelf rows: the old footer's row (round 31) -- header 2 + tab
+        # bar 1 + dossier 4 + list 5 = the 12-row LCD exactly
+        self.cursor = menu.list_window(out, rows, self.cursor, 5, fmt,
                                        empty=empty)
-        out.append_text(menu.footer(self._footer()))
+        out.right_crop(1)          # the last row sheds its newline (the
+        #                            footer convention: 12 rows, no 13th
+        #                            empty split element)
         return out

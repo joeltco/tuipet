@@ -168,14 +168,16 @@ def test_the_info_prices_a_shortfall():
 
 
 def test_buy_feedback_actually_renders_now():
-    """self.msg was never drawn anywhere -- the verdict flashes in the
-    footer for a beat (the eggselect _flash pattern)."""
+    """self.msg was never drawn anywhere -- the verdict flashes for a beat
+    (the eggselect _flash pattern).  Round 31: it rides the STRIP now,
+    verdict > wave tease > hints, and hints return when it expires."""
     p = _pet()
     pan = ShopPanel(p)
     pan.key("enter")                          # buy the first Food row
-    assert "Bought" in pan.text().plain
+    assert "Bought" in pan.strip()
     pan.msg_t = 0
-    assert "Bought" not in pan.text().plain   # the flash expires
+    assert "Bought" not in pan.strip()        # the flash expires
+    assert "ENTER" in pan.strip()             # ...and the keys return
 
 
 def test_the_bag_dossier_shows_resale():
@@ -185,7 +187,8 @@ def test_the_bag_dossier_shows_resale():
     pan.msg_t = 0
     pan.tab = 1                               # Items tab holds the drink
     plain = pan.text().plain
-    assert "R sell" in plain.splitlines()[-1]
+    from tuipet.app import _hud_plain
+    assert "R sell" in _hud_plain(pan.strip())   # keys ride the STRIP (round 31)
     assert "sells 100b" in plain              # resale in the dossier info
 
 
@@ -345,3 +348,56 @@ def test_short_icons_anchor_to_the_baseline_not_the_ceiling():
     assert giga[-1].strip() != ""                    # ...the plate is on the floor
     steak = menu.icon_cell(icons["f:8"][0])          # 24x24: full height
     assert all(l.strip() for l in steak)             # unchanged, fills the cell
+
+
+# ---- round 31 pins (shop screen tidy, 2026-07-19) ---------------------------
+
+def test_the_shelf_fills_the_lcd_and_keys_left_the_footer():
+    """The in-LCD footer doubled the strip's keys; its row feeds the shelf
+    now -- header 2 + tab bar 1 + dossier 4 + list 5 = 12 rows exactly."""
+    p = _pet()
+    for mode in ("shop", "bag"):
+        pan = ShopPanel(p, mode)
+        pan.msg_t = 0
+        lines = pan.text().plain.split("\n")
+        assert len(lines) == 12
+        assert "ENTER" not in lines[-1]           # no key footer in the LCD
+
+
+def test_the_honors_tab_strip_says_wear():
+    from tuipet.app import _hud_plain
+    p = _pet()
+    pan = ShopPanel(p)
+    pan.msg_t = 0
+    pan.tab = pan._tabs().index("Honors")
+    s = _hud_plain(pan.strip())
+    assert "ENTER wear" in s and len(s) <= 40
+
+
+def test_refusals_and_shortfalls_sound_like_refusals():
+    """A kept item (a _Refused) and "Not enough bits." both played the
+    happy confirm chirp (round 31)."""
+    p = _pet()
+    pan = ShopPanel(p)
+    pan.tab = pan._tabs().index("Honors")
+    p.bits = 0
+    pan.key("enter")                              # can't afford the honor
+    assert pan.sfx == "error" and "Not enough bits" in pan.msg
+    p.bits = 10**7                                # rich beyond any honor
+    pan.key("enter")                              # now it buys fine
+    assert pan.sfx == "confirm" and "Earned" in pan.msg
+
+
+def test_escape_carries_a_live_verdict_home():
+    """Keying on self.sfx was dead -- the app consumes sfx every frame, so
+    buy-then-leave never showed its verdict.  msg_t is the live flash."""
+    p = _pet()
+    pan = ShopPanel(p)
+    pan.msg_t = 0
+    pan.key("enter")                              # buy: the flash is live
+    pan.sfx = None                                # ...the app consumed the sfx
+    done, note = pan.key("escape")
+    assert done == "done" and "Bought" in note
+    pan2 = ShopPanel(p)
+    pan2.msg_t = 0                                # no live flash
+    assert pan2.key("escape") == ("done", None)

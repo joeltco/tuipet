@@ -3,6 +3,21 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.5.93 — SHOP MANNERS (2026-07-19)
+
+* **A taller shelf.** The in-LCD key footer duplicated the message
+  strip's hints; its row now shows a fifth list row, filling the LCD
+  exactly. Buy/sell verdicts and the sealed-Digimental wave tease ride
+  the message strip (verdict > tease > hints — the egg carousel's
+  grammar), and the hints tell the truth per tab: "ENTER wear" on
+  Honors, "ENTER buy" on goods.
+* **A no sounds like a no.** An item the pet refuses (and keeps) and
+  "Not enough bits." on an honor both played the happy confirm chirp.
+  Both are errors now.
+* **Leaving mid-verdict carries it home.** ESC right after a buy shows
+  the verdict on the home screen — the old check keyed on a value the
+  app had already consumed, so it never fired.
+
 ## 0.5.92 — LOBBY MANNERS (2026-07-19)
 
 * **The ladder page fits.** With a full top-8 board, "you: rank …" and

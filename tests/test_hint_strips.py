@@ -38,7 +38,10 @@ def test_every_screen_strip_fits_and_speaks():
 
     p = _pet()
     for mode in ("shop", "bag"):
-        assert "ENTER" in _ok(ShopPanel(p, mode).strip(), f"shop:{mode}")
+        sp = ShopPanel(p, mode)
+        sp.msg_t = 0                    # past the welcome flash (round 31:
+        #                                 the strip carries verdicts first)
+        assert "ENTER" in _ok(sp.strip(), f"shop:{mode}")
     egg = EggSelectPanel()
     assert "pick" in _ok(egg.strip(), "eggselect")
     tp = TournamentPanel(p)
