@@ -539,12 +539,19 @@ def set_account(name, pw):
 
 def erase_all():
     """Erase the WHOLE local state: pet save (+bak), settings (progress,
-    account, digimemory, +bak), sound + theme prefs.  The cloud copy stays
+    account, digimemory, +bak), sound + theme prefs -- and every other file
+    carrying the erased pet's data: quarantined save.corrupt.* copies, the
+    crash log and the stashed bug reports (persistence audit 2026-07-18:
+    'for keeps' left the old pet recoverable on disk).  The cloud copy stays
     with the account server-side; with the login gone, nothing pulls it.
     Options-menu 'Erase all data' (Joel 2026-07-04)."""
+    import glob as _glob
     removed = []
-    for fn in ("save.json", "save.json.bak", "settings.json", "settings.json.bak",
-               "sound.txt", "theme.txt"):
+    names = ["save.json", "save.json.bak", "settings.json", "settings.json.bak",
+             "sound.txt", "theme.txt", "crash.log", "pending_bugs.jsonl"]
+    names += [os.path.basename(p) for p in
+              _glob.glob(os.path.join(SAVE_DIR, "save.corrupt.*.json"))]
+    for fn in names:
         p = os.path.join(SAVE_DIR, fn)
         try:
             os.remove(p)

@@ -3,6 +3,17 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.5.68 — HONEST HOUSEKEEPING (2026-07-18)
+
+* **The save warning tells the truth.** One transient disk refusal used
+  to stick forever — the quit banner printed "couldn't save" over a pet
+  that had been saving fine every ten seconds since. The flag now clears
+  when the same file writes clean (and only then — another file's
+  success can't mute a save that's still refusing).
+* **Erase All erases everything.** Quarantined save copies, the crash
+  log and stashed bug reports carried the erased pet's data past the
+  typed-YES erase; they die with it now.
+
 ## 0.5.67 — THE BOSS STANDS TALL (2026-07-18)
 
 * **Raid bosses render whole.** The raid page's reduced scene was wearing

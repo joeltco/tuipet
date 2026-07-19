@@ -102,3 +102,28 @@ def test_module_launch_exists():
     does not reliably carry pip console scripts)."""
     import tuipet.__main__ as m
     assert callable(m.main)
+
+
+def test_save_failed_clears_when_the_same_file_recovers(monkeypatch, tmp_path):
+    """A transient refusal must not stick forever (persistence audit
+    2026-07-18) -- but only the SAME file writing clean clears the flag: a
+    settings write succeeding must not mute a save.json still refusing."""
+    from tuipet import persistio
+    from tuipet import persistence as pers
+    from tuipet.pet import Pet
+    pet = Pet(num=100, stage='Champion', attribute='Vaccine', obedience=500)
+    pet.world_seconds = 600.0
+    blocked = tmp_path / 'blocked'
+    blocked.mkdir()
+    target = str(blocked / 'save.json')
+    os.chmod(blocked, 0o555)
+    try:
+        persistio._atomic_write_json(target, {"x": 1})
+        assert pers.save_failed                    # the refusal is recorded...
+        persistio._atomic_write_json(str(tmp_path / 'settings.json'), {})
+        assert pers.save_failed                    # ...another file can't mute it...
+    finally:
+        os.chmod(blocked, 0o755)
+    persistio._atomic_write_json(target, {"x": 1})
+    assert not pers.save_failed                    # ...its own clean write clears it
+    assert persistio.save_failed == ""

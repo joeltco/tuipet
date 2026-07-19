@@ -51,11 +51,13 @@ SETTINGS_PATH = os.path.join(SAVE_DIR, "settings.json")
 # set by _atomic_write_json when the disk refuses us -- the app surfaces it once
 # so a silently-unsaveable install (iOS's read-only ~) can never eat a pet
 save_failed = ""
+_failed_path = ""    # WHICH file refused: only its own later success clears the flag
 
 def _atomic_write_json(path, data, keep_bak=False):
     """Atomic JSON write (tmp + os.replace); keep_bak rotates one generation
     back first.  This dance lived in three hand-rolled copies (settings, save,
     cloud-pull; refactor 2026-07-05)."""
+    global save_failed, _failed_path
     try:
         os.makedirs(os.path.dirname(path), exist_ok=True)
         tmp = path + ".tmp"
@@ -64,6 +66,13 @@ def _atomic_write_json(path, data, keep_bak=False):
         if keep_bak and os.path.exists(path):
             os.replace(path, path + ".bak")   # keep one generation back
         os.replace(tmp, path)
+        # a transient refusal used to stick forever -- the exit banner
+        # printed "couldn't save" over a pet that had been saving fine
+        # every 10s since (persistence audit 2026-07-18).  Clear it only
+        # when the SAME file writes clean: a settings write succeeding
+        # must not mute a save.json that is still refusing.
+        if path == _failed_path:
+            save_failed, _failed_path = "", ""
     except OSError as e:
         # best-effort, mirroring the read side (load/load_settings both swallow
         # OSError): a full / read-only / quota'd disk must never crash the 10s
@@ -74,8 +83,8 @@ def _atomic_write_json(path, data, keep_bak=False):
         # ...but it must not be SILENT either (iOS support 2026-07-13): a
         # read-only save dir meant the pet quietly never persisted and the
         # player only found out by losing it.  Record it; the app warns.
-        global save_failed
         save_failed = "%s: %s" % (os.path.dirname(path) or path, e.strerror or e)
+        _failed_path = path
         return
 
 _LOCK_NAME = "running.pid"

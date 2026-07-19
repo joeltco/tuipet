@@ -300,6 +300,21 @@ def test_erase_all_wipes_the_local_state():
     assert persistence.get_progress().get("wins", 0) == 0
 
 
+def test_erase_all_takes_the_pet_carrying_leftovers_too():
+    """'For keeps' means for keeps (persistence audit 2026-07-18): the
+    quarantined save copies, the crash log and the stashed bug reports all
+    carry the erased pet's data and must die with it."""
+    for fn in ("save.corrupt.20260718-120000.json", "crash.log",
+               "pending_bugs.jsonl"):
+        with open(os.path.join(persistence.SAVE_DIR, fn), "w") as f:
+            f.write("{}")
+    removed = persistence.erase_all()
+    assert "crash.log" in removed and "pending_bugs.jsonl" in removed
+    assert "save.corrupt.20260718-120000.json" in removed
+    left = os.listdir(persistence.SAVE_DIR)
+    assert not any(fn.startswith("save.corrupt") for fn in left)
+
+
 def test_erase_flows_into_the_egg_carousel_not_an_auto_egg():
     """Erase -> title -> the EGG-SELECT CAROUSEL.  The erase branch parked a
     placeholder Pet.new_egg() and reopened the title, but _new_game was only

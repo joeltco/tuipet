@@ -148,10 +148,10 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("THE BOSS STANDS TALL: raid bosses no longer get their "
-                 "heads cut off on the raid page, the whole page fits the "
-                 "screen again, and the battle timing bar is now the same "
-                 "canon pixel bar the training drill sweeps.")
+    WHATS_NEW = ("HONEST HOUSEKEEPING: the quit message no longer cries "
+                 "\"couldn't save\" after a disk blip that healed itself, "
+                 "and Erase All now really erases everything - including "
+                 "quarantined save copies and crash logs.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and
