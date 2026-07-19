@@ -149,3 +149,26 @@ def test_carimon_left_with_the_fake_egg_cut():
     cut 2026-07-17 with the rest of the fakes."""
     assert all(r["name"] != "Carimon" for r in data.load_egg_unlock().values())
     assert "Carimon" not in {egg.hatch_name(i) for i in range(egg.count())}
+
+
+def test_prev_gate_vocabulary_lives_in_the_roster():
+    """The reachability test above is SELF-FEEDING: _prog_for hands a rule
+    its own prev_field/prev_attr back, so a renamed roster vocabulary
+    (e.g. 'NatureSpirit' -> 'Nature Spirits') would still "open" the egg
+    here while sealing it live -- no real pet could ever snapshot the
+    stale value.  Pin the two vocabularies together, and every history
+    gate to a real roster species (egg audit 2026-07-19)."""
+    sp, _ = data.load_sprites()
+    fields = {r.get("field") or "None" for r in sp}
+    attrs = {r.get("attribute") or "None" for r in sp}
+    nums = {r["num"] for r in sp}
+    for i, r in data.load_egg_unlock().items():
+        if r.get("prev_field") is not None:
+            assert r["prev_field"] in fields, \
+                f"egg {i}: prev_field {r['prev_field']!r} not a roster field"
+        if r.get("prev_attr") is not None:
+            assert r["prev_attr"] in attrs, \
+                f"egg {i}: prev_attr {r['prev_attr']!r} not a roster attribute"
+        for n in (r.get("history") or []):
+            assert n in nums or data.canonical_num(n) in nums, \
+                f"egg {i}: history num {n} not in the roster"

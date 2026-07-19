@@ -3,6 +3,16 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.5.72 — EVERY EGG EARNABLE (2026-07-19)
+
+* **The digitama system passed a full audit.** All 46 eggs verified
+  reachable under their own unlock signals, every gate signal confirmed
+  fed by live code, the progress lines crash-free on any profile, and
+  shell art plus home scenes complete. No player-facing changes —
+  everything already worked.
+* A new test guard ties the unlock rules' vocabulary to the roster's,
+  so a future data edit can never silently seal a family egg.
+
 ## 0.5.71 — A CLEAN SHOPFLOOR (2026-07-19)
 
 * **The shop passed a full economy audit.** All 32 catalog items swept
