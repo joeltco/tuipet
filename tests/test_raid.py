@@ -232,9 +232,20 @@ def test_panel_text_smokes_in_every_view_state():
     # incoming: the countdown replaces the pool bar
     pan.client.raid = _view(_mega(), start=90000.0, now=100.0)
     assert "INCOMING" in pan.text().plain
-    # a waiting purse advertises the claim key
+    # a waiting purse advertises the claim key (it shares the context line
+    # with the status message on the 40-tick beat; raid-menu fix 2026-07-19)
     pan.client.raid = _view(_mega(), award={"id": "9", "boss": "BossMon"})
+    pan.frame_i = 40                            # the purse's beat
     assert "purse" in pan.text().plain
+    pan.frame_i = 0                             # the message's beat
+    assert pan.msg in pan.text().plain
+    # the whole page holds the 12-row LCD in every state (the old stacked
+    # layout ran 14-15 rows and the box clipped the tail)
+    for view in (_view(_mega()), _view(_mega(), start=90000.0, now=100.0),
+                 _view(_mega(), award={"id": "9", "boss": "BossMon"})):
+        pan.client.raid = view
+        rows = pan.text().plain.rstrip("\n").split("\n")   # note()'s trailing \n
+        assert len(rows) <= 12
     assert pan.strip()
 
 
@@ -385,8 +396,9 @@ def test_the_panel_reports_honestly_and_stays_live():
     for _ in range(51):
         pan.anim()
     assert "get" in calls, "the open panel must keep the view live"
-    # and the promise matches the payout
-    src = inspect.getsource(RaidPanel.text)
+    # and the promise matches the payout (the cadence line moved into
+    # _context_line with the 12-row layout, raid-menu fix 2026-07-19)
+    src = inspect.getsource(RaidPanel._context_line)
     assert "weekend pays 1.5x" in src and "weekend pays 2x" not in src
 
 
@@ -398,3 +410,45 @@ def test_claim_key_takes_both_cases():
         pan.client.raid = _view(_mega(), award={"id": 7})
         pan.key(key)
         assert ("claim", 7) in pan.client.calls, key
+
+
+def test_the_boss_stands_unclipped(monkeypatch):
+    """The reduced 8-row scene must NOT wear the 24px-window clip — it
+    chopped the top 6px off every boss (Joel 2026-07-19: 'raid monster
+    sprites are getting cut off')."""
+    import tuipet.raidscreen as rs
+    seen = {}
+    real = rs.render_scene
+
+    def spy(placements, cols, rows, *a, **kw):
+        seen["rows"], seen["clip"] = rows, kw.get("clip")
+        seen["heights"] = [len(p[0]) for p in placements]
+        return real(placements, cols, rows, *a, **kw)
+
+    monkeypatch.setattr(rs, "render_scene", spy)
+    pan = _panel()
+    pan.client.raid = _view(_mega())
+    pan.text()
+    assert seen["clip"] is None                      # no 24px-window clip
+    assert all(h <= seen["rows"] * 2 for h in seen["heights"])   # fits its band
+
+
+def test_the_ready_bar_is_the_training_sprite():
+    """One canon timing bar (Joel 2026-07-19: 'the slide bar should be the
+    same sprite as the training slide bar'): the drill delegates to
+    strikefx.timing_bar, and the battle/raid ready page renders that pixel
+    bar over the arena — the old text-glyph track is gone."""
+    from tuipet import strikefx
+    from tuipet.training import TrainingPanel
+    pan = _panel()
+    pan.client.raid = _view(_mega())
+    pan.key("space")                                 # open the bout
+    pan.sub.key("space")                             # skip the intro
+    assert pan.sub.phase == "ready"
+    plain = pan.sub.text().plain
+    assert len(plain.split("\n")) == 12              # full-LCD scene page
+    assert "◆" not in plain and "mega" not in plain  # the glyph track is gone
+    drill = TrainingPanel(pan.pet)
+    drill.bar = 7
+    assert drill._bar_overlay() == strikefx.timing_bar(
+        7, drill.mega_lo, drill.mega_hi)             # one pixel-set, shared

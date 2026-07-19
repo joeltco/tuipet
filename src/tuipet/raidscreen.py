@@ -202,6 +202,31 @@ class RaidPanel(menu.SubHost):
         return None
 
     # ---- render ----
+    def _context_line(self, v, b):
+        """The raid page's one context line: the status message alternates
+        with the waiting purse / weekly cadence on the shop-tease beat (40
+        ticks), so neither starves the other (menu.note marquees any of
+        them when over-wide)."""
+        award = v.get("award")
+        if award:
+            alt = f"purse waiting: {award.get('boss', '?')[:12]} — press C"
+        elif not self._standing():
+            alt = ""
+        else:
+            from . import tournament as _cad
+            left = max(0, int(b.get("end", 0) - v.get("now", 0)))
+            days, hrs = left // 86400, left % 86400 // 3600
+            fest = _cad.holiday()
+            # the relay pays x1.5 on WEEKENDS only -- "2x" and a festival
+            # bonus were promises the server never paid (raid review
+            # 2026-07-18); the festival stays as pure calendar flavor
+            alt = (f"weekly boss · {days}d {hrs}h left"
+                   + (f" · {fest}" if fest
+                      else " · weekend pays 1.5x" if _cad.is_weekend() else ""))
+        if self.msg and (not alt or (self.frame_i // 40) % 2 == 0):
+            return self.msg
+        return alt or self.msg
+
     def text(self):
         if self.sub is not None:
             return self.sub.text()
@@ -216,15 +241,19 @@ class RaidPanel(menu.SubHost):
             return out
         num = int(b.get("num", -1))
         # the BOSS looms on the arena, breathing on the walk beat -- the whole
-        # point of taking raids out of the lobby's text page
+        # point of taking raids out of the lobby's text page.  The scene is a
+        # 16px band (8 rows): the sprite fits ITS band and the standard
+        # 24px-window clip stays OFF -- clip=grid.WINDOW on this reduced
+        # scene chopped the top 6px off every boss (Joel 2026-07-19: "raid
+        # monster sprites are getting cut off").
         rows = data.bob_frame(num, self.frame_i,
                               "attack" if (self.frame_i // 9) % 4 == 3 else "idle")
-        placements = [(grid.prep(rows, ph=ROWS * 2),
-                       grid.X0 + (grid.W - grid.width(grid.prep(rows, ph=ROWS * 2))) // 2,
-                       False)] if rows else []
+        sc_rows = ROWS - 4
+        boss = grid.prep(rows, ph=sc_rows * 2) if rows else None
+        placements = [(boss, (COLS - grid.width(boss)) // 2, False)] if boss else []
         bgimg = self.pet.background(file="tourneyBack")
-        scene = render_scene(placements, COLS, ROWS - 4, menu.scene_ink(bgimg),
-                             LCD_BG, bgimg=bgimg, clip=grid.WINDOW)
+        scene = render_scene(placements, COLS, sc_rows, menu.scene_ink(bgimg),
+                             LCD_BG, bgimg=bgimg)
         pool, pool_max = int(b.get("hp", 0)), max(1, int(b.get("max_hp", 1)))
         pct = max(0, min(100, pool * 100 // pool_max))
         bar = "█" * (pct * 24 // 100)
@@ -244,24 +273,9 @@ class RaidPanel(menu.SubHost):
         lead = f"{top[0][0][:10]} {_fmt(top[0][1])}" if top else "—"
         out.append(f" attempts {v.get('attempts', 0)}   "
                    f"you #{rank} {_fmt(mine)}   top {lead}\n", style=DIM)
-        # the cadence line (2026-07-17): the WEEKLY window, the day's
-        # attempts, and the real-calendar bonuses the relay already pays
-        from . import tournament as _cad
-        if self._standing():
-            left = max(0, int(b.get("end", 0) - v.get("now", 0)))
-            days, hrs = left // 86400, left % 86400 // 3600
-            fest = _cad.holiday()
-            # the relay pays x1.5 on WEEKENDS only -- "2x" and a festival
-            # bonus were promises the server never paid (raid review
-            # 2026-07-18); the festival stays as pure calendar flavor
-            note = (f" weekly boss · {days}d {hrs}h left"
-                    + (f" · {fest}" if fest
-                       else " · weekend pays 1.5x" if _cad.is_weekend() else ""))
-            out.append(note + "\n", style=DIM)
-        award = v.get("award")
-        if award:
-            out.append(f" purse waiting: {award.get('boss', '?')[:12]} — press C\n",
-                       style=POS)
-        out.append_text(menu.note(self.msg, tick=self.frame_i))
-        out.append_text(menu.footer("SPACE raid   C claim   ESC out"))
+        # ONE context line closes the 12-row budget (the old stacked
+        # cadence + award + note + footer ran the page to 15 rows and the
+        # LCD box clipped the tail): priority msg > waiting purse > the
+        # weekly cadence; the strip carries the keys (scene-screen law).
+        out.append_text(menu.note(self._context_line(v, b), tick=self.frame_i))
         return out

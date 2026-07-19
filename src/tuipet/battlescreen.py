@@ -480,30 +480,16 @@ class BattlePanel:
 
     def _render_ready(self):
         """The timing bar: a marker sweeps 0..24; SPACE locks it.  Inside the
-        mega zone = double blasts most rounds; near it = normal; wide = miss."""
-        e = self.enemy
-        out = menu.header("BATTLE", f"vs {e['name'][:14]}")
-        tag = " BOSS" if e.get("boss") else ""
-        out.append_text(menu.note(f"Set your strike timing!{tag}"))
-        cells = []
-        for x in range(BAR_MAX + 1):
-            if x == self.bar:
-                cells.append("◆")
-            elif self.mega_lo <= x <= self.mega_hi:
-                cells.append("█")
-            elif self.mega_lo - 5 <= x <= self.mega_hi + 5:
-                cells.append("▒")
-            else:
-                cells.append("·")
-        out.append_text(menu.blanks(1))
-        out.append_text(menu.row("  " + "".join(cells)))
-        out.append_text(menu.note("█ mega   ▒ normal   · miss"))
-        out.append_text(menu.blanks(1))
-        out.append_text(menu.note("good care widens the mega zone"))
-        out.append_text(menu.footer("SPACE lock   ESC " +
-                                    ("flee" if self.wild else "back out")))
-        self.hud_php, self.hud_fhp, self.hud_note = 5, 5, "Set your timing!"
-        return out
+        mega zone = double blasts most rounds; near it = normal; wide = miss.
+        Rendered as the CANON pixel bar over the arena -- the same sprite as
+        the training drill (strikefx.timing_bar; Joel 2026-07-19: 'the slide
+        bar should be the same sprite as the training slide bar' -- the old
+        text-glyph page was the one bar that looked nothing like it).  The
+        strip carries SPACE/ESC; the status card carries the coaching."""
+        self.hud_php, self.hud_fhp = 5, 5
+        self.hud_note = "Set your timing!  (good care widens the mega zone)"
+        return self._scene([], strikefx.timing_bar(self.bar, self.mega_lo,
+                                                   self.mega_hi))
 
     def text(self):
         if self.phase == "ready":

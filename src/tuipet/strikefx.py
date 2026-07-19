@@ -29,6 +29,53 @@ def beat_sfx(m, strong):
     return None
 
 
+# the source's 3x5 training font (only the glyphs HIT! needs; '!' is absent
+# and blanks, exactly like the original)
+_FONT_3X5 = {
+    "H": [1, 0, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1, 1, 0, 1],
+    "I": [1, 1, 1, 0, 1, 0, 0, 1, 0, 0, 1, 0, 1, 1, 1],
+    "T": [1, 1, 1, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0],
+    " ": [0] * 15,
+}
+
+
+def timing_bar(bar, mega_lo, mega_hi):
+    """The canon timing bar, pixel for pixel from the source's
+    TRAINING_MINIGAME render (Joel 2026-07-15: 'do it canon style'):
+    HIT! in the 3x5 font at (9,0), the 28x5 outlined track at (2,7),
+    single-pixel ticks above and below the mega window's edges, and the
+    moving 2x3 marker at (3+bar, 8).  Single-sourced here so the drill
+    AND the battle/raid ready screen sweep the SAME sprite (Joel
+    2026-07-19: 'the slide bar should be the same sprite as the
+    training slide bar')."""
+    pts = []
+
+    def L(x, y):                              # the source's pixel-set
+        pts.append((grid.X0 + x, grid.TOP + y))
+
+    def B(x, y, w, h):                        # the source's rect outline
+        for i in range(w):
+            L(x + i, y), L(x + i, y + h - 1)
+        for i in range(h):
+            L(x, y + i), L(x + w - 1, y + i)
+
+    def R(s, x, y):                           # the source's 3x5 font run
+        for ci, ch in enumerate(s):
+            g = _FONT_3X5.get(ch, _FONT_3X5[" "])
+            for gy in range(5):
+                for gx in range(3):
+                    if g[gy * 3 + gx]:
+                        L(x + ci * 4 + gx, y + gy)
+
+    R("HIT!", 9, 0)
+    B(2, 7, 28, 5)
+    lo, hi = 3 + mega_lo, 3 + mega_hi + 1
+    for tx in (lo, hi):                       # the mega window's ticks
+        L(tx, 6), L(tx, 12)
+    B(3 + bar, 8, 2, 3)                       # the marker (outline == solid at 2 wide)
+    return pts
+
+
 def cbounds(rows):
     """Leftmost / rightmost lit column of a sprite (its real content bounds)."""
     w = max(len(r) for r in rows)

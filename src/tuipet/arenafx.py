@@ -317,7 +317,12 @@ class FxMixin:
         elif kind == "inherit":
             # DVPet inheriting(): chip-shrink t11 / parent-grow t17 / parent-shrink
             # t37 all key the attackHit cue; the flight home pips inheritMove
-            # (=alarm) every 4; the collide lands inheritCollide (=strongHit)
+            # (=alarm) every 4; the collide lands inheritCollide (=strongHit).
+            # The t-values above are CANON's 65-beat timeline; these keys are
+            # the same beats on _fxk_inherit's remapped 50-step timeline
+            # (shrink 10 / grow 14 / visit-end 32 / collide 46) -- aligned
+            # with the painter, do NOT "fix" them to the canon numbers
+            # (sound/fx audit 2026-07-18).
             self.fx["snds"] = {10: "attackHit", 14: "attackHit", 32: "attackHit",
                                36: "alarm", 40: "alarm", 44: "alarm", 46: "strongHit"}
         elif kind == "dna_charge":

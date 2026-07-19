@@ -148,10 +148,10 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("A STURDIER RELAY: messages sent to you while you were "
-                 "away can no longer be lost to a bad connection, and the "
-                 "season ladder payout is now confirmed by the server "
-                 "before it lands - same contract as raid rewards.")
+    WHATS_NEW = ("THE BOSS STANDS TALL: raid bosses no longer get their "
+                 "heads cut off on the raid page, the whole page fits the "
+                 "screen again, and the battle timing bar is now the same "
+                 "canon pixel bar the training drill sweeps.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and

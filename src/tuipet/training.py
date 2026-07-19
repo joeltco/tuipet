@@ -138,38 +138,10 @@ class TrainingPanel:
         return (fr[pose] if pose < len(fr) else None) or fr[0]
 
     def _bar_overlay(self):
-        """The canon timing bar, pixel for pixel from the source's
-        TRAINING_MINIGAME render (Joel 2026-07-15: 'do it canon style'):
-        HIT! in the 3x5 font at (9,0) -- the source font has no '!', so it
-        blanks, exactly like the original -- the 28x5 outlined track at
-        (2,7), single-pixel ticks above and below the mega window's edges,
-        and the moving 2x3 marker at (3+pos, 8)."""
-        pts = []
-
-        def L(x, y):                              # the source's pixel-set
-            pts.append((grid.X0 + x, grid.TOP + y))
-
-        def B(x, y, w, h):                        # the source's rect outline
-            for i in range(w):
-                L(x + i, y), L(x + i, y + h - 1)
-            for i in range(h):
-                L(x, y + i), L(x + w - 1, y + i)
-
-        def R(s, x, y):                           # the source's 3x5 font run
-            for ci, ch in enumerate(s):
-                g = _FONT_3X5.get(ch, _FONT_3X5[" "])
-                for gy in range(5):
-                    for gx in range(3):
-                        if g[gy * 3 + gx]:
-                            L(x + ci * 4 + gx, y + gy)
-
-        R("HIT!", 9, 0)
-        B(2, 7, 28, 5)
-        lo, hi = 3 + self.mega_lo, 3 + self.mega_hi + 1
-        for tx in (lo, hi):                       # the mega window's ticks
-            L(tx, 6), L(tx, 12)
-        B(3 + self.bar, 8, 2, 3)                  # the marker (outline == solid at 2 wide)
-        return pts
+        """The canon timing bar (Joel 2026-07-15: 'do it canon style') --
+        the pixel-set moved VERBATIM to strikefx.timing_bar so the battle/
+        raid ready screen sweeps the same sprite (Joel 2026-07-19)."""
+        return strikefx.timing_bar(self.bar, self.mega_lo, self.mega_hi)
 
     def _bar_text(self):
         return menu.paint([], self.pet.background(), rows=ROWS, cols=COLS,

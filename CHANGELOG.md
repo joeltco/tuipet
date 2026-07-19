@@ -3,6 +3,18 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.5.67 — THE BOSS STANDS TALL (2026-07-18)
+
+* **Raid bosses render whole.** The raid page's reduced scene was wearing
+  the full-screen clip, cutting the top six pixels off every boss — and
+  the page itself ran past the LCD, silently clipping its own footer. The
+  boss now stands complete and the page fits exactly, with one rotating
+  context line (verdict / waiting purse / weekly cadence).
+* **One timing bar.** The battle and raid ready screen now sweeps the
+  canon pixel bar — HIT! font, outlined track, window ticks — the same
+  sprite as the training drill, single-sourced, instead of a text-glyph
+  track that looked nothing like it.
+
 ## 0.5.66 — A STURDIER RELAY (2026-07-18)
 
 * **Offline messages survive bad connections.** The relay now deletes a
