@@ -146,7 +146,12 @@ def icon_cell(src):
         return blank
     lines = [t.plain.ljust(IC_W)                # w <= IC_W (factor guarantees it)
              for t in bitmap_text(bm, LCD_ON, LCD_BG)]
-    return (lines + blank)[:IC_ROWS]
+    # short art anchors to the BASELINE, not the ceiling: foods sit on
+    # plates, props sit on the ground -- a top-floated icon over a dead
+    # bottom row reads as clipped (Joel's report 2026-07-19: "giga meal
+    # sprite might be getting cut off in shop?" -- the 24x18 rip is
+    # complete; the float was the lie)
+    return (blank + lines)[-IC_ROWS:]
 
 
 def item_icon(e):

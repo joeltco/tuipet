@@ -396,7 +396,12 @@ class OptionsPanel(menu.SubHost):
                 return "updating…"
             if self.confirm_restart:
                 return "restart now? ENTER"
-            if self._updated or getattr(self.pet, "_updated_to", None):
+            hint = self.update_hint() if self.update_hint is not None else ""
+            if self._updated or "installed" in (hint or ""):
+                # (was getattr(self.pet, "_updated_to") -- a DEAD read: the
+                # launch installer sets the flag on the APP, never the pet;
+                # the update_hint lambda carries the app's message.  Bug-
+                # report sweep 2026-07-19.)
                 return "restart to apply"
             if not persistence.get_auto_update():
                 return f"v{update_check.current_version() or 'dev'} · auto off"

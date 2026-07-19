@@ -3,6 +3,29 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.5.90 — THE REPORTS, PART TWO (2026-07-19)
+
+* **The medicine is a pill now.** You asked "where's the pill? that's a
+  bottle" — and it was: the old art is DVPet's Med *jar*. The heal now
+  eats the Food Pill capsule, a real rip with a true bite-by-bite
+  sequence, the same capsule the assistant already fed with. The bottle
+  sprite is audited safe: nothing else used it, and it stays in the
+  atlas untouched.
+* **No more pooping through dinner.** The original device blocks the
+  squat while an action is playing — that hold was missing here, so a
+  ripe gauge could drop a pile mid-meal. Restored: a busy mon holds it
+  until the animation ends (a long hold releases as the big backlog
+  pile, and the mood pays canon's postpone price).
+* **Short shop icons sit on the floor.** The Giga Meal wasn't cut off —
+  the rip is complete against the original atlas — it was top-floating
+  over a dead row, which read as clipped. Short art now rests on the
+  baseline like every plate should.
+* **And two answers.** Effort filling after medicine is by design (the
+  pill grants effort +1, straight from the source). The "restart to
+  play" message after your in-game update was the auto-updater being
+  honest — a *newer* release had landed while you played; it names the
+  version it means.
+
 ## 0.5.89 — LISTENING TO THE REPORTS (2026-07-19)
 
 * **The scene names, corrected properly this time.** Your reports were

@@ -52,3 +52,63 @@ def test_the_bad_vitamin_lurch_still_drops_a_pile_through_the_helper():
     p = _pet(poop=0, poop_sizes=[])
     p._start_poop()
     assert p.poop == 1 and len(p.poop_sizes) == 1
+
+
+# ---- the startPoop state-machine block (restored 2026-07-19) ----------------
+# Joel's live bug report: "mon is doing a weird pose while walking, and it
+# poops during feeding... make sure you audit that sequnce, make sure nothing
+# can get glitchy. ie pooping".  Canon DVPet blocks startPoop while the anim
+# state machine is busy and bills PostponePoopMoodChange -1; the 07-15 audit
+# had dropped the hold "by architecture".  Restored: a busy pet (care anim
+# playing, or the app's _fx_busy window) HOLDS the squat -- gauge keeps
+# accruing, mood pays -1 once per hold -- and releases when idle.
+
+def _ripe(**kw):
+    p = _pet(**kw)
+    p._poop_t = p._poop_interval + 1.0     # gauge past the threshold
+    return p
+
+def test_a_feeding_pet_holds_the_squat():
+    p = _ripe()
+    p._set_anim("eat", 1.4)
+    p._tick_body(1.0)
+    assert p.poop == 0                     # no pile lands mid-meal
+    assert p.anim == "eat"                 # the meal was never interrupted
+
+def test_the_fx_window_holds_it_too():
+    """The visible fx outlives the anim ttl -- the app marks the window."""
+    p = _ripe()
+    p._fx_busy = True                      # app.on_tick's per-tick proxy
+    p._tick_body(1.0)
+    assert p.poop == 0
+
+def test_the_hold_is_one_episode_not_a_drumbeat():
+    """PostponePoopMoodChange bills via _set_mood -- a no-op today (the
+    mood meter left with BASIC VPET; canon write-sites stay as inert
+    citations) -- but the EPISODE latch must still arm exactly once."""
+    p = _ripe()
+    p._set_anim("eat", 9.0)
+    p._tick_body(1.0)
+    assert p._poop_held is True            # the hold latched...
+    p._tick_body(1.0)
+    assert p.poop == 0                     # ...and keeps holding, no pile
+
+def test_release_lands_the_pile_when_idle_again():
+    p = _ripe()
+    p._set_anim("eat", 1.4)
+    p._tick_body(1.0)
+    assert p.poop == 0
+    p.anim, p._fx_busy = "idle", False     # the action ended
+    p._tick_body(1.0)
+    assert p.poop == 1                     # the held squat goes
+    assert p.anim == "poop"
+    p._set_anim("eat", 1.4)                # a NEW hold re-arms the latch
+    p._poop_t = p._poop_interval + 1.0
+    p._tick_body(1.0)
+    assert p._poop_held is True and p.poop == 1   # held again, no second pile
+
+def test_an_idle_pet_still_goes_on_schedule():
+    p = _ripe()
+    assert p.anim in ("idle", "walk")
+    p._tick_body(1.0)
+    assert p.poop == 1

@@ -150,11 +150,12 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("LISTENING TO THE REPORTS: sunset shore was underwater "
-                 "all along - it is Sunset Seafloor now, the island wears "
-                 "its three times of day honestly, cliff eggs hatch on "
-                 "real coast, and the egg carousel is a clean scene with "
-                 "the neighbour peeks back where they belong.")
+    WHATS_NEW = ("THE REPORTS, PART TWO: the medicine is a real capsule "
+                 "now (the bottle was the Med jar - it stays safe in the "
+                 "atlas), your mon politely holds it in mid-meal instead "
+                 "of pooping through dinner, and short shop icons sit on "
+                 "the shelf floor - the Giga Meal was never cut off, "
+                 "just floating.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and
@@ -935,6 +936,11 @@ class TuiPetApp(ActionsMixin, App):
             sc.paint(self.pet)
 
     def on_tick(self):
+        # the sim's proxy for "an animation is playing": the poop deferral
+        # (canon startPoop state-machine block, restored 2026-07-19) holds
+        # the squat through the whole VISIBLE fx, not just the anim ttl
+        if getattr(self, "pet", None) is not None:
+            self.pet._fx_busy = getattr(getattr(self, "screen_w", None), "fx", None) is not None
         if self.mode is not None:
             # a sub-screen is open -> pause the life-sim (the canon menu
             # freeze) -- EXCEPT the lobby's chat contexts (Joel 2026-07-13:

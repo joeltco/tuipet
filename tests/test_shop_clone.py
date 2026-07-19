@@ -330,3 +330,18 @@ def test_timed_items_deliver_the_hours_on_the_label():
     s0 = p.stage_seconds
     p.add_item("grow_capsule"); p.use_item("grow_capsule")
     assert p.stage_seconds - s0 == 7200.0
+
+
+def test_short_icons_anchor_to_the_baseline_not_the_ceiling():
+    """Joel's report 2026-07-19: "giga meal sprite might be getting cut off
+    in shop?"  The 24x18 rip is COMPLETE (the atlas gutters around f:28 are
+    empty -- verified against spritesFood0.png); the lie was icon_cell
+    top-floating short art over a dead bottom row.  Foods sit on plates:
+    short art bottom-aligns, full-height art is untouched."""
+    from tuipet import data, menu
+    icons = data.load_icons()
+    giga = menu.icon_cell(icons["f:28"][0])          # 24x18: one short row
+    assert giga[0].strip() == ""                     # the dead row is on TOP...
+    assert giga[-1].strip() != ""                    # ...the plate is on the floor
+    steak = menu.icon_cell(icons["f:8"][0])          # 24x24: full height
+    assert all(l.strip() for l in steak)             # unchanged, fills the cell

@@ -345,17 +345,28 @@ class BodyMixin:
         # pooping (DVPet poop(): relief mood bump, sheds weight, drops a sized pile)
         self._poop_t = getattr(self, "_poop_t", 0) + dt
         # (a sleeping pet held it above -- only the desperate 2x gauge goes at night)
-        # (canon's PostponePoopMoodChange -1 -- startPoop blocked by the anim
-        # STATE machine -- has no tuipet counterpart BY ARCHITECTURE: the pile
-        # drops the same tick the gauge crosses, so an awake pet can never be
-        # made to hold it; poop/filth audit 2026-07-15)
         if self._poop_t >= self._poop_interval:
-            self._poop_t -= self._poop_interval  # gauge -= bmMax (the remainder carries)
-            backlog = self._poop_t >= self._poop_interval / 2
-            if backlog:                          # big backlog: bigger pile + extra shed,
-                self._poop_t = 0                 # gauge zeroed (DVPet poop())
-            self._do_poop(backlog=backlog)
-            self._set_anim("poop", 2.2)          # squat-and-go (DVPet poop())
+            busy = self.anim not in ("idle", "walk") or getattr(self, "_fx_busy", False)
+            if busy:
+                # canon startPoop: the anim STATE MACHINE blocks the squat --
+                # the pet HOLDS it until the action ends (restored 2026-07-19,
+                # Joel's report: "it poops during feeding... make sure nothing
+                # can get glitchy").  The 07-15 audit had dropped this "by
+                # architecture"; the app marks the fx window via _fx_busy so
+                # the hold covers the whole visible animation.  Canon bills
+                # the hold once: PostponePoopMoodChange -1.  The gauge keeps
+                # accruing -- a long hold releases as the big backlog pile.
+                if not getattr(self, "_poop_held", False):
+                    self._poop_held = True
+                    self._set_mood(self.mood - 1)
+            else:
+                self._poop_held = False
+                self._poop_t -= self._poop_interval  # gauge -= bmMax (the remainder carries)
+                backlog = self._poop_t >= self._poop_interval / 2
+                if backlog:                          # big backlog: bigger pile + extra shed,
+                    self._poop_t = 0                 # gauge zeroed (DVPet poop())
+                self._do_poop(backlog=backlog)
+                self._set_anim("poop", 2.2)          # squat-and-go (DVPet poop())
         # effort decays per species (DVPet calcStrengthDecayLapse): keep training or it slips
         self._str_t = getattr(self, "_str_t", 0.0) + dt
         if not self.asleep and self.strength > 0 and self._str_t >= self._strength_interval:

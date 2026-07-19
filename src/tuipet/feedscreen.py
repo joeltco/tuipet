@@ -93,10 +93,14 @@ class FeedPanel:
             if self.pet.anim == "eat":
                 out = "Cured!" if was_sick else "A tonic — strength and pep."
                 # the pill is EATEN (the source's EATING action, pill-anim
-                # fix 2026-07-18) through the DVPet f:4 Med strip (art truth
-                # 2026-07-18: all sprites from the DVPet atlas)
-                return ("done", ("healed", {"key": "f:4", "name": "Pill"}, out))
-            return ("done", ("refused", {"key": "f:4", "name": "Pill"}, msg))
+                # fix 2026-07-18) through the DVPet f:41 Food Pill strip --
+                # a real capsule (Joel's report 2026-07-19: "wheres the
+                # pill? thats a bottle" -- f:4 Med IS a bottle; audited
+                # 2026-07-19: nothing else uses f:4, and the bottle strip
+                # stays in the atlas.  The assistant's feed fx already
+                # wears the same capsule as f:44)
+                return ("done", ("healed", {"key": "f:41", "name": "Pill"}, out))
+            return ("done", ("refused", {"key": "f:41", "name": "Pill"}, msg))
         elif k in ("escape", "f"):
             return ("done", None)
         return None

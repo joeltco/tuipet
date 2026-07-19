@@ -98,11 +98,18 @@ def test_the_pill_is_eaten_through_the_dvpet_med_strip():
     pan.cursor = 1                                   # the pill row
     done, (outcome, item, msg) = pan.key("enter")
     assert (done, outcome) == ("done", "healed")
-    assert item["key"] == "f:4" and "Cured" in msg
+    assert item["key"] == "f:41" and "Cured" in msg  # a real CAPSULE, not the
+    #                                                  f:4 Med bottle (Joel's
+    #                                                  report 2026-07-19)
     assert p.anim == "eat"                           # EATING, not the old heal
-    strip = data.load_icons()["f:4"]
+    strip = data.load_icons()["f:41"]
     assert len(strip) == 4
-    assert len({(len(f[0]), len(f)) for f in strip if f}) == 1   # uniform frames
+    # the capsule SHRINKS per bite (24x24 -> 24x21 -> 21x15 -> None, the
+    # blank eaten-away frame blit() tolerates) -- unlike f:0/f:4 the crop
+    # is not uniform, and that IS the eat sequence
+    assert strip[3] is None
+    sizes = [(len(f[0]), len(f)) for f in strip if f]
+    assert sizes[0] == (24, 24) and sizes == sorted(sizes, reverse=True)
     # and the heal fx kind is STILL gone root and branch
     assert not hasattr(Screen, "_fxk_heal")
 
