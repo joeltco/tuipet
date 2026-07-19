@@ -509,3 +509,18 @@ def test_requirement_checklist_page_jumps():
     assert pan.det_off == 0
     pan.key("pageup")
     assert pan.det_off == 0                      # clamped at the head
+
+
+def test_legacy_headstones_speak_real_time(tmp_path, monkeypatch):
+    """One day unit across the book (digicore audit 2026-07-19): the LEGACY
+    page formats an elder's age through _mins — the same real-time unit as
+    the STATUS Age row and the memorial epitaph.  The old //1440 mis-cited
+    the clock law and inflated every headstone 60x ('270d' for a 4.5-day
+    life)."""
+    from tuipet import digicore, persistence
+    p = _pet(name="Vetmon", stage="Champion")
+    p.age_seconds = 388800.0                    # 4.5 real days of ticks
+    persistence.snapshot_prev_gen(p)
+    label, val = digicore._legacy_rows()[0]
+    assert "4d12h" in val, val                  # the Age row's own reading
+    assert "270d" not in val                    # the 60x fantasy is dead

@@ -3,6 +3,15 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.5.73 — HONEST HEADSTONES (2026-07-19)
+
+* **LEGACY headstones tell the truth.** The DigiCore LEGACY page was
+  reading every elder's age sixty times too long — a pet that lived
+  4½ days was carved as "270d" while its own memorial said "4d 12h".
+  The headstones now speak the same clock as every other age in the
+  game; your ancestors' true ages appear on the next visit (the banked
+  records were always correct — only the display lied).
+
 ## 0.5.72 — EVERY EGG EARNABLE (2026-07-19)
 
 * **The digitama system passed a full audit.** All 46 eggs verified

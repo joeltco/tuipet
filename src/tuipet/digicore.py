@@ -261,9 +261,14 @@ def _legacy_rows():
         return [("—", "no elders yet — this pet"), ("", "is writing generation one")]
     rows = []
     for r in reversed(elders[-8:]):                 # 8 headstones + the more row = 9
-        days = int(float(r.get("age", 0)) // 1440)  # 1 game day = 1440 real seconds
+        # _mins: the book's own REAL-time formatter, same unit as the STATUS
+        # Age row and the memorial epitaph.  (The old //1440 mis-cited the
+        # clock law -- 1440 is game-MINUTES per game-day, not seconds -- and
+        # inflated every headstone 60x: a 4.5-day life read "270d";
+        # digicore audit 2026-07-19.)
+        age = _mins(float(r.get("age", 0)))
         fate = "†" if r.get("dead") else ""         # fell vs retired to the next egg
-        val = f"{str(r.get('name', '?'))[:12]} {r.get('stage', '?')} {days}d{fate}"
+        val = f"{str(r.get('name', '?'))[:12]} {r.get('stage', '?')} {age}{fate}"
         rows.append((f"gen {r.get('gen', '?')}", val[:30]))
     if len(elders) > 8:
         rows.append(("…", f"+{len(elders) - 8} more remembered"))

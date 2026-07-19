@@ -64,10 +64,12 @@ def test_evolve_msg_stays_plain_once_seen():
 def test_legacy_page_remembers_retired_generations():
     assert any("no elders yet" in v for _, v in _legacy_rows())
     p = Pet(num=100, name="Coredramon", stage="Champion", generation=3)
-    p.age_seconds = 12 * 1440.0                        # 12 game days
+    p.age_seconds = 12 * 86400.0                       # 12 REAL days of ticks
     persistence.snapshot_prev_gen(p)
     rows = _legacy_rows()
     assert rows[0][0] == "gen 3"
+    # real-time unit, like the Age row (the old pin asserted the 60x
+    # game-day reading; digicore audit 2026-07-19)
     assert "Coredramon" in rows[0][1] and "12d" in rows[0][1]
     assert all(len(v) <= 30 for _, v in rows)          # the 30-col value budget
 
