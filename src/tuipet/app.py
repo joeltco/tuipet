@@ -148,10 +148,10 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("PLAIN WORDS EVERYWHERE: a damaged install now explains "
-                 "itself and how to reinstall on every data file, not just "
-                 "some - no more raw error walls. Under the hood: the full "
-                 "data layer passed a referential-integrity audit.")
+    WHATS_NEW = ("COMPANY AT THE GRAVE: the lobby now opens beside a "
+                 "departed pet - chat, DMs, rooms and the ladder all work "
+                 "while you mourn. Battles and jogress stay sealed: nobody "
+                 "fights the departed.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and
@@ -496,8 +496,11 @@ class TuiPetApp(ActionsMixin, App):
             # ONE chokepoint ahead of every global binding -- the per-action
             # can_*() gates kept slipping (a dead mon could still adventure,
             # Joel 2026-07-05).  Any care key leads back to the memorial;
-            # quit and options stay live beside the grave.
-            if event.key not in ("q", "g"):
+            # quit, options and the LOBBY stay live beside the grave (Joel
+            # 2026-07-19: the social room is not a care action -- chat, DMs,
+            # ladder and rooms all work; battles/jogress stay refused by
+            # can_battle/can_jogress and the server's session gate).
+            if event.key not in ("q", "g", "l"):
                 event.stop()
                 event.prevent_default()
                 self._open_mode(deathscreen.DeathPanel(

@@ -29,24 +29,28 @@ def test_every_binding_leads_a_dead_pet_to_the_memorial():
             await pilot.press("enter")            # dismiss the title
             await pilot.pause()
             for key, action, _label in TuiPetApp.BINDINGS:
-                if action in ("quit", "options"):
-                    continue                       # the two keys that stay live
+                if action in ("quit", "options", "lobby"):
+                    continue                       # the keys that stay live
                 app.mode = None                   # back to the dead home screen
                 await pilot.press(key)
                 await pilot.pause()
                 results[action] = type(app.mode).__name__
-            # options stays reachable beside the grave
-            app.mode = None
-            await pilot.press("g")
-            await pilot.pause()
-            results["_options_open"] = type(app.mode).__name__
+            # options and the lobby stay reachable beside the grave (the
+            # social room is not a care action -- Joel 2026-07-19)
+            for k, slot in (("g", "_options_open"), ("l", "_lobby_open")):
+                app.mode = None
+                await pilot.press(k)
+                await pilot.pause()
+                results[slot] = type(app.mode).__name__
         return results
 
     results = asyncio.run(go())
-    opened = results.pop("_options_open")
+    options_open = results.pop("_options_open")
+    lobby_open = results.pop("_lobby_open")
     escaped = {a: m for a, m in results.items() if m != "DeathPanel"}
     assert not escaped, f"these actions escaped the grave: {escaped}"
-    assert opened == "OptionsPanel", "options must stay live at the memorial"
+    assert options_open == "OptionsPanel", "options must stay live at the memorial"
+    assert lobby_open == "LobbyPanel", "the lobby must stay live at the memorial"
 
 
 def _egg_app():

@@ -3,6 +3,15 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.5.70 — COMPANY AT THE GRAVE (2026-07-19)
+
+* **The lobby opens beside a departed pet.** The social room is not a
+  care action: chat, private messages, password rooms and the season
+  ladder all work while you mourn — claim your award, say goodbye. The
+  combat half stays sealed both ways: a dead pet can't send battle or
+  jogress invites, and the relay refuses invites sent to one. Every
+  care key still leads to the memorial; options was always live.
+
 ## 0.5.69 — PLAIN WORDS EVERYWHERE (2026-07-18)
 
 * **Every data file fails in the player's words.** The compressed atlases
