@@ -85,6 +85,7 @@ def test_fallback_pool_and_mystery_eggs_are_gone():
 
 def _panel(prog=None):
     from tuipet.eggselectscreen import EggSelectPanel
+    from tuipet.eggselectscreen import EggSelectPanel
     pan = EggSelectPanel()
     if prog is not None:
         pan.prog = prog
@@ -164,6 +165,7 @@ def test_a_gated_egg_is_hidden_until_earned_then_appears():
     assert egg_mod.egg_state(idx, _prog(), set()) == "locked"
     assert idx not in EggSelectPanel().carousel      # locked -> hidden
     persistence.wins_add(50)
+    from tuipet.eggselectscreen import EggSelectPanel
     pan = EggSelectPanel()                           # milestone met on open
     assert idx in pan.carousel                       # earned -> hatchable, no purchase
     assert idx in persistence.get_eggs_owned()       # and persisted permanent
@@ -174,6 +176,7 @@ def test_fresh_profile_carousel_never_empty():
     carousel would ZeroDivision.  The data guarantees the floor: the
     DefaultUnlock starters are always hatchable, so the carousel can't be
     empty even on a wiped profile."""
+    from tuipet.eggselectscreen import EggSelectPanel
     from tuipet.eggselectscreen import EggSelectPanel
     pan = EggSelectPanel()                        # sandboxed = a fresh profile
     assert pan.n >= 5                             # the starter floor
@@ -221,3 +224,30 @@ def test_the_guide_sentinel_never_reaches_new_egg():
     assert opened == ["EggGuidePanel"]            # the guide opens, nothing hatches
     app._hatch_new(None, gen=5)
     assert opened[-1] == ("msg", "Kept your current partner.")
+
+
+def test_the_carousel_rests_uncramped():
+    """Carousel audit 2026-07-19 (Joel: "make sure things arent cramped
+    up"): at rest, no sub-8px egg sliver presses the border (they read as
+    dirt, not neighbours -- the slide still shows them in motion), and the
+    in-LCD footer no longer repeats the strip's controls (it keeps ESC,
+    the one key the strip has no room for)."""
+    from tuipet.eggselectscreen import EggSelectPanel
+    pan = EggSelectPanel()
+    pan.scroll = pan.pos = 1.0                    # settled on egg 2
+    plain = pan.text().plain
+    rows = plain.rstrip("\n").split("\n")
+    assert "ESC back" in plain
+    assert "browse" not in plain                  # the strip's job, once
+    # count sprite columns: at rest exactly ONE egg is on the scene
+    import re
+    from tuipet import egg as egg_mod
+    placements = []
+    base = round(pan.scroll)
+    from tuipet.eggselectscreen import CENTER, SPACING, WINDOW, EGG_W, COLS
+    for d in range(-WINDOW, WINDOW + 1):
+        x = CENTER + int(round((base + d - pan.scroll) * SPACING))
+        vis = min(x + EGG_W, COLS) - max(x, 0)
+        if vis >= 8:
+            placements.append(x)
+    assert placements == [CENTER]                 # neighbours' slivers gone

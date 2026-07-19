@@ -150,11 +150,11 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("BACK TO SHORE: the two cliffside egg lines were living "
-                 "on the seabed - their scene turned out to be underwater "
-                 "art wearing a coastal name. Yuramon's and Ketomon's "
-                 "lines now hatch on the sunset shoreline where cliff "
-                 "dwellers belong; the water lines stay submerged.")
+    WHATS_NEW = ("ROOM TO CHOOSE: the egg carousel breathes now - no "
+                 "more egg slivers mashed against the borders at rest "
+                 "(neighbours still glide through as you browse), and "
+                 "one clean hint line instead of two saying the same "
+                 "thing.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and

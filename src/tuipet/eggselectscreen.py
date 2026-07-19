@@ -132,6 +132,14 @@ class EggSelectPanel:
         for d in range(-WINDOW, WINDOW + 1):
             v = base + d
             x = CENTER + int(round((v - self.scroll) * SPACING))
+            vis = min(x + EGG_W, COLS) - max(x, 0)
+            if vis < 8:
+                # a 4px sliver mashed against the border reads as dirt, not
+                # a neighbour (carousel audit 2026-07-19, Joel: "make sure
+                # things arent cramped up").  During the eased slide the
+                # incoming egg crosses 8px within a beat -- the motion IS
+                # the carousel; the rest state stays clean.
+                continue
             placements.append((self._frame(v, d == 0), x, False))
         bgimg = self._scene_bg(self._egg(self.i))
         scene = render_scene(placements, COLS, ROWS,
@@ -150,5 +158,10 @@ class EggSelectPanel:
                 f"{self.locked} more out there · {self.hint}",
                 tick=self.frame_i % TEASE_BEAT))
         else:
-            out.append_text(menu.footer("←→ browse   ENTER pick   ESC back"))
+            # browse/pick/guide live on the STRIP (scene-screen law); the
+            # in-LCD footer used to repeat them beside the strip -- a
+            # double hint row under an 8-row scene (carousel audit
+            # 2026-07-19).  It keeps only the key the strip has no room
+            # for, and stays the msg/tease rotation's home.
+            out.append_text(menu.footer("ESC back"))
         return out

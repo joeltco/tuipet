@@ -3,6 +3,17 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.5.87 — ROOM TO CHOOSE (2026-07-19)
+
+* **The egg carousel breathes.** At rest, neighbouring eggs rendered as
+  four-pixel slivers mashed against the window borders — clutter that
+  read as dirt, not eggs. The resting view now shows your chosen egg
+  alone on its home backdrop; neighbours still glide through while you
+  browse, because the motion is the carousel. And the screen's bottom
+  carried two hint rows saying nearly the same thing — the in-screen
+  line now keeps only the dossier, the tease, and ESC; the message
+  strip carries the controls, once.
+
 ## 0.5.86 — BACK TO SHORE (2026-07-19)
 
 * **The cliffside eggs stand on the shore.** 0.5.85's renaming revealed
