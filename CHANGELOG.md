@@ -3,6 +3,19 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.5.75 — ONE TRUE WEEKEND (2026-07-19)
+
+* **The raid page's weekend note follows the relay's clock.** It borrowed
+  the cups' local calendar to describe a bonus the server pays on UTC
+  weekends — at week edges it promised a bonus that wasn't paying, or
+  stayed silent while one was. It now reads the server's own timestamp.
+  Cups stay on your local calendar on purpose: their purses pay on your
+  device, so your weekend is their truth.
+* **The cup system passed its full audit** — deterministic daily board,
+  honest purse math with canon truncation, live catalog prizes, the
+  winnable featured draw, festival days, and cup wins feeding the egg
+  gates. No changes needed.
+
 ## 0.5.74 — AN HONEST ASSISTANT (2026-07-19)
 
 * **The assistant feeds a sick pet.** Its feed visit routed through your

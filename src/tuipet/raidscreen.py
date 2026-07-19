@@ -213,16 +213,24 @@ class RaidPanel(menu.SubHost):
         elif not self._standing():
             alt = ""
         else:
+            import time as _time
             from . import tournament as _cad
             left = max(0, int(b.get("end", 0) - v.get("now", 0)))
             days, hrs = left // 86400, left % 86400 // 3600
             fest = _cad.holiday()
             # the relay pays x1.5 on WEEKENDS only -- "2x" and a festival
             # bonus were promises the server never paid (raid review
-            # 2026-07-18); the festival stays as pure calendar flavor
+            # 2026-07-18); the festival stays as pure calendar flavor.
+            # The weekend note keys off the SERVER'S clock (its own `now`,
+            # UTC weekday) -- borrowing the cups' LOCAL is_weekend() lied
+            # both ways at week edges: a US Friday evening is already a
+            # paying UTC Saturday, a US Sunday evening a 1x UTC Monday
+            # (cup audit 2026-07-19).  Cups stay local: their purse pays
+            # client-side, so the player's own weekend IS their truth.
+            srv_wknd = _time.gmtime(v.get("now", _time.time())).tm_wday >= 5
             alt = (f"weekly boss · {days}d {hrs}h left"
                    + (f" · {fest}" if fest
-                      else " · weekend pays 1.5x" if _cad.is_weekend() else ""))
+                      else " · weekend pays 1.5x" if srv_wknd else ""))
         if self.msg and (not alt or (self.frame_i // 40) % 2 == 0):
             return self.msg
         return alt or self.msg

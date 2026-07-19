@@ -452,3 +452,21 @@ def test_the_ready_bar_is_the_training_sprite():
     drill.bar = 7
     assert drill._bar_overlay() == strikefx.timing_bar(
         7, drill.mega_lo, drill.mega_hi)             # one pixel-set, shared
+
+
+def test_weekend_note_follows_the_servers_clock(monkeypatch):
+    """The relay pays x1.5 on UTC weekends; the cadence note must key off
+    the server's own `now`, not the player's local calendar (cup audit
+    2026-07-19: at week edges the local clock lied both ways)."""
+    import calendar as _cal
+    import datetime as _dt
+    pan = _panel()
+    utc_sat = _cal.timegm(_dt.datetime(2026, 7, 25, 3, 0).timetuple())
+    utc_mon = _cal.timegm(_dt.datetime(2026, 7, 27, 3, 0).timetuple())
+    for now, expect in ((utc_sat, True), (utc_mon, False)):
+        v = _view(_mega(), start=0.0, now=now)
+        v["boss"]["end"] = now + 86400
+        pan.client.raid = v
+        pan.msg = ""
+        line = pan._context_line(v, v["boss"])
+        assert ("weekend pays 1.5x" in line) is expect, (now, line)
