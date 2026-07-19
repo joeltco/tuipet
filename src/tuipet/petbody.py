@@ -807,7 +807,10 @@ class BodyMixin:
             self._set_mood(self.mood + 6)                # CleanMoodInc
             self._filth_t = 0                            # mess handled: the filth call resets
         elif act == "feed":
-            self.feed_meat()                             # assistantFeed: the staple
+            # assistantFeed: the AI Food Pill serving -- lands on a sick pet
+            # (the plain-meat route refused sickness and BILLED the head-shake;
+            # assistant audit 2026-07-19)
+            self.feed_meat(assisted=True)
         elif act == "strength":
             self.feed_pill()                             # the tonic tops effort/energy
         elif act == "lights":

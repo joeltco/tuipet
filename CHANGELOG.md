@@ -3,6 +3,16 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.5.74 — AN HONEST ASSISTANT (2026-07-19)
+
+* **The assistant feeds a sick pet.** Its feed visit routed through your
+  own meat's sickness refusal — so a sick, starving pet's hired helper
+  billed the full visit fee every three minutes for a head-shake,
+  torching thousands of bits without raising hunger, until it quit over
+  the wallet it had emptied itself. It now serves the canon AI Food Pill
+  (which a sick pet accepts), so every fee buys care that landed.
+  Curing the sickness is still your job — that's the pill in *your* hand.
+
 ## 0.5.73 — HONEST HEADSTONES (2026-07-19)
 
 * **LEGACY headstones tell the truth.** The DigiCore LEGACY page was

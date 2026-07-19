@@ -124,3 +124,26 @@ def test_assist_panel_toggles_and_shows_the_stage_prices():
     assert not p.auto_care
 
 
+
+
+def test_the_assistant_feeds_a_sick_pet_and_never_bills_a_headshake():
+    """assistantFeed = the AI Food Pill (AutoCareHungerFoodID 44): a SICK
+    pet accepts it.  The plain-meat route refused sickness and billed
+    400b/visit for head-shakes until the wallet it emptied fired it
+    (assistant audit 2026-07-19: 4,800b torched in ~34 game-min, hunger
+    never moved)."""
+    p = _pet(bits=5000)
+    p.auto_care, p.assistant_num = True, 4
+    p.sick, p.hunger, p.strength, p.poop = True, 0, 2, 0
+    b0 = p.bits
+    for _ in range(6):                       # one visit + spacing
+        p.tick(1.0)
+        if getattr(p, "assist_event", None):
+            break
+    assert p.assist_event and p.assist_event[0] == "feed"
+    assert p.hunger == 1                     # the serving LANDED
+    assert p.anim == "eat"                   # no head-shake
+    assert p.sick                            # the assistant feeds; curing is yours
+    from tuipet.pet import AUTO_CARE_VISIT_PRICE
+    assert b0 - p.bits == AUTO_CARE_VISIT_PRICE[p.stage]   # one honest fee
+    assert p.auto_care                       # still on duty

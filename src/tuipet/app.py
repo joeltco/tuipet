@@ -148,10 +148,11 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("HONEST HEADSTONES: the DigiCore LEGACY page was reading "
-                 "every elder's age sixty times too long - a 4-day life "
-                 "carved as 270 days. The book speaks one clock now, and "
-                 "your ancestors' true ages show on next visit.")
+    WHATS_NEW = ("AN HONEST ASSISTANT: the hired helper could burn your "
+                 "whole wallet feeding a sick pet meat it would only "
+                 "refuse - hundreds of bits per head-shake. It now serves "
+                 "the AI Food Pill a sick pet accepts, and every fee "
+                 "buys care that actually landed.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and

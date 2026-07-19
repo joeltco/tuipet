@@ -85,17 +85,23 @@ class CareMixin:
         Kept as the meat entry so the assistant and old callers still feed."""
         return self.feed_meat()
 
-    def feed_meat(self):
+    def feed_meat(self, assisted=False):
         """Meat: hunger +1, weight +1.  The source's refusal gates (canon
         gates 2026-07-18, decompile L11676): a sick pet, a pet beside its
         own filth, or a full belly gets the head-shake and NOTHING else --
         the DVPet overeatPenalty (weight+1, mistake+1, bowel shove) left
         with it.  The overeat COUNTER still ticks: the evolution corpus's
         OF gates read it, and a full-belly attempt IS the overfeed signal.
-        Feeding a sleeper DISTURBS it first (refusals don't wake it)."""
+        Feeding a sleeper DISTURBS it first (refusals don't wake it).
+
+        assisted=True is the AI ASSISTANT's serving: canon assistantFeed
+        dishes the AI Food Pill (AutoCareHungerFoodID 44), which a SICK
+        pet still accepts -- routing the visit through YOUR meat's sick
+        refusal made the assistant bill every visit for a head-shake while
+        the pet starved (assistant audit 2026-07-19)."""
         if (_g := self._guard(asleep_blocks=False)) is not None:
             return _g
-        if self.sick:
+        if self.sick and not assisted:
             self._set_anim("refuse", 1.0)
             return f"{self.name} is too sick to eat — try the pill."
         if self.poop:
