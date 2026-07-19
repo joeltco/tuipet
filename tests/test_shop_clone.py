@@ -314,3 +314,19 @@ def test_legacy_bags_migrate_one_to_one():
     assert inv.get("tuna") == 2 and inv.get("music_player") == 1
     assert inv.get("grow_capsule") == 3 and inv.get("energy_drink") == 1
     assert "best_fruit" not in inv and "alarm_clock" not in inv
+
+
+def test_timed_items_deliver_the_hours_on_the_label():
+    """The words won (Joel 2026-07-19, round 17): steak = 12 REAL hours of
+    satiety, potty = 24 REAL hours of auto-clean, grow capsule = 120 REAL
+    minutes of growth.  The old tick-denominated values delivered 1/60th
+    while the labels promised hours -- the eat card's own countdown
+    contradicted the steak message live."""
+    p = _pet()
+    p.add_item("steak"); p.use_item("steak")
+    assert p.full_until - p.world_seconds == 12 * 3600.0
+    p.add_item("port_potty"); p.use_item("port_potty")
+    assert p.auto_clean_until - p.world_seconds == 24 * 3600.0
+    s0 = p.stage_seconds
+    p.add_item("grow_capsule"); p.use_item("grow_capsule")
+    assert p.stage_seconds - s0 == 7200.0

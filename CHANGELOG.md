@@ -3,6 +3,19 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.5.77 — THE LABEL WINS (2026-07-19)
+
+* **Timed items deliver the hours on the label.** The Steak promised
+  "12h satiety" and delivered 12 minutes; the Port. Potty's "24h
+  auto-clean" ran 24 minutes; the Grow Capsule's "+120min" nudged two.
+  The steak's own countdown card exposed it — message said hours, card
+  counted minutes. The mechanics were tuned up to match the words:
+  12 real hours sated, a real day of auto-clean, two real hours of
+  growth. Premium prices finally buy premium windows.
+* Everything else in the message-vs-mechanic sweep came back clean:
+  all sixteen instant effect claims match their numbers exactly, and no
+  player message cites a key or system that no longer exists.
+
 ## 0.5.76 — STRAIGHT TALK ON DP (2026-07-19)
 
 * **The DP hint tells the truth.** The jogress refusal claimed "protein

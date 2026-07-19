@@ -148,11 +148,11 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("STRAIGHT TALK ON DP: the jogress meter's hint claimed "
-                 "protein feeds refill it - they never did. It now tells "
-                 "the truth: a night's sleep is the refill. The whole "
-                 "fusion engine passed its audit - the matrix, the "
-                 "companion doors and the consent flow all verified.")
+    WHATS_NEW = ("THE LABEL WINS: the Steak's 12-hour satiety, the "
+                 "Port. Potty's 24-hour auto-clean and the Grow Capsule's "
+                 "120 minutes were delivering a sixtieth of what they "
+                 "said. The items now do exactly what their labels "
+                 "promise - real hours, real minutes.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and

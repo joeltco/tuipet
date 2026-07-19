@@ -534,12 +534,15 @@ class CareMixin:
 
     def _premium_meat(self):
         self.hunger = FULL_HUNGER
-        self.full_until = self.world_seconds + 12 * 60.0   # 12 game-hours of satiety
+        # 12 REAL hours (Joel 2026-07-19, "tune them up to match the words"):
+        # the old 12*60 ticks delivered 12 real MINUTES while the text and
+        # this message promised hours -- the eat card's countdown exposed it
+        self.full_until = self.world_seconds + 12 * 3600.0
         return "Satiated for 12 hours."
 
     def _smart_potty(self):
         self.clean()
-        self.auto_clean_until = self.world_seconds + 24 * 60.0   # a game day
+        self.auto_clean_until = self.world_seconds + 24 * 3600.0  # 24 REAL hours (same ruling)
         return "Auto-clean for 24 hours."
 
     def _erase_mistake(self):
@@ -566,7 +569,10 @@ class CareMixin:
         return "Rise and shine!"
 
     def _time_gear(self):
-        self.stage_seconds += 120.0        # +120 game-minutes of growth
+        # +120 REAL minutes (Joel 2026-07-19, "tune them up to match the
+        # words"): the old +120 ticks was 2 real minutes -- a 500b bottle
+        # of nearly nothing.  7200 ticks is the 2 hours the label sells.
+        self.stage_seconds += 7200.0
         return "Time lurches forward."
 
     def _anti_evo(self):
