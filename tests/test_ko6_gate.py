@@ -19,6 +19,7 @@ first ~1.5 pets.  The album axis must span GENERATIONS.
 import csv
 import os
 
+from tuipet import data_meta  # noqa: E402
 from tuipet import data
 from tuipet.battle import Battle
 from tuipet.pet import Pet
@@ -92,7 +93,7 @@ def test_mega_foes_demand_real_map_progress():
 # ---------------------------------------------------------------- the eggs
 
 def _egg_rows():
-    path = os.path.join(data._DATA, "eggUnlock.csv")
+    path = os.path.join(data_meta._DATA, "eggUnlock.csv")   # the OWNING module's dir (facade _DATA is whichever module copied last)
     rows = list(csv.reader(open(path, newline="")))
     hdr = rows[0]
     i_alb = next(i for i, h in enumerate(hdr) if h.startswith("AlbumCount"))

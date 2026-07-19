@@ -139,3 +139,20 @@ def test_sync_enabled_honors_toggle_and_env(monkeypatch):
     persistence.set_cloud_sync(True)
     monkeypatch.setenv("TUIPET_NO_SYNC", "1")
     assert not persistence.sync_enabled()      # env outranks the toggle
+
+
+def test_missing_csv_raises_players_words(tmp_path, monkeypatch):
+    """The csv loaders speak the same plain words as the gz atlases (data
+    audit 2026-07-18): a damaged install used to crash them with a raw
+    FileNotFoundError traceback."""
+    from tuipet import data_world, data_meta
+    monkeypatch.setattr(data_world, "_DATA", str(tmp_path))
+    monkeypatch.setattr(data_meta, "_DATA", str(tmp_path))
+    for loader in (data.load_tournies, data.load_titles):
+        loader.cache_clear()
+        try:
+            with pytest.raises(data.AssetsError) as e:
+                loader()
+            assert "pip install --force-reinstall tuipet" in str(e.value)
+        finally:
+            loader.cache_clear()          # never leave the poisoned dir cached

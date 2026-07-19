@@ -12,7 +12,7 @@ _HERE = os.path.dirname(__file__)
 _DATA = os.path.join(_HERE, "data")
 _RAW = _DATA  # bundled CSVs (digimon/evolutions/foods) live alongside sprites
 from .data_core import (  # noqa: F401  (shared plumbing +
-    AssetsError, _load_bundled,  # cross-domain reads)
+    AssetsError, _load_bundled, _open_data,  # cross-domain reads)
     _attack_index, load_requirements, load_sprites)
 
 
@@ -39,7 +39,7 @@ def load_device_attacks():
     path = os.path.join(_RAW, "deviceAttacks.csv")
     out = {}
     if os.path.exists(path):
-        for r in csv.DictReader(open(path)):
+        for r in csv.DictReader(_open_data(path)):
             nm = "".join(c for c in (r.get("Name") or "").lower() if c.isalnum())
             if nm and r.get("AttackKey"):
                 out[nm] = r["AttackKey"]
@@ -77,7 +77,7 @@ def _load_attacks():
     if _ATTACKS is None:
         _ATTACKS = {}
         cols = {"Vaccine": "VaccineName:Effect", "Data": "DataName:Effect", "Virus": "VirusName:Effect"}
-        for r in csv.DictReader(open(os.path.join(_DATA, "digimon.csv"))):
+        for r in csv.DictReader(_open_data(os.path.join(_DATA, "digimon.csv"))):
             try:
                 n = int(r["DigimonNum"])
             except (KeyError, ValueError):
@@ -106,7 +106,7 @@ def load_enemies():
     _, by_num = load_sprites()
     path = os.path.join(_DATA, "enemies.csv")
     enemies = []
-    for r in csv.DictReader(open(path)):
+    for r in csv.DictReader(_open_data(path)):
         try:
             dnum = int(r["Name"])
         except (KeyError, ValueError):
@@ -162,7 +162,7 @@ def load_tournies():
     """Tournament trophies (tournies.csv): per-season cups with field/attribute/age
     restrictions, a BitModifier prize, ItemWon/FoodWon prizes, and enemy overrides."""
     path = os.path.join(_DATA, "tournies.csv")
-    rows = list(csv.DictReader(open(path)))
+    rows = list(csv.DictReader(_open_data(path)))
     if not rows:
         return []
     hdr = list(rows[0].keys())
@@ -219,7 +219,7 @@ def load_tournies():
 def _town_ranges():
     """towns.csv TownRange ("4201t4300") per TownID -- the REAL step spans."""
     out = {}
-    for t in csv.DictReader(open(os.path.join(_DATA, "towns.csv"))):
+    for t in csv.DictReader(_open_data(os.path.join(_DATA, "towns.csv"))):
         try:
             lo, hi = (t.get("TownRange") or "0t0").split("t")
             out[int(t["TownID"])] = (int(lo), int(hi))
@@ -252,7 +252,7 @@ def load_maps():
         by_mz[(e["map"], e["zone"])][slot].append(e)
     towns = _town_ranges()
     zmap = defaultdict(list)
-    for z in csv.DictReader(open(os.path.join(_DATA, "zones.csv"))):
+    for z in csv.DictReader(_open_data(os.path.join(_DATA, "zones.csv"))):
         try:
             m, zn = int(z["MapNum"]), int(z["ZoneNum"])
         except (KeyError, ValueError):

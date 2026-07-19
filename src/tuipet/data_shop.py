@@ -12,7 +12,7 @@ _HERE = os.path.dirname(__file__)
 _DATA = os.path.join(_HERE, "data")
 _RAW = _DATA  # bundled CSVs (digimon/evolutions/foods) live alongside sprites
 from .data_core import (  # noqa: F401  (shared plumbing)
-    AssetsError, _load_bundled)
+    AssetsError, _load_bundled, _open_data)
 
 
 @lru_cache(maxsize=1)
@@ -20,7 +20,7 @@ def load_vitems():
     """The DSprite item catalog (vitems.json, cloned from the v0.4.x rebuild;
     BASIC VPET 2026-07-16) -- the shop/bag speak THIS now; the DVPet
     foods/items.csv consumable machine is retired."""
-    with open(os.path.join(_DATA, "vitems.json")) as fh:
+    with _open_data(os.path.join(_DATA, "vitems.json")) as fh:
         return json.load(fh)
 
 @lru_cache(maxsize=1)
@@ -197,12 +197,12 @@ def _idlist(s):
 @lru_cache(maxsize=1)
 def _load_consumables():
     foods, items = {}, {}
-    for r in csv.DictReader(open(os.path.join(_DATA, "foods.csv"))):
+    for r in csv.DictReader(_open_data(os.path.join(_DATA, "foods.csv"))):
         try:
             foods[int(r["FoodIdentificationNum"])] = _consumable(r, "FoodIdentificationNum")
         except (KeyError, ValueError):
             continue
-    for r in csv.DictReader(open(os.path.join(_DATA, "items.csv"))):
+    for r in csv.DictReader(_open_data(os.path.join(_DATA, "items.csv"))):
         try:
             items[int(r["ItemIdentificationNum"])] = _consumable(r, "ItemIdentificationNum")
         except (KeyError, ValueError):
@@ -329,7 +329,7 @@ def home_shop_pool():
     out = {}
     for fn, id_field, src, prefix in (("foods.csv", "FoodIdentificationNum", foods, "f"),
                                       ("items.csv", "ItemIdentificationNum", items, "i")):
-        for r in csv.DictReader(open(os.path.join(_DATA, fn))):
+        for r in csv.DictReader(_open_data(os.path.join(_DATA, fn))):
             try:
                 cid = int(r[id_field])
             except (KeyError, ValueError):

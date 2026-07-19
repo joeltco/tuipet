@@ -3,6 +3,17 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.5.69 — PLAIN WORDS EVERYWHERE (2026-07-18)
+
+* **Every data file fails in the player's words.** The compressed atlases
+  always explained a damaged install ("reinstall it: pip install
+  --force-reinstall tuipet") — but the CSV half of the data layer crashed
+  with a raw traceback on the same broken install. One shared message
+  now covers all fourteen data files.
+* Under the hood: the whole data layer passed a referential-integrity
+  audit — every icon, effect, catalog, enemy, cup, raid and egg-hatch
+  reference resolves against the tables that own them.
+
 ## 0.5.68 — HONEST HOUSEKEEPING (2026-07-18)
 
 * **The save warning tells the truth.** One transient disk refusal used

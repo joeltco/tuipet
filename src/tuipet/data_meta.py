@@ -12,7 +12,7 @@ _HERE = os.path.dirname(__file__)
 _DATA = os.path.join(_HERE, "data")
 _RAW = _DATA  # bundled CSVs (digimon/evolutions/foods) live alongside sprites
 from .data_core import (  # noqa: F401  (shared plumbing)
-    AssetsError, _load_bundled)
+    AssetsError, _load_bundled, _open_data)
 
 
 # (load_care_effects -- the careEffect.csv runtime, whose only shipped
@@ -139,7 +139,7 @@ def load_titles():
     profile-level (it survives generations) and rides the STATUS panel plus
     the lobby presence card."""
     out = []
-    for r in csv.DictReader(open(os.path.join(_DATA, "titles.csv"))):
+    for r in csv.DictReader(_open_data(os.path.join(_DATA, "titles.csv"))):
         try:
             out.append({"id": int(r["TitleID"]), "name": (r["Name"] or "").strip(),
                         "price": int(r["Price"]),

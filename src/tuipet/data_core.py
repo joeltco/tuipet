@@ -20,18 +20,33 @@ class AssetsError(RuntimeError):
     the first render (professionalism sweep 2026-07-14).  Optional atlases
     (effects/icons/backgrounds) keep degrading gracefully instead."""
 
+def _damaged(name):
+    """The one damaged-install message, shared by every loader."""
+    return AssetsError(
+        f"tuipet's game data is missing or damaged ({name}).\n"
+        f"Reinstall it:   pip install --force-reinstall tuipet\n"
+        f"(running from a source checkout? build the assets first: "
+        f"tools/setup_assets.sh)")
+
+
 def _load_bundled(name):
     """gunzip+parse a required atlas, or raise AssetsError in plain words."""
     try:
         with gzip.open(os.path.join(_DATA, name), "rt") as fh:
             return json.load(fh)
     except (OSError, EOFError, ValueError) as e:
-        raise AssetsError(
-            f"tuipet's game data is missing or damaged ({name}).\n"
-            f"Reinstall it:   pip install --force-reinstall tuipet\n"
-            f"(running from a source checkout? build the assets first: "
-            f"tools/setup_assets.sh)"
-        ) from e
+        raise _damaged(name) from e
+
+
+def _open_data(path):
+    """open() a required csv/json data file, or raise AssetsError in the
+    same plain words as _load_bundled -- the gz side always spoke kindly
+    about a broken install while the csv side crashed with a raw
+    FileNotFoundError traceback (data audit 2026-07-18)."""
+    try:
+        return open(path)
+    except OSError as e:
+        raise _damaged(os.path.basename(path)) from e
 
 # Frame roles VERIFIED against DVPet View/SpriteAnim drawNum() args (each per-Digimon
 # strip is 11 frames, index 0-10; sheet order preserved by extract_sprites col 0..10):
@@ -187,7 +202,7 @@ def load_evolutions():
     """num -> list of target nums it can evolve into."""
     path = os.path.join(_RAW, "evolutions.csv")
     evo = {}
-    with open(path) as fh:
+    with _open_data(path) as fh:
         r = csv.reader(fh)
         next(r)
         for row in r:
@@ -255,7 +270,7 @@ def _attack_index(s):
 def load_requirements():
     path = os.path.join(_RAW, "digimon.csv")
     reqs = {}
-    for r in csv.DictReader(open(path)):
+    for r in csv.DictReader(_open_data(path)):
         try:
             num = int(r["DigimonNum"])
         except (KeyError, ValueError):

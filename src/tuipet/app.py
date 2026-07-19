@@ -148,10 +148,10 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("HONEST HOUSEKEEPING: the quit message no longer cries "
-                 "\"couldn't save\" after a disk blip that healed itself, "
-                 "and Erase All now really erases everything - including "
-                 "quarantined save copies and crash logs.")
+    WHATS_NEW = ("PLAIN WORDS EVERYWHERE: a damaged install now explains "
+                 "itself and how to reinstall on every data file, not just "
+                 "some - no more raw error walls. Under the hood: the full "
+                 "data layer passed a referential-integrity audit.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and
