@@ -150,11 +150,11 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("THE DRILL'S TRUE WORTH: training's own documentation "
-                 "undersold it - the form you lock in the drill is the "
-                 "form your next battle actually fires with, and now the "
-                 "code says so. Veterans at 999 battles never whiff: "
-                 "that's device canon, now cited.")
+    WHATS_NEW = ("LISTENING TO THE REPORTS: sunset shore was underwater "
+                 "all along - it is Sunset Seafloor now, the island wears "
+                 "its three times of day honestly, cliff eggs hatch on "
+                 "real coast, and the egg carousel is a clean scene with "
+                 "the neighbour peeks back where they belong.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and

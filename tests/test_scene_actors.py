@@ -247,7 +247,10 @@ def test_egg_carousel_is_never_window_clipped(monkeypatch):
     p = Pet.new_egg(egg_type=1)
     pan = es.EggSelectPanel(p)
     pan.text()
-    assert seen["rows"] == 8                     # a strip, NOT the full LCD
+    assert seen["rows"] == 10                    # the tall band, NOT the full
+    #                                              LCD (carousel redo 2026-07-19:
+    #                                              the text block left, the egg
+    #                                              got headroom)
     assert seen["clip"] is None, "never window-clip the egg reel"
 
 

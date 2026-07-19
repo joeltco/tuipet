@@ -226,28 +226,22 @@ def test_the_guide_sentinel_never_reaches_new_egg():
     assert opened[-1] == ("msg", "Kept your current partner.")
 
 
-def test_the_carousel_rests_uncramped():
-    """Carousel audit 2026-07-19 (Joel: "make sure things arent cramped
-    up"): at rest, no sub-8px egg sliver presses the border (they read as
-    dirt, not neighbours -- the slide still shows them in motion), and the
-    in-LCD footer no longer repeats the strip's controls (it keeps ESC,
-    the one key the strip has no room for)."""
-    from tuipet.eggselectscreen import EggSelectPanel
+def test_the_carousel_is_pure_scene_with_neighbour_peeks():
+    """Carousel redo 2026-07-19 (Joel's bug report): the LCD is HEADER +
+    SCENE only -- the dossier lives on the status card, the words on the
+    strip -- and the neighbour egg edges PEEK again at rest (cutting them
+    in 0.5.87 'went backwards')."""
+    from tuipet.eggselectscreen import EggSelectPanel, CENTER, SPACING, WINDOW
     pan = EggSelectPanel()
-    pan.scroll = pan.pos = 1.0                    # settled on egg 2
+    pan.scroll = pan.pos = 1.0
     plain = pan.text().plain
-    rows = plain.rstrip("\n").split("\n")
-    assert "ESC back" in plain
-    assert "browse" not in plain                  # the strip's job, once
-    # count sprite columns: at rest exactly ONE egg is on the scene
-    import re
-    from tuipet import egg as egg_mod
-    placements = []
-    base = round(pan.scroll)
-    from tuipet.eggselectscreen import CENTER, SPACING, WINDOW, EGG_W, COLS
-    for d in range(-WINDOW, WINDOW + 1):
-        x = CENTER + int(round((base + d - pan.scroll) * SPACING))
-        vis = min(x + EGG_W, COLS) - max(x, 0)
-        if vis >= 8:
-            placements.append(x)
-    assert placements == [CENTER]                 # neighbours' slivers gone
+    assert "hatches:" not in plain and "browse" not in plain \
+        and "ESC" not in plain                     # pure scene, no text block
+    assert len(plain.rstrip("\n").split("\n")) == 12   # header 2 + scene 10
+    # the strip speaks: hints normally, the tease on its beat, msg first
+    assert "browse" in pan.strip()
+    pan.frame_i = 130
+    if pan.locked and pan.hint:
+        assert "more out there" in pan.strip()
+    pan.msg = "verdict!"
+    assert pan.strip() == "verdict!"

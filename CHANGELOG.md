@@ -3,6 +3,23 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.5.89 — LISTENING TO THE REPORTS (2026-07-19)
+
+* **The scene names, corrected properly this time.** Your reports were
+  right and 0.5.85 was wrong twice: "Sunset Shore" is underwater art —
+  the warm band is sunlight through the water — so it's Sunset Seafloor
+  now, joining Sandy/Blue/Deep. One island wears its three times of day
+  honestly (Island Day / Island Sunset / Island Night — "Lone Island"
+  hid that it was the same island), and the flower field's two skies
+  are Flower Field and Flower Field Sunset.
+* **The cliffside eggs hatch on real coast.** Twice re-homed and
+  finally right: the island's rock faces over open sea, the one true
+  coast in the whole set.
+* **The egg carousel, the way you asked.** The LCD is pure scene with a
+  taller band — the menu-like text block is gone (the status card and
+  message strip were always its home) — and the previous/next egg edges
+  peek again at both sides. Cutting them before was the wrong fix.
+
 ## 0.5.88 — THE DRILL'S TRUE WORTH (2026-07-19)
 
 * **The drill's documentation caught up to its power.** The training

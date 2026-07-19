@@ -13,7 +13,11 @@ from . import persistence
 from .render import render_scene
 from .theme import LCD_ON, LCD_BG  # noqa: F401  (theme.apply propagation)
 
-COLS, ROWS = 40, 8            # scene area (16px tall == one full egg)
+COLS, ROWS = 40, 10           # scene area, 20px: the egg gets headroom --
+#                               the in-LCD text block left (Joel bug report
+#                               2026-07-19: "why does the lcd have menu like
+#                               section under the egg, when theres perfectly
+#                               fine status and message boxes?")
 EGG_W = 16
 CENTER = (COLS - EGG_W) // 2  # x_left that centres a 16px egg
 SPACING = 24                  # px between adjacent eggs (neighbours peek ~4px)
@@ -65,9 +69,16 @@ class EggSelectPanel:
         self.msg, self.msg_t = text, 22
 
     def strip(self):
-        """The message-box hint line (hint overhaul 2026-07-10).  N advertises
-        the egg guide -- the pick is permanent for the generation, and the
-        carousel alone gives no basis to choose (sweep 2026-07-14)."""
+        """The message-box line: a fresh verdict, then the unlock tease on
+        its beat, then the hints (carousel redo 2026-07-19: the LCD is pure
+        scene now -- the dossier lives on the STATUS card, the words live
+        HERE; the box's own marquee carries over-wide lines).  N advertises
+        the egg guide -- the pick is permanent for the generation."""
+        if self.msg:
+            return self.msg
+        if (self.locked > 0 and self.hint
+                and self.frame_i % (2 * TEASE_BEAT) >= TEASE_BEAT):
+            return f"{self.locked} more out there · {self.hint}"
         return menu.hints(("←→", "browse"), ("ENTER", "pick"), ("N", "guide"))
 
     def key(self, k):
@@ -132,36 +143,17 @@ class EggSelectPanel:
         for d in range(-WINDOW, WINDOW + 1):
             v = base + d
             x = CENTER + int(round((v - self.scroll) * SPACING))
-            vis = min(x + EGG_W, COLS) - max(x, 0)
-            if vis < 8:
-                # a 4px sliver mashed against the border reads as dirt, not
-                # a neighbour (carousel audit 2026-07-19, Joel: "make sure
-                # things arent cramped up").  During the eased slide the
-                # incoming egg crosses 8px within a beat -- the motion IS
-                # the carousel; the rest state stays clean.
-                continue
+            # the neighbour PEEKS are wanted (Joel bug report 2026-07-19:
+            # "what happened to seeing the edges of the previous and next
+            # egg?" -- the 0.5.87 sliver cut went backwards; the cramp was
+            # the in-LCD text block, now gone)
             placements.append((self._frame(v, d == 0), x, False))
         bgimg = self._scene_bg(self._egg(self.i))
         scene = render_scene(placements, COLS, ROWS,
                              menu.scene_ink(bgimg), LCD_BG, bgimg=bgimg)
+        # the LCD is PURE SCENE (carousel redo 2026-07-19): the dossier
+        # rides the STATUS card, the words ride the message strip -- the
+        # boxes that exist for them (Joel's bug report, verbatim)
         out = menu.header("CHOOSE YOUR EGG", f"{self.i + 1}/{self.n}")
         out.append_text(scene)
-        out.append("\n")                              # scene has no trailing newline
-        out.append_text(menu.note(self._note(self._egg(self.i)), tick=self.frame_i))
-        if self.msg:
-            out.append_text(menu.footer(self.msg))
-        elif (self.locked > 0 and self.hint
-                and self.frame_i % (2 * TEASE_BEAT) >= TEASE_BEAT):
-            # the tease marquees head-first each appearance (tick resets per
-            # leg) -- an over-wide hint scrolls through whole, never clips
-            out.append_text(menu.footer_note(
-                f"{self.locked} more out there · {self.hint}",
-                tick=self.frame_i % TEASE_BEAT))
-        else:
-            # browse/pick/guide live on the STRIP (scene-screen law); the
-            # in-LCD footer used to repeat them beside the strip -- a
-            # double hint row under an 8-row scene (carousel audit
-            # 2026-07-19).  It keeps only the key the strip has no room
-            # for, and stays the msg/tease rotation's home.
-            out.append_text(menu.footer("ESC back"))
         return out

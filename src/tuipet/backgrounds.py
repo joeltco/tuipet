@@ -33,7 +33,7 @@ NAMES = {
     "cove":         "Sandy Seafloor",
     "forestgate":   "Green Hollow",
     "flowerfield":  "Flower Field",
-    "blossom":      "Blossom Field",
+    "blossom":      "Flower Field Sunset",
     "goldenwood":   "Golden Hollow",
     "tealhollow":   "Teal Hollow",
     "moonmeadow":   "Moonlit Meadow",
@@ -46,9 +46,9 @@ NAMES = {
     "city": "City", "cityday": "White City", "citysunset": "City Sunset",
     "boulevard": "Boulevard", "boulevardusk": "Boulevard Dusk",
     "factory": "Factory", "factorynight": "Factory Night",
-    "fileisland": "Lone Island", "islandsea": "Island Sea",
+    "fileisland": "Island Sunset", "islandsea": "Island Day",
     "islandnight": "Island Night", "jungle": "Jungle",
-    "seafloor": "Deep Seafloor", "sunsetshore": "Sunset Shore",
+    "seafloor": "Deep Seafloor", "sunsetshore": "Sunset Seafloor",
     "tourneyBack": "Arena",
 }
 
@@ -59,9 +59,11 @@ EGG_BG = {
     0: "greenhills",     # Botamon / ver1 (h: Plains)
     1: "mountains",      # Punimon / ver2 (h: Canyon)
     2: "forestgate",     # Poyomon / ver3 (h: Forest)
-    3: "sunsetshore",    # Yuramon / ver4 (h: Cliffside -- the SHORE with a
-                         #   horizon; "cove" turned out to be seabed art and
-                         #   put cliffside mons underwater, scene audit 07-19)
+    3: "islandsea",      # Yuramon / ver4 (h: Cliffside -- the island's rock
+                         #   faces over open sea.  TWICE re-homed: "cove" was
+                         #   seabed art, then "sunsetshore" turned out to be
+                         #   seabed TOO (Joel's report 2026-07-19) -- the
+                         #   island is the one true coast in the whole set)
     4: "islandsea",      # Zurumon / ver5 (h: Ocean)
     5: "datatunnel",     # Kuramon (h: Hard Disk -- the Diablomon net)
     6: "greenhills",     # Chibickmon (h: Plains)
@@ -72,7 +74,7 @@ EGG_BG = {
     11: "factorynight",  # Kiimon (h: Evil Castle -- dark iron)
     12: "datatunnel",    # Dokimon (h: Hard Disk)
     13: "underwater",    # Chibomon (f: DeepSaver / Water)
-    14: "sunsetshore",   # Ketomon (h: Cliffside -- same seabed fix as egg 3)
+    14: "islandsea",     # Ketomon (h: Cliffside -- same island coast as egg 3)
     15: "forestgate",    # Leafmon (h: Forest)
     16: "volcano",       # Petitmon (f: DragonsRoar / Fire)
     17: "city",          # Sakumon (h: City)

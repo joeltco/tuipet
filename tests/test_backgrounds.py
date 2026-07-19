@@ -45,7 +45,11 @@ def test_every_sheet_is_wired_or_allowlisted():
         # as real rips a future egg/system can wear without a data rebuild
         "boulevard", "boulevardusk", "citysunset", "fileisland",
         "islandnight", "jungle", "seafloor",
-        # (sunsetshore GRADUATED 2026-07-19: the cliffside eggs wear it now)
+        # sunsetshore came BACK 2026-07-19: it briefly wore the cliffside
+        # eggs, then Joel's bug report + a full-res look proved it SEABED
+        # art (the warm band is sunlight through the water) -- renamed
+        # Sunset Seafloor, pick-only again
+        "sunsetshore",
         # their wearers (Sunamon / the Meicoomon egg skin) left with the
         # fake-egg cut (2026-07-17); the rips stay for a future wearer
         "desert", "tealhollow",
@@ -81,8 +85,11 @@ def test_scene_display_names_follow_the_family_law():
     from tuipet import backgrounds as bgs
     for k in ("forestgate", "goldenwood", "tealhollow"):
         assert "Hollow" in bgs.NAMES[k], k
-    for k in ("cove", "underwater", "seafloor"):
+    for k in ("cove", "underwater", "seafloor", "sunsetshore"):
         assert "Seafloor" in bgs.NAMES[k], k
+    for k in ("islandsea", "fileisland", "islandnight"):
+        assert bgs.NAMES[k].startswith("Island"), k   # one island, three times
+    assert bgs.NAMES["blossom"].startswith("Flower Field")
     for k in ("baybridge", "bridgenight"):
         assert bgs.NAMES[k].startswith("Bay Bridge"), k
     names = list(bgs.NAMES.values())
@@ -90,13 +97,13 @@ def test_scene_display_names_follow_the_family_law():
 
 
 def test_cliffside_eggs_stand_on_the_shore_not_the_seabed():
-    """The family renames revealed a wiring error (scene audit 2026-07-19):
-    'cove' is seabed art, and the two Cliffside-habitat eggs were wired to
-    it — their hatchlings lived underwater.  They stand on the shoreline
-    now; the true seafloor eggs (DeepSaver/Underwater) stay submerged on
+    """TWICE re-homed (scene audits 2026-07-19): 'cove' was seabed art,
+    then 'sunsetshore' proved seabed TOO (Joel's bug report — the warm
+    band is sunlight through the water).  The island's rock-over-sea is
+    the one true coast in the set; the water lines stay submerged on
     purpose."""
     from tuipet import backgrounds as bgs
-    assert bgs.EGG_BG[3] == "sunsetshore"        # Yuramon (Cliffside)
-    assert bgs.EGG_BG[14] == "sunsetshore"       # Ketomon (Cliffside)
+    assert bgs.EGG_BG[3] == "islandsea"          # Yuramon (Cliffside)
+    assert bgs.EGG_BG[14] == "islandsea"         # Ketomon (Cliffside)
     for i in (13, 18, 24):                       # the water lines: seabed is HOME
         assert "Seafloor" in bgs.NAMES[bgs.EGG_BG[i]], i
