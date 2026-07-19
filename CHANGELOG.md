@@ -3,6 +3,16 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.5.86 — BACK TO SHORE (2026-07-19)
+
+* **The cliffside eggs stand on the shore.** 0.5.85's renaming revealed
+  a wiring error it had been hiding: "Cove" turned out to be seabed art,
+  and both Cliffside-habitat egg lines (Yuramon's and Ketomon's) were
+  wired to it — their hatchlings lived underwater. They hatch on the
+  Sunset Shore now, a real coastline with a horizon. The DeepSaver water
+  lines stay on the seafloor on purpose — that's home. A scene you
+  picked yourself with E is never touched.
+
 ## 0.5.85 — SCENES, PROPERLY NAMED (2026-07-19)
 
 * **Recoloured backdrops share a family name.** The scene picker carried

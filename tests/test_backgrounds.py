@@ -44,10 +44,15 @@ def test_every_sheet_is_wired_or_allowlisted():
         # off-catalog DSprite data scenes: no egg picked them (yet) -- kept
         # as real rips a future egg/system can wear without a data rebuild
         "boulevard", "boulevardusk", "citysunset", "fileisland",
-        "islandnight", "jungle", "seafloor", "sunsetshore",
+        "islandnight", "jungle", "seafloor",
+        # (sunsetshore GRADUATED 2026-07-19: the cliffside eggs wear it now)
         # their wearers (Sunamon / the Meicoomon egg skin) left with the
         # fake-egg cut (2026-07-17); the rips stay for a future wearer
         "desert", "tealhollow",
+        # pick-only since the cliffside rewire (scene audit 2026-07-19):
+        # cove's art is SEABED, not a coast -- the two Cliffside eggs moved
+        # to sunsetshore; the sandy shallows stay on the E-picker shelf
+        "cove",
     }
     wired = set(backgrounds.EGG_BG.values()) | {"tourneyBack"}
     plates = {k for k in data.load_backgrounds() if k.startswith("digicore")}
@@ -82,3 +87,16 @@ def test_scene_display_names_follow_the_family_law():
         assert bgs.NAMES[k].startswith("Bay Bridge"), k
     names = list(bgs.NAMES.values())
     assert len(names) == len(set(names))        # no two scenes share a name
+
+
+def test_cliffside_eggs_stand_on_the_shore_not_the_seabed():
+    """The family renames revealed a wiring error (scene audit 2026-07-19):
+    'cove' is seabed art, and the two Cliffside-habitat eggs were wired to
+    it — their hatchlings lived underwater.  They stand on the shoreline
+    now; the true seafloor eggs (DeepSaver/Underwater) stay submerged on
+    purpose."""
+    from tuipet import backgrounds as bgs
+    assert bgs.EGG_BG[3] == "sunsetshore"        # Yuramon (Cliffside)
+    assert bgs.EGG_BG[14] == "sunsetshore"       # Ketomon (Cliffside)
+    for i in (13, 18, 24):                       # the water lines: seabed is HOME
+        assert "Seafloor" in bgs.NAMES[bgs.EGG_BG[i]], i

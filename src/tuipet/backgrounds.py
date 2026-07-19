@@ -59,7 +59,9 @@ EGG_BG = {
     0: "greenhills",     # Botamon / ver1 (h: Plains)
     1: "mountains",      # Punimon / ver2 (h: Canyon)
     2: "forestgate",     # Poyomon / ver3 (h: Forest)
-    3: "cove",           # Yuramon / ver4 (h: Cliffside)
+    3: "sunsetshore",    # Yuramon / ver4 (h: Cliffside -- the SHORE with a
+                         #   horizon; "cove" turned out to be seabed art and
+                         #   put cliffside mons underwater, scene audit 07-19)
     4: "islandsea",      # Zurumon / ver5 (h: Ocean)
     5: "datatunnel",     # Kuramon (h: Hard Disk -- the Diablomon net)
     6: "greenhills",     # Chibickmon (h: Plains)
@@ -70,7 +72,7 @@ EGG_BG = {
     11: "factorynight",  # Kiimon (h: Evil Castle -- dark iron)
     12: "datatunnel",    # Dokimon (h: Hard Disk)
     13: "underwater",    # Chibomon (f: DeepSaver / Water)
-    14: "cove",          # Ketomon (h: Cliffside)
+    14: "sunsetshore",   # Ketomon (h: Cliffside -- same seabed fix as egg 3)
     15: "forestgate",    # Leafmon (h: Forest)
     16: "volcano",       # Petitmon (f: DragonsRoar / Fire)
     17: "city",          # Sakumon (h: City)

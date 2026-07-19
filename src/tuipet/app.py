@@ -150,11 +150,11 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("SCENES, PROPERLY NAMED: recoloured backdrops now share "
-                 "a family name - the three undersea floors are all "
-                 "Seafloors (sandy, blue, deep), the valley-of-trees trio "
-                 "are all Hollows (green, golden, teal), and the movie "
-                 "bridge twins are both Bay Bridge.")
+    WHATS_NEW = ("BACK TO SHORE: the two cliffside egg lines were living "
+                 "on the seabed - their scene turned out to be underwater "
+                 "art wearing a coastal name. Yuramon's and Ketomon's "
+                 "lines now hatch on the sunset shoreline where cliff "
+                 "dwellers belong; the water lines stay submerged.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and
