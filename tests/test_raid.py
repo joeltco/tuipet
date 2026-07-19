@@ -388,3 +388,13 @@ def test_the_panel_reports_honestly_and_stays_live():
     # and the promise matches the payout
     src = inspect.getsource(RaidPanel.text)
     assert "weekend pays 1.5x" in src and "weekend pays 2x" not in src
+
+
+def test_claim_key_takes_both_cases():
+    """C claims with or without shift/caps, like the lobby's letter keys
+    (grammar sweep 2026-07-18: lowercase-only ate the caps-lock press)."""
+    for key in ("c", "C"):
+        pan = _panel()
+        pan.client.raid = _view(_mega(), award={"id": 7})
+        pan.key(key)
+        assert ("claim", 7) in pan.client.calls, key

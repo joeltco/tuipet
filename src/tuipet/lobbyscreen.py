@@ -79,6 +79,7 @@ class LobbyPanel(BoutMixin, ChatMixin):
         self.pm_to = None              # (id, name): the input line is a PM compose
         self.invite_prompt = None
         self.dm_peer = None            # (id, name): the open DM thread
+        self.dm_scroll = 0             # DM scrollback offset (0 = live tail)
         self.sfx = None
         # jogress session
         self.partner = None
@@ -475,7 +476,9 @@ class LobbyPanel(BoutMixin, ChatMixin):
             return self._key_ladder(k)
         return self._key_lobby(k)
     def _key_ladder(self, k):
-        if k in ("escape", "tab", "q", "g"):
+        # q/g trimmed (grammar sweep 2026-07-18): they were unexplained
+        # extra closes that shadowed q=quit / g=options muscle memory
+        if k in ("escape", "tab"):
             self.phase = "lobby"
         return None
     def _text_ladder(self):
@@ -546,6 +549,7 @@ class LobbyPanel(BoutMixin, ChatMixin):
                 self.action_for = None
             elif k in ("v", "V"):
                 self.phase, self.dm_peer, self.buf = "dm", (pid, pname), ""
+                self.dm_scroll = 0             # a fresh thread opens live
                 self.state.unread.discard(pname)
                 self._save_dms()               # the read badge sticks
                 self.action_for = None
@@ -702,13 +706,20 @@ class LobbyPanel(BoutMixin, ChatMixin):
         if self.phase in ("jogress", "battle"):
             return ""                      # session text phases prompt in-LCD
         if self.phase == "login":
-            return menu.hints(("TAB", "field"), ("ENTER", "go"), ("ESC", "back"))
+            # ESC at login leaves the lobby entirely -> "out", the app's
+            # leave-to-home word (grammar sweep 2026-07-18)
+            return menu.hints(("TAB", "field"), ("ENTER", "go"), ("ESC", "out"))
         if self.phase == "ladder":
             return menu.hints(("TAB", "lobby"), ("ESC", "back"))
         if self.phase == "dm":
             cue = self._care_cue()      # the DM thread live-ticks too
             if cue:
                 return cue
+            if getattr(self, "_dm_overflow", False):
+                # history above the window: advertise the log keys (the
+                # saved-note variant would blow the 40-col budget with them)
+                return menu.hints(("ENTER", "send"), ("PgUp", "log"),
+                                  ("ESC", "back"))
             return menu.hints(("ENTER", "send"), ("ESC", "back")) + \
                 "  [dim]— thread saved[/]"
         if self.invite_prompt is not None:

@@ -77,15 +77,34 @@ class ChatMixin:
             from . import persistence
             persistence.save_dms(self.state.dms, self.state.unread)
     def _key_dm(self, k):
-        """Private thread with one peer: type + Enter sends, Esc back to the lobby."""
+        """Private thread with one peer: type + Enter sends, Esc back to the
+        lobby.  The thread scrolls like the lobby log (grammar sweep
+        2026-07-18: 'thread saved' was true but everything above the window
+        was unreadable) — ↑↓ a line, PgUp/PgDn a page, sending snaps live."""
         if k == "escape":
+            if self.dm_scroll:                 # scrolled thread: snap live first
+                self.dm_scroll = 0
+                return None
             self.phase, self.buf = "lobby", ""
             self._save_dms()                   # the conversation stays
             return None
         if k == "enter":
+            self.dm_scroll = 0                 # speaking snaps the view live
             if self.buf.strip() and self.dm_peer and self.client:
                 self.client.pm(self.dm_peer[0], self.buf.strip(), self.dm_peer[1])
             self.buf = ""
+            return None
+        if k == "up":
+            self.dm_scroll += 1                # older; _text_dm clamps
+            return None
+        if k == "down":
+            self.dm_scroll = max(0, self.dm_scroll - 1)
+            return None
+        if k == "pageup":
+            self.dm_scroll += BODY - 1         # older; _text_dm clamps
+            return None
+        if k == "pagedown":
+            self.dm_scroll = max(0, self.dm_scroll - (BODY - 1))
             return None
         return self._edit(k)
     def _text_dm(self):
@@ -103,7 +122,11 @@ class ChatMixin:
             rows.append((parts[0], DIM if mine else INK_B))
             rows.extend((" " + ln, DIM if mine else INK_B) for ln in parts[1:])
         body = BODY + 1
-        view = rows[-body:]
+        # clamp the scrollback to the log, like _text_lobby does for the room
+        self.dm_scroll = max(0, min(self.dm_scroll, max(0, len(rows) - body)))
+        self._dm_overflow = len(rows) > body         # strip(): advertise PgUp
+        end = len(rows) - self.dm_scroll
+        view = rows[max(0, end - body):end]
         view = [("", INK)] * (body - len(view)) + view
         if not rows:
             view[body // 2] = ("— no messages yet — say hi —"[:w], DIM)

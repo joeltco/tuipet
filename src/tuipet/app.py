@@ -148,10 +148,10 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("ONE KEY GRAMMAR: SPACE works wherever ENTER does (the "
-                 "DNA pages and the retire confirm joined in), and "
-                 "PageUp/PageDown now leap through every long list - help, "
-                 "keys, the egg guide and the evolution checklist.")
+    WHATS_NEW = ("LOBBY POLISH: your saved DM threads finally scroll - "
+                 "arrow and page keys walk the whole history, not just the "
+                 "last screen. The raid claim key works with caps lock, "
+                 "and the lobby's hints tell the truth about ESC.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and

@@ -3,6 +3,17 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.5.65 — LOBBY POLISH (2026-07-18)
+
+* **DM threads scroll.** "Thread saved" was true, but everything above
+  the window was unreadable — ↑↓ and PgUp/PgDn now walk the whole
+  history like the lobby log, sending snaps back live, and the hint line
+  advertises the log keys when there's history to read.
+* **Raid claim works with caps lock.** C claims in either case, like the
+  lobby's letter keys.
+* The login hints say what ESC really does (leaves to home), and the
+  ladder page dropped its two undocumented close keys.
+
 ## 0.5.64 — ONE KEY GRAMMAR (2026-07-18)
 
 * **SPACE works wherever ENTER does.** The DNA stats/roads pages and the

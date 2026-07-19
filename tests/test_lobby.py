@@ -737,3 +737,52 @@ def test_dm_threads_survive_leaving_the_pm_and_the_lobby():
     pan2 = _panel(s2)
     assert s2.dms["mika"][-1] == ("mika", "one more")
     assert "mika" in s2.unread
+
+
+# ---- grammar sweep 2026-07-18 -----------------------------------------------
+
+def test_dm_thread_scrolls_like_the_lobby_log():
+    """'thread saved' is READABLE now: ↑↓/PgUp page the DM history, clamped
+    at the head; sending or a first ESC snaps live, a second ESC leaves."""
+    s = LobbyState()
+    s.connected = True
+    s.me_name = "joel"
+    pan = _panel(s)
+    pan.phase, pan.dm_peer = "dm", (2, "kai")
+    s.dms["kai"] = [("kai", f"line {i}") for i in range(30)]
+    tail = pan.text().plain
+    assert "line 29" in tail and "line 5" not in tail
+    pan.key("pageup")
+    assert "line 29" not in pan.text().plain            # older window
+    for _ in range(20):
+        pan.key("pageup")
+    assert "line 0" in pan.text().plain                 # clamped at the head
+    assert "PgUp" in pan.strip()                        # overflow advertises the log keys
+    pan.key("enter")                                    # (empty) send snaps live
+    assert pan.dm_scroll == 0
+    pan.key("pageup")
+    pan.key("escape")                                   # first ESC: snap live
+    assert pan.phase == "dm" and pan.dm_scroll == 0
+    pan.key("escape")                                   # second ESC: to the lobby
+    assert pan.phase == "lobby"
+
+
+def test_ladder_lost_its_secret_q_g_closes():
+    s = LobbyState()
+    s.connected = True
+    pan = _panel(s)
+    pan.phase = "ladder"
+    pan.key("q")
+    pan.key("g")
+    assert pan.phase == "ladder"                        # letters do nothing here
+    pan.key("tab")
+    assert pan.phase == "lobby"
+
+
+def test_login_strip_says_out_not_back():
+    """ESC at login leaves the lobby entirely — the strip speaks the app's
+    leave-to-home word."""
+    p = Pet(num=100, stage="Champion", attribute="Vaccine")
+    pan = lobbyscreen.LobbyPanel(p, lambda name, pw, card: None)
+    assert pan.phase == "login"
+    assert "out" in pan.strip() and "back" not in pan.strip()

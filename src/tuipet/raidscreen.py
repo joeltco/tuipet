@@ -180,7 +180,7 @@ class RaidPanel(menu.SubHost):
             # the battlescreen replays it (records nothing on the pet)
             self.sub = BattlePanel(self.pet, self._boss_enemy(), raid=True)
             return None
-        if k == "c":
+        if k in ("c", "C"):        # both cases, like the lobby's letter keys
             award = (self.view or {}).get("award")
             if award:
                 self.client.raid_claim(award["id"])
