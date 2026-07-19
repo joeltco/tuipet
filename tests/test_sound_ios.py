@@ -155,3 +155,21 @@ def test_the_bridge_is_probed_once_not_every_beep(monkeypatch):
         assert len(probes) == 1, "probe lazily, once -- not on every sound"
     finally:
         importlib.reload(sound)
+
+
+def test_volume_and_cache_ride_the_save_dir(tmp_path, monkeypatch):
+    """volume.txt + the scaled-wav cache resolve through the LIVE save dir
+    (shape sweep 2026-07-19: sound was theme.txt's twin — a hardcoded
+    ~/.local that dropped the volume choice on iOS and escaped the test
+    sandbox), and erase_all finally sweeps them (the volume pref was
+    never in its list)."""
+    import os
+    from tuipet import persistence, sound
+    monkeypatch.setattr(persistence, "SAVE_DIR", str(tmp_path))
+    sound.set_volume(40) if hasattr(sound, "set_volume") else sound._save_volume(40)
+    assert (tmp_path / "volume.txt").exists()
+    os.makedirs(tmp_path / "sndcache" / "q40", exist_ok=True)
+    removed = persistence.erase_all()
+    assert "volume.txt" in removed and "sndcache/" in removed
+    assert not (tmp_path / "volume.txt").exists()
+    assert not (tmp_path / "sndcache").exists()

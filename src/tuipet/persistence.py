@@ -570,7 +570,8 @@ def erase_all():
     import glob as _glob
     removed = []
     names = ["save.json", "save.json.bak", "settings.json", "settings.json.bak",
-             "sound.txt", "theme.txt", "crash.log", "pending_bugs.jsonl"]
+             "sound.txt", "theme.txt", "crash.log", "pending_bugs.jsonl",
+             "volume.txt"]   # never in this list before the 2026-07-19 shape sweep
     names += [os.path.basename(p) for p in
               _glob.glob(os.path.join(SAVE_DIR, "save.corrupt.*.json"))]
     for fn in names:
@@ -580,6 +581,12 @@ def erase_all():
             removed.append(fn)
         except OSError:
             pass
+    import shutil as _sh
+    try:
+        _sh.rmtree(os.path.join(SAVE_DIR, "sndcache"))   # the scaled-wav cache:
+        removed.append("sndcache/")                      # rebuildable, but "for
+    except OSError:                                      # keeps" is for keeps
+        pass
     # the album's in-process mirror must die with the files, or every species
     # raised BEFORE the erase silently never re-records in the fresh album
     # (album_add early-returns on the cached num; audit 2026-07-13)

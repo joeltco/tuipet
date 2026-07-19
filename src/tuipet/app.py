@@ -150,10 +150,11 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("NO REPORT LEFT BEHIND: bug reports stashed while "
-                 "offline can no longer be lost to a quit mid-retry, and "
-                 "the send verdict always reaches you now - even if you "
-                 "wander into another screen while it is on its way.")
+    WHATS_NEW = ("THE SHAPE SWEEP: every defect pattern found across 21 "
+                 "audit rounds was hunted codebase-wide. Two more fell - "
+                 "account-switch results can no longer be missed, and "
+                 "your volume setting finally saves on iOS and honors "
+                 "Erase All.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and
@@ -591,33 +592,34 @@ class TuiPetApp(ActionsMixin, App):
             self.repaint()
 
 
-    def _bug_verdict(self, msg):
-        """Deliver the send outcome so it actually REACHES the player (bug
-        audit 2026-07-19): the offline path takes the full 8s timeout --
-        long enough to have opened another screen, whose strip overwrites
-        the hud every frame (the round-19 swallow).  Home -> flash now;
-        in a mode -> park it, the ✉-drain pattern shows it back home."""
+    def _verdict(self, msg):
+        """Deliver an ASYNC WORKER's outcome so it actually REACHES the
+        player (the swallow class -- rounds 19/21/22): a worker can finish
+        while any screen is open, whose strip overwrites the hud every
+        frame.  Home -> flash now; in a mode -> park it, the ✉-drain
+        pattern shows it back home.  EVERY async worker with a player
+        verdict routes here (bug sends, account switches, ...)."""
         if self.mode is None:
             self.flash(msg)
         else:
-            self._bug_note = msg
+            self._verdict_note = msg
 
-    def _drain_bug_note(self):
-        note = getattr(self, "_bug_note", "")
+    def _drain_verdict(self):
+        note = getattr(self, "_verdict_note", "")
         if note and self.mode is None:
-            self._bug_note = ""
+            self._verdict_note = ""
             self.flash(note)
 
     async def _send_bug(self, text, meta, name):
         ok = await net.submit_bug(_lobby_uri(), text, meta, name=name)
         if ok:
-            self._bug_verdict("Bug report sent \u2014 thank you!")
+            self._verdict("Bug report sent \u2014 thank you!")
         elif persistence.add_pending_bug(dict(meta, text=text, name=name)):
-            self._bug_verdict("Offline \u2014 saved; it will send next time you are online.")
+            self._verdict("Offline \u2014 saved; it will send next time you are online.")
         else:
             # the stash failed too (a read-only save dir): do not promise a
             # send we cannot make (swallowed-failure sweep 2026-07-13)
-            self._bug_verdict(f"[{theme.NEG}]Couldn't send or save that report \u2014 sorry.[/]")
+            self._verdict(f"[{theme.NEG}]Couldn't send or save that report \u2014 sorry.[/]")
 
     async def _flush_bugs(self):
         """Best-effort resend of stashed bugs.  READ-then-rewrite (bug audit
@@ -729,15 +731,15 @@ class TuiPetApp(ActionsMixin, App):
         stays local, like canon's device-scoped Shared file."""
         import asyncio
         old_name, old_pw = persistence.get_account()
-        self.flash("Switching account…")
+        self._verdict("Switching account…")
         verdict, save = await asyncio.to_thread(
             cloudsync.probe, _lobby_uri(), name, pw)
         if verdict == "badpw":
-            self.flash("Wrong password for that name.")
+            self._verdict("Wrong password for that name.")
             self.beep("error", bell=False)
             return
         if verdict != "ok":
-            self.flash("Can't reach the lobby — try again online.")
+            self._verdict("Can't reach the lobby — try again online.")
             self.beep("error", bell=False)
             return
         if save is not None:
@@ -747,7 +749,7 @@ class TuiPetApp(ActionsMixin, App):
             pet_probe, _ = persistence.pet_from_save(dict(save),
                                                      catch_up=False, strict=True)
             if pet_probe is None:
-                self.flash("That cloud save is unreadable — kept your account.")
+                self._verdict("That cloud save is unreadable — kept your account.")
                 self.beep("error", bell=False)
                 return
         persistence.save(self.pet)                   # park the pet with the OLD account
@@ -763,13 +765,13 @@ class TuiPetApp(ActionsMixin, App):
             loaded, msg = persistence.load()
             self.pet = loaded or Pet.new_egg()
             self._start_sync()
-            self.flash(f"Signed in as {_hud_esc(name)} — {msg or 'welcome back!'}")
+            self._verdict(f"Signed in as {_hud_esc(name)} — {msg or 'welcome back!'}")
             self.repaint()
         else:
             persistence.delete()                     # the old pet must not leak in
             self.pet = Pet.new_egg()                 # placeholder until the carousel picks
             self._start_sync()
-            self.flash(f"Signed in as {_hud_esc(name)} — a fresh start.")
+            self._verdict(f"Signed in as {_hud_esc(name)} — a fresh start.")
             self._open_mode(eggselectscreen.EggSelectPanel(self.pet),
                             self._after_egg_pick)
 
@@ -817,7 +819,7 @@ class TuiPetApp(ActionsMixin, App):
         menu.TICK += 1                         # the shared note marquee clock: no screen clips a message
         self._hud_marquee()                    # scroll any over-long HUD message (independent of the LCD)
         self._drain_pms()                      # ✉ alerts ride the message box (presence 2026-07-05)
-        self._drain_bug_note()                 # a parked send-verdict flashes back home (bug audit 2026-07-19)
+        self._drain_verdict()                  # a parked worker-verdict flashes back home (rounds 19/21/22)
         if self.mode is not None:
             if hasattr(self.mode, "anim"):
                 self.mode.anim()

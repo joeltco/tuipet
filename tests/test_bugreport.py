@@ -161,21 +161,28 @@ def test_flush_survives_an_outage_and_drops_damaged_lines(tmp_path, monkeypatch)
     assert persistence.peek_pending_bugs() == []   # all delivered, stash gone
 
 
-def test_send_verdict_parks_under_a_mode_and_flashes_home():
-    """The async send outcome must REACH the player (round-19 swallow class):
-    home -> flash now; inside a screen -> parked, the drain flashes it on
-    the next home frame."""
+def test_worker_verdicts_park_under_a_mode_and_flash_home():
+    """EVERY async worker's outcome must REACH the player (the swallow
+    class, rounds 19/21/22 -- one generalized channel now serves bug
+    sends AND account switches): home -> flash now; inside a screen ->
+    parked, the drain flashes it on the next home frame; a newer parked
+    verdict supersedes an older one."""
     from tuipet.app import TuiPetApp
     flashes = []
     app = TuiPetApp.__new__(TuiPetApp)
     app.flash = lambda m: flashes.append(m)
     app.mode = object()                            # a screen is open
-    TuiPetApp._bug_verdict(app, "sent!")
-    assert flashes == [] and app._bug_note == "sent!"
-    TuiPetApp._drain_bug_note(app)                 # still in the mode: holds
+    TuiPetApp._verdict(app, "sent!")
+    assert flashes == [] and app._verdict_note == "sent!"
+    TuiPetApp._verdict(app, "actually: failed")    # latest wins the slot
+    TuiPetApp._drain_verdict(app)                  # still in the mode: holds
     assert flashes == []
     app.mode = None
-    TuiPetApp._drain_bug_note(app)                 # back home: it lands
-    assert flashes == ["sent!"] and app._bug_note == ""
-    TuiPetApp._bug_verdict(app, "again")           # home: immediate
-    assert flashes == ["sent!", "again"]
+    TuiPetApp._drain_verdict(app)                  # back home: it lands
+    assert flashes == ["actually: failed"] and app._verdict_note == ""
+    TuiPetApp._verdict(app, "again")               # home: immediate
+    assert flashes == ["actually: failed", "again"]
+    # the account switcher rides the SAME channel (shape sweep 2026-07-22... 07-19)
+    import inspect
+    src = inspect.getsource(TuiPetApp._switch_account)
+    assert "self._verdict(" in src and "self.flash(" not in src

@@ -31,9 +31,22 @@ _DIR = os.path.join(os.path.dirname(__file__), "data", "sounds")
 # amplitude, and each step down squares away real decibels (50% = 1/8
 # amplitude, ~-18dB; 10% = a whisper).  Range 10..100 in steps of 10 -- there
 # is no 0, the sound switch is the mute.
-_STATE_DIR = os.path.expanduser("~/.local/share/tuipet")
-_VOL_CONF = os.path.join(_STATE_DIR, "volume.txt")
-_CACHE = os.path.join(_STATE_DIR, "sndcache")
+# volume.txt + the scaled-wav cache ride the LIVE save dir, resolved at
+# call time (the injectable-paths law; shape sweep 2026-07-19: this was
+# theme.txt's twin -- a hardcoded ~/.local that silently dropped the
+# volume choice on iOS and escaped the test sandbox.  erase_all sweeps
+# volume.txt + sndcache/ now; it never had either).
+def _state_dir():
+    from . import persistence
+    return persistence.SAVE_DIR
+
+
+def _vol_conf():
+    return os.path.join(_state_dir(), "volume.txt")
+
+
+def _cache_dir():
+    return os.path.join(_state_dir(), "sndcache")
 DEFAULT_VOLUME = 100
 
 
@@ -44,7 +57,7 @@ def _amp(v):
 
 def _load_volume():
     try:
-        return max(10, min(100, int(open(_VOL_CONF).read().strip())))
+        return max(10, min(100, int(open(_vol_conf()).read().strip())))
     except (OSError, ValueError):
         return DEFAULT_VOLUME
 
@@ -58,8 +71,8 @@ def set_volume(v):
     global _volume
     _volume = max(10, min(100, int(v)))
     try:
-        os.makedirs(_STATE_DIR, exist_ok=True)
-        with open(_VOL_CONF, "w") as fh:
+        os.makedirs(_state_dir(), exist_ok=True)
+        with open(_vol_conf(), "w") as fh:
             fh.write(str(_volume))
     except OSError:
         pass                       # the level still holds for this session
@@ -75,7 +88,7 @@ def _scaled(f, name):
     scaled copy -- the piercing raw wavs are never played.  The q-prefix
     versions the CURVE: the retired v-dirs held v1's linear scaling and must
     not be served under the new mapping."""
-    dst = os.path.join(_CACHE, f"q{_volume}", name + ".wav")
+    dst = os.path.join(_cache_dir(), f"q{_volume}", name + ".wav")
     if os.path.exists(dst):
         return dst
     try:

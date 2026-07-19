@@ -157,7 +157,7 @@ def test_play_dispatches_the_scaled_copy(monkeypatch):
                         lambda argv, **kw: sent.setdefault("argv", argv))
     sound.set_volume(50)
     assert sound.play("confirm") is True
-    assert sound._CACHE in sent["argv"][-1]
+    assert sound._cache_dir() in sent["argv"][-1]   # paths ride SAVE_DIR (shape sweep 2026-07-19)
 
 
 def test_scaling_failure_falls_back_to_the_original(monkeypatch):

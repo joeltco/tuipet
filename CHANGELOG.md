@@ -3,6 +3,21 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.5.82 — THE SHAPE SWEEP (2026-07-19)
+
+* **Account-switch results always reach you.** "Signed in as…", "Wrong
+  password", and the offline warning could be silently missed if you
+  opened a screen while the switch worked — you could believe a failed
+  switch succeeded. Every background task's verdict now rides one
+  channel that waits for you on the home screen.
+* **The volume setting saves everywhere.** It lived on a hardcoded path
+  that iOS can't write and Erase All never touched — it now sits beside
+  the save like every other pref, and Erase All sweeps it (plus the
+  sound cache).
+* Every other defect pattern from the 21-round audit series — clock
+  units, destroy-before-send, billing-after-refusal, silent clips,
+  local-vs-UTC — swept the whole codebase clean.
+
 ## 0.5.81 — NO REPORT LEFT BEHIND (2026-07-19)
 
 * **Offline bug reports survive everything.** The boot-time retry used
