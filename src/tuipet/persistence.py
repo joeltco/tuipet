@@ -721,6 +721,17 @@ def pet_from_save(data, catch_up=True, strict=False):
         elapsed = min(max(0.0, time.time() - saved_at), MAX_OFFLINE)
         off = _offline(pet, elapsed)
         msg = (msg + "  " + off).strip() if off else msg
+    if getattr(pet, "dna_wager_pending", 0) > 0 and not pet.dead:
+        # a paid mash was in flight at quit/crash: SETTLE it as the spoiled
+        # mash it was (rate 0 -- the stabilizer band still honors a >=500
+        # stake).  The stake stays spent, like the tournament's documented
+        # forfeit; the charge now always buys its outcome
+        # (SUSPECT S2 ruling 2026-07-20)
+        amt = int(pet.dna_wager_pending)
+        field = pet.dna_minigame_award(amt, 0)
+        note = (f"(the interrupted DNA wager settled: {amt} on a spoiled mash"
+                + (f" → {field} banked" if field != "None" else "") + ")")
+        msg = (msg + "  " + note).strip()
     return pet, msg
 
 

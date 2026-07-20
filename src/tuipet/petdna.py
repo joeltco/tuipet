@@ -52,6 +52,12 @@ class DnaMixin:
         if amount <= 0 or not self.spend_bits(amount):
             self._set_anim("refuse", 1.0)                   # Jeering: can't afford the wager
             return False
+        # mark the paid mash in flight: a quit/crash before the award used to
+        # keep the charge and drop the outcome -- load settles this as a
+        # spoiled mash (SUSPECT S2 ruling 2026-07-20: the stake stays spent
+        # like the tournament's documented forfeit; a refund would be free
+        # re-roll insurance on a mash going badly)
+        self.dna_wager_pending = int(amount)
         return True
 
     def dna_minigame_award(self, amount, rate):
@@ -64,6 +70,7 @@ class DnaMixin:
         wager (>=500) clamps a spoiled rate into the nearest real band; a
         RESONANT one (>=2500) splashes amount//5 DNA into the two adjacent
         Fields (capped, no refund)."""
+        self.dna_wager_pending = 0            # the bet settles here, win or waste
         field = dna_field_for_rate(rate)
         if field == "None" and amount >= DNA_STABILIZER_BET:
             rate = min(max(rate, DNA_RATE_BANDS[0][0] + 1), DNA_RATE_BANDS[-1][0])

@@ -47,6 +47,7 @@ class Pet(CareMixin, DnaMixin, BattleMixin, BodyMixin):
     care_mistakes: int = 0
     dna_owned: dict = _dcf(default_factory=lambda: {f: 0 for f in data.DNA_FIELDS})    # banked
     dna_applied: dict = _dcf(default_factory=lambda: {f: 0 for f in data.DNA_FIELDS})  # charged
+    dna_wager_pending: int = 0      # a paid mash in flight -- settled spoiled on relaunch (S2)
     food_ranks: dict = _dcf(default_factory=lambda: {c: 0 for c in data.FOOD_CATEGORIES})
     # the ATTRIBUTE taste ledger (taste/rank audit 2026-07-06): drills warm the
     # pet to an attribute, injuries and forced training sour it; a rank at
@@ -143,6 +144,13 @@ class Pet(CareMixin, DnaMixin, BattleMixin, BodyMixin):
     _lights_t: float = 0.0          # lights-on sleep mistake (float(-inf) = once/night latch)
     _cal_t: float = 0.0             # calorie/hunger lapse accumulator
     _str_t: float = 0.0             # effort-decay accumulator
+    # the four that escaped the lesson above (audit F8, fixed 2026-07-20):
+    # quit-cycling billed call mistakes up to 7x faster (or forgave a 599s
+    # window), never billed the assistant retainer, and shed DP progress
+    _hunger_call_t: float = 0.0     # hunger-call answer window / post-mistake postpone
+    _str_call_t: float = 0.0        # effort-call answer window / post-mistake postpone
+    _ac_pay: float = 0.0            # the assistant's hourly retainer accumulator
+    _dp_t: float = 0.0              # sleep DP-refill accumulator
     _exercise_day: int = -1         # daily exercise counter's day stamp
     free_style: bool = False        # _isFree: Battle Style toggle (Free vs Orders)
     gift: str = ""                  # pending gift-call present (consumable key; "" = none)
@@ -441,7 +449,13 @@ class Pet(CareMixin, DnaMixin, BattleMixin, BodyMixin):
         #                                 revival must not come back sick
         self._starve_t = 0.0                          # the 12h clock restarts
         self.evol_bonus += BONUS_AFTER_SAVED
-        self.age_seconds = max(0.0, self.lifespan - REVIVAL_LIFE)   # lapsed = total - revival
+        # RevivalLifeInc RESTORES life -- the revived pet leaves with at
+        # least REVIVAL_LIFE of runway.  The old unconditional jump was
+        # canon-shaped for old-age deaths only: on a young pet's sickness/
+        # poison/neglect rescue it silently BURNED the rest of the lifespan
+        # down to that floor (SUSPECT S1 ruling 2026-07-20)
+        self.age_seconds = min(self.age_seconds,
+                               max(0.0, self.lifespan - REVIVAL_LIFE))
         old = self.num
         targets = evolution.death_targets(self)
         if targets:

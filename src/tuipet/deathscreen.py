@@ -75,6 +75,11 @@ class DeathPanel:
                 persistence.bank_digimemory(self.new_mem)
                 self.asking = False
             elif k in ("k", "escape"):                    # keep the elder's memory
+                # the etch has nowhere to live, so the bonus CARRIES instead,
+                # exactly like B at the first prompt -- E-then-K used to
+                # discard new_mem AND leave the lower spent-path seed banked,
+                # a strict loss vs pressing B (SUSPECT S3 ruling 2026-07-20)
+                persistence.bank_bonus_seed(self.grade_kept)
                 self.new_mem = None
                 self.asking = False
             return None

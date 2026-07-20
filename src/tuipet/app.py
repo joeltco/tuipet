@@ -150,12 +150,13 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("SMALL TRUTHS: every care item says what it does and "
-                 "refuses a no-op; the frailty warning shows before an "
-                 "elder's 5-slip death; a raid you survive ends on your "
-                 "feet with the boss bar held honest; cup bouts show "
-                 "live HP and disclose their training +2; and chat "
-                 "stops double-printing on reconnect.")
+    WHATS_NEW = ("THE HOUSE KEEPS ITS WORD: a revival restores life "
+                 "without stealing a young pet's years; a DNA wager "
+                 "interrupted mid-mash settles on relaunch instead of "
+                 "vanishing; keeping the elder's memory carries the "
+                 "care bonus like declining; a suspended terminal ages "
+                 "the pet like a closed one; and quit-cycling can't "
+                 "cheat the call, retainer or DP clocks.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and
@@ -1000,10 +1001,18 @@ class TuiPetApp(ActionsMixin, App):
             sc.advance(self.pet)
             sc.paint(self.pet)
 
+    # a real hole in the 1 Hz cadence = the process was SUSPENDED (Ctrl-Z /
+    # laptop lid); ordinary event-loop lag never reaches this
+    SUSPEND_GAP_S = 120.0
+
     def on_tick(self):
         # the sim's proxy for "an animation is playing": the poop deferral
         # (canon startPoop state-machine block, restored 2026-07-19) holds
         # the squat through the whole VISIBLE fx, not just the anim ttl
+        import time as _time
+        now = _time.monotonic()
+        gap = now - getattr(self, "_tick_wall", now)
+        self._tick_wall = now
         if getattr(self, "pet", None) is not None:
             self.pet._fx_busy = getattr(getattr(self, "screen_w", None), "fx", None) is not None
         if self.mode is not None:
@@ -1021,6 +1030,7 @@ class TuiPetApp(ActionsMixin, App):
             if not live:
                 return
             poop0 = self.pet.poop
+            self._suspend_catch_up(gap)
             self.pet.fx_hold = True     # evolution waits for the main view --
             #                             its strobe belongs to the home screen
             self.pet.tick(1.0)
@@ -1059,6 +1069,7 @@ class TuiPetApp(ActionsMixin, App):
             return
         prev = (self.pet.num, self.pet.stage)
         poop0 = self.pet.poop
+        self._suspend_catch_up(gap)
         # an evolution must not swap the sprite UNDER a playing animation (the
         # clean-fx incident 2026-07-04: the pet transformed mid-sweep and the
         # evolve strobe played on the already-evolved form) -- hold the check
@@ -1226,6 +1237,20 @@ class TuiPetApp(ActionsMixin, App):
         if self._hud_off >= len(loop):
             self._hud_off = 0
             self._hud_hold = HUD_HOLD               # hold again when it loops back to the head
+
+    def _suspend_catch_up(self, gap):
+        """SUSPECT S4 ruling 2026-07-20: a process suspend (Ctrl-Z, a closed
+        laptop lid) stopped the interval clock dead -- no ticks -- and the
+        next autosave restamped _saved_at, so `_offline` never saw the hole:
+        an OPEN pet lived a free pause while a CLOSED one aged.  A real gap
+        in the tick cadence now routes through the SAME bounded offline
+        catch-up a relaunch gets.  (The canon menu freeze stays a freeze: a
+        gap that ends inside a paused sub-screen never reaches this.)"""
+        if gap <= self.SUSPEND_GAP_S or self.pet is None or self.pet.dead:
+            return
+        off = persistence._offline(self.pet, min(gap, persistence.MAX_OFFLINE))
+        if off:
+            self.flash(off)
 
     def flash(self, text):
         self._hud(text)

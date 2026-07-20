@@ -3,6 +3,45 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.5.102 — THE HOUSE KEEPS ITS WORD (2026-07-20)
+
+The SUSPECT tier of the 2026-07-19 gameplay audit, ruled and shipped
+(`AUDIT_2026_07_19.md` records each ruling):
+
+* **A revival never steals a young life.** Being saved from death set the
+  age to ~12 game-hours before the end for *every* pet — canon-shaped for
+  an old-age death, but a young pet rescued from sickness or poison
+  silently lost nearly its whole remaining lifespan. Revival now
+  *restores* life, as the canon rule says: old-age rescues get their
+  grace exactly as before, and a young pet keeps the life it had.
+* **An interrupted DNA wager settles instead of vanishing.** The stake is
+  still paid when the mash begins (that part is canon — and refunding it
+  would make quitting free insurance on a mash going badly, the same
+  logic as the cup's documented forfeit). But a quit or crash mid-mash
+  used to keep your bits and give nothing: the paid mash is now
+  remembered, and the next launch settles it as the spoiled mash it was —
+  a big stake still stabilizes into a real Field — and tells you so.
+* **Keeping the elder's memory no longer costs the bonus.** At the
+  memorial, choosing to etch and *then* keeping the previous generation's
+  memory discarded the fresh etch AND left the lower spent-bonus seed —
+  strictly worse than declining up front, and nothing said so. Keeping
+  the elder now carries the care bonus exactly like declining; the two
+  roads to the same choice pay the same.
+* **A suspended terminal no longer stops time.** Ctrl-Z or a closed
+  laptop lid froze the pet completely, while a properly *closed* game
+  aged — so the kind way to leave was the dishonest one. A real gap in
+  the clock now runs through the same gentle offline catch-up a relaunch
+  gets, with the same welcome-back note. Menus still pause the world,
+  exactly as before.
+* **Quit-cycling can't cheat the clocks.** Four sim clocks weren't saved:
+  relaunching could bill hunger/effort call mistakes up to 7× faster (or
+  forgive one at second 599), dodge the assistant's hourly retainer
+  forever, and shed sleep-DP progress. All four now persist, like the
+  starvation clock before them.
+* Also probed: the "estate lost across devices" suspicion **did not
+  reproduce** — a two-device test carried bits, bag, trophies and the DNA
+  bank in full. Documented in the audit.
+
 ## 0.5.101 — SMALL TRUTHS (2026-07-20)
 
 The LOW tier of the 2026-07-19 gameplay audit (`AUDIT_2026_07_19.md`):

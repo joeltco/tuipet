@@ -54,12 +54,21 @@ def test_a_burn_cannot_kill_inside_the_grace():
 
 
 def test_save_from_death_leaves_the_revival_window():
+    # S1 ruling 2026-07-20: RevivalLifeInc RESTORES life -- an old-age death
+    # walks out with the ~750s window, while a YOUNG rescue keeps the life it
+    # had (the old unconditional jump burned it down to the window)
     p = _pet()
     p.dead = True
     p.evol_bonus = 3
+    age0 = p.age_seconds
     p.save_from_death()
     assert not p.dead and p.hunger == 0 and p.evol_bonus == 2
-    assert abs((p.lifespan - p.age_seconds) - 750.0) < 1e-6 or p.num != 100
+    assert p.age_seconds == age0                 # young: nothing burned
+    q = _pet()
+    q.dead = True
+    q.age_seconds = q.lifespan                   # died of old age
+    q.save_from_death()
+    assert abs((q.lifespan - q.age_seconds) - 750.0) < 1e-6 or q.num != 100
 
 
 def test_the_care_bonus_carries_across_generations():
