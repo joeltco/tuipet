@@ -485,10 +485,12 @@ def test_esc_mid_fight_files_the_forfeit_loss():
     pan = _lobby()
     pan.client = _LadderClient()
     _running_fight(pan)
-    losses0 = pan.pet.battles - pan.pet.wins
+    b0, w0 = pan.pet.battles, pan.pet.wins
     pan.key("escape")
     assert pan.client.reports == [(False, "Ryo")], "the losing half files"
-    assert (pan.pet.battles - pan.pet.wins) == losses0 + 1, "the loss counts"
+    # L17 ruling: the loss is filed with the LADDER; the local record
+    # channels stay still (online is progression-neutral)
+    assert (pan.pet.battles, pan.pet.wins) == (b0, w0)
     assert any(p.get("abort") for _, p in pan.client.sent), "partner still told"
     assert pan.phase == "lobby" and "loss" in pan.status
 
@@ -514,7 +516,8 @@ def test_abort_mid_fight_is_a_forfeit_win_not_a_void():
     bits0, wins0 = pan.pet.bits, pan.pet.wins
     pan._on_relay({"from_id": 2, "payload": {"kind": "battle", "abort": True}})
     assert pan.client.reports == [(True, "Ryo")], "the winning half files"
-    assert pan.pet.wins == wins0 + 1 and pan.pet.bits > bits0
+    # L17 ruling: the purse pays and the ladder credits; wins stay still
+    assert pan.pet.wins == wins0 and pan.pet.bits > bits0
     assert pan.bphase == "over" and "you win" in pan.bt_outcome.lower()
     _fits(pan, "forfeit-win over screen")
 

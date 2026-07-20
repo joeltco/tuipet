@@ -493,7 +493,9 @@ def test_online_payout_survives_the_bout():
     pan._battle_over()                          # must not raise
     assert pan.bphase == "over" and "WIN" in pan.bt_outcome
     assert p.bits > bits0                       # the purse actually lands
-    assert p.battles == 1 and p.wins == 1       # and the record with it
+    # L17 ruling (Joel 2026-07-20, option a): online PvP is progression-
+    # neutral -- the purse and ladder pay, the record channels do not move
+    assert p.battles == 0 and p.wins == 0
 
 
 def test_the_update_offers_a_restart(monkeypatch):

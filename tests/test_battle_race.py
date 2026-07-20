@@ -96,9 +96,11 @@ def test_progression_channels_survive_the_race():
     assert p.levels_fought[-1] == 6        # stage rank IS the level now
     assert p.virus == 3                    # +1 in the foe's attribute
     p.record_battle(True, mega, online=True)
-    assert p.mega_kills == 1               # PvP never feeds KO6
+    # L17 ruling (Joel 2026-07-20, option a): online is progression-neutral —
+    # KO6 stays still, and so do wins/battles/battle_log/stage_battles
+    assert p.mega_kills == 1 and p.wins == 1 and p.battles == 1
     p.record_battle(False, mega)
-    assert p.battle_log[-1] == 0 and p.wins == 2
+    assert p.battle_log[-1] == 0 and p.wins == 1
 
 
 def test_raid_bout_reports_damage_and_records_nothing():
