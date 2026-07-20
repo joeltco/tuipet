@@ -99,6 +99,9 @@ class TitlePanel:
         self.fx = random.choice(BOOT_FX)     # this power-on's transition
         self.frame_i = 0
         self._fade = 0                       # >0 while a mascot swap plays in
+        self.sfx = "boot"                    # the power-on jingle (baked from the
+        #                                      device's own beeps — tools/make_boot_jingle.py)
+        #                                      rides the flash via the app's anim-sfx drain
         from . import update
         self.version = update.current_version() or ""   # blank when running from source
 

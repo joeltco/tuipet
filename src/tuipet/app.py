@@ -150,11 +150,10 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("THE DEVICE POWERS ON: the title screen draws one of "
-                 "six boot transitions each launch (dissolve, wipe, "
-                 "scan, blinds, iris, checker), cycles mascots in "
-                 "attract mode with the same effect, and the PRESS "
-                 "ENTER prompt now pulses beside the version.")
+    WHATS_NEW = ("THE POWER-ON JINGLE: the device now sings a tiny "
+                 "rising jingle with the boot flash, composed from "
+                 "its own beeps (rides the sound switch and volume "
+                 "slider as usual).")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and

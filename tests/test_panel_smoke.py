@@ -168,7 +168,9 @@ def test_title_boot_flashes_transitions_then_settles_for_every_fx():
     import random
     from tuipet.titlescreen import TitlePanel, BOOT_BLIP, BOOT_FADE, BOOT_FX
     random.seed(11)
-    assert TitlePanel().fx in BOOT_FX             # launch draws from the fx pool
+    fresh = TitlePanel()
+    assert fresh.fx in BOOT_FX                    # launch draws from the fx pool
+    assert fresh.sfx == "boot"                    # the power-on jingle rides the flash
     for fx in BOOT_FX:
         pan = TitlePanel()
         pan.fx = fx

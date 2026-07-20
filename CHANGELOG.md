@@ -3,6 +3,15 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.5.105 — THE POWER-ON JINGLE (2026-07-20)
+
+* **The device now sings when it boots.** A 0.28s rising jingle
+  (da-di-dii-dii) plays with the power-on flash — baked entirely from the
+  device's own ripped beeps (its three tones: trainhit's low, click's
+  mid, the menu blip's high, in the native 40ms beep unit; nothing
+  synthesized — `tools/make_boot_jingle.py` is the recipe). Respects the
+  sound switch and volume slider like every other sound.
+
 ## 0.5.104 — THE DEVICE POWERS ON (2026-07-20)
 
 Title-screen polish round (Joel: "lets polish the title screen"):
