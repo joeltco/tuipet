@@ -152,3 +152,40 @@ def test_surrender_after_the_bell_never_double_records():
     log0, won0 = list(p.battle_log), b.won
     b.surrender()
     assert p.battle_log == log0 and b.won is won0    # a no-op after the bell
+
+
+def test_never_stuck_fallback_respects_the_induced_gate():
+    """M12 (gameplay audit 2026-07-19): select()'s nothing-qualifies fallback
+    filtered special/item locks but NOT xantibody=="Induced" -- the gate
+    check() and every divergence path enforce.  A corpus pet with no passing
+    candidate could be pushed into an Induced X form, then evolve_to locked
+    x_antibody="Permanent": a free X with no X egg or chip."""
+    from tuipet import data, evolution
+    reqs = data.load_requirements()
+    _, by_num = data.load_sprites()
+    # find a parent whose stage-up children include an Induced form
+    hit = None
+    for parent, kids in data.load_evolutions().items():
+        if parent not in by_num:
+            continue
+        for k in kids:
+            if (k in by_num and by_num[k]["stage"] != by_num[parent]["stage"]
+                    and reqs.get(k, {}).get("xantibody") == "Induced"
+                    and not data.is_placeholder(k)):
+                hit = (parent, k)
+                break
+        if hit:
+            break
+    assert hit, "the dex should hold at least one Induced stage-up child"
+    parent, _induced = hit
+    p = Pet(num=parent, stage=by_num[parent]["stage"], attribute="Vaccine")
+    p.world_seconds = 600.0
+    p.x_antibody = "None"
+    # force the fallback: nothing fully qualifies
+    import random as _r
+    _r.seed(5)
+    for _ in range(40):
+        t = evolution.select(p)
+        if t is not None:
+            assert reqs.get(t, {}).get("xantibody") != "Induced", \
+                "the fallback must never hand out an Induced form for free"

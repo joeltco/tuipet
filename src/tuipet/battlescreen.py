@@ -86,14 +86,18 @@ def round_timeline(ph0, fh0, pdmg, edmg, player_first, effect=None):
     shared by the PvE panel (which reads it off its Battle) and the lobby's
     PvP replay (which reads it off the relayed result; lobby audit 2026-07-04:
     PvP rounds were a text log while PvE plays the full animation)."""
-    # strike order: initiative first; a KO'd side does not retaliate
+    # strike order: initiative first.  The ENGINE is simultaneous -- both
+    # sides' landed blows are already on record -- so a KO'd side's strike
+    # is only hidden when it MISSED (pure presentation, nothing applied).
+    # Suppressing a landed one showed the pet losing HP with no animation:
+    # the next page's true bar didn't match the replay (audit 2026-07-19).
     if player_first:
         seq = [("pet", "foe", pdmg)]
-        if fh0 - max(0, pdmg) > 0:
+        if fh0 - max(0, pdmg) > 0 or edmg > 0:
             seq.append(("foe", "pet", edmg))
     else:
         seq = [("foe", "pet", edmg)]
-        if ph0 - max(0, edmg) > 0:
+        if ph0 - max(0, edmg) > 0 or pdmg > 0:
             seq.append(("pet", "foe", pdmg))
     tl = []
     ph, fh = ph0, fh0

@@ -39,8 +39,12 @@ def core_number(pet):
     pending, otherwise a lifespan meter counting up.  Floors at 1."""
     base = DIGICORE_BASE_RATE
     growth = pet.STAGE_DURATION.get(pet.stage)
-    pending = (growth is not None and pet.stage_seconds < growth
-               and has_next(pet))
+    # Mega's 9e9 is the "never auto-evolves" sentinel, not a growth clock:
+    # counting it as pending froze the meter at its top for any Mega with
+    # onward (jogress/X) rows -- the lifespan count-up this docstring
+    # promises a final form never appeared (gameplay audit 2026-07-19)
+    pending = (growth is not None and growth < 9e8
+               and pet.stage_seconds < growth and has_next(pet))
     if pending:
         denom = round(growth / base) or 1
         n = int(base - pet.stage_seconds / denom)
@@ -182,7 +186,10 @@ def _evo_rows(pet):
         rows = lines.evo_rows(pet)
         return rows or "(final form)"
     try:
-        cands = sorted(evolution.candidates(pet), key=lambda c: (not c[2], c[3]))
+        # ready first, then HIGHEST fulfilled -- ascending put the form the
+        # engine is LEAST likely to pick in the top "closest" row, against
+        # the silhouette on the same screen (gameplay audit 2026-07-19)
+        cands = sorted(evolution.candidates(pet), key=lambda c: (not c[2], -c[3]))
     except Exception:
         cands = []
     if not cands:

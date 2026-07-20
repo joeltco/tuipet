@@ -352,6 +352,28 @@ def _clean(s, limit):
     return str(s).replace("\n", " ").replace("\r", " ").strip()[:limit]
 
 
+def _clamp_pet(p):
+    """Bound an UNTRUSTED presence card to the fields clients actually read
+    (lobbyscreen._card: name/stage/num/attr/title).  The card was stored and
+    REBROADCAST verbatim: a handful of crafted 64KB cards pushed every roster
+    frame past the clients' 256KB read cap, so one bad actor killed the whole
+    room with 1009 closes (MED audit 2026-07-19)."""
+    if not isinstance(p, dict):
+        return {}
+    out = {}
+    for k in ("name", "stage", "attr", "title"):
+        v = p.get(k)
+        if isinstance(v, (str, int, float)) and not isinstance(v, bool):
+            s = _clean(v, MAX_NAME)
+            if s:
+                out[k] = s
+    try:
+        out["num"] = max(0, min(int(p.get("num") or 0), 10 ** 6))
+    except (TypeError, ValueError):
+        out["num"] = 0
+    return out
+
+
 
 # ---- monthly ladder (2026-07-14): online PvP wins, fresh race every month ----
 # Both sides of a bout auto-report; a win only lands when the two stories agree
@@ -993,7 +1015,7 @@ async def handler(ws):
                         LOG.info("evicted stale session id=%s name=%s", c.id, c.name)
                     client.boot = boot
                 client.name = name
-                client.pet = m.get("pet") or {}
+                client.pet = _clamp_pet(m.get("pet"))
                 client.live = not sync_only
                 if sync_only:                     # the newest APP LAUNCH owns the saves
                     _take_lease(client, key, boot)
@@ -1020,7 +1042,7 @@ async def handler(ws):
                 await _send(client, {"t": "error", "msg": "Log in first."})
 
             elif t == "pet":
-                client.pet = m.get("pet") or {}
+                client.pet = _clamp_pet(m.get("pet"))
                 if client.live:
                     await _push_roster()
 

@@ -165,10 +165,15 @@ class LobbyPanel(BoutMixin, ChatMixin):
         if p.asleep:
             return "zzz… asleep"
         if kind == "jogress":
-            return jogress.can_jogress(p)      # pure: stage / DP checks
+            # remote=True: no disturb, no refusal roll, no refuse ANIM --
+            # a stranger's invite must never touch the pet (audit 2026-07-19)
+            return jogress.can_jogress(p, remote=True)
         if p.stage in ("Egg", "Fresh"):
             return "Too young to battle."
-        return None
+        # the same condition gates the SEND side enforces (can_battle), in
+        # their pure form -- a starving/sick/drained pet used to auto-accept
+        # bouts it could never send (gameplay audit 2026-07-19)
+        return p.battle_condition()
     def _others(self):
         """Everyone else ONLINE, lobby regulars first, then the playing
         ghosts (presence 2026-07-05: the roster carries the whole server)."""
@@ -348,9 +353,12 @@ class LobbyPanel(BoutMixin, ChatMixin):
             elif self.phase == "jogress" and self.jphase == "result":
                 self._return_to_lobby("Partner left — no fusion.")
             elif self.phase == "battle" and self.bphase not in (None, "over"):
-                self.bt_outcome = "Opponent left."
-                self.bt_payload = ("battle_msg", "Opponent left — battle void.")
-                self.bphase = "over"
+                if self.bphase == "fight" and self.battle is not None:
+                    self._opp_fled()     # a committed fight: their forfeit, my win
+                else:
+                    self.bt_outcome = "Opponent left."
+                    self.bt_payload = ("battle_msg", "Opponent left — battle void.")
+                    self.bphase = "over"
 
     # ---- session orchestration ------------------------------------------
     def _enter_session(self, pid, pname, kind, host):
@@ -438,9 +446,12 @@ class LobbyPanel(BoutMixin, ChatMixin):
             elif self.phase == "jogress" and self.jphase == "result":
                 self._return_to_lobby("Partner left — no fusion.")   # pre-commit: nobody fuses
             elif self.phase == "battle" and self.bphase not in (None, "over"):
-                self.bt_outcome = "Opponent left."
-                self.bt_payload = ("battle_msg", "Opponent left — battle void.")
-                self.bphase = "over"
+                if self.bphase == "fight" and self.battle is not None:
+                    self._opp_fled()     # a committed fight: their forfeit, my win
+                else:
+                    self.bt_outcome = "Opponent left."
+                    self.bt_payload = ("battle_msg", "Opponent left — battle void.")
+                    self.bphase = "over"
             return
         if kind == "jogress" and self.phase == "jogress" and payload.get("t") == "confirm":
             # two-phase commit: the partner said yes; fuse only when BOTH have

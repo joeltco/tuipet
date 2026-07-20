@@ -114,7 +114,7 @@ def options(pet):
     return out
 
 
-def can_jogress(pet):
+def can_jogress(pet, remote=False):
     if getattr(pet, "dead", False):
         # the missing dead leg let a full-DP corpse pass -- this gate also
         # drives the lobby invite auto-decline (dead sweep 2026-07-06)
@@ -135,12 +135,15 @@ def can_jogress(pet):
     from .pet import DP_MAX
     if getattr(pet, "dp", 0) < DP_MAX:
         return f"DP {getattr(pet, 'dp', 0)}/{DP_MAX} — a night's sleep refills it."
-    # canJogress -> checkRefused(energyChange=-0.66): a non-compliant pet may balk,
-    # and one that can't afford the fusion's energy auto-refuses
-    refused = pet.check_refused(energy_change=-JOGRESS_ENERGY_COST)
-    pet.check_compliant()                        # canJogress: checkRefused; checkCompliant
-    if refused:
-        return f"{pet.name} refuses to fuse!"
+    if not remote:
+        # canJogress -> checkRefused(energyChange=-0.66): a non-compliant pet
+        # may balk, and one that can't afford the fusion's energy auto-refuses.
+        # The REMOTE gate skips the roll: a stranger's spoofable invite used
+        # to trigger a visible refuse animation (gameplay audit 2026-07-19)
+        refused = pet.check_refused(energy_change=-JOGRESS_ENERGY_COST)
+        pet.check_compliant()                    # canJogress: checkRefused; checkCompliant
+        if refused:
+            return f"{pet.name} refuses to fuse!"
     from . import lines as lines_mod
     if not options(pet) and not lines_mod.companion_wanted(pet.num):
         # a pet with no doors of its own may still be somebody's REQUIRED
@@ -180,15 +183,17 @@ def pairable_attrs(pet):
     return sorted({p for o in options(pet) for p in o["partners"]})
 
 
-def _distinct_component(pet, target, peer_num):
+def _distinct_component(pet, peer_num):
     """Canon named fusions need TWO DIFFERENT components (Fusion/Mode canon
-    audit 2026-07-18): the peer must itself be a BASE of the target and a
-    different canonical species than mine -- two WarGreymons never make an
-    Omnimon, whatever the name channel says."""
+    audit 2026-07-18): two WarGreymons never make an Omnimon, whatever the
+    name channel says.  DISTINCTNESS is the whole law: the extra demand
+    that the peer also be a corpus-graph BASE of the target killed 41 of
+    147 attribute doors between partners that mutually declare the same
+    door -- the doors' own contract is any same-stage partner with a
+    listed attribute, proven by the handshake's shared name / mutual
+    attribute channels, not by corpus-graph membership (gameplay audit
+    2026-07-19; Tortamon 113 + Gatomon 100 -> Jagamon 226 repro)."""
     if peer_num is None:
-        return False
-    evo = data.load_evolutions()
-    if not any(target in ts for b, ts in evo.items() if b == peer_num):
         return False
     return data.canonical_num(peer_num) != data.canonical_num(pet.num)
 
@@ -219,7 +224,7 @@ def resolve_online(pet, payload):
     exact = [o for o in mine if not o["partners"] and o["partner_num"] == p_num]
     named = [o for o in mine
              if o["partners"] and o["name"] in set(payload.get("fusions") or ())
-             and _distinct_component(pet, o["num"], p_num)]
+             and _distinct_component(pet, p_num)]
     if exact or named:
         return _final_pick(pet, exact + named)
     # the COMPANION role: the peer's exact door names MY num -- I lend the
@@ -241,7 +246,7 @@ def resolve_online(pet, payload):
     # the attribute fallback gets the same distinct-component law -- the
     # mirror hole reopened here otherwise (audit 2026-07-18)
     targets = [o for o in fuse_targets(pet, p_attr)
-               if _distinct_component(pet, o["num"], p_num)]
+               if _distinct_component(pet, p_num)]
     return _final_pick(pet, targets) if targets else None
 
 

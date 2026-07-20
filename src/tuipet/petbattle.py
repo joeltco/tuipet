@@ -198,20 +198,28 @@ class BattleMixin:
         # the source's battle gates (canon gates 2026-07-18, decompile
         # L11746/11813): a starving, drained, sick or filth-flanked pet
         # refuses the fight with the head-shake
-        if self.hunger <= 0:
+        if (cond := self.battle_condition()) is not None:
             self._set_anim("refuse", 1.0)
-            return "Too hungry to fight."
-        if self.energy < BATTLE_MIN_ENERGY:
-            self._set_anim("refuse", 1.0)
-            return "Too drained to fight."
-        if self.sick:
-            self._set_anim("refuse", 1.0)
-            return "Too sick to fight."
-        if self.poop:
-            self._set_anim("refuse", 1.0)
-            return "Clean up first!"
+            return cond
         if self.check_refused():                             # canBattle -> checkRefused
             return f"{self.name} refuses to fight!"
+        return None
+
+    def battle_condition(self):
+        """The PURE condition half of can_battle -- no disturb, no anim, no
+        refusal roll.  ONE source for every recorded bout: the cup and the
+        invite-accept side used to skip these entirely, so a pet too
+        starved/sick/drained to SEND a challenge could still grind three
+        recorded cup battles per cup and auto-accept incoming invites
+        (gameplay audit 2026-07-19)."""
+        if self.hunger <= 0:
+            return "Too hungry to fight."
+        if self.energy < BATTLE_MIN_ENERGY:
+            return "Too drained to fight."
+        if self.sick:
+            return "Too sick to fight."
+        if self.poop:
+            return "Clean up first!"
         return None
 
     def record_battle(self, won, enemy=None, online=False, source="battle",

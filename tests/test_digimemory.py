@@ -234,19 +234,43 @@ def test_a_rescue_rearms_the_ceremony():
 
 
 def test_a_live_retire_banks_the_full_grade():
-    """action_new on a LIVING pet (Options -> new egg): canon resetDigimon runs
-    careBonusOnReset dead or alive with NO etch offer -- the full adjusted
-    bonus seeds the heir (this seed used to be silently lost)."""
+    """The hatch COMMIT on a LIVING pet (Options -> new egg -> a real pick):
+    canon resetDigimon runs careBonusOnReset dead or alive with NO etch
+    offer -- the full adjusted bonus seeds the heir (this seed used to be
+    silently lost).  Since the M11 fix (gameplay audit 2026-07-19) the bank
+    rides _hatch_new, not the menu open."""
     from tuipet import app as app_mod
     persistence.take_bonus_seed()                    # start the slot empty
     p = _pet(care_mistakes=0, mood=200, obedience=100, evol_bonus=3)
     assert not p.dead
+    grade = p.final_care_grade()
     app = app_mod.TuiPetApp.__new__(app_mod.TuiPetApp)
     app.pet = p
-    called = {}
-    app._open_mode = lambda *a, **k: called.setdefault("open", True)
-    app_mod.TuiPetApp.action_new(app)
-    assert persistence.take_bonus_seed() == p.final_care_grade()
+    app._do = lambda *a, **k: None
+    app._grant_digimemory = lambda pet: None
+    app_mod.TuiPetApp._hatch_new(app, 0, p.generation + 1)
+    assert persistence.take_bonus_seed() == grade
+
+
+def test_a_cancelled_retire_leaves_no_headstone():
+    """M11 (gameplay audit 2026-07-19): action_new snapshotted the previous
+    generation BEFORE the egg carousel -- every N->ESC appended a duplicate
+    headstone for the same life and recorded a still-LIVE pet as last_gen.
+    The generational commit rides the actual pick now."""
+    from tuipet import app as app_mod
+    p = _pet(evol_bonus=3)
+    app = app_mod.TuiPetApp.__new__(app_mod.TuiPetApp)
+    app.pet = p
+    app._open_mode = lambda panel, cb=None: None
+    app._do = lambda *a, **k: None
+    legacy0 = len((persistence.load_settings().get("progress") or {})
+                  .get("legacy") or [])
+    for _ in range(3):                               # N -> ESC, three times
+        app_mod.TuiPetApp.action_new(app)
+        app_mod.TuiPetApp._hatch_new(app, None, p.generation + 1)
+    d = (persistence.load_settings().get("progress") or {})
+    assert len(d.get("legacy") or []) == legacy0, "no headstone for a cancel"
+    assert not (d.get("last_gen") or {}), "a live pet is not the previous gen"
 
 
 def test_longevity_truncates_toward_zero():

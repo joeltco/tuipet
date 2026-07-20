@@ -239,7 +239,8 @@ def eligibility(pet, t):
     # ONE gate: the same rest+stake chain the live paths (eligibility_at /
     # eligibility_featured) run.  This body was a hand-copy of the same
     # rules and the two could drift silently (cup review 2026-07-18).
-    return _eligibility_rest(pet, t) or _stake_check(pet, t)
+    return (_eligibility_rest(pet, t) or _stake_check(pet, t)
+            or pet.battle_condition())   # the ONE bout condition gate (audit 2026-07-19)
 
 
 def eligibility_at(pet, t, slot):
@@ -252,14 +253,16 @@ def eligibility_at(pet, t, slot):
         return "That cup has run."
     if slot != _hour(pet) and not holiday():
         return "That cup is closed — only the %02d:00 one runs now." % _hour(pet)
-    return _eligibility_rest(pet, t) or _stake_check(pet, t)
+    return (_eligibility_rest(pet, t) or _stake_check(pet, t)
+            or pet.battle_condition())   # the ONE bout condition gate (audit 2026-07-19)
 
 
 def eligibility_featured(pet, t):
     """The featured cup: any hour, once per real day."""
     if featured_done(pet):
         return "Today's featured cup has run."
-    return _eligibility_rest(pet, t) or _stake_check(pet, t)
+    return (_eligibility_rest(pet, t) or _stake_check(pet, t)
+            or pet.battle_condition())   # the ONE bout condition gate (audit 2026-07-19)
 
 
 def _stake_check(pet, t):

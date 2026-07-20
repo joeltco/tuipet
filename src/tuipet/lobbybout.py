@@ -225,10 +225,42 @@ class BoutMixin:
             self._forfeit()
         return None
     def _forfeit(self):
-        """Leave a battle in progress -> tell the opponent, then back to the lobby."""
+        """Leave a battle in progress -> tell the opponent, then back to the lobby.
+        Once the seeded fight is RUNNING the bout is committed: walking out is
+        a forfeit LOSS, filed with the ladder like any decided bout -- ESC in
+        "fight" used to relay only the abort, so a losing player could void
+        the result at will while the winner's half expired unconfirmed
+        (MED audit 2026-07-19).  Pre-commit (card/wait) stays a free back-out."""
+        counted = self.bphase == "fight" and self.battle is not None
+        if counted:
+            opp_nm = (self.partner or (0, ""))[1] or (self.opp_card or {}).get("name")
+            report = getattr(self.client, "ladder_report", None)
+            if report and opp_nm:
+                report(False, opp_nm)
+            self.pet.record_battle(False, online=True)
         if self.partner:
             self.client.relay(self.partner[0], {"kind": "battle", "abort": True})
-        self._return_to_lobby("You forfeited.")
+        self._return_to_lobby("Forfeit — counted as a loss." if counted
+                              else "You forfeited.")
+    def _opp_fled(self):
+        """The partner walked out of a RUNNING seeded fight (abort relay or
+        roster vanish): that is THEIR forfeit.  File the winner's half so the
+        pair credits when their agreeing loss lands, and pay the win -- both
+        sites used to call it void, so the ladder never heard of it (MED
+        audit 2026-07-19)."""
+        opp_nm = (self.partner or (0, ""))[1] or (self.opp_card or {}).get("name")
+        report = getattr(self.client, "ladder_report", None)
+        if report and opp_nm:
+            report(True, opp_nm)
+        from .pet import online_reward
+        purse = online_reward(True)
+        self.pet.record_battle(True, online=True)
+        self.pet.bits += int(purse)
+        self.bt_outcome = "Opponent fled — you win!"
+        self.bt_reward = f"+{purse}b" + ("  (weekend bonus!)"
+                                         if purse not in (100, 150, 200) else "")
+        self.bt_payload = ("battle_msg", self.bt_outcome)
+        self.bphase = "over"
 
     # ---- input -----------------------------------------------------------
     def _commit_fusion(self):

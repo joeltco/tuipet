@@ -611,3 +611,18 @@ def test_esc_at_the_bar_backs_out_never_forfeits():
     pan.sub = _WonSub()
     pan.key("space")
     assert pan.tourney.recorded == [True]
+
+
+def test_cup_entry_honors_the_battle_condition_gates():
+    """M5 (gameplay audit 2026-07-19): eligibility checked rest+stake only --
+    a pet too starved/sick/drained to SEND a lobby challenge could still
+    grind three recorded cup battles per cup.  All three entry points run
+    pet.battle_condition() now (the pure half of can_battle)."""
+    p = _pet("Champion", bits=10_000)
+    tr = _trophy()
+    assert tournament.eligibility(p, tr) is None       # healthy: fine
+    p.hunger = 0
+    assert "hungry" in tournament.eligibility(p, tr)
+    p.hunger = 4
+    p.poop = 2
+    assert "Clean up" in tournament.eligibility_featured(p, tr)

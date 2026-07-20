@@ -336,3 +336,21 @@ def test_weekend_tournament_purse_scales(monkeypatch):
     tm.trophy = {"same_day_retry": True, "id": "_wknd_test"}
     tm._finish(1000)
     assert tm.reward_bits == 1500 and p.bits == 1500
+
+
+def test_a_landed_retaliation_is_shown_never_swallowed():
+    """M4 (gameplay audit 2026-07-19): the engine is SIMULTANEOUS -- both
+    landed blows apply -- but the timeline dropped the foe's strike whenever
+    the pet's blow zeroed the foe.  The pet lost 1-2 HP on record with no
+    animation, and the next page's true HP contradicted the replay.  A KO'd
+    side's strike is hidden only when it MISSED (nothing was applied)."""
+    from tuipet.battlescreen import round_timeline
+    # foe at 2, pet lands 2 (KO) while the foe's simultaneous 1 also landed
+    tl = round_timeline(5, 2, 2, 1, player_first=True)
+    assert tl[-1]["ph"] == 4, "the applied retaliation must reach the shown HP"
+    assert any(f["m"] == "hit" and f.get("def") == "pet" for f in tl)
+    # ...but a KO'd side's MISS stays hidden: nothing landed, nothing to show
+    tl2 = round_timeline(5, 2, 2, 0, player_first=True)
+    assert tl2[-1]["ph"] == 5
+    assert not any(f.get("def") == "pet" and f["m"] in ("hit", "dodge")
+                   for f in tl2)

@@ -477,12 +477,13 @@ class BodyMixin:
     def _calc_to_nap(self):
         """calcToSleepNapLapse: how long the pet sits in the DARK before it
         nods off -- an energetic pet resists (~40 game-min), a drained one
-        folds in 20; restless +-1; a well-drilled pet (obedience >= 75)
-        drops the extra +1."""
+        folds in 20; restless +-1.  (The obedience +1 left with the
+        discipline system: the pinned-0 meter billed EVERY pet the extra
+        doze minute while the >=75 discount was unreachable -- MED audit
+        2026-07-19.)"""
         r = self.restless * TO_SLEEP_NAP_RESTLESS
-        obed_mod = 0 if self.obedience >= TO_NAP_OBEDIENCE_FACTOR else 1
         return (TO_NAP_HIGH_ENERGY if self.energy > self.max_energy / 2
-                else TO_NAP_LOW_ENERGY) + r + obed_mod
+                else TO_NAP_LOW_ENERGY) + r
 
     def _tick_sleep_pressure(self, dt):
         """bedtime is a PRESSURE clock, not the sun (setSleepLapse): SleepLapseInc

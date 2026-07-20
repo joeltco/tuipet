@@ -3,6 +3,61 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.5.100 — HAPPY AT LAST (2026-07-20)
+
+The twelve MED findings of the 2026-07-19 gameplay audit
+(`AUDIT_2026_07_19.md`), all fixed:
+
+* **Happy is real now.** The mood meter could never say "Happy", and a
+  whole reward tier hung dead off it: the good birthday (+lifespan,
+  +evolution bonus, the Cupcake), battle power doubling, the happy
+  idle bounce, and the report card's +1. Perfect care reaches it now —
+  an "ok" pet at top condition is Happy.
+* **The report card stops docking a phantom point.** The retired
+  obedience meter (pinned at 0 forever) subtracted 1 from every life
+  ever graded and delayed every pet's nod-off. Removed systems no
+  longer bill live formulas.
+* **Jogress doors open for their declared partners.** 41 of 147
+  attribute doors could never fire with the very partners their own
+  charts declare — the resolver demanded an unrelated ancestry link.
+  Any same-stage partner with a listed attribute now opens the door,
+  as the charts promise.
+* **The battle replay shows the hit that landed.** When your blow
+  finished the foe, the foe's simultaneous strike was cut from the
+  animation but still subtracted — HP dropped with no visible cause.
+  What's applied is what's shown.
+* **Cup and invite bouts obey the same health gates as challenges.**
+  A pet too starved, sick, or drained to *send* a challenge could
+  still grind recorded cup battles and auto-accept incoming invites.
+  And a stranger's invite can no longer trigger your pet's visible
+  refuse animation.
+* **Raid and lobby no longer fight over the connection.** The raid
+  screen leaked its live lobby login; opening the lobby afterwards
+  left the two sessions evicting each other in an endless
+  "reconnecting…" loop.
+* **The lobby shrugs off crafted junk.** The server clamps every
+  stored presence card to its real fields and sizes, closing a route
+  for one hostile client to knock every honest player off the lobby.
+  (Server-side — already live.)
+* **Quitting a fight is a loss, and it's filed.** ESC mid-fight
+  forfeits: the ladder records your loss, and your opponent gets the
+  win, the payout, and "Opponent fled — you win!" instead of an
+  unconfirmed nothing. Backing out before the fight is seeded stays
+  free.
+* **The DigiCore meter counts for Megas.** The final-form lifespan
+  count-up froze at 14 forever whenever the corpus had onward rows.
+* **The data book agrees with itself.** The evolution list sorted
+  backwards — least-likely form first, contradicting the silhouette
+  beside it — and a held Digimental's requirement row always read
+  unmet.
+* **Cancelling a retire leaves no trace.** N then ESC at the egg
+  carousel appended a duplicate headstone for the still-live pet on
+  every attempt — and prematurely recorded it as the previous
+  generation.
+* **No free X antibodies.** The evolution fallback could force an
+  antibody-less pet into an Induced-X form and then lock the antibody
+  in as Permanent. The Induced gate now holds everywhere.
+
 ## 0.5.99 — FAIR PLAY (2026-07-19)
 
 The six HIGH findings of the 2026-07-19 gameplay audit

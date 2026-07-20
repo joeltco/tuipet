@@ -791,11 +791,18 @@ class Pet(CareMixin, DnaMixin, BattleMixin, BodyMixin):
         return tier
 
     def current_mood(self):
-        """DERIVED (the clone's rule): no mood meter -- the word keys off
-        condition.  Unhappy when unwell or unfed, else Neutral."""
+        """DERIVED (no mood meter): the word keys off LIVE state.  Unhappy
+        when unwell or unfed; HAPPY when perfectly kept -- condition tier 3
+        with nothing else wrong, the same "bright" bar the walk poses use.
+        The old derivation stopped at Neutral, so every Happy consumer (the
+        good birthday, the battle power doubling, the happy idle, the grade's
+        +1) was unreachable for the life of the app (MED audit 2026-07-19)."""
         w = self.status_word()
-        return "Unhappy" if w in ("sick", "starving",
-                                  "needs cleaning") else "Neutral"
+        if w in ("sick", "starving", "needs cleaning"):
+            return "Unhappy"
+        if w == "ok" and self.condition() == 3:
+            return "Happy"
+        return "Neutral"
 
     def _set_enthusiasm(self, value):
         """A NO-OP: the spirit meter left with the enthusiasm system (BASIC
@@ -908,10 +915,10 @@ class Pet(CareMixin, DnaMixin, BattleMixin, BodyMixin):
             b += 1
         elif m != "Neutral":
             b -= 1
-        if self.obedience > BONUS_INC_OBEDIENCE:
-            b += 1
-        elif self.obedience < BONUS_DEC_OBEDIENCE:
-            b -= 1
+        # (the obedience legs left with the discipline system: the meter is
+        # pinned at 0, so `< BONUS_DEC_OBEDIENCE` docked EVERY graded life
+        # -1 while the +1 was unreachable -- a removed system must not bill
+        # a live formula (MED audit 2026-07-19))
         if self.battles and (self.wins / self.battles * 100.0) >= BONUS_INC_WIN_RATE:
             b += 1
         # longevity: whole days lived past the growth curve (negative if short).

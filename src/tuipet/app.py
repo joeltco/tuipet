@@ -150,14 +150,13 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("FAIR PLAY: the sleep items actually work now (pill "
-                 "sleeps, caffeine delays bedtime, the alarm's wake "
-                 "holds); quitting is no longer worse than playing -- "
-                 "offline runs at the live rates, satiety and the potty "
-                 "hold, and sleep earns its energy; the life report "
-                 "card grades fairly at every stage; and ESC at the "
-                 "cup's timing bar backs out instead of silently "
-                 "forfeiting your stake.")
+    WHATS_NEW = ("HAPPY AT LAST: perfect care now reaches the Happy "
+                 "mood and everything it unlocks (the good birthday, "
+                 "battle power doubling, the bounce, the grade +1); "
+                 "jogress doors open for the partners their charts "
+                 "declare; quitting an online fight files the loss and "
+                 "pays your opponent the win; and the cup obeys the "
+                 "same health gates as challenges.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and
@@ -1300,6 +1299,16 @@ class TuiPetApp(ActionsMixin, App):
                                 eggselectscreen.EggSelectPanel(self.pet),
                                 lambda et: self._hatch_new(et, gen)))
             return
+        # the generational COMMIT: nothing mutates until the pick is real
+        # (an ESC-cancelled carousel used to have already appended a
+        # headstone and overwritten last_gen -- gameplay audit 2026-07-19)
+        if not self.pet.dead:
+            # a LIVE retire skips the death flow entirely: canon resetDigimon
+            # runs careBonusOnReset dead or alive, and a live reset never
+            # offers the etch -- the FULL adjusted bonus carries to the heir
+            # (digimemory audit 2026-07-06; this seed used to be lost)
+            persistence.bank_bonus_seed(self.pet.final_care_grade())
+        persistence.snapshot_prev_gen(self.pet)   # previous-generation egg gates
         self.pet = Pet.new_egg(generation=gen, egg_type=egg_type)
         self._grant_digimemory(self.pet)
         persistence.save(self.pet)

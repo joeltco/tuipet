@@ -524,3 +524,50 @@ def test_legacy_headstones_speak_real_time(tmp_path, monkeypatch):
     label, val = digicore._legacy_rows()[0]
     assert "4d12h" in val, val                  # the Age row's own reading
     assert "270d" not in val                    # the 60x fantasy is dead
+
+
+def test_mega_core_number_is_the_lifespan_meter(monkeypatch):
+    """M9 (gameplay audit 2026-07-19): Mega's 9e9 STAGE_DURATION sentinel
+    read as a pending evolution for any Mega with onward (jogress/X) rows,
+    freezing the meter at 14 forever -- the lifespan count-up the docstring
+    promises a final form never appeared."""
+    from tuipet import digicore
+    p = _pet(stage="Mega")
+    monkeypatch.setattr(digicore, "has_next", lambda pet: True)
+    p.age_seconds = p.lifespan * 0.5
+    assert core_number(p) == 7                     # halfway through life
+    p.age_seconds = p.lifespan * 0.99
+    assert core_number(p) > 7                      # it MOVES
+
+
+def test_book_sorts_closest_first(monkeypatch):
+    """M10 (gameplay audit 2026-07-19): the corpus book sorted ASCENDING by
+    fulfilled score -- the top 'closest' row was the form the engine was
+    LEAST likely to pick, disagreeing with the silhouette beside it."""
+    from tuipet import digicore
+    from tuipet import evolution
+    p = _pet()
+    monkeypatch.setattr(evolution, "candidates",
+                        lambda pet: [(1, "Far", False, 0.2),
+                                     (2, "Near", False, 0.9),
+                                     (3, "Ready", True, 0.5)])
+    monkeypatch.setattr(evolution, "requirement_report", lambda pet, num: [])
+    rows = digicore._evo_rows(p)
+    assert [r[1] for r in rows] == ["Ready", "Near", "Far"]
+
+
+def test_item_row_reads_the_named_bag_key():
+    """M10's other half: the checklist checked the raw 'i:N' icon key
+    against a bag that stores NAMED keys, so a held Digimental's row always
+    read unmet."""
+    from tuipet import evolution
+    p = _pet(stage="Champion")
+    target = 492                                   # evol_item 15 (Courage)
+    unmet = dict((label, met) for met, label in
+                 evolution.requirement_report(p, target))
+    item_row = next(l for l in unmet if l.startswith("use "))
+    assert unmet[item_row] is False                # empty bag: honest unmet
+    p.inventory["egg_of_courage"] = 1              # the named crest key
+    met = dict((label, met) for met, label in
+               evolution.requirement_report(p, target))
+    assert met[item_row] is True

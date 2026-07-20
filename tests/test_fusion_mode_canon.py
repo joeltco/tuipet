@@ -98,3 +98,37 @@ def test_the_report_no_longer_lists_injury_rows():
                 if data.record_for(t).get("name") == "Omnimon")
     rows = [label for _ok, label in evolution.requirement_report(p, omni)]
     assert not any("injur" in r for r in rows)
+
+
+def test_attribute_doors_open_between_declared_chart_partners(monkeypatch):
+    """M3 (gameplay audit 2026-07-19): _distinct_component also demanded the
+    peer be a CORPUS-GRAPH base of the target, but attribute doors declare
+    their partner by ATTRIBUTE -- 41 of 147 doors could never open with any
+    co-declaring partner (executed repro: Tortamon 113 + Gatomon 100, both
+    mutually compatible, aborted on the Tortamon side).  Distinctness (never
+    a mirror fusion) is the whole law now; the mirror tests above still hold."""
+    monkeypatch.setattr(evolution, "check",
+                        lambda pet, t, connecting=False: True)   # isolate the handshake
+    _, by = data.load_sprites()
+
+    def mk(num):
+        p = Pet(num=num, stage=by[num]["stage"], attribute=by[num]["attribute"],
+                name=by[num]["name"])
+        p.world_seconds = 600.0
+        p.dp = 4
+        return p
+
+    def payload_of(p):
+        opts = jogress.options(p)
+        return {"attr": p.attribute, "num": p.num, "name": p.name,
+                "stage": p.stage,
+                "fusions": [o["name"] for o in opts],
+                "wants": [o["partner_num"] for o in opts if not o["partners"]],
+                "attrs": jogress.pairable_attrs(p)}
+
+    random.seed(7)
+    a, b = mk(113), mk(100)
+    ra = jogress.resolve_online(a, payload_of(b))
+    rb = jogress.resolve_online(b, payload_of(a))
+    assert ra is not None and rb is not None, "both-or-neither: the fusion fires"
+    assert data.record_for(ra["num"])["name"] == "Jagamon"

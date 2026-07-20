@@ -458,3 +458,84 @@ def test_the_dead_pvp_bounds_are_gone():
     from tuipet import accountscreen
     assert not hasattr(accountscreen, "MAX_PVP_HP")
     assert not hasattr(accountscreen, "MAX_PVP_POWER")
+
+
+class _LadderClient(_FakeClient):
+    """A fake that also has the ladder half-report surface."""
+    def __init__(self):
+        super().__init__()
+        self.reports = []
+    def ladder_report(self, won, opp):
+        self.reports.append((won, opp))
+
+
+def _running_fight(pan):
+    pan.partner = (2, "Ryo")
+    pan.phase, pan.bphase, pan.is_host = "battle", "fight", True
+    pan.battle = {"seq": [(True, 1, False, 0)], "host_hp": 5, "guest_hp": 5, "i": 0}
+    pan.opp_card = lobbyscreen._clamp_card({"name": "Wargle", "stage": "Adult",
+                                            "num": 400})
+    pan.my_hp = pan.my_max = pan.opp_hp = pan.opp_max = 5
+
+
+def test_esc_mid_fight_files_the_forfeit_loss():
+    """MED audit 2026-07-19: ESC in "fight" relayed only the abort — a losing
+    player voided the result at will while the winner's half expired
+    unconfirmed.  A committed fight left early is a LOSS, filed and counted."""
+    pan = _lobby()
+    pan.client = _LadderClient()
+    _running_fight(pan)
+    losses0 = pan.pet.battles - pan.pet.wins
+    pan.key("escape")
+    assert pan.client.reports == [(False, "Ryo")], "the losing half files"
+    assert (pan.pet.battles - pan.pet.wins) == losses0 + 1, "the loss counts"
+    assert any(p.get("abort") for _, p in pan.client.sent), "partner still told"
+    assert pan.phase == "lobby" and "loss" in pan.status
+
+
+def test_esc_before_the_commit_stays_a_free_backout():
+    pan = _lobby()
+    pan.client = _LadderClient()
+    pan.partner = (2, "Ryo")
+    pan.phase, pan.bphase = "battle", "card"
+    b0 = pan.pet.battles
+    pan.key("escape")
+    assert pan.client.reports == [], "no seeded engine — nothing to report"
+    assert pan.pet.battles == b0
+    assert pan.status == "You forfeited."
+
+
+def test_abort_mid_fight_is_a_forfeit_win_not_a_void():
+    """The stayer's side of the same hole: the winner's half files so the
+    pair credits, and the win pays like any decided bout."""
+    pan = _lobby()
+    pan.client = _LadderClient()
+    _running_fight(pan)
+    bits0, wins0 = pan.pet.bits, pan.pet.wins
+    pan._on_relay({"from_id": 2, "payload": {"kind": "battle", "abort": True}})
+    assert pan.client.reports == [(True, "Ryo")], "the winning half files"
+    assert pan.pet.wins == wins0 + 1 and pan.pet.bits > bits0
+    assert pan.bphase == "over" and "you win" in pan.bt_outcome.lower()
+    _fits(pan, "forfeit-win over screen")
+
+
+def test_abort_before_the_commit_still_voids():
+    pan = _lobby()
+    pan.client = _LadderClient()
+    pan.partner = (2, "Ryo")
+    pan.phase, pan.bphase = "battle", "wait"
+    pan.battle = None
+    pan._on_relay({"from_id": 2, "payload": {"kind": "battle", "abort": True}})
+    assert pan.client.reports == []
+    assert pan.bphase == "over" and "void" in pan.bt_payload[1]
+
+
+def test_partner_vanishing_mid_fight_is_the_same_forfeit():
+    """Killing the app instead of pressing ESC took the same void exit."""
+    pan = _lobby()
+    pan.client = _LadderClient()
+    _running_fight(pan)
+    pan.state.roster = [p for p in pan.state.roster if p["id"] != 2]
+    pan.anim()
+    assert pan.client.reports == [(True, "Ryo")]
+    assert pan.bphase == "over" and "you win" in pan.bt_outcome.lower()

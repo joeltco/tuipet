@@ -451,3 +451,27 @@ def test_the_saves_prune_policy(tmp_path, monkeypatch):
     assert "garbage" not in server.SAVES
     assert server.SAVES["fresh"]["name"] == "F"
     assert abs(server.SAVES["prestamp"]["_srv_at"] - now) < 1   # grace-stamped
+
+
+def test_leaving_the_raid_drops_its_lobby_worker():
+    """M6 (gameplay audit 2026-07-19): the raid's LobbyClient is a LIVE
+    login, and _after_raid never cancelled its worker -- the next lobby
+    login overwrote the handle, orphaning it, and the two sessions (same
+    process BOOT) evicted each other in a reconnect loop for the rest of
+    the run.  The raid tears down exactly like the lobby now."""
+    from tuipet.app import TuiPetApp
+
+    class _W:
+        cancelled = False
+        def cancel(self):
+            self.cancelled = True
+
+    app = TuiPetApp.__new__(TuiPetApp)
+    app.pet = None
+    app.flash = lambda *a, **k: None
+    app.autosave = lambda: None
+    app.repaint = lambda: None
+    w = _W()
+    app._lobby_worker = w
+    TuiPetApp._after_raid(app, "")
+    assert w.cancelled and app._lobby_worker is None

@@ -101,13 +101,21 @@ class ActionsMixin:
         self._lobby_worker = self.run_worker(client.run(), name="lobby", exclusive=False)
         return client
 
-    def _after_lobby(self, result=None):
-        # The lobby panel applies its own jogress/battle results in-place (you stay
-        # in the lobby between sessions), so here we just tear down the connection.
+    def _drop_lobby_worker(self):
+        """Cancel the live LobbyClient worker (one teardown for every panel
+        that logs in through _lobby_connect -- the raid left ITS worker
+        running, and the next lobby login orphaned it: two sessions on one
+        BOOT evicting each other in a reconnect loop for the rest of the
+        run; gameplay audit 2026-07-19)."""
         w = getattr(self, "_lobby_worker", None)
         if w is not None:
             w.cancel()
             self._lobby_worker = None
+
+    def _after_lobby(self, result=None):
+        # The lobby panel applies its own jogress/battle results in-place (you stay
+        # in the lobby between sessions), so here we just tear down the connection.
+        self._drop_lobby_worker()
         self.repaint()
 
     def action_quit(self):
@@ -327,6 +335,7 @@ class ActionsMixin:
     def _after_raid(self, msg):
         if msg:
             self.flash(msg)
+        self._drop_lobby_worker()   # the raid's login is LIVE: never leak it
         self.autosave()
         self.repaint()
 
@@ -356,13 +365,10 @@ class ActionsMixin:
         self._do(self.pet.toggle_lights())
 
     def action_new(self):
-        if not self.pet.dead:
-            # a LIVE retire skips the death flow entirely: canon resetDigimon
-            # runs careBonusOnReset dead or alive, and a live reset never
-            # offers the etch -- the FULL adjusted bonus carries to the heir
-            # (digimemory audit 2026-07-06; this seed used to be lost)
-            persistence.bank_bonus_seed(self.pet.final_care_grade())
-        persistence.snapshot_prev_gen(self.pet)   # previous-generation egg gates
+        # (the seed bank + prev-gen snapshot moved to _hatch_new's COMMIT
+        # point: mutating here let an ESC-cancelled carousel leave a
+        # duplicate headstone and record a still-live pet as the previous
+        # generation -- gameplay audit 2026-07-19)
         gen = self.pet.generation + 1
         self._open_mode(eggselectscreen.EggSelectPanel(self.pet),
                         lambda et: self._hatch_new(et, gen))

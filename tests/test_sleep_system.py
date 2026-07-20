@@ -27,17 +27,20 @@ def _pet(**kw):
 # --- calcToSleepNapLapse --------------------------------------------------------
 
 def test_the_doze_off_wait_is_energy_and_temperament_shaded():
-    perky = _pet(energy=20, max_energy=24, obedience=0)
-    assert perky._calc_to_nap() == TO_NAP_HIGH_ENERGY + 1     # +1: not well-drilled
-    drained = _pet(energy=0, max_energy=24, obedience=0)
-    assert drained._calc_to_nap() == TO_NAP_LOW_ENERGY + 1
+    """The obedience +1 left with the discipline system (MED audit
+    2026-07-19): the pinned-0 meter billed EVERY pet the extra doze minute
+    while the >=75 discount was unreachable."""
+    perky = _pet(energy=20, max_energy=24)
+    assert perky._calc_to_nap() == TO_NAP_HIGH_ENERGY
+    drained = _pet(energy=0, max_energy=24)
+    assert drained._calc_to_nap() == TO_NAP_LOW_ENERGY
     drilled = _pet(energy=0, obedience=TO_NAP_OBEDIENCE_FACTOR)
-    assert drilled._calc_to_nap() == TO_NAP_LOW_ENERGY        # the +1 drops
-    restless = _pet(energy=0, obedience=0, restless=1)
-    assert restless._calc_to_nap() == TO_NAP_LOW_ENERGY + 2   # +restless +1
+    assert drilled._calc_to_nap() == TO_NAP_LOW_ENERGY        # meter reads never bill
+    restless = _pet(energy=0, restless=1)
+    assert restless._calc_to_nap() == TO_NAP_LOW_ENERGY + 1   # +restless only
 
 def test_lights_off_does_not_nap_instantly():
-    p = _pet(energy=20, max_energy=24)   # perky: the long 41-minute wait
+    p = _pet(energy=20, max_energy=24)   # perky: the long 40-minute wait
     p.lights = False
     for _ in range(30):
         p.tick(1.0)

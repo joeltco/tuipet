@@ -351,7 +351,13 @@ def select(pet):
             return ff
         stage_up = [t for t in targets if by_num[t]["stage"] != pet.stage
                     and data.load_requirements().get(t, {}).get("special", "None") == "None"
-                    and data.load_requirements().get(t, {}).get("evol_item", -1) == -1]
+                    and data.load_requirements().get(t, {}).get("evol_item", -1) == -1
+                    # the Induced gate check()/divergence enforce: without it
+                    # the fallback pushed an antibody-less pet into an X form
+                    # and evolve_to locked x_antibody="Permanent" -- a free X
+                    # with no X egg or chip (gameplay audit 2026-07-19)
+                    and (data.load_requirements().get(t, {}).get("xantibody", "None") != "Induced"
+                         or getattr(pet, "x_antibody", "None") != "None")]
         if stage_up:
             return max(stage_up, key=lambda t: fulfilled(pet, t))
         return None
@@ -527,7 +533,15 @@ def requirement_report(pet, num):
     ev_item = req.get("evol_item", -1)
     if ev_item != -1:
         item = data.consumable_by_key(f"i:{ev_item}")
-        rows.append((f"i:{ev_item}" in getattr(pet, "inventory", {}),
+        # the bag stores NAMED keys (the crest eggs) -- checking the raw
+        # "i:N" icon key read a held Digimental as forever-unmet, inflating
+        # every item-locked form's unmet count (gameplay audit 2026-07-19)
+        from .pet import Pet as _Pet
+        named = next((k for k, v in _Pet._CREST_IDS.items() if v == ev_item),
+                     None)
+        bag = getattr(pet, "inventory", {})
+        held = (named in bag if named is not None else f"i:{ev_item}" in bag)
+        rows.append((held,
                      f"use {(item or {}).get('name', f'item {ev_item}')}"))
     if req.get("xantibody", "None") == "Induced":     # canon gates Induced only
         rows.append((getattr(pet, "x_antibody", "None") != "None", "X-Antibody"))

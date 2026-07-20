@@ -120,3 +120,26 @@ def test_announce_reaches_the_home_screen_ghost():
     s = SyncClient("ws://x/", "joel")
     s._handle('{"t": "announce", "text": "downtime 5 min"}')
     assert ("📢", "downtime 5 min") in s.inbox
+
+
+def test_roster_pet_card_is_clamped_not_stored_verbatim():
+    """MED audit 2026-07-19: the login/pet handlers stored m["pet"] VERBATIM
+    and _roster rebroadcast it -- a handful of crafted 64KB cards pushed every
+    roster frame past the clients' 256KB read cap and 1009-closed the room.
+    The clamp keeps only the fields clients read, at presence-name lengths."""
+    bomb = {"name": "x" * 65536, "payload": ["y" * 65536] * 8,
+            "num": 10 ** 12, "stage": {"deep": {"deeper": "z" * 4096}}}
+    card = server._clamp_pet(bomb)
+    assert len(json.dumps(card)) < 200, "the bomb shrinks to presence size"
+    assert "payload" not in card and "stage" not in card   # unknown/garbage-typed drop
+    assert card["name"] == "x" * server.MAX_NAME
+    assert card["num"] == 10 ** 6
+
+
+def test_roster_pet_card_keeps_the_real_fields():
+    real = {"name": "WarGreymon", "stage": "Ultimate-Super Ultimate",
+            "num": 400, "attr": "Vaccine", "title": "Legend of the Net"}
+    assert server._clamp_pet(real) == real
+    assert server._clamp_pet("not a dict") == {}
+    assert server._clamp_pet({"num": "7", "name": True})["num"] == 7
+    assert "name" not in server._clamp_pet({"name": True})   # bools aren't names

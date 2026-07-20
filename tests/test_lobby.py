@@ -945,3 +945,26 @@ def test_a_forged_invite_resp_never_enters_a_session():
     pan.anim()
     assert pan.phase == "jogress" and pan.partner == (9, "attacker")
     assert (9, "jogress") not in pan._sent_invites    # consumed: no replays
+
+
+def test_session_gate_mirrors_the_send_side_conditions():
+    """M5 (gameplay audit 2026-07-19): the accept side checked only
+    dead/asleep/Egg-Fresh -- a starving, sick pet auto-accepted recorded
+    bouts it was too drained to send.  And the jogress gate must stay PURE:
+    a stranger's (spoofable) invite used to trigger a visible refuse
+    animation through check_refused."""
+    s = LobbyState()
+    pan = _panel(s)
+    p = pan.pet
+    p.sick = True
+    assert "sick" in pan._session_gate("battle")
+    p.sick = False
+    p.hunger = 0
+    assert "hungry" in pan._session_gate("battle")
+    p.hunger = 4
+    # the remote jogress gate touches NOTHING visible
+    p.dp = 0
+    anim0, d0 = p.anim, p.disturb
+    gate = pan._session_gate("jogress")
+    assert gate and "DP" in gate                       # gated on the meter...
+    assert p.anim == anim0 and p.disturb == d0         # ...with zero side effects
