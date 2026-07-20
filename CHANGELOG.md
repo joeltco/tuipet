@@ -3,6 +3,14 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.5.109 — THE PILL EATS RIGHT (2026-07-20)
+
+* **The pill now eats through its own icon.** The pill you pick off the feed
+  menu is the exact sprite your mon chews — full, then a half-eaten pill, then
+  gone — the DSprite way (each food eats through its own glyph, like meat).
+  Before, feeding the pill played an unrelated capsule that never matched the
+  picker.
+
 ## 0.5.108 — NO MORE FUEL METER (2026-07-20)
 
 * **The Fuel meter is gone from the feeding screen.** It charted the DVPet

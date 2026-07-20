@@ -35,12 +35,27 @@ PILL = ["00001110",
         "10001000",
         "01110000"]
 
-# BOTH rows are EATEN (the source's EATING action is the ANIMATION truth:
-# the item shrinks bite by bite as the mon chews) -- but the eating FRAMES
-# are DVPet atlas rips, the ART truth (Joel 2026-07-18: "all sprites must
-# come from dvpet. the dsprite ones suck"): meat eats through f:0 Meat and
-# the pill through f:4 Med, both real uniform 4-frame strips.  The 8px
-# glyphs above are only the MENU icons.
+# the half-eaten pill (DSprite SYMBOL_HALF_PILL): a bite taken out of the top
+HALF_PILL = ["00000000",
+             "00000000",
+             "00000000",
+             "01100000",
+             "11010000",
+             "10101000",
+             "10011000",
+             "01110000"]
+
+# BOTH rows are EATEN -- the source's EATING action is the ANIMATION truth
+# (the item shrinks bite by bite as the mon chews).  MEAT eats through the
+# DVPet f:0 Meat sheet-strip (art truth, Joel 2026-07-18: "all sprites must
+# come from dvpet").  The PILL, though, eats through ITS OWN menu glyph, the
+# DSprite way (EatingAnimationScreen.setSprites(SYMBOL_PILL, SYMBOL_HALF_PILL,
+# SYMBOL_EMPTY) -- main.cpp case 1): full -> half -> gone, so the picked pill
+# IS the eaten pill (pill-anim fix 2026-07-20; the old DVPet f:41 capsule never
+# matched the picker -- Joel: "those are not the same sprites").  The eat fx
+# pulls this via the "sym:pill" icon key; the None tail is the eaten-away frame
+# blit() tolerates.  So the MEAT glyph above is menu-only, but PILL is both.
+PILL_FRAMES = [PILL, PILL, HALF_PILL, None]
 
 CURSOR = ["1000",
           "1100",
@@ -92,15 +107,13 @@ class FeedPanel:
             msg = self.pet.feed_pill()
             if self.pet.anim == "eat":
                 out = "Cured!" if was_sick else "A tonic — strength and pep."
-                # the pill is EATEN (the source's EATING action, pill-anim
-                # fix 2026-07-18) through the DVPet f:41 Food Pill strip --
-                # a real capsule (Joel's report 2026-07-19: "wheres the
-                # pill? thats a bottle" -- f:4 Med IS a bottle; audited
-                # 2026-07-19: nothing else uses f:4, and the bottle strip
-                # stays in the atlas.  The assistant's feed fx already
-                # wears the same capsule as f:44)
-                return ("done", ("healed", {"key": "f:41", "name": "Pill"}, out))
-            return ("done", ("refused", {"key": "f:41", "name": "Pill"}, msg))
+                # the pill is EATEN (the source's EATING action) through ITS
+                # OWN menu glyph -- the DSprite pill route (SYMBOL_PILL ->
+                # SYMBOL_HALF_PILL -> gone), so the picked pill IS the eaten
+                # pill (pill-anim fix 2026-07-20, replacing the DVPet f:41
+                # capsule that never matched the picker)
+                return ("done", ("healed", {"key": "sym:pill", "name": "Pill"}, out))
+            return ("done", ("refused", {"key": "sym:pill", "name": "Pill"}, msg))
         elif k in ("escape", "f"):
             return ("done", None)
         return None

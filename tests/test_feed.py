@@ -79,17 +79,18 @@ def test_the_meat_eats_through_the_dvpet_meat_strip():
 
 
 
-def test_the_pill_is_eaten_through_the_dvpet_med_strip():
-    """Pill-anim fix arc (Joel 2026-07-18): the source has NO heal anim --
-    its pill rides the same EATING action as meat (animation truth), and the
-    frames are the DVPet f:4 Med strip (art truth: "all sprites must come
-    from dvpet. the dsprite ones suck").  The old bandage route drew i:80 at
-    y0-4, above the window top (y6): a clipped sliver.  Pin the whole road:
-    panel verdict -> eat anim -> the f:4 key -> a real uniform strip -> the
-    heal fx kind stays gone."""
-    from tuipet import data
+def test_the_pill_is_eaten_through_its_own_menu_glyph():
+    """Pill-anim fix arc (Joel 2026-07-20): the source has NO heal anim -- its
+    pill rides the same EATING action as meat (animation truth).  The FRAMES
+    are the pill's OWN menu glyph, the DSprite way (EatingAnimationScreen
+    setSprites(SYMBOL_PILL, SYMBOL_HALF_PILL, SYMBOL_EMPTY) -- main.cpp case 1):
+    full -> half -> gone, so the picked pill IS the eaten pill.  This replaces
+    the DVPet f:41 capsule that never matched the picker (Joel: "those are not
+    the same sprites").  Pin the whole road: panel verdict -> eat anim -> the
+    sym:pill key -> the PILL/HALF_PILL strip -> the heal fx kind stays gone."""
     from tuipet.app import Screen
-    from tuipet.feedscreen import FeedPanel
+    from tuipet.arenafx import FxMixin
+    from tuipet.feedscreen import FeedPanel, PILL, HALF_PILL, PILL_FRAMES
     from tuipet.pet import Pet
     p = Pet(num=100, stage="Champion", attribute="Vaccine", obedience=500)
     p.world_seconds = 12 * 60.0
@@ -98,18 +99,16 @@ def test_the_pill_is_eaten_through_the_dvpet_med_strip():
     pan.cursor = 1                                   # the pill row
     done, (outcome, item, msg) = pan.key("enter")
     assert (done, outcome) == ("done", "healed")
-    assert item["key"] == "f:41" and "Cured" in msg  # a real CAPSULE, not the
-    #                                                  f:4 Med bottle (Joel's
-    #                                                  report 2026-07-19)
+    assert item["key"] == "sym:pill" and "Cured" in msg  # the picker's own pill,
+    #                                                  not the f:41 capsule
     assert p.anim == "eat"                           # EATING, not the old heal
-    strip = data.load_icons()["f:41"]
-    assert len(strip) == 4
-    # the capsule SHRINKS per bite (24x24 -> 24x21 -> 21x15 -> None, the
-    # blank eaten-away frame blit() tolerates) -- unlike f:0/f:4 the crop
-    # is not uniform, and that IS the eat sequence
-    assert strip[3] is None
-    sizes = [(len(f[0]), len(f)) for f in strip if f]
-    assert sizes[0] == (24, 24) and sizes == sorted(sizes, reverse=True)
+    # the eat fx resolves sym:pill to the pill's OWN glyph strip -- full, full,
+    # half-eaten, then None (the eaten-away frame blit() tolerates)
+    strip = FxMixin._food_frames(None, "sym:pill")
+    assert strip is PILL_FRAMES
+    # the picker's PILL glyph and the FIRST eat frame are the SAME sprite;
+    # it bites down to HALF_PILL, then None (gone)
+    assert strip[0] is PILL and strip[2] is HALF_PILL and strip[-1] is None
     # and the heal fx kind is STILL gone root and branch
     assert not hasattr(Screen, "_fxk_heal")
 

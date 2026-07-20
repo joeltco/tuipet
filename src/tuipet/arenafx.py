@@ -390,6 +390,12 @@ class FxMixin:
         return (fr[i] if i < len(fr) and fr[i] else None) or first
 
     def _food_frames(self, key, px=8):
+        if key and key.startswith("sym:"):
+            # 8px LCD symbols eat through their OWN glyph, no DVPet food sheet
+            # and no downsample (DSprite: the pill eats PILL -> HALF_PILL ->
+            # gone, so the picked icon IS the eaten one).
+            from .feedscreen import PILL_FRAMES
+            return {"sym:pill": PILL_FRAMES}.get(key)
         raw = data.load_icons().get(key)
         if not raw:
             return None

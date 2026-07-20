@@ -150,9 +150,9 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("The Fuel meter is gone from the feeding screen - it "
-                 "tracked a mechanic that didn't belong. Feeding now "
-                 "shows Hunger, Weight and Effort.")
+    WHATS_NEW = ("The pill now eats like it should - the same pill you "
+                 "pick off the feed menu is the one your mon chews, "
+                 "biting it down to a half-pill, then gone.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and
