@@ -55,7 +55,12 @@ HALF_PILL = ["00000000",
 # matched the picker -- Joel: "those are not the same sprites").  The eat fx
 # pulls this via the "sym:pill" icon key; the None tail is the eaten-away frame
 # blit() tolerates.  So the MEAT glyph above is menu-only, but PILL is both.
-PILL_FRAMES = [PILL, PILL, HALF_PILL, None]
+# DSprite's pill has ONLY these two art frames (SYMBOL_PILL, SYMBOL_HALF_PILL --
+# there is no third bite stage in the source), so the strip is paced full ->
+# half -> half -> gone across the eat fx's food_beats: the half-eaten pill holds
+# through the middle of the chew instead of flashing by (2-frame rebalance, Joel
+# 2026-07-20 "the pill eating animation only has 2 frames?").
+PILL_FRAMES = [PILL, HALF_PILL, HALF_PILL, None]
 
 CURSOR = ["1000",
           "1100",

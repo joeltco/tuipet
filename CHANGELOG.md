@@ -3,6 +3,13 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.5.111 — SMOOTHER PILL CHEW (2026-07-20)
+
+* **The half-eaten pill holds longer.** The pill's eat animation uses the two
+  DSprite pill frames (full, half-eaten); the pacing now gives the half-eaten
+  frame the middle of the chew so full → half → gone reads clean instead of the
+  pill sitting full and then vanishing.
+
 ## 0.5.110 — THE UPDATE RESTART ACTUALLY RESTARTS (2026-07-20)
 
 * **Updating from Options now applies on one restart.** After the game
