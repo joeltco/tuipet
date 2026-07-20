@@ -3,6 +3,16 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.5.113 — EGGS HATCH ON BACKGROUNDS THAT FIT (2026-07-20)
+
+* **Re-homed five eggs to backgrounds that match the creature.** Using the
+  DVPet habitat legend (not filenames): the Yuramon/Palmon **plant** line moved
+  off an island coast into **Green Hollow**; the four **Sky** lines (Puttimon,
+  Fufumon, Ryuda, V Egg) left **Frozen Peak** — which is really *Tundra*, cold
+  and wrong for warm sky creatures — for **Mountains** (open sky) and, for the
+  Veemon egg, **Green Hills**. Frozen Peak stays available as a hand-pick.
+  Existing pets keep whatever background they already have.
+
 ## 0.5.112 — BACKGROUNDS NAMED RIGHT (2026-07-20)
 
 * **Background scenes are named and organized by what they actually show.**

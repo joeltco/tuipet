@@ -45,17 +45,18 @@ def test_every_sheet_is_wired_or_allowlisted():
         # as real rips a future egg/system can wear without a data rebuild
         "boulevard", "boulevardusk", "citysunset", "fileisland",
         "islandnight", "jungle", "seafloor",
-        # sunsetshore came BACK 2026-07-19: it briefly wore the cliffside
-        # eggs, then Joel's bug report + a full-res look proved it SEABED
-        # art (the warm band is sunlight through the water) -- renamed
-        # Sunset Seafloor, pick-only again
+        # sunsetshore: SEABED art (the warm band is sunlight through the
+        # water), named Sunset Seafloor -- pick-only
         "sunsetshore",
+        # Frozen Peak (Tundra) lost its egg defaults when the four Sky lines
+        # moved to Mountains -- Sky is warm & windy, not icy (scene audit
+        # 2026-07-20); pick-only now, awaiting a genuinely cold line
+        "frozenpeak",
         # their wearers (Sunamon / the Meicoomon egg skin) left with the
         # fake-egg cut (2026-07-17); the rips stay for a future wearer
         "desert", "tealhollow",
-        # pick-only since the cliffside rewire (scene audit 2026-07-19):
-        # cove's art is SEABED, not a coast -- the two Cliffside eggs moved
-        # to sunsetshore; the sandy shallows stay on the E-picker shelf
+        # cove is a BEACH -- its art is a sandy shore, NOT a seafloor (scene
+        # audit 2026-07-20); pick-only on the E-shelf
         "cove",
     }
     wired = set(backgrounds.EGG_BG.values()) | {"tourneyBack"}
@@ -99,14 +100,13 @@ def test_scene_display_names_follow_the_family_law():
     assert len(names) == len(set(names))        # no two scenes share a name
 
 
-def test_cliffside_eggs_stand_on_the_shore_not_the_seabed():
-    """TWICE re-homed (scene audits 2026-07-19): 'cove' was seabed art,
-    then 'sunsetshore' proved seabed TOO (Joel's bug report — the warm
-    band is sunlight through the water).  The island's rock-over-sea is
-    the one true coast in the set; the water lines stay submerged on
-    purpose."""
+def test_cliffside_and_water_eggs_stand_on_the_right_ground():
+    """The island's rock-over-sea is the one true coast in the set (cove and
+    sunsetshore are seabed art, not shore).  Ketomon keeps that coast; Yuramon
+    moved OFF it 2026-07-20 -- it's a Palmon PLANT line, so it belongs in the
+    forest, not on a sea cliff.  The water lines stay submerged on purpose."""
     from tuipet import backgrounds as bgs
-    assert bgs.EGG_BG[3] == "islandsea"          # Yuramon (Cliffside)
-    assert bgs.EGG_BG[14] == "islandsea"         # Ketomon (Cliffside)
+    assert bgs.EGG_BG[3] == "forestgate"         # Yuramon -- plant, in the wood
+    assert bgs.EGG_BG[14] == "islandsea"         # Ketomon (Cliffside) -- the coast
     for i in (13, 18, 24):                       # the water lines: seabed is HOME
         assert "Seafloor" in bgs.NAMES[bgs.EGG_BG[i]], i

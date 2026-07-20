@@ -90,28 +90,31 @@ EGG_BG = {
     0: "greenhills",     # Botamon / ver1 (h: Plains)
     1: "mountains",      # Punimon / ver2 (h: Canyon)
     2: "forestgate",     # Poyomon / ver3 (h: Forest)
-    3: "islandsea",      # Yuramon / ver4 (h: Cliffside -- the island's rock
-                         #   faces over open sea.  TWICE re-homed: "cove" was
-                         #   seabed art, then "sunsetshore" turned out to be
-                         #   seabed TOO (Joel's report 2026-07-19) -- the
-                         #   island is the one true coast in the whole set)
+    3: "forestgate",     # Yuramon / ver4 (Palmon PLANT line -- a forest fits the
+                         #   creature.  Long re-home saga (cove/sunsetshore were
+                         #   seabed, then islandsea for an h:Cliffside reading);
+                         #   settled 2026-07-20: a plant belongs in the wood, not
+                         #   on a sea coast)
     4: "islandsea",      # Zurumon / ver5 (h: Ocean)
     5: "datatunnel",     # Kuramon (h: Hard Disk -- the Diablomon net)
     6: "greenhills",     # Chibickmon (h: Plains)
     7: "islandsea",      # Tsubumon (h: Ocean)
     8: "flowerfield",    # Pururumon (h: Field)
     9: "lakeside",      # Dodomon / verX (h: Lake)
-    10: "frozenpeak",    # Puttimon (h: Sky -- the cloud sea)
+    10: "mountains",     # Puttimon (h: Sky -- big open sky.  Sky habitat is warm
+                         #   & windy, NOT the icy Frozen Peak=Tundra it used to
+                         #   sit on; Sky->Mountains, 2026-07-20)
     11: "factorynight",  # Kiimon (h: Evil Castle -- dark iron)
     12: "datatunnel",    # Dokimon (h: Hard Disk)
     13: "underwater",    # Chibomon (f: DeepSaver / Water)
-    14: "islandsea",     # Ketomon (h: Cliffside -- same island coast as egg 3)
+    14: "islandsea",     # Ketomon (h: Cliffside -- the island's rock over open
+                         #   sea, the one true coast in the set)
     15: "forestgate",    # Leafmon (h: Forest)
     16: "volcano",       # Petitmon (f: DragonsRoar / Fire)
     17: "city",          # Sakumon (h: City)
     18: "underwater",    # Zerimon (f: DeepSaver / Water)
     19: "moonmeadow",    # Cocomon (f: NightmareSoldier)
-    20: "frozenpeak",    # Fufumon (h: Sky)
+    20: "mountains",     # Fufumon (h: Sky -- warm/windy, Sky->Mountains 2026-07-20)
     21: "city",          # Cotsucomon (h: City)
     22: "datatunnel",    # Algomon I (f: DarkArea; * the net algae lives IN the net)
     23: "greenhills",    # Nature Spirits Egg (f: NatureSpirit)
@@ -129,12 +132,14 @@ EGG_BG = {
     34: "lakeside",      # DORU Egg (h: Lake)
     35: "volcano",       # Slayerdra Egg (f: DragonsRoar / Fire)
     36: "mountains",     # Breakdra Egg (f: DragonsRoar / Earth -- the drill)
-    37: "frozenpeak",    # Ryuda Egg (h: Sky)
+    37: "mountains",     # Ryuda Egg (h: Sky; Ryudamon is a ground samurai-dragon
+                         #   -- rugged mountains, not ice.  Sky->Mountains 2026-07-20)
     38: "volcano",       # Draco Egg (f: DragonsRoar / Fire)
     39: "flowerfield",   # Lalamon Egg (h: Field)
     40: "baybridge",     # Terrier Egg (* Willis's twin: the movie's Golden Gate)
     41: "bridgenight",   # Lop Egg (* the dark twin gets the bridge at night)
-    42: "frozenpeak",    # V Egg (f: WindGuardian -- the cloud sea)
+    42: "greenhills",    # V Egg (f: WindGuardian -- Veemon is a warm dragon
+                         #   warrior; open green hills beat an ice peak, 2026-07-20)
     43: "greenhills",    # Virus Busters Ver. 20th Egg (h: Plains)
     44: "cityday",       # Digitama X3 (* the Royal Knights' white city)
     45: "datatunnel",    # Kera Digitama (h: Hard Disk)
