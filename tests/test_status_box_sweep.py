@@ -136,14 +136,15 @@ def test_eat_readout_charts_only_live_systems():
     """The feeding readout was REWRITTEN in the modularize pass (2026-07-17):
     the old card charted protein/mineral/vitamin bars from the nutrition
     system removed 2026-07-16 -- frozen numbers.  The live card: hunger,
-    the calorie buffer, weight, effort, satiety."""
+    weight, effort, satiety.  (Fuel/calorie bar removed 2026-07-20 -- a
+    DVPet-only mechanic feeding never touched.)"""
     from tuipet import statusbox
     app = _app()
     app.mode = None
     statusbox.eat(app)
     txt = app.stats_w.txt
-    assert "feeding" in txt and "Hunger" in txt and "Fuel" in txt
-    for dead in ("Protein", "Mineral", "Vitamin", "nourished"):
+    assert "feeding" in txt and "Hunger" in txt
+    for dead in ("Fuel", "Protein", "Mineral", "Vitamin", "nourished"):
         assert dead not in txt, dead
 
 

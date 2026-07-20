@@ -3,6 +3,13 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.5.108 — NO MORE FUEL METER (2026-07-20)
+
+* **The Fuel meter is gone from the feeding screen.** It charted the DVPet
+  calorie buffer — a mechanic with no basis in the DSprite build tuipet is
+  made from, and one feeding never fed. The feeding card now shows Hunger,
+  Weight and Effort (and the satiety window when it applies).
+
 ## 0.5.107 — OUT OF BETA (2026-07-20)
 
 * **TuiPet is officially released.** The beta is over. Thanks to everyone

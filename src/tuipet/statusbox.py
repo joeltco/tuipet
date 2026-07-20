@@ -229,25 +229,22 @@ def feed(app):
 
 
 def eat(app):
-    """The live feeding readout (plays while the eat fx runs).  REWRITTEN
-    2026-07-17: the old card charted protein/mineral/vitamin bars from the
-    REMOVED nutrition system — frozen numbers, a dead readout.  What is
-    live: the hunger hearts filling, the calorie buffer (a full one hastens
-    the poop clock), weight, and the premium-meat satiety window."""
-    from .pet import CALORIE_LIMIT
+    """The live feeding readout (plays while the eat fx runs).  What is live:
+    the hunger hearts filling, weight, effort, and the premium-meat satiety
+    window.  (The Fuel/calorie bar left 2026-07-20: calories is a DVPet-only
+    mechanic with no DSprite basis and a drain-only buffer, so the readout
+    charted a value feeding never touched.)"""
     p, T = app.pet, theme
     full = getattr(p, "full_until", 0.0)
     sated = full and p.world_seconds < full
     lines = [
         f"[b]{p.name[:14]}[/] [dim]· feeding[/]", DIV,
         f"Hunger   {hearts(p.hunger)}",
-        f"Fuel     {bar(min(100, max(0, p.calories) * 100 // CALORIE_LIMIT), 12, T.COIN)}",
         DIV,
         f"Weight   {p.weight}g",
         f"Effort   {hearts(p.strength)}",
         (f"[{T.POS}]sated · {age_compact(full - p.world_seconds)} left[/]"
-         if sated else "[dim]a full fuel gauge[/]"),
-        ("" if sated else "[dim]hastens the poop clock[/]"),
+         if sated else ""),
     ]
     app.stats_w.border_subtitle = gen_subtitle(p)
     app.stats_w.update("\n".join(lines))
