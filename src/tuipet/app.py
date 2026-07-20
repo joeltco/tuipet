@@ -150,10 +150,10 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("ONE MON PER TITLE: the title screen's mascot no "
-                 "longer switches while you look at it - each launch "
-                 "draws one mon and keeps it. Boot transitions and "
-                 "the power-on jingle stay.")
+    WHATS_NEW = ("OUT OF BETA: TuiPet is officially released! Thanks "
+                 "for playing through the beta. From here on I'm "
+                 "leaning on your bug reports - if something breaks or "
+                 "feels off, send it my way.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and

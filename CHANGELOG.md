@@ -3,6 +3,12 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.5.107 — OUT OF BETA (2026-07-20)
+
+* **TuiPet is officially released.** The beta is over. Thanks to everyone
+  who played through it. From here on development leans on player bug
+  reports — if something breaks or feels off, send it in.
+
 ## 0.5.106 — ONE MON PER TITLE (2026-07-20)
 
 * **The title mascot no longer switches.** Attract-mode cycling (added in
