@@ -126,6 +126,30 @@ if [ "$PUBLISH" = 1 ]; then
   echo "==> upload to PyPI"
   .release-venv/bin/twine upload dist/*
   echo "==> published tuipet $NEXT — https://pypi.org/project/tuipet/$NEXT/"
+
+  # --- verify it's actually INSTALLABLE ---------------------------------------
+  # twine returning does NOT mean the release is live: PyPI's install index lags
+  # the upload by up to a couple minutes, and in that window a fresh `pip install
+  # -U tuipet` (and the in-game updater) still gets the OLD version or 404s -- so
+  # a release that "succeeded" looks broken.  Poll the REAL signal (pip resolving
+  # the exact version off the index, cache bypassed -- the JSON API propagates on
+  # its own, faster schedule and is NOT a reliable proxy) until it lands, so a
+  # release only reports done once pip can genuinely install it.
+  echo "==> verifying $NEXT is installable (waiting out PyPI index propagation)…"
+  for i in $(seq 1 30); do
+    if .release-venv/bin/pip install --dry-run --no-deps --no-cache-dir \
+         "tuipet==$NEXT" >/dev/null 2>&1; then
+      echo "==> confirmed live — pip can install tuipet $NEXT"
+      break
+    fi
+    if [ "$i" -eq 30 ]; then
+      echo "⚠ tuipet $NEXT uploaded but still not pip-installable after ~5min." >&2
+      echo "  It should appear shortly; PyPI is just slow. Verify at:" >&2
+      echo "  https://pypi.org/project/tuipet/$NEXT/" >&2
+    else
+      sleep 10
+    fi
+  done
 else
   echo "==> done; watch the release workflow at https://github.com/joeltco/tuipet/actions"
 fi
