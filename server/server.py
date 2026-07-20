@@ -349,7 +349,9 @@ CLIENTS: dict[int, Client] = {}
 
 
 def _clean(s, limit):
-    return str(s).replace("\n", " ").replace("\r", " ").strip()[:limit]
+    # None must clean to "" -- str(None) minted the literal name "None"
+    # (a raid client with no cached account logged in as it)
+    return str(s or "").replace("\n", " ").replace("\r", " ").strip()[:limit]
 
 
 def _clamp_pet(p):
@@ -911,7 +913,9 @@ def _raid_hit(name, raw, num, now=None):
     b["hp"] = max(0, b["hp"] - dealt)
     entry = RAID["board"].setdefault(name, {"damage": 0, "ts": now})
     entry["damage"] += dealt
-    entry["ts"] = now
+    # the ts is the FIRST report's stamp (the rank tie-break is "earliest
+    # report", as _raid_rank documents) -- refreshing it on every hit turned
+    # the tie-break into last-hit
     if b["hp"] <= 0:
         _raid_rotate(now)                 # the kill archives immediately
     _save_raid()
@@ -1025,7 +1029,7 @@ async def handler(ws):
                                      "save": SAVES.get(key)})       # cloud save (or null) for cross-device load
                 if not sync_only:
                     for f in CHAT_BACKLOG:        # rejoin the conversation, not a void
-                        await _send(client, f)
+                        await _send(client, {**f, "replay": True})  # marked: clients skip lines already on the pane
                     await _flush_pending(client, key)   # deliver PMs held while they were away
                 await _push_roster()          # sync ghosts show as "playing" (presence 2026-07-05)
                 LOG.info("login id=%s name=%s sync_only=%s (%d online)",
@@ -1117,7 +1121,7 @@ async def handler(ws):
                     await _send(client, {"t": "room_ok", "room": code})
                     if code is None:              # rejoining main replays the window
                         for f in CHAT_BACKLOG:
-                            await _send(client, f)
+                            await _send(client, {**f, "replay": True})
                     await _push_roster()
                     _feed("room", name=client.name, room=code or "(main)")
                 else:

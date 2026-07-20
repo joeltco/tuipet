@@ -332,7 +332,11 @@ def _atom_row(pet, atom):
         pname = (by_num.get(a) or {}).get("name", f"#{a}")
         return None, f"jogress with {pname} (lobby)"     # informational: a door, not a counter
     if kind == "area":
-        return _atom_met(pet, atom), f"clear map {a}"
+        # speak the raid re-gate, not the departed adventure maps ("clear
+        # map N" survived the re-gate; the gate is N+1 felled raid bosses)
+        n = int(a) if str(a).lstrip("-").isdigit() else 0
+        return _atom_met(pet, atom), (f"{n + 1} raid boss{'es' if n else ''} felled"
+                                      f"  (now {_felled_raids()})")
     span = f"{a}+" if b is None else (f"{a}" if a == b else f"{a}-{b}")
     return _atom_met(pet, atom), f"{_TXT[kind]} {span}  (now {_actual(pet, kind)})"
 

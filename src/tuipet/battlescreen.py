@@ -81,7 +81,8 @@ def mega_window(pet):
     return 12 - c, 12 + c
 
 
-def round_timeline(ph0, fh0, pdmg, edmg, player_first, effect=None):
+def round_timeline(ph0, fh0, pdmg, edmg, player_first, effect=None,
+                   hold_foe_bar=False):
     """One round's alternating-view volley timeline, from PURE round data --
     shared by the PvE panel (which reads it off its Battle) and the lobby's
     PvP replay (which reads it off the relayed result; lobby audit 2026-07-04:
@@ -116,7 +117,9 @@ def round_timeline(ph0, fh0, pdmg, edmg, player_first, effect=None):
                        "prog": (s + 1) / FIRE_T, "ph": ph, "fh": fh})
         if dmg > 0:                                      # HIT: fullscreen flash, then flinch
             if dfn == "foe":
-                fh = max(0, fh - dmg)
+                if not hold_foe_bar:      # a raid boss's bar NEVER falls: the old
+                    #  in-round dip snapped back to full at the next round's frames
+                    fh = max(0, fh - dmg)
             else:
                 ph = max(0, ph - dmg)
             # device-exact (GML 2026-07-14): the hit STING is skipped on the
@@ -250,8 +253,10 @@ class BattlePanel:
             self._enter_result()
             return
         self.timeline = round_timeline(ph0, fh0, rec["pdmg"], rec["edmg"],
-                                       True)
-        if b.over and b.won and (b.enemy or {}).get("boss"):
+                                       True, hold_foe_bar=self.raid)
+        # the death beat is for a boss BEATEN TO ZERO -- won alone would fire
+        # it on a survived raid, whose boss never falls
+        if b.over and b.won and (b.enemy or {}).get("boss") and b.enemy_hp <= 0:
             self.timeline += boss_death_timeline(b.pet_hp)   # boss-death beat
         self.i = 0
         self.phase = "anim"

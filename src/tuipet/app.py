@@ -150,13 +150,12 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("HAPPY AT LAST: perfect care now reaches the Happy "
-                 "mood and everything it unlocks (the good birthday, "
-                 "battle power doubling, the bounce, the grade +1); "
-                 "jogress doors open for the partners their charts "
-                 "declare; quitting an online fight files the loss and "
-                 "pays your opponent the win; and the cup obeys the "
-                 "same health gates as challenges.")
+    WHATS_NEW = ("SMALL TRUTHS: every care item says what it does and "
+                 "refuses a no-op; the frailty warning shows before an "
+                 "elder's 5-slip death; a raid you survive ends on your "
+                 "feet with the boss bar held honest; cup bouts show "
+                 "live HP and disclose their training +2; and chat "
+                 "stops double-printing on reconnect.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and
@@ -1167,7 +1166,8 @@ class TuiPetApp(ActionsMixin, App):
         if self._flash_t > 0:
             self._flash_t -= 1
             self._showing_update = False
-        elif needs:
+        elif needs or p.is_frail():   # frailty warns here too: it has no beep, and
+            #  needs_care() alone never surfaced _need_message's frail branch
             self._hud(self._need_message(p))
             self._showing_need = True
             self._showing_update = False

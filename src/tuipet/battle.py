@@ -228,7 +228,10 @@ class Battle:
         if hasattr(self.pet, "record_battle"):
             self.pet.record_battle(self.won, self.enemy,
                                    online=self.source == "pvp")
-        if self.won and self.source != "pvp":
+        if self.source != "pvp":
+            # record_battle grants the +2 on EVERY local bout, win or lose --
+            # gating the line on won left the losing grant silent under a
+            # DEFEAT card with an empty reward line
             self.reward = "training +2"
 
     def surrender(self):
@@ -240,6 +243,8 @@ class Battle:
         if hasattr(self.pet, "record_battle"):
             self.pet.record_battle(False, self.enemy,
                                    online=self.source == "pvp")
+        if self.source != "pvp":
+            self.reward = "training +2"      # the surrendered bout still bills + trains
 
 
 class RaidBout:
@@ -282,6 +287,10 @@ class RaidBout:
 
     def _finish(self):
         self.over = True                         # no record_battle: a report, not a bout
+        # presentation only: the ATTEMPT succeeded when the pet stood through
+        # its rounds -- won=False forever ended EVERY raid on the loser
+        # collapse frame, even a full-damage run (the boss still never falls)
+        self.won = self.pet_hp > 0
 
     def surrender(self):
         self.over = True

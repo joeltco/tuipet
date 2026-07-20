@@ -218,15 +218,11 @@ class CareMixin:
     # ---- shop / items --------------------------------------------------------
     # (buy_slot -- the town-counter purchase -- cut with the town chain
     # 2026-07-19; shop.buy is the ONE live purchase path)
-    def sell(self, entry):
-        """Resell one from the bag at half price."""
-        key = entry["key"]
-        if self.inventory.get(key, 0) <= 0:
-            return "None to sell."
-        val = shop.resell_price(entry)
-        self.take_item(key)
-        self.bits += val
-        return f"Sold {entry['name']} for {val}b."
+    # (dead-code cut, LOW audit 2026-07-19: CareMixin.sell -- shop.sell is
+    # the ONE live resell path -- plus _apply_item_stats (the DVPet
+    # consumable core; the strict-DSprite item cut orphaned it), _fruit and
+    # _erase_mistake (their items left the catalog; the textbook rides
+    # _erase_mistakes_all).  Nothing live called any of them.)
 
     def _pick_gift(self):
         """The present pool (BASIC VPET 2026-07-16): a uniform pick from the
@@ -265,45 +261,6 @@ class CareMixin:
             return False
         self.bits -= price
         return True
-
-    def _apply_item_stats(self, e, mod):
-        """The canon applyItem stat core, shared by the generic path AND the
-        special branches that used to skip it (energy audit 2026-07-06: the
-        X-Program applied NONE of its hunger -10 / strength -13 / energy -0.8 /
-        spirit -10 / mood -300, and the Digimentals skipped their -0.66 energy
-        price).  A FRACTIONAL energy is a share of maxEnergy."""
-        def _sc(v):
-            return math.ceil(v * mod) if v > 0 else int(round(v * mod))
-        if e["hunger"]:
-            self.hunger = _clamp(self.hunger + _sc(e["hunger"]), 0, 4)
-            self.calories = CALORIE_LIMIT               # food refills the calorie buffer
-        # applyConsumable: the consumable's mood is shaped by personality tags
-        self._set_mood(self.mood + _sc(e["mood"]) + _sc(self._personality_mood(e)))
-        self._set_enthusiasm(self.enthusiasm + _sc(e.get("enthusiasm", 0)))
-        # canon applyItem scales weight by the modifier like every other stat
-        # (PhysicalState:3502 ceil(item.getWeight() x modifier))
-        self._set_weight(self.weight + _sc(e["weight"]))
-        if e["energy"]:
-            ev = e["energy"]
-            amt = math.ceil(ev * self.max_energy * mod) if ev != int(ev) else _sc(ev)
-            self._set_energy(self.energy + amt)
-        if e["strength"]:
-            self.strength = _clamp(self.strength + _sc(e["strength"]), 0, 4)
-        # canon scales obedience too (PhysicalState:3428) -- the old "obedience
-        # is UNscaled" note misread the decompile (weight audit 2026-07-06)
-        self._set_obedience(self.obedience + _sc(e["obedience"]))
-        # applyAttributeChange + compensateAttributes (completeness sweep
-        # 2026-07-06): the six +-15 TRADE toys (Board Game, Skateboard,
-        # Dumbbell...) conserve the total -- a power driven below 0 borrows
-        # the deficit 1:1 from the others, rotating through all three (the
-        # old max(0,) clip quietly forgave the unpaid part of the trade)
-        self.vaccine += _sc(e["vaccine"])
-        self.data_power += _sc(e["data"])
-        self.virus += _sc(e["virus"])
-        self._compensate_attrs()
-        # canon applyItem: a Disposition item nudges the MOOD RANK (the
-        # tracker the Champion re-roll cashes in), scaled like every stat
-        self.mood_rank += _sc(int(e.get("t_disposition", 0) or 0))
 
     def _compensate_attrs(self):
         """compensateAttributes x3 rotations: each negative power borrows from
@@ -358,7 +315,7 @@ class CareMixin:
             "steak": self._premium_meat,
             "poison_mushroom": self._deadly,
             # ---- CARE -------------------------------------------------------
-            "energy_drink": lambda: self._gain_energy(self.max_energy),
+            "energy_drink": self._energy_drink,
             "slim_drink": self._super_carrot,
             "vitamin": self._vitamin,
             "sleeping_pill": self._sleep_pill,
@@ -395,8 +352,11 @@ class CareMixin:
         if self.stage == "Egg" or self.num < 0:
             return _Refused("")
         # item on a sleeper: the alarm wakes mistake-FREE (its whole point),
-        # the sleeping pill is pointless, anything else DISTURBS -- then applies
-        if self.asleep and key not in ("music_player", "sleeping_pill"):
+        # the sleeping pill is pointless, the cold shower runs its OWN disturb
+        # (same law, applied inside so "AWAKE and bracing" can be true),
+        # anything else DISTURBS -- then applies
+        if self.asleep and key not in ("music_player", "sleeping_pill",
+                                       "cold_shower"):
             self._disturbed()
         out = fx()
         if not isinstance(out, _Refused) and out is not None:
@@ -423,8 +383,13 @@ class CareMixin:
         _persist.armor_add(1)                 # the crest-wave shop gate counts it
         return f"{self.name} armor-evolved!"
 
-    def _gain_energy(self, n):
-        self._set_energy(self.energy + n)
+    def _energy_drink(self):
+        """The label says "energy to FULL": SET the signed meter to max (the
+        old += max_energy left a drained pet short of full), and refuse at
+        full like every care sibling instead of vanishing for nothing."""
+        if self.energy >= self.max_energy:
+            return _Refused("Energy is already full.")
+        self._set_energy(self.max_energy)
         return "Energy restored!"
 
     def _snack(self, hunger=0, energy=0, weight=0):
@@ -503,33 +468,21 @@ class CareMixin:
     def _bubble_bath(self):
         """Washes the filth, with style (a clean wearing toy clothes)."""
         if not self.poop:
-            return "Squeaky clean already - but what a soak."
+            return _Refused("Squeaky clean already.")
         n, self.poop = self.poop, 0
         self.poop_sizes = []
         return f"Scrubbed {n} mess{'es' if n > 1 else ''} away."
 
     def _cold_shower(self):
-        """The RUDE waker: not on the mistake-free list, so using it on a
-        sleeper disturbs first (the item-sleep law) -- then the pep lands."""
+        """The RUDE waker: not on the mistake-free list -- on a sleeper it
+        runs the disturb ITSELF (the item-sleep law, kept; use_item leaves it
+        to us so this wake branch can actually run) -- then the pep lands."""
         woke = ""
         if self.asleep:
-            self.asleep = False
-            self.nap = False
-            self.lights = True
-            self.awake_lapse = 0.0
+            self._disturbed()                # bills + wakes like any rude item
             woke = "AWAKE and "
         self._set_energy(self.energy + 2)
         return f"Brrr! {woke}bracing."
-
-    def _fruit(self, quality):
-        if self.hunger >= FULL_HUNGER and quality >= 0:
-            return _Refused("Refused - belly's full.")
-        self.hunger = _clamp(self.hunger + 1, 0, FULL_HUNGER)
-        if quality > 0:
-            self.strength = _clamp(self.strength + quality - 1, 0, 4)
-        elif quality == 0:
-            self._set_weight(self.weight + 3)
-        return "Munch."
 
     def _deadly(self):
         # through _die like every other death: it clears asleep/hatching and
@@ -542,7 +495,10 @@ class CareMixin:
     def _junk(self):
         self.hunger = FULL_HUNGER
         self._set_weight(self.weight + 4)
-        self.care_mistakes += 1
+        # the real mistake pipeline: the bare counter bumped care_mistakes
+        # without the mood sting or mistake_day, so the burger slip was
+        # invisible to the birthday judgment
+        self._inc_mistake()
         return "Delicious. Regrettable."
 
     def _premium_meat(self):
@@ -557,12 +513,6 @@ class CareMixin:
         self.clean()
         self.auto_clean_until = self.world_seconds + 24 * 3600.0  # 24 REAL hours (same ruling)
         return "Auto-clean for 24 hours."
-
-    def _erase_mistake(self):
-        if self.care_mistakes <= 0:
-            return _Refused("No mistakes to erase.")
-        self.care_mistakes -= 1
-        return "One mistake, forgotten."
 
     def _sleep_pill(self):
         """Sleep NOW, no argument.  A line pet's real sleep outside its

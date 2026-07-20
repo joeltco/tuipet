@@ -30,7 +30,7 @@ CATALOG = {
     "vegetable":       ("Vegetable",       "f:3",  150,  "Food", "hunger +1 · weight -1", "crunchy diet fare"),
     "tuna":            ("Tuna",            "f:14", 400,  "Food", "hunger +2 · energy +1", "a hearty catch"),
     "cake":            ("Cake",            "f:6",  300,  "Food", "hunger +1 · energy +2 · weight +2", "a celebration slice"),
-    "cheese_burger":   ("Cheese burger",   "f:57", 50,   "Food", "fills belly · a care mistake", "greasy, regrettable"),
+    "cheese_burger":   ("Cheese burger",   "f:57", 50,   "Food", "fills belly · weight +4 · a care mistake", "greasy, regrettable"),
     "giga_meal":       ("Giga Meal",       "f:28", 800,  "Food", "fills belly · energy +4 · weight +6", "a feast fit for a Mega"),
     "steak":           ("Steak",           "f:8",  2000, "Food", "fills belly · 12h satiety", "the premium table"),
     "poison_mushroom": ("Poison Mushroom", "f:13", 200,  "Food", "DO NOT FEED", "it does look delicious"),

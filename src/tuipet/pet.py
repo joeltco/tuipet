@@ -483,9 +483,12 @@ class Pet(CareMixin, DnaMixin, BattleMixin, BodyMixin):
         return self.needs_care()
 
     def near_bedtime(self):
-        """sleepNotNap: the pressure sits inside the real-sleep edge -- the
-        yawning special idle's eligibility (and lights-out now means SLEEP)."""
-        return self.sleep_lapse >= self.sleep_limit - (
+        """sleepNotNap: nod-off sits inside the real-sleep edge -- the yawning
+        special idle's eligibility (and lights-out now means SLEEP).  Routed
+        through the model-aware _near_bedtime so LINE pets (the wall-clock
+        sleepers -- every hatch) roll their pre-bed yawn too; the pressure
+        path inside is verbatim what stood here."""
+        return self._near_bedtime(
             SLEEP_NOT_NAP_MIN - self.restless * SLEEP_NOT_NAP_RESTLESS)
 
     def _guard(self, asleep_blocks=True):

@@ -230,9 +230,11 @@ class BodyMixin:
                 self._set_mood(self.mood + (LARGE_POOP_WAIT_MOOD
                                             if self._poop_t >= self._poop_interval * 1.5
                                             else POOP_WAIT_MOOD))
-        # death does not wait for morning: the mistake caps and old age
-        # apply asleep too (only the starvation clock freezes; audit 2026-07)
-        if self._check_death_caps() or self._check_old_age():
+        # death does not wait for morning: the caps, the filth/overweight
+        # sickness rolls and the sick-death whisper run in bed too, exactly as
+        # the "filth risk runs in bed" note promises -- _tick_mortality's own
+        # gates freeze ONLY the starvation clock while asleep
+        if self._tick_mortality(dt):
             return
         # startPoop: even asleep, a truly DESPERATE gauge (>= 2x max) goes --
         # this must live in the sleep branch (the awake poop block below is
@@ -468,6 +470,10 @@ class BodyMixin:
                 self._nap_bonus_t = self.world_seconds
                 self._set_mood(self.mood + ON_NAP_MOOD_INC)
             self.asleep, self.nap = True, True
+            # the doze's own length: checkNap's fixed hour (awakeLimit -
+            # minutesHour) -- without this the doze inherited the whole
+            # previous NIGHT's awake_limit and slept the day away
+            self.awake_lapse = max(0.0, self.awake_limit - 60.0)
             self._lights_t = 0.0
             self._lit_obed_hit = False
             self._set_anim("yawn", 1.8)
@@ -617,11 +623,8 @@ class BodyMixin:
         """DVPet startPoop: drop a sized pile."""
         self._add_filth(self._poop_size())
 
-    def _advance_bm(self, bm):
-        """applyFood/bad-med/bad-vitamin: the bowel gauge lurches BM units,
-        proportional to the species' own gauge size."""
-        self._poop_t = getattr(self, "_poop_t", 0) \
-            + self._poop_interval * bm / max(1, self._phys().get("poop_limit", 64))
+    # (_advance_bm cut, LOW audit 2026-07-19: the BM-lurch consumables left
+    # with the DVPet item system; nothing live called it)
 
     def _die(self, cause=""):
         self.dead = True
@@ -727,7 +730,10 @@ class BodyMixin:
             else:
                 postponed = True
                 postpone = random.randint(*DISTURB_POSTPONE)
-                self.sleep_lapse = max(0.0, self.sleep_limit - postpone / max(1, self._sleep_inc()))
+                # the lapse regains _sleep_inc per game-min, so a gap of
+                # postpone game-minutes is postpone x inc -- the old /inc
+                # re-slept a baby (inc 9) in postpone/81 minutes
+                self.sleep_lapse = max(0.0, self.sleep_limit - postpone * self._sleep_inc())
                 if self._in_sleep_window() is not None:
                     self._bed_postpone_t = float(postpone)   # a line pet re-sleeps by the clock
                 # (the missed rest is repaid naturally: _fall_asleep re-sizes the

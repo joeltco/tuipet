@@ -546,8 +546,11 @@ class LobbyPanel(BoutMixin, ChatMixin):
         if not top:
             t.append("  no wins recorded yet — the rungs\n", style=INK)
             t.append("  are empty.  Go start the race!\n", style=INK)
+        me = str(getattr(self.client, "name", "") or "").lower()
         for i, (who, wins) in enumerate(top, start=1):
-            mine = who == getattr(self.client, "name", None)
+            # the server logs you in under the CANONICAL capitalisation; a
+            # typed-case name missed its own row on an exact compare
+            mine = bool(me) and str(who).lower() == me
             t.append(f"  {'▸' if mine else ' '}{i:>2}. {str(who)[:16]:<16} {int(wins):>3}W\n",
                      style=INK_B if mine else INK)
         if you_rank:

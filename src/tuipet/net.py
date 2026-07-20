@@ -351,14 +351,15 @@ class LobbyClient(_WsClient):
             del s.chat[:-CHAT_CAP]
         elif t == "chat":
             nm = m.get("from_name", "?")
-            if nm not in s.blocked:
+            if nm not in s.blocked and not self._replayed(m, nm):
                 s.chat.append((nm, m.get("text", "")))
                 del s.chat[:-CHAT_CAP]
         elif t == "announce":
             # a server announcement rides the public feed under the 📢 speaker
             # (unblockable -- it's the dev's line, not a peer's)
-            s.chat.append((ANNOUNCE, m.get("text", "")))
-            del s.chat[:-CHAT_CAP]
+            if not self._replayed(m, ANNOUNCE):
+                s.chat.append((ANNOUNCE, m.get("text", "")))
+                del s.chat[:-CHAT_CAP]
         elif t == "pm":
             nm = m.get("from_name", "?")
             if nm not in s.blocked:
@@ -395,6 +396,13 @@ class LobbyClient(_WsClient):
                 self._stop = True
         elif t == "error":
             s.error = m.get("msg")
+
+    def _replayed(self, m, nm):
+        """True for a server-marked backlog `replay` line the pane already
+        shows: reconnects and room→main returns re-send the same window, and
+        with no client dedup every line printed twice.  Live repeats are
+        untagged and always append."""
+        return bool(m.get("replay")) and (nm, m.get("text", "")) in self.state.chat[-30:]
 
 
 async def submit_bug(uri, text, meta=None, name="", timeout=8.0):

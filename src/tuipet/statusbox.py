@@ -448,7 +448,24 @@ def assist(app):
         "[dim]ENTER hire/dismiss[/]"])
 
 
+class _SubView:
+    """Painters read app.mode; this lends `app` out with the EMBEDDED panel
+    as the mode, so a host screen can hand its card to the sub's painter
+    (the cup's bouts ran with no visible HP: painter_for dispatches on the
+    top-level mode only, and BattlePanel is never top-level)."""
+    __slots__ = ("_app", "mode")
+
+    def __init__(self, app, mode):
+        self._app, self.mode = app, mode
+
+    def __getattr__(self, k):
+        return getattr(self._app, k)
+
+
 def tournament(app):
+    sub = getattr(app.mode, "sub", None)
+    if sub is not None:                # a cup bout runs: the battle card, live HP
+        return battle(_SubView(app, sub))
     p, t, T = app.pet, app.mode.tourney, theme
     app.stats_w.border_subtitle = gen_subtitle(p)
     if t is None:                      # cup-select phase (no bout yet)

@@ -46,6 +46,8 @@ class RaidPanel(menu.SubHost):
         self._dealt = 0
         self._credited = 0            # the gate's acked board damage this session
         name, pw = persistence.get_account()
+        self._no_account = name is None   # the gate refuses a nameless login;
+        #  the old path sent name=None, which the server minted as "None"
         self.client = client or connect(name, pw, {"num": pet.num,
                                                    "name": pet.name or name})
         self._asked = False
@@ -78,9 +80,19 @@ class RaidPanel(menu.SubHost):
             # the one-shot fetch froze every timer until the player acted
             # (raid review 2026-07-18); one refetch per ~5s is polite
             self.client.raid_get()
-        if self.view and self.msg == "Calling the raid gate…":
-            self.msg = "The boss stands. SPACE to raid!" if self._standing() \
-                else "The next boss is incoming…"
+        if self.msg == "Calling the raid gate…":
+            # surface a refused call instead of ringing forever (the panel
+            # swallowed login_failed/error and held this line for good)
+            st = getattr(self.client, "state", None)
+            if self._no_account:
+                self.msg = "No account — log into the LOBBY first."
+            elif st is not None and st.login_failed:
+                self.msg = f"The gate turned us away: {st.login_failed}"
+            elif st is not None and st.error:
+                self.msg = f"Gate error: {st.error}"
+            elif self.view:
+                self.msg = "The boss stands. SPACE to raid!" if self._standing() \
+                    else "The next boss is incoming…"
         hit = getattr(self.client, "last_hit", None)
         if hit is not None:
             # the gate's authoritative credit (raw x5000 x num-mult) -- the

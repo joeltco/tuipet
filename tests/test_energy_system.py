@@ -9,7 +9,6 @@ Digimentals' -0.66), the X-Program/ItemEvol branches skipped the applyItem
 stat core entirely, and can_battle/can_train carried invented hard gates
 (MinEnergyForActivity is -127 on the classic column; the refusal roll is
 canon's only gate)."""
-import math
 import random
 
 from tuipet import data
@@ -33,11 +32,12 @@ def test_the_loader_keeps_fractional_energies():
     assert data.consumable_by_key("i:15")["energy"] == -0.66   # Courage Digimental
     assert isinstance(data.consumable_by_key("f:0")["energy"], int)   # whole stays int
 
-def test_fractional_energy_is_a_share_of_max():
-    p = _pet(energy=24, max_energy=24, enthusiasm=0)
-    p._apply_item_stats(dict(data.consumable_by_key("i:15")), 1.0)
-    # ceil(-0.66 x 24) = -15: the Digimental drinks 66% like a jogress
-    assert p.energy == 24 + math.ceil(-0.66 * 24)
+def test_the_consumable_stat_core_stays_cut():
+    # _apply_item_stats (the DVPet consumable core) was orphaned by the
+    # strict-DSprite item cut and removed in the LOW audit; the fractional
+    # energies it consumed stay in the loader (test above) for the refusal
+    # affordability math
+    assert not hasattr(_pet(), "_apply_item_stats")
 
 
 def test_an_unaffordable_digimental_is_refused():

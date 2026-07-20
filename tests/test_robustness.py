@@ -55,7 +55,11 @@ def test_the_town_chain_is_cut():
 
 def test_sell_empty_bag():
     p = Pet(num=-1, stage="Rookie")
-    assert p.sell({"key": "f:1", "name": "Meat"}) == "None to sell."
+    # shop.sell is the one live resell path (CareMixin.sell cut, LOW audit)
+    from tuipet import shop
+    assert not hasattr(p, "sell")
+    msg, sfx = shop.sell(p, {"key": "f:1", "name": "Meat"})
+    assert sfx == "error" and "don't have" in msg
 
 
 def test_use_missing_item():

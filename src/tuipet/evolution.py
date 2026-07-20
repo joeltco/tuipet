@@ -71,13 +71,9 @@ def _win_rate(pet):
     return int(pet.wins / pet.battles * 100) if pet.battles else 0
 
 
-def _stat_total_ok(req, total):
-    s = 0
-    for key in ("vaccine", "data", "virus"):
-        cond, val = req[key][0]
-        if cond in ("GreaterThan", "EqualTo"):
-            s += int(val) + (1 if cond == "GreaterThan" else 0)
-    return total >= s
+
+# (_stat_total_ok cut, LOW audit 2026-07-19: no callers -- the corpus
+# checkStatTotal gates read the per-attribute powers directly)
 
 
 def _dna_ok(pet, req):
@@ -93,10 +89,11 @@ def _dna_ok(pet, req):
 def check(pet, num, item=-1, food=-1, connecting=False):
     """checkEvolReq, verbatim semantics (canon re-audit 2026-07):
 
-    * the DNA replacement is CONSUME-ONCE: canon's getDNA() clears its flag on
-      the first failing gate it excuses -- so a met DNA charge forgives exactly
-      ONE failed gate, not all of them.  With short-circuit ||, that reduces to:
-      pass iff no gate fails, or (DNA met and exactly one fails).
+    * NO DNA gate-forgiveness (the canon consume-once excuse left with the
+      DNA slim, BASIC VPET 2026-07-16): a failed care gate is a failed gate.
+      The charge still BENDS selection -- the fulfilled-score bonus and the
+      divergence arm -- but it never excuses a gate here (the body's own
+      note; this docstring taught the removed rule until the LOW audit).
     * special types follow checkSpecialCondition + the optional flags:
       JogressOptional=TRUE (classic) -- a Jogress form IS reachable by normal
       timed care (its heavy gates still apply); FusionOptional=FALSE -- Fusion

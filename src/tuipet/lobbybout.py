@@ -63,15 +63,16 @@ def _clamp_card(card):
     # two engines stay symmetric; garbage stages already ranked as "Child".
     rec = data.record_for(card["num"])
     if not rec.get("_placeholder"):
-        card["stage"] = rec.get("stage", "Child")
+        card["stage"] = rec.get("stage", "Rookie")
         card["attribute"] = rec.get("attribute", "Free")
     else:
+        # unknown num (a newer build's dex): keep a KNOWN claimed stage so the
+        # two engines stay symmetric.  Anything unrankable -- "Special"
+        # included, whose old re-map elif was dead behind this membership
+        # check -- lands on "Rookie": the same rank 3 _RANK's default already
+        # gave it, now wearing the tuipet word instead of "Child"
         if card.get("stage") not in battle._RANK:
-            card["stage"] = "Child"
-        elif card.get("stage") == "Special":
-            # every REAL Special is in the local dex and record-derived
-            # above; an unknown num claiming the 14.5 rank is the forge
-            card["stage"] = "Ultimate-Super Ultimate"
+            card["stage"] = "Rookie"
         if card.get("attribute") not in ("Vaccine", "Virus", "Data", "Free"):
             card["attribute"] = "Free"
     card["hp"] = 5
@@ -188,7 +189,10 @@ class BoutMixin:
         self.pet.bits += int(purse)
         self.bt_outcome = ("DRAW" if draw
                            else "\u2605 YOU WIN! \u2605" if won else "YOU LOSE\u2026")
-        self.bt_reward = f"+{purse}b" + ("  (weekend bonus!)" if purse not in (100, 150, 200) else "")
+        # ask the calendar, not the amount: the weekend loss purse (150)
+        # equals the plain draw purse, which hid the tag on weekend losses
+        from .pet import weekend_bonus
+        self.bt_reward = f"+{purse}b" + ("  (weekend bonus!)" if weekend_bonus() > 1 else "")
         self.bt_payload = ("battle_msg", self.bt_outcome)
     def _stage_volley(self, my0, opp0, dealt, taken):
         """A presentation-only BattlePanel replays the round: my pet RIGHT,
@@ -257,8 +261,9 @@ class BoutMixin:
         self.pet.record_battle(True, online=True)
         self.pet.bits += int(purse)
         self.bt_outcome = "Opponent fled — you win!"
-        self.bt_reward = f"+{purse}b" + ("  (weekend bonus!)"
-                                         if purse not in (100, 150, 200) else "")
+        from .pet import weekend_bonus
+        self.bt_reward = f"+{purse}b" + ("  (weekend bonus!)"      # calendar, not amount
+                                         if weekend_bonus() > 1 else "")
         self.bt_payload = ("battle_msg", self.bt_outcome)
         self.bphase = "over"
 

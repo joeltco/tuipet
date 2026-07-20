@@ -3,6 +3,65 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.5.101 — SMALL TRUTHS (2026-07-20)
+
+The LOW tier of the 2026-07-19 gameplay audit (`AUDIT_2026_07_19.md`):
+sixteen of the eighteen display/label/dead-code findings, fixed. (L17 —
+whether online PvP keeps feeding the win/battle evolution channels — and
+the lost LINES_SPEC.md await rulings; the DNA Crystal leg of L9 didn't
+reproduce and is documented as such.)
+
+* **Care items say what they do, and no-ops refuse.** The Cheese Burger
+  discloses its weight +4, and its care slip now stings like every other
+  mistake (mood + the birthday judgment) instead of a silent bare count.
+  The Energy Drink fills the meter TO full — a drained pet used to land
+  short — and refuses when energy is already full. The Bubble Bath
+  refuses when there's nothing to scrub. Refused items stay in the bag.
+* **The frailty warning actually shows.** The "getting frail — N more
+  slips could be fatal!" line existed but could never reach the box; an
+  elder carrying 3+ mistakes now warns before the 5-slip death lands.
+* **The cold shower narrates its wake.** "Brrr! AWAKE and bracing." was
+  unreachable — the disturb law now runs inside the item so the message
+  can tell the truth (a sleeper is still billed like any rude item).
+* **A disturbed baby stays up its full grumbling time.** The re-sleep
+  math divided by the sleep rate instead of multiplying, so a baby
+  (rate 9) dropped back off in seconds.
+* **Sleep is no longer a plague ward.** The filth/overweight sickness
+  rolls and the sick-death whisper run in bed too, exactly as the sleep
+  branch's own comments always promised. Starvation still freezes
+  overnight.
+* **A line pet's daytime doze is a nap, not a day.** Lights-out dozing
+  ran the whole previous night's span; it's now the fixed hour the
+  pressure model's checkNap always used.
+* **Line pets yawn before bedtime.** The pre-bed yawn roll read only the
+  retired pressure clock; it now reads the wall-clock bedtime every
+  current pet actually sleeps by.
+* **Weekend purses always wear their tag.** A weekend loss paid 150 — the
+  same number as a plain draw — so the "(weekend bonus!)" tag hid exactly
+  there. The tag now asks the calendar, not the amount.
+* **The raid show is honest.** The boss bar no longer dips during a round
+  and snaps back to full — it holds, as the "never falls" rule says — and
+  an attempt your pet SURVIVES ends on its feet instead of the loser's
+  collapse frame. (Dealt damage feeds the community pool unchanged.)
+* **Cup fights show their HP.** The battle card (you/foe bars, result,
+  reward) now rides the status box during cup bouts; it used to be
+  unreachable there. And a local loss discloses the "training +2" every
+  local bout grants — it was granted silently under a DEFEAT screen.
+* **Chat stops double-printing.** Reconnects and room→main returns replay
+  the backlog window; replayed lines are now marked by the server and
+  skipped by the pane when already shown.
+* **The raid gate speaks when it refuses.** With no account it says so
+  (instead of logging you in as the literal name "None"), and a rejected
+  login or server error surfaces instead of "Calling the raid gate…"
+  forever. Raid rank ties now break by earliest report, as documented.
+* **Your ladder row highlights** whatever capitalisation you typed at
+  login. Unknown online cards now read "Rookie" (same rank as before —
+  the "Child" label was pre-tuipet vocabulary).
+* Under the hood: six dead functions cut (`CareMixin.sell`,
+  `_apply_item_stats`, `_fruit`, `_erase_mistake`, `_advance_bm`,
+  `_stat_total_ok`), and the evolution `check()` docstring no longer
+  teaches the removed DNA gate-forgiveness rule.
+
 ## 0.5.100 — HAPPY AT LAST (2026-07-20)
 
 The twelve MED findings of the 2026-07-19 gameplay audit
