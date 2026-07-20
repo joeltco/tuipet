@@ -8,7 +8,6 @@ from .theme import LCD_ON, LCD_BG
 COLS, PXH = 40, 24
 BOOT_BLIP = 4      # frames of all-segments-on (power-on flash)
 BOOT_FADE = 8      # frames of transition from the flash into the title
-CYCLE = 80         # frames between attract-mode mascot swaps (8s at 10Hz)
 # tiny 3x5 pixel font for the wordmark
 _FONT = {
     "T": ["111", "010", "010", "010", "010"],
@@ -92,13 +91,13 @@ class TitlePanel:
 
     def __init__(self):
         _, by = data.load_sprites()
-        self.pool = [n for n, r in by.items()
-                     if r["stage"] in ("Rookie", "Champion", "Ultimate", "Mega")
-                     and not data.is_placeholder(n)]
-        self.num = random.choice(self.pool) if self.pool else next(iter(by))
+        pool = [n for n, r in by.items()
+                if r["stage"] in ("Rookie", "Champion", "Ultimate", "Mega")
+                and not data.is_placeholder(n)]
+        self.num = random.choice(pool) if pool else next(iter(by))   # ONE mon per
+        #                                      title (Joel 2026-07-20: no switching)
         self.fx = random.choice(BOOT_FX)     # this power-on's transition
         self.frame_i = 0
-        self._fade = 0                       # >0 while a mascot swap plays in
         self.sfx = "boot"                    # the power-on jingle (baked from the
         #                                      device's own beeps — tools/make_boot_jingle.py)
         #                                      rides the flash via the app's anim-sfx drain
@@ -107,14 +106,6 @@ class TitlePanel:
 
     def anim(self):
         self.frame_i += 1
-        if self._fade:
-            self._fade -= 1
-        # attract mode: transition to a fresh mascot every few seconds, replaying
-        # this boot's own effect so the swap speaks the power-on's visual language
-        if (self.frame_i > BOOT_BLIP + BOOT_FADE and len(self.pool) > 1
-                and self.frame_i % CYCLE == 0):
-            self.num = random.choice([n for n in self.pool if n != self.num])
-            self._fade = BOOT_FADE
 
     def strip(self):
         """The press-to-start prompt rides the #msg strip.  It used to be set
@@ -161,8 +152,6 @@ class TitlePanel:
             buf = [[1] * COLS for _ in range(PXH)]
         elif boot < BOOT_BLIP + BOOT_FADE:
             self.fx(buf, boot - BOOT_BLIP)
-        elif self._fade:
-            self.fx(buf, BOOT_FADE - self._fade)     # attract swap: same effect, new mascot
         t = Text()
         for cy in range(PXH // 2):
             ty, byy = cy * 2, cy * 2 + 1

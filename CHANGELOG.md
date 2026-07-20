@@ -3,6 +3,13 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.5.106 — ONE MON PER TITLE (2026-07-20)
+
+* **The title mascot no longer switches.** Attract-mode cycling (added in
+  0.5.104) is removed on Joel's ruling — the launch draws one mon and
+  keeps it until you press start. The random boot transitions, power-on
+  jingle, pulsing prompt and version tag all stand.
+
 ## 0.5.105 — THE POWER-ON JINGLE (2026-07-20)
 
 * **The device now sings when it boots.** A 0.28s rising jingle

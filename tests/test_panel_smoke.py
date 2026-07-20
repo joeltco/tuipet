@@ -188,24 +188,23 @@ def test_title_boot_flashes_transitions_then_settles_for_every_fx():
         assert len(set(settled)) == 2, name       # only the two bob poses remain
 
 
-def test_title_attract_cycles_mascots_and_the_prompt_pulses():
-    """Title polish 2026-07-20: every CYCLE frames the mascot dissolves to a
-    DIFFERENT mon (the boot dither reused), and the PRESS ENTER prompt pulses
-    bold/dim at constant visible width so the centred strip never jumps."""
+def test_title_keeps_one_mascot_and_the_prompt_pulses():
+    """Title polish 2026-07-20, attract cycling CUT same day (Joel: "just
+    keep it one mon per title"): the launch's mascot NEVER changes, and the
+    PRESS ENTER prompt pulses bold/dim at constant visible width so the
+    centred strip never jumps."""
     import random
-    from tuipet.titlescreen import TitlePanel, BOOT_BLIP, BOOT_FADE, CYCLE
+    from tuipet.titlescreen import TitlePanel, BOOT_BLIP, BOOT_FADE
     random.seed(11)
     pan = TitlePanel()
-    phases, nums = set(), []
-    for f in range(CYCLE + BOOT_FADE + 2):
+    mascot = pan.num
+    phases = set()
+    for f in range(120):                          # well past the old 80-frame cycle
         _render(pan)                              # every frame renders in budget
         if f > BOOT_BLIP + BOOT_FADE:
             phases.add(pan.strip().split("▸")[0])
-        if not nums or nums[-1] != pan.num:
-            nums.append(pan.num)
+        assert pan.num == mascot                  # one mon per title, always
         pan.anim()
-    assert len(nums) == 2 and nums[0] != nums[1]  # exactly one swap, a new face
-    assert pan._fade == 0                         # ...whose dissolve has settled
     assert phases == {"[b]", "[dim]"}             # both pulse phases showed
     stripped = pan.strip()
     assert "ENTER" in stripped
