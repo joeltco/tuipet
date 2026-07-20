@@ -225,33 +225,37 @@ class BattleMixin:
     def record_battle(self, won, enemy=None, online=False, source="battle",
                       free_style=None, low_health=False):
         """One battle, the 0.5 rules (clone record_battle, 2026-07-17):
-        counters + flat costs, +2 trainings for a LOCAL bout.  KEPT from the
-        classic version -- the progression channels the rest of the game
-        feeds on: battle_log (Pen20 WIN gates), stage_battles (BTL gates),
-        lifetime wins + the mystery-egg note, levels_fought, KO6 (a felled
-        Mega, never in PvP -- untrusted cards), and the win's +1 power in
-        the foe's attribute (the corpus checkStatTotal gates feed on it; a
-        0.5 card's attribute string names the dominant power directly).
-        The old free_style/low_health params are accepted-and-ignored for
-        stragglers.  (Mood/compliance/contagion legs left with their
-        systems; the perfect-wins HP ladder left with the classic battle.)"""
+        counters + flat costs, +2 trainings for a LOCAL bout.  The
+        progression channels the rest of the game feeds on: battle_log
+        (Pen20 WIN gates), stage_battles (BTL gates), lifetime wins + the
+        mystery-egg note, levels_fought, KO6, and the win's +1 power in the
+        foe's attribute (a 0.5 card's attribute string names the dominant
+        power directly).  ONLINE PvP IS PROGRESSION-NEUTRAL (L17 ruling,
+        Joel 2026-07-20, option a): exp and KO6 always excluded it as
+        untrusted -- colluding tamers, forged cards -- and the same
+        collusion farmed the channels that stayed fed; an online bout now
+        bills the BODY only (energy/weight; its purse and ladder standing
+        live server-side).  battles+wins move together so win_rate stays
+        coherent.  The old free_style/low_health params are
+        accepted-and-ignored for stragglers.  (Mood/compliance/contagion
+        legs left with their systems; the perfect-wins HP ladder left with
+        the classic battle.)"""
         if source == "pvp":
             online = True
+        self._set_energy(max(0, self.energy - BATTLE_ENERGY_COST))
+        self._set_weight(max(1, self.weight - BATTLE_WEIGHT_COST))
+        if online:
+            return ""
         self.battles += 1
         self.stage_battles += 1                          # LINES_SPEC BTL gate (per-stage)
         self.battle_log = (self.battle_log + [1 if won else 0])[-15:]   # Pen20 rolling window
-        self._set_energy(max(0, self.energy - BATTLE_ENERGY_COST))
-        self._set_weight(max(1, self.weight - BATTLE_WEIGHT_COST))
-        if not online:
-            self.stage_trainings += 2                    # a local bout trains (clone rule)
+        self.stage_trainings += 2                        # a local bout trains (clone rule)
         if not won:
             return ""
         self.wins += 1
-        if not online:
-            # DMX canon: defeating an enemy pays experience toward LEVEL (the
-            # LV line gates).  PvP excluded like KO6 -- colluding tamers could
-            # farm level-gated evolutions off untrusted cards.
-            self.exp += EXP_PER_WIN
+        # DMX canon: defeating an enemy pays experience toward LEVEL (the
+        # LV line gates)
+        self.exp += EXP_PER_WIN
         from . import persistence as _persist
         total = _persist.wins_add(1)                     # lifetime wins (egg gates)
         if total in egg_mod.wins_thresholds():
@@ -260,9 +264,9 @@ class BattleMixin:
             self.egg_unlock_note = "A new egg appeared in the nursery!"
         if enemy:
             self.levels_fought.append(_enemy_level(enemy))
-            # KO6: Stage VI is Mega, full stop; PvP excluded (untrusted
-            # cards -- colluding tamers could farm it; egg/KO6 audit 2026-07-14)
-            if enemy.get("stage") == "Mega" and not online:
+            # KO6: Stage VI is Mega, full stop (online never reaches here
+            # since the L17 ruling; the old per-line PvP guard is subsumed)
+            if enemy.get("stage") == "Mega":
                 self.mega_kills += 1                     # LINES_SPEC KO6 gate
                 _persist.mega_kills_add(1)               # ...and the X-egg progress
             # the win grows the pet's power in the foe's attribute (+1; a
@@ -278,7 +282,7 @@ class BattleMixin:
                     self.data_power += inc
                 else:
                     self.virus += inc
-        return "training +2" if not online else ""
+        return "training +2"
 
     def can_escape(self, enemy):
         """PhysicalState.canEscape: a power-weighted roll -- prob = nextInt(mine +

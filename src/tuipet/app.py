@@ -150,13 +150,12 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("THE HOUSE KEEPS ITS WORD: a revival restores life "
-                 "without stealing a young pet's years; a DNA wager "
-                 "interrupted mid-mash settles on relaunch instead of "
-                 "vanishing; keeping the elder's memory carries the "
-                 "care bonus like declining; a suspended terminal ages "
-                 "the pet like a closed one; and quit-cycling can't "
-                 "cheat the call, retainer or DP clocks.")
+    WHATS_NEW = ("ONLINE PLAYS FOR THE LADDER: online PvP now pays its "
+                 "purse and your season-ladder standing, and nothing "
+                 "else - wins, battle counts and the evolution/egg "
+                 "gates they feed are earned in the cup and against "
+                 "the world (untrusted peer cards were farmable by "
+                 "colluding tamers).")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and

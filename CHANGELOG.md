@@ -3,6 +3,22 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.5.103 — ONLINE PLAYS FOR THE LADDER (2026-07-20)
+
+The last open finding of the 2026-07-19 gameplay audit, ruled by Joel
+(L17, option a):
+
+* **Online PvP is progression-neutral.** Experience and Mega-kill credit
+  always excluded online bouts — opponent cards are untrusted, and two
+  colluding tamers could farm anything they feed. But wins, the rolling
+  win log, per-stage battle counts and lifetime wins stayed fed, and they
+  gate evolutions and eggs: the same farm, different channels. An online
+  bout now costs your pet's energy and weight and nothing else — the
+  purse still pays, and your standing lives on the season ladder, which
+  was built for exactly this (both-sides-confirm, per-pair caps).
+  Evolution WIN/BTL gates and the lifetime-wins egg gates are earned in
+  the cup and against the world.
+
 ## 0.5.102 — THE HOUSE KEEPS ITS WORD (2026-07-20)
 
 The SUSPECT tier of the 2026-07-19 gameplay audit, ruled and shipped
