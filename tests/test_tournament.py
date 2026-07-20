@@ -361,10 +361,22 @@ def test_mid_bracket_contracts():
         pan3.anim()
     pan3.key("escape")                          # skip the intro -> the timing bar
     assert pan3.sub.phase == "ready"
-    pan3.key("escape")                          # flee before the bell (0.5: once
-    #                                             the bar locks, the race RUNS)
-    assert pan3.sub is None and pan3.tourney.over
-    assert "Eliminated" in pan3.tourney.last    # the flee IS the elimination
+    pan3.key("escape")                          # back out before the bell
+    # H6 (gameplay audit 2026-07-19, supersedes the 2026-07-06 pin): ESC at
+    # the bar is a BACK-OUT to the bracket, not a silent elimination -- the
+    # strip said "back out" while the cup recorded a stake-losing loss; the
+    # raid always treated the same signal as "the attempt keeps".  Walking
+    # out of the CUP remains the labeled forfeit on the bracket page's ESC.
+    assert pan3.sub is None and not pan3.tourney.over
+    assert "back out" in pan3.tourney.last      # the tree page says so
+    pan3.key("space"); pan3.key("space")        # the match still waits
+    assert pan3.sub is not None
+    pan3.key("escape")                          # intro -> the timing bar
+    assert pan3.sub.phase == "ready"
+    pan3.key("escape")                          # back out a second time
+    assert pan3.sub is None and not pan3.tourney.over
+    assert pan3.key("escape")[0] == "done"      # the tree ESC: the REAL forfeit
+    assert pan3.tourney.over
 
 
 def test_champion_wins_the_cup_prizes():
@@ -558,3 +570,44 @@ def test_eligibility_is_one_gate_not_two():
     assert "_eligibility_rest" in src and "_stake_check" in src
     for dup in ('t["age_limit"]', 't["field_req"]', 't["attr_req"]'):
         assert dup not in src, "a hand-copied rule crept back into eligibility()"
+
+
+def test_esc_at_the_bar_backs_out_never_forfeits():
+    """H6 (gameplay audit 2026-07-19): ESC in the bout's ready phase returns
+    ("done", None) -- recording that as a LOSS made the strip's "back out" a
+    silent stake-losing forfeit (the raid treats the same signal as "the
+    attempt keeps").  It returns to the bracket now, match still owed; the
+    bracket page's own ESC stays the labeled forfeit."""
+    from tuipet import tournamentscreen
+
+    class _Sub:                       # a bout reporting ESC-before-the-bell
+        def key(self, k):
+            return ("done", None)
+
+    class _Tourney:
+        over = False
+        champion = False
+        last = "8 enter, one leaves."
+        def __init__(self):
+            self.recorded = []
+        def record(self, won):
+            self.recorded.append(won)
+
+    pan = tournamentscreen.TournamentPanel.__new__(tournamentscreen.TournamentPanel)
+    pan.sub = _Sub()
+    pan.phase = "run"
+    pan.tourney = _Tourney()
+    pan.tree_view = False
+    assert pan.key("escape") is None
+    assert pan.tourney.recorded == [], "backing out must not record a loss"
+    assert pan.sub is None and pan.tree_view
+    assert "back out" in pan.tourney.last
+
+    class _WonSub:                    # a finished bout still records normally
+        def key(self, k):
+            class _B: won = True
+            return ("done", _B())
+
+    pan.sub = _WonSub()
+    pan.key("space")
+    assert pan.tourney.recorded == [True]

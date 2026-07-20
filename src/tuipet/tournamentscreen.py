@@ -50,8 +50,19 @@ class TournamentPanel(menu.SubHost):
         if self.sub is not None:
             r = self.sub.key(k)
             if r is not None and r[0] == "done":
-                self.tourney.record(bool(r[1] and r[1].won))
                 self.sub = None
+                if r[1] is None:
+                    # ESC before the bell: no volley rolled -- backing out
+                    # returns to the bracket with the match still owed (the
+                    # raid's rule for the same signal).  Recording it as a
+                    # loss made the "back out" hint a silent stake-losing
+                    # forfeit (gameplay audit 2026-07-19); walking out of
+                    # the CUP stays the labeled forfeit on the bracket ESC.
+                    self.tree_view = True
+                    self.tourney.last = "You back out — the match still waits."
+                    self.sfx = "refuse"
+                    return None
+                self.tourney.record(bool(r[1].won))
                 self.tree_view = True                   # show the field advancing
                 if self.tourney.over:                   # cup finished this match
                     self.sfx = "champion" if self.tourney.champion else "lose"

@@ -455,11 +455,20 @@ class CareMixin:
         return "Effort brims!"
 
     def _caffeine(self):
-        """Tonight's bedtime pushed later: a quarter of the pressure window
-        off the LIVE sleep clock (the real sleep_lapse nudge)."""
+        """Tonight's bedtime pushed later: a quarter of the night off the
+        clock the pet ACTUALLY sleeps by.  Line pets (every hatch) read the
+        wall-clock window, not sleep_lapse -- the old pressure-only nudge
+        made this a paid no-op for them (gameplay audit 2026-07-19); their
+        push rides the same grace channel a disturb uses."""
         if self.asleep:
             return _Refused("Too late - it's already down.")
-        self.sleep_lapse = max(0.0, self.sleep_lapse - self.sleep_limit * 0.25)
+        if self._in_sleep_window() is not None:
+            bt = lines_mod.bedtime_minutes(self)
+            night = (self.WAKE_MINUTE - bt) % DAY_MINUTES
+            self._bed_postpone_t = max(getattr(self, "_bed_postpone_t", 0.0),
+                                       night * 0.25)
+        else:
+            self.sleep_lapse = max(0.0, self.sleep_lapse - self.sleep_limit * 0.25)
         return "Wide awake for a while yet."
 
     def _erase_mistakes_all(self):
@@ -556,20 +565,36 @@ class CareMixin:
         return "One mistake, forgotten."
 
     def _sleep_pill(self):
+        """Sleep NOW, no argument.  A line pet's real sleep outside its
+        window used to be woken by the very next tick's 7:00-sharp check --
+        one second of sleep for 300b (gameplay audit 2026-07-19): out of
+        hours the pill's sleep is the daytime DOZE shape instead (the
+        shipped lights-out nap), which sleeps off the energy debt and can
+        become the night when the window arrives."""
         if self.asleep:
             return _Refused("It's already asleep.")
         self._fall_asleep()
         self.lights = False
+        self._bed_postpone_t = 0.0      # "no argument" overrides a disturb grace
+        if self._in_sleep_window() is False:
+            self.nap = True
         return "Zzz..."
 
     def _alarm(self):
-        """Wake Up Without Mistake: a clean wake, no disturb penalty."""
+        """Wake Up Without Mistake: a clean wake, no disturb penalty.  In a
+        line pet's sleep window the wake must HOLD like a rude one does --
+        with no grace the pet re-slept on the very next tick, leaving the
+        purpose-built alarm weaker than throwing any other item at the
+        sleeper (gameplay audit 2026-07-19)."""
         if not self.asleep:
             return _Refused("It's already awake.")
+        was_nap = self.nap
         self.asleep = False
         self.nap = False
         self.lights = True
         self.awake_lapse = 0.0
+        if self._in_sleep_window() is not None and not was_nap:
+            self._bed_postpone_t = float(random.randint(*DISTURB_POSTPONE))
         return "Rise and shine!"
 
     def _time_gear(self):

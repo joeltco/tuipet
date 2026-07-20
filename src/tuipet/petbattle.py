@@ -303,8 +303,15 @@ class BattleMixin:
     def surrender_reject(self):
         """ClockTic: the trainer refuses the pet's surrender request (surrender==2) and
         sends it back in — it sulks but obeys a touch more.  If it then LOSES,
-        battleEnd SETS obedience to 10 (the declined-request grudge)."""
+        battleEnd SETS obedience to 10 (the declined-request grudge).
+
+        DORMANT since the 0.5 BATTLE rewrite (2026-07-17): nothing calls this
+        cluster (surrender_reject / surrender_effect / check_surrender /
+        can_escape), record_battle never reads _surr_declined, and
+        SURR_DECLINED_LOST_OBED is unapplied -- the old comment claimed
+        otherwise (gameplay audit 2026-07-19).  Kept as the canon reference
+        for a battle flow that asks again; dormant stays dormant."""
         self._set_mood(self.mood - SURR_REJECT_MOOD_DEC)
         self._set_obedience(self.obedience + SURR_REJECT_OBED_INC)
-        self._surr_declined = True                       # consumed by record_battle
+        self._surr_declined = True                       # no live consumer (see above)
 

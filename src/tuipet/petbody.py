@@ -368,12 +368,19 @@ class BodyMixin:
                 self._do_poop(backlog=backlog)
                 self._set_anim("poop", 2.2)          # squat-and-go (DVPet poop())
         # effort decays per species (DVPet calcStrengthDecayLapse): keep training or it slips
-        self._str_t = getattr(self, "_str_t", 0.0) + dt
-        if not self.asleep and self.strength > 0 and self._str_t >= self._strength_interval:
+        if self.strength > 0:
+            self._str_t = getattr(self, "_str_t", 0.0) + dt
+            if not self.asleep and self._str_t >= self._strength_interval:
+                self._str_t = 0.0
+                self.strength -= 1
+                if self.strength == 0:
+                    self.mistake_day += 1        # StrengthDecAtZeroMissedDayChange
+        else:
+            # an EMPTY gauge has nothing to decay: the timer idling upward
+            # here meant a heal after a long-empty spell was undone ONE TICK
+            # later -- and billed a fresh missed-day (gameplay audit
+            # 2026-07-19).  A refill starts a whole fresh interval.
             self._str_t = 0.0
-            self.strength -= 1
-            if self.strength == 0:
-                self.mistake_day += 1            # StrengthDecAtZeroMissedDayChange
         # strengthCall (canon gap closed, audit 2026-07): an EMPTY effort gauge
         # left unattended 10 game-min is a care mistake + obedience -5
         # (strengthMistakePenalty), postponed after one like the other calls

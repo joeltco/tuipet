@@ -150,12 +150,14 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("THE INHERITANCE WORKS: the Digimemory chip finally "
-                 "shows in the bag and grants the ancestor's power; a "
-                 "quit during the dying beat can no longer disinherit "
-                 "the heir, the poison mushroom dies properly, account "
-                 "switching can't destroy your pet, and forged lobby "
-                 "invites are locked out.")
+    WHATS_NEW = ("FAIR PLAY: the sleep items actually work now (pill "
+                 "sleeps, caffeine delays bedtime, the alarm's wake "
+                 "holds); quitting is no longer worse than playing -- "
+                 "offline runs at the live rates, satiety and the potty "
+                 "hold, and sleep earns its energy; the life report "
+                 "card grades fairly at every stage; and ESC at the "
+                 "cup's timing bar backs out instead of silently "
+                 "forfeiting your stake.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and

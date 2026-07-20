@@ -730,12 +730,24 @@ def _offline(pet, elapsed):
     EVERY skipped second through the full lapse machinery (auto-care feeding
     mid-replay, mistakes, death while away).  On tuipet's compressed clock a
     full replay of 8h away = ~20 pet-days = a guaranteed grave; the capped
-    approximation below is the humane terminal-app adaptation."""
+    approximation below is the humane terminal-app adaptation.
+
+    Aligned with the LIVE sim (gameplay audit 2026-07-19): the old flat
+    rates ran ~6x harsher than playing -- quitting was strictly worse than
+    idling, inverting this module's own "gentle" contract -- and the gates
+    were ignored: sleepers starved (a state live sleep can't produce), the
+    Steak's satiety and the Port. Potty went void exactly while away, the
+    growth clock froze under a running age clock, and a full night away
+    restored nothing.  Now every meter moves at the pet's OWN live cadence,
+    the live gates hold, and sleep earns its energy/DP."""
     if getattr(pet, "dead", False):
         # the departed do not decay: the catch-up starved/soiled a corpse and
         # greeted 'Your pet needs care!' over the grave (dead sweep 2026-07-06);
         # even the clocks stay still -- its age is part of the epitaph
         return ""
+    from .petbase import (CALORIE_LIMIT, DAY_MINUTES, DP_MAX, DP_SLEEP_MIN,
+                          SLEEP_MIN_HUNGER_DECAY, SLEEP_MIN_TO_GAIN)
+    w0 = pet.world_seconds
     pet.world_seconds += elapsed       # keep the day/night clock turning while away
     pet.age_seconds += elapsed         # the pet ages while you're away (canon: the age
     #                                    clock timeToAgeMin has NO egg gate -- age runs
@@ -746,18 +758,67 @@ def _offline(pet, elapsed):
         # aging WITHOUT incubating was the one incoherent half-state (2026-07-06).
         pet.stage_seconds += elapsed
         return ""
+    # the growth clock runs WITH the age clock (audit 2026-07-19 supersedes
+    # the 2026-07-06 living-stage freeze): frozen, a near-elder could return
+    # to an old-age death one tick after the welcome with zero stage
+    # progress.  Evolution itself still fires only on a live tick, so
+    # reopening stays safe and predictable.
+    pet.stage_seconds += elapsed
     if elapsed < 30:
         return ""
     mins = elapsed / 60.0
+
+    # ---- the sleep split: the part of the window spent asleep ------------
+    asleep_secs = 0.0
+    try:
+        awake_inc = max(1, pet._phys().get("awake_inc", 1))
+    except Exception:
+        awake_inc = 1
+    if getattr(pet, "asleep", False):
+        if not getattr(pet, "nap", False) and pet._in_sleep_window():
+            remain = (Pet.WAKE_MINUTE - w0 % DAY_MINUTES) % DAY_MINUTES
+        else:                          # a nap, or the pressure model's night
+            remain = max(0.0, (pet.awake_limit - pet.awake_lapse) / awake_inc)
+        asleep_secs = min(elapsed, remain)
+        if asleep_secs > 0:
+            # sleep earns while away, at the live crossing rates
+            gain = max(1, getattr(pet, "_sleep_energy_gain", 3))
+            pet.energy = min(pet.max_energy, pet.energy + gain *
+                             int(asleep_secs * awake_inc / SLEEP_MIN_TO_GAIN))
+            pet.dp = min(DP_MAX, pet.dp + int(asleep_secs / DP_SLEEP_MIN))
+        if elapsed >= remain:
+            pet._wake()                # the morning came while you were away
+        else:
+            pet.awake_lapse += asleep_secs * awake_inc
+    awake_secs = elapsed - asleep_secs
     # DVPet has no passive energy decay; just re-clamp to the (per-pet) range.
     pet.energy = _clamp(pet.energy, -pet.max_energy, pet.max_energy)
     # (the offline mood drop left with the mood system; BASIC VPET 2026-07-16)
-    drop = min(pet.hunger, int(mins // 5))
+
+    # ---- hunger at the pet's own live cadence, satiety honored -----------
+    satiety = 0.0
+    if getattr(pet, "full_until", 0):
+        satiety = min(elapsed, max(0.0, pet.full_until - w0))
+    heart = max(1.0, 2 * CALORIE_LIMIT * pet._hunger_interval)   # live secs/heart
+    drop = min(pet.hunger, int(max(0.0, elapsed - satiety) / heart))
+    if asleep_secs > awake_secs:
+        # a mostly-sleeping window floors at the live sleeper's stomach
+        # (SleepMinHungerDecay): live sleep cannot starve a pet
+        drop = min(drop, max(0, pet.hunger - SLEEP_MIN_HUNGER_DECAY))
     pet.hunger -= drop
-    starved = mins > 10 and pet.hunger == 0
+    starved = pet.hunger == 0 and awake_secs > 600
     if starved:
         pet.care_mistakes += 1
-    new_poop = min(4, pet.poop + int(mins // 8))
+    # ---- poop at the live cadence; the Port. Potty holds while away ------
+    potty = 0.0
+    if getattr(pet, "auto_clean_until", 0):
+        potty = min(elapsed, max(0.0, pet.auto_clean_until - w0))
+        if potty > 0:                  # the live rule: it flushes while it holds
+            pet.poop, pet.poop_sizes = 0, []
+    # a sleeper holds it in (live: only the desperate 2x gauge goes at night)
+    window = max(0.0, min(awake_secs, elapsed - potty))
+    piles = int(window / max(1.0, pet._poop_interval))
+    new_poop = min(4, pet.poop + piles)
     poops = new_poop - pet.poop
     while len(pet.poop_sizes) < new_poop:            # keep poop == len(poop_sizes)
         pet.poop_sizes.append(pet._poop_size() if hasattr(pet, "_poop_size") else 2)
@@ -769,12 +830,16 @@ def _offline(pet, elapsed):
     # line -- the player just found a changed pet.  Say only what WAS applied.
     away = f"{int(mins)}m" if mins < 60 else f"{int(mins / 60)}h"
     parts = []
+    if asleep_secs > 60:
+        parts.append("it slept" + (" (and woke rested)" if not pet.asleep else ""))
     if starved:
         parts.append("went hungry (+1 care mistake)")
     elif drop:
         parts.append("got hungrier")
     if poops:
         parts.append(f"{poops} poop{'s' if poops > 1 else ''} piled up")
+    elif potty > 0:
+        parts.append("the potty kept things clean")
     name = getattr(pet, "name", "") or "your pet"
     if not parts:
         return f"Welcome back! ({away} away) {name} missed you."

@@ -135,3 +135,20 @@ def test_surrender_lands_a_loss_in_the_rolling_window():
     b.surrender()
     assert p.battle_log == [1] * 5 + [0]        # the fled fight counts against you
     assert p.wins == 0 and b.won is False       # classic stats stay canon
+
+
+def test_surrender_after_the_bell_never_double_records():
+    """H3 (gameplay audit 2026-07-19): Battle.surrender lacked the `if
+    self.over` guard _finish has -- called after the bout ended it filed a
+    SECOND record_battle (a phantom loss on top of the real result)."""
+    import random
+    from tuipet.battle import Battle
+    random.seed(3)
+    p = _pet()
+    b = Battle(p, enemy={"num": 100, "name": "Foe", "stage": "Champion", "hp": 10,
+                         "vaccine": 50, "data_power": 0, "virus": 0, "bits": (1, 2)})
+    while not b.over:
+        b.play_round()
+    log0, won0 = list(p.battle_log), b.won
+    b.surrender()
+    assert p.battle_log == log0 and b.won is won0    # a no-op after the bell

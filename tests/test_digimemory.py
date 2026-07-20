@@ -253,7 +253,7 @@ def test_longevity_truncates_toward_zero():
     """careBonusOnReset's longevity leg: Java long division truncates toward
     ZERO -- a life 0.4 days short loses nothing, not a whole floored day."""
     p = _pet(care_mistakes=0, mood=0, obedience=60, evol_bonus=0)
-    p.age_seconds = p._growth_period() - 0.4 * 1440  # 0.4 days short of the curve
+    p.age_seconds = p._growth_period() - 0.4 * 86400  # 0.4 days short of the curve
     base = p.final_care_grade()
-    p.age_seconds = p._growth_period() - 1.4 * 1440  # 1.4 days short: ONE whole day
+    p.age_seconds = p._growth_period() - 1.4 * 86400  # 1.4 days short: ONE whole day
     assert p.final_care_grade() == max(0, base - 1)

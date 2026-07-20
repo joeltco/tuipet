@@ -232,6 +232,9 @@ class Battle:
             self.reward = "training +2"
 
     def surrender(self):
+        if self.over:
+            return          # the bout already ended -- never a second
+            #                 record_battle on top of _finish's (audit 2026-07-19)
         self.over = True
         self.won = False
         if hasattr(self.pet, "record_battle"):

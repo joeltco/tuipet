@@ -42,3 +42,21 @@ def _pet(**kw):
 # (test_no_more_starvation_sickness left with the sickness system -- BASIC VPET 2026-07-17)
 
 
+
+
+def test_an_effort_heal_survives_a_long_empty_spell():
+    """H4 (gameplay audit 2026-07-19): _str_t kept accruing while the gauge
+    sat EMPTY, so a heal after a long drought was decayed again on the very
+    next tick -- and a fresh missed-day billed -- undoing it in one second.
+    An empty gauge holds the timer; a refill starts a whole fresh interval."""
+    p = Pet(num=-1, stage="Rookie", hunger=4, poop=0)
+    p.world_seconds = 10 * 60.0                 # mid-day: awake
+    p.strength = 0
+    p._str_t = 9999.0                           # the drought's stale build-up
+    p.tick(1.0)
+    assert p._str_t == 0.0, "an empty gauge must hold the decay timer"
+    p.strength = 4                              # the Vitamin's refill
+    md0 = p.mistake_day
+    p.tick(1.0)
+    assert p.strength == 4, "the heal must survive the next tick"
+    assert p.mistake_day == md0

@@ -878,11 +878,16 @@ class Pet(CareMixin, DnaMixin, BattleMixin, BodyMixin):
 
     def _growth_period(self):
         """The growth curve's total: egg + every stage through the current one
-        (canon _growthPeriod; the longevity leg credits life lived past it)."""
+        (canon _growthPeriod; the longevity leg credits life lived past it).
+        Mega's 9e9 STAGE_DURATION is the "never auto-evolves" sentinel, not a
+        duration -- summing it graded every Mega 0 (gameplay audit
+        2026-07-19); the curve ends at REACHING the final form."""
         order = ("Fresh", "InTraining", "Rookie", "Champion", "Ultimate", "Mega")
         total = float(self.EGG_DURATION)
         for st in order:
-            total += self.STAGE_DURATION.get(st, 0)
+            d = self.STAGE_DURATION.get(st, 0)
+            if d < 9e8:
+                total += d
             if st == self.stage:
                 break
         return total
@@ -912,8 +917,11 @@ class Pet(CareMixin, DnaMixin, BattleMixin, BodyMixin):
         # longevity: whole days lived past the growth curve (negative if short).
         # int(x / D), not x // D: canon's Java long division truncates toward
         # ZERO, so a short life loses only its WHOLE missing days (digimemory
-        # audit 2026-07-06 -- floor division over-penalized by one)
-        b += int((self.age_seconds - self._growth_period()) / DAY_MINUTES)
+        # audit 2026-07-06 -- floor division over-penalized by one).  The day
+        # is the MEMORIAL's day (86400s, "Lived N days"): the 1440 game-min
+        # day paid +175..+295 for ANY natural life, swamping the card's +-1
+        # fine structure (gameplay audit 2026-07-19)
+        b += int((self.age_seconds - self._growth_period()) / 86400.0)
         st = BONUS_STAGE.get(self.stage)
         if st:
             base, attr_bar, battle_bar = st

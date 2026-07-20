@@ -3,6 +3,41 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.5.99 — FAIR PLAY (2026-07-19)
+
+The six HIGH findings of the 2026-07-19 gameplay audit
+(`AUDIT_2026_07_19.md`), all fixed:
+
+* **The sleep items work for every pet.** Since bedtimes moved to the
+  wall clock, three 300b items quietly stopped working: the Sleep Pill
+  bought ~1 second of sleep (out of hours it now rides the daytime
+  doze and sleeps off the energy debt), the Caffeine Pill was a paid
+  no-op (it now pushes tonight's nod-off a quarter of the night), and
+  the Music Player's clean wake lasted one tick — weaker than throwing
+  a burger at the sleeper (it now grants the same grumbling-time grace
+  a disturb does, still mistake-free).
+* **The life report card grades fairly.** Every Mega graded 0 (a
+  sentinel leaked into the growth-curve math) and everything else
+  over-graded by hundreds (the longevity leg counted a day 60× too
+  small, swamping every ±1 the card is built on). Longevity now counts
+  the same days the memorial shows.
+* **Quitting is no longer worse than playing.** Offline catch-up ran a
+  different, ~6× harsher sim: it starved sleeping pets, voided the
+  Steak's 12h satiety and the Port. Potty exactly while you were away,
+  froze growth under a running age clock, and let a full night restore
+  nothing. It now moves at your pet's own live rates, honors the live
+  gates, advances growth with age, and sleep earns its energy and DP.
+* **ESC at the cup's timing bar backs out for real.** It recorded a
+  silent, stake-losing elimination while the hint said "back out" —
+  now it returns to the bracket with the match still waiting, exactly
+  like the raid. Leaving the whole cup stays the labeled forfeit.
+* **An effort heal sticks.** The decay timer kept running while the
+  gauge sat empty, so a Vitamin after a drought was partly undone one
+  second later — and billed a fresh missed-day.
+* Under the hood: a battle surrender after the bell can no longer file
+  a second phantom loss, and the dormant surrender-morale cluster's
+  false "consumed by record_battle" comment now tells the truth.
+
 ## 0.5.98 — THE INHERITANCE WORKS (2026-07-19)
 
 The five critical findings of the 2026-07-19 gameplay audit

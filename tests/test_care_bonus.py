@@ -34,11 +34,34 @@ def test_the_full_report_card_adds_up():
             vaccine=140, data_power=120, virus=90, obedience=800)
     p.world_seconds = 12 * 60.0
     p.battles, p.wins = 100, 95
-    p.age_seconds = p._growth_period() + 3 * 1440
+    p.age_seconds = p._growth_period() + 3 * 86400
     p.evol_bonus = 0                # the etch spent it
     # clean +1, obedient +1, winrate +1, 3 days +3, mega +3,
     # attr 350>=300 +1, battles>75 +1  (the happy leg left with the mood system)
     assert p.final_care_grade() == 11
+
+
+def test_a_real_mega_life_no_longer_grades_zero():
+    """H2 (gameplay audit 2026-07-19): _growth_period summed Mega's 9e9
+    "never auto-evolves" sentinel, so int((age - 9e9)/day) buried every real
+    Mega at max(0, ...) = 0 -- the best life in the game always seeded +0."""
+    p = Pet(num=296, name="Elder", stage="Mega", attribute="Vaccine",
+            vaccine=140, data_power=120, virus=90, obedience=800)
+    p.world_seconds = 12 * 60.0
+    p.age_seconds = 432000.0        # a full natural Mega lifespan (5 real days)
+    assert p._growth_period() < 1e5                     # the sentinel stays out
+    assert p.final_care_grade() > 0
+
+
+def test_longevity_speaks_the_memorial_day():
+    """H2's other end: dividing by the 1440 game-min day paid +175..+295 for
+    ANY natural life, swamping the card's +-1 legs.  The longevity leg counts
+    the same 86400s day the memorial's "Lived N days" shows."""
+    p = _pet()
+    p.age_seconds = p._growth_period() + 2 * 86400      # 2 shown days past the curve
+    two = p.final_care_grade()
+    p.age_seconds = p._growth_period()
+    assert two == p.final_care_grade() + 2
 
 
 def test_mistakes_and_misery_drag_it_to_the_floor():

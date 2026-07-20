@@ -241,3 +241,62 @@ def test_full_cared_night_refills_energy_and_dp_without_mistakes():
     assert p.care_mistakes == m0              # the ritual done right costs nothing
     assert p.energy >= p.max_energy - 3       # a night's rest refills
     assert p.dp == DP_MAX                     # Pen20: sleep recharges the meter
+
+
+# ---- the sleep items on the bedtime clock (H1, gameplay audit 2026-07-19) ----
+
+def test_sleep_pill_sticks_outside_the_window():
+    """The pill's real sleep outside a line pet's window was woken by the
+    very next tick's 7:00-sharp check -- one second of sleep for 300b.  Out
+    of hours it rides the daytime DOZE shape now and sleeps in earnest."""
+    p = _line_pet()                              # noon, wide awake
+    p.energy = 0                                 # a debt worth sleeping off
+    p.add_item("sleeping_pill")
+    out = p.use_item("sleeping_pill")
+    assert "Zzz" in str(out)
+    assert p.asleep and p.nap                    # the doze shape
+    for _ in range(120):                         # two game-hours later...
+        p.tick(1.0)
+    assert p.asleep, "the pill's sleep must outlast the next tick"
+    assert p.energy > 0, "a real sleep earns energy"
+
+
+def test_caffeine_pushes_a_line_pets_bedtime():
+    """'Bedtime pushed later' nudged sleep_lapse, which line pets never
+    read -- a paid no-op for every current pet.  It pushes the wall-clock
+    nod-off now, a quarter of the night."""
+    bt = lines.bedtime_minutes(_line_pet())
+    assert bt is not None
+    p = _line_pet()
+    p.world_seconds = float(bt - 1)              # one game-min before bedtime
+    p.add_item("caffeine_pill")
+    p.use_item("caffeine_pill")
+    assert getattr(p, "_bed_postpone_t", 0) > 0
+    for _ in range(30):
+        p.tick(1.0)
+    assert not p.asleep, "tonight runs long"
+    q = _line_pet()                              # the control pet retires on time
+    q.world_seconds = float(bt - 1)
+    for _ in range(30):
+        q.tick(1.0)
+    assert q.asleep
+
+
+def test_music_player_wake_holds_through_the_night():
+    """The clean wake granted no grace, so an in-window line pet re-slept on
+    the very next tick -- the purpose-built alarm was WEAKER than throwing
+    any other item at the sleeper (which routes through _disturbed's real
+    grumbling time).  It grants the same postpone now, mistake-free."""
+    bt = lines.bedtime_minutes(_line_pet())
+    p = _line_pet()
+    p.world_seconds = float(bt + 30)             # mid-window
+    p.tick(1.0)
+    assert p.asleep and not p.nap                # the night took it
+    d0, m0 = p.disturb, p.mistake_day
+    p.add_item("music_player")
+    p.use_item("music_player")
+    assert not p.asleep
+    assert (p.disturb, p.mistake_day) == (d0, m0)   # its whole point: no penalty
+    for _ in range(5):
+        p.tick(1.0)
+    assert not p.asleep, "the wake must hold longer than one tick"

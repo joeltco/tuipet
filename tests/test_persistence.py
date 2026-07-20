@@ -80,9 +80,68 @@ def test_offline_decay_applies():
     # (the offline mood decay left with the mood system)
     assert pet.hunger < 4, "hunger should drop while away"
     assert "away" in msg
-    # don't-flip: BOUNDED decay means no growth/evolution while away -- only
-    # the EGG's incubation replays (canon hatch); living stages stay frozen
-    assert pet.stage_seconds == 0
+    # the growth clock runs with the age clock (H5, audit 2026-07-19 --
+    # supersedes the 2026-07-06 living-stage freeze): frozen, a near-elder
+    # returned to an old-age death with zero stage progress.  Evolution
+    # still fires only on a live tick.
+    assert pet.stage_seconds == 2 * 3600
+
+
+def test_offline_rates_match_the_live_sim():
+    """H5 (gameplay audit 2026-07-19): the flat mins//5 hunger and mins//8
+    poop ran ~6x harsher than playing -- quitting was strictly worse than
+    idling.  Offline moves at the pet's OWN live cadences now: ~1800s per
+    hunger heart, ~2700s per pile (modal species)."""
+    pet = Pet(num=-1, stage="Rookie")
+    pet.hunger, pet.poop = 4, 0
+    persistence._offline(pet, 2 * 3600)          # 2h away
+    # live: 7200s / ~1800s = 4 hearts... clamped by what it had; the OLD
+    # code took all 4 within 20 minutes.  Allow the per-species scale.
+    assert pet.hunger == 0
+    assert 1 <= pet.poop <= 3, "2h should land ~2 piles at the live cadence, not 4"
+    pet2 = Pet(num=-1, stage="Rookie")
+    pet2.hunger, pet2.poop = 4, 0
+    persistence._offline(pet2, 1800)             # 30 min away
+    assert pet2.hunger >= 3, "30 min is ~one live heart, the old code took 6"
+    assert pet2.poop == 0, "30 min is under one live pile interval"
+
+
+def test_offline_honors_the_live_gates():
+    """H5's gate half: the Steak's satiety and the Port. Potty must hold
+    while away (they were void exactly when bought), and a sleeping pet
+    must not be starved into a care mistake -- live sleep can't produce
+    that state."""
+    pet = Pet(num=-1, stage="Rookie")
+    pet.hunger = 4
+    pet.full_until = pet.world_seconds + 12 * 3600      # the Steak's 12h
+    persistence._offline(pet, 6 * 3600)
+    assert pet.hunger == 4, "satiety must hold offline"
+    pet2 = Pet(num=-1, stage="Rookie")
+    pet2.poop, pet2.poop_sizes = 2, [2, 2]
+    pet2.auto_clean_until = pet2.world_seconds + 24 * 3600
+    persistence._offline(pet2, 6 * 3600)
+    assert pet2.poop == 0, "the Port. Potty flushes while it holds"
+    pet3 = Pet(num=-1, stage="Rookie")
+    pet3.hunger, pet3.asleep, pet3.lights = 4, True, False
+    pet3.awake_lapse, pet3.awake_limit = 0.0, 600.0     # a full night owed
+    m0 = pet3.care_mistakes
+    persistence._offline(pet3, 600)                     # away for the night
+    assert pet3.hunger >= 3, "a sleeping stomach floors, never starves"
+    assert pet3.care_mistakes == m0
+
+
+def test_offline_sleep_earns_energy_and_dp():
+    """H5's third half: a full night away used to restore NOTHING -- no
+    energy, no DP.  Sleep earns at the live crossing rates now, and the
+    morning wakes the pet."""
+    pet = Pet(num=-1, stage="Rookie")
+    pet.asleep, pet.nap, pet.lights = True, False, False
+    pet.energy, pet.dp = 0, 0
+    pet.awake_lapse, pet.awake_limit = 0.0, 600.0       # a 10-game-hour night
+    persistence._offline(pet, 3600)                     # away well past it
+    assert pet.energy > 0, "sleep must earn energy offline"
+    assert pet.dp > 0, "sleep must refill DP offline"
+    assert not pet.asleep, "the morning came while away"
 
 
 def test_offline_cap_at_36h():
