@@ -3,6 +3,20 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.5.104 — THE DEVICE POWERS ON (2026-07-20)
+
+Title-screen polish round (Joel: "lets polish the title screen"):
+
+* **Six boot transitions, one drawn at random each launch.** The
+  all-segments power-on flash stays; what follows is now the launch's own
+  draw: dissolve, wipe, scan, blinds, iris, or checker. The transition
+  window grew from 0.5s to 0.8s so the sweeping effects read as motion.
+* **Attract mode.** Every 8 seconds the title mascot transitions to a
+  different mon from the roster, replaying the boot's own effect — one
+  visual language per power-on.
+* **The PRESS ENTER prompt pulses** bold/dim at constant width, and the
+  installed version rides the strip beside it (blank on source runs).
+
 ## 0.5.103 — ONLINE PLAYS FOR THE LADDER (2026-07-20)
 
 The last open finding of the 2026-07-19 gameplay audit, ruled by Joel

@@ -7,7 +7,8 @@ from .theme import LCD_ON, LCD_BG
 
 COLS, PXH = 40, 24
 BOOT_BLIP = 4      # frames of all-segments-on (power-on flash)
-BOOT_FADE = 5      # frames of dither dissolve into the title
+BOOT_FADE = 8      # frames of transition from the flash into the title
+CYCLE = 80         # frames between attract-mode mascot swaps (8s at 10Hz)
 # tiny 3x5 pixel font for the wordmark
 _FONT = {
     "T": ["111", "010", "010", "010", "010"],
@@ -30,19 +31,87 @@ def _wordmark(s):
 WORD = _wordmark("TUIPET")
 
 
+# --- boot transitions -------------------------------------------------------
+# Each takes the finished title buffer and a step in 0..BOOT_FADE-1 and lays
+# lit segments over the not-yet-revealed part; every effect must reveal
+# SOMETHING at step 0 (the flash has to visibly break the moment the
+# transition starts) and keep moving every step.
+
+def _fx_dissolve(buf, step):
+    keep = BOOT_FADE - step                      # thinning noise as the title emerges
+    for y in range(PXH):
+        for x in range(COLS):
+            if (x * 7 + y * 13 + step * 5) % (BOOT_FADE + 1) < keep:
+                buf[y][x] = 1
+
+
+def _fx_wipe(buf, step):
+    edge = (step + 1) * COLS // BOOT_FADE        # curtain sweeps left to right
+    for y in range(PXH):
+        for x in range(edge, COLS):
+            buf[y][x] = 1
+
+
+def _fx_scan(buf, step):
+    edge = (step + 1) * PXH // BOOT_FADE         # CRT scan, top to bottom
+    for y in range(edge, PXH):
+        for x in range(COLS):
+            buf[y][x] = 1
+
+
+def _fx_blinds(buf, step):
+    slit = 1 + step * 5 // (BOOT_FADE - 1)       # venetian slats open downward
+    for y in range(PXH):
+        if y % 6 >= slit:
+            for x in range(COLS):
+                buf[y][x] = 1
+
+
+def _fx_iris(buf, step):
+    rx = (step + 1) * (COLS // 2) // BOOT_FADE   # box iris opens from centre
+    ry = max(1, (step + 1) * (PXH // 2) // BOOT_FADE)
+    cx, cy = COLS // 2, PXH // 2
+    for y in range(PXH):
+        for x in range(COLS):
+            if abs(x - cx) > rx or abs(y - cy) > ry:
+                buf[y][x] = 1
+
+
+def _fx_checker(buf, step):
+    for y in range(PXH):                         # 4x4 tiles flip in, staggered
+        for x in range(COLS):
+            if ((x // 4) * 3 + (y // 4) * 7) % BOOT_FADE > step:
+                buf[y][x] = 1
+
+
+BOOT_FX = (_fx_dissolve, _fx_wipe, _fx_scan, _fx_blinds, _fx_iris, _fx_checker)
+
+
 class TitlePanel:
     """Shows a bobbing mascot + the TUIPET wordmark; any key starts the game (q quits)."""
 
     def __init__(self):
         _, by = data.load_sprites()
-        pool = [n for n, r in by.items()
-                if r["stage"] in ("Rookie", "Champion", "Ultimate", "Mega")
-                and not data.is_placeholder(n)]
-        self.num = random.choice(pool) if pool else next(iter(by))
+        self.pool = [n for n, r in by.items()
+                     if r["stage"] in ("Rookie", "Champion", "Ultimate", "Mega")
+                     and not data.is_placeholder(n)]
+        self.num = random.choice(self.pool) if self.pool else next(iter(by))
+        self.fx = random.choice(BOOT_FX)     # this power-on's transition
         self.frame_i = 0
+        self._fade = 0                       # >0 while a mascot swap plays in
+        from . import update
+        self.version = update.current_version() or ""   # blank when running from source
 
     def anim(self):
         self.frame_i += 1
+        if self._fade:
+            self._fade -= 1
+        # attract mode: transition to a fresh mascot every few seconds, replaying
+        # this boot's own effect so the swap speaks the power-on's visual language
+        if (self.frame_i > BOOT_BLIP + BOOT_FADE and len(self.pool) > 1
+                and self.frame_i % CYCLE == 0):
+            self.num = random.choice([n for n in self.pool if n != self.num])
+            self._fade = BOOT_FADE
 
     def strip(self):
         """The press-to-start prompt rides the #msg strip.  It used to be set
@@ -50,7 +119,12 @@ class TitlePanel:
         later (title audit 2026-07-04) — panels own their strips now."""
         if self.frame_i < BOOT_BLIP + BOOT_FADE:
             return ""                            # let the power-on play in silence
-        return "[b]▸ PRESS ENTER ◂[/b]"
+        tag = f"  [dim]v{self.version}[/dim]" if self.version else ""
+        # pulse bright/dim rather than blink off: same visible width both
+        # phases, so the centred strip never jumps
+        if self.frame_i % 12 < 8:
+            return "[b]▸ PRESS ENTER ◂[/b]" + tag
+        return "[dim]▸ PRESS ENTER ◂[/dim]" + tag
 
     def key(self, k):
         if k == "q":
@@ -77,16 +151,15 @@ class TitlePanel:
             for x, ch in enumerate(line):
                 if ch == "1" and 0 <= wy + y < PXH and 0 <= wx + x < COLS:
                     buf[wy + y][wx + x] = 1
-        # power-on: all segments flash black, then the title dissolves in from static
+        # power-on: all segments flash black, then this boot's randomly drawn
+        # transition (BOOT_FX) plays the title in
         boot = self.frame_i
         if boot < BOOT_BLIP:
             buf = [[1] * COLS for _ in range(PXH)]
         elif boot < BOOT_BLIP + BOOT_FADE:
-            keep = BOOT_BLIP + BOOT_FADE - boot      # thinning noise as the title emerges
-            for y in range(PXH):
-                for x in range(COLS):
-                    if (x * 7 + y * 13 + boot * 5) % (BOOT_FADE + 1) < keep:
-                        buf[y][x] = 1
+            self.fx(buf, boot - BOOT_BLIP)
+        elif self._fade:
+            self.fx(buf, BOOT_FADE - self._fade)     # attract swap: same effect, new mascot
         t = Text()
         for cy in range(PXH // 2):
             ty, byy = cy * 2, cy * 2 + 1

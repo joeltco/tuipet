@@ -160,25 +160,55 @@ def test_the_home_scene_is_wired_to_the_egg():
     assert a.background(file="tourneyBack") != sa    # the arena override still wins
 
 
-def test_title_boot_flashes_dissolves_then_settles():
-    """Title audit 2026-07-04: the power-on sequence was unpinned — all
-    segments flash, static thins into the wordmark, then only the mascot's
-    gentle //4 bob moves.  Budget-checked every frame."""
+def test_title_boot_flashes_transitions_then_settles_for_every_fx():
+    """Title audit 2026-07-04, extended 2026-07-20: the power-on flash is
+    common, then a per-launch random BOOT_FX transition plays the title in.
+    EVERY effect must break the flash on its first step, keep moving, and
+    settle to only the mascot's //4 bob.  Budget-checked every frame."""
     import random
-    from tuipet.titlescreen import TitlePanel, BOOT_BLIP, BOOT_FADE
+    from tuipet.titlescreen import TitlePanel, BOOT_BLIP, BOOT_FADE, BOOT_FX
+    random.seed(11)
+    assert TitlePanel().fx in BOOT_FX             # launch draws from the fx pool
+    for fx in BOOT_FX:
+        pan = TitlePanel()
+        pan.fx = fx
+        frames = []
+        for _ in range(BOOT_BLIP + BOOT_FADE + 9):
+            t = _render(pan)
+            frames.append(t.markup)
+            pan.anim()
+        flash = frames[0]
+        assert flash.count("▀") == 12 * 40        # all segments lit
+        name = fx.__name__
+        assert frames[BOOT_BLIP] != flash, name          # step 0 breaks the flash...
+        assert frames[BOOT_BLIP] != frames[BOOT_BLIP + 2], name   # ...and keeps moving
+        settled = frames[BOOT_BLIP + BOOT_FADE:]
+        assert len(set(settled)) == 2, name       # only the two bob poses remain
+
+
+def test_title_attract_cycles_mascots_and_the_prompt_pulses():
+    """Title polish 2026-07-20: every CYCLE frames the mascot dissolves to a
+    DIFFERENT mon (the boot dither reused), and the PRESS ENTER prompt pulses
+    bold/dim at constant visible width so the centred strip never jumps."""
+    import random
+    from tuipet.titlescreen import TitlePanel, BOOT_BLIP, BOOT_FADE, CYCLE
     random.seed(11)
     pan = TitlePanel()
-    frames = []
-    for _ in range(BOOT_BLIP + BOOT_FADE + 9):
-        t = _render(pan)
-        frames.append(t.markup)
+    phases, nums = set(), []
+    for f in range(CYCLE + BOOT_FADE + 2):
+        _render(pan)                              # every frame renders in budget
+        if f > BOOT_BLIP + BOOT_FADE:
+            phases.add(pan.strip().split("▸")[0])
+        if not nums or nums[-1] != pan.num:
+            nums.append(pan.num)
         pan.anim()
-    flash = frames[0]
-    assert flash.count("▀") == 12 * 40            # all segments lit
-    assert frames[BOOT_BLIP] != flash             # the static wipe differs...
-    assert frames[BOOT_BLIP] != frames[BOOT_BLIP + 2]   # ...and thins each beat
-    settled = frames[BOOT_BLIP + BOOT_FADE:]
-    assert len(set(settled)) == 2                 # only the two bob poses remain
+    assert len(nums) == 2 and nums[0] != nums[1]  # exactly one swap, a new face
+    assert pan._fade == 0                         # ...whose dissolve has settled
+    assert phases == {"[b]", "[dim]"}             # both pulse phases showed
+    stripped = pan.strip()
+    assert "ENTER" in stripped
+    if pan.version:                               # source runs carry no metadata
+        assert f"v{pan.version}" in stripped
 
 
 def test_assist_card_prices_match_canon_and_toggle_names_a_helper():

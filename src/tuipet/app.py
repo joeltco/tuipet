@@ -150,12 +150,11 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("ONLINE PLAYS FOR THE LADDER: online PvP now pays its "
-                 "purse and your season-ladder standing, and nothing "
-                 "else - wins, battle counts and the evolution/egg "
-                 "gates they feed are earned in the cup and against "
-                 "the world (untrusted peer cards were farmable by "
-                 "colluding tamers).")
+    WHATS_NEW = ("THE DEVICE POWERS ON: the title screen draws one of "
+                 "six boot transitions each launch (dissolve, wipe, "
+                 "scan, blinds, iris, checker), cycles mascots in "
+                 "attract mode with the same effect, and the PRESS "
+                 "ENTER prompt now pulses beside the version.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and
