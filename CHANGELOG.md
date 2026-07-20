@@ -3,6 +3,17 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.5.112 — BACKGROUNDS NAMED RIGHT (2026-07-20)
+
+* **Background scenes are named and organized by what they actually show.**
+  Audited by looking at the pixels (and a structural-correlation pass), not the
+  filenames: the sandy shore mislabelled "Sandy Seafloor" is now **Beach**; the
+  real seafloor is one undersea scene at three lightings — **Seafloor / Deep
+  Seafloor / Sunset Seafloor**; and the catalog is grouped into its time-of-day
+  families (island sunset/day/night, city + city sunset, boulevard + dusk, bay
+  bridge day/night, factory day/night, flower field day/sunset). Scene keys are
+  unchanged, so saved pets keep their background.
+
 ## 0.5.111 — SMOOTHER PILL CHEW (2026-07-20)
 
 * **The half-eaten pill holds longer.** The pill's eat animation uses the two

@@ -5,8 +5,12 @@ backgrounds") -- the scene behind the mon is decided by the EGG it hatched
 from and stands for the pet's whole life, exactly like the real device's
 per-version backgrounds (the old egg0Back..egg11Back sheets this system
 replaces).  The art is the DSprite rebuild's rip set (Joel-approved source
-2026-07-15), one look per scene: no time-of-day sheets -- day/night lives
-on in the clock, the HUD sky glyph and the arena's own 5-frame sheet.
+2026-07-15).  Several scenes ship as time-of-day / recolour FAMILIES of one
+composition -- verified by structural correlation of the actual pixels, not
+filenames (scene-name audit 2026-07-20): the island at sunset/day/night, the
+flower field day/sunset, the seafloor day/deep/sunset, the city towers and
+the bay bridge and the factory day/night, the tree path green/golden.  They
+are grouped and named as such in NAMES below.
 
 The egg->scene wiring is derived, not invented: each egg's hatch line maps
 through its members' natural habitats (digimon.csv Habitat, the same table
@@ -17,39 +21,66 @@ flavor overrides are marked inline.
 
 DEFAULT = "greenhills"          # the DM20 background rip; also the fallback
 
-# key -> display name (the clone catalog + the off-catalog data scenes)
-# DISPLAY names only -- the KEYS are wired (EGG_BG, pet.bg_pick in saves)
-# and never change.  THE FAMILY LAW (scene-name audit, Joel 2026-07-19:
-# "sloppy scene names... 3 sea floor scenes, one named different; golden
-# wood has a green alternative named different"): recolours of one
-# composition share a family word -- the V-valley trio are Hollows
-# (green/golden/teal), the undersea trio are Seafloors (sandy/blue/deep,
-# by measured brightness), the movie bridge twins are both Bay Bridge.
+# key -> display name (the clone catalog + the off-catalog data scenes).
+# DISPLAY names only -- the KEYS are wired (EGG_BG, pet.bg_pick in saves) and
+# never change.  THE FAMILY LAW (scene-name audit 2026-07-20, done by LOOKING
+# at the pixels + structural correlation, Joel: "you keep guessing instead of
+# looking at the actual pictures... duplicates with time differences"): a
+# scene shipped as several time-of-day / recolour sheets shares a family word,
+# and each member says its time.  Corrections this pass:
+#   * cove is a BEACH (sand foreground, water beyond) -- it was mislabelled
+#     "Sandy Seafloor" and grouped with the seafloors, but it has ZERO
+#     structural correlation with them.  It is its own shore.
+#   * the real seafloor is ONE undersea scene at three lightings:
+#     underwater=Seafloor (day), seafloor=Deep Seafloor, sunsetshore=Sunset
+#     Seafloor.  (The old catalog counted the beach as the third seafloor and
+#     left the actual sunset seafloor named like a "shore" -- backwards.)
+#   * tealhollow is a SEPARATE teal-underwater V, not the green/golden path
+#     recolour (corr 0.40, not 1.00) -- kept apart from the tree-path pair.
+# Grouped by verified family:
 NAMES = {
+    # grasslands & meadows
     "greenhills":   "Green Hills",
-    "desert":       "Desert",
+    "moonmeadow":   "Moonlit Meadow",   # a daytime cool-toned meadow (name kept)
     "lakeside":     "Lakeside",
-    "mountains":    "Mountains",
-    "cove":         "Sandy Seafloor",
-    "forestgate":   "Green Hollow",
+    # flower field -- one scene, day + sunset
     "flowerfield":  "Flower Field",
     "blossom":      "Flower Field Sunset",
+    # tree-lined path -- one composition, green + golden recolour (corr 1.00)
+    "forestgate":   "Green Hollow",
     "goldenwood":   "Golden Hollow",
+    # mountains, ice, desert
+    "mountains":    "Mountains",
+    "frozenpeak":   "Frozen Peak",
+    "desert":       "Desert",
+    # island mountain -- one scene, sunset + day + night
+    "fileisland":   "Island Sunset",
+    "islandsea":    "Island Day",
+    "islandnight":  "Island Night",
+    # water -- the beach (a shore), the seafloor trio (one undersea scene,
+    # day + deep + sunset), and the separate teal-underwater V
+    "cove":         "Beach",
+    "underwater":   "Seafloor",
+    "seafloor":     "Deep Seafloor",
+    "sunsetshore":  "Sunset Seafloor",
     "tealhollow":   "Teal Hollow",
-    "moonmeadow":   "Moonlit Meadow",
-    "underwater":   "Blue Seafloor",
+    # fire & jungle
     "volcano":      "Volcano",
+    "jungle":       "Jungle",
+    # city -- towers (day+dusk), boulevard (day+dusk), bay bridge (day+night),
+    # factory (day+night), the white waterfront skyline, the data tunnel
+    "city":         "City",
+    "citysunset":   "City Sunset",
+    "boulevard":    "Boulevard",
+    "boulevardusk": "Boulevard Dusk",
     "baybridge":    "Bay Bridge",
     "bridgenight":  "Bay Bridge Night",
+    "factory":      "Factory",
+    "factorynight": "Factory Night",
+    "cityday":      "White City",
     "datatunnel":   "Data Tunnel",
-    "frozenpeak":   "Frozen Peak",
-    "city": "City", "cityday": "White City", "citysunset": "City Sunset",
-    "boulevard": "Boulevard", "boulevardusk": "Boulevard Dusk",
-    "factory": "Factory", "factorynight": "Factory Night",
-    "fileisland": "Island Sunset", "islandsea": "Island Day",
-    "islandnight": "Island Night", "jungle": "Jungle",
-    "seafloor": "Deep Seafloor", "sunsetshore": "Sunset Seafloor",
-    "tourneyBack": "Arena",
+    # arena
+    "tourneyBack":  "Arena",
 }
 
 # egg index -> scene.  Derivation key: (h) = the line's natural habitat via

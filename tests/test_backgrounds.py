@@ -79,14 +79,17 @@ def test_the_pet_wears_its_egg_scene_for_life():
 
 def test_scene_display_names_follow_the_family_law():
     """Recolours of one composition share a family word (scene-name audit
-    2026-07-19): the V-valley trio are Hollows, the undersea trio are
-    Seafloors, the movie bridge twins are both Bay Bridge.  Display names
-    stay unique; keys never change (saves carry them)."""
+    2026-07-20, done by LOOKING at the pixels).  Corrections: cove is a BEACH,
+    not a seafloor (zero structural correlation with them); the real seafloor
+    is ONE undersea scene at three lightings -- underwater/seafloor/sunsetshore.
+    Display names stay unique; keys never change (saves carry them)."""
     from tuipet import backgrounds as bgs
     for k in ("forestgate", "goldenwood", "tealhollow"):
         assert "Hollow" in bgs.NAMES[k], k
-    for k in ("cove", "underwater", "seafloor", "sunsetshore"):
+    # the seafloor trio is one undersea scene, day/deep/sunset -- NOT cove
+    for k in ("underwater", "seafloor", "sunsetshore"):
         assert "Seafloor" in bgs.NAMES[k], k
+    assert bgs.NAMES["cove"] == "Beach"                # a shore, not a seafloor
     for k in ("islandsea", "fileisland", "islandnight"):
         assert bgs.NAMES[k].startswith("Island"), k   # one island, three times
     assert bgs.NAMES["blossom"].startswith("Flower Field")

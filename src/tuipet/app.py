@@ -150,9 +150,9 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("The pill eats a little smoother - the half-eaten pill now "
-                 "holds through the middle of the chew instead of flashing "
-                 "by on its way to gone.")
+    WHATS_NEW = ("Backgrounds are named right now - the beach is a Beach (not "
+                 "a seafloor), the three undersea scenes read as one Seafloor "
+                 "day/deep/sunset, and the scenes are organized by family.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and
