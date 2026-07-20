@@ -56,7 +56,9 @@ def test_atomic_write_still_raises_on_a_real_bug(tmp_path):
 def test_invite_resp_without_from_name_does_not_crash():
     s = LobbyState()
     pan = _panel(s)
-    # a relayed / malformed busy-decline with no from_name (protocol drift)
+    # a relayed / malformed busy-decline with no from_name (protocol drift);
+    # ledgered first -- an UNSOLICITED resp is dropped outright (C5 2026-07-19)
+    pan._sent_invites.add((9, "battle"))
     s.inbox.append({"t": "invite_resp", "from_id": 9, "kind": "battle", "busy": True})
     pan.anim()                                       # drains the inbox
     assert "busy" in pan.status and "?" in pan.status  # rendered via the fallback

@@ -132,6 +132,9 @@ class Pet(CareMixin, DnaMixin, BattleMixin, BodyMixin):
     digimemory: dict = _dcf(default_factory=dict)   # held inheritance data (item 32 payload)
     birthday_note: str = ""         # transient: the HUD's birthday announcement
     saved_from_death: int = 0       # _savedFromDeath: each rescue raises the next bar
+    death_banked: bool = False      # this death's etch/seed ceremony already ran
+    #                                 (rides the save: a quit mid-dying-beat used
+    #                                 to disinherit the heir; audit 2026-07-19)
     # long-horizon clocks (persisted: losing these on reload forgave starvation,
     # wiped the bowel gauge and re-armed once-per-night mistakes -- audit 2026-07)
     _starve_t: float = 0.0          # the 12h starvation death clock
@@ -431,6 +434,7 @@ class Pet(CareMixin, DnaMixin, BattleMixin, BodyMixin):
         Bakemon / Ponchomon / Dexmon...).  With none valid it lives on as-is.
         Returns the old num when a death evolution fired, else None."""
         self.dead = False
+        self.death_banked = False       # the NEXT death owes a fresh ceremony
         self.saved_from_death += 1
         self.hunger = HUNGER_AFTER_SAVED
         self.sick = False               # the clone's revival fix: a fresh

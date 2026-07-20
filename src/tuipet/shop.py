@@ -53,6 +53,7 @@ CATALOG = {
     "x_antibody":      ("X-Antibody",      "i:79", 2000, "Evolution", "the X-Antibody takes hold", "the X factor"),
     "dna_crystal":     ("DNA Crystal",     "i:35", 1500, "Evolution", "+10 own-Field DNA banked", "a Field's worth of code"),
     "revive_floppy":   ("Rev. Floppy",     "i:32", 2500, "Medical", "raise the dead", "one more chance"),
+    "digimemory":      ("Digimemory",      "i:32", None, "Medical", "the ancestor's Va·D·Vi + lifespan", "its data lives on"),
     # ---- TOYS (the shows the engine already ships; small LIVE stat dials:
     # exercise sheds weight, couch time buys energy at a weight price) --------
     "ball":            ("Ball",            "i:3",  100,  "Toy", "play! weight -1", "a grand kickabout"),
@@ -86,6 +87,9 @@ LEGACY_KEYS = {
     "care_mistake_eraser": "textbook", "alarm_clock": "music_player",
     "time_gear": "grow_capsule", "training_pack": "dumbbell",
     "poop_clean_pill": "port_potty",
+    # the inheritance chip circulated under its raw icon key -- a key the
+    # bag could neither show nor use (gameplay audit 2026-07-19)
+    "i:32": "digimemory",
 }
 
 # the crest eggs: used from the bag, they trigger the classic ARMOR evolution

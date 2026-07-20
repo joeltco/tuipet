@@ -78,6 +78,12 @@ class LobbyPanel(BoutMixin, ChatMixin):
         self.action_for = None
         self.pm_to = None              # (id, name): the input line is a PM compose
         self.invite_prompt = None
+        self._sent_invites = set()     # (pid, kind) awaiting a response: an
+        #                                invite_resp with no entry here is a
+        #                                forgery and is dropped (a crafted
+        #                                accept used to force this client into
+        #                                a session -- including a PERMANENT
+        #                                jogress fusion; audit 2026-07-19)
         self.dm_peer = None            # (id, name): the open DM thread
         self.dm_scroll = 0             # DM scrollback offset (0 = live tail)
         self.sfx = None
@@ -271,6 +277,10 @@ class LobbyPanel(BoutMixin, ChatMixin):
                 s.inbox.remove(m)
             elif t == "invite_resp":
                 s.inbox.remove(m)
+                rk = (m.get("from_id"), m.get("kind"))
+                if rk not in self._sent_invites:
+                    continue        # a response to an invite never sent: forged
+                self._sent_invites.discard(rk)
                 if m.get("accept"):
                     if self.phase == "lobby":
                         self._enter_session(m.get("from_id"), m.get("from_name", "?"), m.get("kind"), host=True)
@@ -297,6 +307,7 @@ class LobbyPanel(BoutMixin, ChatMixin):
         # drop -> the client retries on its own; say so instead of stranding a banner
         if getattr(s, "reconnecting", False):
             self._seen_ids = None                  # a refilled roster is not a wave of joins
+            self._sent_invites.clear()             # connection ids died with the drop
             if self.phase == "lobby":
                 self.status = "Connection lost — reconnecting…"
             self._was_down = True
@@ -561,13 +572,13 @@ class LobbyPanel(BoutMixin, ChatMixin):
                 if err:
                     self.status, self.action_for = err, None
                     return None
-                self.client.invite(pid, "battle"); self.status = f"Battle invite → {pname}"; self.action_for = None
+                self.client.invite(pid, "battle"); self._sent_invites.add((pid, "battle")); self.status = f"Battle invite → {pname}"; self.action_for = None
             elif k in ("j", "J") and plive:
                 err = jogress.can_jogress(self.pet)
                 if err:
                     self.status, self.action_for = err, None
                     return None
-                self.client.invite(pid, "jogress"); self.status = f"Jogress invite → {pname}"; self.action_for = None
+                self.client.invite(pid, "jogress"); self._sent_invites.add((pid, "jogress")); self.status = f"Jogress invite → {pname}"; self.action_for = None
             elif k in ("p", "P") and not plive:
                 self.client.ping(pid)
                 self.status = f"Pinged {pname} \u2014 asked them to hop in the lobby!"

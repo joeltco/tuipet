@@ -170,3 +170,51 @@ def test_revive_bar_rises_with_each_rescue():
     assert not p.dead and p.saved_from_death == 1
     bar1 = HITS_TO_SAVE * (p.saved_from_death + 1)
     assert bar1 == 2 * bar0                       # the second rescue costs double
+
+
+def test_poison_mushroom_dies_like_every_other_death():
+    """C3 (gameplay audit 2026-07-19): _deadly hand-set dead=True from the
+    paused bag panel -- asleep/hatching stayed set and the app's was_dead
+    tick edge never saw the between-ticks death (no dying beat, no mash
+    window, no banking).  It routes through _die now."""
+    p = Pet(num=102, name="D", stage="Champion", attribute="Virus",
+            hunger=4, poop=0, world_seconds=10 * 60.0)
+    p.asleep = True
+    p.add_item("poison_mushroom")
+    p.use_item("poison_mushroom")
+    assert p.dead and p.death_cause == "a poison mushroom"
+    assert not p.asleep and not p.hatching
+
+
+def test_a_between_ticks_death_still_gets_the_dying_beat():
+    """The app pairs with C3 by checking STATE, not a was_dead edge: a dead,
+    un-ceremonied pet with no dying fx in flight starts the beat on the
+    next tick, wherever the death landed."""
+    import asyncio
+    from tuipet import data, persistence
+    from tuipet.app import TuiPetApp
+    _, by = data.load_sprites()
+    num = next((n for n, r in by.items()
+                if r["stage"] == "Rookie" and not data.is_placeholder(n)), None)
+    if num is None:
+        import pytest
+        pytest.skip("sprite assets not installed")
+    pet = Pet.from_num(num)
+    pet.hunger = 4
+    pet.energy = 24
+    pet.world_seconds = 10 * 60.0
+
+    async def go():
+        app = TuiPetApp(pet=pet)
+        async with app.run_test(size=(82, 32)) as pilot:
+            await pilot.pause()
+            await pilot.press("enter")            # dismiss title -> main view
+            await pilot.pause()
+            pet.inventory["poison_mushroom"] = 1
+            pet.use_item("poison_mushroom")        # between ticks: sim paused
+            assert pet.dead
+            app.on_tick()
+            return app._dying_fx, (app.screen_w.fx or {}).get("kind")
+
+    dying, kind = asyncio.run(go())
+    assert dying and kind == "dying"

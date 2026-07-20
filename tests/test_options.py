@@ -414,6 +414,79 @@ def test_switch_account_app_flow(monkeypatch):
     assert seen["fresh"], "an empty account starts fresh at the carousel"
 
 
+def test_switch_account_never_destroys_the_only_copy(monkeypatch):
+    """C4 (gameplay audit 2026-07-19), the destruction vectors closed: a
+    failed park ABORTS the switch (the ignored push + delete() pair used to
+    destroy save.json AND .bak); a first-ever login ADOPTS the local pet
+    instead of deleting its only copies; a same-name re-login honors the
+    sync_down timestamp guard (a stale cloud save must not clobber a newer
+    local pet) and never reaches delete()."""
+    import asyncio
+    from tuipet import cloudsync, eggselectscreen
+    from tuipet.app import TuiPetApp
+    from tuipet.pet import Pet
+
+    async def go():
+        p = Pet(num=100, name="Champ", stage="Champion", attribute="Vaccine")
+        p.world_seconds = 10 * 60.0
+        persistence.set_account("joel", "pw")
+        app = TuiPetApp(pet=p)
+        seen = {}
+        async with app.run_test(size=(82, 32)) as pilot:
+            await pilot.pause()
+            app.mode = None
+            # 1) the park push fails and no cloud copy exists: switch aborts
+            monkeypatch.setattr(cloudsync, "probe", lambda uri, n, pw: ("ok", None))
+            monkeypatch.setattr(cloudsync, "push_save", lambda *a, **k: False)
+            monkeypatch.setattr(cloudsync, "pull_save", lambda *a, **k: None)
+            app._after_options(("account", "ana", "pw2"))
+            for _ in range(8):
+                await pilot.pause()
+            seen["abort_kept"] = (persistence.get_account()[0] == "joel"
+                                  and os.path.exists(persistence.SAVE_PATH)
+                                  and app.pet is p)
+            # 2) same-name re-login with NO cloud save yet: the pet stands
+            app._after_options(("account", "joel", "pw"))
+            for _ in range(8):
+                await pilot.pause()
+            seen["same_none"] = (app.pet is p
+                                 and os.path.exists(persistence.SAVE_PATH)
+                                 and not isinstance(app.mode,
+                                                    eggselectscreen.EggSelectPanel))
+            # 3) same-name re-login with a STALE cloud save: the pet stands
+            from tuipet import data
+            rec = data.load_sprites()[1][4]
+            other = Pet(num=4, name=rec["name"], stage=rec["stage"],
+                        attribute="Vaccine")
+            other.world_seconds = 10 * 60.0
+            stale = persistence.to_save_dict(other)
+            stale["_saved_at"] = 1.0                 # a day-old cloud copy
+            monkeypatch.setattr(cloudsync, "probe",
+                                lambda uri, n, pw: ("ok", dict(stale)))
+            app._after_options(("account", "joel", "pw"))
+            for _ in range(8):
+                await pilot.pause()
+            seen["stale_kept"] = app.pet is p and app.pet.num == 100
+            # 4) first-ever login (no old account) onto an empty cloud: ADOPT
+            persistence.set_account("", "")
+            monkeypatch.setattr(cloudsync, "probe", lambda uri, n, pw: ("ok", None))
+            app._after_options(("account", "newbie", "pw3"))
+            for _ in range(8):
+                await pilot.pause()
+            seen["adopted"] = (persistence.get_account()[0] == "newbie"
+                               and app.pet is p
+                               and os.path.exists(persistence.SAVE_PATH)
+                               and not isinstance(app.mode,
+                                                  eggselectscreen.EggSelectPanel))
+        return seen
+
+    seen = asyncio.run(go())
+    assert seen["abort_kept"], "a failed park must abort the switch"
+    assert seen["same_none"], "same-name relogin with no cloud save keeps the pet"
+    assert seen["stale_kept"], "a stale cloud must not clobber a newer local pet"
+    assert seen["adopted"], "a first login adopts the local pet, never deletes it"
+
+
 def test_confirm_prompts_hold_the_keyboard():
     """Polish 2026-07-18: during ANY confirm (erase / retire / restart), a
     typed q must never fall through to the app's quit binding."""

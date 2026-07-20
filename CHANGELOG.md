@@ -3,6 +3,39 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.5.98 — THE INHERITANCE WORKS (2026-07-19)
+
+The five critical findings of the 2026-07-19 gameplay audit
+(`AUDIT_2026_07_19.md`), all fixed:
+
+* **The Digimemory chip is real now.** The heir's chip was banked and
+  granted but invisible in the bag and inert on use — the whole death
+  ceremony fed a payload no pet could ever redeem. It shows under
+  Items, and using it grants the ancestor's etched Va/D/Vi plus the
+  etched lifespan hours, with the canon inherit show on the LCD. An
+  empty husk politely refuses and is kept. Old saves' raw-key chips
+  heal on load.
+* **A quit can't disinherit the heir.** The etch and the care-grade
+  seed banked only when the dying animation finished — closing the
+  terminal during the ~2s beat lost a lifetime of bonus. The ceremony
+  now runs once per death, wherever the death is noticed, and rides
+  the save.
+* **The poison mushroom dies properly.** It set dead between ticks,
+  so the death-edge detector never fired: no dying beat, no mash-
+  rescue window, no banking, and a sleeping pet stayed "asleep" in
+  the grave. Death is detected by state now, and the mushroom goes
+  through the same door as every other death.
+* **Account switching can't destroy your pet.** Switching to an empty
+  account with no prior login deleted the only save (and its backup);
+  a failed park-upload was ignored; re-logging into your own name let
+  a stale cloud save overwrite a newer local pet. Now: a first login
+  adopts your pet, a failed park aborts the switch, and same-name
+  logins honor the timestamp guard.
+* **Forged lobby invites are locked out.** A crafted "accept" could
+  force your pet into a recorded battle — or a permanent jogress
+  fusion — you never asked for. Responses now only count against an
+  invite this device actually sent.
+
 ## 0.5.97 — LOGIN MANNERS (2026-07-19)
 
 * **The cell-width law reaches the login.** The name field tail-

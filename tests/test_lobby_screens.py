@@ -317,6 +317,7 @@ def _tick_app(pan):
     app._mode_close = None
     app._needs = False
     app._nag_t = 0.0
+    app._dying_fx = False           # __init__ sets it; the death check reads it
     app.beeps = []
     app.beep = lambda name=None, bell=True: app.beeps.append(name)
     app.flash = lambda *a, **k: None

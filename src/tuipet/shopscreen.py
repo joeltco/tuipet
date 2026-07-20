@@ -146,6 +146,8 @@ class ShopPanel:
         p = self.pet
         old = p.num
         key = e["key"]
+        # the chip clears its payload on success; the inherit fx needs it
+        mem = dict(p.digimemory) if key == "digimemory" else None
         out = p.use_item(key)
         if p.num != old:                        # a crest egg fired the armor jump
             return ("done", ("evolve", old))
@@ -167,6 +169,10 @@ class ShopPanel:
             # the toy's SHOW: its canon itemfx script on the main LCD
             return ("done", ("item_use", shop.ICON_KEYS[key],
                              shop.TOY_SCRIPTS[key], out))
+        if not refused and key == "digimemory" and mem:
+            # the heir redeems the ancestor: the bag closes and the canon
+            # inherit fx plays on the LCD (_after_shop's waiting route)
+            return ("done", ("inherit", mem))
         self._flash(out)
         self.sfx = "error" if refused else "confirm"   # a kept item is a NO
         return None

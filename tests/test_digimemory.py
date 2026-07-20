@@ -141,15 +141,96 @@ def test_a_held_unused_payload_is_device_lifetime(monkeypatch):
     held = {"name": "Elder", "num": 29, "vaccine": 5, "data": 3, "virus": 1, "seconds": 60.0}
     persistence.bank_digimemory(held)
     heir = Pet.new_egg(generation=3)
-    heir.inventory["i:32"] = 1                       # the estate bag carried the husk
+    heir.inventory["digimemory"] = 1                 # the estate bag carried the husk
     app = app_mod.TuiPetApp.__new__(app_mod.TuiPetApp)
     app._grant_digimemory(heir)
     assert heir.digimemory == held
-    assert heir.inventory.get("i:32") == 1           # one payload, ONE chip
+    assert heir.inventory.get("digimemory") == 1     # one payload, ONE chip
     fresh = Pet.new_egg(generation=1)                # no husk in the bag ->
     persistence.bank_digimemory(held)
     app._grant_digimemory(fresh)
-    assert fresh.inventory.get("i:32") == 1          # ...the grant supplies it
+    assert fresh.inventory.get("digimemory") == 1    # ...the grant supplies it
+
+
+def test_the_heir_redeems_the_chip():
+    """The other half of the ceremony (gameplay audit 2026-07-19: the payload
+    was banked and granted but NOTHING ever read it): using the chip adds the
+    etched Va/D/Vi, extends lifespan by the etched bonus-hours, clears the
+    payload and consumes the chip."""
+    p = _pet(vaccine=10, data_power=10, virus=10)
+    p.digimemory = {"name": "Elder", "num": 29, "vaccine": 5, "data": 3, "virus": 1, "seconds": 120.0}
+    p.inventory["digimemory"] = 1
+    life0 = p.lifespan
+    out = p.use_item("digimemory")
+    assert "Elder" in out
+    assert (p.vaccine, p.data_power, p.virus) == (15, 13, 11)
+    assert p.lifespan == life0 + 120.0
+    assert p.digimemory == {}                        # spent, never re-banks at death
+    assert p.inventory.get("digimemory", 0) == 0     # the chip is consumed
+
+
+def test_a_silent_husk_is_kept_not_eaten():
+    """A chip with no payload aboard (the estate husk) refuses -- the refusal
+    law: a _Refused keeps the item ('consume on refusal' burned Rev.Floppies;
+    clone audit 2026-07-15)."""
+    p = _pet()
+    p.digimemory = {}
+    p.inventory["digimemory"] = 1
+    from tuipet.petbase import _Refused
+    assert isinstance(p.use_item("digimemory"), _Refused)
+    assert p.inventory.get("digimemory") == 1
+
+
+def test_the_raw_icon_key_heals_to_the_named_chip():
+    """Chips circulated under the raw 'i:32' icon key -- a key the bag could
+    neither show nor use.  The bag heal maps them home (shop.LEGACY_KEYS)."""
+    healed = persistence._heal_bag({"i:32": 1})
+    assert healed.get("digimemory") == 1 and "i:32" not in healed
+
+
+def test_the_chip_renders_in_the_bag():
+    """The bag shows only keys shop.entry() resolves -- the chip must be one
+    of them (and stay OFF the shop shelf: price None is never sold)."""
+    from tuipet import shop
+    e = shop.entry("digimemory")
+    assert e and e["category"] == "Medical"
+    assert all(row["key"] != "digimemory" for row in shop.catalog())
+
+
+def test_a_death_noticed_at_relaunch_still_banks_the_inheritance():
+    """C2 (gameplay audit 2026-07-19): the etch + careBonusOnReset seed were
+    banked ONLY in the dying-fx completion branch -- a quit/crash during the
+    ~2s beat relaunched into a bare memorial that banked nothing.  The one
+    ceremony now runs wherever the death is noticed, exactly once."""
+    from tuipet import app as app_mod
+    persistence.take_digimemory()
+    persistence.take_bonus_seed()
+    p = _pet(vaccine=500, data_power=300, virus=100, evol_bonus=10, dead=True)
+    assert not p.death_banked
+    app = app_mod.TuiPetApp.__new__(app_mod.TuiPetApp)
+    app.pet = p
+    opened = []
+    app._open_mode = lambda panel, cb=None: opened.append(panel)
+    app._death_ceremony()
+    assert p.death_banked and p.evol_bonus == 0
+    assert persistence.peek_digimemory()["name"] == "Gatomon"   # the etch banked
+    assert opened and opened[0].new_mem is not None             # the FULL panel
+    seed = persistence._prog().get("bonus_seed")
+    assert seed is not None                                     # the seed banked
+    # a second notice (any later care key) is the bare memorial -- no re-bank
+    app._death_ceremony()
+    assert opened[1].new_mem is None
+    assert persistence._prog().get("bonus_seed") == seed
+    persistence.take_digimemory()
+    persistence.take_bonus_seed()
+
+
+def test_a_rescue_rearms_the_ceremony():
+    """save_from_death must clear death_banked -- the NEXT death owes a
+    fresh etch/seed ceremony."""
+    p = _pet(dead=True, death_banked=True)
+    p.save_from_death()
+    assert not p.death_banked
 
 
 def test_a_live_retire_banks_the_full_grade():

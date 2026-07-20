@@ -150,10 +150,12 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("LOGIN MANNERS: emoji names can no longer tear the "
-                 "login box, the name field stops at the 24 characters "
-                 "that actually log in, and pressing go with a missing "
-                 "field finally says so instead of doing nothing.")
+    WHATS_NEW = ("THE INHERITANCE WORKS: the Digimemory chip finally "
+                 "shows in the bag and grants the ancestor's power; a "
+                 "quit during the dying beat can no longer disinherit "
+                 "the heir, the poison mushroom dies properly, account "
+                 "switching can't destroy your pet, and forged lobby "
+                 "invites are locked out.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and
@@ -380,18 +382,62 @@ class TuiPetApp(ActionsMixin, App):
             self._hud(self._welcome)
             self.repaint()
 
+    def _death_ceremony(self, hold=0):
+        """The ONE banking ceremony for a death, wherever it's noticed --
+        the dying-fx completion, or a relaunch that finds the pet already
+        dead.  The etch and the careBonusOnReset seed used to exist only in
+        the fx branch, so a quit/crash during the dying beat silently
+        disinherited the heir (gameplay audit 2026-07-19).  Runs once per
+        death (pet.death_banked rides the save); after that every care key
+        leads back to the bare memorial.
+
+        UnlockInheritance (onDie with _bonus > 0): the departed CAN etch
+        its Digimemory -- canon's DigiMemory_Validation is a real choice
+        (declining keeps the bonus for the heir), so the panel asks; the
+        etch is the walk-out default.  A held UNUSED payload is
+        device-lifetime (canon item 32 survives resetToEgg): back to the
+        bank first (digimemory audit 2026-07-06), where the only-one
+        prompt covers it."""
+        p = self.pet
+        if p.death_banked:
+            self._open_mode(deathscreen.DeathPanel(
+                p, old_mem=persistence.peek_digimemory()), self._after_death)
+            return
+        if p.digimemory:
+            persistence.bank_digimemory(dict(p.digimemory))
+            p.digimemory = {}
+        b0 = p.evol_bonus
+        new_mem = p.make_digimemory()
+        grade_spent = p.final_care_grade()   # the etch path's seed
+        p.evol_bonus = b0
+        grade_kept = p.final_care_grade()    # the decline path's seed
+        p.evol_bonus = 0                     # the life is spent either way
+        old_mem = persistence.peek_digimemory()
+        banked_new = False
+        if new_mem and not old_mem:
+            persistence.bank_digimemory(new_mem)    # default: etched
+            banked_new = True
+        persistence.bank_bonus_seed(grade_spent)    # default seed; B re-banks
+        p.death_banked = True
+        persistence.save(p)
+        self._open_mode(deathscreen.DeathPanel(p, hold=hold, new_mem=new_mem,
+                                               old_mem=old_mem, grade_kept=grade_kept,
+                                               banked_new=banked_new), self._after_death)
+
     def _grant_digimemory(self, pet):
         """Hand the banked inheritance data to the next generation: the payload
-        rides the pet's save; item 32 appears in its bag (DVPet items persist
-        across resetToEgg -- tuipet's generations carry only this one)."""
+        rides the pet's save; the Digimemory chip appears in its bag (DVPet
+        items persist across resetToEgg -- tuipet's generations carry only
+        this one).  The raw "i:32" icon key it used to ride is healed to the
+        named key on load (shop.LEGACY_KEYS; gameplay audit 2026-07-19)."""
         mem = persistence.take_digimemory()
         if mem:
             pet.digimemory = dict(mem)
             # the inherited ESTATE bag may already carry the elder's unused
             # husk (the re-banked-payload case) -- never a second chip for
             # one payload (digimemory audit 2026-07-06)
-            if pet.inventory.get("i:32", 0) <= 0:
-                pet.add_item("i:32")
+            if pet.inventory.get("digimemory", 0) <= 0:
+                pet.add_item("digimemory")
         # the departed's care grade seeds this generation's bonus (careBonusOnReset)
         pet.evol_bonus = persistence.take_bonus_seed()
 
@@ -513,8 +559,13 @@ class TuiPetApp(ActionsMixin, App):
             if event.key not in ("q", "g", "l"):
                 event.stop()
                 event.prevent_default()
-                self._open_mode(deathscreen.DeathPanel(
-                    self.pet, old_mem=persistence.peek_digimemory()), self._after_death)
+                # every care key leads to the memorial (the dead-gate law) --
+                # and if this death's etch/seed ceremony hasn't run yet (a
+                # relaunch mid-dying-beat), it runs HERE, so the inheritance
+                # can never be lost to a quit (gameplay audit 2026-07-19).
+                # An untouched relaunch still gets the dying beat + mash
+                # window from the tick's state check instead.
+                self._death_ceremony()
             return
         if self.mode is not None:
             event.stop()
@@ -752,10 +803,43 @@ class TuiPetApp(ActionsMixin, App):
                 self.beep("error", bell=False)
                 return
         persistence.save(self.pet)                   # park the pet with the OLD account
-        if old_name and old_name != name:
-            await asyncio.to_thread(                 # last-write-wins guarded upload
+        if old_name == name:
+            # re-login to the SAME account: never park, never delete -- only
+            # refresh from a STRICTLY newer cloud copy.  This path used to
+            # skip the sync_down_at_startup timestamp guard, so a day-old
+            # cloud save could overwrite a newer local pet -- and a cloud
+            # with NO save yet fell through to delete() and destroyed the
+            # local pet's only copies (gameplay audit 2026-07-19).
+            if save is not None and (float(save.get("_saved_at") or 0)
+                                     > persistence.local_saved_at()):
+                persistence.write_save_dict(save)
+                loaded, msg = persistence.load()
+                self.pet = loaded or Pet.new_egg()
+                self._verdict(f"Signed in as {_hud_esc(name)} — {msg or 'welcome back!'}")
+                self.repaint()
+            else:
+                self._verdict(f"Signed in as {_hud_esc(name)} — this device is current.")
+            return
+        if old_name:
+            parked = await asyncio.to_thread(        # last-write-wins guarded upload
                 cloudsync.push_save, _lobby_uri(), old_name, old_pw,
                 persistence.to_save_dict(self.pet))
+            if not parked:
+                # push_save also answers False when the OLD cloud is already
+                # newer (another device carries this pet) -- that counts as
+                # parked.  Distinguish it from a real failed send.
+                cloud = await asyncio.to_thread(
+                    cloudsync.pull_save, _lobby_uri(), old_name, old_pw)
+                parked = bool(cloud) and (float(cloud.get("_saved_at") or 0)
+                                          >= persistence.local_saved_at())
+            if not parked:
+                # the switch may not proceed until the pet has a durable copy
+                # somewhere -- the ignored push + delete() pair destroyed
+                # save.json AND .bak (gameplay audit 2026-07-19)
+                self._verdict(f"Couldn't park your pet with {_hud_esc(old_name)}"
+                              " — kept your account.")
+                self.beep("error", bell=False)
+                return
         self._stop_sync()                            # the old pusher must stop first
         #                                              (cancelled, not just flagged)
         persistence.set_account(name, pw)
@@ -766,13 +850,21 @@ class TuiPetApp(ActionsMixin, App):
             self._start_sync()
             self._verdict(f"Signed in as {_hud_esc(name)} — {msg or 'welcome back!'}")
             self.repaint()
-        else:
-            persistence.delete()                     # the old pet must not leak in
+        elif old_name:
+            persistence.delete()                     # parked above: the old pet must not leak in
             self.pet = Pet.new_egg()                 # placeholder until the carousel picks
             self._start_sync()
             self._verdict(f"Signed in as {_hud_esc(name)} — a fresh start.")
             self._open_mode(eggselectscreen.EggSelectPanel(self.pet),
                             self._after_egg_pick)
+        else:
+            # no old account: the local pet was never parked ANYWHERE, and
+            # deleting it here destroyed its only copies.  Adopt it into the
+            # new account instead -- exactly what the first lobby login does:
+            # the pet stays local and the sync pushes it up.
+            self._start_sync()
+            self._verdict(f"Signed in as {_hud_esc(name)} — your pet syncs here now.")
+            self.repaint()
 
     def _center(self, text):
         from rich.text import Text
@@ -872,32 +964,7 @@ class TuiPetApp(ActionsMixin, App):
                         self.screen_w.start_fx("cheer")
                     persistence.save(self.pet)
                 else:
-                    # UnlockInheritance (onDie with _bonus > 0): the departed CAN
-                    # etch its Digimemory -- canon's DigiMemory_Validation is a
-                    # real choice (declining keeps the bonus for the heir), so
-                    # the panel asks; the etch is the walk-out default.  A held
-                    # UNUSED payload is device-lifetime (canon item 32 survives
-                    # resetToEgg): back to the bank first (digimemory audit
-                    # 2026-07-06), where the only-one prompt covers it.
-                    if self.pet.digimemory:
-                        persistence.bank_digimemory(dict(self.pet.digimemory))
-                        self.pet.digimemory = {}
-                    b0 = self.pet.evol_bonus
-                    new_mem = self.pet.make_digimemory()
-                    grade_spent = self.pet.final_care_grade()   # the etch path's seed
-                    self.pet.evol_bonus = b0
-                    grade_kept = self.pet.final_care_grade()    # the decline path's seed
-                    self.pet.evol_bonus = 0                     # the life is spent either way
-                    old_mem = persistence.peek_digimemory()
-                    banked_new = False
-                    if new_mem and not old_mem:
-                        persistence.bank_digimemory(new_mem)    # default: etched
-                        banked_new = True
-                    persistence.bank_bonus_seed(grade_spent)    # default seed; B re-banks
-                    persistence.save(self.pet)
-                    self._open_mode(deathscreen.DeathPanel(self.pet, hold=20, new_mem=new_mem,
-                                                           old_mem=old_mem, grade_kept=grade_kept,
-                                                           banked_new=banked_new), self._after_death)
+                    self._death_ceremony(hold=20)
             else:                              # any other fx just finished -> restore the HUD
                 self.repaint()
         else:
@@ -953,14 +1020,17 @@ class TuiPetApp(ActionsMixin, App):
                     and m.phase in ("lobby", "dm"))
             if not live:
                 return
-            was_dead = self.pet.dead
             poop0 = self.pet.poop
             self.pet.fx_hold = True     # evolution waits for the main view --
             #                             its strobe belongs to the home screen
             self.pet.tick(1.0)
             p = self.pet
-            if p.dead and not was_dead:
-                # death can't wait for ESC: leave the room, play the memorial
+            if p.dead and not p.death_banked and not self._dying_fx:
+                # death can't wait for ESC: leave the room, play the memorial.
+                # STATE, not a was_dead tick edge: a death set while the sim
+                # was paused (the bag's poison mushroom) landed between ticks
+                # and the edge never saw it -- no dying beat, no mash window,
+                # no banking (gameplay audit 2026-07-19)
                 if getattr(p, "away", False):
                     p.away = False            # the road ends here
                 self._close_mode(None)
@@ -988,7 +1058,6 @@ class TuiPetApp(ActionsMixin, App):
             self._needs = needs
             return
         prev = (self.pet.num, self.pet.stage)
-        was_dead = self.pet.dead
         poop0 = self.pet.poop
         # an evolution must not swap the sprite UNDER a playing animation (the
         # clean-fx incident 2026-07-04: the pet transformed mid-sweep and the
@@ -997,7 +1066,10 @@ class TuiPetApp(ActionsMixin, App):
         self.pet.fx_hold = self.screen_w.fx is not None
         self.pet.tick(1.0)
         p = self.pet
-        if p.dead and not was_dead:
+        if p.dead and not p.death_banked and not self._dying_fx:
+            # STATE, not a was_dead tick edge (see the mode branch above):
+            # any un-ceremonied death gets its dying beat -- including one
+            # set between ticks (poison mushroom) or loaded at relaunch
             self.beep("death")            # death.wav, like DVPet's dying() sound
             self.flash("")
             self.screen_w.start_fx("dying")   # exhausted pose beat, then the memorial

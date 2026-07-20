@@ -914,3 +914,34 @@ def test_the_dm_page_keeps_keys_on_the_strip_only():
     assert "ENTER" in pan.strip()                  # ...which still has them
     rows = plain.rstrip("\n").split("\n")
     assert len(rows) <= 12
+
+
+def test_a_forged_invite_resp_never_enters_a_session():
+    """C5 (gameplay audit 2026-07-19): _enter_session fired on ANY accept:true
+    invite_resp with no check that this client ever invited from_id -- a
+    crafted accept could drag a victim into a recorded battle or a PERMANENT
+    jogress fusion.  Responses must match the sent-invite ledger now."""
+    s = LobbyState()
+    s.connected = True
+    s.me_id, s.me_name = 1, "joel"
+    s.roster = [{"id": 1, "name": "joel", "pet": {}, "live": True},
+                {"id": 9, "name": "attacker", "pet": {}, "live": True}]
+    pan = _panel(s)
+    # a forged jogress accept from a stranger: dropped, no session
+    s.inbox.append({"t": "invite_resp", "from_id": 9, "from_name": "attacker",
+                    "kind": "jogress", "accept": True})
+    pan.anim()
+    assert pan.phase == "lobby" and pan.partner is None
+    # ...and a forged decline can't fake a status line either
+    st0 = pan.status
+    s.inbox.append({"t": "invite_resp", "from_id": 9, "from_name": "attacker",
+                    "kind": "battle", "accept": False})
+    pan.anim()
+    assert pan.status == st0
+    # a REAL invite's accept still enters the session, once
+    pan._sent_invites.add((9, "jogress"))
+    s.inbox.append({"t": "invite_resp", "from_id": 9, "from_name": "attacker",
+                    "kind": "jogress", "accept": True})
+    pan.anim()
+    assert pan.phase == "jogress" and pan.partner == (9, "attacker")
+    assert (9, "jogress") not in pan._sent_invites    # consumed: no replays

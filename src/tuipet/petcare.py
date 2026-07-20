@@ -373,6 +373,7 @@ class CareMixin:
             "x_antibody": self._x_item,
             "dna_crystal": self._dna_crystal,
             "revive_floppy": self._revive_item,
+            "digimemory": self._inherit_memory,
             # ---- TOYS (small LIVE dials; the SHOW is fired by the bag panel)
             "ball": lambda: self._toy(weight=-1, msg="A grand kickabout!"),
             "skateboard": lambda: self._toy(weight=-2, energy=-1,
@@ -522,8 +523,11 @@ class CareMixin:
         return "Munch."
 
     def _deadly(self):
-        self.dead = True
-        self.death_cause = "a poison mushroom"
+        # through _die like every other death: it clears asleep/hatching and
+        # sets the pose -- the hand-rolled dead=True skipped both, and the
+        # tick-edge detector never saw a between-ticks death at all
+        # (gameplay audit 2026-07-19; the app's state check pairs with this)
+        self._die("a poison mushroom")
         return "...it was DELICIOUS. And fatal."
 
     def _junk(self):
@@ -599,6 +603,22 @@ class CareMixin:
             return _Refused("No one needs reviving.")
         self.save_from_death()
         return "It LIVES."
+
+    def _inherit_memory(self):
+        """The Digimemory chip (DVPet item 32, anim Inherit): the ancestor's
+        etched Va/D/Vi joins this pet's powers and the etched bonus-hours
+        extend its lifespan (petbase DIGIMEMORY_* law; mem["seconds"] is
+        already on the game-min scale lifespan uses).  A chip with no
+        payload aboard -- the estate husk -- stays a mute keepsake."""
+        mem = self.digimemory
+        if not mem:
+            return _Refused("The chip is silent.")
+        self.vaccine += int(mem.get("vaccine", 0) or 0)
+        self.data_power += int(mem.get("data", 0) or 0)
+        self.virus += int(mem.get("virus", 0) or 0)
+        self.lifespan += float(mem.get("seconds", 0) or 0)
+        self.digimemory = {}
+        return f"{mem.get('name', 'The ancestor')}'s power lives on!"
 
     def _super_carrot(self):
         if self.weight <= 1:
