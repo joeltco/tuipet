@@ -357,6 +357,18 @@ class OptionsPanel(menu.SubHost):
                 # ENTER actually INSTALLS it (Joel 2026-07-13: "make the update
                 # option actually update the game").  The game also installs
                 # new releases for itself at launch -- `a` opts out of that.
+                hint = self.update_hint() if self.update_hint is not None else ""
+                if self._updated or "installed" in (hint or ""):
+                    # a launch (or earlier) auto-update ALREADY wrote the new
+                    # version to disk -- but this process is still running the
+                    # OLD code it imported at startup, so there is nothing left
+                    # to install: ENTER RESTARTS to apply it.  Without this the
+                    # row read "restart to apply" (see _value) yet ENTER
+                    # re-checked and said "up to date" -- current_version() reads
+                    # the freshly-upgraded disk -- stranding the player on the
+                    # old code with no way to relaunch from Options (Joel
+                    # 2026-07-20: "the first reset should update the game").
+                    return ("done", ("restart",))
                 if self._upd and self._upd != "…":
                     self._install_update()
                 else:

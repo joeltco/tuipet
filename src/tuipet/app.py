@@ -150,9 +150,9 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("The pill now eats like it should - the same pill you "
-                 "pick off the feed menu is the one your mon chews, "
-                 "biting it down to a half-pill, then gone.")
+    WHATS_NEW = ("Updating actually works now - after the game installs a "
+                 "new release, the Update option restarts straight into it. "
+                 "One restart, done.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and

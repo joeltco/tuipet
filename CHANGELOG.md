@@ -3,6 +3,15 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.5.110 — THE UPDATE RESTART ACTUALLY RESTARTS (2026-07-20)
+
+* **Updating from Options now applies on one restart.** After the game
+  installs a new release (at launch, or from the Update option), the Update
+  row read "restart to apply" — but pressing it re-checked and said "up to
+  date" instead of restarting, leaving you on the old code with no way to
+  relaunch from Options. ENTER on "restart to apply" now actually restarts
+  into the new version.
+
 ## 0.5.109 — THE PILL EATS RIGHT (2026-07-20)
 
 * **The pill now eats through its own icon.** The pill you pick off the feed

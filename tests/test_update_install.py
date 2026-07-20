@@ -100,3 +100,29 @@ def test_the_options_row_offers_the_install_then_asks_for_a_restart():
     assert pan._value("update") == "updating…"
     pan._installing, pan._updated = False, True
     assert pan._value("update") == "restart to apply"
+
+
+def test_enter_on_restart_to_apply_actually_restarts():
+    """The launch auto-update writes the new version to disk while the process
+    keeps running the old code; the row then reads 'restart to apply'.  ENTER on
+    it must RESTART -- not re-check and say 'up to date' (current_version reads
+    the freshly-upgraded disk).  Regression: Joel 2026-07-20, 'the first reset
+    should update the game'."""
+    from tuipet.optionsscreen import OptionsPanel, _ROWS
+    from tuipet.pet import Pet
+    p = Pet(num=100, stage="Champion", attribute="Vaccine", obedience=500)
+    p.world_seconds = 600.0
+
+    # the launch auto-update path leaves its 'installed' word on the app's
+    # update_hint (NOT self._updated -- that flag is the OPTIONS install's).
+    pan = OptionsPanel(p, sound_get=lambda: True, sound_toggle=lambda: None,
+                       update_hint=lambda: "✔ tuipet 9.9.9 installed — restart to play it")
+    assert pan._value("update") == "restart to apply"          # display says restart
+    pan.cursor = _ROWS.index("update")
+    assert pan.key("enter") == ("done", ("restart",))          # ...and ENTER does it
+
+    # the manual-install path (self._updated, no hint) restarts too
+    pan2 = OptionsPanel(p, sound_get=lambda: True, sound_toggle=lambda: None)
+    pan2._updated = True
+    pan2.cursor = _ROWS.index("update")
+    assert pan2.key("enter") == ("done", ("restart",))
