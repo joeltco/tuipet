@@ -16,6 +16,16 @@ COLS, ROWS = 40, 7
 FIGHT_ROWS = 12   # the ONE locked arena (was a squat 8-row band that
 #                   cropped the scenery, then the fight itself jumped to 12)
 
+# the CUP THEATER (fun arc 2026-07-21, Joel: "do the award ceremony and npc
+# rounds"): the two dead moments between fights come alive -- the field's
+# other winners PARADE across the arena after each of your wins (the
+# adventure parade's idiom on the cup stage), and the crown gets its
+# AWARD CEREMONY: the champion cheering under a pulsing arena light (the
+# zoneChange idiom) before the tree and the numbers.  Real art only; the
+# shows lock input and play out (own-game law: no skips).
+NPC_T = 20        # ticks per advancing winner's crossing
+CEREMONY_T = 40   # the podium beat
+
 
 class TournamentPanel(menu.SubHost):
     def __init__(self, pet):
@@ -30,16 +40,34 @@ class TournamentPanel(menu.SubHost):
                     else "One cup per hour — F fights today's featured.")
         self.phase = "select"
         self.tree_view = False       # the bracket page (B toggles; shown between rounds)
+        self._advance = None         # the field-advances parade: {"t","nums"}
+        self._ceremony = None        # the champion's podium beat: {"t"}
 
     def anim(self):
         if self.sub_anim():          # SubHost: delegate + sfx bubble
             return
         self.frame_i += 1
+        if self._ceremony is not None:
+            self._ceremony["t"] += 1
+            if self._ceremony["t"] >= CEREMONY_T:
+                self._ceremony = None
+                self.tree_view = True          # the crowned tree, then the numbers
+            return
+        if self._advance is not None:
+            self._advance["t"] += 1
+            if self._advance["t"] >= NPC_T * max(1, len(self._advance["nums"])):
+                self._advance = None
+                self.tree_view = True          # the field, freshly advanced
+            return
 
     def strip(self):
         """The message-box hint line (hint overhaul 2026-07-10)."""
         if self.sub is not None:
             return ""                          # the bout's own panel owns the box
+        if self._ceremony is not None:
+            return "[b]★ CHAMPION![/]"
+        if self._advance is not None:
+            return "[dim]the field advances…[/]"
         if self.phase == "select":
             return menu.hints(("↑↓", "pick"), ("ENTER", "go"),
                               ("F", "feat."), ("A", "alarm"))
@@ -62,10 +90,21 @@ class TournamentPanel(menu.SubHost):
                     self.tourney.last = "You back out — the match still waits."
                     self.sfx = "refuse"
                     return None
-                self.tourney.record(bool(r[1].won))
-                self.tree_view = True                   # show the field advancing
+                won = bool(r[1].won)
+                self.tourney.record(won)
                 if self.tourney.over:                   # cup finished this match
                     self.sfx = "champion" if self.tourney.champion else "lose"
+                    if self.tourney.champion:
+                        self._ceremony = {"t": 0}       # the podium beat first
+                    else:
+                        self.tree_view = True           # eliminated: the tree
+                elif won and getattr(self.tourney, "results_nums", None):
+                    # your win advances the FIELD too: parade the other
+                    # winners across before the tree
+                    self._advance = {"t": 0,
+                                     "nums": list(self.tourney.results_nums)}
+                else:
+                    self.tree_view = True               # backed out: the tree waits
             return None
         if self.phase == "select":
             n = len(self.sched)
@@ -125,6 +164,8 @@ class TournamentPanel(menu.SubHost):
                 return ("done", None)
             return None
         # bracket
+        if self._ceremony is not None or self._advance is not None:
+            return None                        # the show plays out (no skips)
         t = self.tourney
         if k == "b":
             self.tree_view = not self.tree_view
@@ -185,9 +226,59 @@ class TournamentPanel(menu.SubHost):
         # the rest, Joel 2026-07-05)
         return data.bob_frame(num, self.frame_i, role)
 
+    def _ceremony_frame(self):
+        """THE AWARD CEREMONY: the champion cheers centre-stage while the
+        arena light pulses bright (the zoneChange idiom) -- the podium beat
+        the crown never had.  Mirrors the result page's shape exactly (one
+        layout language per screen family)."""
+        from .adventurescreen import _brighten
+        t = self._ceremony["t"]
+        bgimg = self.pet.background(file="tourneyBack")
+        if bgimg and any(a <= t % 20 < b for a, b in ((3, 8), (12, 17))):
+            bgimg = _brighten(bgimg, 0.5)      # the podium light, on the beat
+        on = menu.scene_ink(bgimg)
+        out = menu.bar(self.tourney.name, "CHAMPION")
+        scene = render_scene([grid.center(self._frames(self.pet.num, "happy"),
+                                          ph=FIGHT_ROWS * 2)],
+                             COLS, FIGHT_ROWS, on, LCD_BG, bgimg=bgimg)
+        out.append_text(scene)
+        out.append("\n%s\n" % ("★" * min(self.pet.trophies, 14)), style=INK_B)
+        out.append_text(menu.note("The trophy is yours!", tick=self.frame_i))
+        out.append_text(menu.footer("— the crowd roars —"))
+        return out
+
+    def _advance_frame(self):
+        """THE FIELD ADVANCES: the other winners cross the arena one at a
+        time (the parade idiom on the cup stage) before the bracket page
+        lands -- the tournament happening AROUND you, visible at last."""
+        a = self._advance
+        i = min(a["t"] // NPC_T, len(a["nums"]) - 1)
+        t = a["t"] % NPC_T
+        fr = data.frames_for(a["nums"][i])
+        wi = data.ROLES["walk"][(t // 3) % 2]
+        rows = grid.prep((fr[wi] if wi < len(fr) else None) or fr[0],
+                         ph=FIGHT_ROWS * 2)
+        lo, hi = grid.roam_bounds(grid.width(rows))
+        x = round(hi + (lo - hi) * (t / max(1, NPC_T - 1)))
+        bgimg = self.pet.background(file="tourneyBack")
+        scene = render_scene([(rows, x, False)], COLS, FIGHT_ROWS,
+                             menu.scene_ink(bgimg), LCD_BG, bgimg=bgimg)
+        out = menu.bar(self.tourney.name, "ADVANCING")
+        out.append_text(scene)
+        nm = (self.tourney.results[i]
+              if i < len(self.tourney.results) else "")
+        out.append("\n%s advances\n" % nm, style=INK)
+        out.append_text(menu.note(self.tourney.last, tick=self.frame_i))
+        out.append_text(menu.footer("— the next round forms —"))
+        return out
+
     def text(self):
         if self.sub is not None:
             return self.sub.text()
+        if self._ceremony is not None:
+            return self._ceremony_frame()
+        if self._advance is not None:
+            return self._advance_frame()
         if self.phase == "select":
             self.sched = tournament.schedule(self.pet)   # live: a day rollover re-rolls
             hour = tournament._hour(self.pet)

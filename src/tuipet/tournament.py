@@ -463,6 +463,7 @@ class Tournament:
         self.player_i = random.randrange(8)
         self.bracket.insert(self.player_i, "YOU")
         self.results = []
+        self.results_nums = []
         self.tree = [list(self.bracket)]     # round-by-round history for the bracket page
         self.last = "%s — 8 enter, one leaves with the trophy." % self.name
         # spend this hour's slot AT ENTRY, not at the finish: a bracket
@@ -488,8 +489,11 @@ class Tournament:
         return self.bracket[i + 1] if i % 2 == 0 else self.bracket[i - 1]
 
     def _resolve_npc_round(self):
-        """The other pairs fight while you catch your breath (npcFight/autoFight)."""
-        nxt, notes = [], []
+        """The other pairs fight while you catch your breath (npcFight/
+        autoFight).  results carries the winners' names for the note;
+        results_nums their species, so the screen can PARADE the field
+        advancing (cup fun arc 2026-07-21)."""
+        nxt, notes, nums = [], [], []
         for i in range(0, len(self.bracket), 2):
             a, b = self.bracket[i], self.bracket[i + 1]
             if a == "YOU" or b == "YOU":
@@ -497,9 +501,11 @@ class Tournament:
                 continue
             w = _npc_winner(a, b)
             notes.append(w["name"])
+            nums.append(w["num"])
             nxt.append(w)
         self.bracket = nxt
         self.results = notes
+        self.results_nums = nums
 
     def _calc_bits(self):
         """Tournament.calcBits: the purse is the sum of the FIELD's stage bits

@@ -3,6 +3,20 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.5.137 — CUP THEATER (2026-07-21)
+
+* **The field advances, visibly.** After each of your wins, the bracket's
+  other winners cross the arena one at a time — real roster sprites,
+  named as they pass — before the bracket page lands. Three crossings
+  after the quarterfinal, one after the semi. The tournament finally
+  happens *around* you instead of in a sentence.
+* **The award ceremony.** Winning the final no longer cuts to text: your
+  champion cheers centre-stage while the arena light pulses on the beat,
+  the star row builds, and *then* comes the crowned tree and the purse.
+  The elimination path keeps its canon consolation unchanged.
+* Both shows lock input and play out — no skips, same law as every
+  adventure beat.
+
 ## 0.5.136 — THE CUP AUDIT (2026-07-21)
 
 * **All cups audited** — the 325-cup home board, the hourly schedule, the

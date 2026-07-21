@@ -132,11 +132,11 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("A full cup audit: town cups now vet your mon like the "
-                 "home board does — no more dragging a sick or napping "
-                 "pet into the bracket. Town trophies show their proper "
-                 "name in the trophy room, and the cup board fits its "
-                 "box again. The economy checked out clean.")
+    WHATS_NEW = ("CUP THEATER: after each win the other victors parade "
+                 "across the arena — the tournament happens around you "
+                 "now. And winning it all plays a real AWARD CEREMONY: "
+                 "your champion cheering under the pulsing arena lights "
+                 "before the trophy counts.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and
