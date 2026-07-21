@@ -3,6 +3,28 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.5.115 — TOWN EGG SHOPS (2026-07-21)
+
+* **Every town sells eggs now — and each town stocks different ones.** A new
+  **Eggs** slot in the town hub opens that town's egg market: a distinct band
+  of digitama shown as their real **8×8 egg sprites** (a 2-row grid, the
+  selected egg framed). Buy one on the road with bits and it joins your hatch
+  carousel. No two town shops feel the same, so it's worth stopping in each.
+
+## 0.5.114 — ADVENTURE IS BACK (2026-07-20)
+
+* **The flagship EXPLORE feature returns as a full rebuild.** Press **a** to
+  head out on the road: a teleport out, a march across one of the world's **26
+  real zones**, wild encounters, a region boss to fell, **towns** to rest /
+  resupply / fight the Town Cup, loot to find, and a results card on return —
+  with lives, travel drain, transport items, and progression (conquer a zone
+  to open the next).
+* **Every pillar now earns eggs.** The egg unlock table was re-spread so each
+  system feeds the roster: adventure map-clears, cup wins (a second cup egg —
+  Hack via the Fall Champion Cup), raids, links, and — new — **festival days**
+  (conquer a zone on a holiday to earn the DORU → Alphamon festival egg). Cups
+  and seasonals are no longer egg-hollow.
+
 ## 0.5.113 — EGGS HATCH ON BACKGROUNDS THAT FIT (2026-07-20)
 
 * **Re-homed five eggs to backgrounds that match the creature.** Using the

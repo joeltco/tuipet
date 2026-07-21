@@ -24,10 +24,12 @@ community references. Regular updates ship as the game grows.
 - A **basic V-Pet done properly**, every surviving system faithful to the
   real devices: care (hunger, effort, filth, sleep, lights), training
   drills, evolution (care-quality gates + DNA divergence + armor
-  Digimentals + jogress), raid bosses, cups on a real-calendar schedule
+  Digimentals + jogress), a rebuilt **Adventure** mode (26 real zones,
+  bosses, towns), raid bosses, cups on a real-calendar schedule
   (seasons, weekends, holidays), a shop with the classic four-tab
-  storefront, condition-earned digitama, an in-game AI care assistant, and
-  the device's own screen transitions and animation timelines.
+  storefront, digitama earned by play (and bought outright in each town's
+  own egg shop), an in-game AI care assistant, and the device's own screen
+  transitions and animation timelines.
 - **Online play** tuipet adds on top: accounts with cloud saves that follow
   you across devices, and a live lobby with chat, PvP battles, and two-player
   jogress fusion.
@@ -113,18 +115,19 @@ explore, then grow, then manage:
 | **c** | clean | **n** | digitama guide |
 | **s** | lights | **o** | shop |
 | **v** | AI assistant | **i** | bag |
-| **r** | raid | **e** | scenes |
-| **u** | tournament cup | **g** | options |
-| **l** | online lobby | **b** | bug report |
-| **t** | train | **?** | help |
-| **x** | DNA | **q** | quit |
+| **a** | adventure | **e** | scenes |
+| **r** | raid | **g** | options |
+| **u** | tournament cup | **b** | bug report |
+| **l** | online lobby | **?** | help |
+| **t** | train | **q** | quit |
+| **x** | DNA | | |
 
 SPACE works wherever ENTER does, and PageUp/PageDown leap through every
 long list.
 
-Battles and jogress live where they belong: **PvE combat happens in raids
-and cups; PvP battles and fusion happen in the lobby** — there is no
-free-standing battle key.
+Battles and jogress live where they belong: **PvE combat happens in
+adventure, raids and cups; PvP battles and fusion happen in the lobby** —
+there is no free-standing battle key.
 
 ## Care & evolution
 
@@ -135,8 +138,8 @@ with the game's exact fulfilled-requirement scoring and deviation
 tiebreak. Per-stage counters
 reset on evolution; power and battle records carry for life. Good care with
 focused training walks the classic lines; neglect finds Numemon.
-Battle-gated Champions and above need real fights — raids and cups feed the
-same record.
+Battle-gated Champions and above need real fights — adventure, raids and
+cups feed the same record.
 
 **Training** (`t`) is the timing drill: stop the sweep on the beat to land
 the hit — effort and the drilled attribute power grow with clean rounds.
@@ -217,10 +220,13 @@ would trigger right now. **i** is the bag: use with ENTER, sell back for
 half with R. Birthdays hand out treats you can actually eat. The Honors
 board sells cosmetic tamer titles for the truly rich.
 
-**Digitama are earned, never sold**: eggs unlock by playing — reaching
-stages, felling raid bosses, winning cups, growing your album — exactly
-like the real devices. The egg carousel shows only what you can hatch, and
-teases the next one you're closest to earning.
+**Digitama are earned by playing** — reaching stages, felling raid bosses,
+winning cups, clearing adventure zones, celebrating festivals, growing your
+album — exactly like the real devices; the carousel shows only what you can
+hatch and teases the one you're closest to earning. **On the road, each
+town's egg shop also sells a distinct band of eggs outright** — the real 8×8
+egg sprites, a paid shortcut that drops straight onto your carousel, and no
+two towns stock the same eggs.
 
 ## AI assistant & options
 
