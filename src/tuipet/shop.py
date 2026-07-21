@@ -52,7 +52,10 @@ CATALOG = {
     "anti_evo_chip":   ("Anti-Evo Chip",   "f:32", 1000, "Evolution", "toggle evolution lock", "holds this form"),
     "x_antibody":      ("X-Antibody",      "i:79", 2000, "Evolution", "the X-Antibody takes hold", "the X factor"),
     "dna_crystal":     ("DNA Crystal",     "i:35", 1500, "Evolution", "+10 own-Field DNA banked", "a Field's worth of code"),
-    "revive_floppy":   ("Rev. Floppy",     "i:32", 2500, "Medical", "raise the dead", "one more chance"),
+    # i:64 (the notched-square disk glyph): i:32 is DVPet's own Digimemory
+    # sprite, and two catalog entries sharing an icon broke key_for_icon
+    # (consistency audit 2026-07-21) -- the floppy wears its own rip now
+    "revive_floppy":   ("Rev. Floppy",     "i:64", 2500, "Medical", "raise the dead", "one more chance"),
     "digimemory":      ("Digimemory",      "i:32", None, "Medical", "the ancestor's Va·D·Vi + lifespan", "its data lives on"),
     # ---- TOYS (the shows the engine already ships; small LIVE stat dials:
     # exercise sheds weight, couch time buys energy at a weight price) --------

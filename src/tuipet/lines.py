@@ -272,6 +272,18 @@ def select_line(pet):
     return None
 
 
+@lru_cache(maxsize=1)
+def hatchable_roots():
+    """Every root dex some egg can hatch today.  The dormant legacy charts
+    (the classic 141x lines the family eggs used to borrow, and ver6) still
+    LOAD -- a pet mid-journey keeps its tree -- but they aren't hatched
+    anymore (test_old_wrong_lines_stay_dormant_for_existing_pets), so a
+    re-anchor must never bind a NEW pet into one (consistency audit
+    2026-07-21: 37 shared forms tie-broke into unhatchable charts)."""
+    from . import egg as egg_mod       # late: egg has no lines dependency
+    return {t for i in range(egg_mod.count()) for t in egg_mod.hatch_targets(i)}
+
+
 def adopt_line(pet, prev=None):
     """Re-anchor the pet to a line whose chart contains its CURRENT form -- a
     jogress/mode fusion keeps the pet in the line system whenever ANY line
@@ -279,9 +291,11 @@ def adopt_line(pet, prev=None):
     charts (Babydmon 955 is in slayerdra, breakdra AND draco), so among
     foreign claimants a line containing the road actually travelled -- `prev`,
     the dex worn BEFORE the special evolution, AND the current form -- is the
-    pet's true chart; remaining ties break on the lowest root so the binding
-    is data-stable, never csv-order luck.  '' = truly off-chart: the legacy
-    corpus engine takes over, as before."""
+    pet's true chart; then HATCHABLE lines outrank the dormant legacy charts
+    (hatchable_roots: never capture a new pet into a line no egg hatches);
+    remaining ties break on the lowest root so the binding is data-stable,
+    never csv-order luck.  '' = truly off-chart: the legacy corpus engine
+    takes over, as before."""
     cur = load_lines().get(getattr(pet, "line_id", ""))
     if cur and pet.num in cur["members"]:
         return pet.line_id
@@ -291,6 +305,9 @@ def adopt_line(pet, prev=None):
         travelled = [o for o in owners if prev in o[1]["members"]]
         if travelled:
             owners = travelled
+    live = [o for o in owners if o[1]["root"] in hatchable_roots()]
+    if live:
+        owners = live
     if owners:
         lid = min(owners, key=lambda o: o[1]["root"])[0]
         pet.line_id = lid

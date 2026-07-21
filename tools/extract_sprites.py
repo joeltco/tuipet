@@ -94,7 +94,12 @@ def extract_eggs():
     6px gutter (not the creatures' 60/12), 48px cells, 3 frames down a column. Each
     Egg-stage creature (column = NewSpriteNum // 3) hatches into one specific Fresh
     via evolutions.csv -- we keep the egg sprite AND that hatch target, so the picker
-    shows egg -> Digimon and the egg hatches into the right baby."""
+    shows egg -> Digimon and the egg hatches into the right baby.
+
+    ⚠ The SHIPPED data/eggs.json.gz has been hand-authored past this extractor
+    (display hatch_names like 'Lalamon Egg', curated hatch roots, the Digitama
+    X3 pool) -- rerunning this clobbers that authoring (consistency audit
+    2026-07-21).  Patch the shipped file in place instead of regenerating."""
     sheet = get_sheet("Egg", 0)
     if sheet is None:
         return

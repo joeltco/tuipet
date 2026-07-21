@@ -158,3 +158,44 @@ def test_old_wrong_lines_stay_dormant_for_existing_pets():
     assert L["ver6"]["root"] == 1574
     hatched = {t for i in range(egg.count()) for t in egg.hatch_targets(i)}
     assert 1574 not in hatched
+
+
+class _Adoptee:
+    """The bare shape adopt_line reads/writes (the test-stub pattern above)."""
+    def __init__(self, num, line_id=""):
+        self.num = num
+        self.line_id = line_id
+
+
+def test_adopt_line_never_captures_into_a_dormant_chart():
+    """A fusion landing on a shared form must re-anchor to a HATCHABLE line,
+    never a dormant legacy chart (consistency audit 2026-07-21: the lowest-
+    root tie-break pulled 37 forms into charts no egg hatches -- pichimon's
+    root 1417 outranked luna's for Lunamon 385)."""
+    p = _Adoptee(385)                                # Lunamon: pichimon+luna claim it
+    lid = lines.adopt_line(p)
+    assert lid and lines.load_lines()[lid]["root"] in lines.hatchable_roots()
+    assert lid != "pichimon"
+
+
+def test_adopt_line_prefers_hatchable_for_every_shared_form():
+    """The sweep behind the single case: any form with at least one hatchable
+    claimant adopts a hatchable line; forms only a dormant chart claims keep
+    binding it (a mid-journey pet keeps its tree -- the dormancy contract)."""
+    L = lines.load_lines()
+    live_roots = lines.hatchable_roots()
+    for lid, line in L.items():
+        for num in line["members"]:
+            claim = [i for i, l in L.items() if num in l["members"]]
+            has_live = any(L[c]["root"] in live_roots for c in claim)
+            got = lines.adopt_line(_Adoptee(num))
+            assert got in claim
+            if has_live:
+                assert L[got]["root"] in live_roots, (num, got, claim)
+
+
+def test_adopt_line_keeps_a_pet_already_in_its_dormant_chart():
+    """The other half of the dormancy contract: a pet ALREADY bound to a
+    dormant line and still inside it is left alone."""
+    p = _Adoptee(385, line_id="pichimon")            # mid-journey on the old chart
+    assert lines.adopt_line(p) == "pichimon"

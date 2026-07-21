@@ -269,7 +269,27 @@ def main(write=False):
 
     with open(LINES_CSV, newline="") as fh:
         kept = [r for r in csv.reader(fh)][0:]
-    header, kept_rows = kept[0], [r for r in kept[1:] if r and r[0] in HAND_CURATED]
+    header = kept[0]
+
+    # SHIPPED lid per root (the row whose Parents cell is "egg"): a re-run
+    # must keep speaking the shipped lids (nsp/dsv/x3a/...) -- re-slugging a
+    # display name minted DUPLICATE lines (consistency audit 2026-07-21)
+    lid_by_root = {int(r[2]): r[0] for r in kept[1:]
+                   if r and r[3].strip() == "egg"}
+
+    # every root an egg hatches today; pool eggs (Digitama X3) carry several
+    hatched = {t for i in range(egg_mod.count())
+               for t in egg_mod.hatch_targets(i)}
+
+    # preserved verbatim: the hand-curated lines AND the dormant legacy
+    # charts (roots no egg hatches -- kept loaded so a mid-journey pet keeps
+    # its tree; test_old_wrong_lines_stay_dormant_for_existing_pets).  The
+    # old kept-set was HAND_CURATED only, so a --write run silently DROPPED
+    # the dormant charts (same audit).
+    dormant = {lid for root, lid in lid_by_root.items()
+               if root not in hatched and lid not in HAND_CURATED}
+    keep_ids = set(HAND_CURATED) | dormant
+    kept_rows = [r for r in kept[1:] if r and r[0] in keep_ids]
 
     usage = {}
     for r in kept_rows:
@@ -281,39 +301,42 @@ def main(write=False):
     # shipped content of 40 lines
     prev_hints = {}
     for r in kept[1:]:
-        if not r or r[0] in HAND_CURATED:
+        if not r or r[0] in keep_ids:
             continue
         names = prev_hints.setdefault(r[0], {}).setdefault(r[1], [])
         nm = by_num[int(r[2])]["name"]
         if nm not in names:
             names.append(nm)
 
-    out_rows, stats = [], []
+    out_rows, stats, done = [], [], set()
     for idx in range(egg_mod.count()):
-        targets = egg_mod.hatch_targets(idx)
-        if len(targets) != 1:
-            continue                            # the "???" pool eggs hatch other lines' roots
-        root = targets[0]
         name = egg_mod.hatch_name(idx)
-        line_id = LINE_IDS.get(name, _slug(name))
-        if line_id in HAND_CURATED:
-            continue
-        rows = curate(by_num, evo, reqs, root, line_id, usage,
-                      auto_hints=prev_hints.get(line_id))
-        ceiling = max(rows, key=lambda r: STAGE_ORDER.index(r["stage"]))["stage"]
-        stats.append((line_id, len(rows), ceiling))
-        for r in rows:
-            nm = by_num[r["num"]]["name"]
-            bed = SLEEP.get(nm, BEDTIME[r["stage"]])   # canon per-form, else stage default
-            note = nm + (f" ({r['note']})" if r.get("note") else "")
-            out_rows.append([line_id, r["stage"], str(r["num"]),
-                             ";".join(str(p) for p in r["parents"]),
-                             r["rule"], bed, note])
+        for root in egg_mod.hatch_targets(idx):    # pool eggs: a line per root
+            line_id = lid_by_root.get(root) or LINE_IDS.get(name) or _slug(name)
+            if line_id in keep_ids:
+                continue                           # hand-curated kept verbatim
+            if line_id in done:
+                if root in lid_by_root:
+                    continue                       # two eggs, one line (shared root)
+                line_id = f"{line_id}{root}"       # a NEW pool root needs its own lid
+            done.add(line_id)
+            rows = curate(by_num, evo, reqs, root, line_id, usage,
+                          auto_hints=prev_hints.get(line_id))
+            ceiling = max(rows, key=lambda r: STAGE_ORDER.index(r["stage"]))["stage"]
+            stats.append((line_id, len(rows), ceiling))
+            for r in rows:
+                nm = by_num[r["num"]]["name"]
+                bed = SLEEP.get(nm, BEDTIME[r["stage"]])   # canon per-form, else stage default
+                note = nm + (f" ({r['note']})" if r.get("note") else "")
+                out_rows.append([line_id, r["stage"], str(r["num"]),
+                                 ";".join(str(p) for p in r["parents"]),
+                                 r["rule"], bed, note])
 
     for lid, n, ceil in stats:
         print(f"{lid:16s} {n:3d} forms   ceiling {ceil}")
     print(f"{len(stats)} lines curated, {len(out_rows)} rows"
-          f" (+{len(kept_rows)} hand-curated kept)")
+          f" (+{len(kept_rows)} rows kept: hand-curated {sorted(HAND_CURATED)}"
+          f" + dormant {sorted(dormant)})")
     if write:
         import io
         buf = io.StringIO()
