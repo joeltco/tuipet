@@ -360,6 +360,10 @@ def buy(pet, e):
 
 
 def resell_price(e):
+    # a town-priced bag row carries its LOCAL sell price (buy-low/sell-high,
+    # shops arc 2026-07-21); home keeps the flat half
+    if "sell_price" in e:
+        return max(1, int(e["sell_price"]))
     return max(1, e.get("price", 0) // 2)
 
 
@@ -371,8 +375,154 @@ def sell(pet, e):
     return (f"Sold {e['name']} for {resell_price(e)}b.", "confirm")
 
 
-# (the town storefront chain -- home_shop_open / town_shop_open /
+# (the OLD town storefront chain -- home_shop_open / town_shop_open /
 # town_shop_hours / roll_town_shop / slot_label / slot_info / sell_info /
 # purchase_price + Pet.buy_slot -- CUT 2026-07-19, Joel: "cut the town
-# chain".  Towns and their counters died with adventure in v0.5.8; these
-# served screens that no longer exist, and nothing live called them.)
+# chain".  The hours/rolled-slot machine stays dead.  What follows is the
+# NEW town economy Joel ordered 2026-07-21 ("shops, town shops, deals"):
+# deterministic, no rolls, no opening hours -- the authored data driving
+# tuipet-idiom systems.)
+
+# -- the town economy (shops arc, 2026-07-21) --------------------------------
+# towns.csv override lists -> shopConsumable.csv econ rows -> CATALOG
+# identities.  The 26 towns split into TWO authored stock families (a shared
+# items shelf + two food families) -- that split IS the trade map: a town
+# pays DEMAND rates for goods it doesn't stock.
+TOWN_DEMAND_NUM, TOWN_DEMAND_DEN = 7, 10   # unstocked goods: towns pay 70%
+#                                            (home pays 50%; canon towns pay
+#                                            price//ResellFactor for their
+#                                            OWN stock -- they have plenty)
+TOWN_DAILY_CAP = 3        # tuipet's own per-(town,item,day) purchase bound.
+#                           DVPet's 25-50-steak crates served ITS economy;
+#                           against tuipet's catalog even ratio-scaled deal
+#                           margins would compound into a printer at 50/day.
+
+# PRICE LAW: a town price is the AUTHORED RATIO scaled to tuipet's catalog --
+# catalog_price * row_price / DefaultPrice (the Default* cols are DVPet's own
+# home economy, so the ratio IS the authored "towns discount steak 25%, halve
+# chips, sell furniture at par" structure).  Raw row prices against tuipet's
+# repriced catalog were money printers (375b steak vs 2000b catalog: +625
+# per home flip); the ratio keeps every flip at-or-below water and makes
+# DEALS the only trade window -- by design.
+
+
+def _today_ordinal(today=None):
+    from . import tournament
+    d = today if today is not None else tournament._today()
+    return d.toordinal()
+
+
+def _town_rows(town_id):
+    """The town's authored shelf: [(sid, catalog_key, econ_row, local_price)]
+    in list order (items shelf first, then the food family).  local_price is
+    the PRICE-LAW ratio (see above); rows whose consumable has no living
+    CATALOG identity are dropped -- their systems (chips, furniture) aren't
+    in tuipet, and dormant data stays dormant."""
+    from . import data
+    t = data.load_towns().get(town_id)
+    if not t:
+        return []
+    ov = data.load_shop_overrides()
+    foods, items = data._load_consumables()
+    rows = []
+    for sid in t["items_override"] + t["foods_override"]:
+        o = ov.get(sid)
+        if not o or o["price"] <= 0:
+            continue
+        icon = ("f:" if o["is_food"] else "i:") + str(o["consumable_id"])
+        k = key_for_icon(icon)
+        if not k:
+            continue
+        e = entry(k)
+        default = ((foods if o["is_food"] else items).get(o["consumable_id"])
+                   or {}).get("price", 0)
+        if e and default > 0:
+            local = max(1, round(e["price"] * o["price"] / default))
+        else:
+            local = o["price"]
+        rows.append((sid, k, o, local))
+    return rows
+
+
+def town_deal_sid(town_id, today=None):
+    """The town's ONE rotating daily deal: crc32-seeded on (town, day) --
+    stable all day, different tomorrow, different next town."""
+    import zlib
+    rows = _town_rows(town_id)
+    if not rows:
+        return None
+    i = zlib.crc32(f"{town_id}:{_today_ordinal(today)}".encode()) % len(rows)
+    return rows[i][0]
+
+
+def _stocked(town_id, key):
+    """This town's shelf row for `key`, or None (the demand test)."""
+    for _sid, k, o, local in _town_rows(town_id):
+        if k == key:
+            return o, local
+    return None
+
+
+def _town_taken(pet, today=None):
+    """The day's purchase ledger for this pet ({} once the day turns)."""
+    tb = getattr(pet, "town_bought", None) or {}
+    return tb if tb.get("day") == _today_ordinal(today) else {}
+
+
+def town_stock(town_id, today=None, pet=None):
+    """The town shop's shelves as ready entries [{key,name,price,category,
+    base_price,deal,left,town_id}].  The day's rotating deal (and, on a
+    FESTIVAL, every row -- the festival market) sells at the canon
+    checkSale price: price // SaleFactor.  `left` is the authored maxStock
+    minus the day's take (the anti-pump: town prices are DVPet's own,
+    far under the catalog -- the daily cap is what makes the demand
+    resale a treat instead of a printer)."""
+    from . import adventure
+    deal = town_deal_sid(town_id, today)
+    fest = bool(adventure.active_holiday(today))
+    taken = _town_taken(pet, today) if pet is not None else {}
+    out = []
+    for sid, k, o, local in _town_rows(town_id):
+        e = entry(k)
+        if not e:
+            continue
+        on = fest or sid == deal
+        price = local // max(1, o["sale_factor"]) if on else local
+        cap = min(o["max_stock"], TOWN_DAILY_CAP)
+        left = max(0, cap - int(taken.get(f"{town_id}:{k}", 0)))
+        out.append(dict(e, price=max(1, price), base_price=local,
+                        deal=on, left=left, town_id=town_id))
+    return out
+
+
+def town_buy(pet, e, today=None):
+    """A town counter purchase: blocked once the day's authored stock is
+    gone, recorded in the pet's daily ledger otherwise."""
+    if e.get("left", 0) <= 0:
+        return ("Sold out today — come back tomorrow.", "error")
+    msg, sfx = buy(pet, e)
+    if sfx == "confirm":
+        day = _today_ordinal(today)
+        tb = getattr(pet, "town_bought", None) or {}
+        if tb.get("day") != day:
+            tb = {"day": day}                  # a new day sweeps the ledger
+        k = f"{e['town_id']}:{e['key']}"
+        tb[k] = int(tb.get(k, 0)) + 1
+        pet.town_bought = tb
+    return (msg, sfx)
+
+
+def town_sell_price(key, town_id):
+    """Buy-low/sell-high: a good this town STOCKS resells at the canon
+    local_price // ResellFactor (it has plenty); one it DOESN'T stock is
+    in DEMAND -- 70% of catalog price, better than home's half.  The
+    trade window: buy a family's exclusive ON DEAL, carry it to the
+    OTHER family's towns."""
+    hit = _stocked(town_id, key)
+    if hit is not None:
+        o, local = hit
+        return max(1, local // max(1, o["resell_factor"]))
+    e = entry(key)
+    if not e:
+        return 1
+    return max(1, e["price"] * TOWN_DEMAND_NUM // TOWN_DEMAND_DEN)

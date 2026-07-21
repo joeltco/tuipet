@@ -193,6 +193,11 @@ class Pet(CareMixin, DnaMixin, BattleMixin, BodyMixin):
     # is wired to egg_type now.  BASIC VPET 2026-07-16)
     x_antibody: str = "None"
     inventory: dict = _dcf(default_factory=dict)
+    # the day's town-counter purchases {"day": ordinal, "<tid>:<key>": n} --
+    # the authored maxStock caps a town's daily take (shops arc 2026-07-21:
+    # DVPet's 375b town steak vs the 2000b catalog would otherwise be a
+    # money printer through the demand resale)
+    town_bought: dict = _dcf(default_factory=dict)
     # transient animation request, consumed by the UI
     anim: str = "idle"
     anim_ttl: float = 0.0

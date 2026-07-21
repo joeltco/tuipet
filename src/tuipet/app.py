@@ -132,11 +132,11 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("The road reads your mon now: sick pets trudge at half "
-                 "pace, elders do the aged shuffle, sleepers nap by the "
-                 "roadside — and a pet pushed past empty plants its feet "
-                 "and refuses to walk. SPACE urges it on; a town rest "
-                 "restores its will.")
+    WHATS_NEW = ("TOWN ECONOMIES: every town shop carries its own stock "
+                 "at its own prices, with ONE half-off deal rotating "
+                 "daily — festivals put the whole counter on sale. Towns "
+                 "pay 70% for goods they don't stock: buy the deal in "
+                 "one town, sell it to the other side of the map.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and

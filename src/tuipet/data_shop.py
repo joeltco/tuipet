@@ -305,11 +305,91 @@ def _default_econ(r):
         "shop_unlocked": (r.get("ShopUnlocked") or "FALSE").strip().upper() == "TRUE",
     }
 
-# (load_shop_overrides left 2026-07-18: zero callers since the towns/adventure
-# removal -- the CSV stays on disk, dormant.)
+# load_shop_overrides + load_towns: removed 2026-07-18 (zero callers after the
+# towns/adventure removal), RESTORED VERBATIM 2026-07-21 for the shops arc --
+# the town hub is back and Joel ordered per-town stock + deals ("shops, town
+# shops, deals"): towns.csv override lists -> these rows' authored econ.
 
-# (load_towns left 2026-07-18: zero callers since the towns/adventure
-# removal -- the CSV stays on disk, dormant.)
+@lru_cache(maxsize=1)
+def load_shop_overrides():
+    """shopConsumable.csv: the per-TOWN override table -- towns.csv references
+    these rows by ShopConsumableID to reprice/restock consumables locally."""
+    out = {}
+    path = os.path.join(_DATA, "shopConsumable.csv")
+    if not os.path.exists(path):
+        return out
+    for r in csv.DictReader(open(path)):
+        try:
+            sid = int(r["ShopConsumableID"])
+        except (KeyError, ValueError):
+            continue
+        def i(k, d):
+            try:
+                return int(r.get(k) or d)
+            except ValueError:
+                return d
+        out[sid] = {
+            "consumable_id": i("ConsumableID", -1),
+            "is_food": (r.get("IsFood") or "false").strip().lower() == "true",
+            "price": i("Price", 0),
+            "min_stock": i("minStock", 1), "max_stock": i("maxStock", 1),
+            "stock_chance": _shop_season4(r.get("stockChance(SpringSummerFallWinter)"), 100),
+            "time_avail": _shop_time4(r.get("DefaultTimeAvailable(HtH;SpringSummerFallWinter)")),
+            "must_stock": (r.get("MustStock") or "false").strip().lower() == "true",
+            "sale_chance": _shop_season4(r.get("SaleChance(SpringSummerFallWinter)"), 0),
+            "sale_factor": i("SaleFactor", 1), "resell_factor": i("ResellFactor", 0),
+        }
+    return out
+
+
+@lru_cache(maxsize=1)
+def load_towns():
+    """towns.csv: the full town records -- local shop overrides + inventory
+    sizes, sell permissions, and the town tournament (slots 0-23 are hourly
+    cups; slots past 23 -- where ForceTrophies pin -- are ALWAYS open)."""
+    out = {}
+    for r in csv.DictReader(open(os.path.join(_DATA, "towns.csv"))):
+        try:
+            tid = int(r["TownID"])
+        except (KeyError, ValueError):
+            continue
+        def ids(k):
+            return [int(x) for x in (r.get(k) or "").split(":") if x.strip().isdigit()]
+        forced = [int(x) for x in (r.get("ForceTrophies") or "").split(";")
+                  if x.strip().lstrip("-").isdigit() and int(x) >= 0]
+
+        def hours(k):
+            """'6t23;6t23;24t17;6t23' -> per-season (start, end) opening spans,
+            keyed Spring/Summer/Fall/Winter.  Canon Utility.isOpen(h, span) is a
+            plain h >= start and h <= end -- so a '24t17' span (start past any
+            real hour) is CLOSED FOR THE SEASON, not a wraparound."""
+            spans = [(s.split("t") + ["", ""])[:2] for s in (r.get(k) or "").split(";")]
+            seasons = ("Spring", "Summer", "Fall", "Winter")
+            return {seasons[i]: (int(a), int(b))
+                    for i, (a, b) in enumerate(spans[:4])
+                    if a.strip().lstrip("-").isdigit() and b.strip().lstrip("-").isdigit()}
+        out[tid] = {
+            "id": tid,
+            "items_override": ids("OverrideDefaultItemsSettings(ShopConsumableID)"),
+            "foods_override": ids("OverrideDefaultFoodSettings(ShopConsumableID)"),
+            "food_max": int(r.get("FoodShopInventoryMax") or 8),
+            "item_max": int(r.get("ItemShopInventoryMax") or 12),
+            "can_sell_items": (r.get("CanSellItems") or "false").strip().lower() == "true",
+            "can_sell_food": (r.get("CanSellFood") or "false").strip().lower() == "true",
+            "tournament_limit": int(r.get("TournamentLimit (0 to 23 are hours 0 to 23 – anything higher is always open)") or
+                                    r.get("TournamentLimit") or 0),
+            "forced_trophies": forced,
+            # per-season shop opening hours (FoodShopOpen/ItemShopOpen columns);
+            # winter-market towns (6/13/18) open ONLY in winter by this data
+            "food_hours": hours("FoodShopOpen(SpringSummerFallWinter)"),
+            "item_hours": hours("ItemShopOpen(SpringSummerFallWinter)"),
+            # TownBackgroundID: the town's canonical scenery (a habitat id) --
+            # shown on arrival in adventure and behind the town lobby
+            "bg_habitat": (int(r["TownBackgroundID"])
+                           if (r.get("TownBackgroundID") or "").strip().lstrip("-").isdigit()
+                           and int(r["TownBackgroundID"]) >= 0 else None),
+        }
+    return out
 
 def _shop_econ_default():
     """Always-stocked, no-sale defaults for specialty items not in shopConsumable.csv."""

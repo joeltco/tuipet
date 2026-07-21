@@ -3,6 +3,25 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.5.130 — TOWN ECONOMIES (2026-07-21)
+
+* **Per-town stock.** Town shops no longer mirror the home catalog: the
+  authored town tables are wired back up, splitting the 26 towns into two
+  stock families — a shared items shelf plus a food family each, with
+  steak exclusive to one side and the anti-evo chip to the other. Town
+  counters carry just their two shelves (Food · Items).
+* **Local prices.** A town price is the authored ratio scaled to the
+  catalog — steak 25% off, chips half, transports at par. No town's
+  normal price ever undercuts the home resale (audited, pinned).
+* **The rotating deal.** One item per town per day at half off (▾ on the
+  shelf) — stable all day, different tomorrow, different next town. On a
+  **festival**, the whole counter goes on sale.
+* **Buy low, sell high.** A town pays a pittance for what it stocks but
+  **70%** of catalog for what it doesn't (home pays 50%). Deals are the
+  only below-water prices — catch a family exclusive on deal and carry
+  it across the map. Capped at 3 per item per town per day; the shelf
+  says "sold out today" when you've cleaned it out.
+
 ## 0.5.129 — THE ROAD READS YOUR MON (2026-07-21)
 
 * **Condition walks.** A sick pet drags the collapse/weary trudge at

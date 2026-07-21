@@ -52,10 +52,13 @@ _HONOR_PLATE = ["╭" + "─" * (menu.IC_W - 2) + "╮",
 
 
 class ShopPanel:
-    def __init__(self, pet, start_mode="shop", bag_only=False):
+    def __init__(self, pet, start_mode="shop", bag_only=False, town_id=None):
         self.pet = pet
         self.mode = start_mode
         self.bag_only = bag_only        # road bag: use/sell only
+        self.town = town_id             # a TOWN counter: authored stock, local
+        #                                 prices, the day's deal, demand resale
+        #                                 (shops arc 2026-07-21); None = home
         self.tab = 0
         self.cursor = 0
         self.frame_i = 0
@@ -98,8 +101,12 @@ class ShopPanel:
 
     # ---- data ----
     def _tabs(self):
-        """Shop: the classic four.  Bag: the goods tabs over what you own."""
+        """Shop: the classic four (a TOWN counter carries only its two
+        authored shelves -- eggs have their own hub slot, honors are a home
+        prestige).  Bag: the goods tabs over what you own."""
         if self.mode == "shop":
+            if self.town is not None:
+                return ["Food", "Items"]
             return [g for g, _ in GROUPS]
         return [g for g, cats in GROUPS if cats is not None]
 
@@ -114,12 +121,18 @@ class ShopPanel:
                 return [dict(t, title_id=t["id"], owned=t["id"] in owned,
                              worn=t["id"] == worn)
                         for t in data.load_titles()]
+            if self.town is not None:      # the town counter: authored stock
+                return [e for e in shop.town_stock(self.town, pet=self.pet)
+                        if e["category"] in cats]
             return [e for e in shop.catalog() if e["category"] in cats]
         out = []
         for k, n in self.pet.inventory.items():
             e = shop.entry(k)
             if e and e["category"] in cats:
-                out.append(dict(e, count=n))
+                e = dict(e, count=n)
+                if self.town is not None:  # local demand: the town's OWN offer
+                    e["sell_price"] = shop.town_sell_price(k, self.town)
+                out.append(e)
         out.sort(key=lambda e: e["name"])      # by the name you SEE, not the key
         return out
 
@@ -204,6 +217,9 @@ class ShopPanel:
                 if e.get("title_id") is not None:
                     msg, self.sfx = self._buy_title(e)
                     self._flash(msg)
+                elif self.town is not None:
+                    msg, self.sfx = shop.town_buy(self.pet, e)
+                    self._flash(msg)
                 else:
                     msg, self.sfx = shop.buy(self.pet, e)
                     self._flash(msg)
@@ -264,7 +280,11 @@ class ShopPanel:
             held = self.pet.inventory.get(key, 0)
             short = sel["price"] - self.pet.bits
             price = "%db" % sel["price"]
-            if held:
+            if self.town is not None and sel.get("left", 1) <= 0:
+                price += " · sold out today"
+            elif sel.get("deal"):
+                price += " · DEAL! (was %db)" % sel.get("base_price", 0)
+            elif held:
                 price += " · hold x%d" % held
             elif short > 0:
                 price += " · short %db" % short
@@ -316,7 +336,10 @@ class ShopPanel:
                     return "%-18s %6db" % (e["name"][:18], e["price"])
                 held = self.pet.inventory.get(e["key"], 0)
                 mark = ("x%d" % held) if held else ""
-                return "%-18s %3s %6db" % (e["name"][:18], mark, e["price"])
+                nm = ("▾" + e["name"][:17]) if e.get("deal") else e["name"][:18]
+                if self.town is not None and e.get("left", 1) <= 0:
+                    return "%-18s %3s %6s" % (nm, mark, "out")
+                return "%-18s %3s %6db" % (nm, mark, e["price"])
             return "%-18s x%-3d %5db" % (e["name"][:18], e.get("count", 1),
                                          shop.resell_price(e))
 

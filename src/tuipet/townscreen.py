@@ -47,15 +47,20 @@ class TownPanel(menu.SubHost):
             key = _MENU[self.cursor][0]
             if key == "shop":
                 from .shopscreen import ShopPanel
-                self.sub = ShopPanel(self.pet)   # the real shop, in the town
+                # the real shop layout, serving THIS town's authored stock,
+                # local prices, and the day's deal (shops arc 2026-07-21)
+                self.sub = ShopPanel(self.pet, town_id=self.town_id)
             elif key == "eggs":
                 from .towneggscreen import TownEggPanel
                 # this town's DISTINCT egg stock, as real 8x8 thumbnails
                 self.sub = TownEggPanel(self.pet, self.town_id)
             elif key == "sell":
                 from .shopscreen import ShopPanel
-                # the real bag (use / sell back), same layout as home
-                self.sub = ShopPanel(self.pet, start_mode="bag", bag_only=True)
+                # the real bag (use / sell back), same layout as home --
+                # paying THIS town's rates: demand goods fetch 70%, its own
+                # stock a pittance (buy-low/sell-high, shops arc 2026-07-21)
+                self.sub = ShopPanel(self.pet, start_mode="bag", bag_only=True,
+                                     town_id=self.town_id)
             elif key == "cup":
                 self._start_cup()
             elif key == "leave":
