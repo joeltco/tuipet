@@ -91,6 +91,14 @@ def test_the_discover_sequence_plays_out_and_resumes_the_march(monkeypatch):
     _to_travelling(pan)
     _spot(pan)
     pan.key("enter")
+    for _ in range(INV_WALK_T + 2):                    # the walk-out leg
+        pan.anim()
+        assert pan.text()
+    assert pan._scene.get("meter") and pan._scene["grade"] is None
+    m = pan._scene["meter"]
+    m["bar"] = (m["lo"] + m["hi"]) // 2                # dead centre: a clean dig
+    pan.key("space")                                   # lock the timed dig
+    assert pan._scene["grade"] == "mega"
     saw_dots = saw_reveal = False
     chimed = False
     for _ in range(INV_END_T + 2):
@@ -107,6 +115,93 @@ def test_the_discover_sequence_plays_out_and_resumes_the_march(monkeypatch):
             saw_reveal = saw_reveal or "Dug up" in pan.strip()
         chimed = chimed or pan.sfx == "reward"
     assert saw_dots and saw_reveal and chimed
+    assert pan._scene is None and pan.travelling       # back on the road
+
+
+def _at_the_meter(monkeypatch, p=None):
+    """Spot a glint, ENTER, walk out -- returns (pan, key) with the timed-dig
+    meter live."""
+    from tuipet.adventurescreen import INV_WALK_T
+    monkeypatch.setattr(adventure, "ENCOUNTER_CHANCE", 0.0)
+    monkeypatch.setattr(adventure, "FIND_CHANCE", 1.0)
+    pan = AdventurePanel(p or _pet(), zone=_find_zone())
+    _to_travelling(pan)
+    key = _spot(pan)
+    pan.key("enter")
+    for _ in range(INV_WALK_T + 2):
+        pan.anim()
+    assert pan._scene.get("meter") and pan._scene["grade"] is None
+    return pan, key
+
+
+def test_the_timed_dig_meter_is_the_canon_bar(monkeypatch):
+    """At the dig spot the CANON timing bar owns the window -- the same
+    sprite and mega window as the training drill and the battle bell (one
+    bar everywhere) -- with the dig hint on the strip."""
+    from tuipet import menu, strikefx
+    pan, _key = _at_the_meter(monkeypatch)
+    m = pan._scene["meter"]
+    calls = []
+    real = menu.paint
+    monkeypatch.setattr(menu, "paint",
+                        lambda pl, *a, **k: (calls.append((pl, k)), real(pl, *a, **k))[1])
+    assert pan.text()
+    pl, kw = calls[-1]
+    assert pl == []                                    # the bar owns the window
+    assert kw.get("overlay") == strikefx.timing_bar(m["bar"], m["lo"], m["hi"])
+    assert "dig" in pan.strip().lower()
+
+
+def test_a_mega_lock_banks_a_second_copy(monkeypatch):
+    """Inside the mega window the dig pays DOUBLE -- pinned through the
+    verbatim battles>=999 never-whiff rule the drill and the bell share --
+    and the reveal verdict says x2."""
+    from tuipet.adventurescreen import INV_REVEAL_T
+    p = _pet()
+    p.battles = 999                                    # never whiffs (DSprite truth)
+    pan, key = _at_the_meter(monkeypatch, p)
+    before = p.inventory.get(key, 0)
+    pan.key("space")
+    assert pan._scene["grade"] == "mega"
+    assert p.inventory.get(key, 0) == before + 1       # the bonus copy, at the lock
+    assert pan.sfx == "confirm"
+    for _ in range(INV_REVEAL_T):
+        pan.anim()
+        if "×2" in pan.strip():
+            break
+    assert "×2" in pan.strip()                         # the verdict says double
+
+
+def test_a_wide_miss_still_keeps_the_find(monkeypatch):
+    """The meter is pure upside: a wide miss scrapes the find out all the
+    same -- one copy, nothing lost -- only the verdict (and the cancel
+    thunk) says you blew the timing."""
+    from tuipet.battlescreen import BAR_MAX
+    pan, key = _at_the_meter(monkeypatch)
+    p = pan.pet
+    before = p.inventory.get(key, 0)
+    m = pan._scene["meter"]
+    m["bar"] = 0 if m["lo"] - 5 > 0 else BAR_MAX       # park it outside the bands
+    pan.key("space")
+    assert pan._scene["grade"] == "miss"
+    assert p.inventory.get(key, 0) == before           # base copy from ENTER only
+    assert "Scraped" in pan._find_msg and pan.sfx == "cancel"
+
+
+def test_the_dig_meter_times_out_and_locks_itself(monkeypatch):
+    """No press: the countdown burns out and the spade falls wherever the
+    marker stands -- the sequence still plays to its end and the march
+    resumes (the show never hangs on a missing hand)."""
+    from tuipet.adventurescreen import DIG_METER_T, INV_END_T
+    pan, _key = _at_the_meter(monkeypatch)
+    for _ in range(DIG_METER_T + 2):
+        pan.anim()
+        assert pan.text()
+    assert pan._scene["grade"] is not None             # it locked itself
+    for _ in range(INV_END_T + 2):
+        if pan._scene is None:
+            break
+        pan.anim()
     assert pan._scene is None and pan.travelling       # back on the road
 
 

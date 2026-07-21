@@ -51,6 +51,16 @@ INV_REVEAL_T = 30             # dots done -> the reveal pose fires
 INV_HOLD_T = 42               # reveal held (the find shown beside the cheer)
 INV_END_T = 54                # walk-back (ReturnItem) complete
 
+# the TIMED DIG (arcade arc, Joel 2026-07-21 "do the timed dig"): reaching
+# the dig spot runs the CANON timing bar -- the same sprite and the same
+# care-widened mega window as the training drill and the battle bell
+# (strikefx.timing_bar / battlescreen.mega_window; one bar everywhere is
+# Joel's standing law).  SPACE locks it; mega digs a SECOND copy of the
+# find.  The meter is pure upside: a wide miss still scrapes the find out
+# -- no loot is ever lost to it, the verdict just says so.
+DIG_METER_T = 48              # one full 0..24..0 sweep, then the spade falls
+#                               wherever the marker stands (the TIMED part)
+
 WALK_BEAT = 5                 # idleWalk pose-flip cadence while marching
 MARCH_PX = 0.5                # the march: px per 0.1s tick across the window
 #                               (a full crossing ~ 9-10s, ~one per stride)
@@ -244,12 +254,17 @@ class AdventurePanel(menu.SubHost):
         presentation, like a battle timeline; the verdict and the reward
         chime stay sealed until the reveal beat."""
         from . import shop
+        from .battlescreen import mega_window
         key, self._find = self._find, None
         self.pet.add_item(key)                # a CATALOG key: real, usable loot
         self.adv.finds += 1
         name = (shop.entry(key) or {}).get("name", "loot")
         self._find_msg = f"Dug up {name}!"
-        self._scene = {"t": 0, "icon": self._find_icon(key)}
+        lo, hi = mega_window(self.pet)        # the SHARED care-widened window
+        self._scene = {"t": 0, "icon": self._find_icon(key), "key": key,
+                       "name": name, "grade": None,
+                       "meter": {"bar": 0, "dir": 1, "left": DIG_METER_T,
+                                 "lo": lo, "hi": hi}}
 
     def _find_icon(self, key):
         """The find at HAND size, ~8px beside the 16px mon (old-build rule:
@@ -267,14 +282,50 @@ class AdventurePanel(menu.SubHost):
         return icon
 
     def _scene_tick(self):
-        """Advance the playbook.  The reveal unseals the verdict (reward
-        chime); the walk-back's end puts the mon back on the road."""
+        """Advance the playbook.  At the dig spot the TIMED-DIG meter holds
+        the clock (the bar sweeps, the countdown burns, timeout locks the
+        spade wherever the marker stands); after the lock, the dots and the
+        reveal (reward chime) play on; the walk-back's end puts the mon
+        back on the road."""
+        from .battlescreen import BAR_MAX
         s = self._scene
+        if s["t"] >= INV_WALK_T and s["grade"] is None:
+            m = s["meter"]                    # the meter owns the beat
+            m["bar"] += m["dir"]
+            if m["bar"] >= BAR_MAX or m["bar"] <= 0:
+                m["dir"] = -m["dir"]
+                m["bar"] = max(0, min(BAR_MAX, m["bar"]))
+            m["left"] -= 1
+            if m["left"] <= 0:
+                self._lock_dig()              # time's up: the spade falls
+            return
         s["t"] += 1
         if s["t"] == INV_REVEAL_T:
             self.sfx = "reward"               # _discoverConsumable
         if s["t"] >= INV_END_T:               # carried home -> back on the road
             self._scene = None
+
+    def _lock_dig(self):
+        """The spade falls: grade the marker against the shared mega window
+        (battles >= 999 never whiffs -- DSprite truth, the verbatim battle/
+        drill rule).  Mega banks a SECOND copy of the find on the spot;
+        normal keeps the honest single; a wide miss still scrapes the find
+        out -- the meter is pure upside, only the verdict changes."""
+        s = self._scene
+        m = s.pop("meter")
+        if self.pet.battles >= 999 or m["lo"] <= m["bar"] <= m["hi"]:
+            g = "mega"
+        elif m["lo"] - 5 <= m["bar"] <= m["hi"] + 5:
+            g = "normal"
+        else:
+            g = "miss"
+        s["grade"] = g
+        if g == "mega":
+            self.pet.add_item(s["key"])       # the bonus copy, banked at the lock
+            self._find_msg = f"Dug up {s['name']} ×2!"
+        elif g == "miss":
+            self._find_msg = f"Scraped out {s['name']}..."
+        self.sfx = "confirm" if g != "miss" else "cancel"
 
     def _start_battle(self, enemy):
         """A wild fight rides BattlePanel as a child (SubHost): the road's biome
@@ -382,7 +433,13 @@ class AdventurePanel(menu.SubHost):
         if (self._trans is not None or self._scene is not None
                 or self._pulse is not None or self._parade is not None):
             # the teleport / investigate / celebration beats own the screen
-            # (no skips: own-game law 2026-07-13 -- the beats play out)
+            # (no skips: own-game law 2026-07-13 -- the beats play out).
+            # ONE exception: SPACE locks a LIVE timed-dig meter -- that's
+            # the arcade input, not a skip
+            s = self._scene
+            if (s is not None and s.get("meter") and s["grade"] is None
+                    and s["t"] >= INV_WALK_T and k in ("space", "enter")):
+                self._lock_dig()
             return None
         if self._town_prompt:                 # at a town: visit the hub or walk on
             if k in ("enter",):
@@ -459,7 +516,9 @@ class AdventurePanel(menu.SubHost):
             if self._town_prompt:
                 return "[b]⌂ A town[/]  [dim]ENTER visit · SPACE walk on[/]"
             if self._scene is not None:
-                t = self._scene["t"]
+                s, t = self._scene, self._scene["t"]
+                if s["grade"] is None and t >= INV_WALK_T:
+                    return menu.hints(("SPACE", "dig!"))   # the meter is live
                 if t >= INV_REVEAL_T:         # the reveal, unsealed
                     return f"[b]✦ {self._find_msg}[/]"
                 if t >= INV_WALK_T:           # suspense: . .. ...
@@ -563,6 +622,12 @@ class AdventurePanel(menu.SubHost):
             x = round(x0 + (grid.X0 - x0) * (t / INV_WALK_T))
             return menu.paint([(rows, x, False)], bg, rows=ROWS, cols=COLS,
                               clip=grid.WINDOW)   # faces left (native)
+        if s["grade"] is None:                    # the TIMED DIG: the canon bar
+            m = s["meter"]                        # owns the window, like the
+            return menu.paint([], bg, rows=ROWS,  # drill and the battle bell
+                              cols=COLS, clip=grid.WINDOW,
+                              overlay=strikefx.timing_bar(m["bar"], m["lo"],
+                                                          m["hi"]))
         if t < INV_REVEAL_T:                      # the suspense dig
             rows = self._rows(0)
             overlay = []

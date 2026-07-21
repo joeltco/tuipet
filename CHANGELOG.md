@@ -3,6 +3,19 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.5.125 — THE TIMED DIG (2026-07-21)
+
+* **Digging is a timing game now.** ENTER on a glint walks your mon out to
+  the spot as before — but at the dig, the canon timing bar takes the
+  window: the same sprite and the same care-widened mega window as the
+  training drill and the battle bell. SPACE locks the spade. Dead-centre
+  digs a **second copy** of the find ("Dug up X ×2!"); near it keeps the
+  honest single; a wide miss still scrapes the find out — the meter is
+  pure upside, only the verdict (and the thunk) says you blew it. One
+  full sweep and the spade falls wherever the marker stands, so the
+  sequence never waits on you. Battles maxed at 999 never whiff, same
+  as everywhere else.
+
 ## 0.5.124 — ROAD THEATER: THE FACEOFF, THE DIG, THE PARADE (2026-07-21)
 
 * **The discover sequence is back.** A glint stop now plays the old build's

@@ -132,11 +132,10 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("Adventure roads got their theater back: glints play the "
-                 "full dig-and-carry discover sequence, a knocked-back "
-                 "gate is a boss FACEOFF, and felling a gate flashes the "
-                 "zone pulse — with the map's bosses parading past when "
-                 "you clear a map's final gate.")
+    WHATS_NEW = ("The TIMED DIG: reaching a glint's dig spot now runs the "
+                 "timing bar — the same one as training and battle. Lock "
+                 "it dead-centre to dig the find ×2; miss and you still "
+                 "keep it. Good care widens the sweet spot.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and
