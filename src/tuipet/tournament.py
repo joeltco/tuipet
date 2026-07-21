@@ -104,11 +104,39 @@ _TIERS = ("Rookie", "Champion", "Ultimate", "Mega")
 
 
 def trophy_label(t):
+    if t.get("label"):                    # a road-only town cup names itself
+        return t["label"]
     if t["field_req"]:
         return "%s Cup" % data.pretty_field(t["field_req"])
     if t["attr_req"]:
         return "%s Cup" % t["attr_req"]
     return "%s Open #%d" % (t["season"], t["id"] + 1)   # display 1-based ("#0" reads like a bug)
+
+
+# road-only TOWN cups get their own DISTINCT trophy id space (home cups run
+# 0..324), so a town-cup win is a separate trophy the home cups never award.
+TOWN_TROPHY_BASE = 900
+
+
+def town_cup(pet, town_id=0):
+    """A DISTINCT, road-only town championship: its own trophy (id 900+town),
+    an OPEN bracket any comer can enter, a stake + a healthy purse.  Built from
+    a real trophy shell so the Tournament engine runs it unchanged; recorded
+    under its own id (never a home cup)."""
+    t = dict(data.load_tournies()[0])     # a valid trophy shell (all keys present)
+    t.update({
+        "id": TOWN_TROPHY_BASE + max(0, int(town_id or 0)),
+        "label": "Town Cup",
+        "season": real_season(),
+        # open to all: no age / stage / field / attribute walls
+        "age_limit": "", "enemy_stage": "", "enemy_field": "", "enemy_attr": "",
+        "enemy_elem": "", "field_req": "", "attr_req": "",
+        "prelim": 0, "reset_season": False,
+        "same_day_retry": True,           # throttled by once-per-town-visit, not the day
+        "bit_mod": 1.5,                   # the town-champion purse
+        "item": -1, "food_id": -1, "food_amt": 0,
+    })
+    return t
 
 
 

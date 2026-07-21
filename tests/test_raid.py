@@ -325,9 +325,10 @@ def test_claim_pays_bits_items_ko6_and_the_raids_channel():
 
 # ---- eggs: the MapComplete re-gate ----------------------------------------------
 
-def _prog(raids=0):
+def _prog(raids=0, maps=None):
     prog = persistence.get_progress()
     prog["raids"] = raids
+    prog["maps"] = set(maps or ())
     return prog
 
 
@@ -341,12 +342,18 @@ def test_map_rows_gate_on_felled_raids_now():
     assert egg._conditions_met(deep, _prog(raids=4))
 
 
-def test_map_rows_tell_the_raid_story():
+def test_map_rows_tell_the_adventure_or_raid_story():
+    # map-N eggs now open by clearing adventure region N OR the raid fallback
+    # (adventure rebuild 2026-07-20 -- the map rows always meant region cleared)
     rules = data.load_egg_unlock()
     idx = next(i for i, r in rules.items() if r.get("map") == 1)
-    assert rules[idx]["desc"] == "Fell 2 raid bosses"
-    assert egg.unlock_progress(idx, _prog(raids=1)) == "raid bosses felled 1/2"
-    assert egg.unlock_ratio(idx, _prog(raids=1)) == 0.5
+    assert rules[idx]["desc"] == "Fell 2 raid bosses"          # the CSV desc stands
+    assert egg.unlock_progress(idx, _prog(raids=1)) == \
+        "clear adventure map 2 (or fell 2 raid bosses)"
+    assert egg.unlock_ratio(idx, _prog(raids=1)) == 0.5        # 1/2 raids, map uncleared
+    # clearing the adventure region unlocks it outright
+    assert egg.unlock_progress(idx, _prog(maps={1})) == ""
+    assert egg.unlock_ratio(idx, _prog(maps={1})) == 1.0
 
 
 def test_the_panel_reports_honestly_and_stays_live():

@@ -24,7 +24,7 @@ def _prog_for(rule):
         "maps": set(range(0, 200)), "raids": 99999, "tourneys": set(range(0, 200)),
         "last_field": "None", "last_attr": "None", "last_elem": "None",
         "last_mood": 99999, "last_obed": 99999, "last_xanti": True,
-        "connections": 99999,
+        "connections": 99999, "festivals": set(range(0, 10)),
     }
     if rule:
         if rule["prev_field"] is not None:
@@ -172,3 +172,21 @@ def test_prev_gate_vocabulary_lives_in_the_roster():
         for n in (r.get("history") or []):
             assert n in nums or data.canonical_num(n) in nums, \
                 f"egg {i}: history num {n} not in the roster"
+
+
+def test_map_eggs_unlock_by_clearing_adventure_regions():
+    """The map-N eggs open when ADVENTURE clears region N (the profile `maps`
+    set), with the raid fallback (N+1 bosses) still standing -- the map rows
+    always meant 'region-boss cleared' (adventure rebuild 2026-07-20)."""
+    u = data.load_egg_unlock()
+    mapped = [(i, r) for i, r in u.items() if r.get("map") is not None]
+    assert mapped                                     # there ARE map-gated eggs
+    for i, r in mapped:
+        n = r["map"]
+        base = _prog_for(r)                           # every OTHER gate satisfied
+        locked = {**base, "maps": set(), "raids": 0}
+        assert not egg._conditions_met(r, locked)     # neither path -> locked
+        assert egg._conditions_met(r, {**locked, "maps": {n}})      # adventure clears it
+        assert egg._conditions_met(r, {**locked, "raids": n + 1})   # raid fallback
+        assert "adventure map" in egg.unlock_progress(i, locked)    # the guide names it
+        assert egg.unlock_progress(i, {**locked, "maps": {n}}) == ""  # cleared -> no gate text

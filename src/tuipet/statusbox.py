@@ -90,6 +90,20 @@ def card(app, title, lines, subtitle=""):
 
 # ---- the HOME vitals (the Stats widget delegates here) ---------------------
 
+def adventure_line(pet):
+    """The home card's quest progress -- LIVE from pet.adv_progress: zones
+    conquered of the 26, 'not begun' before the first, '★ all cleared' at the
+    end.  Single source for the adventure readout (status-box liveness rule)."""
+    from . import adventure
+    total = len(adventure.ZONES)
+    prog = max(0, min(int(getattr(pet, "adv_progress", 0) or 0), total))
+    if prog <= 0:
+        return "Quest   [dim]not begun[/]"
+    if prog >= total:
+        return f"Quest   [{theme.POS}]★ all {total} cleared[/]"
+    return f"Quest   {prog}/{total} zones"
+
+
 def home_lines(pet):
     T = theme
     word = pet.status_word()
@@ -117,6 +131,7 @@ def home_lines(pet):
          f"✗{pet.care_mistakes} this stage[/]"),
         f"DP      [{T.ACCENT}]{'◆' * getattr(pet, 'dp', 0)}[/][dim]{'◇' * (4 - getattr(pet, 'dp', 0))}[/]",
         f"Battle  {pet.wins}W/{pet.battles}   [{T.COIN}]★{pet.trophies}[/]",
+        adventure_line(pet),
         f"@{backgrounds.name(pet.bg_pick or backgrounds.scene_for_egg(pet.egg_type))[:16]} [dim]{age}[/]",
         f"Life    {bar(lifepct, 12, lifecol)}",
         status_line(word, deco),

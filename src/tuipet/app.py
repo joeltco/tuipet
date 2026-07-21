@@ -97,7 +97,7 @@ def keys_markup():
     k = f"b {theme.KEY}"
     return (
         f"[{k}]f[/] feed [dim](meat·pill)[/]  [{k}]c[/] clean  [{k}]s[/] lights  [{k}]v[/] assist\n"
-        f"[{k}]r[/] raid  [{k}]u[/] cup  [{k}]l[/] lobby [dim](battle·jogress)[/]  [{k}]t[/] train  [{k}]x[/] DNA  [{k}]d[/] digicore\n"
+        f"[{k}]a[/] adventure  [{k}]r[/] raid  [{k}]u[/] cup  [{k}]l[/] lobby [dim](pvp)[/]  [{k}]t[/] train  [{k}]x[/] DNA  [{k}]d[/] digicore\n"
         f"[{k}]n[/] eggs  [{k}]o[/] shop  [{k}]i[/] bag  [{k}]e[/] scenes  [{k}]g[/] options  [{k}]b[/] bug  [{k}]?[/] help  [{k}]q[/] quit"
     )
 
@@ -150,20 +150,22 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("A few eggs hatch onto backgrounds that fit better now - the "
-                 "plant line moved to the forest, and the sky lines swapped an "
-                 "icy peak for open mountains.")
+    WHATS_NEW = ("Adventure is back: head out on the road, cross a zone's "
+                 "wilds, fell its boss, then rest in towns to resupply and "
+                 "fight the Town Cup. And every path earns eggs now - conquer "
+                 "regions, win cups, fell raids, link up, or play the festivals.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and
-        # jogress should be online pvp only") -- PvE combat lives in raids
-        # and the cup (adventure left 2026-07-16); fusion needs a real
-        # partner from the roster.
+        # jogress should be online pvp only"); fusion needs a real partner
+        # from the roster.  PvE lives in Adventure (rebuild started
+        # 2026-07-20 -- the flagship EXPLORE feature), raids and the cup.
         # Order = the ACTIONS bar / Help-screen reading order (CARE,
         # EXPLORE, GROW, MANAGE) so the Options→Keys page tells the same
         # story (bar tidy 2026-07-18).
         ("f", "feed", "Feed"), ("c", "clean", "Clean"),
         ("s", "sleep", "Lights"), ("v", "assist", "Assistant"),
+        ("a", "adventure", "Adventure"),
         ("r", "raid", "Raid"), ("u", "tournament", "Cup"),
         ("l", "lobby", "Lobby"),
         ("t", "train", "Train"), ("x", "dna", "DNA"),

@@ -330,6 +330,14 @@ def tourney_add(trophy_id):
     _note_set("tourneys", int(trophy_id))
 
 
+def festival_add(name):
+    """Celebrated a festival -- conquered an adventure zone on a holiday day.
+    A set of the festival NAMES seen (distinct festivals only, so same-day
+    conquers count once); gates the seasonal egg (Draco/Examon, the grand
+    festival prize -- festivals were reward-hollow before, 2026-07-20)."""
+    _note_set("festivals", str(name))
+
+
 def snapshot_prev_gen(pet):
     """Record the just-ended pet's traits for the 'previous generation' egg
     gates -- and the careBonusOnReset math (death/rebirth audit 2026-07-06):
@@ -490,6 +498,7 @@ def get_progress():
         "last_obed": int(last.get("obedience", 0)),
         "last_xanti": bool(last.get("xanti", False)),
         "connections": len(prog.get("connections", [])),
+        "festivals": set(prog.get("festivals", [])),
         "armor_evos": int(prog.get("armor_evos", 0)),
     }
 

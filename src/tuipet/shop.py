@@ -63,7 +63,44 @@ CATALOG = {
     "television":      ("Television",      "i:10", 1000, "Toy", "deep couch · energy +3 · weight +1", "glued to the screen"),
     "bubble_bath":     ("Bubble Bath",     "i:26", 400,  "Toy", "washes the filth, with style", "rubber duck included"),
     "cold_shower":     ("Cold Shower",     "i:67", 300,  "Toy", "a bracing wake · energy +2", "brrr. effective."),
+    # ---- ADVENTURE (the road's own shelf -- cleared maps open it) -----------
+    "town_transport":     ("Town Transport",   "i:29", 500,  "Adventure", "on the road: T-warp to a town + rest", "a Birdramon ride"),
+    "disaster_transport": ("Disaster Transp.", "i:30", 250,  "Adventure", "on the road: T-dash to the boss + ambush", "a Garudamon ride"),
+    "life_recovery":      ("Life Recovery",    "i:27", 1000, "Adventure", "restore adventure lives on the road", "a second wind"),
 }
+
+# the road's shelf unlocks by CLEARING MAPS (the profile `maps` set): once a
+# tamer has beaten a continent, the transports/recovery it needs go on sale.
+# key -> how many maps must be cleared.  Same earned-access rule as the eggs.
+ADVENTURE_GATES = {
+    "town_transport": 1, "disaster_transport": 1, "life_recovery": 2,
+}
+
+
+def adventure_open(key, prog=None):
+    """Is this road-shelf item unlocked (enough maps cleared)?  Non-gated keys
+    are always open."""
+    need = ADVENTURE_GATES.get(key)
+    if need is None:
+        return True
+    if prog is None:
+        from . import persistence
+        prog = persistence.get_progress()
+    return len(prog.get("maps", ()) or ()) >= need
+
+
+# sprite icon (i:/f:) -> the CATALOG key that wears it: adventure loot is
+# authored by data id, but the bag/use system speaks CATALOG keys (the same
+# "the bag could neither show nor use" trap the i:32 heal fixed) -- so found
+# loot maps back through this to a real, usable entry.
+_BY_ICON = {}
+for _k, _v in CATALOG.items():
+    _BY_ICON.setdefault(_v[1], _k)
+
+
+def key_for_icon(icon):
+    """The CATALOG key whose sprite is `icon`, or None (unmapped loot)."""
+    return _BY_ICON.get(icon)
 
 # compat views over the one table (shelf text / icons / tests import these)
 EFFECTS = {k: v[4] for k, v in CATALOG.items()}
@@ -161,7 +198,7 @@ def catalog():
     prog = persistence.get_progress()
     out = []
     for k, (name, _icon, price, cat, _eff, _fl) in CATALOG.items():
-        if price is not None:
+        if price is not None and adventure_open(k, prog):   # road shelf gated by maps
             out.append({"key": k, "name": name, "price": price,
                         "category": cat})
     for k, v in data.load_vitems().items():
@@ -205,7 +242,7 @@ def shelf(cat):
 # polish 2026-07-17: the old alphabetical order opened the shop on a
 # two-item Armor-Spirit tab).  Unknown categories append alphabetically.
 CATEGORY_ORDER = ("Care", "Food", "Evolution", "Medical", "Toy",
-                  ARMOR_CATEGORY)
+                  "Adventure", ARMOR_CATEGORY)
 
 
 def crest_answer(pet, key):

@@ -1,0 +1,510 @@
+"""Adventure — tuipet's OWN expedition (rebuild FOUNDATION, 2026-07-20).
+
+This is the skeleton the expedition engine grows into: the menu action, the
+can_adventure() gate, and the REAL canon teleport (SpriteAnim.teleportLeave /
+teleportArrive / teleportAppear) carried VERBATIM from the pre-0.5.8 build --
+leaving home and returning both ride the same striped-curtain wipe.
+
+⛔ OWN-GAME LAW (Joel 2026-07-13, carried forward): DVPet is NOT canon for
+adventures.  One biome per run, cross a zone in ~40 interactive travel actions,
+victory teleport home.
+
+Built so far: the teleport (verbatim); the MARCH -- the pet walks the run's one
+backdrop while the journey rides a ribbon (adventure.Adventure), arrival
+teleports it home with the verdict, ESC turns back; and WILD ENCOUNTERS -- a
+per-leg roll pulls a real roster enemy that fights through BattlePanel (a
+SubHost child), a loss costs an adventure life, and 0 lives fails the run home;
+the real 26-ZONE GEOGRAPHY (adventure.ZONES from data.load_maps -- each zone its
+own biome + wild table); the zone BOSS FIGHT -- the end opens the gate boss,
+felling it is the win, a survivable loss stands the pet at the gate to try again
+(SPACE) or turn back (ESC); TRAVEL DRAIN -- marching tires the pet (⚡ energy on
+the strip), burns weight and tops effort; TOWNS -- a mid-zone rest that refills
+lives + energy; and PROGRESSION -- the ZonePickPanel picks an unlocked zone,
+felling a boss unlocks the next (pet.adv_progress); and FINDS -- spot loot on
+the road, ENTER digs it into the bag; the home STATUS CARD; and TRANSPORT -- press T
+mid-march to spend a town/danger warp item (skip ahead, rest or get ambushed).
+Nothing here is faked.
+"""
+from __future__ import annotations
+from . import data, grid, menu
+from . import adventure
+from .adventure import Adventure, MAX_LIVES, ZONES
+from .theme import LCD_ON, LCD_BG, INK, INK_B, DIM, POS, NEG  # noqa: F401  (theme.apply propagation)
+
+COLS, ROWS = 40, 12           # the ONE locked LCD arena, like every other screen
+
+WALK_BEAT = 5                 # idleWalk pose-flip cadence while marching
+TRAVEL_TICKS = 8              # auto-march pace: ticks per travel step (~0.8s a leg)
+TOWN_HOLD = 14                # ticks the pet rests at a town before marching on
+
+# the habitat transition (canon Enum.State.Teleport_Leave/Teleport_Arrive --
+# SpriteAnim.teleportLeave()/teleportArrive()): the striped CURTAIN
+# (resources/evol.png: 2-on/1-off black stripes) flashes over the standing pet
+# three times, stays down and swallows it (t23), shrinks to a sliver (t26..)
+# and zips off the RIGHT (window law: exits are left/right); the world swaps
+# under the cut, the sliver zips back in from the LEFT, expands to the full
+# window, and teleportAppear flickers it three times -- the pet standing in the
+# new world from the third flash.  Beats are canon interval units (0.1s) mapped
+# 1:1 onto tuipet's 0.1s tick; sounds are the canon device mapping.  Ported
+# verbatim from adventurescreen @ ed22b64 (v0.5.7) -- Joel: "same teleport
+# animation."
+TELE_LEAVE_T = 50             # flashes 3..22, swallow 23, shrink 26..44, depart right
+TELE_ARRIVE_T = 46            # drop 0..5, expand 5..23, appear flicker 23..46
+TELE_ON = ((3, 9), (15, 18), (21, 22))        # leave: curtain flash spans
+TELE_APPEAR_ON = ((1, 2), (5, 8), (14, 20))   # arrive: flicker spans (t-23)
+TELE_LEAVE_SNDS = {3: "strongHit", 15: "strongHit", 21: "strongHit",
+                   26: "attackHit", 44: "attack"}
+TELE_ARRIVE_SNDS = {1: "attack", 5: "attackHit",
+                    24: "strongHit", 28: "strongHit", 37: "strongHit"}
+
+def _curtain_pts(x, y, w, h):
+    """The evol curtain as overlay pixels: the canon stripe pattern (each 3-px
+    band = 1 clear + 2 filled) over an LCD rect.  Rides paint()'s overlay so it
+    covers the PET too, like canon's room-effect layer.  Window-law: the ink is
+    cut at the window, so the sliver's off-edge travel reads as a lawful exit."""
+    return [(px, py) for py in range(y, y + h)
+            for px in range(x, x + w)
+            if (px - x) % 3
+            and grid.X0 <= px < grid.X1 and grid.TOP <= py < grid.FLOOR]
+
+
+class AdventurePanel(menu.SubHost):
+    def __init__(self, pet, zone=None):
+        self.pet = pet
+        self.adv = Adventure(pet, zone=zone)   # zone chosen by the picker (or the frontier)
+        self.frame_i = 0
+        self.sfx = None
+        self.sub = None
+        self.auto_close = None
+        self._landed = False
+        self.travelling = False       # the march begins once the teleport lands
+        self._travel_t = 0            # auto-march pacing counter
+        self._home_msg = None         # the verdict flashed home on close
+        self._fighting_boss = False   # the current sub is the gate boss, not a wild
+        self._fighting_enemy = None   # the enemy dict of the active fight (for the bounty)
+        self._at_gate = False         # knocked back: standing before the boss
+        self._rest_t = 0              # ticks left resting (transport town-warp beat)
+        self._town_prompt = False     # standing at a town: visit the hub or walk on
+        self._town_sub = False        # the current sub is the TownPanel, not a fight
+        self._find = None             # a loot key spotted, awaiting dig/pass
+        self._find_t = 0              # ticks left showing a "Found X!" confirmation
+        self._find_msg = None
+        self._transport = None        # open transport menu: the held transport keys
+        self._transport_cursor = 0
+        self._summary = False         # showing the run-results card before homecoming
+        self._summary_shown = False   # ...so _go_home only defers to it once
+        # leaving home rides the canon teleport (dir "in" == INTO the adventure:
+        # leave-phase plays over HOME, arrive-phase materialises on the road)
+        self._trans = {"dir": "in", "phase": "leave", "t": 0}
+
+    # -- clock ----------------------------------------------------------------
+    def anim(self):
+        if self.sub_anim():               # a wild fight owns the clock -- delegate
+            return
+        self.frame_i += 1
+        if self._trans is not None:
+            # the teleport owns the screen both ways -- canon's state machine
+            # holds every input until endAnim()
+            tr = self._trans
+            tr["t"] += 1
+            snds = TELE_LEAVE_SNDS if tr["phase"] == "leave" else TELE_ARRIVE_SNDS
+            snd = snds.get(tr["t"])
+            if snd:
+                self.sfx = snd
+            if tr["phase"] == "leave" and tr["t"] >= TELE_LEAVE_T:
+                # the sliver left the screen: the world swaps under the cut
+                # (canon teleportArrive frame 0 -- background changes, no anim)
+                tr["phase"], tr["t"] = "arrive", 0
+            elif tr["phase"] == "arrive" and tr["t"] >= TELE_ARRIVE_T:
+                self._trans = None
+                if tr["dir"] == "out":
+                    self.auto_close = ("done", self._home_msg)   # home: close + verdict
+                else:
+                    self._landed = True                # on the road -- the march begins
+                    self.travelling = True
+            return
+        if self.travelling:
+            if self._transport is not None:   # transport menu open: wait for input
+                return
+            if self._find is not None:    # a glint spotted: wait for dig/pass
+                return
+            if self._find_t > 0:          # showing the "Found X!" beat
+                self._find_t -= 1
+                return
+            if self._town_prompt:         # standing at a town: visit or walk on
+                return
+            if self._rest_t > 0:          # a transport town-warp rest beat
+                self._rest_t -= 1
+                return
+            # auto-march: the pet walks the road on its own pace; arrival ends
+            # the run and rides the same teleport back home (SPACE hurries a leg)
+            self._travel_t += 1
+            if self._travel_t >= TRAVEL_TICKS:
+                self._travel_t = 0
+                self._advance()
+
+    # -- input ----------------------------------------------------------------
+    def _advance(self):
+        """One leg of the march.  A wild encounter opens a battle; the zone's
+        end opens the BOSS gate; a bossless crossing rides the teleport home."""
+        r = self.adv.travel()
+        if isinstance(r, tuple) and r[0] == "encounter":
+            self._start_battle(r[1])
+        elif isinstance(r, tuple) and r[0] == "boss":
+            self._start_boss(r[1])
+        elif isinstance(r, tuple) and r[0] == "find":
+            self._find = r[1]                 # a glint: wait for the player to choose
+        elif r == "town":
+            self._town_prompt = True          # rested on arrival; now visit or walk on
+        elif r == "arrived":
+            self._home_msg = f"{self.adv.name} conquered!{self._bits_tail()}"
+            self._go_home()
+
+    def _use_transport(self, key):
+        """Spend the chosen transport: a town warp rests, a danger warp ambushes."""
+        r = self.adv.use_transport(key)
+        self._transport = None
+        if r == "town-warp":
+            self._rest_t = TOWN_HOLD          # the warp-in rest beat
+        elif isinstance(r, tuple) and r[0] == "encounter":
+            self._start_battle(r[1])          # the danger-warp ambush
+
+    def _dig(self):
+        """Dig up the spotted find into the bag, then show a brief confirmation."""
+        from . import shop
+        key, self._find = self._find, None
+        self.pet.add_item(key)                # a CATALOG key: real, usable loot
+        self.adv.finds += 1
+        name = (shop.entry(key) or {}).get("name", "loot")
+        self._find_msg = f"Dug up {name}!"
+        self._find_t = TOWN_HOLD
+        self.sfx = "reward"
+
+    def _start_battle(self, enemy):
+        """A wild fight rides BattlePanel as a child (SubHost): the road's biome
+        is the fight's scene, wild=True gives the pre-bell flee."""
+        from .battlescreen import BattlePanel
+        self.travelling = False               # the march pauses during the fight
+        self._fighting_enemy = enemy
+        self.sub = BattlePanel(self.pet, enemy=enemy, wild=True, scene=self.adv.scene)
+
+    def _start_boss(self, boss):
+        """The gate boss fight -- same road biome, flagged so _battle_done knows
+        to settle it as the zone's end, not a wayside wild."""
+        from .battlescreen import BattlePanel
+        self.travelling = False
+        self._at_gate = False
+        self._fighting_boss = True
+        self._fighting_enemy = boss
+        self.sub = BattlePanel(self.pet, enemy=boss, wild=True, scene=self.adv.scene)
+
+    def _battle_done(self, result):
+        """Settle a finished fight.  result is the battle object (has .won) or
+        None if the pet fled before the bell."""
+        won = bool(getattr(result, "won", False)) if result is not None else False
+        fled = result is None
+        enemy, self._fighting_enemy = self._fighting_enemy, None
+        if not fled:                          # a fought bout (not a pre-bell flee)
+            self.adv.fights += 1
+            if won:
+                self.adv.wins += 1
+        if won and enemy is not None:
+            self.adv.award_bits(enemy)        # the bounty into the purse + run tally
+        if self._fighting_boss:
+            self._fighting_boss = False
+            out = self.adv.resolve_boss(won, fled=fled)
+            if out == "won":
+                unlocked = adventure.record_win(self.pet, self.adv.zone)   # progression
+                from . import persistence              # profile signals: unlocks
+                m = self.adv.zone.get("map")
+                if m is not None and adventure.is_map_cleared(self.pet, m):
+                    persistence.map_complete_add(m - 1)  # shop shelf + eggs (0-based)
+                if self.adv.holiday:                   # conquered on a festival day
+                    persistence.festival_add(self.adv.holiday)  # gates the festival egg
+                tail = " New ground opens!" if unlocked else ""
+                self._home_msg = (f"{self.adv.boss_name} felled — "
+                                  f"{self.adv.name} conquered!{self._bits_tail()}{tail}")
+                self._go_home()
+            elif out == "fled":
+                self._home_msg = f"Turned back from {self.adv.boss_name}.{self._bits_tail()}"
+                self._go_home()
+            elif out == "failed":
+                self._home_msg = f"Defeated by {self.adv.boss_name}.{self._bits_tail()}"
+                self._go_home()
+            else:                             # 'retry' -- stand at the gate, choose
+                self._at_gate = True
+            return
+        # a wayside wild
+        out = self.adv.resolve(won, fled=fled)
+        if out == "failed":
+            self._home_msg = f"Driven back from {self.adv.name}.{self._bits_tail()}"
+            self._go_home()
+        else:
+            self.travelling = True            # resume the march (a grace leg follows)
+
+    def _bits_tail(self):
+        """The run's purse for the homecoming verdict (empty if nothing won)."""
+        return f" +{self.adv.bits_earned}b" if self.adv.bits_earned else ""
+
+    def _town_done(self, _result):
+        """Left the town hub -- back onto the road, the march resumes."""
+        self._town_sub = False
+        self._town_prompt = False
+
+    def _go_home(self):
+        """Conclude the run: show the results card first (a key rides the
+        teleport home), unless there's nothing to summarise -- a bare turn-back
+        goes straight to the canon teleport."""
+        self.travelling = False
+        a = self.adv
+        if not self._summary_shown and (a.bits_earned or a.fights or a.finds or a.done):
+            self._summary = True              # results, then a key teleports
+            return
+        self._trans = {"dir": "out", "phase": "leave", "t": 0}
+
+    def _outcome_word(self):
+        if self.adv.done:
+            return "Conquered!"
+        if self.adv.failed:
+            return "Defeated"
+        return "Turned back"
+
+    def key(self, k):
+        if self.sub is not None:              # a fight or the town hub owns input
+            self.sub_key(k, self._town_done if self._town_sub else self._battle_done)
+            return None
+        if self._trans is not None:
+            return None                       # the teleport owns the screen
+        if self._town_prompt:                 # at a town: visit the hub or walk on
+            if k in ("enter",):
+                from .townscreen import TownPanel
+                self.sub = TownPanel(self.pet, self.adv.town_at(self.adv.loc))
+                self._town_sub = True
+            elif k in ("space", "escape"):
+                self._town_prompt = False     # walk on, the march resumes
+            return None
+        if self._summary:                     # results card up: any key rides home
+            self._summary = False
+            self._summary_shown = True
+            self._go_home()                   # the latch makes this teleport now
+            return None
+        if self._find is not None:            # a glint spotted: dig or pass
+            if k in ("enter",):
+                self._dig()
+            elif k in ("space", "escape"):
+                self._find = None             # walk on, leave it
+            return None
+        if self._transport is not None:       # transport menu: choose / use / cancel
+            n = len(self._transport)
+            if k in ("up", "k"):
+                self._transport_cursor = (self._transport_cursor - 1) % n
+            elif k in ("down", "j"):
+                self._transport_cursor = (self._transport_cursor + 1) % n
+            elif k in ("enter", "space"):
+                self._use_transport(self._transport[self._transport_cursor])
+            elif k in ("escape",):
+                self._transport = None        # back to the road
+            return None
+        if self._at_gate:                     # knocked back before the boss
+            if k == "space":
+                self._start_boss(self.adv.boss)   # face it again
+            elif k == "escape":
+                self._home_msg = f"Turned back from {self.adv.boss_name}.{self._bits_tail()}"
+                self._go_home()
+            return None
+        if k in ("t",) and self.travelling:
+            held = self.adv.held_transports()  # open the transport menu if any held
+            if held:
+                self._transport, self._transport_cursor = held, 0
+        elif k in ("space",) and self.travelling:
+            self._advance()                   # hurry the next leg
+        elif k in ("escape",):
+            # turn back: the SAME teleport the other way; anim() auto-closes
+            # the mode once it lands (canon teleportArrive/endAnim)
+            self._home_msg = f"Turned back from {self.adv.name}.{self._bits_tail()}"
+            self._go_home()
+        return None
+
+    def strip(self):
+        if self.sub is not None:
+            return self.sub.strip()            # the wild fight owns the line
+        if self._trans is not None:
+            return ""                          # the teleport plays out
+        if self._summary:
+            return menu.hints(("any key", "home"))
+        if self._at_gate:                      # knocked back before the boss
+            hearts = "♥" * self.adv.lives + "[dim]♡[/]" * (MAX_LIVES - self.adv.lives)
+            return f"{self.adv.boss_name} {hearts}  [dim]· SPACE fight  ESC home[/]"
+        if self.travelling:
+            lost = MAX_LIVES - self.adv.lives
+            hearts = "♥" * self.adv.lives + "[dim]♡[/]" * lost
+            if self._transport is not None:
+                from . import shop
+                key = self._transport[self._transport_cursor]
+                name = (shop.entry(key) or {}).get("name", "Transport")
+                nav = " ↑↓" if len(self._transport) > 1 else ""
+                return f"[b]⟿ {name}[/]  [dim]ENTER use{nav} · ESC[/]"
+            if self._town_prompt:
+                return "[b]⌂ A town[/]  [dim]ENTER visit · SPACE walk on[/]"
+            if self._find is not None:
+                return "[b]✦ A glint on the road[/]  [dim]ENTER dig · SPACE pass[/]"
+            if self._find_t > 0:
+                return f"[b]✦ {self._find_msg}[/]"
+            if self._rest_t > 0:
+                return f"[b]⌂ Town — rested up[/]  ⚡{self.pet.energy} {hearts}"
+            thint = " T" if self.adv.held_transports() else ""
+            return (f"[dim]{self.adv.ribbon()}[/] ⚡{self.pet.energy} {hearts}"
+                    f"  [dim]· SPACE{thint} ESC[/]")
+        return menu.hints(("ESC", "home"))
+
+    # -- render ---------------------------------------------------------------
+    def _rows(self, idx):
+        fr = data.frames_for(self.pet.num, getattr(self.pet, "egg_type", 0))
+        return grid.prep((fr[idx] if idx < len(fr) else None) or fr[0], ph=ROWS * 2)
+
+    def _road_bg(self):
+        return self.pet.background(self.adv.scene)   # the run's ONE biome (own-game law)
+
+    def _pet_x(self, rows):
+        lo, hi = grid.roam_bounds(grid.width(rows))
+        return (lo + hi) // 2
+
+    def _march_frame(self):
+        """The pet walking the road: the idleWalk pose-flip, facing forward.
+        Journey progress lives on the RIBBON, so the pet just marches in place
+        (the old engine's doctrine) over the run's one backdrop."""
+        pose = (self.frame_i // WALK_BEAT) % 2       # idleWalk 0/1 bob
+        rows = self._rows(pose)
+        return menu.paint([(rows, self._pet_x(rows), False)],
+                          self._road_bg(), rows=ROWS, cols=COLS)
+
+    def _standing_frame(self):
+        """The pet standing centre-stage on the zone road (pre-march fallback)."""
+        rows = self._rows(0)                   # canon drawNumMirror(0, false)
+        return menu.paint([(rows, self._pet_x(rows), False)],
+                          self._road_bg(), rows=ROWS, cols=COLS)
+
+    def _teleport_frame(self):
+        """One frame of the canon teleport, on the side of the wipe the beat
+        script says the world is showing (verbatim port)."""
+        tr = self._trans
+        t, ph = tr["t"], tr["phase"]
+        # which world is under the curtain: leaving-out and arriving-in show the
+        # ROAD; leaving-in and arriving-out show HOME
+        home_side = (tr["dir"] == "in") == (ph == "leave")
+        bgimg = self.pet.background() if home_side else self._road_bg()
+        wx0, wy0, ww, wh = grid.X0, grid.TOP, grid.W, grid.BAND
+        cx, cy = wx0 + (ww - 4) // 2, wy0 + (wh - 6) // 2
+        pet_on, cur = False, None
+        if ph == "leave":
+            pet_on = t < 23                       # swallowed at t23
+            if any(on <= t < off for on, off in TELE_ON) or t >= 23:
+                cur = (wx0, wy0, ww, wh)          # the full-window curtain
+            if 26 <= t < 44:                      # shrinking to the sliver
+                k = t - 26
+                w, h = max(4, ww - 2 * k), max(6, wh - k)
+                cur = (wx0 + (ww - w) // 2, wy0 + (wh - h) // 2, w, h)
+            elif t >= 44:                         # the sliver departs RIGHT
+                cur = (cx + 4 * (t - 44), cy, 4, 6)
+        else:                                     # arrive
+            if t <= 5:                            # the sliver zips in from the LEFT
+                cur = (wx0 - 4 + round((cx - wx0 + 4) * t / 5), cy, 4, 6)
+            elif t < 23:                          # expands back to the full window
+                k = t - 5
+                w, h = min(ww, 4 + 2 * k), min(wh, 6 + k)
+                cur = (wx0 + (ww - w) // 2, wy0 + (wh - h) // 2, w, h)
+            else:                                 # teleportAppear flicker
+                f = t - 23
+                pet_on = f >= 14                  # revealed on the third flash
+                if any(on <= f < off for on, off in TELE_APPEAR_ON):
+                    cur = (wx0, wy0, ww, wh)
+        placements = []
+        if pet_on:
+            rows = self._rows(0)
+            lo, hi = grid.roam_bounds(grid.width(rows))
+            x = (lo + hi) // 2
+            placements = [(rows, x, False)]
+        overlay = _curtain_pts(*cur) if cur else []
+        return menu.paint(placements, bgimg, rows=ROWS, cols=COLS, overlay=overlay)
+
+    def _summary_frame(self):
+        """The run-results card, shown on the LCD before the homecoming teleport."""
+        a = self.adv
+        out = menu.header("ADVENTURE", "results")
+        out.append(a.name[:26] + "\n", style=INK_B)
+        word = self._outcome_word()
+        out.append(word + "\n", style={"Conquered!": POS, "Defeated": NEG}.get(word, DIM))
+        out.append(f"Bits    +{a.bits_earned}\n", style=INK)
+        out.append(f"Fights  {a.wins}W/{a.fights}\n", style=INK)
+        out.append(f"Loot    {a.finds}\n", style=INK)
+        hearts = "♥" * a.lives + "♡" * (MAX_LIVES - a.lives)
+        out.append(f"Lives   {hearts}\n", style=INK)
+        if a.holiday:
+            out.append(f"★ {a.holiday}\n", style=POS)
+        out.append_text(menu.blanks(1))
+        out.append_text(menu.footer("press any key — home"))
+        return out
+
+    def text(self):
+        if self.sub is not None:
+            return self.sub.text()             # the fight owns the screen
+        if self._trans is not None:
+            return self._teleport_frame()
+        if self._summary:
+            return self._summary_frame()       # the run-results card
+        if self._at_gate:
+            return self._standing_frame()      # the pet stands before the boss
+        if self.travelling:
+            if (self._transport is not None or self._find is not None
+                    or self._find_t > 0 or self._rest_t > 0 or self._town_prompt):
+                return self._standing_frame()  # menu / glint / rest / town: stand still
+            return self._march_frame()
+        return self._standing_frame()
+
+
+class ZonePickPanel:
+    """The embark screen: pick an UNLOCKED zone to run.  Progression phase --
+    zones unlock as their gate boss is felled (pet.adv_progress); a conquered
+    zone can be replayed, the frontier is the next challenge.  Returns the
+    chosen zone dict on ENTER, or None on ESC (back out of Adventure)."""
+
+    VIS = 8
+
+    def __init__(self, pet):
+        self.pet = pet
+        self.frame_i = 0
+        self.indices = adventure.unlocked_indices(pet)   # unlocked zone indices, in order
+        self.cursor = len(self.indices) - 1              # default: the frontier (newest)
+        self.holiday = adventure.active_holiday()        # festival banner + double rewards
+
+    def anim(self):
+        self.frame_i += 1
+
+    def key(self, k):
+        n = len(self.indices)
+        if k in ("up", "k"):
+            self.cursor = (self.cursor - 1) % n
+        elif k in ("down", "j"):
+            self.cursor = (self.cursor + 1) % n
+        elif k in ("enter", "space"):
+            return ("done", ZONES[self.indices[self.cursor]])   # embark
+        elif k in ("escape", "a"):
+            return ("done", None)                               # back out
+        return None
+
+    def strip(self):
+        return menu.hints(("↑↓", "pick"), ("ENTER", "go"), ("ESC", "back"))
+
+    def _fmt(self, zi, _i):
+        z = ZONES[zi]
+        mark = "✓" if adventure.is_conquered(self.pet, zi) else "★"   # conquered vs the frontier
+        return f"{mark} {z['name']}"[:34]
+
+    def text(self):
+        right = "★ FESTIVAL" if self.holiday else f"{len(self.indices)}/{len(ZONES)}"
+        out = menu.header("ADVENTURE", right)
+        self.cursor = menu.list_window(out, self.indices, self.cursor, self.VIS, self._fmt)
+        if self.holiday:
+            out.append_text(menu.note(f"★ {self.holiday}: 2× bits · more loot!"))
+        out.append_text(menu.footer("↑↓ pick   ENTER go   ESC back"))
+        return out

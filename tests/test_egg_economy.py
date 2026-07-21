@@ -32,12 +32,12 @@ def test_sakumon_is_the_battle_egg():
 
 def test_petitmon_is_the_collector_egg():
     r = _rule("Petitmon")
-    # 15 species ~ 2.5 lifetimes: the album records one entry per STAGE, so a gate
-    # of 5 used to land halfway through the player's FIRST pet (egg audit 2026-07-14)
-    assert (r["album_n"], r["can_perm"]) == (15, True)        # EARN tier
+    # the album records one entry per STAGE; tier-spread (2026-07-20) eased the
+    # collector gate 15->10 so it sits on the Earned tier's low album rung
+    assert (r["album_n"], r["can_perm"]) == (10, True)        # EARN tier
     assert r["prev_field"] is None                  # no longer a temp lineage egg
-    assert not egg._conditions_met(r, _prog(album=set(range(1, 15))))    # 14
-    assert egg._conditions_met(r, _prog(album=set(range(1, 16))))        # 15
+    assert not egg._conditions_met(r, _prog(album=set(range(1, 10))))    # 9
+    assert egg._conditions_met(r, _prog(album=set(range(1, 11))))        # 10
 
 
 def test_dodomon_is_the_x_egg():
@@ -60,7 +60,7 @@ def test_met_achievement_is_earned_free():
 
 def test_unlock_progress_counts_the_countable():
     assert egg.unlock_progress(_rule("Sakumon")["idx"], _prog(wins=37)) == "lifetime wins 37/50"
-    assert egg.unlock_progress(_rule("Petitmon")["idx"], _prog(album={1, 2, 3})) == "species recorded 3/15"
+    assert egg.unlock_progress(_rule("Petitmon")["idx"], _prog(album={1, 2, 3})) == "species recorded 3/10"
     assert egg.unlock_progress(_rule("Dodomon")["idx"], _prog(mega_kills=1)) == "Mega-class felled 1/5"
 
 

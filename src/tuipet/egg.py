@@ -111,6 +111,12 @@ def _conditions_met(rule, prog):
         return False
     if rule.get("mega") is not None and prog.get("mega_kills", 0) < rule["mega"]:
         return False
+    # tuipet festival gate (2026-07-20): the seasonal egg (Draco/Examon, the
+    # grand festival prize) -- celebrate N of the 4 festival days, recorded when
+    # you conquer an adventure zone on a holiday (persistence.festival_add)
+    if rule.get("festivals_n") is not None \
+            and len(prog.get("festivals", ()) or ()) < rule["festivals_n"]:
+        return False
     # DM20 connection-battle unlocks (Corona/Luna/Meicoo/DORU): distinct
     # tamers linked via a completed lobby bout or jogress
     if rule.get("connections") is not None and prog.get("connections", 0) < rule["connections"]:
@@ -126,8 +132,14 @@ def _conditions_met(rule, prog):
     # MapComplete rows re-gated (BASIC VPET 2026-07-16): adventure left with
     # the world layer, so a row's map index becomes a felled-raid milestone --
     # a map-N row opens after N+1 broken raid bosses (the CSV ran maps 0..4)
-    if rule["map"] is not None and prog.get("raids", 0) <= rule["map"]:
-        return False
+    # map-N egg: opens when ADVENTURE clears region N (the profile `maps` set,
+    # adventure rebuild 2026-07-20) OR the raid fallback (N+1 raid bosses) --
+    # the map rows always meant "region-boss cleared"; raids stood in until the
+    # adventure existed, and both paths now count
+    if rule["map"] is not None:
+        cleared = rule["map"] in (prog.get("maps", ()) or ())
+        if not cleared and prog.get("raids", 0) <= rule["map"]:
+            return False
     if rule["history"] and not all(data.canonical_num(n) in prog["album"]
                                    for n in rule["history"]):
         # name-canonical both sides (album/dex audit 2026-07-06): raising
@@ -216,9 +228,15 @@ def unlock_progress(idx, prog):
         return f"species recorded {min(len(prog['album']), rule['album_n'])}/{rule['album_n']}"
     if rule.get("mega") is not None:
         return f"Mega-class felled {min(prog.get('mega_kills', 0), rule['mega'])}/{rule['mega']}"
+    if rule.get("festivals_n") is not None:
+        n = rule["festivals_n"]
+        return f"festivals celebrated {min(len(prog.get('festivals', ()) or ()), n)}/{n}"
     if rule.get("map") is not None:
-        need = rule["map"] + 1                # the raid re-gate (2026-07-16)
-        return f"raid bosses felled {min(prog.get('raids', 0), need)}/{need}"
+        n = rule["map"]
+        if n in (prog.get("maps", ()) or ()):
+            return ""                         # region cleared -> unlocked
+        s = "" if n == 0 else "es"
+        return f"clear adventure map {n + 1} (or fell {n + 1} raid boss{s})"
     if rule["gen"] is not None:
         return f"generation {min(prog['max_gen'], rule['gen'])}/{rule['gen']}"
     return rule.get("desc", "")
@@ -237,7 +255,11 @@ def unlock_ratio(idx, prog):
         return min(1.0, len(prog["album"]) / max(1, rule["album_n"]))
     if rule.get("mega") is not None:
         return min(1.0, prog.get("mega_kills", 0) / max(1, rule["mega"]))
+    if rule.get("festivals_n") is not None:
+        return min(1.0, len(prog.get("festivals", ()) or ()) / max(1, rule["festivals_n"]))
     if rule.get("map") is not None:
+        if rule["map"] in (prog.get("maps", ()) or ()):
+            return 1.0                        # adventure region cleared
         return min(1.0, prog.get("raids", 0) / (rule["map"] + 1))
     if rule["gen"] is not None:
         return min(1.0, prog["max_gen"] / max(1, rule["gen"]))

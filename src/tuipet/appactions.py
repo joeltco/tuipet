@@ -324,6 +324,27 @@ class ActionsMixin:
             self.flash(msg)
         self.repaint()
 
+    def action_adventure(self):
+        from . import adventurescreen
+        reason = self.pet.can_adventure()   # single-source gate, like raid/train/cup
+        if reason:
+            self._do(reason); return
+        # the zone picker first: choose an UNLOCKED zone, then embark
+        self._open_mode(adventurescreen.ZonePickPanel(self.pet), self._after_zone_pick)
+
+    def _after_zone_pick(self, zone):
+        if not zone:
+            self.repaint(); return          # backed out of Adventure
+        from . import adventurescreen
+        self._open_mode(adventurescreen.AdventurePanel(self.pet, zone=zone),
+                        self._after_adventure)
+
+    def _after_adventure(self, msg):
+        if msg:
+            self.flash(msg)
+        self.autosave()
+        self.repaint()
+
     def action_raid(self):
         from . import raidscreen
         reason = self.pet.can_raid()    # single-source gate, like feed/train/dna/cup

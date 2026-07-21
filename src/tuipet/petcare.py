@@ -342,6 +342,10 @@ class CareMixin:
                                             msg="Glued to the screen."),
             "bubble_bath": self._bubble_bath,
             "cold_shower": self._cold_shower,
+            # ---- ADVENTURE (spent ON THE ROAD, not from the home bag) -------
+            "town_transport": lambda: _Refused("Save it for the road (press T)."),
+            "disaster_transport": lambda: _Refused("Save it for the road (press T)."),
+            "life_recovery": lambda: _Refused("Restores adventure lives — use it on the road."),
         }.get(key)
         if fx is None:
             return ""

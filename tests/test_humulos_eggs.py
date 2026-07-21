@@ -64,15 +64,16 @@ def test_no_egg_is_strictly_dominated():
 
 
 def test_win_ladder_is_staggered():
-    """Each win-gated egg gets its own moment: 10/25/30/40/50/60/75.
+    """Each win-gated egg gets its own moment: 10/25/30/50/60.
     30 is Slayerdra's battle route -- the dragon trio's gates were
     differentiated 2026-07-14 (Slayerdra=wins, Breakdra=Mega kills,
-    Draco=album); Chibickmon's 10 replaced its licence (2026-07-17)."""
+    Draco=album); Chibickmon's 10 replaced its licence (2026-07-17).
+    Unlock-spread (2026-07-20): X3 -> prestige Mega, Zuba 75->60, and
+    Hack left the wins ladder for the cup axis (Fall Champion Cup)."""
     rules = data.load_egg_unlock()
     wins = sorted((r["wins"], r["name"]) for r in rules.values() if r.get("wins"))
     assert wins == [(10, "Chibickmon"), (25, "V Egg"), (30, "Slayerdra Egg"),
-                    (40, "Hack Egg"), (50, "Sakumon"), (60, "Digitama X3"),
-                    (75, "Zuba Egg")]
+                    (50, "Sakumon"), (60, "Zuba Egg")]
 
 
 def test_every_egg_animates_with_real_frames():
@@ -124,12 +125,17 @@ def test_progression_tiers_read_the_right_signals():
     assert egg.egg_state(by["Virus Busters Ver. 20th Egg"],
                          _prog(max_gen=5, last_field="VirusBuster"), set()) == "owned"
     assert egg.egg_state(by["V Egg"], _prog(wins=25), set()) == "owned"
-    assert egg.egg_state(by["Kera Digitama"], _prog(mega_kills=10), set()) == "owned"
-    assert egg.egg_state(by["Digitama X3"], _prog(xanti_ever=True), set()) == "locked"
+    # tier-spread (2026-07-20): Kera -> stage gate (shortest line, was mega=10);
+    # X3 -> the prestige xanti + Mega gate (deepest line inherits Kera's mega=10)
+    assert egg.egg_state(by["Kera Digitama"],
+                         _prog(max_stage=data.STAGE_ORDER.index("Champion")), set()) == "owned"
     assert egg.egg_state(by["Digitama X3"],
-                         _prog(xanti_ever=True, wins=60), set()) == "owned"
-    assert egg.egg_state(by["Hack Egg"], _prog(wins=40), set()) == "owned"
-    assert egg.egg_state(by["Zuba Egg"], _prog(wins=75), set()) == "owned"
+                         _prog(xanti_ever=True, mega_kills=9), set()) == "locked"
+    assert egg.egg_state(by["Digitama X3"],
+                         _prog(xanti_ever=True, mega_kills=10), set()) == "owned"
+    # Hack moved to the cup axis (Fall Champion Cup, trophy 187) 2026-07-20
+    assert egg.egg_state(by["Hack Egg"], _prog(tourneys={187}), set()) == "owned"
+    assert egg.egg_state(by["Zuba Egg"], _prog(wins=60), set()) == "owned"
     # lineage eggs are TEMPORARY, following the previous generation
     assert egg.egg_state(by["Ryuda Egg"],
                          _prog(last_field="DragonsRoar"), set()) == "temp"

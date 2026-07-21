@@ -1,7 +1,7 @@
 """Lifetime wins: the single source (pet.record_battle) feeding the win-gated
-egg rules (Chibickmon 10 / V 25 / Slayerdra 30 / Hack 40 / Sakumon 50 /
-X3 60 / Zuba 75).  The tuipet-only "???" mystery eggs left with the
-fake-egg cut (2026-07-17)."""
+egg rules (Chibickmon 10 / V 25 / Slayerdra 30 / Sakumon 50 / Zuba 60).
+The unlock-spread pass (2026-07-20) moved Hack to the cup axis and X3 to the
+Mega axis, so they no longer ride wins (DORU carries the festival axis)."""
 from tuipet.pet import Pet
 from tuipet import egg, persistence
 

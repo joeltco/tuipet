@@ -171,8 +171,12 @@ class Pet(CareMixin, DnaMixin, BattleMixin, BodyMixin):
     tourney_alert: bool = False     # TournamentAlert: the call is ringing (this hour only)
     full_health: int = STARTING_HEALTH_POINTS   # _fullHealthPoints: TRAINED battle HP
     perfect_wins: int = 0           # _perfectWins: HP-drill wins toward the next +1 HP
-    # (the adventure fields -- adv_map/adv_zone/adv_seek/adv_loc -- left
-    # with the world layer; BASIC VPET 2026-07-16)
+    # (the old adventure fields -- adv_map/adv_zone/adv_seek/adv_loc -- left
+    # with the world layer; BASIC VPET 2026-07-16.  The adventure REBUILD
+    # 2026-07-20 tracks progression with ONE field: the number of zones
+    # conquered = the index of the current frontier zone in adventure.ZONES.
+    # Auto-persisted (asdict / fields(Pet)); old saves default to 0.)
+    adv_progress: int = 0
     egg_type: int = 0
     bg_pick: str = ""               # picked home scene ("" = follow the egg; E picker 2026-07-17)
     lifespan: float = LIFE_START

@@ -123,6 +123,10 @@ def load_egg_unlock():
             # Meicoo/DORU) -- distinct tamers linked via a completed lobby
             # bout or jogress; persistence.record_connection() feeds it
             "connections": _int(r[26]) if (len(r) > 26 and _int(r[26]) is not None and _int(r[26]) >= 0) else None,
+            # tuipet festival gate (2026-07-20): celebrate N of the 4 festival
+            # days (recorded on a holiday-day adventure conquer) -- the seasonal
+            # egg (Draco/Examon), so festivals stop being reward-hollow
+            "festivals_n": _int(r[28]) if (len(r) > 28 and _int(r[28]) is not None and _int(r[28]) >= 0) else None,
         }
         if rules[idx]["map"] is not None:
             # the raid re-gate (BASIC VPET 2026-07-16): adventure left with

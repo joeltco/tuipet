@@ -138,6 +138,19 @@ class BattleMixin:
             return self._disturbed()
         return None
 
+    def can_adventure(self):
+        """The adventure gate (foundation 2026-07-20): the same shape as the
+        raid gate -- dead/egg refused, a Fresh baby is too young for the road,
+        a sleeper is disturbed rather than served.  The engine phase can
+        tighten this (energy/sickness) once the road carries real risk."""
+        if (g := self._guard(asleep_blocks=False)) is not None:
+            return g
+        if self.stage == "Fresh":
+            return "Too young for the road."
+        if self.asleep:
+            return self._disturbed()
+        return None
+
     def max_health(self):
         """PhysicalState.getMaxHealth: the trained-HP CAP rises with lapsed life."""
         days = self.age_seconds / DAY_LENGTH

@@ -16,6 +16,9 @@ HELP = [
     ("ENTER accepts a found gift", 1),
     ("", 0),
     ("EXPLORE", 2),
+    ("a adventure - head out on the road", 1),
+    ("  cross a zone, fell its boss, then", 0),
+    ("  rest in towns, find loot and eggs", 0),
     ("r raid - the community boss: fight", 1),
     ("  10-round volleys, break the shared", 0),
     ("  pool together, claim the purse", 0),
@@ -43,8 +46,8 @@ HELP = [
     ("TIPS", 2),
     ("Feed when hungry, clean the poop,", 0),
     ("and let it sleep at night. Win cups,", 0),
-    ("fell raid bosses and link with other", 0),
-    ("tamers - every egg is earned in play.", 0),
+    ("fell raids, link with tamers, play a", 0),
+    ("festival - every egg is earned.", 0),
 ]
 
 
