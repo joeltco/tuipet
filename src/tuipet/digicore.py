@@ -248,8 +248,8 @@ def _trophy_rows(pet):
     rows.append(("Raids", f"{felled} raid bosses felled"))
     won = sorted((getattr(pet, "trophies_won", None) or {}).items())
     for tid, season in won[:4]:                     # keep the page at 9 rows max
-        tr = _t.trophy_by_id(tid)                   # (was 5: the Maps row joined)
-        rows.append((_t.trophy_label(tr)[:12] if tr else f"cup {tid}", season))
+        # trophy_name speaks every id space -- town cups included
+        rows.append((_t.trophy_name(tid)[:12], season))   # (was 5: Maps row joined)
     if len(won) > 4:
         rows.append(("…", f"+{len(won) - 4} more"))
     return rows

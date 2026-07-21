@@ -3,6 +3,22 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.5.136 — THE CUP AUDIT (2026-07-21)
+
+* **All cups audited** — the 325-cup home board, the hourly schedule, the
+  featured cup, festival entries, and the town cups. The economy checked
+  out clean (break-even for coin-flip pets, skill and care pay, no
+  faucets, no save-scum holes). Three edge faults fixed:
+* **Town cups vet your mon now.** The road bracket ran no pet gates — a
+  starving, sick, or napping pet could fight three recorded bouts. It
+  runs the same checks as the home board (a dozing entrant gets woken by
+  the poke, like every care key). A refused pet keeps its once-per-visit
+  cup for later.
+* **Town trophies wear their name.** The trophy room read "cup 912" for
+  road trophies; it says "Town Cup #13" now.
+* **The cup board fits its box** — the featured row ran 44 of 40 columns
+  and clipped; trimmed, and the board joined the render-budget net.
+
 ## 0.5.135 — THE ROAD CLIMBS IN ORDER (2026-07-21)
 
 * **The unlock road is sorted by difficulty now.** A Monte-Carlo balance

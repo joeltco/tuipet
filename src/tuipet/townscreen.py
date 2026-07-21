@@ -80,6 +80,15 @@ class TownPanel(menu.SubHost):
         if self._cup_done:
             self.msg = "The Town Cup has run — come back next visit."
             return
+        # the SAME pet gates the home board runs (cup audit 2026-07-21: the
+        # town cup skipped them -- the exact gap the 2026-07-19 audit closed
+        # for home cups; a starving/sick/napping pet could grind three
+        # recorded bouts).  can_enter wakes a dozing entrant like every
+        # care key; battle_condition is the ONE bout-condition source.
+        reason = tournament.can_enter(self.pet) or self.pet.battle_condition()
+        if reason:
+            self.msg = reason
+            return
         cup = tournament.town_cup(self.pet, self.town_id)
         fee = tournament.entry_fee(self.pet, cup)
         if self.pet.bits < fee:

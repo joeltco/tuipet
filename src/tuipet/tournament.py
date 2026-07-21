@@ -147,6 +147,18 @@ def trophy_by_id(tid):
     return None
 
 
+def trophy_name(tid):
+    """A trophy id's display name, TOWN ids included -- the trophy room's
+    single source (cup audit 2026-07-21: 900+ ids fell to the raw-number
+    fallback and the room read 'cup 912')."""
+    t = trophy_by_id(tid)
+    if t is not None:
+        return trophy_label(t)
+    if tid >= TOWN_TROPHY_BASE:
+        return "Town Cup #%d" % (tid - TOWN_TROPHY_BASE + 1)   # 1-based town
+    return "cup %d" % tid
+
+
 def _hour(pet):
     from .pet import DAY_LENGTH
     return int((pet.world_seconds % DAY_LENGTH) / DAY_LENGTH * 24)

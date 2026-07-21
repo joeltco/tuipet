@@ -196,3 +196,25 @@ def test_every_state_eats_any_key_without_crashing(monkeypatch, k):
             pan.text()
         except Exception as ex:                  # pragma: no cover
             raise AssertionError(f"{name} crashed on {k!r}: {ex}") from ex
+
+
+def test_the_cup_board_respects_the_lcd_too(monkeypatch):
+    """The cup audit's overflow (the featured row ran 44 cols): the board is
+    in the net now, browsed across a dozen keys."""
+    from tuipet.tournamentscreen import TournamentPanel
+    p = _pet()
+    p.strength = p.hunger = 4
+    p._set_energy(p.max_energy)
+    p.bits = 99999
+    pan = TournamentPanel(p)
+    for k in (None, "down", "down", "up", "pagedown", "pageup"):
+        if k:
+            pan.key(k)
+        pan.anim()
+        lines = pan.text().plain.split("\n")
+        assert len(lines) <= MAX_ROWS + 1
+        for i, ln in enumerate(lines):
+            assert len(ln) <= MAX_COLS, (k, i, ln)
+        s = pan.strip()
+        if s:
+            assert len(Text.from_markup(s).plain) <= MAX_COLS

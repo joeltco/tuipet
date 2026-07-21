@@ -228,7 +228,10 @@ class TournamentPanel(menu.SubHost):
             ftr = tournament.featured_now(self.pet)
             if ftr is not None:
                 done = tournament.featured_done(self.pet)
-                tag = "run today" if done else "F to fight \u00b7 any hour"
+                # tag <= 12: "  \u2605 " + 20-char label + " \u00b7 " + tag must fit
+                # the 40-col box (cup audit 2026-07-21: the old 21-char tag
+                # ran the row to 44 and clipped)
+                tag = "run today" if done else "F \u00b7 any hour"
                 out.append("  \u2605 %s \u00b7 %s\n"
                            % (tournament.trophy_label(ftr)[:20], tag),
                            style=DIM if done else INK_B)
