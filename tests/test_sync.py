@@ -348,7 +348,8 @@ def test_stop_sync_cancels_the_worker_not_just_flags_it():
 # ---- the skew/size hardening (netplay audit 2026-07-18) ---------------------
 
 def _server_mod():
-    import os as _os, sys as _sys
+    import os as _os
+    import sys as _sys
     _sys.path.insert(0, _os.path.join(_os.path.dirname(__file__), "..", "server"))
     import server
     return server
@@ -359,7 +360,8 @@ def test_future_stamps_are_clamped_on_store(tmp_path, monkeypatch):
     the future blocked the other device's REAL progress for as long as the
     skew.  The server now clamps a stored _saved_at to its own clock (+slack)
     and stamps its own receipt time alongside."""
-    import asyncio, time
+    import asyncio
+    import time
     server = _server_mod()
     monkeypatch.setattr(server, "SAVES_PATH", str(tmp_path / "saves.json"))
     monkeypatch.setattr(server, "SAVES", {})

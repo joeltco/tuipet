@@ -2,7 +2,6 @@
 audit 2026-07-06): Tantrum-while-the-call-stands, weathering's three flavors
 (checkNiceWeather: a species that LOVES this sky bounces), and the gated
 personality mood idles (Neutral does nothing)."""
-import random
 
 from tuipet.pet import Pet
 

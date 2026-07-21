@@ -4,7 +4,7 @@ The carousel stays available-only; the GUIDE is where every egg in the game
 shows its state and — verbatim from eggUnlock.csv — what earns it, with the
 live unlock_progress counter.  These tests pin the two-surface split, the
 verbatim-data rule, the 38-col / 12-row LCD budget, and the hint convention."""
-from tuipet import data, egg, persistence
+from tuipet import data, egg
 from tuipet.eggguidescreen import EggGuidePanel, _wrap
 
 

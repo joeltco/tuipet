@@ -1,10 +1,8 @@
 """Regression pins for the 2026-07 full-codebase audit fixes."""
 import json
-import random
 
 from tuipet.pet import Pet
 from tuipet import persistence, data
-from tuipet.battle import Battle
 
 
 def _pet(**kw):

@@ -3,7 +3,6 @@ border-box).  Every painter must fit -- the status-box audit 2026-07-04 found
 the DNA card 28 wide (its hint line wrapped mid-box) and raw-minutes ages
 ('4325m40s').  Same lesson as the LCD box-clip: pixels aren't the box."""
 import re
-import random
 
 from tuipet.pet import Pet
 

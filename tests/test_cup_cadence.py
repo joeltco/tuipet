@@ -6,7 +6,7 @@ import datetime
 
 import pytest
 
-from tuipet import data, tournament
+from tuipet import tournament
 from tuipet.pet import Pet
 
 

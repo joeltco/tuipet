@@ -191,7 +191,7 @@ def test_a_between_ticks_death_still_gets_the_dying_beat():
     un-ceremonied pet with no dying fx in flight starts the beat on the
     next tick, wherever the death landed."""
     import asyncio
-    from tuipet import data, persistence
+    from tuipet import data
     from tuipet.app import TuiPetApp
     _, by = data.load_sprites()
     num = next((n for n, r in by.items()

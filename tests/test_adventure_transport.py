@@ -5,7 +5,6 @@ rests (lives + energy); a Danger Transport (Garuda) dashes toward the boss and
 gets ambushed on arrival.  Both are bag items spent mid-march (press T);
 Zone/Continent warps are obsolete (the zone picker replaced worldmap warping).
 """
-from tuipet import adventure
 from tuipet.adventure import Adventure, ZONES, MAX_LIVES
 from tuipet.adventurescreen import AdventurePanel, TELE_LEAVE_T, TELE_ARRIVE_T
 from tuipet.pet import Pet

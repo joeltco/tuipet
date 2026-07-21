@@ -10,7 +10,6 @@ natural timed care exactly like the item (Digimental) forms.
 import pytest
 
 from tuipet import data
-from tuipet import evolution
 from tuipet.pet import (GERIATRIC_REMAIN, MIN_STOMACH_CAPACITY, Pet)
 
 

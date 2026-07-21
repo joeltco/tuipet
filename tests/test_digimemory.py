@@ -5,7 +5,7 @@ DigimemoryLifeIncCoefficient=3600 (-> 60 game-sec, the BonusEvolutionLife scale)
 import json
 
 from tuipet.pet import Pet, DIGIMEMORY_LIFE_INC
-from tuipet import data, persistence
+from tuipet import persistence
 
 
 def _pet(**kw):

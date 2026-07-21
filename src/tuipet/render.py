@@ -42,8 +42,6 @@ def _paint_cells(buf, cols, rows, on, bg, bgimg, free_ink=None):
     experiment this replaced boxed the mon -- redo 2026-07-05).
     `free_ink` colours the weather plane (buf value 2): rain and snow wear
     their theme's precip colour instead of the sprite ink."""
-    if bgimg:
-        from . import theme
     fi = free_ink or on
     t = Text()
     for cy in range(rows):

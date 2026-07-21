@@ -9,7 +9,6 @@ Digimentals' -0.66), the X-Program/ItemEvol branches skipped the applyItem
 stat core entirely, and can_battle/can_train carried invented hard gates
 (MinEnergyForActivity is -127 on the classic column; the refusal roll is
 canon's only gate)."""
-import random
 
 from tuipet import data
 from tuipet.pet import Pet

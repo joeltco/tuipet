@@ -85,7 +85,6 @@ def test_fallback_pool_and_mystery_eggs_are_gone():
 
 def _panel(prog=None):
     from tuipet.eggselectscreen import EggSelectPanel
-    from tuipet.eggselectscreen import EggSelectPanel
     pan = EggSelectPanel()
     if prog is not None:
         pan.prog = prog
@@ -177,7 +176,6 @@ def test_fresh_profile_carousel_never_empty():
     DefaultUnlock starters are always hatchable, so the carousel can't be
     empty even on a wiped profile."""
     from tuipet.eggselectscreen import EggSelectPanel
-    from tuipet.eggselectscreen import EggSelectPanel
     pan = EggSelectPanel()                        # sandboxed = a fresh profile
     assert pan.n >= 5                             # the starter floor
     assert len(pan.carousel) == pan.n > 0
@@ -231,7 +229,7 @@ def test_the_carousel_is_pure_scene_with_neighbour_peeks():
     SCENE only -- the dossier lives on the status card, the words on the
     strip -- and the neighbour egg edges PEEK again at rest (cutting them
     in 0.5.87 'went backwards')."""
-    from tuipet.eggselectscreen import EggSelectPanel, CENTER, SPACING, WINDOW
+    from tuipet.eggselectscreen import EggSelectPanel
     pan = EggSelectPanel()
     pan.scroll = pan.pos = 1.0
     plain = pan.text().plain

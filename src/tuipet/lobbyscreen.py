@@ -27,19 +27,16 @@ from __future__ import annotations
 import hashlib
 import random
 
-from rich.cells import cell_len, chop_cells, set_cell_size
 from rich.text import Text
 
 from . import data
 from . import jogress
 from . import battle
-from . import battlescreen
 from . import jogressscreen
 from . import menu
 from . import persistence
-from .net import ANNOUNCE, CHAT_CAP
-from .render import marquee
-from .theme import INK, INK_B, DIM, SEL
+from .net import CHAT_CAP
+from .theme import INK, INK_B, DIM
 
 CHATW = 25
 ROSTW = 12

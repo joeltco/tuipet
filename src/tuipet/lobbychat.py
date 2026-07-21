@@ -7,8 +7,6 @@ cell_len/set_cell_size/chop_cells.
 """
 from __future__ import annotations
 
-import hashlib
-import random
 
 from rich.cells import cell_len, chop_cells, set_cell_size  # noqa: F401
 from rich.text import Text  # noqa: F401

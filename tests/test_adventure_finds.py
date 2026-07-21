@@ -4,7 +4,7 @@ Pins the loot roll: a marched step may spot a find from the zone's own loot
 table (rand_items/rand_foods); the player digs it into the bag or walks on;
 towns are safe rest, not scavenging (no finds).
 """
-from tuipet import adventure, data
+from tuipet import adventure
 from tuipet.adventure import Adventure, ZONES
 from tuipet.adventurescreen import AdventurePanel, TELE_LEAVE_T, TELE_ARRIVE_T
 from tuipet.pet import Pet

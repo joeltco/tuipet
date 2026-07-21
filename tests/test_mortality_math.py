@@ -24,11 +24,8 @@ Fixed (canon divergences):
    INVENTED and is removed; the discrete caps (20/20/12h) stay as
    documented tuipet safety nets beneath the burns, their false
    canon-provenance docstring corrected."""
-import random
 
-from tuipet.pet import (Pet, SICK_LIFE_DEC, INJURY_LIFE_DEC, WORSE_MALADY_LIFE_DEC,
-                        FATIGUE_LIFE_DEC, GERIATRIC_FATIGUE_LIFE_DEC,
-                        HUNGER_MISTAKE_LIFE_DEC, INSTANT_DEATH_GRACE)
+from tuipet.pet import (Pet, INSTANT_DEATH_GRACE)
 
 
 def _pet(**kw):

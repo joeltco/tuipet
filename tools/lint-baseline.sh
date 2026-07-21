@@ -35,7 +35,14 @@ count() {
 
 rc=0
 for tool in "${TOOLS[@]}"; do
-  found=$(count "$tool") || { rc=1; continue; }
+  # NOT `found=$(count …) || fail`: every one of these tools exits 1 when it
+  # finds anything, and with `set -o pipefail` that propagates out of count()
+  # -- so the success path looked like a failure and nothing was ever recorded.
+  # Validate the VALUE instead of the exit status.
+  found=$(count "$tool")
+  case "$found" in
+    ''|*[!0-9]*) echo "✗ $tool: could not read a count" >&2; rc=1; continue ;;
+  esac
   base=$(awk -v t="$tool" '$1==t {print $2}' "$BASELINE_FILE" 2>/dev/null)
   base=${base:-999999}
   if [ "$found" -gt "$base" ]; then

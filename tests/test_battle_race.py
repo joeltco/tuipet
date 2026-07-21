@@ -3,7 +3,7 @@ from the clone's test_clone_sim battle block, adapted to classic stages)."""
 import random
 
 from tuipet import battle
-from tuipet.pet import Pet, online_reward
+from tuipet.pet import Pet
 
 
 def _pet(**kw):

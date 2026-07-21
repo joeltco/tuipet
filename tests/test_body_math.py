@@ -25,7 +25,6 @@ Fixed (canon divergences):
    (x species multiplier; the 12000 real-min bound rides the /60 game
    scale) and adds the worse-sick path; the STARVATION sickness the old
    roll invented does not exist in canon and is gone."""
-import random
 
 from tuipet.pet import Pet
 

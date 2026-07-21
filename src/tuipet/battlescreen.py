@@ -232,7 +232,6 @@ class BattlePanel:
 
     def _start_fight(self, hit_type):
         """The bar locked: build the precomputed fight and roll the rounds."""
-        from .battle import Battle
         self.pet.saved_hit_type = hit_type
         self.locked = hit_type
         if self.raid:
@@ -483,7 +482,7 @@ class BattlePanel:
                     "windup": "...", "fire_out": "Fire!", "fire_in": "Incoming!",
                     "dodge": "Dodge!", "flinch": "Hit!", "result": ""}.get(m, "")
             if m == "result":
-                note = f"record {self.pet.wins}W/{self.pet.battles}" 
+                note = f"record {self.pet.wins}W/{self.pet.battles}"
         self.hud_php, self.hud_fhp, self.hud_note = ph, fh, note
         return scene
 

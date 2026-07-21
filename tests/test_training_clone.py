@@ -139,7 +139,8 @@ def test_wall_one_stands_through_everything_but_a_mega_break():
     """The clone's wall rule, verbatim: Wall_1 through the whole volley --
     a whiff, a normal break, the incoming orb -- and ONLY a mega break
     crumbles it to Wall_2."""
-    import json, os
+    import json
+    import os
     import tuipet.training as tr
     wall = json.load(open(os.path.join(os.path.dirname(tr.__file__),
                                        "data", "train_wall.json")))

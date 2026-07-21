@@ -6,9 +6,9 @@ panel pauses to rest there.  Town spans come from data.load_maps z['towns']
 mapped onto the ~40 interactive legs.
 """
 from tuipet import adventure
-from tuipet.adventure import Adventure, ZONES, MAX_LIVES, TOWN_REST_ENERGY
+from tuipet.adventure import Adventure, ZONES, MAX_LIVES
 from tuipet.adventurescreen import (AdventurePanel, TELE_LEAVE_T, TELE_ARRIVE_T,
-                                    TRAVEL_TICKS, TOWN_HOLD)
+                                    TRAVEL_TICKS)
 from tuipet.pet import Pet
 
 

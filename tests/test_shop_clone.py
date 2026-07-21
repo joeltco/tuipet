@@ -1,7 +1,6 @@
 """The TUIPET shop/bag (catalog authored 2026-07-18): the 29-item CATALOG
 table -- DSprite's mechanics grammar wearing DVPet art on every cell --
 plus the classic EGG shelf and HONORS board riding the last tabs."""
-import random
 
 from tuipet import shop
 from tuipet.pet import Pet, FULL_HUNGER

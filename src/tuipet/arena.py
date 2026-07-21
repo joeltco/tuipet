@@ -21,8 +21,8 @@ from . import anim
 from . import egg as egg_mod
 from . import grid
 from . import theme
-from .theme import LCD_ON, LCD_BG, SIL_SCENE, SIL_LIGHTSOFF, VOID, FLASH
-from .pet import Pet, POOP_MAX_PILES
+from .theme import LCD_ON, LCD_BG, SIL_SCENE, SIL_LIGHTSOFF, VOID
+from .pet import Pet
 from .render import render_screen
 
 # the fx engine + shared geometry live in arenafx (tier-2 split 2026-07-17);
@@ -48,9 +48,6 @@ def bar(v, width=12, color=None):
 
 _FX = data.load_effects()
 GRAVESTONE = _FX.get("grave", [None])[0]      # real DVPet death.png
-
-
-from .render import blit as _blit    # one blit for app/training/strikefx (refactor 2026-07-05)
 
 
 #                                                     every canon sprite fits inside; things leave

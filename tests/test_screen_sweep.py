@@ -504,7 +504,7 @@ def test_the_update_offers_a_restart(monkeypatch):
     ("restart",) verdict; ESC defers politely.  The app-side handler saves,
     flags the re-exec and exits Textual cleanly."""
     import threading
-    from tuipet import optionsscreen, update as update_check
+    from tuipet import update as update_check
     from tuipet.optionsscreen import OptionsPanel
     from tuipet.pet import Pet
 

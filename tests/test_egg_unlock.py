@@ -1,7 +1,6 @@
 """The eggUnlock.csv condition engine: start eggs, locking, the password path, and
 the reachability invariant (no signal-gated egg is permanently stranded as locked).
 """
-import pytest
 
 from tuipet import data, egg
 
@@ -125,7 +124,6 @@ def test_no_egg_gated_on_an_unmodeled_system():
 def test_condition_met_unlocks_without_any_purchase():
     """The licence cut (2026-07-17): meeting a can_perm rule's condition owns
     the egg outright -- no shop, no bits, no intermediate state."""
-    from tuipet import persistence
     rules = data.load_egg_unlock()
     idx, r = next((i, r) for i, r in rules.items()
                   if r["wins"] and r["can_perm"] and not r["start"])

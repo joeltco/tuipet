@@ -12,9 +12,7 @@ wiring it.
 """
 from __future__ import annotations
 
-import random
 
-from . import anim
 from . import data
 from . import egg as egg_mod
 from . import grid

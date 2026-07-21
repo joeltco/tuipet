@@ -1,6 +1,6 @@
 """The DSprite feed menu (BASIC VPET 2026-07-16): MEAT and PILL, free and
 infinite -- the DVPet food catalog left with the item system."""
-from tuipet.pet import Pet, FULL_HUNGER, PILL_ENERGY_GAIN, PILL_WEIGHT_GAIN
+from tuipet.pet import Pet, FULL_HUNGER, PILL_WEIGHT_GAIN
 from tuipet.feedscreen import FeedPanel, ROWS_MENU
 
 

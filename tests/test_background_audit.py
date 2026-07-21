@@ -3,7 +3,6 @@ dissolve -- plus the BASIC VPET re-pins (2026-07-17): every scene is the
 single-frame DSprite backdrop, identical around the clock (the day/night
 system, per-habitat triples, weather tints and the winter-sunset quirk all
 left with their systems)."""
-from tuipet import theme
 from tuipet.pet import Pet, DAY_LENGTH
 
 
@@ -78,7 +77,6 @@ def test_crossfade_retargets_from_the_visible_frame():
 # pixels: night ground verbatim, the overcast texture posterized into dark
 # night-sky tones, the moon and stars covered.
 
-from tuipet import data
 
 
 def _cells(frame):

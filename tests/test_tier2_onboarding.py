@@ -5,7 +5,6 @@ finally explained, and the egg guide reachable from the picker."""
 from tuipet import persistence
 from tuipet.app import TuiPetApp
 from tuipet.eggselectscreen import EggSelectPanel
-from tuipet.helpscreen import HELP
 from tuipet.optionsscreen import OptionsPanel, _ROWS
 from tuipet.pet import Pet
 

@@ -1,9 +1,6 @@
 """Trained battle HP + the exercise() nuances (checkAndIncPerfectWins,
 checkExerciseTime, mood+=enthusiasm, checkWorseSick, ExerciseCalorieDec)."""
-import random
-from tuipet.pet import (Pet, DAY_LENGTH, STARTING_HEALTH_POINTS, PERFECT_WINS_LIMIT,
-                        CALORIE_LIMIT)
-from tuipet import persistence
+from tuipet.pet import (Pet, DAY_LENGTH, STARTING_HEALTH_POINTS, PERFECT_WINS_LIMIT)
 
 
 def _pet(**kw):

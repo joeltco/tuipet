@@ -9,11 +9,9 @@ emergence feeding the Happy power bonus and the exercise spirit branches),
 the WEAK injury tables keyed on the static species aversion, the food
 forced-meal decs, and the PERSONALITY TRACKER (childhood energy/weight/mood
 tallies re-rolling the temperament at the Champion evolution)."""
-import random
 
 from tuipet import data
-from tuipet.pet import (Pet, RANK_LIMIT, RANK_INJ_BATTLE_LOST, RANK_TIME_SICK,
-                        PCHAMP_RANK, INJ_EXERCISE, INJ_WEAK_EXERCISE)
+from tuipet.pet import (Pet)
 
 
 def _pet(**kw):

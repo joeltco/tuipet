@@ -5,10 +5,8 @@ Fixtures pin the rolls they don't exercise: (the sickness rolls left) --
 monkeypatched to no-ops where a stray catch would muddy an assertion, and the
 fatigue roll is forced (randrange -> 0) or silenced (-> 99) as the test needs.
 """
-import random
 
-from tuipet.pet import (Pet, RANK_TRAIN_FAIL, RANK_TRAIN_FORCED,
-                        RANK_CHANGE_FATIGUE, RANK_FATIGUE_FORCED)
+from tuipet.pet import (Pet)
 
 
 def _pet(**kw):

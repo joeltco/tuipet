@@ -56,7 +56,6 @@ def _preflight():
         print(e)
         raise SystemExit(1)
     import shutil
-    import sys
     import time as _t
     warn = []
     cols, rows = shutil.get_terminal_size()

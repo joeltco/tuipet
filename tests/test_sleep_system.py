@@ -7,7 +7,6 @@ stall, wake rolls, disturbs, the item Sleep flag).  Found: the nap was
 INSTANT on lights-off -- canon waits out toNapSleepLapse/calcToSleepNapLapse
 first (energy-shaded; canon's real anti-farm for the +10 nap mood); sick/inj
 naps run a fixed hour; and a pet on the edge of sleep never tantrums."""
-import random
 
 from tuipet.pet import (Pet, TO_NAP_HIGH_ENERGY, TO_NAP_LOW_ENERGY,
                         TO_NAP_OBEDIENCE_FACTOR)

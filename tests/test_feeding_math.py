@@ -20,9 +20,8 @@ Fixed (canon divergences):
    rolls sickness per pile (16%/8%).
  * BadMedLifeDec is 3600 REAL-seconds: the port stored 3600 game-seconds
    -- a double dose cost 2.5 game-DAYS instead of one game-hour."""
-import random
 
-from tuipet.pet import Pet, CALORIE_LIMIT
+from tuipet.pet import Pet
 from tuipet import data
 
 

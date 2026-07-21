@@ -13,7 +13,6 @@ from textual.app import App, ComposeResult
 from textual.containers import Horizontal, Vertical
 from textual.widgets import Static
 
-from . import backgrounds
 from . import statusbox
 from .appactions import ActionsMixin
 from .appboot import (  # noqa: F401  (re-export: tuipet.app.X keeps resolving)
@@ -21,33 +20,16 @@ from .appboot import (  # noqa: F401  (re-export: tuipet.app.X keeps resolving)
     _sound_path, host_platform)
 from . import data
 from . import menu
-from . import egg as egg_mod
-from . import training
-from . import backgroundscreen
-from . import battlescreen
-from . import dnascreen
-from . import shopscreen
-from . import eggguidescreen
-from . import assistscreen
-from . import feedscreen
-from . import digicorescreen
 from . import eggselectscreen
 from . import persistence
 from . import net
 from . import lobbyscreen
-from . import tournament
-from . import tournamentscreen
-from . import bugscreen
-from . import helpscreen
 from . import titlescreen
-from . import optionsscreen
 from . import deathscreen
-from . import raidscreen
 from . import sound
 from . import update as update_check
 from . import cloudsync
 from .pet import Pet
-import os
 
 from . import theme
 # arena.py owns the LCD renderer; pull the names app.py and the tests still

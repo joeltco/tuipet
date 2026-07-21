@@ -141,7 +141,7 @@ def test_poop_costs_weight_not_hunger():
     canon says NO (PhysicalState.poop: mood relief + weight shed + gauge +
     filth; hunger is untouched — it falls on its own decay clock).  Even the
     floor-poop obedience change is 0 in the shipped difficulty column."""
-    from tuipet.pet import Pet, POOP_MOOD_INC
+    from tuipet.pet import Pet
     p = Pet(num=102, name="D", stage="Champion", attribute="Virus")
     p.world_seconds = 12 * 60.0
     p.hunger, p.weight, p.mood = 3, 20, 0

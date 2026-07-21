@@ -16,12 +16,10 @@ import json
 import os
 import sys
 
-import pytest
 
 from tuipet import data, egg, persistence
 from tuipet.net import LobbyClient
 from tuipet.pet import Pet
-from tuipet import raidscreen
 from tuipet.raidscreen import RaidPanel
 
 

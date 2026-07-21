@@ -17,7 +17,7 @@ PostponePoopMoodChange (-1): canon's anim-state machine can BLOCK a poop and
 charge mood per blocked minute; tuipet has no blocking state (the pile drops
 the tick the gauge crosses), so the postpone path cannot exist.
 """
-from tuipet.pet import (OBEDIENCE_FILTH_SCALE, POOP_INC_WEIGHT_FACTOR,
+from tuipet.pet import (POOP_INC_WEIGHT_FACTOR,
                         POOP_INC_WEIGHT_FACTOR_SMALL, POOP_MAX_PILES, Pet)
 
 

@@ -5,16 +5,6 @@ pet.py itself) can star-import one leaf module and resolve every name in
 their own namespace.  `from .pet import ANYTHING` still works: pet.py
 star-imports this module back under the __all__ below."""
 from __future__ import annotations
-import math
-import random
-from dataclasses import dataclass, field as _dcf
-from . import data
-from . import shop
-from . import egg as egg_mod
-from . import evolution
-from . import lines as lines_mod
-from . import backgrounds
-from . import theme
 
 
 class _Refused(str):

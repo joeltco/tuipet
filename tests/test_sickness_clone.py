@@ -6,7 +6,6 @@ counters, the 6h malady death) stayed removed; these pin the CLONE's rules.
 """
 import random
 
-import pytest
 
 from tuipet.pet import (Pet, SICK_POOP_P, SICK_OVERWEIGHT_P, DEATH_SICK_P)
 

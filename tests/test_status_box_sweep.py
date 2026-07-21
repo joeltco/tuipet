@@ -3,9 +3,7 @@ every menu, every part of the game, the status box needs to be redone").
 Every mode paints a DELIBERATE card into the right-hand box -- the
 bare-vitals fallback is for the home screen alone.  Driven through the
 real app painters, not re-implementations."""
-import asyncio
 
-import pytest
 
 from tuipet.app import TuiPetApp, Stats
 from tuipet.pet import Pet
@@ -164,7 +162,8 @@ def test_dna_card_bills_energy_not_dead_systems():
 def test_every_painter_lives_in_statusbox():
     """The modularize law (Joel 2026-07-17): app.py holds only thin
     delegates -- no card body may creep back in."""
-    import inspect, re
+    import inspect
+    import re
     from tuipet import app as app_mod
     src = inspect.getsource(app_mod)
     bodies = re.findall(r"def (_status_\w+)\(self.*?\):(.*?)(?=\n    def )", src, re.S)
