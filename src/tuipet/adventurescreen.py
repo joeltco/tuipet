@@ -626,7 +626,8 @@ class AdventurePanel(menu.SubHost):
                     return "[b]Dodged the ambush![/]"
                 return f"[b]Ambushed![/]  ⚡-{adventure.HAZARD_ENERGY}"
             if self._find is not None:
-                return "[b]✦ A glint on the road[/]  [dim]ENTER dig · SPACE pass[/]"
+                # <= 40 plain (budget sweep 2026-07-21: the long line ran 45)
+                return "[b]✦ A glint![/]  [dim]ENTER dig · SPACE pass[/]"
             if self._rest_t > 0:
                 return f"[b]⌂ Town — rested up[/]  ⚡{self.pet.energy} {hearts}"
             thint = " T" if self.adv.held_transports() else ""

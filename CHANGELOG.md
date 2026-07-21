@@ -3,6 +3,20 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.5.131 — THE NIGHT HARDENING PASS (2026-07-21)
+
+* **Every screen from this week's arcs was audited frame by frame** — a
+  new contact-sheet tool renders all ~25 adventure/town/shop states as
+  visible pixels, and everything from the sick trudge to the sold-out
+  shelf was eyeballed. Two real finds fixed: the glint prompt overflowed
+  its 40-column lane (now "✦ A glint!"), and the town hub's greeting
+  clipped mid-word.
+* **A permanent safety net.** New sweeps hold every state to the physical
+  laws (12 rows, 40 columns, 40-char strips), animate each one ten ticks
+  clean, and mash every key at every state without a crash. Old saves
+  from before the town ledger load cleanly (verified). All three ratchet
+  gates (ruff, mypy, bandit) at baseline.
+
 ## 0.5.130 — TOWN ECONOMIES (2026-07-21)
 
 * **Per-town stock.** Town shops no longer mirror the home catalog: the

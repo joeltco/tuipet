@@ -132,11 +132,11 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("TOWN ECONOMIES: every town shop carries its own stock "
-                 "at its own prices, with ONE half-off deal rotating "
-                 "daily — festivals put the whole counter on sale. Towns "
-                 "pay 70% for goods they don't stock: buy the deal in "
-                 "one town, sell it to the other side of the map.")
+    WHATS_NEW = ("A hardening pass over the week's new roads and towns: "
+                 "every adventure and shop screen audited frame by "
+                 "frame, two overflowing lines tightened to fit the box, "
+                 "and a safety net added so no screen can ever spill "
+                 "again.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and

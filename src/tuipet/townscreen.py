@@ -27,7 +27,9 @@ class TownPanel(menu.SubHost):
         self._cup_done = False         # the cup runs ONCE per town visit
         self.frame_i = 0
         self.sfx = None
-        self.msg = "A town on the road — rest, resupply, or fight the Town Cup."
+        # <= 38 cols: the hub body clips hard, no marquee (sheet audit
+        # 2026-07-21 caught the old line dying mid-word at "resupply, o")
+        self.msg = "A town on the road — rest up, shop."
 
     def anim(self):
         if self.sub_anim():            # the shop / cup match owns the clock
