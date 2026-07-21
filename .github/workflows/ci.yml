@@ -2,6 +2,13 @@ name: ci
 
 # The 4-way quality cocktail: ruff (lint) + mypy (types) + bandit (security) + pytest.
 # Runs on every push/PR to main. All four are blocking.
+#
+# lint/typecheck/security run through tools/lint-gate.sh, which RATCHETS against
+# the counts in .lint-baseline rather than demanding zero. They went red on
+# 2026-07-02 and stayed red for three weeks -- a permanently-failing build is one
+# nobody reads, which is precisely how the debt accumulated unnoticed. The gate
+# fails on any INCREASE, so the pile can only shrink; tools/lint-baseline.sh
+# re-records it and refuses to raise a number. pytest stays strictly green.
 
 on:
   push:
@@ -18,7 +25,7 @@ jobs:
         with:
           python-version: "3.12"
       - run: pip install -e ".[dev]"
-      - run: ruff check src tests server
+      - run: ./tools/lint-gate.sh ruff
 
   typecheck:
     runs-on: ubuntu-latest
@@ -28,7 +35,7 @@ jobs:
         with:
           python-version: "3.12"
       - run: pip install -e ".[dev]"
-      - run: mypy src/tuipet
+      - run: ./tools/lint-gate.sh mypy
 
   security:
     runs-on: ubuntu-latest
@@ -38,7 +45,7 @@ jobs:
         with:
           python-version: "3.12"
       - run: pip install -e ".[dev]"
-      - run: bandit -c pyproject.toml -r src server -q
+      - run: ./tools/lint-gate.sh bandit
 
   test:
     runs-on: ubuntu-latest

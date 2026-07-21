@@ -90,7 +90,7 @@ fi
 # count rises above .ruff-baseline, so new lint debt can't ride out in a
 # release while the old pile gets fixed at its own pace (2026-07-21).
 echo "==> ruff (gate)"
-./tools/ruff-gate.sh
+./tools/lint-gate.sh ruff
 
 # --- gate on tests ----------------------------------------------------------
 echo "==> tests"
