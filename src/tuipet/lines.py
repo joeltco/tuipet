@@ -318,6 +318,10 @@ def win_gate_progress(pet):
 _TXT = {"cm": "care slips", "tr": "trainings", "of": "overfeeds",
         "btl": "battles this stage", "lv": "level", "ko6": "Mega-class felled"}
 
+# what fills a WIN window (and what doesn't): drills feed TR gates, lobby
+# duels feed nothing (L17).  <= 35 chars -- the digicore LCD row clip.
+WIN_FEED_NOTE = "fed by local bouts, not lobby pvp"
+
 
 def _atom_row(pet, atom):
     kind, a, b = atom
@@ -330,9 +334,11 @@ def _atom_row(pet, atom):
         # trainings gate (drills feed TR gates + effort), and the L17
         # ruling keeps lobby duels progression-neutral.  The ROW was the
         # gap: it never said WHICH battles fill the window, right after a
-        # stage whose gate WAS trainings (Agumon->Greymon TR 16+).  Name
-        # the feed where the player is actually looking.
-        return _atom_met(pet, atom), f"wins {a} of last {b} local bouts  (now {now}/{min(len(pet.battle_log), b)})"
+        # stage whose gate WAS trainings (Agumon->Greymon TR 16+).  The
+        # answer lives in a WIN_FEED_NOTE sub-row (requirement_report):
+        # "local bouts" inlined here overflowed the LCD's 35-char row clip
+        # and amputated the (now ...) counter (Joel's screenshot, same day).
+        return _atom_met(pet, atom), f"wins {a} of last {b}  (now {now}/{min(len(pet.battle_log), b)})"
     if kind == "jogress":
         if isinstance(a, tuple):                         # Pendulum attribute door
             spec = "/".join("Free" if x == "None" else x for x in a)
@@ -363,12 +369,18 @@ def requirement_report(pet, num):
                     if r["num"] == num), None) or line["members"].get(num)
     if row is None:
         return [(False, "not in this line")]
-    best, best_unmet = None, None
+    best, best_alt, best_unmet = None, None, None
     for alt in row["rule"]:
         rows = [_atom_row(pet, atom) for atom in alt]
         unmet = sum(1 for met, _ in rows if not met)
         if best is None or unmet < best_unmet:
-            best, best_unmet = rows, unmet
+            best, best_alt, best_unmet = rows, alt, unmet
+    if best and any(kind == "win" for kind, _a, _b in best_alt):
+        # the WHICH-battles answer rides under the WIN row as a dim
+        # informational line (met=None, the jogress-door shape) -- inlining
+        # it in the row clipped the counter off the 35-char LCD (Joel's
+        # screenshot 2026-07-21, the "is it training or battles" report)
+        best = best + [(None, WIN_FEED_NOTE)]
     return best or [(True, "time alone — the clock decides")]
 
 

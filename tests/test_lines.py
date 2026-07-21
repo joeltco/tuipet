@@ -395,15 +395,30 @@ def test_requirement_report_shows_live_counters():
     assert (False, "trainings 16+  (now 10)") in rows
     # OR rules report the closest alternative
     r = lines.requirement_report(_Counters(93, log=[1] * 10 + [0] * 5), 220)
-    assert r == [(False, "wins 12 of last 15 local bouts  (now 10/15)")]
+    assert r == [(False, "wins 12 of last 15  (now 10/15)"),
+                 (None, lines.WIN_FEED_NOTE)]
 
 
-def test_win_gate_row_names_the_local_feed():
+def test_win_gate_report_names_the_local_feed():
     """"is it training or battles, because i dont think its filling either
-    way" (Joel bug report 2026-07-21): the data-book WIN row must say the
-    window counts LOCAL bouts -- drills and lobby duels feed it nothing."""
-    rows = "".join(t for _, t in lines.requirement_report(_Counters(93), 220))
-    assert "local bouts" in rows
+    way" (Joel bug report 2026-07-21): a WIN-gate report must say the
+    window counts LOCAL bouts -- drills and lobby duels feed it nothing.
+    The answer is a dim sub-row: inlining it clipped the (now ...) counter
+    off the 35-char LCD row (Joel's screenshot, same day)."""
+    rows = lines.requirement_report(_Counters(93), 220)
+    assert (None, lines.WIN_FEED_NOTE) in rows
+    assert any("(now" in t for _m, t in rows)      # the counter survives
+
+
+def test_every_report_row_fits_the_lcd_clip():
+    """digicorescreen renders req rows as txt[:35] -- any longer row is
+    silently amputated on-device (how the first fix broke).  Pin the law
+    for every row of every ver1 target from a mid-life pet."""
+    line = lines.load_lines()["ver1"]
+    p = _Counters(93, cm=1, tr=10, btl=7, log=[1] * 10 + [0] * 5, mega=1)
+    for num in line["members"]:
+        for _met, txt in lines.requirement_report(p, num):
+            assert len(txt) <= 35, f"row overflows the LCD: {txt!r}"
 
 
 def test_drills_and_online_bouts_leave_the_win_window_alone():

@@ -132,11 +132,10 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("Is it training or battles? Answered: a WIN evolution gate "
-                 "counts wins in your last 15 LOCAL battles -- the data book "
-                 "now says so on the row. Training drills fill TR gates and "
-                 "your effort hearts, and lobby duels pay bits only; the duel "
-                 "purse line now reminds you mid-grind.")
+    WHATS_NEW = ("The data book answer to \"is it training or battles\" no "
+                 "longer shoves its own win counter off the screen: the WIN "
+                 "row keeps its (now N/15), and \"fed by local bouts, not "
+                 "lobby pvp\" rides underneath as its own line.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and
