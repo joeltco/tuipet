@@ -132,11 +132,11 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("A hardening pass over the week's new roads and towns: "
-                 "every adventure and shop screen audited frame by "
-                 "frame, two overflowing lines tightened to fit the box, "
-                 "and a safety net added so no screen can ever spill "
-                 "again.")
+    WHATS_NEW = ("The road reaches evolution now: Alphamon's AREA gate "
+                 "opens by conquering adventure map 4 — the authored "
+                 "meaning, restored. Breaking 4 raid bosses still works; "
+                 "nobody loses an earned gate. Road fights already "
+                 "train, level, and log wins, same as any local bout.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and

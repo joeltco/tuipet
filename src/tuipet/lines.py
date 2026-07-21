@@ -218,12 +218,20 @@ def _atom_met(pet, atom):
     if kind == "win":
         return sum(pet.battle_log[-b:]) >= a
     if kind == "area":
-        # the raid re-gate (BASIC VPET 2026-07-16): adventure left with the
-        # world layer, so an AREA-N atom means N+1 felled community raid
-        # bosses now -- the same map->milestone conversion the eggUnlock
-        # MapComplete rows took (Alphamon's AREA 3 = 4 broken bosses)
+        # AREA n = adventure area n CLEARED -- the authored meaning, RESTORED
+        # 2026-07-21 (run care/evo arc) now that adventure is back.  Area
+        # indices are 0-based like the eggUnlock MapComplete rows (area n ==
+        # zones map n+1), and the raid re-gate (BASIC VPET 2026-07-16: n+1
+        # felled community bosses) stays as the FALLBACK -- the same dual
+        # gate the eggs took in the rebuild; nobody who earned the gate
+        # through raids loses the road they walked.
         n = int(a) if str(a).lstrip("-").isdigit() else 0
-        return _felled_raids() >= n + 1
+        from . import adventure            # late: adventure imports data/pet
+        try:
+            cleared = adventure.is_map_cleared(pet, n + 1)
+        except Exception:
+            cleared = False
+        return cleared or _felled_raids() >= n + 1
     v = _actual(pet, kind)
     return v >= a and (b is None or v <= b)
 

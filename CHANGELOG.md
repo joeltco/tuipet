@@ -3,6 +3,19 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.5.132 — THE ROAD REACHES EVOLUTION (2026-07-21)
+
+* **The AREA evolution gate speaks adventure again.** `AREA n` in the
+  line charts originally meant "adventure area n cleared"; when adventure
+  left, it was re-gated to raid bosses. It's now a dual gate — clear the
+  area on the road (Alphamon's `AREA 3` = conquer all of map 4) **or**
+  the raid fallback (4 broken bosses) — the same restoration the egg
+  unlocks' map rows got. Nobody who earned it through raids loses it.
+* For the record, run care effects were already live: every road fight
+  bills the body and feeds the WIN/BTL/TR/LV/KO6 channels plus attribute
+  power, exactly like any local bout, and the march drains energy,
+  calories, and tops effort. Verified, not changed.
+
 ## 0.5.131 — THE NIGHT HARDENING PASS (2026-07-21)
 
 * **Every screen from this week's arcs was audited frame by frame** — a

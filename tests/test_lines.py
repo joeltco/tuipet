@@ -432,3 +432,29 @@ def test_drills_and_online_bouts_leave_the_win_window_alone():
     assert (p.battle_log, p.battles) == ([], 0)  # progression-neutral
     p.record_battle(True)
     assert (p.battle_log, p.battles) == ([1], 1)
+
+
+def test_area_gate_is_the_adventure_road_or_the_raid_fallback():
+    """AREA n = adventure area n cleared (0-based: zones map n+1) OR n+1
+    felled community raid bosses -- the authored meaning restored with
+    adventure's return (run care/evo arc 2026-07-21), the raid re-gate
+    kept as the fallback exactly like the eggUnlock MapComplete rows.
+    Alphamon's AREA 3: clear map 4, or break 4 bosses."""
+    from tuipet import adventure, persistence
+    atom = ("area", "3", None)
+    p = Pet(num=100, stage="Ultimate", attribute="Vaccine")
+    assert not lines._atom_met(p, atom)                # no road, no raids
+    # the RAID fallback still stands (nobody loses an earned gate)
+    for _ in range(4):
+        persistence.raid_add()
+    assert lines._atom_met(p, atom)
+    # ...and the ROAD alone now opens it: conquer every map-4 zone
+    q = Pet(num=100, stage="Ultimate", attribute="Vaccine")
+    map4 = [i for i, z in enumerate(adventure.ZONES) if z["map"] == 4]
+    assert map4                                        # the area exists
+    q.adv_progress = max(map4) + 1                     # frontier past all of it
+    assert adventure.is_map_cleared(q, 4)
+    d = persistence.load_settings()
+    d.get("progress", {}).pop("raids", None)           # raids back to zero
+    persistence.save_settings(d)
+    assert lines._atom_met(q, atom)                    # the road opens Alphamon
