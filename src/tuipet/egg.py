@@ -75,6 +75,22 @@ def hatch_name(egg_type=0):
     return eggs[_idx(egg_type, len(eggs))]["hatch_name"] if eggs else "?"
 
 
+def destined_name(egg_type=0):
+    """The BABY a single-target egg hatches ('' for a multi-target pool --
+    the mystery is the caller's to keep).  The roster name of the hatch
+    target, NOT hatch_name: for the named banks (Kera Digitama, the field
+    eggs, Lalamon Egg...) hatch_name is the EGG's display title, and the
+    'Destined to hatch' cards were promising an egg would hatch an egg
+    (Joel 2026-07-21).  The classic banks store the baby's name in both,
+    so those read the same either way."""
+    ts = hatch_targets(egg_type)
+    if len(ts) != 1:
+        return ""
+    from . import data
+    rec = data.load_sprites()[1].get(ts[0])
+    return (rec or {}).get("name") or hatch_name(egg_type)
+
+
 def count():
     eggs = _real_eggs()
     return len(eggs) if eggs else 1

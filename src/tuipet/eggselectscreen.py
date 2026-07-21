@@ -124,7 +124,7 @@ class EggSelectPanel:
         if len(targets) > 1:
             name, new = "???  (two fates stir)", False
         else:
-            name = egg_mod.hatch_name(idx)
+            name = egg_mod.destined_name(idx)  # the BABY, not the egg's title
             album = persistence.get_album()
             new = bool(targets) and data.canonical_num(targets[0]) not in album
         tail = "  (this gen only)" if state == "temp" else ""

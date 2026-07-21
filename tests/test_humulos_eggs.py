@@ -217,3 +217,28 @@ def test_every_locked_egg_offers_a_chaseable_hint():
             assert rules[i]["desc"], (i, egg.hatch_name(i))
     assert egg.locked_hint(_prog(), set())
 
+
+
+def test_destined_to_hatch_names_the_baby_not_the_egg():
+    """'Destined to hatch: Kera Digitama' promised an egg would hatch an egg
+    (Joel 2026-07-21) -- the named banks store the EGG's display title in
+    hatch_name.  destined_name resolves the hatch TARGET's roster name for
+    every single-target bank; pools return '' so the cards keep the mystery."""
+    from tuipet import data, egg, statusbox
+    from tuipet.pet import Pet
+    _, by_num = data.load_sprites()
+    for i in range(egg.count()):
+        ts = egg.hatch_targets(i)
+        if len(ts) != 1:
+            assert egg.destined_name(i) == ""
+            continue
+        assert egg.destined_name(i) == by_num[ts[0]]["name"], i
+        assert "Digitama" not in egg.destined_name(i)
+        assert not egg.destined_name(i).endswith("Egg")
+    # and the incubating home card says the baby (Kera egg -> Kuramon)
+    kera = next(i for i in range(egg.count())
+                if egg.hatch_name(i) == "Kera Digitama")
+    p = Pet(num=-1, stage="Egg")
+    p.egg_type = kera
+    body = "\n".join(statusbox.egg_lines(p))
+    assert "Kuramon" in body and "Kera Digitama" not in body

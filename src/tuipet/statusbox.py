@@ -161,7 +161,9 @@ def egg_lines(pet):
         "[dim]a new life is warming[/]",
         "",
         "Destined to hatch",
-        f"  [b]{egg_mod.hatch_name(pet.egg_type)}[/]",
+        # the destined BABY, not the egg's display title ("Kera Digitama"
+        # promised an egg would hatch an egg); a pool keeps its mystery
+        f"  [b]{egg_mod.destined_name(pet.egg_type) or '???'}[/]",
         DIV,
         f"Age     {mins}m{secs:02d}s",
         "",
@@ -212,7 +214,7 @@ def eggselect(app):
     elif len(targets) > 1:
         shown, badge = "???", "[dim]two fates stir[/]"
     else:
-        shown = egg_mod.hatch_name(idx)
+        shown = egg_mod.destined_name(idx)     # the BABY, not the egg's title
         fresh = bool(targets) and \
             data.canonical_num(targets[0]) not in persistence.get_album()
         badge = ("[b]★ never raised[/]" if fresh
