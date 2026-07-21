@@ -336,8 +336,10 @@ _TXT = {"cm": "care slips", "tr": "trainings", "of": "overfeeds",
         "btl": "battles this stage", "lv": "level", "ko6": "Mega-class felled"}
 
 # what fills a WIN window (and what doesn't): drills feed TR gates, lobby
-# duels feed nothing (L17).  <= 35 chars -- the digicore LCD row clip.
-WIN_FEED_NOTE = "fed by local bouts, not lobby pvp"
+# duels feed nothing (L17), and a raid attempt writes NOTHING on the pet
+# (RaidBout, clone rule) -- "road" = the adventure's wilds + zone bosses.
+# <= 35 chars -- the digicore LCD row clip.
+WIN_FEED_NOTE = "fed by cup & road, not pvp/raids"
 
 
 def _atom_row(pet, atom):
