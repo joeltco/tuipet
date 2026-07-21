@@ -356,6 +356,12 @@ def test_mid_bracket_contracts():
     pan3.cursor = slot
     pan3.key("enter")
     pan3.key("space"); pan3.key("space")        # into the round-one bout
+    # the MATCH INTRODUCTIONS play first (cup theater 2026-07-21): the
+    # walk-ins hold the stage, then the bell opens the fight itself
+    from tuipet.tournamentscreen import INTRO_OPP_T, INTRO_PET_T, INTRO_HOLD_T
+    assert pan3._intro is not None and pan3.sub is None
+    for _ in range(INTRO_OPP_T + INTRO_PET_T + INTRO_HOLD_T + 1):
+        pan3.anim()
     assert pan3.sub is not None
     for _ in range(3):
         pan3.anim()
@@ -370,6 +376,8 @@ def test_mid_bracket_contracts():
     assert pan3.sub is None and not pan3.tourney.over
     assert "back out" in pan3.tourney.last      # the tree page says so
     pan3.key("space"); pan3.key("space")        # the match still waits
+    for _ in range(INTRO_OPP_T + INTRO_PET_T + INTRO_HOLD_T + 1):
+        pan3.anim()                             # the re-entry replays the intro
     assert pan3.sub is not None
     pan3.key("escape")                          # intro -> the timing bar
     assert pan3.sub.phase == "ready"

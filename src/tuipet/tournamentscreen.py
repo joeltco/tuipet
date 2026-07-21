@@ -26,6 +26,15 @@ FIGHT_ROWS = 12   # the ONE locked arena (was a squat 8-row band that
 NPC_T = 20        # ticks per advancing winner's crossing
 CEREMONY_T = 40   # the podium beat
 
+# MATCH INTRODUCTIONS (fun arc, Joel: "do the match introductions"): SPACE
+# on the faceoff page stages the walk-ins before the bell -- the challenger
+# strides in from the RIGHT and is announced, your mon answers from the
+# LEFT, both hold the faceoff, then the fight opens itself.  The faceoff
+# page stays the decision point; the intro is the committed entrance.
+INTRO_OPP_T = 14  # the challenger's walk-in
+INTRO_PET_T = 14  # your mon's answer
+INTRO_HOLD_T = 10 # the held stare-down, then the bell
+
 
 class TournamentPanel(menu.SubHost):
     def __init__(self, pet):
@@ -42,6 +51,7 @@ class TournamentPanel(menu.SubHost):
         self.tree_view = False       # the bracket page (B toggles; shown between rounds)
         self._advance = None         # the field-advances parade: {"t","nums"}
         self._ceremony = None        # the champion's podium beat: {"t"}
+        self._intro = None           # the match introductions: {"t"}
 
     def anim(self):
         if self.sub_anim():          # SubHost: delegate + sfx bubble
@@ -59,6 +69,12 @@ class TournamentPanel(menu.SubHost):
                 self._advance = None
                 self.tree_view = True          # the field, freshly advanced
             return
+        if self._intro is not None:
+            self._intro["t"] += 1
+            if self._intro["t"] >= INTRO_OPP_T + INTRO_PET_T + INTRO_HOLD_T:
+                self._intro = None             # the bell: the fight opens itself
+                self.sub = BattlePanel(self.pet, self.tourney.current_opponent())
+            return
 
     def strip(self):
         """The message-box hint line (hint overhaul 2026-07-10)."""
@@ -68,6 +84,8 @@ class TournamentPanel(menu.SubHost):
             return "[b]★ CHAMPION![/]"
         if self._advance is not None:
             return "[dim]the field advances…[/]"
+        if self._intro is not None:
+            return "[dim]introductions…[/]"
         if self.phase == "select":
             return menu.hints(("↑↓", "pick"), ("ENTER", "go"),
                               ("F", "feat."), ("A", "alarm"))
@@ -164,7 +182,8 @@ class TournamentPanel(menu.SubHost):
                 return ("done", None)
             return None
         # bracket
-        if self._ceremony is not None or self._advance is not None:
+        if (self._ceremony is not None or self._advance is not None
+                or self._intro is not None):
             return None                        # the show plays out (no skips)
         t = self.tourney
         if k == "b":
@@ -177,7 +196,8 @@ class TournamentPanel(menu.SubHost):
             self.tree_view = False             # from the final tree to the result
             return None
         if k in ("space", "enter") and not (t.over or self.sub):
-            self.sub = BattlePanel(self.pet, t.current_opponent())
+            self._intro = {"t": 0}             # the introductions, then the bell
+            self.sfx = "menu"
         elif k in ("escape", "u"):          # u (the opening key) also closes
             if not t.over:
                 t.record(False)             # walking out forfeits: the elimination is real
@@ -272,6 +292,48 @@ class TournamentPanel(menu.SubHost):
         out.append_text(menu.footer("— the next round forms —"))
         return out
 
+    def _intro_frame(self):
+        """MATCH INTRODUCTIONS: the challenger strides in from the RIGHT and
+        is announced, your mon answers from the LEFT, both hold the
+        stare-down -- then the bell (anim opens the fight).  The corners are
+        grid.faceoff's own, so the entrance lands exactly where the fight
+        stands."""
+        t = self._intro["t"]
+        opp = self.tourney.current_opponent()
+        pet_rows = self._frames(self.pet.num, "walk" if t >= INTRO_OPP_T else "idle")
+        opp_rows = self._frames(opp["num"], "walk" if t < INTRO_OPP_T else "idle")
+        left, right = grid.faceoff(pet_rows, opp_rows, left_mirror=True,
+                                   right_mirror=False, ph=FIGHT_ROWS * 2)
+        lrows, lx, lm = left
+        rrows, rx, rm = right
+        placements = []
+        if t < INTRO_OPP_T:                    # the challenger walks in
+            p = t / max(1, INTRO_OPP_T - 1)
+            placements = [(rrows, round(grid.X1 + (rx - grid.X1) * p), rm)]
+            note = "%s [%s] enters!" % (opp["name"], opp["attribute"][:2])
+        elif t < INTRO_OPP_T + INTRO_PET_T:    # your mon answers
+            p = (t - INTRO_OPP_T) / max(1, INTRO_PET_T - 1)
+            lw = grid.width(lrows)
+            placements = [(lrows, round((grid.X0 - lw) + (lx - (grid.X0 - lw)) * p), lm),
+                          (rrows, rx, rm)]
+            note = "%s answers!" % (self.pet.name or "YOU")
+        else:                                  # the held stare-down
+            placements = [(lrows, lx, lm), (rrows, rx, rm)]
+            note = "%s — FIGHT!" % self.tourney.round_name
+        bgimg = self.pet.background(file="tourneyBack")
+        scene = render_scene(placements, COLS, FIGHT_ROWS,
+                             menu.scene_ink(bgimg), LCD_BG, bgimg=bgimg,
+                             clip=grid.WINDOW)
+        out = menu.bar(self.tourney.name,
+                       "%s %d/3" % (self.tourney.round_name, self.tourney.round + 1))
+        out.append_text(scene)
+        out.append("\nvs %s[%s]   Trophy %d\n"
+                   % (opp["name"], opp["attribute"][:2], self.pet.trophies),
+                   style=INK)
+        out.append_text(menu.note(note, tick=self.frame_i))
+        out.append_text(menu.footer("— introductions —"))
+        return out
+
     def text(self):
         if self.sub is not None:
             return self.sub.text()
@@ -279,6 +341,8 @@ class TournamentPanel(menu.SubHost):
             return self._ceremony_frame()
         if self._advance is not None:
             return self._advance_frame()
+        if self._intro is not None:
+            return self._intro_frame()
         if self.phase == "select":
             self.sched = tournament.schedule(self.pet)   # live: a day rollover re-rolls
             hour = tournament._hour(self.pet)

@@ -132,11 +132,10 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("CUP THEATER: after each win the other victors parade "
-                 "across the arena — the tournament happens around you "
-                 "now. And winning it all plays a real AWARD CEREMONY: "
-                 "your champion cheering under the pulsing arena lights "
-                 "before the trophy counts.")
+    WHATS_NEW = ("MATCH INTRODUCTIONS in the cup: the challenger strides "
+                 "in and is announced, your mon answers, the stare-down "
+                 "holds — then the bell rings itself. Every bracket "
+                 "match opens like the main event it is.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and

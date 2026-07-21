@@ -3,6 +3,17 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.5.138 — MATCH INTRODUCTIONS (2026-07-21)
+
+* **Every cup match opens like the main event.** SPACE on the faceoff
+  page no longer jump-cuts to the fight: the challenger strides in from
+  the right and is announced by name, your mon answers from the left,
+  the stare-down holds ("Quarterfinal — FIGHT!") — then the bell rings
+  itself. The walk-ins land exactly on the fight's corners, the
+  entrances clip lawfully at the window, and the show plays out (no
+  skips). The faceoff page is still the decision point — ESC backs out
+  before you commit; a re-entered match earns its entrance again.
+
 ## 0.5.137 — CUP THEATER (2026-07-21)
 
 * **The field advances, visibly.** After each of your wins, the bracket's

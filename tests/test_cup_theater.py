@@ -101,3 +101,34 @@ def test_the_parade_walks_real_advancing_species():
     for num, name in zip(pan._advance["nums"], pan.tourney.results):
         rec = data.record_for(num)
         assert rec.get("name") == name         # the sprite IS the named winner
+
+
+def test_space_stages_the_introductions_then_the_bell():
+    """MATCH INTRODUCTIONS: SPACE on the faceoff page walks the challenger
+    in from the right, your mon in from the left, holds the stare-down --
+    input locked -- then the fight opens itself against that SAME opponent."""
+    from tuipet.battlescreen import BattlePanel
+    from tuipet.tournamentscreen import INTRO_OPP_T, INTRO_PET_T, INTRO_HOLD_T
+    pan = _in_bracket()
+    pan.tree_view = False                      # the faceoff page
+    opp = pan.tourney.current_opponent()
+    pan.key("space")
+    assert pan._intro is not None and pan.sub is None   # the show, not the fight
+    assert "introductions" in pan.strip()
+    total = INTRO_OPP_T + INTRO_PET_T + INTRO_HOLD_T
+    saw = set()
+    for _ in range(total):
+        pan.key("escape")                      # locked: no forfeit mid-entrance
+        assert pan.tourney.over is False
+        txt = pan.text().plain
+        if "enters!" in txt:
+            saw.add("opp")
+        if "answers!" in txt:
+            saw.add("pet")
+        if "FIGHT!" in txt:
+            saw.add("bell")
+        pan.anim()
+    assert saw == {"opp", "pet", "bell"}       # all three phases showed
+    assert pan._intro is None
+    assert isinstance(pan.sub, BattlePanel)    # the bell rang
+    assert pan.sub._enemy is opp               # ...against the announced foe
