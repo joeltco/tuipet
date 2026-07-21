@@ -22,6 +22,7 @@ def _bossless():
 
 def test_marching_tires_the_pet(monkeypatch):
     monkeypatch.setattr(adventure, "ENCOUNTER_CHANCE", 0.0)
+    monkeypatch.setattr(adventure, "HAZARD_CHANCE", 0.0)
     p = _pet()
     p.strength = 1
     e0 = p.energy
@@ -34,6 +35,7 @@ def test_marching_tires_the_pet(monkeypatch):
 
 def test_marching_trims_weight_toward_base_never_below(monkeypatch):
     monkeypatch.setattr(adventure, "ENCOUNTER_CHANCE", 0.0)
+    monkeypatch.setattr(adventure, "HAZARD_CHANCE", 0.0)
     p = _pet()
     p._set_weight(p._base_weight() + 6)
     w0 = p.weight
@@ -45,6 +47,7 @@ def test_marching_trims_weight_toward_base_never_below(monkeypatch):
 
 def test_energy_floors_at_zero(monkeypatch):
     monkeypatch.setattr(adventure, "ENCOUNTER_CHANCE", 0.0)
+    monkeypatch.setattr(adventure, "HAZARD_CHANCE", 0.0)
     p = _pet()
     p._set_energy(2)
     a = Adventure(p, zone=_bossless())
@@ -69,6 +72,7 @@ def test_encounter_legs_do_not_drain(monkeypatch):
 
 def test_the_energy_pip_rides_the_march_strip(monkeypatch):
     monkeypatch.setattr(adventure, "ENCOUNTER_CHANCE", 0.0)
+    monkeypatch.setattr(adventure, "HAZARD_CHANCE", 0.0)
     pan = AdventurePanel(_pet())
     for _ in range(TELE_LEAVE_T + TELE_ARRIVE_T + 2):
         pan.anim()

@@ -21,6 +21,7 @@ class _Win:
 
 def _panel_at_boss(monkeypatch):
     monkeypatch.setattr(adventure, "ENCOUNTER_CHANCE", 0.0)
+    monkeypatch.setattr(adventure, "HAZARD_CHANCE", 0.0)
     monkeypatch.setattr(adventure, "FIND_CHANCE", 0.0)
     pan = AdventurePanel(_pet(), zone=ZONES[0])
     for _ in range(TELE_LEAVE_T + TELE_ARRIVE_T + pan.adv.total * TRAVEL_TICKS + 20):
@@ -56,6 +57,7 @@ def test_a_concluded_run_shows_the_results_before_teleporting(monkeypatch):
 
 def test_the_results_count_fights_wins_and_finds(monkeypatch):
     monkeypatch.setattr(adventure, "ENCOUNTER_CHANCE", 0.0)
+    monkeypatch.setattr(adventure, "HAZARD_CHANCE", 0.0)
     monkeypatch.setattr(adventure, "FIND_CHANCE", 0.0)
     pan = AdventurePanel(_pet(), zone=ZONES[0])
     for _ in range(TELE_LEAVE_T + TELE_ARRIVE_T + 2):
@@ -74,6 +76,7 @@ def test_the_results_count_fights_wins_and_finds(monkeypatch):
 
 def test_a_bare_turn_back_skips_the_summary(monkeypatch):
     monkeypatch.setattr(adventure, "ENCOUNTER_CHANCE", 0.0)
+    monkeypatch.setattr(adventure, "HAZARD_CHANCE", 0.0)
     monkeypatch.setattr(adventure, "FIND_CHANCE", 0.0)
     pan = AdventurePanel(_pet(), zone=ZONES[0])
     for _ in range(TELE_LEAVE_T + TELE_ARRIVE_T + 2):

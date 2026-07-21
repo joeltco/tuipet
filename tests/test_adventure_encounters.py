@@ -67,6 +67,7 @@ def test_three_losses_fail_the_run(monkeypatch):
 
 def test_suppressed_encounters_cross_clean(monkeypatch):
     monkeypatch.setattr(adventure, "ENCOUNTER_CHANCE", 0.0)
+    monkeypatch.setattr(adventure, "HAZARD_CHANCE", 0.0)
     bossless = {"name": "Testfield", "scene": "greenhills",
                 "steps": adventure.INTERACTIVE_STEPS, "randoms": [], "bosses": []}
     a = Adventure(_champ(), zone=bossless)     # bossless: the crossing is the win
@@ -117,6 +118,7 @@ def test_a_real_fight_runs_through_the_sub_and_resolves(monkeypatch):
 
 def test_life_pips_ride_the_march_strip(monkeypatch):
     monkeypatch.setattr(adventure, "ENCOUNTER_CHANCE", 0.0)
+    monkeypatch.setattr(adventure, "HAZARD_CHANCE", 0.0)
     pan = AdventurePanel(_champ())
     _to_travelling(pan)
     assert "♥" in pan.strip()                  # full hearts while marching

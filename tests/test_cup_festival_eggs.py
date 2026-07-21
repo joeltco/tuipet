@@ -74,6 +74,7 @@ def test_conquering_on_a_holiday_celebrates_the_festival(tmp_path, monkeypatch):
     the festival (next to the map-clear signal)."""
     monkeypatch.setenv("HOME", str(tmp_path))
     monkeypatch.setattr(adventure, "ENCOUNTER_CHANCE", 0.0)
+    monkeypatch.setattr(adventure, "HAZARD_CHANCE", 0.0)
     monkeypatch.setattr(adventure, "FIND_CHANCE", 0.0)
     pan = AdventurePanel(Pet(num=100, stage="Champion", attribute="Vaccine",
                              obedience=500), zone=ZONES[0])

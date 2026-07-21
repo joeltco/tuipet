@@ -53,6 +53,7 @@ def test_a_map_is_cleared_when_its_last_zone_falls():
 
 def test_felling_a_maps_last_boss_records_the_map(monkeypatch):
     monkeypatch.setattr(adventure, "ENCOUNTER_CHANCE", 0.0)
+    monkeypatch.setattr(adventure, "HAZARD_CHANCE", 0.0)
     monkeypatch.setattr(adventure, "FIND_CHANCE", 0.0)
     recorded = []
     from tuipet import persistence
@@ -75,6 +76,7 @@ def test_felling_a_maps_last_boss_records_the_map(monkeypatch):
 
 def test_a_mid_map_zone_win_records_no_map(monkeypatch):
     monkeypatch.setattr(adventure, "ENCOUNTER_CHANCE", 0.0)
+    monkeypatch.setattr(adventure, "HAZARD_CHANCE", 0.0)
     monkeypatch.setattr(adventure, "FIND_CHANCE", 0.0)
     recorded = []
     from tuipet import persistence

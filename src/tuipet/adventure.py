@@ -40,6 +40,12 @@ ENCOUNTER_CHANCE = 0.20   # per leg -- ~8 wild fights over a 40-leg zone (the ol
 FIND_CHANCE = 0.12        # per marched step -- a chance to spot loot on the road
 #                           (Zone.checkItem), ~3-4 finds over a zone; the player
 #                           digs it up (into the bag) or walks on
+HAZARD_CHANCE = 0.06      # per marched step -- an ambush pounce on the road
+#                           (arcade arc, Joel 2026-07-21 "do the hazard dodges"):
+#                           a zone wild telegraphs and lunges; SPACE ducks it,
+#                           eating it costs a small energy toll
+HAZARD_ENERGY = 2         # the toll for eating a pounce (a SMALL hit -- the
+#                           march drain is 1 per 4 legs for scale)
 HOLIDAY_BITS_MULT = 2     # festival purse: bounties pay double on a holiday
 HOLIDAY_FIND_MULT = 2     # more loot spills on the road during a festival
 POST_FIGHT_GRACE = 1      # legs of encounter immunity after ANY fight (canon
@@ -378,6 +384,25 @@ class Adventure:
             return None
         return random.choice(pool)
 
+    def _roll_hazard(self):
+        """An ambush pounce this leg, or None: town ground is safe, and the
+        pouncer is one of THIS zone's own wilds (real roster art -- the
+        hazard never invents a creature)."""
+        if self._in_town(self.loc):
+            return None
+        if random.random() >= HAZARD_CHANCE:
+            return None
+        pool = self._wild_pool()
+        if not pool:
+            return None
+        return random.choice(pool)
+
+    def hazard_hit(self):
+        """Eat the pounce: the small energy toll.  Single source -- the panel
+        reports the missed dodge, the ENGINE applies the cost."""
+        self.pet._set_energy(self.pet.energy - HAZARD_ENERGY)
+        self.last = "Ambushed on the road!"
+
     def award_bits(self, enemy):
         """Pay out a beaten enemy's bounty (enemies.csv BitsWon range): a wild
         pays a little, a gate boss pays a lot.  Adds to the pet's purse and the
@@ -469,6 +494,10 @@ class Adventure:
         if find is not None:
             self.last = "Something glints on the road."
             return ("find", find)
+        haz = self._roll_hazard()
+        if haz is not None:
+            self.last = "Something rustles ahead!"
+            return ("hazard", haz)
         self.last = f"{self.name} — {self.pct}%"
         return "step"
 

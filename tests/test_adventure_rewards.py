@@ -25,6 +25,7 @@ class _Win:
 
 def _panel_at_boss(monkeypatch):
     monkeypatch.setattr(adventure, "ENCOUNTER_CHANCE", 0.0)
+    monkeypatch.setattr(adventure, "HAZARD_CHANCE", 0.0)
     monkeypatch.setattr(adventure, "FIND_CHANCE", 0.0)
     pan = AdventurePanel(_pet(), zone=_boss_zone())
     for _ in range(TELE_LEAVE_T + TELE_ARRIVE_T + pan.adv.total * TRAVEL_TICKS + 20):

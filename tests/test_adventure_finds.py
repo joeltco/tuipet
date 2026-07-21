@@ -44,6 +44,7 @@ def test_every_real_zone_has_a_loot_pool_of_named_consumables():
 
 def test_a_find_comes_from_the_zone_pool_after_the_step(monkeypatch):
     monkeypatch.setattr(adventure, "ENCOUNTER_CHANCE", 0.0)
+    monkeypatch.setattr(adventure, "HAZARD_CHANCE", 0.0)
     monkeypatch.setattr(adventure, "FIND_CHANCE", 1.0)
     z = _find_zone()
     a = Adventure(_pet(), zone=z)
@@ -64,6 +65,7 @@ def test_towns_have_no_finds(monkeypatch):
 
 def test_digging_a_find_drops_it_in_the_bag(monkeypatch):
     monkeypatch.setattr(adventure, "ENCOUNTER_CHANCE", 0.0)
+    monkeypatch.setattr(adventure, "HAZARD_CHANCE", 0.0)
     monkeypatch.setattr(adventure, "FIND_CHANCE", 1.0)
     p = _pet()
     pan = AdventurePanel(p, zone=_find_zone())
@@ -86,6 +88,7 @@ def test_the_discover_sequence_plays_out_and_resumes_the_march(monkeypatch):
     skips: own-game law)."""
     from tuipet.adventurescreen import (INV_WALK_T, INV_REVEAL_T, INV_END_T)
     monkeypatch.setattr(adventure, "ENCOUNTER_CHANCE", 0.0)
+    monkeypatch.setattr(adventure, "HAZARD_CHANCE", 0.0)
     monkeypatch.setattr(adventure, "FIND_CHANCE", 1.0)
     pan = AdventurePanel(_pet(), zone=_find_zone())
     _to_travelling(pan)
@@ -123,6 +126,7 @@ def _at_the_meter(monkeypatch, p=None):
     meter live."""
     from tuipet.adventurescreen import INV_WALK_T
     monkeypatch.setattr(adventure, "ENCOUNTER_CHANCE", 0.0)
+    monkeypatch.setattr(adventure, "HAZARD_CHANCE", 0.0)
     monkeypatch.setattr(adventure, "FIND_CHANCE", 1.0)
     pan = AdventurePanel(p or _pet(), zone=_find_zone())
     _to_travelling(pan)
@@ -210,6 +214,7 @@ def test_the_glint_wears_the_attention_bounce(monkeypatch):
     (happy poses) instead of a mute stand -- restored old-build behavior."""
     from tuipet import menu
     monkeypatch.setattr(adventure, "ENCOUNTER_CHANCE", 0.0)
+    monkeypatch.setattr(adventure, "HAZARD_CHANCE", 0.0)
     monkeypatch.setattr(adventure, "FIND_CHANCE", 1.0)
     pan = AdventurePanel(_pet(), zone=_find_zone())
     _to_travelling(pan)
@@ -229,6 +234,7 @@ def test_the_glint_wears_the_attention_bounce(monkeypatch):
 
 def test_passing_a_find_leaves_it_and_the_bag_alone(monkeypatch):
     monkeypatch.setattr(adventure, "ENCOUNTER_CHANCE", 0.0)
+    monkeypatch.setattr(adventure, "HAZARD_CHANCE", 0.0)
     monkeypatch.setattr(adventure, "FIND_CHANCE", 1.0)
     p = _pet()
     pan = AdventurePanel(p, zone=_find_zone())
@@ -242,6 +248,7 @@ def test_passing_a_find_leaves_it_and_the_bag_alone(monkeypatch):
 
 def test_find_chance_zero_never_spots(monkeypatch):
     monkeypatch.setattr(adventure, "ENCOUNTER_CHANCE", 0.0)
+    monkeypatch.setattr(adventure, "HAZARD_CHANCE", 0.0)
     monkeypatch.setattr(adventure, "FIND_CHANCE", 0.0)
     a = Adventure(_pet(), zone=_find_zone())
     assert all(a.travel() != "find" for _ in range(a.total - 1))  # up to the boss gate

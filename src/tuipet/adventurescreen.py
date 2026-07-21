@@ -61,6 +61,16 @@ INV_END_T = 54                # walk-back (ReturnItem) complete
 DIG_METER_T = 48              # one full 0..24..0 sweep, then the spade falls
 #                               wherever the marker stands (the TIMED part)
 
+# HAZARD DODGES (arcade arc, Joel 2026-07-21 "do the hazard dodges"): an
+# ambush telegraphs -- the "!" blinking at the road's right edge -- then one
+# of the zone's OWN wilds pounces in; SPACE anywhere inside the window ducks
+# it (canon shield pose) and the pouncer sails past out the LEFT edge; eat
+# it and the engine takes adventure.HAZARD_ENERGY off the tank.  All real
+# art: roster frames for the pouncer, atlas "attention"/"hit" for the fx.
+HZ_TELE_T = 8                 # the "!" telegraph window
+HZ_LUNGE_T = 8                # the pounce crosses the right half
+HZ_END_T = 10                 # the verdict beat (the duck-under / the burst)
+
 WALK_BEAT = 5                 # idleWalk pose-flip cadence while marching
 MARCH_PX = 0.5                # the march: px per 0.1s tick across the window
 #                               (a full crossing ~ 9-10s, ~one per stride)
@@ -134,6 +144,7 @@ class AdventurePanel(menu.SubHost):
         self._find = None             # a loot key spotted, awaiting dig/pass
         self._scene = None            # a running investigateLeft playbook
         self._find_msg = None         # the reveal line (sealed until the beat)
+        self._hazard = None           # a running ambush: {"t","enemy","dodged","hit"}
         self._transport = None        # open transport menu: the held transport keys
         self._transport_cursor = 0
         self._summary = False         # showing the run-results card before homecoming
@@ -196,6 +207,9 @@ class AdventurePanel(menu.SubHost):
             if self._scene is not None:   # the investigate playbook plays out
                 self._scene_tick()
                 return
+            if self._hazard is not None:  # an ambush owns the beat
+                self._hazard_tick()
+                return
             if self._transport is not None:   # transport menu open: wait for input
                 return
             if self._find is not None:    # a glint spotted: wait for dig/pass
@@ -231,6 +245,9 @@ class AdventurePanel(menu.SubHost):
             self._start_boss(r[1])
         elif isinstance(r, tuple) and r[0] == "find":
             self._find = r[1]                 # a glint: wait for the player to choose
+        elif isinstance(r, tuple) and r[0] == "hazard":
+            self._hazard = {"t": 0, "enemy": r[1], "dodged": False, "hit": False}
+            self.sfx = "cancel"               # the rustle: the warning thunk
         elif r == "town":
             self._town_prompt = True          # rested on arrival; now visit or walk on
         elif r == "arrived":
@@ -304,6 +321,22 @@ class AdventurePanel(menu.SubHost):
             self.sfx = "reward"               # _discoverConsumable
         if s["t"] >= INV_END_T:               # carried home -> back on the road
             self._scene = None
+
+    def _hazard_tick(self):
+        """Advance the ambush.  Impact settles it: a duck already banked
+        rings clean, an unducked pounce lands -- the ENGINE takes the toll
+        -- and the verdict beat plays either way before the march resumes."""
+        h = self._hazard
+        h["t"] += 1
+        if h["t"] == HZ_TELE_T + HZ_LUNGE_T:      # the pounce lands (or doesn't)
+            if h["dodged"]:
+                self.sfx = "confirm"              # a clean duck-under
+            else:
+                h["hit"] = True
+                self.adv.hazard_hit()             # the small energy toll
+                self.sfx = "attackHit"
+        if h["t"] >= HZ_TELE_T + HZ_LUNGE_T + HZ_END_T:
+            self._hazard = None                   # back to the march
 
     def _lock_dig(self):
         """The spade falls: grade the marker against the shared mega window
@@ -454,6 +487,12 @@ class AdventurePanel(menu.SubHost):
             self._summary_shown = True
             self._go_home()                   # the latch makes this teleport now
             return None
+        if self._hazard is not None:          # the ambush: SPACE ducks it
+            h = self._hazard
+            if (k in ("space",) and not h["dodged"] and not h["hit"]
+                    and h["t"] < HZ_TELE_T + HZ_LUNGE_T):
+                h["dodged"] = True            # the duck is banked before impact
+            return None                       # everything else rides the beat
         if self._find is not None:            # a glint spotted: dig or pass
             if k in ("enter",):
                 self._dig()
@@ -525,6 +564,15 @@ class AdventurePanel(menu.SubHost):
                     dots = "." * min(3, 1 + (t - INV_WALK_T) // 6)
                     return f"[dim]{dots}[/]"
                 return ""                     # the walk-out plays wordless
+            if self._hazard is not None:
+                h = self._hazard
+                if h["t"] < HZ_TELE_T + HZ_LUNGE_T:
+                    if h["dodged"]:
+                        return "[b]![/]  [dim]ducking...[/]"
+                    return "[b]! ! ![/]  [dim]SPACE dodge[/]"
+                if h["dodged"]:
+                    return "[b]Dodged the ambush![/]"
+                return f"[b]Ambushed![/]  ⚡-{adventure.HAZARD_ENERGY}"
             if self._find is not None:
                 return "[b]✦ A glint on the road[/]  [dim]ENTER dig · SPACE pass[/]"
             if self._rest_t > 0:
@@ -651,6 +699,56 @@ class AdventurePanel(menu.SubHost):
         return menu.paint([(rows, x, True)], bg, rows=ROWS, cols=COLS,
                           overlay=overlay, clip=grid.WINDOW)
 
+    def _hazard_frame(self):
+        """The ambush, frame by frame: the "!" blinking at the road's right
+        edge, one of the zone's own wilds pouncing in (attack pose, riding
+        the overlay like fx do), then the duck-under -- the pouncer sails
+        past and exits LEFT, never sharing the pet's cell (the gap IS the
+        leap-over) -- or the eaten hit: the atlas burst over the hurt pose.
+        All real art; window-law edges throughout."""
+        from . import strikefx
+        h, t = self._hazard, self._hazard["t"]
+        impact = HZ_TELE_T + HZ_LUNGE_T
+        if h["hit"]:
+            prows = self._rows(9)                 # eaten: the hurt pose
+        elif h["dodged"] and t >= HZ_TELE_T:
+            prows = self._rows(4)                 # the duck (canon shield pose)
+        else:
+            prows = self._rows(1)                 # alert on the road
+        px = self._jx(prows)
+        pw = grid.width(prows)
+        overlay = []
+        if t < HZ_TELE_T:                         # the telegraph
+            att = data.load_effects().get("attention")
+            if att and att[0] and (t // 2) % 2:   # urgent blink 2/2
+                ew = max((len(r) for r in att[0]), default=0)
+                overlay = strikefx.blit(att[0], grid.X1 - ew - 1, grid.TOP)
+        else:
+            e = h["enemy"]
+            fr = data.frames_for(e["num"])
+            pose = data.ROLES["attack"][0]
+            bm = (fr[pose] if pose < len(fr) else None) or fr[0]
+            bw = max((len(r) for r in bm), default=0) if bm else 0
+            oy = grid.FLOOR - len(bm) if bm else grid.TOP
+            if t < impact:                        # charging in from the right
+                p = (t - HZ_TELE_T) / max(1, HZ_LUNGE_T - 1)
+                x = round(grid.X1 - (grid.X1 - (px + pw)) * min(1.0, p))
+                if bm and x >= px + pw:           # never share the pet's cell
+                    overlay = strikefx.blit(bm, x, oy)
+            elif h["dodged"]:                     # sails past, exits LEFT
+                p = (t - impact) / max(1, HZ_END_T - 1)
+                x = round((px + pw) - ((px + pw) - (grid.X0 - bw)) * p)
+                if bm and (x + bw <= px or x >= px + pw):   # the leap-over gap
+                    overlay = strikefx.blit(bm, x, oy)
+            else:                                 # eaten: the burst covers the beat
+                hitfx = data.load_effects().get("hit")
+                if hitfx and hitfx[0] and (t - impact) < 6:
+                    hw = max(len(r) for r in hitfx[0])
+                    overlay = strikefx.blit(hitfx[0], min(px + pw, grid.X1 - hw),
+                                            grid.TOP + 2)
+        return menu.paint([(prows, px, True)], self._road_bg(), rows=ROWS,
+                          cols=COLS, overlay=overlay, clip=grid.WINDOW)
+
     def _pulse_frame(self):
         """The zoneChange pulse: the conqueror stands its ground while the
         world flashes bright on the canon beat spans (restored old build)."""
@@ -776,6 +874,8 @@ class AdventurePanel(menu.SubHost):
         if self.travelling:
             if self._scene is not None:
                 return self._scene_frame()     # the investigate playbook
+            if self._hazard is not None:
+                return self._hazard_frame()    # the ambush beat
             if self._find is not None:
                 return self._glint_frame()     # the attention bounce at the spot
             if (self._transport is not None or self._rest_t > 0

@@ -132,10 +132,10 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("The TIMED DIG: reaching a glint's dig spot now runs the "
-                 "timing bar — the same one as training and battle. Lock "
-                 "it dead-centre to dig the find ×2; miss and you still "
-                 "keep it. Good care widens the sweet spot.")
+    WHATS_NEW = ("AMBUSHES on the adventure road: a ! at the road's edge "
+                 "means a wild is pouncing — press SPACE to duck it clean. "
+                 "Eat the pounce and it stings ⚡2 off the tank. Never a "
+                 "fight, never on town ground.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and

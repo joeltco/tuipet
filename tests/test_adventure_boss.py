@@ -29,6 +29,7 @@ def _reach_end(a):
 
 def _panel_at_boss(monkeypatch, zone=None):
     monkeypatch.setattr(adventure, "ENCOUNTER_CHANCE", 0.0)   # clean march to the gate
+    monkeypatch.setattr(adventure, "HAZARD_CHANCE", 0.0)
     monkeypatch.setattr(adventure, "FIND_CHANCE", 0.0)
     pan = AdventurePanel(_champ(), zone=zone)
     for _ in range(TELE_LEAVE_T + TELE_ARRIVE_T + pan.adv.total * TRAVEL_TICKS + 20):
@@ -61,6 +62,7 @@ class _Loss:
 # -- engine -------------------------------------------------------------------
 def test_reaching_the_end_opens_the_boss_not_an_instant_win(monkeypatch):
     monkeypatch.setattr(adventure, "ENCOUNTER_CHANCE", 0.0)
+    monkeypatch.setattr(adventure, "HAZARD_CHANCE", 0.0)
     a = Adventure(_champ(), zone=_boss_zone())
     r = _reach_end(a)
     assert r[1] is a.boss and r[1].get("boss")            # the zone's gate boss
@@ -69,6 +71,7 @@ def test_reaching_the_end_opens_the_boss_not_an_instant_win(monkeypatch):
 
 def test_felling_the_boss_conquers_the_zone(monkeypatch):
     monkeypatch.setattr(adventure, "ENCOUNTER_CHANCE", 0.0)
+    monkeypatch.setattr(adventure, "HAZARD_CHANCE", 0.0)
     a = Adventure(_champ(), zone=_boss_zone())
     _reach_end(a)
     assert a.resolve_boss(True) == "won" and a.done
@@ -76,6 +79,7 @@ def test_felling_the_boss_conquers_the_zone(monkeypatch):
 
 def test_a_survivable_boss_loss_retries_then_fails_at_zero(monkeypatch):
     monkeypatch.setattr(adventure, "ENCOUNTER_CHANCE", 0.0)
+    monkeypatch.setattr(adventure, "HAZARD_CHANCE", 0.0)
     a = Adventure(_champ(), zone=_boss_zone())
     _reach_end(a)
     outs = [a.resolve_boss(False) for _ in range(MAX_LIVES)]
@@ -85,6 +89,7 @@ def test_a_survivable_boss_loss_retries_then_fails_at_zero(monkeypatch):
 
 def test_fleeing_the_boss_turns_back_without_winning(monkeypatch):
     monkeypatch.setattr(adventure, "ENCOUNTER_CHANCE", 0.0)
+    monkeypatch.setattr(adventure, "HAZARD_CHANCE", 0.0)
     a = Adventure(_champ(), zone=_boss_zone())
     _reach_end(a)
     assert a.resolve_boss(False, fled=True) == "fled"

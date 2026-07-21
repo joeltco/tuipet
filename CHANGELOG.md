@@ -3,6 +3,17 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.5.126 — HAZARD DODGES (2026-07-21)
+
+* **The road ambushes you now.** On a marched leg (never on town ground),
+  a "!" blinks urgently at the road's edge — then one of the zone's own
+  wilds pounces in. Press **SPACE** anywhere in the window to duck: your
+  mon drops into the shield pose and the pouncer sails clean over and out
+  the far edge. Eat it and the hit-burst lands with a **⚡−2** sting off
+  the energy tank. It's never a fight and it never waits on you — a late
+  press does nothing, the window is the game. All real art: the pouncer
+  is the zone's own roster sprite.
+
 ## 0.5.125 — THE TIMED DIG (2026-07-21)
 
 * **Digging is a timing game now.** ENTER on a glint walks your mon out to
