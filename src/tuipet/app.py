@@ -132,10 +132,10 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("The Quest card finally says WHERE: it names your "
-                 "frontier zone — the gate boss you're marching toward — "
-                 "next to the live zones-conquered count, instead of a "
-                 "mute 'not begun'. Fell the frontier's boss to move it.")
+    WHATS_NEW = ("Destined to hatch now names the BABY: the Kera egg "
+                 "says Kuramon, the field eggs say their true firstborn — "
+                 "no more eggs destined to hatch eggs. Mystery pools "
+                 "still keep their ???.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and

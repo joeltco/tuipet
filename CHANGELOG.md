@@ -3,6 +3,18 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.5.122 — DESTINED TO HATCH A BABY, NOT AN EGG (2026-07-21)
+
+* **"Destined to hatch" names the actual baby now.** The named egg banks
+  carry display titles ("Kera Digitama", "Nature Spirits Egg"), and the
+  destiny cards were printing those — promising an egg would hatch an egg.
+  The carousel card, the incubating home card and the egg-select note all
+  resolve the true firstborn instead: the Kera egg says **Kuramon**, the
+  field eggs say Bubbmon / Pichimon / Mokumon / Nyokimon / Choromon, and so
+  on. Mystery pools (Digitama X3) keep their "???" — the surprise is the
+  point. The Digitama Guide still lists eggs by their egg names, as a
+  book of eggs should.
+
 ## 0.5.121 — THE QUEST CARD SAYS WHERE (2026-07-21)
 
 * **The home card's Quest line names your frontier zone.** Instead of a mute
