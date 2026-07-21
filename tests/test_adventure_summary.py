@@ -38,6 +38,11 @@ def test_a_concluded_run_shows_the_results_before_teleporting(monkeypatch):
     pan.pet.bits = 0
     pan.sub = None
     pan._battle_done(_Win())
+    from tuipet.adventurescreen import PULSE_T, PARADE_T
+    for _ in range(PULSE_T + 3 * PARADE_T + 4):    # the zoneChange show plays first
+        if pan._pulse is None and pan._parade is None:
+            break
+        pan.anim()
     assert pan._summary and pan._trans is None      # card first, not the teleport
     card = str(pan.text())
     assert "results" in card and "Conquered!" in pan.text().plain

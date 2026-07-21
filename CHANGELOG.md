@@ -3,6 +3,23 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.5.124 — ROAD THEATER: THE FACEOFF, THE DIG, THE PARADE (2026-07-21)
+
+* **The discover sequence is back.** A glint stop now plays the old build's
+  full investigate playbook: the mon does the attention bounce with the
+  "!" pulsing beside it, and ENTER sends it walking out to the spot to
+  dig under suspense dots — the "Dug up X!" verdict and reward chime stay
+  sealed until the reveal, then it carries the find back and marches on.
+  The loot still lands in your bag the moment you press ENTER.
+* **The gate faceoff.** Knocked back at a boss gate, the road is no longer
+  empty: your mon squares up at the left edge, stepping and facing the
+  gate, while the boss looms half-emerged past the right edge.
+* **The zone pulse.** Felling a gate boss flashes the world bright on the
+  canon zoneChange beats before the results card.
+* **The boss parade.** Clearing a map's FINAL gate chains the BossParade:
+  the map's own bosses march across the brightened stage one at a time,
+  under the victory line. No skips — the show plays out.
+
 ## 0.5.123 — THE MARCH CROSSES THE SCREEN AGAIN (2026-07-21)
 
 * **The adventure walking sequence is back** — restored from the old

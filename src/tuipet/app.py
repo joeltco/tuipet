@@ -132,10 +132,11 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("The adventure march is back: travelling, your mon walks "
-                 "clear across the window — out the right edge, back in "
-                 "from the left — facing the way it's going, and road "
-                 "stops happen right where it stands.")
+    WHATS_NEW = ("Adventure roads got their theater back: glints play the "
+                 "full dig-and-carry discover sequence, a knocked-back "
+                 "gate is a boss FACEOFF, and felling a gate flashes the "
+                 "zone pulse — with the map's bosses parading past when "
+                 "you clear a map's final gate.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and

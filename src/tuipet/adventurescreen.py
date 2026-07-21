@@ -33,6 +33,24 @@ from .theme import LCD_ON, LCD_BG, INK, INK_B, DIM, POS, NEG  # noqa: F401  (the
 
 COLS, ROWS = 40, 12           # the ONE locked LCD arena, like every other screen
 
+# the zone-change celebration (canon SpriteAnim.zoneChange, restored from the
+# old build): four zonePulse beats on the map light at interval*5/15/25/35,
+# resolution at interval*54 -- ported as backdrop pulses on the LCD (no map
+# screen on the 32-col arena).  A parade_msg boss chains the BossParade after
+# the pulse: the map's bosses march across, one at a time (the LCD's one-mon
+# rule serialises canon's three-abreast).
+PULSE_T = 54
+PULSE_ON = ((5, 10), (15, 20), (25, 30), (35, 54))
+PARADE_T = 26                 # ticks for one boss to march across
+
+# the investigateLeft playbook (canon SpriteAnim beats in 0.1s ticks, restored
+# from the old build): walk out to the LEFT goal, suspense dots, the reveal --
+# then the ReturnItem walk-back so the pet never teleports back to its spot
+INV_WALK_T = 12               # walk-left leg
+INV_REVEAL_T = 30             # dots done -> the reveal pose fires
+INV_HOLD_T = 42               # reveal held (the find shown beside the cheer)
+INV_END_T = 54                # walk-back (ReturnItem) complete
+
 WALK_BEAT = 5                 # idleWalk pose-flip cadence while marching
 MARCH_PX = 0.5                # the march: px per 0.1s tick across the window
 #                               (a full crossing ~ 9-10s, ~one per stride)
@@ -59,6 +77,20 @@ TELE_LEAVE_SNDS = {3: "strongHit", 15: "strongHit", 21: "strongHit",
                    26: "attackHit", 44: "attack"}
 TELE_ARRIVE_SNDS = {1: "attack", 5: "attackHit",
                     24: "strongHit", 28: "strongHit", 37: "strongHit"}
+
+def _brighten(bg, f):
+    """Lerp a backdrop toward white -- the LCD's zonePulse flash."""
+    out = []
+    for r in bg:
+        row = []
+        for i in range(0, len(r) - 5, 6):
+            v = int(r[i:i + 6], 16)
+            row.append("%02x%02x%02x" % tuple(
+                round(c + (255 - c) * f)
+                for c in ((v >> 16) & 255, (v >> 8) & 255, v & 255)))
+        out.append("".join(row))
+    return out
+
 
 def _curtain_pts(x, y, w, h):
     """The evol curtain as overlay pixels: the canon stripe pattern (each 3-px
@@ -90,12 +122,14 @@ class AdventurePanel(menu.SubHost):
         self._town_prompt = False     # standing at a town: visit the hub or walk on
         self._town_sub = False        # the current sub is the TownPanel, not a fight
         self._find = None             # a loot key spotted, awaiting dig/pass
-        self._find_t = 0              # ticks left showing a "Found X!" confirmation
-        self._find_msg = None
+        self._scene = None            # a running investigateLeft playbook
+        self._find_msg = None         # the reveal line (sealed until the beat)
         self._transport = None        # open transport menu: the held transport keys
         self._transport_cursor = 0
         self._summary = False         # showing the run-results card before homecoming
         self._summary_shown = False   # ...so _go_home only defers to it once
+        self._pulse = None            # a running zoneChange pulse celebration
+        self._parade = None           # a running BossParade (map beaten)
         self._wx = float(grid.X0)     # the march x: the pet CROSSES the window
         # leaving home rides the canon teleport (dir "in" == INTO the adventure:
         # leave-phase plays over HOME, arrive-phase materialises on the road)
@@ -127,13 +161,34 @@ class AdventurePanel(menu.SubHost):
                     self._landed = True                # on the road -- the march begins
                     self.travelling = True
             return
+        if self._pulse is not None:
+            # zoneChange: four zonePulse beats, then home (or the parade)
+            p = self._pulse
+            if any(p["t"] == on for on, _off in PULSE_ON):
+                self.sfx = "select"           # the zonePulse chirp
+            p["t"] += 1
+            if p["t"] >= PULSE_T:
+                self._pulse = None
+                if p.get("parade"):
+                    self._parade = {"t": 0, "nums": p["parade"],
+                                    "msg": p.get("msg")}
+                    self.sfx = "win"          # bossParade cue
+                else:
+                    self._go_home()           # celebrated -- now the verdict
+            return
+        if self._parade is not None:
+            self._parade["t"] += 1
+            if self._parade["t"] >= PARADE_T * len(self._parade["nums"]):
+                self._parade = None
+                self._go_home()
+            return
         if self.travelling:
+            if self._scene is not None:   # the investigate playbook plays out
+                self._scene_tick()
+                return
             if self._transport is not None:   # transport menu open: wait for input
                 return
             if self._find is not None:    # a glint spotted: wait for dig/pass
-                return
-            if self._find_t > 0:          # showing the "Found X!" beat
-                self._find_t -= 1
                 return
             if self._town_prompt:         # standing at a town: visit or walk on
                 return
@@ -182,15 +237,44 @@ class AdventurePanel(menu.SubHost):
             self._start_battle(r[1])          # the danger-warp ambush
 
     def _dig(self):
-        """Dig up the spotted find into the bag, then show a brief confirmation."""
+        """ENTER on a glint: the OUTCOME lands now -- the bag gets the loot,
+        the tally counts it -- then the investigateLeft playbook plays (the
+        discover sequence, restored from the old build): walk out LEFT,
+        suspense dig, the reveal, the carry back.  The beats are pure
+        presentation, like a battle timeline; the verdict and the reward
+        chime stay sealed until the reveal beat."""
         from . import shop
         key, self._find = self._find, None
         self.pet.add_item(key)                # a CATALOG key: real, usable loot
         self.adv.finds += 1
         name = (shop.entry(key) or {}).get("name", "loot")
         self._find_msg = f"Dug up {name}!"
-        self._find_t = TOWN_HOLD
-        self.sfx = "reward"
+        self._scene = {"t": 0, "icon": self._find_icon(key)}
+
+    def _find_icon(self, key):
+        """The find at HAND size, ~8px beside the 16px mon (old-build rule:
+        scale by ceil(dim/8) so every icon reads held -- never crushed to a
+        speck, never drawn as big as the pet)."""
+        from . import shop
+        from .render import downsample
+        raw = [f for f in (data.load_icons().get(shop.ICON_KEYS.get(key)) or [])
+               if f]
+        icon = raw[0] if raw else None
+        if icon:
+            dim = max(len(icon), max(len(r) for r in icon))
+            if dim > 8:
+                icon = downsample(icon, -(-dim // 8))
+        return icon
+
+    def _scene_tick(self):
+        """Advance the playbook.  The reveal unseals the verdict (reward
+        chime); the walk-back's end puts the mon back on the road."""
+        s = self._scene
+        s["t"] += 1
+        if s["t"] == INV_REVEAL_T:
+            self.sfx = "reward"               # _discoverConsumable
+        if s["t"] >= INV_END_T:               # carried home -> back on the road
+            self._scene = None
 
     def _start_battle(self, enemy):
         """A wild fight rides BattlePanel as a child (SubHost): the road's biome
@@ -236,7 +320,17 @@ class AdventurePanel(menu.SubHost):
                 tail = " New ground opens!" if unlocked else ""
                 self._home_msg = (f"{self.adv.boss_name} felled — "
                                   f"{self.adv.name} conquered!{self._bits_tail()}{tail}")
-                self._go_home()
+                # the zoneChange CELEBRATION plays before the homecoming
+                # (restored from the old build): the pulse first; a
+                # parade_msg boss (each map's final gate) chains the
+                # BossParade of the map's own bosses -- canon shows three
+                paraders = []
+                if (enemy or {}).get("parade_msg"):
+                    m = self.adv.zone.get("map")
+                    paraders = [b["num"] for z in ZONES if z.get("map") == m
+                                for b in z["bosses"]][:3]
+                self._pulse = {"t": 0, "parade": paraders,
+                               "msg": (enemy or {}).get("parade_msg")}
             elif out == "fled":
                 self._home_msg = f"Turned back from {self.adv.boss_name}.{self._bits_tail()}"
                 self._go_home()
@@ -285,8 +379,11 @@ class AdventurePanel(menu.SubHost):
         if self.sub is not None:              # a fight or the town hub owns input
             self.sub_key(k, self._town_done if self._town_sub else self._battle_done)
             return None
-        if self._trans is not None:
-            return None                       # the teleport owns the screen
+        if (self._trans is not None or self._scene is not None
+                or self._pulse is not None or self._parade is not None):
+            # the teleport / investigate / celebration beats own the screen
+            # (no skips: own-game law 2026-07-13 -- the beats play out)
+            return None
         if self._town_prompt:                 # at a town: visit the hub or walk on
             if k in ("enter",):
                 from .townscreen import TownPanel
@@ -340,8 +437,11 @@ class AdventurePanel(menu.SubHost):
     def strip(self):
         if self.sub is not None:
             return self.sub.strip()            # the wild fight owns the line
-        if self._trans is not None:
-            return ""                          # the teleport plays out
+        if self._trans is not None or self._pulse is not None:
+            return ""                          # the teleport / pulse plays out
+        if self._parade is not None:
+            msg = self._parade.get("msg")      # the parade carries the victory line
+            return f"[b]★ {msg}[/]" if msg else ""
         if self._summary:
             return menu.hints(("any key", "home"))
         if self._at_gate:                      # knocked back before the boss
@@ -358,10 +458,16 @@ class AdventurePanel(menu.SubHost):
                 return f"[b]⟿ {name}[/]  [dim]ENTER use{nav} · ESC[/]"
             if self._town_prompt:
                 return "[b]⌂ A town[/]  [dim]ENTER visit · SPACE walk on[/]"
+            if self._scene is not None:
+                t = self._scene["t"]
+                if t >= INV_REVEAL_T:         # the reveal, unsealed
+                    return f"[b]✦ {self._find_msg}[/]"
+                if t >= INV_WALK_T:           # suspense: . .. ...
+                    dots = "." * min(3, 1 + (t - INV_WALK_T) // 6)
+                    return f"[dim]{dots}[/]"
+                return ""                     # the walk-out plays wordless
             if self._find is not None:
                 return "[b]✦ A glint on the road[/]  [dim]ENTER dig · SPACE pass[/]"
-            if self._find_t > 0:
-                return f"[b]✦ {self._find_msg}[/]"
             if self._rest_t > 0:
                 return f"[b]⌂ Town — rested up[/]  ⚡{self.pet.energy} {hearts}"
             thint = " T" if self.adv.held_transports() else ""
@@ -407,6 +513,125 @@ class AdventurePanel(menu.SubHost):
         rows = self._rows(0)                   # canon drawNumMirror(0, false)
         return menu.paint([(rows, self._jx(rows), True)],
                           self._road_bg(), rows=ROWS, cols=COLS,
+                          clip=grid.WINDOW)
+
+    def _glint_frame(self):
+        """A glint spotted: the DiscoverCall attention bounce (happy 5<->7)
+        with the atlas "!" riding the up-beats, side-flipped to the free
+        side so it never clamps INTO the sprite -- restored from the old
+        build (audit passes 1+2)."""
+        from . import strikefx
+        rows = self._rows(data.ROLES["happy"][(self.frame_i // 6) % 2])
+        x = self._jx(rows)
+        overlay = []
+        att = data.load_effects().get("attention")
+        if att:
+            ef = att[(self.frame_i // 6) % len(att)]
+            ew = max((len(r) for r in ef), default=0)
+            ex = x + grid.width(rows) + 1
+            if ex + ew > grid.X1:                 # no room on the right
+                ex = max(grid.X0, x - ew - 1)
+            overlay = strikefx.blit(ef, ex, grid.TOP)
+        return menu.paint([(rows, x, True)], self._road_bg(), rows=ROWS,
+                          cols=COLS, overlay=overlay, clip=grid.WINDOW)
+
+    def _held_icon(self, icon, x, rows, gap):
+        """The find beside the mon, vertically centred in the band, pinned
+        inside the right wall (old bug law 2026-07-13: near the wall the
+        behind-the-back spot clamped ONTO the sprite -- beside/in-front
+        always has room)."""
+        if not icon:
+            return []
+        from . import strikefx
+        iw = max(len(r) for r in icon)
+        oy = grid.TOP + max(0, (grid.BAND - len(icon)) // 2)
+        ox = min(x + grid.width(rows) + gap, grid.X1 - iw)
+        return strikefx.blit(icon, ox, oy)
+
+    def _scene_frame(self):
+        """One frame of the investigateLeft playbook (the restored discover
+        sequence): walk OUT to the left goal (native facing), the suspense
+        dig under the pulsing "!", the cheer reveal with the find held up
+        beside, then ReturnItem -- the carry back to the journey spot, the
+        find riding IN FRONT of the walking mon."""
+        from . import strikefx
+        s, bg = self._scene, self._road_bg()
+        t = s["t"]
+        if t < INV_WALK_T:                        # walk out to the LEFT goal
+            rows = self._rows((t // 3) % 2)
+            x0 = self._jx(rows)
+            x = round(x0 + (grid.X0 - x0) * (t / INV_WALK_T))
+            return menu.paint([(rows, x, False)], bg, rows=ROWS, cols=COLS,
+                              clip=grid.WINDOW)   # faces left (native)
+        if t < INV_REVEAL_T:                      # the suspense dig
+            rows = self._rows(0)
+            overlay = []
+            att = data.load_effects().get("attention")
+            if att and (t // 4) % 2:              # the "!" pulses, blink 4/4
+                ef = att[(t // 8) % len(att)]
+                overlay = strikefx.blit(ef, grid.X0 + grid.width(rows) + 1,
+                                        grid.TOP)
+            return menu.paint([(rows, grid.X0, False)], bg, rows=ROWS,
+                              cols=COLS, overlay=overlay, clip=grid.WINDOW)
+        if t < INV_HOLD_T:                        # the reveal: cheer, find shown
+            rows = self._rows(5)
+            overlay = self._held_icon(s["icon"], grid.X0, rows, gap=2)
+            return menu.paint([(rows, grid.X0, False)], bg, rows=ROWS,
+                              cols=COLS, overlay=overlay, clip=grid.WINDOW)
+        rows = self._rows((t // 3) % 2)           # ReturnItem: the carry back
+        x0 = self._jx(rows)
+        p = min(1.0, (t - INV_HOLD_T) / (INV_END_T - INV_HOLD_T))
+        x = round(grid.X0 + (x0 - grid.X0) * p)
+        overlay = self._held_icon(s["icon"], x, rows, gap=1)
+        return menu.paint([(rows, x, True)], bg, rows=ROWS, cols=COLS,
+                          overlay=overlay, clip=grid.WINDOW)
+
+    def _pulse_frame(self):
+        """The zoneChange pulse: the conqueror stands its ground while the
+        world flashes bright on the canon beat spans (restored old build)."""
+        rows = self._rows(0)
+        bg = self._road_bg()
+        if bg and any(on <= self._pulse["t"] < off for on, off in PULSE_ON):
+            bg = _brighten(bg, 0.6)            # the zonePulse light, on the LCD
+        return menu.paint([(rows, self._jx(rows), True)], bg, rows=ROWS,
+                          cols=COLS, clip=grid.WINDOW)
+
+    def _parade_frame(self):
+        """BossParade: the map's bosses march across, one at a time (canon
+        moveLeft; the one-mon LCD rule serialises canon's three-abreast) --
+        over a BRIGHTENED stage, so dark marcher ink pops (old audit pass 2:
+        a dim stage read worse)."""
+        p = self._parade
+        i = min(p["t"] // PARADE_T, len(p["nums"]) - 1)
+        t = p["t"] % PARADE_T
+        fr = data.frames_for(p["nums"][i])
+        wi = data.ROLES["walk"][(t // 3) % 2]
+        rows = grid.prep((fr[wi] if wi < len(fr) else None) or fr[0],
+                         ph=ROWS * 2)
+        lo, hi = grid.roam_bounds(grid.width(rows))
+        x = round(hi + (lo - hi) * (t / max(1, PARADE_T - 1)))
+        bg = self._road_bg()
+        if bg:
+            bg = _brighten(bg, 0.45)
+        return menu.paint([(rows, x, False)], bg, rows=ROWS, cols=COLS,
+                          clip=grid.WINDOW)
+
+    def _gate_frame(self):
+        """The GATE FACEOFF (restored from the old build, audit pass 1: a
+        knocked-back gate showed the mon alone on empty road): squared up
+        at the left, stepping in place, while the boss LOOMS half-emerged
+        past the gate's right edge -- flush placement would read as one
+        blob (two 16px sprites cannot share the 32px window with a gap)."""
+        rows = self._rows((self.frame_i // 8) % 2)
+        placements = [(rows, grid.X0, True)]
+        boss = self.adv.boss
+        bfr = data.frames_for(boss["num"]) if boss else []
+        bf = next((f for f in bfr if f), None)
+        if bf:
+            brows = grid.prep(bf, ph=ROWS * 2)
+            placements.append((brows, grid.X1 - grid.width(brows) * 3 // 4,
+                               False))
+        return menu.paint(placements, self._road_bg(), rows=ROWS, cols=COLS,
                           clip=grid.WINDOW)
 
     def _teleport_frame(self):
@@ -475,14 +700,22 @@ class AdventurePanel(menu.SubHost):
             return self.sub.text()             # the fight owns the screen
         if self._trans is not None:
             return self._teleport_frame()
+        if self._pulse is not None:
+            return self._pulse_frame()         # the zoneChange light
+        if self._parade is not None:
+            return self._parade_frame()        # the map's bosses march past
         if self._summary:
             return self._summary_frame()       # the run-results card
         if self._at_gate:
-            return self._standing_frame()      # the pet stands before the boss
+            return self._gate_frame()          # the FACEOFF: squared up at the gate
         if self.travelling:
-            if (self._transport is not None or self._find is not None
-                    or self._find_t > 0 or self._rest_t > 0 or self._town_prompt):
-                return self._standing_frame()  # menu / glint / rest / town: stand still
+            if self._scene is not None:
+                return self._scene_frame()     # the investigate playbook
+            if self._find is not None:
+                return self._glint_frame()     # the attention bounce at the spot
+            if (self._transport is not None or self._rest_t > 0
+                    or self._town_prompt):
+                return self._standing_frame()  # menu / rest / town: stand still
             return self._march_frame()
         return self._standing_frame()
 
