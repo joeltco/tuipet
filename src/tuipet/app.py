@@ -132,11 +132,11 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("Every adventure run is SCORED now: bits, wins, finds, "
-                 "lives kept, your best streak, +100 for the boss. Each "
-                 "zone keeps its standing best — see it in the zone "
-                 "picker, beat it for the ★ new best! brag on the "
-                 "results card.")
+    WHATS_NEW = ("The road reads your mon now: sick pets trudge at half "
+                 "pace, elders do the aged shuffle, sleepers nap by the "
+                 "roadside — and a pet pushed past empty plants its feet "
+                 "and refuses to walk. SPACE urges it on; a town rest "
+                 "restores its will.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and

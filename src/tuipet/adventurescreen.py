@@ -71,6 +71,15 @@ HZ_TELE_T = 8                 # the "!" telegraph window
 HZ_LUNGE_T = 8                # the pounce crosses the right half
 HZ_END_T = 10                 # the verdict beat (the duck-under / the burst)
 
+# CONDITION WALKS + TRAVEL REFUSALS (restored from the old build's audit
+# pass 3 / canTravel port, 2026-07-21): a SICK pet drags the idleUnwell
+# trudge at HALF march pace; a GERIATRIC one walks the +9 aged-shuffle
+# frames; a sleeping traveller halts the march AND the stride clock (no
+# rolls) as the roadside nap; and a pet pushed PAST EMPTY plants its feet
+# (petcare.check_stop_travel -- today's calibration, deliberately soft:
+# only negative energy refuses.  NEVER revert to chance-based refusals).
+REFUSE_T = 24                 # the refusal head-shake (the fx convention)
+
 WALK_BEAT = 5                 # idleWalk pose-flip cadence while marching
 MARCH_PX = 0.5                # the march: px per 0.1s tick across the window
 #                               (a full crossing ~ 9-10s, ~one per stride)
@@ -145,6 +154,8 @@ class AdventurePanel(menu.SubHost):
         self._scene = None            # a running investigateLeft playbook
         self._find_msg = None         # the reveal line (sealed until the beat)
         self._hazard = None           # a running ambush: {"t","enemy","dodged","hit"}
+        self._refuse_t = 0            # ticks left on the refusal head-shake
+        self._refused = False         # planted: SPACE re-issues the walk
         self._transport = None        # open transport menu: the held transport keys
         self._transport_cursor = 0
         self._summary = False         # showing the run-results card before homecoming
@@ -204,6 +215,13 @@ class AdventurePanel(menu.SubHost):
                 self._go_home()
             return
         if self.travelling:
+            if self.pet.asleep:           # the roadside nap: the journey waits
+                return                    #   -- no strides, no rolls, no march
+            if self._refuse_t > 0:        # the head-shake plays out
+                self._refuse_t -= 1
+                return
+            if self._refused:             # planted: SPACE re-issues the walk
+                return
             if self._scene is not None:   # the investigate playbook plays out
                 self._scene_tick()
                 return
@@ -223,8 +241,9 @@ class AdventurePanel(menu.SubHost):
             # 8ab28a0 -- Joel 2026-07-13: "mon should walk across the
             # screen"): the journey walk actually CROSSES the window -- off
             # the right edge, back in from the left, the lawful exits --
-            # instead of stepping in place at an anchor.
-            self._wx += MARCH_PX
+            # instead of stepping in place at an anchor.  A SICK pet
+            # trudges at HALF pace (pass 3).
+            self._wx += MARCH_PX * (0.5 if self.pet.sick else 1.0)
             if self._wx >= grid.X1:              # fully out the right side
                 self._wx = float(grid.X0 - SPRITE_W_MARCH)   # slide back in
             # auto-march: the pet walks the road on its own pace; arrival ends
@@ -248,6 +267,10 @@ class AdventurePanel(menu.SubHost):
         elif isinstance(r, tuple) and r[0] == "hazard":
             self._hazard = {"t": 0, "enemy": r[1], "dodged": False, "hit": False}
             self.sfx = "cancel"               # the rustle: the warning thunk
+        elif isinstance(r, tuple) and r[0] == "refused":
+            self._refuse_t = REFUSE_T         # the head-shake, then the stand
+            self._refused = True
+            self.sfx = "refuse"
         elif r == "town":
             self._town_prompt = True          # rested on arrival; now visit or walk on
         elif r == "arrived":
@@ -260,6 +283,7 @@ class AdventurePanel(menu.SubHost):
         self._transport = None
         if r == "town-warp":
             self._rest_t = TOWN_HOLD          # the warp-in rest beat
+            self._refused = False             # rested = willing to walk again
         elif isinstance(r, tuple) and r[0] == "encounter":
             self._start_battle(r[1])          # the danger-warp ambush
 
@@ -495,6 +519,21 @@ class AdventurePanel(menu.SubHost):
             self._summary_shown = True
             self._go_home()                   # the latch makes this teleport now
             return None
+        if self._refuse_t > 0:
+            return None                       # the head-shake plays out
+        if self._refused and self._transport is None:   # planted on the road
+            #                                 (an open warp menu keeps its keys)
+            if k == "space":
+                self._refused = False         # re-issue the walk: canTravel
+                self._advance()               # re-rolls on the very next leg
+            elif k == "t":
+                held = self.adv.held_transports()
+                if held:                      # a town warp is the way out
+                    self._transport, self._transport_cursor = held, 0
+            elif k == "escape":
+                self._home_msg = f"Turned back from {self.adv.name}.{self._bits_tail()}"
+                self._go_home()
+            return None
         if self._hazard is not None:          # the ambush: SPACE ducks it
             h = self._hazard
             if (k in ("space",) and not h["dodged"] and not h["hit"]
@@ -562,6 +601,11 @@ class AdventurePanel(menu.SubHost):
                 return f"[b]⟿ {name}[/]  [dim]ENTER use{nav} · ESC[/]"
             if self._town_prompt:
                 return "[b]⌂ A town[/]  [dim]ENTER visit · SPACE walk on[/]"
+            if self.pet.asleep:
+                return "[dim]zzZ — a roadside nap[/]"
+            if self._refuse_t > 0 or self._refused:
+                thint = " T" if self.adv.held_transports() else ""
+                return f"[b]Refuses to walk![/]  [dim]SPACE urge{thint} · ESC[/]"
             if self._scene is not None:
                 s, t = self._scene, self._scene["t"]
                 if s["grade"] is None and t >= INV_WALK_T:
@@ -611,14 +655,27 @@ class AdventurePanel(menu.SubHost):
             x = min(max(x, lo), hi)
         return x
 
+    def _condition_rows(self, wi):
+        """The pet's road sprite, CONDITION-aware (pass 3 restored): a SICK
+        pet drags the idleUnwell collapse/weary trudge with its canon 1px
+        shuffle; a GERIATRIC one walks the +9 aged frames (home stepFrame
+        idiom); everyone else walks the frame given.  Returns (rows, dx)."""
+        from . import anim
+        if self.pet.sick and self.pet.num != -1:
+            si, dx = anim.sick_frame(self.frame_i)
+            return self._rows(si), dx
+        if self.pet.is_geriatric and self.pet.num != -1:
+            wi += 9                            # the aged shuffle
+        return self._rows(wi), 0
+
     def _march_frame(self):
         """The pet walking the road: the idleWalk pose-flip, FACING the way
         it's going, at the RAW march x -- partial edge exits ARE the journey
         (window law: exits are left/right, so the crossing clips at the
         play window, not the LCD border)."""
-        pose = (self.frame_i // WALK_BEAT) % 2       # idleWalk 0/1 bob
-        rows = self._rows(pose)
-        return menu.paint([(rows, self._jx(rows, clamp=False), True)],
+        wi = data.ROLES["walk"][(self.frame_i // WALK_BEAT) % 2]
+        rows, dx = self._condition_rows(wi)
+        return menu.paint([(rows, self._jx(rows, clamp=False) + dx, True)],
                           self._road_bg(), rows=ROWS, cols=COLS,
                           clip=grid.WINDOW)
 
@@ -626,10 +683,39 @@ class AdventurePanel(menu.SubHost):
         """The pet standing on the road: beats (glint, town, rest, gate)
         play WHERE IT STANDS -- the clamped march x -- not snapped back to
         centre (old build: "beats play wherever it stands")."""
-        rows = self._rows(0)                   # canon drawNumMirror(0, false)
-        return menu.paint([(rows, self._jx(rows), True)],
+        rows, dx = self._condition_rows(0)     # canon drawNumMirror(0, false)
+        return menu.paint([(rows, self._jx(rows) + dx, True)],
                           self._road_bg(), rows=ROWS, cols=COLS,
                           clip=grid.WINDOW)
+
+    def _nap_frame(self):
+        """The roadside nap (pass 3): the sleep pose-flip where the pet lay
+        down, the Zzz hanging at the band's top-right exactly like the home
+        sleep scene (arenafx idiom: nothing above the band)."""
+        from . import strikefx
+        rows = self._rows(data.ROLES["sleep"][(self.frame_i // 10) % 2])
+        overlay = []
+        zz = data.load_effects().get("zzz")
+        if zz:
+            z = grid._crop(zz[(self.frame_i // 10) % len(zz)])
+            if z:
+                overlay = strikefx.blit(z, grid.X1 - len(z[0]), grid.TOP)
+        return menu.paint([(rows, self._jx(rows), True)], self._road_bg(),
+                          rows=ROWS, cols=COLS, overlay=overlay,
+                          clip=grid.WINDOW)
+
+    def _refuse_frame(self):
+        """The travel refusal: the canon head-shake (refuse pose under the
+        mirror toggle) while the shake runs, then the WEARY stand -- the
+        planted pet is refusing because it's spent past empty."""
+        if self._refuse_t > 0:
+            rows = self._rows(data.ROLES["refuse"][0])
+            shake = ((REFUSE_T - self._refuse_t) // 6) % 2 == 0
+            return menu.paint([(rows, self._jx(rows), shake)], self._road_bg(),
+                              rows=ROWS, cols=COLS, clip=grid.WINDOW)
+        rows = self._rows(data.ROLES["tired"][0])
+        return menu.paint([(rows, self._jx(rows), True)], self._road_bg(),
+                          rows=ROWS, cols=COLS, clip=grid.WINDOW)
 
     def _glint_frame(self):
         """A glint spotted: the DiscoverCall attention bounce (happy 5<->7)
@@ -889,6 +975,10 @@ class AdventurePanel(menu.SubHost):
         if self._at_gate:
             return self._gate_frame()          # the FACEOFF: squared up at the gate
         if self.travelling:
+            if self.pet.asleep:
+                return self._nap_frame()       # the roadside nap
+            if self._refuse_t > 0 or self._refused:
+                return self._refuse_frame()    # the head-shake / planted feet
             if self._scene is not None:
                 return self._scene_frame()     # the investigate playbook
             if self._hazard is not None:

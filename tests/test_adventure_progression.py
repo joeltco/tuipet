@@ -67,9 +67,12 @@ def test_the_picker_embarks_on_enter_and_backs_out_on_esc():
     assert ZonePickPanel(p).key("escape") == ("done", None)   # back out of Adventure
 
 
-def test_a_panel_boss_win_records_progression():
-    A.ENCOUNTER_CHANCE = 0.0
-    A.FIND_CHANCE = 0.0
+def test_a_panel_boss_win_records_progression(monkeypatch):
+    # monkeypatch, not bare assignment: the old direct writes leaked zeroed
+    # chances into every later test (pollution fix 2026-07-21)
+    monkeypatch.setattr(A, "ENCOUNTER_CHANCE", 0.0)
+    monkeypatch.setattr(A, "HAZARD_CHANCE", 0.0)
+    monkeypatch.setattr(A, "FIND_CHANCE", 0.0)
     p = _champ()
     pan = AdventurePanel(p, zone=ZONES[0])
     for _ in range(TELE_LEAVE_T + TELE_ARRIVE_T + pan.adv.total * TRAVEL_TICKS + 20):

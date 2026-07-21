@@ -516,6 +516,12 @@ class Adventure:
         otherwise, None if the run is already over."""
         if self.done or self.failed:
             return None
+        if self.pet.check_stop_travel():
+            # canTravel (restored 2026-07-21): a pet pushed PAST EMPTY plants
+            # its feet -- today's deliberately-soft calibration (petcare:
+            # negative energy only), NEVER the old chance-based refusal
+            self.last = f"{self.pet.name} refuses to walk!"
+            return ("refused", None)
         enemy = self._roll_encounter()
         if enemy is not None:
             self.last = f"A wild {enemy['name']} blocks the road!"

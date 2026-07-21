@@ -3,6 +3,19 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.5.129 — THE ROAD READS YOUR MON (2026-07-21)
+
+* **Condition walks.** A sick pet drags the collapse/weary trudge at
+  **half march pace** — never the healthy stride. A geriatric one walks
+  the aged shuffle, same as at home. A sleeping traveller halts the whole
+  journey — no strides, no encounters, no finds — napping under its Zzz
+  by the roadside until it wakes on its own.
+* **Travel refusals.** A pet pushed **past empty** (marching only tires
+  it to zero — it's eating ambushes while drained that pushes it over)
+  plants its feet with the canon head-shake and won't walk. SPACE urges
+  it on (a spent pet just refuses again), a held town warp rests it back
+  to willing, ESC turns back home. Manage the tank or the road stops.
+
 ## 0.5.128 — THE RUN SCORE (2026-07-21)
 
 * **Every run of substance gets a score.** Rolled from the tallies the
