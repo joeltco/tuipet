@@ -196,6 +196,8 @@ class ShopPanel:
             self.cursor = (self.cursor - 1) % n
         elif k in ("down", "j") and n:
             self.cursor = (self.cursor + 1) % n
+        elif k in ("pageup", "pagedown"):     # the shelf/bag leap (help audit 2026-07-21)
+            self.cursor = menu.page_step(self.cursor, n, 5, k)
         elif k in ("enter", "space") and n:
             e = rows[self.cursor % n]
             if self.mode == "shop":

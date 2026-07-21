@@ -88,6 +88,12 @@ class EggSelectPanel:
         elif k in ("left", "h", "up", "k"):
             self.pos -= 1
             self.i = int(self.pos) % self.n if self.n else 0
+        elif k in ("pageup", "pagedown") and self.n:
+            # the carousel is an EASED float, not a cursor -- feed pos the
+            # leap and the existing snap/ease carries it (help audit
+            # 2026-07-21).  It wraps like ←→ do, so no page_step clamp here.
+            self.pos += 8 if k == "pagedown" else -8
+            self.i = int(self.pos) % self.n
         elif k in ("enter", "space"):
             if not self.n:
                 return None

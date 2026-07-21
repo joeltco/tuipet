@@ -1,11 +1,21 @@
 """In-app Help screen (Joel 2026-07-09): controls + how-to, opened with ?."""
+import pathlib
+import re
+
 from tuipet.pet import Pet
 from tuipet.helpscreen import HelpPanel, HELP, VIS
 from tuipet.app import TuiPetApp, keys_markup
 
+README = pathlib.Path(__file__).resolve().parent.parent / "README.md"
+
 
 def _pet():
     return Pet(num=100, stage="Champion", attribute="Vaccine", bits=99)
+
+
+def _glyph(key):
+    """The key as a PLAYER sees it (Textual's identifiers never reach a page)."""
+    return {"question_mark": "?", "enter": "ENTER"}.get(key, key)
 
 
 def test_help_is_bound_to_question_mark_and_listed():
@@ -25,6 +35,28 @@ def test_every_binding_is_on_the_actions_bar():
             continue
         shown = "?" if key == "question_mark" else key
         assert f"]{shown}[/]" in bar, f"{action} ({shown}) missing from the ACTIONS bar"
+
+
+def test_help_lists_every_binding():
+    """The bar has been pinned against BINDINGS since the n egg-guide miss --
+    HELP itself never was, and `?` had quietly fallen off its own page while
+    the bar, the README and the Keys page all carried it (help audit
+    2026-07-21).  Four hand-maintained surfaces, four pins now."""
+    lines = [t for t, kind in HELP if kind == 1]
+    for key, action, _label in TuiPetApp.BINDINGS:
+        g = _glyph(key)
+        assert any(re.search(r"(?:^|\s)%s\s" % re.escape(g), t) for t in lines), \
+            f"{action} ({g}) missing from the in-game Help"
+
+
+def test_readme_keys_table_lists_every_binding():
+    """The README table had drifted furthest of the four: no ENTER row at all,
+    and the word "gift" appeared nowhere in the file (help audit 2026-07-21)."""
+    body = README.read_text(encoding="utf-8")
+    table = body.split("## Keys", 1)[1].split("## ", 1)[0]
+    for key, action, _label in TuiPetApp.BINDINGS:
+        assert f"**{_glyph(key)}**" in table, \
+            f"{action} ({_glyph(key)}) missing from the README key table"
 
 
 def test_help_page_jumps_and_clamps():
@@ -77,3 +109,76 @@ def test_help_teaches_the_gift_and_the_key_grammar():
     assert "PgUp/PgDn" in joined
     for text, _kind in HELP:
         assert len(text) <= 38, text
+
+
+def test_help_teaches_the_grave_and_the_shop_tabs():
+    """The memorial's E/B and E/K prompts drive a PERMANENT inheritance
+    choice and had no help text at all; Honors and the Options rows were
+    likewise hidden behind one-word entries (help audit 2026-07-21)."""
+    joined = "\n".join(t for t, _k in HELP)
+    assert "E etch its data for your heir" in joined
+    assert "B keep the care bonus instead" in joined
+    assert "K keeps the elder's." in joined
+    assert "HONORS" in joined
+    assert "cloud sync" in joined
+
+
+# ---- the two claims HELP makes about the WHOLE app ---------------------------
+
+def _long_list_panels():
+    """Every cursor list a player can actually walk a long way."""
+    from tuipet import (adventure, adventurescreen, backgroundscreen,
+                        eggselectscreen, shop, shopscreen, tournamentscreen)
+    pet = Pet(num=100, stage="Champion", attribute="Vaccine", bits=99999)
+    # a FULL bag and an opened map: the empty-list case is a no-op by design,
+    # so an unstocked fixture would pass this test without exercising anything
+    for e in shop.catalog():
+        pet.inventory[e["key"]] = 1
+    pet.adv_progress = len(adventure.ZONES) - 1
+    return [
+        ("shop", shopscreen.ShopPanel(pet)),
+        ("bag", shopscreen.ShopPanel(pet, start_mode="bag")),
+        ("scenes", backgroundscreen.BackgroundPanel(pet)),
+        ("zones", adventurescreen.ZonePickPanel(pet)),
+        ("cup", tournamentscreen.TournamentPanel(pet)),
+        ("eggs", eggselectscreen.EggSelectPanel(Pet.new_egg())),
+    ]
+
+
+def test_page_keys_leap_through_every_long_list():
+    """Help and the README have promised "PgUp/PgDn leap through long lists"
+    since 0.5.64, but only the top/window scrollers implemented it -- the
+    CURSOR lists (the 31-row scene picker, the 24-slot cup board, the shop,
+    the bag, the zone picker, the egg carousel) silently ATE the key
+    (help audit 2026-07-21).  A stated law has to hold everywhere."""
+    for name, pan in _long_list_panels():
+        def where():
+            return pan.cursor if hasattr(pan, "cursor") else pan.pos
+        for _ in range(9):                          # to the top first (the zone
+            pan.key("pageup")                       # picker OPENS on the frontier)
+        top = where()
+        pan.key("pagedown")
+        assert where() != top, f"{name}: PgDn did nothing"
+        pan.key("pageup")
+        assert where() == top, f"{name}: PgUp did not come back"
+        pan.text()                                  # and the window still paints
+
+
+def test_space_equals_enter_at_the_memorial_prompts():
+    """The one non-text panel that broke the SPACE=ENTER law: the digimemory
+    etch prompts took ("e", "enter") only (help audit 2026-07-21)."""
+    from tuipet.deathscreen import DeathPanel
+    mem = {"name": "Elder", "vaccine": 1, "data": 1, "virus": 1}
+    pet = Pet(num=100, stage="Champion", attribute="Vaccine")
+    pet.dead = True
+
+    pan = DeathPanel(pet, new_mem=mem, hold=0)
+    assert pan.ask_etch
+    pan.key("space")                                # SPACE answers the etch...
+    assert not pan.ask_etch
+
+    pan = DeathPanel(pet, new_mem=mem, old_mem=dict(mem, name="Old"), hold=0)
+    pan.key("space")
+    assert pan.asking                               # ...and the only-one prompt
+    pan.key("space")
+    assert not pan.asking

@@ -486,6 +486,8 @@ class ZonePickPanel:
             self.cursor = (self.cursor - 1) % n
         elif k in ("down", "j"):
             self.cursor = (self.cursor + 1) % n
+        elif k in ("pageup", "pagedown"):       # up to 26 zones unlock
+            self.cursor = menu.page_step(self.cursor, n, self.VIS, k)
         elif k in ("enter", "space"):
             return ("done", ZONES[self.indices[self.cursor]])   # embark
         elif k in ("escape", "a"):

@@ -120,7 +120,7 @@ explore, then grow, then manage:
 | **u** | tournament cup | **b** | bug report |
 | **l** | online lobby | **?** | help |
 | **t** | train | **q** | quit |
-| **x** | DNA | | |
+| **x** | DNA | **ENTER** | accept a found gift |
 
 SPACE works wherever ENTER does, and PageUp/PageDown leap through every
 long list.

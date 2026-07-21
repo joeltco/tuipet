@@ -73,6 +73,8 @@ class TournamentPanel(menu.SubHost):
                 self.cursor = (self.cursor - 1) % n
             elif k in ("down", "j"):
                 self.cursor = (self.cursor + 1) % n
+            elif k in ("pageup", "pagedown"):   # 24 hourly slots, 5 on screen
+                self.cursor = menu.page_step(self.cursor, n, 5, k)
             elif k in ("enter", "space"):
                 # checkTourneyClosed: only the current hour's cup takes
                 # entries -- except on a FESTIVAL day, when every un-run

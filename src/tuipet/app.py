@@ -150,10 +150,11 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("Town shops now sell eggs — and every town stocks DIFFERENT "
-                 "ones, shown as real egg sprites. Buy one on the road and it "
-                 "joins your hatch carousel. Each town's shelf is its own, so "
-                 "it's worth stopping in every town you reach.")
+    WHATS_NEW = ("PgUp/PgDn now really do leap through every long list — the "
+                 "shop, your bag, the 31 scenes, the cup board and the zone "
+                 "picker all used to ignore them. Help gained a LEGACY page "
+                 "explaining what the grave asks when your pet passes, and "
+                 "SPACE finally answers those prompts like ENTER does.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and

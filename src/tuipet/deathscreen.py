@@ -59,7 +59,7 @@ class DeathPanel:
         if self._hold > 0:                      # the grave beat absorbs the mash
             return None
         if self.ask_etch:
-            if k in ("e", "enter"):                       # Yes: etch the data
+            if k in ("e", "enter", "space"):              # Yes: etch the data
                 self.ask_etch = False
                 if self.old_mem:                          # ...old data standing ->
                     self.asking = True                    # the only-one prompt
@@ -71,7 +71,10 @@ class DeathPanel:
                 self.ask_etch = False
             return None
         if self.asking:
-            if k in ("e", "enter"):                       # etch the new data over the old
+            # SPACE = ENTER is a stated law of the app grammar (Help, README);
+            # these two prompts were the only non-text panel that broke it
+            # (help audit 2026-07-21)
+            if k in ("e", "enter", "space"):              # etch the new data over the old
                 persistence.bank_digimemory(self.new_mem)
                 self.asking = False
             elif k in ("k", "escape"):                    # keep the elder's memory

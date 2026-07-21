@@ -37,6 +37,12 @@ class BackgroundPanel:
             self.cursor = (self.cursor - 1) % len(self.rows)
         elif k in ("down", "j", "right", "l"):
             self.cursor = (self.cursor + 1) % len(self.rows)
+        elif k in ("pageup", "pagedown"):
+            # 31 scenes one tap at a time was the worst walk in the game
+            # (help audit 2026-07-21).  The browser previews ONE scene, so
+            # there is no window to page -- an 8-row leap matches the VIS
+            # stride every other list jumps by.
+            self.cursor = menu.page_step(self.cursor, len(self.rows), 8, k)
         elif k in ("enter", "space"):
             key = self.rows[self.cursor]
             if key == self.pet.bg_pick:

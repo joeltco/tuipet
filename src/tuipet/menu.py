@@ -203,6 +203,26 @@ def list_window(out, rows, cursor, vis, fmt, empty=None):
     return cursor
 
 
+def page_step(cursor, n, vis, k):
+    """PgUp/PgDn for a CURSOR list: a vis-1 leap, clamped at both ends (never
+    wrapped -- a page key is "get me across this list", and wrapping past the
+    end reads as a bug).  Returns the new cursor, or None when k isn't a page
+    key so the caller's elif chain falls through untouched.
+
+    Help and the README have promised "PgUp/PgDn leap through long lists"
+    since 0.5.64, but only the top/window scrollers (help, egg guide, digicore,
+    options, lobby) ever implemented it -- the CURSOR lists, including the
+    31-row scene picker and the 24-slot cup board, silently ate the key
+    (help audit 2026-07-21).  One helper so the claim stays true everywhere."""
+    if k not in ("pageup", "pagedown"):
+        return None
+    if n <= 0:
+        return 0
+    step = max(1, vis - 1)
+    delta = -step if k == "pageup" else step
+    return max(0, min(n - 1, cursor + delta))
+
+
 def scroll_window(out, rows, off, vis, fmt):
     """list_window's cursor-less cousin: a vis-row window at a raw scroll
     OFFSET (requirement checklists, logs) -- no selection, no centring.  Same

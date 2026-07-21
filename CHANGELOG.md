@@ -3,6 +3,25 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.5.116 — THE HELP SYSTEM TELLS THE TRUTH (2026-07-21)
+
+* **PgUp/PgDn now leap through every long list — as Help has claimed all
+  along.** Only the window scrollers (help, egg guide, DigiCore, options,
+  lobby) ever implemented it; the *cursor* lists silently ate the key. The
+  shop, your bag, the Honors board, the **31-scene** picker, the **24-slot**
+  cup board, the 26-zone picker and the hatch carousel all page properly now.
+  Walking the scene picker one tap at a time is over.
+* **SPACE answers the memorial prompts.** "SPACE works wherever ENTER does"
+  is a stated law of the app, and the digimemory etch prompts were the one
+  non-typing screen that broke it.
+* **Help gained a LEGACY page.** The grave asks a permanent question — etch
+  your pet's data for the heir, or keep the care bonus; and if data already
+  stands, which generation's survives — and until now the in-game guide never
+  mentioned death at all. Help also stops hiding things behind one-word
+  entries: the shop's **Honors** tab and what **Options** actually holds
+  (themes, sound, cloud sync, your account, updates, every key) are spelled
+  out, and **?** finally appears on its own key list.
+
 ## 0.5.115 — TOWN EGG SHOPS (2026-07-21)
 
 * **Every town sells eggs now — and each town stocks different ones.** A new
