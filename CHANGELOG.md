@@ -3,6 +3,17 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.5.121 — THE QUEST CARD SAYS WHERE (2026-07-21)
+
+* **The home card's Quest line names your frontier zone.** Instead of a mute
+  "not begun", it now shows the zone you're marching toward — "▸ Devimon"
+  before your first run, "3/26 ▸ MetalSeadra" partway — using the full zone
+  name when it fits the panel and the gate boss's name when it doesn't.
+  The counter itself works as it always did: it advances only when you fell
+  the **frontier** zone's boss (replays and wild fights never move it), and
+  each generation walks the map fresh while your permanent map-clear
+  unlocks (road shelf, map eggs) stay on the profile.
+
 ## 0.5.120 — THE TURN-AWAY DODGE (2026-07-21)
 
 * **Dodges got dramatic.** An airborne dodger now whips its back to the
