@@ -3,6 +3,22 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.5.119 — THE CONSISTENCY AUDIT (2026-07-21)
+
+* **Rev. Floppy has its own icon.** It wore the same sprite as the
+  Digimemory — DVPet's own Digimemory glyph, in fact — so the two Medical
+  shelves looked identical in the shop and the bag. The floppy now wears a
+  proper disk of its own; the Digimemory keeps its rightful art.
+* **Fusions can't land on a retired chart anymore.** lines.csv keeps a few
+  dormant legacy trees so long-running pets mid-journey keep their chart —
+  but a jogress landing on a shared form could get re-anchored *into* one
+  of them (a chart no egg hatches). Hatchable lines now always win the
+  tie-break; pets already on a dormant chart are left alone, as promised.
+* Under the hood: the line curator round-trips the shipped 51 charts
+  exactly (shipped line ids, the Digitama X3 pool, dormant charts all
+  preserved), and the dormant-chart contract is now written down in
+  LINES_SPEC and pinned by tests.
+
 ## 0.5.116 — THE HELP SYSTEM TELLS THE TRUTH (2026-07-21)
 
 * **PgUp/PgDn now leap through every long list — as Help has claimed all
