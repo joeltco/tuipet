@@ -452,7 +452,8 @@ def test_area_gate_is_the_adventure_road_or_the_raid_fallback():
     q = Pet(num=100, stage="Ultimate", attribute="Vaccine")
     map4 = [i for i, z in enumerate(adventure.ZONES) if z["map"] == 4]
     assert map4                                        # the area exists
-    q.adv_progress = max(map4) + 1                     # frontier past all of it
+    # option b: conquest counts ROAD positions, and the road interleaves maps
+    q.adv_progress = max(adventure.PROGRESSION.index(i) for i in map4) + 1
     assert adventure.is_map_cleared(q, 4)
     d = persistence.load_settings()
     d.get("progress", {}).pop("raids", None)           # raids back to zero

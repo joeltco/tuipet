@@ -45,9 +45,11 @@ def test_the_road_shelf_gates_on_maps_cleared():
 
 def test_a_map_is_cleared_when_its_last_zone_falls():
     p = _pet()
-    p.adv_progress = 6                 # zones 0-5 of map 1 conquered, zone 6 (last) not
+    m1 = [adventure.PROGRESSION.index(i)     # map 1's ROAD positions (option b:
+          for i, z in enumerate(ZONES) if z["map"] == 1]   # the road interleaves maps)
+    p.adv_progress = max(m1)           # every map-1 stop but the DEEPEST
     assert not is_map_cleared(p, 1)
-    p.adv_progress = 7                 # zone 6 conquered -> map 1 (zones 0-6) complete
+    p.adv_progress = max(m1) + 1       # the deepest falls -> map 1 complete
     assert is_map_cleared(p, 1) and not is_map_cleared(p, 2)
 
 
@@ -58,10 +60,12 @@ def test_felling_a_maps_last_boss_records_the_map(monkeypatch):
     recorded = []
     from tuipet import persistence
     monkeypatch.setattr(persistence, "map_complete_add", lambda m: recorded.append(m))
-    # a pet on the LAST zone of map 1 (index 6): felling its boss clears map 1
+    # a pet at map 1's DEEPEST road stop: felling its boss clears map 1
     p = _pet()
-    p.adv_progress = 6
-    pan = AdventurePanel(p, zone=ZONES[6])
+    m1 = [adventure.PROGRESSION.index(i)
+          for i, z in enumerate(ZONES) if z["map"] == 1]
+    p.adv_progress = max(m1)           # that stop IS the frontier
+    pan = AdventurePanel(p, zone=ZONES[adventure.PROGRESSION[max(m1)]])
     for _ in range(TELE_LEAVE_T + TELE_ARRIVE_T + pan.adv.total * TRAVEL_TICKS + 20):
         pan.anim()
         if pan._town_prompt:
@@ -70,7 +74,7 @@ def test_felling_a_maps_last_boss_records_the_map(monkeypatch):
             break
     pan.sub = None
     pan._battle_done(_Win())
-    assert p.adv_progress == 7           # frontier advanced
+    assert p.adv_progress == max(m1) + 1     # frontier advanced
     assert recorded == [0]               # map 1 recorded 0-based (profile `maps`)
 
 
@@ -82,8 +86,8 @@ def test_a_mid_map_zone_win_records_no_map(monkeypatch):
     from tuipet import persistence
     monkeypatch.setattr(persistence, "map_complete_add", lambda m: recorded.append(m))
     p = _pet()
-    p.adv_progress = 2                   # frontier mid-map-1
-    pan = AdventurePanel(p, zone=ZONES[2])
+    p.adv_progress = 2                   # early road: no map near completion
+    pan = AdventurePanel(p, zone=ZONES[adventure.PROGRESSION[2]])
     for _ in range(TELE_LEAVE_T + TELE_ARRIVE_T + pan.adv.total * TRAVEL_TICKS + 20):
         pan.anim()
         if pan._town_prompt:

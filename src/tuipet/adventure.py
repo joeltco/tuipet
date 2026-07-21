@@ -216,8 +216,32 @@ def pick_zone(pet):
 
 
 # -- progression --------------------------------------------------------------
-# pet.adv_progress = zones CONQUERED = the index of the current FRONTIER zone.
-# Unlocked = 0..frontier (inclusive); conquered = strictly below the frontier.
+# pet.adv_progress = zones CONQUERED (a count).  The road runs in DIFFICULTY
+# ORDER (balance audit 2026-07-21, Joel's option b): the Monte-Carlo sweep
+# over the real Battle engine showed zones.csv order was non-monotonic --
+# Mega wilds in map 1's zone 3, an 11% boss at zone 2, the endgame map 5
+# EASIER than map 1's back half, the all-Mega zone 16 cliff mid-game.  Win
+# rate tracks the rosters' stage ranks, so PROGRESSION sorts by that key --
+# self-documenting, roster-untouched, and it re-derives if the data changes.
+# Zone IDENTITY (list index) is untouched: score bests, names, and the map
+# field all stay keyed as before; only the ORDER you meet them changed.
+
+
+def _difficulty(z):
+    """The zone's deterministic difficulty key: mean wild stage rank + gate
+    boss rank (the measured win-rate driver)."""
+    from .battle import _RANK
+    wilds = [e for e in z.get("randoms", ()) if not e.get("boss")]
+    wr = (sum(_RANK.get(e.get("stage"), 3) for e in wilds) / len(wilds)
+          if wilds else 3.0)
+    bs = z.get("bosses") or []
+    br = _RANK.get(bs[0].get("stage"), 3) if bs else 3
+    return wr + br
+
+
+PROGRESSION = sorted(range(len(ZONES)),
+                     key=lambda i: (_difficulty(ZONES[i]), i))
+_ORDER_POS = {zi: pos for pos, zi in enumerate(PROGRESSION)}
 def zone_index(zone):
     """The index of a zone dict in the ordered ZONES, or None (a test zone)."""
     try:
@@ -227,18 +251,26 @@ def zone_index(zone):
 
 
 def frontier(pet):
-    """The index of the pet's current frontier zone (clamped into range)."""
-    return max(0, min(int(getattr(pet, "adv_progress", 0) or 0), len(ZONES) - 1))
+    """The ZONES index of the pet's current frontier zone: the next stop on
+    the difficulty road (clamped to the last stop)."""
+    prog = max(0, min(int(getattr(pet, "adv_progress", 0) or 0),
+                      len(PROGRESSION) - 1))
+    return PROGRESSION[prog]
 
 
 def unlocked_indices(pet):
-    """The zone indices the pet may embark on: 0..frontier."""
-    return list(range(frontier(pet) + 1))
+    """The zone indices the pet may embark on, in ROAD order: everything up
+    to and including the frontier."""
+    prog = max(0, min(int(getattr(pet, "adv_progress", 0) or 0),
+                      len(PROGRESSION) - 1))
+    return PROGRESSION[:prog + 1]
 
 
 def is_conquered(pet, zi):
-    """Has the pet already felled this zone's boss (it sits below the frontier)?"""
-    return zi < int(getattr(pet, "adv_progress", 0) or 0)
+    """Has the pet already felled this zone's boss (its road position sits
+    below the conquered count)?"""
+    pos = _ORDER_POS.get(zi)
+    return pos is not None and pos < int(getattr(pet, "adv_progress", 0) or 0)
 
 
 def _veteran(enemy):
@@ -259,17 +291,20 @@ def _veteran(enemy):
 def is_map_cleared(pet, map_num):
     """Are ALL of a map's zones conquered (every one below the frontier)?  This
     is the profile `maps` signal that unlocks the road shop shelf + eggs."""
-    prog = int(getattr(pet, "adv_progress", 0) or 0)
     idxs = [i for i, z in enumerate(ZONES) if z["map"] == map_num]
-    return bool(idxs) and all(i < prog for i in idxs)
+    # road-order aware (option b, 2026-07-21): a map is cleared when every
+    # one of ITS zones is conquered, wherever they now sit on the road
+    return bool(idxs) and all(is_conquered(pet, i) for i in idxs)
 
 
 def record_win(pet, zone):
-    """A boss felled: if it was the FRONTIER, the next zone unlocks.  Replaying
-    an already-conquered zone advances nothing.  Returns True if a zone unlocked."""
+    """A boss felled: if it was the FRONTIER, the next stop on the road
+    unlocks.  Replaying an already-conquered zone advances nothing.
+    Returns True if a zone unlocked."""
     zi = zone_index(zone)
     prog = int(getattr(pet, "adv_progress", 0) or 0)
-    if zi is not None and zi == prog and prog < len(ZONES):
+    if (zi is not None and prog < len(PROGRESSION)
+            and _ORDER_POS.get(zi) == prog):
         pet.adv_progress = prog + 1
         return True
     return False

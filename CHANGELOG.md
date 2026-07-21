@@ -3,6 +3,21 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.5.135 — THE ROAD CLIMBS IN ORDER (2026-07-21)
+
+* **The unlock road is sorted by difficulty now.** A Monte-Carlo balance
+  audit over the real battle engine showed the old zone order was full
+  of walls: Mega wilds at the fourth zone, an 11% boss at the third, a
+  mid-game cliff at the all-Mega den, and an endgame easier than map
+  one's back half. The road now opens gently (Airdramon's Flower Field,
+  Devimon's Factory Night) and climbs monotonically to the deep end —
+  Dexmon's lair is the final gate. **Nothing about the zones themselves
+  changed**: same rosters, same bounties, same names and standing bests
+  — only the order you meet them.
+* Your save keeps its conquest **count**; the conquered set maps onto
+  the new road's first stops. Map clears, egg gates, the shop shelf,
+  and Alphamon's AREA gate all follow the new order correctly.
+
 ## 0.5.134 — THE @ LINE KNOWS WHERE YOU ARE (2026-07-21)
 
 * **The status card's @ line goes live.** During an adventure it names
