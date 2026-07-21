@@ -188,10 +188,19 @@ class AdventurePanel(menu.SubHost):
             elif tr["phase"] == "arrive" and tr["t"] >= TELE_ARRIVE_T:
                 self._trans = None
                 if tr["dir"] == "out":
+                    # home: the flag the body sim gates on (assistant billing,
+                    # filth, gift call -- canon _isHome) comes back down.  The
+                    # SETTER died with the old adventure and was never rewired
+                    # (found 2026-07-21 via Joel's @-line question); the app's
+                    # death path already cleared it, waiting for this.
+                    self.pet.away = False
+                    self.pet.away_where = ""
                     self.auto_close = ("done", self._home_msg)   # home: close + verdict
                 else:
                     self._landed = True                # on the road -- the march begins
                     self.travelling = True
+                    self.pet.away = True               # canon: the teleport toggles it
+                    self.pet.away_where = self.adv.name   # the @-line's live zone
             return
         if self._pulse is not None:
             # zoneChange: four zonePulse beats, then home (or the parade)

@@ -3,6 +3,19 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.5.134 — THE @ LINE KNOWS WHERE YOU ARE (2026-07-21)
+
+* **The status card's @ line goes live.** During an adventure it names
+  the zone your mon is actually marching through (boss-trimmed to fit,
+  like the Quest line); at home it shows your scene, as ever.
+* **The away flag is finally wired.** The body sim's canon home-only
+  gates — the AI assistant's billing and visits, the filth count, the
+  gift call — all read a flag nothing ever raised: the setter died with
+  the old adventure and the rebuild never reconnected it. The landing
+  teleport raises it now and the homecoming lowers it, so **the
+  assistant no longer bills or visits while your mon is on the road** —
+  it minds the house, not the wilderness.
+
 ## 0.5.133 — THE VETERAN ROAD (2026-07-21)
 
 * **Conquered zones fight back harder.** Replay a zone you've beaten and

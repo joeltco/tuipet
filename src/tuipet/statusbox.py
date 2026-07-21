@@ -90,16 +90,30 @@ def card(app, title, lines, subtitle=""):
 
 # ---- the HOME vitals (the Stats widget delegates here) ---------------------
 
-def _frontier_name(pet, avail):
-    """The frontier zone's display name shortened to `avail` visible cols:
-    the full name when it fits, else its gate BOSS (zone names are
-    "{Boss}'s {biome}", and the boss IS the march's destination), else a
-    plain clip -- the stats column is 26 wide, zone names run to 32."""
-    from . import adventure
-    name = adventure.ZONES[adventure.frontier(pet)]["name"]
+def _zone_display(name, avail):
+    """A zone's display name shortened to `avail` visible cols: the full
+    name when it fits, else its gate BOSS (zone names are "{Boss}'s
+    {biome}", and the boss IS the destination), else a plain clip."""
     if len(name) <= avail:
         return name
     return name.split("'s ", 1)[0][:avail]
+
+
+def _frontier_name(pet, avail):
+    """The frontier zone's display name (the stats column is 26 wide,
+    zone names run to 32)."""
+    from . import adventure
+    return _zone_display(adventure.ZONES[adventure.frontier(pet)]["name"], avail)
+
+
+def _where(pet):
+    """The @ line's place, <=16 cols: the run's zone while the mon is AWAY
+    on the road (pet.away_where, set by the landing teleport), the home
+    scene otherwise."""
+    if getattr(pet, "away", False):
+        return _zone_display(getattr(pet, "away_where", "") or "?", 16)
+    return backgrounds.name(pet.bg_pick
+                            or backgrounds.scene_for_egg(pet.egg_type))[:16]
 
 
 def adventure_line(pet):
@@ -147,7 +161,10 @@ def home_lines(pet):
         f"DP      [{T.ACCENT}]{'◆' * getattr(pet, 'dp', 0)}[/][dim]{'◇' * (4 - getattr(pet, 'dp', 0))}[/]",
         f"Battle  {pet.wins}W/{pet.battles}   [{T.COIN}]★{pet.trophies}[/]",
         adventure_line(pet),
-        f"@{backgrounds.name(pet.bg_pick or backgrounds.scene_for_egg(pet.egg_type))[:16]} [dim]{age}[/]",
+        # the @ line is WHERE THE MON STANDS (liveness law, Joel 2026-07-21
+        # "shouldnt the @ say what zone the mon is in during adventure?"):
+        # the run's zone while it's away on the road, the home scene otherwise
+        f"@{_where(pet)} [dim]{age}[/]",
         f"Life    {bar(lifepct, 12, lifecol)}",
         status_line(word, deco),
     ]

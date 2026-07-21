@@ -340,6 +340,11 @@ class ActionsMixin:
                         self._after_adventure)
 
     def _after_adventure(self, msg):
+        # safety net: however the mode closed, the pet is HOME now -- the
+        # away flag (assistant billing / filth / gift-call gates + the
+        # status card's @ line) must never survive the room
+        self.pet.away = False
+        self.pet.away_where = ""
         if msg:
             self.flash(msg)
         self.autosave()

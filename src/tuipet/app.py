@@ -132,11 +132,12 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("THE VETERAN ROAD: replay a conquered zone and the same "
-                 "foes come back fighting TRAINED — a real edge in the "
-                 "hit formula, not padded stats — and bounties pay half "
-                 "again for it. Chase your zone bests on the harder "
-                 "road.")
+    WHATS_NEW = ("The status card's @ line now says WHERE your mon "
+                 "stands — the zone it's marching through on a run, home "
+                 "otherwise. And a real fix underneath: the AI assistant "
+                 "was quietly billing while your mon was away on the "
+                 "road; it now pauses until the homecoming, as canon "
+                 "always intended.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and
@@ -1024,6 +1025,7 @@ class TuiPetApp(ActionsMixin, App):
                 # no banking (gameplay audit 2026-07-19)
                 if getattr(p, "away", False):
                     p.away = False            # the road ends here
+                    p.away_where = ""
                 self._close_mode(None)
                 self.beep("death")
                 self.flash("")
