@@ -290,3 +290,46 @@ def test_battle_dodge_leap_never_exits_upward():
               "ph": pan.battle.pet_hp, "fh": pan.battle.enemy_hp}
         text = pan._render_scene_frame(fr)
         assert text is not None                    # renders under the clip
+
+
+def test_dodge_turns_away_while_airborne():
+    """The tuipet turn-away dodge (Joel 2026-07-21, a DELIBERATE canon
+    deviation -- ANIM_REFERENCE): airborne (dt 1-9) the dodger wears the
+    OPPOSITE of its battle facing; touchdown (dt 10) and the return steps
+    land it facing the foe again."""
+    from tuipet import strikefx
+    from tuipet.pet import Pet
+    from tuipet import battlescreen as bs
+    rows = ["0110", "1100", "0110"]                    # asymmetric ink
+    # the seam: turn inverts each side's normal mirror flag
+    place, _ = strikefx.place_combatant(True, rows)
+    assert place[0][2] is False                        # pet: native facing
+    place, _ = strikefx.place_combatant(True, rows, turn=True)
+    assert place[0][2] is True                         # pet turned: mirrored
+    place, _ = strikefx.place_combatant(False, rows)
+    assert place[0][2] is True                         # foe: mirrored to face pet
+    place, _ = strikefx.place_combatant(False, rows, turn=True)
+    assert place[0][2] is False                        # foe turned: native
+    # the timeline: only the airborne dodge beats pass turn=True
+    p = Pet(num=100, stage="Champion", attribute="Vaccine", obedience=500)
+    p.world_seconds = 600.0
+    pan = bs.BattlePanel(p)
+    pan.bar = (pan.mega_lo + pan.mega_hi) // 2
+    pan._lock_bar()
+    seen = {}
+    orig = pan._place_one
+
+    def spy(view, rows, xshift=0, turn=False):
+        seen[spy_dt[0]] = turn
+        return orig(view, rows, xshift, turn=turn)
+
+    spy_dt = [0]
+    pan._place_one = spy
+    for dt in range(1, bs.DODGE_T + 1):
+        spy_dt[0] = dt
+        fr = {"m": "dodge", "view": "pet", "prog": dt / bs.DODGE_T,
+              "ph": pan.battle.pet_hp, "fh": pan.battle.enemy_hp}
+        assert pan._render_scene_frame(fr) is not None
+    assert all(seen[dt] for dt in range(1, 10)), "airborne beats must turn"
+    assert not any(seen[dt] for dt in range(10, bs.DODGE_T + 1)), \
+        "touchdown + return steps land facing forward"

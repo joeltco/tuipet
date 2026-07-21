@@ -381,12 +381,13 @@ class BattlePanel:
                               else ("tourneyBack" if self.arena else None)),
                           rows=ROWS, cols=COLS, overlay=overlay, clip=grid.WINDOW)
 
-    def _place_one(self, view, rows, xshift=0):
+    def _place_one(self, view, rows, xshift=0, turn=False):
         """Place the ONE monster currently on screen. Player stands RIGHT (faces left), enemy
-        LEFT (faces right). Returns (placements, mouth_edge) -- the inner edge the orb leaves
+        LEFT (faces right). turn=True wears the opposite facing (the airborne beat of the
+        turn-away dodge). Returns (placements, mouth_edge) -- the inner edge the orb leaves
         from / arrives at."""
         # shared placement: pet (view!="foe") faces left on the right; foe faces right on the left
-        return strikefx.place_combatant(view != "foe", rows, xshift)
+        return strikefx.place_combatant(view != "foe", rows, xshift, turn=turn)
 
     def _orb_overlay(self, fr, mouth):
         """The attacker's projectile flown by the shared strikefx, tinted
@@ -451,6 +452,7 @@ class BattlePanel:
             num = self.pet.num if view == "pet" else self.enemy["num"]
             rows = self._rows(num, pose)
             xshift = 0
+            turned = False
             back = 1 if view == "pet" else -1                # +x = pet's wall (right), foe's (left)
             if m == "windup":
                 xshift = back * min(3, fr.get("wu", 0) + 1)  # rear back, charging up
@@ -461,6 +463,11 @@ class BattlePanel:
                 # while the shot whiffs past, then drop back to its mark (dt 11+)
                 out, lift = ((2, 2), (3, 3), (3, 3), (3, 3), (3, 3), (3, 3),
                              (3, 3), (3, 3), (2, 1), (1, 0))[dt - 1]
+                # the tuipet turn-away (Joel 2026-07-21, layered on the canon
+                # leap): airborne, the dodger shows the foe its BACK -- flips
+                # at takeoff, lands at dt 10 facing forward.  Keyed on the
+                # TABLE's lift, so a tall sprite with clamped sky still turns.
+                turned = lift > 0
                 xshift = back * out
                 # window-law: clamp the leap to the INK's headroom -- frames
                 # carry transparent top padding, so the real art usually has
@@ -473,7 +480,7 @@ class BattlePanel:
                     w = max(len(r) for r in rows)
                     blank = "0" * w if isinstance(rows[0], str) else [None] * w
                     rows = list(rows) + [blank] * lift
-            place, mouth = self._place_one(view, rows, xshift)
+            place, mouth = self._place_one(view, rows, xshift, turn=turned)
             # no orb on "dodge": canon hides the attack sprite -- the unhurt hop IS the miss
             overlay = self._orb_overlay(fr, mouth) if m in ("fire_out", "fire_in") else []
             scene = self._scene(place, overlay)
