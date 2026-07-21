@@ -132,11 +132,11 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("Rev. Floppy wears its own disk icon — it shared the "
-                 "Digimemory glyph, so the two Medical shelves looked "
-                 "identical. And a fusion now always lands your pet on a "
-                 "chart eggs actually hatch, never one of the retired "
-                 "legacy trees.")
+    WHATS_NEW = ("The turn-away dodge: an airborne dodger now whips its "
+                 "back to the shot and lands facing forward — watch for "
+                 "it when a volley whiffs. And the data book's WIN row "
+                 "tells the whole truth: the window is fed by cup & road "
+                 "fights — pvp and raids never count.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and

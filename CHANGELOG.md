@@ -3,6 +3,19 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.5.120 — THE TURN-AWAY DODGE (2026-07-21)
+
+* **Dodges got dramatic.** An airborne dodger now whips its back to the
+  incoming shot — springing toward its own wall, hanging there turned away
+  while the orb whiffs past — and lands at touchdown facing forward for the
+  classic return hop. A deliberate tuipet flourish on top of the canon leap.
+* **The WIN gate's sub-row tells the whole truth now.** The data book note
+  under a WIN requirement reads "fed by cup & road, not pvp/raids": the
+  rolling 15-fight window moves on cup rounds and adventure road fights
+  (wilds + zone bosses) only. Lobby PvP never counted (progression-neutral
+  by ruling), and raid attempts have never written anything on the pet —
+  the old note just didn't say so.
+
 ## 0.5.119 — THE CONSISTENCY AUDIT (2026-07-21)
 
 * **Rev. Floppy has its own icon.** It wore the same sprite as the
