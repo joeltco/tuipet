@@ -3,6 +3,17 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.5.128 — THE RUN SCORE (2026-07-21)
+
+* **Every run of substance gets a score.** Rolled from the tallies the
+  results card already shows: bits 1:1 (streak/festival scaling and all),
+  +10 per win, +5 per find, +25 per life still held at the end, +10 per
+  chained win past the first, and +100 for felling the gate boss. Each
+  zone keeps its **standing best** on your profile — the zone picker
+  shows the number beside every scored zone, and beating it earns the
+  **★ new best!** brag on the results card. Bare turn-backs (nothing
+  fought, found, or earned) stay out of the books.
+
 ## 0.5.127 — THE WIN STREAK (2026-07-21)
 
 * **Chained wins pay better.** Every consecutive fight won on the road

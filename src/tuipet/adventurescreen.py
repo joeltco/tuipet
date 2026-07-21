@@ -450,6 +450,12 @@ class AdventurePanel(menu.SubHost):
         self.travelling = False
         a = self.adv
         if not self._summary_shown and (a.bits_earned or a.fights or a.finds or a.done):
+            # a run of substance gets SCORED against the zone's standing
+            # best (bare turn-backs skip the card AND the books)
+            from . import persistence
+            zi = adventure.zone_index(a.zone)
+            self._new_best = (persistence.zone_best_set(zi, a.score())
+                              if zi is not None else False)
             self._summary = True              # results, then a key teleports
             return
         self._trans = {"dir": "out", "phase": "leave", "t": 0}
@@ -857,9 +863,15 @@ class AdventurePanel(menu.SubHost):
         out.append(f"Lives   {hearts}\n", style=INK)
         if a.best_streak >= 2:                 # a chain worth bragging about
             out.append(f"Streak  ×{a.best_streak} best\n", style=INK)
+        out.append(f"Score   {a.score()}", style=INK_B)
+        if getattr(self, "_new_best", False):
+            out.append("  ★ new best!", style=POS)
+        out.append("\n")
         if a.holiday:
             out.append(f"★ {a.holiday}\n", style=POS)
-        out.append_text(menu.blanks(1))
+        # the card is 12 physical rows: pad only while both extras are absent
+        if (1 if a.best_streak >= 2 else 0) + (1 if a.holiday else 0) < 2:
+            out.append_text(menu.blanks(1))
         out.append_text(menu.footer("press any key — home"))
         return out
 
@@ -899,11 +911,13 @@ class ZonePickPanel:
     VIS = 8
 
     def __init__(self, pet):
+        from . import persistence
         self.pet = pet
         self.frame_i = 0
         self.indices = adventure.unlocked_indices(pet)   # unlocked zone indices, in order
         self.cursor = len(self.indices) - 1              # default: the frontier (newest)
         self.holiday = adventure.active_holiday()        # festival banner + double rewards
+        self.bests = persistence.zone_bests()            # standing run scores per zone
 
     def anim(self):
         self.frame_i += 1
@@ -928,6 +942,9 @@ class ZonePickPanel:
     def _fmt(self, zi, _i):
         z = ZONES[zi]
         mark = "✓" if adventure.is_conquered(self.pet, zi) else "★"   # conquered vs the frontier
+        best = self.bests.get(zi)
+        if best:                               # the standing score: chase it
+            return f"{mark} {z['name']}"[:27].ljust(27) + f"{best:>6}"
         return f"{mark} {z['name']}"[:34]
 
     def text(self):

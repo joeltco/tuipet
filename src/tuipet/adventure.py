@@ -46,6 +46,16 @@ HAZARD_CHANCE = 0.06      # per marched step -- an ambush pounce on the road
 #                           eating it costs a small energy toll
 HAZARD_ENERGY = 2         # the toll for eating a pounce (a SMALL hit -- the
 #                           march drain is 1 per 4 legs for scale)
+# the RUN SCORE (arcade arc, Joel 2026-07-21 "do the run score"): one number
+# rolled from the tallies the summary card already shows, so a run can chase
+# the zone's standing best (persistence.zone_bests).  Bits ride 1:1 (already
+# streak/festival-scaled); the rest weight what the run DID.
+SCORE_WIN = 10            # per fight won
+SCORE_FIND = 5            # per find dug up
+SCORE_LIFE = 25           # per adventure life still held at the end
+SCORE_STREAK = 10         # per chained win past the first (the run's best chain)
+SCORE_CONQUEST = 100      # the boss fell -- the run's whole point
+
 STREAK_STEP = 0.25        # WIN STREAK (arcade arc, Joel 2026-07-21 "do the win
 #                           streak bonus"): each chained win past the first
 #                           adds +25% to bounties...
@@ -404,6 +414,15 @@ class Adventure:
         if not pool:
             return None
         return random.choice(pool)
+
+    def score(self):
+        """The run's arcade score, from the tallies the card already shows."""
+        return (self.bits_earned
+                + SCORE_WIN * self.wins
+                + SCORE_FIND * self.finds
+                + SCORE_LIFE * self.lives
+                + SCORE_STREAK * max(0, self.best_streak - 1)
+                + (SCORE_CONQUEST if self.done else 0))
 
     def _rest_up(self):
         """A town rest, wherever it comes from (waypoint or warp): lives and

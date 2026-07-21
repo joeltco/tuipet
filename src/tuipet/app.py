@@ -132,11 +132,11 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("WIN STREAKS on the road: chain fight wins and bounties "
-                 "grow +25% per win, up to double — but a loss, a flee, "
-                 "or ANY town rest breaks the chain. Push on hurt, or "
-                 "rest safe and start over? The ×N on the strip is your "
-                 "streak.")
+    WHATS_NEW = ("Every adventure run is SCORED now: bits, wins, finds, "
+                 "lives kept, your best streak, +100 for the boss. Each "
+                 "zone keeps its standing best — see it in the zone "
+                 "picker, beat it for the ★ new best! brag on the "
+                 "results card.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and
