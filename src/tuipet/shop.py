@@ -165,6 +165,42 @@ def digimental_open(key, prog=None):
     sig, need = gate
     return int(prog.get(sig, 0)) >= need
 
+
+# --- per-town egg market (Joel 2026-07-21: "different towns sell different
+# eggs -- all shops feel unique").  Each town stocks a DISTINCT band of the
+# earnable digitama, shown as the real 8x8 egg thumbnails; buying one owns it
+# outright (bits -> persistence.egg_own).  Eggs still unlock FREE by condition
+# elsewhere -- a town is the road shortcut, priced.
+EGG_STOCK_PER_TOWN = 6
+
+
+def _sellable_eggs():
+    """The digitama a town may stock: every egg that ISN'T a free starter
+    (the five START babies you already own)."""
+    from . import egg as egg_mod, data
+    rules = data.load_egg_unlock()
+    return [i for i in range(egg_mod.count())
+            if not (rules.get(i) or {}).get("start")]
+
+
+def town_egg_stock(town_id, count=EGG_STOCK_PER_TOWN):
+    """The DISTINCT set of eggs THIS town sells -- a stable band over the
+    earnable digitama, rotated by town so no two town shops feel the same."""
+    pool = _sellable_eggs()
+    if not pool:
+        return []
+    count = min(count, len(pool))
+    start = (int(town_id) * count) % len(pool)
+    return [pool[(start + i) % len(pool)] for i in range(count)]
+
+
+def egg_price(idx):
+    """A town egg's bit price -- earned eggs are a treat, so the buy-outright
+    shortcut costs real bits.  Starters (never stocked) are free."""
+    from . import data
+    rule = data.load_egg_unlock().get(idx) or {}
+    return 0 if rule.get("start") else 800
+
 # (the DVPet staple props -- Toilet/Port. Potty/Futon, items.csv 81-83, and
 # their uses/cap stock maths -- left 2026-07-17: strict-DSprite items
 # ("go strict").  DSprite's catalog has no furniture; the shelf is exactly

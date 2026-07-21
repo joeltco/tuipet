@@ -13,7 +13,8 @@ from __future__ import annotations
 from . import menu, tournament
 from .theme import INK, INK_B, DIM, POS  # noqa: F401  (theme.apply propagation)
 
-_MENU = (("shop", "Shop"), ("sell", "Sell"), ("cup", "Town Cup"), ("leave", "Leave"))
+_MENU = (("shop", "Shop"), ("eggs", "Eggs"), ("sell", "Sell"),
+         ("cup", "Town Cup"), ("leave", "Leave"))
 
 
 class TownPanel(menu.SubHost):
@@ -47,6 +48,10 @@ class TownPanel(menu.SubHost):
             if key == "shop":
                 from .shopscreen import ShopPanel
                 self.sub = ShopPanel(self.pet)   # the real shop, in the town
+            elif key == "eggs":
+                from .towneggscreen import TownEggPanel
+                # this town's DISTINCT egg stock, as real 8x8 thumbnails
+                self.sub = TownEggPanel(self.pet, self.town_id)
             elif key == "sell":
                 from .shopscreen import ShopPanel
                 # the real bag (use / sell back), same layout as home

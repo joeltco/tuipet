@@ -150,10 +150,10 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("Adventure is back: head out on the road, cross a zone's "
-                 "wilds, fell its boss, then rest in towns to resupply and "
-                 "fight the Town Cup. And every path earns eggs now - conquer "
-                 "regions, win cups, fell raids, link up, or play the festivals.")
+    WHATS_NEW = ("Town shops now sell eggs — and every town stocks DIFFERENT "
+                 "ones, shown as real egg sprites. Buy one on the road and it "
+                 "joins your hatch carousel. Each town's shelf is its own, so "
+                 "it's worth stopping in every town you reach.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and
