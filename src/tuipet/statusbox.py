@@ -90,18 +90,33 @@ def card(app, title, lines, subtitle=""):
 
 # ---- the HOME vitals (the Stats widget delegates here) ---------------------
 
+def _frontier_name(pet, avail):
+    """The frontier zone's display name shortened to `avail` visible cols:
+    the full name when it fits, else its gate BOSS (zone names are
+    "{Boss}'s {biome}", and the boss IS the march's destination), else a
+    plain clip -- the stats column is 26 wide, zone names run to 32."""
+    from . import adventure
+    name = adventure.ZONES[adventure.frontier(pet)]["name"]
+    if len(name) <= avail:
+        return name
+    return name.split("'s ", 1)[0][:avail]
+
+
 def adventure_line(pet):
-    """The home card's quest progress -- LIVE from pet.adv_progress: zones
-    conquered of the 26, 'not begun' before the first, '★ all cleared' at the
-    end.  Single source for the adventure readout (status-box liveness rule)."""
+    """The home card's quest readout -- LIVE from pet.adv_progress (zones
+    conquered of the 26), plus the FRONTIER zone's name (Joel 2026-07-21:
+    "show the frontier zone name on the card") -- the road the pet walks
+    next.  8-col label + 18 content cols; '★ all cleared' at the end.
+    Single source for the adventure readout (status-box liveness rule)."""
     from . import adventure
     total = len(adventure.ZONES)
     prog = max(0, min(int(getattr(pet, "adv_progress", 0) or 0), total))
-    if prog <= 0:
-        return "Quest   [dim]not begun[/]"
     if prog >= total:
         return f"Quest   [{theme.POS}]★ all {total} cleared[/]"
-    return f"Quest   {prog}/{total} zones"
+    if prog <= 0:
+        return f"Quest   [dim]▸ {_frontier_name(pet, 16)}[/]"
+    count = f"{prog}/{total} "
+    return f"Quest   {count}[dim]▸ {_frontier_name(pet, 16 - len(count))}[/]"
 
 
 def home_lines(pet):

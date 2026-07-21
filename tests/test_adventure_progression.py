@@ -102,12 +102,27 @@ def test_an_old_save_without_the_field_defaults_to_zero():
 
 
 def test_the_home_card_shows_live_quest_progress():
+    """The card names the FRONTIER zone (Joel 2026-07-21) alongside the live
+    count: dim '▸ name' before the first run, 'N/26 ▸ name' partway, the
+    cleared star at the end.  The name shortens to the gate BOSS when the
+    full name overflows the 26-col stats column."""
     from tuipet import statusbox
     p = _champ()
-    assert "not begun" in statusbox.adventure_line(p)          # before the first run
+    line = statusbox.adventure_line(p)
+    first = ZONES[0]["name"]
+    assert "▸" in line and (first in line or first.split("'s ", 1)[0] in line)
     p.adv_progress = 5
-    assert f"5/{len(ZONES)}" in statusbox.adventure_line(p)    # partway
+    line = statusbox.adventure_line(p)
+    assert f"5/{len(ZONES)}" in line                           # partway, count kept
+    sixth = ZONES[5]["name"]
+    assert sixth in line or sixth.split("'s ", 1)[0][:11] in line
     p.adv_progress = len(ZONES)
     assert "cleared" in statusbox.adventure_line(p)            # all done
     # and it rides the home card (single-source, liveness rule)
     assert any("Quest" in line for line in statusbox.home_lines(p))
+    # the line never overflows the 26-col stats panel, any frontier
+    from rich.text import Text
+    for prog in range(len(ZONES)):
+        p.adv_progress = prog
+        vis = len(Text.from_markup(statusbox.adventure_line(p)).plain)
+        assert vis <= 26, (prog, statusbox.adventure_line(p))
