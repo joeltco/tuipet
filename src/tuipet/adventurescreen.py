@@ -388,6 +388,8 @@ class AdventurePanel(menu.SubHost):
             self.adv.fights += 1
             if won:
                 self.adv.wins += 1
+        self.adv.chain(won)                   # the streak: BEFORE the bounty, so
+        #                                       this win's own chain pays it
         if won and enemy is not None:
             self.adv.award_bits(enemy)        # the bounty into the purse + run tally
         if self._fighting_boss:
@@ -578,8 +580,9 @@ class AdventurePanel(menu.SubHost):
             if self._rest_t > 0:
                 return f"[b]⌂ Town — rested up[/]  ⚡{self.pet.energy} {hearts}"
             thint = " T" if self.adv.held_transports() else ""
+            chain = f" [b]×{self.adv.streak}[/]" if self.adv.streak >= 2 else ""
             return (f"[dim]{self.adv.ribbon()}[/] ⚡{self.pet.energy} {hearts}"
-                    f"  [dim]· SPACE{thint} ESC[/]")
+                    f"{chain}  [dim]· SPACE{thint} ESC[/]")
         return menu.hints(("ESC", "home"))
 
     # -- render ---------------------------------------------------------------
@@ -852,6 +855,8 @@ class AdventurePanel(menu.SubHost):
         out.append(f"Loot    {a.finds}\n", style=INK)
         hearts = "♥" * a.lives + "♡" * (MAX_LIVES - a.lives)
         out.append(f"Lives   {hearts}\n", style=INK)
+        if a.best_streak >= 2:                 # a chain worth bragging about
+            out.append(f"Streak  ×{a.best_streak} best\n", style=INK)
         if a.holiday:
             out.append(f"★ {a.holiday}\n", style=POS)
         out.append_text(menu.blanks(1))

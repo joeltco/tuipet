@@ -46,6 +46,13 @@ HAZARD_CHANCE = 0.06      # per marched step -- an ambush pounce on the road
 #                           eating it costs a small energy toll
 HAZARD_ENERGY = 2         # the toll for eating a pounce (a SMALL hit -- the
 #                           march drain is 1 per 4 legs for scale)
+STREAK_STEP = 0.25        # WIN STREAK (arcade arc, Joel 2026-07-21 "do the win
+#                           streak bonus"): each chained win past the first
+#                           adds +25% to bounties...
+STREAK_CAP = 2.0          # ...capped at DOUBLE (the festival double's scale).
+#                           A loss or a flee breaks the chain; so does any town
+#                           rest -- the push-on gamble: rest for safety, pay
+#                           with the chain.
 HOLIDAY_BITS_MULT = 2     # festival purse: bounties pay double on a holiday
 HOLIDAY_FIND_MULT = 2     # more loot spills on the road during a festival
 POST_FIGHT_GRACE = 1      # legs of encounter immunity after ANY fight (canon
@@ -253,6 +260,8 @@ class Adventure:
         self.fights = 0                  # fights entered this run (wild + boss)
         self.wins = 0                    # ...of those, won
         self.finds = 0                   # loot dug up this run
+        self.streak = 0                  # chained wins alive RIGHT NOW (run-local)
+        self.best_streak = 0             # the run's longest chain (the summary line)
         self.holiday = active_holiday()  # a festival today? double bits + more finds
         self.last = f"Setting out for {self.name}."
 
@@ -357,8 +366,7 @@ class Adventure:
             legs = self.zone.get("town_legs") or ()
             if legs:
                 self.loc = max(self.loc, legs[0][0])   # forward only, never backward
-            self.lives = MAX_LIVES
-            self.pet._set_energy(self.pet.energy + TOWN_REST_ENERGY)
+            self._rest_up()
             self._resting = self._in_town(self.loc)
             self.last = "Warped to a town — rested up."
             return "town-warp"
@@ -397,6 +405,28 @@ class Adventure:
             return None
         return random.choice(pool)
 
+    def _rest_up(self):
+        """A town rest, wherever it comes from (waypoint or warp): lives and
+        energy back -- and the WIN STREAK breaks.  The push-on gamble in one
+        place: rest for safety, pay with the chain."""
+        self.lives = MAX_LIVES
+        self.pet._set_energy(self.pet.energy + TOWN_REST_ENERGY)
+        self.streak = 0
+
+    def chain(self, won):
+        """Advance the WIN STREAK: a chained win grows it (and the run's
+        best); a loss or a flee breaks it."""
+        if won:
+            self.streak += 1
+            self.best_streak = max(self.best_streak, self.streak)
+        else:
+            self.streak = 0
+
+    def streak_mult(self):
+        """The chained-win bounty multiplier: +STREAK_STEP per win past the
+        first, capped at STREAK_CAP."""
+        return min(STREAK_CAP, 1 + STREAK_STEP * max(0, self.streak - 1))
+
     def hazard_hit(self):
         """Eat the pounce: the small energy toll.  Single source -- the panel
         reports the missed dodge, the ENGINE applies the cost."""
@@ -413,6 +443,7 @@ class Adventure:
         if amt and self.holiday:
             amt *= HOLIDAY_BITS_MULT        # festival purse
         if amt:
+            amt = round(amt * self.streak_mult())   # the chained-win bonus
             self.pet.bits += amt
             self.bits_earned += amt
         return amt
@@ -475,8 +506,7 @@ class Adventure:
         if self._in_town(self.loc):
             if not self._resting:        # just stepped into a town: rest up
                 self._resting = True
-                self.lives = MAX_LIVES
-                self.pet._set_energy(self.pet.energy + TOWN_REST_ENERGY)
+                self._rest_up()
                 self.last = f"Reached a town in {self.name} — rested up."
                 return "town"
         else:

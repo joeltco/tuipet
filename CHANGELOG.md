@@ -3,6 +3,18 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.5.127 — THE WIN STREAK (2026-07-21)
+
+* **Chained wins pay better.** Every consecutive fight won on the road
+  grows your streak: +25% on bounties per win past the first, capped at
+  **double** (and it stacks with the festival double). The chain feeds
+  the win that earns it — your second straight win already pays ×1.25,
+  and a chained gate-boss kill is the pot payoff. A loss or a flee
+  breaks it — and so does **any** town rest, waypoint or warp. That's
+  the gamble: push on hurt with the chain alive, or rest safe and start
+  over. The march strip wears a **×N** marker from 2 up, and the
+  results card brags your run's best chain.
+
 ## 0.5.126 — HAZARD DODGES (2026-07-21)
 
 * **The road ambushes you now.** On a marched leg (never on town ground),
