@@ -32,6 +32,16 @@ CHAT_MAX = 400          # server MAX_CHAT: the local input buffer stops here too
 from .lobbychat import _fit, _wrap, _tail_cells, _hpbar  # noqa: F401
 
 
+
+def _evo_note(pet):
+    """L17 keeps online duels progression-neutral -- when this pet is mid
+    WIN-gate the purse line says where the wins must come from ("i dont
+    think its filling either way"; Joel bug report 2026-07-21).  Quiet for
+    every pet that has no open WIN gate: the note is an answer, not a nag."""
+    from . import lines as _lines
+    wg = _lines.win_gate_progress(pet)
+    return "  (evo: local wins only)" if wg and wg[0] < wg[1] else ""
+
 def _clamp_card(card):
     """Bound an UNTRUSTED battle card to what the game can actually produce.
     Module-level because seeded PvP feeds BOTH engines identically-clamped
@@ -192,7 +202,7 @@ class BoutMixin:
         # ask the calendar, not the amount: the weekend loss purse (150)
         # equals the plain draw purse, which hid the tag on weekend losses
         from .pet import weekend_bonus
-        self.bt_reward = f"+{purse}b" + ("  (weekend bonus!)" if weekend_bonus() > 1 else "")
+        self.bt_reward = f"+{purse}b" + ("  (weekend bonus!)" if weekend_bonus() > 1 else "") + _evo_note(self.pet)
         self.bt_payload = ("battle_msg", self.bt_outcome)
     def _stage_volley(self, my0, opp0, dealt, taken):
         """A presentation-only BattlePanel replays the round: my pet RIGHT,
@@ -263,7 +273,7 @@ class BoutMixin:
         self.bt_outcome = "Opponent fled — you win!"
         from .pet import weekend_bonus
         self.bt_reward = f"+{purse}b" + ("  (weekend bonus!)"      # calendar, not amount
-                                         if weekend_bonus() > 1 else "")
+                                         if weekend_bonus() > 1 else "") + _evo_note(self.pet)
         self.bt_payload = ("battle_msg", self.bt_outcome)
         self.bphase = "over"
 

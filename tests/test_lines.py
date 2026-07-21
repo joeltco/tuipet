@@ -395,4 +395,25 @@ def test_requirement_report_shows_live_counters():
     assert (False, "trainings 16+  (now 10)") in rows
     # OR rules report the closest alternative
     r = lines.requirement_report(_Counters(93, log=[1] * 10 + [0] * 5), 220)
-    assert r == [(False, "wins 12 of last 15  (now 10/15)")]
+    assert r == [(False, "wins 12 of last 15 local bouts  (now 10/15)")]
+
+
+def test_win_gate_row_names_the_local_feed():
+    """"is it training or battles, because i dont think its filling either
+    way" (Joel bug report 2026-07-21): the data-book WIN row must say the
+    window counts LOCAL bouts -- drills and lobby duels feed it nothing."""
+    rows = "".join(t for _, t in lines.requirement_report(_Counters(93), 220))
+    assert "local bouts" in rows
+
+
+def test_drills_and_online_bouts_leave_the_win_window_alone():
+    """The counter truths behind that row, pinned on a real Pet: a drill
+    fills TR only; an online bout (L17 ruling, Joel 2026-07-20) fills
+    nothing; a LOCAL bout is the only feed the WIN window has."""
+    p = _line_pet()
+    p.train_result(True)
+    assert (p.stage_trainings, p.battle_log, p.battles) == (1, [], 0)
+    p.record_battle(True, online=True)
+    assert (p.battle_log, p.battles) == ([], 0)  # progression-neutral
+    p.record_battle(True)
+    assert (p.battle_log, p.battles) == ([1], 1)

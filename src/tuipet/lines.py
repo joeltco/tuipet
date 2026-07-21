@@ -323,7 +323,16 @@ def _atom_row(pet, atom):
     kind, a, b = atom
     if kind == "win":
         now = sum(pet.battle_log[-b:])
-        return _atom_met(pet, atom), f"wins {a} of last {b}  (now {now}/{min(len(pet.battle_log), b)})"
+        # "training isnt filling the evo requirements in my metal greymon,
+        # unless thats supposed to be battles? is it training or battles,
+        # because i dont think its filling either way" (Joel, 2026-07-21).
+        # VERDICT MATCHES -- the counters are canon: checkEvolReq has no
+        # trainings gate (drills feed TR gates + effort), and the L17
+        # ruling keeps lobby duels progression-neutral.  The ROW was the
+        # gap: it never said WHICH battles fill the window, right after a
+        # stage whose gate WAS trainings (Agumon->Greymon TR 16+).  Name
+        # the feed where the player is actually looking.
+        return _atom_met(pet, atom), f"wins {a} of last {b} local bouts  (now {now}/{min(len(pet.battle_log), b)})"
     if kind == "jogress":
         if isinstance(a, tuple):                         # Pendulum attribute door
             spec = "/".join("Free" if x == "None" else x for x in a)

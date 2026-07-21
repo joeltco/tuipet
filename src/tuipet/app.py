@@ -132,11 +132,11 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("PgUp/PgDn now really do leap through every long list — the "
-                 "shop, your bag, the 31 scenes, the cup board and the zone "
-                 "picker all used to ignore them. Help gained a LEGACY page "
-                 "explaining what the grave asks when your pet passes, and "
-                 "SPACE finally answers those prompts like ENTER does.")
+    WHATS_NEW = ("Is it training or battles? Answered: a WIN evolution gate "
+                 "counts wins in your last 15 LOCAL battles -- the data book "
+                 "now says so on the row. Training drills fill TR gates and "
+                 "your effort hearts, and lobby duels pay bits only; the duel "
+                 "purse line now reminds you mid-grind.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and
