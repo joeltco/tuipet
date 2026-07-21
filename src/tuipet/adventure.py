@@ -46,6 +46,15 @@ HAZARD_CHANCE = 0.06      # per marched step -- an ambush pounce on the road
 #                           eating it costs a small energy toll
 HAZARD_ENERGY = 2         # the toll for eating a pounce (a SMALL hit -- the
 #                           march drain is 1 per 4 legs for scale)
+# REPLAY DIFFICULTY (Joel 2026-07-21 "do the replay difficulty scaling"): a
+# CONQUERED zone re-run is a VETERAN ROAD -- the same species fight TRAINED,
+# through the real hit-formula terms (Side.hit_chance's trainings + winning-
+# record legs, the very ones the pet earns), never invented stats; bounties
+# pay half again for it.  No new persistence: "conquered" IS the tier.
+VETERAN_TRAININGS = (500, 5000)   # trainings_cur/total: half each trained ceiling
+VETERAN_RECORD = (100, 75)        # battles/wins: a 75% career (+wr term)
+REPLAY_BITS_NUM, REPLAY_BITS_DEN = 3, 2   # veteran bounties: +50%
+
 # the RUN SCORE (arcade arc, Joel 2026-07-21 "do the run score"): one number
 # rolled from the tallies the summary card already shows, so a run can chase
 # the zone's standing best (persistence.zone_bests).  Bits ride 1:1 (already
@@ -232,6 +241,21 @@ def is_conquered(pet, zi):
     return zi < int(getattr(pet, "adv_progress", 0) or 0)
 
 
+def _veteran(enemy):
+    """A conquered zone's foe, replayed: the SAME species carrying a
+    trained veteran's Side -- the real hit-formula terms (trainings, a
+    winning record), which Battle consumes via enemy['side'].  Returns a
+    scaled COPY: zone dicts are shared and cached, never mutated."""
+    from .battle import Side
+    e = dict(enemy)
+    s = Side.wild(e.get("num", 0), boss=bool(e.get("boss")))
+    s.trainings_cur, s.trainings_total = VETERAN_TRAININGS
+    s.battles, s.wins = VETERAN_RECORD
+    e["side"] = s
+    e["veteran"] = True
+    return e
+
+
 def is_map_cleared(pet, map_num):
     """Are ALL of a map's zones conquered (every one below the frontier)?  This
     is the profile `maps` signal that unlocks the road shop shelf + eggs."""
@@ -273,6 +297,9 @@ class Adventure:
         self.streak = 0                  # chained wins alive RIGHT NOW (run-local)
         self.best_streak = 0             # the run's longest chain (the summary line)
         self.holiday = active_holiday()  # a festival today? double bits + more finds
+        zi = zone_index(self.zone)
+        self.replay = zi is not None and is_conquered(pet, zi)   # a VETERAN road
+        self._vboss = None               # the veteran gate boss, built once
         self.last = f"Setting out for {self.name}."
 
     @property
@@ -294,7 +321,12 @@ class Adventure:
     @property
     def boss(self):
         bs = self.zone.get("bosses") or []
-        return bs[0] if bs else None       # one gate boss per run (the first listed)
+        b = bs[0] if bs else None          # one gate boss per run (the first listed)
+        if b is not None and self.replay:
+            if self._vboss is None:        # built once: the gate keeps identity
+                self._vboss = _veteran(b)
+            return self._vboss
+        return b
 
     @property
     def boss_name(self):
@@ -348,7 +380,8 @@ class Adventure:
         if not pool:
             return None
         weights = [max(1, e.get("chance", 100)) for e in pool]
-        return random.choices(pool, weights=weights, k=1)[0]
+        e = random.choices(pool, weights=weights, k=1)[0]
+        return _veteran(e) if self.replay else e
 
     # -- transport (in-run warp items) ----------------------------------------
     def _transport_kind(self, key):
@@ -463,6 +496,9 @@ class Adventure:
             amt *= HOLIDAY_BITS_MULT        # festival purse
         if amt:
             amt = round(amt * self.streak_mult())   # the chained-win bonus
+        if amt and self.replay:
+            amt = amt * REPLAY_BITS_NUM // REPLAY_BITS_DEN   # veteran bounty
+        if amt:
             self.pet.bits += amt
             self.bits_earned += amt
         return amt

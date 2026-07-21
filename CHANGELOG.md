@@ -3,6 +3,17 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.5.133 — THE VETERAN ROAD (2026-07-21)
+
+* **Conquered zones fight back harder.** Replay a zone you've beaten and
+  its wilds and gate boss return as **veterans**: trained and carrying a
+  winning record, a genuine ~17-point edge through the real hit formula
+  — the same terms your own pet earns, never padded stats. Bounties pay
+  **half again** on a veteran road (stacking with streaks and festival
+  doubles), feeding the zone's standing score to chase. The frontier and
+  fresh zones are untouched, and no new save data: conquered *is* the
+  tier. The zone picker tells you before you embark.
+
 ## 0.5.132 — THE ROAD REACHES EVOLUTION (2026-07-21)
 
 * **The AREA evolution gate speaks adventure again.** `AREA n` in the

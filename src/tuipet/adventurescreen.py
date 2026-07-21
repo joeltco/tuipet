@@ -1044,5 +1044,10 @@ class ZonePickPanel:
         self.cursor = menu.list_window(out, self.indices, self.cursor, self.VIS, self._fmt)
         if self.holiday:
             out.append_text(menu.note(f"★ {self.holiday}: 2× bits · more loot!"))
+        elif adventure.is_conquered(self.pet, self.indices[self.cursor]):
+            # the VETERAN ROAD tease (replay scaling 2026-07-21) -- the
+            # festival note owns the slot on the rarer festival days
+            out.append_text(menu.note("✓ veteran road: foes fight trained "
+                                      "· bounties +50%"))
         out.append_text(menu.footer("↑↓ pick   ENTER go   ESC back"))
         return out
