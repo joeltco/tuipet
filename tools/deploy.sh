@@ -83,6 +83,15 @@ print("✓ WHATS_NEW updated since", sys.argv[1])
 PY
 fi
 
+# --- gate on lint (ratchet) -------------------------------------------------
+# Ruff has been red on main since 2026-07-02 and CI's lint job with it, so a
+# strict `ruff check` here would block every release until ~400 pre-existing
+# findings are cleaned up.  Instead the gate RATCHETS: it fails only when the
+# count rises above .ruff-baseline, so new lint debt can't ride out in a
+# release while the old pile gets fixed at its own pace (2026-07-21).
+echo "==> ruff (gate)"
+./tools/ruff-gate.sh
+
 # --- gate on tests ----------------------------------------------------------
 echo "==> tests"
 python3 -m pytest -q

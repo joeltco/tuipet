@@ -20,7 +20,12 @@ classifiers = [
 dependencies = ["textual>=0.50", "rich>=13", "websockets>=12"]
 
 [project.optional-dependencies]
-dev = ["ruff", "bandit", "mypy", "pytest"]
+# PINNED (2026-07-21): unpinned dev tools meant CI and a local .venv-dev could
+# lint with different ruff/mypy versions and disagree about what "green" is --
+# a release gate you cannot reproduce locally is not a gate.  Compatible-release
+# pins (~=) take patch fixes but never a minor bump that introduces new rules.
+# Bump these deliberately, and expect new findings when you do.
+dev = ["ruff~=0.15.20", "bandit~=1.9.4", "mypy~=2.1.0", "pytest~=9.1.1"]
 
 [project.urls]
 Homepage = "https://github.com/joeltco/tuipet"
