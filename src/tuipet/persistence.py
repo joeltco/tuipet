@@ -316,6 +316,27 @@ def map_complete_add(map_index):
     _note_set("maps", int(map_index))
 
 
+def zone_best_set(zone_index, score):
+    """Record an adventure run's SCORE against the zone's standing best
+    (arcade arc, 2026-07-21).  Returns True when it's a NEW best -- the
+    summary card's brag."""
+    d = load_settings()
+    prog = d.setdefault("progress", {})
+    bests = prog.setdefault("zone_bests", {})
+    k = str(int(zone_index))
+    if int(score) > int(bests.get(k, 0)):
+        bests[k] = int(score)
+        save_settings(d)
+        return True
+    return False
+
+
+def zone_bests():
+    """zone_index -> best run score (str-keyed in storage, int-keyed here)."""
+    return {int(k): int(v)
+            for k, v in (_prog().get("zone_bests", {}) or {}).items()}
+
+
 def raid_add():
     """One community raid boss this save contributed to FELL (counted at the
     claim, when the relay confirms defeated=True).  The count re-gates the
