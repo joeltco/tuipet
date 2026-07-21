@@ -34,6 +34,9 @@ from .theme import LCD_ON, LCD_BG, INK, INK_B, DIM, POS, NEG  # noqa: F401  (the
 COLS, ROWS = 40, 12           # the ONE locked LCD arena, like every other screen
 
 WALK_BEAT = 5                 # idleWalk pose-flip cadence while marching
+MARCH_PX = 0.5                # the march: px per 0.1s tick across the window
+#                               (a full crossing ~ 9-10s, ~one per stride)
+SPRITE_W_MARCH = 16           # re-entry offset: slide in from fully hidden
 TRAVEL_TICKS = 8              # auto-march pace: ticks per travel step (~0.8s a leg)
 TOWN_HOLD = 14                # ticks the pet rests at a town before marching on
 
@@ -93,6 +96,7 @@ class AdventurePanel(menu.SubHost):
         self._transport_cursor = 0
         self._summary = False         # showing the run-results card before homecoming
         self._summary_shown = False   # ...so _go_home only defers to it once
+        self._wx = float(grid.X0)     # the march x: the pet CROSSES the window
         # leaving home rides the canon teleport (dir "in" == INTO the adventure:
         # leave-phase plays over HOME, arrive-phase materialises on the road)
         self._trans = {"dir": "in", "phase": "leave", "t": 0}
@@ -136,6 +140,14 @@ class AdventurePanel(menu.SubHost):
             if self._rest_t > 0:          # a transport town-warp rest beat
                 self._rest_t -= 1
                 return
+            # THE MARCH (walking sequence restored from the old build,
+            # 8ab28a0 -- Joel 2026-07-13: "mon should walk across the
+            # screen"): the journey walk actually CROSSES the window -- off
+            # the right edge, back in from the left, the lawful exits --
+            # instead of stepping in place at an anchor.
+            self._wx += MARCH_PX
+            if self._wx >= grid.X1:              # fully out the right side
+                self._wx = float(grid.X0 - SPRITE_W_MARCH)   # slide back in
             # auto-march: the pet walks the road on its own pace; arrival ends
             # the run and rides the same teleport back home (SPACE hurries a leg)
             self._travel_t += 1
@@ -365,24 +377,37 @@ class AdventurePanel(menu.SubHost):
     def _road_bg(self):
         return self.pet.background(self.adv.scene)   # the run's ONE biome (own-game law)
 
-    def _pet_x(self, rows):
-        lo, hi = grid.roam_bounds(grid.width(rows))
-        return (lo + hi) // 2
+    def _jx(self, rows, clamp=True):
+        """Where the mon stands RIGHT NOW: the march position (it walks
+        clear across the window while travelling -- old build 8ab28a0).
+        Beats, reveals and stand-stills play at this spot; `clamp` pulls it
+        fully inside the walkable band so a beat never plays half-off an
+        edge.  Journey progress lives on the ribbon."""
+        x = int(self._wx)
+        if clamp:
+            lo, hi = grid.roam_bounds(grid.width(rows))
+            x = min(max(x, lo), hi)
+        return x
 
     def _march_frame(self):
-        """The pet walking the road: the idleWalk pose-flip, facing forward.
-        Journey progress lives on the RIBBON, so the pet just marches in place
-        (the old engine's doctrine) over the run's one backdrop."""
+        """The pet walking the road: the idleWalk pose-flip, FACING the way
+        it's going, at the RAW march x -- partial edge exits ARE the journey
+        (window law: exits are left/right, so the crossing clips at the
+        play window, not the LCD border)."""
         pose = (self.frame_i // WALK_BEAT) % 2       # idleWalk 0/1 bob
         rows = self._rows(pose)
-        return menu.paint([(rows, self._pet_x(rows), False)],
-                          self._road_bg(), rows=ROWS, cols=COLS)
+        return menu.paint([(rows, self._jx(rows, clamp=False), True)],
+                          self._road_bg(), rows=ROWS, cols=COLS,
+                          clip=grid.WINDOW)
 
     def _standing_frame(self):
-        """The pet standing centre-stage on the zone road (pre-march fallback)."""
+        """The pet standing on the road: beats (glint, town, rest, gate)
+        play WHERE IT STANDS -- the clamped march x -- not snapped back to
+        centre (old build: "beats play wherever it stands")."""
         rows = self._rows(0)                   # canon drawNumMirror(0, false)
-        return menu.paint([(rows, self._pet_x(rows), False)],
-                          self._road_bg(), rows=ROWS, cols=COLS)
+        return menu.paint([(rows, self._jx(rows), True)],
+                          self._road_bg(), rows=ROWS, cols=COLS,
+                          clip=grid.WINDOW)
 
     def _teleport_frame(self):
         """One frame of the canon teleport, on the side of the wipe the beat

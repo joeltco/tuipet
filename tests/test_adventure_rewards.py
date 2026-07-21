@@ -85,6 +85,13 @@ def test_a_wild_win_pays_its_bounty_too(monkeypatch):
         if pan.sub is not None:                         # a wild fight opened
             break
     assert not pan._fighting_boss                       # a wayside wild, not the gate
+    enemy = pan._fighting_enemy
     pan.sub = None
     pan._battle_done(_Win())
-    assert p.bits > 0 and pan.adv.bits_earned == p.bits
+    # the payout is the ENEMY'S OWN BitsWon range (holidays double it) -- some
+    # wilds run (0, n), so a legitimate roll can pay 0: assert the range, not
+    # ">0" (flake fix 2026-07-21: the old assert lost to global-RNG luck)
+    lo, hi = enemy["bits"]
+    mult = 2 if pan.adv.holiday else 1
+    assert lo * mult <= p.bits <= hi * mult
+    assert pan.adv.bits_earned == p.bits

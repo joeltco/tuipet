@@ -85,6 +85,65 @@ def test_the_panel_auto_marches_to_the_boss_gate(no_encounters):
     assert pan.adv.done is False                        # not won until the boss falls
 
 
+def test_the_walking_sequence_crosses_the_window(no_encounters):
+    """The MARCH (walking sequence restored from the old build, 8ab28a0 --
+    Joel: "mon should walk across the screen"): travelling, the mon walks
+    clear across the window, exits the RIGHT edge fully, and re-enters from
+    hidden LEFT (the lawful exits) -- never stepping in place at an anchor."""
+    from tuipet import grid
+    from tuipet.adventurescreen import SPRITE_W_MARCH
+    pan = AdventurePanel(_champ())
+    pan._trans = None
+    pan._landed = True
+    pan.travelling = True                     # land instantly: the march begins
+    xs = []
+    for _ in range(220):                      # > one full 96-tick crossing
+        pan.anim()
+        if pan._town_prompt:
+            pan.key("space")                  # walk on -- towns pause the march
+        if pan._fighting_boss or pan._trans is not None:
+            break
+        assert pan.text()                     # every march frame renders clean
+        xs.append(int(pan._wx))
+    assert max(xs) >= grid.X1 - 1             # it walked out the right side
+    assert min(xs) <= grid.X0 - SPRITE_W_MARCH + 1   # ...and slid back in hidden
+    assert len(set(xs)) > 30                  # a real sweep, not an anchor
+
+
+def test_beats_play_where_the_mon_stands_not_at_centre(no_encounters):
+    """A road beat (the glint stop) plays at the CLAMPED march x -- "beats
+    play wherever it stands" (old build) -- not snapped back to centre."""
+    from tuipet import grid
+    pan = AdventurePanel(_champ())
+    pan._trans = None
+    pan._landed = True
+    pan.travelling = True
+    pan._wx = float(grid.X1 - 4)              # caught mid-exit, half off the edge
+    rows = pan._rows(0)
+    lo, hi = grid.roam_bounds(grid.width(rows))
+    assert pan._jx(rows) == hi                # clamped in-band at the spot it reached
+    assert pan._jx(rows) != (lo + hi) // 2    # NOT the old centre snap
+    pan._find = "i:1"
+    assert pan.text()                         # the glint beat renders there
+
+
+def test_the_march_faces_the_direction_of_travel(no_encounters, monkeypatch):
+    """Marching, the mon FACES the way it's going (mirror flip -- the art's
+    native facing is the other way), like the old build's crossing."""
+    from tuipet import menu
+    pan = AdventurePanel(_champ())
+    pan._trans = None
+    pan._landed = True
+    pan.travelling = True
+    calls = []
+    real = menu.paint
+    monkeypatch.setattr(menu, "paint",
+                        lambda pl, *a, **k: (calls.append(pl), real(pl, *a, **k))[1])
+    pan.text()
+    (rows, x, mirror), = calls[-1]
+    assert mirror is True
+
+
 def test_space_hurries_a_leg_while_travelling(no_encounters):
     p = _champ()
     pan = AdventurePanel(p)

@@ -132,10 +132,10 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("Destined to hatch now names the BABY: the Kera egg "
-                 "says Kuramon, the field eggs say their true firstborn — "
-                 "no more eggs destined to hatch eggs. Mystery pools "
-                 "still keep their ???.")
+    WHATS_NEW = ("The adventure march is back: travelling, your mon walks "
+                 "clear across the window — out the right edge, back in "
+                 "from the left — facing the way it's going, and road "
+                 "stops happen right where it stands.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and

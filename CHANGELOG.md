@@ -3,6 +3,16 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.5.123 — THE MARCH CROSSES THE SCREEN AGAIN (2026-07-21)
+
+* **The adventure walking sequence is back** — restored from the old
+  build's own march. Travelling, your mon walks clear across the window,
+  exits the right edge fully, and slides back in hidden from the left
+  (the lawful exits) instead of stepping in place at a centre anchor —
+  a full crossing every ~9-10 seconds, about one per stride. It faces
+  the direction of travel, and road beats — a glint, a town, a rest —
+  play **where the mon stands**, not snapped back to centre.
+
 ## 0.5.122 — DESTINED TO HATCH A BABY, NOT AN EGG (2026-07-21)
 
 * **"Destined to hatch" names the actual baby now.** The named egg banks
