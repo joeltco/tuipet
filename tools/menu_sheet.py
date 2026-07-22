@@ -283,6 +283,53 @@ def _raid():
     show("raid (calling the gate)", RaidPanel(_pet(), None, client=stub))
 
 
+@state("battle")
+def _battle():
+    # the ARENA (fx sweep round 6): intro banner, the timing bar, a mid
+    # volley and the verdict -- a REAL seeded cup bout, mega-window lock
+    import random as _r
+    from tuipet.battlescreen import BattlePanel
+    _r.seed(7)
+    p = _pet(bits=999)
+    p.name = "Rookling"
+    trophy = tournament.trophy_by_id(tournament.schedule(p)[tournament._hour(p)])
+    opp = tournament.Tournament(p, trophy).current_opponent()
+    b = BattlePanel(p, opp)
+    show("battle (intro banner)", b)
+    guard = 0
+    while b.phase == "intro" and guard < 500:
+        b.anim(); guard += 1
+    show("battle (timing bar)", b)
+    b.bar = (b.mega_lo + b.mega_hi) // 2
+    b.key("space")                              # lock inside the mega window
+    for _ in range(6):
+        b.anim()
+    show("battle (mid volley)", b)
+    guard = 0
+    while b.phase != "result" and guard < 3000:
+        b.anim(); guard += 1
+    show("battle (result)", b)
+
+
+@state("training")
+def _training():
+    # the drill (fx sweep round 6): the bar, the strike volley, the verdict
+    import random as _r
+    from tuipet.training import TrainingPanel
+    _r.seed(7)
+    t = TrainingPanel(_pet())
+    t.bar = (t.mega_lo + t.mega_hi) // 2
+    show("training (the bar)", t)
+    t.key("space")                              # a PERFECT strike
+    for _ in range(4):
+        t.anim()
+    show("training (mid strike)", t)
+    guard = 0
+    while t.auto_close is None and guard < 500:
+        t.anim(); guard += 1
+    show("training (the verdict beat)", t)
+
+
 @state("town")
 def _town():
     # the ROAD's town family (deep-state sweep round 5): the hub, this
