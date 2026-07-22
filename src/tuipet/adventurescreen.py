@@ -41,7 +41,8 @@ COLS, ROWS = 40, 12           # the ONE locked LCD arena, like every other scree
 # rule serialises canon's three-abreast).
 PULSE_T = 54
 PULSE_ON = ((5, 10), (15, 20), (25, 30), (35, 54))
-PARADE_T = 26                 # ticks for one boss to march across
+PARADE_T = 40                 # ticks for one boss to march across (edge to
+#                               edge since audit A10: ~48px at ~1.2px/tick)
 
 # the investigateLeft playbook (canon SpriteAnim beats in 0.1s ticks, restored
 # from the old build): walk out to the LEFT goal, suspense dots, the reveal --
@@ -83,9 +84,9 @@ REFUSE_T = 24                 # the refusal head-shake (the fx convention)
 WALK_BEAT = 5                 # idleWalk pose-flip cadence while marching
 MARCH_PX = 0.5                # the march: px per 0.1s tick across the window
 #                               (a full crossing ~ 9-10s, ~one per stride)
-SPRITE_W_MARCH = 16           # re-entry offset: slide in from fully hidden
 TRAVEL_TICKS = 8              # auto-march pace: ticks per travel step (~0.8s a leg)
 TOWN_HOLD = 14                # ticks the pet rests at a town before marching on
+NOTE_HOLD = 30                # ticks a road-item verdict rides the strip
 
 # the habitat transition (canon Enum.State.Teleport_Leave/Teleport_Arrive --
 # SpriteAnim.teleportLeave()/teleportArrive()): the striped CURTAIN
@@ -98,8 +99,11 @@ TOWN_HOLD = 14                # ticks the pet rests at a town before marching on
 # 1:1 onto tuipet's 0.1s tick; sounds are the canon device mapping.  Ported
 # verbatim from adventurescreen @ ed22b64 (v0.5.7) -- Joel: "same teleport
 # animation."
-TELE_LEAVE_T = 50             # flashes 3..22, swallow 23, shrink 26..44, depart right
-TELE_ARRIVE_T = 46            # drop 0..5, expand 5..23, appear flicker 23..46
+TELE_LEAVE_T = 50             # flashes 3..22, swallow 23, shrink 26..40 (the
+#                               sliver then HOLDS to 43 -- both dims floor
+#                               early), depart right 44..
+TELE_ARRIVE_T = 46            # sliver zips in from the LEFT 0..5, expand
+#                               6..22, appear flicker 23..46
 TELE_ON = ((3, 9), (15, 18), (21, 22))        # leave: curtain flash spans
 TELE_APPEAR_ON = ((1, 2), (5, 8), (14, 20))   # arrive: flicker spans (t-23)
 TELE_LEAVE_SNDS = {3: "strongHit", 15: "strongHit", 21: "strongHit",
@@ -148,6 +152,9 @@ class AdventurePanel(menu.SubHost):
         self._fighting_enemy = None   # the enemy dict of the active fight (for the bounty)
         self._at_gate = False         # knocked back: standing before the boss
         self._rest_t = 0              # ticks left resting (transport town-warp beat)
+        self._heal_t = 0              # ticks left on the Life Recovery second-wind beat
+        self._note = ""               # a transient strip verdict (heal / bare warp)
+        self._note_t = 0
         self._town_prompt = False     # standing at a town: visit the hub or walk on
         self._town_sub = False        # the current sub is the TownPanel, not a fight
         self._find = None             # a loot key spotted, awaiting dig/pass
@@ -172,6 +179,8 @@ class AdventurePanel(menu.SubHost):
         if self.sub_anim():               # a wild fight owns the clock -- delegate
             return
         self.frame_i += 1
+        if self._note_t > 0:              # the transient strip verdict decays
+            self._note_t -= 1
         if self._trans is not None:
             # the teleport owns the screen both ways -- canon's state machine
             # holds every input until endAnim()
@@ -246,6 +255,9 @@ class AdventurePanel(menu.SubHost):
             if self._rest_t > 0:          # a transport town-warp rest beat
                 self._rest_t -= 1
                 return
+            if self._heal_t > 0:          # the Life Recovery second wind
+                self._heal_t -= 1
+                return
             # THE MARCH (walking sequence restored from the old build,
             # 8ab28a0 -- Joel 2026-07-13: "mon should walk across the
             # screen"): the journey walk actually CROSSES the window -- off
@@ -254,7 +266,9 @@ class AdventurePanel(menu.SubHost):
             # trudges at HALF pace (pass 3).
             self._wx += MARCH_PX * (0.5 if self.pet.sick else 1.0)
             if self._wx >= grid.X1:              # fully out the right side
-                self._wx = float(grid.X0 - SPRITE_W_MARCH)   # slide back in
+                # slide back in from JUST off-left of the real sprite (audit
+                # C2: the flat 16px offset over-hid narrow sprites for ticks)
+                self._wx = float(grid.X0 - grid.width(self._rows(0)))
             # auto-march: the pet walks the road on its own pace; arrival ends
             # the run and rides the same teleport back home (SPACE hurries a leg)
             self._travel_t += 1
@@ -296,6 +310,17 @@ class AdventurePanel(menu.SubHost):
             self._refused = False             # rested = willing to walk again
         elif isinstance(r, tuple) and r[0] == "encounter":
             self._start_battle(r[1])          # the danger-warp ambush
+        elif r == "life-recovery":
+            # the second wind is VISIBLE now (anim audit A3, 2026-07-22):
+            # the v0.5.164 heal was nothing but the heart glyphs ticking --
+            # a happy beat + the verdict on the strip, the rest-beat grammar
+            self._heal_t = TOWN_HOLD
+            self._note, self._note_t = self.adv.last, NOTE_HOLD
+            self.sfx = "confirm"
+        elif r == "danger-warp":
+            # empty wild pool: the dash still happened -- say so instead of
+            # silently eating the ticket (anim audit A12)
+            self._note, self._note_t = self.adv.last, NOTE_HOLD
 
     def _dig(self):
         """ENTER on a glint: the OUTCOME lands now -- the bag gets the loot,
@@ -371,6 +396,8 @@ class AdventurePanel(menu.SubHost):
                 self.sfx = "attackHit"
         if h["t"] >= HZ_TELE_T + HZ_LUNGE_T + HZ_END_T:
             self._hazard = None                   # back to the march
+            self._wx = float(grid.X0)             # ...from the wall the
+            #                                       scramble left it at (A1)
 
     def _lock_dig(self):
         """The spade falls: grade the marker against the shared mega window
@@ -640,6 +667,9 @@ class AdventurePanel(menu.SubHost):
                 return "[b]✦ A glint![/]  [dim]ENTER dig · SPACE pass[/]"
             if self._rest_t > 0:
                 return f"[b]⌂ Town — rested up[/]  ⚡{self.pet.energy} {hearts}"
+            if self._heal_t > 0 or self._note_t > 0:
+                # the road-item verdict (audit A3/A12): second wind / bare dash
+                return f"[b]⚡ {self._note}[/] {hearts}" if self._note else ""
             thint = " T" if self.adv.held_transports() else ""
             chain = f" [b]×{self.adv.streak}[/]" if self.adv.streak >= 2 else ""
             return (f"[dim]{self.adv.ribbon()}[/] ⚡{self.pet.energy} {hearts}"
@@ -664,6 +694,12 @@ class AdventurePanel(menu.SubHost):
         if clamp:
             lo, hi = grid.roam_bounds(grid.width(rows))
             x = min(max(x, lo), hi)
+            if x != int(self._wx):
+                # a beat that clamps also RE-ANCHORS the march (anim audit
+                # A6): the beat still never plays half-off an edge, and the
+                # resume now walks on from where the beat played -- one
+                # snap instead of a snap-there-and-back
+                self._wx = float(x)
         return x
 
     def _condition_rows(self, wi):
@@ -695,9 +731,21 @@ class AdventurePanel(menu.SubHost):
         play WHERE IT STANDS -- the clamped march x -- not snapped back to
         centre (old build: "beats play wherever it stands")."""
         rows, dx = self._condition_rows(0)     # canon drawNumMirror(0, false)
-        return menu.paint([(rows, self._jx(rows) + dx, True)],
+        lo, hi = grid.roam_bounds(grid.width(rows))
+        # re-clamp AFTER the sick shuffle's dx (audit A11: +1 at the right
+        # bound poked the sprite a pixel past the window)
+        x = min(max(self._jx(rows) + dx, lo), hi)
+        return menu.paint([(rows, x, True)],
                           self._road_bg(), rows=ROWS, cols=COLS,
                           clip=grid.WINDOW)
+
+    def _heal_frame(self):
+        """The Life Recovery beat (anim audit A3): the happy pose-flip where
+        the pet stands -- the glint celebration frames -- while the hearts
+        refill on the strip."""
+        rows = self._rows((5, 7)[(self.frame_i // 5) % 2])
+        return menu.paint([(rows, self._jx(rows), True)], self._road_bg(),
+                          rows=ROWS, cols=COLS, clip=grid.WINDOW)
 
     def _nap_frame(self):
         """The roadside nap (pass 3): the sleep pose-flip where the pet lay
@@ -705,13 +753,21 @@ class AdventurePanel(menu.SubHost):
         sleep scene (arenafx idiom: nothing above the band)."""
         from . import strikefx
         rows = self._rows(data.ROLES["sleep"][(self.frame_i // 10) % 2])
+        px = self._jx(rows)
         overlay = []
         zz = data.load_effects().get("zzz")
         if zz:
             z = grid._crop(zz[(self.frame_i // 10) % len(zz)])
             if z:
-                overlay = strikefx.blit(z, grid.X1 - len(z[0]), grid.TOP)
-        return menu.paint([(rows, self._jx(rows), True)], self._road_bg(),
+                zw = len(z[0])
+                zx = grid.X1 - zw
+                if zx < px + grid.width(rows) + 1:
+                    # a right-side sleeper sat UNDER the Zzz -- first-ink-
+                    # wins merged them into one silhouette (anim audit A7);
+                    # hang it on the free side instead (the glint rule)
+                    zx = grid.X0
+                overlay = strikefx.blit(z, zx, grid.TOP)
+        return menu.paint([(rows, px, True)], self._road_bg(),
                           rows=ROWS, cols=COLS, overlay=overlay,
                           clip=grid.WINDOW)
 
@@ -749,16 +805,20 @@ class AdventurePanel(menu.SubHost):
                           cols=COLS, overlay=overlay, clip=grid.WINDOW)
 
     def _held_icon(self, icon, x, rows, gap):
-        """The find beside the mon, vertically centred in the band, pinned
-        inside the right wall (old bug law 2026-07-13: near the wall the
-        behind-the-back spot clamped ONTO the sprite -- beside/in-front
-        always has room)."""
+        """The find beside the mon, vertically centred in the band: in
+        FRONT when the right has room, flipped BEHIND when it doesn't (the
+        glint's side-flip rule).  The old right-wall pin (min(.., X1-iw))
+        dropped the icon ONTO a pet returning from a right-side dig -- the
+        exact clamped-onto-the-sprite bug its docstring claimed the pin
+        prevented (anim audit A2, 2026-07-22)."""
         if not icon:
             return []
         from . import strikefx
         iw = max(len(r) for r in icon)
         oy = grid.TOP + max(0, (grid.BAND - len(icon)) // 2)
-        ox = min(x + grid.width(rows) + gap, grid.X1 - iw)
+        ox = x + grid.width(rows) + gap
+        if ox + iw > grid.X1:                  # no room in front: carry behind
+            ox = max(grid.X0, x - iw - gap)
         return strikefx.blit(icon, ox, oy)
 
     def _scene_frame(self):
@@ -821,20 +881,41 @@ class AdventurePanel(menu.SubHost):
             prows = self._rows(4)                 # the duck (canon shield pose)
         else:
             prows = self._rows(1)                 # alert on the road
-        px = self._jx(prows)
+        # the pet SCRAMBLES to the left wall during the telegraph (anim
+        # audit A1, 2026-07-22): the pounce lands at the pet's right edge,
+        # and two 16px sprites only fit the 32px window with the pet at X0
+        # -- anchored at the march x, the ambusher rendered half-cut on
+        # most legs and fully OFF-window with the pet right of centre (the
+        # pet reacted to nothing).  The scramble is animated, so it reads
+        # as the startle, not a snap; the gate faceoff pins the same wall.
+        x0 = h.setdefault("x0", self._jx(prows))
+        if t < HZ_TELE_T:
+            p = t / max(1, HZ_TELE_T - 1)
+            px = round(x0 + (grid.X0 - x0) * min(1.0, p))
+        else:
+            px = grid.X0
         pw = grid.width(prows)
         overlay = []
         if t < HZ_TELE_T:                         # the telegraph
             att = data.load_effects().get("attention")
             if att and att[0] and (t // 2) % 2:   # urgent blink 2/2
                 ew = max((len(r) for r in att[0]), default=0)
-                overlay = strikefx.blit(att[0], grid.X1 - ew - 1, grid.TOP)
+                ex = grid.X1 - ew - 1
+                if ex < px + pw + 1:              # scrambler still under it:
+                    ex = max(grid.X0, px - ew - 1)   # flip (the glint rule,
+                    #                                  audit A8 -- it drew
+                    #                                  over the pet's head)
+                overlay = strikefx.blit(att[0], ex, grid.TOP)
         else:
             e = h["enemy"]
             fr = data.frames_for(e["num"])
             pose = data.ROLES["attack"][0]
-            bm = (fr[pose] if pose < len(fr) else None) or fr[0]
-            bw = max((len(r) for r in bm), default=0) if bm else 0
+            # prepped like every other arena actor (audit A9: the raw frame
+            # floated above the y21 floor on bottom-padded rips and measured
+            # its PADDED box in the overlap guards)
+            bm = grid.prep((fr[pose] if pose < len(fr) else None) or fr[0],
+                           ph=ROWS * 2)
+            bw = grid.width(bm) if bm else 0
             oy = grid.FLOOR - len(bm) if bm else grid.TOP
             if t < impact:                        # charging in from the right
                 p = (t - HZ_TELE_T) / max(1, HZ_LUNGE_T - 1)
@@ -877,8 +958,13 @@ class AdventurePanel(menu.SubHost):
         wi = data.ROLES["walk"][(t // 3) % 2]
         rows = grid.prep((fr[wi] if wi < len(fr) else None) or fr[0],
                          ph=ROWS * 2)
-        lo, hi = grid.roam_bounds(grid.width(rows))
-        x = round(hi + (lo - hi) * (t / max(1, PARADE_T - 1)))
+        # each boss ENTERS off the right edge and EXITS off the left (anim
+        # audit A10, 2026-07-22): the old roam-bounds interpolation popped
+        # them in at x=20 and vanished them at x=4 mid-window -- the march's
+        # own edge-crossing grammar, with the window clip doing the doors
+        w = grid.width(rows)
+        x = round(grid.X1 + ((grid.X0 - w) - grid.X1)
+                  * (t / max(1, PARADE_T - 1)))
         bg = self._road_bg()
         if bg:
             bg = _brighten(bg, 0.45)
@@ -935,16 +1021,29 @@ class AdventurePanel(menu.SubHost):
             else:                                 # teleportAppear flicker
                 f = t - 23
                 pet_on = f >= 14                  # revealed on the third flash
-                if any(on <= f < off for on, off in TELE_APPEAR_ON):
+                # f==0 rides the expand's full curtain (audit C3: it used to
+                # render one frame of bare road between expand and flicker)
+                if f == 0 or any(on <= f < off for on, off in TELE_APPEAR_ON):
                     cur = (wx0, wy0, ww, wh)
         placements = []
         if pet_on:
             rows = self._rows(0)
             lo, hi = grid.roam_bounds(grid.width(rows))
-            x = (lo + hi) // 2
-            placements = [(rows, x, False)]
+            if home_side:
+                x, mirror = (lo + hi) // 2, False   # the home scene's centre
+            else:
+                # ROAD side: the pet stands AT ITS MARCH SPOT facing the way
+                # it walks (anim audit A4+A5, 2026-07-22): the centred reveal
+                # popped ~8px left + flipped facing into the first march
+                # frame at every run start, and an ESC turn-back snapped a
+                # right-side marcher to centre before the curtain dropped
+                x, mirror = self._jx(rows), True
+            placements = [(rows, x, mirror)]
         overlay = _curtain_pts(*cur) if cur else []
-        return menu.paint(placements, bgimg, rows=ROWS, cols=COLS, overlay=overlay)
+        # every arena frame clips to the window (audit C1: this was the one
+        # unclipped paint -- safe only because the curtain self-clips)
+        return menu.paint(placements, bgimg, rows=ROWS, cols=COLS,
+                          overlay=overlay, clip=grid.WINDOW)
 
     def _summary_frame(self):
         """The run-results card, shown on the LCD before the homecoming teleport."""
@@ -996,6 +1095,8 @@ class AdventurePanel(menu.SubHost):
                 return self._hazard_frame()    # the ambush beat
             if self._find is not None:
                 return self._glint_frame()     # the attention bounce at the spot
+            if self._heal_t > 0:
+                return self._heal_frame()      # the second-wind celebration
             if (self._transport is not None or self._rest_t > 0
                     or self._town_prompt):
                 return self._standing_frame()  # menu / rest / town: stand still

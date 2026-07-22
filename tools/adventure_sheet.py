@@ -61,12 +61,15 @@ def _pet():
     return Pet(num=29, stage="Champion", attribute="Vaccine", obedience=500)
 
 
-def _on_road(pet=None, zone=None):
+def _on_road(pet=None, zone=None, wx=14.0):
+    # wx is a PARAMETER since the anim audit (2026-07-22): the fixed 14.0
+    # staged every state on the left half -- the exact side where none of
+    # the right-half defects (pouncer clip, icon smear, Zzz merge) showed
     pan = AdventurePanel(pet or _pet(), zone=zone or adventure.ZONES[0])
     pan._trans = None
     pan._landed = True
     pan.travelling = True
-    pan._wx = 14.0
+    pan._wx = wx
     return pan
 
 
@@ -103,8 +106,16 @@ def _sick():
 @state("march-aged")
 def _aged():
     p = _on_road()
-    p.pet.age_seconds = p.pet.lifespan - 1
+    # geriatric = age >= 15d (the lifespan clock is a REMOVED relic -- the
+    # old `p.pet.lifespan - 1` crashed this state; DSprite mortality law)
+    p.pet.age_seconds = 16 * 86400.0
     show("march (aged shuffle)", p)
+
+
+@state("march-wrap")
+def _wrap():
+    p = _on_road(wx=-10.0)
+    show("march (re-entering hidden from the left)", p)
 
 
 @state("nap")
@@ -112,6 +123,9 @@ def _nap():
     p = _on_road()
     p.pet.asleep = True
     show("roadside nap (Zzz)", p)
+    q = _on_road(wx=32.0)
+    q.pet.asleep = True
+    show("roadside nap (right side: Zzz flips left)", q)
 
 
 @state("refuse")
@@ -164,6 +178,11 @@ def _hazard():
     p._hazard.update(dodged=False, hit=True,
                      t=HZ_TELE_T + HZ_LUNGE_T + 2)
     show("hazard eaten (burst + hurt)", p)
+    q = _on_road(wx=32.0)
+    q._hazard = {"t": HZ_TELE_T + HZ_LUNGE_T - 1,
+                 "enemy": adventure.ZONES[0]["randoms"][0],
+                 "dodged": False, "hit": False}
+    show("hazard impact from the right (scrambled to the wall)", q)
 
 
 @state("gate")
@@ -216,6 +235,31 @@ def _tele():
     for _ in range(30):
         p.anim()
     show("teleport (leave, mid-shrink)", p)
+
+
+@state("teleport-arrive")
+def _tele_arrive():
+    p = AdventurePanel(_pet(), zone=adventure.ZONES[0])
+    p._trans = {"dir": "in", "phase": "arrive", "t": 23 + 15}
+    show("teleport (arrive: revealed at the march spot)", p)
+
+
+@state("teleport-out")
+def _tele_out():
+    p = _on_road(wx=30.0)
+    p.key("escape")                           # turn back mid-march
+    show("teleport (turn-back leave: pet at its march x)", p)
+
+
+@state("heal")
+def _heal():
+    p = _on_road()
+    p.pet.add_item("life_recovery")
+    p.adv.lives = 1
+    p._transport, p._transport_cursor = ["life_recovery"], 0
+    p.key("enter")
+    p.anim()
+    show("life recovery (second-wind beat)", p)
 
 
 @state("picker")

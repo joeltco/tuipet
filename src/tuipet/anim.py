@@ -21,7 +21,9 @@ WALL_PAUSE = 4     # device limit_reach: 4 beats (2.0s) STOPPED at a wall on the
 #                    turn pose pair before departing the other way
 WALK_BEAT = 5      # idleWalk advances at _frame 0 and _frame 5 -> a step every 5 intervals
 SLEEP_BEAT = 10    # idleSleep: pose 2 at 0, pose 3 at 10, back at 20 (period 20)
-SICK_PERIOD = 50   # idleUnwell: collapse held, tiny shuffle 30..45, weary flash at 50
+SICK_PERIOD = 50   # idleUnwell: collapse held, tiny shuffle 30..45, weary flash
+#                    on the cycle's LAST beat (frame%50 == 49 -- audit C2: the
+#                    old "at 50" was an off-by-one; 50 never occurs mod 50)
 IDLE_EXPR_CHANCE = 0.30   # stepFrame: a fraction of idle steps show a mood pose, not the walk toggle
 
 

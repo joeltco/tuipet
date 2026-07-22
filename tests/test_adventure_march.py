@@ -92,7 +92,6 @@ def test_the_walking_sequence_crosses_the_window(no_encounters):
     clear across the window, exits the RIGHT edge fully, and re-enters from
     hidden LEFT (the lawful exits) -- never stepping in place at an anchor."""
     from tuipet import grid
-    from tuipet.adventurescreen import SPRITE_W_MARCH
     pan = AdventurePanel(_champ())
     pan._trans = None
     pan._landed = True
@@ -107,7 +106,8 @@ def test_the_walking_sequence_crosses_the_window(no_encounters):
         assert pan.text()                     # every march frame renders clean
         xs.append(int(pan._wx))
     assert max(xs) >= grid.X1 - 1             # it walked out the right side
-    assert min(xs) <= grid.X0 - SPRITE_W_MARCH + 1   # ...and slid back in hidden
+    # ...and slid back in from just off-left of its REAL width (audit C2)
+    assert min(xs) <= grid.X0 - grid.width(pan._rows(0)) + 1
     assert len(set(xs)) > 30                  # a real sweep, not an anchor
 
 
