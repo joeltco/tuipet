@@ -3,6 +3,10 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.5.172 — THE ROAD LOOKS RIGHT (2026-07-22)
+
+THE ROAD LOOKS RIGHT: an adventure animation audit fixed every pop and vanish — ambushers no longer strike from off-screen (your mon scrambles to the wall as the ! blinks), the dug-up treasure never smears over the pet, Life Recovery finally LOOKS like a second wind, runs open without the 8px teleport pop, turn-backs leave from where you stood, a right-side sleeper's zzZ flips to the free side, and parade bosses march in through the edges like everyone else. Every scene is now pixel-pinned in place.
+
 ## 0.5.171 — THE FIGHT TALKS BACK (2026-07-22)
 
 THE FIGHT TALKS BACK: the result card now says WHY — won by a whisker or with HP to spare, a draw names the draw-counts-as-loss rule, and a loss coaches the biggest fixable drag (weight off base, an empty belly, low energy, outranked, or just train more). The timing bar finally matters: a clean mega steadies your aim, a shank shakes it. Cups ramp — the semi fights part-trained, the final near-veteran. Plus: alarms ring 1×/2×/3× by urgency, a happy well-kept mon actually bounces again, gen-1 tamers start with 250 bits, every town keeps its own guest good, and the honors ladder climbs to a million.
