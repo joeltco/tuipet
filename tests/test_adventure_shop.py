@@ -97,3 +97,55 @@ def test_a_mid_map_zone_win_records_no_map(monkeypatch):
     pan.sub = None
     pan._battle_done(_Win())
     assert p.adv_progress == 3 and recorded == []   # map 1 not done yet
+
+
+# --- the shelf must RENDER, not just exist (gameplay polish 2026-07-22) ------
+# v0.5.114 put the road shelf in the CATALOG and gated it on cleared maps,
+# but no GROUPS tab carried "Adventure" -- and home shop, town counters AND
+# the bag all build their rows through the tab grammar, so 1750b of shipped
+# items could never be seen, bought, or (in the bag) even looked at.  The
+# town daily deal still rolled onto the invisible rows ~half of all days.
+
+def test_every_sold_category_has_a_home_in_the_tab_grammar():
+    """The ratchet: a future category added to the CATALOG without a tab
+    would go silently unsellable again."""
+    from tuipet import shopscreen
+    tabbed = set()
+    for _name, cats in shopscreen.GROUPS:
+        tabbed |= set(cats or ())
+    sold = {cat for (_n, _i, price, cat, _e, _f) in shop.CATALOG.values()
+            if price is not None}
+    assert sold <= tabbed, f"untabbed categories: {sold - tabbed}"
+
+
+def test_the_unlocked_road_shelf_renders_on_the_items_tab(monkeypatch):
+    from tuipet import persistence
+    from tuipet.shopscreen import ShopPanel
+    monkeypatch.setattr(persistence, "get_progress", lambda: {"maps": {0, 1}})
+    pan = ShopPanel(_pet())
+    pan.tab = pan._tabs().index("Items")
+    keys = {e["key"] for e in pan._rows()}
+    assert {"town_transport", "disaster_transport", "life_recovery"} <= keys
+    txt = pan.text().plain                     # the smoke walk renders too
+    assert "Items" in txt
+
+
+def test_the_town_counter_sells_its_authored_transports():
+    from tuipet.shopscreen import ShopPanel
+    pan = ShopPanel(_pet(), town_id=0)         # authored SID1/SID2 = the warps
+    pan.tab = pan._tabs().index("Items")
+    keys = {e["key"] for e in pan._rows()}
+    assert {"town_transport", "disaster_transport"} <= keys
+    pan.text()                                 # render walk
+
+
+def test_a_held_road_item_shows_in_the_bag():
+    from tuipet.shopscreen import ShopPanel
+    p = _pet()
+    p.add_item("town_transport")
+    pan = ShopPanel(p, start_mode="bag", bag_only=True)
+    seen = set()
+    for i in range(len(pan._tabs())):
+        pan.tab = i
+        seen |= {e["key"] for e in pan._rows()}
+    assert "town_transport" in seen

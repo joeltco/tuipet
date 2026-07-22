@@ -287,7 +287,8 @@ class AdventurePanel(menu.SubHost):
             self._go_home()
 
     def _use_transport(self, key):
-        """Spend the chosen transport: a town warp rests, a danger warp ambushes."""
+        """Spend the chosen road item: a town warp rests, a danger warp
+        ambushes, a life recovery refills the hearts in place."""
         r = self.adv.use_transport(key)
         self._transport = None
         if r == "town-warp":

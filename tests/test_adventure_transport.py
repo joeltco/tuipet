@@ -1,8 +1,9 @@
 """Adventure rebuild — TRANSPORT items (phase 11, 2026-07-20).
 
-Pins the two in-run warps: a Town Transport (Birdra) jumps to the town and
+Pins the in-run road items: a Town Transport (Birdra) jumps to the town and
 rests (lives + energy); a Danger Transport (Garuda) dashes toward the boss and
-gets ambushed on arrival.  Both are bag items spent mid-march (press T);
+gets ambushed on arrival; a Life Recovery (gameplay polish 2026-07-22) refills
+the hearts where the pet stands.  All are bag items spent mid-march (press T);
 Zone/Continent warps are obsolete (the zone picker replaced worldmap warping).
 """
 from tuipet.adventure import Adventure, ZONES, MAX_LIVES
@@ -92,6 +93,49 @@ def test_a_danger_warp_from_the_panel_opens_a_fight():
     pan.key("enter")                               # use Disaster Transport
     assert type(pan.sub).__name__ == "BattlePanel" and pan.sub.wild
     assert pan._transport is None
+
+
+def test_life_recovery_restores_the_hearts_in_place():
+    """THE B2 PIN (gameplay polish 2026-07-22): Life Recovery shipped in
+    v0.5.114 with a home-use refusal pointing at the road ("use it on the
+    road") while the road only knew the two warps -- a 1000b item with no
+    code path that consumed it.  Now it heals where the pet stands."""
+    p = _pet()
+    p.add_item("life_recovery")
+    a = Adventure(p, zone=_zone())
+    a.lives = 1
+    loc = a.loc
+    assert "life_recovery" in a.held_transports()
+    assert a.use_transport("life_recovery") == "life-recovery"
+    assert a.lives == MAX_LIVES                   # hearts back to full
+    assert a.loc == loc                           # no warp: healed in place
+    assert p.inventory.get("life_recovery", 0) == 0         # spent
+    assert "second wind" in a.last
+
+
+def test_life_recovery_hides_and_refuses_at_full_hearts():
+    p = _pet()
+    p.add_item("life_recovery")
+    a = Adventure(p, zone=_zone())
+    assert a.lives == MAX_LIVES
+    assert "life_recovery" not in a.held_transports()   # no dead menu row
+    assert a.use_transport("life_recovery") is None     # defensive guard
+    assert p.inventory.get("life_recovery", 0) == 1     # nothing wasted
+
+
+def test_the_panel_uses_a_life_recovery_from_the_T_menu():
+    p = _pet()
+    p.add_item("life_recovery")
+    pan = AdventurePanel(p, zone=_zone())
+    _to_travelling(pan)
+    pan.adv.lives = 1
+    pan.key("t")
+    assert pan._transport == ["life_recovery"]          # the menu opened
+    assert "Life Recovery" in pan.strip()
+    pan.key("enter")
+    assert pan._transport is None
+    assert pan.adv.lives == MAX_LIVES
+    assert p.inventory.get("life_recovery", 0) == 0
 
 
 def test_the_menu_cancels_on_esc():

@@ -420,25 +420,40 @@ class Adventure:
 
     # -- transport (in-run warp items) ----------------------------------------
     def _transport_kind(self, key):
-        """'town' (Birdra) or 'danger' (Garuda) -- the two CATALOG transports
-        that mean something WITHIN a run -- else None.  Zone/Continent warps are
-        obsolete: the zone picker replaced worldmap warping."""
-        return {"town_transport": "town", "disaster_transport": "danger"}.get(key)
+        """'town' (Birdra), 'danger' (Garuda) or 'life' (Life Recovery) --
+        the CATALOG road items that mean something WITHIN a run -- else
+        None.  Zone/Continent warps are obsolete: the zone picker replaced
+        worldmap warping."""
+        return {"town_transport": "town", "disaster_transport": "danger",
+                "life_recovery": "life"}.get(key)
 
     def held_transports(self):
-        """The run-usable transport keys the pet is carrying, in bag order."""
+        """The run-usable road-item keys the pet is carrying, in bag order.
+        Life Recovery only lists when a life is actually missing -- a
+        full-hearts entry would be a dead menu row."""
         inv = getattr(self.pet, "inventory", {}) or {}
-        return [k for k, n in inv.items() if n > 0 and self._transport_kind(k)]
+        return [k for k, n in inv.items() if n > 0 and self._transport_kind(k)
+                and not (self._transport_kind(k) == "life"
+                         and self.lives >= MAX_LIVES)]
 
     def use_transport(self, key):
-        """Spend a transport to skip ahead.  Town warp -> jump to the town and
-        rest (lives + energy).  Danger warp -> dash toward the boss and get
-        ambushed on arrival.  Returns 'town-warp', ('encounter', enemy),
-        'danger-warp', or None (not a run transport / not held)."""
+        """Spend a road item.  Town warp -> jump to the town and rest
+        (lives + energy).  Danger warp -> dash toward the boss and get
+        ambushed on arrival.  Life Recovery -> hearts back to full where
+        you stand.  Returns 'town-warp', ('encounter', enemy),
+        'danger-warp', 'life-recovery', or None (not a run item / not
+        held / hearts already full)."""
         kind = self._transport_kind(key)
         inv = getattr(self.pet, "inventory", {}) or {}
         if kind is None or inv.get(key, 0) <= 0 or self.done or self.failed:
             return None
+        if kind == "life":
+            if self.lives >= MAX_LIVES:        # defensive: menu already hides it
+                return None
+            self.pet.take_item(key)
+            self.lives = MAX_LIVES
+            self.last = "A second wind — lives restored!"
+            return "life-recovery"
         self.pet.take_item(key)
         if kind == "town":
             legs = self.zone.get("town_legs") or ()

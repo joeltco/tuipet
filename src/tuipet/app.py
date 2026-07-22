@@ -132,12 +132,14 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("A CLOSED GAME IS A STOPPED CLOCK: your pet no longer lives "
-                 "without you. Quitting used to keep it aging, growing, "
-                 "getting hungry and making a mess for up to 36 hours — an "
-                 "egg could even hatch while you were gone. Now nothing "
-                 "happens while you're away. Come back in five months and "
-                 "your mon is exactly as you left it.")
+    WHATS_NEW = ("THE ROAD SHELF IS OPEN: Town Transport, Disaster Transport "
+                 "and Life Recovery have been in the catalog since v0.5.114 — "
+                 "but no shop tab ever carried the Adventure shelf, so nobody "
+                 "could ever buy one. They now sell under Items (home shop "
+                 "AND town counters, map-clear gates unchanged), show in the "
+                 "bag, and Life Recovery finally does its job: press T on the "
+                 "road for a second wind — hearts back to full where you "
+                 "stand.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and

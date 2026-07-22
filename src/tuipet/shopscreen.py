@@ -39,7 +39,7 @@ from . import menu
 # the classic tab grammar (v0.5.0): the DSprite categories fold into the
 # four tabs the shop always had.  Honors is shop-only (titles never bag).
 GROUPS = (("Food", ("Food", "Fruit")),
-          ("Items", ("Care", "Evolution", "Medical", "Toy")),
+          ("Items", ("Care", "Evolution", "Medical", "Toy", "Adventure")),
           ("Eggs", (shop.ARMOR_CATEGORY,)),
           ("Honors", None))
 
