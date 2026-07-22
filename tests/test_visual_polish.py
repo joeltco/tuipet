@@ -45,10 +45,11 @@ def _open(key):
 
 def test_dna_card_wraps_guidance_instead_of_clipping():
     """'Generate DNA, then charge it.' clipped at [:24] to '...then charg'.
-    The guidance now wraps on word boundaries and survives whole."""
+    The guidance wraps on word boundaries and survives whole -- re-pinned
+    on the loop-in-one-line wording (gameplay polish #12, 2026-07-22)."""
     card = _open("x")
-    assert "charge it." in card
-    assert "charg\n" not in card
+    assert "charge ONE" in card and "road" in card   # the line survives whole
+    assert "charg\n" not in card                     # never mid-word
 
 
 def test_bug_prompt_fits_the_lcd():
