@@ -37,7 +37,11 @@ def test_entering_the_cup_pays_the_stake_and_opens_the_bracket():
     t.cursor = _cup_index()
     before = p.bits
     t.key("enter")
-    assert t.tourney is not None and type(t.sub).__name__ == "BattlePanel"
+    # the FIGHT SCENE graft (parked item ruled 2026-07-22): the town cup
+    # rides TournamentPanel like the home board -- bracket first, then the
+    # faceoff/intros/parade/podium show, battles as ITS sub
+    assert t.tourney is not None and type(t.sub).__name__ == "TournamentPanel"
+    assert t.sub.phase == "bracket" and t.sub.tree_view
     assert t._cup_done and p.bits < before                  # stake taken on entry
 
 
@@ -48,11 +52,14 @@ def test_winning_the_cup_pays_the_purse_and_records_its_trophy(monkeypatch):
     t.key("enter")
     tid = t.tourney.trophy["id"]
     before = p.bits
+    cup = t.sub.tourney                                     # the panel drives its own bouts
     for _ in range(20):                                     # win every match -> champion
-        if t.tourney is None:
+        if cup.over:
             break
-        t.sub = None
-        t._cup_match_done(_Win())
+        cup.record(True)
+    assert cup.champion
+    t.sub = None
+    t._cup_match_done((cup.last, cup.champion))             # the panel's exit tuple
     assert t.tourney is None
     assert "champion" in t.msg.lower() and p.bits > before  # the purse landed
     assert tid in persistence.get_progress()["tourneys"]    # the distinct trophy recorded
@@ -114,3 +121,34 @@ def test_the_trophy_room_names_town_cups():
     rows = digicore._trophy_rows(p)
     assert any("Town Cup #4" in name for name, _v in rows)   # the room reads it
     assert not any(name.startswith("cup ") for name, _v in rows)
+
+
+def test_the_town_cup_plays_the_whole_show_through_the_town():
+    """The graft's smoke walk (panel-smoke law): the nested chain
+    town -> TournamentPanel -> BattlePanel renders and delegates at every
+    beat -- tree, faceoff, the intro walk-ins, the bell opening the bout --
+    and the bracket ESC exits the CUP, never landing on the home board."""
+    p = _pet()
+    t = TownPanel(p, town_id=1)
+    t.cursor = _cup_index()
+    t.key("enter")
+    pan = t.sub
+    assert "BRACKET" in t.text().plain                 # the tree, through the town
+    t.key("space")                                     # tree -> faceoff
+    assert not pan.tree_view and "your ★" in t.text().plain
+    t.key("space")                                     # faceoff -> introductions
+    assert pan._intro is not None
+    for _ in range(60):                                # the walk-ins play out
+        t.anim()
+        t.text()
+        if pan.sub is not None:
+            break
+    assert type(pan.sub).__name__ == "BattlePanel"     # the bell rang
+    m = t                                              # the app's strip walk:
+    while getattr(m, "sub", None) is not None:         # the DEEPEST panel owns
+        m = m.sub                                      # the box (app._mode_strip)
+    assert m is pan.sub and m.strip()
+    pan.sub = None                                     # back out of the bout
+    t.key("escape")                                    # bracket ESC: forfeit + close
+    assert t.sub is None and t.tourney is None
+    assert "forfeit" in t.msg.lower() or t.msg         # the town told the verdict

@@ -132,13 +132,12 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("THE SHELF TELLS THE TRUTH: every shop blurb was "
-                 "checked against what the item actually does — all 36 "
-                 "held, every dial, timer and refusal. And for the "
-                 "cautious: the X-Antibody chip is confirmed SAFE, and "
-                 "always was. The deadly roulette people whisper about "
-                 "belonged to a different item that left the shelf long "
-                 "ago. The mushroom, however, remains exactly as labeled.")
+    WHATS_NEW = ("THE TOWN CUP GETS ITS SHOW: the road's championships "
+                 "used to throw you into three bare fights. Now the town "
+                 "cup stages the full event — the field of eight on the "
+                 "bracket, the faceoff, the walk-in introductions, the "
+                 "advancing-field parade, and the champion's podium — the "
+                 "same theater the home cups earned.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and

@@ -95,26 +95,33 @@ class TownPanel(menu.SubHost):
             self.msg = f"Stake {fee}b — you can't cover it."
             return
         self._cup_done = True                    # your cup for this visit, win or lose
-        self.tourney = tournament.Tournament(self.pet, cup)   # stake paid on entry
-        self._open_match()
-
-    def _open_match(self):
-        from .battlescreen import BattlePanel
-        self.sub = BattlePanel(self.pet, self.tourney.current_opponent())
+        # THE FIGHT SCENE (the cups arc's parked item, ruled 2026-07-22):
+        # the town cup rides the SAME shipped machinery as the home board --
+        # TournamentPanel entered at the bracket (the field of eight), so the
+        # faceoff, walk-in introductions, advancing-field parade and the
+        # champion's podium all play here too.  The raw BattlePanel jump had
+        # the town cup fighting three bare bouts with none of the show.
+        from .tournamentscreen import TournamentPanel
+        pan = TournamentPanel(self.pet)
+        pan.tourney = tournament.Tournament(self.pet, cup)    # stake paid on entry
+        pan.phase = "bracket"
+        pan.tree_view = True                     # the event opens on the field
+        self.sfx = "mischief"                    # tourneyStart, like the home board
+        self.tourney = pan.tourney               # the visit flag's live handle
+        self.sub = pan
 
     def _cup_match_done(self, result):
-        if result is None:                       # backed out before the bell
-            self.tourney = None
-            self.msg = "You forfeit the Town Cup."
-            return
-        self.tourney.record(bool(getattr(result, "won", False)))
-        if self.tourney.over:
-            self.sfx = "champion" if self.tourney.champion else "lose"
-            self.msg = (f"Town champion! +{self.tourney.reward_bits}b"
-                        if self.tourney.champion else "Knocked out of the Town Cup.")
-            self.tourney = None
+        """The cup panel closed: ('done', (last, champion)) from the bracket,
+        or None from its select-phase escape (unreachable here -- the panel
+        never enters select)."""
+        self.tourney = None
+        if isinstance(result, tuple):
+            last, champ = result
+            self.sfx = "champion" if champ else "lose"
+            self.msg = last or ("Town champion!" if champ
+                                else "Knocked out of the Town Cup.")
         else:
-            self._open_match()                   # the next opponent
+            self.msg = "You forfeit the Town Cup."
 
     # -- render ---------------------------------------------------------------
     def strip(self):
