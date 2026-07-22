@@ -132,11 +132,10 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("THE RECORD CATCHES UP: the changelog now carries every "
-                 "release of this wild week — the album, the DSprite "
-                 "mortality, the audits, the town cup's show — and from "
-                 "here on, every release writes its own entry the moment "
-                 "it ships.")
+    WHATS_NEW = ("EVERY MENU PAUSES NOW: the lobby was the one screen that "
+                 "kept your pet's clock running — chat for an hour and come "
+                 "back to a hungrier, older mon. It doesn't anymore. Open a "
+                 "menu, any menu, and life waits for you.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and
@@ -998,56 +997,14 @@ class TuiPetApp(ActionsMixin, App):
             self.pet._fx_busy = getattr(getattr(self, "screen_w", None), "fx", None) is not None
         if self.mode is not None:
             # a sub-screen is open -> pause the life-sim (the canon menu
-            # freeze) -- EXCEPT the lobby's chat contexts (Joel 2026-07-13:
-            # "make the lobby tick, alarm and all") and the OPEN ROAD (Joel
-            # 2026-07-13 again: "make adventures live-tick the sim" -- a long
-            # expedition carries real hunger/sleep/sickness risk).  Sessions
-            # (battle/jogress), login, teleports and every road-side sub
-            # (town, feed, bag) keep the freeze: a pet must not starve or die
-            # mid-volley or mid-menu.
-            m = self.mode
-            live = (isinstance(m, lobbyscreen.LobbyPanel)
-                    and m.phase in ("lobby", "dm"))
-            if not live:
-                return
-            poop0 = self.pet.poop
-            self._suspend_catch_up(gap)
-            self.pet.fx_hold = True     # evolution waits for the main view --
-            #                             its strobe belongs to the home screen
-            self.pet.tick(1.0)
-            p = self.pet
-            if p.dead and not p.death_banked and not self._dying_fx:
-                # death can't wait for ESC: leave the room, play the memorial.
-                # STATE, not a was_dead tick edge: a death set while the sim
-                # was paused (the bag's poison mushroom) landed between ticks
-                # and the edge never saw it -- no dying beat, no mash window,
-                # no banking (gameplay audit 2026-07-19)
-                if getattr(p, "away", False):
-                    p.away = False            # the road ends here
-                    p.away_where = ""
-                self._close_mode(None)
-                self.beep("death")
-                self.flash("")
-                self.screen_w.start_fx("dying")
-                self._dying_fx = True
-                self._revive_hits = 0
-                return
-            if p.poop > poop0:          # the pile still lands audibly off-screen
-                sz = (p.poop_sizes[-1] if getattr(p, "poop_sizes", None) else 2)
-                self.beep("smallPoop" if sz == 1 else ("largePoop" if sz > 2 else "poop"),
-                          bell=False)
-            # the care alarm, canon nag cadence (onset ring + every ~90s);
-            # its on-screen half rides the lobby strip (LobbyPanel._care_cue)
-            needs = p.needs_attention()
-            if needs and not self._needs:
-                self.beep("alarm")
-                self._nag_t = 0.0
-            elif needs:
-                self._nag_t = getattr(self, "_nag_t", 0.0) + 1.0
-                if self._nag_t >= 90:
-                    self._nag_t = 0.0
-                    self.beep("alarm")
-            self._needs = needs
+            # freeze), with NO exception.  The lobby's chat contexts used to
+            # tick on (Joel 2026-07-13: "make the lobby tick, alarm and all"),
+            # and the comment here also claimed the open road ticked -- it
+            # never did: AdventurePanel goes through _open_mode like every
+            # other panel, so the road froze with the rest.  Joel 2026-07-22,
+            # on the audit finding the lobby was the ONLY live menu: "take it
+            # off if lobby is the only one that does it."  One law now -- a
+            # pet must not starve, sicken, age or die behind ANY menu.
             return
         prev = (self.pet.num, self.pet.stage)
         poop0 = self.pet.poop

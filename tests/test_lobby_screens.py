@@ -329,38 +329,34 @@ def _tick_app(pan):
     return app
 
 
-def test_lobby_chat_ticks_the_life_sim_but_sessions_freeze():
-    """Joel 2026-07-13: "make the lobby tick, alarm and all" -- chat is not a
-    pause button.  on_tick runs the sim through the lobby/dm phases (with
-    evolution HELD for the main view), keeps the canon freeze during
-    battle/jogress sessions and login, and rings the care alarm on onset."""
+def test_the_lobby_freezes_the_life_sim_like_every_other_menu():
+    """Joel 2026-07-22, after the audit found the lobby was the ONLY menu that
+    live-ticked: "take it off if lobby is the only one that does it."  The
+    chat contexts used to run the sim (Joel 2026-07-13, "make the lobby tick,
+    alarm and all"); that carve-out is GONE.  One law: every open panel is the
+    canon menu freeze, so no phase of the lobby ages the pet or rings a
+    tick-driven alarm."""
     pan = _lobby()
     app = _tick_app(pan)
-    t0 = pan.pet.age_seconds
-    app.on_tick()
-    assert pan.pet.age_seconds == t0 + 1.0, "the lobby must tick the sim"
-    assert pan.pet.fx_hold, "evolution waits for the main view"
-
-    pan.phase = "dm"
-    app.on_tick()
-    assert pan.pet.age_seconds == t0 + 2.0, "the DM thread ticks too"
-
-    for frozen in ("battle", "jogress", "login"):
-        pan.phase = frozen
-        app.on_tick()
-        assert pan.pet.age_seconds == t0 + 2.0, f"{frozen} keeps the canon freeze"
-
-    pan.phase = "lobby"                          # the alarm rings on onset
-    pan.pet.hunger = 0
+    pan.pet.hunger = 0                           # a need the old code rang for
     pan.pet.stage = "Rookie"
-    app.on_tick()
-    assert "alarm" in app.beeps
+    t0 = pan.pet.age_seconds
+
+    for phase in ("lobby", "dm", "battle", "jogress", "login"):
+        pan.phase = phase
+        app.on_tick()
+        assert pan.pet.age_seconds == t0, f"{phase} must freeze the sim"
+
+    assert app.beeps == [], "a frozen sim rings no care alarm behind the chat"
 
 
-def test_death_in_the_lobby_returns_home_for_the_memorial(monkeypatch):
-    """Death can't wait for ESC: the tick that kills the pet closes the lobby
-    (tearing down the connection via the normal close path) and starts the
-    dying fx on the home screen."""
+def test_no_death_can_originate_in_the_lobby(monkeypatch):
+    """The lobby used to run the sim, so it needed its own death handler --
+    the killing tick closed the room and played the memorial at home.  With
+    the freeze restored (2026-07-22) the sim never advances behind the chat,
+    so that death can no longer happen: the pet lives, the room stays open,
+    and nothing starts a dying fx.  Pinned as an ABSENCE so the handler is
+    never re-added to a branch that cannot reach it."""
     from tuipet.pet import Pet
     pan = _lobby()
     app = _tick_app(pan)
@@ -374,12 +370,12 @@ def test_death_in_the_lobby_returns_home_for_the_memorial(monkeypatch):
 
     def die(self, dt):
         self.dead = True
-    monkeypatch.setattr(Pet, "tick", die)
+    monkeypatch.setattr(Pet, "tick", die)      # would kill IF it ever ran
     app.on_tick()
-    assert app.mode is None, "the lobby closes so the memorial owns the screen"
-    assert closed == [None], "the normal close callback tears down the client"
-    assert app.screen_w.fx and app.screen_w.fx[0] == "dying"
-    assert "death" in app.beeps
+    assert not pan.pet.dead, "the frozen sim never called tick, so nothing died"
+    assert app.mode is pan, "the lobby stays open"
+    assert closed == [], "no close, no teardown"
+    assert app.screen_w.fx is None and "death" not in app.beeps
 
 
 def test_lobby_strip_carries_the_care_alarm():
