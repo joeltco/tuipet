@@ -99,3 +99,38 @@ def test_trophies_page_opens_the_album_and_space_still_pages():
     # unknown start titles fall to the cover, and ENTER there stays inert
     cover = DigiCorePanel(_pet(), start="NO-SUCH-PAGE")
     assert cover.i == 0
+
+
+# --- the route home (gameplay polish #15, 2026-07-22) ------------------------
+
+def test_an_unseen_entry_names_its_route_home():
+    """The book was a checklist with the HOW invisible: 'keep raising'
+    over hundreds of masked entries while lines.load_lines() knew the
+    answer.  Routes name eggs and doors, never masked forms."""
+    from tuipet import albumscreen
+    assert albumscreen.route_hint(29).startswith("raised on the ")   # a line member
+    assert albumscreen.route_hint(492) == "an armor jump reaches it"
+
+
+def test_every_roster_form_gets_a_route_class():
+    from tuipet import albumscreen, data
+    hints = {n: albumscreen.route_hint(n) for n in data.album_roster()}
+    for n, h in hints.items():
+        assert (h.startswith("raised on") or h.endswith("reaches it")
+                or h == "keep raising"), (n, h)
+    # the map is genuinely informative: the bare fallback is the rare case
+    bare = sum(1 for h in hints.values() if h == "keep raising")
+    assert bare < len(hints) * 0.1, f"{bare}/{len(hints)} routeless"
+
+
+def test_the_unseen_detail_page_carries_the_route():
+    from tuipet.albumscreen import AlbumPanel
+    from tuipet.pet import Pet
+    pan = AlbumPanel(Pet(num=100, stage="Champion"))
+    unseen = next(i for i, n in enumerate(pan.roster) if n not in pan.seen)
+    pan.i, pan.detail = unseen, True
+    plain = pan.text().plain
+    assert "not yet discovered" in plain
+    assert ("raised on" in plain or "reaches it" in plain
+            or "keep raising" in plain)
+    assert "???" in plain                     # the name mask is untouched

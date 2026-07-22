@@ -75,7 +75,7 @@ code stays dormant unless named.
 - [x] **13 — "Charges clear at evolution" warning missing from the Charge
   screen / DNA home** (only on the Divergence page, dnascreen.py:313).
 - [x] **14 — ARMED divergence never reaches the HUD/status card.**
-- [ ] **15 — Album "???" has no route home** — name the line/egg (or
+- [x] **15 — Album "???" has no route home** *(shipped v0.5.170: route_hint names the egg line or the off-chart door)* — name the line/egg (or
   jogress/armor/divergence) that reaches an unseen form
   (albumscreen.py:138; lines.py knows membership).
 - [x] **16 — CORE number has no unit** *(shipped v0.5.167)* — countdown vs age share one bare

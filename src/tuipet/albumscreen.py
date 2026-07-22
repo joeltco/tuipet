@@ -25,6 +25,36 @@ VIS = 9                      # list rows shown at once (the egg-guide window)
 IMG_W, IMG_H = 40, 16        # detail pixel area (8 character rows)
 
 
+def route_hint(num):
+    """How an undiscovered form is reached (gameplay polish #15,
+    2026-07-22): the book was a completion checklist with the HOW
+    invisible -- "keep raising" over hundreds of masked entries, while
+    lines.load_lines() knew exactly which line holds each form.  Named
+    routes only, never names of forms: the egg/line that raises it, else
+    the off-chart door its own requirements declare (armor / jogress /
+    a Field divergence).  Data only, nothing guessed."""
+    from . import egg as egg_mod, lines
+    lids = {lid for lid, line in lines.load_lines().items()
+            if num in line["members"]}
+    if lids:
+        for i in range(egg_mod.count()):
+            for t in egg_mod.hatch_targets(i):
+                _root, lid = lines.canonical_root(t)
+                if lid in lids:
+                    return f"raised on the {egg_mod.hatch_name(i)} line"
+        return "raised on a line"          # a line holds it; no listed egg
+    req = data.load_requirements().get(num, {})
+    if req.get("evol_item", -1) != -1:
+        return "an armor jump reaches it"
+    if req.get("special", "None") != "None":
+        return "a jogress reaches it"
+    _, by_num = data.load_sprites()
+    field = (by_num.get(num) or {}).get("field", "") or ""
+    if field and field != "None":
+        return f"a {data.pretty_field(field)} divergence reaches it"
+    return "keep raising"
+
+
 class AlbumPanel:
     def __init__(self, pet=None):
         self.pet = pet
@@ -134,7 +164,12 @@ class AlbumPanel:
                 data.pretty_field(rec.get("field", "") or ""),
                 rec.get("element", "")) if x)
         else:
-            info = "not yet discovered — keep raising"
+            # the route home rides the note (marquee handles the length);
+            # cached per entry -- the egg sweep is loads, not per-frame work
+            self._routes = getattr(self, "_routes", {})
+            if num not in self._routes:
+                self._routes[num] = route_hint(num)
+            info = f"not yet discovered — {self._routes[num]}"
         out.append_text(menu.note(info, tick=self.frame_i))
         out.right_crop(1)     # keys ride the strip (the egg-guide law)
         return out
