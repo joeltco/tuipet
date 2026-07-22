@@ -132,12 +132,12 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("EVERY THEME, LEGIBLE: a contrast audit ran every menu "
-                 "under all eight themes. Your bits were nearly invisible "
-                 "in grey and gameboy — the coin gold now reads dark and "
-                 "clear in both. Six themes came through spotless, and a "
-                 "new test stands guard so no palette edit can ever ship "
-                 "grey-on-grey.")
+    WHATS_NEW = ("THE GUIDE TELLS THE TRUTH: a full audit checked every "
+                 "line of the help (?) against the game as it actually "
+                 "plays. Verdict: nearly all of it holds — two promises "
+                 "were trimmed to honest ('? answers from home', 'SPACE "
+                 "doubles ENTER on most screens'), and a new test makes "
+                 "sure every key on the bar stays taught forever.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and

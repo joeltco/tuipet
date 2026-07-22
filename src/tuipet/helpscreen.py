@@ -46,8 +46,11 @@ HELP = [
     ("g options   b report a bug   q quit", 1),
     ("  themes, sound, cloud sync, your", 0),
     ("  account, updates, every key", 0),
-    ("? this guide, any time", 1),
-    ("SPACE works wherever ENTER does;", 0),
+    # honest reach (help audit 2026-07-22): with a screen open every key
+    # belongs to that screen -- ? answers from home, and SPACE=ENTER has
+    # its one shipped exception (digicore: SPACE pages, ENTER opens doors)
+    ("? this guide, any time you're home", 1),
+    ("SPACE doubles ENTER on most screens;", 0),
     ("PgUp/PgDn leap through long lists.", 0),
     ("", 0),
     ("LEGACY", 2),

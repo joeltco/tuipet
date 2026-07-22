@@ -105,7 +105,7 @@ def test_help_teaches_the_gift_and_the_key_grammar():
     line also holds the 38-col budget."""
     joined = "\n".join(t for t, _k in HELP)
     assert "ENTER accepts a found gift" in joined
-    assert "SPACE works wherever ENTER" in joined
+    assert "SPACE doubles ENTER on most screens" in joined   # honest since the help audit 2026-07-22
     assert "PgUp/PgDn" in joined
     for text, _kind in HELP:
         assert len(text) <= 38, text
@@ -182,3 +182,28 @@ def test_space_equals_enter_at_the_memorial_prompts():
     assert pan.asking                               # ...and the only-one prompt
     pan.key("space")
     assert not pan.asking
+
+
+def test_every_binding_is_taught_in_the_guide():
+    """The coverage ratchet (help audit 2026-07-22): every home binding must
+    appear in the guide -- a new action-bar key without a HELP line ships an
+    untaught feature.  (The inverse -- help teaching dead keys -- is caught
+    by the claims audit, not greppable.)"""
+    from tuipet.app import TuiPetApp
+    keymap = {"question_mark": "?", "enter": "ENTER"}
+    lines = [ln for ln, kind in HELP if kind == 1]
+    for key, _action, label in TuiPetApp.BINDINGS:
+        k = keymap.get(key, key)
+        taught = any(ln.startswith(k + " ") or f"  {k} " in ln or f" {k} " in ln
+                     for ln in lines)
+        assert taught, f"binding '{k}' ({label}) is not taught in HELP"
+
+
+def test_the_guides_reach_claims_stay_honest():
+    """"any time" was an overclaim: with a screen open every key routes to
+    that screen (app.on_key) -- ? answers from HOME.  And SPACE=ENTER has
+    its shipped exception (digicore: SPACE pages, ENTER opens the doors)."""
+    text = "\n".join(ln for ln, _ in HELP)
+    assert "any time you're home" in text
+    assert "SPACE doubles ENTER on most screens" in text
+    assert "wherever ENTER does" not in text
