@@ -587,5 +587,16 @@ def test_dna_charge_badge_feeds_in_at_chip_scale():
         ys = {pt[1] for pt in c.overlay}
         assert max(xs) - min(xs) + 1 <= 8, f"step {step}: badge {max(xs)-min(xs)+1} wide"
         assert max(ys) - min(ys) + 1 <= 8, f"step {step}: badge {max(ys)-min(ys)+1} tall"
+    # the badge EMERGES from behind the top bezel (window law: it never
+    # pops) and the sink tail walks it fully off before the fx ends --
+    # at 1px/tick the half-scale chip sat at the floor and blinked out
+    # with the last frame (fx audit 2026-07-22)
+    def lane_ink(step):
+        c = ctx()
+        s._fxk_dna_charge(p, s.fx, step, c)
+        return sum(1 for pt in c.overlay if 6 <= pt[1] <= 22 and pt[0] < 13)
+    assert lane_ink(4) > 0                        # peeking under the bezel
+    assert lane_ink(4) < lane_ink(8)              # ...and growing: no pop
+    assert lane_ink(43) == 0                      # sunk away before the end
     while s.fx is not None:                       # the full fx plays out
         s.advance_fx()

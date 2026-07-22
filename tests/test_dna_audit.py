@@ -117,3 +117,41 @@ def test_the_charge_meter_and_award_share_one_band_map():
         p = _pet()
         p.dna_bet(10)
         assert p.dna_minigame_award(10, rate) == dna_field_for_rate(rate)
+
+
+def test_the_mash_scene_and_result_blink_animate():
+    """DNA visual audit (2026-07-22): the mash bob flips on its urgency beat
+    (2), a press flashes the strike pose for exactly its decay, and the
+    result's Field name blinks in on the reveal cadence.  Frames compared
+    at the PIXEL tap -- .plain of a painted scene is all half-blocks and
+    proves nothing (the theme-audit lesson)."""
+    from tuipet import render
+    from tuipet.dnascreen import DNAPanel
+    grabbed = {}
+    real = render._paint_cells
+    def tap(buf, *a, **k):
+        grabbed["buf"] = tuple(tuple(r) for r in buf)
+        return real(buf, *a, **k)
+    render._paint_cells = tap
+    try:
+        p = _pet()
+        pan = DNAPanel(p)
+        pan.phase = "mash"
+        def frame():
+            pan.text()
+            return grabbed["buf"]
+        pan.frame_i = 0; f0 = frame()
+        pan.frame_i = 1; assert frame() == f0          # holds within the beat
+        pan.frame_i = 2; f2 = frame()
+        assert f2 != f0                                # flips at beat 2
+        pan._mash_flash = 2
+        assert frame() != f2                           # the strike pose lands
+        assert pan._mash_flash == 1                    # ...and decays
+    finally:
+        render._paint_cells = real
+    pan = DNAPanel(_pet())
+    pan.phase, pan.won = "result", ("NatureSpirit", 500, 30, 99, 0)
+    pan.blink = 0
+    assert "Nature Spirit" in pan.text().plain         # the reveal
+    pan.blink = 2
+    assert "Nature Spirit" not in pan.text().plain     # the blink out

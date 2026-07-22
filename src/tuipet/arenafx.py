@@ -908,7 +908,11 @@ class FxMixin:
             if step < 8:
                 by = -bh + int((rest + bh) * step / 7)     # moveDown 6/tick descent
             else:
-                by = rest + (1 if step >= 16 else 0) + max(0, step - 36)   # insert nudge + sink tail
+                # sink at 2px/tick: the half-scale chip (7px since the fx
+                # audit 2026-07-22) never cleared the window bottom at
+                # 1px/tick -- it sat at the floor and BLINKED OUT with the
+                # fx's last frame instead of sinking away
+                by = rest + (1 if step >= 16 else 0) + max(0, step - 36) * 2
             c.overlay += _blit(badge, bx, by)
         wash = (E.get("dna_wash") or [None])[0]
         if wash and step >= 21:

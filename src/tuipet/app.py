@@ -132,12 +132,12 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("THE TOWN CUP GETS ITS SHOW: the road's championships "
-                 "used to throw you into three bare fights. Now the town "
-                 "cup stages the full event — the field of eight on the "
-                 "bracket, the faceoff, the walk-in introductions, the "
-                 "advancing-field parade, and the champion's podium — the "
-                 "same theater the home cups earned.")
+    WHATS_NEW = ("DNA, FRAME BY FRAME: the charge ceremony was audited "
+                 "beat by beat. The chip now sinks fully away at the end "
+                 "instead of blinking out at the floor, and everything "
+                 "else held under the glass — the descent from behind the "
+                 "bezel, the wobble, the wash, the strain, the mash bob "
+                 "and strike flash, and the result's blinking reveal.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and
