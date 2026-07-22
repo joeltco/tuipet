@@ -125,13 +125,12 @@ def test_no_lifespan_survives_anywhere():
     from tuipet import persistence
     assert "lifespan" not in {f.name for f in dataclasses.fields(Pet)}
     assert not hasattr(_pet(), "_burn_life")
-    d = persistence.pet_to_save(_pet()) if hasattr(persistence, "pet_to_save") else {}
+    d = persistence.to_save_dict(_pet())
     assert "lifespan" not in d
-    old_save = dict(persistence.pet_to_save(_pet())) if hasattr(persistence, "pet_to_save") else None
-    if old_save is not None:
-        old_save["lifespan"] = 259200.0          # a pre-port save
-        pet, _ = persistence.pet_from_save(old_save, catch_up=False)
-        assert pet is not None and not hasattr(pet, "lifespan")
+    old_save = dict(persistence.to_save_dict(_pet()))
+    old_save["lifespan"] = 259200.0              # a pre-port save
+    pet, _ = persistence.pet_from_save(old_save, catch_up=False)
+    assert pet is not None and not hasattr(pet, "lifespan")
 
 
 def test_dead_system_lifedecs_stay_gone():

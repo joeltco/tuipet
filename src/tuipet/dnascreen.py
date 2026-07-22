@@ -22,7 +22,7 @@ import math
 from . import data, grid, menu, evolution
 from .theme import LCD_ON, LCD_BG, SIL_SCENE  # noqa: F401  (palette names bound for theme.apply propagation)
 from .pet import (MAX_DNA_INVENTORY, MAX_DNA_WAGER, DNA_STABILIZER_BET,
-                  DNA_RESONANT_BET, dna_field_for_rate)
+                  DNA_RESONANT_BET, DNA_RATE_BANDS, dna_field_for_rate)
 
 MASH_TICKS = 100            # DVPet: 100 intervals x 0.1s = the 10s mini-game window
 MASH_KEYS = ("space",)      # the single "button" you mash
@@ -305,7 +305,12 @@ class DNAPanel:
             out.append_text(menu.row(label, i == self.road_i))
         out.append_text(menu.note("Armed: next evolution takes the road."
                                   if armed else
-                                  "Charge %d in ONE Field to arm." % need,
+                                  # the honest line's sibling (DNA audit
+                                  # 2026-07-22): evolve_to's reset_dna wipes
+                                  # charges at EVERY evolution -- an
+                                  # under-armed charge dies silently at the
+                                  # line climb unless the page says so
+                                  "Charge %d in ONE Field to arm — charges clear at every evolution." % need,
                                   tick=self.frame_i))
         out.append_text(menu.footer("↑↓ field   ESC back"))
         return out
@@ -392,7 +397,12 @@ class DNAPanel:
         if field == "None":
             out.append_text(menu.row("None = the dud field (banked)", False))
         elif wager >= DNA_RESONANT_BET:
-            out.append_text(menu.row("resonance: +%d to both neighbors" % (wager // 5), False))
+            # edge bands (DeepSaver/DarkArea) have ONE neighbor -- "both"
+            # was a lie on the ends (DNA audit 2026-07-22)
+            fields = [f for _, f in DNA_RATE_BANDS if f != "None"]
+            edge = field in (fields[0], fields[-1])
+            out.append_text(menu.row("resonance: +%d to %s" % (
+                wager // 5, "its one neighbor" if edge else "both neighbors"), False))
         else:
             out.append_text(menu.row("banked — open Charge to use it", False))
         out.append_text(menu.footer("any key  →  DNA menu"))

@@ -132,12 +132,13 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("THE EGG GUIDE TELLS THE TRUTH TOO: every digitama's "
-                 "unlock story was checked against its real gate. Two "
-                 "were tall tales — Dokimon asked for 'a Mega tournament "
-                 "in Summer' and Hack Egg a 'Fall Champion Cup' that "
-                 "never existed. Both now name the exact cup they want: "
-                 "Summer Open #147 and Fall Open #188. Go win them.")
+    WHATS_NEW = ("DNA UNDER THE MICROSCOPE: a full audit of the wager, "
+                 "the bands, the charge bills and the Divergence roads — "
+                 "on tuipet's own terms. The math all held. Two truths "
+                 "now get said out loud: an edge-band resonance splashes "
+                 "ONE neighbor (the page claimed both), and the Divergence "
+                 "page warns that charges clear at every evolution — arm "
+                 "before the climb, or the charge dies with it.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and
