@@ -37,7 +37,7 @@ def test_old_saves_shed_the_staples_on_load():
     p.inventory = {"i:80": 99, "i:81": 100, "i:82": 100, "i:83": 3,
                    "energy_drink": 2}
     d = asdict(p)
-    loaded, _ = persistence.pet_from_save(d, catch_up=False)
+    loaded, _ = persistence.pet_from_save(d)
     assert loaded is not None
     assert loaded.inventory == {"energy_drink": 2}
 

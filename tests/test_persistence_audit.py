@@ -29,7 +29,7 @@ def test_corrupt_save_falls_back_to_the_backup():
     assert os.path.exists(persistence.SAVE_PATH + ".bak")
     with open(persistence.SAVE_PATH, "w") as fh:
         fh.write('{"trunc')                          # the disk ate a write
-    loaded, msg = persistence.load(catch_up=False)
+    loaded, msg = persistence.load()
     assert loaded is not None and loaded.bits == 777      # NOT a silent new egg
     assert "backup" in msg
 
@@ -39,7 +39,7 @@ def test_crash_between_the_two_renames_still_recovers():
     persistence.save(p)
     persistence.save(p)
     os.remove(persistence.SAVE_PATH)                 # died after rotating, before landing
-    loaded, _ = persistence.load(catch_up=False)
+    loaded, _ = persistence.load()
     assert loaded is not None and loaded.bits == 555
 
 
@@ -56,11 +56,11 @@ def test_corrupt_settings_fall_back_too():
 def test_wrong_typed_save_is_rejected_not_a_time_bomb():
     d = persistence.to_save_dict(_pet())
     d["hunger"] = "four"                             # right key, wrong type
-    pet, _ = persistence.pet_from_save(json.loads(json.dumps(d)), catch_up=False)
+    pet, _ = persistence.pet_from_save(json.loads(json.dumps(d)))
     assert pet is None                               # rejected at load, not a tick() crash
     d2 = persistence.to_save_dict(_pet())
     d2["inventory"] = ["f:0"]                        # a list where a dict lives
-    assert persistence.pet_from_save(d2, catch_up=False)[0] is None
+    assert persistence.pet_from_save(d2)[0] is None
 
 
 def test_wrong_typed_cloud_save_never_clobbers_local(tmp_path, monkeypatch):
@@ -70,7 +70,7 @@ def test_wrong_typed_cloud_save_never_clobbers_local(tmp_path, monkeypatch):
     bad["_saved_at"] = 9e12                          # "newer" than anything local
     monkeypatch.setattr(cloudsync, "pull_save", lambda *a, **k: bad)
     assert cloudsync.sync_down_at_startup("ws://x/", "joel", "pw") == "cloud-save-invalid"
-    loaded, _ = persistence.load(catch_up=False)
+    loaded, _ = persistence.load()
     assert loaded is not None and loaded.bits == 999      # local untouched
 
 
@@ -102,7 +102,7 @@ def test_backup_never_blocks_a_legit_fresh_start():
 
 def test_normal_load_message_is_unchanged():
     persistence.save(_pet(bits=5))
-    loaded, msg = persistence.load(catch_up=False)
+    loaded, msg = persistence.load()
     assert loaded is not None and "backup" not in msg
 
 

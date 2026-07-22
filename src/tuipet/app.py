@@ -132,10 +132,12 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("EVERY MENU PAUSES NOW: the lobby was the one screen that "
-                 "kept your pet's clock running — chat for an hour and come "
-                 "back to a hungrier, older mon. It doesn't anymore. Open a "
-                 "menu, any menu, and life waits for you.")
+    WHATS_NEW = ("A CLOSED GAME IS A STOPPED CLOCK: your pet no longer lives "
+                 "without you. Quitting used to keep it aging, growing, "
+                 "getting hungry and making a mess for up to 36 hours — an "
+                 "egg could even hatch while you were gone. Now nothing "
+                 "happens while you're away. Come back in five months and "
+                 "your mon is exactly as you left it.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and
@@ -778,7 +780,7 @@ class TuiPetApp(ActionsMixin, App):
             # blob must not cost the player their current login (the same
             # strict probe sync_down_at_startup runs)
             pet_probe, _ = persistence.pet_from_save(dict(save),
-                                                     catch_up=False, strict=True)
+                                                     strict=True)
             if pet_probe is None:
                 self._verdict("That cloud save is unreadable — kept your account.")
                 self.beep("error", bell=False)
@@ -981,18 +983,15 @@ class TuiPetApp(ActionsMixin, App):
             sc.advance(self.pet)
             sc.paint(self.pet)
 
-    # a real hole in the 1 Hz cadence = the process was SUSPENDED (Ctrl-Z /
-    # laptop lid); ordinary event-loop lag never reaches this
-    SUSPEND_GAP_S = 120.0
-
     def on_tick(self):
         # the sim's proxy for "an animation is playing": the poop deferral
         # (canon startPoop state-machine block, restored 2026-07-19) holds
         # the squat through the whole VISIBLE fx, not just the anim ttl
-        import time as _time
-        now = _time.monotonic()
-        gap = now - getattr(self, "_tick_wall", now)
-        self._tick_wall = now
+        #
+        # (the SUSPEND_GAP_S / _tick_wall gap tracking went with the offline
+        # catch-up 2026-07-22: nothing measures lost wall-time any more,
+        # because nothing is ever replayed from it.  One tick = one second
+        # of pet life, and only while the main view is up.)
         if getattr(self, "pet", None) is not None:
             self.pet._fx_busy = getattr(getattr(self, "screen_w", None), "fx", None) is not None
         if self.mode is not None:
@@ -1008,7 +1007,6 @@ class TuiPetApp(ActionsMixin, App):
             return
         prev = (self.pet.num, self.pet.stage)
         poop0 = self.pet.poop
-        self._suspend_catch_up(gap)
         # an evolution must not swap the sprite UNDER a playing animation (the
         # clean-fx incident 2026-07-04: the pet transformed mid-sweep and the
         # evolve strobe played on the already-evolved form) -- hold the check
@@ -1179,19 +1177,12 @@ class TuiPetApp(ActionsMixin, App):
             self._hud_off = 0
             self._hud_hold = HUD_HOLD               # hold again when it loops back to the head
 
-    def _suspend_catch_up(self, gap):
-        """SUSPECT S4 ruling 2026-07-20: a process suspend (Ctrl-Z, a closed
-        laptop lid) stopped the interval clock dead -- no ticks -- and the
-        next autosave restamped _saved_at, so `_offline` never saw the hole:
-        an OPEN pet lived a free pause while a CLOSED one aged.  A real gap
-        in the tick cadence now routes through the SAME bounded offline
-        catch-up a relaunch gets.  (The canon menu freeze stays a freeze: a
-        gap that ends inside a paused sub-screen never reaches this.)"""
-        if gap <= self.SUSPEND_GAP_S or self.pet is None or self.pet.dead:
-            return
-        off = persistence._offline(self.pet, min(gap, persistence.MAX_OFFLINE))
-        if off:
-            self.flash(off)
+    # (_suspend_catch_up removed 2026-07-22 with the offline catch-up itself.
+    # The S4 ruling routed a process suspend (Ctrl-Z, a closed lid) through
+    # the same bounded replay a relaunch got, so an open-but-suspended pet
+    # could not out-live a closed one.  With a closed game now a STOPPED
+    # clock, the symmetry holds by doing nothing on both sides -- replaying
+    # a suspend would make Ctrl-Z strictly harsher than quitting.)
 
     def flash(self, text):
         self._hud(text)

@@ -139,7 +139,7 @@ def test_legacy_save_without_line_id_is_adopted():
     p.line_id = "slayerdra"
     blob = persistence.to_save_dict(p)
     blob.pop("line_id", None)                   # a save from before lines existed
-    loaded, _msg = persistence.pet_from_save(blob, catch_up=False)
+    loaded, _msg = persistence.pet_from_save(blob)
     assert loaded is not None
     assert loaded.line_id == "slayerdra", "mid-line pet must not ride the corpus engine"
 
@@ -154,5 +154,5 @@ def test_legacy_off_chart_save_stays_corpus():
     p.line_id = ""
     blob = persistence.to_save_dict(p)
     blob.pop("line_id", None)
-    loaded, _msg = persistence.pet_from_save(blob, catch_up=False)
+    loaded, _msg = persistence.pet_from_save(blob)
     assert loaded is not None and loaded.line_id == ""

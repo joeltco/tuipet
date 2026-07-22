@@ -129,7 +129,7 @@ def test_no_lifespan_survives_anywhere():
     assert "lifespan" not in d
     old_save = dict(persistence.to_save_dict(_pet()))
     old_save["lifespan"] = 259200.0              # a pre-port save
-    pet, _ = persistence.pet_from_save(old_save, catch_up=False)
+    pet, _ = persistence.pet_from_save(old_save)
     assert pet is not None and not hasattr(pet, "lifespan")
 
 

@@ -141,19 +141,25 @@ def test_future_timestamp_no_time_travel():
     assert pet.world_seconds >= 0, "future save must clamp offline elapsed to 0"
 
 
-# ---- offline catch-up at extremes ------------------------------------------
+# ---- a stopped clock has no extremes --------------------------------------
 
-def test_offline_zero_elapsed():
-    p = Pet(num=-1, stage="Rookie", mood=100, hunger=4)
-    assert persistence._offline(p, 0) == ""
-    assert p.mood == 100 and p.hunger == 4         # nothing decays at 0s
-
-
-def test_offline_huge_elapsed_stays_bounded():
-    p = Pet(num=-1, stage="Rookie", mood=300, hunger=4)
-    persistence._offline(p, 10 ** 9)               # absurd gap
-    # (mood is pinned 0 now; the clamp left with the mood system)
-    assert 0 <= p.hunger <= 4                        # hunger stays in range
+def test_absurd_elapsed_is_simply_ignored(tmp_path):
+    """The old catch-up needed clamps at both ends (0s, 10**9s, a future
+    stamp).  With nothing replayed from wall-time, an absurd gap is not
+    bounded -- it is irrelevant.  A save stamped a thousand years ago loads
+    as the pet that was written."""
+    import json
+    import time
+    from tuipet import persistence
+    pet = Pet(num=-1, stage="Rookie", hunger=4)
+    persistence.save(pet)
+    data = json.load(open(persistence.SAVE_PATH))
+    data["_saved_at"] = time.time() - 1000 * 365 * 24 * 3600
+    json.dump(data, open(persistence.SAVE_PATH, "w"))
+    loaded, _ = persistence.load()
+    assert loaded is not None
+    assert (loaded.hunger, loaded.age_seconds, loaded.stage_seconds) == (
+        4, pet.age_seconds, pet.stage_seconds)
 
 
 # ---- egg helpers tolerate out-of-range indices -----------------------------

@@ -19,7 +19,7 @@ def test_int_dict_keys_survive_the_save_round_trip():
     p = _pet()
     p.trophies_won = {7: "Spring"}
     d = json.loads(json.dumps(persistence.to_save_dict(p)))
-    p2, _ = persistence.pet_from_save(d, catch_up=False)
+    p2, _ = persistence.pet_from_save(d)
     assert p2.trophies_won.get(7) == "Spring"         # prelim chains survive restarts
 
 
@@ -28,7 +28,7 @@ def test_long_horizon_clocks_persist():
     p._starve_t, p._poop_t, p._filth_t = 40000.0, 1200.0, 900.0
     p._lights_t = float("-inf")                       # the once-per-night latch
     d = json.loads(json.dumps(persistence.to_save_dict(p)))
-    p2, _ = persistence.pet_from_save(d, catch_up=False)
+    p2, _ = persistence.pet_from_save(d)
     assert p2._starve_t == 40000.0                    # no more starvation amnesty on restart
     assert p2._poop_t == 1200.0 and p2._filth_t == 900.0
     assert p2._lights_t == float("-inf")

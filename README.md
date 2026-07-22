@@ -250,9 +250,14 @@ instead of pretending it updated.
 
 ## Saving
 
-Automatic — local save every 10 seconds and on quit, with backup generation
-and offline catch-up decay (bounded; never evolves or dies while closed).
+Automatic — local save every 10 seconds and on quit, with backup generation.
 With an account, the same save syncs to the cloud in the background.
+
+**A closed game is a stopped clock.** Nothing happens while you're away: your
+pet doesn't age, grow, incubate, get hungry, or make a mess. Quit for five
+minutes or five months and you reopen to exactly the pet you left. Time passes
+only while you're actually playing — and only on the main view, since every
+menu pauses the sim too.
 
 ## Asset pipeline
 

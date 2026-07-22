@@ -52,110 +52,56 @@ def test_old_save_migration():
     assert loaded.generation == 1             # absent keys take defaults
 
 
-def test_offline_egg_does_not_decay():
-    egg = Pet(num=-1, stage="Egg")
-    egg.mood, egg.hunger = 0, 4
-    msg = persistence._offline(egg, 7200)        # 2h away
-    assert msg == ""
-    assert egg.hunger == 4 and egg.mood == 0     # eggs are inert offline
-    assert egg.world_seconds == 7200             # ...but the clock still advances
-    assert egg.age_seconds == 7200
-
-
-def test_offline_egg_incubates():
-    """Canon processSkippedSeconds replays incubation: an egg left alone while
-    the game is off comes back HATCHING (age accrual without incubation was the
-    incoherent half-state -- 2026-07-06)."""
-    egg = Pet(num=-1, stage="Egg")
-    persistence._offline(egg, 7200)              # 2h away >> EGG_DURATION
-    assert egg.stage_seconds == 7200
-    egg._tick_egg()                              # first tick after load
-    assert egg.hatching, "the return should greet a hatch, not a frozen egg"
-
-
-def test_offline_decay_applies():
-    pet = Pet(num=-1, stage="Rookie")
-    pet.mood, pet.hunger = 100, 4
-    msg = persistence._offline(pet, 2 * 3600)    # 2h
-    # (the offline mood decay left with the mood system)
-    assert pet.hunger < 4, "hunger should drop while away"
-    assert "away" in msg
-    # the growth clock runs with the age clock (H5, audit 2026-07-19 --
-    # supersedes the 2026-07-06 living-stage freeze): frozen, a near-elder
-    # returned to an old-age death with zero stage progress.  Evolution
-    # still fires only on a live tick.
-    assert pet.stage_seconds == 2 * 3600
-
-
-def test_offline_rates_match_the_live_sim():
-    """H5 (gameplay audit 2026-07-19): the flat mins//5 hunger and mins//8
-    poop ran ~6x harsher than playing -- quitting was strictly worse than
-    idling.  Offline moves at the pet's OWN live cadences now: ~1800s per
-    hunger heart, ~2700s per pile (modal species)."""
-    pet = Pet(num=-1, stage="Rookie")
-    pet.hunger, pet.poop = 4, 0
-    persistence._offline(pet, 2 * 3600)          # 2h away
-    # live: 7200s / ~1800s = 4 hearts... clamped by what it had; the OLD
-    # code took all 4 within 20 minutes.  Allow the per-species scale.
-    assert pet.hunger == 0
-    assert 1 <= pet.poop <= 3, "2h should land ~2 piles at the live cadence, not 4"
-    pet2 = Pet(num=-1, stage="Rookie")
-    pet2.hunger, pet2.poop = 4, 0
-    persistence._offline(pet2, 1800)             # 30 min away
-    assert pet2.hunger >= 3, "30 min is ~one live heart, the old code took 6"
-    assert pet2.poop == 0, "30 min is under one live pile interval"
-
-
-def test_offline_honors_the_live_gates():
-    """H5's gate half: the Steak's satiety and the Port. Potty must hold
-    while away (they were void exactly when bought), and a sleeping pet
-    must not be starved into a care mistake -- live sleep can't produce
-    that state."""
-    pet = Pet(num=-1, stage="Rookie")
-    pet.hunger = 4
-    pet.full_until = pet.world_seconds + 12 * 3600      # the Steak's 12h
-    persistence._offline(pet, 6 * 3600)
-    assert pet.hunger == 4, "satiety must hold offline"
-    pet2 = Pet(num=-1, stage="Rookie")
-    pet2.poop, pet2.poop_sizes = 2, [2, 2]
-    pet2.auto_clean_until = pet2.world_seconds + 24 * 3600
-    persistence._offline(pet2, 6 * 3600)
-    assert pet2.poop == 0, "the Port. Potty flushes while it holds"
-    pet3 = Pet(num=-1, stage="Rookie")
-    pet3.hunger, pet3.asleep, pet3.lights = 4, True, False
-    pet3.awake_lapse, pet3.awake_limit = 0.0, 600.0     # a full night owed
-    m0 = pet3.care_mistakes
-    persistence._offline(pet3, 600)                     # away for the night
-    assert pet3.hunger >= 3, "a sleeping stomach floors, never starves"
-    assert pet3.care_mistakes == m0
-
-
-def test_offline_sleep_earns_energy_and_dp():
-    """H5's third half: a full night away used to restore NOTHING -- no
-    energy, no DP.  Sleep earns at the live crossing rates now, and the
-    morning wakes the pet."""
-    pet = Pet(num=-1, stage="Rookie")
-    pet.asleep, pet.nap, pet.lights = True, False, False
-    pet.energy, pet.dp = 0, 0
-    pet.awake_lapse, pet.awake_limit = 0.0, 600.0       # a 10-game-hour night
-    persistence._offline(pet, 3600)                     # away well past it
-    assert pet.energy > 0, "sleep must earn energy offline"
-    assert pet.dp > 0, "sleep must refill DP offline"
-    assert not pet.asleep, "the morning came while away"
-
-
-def test_offline_cap_at_36h():
-    """A save abandoned for days catches up at most MAX_OFFLINE (36h), never more."""
-    pet = Pet(num=-1, name="Capmon", stage="Rookie")
+def test_a_closed_game_is_a_stopped_clock():
+    """Joel 2026-07-22: "do we have an away system? like, where the mon still
+    grows, even when its shut off? if so, we gotta remove it."  It did -- the
+    bounded catch-up advanced age, the GROWTH clock, egg incubation, hunger,
+    poop and sleep.  All of it is gone: a save reloads as the pet that was
+    saved, whatever the wall clock did in between.  This is the one pin that
+    replaces the whole test_offline_* family."""
+    pet = Pet(num=-1, name="Stasismon", stage="Rookie")
+    pet.hunger, pet.poop, pet.poop_sizes = 4, 0, []
+    pet.energy, pet.dp = 5, 2
     persistence.save(pet)
-    # rewrite the timestamp far into the past
-    data = json.load(open(persistence.SAVE_PATH))
-    data["_saved_at"] = time.time() - 100 * 3600   # 100h ago
+    before = json.load(open(persistence.SAVE_PATH))
+
+    data = dict(before)
+    data["_saved_at"] = time.time() - 100 * 3600      # a hundred hours ago
     json.dump(data, open(persistence.SAVE_PATH, "w"))
     loaded, msg = persistence.load()
+
     assert loaded is not None
-    # capped elapsed == 36h -> message reports 36h, not 100h
-    assert "36h" in msg
+    for field in ("age_seconds", "stage_seconds", "world_seconds",
+                  "hunger", "poop", "energy", "dp", "care_mistakes"):
+        assert getattr(loaded, field) == before[field], \
+            f"{field} must not move while the game is shut off"
+    assert "away" not in msg and "Welcome back" not in msg, \
+        "there is no away report any more -- nothing happened"
+
+
+def test_a_closed_egg_does_not_incubate():
+    """The egg used to hatch while you were gone (canon processSkippedSeconds
+    replayed incubation).  With the clock stopped it waits for you."""
+    egg = Pet(num=-1, name="Waitmon", stage="Egg")
+    persistence.save(egg)
+    data = json.load(open(persistence.SAVE_PATH))
+    data["_saved_at"] = time.time() - 7200            # 2h >> EGG_DURATION
+    json.dump(data, open(persistence.SAVE_PATH, "w"))
+    loaded, _ = persistence.load()
+    assert loaded.stage == "Egg" and loaded.stage_seconds == egg.stage_seconds
+    loaded._tick_egg()                                # first tick after load
+    assert not loaded.hatching, "incubation starts when YOU open the game"
+
+
+def test_the_offline_machinery_is_gone_for_good():
+    """Pinned as an ABSENCE: the catch-up and the flag that gated it are
+    removed, not merely bypassed, so nothing can quietly re-enter through a
+    default argument."""
+    import inspect
+    assert not hasattr(persistence, "_offline")
+    assert not hasattr(persistence, "MAX_OFFLINE")
+    assert "catch_up" not in inspect.signature(persistence.pet_from_save).parameters
+    assert "catch_up" not in inspect.signature(persistence.load).parameters
 
 
 def test_progress_signals_round_trip():
@@ -251,7 +197,7 @@ def test_a_poisoned_egg_type_heals_at_load():
     p.world_seconds = 100.0
     d = persistence.to_save_dict(p)
     d["egg_type"] = "guide"                       # the poisoned save
-    healed, _msg = persistence.pet_from_save(d, catch_up=False)
+    healed, _msg = persistence.pet_from_save(d)
     assert healed is not None
     assert healed.egg_type == 0                   # a Botamon egg, not a crash
     # belt AND suspenders: the renderer can never die over it again

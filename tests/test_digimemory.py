@@ -42,7 +42,7 @@ def test_the_held_payload_survives_the_save_round_trip():
     p = _pet()
     p.digimemory = {"name": "Elder", "num": 29, "vaccine": 5, "data": 3, "virus": 1, "seconds": 60.0}
     d = json.loads(json.dumps(persistence.to_save_dict(p)))
-    p2, _ = persistence.pet_from_save(d, catch_up=False)
+    p2, _ = persistence.pet_from_save(d)
     assert p2.digimemory == p.digimemory
 
 

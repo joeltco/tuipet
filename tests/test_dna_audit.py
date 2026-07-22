@@ -93,13 +93,13 @@ def test_interrupted_wager_settles_as_a_spoiled_mash(isolate_save=None):
     p.dna_bet(50)
     assert p.dna_wager_pending == 50
     save = persistence.to_save_dict(p)
-    q, msg = persistence.pet_from_save(save, catch_up=False)
+    q, msg = persistence.pet_from_save(save)
     assert q.dna_wager_pending == 0
     assert "settled" in msg and q.dna_owned.get("None", 0) == 50   # the dud bin banks
     r = _pet()
     r.dna_bet(DNA_STABILIZER_BET)
     save = persistence.to_save_dict(r)
-    s, msg = persistence.pet_from_save(save, catch_up=False)
+    s, msg = persistence.pet_from_save(save)
     assert s.dna_wager_pending == 0
     assert s.dna_owned.get("DeepSaver", 0) == 99           # clamped into the low band
     assert "DeepSaver banked" in msg

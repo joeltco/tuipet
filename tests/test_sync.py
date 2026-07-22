@@ -21,7 +21,7 @@ def test_save_dict_roundtrips_through_pet():
     pet = Pet(num=-1, stage="Rookie", vaccine=12, data_power=3, virus=4)
     data = persistence.to_save_dict(pet)
     assert "_saved_at" in data and data["_saved_at"] > 0
-    back, _ = persistence.pet_from_save(data, catch_up=False)
+    back, _ = persistence.pet_from_save(data)
     assert back is not None
     assert (back.stage, back.vaccine, back.data_power, back.virus) == ("Rookie", 12, 3, 4)
 

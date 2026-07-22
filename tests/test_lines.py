@@ -360,7 +360,7 @@ def test_line_fields_survive_the_save_round_trip():
     p = _line_pet()
     p.stage_trainings, p.battle_log, p.mega_kills = 7, [1, 0, 1], 2
     d = persistence.to_save_dict(p)
-    q, _ = persistence.pet_from_save(d, catch_up=False)
+    q, _ = persistence.pet_from_save(d)
     assert (q.line_id, q.stage_trainings, q.battle_log, q.mega_kills) == \
         ("ver1", 7, [1, 0, 1], 2)
 

@@ -107,7 +107,7 @@ def test_visits_are_spaced_like_the_assistant_anim_guard():
 def test_contract_survives_the_save_round_trip():
     p = _pet(bits=1000, auto_care=True, assistant_num=42)
     d = json.loads(json.dumps(persistence.to_save_dict(p)))
-    p2, _ = persistence.pet_from_save(d, catch_up=False)
+    p2, _ = persistence.pet_from_save(d)
     assert p2.auto_care is True and p2.assistant_num == 42
     assert "assist_event" not in d                           # the fx mailbox is transient
 

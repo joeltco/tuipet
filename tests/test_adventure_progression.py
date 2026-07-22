@@ -94,7 +94,7 @@ def test_adv_progress_survives_a_save_round_trip():
     p.adv_progress = 7
     d = persistence.to_save_dict(p)
     assert d["adv_progress"] == 7
-    q, _ = persistence.pet_from_save(d, catch_up=False)
+    q, _ = persistence.pet_from_save(d)
     assert q.adv_progress == 7
 
 
@@ -102,7 +102,7 @@ def test_an_old_save_without_the_field_defaults_to_zero():
     p = _champ()
     d = persistence.to_save_dict(p)
     d.pop("adv_progress", None)                      # a pre-rebuild save
-    q, _ = persistence.pet_from_save(d, catch_up=False)
+    q, _ = persistence.pet_from_save(d)
     assert q.adv_progress == 0                       # a safe default, not a crash
 
 

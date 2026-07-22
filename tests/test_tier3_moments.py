@@ -7,30 +7,12 @@ from tuipet.digicorescreen import _legacy_rows, _trophy_rows
 from tuipet.pet import Pet
 
 
-# ---- the itemized welcome back ---------------------------------------------------
-
-def _aged_pet():
-    p = Pet(num=100, name="Agumon", stage="Champion", hunger=4)
-    p.world_seconds = 10 * 60.0
-    return p
-
-
-def test_offline_return_is_itemized():
-    p = _aged_pet()
-    msg = persistence._offline(p, 3 * 3600.0)          # 3h away
-    assert "3h away" in msg and "While you were gone" in msg
-    assert "went hungry (+1 care mistake)" in msg      # hunger 4 drains in 20min
-    assert "poop" in msg
-
-
-def test_offline_short_absence_stays_quiet():
-    assert persistence._offline(_aged_pet(), 20.0) == ""
-
-
-def test_offline_uneventful_return_just_greets():
-    p = _aged_pet()
-    msg = persistence._offline(p, 120.0)               # 2min: hunger 4 -> 4
-    assert "missed you" in msg and "While you were gone" not in msg
+# ---- the welcome back went with the offline catch-up ----------------------
+# The itemized "While you were gone: it slept, went hungry (+1 care mistake),
+# 2 poops piled up" report had nothing left to report once a closed game
+# became a stopped clock (Joel 2026-07-22).  Its three pins retired with it;
+# tests/test_persistence.py::test_a_closed_game_is_a_stopped_clock is the
+# replacement contract.
 
 
 # ---- firsts are announced -----------------------------------------------------------

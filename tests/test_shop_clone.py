@@ -310,7 +310,7 @@ def test_legacy_bags_migrate_one_to_one():
     save = persistence.to_save_dict(p)
     save["inventory"] = {"best_fruit": 2, "alarm_clock": 1, "time_gear": 3,
                          "energy_drink": 1}
-    healed, _ = persistence.pet_from_save(save, catch_up=False)
+    healed, _ = persistence.pet_from_save(save)
     assert healed is not None
     inv = healed.inventory
     assert inv.get("tuna") == 2 and inv.get("music_player") == 1

@@ -101,7 +101,7 @@ def test_the_daily_stock_cap_stops_the_money_printer():
     assert sfx == "error" and "Sold out" in msg
     # a new day restocks; the ledger survives a save round trip
     d = persistence.to_save_dict(p)
-    q, _msg = persistence.pet_from_save(d, catch_up=False)
+    q, _msg = persistence.pet_from_save(d)
     assert q.town_bought == p.town_bought
     e3 = next(x for x in shop.town_stock(B_TOWN, D + datetime.timedelta(days=1),
                                          pet=q) if x["key"] == "steak")

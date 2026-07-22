@@ -17,7 +17,7 @@ def _foreign_save(**kw):
 
 
 def test_local_load_repairs_a_foreign_save():
-    pet, msg = persistence.pet_from_save(_foreign_save(), catch_up=False)
+    pet, msg = persistence.pet_from_save(_foreign_save())
     assert pet is not None
     assert "repaired" in msg
     # identity re-derived from the dex; the line re-bound by name (dex 1 =
@@ -29,13 +29,13 @@ def test_local_load_repairs_a_foreign_save():
 
 
 def test_cloud_probe_rejects_a_foreign_save():
-    pet, _ = persistence.pet_from_save(_foreign_save(), catch_up=False, strict=True)
+    pet, _ = persistence.pet_from_save(_foreign_save(), strict=True)
     assert pet is None                        # sync_down_at_startup keeps the local pet
 
 
 def test_unknown_dex_survives_locally_but_never_syncs_in():
     # local: the data-refresh robustness contract (test_load_unknown_num) holds
-    pet, _ = persistence.pet_from_save(_foreign_save(num=999999), catch_up=False)
+    pet, _ = persistence.pet_from_save(_foreign_save(num=999999))
     assert pet is not None and pet.num == 999999
     # cloud: the strict probe refuses what this build cannot verify
     pet, _ = persistence.pet_from_save(_foreign_save(num=999999), strict=True)
@@ -48,14 +48,14 @@ def test_healthy_saves_pass_untouched():
     p.bits = 42
     d = persistence.to_save_dict(p)
     for strict in (False, True):
-        q, msg = persistence.pet_from_save(d, catch_up=False, strict=strict)
+        q, msg = persistence.pet_from_save(d, strict=strict)
         assert q is not None and "repaired" not in (msg or "")
         assert (q.num, q.name, q.line_id, q.bits) == (p.num, p.name, p.line_id, 42)
 
 
 def test_egg_saves_are_exempt():
     d = persistence.to_save_dict(Pet.new_egg(egg_type=1))
-    q, msg = persistence.pet_from_save(d, catch_up=False, strict=True)
+    q, msg = persistence.pet_from_save(d, strict=True)
     assert q is not None and q.stage == "Egg"
 
 

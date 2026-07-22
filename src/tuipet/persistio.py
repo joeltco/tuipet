@@ -44,7 +44,6 @@ SAVE_DIR = _pick_save_dir()
 
 SAVE_PATH = os.path.join(SAVE_DIR, "save.json")
 
-MAX_OFFLINE = 36 * 3600  # cap catch-up at 36h of real time
 
 SETTINGS_PATH = os.path.join(SAVE_DIR, "settings.json")
 

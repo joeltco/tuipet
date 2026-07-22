@@ -166,9 +166,12 @@ def test_every_entry_gate_has_the_dead_leg():
         assert "rests now" in (gate() or ""), gate
 
 
-def test_offline_catchup_never_decays_a_corpse():
+def test_a_dead_save_loads_untouched_however_long_it_sat():
     """Loading a dead save after hours away starved/soiled the corpse and
-    greeted 'Your pet needs care!' over the grave (dead sweep 2026-07-06)."""
+    greeted 'Your pet needs care!' over the grave (dead sweep 2026-07-06).
+    The catch-up that did it is gone entirely (2026-07-22) -- nothing decays
+    now, dead or alive -- but the grave keeps its own pin: a corpse must
+    still load as the corpse that was buried."""
     import time
     from tuipet import persistence, data
     d = _dead()

@@ -1,9 +1,15 @@
-"""Save/load the pet to disk, with bounded offline catch-up.
+"""Save/load the pet to disk.
 
-The pet is a flat dataclass, so it serialises straight to JSON. On load we apply
-a gentle "while you were away" decay (hunger/energy/mood/poop) scaled to the real
-elapsed time — but never run evolution or death offline, so reopening is always
-safe and predictable.
+The pet is a flat dataclass, so it serialises straight to JSON.
+
+A CLOSED GAME IS A STOPPED CLOCK.  Nothing at all happens while you are away:
+no aging, no growth, no incubation, no hunger, no poop, no sleep.  You reopen
+to exactly the pet you left.  This replaces the bounded "while you were away"
+catch-up that used to run here (Joel 2026-07-22: "do we have an away system?
+like, where the mon still grows, even when its shut off? if so, we gotta
+remove it" -> total stasis).  It is the same law as the canon menu freeze the
+lobby carve-out was removed for the same day: time passes only while you are
+actually playing.
 """
 from __future__ import annotations
 import json
@@ -11,7 +17,7 @@ import os
 import time
 from dataclasses import asdict, fields
 
-from .pet import Pet, _clamp
+from .pet import Pet
 
 # the IO plumbing + the egg-bank migration live in their own modules
 # (tier-4 split 2026-07-17); the old names keep resolving from here
@@ -21,7 +27,7 @@ from .eggmigrate import (  # noqa: F401
     _migrate_egg_index, _migrate_v401_save, _migrate_v401_settings,
     _sane_owned, _table_for)
 from .persistio import (  # noqa: F401
-    MAX_OFFLINE, SAVE_DIR, SAVE_PATH, SETTINGS_PATH, _LOCK_NAME,
+    SAVE_DIR, SAVE_PATH, SETTINGS_PATH, _LOCK_NAME,
     _atomic_write_json, _can_use, _pick_save_dir, acquire_instance_lock,
     release_instance_lock, write_crash_log)
 from . import persistio as _persistio
@@ -657,9 +663,14 @@ def local_saved_at(path=None):
         return 0.0
 
 
-def pet_from_save(data, catch_up=True, strict=False):
+def pet_from_save(data, strict=False):
     """Build (pet, message) from a save dict (disk or cloud). Returns (None, '')
-    on malformed data. Applies the bounded offline decay when catch_up is set.
+    on malformed data.
+
+    NOTHING is applied for time spent away: a closed game is a STOPPED clock
+    (Joel 2026-07-22, "we gotta remove it").  The bounded offline catch-up
+    that used to run here -- age, growth, hunger, poop, sleep -- is gone with
+    the `catch_up` flag that gated it; see the module header.
 
     strict=True (the cloud probe) REJECTS foreign-format saves outright --
     a save whose name/stage disagree with its dex was written by a different
@@ -681,7 +692,11 @@ def pet_from_save(data, catch_up=True, strict=False):
             data["egg_type"] = int(data.get("egg_type"))
         except (TypeError, ValueError):
             data["egg_type"] = 0
-    saved_at = data.pop("_saved_at", None)
+    # still POPPED (it is not a Pet field), but no longer READ: the elapsed
+    # time it stamped drove the offline catch-up, removed 2026-07-22.  The
+    # stamp itself stays on disk -- cloudsync's local_saved_at() reads it to
+    # decide which SAVE is newer, which is a sync question, not a sim one.
+    data.pop("_saved_at", None)
     # JSON stringifies int dict keys: trophies_won comes back str-keyed,
     # silently breaking cup prelim chains (audit 2026-07; habitat_record
     # left with the habitat system).  Coerce them back on every load.
@@ -747,10 +762,6 @@ def pet_from_save(data, catch_up=True, strict=False):
             # forms keep '' as before)
             from . import lines as _lines
             _lines.adopt_line(pet)
-    if catch_up and saved_at:
-        elapsed = min(max(0.0, time.time() - saved_at), MAX_OFFLINE)
-        off = _offline(pet, elapsed)
-        msg = (msg + "  " + off).strip() if off else msg
     if getattr(pet, "dna_wager_pending", 0) > 0 and not pet.dead:
         # a paid mash was in flight at quit/crash: SETTLE it as the spoiled
         # mash it was (rate 0 -- the stabilizer band still honors a >=500
@@ -763,128 +774,6 @@ def pet_from_save(data, catch_up=True, strict=False):
                 + (f" → {field} banked" if field != "None" else "") + ")")
         msg = (msg + "  " + note).strip()
     return pet, msg
-
-
-def _offline(pet, elapsed):
-    """The BOUNDED offline decay -- a deliberate design divergence from canon
-    (completeness sweep 2026-07-06): DVPet's processSkippedSeconds replays
-    EVERY skipped second through the full lapse machinery (auto-care feeding
-    mid-replay, mistakes, death while away).  On tuipet's compressed clock a
-    full replay of 8h away = ~20 pet-days = a guaranteed grave; the capped
-    approximation below is the humane terminal-app adaptation.
-
-    Aligned with the LIVE sim (gameplay audit 2026-07-19): the old flat
-    rates ran ~6x harsher than playing -- quitting was strictly worse than
-    idling, inverting this module's own "gentle" contract -- and the gates
-    were ignored: sleepers starved (a state live sleep can't produce), the
-    Steak's satiety and the Port. Potty went void exactly while away, the
-    growth clock froze under a running age clock, and a full night away
-    restored nothing.  Now every meter moves at the pet's OWN live cadence,
-    the live gates hold, and sleep earns its energy/DP."""
-    if getattr(pet, "dead", False):
-        # the departed do not decay: the catch-up starved/soiled a corpse and
-        # greeted 'Your pet needs care!' over the grave (dead sweep 2026-07-06);
-        # even the clocks stay still -- its age is part of the epitaph
-        return ""
-    from .petbase import (CALORIE_LIMIT, DAY_MINUTES, DP_MAX, DP_SLEEP_MIN,
-                          SLEEP_MIN_HUNGER_DECAY, SLEEP_MIN_TO_GAIN)
-    w0 = pet.world_seconds
-    pet.world_seconds += elapsed       # keep the day/night clock turning while away
-    pet.age_seconds += elapsed         # the pet ages while you're away (canon: the age
-    #                                    clock timeToAgeMin has NO egg gate -- age runs
-    #                                    from egg creation, so a hatchling carries it)
-    if pet.stage == "Egg":
-        # canon's replay advances incubation too: an egg left alone hatches while
-        # you're away.  Advance the growth clock so the return greets a hatch --
-        # aging WITHOUT incubating was the one incoherent half-state (2026-07-06).
-        pet.stage_seconds += elapsed
-        return ""
-    # the growth clock runs WITH the age clock (audit 2026-07-19 supersedes
-    # the 2026-07-06 living-stage freeze): frozen, a near-elder could return
-    # to an old-age death one tick after the welcome with zero stage
-    # progress.  Evolution itself still fires only on a live tick, so
-    # reopening stays safe and predictable.
-    pet.stage_seconds += elapsed
-    if elapsed < 30:
-        return ""
-    mins = elapsed / 60.0
-
-    # ---- the sleep split: the part of the window spent asleep ------------
-    asleep_secs = 0.0
-    try:
-        awake_inc = max(1, pet._phys().get("awake_inc", 1))
-    except Exception:
-        awake_inc = 1
-    if getattr(pet, "asleep", False):
-        if not getattr(pet, "nap", False) and pet._in_sleep_window():
-            remain = (Pet.WAKE_MINUTE - w0 % DAY_MINUTES) % DAY_MINUTES
-        else:                          # a nap, or the pressure model's night
-            remain = max(0.0, (pet.awake_limit - pet.awake_lapse) / awake_inc)
-        asleep_secs = min(elapsed, remain)
-        if asleep_secs > 0:
-            # sleep earns while away, at the live crossing rates
-            gain = max(1, getattr(pet, "_sleep_energy_gain", 3))
-            pet.energy = min(pet.max_energy, pet.energy + gain *
-                             int(asleep_secs * awake_inc / SLEEP_MIN_TO_GAIN))
-            pet.dp = min(DP_MAX, pet.dp + int(asleep_secs / DP_SLEEP_MIN))
-        if elapsed >= remain:
-            pet._wake()                # the morning came while you were away
-        else:
-            pet.awake_lapse += asleep_secs * awake_inc
-    awake_secs = elapsed - asleep_secs
-    # DVPet has no passive energy decay; just re-clamp to the (per-pet) range.
-    pet.energy = _clamp(pet.energy, -pet.max_energy, pet.max_energy)
-    # (the offline mood drop left with the mood system; BASIC VPET 2026-07-16)
-
-    # ---- hunger at the pet's own live cadence, satiety honored -----------
-    satiety = 0.0
-    if getattr(pet, "full_until", 0):
-        satiety = min(elapsed, max(0.0, pet.full_until - w0))
-    heart = max(1.0, 2 * CALORIE_LIMIT * pet._hunger_interval)   # live secs/heart
-    drop = min(pet.hunger, int(max(0.0, elapsed - satiety) / heart))
-    if asleep_secs > awake_secs:
-        # a mostly-sleeping window floors at the live sleeper's stomach
-        # (SleepMinHungerDecay): live sleep cannot starve a pet
-        drop = min(drop, max(0, pet.hunger - SLEEP_MIN_HUNGER_DECAY))
-    pet.hunger -= drop
-    starved = pet.hunger == 0 and awake_secs > 600
-    if starved:
-        pet.care_mistakes += 1
-    # ---- poop at the live cadence; the Port. Potty holds while away ------
-    potty = 0.0
-    if getattr(pet, "auto_clean_until", 0):
-        potty = min(elapsed, max(0.0, pet.auto_clean_until - w0))
-        if potty > 0:                  # the live rule: it flushes while it holds
-            pet.poop, pet.poop_sizes = 0, []
-    # a sleeper holds it in (live: only the desperate 2x gauge goes at night)
-    window = max(0.0, min(awake_secs, elapsed - potty))
-    piles = int(window / max(1.0, pet._poop_interval))
-    new_poop = min(4, pet.poop + piles)
-    poops = new_poop - pet.poop
-    while len(pet.poop_sizes) < new_poop:            # keep poop == len(poop_sizes)
-        pet.poop_sizes.append(pet._poop_size() if hasattr(pet, "_poop_size") else 2)
-    pet.poop = new_poop
-    if mins < 1:
-        return ""
-    # ITEMIZE the return (sweep 2026-07-14): this routine knows exactly what
-    # happened while you were gone, and used to throw it away for one generic
-    # line -- the player just found a changed pet.  Say only what WAS applied.
-    away = f"{int(mins)}m" if mins < 60 else f"{int(mins / 60)}h"
-    parts = []
-    if asleep_secs > 60:
-        parts.append("it slept" + (" (and woke rested)" if not pet.asleep else ""))
-    if starved:
-        parts.append("went hungry (+1 care mistake)")
-    elif drop:
-        parts.append("got hungrier")
-    if poops:
-        parts.append(f"{poops} poop{'s' if poops > 1 else ''} piled up")
-    elif potty > 0:
-        parts.append("the potty kept things clean")
-    name = getattr(pet, "name", "") or "your pet"
-    if not parts:
-        return f"Welcome back! ({away} away) {name} missed you."
-    return f"Welcome back! ({away} away) While you were gone: " + ", ".join(parts) + "."
 
 
 def quarantine_save(path):
@@ -901,7 +790,7 @@ def quarantine_save(path):
         return None
 
 
-def load(path=None, catch_up=True):
+def load(path=None):
     """Return (pet, message); pet is None if no valid save exists.  A corrupt
     main save falls back to the .bak rotated by save() -- at most one autosave
     (~10s) behind, instead of a silent new egg.  When BOTH generations are
@@ -918,7 +807,7 @@ def load(path=None, catch_up=True):
         except (ValueError, OSError):
             broken = broken or candidate
             continue
-        pet, msg = pet_from_save(data, catch_up=catch_up)
+        pet, msg = pet_from_save(data)
         if pet is None:
             broken = broken or candidate
             continue
