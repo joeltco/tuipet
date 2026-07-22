@@ -699,16 +699,22 @@ class BodyMixin:
         else:
             # canon wakeUp poses vary with the morning: 7 normal / 5 good /
             # 9 bad / 6 terrible (birthday audit 2026-07-05: it always woke
-            # on the plain pose)
+            # on the plain pose).  The roll can swing mood by a full tier
+            # with nothing but a 1.6s pose to show for it -- the morning now
+            # leaves a note the HUD flashes (gameplay polish #11,
+            # 2026-07-22; the assist_note pop grammar)
             if r == 0:
                 self._set_mood(self.mood + BAD_MORNING_MOOD.get(m, -10))
                 wake_anim = "sad"                    # BadMorning: wakeUp(9)
+                self.wake_note = f"{self.name} woke up on the wrong side…"
             elif r == 1 and m == "Happy":
                 self._set_mood(WORST_MORNING_MOOD)
                 wake_anim = "surprise"               # TerribleMorning: wakeUp(6)
+                self.wake_note = f"{self.name} had an awful night!"
             elif r == 2:
                 self._set_mood(self.mood + GOOD_MORNING_MOOD.get(m, 100))
                 wake_anim = "happy"                  # GoodMorning: wakeUp(5)
+                self.wake_note = f"{self.name} woke up beaming!"
         self._set_anim(wake_anim, 1.6)
 
     def _disturbed(self):
@@ -747,6 +753,8 @@ class BodyMixin:
         enth = {1: -1, 0: -2, -1: -3}.get(self.restless, -2)   # DisturbEnthusiasmDec*
         self._set_enthusiasm(self.enthusiasm + enth)
         self._wake()                                # setAsleep(false): the wake roll
+        self.wake_note = ""                         # a disturbed wake reports the
+        #                                             DISTURBANCE, not the morning tier
         if nap:
             return "It stirs from its doze."
         if not postponed:

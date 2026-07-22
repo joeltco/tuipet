@@ -55,15 +55,17 @@ code stays dormant unless named.
 
 - [J] **6 — Energy is a dead gauge on the home loop** (no passive decay,
   deliberate at petbody.py:252).  Design call: earn the gauge or accept.
-- [ ] **7 — Lone poop pile is silent friction** — nag only at ≥3 piles
+- [x] **7 — Lone poop pile is silent friction** *(shipped v0.5.168: quiet idle nudge, no beep)* — nag only at ≥3 piles
   (~135 min, pet.py:508).
-- [ ] **8 — Every alarm is the same beep** (app.py:1106-1112).  Existing
-  sounds only — no new assets.
-- [ ] **9 — Frailty (the lethal state) has no beep** (app.py:1119) while
+- [J] **8 — Every alarm is the same beep** (app.py:1106-1112).  Which
+  existing sound maps to which need is a taste call — proposal: keep
+  alarm.wav as the base, differentiate by PATTERN (single/double/triple)
+  rather than sample, or name the mapping you want.
+- [x] **9 — Frailty (the lethal state) has no beep** *(shipped v0.5.168: onset alarm, no re-nag)* (app.py:1119) while
   harmless needs chirp every 90s.
 - [J] **10 — Good care suppresses idle personality** — `_special_idle`
   bails at strength > 2 (petbody.py:770).  Design call.
-- [ ] **11 — Bad mornings are invisible** — wake roll can dump 150 mood
+- [x] **11 — Bad mornings are invisible** *(shipped v0.5.168: morning-tier HUD note)* — wake roll can dump 150 mood
   with only a pose (petbody.py:703-708).
 
 ## Growth / DNA

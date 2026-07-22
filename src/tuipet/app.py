@@ -132,13 +132,14 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("THE CORE NUMBER SAYS WHICH WAY IT COUNTS: the DigiCore's "
-                 "◆ meter was a countdown-to-evolve on a growing pet and an "
-                 "age-count on a final form — the same bare glyph, opposite "
-                 "directions. It now reads '◆ 7 to evolve', '◆ 7 of 14 to "
-                 "elder', or '◆ 16 — elder', so one glance tells you whether "
-                 "the core is filling toward a new form or the mon is simply "
-                 "getting old.")
+    WHATS_NEW = ("THE QUIET STATES SPEAK UP: a lone poop pile now asks for a "
+                 "tidy-up in the idle HUD (text only — the 3-pile alarm keeps "
+                 "its job), frailty finally rings its alarm the moment an "
+                 "Ultimate/Mega crosses 3 care mistakes (the one lethal state "
+                 "was the only silent one), and your mon's morning tier "
+                 "reaches the HUD — wake up beaming, on the wrong side, or "
+                 "from an awful night, you'll hear about it instead of "
+                 "guessing from a 2-second pose.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and
@@ -192,6 +193,7 @@ class TuiPetApp(ActionsMixin, App):
         self._update_msg = None     # set by the background PyPI check when a newer release exists
         self._showing_update = False
         self._showing_armed = False  # the standing DNA-divergence notice (set once: marquee)
+        self._showing_tidy = False   # the sub-alarm tidy-up nudge (1-2 piles)
         self._sync = None           # background cloud-save push client (net.SyncClient), or None
         self._hud_scroll = None     # plain text being marquee-scrolled, or None when it fits
         self._hud_off = 0           # marquee window offset
@@ -1073,6 +1075,12 @@ class TuiPetApp(ActionsMixin, App):
         if note:
             self.flash(note)
             p.assist_note = ""
+        wn = getattr(p, "wake_note", "")
+        if wn:
+            # the morning tier used to land as nothing but a 1.6s pose
+            # while the roll moved mood a whole tier (gameplay polish #11)
+            self.flash(wn)
+            p.wake_note = ""
         # a lifetime-win gate crossed mid-battle: announce it back home
         note = getattr(p, "egg_unlock_note", "")
         if note:
@@ -1102,6 +1110,15 @@ class TuiPetApp(ActionsMixin, App):
         self._gift_seen = bool(p.gift)
         if p.gift and p.anim == "idle" and self.screen_w.fx is None:
             p._set_anim("happy", 1.2)
+        # frailty gets its ONSET alarm (gameplay polish #9, 2026-07-22): the
+        # one genuinely lethal care state was the only silent one.  Onset
+        # only, no 90s re-nag -- unlike hunger there is no key that clears
+        # it (mistakes are stage-scoped), so a standing nag would just be
+        # torture; the HUD line below stays up for as long as it holds
+        frail = p.is_frail()
+        if frail and not getattr(self, "_frail_seen", False):
+            self.beep("alarm")
+        self._frail_seen = frail
         # care-need call (classic V-pet nag): alert on onset, then every ~90s
         needs = p.needs_attention()
         if needs and not self._needs:
@@ -1134,6 +1151,20 @@ class TuiPetApp(ActionsMixin, App):
         elif self._showing_need:
             self._hud("")
             self._showing_need = False
+        elif 0 < p.poop < 3 and not p.asleep:
+            # the sub-alarm tidy nudge (gameplay polish #7, 2026-07-22): the
+            # care ALARM deliberately waits for 3 piles (~135 min), but a
+            # lone pile sat visible and un-asked-about the whole way there
+            # -- "is this a problem or not?".  A quiet idle line answers:
+            # yes, and C clears it.  No beep -- the 3-pile alarm keeps its
+            # escalation role.
+            if not self._showing_tidy:
+                self._hud("a mess on the floor — [b]C[/] to clean")
+                self._showing_tidy = True
+            self._showing_update = False
+        elif self._showing_tidy:
+            self._hud("")
+            self._showing_tidy = False
         elif self._armed_field(p):
             # a standing choice must stay visible (the Divergence page law:
             # "the door must be visible to be a choice") -- an armed steer

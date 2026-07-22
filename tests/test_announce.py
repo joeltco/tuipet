@@ -182,3 +182,123 @@ def test_frail_badge_rides_the_hud_deco():
     assert any("frail" in d for d in _care_deco(p))
     p.care_mistakes = 0
     assert not any("frail" in d for d in _care_deco(p))
+
+
+# --- gameplay polish #7 / #9 / #11 (2026-07-22) ------------------------------
+
+def _quiet_champion():
+    """No needs, awake, mid-day: the idle HUD slot is free."""
+    p = Pet(num=100, stage="Champion", attribute="Vaccine", obedience=500)
+    p.hunger, p.energy = 4, 24
+    p.world_seconds = 10 * 60.0
+    p._sicken = lambda *a, **k: None
+    return p
+
+
+def test_a_lone_pile_gets_the_quiet_tidy_nudge():
+    """The care ALARM deliberately waits for 3 piles; a lone pile sat
+    visible and un-asked-about for ~135 min.  The idle slot now answers
+    -- text only, the 3-pile alarm keeps the escalation."""
+    import asyncio
+    from tuipet.app import TuiPetApp
+    p = _quiet_champion()
+    p.poop = 1
+
+    async def go():
+        app = TuiPetApp(pet=p)
+        async with app.run_test(size=(82, 32)) as pilot:
+            await pilot.pause()
+            await pilot.press("enter")
+            await pilot.pause()
+            app.beeps = []
+            app.beep = lambda name=None, bell=True: app.beeps.append(name)
+            app.on_tick()
+            nudged = str(app.msg_w.render())
+            beeped = list(app.beeps)
+            p.poop = 0                         # cleaned: the nudge clears
+            app.on_tick()
+            app.on_tick()
+            cleared = str(app.msg_w.render())
+            p.poop = 3                         # the real alarm outranks it
+            app.on_tick()
+            alarmed = str(app.msg_w.render())
+            return nudged, beeped, cleared, alarmed
+
+    nudged, beeped, cleared, alarmed = asyncio.run(go())
+    assert "to clean" in nudged
+    assert "alarm" not in beeped               # the nudge itself is silent
+    assert "to clean" not in cleared
+    assert "needs cleaning" in alarmed         # the 3-pile call is unchanged
+
+
+def test_frailty_beeps_once_at_onset():
+    """The one lethal care state was the only silent one.  Onset alarm
+    only -- no key clears frailty, so no 90s re-nag."""
+    import asyncio
+    from tuipet.app import TuiPetApp
+    p = _quiet_champion()
+    p.stage = "Ultimate"
+
+    async def go():
+        app = TuiPetApp(pet=p)
+        async with app.run_test(size=(82, 32)) as pilot:
+            await pilot.pause()
+            await pilot.press("enter")
+            await pilot.pause()
+            app.beeps = []
+            app.beep = lambda name=None, bell=True: app.beeps.append(name)
+            app.on_tick()
+            before = app.beeps.count("alarm")
+            p.care_mistakes = 3                # frailty begins
+            app.on_tick()
+            onset = app.beeps.count("alarm")
+            for _ in range(120):               # two nag-windows later…
+                app.on_tick()
+            later = app.beeps.count("alarm")
+            return before, onset, later
+
+    before, onset, later = asyncio.run(go())
+    assert before == 0 and onset == 1
+    assert later == 1                          # …still just the one
+
+
+def test_the_morning_tier_reaches_the_hud():
+    """The wake roll can move mood a full tier with nothing but a 1.6s
+    pose (petbody._wake).  The note now flashes; a DISTURBED wake keeps
+    reporting the disturbance instead."""
+    import asyncio
+    from tuipet import petbody
+    from tuipet.app import TuiPetApp
+
+    # unit half: the roll writes the note, the disturb path clears it
+    p = _quiet_champion()
+    p.asleep, p.lights = True, False
+    real = petbody.random.randrange
+    petbody.random.randrange = lambda n: 0     # force BadMorning
+    try:
+        p._wake()
+    finally:
+        petbody.random.randrange = real
+    assert "wrong side" in p.wake_note
+
+    q = _quiet_champion()
+    q.asleep, q.lights, q.energy = True, False, 1
+    q._disturbed()
+    assert getattr(q, "wake_note", "") == ""   # the grumble is the story
+
+    # app half: the note flashes once and is consumed
+    z = _quiet_champion()
+
+    async def go():
+        app = TuiPetApp(pet=z)
+        async with app.run_test(size=(82, 32)) as pilot:
+            await pilot.pause()
+            await pilot.press("enter")
+            await pilot.pause()
+            z.wake_note = "Pico woke up beaming!"
+            app.on_tick()
+            shown = str(app.msg_w.render())
+            return shown, z.wake_note
+
+    shown, left = asyncio.run(go())
+    assert "beaming" in shown and left == ""
