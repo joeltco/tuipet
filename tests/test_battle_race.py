@@ -135,3 +135,76 @@ def test_the_panel_bar_locks_and_replays_the_race():
             break
     assert pan.phase == "result"
     assert pan.key("space") == ("done", pan.battle)
+
+
+# --- combat feedback + the bar's real stake (gameplay polish #1/#3/#5) -------
+
+def _side(**kw):
+    d = dict(stage="Rookie", attribute="Free", strength=4, strength_max=4,
+             hunger=4, hunger_max=4, energy=5, energy_max=5,
+             base_weight=10, weight=10)
+    d.update(kw)
+    return battle.Side(0, **d)
+
+
+def test_the_saved_form_steadies_or_shakes_the_aim():
+    """#3: the timing bar's grade only ever tiered damage EV while the
+    fight was decided by hit_chance -- the one interactive moment barely
+    moved outcomes.  A mega now adds 0.05 accuracy, a miss costs it."""
+    foe = _side()
+    normal = _side().hit_chance(foe)
+    mega = _side(hit_type="mega").hit_chance(foe)
+    miss = _side(hit_type="miss").hit_chance(foe)
+    assert abs(mega - normal - 0.05) < 1e-9
+    assert abs(normal - miss - 0.05) < 1e-9
+
+
+def test_coach_line_names_the_biggest_fixable_drag():
+    """#1: precedence = fixability (condition tonight > rank > drills)."""
+    foe = _side()
+    assert "weight" in battle.coach_line(_side(weight=25), foe)
+    assert "hungry" in battle.coach_line(_side(hunger=1), foe)
+    assert "energy" in battle.coach_line(_side(energy=1), foe)
+    assert "effort" in battle.coach_line(_side(strength=1), foe)
+    assert "outranked" in battle.coach_line(_side(), _side(stage="Mega"))
+    assert "drills" in battle.coach_line(_side(), foe)   # nothing else drags
+    maxed = _side(trainings_cur=999, trainings_total=9999)
+    assert battle.coach_line(maxed, foe) == ""           # a clean loss is luck
+
+
+def test_a_true_draw_is_flagged():
+    """#5: equal survivors counted as a silent loss -- the flag lets the
+    result card SAY so."""
+    me, foe = _side(), _side()
+    b = battle.Battle(me, {"num": 100})
+    b.pet_hp = b.enemy_hp = 2
+    b.over = False
+    b._finish()
+    assert b.drawn and not b.won
+    b2 = battle.Battle(me, {"num": 100})
+    b2.pet_hp, b2.enemy_hp = 3, 2
+    b2.over = False
+    b2._finish()
+    assert not b2.drawn and b2.won
+
+
+def test_the_result_note_tells_margin_draw_or_why():
+    """#1+#5 on the card: win = HP to spare, draw = the rule, loss = the
+    coach line."""
+    from tuipet.battlescreen import BattlePanel
+    p = _pet()
+    pan = BattlePanel(p, enemy={"num": 100})
+    pan.battle = battle.Battle(_side(), {"num": 100})
+    pan.battle.over = True
+    pan.won = True
+    pan.battle.pet_hp = 1
+    assert "whisker" in pan._result_note()
+    pan.battle.pet_hp = 4
+    assert "4 HP to spare" in pan._result_note()
+    pan.won = False
+    pan.battle.drawn = True
+    assert "counts as a loss" in pan._result_note()
+    pan.battle.drawn = False
+    pan.battle.me = _side(hunger=1)
+    pan.battle.foe = _side()
+    assert "hungry" in pan._result_note()

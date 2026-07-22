@@ -132,14 +132,17 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("EVERY ??? HAS A ROAD HOME: an undiscovered album entry "
-                 "used to say only 'keep raising' — with hundreds of masked "
-                 "forms and no map, the collection endgame had no compass. "
-                 "Each ??? now names its route: the digitama line that "
-                 "raises it, or the door that reaches it off the charts — "
-                 "an armor jump, a jogress, or a Field divergence. Routes "
-                 "name eggs and doors, never the forms themselves: the "
-                 "surprise stays sealed.")
+    WHATS_NEW = ("THE FIGHT TALKS BACK: the result card now says WHY — won "
+                 "by a whisker or with HP to spare, a draw names the "
+                 "draw-counts-as-loss rule, and a loss coaches the biggest "
+                 "fixable drag (weight off base, an empty belly, low energy, "
+                 "outranked, or just train more). The timing bar finally "
+                 "matters: a clean mega steadies your aim, a shank shakes "
+                 "it. Cups ramp — the semi fights part-trained, the final "
+                 "near-veteran. Plus: alarms ring 1×/2×/3× by urgency, a "
+                 "happy well-kept mon actually bounces again, gen-1 tamers "
+                 "start with 250 bits, every town keeps its own guest good, "
+                 "and the honors ladder climbs to a million.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and
@@ -733,6 +736,39 @@ class TuiPetApp(ActionsMixin, App):
         if bell:
             self.bell()
 
+    def alarm_pattern(self, n):
+        """The care alarm's COUNT is the message (gameplay polish #8,
+        2026-07-22): every need rang the identical single alarm, so by ear
+        a player couldn't tell hunger from sickness from across the room.
+        Same wav — no new-sample taste calls — differentiated by pattern:
+        1× routine (hunger/effort/lights), 2× cleaning, 3× urgent
+        (sick/exhausted/frail).  Extra rings queue onto the 10 Hz frame
+        clock, 4 frames apart."""
+        self.beep("alarm")
+        if n > 1:
+            q = getattr(self, "_beep_q", None)
+            if q is None:
+                q = self._beep_q = []
+            q.extend([4 * i for i in range(1, n)])
+
+    def _alarm_urgency(self, p):
+        """How many rings the standing need deserves (the _need_message
+        precedence, classed): 3 = lethal-adjacent, 2 = the mess, 1 = routine."""
+        if p.sick or p.energy <= 0 or p.is_frail():
+            return 3
+        if p.poop >= 3:
+            return 2
+        return 1
+
+    def _drain_beep_q(self):
+        """One frame-tick of the pattern queue (counts down; 0 fires)."""
+        q = getattr(self, "_beep_q", None)
+        if not q:
+            return
+        self._beep_q = [t - 1 for t in q if t > 0]
+        if any(t <= 0 for t in q):
+            self.beep("alarm", bell=False)
+
     def _toggle_sound(self):
         """The options-menu sound switch (the panel carries its own message)."""
         self.sound = not self.sound
@@ -896,6 +932,7 @@ class TuiPetApp(ActionsMixin, App):
 
     def on_frame(self):                        # single DVPet interval clock (10 Hz, 0.1s): main view AND sub-screens
         menu.TICK += 1                         # the shared note marquee clock: no screen clips a message
+        self._drain_beep_q()                   # the alarm-pattern tail (#8): extra rings land here
         self._hud_marquee()                    # scroll any over-long HUD message (independent of the LCD)
         self._drain_pms()                      # ✉ alerts ride the message box (presence 2026-07-05)
         self._drain_verdict()                  # a parked worker-verdict flashes back home (rounds 19/21/22)
@@ -1118,18 +1155,20 @@ class TuiPetApp(ActionsMixin, App):
         # torture; the HUD line below stays up for as long as it holds
         frail = p.is_frail()
         if frail and not getattr(self, "_frail_seen", False):
-            self.beep("alarm")
+            self.alarm_pattern(3)          # the lethal class rings urgent
         self._frail_seen = frail
         # care-need call (classic V-pet nag): alert on onset, then every ~90s
+        # -- the ring COUNT carries the class by ear (#8: 1 routine / 2 mess
+        # / 3 urgent), same alarm.wav throughout
         needs = p.needs_attention()
         if needs and not self._needs:
-            self.beep("alarm")
+            self.alarm_pattern(self._alarm_urgency(p))
             self._nag_t = 0.0
         elif needs:
             self._nag_t = getattr(self, "_nag_t", 0.0) + 1.0
             if self._nag_t >= 90:
                 self._nag_t = 0.0
-                self.beep("alarm")
+                self.alarm_pattern(self._alarm_urgency(p))
         self._needs = needs
         # the alarm's on-screen half: announce the active care need in the HUD box,
         # yielding to a fresh action flash and clearing once the need is met

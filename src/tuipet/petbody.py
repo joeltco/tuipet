@@ -773,15 +773,19 @@ class BodyMixin:
         weather system; BASIC VPET 2026-07-16.)"""
         if getattr(self, "away", False):
             return                                   # no home idles on the road
-        # the personality idles: canon gates -- energy >= max/3, spirit >= 0,
-        # effort <= limit/2, not unwell (and the TIER, not raw mood)
-        if (self.energy < self.max_energy / 3 or self.enthusiasm < 0
-                or self.strength > 2):
+        # the personality idles: rested + spirited gates for both families;
+        # the under-drilled gate (effort <= 2) now scopes ONLY the sulk
+        # (gameplay polish #10, 2026-07-22): it used to mute the HAPPY
+        # family too, so a freshly-fed, well-trained pet played NO ambient
+        # emote for its first ~50-100 min while a neglected one danced --
+        # good care made the mon look MORE inert.  Joy plays at any effort;
+        # fuming stays an under-drilled tell.
+        if self.energy < self.max_energy / 3 or self.enthusiasm < 0:
             return
         m = self.current_mood()
         if m == "Happy":
             self._set_anim(random.choice(("play", "happy")), 2.0)
-        elif m in ("Unhappy", "Depressed"):
+        elif m in ("Unhappy", "Depressed") and self.strength <= 2:
             self._set_anim(random.choice(("angry", "tantrum")), 2.0)
 
     def _check_discipline_call(self):

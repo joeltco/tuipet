@@ -249,3 +249,12 @@ def test_every_need_call_names_its_key():
     assert "I" in msgs["sick"] and "pill" in msgs["sick"]
     assert "C" in msgs["clean"]
     assert "T" in msgs["effort"]
+
+
+def test_help_teaches_the_energy_dial_and_the_alarm_legend():
+    """#6: energy has no passive decay BY DESIGN — it is the action meter,
+    and the gauge only reads broken to a player nobody told.  #8: the
+    ring-count legend."""
+    text = " ".join(t for t, _k in HELP)
+    assert "Energy fuels" in text and "sleep refills" in text
+    assert "one beep" in text and "three urgent" in text

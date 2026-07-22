@@ -670,3 +670,31 @@ def test_cup_rows_wear_one_whole_tag(monkeypatch):
     assert "+item" in item_row
     for ln in (open_row, alarm_row, item_row):
         assert cell_len(ln.rstrip()) <= 38
+
+
+def test_the_bracket_ramps_toward_the_final():
+    """Gameplay polish #4 (2026-07-22): QF fights the fresh wild, the semi
+    part-trained, the final near-veteran -- and a title DEFENSE's veteran
+    field (attached at init) stays strictly harder than the ramp."""
+    from tuipet import adventure
+    random.seed(4)
+    p = _pet("Rookie")
+    tm = Tournament(p, _trophy())
+    assert "side" not in tm.current_opponent()          # QF: the fresh wild
+    tm.round = 1
+    s = tm.current_opponent()["side"]
+    assert (s.trainings_cur, s.trainings_total) == (250, 2500)
+    tm.round = 2
+    s = tm.current_opponent()["side"]
+    assert (s.trainings_cur, s.trainings_total) == (500, 5000)
+    assert (s.battles, s.wins) < adventure.VETERAN_RECORD   # defense stays peak
+    # a defense's pre-attached veteran side is never re-statted by the ramp
+    random.seed(4)
+    q = _pet("Rookie")
+    troph = _trophy()
+    q.trophies_won = {troph["id"]: troph["season"]}
+    dm = Tournament(q, troph)
+    dm.round = 2
+    s = dm.current_opponent()["side"]
+    assert (s.trainings_cur, s.trainings_total) == adventure.VETERAN_TRAININGS
+    assert (s.battles, s.wins) == adventure.VETERAN_RECORD

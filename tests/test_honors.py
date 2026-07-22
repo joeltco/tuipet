@@ -161,3 +161,15 @@ def test_long_roster_entries_scroll_the_star_into_view():
     pan._mq = 38                             # step 19 -> the window has slid
     t1 = pan.text().plain
     assert "mername ★" in t1, "the marquee must carry the star into view"
+
+
+def test_the_prestige_ladder_reaches_a_million():
+    """Gameplay polish #25 (2026-07-22): after 435k of honors the bankroll
+    went inert.  Two rungs extend the existing ladder — same system, same
+    plate, no new economy."""
+    from tuipet import data
+    ts = data.load_titles()
+    assert len(ts) == 7
+    prices = [t["price"] for t in ts]
+    assert prices == sorted(prices) and prices[-1] == 1_000_000
+    assert all(t["name"] and t["desc"] for t in ts)

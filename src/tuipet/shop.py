@@ -441,6 +441,25 @@ def _town_rows(town_id):
         else:
             local = o["price"]
         rows.append((sid, k, o, local))
+    # the GUEST shelf (gameplay polish #24, 2026-07-22): after catalog
+    # mapping, the 26 authored counters collapsed to TWO variants one SKU
+    # apart -- "all shops feel unique" (Joel 2026-07-21) lived only in the
+    # egg market and the cup.  Each town now keeps ONE standing guest good,
+    # crc32-picked from the UNGATED home CATALOG (the gated catalog() would
+    # re-deal the guest as unlocks land -- a town's character is permanent;
+    # the daily deal already rotates).  Adventure stays off the pool (its
+    # map-clear gate must hold); catalog price, standard factors, capped
+    # stock: no money printer.
+    import zlib
+    stocked = {k for _sid, k, _o, _p in rows}
+    pool = [(k, v) for k, v in CATALOG.items()
+            if v[2] is not None and v[3] != "Adventure" and k not in stocked]
+    if pool:
+        gk, gv = pool[zlib.crc32(f"guest:{town_id}".encode()) % len(pool)]
+        o = {"price": gv[2], "sale_factor": 2, "resell_factor": 2,
+             "max_stock": 2, "is_food": gv[3] in ("Food", "Fruit"),
+             "consumable_id": -1}
+        rows.append((f"guest:{town_id}", gk, o, gv[2]))
     return rows
 
 

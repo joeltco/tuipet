@@ -237,6 +237,13 @@ class Pet(CareMixin, DnaMixin, BattleMixin, BodyMixin):
         pet = cls(num=-1, name="Digitama", stage="Egg",
                   egg_type=egg_type, generation=generation)
         pet.mood = EGG_MOOD                     # Evolution.egg: setMood(EggMood 100)
+        if generation == 1:
+            # the tamer's pocket money (gameplay polish #23, 2026-07-22): a
+            # first-generation pet started at 0 bits with every faucet
+            # gated -- adventure needs Rookie, a cup needs a stake it
+            # couldn't cover.  250 opens the first Rookie stake or one
+            # small shop treat; generation 2+ inherits the estate instead.
+            pet.bits = 250
         if generation > 1:
             # the heir's ESTATE (death/rebirth + item audits): canon's
             # resetToEgg never touches bits, the bag or the trophy room --

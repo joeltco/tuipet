@@ -331,3 +331,42 @@ def test_the_egg_wait_has_a_pointer_and_an_eta():
 
     hud = asyncio.run(go())
     assert "help" in hud                         # the standing pointer
+
+
+def test_the_alarm_ring_count_carries_the_class():
+    """Gameplay polish #8: 1× routine, 2× the mess, 3× urgent — same
+    alarm.wav, the COUNT is the message.  Extra rings drain on the frame
+    clock."""
+    import asyncio
+    from tuipet.app import TuiPetApp
+    p = _quiet_champion()
+
+    async def go():
+        app = TuiPetApp(pet=p)
+        async with app.run_test(size=(82, 32)) as pilot:
+            await pilot.pause()
+            await pilot.press("enter")
+            await pilot.pause()
+            app.beeps = []
+            app.beep = lambda name=None, bell=True: app.beeps.append(name)
+
+            def rings_for(**state):
+                for k, v in state.items():
+                    setattr(p, k, v)
+                app.beeps.clear()
+                app._needs = False               # a fresh onset
+                app.on_tick()
+                for _ in range(20):              # drain the pattern tail
+                    app._drain_beep_q()
+                n = app.beeps.count("alarm")
+                p.hunger, p.poop, p.sick = 4, 0, False
+                app.on_tick()                    # clear the need
+                return n
+
+            one = rings_for(hunger=0)
+            two = rings_for(hunger=4, poop=4)
+            three = rings_for(poop=0, sick=True)
+            return one, two, three
+
+    one, two, three = asyncio.run(go())
+    assert (one, two, three) == (1, 2, 3)

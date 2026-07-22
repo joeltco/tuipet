@@ -132,3 +132,32 @@ def test_the_town_panel_serves_the_counter(monkeypatch):
     bag.cursor = next(i for i, e in enumerate(bag._rows()) if e["key"] == "steak")
     bag.key("r")                                       # sell into A-town demand
     assert p.bits - bits1 == shop.town_sell_price("steak", A_TOWN)
+
+
+def test_every_town_keeps_one_standing_guest_good():
+    """Gameplay polish #24 (2026-07-22): after catalog mapping the 26
+    counters collapsed to TWO variants one SKU apart.  Each town now keeps
+    ONE crc32-picked guest from the ungated catalog -- permanent per town
+    (the daily deal rotates; a town's character doesn't), never the
+    map-gated Adventure shelf, at flat catalog price (no printer)."""
+    guests = {}
+    for tid in data.load_towns():
+        rows = shop._town_rows(tid)
+        g = [(sid, k, o, local) for sid, k, o, local in rows
+             if str(sid).startswith("guest:")]
+        assert len(g) == 1, tid
+        sid, k, o, local = g[0]
+        e = shop.entry(k)
+        assert e["category"] != "Adventure"          # the gate holds
+        assert local == shop.CATALOG[k][2]           # flat catalog price
+        assert shop._town_rows(tid)[-1][1] == k      # stable across calls
+        guests[tid] = k
+    assert len(set(guests.values())) > 2             # real variety landed
+
+
+def test_the_first_generation_starts_with_pocket_money():
+    """Gameplay polish #23: gen-1 started at 0 bits with every faucet
+    gated (adventure needs Rookie, cups need a stake).  250 opens the
+    first Rookie stake or one treat; heirs inherit the estate instead."""
+    p = Pet.new_egg(generation=1)
+    assert p.bits == 250

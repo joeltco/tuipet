@@ -22,6 +22,14 @@ HELP = [
     ("comes next and reset each stage.", 0),
     ("20 is fatal - and a frail Ultimate/", 0),
     ("Mega elder can go at just 5.", 0),
+    # the energy dial explained (gameplay polish #6, 2026-07-22): no
+    # passive decay BY DESIGN -- it is the ACTION meter, so the gauge only
+    # reads "broken" to a player nobody told what spends it
+    ("Energy fuels drills, fights and the", 0),
+    ("road; sleep refills it each night.", 0),
+    # the alarm legend (#8): the ring count is the message
+    ("Alarms count the urgency: one beep", 0),
+    ("routine, two a mess, three urgent.", 0),
     ("", 0),
     ("EXPLORE", 2),
     ("a adventure - head out on the road", 1),

@@ -59,3 +59,25 @@ def test_an_effort_heal_survives_a_long_empty_spell():
     p.tick(1.0)
     assert p.strength == 4, "the heal must survive the next tick"
     assert p.mistake_day == md0
+
+
+def test_good_care_no_longer_mutes_the_happy_idles():
+    """Gameplay polish #10 (2026-07-22): the under-drilled gate (effort<=2)
+    muted BOTH idle families, so a well-kept pet played no ambient emote
+    while a neglected one danced.  Joy plays at any effort now; the sulk
+    stays an under-drilled tell."""
+    from tuipet.pet import Pet
+
+    def idled(strength, sick=False):
+        p = Pet(num=100, stage="Champion", attribute="Vaccine")
+        p.world_seconds = 10 * 60.0
+        p.hunger, p.energy, p.enthusiasm = 4, p.max_energy, 5
+        p.strength, p.sick = strength, sick
+        p.anim = "idle"
+        assert p.current_mood() == ("Unhappy" if sick else "Happy")
+        p._special_idle()
+        return p.anim
+
+    assert idled(4) in ("play", "happy")           # well-drilled joy PLAYS
+    assert idled(4, sick=True) == "idle"           # a drilled pet doesn't sulk
+    assert idled(1, sick=True) in ("angry", "tantrum")   # under-drilled fuming

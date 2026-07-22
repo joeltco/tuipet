@@ -36,34 +36,34 @@ code stays dormant unless named.
 
 ## Combat feel
 
-- [J] **1 — Show why you won/lost.**  `hit_chance` (battle.py:123) reads
+- [x] **1 — Show why you won/lost.** *(v0.5.171: battle.coach_line on the result card)*  `hit_chance` (battle.py:123) reads
   seven hidden terms; the result screen shows none.  Proposal: post-fight
   one-liner naming the biggest drag (weight off-base / rank gap / low
   trainings), sourced from the same Side terms the engine computed.
-- [J] **2 — Coaching text points at the wrong formula.**  "Good care
+- [x] **2 — Coaching text points at the wrong formula.** *(v0.5.171: ready hint names the real levers)*  "Good care
   widens the mega zone" describes the bar (battlescreen.py:68-81, reads
   age); the fight is decided by hit_chance (reads weight/trainings).
   Proposal: reword the ready-screen hint toward the real levers.
-- [J] **3 — Timing bar is nearly cosmetic** (EV 1.9/1.5/1.2; drill grades
+- [x] **3 — Timing bar is nearly cosmetic** *(v0.5.171: saved form now ±0.05 accuracy; drill rulings untouched)* (EV 1.9/1.5/1.2; drill grades
   stat-identical, petbattle.py:179-201).  Balance call.
-- [J] **4 — Normal cups flatline vs untrained fields** (battle.py:79-88);
+- [x] **4 — Normal cups flatline vs untrained fields** *(v0.5.171: SF part-trained, Final near-veteran; defense stays peak)* (battle.py:79-88);
   only title defenses field trained foes.  Balance call.
-- [J] **5 — Close fights look like blowouts** — no HP-margin readout;
+- [x] **5 — Close fights look like blowouts** *(v0.5.171: HP-margin + draw-counts-as-loss on the card)* — no HP-margin readout;
   draw-as-loss invisible (battle.py:220-227).
 
 ## Care loop / main view
 
-- [J] **6 — Energy is a dead gauge on the home loop** (no passive decay,
+- [x] **6 — Energy is a dead gauge on the home loop** *(v0.5.171: kept no-decay BY DESIGN — it's the action meter; help now teaches what spends/refills it)* (no passive decay,
   deliberate at petbody.py:252).  Design call: earn the gauge or accept.
 - [x] **7 — Lone poop pile is silent friction** *(shipped v0.5.168: quiet idle nudge, no beep)* — nag only at ≥3 piles
   (~135 min, pet.py:508).
-- [J] **8 — Every alarm is the same beep** (app.py:1106-1112).  Which
+- [x] **8 — Every alarm is the same beep** *(v0.5.171: ring COUNT = the class — 1 routine / 2 mess / 3 urgent, same wav; legend in help)* (app.py:1106-1112).  Which
   existing sound maps to which need is a taste call — proposal: keep
   alarm.wav as the base, differentiate by PATTERN (single/double/triple)
   rather than sample, or name the mapping you want.
 - [x] **9 — Frailty (the lethal state) has no beep** *(shipped v0.5.168: onset alarm, no re-nag)* (app.py:1119) while
   harmless needs chirp every 90s.
-- [J] **10 — Good care suppresses idle personality** — `_special_idle`
+- [x] **10 — Good care suppresses idle personality** *(v0.5.171: joy plays at any effort; fuming stays under-drilled)* — `_special_idle`
   bails at strength > 2 (petbody.py:770).  Design call.
 - [x] **11 — Bad mornings are invisible** *(shipped v0.5.168: morning-tier HUD note)* — wake roll can dump 150 mood
   with only a pose (petbody.py:703-708).
@@ -98,11 +98,11 @@ code stays dormant unless named.
 
 ## Economy / world
 
-- [J] **23 — Gen-1 starts broke with faucets gated** (0 bits; adventure
+- [x] **23 — Gen-1 starts broke with faucets gated** *(v0.5.171: 250 starting bits, gen-1 only)* (0 bits; adventure
   needs Rookie; cups need a stake).  Balance call.
-- [J] **24 — Two town-shop variants game-wide** (one SKU apart).  B1
+- [x] **24 — Two town-shop variants game-wide** *(v0.5.171: one standing crc32 guest good per town, ungated catalog, flat price)* (one SKU apart).  B1
   restores the transports to every counter; further variety = design call.
-- [J] **25 — Late-game bits go inert** after honors/DNA/eggs cap.  New
+- [x] **25 — Late-game bits go inert** *(v0.5.171: honors ladder extended to 7 rungs / 1.935M total)* after honors/DNA/eggs cap.  New
   rungs on existing ladders = Joel's call (no invented economies).
 
 ## Noted, deliberately untouched

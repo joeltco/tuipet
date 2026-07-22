@@ -127,7 +127,16 @@ class Side:
              + min(self.trainings_cur / 999 * 0.1, 0.1)
              + min(self.trainings_total / 9999 * 0.2, 0.2)
              + self._condition()
-             + _tri(self.attribute, other.attribute))
+             + _tri(self.attribute, other.attribute)
+             # the timing bar's real stake (gameplay polish #3, 2026-07-22):
+             # the saved form only ever tiered damage EV (1.9/1.5/1.2 per
+             # landed hit) while the fight was decided here -- the one
+             # interactive combat moment barely moved outcomes.  A clean
+             # mega now steadies the aim too, a shanked drill shakes it;
+             # symmetric for every Side (cards carry hit_type; wilds are
+             # "normal"; the drill rulings -- effort/weight move win or
+             # lose -- are untouched, the STAKE just reaches the arena)
+             + {"mega": 0.05, "miss": -0.05}.get(self.hit_type, 0.0))
         return min(1.0, max(0.0, p))
 
     def roll_damage(self, rng):
@@ -167,6 +176,28 @@ def generate(me, foe, rounds=ROUNDS_LOCAL, rng=None):
     return seq, max(0, my_hp), max(0, foe_hp)
 
 
+def coach_line(mine, theirs):
+    """The result screen's one-line WHY (gameplay polish #1, 2026-07-22):
+    hit_chance sums seven hidden terms and the old card showed none of
+    them, so losses read as arbitrary.  Precedence = fixability: condition
+    anomalies first (a player can fix those tonight), then the rank gap,
+    then the training ledger.  '' when nothing notable dragged -- the
+    volleys were just volleys."""
+    if mine.base_weight > 0 and abs(mine.weight - mine.base_weight) >= 8:
+        return f"weight {mine.weight}g vs base {mine.base_weight}g dragged it"
+    if mine.hunger <= 1:
+        return "it fought hungry"
+    if mine.energy <= mine.energy_max * 0.4:
+        return "energy ran low"
+    if mine.strength <= 1:
+        return "the effort gauge sat near empty"
+    if theirs._rank() > mine._rank():
+        return f"outranked — {theirs.stage} over {mine.stage}"
+    if mine.trainings_total < 1000:
+        return "more drills raise the hit rate"
+    return ""
+
+
 class Battle:
     """A playable fight the screen steps through round by round."""
 
@@ -189,6 +220,7 @@ class Battle:
         self.round = 0
         self.over = False
         self.won = False
+        self.drawn = False           # both stood at equal HP (counts as a loss)
         self.reward = ""
         self.source = source
 
@@ -225,6 +257,9 @@ class Battle:
             self.won = False
         else:
             self.won = self.pet_hp > self.enemy_hp
+            # the silent rule made visible (gameplay polish #5): a true
+            # draw always read as an unexplained loss on the result card
+            self.drawn = self.pet_hp == self.enemy_hp
         if hasattr(self.pet, "record_battle"):
             self.pet.record_battle(self.won, self.enemy,
                                    online=self.source == "pvp")

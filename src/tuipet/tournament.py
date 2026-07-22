@@ -522,9 +522,26 @@ class Tournament:
     def round_name(self):
         return ROUNDS[min(self.round, 2)]
 
+    # the in-bracket ramp (gameplay polish #4, 2026-07-22): every standard
+    # entrant fought as an untrained ideal-condition wild, so QF/SF/Final
+    # were mechanically identical and a developed pet clamped near 0.95 vs
+    # their 0.55 -- cups you didn't hold went trivial at maturity, with
+    # nothing between "fresh wild" and the title-defense veterans.  The
+    # semi fights part-trained, the final near-veteran; a DEFENSE's field
+    # (VETERAN_TRAININGS/RECORD, attached at init) stays strictly harder.
+    # round -> (trainings_cur, trainings_total, battles, wins)
+    _RAMP = {1: (250, 2500, 40, 25), 2: (500, 5000, 80, 55)}
+
     def current_opponent(self):
         i = self.bracket.index("YOU")
-        return self.bracket[i + 1] if i % 2 == 0 else self.bracket[i - 1]
+        opp = self.bracket[i + 1] if i % 2 == 0 else self.bracket[i - 1]
+        ramp = self._RAMP.get(min(self.round, 2))
+        if isinstance(opp, dict) and "side" not in opp and ramp:
+            from . import battle
+            s = battle.Side.wild(opp["num"])
+            s.trainings_cur, s.trainings_total, s.battles, s.wins = ramp
+            opp = dict(opp, side=s)     # a copy: the parade keeps its card
+        return opp
 
     def _resolve_npc_round(self):
         """The other pairs fight while you catch your breath (npcFight/

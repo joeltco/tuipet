@@ -489,9 +489,29 @@ class BattlePanel:
                     "windup": "...", "fire_out": "Fire!", "fire_in": "Incoming!",
                     "dodge": "Dodge!", "flinch": "Hit!", "result": ""}.get(m, "")
             if m == "result":
-                note = f"record {self.pet.wins}W/{self.pet.battles}"
+                note = self._result_note()
         self.hud_php, self.hud_fhp, self.hud_note = ph, fh, note
         return scene
+
+    def _result_note(self):
+        """Record + the WHY (gameplay polish #1+#5, 2026-07-22): a win says
+        how close it stood, a draw names the draw-counts-as-loss rule, a
+        loss carries battle.coach_line's biggest fixable drag.  A raid
+        keeps the plain record — its boss never falls and the dealt tally
+        rides the exit line."""
+        rec = f"record {self.pet.wins}W/{self.pet.battles}"
+        b = self.battle
+        if b is None or self.raid:
+            return rec
+        if getattr(b, "drawn", False):
+            return f"a draw — counts as a loss · {rec}"
+        if self.won:
+            edge = ("by a whisker" if b.pet_hp <= 1
+                    else f"{b.pet_hp} HP to spare")
+            return f"won {edge} · {rec}"
+        from . import battle as _b
+        why = _b.coach_line(b.me, b.foe)
+        return f"{why} · {rec}" if why else rec
 
     def _render_ready(self):
         """The timing bar: a marker sweeps 0..24; SPACE locks it.  Inside the
@@ -502,7 +522,12 @@ class BattlePanel:
         text-glyph page was the one bar that looked nothing like it).  The
         strip carries SPACE/ESC; the status card carries the coaching."""
         self.hud_php, self.hud_fhp = 5, 5
-        self.hud_note = "Set your timing!  (good care widens the mega zone)"
+        # the coaching names the FIGHT's levers (gameplay polish #2): the
+        # old line pointed only at the bar-widening formula (which reads
+        # age), while the fight itself is decided by hit_chance -- weight
+        # near base, full meters, drills.  The bar still matters (damage
+        # tier); the levers matter more.
+        self.hud_note = "Set your timing!  (weight on base, full belly & drills win fights)"
         return self._scene([], strikefx.timing_bar(self.bar, self.mega_lo,
                                                    self.mega_hi))
 
