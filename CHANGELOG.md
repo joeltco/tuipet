@@ -3,6 +3,10 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.5.170 — EVERY ??? HAS A ROAD HOME (2026-07-22)
+
+EVERY ??? HAS A ROAD HOME: an undiscovered album entry used to say only 'keep raising' — with hundreds of masked forms and no map, the collection endgame had no compass. Each ??? now names its route: the digitama line that raises it, or the door that reaches it off the charts — an armor jump, a jogress, or a Field divergence. Routes name eggs and doors, never the forms themselves: the surprise stays sealed.
+
 ## 0.5.169 — THE FIRST HOUR EXPLAINS ITSELF (2026-07-22)
 
 THE FIRST HOUR EXPLAINS ITSELF: every care call now names its key (hungry F, sick I, cleaning C — lights always said S), help finally explains the ✗ care-mistake counter that steers every evolution (20 is fatal, 5 for a frail elder) and names the assistant's bits-per-hour retainer, and the egg wait has a shape: the card counts down to hatch and the HUD holds the help pointer for the whole wait instead of flashing it for 4 seconds.
