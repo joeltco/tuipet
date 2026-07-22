@@ -132,12 +132,12 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("THE LIFE BAR BITES BACK: the life meter is your pet's "
-                 "master death clock, and now neglect actually feeds it. "
-                 "Falling ill from filth or overweight, and taking the "
-                 "X-Antibody, both BURN life again — canon costs that had "
-                 "gone silent — and the pet jeers as they land, so you SEE "
-                 "the bar react instead of watching it drift.")
+    WHATS_NEW = ("MENU POLISH, ROUND TWO: the shop's Honors tab held its "
+                 "prices four columns left of every other shelf — now the "
+                 "price column stands still when you tab across. And the "
+                 "digicore STATUS page speaks one language for nothing: "
+                 "an unnamed pet and an empty Field both read — instead "
+                 "of a blank and a bare hyphen.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and

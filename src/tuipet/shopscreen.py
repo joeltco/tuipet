@@ -329,11 +329,13 @@ class ShopPanel:
         def fmt(e, i):
             if self.mode == "shop":
                 if e.get("title_id") is not None:
+                    # blank mark column so the price column holds still when
+                    # tabbing Food/Items/Eggs <-> Honors (menu polish 2026-07-21)
                     if e.get("worn"):
-                        return "%-18s %7s" % (("★ " + e["name"])[:18], "worn")
+                        return "%-18s %3s %7s" % (("★ " + e["name"])[:18], "", "worn")
                     if e.get("owned"):
-                        return "%-18s %7s" % (e["name"][:18], "owned")
-                    return "%-18s %6db" % (e["name"][:18], e["price"])
+                        return "%-18s %3s %7s" % (e["name"][:18], "", "owned")
+                    return "%-18s %3s %6db" % (e["name"][:18], "", e["price"])
                 held = self.pet.inventory.get(e["key"], 0)
                 mark = ("x%d" % held) if held else ""
                 nm = ("▾" + e["name"][:17]) if e.get("deal") else e["name"][:18]
