@@ -3,6 +3,10 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.5.161 — THE RECORD CATCHES UP (2026-07-22)
+
+THE RECORD CATCHES UP: the changelog now carries every release of this wild week — the album, the DSprite mortality, the audits, the town cup's show — and from here on, every release writes its own entry the moment it ships.
+
 ## 0.5.160 — THE GUIDE TELLS THE DNA STORY (2026-07-22)
 
 THE GUIDE TELLS THE DNA STORY: what DNA is FOR, in one breath — wager bits, mash to bank a Field, charge ONE Field to its threshold, and your next evolution takes that road instead of the chart's. The album's 1218 species are the reason. It was always true; now it's taught.
