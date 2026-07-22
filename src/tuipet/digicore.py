@@ -347,11 +347,14 @@ def build_pages(pet):
         ("Age", _mins(pet.age_seconds)),
         ("Battles", f"{pet.wins}W / {pet.battles} · {pet.bits}b"),
     ]
-    # the POWER page carries the numbers the evolution gates actually read
-    # (data-page polish 2026-07-17): the attribute ledger (setPower), the
-    # trained battle Form, the DMX battle level, KO6 Mega kills.  The
-    # weight/bits/battles bookkeeping moved beside its kin (weight ->
-    # CONDITION; battles/bits -> STATUS; trophies have their own page).
+    # the POWER page is the BATTLE ledger (framing fixed, gameplay polish
+    # #17 2026-07-22): the Va/D/Vi attribute powers stopped gating growth
+    # when those checks left evolution.check() -- lines never read them
+    # either.  What still feeds evolution here is Level (LV gates), KO6 and
+    # Effort; the attribute trio, Form and Drills feed the FIGHT
+    # (hit_chance / roll_damage).  The weight/bits/battles bookkeeping
+    # moved beside its kin (weight -> CONDITION; battles/bits -> STATUS;
+    # trophies have their own page).
     power = [
         ("Vaccine", str(pet.vaccine)), ("Data", str(pet.data_power)),
         ("Virus", str(pet.virus)), ("Effort", f"{pet.strength}/4"),

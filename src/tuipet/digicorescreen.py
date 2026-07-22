@@ -169,8 +169,18 @@ class DigiCorePanel:
         pending = (growth is not None and p.stage_seconds < growth
                    and core.has_next(p))
         x = getattr(p, "x_antibody", "None")
+        # the number wears its own meaning (gameplay polish #16, 2026-07-22):
+        # a bare "◆ 7" was a countdown-to-evolve on a growing pet and an
+        # age-count on a final form -- same glyph, opposite directions,
+        # with only the Meter row to disambiguate
+        if pending:
+            core_val = f"{chr(0x25C6)} {n} to evolve"
+        elif p.is_geriatric:
+            core_val = f"{chr(0x25C6)} {n} — elder"
+        else:
+            core_val = f"{chr(0x25C6)} {n} of {DIGICORE_BASE_RATE} to elder"
         rows = [
-            ("Core", f"{chr(0x25C6)} {n}"),
+            ("Core", core_val),
             ("Meter", "evolution nears at 1" if pending else "counts the days"),
             ("Field", data.pretty_field(getattr(p, "field", "") or "None")),
             ("X-State", "none" if x == "None" else x.lower()),

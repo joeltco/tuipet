@@ -635,3 +635,17 @@ def test_the_armed_row_wears_its_own_tag_and_sheet():
     sheet = pan.text().plain
     assert "ARMED" in sheet and "charges clear at every evolution" in sheet
     assert "not in this line" not in sheet     # the old foreign-num answer
+
+
+def test_the_core_number_wears_its_own_unit():
+    """Gameplay polish #16: a bare '◆ 7' was a countdown on a growing pet
+    and an age-count on a final form — the value now says which."""
+    p = _pet(stage_seconds=0.0)                    # growing: a countdown
+    pan = DigiCorePanel(p)
+    assert "to evolve" in pan.text().plain
+    p2 = _pet()                                    # past growth: the age count
+    p2.stage_seconds = p2.STAGE_DURATION["Rookie"] + 1
+    p2.age_seconds = 5 * 86400.0
+    assert "to elder" in DigiCorePanel(p2).text().plain
+    p2.age_seconds = 16 * 86400.0                  # over the line
+    assert "elder" in DigiCorePanel(p2).text().plain

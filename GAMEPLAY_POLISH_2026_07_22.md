@@ -76,9 +76,9 @@ code stays dormant unless named.
 - [ ] **15 — Album "???" has no route home** — name the line/egg (or
   jogress/armor/divergence) that reaches an unseen form
   (albumscreen.py:138; lines.py knows membership).
-- [ ] **16 — CORE number has no unit** — countdown vs age share one bare
+- [x] **16 — CORE number has no unit** *(shipped v0.5.167)* — countdown vs age share one bare
   glyph (digicore.py:37-57).
-- [ ] **17 — POWER page still frames Va/D/Vi as evolution gates**
+- [x] **17 — POWER page still frames Va/D/Vi as evolution gates** *(comment-only; fixed v0.5.167)*
   (digicore.py:307-311); those gates were dropped — battle stats now.
 
 ## New-player experience

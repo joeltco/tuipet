@@ -132,13 +132,13 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("DNA TEACHES ITSELF: the Charge screen now tells you both "
-                 "truths where you spend — charging arms the Divergence road "
-                 "(the line climb ignores it) AND charges clear at every "
-                 "evolution, so arm before the clock fills. The DNA menu "
-                 "names the whole loop in one line, and an armed steer now "
-                 "rides the main-view HUD — no more divergences firing hours "
-                 "after you forgot you set one.")
+    WHATS_NEW = ("THE CORE NUMBER SAYS WHICH WAY IT COUNTS: the DigiCore's "
+                 "◆ meter was a countdown-to-evolve on a growing pet and an "
+                 "age-count on a final form — the same bare glyph, opposite "
+                 "directions. It now reads '◆ 7 to evolve', '◆ 7 of 14 to "
+                 "elder', or '◆ 16 — elder', so one glance tells you whether "
+                 "the core is filling toward a new form or the mon is simply "
+                 "getting old.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and
