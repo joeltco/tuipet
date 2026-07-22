@@ -28,7 +28,7 @@ code stays dormant unless named.
   two transports (adventure.py:426).  **Fix:** road T-menu offers Life
   Recovery when held → restores lives (refuse at full), consumes one.
 
-- [ ] **B3 — Digicore lies under an armed divergence.**  `_maybe_evolve`
+- [x] **B3 — Digicore lies under an armed divergence.** *(shipped v0.5.165)*  `_maybe_evolve`
   honors `divergence_target` first (pet.py:557) but the CORE silhouette
   and EVOLVES checklist read only the line chart (digicore.py:135-212).
   **Fix:** when a divergence is armed, the gaze + EVOLVES page show the

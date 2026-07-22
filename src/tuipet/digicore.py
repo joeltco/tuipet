@@ -142,6 +142,13 @@ def next_evolution(pet):
         from . import egg as egg_mod
         targets = egg_mod.hatch_targets(getattr(pet, "egg_type", 0))
         return targets[0] if targets else None
+    div = evolution.divergence_target(pet)
+    if div is not None:
+        # an ARMED DNA divergence fires FIRST (_maybe_evolve checks the
+        # steer before the chart), so the gaze must tease the steer's
+        # target -- it promised a line future that would NOT happen
+        # (gameplay audit B3, 2026-07-22)
+        return div
     if lines.active(pet):
         rows = lines.evo_rows(pet)      # line chart: ready first, else fewest-unmet
         if not rows:
@@ -163,10 +170,42 @@ def _mins(s):
     return f"{s // 86400}d{(s % 86400) // 3600:02d}h"
 
 
+def _divergence_row(pet):
+    """The armed DNA steer as a chart row -- (num, name, True, 0) -- or
+    None while unarmed.  The hidden-evo mask is honored like any corpus
+    row: the steer names its destination only once the album has seen it."""
+    div = evolution.divergence_target(pet)
+    if div is None:
+        return None
+    _, by = data.load_sprites()
+    name = by.get(div, {}).get("name", "?")
+    from tuipet import persistence as _p
+    if data.load_requirements().get(div, {}).get("hidden_evo") \
+            and not _p.album_seen(div):
+        name = "???"
+    return (div, name, True, 0)
+
+
+def divergence_report(pet):
+    """The armed steer's checklist (met, text) rows -- the EVOLVES detail
+    for the divergence row.  lines.requirement_report would answer "not in
+    this line" (true, and exactly the point): what fires this jump is the
+    charge, so the sheet reports the charge."""
+    field = pet.highest_dna()
+    need = evolution.DIVERGE_NEED.get(pet.stage, 0)
+    have = pet.dna_applied.get(field, 0)
+    return [(True, f"{field} charge {have}/{need} — ARMED"),
+            (None, "the steer overrides the chart"),
+            (None, "charges clear at every evolution")]
+
+
 def _evo_rows(pet):
     """The evolution line for the data book: (num, name, ready, unmet) per
-    candidate, closest-first.  unmet counts the failing checklist gates
-    (evolution.requirement_report) -- the page shows it as distance-to-go.
+    candidate, closest-first -- with an ARMED DNA divergence riding the top
+    row, because that is what actually fires next (gameplay audit B3,
+    2026-07-22: the page promised a line future the steer would override).
+    unmet counts the failing checklist gates (evolution.requirement_report)
+    -- the page shows it as distance-to-go.
 
     Canon shows the chart at EVERY stage -- DVPet's drawEvolutionMenu never
     gates on age, and setupDigicore counts hatching as the egg's own
@@ -183,10 +222,15 @@ def _evo_rows(pet):
         if len(targets) > 1:
             return [(targets[0], "???", False, 0)]
         return [(t, by.get(t, {}).get("name", "?"), False, 0) for t in targets]
+    armed = _divergence_row(pet)
     if lines.active(pet):
         # line pets: the line's own chart rows, in first-match order (the order
         # IS the information -- earlier rows win ties), with live unmet counts
         rows = lines.evo_rows(pet)
+        if armed:
+            # the steer tops the chart; the line rows stay below -- they
+            # come BACK if another Field catches up and breaks the strict max
+            return [armed] + [r for r in (rows or []) if r[0] != armed[0]]
         return rows or "(final form)"
     try:
         # ready first, then HIGHEST fulfilled -- ascending put the form the
@@ -196,7 +240,7 @@ def _evo_rows(pet):
     except Exception:
         cands = []
     if not cands:
-        return "(final form)"
+        return [armed] if armed else "(final form)"
     rows = []
     from tuipet import persistence as _p
     reqs = data.load_requirements()
@@ -209,6 +253,8 @@ def _evo_rows(pet):
         if reqs.get(num, {}).get("hidden_evo") and not _p.album_seen(num):
             name = "???"
         rows.append((num, name, ready, unmet))
+    if armed:
+        rows = [armed] + [r for r in rows if r[0] != armed[0]]
     return rows
 
 

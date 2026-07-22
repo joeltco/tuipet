@@ -584,3 +584,54 @@ def test_core_page_teaches_the_gaze_in_bold():
     plain = pan.text().plain
     assert "Nothing stirs" in plain
     assert "SPACE: gaze into the core" not in plain
+
+
+# --- the book must not lie under an ARMED divergence (audit B3, 2026-07-22) --
+# _maybe_evolve honors evolution.divergence_target FIRST, but the gaze and
+# the EVOLVES chart read only the line -- an armed pet's data book promised
+# a line future the steer would override.
+
+def _armed_pet():
+    """A ver1 Agumon with DeepSaver charged to the Rookie threshold:
+    divergence_target == 88 (Coelamon), the single plain DeepSaver edge."""
+    from tuipet import evolution
+    p = Pet(num=29, stage="Rookie", attribute="Vaccine")
+    p.line_id = "ver1"
+    p.dna_applied["DeepSaver"] = evolution.DIVERGE_NEED["Rookie"]
+    assert evolution.divergence_target(p) == 88
+    return p
+
+
+def test_the_gaze_teases_the_armed_steer_not_the_line():
+    from tuipet import digicore, lines
+    p = _armed_pet()
+    line_next = [r[0] for r in lines.evo_rows(p)]
+    assert 88 not in line_next                 # the chart alone would lie
+    assert digicore.next_evolution(p) == 88    # the gaze tells the truth
+    p.dna_applied["DeepSaver"] = 0             # disarmed: the line resumes
+    assert digicore.next_evolution(p) in line_next
+
+
+def test_the_evolves_chart_tops_with_the_armed_row():
+    from tuipet import digicore
+    p = _armed_pet()
+    rows = digicore._evo_rows(p)
+    num, name, ready, unmet = rows[0]
+    assert (num, ready, unmet) == (88, True, 0)
+    # the line rows STAY below -- another Field catching up re-steers, a
+    # tie disarms entirely, so those futures are still live
+    assert len(rows) > 1
+
+
+def test_the_armed_row_wears_its_own_tag_and_sheet():
+    from tuipet.digicorescreen import DigiCorePanel
+    p = _armed_pet()
+    pan = DigiCorePanel(p)
+    while pan.pages[pan.i][0] != "EVOLVES":    # page over to the chart
+        pan.key("right")
+    plain = pan.text().plain
+    assert "armed" in plain                    # the steer's own word
+    pan.key("enter")                           # the top row's checklist
+    sheet = pan.text().plain
+    assert "ARMED" in sheet and "charges clear at every evolution" in sheet
+    assert "not in this line" not in sheet     # the old foreign-num answer

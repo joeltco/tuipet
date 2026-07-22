@@ -253,8 +253,14 @@ class DigiCorePanel:
         met gates dim out of the way, the unmet ones are the raising guide."""
         from rich.text import Text
         num, name = self.detail
-        report = (lines.requirement_report(self.pet, num) if lines.active(self.pet)
-                  else evolution.requirement_report(self.pet, num))
+        if num == evolution.divergence_target(self.pet):
+            # the steer's own sheet: lines.requirement_report would say
+            # "not in this line" -- true, and exactly the point; what
+            # fires this jump is the charge (gameplay audit B3)
+            report = core.divergence_report(self.pet)
+        else:
+            report = (lines.requirement_report(self.pet, num) if lines.active(self.pet)
+                      else evolution.requirement_report(self.pet, num))
         vis = DET_VIS
         out = menu.header(f"DIGICORE  {name[:16].upper()}", "req")
 
@@ -281,10 +287,15 @@ class DigiCorePanel:
             out.append_text(menu.footer("←→ page    ESC out"))
             return out
 
+        div = evolution.divergence_target(self.pet)
+
         def fmt(r, j):
             num, name, ready, unmet = r
             cur = j == self.evo_sel
-            tag = chr(0x2713) + " ready" if ready else f"{unmet} to go"
+            # the armed DNA steer wears its own word: it isn't "gates met",
+            # it's the charge overriding the chart (gameplay audit B3)
+            tag = (chr(0x2713) + " armed" if num == div
+                   else chr(0x2713) + " ready" if ready else f"{unmet} to go")
             t = Text()
             t.append(("▸" if cur else " ") + f" {name[:20]:<21}", style=INK_B if cur else INK)
             t.append(f"{tag:>10}\n", style=INK_B if ready else DIM)
