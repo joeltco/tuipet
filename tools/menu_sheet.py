@@ -283,6 +283,55 @@ def _raid():
     show("raid (calling the gate)", RaidPanel(_pet(), None, client=stub))
 
 
+@state("town")
+def _town():
+    # the ROAD's town family (deep-state sweep round 5): the hub, this
+    # town's authored shop (stock/prices/deal), and the sell-back bag
+    from tuipet.townscreen import TownPanel
+    from tuipet.shopscreen import ShopPanel
+    show("town hub", TownPanel(_pet(bits=1234), town_id=4))
+    p = _pet(bits=9999)
+    s = ShopPanel(p, town_id=4)
+    for i in (0, 1):
+        s.tab = i
+        show(f"town shop tab {i}", s)
+    q = _pet(bits=777)
+    q.inventory = {"cupcake": 2, "digimemory": 1, "sleeping_pill": 3}
+    show("town sell (bag at town rates)",
+         ShopPanel(q, start_mode="bag", bag_only=True, town_id=4))
+
+
+@state("cupfight")
+def _cupfight():
+    # the cup's IN-FIGHT pages (deep-state sweep round 5): tree, faceoff,
+    # both intro beats, the advancing-field parade after a REAL quarterfinal
+    # win, and the champion's podium
+    import random as _r
+    from tuipet.tournamentscreen import TournamentPanel
+    _r.seed(4)
+    p = _pet(bits=9999)
+    p.name = "Rookling"
+    pan = TournamentPanel(p)
+    trophy = tournament.trophy_by_id(tournament.schedule(p)[tournament._hour(p)])
+    pan.tourney = tournament.Tournament(p, trophy)
+    pan.phase = "bracket"
+    pan.tree_view = True
+    show("cup bracket (the tree)", pan)
+    pan.tree_view = False
+    show("cup faceoff", pan)
+    pan._intro = {"t": 5}
+    show("cup intro (challenger walk-in)", pan)
+    pan._intro = {"t": 20}
+    show("cup intro (your answer)", pan)
+    pan._intro = None
+    pan.tourney.record(True)                     # the QF falls
+    pan._advance = {"t": 3, "nums": list(pan.tourney.results_nums or ())}
+    show("cup parade (the field advances)", pan)
+    pan._advance = None
+    pan._ceremony = {"t": 5}
+    show("cup ceremony (the podium)", pan)
+
+
 @state("dnapages")
 def _dnapages():
     # the DNA SUBPAGES (deep-state sweep 2026-07-22: the budget net staged

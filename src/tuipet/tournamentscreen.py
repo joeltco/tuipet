@@ -345,7 +345,10 @@ class TournamentPanel(menu.SubHost):
         out = menu.bar(self.tourney.name,
                        "%s %d/3" % (self.tourney.round_name, self.tourney.round + 1))
         out.append_text(scene)
-        out.append("\nvs %s[%s]   Trophy %d\n"
+        # "your ★N": the card's trophy glyph, ownership said out loud --
+        # bare "Trophy 0" beside the challenger's name read as THEIR record
+        # (menu polish round 5, 2026-07-22)
+        out.append("\nvs %s[%s]   your ★%d\n"
                    % (opp["name"], opp["attribute"][:2], self.pet.trophies),
                    style=INK)
         out.append_text(menu.note(note, tick=self.frame_i))
@@ -460,7 +463,7 @@ class TournamentPanel(menu.SubHost):
                              COLS, FIGHT_ROWS, on, LCD_BG, bgimg=bgimg)
         out = menu.bar(t.name, "%s %d/3" % (t.round_name, t.round + 1))
         out.append_text(scene)
-        out.append("\nvs %s[%s]   Trophy %d\n" % (opp["name"], opp["attribute"][:2], self.pet.trophies), style=INK)
+        out.append("\nvs %s[%s]   your ★%d\n" % (opp["name"], opp["attribute"][:2], self.pet.trophies), style=INK)
         out.append_text(menu.note(t.last, tick=self.frame_i))
         out.append_text(menu.footer("SPACE fight   ESC leave"))
         return out

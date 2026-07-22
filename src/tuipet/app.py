@@ -132,12 +132,11 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("MENU POLISH, ROUND FOUR: a deep sweep of the screens "
-                 "behind the screens — DNA's five sub-pages, the egg "
-                 "stories, the raid board, the grave's own prompts. One "
-                 "fix shipped: the bag's item count now counts exactly "
-                 "what its shelves can show, so the header can never "
-                 "claim goods you can't see.")
+    WHATS_NEW = ("MENU POLISH, ROUND FIVE: the road's towns and the "
+                 "cup's fight pages went under the glass. One thing read "
+                 "wrong: the faceoff's bare 'Trophy 0' sat beside the "
+                 "challenger's name like it was THEIR record — it now says "
+                 "'your \u2605N', the same star your status card wears.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and
