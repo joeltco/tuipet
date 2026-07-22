@@ -569,13 +569,9 @@ class CareMixin:
         burn was dead; the antibody was a free ride (Joel 2026-07-22)."""
         if self.x_antibody != "None":
             return _Refused("The antibody already runs in it.")
-        # calcXAntibodyLifeDec: chance-gated (config 100 = always roll), then
-        # XAntibodyLifeDec / nextInt(bound) -- a 0 draw is a free pass
-        if random.randint(1, 100) <= X_LIFE_DEC_CHANCE:  # noqa: F405
-            d = random.randrange(X_LIFE_DEC_BOUND)  # noqa: F405
-            if d:
-                self._burn_life(X_LIFE_DEC / d,  # noqa: F405
-                                f"the X-Antibody burns {self.name}'s life")
+        # (calcXAntibodyLifeDec left with the lifespan clock -- DSprite
+        # mortality 2026-07-22: there is no life bar for the X to burn.
+        # The unmarked-pet roulette below is untouched.)
         self._set_xantibody("Permanent")
         from . import persistence as _persist
         _persist.note_xanti()
@@ -595,17 +591,17 @@ class CareMixin:
 
     def _inherit_memory(self):
         """The Digimemory chip (DVPet item 32, anim Inherit): the ancestor's
-        etched Va/D/Vi joins this pet's powers and the etched bonus-hours
-        extend its lifespan (petbase DIGIMEMORY_* law; mem["seconds"] is
-        already on the game-min scale lifespan uses).  A chip with no
-        payload aboard -- the estate husk -- stays a mute keepsake."""
+        etched Va/D/Vi joins this pet's powers (petbase DIGIMEMORY_* law).
+        (The chip's lifespan hours left with the lifespan clock -- DSprite
+        mortality 2026-07-22; an OLD chip's "seconds" payload loads fine and
+        is simply not applied.)  A chip with no payload aboard -- the estate
+        husk -- stays a mute keepsake."""
         mem = self.digimemory
         if not mem:
             return _Refused("The chip is silent.")
         self.vaccine += int(mem.get("vaccine", 0) or 0)
         self.data_power += int(mem.get("data", 0) or 0)
         self.virus += int(mem.get("virus", 0) or 0)
-        self.lifespan += float(mem.get("seconds", 0) or 0)
         self.digimemory = {}
         return f"{mem.get('name', 'The ancestor')}'s power lives on!"
 

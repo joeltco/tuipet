@@ -68,9 +68,9 @@ def test_good_birthday_needs_happy_majority_and_zero_slips():
     p = _pet()
     p.daily_mood = {"Happy": 10, "Neutral": 2, "Unhappy": 0, "Depressed": 0}
     p.mistake_day = 0
-    b0, l0 = p.evol_bonus, p.lifespan
+    b0 = p.evol_bonus
     p._birthday()
-    assert p.evol_bonus == b0 + 1 and p.lifespan == l0 + 360.0
+    assert p.evol_bonus == b0 + 1     # (the BonusLifeInc leg left with the clock)
     assert p.inventory.get("cupcake", 0) == 1                  # the Cupcake (a REAL bag treat since 2026-07-18)
     assert p.mistake_day == 0 and sum(p.daily_mood.values()) == 0   # the slate wipes
 
@@ -89,10 +89,8 @@ def test_bad_birthday_and_the_bonus_floor():
     p = _pet(evol_bonus=0)
     p.daily_mood = {"Happy": 0, "Neutral": 1, "Unhappy": 8, "Depressed": 0}
     p.mistake_day = 3
-    l0 = p.lifespan
     p._birthday()
     assert p.evol_bonus == 0                   # the floor: never negative
-    assert p.lifespan == l0 - 360.0
     assert p.inventory.get("candy", 0) == 1    # the consolation Candy
 
 

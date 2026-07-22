@@ -1,31 +1,21 @@
-"""Death/mortality math audit (2026-07): canon re-verification vs
-PhysicalState.setLapsedLife / setTotalLifespan / saveFromDeath / sicken /
-injure / fatigue / worsened* / hungerMistakePenalty / xEvolve /
-calcXAntibodyLifeDec + config column 1.
+"""DSprite mortality (Joel 2026-07-22: "we gotta do it how dsprite does.
+life bar must be a dvpet fkrgetten relic") -- the lifespan clock and its
+whole LifeDec burn economy LEFT the game; death is the clone's per-minute
+hazard roll again (v0.4.12 L440-454, tables verbatim):
 
-Canon death is ONE trigger -- old age -- reached faster through the
-LifeDec burn economy.  Verified: saveFromDeath (hunger 0, bonus -1,
-lapsedLife = total - RevivalLifeInc 45000 on the /60 scale, then the
-death evolution), the dying mash (HitsToSave 175 -> 30, a documented
-clock adaptation), the postponeDie busy-state machinery (approximated by
-tuipet's fx flow), and the death evolution (the evolution audit).
+    d = first matching DEATH_MISTAKES bracket
+      + DEATH_SICK_P while sick
+      + first matching DEATH_AGE bracket
+    one roll per tick: random() < d * dt -> dead
 
-Fixed (canon divergences):
- * The BURN ECONOMY was mostly missing: SickLifeDec/InjuryLifeDec 10800
-   per onset, WorseSick/WorseInjuryLifeDec 10800 per worsening (their
-   omission notes are gone), FatigueLifeDec 21600 (+3600 geriatric), and
-   the X-Program's one-time price (86400/nextInt(7), a 0 draw free) --
-   all on the /60 game scale.
- * MistakeHungerLifeDec used a bespoke rescale (3600) instead of the
-   series' /60 (360) -- the BadMed bug class again.
- * InstantDeathGracePeriod was unported: a burn can never kill inside
-   the grace -- _burn_life clamps to age + 60.
- * The continuous per-second "extra" lifespan drip (sick 0.8 etc.) was
-   INVENTED and is removed; the discrete caps (20/20/12h) stay as
-   documented tuipet safety nets beneath the burns, their false
-   canon-provenance docstring corrected."""
+Beneath the roll the discrete nets stand as before (NOT clock machinery):
+the 20-mistake cap, Pen20 elder frailty (LINES_SPEC §5 contract) and the
+12h starvation clock.  These pins hold the roll's shape, the immunity
+window, and that NOTHING in the codebase burns or reads a lifespan."""
+import pytest
 
-from tuipet.pet import (Pet, INSTANT_DEATH_GRACE)
+from tuipet.pet import (Pet, DEATH_MISTAKES, DEATH_AGE, DEATH_SICK_P,
+                        GERIATRIC_AGE_DAYS, AGE_DAY)
 
 
 def _pet(**kw):
@@ -37,177 +27,120 @@ def _pet(**kw):
     return p
 
 
-# (test_every_malady_burns_life left with the sickness system -- BASIC VPET 2026-07-17)
+def _hazard(p):
+    """The roll's d, recomputed the clone way -- the oracle for the pins."""
+    d = 0.0
+    for thresh, rate in DEATH_MISTAKES:
+        if p.care_mistakes >= thresh:
+            d += rate
+            break
+    if p.sick:
+        d += DEATH_SICK_P
+    for thresh, rate in DEATH_AGE:
+        if p.age_days >= thresh:
+            d += rate
+            break
+    return d
 
 
-def test_a_burn_cannot_kill_inside_the_grace():
-    p = _pet()
-    p.age_seconds = p.lifespan - 30.0            # 30s from the end
-    p._burn_life(180.0)                          # -180 would kill instantly
-    #                                              (the sicken source left
-    #                                              with the sickness system)
-    assert p.lifespan == p.age_seconds + INSTANT_DEATH_GRACE
-    assert not p.dead                            # the grace holds until the clock
-
-
-def test_save_from_death_leaves_the_revival_window():
-    # S1 ruling 2026-07-20: RevivalLifeInc RESTORES life -- an old-age death
-    # walks out with the ~750s window, while a YOUNG rescue keeps the life it
-    # had (the old unconditional jump burned it down to the window)
-    p = _pet()
-    p.dead = True
-    p.evol_bonus = 3
-    age0 = p.age_seconds
-    p.save_from_death()
-    assert not p.dead and p.hunger == 0 and p.evol_bonus == 2
-    assert p.age_seconds == age0                 # young: nothing burned
-    q = _pet()
-    q.dead = True
-    q.age_seconds = q.lifespan                   # died of old age
-    q.save_from_death()
-    assert abs((q.lifespan - q.age_seconds) - 750.0) < 1e-6 or q.num != 100
-
-
-def test_the_care_bonus_carries_across_generations():
-    """careBonusOnReset (death/rebirth audit 2026-07-06; unified onto the ONE
-    bonus_seed channel, digimemory audit 2026-07-06): canon never zeroes the
-    bonus at resetToEgg -- the ended life's full report card (final_care_grade)
-    seeds what the next generation inherits, floored at zero."""
-    from tuipet import persistence
-    p = _pet(care_mistakes=0, mood=200, obedience=100, evol_bonus=2)
-    persistence.bank_bonus_seed(p.final_care_grade())
-    heir = Pet.new_egg(generation=2)
-    heir.evol_bonus = persistence.take_bonus_seed()  # app._grant_digimemory's hand-off
-    assert heir.evol_bonus == p.final_care_grade() > 2   # clean/Happy/obedient legs land
-    fresh = Pet.new_egg(generation=1)
-    assert fresh.evol_bonus == 0                     # a fresh game inherits nothing
-    q = _pet(care_mistakes=6, mood=-50, obedience=10, evol_bonus=0)
-    assert q.final_care_grade() == 0                 # a graded wreck floors at zero
-
-
-def test_the_heir_inherits_the_device_bag():
-    """Item/inventory audit 2026-07-06: canon's resetToEgg never touches bits,
-    the bag, or the beaten-qualifier trophies -- the estate is device-lifetime.
-    (The generation-1 StartingUses kit left with the staple props:
-    strict-DSprite items, 2026-07-17 -- a fresh device starts empty, and an
-    inherited bag sheds any dead furniture keys.)"""
-    from tuipet import persistence
-    p = _pet(bits=777, trophies=2)
-    p.inventory = {"i:15": 1, "f:3": 4, "i:82": 40}
-    p.trophies_won = {9: "Spring"}
-    persistence.snapshot_prev_gen(p)
-    heir = Pet.new_egg(generation=2)
-    assert heir.bits == 777
-    assert heir.inventory == {"i:15": 1, "f:3": 4}      # carries, minus dead keys
-    assert heir.trophies == 2 and heir.trophies_won == {9: "Spring"}
-    fresh = Pet.new_egg(generation=1)
-    assert fresh.bits == 0
-    assert fresh.inventory == {}
-
-
-# ---- the re-wired burn economy (Joel 2026-07-22: "does the life bar even
-# do anything?") -- the two LIVE neglect/cost events burn again and SURFACE ----
-
-def test_sickness_onset_burns_life_and_surfaces(monkeypatch):
-    """The headline dead burn, re-wired: sickness from filth costs SickLifeDec
-    (canon sicken L1846) and leaves the surfaced tell the HUD flashes.  Dropped
-    in the BASIC VPET slim while self.sick stayed live -- so the bar sat inert."""
+def test_the_immunity_window_holds():
+    """The clone's promise: <5 mistakes, healthy, under age 15 = the roll
+    CANNOT kill.  Even a forced 0.0 draw leaves d == 0 -> no roll at all."""
     import tuipet.petbody as body
-    from tuipet.pet import SICK_LIFE_DEC
-    p = _pet(name="Greymon", hunger=4, poop=1)
-    p.poop_sizes = [2]
-    monkeypatch.setattr(body.random, "random", lambda: 0.0)   # force the roll
-    life0 = p.lifespan
-    p._tick_mortality(1.0)
-    assert p.sick
-    assert p.lifespan == life0 - SICK_LIFE_DEC                 # the illness burned life
-    assert "life" in p.life_penalty_note and "Greymon" in p.life_penalty_note
+    p = _pet(care_mistakes=4)
+    assert _hazard(p) == 0.0
+    real = body.random.random
+    try:
+        body.random.random = lambda: 0.0
+        assert p._tick_mortality(1.0) is False
+        assert not p.dead
+    finally:
+        body.random.random = real
 
 
-def test_x_antibody_gain_pays_its_life_price(monkeypatch):
-    """canon xEvolve charges calcXAntibodyLifeDec the instant X is gained from
-    None (L3361) -- was a free ride.  A d=2 draw burns XAntibodyLifeDec/2."""
-    import tuipet.petcare as care
-    from tuipet.pet import X_LIFE_DEC
+@pytest.mark.parametrize("mistakes,want", [
+    (4, 0.0), (5, 1.5e-5), (9, 1.5e-5), (10, 7.5e-5),
+    (14, 7.5e-5), (15, 3.75e-4), (19, 3.75e-4), (20, 0.0015)])
+def test_mistake_brackets_first_match_wins(mistakes, want):
+    assert _hazard(_pet(care_mistakes=mistakes)) == want
+
+
+@pytest.mark.parametrize("days,want", [
+    (14, 0.0), (15, 3.75e-5), (19, 3.75e-5), (20, 1.5e-4),
+    (24, 1.5e-4), (25, 3.75e-4), (40, 3.75e-4)])
+def test_age_brackets_first_match_wins(days, want):
+    p = _pet()
+    p.age_seconds = days * AGE_DAY
+    assert _hazard(p) == want
+
+
+def test_the_whisper_folds_into_one_roll():
+    """Sickness is a TERM of d, not a separate death (the clone shape): a
+    sick elder with a record stacks all three."""
+    p = _pet(care_mistakes=12, sick=True)
+    p.age_seconds = 21 * AGE_DAY
+    assert _hazard(p) == 7.5e-5 + DEATH_SICK_P + 1.5e-4
+
+
+def test_roll_causes_read_the_dominant_reason(monkeypatch):
+    import tuipet.petbody as body
+    monkeypatch.setattr(body.random, "random", lambda: 0.0)
+    old = _pet()
+    old.age_seconds = 16 * AGE_DAY
+    old._tick_mortality(1.0)
+    assert old.dead and old.death_cause == "old age"
+    slob = _pet(care_mistakes=8)
+    slob._tick_mortality(1.0)
+    assert slob.dead and slob.death_cause == "neglect"
+    ill = _pet(sick=True)
+    ill._tick_mortality(1.0)
+    assert ill.dead and ill.death_cause == "sickness"
+
+
+def test_the_discrete_nets_still_stand():
+    """20 mistakes and Pen20 frailty (LINES_SPEC §5) are contract, not clock
+    -- they survived the lifespan removal."""
+    p = _pet(care_mistakes=20)
+    assert p._tick_mortality(1.0) is True and p.death_cause == "neglect"
+    q = _pet(stage="Mega", care_mistakes=5)
+    q.stage_seconds = q.LATE_STAGE_WINDOW
+    assert q._tick_mortality(1.0) is True and q.death_cause == "frailty"
+
+
+def test_the_elder_line_is_age_alone():
+    p = _pet()
+    p.age_seconds = GERIATRIC_AGE_DAYS * AGE_DAY - 1
+    assert not p.is_geriatric
+    p.age_seconds = GERIATRIC_AGE_DAYS * AGE_DAY
+    assert p.is_geriatric
+    p.dead = True
+    assert not p.is_geriatric                    # the dead are past age
+
+
+def test_no_lifespan_survives_anywhere():
+    """The relic sweep's guard: no field, no burn, no save leak, no display
+    source.  A pre-port save carrying "lifespan" still loads (the key is
+    simply dropped)."""
+    import dataclasses
     from tuipet import persistence
-    monkeypatch.setattr(persistence, "note_xanti", lambda: None)
-    monkeypatch.setattr(care.random, "randint", lambda a, b: 1)    # chance passes
-    monkeypatch.setattr(care.random, "randrange", lambda n: 2)     # d=2 -> /2 burn
-    p = _pet(name="Wormmon")
-    life0 = p.lifespan
-    p._x_item()
-    assert p.x_antibody == "Permanent"
-    assert p.lifespan == life0 - X_LIFE_DEC / 2
-    assert "X-Antibody" in p.life_penalty_note
+    assert "lifespan" not in {f.name for f in dataclasses.fields(Pet)}
+    assert not hasattr(_pet(), "_burn_life")
+    d = persistence.pet_to_save(_pet()) if hasattr(persistence, "pet_to_save") else {}
+    assert "lifespan" not in d
+    old_save = dict(persistence.pet_to_save(_pet())) if hasattr(persistence, "pet_to_save") else None
+    if old_save is not None:
+        old_save["lifespan"] = 259200.0          # a pre-port save
+        pet, _ = persistence.pet_from_save(old_save, catch_up=False)
+        assert pet is not None and not hasattr(pet, "lifespan")
 
 
-def test_x_antibody_zero_draw_is_a_free_pass(monkeypatch):
-    """calcXAntibodyLifeDec: a nextInt==0 draw returns 0 -- no burn, no tell."""
-    import tuipet.petcare as care
-    from tuipet import persistence
-    monkeypatch.setattr(persistence, "note_xanti", lambda: None)
-    monkeypatch.setattr(care.random, "randint", lambda a, b: 1)
-    monkeypatch.setattr(care.random, "randrange", lambda n: 0)     # the free draw
-    p = _pet()
-    life0 = p.lifespan
-    p._x_item()
-    assert p.lifespan == life0 and p.life_penalty_note == ""
-
-
-def test_a_noteless_burn_leaves_no_tell():
-    """_burn_life without a note stays silent -- the mechanism, not the
-    doctrine: since the surfaced-burns sweep (Joel 2026-07-22: "surface the
-    silent burns too") every LIVE burn passes a note or rides another tell
-    (the bad birthday's).  Regression on _burn_life itself."""
-    p = _pet()
-    p._burn_life(60.0)
-    assert p.life_penalty_note == ""
-
-
-def test_hunger_mistake_burns_and_surfaces():
-    """The missed hunger call burns scaled life AND leaves the tell
-    (surfaced-burns sweep 2026-07-22)."""
-    from tuipet.pet import HUNGER_MISTAKE_LIFE_DEC
-    p = _pet(name="Greymon", hunger=0)
-    p._hunger_call_t = 600.0
-    life0 = p.lifespan
-    p._tick_hunger(1.0)
-    assert p.care_mistakes == 1
-    assert p.lifespan == life0 - HUNGER_MISTAKE_LIFE_DEC
-    assert "hunger" in p.life_penalty_note and "Greymon" in p.life_penalty_note
-
-
-def test_energy_floor_burns_and_surfaces():
-    """Bottoming out past -max_energy costs MinEnergyLifePenalty AND leaves
-    the tell, which parks on the pet until the home tick flashes it."""
-    from tuipet.pet import MIN_ENERGY_LIFE_PENALTY
-    p = _pet(name="Greymon")
-    life0 = p.lifespan
-    p._set_energy(-p.max_energy - 1)
-    assert p.lifespan == life0 - MIN_ENERGY_LIFE_PENALTY
-    assert "exhaustion" in p.life_penalty_note and "Greymon" in p.life_penalty_note
-
-
-def test_bad_birthday_burn_rides_the_birthday_tell():
-    """The bonus-decay burn surfaces through the birthday note itself (one
-    flash, not two): the bad-day text names the life cost."""
-    p = _pet()
-    p.daily_mood = {"Unhappy": 5, "Happy": 0}
-    p.mistake_day = 99
-    life0 = p.lifespan
-    p._birthday()
-    assert p.lifespan < life0
-    assert "life" in p.birthday_note and "Candy" in p.birthday_note
-    assert p.life_penalty_note == ""            # no second flash
-
-
-def test_dead_system_lifedecs_have_no_live_trigger():
-    """Honesty pin for the _tick_mortality audit: the injury/fatigue LifeDecs
-    are DORMANT holdovers -- their systems left in the BASIC VPET slim, so no
-    code applies them.  If someone wires a live trigger, wire the burn too."""
+def test_dead_system_lifedecs_stay_gone():
+    """The whole LifeDec constant family left with the clock -- nothing may
+    quietly re-import it."""
     import inspect
-    from tuipet import petbody, petcare, pet as petmod
+    from tuipet import petbody, petcare, pet as petmod, petbase
     src = "".join(inspect.getsource(m) for m in (petbody, petcare, petmod))
-    for dead in ("INJURY_LIFE_DEC", "FATIGUE_LIFE_DEC",
-                 "WORSE_MALADY_LIFE_DEC", "GERIATRIC_FATIGUE_LIFE_DEC"):
-        assert dead not in src, f"{dead} now referenced -- wire its burn + drop it from the dormant list"
+    for dead in ("LIFE_DEC", "_burn_life", "BONUS_LIFE_INC", "REVIVAL_LIFE",
+                 "INSTANT_DEATH_GRACE", "life_penalty_note"):
+        assert dead not in src, f"{dead} referenced again -- the clock is gone (2026-07-22)"
+    assert not any(n.endswith("LIFE_DEC") for n in vars(petbase))

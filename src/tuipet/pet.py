@@ -132,7 +132,6 @@ class Pet(CareMixin, DnaMixin, BattleMixin, BodyMixin):
     evol_bonus: int = 0             # _bonus: birthday/win-rate credit fed into evolution odds
     digimemory: dict = _dcf(default_factory=dict)   # held inheritance data (item 32 payload)
     birthday_note: str = ""         # transient: the HUD's birthday announcement
-    life_penalty_note: str = ""     # transient: a neglect/cost event just BURNED life (surfaced Bad_Health_Jeering tell)
     saved_from_death: int = 0       # _savedFromDeath: each rescue raises the next bar
     death_banked: bool = False      # this death's etch/seed ceremony already ran
     #                                 (rides the save: a quit mid-dying-beat used
@@ -185,7 +184,6 @@ class Pet(CareMixin, DnaMixin, BattleMixin, BodyMixin):
     rival_name: str = ""
     egg_type: int = 0
     bg_pick: str = ""               # picked home scene ("" = follow the egg; E picker 2026-07-17)
-    lifespan: float = LIFE_START
     generation: int = 1
     dead: bool = False
     sick: bool = False              # the DSprite flag (clone-style, 2026-07-17): pill-cured only
@@ -359,18 +357,30 @@ class Pet(CareMixin, DnaMixin, BattleMixin, BodyMixin):
 
 
     @property
+    def age_days(self):
+        """The clone's age scale (v0.4.12 age_days): whole REAL days lived."""
+        return int(self.age_seconds // AGE_DAY)
+
+    @property
     def is_geriatric(self):
+        # the clone's elder line (v0.4.12 L926): AGE alone makes an elder --
+        # there is no lifespan clock to be near the end of (DSprite mortality
+        # 2026-07-22).  The stage gate stays: the +9 aged-shuffle frames the
+        # flag drives exist for the grown stages.
         return (not self.dead
                 and self.stage in ("Rookie", "Champion", "Ultimate", "Mega")
-                and (self.lifespan - self.age_seconds) < GERIATRIC_REMAIN)
+                and self.age_days >= GERIATRIC_AGE_DAYS)
 
     def stomach_capacity(self):
         """Canon getStomachCapacity: the SPECIES stomach (digimon.csv), shrunk
         linearly through old age toward MinStomachCapacity(7) -- an elder
-        fills up on smaller meals (food audit 2026-07-15)."""
+        fills up on smaller meals (food audit 2026-07-15).  The shrink runs
+        over the first GERIATRIC_REMAIN seconds PAST the elder line (age-based
+        since the DSprite mortality port 2026-07-22)."""
         cap = data.load_requirements().get(self.num, {}).get("stomach_capacity", 10)
         if self.is_geriatric:
-            diff = max(0.0, GERIATRIC_REMAIN - max(0.0, self.lifespan - self.age_seconds))
+            diff = min(GERIATRIC_REMAIN,
+                       max(0.0, self.age_seconds - GERIATRIC_AGE_DAYS * AGE_DAY))
             cap = max(MIN_STOMACH_CAPACITY, cap - int(diff * GERIATRIC_STOMACH_COEF))
         return cap
 
@@ -464,13 +474,10 @@ class Pet(CareMixin, DnaMixin, BattleMixin, BodyMixin):
         #                                 revival must not come back sick
         self._starve_t = 0.0                          # the 12h clock restarts
         self.evol_bonus += BONUS_AFTER_SAVED
-        # RevivalLifeInc RESTORES life -- the revived pet leaves with at
-        # least REVIVAL_LIFE of runway.  The old unconditional jump was
-        # canon-shaped for old-age deaths only: on a young pet's sickness/
-        # poison/neglect rescue it silently BURNED the rest of the lifespan
-        # down to that floor (SUSPECT S1 ruling 2026-07-20)
-        self.age_seconds = min(self.age_seconds,
-                               max(0.0, self.lifespan - REVIVAL_LIFE))
+        # (the RevivalLifeInc runway left with the lifespan clock -- the
+        # clone's revive touches no life math at all; DSprite mortality
+        # 2026-07-22.  The rescued pet simply lives on under the same
+        # hazard roll, starving and a bonus point poorer.)
         old = self.num
         targets = evolution.death_targets(self)
         if targets:
@@ -677,17 +684,14 @@ class Pet(CareMixin, DnaMixin, BattleMixin, BodyMixin):
         self.vaccine = max(0, self.vaccine + _req.get("vaccine_change", 0))
         self.data_power = max(0, self.data_power + _req.get("data_change", 0))
         self.virus = max(0, self.virus + _req.get("virus_change", 0))
-        # reaching a higher stage extends lifespan toward the stage floor; LifespanMod adjusts
-        # it per form (real-time scale). GrowthPeriodMod is omitted -- DVPet's growth period is
-        # in real days while tuipet's evolve timer is compressed, so the scales don't align.
-        self.lifespan = max(self.lifespan,
-                            STAGE_LIFE.get(self.stage, self.lifespan) + _req.get("lifespan_mod", 0))
+        # (the stage-floor lifespan extension + bonusLifespan left with the
+        # lifespan clock -- DSprite mortality 2026-07-22.  LifespanMod stays
+        # loaded in the requirements as dormant data.)
         if self.stage == "Champion" and self.battles:
             # Evolution.champion: the Rookie career's win rate adjusts the bonus
             # (0.1 x winRate - 5: below 50% costs credit, above earns it)
             wr = self.wins / self.battles * 100.0
             self.evol_bonus += int(WIN_RATE_BONUS_COEF * wr - 5)
-        self.lifespan += BONUS_EVOLUTION_LIFE * self.evol_bonus   # bonusLifespan
         if _req.get("give_item", -1) >= 0:        # GiveItem: grant a consumable (dormant in data)
             self.add_item(f"i:{_req['give_item']}")
         if _req.get("xantibody", "None") in ("Induced", "Natural"):
@@ -855,11 +859,9 @@ class Pet(CareMixin, DnaMixin, BattleMixin, BodyMixin):
             self._set_obedience(self.obedience - (NEGATIVE_ENERGY_OBEDIENCE_DEC - raw))
             # (the over-exertion fatigue left with the fatigue system; the
             # perfect-conditions bounce left with the day/night system)
-        if raw < -self.max_energy:
-            # setEnergy's floor penalty -- set mid-battle, the tell parks on
-            # the pet and flashes back home (the egg_unlock_note pattern)
-            self._burn_life(MIN_ENERGY_LIFE_PENALTY,
-                            f"exhaustion burns {self.name}'s life")
+        # (MinEnergyLifePenalty at the -maxEnergy floor left with the
+        # lifespan clock -- DSprite mortality 2026-07-22; the mood and
+        # obedience stings above are the whole toll now)
         self.energy = _clamp(raw, -self.max_energy, self.max_energy)
 
     # (_energy_bonus_save -- checkEnergyIncFromPerfectConditions -- left
@@ -978,17 +980,17 @@ class Pet(CareMixin, DnaMixin, BattleMixin, BodyMixin):
 
     def make_digimemory(self):
         """setNewDigimemory, the dying pet's side: with a care bonus in hand, etch
-        Va/D/Vi = floor(power * bonus * 0.01) and +1 bonus-hour of lifespan into
-        the Digimemory payload; the bonus is spent.  Returns None with no bonus
-        (DVPet onDie only enters UnlockInheritance when _bonus > 0)."""
+        Va/D/Vi = floor(power * bonus * 0.01) into the Digimemory payload; the
+        bonus is spent.  Returns None with no bonus (DVPet onDie only enters
+        UnlockInheritance when _bonus > 0).  (The chip's lifespan hour left
+        with the lifespan clock -- DSprite mortality 2026-07-22.)"""
         if self.evol_bonus <= 0:
             return None
         b = self.evol_bonus
         mem = {"name": self.name, "num": self.num,
                "vaccine": int(self.vaccine * b * DIGIMEMORY_ATTR_COEF),
                "data": int(self.data_power * b * DIGIMEMORY_ATTR_COEF),
-               "virus": int(self.virus * b * DIGIMEMORY_ATTR_COEF),
-               "seconds": DIGIMEMORY_LIFE_INC * b}
+               "virus": int(self.virus * b * DIGIMEMORY_ATTR_COEF)}
         self.evol_bonus = 0
         return mem
 

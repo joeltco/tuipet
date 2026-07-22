@@ -4,7 +4,7 @@ full-strength Inherit route; config.csv DigimemoryAttributeCoefficient=0.01,
 DigimemoryLifeIncCoefficient=3600 (-> 60 game-sec, the BonusEvolutionLife scale)."""
 import json
 
-from tuipet.pet import Pet, DIGIMEMORY_LIFE_INC
+from tuipet.pet import Pet
 from tuipet import persistence
 
 
@@ -20,7 +20,7 @@ def test_the_departed_etches_powers_scaled_by_its_bonus():
     p = _pet(vaccine=500, data_power=300, virus=100, evol_bonus=10)
     mem = p.make_digimemory()
     assert mem["vaccine"] == 50 and mem["data"] == 30 and mem["virus"] == 10   # power*bonus*0.01
-    assert mem["seconds"] == 10 * DIGIMEMORY_LIFE_INC                           # a bonus-hour each
+    assert "seconds" not in mem       # the lifespan hour left with the clock (2026-07-22)
     assert mem["name"] == "Gatomon" and mem["num"] == 100
     assert p.evol_bonus == 0                                                    # the bonus is spent
 
@@ -100,10 +100,8 @@ def test_every_death_records_its_cause_and_the_memorial_tells_it():
     p._tick_mortality(1.0)
     assert p.death_cause == "frailty"
 
-    p = dead_pet()
-    p.age_seconds = p.lifespan
-    p._tick_mortality(1.0)
-    assert p.death_cause == "old age"
+    # (the old-age clock death left with the lifespan clock -- the DSprite
+    # hazard roll's causes are pinned in test_mortality_math; 2026-07-22)
 
     # (the sickness death left with the sickness system -- 2026-07-17)
 
@@ -114,7 +112,7 @@ def test_every_death_records_its_cause_and_the_memorial_tells_it():
     for _ in range(120):
         pan.anim()
         seen += pan.strip()
-    assert "of old age" in seen                   # the epitaph tells it
+    assert "of frailty" in seen                   # the epitaph tells it
 
 
 def test_declining_the_etch_carries_the_bonus():
@@ -155,16 +153,14 @@ def test_a_held_unused_payload_is_device_lifetime(monkeypatch):
 def test_the_heir_redeems_the_chip():
     """The other half of the ceremony (gameplay audit 2026-07-19: the payload
     was banked and granted but NOTHING ever read it): using the chip adds the
-    etched Va/D/Vi, extends lifespan by the etched bonus-hours, clears the
-    payload and consumes the chip."""
+    etched Va/D/Vi, clears the payload and consumes the chip.  An OLD chip's
+    "seconds" payload loads fine and is simply not applied (2026-07-22)."""
     p = _pet(vaccine=10, data_power=10, virus=10)
     p.digimemory = {"name": "Elder", "num": 29, "vaccine": 5, "data": 3, "virus": 1, "seconds": 120.0}
     p.inventory["digimemory"] = 1
-    life0 = p.lifespan
     out = p.use_item("digimemory")
     assert "Elder" in out
     assert (p.vaccine, p.data_power, p.virus) == (15, 13, 11)
-    assert p.lifespan == life0 + 120.0
     assert p.digimemory == {}                        # spent, never re-banks at death
     assert p.inventory.get("digimemory", 0) == 0     # the chip is consumed
 

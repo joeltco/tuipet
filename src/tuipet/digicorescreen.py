@@ -6,7 +6,8 @@ HIGHEST DNA field, falling back to its own), the core badge (a special core
 from digicoreMenuConfig.csv, else the X-antibody state badge), and the core
 NUMBER — with a pending evolution it counts DOWN from DigicoreBaseRate 14 as
 the growth period elapses; past growth (or a final form) it counts UP through
-the lifespan.  Pressing the core plays the silhouette teaser
+the days toward the elder line (age-based since the DSprite mortality port
+2026-07-22).  Pressing the core plays the silhouette teaser
 (EvolSilhouetteTransition): the next natural evolution as a blacked-out shape.
 The data-book pages after it are tuipet's own readout (kept adaptation).
 """
@@ -170,7 +171,7 @@ class DigiCorePanel:
         x = getattr(p, "x_antibody", "None")
         rows = [
             ("Core", f"{chr(0x25C6)} {n}"),
-            ("Meter", "evolution nears at 1" if pending else "life meter"),
+            ("Meter", "evolution nears at 1" if pending else "counts the days"),
             ("Field", data.pretty_field(getattr(p, "field", "") or "None")),
             ("X-State", "none" if x == "None" else x.lower()),
             ("Mode", ("ready — press M" if p.can_mode_change() else chr(0x2014))),

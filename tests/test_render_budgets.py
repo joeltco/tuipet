@@ -59,7 +59,7 @@ def _states(monkeypatch):
     s.frame_i = 5
     out.append(("march-sick", s))
     a = _road(monkeypatch)
-    a.pet.age_seconds = a.pet.lifespan - 1
+    a.pet.age_seconds = 16 * 86400.0
     out.append(("march-aged", a))
     n = _road(monkeypatch)
     n.pet.asleep = True

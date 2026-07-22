@@ -38,9 +38,13 @@ def test_the_full_report_card_adds_up():
     p.battles, p.wins = 100, 95
     p.age_seconds = p._growth_period() + 3 * 86400
     p.evol_bonus = 0                # the etch spent it
-    # clean +1, winrate +1, 3 days +3, mega +3, attr 350>=300 +1,
-    # battles>75 +1  (the obedience legs left with the discipline system)
-    assert p.final_care_grade() == 10
+    # clean +1, Happy +1, winrate +1, 3 days +3, mega +3, attr 350>=300 +1,
+    # battles>75 +1  (the obedience legs left with the discipline system).
+    # The Happy leg: under the old remaining-life rule this pet was an
+    # ACCIDENTAL elder (age 266280 > lifespan-window) and "elderly" pinned
+    # the mood word Neutral; the age-based elder line (DSprite mortality
+    # 2026-07-22) reads 3 days old -- a perfectly kept pet grades Happy.
+    assert p.final_care_grade() == 11
 
 
 def test_a_real_mega_life_no_longer_grades_zero():

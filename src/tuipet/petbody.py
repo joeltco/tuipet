@@ -315,8 +315,9 @@ class BodyMixin:
                 self._hunger_call_t = -3600.0                # AfterMistakeMinutesPostponed
                 self._inc_mistake()
                 self.mistake_day += 1  # + HungerDecAtZero MissedDayChange
-                self._burn_life(HUNGER_MISTAKE_LIFE_DEC * max(1, self.care_mistakes),
-                                f"hunger gnaws at {self.name}'s life")
+                # (the MistakeHungerLifeDec burn left with the lifespan clock
+                # -- DSprite mortality 2026-07-22: mistakes now raise the
+                # hazard brackets instead of burning a bar)
                 # hungerMistakePenalty: obedience +1 -- or -1 for a glutton.
                 # NO scold window: canon opens those for refusals and the
                 # discipline tantrum only -- neglect costs mistakes/obedience,
@@ -552,38 +553,16 @@ class BodyMixin:
             return True
         return False
 
-    def _check_old_age(self):
-        """lapsedLife >= totalLifespan -- canon's one true death trigger.
-        True when the pet died."""
-        if self.age_seconds >= self.lifespan:
-            self._die("old age")
-            return True
-        return False
-
-    def _burn_life(self, amount, note=None):
-        """setTotalLifespan's penalty path (canon re-audit 2026-07): every
-        neglect event BURNS lifespan, clamped so a cut can never kill inside
-        InstantDeathGracePeriod of now -- death always gives you the grace.
-        A `note` marks the burn as a SURFACED event (canon EnableLifePenaltyAnim
-        -> Bad_Health_Jeering): app.on_tick flashes it and jeers, so the Life bar
-        is felt reacting instead of ticking in silence (Joel 2026-07-22: "does
-        the life bar even do anything?")."""
-        self.lifespan = max(self.age_seconds + INSTANT_DEATH_GRACE, self.lifespan - amount)
-        if note:
-            self.life_penalty_note = note
-
     def _tick_mortality(self, dt):
-        """Canon death is ONE trigger -- old age (lapsedLife >= totalLifespan)
-        -- reached faster as neglect/cost events BURN lifespan toward it.  LIVE
-        burns, each a real trigger in tuipet: the hunger MISTAKE
-        (hungerMistakePenalty), the battle ENERGY floor (MinEnergyLifePenalty),
-        SICKNESS onset (SickLifeDec -- re-wired 2026-07-22, dropped in the BASIC
-        VPET sickness slim), the X-Antibody's one-time price (calcXAntibodyLifeDec),
-        and the bonus decay.  DORMANT (systems left in the BASIC VPET slim, so
-        nothing fires them; kept as constants, NOT claimed live): Injury / Fatigue
-        / WorseMalady / GeriatricFatigue LifeDec.  The discrete caps (20 mistakes /
-        20 injuries / 12h starving) are tuipet SAFETY NETS beneath the burns, not
-        canon.  Returns True when the pet died this tick."""
+        """The DSprite mortality (ported back from the clone, Joel 2026-07-22:
+        "we gotta do it how dsprite does. life bar must be a dvpet forgotten
+        relic"): NO lifespan clock, no burns -- death is ONE per-minute hazard
+        roll, d = mistakes bracket + sick whisper + age bracket (v0.4.12
+        L440-454, tables verbatim).  A healthy pet with <5 mistakes under age
+        15 CANNOT die by the roll.  The discrete nets stand beneath it as
+        before: the 20-mistake cap, Pen20 elder frailty (LINES_SPEC §5
+        contract) and the 12h starvation clock are tuipet's own, not clock
+        machinery.  Returns True when the pet died this tick."""
         if self._check_death_caps():
             return True
         if self.hunger == 0 and not self.asleep:              # awake-only, like hungerCall()
@@ -594,8 +573,7 @@ class BodyMixin:
             self._starve_t = 0.0
         # the DSprite sickness (clone rules, 2026-07-17): caught per game-min
         # from filth (never on the road -- countFilth reads 0 away) or from
-        # overweight steps; while sick, the clone's per-minute death whisper
-        # stands where the classic 6h malady death used to
+        # overweight steps
         if not self.sick:
             p = (SICK_POOP_P if (self.poop > 0
                                  and not getattr(self, "away", False)) else 0.0)
@@ -604,18 +582,25 @@ class BodyMixin:
                 p += int((self.weight - bw) // (bw * 0.5)) * SICK_OVERWEIGHT_P
             if p > 0 and random.random() < p * dt:
                 self.sick = True
-                # canon sicken(): ++sickCount THEN setTotalLifespan(-SickLifeDec)
-                # (PhysicalState L1846).  This was the headline DEAD burn --
-                # sickness from filth/overweight left the Life bar untouched, so
-                # it "did nothing" (Joel 2026-07-22).  Re-wired at the live
-                # trigger; the SickLifeDec was dropped in the BASIC VPET slim.
-                self._burn_life(SICK_LIFE_DEC, f"{self.name}'s illness drains its life")  # noqa: F405
-        elif random.random() < DEATH_SICK_P * dt:
-            self._die("sickness")
+        # the hazard roll: first matching bracket each from mistakes and age,
+        # plus the sick whisper -- summed, rolled once (clone shape: the
+        # whisper folds INTO d, it is not a separate death)
+        d = 0.0
+        for thresh, rate in DEATH_MISTAKES:                   # noqa: F405
+            if self.care_mistakes >= thresh:
+                d += rate
+                break
+        if self.sick:
+            d += DEATH_SICK_P
+        for thresh, rate in DEATH_AGE:                        # noqa: F405
+            if self.age_days >= thresh:
+                d += rate
+                break
+        if d > 0 and random.random() < d * dt:
+            self._die("old age" if self.age_days >= GERIATRIC_AGE_DAYS  # noqa: F405
+                      else "neglect" if self.care_mistakes >= 5 else "sickness")
             return True
-        # (the old continuous per-second "extra" drain was invented -- canon
-        # burns lifespan through the EVENT penalties wired below instead)
-        return self._check_old_age()
+        return False
 
     # (getEffectEnergyGain / the care-effect tick -- careEffect.csv's whole
     # runtime, whose only shipped effect was the Futon's sleep boost -- left
@@ -867,8 +852,8 @@ class BodyMixin:
 
     def _birthday(self):
         """setTimeToAge's age-up: a mostly-Happy, zero-slip day earns a GOOD
-        birthday (+bonus, +lifespan, a Cupcake); a mostly-Unhappy day with slips
-        is a BAD one (-bonus, -lifespan, a consolation Candy); anything else is
+        birthday (+bonus, a Cupcake); a mostly-Unhappy day with slips
+        is a BAD one (-bonus, a consolation Candy); anything else is
         normal (a Cookie).  getMajority: a TIE yields no major mood -> normal.
         The slate (missed-days + the mood record) wipes for the new day."""
         counts = self.daily_mood
@@ -876,21 +861,18 @@ class BodyMixin:
         tops = [k for k, v in counts.items() if v == best and best > 0]
         major = tops[0] if len(tops) == 1 else None
         if major == "Happy" and self.mistake_day <= MAX_MISTAKE_DAY_BONUS:
-            self.lifespan += BONUS_LIFE_INC
             self.evol_bonus += 1
             self.add_item("cupcake")            # a REAL bag treat (TUIPET catalog 2026-07-18)
             self._set_anim("happy", 2.0)                     # Birthday_Good
             self.birthday_note = f"A wonderful day! {self.name} earned a Cupcake!"
         elif major == "Unhappy" and self.mistake_day >= MIN_MISTAKE_DAY_DEC:
-            # the life cost rides the birthday's OWN tell (surfaced-burns
-            # sweep 2026-07-22) -- a second life note the same tick would
-            # just overwrite this flash
-            self._burn_life(BONUS_LIFE_DEC)
+            # (the BonusLifeDec burn left with the lifespan clock --
+            # DSprite mortality 2026-07-22; the bad day still costs bonus)
             if self.evol_bonus > 0:
                 self.evol_bonus -= 1
             self.add_item("candy")
             self._set_anim("sad", 2.0)                       # Birthday_Bad
-            self.birthday_note = "A rough day cost some life… just a Candy."
+            self.birthday_note = "A rough day… just a Candy."
         else:
             self.add_item("cookie")
             self._set_anim("happy", 1.5)                     # Birthday_Normal

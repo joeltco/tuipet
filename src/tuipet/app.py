@@ -132,12 +132,12 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("NO MORE SILENT BURNS: every cost to your pet's life now "
-                 "announces itself. A missed hunger call, collapsing past "
-                 "empty in battle, a rough birthday — each one flashes its "
-                 "toll and the pet jeers, same as illness and the "
-                 "X-Antibody already did. When the Life bar moves, you'll "
-                 "know exactly why.")
+    WHATS_NEW = ("THE LIFE BAR IS GONE — and that's the point. No clock "
+                 "counts your pet down anymore. Death rolls the dice the "
+                 "old way now: care mistakes, sickness and old age each "
+                 "raise the odds, and a well-kept young pet simply cannot "
+                 "die. Keep it fed, clean and healthy, and let the days "
+                 "add up.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and
@@ -1017,7 +1017,6 @@ class TuiPetApp(ActionsMixin, App):
             #                             its strobe belongs to the home screen
             self.pet.tick(1.0)
             p = self.pet
-            p.life_penalty_note = ""    # road burns drop silently; the home card owns the tell
             if p.dead and not p.death_banked and not self._dying_fx:
                 # death can't wait for ESC: leave the room, play the memorial.
                 # STATE, not a was_dead tick edge: a death set while the sim
@@ -1131,16 +1130,8 @@ class TuiPetApp(ActionsMixin, App):
             self.flash(p.birthday_note)
             self.beep("reward" if "Cupcake" in p.birthday_note or "Cookie" in p.birthday_note else "lose", bell=False)
             p.birthday_note = ""
-        # a neglect/cost event just BURNED life (canon Bad_Health_Jeering, only
-        # when EnableLifePenaltyAnim): flash the tell and jeer so the Life bar is
-        # felt reacting, not ticking in silence (Joel 2026-07-22)
-        note = getattr(p, "life_penalty_note", "")
-        if note:
-            self.flash(note)
-            p.life_penalty_note = ""
-            self.beep("lose", bell=False)
-            if self.screen_w.fx is None:
-                self.screen_w.start_fx("jeer")
+        # (the life-burn tell left with the lifespan clock -- DSprite
+        # mortality 2026-07-22: there are no burns to announce)
         # tournament alarm (TournamentAlert): the alarmed cup's hour arrived --
         # onset ring, then the same attention bounce as the gift call
         if p.tourney_alert and not getattr(self, "_cup_alert_seen", False):

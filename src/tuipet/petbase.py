@@ -51,11 +51,14 @@ def _enemy_level(enemy):
 
 
 # Lifespan (seconds), scaled from DVPet's real-time model. A pet lives this long
-# in total; reaching higher stages extends it; neglect (sickness/starvation/
-# fatigue) burns it down faster. The final stretch is the geriatric "old age".
-LIFE_START = 259200.0          # 3 days (egg/baby base lifespan)
-STAGE_LIFE = {"Rookie": 345600.0, "Champion": 388800.0, "Ultimate": 432000.0, "Mega": 432000.0}  # 4-5 days
-GERIATRIC_REMAIN = 21600.0   # last N seconds of life = elderly
+# (the DVPet lifespan clock -- LIFE_START / STAGE_LIFE / the whole LifeDec
+# burn economy -- left with the DSprite mortality ruling, Joel 2026-07-22:
+# "we gotta do it how dsprite does. life bar must be a dvpet forgotten
+# relic".  Death is the clone's per-minute hazard roll now; age alone
+# defines the elder.)
+GERIATRIC_AGE_DAYS = 15      # the clone's elder line: age_days >= 15 (v0.4.12 L926)
+AGE_DAY = 86400.0            # one REAL day of age_seconds (the clone's DAY_MINUTES scale)
+GERIATRIC_REMAIN = 21600.0   # stomach-shrink window: the first N seconds past the elder line
 
 # DVPet mood model (config.csv): a signed score mapped to a Mood enum.
 MOOD_MIN, MOOD_MAX = -300, 300        # MinMood / MaxMood
@@ -197,16 +200,15 @@ ROOKIE_OBED_BAD = 0                 # RookieBadObedience (anything else, ties in
 MOOD_RECORD_MIN = 5                 # MoodRecordMin: sample the mood tier every 5 game-min
 MAX_MISTAKE_DAY_BONUS = 0           # MaxMissedDayForBonusInc: a good day allows ZERO slips
 MIN_MISTAKE_DAY_DEC = 1             # MinMissedDayForBonusDec
-BONUS_LIFE_INC = 360.0              # BonusLifeInc 21600 real-sec -> game-min scale (+6 game-hours)
-BONUS_LIFE_DEC = 360.0              # BonusLifeDec
-BONUS_EVOLUTION_LIFE = 60.0         # BonusEvolutionLife 3600 -> game-min scale, x bonus per evolution
+# (BonusLifeInc/Dec + BonusEvolutionLife left with the lifespan clock --
+# DSprite mortality 2026-07-22; the birthday still moves evol_bonus + items)
 # DVPet DigiMemory / inheritance (PhysicalState.setNewDigimemory / getDigimemory,
 # item 32 anim Inherit; config.csv DigimemoryAttributeCoefficient / LifeInc).  The
 # departed etches its attack powers -- scaled by the care bonus it died holding --
-# into the Digimemory; the HEIR uses the item to add Va/D/Vi and lifespan.
+# into the Digimemory; the HEIR uses the item to add Va/D/Vi.  (The chip's
+# lifespan leg left with the lifespan clock -- DSprite mortality 2026-07-22;
+# old chips' "seconds" payloads load fine and are simply not applied.)
 DIGIMEMORY_ATTR_COEF = 0.01         # DigimemoryAttributeCoefficient
-DIGIMEMORY_LIFE_INC = 60.0          # DigimemoryLifeIncCoefficient 3600 real-sec (1h) -> the
-#                                     game-min scale, exactly like BonusEvolutionLife above
 # (the birthday grants speak the TUIPET catalog keys since 2026-07-18 --
 # the raw DVPet food ids landed items the strict bag could neither show
 # nor use, a reward the player never received; item review 2026-07-18)
@@ -217,7 +219,6 @@ WIN_RATE_BONUS_COEF = 0.1           # winRateRookieBonusIncCoefficient (champion
 # saveFromDeath: frantic taps during the dying beat can pull the pet back
 HITS_TO_SAVE = 30                   # HitsToSave 175 mouse-clicks over DVPet's ~7s jingle,
                                     #   scaled to a ~6/s keyboard mash over tuipet's 5s beat
-REVIVAL_LIFE = 750.0                # RevivalLifeInc 45000 real-sec -> game-min scale (~12.5 game-h left)
 HUNGER_AFTER_SAVED = 0              # HungerAfterSavedFromDeath (alive, but starving)
 BONUS_AFTER_SAVED = -1              # BonusChangeAfterSavedFromDeath
 # battle style (Battle_Style menu): Free = the pet fights its own way (+1 all
@@ -437,6 +438,16 @@ FILTH_WORSE_CHANCE = 20                 # FilthWorseSickChance (x piles, already
 SICK_POOP_P = 0.015            # sickness per minute while filth is present
 SICK_OVERWEIGHT_P = 0.00375    # per overweight step: floor(excess/(base*0.5))
 DEATH_SICK_P = 7.5e-5          # the clone's per-minute death whisper while sick
+# ---- the DSprite mortality (rebuilt 2026-07-22, Joel: "we gotta do it how
+# dsprite does. life bar must be a dvpet forgotten relic"): NO lifespan
+# clock, no burns -- death is ONE per-minute hazard roll, the sum of the
+# first matching mistake bracket, the sick whisper above, and the first
+# matching age bracket.  A healthy pet with <5 mistakes under age 15 CANNOT
+# die by the roll.  Tables verbatim from the clone (v0.4.12 L45-47); the
+# discrete nets (20-mistake cap, Pen20 frailty, 12h starvation) stand
+# beneath it as before -- Pen20 is LINES_SPEC §5 contract, not clock.
+DEATH_MISTAKES = ((20, 0.0015), (15, 3.75e-4), (10, 7.5e-5), (5, 1.5e-5))
+DEATH_AGE = ((25, 3.75e-4), (20, 1.5e-4), (15, 3.75e-5))
 BAD_WEIGHT_MOOD_DEC = 2                 # BadWeightMoodLapseDec (per lapse off Healthy)
 VERY_NEUTRAL_MOOD_DEC = 5               # VeryNeutralMoodLapseDec (neutral [5,150) drains faster)
 DEPRESSED_LAPSE_MIN = 59.0              # DepressedLapseMin
@@ -481,7 +492,8 @@ STOMACH_CAPACITY = 4                    # legacy fallback only -- see stomach_ca
 MIN_STOMACH_CAPACITY = 7                # MinStomachCapacity
 OVEREAT_FACTOR = 0.75                   # OvereatLimitFactor (x capacity)
 # canon 0.00021 per REAL second across the 43200s window (max dec ~9.07);
-# tuipet's elderly window is GERIATRIC_REMAIN game-sec -- same endpoint shape
+# tuipet's shrink runs over the GERIATRIC_REMAIN window PAST the elder line
+# (age-based since the DSprite mortality port 2026-07-22) -- same endpoint shape
 GERIATRIC_STOMACH_COEF = (43200 * 0.00021) / 21600.0
 DISPOSE_LEFTOVERS_MIN = 0.5             # DisposeLeftoversMinModifier: at/below, Munching drops the rest
 OVEREAT_LIMIT = 5                       # OvereatLimit: a glutton may fill one heart past full
@@ -526,21 +538,10 @@ DISTURB_WORSE_SICK_CHANCE = 50          # DisturbWorseSickChance % (an already-s
 DISTURB_SICK_CHANCE = 25                # DisturbSickChance % (vs SickChance bound 100)
 DISTURB_LIMIT_CHECK_SICK = 5            # DisturbLimitCheckSick: the sick risk from the 5th disturb on
 STARVE_WEIGHT_DEC = 1                   # ActivityWeightChange: starving sheds weight per lapse
-HUNGER_MISTAKE_LIFE_DEC = 360.0         # MistakeHungerLifeDec 21600 real-sec on the /60 game
-#                                         scale (x TOTAL mistakes per event; the old 3600 was a
-#                                         bespoke rescale -- the BadMed audit's bug class)
-SICK_LIFE_DEC = 180.0                   # SickLifeDec 10800: every illness costs 3 real-hours (LIVE: petbody sicken)
-# DORMANT below -- the injury/fatigue/worsening systems left in the BASIC VPET
-# slim (2026-07-16/17).  They keep their canon values but have NO live trigger
-# (is_injured/is_fatigued are hardwired False), so nothing burns them.  Do not
-# claim them live -- see the _tick_mortality audit (Joel 2026-07-22):
-INJURY_LIFE_DEC = 180.0                 # InjuryLifeDec 10800
-WORSE_MALADY_LIFE_DEC = 180.0           # WorseSick/WorseInjuryLifeDec 10800 (each worsening)
-FATIGUE_LIFE_DEC = 360.0                # FatigueLifeDec 21600
-GERIATRIC_FATIGUE_LIFE_DEC = 60.0       # GeriatricFatigueLifeDec 3600 (an old body pays extra)
-X_LIFE_DEC = 1440.0                     # XAntibodyLifeDec 86400: the X-Program's price in LIFE
-X_LIFE_DEC_BOUND = 7                    # XAntibodyLifeDecModifierBound (86400/nextInt(7); 0 = free)
-X_LIFE_DEC_CHANCE = 100                 # XAntibodyLifeDecChance (config.csv: 100 -> the roll ALWAYS happens)
+# (the ENTIRE LifeDec family -- HungerMistake/Sick/Injury/WorseMalady/
+# Fatigue/GeriatricFatigue/XAntibody LifeDec, live and dormant alike --
+# left with the lifespan clock: DSprite mortality, Joel 2026-07-22.
+# Neglect kills through the hazard tables below now, not through burns.)
 # xProgramSurvivalChance 1/1000 (death/rebirth audit 2026-07-06): the sample
 # is RUSSIAN ROULETTE for an UNMARKED pet -- 999 in 1000 it dies outright,
 # and that death cannot be mash-revived (savedFromDeath = 127, verbatim).
@@ -548,10 +549,6 @@ X_LIFE_DEC_CHANCE = 100                 # XAntibodyLifeDecChance (config.csv: 10
 X_SURVIVAL_TARGET = 1                   # XProgramSurvivalChanceTarget
 X_SURVIVAL_BOUND = 1000                 # XProgramSurvivalChanceBound
 X_SAVE_BLOCK = 127                      # the canon revive-block sentinel
-INSTANT_DEATH_GRACE = 60.0              # InstantDeathGracePeriod 3600: a burn cannot kill in
-#                                         under the grace -- setTotalLifespan's clamp, verbatim
-MIN_ENERGY_LIFE_PENALTY = 60.0          # MinEnergyLifePenalty 3600: bottoming out at the
-#                                         -maxEnergy floor burns life (setEnergy, per hit)
 #                                         scaled to tuipet's ~84h: ~1.2% of life x total mistakes
 # setEnergy: a drop INTO the red bills mood/obedience scaled by the depth
 # (dec - newEnergy, i.e. 10 + |new| / 1 + |new|) and fatigues an uninjured pet
@@ -692,7 +689,8 @@ MAX_MACRO = 24                 # MaxProtein / MaxVitamin / MaxMineral
 NUTRITION_LAPSE_CHANGE = -3    # NutritionLapseChange (decay per lapse)
 NUTRITION_LAPSE_SEC = 600.0    # tuipet cadence for macro decay (real-time adaptation)
 GOOD_NUTR_RECOVERY_MULT = 2.0  # GoodNutrition{Sick,Inj,Fatigue}LapseChange=-1 -> ~2x recovery
-GOOD_NUTR_LIFESPAN_COEF = 0.5  # GoodNutritionLifespanDecCoefficient (slower lifespan loss)
+# (GoodNutritionLifespanDecCoefficient left with the lifespan clock -- it
+# never had a consumer here; DSprite mortality 2026-07-22)
 INJ_LAPSE_MIN = 29                       # InjLapseMin
 
 # DVPet injury worsening + vitamins (config.csv, calcWorse{Exercise,Battle}Inj /
@@ -763,12 +761,11 @@ WORSE_INJ_ENTH_CHANGE = -1               # WorseInjuryEnthusiasmChange
 VITAMIN_HOURS = 60                       # VitaminHours (game-min of injury-worsening protection)
 CURED_MOOD_BONUS = 75                    # CuredMoodBonus (divided by Max{Sick,Inj}Length per treatment)
 CURED_OBED_BONUS = 25                    # CuredObedienceBonus
-BAD_MED_LIFE_DEC = 60.0                  # BadMedLifeDec 3600 real-sec (1h) -> the game-min
-#                                          scale, like BonusEvolutionLife/DigimemoryLifeInc
-#                                          (the old 3600 game-sec was 60x too harsh)
+# (BadMedLifeDec + BadVitaminLifeDec left with the lifespan clock --
+# DSprite mortality 2026-07-22; they had no live consumer since the
+# medicine slim anyway)
 BAD_MED_BM_INC = 6                       # BadMedBMInc (bowel gauge lurch)
 BAD_VITAMIN_MOOD_DEC = 8                 # BadVitaminMoodDec
-BAD_VITAMIN_LIFE_DEC = 7200.0            # BadVitaminLifeDec
 BAD_VITAMIN_BM_INC = 2                   # BadVitaminBMInc
 VITAMIN_WORSE_SICK_CHANCE = 1            # VitaminWorseSickChance %
 VITAMIN_OVERFED_SICK_CHANCE = 50         # VitaminOverfedSickChance (RefuseChance-bounded roll)

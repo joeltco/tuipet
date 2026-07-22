@@ -48,7 +48,7 @@ def test_a_geriatric_pet_walks_the_aged_shuffle(monkeypatch):
     from tuipet import menu
     pan = _on_the_road(monkeypatch)
     p = pan.pet
-    p.age_seconds = p.lifespan - 1                     # the twilight window
+    p.age_seconds = 16 * 86400.0                       # past the elder line
     assert p.is_geriatric
     calls = []
     real = menu.paint

@@ -22,8 +22,8 @@ def test_core_number_counts_down_to_evolution():
 def test_core_number_counts_up_past_growth():
     p = _pet()
     p.stage_seconds = p.STAGE_DURATION["Rookie"] + 1
-    p.age_seconds = p.lifespan * 0.5
-    assert core_number(p) == 7                      # halfway through life
+    p.age_seconds = 7.5 * 86400.0
+    assert core_number(p) == 7                      # halfway to the elder line
     p.age_seconds = 0.0
     assert core_number(p) == 1                      # floors at 1
 
@@ -534,9 +534,9 @@ def test_mega_core_number_is_the_lifespan_meter(monkeypatch):
     from tuipet import digicore
     p = _pet(stage="Mega")
     monkeypatch.setattr(digicore, "has_next", lambda pet: True)
-    p.age_seconds = p.lifespan * 0.5
-    assert core_number(p) == 7                     # halfway through life
-    p.age_seconds = p.lifespan * 0.99
+    p.age_seconds = 7.5 * 86400.0
+    assert core_number(p) == 7                     # halfway to the elder line
+    p.age_seconds = 14.9 * 86400.0
     assert core_number(p) > 7                      # it MOVES
 
 

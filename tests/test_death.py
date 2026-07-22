@@ -58,12 +58,17 @@ def test_starvation_clock_resets_when_fed():
     assert p._starve_t == 0.0, "feeding must reset the starvation timer"
 
 
-def test_lifespan_expiry_is_fatal():
-    p = _healthy()
-    p.lifespan = 100.0
-    p.age_seconds = 100.0
-    p.tick(0.1)                   # age ticks past lifespan
-    assert p.dead is True
+def test_the_hazard_roll_is_fatal(monkeypatch):
+    # the DSprite roll (2026-07-22): mistakes bracket + age bracket, one roll
+    import tuipet.petbody as body
+    monkeypatch.setattr(body.random, "random", lambda: 0.0)
+    p = _healthy(care_mistakes=5)
+    p.tick(0.1)
+    assert p.dead is True and p.death_cause == "neglect"
+    q = _healthy()
+    q.age_seconds = 26 * 86400.0
+    q.tick(0.1)
+    assert q.dead is True and q.death_cause == "old age"
 
 
 def test_egg_is_immune_to_neglect_death():
@@ -88,7 +93,6 @@ def test_save_from_death_restores_life_and_costs_bonus():
     p = _healthy(stage="Champion")
     p.num = 100                                       # Gatomon (no Death target expected)
     p.evol_bonus = 2
-    p.lifespan = 10000.0
     p.age_seconds = 10000.0
     p.dead = True
     p.save_from_death()
@@ -96,7 +100,7 @@ def test_save_from_death_restores_life_and_costs_bonus():
     assert p.saved_from_death == 1
     assert p.hunger == 0                              # alive, but starving
     assert p.evol_bonus == 1                          # BonusChangeAfterSavedFromDeath
-    assert p.age_seconds == 10000.0 - 750.0           # RevivalLifeInc restored
+    assert p.age_seconds == 10000.0                   # no life math: the clone's revive
 
 
 def test_death_evolution_fires_when_a_dark_form_accepts():

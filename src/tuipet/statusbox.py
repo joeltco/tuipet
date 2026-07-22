@@ -139,8 +139,6 @@ def home_lines(pet):
     deco = care_deco(pet, word)
     age = age_compact(pet.age_seconds)
     xm = f" [b {T.ACCENT}]X[/]" if pet.x_antibody != "None" else ""
-    lifepct = max(0, int((pet.lifespan - pet.age_seconds) / max(1, pet.lifespan) * 100))
-    lifecol = T.NEG if pet.is_geriatric else T.LIFE
     return [
         f"[b]{pet.name[:22]}[/]{xm}",
         f"[dim]{pet.stage}{(' · ' + pet.attribute) if pet.attribute else ''}[/]",
@@ -165,7 +163,9 @@ def home_lines(pet):
         # "shouldnt the @ say what zone the mon is in during adventure?"):
         # the run's zone while it's away on the road, the home scene otherwise
         f"@{_where(pet)} [dim]{age}[/]",
-        f"Life    {bar(lifepct, 12, lifecol)}",
+        # (the Life bar left as a DVPet relic -- DSprite mortality, Joel
+        # 2026-07-22: death is the hazard roll, there is no meter to show;
+        # the elder tell is the aged shuffle sprite)
         status_line(word, deco),
     ]
 

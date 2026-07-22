@@ -36,20 +36,23 @@ def has_next(pet):
 
 def core_number(pet):
     """setupDigicore's meter: an evolution countdown while a normal evolution is
-    pending, otherwise a lifespan meter counting up.  Floors at 1."""
+    pending, otherwise an AGE meter counting up toward the elder line (the
+    lifespan denominator left with the clock -- DSprite mortality 2026-07-22:
+    age is what kills now, so age is what the core counts).  Floors at 1."""
     base = DIGICORE_BASE_RATE
     growth = pet.STAGE_DURATION.get(pet.stage)
     # Mega's 9e9 is the "never auto-evolves" sentinel, not a growth clock:
     # counting it as pending froze the meter at its top for any Mega with
-    # onward (jogress/X) rows -- the lifespan count-up this docstring
-    # promises a final form never appeared (gameplay audit 2026-07-19)
+    # onward (jogress/X) rows -- the count-up this docstring promises a
+    # final form never appeared (gameplay audit 2026-07-19)
     pending = (growth is not None and growth < 9e8
                and pet.stage_seconds < growth and has_next(pet))
     if pending:
         denom = round(growth / base) or 1
         n = int(base - pet.stage_seconds / denom)
     else:
-        denom = round(pet.lifespan / base) or 1
+        from .petbase import AGE_DAY, GERIATRIC_AGE_DAYS
+        denom = round(GERIATRIC_AGE_DAYS * AGE_DAY / base) or 1
         n = int(pet.age_seconds / denom)
     return max(1, n)
 
@@ -283,7 +286,6 @@ def _legacy_rows():
 
 
 def build_pages(pet):
-    rem = pet.lifespan - pet.age_seconds
     appetite = ["picky", "normal", "greedy"][pet._glutton() + 1]
     temperament = ["mellow", "steady", "restless"][pet._restless() + 1]
     disp = ["sour", "even", "sunny"][pet._disposition() + 1]
@@ -294,7 +296,9 @@ def build_pages(pet):
         ("No.", "—" if pet.num < 0 else f"#{pet.num}"), ("Stage", pet.stage),
         ("Attrib", pet.attribute), ("Field", data.pretty_field(pet.field) or "—"),
         ("Gen", str(pet.generation)),
-        ("Age", _mins(pet.age_seconds)), ("Life", f"{_mins(rem)} left"),
+        # (the "Life Xd left" row left with the lifespan clock -- DSprite
+        # mortality 2026-07-22: nothing counts down anymore, Age counts up)
+        ("Age", _mins(pet.age_seconds)),
         ("Battles", f"{pet.wins}W / {pet.battles} · {pet.bits}b"),
     ]
     # the POWER page carries the numbers the evolution gates actually read

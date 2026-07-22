@@ -10,7 +10,8 @@ natural timed care exactly like the item (Digimental) forms.
 import pytest
 
 from tuipet import data
-from tuipet.pet import (GERIATRIC_REMAIN, MIN_STOMACH_CAPACITY, Pet)
+from tuipet.pet import (AGE_DAY, GERIATRIC_AGE_DAYS, GERIATRIC_REMAIN,
+                        MIN_STOMACH_CAPACITY, Pet)
 
 
 def _pet(**kw):
@@ -35,10 +36,10 @@ def test_geriatric_stomach_shrinks_to_the_floor():
     p = Pet(num=num, stage="Champion", obedience=500)
     full = p.stomach_capacity()
     assert full >= 16
-    p.lifespan, p.age_seconds = 100000.0, 100000.0 - GERIATRIC_REMAIN + 1
+    p.age_seconds = GERIATRIC_AGE_DAYS * AGE_DAY + 1   # just past the elder line
     assert p.is_geriatric
     assert p.stomach_capacity() == full        # shrink starts at ~0 at onset
-    p.age_seconds = p.lifespan                 # the last breath
+    p.age_seconds = GERIATRIC_AGE_DAYS * AGE_DAY + GERIATRIC_REMAIN   # window's end
     shrunk = p.stomach_capacity()
     assert MIN_STOMACH_CAPACITY <= shrunk <= full - 8   # canon max dec ~9
 

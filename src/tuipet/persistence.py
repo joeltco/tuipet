@@ -715,7 +715,7 @@ def pet_from_save(data, catch_up=True, strict=False):
                         ("mood", (int, float)), ("weight", (int, float)),
                         ("bits", (int, float)), ("poop", (int, float)),
                         ("world_seconds", (int, float)), ("age_seconds", (int, float)),
-                        ("lifespan", (int, float)), ("sleep_lapse", (int, float)),
+                        ("sleep_lapse", (int, float)),
                         ("stage", str), ("attribute", str),
                         ("inventory", dict), ("poop_sizes", list)):
         if not isinstance(getattr(pet, fname), want):
