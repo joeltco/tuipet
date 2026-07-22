@@ -132,11 +132,13 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("THE DNA CHIP FITS THE MOUTH: charging DNA feeds a "
-                 "field badge to your pet — and that badge was rendering "
-                 "nearly pet-sized, a 14px chip meant for a much taller "
-                 "screen. It now feeds in at proper chip scale, the same "
-                 "way food is scaled for the eating animation.")
+    WHATS_NEW = ("THE SHELF TELLS THE TRUTH: every shop blurb was "
+                 "checked against what the item actually does — all 36 "
+                 "held, every dial, timer and refusal. And for the "
+                 "cautious: the X-Antibody chip is confirmed SAFE, and "
+                 "always was. The deadly roulette people whisper about "
+                 "belonged to a different item that left the shelf long "
+                 "ago. The mushroom, however, remains exactly as labeled.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and

@@ -570,8 +570,11 @@ class CareMixin:
         if self.x_antibody != "None":
             return _Refused("The antibody already runs in it.")
         # (calcXAntibodyLifeDec left with the lifespan clock -- DSprite
-        # mortality 2026-07-22: there is no life bar for the X to burn.
-        # The unmarked-pet roulette below is untouched.)
+        # mortality 2026-07-22.  NOTE: the unmarked-pet death roulette was
+        # never THIS item's -- it belonged to the separate X-PROGRAM item,
+        # removed with the strict-DSprite shelf 2026-07-17; the chip has
+        # always been the safe path.  Dossier audit 2026-07-22 corrected
+        # this comment's false claim that a roulette ran "below".)
         self._set_xantibody("Permanent")
         from . import persistence as _persist
         _persist.note_xanti()

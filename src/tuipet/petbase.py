@@ -542,13 +542,10 @@ STARVE_WEIGHT_DEC = 1                   # ActivityWeightChange: starving sheds w
 # Fatigue/GeriatricFatigue/XAntibody LifeDec, live and dormant alike --
 # left with the lifespan clock: DSprite mortality, Joel 2026-07-22.
 # Neglect kills through the hazard tables below now, not through burns.)
-# xProgramSurvivalChance 1/1000 (death/rebirth audit 2026-07-06): the sample
-# is RUSSIAN ROULETTE for an UNMARKED pet -- 999 in 1000 it dies outright,
-# and that death cannot be mash-revived (savedFromDeath = 127, verbatim).
-# A pet already carrying any antibody state is safe.
-X_SURVIVAL_TARGET = 1                   # XProgramSurvivalChanceTarget
-X_SURVIVAL_BOUND = 1000                 # XProgramSurvivalChanceBound
-X_SAVE_BLOCK = 127                      # the canon revive-block sentinel
+# (the X-PROGRAM survival roulette constants left with their item -- the
+# X-Program sample was cut with the strict-DSprite shelf 2026-07-17 and
+# nothing rolled them since; dossier audit 2026-07-22.  The X-Antibody
+# CHIP never carried the roulette.)
 #                                         scaled to tuipet's ~84h: ~1.2% of life x total mistakes
 # setEnergy: a drop INTO the red bills mood/obedience scaled by the depth
 # (dec - newEnergy, i.e. 10 + |new| / 1 + |new|) and fatigues an uninjured pet
