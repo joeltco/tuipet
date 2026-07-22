@@ -3,6 +3,10 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.5.165 — THE DATA BOOK STOPS LYING (2026-07-22)
+
+THE DATA BOOK STOPS LYING: with a DNA divergence armed, the DigiCore's gaze and EVOLVES chart still promised your line's next form — a future the steer was about to override. Now the armed target rides the top of the chart wearing its own ✓ armed tag, the gaze teases the form that will actually come, and ENTER on the armed row reports the charge that fired it. The line rows stay below: another Field catching up re-steers, and a tie disarms.
+
 ## 0.5.164 — THE ROAD SHELF IS OPEN (2026-07-22)
 
 THE ROAD SHELF IS OPEN: Town Transport, Disaster Transport and Life Recovery have been in the catalog since v0.5.114 — but no shop tab ever carried the Adventure shelf, so nobody could ever buy one. They now sell under Items (home shop AND town counters, map-clear gates unchanged), show in the bag, and Life Recovery finally does its job: press T on the road for a second wind — hearts back to full where you stand.
