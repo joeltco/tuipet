@@ -3,6 +3,10 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.5.169 — THE FIRST HOUR EXPLAINS ITSELF (2026-07-22)
+
+THE FIRST HOUR EXPLAINS ITSELF: every care call now names its key (hungry F, sick I, cleaning C — lights always said S), help finally explains the ✗ care-mistake counter that steers every evolution (20 is fatal, 5 for a frail elder) and names the assistant's bits-per-hour retainer, and the egg wait has a shape: the card counts down to hatch and the HUD holds the help pointer for the whole wait instead of flashing it for 4 seconds.
+
 ## 0.5.168 — THE QUIET STATES SPEAK UP (2026-07-22)
 
 THE QUIET STATES SPEAK UP: a lone poop pile now asks for a tidy-up in the idle HUD (text only — the 3-pile alarm keeps its job), frailty finally rings its alarm the moment an Ultimate/Mega crosses 3 care mistakes (the one lethal state was the only silent one), and your mon's morning tier reaches the HUD — wake up beaming, on the wrong side, or from an awful night, you'll hear about it instead of guessing from a 2-second pose.
