@@ -3,6 +3,10 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.5.166 — DNA TEACHES ITSELF (2026-07-22)
+
+DNA TEACHES ITSELF: the Charge screen now tells you both truths where you spend — charging arms the Divergence road (the line climb ignores it) AND charges clear at every evolution, so arm before the clock fills. The DNA menu names the whole loop in one line, and an armed steer now rides the main-view HUD — no more divergences firing hours after you forgot you set one.
+
 ## 0.5.165 — THE DATA BOOK STOPS LYING (2026-07-22)
 
 THE DATA BOOK STOPS LYING: with a DNA divergence armed, the DigiCore's gaze and EVOLVES chart still promised your line's next form — a future the steer was about to override. Now the armed target rides the top of the chart wearing its own ✓ armed tag, the gaze teases the form that will actually come, and ENTER on the armed row reports the charge that fired it. The line rows stay below: another Field catching up re-steers, and a tie disarms.
