@@ -21,7 +21,8 @@ THEMES = {
         "on": "#2b2e31", "bg": "#c6c9cc", "mid": "#7d8186",
         "accent": "#b04a3a", "pos": "#3a6ea5", "neg": "#a23b2f", "border": "#7a7e78",
         "sil_scene": "#2b2e31", "sil_lightsoff": "#e4e7ea",
-        "heart": "#c25a4a", "energy": "#4a90c2", "care": "#a06ac2", "life": "#3f9a86", "coin": "#c2a24a",
+        "heart": "#c25a4a", "energy": "#4a90c2", "care": "#a06ac2", "life": "#3f9a86",
+        "coin": "#7a5f14",   # was #c2a24a: 1.48:1 on the light box (theme audit 2026-07-22)
         "void": "#000000", "flash": ("#f2f6fa", "#1a2026", "#e8eef2"),
     },
     "mono": {
@@ -52,7 +53,8 @@ THEMES = {
         "on": "#0f380f", "bg": "#9bbc0f", "mid": "#306230",
         "accent": "#7a3a22", "pos": "#2a5a8a", "neg": "#8a3a2a", "border": "#4a5a28",
         "sil_scene": "#0f380f", "sil_lightsoff": "#d8e8a0",
-        "heart": "#8a4a2a", "energy": "#2a6a8a", "care": "#6a4a8a", "life": "#306230", "coin": "#8a7a1a",
+        "heart": "#8a4a2a", "energy": "#2a6a8a", "care": "#6a4a8a", "life": "#306230",
+        "coin": "#3a4406",   # was #8a7a1a: 1.97:1 on the pea LCD (theme audit 2026-07-22)
         "void": "#0f380f", "flash": ("#e0f0c0", "#0f380f", "#d8e8a0"),
         # (the bg_ramp background quantizer is GONE -- Joel 2026-07-18:
         # "get rid of the green and white background pallet switcher in
@@ -121,7 +123,11 @@ def _derive(t):
         "BEZEL": t.get("bezel", t["border"]),
         "SHELL": t.get("shell", t["border"]),
         "LABEL": t.get("label", t["mid"]),
-        "KEY": t.get("key", "cyan"),
+        "KEY": t.get("key", "cyan"),   # cyan is PINNED design (the shell-revert
+        #                                ruling, test_theme) -- the 2026-07-22
+        #                                theme audit flagged it as terminal-
+        #                                palette roulette; change only on a
+        #                                named order
     }
 
 

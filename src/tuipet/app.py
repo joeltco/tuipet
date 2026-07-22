@@ -132,11 +132,12 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("MENU POLISH, ROUND FIVE: the road's towns and the "
-                 "cup's fight pages went under the glass. One thing read "
-                 "wrong: the faceoff's bare 'Trophy 0' sat beside the "
-                 "challenger's name like it was THEIR record — it now says "
-                 "'your \u2605N', the same star your status card wears.")
+    WHATS_NEW = ("EVERY THEME, LEGIBLE: a contrast audit ran every menu "
+                 "under all eight themes. Your bits were nearly invisible "
+                 "in grey and gameboy — the coin gold now reads dark and "
+                 "clear in both. Six themes came through spotless, and a "
+                 "new test stands guard so no palette edit can ever ship "
+                 "grey-on-grey.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and
