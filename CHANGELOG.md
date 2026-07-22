@@ -3,6 +3,10 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.5.168 — THE QUIET STATES SPEAK UP (2026-07-22)
+
+THE QUIET STATES SPEAK UP: a lone poop pile now asks for a tidy-up in the idle HUD (text only — the 3-pile alarm keeps its job), frailty finally rings its alarm the moment an Ultimate/Mega crosses 3 care mistakes (the one lethal state was the only silent one), and your mon's morning tier reaches the HUD — wake up beaming, on the wrong side, or from an awful night, you'll hear about it instead of guessing from a 2-second pose.
+
 ## 0.5.167 — THE CORE NUMBER SAYS WHICH WAY IT COUNTS (2026-07-22)
 
 THE CORE NUMBER SAYS WHICH WAY IT COUNTS: the DigiCore's ◆ meter was a countdown-to-evolve on a growing pet and an age-count on a final form — the same bare glyph, opposite directions. It now reads '◆ 7 to evolve', '◆ 7 of 14 to elder', or '◆ 16 — elder', so one glance tells you whether the core is filling toward a new form or the mon is simply getting old.
