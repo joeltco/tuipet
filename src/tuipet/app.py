@@ -132,14 +132,13 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("THE DATA BOOK STOPS LYING: with a DNA divergence armed, the "
-                 "DigiCore's gaze and EVOLVES chart still promised your line's "
-                 "next form — a future the steer was about to override. Now "
-                 "the armed target rides the top of the chart wearing its own "
-                 "✓ armed tag, the gaze teases the form that will actually "
-                 "come, and ENTER on the armed row reports the charge that "
-                 "fired it. The line rows stay below: another Field catching "
-                 "up re-steers, and a tie disarms.")
+    WHATS_NEW = ("DNA TEACHES ITSELF: the Charge screen now tells you both "
+                 "truths where you spend — charging arms the Divergence road "
+                 "(the line climb ignores it) AND charges clear at every "
+                 "evolution, so arm before the clock fills. The DNA menu "
+                 "names the whole loop in one line, and an armed steer now "
+                 "rides the main-view HUD — no more divergences firing hours "
+                 "after you forgot you set one.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and
@@ -192,6 +191,7 @@ class TuiPetApp(ActionsMixin, App):
         self._showing_need = False
         self._update_msg = None     # set by the background PyPI check when a newer release exists
         self._showing_update = False
+        self._showing_armed = False  # the standing DNA-divergence notice (set once: marquee)
         self._sync = None           # background cloud-save push client (net.SyncClient), or None
         self._hud_scroll = None     # plain text being marquee-scrolled, or None when it fits
         self._hud_off = 0           # marquee window offset
@@ -1134,6 +1134,20 @@ class TuiPetApp(ActionsMixin, App):
         elif self._showing_need:
             self._hud("")
             self._showing_need = False
+        elif self._armed_field(p):
+            # a standing choice must stay visible (the Divergence page law:
+            # "the door must be visible to be a choice") -- an armed steer
+            # set hours ago otherwise fired with zero warning outside the
+            # DNA screen (gameplay polish #14, 2026-07-22).  Idle-only:
+            # every need, alert and gift outranks it.
+            if not self._showing_armed:
+                self._hud(f"◆ DNA armed — next evolution rides the "
+                          f"{data.pretty_field(self._armed_field(p))} road ([b]X[/])")
+                self._showing_armed = True
+            self._showing_update = False
+        elif self._showing_armed:
+            self._hud("")
+            self._showing_armed = False
         elif self._update_msg and not self._showing_update:
             self._hud(self._update_msg)     # gentle update nudge when idle (set once so the marquee can scroll)
             self._showing_update = True
@@ -1212,6 +1226,13 @@ class TuiPetApp(ActionsMixin, App):
         if extra:
             msg += f"  [b]★ {' · '.join(extra)}![/]"
         return msg
+
+    def _armed_field(self, p):
+        """The strict-max Field whose charge has ARMED a divergence, or None
+        -- the HUD's wrapper over evolution.divergence_target (cheap: the
+        corpus tables behind it are all lru_cached loads)."""
+        from . import evolution
+        return p.highest_dna() if evolution.divergence_target(p) is not None else None
 
     def _need_message(self, p):
         """HUD announcement for the pet's most urgent unmet care need (or '')."""

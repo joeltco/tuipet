@@ -68,11 +68,11 @@ code stays dormant unless named.
 
 ## Growth / DNA
 
-- [ ] **12 — Teach that divergence IS the point of DNA** for line pets
+- [x] **12 — Teach that divergence IS the point of DNA** for line pets *(shipped v0.5.166)*
   (dnascreen.py:234,253).
-- [ ] **13 — "Charges clear at evolution" warning missing from the Charge
+- [x] **13 — "Charges clear at evolution" warning missing from the Charge
   screen / DNA home** (only on the Divergence page, dnascreen.py:313).
-- [ ] **14 — ARMED divergence never reaches the HUD/status card.**
+- [x] **14 — ARMED divergence never reaches the HUD/status card.**
 - [ ] **15 — Album "???" has no route home** — name the line/egg (or
   jogress/armor/divergence) that reaches an unseen form
   (albumscreen.py:138; lines.py knows membership).

@@ -155,3 +155,87 @@ def test_the_mash_scene_and_result_blink_animate():
     assert "Nature Spirit" in pan.text().plain         # the reveal
     pan.blink = 2
     assert "Nature Spirit" not in pan.text().plain     # the blink out
+
+
+# --- the teachings ride where the player IS (gameplay polish #12-14) ---------
+
+def test_the_charge_screen_alternates_both_truths():
+    """The wipe law lived only on the Divergence page while the SPENDING
+    happens on Charge -- a 5/8 charge died silently at the stage timer.
+    The note now alternates the two honest lines on the sealed-tease
+    cadence (40 ticks), armed state outranking both."""
+    from tuipet.dnascreen import DNAPanel
+    from tuipet import evolution
+    p = _pet(stage="Rookie")
+    pan = DNAPanel(p)
+    pan.phase = "charge"
+    # long notes MARQUEE (they never clip) -- sample the cycle and pin the
+    # SOURCE strings, this file's own round-two lesson
+    frames = []
+    for t in range(0, 160, 4):
+        pan.frame_i = t
+        frames.append(pan.text().plain)
+    union = "".join(frames)
+    assert "arms the Divergence road" in union       # truth A's head
+    assert "charges clear" in union                  # truth B scrolls through
+    assert len(set(frames)) > 1                      # it genuinely alternates
+    import inspect
+    from tuipet import dnascreen
+    src = inspect.getsource(dnascreen)
+    assert "charges clear at every evolution — arm before the clock fills" in src
+    p.dna_applied["DeepSaver"] = evolution.DIVERGE_NEED["Rookie"]
+    pan2 = DNAPanel(p)                              # _roads resolve at init
+    pan2.phase = "charge"
+    assert "ARMED" in pan2.text().plain             # armed outranks the cycle
+
+
+def test_the_dna_home_teaches_the_whole_loop():
+    """help GROW's grammar, on the screen itself: generate, charge ONE
+    Field, take the road -- 'then charge it' never said WHY."""
+    from tuipet.dnascreen import DNAPanel
+    pan = DNAPanel(_pet(stage="Rookie"))
+    plain = pan.text().plain
+    assert "charge ONE Field" in plain and "road" in plain
+
+
+def test_the_hud_carries_the_standing_armed_notice():
+    """Gameplay polish #14: an armed steer set hours ago fired with zero
+    warning outside the DNA screen.  The idle HUD now carries it -- and
+    every need outranks it (the cascade is untouched above it)."""
+    import asyncio
+    from tuipet.app import TuiPetApp
+    from tuipet import evolution
+    p = _pet(stage="Rookie")
+    p.line_id = "ver1"
+    p.hunger, p.energy = 4, 24                     # no needs: the idle slot
+    p._sicken = lambda *a, **k: None
+    p.dna_applied["DeepSaver"] = evolution.DIVERGE_NEED["Rookie"]
+
+    async def go():
+        app = TuiPetApp(pet=p)
+        async with app.run_test(size=(82, 32)) as pilot:
+            await pilot.pause()
+            await pilot.press("enter")             # title -> main view
+            await pilot.pause()
+            app.on_tick()
+            app.on_tick()                          # clear-slot tick, then armed
+            armed = str(app.msg_w.render())
+            p.hunger = 0                           # a need arrives: it outranks
+            app.on_tick()
+            need = str(app.msg_w.render())
+            p.hunger = 4
+            p.dna_applied["DeepSaver"] = 0         # disarmed: the notice clears
+            app.on_tick()
+            app.on_tick()
+            gone = str(app.msg_w.render())
+            return armed, need, gone
+
+    armed, need, gone = asyncio.run(go())
+    # the HUD box clips at its width and the full line marquees -- pin the
+    # head here and the full wording at its source
+    assert "DNA armed" in armed
+    import inspect
+    from tuipet import app as app_mod
+    assert "next evolution rides the" in inspect.getsource(app_mod)
+    assert "hungry" in need and "DNA armed" not in need
+    assert "DNA armed" not in gone

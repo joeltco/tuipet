@@ -67,7 +67,10 @@ class DNAPanel:
         self.mash_f = 0
         self.won = None             # (field, wager, rate) after a mini-game
         self.blink = 0              # UnlockDNA reveal blink counter
-        self.last = "Generate DNA, then charge it."
+        # the loop in one line, help-GROW's own grammar (gameplay polish
+        # #12, 2026-07-22): "Generate, then charge" never said WHY -- for a
+        # line pet the whole point of charging is the Divergence road
+        self.last = "Generate · charge ONE Field · road"
         self.sfx = None
         self._roads = evolution.divergence_roads(pet)   # field -> wild-road targets
         self.road_i = 0
@@ -249,8 +252,19 @@ class DNAPanel:
         p = self.pet
         out = menu.bar("DNA · CHARGE", "%db  x%d" % (p.bits, self.amount))
         # the honest line (DNA ruling 2026-07-18): charge is the WILD-ROAD
-        # tool -- the ordinary line climb never reads it
-        out.append_text(menu.note("arms the Divergence road — the line climb ignores it"))
+        # tool -- the ordinary line climb never reads it.  It alternates
+        # with the wipe law (gameplay polish #13, 2026-07-22): reset_dna
+        # clears charges at EVERY evolution, and the one place that said so
+        # was the Divergence page -- a 5/8 charge died silently at the
+        # stage timer with no warning where the spending happens.  Armed
+        # state outranks both (the shop sealed-tease cadence).
+        if self._armed():
+            note = "ARMED — the next evolution takes the road"
+        elif (self.frame_i // 40) % 2 == 0:
+            note = "arms the Divergence road — the line climb ignores it"
+        else:
+            note = "charges clear at every evolution — arm before the clock fills"
+        out.append_text(menu.note(note, tick=self.frame_i))
         cur = self.cursor % len(self.charge_fields)
         for i, f in enumerate(self.charge_fields):
             own = p.dna_owned.get(f, 0)
