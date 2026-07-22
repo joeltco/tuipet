@@ -313,7 +313,12 @@ class ShopPanel:
         if self.mode == "shop":
             out = menu.header("SHOP", f"{p.bits}b")
         else:
-            out = menu.header("BAG", f"{sum(p.inventory.values())} items · {p.bits}b")
+            # count what the shelves can SHOW: a key the catalog doesn't know
+            # (a newer build's item riding cloud sync past the bag heal) used
+            # to count in the header while appearing on NO tab -- "8 items"
+            # over 5 visible (deep-state sweep 2026-07-22)
+            held = sum(v for k, v in p.inventory.items() if k in shop.CATALOG)
+            out = menu.header("BAG", f"{held} items · {p.bits}b")
         # the classic tab bar: active bracketed, the rest breathing
         out.append(self._bar_text(tabs), style=INK_B)
 

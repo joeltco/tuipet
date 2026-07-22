@@ -50,6 +50,15 @@ def show(title, panel, budget=40):
     if buf is not None:
         for row in buf:
             print("".join(".#%"[min(v, 2)] for v in row))
+        # MIXED panels (raid: bar + scene + pool row): the pixel tap replaced
+        # the WHOLE text, so the chrome around the scene was never eyeballed
+        # (deep-state sweep 2026-07-22).  Print every non-scene line too,
+        # width flags intact -- pure-scene panels add nothing (all half-blocks).
+        for ln in txt.plain.split("\n"):
+            body = ln.strip()
+            if body and not set(body) <= set("▀▄█ "):
+                w = cell_len(ln)
+                print(ln + (f"   ⚠ {w} cells" if w > budget else ""))
     else:
         lines = txt.plain.split("\n")
         for ln in lines:
@@ -272,6 +281,98 @@ def _raid():
                                  raid=None, raid_get=lambda: None,
                                  close=lambda: None)
     show("raid (calling the gate)", RaidPanel(_pet(), None, client=stub))
+
+
+@state("dnapages")
+def _dnapages():
+    # the DNA SUBPAGES (deep-state sweep 2026-07-22: the budget net staged
+    # only the home menu) -- banked DNA so charge/stats show real columns
+    from tuipet.dnascreen import DNAPanel
+    p = _pet(bits=5000)
+    p.dna_owned = {"NatureSpirit": 42, "MetalEmpire": 7}
+    p.dna_applied = {"NatureSpirit": 3}
+    for phase, title in (("charge", "dna charge"), ("stats", "dna stats"),
+                         ("roads", "dna divergence"), ("bet", "dna generate (bet)")):
+        d = DNAPanel(p)
+        d.phase = phase
+        show(title, d)
+    d = DNAPanel(p)
+    d.phase, d.won, d.blink = "result", ("NatureSpirit", 500, 8, 99, 20), 0
+    show("dna generate (result)", d)
+
+
+@state("eggstory")
+def _eggstory():
+    from tuipet.eggguidescreen import EggGuidePanel
+    g = EggGuidePanel(_pet())
+    g.detail = True
+    show("egg guide (story, owned)", g)
+    g.i = 6                                       # the live-counter egg
+    show("egg guide (story, counter)", g)
+
+
+@state("bagfull")
+def _bagfull():
+    from tuipet.shopscreen import ShopPanel
+    p = _pet(bits=777)
+    p.inventory = {"cupcake": 2, "candy": 1, "digimemory": 1,
+                   "music_player": 1, "sleeping_pill": 3}
+    b = ShopPanel(p, start_mode="bag", bag_only=True)
+    show("bag (food tab, stocked)", b)
+    b.tab = 1
+    show("bag (items tab, stocked)", b)
+
+
+@state("honorworn")
+def _honorworn():
+    from tuipet.shopscreen import ShopPanel
+    p = _pet(bits=99999)
+    s = ShopPanel(p)
+    s.tab = 3
+    s.key("enter")                                # buy the first honor
+    s.key("enter")                                # wear it
+    show("shop honors (owned/worn)", s)
+
+
+@state("deathask")
+def _deathask():
+    # the etch/only-one prompts ride the STRIP (the sheet's old death state
+    # passed new_mem=None and never staged them; deep-state sweep 2026-07-22)
+    from tuipet.deathscreen import DeathPanel
+    p = _pet(evol_bonus=5)
+    p.name = "Elder"
+    mem = p.make_digimemory()
+    d = DeathPanel(p, new_mem=mem)
+    d._hold = 0
+    show("death (etch prompt)", d)
+    d2 = DeathPanel(p, new_mem=dict(mem or {}), old_mem={"name": "Ancestor"})
+    d2._hold = 0
+    d2.ask_etch, d2.asking = False, True
+    show("death (only-one prompt)", d2)
+
+
+@state("raidboard")
+def _raidboard():
+    from tuipet.raidscreen import RaidPanel
+    def _client(raid):
+        # a logged-in stub: anim() swaps the "Calling…" note for the live
+        # verdict once the gate answers -- stage THAT state, not the fetch
+        return types.SimpleNamespace(state=types.SimpleNamespace(
+                                         me_id=1, login_failed=None, error=None),
+                                     raid=raid, raid_get=lambda: None,
+                                     close=lambda: None)
+    standing = {"now": 5000, "boss": {"num": 29, "name": "Greymon",
+                                      "hp": 61234, "max_hp": 100000, "start": 0}}
+    pan = RaidPanel(_pet(), None, client=_client(standing))
+    pan._no_account = False              # the throwaway HOME has no account
+    pan.anim()
+    show("raid (standing boss)", pan)
+    incoming = {"now": 0, "boss": {"num": 29, "name": "Greymon",
+                                   "hp": 100000, "max_hp": 100000, "start": 9000}}
+    pan = RaidPanel(_pet(), None, client=_client(incoming))
+    pan._no_account = False
+    pan.anim()
+    show("raid (incoming boss)", pan)
 
 
 @state("cupboard")

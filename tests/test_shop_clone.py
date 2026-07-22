@@ -400,3 +400,17 @@ def test_escape_carries_a_live_verdict_home():
     pan2 = ShopPanel(p)
     pan2.msg_t = 0                                # no live flash
     assert pan2.key("escape") == ("done", None)
+
+
+def test_bag_header_counts_only_what_the_shelves_show():
+    """An inventory key the catalog doesn't know (a newer build's item riding
+    cloud sync past the bag heal) must not inflate the header: "8 items" over
+    5 visible read as a broken bag (deep-state sweep 2026-07-22)."""
+    from tuipet.shopscreen import ShopPanel
+    from tuipet.pet import Pet
+    p = Pet(num=29, stage="Champion", attribute="Vaccine")
+    p.inventory = {"cupcake": 2, "sleeping_pill": 3, "from_the_future": 7}
+    pan = ShopPanel(p, start_mode="bag", bag_only=True)
+    head = pan.text().plain.split("\n")[0]
+    assert "5 items" in head          # the unknown key is not counted...
+    assert p.inventory["from_the_future"] == 7   # ...and not destroyed
