@@ -471,6 +471,22 @@ class Tournament:
                 e = dict(_mk_entrant(rec, trophy, open_mega), rival=True)
                 self.entrants[random.randrange(7)] = e
                 self.rival_in = True
+        # DEFENDING CHAMPION (fun arc 2026-07-21; purse shape Claude's call,
+        # Joel: "its your call on the purse"): re-entering a cup you HOLD is
+        # a title DEFENSE -- the field fights TRAINED (the adventure veteran
+        # tier, the game's ONE trained-foe idiom) and the purse pays HALF
+        # AGAIN, the veteran road's own exchange rate.  The stake stays the
+        # normal quarter: same risk, harder field, fatter pot.  Town cups
+        # (900+ ids) defend the same way.
+        self.defending = trophy["id"] in (getattr(pet, "trophies_won", None) or {})
+        if self.defending:
+            from . import adventure, battle
+            for e in self.entrants:
+                s = battle.Side.wild(e["num"])
+                s.trainings_cur, s.trainings_total = adventure.VETERAN_TRAININGS
+                s.battles, s.wins = adventure.VETERAN_RECORD
+                e["side"] = s               # Battle's own door; NPC-vs-NPC
+                #                             rounds stay fresh wilds (fair)
         # the bracket: entrants + the player at a random slot, pairs (0,1)(2,3)...
         self.bracket = list(self.entrants)
         self.player_i = random.randrange(8)
