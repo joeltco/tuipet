@@ -132,13 +132,12 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("THE ALBUM OPENS: the digicore trophy page's 'Album "
-                 "0/1218 discovered' was a scoreboard pointing at a book "
-                 "that didn't exist. Press ENTER on the TROPHIES page and "
-                 "the book is real — every species in dex order, the ones "
-                 "you've raised wearing their name, stage and living "
-                 "sprite, the rest a silhouette and a ??? still waiting "
-                 "to be earned. The guide (?) knows the way there too.")
+    WHATS_NEW = ("THE CORE SHOWS ITS DOOR: the digicore's gaze — the "
+                 "silhouette tease of what your pet may become — was easy "
+                 "to walk right past. The CORE page now says it in bold: "
+                 "SPACE: gaze into the core. And if you missed it, the "
+                 "ALBUM is new too — ENTER on the trophy page opens the "
+                 "full bestiary of every species you've ever raised.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and

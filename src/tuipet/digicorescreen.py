@@ -182,7 +182,12 @@ class DigiCorePanel:
         out.append_text(menu.blanks(9 - len(rows) - 3))
         out.append(" gaze into the core to glimpse\n", style=DIM)
         out.append(" what stirs within…\n", style=DIM)
-        out.append_text(menu.note(self.note if self.note != "the core stirs…" else "",
+        # the door wears its key in BOLD (menu polish 2026-07-21: the gaze
+        # was easy to look over in dim prose) -- the EVOLVES "ENTER: what it
+        # takes" / TROPHIES "ENTER: the album" teaching line, gaze verdicts
+        # still take the slot when one is pending
+        out.append_text(menu.note(self.note if self.note != "the core stirs…"
+                                  else "SPACE: gaze into the core",
                                   tick=self.frame_i))
         out.append_text(menu.footer("SPACE gaze  ←→ page  ESC out"))
         return out

@@ -571,3 +571,16 @@ def test_item_row_reads_the_named_bag_key():
     met = dict((label, met) for met, label in
                evolution.requirement_report(p, target))
     assert met[item_row] is True
+
+
+def test_core_page_teaches_the_gaze_in_bold():
+    """The gaze door wears its key in the note slot (menu polish 2026-07-21:
+    dim prose alone was easy to look over) — the EVOLVES/TROPHIES teaching
+    pattern.  A pending gaze verdict still owns the slot."""
+    from tuipet.digicorescreen import DigiCorePanel
+    pan = DigiCorePanel(_pet())
+    assert "SPACE: gaze into the core" in pan.text().plain
+    pan.note = "Nothing stirs — this is its final form."
+    plain = pan.text().plain
+    assert "Nothing stirs" in plain
+    assert "SPACE: gaze into the core" not in plain
