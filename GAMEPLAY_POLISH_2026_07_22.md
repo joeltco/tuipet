@@ -85,15 +85,15 @@ code stays dormant unless named.
 
 ## New-player experience
 
-- [ ] **18 — Teach the care-mistake counter** — `✗N` steers evolution and
+- [x] **18 — — Teach the care-mistake counter** — `✗N` steers evolution and
   20 is lethal; meaning appears nowhere (statusbox.py:154-158).
-- [ ] **19 — Key hints in need messages** — hungry/sick/cleaning name no
+- [x] **19 — — Key hints in need messages** — hungry/sick/cleaning name no
   key; lights does (app.py:1219-1223).
-- [ ] **20 — "? = help" pointer is a 4-second flash** a care nag can
+- [x] **20 — — "? = help" pointer is a 4-second flash** a care nag can
   overwrite (appactions.py:70).
-- [ ] **21 — Egg wait is a dead zone** — 19 lit keys refuse identically,
+- [x] **21 — — Egg wait is a dead zone** — 19 lit keys refuse identically,
   no hatch ETA (pet.py:535).
-- [ ] **22 — Assistant bills silently** — `v` starts a metered retainer;
+- [x] **22 — — Assistant bills silently** — `v` starts a metered retainer;
   help says only "v assistant" (petbase.py:626-629, helpscreen.py:15).
 
 ## Economy / world

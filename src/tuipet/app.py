@@ -132,14 +132,14 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("THE QUIET STATES SPEAK UP: a lone poop pile now asks for a "
-                 "tidy-up in the idle HUD (text only — the 3-pile alarm keeps "
-                 "its job), frailty finally rings its alarm the moment an "
-                 "Ultimate/Mega crosses 3 care mistakes (the one lethal state "
-                 "was the only silent one), and your mon's morning tier "
-                 "reaches the HUD — wake up beaming, on the wrong side, or "
-                 "from an awful night, you'll hear about it instead of "
-                 "guessing from a 2-second pose.")
+    WHATS_NEW = ("THE FIRST HOUR EXPLAINS ITSELF: every care call now names "
+                 "its key (hungry F, sick I, cleaning C — lights always said "
+                 "S), help finally explains the ✗ care-mistake counter that "
+                 "steers every evolution (20 is fatal, 5 for a frail elder) "
+                 "and names the assistant's bits-per-hour retainer, and the "
+                 "egg wait has a shape: the card counts down to hatch and "
+                 "the HUD holds the help pointer for the whole wait instead "
+                 "of flashing it for 4 seconds.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and
@@ -194,6 +194,7 @@ class TuiPetApp(ActionsMixin, App):
         self._showing_update = False
         self._showing_armed = False  # the standing DNA-divergence notice (set once: marquee)
         self._showing_tidy = False   # the sub-alarm tidy-up nudge (1-2 piles)
+        self._showing_eggwait = False   # the egg-stage standing pointer (set once: marquee)
         self._sync = None           # background cloud-save push client (net.SyncClient), or None
         self._hud_scroll = None     # plain text being marquee-scrolled, or None when it fits
         self._hud_off = 0           # marquee window offset
@@ -1151,6 +1152,19 @@ class TuiPetApp(ActionsMixin, App):
         elif self._showing_need:
             self._hud("")
             self._showing_need = False
+        elif p.num == -1:
+            # the egg wait finally says something (gameplay polish #20+#21,
+            # 2026-07-22): 19 lit action keys all refused identically while
+            # the only help pointer was a 4-second flash any nag could
+            # overwrite.  The egg has no needs, so the idle slot is free to
+            # hold the pointer for the whole wait.
+            if not self._showing_eggwait:
+                self._hud("the egg hatches on its own — [b]?[/] help · [b]N[/] egg guide")
+                self._showing_eggwait = True
+            self._showing_update = False
+        elif self._showing_eggwait:
+            self._hud("")
+            self._showing_eggwait = False
         elif 0 < p.poop < 3 and not p.asleep:
             # the sub-alarm tidy nudge (gameplay polish #7, 2026-07-22): the
             # care ALARM deliberately waits for 3 piles (~135 min), but a
@@ -1270,11 +1284,14 @@ class TuiPetApp(ActionsMixin, App):
         name = p.name or "Your pet"
         if p.asleep and p.lights:               # lightsCall: the one asleep call
             msg = f"{name} is trying to sleep — lights off! ([b]S[/])"
-        elif p.sick:          msg = f"{name} is sick!"
-        elif p.hunger == 0:   msg = f"{name} is hungry!"
-        elif p.strength == 0: msg = f"{name}'s effort gauge is empty — train it!"
-        elif p.poop >= 3:     msg = f"{name} needs cleaning!"
-        elif p.energy <= 0:   msg = f"{name} is exhausted!"
+        # every call names its key (gameplay polish #19, 2026-07-22): lights
+        # always said (S) while hungry/sick/cleaning -- the three commonest
+        # calls -- left a new player hunting the 19-key bar mid-alarm
+        elif p.sick:          msg = f"{name} is sick! ([b]I[/] — use a pill)"
+        elif p.hunger == 0:   msg = f"{name} is hungry! ([b]F[/])"
+        elif p.strength == 0: msg = f"{name}'s effort gauge is empty — train it! ([b]T[/])"
+        elif p.poop >= 3:     msg = f"{name} needs cleaning! ([b]C[/])"
+        elif p.energy <= 0:   msg = f"{name} is exhausted! ([b]S[/] — rest)"
         elif p.is_frail():
             left = max(0, 5 - p.care_mistakes)
             msg = (f"{name} is getting frail — "

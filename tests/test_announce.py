@@ -302,3 +302,32 @@ def test_the_morning_tier_reaches_the_hud():
 
     shown, left = asyncio.run(go())
     assert "beaming" in shown and left == ""
+
+
+def test_the_egg_wait_has_a_pointer_and_an_eta():
+    """Gameplay polish #20+#21: the egg stage was a dead zone -- 19 lit
+    keys refusing identically, no hatch ETA, and the only help pointer a
+    4-second flash.  The idle HUD now holds the pointer all wait long and
+    the card counts down the real incubation clock."""
+    import asyncio
+    from tuipet import statusbox
+    from tuipet.app import TuiPetApp
+    from tuipet.pet import Pet
+    p = Pet(num=-1, stage="Egg")
+    p.stage_seconds = 10.0
+    card = "\n".join(statusbox.egg_lines(p))
+    assert "Hatch   in ~50s" in card            # EGG_DURATION 60 - 10
+    p.stage_seconds = 61.0
+    assert "any moment" in "\n".join(statusbox.egg_lines(p))
+
+    async def go():
+        app = TuiPetApp(pet=Pet(num=-1, stage="Egg"))
+        async with app.run_test(size=(82, 32)) as pilot:
+            await pilot.pause()
+            await pilot.press("enter")
+            await pilot.pause()
+            app.on_tick()
+            return str(app.msg_w.render())
+
+    hud = asyncio.run(go())
+    assert "help" in hud                         # the standing pointer

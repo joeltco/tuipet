@@ -12,8 +12,16 @@ HELP = [
     ("CARE", 2),
     ("f feed - meat fills, pill heals", 1),
     ("c clean poop", 1),
-    ("s lights   v assistant", 1),
+    ("s lights   v assistant (bits/hour)", 1),
     ("ENTER accepts a found gift", 1),
+    # the ✗ counter finally explained (gameplay polish #18, 2026-07-22):
+    # it steers every line's CM gates and 20 is lethal -- the single most
+    # important growth driver was an unexplained glyph on the status card
+    ("Ignored calls add ✗ care mistakes", 0),
+    ("(status card): they pick which form", 0),
+    ("comes next and reset each stage.", 0),
+    ("20 is fatal - and a frail Ultimate/", 0),
+    ("Mega elder can go at just 5.", 0),
     ("", 0),
     ("EXPLORE", 2),
     ("a adventure - head out on the road", 1),

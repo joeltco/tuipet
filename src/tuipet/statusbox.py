@@ -183,10 +183,22 @@ def egg_lines(pet):
         f"  [b]{egg_mod.destined_name(pet.egg_type) or '???'}[/]",
         DIV,
         f"Age     {mins}m{secs:02d}s",
+        # the wait has a shape now (gameplay polish #21, 2026-07-22): the
+        # card said only "hatches on its own" over a rising Age -- with no
+        # ETA the first minute read as a mystery stall.  LIVE data: the
+        # real incubation clock.
+        _hatch_line(pet),
         "",
         "[dim]keep it cosy — it[/]",
         "[dim]hatches on its own[/]",
     ]
+
+
+def _hatch_line(pet):
+    left = max(0, int(pet.EGG_DURATION - pet.stage_seconds))
+    if left <= 0:
+        return "Hatch   [b]any moment now…[/]"
+    return f"Hatch   in ~{left}s"
 
 
 def grave_lines(pet):

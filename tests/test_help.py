@@ -207,3 +207,45 @@ def test_the_guides_reach_claims_stay_honest():
     assert "any time you're home" in text
     assert "SPACE doubles ENTER on most screens" in text
     assert "wherever ENTER does" not in text
+
+
+def test_help_teaches_the_care_mistake_counter():
+    """Gameplay polish #18 (2026-07-22): ✗N steers every line's CM gates,
+    resets each stage, 20 is fatal (5 for a frail late-stage elder) --
+    and its meaning appeared NOWHERE.  Help CARE carries it now."""
+    text = " ".join(t for t, _k in HELP)
+    assert "care mistakes" in text
+    assert "reset each stage" in text
+    assert "20 is fatal" in text and "5" in text
+    assert "bits/hour" in text        # the assistant's retainer named (#22)
+
+
+def test_every_need_call_names_its_key():
+    """Gameplay polish #19: lights always said (S); hungry/sick/cleaning
+    -- the three commonest calls -- named no key."""
+    import asyncio
+    from tuipet.app import TuiPetApp
+    from tuipet.pet import Pet
+    p = Pet(num=100, stage="Champion", attribute="Vaccine", obedience=500)
+    p.world_seconds = 10 * 60.0
+
+    async def go():
+        app = TuiPetApp(pet=p)
+        async with app.run_test(size=(82, 32)):
+            return {
+                "hungry": app._need_message(_state(p, hunger=0)),
+                "sick": app._need_message(_state(p, hunger=4, sick=True)),
+                "clean": app._need_message(_state(p, sick=False, poop=3)),
+                "effort": app._need_message(_state(p, poop=0, strength=0)),
+            }
+
+    def _state(pet, **kw):
+        for k, v in kw.items():
+            setattr(pet, k, v)
+        return pet
+
+    msgs = asyncio.run(go())
+    assert "F" in msgs["hungry"] and "hungry" in msgs["hungry"]
+    assert "I" in msgs["sick"] and "pill" in msgs["sick"]
+    assert "C" in msgs["clean"]
+    assert "T" in msgs["effort"]
