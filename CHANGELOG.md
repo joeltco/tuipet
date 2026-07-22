@@ -3,6 +3,10 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.5.162 — EVERY MENU PAUSES NOW (2026-07-22)
+
+EVERY MENU PAUSES NOW: the lobby was the one screen that kept your pet's clock running — chat for an hour and come back to a hungrier, older mon. It doesn't anymore. Open a menu, any menu, and life waits for you.
+
 ## 0.5.161 — THE RECORD CATCHES UP (2026-07-22)
 
 THE RECORD CATCHES UP: the changelog now carries every release of this wild week — the album, the DSprite mortality, the audits, the town cup's show — and from here on, every release writes its own entry the moment it ships.
