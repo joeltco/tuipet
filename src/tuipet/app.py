@@ -138,7 +138,7 @@ class TuiPetApp(ActionsMixin, App):
                  "the book is real — every species in dex order, the ones "
                  "you've raised wearing their name, stage and living "
                  "sprite, the rest a silhouette and a ??? still waiting "
-                 "to be earned.")
+                 "to be earned. The guide (?) knows the way there too.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and

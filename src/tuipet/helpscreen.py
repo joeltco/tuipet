@@ -34,6 +34,8 @@ HELP = [
     ("t train - time the strike; a clean", 1),
     ("  hit saves your battle form", 0),
     ("x DNA   d digicore", 1),
+    ("  ENTER on its trophy page opens the", 0),
+    ("  ALBUM - every species, in dex order", 0),
     ("n egg guide - every digitama + what", 1),
     ("  earns it, with live progress", 0),
     ("", 0),
