@@ -372,11 +372,20 @@ class TournamentPanel(menu.SubHost):
                 if tr and tid in (getattr(self.pet, "trophies_won", None) or {}):
                     # a cup you HOLD: entering again is a title defense
                     name = ("\u265b" + name)[:22]
-                extra = " +item" if (tr and tr["item"] >= 0) else ""
-                mark = "\u00bb OPEN" if i == hour else ""
-                if tr and self.pet.tourney_alarm == tr["id"]:
-                    mark = (mark + " \u2666alarm").strip()
-                return "%02dh %-22s%s %s" % (i, name, extra, mark)
+                # ONE tag per row, dominant state first (menu polish
+                # 2026-07-22: the 10-cell tag slot hard-cut every combo --
+                # "+item OPEN" clipped mid-word).  OPEN beats alarm (an
+                # open cup IS the alarm's fulfilment); alarm beats +item
+                # (the itemed prize shows on every other hour + in the cup)
+                if i == hour:
+                    tag = "\u00bb OPEN"
+                elif tr and self.pet.tourney_alarm == tr["id"]:
+                    tag = "\u2666alarm"
+                elif tr and tr["item"] >= 0:
+                    tag = "+item"
+                else:
+                    tag = ""
+                return ("%02dh %-22s %s" % (i, name, tag)).rstrip()
 
             self.cursor = menu.list_window(out, self.sched, self.cursor, 5, fmt)
             from . import lines as _lines

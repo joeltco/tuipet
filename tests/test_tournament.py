@@ -638,3 +638,35 @@ def test_cup_entry_honors_the_battle_condition_gates():
     p.hunger = 4
     p.poop = 2
     assert "Clean up" in tournament.eligibility_featured(p, tr)
+
+
+def test_cup_rows_wear_one_whole_tag(monkeypatch):
+    """The board's 10-cell tag slot hard-cut every two-tag combo ("+item
+    » OPEN" shipped as "» O" -- menu polish 2026-07-22): ONE tag
+    per row now, dominant state first (OPEN > alarm > +item), and every
+    row fits the 38-cell budget whole."""
+    from rich.cells import cell_len
+    from tuipet import tournament
+    from tuipet.tournamentscreen import TournamentPanel
+    p = _pet("Rookie")
+    pan = TournamentPanel(p)
+    pan.phase = "select"
+    # force an ITEMED trophy into every slot, the alarm onto hour 1
+    from tuipet import data as _data
+    tr = next(t for t in _data.load_tournies() if t["item"] >= 0)
+    monkeypatch.setattr(tournament, "trophy_by_id",
+                        lambda tid: dict(tr, id=tid))   # distinct ids, all itemed
+    monkeypatch.setattr(tournament, "_hour", lambda pet: 0)
+    # text() re-rolls the schedule live (day-rollover guard) -- patch the roll
+    monkeypatch.setattr(tournament, "schedule", lambda pet: list(range(100, 124)))
+    p.tourney_alarm = 101                               # the 01h slot's cup
+    pan.cursor = 0
+    lines = pan.text().plain.split("\n")
+    open_row = next(ln for ln in lines if ln.startswith("▸ 00h"))
+    alarm_row = next(ln for ln in lines if ln.lstrip().startswith("01h"))
+    item_row = next(ln for ln in lines if ln.lstrip().startswith("02h"))
+    assert "» OPEN" in open_row and "+item" not in open_row
+    assert "♦alarm" in alarm_row and "+item" not in alarm_row
+    assert "+item" in item_row
+    for ln in (open_row, alarm_row, item_row):
+        assert cell_len(ln.rstrip()) <= 38

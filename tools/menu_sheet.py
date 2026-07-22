@@ -109,8 +109,10 @@ def _account():
     from tuipet.accountscreen import AccountPanel
     a = AccountPanel()
     show("account (login form)", a)
-    a.name = "averylongplayername"
-    a.pw = "hunter2"
+    # the REAL buffers (name_buf/pw_buf -- a.name/a.pw were phantom attrs and
+    # this state eyeballed the EMPTY form for two rounds; sheet audit 2026-07-22)
+    a.name_buf = "averylongplayername"
+    a.pw_buf = "hunter2"
     show("account (typed long)", a)
 
 

@@ -555,7 +555,8 @@ class LobbyPanel(BoutMixin, ChatMixin):
         else:
             t.append("  you: unranked — win online to climb\n", style=DIM)
         d = int(lad.get("days_left") or 0)
-        t.append(f"  season resets in {d} day{'s' if d != 1 else ''}\n", style=DIM)
+        t.append("  season resets today\n" if d == 0 else
+                 f"  season resets in {d} day{'s' if d != 1 else ''}\n", style=DIM)
         return t
     def _key_login(self, k):
         r = self.entry.key(k)

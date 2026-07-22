@@ -132,12 +132,11 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("THE LIFE BAR IS GONE — and that's the point. No clock "
-                 "counts your pet down anymore. Death rolls the dice the "
-                 "old way now: care mistakes, sickness and old age each "
-                 "raise the odds, and a well-kept young pet simply cannot "
-                 "die. Keep it fed, clean and healthy, and let the days "
-                 "add up.")
+    WHATS_NEW = ("MENU POLISH, ROUND THREE: the cup board wears one clean "
+                 "tag per row now — OPEN, then alarm, then +item — instead "
+                 "of cramming both into a slot that cut them mid-word. And "
+                 "the lobby ladder says 'season resets today' when it "
+                 "means today, not 'in 0 days'.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and
