@@ -105,6 +105,7 @@ def _menu_panels():
     from tuipet.bugscreen import BugReportPanel
     from tuipet.deathscreen import DeathPanel
     from tuipet.digicorescreen import DigiCorePanel
+    from tuipet.albumscreen import AlbumPanel
     from tuipet.dnascreen import DNAPanel
     from tuipet.eggguidescreen import EggGuidePanel
     from tuipet.eggselectscreen import EggSelectPanel
@@ -134,6 +135,7 @@ def _menu_panels():
         ("jogress", JogressPanel(p, 29, 45, 60)),
         ("eggselect", EggSelectPanel(p)),
         ("eggguide", EggGuidePanel(p)),
+        ("album", AlbumPanel(p)),
         ("townegg", TownEggPanel(p, town_id=4)),
         ("assist", AssistPanel(p)),
         ("bug", BugReportPanel(p)),

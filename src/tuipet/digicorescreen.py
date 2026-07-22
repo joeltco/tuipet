@@ -44,10 +44,12 @@ build_pages = core.build_pages
 
 
 class DigiCorePanel:
-    def __init__(self, pet):
+    def __init__(self, pet, start="CORE"):
         self.pet = pet
         self.pages = [("CORE", None)] + build_pages(pet)
-        self.i = 0
+        # start lands on a page by TITLE (the album round-trip reopens the
+        # book on TROPHIES, not the cover); unknown titles fall to the cover
+        self.i = next((j for j, (t, _) in enumerate(self.pages) if t == start), 0)
         self.teaser = False       # EvolSilhouette view (SPACE on the core)
         self.teaser_t = 0         # ticks into the digicoreExpand zoom
         self._back_t = 0          # evolSilhouetteBack dark-blink ticks left
@@ -115,6 +117,10 @@ class DigiCorePanel:
                 self.detail = (num, name)
                 self.det_off = 0
                 return None
+        if k == "enter" and self.pages[self.i][0] == "TROPHIES":
+            # the album count's book (2026-07-21): ENTER opens it, SPACE
+            # keeps paging — the EVOLVES enter-picks/space-pages split
+            return ("done", ("album",))
         if k in ("right", "l") or (k == "space" and self.i > 0):
             self.i = (self.i + 1) % len(self.pages)
         elif k in ("left", "h"):
@@ -300,6 +306,13 @@ class DigiCorePanel:
         for label, val in rows:
             out.append(f" {label:<9}", style=DIM)
             out.append(f"{val}\n", style=INK_B)
-        out.append_text(menu.blanks(9 - len(rows)))
-        out.append_text(menu.footer("←→ page    ESC out"))
+        if title == "TROPHIES":
+            # the Album row fronts a browsable book (2026-07-21): teach the
+            # door the way EVOLVES teaches its checklist
+            out.append_text(menu.blanks(9 - len(rows) - 1))
+            out.append_text(menu.note("ENTER: the album"))
+            out.append_text(menu.footer("ENTER album  ←→ page  ESC out"))
+        else:
+            out.append_text(menu.blanks(9 - len(rows)))
+            out.append_text(menu.footer("←→ page    ESC out"))
         return out

@@ -16,12 +16,15 @@ def test_the_album_denominator_is_actually_reachable():
     reachable = len({data.canonical_num(n) for n in live})
     assert reachable < raw, "the dex really does carry duplicate rows"
 
-    # the row builders moved to digicore.py (modularize 2026-07-17)
+    # the canonical set moved to data.album_roster() (album screen
+    # 2026-07-21) -- BEHAVIORAL pin now: the shared denominator must equal
+    # the reachable canonical count, and the trophy row must read from it
+    assert len(data.album_roster()) == reachable, \
+        "the Album total must count canonical species, not raw rows"
     from tuipet import digicore
     import inspect
-    src = inspect.getsource(digicore)
-    assert "canonical_num(n) for n in by" in src, \
-        "the Album total must count canonical species, not raw rows"
+    assert "album_roster()" in inspect.getsource(digicore._trophy_rows), \
+        "the trophy row must count the SHARED roster, not its own set"
 
 
 def test_every_duplicate_folds_onto_one_canonical_id():

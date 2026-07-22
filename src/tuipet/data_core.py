@@ -393,3 +393,12 @@ def _name_canonical_map():
 def canonical_num(num):
     """The name-canonical roster num (checkNaturalUnlocked's identity)."""
     return _name_canonical_map().get(num, num)
+
+def album_roster():
+    """The album's page order: every name-canonical, non-placeholder roster
+    num, sorted.  The SINGLE SOURCE for both the digicore trophy denominator
+    and the album screen's pages — the book and its scoreboard can never
+    disagree (the 1218/1547 uncompletable-album lesson, roster audit
+    2026-07-14)."""
+    _, by = load_sprites()
+    return sorted({canonical_num(n) for n in by if not is_placeholder(n)})

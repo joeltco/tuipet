@@ -132,12 +132,13 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("MENU POLISH, ROUND TWO: the shop's Honors tab held its "
-                 "prices four columns left of every other shelf — now the "
-                 "price column stands still when you tab across. And the "
-                 "digicore STATUS page speaks one language for nothing: "
-                 "an unnamed pet and an empty Field both read — instead "
-                 "of a blank and a bare hyphen.")
+    WHATS_NEW = ("THE ALBUM OPENS: the digicore trophy page's 'Album "
+                 "0/1218 discovered' was a scoreboard pointing at a book "
+                 "that didn't exist. Press ENTER on the TROPHIES page and "
+                 "the book is real — every species in dex order, the ones "
+                 "you've raised wearing their name, stage and living "
+                 "sprite, the rest a silhouette and a ??? still waiting "
+                 "to be earned.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and

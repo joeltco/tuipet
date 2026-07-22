@@ -222,6 +222,23 @@ def _townegg():
     show("town egg", TownEggPanel(_pet(bits=9999), town_id=4))
 
 
+@state("album")
+def _album():
+    from tuipet import persistence
+    from tuipet.albumscreen import AlbumPanel
+    persistence.album_add(29)                       # one discovered entry
+    a = AlbumPanel(_pet())
+    show("album (list, top)", a)
+    a.i = a.roster.index(29)
+    show("album (list, on Agumon)", a)
+    a.key("enter")
+    show("album (detail, seen)", a)
+    a.key("escape")
+    a.i = 0
+    a.key("enter")
+    show("album (detail, unseen)", a)
+
+
 @state("assist")
 def _assist():
     from tuipet.assistscreen import AssistPanel

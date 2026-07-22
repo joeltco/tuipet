@@ -107,6 +107,10 @@ def test_the_simple_panels_all_draw():
     dead = _pet(dead=True)
     _walk(DeathPanel(dead), [])
     _walk(FeedPanel(p), ["down", "up"])
+    from tuipet.albumscreen import AlbumPanel
+    # both album phases (hard rule: every phase gets a text() walk)
+    _walk(AlbumPanel(p), ["down", "pagedown", "enter", "right", "left",
+                          "escape", "pageup"])
 
 
 def test_shop_has_no_digitama_shelf():

@@ -229,15 +229,15 @@ def _trophy_rows(pet):
         seen = len(_p.get_progress().get("album", ()) or ())
     except Exception:
         seen = 0
-    _, by = data.load_sprites()
     # the denominator must count what the numerator can actually REACH: the dex
     # carries 329 duplicate rows (one species can sit on several device pages --
     # five Petitmon, seven Omnimon MM), and album_add stores the CANONICAL num,
     # so `seen` tops out at the canonical count.  Comparing it to the raw row
     # count showed 1218/1547: an album that could never be completed, however
     # perfectly you played (roster audit 2026-07-14, Joel: "we have duplicate
-    # mons??").
-    total = len({data.canonical_num(n) for n in by if not data.is_placeholder(n)})
+    # mons??").  album_roster() = that canonical set, shared with the album
+    # screen's pages (the book this count fronts for).
+    total = len(data.album_roster())
     rows.append(("Album", f"{seen}/{total} discovered"))
     # the Maps row became the Raids row (BASIC VPET 2026-07-16): adventure
     # left, and felled community bosses gate the old MapComplete eggs now

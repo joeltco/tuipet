@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import random  # noqa: F401
 
+from . import albumscreen  # noqa: F401
 from . import assistscreen  # noqa: F401
 from . import backgroundscreen  # noqa: F401
 from . import bugscreen  # noqa: F401
@@ -287,6 +288,14 @@ class ActionsMixin:
         self._open_mode(digicorescreen.DigiCorePanel(self.pet), self._after_digicore)
 
     def _after_digicore(self, msg):
+        if isinstance(msg, tuple) and msg and msg[0] == "album":
+            # TROPHIES' ENTER: browse the album, then come back to the shelf
+            # it opened from (the egg-guide-from-carousel round-trip shape)
+            self._open_mode(albumscreen.AlbumPanel(self.pet),
+                            lambda _=None: self._open_mode(
+                                digicorescreen.DigiCorePanel(self.pet, start="TROPHIES"),
+                                self._after_digicore))
+            return
         if isinstance(msg, tuple) and msg and msg[0] == "evolve":
             # modeChange -> State.Evolving: the same strobe as any evolution
             self.flash(f"[b]{msg[2] if len(msg) > 2 else 'MODE CHANGE!'}[/]")
