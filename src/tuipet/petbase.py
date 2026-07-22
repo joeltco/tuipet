@@ -529,13 +529,18 @@ STARVE_WEIGHT_DEC = 1                   # ActivityWeightChange: starving sheds w
 HUNGER_MISTAKE_LIFE_DEC = 360.0         # MistakeHungerLifeDec 21600 real-sec on the /60 game
 #                                         scale (x TOTAL mistakes per event; the old 3600 was a
 #                                         bespoke rescale -- the BadMed audit's bug class)
-SICK_LIFE_DEC = 180.0                   # SickLifeDec 10800: every illness costs 3 real-hours
+SICK_LIFE_DEC = 180.0                   # SickLifeDec 10800: every illness costs 3 real-hours (LIVE: petbody sicken)
+# DORMANT below -- the injury/fatigue/worsening systems left in the BASIC VPET
+# slim (2026-07-16/17).  They keep their canon values but have NO live trigger
+# (is_injured/is_fatigued are hardwired False), so nothing burns them.  Do not
+# claim them live -- see the _tick_mortality audit (Joel 2026-07-22):
 INJURY_LIFE_DEC = 180.0                 # InjuryLifeDec 10800
 WORSE_MALADY_LIFE_DEC = 180.0           # WorseSick/WorseInjuryLifeDec 10800 (each worsening)
 FATIGUE_LIFE_DEC = 360.0                # FatigueLifeDec 21600
 GERIATRIC_FATIGUE_LIFE_DEC = 60.0       # GeriatricFatigueLifeDec 3600 (an old body pays extra)
 X_LIFE_DEC = 1440.0                     # XAntibodyLifeDec 86400: the X-Program's price in LIFE
 X_LIFE_DEC_BOUND = 7                    # XAntibodyLifeDecModifierBound (86400/nextInt(7); 0 = free)
+X_LIFE_DEC_CHANCE = 100                 # XAntibodyLifeDecChance (config.csv: 100 -> the roll ALWAYS happens)
 # xProgramSurvivalChance 1/1000 (death/rebirth audit 2026-07-06): the sample
 # is RUSSIAN ROULETTE for an UNMARKED pet -- 999 in 1000 it dies outright,
 # and that death cannot be mash-revived (savedFromDeath = 127, verbatim).

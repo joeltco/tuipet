@@ -559,20 +559,30 @@ class BodyMixin:
             return True
         return False
 
-    def _burn_life(self, amount):
+    def _burn_life(self, amount, note=None):
         """setTotalLifespan's penalty path (canon re-audit 2026-07): every
         neglect event BURNS lifespan, clamped so a cut can never kill inside
-        InstantDeathGracePeriod of now -- death always gives you the grace."""
+        InstantDeathGracePeriod of now -- death always gives you the grace.
+        A `note` marks the burn as a SURFACED event (canon EnableLifePenaltyAnim
+        -> Bad_Health_Jeering): app.on_tick flashes it and jeers, so the Life bar
+        is felt reacting instead of ticking in silence (Joel 2026-07-22: "does
+        the life bar even do anything?")."""
         self.lifespan = max(self.age_seconds + INSTANT_DEATH_GRACE, self.lifespan - amount)
+        if note:
+            self.life_penalty_note = note
 
     def _tick_mortality(self, dt):
         """Canon death is ONE trigger -- old age (lapsedLife >= totalLifespan)
-        -- with every neglect event BURNING lifespan toward it (the Sick/Injury/
-        Fatigue/Mistake/X LifeDec economy; canon re-audit 2026-07).  The discrete
-        caps (20 mistakes / 20 injuries / 12h starving) are tuipet SAFETY NETS
-        kept beneath the burn economy, not canon (an earlier docstring claimed
-        otherwise); under correct burns they almost never fire first.  Returns
-        True when the pet died this tick."""
+        -- reached faster as neglect/cost events BURN lifespan toward it.  LIVE
+        burns, each a real trigger in tuipet: the hunger MISTAKE
+        (hungerMistakePenalty), the battle ENERGY floor (MinEnergyLifePenalty),
+        SICKNESS onset (SickLifeDec -- re-wired 2026-07-22, dropped in the BASIC
+        VPET sickness slim), the X-Antibody's one-time price (calcXAntibodyLifeDec),
+        and the bonus decay.  DORMANT (systems left in the BASIC VPET slim, so
+        nothing fires them; kept as constants, NOT claimed live): Injury / Fatigue
+        / WorseMalady / GeriatricFatigue LifeDec.  The discrete caps (20 mistakes /
+        20 injuries / 12h starving) are tuipet SAFETY NETS beneath the burns, not
+        canon.  Returns True when the pet died this tick."""
         if self._check_death_caps():
             return True
         if self.hunger == 0 and not self.asleep:              # awake-only, like hungerCall()
@@ -593,6 +603,12 @@ class BodyMixin:
                 p += int((self.weight - bw) // (bw * 0.5)) * SICK_OVERWEIGHT_P
             if p > 0 and random.random() < p * dt:
                 self.sick = True
+                # canon sicken(): ++sickCount THEN setTotalLifespan(-SickLifeDec)
+                # (PhysicalState L1846).  This was the headline DEAD burn --
+                # sickness from filth/overweight left the Life bar untouched, so
+                # it "did nothing" (Joel 2026-07-22).  Re-wired at the live
+                # trigger; the SickLifeDec was dropped in the BASIC VPET slim.
+                self._burn_life(SICK_LIFE_DEC, f"{self.name}'s illness drains its life")  # noqa: F405
         elif random.random() < DEATH_SICK_P * dt:
             self._die("sickness")
             return True

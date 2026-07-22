@@ -132,6 +132,7 @@ class Pet(CareMixin, DnaMixin, BattleMixin, BodyMixin):
     evol_bonus: int = 0             # _bonus: birthday/win-rate credit fed into evolution odds
     digimemory: dict = _dcf(default_factory=dict)   # held inheritance data (item 32 payload)
     birthday_note: str = ""         # transient: the HUD's birthday announcement
+    life_penalty_note: str = ""     # transient: a neglect/cost event just BURNED life (surfaced Bad_Health_Jeering tell)
     saved_from_death: int = 0       # _savedFromDeath: each rescue raises the next bar
     death_banked: bool = False      # this death's etch/seed ceremony already ran
     #                                 (rides the save: a quit mid-dying-beat used

@@ -563,9 +563,19 @@ class CareMixin:
         return "Evolution " + ("BLOCKED." if self.evo_blocked else "unblocked.")
 
     def _x_item(self):
-        """The X-Antibody chip: raises the X state (the classic X system)."""
+        """The X-Antibody chip: raises the X state (the classic X system).
+        Canon xEvolve() charges calcXAntibodyLifeDec() the instant X is gained
+        from None (PhysicalState L3361) -- the X-Program's price in LIFE.  That
+        burn was dead; the antibody was a free ride (Joel 2026-07-22)."""
         if self.x_antibody != "None":
             return _Refused("The antibody already runs in it.")
+        # calcXAntibodyLifeDec: chance-gated (config 100 = always roll), then
+        # XAntibodyLifeDec / nextInt(bound) -- a 0 draw is a free pass
+        if random.randint(1, 100) <= X_LIFE_DEC_CHANCE:  # noqa: F405
+            d = random.randrange(X_LIFE_DEC_BOUND)  # noqa: F405
+            if d:
+                self._burn_life(X_LIFE_DEC / d,  # noqa: F405
+                                f"the X-Antibody burns {self.name}'s life")
         self._set_xantibody("Permanent")
         from . import persistence as _persist
         _persist.note_xanti()

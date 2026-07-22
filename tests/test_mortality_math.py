@@ -103,3 +103,72 @@ def test_the_heir_inherits_the_device_bag():
     fresh = Pet.new_egg(generation=1)
     assert fresh.bits == 0
     assert fresh.inventory == {}
+
+
+# ---- the re-wired burn economy (Joel 2026-07-22: "does the life bar even
+# do anything?") -- the two LIVE neglect/cost events burn again and SURFACE ----
+
+def test_sickness_onset_burns_life_and_surfaces(monkeypatch):
+    """The headline dead burn, re-wired: sickness from filth costs SickLifeDec
+    (canon sicken L1846) and leaves the surfaced tell the HUD flashes.  Dropped
+    in the BASIC VPET slim while self.sick stayed live -- so the bar sat inert."""
+    import tuipet.petbody as body
+    from tuipet.pet import SICK_LIFE_DEC
+    p = _pet(name="Greymon", hunger=4, poop=1)
+    p.poop_sizes = [2]
+    monkeypatch.setattr(body.random, "random", lambda: 0.0)   # force the roll
+    life0 = p.lifespan
+    p._tick_mortality(1.0)
+    assert p.sick
+    assert p.lifespan == life0 - SICK_LIFE_DEC                 # the illness burned life
+    assert "life" in p.life_penalty_note and "Greymon" in p.life_penalty_note
+
+
+def test_x_antibody_gain_pays_its_life_price(monkeypatch):
+    """canon xEvolve charges calcXAntibodyLifeDec the instant X is gained from
+    None (L3361) -- was a free ride.  A d=2 draw burns XAntibodyLifeDec/2."""
+    import tuipet.petcare as care
+    from tuipet.pet import X_LIFE_DEC
+    from tuipet import persistence
+    monkeypatch.setattr(persistence, "note_xanti", lambda: None)
+    monkeypatch.setattr(care.random, "randint", lambda a, b: 1)    # chance passes
+    monkeypatch.setattr(care.random, "randrange", lambda n: 2)     # d=2 -> /2 burn
+    p = _pet(name="Wormmon")
+    life0 = p.lifespan
+    p._x_item()
+    assert p.x_antibody == "Permanent"
+    assert p.lifespan == life0 - X_LIFE_DEC / 2
+    assert "X-Antibody" in p.life_penalty_note
+
+
+def test_x_antibody_zero_draw_is_a_free_pass(monkeypatch):
+    """calcXAntibodyLifeDec: a nextInt==0 draw returns 0 -- no burn, no tell."""
+    import tuipet.petcare as care
+    from tuipet import persistence
+    monkeypatch.setattr(persistence, "note_xanti", lambda: None)
+    monkeypatch.setattr(care.random, "randint", lambda a, b: 1)
+    monkeypatch.setattr(care.random, "randrange", lambda n: 0)     # the free draw
+    p = _pet()
+    life0 = p.lifespan
+    p._x_item()
+    assert p.lifespan == life0 and p.life_penalty_note == ""
+
+
+def test_a_silent_burn_leaves_no_tell():
+    """The old wired burns (mistake/energy-floor/bonus) pass no note -- they
+    stay silent; only the surfaced events flash.  Regression on _burn_life."""
+    p = _pet()
+    p._burn_life(60.0)
+    assert p.life_penalty_note == ""
+
+
+def test_dead_system_lifedecs_have_no_live_trigger():
+    """Honesty pin for the _tick_mortality audit: the injury/fatigue LifeDecs
+    are DORMANT holdovers -- their systems left in the BASIC VPET slim, so no
+    code applies them.  If someone wires a live trigger, wire the burn too."""
+    import inspect
+    from tuipet import petbody, petcare, pet as petmod
+    src = "".join(inspect.getsource(m) for m in (petbody, petcare, petmod))
+    for dead in ("INJURY_LIFE_DEC", "FATIGUE_LIFE_DEC",
+                 "WORSE_MALADY_LIFE_DEC", "GERIATRIC_FATIGUE_LIFE_DEC"):
+        assert dead not in src, f"{dead} now referenced -- wire its burn + drop it from the dormant list"
