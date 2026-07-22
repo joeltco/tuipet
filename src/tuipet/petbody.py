@@ -315,7 +315,8 @@ class BodyMixin:
                 self._hunger_call_t = -3600.0                # AfterMistakeMinutesPostponed
                 self._inc_mistake()
                 self.mistake_day += 1  # + HungerDecAtZero MissedDayChange
-                self._burn_life(HUNGER_MISTAKE_LIFE_DEC * max(1, self.care_mistakes))
+                self._burn_life(HUNGER_MISTAKE_LIFE_DEC * max(1, self.care_mistakes),
+                                f"hunger gnaws at {self.name}'s life")
                 # hungerMistakePenalty: obedience +1 -- or -1 for a glutton.
                 # NO scold window: canon opens those for refusals and the
                 # discipline tantrum only -- neglect costs mistakes/obedience,
@@ -881,12 +882,15 @@ class BodyMixin:
             self._set_anim("happy", 2.0)                     # Birthday_Good
             self.birthday_note = f"A wonderful day! {self.name} earned a Cupcake!"
         elif major == "Unhappy" and self.mistake_day >= MIN_MISTAKE_DAY_DEC:
+            # the life cost rides the birthday's OWN tell (surfaced-burns
+            # sweep 2026-07-22) -- a second life note the same tick would
+            # just overwrite this flash
             self._burn_life(BONUS_LIFE_DEC)
             if self.evol_bonus > 0:
                 self.evol_bonus -= 1
             self.add_item("candy")
             self._set_anim("sad", 2.0)                       # Birthday_Bad
-            self.birthday_note = "A rough day… just a Candy."
+            self.birthday_note = "A rough day cost some life… just a Candy."
         else:
             self.add_item("cookie")
             self._set_anim("happy", 1.5)                     # Birthday_Normal

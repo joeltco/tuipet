@@ -856,7 +856,10 @@ class Pet(CareMixin, DnaMixin, BattleMixin, BodyMixin):
             # (the over-exertion fatigue left with the fatigue system; the
             # perfect-conditions bounce left with the day/night system)
         if raw < -self.max_energy:
-            self._burn_life(MIN_ENERGY_LIFE_PENALTY)     # setEnergy's floor penalty
+            # setEnergy's floor penalty -- set mid-battle, the tell parks on
+            # the pet and flashes back home (the egg_unlock_note pattern)
+            self._burn_life(MIN_ENERGY_LIFE_PENALTY,
+                            f"exhaustion burns {self.name}'s life")
         self.energy = _clamp(raw, -self.max_energy, self.max_energy)
 
     # (_energy_bonus_save -- checkEnergyIncFromPerfectConditions -- left

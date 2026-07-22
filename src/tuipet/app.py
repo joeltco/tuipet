@@ -132,12 +132,12 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("THE CORE SHOWS ITS DOOR: the digicore's gaze — the "
-                 "silhouette tease of what your pet may become — was easy "
-                 "to walk right past. The CORE page now says it in bold: "
-                 "SPACE: gaze into the core. And if you missed it, the "
-                 "ALBUM is new too — ENTER on the trophy page opens the "
-                 "full bestiary of every species you've ever raised.")
+    WHATS_NEW = ("NO MORE SILENT BURNS: every cost to your pet's life now "
+                 "announces itself. A missed hunger call, collapsing past "
+                 "empty in battle, a rough birthday — each one flashes its "
+                 "toll and the pet jeers, same as illness and the "
+                 "X-Antibody already did. When the Life bar moves, you'll "
+                 "know exactly why.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and

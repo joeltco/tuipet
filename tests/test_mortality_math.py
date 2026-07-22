@@ -154,12 +154,51 @@ def test_x_antibody_zero_draw_is_a_free_pass(monkeypatch):
     assert p.lifespan == life0 and p.life_penalty_note == ""
 
 
-def test_a_silent_burn_leaves_no_tell():
-    """The old wired burns (mistake/energy-floor/bonus) pass no note -- they
-    stay silent; only the surfaced events flash.  Regression on _burn_life."""
+def test_a_noteless_burn_leaves_no_tell():
+    """_burn_life without a note stays silent -- the mechanism, not the
+    doctrine: since the surfaced-burns sweep (Joel 2026-07-22: "surface the
+    silent burns too") every LIVE burn passes a note or rides another tell
+    (the bad birthday's).  Regression on _burn_life itself."""
     p = _pet()
     p._burn_life(60.0)
     assert p.life_penalty_note == ""
+
+
+def test_hunger_mistake_burns_and_surfaces():
+    """The missed hunger call burns scaled life AND leaves the tell
+    (surfaced-burns sweep 2026-07-22)."""
+    from tuipet.pet import HUNGER_MISTAKE_LIFE_DEC
+    p = _pet(name="Greymon", hunger=0)
+    p._hunger_call_t = 600.0
+    life0 = p.lifespan
+    p._tick_hunger(1.0)
+    assert p.care_mistakes == 1
+    assert p.lifespan == life0 - HUNGER_MISTAKE_LIFE_DEC
+    assert "hunger" in p.life_penalty_note and "Greymon" in p.life_penalty_note
+
+
+def test_energy_floor_burns_and_surfaces():
+    """Bottoming out past -max_energy costs MinEnergyLifePenalty AND leaves
+    the tell, which parks on the pet until the home tick flashes it."""
+    from tuipet.pet import MIN_ENERGY_LIFE_PENALTY
+    p = _pet(name="Greymon")
+    life0 = p.lifespan
+    p._set_energy(-p.max_energy - 1)
+    assert p.lifespan == life0 - MIN_ENERGY_LIFE_PENALTY
+    assert "exhaustion" in p.life_penalty_note and "Greymon" in p.life_penalty_note
+
+
+def test_bad_birthday_burn_rides_the_birthday_tell():
+    """The bonus-decay burn surfaces through the birthday note itself (one
+    flash, not two): the bad-day text names the life cost."""
+    p = _pet()
+    p.daily_mood = {"Unhappy": 5, "Happy": 0}
+    p.mistake_day = 99
+    life0 = p.lifespan
+    p._birthday()
+    assert p.lifespan < life0
+    assert "life" in p.birthday_note and "Candy" in p.birthday_note
+    assert p.life_penalty_note == ""            # no second flash
 
 
 def test_dead_system_lifedecs_have_no_live_trigger():
