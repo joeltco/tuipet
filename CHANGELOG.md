@@ -3,6 +3,10 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.5.163 — A CLOSED GAME IS A STOPPED CLOCK (2026-07-22)
+
+A CLOSED GAME IS A STOPPED CLOCK: your pet no longer lives without you. Quitting used to keep it aging, growing, getting hungry and making a mess for up to 36 hours — an egg could even hatch while you were gone. Now nothing happens while you're away. Come back in five months and your mon is exactly as you left it.
+
 ## 0.5.162 — EVERY MENU PAUSES NOW (2026-07-22)
 
 EVERY MENU PAUSES NOW: the lobby was the one screen that kept your pet's clock running — chat for an hour and come back to a hungrier, older mon. It doesn't anymore. Open a menu, any menu, and life waits for you.
