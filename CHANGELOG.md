@@ -3,6 +3,10 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.5.171 — THE FIGHT TALKS BACK (2026-07-22)
+
+THE FIGHT TALKS BACK: the result card now says WHY — won by a whisker or with HP to spare, a draw names the draw-counts-as-loss rule, and a loss coaches the biggest fixable drag (weight off base, an empty belly, low energy, outranked, or just train more). The timing bar finally matters: a clean mega steadies your aim, a shank shakes it. Cups ramp — the semi fights part-trained, the final near-veteran. Plus: alarms ring 1×/2×/3× by urgency, a happy well-kept mon actually bounces again, gen-1 tamers start with 250 bits, every town keeps its own guest good, and the honors ladder climbs to a million.
+
 ## 0.5.170 — EVERY ??? HAS A ROAD HOME (2026-07-22)
 
 EVERY ??? HAS A ROAD HOME: an undiscovered album entry used to say only 'keep raising' — with hundreds of masked forms and no map, the collection endgame had no compass. Each ??? now names its route: the digitama line that raises it, or the door that reaches it off the charts — an armor jump, a jogress, or a Field divergence. Routes name eggs and doors, never the forms themselves: the surprise stays sealed.
