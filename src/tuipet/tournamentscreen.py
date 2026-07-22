@@ -365,6 +365,9 @@ class TournamentPanel(menu.SubHost):
             def fmt(tid, i):
                 tr = tournament.trophy_by_id(tid) if tid >= 0 else None
                 name = tournament.trophy_label(tr)[:22] if tr else "\u2014"
+                if tr and tid in (getattr(self.pet, "trophies_won", None) or {}):
+                    # a cup you HOLD: entering again is a title defense
+                    name = ("\u265b" + name)[:22]
                 extra = " +item" if (tr and tr["item"] >= 0) else ""
                 mark = "\u00bb OPEN" if i == hour else ""
                 if tr and self.pet.tourney_alarm == tr["id"]:

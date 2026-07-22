@@ -3,6 +3,18 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.5.140 — DEFENDING CHAMPION (2026-07-21)
+
+* **Cups you hold are titles to defend.** The board crowns them (♛), the
+  gate announces the defense, and the bracket knows: all seven entrants
+  fight **trained** — the same veteran tier as replayed adventure zones
+  — while the purse pays **half again** on the same stake. Simulated
+  honest: a defense is about one stage harder than a fresh cup, the
+  fatter pot keeps it break-even, and a successful defense pays like
+  the achievement it is. Town cups defend the same way. The rival and
+  the defense announce together when your grudge is in a field you're
+  defending — the grand cup drama, complete.
+
 ## 0.5.139 — THE RIVAL (2026-07-21)
 
 * **Cup losses have a face now.** The mon that beats you in a fought

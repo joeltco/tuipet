@@ -207,3 +207,42 @@ def test_revenge_settles_the_grudge():
     _finish_match(pan, won=True)               # the revenge bout
     assert p.rival_num == -1 and p.rival_name == ""
     assert "REVENGE" in t.last
+
+
+def test_a_held_cup_is_a_title_defense():
+    """DEFENDING CHAMPION (purse shape: the veteran road's exchange rate --
+    trained field, purse ×1.5, stake unchanged).  Holding the trophy makes
+    re-entry a defense; town cups defend the same way."""
+    from tuipet.adventure import VETERAN_TRAININGS, VETERAN_RECORD
+    p = _pet()
+    trophy = tournament.trophy_by_id(tournament.schedule(p)[tournament._hour(p)])
+    fresh = tournament.Tournament(p, trophy)
+    assert not fresh.defending
+    assert not any("side" in e for e in fresh.entrants)     # fresh field: plain
+    base = fresh._calc_bits()
+    fresh.defending = True                                  # same field, defended
+    assert fresh._calc_bits() == base * 3 // 2              # the ×1.5 purse
+    fresh.defending = False
+    p.trophies_won = {trophy["id"]: "day 1"}                # you HOLD it now
+    d = tournament.Tournament(p, trophy)
+    assert d.defending and "defending the title" in d.last
+    for e in d.entrants:                                    # the whole field trains
+        s = e["side"]
+        assert (s.trainings_cur, s.trainings_total) == VETERAN_TRAININGS
+        assert (s.battles, s.wins) == VETERAN_RECORD
+    fee_held = tournament.entry_fee(p, trophy)
+    p2 = _pet()
+    assert fee_held == tournament.entry_fee(p2, trophy)     # the stake is unchanged
+    # a held TOWN cup defends too
+    p.trophies_won[tournament.TOWN_TROPHY_BASE + 4] = "day 2"
+    tc = tournament.Tournament(p, tournament.town_cup(p, 4))
+    assert tc.defending
+
+
+def test_the_board_crowns_the_cups_you_hold():
+    p = _pet()
+    pan = TournamentPanel(p)
+    sched = tournament.schedule(p)
+    tid = next(t for t in sched if t >= 0)
+    p.trophies_won = {tid: "day 1"}
+    assert "♛" in pan.text().plain                          # the crown on the board

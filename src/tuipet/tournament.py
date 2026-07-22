@@ -494,9 +494,14 @@ class Tournament:
         self.results = []
         self.results_nums = []
         self.tree = [list(self.bracket)]     # round-by-round history for the bracket page
+        tags = []
+        if self.defending:
+            tags.append("defending the title — trained field, purse ×1.5")
         if self.rival_in:
-            self.last = ("%s — your rival %s is in the field!"
-                         % (self.name, getattr(pet, "rival_name", "") or "?"))
+            tags.append("your rival %s is in the field"
+                        % (getattr(pet, "rival_name", "") or "?"))
+        if tags:
+            self.last = "%s — %s!" % (self.name, "; ".join(tags))
         else:
             self.last = "%s — 8 enter, one leaves with the trophy." % self.name
         # spend this hour's slot AT ENTRY, not at the finish: a bracket
@@ -552,6 +557,8 @@ class Tournament:
             # a 1.1-modifier all-Rookie field pays 959, not the float-sum's 962
             # (identical IEEE doubles Java-side -- the halves floor away per step)
             total = int(total + base * self.trophy["bit_mod"])
+        if self.defending:
+            total = total * 3 // 2          # the title defense pays half again
         return total
 
     def _finish(self, bits):
