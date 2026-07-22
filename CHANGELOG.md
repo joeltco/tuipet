@@ -3,6 +3,82 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.5.160 — THE GUIDE TELLS THE DNA STORY (2026-07-22)
+
+THE GUIDE TELLS THE DNA STORY: what DNA is FOR, in one breath — wager bits, mash to bank a Field, charge ONE Field to its threshold, and your next evolution takes that road instead of the chart's. The album's 1218 species are the reason. It was always true; now it's taught.
+
+## 0.5.159 — DNA, FRAME BY FRAME (2026-07-22)
+
+DNA, FRAME BY FRAME: the charge ceremony was audited beat by beat. The chip now sinks fully away at the end instead of blinking out at the floor, and everything else held under the glass — the descent from behind the bezel, the wobble, the wash, the strain, the mash bob and strike flash, and the result's blinking reveal.
+
+## 0.5.158 — THE TOWN CUP GETS ITS SHOW (2026-07-22)
+
+THE TOWN CUP GETS ITS SHOW: the road's championships used to throw you into three bare fights. Now the town cup stages the full event — the field of eight on the bracket, the faceoff, the walk-in introductions, the advancing-field parade, and the champion's podium — the same theater the home cups earned.
+
+## 0.5.157 — THE SHELF TELLS THE TRUTH (2026-07-22)
+
+THE SHELF TELLS THE TRUTH: every shop blurb was checked against what the item actually does — all 36 held, every dial, timer and refusal. And for the cautious: the X-Antibody chip is confirmed SAFE, and always was. The deadly roulette people whisper about belonged to a different item that left the shelf long ago. The mushroom, however, remains exactly as labeled.
+
+## 0.5.156 — THE DNA CHIP FITS THE MOUTH (2026-07-22)
+
+THE DNA CHIP FITS THE MOUTH: charging DNA feeds a field badge to your pet — and that badge was rendering nearly pet-sized, a 14px chip meant for a much taller screen. It now feeds in at proper chip scale, the same way food is scaled for the eating animation.
+
+## 0.5.155 — DNA UNDER THE MICROSCOPE (2026-07-22)
+
+DNA UNDER THE MICROSCOPE: a full audit of the wager, the bands, the charge bills and the Divergence roads — on tuipet's own terms. The math all held. Two truths now get said out loud: an edge-band resonance splashes ONE neighbor (the page claimed both), and the Divergence page warns that charges clear at every evolution — arm before the climb, or the charge dies with it.
+
+## 0.5.154 — THE EGG GUIDE TELLS THE TRUTH TOO (2026-07-22)
+
+THE EGG GUIDE TELLS THE TRUTH TOO: every digitama's unlock story was checked against its real gate. Two were tall tales — Dokimon asked for 'a Mega tournament in Summer' and Hack Egg a 'Fall Champion Cup' that never existed. Both now name the exact cup they want: Summer Open #147 and Fall Open #188. Go win them.
+
+## 0.5.153 — THE GUIDE TELLS THE TRUTH (2026-07-22)
+
+THE GUIDE TELLS THE TRUTH: a full audit checked every line of the help (?) against the game as it actually plays. Verdict: nearly all of it holds — two promises were trimmed to honest ('? answers from home', 'SPACE doubles ENTER on most screens'), and a new test makes sure every key on the bar stays taught forever.
+
+## 0.5.152 — EVERY THEME, LEGIBLE (2026-07-22)
+
+EVERY THEME, LEGIBLE: a contrast audit ran every menu under all eight themes. Your bits were nearly invisible in grey and gameboy — the coin gold now reads dark and clear in both. Six themes came through spotless, and a new test stands guard so no palette edit can ever ship grey-on-grey.
+
+## 0.5.151 — MENU POLISH, ROUND FIVE (2026-07-22)
+
+MENU POLISH, ROUND FIVE: the road's towns and the cup's fight pages went under the glass. One thing read wrong: the faceoff's bare 'Trophy 0' sat beside the challenger's name like it was THEIR record — it now says 'your ★N', the same star your status card wears.
+
+## 0.5.150 — MENU POLISH, ROUND FOUR (2026-07-22)
+
+MENU POLISH, ROUND FOUR: a deep sweep of the screens behind the screens — DNA's five sub-pages, the egg stories, the raid board, the grave's own prompts. One fix shipped: the bag's item count now counts exactly what its shelves can show, so the header can never claim goods you can't see.
+
+## 0.5.149 — MENU POLISH, ROUND THREE (2026-07-22)
+
+MENU POLISH, ROUND THREE: the cup board wears one clean tag per row now — OPEN, then alarm, then +item — instead of cramming both into a slot that cut them mid-word. And the lobby ladder says 'season resets today' when it means today, not 'in 0 days'.
+
+## 0.5.148 — THE LIFE BAR IS GONE (2026-07-22)
+
+THE LIFE BAR IS GONE — and that's the point. No clock counts your pet down anymore. Death rolls the dice the old way now: care mistakes, sickness and old age each raise the odds, and a well-kept young pet simply cannot die. Keep it fed, clean and healthy, and let the days add up.
+
+## 0.5.147 — NO MORE SILENT BURNS (2026-07-22)
+
+NO MORE SILENT BURNS: every cost to your pet's life now announces itself. A missed hunger call, collapsing past empty in battle, a rough birthday — each one flashes its toll and the pet jeers, same as illness and the X-Antibody already did. When the Life bar moves, you'll know exactly why.
+
+## 0.5.146 — THE CORE SHOWS ITS DOOR (2026-07-21)
+
+THE CORE SHOWS ITS DOOR: the digicore's gaze — the silhouette tease of what your pet may become — was easy to walk right past. The CORE page now says it in bold: SPACE: gaze into the core. And if you missed it, the ALBUM is new too — ENTER on the trophy page opens the full bestiary of every species you've ever raised.
+
+## 0.5.145 — THE ALBUM OPENS (2026-07-21)
+
+THE ALBUM OPENS: the digicore trophy page's 'Album 0/1218 discovered' was a scoreboard pointing at a book that didn't exist. Press ENTER on the TROPHIES page and the book is real — every species in dex order, the ones you've raised wearing their name, stage and living sprite, the rest a silhouette and a ??? still waiting to be earned. The guide (?) knows the way there too.
+
+## 0.5.144 — THE ALBUM OPENS (2026-07-21)
+
+THE ALBUM OPENS: the digicore trophy page's 'Album 0/1218 discovered' was a scoreboard pointing at a book that didn't exist. Press ENTER on the TROPHIES page and the book is real — every species in dex order, the ones you've raised wearing their name, stage and living sprite, the rest a silhouette and a ??? still waiting to be earned.
+
+## 0.5.143 — MENU POLISH, ROUND TWO (2026-07-21)
+
+MENU POLISH, ROUND TWO: the shop's Honors tab held its prices four columns left of every other shelf — now the price column stands still when you tab across. And the digicore STATUS page speaks one language for nothing: an unnamed pet and an empty Field both read — instead of a blank and a bare hyphen.
+
+## 0.5.142 — THE LIFE BAR BITES BACK (2026-07-21)
+
+THE LIFE BAR BITES BACK: the life meter is your pet's master death clock, and now neglect actually feeds it. Falling ill from filth or overweight, and taking the X-Antibody, both BURN life again — canon costs that had gone silent — and the pet jeers as they land, so you SEE the bar react instead of watching it drift.
+
 ## 0.5.141 — MENU POLISH (2026-07-21)
 
 * **No word runs off a menu.** A heavy-duty sweep of every screen: the

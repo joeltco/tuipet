@@ -112,6 +112,29 @@ if [ "$CONFIRM" = 1 ] && [ -t 0 ]; then
   case "$ans" in y|Y) ;; *) git checkout -- pyproject.toml; echo "aborted (reverted bump)"; exit 1 ;; esac
 fi
 
+# --- changelog: the release writes its own entry ----------------------------
+# CHANGELOG.md drifted 19 releases behind (doc audit 2026-07-22) because a
+# human had to remember it.  The deploy already parses WHATS_NEW for the
+# gate; append it as the entry, verbatim -- the doc's stated contract is
+# "the same line each version shows on its title screen".
+python3 - "$NEXT" <<'PY'
+import ast, datetime, re, sys
+v = sys.argv[1]
+src = open("src/tuipet/app.py").read()
+w = next(ast.literal_eval(n.value) for n in ast.walk(ast.parse(src))
+         if isinstance(n, ast.Assign) and any(
+             isinstance(t, ast.Name) and t.id == "WHATS_NEW" for t in n.targets))
+m = re.match(r"^([A-Z0-9 ,'\u2019\-\u2014:.!?&]+?)[:\u2014]\s", w)
+title = (m.group(1).strip() if m else w.split(":")[0])[:60]
+d = datetime.date.today().isoformat()
+entry = f"## {v} \u2014 {title} ({d})\n\n{' '.join(w.split())}\n\n"
+p = "CHANGELOG.md"
+s = open(p).read()
+i = s.index("## ")
+open(p, "w").write(s[:i] + entry + s[i:])
+print(f"==> changelog: {v} \u2014 {title}")
+PY
+
 # --- commit / tag / push ----------------------------------------------------
 git add -A
 git commit -q -m "release $TAG"
