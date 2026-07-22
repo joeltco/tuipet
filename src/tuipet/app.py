@@ -132,12 +132,12 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("DNA, FRAME BY FRAME: the charge ceremony was audited "
-                 "beat by beat. The chip now sinks fully away at the end "
-                 "instead of blinking out at the floor, and everything "
-                 "else held under the glass — the descent from behind the "
-                 "bezel, the wobble, the wash, the strain, the mash bob "
-                 "and strike flash, and the result's blinking reveal.")
+    WHATS_NEW = ("THE GUIDE TELLS THE DNA STORY: what DNA is FOR, in "
+                 "one breath — wager bits, mash to bank a Field, charge "
+                 "ONE Field to its threshold, and your next evolution "
+                 "takes that road instead of the chart's. The album's "
+                 "1218 species are the reason. It was always true; now "
+                 "it's taught.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and

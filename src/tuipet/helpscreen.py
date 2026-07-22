@@ -33,7 +33,13 @@ HELP = [
     ("Each egg has its own line to a Mega.", 0),
     ("t train - time the strike; a clean", 1),
     ("  hit saves your battle form", 0),
-    ("x DNA   d digicore", 1),
+    # the DNA arc told as ONE story (Joel 2026-07-22: "what does dna even
+    # do lol" -- the pages teach the pieces, the guide tells the loop)
+    ("x DNA - steer the next evolution:", 1),
+    ("  wager bits, mash to bank a Field,", 0),
+    ("  charge ONE Field to its threshold;", 0),
+    ("  the next evolution takes that road", 0),
+    ("d digicore - the pet's data book", 1),
     ("  ENTER on its trophy page opens the", 0),
     ("  ALBUM - every species, in dex order", 0),
     ("n egg guide - every digitama + what", 1),

@@ -128,8 +128,10 @@ def test_options_keys_page_shows_glyphs_not_ids():
 def test_help_home_line_drops_the_lobby_only_jogress():
     from tuipet import helpscreen
     texts = [t for t, _kind in helpscreen.HELP]
-    assert "x DNA   d digicore" in texts
-    assert not any("jogress" in t and "DNA" in t for t in texts)
+    # (the combined "x DNA   d digicore" row split when the guide learned
+    # to tell the DNA story -- 2026-07-22; the P2 guard is the jogress claim)
+    assert any(t.startswith("x DNA") for t in texts)
+    assert not any("jogress" in t.lower() and "DNA" in t for t in texts)
 
 
 # (test_battle_surrender_strip_matches_its_footer_wording left with the classic battle -- 0.5 BATTLE 2026-07-17)
