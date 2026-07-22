@@ -554,3 +554,38 @@ def test_the_app_split_holds_its_boundaries():
     for name in ("host_platform", "_preflight", "_lobby_uri",
                  "MIN_COLS", "MIN_ROWS"):
         assert hasattr(app, name) and hasattr(appboot, name)
+
+
+def test_dna_charge_badge_feeds_in_at_chip_scale():
+    """The 14x14 field badge art was a small chip on the source's 60px stage
+    but NEAR PET-SIZE on our 24px window (Joel 2026-07-22: "enlarged dna item
+    sprites during the eating animation" -- the charge's feed-in).  It halves
+    like the eat fx's food: every pre-wash frame keeps the badge inside an
+    8x8 box, and the whole 44-step fx plays through."""
+    from tuipet import arenafx
+
+    class S:
+        fx = None
+        frame_i = 0
+    for name in ("start_fx", "advance_fx", "_fxk_dna_charge",
+                 "_pose_rows_idx", "_fx_filth"):
+        setattr(S, name, getattr(Screen, name))
+
+    def ctx():
+        c = arenafx._FxCtx()
+        c.rows = None; c.overlay = []; c.free = []; c.xshift = 0
+        c.yshift = 0; c.bg = None; c.bgimg = None; c.px_h = 24; c.mirror = False
+        return c
+
+    s = S()
+    p = Pet(num=29, stage="Champion", attribute="Vaccine")
+    s.start_fx("dna_charge", icon="NatureSpirit", pet=p)
+    for step in range(8, 21):                     # badge landed, wash not yet
+        c = ctx()
+        s._fxk_dna_charge(p, s.fx, step, c)
+        xs = {pt[0] for pt in c.overlay}
+        ys = {pt[1] for pt in c.overlay}
+        assert max(xs) - min(xs) + 1 <= 8, f"step {step}: badge {max(xs)-min(xs)+1} wide"
+        assert max(ys) - min(ys) + 1 <= 8, f"step {step}: badge {max(ys)-min(ys)+1} tall"
+    while s.fx is not None:                       # the full fx plays out
+        s.advance_fx()

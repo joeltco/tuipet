@@ -894,6 +894,13 @@ class FxMixin:
         c.xshift = 1
         badge = (E.get("field_" + str(fx.get("icon") or "")) or E.get("field_None") or [None])[0]
         if badge:
+            # the badge art is 14x14 -- a small chip on the source's 60px
+            # stage, but NEAR PET-SIZE on our 24px window (Joel 2026-07-22:
+            # "enlarged dna item sprites during eating animation").  Halve it
+            # like the eat fx halves its 24px food: a 7px chip feeds in at
+            # the source's proportion
+            from .render import downsample
+            badge = downsample(badge, 2)
             bw, bh = len(badge[0]), len(badge)
             base = PET_BASE_X + c.xshift
             bx = max(0, base - 2 - bw) + ({9: -1, 10: -1, 11: 1, 12: 1}.get(step, 0))

@@ -132,13 +132,11 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("DNA UNDER THE MICROSCOPE: a full audit of the wager, "
-                 "the bands, the charge bills and the Divergence roads — "
-                 "on tuipet's own terms. The math all held. Two truths "
-                 "now get said out loud: an edge-band resonance splashes "
-                 "ONE neighbor (the page claimed both), and the Divergence "
-                 "page warns that charges clear at every evolution — arm "
-                 "before the climb, or the charge dies with it.")
+    WHATS_NEW = ("THE DNA CHIP FITS THE MOUTH: charging DNA feeds a "
+                 "field badge to your pet — and that badge was rendering "
+                 "nearly pet-sized, a 14px chip meant for a much taller "
+                 "screen. It now feeds in at proper chip scale, the same "
+                 "way food is scaled for the eating animation.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and
