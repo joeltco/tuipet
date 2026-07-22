@@ -11,6 +11,7 @@ import time
 import pytest
 
 from tuipet.net import LobbyClient, LobbyState
+from tuipet import lobbychat
 from tuipet.pet import Pet
 from tuipet import lobbyscreen
 
@@ -52,7 +53,7 @@ def _panel(state):
     p.world_seconds = 600.0
     pan = lobbyscreen.LobbyPanel(p, lambda name, pw, card: _StubClient(state),
                                  name="joel", pw="x")
-    pan.status = "↑↓ pick · ENTER chat · TAB ranks · ESC"
+    pan.status = lobbychat.HINTS_OPEN
     return pan
 
 

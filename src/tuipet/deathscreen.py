@@ -119,7 +119,10 @@ class DeathPanel:
         if self.new_mem:
             m = self.new_mem
             rip += f" · etched Va+{m['vaccine']} D+{m['data']} Vi+{m['virus']}"
-        return f"[b]{marquee(rip, 22, mq)}[/] [dim]· N new egg · ESC[/]"
+        # field 18 + chrome 22 = 40: ESC wears its word (the bare "· ESC"
+        # read as a clipped run-off -- menu audit 2026-07-21); "out" is the
+        # app's leave-to-home word
+        return f"[b]{marquee(rip, 18, mq)}[/] [dim]· N new egg · ESC out[/]"
 
     def text(self):
         p = self.pet

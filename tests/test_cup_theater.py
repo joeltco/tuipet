@@ -123,7 +123,7 @@ def test_space_stages_the_introductions_then_the_bell():
         txt = pan.text().plain
         if "enters!" in txt:
             saw.add("opp")
-        if "answers!" in txt:
+        if "answers!" in txt or "You answer!" in txt:   # named / unnamed grammar
             saw.add("pet")
         if "FIGHT!" in txt:
             saw.add("bell")

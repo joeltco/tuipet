@@ -5,6 +5,7 @@ jogress converge/flash/reveal.  All wire-free: state + relays are stubbed."""
 import random
 
 from tuipet.pet import Pet
+from tuipet import lobbychat
 from tuipet import lobbyscreen
 from tuipet.lobbyscreen import LobbyPanel, AccountPanel
 from tuipet.net import LobbyState
@@ -39,7 +40,7 @@ def _lobby():
     s.roster = [{"id": 1, "name": "JoeltCo", "pet": {}},
                 {"id": 2, "name": "Ryo", "pet": {"name": "WarGreymon", "stage": "Mega"}}]
     pan.client, pan.state, pan.phase = _FakeClient(), s, "lobby"
-    pan.status = "↑↓ pick · ENTER chat · TAB ranks · ESC"
+    pan.status = lobbychat.HINTS_OPEN
     return pan
 
 
@@ -233,7 +234,7 @@ def test_prompt_lines_keep_their_hints_with_long_names():
         and "[M] PM" in rolled and "[ESC]" in rolled
     pan.action_for = None                         # the selection status line
     pan.sel = 1                                   # sorted: the long-name live row
-    pan.status = "↑↓ pick · ENTER chat · TAB ranks · ESC"
+    pan.status = lobbychat.HINTS_OPEN
     others = pan._others()
     target = next(i for i, p in enumerate(others) if p["name"] == long)
     pan.sel = target
@@ -257,16 +258,20 @@ def test_join_leave_log_caps_at_the_shared_chat_cap():
 
 
 def test_default_status_hint_renders_whole():
-    """The connect-time hint itself must fit the 38-col line — the old
-    41-char "Up/Down pick · …" clipped its own "Esc leave" to "Esc le"
-    (Joel's live screen, 2026-07-07)."""
+    """The connect-time hint must fit the 38-col line AND end in whole words —
+    the 2026-07-07 fit-fix dropped ESC's label to squeeze under 38, and the
+    bare "· ESC" read as a run-off on Joel's live screen (menu audit
+    2026-07-21).  Both room footers now carry a word on every key."""
     pan = _lobby()
     pan.state.roster = [{"id": 1, "name": "JoeltCo", "pet": {}}]   # alone: raw status shows
     pan.status = "Connecting…"
     pan.anim()                                    # the connected transition sets it
-    assert len(pan.status) <= 38
+    assert pan.status == lobbychat.HINTS_OPEN
+    for hint in (lobbychat.HINTS_OPEN, lobbychat.HINTS_FOLDED):
+        assert len(hint) <= 38
+        assert not hint.endswith("ESC"), hint     # every key wears its word
     last = pan.text().plain.split("\n")[-1]
-    assert last.endswith("TAB ranks · ESC"), last
+    assert last == lobbychat.HINTS_OPEN, last
 
 
 def test_malformed_relay_payloads_never_crash_the_battle():

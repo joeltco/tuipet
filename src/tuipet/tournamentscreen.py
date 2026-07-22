@@ -250,7 +250,10 @@ class TournamentPanel(menu.SubHost):
         if t.over:
             out.append_text(menu.footer("SPACE result   ESC leave"))
         else:
-            out.append_text(menu.footer("SPACE to the %s   ESC forfeit" % t.round_name.lower()))
+            # two-space gap: "quarterfinal" runs the line to exactly 38 --
+            # three spaces clipped "ESC forfeit" to "ESC forfei" (menu audit
+            # 2026-07-21; menu.footer hard-cuts at W)
+            out.append_text(menu.footer("SPACE to the %s  ESC forfeit" % t.round_name.lower()))
         return out
 
     def _frames(self, num, role="idle"):
@@ -330,7 +333,8 @@ class TournamentPanel(menu.SubHost):
             lw = grid.width(lrows)
             placements = [(lrows, round((grid.X0 - lw) + (lx - (grid.X0 - lw)) * p), lm),
                           (rrows, rx, rm)]
-            note = "%s answers!" % (self.pet.name or "YOU")
+            note = ("%s answers!" % self.pet.name if self.pet.name
+                    else "You answer!")           # unnamed: "YOU answers!" was bad grammar
         else:                                  # the held stare-down
             placements = [(lrows, lx, lm), (rrows, rx, rm)]
             note = "%s — FIGHT!" % self.tourney.round_name

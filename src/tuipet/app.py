@@ -132,11 +132,10 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("DEFENDING CHAMPION: cups you hold wear a ♛ on the "
-                 "board, and re-entering one is a title defense — the "
-                 "whole field fights trained, and the purse pays half "
-                 "again. Same stake, harder field, fatter pot. Town "
-                 "cups defend too.")
+    WHATS_NEW = ("MENU POLISH: every screen swept for clipped words — "
+                 "the lobby's footer says ESC leave in full, the cup "
+                 "bracket's forfeit hint fits, and the DNA pages spell "
+                 "Nightmare Soldier whole. Small words, cleaner rooms.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and

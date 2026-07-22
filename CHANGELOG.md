@@ -3,6 +3,18 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.5.141 — MENU POLISH (2026-07-21)
+
+* **No word runs off a menu.** A heavy-duty sweep of every screen: the
+  lobby room footer now says **ESC leave** in full (its old fit-fix had
+  dropped the word), the cup bracket's **ESC forfeit** hint fits every
+  round name, the memorial strip labels its ESC, the DNA pages spell
+  **Nightmare Soldier** (and every field) whole at word boundaries, and
+  an unnamed mon's cup intro reads "You answer!" — proper grammar.
+* Behind the glass: a menu contact sheet (`tools/menu_sheet.py`) that
+  renders every menu state as visible ASCII, and a run-off test net
+  pinning the fixes plus a smoke walk over 19 panels.
+
 ## 0.5.140 — DEFENDING CHAMPION (2026-07-21)
 
 * **Cups you hold are titles to defend.** The board crowns them (♛), the

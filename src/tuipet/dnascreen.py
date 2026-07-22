@@ -34,6 +34,19 @@ _HOME = (("charge", "Charge"), ("generate", "Generate"),
          ("stats", "Stats"), ("roads", "Divergence"))
 
 
+def _field_word(f, w):
+    """pretty_field fitted to `w` at a WORD boundary: a column too narrow for
+    the full name shows whole words only -- "Nightmare", never the mid-word
+    run-off "Nightmare Sold" the old char-slices printed (menu audit
+    2026-07-21).  Every field's first word is unique, so a one-word tag
+    still names it."""
+    s = data.pretty_field(f)
+    if len(s) <= w:
+        return s
+    cut = s[:w]
+    return cut.rsplit(" ", 1)[0] if " " in cut else cut
+
+
 class DNAPanel:
     def __init__(self, pet):
         self.pet = pet
@@ -218,7 +231,7 @@ class DNAPanel:
             return "%d charged" % p.dna_total()
         if key == "roads":
             f = self._armed()
-            return ("ARMED: %s" % data.pretty_field(f)[:10]) if f \
+            return ("ARMED: %s" % _field_word(f, 10)) if f \
                 else "%d road(s)" % sum(len(v) for v in self._roads.values())
         return ""
 
@@ -245,7 +258,9 @@ class DNAPanel:
             pct = p.dna_percent(f)
             tag = "*" if f == p.field else " "           # * = your own Field (cheaper)
             road = "▸" if f in self._roads else " "      # ▸ = a wild road exists (Divergence page)
-            label = "%s%-14s%s%3db %3dc %3d%%" % (tag, data.pretty_field(f)[:14], road, own, chg, pct)
+            # 17-col name: "Nightmare Soldier" fits whole (the 14-col slice
+            # printed "Nightmare Sold" -- menu audit 2026-07-21); row = 35
+            label = "%s%-17s%s%3db %3dc %3d%%" % (tag, _field_word(f, 17), road, own, chg, pct)
             out.append_text(menu.row(label, i == cur))
         out.append_text(menu.footer("↑↓fld ←→amt ENTER chg  ESC back"))
         return out
@@ -256,7 +271,7 @@ class DNAPanel:
         for i, f in enumerate(self.fields):
             pct = p.dna_percent(f)
             bar = "█" * (pct * 12 // 100)
-            out.append_text(menu.row("%-14s%3d%% %s" % (data.pretty_field(f)[:14], pct, bar),
+            out.append_text(menu.row("%-17s%3d%% %s" % (_field_word(f, 17), pct, bar),
                                      i == self.cursor))
         out.append_text(menu.footer("↑↓ field   ESC back"))
         return out
@@ -285,7 +300,7 @@ class DNAPanel:
                 names += "…"
             chg = p.dna_applied.get(f, 0)
             mark = "▶" if f == armed else " "
-            label = "%s%-13s %2d/%-2d %s" % (mark, data.pretty_field(f)[:13],
+            label = "%s%-13s %2d/%-2d %s" % (mark, _field_word(f, 13),
                                              chg, need, names[:15])
             out.append_text(menu.row(label, i == self.road_i))
         out.append_text(menu.note("Armed: next evolution takes the road."
@@ -347,7 +362,7 @@ class DNAPanel:
         if self.phase == "mash":
             rate = self._rate()
             left = max(0.0, (MASH_TICKS - self.mash_f) / 10.0)
-            fld = data.pretty_field(dna_field_for_rate(rate))[:9]
+            fld = _field_word(dna_field_for_rate(rate), 9)
             return ("%s r%-2d→[b]%-9s[/] %4.1fs SPACE!"
                     % (self._meter(rate), rate, fld, left))
         if self.phase == "charge":

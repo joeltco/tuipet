@@ -27,6 +27,14 @@ ROSTW = 12
 BODY = 8
 CHAT_MAX = 400          # server MAX_CHAT: the local input buffer stops here too
 
+# The room's default footer lines (menu audit 2026-07-21: the open-room line
+# ended in a BARE "· ESC" — the 2026-07-07 fit-fix had dropped its word, and
+# on Joel's live screen it read as a run-off).  WHOLE WORDS ONLY, <= 38 cells;
+# ↑↓ pick lives on the strip below, so the LCD line doesn't repeat it.  These
+# are also the "default status" sentinels _text_lobby rewrites in place.
+HINTS_OPEN = "ENTER chat · TAB ranks · ESC leave"
+HINTS_FOLDED = "↑↓ scroll · ← player box · ESC leave"
+
 
 def _fit(s, w):
     """Pad or truncate to exactly `w` DISPLAY CELLS (never characters)."""
@@ -294,10 +302,10 @@ class ChatMixin:
             t.append("▲ older — PgUp/PgDn · ESC back to live"[:w], style=DIM)
         else:
             line = self.status
-            if self.rost_hidden and line.startswith("↑↓ pick"):
+            if self.rost_hidden and line == HINTS_OPEN:
                 # the box is folded: ↑↓ drive the log now, not the roster pick
-                line = "↑↓ scroll · ← player box · Esc leave"
-            elif others and line.startswith("↑↓ pick"):
+                line = HINTS_FOLDED
+            elif others and line == HINTS_OPEN:
                 p = others[sel]
                 if p.get("live", True):
                     blurb = self._pet_of(p["id"])

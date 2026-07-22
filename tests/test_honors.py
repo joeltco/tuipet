@@ -5,6 +5,7 @@ Cosmetic tamer titles priced 10k..250k: profile-level like egg licences
 with ENTER, and shown on the STATUS border + the lobby presence card.
 """
 from tuipet import data, persistence
+from tuipet import lobbychat
 from tuipet.pet import Pet
 from tuipet.shopscreen import ShopPanel
 
@@ -130,7 +131,7 @@ def _fake_lobby():
          "pet": {"name": "Agumon", "stage": "Rookie", "title": "Data Dynast"}},
     ]
     pan.client, pan.state, pan.phase = _C(), s, "lobby"
-    pan.status = "↑↓ pick · ENTER chat · TAB ranks · ESC"
+    pan.status = lobbychat.HINTS_OPEN
     return pan
 
 

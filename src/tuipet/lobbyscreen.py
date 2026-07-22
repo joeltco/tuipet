@@ -55,7 +55,8 @@ CHAT_MAX = 400          # server MAX_CHAT: the local input buffer stops here too
 # the bout engine live in their own modules; the old names stay importable
 from .accountscreen import AccountPanel  # noqa: F401
 from .lobbybout import BoutMixin, _clamp_card  # noqa: F401
-from .lobbychat import ChatMixin, _fit, _wrap, _tail_cells, _hpbar  # noqa: F401
+from .lobbychat import (ChatMixin, HINTS_FOLDED, HINTS_OPEN,  # noqa: F401
+                        _fit, _wrap, _tail_cells, _hpbar)
 
 
 class LobbyPanel(BoutMixin, ChatMixin):
@@ -303,9 +304,7 @@ class LobbyPanel(BoutMixin, ChatMixin):
             self.status = f"! {s.error}"
             s.error = None
         elif s.connected and self.status == "Connecting…":
-            # 36 chars: the old "Up/Down pick · …" ran 41 and CLIPPED its own
-            # "Esc leave" hint off the 38-col line (Joel's live screen 2026-07-07)
-            self.status = "↑↓ pick · ENTER chat · TAB ranks · ESC"
+            self.status = HINTS_OPEN
         # drop -> the client retries on its own; say so instead of stranding a banner
         if getattr(s, "reconnecting", False):
             self._seen_ids = None                  # a refilled roster is not a wave of joins
@@ -654,11 +653,11 @@ class LobbyPanel(BoutMixin, ChatMixin):
         if k == "right" and not self.rost_hidden:
             # fold the player box: the chat gets the full width (Joel 2026-07-10)
             self.rost_hidden = True
-            self.status = "↑↓ scroll · ← player box · ESC leave"
+            self.status = HINTS_FOLDED
             return None
         if k == "left" and self.rost_hidden:
             self.rost_hidden = False
-            self.status = "↑↓ pick · ENTER chat · TAB ranks · ESC"
+            self.status = HINTS_OPEN
             return None
         if k == "up":
             if self.rost_hidden:
