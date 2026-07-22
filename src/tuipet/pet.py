@@ -177,6 +177,11 @@ class Pet(CareMixin, DnaMixin, BattleMixin, BodyMixin):
     # conquered = the index of the current frontier zone in adventure.ZONES.
     # Auto-persisted (asdict / fields(Pet)); old saves default to 0.)
     adv_progress: int = 0
+    # THE RIVAL (cup fun arc 2026-07-21): the mon that last ELIMINATED you
+    # from a cup bracket -- it re-seeds into future brackets its tier fits,
+    # until revenge settles the grudge.  Real losses only, never forfeits.
+    rival_num: int = -1
+    rival_name: str = ""
     egg_type: int = 0
     bg_pick: str = ""               # picked home scene ("" = follow the egg; E picker 2026-07-17)
     lifespan: float = LIFE_START

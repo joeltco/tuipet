@@ -109,13 +109,23 @@ class TournamentPanel(menu.SubHost):
                     self.sfx = "refuse"
                     return None
                 won = bool(r[1].won)
+                opp = self.tourney.current_opponent()   # before the bracket moves
                 self.tourney.record(won)
+                if won and isinstance(opp, dict) and opp.get("rival"):
+                    # REVENGE: the grudge is settled, the slate wiped
+                    self.pet.rival_num, self.pet.rival_name = -1, ""
+                    self.tourney.last = ("REVENGE on %s! The grudge is settled."
+                                         % opp["name"])
+                    self.sfx = "happy"
                 if self.tourney.over:                   # cup finished this match
                     self.sfx = "champion" if self.tourney.champion else "lose"
                     if self.tourney.champion:
                         self._ceremony = {"t": 0}       # the podium beat first
                     else:
-                        self.tree_view = True           # eliminated: the tree
+                        self.tree_view = True           # eliminated: the tree...
+                        if isinstance(opp, dict):       # ...and the beater becomes
+                            self.pet.rival_num = opp.get("num", -1)   # THE RIVAL
+                            self.pet.rival_name = opp.get("name", "")
                 elif won and getattr(self.tourney, "results_nums", None):
                     # your win advances the FIELD too: parade the other
                     # winners across before the tree
@@ -214,7 +224,10 @@ class TournamentPanel(menu.SubHost):
         tree = t.tree
 
         def nm(e, w):
-            s = (self.pet.name or "YOU") if e == "YOU" else e["name"]
+            if e == "YOU":
+                s = self.pet.name or "YOU"
+            else:                              # the rival wears its grudge mark
+                s = ("!" if e.get("rival") else "") + e["name"]
             return s[:w]
 
         out = menu.bar(t.name, "BRACKET")
@@ -310,7 +323,8 @@ class TournamentPanel(menu.SubHost):
         if t < INTRO_OPP_T:                    # the challenger walks in
             p = t / max(1, INTRO_OPP_T - 1)
             placements = [(rrows, round(grid.X1 + (rx - grid.X1) * p), rm)]
-            note = "%s [%s] enters!" % (opp["name"], opp["attribute"][:2])
+            note = ("%s — your RIVAL!" % opp["name"] if opp.get("rival") else
+                    "%s [%s] enters!" % (opp["name"], opp["attribute"][:2]))
         elif t < INTRO_OPP_T + INTRO_PET_T:    # your mon answers
             p = (t - INTRO_OPP_T) / max(1, INTRO_PET_T - 1)
             lw = grid.width(lrows)

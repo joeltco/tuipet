@@ -600,6 +600,10 @@ def test_esc_at_the_bar_backs_out_never_forfeits():
             self.recorded = []
         def record(self, won):
             self.recorded.append(won)
+        def current_opponent(self):
+            # the real interface: the panel reads the foe before recording
+            # (the rival capture, 2026-07-21)
+            return {"num": 0, "name": "Stub"}
 
     pan = tournamentscreen.TournamentPanel.__new__(tournamentscreen.TournamentPanel)
     pan.sub = _Sub()

@@ -458,6 +458,19 @@ class Tournament:
                     and not data.is_placeholder(n)]
         self.entrants = [_mk_entrant(random.choice(pool), trophy, open_mega)
                          for _ in range(7)]
+        # THE RIVAL (cup fun arc 2026-07-21): your last eliminator re-seeds
+        # into the field -- IF this bracket's tier can hold it (no wall-
+        # breaking).  One standing grudge; revenge clears it (panel-side).
+        self.rival_in = False
+        rn = int(getattr(pet, "rival_num", -1) or -1)
+        if rn >= 0:
+            rec = data.record_for(rn)
+            tier = (trophy["enemy_stage"] or trophy["age_limit"]
+                    or pet_tier(pet) or "Mega")
+            if rec and not data.is_placeholder(rn) and rec.get("stage") == tier:
+                e = dict(_mk_entrant(rec, trophy, open_mega), rival=True)
+                self.entrants[random.randrange(7)] = e
+                self.rival_in = True
         # the bracket: entrants + the player at a random slot, pairs (0,1)(2,3)...
         self.bracket = list(self.entrants)
         self.player_i = random.randrange(8)
@@ -465,7 +478,11 @@ class Tournament:
         self.results = []
         self.results_nums = []
         self.tree = [list(self.bracket)]     # round-by-round history for the bracket page
-        self.last = "%s — 8 enter, one leaves with the trophy." % self.name
+        if self.rival_in:
+            self.last = ("%s — your rival %s is in the field!"
+                         % (self.name, getattr(pet, "rival_name", "") or "?"))
+        else:
+            self.last = "%s — 8 enter, one leaves with the trophy." % self.name
         # spend this hour's slot AT ENTRY, not at the finish: a bracket
         # abandoned (ESC forfeits; a force-quit does not even reach _finish)
         # must not hand back a free re-roll of the field

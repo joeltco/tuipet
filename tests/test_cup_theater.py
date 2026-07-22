@@ -132,3 +132,78 @@ def test_space_stages_the_introductions_then_the_bell():
     assert pan._intro is None
     assert isinstance(pan.sub, BattlePanel)    # the bell rang
     assert pan.sub._enemy is opp               # ...against the announced foe
+
+
+def _finish_match(pan, won):
+    pan.sub = _Sub(won)
+    pan.key("space")
+
+
+def test_a_real_elimination_crowns_a_rival_a_forfeit_does_not():
+    """THE RIVAL: the mon that beats you in a fought match becomes the
+    standing grudge; walking out of the bracket names nobody."""
+    pan = _in_bracket()
+    opp = pan.tourney.current_opponent()
+    _finish_match(pan, won=False)              # a real loss
+    assert pan.pet.rival_num == opp["num"]
+    assert pan.pet.rival_name == opp["name"]
+    pan2 = _in_bracket()                       # a fresh cup, fresh pet
+    pan2.pet.rival_num, pan2.pet.rival_name = -1, ""
+    pan2.key("escape")                         # forfeit from the tree
+    assert pan2.pet.rival_num == -1            # no fight, no grudge
+
+
+def test_the_rival_reseeds_marked_and_announced():
+    p = _pet()
+    trophy = tournament.trophy_by_id(tournament.schedule(p)[tournament._hour(p)])
+    probe = tournament.Tournament(p, trophy)   # learn the bracket's tier
+    tier_num = probe.entrants[0]["num"]
+    rec = data.record_for(tier_num)
+    p.rival_num, p.rival_name = tier_num, rec["name"]
+    t = tournament.Tournament(p, trophy)
+    assert t.rival_in
+    rivals = [e for e in t.entrants if e.get("rival")]
+    assert len(rivals) == 1 and rivals[0]["num"] == tier_num
+    assert "your rival" in t.last              # announced at the gate
+    pan = TournamentPanel(p)
+    pan.tourney, pan.phase, pan.tree_view = t, "bracket", True
+    assert "!" + rec["name"][:9] in pan.text().plain[:400]   # the grudge mark
+
+
+def test_a_mismatched_tier_keeps_the_rival_out():
+    p = _pet()
+    trophy = tournament.trophy_by_id(tournament.schedule(p)[tournament._hour(p)])
+    from tuipet.data import load_sprites
+    _, by_num = load_sprites()
+    probe = tournament.Tournament(p, trophy)
+    tier_stage = data.record_for(probe.entrants[0]["num"])["stage"]
+    other = next(n for n, r in by_num.items()
+                 if r["stage"] not in ("Egg", "Fresh", "InTraining", tier_stage)
+                 and not data.is_placeholder(n))
+    p.rival_num, p.rival_name = other, by_num[other]["name"]
+    t = tournament.Tournament(p, trophy)
+    assert not t.rival_in                      # the wall holds
+    assert not any(e.get("rival") for e in t.entrants)
+
+
+def test_revenge_settles_the_grudge():
+    p = _pet()
+    trophy = tournament.trophy_by_id(tournament.schedule(p)[tournament._hour(p)])
+    probe = tournament.Tournament(p, trophy)
+    tier_num = probe.entrants[0]["num"]
+    p.rival_num = tier_num
+    p.rival_name = data.record_for(tier_num)["name"]
+    pan = TournamentPanel(p)
+    pan.tourney = tournament.Tournament(p, trophy)
+    pan.phase = "bracket"
+    # stand the rival across from YOU
+    t = pan.tourney
+    yi = t.bracket.index("YOU")
+    ri = next(i for i, e in enumerate(t.bracket)
+              if e != "YOU" and e.get("rival"))
+    pair = yi + 1 if yi % 2 == 0 else yi - 1
+    t.bracket[ri], t.bracket[pair] = t.bracket[pair], t.bracket[ri]
+    assert t.current_opponent().get("rival")
+    _finish_match(pan, won=True)               # the revenge bout
+    assert p.rival_num == -1 and p.rival_name == ""
+    assert "REVENGE" in t.last

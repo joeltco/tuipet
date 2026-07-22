@@ -132,10 +132,11 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("MATCH INTRODUCTIONS in the cup: the challenger strides "
-                 "in and is announced, your mon answers, the stare-down "
-                 "holds — then the bell rings itself. Every bracket "
-                 "match opens like the main event it is.")
+    WHATS_NEW = ("THE RIVAL: whoever knocks you out of a cup becomes "
+                 "your standing grudge — it re-seeds into your future "
+                 "brackets (marked ! on the tree, called out in the "
+                 "introductions) until you beat it and hear the words: "
+                 "REVENGE! The grudge is settled.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and

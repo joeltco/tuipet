@@ -3,6 +3,19 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.5.139 — THE RIVAL (2026-07-21)
+
+* **Cup losses have a face now.** The mon that beats you in a fought
+  match becomes your **rival** — it re-seeds into every future bracket
+  its tier fits (one guaranteed slot, never breaking a cup's stage
+  walls), wears a `!` on the bracket tree, gets announced at the gate,
+  and the match introductions call it what it is: "— your RIVAL!"
+  Walking out of a bracket names nobody; only a real beating earns the
+  grudge. Beat your rival anywhere and it settles: **REVENGE!** — clean
+  slate until the next mon takes you down. The grudge survives saves
+  and evolution; a new generation starts unburdened. No economy touch —
+  pure nemesis.
+
 ## 0.5.138 — MATCH INTRODUCTIONS (2026-07-21)
 
 * **Every cup match opens like the main event.** SPACE on the faceoff
