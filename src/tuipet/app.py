@@ -132,12 +132,12 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("THE GUIDE TELLS THE TRUTH: a full audit checked every "
-                 "line of the help (?) against the game as it actually "
-                 "plays. Verdict: nearly all of it holds — two promises "
-                 "were trimmed to honest ('? answers from home', 'SPACE "
-                 "doubles ENTER on most screens'), and a new test makes "
-                 "sure every key on the bar stays taught forever.")
+    WHATS_NEW = ("THE EGG GUIDE TELLS THE TRUTH TOO: every digitama's "
+                 "unlock story was checked against its real gate. Two "
+                 "were tall tales — Dokimon asked for 'a Mega tournament "
+                 "in Summer' and Hack Egg a 'Fall Champion Cup' that "
+                 "never existed. Both now name the exact cup they want: "
+                 "Summer Open #147 and Fall Open #188. Go win them.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and

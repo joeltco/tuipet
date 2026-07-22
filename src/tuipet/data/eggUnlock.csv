@@ -11,7 +11,7 @@ Pururumon,FALSE,0,1,None,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-
 Dodomon,FALSE,0,-1,None,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Fell 5 Mega-class foes,TRUE,-1,-1,5,-1,,-1
 Puttimon,FALSE,0,-1,None,FALSE,-1,-1,-1,None,Vaccine,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Direct descendant of a Vaccine Digimon,FALSE,-1,-1,-1,-1,,-1
 Kiimon,FALSE,0,-1,None,TRUE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Raise an X-Antibody bearer,TRUE,-1,-1,-1,-1,,-1
-Dokimon,FALSE,0,-1,None,FALSE,146,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Win a Mega tournament in Summer,TRUE,-1,-1,-1,-1,,-1
+Dokimon,FALSE,0,-1,None,FALSE,146,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Win Summer Open #147,TRUE,-1,-1,-1,-1,,-1
 Chibomon,FALSE,0,2,None,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Saved the Digital World,TRUE,-1,-1,-1,-1,,-1
 Fufumon,FALSE,0,-1,None,TRUE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Carries the X-Antibody,FALSE,-1,-1,-1,-1,,-1
 Ketomon,FALSE,0,-1,None,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Record 20 species in the album,TRUE,-1,20,-1,-1,,-1
@@ -28,7 +28,7 @@ DORU Egg,FALSE,0,-1,None,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-
 Deep Savers Egg,FALSE,0,-1,None,FALSE,-1,-1,-1,DeepSaver,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,End a generation in Deep Savers,TRUE,-1,-1,-1,-1,,-1
 Digitama X3,FALSE,0,-1,None,TRUE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,X-Antibody + fell 10 Mega-class foes,TRUE,-1,-1,10,-1,,-1
 Draco Egg,FALSE,0,-1,None,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Record 18 species in the album,TRUE,,18,,-1,,-1
-Hack Egg,FALSE,0,-1,None,FALSE,187,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Win the Fall Champion Cup,TRUE,-1,-1,-1,-1,,-1
+Hack Egg,FALSE,0,-1,None,FALSE,187,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Win Fall Open #188,TRUE,-1,-1,-1,-1,,-1
 Kera Digitama,FALSE,0,-1,Champion,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Reach the Champion stage,TRUE,-1,-1,-1,-1,,-1
 Lalamon Egg,FALSE,0,-1,None,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,120,-1,-1,A devoted lineage: obedience 120+,FALSE,-1,-1,-1,-1,,-1
 Lop Egg,FALSE,0,-1,None,FALSE,-1,-1,-1,None,None,None,-1,-1,-1,-1,-1,-1,-1,-1,-1,Befriend a tamer online,TRUE,-1,-1,-1,1,,-1
