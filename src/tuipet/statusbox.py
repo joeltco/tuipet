@@ -403,7 +403,10 @@ def digicore(app):
 
 
 def raid(app):
-    """RAID: the boss, the shared pool, your standing."""
+    """RAID: the boss, the shared pool, your standing — ALL the numbers
+    live HERE (scene-screen law, raid uncramp 2026-07-23: the LCD page
+    duplicated every one of these lines and crushed the boss for it)."""
+    from .raidscreen import _fmt as _fmt_dmg
     m = app.mode
     v = m.view or {}
     b = m._boss()
@@ -417,12 +420,17 @@ def raid(app):
     left = max(0, int((b.get("end" if standing else "start", 0)
                        - v.get("now", 0))))
     when = "%dd %dh" % (left // 86400, left % 86400 // 3600)
+    top = v.get("top") or []
+    lead = (f"{str(top[0][0])[:10]} · {_fmt_dmg(top[0][1])}" if top else "—")
     card(app, "Raid", [
         f"[b]{b.get('name', '?')[:18]}[/]",
-        (f"Pool   {pct}%" if standing else "[dim]incoming boss[/]"),
+        (f"Pool   {bar(pct, 11, theme.NEG)} {pct}%" if standing
+         else "[dim]incoming boss[/]"),
         (f"[dim]{when} left[/]" if standing else f"[dim]in {when}[/]"),
         "",
-        f"You    #{rank} · {mine}",
+        (f"You    #{rank} · {_fmt_dmg(mine)}" if rank
+         else "You    [dim]— not on the board[/]"),
+        f"Top    {lead}",
         f"Tries  {v.get('attempts', 0)} today",
         ("[b]purse waiting — C[/]" if v.get("award") else ""),
         "[dim]SPACE raid  C claim[/]"],

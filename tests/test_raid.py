@@ -227,7 +227,9 @@ def test_panel_text_smokes_in_every_view_state():
     pan.client.raid = _view(_mega())
     pan.anim()
     plain = pan.text().plain
-    assert "BossMon" in plain and "POOL" in plain
+    # the LCD is PURE SCENE since the uncramp (2026-07-23): the boss +
+    # ONE context line; POOL/standing/tries live on the status card
+    assert "BossMon" in plain and "POOL" not in plain
     # incoming: the countdown replaces the pool bar
     pan.client.raid = _view(_mega(), start=90000.0, now=100.0)
     assert "INCOMING" in pan.text().plain
@@ -509,16 +511,31 @@ def test_the_walk_away_is_not_a_whiff():
 
 
 def test_unranked_shows_a_dash_not_rank_zero():
+    """The rule moved to the CARD with the numbers (uncramp 2026-07-23)."""
+    from tuipet import statusbox
+
+    class _W:
+        txt = ""
+        border_subtitle = ""
+        def update(self, t):
+            self.txt = t
+
     pan = _panel()
     v = _view(_mega())
     v["you"] = [0, 0]                                   # not on the board yet
+
+    class _A:
+        pet = pan.pet
+        mode = pan
+        stats_w = _W()
+
     pan.client.raid = v
-    assert "you —" in pan.text().plain
-    assert "#0" not in pan.text().plain
+    statusbox.raid(_A())
+    assert "not on the board" in _A.stats_w.txt
+    assert "#0" not in _A.stats_w.txt
     v["you"] = [2, 150000]                              # ranked: the number
-    pan.client.raid = None
-    pan.client.raid = v
-    assert "you #2" in pan.text().plain
+    statusbox.raid(_A())
+    assert "#2" in _A.stats_w.txt
 
 
 def test_the_loading_page_keeps_its_keys_on_the_strip():

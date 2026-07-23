@@ -275,62 +275,38 @@ class RaidPanel(menu.SubHost):
             # (raid round 2026-07-19)
             return out
         num = int(b.get("num", -1))
-        # the BOSS looms on the arena, breathing on the walk beat -- the whole
-        # point of taking raids out of the lobby's text page.  The scene is a
-        # 16px band (8 rows): the sprite fits ITS band and the standard
-        # 24px-window clip stays OFF -- clip=grid.WINDOW on this reduced
-        # scene chopped the top 6px off every boss (Joel 2026-07-19: "raid
-        # monster sprites are getting cut off").
+        # THE LCD IS PURE SCENE (raid uncramp 2026-07-23, Joel: "its still
+        # a cramped up mess, it looks like hes in the sky").  The old page
+        # stacked POOL bar + stats + cadence UNDER an 8-row scene -- every
+        # one of those numbers already lives on the STATUS card, and the
+        # boss paid for the duplication: a 16px sprite crammed edge-to-edge
+        # in a 16px band, head touching the header, feet flush on text.
+        # Now: header + a TALL 10-row stage + one context line.  The boss
+        # gets 4px of sky and the standard 2px floor margin, and the
+        # backdrop's BOTTOM 20px keeps the arena floor under its feet
+        # (_paint_cells indexes bgimg by absolute row -- an unsliced 24px
+        # backdrop painted this reduced scene with its sky band).
         rows = data.bob_frame(num, self.frame_i,
                               "attack" if (self.frame_i // 9) % 4 == 3 else "idle")
-        sc_rows = ROWS - 4
+        sc_rows = ROWS - 2
         boss = grid.prep(rows, ph=sc_rows * 2) if rows else None
         placements = [(boss, (COLS - grid.width(boss)) // 2, False)] if boss else []
         bgimg = self.pet.background(file="tourneyBack")
-        # FLOOR-anchor the backdrop crop (raid audit 2026-07-23, Joel: the
-        # boss screen "looks like shit garbled mess"): _paint_cells indexes
-        # bgimg by absolute row, so this reduced 16px scene painted the TOP
-        # of the 24px arena art -- sky band, floor gone, the boss floating
-        # mid-backdrop.  The bottom slice keeps the arena floor under it.
         if bgimg and len(bgimg) > sc_rows * 2:
             bgimg = bgimg[-sc_rows * 2:]
         scene = render_scene(placements, COLS, sc_rows, menu.scene_ink(bgimg),
                              LCD_BG, bgimg=bgimg)
-        pool, pool_max = int(b.get("hp", 0)), max(1, int(b.get("max_hp", 1)))
-        pct = max(0, min(100, pool * 100 // pool_max))
-        bar = "█" * (pct * 24 // 100)
         stage = data.record_for(num).get("stage", "Mega")
         out = menu.bar(f"RAID · {b.get('name', '?')[:14]}", stage[:8])
         out.append_text(scene)
-        out.append("\n")
+        out.append("\n")               # terminate the scene's last row
         if not self._standing():
             left = max(0, int(b.get("start", 0) - v.get("now", 0)))
-            out.append(f" INCOMING BOSS — {left // 3600}h {left % 3600 // 60}m\n",
-                       style=INK_B)
+            note = f"INCOMING BOSS — {left // 3600}h {left % 3600 // 60}m"
         else:
-            out.append(f" POOL {bar:<24}{pct:>3}%\n",
-                       style=NEG if pct < 25 else INK_B)
-        rank, mine = (list(v.get("you") or (0, 0)) + [0, 0])[:2]
-        top = v.get("top") or []
-        # PRE-FIT to the 40-col LCD (raid audit 2026-07-23: with a real
-        # tamer name this line ran 42+ cols, WRAPPED in the box, and the
-        # whole bottom of the page garbled -- the run-off law): fixed
-        # budget per field, name last and truncated to whatever remains.
-        you = f"you #{rank} {_fmt(mine)}" if rank else "you —"
-        head = f" ⚔{v.get('attempts', 0)}  {you}  top "
-        if top:
-            val = _fmt(top[0][1])
-            name = str(top[0][0])[:max(3, 39 - len(head) - 1 - len(val))]
-            line = f"{head}{name} {val}"
-        else:
-            line = f"{head}—"
-        out.append(line[:40] + "\n", style=DIM)
-        # ONE context line closes the 12-row budget (the old stacked
-        # cadence + award + note + footer ran the page to 15 rows and the
-        # LCD box clipped the tail): priority msg > waiting purse > the
-        # weekly cadence; the strip carries the keys (scene-screen law).
-        out.append_text(menu.note(self._context_line(v, b), tick=self.frame_i))
-        out.right_crop(1)          # 12 rows, no 13th empty split element
-        #                            (the footer convention -- the trailing
-        #                            newline pushed the page to 13 rows)
+            # priority msg > waiting purse > the weekly cadence; every
+            # number (pool, standing, tries, top) lives on the CARD
+            note = self._context_line(v, b)
+        out.append_text(menu.note(note, tick=self.frame_i))
+        out.right_crop(1)          # 12 rows exactly, no trailing 13th
         return out
