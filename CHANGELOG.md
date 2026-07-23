@@ -3,6 +3,10 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.5.200 — THE BATTLE BAR NO LONGER EATS YOUR MASH (2026-07-23)
+
+THE BATTLE BAR NO LONGER EATS YOUR MASH: pressing SPACE through the battle intro used to lock the timing bar instantly at the left edge — a miss you never aimed. The bar now arms half a second after it appears, so only a deliberate press locks it. Your training megas were always real; now battles are too.
+
 ## 0.5.199 — AN HONEST TIMING BAR (2026-07-23)
 
 AN HONEST TIMING BAR: if you saw the marker hit the center, you hit the center — the lock now forgives the split second between your eyes and your keyboard, the whole 2-pixel marker counts, and the center zone never shrinks below a humanly possible size. Same bar in training and every battle.
