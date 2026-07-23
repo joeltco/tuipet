@@ -78,7 +78,7 @@ def keys_markup():
     guide wraps onto line 3: the line only holds 71 cells."""
     k = f"b {theme.KEY}"
     return (
-        f"[{k}]f[/] feed [dim](meat·pill)[/]  [{k}]c[/] clean  [{k}]s[/] lights  [{k}]v[/] assist\n"
+        f"[{k}]f[/] feed [dim](meat·pill)[/]  [{k}]c[/] clean  [{k}]s[/] lights  [{k}]v[/] assist  [{k}]m[/] battle\n"
         f"[{k}]a[/] adventure  [{k}]r[/] raid  [{k}]u[/] cup  [{k}]l[/] lobby [dim](pvp)[/]  [{k}]t[/] train  [{k}]x[/] DNA  [{k}]d[/] digicore\n"
         f"[{k}]n[/] eggs  [{k}]o[/] shop  [{k}]i[/] bag  [{k}]e[/] scenes  [{k}]g[/] options  [{k}]b[/] bug  [{k}]?[/] help  [{k}]q[/] quit"
     )
@@ -132,11 +132,11 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("TRAINING IN THE LEDGER: the DigiCore POWER page's "
-                 "Drills row now shows both counts that feed the fight — "
-                 "lifetime drills (never reset) and this stage's (they "
-                 "gate evolution and reset when it evolves). The stage "
-                 "count was always working; now you can watch it.")
+    WHATS_NEW = ("THE BATTLE KEY: press M to fight a rival of your "
+                 "pet's own stage, right at home. It's a real bout — "
+                 "wins, experience and training all count — but pays no "
+                 "bits (adventure keeps the purse), and each fight "
+                 "spends 5 energy, so the tank paces the brawling.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and
@@ -148,6 +148,7 @@ class TuiPetApp(ActionsMixin, App):
         # story (bar tidy 2026-07-18).
         ("f", "feed", "Feed"), ("c", "clean", "Clean"),
         ("s", "sleep", "Lights"), ("v", "assist", "Assistant"),
+        ("m", "battle", "Battle"),
         ("a", "adventure", "Adventure"),
         ("r", "raid", "Raid"), ("u", "tournament", "Cup"),
         ("l", "lobby", "Lobby"),

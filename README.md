@@ -115,19 +115,21 @@ explore, then grow, then manage:
 | **c** | clean | **n** | digitama guide |
 | **s** | lights | **o** | shop |
 | **v** | AI assistant | **i** | bag |
-| **a** | adventure | **e** | scenes |
-| **r** | raid | **g** | options |
-| **u** | tournament cup | **b** | bug report |
-| **l** | online lobby | **?** | help |
-| **t** | train | **q** | quit |
-| **x** | DNA | **ENTER** | accept a found gift |
+| **m** | battle | **e** | scenes |
+| **a** | adventure | **g** | options |
+| **r** | raid | **b** | bug report |
+| **u** | tournament cup | **?** | help |
+| **l** | online lobby | **q** | quit |
+| **t** | train | **ENTER** | accept a found gift |
+| **x** | DNA | | |
 
 SPACE works wherever ENTER does, and PageUp/PageDown leap through every
 long list.
 
-Battles and jogress live where they belong: **PvE combat happens in
-adventure, raids and cups; PvP battles and fusion happen in the lobby** —
-there is no free-standing battle key.
+**m** is the battle key: a real recorded bout against a rival of your
+pet's own stage, right at home — no purse, and each bout spends energy,
+so the tank paces the fighting.  Beyond it, **PvE combat happens in
+adventure, raids and cups; PvP battles and fusion happen in the lobby**.
 
 ## Care & evolution
 

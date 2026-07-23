@@ -221,6 +221,32 @@ class ActionsMixin:
             self.screen_w.start_fx("spit")
         self.repaint()
 
+    def action_battle(self):
+        # DM20's battle icon as a first-class action (Joel 2026-07-23
+        # "should we add battles action... like dm20 does it?" -> "yeah
+        # lets do it"): a REAL recorded bout -- wins/exp/KO6/log/+2
+        # trainings, exactly like a road wild -- against a tier-matched
+        # rival (battle.pick_enemy, same stage bracket), with NO purse:
+        # adventure stays the earning game, and energy is the pacer
+        # (entry gates >= 10, each bout bills -5, ~3 per full tank).
+        # can_battle is the ONE gate: dead / too young / asleep-wake /
+        # starved / drained / sick / filth + the soft refusal roll.
+        err = self.pet.can_battle()
+        if err:
+            self._do(err); return
+        from . import battlescreen
+        self._open_mode(battlescreen.BattlePanel(self.pet),
+                        self._after_battle)
+
+    def _after_battle(self, b):
+        # the post-bout emotional beat rides the HOUSE screen, the cup's
+        # grammar (_after_cup): cheer a win home, sulk a loss.  b is None
+        # when the pet walked away before the bell -- nothing happened.
+        if (b is not None and getattr(b, "over", False)
+                and self.screen_w.fx is None and not self.pet.dead):
+            self.screen_w.start_fx("cheer" if b.won else "losing")
+        self.repaint()
+
     def action_tournament(self):
         err = tournament.can_enter(self.pet)   # single source of entry gating (young/asleep/no-cup)
         if err:

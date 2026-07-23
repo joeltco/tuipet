@@ -515,16 +515,18 @@ def test_crossed_invites_consume_the_pending_prompt():
     assert declines == [(7, False, True)]
 
 
-def test_battle_and_jogress_are_lobby_only():
-    """Design decision (Joel 2026-07-07): battles and jogress are ONLINE-ONLY
-    -- PvE combat lives in adventure/cup, fusion needs a real roster partner.
-    The home screen must expose neither key."""
+def test_jogress_is_lobby_only_and_battle_rides_m():
+    """Half this pin was SUPERSEDED (Joel 2026-07-23 "should we add
+    battles action... like dm20 does it?" -> "yeah lets do it"): the home
+    BATTLE action is back as `m` -- tier-matched, real record, no purse
+    (test_home_battle owns its pins).  What still holds from the 2026-07-07
+    ruling: jogress is ONLINE-ONLY (fusion needs a real roster partner),
+    and `b` is the bug reporter, never battle."""
     from tuipet.app import TuiPetApp
     keys = {b[0] for b in TuiPetApp.BINDINGS}
     amap = {b[0]: b[1] for b in TuiPetApp.BINDINGS}
-    # no battle/jogress ACTION on the home screen (the real invariant); the old
-    # battle key "b" is now the bug reporter, and "j" (jogress) stays retired
-    assert not hasattr(TuiPetApp, "action_battle")
+    assert hasattr(TuiPetApp, "action_battle")               # the m bout
+    assert amap.get("m") == "battle"
     assert not hasattr(TuiPetApp, "action_jogress")
     assert "j" not in keys
     assert amap.get("b") == "bug"                                # never battle
