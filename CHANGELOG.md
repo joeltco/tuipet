@@ -3,6 +3,10 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.5.196 — THE WARP OPENS THE DOORS (2026-07-23)
+
+THE WARP OPENS THE DOORS: a Town Transport now lands you at the town for real — after the rest, you get the same visit-or-walk-on choice as arriving on foot, shop and all. It used to rest you and march straight past the town you paid a ticket to reach.
+
 ## 0.5.195 — A REAL NIGHT'S REST (2026-07-23)
 
 A REAL NIGHT'S REST: an adventure town now rests your pet to at least HALF its energy tank (it used to give one battle's worth — 'rested up' that a single fight erased). Above half, towns still top you up toward full. The win streak still breaks — rest for safety, pay with the chain.
