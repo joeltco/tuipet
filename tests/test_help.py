@@ -14,7 +14,10 @@ def _pet():
 
 
 def _glyph(key):
-    """The key as a PLAYER sees it (Textual's identifiers never reach a page)."""
+    """The key as a PLAYER sees it (Textual's identifiers never reach a page).
+    A comma alias list ("enter,space") teaches only its FIRST key -- the
+    alias is deliberately silent (QOL 2026-07-23)."""
+    key = key.split(",")[0]
     return {"question_mark": "?", "enter": "ENTER"}.get(key, key)
 
 
@@ -31,6 +34,7 @@ def test_every_binding_is_on_the_actions_bar():
     the bar (Joel caught it).  Every home-screen binding must show its key."""
     bar = keys_markup()
     for key, action, _label in TuiPetApp.BINDINGS:
+        key = key.split(",")[0]                    # alias lists teach key one
         if key == "enter":                         # the gift accept: no bar slot
             continue
         shown = "?" if key == "question_mark" else key
@@ -193,7 +197,7 @@ def test_every_binding_is_taught_in_the_guide():
     keymap = {"question_mark": "?", "enter": "ENTER"}
     lines = [ln for ln, kind in HELP if kind == 1]
     for key, _action, label in TuiPetApp.BINDINGS:
-        k = keymap.get(key, key)
+        k = keymap.get(key.split(",")[0], key.split(",")[0])
         taught = any(ln.startswith(k + " ") or f"  {k} " in ln or f" {k} " in ln
                      for ln in lines)
         assert taught, f"binding '{k}' ({label}) is not taught in HELP"

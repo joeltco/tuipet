@@ -37,6 +37,8 @@ def test_a_forced_encounter_pulls_a_real_wild_and_holds_the_leg(monkeypatch):
 def test_win_grants_a_grace_leg_then_the_march_resumes(monkeypatch):
     monkeypatch.setattr(adventure, "ENCOUNTER_CHANCE", 1.0)
     monkeypatch.setattr(adventure, "FIND_CHANCE", 0.0)   # isolate the grace leg
+    monkeypatch.setattr(adventure, "HAZARD_CHANCE", 0.0)  # (immunity covers
+    # encounters only -- an unlucky hazard roll made this flake, 2026-07-23)
     a = Adventure(_champ())
     a.travel()                                             # encounter
     assert a.resolve(True) == "won"

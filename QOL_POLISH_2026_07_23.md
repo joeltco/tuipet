@@ -53,24 +53,24 @@ one release per batch.
 
 ## Batch 3 — main view & care
 
-- [ ] C2 Care keys swallowed silently during care fx — no blip, no
+- [x] C2 Care keys swallowed silently during care fx — no blip, no
       note; players mash.  Acknowledge the key (soft blip / "one
       moment…" flash).
-- [ ] C3 Satiety (12h) / auto-clean (24h) buffs invisible at home —
+- [x] C3 Satiety (12h) / auto-clean (24h) buffs invisible at home —
       compact deco badges (`sated 3h` / `tidy 8h`) via care_deco.
-- [ ] C4 Hired assistant (bills per visit!) invisible at home — add a
+- [x] C4 Hired assistant (bills per visit!) invisible at home — add a
       `helper` deco badge when auto_care is on.
-- [ ] C5 LCD border subtitle "● on" is set ONCE and lies after lights
+- [x] C5 LCD border subtitle "● on" is set ONCE and lies after lights
       out — reflect pet.lights ("● on"/"● off").
-- [ ] C6 Space is dead for accepting a gift; only Enter works, while
+- [x] C6 Space is dead for accepting a gift; only Enter works, while
       panels accept both.  Bind Space to gift too.
-- [ ] C7 Bare grave card says "press N for a new egg" but N re-opens
+- [x] C7 Bare grave card says "press N for a new egg" but N re-opens
       the full memorial, not the carousel.  Make N deliver what it
       promises.
-- [ ] C8 Exhausted "S — rest" prompt answers with a flat "Lights off."
+- [x] C8 Exhausted "S — rest" prompt answers with a flat "Lights off."
       and the pet keeps standing until the doze timer — flash a
       "settling down to rest…" variant so the action reads as working.
-- [ ] C9 Feed card doesn't mark Meat as refusable (full belly / filth
+- [x] C9 Feed card doesn't mark Meat as refusable (full belly / filth
       on the floor) — annotate the row ("— full" / "— clean first")
       before the player commits.
 

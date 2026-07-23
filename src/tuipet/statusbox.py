@@ -65,6 +65,21 @@ def care_deco(pet, word=None):
     if pet.poop: deco.append(f"[{T.COIN}]~poop x{pet.poop}[/]")
     # (the ✦care-effect badge left with the Futon's careEffect runtime;
     # strict-DSprite items 2026-07-17)
+    # the standing buffs, visible at HOME (QOL 2026-07-23): satiety and
+    # auto-clean only ever showed in the transient eat readout, and a
+    # hired assistant (billing per visit!) showed nowhere at all.  Lowest
+    # priority: they drop first when the need badges pile up.
+    def _left(until):
+        s = int(until - pet.world_seconds)
+        return f"{s // 3600}h" if s >= 3600 else f"{max(1, s // 60)}m"
+    full = getattr(pet, "full_until", 0.0)
+    if full and pet.world_seconds < full:
+        deco.append(f"[{T.POS}]sated {_left(full)}[/]")
+    tidy = getattr(pet, "auto_clean_until", 0.0)
+    if tidy and pet.world_seconds < tidy:
+        deco.append(f"[{T.POS}]tidy {_left(tidy)}[/]")
+    if getattr(pet, "auto_care", False):
+        deco.append(f"[{T.COIN}]helper[/]")
     return deco
 
 
@@ -296,6 +311,17 @@ def feed(app):
     row = ("Meat — hunger +1,", "Pill — cures sickness,")[sel]
     tail = ("weight +1 · the staple", "effort +1 · energy +7")[sel]
     tail2 = ("", "weight +5")[sel]
+    if sel == 0:
+        # meat's refusal gates, visible BEFORE the pick (QOL 2026-07-23):
+        # the menu used to close on a refusal you couldn't see coming
+        from .petcare import FULL_HUNGER
+        T = theme
+        if p.sick:
+            tail2 = f"[{T.NEG}]refused — sick: the Pill[/]"
+        elif p.poop:
+            tail2 = f"[{T.NEG}]refused — clean first (C)[/]"
+        elif p.hunger >= FULL_HUNGER:
+            tail2 = f"[{T.NEG}]refused — belly is full[/]"
     card(app, "Feed", [
         f"Hunger   {hearts(p.hunger)}",
         f"Effort   {hearts(p.strength)}",

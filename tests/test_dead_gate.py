@@ -31,10 +31,12 @@ def test_every_binding_leads_a_dead_pet_to_the_memorial():
             for key, action, _label in TuiPetApp.BINDINGS:
                 if action in ("quit", "options", "lobby"):
                     continue                       # the keys that stay live
-                app.mode = None                   # back to the dead home screen
-                await pilot.press(key)
-                await pilot.pause()
-                results[action] = type(app.mode).__name__
+                for k in key.split(","):           # alias lists press each key
+                    app.mode = None               # back to the dead home screen
+                    await pilot.press(k)
+                    await pilot.pause()
+                    results[f"{action}:{k}" if "," in key else action] = \
+                        type(app.mode).__name__
             # options and the lobby stay reachable beside the grave (the
             # social room is not a care action -- Joel 2026-07-19)
             for k, slot in (("g", "_options_open"), ("l", "_lobby_open")):
@@ -47,6 +49,11 @@ def test_every_binding_leads_a_dead_pet_to_the_memorial():
     results = asyncio.run(go())
     options_open = results.pop("_options_open")
     lobby_open = results.pop("_lobby_open")
+    # the ONE sanctioned exit: the bare grave card says "press N for a new
+    # egg", and N delivers the carousel once the ceremony is banked
+    # (QOL 2026-07-23) -- every other key still leads to the memorial
+    assert results.pop("eggguide") == "EggSelectPanel", \
+        "the grave's N must open the egg carousel it promises"
     escaped = {a: m for a, m in results.items() if m != "DeathPanel"}
     assert not escaped, f"these actions escaped the grave: {escaped}"
     assert options_open == "OptionsPanel", "options must stay live at the memorial"

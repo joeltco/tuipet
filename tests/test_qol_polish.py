@@ -234,3 +234,89 @@ def test_menu_family_footers_are_gone():
     tp = ThemePanel(_pet())
     assert "ENTER keep" not in tp.text().plain
     assert "keep" in tp.strip()            # ...because the strip carries it
+
+
+# ============ Batch 3: main view & care ======================================
+
+# ---- C3/C4: standing buffs + the hired helper are visible at home -----------
+
+def test_satiety_and_autoclean_wear_home_badges():
+    from tuipet import statusbox
+    p = _pet(world_seconds=1000.0)
+    plain = " ".join(statusbox.care_deco(p))
+    assert "sated" not in plain and "tidy" not in plain
+    p.full_until = p.world_seconds + 2 * 3600.0
+    p.auto_clean_until = p.world_seconds + 90.0
+    plain = " ".join(statusbox.care_deco(p))
+    assert "sated 2h" in plain and "tidy 1m" in plain
+    p.world_seconds += 3 * 3600.0          # both windows expired
+    plain = " ".join(statusbox.care_deco(p))
+    assert "sated" not in plain and "tidy" not in plain
+
+
+def test_the_hired_assistant_wears_a_home_badge():
+    from tuipet import statusbox
+    p = _pet()
+    assert "helper" not in " ".join(statusbox.care_deco(p))
+    p.set_auto_care(True)
+    assert "helper" in " ".join(statusbox.care_deco(p))
+    p.set_auto_care(False)
+    assert "helper" not in " ".join(statusbox.care_deco(p))
+
+
+# ---- C9: meat's refusal gates show BEFORE the pick --------------------------
+
+class _CardW:
+    def __init__(self):
+        self.txt, self.border_subtitle = "", ""
+
+    def update(self, t):
+        self.txt = t
+
+
+class _CardApp:
+    def __init__(self, pet, mode):
+        self.pet, self.mode, self.stats_w = pet, mode, _CardW()
+
+
+def _feed_card(pet, cursor):
+    from tuipet import statusbox
+    pan = FeedPanel(pet)
+    pan.cursor = cursor
+    app = _CardApp(pet, pan)
+    statusbox.feed(app)
+    return app.stats_w.txt
+
+
+def test_feed_card_flags_a_refusable_meat_row():
+    p = _pet(sick=True)
+    assert "refused — sick" in _feed_card(p, 0)
+    p = _pet(poop=2)
+    assert "refused — clean first" in _feed_card(p, 0)
+    from tuipet.petcare import FULL_HUNGER
+    p = _pet(hunger=FULL_HUNGER)
+    assert "refused — belly is full" in _feed_card(p, 0)
+    assert "refused" not in _feed_card(_pet(hunger=1), 0)   # feedable: no flag
+    assert "refused" not in _feed_card(_pet(sick=True), 1)  # the pill row never
+
+
+# ---- C8: lights-off on an exhausted pet reads as WORKING --------------------
+
+def test_lights_off_when_exhausted_says_settling_down():
+    p = _pet()
+    p._set_energy(0)
+    p.lights = True
+    assert "settles down to rest" in p.toggle_lights()
+    p.lights = False
+    p.toggle_lights()                      # back on
+    p._set_energy(p.max_energy)
+    p.lights = True
+    assert p.toggle_lights() == "Lights off."   # rested: the plain toggle
+
+
+# ---- C6: space rides the gift binding ---------------------------------------
+
+def test_space_is_a_gift_alias_on_the_home_view():
+    from tuipet.app import TuiPetApp
+    keys = [b[0] for b in TuiPetApp.BINDINGS if b[1] == "gift"]
+    assert keys == ["enter,space"]

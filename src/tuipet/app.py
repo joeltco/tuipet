@@ -132,14 +132,14 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("QUALITY OF LIFE, ROUND 2 — menus & shops: the shop "
-                 "remembers where you left off (per tab, and across "
-                 "visits), prices you can't afford show dim across the "
-                 "whole shelf, emptying a stack in the bag can no longer "
-                 "sneak your next press onto a neighbor, the Album and "
-                 "Egg Guide wrap top to bottom and page inside the book, "
-                 "and the menu screens dropped their stale key footers — "
-                 "the hint strip is the one true key line.")
+    WHATS_NEW = ("QUALITY OF LIFE, ROUND 3 — home & care: satiety, "
+                 "auto-clean and a hired assistant now wear little badges "
+                 "on the status card, the feed menu warns when Meat would "
+                 "be refused, the lights LED actually follows the lights, "
+                 "SPACE accepts gifts too, keys pressed during a care "
+                 "show answer with a soft click instead of dead silence, "
+                 "and at the grave N really does open the new-egg "
+                 "carousel like the card promises.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and
@@ -159,7 +159,10 @@ class TuiPetApp(ActionsMixin, App):
         ("o", "shop", "Shop"), ("i", "inventory", "Bag"),
         ("e", "scenes", "Scenes"), ("g", "options", "Options"),
         ("b", "bug", "Bug"), ("question_mark", "help", "Help"), ("q", "quit", "Quit"),
-        ("enter", "gift", "Accept gift"),
+        # space rides along as a silent confirm alias (QOL 2026-07-23):
+        # every in-panel confirm takes ENTER or SPACE, the home view took
+        # only ENTER.  action_gift no-ops when no gift is pending.
+        ("enter,space", "gift", "Accept gift"),
     ]
 
     def __init__(self, pet: Pet | None = None):
@@ -218,7 +221,9 @@ class TuiPetApp(ActionsMixin, App):
         self.screen_w.border_title = "TUIPET"
         self.stats_w.border_title = "STATUS"
         self.keys_w.border_title = "ACTIONS"
-        self.screen_w.border_subtitle = "● on"
+        # the "● on" LED is LIVE (repaint syncs it to pet.lights) -- set
+        # once, it kept reading "on" all night (QOL 2026-07-23)
+        self.screen_w.border_subtitle = "● on" if self.pet.lights else "● off"
         wn = self._whats_new()
         if wn:                       # first launch on a new build: the news
             self._welcome = f"{wn}  ·  {self._welcome}"   # rides the msg box
@@ -532,6 +537,10 @@ class TuiPetApp(ActionsMixin, App):
             # guarded; the browse menus could still open mid-ceremony -- now
             # every binding waits for the show.  q (quit) stays live; the
             # dying-fx revive mash is handled above this gate.
+            # the swallowed key is ACKNOWLEDGED (QOL 2026-07-23): a silent
+            # eat read as a frozen app and invited a mash -- same soft
+            # click the dying-fx taps get
+            self.beep("click", bell=False)
             event.stop()
             event.prevent_default()
             return
@@ -547,6 +556,13 @@ class TuiPetApp(ActionsMixin, App):
             if event.key not in ("q", "g", "l"):
                 event.stop()
                 event.prevent_default()
+                if event.key == "n" and self.pet.death_banked:
+                    # the bare grave card promises "press N for a new egg"
+                    # -- deliver the CAROUSEL, not another lap through the
+                    # memorial (QOL 2026-07-23).  Pre-bank, N still runs
+                    # the ceremony below: the etch comes first.
+                    self.action_new()
+                    return
                 # every care key leads to the memorial (the dead-gate law) --
                 # and if this death's etch/seed ceremony hasn't run yet (a
                 # relaunch mid-dying-beat), it runs HERE, so the inheritance
@@ -903,6 +919,9 @@ class TuiPetApp(ActionsMixin, App):
             self._mode_strip()
         else:
             self.screen_w.paint(self.pet)
+            led = "● on" if self.pet.lights else "● off"
+            if self.screen_w.border_subtitle != led:
+                self.screen_w.border_subtitle = led
         if (painter := self._status_painter()) is not None:
             painter()
         else:

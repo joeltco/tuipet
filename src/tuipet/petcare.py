@@ -213,6 +213,10 @@ class CareMixin:
             # items, 2026-07-17)
             self._wake()                         # a nap wake rolls +-NapWakeMoodDec
             return "Lights on — up from its nap."
+        if not self.lights and not self.asleep and self.energy <= 0:
+            # the exhausted nag said "S — rest"; a flat "Lights off." read
+            # as a no-op while the doze timer ran (QOL 2026-07-23)
+            return f"Lights off — {self.name} settles down to rest…"
         return "Lights off." if not self.lights else "Lights on."
 
     # ---- shop / items --------------------------------------------------------
