@@ -3,6 +3,10 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.5.209 — THE BANDAGE HAS ITS ANIMATION BACK (2026-07-23)
+
+THE BANDAGE HAS ITS ANIMATION BACK: treating an injured pet now plays the real DVPet bandaging sequence — the dressing is held up, pressed on, and worked through its four frames while your pet holds still, then cheers when it is patched up.
+
 ## 0.5.208 — EVERY CONSUMABLE IS EATEN NOW (2026-07-23)
 
 EVERY CONSUMABLE IS EATEN NOW: vitamins, both drinks, the sleep and caffeine pills and the anti-evo chip all play the eating animation with their own ripped artwork, instead of flashing a line of text. The pill always worked this way — now the whole shelf does.
