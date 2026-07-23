@@ -3,6 +3,10 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.5.175 — BUBBMON DANCES (2026-07-22)
+
+BUBBMON DANCES: a few sprite sheets fill several pose slots with one identical frame — Bubbmon's happy dance and poopdance flipped between two copies of the same image, freezing solid. When a pose-flip resolves to one bitmap, the dance now alternates with a different REAL frame of the same species (its bob), so every mon moves when it celebrates. Nothing is drawn — rips only, as always.
+
 ## 0.5.174 — THE EGG WEARS ITS NAME (2026-07-22)
 
 THE EGG WEARS ITS NAME: the carousel's status card now titles the digitama you're browsing — matching an egg to its egg-guide entry used to mean matching the art by eye. The hatch line still names only the destined BABY: an egg will never promise to hatch an egg.
