@@ -3,6 +3,10 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.5.173 — THE DODGE IS REAL NOW (2026-07-22)
+
+THE DODGE IS REAL NOW: ducking an ambush used to make the attacker blink out of existence mid-air — the sail-past hid it behind your mon's own pixels for the whole beat, so a clean SPACE-dodge looked like a glitch. The strike now WHIFFS: the pouncer pulls up short of your crouch and visibly retreats off the right edge, on screen for every tick of the beat. Ducking finally looks as good as it feels.
+
 ## 0.5.172 — THE ROAD LOOKS RIGHT (2026-07-22)
 
 THE ROAD LOOKS RIGHT: an adventure animation audit fixed every pop and vanish — ambushers no longer strike from off-screen (your mon scrambles to the wall as the ! blinks), the dug-up treasure never smears over the pet, Life Recovery finally LOOKS like a second wind, runs open without the 8px teleport pop, turn-backs leave from where you stood, a right-side sleeper's zzZ flips to the free side, and parade bosses march in through the edges like everyone else. Every scene is now pixel-pinned in place.
