@@ -3,6 +3,10 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.5.195 — A REAL NIGHT'S REST (2026-07-23)
+
+A REAL NIGHT'S REST: an adventure town now rests your pet to at least HALF its energy tank (it used to give one battle's worth — 'rested up' that a single fight erased). Above half, towns still top you up toward full. The win streak still breaks — rest for safety, pay with the chain.
+
 ## 0.5.194 — ROAD SAFETY (2026-07-23)
 
 ROAD SAFETY: a Sleep Pill can no longer be taken on the road — it used to freeze the march in a nap that never ended. And when a spent pet plants its feet out there, the message now names the real ways out (warp to a town or head home) instead of promising a rest the road can't give.
