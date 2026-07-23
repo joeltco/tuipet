@@ -3,6 +3,10 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.5.198 — THE BATTLE KEY (2026-07-23)
+
+THE BATTLE KEY: press M to fight a rival of your pet's own stage, right at home. It's a real bout — wins, experience and training all count — but pays no bits (adventure keeps the purse), and each fight spends 5 energy, so the tank paces the brawling.
+
 ## 0.5.197 — TRAINING IN THE LEDGER (2026-07-23)
 
 TRAINING IN THE LEDGER: the DigiCore POWER page's Drills row now shows both counts that feed the fight — lifetime drills (never reset) and this stage's (they gate evolution and reset when it evolves). The stage count was always working; now you can watch it.
