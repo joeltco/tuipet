@@ -3,6 +3,10 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.5.176 — EVERY MON MOVES WHEN IT SHOULD (2026-07-22)
+
+EVERY MON MOVES WHEN IT SHOULD: a roster scan found ~35 species whose sheets fill a pose-flip with one identical frame — Bubbmon's dance was frozen solid, others froze their tantrums, startles or wash. Those flips now alternate with a different REAL frame of the same species (its bob), so celebration and agitation always MOVE. Sleep stays exempt on purpose: a still sleeper is the pose. Nothing is drawn — rips only, as always.
+
 ## 0.5.175 — BUBBMON DANCES (2026-07-22)
 
 BUBBMON DANCES: a few sprite sheets fill several pose slots with one identical frame — Bubbmon's happy dance and poopdance flipped between two copies of the same image, freezing solid. When a pose-flip resolves to one bitmap, the dance now alternates with a different REAL frame of the same species (its bob), so every mon moves when it celebrates. Nothing is drawn — rips only, as always.
