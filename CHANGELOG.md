@@ -3,6 +3,10 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.5.205 — INJURY IS BACK (canon) (2026-07-23)
+
+INJURY IS BACK (canon): battles can wound — especially losses in poor condition — and a hurt pet can't fight until you treat it with the BANDAGE (new in the shop, the device's second med). A Vitamin now also guards against injury for a day. Plus the Pendulum rule: a shaky bar lock costs nothing, and every fight names what's dragging you before the bell.
+
 ## 0.5.204 — BATTLES STOP STARVING YOUR PET (2026-07-23)
 
 BATTLES STOP STARVING YOUR PET: every bout sheds weight, and it could grind a pet 30g below its species base — a huge hidden accuracy penalty that grew the MORE you fought. Weight now floors at the species base, like training and travel always did. If your pet is thin, feed it back up — every gram toward base is hit chance back.
