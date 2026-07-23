@@ -3,6 +3,10 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.5.190 — QUALITY OF LIFE, ROUND 4 (2026-07-23)
+
+QUALITY OF LIFE, ROUND 4 — the lobby feels the network: a dead connection fails fast instead of freezing "Connecting…" for ten seconds, the banner says whether you dropped or never got through, ENTER retries right now instead of waiting out the backoff, chat sent while offline says it's queued, the ladder page can time out and retry, long login messages scroll instead of clipping, and your password shows its last letter while you type it — so the account you create is the one you meant.
+
 ## 0.5.189 — QUALITY OF LIFE, ROUND 3 (2026-07-23)
 
 QUALITY OF LIFE, ROUND 3 — home & care: satiety, auto-clean and a hired assistant now wear little badges on the status card, the feed menu warns when Meat would be refused, the lights LED actually follows the lights, SPACE accepts gifts too, keys pressed during a care show answer with a soft click instead of dead silence, and at the grave N really does open the new-egg carousel like the card promises.
