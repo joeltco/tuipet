@@ -3,6 +3,10 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.5.186 — EASIER ON THE EARS (2026-07-23)
+
+EASIER ON THE EARS: fresh installs now start at 50% volume instead of full blast. Your saved volume setting is untouched — this only picks the starting point for new tamers (Options → Sound to taste, as always).
+
 ## 0.5.185 — STATUS CARDS HOLD THEIR LINES (2026-07-23)
 
 STATUS CARDS HOLD THEIR LINES: a full card audit found text running off the 26-column card and wrapping — the DNA header with a long pet name, the feed dossier, a memorial's long cause of death. All pre-fit now, and a 40-state sweep test renders every card with worst-case names and numbers so a run-off can never ship again.
