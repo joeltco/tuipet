@@ -474,7 +474,8 @@ class Adventure:
 
     def use_transport(self, key):
         """Spend a road item.  Town warp -> jump to the town and rest
-        (lives + energy).  Danger warp -> dash toward the boss and get
+        (lives + energy; the PANEL then offers the hub doors like any
+        walked-in arrival).  Danger warp -> dash toward the boss and get
         ambushed on arrival.  Life Recovery -> hearts back to full where
         you stand.  Returns 'town-warp', ('encounter', enemy),
         'danger-warp', 'life-recovery', or None (not a run item / not

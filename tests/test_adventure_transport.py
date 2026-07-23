@@ -147,3 +147,41 @@ def test_the_menu_cancels_on_esc():
     pan.key("escape")
     assert pan._transport is None
     assert p.inventory.get("town_transport", 0) == 1         # nothing spent
+
+
+def test_a_town_warp_opens_the_town_doors():
+    """Joel 2026-07-23: "shoukdnt town transports allow us to go to the
+    shop, etc?"  A warp that lands ON town ground now raises the SAME
+    visit-or-walk-on prompt a walked-in arrival gets -- ENTER opens the
+    hub (shop/eggs/sell/cup doors), SPACE walks on.  Before this, the
+    warp played its rest beat and marched straight past the town it
+    paid a ticket to reach."""
+    p = _pet()
+    p.add_item("town_transport")
+    pan = AdventurePanel(p, zone=_zone())
+    _to_travelling(pan)
+    pan.key("t")
+    pan.key("enter")                              # warp: the rest beat plays
+    while pan._rest_t > 0:
+        pan.anim()
+    assert pan._town_prompt                       # the doors are open
+    assert "visit" in pan.strip()                 # the walk-in prompt, reused
+    pan.key("enter")
+    assert type(pan.sub).__name__ == "TownPanel"
+    assert pan.sub.town_id == pan.adv.town_at(pan.adv.loc)
+
+
+def test_a_warp_from_past_the_town_rests_in_place_without_doors():
+    """Forward-only warping means a pet already PAST the span rests where
+    it stands -- there is no town ground under it, so no prompt."""
+    p = _pet()
+    p.add_item("town_transport")
+    z = _zone()
+    pan = AdventurePanel(p, zone=z)
+    _to_travelling(pan)
+    pan.adv.loc = z["town_legs"][-1][1] + 1       # beyond the last span
+    pan.key("t")
+    pan.key("enter")
+    while pan._rest_t > 0:
+        pan.anim()
+    assert not pan._town_prompt                   # rested in place, march on

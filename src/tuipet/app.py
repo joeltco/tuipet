@@ -132,12 +132,11 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("A REAL NIGHT'S REST: an adventure town now rests your "
-                 "pet to at least HALF its energy tank (it used to give "
-                 "one battle's worth — 'rested up' that a single fight "
-                 "erased). Above half, towns still top you up toward "
-                 "full. The win streak still breaks — rest for safety, "
-                 "pay with the chain.")
+    WHATS_NEW = ("THE WARP OPENS THE DOORS: a Town Transport now lands "
+                 "you at the town for real — after the rest, you get the "
+                 "same visit-or-walk-on choice as arriving on foot, shop "
+                 "and all. It used to rest you and march straight past "
+                 "the town you paid a ticket to reach.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and

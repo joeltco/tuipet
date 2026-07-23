@@ -254,6 +254,13 @@ class AdventurePanel(menu.SubHost):
                 return
             if self._rest_t > 0:          # a transport town-warp rest beat
                 self._rest_t -= 1
+                if self._rest_t == 0 and self.adv._in_town(self.adv.loc):
+                    # the warp landed ON town ground -- open the same
+                    # visit-or-walk-on door a walked-in arrival gets (Joel
+                    # 2026-07-23: "shoukdnt town transports allow us to go
+                    # to the shop, etc?").  A warp from PAST the span
+                    # rested in place, so there is no town to enter.
+                    self._town_prompt = True
                 return
             if self._heal_t > 0:          # the Life Recovery second wind
                 self._heal_t -= 1
@@ -301,7 +308,8 @@ class AdventurePanel(menu.SubHost):
             self._go_home()
 
     def _use_transport(self, key):
-        """Spend the chosen road item: a town warp rests, a danger warp
+        """Spend the chosen road item: a town warp rests (and opens the
+        town's doors once the beat ends -- see anim), a danger warp
         ambushes, a life recovery refills the hearts in place."""
         r = self.adv.use_transport(key)
         self._transport = None
