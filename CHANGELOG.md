@@ -3,6 +3,10 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.5.189 — QUALITY OF LIFE, ROUND 3 (2026-07-23)
+
+QUALITY OF LIFE, ROUND 3 — home & care: satiety, auto-clean and a hired assistant now wear little badges on the status card, the feed menu warns when Meat would be refused, the lights LED actually follows the lights, SPACE accepts gifts too, keys pressed during a care show answer with a soft click instead of dead silence, and at the grave N really does open the new-egg carousel like the card promises.
+
 ## 0.5.188 — QUALITY OF LIFE, ROUND 2 (2026-07-23)
 
 QUALITY OF LIFE, ROUND 2 — menus & shops: the shop remembers where you left off (per tab, and across visits), prices you can't afford show dim across the whole shelf, emptying a stack in the bag can no longer sneak your next press onto a neighbor, the Album and Egg Guide wrap top to bottom and page inside the book, and the menu screens dropped their stale key footers — the hint strip is the one true key line.
