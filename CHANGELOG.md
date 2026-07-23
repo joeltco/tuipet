@@ -3,6 +3,10 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.5.199 — AN HONEST TIMING BAR (2026-07-23)
+
+AN HONEST TIMING BAR: if you saw the marker hit the center, you hit the center — the lock now forgives the split second between your eyes and your keyboard, the whole 2-pixel marker counts, and the center zone never shrinks below a humanly possible size. Same bar in training and every battle.
+
 ## 0.5.198 — THE BATTLE KEY (2026-07-23)
 
 THE BATTLE KEY: press M to fight a rival of your pet's own stage, right at home. It's a real bout — wins, experience and training all count — but pays no bits (adventure keeps the purse), and each fight spends 5 energy, so the tank paces the brawling.
