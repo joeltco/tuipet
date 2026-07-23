@@ -3,6 +3,10 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.5.192 — A RICHER WORLD (2026-07-23)
+
+A RICHER WORLD: adventure digs now match the land — fish by the seafloor, steak in the mountains, video games in the city — and each map's FINAL zone digs a rare tier worth the march. Every town shop got character too: each map sells a regional specialty (the hardest region stocks the Revive Floppy), and all 26 towns now carry a different signature good — no two shops in the world are alike.
+
 ## 0.5.191 — THE RECOVERY DOZE (2026-07-23)
 
 THE RECOVERY DOZE: a drained pet's nap no longer wakes after one bar — lights off, it now sleeps straight through until half its energy is back (and past empty it recovers double-speed), so you don't have to babysit a wake-and-drain loop. Lights on still rouses it. And an empty tank finally says so: status reads "exhausted" instead of "ok".
