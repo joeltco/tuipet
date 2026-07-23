@@ -3,6 +3,10 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.5.211 — YOUR PET FIDGETS NOW (2026-07-23)
+
+YOUR PET FIDGETS NOW: it does a little squirming dance when a poop is building, and yawns and stretches as bedtime gets close. Both animations were drawn long ago and never once played — now they do, quietly, while it idles.
+
 ## 0.5.210 — LESSONS LOOK LIKE LESSONS (2026-07-23)
 
 LESSONS LOOK LIKE LESSONS: praising your pet at a proud moment now plays the cheer, and scolding a real tantrum plays the sulk — the same beats training and the cup already use. Praise or scold at the wrong moment still shows nothing, because nothing happened.
