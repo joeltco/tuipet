@@ -399,6 +399,16 @@ INTOL_FOOD_SICK_CHANCE = 50            # config IntolerantFoodSickChance (per ro
 # DVPet poop / filth (config.csv, PhysicalState.poop / poopWaitMoodCheck).  A bowel
 # movement bumps mood, sheds a little weight and drops a pile of a size set by the
 # Digimon's base weight; an uncleaned mess then nags the mood until it is cleaned.
+# THE BODY TELLS (canon special-idle rolls, restored 2026-07-23: both fx
+# shipped fully painted and NOTHING ever fired them).  Each fx's own
+# docstring names its trigger, and these are those numbers:
+# poopDance rolls "while the need APPROACHES (>= 80%% of the interval)"
+# -- canon dances on a FULL gauge, but tuipet fires the poop the moment
+# it fills, so the tell has to come earlier; yawning() is "the
+# special-idle tell that bedtime NEARS", i.e. the last tenth of the
+# awake window (the doze-off keeps its own simple two-pose yawn anim).
+POOPDANCE_AT = 0.8                      # fraction of the bowel gauge
+YAWN_AT = 0.9                           # fraction of awake_limit
 POOP_MOOD_INC = 10                      # PoopMoodInc (relief)
 CLEAN_MOOD_INC = 6                      # CleanMoodInc
 CLEAN_OBED_INC = {0: 1, 1: 2, -1: 0}    # CleanObedienceInc / HighDisposition / LowDisposition

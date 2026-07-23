@@ -292,10 +292,12 @@ fx kinds the painter fully implements but **nothing ever fires**:
 |----|-------|
 | `heal` | painter gone (44c6405); E2 restores the show |
 | `toilet` | orphaned by the staple-props strip (2026-07-17) |
-| `poopdance` | never wired |
-| `yawn` | fires as an ANIM (3 sites) but the FX never plays |
+| `poopdance` | ✅ WIRED v0.5.211 (gauge >= 80%) |
+| `yawn` | ✅ WIRED v0.5.211 (bedtime nears); the 3 anim sites keep their simple pose |
 
-- [ ] Rule each: wire it to the moment it belongs to, or delete it.
+- [x] poopdance + yawn WIRED v0.5.211 (Joel's order).  ⬜ `toilet`
+      still unruled -- a deletion needs a NAMED order (removals rule).
+      ~~Rule each: wire it to the moment it belongs to, or delete it.~~
       **Recommend: wire `poopdance` + `yawn`** (both are pure charm and
       the pet already has the moments — a fresh poop, a sleepy pet),
       **delete `toilet`** (its system is gone by ruling).

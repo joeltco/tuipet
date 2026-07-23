@@ -132,11 +132,11 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("LESSONS LOOK LIKE LESSONS: praising your pet at a "
-                 "proud moment now plays the cheer, and scolding a real "
-                 "tantrum plays the sulk — the same beats training and "
-                 "the cup already use. Praise or scold at the wrong "
-                 "moment still shows nothing, because nothing happened.")
+    WHATS_NEW = ("YOUR PET FIDGETS NOW: it does a little squirming "
+                 "dance when a poop is building, and yawns and stretches "
+                 "as bedtime gets close. Both animations were drawn long "
+                 "ago and never once played — now they do, quietly, "
+                 "while it idles.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and
@@ -1108,6 +1108,16 @@ class TuiPetApp(ActionsMixin, App):
                 self.screen_w.fx["snds"] = {18: poop_snd}
             else:
                 self.beep(poop_snd, bell=False)
+        # the BODY TELLS (restored 2026-07-23): the sim rolls a special
+        # idle and posts it here -- a poop dance while the need builds, a
+        # yawn as bedtime nears.  Same mailbox pattern as the assistant
+        # below; both fx were painted long ago and never fired.  Ambient,
+        # so it yields to any running show and never interrupts.
+        tell = getattr(p, "idle_fx", None)
+        if tell:
+            p.idle_fx = None
+            if self.screen_w.fx is None and self.mode is None and not p.dead:
+                self.screen_w.start_fx(tell)
         # AI Assistant rounds (checkAutoCare): play the visit, flash the quit notes
         ev = getattr(p, "assist_event", None)
         if ev and self.screen_w.fx is None:

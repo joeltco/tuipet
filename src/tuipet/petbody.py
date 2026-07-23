@@ -832,6 +832,21 @@ class BodyMixin:
         weather system; BASIC VPET 2026-07-16.)"""
         if getattr(self, "away", False):
             return                                   # no home idles on the road
+        # THE BODY TELLS (restored 2026-07-23, Joel: "do the poopdance and
+        # yawn animations too").  Both fx were fully painted and NOTHING
+        # ever fired them; each names its own trigger in its docstring.
+        # They sit ABOVE the personality gate on purpose: that gate wants
+        # a rested pet, but a DRAINED pet at bedtime is exactly when a
+        # yawn belongs.  Presentation only -- handed to the app through
+        # the idle_fx mailbox, the assist_event pattern.  (The roll that
+        # reaches this method is already awake-only, idle-only, and
+        # filth-free, so the dance can't fire over a mess.)
+        if self._poop_t >= self._poop_interval * POOPDANCE_AT:   # noqa: F405
+            self.idle_fx = "poopdance"
+            return
+        if self.awake_lapse >= self.awake_limit * YAWN_AT:       # noqa: F405
+            self.idle_fx = "yawn"
+            return
         # the personality idles: rested + spirited gates for both families;
         # the under-drilled gate (effort <= 2) now scopes ONLY the sulk
         # (gameplay polish #10, 2026-07-22): it used to mute the HAPPY
