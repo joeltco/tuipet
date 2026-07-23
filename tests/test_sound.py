@@ -116,12 +116,13 @@ def _peak(path):
     return max(abs(s) for s in a)
 
 
-def test_default_100_percent_is_the_baked_in_chop():
+def test_slider_100_is_the_baked_in_chop():
     """The TOP of the slider is already the halved wav — the piercing raw
-    files are never what plays, and the default leaves the whole scale free
-    to go DOWN ("should of started at 100%", Joel 2026-07-15)."""
+    files are never what plays.  (The 2026-07-15 'start at 100%' default
+    was SUPERSEDED 2026-07-23: fresh installs start at 50 now — see
+    test_a_fresh_install_starts_at_half_volume — but slider-100 keeps
+    this amplitude law.)"""
     src = os.path.join(sound._DIR, "confirm.wav")
-    assert sound.DEFAULT_VOLUME == 100
     sound.set_volume(100)
     out = sound._scaled(src, "confirm")
     assert out != src and os.path.exists(out)
@@ -175,3 +176,12 @@ def test_volume_clamps_and_persists():
     assert sound.set_volume(500) == 100
     sound.set_volume(40)
     assert sound._load_volume() == 40       # survives a relaunch
+
+
+def test_a_fresh_install_starts_at_half_volume():
+    """Joel 2026-07-23: 'make it so audio volume starts at 50% by
+    default.'  A saved volume.txt still wins; only a fresh state dir
+    lands on the default."""
+    from tuipet import sound
+    assert sound.DEFAULT_VOLUME == 50
+    assert sound._load_volume() == 50     # sandboxed dir: no volume.txt

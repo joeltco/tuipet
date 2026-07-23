@@ -132,12 +132,10 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("STATUS CARDS HOLD THEIR LINES: a full card audit found "
-                 "text running off the 26-column card and wrapping — the "
-                 "DNA header with a long pet name, the feed dossier, a "
-                 "memorial's long cause of death. All pre-fit now, and a "
-                 "40-state sweep test renders every card with worst-case "
-                 "names and numbers so a run-off can never ship again.")
+    WHATS_NEW = ("EASIER ON THE EARS: fresh installs now start at 50% "
+                 "volume instead of full blast. Your saved volume setting "
+                 "is untouched — this only picks the starting point for "
+                 "new tamers (Options → Sound to taste, as always).")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and

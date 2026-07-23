@@ -47,7 +47,9 @@ def _vol_conf():
 
 def _cache_dir():
     return os.path.join(_state_dir(), "sndcache")
-DEFAULT_VOLUME = 100
+DEFAULT_VOLUME = 50   # Joel 2026-07-23: "audio volume starts at 50% by
+#                       default" -- a saved volume.txt still wins; only a
+#                       fresh install (or a wiped save dir) lands here
 
 
 def _amp(v):
